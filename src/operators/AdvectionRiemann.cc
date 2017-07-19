@@ -143,31 +143,25 @@ void AdvectionRiemann::UpdateMatricesCell_(const CompositeVector& u)
 
   for (int c = 0; c < ncells_owned; ++c) {
     if (space_col_ == DG0 && space_row_ == DG0) {
-      int k(0);
-      dg.set_order(k);
+      dg.set_order(0);
 
-      std::vector<AmanziGeometry::Point> v;
-      while (k < uc->NumVectors()) {
-        v.push_back(AmanziGeometry::Point((*uc)[k][c], (*uc)[k + 1][c]));
-        k += 2;
-      }
+      WhetStone::Polynomial divv(d, 0);
+      divv.monomials(0).coefs()[0] = (*uc)[0][c];
 
-      WhetStone::DenseMatrix Acell(1, 1);
-      dg.AdvectionMatrixCell(c, v, Acell);
+      WhetStone::DenseMatrix Acell;
+      dg.AdvectionMatrixCell(c, divv, Acell);
       matrix[c] = Acell;
     } 
     else if (space_col_ == DG1 && space_row_ == DG1) {
-      int k(1);
-      dg.set_order(k);
+      dg.set_order(1);
 
-      std::vector<AmanziGeometry::Point> v;
-      while (k < uc->NumVectors()) {
-        v.push_back(AmanziGeometry::Point((*uc)[k][c], (*uc)[k + 1][c]));
-        k += 2;
-      }
+      WhetStone::Polynomial divv(d, 1);
+      divv.monomials(0).coefs()[0] = (*uc)[0][c];
+      divv.monomials(1).coefs()[0] = (*uc)[1][c];
+      divv.monomials(1).coefs()[1] = (*uc)[2][c];
 
-      WhetStone::DenseMatrix Acell(3, 3);
-      dg.AdvectionMatrixCell(c, v, Acell);
+      WhetStone::DenseMatrix Acell;
+      dg.AdvectionMatrixCell(c, divv, Acell);
       matrix[c] = Acell;
     }
     else if (space_col_ == BERNARDI_RAUGEL && space_row_ == BERNARDI_RAUGEL) { 
@@ -209,26 +203,20 @@ void AdvectionRiemann::UpdateMatricesFace_(const CompositeVector& u)
   AmanziMesh::Entity_ID_List cells;
 
   for (int f = 0; f < nfaces_owned; ++f) {
-    mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
-    int ncells = cells.size();
-
-    int ndofs = ncells * (local_schema_col_.items())[0].num;
-    WhetStone::DenseMatrix Aface(ndofs, ndofs);
-
-    int k(0);
-    std::vector<AmanziGeometry::Point> v;
-    while (k < uf.NumVectors()) {
-      v.push_back(AmanziGeometry::Point(uf[k][f], uf[k + 1][f]));
-      k += 2;
-    }
+    WhetStone::DenseMatrix Aface;
 
     if (space_col_ == DG0 && space_row_ == DG0) {
+      WhetStone::Polynomial vn(d, 0);
+      vn.monomials(0).coefs()[0] = uf[0][f];
+
       dg.set_order(0);
-      dg.AdvectionMatrixFace(f, v, Aface);
+      dg.AdvectionMatrixFace(f, vn, Aface);
     }
     else if (space_col_ == DG1 && space_row_ == DG1) {
+      WhetStone::Polynomial vn(d, 1);
+
       dg.set_order(1);
-      dg.AdvectionMatrixFace(f, v, Aface);
+      dg.AdvectionMatrixFace(f, vn, Aface);
     }
 
     matrix[f] = Aface;

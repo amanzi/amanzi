@@ -21,6 +21,7 @@
 #include "Point.hh"
 
 #include "DenseMatrix.hh"
+#include "Polynomial.hh"
 #include "Tensor.hh"
 #include "WhetStone_typedefs.hh"
 
@@ -41,7 +42,6 @@ const double q1d_points[4][4] = {
     0.0694318442029737, 0.330009478207572, 0.669990521792428, 0.930568155797026
 };
 
-
 class DG_Modal { 
  public:
   DG_Modal(Teuchos::RCP<const AmanziMesh::Mesh> mesh) 
@@ -55,8 +55,8 @@ class DG_Modal {
   ~DG_Modal() {};
 
   int MassMatrix(int c, const Tensor& K, DenseMatrix& M);
-  int AdvectionMatrixCell(int c, std::vector<AmanziGeometry::Point>& u, DenseMatrix& A);
-  int AdvectionMatrixFace(int f, std::vector<AmanziGeometry::Point>& u, DenseMatrix& M);
+  int AdvectionMatrixCell(int c, Polynomial& divu, DenseMatrix& A);
+  int AdvectionMatrixFace(int f, Polynomial& un, DenseMatrix& A);
 
   // miscalleneous
   void set_order(int order) { order_ = order; }
@@ -67,11 +67,11 @@ class DG_Modal {
                      std::vector<AmanziGeometry::Point>& u) const;
 
  private:
-  void IntegrateMonomialsCell_(int c, int k, double* monomials);
-  void IntegrateMonomialsFace_(int f, int k, double factor, double* monomials);
+  void IntegrateMonomialsCell_(int c, Monomial& monomials);
+  void IntegrateMonomialsFace_(int f, double factor, Monomial& monomials);
   void IntegrateMonomialsEdge_(
       const AmanziGeometry::Point& x1, const AmanziGeometry::Point& x2,
-      int k, double factor, double* monomials);
+      double factor, Monomial& monomials);
   double IntegrateMonomialsEdge_(
       const AmanziGeometry::Point& x1, const AmanziGeometry::Point& x2,
       int ix, int iy, int jx, int jy,

@@ -47,8 +47,8 @@ add_amanzi_library(whetstone
                           MFD3D_BernardiRaugel.cc
                           DG_Modal.cc nlfv.cc 
                           Tensor.cc DenseMatrix.cc
-                   HEADERS DenseMatrix.hh
-                           DenseVector.hh
+                          Polynomial.cc
+                   HEADERS DenseMatrix.hh DenseVector.hh
                            DG_Modal.hh
                            lapack.hh
                            InnerProductL2.hh InnerProductH1.hh
@@ -61,7 +61,7 @@ add_amanzi_library(whetstone
                            MFD3D_BernardiRaugel.hh
                            MFD3DFactory.hh
                            nlfv.hh
-                           Tensor.hh
+                           Polynomial.hh Tensor.hh
                            WhetStoneDefs.hh
                            WhetStone_typedefs.hh
                    LINK_LIBS geometry mesh error_handling ${Epetra_LIBRARIES})

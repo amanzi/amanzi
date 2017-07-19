@@ -21,6 +21,30 @@
 
 #include "DenseMatrix.hh"
 #include "DG_Modal.hh"
+#include "Polynomial.hh"
+
+
+/* ****************************************************************
+* Test of Taylor polynomials
+**************************************************************** */
+TEST(DG_TAYLOR_POLYNOMIALS) {
+  using namespace Amanzi;
+  using namespace Amanzi::WhetStone;
+
+  Polynomial p(2, 3);
+  std::cout << p << std::endl; 
+
+  p.IteratorReset();
+  for (int i = 0; i < p.size(); ++i) {
+    const int* index = p.MultiIndex();
+    CHECK(index[0] >= 0 && index[1] >= 0);
+
+    int pos = p.MonomialPosition(index);
+    // CHECK(pos == i);
+
+    p.IteratorNext();
+  }
+}
 
 
 /* ****************************************************************
@@ -85,69 +109,38 @@ TEST(DG_ADVECTION_MATRIX_CELL) {
   // Teuchos::RCP<Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 1, 1); 
   Teuchos::RCP<Mesh> mesh = meshfactory("test/one_cell2.exo");
  
+  DenseMatrix A[2];
   AmanziGeometry::Point zero(0.0, 0.0);
 
-  for (int k = 0; k < 3; k++) {
-    DG_Modal dg(k, mesh);
-    int nk = (k + 1) * (k + 2) / 2;
-    DenseMatrix A0(nk, nk), A1(nk, nk);
+  for (int k = 0; k < 2; k++) {
+    DG_Modal dg(1, mesh);
+    Polynomial u(2, k);
+    u.monomials(0).coefs()[0] = 1.0;
 
-    std::vector<AmanziGeometry::Point> u;
-    u.push_back(AmanziGeometry::Point(1.0, 2.0));
+    dg.AdvectionMatrixCell(0, u, A[k]);
+    int nk = A[k].NumRows();
 
-    dg.AdvectionMatrixCell(0, u, A0);
-
-    printf("Advection matrix (cell-based) for order=%d\n", k);
+    printf("Advection matrix (cell-based) for velocity of order=%d\n", k);
     for (int i = 0; i < nk; i++) {
-      for (int j = 0; j < nk; j++ ) printf("%8.4f ", A0(i, j)); 
+      for (int j = 0; j < nk; j++ ) printf("%8.4f ", A[k](i, j)); 
       printf("\n");
-    }
-
-    // TEST1: accuracy
-    DenseVector v(nk), av(nk);
-    if (k > 1) {
-      double tmp;
-      const AmanziGeometry::Point& xc = mesh->cell_centroid(0);
-
-      v.PutScalar(0.0);
-      v(0) = xc[0] + 2 * xc[1];
-      v(1) = 1.0;
-      v(2) = 2.0;
-    
-      A0.Multiply(v, av, false);
-      v.Dot(av, &tmp);
-      CHECK_CLOSE(tmp, 5 * v(0) * mesh->cell_volume(0), 1e-12);
-    }
-
-    // TEST2: add zero linear component to constant u
-    u.push_back(zero);
-    u.push_back(zero);
-
-    dg.AdvectionMatrixCell(0, u, A1);
-
-    A1 -= A0;
-    CHECK_CLOSE(0.0, A1.NormInf(), 1e-12);
-
-    // TEST3: nonzero linear component of u
-    u.clear();
-    u.push_back(zero);
-    u.push_back(zero);
-    u.push_back(AmanziGeometry::Point(0.0, 1.0));
-
-    dg.AdvectionMatrixCell(0, u, A1);
-
-    printf("Advection matrix (cell-based) for order=%d u=(0,y)\n", k);
-    for (int i = 0; i < nk; i++) {
-      for (int j = 0; j < nk; j++ ) printf("%8.4f ", A1(i, j)); 
-      printf("\n");
-    }
-
-    if (k > 1) {
-      double mon_y2(0.384318693694);
-      CHECK_CLOSE(2 * mon_y2, A1(0, 5), 1e-12);
-      CHECK_CLOSE(mon_y2, A1(2, 2), 1e-12);
     }
   }
+
+  // TEST1: accuracy
+  int nk = A[0].NumRows();
+  DenseVector v(nk), av(nk);
+  double tmp;
+  const AmanziGeometry::Point& xc = mesh->cell_centroid(0);
+
+  v.PutScalar(0.0);
+  v(0) = xc[0] + 2 * xc[1];
+  v(1) = 1.0;
+  v(2) = 2.0;
+    
+  A[0].Multiply(v, av, false);
+  v.Dot(av, &tmp);
+  CHECK_CLOSE(20.2332916667, tmp, 1e-10);
 
   delete comm;
 }
@@ -172,22 +165,23 @@ TEST(DG_ADVECTION_MATRIX_FACE) {
 
   for (int k = 0; k < 2; k++) {
     DG_Modal dg(k, mesh);
-    int nk = (k + 1) * (k + 2);
-    DenseMatrix A0(nk, nk), A1(nk, nk);
+    DenseMatrix A0, A1;
 
-    std::vector<AmanziGeometry::Point> u;
-    u.push_back(AmanziGeometry::Point(1.0, 2.0));
+    Polynomial un(2, 0);
+    un.monomials(0).coefs()[0] = 1.0;
 
     // TEST1: constant u
-    dg.AdvectionMatrixFace(1, u, A0);
+    dg.AdvectionMatrixFace(1, un, A0);
 
     printf("Advection matrix (face-based) for order=%d  u=constant\n", k);
+    int nk = A0.NumRows();
     for (int i = 0; i < nk; i++) {
       for (int j = 0; j < nk; j++ ) printf("%8.4f ", A0(i, j)); 
       printf("\n");
     }
 
     // TEST2: linear u with zero gradient
+    /*
     u.push_back(zero);
     u.push_back(zero);
 
@@ -209,6 +203,7 @@ TEST(DG_ADVECTION_MATRIX_FACE) {
       for (int j = 0; j < nk; j++ ) printf("%8.4f ", A1(i, j)); 
       printf("\n");
     }
+    */
   }
 
   delete comm;

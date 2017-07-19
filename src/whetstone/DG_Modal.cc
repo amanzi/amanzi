@@ -16,6 +16,7 @@
 
 #include "DenseMatrix.hh"
 #include "DG_Modal.hh"
+#include "Polynomial.hh"
 #include "WhetStoneDefs.hh"
 
 namespace Amanzi {
@@ -26,29 +27,43 @@ namespace WhetStone {
 ****************************************************************** */
 int DG_Modal::MassMatrix(int c, const Tensor& K, DenseMatrix& M)
 {
-  // calculate monomials
-  int n(1), m((2 * order_ + 1) * (order_ + 1));
-  std::vector<int> shift(1, 0);
-  DenseVector monomials(m);
+  // calculate all monomials
+  Polynomial integrals(d_, 2 * order_);
 
-  monomials.PutScalar(0.0);
-  monomials(0) = mesh_->cell_volume(c);
+  integrals.monomials(0).coefs()[0] = mesh_->cell_volume(c);
 
-  for (int k = 1; k <= 2 * order_; ++k) {
-    shift.resize(n, k - 1);
-    IntegrateMonomialsCell_(c, k, &(monomials(n)));
-    n += k + 1;
+  for (int k = 1; k <= integrals.order(); ++k) {
+    IntegrateMonomialsCell_(c, integrals.monomials(k));
   }
    
-  // copy integrals to mass matrix (2D algorithm)
-  int nrows = (order_ + 1) * (order_ + 2) / 2;
+  // copy integrals to mass matrix
+  int multi_index[3];
+  Polynomial p(d_, order_), q(d_, order_);
+
+  int nrows = p.size();
   M.Reshape(nrows, nrows);
 
+  p.IteratorReset();
   for (int k = 0; k < nrows; ++k) {
-    for (int l = k; l < nrows; ++l) {
-      int i = shift[k] * shift[l];
-      M(k, l) = M(l, k) = K(0, 0) * monomials(k + l + i);
+    const int* idx_p = p.MultiIndex();
+
+    q.IteratorReset();
+    for (int l = 0; l < nrows; ++l) {
+      const int* idx_q = q.MultiIndex();
+      
+      int n(0);
+      for (int i = 0; i < d_; ++i) {
+        multi_index[i] = idx_p[i] + idx_q[i];
+        n += multi_index[i];
+      }
+
+      const auto& coefs = integrals.monomials(n).coefs();
+      M(k, l) = K(0, 0) * coefs[p.MonomialPosition(multi_index)];
+
+      q.IteratorNext();
     }
+
+    p.IteratorNext();
   }
 
   return 0;
@@ -58,55 +73,56 @@ int DG_Modal::MassMatrix(int c, const Tensor& K, DenseMatrix& M)
 /* ******************************************************************
 * Advection matrix for Taylor basis and polynomial velocity u.
 ****************************************************************** */
-int DG_Modal::AdvectionMatrixCell(
-    int c, std::vector<AmanziGeometry::Point>& u, DenseMatrix& A)
+int DG_Modal::AdvectionMatrixCell(int c, Polynomial& divu, DenseMatrix& A)
 {
   // calculate monomials
-  int uk(std::pow(2 * u.size(), 0.5) - 1);
-  int nk(1), mk((2 * (order_ + uk) + 1) * (order_ + uk));
+  int uk(divu.order());
+  Polynomial integrals(d_, 2 * order_ + uk);
 
-  std::vector<int> pk(1, 0); 
-  DenseVector monomials(mk + uk + 1);
+  integrals.monomials(0).coefs()[0] = mesh_->cell_volume(c);
 
-  monomials.PutScalar(0.0);
-  monomials(0) = mesh_->cell_volume(c);
-
-  for (int k = 1; k < 2 * order_ + uk; ++k) {
-    pk.push_back(nk);
-    IntegrateMonomialsCell_(c, k, &(monomials(nk)));
-    nk += k + 1;
+  for (int k = 1; k <= integrals.order(); ++k) {
+    IntegrateMonomialsCell_(c, integrals.monomials(k));
   }
-   
-  // copy integrals to mass matrix
-  int k1, l1, m1, mm, nrows(A.NumRows());
 
+  // copy integrals to mass matrix
+  int multi_index[3];
+  Polynomial p(d_, order_), q(d_, order_);
+
+  int nrows = p.size();
+  A.Reshape(nrows, nrows);
   A.PutScalar(0.0);
 
   // two loops for column polynomial
-  for (int i = 0; i <= order_; ++i) {
-    for (int k = 0; k < i + 1; ++ k) {
-      k1 = pk[i] + k;
+  p.IteratorReset();
+  for (int k = 0; k < nrows; ++k) {
+    const int* idx_p = p.MultiIndex();
 
-      // two loops for coefficient
-      for (int m = 0, m1 = 0; m <= uk; ++m) {
-        for (int n = 0; n < m + 1; ++n, ++m1) {
-          double ux(u[m1][0]), uy(u[m1][1]);
+    divu.IteratorReset();
+    for (int m = 0; m < divu.size(); ++m) {
+      const int* idx_divu = divu.MultiIndex();
+      double factor = divu.monomials(idx_divu[0] + idx_divu[1]).coefs()[m];
 
-          // two loops for row polynomial
-          for (int j = 1; j <= order_; ++j) {
-            mm = pk[i + m + j - 1] + k;
-            l1 = pk[j];
-            for (int l = 0; l < j + 1; ++l) {
-              A(k1, l1 + l) += ux * monomials(mm + n + l) * (j - l);
-            }
+      q.IteratorReset();
+      for (int l = 0; l < nrows; ++l) {
+        const int* idx_q = q.MultiIndex();
 
-            for (int l = 1; l < j + 1; ++l) {
-              A(k1, l1 + l) += uy * monomials(mm + n + l - 1) * l;
-            }
-          }
+        int n(0);
+        for (int i = 0; i < d_; ++i) {
+          multi_index[i] = idx_p[i] + idx_q[i] + idx_divu[i];
+          n += multi_index[i];
         }
+
+        const auto& coefs = integrals.monomials(n).coefs();
+        A(k, l) += factor * coefs[p.MonomialPosition(multi_index)];
+
+        q.IteratorNext();
       }
+
+      divu.IteratorNext();
     }
+
+    p.IteratorNext();
   }
 
   return 0;
@@ -114,96 +130,46 @@ int DG_Modal::AdvectionMatrixCell(
 
 
 /* ******************************************************************
-* Advection matrix for Taylor basis and constant velocity u (2D only)
+* Advection matrix for Taylor basis and normal velocity u.n.
 * Velocity is given in the face-based Taylor basis.
 ****************************************************************** */
-int DG_Modal::AdvectionMatrixFace(
-    int f, std::vector<AmanziGeometry::Point>& u, DenseMatrix& M)
+int DG_Modal::AdvectionMatrixFace(int f, Polynomial& un, DenseMatrix& A)
 {
   AmanziMesh::Entity_ID_List cells, nodes;
 
   mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
   int ncells = cells.size();
 
-  M.PutScalar(0.0);
+  A.Reshape(ncells, ncells);  // hack
+  A.PutScalar(0.0);
 
-  // calculate normal velocity
-  int dir, cd(cells[0]);
-  std::vector<double> factors;
-  const AmanziGeometry::Point& normal = mesh_->face_normal(f, false, cd, &dir);
-
-  for (int i = 0; i < u.size(); ++i) {
-    factors.push_back(u[i] * normal);
-  }
-
-  // identify downwind cell
+  // identify upwind cell
   int id(0); 
-  if (factors[0] > 0.0) {
+  double vel = un.monomials(0).coefs()[0];
+  if (vel < 0.0) {
     if (ncells == 1) return 0;
-    cd = cells[1];
     id = 1;
-  } else {
-    for (auto it = factors.begin(); it != factors.end(); ++it) {
-      *it *= -1.0;
-    }
   }
 
   // integrate traces from downwind cell
-  mesh_->face_get_nodes(f, &nodes);
-
-  AmanziGeometry::Point x1(d_), x2(d_);
-  mesh_->node_get_coordinates(nodes[0], &x1);
-  mesh_->node_get_coordinates(nodes[1], &x2);
-
-  const AmanziGeometry::Point& xc1 = mesh_->cell_centroid(cd);
-
-  int nrows = M.NumRows() / 2;
-  int ks(nrows * id), ls(nrows * (1 - id));
-  int is(ks);
-
-  for (int i = 0; i <= order_; ++i) {
-    for (int k = 0; k < i + 1; ++k) {
-      int js(ks);
-      for (int j = 0; j <= order_; ++j) {
-        for (int l = 0; l < j + 1; ++l) {
-          M(is + k, js) += IntegrateMonomialsEdge_(x1, x2, i - k, k,
-                                                           j - l, l, factors, xc1, xc1);
-          js++;
-        }
-      }
-    }
-    is += i + 1;
-  }
-
-  // integrate traces from both cells
-  if (ncells == 1) return 0;
-
-  int c2(cells[0] + cells[1] - cd);
-  const AmanziGeometry::Point& xc2 = mesh_->cell_centroid(c2);
-
-  is = ks;
-  for (int i = 0; i <= order_; ++i) {
-    for (int k = 0; k < i + 1; ++k) {
-      int js(ls);
-      for (int j = 0; j <= order_; ++j) {
-        for (int l = 0; l < j + 1; ++l) {
-          M(is + k, js) -= IntegrateMonomialsEdge_(x1, x2, i - k, k,
-                                                           j - l, l, factors, xc1, xc2);
-          js++;
-        }
-      }
-    }
-    is += i + 1;
+  double umod = fabs(vel);
+  if (ncells == 1) {
+    A(0, 0) = umod;
+  } else {
+    A(id, id) = umod;
+    A(1 - id, id) = -umod;
   }
 }
 
 
 /* ******************************************************************
-* Integrate all monomials of order k in cell c.
+* Integrate all specified monomials in cell c.
 * The cell must be star-shape w.r.t. to its centroid.
 ****************************************************************** */
-void DG_Modal::IntegrateMonomialsCell_(int c, int k, double* monomials)
+void DG_Modal::IntegrateMonomialsCell_(int c, Monomial& monomials)
 {
+  int k = monomials.order();
+
   Entity_ID_List faces, nodes;
   std::vector<int> dirs;
 
@@ -219,7 +185,7 @@ void DG_Modal::IntegrateMonomialsCell_(int c, int k, double* monomials)
     double tmp = dirs[n] * ((xf - xc) * normal) / (k + d_);
     
     if (d_ == 3) {
-      IntegrateMonomialsFace_(f, k, tmp, monomials);
+      IntegrateMonomialsFace_(f, tmp, monomials);
     } else if (d_ == 2) {
       mesh_->face_get_nodes(f, &nodes);
 
@@ -229,7 +195,7 @@ void DG_Modal::IntegrateMonomialsCell_(int c, int k, double* monomials)
 
       x1 -= xc;
       x2 -= xc;
-      IntegrateMonomialsEdge_(x1, x2, k, tmp, monomials);
+      IntegrateMonomialsEdge_(x1, x2, tmp, monomials);
     }
   }
 }
@@ -238,7 +204,7 @@ void DG_Modal::IntegrateMonomialsCell_(int c, int k, double* monomials)
 /* ******************************************************************
 * Integrate all monomials of order k on face.
 ****************************************************************** */
-void DG_Modal::IntegrateMonomialsFace_(int c, int k, double factor, double* monomials)
+void DG_Modal::IntegrateMonomialsFace_(int c, double factor, Monomial& monomials)
 {
 }
 
@@ -248,10 +214,11 @@ void DG_Modal::IntegrateMonomialsFace_(int c, int k, double factor, double* mono
 ****************************************************************** */
 void DG_Modal::IntegrateMonomialsEdge_(
     const AmanziGeometry::Point& x1, const AmanziGeometry::Point& x2,
-    int k, double factor, double* monomials)
+    double factor, Monomial& monomials)
 {
-  double a1; 
+  int k = monomials.order();
   AmanziGeometry::Point xm(d_);
+  auto& coefs = monomials.coefs();
 
   if (d_ == 2) {
     int m = k / 2;  // calculate quadrature rule
@@ -259,8 +226,8 @@ void DG_Modal::IntegrateMonomialsEdge_(
     for (int i = 0; i <= k; ++i) {
       for (int n = 0; n <= m; ++n) { 
         xm = x1 * q1d_points[m][n] + x2 * (1.0 - q1d_points[m][n]);
-        a1 = std::pow(xm[0], k - i) * std::pow(xm[1], i);
-        monomials[i] += factor * a1 * q1d_weights[m][n];      
+        double a1 = std::pow(xm[0], k - i) * std::pow(xm[1], i);
+        coefs[i] += factor * a1 * q1d_weights[m][n];      
       }
     }
   }
