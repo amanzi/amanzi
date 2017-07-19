@@ -36,6 +36,7 @@ class InputConverterU : public InputConverter {
       vo_(NULL),
       flow_single_phase_(false),
       compressibility_(false),
+      fractures_(false),
       mesh_rectangular_(false),
       transport_permeability_(false),
       use_transport_porosity_(false),
@@ -51,6 +52,7 @@ class InputConverterU : public InputConverter {
       vo_(NULL),
       flow_single_phase_(false),
       compressibility_(false),
+      fractures_(false),
       mesh_rectangular_(false),
       transport_permeability_(false),
       use_transport_porosity_(false),
@@ -117,6 +119,7 @@ class InputConverterU : public InputConverter {
   Teuchos::ParameterList TranslateFlowMSM_();
   Teuchos::ParameterList TranslateFlowBCs_();
   Teuchos::ParameterList TranslateFlowSources_();
+  Teuchos::ParameterList TranslateFlowFractures_();
 
   // -- transport
   Teuchos::ParameterList TranslateTransport_();
@@ -179,7 +182,7 @@ class InputConverterU : public InputConverter {
   // global flow constants
   std::string flow_model_;  // global value
   bool flow_single_phase_;  // runtime value
-  bool compressibility_;
+  bool compressibility_, fractures_;
   double rho_;
 
   // global mesh data

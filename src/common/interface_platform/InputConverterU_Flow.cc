@@ -65,6 +65,11 @@ Teuchos::ParameterList InputConverterU::TranslateFlow_(const std::string& mode)
   // create flow header
   if (pk_model_["flow"] == "darcy") {
     Teuchos::ParameterList& darcy_list = out_list.sublist("Darcy problem");
+    darcy_list.sublist("fracture permeability models") = TranslateFlowFractures_();
+    if (darcy_list.sublist("fracture permeability models").numParams() > 0) {
+      darcy_list.sublist("physical models and assumptions")
+          .set<bool>("flow in fractures", true);
+    }
 
     flow_list = &darcy_list;
     flow_single_phase_ = true;
@@ -822,6 +827,56 @@ Teuchos::ParameterList InputConverterU::TranslateFlowSources_()
   }
 
   return out_list;
+}
+
+
+/* ******************************************************************
+* Add optional fracture model to the list of physical models.
+****************************************************************** */
+Teuchos::ParameterList InputConverterU::TranslateFlowFractures_()
+{
+  Teuchos::ParameterList out_list;
+
+  Teuchos::OSTab tab = vo_->getOSTab();
+  if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH)
+    *vo_->os() << "Translating optional fracture models" << std::endl;
+
+  MemoryManager mm;
+  DOMNodeList *node_list, *children;
+  DOMNode* node;
+  DOMElement* element;
+
+  node_list = doc_->getElementsByTagName(mm.transcode("fractures_properties"));
+  if (node_list->getLength() == 0) return out_list;
+
+  node_list = doc_->getElementsByTagName(mm.transcode("materials"));
+  element = static_cast<DOMElement*>(node_list->item(0));
+  children = element->getElementsByTagName(mm.transcode("material"));
+
+  for (int i = 0; i < children->getLength(); ++i) {
+    DOMNode* inode = children->item(i); 
+ 
+    // get assigned regions
+    bool flag;
+    node = GetUniqueElementByTagsString_(inode, "assigned_regions", flag);
+    std::vector<std::string> regions = CharToStrings_(mm.transcode(node->getTextContent()));
+
+    // get optional complessibility
+    node = GetUniqueElementByTagsString_(inode, "fractures_properties, aperture", flag);
+    double value = GetAttributeValueD_(node, "value", TYPE_NUMERICAL, "m");
+    std::string model = GetAttributeValueS_(node, "model", "cubic law, linear");
+
+    for (std::vector<std::string>::const_iterator it = regions.begin(); it != regions.end(); ++it) {
+      std::stringstream ss;
+      ss << "FPM for " << *it;
+
+      Teuchos::ParameterList& fam_list = out_list.sublist(ss.str());
+      fam_list.set<std::string>("region", *it);
+
+      fam_list.set<std::string>("model", model);
+      fam_list.set<double>("aperture", value);
+    }
+  }
 }
 
 

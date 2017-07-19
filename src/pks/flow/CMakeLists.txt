@@ -131,6 +131,7 @@ set(flow_src_files Flow_PK.cc
                    DarcyVelocityEvaluator.cc
                    MultiscaleFlowPorosityFactory.cc MultiscaleFlowPorosityPartition.cc
                    MultiscaleFlowPorosity_DPM.cc
+                   FracturePermModelPartition.cc FracturePermModelEvaluator.cc
                    )
 set(flow_tpl_libs ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES})
 if ( Ifpack_ENABLE_HYPRE )
@@ -151,6 +152,11 @@ set(flow_inc_files
   FlowBoundaryFunction.hh
   Flow_PK.hh
   FlowTypeDefs.hh
+  FracturePermModel.hh
+  FracturePermModel_CubicLaw.hh
+  FracturePermModel_Linear.hh
+  FracturePermModelPartition.hh
+  FracturePermModelEvaluator.hh
   MultiscaleFlowPorosity.hh
   MultiscaleFlowPorosity_DPM.hh
   MultiscaleFlowPorosityFactory.hh

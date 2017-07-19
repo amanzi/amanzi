@@ -23,15 +23,16 @@
 #include "exceptions.hh"
 #include "LinearOperatorFactory.hh"
 #include "MFD3D_Diffusion.hh"
+#include "primary_variable_field_evaluator.hh"
 #include "TimestepControllerFactory.hh"
 #include "Tensor.hh"
 
 // Amanzi::Flow
 #include "Darcy_PK.hh"
-#include "FlowDefs.hh"
-
 #include "DarcyVelocityEvaluator.hh"
-#include "primary_variable_field_evaluator.hh"
+#include "FlowDefs.hh"
+#include "FracturePermModelPartition.hh"
+#include "FracturePermModelEvaluator.hh"
 
 namespace Amanzi {
 namespace Flow {
@@ -117,6 +118,8 @@ void Darcy_PK::Setup(const Teuchos::Ptr<State>& S)
     msg << "Darcy PK supports only constant viscosity model.";
     Exceptions::amanzi_throw(msg);
   }
+  bool fractures = physical_models->get<bool>("flow in fractures", false);
+  fractures &= (mesh_->manifold_dimension() != mesh_->space_dimension());
 
   // Require primary field for this PK.
   std::vector<std::string> names;
@@ -182,6 +185,26 @@ void Darcy_PK::Setup(const Teuchos::Ptr<State>& S)
   // -- viscosity
   if (!S->HasField("fluid_viscosity")) {
     S->RequireScalar("fluid_viscosity", passwd_);
+  }
+
+  // -- effective fracture permeability
+  if (fractures) {
+    if (!S->HasField("fracture_aperture")) {
+      S->RequireField("fracture_aperture", passwd_)->SetMesh(mesh_)->SetGhosted(true)
+        ->SetComponent("cell", AmanziMesh::CELL, 1);
+    }
+    if (!S->HasField("fracture_permeability")) {
+      S->RequireField("fracture_permeability", "fracture_permeability")->SetMesh(mesh_)->SetGhosted(true)
+        ->SetComponent("cell", AmanziMesh::CELL, 1);
+
+      Teuchos::RCP<Teuchos::ParameterList>
+          fpm_list = Teuchos::sublist(dp_list_, "fracture permeability models", true);
+      Teuchos::RCP<FracturePermModelPartition> fpm = CreateFracturePermModelPartition(mesh_, fpm_list);
+
+      Teuchos::ParameterList elist;
+      Teuchos::RCP<FracturePermModelEvaluator> eval = Teuchos::rcp(new FracturePermModelEvaluator(elist, fpm));
+      S->SetFieldEvaluator("fracture_permeability", eval);
+    }
   }
 
   // Local fields and evaluators.

@@ -126,7 +126,7 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
         Exceptions::amanzi_throw(msg);
       }
 
-      // -- permeability.
+      // -- permeability
       double perm_x, perm_y, perm_z;
       bool perm_init_from_file(false), conductivity(false);
       std::string perm_file, perm_attribute, perm_format, unit("m^2");
@@ -197,6 +197,16 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
       }
       if (kx < 0.0 || ky < 0.0 || kz < 0.0) {
         ThrowErrorIllformed_("materials", "permeability/hydraulic_conductivity", "file/filename/x/y/z");
+      }
+
+      // -- fracture aperture
+      node = GetUniqueElementByTagsString_(inode, "fractures_properties, aperture", flag);
+      if (flag) {
+        fractures_ = true;
+        TranslateFieldEvaluator_(node, "fracture_aperture", "m", reg_str, regions, out_ic, out_ev);
+      } else if (fractures_) {
+        msg << "Fracture properties element must be specified for all materials or none.";
+        Exceptions::amanzi_throw(msg);
       }
 
       // -- specific_yield
