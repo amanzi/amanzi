@@ -200,13 +200,10 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
       }
 
       // -- fracture aperture
-      node = GetUniqueElementByTagsString_(inode, "fractures_properties, aperture", flag);
+      node = GetUniqueElementByTagsString_(inode, "fracture_permeability", flag);
       if (flag) {
         fractures_ = true;
-        TranslateFieldEvaluator_(node, "fracture_aperture", "m", reg_str, regions, out_ic, out_ev);
-      } else if (fractures_) {
-        msg << "Fracture properties element must be specified for all materials or none.";
-        Exceptions::amanzi_throw(msg);
+        TranslateFieldEvaluator_(node, "fracture_aperture", "m", reg_str, regions, out_ic, out_ev, "aperture");
       }
 
       // -- specific_yield
@@ -464,7 +461,8 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
 void InputConverterU::TranslateFieldEvaluator_(
     DOMNode* node, std::string field, std::string unit,
     const std::string& reg_str, const std::vector<std::string>& regions,
-    Teuchos::ParameterList& out_ic, Teuchos::ParameterList& out_ev)
+    Teuchos::ParameterList& out_ic, Teuchos::ParameterList& out_ev,
+    std::string data_key)
 {
   std::string type = GetAttributeValueS_(node, "type", TYPE_NONE, false, "");
   if (type == "file") {
@@ -475,7 +473,7 @@ void InputConverterU::TranslateFieldEvaluator_(
     Teuchos::ParameterList& field_ev = out_ev.sublist(field);
     field_ev.set<std::string>("field evaluator type", "constant variable");
   } else {
-    double val = GetAttributeValueD_(node, "value", TYPE_NUMERICAL, unit);
+    double val = GetAttributeValueD_(node, data_key.c_str(), TYPE_NUMERICAL, unit);
 
     Teuchos::ParameterList& field_ev = out_ev.sublist(field);
     field_ev.sublist("function").sublist(reg_str)

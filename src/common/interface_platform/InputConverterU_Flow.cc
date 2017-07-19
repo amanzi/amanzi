@@ -846,7 +846,7 @@ Teuchos::ParameterList InputConverterU::TranslateFlowFractures_()
   DOMNode* node;
   DOMElement* element;
 
-  node_list = doc_->getElementsByTagName(mm.transcode("fractures_properties"));
+  node_list = doc_->getElementsByTagName(mm.transcode("fracture_permeability"));
   if (node_list->getLength() == 0) return out_list;
 
   node_list = doc_->getElementsByTagName(mm.transcode("materials"));
@@ -862,19 +862,25 @@ Teuchos::ParameterList InputConverterU::TranslateFlowFractures_()
     std::vector<std::string> regions = CharToStrings_(mm.transcode(node->getTextContent()));
 
     // get optional complessibility
-    node = GetUniqueElementByTagsString_(inode, "fractures_properties, aperture", flag);
-    double value = GetAttributeValueD_(node, "value", TYPE_NUMERICAL, "m");
-    std::string model = GetAttributeValueS_(node, "model", "cubic law, linear");
+    node = GetUniqueElementByTagsString_(inode, "fracture_permeability", flag);
+    if (flag)  {
+      double aperture = GetAttributeValueD_(node, "aperture", TYPE_NUMERICAL, "m");
+      std::string model = GetAttributeValueS_(node, "model", "cubic law, linear");
 
-    for (std::vector<std::string>::const_iterator it = regions.begin(); it != regions.end(); ++it) {
-      std::stringstream ss;
-      ss << "FPM for " << *it;
+      for (std::vector<std::string>::const_iterator it = regions.begin(); it != regions.end(); ++it) {
+        std::stringstream ss;
+        ss << "FPM for " << *it;
+ 
+        Teuchos::ParameterList& fam_list = out_list.sublist(ss.str());
+        fam_list.set<std::string>("region", *it);
 
-      Teuchos::ParameterList& fam_list = out_list.sublist(ss.str());
-      fam_list.set<std::string>("region", *it);
-
-      fam_list.set<std::string>("model", model);
-      fam_list.set<double>("aperture", value);
+        fam_list.set<std::string>("model", model);
+        fam_list.set<double>("aperture", aperture);
+      }
+    } else {
+      Errors::Message msg;
+      msg << "fracture_permeability element must be specified for all materials or none.";
+      Exceptions::amanzi_throw(msg);
     }
   }
 }

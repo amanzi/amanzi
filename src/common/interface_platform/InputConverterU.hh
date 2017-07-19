@@ -106,7 +106,8 @@ class InputConverterU : public InputConverter {
   void TranslateFieldEvaluator_(
       DOMNode* node, std::string field, std::string unit,
       const std::string& reg_str, const std::vector<std::string>& regions,
-      Teuchos::ParameterList& out_ic, Teuchos::ParameterList& out_ev);
+      Teuchos::ParameterList& out_ic, Teuchos::ParameterList& out_ev,
+      std::string data_key = "value");
   void TranslateFieldIC_(
       DOMNode* node, std::string field, std::string unit,
       const std::string& reg_str, const std::vector<std::string>& regions,

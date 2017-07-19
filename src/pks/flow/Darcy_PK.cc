@@ -189,10 +189,6 @@ void Darcy_PK::Setup(const Teuchos::Ptr<State>& S)
 
   // -- effective fracture permeability
   if (fractures) {
-    if (!S->HasField("fracture_aperture")) {
-      S->RequireField("fracture_aperture", passwd_)->SetMesh(mesh_)->SetGhosted(true)
-        ->SetComponent("cell", AmanziMesh::CELL, 1);
-    }
     if (!S->HasField("fracture_permeability")) {
       S->RequireField("fracture_permeability", "fracture_permeability")->SetMesh(mesh_)->SetGhosted(true)
         ->SetComponent("cell", AmanziMesh::CELL, 1);

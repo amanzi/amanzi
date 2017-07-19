@@ -17,7 +17,7 @@
 #define AMANZI_FLOW_POROSITY_EVALUATOR_HH_
 
 #include "factory.hh"
-#include "secondary_variables_field_evaluator.hh"
+#include "secondary_variable_field_evaluator.hh"
 
 #include "FracturePermModel.hh"
 #include "FracturePermModelPartition.hh"
@@ -25,7 +25,7 @@
 namespace Amanzi {
 namespace Flow {
 
-class FracturePermModelEvaluator : public SecondaryVariablesFieldEvaluator {
+class FracturePermModelEvaluator : public SecondaryVariableFieldEvaluator {
  public:
   // constructor format for all derived classes
   explicit
@@ -38,14 +38,13 @@ class FracturePermModelEvaluator : public SecondaryVariablesFieldEvaluator {
  protected:
   // Required methods from SecondaryVariableFieldEvaluator
   virtual void EvaluateField_(const Teuchos::Ptr<State>& S,
-          const std::vector<Teuchos::Ptr<CompositeVector> >& results);
+                              const Teuchos::Ptr<CompositeVector>& result);
   virtual void EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>& S,
-          Key wrt_key, const std::vector<Teuchos::Ptr<CompositeVector> > & results);
+          Key wrt_key, const Teuchos::Ptr<CompositeVector>& result);
 
  protected:
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
   Teuchos::RCP<FracturePermModelPartition> fpm_;
-  Key my_key_;
   Key aperture_key_;
 
  private:

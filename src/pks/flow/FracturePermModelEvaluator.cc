@@ -27,17 +27,17 @@ namespace Flow {
 ****************************************************************** */
 FracturePermModelEvaluator::FracturePermModelEvaluator(
     Teuchos::ParameterList& plist, Teuchos::RCP<FracturePermModelPartition> fpm) :
-    SecondaryVariablesFieldEvaluator(plist),
+    SecondaryVariableFieldEvaluator(plist),
     fpm_(fpm)
 {
-  my_key_ = std::string("fracture permeability");
-  aperture_key_ = std::string("aperture");
+  my_key_ = std::string("fracture_permeability");
+  aperture_key_ = std::string("fracture_aperture");
   dependencies_.insert(aperture_key_);
 }
 
 
 FracturePermModelEvaluator::FracturePermModelEvaluator(const FracturePermModelEvaluator& other) :
-    SecondaryVariablesFieldEvaluator(other),
+    SecondaryVariableFieldEvaluator(other),
     aperture_key_(other.aperture_key_),
     fpm_(other.fpm_) {};
 
@@ -55,9 +55,9 @@ Teuchos::RCP<FieldEvaluator> FracturePermModelEvaluator::Clone() const {
 ****************************************************************** */
 void FracturePermModelEvaluator::EvaluateField_(
     const Teuchos::Ptr<State>& S,
-    const std::vector<Teuchos::Ptr<CompositeVector> >& results)
+    const Teuchos::Ptr<CompositeVector>& result)
 {
-  Epetra_MultiVector& perm_c = *results[0]->ViewComponent("cell", false);
+  Epetra_MultiVector& perm_c = *result->ViewComponent("cell", false);
   const Epetra_MultiVector& aperture_c = *S->GetFieldData(aperture_key_)->ViewComponent("cell", false);
 
   int ncells = perm_c.MyLength();
@@ -73,9 +73,9 @@ void FracturePermModelEvaluator::EvaluateField_(
 void FracturePermModelEvaluator::EvaluateFieldPartialDerivative_(
     const Teuchos::Ptr<State>& S,
     Key wrt_key,
-    const std::vector<Teuchos::Ptr<CompositeVector> > & results)
+    const Teuchos::Ptr<CompositeVector>& result)
 {
-  results[0]->PutScalar(0.0);
+  result->PutScalar(0.0);
 }
 
 }  // namespace Flow
