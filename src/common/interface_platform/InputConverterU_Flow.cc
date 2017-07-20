@@ -877,10 +877,6 @@ Teuchos::ParameterList InputConverterU::TranslateFlowFractures_()
         fam_list.set<std::string>("model", model);
         fam_list.set<double>("aperture", aperture);
       }
-    } else {
-      Errors::Message msg;
-      msg << "fracture_permeability element must be specified for all materials or none.";
-      Exceptions::amanzi_throw(msg);
     }
   }
 }

@@ -62,11 +62,6 @@ void Flow_PK::Setup(const Teuchos::Ptr<State>& S)
   if (!S->HasField("gravity")) {
     S->RequireConstantVector("gravity", passwd_, dim);  // state resets ownership.
   } 
-
-  if (!S->HasField("permeability")) {
-    S->RequireField("permeability", passwd_)->SetMesh(mesh_)->SetGhosted(true)
-      ->SetComponent("cell", AmanziMesh::CELL, dim);
-  }
 }
 
 

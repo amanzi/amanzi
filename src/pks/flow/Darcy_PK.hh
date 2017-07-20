@@ -120,6 +120,8 @@ class Darcy_PK : public Flow_PK {
   bool initialize_with_darcy_;
   int num_itrs_;
 
+  bool flow_in_fractures_;
+
   Teuchos::RCP<CompositeVector> solution;  // next pressure state
   Teuchos::RCP<Epetra_Vector> pdot_cells_prev;  // time derivative of pressure
   Teuchos::RCP<Epetra_Vector> pdot_cells;

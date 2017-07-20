@@ -118,8 +118,8 @@ void Darcy_PK::Setup(const Teuchos::Ptr<State>& S)
     msg << "Darcy PK supports only constant viscosity model.";
     Exceptions::amanzi_throw(msg);
   }
-  bool fractures = physical_models->get<bool>("flow in fractures", false);
-  fractures &= (mesh_->manifold_dimension() != mesh_->space_dimension());
+  flow_in_fractures_ = physical_models->get<bool>("flow in fractures", false);
+  flow_in_fractures_ &= (mesh_->manifold_dimension() != mesh_->space_dimension());
 
   // Require primary field for this PK.
   std::vector<std::string> names;
@@ -188,7 +188,7 @@ void Darcy_PK::Setup(const Teuchos::Ptr<State>& S)
   }
 
   // -- effective fracture permeability
-  if (fractures) {
+  if (flow_in_fractures_) {
     if (!S->HasField("fracture_permeability")) {
       S->RequireField("fracture_permeability", "fracture_permeability")->SetMesh(mesh_)->SetGhosted(true)
         ->SetComponent("cell", AmanziMesh::CELL, 1);
@@ -200,6 +200,11 @@ void Darcy_PK::Setup(const Teuchos::Ptr<State>& S)
       Teuchos::ParameterList elist;
       Teuchos::RCP<FracturePermModelEvaluator> eval = Teuchos::rcp(new FracturePermModelEvaluator(elist, fpm));
       S->SetFieldEvaluator("fracture_permeability", eval);
+    }
+  } else {
+    if (!S->HasField("permeability")) {
+      S->RequireField("permeability", passwd_)->SetMesh(mesh_)->SetGhosted(true)
+        ->SetComponent("cell", AmanziMesh::CELL, dim);
     }
   }
 
@@ -299,16 +304,23 @@ void Darcy_PK::Initialize(const Teuchos::Ptr<State>& S)
   // Initialize diffusion operator and solver.
   // -- instead of scaling K, we scale the elemental mass matrices 
   double mu = *S->GetScalarData("fluid_viscosity");
-  SetAbsolutePermeabilityTensor();
-
   Teuchos::ParameterList& oplist = dp_list_->sublist("operators")
                                             .sublist("diffusion operator")
                                             .sublist("matrix");
   Operators::DiffusionFactory opfactory;
   op_diff_ = opfactory.Create(oplist, mesh_, op_bc_, rho_ * rho_ / mu, gravity_);
-  Teuchos::RCP<std::vector<WhetStone::Tensor> > Kptr = Teuchos::rcpFromRef(K);
   op_diff_->SetBCs(op_bc_, op_bc_);
-  op_diff_->Setup(Kptr, Teuchos::null, Teuchos::null);
+
+  if (!flow_in_fractures_) {
+    SetAbsolutePermeabilityTensor();
+    Teuchos::RCP<std::vector<WhetStone::Tensor> > Kptr = Teuchos::rcpFromRef(K);
+    op_diff_->Setup(Kptr, Teuchos::null, Teuchos::null);
+  } else {
+    S_->GetFieldEvaluator("fracture_permeability")->HasFieldChanged(S_.ptr(), "fracture_permeability");
+    auto Kptr = S_->GetFieldData("fracture_permeability");
+    op_diff_->Setup(Teuchos::null, Kptr, Teuchos::null);
+  }
+
   op_diff_->ScaleMassMatrices(rho_ / mu);
   op_diff_->UpdateMatrices(Teuchos::null, Teuchos::null);
   op_ = op_diff_->global_operator();

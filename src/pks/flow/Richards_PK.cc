@@ -223,6 +223,12 @@ void Richards_PK::Setup(const Teuchos::Ptr<State>& S)
   }
 
   // Require additional fields and evaluators for this PK.
+  // -- absolute permeability
+  if (!S->HasField("permeability")) {
+    S->RequireField("permeability", passwd_)->SetMesh(mesh_)->SetGhosted(true)
+      ->SetComponent("cell", AmanziMesh::CELL, dim);
+  }
+
   // -- darcy flux
   if (!S->HasField("darcy_flux")) {
     S->RequireField("darcy_flux", passwd_)->SetMesh(mesh_)->SetGhosted(true)
