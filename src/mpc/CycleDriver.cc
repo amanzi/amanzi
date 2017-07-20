@@ -527,8 +527,9 @@ double CycleDriver::get_dt(bool after_failure) {
   // cap the max step size
   if (dt > max_dt_) {
     dt = max_dt_;   
+    Utils::Units units("molar");
     Teuchos::OSTab tab = vo_->getOSTab();
-    *vo_->os() << "Resetting time step to the maximum allowed of " << dt << " s.\n";
+    *vo_->os() << "Resetting time step to the maximum allowed of " << units.OutputTime(dt) << "\n";
   }
 
   return dt;

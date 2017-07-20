@@ -14,6 +14,7 @@
 #include <iostream>
 
 #include "TimeStepManager.hh"
+#include "Units.hh"
 #include "VerboseObject.hh"
 
 namespace Amanzi {
@@ -115,9 +116,10 @@ double TimeStepManager::TimeStep(double T, double dT, bool after_failure) {
     if (!physical) dt_stable_storage = dT;
     if (vo_ != Teuchos::null) {
       if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
+        Utils::Units units("molar");
         Teuchos::OSTab tab = vo_->getOSTab();
-            *vo_->os() << "Proposed dT=" << dT 
-                   << " [sec]. CD limits it to " << time_remaining << std::endl;
+        *vo_->os() << "Proposed dT=" << units.OutputTime(dT)
+                   << ". CD limits it to " << units.OutputTime(time_remaining) << std::endl;
       }
     }
 
@@ -127,9 +129,10 @@ double TimeStepManager::TimeStep(double T, double dT, bool after_failure) {
     if (!physical) dt_stable_storage = dT + (dT - 0.5*time_remaining);
     if (vo_!=Teuchos::null) {
       if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
+        Utils::Units units("molar");
         Teuchos::OSTab tab = vo_->getOSTab();
-        *vo_->os() << "Proposed dT=" << dT 
-                   << " [sec]. CD limits it to " << 0.5*time_remaining << std::endl;
+        *vo_->os() << "Proposed dT=" << units.OutputTime(dT)
+                   << ". CD limits it to " << units.OutputTime(0.5*time_remaining) << std::endl;
       }
     }
 
