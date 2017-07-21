@@ -34,15 +34,13 @@ TEST(DG_TAYLOR_POLYNOMIALS) {
   Polynomial p(2, 3);
   std::cout << p << std::endl; 
 
-  p.IteratorReset();
-  for (int i = 0; i < p.size(); ++i) {
-    const int* index = p.MultiIndex();
+  int i(0);
+  for (auto it = p.begin(); it.end() != p.end(); ++it) {
+    const int* index = it.multi_index();
     CHECK(index[0] >= 0 && index[1] >= 0);
 
-    int pos = p.MonomialPosition(index);
-    // CHECK(pos == i);
-
-    p.IteratorNext();
+    int pos = p.PolynomialPosition(index);
+    CHECK(pos == i++);
   }
 }
 

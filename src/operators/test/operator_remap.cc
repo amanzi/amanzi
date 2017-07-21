@@ -129,6 +129,7 @@ void RemapTests2DExplicit(int order, std::string disc_name,
   auto global_op = op->global_operator();
 
   // create secondary advection operator (cell-based)
+  /*
   plist.sublist("schema domain")
       .set<std::string>("base", "cell")
       .set<Teuchos::Array<std::string> >("location", std::vector<std::string>({"cell"}))
@@ -138,6 +139,7 @@ void RemapTests2DExplicit(int order, std::string disc_name,
   plist.sublist("schema range") = plist.sublist("schema domain");
 
   Teuchos::RCP<AdvectionRiemann> op_adv = Teuchos::rcp(new AdvectionRiemann(plist, global_op));
+  */
 
   // create accumulation operator
   plist.sublist("schema")
@@ -161,7 +163,7 @@ void RemapTests2DExplicit(int order, std::string disc_name,
       (*jac)[0][c] = 1.0 + t * (v1 - v0) / v0;
     }
 
-    // rotate velocities
+    // rotate velocities and calculate normal component
     WhetStone::Tensor R(2, 2);
     CompositeVector velc_t(*velc), velf_t(*velf);
 
@@ -174,36 +176,17 @@ void RemapTests2DExplicit(int order, std::string disc_name,
 
       for (int k = 0; k < nk; ++k) {
         xv[0] = vel[2 * k][f];
-        xv[1] = vel[2 *k + 1][f];
+        xv[1] = vel[2 * k + 1][f];
 
         xv = R * xv;
       
-        vel[2 * k][f] = xv[0];
-        vel[2 * k + 1][f] = xv[1];
-      }
-    }
-    
-    Epetra_MultiVector& vel2 = *velc_t.ViewComponent("cell");
-    for (int c = 0; c < ncells_owned; ++c) {
-      R(0, 0) = 1.0 + t * vel2[5][c];
-      R(0, 1) = -t * vel2[4][c];
-      R(1, 0) = -t * vel2[3][c];
-      R(1, 1) = 1.0 + t * vel2[2][c];
-
-      for (int k = 0; k < nk; ++k) {
-        xv[0] = vel2[2 * k][c];
-        xv[1] = vel2[2 *k + 1][c];
-
-        xv = R * xv;
-      
-        vel2[2 * k][c] = xv[0];
-        vel2[2 * k + 1][c] = xv[1];
+        vel[0][f] = xv * mesh1->face_normal(f);
       }
     }
     
     // populate operators
     op->UpdateMatrices(velf_t);
-    op_adv->UpdateMatrices(velc_t);
+    // op_adv->UpdateMatrices(velc_t);
     op_reac->UpdateMatrices(p1);
 
     // predictor step
@@ -273,6 +256,7 @@ void RemapTests2DExplicit(int order, std::string disc_name,
 /* *****************************************************************
 * Remap of polynomilas in three dimensions. Implicit scheme.
 ***************************************************************** */
+/*
 void RemapTests2DImplicit(int order, std::string disc_name,
                           int nx, int ny, double dt) {
   using namespace Amanzi;
@@ -501,10 +485,11 @@ void RemapTests2DImplicit(int order, std::string disc_name,
     GMV::close_data_file();
   }
 }
+*/
 
 
 TEST(REMAP_2D_EXPLICIT) {
-  RemapTests2DExplicit(0, "DG order 0", 40, 40, 0.1);
+  RemapTests2DExplicit(0, "DG order 0", 5, 5, 0.1);
 }
 
 // TEST(REMAP_2D_IMPLICIT) {

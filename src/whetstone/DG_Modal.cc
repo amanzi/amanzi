@@ -43,13 +43,13 @@ int DG_Modal::MassMatrix(int c, const Tensor& K, DenseMatrix& M)
   int nrows = p.size();
   M.Reshape(nrows, nrows);
 
-  p.IteratorReset();
-  for (int k = 0; k < nrows; ++k) {
-    const int* idx_p = p.MultiIndex();
+  for (auto it = p.begin(); it.end() <= p.end(); ++it) {
+    const int* idx_p = it.multi_index();
+    int k = p.PolynomialPosition(idx_p);
 
-    q.IteratorReset();
-    for (int l = 0; l < nrows; ++l) {
-      const int* idx_q = q.MultiIndex();
+    for (auto jt = q.begin(); jt.end() <= q.end(); ++jt) {
+      const int* idx_q = jt.multi_index();
+      int l = q.PolynomialPosition(idx_q);
       
       int n(0);
       for (int i = 0; i < d_; ++i) {
@@ -59,11 +59,7 @@ int DG_Modal::MassMatrix(int c, const Tensor& K, DenseMatrix& M)
 
       const auto& coefs = integrals.monomials(n).coefs();
       M(k, l) = K(0, 0) * coefs[p.MonomialPosition(multi_index)];
-
-      q.IteratorNext();
     }
-
-    p.IteratorNext();
   }
 
   return 0;
@@ -93,19 +89,18 @@ int DG_Modal::AdvectionMatrixCell(int c, Polynomial& divu, DenseMatrix& A)
   A.Reshape(nrows, nrows);
   A.PutScalar(0.0);
 
-  // two loops for column polynomial
-  p.IteratorReset();
-  for (int k = 0; k < nrows; ++k) {
-    const int* idx_p = p.MultiIndex();
+  for (auto it = p.begin(); it.end() <= p.end(); ++it) {
+    const int* idx_p = it.multi_index();
+    int k = p.PolynomialPosition(idx_p);
 
-    divu.IteratorReset();
-    for (int m = 0; m < divu.size(); ++m) {
-      const int* idx_divu = divu.MultiIndex();
-      double factor = divu.monomials(idx_divu[0] + idx_divu[1]).coefs()[m];
+    for (auto mt = divu.begin(); mt.end() <= divu.end(); ++mt) {
+      const int* idx_divu = mt.multi_index();
+      int m = divu.MonomialPosition(idx_divu);
+      double factor = divu.monomials(mt.end()).coefs()[m];
 
-      q.IteratorReset();
-      for (int l = 0; l < nrows; ++l) {
-        const int* idx_q = q.MultiIndex();
+      for (auto jt = q.begin(); jt.end() <= q.end(); ++jt) {
+        const int* idx_q = jt.multi_index();
+        int l = q.PolynomialPosition(idx_q);
 
         int n(0);
         for (int i = 0; i < d_; ++i) {
@@ -114,15 +109,9 @@ int DG_Modal::AdvectionMatrixCell(int c, Polynomial& divu, DenseMatrix& A)
         }
 
         const auto& coefs = integrals.monomials(n).coefs();
-        A(k, l) += factor * coefs[p.MonomialPosition(multi_index)];
-
-        q.IteratorNext();
+        A(k, l) -= factor * coefs[p.MonomialPosition(multi_index)];
       }
-
-      divu.IteratorNext();
     }
-
-    p.IteratorNext();
   }
 
   return 0;
@@ -143,10 +132,11 @@ int DG_Modal::AdvectionMatrixFace(int f, Polynomial& un, DenseMatrix& A)
   A.Reshape(ncells, ncells);  // hack
   A.PutScalar(0.0);
 
-  // identify upwind cell
-  int id(0); 
+  // identify downwind cell
+  int dir, id(0); 
   double vel = un.monomials(0).coefs()[0];
-  if (vel < 0.0) {
+  mesh_->face_normal(f, false, cells[0], &dir);
+  if (vel * dir < 0.0) {
     if (ncells == 1) return 0;
     id = 1;
   }

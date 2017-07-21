@@ -32,40 +32,22 @@ Polynomial::Polynomial(int d, int order) : d_(d), order_(order)
 
 
 /* ******************************************************************
-* Iterators: 2D algorithm
-****************************************************************** */
-void Polynomial::IteratorReset()
-{
-  it_k_ = 0;
-  it_m_ = 0;
-  it_index_[0] = 0;
-  it_index_[1] = 0;
-  it_index_[2] = 0;
-}
-
-
-void Polynomial::IteratorNext() 
-{
-  if (it_index_[0] == 0) {
-    it_k_++;
-    it_m_ = 0;
-    it_index_[0] = it_k_;
-    it_index_[1] = 0;
-    it_index_[2] = 0;
-  } else {
-    it_m_++;
-    it_index_[0]--;
-    it_index_[1] = it_k_ - it_index_[0];
-  }
-}
-
-
-/* ******************************************************************
-* Global position of monomial defined by multi index. 2D algorithm.
+* Position in monomial defined by multi_index. 2D algorithm
 ****************************************************************** */
 int Polynomial::MonomialPosition(const int* multi_index) const
 {
   return multi_index[1];
+}
+
+
+/* ******************************************************************
+* Position in polynomial defined by multi_index. 2D algorithm.
+****************************************************************** */
+int Polynomial::PolynomialPosition(const int* multi_index) const
+{
+  int k = multi_index[0] + multi_index[1];
+  int nk = k * (k + 1) / 2; 
+  return nk + multi_index[1];
 }
 
 }  // namespace WhetStone

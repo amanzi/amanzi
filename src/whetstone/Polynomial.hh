@@ -24,6 +24,48 @@
 namespace Amanzi {
 namespace WhetStone {
 
+class Iterator {
+ public:
+  Iterator() {};
+  ~Iterator() {};
+
+  Iterator& begin() {
+    k_ = 0;
+    m_ = 0;
+    multi_index_[0] = 0;
+    multi_index_[1] = 0;
+    multi_index_[2] = 0;
+
+    return *this;
+  }
+
+  Iterator& operator++() {  // prefix only
+    if (multi_index_[0] == 0) {
+      k_++;
+      m_ = 0;
+      multi_index_[0] = k_;
+      multi_index_[1] = 0;
+      multi_index_[2] = 0;
+    } else {
+      m_++;
+      multi_index_[0]--;
+      multi_index_[1] = k_ - multi_index_[0];
+    }
+    return *this;
+  }
+
+  int end() { return k_; }
+
+  // access
+  const int* multi_index() const { return multi_index_; }
+
+ private:
+  int k_;  // current monomials order
+  int m_;  // current position in the list of monomials
+  int multi_index_[3];
+};
+
+
 class Monomial {
  public:
   Monomial() : d_(0), order_(-1) {};
@@ -65,15 +107,12 @@ class Polynomial {
   Polynomial(int d, int order);
 
   // elemental operations with polynomials
-  Polynomial& Multiply(const int* multi_index);
-  Polynomial& Multiply(const Polynomial& p);
-
   int MonomialPosition(const int* multi_index) const;
+  int PolynomialPosition(const int* multi_index) const;
 
   // iterators
-  void IteratorReset();
-  void IteratorNext();
-  const int* MultiIndex() const { return it_index_; }
+  Iterator& begin() { return it_.begin(); }
+  int end() { return order_; }
 
   // access
   int order() const { return order_; }
@@ -91,11 +130,12 @@ class Polynomial {
     return os;
   }
 
+ protected:
+  Iterator it_; 
+
  private:
   int d_, order_, size_;
   std::vector<Monomial> coefs_;
-
-  int it_k_, it_m_, it_index_[3];
 };
 
 }  // namespace WhetStone
