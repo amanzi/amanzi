@@ -62,15 +62,13 @@ class ReconstructionCell : public Reconstruction {
 
   // access
   Teuchos::RCP<CompositeVector> gradient() { return gradient_; }
+  Teuchos::RCP<Epetra_Vector> limiter() { return limiter_; }
  
  private:
-  void PopulateLeastSquareSystem(AmanziGeometry::Point& centroid,
-                                 double field_value,
-                                 WhetStone::DenseMatrix& matrix,
-                                 WhetStone::DenseVector& rhs);
-
-  void PrintLeastSquareSystem(WhetStone::DenseMatrix& matrix,
-                              WhetStone::DenseVector& rhs);
+  void PopulateLeastSquareSystem_(AmanziGeometry::Point& centroid,
+                                  double field_value,
+                                  WhetStone::DenseMatrix& matrix,
+                                  WhetStone::DenseVector& rhs);
 
   // internal limiters and supporting routines
   void LimiterBarthJespersen_(
@@ -83,14 +81,13 @@ class ReconstructionCell : public Reconstruction {
   void LimiterKuzmin_(
       const std::vector<int>& bc_model, const std::vector<double>& bc_value);
 
+  void LimiterKuzminSet_(AmanziMesh::Entity_ID_List& ids,
+                         std::vector<AmanziGeometry::Point>& gradient);
+
   void LimiterKuzminCell_(int cell,
                           AmanziGeometry::Point& gradient_c,
                           const std::vector<double>& field_node_min_c,
                           const std::vector<double>& field_node_max_c);
-
-  void LimiterKuzminonSet_(AmanziMesh::Entity_ID_List& ids,
-                           std::vector<AmanziGeometry::Point>& gradient);
-
 
   void CalculateDescentDirection_(std::vector<AmanziGeometry::Point>& normals,
                                   AmanziGeometry::Point& normal_new,
@@ -120,6 +117,7 @@ class ReconstructionCell : public Reconstruction {
   int ncells_wghost, nfaces_wghost, nnodes_wghost;
 
   Teuchos::RCP<CompositeVector> gradient_;
+  Teuchos::RCP<Epetra_Vector> limiter_;
 
  private: 
   Teuchos::RCP<const Epetra_MultiVector> flux_;  // for limiters

@@ -136,7 +136,7 @@ int DG_Modal::AdvectionMatrixFace(int f, Polynomial& un, DenseMatrix& A)
   int dir, id(0); 
   double vel = un.monomials(0).coefs()[0];
   mesh_->face_normal(f, false, cells[0], &dir);
-  if (vel * dir < 0.0) {
+  if (vel * dir > 0.0) {
     if (ncells == 1) return 0;
     id = 1;
   }
@@ -144,10 +144,10 @@ int DG_Modal::AdvectionMatrixFace(int f, Polynomial& un, DenseMatrix& A)
   // integrate traces from downwind cell
   double umod = fabs(vel);
   if (ncells == 1) {
-    A(0, 0) = umod;
+    A(0, 0) = -umod;
   } else {
-    A(id, id) = umod;
-    A(1 - id, id) = -umod;
+    A(id, id) = -umod;
+    A(1 - id, id) = umod;
   }
 }
 

@@ -48,6 +48,7 @@ void ReconstructionCell::LimiterTensorial_(
 
   std::vector<AmanziGeometry::Point> normals;
   AmanziMesh::Entity_ID_List faces;
+  Teuchos::RCP<Epetra_Vector> limiter = Teuchos::rcp(new Epetra_Vector(mesh_->cell_map(false)));
 
   // Step 1: limit gradient to a feasiable set excluding Dirichlet boundary
   for (int c = 0; c < ncells_owned; c++) {
@@ -56,6 +57,7 @@ void ReconstructionCell::LimiterTensorial_(
 
     const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
     for (int i = 0; i < dim; i++) gradient_c1[i] = grad[i][c];
+    (*limiter_)[c] = norm(gradient_c1); 
 
     normals.clear();  // normals to planes that define a feasiable set
     for (int loop = 0; loop < 2; loop++) {
@@ -163,6 +165,17 @@ void ReconstructionCell::LimiterTensorial_(
   }    
 
   gradient_->ScatterMasterToGhosted("cell");
+
+  // approximate estimate of scalar limiter (mainly for statistics)
+  for (int c = 0; c < ncells_owned; c++) {
+    double grad_norm0 = (*limiter_)[c];
+    if (grad_norm0 == 0.0) { 
+      (*limiter_)[c] = 1.0;
+    } else {
+      for (int i = 0; i < dim; i++) gradient_c1[i] = grad[i][c];
+      (*limiter_)[c] = norm(gradient_c1) / grad_norm0;
+    }
+  }
 }
 
 
@@ -494,9 +507,12 @@ void ReconstructionCell::LimiterKuzmin_(
 
 
 
-void ReconstructionCell::LimiterKuzminonSet_(AmanziMesh::Entity_ID_List& ids,
-                                             std::vector<AmanziGeometry::Point>& gradient){
-
+/* *******************************************************************
+* Kuzmin's limiter over a subset of cells.  
+******************************************************************* */
+void ReconstructionCell::LimiterKuzminSet_(AmanziMesh::Entity_ID_List& ids,
+                                           std::vector<AmanziGeometry::Point>& gradient)
+{
   // Step 1: local extrema are calculated here at nodes and updated later
   std::vector<double> field_node_min(nnodes_wghost);
   std::vector<double> field_node_max(nnodes_wghost);
@@ -508,17 +524,17 @@ void ReconstructionCell::LimiterKuzminonSet_(AmanziMesh::Entity_ID_List& ids,
   field_node_max.assign(nnodes_wghost, -OPERATOR_LIMITER_INFINITY);
   bc_scaling_ = 1.0;
 
-  for (int c = 0; c < ncells_wghost; c++) {
+  for (int c = 0; c < ncells_wghost; ++c) {
     mesh_->cell_get_nodes(c, &nodes);
     double value = (*field_)[component_][c];
-    for (int i = 0; i < nodes.size(); i++) {
+    for (int i = 0; i < nodes.size(); ++i) {
       int v = nodes[i];
       field_node_min[v] = std::min(field_node_min[v], value);
       field_node_max[v] = std::max(field_node_max[v], value);
     }
   }
 
-  for (int k=0; k<ids.size(); k++){
+  for (int k = 0; k < ids.size(); ++k){
     int c = ids[k];
     mesh_->cell_get_nodes(c, &nodes);
     int nnodes = nodes.size();
@@ -529,22 +545,18 @@ void ReconstructionCell::LimiterKuzminonSet_(AmanziMesh::Entity_ID_List& ids,
     }
     LimiterKuzminCell_(c, gradient[k], field_min_cell, field_max_cell);
   }
-
 }
 
 
-
 /* *******************************************************************
-* Kuzmin's limiter use all neighbors of a computational cell and limit 
-* gradient on one cell only.  
+* Kuzmin's limiter use all neighbors of the given cell and limit 
+* gradient in this cell only.  
 ******************************************************************* */
- void ReconstructionCell::LimiterKuzminCell_(int cell,
-                                             AmanziGeometry::Point& gradient_c,
-                                             const std::vector<double>& field_node_min_c,
-                                             const std::vector<double>& field_node_max_c)
+void ReconstructionCell::LimiterKuzminCell_(int cell,
+                                            AmanziGeometry::Point& gradient_c,
+                                            const std::vector<double>& field_node_min_c,
+                                            const std::vector<double>& field_node_max_c)
 {
-  
-  // Step 2: limit reconstructed gradients at cell nodes
   double umin, umax, up, u1;
   AmanziGeometry::Point xp(dim);
 
@@ -592,7 +604,6 @@ void ReconstructionCell::LimiterKuzminonSet_(AmanziMesh::Entity_ID_List& ids,
     double grad_norm = norm(gradient_c);
     if (grad_norm < OPERATOR_LIMITER_TOLERANCE * bc_scaling_) gradient_c.set(0.0);
   }
-
 }
 
 

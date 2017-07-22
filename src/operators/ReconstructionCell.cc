@@ -98,7 +98,7 @@ void ReconstructionCell::Compute()
       for (int i = 0; i < dim; i++) xcc[i] = xc2[i] - xc[i];
 
       double value = (*field_)[component_][cells[n]] - (*field_)[component_][c];
-      PopulateLeastSquareSystem(xcc, value, matrix, rhs);
+      PopulateLeastSquareSystem_(xcc, value, matrix, rhs);
     }
 
     // improve robustness w.r.t degenerate matrices
@@ -109,7 +109,6 @@ void ReconstructionCell::Compute()
       norm *= OPERATOR_RECONSTRUCTION_MATRIX_CORRECTION;
       for (int i = 0; i < dim; i++) matrix(i, i) += norm;
     }
-    // PrintLeastSquareSystem(matrix, rhs);
 
     int info, nrhs = 1;
     WhetStone::DPOSV_F77("U", &dim, &nrhs, matrix.Values(), &dim, rhs.Values(), &dim, &info);
@@ -140,7 +139,7 @@ void ReconstructionCell::ComputeGradient(
   WhetStone::DenseVector rhs(dim);
 
   gradient.clear();
-  for (AmanziMesh::Entity_ID_List::const_iterator it = ids.begin(); it != ids.end(); ++it) {
+  for (auto it = ids.begin(); it != ids.end(); ++it) {
     int c = *it;
     const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
 
@@ -155,7 +154,7 @@ void ReconstructionCell::ComputeGradient(
       for (int i = 0; i < dim; i++) xcc[i] = xc2[i] - xc[i];
 
       double value = (*field_)[component_][cells[n]] - (*field_)[component_][c];
-      PopulateLeastSquareSystem(xcc, value, matrix, rhs);
+      PopulateLeastSquareSystem_(xcc, value, matrix, rhs);
     }
 
     // improve robustness w.r.t degenerate matrices
@@ -185,14 +184,28 @@ void ReconstructionCell::ComputeGradient(
 void ReconstructionCell::ApplyLimiter(
     const std::vector<int>& bc_model, const std::vector<double>& bc_value)
 {
+  limiter_ = Teuchos::rcp(new Epetra_Vector(mesh_->cell_map(true)));
   if (limiter_id_ == OPERATOR_LIMITER_BARTH_JESPERSEN) {
-    Teuchos::RCP<Epetra_Vector> limiter = Teuchos::rcp(new Epetra_Vector(mesh_->cell_map(true)));
-    LimiterBarthJespersen_(bc_model, bc_value, limiter);
-    ApplyLimiter(limiter);
+    LimiterBarthJespersen_(bc_model, bc_value, limiter_);
+    ApplyLimiter(limiter_);
   } else if (limiter_id_ == OPERATOR_LIMITER_TENSORIAL) {
     LimiterTensorial_(bc_model, bc_value);
   } else if (limiter_id_ == OPERATOR_LIMITER_KUZMIN) {
     LimiterKuzmin_(bc_model, bc_value);
+  }
+}
+
+
+/* ******************************************************************
+* Apply internal limiter over set of cells.
+****************************************************************** */
+void ReconstructionCell::ApplyLimiter(AmanziMesh::Entity_ID_List& ids,
+                                      std::vector<AmanziGeometry::Point>& gradient)
+{
+  if (limiter_id_ == OPERATOR_LIMITER_KUZMIN) {
+    LimiterKuzminSet_(ids, gradient);   
+  } else {
+    ASSERT(0);
   }
 }
 
@@ -209,14 +222,6 @@ void ReconstructionCell::ApplyLimiter(Teuchos::RCP<Epetra_MultiVector> limiter)
   }
 }
 
-void ReconstructionCell::ApplyLimiter(AmanziMesh::Entity_ID_List& ids,
-                                      std::vector<AmanziGeometry::Point>& gradient){
-
-  if (limiter_id_ == OPERATOR_LIMITER_KUZMIN) {
-    LimiterKuzminonSet_(ids, gradient);   
-  }
-
-}
 
 /* ******************************************************************
 * Calculates reconstructed value at point p.
@@ -251,10 +256,9 @@ double ReconstructionCell::getValue(
 /* ******************************************************************
 * Assemble a SPD least square matrix
 ****************************************************************** */
-void ReconstructionCell::PopulateLeastSquareSystem(AmanziGeometry::Point& centroid,
-                                                   double field_value,
-                                                   WhetStone::DenseMatrix& matrix,
-                                                   WhetStone::DenseVector& rhs)
+void ReconstructionCell::PopulateLeastSquareSystem_(
+    AmanziGeometry::Point& centroid, double field_value,
+    WhetStone::DenseMatrix& matrix, WhetStone::DenseVector& rhs)
 {
   for (int i = 0; i < dim; i++) {
     double xyz = centroid[i];
@@ -265,21 +269,6 @@ void ReconstructionCell::PopulateLeastSquareSystem(AmanziGeometry::Point& centro
     rhs(i) += xyz * field_value;
   }
 }
-
-
-/* ******************************************************************
- * IO routines
-****************************************************************** */
-void ReconstructionCell::PrintLeastSquareSystem(
-    WhetStone::DenseMatrix& matrix, WhetStone::DenseVector& rhs)
-{
-  for (int i = 0; i < dim; i++) {
-    for (int j = 0; j < dim; j++) std::printf("%6.3f ", matrix(i, j));
-    std::printf("  f[%1d] =%8.5f\n", i, rhs(i));
-  }
-  std::printf("\n");
-}
-
 
 }  // namespace Transport
 }  // namespace Amanzi

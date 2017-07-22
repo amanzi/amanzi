@@ -695,6 +695,9 @@ void InputConverterU::TranslateTransportSourcesGroup_(
     } else if (strcmp(text, "flow_weighted_conc") == 0) {
       element = static_cast<DOMElement*>(phase_l);
       node_list = element->getElementsByTagName(mm.transcode("liquid_component")); 
+      if (node_list->getLength() == 0)
+        ThrowErrorIllformed_(srcname, "liquid_component", text);
+
       GetSameChildNodes_(node_list->item(0), srctype_flow, flag, true);
       weight = (srctype_flow == "volume_weighted") ? "volume" : "permeability";
     } else if (strcmp(text, "flow_mass_fraction_conc") == 0) {

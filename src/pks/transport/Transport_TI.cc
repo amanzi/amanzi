@@ -19,10 +19,12 @@ namespace Amanzi {
 namespace Transport {
 
 /* ******************************************************************* 
- * Routine takes a parallel overlapping vector C and returns a parallel
- * overlapping vector F(C).
- ****************************************************************** */
-void Transport_PK::Functional(const double t, const Epetra_Vector& component, Epetra_Vector& f_component)
+* Routine takes a parallel overlapping vector C and returns parallel
+* overlapping vector F(C).
+****************************************************************** */
+void Transport_PK::Functional(const double t,
+                              const Epetra_Vector& component,
+                              Epetra_Vector& f_component)
 {
   // transport routines need an RCP pointer
   Teuchos::RCP<const Epetra_Vector> component_rcp(&component, false);
@@ -142,6 +144,9 @@ void Transport_PK::Functional(const double t, const Epetra_Vector& component, Ep
       }
     }
   }
+
+  // output of selected statistics
+  VV_PrintLimiterStatistics();
 }
 
 }  // namespace Transport
