@@ -699,14 +699,20 @@ bool Transport_PK::AdvanceStep(double t_old, double t_new, bool reinit)
       swap = 1 - swap;
     }
 
-    if (mesh_->space_dimension() != mesh_->manifold_dimension()) {
-      AdvanceDonorUpwindNonManifold(dt_cycle);
-    } else if (spatial_disc_order == 1) {  // temporary solution (lipnikov@lanl.gov)
-      AdvanceDonorUpwind(dt_cycle);
-    } else if (spatial_disc_order == 2 && temporal_disc_order == 1) {
-      AdvanceSecondOrderUpwindRK1(dt_cycle);
-    } else if (spatial_disc_order == 2 && temporal_disc_order == 2) {
-      AdvanceSecondOrderUpwindRK2(dt_cycle);
+    if (mesh_->space_dimension() == mesh_->manifold_dimension()) {
+      if (spatial_disc_order == 1) {
+        AdvanceDonorUpwind(dt_cycle);
+      } else if (spatial_disc_order == 2 && temporal_disc_order == 1) {
+        AdvanceSecondOrderUpwindRK1(dt_cycle);
+      } else if (spatial_disc_order == 2 && temporal_disc_order == 2) {
+        AdvanceSecondOrderUpwindRK2(dt_cycle);
+      }
+    } else {  // transport on intersecting manifolds
+      if (spatial_disc_order == 1) {
+        AdvanceDonorUpwindNonManifold(dt_cycle);
+      } else {
+        AdvanceSecondOrderUpwindRK2(dt_cycle);
+      }
     }
 
     // add multiscale model
@@ -1508,8 +1514,8 @@ void Transport_PK::IdentifyUpwindCells()
       if (downwind_cells_[f].size() == 0) downwind_cells_[f].push_back(-1);
     }
   } else {
-    upwind_flux_.clear();
-    downwind_flux_.clear();
+    upwind_cells_.clear();
+    downwind_cells_.clear();
 
     upwind_flux_.resize(nfaces_wghost);
     downwind_flux_.resize(nfaces_wghost);
