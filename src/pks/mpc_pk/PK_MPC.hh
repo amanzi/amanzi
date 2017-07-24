@@ -75,21 +75,27 @@ class PK_MPC : virtual public PK {
   virtual void State_to_Solution(const Teuchos::RCP<State>& S,
                                  TreeVector& soln) {} ;
 
-  virtual void ChangedSolutionPK() {}
+  // -- identifier accessor
+  std::string name() const { return name_; }
 
  protected:
+  // identifier
+  std::string name_;
+
   // list of the PKs coupled by this MPC
   typedef std::vector<Teuchos::RCP<PK_Base> > SubPKList;
   SubPKList sub_pks_;
+
+  // single solution vector for the coupled problem
+  Teuchos::RCP<TreeVector> solution_;
 
   // plists
   Teuchos::RCP<Teuchos::ParameterList> global_list_;
   Teuchos::RCP<Teuchos::ParameterList> my_list_;
   Teuchos::ParameterList pk_tree_;
 
-  // note this hides the one in PK, which is for ATS and is const
+  // states
   Teuchos::RCP<State> S_;
-  
 };
 
 
@@ -101,10 +107,18 @@ PK_MPC<PK_Base>::PK_MPC(Teuchos::ParameterList& pk_tree,
                         const Teuchos::RCP<Teuchos::ParameterList>& global_list,
                         const Teuchos::RCP<State>& S,
                         const Teuchos::RCP<TreeVector>& soln) :
-    PK(pk_tree, global_list, S, soln),
-    pk_tree_(pk_tree),
-    global_list_(global_list)
+  pk_tree_(pk_tree),
+  global_list_(global_list),
+  S_(S),
+  solution_(soln)
 {
+  // name the PK
+  name_ = pk_tree.name();
+
+  boost::iterator_range<std::string::iterator> res = boost::algorithm::find_last(name_,"->");
+
+  if (res.end() - name_.end() != 0) boost::algorithm::erase_head(name_, res.end() - name_.begin());
+
   // get my parameter list
   my_list_ = Teuchos::sublist(Teuchos::sublist(global_list_, "PKs"), name_);
 
@@ -129,11 +143,12 @@ PK_MPC<PK_Base>::PK_MPC(Teuchos::ParameterList& pk_tree,
 
   for (int i = 0; i < pk_name.size(); i++) {
     // Collect arguments to the constructor
+    Teuchos::ParameterList& pk_sub_tree = pk_tree.sublist(pk_name[i]);
     Teuchos::RCP<TreeVector> pk_soln = Teuchos::rcp(new TreeVector());
     solution_->PushBack(pk_soln);
 
     // create the PK
-    Teuchos::RCP<PK> pk_notype = pk_factory.CreatePK(pk_name[i], pk_tree, global_list, S, pk_soln);
+    Teuchos::RCP<PK> pk_notype = pk_factory.CreatePK(pk_sub_tree, global_list, S, pk_soln);
     Teuchos::RCP<PK_Base> pk = Teuchos::rcp_dynamic_cast<PK_Base>(pk_notype);
     sub_pks_.push_back(pk);
   }

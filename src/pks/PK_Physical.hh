@@ -12,6 +12,7 @@ Default base with a few methods implemented in standard ways.
 #define AMANZI_PK_PHYSICAL_HH_
 
 #include "Teuchos_ParameterList.hpp"
+#include "boost/algorithm/string.hpp"
 #include "VerboseObject.hh"
 #include "primary_variable_field_evaluator.hh"
 #include "PK.hh"
@@ -27,7 +28,25 @@ class PK_Physical : virtual public PK {
               const Teuchos::RCP<Teuchos::ParameterList>& glist,
               const Teuchos::RCP<State>& S,
               const Teuchos::RCP<TreeVector>& soln):
-      PK(pk_tree, glist, S, soln) {};
+      PK(pk_tree, glist, S, soln) {
+
+    // name the PK
+    name_ = pk_tree.name();
+    boost::iterator_range<std::string::iterator> res = boost::algorithm::find_last(name_,"->");
+    if (res.end() - name_.end() != 0) boost::algorithm::erase_head(name_, res.end() - name_.begin());
+
+
+    Teuchos::RCP<Teuchos::ParameterList> pks_list = Teuchos::sublist(glist, "PKs");
+
+    if (pks_list->isSublist(name_)) {
+      plist_ = Teuchos::sublist(pks_list, name_); 
+    } else {
+      std::stringstream messagestream;
+      messagestream << "There is no sublist for PK "<<name_<<"in PKs list\n";
+      Errors::Message message(messagestream.str());
+      Exceptions::amanzi_throw(message);
+    }
+  };
 
 
   // Virtual destructor
@@ -47,10 +66,6 @@ class PK_Physical : virtual public PK {
                           const Teuchos::RCP<State>& S_inter,
                           const Teuchos::RCP<State>& S_next);
 
-  virtual void ChangedSolutionPK() {
-    solution_evaluator_->SetFieldAsChanged(S_next_.ptr());
-  }
-  
   // Accessor for debugger, for use by coupling MPCs
   Teuchos::RCP<Debugger> debugger() { return db_; }
 
