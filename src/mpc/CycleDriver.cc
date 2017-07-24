@@ -134,7 +134,7 @@ void CycleDriver::Init_PK(int time_pr_id) {
     Exceptions::amanzi_throw(message);
   }
 
-  pk_ = pk_factory.CreatePK(pk_tree_list.sublist(pk_name), glist_, S_, soln_);
+  pk_ = pk_factory.CreatePK(pk_name, pk_tree_list, glist_, S_, soln_);
 }
 
 
