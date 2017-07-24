@@ -105,6 +105,7 @@ std::cout << "Test: Advance on a 2D square mesh" << std::endl;
     if (t_new > switch_time && flag) {
       flag = false;
       flux.Scale(-1.0);
+      std::cout << "Changing Darcy velocity direction to opposite.\n\n";
     }
 
     dt = TPK.StableTimeStep();

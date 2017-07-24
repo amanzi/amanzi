@@ -23,6 +23,14 @@
 namespace Amanzi {
 namespace Explicit_TI {
 
+enum method_t{forward_euler, 
+              heun_euler, 
+              midpoint, 
+              ralston, 
+              kutta_3rd_order, 
+              runge_kutta_4th_order,
+              user_defined};
+
 template<class Vector>
 class RK {
   // this class implements several explicit Runge Kutta methods:
@@ -64,14 +72,6 @@ class RK {
   //     k_{s-1} = h * f(t_n + c[s-1]*h, y_n + a(s-1,0)*k_0 + ... + a(s-1,s-2)*k_{s-2})
  
  public:
-  enum method_t{forward_euler, 
-                heun_euler, 
-                midpoint, 
-                ralston, 
-                kutta_3rd_order, 
-                runge_kutta_4th_order,
-                user_defined};
-
   // constructor for pre-coded RK methods (see list of methods in the method_t type above)
   RK(fnBase<Vector>& fn, 
      const method_t method, 
@@ -296,7 +296,7 @@ void RK<Vector>::CreateStorage_(const Vector& initvector)
 
 
 template<class Vector>
-void RK<Vector>::TimeStep(const double t, const double h, const Vector& y, Vector& y_new)
+void RK<Vector>::TimeStep(double t, double h, const Vector& y, Vector& y_new)
 {
   Vector sum_vec(y);
   double sum_time;

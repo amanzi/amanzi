@@ -19,11 +19,16 @@ Changes V6 -> V7
 * Dual porosity model to flow and transport.
 * Support of units in output of observations.
 * New regions: with volume fractions and line segments.
-* Finer control of IO of state fields. 
+* Finer control of IO of state fields via blacklisting
 * New functions: distance and monomial.
 * Support of Trilinos solvers: Belos GMRES and NOX.
 * Simple back-tracking and continuation algorithms.
 * More submodels for boundary conditions.
+* New permeability models for flow in fractures.
+* Support of higher-order transport, 3rd and 4th.
+* New time step controller "from file".
+* Experimental support of Stokes and Navier Stokes flows
+* Better layout, less typos.
 
 
 ParameterList XML
@@ -2002,10 +2007,12 @@ and temporal accuracy, and verbosity:
 * `"cfl`" [double] Time step limiter, a number less than 1. Default value is 1.
    
 * `"spatial discretization order`" [int] defines accuracy of spatial discretization.
-  It allows values 1 or 2. Default value is 1. 
+  It permits values 1 or 2. Default value is 1. 
   
 * `"temporal discretization order`" [int] defines accuracy of temporal discretization.
-  It allows values 1 or 2. Default value is 1.
+  It permits values 1 or 2 and values 3 or 4 when expert parameter 
+  `"generic RK implementation`" is set to true. Note that RK3 is not monotone.
+  Default value is 1.
 
 * `"reconstruction`" [list] collects reconstruction parameters. The available options are
   describe in the separate section below.
@@ -2352,8 +2359,11 @@ Developer parameters
 
 The remaining parameters that can be used by a developer include
 
-* `"enable internal tests`" [string] various internal tests will be executed during
-  the run time. The default value is `"no`".
+* `"enable internal tests`" [bool] turns on various internal tests during
+  run time. Default value is `"false`".
+   
+* `"generic RK implementation`" [bool] leads to generic implementation of 
+  all Runge-Kutta methods. Default value is `"false`".
    
 * `"internal tests tolerance`" [double] tolerance for internal tests such as the 
   divergence-free condition. The default value is 1e-6.

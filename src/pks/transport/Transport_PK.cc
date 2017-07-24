@@ -265,8 +265,8 @@ void Transport_PK::Initialize(const Teuchos::Ptr<State>& S)
 
   dispersion_preconditioner = "identity";
 
-  internal_tests = 0;
-  tests_tolerance = TRANSPORT_CONCENTRATION_OVERSHOOT;
+  internal_tests_ = 0;
+  internal_tests_tol_ = TRANSPORT_CONCENTRATION_OVERSHOOT;
 
   // Create verbosity object.
   Teuchos::ParameterList vlist;
@@ -455,7 +455,7 @@ void Transport_PK::Initialize(const Teuchos::Ptr<State>& S)
 
 
 /* ******************************************************************
-* Initalized fields left by State and other PKs.
+* Initalized fields not touched by State and other PKs.
 ****************************************************************** */
 void Transport_PK::InitializeFields_()
 {
@@ -702,6 +702,8 @@ bool Transport_PK::AdvanceStep(double t_old, double t_new, bool reinit)
     if (mesh_->space_dimension() == mesh_->manifold_dimension()) {
       if (spatial_disc_order == 1) {
         AdvanceDonorUpwind(dt_cycle);
+      } else if (spatial_disc_order == 2 && genericRK_) {
+        AdvanceSecondOrderUpwindRKn(dt_cycle);
       } else if (spatial_disc_order == 2 && temporal_disc_order == 1) {
         AdvanceSecondOrderUpwindRK1(dt_cycle);
       } else if (spatial_disc_order == 2 && temporal_disc_order == 2) {
@@ -1015,8 +1017,8 @@ void Transport_PK::CommitStep(double t_old, double t_new, const Teuchos::RCP<Sta
 
 
 /* ******************************************************************* 
- * A simple first-order transport method 
- ****************************************************************** */
+* A simple first-order "donor" upwind method.
+******************************************************************* */
 void Transport_PK::AdvanceDonorUpwind(double dt_cycle)
 {
   dt_ = dt_cycle;  // overwrite the maximum stable transport step
@@ -1108,15 +1110,15 @@ void Transport_PK::AdvanceDonorUpwind(double dt_cycle)
     mass_solutes_exact_[i] += mass_solutes_source_[i] * dt_;
   }
 
-  if (internal_tests) {
+  if (internal_tests_) {
     VV_CheckGEDproperty(*tcc_tmp->ViewComponent("cell"));
   }
 }
 
 
 /* ******************************************************************* 
- * A simple first-order transport method on non-manifolds
- ****************************************************************** */
+* A simple first-order upwind method on non-manifolds.
+******************************************************************* */
 void Transport_PK::AdvanceDonorUpwindNonManifold(double dt_cycle)
 {
   dt_ = dt_cycle;  // overwrite the maximum stable transport step
@@ -1230,11 +1232,9 @@ void Transport_PK::AdvanceDonorUpwindNonManifold(double dt_cycle)
 
 
 /* ******************************************************************* 
- * We have to advance each component independently due to different
- * reconstructions. We use tcc when only owned data are needed and 
- * tcc_next when owned and ghost data. This is a special routine for 
- * transient flow and uses first-order time integrator. 
- ****************************************************************** */
+* Advance each component independently due to different field 
+* reconstruction. This routine uses first-order time integrator. 
+******************************************************************* */
 void Transport_PK::AdvanceSecondOrderUpwindRK1(double dt_cycle)
 {
   dt_ = dt_cycle;  // overwrite the maximum stable transport step
@@ -1257,7 +1257,7 @@ void Transport_PK::AdvanceSecondOrderUpwindRK1(double dt_cycle)
 
     double T = t_physics_;
     Epetra_Vector*& component = tcc_prev(i);
-    Functional(T, *component, f_component);
+    FunctionalOld(T, *component, f_component);
 
     double ws_ratio;
     for (int c = 0; c < ncells_owned; c++) {
@@ -1271,17 +1271,17 @@ void Transport_PK::AdvanceSecondOrderUpwindRK1(double dt_cycle)
     mass_solutes_exact_[i] += mass_solutes_source_[i] * dt_;
   }
 
-  if (internal_tests) {
+  if (internal_tests_) {
     VV_CheckGEDproperty(*tcc_tmp->ViewComponent("cell"));
   }
 }
 
 
 /* ******************************************************************* 
- * We have to advance each component independently due to different
- * reconstructions. This is a special routine for transient flow and 
- * uses second-order predictor-corrector time integrator. 
- ****************************************************************** */
+* Advance each component independently due to different field
+* reconstructions. This routine uses custom implementation of the 
+* second-order predictor-corrector time integration scheme. 
+******************************************************************* */
 void Transport_PK::AdvanceSecondOrderUpwindRK2(double dt_cycle)
 {
   dt_ = dt_cycle;  // overwrite the maximum stable transport step
@@ -1308,7 +1308,7 @@ void Transport_PK::AdvanceSecondOrderUpwindRK2(double dt_cycle)
 
     double T = t_physics_;
     Epetra_Vector*& component = tcc_prev(i);
-    Functional(T, *component, f_component);
+    FunctionalOld(T, *component, f_component);
 
     for (int c = 0; c < ncells_owned; c++) {
       tcc_next[i][c] = (tcc_prev[i][c] + dt_ * f_component[c]) * ws_ratio[c];
@@ -1323,7 +1323,7 @@ void Transport_PK::AdvanceSecondOrderUpwindRK2(double dt_cycle)
 
     double T = t_physics_;
     Epetra_Vector*& component = tcc_next(i);
-    Functional(T, *component, f_component);
+    FunctionalOld(T, *component, f_component);
 
     for (int c = 0; c < ncells_owned; c++) {
       double value = (tcc_prev[i][c] + dt_ * f_component[c]) * ws_ratio[c];
@@ -1336,52 +1336,49 @@ void Transport_PK::AdvanceSecondOrderUpwindRK2(double dt_cycle)
     mass_solutes_exact_[i] += mass_solutes_source_[i] * dt_ / 2;
   }
 
-  if (internal_tests) {
+  if (internal_tests_) {
     VV_CheckGEDproperty(*tcc_tmp->ViewComponent("cell"));
   }
 }
 
 
 /* ******************************************************************* 
- * We have to advance each component independently due to different
- * reconstructions. We use tcc when only owned data are needed and 
- * tcc_next when owned and ghost data.
- *
- * Data flow: loop over components and apply the generic RK2 method.
- * The generic means that saturation is constant during time step. 
- ****************************************************************** */
-/*
-void Transport_PK::AdvanceSecondOrderUpwindGeneric(double dt_cycle)
+* Advance each component independently due to different field
+* reconstructions. This routine uses generic explicit time integrator. 
+******************************************************************* */
+void Transport_PK::AdvanceSecondOrderUpwindRKn(double dt_cycle)
 {
   dt_ = dt_cycle;  // overwrite the maximum stable transport step
 
-  Teuchos::RCP<Epetra_MultiVector> tcc = TS->total_component_concentration();
-  Teuchos::RCP<Epetra_MultiVector> tcc_next = TS_nextBIG->total_component_concentration();
+  S_->GetFieldData("total_component_concentration")->ScatterMasterToGhosted("cell");
+  Epetra_MultiVector& tcc_prev = *tcc->ViewComponent("cell", true);
+  Epetra_MultiVector& tcc_next = *tcc_tmp->ViewComponent("cell", true);
 
   // define time integration method
-  Explicit_TI::RK::method_t ti_method = Explicit_TI::RK::forward_euler;
+  auto ti_method = Explicit_TI::forward_euler;
   if (temporal_disc_order == 2) {
-    ti_method = Explicit_TI::RK::heun_euler;
+    ti_method = Explicit_TI::heun_euler;
+  } else if (temporal_disc_order == 3) {
+    ti_method = Explicit_TI::kutta_3rd_order;
+  } else if (temporal_disc_order == 3) {
+    ti_method = Explicit_TI::runge_kutta_4th_order;
   }
-  Explicit_TI::RK TVD_RK(*this, ti_method, *component_);
 
+  // We interpolate ws using dt which becomes local time.
+  double T = 0.0; 
   // We advect only aqueous components.
-  // int ncomponents = tcc_next.NumVectors();
   int ncomponents = num_aqueous;
 
   for (int i = 0; i < ncomponents; i++) {
     current_component_ = i;  // it is needed in BJ called inside RK:fun
 
-    Epetra_Vector*& tcc_component = (*tcc)(i);
-    TS_nextBIG->CopyMasterCell2GhostCell(*tcc_component, *component_);
+    Epetra_Vector*& component_prev = tcc_prev(i);
+    Epetra_Vector*& component_next = tcc_next(i);
 
-    double T = 0.0;  // requires fixes (lipnikov@lanl.gov)
-    TVD_RK.step(T, dt_, *component_, *component_next_);
-
-    for (int c = 0; c < ncells_owned; c++) (*tcc_next)[i][c] = (*component_next_)[c];
+    Explicit_TI::RK<Epetra_Vector> TVD_RK(*this, ti_method, *component_prev);
+    TVD_RK.TimeStep(T, dt_, *component_prev, *component_next);
   }
 }
-*/
 
 
 /* ******************************************************************
@@ -1553,7 +1550,7 @@ void Transport_PK::InterpolateCellVector(
 {
   double a = dt_int / dt;
   double b = 1.0 - a;
-  v_int.Update(b, v0, a, v1, 0.);
+  v_int.Update(b, v0, a, v1, 0.0);
 }
 
 }  // namespace Transport
