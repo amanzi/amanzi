@@ -320,7 +320,6 @@ void Richards::SetupRichardsFlow_(const Teuchos::Ptr<State>& S) {
     ss_flux_key_ = Keys::readKey(*plist_, domain_surf, "surface-subsurface flux", "surface_subsurface_flux");
     S->RequireField(ss_flux_key_)->SetMesh(S->GetMesh(domain_surf))
       ->AddComponent("cell", AmanziMesh::CELL, 1);
-    std::cout<<"RICHARDS: "<<ss_flux_key_<<" "<<coupled_to_surface_via_flux_<<"\n";
   }
 
   // -- coupling done by a Dirichlet condition

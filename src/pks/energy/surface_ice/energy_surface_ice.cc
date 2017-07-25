@@ -85,7 +85,7 @@ void EnergySurfaceIce::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
   coupled_to_subsurface_via_flux_ =
       plist_->get<bool>("coupled to subsurface via flux", false);
   ASSERT(! (coupled_to_subsurface_via_flux_ && coupled_to_subsurface_via_temp_));
-  std::cout<<"ENERGY SURF_ICE-1:::  "<<coupled_to_subsurface_via_flux_<<" === "<<domain_<<std::endl;
+
   if (coupled_to_subsurface_via_temp_ || coupled_to_subsurface_via_flux_ ) {
     // -- ensure mass source from subsurface exists
     /*
@@ -97,7 +97,7 @@ void EnergySurfaceIce::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
       domain_ss = plist_->get<std::string>("subsurface domain name", "domain");
       } */     
     Key key_ss = Keys::getKey(domain_,"surface_subsurface_flux");
-    std::cout<<"ENERGY SURF_ICE: "<<key_ss<<" "<<domain_<<std::endl;
+
     S->RequireField(key_ss)
         ->SetMesh(mesh_)->AddComponent("cell", AmanziMesh::CELL, 1);
   }
@@ -176,7 +176,7 @@ void EnergySurfaceIce::Initialize(const Teuchos::Ptr<State>& S) {
       for (unsigned int c=0; c!=ncells_surface; ++c) {
         int id = mesh_->cell_map(false).GID(c);
         std::stringstream name;
-        name << "column_"<< id << "_surface";
+        name << "surface_column_" << id;
         const Epetra_MultiVector& temp = *S->GetFieldData(Keys::getKey(name.str(),"temperature"))->ViewComponent("cell",false);
         surf_temp[0][c] = temp[0][0];
       }

@@ -26,6 +26,7 @@ Author: Ethan Coon (ecoon@lanl.gov)
 #include "pres_elev_evaluator.hh"
 #include "elevation_evaluator.hh"
 #include "meshed_elevation_evaluator.hh"
+#include "elevation_evaluator_column.hh"
 #include "standalone_elevation_evaluator.hh"
 #include "overland_conductivity_evaluator.hh"
 #include "overland_conductivity_model.hh"
@@ -317,7 +318,12 @@ void OverlandPressureFlow::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S
   } else {
     Teuchos::ParameterList elev_plist = plist_->sublist("elevation evaluator");
     elev_plist.set("evaluator name", Keys::getKey(domain_, "elevation"));
-    elev_evaluator = Teuchos::rcp(new Flow::MeshedElevationEvaluator(elev_plist));
+    if (!boost::starts_with(domain_,"surface_"))
+      elev_evaluator = Teuchos::rcp(new Flow::MeshedElevationEvaluator(elev_plist));
+    else{
+      elev_evaluator = Teuchos::rcp(new Flow::ElevationEvaluatorColumn(elev_plist));
+      std::cout<<"Overland Pres. Elevation: "<< domain_<<"\n";
+    }
   }
 
   S->SetFieldEvaluator(Keys::getKey(domain_,"elevation"), elev_evaluator);
@@ -475,7 +481,6 @@ void OverlandPressureFlow::Initialize(const Teuchos::Ptr<State>& S) {
       }
       const Epetra_MultiVector& subsurf_pres = *S->GetFieldData(key_ss)
         ->ViewComponent("face",false);
-
       unsigned int ncells_surface = mesh_->num_entities(AmanziMesh::CELL,AmanziMesh::OWNED);
       for (unsigned int c=0; c!=ncells_surface; ++c) {
         // -- get the surface cell's equivalent subsurface face and neighboring cell
@@ -495,14 +500,13 @@ void OverlandPressureFlow::Initialize(const Teuchos::Ptr<State>& S) {
     else if (ic_plist.get<bool>("initialize surface_star head from surface cells",false)) {
       assert(domain_ == "surface_star");
       Epetra_MultiVector& pres_star = *pres_cv->ViewComponent("cell",false);
-      
+    
       unsigned int ncells_surface = mesh_->num_entities(AmanziMesh::CELL,AmanziMesh::OWNED);
-      
       for (unsigned int c=0; c!=ncells_surface; ++c) {
         int id = mesh_->cell_map(false).GID(c);
         
         std::stringstream name;
-        name << "column_"<< id << "_surface";
+        name << "surface_column_"<< id;
         
         const Epetra_MultiVector& pres = *S->GetFieldData(Keys::getKey(name.str(),"pressure"))->ViewComponent("cell",false);
       
@@ -511,6 +515,7 @@ void OverlandPressureFlow::Initialize(const Teuchos::Ptr<State>& S) {
           pres_star[0][c] = pres[0][0];
         else
           pres_star[0][c] = 101325.0;
+        
       }
      
       // mark as initialized
@@ -700,12 +705,11 @@ bool OverlandPressureFlow::UpdatePermeabilityData_(const Teuchos::Ptr<State>& S)
   if (update_perm) {
     // Update the perm only if needed.
     perm_update_required_ = false;
-
+    
     // get upwind conductivity data
     Teuchos::RCP<CompositeVector> uw_cond =
-
       S->GetFieldData(Keys::getKey(domain_,"upwind_overland_conductivity"), name_);
-
+    
     // update the direction of the flux -- note this is NOT the flux
     Teuchos::RCP<CompositeVector> flux_dir =
       S->GetFieldData(Keys::getKey(domain_,"mass_flux_direction"), name_);

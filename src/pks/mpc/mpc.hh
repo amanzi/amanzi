@@ -74,7 +74,7 @@ public:
   virtual void CommitStep(double t_old, double t_new, const Teuchos::RCP<State>& S);
   virtual void CalculateDiagnostics(const Teuchos::RCP<State>& S);
   virtual bool ValidStep();
-  virtual void ChangedSolutionPK();
+  virtual void ChangedSolutionPK(const Teuchos::Ptr<State>& S);
   
   // set States
   virtual void set_states(const Teuchos::RCP<const State>& S,
@@ -206,10 +206,10 @@ bool MPC<PK_t>::ValidStep() {
 // Marks sub-PKs as changed.
 // -----------------------------------------------------------------------------
 template <class PK_t>
-void MPC<PK_t>::ChangedSolutionPK() {
+void MPC<PK_t>::ChangedSolutionPK(const Teuchos::Ptr<State>& S) {
   for (typename SubPKList::iterator pk = sub_pks_.begin();
        pk != sub_pks_.end(); ++pk) {
-    (*pk)->ChangedSolutionPK();
+    (*pk)->ChangedSolutionPK(S.ptr());
   }
 };
 
