@@ -183,6 +183,42 @@ void Tensor::PseudoInverse()
 
 
 /* ******************************************************************
+* Matrix of co-factors
+****************************************************************** */
+Tensor Tensor::Cofactors() const
+{
+  Tensor C(d_, rank_);
+  double* dataC = C.data();
+
+  if (size_ == 1) {
+    dataC[0] = 1.0;
+
+  } else if (size_ == 2) {
+    dataC[0] = data_[3];
+    dataC[3] = data_[0];
+
+    dataC[1] = -data_[2];
+    dataC[2] = -data_[1];
+
+  } else if (size_ == 3) { 
+    dataC[0] = data_[6] * data_[8] - data_[5] * data_[7];
+    dataC[1] = data_[5] * data_[6] - data_[3] * data_[8];
+    dataC[2] = data_[3] * data_[7] - data_[4] * data_[6];
+
+    dataC[3] = data_[2] * data_[7] - data_[1] * data_[8];
+    dataC[4] = data_[0] * data_[8] - data_[2] * data_[6];
+    dataC[5] = data_[1] * data_[6] - data_[0] * data_[7];
+
+    dataC[6] = data_[1] * data_[5] - data_[2] * data_[4];
+    dataC[7] = data_[2] * data_[3] - data_[0] * data_[5];
+    dataC[8] = data_[0] * data_[4] - data_[1] * data_[3];
+  }
+
+  return C;
+}
+
+
+/* ******************************************************************
 * Transpose operator for non-symmetric tensors.
 ****************************************************************** */
 void Tensor::Transpose()
@@ -210,7 +246,7 @@ void Tensor::Transpose()
 /* ******************************************************************
 * Determinant of second-order tensors.
 ****************************************************************** */
-double Tensor::Det()
+double Tensor::Det() const
 {
   double det = 0.0;
   if (rank_ == 2 && d_ == 2) {

@@ -319,6 +319,59 @@ int DG_Modal::LeastSquareFit(const std::vector<AmanziGeometry::Point>& x1,
   }
 }
 
+
+/* ******************************************************************
+* Support of finite element meshes: bilinear map (2D algorithm)
+****************************************************************** */
+AmanziGeometry::Point DG_Modal::EvaluateMap(int c, const AmanziGeometry::Point& xref) const
+{
+  Entity_ID_List nodes;
+
+  mesh_->cell_get_nodes(c, &nodes);
+  int nnodes = nodes.size();
+  ASSERT(nnodes == 4);
+
+  AmanziGeometry::Point p1(d_), p2(d_), p3(d_), p4(d_), f(d_);
+  mesh_->node_get_coordinates(nodes[0], &p1);
+  mesh_->node_get_coordinates(nodes[1], &p2);
+  mesh_->node_get_coordinates(nodes[2], &p3);
+  mesh_->node_get_coordinates(nodes[3], &p4);
+
+  double x(xref[0]), y(xref[1]);
+  f = (1.0 - x) * (1.0 - y) * p1 + x * (1.0 - y) * p2
+    + x * y * p3 + (1.0 - x) * y * p4;
+
+  return f;
+}
+
+
+/* ******************************************************************
+* Support of finite element meshes: Jacobian
+****************************************************************** */
+Tensor DG_Modal::EvaluateJacobian(int c, const AmanziGeometry::Point& xref) const
+{
+  Entity_ID_List nodes;
+
+  mesh_->cell_get_nodes(c, &nodes);
+  int nnodes = nodes.size();
+  ASSERT(nnodes == 4);
+
+  AmanziGeometry::Point p1(d_), p2(d_), p3(d_), p4(d_), j0(d_), j1(d_);
+  mesh_->node_get_coordinates(nodes[0], &p1);
+  mesh_->node_get_coordinates(nodes[1], &p2);
+  mesh_->node_get_coordinates(nodes[2], &p3);
+  mesh_->node_get_coordinates(nodes[3], &p4);
+
+  j0 = (1.0 - xref[1]) * (p2 - p1) + xref[1] * (p3 - p4);
+  j1 = (1.0 - xref[0]) * (p4 - p1) + xref[0] * (p3 - p2);
+
+  Tensor jac(d_, 2);
+  jac.SetRow(0, j0);
+  jac.SetRow(1, j1);
+
+  return jac;
+}
+
 }  // namespace WhetStone
 }  // namespace Amanzi
 

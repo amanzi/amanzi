@@ -20,6 +20,7 @@
 #include "Teuchos_ParameterXMLFileReader.hpp"
 #include "UnitTest++.h"
 
+#include "DG_Modal.hh"
 #include "GMVMesh.hh"
 #include "LinearOperatorPCG.hh"
 #include "LinearOperatorGMRES.hh"
@@ -155,8 +156,9 @@ void RemapTests2DExplicit(int order, std::string disc_name,
   op_reac->Setup(jac);
 
   double t(0.0), tend(1.0);
+  WhetStone::DG_Modal dg(mesh2);
   while(t < tend) {
-    // calculate determinat of jacobian
+    // calculate determinant of Jacobian
     for (int c = 0; c < ncells_owned; ++c) {
       double v0 = mesh1->cell_volume(c);
       double v1 = mesh2->cell_volume(c);
@@ -164,24 +166,42 @@ void RemapTests2DExplicit(int order, std::string disc_name,
     }
 
     // rotate velocities and calculate normal component
-    WhetStone::Tensor R(2, 2);
-    CompositeVector velc_t(*velc), velf_t(*velf);
+    Entity_ID_List faces, nodes;
+    std::vector<int> dirs;
 
+    CompositeVector velf_t(*velf);
     Epetra_MultiVector& vel = *velf_t.ViewComponent("face");
-    for (int f = 0; f < nfaces_wghost; ++f) {
-      R(0, 0) = 1.0 + t * vel[5][f];
-      R(0, 1) = -t * vel[4][f];
-      R(1, 0) = -t * vel[3][f];
-      R(1, 1) = 1.0 + t * vel[2][f];
 
-      for (int k = 0; k < nk; ++k) {
-        xv[0] = vel[2 * k][f];
-        xv[1] = vel[2 * k + 1][f];
+    for (int c = 0; c < ncells_owned; ++c) {
+      mesh1->cell_get_faces_and_dirs(c, &faces, &dirs);
+      int nfaces = faces.size();
 
-        xv = R * xv;
-      
-        vel[0][f] = xv * mesh1->face_normal(f);
+double sum(0.0);
+      for (int n = 0; n < nfaces; ++n) {
+        int f = faces[n];
+
+        // calculate j J^{-t} N dA
+        AmanziGeometry::Point xref(2);
+        if (n == 0) { xref[0] = 0.5; xref[1] = 0.0; }
+        if (n == 1) { xref[0] = 1.0; xref[1] = 0.5; }
+        if (n == 2) { xref[0] = 0.5; xref[1] = 1.0; }
+        if (n == 3) { xref[0] = 0.0; xref[1] = 0.5; }
+        WhetStone::Tensor J = dg.EvaluateJacobian(c, xref);
+        J *= t * nx;
+        J += 1.0 - t;
+        WhetStone::Tensor C = J.Cofactors();
+        AmanziGeometry::Point cn = C * mesh1->face_normal(f); 
+if (f==5) std::cout << dg.EvaluateMap(c, xref) << " xref=" << xref 
+<< " n=" << n << "\n J=" << J << " " << C << " cn=" << cn << std::endl;
+
+        // calculate velocity
+        xv[0] = vel[0][f];
+        xv[1] = vel[1][f];
+
+        vel[0][f] = xv * cn;
+sum+= vel[0][f] * dirs[n];
       }
+std::cout << c << " sum=" << sum*nx*ny << std::endl;
     }
     
     // populate operators

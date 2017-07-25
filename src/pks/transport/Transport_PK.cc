@@ -7,6 +7,8 @@
   provided in the top-level COPYRIGHT file.
 
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
+
+  Major transport algorithms.
 */
 
 #include <algorithm>
@@ -502,7 +504,7 @@ void Transport_PK::InitializeFieldFromField_(
 * Routine must be called every time we update a flow field.
 *
 * Warning: Barth calculates influx, we calculate outflux. The methods
-* are equivalent for divergence-free flows and gurantee EMP. Outflux 
+* are equivalent for divergence-free flows and guarantee EMP. Outflux 
 * takes into account sinks and sources but preserves only positivity
 * of an advected mass.
 * ***************************************************************** */
@@ -1319,7 +1321,7 @@ void Transport_PK::AdvanceSecondOrderUpwindRK2(double dt_cycle)
 
   // corrector step
   for (int i = 0; i < num_advect; i++) {
-    current_component_ = i;  // needed by BJ 
+    current_component_ = i;  // needed in BJ for BCs
 
     double T = t_physics_;
     Epetra_Vector*& component = tcc_next(i);

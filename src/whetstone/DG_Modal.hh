@@ -58,6 +58,10 @@ class DG_Modal {
   int AdvectionMatrixCell(int c, Polynomial& divu, DenseMatrix& A);
   int AdvectionMatrixFace(int f, Polynomial& un, DenseMatrix& A);
 
+  // finite element (for testing)
+  AmanziGeometry::Point EvaluateMap(int c, const AmanziGeometry::Point& xref) const;
+  Tensor EvaluateJacobian(int c, const AmanziGeometry::Point& xref) const;
+
   // miscalleneous
   void set_order(int order) { order_ = order; }
 

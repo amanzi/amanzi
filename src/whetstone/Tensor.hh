@@ -49,10 +49,11 @@ class Tensor {
   int Init(int d, int rank);
   void PutScalar(double val);
   double Trace() const;
-  double Det();
+  double Det() const;
   void Inverse();
   void PseudoInverse();
   void Transpose();
+  Tensor Cofactors() const;
   void SymmetricPart();
   bool isZero();
   void SpectralBounds(double* lower, double* upper) const;
