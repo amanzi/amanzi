@@ -84,7 +84,7 @@ void SnowDistribution::SetupSnowDistribution_(const Teuchos::Ptr<State>& S) {
     upwind_method_ = Operators::UPWIND_METHOD_POTENTIAL_DIFFERENCE;
     upwinding_ = Teuchos::rcp(new Operators::UpwindPotentialDifference(name_,
                  Keys::getKey(domain_,"snow_conductivity"), Keys::getKey(domain_,"upwind_snow_conductivity"),
-                 Keys::getKey(domain_,"skin_potential"), Keys::getKey(domain_,"precipitation")));
+                 Keys::getKey(domain_,"skin_potential"), Keys::getKey(domain_,"precipitation_snow")));
   } else {
     std::stringstream messagestream;
     messagestream << "Snow Precipitation: has no upwinding method named: " << method_name;
@@ -180,14 +180,14 @@ bool SnowDistribution::UpdatePermeabilityData_(const Teuchos::Ptr<State>& S) {
 
   bool update_perm = S->GetFieldEvaluator(Keys::getKey(domain_,"snow_conductivity"))
       ->HasFieldChanged(S, name_);
-  update_perm |= S->GetFieldEvaluator(Keys::getKey(domain_,"snow_precipitation"))->HasFieldChanged(S, name_);
+  update_perm |= S->GetFieldEvaluator(Keys::getKey(domain_,"precipitation_snow"))->HasFieldChanged(S, name_);
   update_perm |= S->GetFieldEvaluator(Keys::getKey(domain_,"snow_skin_potential"))->HasFieldChanged(S, name_);
 
   if (update_perm) {
     if (upwind_method_ == Operators::UPWIND_METHOD_TOTAL_FLUX) {
       // update the direction of the flux -- note this is NOT the flux
       Teuchos::RCP<CompositeVector> flux_dir =
-          S->GetFieldData("snow_flux_direction", name_);
+          S->GetFieldData(Keys::getKey(domain_,"snow_flux_direction"), name_);
 
       // Create the stiffness matrix without a rel perm (just n/mu)
       matrix_->Init();

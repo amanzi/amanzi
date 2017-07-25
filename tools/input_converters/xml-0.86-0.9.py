@@ -112,6 +112,32 @@ def primary_variable(xml):
         if pv.value == "ponded_depth":
             pv.setValue("surface-ponded_depth")
             
+def mesh_list(xml):
+    mesh = asearch.childByName(xml, "mesh")
+    if (mesh.isElement("domain")):
+        return
+    
+    domain = mesh.sublist("domain")
+    to_pop = []
+    for el in mesh:
+        if el.get("name") == "surface mesh":
+            el.set("name", "surface")
+        elif el.get("name") == "column meshes":
+            el.set("name", "column")
+        elif el.get("name") == "column surface meshes":
+            el.set("name", "column surface")
+        elif el.get("name") in ["surface", "column", "column surface", "domain"]:
+            pass
+        else:
+            domain.append(el)
+
+    for el in domain:
+        mesh.pop(el.get("name"))
+    return
+            
+        
+    
+
 def update(xml):
     flatten_pks.flatten_pks(xml)
     fixEvaluator(xml, "ponded_depth", "surface-ponded_depth")
@@ -125,7 +151,7 @@ def update(xml):
     adds_source_units(xml)
     seepage_face_bcs(xml)
     primary_variable(xml)
-        
+    mesh_list(xml)
 
 if __name__ == "__main__":
     import argparse
