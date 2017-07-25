@@ -82,6 +82,7 @@ ExternalProject_Add(${Silo_BUILD_TARGET}
                                           CXX=${CMAKE_CXX_COMPILER_USE}
                                           CFLAGS=${silo_cflags}
                                           CXXFLAGS=${silo_cxxflags}
+					  LIBS=-ldl
                                           
                     # -- Build
                     BINARY_DIR        ${Silo_build_dir}           # Build directory 
