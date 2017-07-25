@@ -37,7 +37,7 @@
                     <primary coefficient_of_diffusion="1.0E-9">Na+</primary>
                     <primary coefficient_of_diffusion="1.0E-9">SiO2(aq)</primary>
                     <primary coefficient_of_diffusion="1.0E-9">SO4--</primary>
-                    <primary backward_rate="0.0" coefficient_of_diffusion="1.0E-9" forward_rate="1.78577e-09 ">Tritium</primary>
+                    <primary backward_rate="0.0" coefficient_of_diffusion="1.0E-9" first_order_decay_constant="1.78577e-09 ">Tritium</primary>
                     <primary coefficient_of_diffusion="1.0E-9">NO3-</primary>
                     <primary coefficient_of_diffusion="1.0E-9">UO2++</primary>
                 </primaries>

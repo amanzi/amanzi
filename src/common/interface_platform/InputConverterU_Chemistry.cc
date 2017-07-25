@@ -150,12 +150,14 @@ Teuchos::ParameterList InputConverterU::TranslateChemistry_()
     for (int i = 0; i < children->getLength(); ++i) {
       DOMNode* inode = children->item(i);
 
-      double krate(0.0);
-      krate = GetAttributeValueD_(inode, "first_order_decay_constant", TYPE_NUMERICAL, "", false, 0.0);
-      kin_rate_cnst.push_back(krate);
+      double krate(-99.9);
+      krate = GetAttributeValueD_(inode, "first_order_decay_constant", TYPE_NUMERICAL, "", false, -99.9);
 
-      std::string name = TrimString_(mm.transcode(inode->getTextContent()));
-      aqueous_reactions.push_back(name);
+      if (krate != -99.9){
+	kin_rate_cnst.push_back(krate);
+	std::string name = TrimString_(mm.transcode(inode->getTextContent()));
+	aqueous_reactions.push_back(name);
+      }
     }
   }
 
