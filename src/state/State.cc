@@ -245,7 +245,6 @@ State::RequireFieldEvaluator(Key key) {
     if (fm_plist.isSublist(key)) {
       // -- Get this evaluator's plist.
       Teuchos::ParameterList sublist = fm_plist.sublist(key);
-      //      std::cout << "setting a non lifted eval name " << key << std::endl;
       sublist.set<Key>("evaluator name", key);
 
       // -- Get the model plist.
@@ -834,7 +833,6 @@ void State::Setup() {
       Exceptions::amanzi_throw(message);
     }
     evaluator->second->EnsureCompatibility(Teuchos::ptr(this));
-    std::cout << "Evaluator: " << evaluator->first << std::endl;
   }
 
   // Create all data for vector fields.
