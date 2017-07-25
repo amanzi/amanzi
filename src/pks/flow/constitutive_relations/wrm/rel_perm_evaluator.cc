@@ -78,7 +78,7 @@ void RelPermEvaluator::InitializeFromPlist_() {
   is_surf_ = plist_.get<bool>("use surface rel perm", false);
   if (is_surf_) {
     if (domain_name.empty()) {
-      surf_domain_ = "surface";
+      surf_domain_ = Key("surface");
     } else {
       surf_domain_ = Key("surface_")+domain_name;
     }

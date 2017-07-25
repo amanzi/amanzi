@@ -207,7 +207,6 @@ protected:
   bool symmetric_;
   bool perm_update_required_;
   bool source_only_if_unfrozen_;
-  bool smoothed_ponded_accumulation_;
   bool subgrid_model_;
   
   double p_limit_;

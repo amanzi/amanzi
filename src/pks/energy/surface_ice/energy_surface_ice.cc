@@ -88,6 +88,7 @@ void EnergySurfaceIce::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
 
   if (coupled_to_subsurface_via_temp_ || coupled_to_subsurface_via_flux_ ) {
     // -- ensure mass source from subsurface exists
+
     /*
     Key domain_ss;
     if (boost::starts_with(domain_, "surface") && domain_.find("column") != std::string::npos) {
@@ -96,6 +97,7 @@ void EnergySurfaceIce::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
     } else {
       domain_ss = plist_->get<std::string>("subsurface domain name", "domain");
       } */     
+
     Key key_ss = Keys::getKey(domain_,"surface_subsurface_flux");
 
     S->RequireField(key_ss)
@@ -139,6 +141,7 @@ void EnergySurfaceIce::Initialize(const Teuchos::Ptr<State>& S) {
       Teuchos::RCP<CompositeVector> surf_temp_cv = S->GetFieldData(key_, name_);
       Epetra_MultiVector& surf_temp = *surf_temp_cv->ViewComponent("cell",false);
 
+<<<<<<< HEAD
       Key key_ss;
       if (boost::starts_with(domain_, "surface") && domain_.find("column") != std::string::npos) {
         key_ss = ic_plist.get<std::string>("subsurface temperature key",
@@ -146,6 +149,10 @@ void EnergySurfaceIce::Initialize(const Teuchos::Ptr<State>& S) {
       } else {
         key_ss = ic_plist.get<std::string>("subsurface temperature key", "temperature");
       }
+=======
+
+      Key key_ss = Keys::getKey(domain_ss_,"temperature");
+>>>>>>> upstream/master
       const Epetra_MultiVector& temp = *S->GetFieldData(key_ss)
         ->ViewComponent("face",false);
 

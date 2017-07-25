@@ -122,6 +122,20 @@ WeakMPCSemiCoupledDeform::Setup(const Teuchos::Ptr<State>& S) {
 
 };
 
+  // surface_column cells are initialized from the subsurface columns, and then surface_star is initialized from surface cells, so order is important
+void 
+WeakMPCSemiCoupledDeform::Initialize(const Teuchos::Ptr<State>& S){
+
+  MPC<PK>::SubPKList::iterator pk = sub_pks_.begin();
+  ++pk;
+  for (pk; pk!=sub_pks_.end(); ++pk){
+    (*pk)->Initialize(S);
+  }
+
+  MPC<PK>::Initialize(S);
+
+}
+
 //-------------------------------------------------------------------------------------
 // Semi coupled thermal hydrology
 bool 
@@ -181,7 +195,7 @@ WeakMPCSemiCoupledDeform::CoupledSurfSubsurfColumns(double t_old, double t_new, 
 
   assert(size_t == numPKs_ -1); // check if the subsurface columns are equal to the surface cells
   
-  /*
+  
   //copying pressure
   if(!sg_model_){
     const Epetra_MultiVector& surfstar_pres = *S_next_->GetFieldData("surface_star-pressure")->ViewComponent("cell", false);
@@ -255,14 +269,10 @@ WeakMPCSemiCoupledDeform::CoupledSurfSubsurfColumns(double t_old, double t_new, 
   for(int i=1; i<numPKs_; i++){
     Teuchos::RCP<PK> pk_domain =
       Teuchos::rcp_dynamic_cast<PK>(sub_pks_[i]);
-    /--  Teuchos::RCP<PK_BDF_Default> pk_domain =
-      Teuchos::rcp_dynamic_cast<PK_BDF_Default>(sub_pks_[i]);
-      ASSERT(pk_domain.get()); // make sure the pk_domain is not empty
---/
-    //    pk_domain->ChangedSolution(S_inter_.ptr());
-    pk_domain->ChangedSolutionPK(); //update to S_inter_.ptr()
+    ASSERT(pk_domain.get());
+    pk_domain->ChangedSolutionPK(S_inter_.ptr()); 
   }
-*/
+
   int nfailed = 0;
   int count=0;
   double t0 = S_inter_->time();
@@ -407,7 +417,7 @@ WeakMPCSemiCoupledDeform::CoupledSurfSubsurfColumns(double t_old, double t_new, 
   int nfailed_local = nfailed;
   S_->GetMesh("surface")->get_comm()->SumAll(&nfailed_local, &nfailed, 1);
  
-  /*
+  
   if (nfailed ==0){ 
     Epetra_MultiVector& surfstar_p = *S_next_->GetFieldData("surface_star-pressure",
 							    S_inter_->GetField("surface_star-pressure")->owner())
@@ -418,6 +428,8 @@ WeakMPCSemiCoupledDeform::CoupledSurfSubsurfColumns(double t_old, double t_new, 
     Epetra_MultiVector& surfstar_wc = *S_next_->GetFieldData("surface_star-water_content",
 							     S_inter_->GetField("surface_star-water_content")->owner())
       ->ViewComponent("cell", false);
+    
+    
     if (!sg_model_){
       for (unsigned c=0; c<size_t; c++){
 	std::stringstream name;
@@ -445,7 +457,7 @@ WeakMPCSemiCoupledDeform::CoupledSurfSubsurfColumns(double t_old, double t_new, 
       const Epetra_Vector& gravity = *S_->GetConstantVectorData("gravity");
       double gz = -gravity[2];
       const double& p_atm = *S_->GetScalarData("atmospheric_pressure");
-
+      
       int rank;
       MPI_Comm_rank(MPI_COMM_WORLD, &rank);
       
@@ -460,17 +472,17 @@ WeakMPCSemiCoupledDeform::CoupledSurfSubsurfColumns(double t_old, double t_new, 
 	
 	const Epetra_MultiVector& cv = *S_next_->GetFieldData(Keys::getKey(name.str(),"cell_volume"))
 	  ->ViewComponent("cell", false);
-
+	
 	const Epetra_MultiVector& mdl = *S_next_->GetFieldData(Keys::getKey(name.str(),"mass_density_liquid"))
 	  ->ViewComponent("cell", false);
 	
 	if (pd[0][0] >0){
-	 
+	  
 	  double delta = FindVolumetricHead(pd[0][0], delta_max_v[0][c],delta_ex_v[0][c]);
 	  
 	  double pres = delta*mdl[0][0] *gz + p_atm;
 	  surfstar_p[0][c] = pres; 
-
+	  
 	  double vpd = 0;
 	  if (delta <= delta_max_v[0][c]){
 	    vpd = std::pow(delta,2)*(2*delta_max_v[0][c] - 3*delta_ex_v[0][c])/std::pow(delta_max_v[0][c],2) 
@@ -479,7 +491,7 @@ WeakMPCSemiCoupledDeform::CoupledSurfSubsurfColumns(double t_old, double t_new, 
 	  else{
 	    vpd = delta - delta_ex_v[0][c];
 	  }
-
+	  
 	  double vpd_pres = vpd *mdl[0][0] *gz + p_atm;
 	  
 	  surfstar_wc[0][c] = (vpd_pres - p_atm)/ (gz * M_);
@@ -490,7 +502,29 @@ WeakMPCSemiCoupledDeform::CoupledSurfSubsurfColumns(double t_old, double t_new, 
       }
       
     }
-
+    
+    /*
+    
+    // surface_star deformation update
+    if (true){
+      Epetra_MultiVector& surfstar_elev = *S_next_->GetFieldData("surface_star-elevation",
+								 S_inter_->GetField("surface_star-elevation")->owner())	
+	->ViewComponent("cell", false);
+      for (unsigned c=0; c<size_t; c++){
+	std::stringstream name;
+	
+	int id = S_->GetMesh("surface")->cell_map(false).GID(c);
+	name << "column_" << id;
+	
+	int nfaces = S_->GetMesh(name.str())->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
+	
+	std::vector<AmanziGeometry::Point> coord; 
+	S_->GetMesh(name.str())->face_get_coordinates(nfaces-1, &coord);
+	std::cout<<"WEAKMPC: num faces and nodes: "<<name.str()<<" "<<nfaces<< " "<<coord[0]<<"\n";
+	surfstar_elev[0][c] = coord[0][2];
+      }
+      
+    }
     for (unsigned c=0; c<size_t; c++){
       std::stringstream name;
       int id = S_->GetMesh("surface")->cell_map(false).GID(c);
@@ -498,28 +532,116 @@ WeakMPCSemiCoupledDeform::CoupledSurfSubsurfColumns(double t_old, double t_new, 
       const Epetra_MultiVector& surf_t = *S_next_->GetFieldData(Keys::getKey(name.str(),"temperature"))->ViewComponent("cell", false);
       surfstar_t[0][c] = surf_t[0][0];
     }
-
     
-  // Mark surface_star-pressure evaluator as changed.
-  // NOTE: later do it in the setup --aj
-  Teuchos::RCP<PK_BDF_Default> pk_surf =
-    Teuchos::rcp_dynamic_cast<PK_BDF_Default>(sub_pks_[0]);
-  ASSERT(pk_surf.get());
-  pk_surf->ChangedSolution();
-  MPC<PK>::SubPKList::iterator pk1 = sub_pks_.begin();
+    
+    //SLOPE UPDATE
+    // Get current cell centroid (c), get ordered faces ids, get face adjacent cell centroid, find a plane (c, c1, c2), find normal to plane, average all normal
+    std::cout<<"---- aborting Weak MPC ----\n";
+    abort();
+    Epetra_MultiVector& surfstar_slope = *S_next_->GetFieldData("surface_star-slope_magnitude", S_inter_->GetField("surface_star-slope_magnitude")->owner())->ViewComponent("cell", false);
+    std::vector<AmanziGeometry::Point> my_centroid; 
+    for (unsigned c=0; c<size_t; c++){
+      std::stringstream name;
+      
+      int id = S_->GetMesh("surface")->cell_map(false).GID(c);
+      
+      name << "column_" << id;
+      // name_sf << "surface_column_" << id;
+      int nfaces = S_->GetMesh(name.str())->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
+      
+      std::vector<AmanziGeometry::Point> coord; 
+      S_->GetMesh(name.str())->face_get_coordinates(nfaces-1, &coord);
+      
+      my_centroid.push_back(coord[0]);
+      AmanziGeometry::Entity_ID_List nadj_cellids;
+      S_->GetMesh("surface")->cell_get_face_adj_cells(id, AmanziMesh::USED, &nadj_cellids);
+      int nface_pcell = S_->GetMesh("surface")->cell_get_num_faces(id);
+      
+      int ngb_cells = nadj_cellids.size();
+      std::vector<AmanziGeometry::Point> ngb_centroids(ngb_cells);
+      std::cout<<"----------\n";
+      
+      //get the neighboring cell centroids
+      for(unsigned i=0; i<ngb_cells; i++){
+	std::stringstream col_name;
+	col_name << "column_" <<nadj_cellids[i];
+	std::vector<AmanziGeometry::Point> crd; 
+	S_->GetMesh(col_name.str())->face_get_coordinates(nfaces-1, &crd);
+	ngb_centroids[i] = crd[0];
+	std::cout<<"Centroid: "<< name.str()<<" "<<col_name.str()<<" "<<my_centroid[c]<<" "<<nadj_cellids[i]<<" "<<crd[0]<< " \n";
+      }
+      
+      //std::cout<<"Normal: "<<my_centroid[c]<<" "<<ngb_centroids[i]<<" "<<ngb_centroids[i+1]<<" "<<Normal[i]<<"\n";
+      // std::cout<<"Adj cell ids: "<<nadj_cellids[i]<<"\n";
+      // average all neighbor face normals
 
-   if(subcycle_key_)
-     (*pk1)->CommitStep(t_old, t_new,S_next_);
+      //ngb_face1 = S_->GetMesh("surface_3d")->entity_get_parent(AmanziMesh::FACE, nadj_cellids[i]);
+      //ngb_face2 = S_->GetMesh("surface_3d")->entity_get_parent(AmanziMesh::FACE, nadj_cellids[i]);
+      
+      //AmanziGeometry::Point fnor1 = S_->GetMesh(name.str())->face_normal(ngb_face1);
+      //AmanziGeometry::Point fnor2 = S_->GetMesh(name.str())->face_normal(ngb_face2);
+      std::vector<AmanziGeometry::Point> Normal;
+      AmanziGeometry::Point N, PQ, PR, Nor_avg(3);
+      
+      if (ngb_cells >1){
+	for (int i=0; i <ngb_cells-1; i++){
+	  PQ = my_centroid[c] - ngb_centroids[i];
+	  PR = my_centroid[c] - ngb_centroids[i+1];
+	  N = PQ^PR;
+	  Normal.push_back(PQ^PR);
+	}
+	AmanziMesh::Entity_ID face;
+	face = S_->GetMesh("surface_star")->entity_get_parent(AmanziMesh::CELL, c);
+	
+	//AmanziGeometry::Point fnor = S_->GetMesh(name.str())->face_normal(face);
+	AmanziGeometry::Point fnor = S_->GetMesh("domain")->face_normal(face);
+	std::cout<<"Normal: "<<name.str()<<" "<<N<<" "<<fnor<<" : "<<face<<std::endl;
+	Nor_avg = (nface_pcell - Normal.size()) * fnor; 
+	for (int i=0; i <Normal.size(); i++)
+	  Nor_avg += Normal[i];
+	
+    	
+	std::cout<<"Neighbor normal: "<<fnor<<" "<<Nor_avg<<" "<<std::endl;
+	
+	//Nor_avg /= AmanziGeometry::norm(Nor_avg);
+	Nor_avg /= nface_pcell;
+	std::cout<<"Avg normal: "<<Nor_avg<<" "<<std::endl;
+	double sl = (std::sqrt(std::pow(Nor_avg[0],2) + std::pow(Nor_avg[1],2)))/ std::abs(Nor_avg[2]);
+	std::cout<<"SLOPE: "<<c<<" "<<sl<<"\n";
+      }
+      else{
+	PQ = my_centroid[c] - ngb_centroids[0];
+	double sl = (std::sqrt(std::pow(PQ[0],2) + std::pow(PQ[1],2))) / std::abs(PQ[2]);
+	std::cout<<"SLOPE: "<<c<<" "<<sl<<"\n";
+	//get slope
+      }
+      
+    }
+    */ 
+      
+     
+    // Mark surface_star-pressure evaluator as changed.
+    // NOTE: later do it in the setup --aj
+    Teuchos::RCP<PK_BDF_Default> pk_surf =
+      Teuchos::rcp_dynamic_cast<PK_BDF_Default>(sub_pks_[0]);
+    ASSERT(pk_surf.get());
+    pk_surf->ChangedSolution();
+    MPC<PK>::SubPKList::iterator pk1 = sub_pks_.begin();
 
-     }*/
+    if(subcycle_key_)
+      (*pk1)->CommitStep(t_old, t_new,S_next_);
+    
+  }
+
   if (nfailed > 0){
-    flag_star = 1;
+    flag_star = 1; 
     return true;
   }
   else{
-    flag_star = 1;
+    flag_star = 1; 
     return false;
   }
+
 }
   
 

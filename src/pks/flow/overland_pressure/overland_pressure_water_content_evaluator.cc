@@ -15,29 +15,16 @@ namespace Flow {
 OverlandPressureWaterContentEvaluator::OverlandPressureWaterContentEvaluator(Teuchos::ParameterList& plist) :
     SecondaryVariableFieldEvaluator(plist) {
   M_ = plist_.get<double>("molar mass", 0.0180153);
-  bar_ = plist_.get<bool>("water content bar", false);
+  bar_ = plist_.get<bool>("allow negative water content", false);
   rollover_ = plist_.get<double>("water content rollover", 0.);
 
-
-  Key domain;
-
-  if(!my_key_.empty())
-    domain = Keys::getDomain(my_key_);
-
-  if (my_key_.empty()) {
-    domain = plist.get<std::string>("domain name", "surface");
-    my_key_ = Keys::getKey(domain, "water_content");
-    if (bar_) my_key_ += std::string("_bar");
-    my_key_ = plist_.get<std::string>("water content key", my_key_);
-  }
+  Key domain = Keys::getDomain(my_key_);
 
   // my dependencies
-
   pres_key_ = plist_.get<std::string>("pressure key", Keys::getKey(domain, "pressure"));
   dependencies_.insert(pres_key_);
   cv_key_ = plist_.get<std::string>("cell volume key", Keys::getKey(domain, "cell_volume"));
   dependencies_.insert(cv_key_);
-
 }
 
 

@@ -22,7 +22,7 @@ class WeakMPCSemiCoupledDeform : public MPC<PK> {
 
   virtual bool AdvanceStep(double t_old, double t_new, bool reinit); //virtual bool advance (double dt);
   virtual void Setup(const Teuchos::Ptr<State>& S);
-
+  virtual void Initialize(const Teuchos::Ptr<State>& S);
 
   //  void generalize_inputspec(const Teuchos::Ptr<State>& S);
   bool CoupledSurfSubsurf3D(double t_old, double t_new, bool reinit);

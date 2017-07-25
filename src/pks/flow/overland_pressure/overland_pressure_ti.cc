@@ -176,12 +176,13 @@ int OverlandPressureFlow::ApplyPreconditioner(Teuchos::RCP<const TreeVector> u, 
   // tack on the variable change
   const Epetra_MultiVector& dh_dp =
     *S_next_->GetFieldData(Keys::getDerivKey(Keys::getKey(domain_,"ponded_depth_bar"),key_))->ViewComponent("cell",false);
-
   Epetra_MultiVector& Pu_c = *Pu->Data()->ViewComponent("cell",false);
+
   unsigned int ncells = Pu_c.MyLength();
   for (unsigned int c=0; c!=ncells; ++c) {
     Pu_c[0][c] /= dh_dp[0][c];
   }
+
 #if DEBUG_FLAG
   db_->WriteVector("PC*h_res (p-coords)", Pu->Data().ptr(), true);
 #endif
@@ -200,15 +201,12 @@ void OverlandPressureFlow::UpdatePreconditioner(double t, Teuchos::RCP<const Tre
     *vo_->os() << "Precon update at t = " << t << std::endl;
 
   // update state with the solution up.
-
   if (std::abs(t - iter_counter_time_)/t > 1.e-4) {
     iter_ = 0;
     iter_counter_time_ = t;
   }
-
   ASSERT(std::abs(S_next_->time() - t) <= 1.e-4*t);
   PK_PhysicalBDF_Default::Solution_to_State(*up, S_next_);
-
 
   // calculating the operator is done in 3 steps:
   // 1. Diffusion components
@@ -223,7 +221,6 @@ void OverlandPressureFlow::UpdatePreconditioner(double t, Teuchos::RCP<const Tre
   if (jacobian_ && iter_ >= jacobian_lag_) UpdatePermeabilityDerivativeData_(S_next_.ptr());
 
   Teuchos::RCP<const CompositeVector> cond =
-
     S_next_->GetFieldData(Keys::getKey(domain_,"upwind_overland_conductivity"));
 
   Teuchos::RCP<const CompositeVector> dcond = Teuchos::null;
@@ -262,16 +259,13 @@ void OverlandPressureFlow::UpdatePreconditioner(double t, Teuchos::RCP<const Tre
   //    to h.
   //
   // -- update dh_bar / dp
-
   S_next_->GetFieldEvaluator(Keys::getKey(domain_,"ponded_depth_bar"))
       ->HasFieldDerivativeChanged(S_next_.ptr(), name_, key_);
   const Epetra_MultiVector& dh_dp =
     *S_next_->GetFieldData(Keys::getDerivKey(Keys::getKey(domain_,"ponded_depth_bar"),key_))
     ->ViewComponent("cell",false);
-  const double& p_atm = *S_next_->GetScalarData("atmospheric_pressure");
 
   // -- update the accumulation derivatives
-
   S_next_->GetFieldEvaluator(Keys::getKey(domain_,"water_content_bar"))
       ->HasFieldDerivativeChanged(S_next_.ptr(), name_, key_);
   const Epetra_MultiVector& dwc_dp =
@@ -279,7 +273,6 @@ void OverlandPressureFlow::UpdatePreconditioner(double t, Teuchos::RCP<const Tre
       ->ViewComponent("cell",false);
   db_->WriteVector("    dwc_dp", S_next_->GetFieldData(Keys::getDerivKey(Keys::getKey(domain_,"water_content_bar"),key_)).ptr());
   db_->WriteVector("    dh_dp", S_next_->GetFieldData(Keys::getDerivKey(Keys::getKey(domain_,"ponded_depth_bar"),key_)).ptr());
-
 
   // -- pull out other needed data
   std::vector<double>& Acc_cells = preconditioner_acc_->local_matrices()->vals;
@@ -367,8 +360,7 @@ void OverlandPressureFlow::UpdatePreconditioner(double t, Teuchos::RCP<const Tre
   // 3.d: Rescale to use as a pressure matrix if used in a coupler
   if (coupled_to_subsurface_via_head_ || coupled_to_subsurface_via_flux_) {
     // Scale Spp by dh/dp (h, NOT h_bar), clobbering rows with p < p_atm
-
-    std::string pd_key = smoothed_ponded_accumulation_ ? Keys::getKey(domain_,"smoothed_ponded_depth") : Keys::getKey(domain_,"ponded_depth");
+    std::string pd_key = Keys::getKey(domain_,"ponded_depth");
     std::string pd_deriv_key = Keys::getDerivKey(pd_key,key_);
 
     S_next_->GetFieldEvaluator(pd_key)
@@ -382,7 +374,6 @@ void OverlandPressureFlow::UpdatePreconditioner(double t, Teuchos::RCP<const Tre
       *vo_->os() << "  Right scaling TPFA" << std::endl;
     db_->WriteVector("    dh_dp", dh0_dp.ptr());
   }
-
 
   if (precon_used_) {
     preconditioner_->AssembleMatrix();

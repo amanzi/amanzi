@@ -385,6 +385,7 @@ void Richards::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
   // -- Water retention evaluators
   // -- saturation
   Teuchos::ParameterList& wrm_plist = plist_->sublist("water retention evaluator");
+  wrm_plist.set("evaluator name", Keys::getKey(domain_,"saturation_liquid"));
   Teuchos::RCP<Flow::WRMEvaluator> wrm =
       Teuchos::rcp(new Flow::WRMEvaluator(wrm_plist));
 

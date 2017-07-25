@@ -20,8 +20,8 @@ PK_Physical_Default::PK_Physical_Default(Teuchos::ParameterList& pk_tree,
     PK(pk_tree, glist, S, solution),
     PK_Physical(pk_tree, glist, S, solution)
 {
-  domain_ = plist_->get<std::string>("domain name", "domain");
-  key_ = Keys::readKey(*plist_, domain_, "primary variable");
+  key_ = Keys::readKey(*plist_, "", "primary variable");
+  domain_ = plist_->get<std::string>("domain name", Keys::getDomain(key_));
 
   Teuchos::ParameterList& FElist = S->FEList();
   // set up the primary variable solution, and its evaluator
@@ -32,6 +32,9 @@ PK_Physical_Default::PK_Physical_Default(Teuchos::ParameterList& pk_tree,
 
   // primary variable max change
   max_valid_change_ = plist_->get<double>("max valid change", -1.0);
+
+  // verbose object
+  vo_ = Teuchos::rcp(new VerboseObject(name_, *plist_));
 }
 
 // -----------------------------------------------------------------------------
@@ -134,6 +137,14 @@ bool PK_Physical_Default::ValidStep() {
     }
   }
   return true;
+}
+
+
+// -----------------------------------------------------------------------------
+//  Marks as changed
+// -----------------------------------------------------------------------------
+void PK_Physical_Default::ChangedSolutionPK() {
+  solution_evaluator_->SetFieldAsChanged(S_next_.ptr());
 }
 
 

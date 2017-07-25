@@ -82,6 +82,9 @@ class PK_Physical_Default : public PK_Physical {
 
   virtual bool ValidStep();
 
+  // Tag the primary variable as changed in the DAG
+  virtual void ChangedSolutionPK();
+  
   // -- setup
   virtual void Setup(const Teuchos::Ptr<State>& S);
 

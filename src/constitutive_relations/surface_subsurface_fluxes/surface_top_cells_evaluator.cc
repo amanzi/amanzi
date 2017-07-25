@@ -7,7 +7,7 @@
   Authors: Ethan Coon (ecoon@lanl.gov)
 */
 
-#include <boost/algorithm/string/predicate.hpp>
+#include "boost/algorithm/string/predicate.hpp"
 
 
 #include "surface_top_cells_evaluator.hh"

@@ -47,7 +47,7 @@ void SnowDistribution::AddAccumulation_(const Teuchos::Ptr<CompositeVector>& g) 
   // get these fields
   Teuchos::RCP<const CompositeVector> h1 = S_next_->GetFieldData(key_);
   Teuchos::RCP<const CompositeVector> cv1 =
-    S_next_->GetFieldData("surface-cell_volume");
+    S_next_->GetFieldData(Keys::getKey(domain_,"cell_volume"));
 
   std::vector<double> time(1,S_next_->time());
   double precip = (*precip_func_)(time);

@@ -25,14 +25,14 @@
 namespace ATS {
 
 void
-createMeshes(Teuchos::ParameterList& plist,
+createMeshes(Teuchos::ParameterList& global_list,
              const Teuchos::RCP<Epetra_MpiComm>& comm,
              const Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel>& gm,
              Amanzi::State& S) {
+
+  Teuchos::ParameterList& plist = global_list.sublist("mesh");
   int num_procs = comm->NumProc();
   int rank = comm->MyPID();
-
-  Teuchos::ParameterList mesh_plist = plist.sublist("mesh");
 
   // create the MSTK factory
   Amanzi::AmanziMesh::MeshFactory factory(comm.get());
@@ -40,7 +40,9 @@ createMeshes(Teuchos::ParameterList& plist,
   prefs.clear();
   prefs.push_back(Amanzi::AmanziMesh::MSTK);
 
+  // -------------------------------------------------
   // create the base mesh
+  Teuchos::ParameterList& mesh_plist = plist.sublist("domain");
   Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh;
 
   if (mesh_plist.isSublist("read mesh file")) {
@@ -97,9 +99,8 @@ createMeshes(Teuchos::ParameterList& plist,
     Exceptions::amanzi_throw(msg);
   }
 
-  ASSERT(!mesh.is_null());
-
   // mesh verification
+  ASSERT(!mesh.is_null());
   bool verify = mesh_plist.get<bool>("verify mesh", false);
   if (verify) {
     if (rank == 0)
@@ -136,12 +137,16 @@ createMeshes(Teuchos::ParameterList& plist,
     }
   }  // if verify
 
+  bool deformable = mesh_plist.get<bool>("deformable mesh",false);
+  S.RegisterDomainMesh(mesh, deformable);
+  
 
+  // -------------------------------------------------
   // Create the surface mesh if needed
-  Teuchos::RCP<Amanzi::AmanziMesh::Mesh> surface_mesh = Teuchos::null;
-  Teuchos::RCP<Amanzi::AmanziMesh::Mesh> surface3D_mesh = Teuchos::null;
-  if (mesh_plist.isSublist("surface mesh")) {
-    Teuchos::ParameterList surface_plist = mesh_plist.sublist("surface mesh");
+  if (plist.isSublist("surface")) {
+    Teuchos::RCP<Amanzi::AmanziMesh::Mesh> surface_mesh = Teuchos::null;
+    Teuchos::RCP<Amanzi::AmanziMesh::Mesh> surface3D_mesh = Teuchos::null;
+    Teuchos::ParameterList& surface_plist = plist.sublist("surface");
     if (surface_plist.get<bool>("aliased", false)) {
       surface_mesh = mesh;
 
@@ -199,98 +204,93 @@ createMeshes(Teuchos::ParameterList& plist,
         }
       }  // if surf_verify
 
-
       if (surface_plist.isParameter("export mesh to file")) {
         std::string export_surf_mesh_filename =
             surface_plist.get<std::string>("export mesh to file");
         surface3D_mesh->write_to_exodus_file(export_surf_mesh_filename);
       }
     }
+
+    // register meshes with state
+    bool deformable_surface = surface_plist.get<bool>("deformable mesh", deformable);
+    if (surface3D_mesh != Teuchos::null)
+      S.RegisterMesh("surface_3d", surface3D_mesh, deformable_surface);
+    if (surface_mesh != Teuchos::null)
+      S.RegisterMesh("surface", surface_mesh, deformable_surface);
   }
 
 
- // column meshes
-  std::vector<Teuchos::RCP<Amanzi::AmanziMesh::Mesh> > col_meshes;
-  std::vector<Teuchos::RCP<Amanzi::AmanziMesh::Mesh> > col_surf_meshes;
+  // -------------------------------------------------
+  // Column meshes
+  if (plist.isSublist("column")) {
+    std::vector<Teuchos::RCP<Amanzi::AmanziMesh::Mesh> > col_meshes;
+    std::vector<Teuchos::RCP<Amanzi::AmanziMesh::Mesh> > col_surf_meshes;
+    auto surface_mesh = S.GetMesh("surface");
 
-  int nc = mesh->num_columns();
-  if (mesh_plist.isSublist("column meshes")) {
+    int nc = mesh->num_columns();
     col_meshes.resize(nc, Teuchos::null);
     col_surf_meshes.resize(nc, Teuchos::null);
     for (int c=0; c!=nc; ++c) {
       col_meshes[c] = Teuchos::rcp(new Amanzi::AmanziMesh::MeshColumn(*mesh, c));
     }
-    if (mesh_plist.isSublist("column surface meshes"))
+    if (mesh_plist.isSublist("column surface"))
       for (int c1=0; c1!=nc; ++c1)
         col_surf_meshes[c1] = Teuchos::rcp(new Amanzi::AmanziMesh::MeshSurfaceCell(*col_meshes[c1], "surface"));
-  }  
 
-  //generalize vis for columns
-  if (plist.isSublist("visualization columns")) {
-    Teuchos::ParameterList& vis_ss_plist = plist.sublist("visualization columns"); 
-    for (int c=0; c!=nc; ++c){
-      int id = surface_mesh->cell_map(false).GID(c);
-      std::stringstream name_ss;
-      name_ss << "column_" << id;
-      vis_ss_plist.set("file name base", "visdump_"+name_ss.str());         
-      plist.set("visualization " +name_ss.str(), vis_ss_plist);
-    }  
-    plist.remove("visualization columns");
-  }
+    // generalize vis for columns
+    if (global_list.isSublist("visualization columns")) {
+      Teuchos::ParameterList& vis_ss_plist = global_list.sublist("visualization columns"); 
+      for (int c=0; c!=nc; ++c){
+        int id = surface_mesh->cell_map(false).GID(c);
+        std::stringstream name_ss;
+        name_ss << "column_" << id;
+        vis_ss_plist.set("file name base", "visdump_"+name_ss.str());         
+        plist.set("visualization " +name_ss.str(), vis_ss_plist);
+      }  
+      plist.remove("visualization columns");
+    }
 
-  //generalize vis for columns
-  if (plist.isSublist("visualization surface cells")) {
-    Teuchos::ParameterList& vis_sf_plist = plist.sublist("visualization surface cells");
-    for (int c=0; c!=nc; ++c){
-      int id = surface_mesh->cell_map(false).GID(c);
-      std::stringstream name_ss, name_sf;
-      name_sf << "column_" << id << "_surface";
-      vis_sf_plist.set("file name base", "visdump_"+name_sf.str());
-      plist.set("visualization " +name_sf.str(), vis_sf_plist);
-  }
-    plist.remove("visualization surface cells");
-  }
+    // generalize vis for surface columns
+    if (global_list.isSublist("visualization surface cells")) {
+      Teuchos::ParameterList& vis_sf_plist = global_list.sublist("visualization surface cells");
+      for (int c=0; c!=nc; ++c){
+        int id = surface_mesh->cell_map(false).GID(c);
+        std::stringstream name_ss, name_sf;
+        name_sf << "column_" << id << "_surface";
+        vis_sf_plist.set("file name base", "visdump_"+name_sf.str());
+        global_list.set("visualization " +name_sf.str(), vis_sf_plist);
+      }
+      global_list.remove("visualization surface cells");
+    }
 
-
-  //generalize checkpoint files for columns
-  
-  if (mesh_plist.isSublist("column meshes")) {
-    Teuchos::ParameterList& checkpoint_plist = plist.sublist("checkpoint columns");
-    std::stringstream name_check;
-    name_check << rank;
-    if (plist.isSublist("checkpoint columns"))
-      checkpoint_plist.set("file name base", "checkpoint_"+name_check.str() + "_");
-    else
-      checkpoint_plist.set("file name base", "checkpoint");
-    plist.set("checkpoint " +name_check.str(), checkpoint_plist);
-    plist.remove("checkpoint columns");
-  }
-
-  
-  Teuchos::TimeMonitor::summarize();
-  Teuchos::TimeMonitor::zeroOutTimers();
-
-  // register meshes with state
-  bool deformable = mesh_plist.get<bool>("deformable mesh",false);
-  S.RegisterDomainMesh(mesh, deformable);
-  if (surface3D_mesh != Teuchos::null)
-    S.RegisterMesh("surface_3d", surface3D_mesh, deformable);
-  if (surface_mesh != Teuchos::null)
-    S.RegisterMesh("surface", surface_mesh, deformable);
-
-   if (col_meshes.size() > 0) {
+    bool deformable_columns = plist.sublist("column").get<bool>("deformable mesh");
     for (int c=0; c!=col_meshes.size(); ++c) {
       std::stringstream name_ss, name_surf;
       int id = surface_mesh->cell_map(false).GID(c);
       name_ss << "column_" << id;
       name_surf << "surface_column_" << id;
-      S.RegisterMesh(name_ss.str(), col_meshes[c], deformable);
+      S.RegisterMesh(name_ss.str(), col_meshes[c], deformable_columns);
       if (mesh_plist.isSublist("column surface meshes"))
-        S.RegisterMesh(name_surf.str(), col_surf_meshes[c], deformable);
+        S.RegisterMesh(name_surf.str(), col_surf_meshes[c], deformable_columns);
     }
   }
 
 
+  // -------------------------------------------------
+  // aliased domains
+  for (auto sub : plist) {
+    if (plist.isSublist(sub.first) &&
+        sub.first != "domain" && sub.first != "surface" &&
+        sub.first != "column" && sub.first != "column surface") {
+      std::string alias = plist.sublist(sub.first).get<std::string>("alias");
+      S.AliasMesh(alias, sub.first);
+    }
+  }
+
+  
+  
+  Teuchos::TimeMonitor::summarize();
+  Teuchos::TimeMonitor::zeroOutTimers();
 }
 
 

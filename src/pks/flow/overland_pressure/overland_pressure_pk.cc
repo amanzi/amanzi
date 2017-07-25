@@ -73,7 +73,6 @@ OverlandPressureFlow::OverlandPressureFlow(Teuchos::ParameterList& pk_tree,
   // set a default absolute tolerance
   if (!plist_->isParameter("absolute error tolerance"))
     plist_->set("absolute error tolerance", 0.01 * 55000.0); // h * nl
-
 }
 
 
@@ -90,6 +89,18 @@ void OverlandPressureFlow::Setup(const Teuchos::Ptr<State>& S) {
   S->RequireFieldEvaluator(Keys::getKey(domain_,"water_content"));
 
   PK_PhysicalBDF_Default::Setup(S);
+
+
+  // add _bar evaluators
+  Teuchos::ParameterList pd_bar_list = S->FEList().sublist(Keys::getKey(domain_, "ponded_depth"));
+  pd_bar_list.set("allow negative ponded depth", true);
+  pd_bar_list.setName(Keys::getKey(domain_, "ponded_depth_bar"));
+  S->FEList().set(Keys::getKey(domain_, "ponded_depth_bar"), pd_bar_list);
+
+  Teuchos::ParameterList wc_bar_list = S->FEList().sublist(Keys::getKey(domain_, "water_content"));
+  wc_bar_list.set("allow negative water content", true);
+  wc_bar_list.setName(Keys::getKey(domain_, "water_content_bar"));
+  S->FEList().set(Keys::getKey(domain_, "water_content_bar"), wc_bar_list);
   
   SetupOverlandFlow_(S);
   SetupPhysicalEvaluators_(S);
@@ -362,54 +373,18 @@ void OverlandPressureFlow::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S
 
   // -- water content bar (can be negative)
   S->RequireField(Keys::getKey(domain_,"water_content_bar"))->SetMesh(mesh_)->SetGhosted()
-        ->AddComponent("cell", AmanziMesh::CELL, 1);
-
-  Teuchos::ParameterList& wc_plist =
-      plist_->sublist("overland water content evaluator");
-  Teuchos::ParameterList wcbar_plist(wc_plist);
-  wcbar_plist.set("water content bar", true);
-  wcbar_plist.set("evaluator name", Keys::getKey(domain_,"water_content_bar"));
-
-  if(!subgrid_model_){
-    Teuchos::RCP<Flow::OverlandPressureWaterContentEvaluator> wc_evaluator =
-      Teuchos::rcp(new Flow::OverlandPressureWaterContentEvaluator(wcbar_plist));
-    S->SetFieldEvaluator(Keys::getKey(domain_,"water_content_bar"), wc_evaluator);
-  }
-  else {
-    Teuchos::RCP<Flow::OverlandSubgridWaterContentEvaluator> wc_evaluator =
-      Teuchos::rcp(new Flow::OverlandSubgridWaterContentEvaluator(wcbar_plist));
-    S->SetFieldEvaluator(Keys::getKey(domain_,"water_content_bar"), wc_evaluator);
-  }
-
+    ->AddComponent("cell", AmanziMesh::CELL, 1);
+  S->RequireFieldEvaluator(Keys::getKey(domain_,"water_content_bar"));
 
   // -- ponded depth
   S->RequireField(Keys::getKey(domain_,"ponded_depth"))->Update(matrix_->RangeMap())->SetGhosted();
   S->RequireFieldEvaluator(Keys::getKey(domain_,"ponded_depth"));
 
-  // -- ponded depth bar
-  // clone the ponded_depth parameter list for ponded_depth bar
-  Teuchos::ParameterList& FElist = S->FEList();
-  ASSERT(FElist.isSublist(Keys::getKey(domain_, "ponded_depth")));
-  Teuchos::ParameterList& pd_list = FElist.sublist(Keys::getKey(domain_,"ponded_depth"));
-
-  Teuchos::ParameterList pdbar_list(pd_list);
-  pdbar_list.set("ponded depth bar", true);
-  pdbar_list.set("height key", Keys::getKey(domain_,"ponded_depth_bar"));
-  FElist.set(Keys::getKey(domain_,"ponded_depth_bar"), pdbar_list);
-  
+  // -- ponded depth bar (can be negative)
   S->RequireField(Keys::getKey(domain_,"ponded_depth_bar"))->SetMesh(mesh_)->SetGhosted()
       ->AddComponent("cell", AmanziMesh::CELL, 1);
   S->RequireFieldEvaluator(Keys::getKey(domain_,"ponded_depth_bar"));
   
-  // -- effective accumulation ponded depth (smoothing of derivatives as h --> 0)
-  smoothed_ponded_accumulation_ = plist_->get<bool>("smooth ponded accumulation",false);
-  if (smoothed_ponded_accumulation_) {
-
-    S->RequireField(Keys::getKey(domain_,"smoothed_ponded_depth"))->SetMesh(mesh_)
-        ->AddComponent("cell", AmanziMesh::CELL, 1);
-    S->RequireFieldEvaluator(Keys::getKey(domain_,"smoothed_ponded_depth"));
-  }
-
   // -- conductivity evaluator
   S->RequireField(Keys::getKey(domain_,"overland_conductivity"))->SetMesh(mesh_)->SetGhosted()
         ->AddComponent("cell", AmanziMesh::CELL, 1);
@@ -473,9 +448,13 @@ void OverlandPressureFlow::Initialize(const Teuchos::Ptr<State>& S) {
     if (ic_plist.get<bool>("initialize surface head from subsurface",false)) {
       Epetra_MultiVector& pres = *pres_cv->ViewComponent("cell",false);
       Key key_ss;
+
       if (boost::starts_with(domain_, "surface") && domain_.find("column") != std::string::npos) {
+        Key domain_ss;
+        if (domain_ == "surface") domain_ss = "domain";
+        else domain_ss = domain_.substr(8,domain_.size());
         key_ss = ic_plist.get<std::string>("subsurface pressure key",
-                Keys::getKey(domain_.substr(8,domain_.size()), "pressure"));
+                Keys::getKey(domain_ss, "pressure"));
       } else {
         key_ss = ic_plist.get<std::string>("subsurface pressure key", "pressure");
       }

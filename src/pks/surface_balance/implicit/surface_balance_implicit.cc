@@ -14,7 +14,7 @@
 
    ------------------------------------------------------------------------- */
 
-#include <boost/algorithm/string/predicate.hpp>
+#include "boost/algorithm/string/predicate.hpp"
 
 #include "seb_physics_defs.hh"
 #include "seb_physics_funcs.hh"

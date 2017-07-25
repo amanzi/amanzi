@@ -107,15 +107,21 @@ void Coordinator::coordinator_init() {
   // check whether meshes are deformable, and if so require a nodal position
   for (Amanzi::State::mesh_iterator mesh=S_->mesh_begin();
        mesh!=S_->mesh_end(); ++mesh) {
-    bool surf = boost::starts_with(mesh->first, "surface_");
-    if (S_->IsDeformableMesh(mesh->first) &&  !surf && mesh->first != "domain") {
-      std::cout<<"coords: "<<mesh->first<<"\n";
-      std::string node_key = mesh->first+std::string("-vertex_coordinate");
-      S_->RequireField(node_key)->SetMesh(mesh->second.first)->SetGhosted()
+
+    if (S_->IsDeformableMesh(mesh->first) ){
+      if (mesh->first.find("column") != std::string::npos) {
+        std::string node_key = mesh->first+std::string("-vertex_coordinate");
+        S_->RequireField(node_key)->SetMesh(mesh->second.first)->SetGhosted()
           ->AddComponent("node", Amanzi::AmanziMesh::NODE, mesh->second.first->space_dimension());
+      }
+      else if (!parameter_list_->sublist("mesh").isSublist("column meshes") && mesh->first != "domain"){
+        std::string node_key = mesh->first+std::string("-vertex_coordinate");
+        S_->RequireField(node_key)->SetMesh(mesh->second.first)->SetGhosted()
+          ->AddComponent("node", Amanzi::AmanziMesh::NODE, mesh->second.first->space_dimension());
+        
+      }
     }
   }
-
   // create the time step manager
   tsm_ = Teuchos::rcp(new Amanzi::TimeStepManager());
   
@@ -523,27 +529,59 @@ bool Coordinator::advance(double t_old, double t_new) {
     for (Amanzi::State::mesh_iterator mesh=S_->mesh_begin();
          mesh!=S_->mesh_end(); ++mesh) {
       bool surf = boost::starts_with(mesh->first, "surface_");
-      if (S_->IsDeformableMesh(mesh->first) &&  !surf && mesh->first != "domain") {
-        // collect the old coordinates
-        std::string node_key = mesh->first+std::string("-vertex_coordinate");
-        Teuchos::RCP<const Amanzi::CompositeVector> vc_vec = S_->GetFieldData(node_key);
-        vc_vec->ScatterMasterToGhosted();
-        const Epetra_MultiVector& vc = *vc_vec->ViewComponent("node", true);
-        std::vector<int> node_ids(vc.MyLength());
-        Amanzi::AmanziGeometry::Point_List old_positions(vc.MyLength());
-        for (int n=0;n!=vc.MyLength();++n) {
-          node_ids[n] = n;
-          if (mesh->second.first->space_dimension() == 2) {
-            old_positions[n] = Amanzi::AmanziGeometry::Point(vc[0][n], vc[1][n]);
-          } else {
-            old_positions[n] = Amanzi::AmanziGeometry::Point(vc[0][n], vc[1][n], vc[2][n]);
-          }
-        }
 
-        // undeform the mesh
-        Amanzi::AmanziGeometry::Point_List final_positions;
-        mesh->second.first->deform(node_ids, old_positions, false, &final_positions);
+      if (S_->IsDeformableMesh(mesh->first)){
+        if (mesh->first.find("column") != std::string::npos) {
+        // collect the old coordinates
+          
+          std::string node_key = mesh->first+std::string("-vertex_coordinate");
+          
+          Teuchos::RCP<const Amanzi::CompositeVector> vc_vec = S_->GetFieldData(node_key);
+          vc_vec->ScatterMasterToGhosted();
+          const Epetra_MultiVector& vc = *vc_vec->ViewComponent("node", true);
+          std::vector<int> node_ids(vc.MyLength());
+          Amanzi::AmanziGeometry::Point_List old_positions(vc.MyLength());
+          for (int n=0;n!=vc.MyLength();++n) {
+            node_ids[n] = n;
+            if (mesh->second.first->space_dimension() == 2) {
+              old_positions[n] = Amanzi::AmanziGeometry::Point(vc[0][n], vc[1][n]);
+            } else {
+              old_positions[n] = Amanzi::AmanziGeometry::Point(vc[0][n], vc[1][n], vc[2][n]);
+            }
+          }
+          
+          // undeform the mesh
+          Amanzi::AmanziGeometry::Point_List final_positions;
+          mesh->second.first->deform(node_ids, old_positions, false, &final_positions);
+        }
+        
+        else if (!parameter_list_->sublist("mesh").isSublist("column meshes") && mesh->first != "domain") {
+          // collect the old coordinates
+          
+          std::string node_key = mesh->first+std::string("-vertex_coordinate");
+          
+          Teuchos::RCP<const Amanzi::CompositeVector> vc_vec = S_->GetFieldData(node_key);
+          vc_vec->ScatterMasterToGhosted();
+          const Epetra_MultiVector& vc = *vc_vec->ViewComponent("node", true);
+          std::vector<int> node_ids(vc.MyLength());
+          Amanzi::AmanziGeometry::Point_List old_positions(vc.MyLength());
+          for (int n=0;n!=vc.MyLength();++n) {
+            node_ids[n] = n;
+            if (mesh->second.first->space_dimension() == 2) {
+              old_positions[n] = Amanzi::AmanziGeometry::Point(vc[0][n], vc[1][n]);
+            } else {
+              old_positions[n] = Amanzi::AmanziGeometry::Point(vc[0][n], vc[1][n], vc[2][n]);
+            }
+          }
+          
+          // undeform the mesh
+          Amanzi::AmanziGeometry::Point_List final_positions;
+          mesh->second.first->deform(node_ids, old_positions, false, &final_positions);
+        }
+        
       }
+      
+
     }
   }
   return fail;

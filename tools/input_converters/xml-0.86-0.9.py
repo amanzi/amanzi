@@ -22,8 +22,9 @@ def fixEvaluator(xml, name, newname):
     try:
         pd = asearch.childByNamePath(xml, "state/field evaluators/%s"%name)
     except aerrors.MissingXMLError:
+        pass
+    else:
         pd.set("name", newname)
-    pass
     
 
 def compressibility(xml):
@@ -103,22 +104,27 @@ def seepage_face_bcs(xml):
                 bclist.sublist("seepage face").set("name", "seepage face head")
             else:
                 raise RuntimeError("unknown seepage condition")
-    
 
+def primary_variable(xml):
+    for pv in asearch.generateElementByNamePath(xml, "primary variable"):
+        pv.name = "primary variable key"
+    for pv in asearch.generateElementByNamePath(xml, "primary variable key"):
+        if pv.value == "ponded_depth":
+            pv.setValue("surface-ponded_depth")
             
-
-
-               
-
 def update(xml):
     flatten_pks.flatten_pks(xml)
-#    fixEvaluator(xml, "ponded_depth", "surface-ponded_depth")
-#    fixEvaluator(xml, "ponded_depth_bar", "surface-ponded_depth_bar")
+    fixEvaluator(xml, "ponded_depth", "surface-ponded_depth")
+    fixEvaluator(xml, "ponded_depth_bar", "surface-ponded_depth_bar")
+    fixEvaluator(xml, "manning_coefficient", "surface-manning_coefficient")
+    fixEvaluator(xml, "unfrozen_fraction", "surface-unfrozen_fraction")
+    fixEvaluator(xml, "unfrozen_effective_depth", "surface-unfrozen_effective_depth")
     compressibility(xml)
     diffusion(xml)
     water_energy(xml)
     adds_source_units(xml)
     seepage_face_bcs(xml)
+    primary_variable(xml)
         
 
 if __name__ == "__main__":
@@ -132,7 +138,8 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    xml = aio.fromFile(args.infile)
+    print "Converting file: %s"%args.infile
+    xml = aio.fromFile(args.infile, True)
     update(xml)
     if args.inplace:
         aio.toFile(xml, args.infile)
