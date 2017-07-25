@@ -16,22 +16,14 @@ namespace Flow {
 
 HeightEvaluator::HeightEvaluator(Teuchos::ParameterList& plist) :
     SecondaryVariableFieldEvaluator(plist) {
-  bar_ = plist_.get<bool>("ponded depth bar", false);
-
-
+  bar_ = plist_.get<bool>("allow negative ponded depth", false);
   Key domain = Keys::getDomain(my_key_);
-  my_key_ = Keys::getKey(domain, "ponded_depth");
-
-  if (bar_) my_key_ += std::string("_bar");
-  my_key_ = plist_.get<std::string>("height key", my_key_);
 
   // my dependencies
-
   dens_key_ = plist_.get<std::string>("mass density key", Keys::getKey(domain, "mass_density_liquid"));
   dependencies_.insert(dens_key_);
 
   pres_key_ = plist_.get<std::string>("pressure key", Keys::getKey(domain, "pressure"));
-
   dependencies_.insert(pres_key_);
 
   gravity_key_ = plist_.get<std::string>("gravity key", "gravity");

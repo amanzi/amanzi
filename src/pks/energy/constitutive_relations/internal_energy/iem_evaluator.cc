@@ -46,10 +46,6 @@ IEMEvaluator::Clone() const {
 
 
 void IEMEvaluator::InitializeFromPlist_() {
-  if (my_key_.empty()) {
-    my_key_ = plist_.get<std::string>("internal energy key");
-  }
-
   // Set up my dependencies.
   std::string domain_name = Keys::getDomain(my_key_);
 

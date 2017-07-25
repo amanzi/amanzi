@@ -66,6 +66,9 @@ protected:
   bool is_air_conductivity_;
   bool mass_source_only_if_unfrozen_;
 
+  // keys
+  Key domain_ss_;
+  
 private:
   // factory registration
   static RegisteredPKFactory<EnergySurfaceIce> reg_;

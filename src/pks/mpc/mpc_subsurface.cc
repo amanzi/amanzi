@@ -51,7 +51,7 @@ void MPCSubsurface::Setup(const Teuchos::Ptr<State>& S) {
   enth_key_ = Keys::getKey(domain_name_, "enthalpy");
   hkr_key_ = Keys::getKey(domain_name_, "enthalpy_times_relative_permeability");
   uw_hkr_key_ = Keys::getKey(domain_name_, "upwind_enthalpy_times_relative_permeability");
-  energy_flux_key_ = Keys::getKey(domain_name_, "energy_flux");
+  energy_flux_key_ = Keys::getKey(domain_name_, "diffusive_energy_flux");
   mass_flux_key_ = Keys::getKey(domain_name_, "mass_flux");
   mass_flux_dir_key_ = Keys::getKey(domain_name_, "mass_flux_direction");
   rho_key_ = Keys::getKey(domain_name_, "mass_density_liquid");

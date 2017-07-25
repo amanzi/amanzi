@@ -36,9 +36,6 @@ SnowDistribution::SnowDistribution(Teuchos::ParameterList& FElist,
     PK(FElist, plist, S, solution),
     PK_PhysicalBDF_Default(FElist, plist, S, solution),
     full_jacobian_(false) {
-  plist_->set("primary variable key", "surface-precipitation_snow");
-
-  plist_->set("domain name", "surface");
 
   // set a default absolute tolerance
   if (!plist_->isParameter("absolute error tolerance"))
@@ -68,8 +65,7 @@ void SnowDistribution::SetupSnowDistribution_(const Teuchos::Ptr<State>& S) {
       ->SetComponent("cell", AmanziMesh::CELL, 1);
 
   // -- cell volume and evaluator
-
-  S->RequireFieldEvaluator("surface-cell_volume");
+  S->RequireFieldEvaluator(Keys::getKey(domain_, "cell_volume"));
   
   // Create the upwinding method.
   S->RequireField(Keys::getKey(domain_,"upwind_snow_conductivity"), name_)->SetMesh(mesh_)
@@ -77,7 +73,7 @@ void SnowDistribution::SetupSnowDistribution_(const Teuchos::Ptr<State>& S) {
   S->GetField(Keys::getKey(domain_,"upwind_snow_conductivity"),name_)->set_io_vis(false);
 
 
-  std::string method_name = plist_->get<std::string>("upwind conductivity method",
+  std::string method_name = plist_->get<std::string>("upwind snow_conductivity method",
           "upwind with total flux");
   if (method_name == "upwind with total flux") {
     upwind_method_ = Operators::UPWIND_METHOD_TOTAL_FLUX;
@@ -88,7 +84,7 @@ void SnowDistribution::SetupSnowDistribution_(const Teuchos::Ptr<State>& S) {
     upwind_method_ = Operators::UPWIND_METHOD_POTENTIAL_DIFFERENCE;
     upwinding_ = Teuchos::rcp(new Operators::UpwindPotentialDifference(name_,
                  Keys::getKey(domain_,"snow_conductivity"), Keys::getKey(domain_,"upwind_snow_conductivity"),
-                 Keys::getKey(domain_,"snow_skin_potential"), Keys::getKey(domain_,"precipitation_snow")));
+                 Keys::getKey(domain_,"skin_potential"), Keys::getKey(domain_,"precipitation")));
   } else {
     std::stringstream messagestream;
     messagestream << "Snow Precipitation: has no upwinding method named: " << method_name;
@@ -99,10 +95,10 @@ void SnowDistribution::SetupSnowDistribution_(const Teuchos::Ptr<State>& S) {
   // -- owned secondary variables, no evaluator used
   if (upwind_method_ == Operators::UPWIND_METHOD_TOTAL_FLUX) {
 
-    S->RequireField("surface-snow_flux_direction", name_)->SetMesh(mesh_)->SetGhosted()
+    S->RequireField(Keys::getKey(domain_, "snow_flux_direction"), name_)->SetMesh(mesh_)->SetGhosted()
         ->SetComponent("face", AmanziMesh::FACE, 1);
   }
-  S->RequireField("surface-snow_flux", name_)->SetMesh(mesh_)->SetGhosted()
+  S->RequireField(Keys::getKey(domain_, "snow_flux"), name_)->SetMesh(mesh_)->SetGhosted()
       ->SetComponent("face", AmanziMesh::FACE, 1);
 
   int nfaces = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
@@ -142,10 +138,10 @@ void SnowDistribution::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
   // -- evaluator for potential field, h + z
 
   S->RequireFieldEvaluator(Keys::getKey(domain_,"snow_skin_potential"));
-  S->RequireField(Keys::getKey(domain_,"snow_skin_potential"))->SetMesh(S->GetMesh("surface"))->SetGhosted()
+  S->RequireField(Keys::getKey(domain_,"snow_skin_potential"))->SetMesh(mesh_)->SetGhosted()
       ->AddComponent("cell", AmanziMesh::CELL, 1);
 
-  // -- conductivity evaluator
+  // -- snow_conductivity evaluator
   S->RequireFieldEvaluator(Keys::getKey(domain_,"snow_conductivity"));
   S->RequireField(Keys::getKey(domain_,"snow_conductivity"))->SetMesh(mesh_)->SetGhosted()
       ->AddComponent("cell", AmanziMesh::CELL, 1);
@@ -167,12 +163,11 @@ void SnowDistribution::Initialize(const Teuchos::Ptr<State>& S) {
   S->GetField(Keys::getKey(domain_,"upwind_snow_conductivity"),name_)->set_initialized();
 
   if (upwind_method_ == Operators::UPWIND_METHOD_TOTAL_FLUX) {
-    S->GetFieldData("surface-snow_flux_direction", name_)->PutScalar(0.);
-    S->GetField("surface-snow_flux_direction", name_)->set_initialized();
+    S->GetFieldData(Keys::getKey(domain_,"snow_flux_direction"), name_)->PutScalar(0.);
+    S->GetField(Keys::getKey(domain_,"snow_flux_direction"), name_)->set_initialized();
   }
-  S->GetFieldData("surface-snow_flux", name_)->PutScalar(0.);
-  S->GetField("surface-snow_flux", name_)->set_initialized();
-
+  S->GetFieldData(Keys::getKey(domain_,"snow_flux"), name_)->PutScalar(0.);
+  S->GetField(Keys::getKey(domain_,"snow_flux"), name_)->set_initialized();
 };
 
 
@@ -185,14 +180,14 @@ bool SnowDistribution::UpdatePermeabilityData_(const Teuchos::Ptr<State>& S) {
 
   bool update_perm = S->GetFieldEvaluator(Keys::getKey(domain_,"snow_conductivity"))
       ->HasFieldChanged(S, name_);
-  update_perm |= S->GetFieldEvaluator(Keys::getKey(domain_,"precipitation_snow"))->HasFieldChanged(S, name_);
+  update_perm |= S->GetFieldEvaluator(Keys::getKey(domain_,"snow_precipitation"))->HasFieldChanged(S, name_);
   update_perm |= S->GetFieldEvaluator(Keys::getKey(domain_,"snow_skin_potential"))->HasFieldChanged(S, name_);
 
   if (update_perm) {
     if (upwind_method_ == Operators::UPWIND_METHOD_TOTAL_FLUX) {
       // update the direction of the flux -- note this is NOT the flux
       Teuchos::RCP<CompositeVector> flux_dir =
-          S->GetFieldData("surface-snow_flux_direction", name_);
+          S->GetFieldData("snow_flux_direction", name_);
 
       // Create the stiffness matrix without a rel perm (just n/mu)
       matrix_->Init();
@@ -204,11 +199,11 @@ bool SnowDistribution::UpdatePermeabilityData_(const Teuchos::Ptr<State>& S) {
       matrix_diff_->UpdateFlux(*potential, *flux_dir);
     }
 
-    // get conductivity data
+    // get snow_conductivity data
     const Epetra_MultiVector& cond_c = *S->GetFieldData(Keys::getKey(domain_,"snow_conductivity"))
         ->ViewComponent("cell",false);
 
-    // get upwind conductivity data
+    // get upwind snow_conductivity data
     Teuchos::RCP<CompositeVector> uw_cond =
 
       S->GetFieldData(Keys::getKey(domain_,"upwind_snow_conductivity"), name_);

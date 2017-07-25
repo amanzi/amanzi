@@ -72,7 +72,6 @@ void SnowDistribution::Functional( double t_old,
   ApplyDiffusion_(S_next_.ptr(), res.ptr());
 
 #if DEBUG_FLAG
-
   db_->WriteVector("k_s", S_next_->GetFieldData(Keys::getKey(domain_,"upwind_snow_conductivity")).ptr(), true);
   db_->WriteVector("res (post diffusion)", res.ptr(), true);
 #endif
@@ -138,10 +137,10 @@ void SnowDistribution::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVec
   cond_times_factor->Scale(864000);
 
   // ADD BACK in when upwinding of snow conductivity is added.
-  // S_next_->GetFieldEvaluator("snow_conductivity")
+  // S_next_->GetFieldEvaluator("conductivity")
   //     ->HasFieldDerivativeChanged(S_next_.ptr(), name_, key_);
   // Teuchos::RCP<const CompositeVector> dcond_dp =
-  //     S_next_->GetFieldData("dsnow_conductivity_dprecipitation_snow");
+  //     S_next_->GetFieldData("dconductivity_dprecipitation_snow");
   
   // calculating the operator is done in 3 steps:
   // 1. Create all local matrices.
@@ -155,7 +154,7 @@ void SnowDistribution::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVec
   // 2.b Update local matrices diagonal with the accumulation terms.
   // -- update the accumulation derivatives
 
-  const Epetra_MultiVector& cell_volume = *S_next_->GetFieldData("surface-cell_volume")
+  const Epetra_MultiVector& cell_volume = *S_next_->GetFieldData(Keys::getKey(domain_,"cell_volume"))
 
       ->ViewComponent("cell",false);
   std::vector<double>& Acc_cells = preconditioner_acc_->local_matrices()->vals;
@@ -179,8 +178,7 @@ double SnowDistribution::ErrorNorm(Teuchos::RCP<const TreeVector> u,
   const Epetra_MultiVector& res_c = *res->ViewComponent("cell",false);
   const Epetra_MultiVector& precip_c = *u->Data()->ViewComponent("cell",false);
 
-  const Epetra_MultiVector& cv = *S_next_->GetFieldData("surface-cell_volume")
-
+  const Epetra_MultiVector& cv = *S_next_->GetFieldData(Keys::getKey(domain_,"cell_volume"))
       ->ViewComponent("cell",false);
   double dt = S_next_->time() - S_inter_->time();
   std::vector<double> time(1, S_next_->time());

@@ -50,7 +50,18 @@ public:
         global_list_(global_list),
         pk_tree_(pk_tree),
         pks_list_(Teuchos::sublist(global_list, "PKs"))        
-  {}
+  {
+    // name the PK
+    name_ = pk_tree.name();
+    boost::iterator_range<std::string::iterator> res = boost::algorithm::find_last(name_,"->");
+    if (res.end() - name_.end() != 0) boost::algorithm::erase_head(name_, res.end() - name_.begin());
+
+    // get my parameter list
+    plist_ = Teuchos::sublist(pks_list_, name_);
+
+    // verbose object
+    vo_ = Teuchos::rcp(new VerboseObject(name_, *plist_));
+  }
 
   // Virtual destructor
   virtual ~MPC() {}

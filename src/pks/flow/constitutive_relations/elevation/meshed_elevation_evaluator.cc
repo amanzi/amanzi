@@ -5,7 +5,7 @@
 
   Authors: Ethan Coon (ecoon@lanl.gov)
 */
-#include <boost/algorithm/string/predicate.hpp>
+#include "boost/algorithm/string/predicate.hpp"
 
 #include "Mesh.hh"
 #include "Mesh_MSTK.hh"
