@@ -304,8 +304,8 @@ void EnergySurfaceIce::AddSources_(const Teuchos::Ptr<State>& S,
 
         ASSERT(cells.size() == 1);
         g_c[0][c] -= flux * enth_subsurf[0][cells[0]];
-        std::cout << "source = " << flux << " * " << enth_subsurf[0][cells[0]] << " = " << -flux * enth_subsurf[0][cells[0]] << std::endl;
-        std::cout << "OR source = " << flux << " * " << enth_surf[0][c] << " = " << -flux * enth_surf[0][c] << std::endl;
+        //        std::cout << "source = " << flux << " * " << enth_subsurf[0][cells[0]] << " = " << -flux * enth_subsurf[0][cells[0]] << std::endl;
+        //        std::cout << "OR source = " << flux << " * " << enth_surf[0][c] << " = " << -flux * enth_surf[0][c] << std::endl;
       } else { // infiltration
         g_c[0][c] -= flux * enth_surf[0][c];
       }
