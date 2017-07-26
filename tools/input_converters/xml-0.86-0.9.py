@@ -61,18 +61,15 @@ def water_energy(xml):
     except aerrors.MissingXMLError:
         pass
     else:
-        ftype = asearch.childByNamePath(energy, "field evaluator type")
-        if ftype.value == "three phase energy":
-            if water.isElement("include water vapor") and water.getElement("include water vapor").value:
-                ftype.setValue("three phase energy")
-            else:
-                ftype.setValue("liquid+ice energy")
-                    
-        elif ftype.value == "two phase energy":
-            if water.isElement("include water vapor") and water.getElement("include water vapor").value:
-                ftype.setValue("liquid+gas energy")
-            else:
-                ftype.setValue("richards energy")
+        etype = asearch.childByNamePath(energy, "field evaluator type")
+        if ftype.value == "three phase water content":
+            etype.setValue("thee phase energy")
+        elif ftype.value == "liquid+ice water content":
+            etype.setValue("liquid+ice energy")
+        elif ftype.value == "liquid+gas water content":
+            etype.setValue("liquid+gas energy")
+        elif ftype.value == "richards water content":
+            etype.setValue("richards energy")
 
             
 def adds_source_units(xml):

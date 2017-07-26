@@ -20,13 +20,12 @@ PK_Physical_Default::PK_Physical_Default(Teuchos::ParameterList& pk_tree,
     PK(pk_tree, glist, S, solution),
     PK_Physical(pk_tree, glist, S, solution)
 {
-  key_ = Keys::readKey(*plist_, "", "primary variable");
-  domain_ = plist_->get<std::string>("domain name", Keys::getDomain(key_));
-
-  Teuchos::ParameterList& FElist = S->FEList();
+  domain_ = plist_->get<std::string>("domain name", "");
+  key_ = Keys::readKey(*plist_, domain_, "primary variable");
+  
   // set up the primary variable solution, and its evaluator
+  Teuchos::ParameterList& FElist = S->FEList();
   Teuchos::ParameterList& pv_sublist = FElist.sublist(key_);
-  std::cout << "constructed pk " << name_ << " with primary key " << key_ << std::endl;
   pv_sublist.set("evaluator name", key_);
   pv_sublist.set("field evaluator type", "primary variable");
 

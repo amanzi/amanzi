@@ -233,10 +233,21 @@ createMeshes(Teuchos::ParameterList& global_list,
     for (int c=0; c!=nc; ++c) {
       col_meshes[c] = Teuchos::rcp(new Amanzi::AmanziMesh::MeshColumn(*mesh, c));
     }
-    if (mesh_plist.isSublist("column surface"))
+    if (plist.isSublist("column surface"))
       for (int c1=0; c1!=nc; ++c1)
         col_surf_meshes[c1] = Teuchos::rcp(new Amanzi::AmanziMesh::MeshSurfaceCell(*col_meshes[c1], "surface"));
 
+    bool deformable_columns = plist.sublist("column").get<bool>("deformable mesh", deformable);
+    for (int c=0; c!=col_meshes.size(); ++c) {
+      std::stringstream name_ss, name_surf;
+      int id = surface_mesh->cell_map(false).GID(c);
+      name_ss << "column_" << id;
+      name_surf << "surface_column_" << id;
+      S.RegisterMesh(name_ss.str(), col_meshes[c], deformable_columns);
+      if (plist.isSublist("column surface"))
+        S.RegisterMesh(name_surf.str(), col_surf_meshes[c], deformable_columns);
+    }
+    
     // generalize vis for columns
     if (global_list.isSublist("visualization columns")) {
       Teuchos::ParameterList& vis_ss_plist = global_list.sublist("visualization columns"); 
@@ -245,9 +256,9 @@ createMeshes(Teuchos::ParameterList& global_list,
         std::stringstream name_ss;
         name_ss << "column_" << id;
         vis_ss_plist.set("file name base", "visdump_"+name_ss.str());         
-        plist.set("visualization " +name_ss.str(), vis_ss_plist);
+        global_list.set("visualization " +name_ss.str(), vis_ss_plist);
       }  
-      plist.remove("visualization columns");
+      global_list.remove("visualization columns");
     }
 
     // generalize vis for surface columns
@@ -261,17 +272,6 @@ createMeshes(Teuchos::ParameterList& global_list,
         global_list.set("visualization " +name_sf.str(), vis_sf_plist);
       }
       global_list.remove("visualization surface cells");
-    }
-
-    bool deformable_columns = plist.sublist("column").get<bool>("deformable mesh");
-    for (int c=0; c!=col_meshes.size(); ++c) {
-      std::stringstream name_ss, name_surf;
-      int id = surface_mesh->cell_map(false).GID(c);
-      name_ss << "column_" << id;
-      name_surf << "surface_column_" << id;
-      S.RegisterMesh(name_ss.str(), col_meshes[c], deformable_columns);
-      if (mesh_plist.isSublist("column surface meshes"))
-        S.RegisterMesh(name_surf.str(), col_surf_meshes[c], deformable_columns);
     }
   }
 

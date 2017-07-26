@@ -22,9 +22,7 @@ UpwindArithmeticMean::UpwindArithmeticMean(Key pkname,
         Key face_coef) :
     pkname_(std::move(pkname)),
     cell_coef_(std::move(cell_coef)),
-    face_coef_(std::move(face_coef)) {
-  std::cout << "in constructor with pkname = " << pkname << " the cell coefs are " << cell_coef << "," << cell_coef_ << " and the face coefs are " << face_coef << "<" << face_coef_ << std::endl;
-};
+    face_coef_(std::move(face_coef)) {};
 
 
 void UpwindArithmeticMean::Update(const Teuchos::Ptr<State>& S,

@@ -34,10 +34,7 @@ SurfaceBalanceImplicit::SurfaceBalanceImplicit(Teuchos::ParameterList& pk_tree,
   if (!plist_->isParameter("conserved quantity suffix"))
     plist_->set("conserved quantity suffix", "snow_depth");
 
-  //Teuchos::ParameterList& FElist = global_list->sublist("state").sublist("field evaluators");
   Teuchos::ParameterList& FElist = S->FEList();
-
-
 
   // set up additional primary variables -- this is very hacky...
   // -- surface energy source
