@@ -79,13 +79,13 @@ int Operator_Schema::ApplyMatrixFreeOp(const Op_Face_Schema& op,
   Y.PutScalarGhosted(0.0);
 
   for (int f = 0; f != nfaces_owned; ++f) {
-    const WhetStone::DenseMatrix& Acell = op.matrices[f];
-    int ncols = Acell.NumCols();
-    int nrows = Acell.NumRows();
+    const WhetStone::DenseMatrix& Aface = op.matrices[f];
+    int ncols = Aface.NumCols();
+    int nrows = Aface.NumRows();
     WhetStone::DenseVector v(ncols), av(nrows);
 
     ExtractVectorFaceOp(f, op.schema_col_, v, X);
-    Acell.Multiply(v, av, false);
+    Aface.Multiply(v, av, false);
     AssembleVectorFaceOp(f, op.schema_row_, av, Y);
   }
 

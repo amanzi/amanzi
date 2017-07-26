@@ -366,8 +366,8 @@ Tensor DG_Modal::EvaluateJacobian(int c, const AmanziGeometry::Point& xref) cons
   j1 = (1.0 - xref[0]) * (p4 - p1) + xref[0] * (p3 - p2);
 
   Tensor jac(d_, 2);
-  jac.SetRow(0, j0);
-  jac.SetRow(1, j1);
+  jac.SetColumn(0, j0);
+  jac.SetColumn(1, j1);
 
   return jac;
 }
