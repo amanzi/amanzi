@@ -76,7 +76,7 @@ void CompositeVectorFunction::Compute(double time,
       // region ENTIRE_MESH_REGION
       if (*region == std::string("ENTIRE_MESH_REGION")) {
         if (kind == AmanziMesh::BOUNDARY_FACE) {
-          unsigned int nfaces = mesh->num_entities(kind, AmanziMesh::OWNED);
+          unsigned int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
           const Epetra_Map& vandelay_map = mesh->exterior_face_map(false);
           const Epetra_Map& face_map = mesh->face_map(AmanziMesh::OWNED);
 
