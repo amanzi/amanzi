@@ -247,7 +247,7 @@ createMeshes(Teuchos::ParameterList& global_list,
         vis_ss_plist.set("file name base", "visdump_"+name_ss.str());         
         plist.set("visualization " +name_ss.str(), vis_ss_plist);
       }  
-      plist.remove("visualization columns");
+      global_list.remove("visualization columns");
     }
 
     // generalize vis for surface columns
@@ -270,7 +270,7 @@ createMeshes(Teuchos::ParameterList& global_list,
       name_ss << "column_" << id;
       name_surf << "surface_column_" << id;
       S.RegisterMesh(name_ss.str(), col_meshes[c], deformable_columns);
-      if (mesh_plist.isSublist("column surface meshes"))
+      if (mesh_plist.isSublist("column surface"))
         S.RegisterMesh(name_surf.str(), col_surf_meshes[c], deformable_columns);
     }
   }

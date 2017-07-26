@@ -82,7 +82,7 @@ void Coordinator::coordinator_init() {
   int size = comm_->NumProc();
   std::stringstream check;
   
-  if(parameter_list_->sublist("mesh").isSublist("column meshes"))  
+  if(parameter_list_->sublist("mesh").isSublist("column"))  
     check << "checkpoint " << rank;
   else
     check << "checkpoint";
@@ -90,7 +90,7 @@ void Coordinator::coordinator_init() {
   // create the checkpointing
 
   Teuchos::ParameterList& chkp_plist = parameter_list_->sublist(check.str());
-  if (parameter_list_->sublist("mesh").isSublist("column meshes") && size >1){
+  if (parameter_list_->sublist("mesh").isSublist("column") && size >1){
     MPI_Comm mpi_comm_self(MPI_COMM_SELF);
     Epetra_MpiComm *comm_self = new Epetra_MpiComm(mpi_comm_self);
     checkpoint_ = Teuchos::rcp(new Amanzi::Checkpoint(chkp_plist, comm_self));
@@ -109,12 +109,13 @@ void Coordinator::coordinator_init() {
        mesh!=S_->mesh_end(); ++mesh) {
 
     if (S_->IsDeformableMesh(mesh->first) ){
+      std::cout<<"COORD1: "<< mesh->first<<"\n";
       if (mesh->first.find("column") != std::string::npos) {
         std::string node_key = mesh->first+std::string("-vertex_coordinate");
         S_->RequireField(node_key)->SetMesh(mesh->second.first)->SetGhosted()
           ->AddComponent("node", Amanzi::AmanziMesh::NODE, mesh->second.first->space_dimension());
       }
-      else if (!parameter_list_->sublist("mesh").isSublist("column meshes") && mesh->first != "domain"){
+      else if (!parameter_list_->sublist("mesh").isSublist("column") && mesh->first != "domain"){
         std::string node_key = mesh->first+std::string("-vertex_coordinate");
         S_->RequireField(node_key)->SetMesh(mesh->second.first)->SetGhosted()
           ->AddComponent("node", Amanzi::AmanziMesh::NODE, mesh->second.first->space_dimension());
@@ -208,7 +209,7 @@ void Coordinator::initialize() {
     vis->set_mesh(surface_3d);    
 
     //should be removed in future -- xmdf does not work for general polyhdera, and 3D silo gives error "3D not tested yet!!"
-    if (parameter_list_->sublist("mesh").isSublist("column meshes") || parameter_list_->sublist("mesh").sublist("surface mesh").isParameter("polygonal cells")){
+    if (parameter_list_->sublist("mesh").isSublist("column") || parameter_list_->sublist("mesh").sublist("surface mesh").isParameter("polygonal cells")){
       vis->set_mesh(surface);
       vis->CreateFiles();
     }
@@ -555,7 +556,7 @@ bool Coordinator::advance(double t_old, double t_new) {
           mesh->second.first->deform(node_ids, old_positions, false, &final_positions);
         }
         
-        else if (!parameter_list_->sublist("mesh").isSublist("column meshes") && mesh->first != "domain") {
+        else if (!parameter_list_->sublist("mesh").isSublist("column") && mesh->first != "domain") {
           // collect the old coordinates
           
           std::string node_key = mesh->first+std::string("-vertex_coordinate");

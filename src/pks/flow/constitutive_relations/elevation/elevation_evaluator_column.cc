@@ -139,7 +139,7 @@ void ElevationEvaluatorColumn::EvaluateElevationAndSlope_(const Teuchos::Ptr<Sta
 
   // Set the elevation on faces by getting the corresponding face and its
   // centroid.
-  if (elev->HasComponent("face")) {
+  /* if (elev->HasComponent("face")) {
     Epetra_MultiVector& elev_f = *elev->ViewComponent("face", false);
     int nfaces = elev_f.MyLength();
     for (int f=0; f!=nfaces; ++f) {
@@ -150,7 +150,7 @@ void ElevationEvaluatorColumn::EvaluateElevationAndSlope_(const Teuchos::Ptr<Sta
       
         elev_f[0][f] = x[2];
     }
-  }
+    }*/
 
 }
 

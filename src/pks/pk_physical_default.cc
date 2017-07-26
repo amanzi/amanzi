@@ -143,8 +143,9 @@ bool PK_Physical_Default::ValidStep() {
 // -----------------------------------------------------------------------------
 //  Marks as changed
 // -----------------------------------------------------------------------------
-void PK_Physical_Default::ChangedSolutionPK() {
-  solution_evaluator_->SetFieldAsChanged(S_next_.ptr());
+void PK_Physical_Default::ChangedSolutionPK(const Teuchos::Ptr<State>& S) {
+  assert(S == Teuchos::null);
+  solution_evaluator_->SetFieldAsChanged(S.ptr());
 }
 
 
