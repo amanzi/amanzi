@@ -27,10 +27,10 @@ ElevationEvaluatorColumn::ElevationEvaluatorColumn(Teuchos::ParameterList& plist
       base_por_key_ = Keys::readKey(plist_, name.str(), "base porosity", "base_porosity");
       dependencies_.insert(base_por_key_);
     }
-  } else {
+  } /*else {
     Errors::Message msg("ElevationEvaluatorColumn: this evaluator should be used for columnar meshes only.");
     Exceptions::amanzi_throw(msg);
-  }  
+    }  */ // keep it for a while!!
 };
 
 ElevationEvaluatorColumn::ElevationEvaluatorColumn(const ElevationEvaluatorColumn& other) :
@@ -84,7 +84,6 @@ void ElevationEvaluatorColumn::EvaluateElevationAndSlope_(const Teuchos::Ptr<Sta
       
       int ngb_cells = nadj_cellids.size();
       std::vector<AmanziGeometry::Point> ngb_centroids(ngb_cells);
-      std::cout<<"---------ELEVATION EVAL COLUMN----------"<<c<<" "<<id<<"\n";
       
       //get the neighboring cell's centroids
       for(unsigned i=0; i<ngb_cells; i++){
@@ -93,7 +92,6 @@ void ElevationEvaluatorColumn::EvaluateElevationAndSlope_(const Teuchos::Ptr<Sta
 	std::vector<AmanziGeometry::Point> crd; 
 	S->GetMesh(col_name.str())->face_get_coordinates(nfaces-1, &crd);
 	ngb_centroids[i] = crd[0];
-	std::cout<<"Centroid: "<< my_name.str()<<" "<<col_name.str()<<" "<<my_centroid[c]<<" "<<nadj_cellids[i]<<" "<<crd[0]<< " \n";
       }
 
       
@@ -112,15 +110,11 @@ void ElevationEvaluatorColumn::EvaluateElevationAndSlope_(const Teuchos::Ptr<Sta
 	}
 
 	AmanziGeometry::Point fnor = S->GetMesh(my_name.str())->face_normal(nfaces-1);
-	std::cout<<"Normal: "<<my_name.str()<<" "<<N<<" "<<fnor<<std::endl;
 	Nor_avg = (nface_pcell - Normal.size()) * fnor; 
 	for (int i=0; i <Normal.size(); i++)
 	  Nor_avg += Normal[i];
 	
-    	std::cout<<"Neighbor normal: "<<fnor<<" "<<Nor_avg<<" "<<std::endl;
-	
-	Nor_avg /= nface_pcell;
-	std::cout<<"Avg normal: "<<Nor_avg<<" "<<std::endl;
+        Nor_avg /= nface_pcell;
 	slope_c[0][c] = (std::sqrt(std::pow(Nor_avg[0],2) + std::pow(Nor_avg[1],2)))/ std::abs(Nor_avg[2]);
         
       }
@@ -129,7 +123,6 @@ void ElevationEvaluatorColumn::EvaluateElevationAndSlope_(const Teuchos::Ptr<Sta
 	slope_c[0][c] = std::abs(PQ[2]) / (std::sqrt(std::pow(PQ[0],2) + std::pow(PQ[1],2)));
         
       }
-      std::cout<<"SLOPE: "<<c<<" "<<slope_c[0][c]<<"\n";
     }
     else{
       slope_c[0][c]=0; // if domain is surface_column_*, slope is zero.
