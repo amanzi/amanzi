@@ -138,7 +138,7 @@ TEST(DG_ADVECTION_MATRIX_CELL) {
     
   A[0].Multiply(v, av, false);
   v.Dot(av, &tmp);
-  CHECK_CLOSE(20.2332916667, tmp, 1e-10);
+  CHECK_CLOSE(-20.2332916667, tmp, 1e-10);
 
   delete comm;
 }

@@ -67,8 +67,8 @@ void Transport_PK::Functional(double t,
 
   f_component.PutScalar(0.0);
   for (int f = 0; f < nfaces_wghost; f++) {  // loop over master and slave faces
-    c1 = upwind_cells_[f][0];
-    c2 = downwind_cells_[f][0];
+    c1 = (upwind_cells_[f].size() > 0) ? upwind_cells_[f][0] : -1;
+    c2 = (downwind_cells_[f].size() > 0) ? downwind_cells_[f][0] : -1;
 
     if (c1 >= 0 && c2 >= 0) {
       u1 = component[c1];
@@ -134,9 +134,8 @@ void Transport_PK::Functional(double t,
 
           std::vector<double>& values = it->second;
 
-          c2 = downwind_cells_[f][0];
-
-          if (c2 >= 0 && f < nfaces_owned) {
+          if (downwind_cells_[f].size() > 0 && f < nfaces_owned) {
+            c2 = downwind_cells_[f][0];
             u = fabs((*darcy_flux)[0][f]);
             double vol_phi_ws = mesh_->cell_volume(c2) * (*phi)[0][c2] * (*ws_start)[0][c2];
             tcc_flux = u * values[i];
@@ -201,8 +200,8 @@ void Transport_PK::FunctionalOld(double t,
 
   f_component.PutScalar(0.0);
   for (int f = 0; f < nfaces_wghost; f++) {  // loop over master and slave faces
-    c1 = upwind_cells_[f][0];
-    c2 = downwind_cells_[f][0];
+    c1 = (upwind_cells_[f].size() > 0) ? upwind_cells_[f][0] : -1;
+    c2 = (downwind_cells_[f].size() > 0) ? downwind_cells_[f][0] : -1;
 
     if (c1 >= 0 && c2 >= 0) {
       u1 = component[c1];
@@ -266,9 +265,9 @@ void Transport_PK::FunctionalOld(double t,
 
           std::vector<double>& values = it->second;
 
-          c2 = downwind_cells_[f][0];
 
-          if (c2 >= 0 && f < nfaces_owned) {
+          if (downwind_cells_[f].size() > 0 && f < nfaces_owned) {
+            c2 = downwind_cells_[f][0];
             u = fabs((*darcy_flux)[0][f]);
             double vol_phi_ws = mesh_->cell_volume(c2) * (*phi)[0][c2] * (*ws_start)[0][c2];
             tcc_flux = u * values[i];

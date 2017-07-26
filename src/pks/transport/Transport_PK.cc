@@ -520,7 +520,7 @@ double Transport_PK::StableTimeStep()
   for (int f = 0; f < nfaces_wghost; f++) {
     if (upwind_cells_[f].size() > 0) {
       int c = upwind_cells_[f][0];
-      if (c >= 0) total_outflux[c] += fabs((*darcy_flux)[0][f]);
+      total_outflux[c] += fabs((*darcy_flux)[0][f]);
     }
   }
 
@@ -715,7 +715,7 @@ bool Transport_PK::AdvanceStep(double t_old, double t_new, bool reinit)
       if (spatial_disc_order == 1) {
         AdvanceDonorUpwindNonManifold(dt_cycle);
       } else {
-        AdvanceSecondOrderUpwindRK2(dt_cycle);
+        AdvanceSecondOrderUpwindRKn(dt_cycle);
       }
     }
 
@@ -1046,8 +1046,8 @@ void Transport_PK::AdvanceDonorUpwind(double dt_cycle)
 
   // advance all components at once
   for (int f = 0; f < nfaces_wghost; f++) {  // loop over master and slave faces
-    int c1 = upwind_cells_[f][0];
-    int c2 = downwind_cells_[f][0];
+    int c1 = (upwind_cells_[f].size() > 0) ? upwind_cells_[f][0] : -1;
+    int c2 = (downwind_cells_[f].size() > 0) ? downwind_cells_[f][0] : -1;
 
     double u = fabs((*darcy_flux)[0][f]);
 
@@ -1081,8 +1081,8 @@ void Transport_PK::AdvanceDonorUpwind(double dt_cycle)
       int f = it->first;
       std::vector<double>& values = it->second; 
 
-      int c2 = downwind_cells_[f][0];
-      if (c2 >= 0) {
+      if (downwind_cells_[f].size() > 0) {
+        int c2 = downwind_cells_[f][0];
         double u = fabs((*darcy_flux)[0][f]);
         for (int i = 0; i < ncomp; i++) {
           int k = tcc_index[i];
@@ -1505,12 +1505,6 @@ void Transport_PK::IdentifyUpwindCells()
           downwind_cells_[f].push_back(c);
         }
       }
-    }
-
-    // pushing negative one for compatibility
-    for (int f = 0; f < nfaces_wghost; ++f) {
-      if (upwind_cells_[f].size() == 0) upwind_cells_[f].push_back(-1);
-      if (downwind_cells_[f].size() == 0) downwind_cells_[f].push_back(-1);
     }
   } else {
     upwind_cells_.clear();
