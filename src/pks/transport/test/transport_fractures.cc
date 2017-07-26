@@ -136,7 +136,8 @@ std::cout << "Test: Advance on a 2D square mesh" << std::endl;
     iter++;
 
     // verify solution
-    for (int c = 0; c < ncells_owned; ++c) CHECK(tcc[0][c] >= 0.0);
+    for (int c = 0; c < ncells_owned; ++c) 
+        CHECK(tcc[0][c] >= 0.0 && tcc[0][c] <= 1.0);
   }
 
   // test the maximum principle

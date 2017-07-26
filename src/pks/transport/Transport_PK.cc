@@ -1507,8 +1507,8 @@ void Transport_PK::IdentifyUpwindCells()
       }
     }
   } else {
-    upwind_cells_.clear();
-    downwind_cells_.clear();
+    upwind_flux_.clear();
+    downwind_flux_.clear();
 
     upwind_flux_.resize(nfaces_wghost);
     downwind_flux_.resize(nfaces_wghost);
