@@ -2,7 +2,7 @@
 
 /*
   License: BSD
-  Authors: Ethan Coon (ecoon@lanl.gov)
+  Authors: Ahmad Jan (jana@ornl.gov)
 */
 
 #include "elevation_evaluator_column.hh"

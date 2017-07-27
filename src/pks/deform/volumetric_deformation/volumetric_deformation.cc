@@ -43,6 +43,7 @@ VolumetricDeformation::VolumetricDeformation(Teuchos::ParameterList& pk_tree,
   dt_max_ = dt_;
 
   domain_ = Keys::getDomain(key_);
+  std::cout<<"VOL. Deform: "<<domain_<<" "<<key_<<"\n";
   if (domain_.empty())
     domain_ = "domain";
   // The deformation mode describes how to calculate new cell volume from a

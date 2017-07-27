@@ -6,7 +6,7 @@
   The terms of use and "as is" disclaimer for this license are 
   provided in the top-level COPYRIGHT file.
 
-  Authors: Ethan Coon (ecoon@lanl.gov)
+  Authors: Ahmad Jan (jana@ornl.gov)
 */
 
 /*!
@@ -16,15 +16,15 @@ Evaluates the z-coordinate and the magnitude of the slope :math:``|\nambla_h z|`
 
 * `"elevation key`" ``[string]`` **elevation** Name the elevation variable. [m]
 * `"slope magnitude key`" ``[string]`` **slope_magnitude** Name the elevation variable. [-]
-* `"dynamic mesh`" ``[bool]`` **false** Lets the evaluator know that the elevation changes in time, and adds the `"deformation`" dependency.
-* `"parent domain name`" ``[string]`` **DOMAIN** Domain name of the parent mesh, which is the 3D version of this domain.  Attempts to generate an intelligent default by stripping "surface" from this domain.
+* `"dynamic mesh`" ``[bool]`` **false** Lets the evaluator know that the elevation changes in time, and adds the `"deformation`" and `"base_porosity`" dependencies.
+* `"parent domain name`" ``[string]`` **DOMAIN** Domain name of the parent mesh, which is the 3D version of this domain.  In the columnar meshes the surface elevation and slope are assigned based on the columns and not the base 3D domain.
 
 Example:
 
 .. code-block:: xml
 
   <ParameterList name="elevation">
-    <Parameter name="evaluator type" type="string" value="elevation column"/>
+    <Parameter name="evaluator type" type="string" value="elevation evaluator"/>
   </ParameterList>
 
 */
@@ -50,6 +50,8 @@ class ElevationEvaluatorColumn : public ElevationEvaluator {
 
   virtual void EvaluateElevationAndSlope_(const Teuchos::Ptr<State>& S,
           const std::vector<Teuchos::Ptr<CompositeVector> >& results);
+
+  virtual void EnsureCompatibility(const Teuchos::Ptr<State>& S);
 
  private:
   static Utils::RegisteredFactory<FieldEvaluator,ElevationEvaluatorColumn> reg_;

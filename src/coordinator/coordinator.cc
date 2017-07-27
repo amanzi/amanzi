@@ -109,7 +109,6 @@ void Coordinator::coordinator_init() {
        mesh!=S_->mesh_end(); ++mesh) {
 
     if (S_->IsDeformableMesh(mesh->first) ){
-      std::cout<<"COORD1: "<< mesh->first<<"\n";
       if (mesh->first.find("column") != std::string::npos) {
         std::string node_key = mesh->first+std::string("-vertex_coordinate");
         S_->RequireField(node_key)->SetMesh(mesh->second.first)->SetGhosted()
