@@ -35,7 +35,7 @@
     <liquid_phase name="water">
       <eos>False</eos>
       <viscosity>1.002e-3</viscosity>
-      <density>998.2</density>
+      <density>9.998676E+02</density>
       <dissolved_components>
         <primaries>
           <primary>Na+</primary>
