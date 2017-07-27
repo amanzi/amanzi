@@ -21,6 +21,7 @@
 #define UTILS_KEY_HH_
 
 
+#include "boost/algorithm/string.hpp"
 #include "Teuchos_ParameterList.hpp"
 
 namespace Amanzi {
@@ -36,6 +37,15 @@ typedef std::set<std::pair<Key, Key> > KeyPairSet;
 typedef std::tuple<Key,Key,Key> KeyTriple;
 
 namespace Keys {
+
+// parameter list names take their parent history?
+inline Key
+cleanPListName(std::string name)
+{
+  auto res = boost::algorithm::find_last(name,"->");
+  if (res.end() - name.end() != 0) boost::algorithm::erase_head(name, res.end() - name.begin());
+  return name;
+}
 
 // Keys are often a combination of a domain and a variable name.
 

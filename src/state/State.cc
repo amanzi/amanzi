@@ -161,7 +161,12 @@ void State::RemoveMesh(Key key) {
 
 
 Teuchos::RCP<const AmanziMesh::Mesh> State::GetMesh(Key key) const {
-  Teuchos::RCP<const AmanziMesh::Mesh> mesh = GetMesh_(key);
+  Teuchos::RCP<const AmanziMesh::Mesh> mesh;
+  if (key.empty()) {
+    mesh = GetMesh_("domain");
+  } else {
+    mesh = GetMesh_(key);
+  }
   if (mesh == Teuchos::null) {
     std::stringstream messagestream;
     messagestream << "Mesh " << key << " does not exist in the state.";

@@ -569,7 +569,17 @@ class Mesh {
   //
   // Epetra maps
   //------------
-
+  const Epetra_Map& map(Entity_kind kind, bool include_ghost) const {
+    if (kind == CELL) return cell_map(include_ghost);
+    else if (kind == FACE) return face_map(include_ghost);
+    else if (kind == EDGE) return edge_map(include_ghost);
+    else if (kind == NODE) return node_map(include_ghost);
+    else if (kind == BOUNDARY_FACE) return exterior_face_map(include_ghost);
+    Errors::Message mesg("No such map type.");
+    Exceptions::amanzi_throw(mesg);
+    throw(mesg);
+  }
+  
   // Get cell map
   virtual
   const Epetra_Map& cell_map(bool include_ghost) const = 0;
