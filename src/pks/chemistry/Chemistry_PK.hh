@@ -77,6 +77,9 @@ class Chemistry_PK : public PK_Physical {
   int number_minerals_;
   std::vector<std::string> mineral_names_;
 
+  int number_aqueous_kinetics_;
+  std::vector<std::string> aqueous_kinetics_names_;
+  
   int number_sorption_sites_, number_total_sorbed_;
   std::vector<std::string> sorption_site_names_;
   bool using_sorption_, using_sorption_isotherms_;

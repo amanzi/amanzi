@@ -120,6 +120,9 @@ Alquimia_PK::Alquimia_PK(Teuchos::ParameterList& pk_tree,
   number_free_ion_ = number_aqueous_components_;
   number_total_sorbed_ = number_aqueous_components_;
 
+  chem_engine_->GetAqueousKineticNames(aqueous_kinetics_names_);
+  number_aqueous_kinetics_ = aqueous_kinetics_names_.size();
+  
   // verbosity object
   vo_ = Teuchos::rcp(new VerboseObject("Chem::Alquimia:" + domain_name_, *cp_list_));
   chem_out = &*vo_;
@@ -472,7 +475,7 @@ void Alquimia_PK::XMLParameters()
 *
 ******************************************************************* */
 void Alquimia_PK::CopyToAlquimia(int cell,
-                                 AlquimiaMaterialProperties& mat_props,
+                                 AlquimiaProperties& mat_props,
                                  AlquimiaState& state,
                                  AlquimiaAuxiliaryData& aux_data)
 {
@@ -487,7 +490,7 @@ void Alquimia_PK::CopyToAlquimia(int cell,
 ******************************************************************* */
 void Alquimia_PK::CopyToAlquimia(int cell,
                                  Teuchos::RCP<const Epetra_MultiVector> aqueous_components,
-                                 AlquimiaMaterialProperties& mat_props,
+                                 AlquimiaProperties& mat_props,
                                  AlquimiaState& state,
                                  AlquimiaAuxiliaryData& aux_data)
 {
@@ -516,12 +519,15 @@ void Alquimia_PK::CopyToAlquimia(int cell,
   // minerals
   assert(state.mineral_volume_fraction.size == number_minerals_);
   assert(state.mineral_specific_surface_area.size == number_minerals_);
+  assert(mat_props.mineral_rate_cnst.size == number_minerals_);
 
   if (number_minerals_ > 0) {
     const Epetra_MultiVector& mineral_vf = *S_->GetFieldData(min_vol_frac_key_)->ViewComponent("cell", true);
     const Epetra_MultiVector& mineral_ssa = *S_->GetFieldData(min_ssa_key_)->ViewComponent("cell", true);
+    const Epetra_MultiVector& mineral_rate = *S_->GetFieldData("mineral_rate_constant")->ViewComponent("cell", true);
     for (unsigned int i = 0; i < number_minerals_; ++i) {
       state.mineral_volume_fraction.data[i] = mineral_vf[i][cell];
+      mat_props.mineral_rate_cnst.data[i] = mineral_rate[i][cell];
       state.mineral_specific_surface_area.data[i] = mineral_ssa[i][cell];
     }
   }
@@ -581,6 +587,15 @@ void Alquimia_PK::CopyToAlquimia(int cell,
       mat_props.langmuir_b.data[i] = isotherm_langmuir_b[i][cell];
     }
   }
+  
+  // first order reaction rate cnst
+  if (number_aqueous_kinetics_ > 0) {
+    const Epetra_MultiVector& aqueous_kinetics_rate = *S_->GetFieldData("first_order_decay_constant")->ViewComponent("cell", true);
+    for (unsigned int i = 0; i < number_aqueous_kinetics_; ++i) {
+      mat_props.aqueous_kinetic_rate_cnst.data[i] = aqueous_kinetics_rate[i][cell];
+    }
+  }
+
 }
 
 
@@ -589,7 +604,7 @@ void Alquimia_PK::CopyToAlquimia(int cell,
 ******************************************************************* */
 void Alquimia_PK::CopyAlquimiaStateToAmanzi(
     const int cell,
-    const AlquimiaMaterialProperties& mat_props,
+    const AlquimiaProperties& mat_props,
     const AlquimiaState& state,
     const AlquimiaAuxiliaryData& aux_data,
     const AlquimiaAuxiliaryOutputData& aux_output,
@@ -677,7 +692,7 @@ void Alquimia_PK::CopyAlquimiaStateToAmanzi(
 x * 
 ******************************************************************* */
 void Alquimia_PK::CopyFromAlquimia(const int cell,
-                                   const AlquimiaMaterialProperties& mat_props,
+                                   const AlquimiaProperties& mat_props,
                                    const AlquimiaState& state,
                                    const AlquimiaAuxiliaryData& aux_data,
                                    const AlquimiaAuxiliaryOutputData& aux_output,
@@ -705,10 +720,12 @@ void Alquimia_PK::CopyFromAlquimia(const int cell,
   if (number_minerals_ > 0) {
     const Epetra_MultiVector& mineral_vf = *S_->GetFieldData(min_vol_frac_key_)->ViewComponent("cell", true);
     const Epetra_MultiVector& mineral_ssa = *S_->GetFieldData(min_ssa_key_)->ViewComponent("cell", true);
+    const Epetra_MultiVector& mineral_rate = *S_->GetFieldData("mineral_rate_constant")->ViewComponent("cell", true);
 
     for (int i = 0; i < number_minerals_; ++i) {
       mineral_vf[i][cell] = state.mineral_volume_fraction.data[i];
       mineral_ssa[i][cell] = state.mineral_specific_surface_area.data[i];
+      mineral_rate[i][cell] = mat_props.mineral_rate_cnst.data[i];
     }
   }
 
@@ -768,7 +785,7 @@ int Alquimia_PK::AdvanceSingleCell(
     double dt, Teuchos::RCP<Epetra_MultiVector>& aqueous_components,
     int cell)
 {
-  // Copy the state and material information from Amanzi's state within 
+  // Copy the state and property information from Amanzi's state within 
   // this cell to Alquimia.
   CopyToAlquimia(cell, aqueous_components, 
                  alq_mat_props_, alq_state_, alq_aux_data_);

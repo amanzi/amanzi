@@ -20,11 +20,11 @@
 #include <vector>
 #include <map>
 
-#include "alquimia_memory.h"
-#include "alquimia_util.h"
-#include "alquimia_constants.h"
-#include "alquimia_containers.h"
-#include "alquimia_interface.h"
+#include "alquimia/alquimia_memory.h"
+#include "alquimia/alquimia_util.h"
+#include "alquimia/alquimia_constants.h"
+#include "alquimia/alquimia_containers.h"
+#include "alquimia/alquimia_interface.h"
 
 namespace Amanzi {
 namespace AmanziChemistry {
@@ -33,7 +33,7 @@ namespace AmanziChemistry {
 struct GeochemicalConditionData
 {
   bool processed;
-  AlquimiaMaterialProperties mat_props;
+  AlquimiaProperties mat_props;
   AlquimiaGeochemicalCondition condition;
   AlquimiaState chem_state;
   AlquimiaAuxiliaryData aux_data;
@@ -73,19 +73,21 @@ class ChemistryEngine {
   void GetIsothermSpeciesNames(std::vector<std::string>& species_names) const;
   int NumFreeIonSpecies() const;
   void GetAuxiliaryOutputNames(std::vector<std::string>& aux_names) const;
-
+  int NumAqueousKinetics() const;
+  void GetAqueousKineticNames(std::vector<std::string>& kinetics_names) const;
+  
   // Returns a reference to a "sizes" object that can be queried to find the sizes of the various 
   // arrays representing the geochemical state within the engine.
   const AlquimiaSizes& Sizes() const;
 
   // Initializes the data structures that hold the chemical state information.
-  void InitState(AlquimiaMaterialProperties& mat_props,
+  void InitState(AlquimiaProperties& mat_props,
                  AlquimiaState& chem_state, 
                  AlquimiaAuxiliaryData& aux_data,
                  AlquimiaAuxiliaryOutputData& aux_output);
                  
   // Frees the data structures that hold the chemical state information.
-  void FreeState(AlquimiaMaterialProperties& mat_props,
+  void FreeState(AlquimiaProperties& mat_props,
                  AlquimiaState& chem_state,
                  AlquimiaAuxiliaryData& aux_data,
                  AlquimiaAuxiliaryOutputData& aux_output);
@@ -122,7 +124,7 @@ class ChemistryEngine {
   // concentrations in the array matches that of the species names returned by GetSpeciesNames.
   void EnforceCondition(const std::string& condition_name,
                         const double time,
-                        const AlquimiaMaterialProperties& mat_props,
+                        const AlquimiaProperties& mat_props,
                         AlquimiaState& chem_state,
                         AlquimiaAuxiliaryData& aux_data,
                         AlquimiaAuxiliaryOutputData& aux_output);
@@ -132,7 +134,7 @@ class ChemistryEngine {
   // returned by GetSpeciesNames. Returns true if the advance is successful, 
   // false if it fails.
   bool Advance(const double delta_time,
-               const AlquimiaMaterialProperties& mat_props,
+               const AlquimiaProperties& mat_props,
                AlquimiaState& chem_state,
                AlquimiaAuxiliaryData& aux_data,
                AlquimiaAuxiliaryOutputData& aux_output,

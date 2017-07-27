@@ -64,8 +64,17 @@ def GetXY_PFloTran(path,root,time,comp):
 if __name__ == "__main__":
 
     import os
+    try:
+        sys.path.append('../../../../tools/amanzi_xml')
+    except:
+        pass
     import run_amanzi_standard
     import numpy as np
+
+    try:
+        sys.path.append('../../../../MY_TPL_BUILD/ccse/ccse-1.3.4-source/Tools/Py_util')
+    except:
+        pass
 
     # root name for problem
     root = "farea-full"
