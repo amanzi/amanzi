@@ -38,7 +38,7 @@ protected:
                       const IntVect&               iv,
                       Real                         water_density,
                       Real                         temperature,
-                      AlquimiaMaterialProperties&  mat_props,
+                      AlquimiaProperties&  mat_props,
                       AlquimiaState&               chem_state,
                       AlquimiaAuxiliaryData&       aux_input,
                       AlquimiaAuxiliaryOutputData& aux_output);
@@ -46,13 +46,13 @@ protected:
   void Alquimia_to_BL(FArrayBox& primary_species_mobile,   int sPrimMob,
                       FArrayBox&                   aux_data,
                       const IntVect&               iv,
-                      AlquimiaMaterialProperties&  mat_props,
+                      AlquimiaProperties&  mat_props,
                       AlquimiaState&               chem_state,
                       AlquimiaAuxiliaryData&       aux_input,
                       AlquimiaAuxiliaryOutputData& aux_output);
 
   void DumpAlquimiaStructures(std::ostream&                os,
-			      AlquimiaMaterialProperties&  mat_props,
+			      AlquimiaProperties&  mat_props,
 			      AlquimiaState&               chem_state,
 			      AlquimiaAuxiliaryData&       aux_input,
 			      AlquimiaAuxiliaryOutputData& aux_output);
@@ -61,7 +61,7 @@ protected:
   int nthreads;
 
   std::vector<AlquimiaState> alquimia_state;
-  std::vector<AlquimiaMaterialProperties> alquimia_material_properties;
+  std::vector<AlquimiaProperties> alquimia_properties;
   std::vector<AlquimiaAuxiliaryData> alquimia_aux_in;
   std::vector<AlquimiaAuxiliaryOutputData> alquimia_aux_out;
   const AlquimiaSizes& alq_sizes;

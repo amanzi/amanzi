@@ -97,9 +97,11 @@ bool FlowReactiveTransport_PK::AdvanceStep(double t_old, double t_new, bool rein
       S_->set_intermediate_time(t_old + dt_done + dt_next);
       sub_pks_[slave_]->CommitStep(t_old + dt_done, t_old + dt_done + dt_next, S_);
       dt_done += dt_next;
+      //allow dt to grow only when success
+      dt_next = sub_pks_[slave_]->get_dt();
     }
 
-    dt_next = sub_pks_[slave_]->get_dt();
+    //dt_next = sub_pks_[slave_]->get_dt();
 
     // check for done condition
     done = (std::abs(t_old + dt_done - t_new) / (t_new - t_old) < 0.1*min_dt_) || // finished the step

@@ -37,7 +37,7 @@
                     <primary coefficient_of_diffusion="1.0E-9">Na+</primary>
                     <primary coefficient_of_diffusion="1.0E-9">SiO2(aq)</primary>
                     <primary coefficient_of_diffusion="1.0E-9">SO4--</primary>
-                    <primary backward_rate="0.0" coefficient_of_diffusion="1.0E-9" forward_rate="1.78577e-09 ">Tritium</primary>
+                    <primary backward_rate="0.0" coefficient_of_diffusion="1.0E-9" first_order_decay_constant="1.78577e-09 ">Tritium</primary>
                     <primary coefficient_of_diffusion="1.0E-9">NO3-</primary>
                     <primary coefficient_of_diffusion="1.0E-9">UO2++</primary>
                 </primaries>
@@ -87,14 +87,14 @@
         </liquid_phase>
         <solid_phase>
             <minerals>
-                <mineral rate_constant="-13.345">Quartz</mineral>
-                <mineral rate_constant="-7.94">Goethite</mineral>
-                <mineral alpha="0.777" prefactor_species="H+" rate_constant="-12.967">Kaolinite</mineral>
-                <mineral rate_constant="2.0">Schoepite</mineral>
-                <mineral rate_constant="-11.5">Gibbsite</mineral>
-                <mineral rate_constant="-8.0">Jurbanite</mineral>
-                <mineral rate_constant="-8.0">Basaluminite</mineral>
-                <mineral rate_constant="-12.135">Opal</mineral>
+                <mineral rate_constant="4.51856E-10">Quartz</mineral>
+                <mineral rate_constant="1.14815E-04">Goethite</mineral>
+                <mineral alpha="0.777" prefactor_species="H+" rate_constant="1.07895E-09">Kaolinite</mineral>
+                <mineral rate_constant="1.00000E+06">Schoepite</mineral>
+                <mineral rate_constant="3.16228E-08">Gibbsite</mineral>
+                <mineral rate_constant="1.0e-4">Jurbanite</mineral>
+                <mineral rate_constant="1.0e-4">Basaluminite</mineral>
+                <mineral rate_constant="7.32825E-09">Opal</mineral>
             </minerals>
         </solid_phase>
         <gas_phase>

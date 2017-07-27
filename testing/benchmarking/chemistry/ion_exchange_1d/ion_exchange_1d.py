@@ -51,6 +51,10 @@ def GetXY_AmanziS(path,root,time,comp):
         x = np.zeros( (nx), dtype=np.float64)
         y = np.zeros( (nx), dtype=np.float64)
         (y, x, npts, err) = fsnapshot.fplotfile_get_data_1d(plotfile, comp, y, x)
+
+        x = np.array(xrange(100))
+        x = x + 0.5
+
     else:
         x = np.zeros( (0), dtype=np.float64)
         y = np.zeros( (0), dtype=np.float64)
@@ -104,9 +108,18 @@ def GetXY_CrunchFlow(path,root,cf_file,comp,ignore):
 
 if __name__ == "__main__":
 
-    import os
+    import os, sys
+    try:
+        sys.path.append('../../../../tools/amanzi_xml')
+    except:
+        pass
     import run_amanzi_standard
     import numpy as np
+
+    try:
+        sys.path.append('../../../../MY_TPL_BUILD/ccse/ccse-1.3.4-source/Tools/Py_util')
+    except:
+        pass
 
     # root name for problem
     root = "ion-exchange"
@@ -186,10 +199,19 @@ if __name__ == "__main__":
                          'total_sorbed.cell.2', \
                          'total_sorbed.cell.3']
 
-    amanzi_compS      = ['Na+_Aqueous_Concentration', \
-                         'Ca++_Aqueous_Concentration', \
-                         'Mg++_Aqueous_Concentration', \
-                         'Cl-_Aqueous_Concentration']
+#    amanzi_compS      = ['Na+_Aqueous_Concentration', \
+#                         'Ca++_Aqueous_Concentration', \
+#                         'Mg++_Aqueous_Concentration', \
+#                         'Cl-_Aqueous_Concentration']
+#    amanzi_sorbS      = ['Na+_Sorbed_Concentration', \
+#                         'Ca++_Sorbed_Concentration', \
+#                         'Mg++_Sorbed_Concentration', \
+#                         'Cl-_Sorbed_Concentration']
+
+    amanzi_compS      = ['Na+_water_Concentration', \
+                         'Ca++_water_Concentration', \
+                         'Mg++_water_Concentration', \
+                         'Cl-_water_Concentration']
     amanzi_sorbS      = ['Na+_Sorbed_Concentration', \
                          'Ca++_Sorbed_Concentration', \
                          'Mg++_Sorbed_Concentration', \
@@ -240,8 +262,9 @@ if __name__ == "__main__":
 
     except: 
         alq = False
-  
-    try:
+
+    if(0):
+    ##try:
 
         # Amanzi-Alquimia-Crunch
         input_filename = os.path.join("amanzi-u-1d-"+root+"-alq-crunch.xml")
@@ -261,8 +284,8 @@ if __name__ == "__main__":
               v_amanzi_alquimia_crunch[i][j] = c_amanzi_alquimia_crunch
 
         alq_crunch = True
-
-    except: 
+    else:
+    ##except: 
         alq_crunch = False
 
 
@@ -270,10 +293,10 @@ if __name__ == "__main__":
     
     # +pflotran
     try:
-        input_filename = os.path.join("amanzi-s-1d-ion-exchange-alq.xml")
+        input_filename = os.path.join("amanzi-s-1d-ion-exchange-alq-pflo.xml")
         path_to_amanziS = "struct_amanzi-output-pflo"
         run_amanzi_standard.run_amanzi(input_filename, 1, [], path_to_amanziS)
-        root_amanziS = "plt00051"
+        root_amanziS = "plt00036"
         #compS = "Na+_Aqueous_Concentration"
         #x_amanziS, c_amanziS = GetXY_AmanziS(path_to_amanziS,root_amanziS,time,compS)
 
@@ -301,7 +324,7 @@ if __name__ == "__main__":
         input_filename = os.path.join("amanzi-s-1d-ion-exchange-alq-crunch.xml")
         path_to_amanziS = "struct_amanzi-output-crunch"
         run_amanzi_standard.run_amanzi(input_filename, 1, [], path_to_amanziS)
-        root_amanziS = "plt00051"
+        root_amanziS = "plt00036"
         #compS = "Na+_Aqueous_Concentration"
         #x_amanziS, c_amanziS = GetXY_AmanziS(path_to_amanziS,root_amanziS,time,compS)
 
@@ -383,13 +406,13 @@ if __name__ == "__main__":
     if (struct>0):
 
         for j in range(len(amanzi_compS)):
-            ax[j].plot(x_amanziS, u_amanziS[j],'g-')
+            ax[j].plot(x_amanziS, u_amanziS[j],'g-')#,label='AmanziS+Alq(PFT)')
             bx[j].plot(x_amanziS, v_amanziS[j],'g-',label='AmanziS+Alq(PFT)')
 
     if (struct_c > 0):
         
         for j in range(len(amanzi_compS)):
-            ax[j].plot(x_amanziS_c, u_amanziS_c[j],'g*')      
+            ax[j].plot(x_amanziS_c, u_amanziS_c[j],'g*')#,label='AmanziS+Alq(CF)')
             bx[j].plot(x_amanziS_c, v_amanziS_c[j],'g*',label='AmanziS+Alq(CF)')
 
     # axes
