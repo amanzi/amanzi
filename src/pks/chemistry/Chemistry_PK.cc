@@ -228,7 +228,7 @@ void Chemistry_PK::Initialize(const Teuchos::Ptr<State>& S)
 
   // Aqueous kinetics
   if (number_aqueous_kinetics_ > 0) {
-    InitializeField_("first_order_decay_constant", 0.0);
+    InitializeField(S_, passwd_, "first_order_decay_constant", 0.0);
   }
   
   // Ion exchange sites: default to 1

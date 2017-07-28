@@ -101,13 +101,23 @@ if (BUILD_TESTS AND ENABLE_Unstructured)
     # Copy test directory files if any out of source build
     if (NOT (${CMAKE_SOURCE_DIR} EQUAL ${CMAKE_BINARY_DIR}))
         file(GLOB DataFiles "${CHEMPK_SOURCE_DIR}/test/*.xml"
-                            "${CHEMPK_SOURCE_DIR}/test/*.bgd")
+                            "${CHEMPK_SOURCE_DIR}/test/*.bgd"
+                            "${CHEMPK_SOURCE_DIR}/test/*.in"
+                            "${CHEMPK_SOURCE_DIR}/test/*.dat")
         file(COPY ${DataFiles} DESTINATION ${CHEMPK_BINARY_DIR}/test/)
     endif()
 
     add_amanzi_test(chemistry_amanzi_pk chemistry_amanzi_pk
                     KIND int
                     SOURCE test/Main.cc test/chemistry_amanzi_pk.cc
+                    LINK_LIBS chemistry_pk state pks data_structures
+                              mesh_functions mesh mesh_factory error_handling 
+                              interface
+                              ${UnitTest_LIBRARIES} ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES})
+
+    add_amanzi_test(chemistry_alquimia_pk chemistry_alquimia_pk
+                    KIND int
+                    SOURCE test/Main.cc test/chemistry_alquimia_pk.cc
                     LINK_LIBS chemistry_pk state pks data_structures
                               mesh_functions mesh mesh_factory error_handling 
                               interface

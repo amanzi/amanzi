@@ -91,7 +91,7 @@ ChemistryEngine::ChemistryEngine(const std::string& engineName,
   if (chem_engine_name_ != "PFloTran" && chem_engine_name_ != "CrunchFlow")
   {
     msg << "ChemistryEngine: Unsupported chemistry engine: '" << chem_engine_name_ << "'\n";
-    msg << "  Options are 'PFlotran' or 'CrunchFlow'.\n";
+    msg << "  Options are 'PFloTran' or 'CrunchFlow'.\n";
     Exceptions::amanzi_throw(msg);
   }
 
