@@ -78,11 +78,11 @@ CHEMISTRY
     Opal
   /
 
-  GENERAL_REACTION
+  RADIOACTIVE_DECAY_REACTION
     REACTION Tritium <-> 
-    FORWARD_RATE 1.78577e-09 : [s^-1] half life of 12.3 y
-    BACKWARD_RATE 0.d0
+    RATE_CONSTANT 1.78577e-09
   /
+
 
   MINERAL_KINETICS
     Quartz

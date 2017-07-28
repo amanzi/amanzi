@@ -38,7 +38,7 @@ TEST(INTERFACE_LIBRARY_INIT) {
   CHECK(engine->NumSurfaceSites() == 1);
   CHECK(engine->NumIonExchangeSites() == 1);
   CHECK(engine->NumIsothermSpecies() == 0);
-  CHECK(engine->NumAqueousKinetics() == 1);
+  CHECK(engine->NumAqueousKinetics() == 0);
 
   std::vector<std::string> species;
   engine->GetPrimarySpeciesNames(species);
@@ -70,10 +70,7 @@ TEST(INTERFACE_LIBRARY_INIT) {
 
   std::vector<std::string> names;
   engine->GetAqueousKineticNames(names);
-  CHECK(names.size() == 1);
-  std::cout << "aqueous kinetic names: " << names[0] << " size=" << names[0].size() << std::endl;
-
-  // engine->CreateCondition("background"); 
+  CHECK(names.size() == 0);
 }  
 
 
@@ -93,7 +90,7 @@ TEST(INTERFACE_LIBRARY_ADVANCE) {
 
   mat_props.volume = 0.1;
   mat_props.saturation = 1.0;
-  mat_props.aqueous_kinetic_rate_cnst.data[0] = 1.78577e-09;
+  // mat_props.aqueous_kinetic_rate_cnst.data[0] = 1.78577e-09;
   {
     std::vector<double> data(
       {1.3345e+05, -7.94e+04, -1.2967e+05, 2.0e+04, -1.15e+05, -8.0e+04, -8.0e+04, -1.2135e+05});
