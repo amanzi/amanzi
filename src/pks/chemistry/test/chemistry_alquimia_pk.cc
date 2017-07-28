@@ -7,11 +7,8 @@
   provided in the top-level COPYRIGHT file.
 */
 
-#include <cstdlib>
 #include <cmath>
-#include <iostream>
 #include <vector>
-#include <typeinfo>
 
 #include <UnitTest++.h>
 
@@ -28,11 +25,13 @@
 #include "Alquimia_PK.hh"
 
 
-TEST(INTERFACE_LIBRARY) {
+TEST(INTERFACE_LIBRARY_INIT) {
   using namespace Amanzi;
   using namespace Amanzi::AmanziChemistry;
 
   auto engine = Teuchos::rcp(new AmanziChemistry::ChemistryEngine("PFloTran", "test/chemistry_alquimia_pk.in"));
+  CHECK(engine->Name() == "PFloTran");
+
   CHECK(engine->NumPrimarySpecies() == 14);
   CHECK(engine->NumAqueousComplexes() == 37);
   CHECK(engine->NumSorbedSpecies() == 14);
@@ -76,3 +75,70 @@ TEST(INTERFACE_LIBRARY) {
 
   // engine->CreateCondition("background"); 
 }  
+
+
+TEST(INTERFACE_LIBRARY_ADVANCE) {
+  using namespace Amanzi;
+  using namespace Amanzi::AmanziChemistry;
+
+  auto engine = Teuchos::rcp(new AmanziChemistry::ChemistryEngine("PFloTran", "test/chemistry_alquimia_pk.in"));
+
+  AlquimiaState state, state_tmp;
+  AlquimiaProperties mat_props;
+  AlquimiaAuxiliaryData aux_data;
+  AlquimiaAuxiliaryOutputData aux_output;
+
+  engine->InitState(mat_props, state_tmp, aux_data, aux_output);
+  engine->InitState(mat_props, state, aux_data, aux_output);
+
+  mat_props.volume = 0.1;
+  mat_props.saturation = 1.0;
+  mat_props.aqueous_kinetic_rate_cnst.data[0] = 1.78577e-09;
+  {
+    std::vector<double> data(
+      {1.3345e+05, -7.94e+04, -1.2967e+05, 2.0e+04, -1.15e+05, -8.0e+04, -8.0e+04, -1.2135e+05});
+    for (int i = 0; i < 8; ++i) mat_props.mineral_rate_cnst.data[i] = data[i];
+  }
+
+  state.water_density = 998.0;
+  state.porosity = 0.2;
+  state.cation_exchange_capacity.data[0] = 2.750;
+  state.surface_site_density.data[0] = 1.56199e-01;
+
+  {
+    std::vector<double> data(
+      {2.95786307706898224e-06, 2.21343191783434494e-08, 1.0e-05, 9.98922451603534434e-03,
+      2.52312817040197963e-16, 1.21461876452330652e-05, 3.32e-05, 5.35e-03,
+      2.78e-04, 1.77282139025972417e-04, 2.25e-05, 1.0e-15, 1.0e-03, 1.25e-10});
+    for (int i = 0; i < 14; ++i) state.total_mobile.data[i] = data[i];
+    for (int i = 0; i < 14; ++i) state.total_immobile.data[i] = 0.0;
+  }
+
+  {
+    std::vector<double> data({8.8e-01, 1.6e-02, 1.1e-01, 0.0, 0.0, 0.0, 0.0});
+    for (int i = 0; i < 8; ++i) state.mineral_volume_fraction.data[i] = data[i];
+  }
+
+  {
+    std::vector<double> data(
+      {3.2623e+05, 1.10763e+06, 5.90939e+06, 10.0, 10.0, 10.0, 10.0, 10.0});
+    for (int i = 0; i < 8; ++i) state.mineral_specific_surface_area.data[i] = data[i];
+  }
+
+  CopyAlquimiaState(&state, &state_tmp);
+  engine->EnforceCondition("background", 0.0, mat_props, state, aux_data, aux_output);
+
+  // fancy output
+  std::vector<std::string> species;
+  engine->GetPrimarySpeciesNames(species);
+
+  for (int i = 0; i < 14; ++i) {
+    double v0 = state_tmp.total_mobile.data[i];
+    double v1 = state.total_mobile.data[i];
+    double diff = 200 * fabs(v0-v1) / (fabs(v0) + fabs(v1) + 1e-30);
+
+    CHECK(diff < 0.1);
+    printf("%10s  %14.6g  -> %12.6g   diff:%5.2f%\n", species[i].c_str(), v0, v1, diff);
+  } 
+}
+
