@@ -7,6 +7,7 @@
   provided in the top-level COPYRIGHT file.
 
   Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
+           Sergi Molins <smolins@lbl.gov>
 */
 
 #include <algorithm>

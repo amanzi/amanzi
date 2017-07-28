@@ -38,6 +38,8 @@ TEST(INTERFACE_LIBRARY) {
   CHECK(engine->NumSorbedSpecies() == 14);
   CHECK(engine->NumSurfaceSites() == 1);
   CHECK(engine->NumIonExchangeSites() == 1);
+  CHECK(engine->NumIsothermSpecies() == 0);
+  CHECK(engine->NumAqueousKinetics() == 1);
 
   std::vector<std::string> species;
   engine->GetPrimarySpeciesNames(species);
@@ -58,4 +60,19 @@ TEST(INTERFACE_LIBRARY) {
   engine->GetIonExchangeNames(ions);
   CHECK(ions.size() == 1);
   CHECK(ions[0] == "X-");
+
+  engine->GetIsothermSpeciesNames(species);
+  CHECK(species.size() == 0);
+
+  std::vector<std::string> aux;
+  engine->GetAuxiliaryOutputNames(aux);
+  CHECK(aux.size() == 119);
+  CHECK(aux[0] == "pH");
+
+  std::vector<std::string> names;
+  engine->GetAqueousKineticNames(names);
+  CHECK(names.size() == 1);
+  std::cout << "aqueous kinetic names: " << names[0] << " size=" << names[0].size() << std::endl;
+
+  // engine->CreateCondition("background"); 
 }  

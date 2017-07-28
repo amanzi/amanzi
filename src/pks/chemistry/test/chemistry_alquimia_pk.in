@@ -137,7 +137,7 @@ CHEMISTRY
   / :sorption
 
 
-  DATABASE farea-full.dat
+  DATABASE test/chemistry_alquimia_pk.dat
   LOG_FORMULATION
   ACTIVITY_COEFFICIENTS TIMESTEP
 
