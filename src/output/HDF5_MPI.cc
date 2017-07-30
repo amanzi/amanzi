@@ -1,6 +1,17 @@
+/*
+  Output
+
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
+
+  Author: Erin Baker
+*/
+
 #include "Element_types.hh"
 
-#include "hdf5mpi_mesh.hh"
+#include "HDF5_MPI.hh"
 #include <iostream>
 
 //TODO(barker): clean up debugging output
@@ -9,7 +20,6 @@
 //TODO(barker): clean up formating
 
 namespace Amanzi {
-
 
 HDF5_MPI::HDF5_MPI(const Epetra_MpiComm &comm)
     : viz_comm_(comm),
@@ -27,6 +37,7 @@ HDF5_MPI::HDF5_MPI(const Epetra_MpiComm &comm)
   NumElems_ = 0;
   ConnLength_ = 0;
 }
+
 
 HDF5_MPI::HDF5_MPI(const Epetra_MpiComm &comm, std::string dataFilename)
     : viz_comm_(comm),
@@ -47,10 +58,12 @@ HDF5_MPI::HDF5_MPI(const Epetra_MpiComm &comm, std::string dataFilename)
   ConnLength_ = 0;
 }
 
+
 HDF5_MPI::~HDF5_MPI()
 {
   parallelIO_IOgroup_cleanup(&IOgroup_);
 }
+
 
 void HDF5_MPI::createMeshFile(Teuchos::RCP<const AmanziMesh::Mesh> mesh, std::string filename)
 {
@@ -87,8 +100,6 @@ void HDF5_MPI::createMeshFile(Teuchos::RCP<const AmanziMesh::Mesh> mesh, std::st
     // start xmf files xmlObjects stored inside functions
     createXdmfMeshVisit_();
   }
-
-
 }
 
 
@@ -381,7 +392,6 @@ void HDF5_MPI::writeMesh(const double time, const int iteration)
 
   mesh_written_ = true;
   static_mesh_cycle_ = iteration;
-
 }
 
 
@@ -608,11 +618,11 @@ void HDF5_MPI::writeDualMesh(const double time, const int iteration)
 
   mesh_written_ = true;
   static_mesh_cycle_ = iteration;
-
 }
 
-void HDF5_MPI::createDataFile(std::string soln_filename) {
 
+void HDF5_MPI::createDataFile(std::string soln_filename)
+{
   std::string h5filename, PVfilename, Vfilename;
   herr_t status;
 
@@ -643,7 +653,9 @@ void HDF5_MPI::createDataFile(std::string soln_filename) {
   }
 }
 
-void HDF5_MPI::open_h5file() {
+
+void HDF5_MPI::open_h5file()
+{
   data_file_ = parallelIO_open_file(H5DataFilename_.c_str(), &IOgroup_,
                                     FILE_READWRITE);
   if (data_file_ < 0) {
@@ -658,8 +670,8 @@ void HDF5_MPI::close_h5file() {
 }
 
 
-void HDF5_MPI::createTimestep(const double time, const int iteration) {
-
+void HDF5_MPI::createTimestep(const double time, const int iteration)
+{
   std::ofstream of;
 
   if (TrackXdmf() && viz_comm_.MyPID() == 0) {
@@ -690,7 +702,9 @@ void HDF5_MPI::createTimestep(const double time, const int iteration) {
   setTime(time);
 }
 
-void HDF5_MPI::endTimestep() {
+
+void HDF5_MPI::endTimestep()
+{
   if (TrackXdmf() && viz_comm_.MyPID() == 0) {
     //std::ofstream of;
     //std::stringstream filename;
@@ -700,6 +714,7 @@ void HDF5_MPI::endTimestep() {
     of_timestep_.close();
   }
 }
+
 
 void HDF5_MPI::writeAttrString(const std::string value, const std::string attrname)
 {
@@ -746,6 +761,7 @@ void HDF5_MPI::writeAttrReal(double value, const std::string attrname)
   delete [] loc_h5path;
   delete [] loc_attrname;
 }
+
 
 void HDF5_MPI::writeAttrReal(double value, const std::string attrname, std::string h5path)
 {
@@ -870,6 +886,7 @@ void HDF5_MPI::readAttrString(std::string &value, const std::string attrname)
   delete [] loc_h5path;
   delete [] loc_attrname;
 }
+
 
 void HDF5_MPI::readAttrReal(double &value, const std::string attrname)
 {
@@ -998,6 +1015,7 @@ void HDF5_MPI::writeDataString(char **x, int num_entries, const std::string varn
   delete [] h5path;
 }
 
+
 void HDF5_MPI::readDataString(char ***x, int *num_entries, const std::string varname)
 {
   char *h5path = new char [varname.size()+1];
@@ -1022,44 +1040,44 @@ void HDF5_MPI::readDataString(char ***x, int *num_entries, const std::string var
   delete [] h5path;
 }
 
-void HDF5_MPI::writeDataReal(const Epetra_Vector &x, const std::string varname)
-{
+
+void HDF5_MPI::writeDataReal(const Epetra_Vector &x, const std::string varname) {
   writeFieldData_(x, varname, PIO_DOUBLE, "NONE");
 }
 
-void HDF5_MPI::writeDataInt(const Epetra_Vector &x, const std::string varname)
-{
+
+void HDF5_MPI::writeDataInt(const Epetra_Vector &x, const std::string varname) {
   writeFieldData_(x, varname, PIO_INTEGER, "NONE");
 }
 
+
 void HDF5_MPI::writeCellDataReal(const Epetra_Vector &x,
-                                 const std::string varname)
-{
+                                 const std::string varname) {
   writeFieldData_(x, varname, PIO_DOUBLE, "Cell");
 }
 
+
 void HDF5_MPI::writeCellDataInt(const Epetra_Vector &x,
-                                const std::string varname)
-{
+                                const std::string varname) {
   writeFieldData_(x, varname, PIO_INTEGER, "Cell");
 }
 
+
 void HDF5_MPI::writeNodeDataReal(const Epetra_Vector &x,
-                                 const std::string varname)
-{
+                                 const std::string varname) {
   writeFieldData_(x, varname, PIO_DOUBLE, "Node");
 }
 
+
 void HDF5_MPI::writeNodeDataInt(const Epetra_Vector &x,
-                                const std::string varname)
-{
+                                const std::string varname) {
   writeFieldData_(x, varname, PIO_INTEGER, "Node");
 }
 
 
 void HDF5_MPI::writeFieldData_(const Epetra_Vector &x, std::string varname,
-                               datatype_t type, std::string loc) {
-
+                               datatype_t type, std::string loc)
+{
   // write field data
   double *data;
   int err = x.ExtractView(&data);
@@ -1111,14 +1129,14 @@ void HDF5_MPI::writeFieldData_(const Epetra_Vector &x, std::string varname,
   delete [] tmp;
 }
 
-bool HDF5_MPI::readData(Epetra_Vector &x, const std::string varname)
-{
+
+bool HDF5_MPI::readData(Epetra_Vector &x, const std::string varname) {
   return readFieldData_(x, varname, PIO_DOUBLE);
 }
 
 
-bool HDF5_MPI::checkFieldData_(std::string varname) {
-
+bool HDF5_MPI::checkFieldData_(std::string varname)
+{
   char *h5path = new char [varname.size()+1];
   strcpy(h5path,varname.c_str());
   bool exists=false;
@@ -1144,8 +1162,8 @@ bool HDF5_MPI::checkFieldData_(std::string varname) {
 
 
 bool HDF5_MPI::readFieldData_(Epetra_Vector &x, std::string varname,
-                              datatype_t type) {
-
+                              datatype_t type)
+{
   char *h5path = new char [varname.size()+1];
   strcpy(h5path,varname.c_str());
 
@@ -1162,7 +1180,7 @@ bool HDF5_MPI::readFieldData_(Epetra_Vector &x, std::string varname,
   }
 
 
-  int  globaldims[ndims], localdims[ndims];
+  int globaldims[ndims], localdims[ndims];
   parallelIO_get_dataset_dims(globaldims, data_file_, h5path, &IOgroup_);
   localdims[0] = x.MyLength();
   localdims[1] = globaldims[1];
@@ -1179,11 +1197,11 @@ bool HDF5_MPI::readFieldData_(Epetra_Vector &x, std::string varname,
   delete [] h5path;
 
   return true;
-
 }
 
-int HDF5_MPI::getCellTypeID_(AmanziMesh::Cell_type type) {
 
+int HDF5_MPI::getCellTypeID_(AmanziMesh::Cell_type type)
+{
   //TODO(barker): how to return polyhedra?
   // cell type id's defined in Xdmf/include/XdmfTopology.h
 
@@ -1210,10 +1228,12 @@ int HDF5_MPI::getCellTypeID_(AmanziMesh::Cell_type type) {
     default:
       return 3; //unknown, for now same as polygon
   }
-
 }
 
-void HDF5_MPI::createXdmfMesh_(const std::string filename, const double time, const int iteration) {
+
+void HDF5_MPI::createXdmfMesh_(const std::string filename,
+                               const double time, const int iteration)
+{
   // TODO(barker): add error handling: can't open/write
   Teuchos::XMLObject mesh("Xdmf");
 
@@ -1232,8 +1252,8 @@ void HDF5_MPI::createXdmfMesh_(const std::string filename, const double time, co
 }
 
 
-
-void HDF5_MPI::createXdmfMeshVisit_() {
+void HDF5_MPI::createXdmfMeshVisit_()
+{
   Teuchos::XMLObject xmf("Xdmf");
   xmf.addAttribute("xmlns:xi", "http://www.w3.org/2001/XInclude");
   xmf.addAttribute("Version", "2.0");
@@ -1251,8 +1271,8 @@ void HDF5_MPI::createXdmfMeshVisit_() {
 }
 
 
-
-void HDF5_MPI::createXdmfVisit_() {
+void HDF5_MPI::createXdmfVisit_()
+{
   // TODO(barker): add error handling: can't open/write
   Teuchos::XMLObject xmf("Xdmf");
   xmf.addAttribute("xmlns:xi", "http://www.w3.org/2001/XInclude");
@@ -1270,8 +1290,9 @@ void HDF5_MPI::createXdmfVisit_() {
   xmlVisit_ = xmf;
 }
 
-Teuchos::XMLObject HDF5_MPI::addXdmfHeaderGlobal_() {
 
+Teuchos::XMLObject HDF5_MPI::addXdmfHeaderGlobal_()
+{
   Teuchos::XMLObject domain("Domain");
 
   Teuchos::XMLObject grid("Grid");
@@ -1282,7 +1303,10 @@ Teuchos::XMLObject HDF5_MPI::addXdmfHeaderGlobal_() {
   return domain;
 }
 
-Teuchos::XMLObject HDF5_MPI::addXdmfHeaderLocal_(const std::string name, const double value, const int cycle) {
+
+Teuchos::XMLObject HDF5_MPI::addXdmfHeaderLocal_(
+    const std::string name, const double value, const int cycle)
+{
   Teuchos::XMLObject domain("Domain");
 
   Teuchos::XMLObject grid("Grid");
@@ -1298,7 +1322,9 @@ Teuchos::XMLObject HDF5_MPI::addXdmfHeaderLocal_(const std::string name, const d
   return domain;
 }
 
-Teuchos::XMLObject HDF5_MPI::addXdmfTopo_(const int cycle) {
+
+Teuchos::XMLObject HDF5_MPI::addXdmfTopo_(const int cycle)
+{
   std::stringstream tmp, tmp1;
 
   // NEW MIXED MESH
@@ -1326,7 +1352,9 @@ Teuchos::XMLObject HDF5_MPI::addXdmfTopo_(const int cycle) {
   return topo;
 }
 
-Teuchos::XMLObject HDF5_MPI::addXdmfGeo_(const int cycle) {
+
+Teuchos::XMLObject HDF5_MPI::addXdmfGeo_(const int cycle)
+{
   std::stringstream tmp;
   std::stringstream tmp1;
 
@@ -1350,8 +1378,9 @@ Teuchos::XMLObject HDF5_MPI::addXdmfGeo_(const int cycle) {
   return geo;
 }
 
-void HDF5_MPI::writeXdmfVisitGrid_(std::string filename) {
 
+void HDF5_MPI::writeXdmfVisitGrid_(std::string filename)
+{
   // Create xmlObject grid
   Teuchos::XMLObject xi_include("xi:include");
   xi_include.addAttribute("href", stripFilename_(filename));
@@ -1365,8 +1394,9 @@ void HDF5_MPI::writeXdmfVisitGrid_(std::string filename) {
   node.addChild(xi_include);
 }
 
-void HDF5_MPI::writeXdmfMeshVisitGrid_(std::string filename) {
 
+void HDF5_MPI::writeXdmfMeshVisitGrid_(std::string filename)
+{
   // Create xmlObject grid
   Teuchos::XMLObject xi_include("xi:include");
   xi_include.addAttribute("href", stripFilename_(filename));
@@ -1381,9 +1411,8 @@ void HDF5_MPI::writeXdmfMeshVisitGrid_(std::string filename) {
 }
 
 
-
-Teuchos::XMLObject HDF5_MPI::findGridNode_(Teuchos::XMLObject xmlobject) {
-
+Teuchos::XMLObject HDF5_MPI::findGridNode_(Teuchos::XMLObject xmlobject)
+{
   Teuchos::XMLObject node, tmp;
 
   // Step down to child tag==Domain
@@ -1407,8 +1436,9 @@ Teuchos::XMLObject HDF5_MPI::findGridNode_(Teuchos::XMLObject xmlobject) {
   return node;
 }
 
-Teuchos::XMLObject HDF5_MPI::findMeshNode_(Teuchos::XMLObject xmlobject) {
 
+Teuchos::XMLObject HDF5_MPI::findMeshNode_(Teuchos::XMLObject xmlobject)
+{
   Teuchos::XMLObject node, tmp;
 
   // Step down to child tag==Domain
@@ -1432,10 +1462,12 @@ Teuchos::XMLObject HDF5_MPI::findMeshNode_(Teuchos::XMLObject xmlobject) {
   return node;
 }
 
+
 Teuchos::XMLObject HDF5_MPI::addXdmfAttribute_(std::string varname,
                                                std::string location,
                                                int length,
-                                               std::string h5path) {
+                                               std::string h5path)
+{
   Teuchos::XMLObject attribute("Attribute");
   attribute.addAttribute("Name", varname);
   attribute.addAttribute("Type", "Scalar");
@@ -1453,8 +1485,9 @@ Teuchos::XMLObject HDF5_MPI::addXdmfAttribute_(std::string varname,
   return attribute;
 }
 
-std::string HDF5_MPI::stripFilename_(std::string filename)  {
 
+std::string HDF5_MPI::stripFilename_(std::string filename)
+{
   std::stringstream ss(filename);
   std::string name;
   // strip for linux/unix/mac directory names
@@ -1467,7 +1500,6 @@ std::string HDF5_MPI::stripFilename_(std::string filename)  {
   return name;
 }
 
-std::string HDF5_MPI::xdmfHeader_ =
-                                                    "<?xml version=\"1.0\" ?>\n<!DOCTYPE Xdmf SYSTEM \"Xdmf.dtd\" []>\n";
+std::string HDF5_MPI::xdmfHeader_ = "<?xml version=\"1.0\" ?>\n<!DOCTYPE Xdmf SYSTEM \"Xdmf.dtd\" []>\n";
 
-} // close namespace Amanzi
+}  // namespace Amanzi

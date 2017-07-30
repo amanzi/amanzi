@@ -733,6 +733,9 @@ bool Transport_PK::AdvanceStep(double t_old, double t_new, bool reinit)
     ncycles++;
   }
 
+  // output of selected statistics
+  VV_PrintLimiterStatistics();
+
   dt_ = dt_original;  // restore the original time step (just in case)
 
   // We define tracer as the species #0 as calculate some statistics.

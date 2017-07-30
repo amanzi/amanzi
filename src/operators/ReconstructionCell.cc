@@ -78,7 +78,7 @@ void ReconstructionCell::Init(Teuchos::RCP<const Epetra_MultiVector> field,
 void ReconstructionCell::Compute()
 {
   Teuchos::RCP<Epetra_MultiVector> grad = gradient_->ViewComponent("cell", false);
-  AmanziMesh::Entity_ID_List cells;
+  AmanziGeometry::Entity_ID_List cells;
   AmanziGeometry::Point xcc(dim);
 
   WhetStone::DenseMatrix matrix(dim, dim);
@@ -87,7 +87,8 @@ void ReconstructionCell::Compute()
   for (int c = 0; c < ncells_owned; c++) {
     const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
 
-    mesh_->cell_get_face_adj_cells(c, AmanziMesh::USED, &cells);
+    // mesh_->cell_get_face_adj_cells(c, AmanziMesh::USED, &cells);
+    CellFaceAdjCellsNonManifold_(c, AmanziMesh::USED, cells);
     int ncells = cells.size();
 
     matrix.PutScalar(0.0);
@@ -129,10 +130,10 @@ void ReconstructionCell::Compute()
 * in specied cells and internal structures are not modified.
 ****************************************************************** */
 void ReconstructionCell::ComputeGradient(
-    const AmanziMesh::Entity_ID_List& ids,
+    const AmanziGeometry::Entity_ID_List& ids,
     std::vector<AmanziGeometry::Point>& gradient)
 {
-  AmanziMesh::Entity_ID_List cells;
+  AmanziGeometry::Entity_ID_List cells;
   AmanziGeometry::Point xcc(dim), grad(dim);
 
   WhetStone::DenseMatrix matrix(dim, dim);
@@ -199,7 +200,7 @@ void ReconstructionCell::ApplyLimiter(
 /* ******************************************************************
 * Apply internal limiter over set of cells.
 ****************************************************************** */
-void ReconstructionCell::ApplyLimiter(AmanziMesh::Entity_ID_List& ids,
+void ReconstructionCell::ApplyLimiter(AmanziGeometry::Entity_ID_List& ids,
                                       std::vector<AmanziGeometry::Point>& gradient)
 {
   if (limiter_id_ == OPERATOR_LIMITER_KUZMIN) {
@@ -270,6 +271,52 @@ void ReconstructionCell::PopulateLeastSquareSystem_(
   }
 }
 
-}  // namespace Transport
+
+/* ******************************************************************
+* On intersecting manifolds, we extract neighboors living in the same 
+* manifold using a smoothness criterion.
+****************************************************************** */
+void ReconstructionCell::CellFaceAdjCellsNonManifold_(
+    AmanziGeometry::Entity_ID c, AmanziMesh::Parallel_type ptype,
+    std::vector<AmanziGeometry::Entity_ID>& cells) const
+{
+  AmanziGeometry::Entity_ID_List faces, fcells;
+  std::vector<int> dirs;
+
+  mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+  int nfaces = faces.size();
+
+  cells.clear();
+
+  for (int n = 0; n < nfaces; ++n) {
+    AmanziGeometry::Entity_ID f = faces[n];
+    mesh_->face_get_cells(f, ptype, &fcells);
+    int ncells = fcells.size();
+
+    if (ncells == 2) {
+      cells.push_back(fcells[0] + fcells[1] - c);
+    } else if (ncells > 2) {
+      AmanziGeometry::Entity_ID cmax;
+      double dmax(0.0);
+      const AmanziGeometry::Point& normal0 = mesh_->face_normal(f);
+
+      for (int i = 0; i < ncells; ++i) {
+        AmanziGeometry::Entity_ID c1 = fcells[i];
+        if (c1 != c) {
+          const AmanziGeometry::Point& normal1 = mesh_->face_normal(f);
+          double d = fabs(normal0 * normal1) / norm(normal1);
+          if (d > dmax) {
+            dmax = d;
+            cmax = c1; 
+          }
+        }
+      } 
+
+      cells.push_back(cmax);
+    }
+  }
+}
+
+}  // namespace Operator
 }  // namespace Amanzi
 

@@ -1,9 +1,15 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+/*
+  Geometry
 
-// Definitions for geometry, regions.
-//
-// Author: Ethan Coon
-//
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
+
+  Author: Ethan Coon
+
+  Definitions for geometry, regions.
+*/
 
 #ifndef AMANZI_GEOMETRY_DEFS_HH_
 #define AMANZI_GEOMETRY_DEFS_HH_
@@ -55,9 +61,8 @@ const double TOL = 1.0e-08;
 // with IDs of LabeledSet regions
 const unsigned int REGION_ID_OFFSET = 59049;  
 
-
-} // namespace
-} // namespace
+}  // namespace AmanziGeometry
+}  // namespace Amanzi
 
 
 

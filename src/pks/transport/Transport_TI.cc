@@ -145,9 +145,6 @@ void Transport_PK::Functional(double t,
       }
     }
   }
-
-  // output of selected statistics
-  VV_PrintLimiterStatistics();
 }
 
 
@@ -277,9 +274,6 @@ void Transport_PK::FunctionalOld(double t,
       }
     }
   }
-
-  // output of selected statistics
-  VV_PrintLimiterStatistics();
 }
 
 }  // namespace Transport
