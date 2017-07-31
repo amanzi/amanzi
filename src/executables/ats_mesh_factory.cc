@@ -66,6 +66,12 @@ createMesh(Teuchos::ParameterList& mesh_plist,
       Exceptions::amanzi_throw(msg);
     }
     auto mesh = factory.create(file, gm);
+
+    if (mesh_plist.isParameter("build columns from set")) {
+      std::string regionname = mesh_plist.get<std::string>("build columns from set");
+      mesh->build_columns(regionname);
+    }
+
     bool deformable = mesh_plist.get<bool>("deformable mesh",false);
 
     checkVerifyMesh(mesh_plist, mesh);
@@ -149,7 +155,8 @@ createMesh(Teuchos::ParameterList& mesh_plist,
   } else if (mesh_type == "column surface") {
     Teuchos::ParameterList& column_list = mesh_plist.sublist("column surface parameters");
     std::string surface_setname = column_list.get<std::string>("subgrid set name", "surface");
-    auto parent = S.GetMesh(column_list.get<std::string>("parent domain"));
+    std::string parent_domain_name = mesh_plist.name().substr(8,mesh_plist.name().size());
+    auto parent = S.GetMesh(parent_domain_name);
     auto mesh = Teuchos::rcp(new Amanzi::AmanziMesh::MeshSurfaceCell(*parent, surface_setname));
 
     bool deformable = mesh_plist.get<bool>("deformable mesh",false);
@@ -173,15 +180,16 @@ createMesh(Teuchos::ParameterList& mesh_plist,
       Exceptions::amanzi_throw(msg);
     }
 
-    auto region = subgrid.get<std::string>("region", "ENTIRE_MESH_REGION");
-    auto parent_mesh = S.GetMesh(subgrid.get<std::string>("parent mesh", "domain"));
+    auto regionname = subgrid.get<std::string>("subgrid region name", "ENTIRE_MESH_REGION");
+    std::string parent_domain_name = subgrid.get<std::string>("parent domain", "domain");
+    auto parent_mesh = S.GetMesh(parent_domain_name);
+
     bool flyweight = subgrid.get<bool>("flyweight mesh", false);
-    
     auto comm_self = Teuchos::rcp(new Epetra_MpiComm(MPI_COMM_SELF));
     
     // for each id in the regions of the parent mesh on entity, create a subgrid mesh
     Amanzi::AmanziMesh::Entity_ID_List entities;
-    parent_mesh->get_set_entities(region, kind, Amanzi::AmanziMesh::OWNED, &entities);
+    parent_mesh->get_set_entities(regionname, kind, Amanzi::AmanziMesh::OWNED, &entities);
     const Epetra_Map& map = parent_mesh->map(kind,false);
     
     for (auto lid : entities) {
@@ -195,10 +203,18 @@ createMesh(Teuchos::ParameterList& mesh_plist,
       } else {
         subgrid_i_list = subgrid.sublist(Amanzi::Keys::cleanPListName(mesh_plist.name())+"_*");
       }
+
       subgrid_i_list.setName(name.str());
-      subgrid_i_list.set("entity kind", kind_str);
-      subgrid_i_list.set("entity LID", lid);
-      subgrid_i_list.set("subgrid set name", region);
+      Teuchos::ParameterList& subgrid_i_param_list = subgrid_i_list.sublist(
+          subgrid_i_list.get<std::string>("mesh type")+" parameters");
+      if (!subgrid_i_param_list.isParameter("entity kind"))
+        subgrid_i_param_list.set("entity kind", kind_str);
+      if (!subgrid_i_param_list.isParameter("entity LID"))
+        subgrid_i_param_list.set("entity LID", lid);
+      if (!subgrid_i_param_list.isParameter("subgrid region name"))
+        subgrid_i_param_list.set("subgrid region name", regionname);
+      if (!subgrid_i_param_list.isParameter("parent domain"))
+        subgrid_i_param_list.set("parent domain", parent_domain_name);
       createMesh(subgrid_i_list, comm_self, gm, S);
     }
 
