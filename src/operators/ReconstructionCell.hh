@@ -126,7 +126,8 @@ class ReconstructionCell : public Reconstruction {
 
  private: 
   Teuchos::RCP<const Epetra_MultiVector> flux_;  // for limiters
-  std::vector<int> upwind_cell_, downwind_cell_;
+  std::vector<std::vector<int> > upwind_cells_;  // fracture friendly 
+  std::vector<std::vector<int> > downwind_cells_;
 
   double bc_scaling_;
   int limiter_id_, poly_order_;

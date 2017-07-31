@@ -185,6 +185,9 @@ void ReconstructionCell::ComputeGradient(
 void ReconstructionCell::ApplyLimiter(
     const std::vector<int>& bc_model, const std::vector<double>& bc_value)
 {
+  ASSERT(upwind_cells_.size() > 0);
+  ASSERT(downwind_cells_.size() > 0);
+
   limiter_ = Teuchos::rcp(new Epetra_Vector(mesh_->cell_map(true)));
   if (limiter_id_ == OPERATOR_LIMITER_BARTH_JESPERSEN) {
     LimiterBarthJespersen_(bc_model, bc_value, limiter_);
@@ -296,14 +299,15 @@ void ReconstructionCell::CellFaceAdjCellsNonManifold_(
     if (ncells == 2) {
       cells.push_back(fcells[0] + fcells[1] - c);
     } else if (ncells > 2) {
-      AmanziGeometry::Entity_ID cmax;
+      int dir;
       double dmax(0.0);
-      const AmanziGeometry::Point& normal0 = mesh_->face_normal(f);
+      AmanziGeometry::Entity_ID cmax;
+      const AmanziGeometry::Point& normal0 = mesh_->face_normal(f, false, c, &dir);
 
       for (int i = 0; i < ncells; ++i) {
         AmanziGeometry::Entity_ID c1 = fcells[i];
         if (c1 != c) {
-          const AmanziGeometry::Point& normal1 = mesh_->face_normal(f);
+          const AmanziGeometry::Point& normal1 = mesh_->face_normal(f, false, c1, &dir);
           double d = fabs(normal0 * normal1) / norm(normal1);
           if (d > dmax) {
             dmax = d;

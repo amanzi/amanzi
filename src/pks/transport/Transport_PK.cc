@@ -1478,7 +1478,7 @@ bool Transport_PK::ComputeBCs_(
 
 /* *******************************************************************
 * Identify flux direction based on orientation of the face normal 
-* and sign of the  Darcy velocity.                               
+* and sign of the Darcy velocity.                               
 ******************************************************************* */
 void Transport_PK::IdentifyUpwindCells()
 {

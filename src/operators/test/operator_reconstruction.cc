@@ -832,11 +832,20 @@ TEST(RECONSTRUCTION_LINEAR_LIMITER_FRACtURES) {
 
   for (int c = 0; c < ncells_wghost; c++) {
     const AmanziGeometry::Point& xc = mesh->cell_centroid(c);
-    (*field)[0][c] = xc[0] + 2 * xc[1] + 3 * xc[2];
-    if (c < ncells_owned) {
-      grad_exact[0][c] = 1.0;
-      grad_exact[1][c] = 2.0;
-      grad_exact[2][c] = 3.0;
+    if (fabs(xc[2] - 0.5) < 1e-10) {
+      (*field)[0][c] = xc[0] + 2 * xc[1];
+      if (c < ncells_owned) {
+        grad_exact[0][c] = 1.0;
+        grad_exact[1][c] = 2.0;
+        grad_exact[2][c] = 0.0;
+      }
+    } else if (fabs(xc[1] - 0.5) < 1e-10) {
+      (*field)[0][c] = xc[0] + 3 * xc[2];
+      if (c < ncells_owned) {
+        grad_exact[0][c] = 1.0;
+        grad_exact[1][c] = 0.0;
+        grad_exact[2][c] = 3.0;
+      }
     }
   }
 
@@ -893,13 +902,12 @@ TEST(RECONSTRUCTION_LINEAR_LIMITER_FRACtURES) {
     // lifting.ApplyLimiter(bc_model, bc_value);
 
     // calculate gradient error
-// std::cout << *lifting.gradient()->ViewComponent("cell") << std::endl;
     Epetra_MultiVector grad_computed(*lifting.gradient()->ViewComponent("cell"));
     grad_computed.Update(-1.0, grad_exact, 1.0);
 
     double err_int, err_glb;
     GradientError(mesh, grad_computed, grad_exact, err_int, err_glb);
-    // CHECK_CLOSE(0.0, err_int + err_glb, 1.0e-12);
+    CHECK_CLOSE(0.0, err_int + err_glb, 1.0e-12);
 
     if (MyPID == 0)
         printf("%9s: errors: %8.4f %8.4f\n", LIMITERS[i].c_str(), err_int, err_glb);
