@@ -407,6 +407,10 @@ class Mesh {
   // are computed for all cells the first time one of these routines
   // is called and then cached
 
+  //
+  virtual
+  int build_columns(const std::string& setname) const;
+
   // Number of columns in mesh
   int num_columns(bool ghosted=false) const;
 
@@ -674,11 +678,11 @@ class Mesh {
   virtual
   void write_to_exodus_file(const std::string filename) const = 0;
 
-
  protected:
   // Helper function to build columns
   virtual
   int build_columns_() const;
+  void build_column_(int colnum, Entity_ID top_face) const;
 
   // Beginning of new interface to regions using the base mesh.
   void get_set_entities_box_vofs_(
