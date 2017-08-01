@@ -180,8 +180,6 @@ void OperatorDiffusionMFDwithGravity::UpdateFlux(
 
   int dim = mesh_->space_dimension();
   Epetra_MultiVector& flux_data = *flux.ViewComponent("face", true);
-  Epetra_MultiVector grav_flux(flux_data);
-  grav_flux.PutScalar(0.);
 
   AmanziMesh::Entity_ID_List faces;
   std::vector<int> dirs;
@@ -224,19 +222,19 @@ void OperatorDiffusionMFDwithGravity::UpdateFlux(
 
       for (int n = 0; n < nfaces; n++) {
         int f = faces[n];
-        if (f < nfaces_owned) {
+        if (f < nfaces_owned && !flag[f]) {
           const AmanziGeometry::Point& normal = mesh_->face_normal(f);
 
           if (gravity_special_projection_) {
             const AmanziGeometry::Point& xcc = GravitySpecialDirection_(f);
             double sign = normal * xcc;
             double tmp = copysign(norm(normal) / norm(xcc), sign);
-            grav_flux[0][f] += (Kcg * xcc) * rho * kf[n] * tmp;
+            flux_data[0][f] += (Kcg * xcc) * rho * kf[n] * tmp;
           } else {
-            grav_flux[0][f] += (Kcg * normal) * rho * kf[n];
+            flux_data[0][f] += (Kcg * normal) * rho * kf[n];
           }
             
-          flag[f]++;
+          flag[f] = 1;
         }
       }
     }
@@ -257,16 +255,12 @@ void OperatorDiffusionMFDwithGravity::UpdateFlux(
           const AmanziGeometry::Point& normal = mesh_->face_normal(f, false, c, &dir);
             
           double tmp = av(n) * kf[n] * dir;
-          grav_flux[0][f] += tmp;
+          flux_data[0][f] += tmp;
 
-          flag[f]++;
+          flag[f] = 1;
         }
       }
     }
-  }
-
-  for (int f=0; f < nfaces_owned; f++) {
-    flux_data[0][f] += grav_flux[0][f] / flag[f];
   }
 }
 
