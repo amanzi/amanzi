@@ -230,8 +230,8 @@ void SecondaryVariableFieldEvaluator::UpdateFieldDerivative_(const Teuchos::Ptr<
     dmy = Teuchos::rcp(new CompositeVector(*new_fac));
     S->SetData(dmy_key, my_key_, dmy);
     S->GetField(dmy_key,my_key_)->set_initialized();
-    S->GetField(dmy_key,my_key_)->set_io_vis(false);
-    S->GetField(dmy_key,my_key_)->set_io_checkpoint(false);
+    S->GetField(dmy_key,my_key_)->set_io_vis(plist_.get<bool>("visualize derivative", false));
+    S->GetField(dmy_key,my_key_)->set_io_checkpoint(plist_.get<bool>("checkpoint derivative", false));
   }
 
   // Now update the values.
