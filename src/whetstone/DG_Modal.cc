@@ -67,12 +67,12 @@ int DG_Modal::MassMatrix(int c, const Tensor& K, DenseMatrix& M)
 
 
 /* ******************************************************************
-* Advection matrix for Taylor basis and polynomial velocity u.
+* Mass matrix for Taylor basis and polynomial coefficient K.
 ****************************************************************** */
-int DG_Modal::AdvectionMatrixCell(int c, Polynomial& divu, DenseMatrix& A)
+int DG_Modal::MassMatrix(int c, Polynomial& K, DenseMatrix& A)
 {
   // calculate monomials
-  int uk(divu.order());
+  int uk(K.order());
   Polynomial integrals(d_, 2 * order_ + uk);
 
   integrals.monomials(0).coefs()[0] = mesh_->cell_volume(c);
@@ -93,10 +93,10 @@ int DG_Modal::AdvectionMatrixCell(int c, Polynomial& divu, DenseMatrix& A)
     const int* idx_p = it.multi_index();
     int k = p.PolynomialPosition(idx_p);
 
-    for (auto mt = divu.begin(); mt.end() <= divu.end(); ++mt) {
-      const int* idx_divu = mt.multi_index();
-      int m = divu.MonomialPosition(idx_divu);
-      double factor = divu.monomials(mt.end()).coefs()[m];
+    for (auto mt = K.begin(); mt.end() <= K.end(); ++mt) {
+      const int* idx_K = mt.multi_index();
+      int m = K.MonomialPosition(idx_K);
+      double factor = K.monomials(mt.end()).coefs()[m];
 
       for (auto jt = q.begin(); jt.end() <= q.end(); ++jt) {
         const int* idx_q = jt.multi_index();
@@ -104,7 +104,7 @@ int DG_Modal::AdvectionMatrixCell(int c, Polynomial& divu, DenseMatrix& A)
 
         int n(0);
         for (int i = 0; i < d_; ++i) {
-          multi_index[i] = idx_p[i] + idx_q[i] + idx_divu[i];
+          multi_index[i] = idx_p[i] + idx_q[i] + idx_K[i];
           n += multi_index[i];
         }
 
@@ -348,19 +348,37 @@ AmanziGeometry::Point DG_Modal::EvaluateMap(int c, const AmanziGeometry::Point& 
 /* ******************************************************************
 * Support of finite element meshes: Jacobian
 ****************************************************************** */
-Tensor DG_Modal::EvaluateJacobian(int c, const AmanziGeometry::Point& xref) const
+Tensor DG_Modal::EvaluateJacobian(
+    int c, const AmanziGeometry::Point& xref) const
+{
+  Tensor jac = EvaluateJacobianInternal_(mesh_, c, xref);
+ 
+  // Jacobian for convolution of two maps.
+  if (mesh0_ != Teuchos::null) {
+    Tensor jac0 = EvaluateJacobianInternal_(mesh0_, c, xref);
+    jac0.Inverse();
+    jac = jac * jac0;
+  }
+
+  return jac;
+}
+
+
+Tensor DG_Modal::EvaluateJacobianInternal_(
+    Teuchos::RCP<const AmanziMesh::Mesh> mesh, 
+    int c, const AmanziGeometry::Point& xref) const
 {
   Entity_ID_List nodes;
 
-  mesh_->cell_get_nodes(c, &nodes);
+  mesh->cell_get_nodes(c, &nodes);
   int nnodes = nodes.size();
   ASSERT(nnodes == 4);
 
   AmanziGeometry::Point p1(d_), p2(d_), p3(d_), p4(d_), j0(d_), j1(d_);
-  mesh_->node_get_coordinates(nodes[0], &p1);
-  mesh_->node_get_coordinates(nodes[1], &p2);
-  mesh_->node_get_coordinates(nodes[2], &p3);
-  mesh_->node_get_coordinates(nodes[3], &p4);
+  mesh->node_get_coordinates(nodes[0], &p1);
+  mesh->node_get_coordinates(nodes[1], &p2);
+  mesh->node_get_coordinates(nodes[2], &p3);
+  mesh->node_get_coordinates(nodes[3], &p4);
 
   j0 = (1.0 - xref[1]) * (p2 - p1) + xref[1] * (p3 - p4);
   j1 = (1.0 - xref[0]) * (p4 - p1) + xref[0] * (p3 - p2);

@@ -145,23 +145,23 @@ void AdvectionRiemann::UpdateMatricesCell_(const CompositeVector& u)
     if (space_col_ == DG0 && space_row_ == DG0) {
       dg.set_order(0);
 
-      WhetStone::Polynomial divv(d, 0);
-      divv.monomials(0).coefs()[0] = (*uc)[0][c];
+      WhetStone::Polynomial K(d, 0);
+      K.monomials(0).coefs()[0] = (*uc)[0][c];
 
       WhetStone::DenseMatrix Acell;
-      dg.AdvectionMatrixCell(c, divv, Acell);
+      dg.MassMatrix(c, K, Acell);
       matrix[c] = Acell;
     } 
     else if (space_col_ == DG1 && space_row_ == DG1) {
       dg.set_order(1);
 
-      WhetStone::Polynomial divv(d, 1);
-      divv.monomials(0).coefs()[0] = (*uc)[0][c];
-      divv.monomials(1).coefs()[0] = (*uc)[1][c];
-      divv.monomials(1).coefs()[1] = (*uc)[2][c];
+      WhetStone::Polynomial K(d, 1);
+      K.monomials(0).coefs()[0] = (*uc)[0][c];
+      K.monomials(1).coefs()[0] = (*uc)[1][c];
+      K.monomials(1).coefs()[1] = (*uc)[2][c];
 
       WhetStone::DenseMatrix Acell;
-      dg.AdvectionMatrixCell(c, divv, Acell);
+      dg.MassMatrix(c, K, Acell);
       matrix[c] = Acell;
     }
     else if (space_col_ == BERNARDI_RAUGEL && space_row_ == BERNARDI_RAUGEL) { 

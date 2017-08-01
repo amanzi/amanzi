@@ -46,7 +46,7 @@ TEST(DG_TAYLOR_POLYNOMIALS) {
 
 
 /* ****************************************************************
-* Test of DG mass matrices
+* Test of DG mass matrices: K is tensor
 **************************************************************** */
 TEST(DG_MASS_MATRIX) {
   using namespace Amanzi;
@@ -92,9 +92,9 @@ TEST(DG_MASS_MATRIX) {
 
 
 /* ****************************************************************
-* Test of DG advection matrices in a cell
+* Test of DG mass matrices: K is polynomial
 **************************************************************** */
-TEST(DG_ADVECTION_MATRIX_CELL) {
+TEST(DG_MASS_MATRIX_POLYNOMIAL) {
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::WhetStone;
@@ -115,7 +115,7 @@ TEST(DG_ADVECTION_MATRIX_CELL) {
     Polynomial u(2, k);
     u.monomials(0).coefs()[0] = 1.0;
 
-    dg.AdvectionMatrixCell(0, u, A[k]);
+    dg.MassMatrix(0, u, A[k]);
     int nk = A[k].NumRows();
 
     printf("Advection matrix (cell-based) for velocity of order=%d\n", k);

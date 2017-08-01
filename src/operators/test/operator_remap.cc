@@ -101,9 +101,9 @@ void RemapTests2DExplicit(int order, std::string disc_name,
 
   for (int c = 0; c < ncells_wghost; c++) {
     const AmanziGeometry::Point& xc = mesh1->cell_centroid(c);
-    p1c[0][c] = xc[0];  // + 2 * xc[1] * xc[1];
+    p1c[0][c] = xc[0] + 2 * xc[1] * xc[1];
     if (nk > 1) {
-      p1c[1][c] = 1.0;
+      p1c[1][c] = 0.0;
       p1c[2][c] = 0.0;  // 4.0 * xc[1];
     }
   }
@@ -129,19 +129,6 @@ void RemapTests2DExplicit(int order, std::string disc_name,
   Teuchos::RCP<AdvectionRiemann> op = Teuchos::rcp(new AdvectionRiemann(plist, mesh1));
   auto global_op = op->global_operator();
 
-  // create secondary advection operator (cell-based)
-  /*
-  plist.sublist("schema domain")
-      .set<std::string>("base", "cell")
-      .set<Teuchos::Array<std::string> >("location", std::vector<std::string>({"cell"}))
-      .set<Teuchos::Array<std::string> >("type", std::vector<std::string>({"scalar"}))
-      .set<Teuchos::Array<int> >("number", std::vector<int>({nk}));
-
-  plist.sublist("schema range") = plist.sublist("schema domain");
-
-  Teuchos::RCP<AdvectionRiemann> op_adv = Teuchos::rcp(new AdvectionRiemann(plist, global_op));
-  */
-
   // create accumulation operator
   plist.sublist("schema")
       .set<std::string>("base", "cell")
@@ -149,24 +136,33 @@ void RemapTests2DExplicit(int order, std::string disc_name,
       .set<Teuchos::Array<std::string> >("type", std::vector<std::string>({"scalar"}))
       .set<Teuchos::Array<int> >("number", std::vector<int>({nk}));
 
-  Teuchos::RCP<Reaction> op_reac = Teuchos::rcp(new Reaction(plist, mesh1));
-  auto global_reac = op_reac->global_operator();
+  Teuchos::RCP<Reaction> op_reac0 = Teuchos::rcp(new Reaction(plist, mesh1));
+  Teuchos::RCP<Reaction> op_reac1 = Teuchos::rcp(new Reaction(plist, mesh1));
+  auto global_reac0 = op_reac0->global_operator();
+  auto global_reac1 = op_reac1->global_operator();
 
-  Teuchos::RCP<Epetra_MultiVector> jac = Teuchos::rcp(new Epetra_MultiVector(mesh1->cell_map(true), 1));
-  op_reac->Setup(jac);
-
-  CompositeVector div(cvs1);
-  Epetra_MultiVector& div_c = *div.ViewComponent("cell");
+  Teuchos::RCP<Epetra_MultiVector> jac0 = Teuchos::rcp(new Epetra_MultiVector(mesh1->cell_map(true), 1));
+  Teuchos::RCP<Epetra_MultiVector> jac1 = Teuchos::rcp(new Epetra_MultiVector(mesh1->cell_map(true), 1));
+  op_reac0->Setup(jac0);
+  op_reac1->Setup(jac1);
 
   double t(0.0), tend(1.0);
-  WhetStone::DG_Modal dg1(mesh1), dg2(mesh2);
+  WhetStone::DG_Modal dg1(mesh1), dg2(mesh1, mesh2);
 
   while(t < tend - dt/2) {
     // calculate determinant of Jacobian
     for (int c = 0; c < ncells_owned; ++c) {
       AmanziGeometry::Point xref(0.5, 0.5);
-      WhetStone::Tensor J = dg2.EvaluateJacobian(c, xref);
-      (*jac)[0][c] = 1.0;  // J.Det() * nx * ny;
+
+      WhetStone::Tensor J0 = dg2.EvaluateJacobian(c, xref);
+      WhetStone::Tensor J1(J0);
+      J0 *= t;
+      J0 += 1.0 - t;
+      (*jac0)[0][c] = J0.Det();
+
+      J1 *= t + dt;
+      J1 += 1.0 - (t + dt);
+      (*jac1)[0][c] = J1.Det();
     }
 
     // rotate velocities and calculate normal component
@@ -177,8 +173,6 @@ void RemapTests2DExplicit(int order, std::string disc_name,
     const Epetra_MultiVector& vel = *velf->ViewComponent("face");
     Epetra_MultiVector& vel_tmp = *velf_tmp.ViewComponent("face");
 
-    div.PutScalar(0.0);
-
     for (int c = 0; c < ncells_owned; ++c) {
       mesh1->cell_get_faces_and_dirs(c, &faces, &dirs);
       int nfaces = faces.size();
@@ -187,66 +181,59 @@ void RemapTests2DExplicit(int order, std::string disc_name,
         int f = faces[n];
 
         // calculate j J^{-t} N dA
-        double a(WhetStone::q1d_points[1][0]), b(WhetStone::q1d_points[1][1]);
+        // double qa(WhetStone::q1d_points[1][0]), qb(WhetStone::q1d_points[1][1]);
+        double qa(0.5);
         std::vector<AmanziGeometry::Point> xref;
         if (n == 0) { 
-          xref.push_back(AmanziGeometry::Point(a, 0.0));
-          xref.push_back(AmanziGeometry::Point(b, 0.0));
+          xref.push_back(AmanziGeometry::Point(qa, 0.0));
+          // xref.push_back(AmanziGeometry::Point(qb, 0.0));
         } else if (n == 1) {
-          xref.push_back(AmanziGeometry::Point(1.0, a));
-          xref.push_back(AmanziGeometry::Point(1.0, b));
+          xref.push_back(AmanziGeometry::Point(1.0, qa));
+          // xref.push_back(AmanziGeometry::Point(1.0, qb));
         } else if (n == 2) { 
-          xref.push_back(AmanziGeometry::Point(a, 1.0));
-          xref.push_back(AmanziGeometry::Point(b, 1.0));
+          xref.push_back(AmanziGeometry::Point(qa, 1.0));
+          // xref.push_back(AmanziGeometry::Point(qb, 1.0));
         } else if (n == 3) {
-          xref.push_back(AmanziGeometry::Point(0.0, a));
-          xref.push_back(AmanziGeometry::Point(0.0, b));
+          xref.push_back(AmanziGeometry::Point(0.0, qa));
+          // xref.push_back(AmanziGeometry::Point(0.0, qb));
         }
 
         vel_tmp[0][f] = 0.0;
         for (int i = 0; i < xref.size(); ++i) {
-          WhetStone::Tensor J2 = dg2.EvaluateJacobian(c, xref[i]);
-          WhetStone::Tensor J1 = dg1.EvaluateJacobian(c, xref[i]);
-          J1.Inverse();
-
-          WhetStone::Tensor J = J2 * J1;
-          J *= t + dt;
-          J += 1.0 - (t + dt);
+          WhetStone::Tensor J = dg2.EvaluateJacobian(c, xref[i]);
+          J *= t;
+          J += 1.0 - t;
           WhetStone::Tensor C = J.Cofactors();
           AmanziGeometry::Point cn = C * mesh1->face_normal(f); 
 
           // calculate velocity
           xv = dg2.EvaluateMap(c, xref[i]) - dg1.EvaluateMap(c, xref[i]);
-
-          vel_tmp[0][f] += (xv * cn) * WhetStone::q1d_weights[1][i];
+          vel_tmp[0][f] += (xv * cn) * WhetStone::q1d_weights[0][i];
         }
-        div_c[0][c] += vel_tmp[0][f] * dirs[n];
       }
-      div_c[0][c] /= mesh1->cell_volume(c);
     }
 
     // populate operators
     op->UpdateMatrices(velf_tmp);
-
-    // op_adv->UpdateMatrices(div);
-    op_reac->UpdateMatrices(p1);
+    op_reac0->UpdateMatrices(p1);
 
     // predictor step
-    CompositeVector& rhs = *global_reac->rhs();
-    global_reac->Apply(p1, rhs);
+    CompositeVector& rhs = *global_reac0->rhs();
+    global_reac0->Apply(p1, rhs);
 
     CompositeVector g(cvs1);
     global_op->Apply(p1, g);
     g.Update(1.0, rhs, dt);
 
-    global_reac->SymbolicAssembleMatrix();
-    global_reac->AssembleMatrix();
+    op_reac1->UpdateMatrices(p1);
+    global_reac1->SymbolicAssembleMatrix();
+    global_reac1->AssembleMatrix();
 
     plist.set<std::string>("preconditioner type", "diagonal");
-    global_reac->InitPreconditioner(plist);
+    global_reac1->InitPreconditioner(plist);
 
     AmanziSolvers::LinearOperatorPCG<Operator, CompositeVector, CompositeVectorSpace>
-        pcg(global_reac, global_reac);
+        pcg(global_reac1, global_reac1);
 
     pcg.Init(plist);
     pcg.ApplyInverse(g, p2);
@@ -270,14 +257,14 @@ void RemapTests2DExplicit(int order, std::string disc_name,
     const AmanziGeometry::Point& xc = mesh2->cell_centroid(c);
     double area_c = mesh2->cell_volume(c);
 
-    double tmp = (xc[0] + 0 * xc[1] * xc[1]) - p2c[0][c];
+    double tmp = (xc[0] + 2 * xc[1] * xc[1]) - p2c[0][c];
     pinf_err = std::max(pinf_err, fabs(tmp));
     pl2_err += tmp * tmp * area_c;
-    // std::cout << c << " " << p2c[0][c] << " err=" << tmp << std::endl;
 
     area += area_c;
   }
   pl2_err = std::pow(pl2_err, 0.5);
+  CHECK(pl2_err < 0.05);
 
   if (MyPID == 0) {
     printf("L2(p0)=%12.8g  Inf(p0)=%12.8g  Err(area)=%12.8g\n", 
@@ -290,14 +277,13 @@ void RemapTests2DExplicit(int order, std::string disc_name,
     GMV::open_data_file(*mesh2, (std::string)"operators.gmv");
     GMV::start_data();
     GMV::write_cell_data(p2c, 0, "remaped");
-    GMV::write_cell_data(div_c, 0, "divergence");
     GMV::close_data_file();
   }
 }
 
 
 TEST(REMAP_2D_EXPLICIT) {
-  RemapTests2DExplicit(0, "DG order 0", 40, 40, 0.1 / 8);
+  RemapTests2DExplicit(0, "DG order 0", 20, 20, 0.1 / 2);
 }
 
 // TEST(REMAP_2D_IMPLICIT) {

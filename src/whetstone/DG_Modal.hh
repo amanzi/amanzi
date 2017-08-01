@@ -47,18 +47,29 @@ class DG_Modal {
   DG_Modal(Teuchos::RCP<const AmanziMesh::Mesh> mesh) 
     : order_(-1),
       mesh_(mesh),
+      mesh0_(Teuchos::null),
       d_(mesh_->space_dimension()) {};
+
+  DG_Modal(Teuchos::RCP<const AmanziMesh::Mesh> mesh0,
+           Teuchos::RCP<const AmanziMesh::Mesh> mesh) 
+    : order_(-1),
+      mesh_(mesh),
+      mesh0_(mesh0),
+      d_(mesh_->space_dimension()) {};
+
   DG_Modal(int order, Teuchos::RCP<const AmanziMesh::Mesh> mesh)
     : order_(order), 
       mesh_(mesh),
+      mesh0_(Teuchos::null),
       d_(mesh_->space_dimension()) {};
+
   ~DG_Modal() {};
 
   int MassMatrix(int c, const Tensor& K, DenseMatrix& M);
-  int AdvectionMatrixCell(int c, Polynomial& divu, DenseMatrix& A);
+  int MassMatrix(int c, Polynomial& K, DenseMatrix& A);
   int AdvectionMatrixFace(int f, Polynomial& un, DenseMatrix& A);
 
-  // finite element (for testing)
+  // finite elements use three meshes: reference, initial and target
   AmanziGeometry::Point EvaluateMap(int c, const AmanziGeometry::Point& xref) const;
   Tensor EvaluateJacobian(int c, const AmanziGeometry::Point& xref) const;
 
@@ -82,8 +93,12 @@ class DG_Modal {
       const std::vector<double>& factors, 
       const AmanziGeometry::Point& xc1, const AmanziGeometry::Point& xc2);
 
+  Tensor EvaluateJacobianInternal_(Teuchos::RCP<const AmanziMesh::Mesh> mesh,
+                                   int c, const AmanziGeometry::Point& xref) const;
+
  private:
-  Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
+  Teuchos::RCP<const AmanziMesh::Mesh> mesh_;  // target mesh
+  Teuchos::RCP<const AmanziMesh::Mesh> mesh0_;  // initial mesh 
   int order_, d_;
 };
 
