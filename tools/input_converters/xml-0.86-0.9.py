@@ -173,9 +173,24 @@ def mesh_list(xml):
             assert(found)
         
     return
-            
-        
+
+
+def vis(xml):
+    if xml.isElement("visualization") and not asearch.childByName(xml, "visualization").isElement("domain"):
+        vis_domain = xml.pop("visualization")
+        vis_domain.set("name", "domain")
     
+        vis_list = xml.sublist("visualization")
+        vis_list.append(vis_domain)
+        if xml.isElement("visualization surface"):
+            vis_surf = xml.pop("visualization surface")
+            vis_surf.set("name", "surface")
+            vis_list.append(vis_surf)
+
+        if xml.isElement("visualization columns"):
+            vis_col = xml.pop("visualization columns")
+            vis_col.set("name", "column_*")
+            vis_list.append(vis_col)
 
 def update(xml):
     flatten_pks.flatten_pks(xml)
@@ -191,6 +206,7 @@ def update(xml):
     seepage_face_bcs(xml)
     primary_variable(xml)
     mesh_list(xml)
+    vis(xml)
 
 if __name__ == "__main__":
     import argparse
