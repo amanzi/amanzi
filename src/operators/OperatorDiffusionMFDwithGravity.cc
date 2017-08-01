@@ -185,7 +185,7 @@ void OperatorDiffusionMFDwithGravity::UpdateFlux(
 
   AmanziMesh::Entity_ID_List faces;
   std::vector<int> dirs;
-  std::vector<int> flag(nfaces_wghost, 0);
+  std::vector<int> hits(nfaces_wghost, 0);
 
   WhetStone::Tensor Kc(dim, 1);
   Kc(0, 0) = 1.0;
@@ -236,7 +236,7 @@ void OperatorDiffusionMFDwithGravity::UpdateFlux(
             grav_flux[0][f] += (Kcg * normal) * rho * kf[n];
           }
             
-          flag[f]++;
+          hits[f]++;
         }
       }
     }
@@ -259,15 +259,14 @@ void OperatorDiffusionMFDwithGravity::UpdateFlux(
           double tmp = av(n) * kf[n] * dir;
           grav_flux[0][f] += tmp;
 
-          flag[f]++;
+          hits[f]++;
         }
       }
     }
   }
 
   for (int f=0; f < nfaces_owned; f++) {
-    ASSERT(flag[f] == 1 || flag[f] == 2);
-    flux_data[0][f] += grav_flux[0][f] / flag[f];
+    flux_data[0][f] += grav_flux[0][f] / hits[f];
   }
 }
 
