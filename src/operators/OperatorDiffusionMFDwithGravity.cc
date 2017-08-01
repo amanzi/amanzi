@@ -253,7 +253,7 @@ void OperatorDiffusionMFDwithGravity::UpdateFlux(
 
       for (int n = 0; n < nfaces; n++) {
         int dir, f = faces[n];
-        if (f < nfaces_owned && !flag[f]) {
+        if (f < nfaces_owned) {
           const AmanziGeometry::Point& normal = mesh_->face_normal(f, false, c, &dir);
             
           double tmp = av(n) * kf[n] * dir;
@@ -266,6 +266,7 @@ void OperatorDiffusionMFDwithGravity::UpdateFlux(
   }
 
   for (int f=0; f < nfaces_owned; f++) {
+    ASSERT(flag[f] == 1 || flag[f] == 2);
     flux_data[0][f] += grav_flux[0][f] / flag[f];
   }
 }

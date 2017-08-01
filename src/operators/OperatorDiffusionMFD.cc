@@ -1079,6 +1079,7 @@ void OperatorDiffusionMFD::UpdateFlux(const CompositeVector& u, CompositeVector&
   }
 
   for (int f=0; f!=nfaces_owned; ++f) {
+    ASSERT(flag[f] == 1 || flag[f] == 2);
     flux_data[0][f] /= flag[f];
   }
 }
