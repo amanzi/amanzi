@@ -180,89 +180,41 @@ void Coordinator::initialize() {
   // commit the initial conditions.
   pk_->CommitStep(0., 0., S_);
 
-  // vis for the state
-  // HACK to vis with a surrogate surface mesh.  This needs serious re-design. --etc
-  bool surface_done = false;
-  if (S_->HasMesh("surface") && S_->HasMesh("surface_3d")) {
-    Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> surface_3d = S_->GetMesh("surface_3d");
-    Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> surface = S_->GetMesh("surface");
+  // visualization
+  auto vis_list = Teuchos::sublist(parameter_list_,"visualization");
+  for (auto& entry : *vis_list) {
+    std::string domain_name = entry.first;
 
-    // vis successful timesteps
-    std::string plist_name = "visualization surface";
-    Teuchos::ParameterList& vis_plist = parameter_list_->sublist(plist_name);
-/*
-    Teuchos::RCP<Amanzi::Visualization> vis_2d = Teuchos::rcp(new Visualization(vis_plist, comm_));
-    vis_2d->set_mesh(surface);
-    vis_2d->CreateFiles();
-    vis_2d->set_mesh(surface);
-    visualization_.push_back(vis_2d);
-*/    
-    Teuchos::RCP<Amanzi::Visualization> vis = Teuchos::rcp(new Amanzi::Visualization(vis_plist, comm_));
-    vis->set_mesh(surface_3d);    
+    if (S_->HasMesh(domain_name)) {
+      // visualize standard domain
+      auto mesh_p = S_->GetMesh(domain_name);
+      if (domain_name == "surface" && S_->HasMesh("surface_3d"))
+        mesh_p = S_->GetMesh("surface_3d");
+      
+      auto sublist_p = Teuchos::sublist(vis_list, domain_name);
 
-    //should be removed in future -- xmdf does not work for general polyhdera, and 3D silo gives error "3D not tested yet!!"
-    if (parameter_list_->sublist("mesh").isSublist("column meshes") || parameter_list_->sublist("mesh").sublist("surface mesh").isParameter("polygonal cells")){
-      vis->set_mesh(surface);
+      // vis successful timesteps
+      auto vis = Teuchos::rcp(new Amanzi::Visualization(*sublist_p));
+      vis->set_mesh(mesh_p);    
       vis->CreateFiles();
-    }
-    else{
-      vis->CreateFiles();
-      vis->set_mesh(surface);
-    }
     
-    visualization_.push_back(vis);
-    surface_done = true;
+      visualization_.push_back(vis);
 
-    // vis unsuccesful timesteps
-    std::string fail_plist_name = "visualization surface failed steps";
-    if (parameter_list_->isSublist(fail_plist_name)) {
-      Teuchos::ParameterList& fail_vis_plist = parameter_list_->sublist(fail_plist_name);
-      Teuchos::RCP<Amanzi::Visualization> fail_vis = Teuchos::rcp(new Amanzi::Visualization(fail_vis_plist, comm_));
-      fail_vis->set_mesh(surface_3d);
-      fail_vis->CreateFiles();
-      fail_vis->set_mesh(surface);
-      failed_visualization_.push_back(fail_vis);
-    }
-  }
-
-  for (Amanzi::State::mesh_iterator mesh=S_->mesh_begin();
-       mesh!=S_->mesh_end(); ++mesh) {
-    if (mesh->first == "surface_3d") {
-      // pass
-    } else if ((mesh->first == "surface") && surface_done) {
-      // pass
-    } else {
-      // vis successful steps
-      std::string plist_name = "visualization "+mesh->first;
-      // in the case of just a domain mesh, we want to allow no name.
-      if ((mesh->first == "domain") && !parameter_list_->isSublist(plist_name)) {
-        plist_name = "visualization";
+    } else if (boost::ends_with(domain_name, "_*")) {
+      // visualize domain set
+      std::string domain_set_name = domain_name.substr(0,domain_name.size()-2);
+      for (auto m=S_->mesh_begin(); m!=S_->mesh_end(); ++m) {
+        if (boost::starts_with(m->first, domain_set_name)) {
+          // visualize each subdomain
+          Teuchos::ParameterList sublist = vis_list->sublist(domain_name);
+          sublist.set<std::string>("file name base", std::string("visdump_")+m->first);
+          auto vis = Teuchos::rcp(new Amanzi::Visualization(sublist));
+          vis->set_mesh(m->second.first);    
+          vis->CreateFiles();
+          visualization_.push_back(vis);
+        }
       }
 
-      if (parameter_list_->isSublist(plist_name)) {
-        Teuchos::ParameterList& vis_plist = parameter_list_->sublist(plist_name);
-        Teuchos::RCP<Amanzi::Visualization> vis =
-          Teuchos::rcp(new Amanzi::Visualization(vis_plist, comm_));
-        vis->set_mesh(mesh->second.first);
-        vis->CreateFiles();
-        visualization_.push_back(vis);
-      }
-
-      // vis unsuccessful steps
-      std::string fail_plist_name = "visualization "+mesh->first+" failed steps";
-      // in the case of just a domain mesh, we want to allow no name.
-      if ((mesh->first == "domain") && !parameter_list_->isSublist(fail_plist_name)) {
-        fail_plist_name = "visualization failed steps";
-      }
-
-      if (parameter_list_->isSublist(fail_plist_name)) {
-        Teuchos::ParameterList& fail_vis_plist = parameter_list_->sublist(fail_plist_name);
-        Teuchos::RCP<Amanzi::Visualization> fail_vis =
-          Teuchos::rcp(new Amanzi::Visualization(fail_vis_plist, comm_));
-        fail_vis->set_mesh(mesh->second.first);
-        fail_vis->CreateFiles();
-        failed_visualization_.push_back(fail_vis);
-      }
     }
   }
 

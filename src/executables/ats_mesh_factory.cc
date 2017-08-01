@@ -168,24 +168,18 @@ createMesh(Teuchos::ParameterList& mesh_plist,
     Teuchos::ParameterList& subgrid = mesh_plist.sublist("subgrid parameters");
     auto kind_str = subgrid.get<std::string>("entity kind");
 
-    Amanzi::AmanziMesh::Entity_kind kind;
-    if (kind_str == "CELL" || kind_str == "cell" || kind_str == "Cell") {
-      kind = Amanzi::AmanziMesh::CELL;
-    } else if (kind_str == "FACE" || kind_str == "face" || kind_str == "Face") {
-      kind = Amanzi::AmanziMesh::FACE;
-    } else if (kind_str == "NODE" || kind_str == "node" || kind_str == "Node") {
-      kind = Amanzi::AmanziMesh::NODE;
-    } else {
-      Errors::Message msg("ATS Mesh Factory: Cannot create a subgrid mesh on the requested entity kind");
-      Exceptions::amanzi_throw(msg);
-    }
+    Amanzi::AmanziMesh::Entity_kind kind = Amanzi::AmanziMesh::entity_kind(kind_str);
 
-    auto regionname = subgrid.get<std::string>("subgrid region name", "ENTIRE_MESH_REGION");
+    auto regionname = subgrid.get<std::string>("subgrid region name");
     std::string parent_domain_name = subgrid.get<std::string>("parent domain", "domain");
     auto parent_mesh = S.GetMesh(parent_domain_name);
 
     bool flyweight = subgrid.get<bool>("flyweight mesh", false);
-    auto comm_self = Teuchos::rcp(new Epetra_MpiComm(MPI_COMM_SELF));
+
+    // etc: Note that this explicitly and purposefully leaks the comm's
+    // memory.  This is due to poor design of the mesh infrastructure, where a
+    // bare pointer is stored instead of a reference counted pointer.  
+    Teuchos::RCP<Epetra_MpiComm> comm_self = Teuchos::rcpFromRef(*(new Epetra_MpiComm(MPI_COMM_SELF)));
     
     // for each id in the regions of the parent mesh on entity, create a subgrid mesh
     Amanzi::AmanziMesh::Entity_ID_List entities;

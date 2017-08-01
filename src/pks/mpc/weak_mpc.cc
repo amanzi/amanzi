@@ -16,6 +16,16 @@ See additional documentation in the base class src/pks/mpc/MPC.hh
 
 namespace Amanzi {
 
+WeakMPC::WeakMPC(Teuchos::ParameterList& FElist,
+                 const Teuchos::RCP<Teuchos::ParameterList>& plist,
+                 const Teuchos::RCP<State>& S,
+                 const Teuchos::RCP<TreeVector>& solution)
+    : PK(FElist, plist, S, solution),
+      MPC<PK>(FElist, plist, S, solution) {
+  init_(S);
+};
+
+
 // -----------------------------------------------------------------------------
 // Calculate the min of sub PKs timestep sizes.
 // -----------------------------------------------------------------------------
