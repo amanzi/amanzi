@@ -28,7 +28,7 @@ class Reconstruction {
   Reconstruction() {};
   Reconstruction(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh) :
       mesh_(mesh), field_(Teuchos::null), component_(0) {};
-  ~Reconstruction() {};
+  virtual ~Reconstruction() = default;
 
   // main members
   virtual void Init(Teuchos::RCP<const Epetra_MultiVector> field,

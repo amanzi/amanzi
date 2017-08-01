@@ -10,8 +10,8 @@
 
   Test for a nonlinear coupled diffusion problem.
 
-  - div( k00(u,v) grad(u) = f0
-  - div( k11(u,v) grad(v) = f1
+  - div( k00(u,v) grad(u) ) = f0
+  - div( k11(u,v) grad(v) ) = f1
 
   u = a x^2 + y^2
   v = sin^2( pi/4 * (x+y) )
@@ -31,9 +31,8 @@
 class AnalyticNonlinearCoupled00 : public AnalyticNonlinearCoupledBase {
  public:
   AnalyticNonlinearCoupled00(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh) :
-      AnalyticNonlinearCoupledBase(mesh),
-      pi4_(M_PI/4.0) {};
-
+      AnalyticNonlinearCoupledBase(mesh) {};
+  
   // analytic solution for diffusion problem with gravity
   bool isBlock(int i, int j) {
     return i==j ? true : false;
@@ -115,9 +114,6 @@ class AnalyticNonlinearCoupled00 : public AnalyticNonlinearCoupledBase {
     double y = p[1];
     return -1.0L/2.0L*M_PI*(2*x + (1.0L/4.0L)*M_PI*sin(M_PI*((1.0L/4.0L)*x + (1.0L/4.0L)*y))*cos(M_PI*((1.0L/4.0L)*x + (1.0L/4.0L)*y)))*exp(pow(x, 2) + (1.0L/2.0L)*pow(y, 2) + (1.0L/2.0L)*pow(sin(M_PI*((1.0L/4.0L)*x + (1.0L/4.0L)*y)), 2))*sin(M_PI*((1.0L/4.0L)*x + (1.0L/4.0L)*y))*cos(M_PI*((1.0L/4.0L)*x + (1.0L/4.0L)*y)) - 1.0L/2.0L*M_PI*(y + (1.0L/4.0L)*M_PI*sin(M_PI*((1.0L/4.0L)*x + (1.0L/4.0L)*y))*cos(M_PI*((1.0L/4.0L)*x + (1.0L/4.0L)*y)))*exp(pow(x, 2) + (1.0L/2.0L)*pow(y, 2) + (1.0L/2.0L)*pow(sin(M_PI*((1.0L/4.0L)*x + (1.0L/4.0L)*y)), 2))*sin(M_PI*((1.0L/4.0L)*x + (1.0L/4.0L)*y))*cos(M_PI*((1.0L/4.0L)*x + (1.0L/4.0L)*y)) + (1.0L/4.0L)*pow(M_PI, 2)*exp(pow(x, 2) + (1.0L/2.0L)*pow(y, 2) + (1.0L/2.0L)*pow(sin(M_PI*((1.0L/4.0L)*x + (1.0L/4.0L)*y)), 2))*pow(sin(M_PI*((1.0L/4.0L)*x + (1.0L/4.0L)*y)), 2) - 1.0L/4.0L*pow(M_PI, 2)*exp(pow(x, 2) + (1.0L/2.0L)*pow(y, 2) + (1.0L/2.0L)*pow(sin(M_PI*((1.0L/4.0L)*x + (1.0L/4.0L)*y)), 2))*pow(cos(M_PI*((1.0L/4.0L)*x + (1.0L/4.0L)*y)), 2);
   }
-
- private:
-  double pi4_;
-  
 };
+
 #endif

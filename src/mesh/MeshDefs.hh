@@ -23,7 +23,9 @@
 
 #include <vector>
 #include <string>
+#include "boost/algorithm/string.hpp"
 
+#include "errors.hh"
 #include "GeometryDefs.hh"
 
 namespace Amanzi {
@@ -66,6 +68,26 @@ bool entity_valid_kind (const Entity_kind kind) {
   return (kind >= NODE && kind <= CELL);
 }
 
+// entity kind from string
+inline
+Entity_kind entity_kind(const std::string& instring)
+{
+  std::string estring = instring; // note not done in signature to throw a better error
+  boost::algorithm::to_lower(estring);
+  if (estring == "cell") return CELL;
+  else if (estring == "face") return FACE;
+  else if (estring == "boundary_face") return BOUNDARY_FACE;
+  else if (estring == "edge") return EDGE;
+  else if (estring == "node") return NODE;
+  else {
+    Errors::Message msg;
+    msg << "Unknown entity kind string: \"" << instring << "\", valid are \"cell\", \"face\", \"boundary_face\", \"edge\", and \"node\".";
+    Exceptions::amanzi_throw(msg);
+    return NODE;
+  }
+}
+
+
 // Parallel status of entity 
     
 enum Parallel_type 
@@ -95,7 +117,7 @@ enum Cell_type
   PRISM,
   PYRAMID,
   HEX,
-  POLYHED                // Polyhedron 
+  POLYHED  // Polyhedron 
 };
     
 // Check if Cell_type is valid
@@ -104,8 +126,8 @@ bool cell_valid_type (const Cell_type type) {
   return (type >= TRI && type <= POLYHED); 
 }
 
-} // close namespace Amanzi 
-} // close namespace AmanziMesh
+}  // namespace Amanzi 
+}  // namespace AmanziMesh
 
 
 

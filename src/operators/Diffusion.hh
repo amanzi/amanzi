@@ -78,6 +78,8 @@ class Diffusion : public PDE_Helper {
       k_(Teuchos::null),
       dkdp_(Teuchos::null)
   {};
+
+  virtual ~Diffusion() = default;
   
   // main virtual members
   // -- setup 

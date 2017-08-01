@@ -62,6 +62,8 @@ class Op {
       mesh_(mesh)
   {};
 
+  virtual ~Op() = default;
+
   // Clean the operator without destroying memory
   void Init() {
     if (diag != Teuchos::null) {

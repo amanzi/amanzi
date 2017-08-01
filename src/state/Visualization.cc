@@ -13,7 +13,6 @@
 */
 
 // TPLs
-#include "Epetra_MpiComm.h"
 #include "Teuchos_VerboseObjectParameterListHelpers.hpp"
 
 #include "dbc.hh"
@@ -32,8 +31,8 @@ namespace Amanzi {
 // -----------------------------------------------------------------------------
 // Constructor
 // -----------------------------------------------------------------------------
-Visualization::Visualization (Teuchos::ParameterList& plist, Epetra_MpiComm* comm) :
-  IOEvent(plist) {
+Visualization::Visualization (Teuchos::ParameterList& plist) :
+    IOEvent(plist) {
   ReadParameters_();
 
   // set the line prefix for output

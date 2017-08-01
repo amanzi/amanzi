@@ -20,7 +20,8 @@ namespace Amanzi {
 // -----------------------------------------------------------------------------
 SecondaryVariablesFieldEvaluator::SecondaryVariablesFieldEvaluator(
             Teuchos::ParameterList& plist) :
-    FieldEvaluator(plist) {
+    FieldEvaluator(plist)
+{
   // process the plist
   if (plist_.isParameter("evaluator names")) {
     Teuchos::Array<std::string> names =
@@ -41,6 +42,8 @@ SecondaryVariablesFieldEvaluator::SecondaryVariablesFieldEvaluator(
   }
 
   check_derivative_ = plist_.get<bool>("check derivatives", false);
+
+  nonlocal_dependencies_ = plist_.get<bool>("includes non-rank-local dependencies", false);
 }
 
 SecondaryVariablesFieldEvaluator::SecondaryVariablesFieldEvaluator(
@@ -48,7 +51,9 @@ SecondaryVariablesFieldEvaluator::SecondaryVariablesFieldEvaluator(
     FieldEvaluator(other),
     my_keys_(other.my_keys_),
     dependencies_(other.dependencies_),
-    check_derivative_(other.check_derivative_) {}
+    check_derivative_(other.check_derivative_),
+    nonlocal_dependencies_(other.nonlocal_dependencies_)
+{}
 
 
 void SecondaryVariablesFieldEvaluator::operator=(const FieldEvaluator& other) {
@@ -87,6 +92,14 @@ bool SecondaryVariablesFieldEvaluator::HasFieldChanged(const Teuchos::Ptr<State>
     update |= S->GetFieldEvaluator(*dep)->HasFieldChanged(S, *my_keys_.begin());
   }
 
+  // check if nonlocal for changes in offprocess dependencies
+  if (nonlocal_dependencies_) {
+    int update_l = update;
+    int update_g = 0;
+    S->GetFieldData(my_keys_[0])->Comm().MaxAll(&update_l, &update_g, 1);
+    update |= update_g;
+  }
+  
   if (update) {
     if (vo_->os_OK(Teuchos::VERB_EXTREME)) {
       *vo_->os() << "Updating " << my_keys_[0] << " value... " << std::endl;
@@ -122,6 +135,9 @@ bool SecondaryVariablesFieldEvaluator::HasFieldChanged(const Teuchos::Ptr<State>
 // ---------------------------------------------------------------------------
 bool SecondaryVariablesFieldEvaluator::HasFieldDerivativeChanged(
     const Teuchos::Ptr<State>& S, Key request, Key wrt_key) {
+  ASSERT(!request.empty());
+  ASSERT(!wrt_key.empty());
+
   Teuchos::OSTab tab = vo_->getOSTab();
 
   if (vo_->os_OK(Teuchos::VERB_EXTREME)) {
@@ -146,6 +162,13 @@ bool SecondaryVariablesFieldEvaluator::HasFieldDerivativeChanged(
   for (KeySet::const_iterator dep=dependencies_.begin();
        dep!=dependencies_.end(); ++dep) {
     update |= S->GetFieldEvaluator(*dep)->HasFieldDerivativeChanged(S, *my_keys_.begin(), wrt_key);
+  }
+  // check if nonlocal for changes in offprocess dependencies
+  if (nonlocal_dependencies_) {
+    int update_l = update;
+    int update_g = 0;
+    S->GetFieldData(my_keys_[0])->Comm().MaxAll(&update_l, &update_g, 1);
+    update |= update_g;
   }
 
   // Do the update
@@ -221,8 +244,8 @@ void SecondaryVariablesFieldEvaluator::UpdateFieldDerivative_(const Teuchos::Ptr
       dmy = Teuchos::rcp(new CompositeVector(*new_fac));
       S->SetData(dmy_key, *my_key, dmy);
       S->GetField(dmy_key,*my_key)->set_initialized();
-      S->GetField(dmy_key,*my_key)->set_io_vis(false);
-      S->GetField(dmy_key,*my_key)->set_io_checkpoint(false);
+      S->GetField(dmy_key,*my_key)->set_io_vis(plist_.get<bool>("visualize derivative", false));
+      S->GetField(dmy_key,*my_key)->set_io_checkpoint(plist_.get<bool>("checkpoint derivative", false));
 
       dmy->PutScalar(0.0);
       dmys.push_back(dmy.ptr());
@@ -299,9 +322,9 @@ void SecondaryVariablesFieldEvaluator::EnsureCompatibility(const Teuchos::Ptr<St
     Teuchos::RCP<CompositeVectorSpace> my_fac = S->RequireField(*my_key, *my_key);
 
     // Check plist for vis or checkpointing control.
-    bool io_my_key = plist_.get<bool>(std::string("visualize ")+*my_key, true);
+    bool io_my_key = plist_.get<bool>("visualize", true);
     S->GetField(*my_key, *my_key)->set_io_vis(io_my_key);
-    bool checkpoint_my_key = plist_.get<bool>(std::string("checkpoint ")+*my_key, false);
+    bool checkpoint_my_key = plist_.get<bool>("checkpoint", false);
     S->GetField(*my_key, *my_key)->set_io_checkpoint(checkpoint_my_key);
 
     // Select a "master factory" to ensure commonality of all of my factories.

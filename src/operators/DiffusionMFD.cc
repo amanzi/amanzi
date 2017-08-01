@@ -1071,11 +1071,15 @@ void DiffusionMFD::UpdateFlux(const CompositeVector& u, CompositeVector& flux)
 
     for (int n = 0; n < nfaces; n++) {
       int f = faces[n];
-      if (f < nfaces_owned && !flag[f]) {
+      if (f < nfaces_owned) {
         flux_data[0][f] -= av(n) * dirs[n];
-        flag[f] = 1;
+        flag[f]++;
       }
     }
+  }
+
+  for (int f = 0; f != nfaces_owned; ++f) {
+    flux_data[0][f] /= flag[f];
   }
 }
 

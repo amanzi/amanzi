@@ -409,6 +409,10 @@ class Mesh {
   // are computed for all cells the first time one of these routines
   // is called and then cached
 
+  //
+  virtual
+  int build_columns(const std::string& setname) const;
+
   // Number of columns in mesh
   int num_columns(bool ghosted=false) const;
 
@@ -546,6 +550,7 @@ class Mesh {
   // If the flag keep_valid is true, then the nodes are moved
   // only as much as possible without making the mesh invalid
   // The final positions of the nodes is returned in final_positions
+  virtual
   int deform(const Entity_ID_List& nodeids,
              const AmanziGeometry::Point_List& new_positions,
              const bool keep_valid,
@@ -570,7 +575,17 @@ class Mesh {
   //
   // Epetra maps
   //------------
-
+  const Epetra_Map& map(Entity_kind kind, bool include_ghost) const {
+    if (kind == CELL) return cell_map(include_ghost);
+    else if (kind == FACE) return face_map(include_ghost);
+    else if (kind == EDGE) return edge_map(include_ghost);
+    else if (kind == NODE) return node_map(include_ghost);
+    else if (kind == BOUNDARY_FACE) return exterior_face_map(include_ghost);
+    Errors::Message mesg("No such map type.");
+    Exceptions::amanzi_throw(mesg);
+    throw(mesg);
+  }
+  
   // Get cell map
   virtual
   const Epetra_Map& cell_map(bool include_ghost) const = 0;
@@ -585,8 +600,8 @@ class Mesh {
   const Epetra_Map& edge_map(bool include_ghost) const
   {
     Errors::Message mesg("Edges are not implemented in this framework.");
-    amanzi_throw(mesg);
-    return edge_map(include_ghost);  // avoids clang warnings for every file.
+    Exceptions::amanzi_throw(mesg);
+    throw(mesg);
   }
 
   // Get node map
@@ -665,11 +680,11 @@ class Mesh {
   virtual
   void write_to_exodus_file(const std::string filename) const = 0;
 
-
  protected:
   // Helper function to build columns
   virtual
   int build_columns_() const;
+  void build_column_(int colnum, Entity_ID top_face) const;
 
   // Beginning of new interface to regions using the base mesh.
   void get_set_entities_box_vofs_(

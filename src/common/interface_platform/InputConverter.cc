@@ -329,7 +329,7 @@ DOMNode* InputConverter::GetUniqueElementByTagsString_(
 DOMNode* InputConverter::GetUniqueElementByTagsString_(
     const DOMNode* node1, const std::string& tags, bool& flag)
 {
-  DOMNode* node;
+  DOMNode* node = nullptr;
 
   flag = false;
   std::vector<std::string> tag_names = CharToStrings_(tags.c_str());
@@ -580,6 +580,7 @@ double InputConverter::GetAttributeValueD_(
   } else {
     char* tagname = mm.transcode(elem->getNodeName());
     ThrowErrorMissattr_(tagname, "attribute", attr_name, tagname);
+    val = default_val;
   }
 
   return val;
@@ -848,6 +849,7 @@ double InputConverter::GetTextContentD_(
         msg << "Input unit [" << unit_in << "] for element \"" << tagname
             << "\" does not match the expected unit [" << unit << "].\n";
         Exceptions::amanzi_throw(msg);
+        val = 0.0;
       }
     }
   } else if (!exception) {

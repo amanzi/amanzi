@@ -305,6 +305,7 @@ int Operator::ApplyTranspose(const CompositeVector& X, CompositeVector& Y, doubl
   return 0;
 }
 
+
 /* ******************************************************************
 * Parallel matvec product Y = A * X.
 * This method is mainly for debugging! Matrix-free apply could better.

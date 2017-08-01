@@ -44,7 +44,8 @@ class SuperMap {
            const std::vector<Teuchos::RCP<const Epetra_Map> >& ghost_maps);
 
   SuperMap(const SuperMap& other);  
-
+  virtual ~SuperMap() = default;
+  
   // meta-data accessors
   bool HasComponent(const std::string& compname) const;
   int Offset(const std::string& compname) const { return offsets_.at(compname); }

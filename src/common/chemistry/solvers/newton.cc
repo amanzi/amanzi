@@ -27,7 +27,7 @@ void Newton::LUDecomposition(double** a, int n, int* indx) {
   for (i = 0; i < n; i++) {
     big = 0.0;
     for (j = 0; j < n; j++)
-      if ((temp = fabs(a[i][j])) > big) {
+      if ((temp = std::fabs(a[i][j])) > big) {
         big = temp;
       }
     if (big == 0.0) {
@@ -50,7 +50,7 @@ void Newton::LUDecomposition(double** a, int n, int* indx) {
         sum -= a[i][k] * a[k][j];
       }
       a[i][j] = sum;
-      if ((dum = vv_[i] * fabs(sum)) >= big) {
+      if ((dum = vv_[i] * std::fabs(sum)) >= big) {
         big = dum;
         imax = i;
       }

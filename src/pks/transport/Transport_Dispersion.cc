@@ -120,14 +120,14 @@ void Transport_PK::CalculateAxiSymmetryDirection()
     const Epetra_MultiVector& perm = *S_->GetFieldData("permeability")->ViewComponent("cell");
 
     for (int c = 0; c < ncells_owned; ++c) {
-      int k;
+      int k = -1;
       if (perm[0][c] != perm[1][c] && perm[1][c] == perm[2][c]) {
         k = 0;
       } else if (perm[1][c] != perm[2][c] && perm[2][c] == perm[0][c]) {
         k = 1;
       } else if (perm[2][c] != perm[0][c] && perm[0][c] == perm[1][c]) {
         k = 2;
-      }
+      } 
       axi_symmetry_[c] = k;
     }
   }

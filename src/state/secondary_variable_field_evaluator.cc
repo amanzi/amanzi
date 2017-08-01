@@ -21,8 +21,8 @@ namespace Amanzi {
 
 SecondaryVariableFieldEvaluator::SecondaryVariableFieldEvaluator(
         Teuchos::ParameterList& plist) :
-    FieldEvaluator(plist) {
-
+    FieldEvaluator(plist)
+{
   // process the plist
   if (plist_.isParameter("evaluator name")) {
     my_key_ = plist_.get<std::string>("evaluator name");
@@ -37,6 +37,8 @@ SecondaryVariableFieldEvaluator::SecondaryVariableFieldEvaluator(
   }
 
   check_derivative_ = plist_.get<bool>("check derivatives", false);
+
+  nonlocal_dependencies_ = plist_.get<bool>("includes non-rank-local dependencies", false);
 }
 
 SecondaryVariableFieldEvaluator::SecondaryVariableFieldEvaluator(
@@ -44,7 +46,9 @@ SecondaryVariableFieldEvaluator::SecondaryVariableFieldEvaluator(
     FieldEvaluator(other),
     my_key_(other.my_key_),
     dependencies_(other.dependencies_),
-    check_derivative_(other.check_derivative_) {}
+    check_derivative_(other.check_derivative_),
+    nonlocal_dependencies_(other.nonlocal_dependencies_)
+{}
 
 
 void SecondaryVariableFieldEvaluator::operator=(const FieldEvaluator& other) {
@@ -81,6 +85,13 @@ bool SecondaryVariableFieldEvaluator::HasFieldChanged(const Teuchos::Ptr<State>&
   for (KeySet::const_iterator dep=dependencies_.begin();
        dep!=dependencies_.end(); ++dep) {
     update |= S->GetFieldEvaluator(*dep)->HasFieldChanged(S, my_key_);
+  }
+  // check if nonlocal for changes in offprocess dependencies
+  if (nonlocal_dependencies_) {
+    int update_l = update;
+    int update_g = 0;
+    S->GetFieldData(my_key_)->Comm().MaxAll(&update_l, &update_g, 1);
+    update |= update_g;
   }
 
   if (update) {
@@ -121,6 +132,9 @@ bool SecondaryVariableFieldEvaluator::HasFieldDerivativeChanged(const Teuchos::P
         Key request, Key wrt_key) {
   Teuchos::OSTab tab = vo_->getOSTab();
 
+  ASSERT(!wrt_key.empty());
+  ASSERT(!request.empty());
+  
   if (vo_->os_OK(Teuchos::VERB_EXTREME)) {
     *vo_->os() << "Secondary Variable d" << my_key_ << "_d" << wrt_key
           << " requested by " << request << std::endl;
@@ -142,6 +156,14 @@ bool SecondaryVariableFieldEvaluator::HasFieldDerivativeChanged(const Teuchos::P
     update |= S->GetFieldEvaluator(*dep)->HasFieldDerivativeChanged(S, my_key_, wrt_key);
   }
 
+  // check if nonlocal for changes in offprocess dependencies
+  if (nonlocal_dependencies_) {
+    int update_l = update;
+    int update_g = 0;
+    S->GetFieldData(my_key_)->Comm().MaxAll(&update_l, &update_g, 1);
+    update |= update_g;
+  }
+  
   // Do the update
   std::pair<Key,Key> deriv_request(request, wrt_key);
   if (update) {
@@ -208,8 +230,8 @@ void SecondaryVariableFieldEvaluator::UpdateFieldDerivative_(const Teuchos::Ptr<
     dmy = Teuchos::rcp(new CompositeVector(*new_fac));
     S->SetData(dmy_key, my_key_, dmy);
     S->GetField(dmy_key,my_key_)->set_initialized();
-    S->GetField(dmy_key,my_key_)->set_io_vis(false);
-    S->GetField(dmy_key,my_key_)->set_io_checkpoint(false);
+    S->GetField(dmy_key,my_key_)->set_io_vis(plist_.get<bool>("visualize derivative", false));
+    S->GetField(dmy_key,my_key_)->set_io_checkpoint(plist_.get<bool>("checkpoint derivative", false));
   }
 
   // Now update the values.

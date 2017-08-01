@@ -74,6 +74,7 @@ SuperMapSurface::CreateIndices_(const std::string& surf_compname, int dofnum, bo
     Errors::Message msg("SuperMapSurface only provides CELL entities.");
     Exceptions::amanzi_throw(msg);
   }
+  // return std::vector<int>();
 }
 
 } // namespace Operators

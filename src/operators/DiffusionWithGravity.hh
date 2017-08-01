@@ -32,6 +32,8 @@ class DiffusionWithGravity : public virtual Diffusion {
       Diffusion(mesh),
       is_scalar_(false) {};
 
+  virtual ~DiffusionWithGravity() = default;
+  
   virtual void SetGravity(const AmanziGeometry::Point& g) { g_ = g; }
   
   virtual void SetDensity(double rho) {

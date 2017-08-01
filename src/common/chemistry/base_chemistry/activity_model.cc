@@ -68,7 +68,7 @@ void ActivityModel::CalculateSumAbsZ(
   for (std::vector<Species>::const_iterator i = primarySpecies.begin();
        i != primarySpecies.end(); i++) {
     if (i->name() != "h2o" && i->name() != "H2O") {
-      Z_ += i->molality() * abs(i->charge());
+      Z_ += i->molality() * std::abs(i->charge());
     }
   }
 
@@ -76,7 +76,7 @@ void ActivityModel::CalculateSumAbsZ(
   for (std::vector<AqueousEquilibriumComplex>::const_iterator i = secondarySpecies.begin();
        i != secondarySpecies.end(); i++) {
     if (i->name() != "h2o" && i->name() != "H2O") {
-      Z_ += i->molality() * abs(i->charge());
+      Z_ += i->molality() * std::abs(i->charge());
     }
   }
 

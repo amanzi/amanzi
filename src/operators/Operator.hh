@@ -146,20 +146,27 @@ class Operator {
   // main constructor
   // At the moment CVS is the domain and range of the operator
   Operator() { apply_calls_ = 0; }
+
   Operator(const Teuchos::RCP<const CompositeVectorSpace>& cvs,
            Teuchos::ParameterList& plist,
            int schema);
+
   Operator(const Teuchos::RCP<const CompositeVectorSpace>& cvs_row_,
            const Teuchos::RCP<const CompositeVectorSpace>& cvs_col_,
            Teuchos::ParameterList& plist,
            const Schema& schema_row_,
            const Schema& schema_col_);
 
+  virtual ~Operator() = default;
+  
   void Init();
 
   // main members
   // -- virtual methods potentially altered by the schema
-  virtual int Apply(const CompositeVector& X, CompositeVector& Y, double scalar = 0.0) const;
+  virtual int Apply(const CompositeVector& X, CompositeVector& Y, double scalar) const;
+  virtual int Apply(const CompositeVector& X, CompositeVector& Y) const {
+    return Apply(X, Y, 0.0);
+  }
   virtual int ApplyTranspose(const CompositeVector& X, CompositeVector& Y, double scalar = 0.0) const;
   virtual int ApplyAssembled(const CompositeVector& X, CompositeVector& Y, double scalar = 0.0) const;
   virtual int ApplyInverse(const CompositeVector& X, CompositeVector& Y) const;

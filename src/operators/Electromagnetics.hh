@@ -43,6 +43,8 @@ class Electromagnetics : public PDE_Helper {
     Init_(plist);
   }
 
+  virtual ~Electromagnetics() = default;
+  
   // main virtual members
   // -- setup 
   virtual void SetTensorCoefficient(const Teuchos::RCP<std::vector<WhetStone::Tensor> >& K);

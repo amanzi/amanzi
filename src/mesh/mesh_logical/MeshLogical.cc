@@ -488,7 +488,7 @@ MeshLogical::get_set_entities(const Set_ID setid,
 
   Teuchos::RCP<const AmanziGeometry::Region> rgn = geometric_model_->FindRegion(setid);
 
-  if (rgn->name() == "All" || rgn->name() == "all" || rgn->name() == "ALL") {
+  if (rgn->name() == "ENTIRE_MESH_REGION") {
     int nent = num_entities(kind, ptype);
     entids->resize(num_entities(kind, ptype));
     for (int i=0; i!=nent; ++i) {
@@ -625,6 +625,7 @@ int
 MeshLogical::build_columns_() const {
   Errors::Message mesg("No columns are buildable in MeshLogical.");
   Exceptions::amanzi_throw(mesg);
+  return -1;
 }
 
 
@@ -646,12 +647,14 @@ int
 MeshLogical::compute_cell_geometric_quantities_() const {
   Errors::Message mesg("DEVELOPER ERROR: cache should be created in finalize()");
   Exceptions::amanzi_throw(mesg);
+  return -1;
 }
 
 int
 MeshLogical::compute_face_geometric_quantities_() const {
   Errors::Message mesg("DEVELOPER ERROR: cache should be created in finalize()");
   Exceptions::amanzi_throw(mesg);
+  return -1;
 }
 
 }  // namespace AmanziMesh
