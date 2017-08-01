@@ -21,6 +21,8 @@
 #include <iomanip>
 #include <vector>
 
+#include "Point.hh"
+
 namespace Amanzi {
 namespace WhetStone {
 
@@ -96,6 +98,13 @@ class Monomial {
   }
 
  private:
+  // direct memory access operations
+  double& operator()(int i) { return coefs_[i]; }
+  const double& operator()(int i) const { return coefs_[i]; }
+
+  friend class Polynomial;
+
+ private:
   int d_, order_;
   std::vector<double> coefs_;
 };
@@ -107,6 +116,10 @@ class Polynomial {
   Polynomial(int d, int order);
 
   // elemental operations with polynomials
+  // -- polynomial value
+  double Value(const AmanziGeometry::Point& xp);
+
+  // -- multi index defines both monomial order and current monomial
   int MonomialPosition(const int* multi_index) const;
   int PolynomialPosition(const int* multi_index) const;
 

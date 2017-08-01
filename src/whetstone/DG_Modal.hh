@@ -69,9 +69,12 @@ class DG_Modal {
   int MassMatrix(int c, Polynomial& K, DenseMatrix& A);
   int AdvectionMatrixFace(int f, Polynomial& un, DenseMatrix& A);
 
+  // virtual elements
+  void VEM_FaceVelocity(int f, std::vector<Polynomial>& v) const;
+
   // finite elements use three meshes: reference, initial and target
-  AmanziGeometry::Point EvaluateMap(int c, const AmanziGeometry::Point& xref) const;
-  Tensor EvaluateJacobian(int c, const AmanziGeometry::Point& xref) const;
+  AmanziGeometry::Point FEM_Map(int c, const AmanziGeometry::Point& xref) const;
+  Tensor FEM_Jacobian(int c, const AmanziGeometry::Point& xref) const;
 
   // miscalleneous
   void set_order(int order) { order_ = order; }
@@ -93,7 +96,7 @@ class DG_Modal {
       const std::vector<double>& factors, 
       const AmanziGeometry::Point& xc1, const AmanziGeometry::Point& xc2);
 
-  Tensor EvaluateJacobianInternal_(Teuchos::RCP<const AmanziMesh::Mesh> mesh,
+  Tensor FEM_JacobianInternal_(Teuchos::RCP<const AmanziMesh::Mesh> mesh,
                                    int c, const AmanziGeometry::Point& xref) const;
 
  private:

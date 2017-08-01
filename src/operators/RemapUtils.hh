@@ -32,11 +32,6 @@ namespace Operators {
 int CellToFace_Scale(Teuchos::RCP<CompositeVector> f1, Teuchos::RCP<CompositeVector>& f2);
 int CellToFace_ScaleInverse(Teuchos::RCP<const CompositeVector> f1, Teuchos::RCP<CompositeVector>& f2);
 
-int RemapVelocityFaces(int order, Teuchos::RCP<const AmanziMesh::Mesh> mesh1,
-                       Teuchos::RCP<AmanziMesh::Mesh> mesh2, Teuchos::RCP<CompositeVector>& u);
-int RemapVelocityCells(int order, Teuchos::RCP<const AmanziMesh::Mesh> mesh1,
-                       Teuchos::RCP<AmanziMesh::Mesh> mesh2, Teuchos::RCP<CompositeVector>& u);
-
 }  // namespace Operators
 }  // namespace Amanzi
 

@@ -264,6 +264,45 @@ double DG_Modal::IntegrateMonomialsEdge_(
 
 
 /* ******************************************************************
+* Calculate mesh velocity on face f.
+****************************************************************** */
+void DG_Modal::VEM_FaceVelocity(int f, std::vector<Polynomial>& v) const
+{
+  ASSERT(mesh0_ != Teuchos::null);
+
+  AmanziMesh::Entity_ID_List nodes;
+  AmanziGeometry::Point x1, x2;
+
+  const AmanziGeometry::Point& xf0 = mesh0_->face_centroid(f);
+  const AmanziGeometry::Point& xf1 = mesh_->face_centroid(f);
+
+  // velocity order 0
+  for (int i = 0; i < d_; ++i) v[i].monomials(0).coefs()[0] = xf1[i] - xf0[i];
+
+  // velocity order 1
+  mesh0_->face_get_nodes(f, &nodes);
+  mesh0_->node_get_coordinates(nodes[0], &x1);
+  mesh_->node_get_coordinates(nodes[0], &x2);
+
+  x1 -= xf0;
+  x2 -= xf1;
+
+  WhetStone::Tensor A(2, 2);
+  AmanziGeometry::Point b(2);
+
+  A(0, 0) = x1[0];
+  A(0, 1) = A(1, 0) = x1[1];
+  A(1, 1) = -x1[0];
+
+  A.Inverse();
+  b = A * (x2 - x1);
+
+  // v.push_back(AmanziGeometry::Point(b[0], -b[1]));
+  // v.push_back(AmanziGeometry::Point(b[1],  b[0]));
+}
+
+
+/* ******************************************************************
 * Polynomial approximation of map x2 = F(x1).
 * We assume that vectors of vertices have a proper length.
 ****************************************************************** */
@@ -323,7 +362,7 @@ int DG_Modal::LeastSquareFit(const std::vector<AmanziGeometry::Point>& x1,
 /* ******************************************************************
 * Support of finite element meshes: bilinear map (2D algorithm)
 ****************************************************************** */
-AmanziGeometry::Point DG_Modal::EvaluateMap(int c, const AmanziGeometry::Point& xref) const
+AmanziGeometry::Point DG_Modal::FEM_Map(int c, const AmanziGeometry::Point& xref) const
 {
   Entity_ID_List nodes;
 
@@ -348,14 +387,13 @@ AmanziGeometry::Point DG_Modal::EvaluateMap(int c, const AmanziGeometry::Point& 
 /* ******************************************************************
 * Support of finite element meshes: Jacobian
 ****************************************************************** */
-Tensor DG_Modal::EvaluateJacobian(
-    int c, const AmanziGeometry::Point& xref) const
+Tensor DG_Modal::FEM_Jacobian(int c, const AmanziGeometry::Point& xref) const
 {
-  Tensor jac = EvaluateJacobianInternal_(mesh_, c, xref);
+  Tensor jac = FEM_JacobianInternal_(mesh_, c, xref);
  
   // Jacobian for convolution of two maps.
   if (mesh0_ != Teuchos::null) {
-    Tensor jac0 = EvaluateJacobianInternal_(mesh0_, c, xref);
+    Tensor jac0 = FEM_JacobianInternal_(mesh0_, c, xref);
     jac0.Inverse();
     jac = jac * jac0;
   }
@@ -364,7 +402,7 @@ Tensor DG_Modal::EvaluateJacobian(
 }
 
 
-Tensor DG_Modal::EvaluateJacobianInternal_(
+Tensor DG_Modal::FEM_JacobianInternal_(
     Teuchos::RCP<const AmanziMesh::Mesh> mesh, 
     int c, const AmanziGeometry::Point& xref) const
 {

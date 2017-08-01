@@ -88,11 +88,6 @@ void RemapTests2DExplicit(int order, std::string disc_name,
   }
   mesh2->deform(nodeids, new_positions, false, &final_positions);
 
-  // calculate mesh velocity on faces and in cells
-  Teuchos::RCP<CompositeVector> velc, velf;
-  RemapVelocityFaces(1, mesh1, mesh2, velf);
-  RemapVelocityCells(1, mesh1, mesh2, velc);
-
   // create and initialize cell-based field 
   CompositeVectorSpace cvs1;
   cvs1.SetMesh(mesh1)->SetGhosted(true)->AddComponent("cell", AmanziMesh::CELL, nk);
@@ -154,7 +149,7 @@ void RemapTests2DExplicit(int order, std::string disc_name,
     for (int c = 0; c < ncells_owned; ++c) {
       AmanziGeometry::Point xref(0.5, 0.5);
 
-      WhetStone::Tensor J0 = dg2.EvaluateJacobian(c, xref);
+      WhetStone::Tensor J0 = dg2.FEM_Jacobian(c, xref);
       WhetStone::Tensor J1(J0);
       J0 *= t;
       J0 += 1.0 - t;
@@ -167,14 +162,15 @@ void RemapTests2DExplicit(int order, std::string disc_name,
 
     // rotate velocities and calculate normal component
     Entity_ID_List faces;
-    std::vector<int> dirs;
 
-    CompositeVector velf_tmp(*velf);
-    const Epetra_MultiVector& vel = *velf->ViewComponent("face");
-    Epetra_MultiVector& vel_tmp = *velf_tmp.ViewComponent("face");
+    CompositeVectorSpace cvs;
+    cvs.SetMesh(mesh1)->SetGhosted(true)->AddComponent("face", AmanziMesh::FACE, 1);
+
+    Teuchos::RCP<CompositeVector> vel = Teuchos::RCP<CompositeVector>(new CompositeVector(cvs));
+    Epetra_MultiVector& vel_f = *vel->ViewComponent("face");
 
     for (int c = 0; c < ncells_owned; ++c) {
-      mesh1->cell_get_faces_and_dirs(c, &faces, &dirs);
+      mesh1->cell_get_faces(c, &faces);
       int nfaces = faces.size();
 
       for (int n = 0; n < nfaces; ++n) {
@@ -198,23 +194,23 @@ void RemapTests2DExplicit(int order, std::string disc_name,
           // xref.push_back(AmanziGeometry::Point(0.0, qb));
         }
 
-        vel_tmp[0][f] = 0.0;
+        vel_f[0][f] = 0.0;
         for (int i = 0; i < xref.size(); ++i) {
-          WhetStone::Tensor J = dg2.EvaluateJacobian(c, xref[i]);
+          WhetStone::Tensor J = dg2.FEM_Jacobian(c, xref[i]);
           J *= t;
           J += 1.0 - t;
           WhetStone::Tensor C = J.Cofactors();
           AmanziGeometry::Point cn = C * mesh1->face_normal(f); 
 
           // calculate velocity
-          xv = dg2.EvaluateMap(c, xref[i]) - dg1.EvaluateMap(c, xref[i]);
-          vel_tmp[0][f] += (xv * cn) * WhetStone::q1d_weights[0][i];
+          xv = dg2.FEM_Map(c, xref[i]) - dg1.FEM_Map(c, xref[i]);
+          vel_f[0][f] += (xv * cn) * WhetStone::q1d_weights[0][i];
         }
       }
     }
 
     // populate operators
-    op->UpdateMatrices(velf_tmp);
+    op->UpdateMatrices(*vel);
     op_reac0->UpdateMatrices(p1);
 
     // predictor step
@@ -285,8 +281,4 @@ void RemapTests2DExplicit(int order, std::string disc_name,
 TEST(REMAP_2D_EXPLICIT) {
   RemapTests2DExplicit(0, "DG order 0", 20, 20, 0.1 / 2);
 }
-
-// TEST(REMAP_2D_IMPLICIT) {
-//   RemapTests2DImplicit(0, "DG order 0", 40, 40, 0.1);
-// }
 

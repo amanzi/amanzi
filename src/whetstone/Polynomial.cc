@@ -32,6 +32,31 @@ Polynomial::Polynomial(int d, int order) : d_(d), order_(order)
 
 
 /* ******************************************************************
+* Calculate polynomial value
+****************************************************************** */
+double Polynomial::Value(const AmanziGeometry::Point& xp)
+{
+  double sum(0.0);
+
+  for (auto it = begin(); it.end() != end(); ++it) {
+    const int* index = it.multi_index();
+    int l = MonomialPosition(index);
+
+    int k(0);
+    double tmp(1.0);
+    for (int i = 0; i < d_; ++i) {
+      tmp *= std::pow(xp[i], index[i]);
+      k += index[i];
+    }
+    sum += tmp * coefs_[k](l);
+  }
+
+  return sum;
+}
+
+
+
+/* ******************************************************************
 * Position in monomial defined by multi_index. 2D algorithm
 ****************************************************************** */
 int Polynomial::MonomialPosition(const int* multi_index) const
