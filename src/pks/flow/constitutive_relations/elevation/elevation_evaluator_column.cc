@@ -95,7 +95,7 @@ void ElevationEvaluatorColumn::EvaluateElevationAndSlope_(const Teuchos::Ptr<Sta
       for(unsigned i=0; i<ngb_cells; i++){
         AmanziGeometry::Point P2 = S->GetMesh("surface_star")->cell_centroid(nadj_cellids[i]);
         ngb_centroids[i].set(P2[0], P2[1], elev_ngb_c[0][nadj_cellids[i]]);
-        //      std::cout<<"NEIGHB: Centroid: "<<c<<" "<<my_centroid[c]<<" : "<<nadj_cellids[i]<<" "<< ngb_centroids[i]<<"\n";
+        //std::cout<<"NEIGHB: Centroid: "<<c<<" "<<my_centroid[c]<<" : "<<nadj_cellids[i]<<" "<< ngb_centroids[i]<<"\n";
       }
 
     

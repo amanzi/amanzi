@@ -333,7 +333,6 @@ void OverlandPressureFlow::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S
       elev_evaluator = Teuchos::rcp(new Flow::MeshedElevationEvaluator(elev_plist));
     else{
       elev_evaluator = Teuchos::rcp(new Flow::ElevationEvaluatorColumn(elev_plist));
-      std::cout<<"Overland Pres. Elevation: "<< domain_<<"\n";
     }
   }
 

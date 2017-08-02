@@ -45,6 +45,7 @@ WeakMPCSemiCoupledDeform::WeakMPCSemiCoupledDeform(Teuchos::ParameterList& pk_tr
     domain_name_stream << std::get<0>(col_triple) << "_" << gid;
     subpks.push_back(Keys::getKey(domain_name_stream.str(), std::get<2>(col_triple)));
   }
+
   numPKs_ = subpks.size();
 
   PKFactory pk_factory;
@@ -58,6 +59,8 @@ WeakMPCSemiCoupledDeform::WeakMPCSemiCoupledDeform(Teuchos::ParameterList& pk_tr
   Teuchos::RCP<PK> pk = pk_factory.CreatePK(subpks[0], pk_tree, global_list_, S, pk_soln);
   sub_pks_.push_back(pk);
   
+  int rank;
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
   // -- create the lifted PKs
   int npks = subpks.size();
   for (int i=1; i!=npks; ++i) {
@@ -68,7 +71,64 @@ WeakMPCSemiCoupledDeform::WeakMPCSemiCoupledDeform(Teuchos::ParameterList& pk_tr
     // create the PK
     Teuchos::RCP<PK> pk = pk_factory.CreatePK(subpks[i], pk_tree, global_list_, S, pk_soln);
     sub_pks_.push_back(pk);
+
+    //check IC
+    Teuchos::Array<std::string> pkorder1 = global_list_->sublist("PKs").sublist(subpks[i]).get<Teuchos::Array<std::string> >("PKs order");
+    Teuchos::Array<std::string> pkorder2 = global_list_->sublist("PKs").sublist(pkorder1[1]).get<Teuchos::Array<std::string> >("PKs order");
+    for (int i=0; i<pkorder2.size(); i++){
+      
+      if (global_list_->sublist("PKs").sublist(pkorder2[i]).isSublist("initial condition")){
+	Teuchos::ParameterList& seb_list = global_list_->sublist("PKs").sublist(pkorder2[i]).sublist("initial condition");
+	if (seb_list.isParameter("restart files, cycles")){
+	  
+	  Teuchos::Array<std::string> restart = seb_list.get<Teuchos::Array<std::string> >("restart files, cycles");
+	  
+	  std::stringstream res_file;
+	  
+	  if(restart[0].rfind("/") == restart[0].size()-1){} //exact path
+	  else
+	    restart[0] += "/";
+	  
+	  res_file << restart[0] << "checkpoint_" << rank << "_" << restart[1] << ".h5";
+	  
+	  seb_list.set("restart file", res_file.str());
+	  
+	}
+	
+	
+      }
+      else if(global_list_->sublist("PKs").sublist(pkorder2[i]).isParameter("PKs order")) {
+
+	Teuchos::Array<std::string> pkorder3 = global_list_->sublist("PKs").sublist(pkorder2[i]).get<Teuchos::Array<std::string> >("PKs order");
+
+	for(int j=0; j <pkorder3.size(); j++){
+	  Teuchos::ParameterList& seb_list = global_list_->sublist("PKs").sublist(pkorder3[j]).sublist("initial condition");
+	  if (seb_list.isParameter("restart files, cycles")){
+	    
+	    Teuchos::Array<std::string> restart = seb_list.get<Teuchos::Array<std::string> >("restart files, cycles");
+	    
+	    std::stringstream res_file;
+	    
+	    if(restart[0].rfind("/") == restart[0].size()-1){} //exact path
+	    else
+	      restart[0] += "/";
+	    
+	    res_file << restart[0] << "checkpoint_" << rank << "_" << restart[1] << ".h5";
+	    
+	    seb_list.set("restart file", res_file.str());
+	    
+	  }
+	  
+
+	}
+      } //PSS end
+
+     
+    }  
   }
+
+  
+  
 }
 
 
@@ -502,123 +562,6 @@ WeakMPCSemiCoupledDeform::CoupledSurfSubsurfColumns(double t_old, double t_new, 
       }
       
     }
-    
-    /*
-    
-    // surface_star deformation update
-    if (true){
-      Epetra_MultiVector& surfstar_elev = *S_next_->GetFieldData("surface_star-elevation",
-								 S_inter_->GetField("surface_star-elevation")->owner())	
-	->ViewComponent("cell", false);
-      for (unsigned c=0; c<size_t; c++){
-	std::stringstream name;
-	
-	int id = S_->GetMesh("surface")->cell_map(false).GID(c);
-	name << "column_" << id;
-	
-	int nfaces = S_->GetMesh(name.str())->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
-	
-	std::vector<AmanziGeometry::Point> coord; 
-	S_->GetMesh(name.str())->face_get_coordinates(nfaces-1, &coord);
-	std::cout<<"WEAKMPC: num faces and nodes: "<<name.str()<<" "<<nfaces<< " "<<coord[0]<<"\n";
-	surfstar_elev[0][c] = coord[0][2];
-      }
-      
-    }
-    for (unsigned c=0; c<size_t; c++){
-      std::stringstream name;
-      int id = S_->GetMesh("surface")->cell_map(false).GID(c);
-      name << "surface_column_" << id;
-      const Epetra_MultiVector& surf_t = *S_next_->GetFieldData(Keys::getKey(name.str(),"temperature"))->ViewComponent("cell", false);
-      surfstar_t[0][c] = surf_t[0][0];
-    }
-    
-    
-    //SLOPE UPDATE
-    // Get current cell centroid (c), get ordered faces ids, get face adjacent cell centroid, find a plane (c, c1, c2), find normal to plane, average all normal
-    std::cout<<"---- aborting Weak MPC ----\n";
-    abort();
-    Epetra_MultiVector& surfstar_slope = *S_next_->GetFieldData("surface_star-slope_magnitude", S_inter_->GetField("surface_star-slope_magnitude")->owner())->ViewComponent("cell", false);
-    std::vector<AmanziGeometry::Point> my_centroid; 
-    for (unsigned c=0; c<size_t; c++){
-      std::stringstream name;
-      
-      int id = S_->GetMesh("surface")->cell_map(false).GID(c);
-      
-      name << "column_" << id;
-      // name_sf << "surface_column_" << id;
-      int nfaces = S_->GetMesh(name.str())->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
-      
-      std::vector<AmanziGeometry::Point> coord; 
-      S_->GetMesh(name.str())->face_get_coordinates(nfaces-1, &coord);
-      
-      my_centroid.push_back(coord[0]);
-      AmanziGeometry::Entity_ID_List nadj_cellids;
-      S_->GetMesh("surface")->cell_get_face_adj_cells(id, AmanziMesh::USED, &nadj_cellids);
-      int nface_pcell = S_->GetMesh("surface")->cell_get_num_faces(id);
-      
-      int ngb_cells = nadj_cellids.size();
-      std::vector<AmanziGeometry::Point> ngb_centroids(ngb_cells);
-      std::cout<<"----------\n";
-      
-      //get the neighboring cell centroids
-      for(unsigned i=0; i<ngb_cells; i++){
-	std::stringstream col_name;
-	col_name << "column_" <<nadj_cellids[i];
-	std::vector<AmanziGeometry::Point> crd; 
-	S_->GetMesh(col_name.str())->face_get_coordinates(nfaces-1, &crd);
-	ngb_centroids[i] = crd[0];
-	std::cout<<"Centroid: "<< name.str()<<" "<<col_name.str()<<" "<<my_centroid[c]<<" "<<nadj_cellids[i]<<" "<<crd[0]<< " \n";
-      }
-      
-      //std::cout<<"Normal: "<<my_centroid[c]<<" "<<ngb_centroids[i]<<" "<<ngb_centroids[i+1]<<" "<<Normal[i]<<"\n";
-      // std::cout<<"Adj cell ids: "<<nadj_cellids[i]<<"\n";
-      // average all neighbor face normals
-
-      //ngb_face1 = S_->GetMesh("surface_3d")->entity_get_parent(AmanziMesh::FACE, nadj_cellids[i]);
-      //ngb_face2 = S_->GetMesh("surface_3d")->entity_get_parent(AmanziMesh::FACE, nadj_cellids[i]);
-      
-      //AmanziGeometry::Point fnor1 = S_->GetMesh(name.str())->face_normal(ngb_face1);
-      //AmanziGeometry::Point fnor2 = S_->GetMesh(name.str())->face_normal(ngb_face2);
-      std::vector<AmanziGeometry::Point> Normal;
-      AmanziGeometry::Point N, PQ, PR, Nor_avg(3);
-      
-      if (ngb_cells >1){
-	for (int i=0; i <ngb_cells-1; i++){
-	  PQ = my_centroid[c] - ngb_centroids[i];
-	  PR = my_centroid[c] - ngb_centroids[i+1];
-	  N = PQ^PR;
-	  Normal.push_back(PQ^PR);
-	}
-	AmanziMesh::Entity_ID face;
-	face = S_->GetMesh("surface_star")->entity_get_parent(AmanziMesh::CELL, c);
-	
-	//AmanziGeometry::Point fnor = S_->GetMesh(name.str())->face_normal(face);
-	AmanziGeometry::Point fnor = S_->GetMesh("domain")->face_normal(face);
-	std::cout<<"Normal: "<<name.str()<<" "<<N<<" "<<fnor<<" : "<<face<<std::endl;
-	Nor_avg = (nface_pcell - Normal.size()) * fnor; 
-	for (int i=0; i <Normal.size(); i++)
-	  Nor_avg += Normal[i];
-	
-    	
-	std::cout<<"Neighbor normal: "<<fnor<<" "<<Nor_avg<<" "<<std::endl;
-	
-	//Nor_avg /= AmanziGeometry::norm(Nor_avg);
-	Nor_avg /= nface_pcell;
-	std::cout<<"Avg normal: "<<Nor_avg<<" "<<std::endl;
-	double sl = (std::sqrt(std::pow(Nor_avg[0],2) + std::pow(Nor_avg[1],2)))/ std::abs(Nor_avg[2]);
-	std::cout<<"SLOPE: "<<c<<" "<<sl<<"\n";
-      }
-      else{
-	PQ = my_centroid[c] - ngb_centroids[0];
-	double sl = (std::sqrt(std::pow(PQ[0],2) + std::pow(PQ[1],2))) / std::abs(PQ[2]);
-	std::cout<<"SLOPE: "<<c<<" "<<sl<<"\n";
-	//get slope
-      }
-      
-    }
-    */ 
-      
      
     // Mark surface_star-pressure evaluator as changed.
     // NOTE: later do it in the setup --aj

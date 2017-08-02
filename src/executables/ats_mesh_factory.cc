@@ -273,9 +273,22 @@ createMeshes(Teuchos::ParameterList& global_list,
       }
       global_list.remove("visualization surface cells");
     }
+
+
+    //generalize checkpoint files for columns
+    
+    Teuchos::ParameterList& checkpoint_plist = global_list.sublist("checkpoints");
+    std::stringstream name_check;
+    name_check << rank;
+    if (global_list.isSublist("checkpoints"))
+      checkpoint_plist.set("file name base", "checkpoint_"+name_check.str() + "_");
+    else
+      checkpoint_plist.set("file name base", "checkpoint");
+    global_list.set("checkpoint " +name_check.str(), checkpoint_plist);
+    global_list.remove("checkpoints");
+        
   }
-
-
+  
   // -------------------------------------------------
   // aliased domains
   for (auto sub : plist) {
