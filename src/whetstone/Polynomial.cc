@@ -32,13 +32,25 @@ Polynomial::Polynomial(int d, int order) : d_(d), order_(order)
 
 
 /* ******************************************************************
+* Resets all coefficients to zero
+****************************************************************** */
+void Polynomial::Reset()
+{
+  for (int i = 0; i <= order_; ++i) {
+    std::vector<double>& tmp = coefs_[i].coefs();
+    for (auto it = tmp.begin(); it != tmp.end(); ++it) *it = 0.0;
+  }
+}
+
+
+/* ******************************************************************
 * Calculate polynomial value
 ****************************************************************** */
 double Polynomial::Value(const AmanziGeometry::Point& xp)
 {
   double sum(0.0);
 
-  for (auto it = begin(); it.end() != end(); ++it) {
+  for (auto it = begin(); it.end() <= end(); ++it) {
     const int* index = it.multi_index();
     int l = MonomialPosition(index);
 

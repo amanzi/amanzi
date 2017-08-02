@@ -56,15 +56,15 @@ void RemapTests2DExplicit(int order, std::string disc_name,
   MeshFactory meshfactory(&comm);
   meshfactory.preference(FrameworkPreference({MSTK}));
 
-  Teuchos::RCP<const Mesh> mesh1 = meshfactory(0.0, 0.0, 1.0, 1.0, nx, ny);
+  Teuchos::RCP<const Mesh> mesh0 = meshfactory(0.0, 0.0, 1.0, 1.0, nx, ny);
 
-  int ncells_owned = mesh1->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
-  int ncells_wghost = mesh1->num_entities(AmanziMesh::CELL, AmanziMesh::USED);
-  int nfaces_wghost = mesh1->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
-  int nnodes_owned = mesh1->num_entities(AmanziMesh::NODE, AmanziMesh::OWNED);
+  int ncells_owned = mesh0->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  int ncells_wghost = mesh0->num_entities(AmanziMesh::CELL, AmanziMesh::USED);
+  int nfaces_wghost = mesh0->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
+  int nnodes_owned = mesh0->num_entities(AmanziMesh::NODE, AmanziMesh::OWNED);
 
   // create second and auxiliary mesh
-  Teuchos::RCP<Mesh> mesh2 = meshfactory(0.0, 0.0, 1.0, 1.0, nx, ny);
+  Teuchos::RCP<Mesh> mesh1 = meshfactory(0.0, 0.0, 1.0, 1.0, nx, ny);
 
   // deform the second mesh
   AmanziGeometry::Point xv(2);
@@ -72,7 +72,7 @@ void RemapTests2DExplicit(int order, std::string disc_name,
   AmanziGeometry::Point_List new_positions, final_positions;
 
   for (int v = 0; v < nnodes_owned; ++v) {
-    mesh2->node_get_coordinates(v, &xv);
+    mesh1->node_get_coordinates(v, &xv);
 
     double ds(0.001), ux, uy;
     for (int i = 0; i < 1000; ++i) {
@@ -86,16 +86,16 @@ void RemapTests2DExplicit(int order, std::string disc_name,
     nodeids.push_back(v);
     new_positions.push_back(xv);
   }
-  mesh2->deform(nodeids, new_positions, false, &final_positions);
+  mesh1->deform(nodeids, new_positions, false, &final_positions);
 
   // create and initialize cell-based field 
   CompositeVectorSpace cvs1;
-  cvs1.SetMesh(mesh1)->SetGhosted(true)->AddComponent("cell", AmanziMesh::CELL, nk);
+  cvs1.SetMesh(mesh0)->SetGhosted(true)->AddComponent("cell", AmanziMesh::CELL, nk);
   CompositeVector p1(cvs1);
   Epetra_MultiVector& p1c = *p1.ViewComponent("cell", true);
 
   for (int c = 0; c < ncells_wghost; c++) {
-    const AmanziGeometry::Point& xc = mesh1->cell_centroid(c);
+    const AmanziGeometry::Point& xc = mesh0->cell_centroid(c);
     p1c[0][c] = xc[0] + 2 * xc[1] * xc[1];
     if (nk > 1) {
       p1c[1][c] = 0.0;
@@ -105,7 +105,7 @@ void RemapTests2DExplicit(int order, std::string disc_name,
 
   // allocate memory
   CompositeVectorSpace cvs2;
-  cvs2.SetMesh(mesh2)->SetGhosted(true)->AddComponent("cell", AmanziMesh::CELL, nk);
+  cvs2.SetMesh(mesh1)->SetGhosted(true)->AddComponent("cell", AmanziMesh::CELL, nk);
   CompositeVector p2(cvs2);
   Epetra_MultiVector& p2c = *p2.ViewComponent("cell", true);
 
@@ -121,7 +121,7 @@ void RemapTests2DExplicit(int order, std::string disc_name,
 
   plist.sublist("schema range") = plist.sublist("schema domain");
 
-  Teuchos::RCP<AdvectionRiemann> op = Teuchos::rcp(new AdvectionRiemann(plist, mesh1));
+  Teuchos::RCP<AdvectionRiemann> op = Teuchos::rcp(new AdvectionRiemann(plist, mesh0));
   auto global_op = op->global_operator();
 
   // create accumulation operator
@@ -131,25 +131,25 @@ void RemapTests2DExplicit(int order, std::string disc_name,
       .set<Teuchos::Array<std::string> >("type", std::vector<std::string>({"scalar"}))
       .set<Teuchos::Array<int> >("number", std::vector<int>({nk}));
 
-  Teuchos::RCP<Reaction> op_reac0 = Teuchos::rcp(new Reaction(plist, mesh1));
-  Teuchos::RCP<Reaction> op_reac1 = Teuchos::rcp(new Reaction(plist, mesh1));
+  Teuchos::RCP<Reaction> op_reac0 = Teuchos::rcp(new Reaction(plist, mesh0));
+  Teuchos::RCP<Reaction> op_reac1 = Teuchos::rcp(new Reaction(plist, mesh0));
   auto global_reac0 = op_reac0->global_operator();
   auto global_reac1 = op_reac1->global_operator();
 
-  Teuchos::RCP<Epetra_MultiVector> jac0 = Teuchos::rcp(new Epetra_MultiVector(mesh1->cell_map(true), 1));
-  Teuchos::RCP<Epetra_MultiVector> jac1 = Teuchos::rcp(new Epetra_MultiVector(mesh1->cell_map(true), 1));
+  Teuchos::RCP<Epetra_MultiVector> jac0 = Teuchos::rcp(new Epetra_MultiVector(mesh0->cell_map(true), 1));
+  Teuchos::RCP<Epetra_MultiVector> jac1 = Teuchos::rcp(new Epetra_MultiVector(mesh0->cell_map(true), 1));
   op_reac0->Setup(jac0);
   op_reac1->Setup(jac1);
 
   double t(0.0), tend(1.0);
-  WhetStone::DG_Modal dg1(mesh1), dg2(mesh1, mesh2);
+  WhetStone::DG_Modal dg(mesh0, mesh1);
 
   while(t < tend - dt/2) {
     // calculate determinant of Jacobian
     for (int c = 0; c < ncells_owned; ++c) {
       AmanziGeometry::Point xref(0.5, 0.5);
 
-      WhetStone::Tensor J0 = dg2.FEM_Jacobian(c, xref);
+      WhetStone::Tensor J0 = dg.FEM_Jacobian(c, xref);
       WhetStone::Tensor J1(J0);
       J0 *= t;
       J0 += 1.0 - t;
@@ -162,48 +162,49 @@ void RemapTests2DExplicit(int order, std::string disc_name,
 
     // rotate velocities and calculate normal component
     Entity_ID_List faces;
+    WhetStone::Polynomial poly(2, 1);
+    std::vector<WhetStone::Polynomial> uv(2, poly);
 
     CompositeVectorSpace cvs;
-    cvs.SetMesh(mesh1)->SetGhosted(true)->AddComponent("face", AmanziMesh::FACE, 1);
+    cvs.SetMesh(mesh0)->SetGhosted(true)->AddComponent("face", AmanziMesh::FACE, 1);
 
     Teuchos::RCP<CompositeVector> vel = Teuchos::RCP<CompositeVector>(new CompositeVector(cvs));
     Epetra_MultiVector& vel_f = *vel->ViewComponent("face");
 
     for (int c = 0; c < ncells_owned; ++c) {
-      mesh1->cell_get_faces(c, &faces);
+      mesh0->cell_get_faces(c, &faces);
       int nfaces = faces.size();
 
       for (int n = 0; n < nfaces; ++n) {
         int f = faces[n];
 
         // calculate j J^{-t} N dA
-        // double qa(WhetStone::q1d_points[1][0]), qb(WhetStone::q1d_points[1][1]);
         double qa(0.5);
         std::vector<AmanziGeometry::Point> xref;
         if (n == 0) { 
           xref.push_back(AmanziGeometry::Point(qa, 0.0));
-          // xref.push_back(AmanziGeometry::Point(qb, 0.0));
         } else if (n == 1) {
           xref.push_back(AmanziGeometry::Point(1.0, qa));
-          // xref.push_back(AmanziGeometry::Point(1.0, qb));
         } else if (n == 2) { 
           xref.push_back(AmanziGeometry::Point(qa, 1.0));
-          // xref.push_back(AmanziGeometry::Point(qb, 1.0));
         } else if (n == 3) {
           xref.push_back(AmanziGeometry::Point(0.0, qa));
-          // xref.push_back(AmanziGeometry::Point(0.0, qb));
         }
 
         vel_f[0][f] = 0.0;
         for (int i = 0; i < xref.size(); ++i) {
-          WhetStone::Tensor J = dg2.FEM_Jacobian(c, xref[i]);
+          dg.FaceVelocity(c, f, uv);
+
+          WhetStone::Tensor J = dg.FEM_Jacobian(c, xref[i]);
+          // WhetStone::Tensor J = dg.VEM_Jacobian(c, f, uv);
           J *= t;
           J += 1.0 - t;
           WhetStone::Tensor C = J.Cofactors();
-          AmanziGeometry::Point cn = C * mesh1->face_normal(f); 
+          AmanziGeometry::Point cn = C * mesh0->face_normal(f); 
 
-          // calculate velocity
-          xv = dg2.FEM_Map(c, xref[i]) - dg1.FEM_Map(c, xref[i]);
+          // calculate velocity (FEM = VEM)
+          const AmanziGeometry::Point& xf = mesh0->face_centroid(f);
+          xv = AmanziGeometry::Point(uv[0].Value(xf), uv[1].Value(xf));
           vel_f[0][f] += (xv * cn) * WhetStone::q1d_weights[0][i];
         }
       }
@@ -250,8 +251,8 @@ void RemapTests2DExplicit(int order, std::string disc_name,
   // calculate error
   double pl2_err(0.0), pinf_err(0.0), area(0.0);
   for (int c = 0; c < ncells_owned; ++c) {
-    const AmanziGeometry::Point& xc = mesh2->cell_centroid(c);
-    double area_c = mesh2->cell_volume(c);
+    const AmanziGeometry::Point& xc = mesh1->cell_centroid(c);
+    double area_c = mesh1->cell_volume(c);
 
     double tmp = (xc[0] + 2 * xc[1] * xc[1]) - p2c[0][c];
     pinf_err = std::max(pinf_err, fabs(tmp));
@@ -270,9 +271,9 @@ void RemapTests2DExplicit(int order, std::string disc_name,
   // visualization
   if (MyPID == 0) {
     const Epetra_MultiVector& p2c = *p2.ViewComponent("cell");
-    GMV::open_data_file(*mesh2, (std::string)"operators.gmv");
+    GMV::open_data_file(*mesh1, (std::string)"operators.gmv");
     GMV::start_data();
-    GMV::write_cell_data(p2c, 0, "remaped");
+    GMV::write_cell_data(p1c, 0, "remaped");
     GMV::close_data_file();
   }
 }

@@ -266,39 +266,71 @@ double DG_Modal::IntegrateMonomialsEdge_(
 /* ******************************************************************
 * Calculate mesh velocity on face f.
 ****************************************************************** */
-void DG_Modal::VEM_FaceVelocity(int f, std::vector<Polynomial>& v) const
+void DG_Modal::FaceVelocity(int c, int f, std::vector<Polynomial>& v) const
 {
   ASSERT(mesh0_ != Teuchos::null);
+  VEM_FaceVelocity_(c, f, v);
+}
 
+
+/* ******************************************************************
+* Calculate mesh velocity on face f: VEM implemenetation
+****************************************************************** */
+void DG_Modal::VEM_FaceVelocity_(int c, int f, std::vector<Polynomial>& v) const
+{
   AmanziMesh::Entity_ID_List nodes;
-  AmanziGeometry::Point x1, x2;
+  AmanziGeometry::Point x0, x1;
 
   const AmanziGeometry::Point& xf0 = mesh0_->face_centroid(f);
   const AmanziGeometry::Point& xf1 = mesh_->face_centroid(f);
 
   // velocity order 0
-  for (int i = 0; i < d_; ++i) v[i].monomials(0).coefs()[0] = xf1[i] - xf0[i];
+  for (int i = 0; i < d_; ++i) {
+    v[i].Reset();
+    v[i].monomials(0).coefs()[0] = xf1[i] - xf0[i];
+  }
 
-  // velocity order 1
+  // velocity order 1 (2D algorithm)
   mesh0_->face_get_nodes(f, &nodes);
-  mesh0_->node_get_coordinates(nodes[0], &x1);
-  mesh_->node_get_coordinates(nodes[0], &x2);
+  mesh0_->node_get_coordinates(nodes[0], &x0);
+  mesh_->node_get_coordinates(nodes[0], &x1);
 
-  x1 -= xf0;
-  x2 -= xf1;
+  x0 -= xf0;
+  x1 -= xf1;
 
   WhetStone::Tensor A(2, 2);
   AmanziGeometry::Point b(2);
 
-  A(0, 0) = x1[0];
-  A(0, 1) = A(1, 0) = x1[1];
-  A(1, 1) = -x1[0];
+  A(0, 0) = x0[0];
+  A(0, 1) = A(1, 0) = x0[1];
+  A(1, 1) = -x0[0];
 
   A.Inverse();
-  b = A * (x2 - x1);
+  b = A * (x1 - x0);
 
-  // v.push_back(AmanziGeometry::Point(b[0], -b[1]));
-  // v.push_back(AmanziGeometry::Point(b[1],  b[0]));
+  v[0].monomials(1).coefs() = { b[0], b[1]};
+  v[1].monomials(1).coefs() = {-b[1], b[0]};
+
+  v[0].monomials(0).coefs()[0] -= b * xf0;
+  v[1].monomials(0).coefs()[0] -= (b^xf0)[0];
+}
+
+
+/* ******************************************************************
+* Calculate mesh velocity on face f: VEM implemenetation
+****************************************************************** */
+Tensor DG_Modal::VEM_Jacobian(int c, int f, std::vector<Polynomial>& v) const
+{
+  Tensor jac(d_, 2);
+
+  for (int i = 0; i < d_; ++i) {
+    for (int j = 0; j < d_; ++j) {
+      jac(i, j) = v[i].monomials(1).coefs()[j];
+    }
+  }
+  jac += 1.0;
+
+  return jac;
 }
 
 

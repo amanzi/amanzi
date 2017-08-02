@@ -16,19 +16,20 @@
 namespace Amanzi {
 namespace WhetStone {
 
+// status of elemental matrices
 const int WHETSTONE_ELEMENTAL_MATRIX_OK = 0;
 const int WHETSTONE_ELEMENTAL_MATRIX_SIZE = 1;
 const int WHETSTONE_ELEMENTAL_MATRIX_FAILED = 2;  // only for unexpected situations
 
+// control of the stabilization term in MFD schemes
 const int WHETSTONE_STABILITY_GENERIC = 1;
 const int WHETSTONE_STABILITY_GENERIC_SCALED = 2;
 const int WHETSTONE_STABILITY_OPTIMIZED_DMP = 3;
 const int WHETSTONE_STABILITY_OPTIMIZED_GEOMETRY = 4;
 
-const int WHETSTONE_MAX_SPATIAL_DIMENSION = 3;
-
 const double WHETSTONE_TOLERANCE_DECOMPOSITION = 1e-12;
 
+// control of simplex method
 const double WHETSTONE_SIMPLEX_TOLERANCE = 1e-10;
 const double WHETSTONE_SIMPLEX_MAX_ITERATIONS = 100;  // factor of number of unknowns
 const double WHETSTONE_SIMPLEX_NO_FEASIBLE_SET = -1;
@@ -40,12 +41,18 @@ const int WHETSTONE_SIMPLEX_FUNCTIONAL_TRACE = 2;
 #undef WHETSTONE_SIMPLEX_PIVOT_BRANDT  // select pivot rule
 #define WHETSTONE_SIMPLEX_PIVOT_MFD3D
 
-const int DIFFUSION_OPTIMIZED_FOR_SPARSITY = 9;  // recommended MFD methods
+// various MFD schemes
+const int DIFFUSION_OPTIMIZED_FOR_SPARSITY = 9;  // recommended
 const int DIFFUSION_POLYHEDRA_SCALED = 2; 
 const int DIFFUSION_OPTIMIZED_FOR_MONOTONICITY = 3;  
 const int DIFFUSION_HEXAHEDRA_MONOTONE = 4;
 const int DIFFUSION_SUPPORT_OPERATOR = 7;
 const int DIFFUSION_TPFA = 5; 
+
+// various discretization methods (used by DG schemes)
+const int WHETSTONE_METHOD_MFD = 0;
+const int WHETSTONE_METHOD_VEM = 1;
+const int WHETSTONE_METHOD_FEM = 2;
 
 }  // namespace WhetStone
 }  // namespace Amanzi

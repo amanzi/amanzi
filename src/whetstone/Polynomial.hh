@@ -115,8 +115,11 @@ class Polynomial {
   Polynomial() : d_(0), order_(-1), size_(0) {};
   Polynomial(int d, int order);
 
+  // resets all coefficients to zero
+  void Reset();
+
   // elemental operations with polynomials
-  // -- polynomial value
+  // -- polynomial values
   double Value(const AmanziGeometry::Point& xp);
 
   // -- multi index defines both monomial order and current monomial

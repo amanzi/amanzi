@@ -23,6 +23,7 @@
 #include "DenseMatrix.hh"
 #include "Polynomial.hh"
 #include "Tensor.hh"
+#include "WhetStoneDefs.hh"
 #include "WhetStone_typedefs.hh"
 
 namespace Amanzi {
@@ -48,20 +49,23 @@ class DG_Modal {
     : order_(-1),
       mesh_(mesh),
       mesh0_(Teuchos::null),
-      d_(mesh_->space_dimension()) {};
+      d_(mesh_->space_dimension()),
+      method_(WHETSTONE_METHOD_VEM) {};
 
   DG_Modal(Teuchos::RCP<const AmanziMesh::Mesh> mesh0,
            Teuchos::RCP<const AmanziMesh::Mesh> mesh) 
     : order_(-1),
       mesh_(mesh),
       mesh0_(mesh0),
-      d_(mesh_->space_dimension()) {};
+      d_(mesh_->space_dimension()),
+      method_(WHETSTONE_METHOD_VEM) {};
 
   DG_Modal(int order, Teuchos::RCP<const AmanziMesh::Mesh> mesh)
     : order_(order), 
       mesh_(mesh),
       mesh0_(Teuchos::null),
-      d_(mesh_->space_dimension()) {};
+      d_(mesh_->space_dimension()),
+      method_(WHETSTONE_METHOD_VEM) {};
 
   ~DG_Modal() {};
 
@@ -69,8 +73,11 @@ class DG_Modal {
   int MassMatrix(int c, Polynomial& K, DenseMatrix& A);
   int AdvectionMatrixFace(int f, Polynomial& un, DenseMatrix& A);
 
-  // virtual elements
-  void VEM_FaceVelocity(int f, std::vector<Polynomial>& v) const;
+  // support of advection schemes
+  void FaceVelocity(int c, int f, std::vector<Polynomial>& v) const;
+
+  // projection method
+  Tensor VEM_Jacobian(int c, int f, std::vector<Polynomial>& v) const;
 
   // finite elements use three meshes: reference, initial and target
   AmanziGeometry::Point FEM_Map(int c, const AmanziGeometry::Point& xref) const;
@@ -78,6 +85,7 @@ class DG_Modal {
 
   // miscalleneous
   void set_order(int order) { order_ = order; }
+  void set_method(int method) { method_ = method; }
 
   // polynomial approximation of map x2 = F(x1)
   int LeastSquareFit(const std::vector<AmanziGeometry::Point>& x1, 
@@ -96,13 +104,18 @@ class DG_Modal {
       const std::vector<double>& factors, 
       const AmanziGeometry::Point& xc1, const AmanziGeometry::Point& xc2);
 
+  // finite element maps 
   Tensor FEM_JacobianInternal_(Teuchos::RCP<const AmanziMesh::Mesh> mesh,
-                                   int c, const AmanziGeometry::Point& xref) const;
+                               int c, const AmanziGeometry::Point& xref) const;
+
+  // virtual element maps 
+  void VEM_FaceVelocity_(int c, int f, std::vector<Polynomial>& v) const;
 
  private:
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;  // target mesh
   Teuchos::RCP<const AmanziMesh::Mesh> mesh0_;  // initial mesh 
   int order_, d_;
+  int method_;
 };
 
 }  // namespace WhetStone
