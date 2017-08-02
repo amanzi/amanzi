@@ -28,7 +28,8 @@ namespace WhetStone {
 
 class Iterator {
  public:
-  Iterator() {};
+  Iterator() : d_(0) {};
+  Iterator(int d) : d_(d) {};
   ~Iterator() {};
 
   Iterator& begin() {
@@ -42,16 +43,35 @@ class Iterator {
   }
 
   Iterator& operator++() {  // prefix only
-    if (multi_index_[0] == 0) {
-      k_++;
-      m_ = 0;
-      multi_index_[0] = k_;
-      multi_index_[1] = 0;
-      multi_index_[2] = 0;
-    } else {
-      m_++;
-      multi_index_[0]--;
-      multi_index_[1] = k_ - multi_index_[0];
+    if (d_ == 2) {
+      if (multi_index_[0] == 0) {
+        k_++;  // next group of monomials
+        m_ = 0;
+        multi_index_[0] = k_;
+        multi_index_[1] = 0;
+        multi_index_[2] = 0;
+      } else {
+        m_++;
+        multi_index_[0]--;
+        multi_index_[1] = k_ - multi_index_[0];
+      }
+    } else if (d_ == 3) {
+      if (multi_index_[0] == 0 && multi_index_[1] == 0) {
+        k_++;  // next group of monomials
+        m_ = 0;
+        multi_index_[0] = k_;
+        multi_index_[1] = 0;
+        multi_index_[2] = 0;
+      } else if (multi_index_[1] == 0) {
+        m_++;
+        multi_index_[0]--;
+        multi_index_[1] = k_ - multi_index_[0];
+        multi_index_[2] = 0;
+      } else {
+        m_++;
+        multi_index_[1]--;
+        multi_index_[2] = k_ - multi_index_[0] - multi_index_[1];
+      }
     }
     return *this;
   }
@@ -65,6 +85,7 @@ class Iterator {
   int k_;  // current monomials order
   int m_;  // current position in the list of monomials
   int multi_index_[3];
+  int d_;
 };
 
 
@@ -92,7 +113,7 @@ class Monomial {
   friend std::ostream& operator << (std::ostream& os, const Monomial& m) {
     const auto& v = m.coefs();
     for (int i = 0; i < v.size(); i++) {
-      os << std::setw(12) << std::setprecision(12) << v[i] << " ";
+      os << std::setw(10) << std::setprecision(10) << v[i] << " ";
     }
     return os;
   }
@@ -141,7 +162,7 @@ class Polynomial {
   friend std::ostream& operator << (std::ostream& os, const Polynomial& p) {
     for (int i = 0; i <= p.order(); i++) {
       const Monomial& m = p.monomials(i);
-      os << m << "\n";
+      os << "k=" << i << "  coefs: " << m << "\n";
     } 
     return os;
   }

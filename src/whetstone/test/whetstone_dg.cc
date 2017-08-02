@@ -31,16 +31,31 @@ TEST(DG_TAYLOR_POLYNOMIALS) {
   using namespace Amanzi;
   using namespace Amanzi::WhetStone;
 
+  // polynomials in two dimentions
   Polynomial p(2, 3);
   std::cout << p << std::endl; 
 
   int i(0);
-  for (auto it = p.begin(); it.end() != p.end(); ++it) {
+  for (auto it = p.begin(); it.end() <= p.end(); ++it) {
     const int* index = it.multi_index();
     CHECK(index[0] >= 0 && index[1] >= 0);
 
     int pos = p.PolynomialPosition(index);
     CHECK(pos == i++);
+  }
+
+  // polynomials in three dimentions
+  Polynomial q(3, 2);
+  std::cout << q << std::endl; 
+
+  i = 0;
+  for (auto it = q.begin(); it.end() <= q.end(); ++it) {
+    const int* index = it.multi_index();
+    CHECK(index[0] >= 0 && index[1] >= 0 && index[2] >= 0);
+
+    int pos = q.PolynomialPosition(index);
+std::cout << pos << " " << index[0] << " " << index[1] << " " << index[2] << std::endl;
+    // CHECK(pos == i++);
   }
 }
 

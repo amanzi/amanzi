@@ -20,7 +20,7 @@ namespace WhetStone {
 /* ******************************************************************
 * Constructor
 ****************************************************************** */
-Polynomial::Polynomial(int d, int order) : d_(d), order_(order)
+Polynomial::Polynomial(int d, int order) : d_(d), order_(order), it_(d)
 {
   size_ = 0;
   coefs_.resize(order_ + 1);
