@@ -45,7 +45,7 @@ TEST(DG_TAYLOR_POLYNOMIALS) {
   }
 
   // polynomials in three dimentions
-  Polynomial q(3, 2);
+  Polynomial q(3, 3);
   std::cout << q << std::endl; 
 
   i = 0;
@@ -54,8 +54,7 @@ TEST(DG_TAYLOR_POLYNOMIALS) {
     CHECK(index[0] >= 0 && index[1] >= 0 && index[2] >= 0);
 
     int pos = q.PolynomialPosition(index);
-std::cout << pos << " " << index[0] << " " << index[1] << " " << index[2] << std::endl;
-    // CHECK(pos == i++);
+    CHECK(pos == i++);
   }
 }
 

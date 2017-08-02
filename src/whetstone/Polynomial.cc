@@ -73,7 +73,12 @@ double Polynomial::Value(const AmanziGeometry::Point& xp)
 ****************************************************************** */
 int Polynomial::MonomialPosition(const int* multi_index) const
 {
-  return multi_index[1];
+  int m(multi_index[1]);
+  if (d_ == 3) {
+    int n = multi_index[1] + multi_index[2];
+    m = n * (n + 1) / 2 + multi_index[2];
+  }
+  return m;
 }
 
 
@@ -82,9 +87,14 @@ int Polynomial::MonomialPosition(const int* multi_index) const
 ****************************************************************** */
 int Polynomial::PolynomialPosition(const int* multi_index) const
 {
-  int k = multi_index[0] + multi_index[1];
-  int nk = k * (k + 1) / 2; 
-  return nk + multi_index[1];
+  // current monomial order
+  int k = 0;
+  for (int i = 0; i < d_; ++i) k += multi_index[i];
+
+  // sum of previous monomials
+  int nk = (d_ == 2) ? k * (k + 1) / 2 : k * (k + 1) * (k + 2) / 6; 
+
+  return nk + MonomialPosition(multi_index);
 }
 
 }  // namespace WhetStone
