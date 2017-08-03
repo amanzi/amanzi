@@ -562,7 +562,17 @@ WeakMPCSemiCoupledDeform::CoupledSurfSubsurfColumns(double t_old, double t_new, 
       }
       
     }
-     
+
+    
+    
+    for (unsigned c=0; c<size_t; c++){
+      std::stringstream name;
+      int id = S_->GetMesh("surface")->cell_map(false).GID(c);
+      name << "surface_column_" << id;
+      const Epetra_MultiVector& surf_t = *S_next_->GetFieldData(Keys::getKey(name.str(),"temperature"))->ViewComponent("cell", false);
+      surfstar_t[0][c] = surf_t[0][0];
+    }
+
     // Mark surface_star-pressure evaluator as changed.
     // NOTE: later do it in the setup --aj
     Teuchos::RCP<PK_BDF_Default> pk_surf =
