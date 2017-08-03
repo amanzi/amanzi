@@ -20,6 +20,7 @@
 #include "Teuchos_ParameterXMLFileReader.hpp"
 #include "UnitTest++.h"
 
+// Amanzi
 #include "DG_Modal.hh"
 #include "GMVMesh.hh"
 #include "LinearOperatorPCG.hh"
@@ -27,7 +28,9 @@
 #include "Mesh.hh"
 #include "MeshFactory.hh"
 #include "Tensor.hh"
+#include "WhetStoneDefs.hh"
 
+// Amanzi::Operators
 #include "Accumulation.hh"
 #include "AdvectionRiemann.hh"
 #include "OperatorDefs.hh"
@@ -67,7 +70,7 @@ void RemapTests2DExplicit(int order, std::string disc_name,
   Teuchos::RCP<Mesh> mesh1 = meshfactory(0.0, 0.0, 1.0, 1.0, nx, ny);
 
   // deform the second mesh
-  AmanziGeometry::Point xv(2);
+  AmanziGeometry::Point xv(2), xref(2);
   Entity_ID_List nodeids;
   AmanziGeometry::Point_List new_positions, final_positions;
 
@@ -98,8 +101,8 @@ void RemapTests2DExplicit(int order, std::string disc_name,
     const AmanziGeometry::Point& xc = mesh0->cell_centroid(c);
     p1c[0][c] = xc[0] + 2 * xc[1] * xc[1];
     if (nk > 1) {
-      p1c[1][c] = 0.0;
-      p1c[2][c] = 0.0;  // 4.0 * xc[1];
+      p1c[1][c] = 1.0;
+      p1c[2][c] = 4.0 * xc[1];
     }
   }
 
@@ -143,11 +146,12 @@ void RemapTests2DExplicit(int order, std::string disc_name,
 
   double t(0.0), tend(1.0);
   WhetStone::DG_Modal dg(mesh0, mesh1);
+  dg.set_method(WhetStone::WHETSTONE_METHOD_VEM);
 
   while(t < tend - dt/2) {
     // calculate determinant of Jacobian
     for (int c = 0; c < ncells_owned; ++c) {
-      AmanziGeometry::Point xref(0.5, 0.5);
+      xref.set(0.5, 0.5);
 
       WhetStone::Tensor J0 = dg.FEM_Jacobian(c, xref);
       WhetStone::Tensor J1(J0);
@@ -179,34 +183,18 @@ void RemapTests2DExplicit(int order, std::string disc_name,
         int f = faces[n];
 
         // calculate j J^{-t} N dA
-        double qa(0.5);
-        std::vector<AmanziGeometry::Point> xref;
-        if (n == 0) { 
-          xref.push_back(AmanziGeometry::Point(qa, 0.0));
-        } else if (n == 1) {
-          xref.push_back(AmanziGeometry::Point(1.0, qa));
-        } else if (n == 2) { 
-          xref.push_back(AmanziGeometry::Point(qa, 1.0));
-        } else if (n == 3) {
-          xref.push_back(AmanziGeometry::Point(0.0, qa));
-        }
+        dg.FaceVelocity(c, f, uv);
 
-        vel_f[0][f] = 0.0;
-        for (int i = 0; i < xref.size(); ++i) {
-          dg.FaceVelocity(c, f, uv);
+        WhetStone::Tensor J = dg.FaceJacobian(c, f, uv, xref);
+        J *= t;
+        J += 1.0 - t;
+        WhetStone::Tensor C = J.Cofactors();
+        AmanziGeometry::Point cn = C * mesh0->face_normal(f); 
 
-          WhetStone::Tensor J = dg.FEM_Jacobian(c, xref[i]);
-          // WhetStone::Tensor J = dg.VEM_Jacobian(c, f, uv);
-          J *= t;
-          J += 1.0 - t;
-          WhetStone::Tensor C = J.Cofactors();
-          AmanziGeometry::Point cn = C * mesh0->face_normal(f); 
-
-          // calculate velocity (FEM = VEM)
-          const AmanziGeometry::Point& xf = mesh0->face_centroid(f);
-          xv = AmanziGeometry::Point(uv[0].Value(xf), uv[1].Value(xf));
-          vel_f[0][f] += (xv * cn) * WhetStone::q1d_weights[0][i];
-        }
+        // calculate velocity
+        const AmanziGeometry::Point& xf = mesh0->face_centroid(f);
+        xv = AmanziGeometry::Point(uv[0].Value(xf), uv[1].Value(xf));
+        vel_f[0][f] = xv * cn;
       }
     }
 
@@ -279,7 +267,11 @@ void RemapTests2DExplicit(int order, std::string disc_name,
 }
 
 
-TEST(REMAP_2D_EXPLICIT) {
+TEST(REMAP_DG0_EXPLICIT) {
   RemapTests2DExplicit(0, "DG order 0", 20, 20, 0.1 / 2);
 }
+
+// TEST(REMAP_DG1_EXPLICIT) {
+//   RemapTests2DExplicit(1, "DG order 1", 20, 20, 0.1 / 2);
+// }
 

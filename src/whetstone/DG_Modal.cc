@@ -95,7 +95,7 @@ int DG_Modal::MassMatrix(int c, Polynomial& K, DenseMatrix& A)
 
     for (auto mt = K.begin(); mt.end() <= K.end(); ++mt) {
       const int* idx_K = mt.multi_index();
-      int m = K.MonomialPosition(idx_K);
+      int m = mt.MonomialPosition();
       double factor = K.monomials(mt.end()).coefs()[m];
 
       for (auto jt = q.begin(); jt.end() <= q.end(); ++jt) {
@@ -317,10 +317,26 @@ void DG_Modal::VEM_FaceVelocity_(int c, int f, std::vector<Polynomial>& v) const
 
 
 /* ******************************************************************
-* Calculate mesh velocity on face f: VEM implemenetation
+* Calculate Jacobian at point x of face f 
 ****************************************************************** */
-Tensor DG_Modal::VEM_Jacobian(int c, int f, std::vector<Polynomial>& v) const
+Tensor DG_Modal::FaceJacobian(int c, int f, const std::vector<Polynomial>& v,
+                              const AmanziGeometry::Point& x) const
 {
+  if (method_ == WHETSTONE_METHOD_FEM) {
+    return FEM_FaceJacobian_(c, f, v, x);
+  } else if (method_ == WHETSTONE_METHOD_VEM) {
+    return VEM_FaceJacobian_(c, f, v, x);
+  }
+}
+
+
+/* ******************************************************************
+* Calculate Jacobian at point x of face f: VEM implementation
+****************************************************************** */
+Tensor DG_Modal::VEM_FaceJacobian_(int c, int f, const std::vector<Polynomial>& v,
+                                   const AmanziGeometry::Point& x) const
+{
+  // FIXME x is not used
   Tensor jac(d_, 2);
 
   for (int i = 0; i < d_; ++i) {
@@ -331,6 +347,35 @@ Tensor DG_Modal::VEM_Jacobian(int c, int f, std::vector<Polynomial>& v) const
   jac += 1.0;
 
   return jac;
+}
+
+
+/* ******************************************************************
+* Calculate Jacobian at point x of face f: FEM implementation
+****************************************************************** */
+Tensor DG_Modal::FEM_FaceJacobian_(int c, int f, const std::vector<Polynomial>& v,
+                                   const AmanziGeometry::Point& x) const
+{
+  Entity_ID_List faces;
+  mesh0_->cell_get_faces(c, &faces);
+  
+  AmanziGeometry::Point xref;
+  for (int n = 0; n < faces.size(); n++) {
+    if (faces[n] == f) {
+      if (n == 0) { 
+        xref.set(0.5, 0.0);
+      } else if (n == 1) {
+        xref.set(1.0, 0.5);
+      } else if (n == 2) { 
+        xref.set(0.5, 1.0);
+      } else if (n == 3) {
+        xref.set(0.0, 0.5);
+      }
+      break;
+    }
+  }
+
+  return FEM_Jacobian(c, xref);
 }
 
 

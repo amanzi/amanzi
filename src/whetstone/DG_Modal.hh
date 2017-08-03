@@ -75,9 +75,8 @@ class DG_Modal {
 
   // support of advection schemes
   void FaceVelocity(int c, int f, std::vector<Polynomial>& v) const;
-
-  // projection method
-  Tensor VEM_Jacobian(int c, int f, std::vector<Polynomial>& v) const;
+  Tensor FaceJacobian(int c, int f, const std::vector<Polynomial>& v,
+                      const AmanziGeometry::Point& x) const;
 
   // finite elements use three meshes: reference, initial and target
   AmanziGeometry::Point FEM_Map(int c, const AmanziGeometry::Point& xref) const;
@@ -107,9 +106,13 @@ class DG_Modal {
   // finite element maps 
   Tensor FEM_JacobianInternal_(Teuchos::RCP<const AmanziMesh::Mesh> mesh,
                                int c, const AmanziGeometry::Point& xref) const;
+  Tensor FEM_FaceJacobian_(int c, int f, const std::vector<Polynomial>& v,
+                           const AmanziGeometry::Point& xref) const;
 
   // virtual element maps 
   void VEM_FaceVelocity_(int c, int f, std::vector<Polynomial>& v) const;
+  Tensor VEM_FaceJacobian_(int c, int f, const std::vector<Polynomial>& v,
+                           const AmanziGeometry::Point& x) const;
 
  private:
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;  // target mesh

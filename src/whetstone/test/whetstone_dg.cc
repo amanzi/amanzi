@@ -33,7 +33,6 @@ TEST(DG_TAYLOR_POLYNOMIALS) {
 
   // polynomials in two dimentions
   Polynomial p(2, 3);
-  std::cout << p << std::endl; 
 
   int i(0);
   for (auto it = p.begin(); it.end() <= p.end(); ++it) {
@@ -42,11 +41,33 @@ TEST(DG_TAYLOR_POLYNOMIALS) {
 
     int pos = p.PolynomialPosition(index);
     CHECK(pos == i++);
-  }
 
-  // polynomials in three dimentions
+    int m = p.MonomialPosition(index);
+    p.monomials(index[0] + index[1]).coefs()[m] = pos;
+  }
+  std::cout << p << std::endl; 
+  CHECK(p.size() == 10);
+
+  // re-define polynomials
+  p.Reshape(2, 4);
+  std::cout << p << std::endl; 
+  CHECK(p.size() == 15);
+
+  Polynomial p_tmp(p);
+  p.Reshape(2, 2);
+  std::cout << "Reshaping last polynomial\n" << p << std::endl; 
+  CHECK(p.size() == 6);
+
+  // operations with polynomials
+  AmanziGeometry::Point xy(1.0, 0.0);
+  double val = p.Value(xy) + p_tmp.Value(xy);
+
+  p += p_tmp;
+  CHECK(p.size() == 15);
+  CHECK_CLOSE(p.Value(xy), val, 1e-12);
+
+  // polynomials in 3D
   Polynomial q(3, 3);
-  std::cout << q << std::endl; 
 
   i = 0;
   for (auto it = q.begin(); it.end() <= q.end(); ++it) {
@@ -55,7 +76,32 @@ TEST(DG_TAYLOR_POLYNOMIALS) {
 
     int pos = q.PolynomialPosition(index);
     CHECK(pos == i++);
+
+    int m = q.MonomialPosition(index);
+    q.monomials(index[0] + index[1] + index[2]).coefs()[m] = pos;
   }
+  std::cout << q << std::endl; 
+  CHECK(q.size() == 20);
+
+  // reshape polynomials
+  q.Reshape(3, 2);
+  Polynomial q1(q), q2(q);
+  std::cout << "Reshaping last polynomial\n" << q << std::endl; 
+  CHECK(q.size() == 10);
+
+  q.Reshape(3, 3);
+  std::cout << "Reshaping last polynomial\n" << q << std::endl; 
+  CHECK(q.size() == 20);
+
+  // operations with polynomials
+  AmanziGeometry::Point xyz(1.0, 2.0, 3.0);
+  val = q1.Value(xyz);
+  q1 *= q2;
+  CHECK_CLOSE(q1.Value(xyz), val * val, 1e-10);
+
+  val = q2.Value(xyz);
+  q2 *= q2;
+  CHECK_CLOSE(q2.Value(xyz), val * val, 1e-10);
 }
 
 

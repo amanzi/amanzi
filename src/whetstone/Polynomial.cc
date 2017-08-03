@@ -32,6 +32,113 @@ Polynomial::Polynomial(int d, int order) : d_(d), order_(order), it_(d)
 
 
 /* ******************************************************************
+* Reshaping polynomial
+* NOTE: case d > d_ can be treated more intelligently.
+****************************************************************** */
+void Polynomial::Reshape(int d, int order, bool reset)
+{
+  if (d_ != d) {
+    d_ = d;
+    coefs_.clear();
+    coefs_.resize(order_ + 1);
+    for (int i = 0; i <= order_; ++i) {
+      coefs_[i] = Monomial(d_, i);
+    }
+  } else if (order_ != order) {
+    coefs_.resize(order + 1);
+    for (int i = order_ + 1; i <= order; ++i) {
+      coefs_[i] = Monomial(d_, i);
+    }
+    order_ = order;
+  }
+
+  size_ = 0;
+  for (int i = 0; i <= order_; ++i) {
+    size_ += coefs_[i].size();
+  }
+
+  if (reset) Reset();
+}
+
+
+/* ******************************************************************
+* Implemented ring algebra operations
+****************************************************************** */
+Polynomial& Polynomial::operator+=(const Polynomial& poly)
+{
+  ASSERT(d_ == poly.dimension());  // FIXME
+
+  int order_max = std::max(order_, poly.order());
+  Reshape(d_, order_max);
+
+  for (int i = 0; i <= poly.order(); ++i) {
+    auto& mono = coefs_[i].coefs();
+    for (int k = 0; k < mono.size(); ++k) {
+      mono[k] += poly.monomials(i).coefs()[k];
+    }
+  }
+
+  return *this;
+}
+
+
+Polynomial& Polynomial::operator-=(const Polynomial& poly)
+{
+  ASSERT(d_ == poly.dimension());  // FIXME
+
+  int order_max = std::max(order_, poly.order());
+  Reshape(d_, order_max);
+
+  for (int i = 0; i <= poly.order(); ++i) {
+    auto& mono = coefs_[i].coefs();
+    for (int k = 0; k < mono.size(); ++k) {
+      mono[k] -= poly.monomials(i).coefs()[k];
+    }
+  }
+
+  return *this;
+}
+
+
+Polynomial& Polynomial::operator*=(const Polynomial& poly)
+{
+  ASSERT(d_ == poly.dimension());  // FIXME
+
+  Polynomial arg1(*this);
+  const Polynomial* arg2 = &poly;
+  if (this == arg2) arg2 = &arg1; 
+
+  int order_prod = order_ * poly.order();
+  Reshape(d_, order_prod, true);
+
+  int index[3];
+  for (auto it1 = arg1.begin(); it1.end() <= arg1.end(); ++it1) {
+    const int* idx1 = it1.multi_index();
+    int k1 = it1.MonomialOrder();
+    int m1 = it1.MonomialPosition();
+    double val1 = arg1.monomials(k1).coefs()[m1];
+
+    for (auto it2 = arg2->begin(); it2.end() <= arg2->end(); ++it2) {
+      const int* idx2 = it2.multi_index();
+      int k2 = it2.MonomialOrder();
+      int m2 = it2.MonomialPosition();
+      double val2 = arg2->monomials(k2).coefs()[m2];
+
+      int n(0);
+      for (int i = 0; i < d_; ++i) {
+        index[i] = idx1[i] + idx2[i];
+        n += index[i];
+      }
+      int l = MonomialPosition(index);
+      coefs_[n](l) += val1 * val2;
+    }
+  }
+
+  return *this;
+}
+
+
+/* ******************************************************************
 * Resets all coefficients to zero
 ****************************************************************** */
 void Polynomial::Reset()

@@ -9,7 +9,7 @@
 
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 
-  Operations with polynomials.
+  Operations with polynomials in 2D and 3D.
 */
 
 #ifndef AMANZI_WHETSTONE_POLYNOMIAL_HH_
@@ -79,6 +79,8 @@ class Iterator {
   int end() { return k_; }
 
   // access
+  int MonomialOrder() const { return k_; }
+  int MonomialPosition() const { return m_; }
   const int* multi_index() const { return multi_index_; }
 
  private:
@@ -136,22 +138,31 @@ class Polynomial {
   Polynomial() : d_(0), order_(-1), size_(0) {};
   Polynomial(int d, int order);
 
+  // reshape polynomial with erase (optionally) memory
+  void Reshape(int d, int order, bool reset = false);
+
   // resets all coefficients to zero
   void Reset();
 
-  // elemental operations with polynomials
+  // typical operations with polynomials
   // -- polynomial values
   double Value(const AmanziGeometry::Point& xp);
+
+  // -- operators (ring algebra)
+  Polynomial& operator+=(const Polynomial& poly);
+  Polynomial& operator-=(const Polynomial& poly);
+  Polynomial& operator*=(const Polynomial& poly);
 
   // -- multi index defines both monomial order and current monomial
   int MonomialPosition(const int* multi_index) const;
   int PolynomialPosition(const int* multi_index) const;
 
   // iterators
-  Iterator& begin() { return it_.begin(); }
-  int end() { return order_; }
+  Iterator& begin() const { return it_.begin(); }
+  int end() const { return order_; }
 
   // access
+  int dimension() const { return d_; }
   int order() const { return order_; }
   int size() const { return size_; }
 
@@ -168,7 +179,7 @@ class Polynomial {
   }
 
  protected:
-  Iterator it_; 
+  mutable Iterator it_; 
 
  private:
   int d_, order_, size_;
