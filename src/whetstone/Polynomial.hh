@@ -84,6 +84,10 @@ class Iterator {
   const int* multi_index() const { return multi_index_; }
 
  private:
+  void set_dimension(int d) { d_ = d; }
+  friend class Polynomial;
+
+ private:
   int k_;  // current monomials order
   int m_;  // current position in the list of monomials
   int multi_index_[3];
@@ -110,15 +114,6 @@ class Monomial {
 
   std::vector<double>& coefs() { return coefs_; } 
   const std::vector<double>& coefs() const { return coefs_; } 
-
-  // output 
-  friend std::ostream& operator << (std::ostream& os, const Monomial& m) {
-    const auto& v = m.coefs();
-    for (int i = 0; i < v.size(); i++) {
-      os << std::setw(10) << std::setprecision(10) << v[i] << " ";
-    }
-    return os;
-  }
 
  private:
   // direct memory access operations
@@ -152,6 +147,24 @@ class Polynomial {
   Polynomial& operator+=(const Polynomial& poly);
   Polynomial& operator-=(const Polynomial& poly);
   Polynomial& operator*=(const Polynomial& poly);
+ 
+  friend Polynomial operator+(const Polynomial& poly1, const Polynomial& poly2) {
+    Polynomial tmp(poly1);
+    return tmp += poly2;
+  }
+
+  friend Polynomial operator-(const Polynomial& poly1, const Polynomial& poly2) {
+    Polynomial tmp(poly1);
+    return tmp -= poly2;
+  }
+
+  friend Polynomial operator*(const Polynomial& poly1, const Polynomial& poly2) {
+    Polynomial tmp(poly1);
+    return tmp *= poly2;
+  }
+
+  // -- derivatives
+  void Gradient(std::vector<Polynomial>& grad) const;
 
   // -- multi index defines both monomial order and current monomial
   int MonomialPosition(const int* multi_index) const;
@@ -170,13 +183,7 @@ class Polynomial {
   const Monomial& monomials(int i) const { return coefs_[i]; }
 
   // output 
-  friend std::ostream& operator << (std::ostream& os, const Polynomial& p) {
-    for (int i = 0; i <= p.order(); i++) {
-      const Monomial& m = p.monomials(i);
-      os << "k=" << i << "  coefs: " << m << "\n";
-    } 
-    return os;
-  }
+  friend std::ostream& operator << (std::ostream& os, const Polynomial& p);
 
  protected:
   mutable Iterator it_; 

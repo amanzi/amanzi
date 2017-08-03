@@ -32,13 +32,16 @@ Polynomial::Polynomial(int d, int order) : d_(d), order_(order), it_(d)
 
 
 /* ******************************************************************
-* Reshaping polynomial
+* Re-shape polynomial
 * NOTE: case d > d_ can be treated more intelligently.
 ****************************************************************** */
 void Polynomial::Reshape(int d, int order, bool reset)
 {
   if (d_ != d) {
     d_ = d;
+    order_ = order;
+    it_.set_dimension(d);
+
     coefs_.clear();
     coefs_.resize(order_ + 1);
     for (int i = 0; i <= order_; ++i) {
@@ -62,7 +65,8 @@ void Polynomial::Reshape(int d, int order, bool reset)
 
 
 /* ******************************************************************
-* Implemented ring algebra operations
+* Implemented ring algebra operations.
+* NOTE: implementation is order independent.
 ****************************************************************** */
 Polynomial& Polynomial::operator+=(const Polynomial& poly)
 {
@@ -139,6 +143,40 @@ Polynomial& Polynomial::operator*=(const Polynomial& poly)
 
 
 /* ******************************************************************
+* Compute gradient of a polynomial
+***************************************************************** */
+void Polynomial::Gradient(std::vector<Polynomial>& grad) const
+{
+  grad.resize(d_);
+
+  int order = std::max(0, order_ - 1);
+  for (int i = 0; i < d_; ++i) {
+    grad[i].Reshape(d_, order, true);
+  }
+
+  int index[3];
+  for (auto it = begin(); it.end() <= end(); ++it) {
+    int k = it.MonomialOrder();
+    if (k > 0) {
+      const int* idx = it.multi_index();
+      int m = it.MonomialPosition();
+      double val = monomials(k).coefs()[m];
+
+      for (int i = 0; i < d_; ++i) {
+        for (int j = 0; j < d_; ++j) index[j] = idx[j];
+
+        if (index[i] > 0) {
+          index[i]--;
+          m = MonomialPosition(index);
+          grad[i].monomials(k - 1)(m) = val * idx[i];
+        }
+      }
+    }
+  }
+}
+
+
+/* ******************************************************************
 * Resets all coefficients to zero
 ****************************************************************** */
 void Polynomial::Reset()
@@ -203,6 +241,35 @@ int Polynomial::PolynomialPosition(const int* multi_index) const
 
   return nk + MonomialPosition(multi_index);
 }
+
+
+/* ******************************************************************
+* Fancy I/O
+****************************************************************** */
+std::ostream& operator << (std::ostream& os, const Polynomial& p)
+{
+  for (auto it = p.begin(); it.end() <= p.end(); ++it) {
+    int k = it.MonomialOrder();
+    int m = it.MonomialPosition();
+    double val = p.monomials(k).coefs()[m];
+
+    if (m == 0) os << "k=" << k << "  coefs:";
+    if (m > 0 && val >= 0) os << " +";
+    os << " " << val << " ";
+
+    const int* index = it.multi_index();
+    if (index[0] == 1) os << "x";
+    if (index[0] > 1)  os << "x^" << index[0];
+    if (index[1] == 1) os << "y";
+    if (index[1] > 1)  os << "y^" << index[1];
+    if (index[2] == 1) os << "z";
+    if (index[2] > 1)  os << "z^" << index[2];
+
+    if (m == p.monomials(k).size() - 1) os << std::endl;
+  } 
+  return os;
+}
+
 
 }  // namespace WhetStone
 }  // namespace Amanzi

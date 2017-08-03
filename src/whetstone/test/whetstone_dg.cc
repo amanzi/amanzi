@@ -82,10 +82,11 @@ TEST(DG_TAYLOR_POLYNOMIALS) {
   }
   std::cout << q << std::endl; 
   CHECK(q.size() == 20);
+  Polynomial q_orig(q);
 
   // reshape polynomials
   q.Reshape(3, 2);
-  Polynomial q1(q), q2(q);
+  Polynomial q1(q), q2(q), q3(q);
   std::cout << "Reshaping last polynomial\n" << q << std::endl; 
   CHECK(q.size() == 10);
 
@@ -93,7 +94,7 @@ TEST(DG_TAYLOR_POLYNOMIALS) {
   std::cout << "Reshaping last polynomial\n" << q << std::endl; 
   CHECK(q.size() == 20);
 
-  // operations with polynomials
+  // ring operations with polynomials
   AmanziGeometry::Point xyz(1.0, 2.0, 3.0);
   val = q1.Value(xyz);
   q1 *= q2;
@@ -102,6 +103,14 @@ TEST(DG_TAYLOR_POLYNOMIALS) {
   val = q2.Value(xyz);
   q2 *= q2;
   CHECK_CLOSE(q2.Value(xyz), val * val, 1e-10);
+
+  Polynomial q4 = q2 - q3 * q3;
+  CHECK_CLOSE(q4.Value(xyz), 0.0, 1e-10);
+
+  // derivatives
+  std::vector<Polynomial> grad;
+  q_orig.Gradient(grad);
+  std::cout << "Gradient:\n" << grad[0] << grad[1] << grad[2] << std::endl;
 }
 
 
