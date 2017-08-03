@@ -53,9 +53,10 @@ class AdvectionUpwind : public Advection {
   // required members 
   // -- setup
   virtual void Setup(const CompositeVector& u);
-  // -- data
-  virtual void UpdateMatrices(const CompositeVector& u);
-  virtual void UpdateMatrices(const CompositeVector& u, const CompositeVector& dhdT);
+  // -- generate a linearized operator
+  virtual void UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& u,
+                              const Teuchos::Ptr<const CompositeVector>& p);
+  virtual void UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& dhdT);
 
   // -- results -- determine advected flux of u
   void UpdateFlux(const CompositeVector& h , const CompositeVector& u,

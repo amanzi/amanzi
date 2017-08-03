@@ -48,9 +48,11 @@ class Electromagnetics : public PDE_Helper {
   // main virtual members
   // -- setup 
   virtual void SetTensorCoefficient(const Teuchos::RCP<std::vector<WhetStone::Tensor> >& K);
-  // -- creation of an operator
-  virtual void UpdateMatrices();
-  // -- modification of the operator
+  // -- creation of a linearized operator
+  using PDE_Helper::UpdateMatrices;
+  virtual void UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& u,
+                              const Teuchos::Ptr<const CompositeVector>& p) override;
+  // -- modification of the operator due to boundary conditions
   //    Variable 'primary' indicates that we put 1 on the matrix diagonal.
   //    Variable 'eliminate' says that we eliminate essential BCs for the 
   //    trial function, i.e. zeros go in the corresponding matrix columns.

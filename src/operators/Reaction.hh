@@ -18,6 +18,10 @@
 
 #include "Epetra_MultiVector.h"
 
+// Amanzi
+#include "Polynomial.hh"
+
+// Amanzi::Operators
 #include "PDE_Helper.hh"
 #include "Schema.hh"
 
@@ -40,9 +44,11 @@ class Reaction : public PDE_Helper {
   // required members 
   // -- setup
   virtual void Setup(Teuchos::RCP<Epetra_MultiVector>& K) { K_ = K; }
-  // -- data
-  virtual void UpdateMatrices(const CompositeVector& u);
-  virtual void UpdateMatrices(const CompositeVector& u, const CompositeVector& dhdT) {};
+  virtual void Setup(Teuchos::RCP<std::vector<WhetStone::Polynomial> >& poly) { poly_ = poly; }
+  // -- generate a linearized operator 
+  using PDE_Helper::UpdateMatrices;
+  virtual void UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& u,
+                              const Teuchos::Ptr<const CompositeVector>& p) override;
   // -- results -- determine advected flux of u
   void UpdateFlux(const CompositeVector& h , const CompositeVector& u,
                   const Teuchos::RCP<BCs>& bc, CompositeVector& flux);
@@ -55,6 +61,7 @@ class Reaction : public PDE_Helper {
 
  protected:
   Teuchos::RCP<const Epetra_MultiVector> K_;
+  Teuchos::RCP<const std::vector<WhetStone::Polynomial> > poly_;
 
  private:
   Schema global_schema_col_, global_schema_row_;

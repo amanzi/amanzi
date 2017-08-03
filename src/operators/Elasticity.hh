@@ -47,7 +47,9 @@ class Elasticity : public PDE_Helper {
   void SetTensorCoefficient(double K);
 
   // -- creation of an operator
-  virtual void UpdateMatrices();
+  using PDE_Helper::UpdateMatrices;
+  virtual void UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& u,
+                              const Teuchos::Ptr<const CompositeVector>& p) override;
 
   // access
   const Schema& global_schema_col() { return global_schema_col_; }

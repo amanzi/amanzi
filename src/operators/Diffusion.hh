@@ -88,8 +88,6 @@ class Diffusion : public PDE_Helper {
                                     const Teuchos::RCP<const CompositeVector>& dkdp) = 0;
 
   // -- creation of an operator
-  virtual void UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& flux,
-          const Teuchos::Ptr<const CompositeVector>& u) = 0;
   virtual void UpdateMatricesNewtonCorrection(
           const Teuchos::Ptr<const CompositeVector>& flux,
           const Teuchos::Ptr<const CompositeVector>& u,

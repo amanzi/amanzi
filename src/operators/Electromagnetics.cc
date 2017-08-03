@@ -51,8 +51,11 @@ void Electromagnetics::SetTensorCoefficient(
 
 /* ******************************************************************
 * Calculate elemental matrices.
+* NOTE: The input parameters are not yet used.
 ****************************************************************** */
-void Electromagnetics::UpdateMatrices()
+void Electromagnetics::UpdateMatrices(
+    const Teuchos::Ptr<const CompositeVector>& u,
+    const Teuchos::Ptr<const CompositeVector>& p)
 {
   WhetStone::MFD3D_Electromagnetics mfd(mesh_);
   WhetStone::DenseMatrix Acell;

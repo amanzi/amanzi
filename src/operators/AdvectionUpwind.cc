@@ -85,13 +85,13 @@ void AdvectionUpwind::Setup(const CompositeVector& u)
 * Advection operator is of the form: div (u C), where u is the given
 * velocity field and C is the advected field.
 ****************************************************************** */
-void AdvectionUpwind::UpdateMatrices(const CompositeVector& u)
+void AdvectionUpwind::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& u)
 {
   std::vector<WhetStone::DenseMatrix>& matrix = local_op_->matrices;
   std::vector<WhetStone::DenseMatrix>& matrix_shadow = local_op_->matrices_shadow;
 
   AmanziMesh::Entity_ID_List cells;
-  const Epetra_MultiVector& uf = *u.ViewComponent("face");
+  const Epetra_MultiVector& uf = *u->ViewComponent("face");
 
   for (int f = 0; f < nfaces_owned; ++f) {
     int c1 = (*upwind_cell_)[f];
@@ -126,17 +126,18 @@ void AdvectionUpwind::UpdateMatrices(const CompositeVector& u)
 *     h: advected quantity (i.e. enthalpy)
 *     T: primary varaible (i.e. temperature)
 ****************************************************************** */
-void AdvectionUpwind::UpdateMatrices(const CompositeVector& u,
-                                     const CompositeVector& dhdT)
+void AdvectionUpwind::UpdateMatrices(
+    const Teuchos::Ptr<const CompositeVector>& u,
+    const Teuchos::Ptr<const CompositeVector>& dhdT)
 {
   std::vector<WhetStone::DenseMatrix>& matrix = local_op_->matrices;
   std::vector<WhetStone::DenseMatrix>& matrix_shadow = local_op_->matrices_shadow;
 
   AmanziMesh::Entity_ID_List cells;
-  const Epetra_MultiVector& uf = *u.ViewComponent("face");
+  const Epetra_MultiVector& uf = *u->ViewComponent("face");
 
-  dhdT.ScatterMasterToGhosted("cell");
-  const Epetra_MultiVector& dh = *dhdT.ViewComponent("cell", true);
+  dhdT->ScatterMasterToGhosted("cell");
+  const Epetra_MultiVector& dh = *dhdT->ViewComponent("cell", true);
 
   for (int f = 0; f < nfaces_owned; ++f) {
     int c1 = (*upwind_cell_)[f];

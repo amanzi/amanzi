@@ -83,9 +83,11 @@ void Abstract::Init_(Teuchos::ParameterList& plist)
 
 
 /* ******************************************************************
-* Loop over existing methods.
+* Populate containers of elemental matrices using MFD factory.
+* NOTE: input parameters are not yet used.
 ****************************************************************** */
-void Abstract::UpdateMatrices()
+void Abstract::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& u,
+                              const Teuchos::Ptr<const CompositeVector>& p)
 {
   std::vector<WhetStone::DenseMatrix>& matrix = local_op_->matrices;
   std::vector<WhetStone::DenseMatrix>& matrix_shadow = local_op_->matrices_shadow;
@@ -100,7 +102,13 @@ void Abstract::UpdateMatrices()
   WhetStone::Tensor Kc(mesh_->space_dimension(), 1);
   Kc(0, 0) = 1.0;
 
-  if (matrix_ == "stiffness") {
+  if (matrix_ == "mass") {
+    for (int c = 0; c < ncells_owned; ++c) {
+      if (K_.get()) Kc = (*K_)[c];
+      mfd->MassMatrix(c, Kc, Acell);
+      matrix[c] = Acell;
+    }
+  } else if (matrix_ == "stiffness") {
     for (int c = 0; c < ncells_owned; ++c) {
       if (K_.get()) Kc = (*K_)[c];
       mfd->StiffnessMatrix(c, Kc, Acell);

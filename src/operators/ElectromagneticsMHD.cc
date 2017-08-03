@@ -26,9 +26,12 @@ namespace Amanzi {
 namespace Operators {
 
 /* ******************************************************************
-* Calculate elemental matrices.
+* Populate contains of elemental matrices.
+* NOTE: The input parameters are not yet used.
 ****************************************************************** */
-void ElectromagneticsMHD::UpdateMatrices()
+void ElectromagneticsMHD::UpdateMatrices(
+    const Teuchos::Ptr<const CompositeVector>& u,
+    const Teuchos::Ptr<const CompositeVector>& p)
 {
   WhetStone::MFD3D_Electromagnetics mfd(mesh_);
   WhetStone::DenseMatrix Mcell, Ccell, Acell;

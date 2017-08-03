@@ -37,9 +37,6 @@ class Advection : public PDE_Helper {
   // main members
   // -- setup
   virtual void Setup(const CompositeVector& u) = 0;
-  // -- populate data: arrays of local matrices
-  virtual void UpdateMatrices(const CompositeVector& u) = 0;
-  virtual void UpdateMatrices(const CompositeVector& u, const CompositeVector& dhdT) = 0;
 
   // -- results: determine advected flux of u
   virtual void UpdateFlux(const CompositeVector& h , const CompositeVector& u,

@@ -37,7 +37,18 @@ class PDE_Helper : public BCsList {
   PDE_Helper(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh);
   ~PDE_Helper() {};
 
-  // boundary conditions
+  // generate linearized operator
+  // -- generate matrix. We can use parameter to define coefficeints
+  //    or/and perform on-a-fly linearization. 
+  virtual void UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& u,
+                              const Teuchos::Ptr<const CompositeVector>& p) = 0;
+  virtual void UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& u) {
+    UpdateMatrices(u, Teuchos::null);
+  }
+  virtual void UpdateMatrices() {
+    UpdateMatrices(Teuchos::null, Teuchos::null);
+  }
+  // -- modify matrix due to boundary conditions 
   virtual void ApplyBCs(bool primary, bool eliminate);
 
   // access

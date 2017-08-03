@@ -107,16 +107,17 @@ void AdvectionRiemann::InitAdvection_(Teuchos::ParameterList& plist)
 
 
 /* ******************************************************************
-* A simple first-order transport method.
-* Advection operator is of the form: div (u C), where u is the given
-* velocity field and C is the advected field.
+* A simple first-order transport method of the form div (u C), where 
+* u is the given velocity field and C is the advected field.
 ****************************************************************** */
-void AdvectionRiemann::UpdateMatrices(const CompositeVector& u)
+void AdvectionRiemann::UpdateMatrices(
+    const Teuchos::Ptr<const CompositeVector>& u,
+    const Teuchos::Ptr<const CompositeVector>& p)
 {
   if (local_schema_row_.base() == AmanziMesh::CELL) {
-    UpdateMatricesCell_(u);
+    UpdateMatricesCell_(*u);
   } else if (local_schema_row_.base() == AmanziMesh::FACE) {
-    UpdateMatricesFace_(u);
+    UpdateMatricesFace_(*u);
   }
 }
 

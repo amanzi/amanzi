@@ -94,8 +94,8 @@ void RemapTests2DExplicit(int order, std::string disc_name,
   // create and initialize cell-based field 
   CompositeVectorSpace cvs1;
   cvs1.SetMesh(mesh0)->SetGhosted(true)->AddComponent("cell", AmanziMesh::CELL, nk);
-  CompositeVector p1(cvs1);
-  Epetra_MultiVector& p1c = *p1.ViewComponent("cell", true);
+  Teuchos::RCP<CompositeVector> p1 = Teuchos::rcp(new CompositeVector(cvs1));
+  Epetra_MultiVector& p1c = *p1->ViewComponent("cell", true);
 
   for (int c = 0; c < ncells_wghost; c++) {
     const AmanziGeometry::Point& xc = mesh0->cell_centroid(c);
@@ -199,18 +199,18 @@ void RemapTests2DExplicit(int order, std::string disc_name,
     }
 
     // populate operators
-    op->UpdateMatrices(*vel);
-    op_reac0->UpdateMatrices(p1);
+    op->UpdateMatrices(vel.ptr());
+    op_reac0->UpdateMatrices(p1.ptr());
 
     // predictor step
     CompositeVector& rhs = *global_reac0->rhs();
-    global_reac0->Apply(p1, rhs);
+    global_reac0->Apply(*p1, rhs);
 
     CompositeVector g(cvs1);
-    global_op->Apply(p1, g);
+    global_op->Apply(*p1, g);
     g.Update(1.0, rhs, dt);
 
-    op_reac1->UpdateMatrices(p1);
+    op_reac1->UpdateMatrices(p1.ptr());
     global_reac1->SymbolicAssembleMatrix();
     global_reac1->AssembleMatrix();
 
@@ -232,7 +232,7 @@ void RemapTests2DExplicit(int order, std::string disc_name,
     pcg.ApplyInverse(g, p2);
     */
 
-    *p1.ViewComponent("cell") = *p2.ViewComponent("cell");
+    *p1->ViewComponent("cell") = *p2.ViewComponent("cell");
     t += dt;
   }
 

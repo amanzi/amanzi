@@ -136,9 +136,9 @@ class DiffusionFVwithGravity : public DiffusionFV,
     SetScalarCoefficient(k, dkdp);
   }
 
-  // -- create an operator
+  // -- create a lineratized operator
   virtual void UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& flux,
-          const Teuchos::Ptr<const CompositeVector>& u);
+                              const Teuchos::Ptr<const CompositeVector>& u);
   virtual void UpdateFlux(const CompositeVector& u, CompositeVector& flux);
   virtual void UpdateFluxNonManifold(const CompositeVector& u, CompositeVector& flux);
 

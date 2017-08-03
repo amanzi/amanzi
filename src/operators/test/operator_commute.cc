@@ -69,7 +69,6 @@ TEST(ADVECTION_DIFFUSION_COMMUTE) {
   RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 40, 40, gm);
 
   // modify diffusion coefficient.
-  // -- since rho=mu=1.0, we do not need additional special steps.
   Teuchos::RCP<std::vector<WhetStone::Tensor> > K = Teuchos::rcp(new std::vector<WhetStone::Tensor>());
   int ncells_owned = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
@@ -79,7 +78,6 @@ TEST(ADVECTION_DIFFUSION_COMMUTE) {
     Kc(0, 0) = 1.0;
     K->push_back(Kc);
   }
-  double rho(1.0), mu(1.0);
 
   // create boundary data
   Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(mesh, AmanziMesh::FACE, SCHEMA_DOFS_SCALAR));
@@ -102,8 +100,8 @@ TEST(ADVECTION_DIFFUSION_COMMUTE) {
   cvs->AddComponent("face", AmanziMesh::FACE, 1);
 
   // create velocity field
-  CompositeVector u(*cvs);
-  Epetra_MultiVector& uf = *u.ViewComponent("face");
+  Teuchos::RCP<CompositeVector> u = Teuchos::rcp(new CompositeVector(*cvs));
+  Epetra_MultiVector& uf = *u->ViewComponent("face");
   int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
   Point vel(4.0, 4.0);
   for (int f = 0; f < nfaces; f++) {
@@ -117,8 +115,8 @@ TEST(ADVECTION_DIFFUSION_COMMUTE) {
   // create advection operator
   Teuchos::ParameterList alist;
   Teuchos::RCP<AdvectionUpwind> op1 = Teuchos::rcp(new AdvectionUpwind(alist, global_op));
-  op1->Setup(u);
-  op1->UpdateMatrices(u);
+  op1->Setup(*u);
+  op1->UpdateMatrices(u.ptr());
 
   // add the diffusion operator
   Teuchos::ParameterList olist = plist.get<Teuchos::ParameterList>("PK operator")
@@ -147,8 +145,8 @@ TEST(ADVECTION_DIFFUSION_COMMUTE) {
 
   Teuchos::ParameterList alist2;
   Teuchos::RCP<AdvectionUpwind> op4 = Teuchos::rcp(new AdvectionUpwind(alist2, global_op2));
-  op4->Setup(u);
-  op4->UpdateMatrices(u);
+  op4->Setup(*u);
+  op4->UpdateMatrices(u.ptr());
 
   // create a preconditioner
   op3->ApplyBCs(true, true);
@@ -198,7 +196,6 @@ TEST(ADVECTION_DIFFUSION_COMMUTE_FV) {
   RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 40, 40, gm);
 
   // modify diffusion coefficient
-  // -- since rho=mu=1.0, we do need additional special steps.
   Teuchos::RCP<std::vector<WhetStone::Tensor> > K = Teuchos::rcp(new std::vector<WhetStone::Tensor>());
   int ncells_owned = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
@@ -208,7 +205,6 @@ TEST(ADVECTION_DIFFUSION_COMMUTE_FV) {
     Kc(0, 0) = 1.0;
     K->push_back(Kc);
   }
-  double rho(1.0), mu(1.0);
 
   // create boundary data
   Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(mesh, AmanziMesh::FACE, SCHEMA_DOFS_SCALAR));
@@ -231,8 +227,8 @@ TEST(ADVECTION_DIFFUSION_COMMUTE_FV) {
   cvs->AddComponent("face", AmanziMesh::FACE, 1);
 
   // create velocity field
-  CompositeVector u(*cvs);
-  Epetra_MultiVector& uf = *u.ViewComponent("face");
+  Teuchos::RCP<CompositeVector> u = Teuchos::rcp(new CompositeVector(*cvs));
+  Epetra_MultiVector& uf = *u->ViewComponent("face");
   int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
   Point vel(4.0, 4.0);
   for (int f = 0; f < nfaces; f++) {
@@ -246,8 +242,8 @@ TEST(ADVECTION_DIFFUSION_COMMUTE_FV) {
   // create advection operator
   Teuchos::ParameterList alist;
   Teuchos::RCP<AdvectionUpwind> op1 = Teuchos::rcp(new AdvectionUpwind(alist, global_op));
-  op1->Setup(u);
-  op1->UpdateMatrices(u);
+  op1->Setup(*u);
+  op1->UpdateMatrices(u.ptr());
 
   // add the diffusion operator
   Teuchos::ParameterList olist = plist.get<Teuchos::ParameterList>("PK operator")
@@ -276,8 +272,8 @@ TEST(ADVECTION_DIFFUSION_COMMUTE_FV) {
 
   Teuchos::ParameterList alist2;
   Teuchos::RCP<AdvectionUpwind> op4 = Teuchos::rcp(new AdvectionUpwind(alist2, global_op2));
-  op4->Setup(u);
-  op4->UpdateMatrices(u);
+  op4->Setup(*u);
+  op4->UpdateMatrices(u.ptr());
 
   // create a preconditioner
   op3->ApplyBCs(false, true);

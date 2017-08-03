@@ -150,8 +150,8 @@ std::cout << "Passed EPK.Initilize()" << std::endl;
       ->ViewComponent("cell", true);
   const Epetra_MultiVector& n_l = *S->GetFieldData("molar_density_liquid")->ViewComponent("cell", true);
 
-  CompositeVector flux(op->DomainMap());
-  Epetra_MultiVector& q_l = *flux.ViewComponent("face");
+  Teuchos::RCP<CompositeVector> flux = Teuchos::rcp(new CompositeVector(op->DomainMap()));
+  Epetra_MultiVector& q_l = *flux->ViewComponent("face");
 
   AmanziMesh::Entity_ID_List cells;
 
@@ -172,8 +172,8 @@ std::cout << "Passed EPK.Initilize()" << std::endl;
 
   Teuchos::ParameterList alist;
   Teuchos::RCP<AdvectionUpwind> op3 = Teuchos::rcp(new AdvectionUpwind(alist, op));
-  op3->Setup(flux);
-  op3->UpdateMatrices(flux);
+  op3->Setup(*flux);
+  op3->UpdateMatrices(flux.ptr());
 
   // build the matrix
   op1->ApplyBCs(true, true);

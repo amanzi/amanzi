@@ -123,16 +123,16 @@ TEST(ADVECTION_DIFFUSION_SURFACE) {
   Teuchos::RCP<AdvectionUpwind> op_adv = Teuchos::rcp(new AdvectionUpwind(alist, global_op));
 
   // get a flux field
-  CompositeVector u(cvs);
-  Epetra_MultiVector& uf = *u.ViewComponent("face");
+  Teuchos::RCP<CompositeVector> u = Teuchos::rcp(new CompositeVector(cvs));
+  Epetra_MultiVector& uf = *u->ViewComponent("face");
   int nfaces = surfmesh->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
   Point vel(4.0, 4.0, 0.0);
   for (int f = 0; f < nfaces; f++) {
     uf[0][f] = vel * surfmesh->face_normal(f);
   }
 
-  op_adv->Setup(u);
-  op_adv->UpdateMatrices(u);
+  op_adv->Setup(*u);
+  op_adv->UpdateMatrices(u.ptr());
 
   // Add an accumulation term.
   CompositeVector solution(cvs);

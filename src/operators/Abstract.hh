@@ -40,9 +40,14 @@ class Abstract : public PDE_Helper {
   }
 
   // main members 
-  void Setup(const Teuchos::RCP<std::vector<WhetStone::Tensor> >& K) { K_ = K; }
-  void UpdateMatrices();
+  // -- required by the interface
+  using PDE_Helper::UpdateMatrices;
+  virtual void UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& u,
+                              const Teuchos::Ptr<const CompositeVector>& p);
   
+  // -- setup
+  void Setup(const Teuchos::RCP<std::vector<WhetStone::Tensor> >& K) { K_ = K; }
+
  protected:
   Teuchos::RCP<std::vector<WhetStone::Tensor> > K_;
 

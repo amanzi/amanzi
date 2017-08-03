@@ -50,8 +50,10 @@ void Elasticity::SetTensorCoefficient(double K) {
 
 /* ******************************************************************
 * Calculate elemental matrices.
+* NOTE: The input parameters are not yet used.
 ****************************************************************** */
-void Elasticity::UpdateMatrices()
+void Elasticity::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& u,
+                                const Teuchos::Ptr<const CompositeVector>& p)
 {
   WhetStone::MFD3D_BernardiRaugel mfd(mesh_);
   WhetStone::DenseMatrix Acell;
