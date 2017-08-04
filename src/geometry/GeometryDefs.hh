@@ -14,8 +14,12 @@
 #ifndef AMANZI_GEOMETRY_DEFS_HH_
 #define AMANZI_GEOMETRY_DEFS_HH_
 
+#include "Point.hh"
+
 namespace Amanzi {
 namespace AmanziGeometry {  
+
+typedef std::vector<Point> Point_List;
 
 typedef int Entity_ID; 
 typedef std::vector<Entity_ID> Entity_ID_List;

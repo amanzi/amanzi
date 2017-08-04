@@ -20,7 +20,8 @@ namespace WhetStone {
 /* ******************************************************************
 * Constructor
 ****************************************************************** */
-Polynomial::Polynomial(int d, int order) : d_(d), order_(order), it_(d)
+Polynomial::Polynomial(int d, int order) : 
+    d_(d), order_(order), it_(d), origin_(d)
 {
   size_ = 0;
   coefs_.resize(order_ + 1);
@@ -41,6 +42,7 @@ void Polynomial::Reshape(int d, int order, bool reset)
     d_ = d;
     order_ = order;
     it_.set_dimension(d);
+    origin_ = AmanziGeometry::Point(d);
 
     coefs_.clear();
     coefs_.resize(order_ + 1);
@@ -71,6 +73,7 @@ void Polynomial::Reshape(int d, int order, bool reset)
 Polynomial& Polynomial::operator+=(const Polynomial& poly)
 {
   ASSERT(d_ == poly.dimension());  // FIXME
+  ASSERT(origin_ == poly.origin());
 
   int order_max = std::max(order_, poly.order());
   Reshape(d_, order_max);
@@ -89,6 +92,7 @@ Polynomial& Polynomial::operator+=(const Polynomial& poly)
 Polynomial& Polynomial::operator-=(const Polynomial& poly)
 {
   ASSERT(d_ == poly.dimension());  // FIXME
+  ASSERT(origin_ == poly.origin());
 
   int order_max = std::max(order_, poly.order());
   Reshape(d_, order_max);
@@ -107,6 +111,7 @@ Polynomial& Polynomial::operator-=(const Polynomial& poly)
 Polynomial& Polynomial::operator*=(const Polynomial& poly)
 {
   ASSERT(d_ == poly.dimension());  // FIXME
+  ASSERT(origin_ == poly.origin());
 
   Polynomial arg1(*this);
   const Polynomial* arg2 = &poly;
@@ -177,6 +182,23 @@ void Polynomial::Gradient(std::vector<Polynomial>& grad) const
 
 
 /* ******************************************************************
+* Rebase polynomial to different origin.
+****************************************************************** */
+void Polynomial::ChangeOrigin(const AmanziGeometry::Point& origin)
+{
+  ASSERT(order_ < 2);  // FIXME
+
+  if (order_ == 1) {
+    AmanziGeometry::Point shift(origin - origin_);
+    for (int i = 0; i < d_; ++i) {
+      coefs_[0](0) += coefs_[1](i) * shift[i];
+    }
+  }
+  origin_ = origin;   
+}
+
+
+/* ******************************************************************
 * Resets all coefficients to zero
 ****************************************************************** */
 void Polynomial::Reset()
@@ -202,7 +224,7 @@ double Polynomial::Value(const AmanziGeometry::Point& xp)
     int k(0);
     double tmp(1.0);
     for (int i = 0; i < d_; ++i) {
-      tmp *= std::pow(xp[i], index[i]);
+      tmp *= std::pow(xp[i] - origin_[i], index[i]);
       k += index[i];
     }
     sum += tmp * coefs_[k](l);
@@ -267,6 +289,7 @@ std::ostream& operator << (std::ostream& os, const Polynomial& p)
 
     if (m == p.monomials(k).size() - 1) os << std::endl;
   } 
+  os << "origin: " << p.origin() << std::endl;
   return os;
 }
 

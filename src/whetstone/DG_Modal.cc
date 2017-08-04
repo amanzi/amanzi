@@ -69,10 +69,14 @@ int DG_Modal::MassMatrix(int c, const Tensor& K, DenseMatrix& M)
 /* ******************************************************************
 * Mass matrix for Taylor basis and polynomial coefficient K.
 ****************************************************************** */
-int DG_Modal::MassMatrix(int c, Polynomial& K, DenseMatrix& A)
+int DG_Modal::MassMatrix(int c, const Polynomial& K, DenseMatrix& A)
 {
-  // calculate monomials
-  int uk(K.order());
+  // rebase the polynomial
+  Polynomial Kcopy(K);
+  Kcopy.ChangeOrigin(mesh_->cell_centroid(c));
+
+  // calculate monomials centered at cell centroid
+  int uk(Kcopy.order());
   Polynomial integrals(d_, 2 * order_ + uk);
 
   integrals.monomials(0).coefs()[0] = mesh_->cell_volume(c);
@@ -93,10 +97,10 @@ int DG_Modal::MassMatrix(int c, Polynomial& K, DenseMatrix& A)
     const int* idx_p = it.multi_index();
     int k = p.PolynomialPosition(idx_p);
 
-    for (auto mt = K.begin(); mt.end() <= K.end(); ++mt) {
+    for (auto mt = Kcopy.begin(); mt.end() <= Kcopy.end(); ++mt) {
       const int* idx_K = mt.multi_index();
       int m = mt.MonomialPosition();
-      double factor = K.monomials(mt.end()).coefs()[m];
+      double factor = Kcopy.monomials(mt.end()).coefs()[m];
 
       for (auto jt = q.begin(); jt.end() <= q.end(); ++jt) {
         const int* idx_q = jt.multi_index();
@@ -109,7 +113,7 @@ int DG_Modal::MassMatrix(int c, Polynomial& K, DenseMatrix& A)
         }
 
         const auto& coefs = integrals.monomials(n).coefs();
-        A(k, l) -= factor * coefs[p.MonomialPosition(multi_index)];
+        A(k, l) += factor * coefs[p.MonomialPosition(multi_index)];
       }
     }
   }

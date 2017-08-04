@@ -139,6 +139,9 @@ class Polynomial {
   // resets all coefficients to zero
   void Reset();
 
+  // change the coordinate system
+  void ChangeOrigin(const AmanziGeometry::Point& origin);
+
   // typical operations with polynomials
   // -- polynomial values
   double Value(const AmanziGeometry::Point& xp);
@@ -178,6 +181,7 @@ class Polynomial {
   int dimension() const { return d_; }
   int order() const { return order_; }
   int size() const { return size_; }
+  const AmanziGeometry::Point& origin() const { return origin_; }
 
   Monomial& monomials(int i) { return coefs_[i]; }
   const Monomial& monomials(int i) const { return coefs_[i]; }
@@ -190,6 +194,7 @@ class Polynomial {
 
  private:
   int d_, order_, size_;
+  AmanziGeometry::Point origin_;
   std::vector<Monomial> coefs_;
 };
 

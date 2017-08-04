@@ -59,7 +59,8 @@ void RemapTests2DExplicit(int order, std::string disc_name,
   MeshFactory meshfactory(&comm);
   meshfactory.preference(FrameworkPreference({MSTK}));
 
-  Teuchos::RCP<const Mesh> mesh0 = meshfactory(0.0, 0.0, 1.0, 1.0, nx, ny);
+  // Teuchos::RCP<const Mesh> mesh0 = meshfactory(0.0, 0.0, 1.0, 1.0, nx, ny);
+  Teuchos::RCP<const Mesh> mesh0 = meshfactory("test/median32x33.exo", Teuchos::null);
 
   int ncells_owned = mesh0->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   int ncells_wghost = mesh0->num_entities(AmanziMesh::CELL, AmanziMesh::USED);
@@ -67,7 +68,8 @@ void RemapTests2DExplicit(int order, std::string disc_name,
   int nnodes_owned = mesh0->num_entities(AmanziMesh::NODE, AmanziMesh::OWNED);
 
   // create second and auxiliary mesh
-  Teuchos::RCP<Mesh> mesh1 = meshfactory(0.0, 0.0, 1.0, 1.0, nx, ny);
+  // Teuchos::RCP<Mesh> mesh1 = meshfactory(0.0, 0.0, 1.0, 1.0, nx, ny);
+  Teuchos::RCP<Mesh> mesh1 = meshfactory("test/median32x33.exo", Teuchos::null);
 
   // deform the second mesh
   AmanziGeometry::Point xv(2), xref(2);
@@ -150,6 +152,7 @@ void RemapTests2DExplicit(int order, std::string disc_name,
 
   while(t < tend - dt/2) {
     // calculate determinant of Jacobian
+    /*
     for (int c = 0; c < ncells_owned; ++c) {
       xref.set(0.5, 0.5);
 
@@ -163,9 +166,11 @@ void RemapTests2DExplicit(int order, std::string disc_name,
       J1 += 1.0 - (t + dt);
       (*jac1)[0][c] = J1.Det();
     }
+    */
 
     // rotate velocities and calculate normal component
     Entity_ID_List faces;
+    std::vector<int> dirs;
     WhetStone::Polynomial poly(2, 1);
     std::vector<WhetStone::Polynomial> uv(2, poly);
 
@@ -176,9 +181,10 @@ void RemapTests2DExplicit(int order, std::string disc_name,
     Epetra_MultiVector& vel_f = *vel->ViewComponent("face");
 
     for (int c = 0; c < ncells_owned; ++c) {
-      mesh0->cell_get_faces(c, &faces);
+      mesh0->cell_get_faces_and_dirs(c, &faces, &dirs);
       int nfaces = faces.size();
 
+      double sum0(0.0), sum1(0.0);
       for (int n = 0; n < nfaces; ++n) {
         int f = faces[n];
 
@@ -195,7 +201,19 @@ void RemapTests2DExplicit(int order, std::string disc_name,
         const AmanziGeometry::Point& xf = mesh0->face_centroid(f);
         xv = AmanziGeometry::Point(uv[0].Value(xf), uv[1].Value(xf));
         vel_f[0][f] = xv * cn;
+
+        // test
+        const AmanziGeometry::Point& xf1 = mesh1->face_centroid(f);
+        sum0 += (xf + t * (xf1 - xf)) * cn * dirs[n];
+        J = dg.FaceJacobian(c, f, uv, xref);
+        J *= t + dt;
+        J += 1.0 - (t + dt);
+        C = J.Cofactors();
+        cn = C * mesh0->face_normal(f); 
+        sum1 += (xf + (t + dt) * (xf1 - xf)) * cn * dirs[n];
       }
+      (*jac0)[0][c] = sum0 / 2 / mesh0->cell_volume(c);
+      (*jac1)[0][c] = sum1 / 2 / mesh0->cell_volume(c);
     }
 
     // populate operators
@@ -268,7 +286,7 @@ void RemapTests2DExplicit(int order, std::string disc_name,
 
 
 TEST(REMAP_DG0_EXPLICIT) {
-  RemapTests2DExplicit(0, "DG order 0", 20, 20, 0.1 / 2);
+  RemapTests2DExplicit(0, "DG order 0", 40, 40, 0.1 / 3);
 }
 
 // TEST(REMAP_DG1_EXPLICIT) {

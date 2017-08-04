@@ -87,11 +87,11 @@ TEST(DG_TAYLOR_POLYNOMIALS) {
   // reshape polynomials
   q.Reshape(3, 2);
   Polynomial q1(q), q2(q), q3(q);
-  std::cout << "Reshaping last polynomial\n" << q << std::endl; 
+  std::cout << "Reshaping last 3D polynomial\n" << q << std::endl; 
   CHECK(q.size() == 10);
 
   q.Reshape(3, 3);
-  std::cout << "Reshaping last polynomial\n" << q << std::endl; 
+  std::cout << "Reshaping last 3D polynomial, q=\n" << q << std::endl; 
   CHECK(q.size() == 20);
 
   // ring operations with polynomials
@@ -111,6 +111,12 @@ TEST(DG_TAYLOR_POLYNOMIALS) {
   std::vector<Polynomial> grad;
   q_orig.Gradient(grad);
   std::cout << "Gradient:\n" << grad[0] << grad[1] << grad[2] << std::endl;
+
+  // change coordinate system
+  AmanziGeometry::Point origin(0.5, 0.5, 0.5);
+  q.Reshape(3, 1);
+  q.ChangeOrigin(origin);
+  std::cout << "Changed origin of polynomial q\n" << q << std::endl; 
 }
 
 
@@ -122,7 +128,7 @@ TEST(DG_MASS_MATRIX) {
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::WhetStone;
 
-  std::cout << "Test: DG mass matrices" << std::endl;
+  std::cout << "Test: DG mass matrices (tensors)" << std::endl;
   Epetra_MpiComm *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
 
   MeshFactory meshfactory(comm);
@@ -168,7 +174,7 @@ TEST(DG_MASS_MATRIX_POLYNOMIAL) {
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::WhetStone;
 
-  std::cout << "\nTest: DG advection matrices in cells" << std::endl;
+  std::cout << "\nTest: DG mass matrices (polynomials)" << std::endl;
   Epetra_MpiComm *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
 
   MeshFactory meshfactory(comm);
@@ -176,38 +182,41 @@ TEST(DG_MASS_MATRIX_POLYNOMIAL) {
   // Teuchos::RCP<Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 1, 1); 
   Teuchos::RCP<Mesh> mesh = meshfactory("test/one_cell2.exo");
  
-  DenseMatrix A[2];
+  double tmp, integral[2];
+  DenseMatrix A;
   AmanziGeometry::Point zero(0.0, 0.0);
 
   for (int k = 0; k < 2; k++) {
     DG_Modal dg(1, mesh);
+
     Polynomial u(2, k);
     u.monomials(0).coefs()[0] = 1.0;
+    u.monomials(k).coefs()[0] = 1.0;
 
-    dg.MassMatrix(0, u, A[k]);
-    int nk = A[k].NumRows();
+    dg.MassMatrix(0, u, A);
+    int nk = A.NumRows();
 
-    printf("Advection matrix (cell-based) for velocity of order=%d\n", k);
+    printf("Mass matrix for polynomial of order=%d\n", k);
     for (int i = 0; i < nk; i++) {
-      for (int j = 0; j < nk; j++ ) printf("%8.4f ", A[k](i, j)); 
+      for (int j = 0; j < nk; j++ ) printf("%8.4f ", A(i, j)); 
       printf("\n");
     }
-  }
 
-  // TEST1: accuracy
-  int nk = A[0].NumRows();
-  DenseVector v(nk), av(nk);
-  double tmp;
-  const AmanziGeometry::Point& xc = mesh->cell_centroid(0);
+    // TEST1: accuracy
+    DenseVector v(nk), av(nk);
+    const AmanziGeometry::Point& xc = mesh->cell_centroid(0);
 
-  v.PutScalar(0.0);
-  v(0) = xc[0] + 2 * xc[1];
-  v(1) = 1.0;
-  v(2) = 2.0;
+    v.PutScalar(0.0);
+    v(0) = xc[0] + 2 * xc[1];
+    v(1) = 1.0;
+    v(2) = 2.0;
     
-  A[0].Multiply(v, av, false);
-  v.Dot(av, &tmp);
-  CHECK_CLOSE(-20.2332916667, tmp, 1e-10);
+    A.Multiply(v, av, false);
+    v.Dot(av, &tmp);
+    integral[k] = tmp;
+  }
+  CHECK_CLOSE(20.2332916667, integral[0], 1e-10);
+  CHECK(integral[0] < integral[1]);
 
   delete comm;
 }

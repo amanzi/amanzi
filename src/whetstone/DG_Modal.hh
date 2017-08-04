@@ -70,7 +70,7 @@ class DG_Modal {
   ~DG_Modal() {};
 
   int MassMatrix(int c, const Tensor& K, DenseMatrix& M);
-  int MassMatrix(int c, Polynomial& K, DenseMatrix& A);
+  int MassMatrix(int c, const Polynomial& K, DenseMatrix& A);
   int AdvectionMatrixFace(int f, Polynomial& un, DenseMatrix& A);
 
   // support of advection schemes

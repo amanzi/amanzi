@@ -103,8 +103,12 @@ void Reaction::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& u,
   WhetStone::Tensor Kc(d, 1);
 
   for (int c = 0; c < ncells_owned; ++c) {
-    Kc(0, 0) = K_.get() ? (*K_)[0][c] : 1.0;
-    dg.MassMatrix(c, Kc, Mcell);
+    if (poly_.get()) {
+      dg.MassMatrix(c, (*poly_)[c], Mcell);
+    } else {
+      Kc(0, 0) = K_.get() ? (*K_)[0][c] : 1.0;
+      dg.MassMatrix(c, Kc, Mcell);
+    }
 
     matrix[c] = Mcell;
   }
