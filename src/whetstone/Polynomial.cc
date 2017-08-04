@@ -117,7 +117,7 @@ Polynomial& Polynomial::operator*=(const Polynomial& poly)
   const Polynomial* arg2 = &poly;
   if (this == arg2) arg2 = &arg1; 
 
-  int order_prod = order_ * poly.order();
+  int order_prod = order_ + poly.order();
   Reshape(d_, order_prod, true);
 
   int index[3];
@@ -126,6 +126,7 @@ Polynomial& Polynomial::operator*=(const Polynomial& poly)
     int k1 = it1.MonomialOrder();
     int m1 = it1.MonomialPosition();
     double val1 = arg1.monomials(k1).coefs()[m1];
+    if (val1 == 0.0) continue;
 
     for (auto it2 = arg2->begin(); it2.end() <= arg2->end(); ++it2) {
       const int* idx2 = it2.multi_index();
@@ -141,6 +142,17 @@ Polynomial& Polynomial::operator*=(const Polynomial& poly)
       int l = MonomialPosition(index);
       coefs_[n](l) += val1 * val2;
     }
+  }
+
+  return *this;
+}
+
+
+Polynomial& Polynomial::operator*=(double val)
+{
+  for (int i = 0; i <= order_; ++i) {
+    std::vector<double>& tmp = coefs_[i].coefs();
+    for (auto it = tmp.begin(); it != tmp.end(); ++it) *it *= val;
   }
 
   return *this;
@@ -186,13 +198,56 @@ void Polynomial::Gradient(std::vector<Polynomial>& grad) const
 ****************************************************************** */
 void Polynomial::ChangeOrigin(const AmanziGeometry::Point& origin)
 {
-  ASSERT(order_ < 2);  // FIXME
+  AmanziGeometry::Point shift(origin - origin_);
 
   if (order_ == 1) {
-    AmanziGeometry::Point shift(origin - origin_);
     for (int i = 0; i < d_; ++i) {
       coefs_[0](0) += coefs_[1](i) * shift[i];
     }
+  } else if (order_ > 1) {
+    // create powers (x_i - o_i)^k
+    std::vector<std::vector<Polynomial> > powers(d_);
+
+    for (int i = 0; i < d_; ++i) {
+      powers[i].resize(order_ + 1);
+
+      for (int k = 0; k <= order_; ++k) {
+        int index[3] = {0, 0, 0};
+        index[i] = k;
+
+        Polynomial& p = powers[i][k];
+        p.Reshape(d_, k, true);
+
+        int cnk(1);
+        double val(1.0), a(shift[i]);
+        for (int n = 0; n <= k; ++n) {
+          int l = p.MonomialPosition(index);
+          index[i]--;
+
+          p.monomials(k - n)(l) = val * cnk;
+          cnk *= (k - n);
+          cnk /= (n + 1);
+          val *= a;
+        }
+      }
+    }
+
+    // iterate over polynomial and sum up products
+    Polynomial rebased(d_, order_);
+    for (auto it = begin(); it.end() <= end(); ++it) {
+      int k = it.MonomialOrder();
+      int m = it.MonomialPosition();
+      double coef = monomials(k).coefs()[m];
+
+      const int* index = it.multi_index();
+      Polynomial tmp(powers[0][index[0]]);
+      for (int i = 1; i < d_; ++i) tmp *= powers[i][index[i]];
+
+      tmp *= coef; 
+      rebased += tmp;
+    }
+    
+    *this = rebased;
   }
   origin_ = origin;   
 }
@@ -270,6 +325,8 @@ int Polynomial::PolynomialPosition(const int* multi_index) const
 ****************************************************************** */
 std::ostream& operator << (std::ostream& os, const Polynomial& p)
 {
+  os << "polynomial: order=" << p.order() << " d=" << p.dimension() 
+     << " size=" << p.size() << std::endl;
   for (auto it = p.begin(); it.end() <= p.end(); ++it) {
     int k = it.MonomialOrder();
     int m = it.MonomialPosition();

@@ -150,6 +150,7 @@ class Polynomial {
   Polynomial& operator+=(const Polynomial& poly);
   Polynomial& operator-=(const Polynomial& poly);
   Polynomial& operator*=(const Polynomial& poly);
+  Polynomial& operator*=(double val);
  
   friend Polynomial operator+(const Polynomial& poly1, const Polynomial& poly2) {
     Polynomial tmp(poly1);
@@ -164,6 +165,15 @@ class Polynomial {
   friend Polynomial operator*(const Polynomial& poly1, const Polynomial& poly2) {
     Polynomial tmp(poly1);
     return tmp *= poly2;
+  }
+
+  friend Polynomial operator*(double val, const Polynomial& poly) {
+    Polynomial tmp(poly);
+    return tmp *= val;
+  }
+  friend Polynomial operator*(const Polynomial& poly, double val) {
+    Polynomial tmp(poly);
+    return tmp *= val;
   }
 
   // -- derivatives
