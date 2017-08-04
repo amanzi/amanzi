@@ -14,6 +14,7 @@
 #include <iostream>
 #include <vector>
 
+// TPLs
 #include "Epetra_MultiVector.h"
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
@@ -24,9 +25,9 @@
 #include "DG_Modal.hh"
 #include "GMVMesh.hh"
 #include "LinearOperatorPCG.hh"
-#include "LinearOperatorGMRES.hh"
 #include "Mesh.hh"
 #include "MeshFactory.hh"
+#include "MeshMaps.hh"
 #include "Tensor.hh"
 #include "WhetStoneDefs.hh"
 
@@ -147,8 +148,8 @@ void RemapTests2DExplicit(int order, std::string disc_name,
   op_reac1->Setup(jac1);
 
   double t(0.0), tend(1.0);
-  WhetStone::DG_Modal dg(mesh0, mesh1);
-  dg.set_method(WhetStone::WHETSTONE_METHOD_VEM);
+  WhetStone::MeshMaps maps(mesh0, mesh1);
+  maps.set_method(WhetStone::WHETSTONE_METHOD_VEM);
 
   while(t < tend - dt/2) {
     // calculate determinant of Jacobian
@@ -156,7 +157,7 @@ void RemapTests2DExplicit(int order, std::string disc_name,
     for (int c = 0; c < ncells_owned; ++c) {
       xref.set(0.5, 0.5);
 
-      WhetStone::Tensor J0 = dg.FEM_Jacobian(c, xref);
+      WhetStone::Tensor J0 = maps.FEM_Jacobian(c, xref);
       WhetStone::Tensor J1(J0);
       J0 *= t;
       J0 += 1.0 - t;
@@ -189,9 +190,9 @@ void RemapTests2DExplicit(int order, std::string disc_name,
         int f = faces[n];
 
         // calculate j J^{-t} N dA
-        dg.FaceVelocity(c, f, uv);
+        maps.FaceVelocity(c, f, uv);
 
-        WhetStone::Tensor J = dg.FaceJacobian(c, f, uv, xref);
+        WhetStone::Tensor J = maps.FaceJacobian(c, f, uv, xref);
         J *= t;
         J += 1.0 - t;
         WhetStone::Tensor C = J.Cofactors();
@@ -205,7 +206,7 @@ void RemapTests2DExplicit(int order, std::string disc_name,
         // test
         const AmanziGeometry::Point& xf1 = mesh1->face_centroid(f);
         sum0 += (xf + t * (xf1 - xf)) * cn * dirs[n];
-        J = dg.FaceJacobian(c, f, uv, xref);
+        J = maps.FaceJacobian(c, f, uv, xref);
         J *= t + dt;
         J += 1.0 - (t + dt);
         C = J.Cofactors();

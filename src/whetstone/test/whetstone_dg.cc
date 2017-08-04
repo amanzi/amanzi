@@ -13,14 +13,18 @@
 #include <cmath>
 #include <iostream>
 
+// TPLs
 #include "Teuchos_RCP.hpp"
 #include "UnitTest++.h"
 
+// Amanzi
 #include "Mesh.hh"
 #include "MeshFactory.hh"
 
+// Amanzi::WhetStone
 #include "DenseMatrix.hh"
 #include "DG_Modal.hh"
+#include "MeshMaps.hh"
 #include "Polynomial.hh"
 
 
@@ -316,11 +320,11 @@ TEST(DG_MAP_APPROXIMATION_CELL) {
   }
 
   // test identity map
-  DG_Modal dg(1, mesh);
+  MeshMaps maps(mesh);
   std::vector<AmanziGeometry::Point> u;
   AmanziGeometry::Point ex(1.0, 0.0), ey(0.0, 1.0);
 
-  dg.LeastSquareFit(x1, x1, u);
+  maps.LeastSquareFit(1, x1, x1, u);
   CHECK_CLOSE(norm(u[0]), 0.0, 1e-12);
   CHECK_CLOSE(norm(u[1] - ex), 0.0, 1e-12);
   CHECK_CLOSE(norm(u[2] - ey), 0.0, 1e-12);
@@ -332,7 +336,7 @@ TEST(DG_MAP_APPROXIMATION_CELL) {
     x2[i] += shift;
   }
 
-  dg.LeastSquareFit(x1, x2, u);
+  maps.LeastSquareFit(1, x1, x2, u);
   CHECK_CLOSE(norm(u[0] - shift), 0.0, 1e-12);
   CHECK_CLOSE(norm(u[1] - ex), 0.0, 1e-12);
   CHECK_CLOSE(norm(u[2] - ey), 0.0, 1e-12);
@@ -344,7 +348,7 @@ TEST(DG_MAP_APPROXIMATION_CELL) {
     x2[i][1] = s * x1[i][0] + c * x1[i][1];
   }
 
-  dg.LeastSquareFit(x1, x2, u);
+  maps.LeastSquareFit(1, x1, x2, u);
   CHECK_CLOSE(norm(u[0]), 0.0, 1e-12);
   CHECK_CLOSE(norm(u[1] - AmanziGeometry::Point(c, s)), 0.0, 1e-12);
   CHECK_CLOSE(norm(u[2] - AmanziGeometry::Point(-s, c)), 0.0, 1e-12);
@@ -359,7 +363,7 @@ TEST(DG_MAP_APPROXIMATION_CELL) {
   x2 = x1;
   x2[3] += AmanziGeometry::Point(0.1, 0.1);
 
-  dg.LeastSquareFit(x1, x2, u);
+  maps.LeastSquareFit(1, x1, x2, u);
 
   for (int i = 0; i < u.size(); ++i) {
     printf("u[%d] = %8.4g %8.4g\n", i, u[i][0], u[i][1]); 
