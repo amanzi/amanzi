@@ -66,7 +66,7 @@ void Transport_PK::Functional(double t,
   double u, u1, u2, umin, umax, upwind_tcc, tcc_flux;
 
   f_component.PutScalar(0.0);
-  for (int f = 0; f < nfaces_wghost; f++) {  // loop over master and slave faces
+  for (int f = 0; f < nfaces_wghost; f++) {
     c1 = (upwind_cells_[f].size() > 0) ? upwind_cells_[f][0] : -1;
     c2 = (downwind_cells_[f].size() > 0) ? downwind_cells_[f][0] : -1;
 

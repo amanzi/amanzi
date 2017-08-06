@@ -7,6 +7,8 @@
   provided in the top-level COPYRIGHT file.
 
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
+
+  Implementation of three different limiters.
 */
 
 #include <algorithm>
@@ -60,17 +62,27 @@ void ReconstructionCell::LimiterTensorial_(
     for (int loop = 0; loop < 2; loop++) {
       for (int i = 0; i < nfaces; ++i) {
         int f = faces[i];
-        int c1 = (upwind_cells_[f].size() > 0) ? upwind_cells_[f][0] : -1;
-        int c2 = (downwind_cells_[f].size() > 0) ? downwind_cells_[f][0] : -1;
+        // Limiting on inflow boundary is done in Step 2.
+        if (upwind_cells_[f].size() == 0) continue;
 
-        if (c1 >= 0 && c2 >= 0) {
+        // We enforce non-decreasing reconstruction on outflow boundary.
+        if (downwind_cells_[f].size() == 0) {
+          u1 = u2 = (*field_)[component_][c];
+        } else {
+          int c1 = upwind_cells_[f][0];
+          for (int n = 1; n < upwind_cells_[f].size(); ++n) {
+            if (upwind_cells_[f][n] == c) c1 = c;
+          }   
+
+          int c2 = downwind_cells_[f][0];
+          for (int n = 1; n < downwind_cells_[f].size(); ++n) {
+            if (downwind_cells_[f][n] == c) c2 = c;
+          }
+
           u1 = (*field_)[component_][c];
           u2 = (*field_)[component_][c1 + c2 - c];
-        } else if (c1 == c) {
-          u1 = u2 = (*field_)[component_][c];
-        } else {  // limiting on upwind face is done separately.
-          continue;
         }
+
         umin = std::min(u1, u2);
         umax = std::max(u1, u2);
 
@@ -156,7 +168,7 @@ void ReconstructionCell::LimiterTensorial_(
     }
   }
 
-  // Step 3: enforcing a priori time step estimate (division of dT by 2).
+  // Step 3: enforce a priori time step estimate (division of dT by 2).
   if (limiter_correction_) {
     LimiterExtensionTransportTensorial_(field_local_min, field_local_max);
   }    
@@ -179,7 +191,7 @@ void ReconstructionCell::LimiterTensorial_(
 /* *******************************************************************
 * Extension of the tensorial limiter. Routine changes gradient to 
 * satisfy an a prioty estimate of the stable time step. That estimate
-* assumes that the weigthed flux is smaller that the first-order flux.
+* assumes that the weigthed flux is smaller than the first-order flux.
 ******************************************************************* */
 void ReconstructionCell::LimiterExtensionTransportTensorial_(
     const std::vector<double>& field_local_min, const std::vector<double>& field_local_max)

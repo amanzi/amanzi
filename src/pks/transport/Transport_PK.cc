@@ -504,9 +504,9 @@ void Transport_PK::InitializeFieldFromField_(
 * Routine must be called every time we update a flow field.
 *
 * Warning: Barth calculates influx, we calculate outflux. The methods
-* are equivalent for divergence-free flows and guarantee EMP. Outflux 
-* takes into account sinks and sources but preserves only positivity
-* of an advected mass.
+* are equivalent for divergence-free flows and guarantee the extrema
+* diminishing principle. Outflux takes into account sinks and 
+* sources but preserves only positivity of an advected mass.
 * ***************************************************************** */
 double Transport_PK::StableTimeStep()
 {
@@ -1163,7 +1163,6 @@ void Transport_PK::AdvanceDonorUpwindNonManifold(double dt_cycle)
     }
 
     for (int n = 0; n < downwind_cells_[f].size(); ++n) {
-      int c = downwind_cells_[f][n];
       flux_in -= downwind_flux_[f][n];
     }
     if (flux_in == 0.0) flux_in = 1e-12;

@@ -1,15 +1,15 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
-/* -------------------------------------------------------------------------
+/*
+  Utils
 
-License: see $AMANZI_DIR/COPYRIGHT
-Author: Ethan Coon
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
 
-Helper classes which define const iterators that point to const.
------------------------------------------------------------------------------ */
+  Author: Ethan Coon
 
-#include "boost/iterator_adaptors.hpp"
-#include "Teuchos_RCP.hpp"
-
+  Helper classes which define const iterators that point to const.
+*/
 
 #ifndef AMANZI_CONTAINER_HH_
 #define AMANZI_CONTAINER_HH_

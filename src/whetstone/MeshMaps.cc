@@ -9,7 +9,7 @@
 
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 
-  Discontinuous Galerkin methods.
+  Maps between mesh objects located possibly on different meshes.
 */
 
 #include "Point.hh"

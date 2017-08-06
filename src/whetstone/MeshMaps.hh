@@ -54,6 +54,7 @@ class MeshMaps {
   // finite elements use three meshes: reference, initial and target
   AmanziGeometry::Point FEM_Map(int c, const AmanziGeometry::Point& xref) const;
   Tensor FEM_Jacobian(int c, const AmanziGeometry::Point& xref) const;
+  void FEM_Jacobian(int c, Polynomial& jac) const;
 
   // miscalleneous
   void set_method(int method) { method_ = method; }
