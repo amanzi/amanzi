@@ -111,12 +111,13 @@ void DiffusionFVwithGravity::ApplyBCs(bool primary, bool eliminate)
 * Calculate flux from cell-centered data
 ****************************************************************** */
 void DiffusionFVwithGravity::UpdateFlux(
-    const CompositeVector& solution, CompositeVector& darcy_mass_flux)
+    const Teuchos::Ptr<const CompositeVector>& solution,
+    const Teuchos::Ptr<CompositeVector>& darcy_mass_flux)
 {
   DiffusionFV::UpdateFlux(solution, darcy_mass_flux);
 
   // add gravity term
-  Epetra_MultiVector& flux = *darcy_mass_flux.ViewComponent("face", false);
+  Epetra_MultiVector& flux = *darcy_mass_flux->ViewComponent("face", false);
   const Teuchos::Ptr<const Epetra_MultiVector> Krel_face =
       k_.get() ? k_->ViewComponent("face", false).ptr() : Teuchos::null;
 
@@ -194,7 +195,8 @@ void DiffusionFVwithGravity::ComputeJacobianLocal_(
 * Calculate flux from cell-centered data
 ****************************************************************** */
 void DiffusionFVwithGravity::UpdateFluxNonManifold(
-    const CompositeVector& solution, CompositeVector& darcy_mass_flux)
+    const Teuchos::Ptr<const CompositeVector>& u,
+    const Teuchos::Ptr<CompositeVector>& flux)
 {
   Errors::Message msg;
   msg << "DiffusionFV: missing support for non-manifolds.";

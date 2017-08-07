@@ -27,9 +27,9 @@
 #include "LinearOperatorPCG.hh"
 #include "Mesh.hh"
 #include "MeshFactory.hh"
-#include "MeshMaps.hh"
+#include "MeshMaps_FEM.hh"
+#include "MeshMaps_VEM.hh"
 #include "Tensor.hh"
-#include "WhetStoneDefs.hh"
 
 // Amanzi::Operators
 #include "Accumulation.hh"
@@ -60,8 +60,8 @@ void RemapTests2DExplicit(int order, std::string disc_name,
   MeshFactory meshfactory(&comm);
   meshfactory.preference(FrameworkPreference({MSTK}));
 
-  // Teuchos::RCP<const Mesh> mesh0 = meshfactory(0.0, 0.0, 1.0, 1.0, nx, ny);
-  Teuchos::RCP<const Mesh> mesh0 = meshfactory("test/median32x33.exo", Teuchos::null);
+  Teuchos::RCP<const Mesh> mesh0 = meshfactory(0.0, 0.0, 1.0, 1.0, nx, ny);
+  // Teuchos::RCP<const Mesh> mesh0 = meshfactory("test/median32x33.exo", Teuchos::null);
 
   int ncells_owned = mesh0->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   int ncells_wghost = mesh0->num_entities(AmanziMesh::CELL, AmanziMesh::USED);
@@ -69,8 +69,8 @@ void RemapTests2DExplicit(int order, std::string disc_name,
   int nnodes_owned = mesh0->num_entities(AmanziMesh::NODE, AmanziMesh::OWNED);
 
   // create second and auxiliary mesh
-  // Teuchos::RCP<Mesh> mesh1 = meshfactory(0.0, 0.0, 1.0, 1.0, nx, ny);
-  Teuchos::RCP<Mesh> mesh1 = meshfactory("test/median32x33.exo", Teuchos::null);
+  Teuchos::RCP<Mesh> mesh1 = meshfactory(0.0, 0.0, 1.0, 1.0, nx, ny);
+  // Teuchos::RCP<Mesh> mesh1 = meshfactory("test/median32x33.exo", Teuchos::null);
 
   // deform the second mesh
   AmanziGeometry::Point xv(2), xref(2);
@@ -148,26 +148,20 @@ void RemapTests2DExplicit(int order, std::string disc_name,
   op_reac1->Setup(jac1);
 
   double t(0.0), tend(1.0);
-  WhetStone::MeshMaps maps(mesh0, mesh1);
-  maps.set_method(WhetStone::WHETSTONE_METHOD_VEM);
+  WhetStone::MeshMaps_FEM maps(mesh0, mesh1);
 
   while(t < tend - dt/2) {
-    // calculate determinant of Jacobian
-    /*
+    // calculate determinant of Jacobian at time t
     for (int c = 0; c < ncells_owned; ++c) {
       xref.set(0.5, 0.5);
 
-      WhetStone::Tensor J0 = maps.FEM_Jacobian(c, xref);
-      WhetStone::Tensor J1(J0);
-      J0 *= t;
-      J0 += 1.0 - t;
-      (*jac0)[0][c] = J0.Det();
+      WhetStone::Tensor J0(2, 2), J1(2, 2);
+      maps.JacobianCellValue(c, t, xref, J0);
+      maps.JacobianCellValue(c, t + dt, xref, J1);
 
-      J1 *= t + dt;
-      J1 += 1.0 - (t + dt);
+      (*jac0)[0][c] = J0.Det();
       (*jac1)[0][c] = J1.Det();
     }
-    */
 
     // rotate velocities and calculate normal component
     Entity_ID_List faces;
@@ -190,9 +184,10 @@ void RemapTests2DExplicit(int order, std::string disc_name,
         int f = faces[n];
 
         // calculate j J^{-t} N dA
-        maps.FaceVelocity(c, f, uv);
+        maps.VelocityFace(c, f, uv);
 
-        WhetStone::Tensor J = maps.FaceJacobian(c, f, uv, xref);
+        WhetStone::Tensor J(2, 2); 
+        maps.JacobianFaceValue(c, f, uv, xref, J);
         J *= t;
         J += 1.0 - t;
         WhetStone::Tensor C = J.Cofactors();
@@ -204,17 +199,19 @@ void RemapTests2DExplicit(int order, std::string disc_name,
         vel_f[0][f] = xv * cn;
 
         // test
+        /*
         const AmanziGeometry::Point& xf1 = mesh1->face_centroid(f);
         sum0 += (xf + t * (xf1 - xf)) * cn * dirs[n];
-        J = maps.FaceJacobian(c, f, uv, xref);
+        maps.JacobianFaceValue(c, f, uv, xref, J);
         J *= t + dt;
         J += 1.0 - (t + dt);
         C = J.Cofactors();
         cn = C * mesh0->face_normal(f); 
         sum1 += (xf + (t + dt) * (xf1 - xf)) * cn * dirs[n];
+        */
       }
-      (*jac0)[0][c] = sum0 / 2 / mesh0->cell_volume(c);
-      (*jac1)[0][c] = sum1 / 2 / mesh0->cell_volume(c);
+      // (*jac0)[0][c] = sum0 / 2 / mesh0->cell_volume(c);
+      // (*jac1)[0][c] = sum1 / 2 / mesh0->cell_volume(c);
     }
 
     // populate operators

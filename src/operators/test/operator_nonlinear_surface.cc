@@ -146,10 +146,9 @@ void RunTest(std::string op_list_name) {
   cvs->AddComponent("face", AmanziMesh::FACE, 1);
 
   // create and initialize state variables.
+  Teuchos::RCP<CompositeVector> solution = Teuchos::rcp(new CompositeVector(*cvs));
   Teuchos::RCP<CompositeVector> flux = Teuchos::rcp(new CompositeVector(*cvs));
-
-  CompositeVector solution(*cvs);
-  solution.PutScalar(0.0);  // solution at time T=0
+  solution->PutScalar(0.0);  // solution at time T=0
 
   CompositeVector phi(*cvs);
   phi.PutScalar(0.2);
@@ -170,8 +169,8 @@ void RunTest(std::string op_list_name) {
   double dT = 1.0;
   for (int loop = 0; loop < 3; loop++) {
     // create diffusion operator
-    solution.ScatterMasterToGhosted();
-    knc->UpdateValues(solution);
+    solution->ScatterMasterToGhosted();
+    knc->UpdateValues(*solution);
 
     Teuchos::ParameterList olist = plist.get<Teuchos::ParameterList>("PK operator")
                                         .get<Teuchos::ParameterList>(op_list_name);
@@ -188,7 +187,7 @@ void RunTest(std::string op_list_name) {
 
     // add accumulation terms
     Accumulation op_acc(AmanziMesh::CELL, global_op);
-    op_acc.AddAccumulationDelta(solution, phi, phi, dT, "cell");
+    op_acc.AddAccumulationDelta(*solution, phi, phi, dT, "cell");
 
     // apply BCs and assemble
     global_op->UpdateRHS(source, false);
@@ -214,7 +213,7 @@ void RunTest(std::string op_list_name) {
        solver = factory.Create("Amanzi GMRES", lop_list, global_op);
 
     CompositeVector rhs = *global_op->rhs();
-    int ierr = solver->ApplyInverse(rhs, solution);
+    int ierr = solver->ApplyInverse(rhs, *solution);
 
     int num_itrs = solver->num_itrs();
     CHECK(num_itrs > 5 && num_itrs < 15);
@@ -229,7 +228,7 @@ void RunTest(std::string op_list_name) {
     }
 
     // derive diffusion flux.
-    op.UpdateFlux(solution, *flux);
+    op.UpdateFlux(solution.ptr(), flux.ptr());
 
     // turn off the source
     source.PutScalar(0.0);
@@ -237,7 +236,7 @@ void RunTest(std::string op_list_name) {
  
   if (MyPID == 0) {
     // visualization
-    const Epetra_MultiVector& p = *solution.ViewComponent("cell");
+    const Epetra_MultiVector& p = *solution->ViewComponent("cell");
     GMV::open_data_file(*surfmesh, (std::string)"operators.gmv");
     GMV::start_data();
     GMV::write_cell_data(p, 0, "solution");

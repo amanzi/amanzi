@@ -110,7 +110,8 @@ TEST(OPERATOR_MIXED_DIFFUSION) {
   cvs->SetOwned(false);
   cvs->AddComponent("face", AmanziMesh::FACE, 1);
 
-  CompositeVector solution(*cvs), flux(*cvs);
+  Teuchos::RCP<CompositeVector> solution = Teuchos::rcp(new CompositeVector(*cvs));
+  Teuchos::RCP<CompositeVector> flux = Teuchos::rcp(new CompositeVector(*cvs));
 
   // create source 
   CompositeVector source(*cvs);
@@ -142,7 +143,7 @@ TEST(OPERATOR_MIXED_DIFFUSION) {
             
     op2.set_factor(factor);  // for developers only
     op2.Setup(K, Teuchos::null, Teuchos::null);
-    op2.UpdateMatrices(Teuchos::null, Teuchos::null);
+    op2.UpdateMatrices();
 
     // get and assemeble the global operator
     Teuchos::RCP<Operator> global_op = op2.global_operator();
@@ -156,25 +157,25 @@ TEST(OPERATOR_MIXED_DIFFUSION) {
 
     // solve the problem
     Teuchos::ParameterList lop_list = plist.get<Teuchos::ParameterList>("solvers");
-    solution.PutScalar(0.0);
+    solution->PutScalar(0.0);
     AmanziSolvers::LinearOperatorFactory<Operator, CompositeVector, CompositeVectorSpace> factory;
     Teuchos::RCP<AmanziSolvers::LinearOperator<Operator, CompositeVector, CompositeVectorSpace> >
        solver = factory.Create("AztecOO CG", lop_list, global_op);
 
     CompositeVector& rhs = *global_op->rhs();
-    int ierr = solver->ApplyInverse(rhs, solution);
+    int ierr = solver->ApplyInverse(rhs, *solution);
 
     // calculate pressure errors
-    Epetra_MultiVector& p = *solution.ViewComponent("cell", false);
+    Epetra_MultiVector& p = *solution->ViewComponent("cell", false);
     double pnorm, pl2_err, pinf_err;
     ana.ComputeCellError(p, 0.0, pnorm, pl2_err, pinf_err);
 
     // calculate flux errors
-    Epetra_MultiVector& flx = *flux.ViewComponent("face", true);
+    Epetra_MultiVector& flx = *flux->ViewComponent("face", true);
     double unorm, ul2_err, uinf_err;
 
-    op2.UpdateFlux(solution, flux);
-    flux.ScatterMasterToGhosted();
+    op2.UpdateFlux(solution.ptr(), flux.ptr());
+    flux->ScatterMasterToGhosted();
     ana.ComputeFaceError(flx, 0.0, unorm, ul2_err, uinf_err);
 
     if (MyPID == 0) {
@@ -187,7 +188,7 @@ TEST(OPERATOR_MIXED_DIFFUSION) {
     }
   }
 
-  Epetra_MultiVector& p = *solution.ViewComponent("cell", false);
+  Epetra_MultiVector& p = *solution->ViewComponent("cell", false);
   GMV::open_data_file(*mesh, (std::string)"operators.gmv");
   GMV::start_data();
   GMV::write_cell_data(p, 0, "pressure");

@@ -158,7 +158,7 @@ void RunTestDiffusionNLFV_DMP(double gravity, bool testing) {
     Teuchos::RCP<CompositeVector> flux = Teuchos::rcp(new CompositeVector(cvs_tmp));
     Epetra_MultiVector& flx = *flux->ViewComponent("face", true);
 
-    op->UpdateFlux(*solution, *flux);
+    op->UpdateFlux(solution.ptr(), flux.ptr());
     double unorm, ul2_err, uinf_err;
 
     ana.ComputeFaceError(flx, 0.0, unorm, ul2_err, uinf_err);

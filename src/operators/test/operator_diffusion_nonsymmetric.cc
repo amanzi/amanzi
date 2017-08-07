@@ -107,8 +107,8 @@ TEST(OPERATOR_DIFFUSION_NONSYMMETRIC) {
   const CompositeVectorSpace& cvs = op->global_operator()->DomainMap();
 
   // create and initialize state variables.
-  CompositeVector solution(cvs);
-  solution.PutScalar(0.0);
+  Teuchos::RCP<CompositeVector> solution = Teuchos::rcp(new CompositeVector(cvs));
+  solution->PutScalar(0.0);
 
   // create source 
   CompositeVector source(cvs);
@@ -141,7 +141,7 @@ TEST(OPERATOR_DIFFUSION_NONSYMMETRIC) {
      solver = factory.Create("Belos GMRES", lop_list, global_op);
 
   CompositeVector& rhs = *global_op->rhs();
-  int ierr = solver->ApplyInverse(rhs, solution);
+  int ierr = solver->ApplyInverse(rhs, *solution);
 
   if (MyPID == 0) {
     std::cout << "pressure solver (" << solver->name() 
@@ -150,7 +150,7 @@ TEST(OPERATOR_DIFFUSION_NONSYMMETRIC) {
   }
 
   // compute pressure error
-  Epetra_MultiVector& p = *solution.ViewComponent("cell", false);
+  Epetra_MultiVector& p = *solution->ViewComponent("cell", false);
   double pnorm, pl2_err, pinf_err;
   ana.ComputeCellError(p, 0.0, pnorm, pl2_err, pinf_err);
 
@@ -158,7 +158,7 @@ TEST(OPERATOR_DIFFUSION_NONSYMMETRIC) {
   Teuchos::RCP<CompositeVector> flux = Teuchos::rcp(new CompositeVector(cvs));
   Epetra_MultiVector& flx = *flux->ViewComponent("face", true);
 
-  op->UpdateFlux(solution, *flux);
+  op->UpdateFlux(solution.ptr(), flux.ptr());
   double unorm, ul2_err, uinf_err;
   ana.ComputeFaceError(flx, 0.0, unorm, ul2_err, uinf_err);
 

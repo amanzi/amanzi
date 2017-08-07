@@ -101,8 +101,8 @@ void RunTestDiffusionDivK2D(std::string diffusion_list, std::string upwind_list)
   const CompositeVectorSpace& cvs = op->global_operator()->DomainMap();
 
   // create and initialize state variables.
-  CompositeVector solution(cvs);
-  solution.PutScalar(0.0);
+  Teuchos::RCP<CompositeVector> solution = Teuchos::rcp(new CompositeVector(cvs));
+  solution->PutScalar(0.0);
 
   Teuchos::RCP<CompositeVector> flux = Teuchos::rcp(new CompositeVector(cvs));
   Epetra_MultiVector& flx = *flux->ViewComponent("face", true);
@@ -123,7 +123,7 @@ void RunTestDiffusionDivK2D(std::string diffusion_list, std::string upwind_list)
 
   knc->UpdateValues(*flux);  // argument is not used
   ModelUpwindFn func = &HeatConduction::Conduction;
-  upwind.Compute(*flux, solution, bc_model, bc_value, *knc->values(), func);
+  upwind.Compute(*flux, *solution, bc_model, bc_value, *knc->values(), func);
 
   if (upwind_list == "upwind second-order") knc->UpdateValuesPostUpwind();
 
@@ -138,7 +138,7 @@ void RunTestDiffusionDivK2D(std::string diffusion_list, std::string upwind_list)
 
   // populate the diffusion operator
   op->Setup(K, knc->values(), knc->derivatives());
-  op->UpdateMatrices(flux.ptr(), Teuchos::null);
+  op->UpdateMatrices(flux.ptr());
 
   // get and assemble the global operator
   Teuchos::RCP<Operator> global_op = op->global_operator();
@@ -159,7 +159,7 @@ void RunTestDiffusionDivK2D(std::string diffusion_list, std::string upwind_list)
   solver.Init(lop_list);
 
   CompositeVector& rhs = *global_op->rhs();
-  int ierr = solver.ApplyInverse(rhs, solution);
+  int ierr = solver.ApplyInverse(rhs, *solution);
 
   if (MyPID == 0) {
     std::cout << "pressure solver (pcg): ||r||=" << solver.residual() 
@@ -168,12 +168,12 @@ void RunTestDiffusionDivK2D(std::string diffusion_list, std::string upwind_list)
   }
 
   // compute pressure error
-  Epetra_MultiVector& p = *solution.ViewComponent("cell", false);
+  Epetra_MultiVector& p = *solution->ViewComponent("cell", false);
   double pnorm, pl2_err, pinf_err;
   ana.ComputeCellError(p, 0.0, pnorm, pl2_err, pinf_err);
 
   // calculate flux error
-  op->UpdateFlux(solution, *flux);
+  op->UpdateFlux(solution.ptr(), flux.ptr());
   double unorm, ul2_err, uinf_err;
   ana.ComputeFaceError(flx, 0.0, unorm, ul2_err, uinf_err);
 
@@ -264,8 +264,8 @@ TEST(OPERATOR_DIFFUSION_DIVK_AVERAGE_3D) {
   const CompositeVectorSpace& cvs = op->global_operator()->DomainMap();
 
   // create and initialize state variables.
-  CompositeVector solution(cvs);
-  solution.PutScalar(0.0);
+  Teuchos::RCP<CompositeVector> solution = Teuchos::rcp(new CompositeVector(cvs));
+  solution->PutScalar(0.0);
 
   Teuchos::RCP<CompositeVector> flux = Teuchos::rcp(new CompositeVector(cvs));
   Epetra_MultiVector& flx = *flux->ViewComponent("face", true);
@@ -286,7 +286,7 @@ TEST(OPERATOR_DIFFUSION_DIVK_AVERAGE_3D) {
 
   knc->UpdateValues(*flux);  // argument is not used
   ModelUpwindFn func = &HeatConduction::Conduction;
-  upwind.Compute(*flux, solution, bc_model, bc_value, *knc->values(), func);
+  upwind.Compute(*flux, *solution, bc_model, bc_value, *knc->values(), func);
 
   // create source 
   CompositeVector source(cvs);
@@ -299,7 +299,7 @@ TEST(OPERATOR_DIFFUSION_DIVK_AVERAGE_3D) {
 
   // populate the diffusion operator
   op->SetScalarCoefficient(knc->values(), knc->derivatives());
-  op->UpdateMatrices(flux.ptr(), Teuchos::null);
+  op->UpdateMatrices(flux.ptr());
 
   // get and assmeble the global operator
   Teuchos::RCP<Operator> global_op = op->global_operator();
@@ -320,7 +320,7 @@ TEST(OPERATOR_DIFFUSION_DIVK_AVERAGE_3D) {
   solver.Init(lop_list);
 
   CompositeVector rhs = *global_op->rhs();
-  int ierr = solver.ApplyInverse(rhs, solution);
+  int ierr = solver.ApplyInverse(rhs, *solution);
 
   if (MyPID == 0) {
     std::cout << "pressure solver (pcg): ||r||=" << solver.residual() 
@@ -329,12 +329,12 @@ TEST(OPERATOR_DIFFUSION_DIVK_AVERAGE_3D) {
   }
 
   // compute pressure error
-  Epetra_MultiVector& p = *solution.ViewComponent("cell", false);
+  Epetra_MultiVector& p = *solution->ViewComponent("cell", false);
   double pnorm, pl2_err, pinf_err;
   ana.ComputeCellError(p, 0.0, pnorm, pl2_err, pinf_err);
 
   // calculate flux error
-  op->UpdateFlux(solution, *flux);
+  op->UpdateFlux(solution.ptr(), flux.ptr());
   double unorm, ul2_err, uinf_err;
   ana.ComputeFaceError(flx, 0.0, unorm, ul2_err, uinf_err);
 

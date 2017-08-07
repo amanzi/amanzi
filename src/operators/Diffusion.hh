@@ -93,9 +93,9 @@ class Diffusion : public PDE_Helper {
           const Teuchos::Ptr<const CompositeVector>& u,
           double scalar_limiter = 1.0) = 0;
 
-  // -- after solving the problem: postrocessing
-  virtual void UpdateFlux(const CompositeVector& u, CompositeVector& flux) = 0;
-  virtual void UpdateFluxNonManifold(const CompositeVector& u, CompositeVector& flux) = 0;
+  // -- additional interface on non-manifolds
+  virtual void UpdateFluxNonManifold(const Teuchos::Ptr<const CompositeVector>& u,
+                                     const Teuchos::Ptr<CompositeVector>& flux) = 0;
 
   // -- matrix modification
   virtual void ApplyBCs(bool primary, bool eliminate) = 0;

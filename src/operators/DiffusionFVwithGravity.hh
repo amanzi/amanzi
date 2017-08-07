@@ -139,8 +139,10 @@ class DiffusionFVwithGravity : public DiffusionFV,
   // -- create a lineratized operator
   virtual void UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& flux,
                               const Teuchos::Ptr<const CompositeVector>& u);
-  virtual void UpdateFlux(const CompositeVector& u, CompositeVector& flux);
-  virtual void UpdateFluxNonManifold(const CompositeVector& u, CompositeVector& flux);
+  virtual void UpdateFlux(const Teuchos::Ptr<const CompositeVector>& u,
+                          const Teuchos::Ptr<CompositeVector>& flux) override;
+  virtual void UpdateFluxNonManifold(const Teuchos::Ptr<const CompositeVector>& u,
+                                     const Teuchos::Ptr<CompositeVector>& flux) override;
 
   // -- modify an operator
   virtual void ApplyBCs(bool primary, bool eliminate);

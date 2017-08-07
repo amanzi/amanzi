@@ -48,6 +48,10 @@ class Abstract : public PDE_Helper {
   // -- setup
   void Setup(const Teuchos::RCP<std::vector<WhetStone::Tensor> >& K) { K_ = K; }
 
+  // optional calculation of flux from potential p
+  virtual void UpdateFlux(const Teuchos::Ptr<const CompositeVector>& p,
+                          const Teuchos::Ptr<CompositeVector>& u) override {};
+
  protected:
   Teuchos::RCP<std::vector<WhetStone::Tensor> > K_;
 

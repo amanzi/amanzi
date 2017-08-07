@@ -1077,8 +1077,8 @@ std::pair<double,double> RunNonlinearProblem(
     if (error <= 1.e-8) continue;
 
     // update fluxes
-    problem->op00->UpdateFlux(*u, *problem->q0);
-    problem->op11->UpdateFlux(*v, *problem->q1);
+    problem->op00->UpdateFlux(u.ptr(), problem->q0.ptr());
+    problem->op11->UpdateFlux(v.ptr(), problem->q1.ptr());
     
     // assemble the preconditioner
     problem->pc00->global_operator()->Init();

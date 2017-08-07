@@ -51,6 +51,10 @@ class Elasticity : public PDE_Helper {
   virtual void UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& u,
                               const Teuchos::Ptr<const CompositeVector>& p) override;
 
+  // -- postprocessing: calculated stress u from displacement p
+  virtual void UpdateFlux(const Teuchos::Ptr<const CompositeVector>& p,
+                          const Teuchos::Ptr<CompositeVector>& u) override {};
+
   // access
   const Schema& global_schema_col() { return global_schema_col_; }
   const Schema& schema_col() { return local_schema_col_; }

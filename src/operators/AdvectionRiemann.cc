@@ -229,16 +229,17 @@ void AdvectionRiemann::UpdateMatricesFace_(const CompositeVector& u)
 * Identify the advected flux of u
 ******************************************************************* */
 void AdvectionRiemann::UpdateFlux(
-    const CompositeVector& h, const CompositeVector& u,
-    const Teuchos::RCP<BCs>& bc, CompositeVector& flux)
+    const Teuchos::Ptr<const CompositeVector>& h,
+    const Teuchos::Ptr<const CompositeVector>& u,
+    const Teuchos::RCP<BCs>& bc, Teuchos::Ptr<CompositeVector>& flux)
 {
-  h.ScatterMasterToGhosted("cell");
+  h->ScatterMasterToGhosted("cell");
   
-  const Epetra_MultiVector& h_f = *h.ViewComponent("face", true);
-  const Epetra_MultiVector& u_f = *u.ViewComponent("face", false);
-  Epetra_MultiVector& flux_f = *flux.ViewComponent("face", false);
+  const Epetra_MultiVector& h_f = *h->ViewComponent("face", true);
+  const Epetra_MultiVector& u_f = *u->ViewComponent("face", false);
+  Epetra_MultiVector& flux_f = *flux->ViewComponent("face", false);
 
-  flux.PutScalar(0.0);
+  flux->PutScalar(0.0);
   for (int f = 0; f < nfaces_owned; ++f) {
     flux_f[0][f] = u_f[0][f] * h_f[0][f];
   }  

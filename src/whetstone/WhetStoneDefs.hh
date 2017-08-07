@@ -49,11 +49,6 @@ const int DIFFUSION_HEXAHEDRA_MONOTONE = 4;
 const int DIFFUSION_SUPPORT_OPERATOR = 7;
 const int DIFFUSION_TPFA = 5; 
 
-// various discretization methods (used by DG schemes)
-const int WHETSTONE_METHOD_MFD = 0;
-const int WHETSTONE_METHOD_VEM = 1;
-const int WHETSTONE_METHOD_FEM = 2;
-
 }  // namespace WhetStone
 }  // namespace Amanzi
 

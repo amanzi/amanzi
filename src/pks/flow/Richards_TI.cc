@@ -312,7 +312,7 @@ void Richards_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVector>
 
   // -- Darcy flux
   if (upwind_frequency_ == FLOW_UPWIND_UPDATE_ITERATION) {
-    op_matrix_diff_->UpdateFlux(*solution, *darcy_flux_copy);
+    op_matrix_diff_->UpdateFlux(solution.ptr(), darcy_flux_copy.ptr());
     Epetra_MultiVector& flux = *darcy_flux_copy->ViewComponent("face");
     for (int f = 0; f < nfaces_owned; f++) flux[0][f] /= molar_rho_;
   }

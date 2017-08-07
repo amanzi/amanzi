@@ -1039,15 +1039,16 @@ void DiffusionMFD::ModifyMatrices(const CompositeVector& u)
 * Richards equation), we derive it only once (using flag) and in 
 * exactly the same manner as other routines.
 * **************************************************************** */
-void DiffusionMFD::UpdateFlux(const CompositeVector& u, CompositeVector& flux)
+void DiffusionMFD::UpdateFlux(const Teuchos::Ptr<const CompositeVector>& u,
+                              const Teuchos::Ptr<CompositeVector>& flux)
 {
   // Initialize intensity in ghost faces.
-  flux.PutScalar(0.0);
-  u.ScatterMasterToGhosted("face");
+  flux->PutScalar(0.0);
+  u->ScatterMasterToGhosted("face");
 
-  const Epetra_MultiVector& u_cell = *u.ViewComponent("cell");
-  const Epetra_MultiVector& u_face = *u.ViewComponent("face", true);
-  Epetra_MultiVector& flux_data = *flux.ViewComponent("face", true);
+  const Epetra_MultiVector& u_cell = *u->ViewComponent("cell");
+  const Epetra_MultiVector& u_face = *u->ViewComponent("face", true);
+  Epetra_MultiVector& flux_data = *flux->ViewComponent("face", true);
 
   AmanziMesh::Entity_ID_List faces;
   std::vector<int> dirs;
@@ -1088,16 +1089,16 @@ void DiffusionMFD::UpdateFlux(const CompositeVector& u, CompositeVector& flux)
 * Calculates one-sided (cell-based) exterior fluxes that satisfy 
 * proper continuity equations.
 * **************************************************************** */
-void DiffusionMFD::UpdateFluxNonManifold(
-    const CompositeVector& u, CompositeVector& flux)
+void DiffusionMFD::UpdateFluxNonManifold(const Teuchos::Ptr<const CompositeVector>& u,
+                                         const Teuchos::Ptr<CompositeVector>& flux)
 {
   // Initialize intensity in ghost faces.
-  flux.PutScalar(0.0);
-  u.ScatterMasterToGhosted("face");
+  flux->PutScalar(0.0);
+  u->ScatterMasterToGhosted("face");
 
-  const Epetra_MultiVector& u_cell = *u.ViewComponent("cell");
-  const Epetra_MultiVector& u_face = *u.ViewComponent("face", true);
-  Epetra_MultiVector& flux_data = *flux.ViewComponent("cell", true);
+  const Epetra_MultiVector& u_cell = *u->ViewComponent("cell");
+  const Epetra_MultiVector& u_face = *u->ViewComponent("face", true);
+  Epetra_MultiVector& flux_data = *flux->ViewComponent("cell", true);
 
   AmanziMesh::Entity_ID_List faces;
   std::vector<int> dirs;

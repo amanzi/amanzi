@@ -24,7 +24,7 @@
 // Amanzi::WhetStone
 #include "DenseMatrix.hh"
 #include "DG_Modal.hh"
-#include "MeshMaps.hh"
+#include "MeshMaps_VEM.hh"
 #include "Polynomial.hh"
 
 
@@ -320,7 +320,7 @@ TEST(DG_MAP_APPROXIMATION_CELL) {
   }
 
   // test identity map
-  MeshMaps maps(mesh);
+  MeshMaps_VEM maps(mesh, mesh);
   std::vector<AmanziGeometry::Point> u;
   AmanziGeometry::Point ex(1.0, 0.0), ey(0.0, 1.0);
 

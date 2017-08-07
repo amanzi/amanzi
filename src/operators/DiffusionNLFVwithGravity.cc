@@ -84,16 +84,16 @@ void DiffusionNLFVwithGravity::UpdateMatrices(
 /* ******************************************************************
 * Calculate flux using cell-centered data.
 * **************************************************************** */
-void DiffusionNLFVwithGravity::UpdateFlux(
-    const CompositeVector& u, CompositeVector& flux) 
+void DiffusionNLFVwithGravity::UpdateFlux(const Teuchos::Ptr<const CompositeVector>& u,
+                                          const Teuchos::Ptr<CompositeVector>& flux) 
 {
   const std::vector<int>& bc_model = bcs_trial_[0]->bc_model();
 
   // Map field u for the local system. For Richards's equation, this
   // is equivalent to calculating the hydraulic head.
-  CompositeVector hh(u);
-  Epetra_MultiVector& hh_c = *hh.ViewComponent("cell");
-  const Epetra_MultiVector& u_c = *u.ViewComponent("cell");
+  Teuchos::RCP<CompositeVector> hh = Teuchos::rcp(new CompositeVector(*u));
+  Epetra_MultiVector& hh_c = *hh->ViewComponent("cell");
+  const Epetra_MultiVector& u_c = *u->ViewComponent("cell");
 
   double rho_g = rho_ * norm(g_);
   for (int c = 0; c < ncells_owned; ++c) {
@@ -101,7 +101,7 @@ void DiffusionNLFVwithGravity::UpdateFlux(
     hh_c[0][c] = u_c[0][c] + rho_g * zc;
   }
 
-  DiffusionNLFV::UpdateFlux(hh, flux);
+  DiffusionNLFV::UpdateFlux(hh.ptr(), flux);
 }
 
 

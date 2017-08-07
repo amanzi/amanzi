@@ -51,6 +51,11 @@ class PDE_Helper : public BCsList {
   // -- modify matrix due to boundary conditions 
   virtual void ApplyBCs(bool primary, bool eliminate);
 
+  // postprocessing
+  // -- flux calculation uses potential p to calculate flux u
+  virtual void UpdateFlux(const Teuchos::Ptr<const CompositeVector>& p,
+                          const Teuchos::Ptr<CompositeVector>& u) = 0;
+
   // access
   // -- global operator (collection of ops with Apply, etc)
   Teuchos::RCP<const Operator> global_operator() const { return global_op_; }

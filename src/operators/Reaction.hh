@@ -49,9 +49,9 @@ class Reaction : public PDE_Helper {
   using PDE_Helper::UpdateMatrices;
   virtual void UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& u,
                               const Teuchos::Ptr<const CompositeVector>& p) override;
-  // -- results -- determine advected flux of u
-  void UpdateFlux(const CompositeVector& h , const CompositeVector& u,
-                  const Teuchos::RCP<BCs>& bc, CompositeVector& flux);
+  // -- flux calculation has yet no meaning for this operator
+  virtual void UpdateFlux(const Teuchos::Ptr<const CompositeVector>& p,
+                          const Teuchos::Ptr<CompositeVector>& u) override {};
   
   // boundary conditions
   void ApplyBCs(bool primary, bool eliminate);

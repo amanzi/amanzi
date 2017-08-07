@@ -110,6 +110,7 @@ class DiffusionMFD : public virtual Diffusion {
 
   // -- To calculate elemetal matrices, we can use input parameters flux 
   //    and u from the previous nonlinear iteration. Otherwise, use null-pointers.
+  using PDE_Helper::UpdateMatrices;
   virtual void UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& flux,
                               const Teuchos::Ptr<const CompositeVector>& u) override;
 
@@ -135,8 +136,10 @@ class DiffusionMFD : public virtual Diffusion {
 
   // main virtual members after solving the problem
   // -- calculate the flux variable.
-  virtual void UpdateFlux(const CompositeVector& u, CompositeVector& flux) override;
-  virtual void UpdateFluxNonManifold(const CompositeVector& u, CompositeVector& flux) override;
+  virtual void UpdateFlux(const Teuchos::Ptr<const CompositeVector>& u,
+                          const Teuchos::Ptr<CompositeVector>& flux) override;
+  virtual void UpdateFluxNonManifold(const Teuchos::Ptr<const CompositeVector>& u,
+                                     const Teuchos::Ptr<CompositeVector>& flux) override;
 
   // Developments
   // -- working with consistent faces

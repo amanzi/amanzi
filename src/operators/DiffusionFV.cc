@@ -289,23 +289,23 @@ void DiffusionFV::ApplyBCs(bool primary, bool eliminate)
 
 
 /* ******************************************************************
-* Calculate flux from cell-centered data
+* Calculate mass flux from cell-centered data
 ****************************************************************** */
-void DiffusionFV::UpdateFlux(
-    const CompositeVector& solution, CompositeVector& darcy_mass_flux)
+void DiffusionFV::UpdateFlux(const Teuchos::Ptr<const CompositeVector>& solution,
+                             const Teuchos::Ptr<CompositeVector>& darcy_mass_flux)
 {
   const Epetra_MultiVector& trans_face = *transmissibility_->ViewComponent("face", true);
 
   const std::vector<int>& bc_model = bcs_trial_[0]->bc_model();
   const std::vector<double>& bc_value = bcs_trial_[0]->bc_value();
 
-  solution.ScatterMasterToGhosted("cell");
+  solution->ScatterMasterToGhosted("cell");
 
   const Teuchos::Ptr<const Epetra_MultiVector> Krel_face =
       k_.get() ? k_->ViewComponent("face", false).ptr() : Teuchos::null;
 
-  const Epetra_MultiVector& p = *solution.ViewComponent("cell", true);
-  Epetra_MultiVector& flux = *darcy_mass_flux.ViewComponent("face", false);
+  const Epetra_MultiVector& p = *solution->ViewComponent("cell", true);
+  Epetra_MultiVector& flux = *darcy_mass_flux->ViewComponent("face", false);
 
   AmanziMesh::Entity_ID_List cells, faces;
   std::vector<int> dirs;
@@ -356,8 +356,8 @@ void DiffusionFV::UpdateFlux(
 /* ******************************************************************
 * Calculate flux from cell-centered data
 ****************************************************************** */
-void DiffusionFV::UpdateFluxNonManifold(
-    const CompositeVector& solution, CompositeVector& darcy_mass_flux)
+void DiffusionFV::UpdateFluxNonManifold(const Teuchos::Ptr<const CompositeVector>& u,
+                                        const Teuchos::Ptr<CompositeVector>& flux)
 {
   Errors::Message msg;
   msg << "DiffusionFV: missing support for non-manifolds.";

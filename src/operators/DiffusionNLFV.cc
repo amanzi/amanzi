@@ -665,7 +665,8 @@ double OperatorDiffusionNLFV::ComputeWeightedFlux(
 /* ******************************************************************
 * Calculate flux using cell-centered data.
 * **************************************************************** */
-void DiffusionNLFV::UpdateFlux(const CompositeVector& u, CompositeVector& flux) 
+void DiffusionNLFV::UpdateFlux(const Teuchos::Ptr<const CompositeVector>& u,
+                               const Teuchos::Ptr<CompositeVector>& flux) 
 {
   const std::vector<int>& bc_model = bcs_trial_[0]->bc_model();
   const std::vector<double>& bc_value = bcs_trial_[0]->bc_value();
@@ -675,11 +676,11 @@ void DiffusionNLFV::UpdateFlux(const CompositeVector& u, CompositeVector& flux)
   CompositeVector wgt_sideflux_cv(cvs);
 
   Epetra_MultiVector& wgt_sideflux = *wgt_sideflux_cv.ViewComponent("face", true);
-  Epetra_MultiVector& flux_data = *flux.ViewComponent("face", true);
+  Epetra_MultiVector& flux_data = *flux->ViewComponent("face", true);
 
-  u.ScatterMasterToGhosted("cell");
+  u->ScatterMasterToGhosted("cell");
   // OneSidedFluxCorrections_(0, u, sideflux_cv);
-  OneSidedWeightFluxes_(0, u, wgt_sideflux_cv);
+  OneSidedWeightFluxes_(0, *u, wgt_sideflux_cv);
 
   int c1, c2, dir;
   AmanziMesh::Entity_ID_List cells;

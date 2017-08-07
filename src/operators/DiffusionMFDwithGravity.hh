@@ -113,9 +113,12 @@ class DiffusionMFDwithGravity : public DiffusionMFD,
   // main members
   // -- required by the base class
   virtual void UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& flux,
-          const Teuchos::Ptr<const CompositeVector>& u);
-  virtual void UpdateFlux(const CompositeVector& u, CompositeVector& flux);
-  virtual void UpdateFluxNonManifold(const CompositeVector& u, CompositeVector& flux);
+                              const Teuchos::Ptr<const CompositeVector>& u);
+
+  virtual void UpdateFlux(const Teuchos::Ptr<const CompositeVector>& u,
+                          const Teuchos::Ptr<CompositeVector>& flux) override;
+  virtual void UpdateFluxNonManifold(const Teuchos::Ptr<const CompositeVector>& u,
+                                     const Teuchos::Ptr<CompositeVector>& flux) override;
 
   // -- problem initialiation
   using DiffusionMFD::Setup;

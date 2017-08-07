@@ -14,6 +14,9 @@
 #ifndef AMANZI_CONTAINER_HH_
 #define AMANZI_CONTAINER_HH_
 
+#include "boost/iterator_adaptors.hpp"
+#include "Teuchos_RCP.hpp"
+
 namespace Amanzi {
 namespace Utils {
 

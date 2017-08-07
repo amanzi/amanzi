@@ -124,15 +124,5 @@ void Reaction::ApplyBCs(bool primary, bool eliminate)
   }
 }
 
-
-/* *******************************************************************
-* Identify the advected flux of u
-******************************************************************* */
-void Reaction::UpdateFlux(
-    const CompositeVector& h, const CompositeVector& u,
-    const Teuchos::RCP<BCs>& bc, CompositeVector& flux)
-{
-}
-
 }  // namespace Operators
 }  // namespace Amanzi

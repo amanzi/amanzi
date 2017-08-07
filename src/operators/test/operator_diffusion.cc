@@ -168,10 +168,11 @@ void RunTestDiffusionMixed(double gravity) {
   solver.Init(lop_list);
 
   CompositeVector rhs = *global_op->rhs();
-  CompositeVector solution(rhs), flux(rhs);
-  solution.PutScalar(0.0);
+  Teuchos::RCP<CompositeVector> solution = Teuchos::rcp(new CompositeVector(rhs));
+  Teuchos::RCP<CompositeVector> flux = Teuchos::rcp(new CompositeVector(rhs));
+  solution->PutScalar(0.0);
 
-  int ierr = solver.ApplyInverse(rhs, solution);
+  int ierr = solver.ApplyInverse(rhs, *solution);
 
   if (MyPID == 0) {
     std::cout << "pressure solver (pcg): ||r||=" << solver.residual() 
@@ -180,15 +181,15 @@ void RunTestDiffusionMixed(double gravity) {
   }
 
   // compute pressure error
-  Epetra_MultiVector& p = *solution.ViewComponent("cell", false);
+  Epetra_MultiVector& p = *solution->ViewComponent("cell", false);
   double pnorm, pl2_err, pinf_err;
   ana.ComputeCellError(p, 0.0, pnorm, pl2_err, pinf_err);
 
   // calculate flux error
-  Epetra_MultiVector& flx = *flux.ViewComponent("face", true);
+  Epetra_MultiVector& flx = *flux->ViewComponent("face", true);
   double unorm, ul2_err, uinf_err;
 
-  op->UpdateFlux(solution, flux);
+  op->UpdateFlux(solution.ptr(), flux.ptr());
   ana.ComputeFaceError(flx, 0.0, unorm, ul2_err, uinf_err);
 
   if (MyPID == 0) {

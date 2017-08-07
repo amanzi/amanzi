@@ -230,19 +230,20 @@ void AdvectionUpwind::ApplyBCs(const Teuchos::RCP<BCs>& bc, bool primary)
 * Identify the advected flux of u
 ******************************************************************* */
 void AdvectionUpwind::UpdateFlux(
-    const CompositeVector& h, const CompositeVector& u,
-    const Teuchos::RCP<BCs>& bc, CompositeVector& flux)
+    const Teuchos::Ptr<const CompositeVector>& h,
+    const Teuchos::Ptr<const CompositeVector>& u,
+    const Teuchos::RCP<BCs>& bc, Teuchos::Ptr<CompositeVector>& flux)
 {
   // might need to think more carefully about BCs
   const std::vector<int>& bc_model = bc->bc_model();
   const std::vector<double>& bc_value = bc->bc_value();
-  flux.PutScalar(0.0);
+  flux->PutScalar(0.0);
   
   // apply preconditioner inversion
-  h.ScatterMasterToGhosted("cell");
-  const Epetra_MultiVector& h_c = *h.ViewComponent("cell", true);
-  const Epetra_MultiVector& u_f = *u.ViewComponent("face", false);
-  Epetra_MultiVector& flux_f = *flux.ViewComponent("face", false);
+  h->ScatterMasterToGhosted("cell");
+  const Epetra_MultiVector& h_c = *h->ViewComponent("cell", true);
+  const Epetra_MultiVector& u_f = *u->ViewComponent("face", false);
+  Epetra_MultiVector& flux_f = *flux->ViewComponent("face", false);
 
   for (int f = 0; f < nfaces_owned; ++f) {
     int c1 = (*upwind_cell_)[f];

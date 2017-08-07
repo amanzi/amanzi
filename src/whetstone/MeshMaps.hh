@@ -9,7 +9,12 @@
 
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 
-  Maps between mesh objects located possibly on different meshes.
+  Base class for maps between mesh objects located on different 
+  meshes, e.g. two states (mesh0 and mesh1) of a deformable mesh. 
+  For calculating time dependent maps, we connect the two states 
+  using the linearized map: x + t (F(x) - x) where F(x) is a 
+  steady-state map from mesh0 to mesh1 and time t is between 0 
+  and 1. Thus, the linearized velocity is v = F(x) - x.
 */
 
 #ifndef AMANZI_WHETSTONE_MESH_MAPS_HH_
@@ -23,7 +28,6 @@
 #include "DenseMatrix.hh"
 #include "Polynomial.hh"
 #include "Tensor.hh"
-#include "WhetStoneDefs.hh"
 #include "WhetStone_typedefs.hh"
 
 namespace Amanzi {
@@ -34,54 +38,43 @@ class MeshMaps {
   MeshMaps(Teuchos::RCP<const AmanziMesh::Mesh> mesh) 
     : mesh1_(mesh),
       mesh0_(mesh),
-      d_(mesh1_->space_dimension()),
-      method_(WHETSTONE_METHOD_VEM) {};
+      d_(mesh1_->space_dimension()) {};
 
   MeshMaps(Teuchos::RCP<const AmanziMesh::Mesh> mesh0,
            Teuchos::RCP<const AmanziMesh::Mesh> mesh1) 
     : mesh1_(mesh1),
       mesh0_(mesh0),
-      d_(mesh1_->space_dimension()),
-      method_(WHETSTONE_METHOD_VEM) {};
+      d_(mesh1_->space_dimension()) {};
 
   ~MeshMaps() {};
 
-  // support of advection schemes
-  void FaceVelocity(int c, int f, std::vector<Polynomial>& v) const;
-  Tensor FaceJacobian(int c, int f, const std::vector<Polynomial>& v,
-                      const AmanziGeometry::Point& x) const;
+  // Jacobian
+  // -- determinant of Jacobian
+  virtual void JacobianDet(int c, Polynomial& v) const = 0;
 
-  // finite elements use three meshes: reference, initial and target
-  AmanziGeometry::Point FEM_Map(int c, const AmanziGeometry::Point& xref) const;
-  Tensor FEM_Jacobian(int c, const AmanziGeometry::Point& xref) const;
-  void FEM_Jacobian(int c, Polynomial& jac) const;
+  // -- Jacobian value at point x
+  virtual void JacobianCellValue(int c, 
+                                 double t, const AmanziGeometry::Point& x,
+                                 Tensor& J) const = 0;
+  virtual void JacobianFaceValue(int c, int f, const std::vector<Polynomial>& v,
+                                 const AmanziGeometry::Point& x,
+                                 Tensor& J) const = 0;
 
-  // miscalleneous
-  void set_method(int method) { method_ = method; }
+  // Maps
+  // -- pseudo-velocity on face f
+  virtual void VelocityFace(int c, int f, std::vector<Polynomial>& v) const = 0;
 
-  // polynomial approximation of map x2 = F(x1)
+  // Miscalleneous
+  // -- polynomial approximation of map x2 = F(x1)
   int LeastSquareFit(int order,
                      const std::vector<AmanziGeometry::Point>& x1, 
                      const std::vector<AmanziGeometry::Point>& x2,
                      std::vector<AmanziGeometry::Point>& u) const;
 
- private:
-  // finite element maps 
-  Tensor FEM_JacobianInternal_(Teuchos::RCP<const AmanziMesh::Mesh> mesh,
-                               int c, const AmanziGeometry::Point& xref) const;
-  Tensor FEM_FaceJacobian_(int c, int f, const std::vector<Polynomial>& v,
-                           const AmanziGeometry::Point& xref) const;
-
-  // virtual element maps 
-  void VEM_FaceVelocity_(int c, int f, std::vector<Polynomial>& v) const;
-  Tensor VEM_FaceJacobian_(int c, int f, const std::vector<Polynomial>& v,
-                           const AmanziGeometry::Point& x) const;
-
- private:
-  Teuchos::RCP<const AmanziMesh::Mesh> mesh1_;  // target mesh
+ protected:
   Teuchos::RCP<const AmanziMesh::Mesh> mesh0_;  // initial mesh 
+  Teuchos::RCP<const AmanziMesh::Mesh> mesh1_;  // target mesh
   int d_;
-  int method_;
 };
 
 }  // namespace WhetStone

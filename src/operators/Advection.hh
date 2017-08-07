@@ -38,9 +38,15 @@ class Advection : public PDE_Helper {
   // -- setup
   virtual void Setup(const CompositeVector& u) = 0;
 
-  // -- results: determine advected flux of u
-  virtual void UpdateFlux(const CompositeVector& h , const CompositeVector& u,
-                          const Teuchos::RCP<BCs>& bc, CompositeVector& flux) = 0;
+  // -- determine advected flux of u
+  virtual void UpdateFlux(const Teuchos::Ptr<const CompositeVector>& p,
+                          const Teuchos::Ptr<CompositeVector>& u) override {};
+
+  // -- additional interface for flux calcualtion
+  virtual void UpdateFlux(const Teuchos::Ptr<const CompositeVector>& h,
+                          const Teuchos::Ptr<const CompositeVector>& p,
+                          const Teuchos::RCP<BCs>& bc, 
+                          Teuchos::Ptr<CompositeVector>& u) = 0;
   
  protected:
   Schema global_schema_row_, global_schema_col_;

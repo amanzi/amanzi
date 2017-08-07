@@ -58,6 +58,10 @@ class Electromagnetics : public PDE_Helper {
   //    trial function, i.e. zeros go in the corresponding matrix columns.
   virtual void ApplyBCs(bool primary, bool eliminate);
 
+  // -- postprocessing: calculated flux u from potential p
+  virtual void UpdateFlux(const Teuchos::Ptr<const CompositeVector>& p,
+                          const Teuchos::Ptr<CompositeVector>& u) override {};
+
   // new virtual members
   // -- before solving the problem
   virtual void ModifyMatrices(CompositeVector& E, CompositeVector& B, double dt) {};

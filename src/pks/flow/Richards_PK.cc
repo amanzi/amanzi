@@ -627,7 +627,7 @@ void Richards_PK::Initialize(const Teuchos::Ptr<State>& S)
   double tmp;
   darcy_flux_copy->Norm2(&tmp);
   if (tmp == 0.0) {
-    op_matrix_diff_->UpdateFlux(*solution, *darcy_flux_copy);
+    op_matrix_diff_->UpdateFlux(solution.ptr(), darcy_flux_copy.ptr());
 
     Epetra_MultiVector& flux = *darcy_flux_copy->ViewComponent("face", true);
     for (int f = 0; f < nfaces_owned; f++) flux[0][f] /= molar_rho_;
@@ -644,7 +644,7 @@ void Richards_PK::Initialize(const Teuchos::Ptr<State>& S)
       // update mass flux
       op_matrix_->Init();
       op_matrix_diff_->UpdateMatrices(Teuchos::null, solution.ptr());
-      op_matrix_diff_->UpdateFlux(*solution, *darcy_flux_copy);
+      op_matrix_diff_->UpdateFlux(solution.ptr(), darcy_flux_copy.ptr());
 
       // normalize to Darcy flux, m/s
       Epetra_MultiVector& flux = *darcy_flux_copy->ViewComponent("face", true);
@@ -917,10 +917,10 @@ bool Richards_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 void Richards_PK::CommitStep(double t_old, double t_new, const Teuchos::RCP<State>& S)
 {
   // calculate Darcy flux.
-  CompositeVector& darcy_flux = *S->GetFieldData("darcy_flux", passwd_);
-  op_matrix_diff_->UpdateFlux(*solution, darcy_flux);
+  Teuchos::RCP<CompositeVector> darcy_flux = S->GetFieldData("darcy_flux", passwd_);
+  op_matrix_diff_->UpdateFlux(solution.ptr(), darcy_flux.ptr());
 
-  Epetra_MultiVector& flux = *darcy_flux.ViewComponent("face", true);
+  Epetra_MultiVector& flux = *darcy_flux->ViewComponent("face", true);
   for (int f = 0; f < nfaces_owned; f++) flux[0][f] /= molar_rho_;
   *darcy_flux_copy->ViewComponent("face", true) = flux;
 

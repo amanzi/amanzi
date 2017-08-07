@@ -259,7 +259,7 @@ void HeatConduction::Residual(const Teuchos::RCP<CompositeVector>& u,
 ****************************************************************** */
 void HeatConduction::UpdatePreconditioner(const Teuchos::RCP<const CompositeVector>& up)
 {
-  op_diff_->UpdateFlux(*up, *flux_);
+  op_diff_->UpdateFlux(up.ptr(), flux_.ptr());
 
   // Calculate new matrix.
   UpdateValues(*up);

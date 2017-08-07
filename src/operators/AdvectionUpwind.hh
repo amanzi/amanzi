@@ -58,9 +58,11 @@ class AdvectionUpwind : public Advection {
                               const Teuchos::Ptr<const CompositeVector>& p);
   virtual void UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& dhdT);
 
-  // -- results -- determine advected flux of u
-  void UpdateFlux(const CompositeVector& h , const CompositeVector& u,
-                  const Teuchos::RCP<BCs>& bc, CompositeVector& flux);
+  // -- determine advected flux of potential u
+  virtual void UpdateFlux(const Teuchos::Ptr<const CompositeVector>& h, 
+                          const Teuchos::Ptr<const CompositeVector>& u,
+                          const Teuchos::RCP<BCs>& bc,
+                          Teuchos::Ptr<CompositeVector>& flux);
   
   // boundary conditions
   void ApplyBCs(const Teuchos::RCP<BCs>& bc, bool primary);

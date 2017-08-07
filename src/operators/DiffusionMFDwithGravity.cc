@@ -160,8 +160,8 @@ void DiffusionMFDwithGravity::AddGravityToRHS_()
 * WARNING: Since gravity flux is not continuous, we derive it only once
 * (using flag) and in exactly the same manner as in other routines.
 * **************************************************************** */
-void DiffusionMFDwithGravity::UpdateFlux(
-    const CompositeVector& u, CompositeVector& flux)
+void DiffusionMFDwithGravity::UpdateFlux(const Teuchos::Ptr<const CompositeVector>& u,
+                                         const Teuchos::Ptr<CompositeVector>& flux)
 {
   // Calculate diffusive part of the flux.
   DiffusionMFD::UpdateFlux(u, flux);
@@ -180,7 +180,7 @@ void DiffusionMFDwithGravity::UpdateFlux(
   }
 
   int dim = mesh_->space_dimension();
-  Epetra_MultiVector& flux_data = *flux.ViewComponent("face", true);
+  Epetra_MultiVector& flux_data = *flux->ViewComponent("face", true);
   Epetra_MultiVector grav_flux(flux_data);
   grav_flux.PutScalar(0.0);
 
@@ -276,7 +276,8 @@ void DiffusionMFDwithGravity::UpdateFlux(
 * Add "gravity flux" to the Darcy flux. 
 * **************************************************************** */
 void DiffusionMFDwithGravity::UpdateFluxNonManifold(
-    const CompositeVector& u, CompositeVector& flux)
+    const Teuchos::Ptr<const CompositeVector>& u,
+    const Teuchos::Ptr<CompositeVector>& flux)
 {
   // Calculate diffusive part of the flux.
   DiffusionMFD::UpdateFluxNonManifold(u, flux);
@@ -291,7 +292,7 @@ void DiffusionMFDwithGravity::UpdateFluxNonManifold(
   }
 
   int dim = mesh_->space_dimension();
-  Epetra_MultiVector& flux_data = *flux.ViewComponent("cell", true);
+  Epetra_MultiVector& flux_data = *flux->ViewComponent("cell", true);
 
   AmanziMesh::Entity_ID_List faces;
   std::vector<int> dirs;
