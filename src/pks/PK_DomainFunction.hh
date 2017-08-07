@@ -33,7 +33,7 @@ class PK_DomainFunction {
   PK_DomainFunction(const Teuchos::ParameterList& plist)
     : domain_volume_(-1.0) {};
 
-  ~PK_DomainFunction() {};
+  virtual ~PK_DomainFunction() = default;
 
   // source term on time interval (t0, t1]
   virtual void Compute(double t0, double t1) { ASSERT(false); }

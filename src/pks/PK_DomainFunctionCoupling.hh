@@ -31,7 +31,7 @@ class PK_DomainFunctionCoupling : public FunctionBase {
  public:
   PK_DomainFunctionCoupling(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) :
       mesh_(mesh) {};
-  ~PK_DomainFunctionCoupling() {};
+  virtual ~PK_DomainFunctionCoupling() = default;
 
   typedef std::vector<std::string> RegionList;
   typedef std::pair<RegionList, AmanziMesh::Entity_kind> Domain;

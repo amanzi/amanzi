@@ -24,7 +24,8 @@
 class AnalyticNonlinearCoupledBase {
  public:
   AnalyticNonlinearCoupledBase(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh) : mesh_(mesh) {};
-
+  virtual ~AnalyticNonlinearCoupledBase() = default;
+  
   // analytic solution for diffusion problem with gravity
   virtual bool isBlock(int i, int j) = 0;
   

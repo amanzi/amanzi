@@ -150,7 +150,7 @@ MeshLogicalFactory::AddSegment(int n_cells,
       Teuchos::rcp(new AmanziGeometry::RegionEnumerated(set_name, gm_->RegionSize(),
               "CELL", new_cells));
   gm_->AddRegion(enum_rgn);
-
+  
   if (first_tip == MeshLogicalFactory::TIP_BOUNDARY) {
     Entity_ID_List boundary_face(1,first_face);
     Teuchos::RCP<AmanziGeometry::RegionEnumerated> boundary_rgn =
@@ -271,8 +271,10 @@ MeshLogicalFactory::AddSegment(int n_cells,
 
   // extend face_cell_list
   // - first face
+  Entity_ID first_face = -1;
   if (first_tip == MeshLogicalFactory::TIP_BOUNDARY) {
     if (faces) faces->push_back(face_cell_list_.size());
+    first_face = faces->front();
     Entity_ID_List my_cells(1,cell_first);
     face_cell_list_.push_back(my_cells);
     face_cell_lengths_.push_back(ds_halflengths_boundary);
@@ -290,8 +292,10 @@ MeshLogicalFactory::AddSegment(int n_cells,
   }
 
   // -last face
+  Entity_ID last_face = -1;
   if (last_tip == MeshLogicalFactory::TIP_BOUNDARY) {
     if (faces) faces->push_back(face_cell_list_.size());
+    last_face = faces->back();
     Entity_ID_List my_cells(1,cell_last-1);
     face_cell_list_.push_back(my_cells);
     face_cell_lengths_.push_back(ds_halflengths_boundary);
@@ -311,6 +315,22 @@ MeshLogicalFactory::AddSegment(int n_cells,
               "CELL", new_cells));
   gm_->AddRegion(enum_rgn);
 
+  if (first_tip == MeshLogicalFactory::TIP_BOUNDARY) {
+    Entity_ID_List boundary_face(1,first_face);
+    Teuchos::RCP<AmanziGeometry::RegionEnumerated> boundary_rgn =
+        Teuchos::rcp(new AmanziGeometry::RegionEnumerated(set_name+"_first_tip",
+                gm_->RegionSize(), "FACE", boundary_face));
+    gm_->AddRegion(boundary_rgn);
+  }
+  
+  if (last_tip == MeshLogicalFactory::TIP_BOUNDARY) {
+    Entity_ID_List boundary_face(1,last_face);
+    Teuchos::RCP<AmanziGeometry::RegionEnumerated> boundary_rgn =
+        Teuchos::rcp(new AmanziGeometry::RegionEnumerated(set_name+"_last_tip",
+                gm_->RegionSize(), "FACE", boundary_face));
+    gm_->AddRegion(boundary_rgn);
+  }
+  
   return;
 }
 
@@ -357,8 +377,10 @@ MeshLogicalFactory::AddSegment(const AmanziGeometry::Point& begin,
   // - first face
   int f_index = 0;
   int c_index = 0;
+  Entity_ID first_face = -1;
   if (first_tip == MeshLogicalFactory::TIP_BOUNDARY) {
     if (faces) faces->push_back(face_cell_list_.size());
+    first_face = faces->front();
     Entity_ID_List my_cells(1,cell_first);
     std::vector<double> my_lengths(1, lengths[c_index]/2.0);
     AmanziGeometry::Point my_normal = -std::abs(areas[f_index]) * normal; // negate as it must be outward normal
@@ -387,9 +409,11 @@ MeshLogicalFactory::AddSegment(const AmanziGeometry::Point& begin,
   }
 
   // -last face
+  Entity_ID last_face = -1;
   if (last_tip == MeshLogicalFactory::TIP_BOUNDARY) {
 
     if (faces) faces->push_back(face_cell_list_.size());
+    last_face = faces->back();
     Entity_ID_List my_cells(1, cell_last-1);
     std::vector<double> my_lengths(1);
     my_lengths[0] = lengths[c_index]/2.;
@@ -416,6 +440,23 @@ MeshLogicalFactory::AddSegment(const AmanziGeometry::Point& begin,
       Teuchos::rcp(new AmanziGeometry::RegionEnumerated(set_name, gm_->RegionSize(),
               "CELL", new_cells));
   gm_->AddRegion(enum_rgn);
+
+  if (first_tip == MeshLogicalFactory::TIP_BOUNDARY) {
+    Entity_ID_List boundary_face(1,first_face);
+    Teuchos::RCP<AmanziGeometry::RegionEnumerated> boundary_rgn =
+        Teuchos::rcp(new AmanziGeometry::RegionEnumerated(set_name+"_first_tip",
+                gm_->RegionSize(), "FACE", boundary_face));
+    gm_->AddRegion(boundary_rgn);
+  }
+  
+  if (last_tip == MeshLogicalFactory::TIP_BOUNDARY) {
+    Entity_ID_List boundary_face(1,last_face);
+    Teuchos::RCP<AmanziGeometry::RegionEnumerated> boundary_rgn =
+        Teuchos::rcp(new AmanziGeometry::RegionEnumerated(set_name+"_last_tip",
+                gm_->RegionSize(), "FACE", boundary_face));
+    gm_->AddRegion(boundary_rgn);
+  }
+
   return;
 }
 
@@ -468,7 +509,6 @@ MeshLogicalFactory::Create(Teuchos::ParameterList& plist) {
     }
   }
   
-
   // Create each segment
   // - map to store metadata about previously inserted segments
   std::map<std::string, Entity_ID_List> seg_cells;
@@ -508,6 +548,7 @@ MeshLogicalFactory::Create(Teuchos::ParameterList& plist) {
     } else {
       Errors::Message msg("MeshLogicalFactory: invalid tip type specified.");
       Exceptions::amanzi_throw(msg);
+      first_type = MeshLogicalFactory::TIP_NULL;
     }
     
     // -- last tip
@@ -559,6 +600,7 @@ MeshLogicalFactory::Create(Teuchos::ParameterList& plist) {
     } else {
       Errors::Message msg("MeshLogicalFactory: invalid tip type specified.");
       Exceptions::amanzi_throw(msg);
+      last_type = MeshLogicalFactory::TIP_NULL;
     }
     
     // add the segment

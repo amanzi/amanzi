@@ -147,6 +147,7 @@ herr_t unpermute(const char *name, hid_t file_id, hid_t new_fileid, int *nodemap
   H5Sclose(dataspace);
   H5Tclose(ds_type);
   std::cout << "  E>> done in upermute" << std::endl;
+  return 0;
 }
 
 int main (int argc, char *argv[])
@@ -279,6 +280,7 @@ int main (int argc, char *argv[])
         //  conn_len = ????; //POLYGON or POLYHED
         //  break;
         default:
+          conn_len = -1;
           break;
       }
       elem_types[i][1] = conn_len;

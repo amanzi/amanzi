@@ -55,7 +55,7 @@ void SurfaceComplexationRxn::SetNewtonSolveFlag(void) {
       surface_complexes_.begin();
   const double tolerance = 1.e-20;
   for (; srfcplx != surface_complexes_.end(); srfcplx++) {
-    if (fabs(srfcplx->free_site_stoichiometry() - 1.) > tolerance) {
+    if (std::fabs(srfcplx->free_site_stoichiometry() - 1.) > tolerance) {
       set_use_newton_solve(true);
       break;
     }
@@ -110,7 +110,7 @@ void SurfaceComplexationRxn::Update(const std::vector<Species>& primarySpecies) 
       }
       free_site_concentration += damping_factor * dfree_site_conc;
       double tolerance = 1.e-12;
-      double rel_change_in_free_site_conc = fabs(dfree_site_conc / free_site_concentration);
+      double rel_change_in_free_site_conc = std::fabs(dfree_site_conc / free_site_concentration);
       if (rel_change_in_free_site_conc < tolerance) {
         one_more = true;
       }

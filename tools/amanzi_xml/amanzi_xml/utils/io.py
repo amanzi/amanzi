@@ -9,13 +9,16 @@ def fromFile(file_or_filename, ensure_is_plistable=False):
     """Reads a amanzi-xml hierarchy from a file or file handle"""
     elem = etree.parse(file_or_filename)
 
-    try:
+    if ensure_is_plistable:
         return parser.fromElement(elem.getroot())
-    except:
-        if ensure_is_plistable:
-            raise errors.NotNativeSpecError()
-        else:
-            return elem.getroot()
+    else:
+        try:
+            return parser.fromElement(elem.getroot())
+        except:
+            if ensure_is_plistable:
+                raise errors.NotNativeSpecError()
+            else:
+                return elem.getroot()
 
 
 def fromString(string):

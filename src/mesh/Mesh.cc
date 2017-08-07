@@ -152,6 +152,7 @@ Mesh::entity_get_parent(const Entity_kind kind, const Entity_ID entid) const
 {
   Errors::Message mesg("Parent/daughter entities not enabled in this framework.");
   Exceptions::amanzi_throw(mesg);
+  return -1;
 }
 
 
@@ -248,6 +249,8 @@ void Mesh::face_get_cells(const Entity_ID faceid, const Parallel_type ptype,
         if (face_cell_ptype_[faceid][i] == GHOST)
           cellids->push_back(face_cell_ids_[faceid][i]);
       break;
+    default:
+      break;
   }
 
 #else  // Non-cached version
@@ -272,6 +275,8 @@ void Mesh::face_get_cells(const Entity_ID faceid, const Parallel_type ptype,
       for (int i = 0; i < n; i++)
         if (entity_get_ptype(CELL,fcells[i]) == GHOST)
           cellids->push_back(fcells[i]);
+      break;
+    default:
       break;
   }
 
@@ -1306,22 +1311,22 @@ Mesh::deform(const Entity_ID_List& nodeids,
 // Figure out columns of cells in a semi-structured mesh and cache the
 // information for later.
 //
-// The columns are defined by identifying all boundary faces which have a
-// negative-z-direction normal, then collecting cells and faces upward.  As a
-// semi-structured mesh requires that all lateral faces have 0 z-normal, and
-// all top surface faces have positive z-normal, the set of bottom faces is
-// defined with no user input.
+// The columns are defined by identifying all boundary faces in a provided
+// set, then collecting cells and faces upward.
 //
 // NOTE: Currently ghost columns are built too because we didn't know that
 // they weren't necessary. --etc
+//
+// NOTE: this could be const thanks to only changing mutable things, but we
+// choose not to be since it is directly a user asking for provided column
+// structure.
 int
-Mesh::build_columns_() const
+Mesh::build_columns(const std::string& setname) const
 {
-  int status = 1;
-
   // Allocate space and initialize.
   int nn = num_entities(NODE,USED);
   int nf = num_entities(FACE,USED);
+  int nf_owned = num_entities(FACE,OWNED);
   int nc = num_entities(CELL,USED);
   int nc_owned = num_entities(CELL, OWNED);
 
@@ -1333,216 +1338,285 @@ Mesh::build_columns_() const
   node_nodeabove_.resize(nn);
   node_nodeabove_.assign(nn,-1);
 
-  // Find the faces at the bottom of the domain. We assume that these are all
-  // the boundary faces whose normal points in the negative z-direction
-  //
-  bool owned_cols = true;
-  int ncolumns = 0;
-  num_owned_cols_ = 0;
-  for (int i = 0; i < nf; i++) {
+  Entity_ID_List top_faces;
+  get_set_entities(setname, FACE, USED, &top_faces);
+  
+  int ncolumns = top_faces.size();
+  num_owned_cols_ = get_set_size(setname, FACE, OWNED);
 
+  for (int i = 0; i < ncolumns; i++) {
+    Entity_ID f = top_faces[i];
     Entity_ID_List fcells;
-    face_get_cells(i,USED,&fcells);
+    face_get_cells(f,USED,&fcells);
 
     // not a boundary face?
-    if (fcells.size() != 1) continue;
-
-    AmanziGeometry::Point normal = face_normal(i,false,fcells[0]);
-    normal /= norm(normal);
-
-    AmanziGeometry::Point negzvec(space_dim_);
-    if (space_dim_ == 2)
-      negzvec.set(0.0,-1.0);
-    else if (space_dim_ == 3)
-      negzvec.set(0.0,0.0,-1.0);
-
-    double dp = negzvec*normal;
-
-    // Check the normal:
-    //  1) n dot -z = 0 --> lateral face
-    //  2) n dot -z < 0 --> top face
-    if (dp < 1.e-10) continue;
-
-    // Walk through the cells until we get to the top of the domain
-    Entity_ID cur_cell = fcells[0];
-    Entity_ID bot_face = i;
-    Entity_ID top_face = -1;
-    Entity_ID_List fcells2, cfaces, colcells, colfaces;
-    std::vector<int> cfdirs;
-
-    bool done = false;
-    while (!done) {
-      columnID_[cur_cell] = ncolumns;
-      colcells.push_back(cur_cell);
-      colfaces.push_back(bot_face);
-
-      // Faces of current cell
-      cell_get_faces_and_dirs(cur_cell,&cfaces,&cfdirs);
-
-      // Find the top face of the cell as the face whose outward
-      // normal from the current cell is most aligned with the Z
-      // direction
-      double mindp = 999.0;
-      top_face = -1;
-      for (int j = 0; j < cfaces.size(); j++) {
-        normal = face_normal(cfaces[j]);
-        if (cfdirs[j] == -1) normal *= -1;
-        normal /= norm(normal);
-
-        dp = normal*negzvec;
-        if (dp < mindp) {
-          mindp = dp;
-          top_face = cfaces[j];
-        }
-      }
-
-      if (top_face == bot_face) {
-        std::cout << "Build Columns broke:" << std::endl
-                  << "  on column = " << ncolumns << std::endl
-                  << "  cell / face = " << cur_cell << "," << top_face << std::endl
-                  << "  candidates = " << cfaces[cfaces.size()-2] << "," << cfaces[cfaces.size()-1] << std::endl;
-
-        Entity_ID f1 = cfaces[cfaces.size()-2];
-        Entity_ID_List nodes;
-        AmanziGeometry::Point cen;
-        std::cout << "Face " << f1 << " at " << face_centroid(f1) << " with normal " << face_normal(f1, false, cur_cell) << std::endl;
-        face_get_nodes(f1, &nodes);
-        for (int n = 0; n!=nodes.size(); ++n) {
-          node_get_coordinates(nodes[n], &cen);
-          std::cout << "  " << cen << std::endl;
-        }
-
-        Entity_ID f2 = cfaces[cfaces.size()-1];
-        std::cout << "Face " << f2 << " at " << face_centroid(f2) << " with normal " << face_normal(f2, false, cur_cell) << std::endl;
-        face_get_nodes(f2, &nodes);
-        for (int n = 0; n!=nodes.size(); ++n) {
-          node_get_coordinates(nodes[n], &cen);
-          std::cout << "  " << cen << std::endl;
-        }
-      }
-      ASSERT(top_face != bot_face);
-      ASSERT(top_face != -1);
-
-      // record the cell above and cell below
-      face_get_cells(top_face,USED,&fcells2);
-      if (fcells2.size() == 2) {
-        if (cell_cellabove_[cur_cell] != -1) {  // intersecting column of cells
-          status = 0;
-          Errors::Message mesg("Intersecting column of cells");
-          Exceptions::amanzi_throw(mesg);
-        }
-
-        if (fcells2[0] == cur_cell) {
-          cell_cellabove_[cur_cell] = fcells2[1];
-          cell_cellbelow_[fcells2[1]] = cur_cell;
-          cur_cell = fcells2[1];
-        }
-        else if (fcells2[1] == cur_cell) {
-          cell_cellabove_[cur_cell] = fcells2[0];
-          cell_cellbelow_[fcells2[0]] = cur_cell;
-          cur_cell = fcells2[0];
-        }
-        else {
-          status = 0;
-          Errors::Message mesg("Unlikely problem in face to cell connectivity");
-          Exceptions::amanzi_throw(mesg);
-        }
-      }
-      else {
-        done = true;
-      }
-
-      // record the node above for each of the bot face nodes
-      // start node of bottom face
-      Entity_ID_List botnodes, topnodes, sidenodes;
-
-      face_get_nodes(bot_face,&botnodes);
-      Entity_ID botnode0 = botnodes[0];
-
-      // nodes of the top face
-      face_get_nodes(top_face,&topnodes);
-
-      if (botnodes.size() != topnodes.size()) {
-        Errors::Message mesg("Top and bottom face of columnar cell have different number of nodes.");
-        Exceptions::amanzi_throw(mesg);
-      }
-
-      // match a node above to a node below
-      bool found = false;
-      int ind = -1;
-      int nfvbot = botnodes.size();
-
-      AmanziGeometry::Point botnode0c;
-      node_get_coordinates(botnode0, &botnode0c);
-
-      for (int k = 0; k < nfvbot; k++) {
-        AmanziGeometry::Point kc;
-        node_get_coordinates(topnodes[k], &kc);
-
-        double horiz_dist = 0.;
-        for (int m=0; m!=space_dim_-1; ++m) {
-          horiz_dist += std::abs(botnode0c[m]-kc[m]);
-        }
-
-        if (horiz_dist < 1.e-6) {
-          found = true;
-          ind = k;
-          break;
-        }
-      }
-
-      if (!found) {
-        Errors::Message mesg("Could not find the right structure in mesh");
-        Exceptions::amanzi_throw(mesg);
-      }
-
-      // We have a matching botnode and topnode - now match up the rest
-      // even or odd handedness?
-      double even_odd_product = face_normal(top_face)[space_dim_-1]
-          * face_normal(bot_face)[space_dim_-1];
-      ASSERT(std::abs(even_odd_product) > 0);
-      int even_odd = even_odd_product >= 0. ? 1 : -1;
-
-      for (int k = 0; k < nfvbot; k++) {
-        Entity_ID botnode = botnodes[k];
-        int top_i = (ind+even_odd*k)%nfvbot;
-        if (top_i < 0) top_i += nfvbot;
-        Entity_ID topnode = topnodes[top_i];
-        node_nodeabove_[botnode] = topnode;
-
-        // ASSERT used in debugging
-        // AmanziGeometry::Point bc;
-        // AmanziGeometry::Point tc;
-        // node_get_coordinates(botnode, &bc);
-        // node_get_coordinates(topnode, &tc);
-        // double horiz_dist = 0.;
-        // for (int m=0; m!=space_dim_-1; ++m) {
-        //   horiz_dist += std::abs(bc[m]-tc[m]);
-        // }
-        // ASSERT(horz_dist < 1.e-10);
-      }
-
-      bot_face = top_face;
-    } // while (!done)
-
-    if (colcells[0] < nc_owned) {
-      ASSERT(owned_cols); // this ensures that the owned columns are the first ones in the list
-      num_owned_cols_++;
-    } else {
-      owned_cols = false;
+    if (fcells.size() != 1) {
+      Errors::Message mesg("Mesh: Provided set for build_columns() includes faces that are not exterior faces.");
+      Exceptions::amanzi_throw(mesg);
     }
-    
-    colfaces.push_back(top_face);
-    column_cells_.push_back(colcells);
-    column_faces_.push_back(colfaces);
-    ncolumns++;
+
+    // check that the normal points upward
+    AmanziGeometry::Point normal = face_normal(f,false,fcells[0]);
+    normal /= norm(normal);
+    if (normal[2] < 1.e-10) {
+      Errors::Message mesg("Mesh: Provided set for build_columns() includes faces that don't point upward.");
+      Exceptions::amanzi_throw(mesg);
+    }
+
+    build_column_(i, f);
   }
 
   columns_built_ = true;
-  return status;
+  return ncolumns;
 }
 
 
+// Figure out columns of cells in a semi-structured mesh and cache the
+// information for later.
+//
+// The columns are defined by identifying all boundary faces which have a
+// negative-z-direction normal, then collecting cells and faces upward.  As a
+// semi-structured mesh requires that all lateral faces have 0 z-normal, and
+// all top surface faces have positive z-normal, the set of bottom faces is
+// defined with no user input.
+//
+// NOTE: Currently ghost columns are built too because we didn't know that
+// they weren't necessary. --etc
+int
+Mesh::build_columns_() const
+{
+  // Allocate space and initialize.
+  int nn = num_entities(NODE,USED);
+  int nf = num_entities(FACE,USED);
+  int nf_owned = num_entities(FACE,OWNED);
+  int nc = num_entities(CELL,USED);
+  int nc_owned = num_entities(CELL, OWNED);
+
+  columnID_.resize(nc);
+  cell_cellbelow_.resize(nc);
+  cell_cellbelow_.assign(nc,-1);
+  cell_cellabove_.resize(nc);
+  cell_cellabove_.assign(nc,-1);
+  node_nodeabove_.resize(nn);
+  node_nodeabove_.assign(nn,-1);
+
+  // Find the faces at the top of the domain. We assume that these are all
+  // the boundary faces whose normal points in the positive z-direction
+  //
+  int ncolumns = 0;
+  num_owned_cols_ = 0;
+  for (int i = 0; i < nf; i++) {
+    Entity_ID_List fcells;
+    face_get_cells(i,USED,&fcells);
+
+    // Is it a boundary face?
+    if (fcells.size() != 1) continue;
+
+    // Is it pointing up?
+    AmanziGeometry::Point normal = face_normal(i,false,fcells[0]);
+    normal /= norm(normal);
+
+    AmanziGeometry::Point zvec(space_dim_);
+    if (space_dim_ == 2)
+      zvec.set(0.0,1.0);
+    else if (space_dim_ == 3)
+      zvec.set(0.0,0.0,1.0);
+
+    double dp = zvec*normal;
+
+    // Check the normal:
+    //  1) n dot z = 0 --> lateral face
+    //  2) n dot z < 0 --> downard pointing face
+    if (dp < 1.e-10) continue;
+
+    build_column_(ncolumns, i);
+    ncolumns++;
+    if (i < nf_owned) num_owned_cols_++;
+  }
+
+  columns_built_ = true;
+  return ncolumns;
+}
+    
+
+void
+Mesh::build_column_(int colnum, Entity_ID top_face) const
+{
+  Entity_ID_List fcells;
+  face_get_cells(top_face,USED,&fcells);
+
+  // Walk through the cells until we get to the bottom of the domain
+  Entity_ID cur_cell = fcells[0];
+  Entity_ID bot_face = -1;
+  Entity_ID_List fcells2, cfaces, colcells, colfaces;
+  std::vector<int> cfdirs;
+
+  AmanziGeometry::Point negzvec(space_dim_);
+  if (space_dim_ == 2)
+    negzvec.set(0.0,-1.0);
+  else if (space_dim_ == 3)
+    negzvec.set(0.0,0.0,-1.0);
+  
+  bool done = false;
+  while (!done) {
+    columnID_[cur_cell] = colnum;
+    colcells.push_back(cur_cell);
+    colfaces.push_back(top_face);
+
+    // Faces of current cell
+    cell_get_faces_and_dirs(cur_cell,&cfaces,&cfdirs);
+
+    // Find the bottom face of the cell as the face whose outward
+    // normal from the current cell is most aligned with the -Z
+    // direction
+    double mindp = -999.0;
+    bot_face = -1;
+    for (int j = 0; j < cfaces.size(); j++) {
+      AmanziGeometry::Point normal = face_normal(cfaces[j]);
+      if (cfdirs[j] == -1) normal *= -1;
+      normal /= norm(normal);
+
+      double dp = normal*negzvec;
+      if (dp > mindp) {
+        mindp = dp;
+        bot_face = cfaces[j];
+      }
+    }
+
+    if (bot_face == top_face) {
+      std::cout << "Build Columns broke:" << std::endl
+                << "  on column = " << colnum << std::endl
+                << "  cell / face = " << cur_cell << "," << bot_face << std::endl
+                << "  candidates = " << cfaces[cfaces.size()-2] << "," << cfaces[cfaces.size()-1] << std::endl;
+      /*
+      Entity_ID f1 = cfaces[cfaces.size()-2];
+      Entity_ID_List nodes;
+      AmanziGeometry::Point cen;
+      std::cout << "Face " << f1 << " at " << face_centroid(f1) << " with normal " << face_normal(f1, false, cur_cell) << std::endl;
+      face_get_nodes(f1, &nodes);
+      for (int n = 0; n!=nodes.size(); ++n) {
+        node_get_coordinates(nodes[n], &cen);
+        std::cout << "  " << cen << std::endl;
+      }
+
+      Entity_ID f2 = cfaces[cfaces.size()-1];
+      std::cout << "Face " << f2 << " at " << face_centroid(f2) << " with normal " << face_normal(f2, false, cur_cell) << std::endl;
+      face_get_nodes(f2, &nodes);
+      for (int n = 0; n!=nodes.size(); ++n) {
+        node_get_coordinates(nodes[n], &cen);
+        std::cout << "  " << cen << std::endl;
+      }
+      */
+    }
+    ASSERT(bot_face != top_face);
+    ASSERT(bot_face != -1);
+
+    // record the cell above and cell below
+    face_get_cells(bot_face,USED,&fcells2);
+    if (fcells2.size() == 2) {
+      if (cell_cellbelow_[cur_cell] != -1) {  // intersecting column of cells
+        Errors::Message mesg("Intersecting column of cells");
+        Exceptions::amanzi_throw(mesg);
+      }
+
+      if (fcells2[0] == cur_cell) {
+        cell_cellbelow_[cur_cell] = fcells2[1];
+        cell_cellabove_[fcells2[1]] = cur_cell;
+        cur_cell = fcells2[1];
+      }
+      else if (fcells2[1] == cur_cell) {
+        cell_cellbelow_[cur_cell] = fcells2[0];
+        cell_cellabove_[fcells2[0]] = cur_cell;
+        cur_cell = fcells2[0];
+      }
+      else {
+        Errors::Message mesg("Unlikely problem in face to cell connectivity");
+        Exceptions::amanzi_throw(mesg);
+      }
+    }
+    else {
+      done = true;
+    }
+
+    // record the node below for each of the top face nodes
+    // start node of bottom face
+    Entity_ID_List botnodes, topnodes, sidenodes;
+
+    face_get_nodes(top_face,&topnodes);
+    Entity_ID topnode0 = topnodes[0];
+
+    // nodes of the top face
+    face_get_nodes(bot_face,&botnodes);
+
+    if (topnodes.size() != botnodes.size()) {
+      Errors::Message mesg("Top and bottom face of columnar cell have different number of nodes.");
+      Exceptions::amanzi_throw(mesg);
+    }
+
+    // match a node below to a node above
+    bool found = false;
+    int ind = -1;
+    int nfvtop = topnodes.size();
+
+    AmanziGeometry::Point topnode0c;
+    node_get_coordinates(topnode0, &topnode0c);
+
+    for (int k = 0; k < nfvtop; k++) {
+      AmanziGeometry::Point kc;
+      node_get_coordinates(botnodes[k], &kc);
+
+      double horiz_dist = 0.;
+      for (int m=0; m!=space_dim_-1; ++m) {
+        horiz_dist += std::abs(topnode0c[m]-kc[m]);
+      }
+
+      if (horiz_dist < 1.e-6) {
+        found = true;
+        ind = k;
+        break;
+      }
+    }
+
+    if (!found) {
+      Errors::Message mesg("Could not find the right structure in mesh");
+      Exceptions::amanzi_throw(mesg);
+    }
+
+    // We have a matching topnode and botnode - now match up the rest
+    // even or odd handedness?
+    double even_odd_product = face_normal(bot_face)[space_dim_-1]
+        * face_normal(top_face)[space_dim_-1];
+    ASSERT(std::abs(even_odd_product) > 0);
+    int even_odd = even_odd_product >= 0. ? 1 : -1;
+
+    for (int k = 0; k < nfvtop; k++) {
+      Entity_ID topnode = topnodes[k];
+      int bot_i = (ind+even_odd*k)%nfvtop;
+      if (bot_i < 0) bot_i += nfvtop;
+      Entity_ID botnode = botnodes[bot_i];
+      node_nodeabove_[botnode] = topnode;
+
+      // ASSERT used in debugging
+      // AmanziGeometry::Point bc;
+      // AmanziGeometry::Point tc;
+      // node_get_coordinates(topnode, &bc);
+      // node_get_coordinates(botnode, &tc);
+      // double horiz_dist = 0.;
+      // for (int m=0; m!=space_dim_-1; ++m) {
+      //   horiz_dist += std::abs(bc[m]-tc[m]);
+      // }
+      // ASSERT(horz_dist < 1.e-10);
+    }
+
+    top_face = bot_face;
+  } // while (!done)
+
+  colfaces.push_back(bot_face);
+  column_cells_.push_back(colcells);
+  column_faces_.push_back(colfaces);
+}  
+
+    
 std::string
 Mesh::cell_type_to_name(const Cell_type type)
 {

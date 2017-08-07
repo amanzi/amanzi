@@ -91,7 +91,7 @@ TEST(FLOW_2D_MULTISCALE) {
   ti_specs.T0 = 0.0;
   ti_specs.dT0 = 2000.0;
   ti_specs.T1 = 6.0e+10;
-  ti_specs.max_itrs = 400;
+  ti_specs.max_itrs = 1000;
 
   AdvanceToSteadyState(S, *RPK, ti_specs, soln);
   RPK->CommitStep(0.0, 1.0, S);  // dummy times
@@ -106,5 +106,5 @@ TEST(FLOW_2D_MULTISCALE) {
 
   // check the pressure
   int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
-  for (int c = 0; c < 60; c++) CHECK(fabs(pm[0][c] - pf[0][c]) < 0.2);
+  for (int c = 0; c < 60; c++) CHECK_CLOSE(pm[0][c], pf[0][c], 0.2);
 }

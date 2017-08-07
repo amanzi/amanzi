@@ -164,13 +164,14 @@ herr_t unpermute(const char *name, hid_t file_id, hid_t new_fileid, int *nodemap
   H5Sclose(dataspace);
   H5Tclose(ds_type);
   std::cout << "  E>> done in upermute" << std::endl;
+  return 0;
 }
 
 int main (int argc, char *argv[])
 {
 
   FILE *fp;
-  hid_t mesh_file, dataset_id, dataspace, new_file, dt, data_file;
+  hid_t mesh_file, dataset_id, dataspace, new_file, dt, data_file = 0;
   hsize_t *cdims, *mdims, dimsf[2], mapnodes;
   herr_t status;
   int rank;
@@ -300,6 +301,7 @@ int main (int argc, char *argv[])
         //  break;
         //TODO(barker): deal with polygons and polyhedra
         default:
+          conn_len = -1;
           break;
       }
       elem_types[i][1] = conn_len;

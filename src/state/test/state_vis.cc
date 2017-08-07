@@ -52,7 +52,7 @@ SUITE(VISUALIZATION) {
     plist.set<Teuchos::Array<double> >("times", times);
 
     Epetra_MpiComm comm(MPI_COMM_WORLD);
-    Amanzi::Visualization V(plist, &comm);
+    Amanzi::Visualization V(plist);
 
     // test the cycle stuff, the expected result is in cycles_ and 
     // we store the computed result in cycles
@@ -114,7 +114,7 @@ SUITE(VISUALIZATION) {
     S0->set_time(1.02);
 
     Teuchos::ParameterList visualization_list = plist.get<Teuchos::ParameterList>("visualization");
-    Teuchos::Ptr<Amanzi::Visualization> V = Teuchos::ptr( new Amanzi::Visualization(visualization_list, &comm));
+    Teuchos::Ptr<Amanzi::Visualization> V = Teuchos::ptr( new Amanzi::Visualization(visualization_list));
     V->set_mesh(Mesh);
     V->CreateFiles();
 

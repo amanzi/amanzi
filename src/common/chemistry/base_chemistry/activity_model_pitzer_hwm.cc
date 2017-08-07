@@ -208,7 +208,7 @@ void ActivityModelPitzerHWM::ComputemQcmProduct(std::vector<double>& gamma,
   }
   osmotic_coefficient += Z_ * qc;
   for (int i = 0; i < gamma.size(); i++) {
-    gamma.at(i) += abs(charge.at(i)) * qc;
+    gamma.at(i) += std::abs(charge.at(i)) * qc;
   }
 }
 
@@ -935,7 +935,7 @@ void ActivityModelPitzerHWM::ParseCfiVirialCoefficient(const std::string& data) 
   if (isp1 > -1 && isp2 > -1) {
     no_spaces.tokenize(cfi.at(2), space);
     double virial(std::atof(no_spaces.at(0).c_str()));
-    virial /= 2.0 * sqrt(abs(charge.at(isp1) * charge.at(isp2)));
+    virial /= 2.0 * sqrt(std::abs(charge.at(isp1) * charge.at(isp2)));
     std::vector<double> virial_vec;
     virial_vec.push_back(virial);
     SetVirialCoefficient(virial_vec, "cfi", isp1, isp2, -1);
@@ -1232,7 +1232,7 @@ void ActivityModelPitzerHWM::AssignIndexBetaFunctions() {
   for (nz = 0; nz < number_non_zero_beta; nz++) {
     double z1(charge.at(beta0_virial.at(nz).GetIsp1()));
     double z2(charge.at(beta0_virial.at(nz).GetIsp2()));
-    if (abs(z1) == 1.0 || abs(z2) == 1.0) {
+    if (std::abs(z1) == 1.0 || std::abs(z2) == 1.0) {
       if (l1 == 0) {
         number_b_functions++;
         beta0_virial.at(nz).SetIfun1(number_b_functions - 1);
@@ -1248,7 +1248,7 @@ void ActivityModelPitzerHWM::AssignIndexBetaFunctions() {
         beta2_virial.at(nz).SetIfun1(n1);
       }
     } else {
-      if (abs(z1) != abs(z2)) {
+      if (std::abs(z1) != std::abs(z2)) {
         if (l2 == 0) {
           number_b_functions++;
           beta0_virial.at(nz).SetIfun1(number_b_functions - 1);

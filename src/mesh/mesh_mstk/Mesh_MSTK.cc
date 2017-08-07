@@ -39,7 +39,7 @@ Mesh_MSTK::Mesh_MSTK(const char *filename, const Epetra_MpiComm *incomm_,
   // Assume three dimensional problem if constructor called without 
   // the space_dimension parameter
 
-  int ok;
+  int ok = 0;
 
 #ifdef DEBUG
   if (verbobj.get() && verbobj->os_OK(Teuchos::VERB_MEDIUM)) {
@@ -119,7 +119,7 @@ Mesh_MSTK::Mesh_MSTK(const char *filename, const Epetra_MpiComm *incomm_,
     // Check if this is a completely planar mesh 
     // in which case one can label the space dimension as 2
     
-    MVertex_ptr mv, mv0 = MESH_Vertex(mesh,0);
+    MVertex_ptr mv = nullptr, mv0 = MESH_Vertex(mesh,0);
     double vxyz[3], z0;
     
     MV_Coords(mv0,vxyz);
@@ -166,7 +166,7 @@ Mesh_MSTK::Mesh_MSTK(const char *filename, const Epetra_MpiComm *incomm_,
     extface_map_w_ghosts_(NULL), extface_map_wo_ghosts_(NULL),
     owned_to_extface_importer_(NULL)
 {
-  int ok;
+  int ok = 0;
 
   // Pre-processing (init, MPI queries etc)
 
@@ -278,7 +278,7 @@ Mesh_MSTK::Mesh_MSTK(const double x0, const double y0, const double z0,
     myprocid = 0;
   }
   else {
-    Mesh_ptr globalmesh;
+    Mesh_ptr globalmesh = nullptr;
     int topo_dim=3; // What is the topological dimension of the mesh
     int ring = 1; // One layer of ghost cells in parallel meshes
     int with_attr = 1;  // update of attributes in parallel meshes
@@ -376,7 +376,7 @@ Mesh_MSTK::Mesh_MSTK(const double x0, const double y0,
     myprocid = 0;
   }
   else {
-    Mesh_ptr globalmesh;
+    Mesh_ptr globalmesh = nullptr;
     int ring = 1; // One layer of ghost cells in parallel meshes
     int with_attr = 1;  // update of attributes in parallel meshes
     int del_inmesh = 1; // delete input mesh at the earliest
@@ -437,7 +437,7 @@ Mesh_MSTK::Mesh_MSTK(const GenerationSpec& gspec,
     extface_map_w_ghosts_(NULL), extface_map_wo_ghosts_(NULL),
     owned_to_extface_importer_(NULL)
 {
-  int ok;
+  int ok = 0;
 
   // Get info about the domain from the generation specification class
 
@@ -477,7 +477,7 @@ Mesh_MSTK::Mesh_MSTK(const GenerationSpec& gspec,
     myprocid = 0;
   }
   else {
-    Mesh_ptr globalmesh;
+    Mesh_ptr globalmesh = nullptr;
     int ring = 1; // One layer of ghost cells in parallel meshes
     int with_attr = 1;  // update of attributes in parallel meshes
     int del_inmesh = 1; // delete global mesh
@@ -547,7 +547,7 @@ Mesh_MSTK::Mesh_MSTK(const Mesh *inmesh,
   int mkid = MSTK_GetMarker();
   List_ptr src_ents = List_New(10);
   for (int i = 0; i < setnames.size(); ++i) {
-    MSet_ptr mset;
+    MSet_ptr mset = nullptr;
     
     Teuchos::RCP<const AmanziGeometry::GeometricModel> gm = inmesh->geometric_model();
     Teuchos::RCP<const AmanziGeometry::Region> rgn = gm->FindRegion(setnames[i]);
@@ -565,7 +565,7 @@ Mesh_MSTK::Mesh_MSTK(const Mesh *inmesh,
 
     if (mset) {
       int idx = 0;
-      MEntity_ptr ment;
+      MEntity_ptr ment = nullptr;
       while ((ment = (MEntity_ptr) MSet_Next_Entry(mset,&idx))) {
         if (!MEnt_IsMarked(ment,mkid) && MEnt_PType(ment) != PGHOST && MEnt_Dim(ment) != MDELETED) {
           List_Add(src_ents,ment);
@@ -602,7 +602,7 @@ Mesh_MSTK::Mesh_MSTK(const Mesh& inmesh,
   int mkid = MSTK_GetMarker();
   List_ptr src_ents = List_New(10);
   for (int i = 0; i < setnames.size(); ++i) {
-    MSet_ptr mset;
+    MSet_ptr mset = nullptr;
     
     Teuchos::RCP<const AmanziGeometry::GeometricModel> gm = inmesh.geometric_model();
     Teuchos::RCP<const AmanziGeometry::Region> rgn = gm->FindRegion(setnames[i]);
@@ -621,7 +621,7 @@ Mesh_MSTK::Mesh_MSTK(const Mesh& inmesh,
 
     if (mset) {
       int idx = 0;
-      MEntity_ptr ment;
+      MEntity_ptr ment = nullptr;
       while ((ment = (MEntity_ptr) MSet_Next_Entry(mset,&idx))) {
         if (!MEnt_IsMarked(ment,mkid) && MEnt_PType(ment) != PGHOST && MEnt_Dim(ment) != MDELETED) {
           List_Add(src_ents,ment);
@@ -798,8 +798,8 @@ void Mesh_MSTK::extract_mstk_mesh(const Epetra_MpiComm *incomm,
                                   const bool request_faces,
                                   const bool request_edges)
 {
-  int ok, ival, idx;
-  double rval, xyz[3];
+  int ok, ival = 0, idx;
+  double rval = 0., xyz[3];
   void *pval;
 
   Mesh_ptr inmesh_mstk = inmesh.mesh;
@@ -897,186 +897,187 @@ void Mesh_MSTK::extract_mstk_mesh(const Epetra_MpiComm *incomm,
   rparentatt = MAttrib_New(mesh,"rparentatt",POINTER,MREGION);
   
   switch (entity_dim) {
-  case MREGION:
+    case MREGION: {
       
-    idx = 0; 
-    MRegion_ptr mr;
-    while ((mr = (MRegion_ptr) List_Next_Entry(src_entities,&idx))) {
+      idx = 0; 
+      MRegion_ptr mr;
+      while ((mr = (MRegion_ptr) List_Next_Entry(src_entities,&idx))) {
 
-      List_ptr rfaces = MR_Faces(mr);                                  
-      int nrf = List_Num_Entries(rfaces);
-      MFace_ptr rfaces_new[MAXPF3];
-      int rfdirs_new[MAXPF3];
-      for (int i = 0; i < nrf; ++i) {
-        MFace_ptr mf = List_Entry(rfaces,i);
+        List_ptr rfaces = MR_Faces(mr);                                  
+        int nrf = List_Num_Entries(rfaces);
+        MFace_ptr rfaces_new[MAXPF3];
+        int rfdirs_new[MAXPF3];
+        for (int i = 0; i < nrf; ++i) {
+          MFace_ptr mf = List_Entry(rfaces,i);
 
-        MEnt_Get_AttVal(mf,copyatt,&ival,&rval,&pval);
-        if (pval) {
-          rfaces_new[i] = pval;
-          rfdirs_new[i] = MR_FaceDir_i(mr,i);
+          MEnt_Get_AttVal(mf,copyatt,&ival,&rval,&pval);
+          if (pval) {
+            rfaces_new[i] = pval;
+            rfdirs_new[i] = MR_FaceDir_i(mr,i);
+          }
+          else {
+
+            List_ptr fverts = MF_Vertices(mf,1,0);
+            int nfv = List_Num_Entries(fverts);
+            MVertex_ptr fverts_new[MAXPV2];
+            for (int j = 0; j < nfv; ++j) {
+              MVertex_ptr mv = List_Entry(fverts,j);
+              MEnt_Get_AttVal(mv,copyatt,&ival,&rval,&pval);
+              if (pval)
+                fverts_new[j] = pval;
+              else {
+                fverts_new[j] = MV_New(mesh);
+                MV_Coords(mv,xyz);
+                MV_Set_Coords(fverts_new[j],xyz);
+                MV_Set_GEntDim(fverts_new[j],MV_GEntDim(mv));
+                MV_Set_GEntID(fverts_new[j],MV_GEntID(mv));
+                MEnt_Set_AttVal(mv,copyatt,ival,rval,fverts_new[j]);
+                MEnt_Set_AttVal(fverts_new[j],vparentatt,0,0.0,mv);
+              }
+            }
+            List_Delete(fverts);
+            
+            rfaces_new[i] = MF_New(mesh);
+            MF_Set_Vertices(rfaces_new[i],nfv,fverts_new);
+            MF_Set_GEntDim(rfaces_new[i],MF_GEntDim(mf));
+            MF_Set_GEntID(rfaces_new[i],MF_GEntID(mf));
+            rfdirs_new[i] = MR_FaceDir_i(mr,i);
+
+            MEnt_Set_AttVal(mf,copyatt,ival,rval,rfaces_new[i]);
+            MEnt_Set_AttVal(rfaces_new[i],fparentatt,0,0.0,mf);
+          }
         }
-        else {
+        List_Delete(rfaces);
 
-          List_ptr fverts = MF_Vertices(mf,1,0);
-          int nfv = List_Num_Entries(fverts);
-          MVertex_ptr fverts_new[MAXPV2];
-          for (int j = 0; j < nfv; ++j) {
-            MVertex_ptr mv = List_Entry(fverts,j);
-            MEnt_Get_AttVal(mv,copyatt,&ival,&rval,&pval);
-            if (pval)
-              fverts_new[j] = pval;
-            else {
-              fverts_new[j] = MV_New(mesh);
-              MV_Coords(mv,xyz);
-              MV_Set_Coords(fverts_new[j],xyz);
-              MV_Set_GEntDim(fverts_new[j],MV_GEntDim(mv));
-              MV_Set_GEntID(fverts_new[j],MV_GEntID(mv));
-              MEnt_Set_AttVal(mv,copyatt,ival,rval,fverts_new[j]);
-              MEnt_Set_AttVal(fverts_new[j],vparentatt,0,0.0,mv);
+        MRegion_ptr mr_new = MR_New(mesh);
+        MR_Set_Faces(mr_new,nrf,rfaces_new,rfdirs_new);
+        MR_Set_GEntID(mr_new,MR_GEntID(mr));
+
+        MEnt_Set_AttVal(mr,copyatt,ival,rval,mr_new);
+        MEnt_Set_AttVal(mr_new,rparentatt,0,0.0,mr);
+      }
+
+      break;
+    }
+    case MFACE: {
+
+      idx = 0; 
+      MFace_ptr mf = nullptr;
+      while ((mf = (MFace_ptr) List_Next_Entry(src_entities,&idx))) {
+
+        List_ptr fedges = MF_Edges(mf,1,0);
+        int nfe = List_Num_Entries(fedges);
+        int fedirs[MAXPV2];
+        MEdge_ptr fedges_new[MAXPV2];
+        for (int j = 0; j < nfe; ++j) {
+          MEdge_ptr me = List_Entry(fedges,j);
+          MEnt_Get_AttVal(me,copyatt,&ival,&rval,&pval);
+          if (pval)
+            fedges_new[j] = pval;
+          else {
+            fedges_new[j] = ME_New(mesh);
+
+            for (int k = 0; k < 2; ++k) {
+              MVertex_ptr mv = ME_Vertex(me,k);
+              MVertex_ptr mv_new = nullptr;
+              MEnt_Get_AttVal(mv,copyatt,&ival,&rval,&pval);
+              if (pval)
+                mv_new = pval;
+              else {              
+                MV_Coords(mv,xyz);
+                if (flatten) xyz[2] = 0.0;
+                mv_new = MV_New(mesh);
+                MV_Set_Coords(mv_new,xyz);
+                MV_Set_GEntDim(mv_new,MV_GEntDim(mv));
+                MV_Set_GEntID(mv_new,MV_GEntID(mv));
+                MEnt_Set_AttVal(mv,copyatt,ival,rval,mv_new);
+                MEnt_Set_AttVal(mv_new,vparentatt,0,0.0,mv);
+              }
+
+              ME_Set_Vertex(fedges_new[j],k,mv_new);
+              ME_Set_GEntDim(fedges_new[j],ME_GEntDim(me));
+              ME_Set_GEntID(fedges_new[j],ME_GEntID(me));
+              MEnt_Set_AttVal(me,copyatt,ival,rval,fedges_new[j]);
+              MEnt_Set_AttVal(fedges_new[j],eparentatt,0,0.0,me);
             }
           }
-          List_Delete(fverts);
-            
-          rfaces_new[i] = MF_New(mesh);
-          MF_Set_Vertices(rfaces_new[i],nfv,fverts_new);
-          MF_Set_GEntDim(rfaces_new[i],MF_GEntDim(mf));
-          MF_Set_GEntID(rfaces_new[i],MF_GEntID(mf));
-          rfdirs_new[i] = MR_FaceDir_i(mr,i);
-
-          MEnt_Set_AttVal(mf,copyatt,ival,rval,rfaces_new[i]);
-          MEnt_Set_AttVal(rfaces_new[i],fparentatt,0,0.0,mf);
+          fedirs[j] = MF_EdgeDir_i(mf,j);
         }
+        List_Delete(fedges);
+            
+        MFace_ptr mf_new = MF_New(mesh);
+        MF_Set_Edges(mf_new,nfe,fedges_new,fedirs);
+        MF_Set_GEntDim(mf_new,MF_GEntDim(mf));
+        MF_Set_GEntID(mf_new,MF_GEntID(mf));
+
+        MEnt_Set_AttVal(mf,copyatt,ival,rval,mf_new);
+        MEnt_Set_AttVal(mf_new,fparentatt,0,0.0,mf);
       }
-      List_Delete(rfaces);
 
-      MRegion_ptr mr_new = MR_New(mesh);
-      MR_Set_Faces(mr_new,nrf,rfaces_new,rfdirs_new);
-      MR_Set_GEntID(mr_new,MR_GEntID(mr));
-
-      MEnt_Set_AttVal(mr,copyatt,ival,rval,mr_new);
-      MEnt_Set_AttVal(mr_new,rparentatt,0,0.0,mr);
+      break;
     }
+    case MEDGE: {
 
-    break;
+      idx = 0;
+      MEdge_ptr me = nullptr;
+      while ((me = (MEdge_ptr) List_Next_Entry(src_entities,&idx))) {
 
-  case MFACE:
+        MEdge_ptr me_new = ME_New(mesh);
 
-    idx = 0; 
-    MFace_ptr mf;
-    while ((mf = (MFace_ptr) List_Next_Entry(src_entities,&idx))) {
+        for (int j = 0; j < 2; ++j)  {
+          MVertex_ptr mv = ME_Vertex(me,j);
 
-      List_ptr fedges = MF_Edges(mf,1,0);
-      int nfe = List_Num_Entries(fedges);
-      int fedirs[MAXPV2];
-      MEdge_ptr fedges_new[MAXPV2];
-      for (int j = 0; j < nfe; ++j) {
-        MEdge_ptr me = List_Entry(fedges,j);
-        MEnt_Get_AttVal(me,copyatt,&ival,&rval,&pval);
-        if (pval)
-          fedges_new[j] = pval;
-        else {
-          fedges_new[j] = ME_New(mesh);
+          MVertex_ptr mv_new = nullptr;
 
-          for (int k = 0; k < 2; ++k) {
-            MVertex_ptr mv = ME_Vertex(me,k);
-            MVertex_ptr mv_new;
-            MEnt_Get_AttVal(mv,copyatt,&ival,&rval,&pval);
-            if (pval)
-              mv_new = pval;
-            else {              
-              MV_Coords(mv,xyz);
-              if (flatten) xyz[2] = 0.0;
-              mv_new = MV_New(mesh);
-              MV_Set_Coords(mv_new,xyz);
-              MV_Set_GEntDim(mv_new,MV_GEntDim(mv));
-              MV_Set_GEntID(mv_new,MV_GEntID(mv));
-              MEnt_Set_AttVal(mv,copyatt,ival,rval,mv_new);
-              MEnt_Set_AttVal(mv_new,vparentatt,0,0.0,mv);
+          MEnt_Get_AttVal(mv,copyatt,&ival,&rval,&pval);
+          if (pval)
+            mv_new = pval;
+          else {
+            MV_Coords(mv,xyz);
+            if (flatten) {
+              xyz[1] = 0.0;
+              xyz[2] = 0.0;
             }
+            mv_new = MV_New(mesh);
+            MV_Set_Coords(mv_new,xyz);
+            MV_Set_GEntDim(mv_new,MV_GEntDim(mv));
+            MV_Set_GEntID(mv_new,MV_GEntID(mv));
 
-            ME_Set_Vertex(fedges_new[j],k,mv_new);
-            ME_Set_GEntDim(fedges_new[j],ME_GEntDim(me));
-            ME_Set_GEntID(fedges_new[j],ME_GEntID(me));
-            MEnt_Set_AttVal(me,copyatt,ival,rval,fedges_new[j]);
-            MEnt_Set_AttVal(fedges_new[j],eparentatt,0,0.0,me);
+            MEnt_Set_AttVal(mv,copyatt,ival,rval,mv_new);
+            MEnt_Set_AttVal(mv_new,vparentatt,0,0.0,mv);
           }
-        }
-        fedirs[j] = MF_EdgeDir_i(mf,j);
-      }
-      List_Delete(fedges);
-            
-      MFace_ptr mf_new = MF_New(mesh);
-      MF_Set_Edges(mf_new,nfe,fedges_new,fedirs);
-      MF_Set_GEntDim(mf_new,MF_GEntDim(mf));
-      MF_Set_GEntID(mf_new,MF_GEntID(mf));
 
-      MEnt_Set_AttVal(mf,copyatt,ival,rval,mf_new);
-      MEnt_Set_AttVal(mf_new,fparentatt,0,0.0,mf);
-    }
-
-    break;
-
-  case MEDGE:
-
-    idx = 0;
-    MEdge_ptr me;
-    while ((me = (MEdge_ptr) List_Next_Entry(src_entities,&idx))) {
-
-      MEdge_ptr me_new = ME_New(mesh);
-
-      for (int j = 0; j < 2; ++j)  {
-        MVertex_ptr mv = ME_Vertex(me,j);
-
-        MVertex_ptr mv_new;
-
-        MEnt_Get_AttVal(mv,copyatt,&ival,&rval,&pval);
-        if (pval)
-          mv_new = pval;
-        else {
-          MV_Coords(mv,xyz);
-          if (flatten) {
-            xyz[1] = 0.0;
-            xyz[2] = 0.0;
-          }
-          mv_new = MV_New(mesh);
-          MV_Set_Coords(mv_new,xyz);
-          MV_Set_GEntDim(mv_new,MV_GEntDim(mv));
-          MV_Set_GEntID(mv_new,MV_GEntID(mv));
-
-          MEnt_Set_AttVal(mv,copyatt,ival,rval,mv_new);
-          MEnt_Set_AttVal(mv_new,vparentatt,0,0.0,mv);
+          ME_Set_Vertex(me_new,j,mv_new);
         }
 
-        ME_Set_Vertex(me_new,j,mv_new);
+        MEnt_Set_AttVal(me,copyatt,ival,rval,me_new);
+        MEnt_Set_AttVal(me,eparentatt,0,0.0,me);
       }
 
-      MEnt_Set_AttVal(me,copyatt,ival,rval,me_new);
-      MEnt_Set_AttVal(me,eparentatt,0,0.0,me);
+      break;
     }
+    case MVERTEX: {
 
-    break;
+      idx = 0;
+      MVertex_ptr mv = nullptr;
+      while ((mv = (MVertex_ptr) List_Next_Entry(src_entities,&idx))) {
 
-  case MVERTEX:
-
-    idx = 0;
-    MVertex_ptr mv;
-    while ((mv = (MVertex_ptr) List_Next_Entry(src_entities,&idx))) {
-
-      MVertex_ptr mv_new = MV_New(mesh);
-      MV_Set_Coords(mv_new,xyz);
-      if (flatten) xyz[2] = 0.0;
-      MV_Set_GEntDim(mv_new,MV_GEntDim(mv));
-      MV_Set_GEntID(mv_new,MV_GEntID(mv));
+        MVertex_ptr mv_new = MV_New(mesh);
+        MV_Set_Coords(mv_new,xyz);
+        if (flatten) xyz[2] = 0.0;
+        MV_Set_GEntDim(mv_new,MV_GEntDim(mv));
+        MV_Set_GEntID(mv_new,MV_GEntID(mv));
         
-      MEnt_Set_AttVal(mv,copyatt,ival,rval,mv_new);
-      MEnt_Set_AttVal(mv_new,vparentatt,0,0.0,mv);
+        MEnt_Set_AttVal(mv,copyatt,ival,rval,mv_new);
+        MEnt_Set_AttVal(mv_new,vparentatt,0,0.0,mv);
+      }
+
+      break;
     }
-
-    break;
-
-  default:
-    Errors::Message mesg("Unknown entity type");
-    amanzi_throw(mesg);
+    default: {
+      Errors::Message mesg("Unknown entity type");
+      amanzi_throw(mesg);
+    }
   }
 
 
@@ -1098,7 +1099,7 @@ void Mesh_MSTK::extract_mstk_mesh(const Epetra_MpiComm *incomm,
     // Attach parent global ID info to entities used by other processors
 
     idx = 0;
-    MVertex_ptr mv;
+    MVertex_ptr mv = nullptr;
     while ((mv = (MVertex_ptr) MESH_Next_Vertex(mesh,&idx)))
       if (MV_PType(mv) == POVERLAP) {
         MEnt_Get_AttVal(mv,vparentatt,&ival,&rval,&pval);
@@ -1106,7 +1107,7 @@ void Mesh_MSTK::extract_mstk_mesh(const Epetra_MpiComm *incomm,
                         NULL);
       }
     idx = 0;
-    MEdge_ptr me;
+    MEdge_ptr me = nullptr;
     while ((me = (MEdge_ptr) MESH_Next_Edge(mesh,&idx)))
       if (ME_PType(me) == POVERLAP) {
         MEnt_Get_AttVal(me,eparentatt,&ival,&rval,&pval);
@@ -1114,7 +1115,7 @@ void Mesh_MSTK::extract_mstk_mesh(const Epetra_MpiComm *incomm,
                         NULL);
       }
     idx = 0;
-    MFace_ptr mf;
+    MFace_ptr mf = nullptr;
     while ((mf = (MFace_ptr) MESH_Next_Face(mesh,&idx)))
       if (MF_PType(mf) == POVERLAP) {
         MEnt_Get_AttVal(mf,fparentatt,&ival,&rval,&pval);
@@ -1122,7 +1123,7 @@ void Mesh_MSTK::extract_mstk_mesh(const Epetra_MpiComm *incomm,
                         NULL);
       }
     idx = 0;
-    MRegion_ptr mr;
+    MRegion_ptr mr = nullptr;
     while ((mr = (MRegion_ptr) MESH_Next_Region(mesh,&idx)))
       if (MR_PType(mr) == POVERLAP) {
         MEnt_Get_AttVal(mr,rparentatt,&ival,&rval,&pval);
@@ -1203,8 +1204,8 @@ void Mesh_MSTK::extract_mstk_mesh(const Epetra_MpiComm *incomm,
   // Clean up
 
   switch (entity_dim) {
-  case MREGION:
-    MRegion_ptr mr;
+  case MREGION: {
+    MRegion_ptr mr = nullptr;
     idx = 0; 
     while ((mr = (MRegion_ptr) List_Next_Entry(src_entities,&idx))) {
 
@@ -1230,11 +1231,10 @@ void Mesh_MSTK::extract_mstk_mesh(const Epetra_MpiComm *incomm,
 
       MEnt_Rem_AttVal(mr,copyatt);
     }
-
     break;
-
-  case MFACE:
-    MFace_ptr mf;
+  }
+    case MFACE: {
+    MFace_ptr mf = nullptr;
     idx = 0; 
     while ((mf = (MFace_ptr) List_Next_Entry(src_entities,&idx))) {
 
@@ -1252,8 +1252,8 @@ void Mesh_MSTK::extract_mstk_mesh(const Epetra_MpiComm *incomm,
     }
 
     break;
-
-  case MEDGE:
+  }
+    case MEDGE: {
     MEdge_ptr me;
     idx = 0;
     while ((me = (MEdge_ptr) List_Next_Entry(src_entities,&idx))) {
@@ -1265,18 +1265,19 @@ void Mesh_MSTK::extract_mstk_mesh(const Epetra_MpiComm *incomm,
     }
 
     break;
-
-  case MVERTEX:
-    MVertex_ptr mv;
+  }
+  case MVERTEX: {
+    MVertex_ptr mv = nullptr;
     idx = 0;
     while ((mv = (MVertex_ptr) List_Next_Entry(src_entities,&idx)))
       MEnt_Rem_AttVal(mv,copyatt);
 
     break;
-
-  default:
+  }
+  default: {
     Errors::Message mesg("Unknown entity type");
     amanzi_throw(mesg);
+  }
   }
   
   MAttrib_Delete(copyatt);
@@ -1425,7 +1426,7 @@ unsigned int Mesh_MSTK::num_entities(const Entity_kind kind,
 //---------------------------------------------------------
 Cell_type Mesh_MSTK::cell_get_type(const Entity_ID cellid) const
 {
-  MEntity_ptr cell;
+  MEntity_ptr cell = nullptr;
   int ival;
   Cell_type celltype;
   
@@ -1460,7 +1461,7 @@ void Mesh_MSTK::cell_get_faces_and_dirs_ordered(const Entity_ID cellid,
                                                 std::vector<int> *face_dirs) const 
 {
 
-  MEntity_ptr cell;
+  MEntity_ptr cell = nullptr;
 
   if (manifold_dimension() == 3) {
 
@@ -1480,8 +1481,8 @@ void Mesh_MSTK::cell_get_faces_and_dirs_ordered(const Entity_ID cellid,
       
       /* base face */
       
-      MFace_ptr face0;
-      int fdir0;
+      MFace_ptr face0 = nullptr;
+      int fdir0 = 0;
       
       if (celltype == TET || celltype == HEX) {
         face0 = List_Entry(rfaces,0);
@@ -1525,7 +1526,7 @@ void Mesh_MSTK::cell_get_faces_and_dirs_ordered(const Entity_ID cellid,
            adjacent to this edge */
         
         int idx2 = 0;
-        MFace_ptr fadj; 
+        MFace_ptr fadj = nullptr; 
         int i = 0;
         while ((fadj = List_Next_Entry(rfaces,&idx2))) {
           if (fadj != face0 && !MEnt_IsMarked(fadj,mkid)) {
@@ -3356,6 +3357,9 @@ void Mesh_MSTK::get_set_entities_and_vofs(const std::string setname,
           break;
         case NODE:
           entdim = MVERTEX;
+          break;
+          default:
+          entdim = MUNKNOWNTYPE;
         }
 
       // If not, can we find a mesh set with the right name and right
@@ -3435,6 +3439,8 @@ void Mesh_MSTK::get_set_entities_and_vofs(const std::string setname,
         ++nent_loc;
       }
       break;
+    default:
+      {}
     }
     
     setents->resize(nent_loc);
@@ -3463,9 +3469,9 @@ Entity_ID Mesh_MSTK::entity_get_parent(const Entity_kind kind, const Entity_ID e
 {
   int ival;
   double rval;
-  void *pval;
-  MEntity_ptr ment;
-  MAttrib_ptr att;
+  void *pval = nullptr;
+  MEntity_ptr ment = nullptr;
+  MAttrib_ptr att = nullptr;
 
   switch(kind) {
   case CELL:
@@ -3485,6 +3491,8 @@ Entity_ID Mesh_MSTK::entity_get_parent(const Entity_kind kind, const Entity_ID e
     att = vparentatt;
     ment = (MEntity_ptr) vtx_id_to_handle[entid];
     break;
+  default:
+    {}
   }
   
   if (!att) return 0;
@@ -3563,9 +3571,9 @@ void Mesh_MSTK::init_cell_map()
 //---------------------------------------------------------
 void Mesh_MSTK::init_face_map()
 {
-  int *face_gids, *extface_gids;
-  int nface, n_extface, idx, i, j;
-  MEntity_ptr ment;
+  int *face_gids = nullptr, *extface_gids = nullptr;
+  int nface = -1, n_extface = -1, idx, i = -1, j = -1;
+  MEntity_ptr ment = nullptr;
   const Epetra_Comm *epcomm_ = get_comm();
 
   if (!serial_run) {
