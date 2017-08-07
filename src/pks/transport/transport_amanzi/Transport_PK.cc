@@ -53,14 +53,12 @@ Transport_PK_ATS::Transport_PK_ATS(Teuchos::ParameterList& pk_tree,
   S_(S),
   soln_(soln)
 {
-  std::string pk_name = Keys::cleanPListName(pk_tree.name());
+  name_ = Keys::cleanPListName(pk_tree.name());
   
   // Create miscaleneous lists.
   Teuchos::RCP<Teuchos::ParameterList> pk_list = Teuchos::sublist(glist, "PKs", true);
   //std::cout<<*pk_list;
-  tp_list_ = Teuchos::sublist(pk_list, pk_name, true);
-
-
+  tp_list_ = Teuchos::sublist(pk_list, name_, true);
 
   if (tp_list_->isParameter("component names")) {
     component_names_ = tp_list_->get<Teuchos::Array<std::string> >("component names").toVector();
@@ -381,10 +379,32 @@ void Transport_PK_ATS::Initialize(const Teuchos::Ptr<State>& S)
       std::string name = it->first;
       if (clist.isSublist(name)) {
         Teuchos::ParameterList& bc_list = clist.sublist(name);
-        if (name=="coupling") {
+        if (name == "coupling") {
           Teuchos::ParameterList::ConstIterator it1 = bc_list.begin();
           std::string specname = it1->first;
           Teuchos::ParameterList& spec = bc_list.sublist(specname);
+          Teuchos::RCP<TransportDomainFunction> 
+            bc = factory.Create(spec, "boundary concentration", AmanziMesh::FACE, Kxy);
+
+          for (int i = 0; i < component_names_.size(); i++){
+            bc->tcc_names().push_back(component_names_[i]);
+            bc->tcc_index().push_back(i);
+          }
+          //          std::cout << "tcc_names "<<tcc_names<<"\n";
+          //std::cout << "tcc_index "<<tcc_index<<"\n";
+          
+          bc->set_state(S_);
+          bcs_.push_back(bc);
+        } else if (name == "subgrid") {
+          Teuchos::ParameterList::ConstIterator it1 = bc_list.begin();
+          std::string specname = it1->first;
+          Teuchos::ParameterList& spec = bc_list.sublist(specname);
+          Teuchos::Array<std::string> regions(1, domain_name_);
+
+          std::size_t last_of = domain_name_.find_last_of("_");
+          ASSERT(last_of != std::string::npos);
+          int gid = std::stoi(domain_name_.substr(last_of+1, domain_name_.size()));
+          spec.set("entity_gid_out", gid);
           Teuchos::RCP<TransportDomainFunction> 
             bc = factory.Create(spec, "boundary concentration", AmanziMesh::FACE, Kxy);
 

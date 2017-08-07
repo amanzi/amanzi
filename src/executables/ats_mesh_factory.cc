@@ -179,7 +179,8 @@ createMesh(Teuchos::ParameterList& mesh_plist,
     // etc: Note that this explicitly and purposefully leaks the comm's
     // memory.  This is due to poor design of the mesh infrastructure, where a
     // bare pointer is stored instead of a reference counted pointer.  
-    Teuchos::RCP<Epetra_MpiComm> comm_self = Teuchos::rcpFromRef(*(new Epetra_MpiComm(MPI_COMM_SELF)));
+    Teuchos::RCP<Epetra_MpiComm> comm_self =
+        Teuchos::rcpFromRef(*(new Epetra_MpiComm(MPI_COMM_SELF)));
     
     // for each id in the regions of the parent mesh on entity, create a subgrid mesh
     Amanzi::AmanziMesh::Entity_ID_List entities;
