@@ -135,7 +135,27 @@ void ElevationEvaluatorColumn::EvaluateElevationAndSlope_(const Teuchos::Ptr<Sta
   else{
     slope_c[0][0] = 0.0; // if domain is surface_column_*, slope is zero.
   }
+
+  
+  if (elev->HasComponent("face")) {
+    Epetra_MultiVector& elev_f = *elev->ViewComponent("face", false);
+
+    Teuchos::RCP<CompositeVector> elev_ngb = S->GetFieldData(my_keys_[0], S->GetField(my_keys_[0])->owner() );
+    elev_ngb->ScatterMasterToGhosted("cell");
+    const Epetra_MultiVector& elev_ngb_c = *elev_ngb->ViewComponent("cell",true);
+    int nfaces = elev_f.MyLength();
     
+    for (int f=0; f!=nfaces; ++f) {
+      AmanziGeometry::Entity_ID_List nadj_cellids;
+      S->GetMesh("surface_star")->face_get_cells(f, AmanziMesh::USED, &nadj_cellids);
+      double ef = 0;
+      for (int i=0; i<nadj_cellids.size(); i++){
+        ef += elev_ngb_c[0][nadj_cellids[i]];
+      }
+      elev_f[0][f] = ef/nadj_cellids.size();
+    }
+  }
+  
 }
 
 
