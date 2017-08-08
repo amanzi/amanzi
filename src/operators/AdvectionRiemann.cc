@@ -135,7 +135,7 @@ void AdvectionRiemann::UpdateMatricesCell_(const CompositeVector& u)
   int dir, d(mesh_->space_dimension());
   AmanziMesh::Entity_ID_List nodes;
 
-  WhetStone::DG_Modal dg(mesh_);
+  WhetStone::DenseMatrix Acell;
   WhetStone::MFD3D_BernardiRaugel mfd(mesh_);
 
   Teuchos::RCP<const Epetra_MultiVector> uc, uv;
@@ -143,33 +143,9 @@ void AdvectionRiemann::UpdateMatricesCell_(const CompositeVector& u)
   if (u.HasComponent("node")) uv = u.ViewComponent("node");
 
   for (int c = 0; c < ncells_owned; ++c) {
-    if (space_col_ == DG0 && space_row_ == DG0) {
-      dg.set_order(0);
-
-      WhetStone::Polynomial K(d, 0);
-      K.monomials(0).coefs()[0] = (*uc)[0][c];
-
-      WhetStone::DenseMatrix Acell;
-      dg.MassMatrix(c, K, Acell);
-      matrix[c] = Acell;
-    } 
-    else if (space_col_ == DG1 && space_row_ == DG1) {
-      dg.set_order(1);
-
-      WhetStone::Polynomial K(d, 1);
-      K.monomials(0).coefs()[0] = (*uc)[0][c];
-      K.monomials(1).coefs()[0] = (*uc)[1][c];
-      K.monomials(1).coefs()[1] = (*uc)[2][c];
-
-      WhetStone::DenseMatrix Acell;
-      dg.MassMatrix(c, K, Acell);
-      matrix[c] = Acell;
-    }
-    else if (space_col_ == BERNARDI_RAUGEL && space_row_ == BERNARDI_RAUGEL) { 
+    if (space_col_ == BERNARDI_RAUGEL && space_row_ == BERNARDI_RAUGEL) { 
       mesh_->cell_get_nodes(c, &nodes);
       int nnodes = nodes.size();
-      int nfaces = mesh_->cell_get_num_faces(c);
-      int ndofs = d * nnodes + nfaces;
 
       // 2D vertsion: FIXME
       std::vector<AmanziGeometry::Point> velocity;
@@ -178,7 +154,6 @@ void AdvectionRiemann::UpdateMatricesCell_(const CompositeVector& u)
         velocity.push_back(AmanziGeometry::Point((*uv)[0][v], (*uv)[1][v]));
       }
 
-      WhetStone::DenseMatrix Acell(ndofs, ndofs);
       mfd.AdvectionMatrix(c, Acell, velocity);
 
       matrix[c] = Acell;

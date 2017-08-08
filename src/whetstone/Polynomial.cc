@@ -268,7 +268,7 @@ void Polynomial::Reset()
 /* ******************************************************************
 * Calculate polynomial value
 ****************************************************************** */
-double Polynomial::Value(const AmanziGeometry::Point& xp)
+double Polynomial::Value(const AmanziGeometry::Point& xp) const
 {
   double sum(0.0);
 

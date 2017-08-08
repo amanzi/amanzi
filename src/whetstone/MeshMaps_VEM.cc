@@ -35,7 +35,7 @@ void MeshMaps_VEM::JacobianCellValue(
 /* ******************************************************************
 * Calculate determinant of a Jacobian.
 ****************************************************************** */
-void MeshMaps_VEM::JacobianDet(int c, Polynomial& v) const
+void MeshMaps_VEM::JacobianDet(int c, double t, Polynomial& v) const
 {
   v.Reshape(d_, 0);
   v.monomials(0).coefs()[0] = mesh1_->cell_volume(c);

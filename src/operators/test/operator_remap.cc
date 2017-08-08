@@ -115,7 +115,7 @@ void RemapTests2DExplicit(int order, std::string disc_name,
   CompositeVector p2(cvs2);
   Epetra_MultiVector& p2c = *p2.ViewComponent("cell", true);
 
-  // create primary advection operator
+  // create advection operator
   Teuchos::ParameterList plist;
   plist.set<std::string>("discretization", disc_name);
 
@@ -142,25 +142,23 @@ void RemapTests2DExplicit(int order, std::string disc_name,
   auto global_reac0 = op_reac0->global_operator();
   auto global_reac1 = op_reac1->global_operator();
 
-  Teuchos::RCP<Epetra_MultiVector> jac0 = Teuchos::rcp(new Epetra_MultiVector(mesh0->cell_map(true), 1));
-  Teuchos::RCP<Epetra_MultiVector> jac1 = Teuchos::rcp(new Epetra_MultiVector(mesh0->cell_map(true), 1));
+  Teuchos::RCP<std::vector<WhetStone::Polynomial> > jac0 = 
+     Teuchos::rcp(new std::vector<WhetStone::Polynomial>(ncells_owned));
+  Teuchos::RCP<std::vector<WhetStone::Polynomial> > jac1 = 
+     Teuchos::rcp(new std::vector<WhetStone::Polynomial>(ncells_owned));
+
   op_reac0->Setup(jac0);
   op_reac1->Setup(jac1);
 
   double t(0.0), tend(1.0);
+  WhetStone::Polynomial det0, det1;
   WhetStone::MeshMaps_FEM maps(mesh0, mesh1);
 
   while(t < tend - dt/2) {
     // calculate determinant of Jacobian at time t
     for (int c = 0; c < ncells_owned; ++c) {
-      xref.set(0.5, 0.5);
-
-      WhetStone::Tensor J0(2, 2), J1(2, 2);
-      maps.JacobianCellValue(c, t, xref, J0);
-      maps.JacobianCellValue(c, t + dt, xref, J1);
-
-      (*jac0)[0][c] = J0.Det();
-      (*jac1)[0][c] = J1.Det();
+      maps.JacobianDet(c, t, (*jac0)[c]);
+      maps.JacobianDet(c, t + dt, (*jac1)[c]);
     }
 
     // rotate velocities and calculate normal component
@@ -284,7 +282,7 @@ void RemapTests2DExplicit(int order, std::string disc_name,
 
 
 TEST(REMAP_DG0_EXPLICIT) {
-  RemapTests2DExplicit(0, "DG order 0", 40, 40, 0.1 / 3);
+  RemapTests2DExplicit(0, "DG order 0", 30, 30, 0.1 / 3);
 }
 
 // TEST(REMAP_DG1_EXPLICIT) {

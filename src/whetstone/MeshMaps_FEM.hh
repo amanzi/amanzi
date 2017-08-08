@@ -41,7 +41,7 @@ class MeshMaps_FEM : public MeshMaps {
 
   // Jacobian
   // -- determinant of Jacobian
-  virtual void JacobianDet(int c, Polynomial& v) const;
+  virtual void JacobianDet(int c, double t, Polynomial& v) const;
 
   // -- Jacobian value at point x
   virtual void JacobianCellValue(int c,

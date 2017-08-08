@@ -144,7 +144,7 @@ class Polynomial {
 
   // typical operations with polynomials
   // -- polynomial values
-  double Value(const AmanziGeometry::Point& xp);
+  double Value(const AmanziGeometry::Point& xp) const;
 
   // -- operators (ring algebra)
   Polynomial& operator+=(const Polynomial& poly);
