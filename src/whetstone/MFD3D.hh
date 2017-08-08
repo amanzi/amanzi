@@ -46,6 +46,7 @@ class MFD3D : public virtual InnerProductL2,
 
   // additional required members
   virtual int DivergenceMatrix(int c, DenseMatrix& A) = 0;
+  virtual int AdvectionMatrix(int c, const std::vector<AmanziGeometry::Point>& v, DenseMatrix& A) {};
 
   // geometry methods
   void PolygonCentroidWeights(

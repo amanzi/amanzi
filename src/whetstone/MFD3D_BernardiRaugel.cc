@@ -230,7 +230,7 @@ int MFD3D_BernardiRaugel::StiffnessMatrix(
 * Advection matrix depends on velocity u.
 ****************************************************************** */
 int MFD3D_BernardiRaugel::AdvectionMatrix(
-    int c, DenseMatrix& A, const std::vector<AmanziGeometry::Point>& u)
+    int c, const std::vector<AmanziGeometry::Point>& u, DenseMatrix& A)
 {
   ASSERT(d_ == 2);
 

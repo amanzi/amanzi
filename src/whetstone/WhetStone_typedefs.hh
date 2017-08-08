@@ -15,6 +15,8 @@
 
 #include <vector>
 
+#include "Polynomial.hh"
+
 #define AMANZI_CODE
 
 namespace Amanzi {
@@ -38,6 +40,8 @@ const int OWNED = 1;  // Owned by this processor
 const int GHOST = 2;  // Owned by another processor
 const int USED  = 3;  // OWNED + GHOST
 #endif
+
+typedef std::vector<Polynomial> VectorPolynomial;
 
 }  // namespace WhetStone
 }  // namespace Amanzi

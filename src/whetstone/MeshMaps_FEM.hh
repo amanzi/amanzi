@@ -41,19 +41,20 @@ class MeshMaps_FEM : public MeshMaps {
 
   // Jacobian
   // -- determinant of Jacobian
-  virtual void JacobianDet(int c, double t, Polynomial& v) const;
+  virtual void JacobianDet(int c, double t, const std::vector<VectorPolynomial>& vf,
+                           Polynomial& vc) const;
 
   // -- Jacobian value at point x
   virtual void JacobianCellValue(int c,
                                  double t, const AmanziGeometry::Point& x,
-                                 Tensor& J) const;
-  virtual void JacobianFaceValue(int c, int f, const std::vector<Polynomial>& v,
+                                 Tensor& J) const override;
+  virtual void JacobianFaceValue(int f, const VectorPolynomial& v,
                                  const AmanziGeometry::Point& x,
-                                 Tensor& J) const;
+                                 Tensor& J) const override;
 
   // Maps
   // -- pseudo-velocity on face f
-  virtual void VelocityFace(int c, int f, std::vector<Polynomial>& v) const;
+  virtual void VelocityFace(int f, VectorPolynomial& v) const override;
 
  private:
   AmanziGeometry::Point Map_(int c, const AmanziGeometry::Point& xref) const;

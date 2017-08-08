@@ -18,7 +18,6 @@
 #include "DenseMatrix.hh"
 #include "MeshMaps_VEM.hh"
 #include "Polynomial.hh"
-#include "WhetStoneDefs.hh"
 
 namespace Amanzi {
 namespace WhetStone {
@@ -33,19 +32,49 @@ void MeshMaps_VEM::JacobianCellValue(
 
 
 /* ******************************************************************
-* Calculate determinant of a Jacobian.
+* Calculate determinant of a Jacobian. A prototype for the future 
+* projection scheme. Currently, we return a number.
 ****************************************************************** */
-void MeshMaps_VEM::JacobianDet(int c, double t, Polynomial& v) const
+void MeshMaps_VEM::JacobianDet(
+    int c, double t, const std::vector<VectorPolynomial>& vf, Polynomial& vc) const
 {
-  v.Reshape(d_, 0);
-  v.monomials(0).coefs()[0] = mesh1_->cell_volume(c);
+  AmanziGeometry::Point x(d_), cn(d_);
+  WhetStone::Tensor J(d_, 2); 
+
+  Entity_ID_List faces;
+  std::vector<int> dirs;
+
+  mesh0_->cell_get_faces_and_dirs(c, &faces, &dirs);
+  int nfaces = faces.size();
+
+  double sum(0.0);
+  for (int n = 0; n < nfaces; ++n) {
+    int f = faces[n];
+
+    // calculate j J^{-t} N dA
+    JacobianFaceValue(f, vf[n], x, J);
+
+    J *= t;
+    J += 1.0 - t;
+
+    Tensor C = J.Cofactors();
+    cn = C * mesh0_->face_normal(f); 
+
+    const AmanziGeometry::Point& xf0 = mesh0_->face_centroid(f);
+    const AmanziGeometry::Point& xf1 = mesh1_->face_centroid(f);
+    sum += (xf0 + t * (xf1 - xf0)) * cn * dirs[n];
+  }
+  sum /= 2 * mesh0_->cell_volume(c);
+
+  vc.Reshape(d_, 0);
+  vc.monomials(0).coefs()[0] = sum;
 }
 
 
 /* ******************************************************************
 * Calculate mesh velocity on face f.
 ****************************************************************** */
-void MeshMaps_VEM::VelocityFace(int c, int f, std::vector<Polynomial>& v) const
+void MeshMaps_VEM::VelocityFace(int f, VectorPolynomial& v) const
 {
   AmanziMesh::Entity_ID_List nodes;
   AmanziGeometry::Point x0, x1;
@@ -54,8 +83,9 @@ void MeshMaps_VEM::VelocityFace(int c, int f, std::vector<Polynomial>& v) const
   const AmanziGeometry::Point& xf1 = mesh1_->face_centroid(f);
 
   // velocity order 0
+  v.resize(d_);
   for (int i = 0; i < d_; ++i) {
-    v[i].Reset();
+    v[i].Reshape(d_, 1);
     v[i].monomials(0).coefs()[0] = xf1[i] - xf0[i];
   }
 
@@ -90,7 +120,7 @@ void MeshMaps_VEM::VelocityFace(int c, int f, std::vector<Polynomial>& v) const
 * Calculate Jacobian at point x of face f 
 ****************************************************************** */
 void MeshMaps_VEM::JacobianFaceValue(
-    int c, int f, const std::vector<Polynomial>& v,
+    int f, const VectorPolynomial& v,
     const AmanziGeometry::Point& x, Tensor& J) const
 {
   // FIXME x is not used

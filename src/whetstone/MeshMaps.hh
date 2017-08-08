@@ -50,19 +50,20 @@ class MeshMaps {
 
   // Jacobian
   // -- determinant of Jacobian
-  virtual void JacobianDet(int c, double t, Polynomial& v) const = 0;
+  virtual void JacobianDet(int c, double t, const std::vector<VectorPolynomial>& vf,
+                           Polynomial& vc) const = 0;
 
   // -- Jacobian value at point x
   virtual void JacobianCellValue(int c, 
                                  double t, const AmanziGeometry::Point& x,
                                  Tensor& J) const = 0;
-  virtual void JacobianFaceValue(int c, int f, const std::vector<Polynomial>& v,
+  virtual void JacobianFaceValue(int f, const VectorPolynomial& v,
                                  const AmanziGeometry::Point& x,
                                  Tensor& J) const = 0;
 
   // Maps
   // -- pseudo-velocity on face f
-  virtual void VelocityFace(int c, int f, std::vector<Polynomial>& v) const = 0;
+  virtual void VelocityFace(int f, VectorPolynomial& v) const = 0;
 
   // Miscalleneous
   // -- polynomial approximation of map x2 = F(x1)

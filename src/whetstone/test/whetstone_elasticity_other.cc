@@ -150,10 +150,8 @@ TEST(ADVECTION_NAVIER_STOKES_2D) {
   }
 
   // calculate advection matrix
-  int nrows = 2 * nnodes + nfaces;
-  DenseMatrix A(nrows, nrows);
-
-  mfd.AdvectionMatrix(cell, A, u);
+  DenseMatrix A;
+  mfd.AdvectionMatrix(cell, u, A);
 
   printf("Advection matrix for cell %3d\n", cell);
   for (int i = 0; i < 2*nnodes; i++) {

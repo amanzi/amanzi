@@ -50,7 +50,7 @@ class MFD3D_BernardiRaugel : public virtual MFD3D {
 
   // -- other matrices
   virtual int DivergenceMatrix(int c, DenseMatrix& A);
-  int AdvectionMatrix(int c, DenseMatrix& A, const std::vector<AmanziGeometry::Point>& u);
+  virtual int AdvectionMatrix(int c, const std::vector<AmanziGeometry::Point>& u, DenseMatrix& A);
 };
 
 }  // namespace WhetStone

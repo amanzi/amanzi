@@ -119,6 +119,26 @@ void Abstract::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& u,
       mfd->DivergenceMatrix(c, Acell);
       matrix[c] = Acell;
     }
+  } else if (matrix_ == "advection") {
+    int d(mesh_->space_dimension());
+    const Epetra_MultiVector& u_v = *u->ViewComponent("node", true);
+
+    for (int c = 0; c < ncells_owned; ++c) {
+      mesh_->cell_get_nodes(c, &nodes);
+      int nnodes = nodes.size();
+
+      AmanziGeometry::Point vp(d);
+      std::vector<AmanziGeometry::Point> velocity;
+
+      for (int n = 0; n < nnodes; ++n) {
+        int v = nodes[n];
+        for (int i = 0; i < d; ++i) vp[i] = u_v[i][v];
+        velocity.push_back(vp);
+      }
+
+      mfd->AdvectionMatrix(c, velocity, Acell);
+      matrix[c] = Acell;
+    }
   }
 }
 

@@ -16,8 +16,10 @@
 #define AMANZI_OPERATOR_ABSTRACT_HH_
 
 #include <string>
+#include <vector>
 
 // Amanzi
+#include "Polynomial.hh"
 #include "Tensor.hh"
 
 // Operators
@@ -47,6 +49,7 @@ class Abstract : public PDE_Helper {
   
   // -- setup
   void Setup(const Teuchos::RCP<std::vector<WhetStone::Tensor> >& K) { K_ = K; }
+  void Setup(const Teuchos::RCP<const std::vector<WhetStone::Polynomial> >& Kpoly) { Kpoly_ = Kpoly; }
 
   // optional calculation of flux from potential p
   virtual void UpdateFlux(const Teuchos::Ptr<const CompositeVector>& p,
@@ -54,6 +57,7 @@ class Abstract : public PDE_Helper {
 
  protected:
   Teuchos::RCP<std::vector<WhetStone::Tensor> > K_;
+  Teuchos::RCP<const std::vector<WhetStone::Polynomial> > Kpoly_;
 
   Schema global_schema_row_, global_schema_col_;
   Schema local_schema_col_, local_schema_row_;

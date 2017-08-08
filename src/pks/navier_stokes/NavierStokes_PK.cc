@@ -196,8 +196,8 @@ void NavierStokes_PK::Initialize(const Teuchos::Ptr<State>& S)
   // -- create convection term
   Teuchos::ParameterList& tmp3 = ns_list_->sublist("operators")
                                           .sublist("advection operator");
-  op_matrix_conv_ = Teuchos::rcp(new Operators::AdvectionRiemann(tmp3, op_matrix_elas_->global_operator()));
-  op_preconditioner_conv_ = Teuchos::rcp(new Operators::AdvectionRiemann(tmp3, op_preconditioner_elas_->global_operator()));
+  op_matrix_conv_ = Teuchos::rcp(new Operators::Abstract(tmp3, op_matrix_elas_->global_operator()));
+  op_preconditioner_conv_ = Teuchos::rcp(new Operators::Abstract(tmp3, op_preconditioner_elas_->global_operator()));
 
   // -- create pressure block (for preconditioner)
   op_mass_ = Teuchos::rcp(new Operators::Accumulation(AmanziMesh::CELL, mesh_));

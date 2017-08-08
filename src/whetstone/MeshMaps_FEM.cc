@@ -45,7 +45,8 @@ void MeshMaps_FEM::JacobianCellValue(
 * Calculate determinant of the Jacobian at time t.
 * NOTE: We assume that cell c is a parallepiped.
 ****************************************************************** */
-void MeshMaps_FEM::JacobianDet(int c, double t, Polynomial& v) const
+void MeshMaps_FEM::JacobianDet(
+    int c, double t, const std::vector<VectorPolynomial>& vf, Polynomial& vc) const
 {
   Entity_ID_List nodes;
 
@@ -75,20 +76,20 @@ void MeshMaps_FEM::JacobianDet(int c, double t, Polynomial& v) const
   a0[0] += 1.0 - t;
   a1[1] += 1.0 - t;
 
-  v.Reshape(2, 2);
-  v.monomials(0).coefs()[0] = a0[0] * a1[1] - a0[1] * a1[0];
+  vc.Reshape(2, 2);
+  vc.monomials(0).coefs()[0] = a0[0] * a1[1] - a0[1] * a1[0];
 
-  v.monomials(1).coefs()[0] = a0[0] * b1[1] - a0[1] * b1[0];
-  v.monomials(1).coefs()[1] = b0[0] * a1[1] - b0[1] * a1[0];
+  vc.monomials(1).coefs()[0] = a0[0] * b1[1] - a0[1] * b1[0];
+  vc.monomials(1).coefs()[1] = b0[0] * a1[1] - b0[1] * a1[0];
 
-  v.monomials(2).coefs()[1] = b0[0] * b1[1] - b0[1] * b1[0];
+  vc.monomials(2).coefs()[1] = b0[0] * b1[1] - b0[1] * b1[0];
 }
 
 
 /* ******************************************************************
 * Calculate mesh velocity on face f.
 ****************************************************************** */
-void MeshMaps_FEM::VelocityFace(int c, int f, std::vector<Polynomial>& v) const
+void MeshMaps_FEM::VelocityFace(int f, VectorPolynomial& v) const
 {
   AmanziMesh::Entity_ID_List nodes;
   AmanziGeometry::Point x0, x1;
@@ -97,8 +98,9 @@ void MeshMaps_FEM::VelocityFace(int c, int f, std::vector<Polynomial>& v) const
   const AmanziGeometry::Point& xf1 = mesh1_->face_centroid(f);
 
   // velocity order 0
+  v.resize(d_);
   for (int i = 0; i < d_; ++i) {
-    v[i].Reset();
+    v[i].Reshape(d_, 1);
     v[i].monomials(0).coefs()[0] = xf1[i] - xf0[i];
   }
 
@@ -133,10 +135,13 @@ void MeshMaps_FEM::VelocityFace(int c, int f, std::vector<Polynomial>& v) const
 * Calculate Jacobian at point x of face f.
 ****************************************************************** */
 void MeshMaps_FEM::JacobianFaceValue(
-    int c, int f, const std::vector<Polynomial>& v,
+    int f, const VectorPolynomial& v,
     const AmanziGeometry::Point& x, Tensor& J) const
 {
-  Entity_ID_List faces;
+  Entity_ID_List faces, cells;
+  mesh0_->face_get_cells(f, AmanziMesh::USED, &cells);
+
+  int c(cells[0]);
   mesh0_->cell_get_faces(c, &faces);
   
   AmanziGeometry::Point xref;

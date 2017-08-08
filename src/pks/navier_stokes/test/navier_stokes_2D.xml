@@ -76,7 +76,8 @@
         </ParameterList>
 
         <ParameterList name="advection operator">
-          <Parameter name="discretization" type="string" value="BernardiRaugel"/>
+          <Parameter name="mfd method" type="string" value="BernardiRaugel"/>
+          <Parameter name="matrix type" type="string" value="advection"/>
           <ParameterList name="schema domain">
             <Parameter name="base" type="string" value="cell"/>
             <Parameter name="location" type="Array(string)" value="{node, face}"/>

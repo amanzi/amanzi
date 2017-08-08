@@ -30,6 +30,7 @@
 #include "MeshMaps_FEM.hh"
 #include "MeshMaps_VEM.hh"
 #include "Tensor.hh"
+#include "WhetStone_typedefs.hh"
 
 // Amanzi::Operators
 #include "Accumulation.hh"
@@ -65,6 +66,7 @@ void RemapTests2DExplicit(int order, std::string disc_name,
 
   int ncells_owned = mesh0->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   int ncells_wghost = mesh0->num_entities(AmanziMesh::CELL, AmanziMesh::USED);
+  int nfaces_owned = mesh0->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
   int nfaces_wghost = mesh0->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
   int nnodes_owned = mesh0->num_entities(AmanziMesh::NODE, AmanziMesh::OWNED);
 
@@ -130,7 +132,16 @@ void RemapTests2DExplicit(int order, std::string disc_name,
   Teuchos::RCP<AdvectionRiemann> op = Teuchos::rcp(new AdvectionRiemann(plist, mesh0));
   auto global_op = op->global_operator();
 
-  // create accumulation operator
+  CompositeVectorSpace cvs;
+  cvs.SetMesh(mesh0)->SetGhosted(true)->AddComponent("face", AmanziMesh::FACE, 1);
+
+  Teuchos::RCP<CompositeVector> vel = Teuchos::RCP<CompositeVector>(new CompositeVector(cvs));
+  Epetra_MultiVector& vel_f = *vel->ViewComponent("face");
+
+  Teuchos::RCP<std::vector<WhetStone::VectorPolynomial> > vel0 = 
+     Teuchos::rcp(new std::vector<WhetStone::VectorPolynomial>(nfaces_owned));
+
+  // create accumulation operator reusing reaction operator
   plist.sublist("schema")
       .set<std::string>("base", "cell")
       .set<Teuchos::Array<std::string> >("location", std::vector<std::string>({"cell"}))
@@ -151,65 +162,44 @@ void RemapTests2DExplicit(int order, std::string disc_name,
   op_reac1->Setup(jac1);
 
   double t(0.0), tend(1.0);
-  WhetStone::Polynomial det0, det1;
   WhetStone::MeshMaps_FEM maps(mesh0, mesh1);
 
   while(t < tend - dt/2) {
-    // calculate determinant of Jacobian at time t
-    for (int c = 0; c < ncells_owned; ++c) {
-      maps.JacobianDet(c, t, (*jac0)[c]);
-      maps.JacobianDet(c, t + dt, (*jac1)[c]);
+    // calculate face velocities
+    for (int f = 0; f < nfaces_owned; ++f) {
+      maps.VelocityFace(f, (*vel0)[f]);
     }
 
-    // rotate velocities and calculate normal component
+    for (int f = 0; f < nfaces_owned; ++f) {
+      // calculate j J^{-t} N dA
+      WhetStone::Tensor J(2, 2); 
+      maps.JacobianFaceValue(f, (*vel0)[f], xref, J);
+      J *= t;
+      J += 1.0 - t;
+      WhetStone::Tensor C = J.Cofactors();
+      AmanziGeometry::Point cn = C * mesh0->face_normal(f); 
+
+      // calculate velocity
+      const AmanziGeometry::Point& xf = mesh0->face_centroid(f);
+      AmanziGeometry::Point xv((*vel0)[f][0].Value(xf), (*vel0)[f][1].Value(xf));
+      vel_f[0][f] = xv * cn;
+    }
+
+    // calculate determinant of Jacobian at time t
     Entity_ID_List faces;
     std::vector<int> dirs;
-    WhetStone::Polynomial poly(2, 1);
-    std::vector<WhetStone::Polynomial> uv(2, poly);
-
-    CompositeVectorSpace cvs;
-    cvs.SetMesh(mesh0)->SetGhosted(true)->AddComponent("face", AmanziMesh::FACE, 1);
-
-    Teuchos::RCP<CompositeVector> vel = Teuchos::RCP<CompositeVector>(new CompositeVector(cvs));
-    Epetra_MultiVector& vel_f = *vel->ViewComponent("face");
 
     for (int c = 0; c < ncells_owned; ++c) {
       mesh0->cell_get_faces_and_dirs(c, &faces, &dirs);
       int nfaces = faces.size();
+      std::vector<WhetStone::VectorPolynomial> vf;
 
-      double sum0(0.0), sum1(0.0);
       for (int n = 0; n < nfaces; ++n) {
-        int f = faces[n];
-
-        // calculate j J^{-t} N dA
-        maps.VelocityFace(c, f, uv);
-
-        WhetStone::Tensor J(2, 2); 
-        maps.JacobianFaceValue(c, f, uv, xref, J);
-        J *= t;
-        J += 1.0 - t;
-        WhetStone::Tensor C = J.Cofactors();
-        AmanziGeometry::Point cn = C * mesh0->face_normal(f); 
-
-        // calculate velocity
-        const AmanziGeometry::Point& xf = mesh0->face_centroid(f);
-        xv = AmanziGeometry::Point(uv[0].Value(xf), uv[1].Value(xf));
-        vel_f[0][f] = xv * cn;
-
-        // test
-        /*
-        const AmanziGeometry::Point& xf1 = mesh1->face_centroid(f);
-        sum0 += (xf + t * (xf1 - xf)) * cn * dirs[n];
-        maps.JacobianFaceValue(c, f, uv, xref, J);
-        J *= t + dt;
-        J += 1.0 - (t + dt);
-        C = J.Cofactors();
-        cn = C * mesh0->face_normal(f); 
-        sum1 += (xf + (t + dt) * (xf1 - xf)) * cn * dirs[n];
-        */
+        vf.push_back((*vel0)[faces[n]]);
       }
-      // (*jac0)[0][c] = sum0 / 2 / mesh0->cell_volume(c);
-      // (*jac1)[0][c] = sum1 / 2 / mesh0->cell_volume(c);
+
+      maps.JacobianDet(c, t, vf, (*jac0)[c]);
+      maps.JacobianDet(c, t + dt, vf, (*jac1)[c]);
     }
 
     // populate operators

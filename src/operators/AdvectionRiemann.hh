@@ -42,10 +42,12 @@ class AdvectionRiemann : public Advection {
   // required members 
   // -- setup
   virtual void Setup(const CompositeVector& u) {};
+
   // -- generate linearized operator may use flux and potential
   using PDE_Helper::UpdateMatrices;
   virtual void UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& u,
                               const Teuchos::Ptr<const CompositeVector>& p);
+
   // -- determine advected flux of potential u
   virtual void UpdateFlux(const Teuchos::Ptr<const CompositeVector>& h,
                           const Teuchos::Ptr<const CompositeVector>& u,
@@ -54,8 +56,6 @@ class AdvectionRiemann : public Advection {
   
  private:
   void InitAdvection_(Teuchos::ParameterList& plist);
-  void UpdateMatricesCell_(const CompositeVector& u);
-  void UpdateMatricesFace_(const CompositeVector& u);
 
  private:
   std::string flux_, riemann_;
