@@ -109,33 +109,24 @@ void AdvectionRiemann::InitAdvection_(Teuchos::ParameterList& plist)
 * u is the given velocity field and C is the advected field.
 ****************************************************************** */
 void AdvectionRiemann::UpdateMatrices(
-    const Teuchos::Ptr<const CompositeVector>& u,
-    const Teuchos::Ptr<const CompositeVector>& p)
+    const Teuchos::Ptr<const std::vector<WhetStone::Polynomial> >& u)
 {
   std::vector<WhetStone::DenseMatrix>& matrix = local_op_->matrices;
   std::vector<WhetStone::DenseMatrix>& matrix_shadow = local_op_->matrices_shadow;
 
+  int d(mesh_->space_dimension());
   WhetStone::DG_Modal dg(mesh_);
-  const Epetra_MultiVector& uf = *u->ViewComponent("face");
-
-  int dir, d(mesh_->space_dimension());
-  AmanziMesh::Entity_ID_List cells;
 
   for (int f = 0; f < nfaces_owned; ++f) {
     WhetStone::DenseMatrix Aface;
 
     if (space_col_ == DG0 && space_row_ == DG0) {
-      WhetStone::Polynomial vn(d, 0);
-      vn.monomials(0).coefs()[0] = uf[0][f];
-
       dg.set_order(0);
-      dg.AdvectionMatrixFace(f, vn, Aface);
+      dg.AdvectionMatrix(f, (*u)[f], Aface);
     }
     else if (space_col_ == DG1 && space_row_ == DG1) {
-      WhetStone::Polynomial vn(d, 1);
-
       dg.set_order(1);
-      dg.AdvectionMatrixFace(f, vn, Aface);
+      dg.AdvectionMatrix(f, (*u)[f], Aface);
     }
 
     matrix[f] = Aface;

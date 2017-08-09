@@ -59,7 +59,7 @@ class DG_Modal {
 
   int MassMatrix(int c, const Tensor& K, DenseMatrix& M);
   int MassMatrix(int c, const Polynomial& K, DenseMatrix& A);
-  int AdvectionMatrixFace(int f, Polynomial& un, DenseMatrix& A);
+  int AdvectionMatrix(int f, const Polynomial& un, DenseMatrix& A);
 
   // miscalleneous
   void set_order(int order) { order_ = order; }

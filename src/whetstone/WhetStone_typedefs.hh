@@ -15,7 +15,6 @@
 
 #include <vector>
 
-#include "Polynomial.hh"
 
 #define AMANZI_CODE
 
@@ -40,6 +39,8 @@ const int OWNED = 1;  // Owned by this processor
 const int GHOST = 2;  // Owned by another processor
 const int USED  = 3;  // OWNED + GHOST
 #endif
+
+class Polynomial;
 
 typedef std::vector<Polynomial> VectorPolynomial;
 

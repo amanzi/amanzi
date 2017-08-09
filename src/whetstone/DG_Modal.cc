@@ -126,7 +126,7 @@ int DG_Modal::MassMatrix(int c, const Polynomial& K, DenseMatrix& A)
 * Advection matrix for Taylor basis and normal velocity u.n.
 * Velocity is given in the face-based Taylor basis.
 ****************************************************************** */
-int DG_Modal::AdvectionMatrixFace(int f, Polynomial& un, DenseMatrix& A)
+int DG_Modal::AdvectionMatrix(int f, const Polynomial& un, DenseMatrix& A)
 {
   AmanziMesh::Entity_ID_List cells, nodes;
 
@@ -137,8 +137,10 @@ int DG_Modal::AdvectionMatrixFace(int f, Polynomial& un, DenseMatrix& A)
   A.PutScalar(0.0);
 
   // identify downwind cell
+  const AmanziGeometry::Point& xf = mesh_->face_centroid(f);
+  double vel = un.Value(xf);
+
   int dir, id(0); 
-  double vel = un.monomials(0).coefs()[0];
   mesh_->face_normal(f, false, cells[0], &dir);
   if (vel * dir > 0.0) {
     if (ncells == 1) return 0;

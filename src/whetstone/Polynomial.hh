@@ -176,6 +176,16 @@ class Polynomial {
     return tmp *= val;
   }
 
+  // -- operatios with vector polynomials
+  friend Polynomial operator*(const std::vector<Polynomial>& poly, const AmanziGeometry::Point& p) {
+    int d(p.dim());
+    Polynomial tmp(d, 0);
+    for (int i = 0; i < p.dim(); ++i) {
+      tmp += poly[i] * p[i];
+    }
+    return tmp;
+  }
+
   // -- derivatives
   void Gradient(std::vector<Polynomial>& grad) const;
 

@@ -253,7 +253,7 @@ TEST(DG_ADVECTION_MATRIX_FACE) {
     un.monomials(0).coefs()[0] = 1.0;
 
     // TEST1: constant u
-    dg.AdvectionMatrixFace(1, un, A0);
+    dg.AdvectionMatrix(1, un, A0);
 
     printf("Advection matrix (face-based) for order=%d  u=constant\n", k);
     int nk = A0.NumRows();
@@ -267,7 +267,7 @@ TEST(DG_ADVECTION_MATRIX_FACE) {
     u.push_back(zero);
     u.push_back(zero);
 
-    dg.AdvectionMatrixFace(1, u, A1);
+    dg.AdvectionMatrix(1, u, A1);
 
     A1 -= A0;
     CHECK_CLOSE(0.0, A1.NormInf(), 1e-12);
@@ -278,7 +278,7 @@ TEST(DG_ADVECTION_MATRIX_FACE) {
     u.push_back(zero);
     u.push_back(AmanziGeometry::Point(1.0, 0.0));
 
-    dg.AdvectionMatrixFace(1, u, A1);
+    dg.AdvectionMatrix(1, u, A1);
 
     printf("Advection matrix (cell-based) for order=%d u=(y-y0,0)\n", k);
     for (int i = 0; i < nk; i++) {

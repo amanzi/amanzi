@@ -125,23 +125,18 @@ void RemapTests2DExplicit(int order, std::string disc_name,
       .set<std::string>("base", "face")
       .set<Teuchos::Array<std::string> >("location", std::vector<std::string>({"cell"}))
       .set<Teuchos::Array<std::string> >("type", std::vector<std::string>({"scalar"}))
-      .set<Teuchos::Array<int> >("number", std::vector<int>({nk}));
+      .set<Teuchos::Array<int> >("number", std::vector<int>({1}));
 
   plist.sublist("schema range") = plist.sublist("schema domain");
 
   Teuchos::RCP<AdvectionRiemann> op = Teuchos::rcp(new AdvectionRiemann(plist, mesh0));
   auto global_op = op->global_operator();
 
-  CompositeVectorSpace cvs;
-  cvs.SetMesh(mesh0)->SetGhosted(true)->AddComponent("face", AmanziMesh::FACE, 1);
+  std::vector<WhetStone::VectorPolynomial> vec_vel(nfaces_owned);
+  Teuchos::RCP<std::vector<WhetStone::Polynomial> > vel = 
+      Teuchos::rcp(new std::vector<WhetStone::Polynomial>(nfaces_owned));
 
-  Teuchos::RCP<CompositeVector> vel = Teuchos::RCP<CompositeVector>(new CompositeVector(cvs));
-  Epetra_MultiVector& vel_f = *vel->ViewComponent("face");
-
-  Teuchos::RCP<std::vector<WhetStone::VectorPolynomial> > vel0 = 
-     Teuchos::rcp(new std::vector<WhetStone::VectorPolynomial>(nfaces_owned));
-
-  // create accumulation operator reusing reaction operator
+  // create accumulation operator re-using reaction operator
   plist.sublist("schema")
       .set<std::string>("base", "cell")
       .set<Teuchos::Array<std::string> >("location", std::vector<std::string>({"cell"}))
@@ -162,27 +157,25 @@ void RemapTests2DExplicit(int order, std::string disc_name,
   op_reac1->Setup(jac1);
 
   double t(0.0), tend(1.0);
-  WhetStone::MeshMaps_FEM maps(mesh0, mesh1);
+  WhetStone::MeshMaps_VEM maps(mesh0, mesh1);
 
   while(t < tend - dt/2) {
     // calculate face velocities
     for (int f = 0; f < nfaces_owned; ++f) {
-      maps.VelocityFace(f, (*vel0)[f]);
+      maps.VelocityFace(f, vec_vel[f]);
     }
 
     for (int f = 0; f < nfaces_owned; ++f) {
       // calculate j J^{-t} N dA
       WhetStone::Tensor J(2, 2); 
-      maps.JacobianFaceValue(f, (*vel0)[f], xref, J);
+      maps.JacobianFaceValue(f, vec_vel[f], xref, J);
       J *= t;
       J += 1.0 - t;
       WhetStone::Tensor C = J.Cofactors();
       AmanziGeometry::Point cn = C * mesh0->face_normal(f); 
 
-      // calculate velocity
-      const AmanziGeometry::Point& xf = mesh0->face_centroid(f);
-      AmanziGeometry::Point xv((*vel0)[f][0].Value(xf), (*vel0)[f][1].Value(xf));
-      vel_f[0][f] = xv * cn;
+      // calculate normal velocity component
+      (*vel)[f] = vec_vel[f] * cn;
     }
 
     // calculate determinant of Jacobian at time t
@@ -195,7 +188,7 @@ void RemapTests2DExplicit(int order, std::string disc_name,
       std::vector<WhetStone::VectorPolynomial> vf;
 
       for (int n = 0; n < nfaces; ++n) {
-        vf.push_back((*vel0)[faces[n]]);
+        vf.push_back(vec_vel[faces[n]]);
       }
 
       maps.JacobianDet(c, t, vf, (*jac0)[c]);
@@ -272,10 +265,10 @@ void RemapTests2DExplicit(int order, std::string disc_name,
 
 
 TEST(REMAP_DG0_EXPLICIT) {
-  RemapTests2DExplicit(0, "DG order 0", 30, 30, 0.1 / 3);
+  RemapTests2DExplicit(0, "DG order 0", 20, 20, 0.1 / 2);
 }
 
-// TEST(REMAP_DG1_EXPLICIT) {
-//   RemapTests2DExplicit(1, "DG order 1", 20, 20, 0.1 / 2);
-// }
+TEST(REMAP_DG1_EXPLICIT) {
+  RemapTests2DExplicit(1, "DG order 1", 20, 20, 0.1 / 2);
+}
 
