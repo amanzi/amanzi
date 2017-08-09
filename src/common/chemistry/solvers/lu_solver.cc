@@ -48,7 +48,7 @@ void LUSolver::Decomposition(MatrixBlock* A) {
   for (int i = 0; i < system_size(); ++i) {
     double big = 0.0;
     for (int j = 0; j < system_size(); ++j) {
-      double temp = fabs(a[i][j]);
+      double temp = std::fabs(a[i][j]);
       if (temp > big) {
         big = temp;
       }
@@ -78,7 +78,7 @@ void LUSolver::Decomposition(MatrixBlock* A) {
         sum -= a[i][k] * a[k][j];
       }
       a[i][j] = sum;
-      temp = row_scaling_.at(i) * fabs(sum);
+      temp = row_scaling_.at(i) * std::fabs(sum);
       if (temp >= big) {
         big = temp;
         imax = i;

@@ -10,6 +10,7 @@ def _valid_parameter_from_string(ptype, value):
         try:
             retval = float(value)
         except ValueError:
+            
             raise RuntimeError("Parameter of type double with invalid value \"%s\""%str(value))
 
     elif ptype == "int":
@@ -49,9 +50,12 @@ def _valid_parameter_from_string(ptype, value):
 
 
 def _valid_parameter_from_type(ptype, value):
+    # null string is valid
+    if type(value) == str and len(value) == 0:
+        return ''
+    
     # ensure types
     retval = None
-
     if ptype == "double":
         retval = str(float(value))
     elif ptype == "int":
@@ -90,8 +94,11 @@ class Parameter(base.TeuchosBaseXML):
 
         mytype = this.get("type")
         myval = this.get("value")
-        this.setType(mytype) #validation
-        this.setValue(myval) #validation
+        try:
+            this.setType(mytype) #validation
+            this.setValue(myval) #validation
+        except RuntimeError as err:
+            raise RuntimeError(str(err)+"\n from xml entry: \"%s\""%str(elem.attrib))
         return this
 
     def __str__(self):
@@ -125,9 +132,15 @@ class Parameter(base.TeuchosBaseXML):
         if self._isarray:
             if type(value) is str:
                 vals = value.strip().strip('{').strip('}').split(',')
-                self.value = [self._checkSingleValueFromString(val) for val in vals]
+                if len(vals) == 1 and vals[0] == '':
+                    self.value = ['',]
+                else:
+                    self.value = [self._checkSingleValueFromString(val) for val in vals]
             elif type(value) is list:
-                self.value = [self._checkSingleValueFromString(val) for val in value]
+                if len(value) == 1 and value[0] == '':
+                    self.value = ['',]
+                else:
+                    self.value = [self._checkSingleValueFromString(val) for val in value]
 
             self.set("value", "{"+",".join([self._checkSingleValueFromType(val) for val in self.value])+"}")
         else:

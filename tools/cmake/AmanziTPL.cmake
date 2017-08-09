@@ -44,10 +44,10 @@ set(Boost_ADDITIONAL_VERSIONS
     1.53 1.53.0
     1.54 1.55.0)
 find_package( Boost COMPONENTS system filesystem program_options regex REQUIRED)
-set_feature_info(Boost
-                 "C++ Extension library"
-                 "http://www.boost.org"
-                 "Required by the MPC")
+set_package_properties(Boost PROPERTIES
+                 DESCRIPTION "C++ Extension library"
+                 URL "http://www.boost.org"
+                 PURPOSE "Required by the MPC")
 
 if ( Boost_VERSION) 
 
@@ -91,10 +91,10 @@ if ( NOT HDF5_IS_PARALLEL )
                         "HDF5 installation to include MPI I/O symbols"
             )            
 endif(NOT HDF5_IS_PARALLEL)
-set_feature_info(HDF5
-                "I/O library that creates HDF5 formatted files"
-                "http://www.hdfgroup.org/HDF5"
-                "Required library for several components in Amanzi"
+set_package_properties(HDF5 PROPERTIES
+                DESCRIPTION "I/O library that creates HDF5 formatted files"
+                URL "http://www.hdfgroup.org/HDF5"
+                PURPOSE "Required library for several components in Amanzi"
                 )
 
 # Restore policy of preferring offical CMake modules over local ones.
@@ -244,28 +244,31 @@ endif()
 # NetCDF - http://www.unidata.ucar.edu/software/netcdf/
 ##############################################################################
 find_package(NetCDF REQUIRED)
-set_feature_info(NetCDF
-                 "Network Common Data Format (NetCDF)"
-                 "http://www.unidata.ucar.edu/software/netcdf/"
-                 "Required by ExodusII library")
+set_package_properties(NetCDF
+                 PROPERTIES
+                 DESCRIPTION "Network Common Data Format (NetCDF)"
+                 URL "http://www.unidata.ucar.edu/software/netcdf/"
+                 PURPOSE "Required by ExodusII library")
 
 
 ##############################################################################
 # Exodus II -http://sourceforge.net/projects/exodusii
 ##############################################################################
 find_package(ExodusII REQUIRED)
-set_feature_info(ExodusII
-                 "File format library. Originated from Sandia."
-                 "http://sourceforge.net/projects/exodusii/"
-                 "Required by all the mesh frameworks to read mesh files")
+set_package_properties(ExodusII
+		 PROPERTIES
+                 DESCRIPTION "File format library. Originated from Sandia."
+                 URL "http://sourceforge.net/projects/exodusii/"
+                 PURPOSE "Required by all the mesh frameworks to read mesh files")
 
 
 ##############################################################################
 # XERCES-C - http://http://xerces.apache.org/xerces-c/
 ##############################################################################
 find_package(XERCES REQUIRED)
-set_feature_info(XERCES
-	         "Validating XML parser")
+set_package_properties(XERCES
+		 PROPERTIES
+	         PURPOSE "Validating XML parser")
 
 
 ##############################################################################
@@ -273,8 +276,9 @@ set_feature_info(XERCES
 ##############################################################################
 if (ENABLE_Structured)
   find_package(CCSE REQUIRED)
-  set_feature_info(CCSE
-                   "CCSE BoxLib softare library required for structured grid")
+  set_package_properties(CCSE
+                   PROPERTIES
+                   PURPOSE "CCSE BoxLib softare library required for structured grid")
 endif()
 
 ##############################################################################
@@ -307,7 +311,7 @@ endif()
 # STK - Sierra Mesh Tool Kit part of Trilinos
 ##############################################################################
 option(ENABLE_STK_Mesh  "Build Amanzi with the STK mesh framework" OFF)
-set_feature_info(STK_Mesh
+add_feature_info(STK_Mesh
                  ENABLE_STK_Mesh
                  "Sierra Mesh Tool Kit (STK Mesh) a Trilinos package"
                  )
@@ -317,7 +321,7 @@ set_feature_info(STK_Mesh
 # MOAB - svn co https://svn.mcs.anl.gov/repos/ITAPS/MOAB/trunk MOAB
 ##############################################################################
 option(ENABLE_MOAB_Mesh "Build Amanzi with the MOAB mesh framework" OFF)
-set_feature_info(MOAB_Mesh
+add_feature_info(MOAB_Mesh
                  ENABLE_MOAB_Mesh
                  "A Mesh-Oriented datABase"
                  )
@@ -329,7 +333,7 @@ endif()
 # MSTK - https://software.lanl.gov/MeshTools/trac/raw-attachment/wiki/WikiStart/mstk-1.80.tar.gz
 ##############################################################################
 option(ENABLE_MSTK_Mesh "Build Amanzi with the MSTK mesh framework" OFF)
-set_feature_info(MSTK_Mesh
+add_feature_info(MSTK_Mesh
                  ENABLE_MSTK_Mesh
                  "A mesh framework"
                  )
@@ -359,11 +363,11 @@ endif()
 # ASCEMIO - http://www.cgns.sourceforge.net/
 ##############################################################################
 option(ENABLE_ASCEMIO  "Build Amanzi output library with ASCEM-IO parallelIO" OFF)
-set_feature_info(ASCEMIO
-                  ENABLE_ASCEMIO
-                 "ASCEM-IO Scalable Parallel I/O module for Environmental Management Applications"
-                 "http://ascem-io.secure-water.org"
-                 "Required to produce VisIt files in parallel"
+set_package_properties(ASCEMIO
+		 PROPERTIES
+		 DESCRIPTION "ASCEM-IO Scalable Parallel I/O module for Environmental Management Applications"
+		 URL "http://ascem-io.secure-water.org"
+		 PURPOSE "Required to produce VisIt files in parallel"
                  )
 #if (ENABLE_ASCEMIO)
 if (ENABLE_Unstructured)
@@ -376,9 +380,10 @@ endif()
 # UnitTest++ - http://unittest-cpp.sourceforge.net/
 ##############################################################################
 option(ENABLE_UnitTest "Build Amanzi unit tests. Requires UnitTest++" ON)
-set_feature_info(UnitTest
-                 ENABLE_UnitTest
-                 "C++ unit test framework"
+set_package_properties(UnitTest
+		 PROPERTIES
+                 DESCRIPTION "C++ unit test framework"
+                 URL "http://unittest-cpp.sourceforge.net/"
                  )
 if (ENABLE_UnitTest)
     find_package(UnitTest)

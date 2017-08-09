@@ -89,7 +89,7 @@
 // time integrator
 #define TI_SOLVER                       "AztecOO"
 #define TI_PRECONDITIONER               "Hypre AMG"
-#define TI_PLAMBDA_SOLVER               "AztecOO"
+#define TI_PLAMBDA_SOLVER               "GMRES with Hypre AMG"
 #define TI_TIMESTEP_CONTROLLER          "standard"
 #define TI_MIN_ITERATIONS               10
 #define TI_MAX_ITERATIONS               15

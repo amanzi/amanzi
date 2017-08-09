@@ -43,9 +43,12 @@ An ``[observation-spec]`` consists of the following quantities:
 
 * Additionally, each ``[observation-spec]`` contains all parameters as in a IOEvent_ spec, which are used to specify at which times/cycles the observation is collected.
 
-For flux observations, and additional option is available:
+For flux observations, additional options are available:
 
-* `"direction normalized flux`" [bool] *false* Normalize the flux to point in the outward-normal direction.  This is important when looking at fluxes across a boundary, for instance to plot a hydrograph.
+* `"direction normalized flux`" [bool] *false* Dots the face-normal flux with a vector to ensure fluxes are integrated pointing the same direction.
+
+* `"direction normalized flux direction`" [Array(double)] Provides the vector to dot the face normal with.  If this is not provided, then it is assumed that the faces integrated over are all boundary faces and that the default vector is the outward normal direction for each face.
+
 
 
 Example:
@@ -95,6 +98,7 @@ Example:
 #include "Teuchos_RCP.hpp"
 #include "Epetra_MpiComm.h"
 
+#include "Point.hh"
 #include "ObservationData.hh"
 #include "MeshDefs.hh"
 #include "IOEvent.hh"
@@ -137,6 +141,9 @@ class Observable : public IOEvent {
   Teuchos::RCP<std::ofstream> out_;
 
   bool flux_normalize_;
+  Teuchos::RCP<AmanziGeometry::Point> direction_;
+
+  
   std::string name_;
   std::string variable_;
   std::string region_;

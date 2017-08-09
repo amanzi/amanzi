@@ -1,0 +1,23 @@
+# Materials file input (e.g. init_bnds.inf)
+INPUT_BNDS=init_bnds.inf
+
+# Elevation file input (optional)
+#INPUT_ELEV=
+
+# Exported mesh name
+EXPORT_NAME=for_terry.inp
+
+# Set to number of rows & columns 
+NCOLS=284
+NROWS=307
+
+# Spacing
+DX=100
+DY=100
+
+# Thickness of final mesh
+HEIGHT=7.75
+
+# Starting position of lower left hand corner
+MINX=601650
+MINY=3566450

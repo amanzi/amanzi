@@ -1,15 +1,33 @@
 /*
-  Time Integration
-
   Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
   The terms of use and "as is" disclaimer for this license are 
   provided in the top-level COPYRIGHT file.
 
   Author: Ethan Coon
-
-  Slightly smarter timestep control based upon a history of previous timesteps.
 */
+
+//!  Slightly smarter timestep controller based upon a history of previous timesteps.
+
+/*!
+
+``TimestepControllerSmarter`` is based on ``TimestepControllerStandard``, but
+also tries to be a bit smarter to avoid repeated increase/decrease loops where
+the step size decreases, converges in few iterations, increases, but then
+fails again.  It also tries to grow the step geometrically to more quickly
+recover from tricky nonlinearities.
+
+* `"max iterations`" ``[int]`` :math:`N^{max}`, decrease the timestep if the previous step took more than this.
+* `"min iterations`" ``[int]`` :math:`N^{min}`, increase the timestep if the previous step took less than this.
+* `"time step reduction factor`" ``[double]`` :math:`f_reduction`, reduce the previous timestep by this multiple.
+* `"time step increase factor`" ``[double]`` :math:`f_increase`, increase the previous timestep by this multiple.  Note that this can be modified geometrically in the case of repeated successful steps.
+* `"max time step increase factor`" ``[double]`` **10.** The max :math:`f_increase` will ever get.
+* `"growth wait after fail`" ``[int]`` Wait at least this many timesteps before attempting to grow the timestep after a failed timestep.
+* `"count before increasing increase factor`" ``[int]`` Require this many successive increasions before multiplying :math:`f_increase` by itself.
+
+
+*/
+
 
 #ifndef AMANZI_SMARTER_TIMESTEP_CONTROLLER_HH_
 #define AMANZI_SMARTER_TIMESTEP_CONTROLLER_HH_

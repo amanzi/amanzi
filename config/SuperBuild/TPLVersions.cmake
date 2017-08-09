@@ -70,6 +70,8 @@
 #
 #   0.93.0       - defaulted to C++11, update Trilinos to 12.6.1
 #   0.93.1       - update Boost to version 1.61.0
+#   0.93.2       - update Alquimia to version 1.0.3
+#   0.93.3       - update Alquimia to version 1.0.4
 
 #   0.94.1       - updates several TPLs, new versions are:
 #                - Trilinos 12.10.1
@@ -79,6 +81,9 @@
 #                - netcdf-fortran 4.4.4
 #                - boost 1.6.3
 #   0.94.2       - update MTSK to version 2.28rc1
+#   0.94.3       - update MSTK to version 3.00 (incompatible - need to update #defines)
+#   0.94.4       - update MSTK to version 3.01
+#   0.94.5       - restored Alquimia to version 1.0.4
 
 include(CMakeParseArguments)
 
@@ -128,7 +133,7 @@ endmacro(amanzi_tpl_version_write)
 
 set (AMANZI_TPLS_VERSION_MAJOR 0)
 set (AMANZI_TPLS_VERSION_MINOR 94)
-set (AMANZI_TPLS_VERSION_PATCH 2)
+set (AMANZI_TPLS_VERSION_PATCH 5)
 set (AMANZI_TPLS_VERSION ${AMANZI_TPLS_VERSION}.${AMANZI_TPLS_VERSION_MINOR}.${AMANZI_TPLS_VERSION_PATCH})
 #   Not sure how to create a meaningful hash key for the collection
 
@@ -282,13 +287,13 @@ set(ExodusII_MD5_SUM       cfd240dbc1251b08fb1d0ee2de40a44c)
 #
 # TPL: MSTK
 #
-set(MSTK_VERSION_MAJOR 2)
-set(MSTK_VERSION_MINOR 28)
-set(MSTK_VERSION_PATCH rc1)
-set(MSTK_VERSION ${MSTK_VERSION_MAJOR}.${MSTK_VERSION_MINOR}${MSTK_VERSION_PATCH})
+set(MSTK_VERSION_MAJOR 3)
+set(MSTK_VERSION_MINOR 0)
+set(MSTK_VERSION_PATCH 1)
+set(MSTK_VERSION ${MSTK_VERSION_MAJOR}.${MSTK_VERSION_MINOR}.${MSTK_VERSION_PATCH})
 set(MSTK_URL_STRING     ${AMANZI_TPLS_DOWNLOAD_URL})
 set(MSTK_ARCHIVE_FILE   mstk-${MSTK_VERSION}.tar.gz)
-set(MSTK_MD5_SUM        b1c8ca7d084ee8b613092db9ea026da4)
+set(MSTK_MD5_SUM        d0761665844b1f956ef7cb3d80d68d88)
 
 #
 # TPL: MOAB
@@ -387,13 +392,12 @@ set(PFLOTRAN_MD5_SUM        e18997dd7de5523c9bef8489a0a2dd24)
 #
 # TPL: Alquimia
 #
-set(ALQUIMIA_VERSION_MAJOR 0)
-set(ALQUIMIA_VERSION_MINOR 3)
-set(ALQUIMIA_VERSION_PATCH 1)
+set(ALQUIMIA_VERSION_MAJOR 1)
+set(ALQUIMIA_VERSION_MINOR 0)
+set(ALQUIMIA_VERSION_PATCH 4)
 set(ALQUIMIA_URL_STRING     ${AMANZI_TPLS_DOWNLOAD_URL})
-set(ALQUIMIA_ARCHIVE_FILE   alquimia-0.3.1.tar.gz)
-set(ALQUIMIA_MD5_SUM        6c513ef53709ccef413b7629a5d261ab)
-
+set(ALQUIMIA_ARCHIVE_FILE   alquimia-dev-1.0.4.tar.gz)
+set(ALQUIMIA_MD5_SUM        437e5b0a2f3c7a7dace78344b7218b3c)
 
 #
 # TPL: Silo

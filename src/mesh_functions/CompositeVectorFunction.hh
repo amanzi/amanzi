@@ -29,7 +29,8 @@ class CompositeVectorFunction {
 public:
   CompositeVectorFunction(const Teuchos::RCP<const MeshFunction>& func,
                           const std::vector<std::string>& names);
-
+  virtual ~CompositeVectorFunction() = default;
+  
   virtual void Compute(double time, const Teuchos::Ptr<CompositeVector>& vec);
 
 protected:

@@ -409,6 +409,36 @@
           </ParameterList>
         </ParameterList>
       </ParameterList>
+      <ParameterList name="mineral_rate_constant">
+        <ParameterList name="function">
+          <ParameterList name="Soil_1">
+            <Parameter name="region" type="string" value="Soil_1"/>
+            <Parameter name="component" type="string" value="cell"/>
+            <ParameterList name="function">
+              <Parameter name="number of dofs" type="int" value="1"/>
+              <Parameter name="function type" type="string" value="composite function"/>
+              <ParameterList name="dof 1 function">
+                <ParameterList name="function-constant">
+                  <Parameter name="value" type="double" value="1.00000000000000005e-04"/>
+                </ParameterList>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+          <ParameterList name="Soil_2">
+            <Parameter name="region" type="string" value="Soil_2"/>
+            <Parameter name="component" type="string" value="cell"/>
+            <ParameterList name="function">
+              <Parameter name="number of dofs" type="int" value="1"/>
+              <Parameter name="function type" type="string" value="composite function"/>
+              <ParameterList name="dof 1 function">
+                <ParameterList name="function-constant">
+                  <Parameter name="value" type="double" value="2.00000000000000010e-04"/>
+                </ParameterList>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
       <ParameterList name="ion_exchange_sites">
         <ParameterList name="function">
           <ParameterList name="Soil_1">

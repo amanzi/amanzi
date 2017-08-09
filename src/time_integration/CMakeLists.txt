@@ -57,7 +57,6 @@ add_amanzi_library(time_integration
 		           HEADERS ${time_int_new_inc_files}
 		           LINK_LIBS ${time_integration_link_libs} ${time_int_new_tpl_libs})
 
-
 if (BUILD_TESTS)
 
     # Add UnitTest include directoy

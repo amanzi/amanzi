@@ -45,12 +45,12 @@ Geochemical equilibrium between aqueous species makes it possible to calculate t
 
 where :math:`N_r` is the number of aqueous equilibrium reactions.
 
-This approach is widely used in geochemical models ([Lichtner1985]_, [Yeh-Tripathi1989]_, [Steefel-Lasaga1994]_, [Steefel-MacQuarrie1996]_) to reduce the size of the system to solve, and more specifically the number of transport equations.
+This approach is widely used in geochemical models (:cite:`chem-Lichtner_1985`, :cite:`chem-Yeh_rt-evaluation_1989`, :cite:`chem-Steefel_1994`, :cite:`chem-Steefel_1996`) to reduce the size of the system to solve, and more specifically the number of transport equations.
 
 Transport and Chemistry Coupling: Operator Splitting Approach
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Amanzi uses the so-called Operator Spliting Aproach to couple transport and reaction processes [Yeh-Tripathi1989]_. In the operator splitting approach, transport and chemistry are solved sequentially over the same time step, first transport and then chemistry. One advantage of this approach is that transport equations can be solved using linear solvers. Additionally, the non-linear chemical equations can be solved on a cell-by-cell basis in what is an embarassingly parallel problem. To access these advantages, the transport solver does not operate on the concentrations of each reactant (:math:`C_j`) and product species (:math:`C_i`). Rather, transport operates on the total component concentrations (:math:`U_j`) as defined in eq. :eq:`totalcomponent`. Please see :doc:`transport` for details of the transport capabilities of Amanzi. Following transport, the chemical processes affecting the mass balance of all components are solved over the same timestep:
+Amanzi uses the so-called Operator Spliting Aproach to couple transport and reaction processes :cite:`chem-Yeh_rt-evaluation_1989`. In the operator splitting approach, transport and chemistry are solved sequentially over the same time step, first transport and then chemistry. One advantage of this approach is that transport equations can be solved using linear solvers. Additionally, the non-linear chemical equations can be solved on a cell-by-cell basis in what is an embarassingly parallel problem. To access these advantages, the transport solver does not operate on the concentrations of each reactant (:math:`C_j`) and product species (:math:`C_i`). Rather, transport operates on the total component concentrations (:math:`U_j`) as defined in eq. :eq:`totalcomponent`. Please see :doc:`transport` for details of the transport capabilities of Amanzi. Following transport, the chemical processes affecting the mass balance of all components are solved over the same timestep:
 
 .. math::
    \frac{\partial (\phi s_l U_j)}{\partial t} 
@@ -108,10 +108,7 @@ Currently, the geochemical capabilities of the reactive transport code PFloTran 
 References
 ~~~~~~~~~~
 
-.. [Lichtner1985] Lichtner, P. (1985), Continuum model for simultaneous chemical-reactions and mass-transport in hydrothermal systems, Geochim. Cosmochim. Acta, 49(3), 779–800, doi:10.1016/0016-7037(85)90172-3.
-
-.. [Steefel-Lasaga1994] Steefel, C. I., and A. C. Lasaga (1994), A coupled model for transport of Hydrothermal fluxes of major elements, Juan de Fuca flank 1755 multiple chemical species and kinetic precipitation/dissolution reactions with application to reactive flow in single phase hydrothermal systems, Am. J. Sci., 294, 529–592.
-
-.. [Steefel-MacQuarrie1996] Steefel, C. I., and K. MacQuarrie (1996), Approaches to modeling of reactive transport in porous media, in Reactive Transport In Porous Media, Rev. in Min., vol. 34, edited by P. C. Lichtner, C. I. Steefel, and E. H. Oelkers, pp. 83–129, Min. Soc. Am., Washington, D.C.
-
-.. [Yeh-Tripathi1989] Yeh, G. T., and V. S. Tripathi (1989), A critical evaluation of recent developments in hydrogeochemical transport models of reactive multichemical components, Water Resour. Res., 25, 93–108.
+.. bibliography:: /bib/ascem.bib
+   :filter: docname in docnames
+   :style:  alpha
+   :keyprefix: chem-

@@ -73,14 +73,14 @@ AlquimiaHelper_Structured::AlquimiaHelper_Structured(Amanzi::AmanziChemistry::Ch
 #ifdef _OPENMP
   nthreads = omp_get_max_threads();
 #endif
-  alquimia_material_properties.resize(nthreads);
+  alquimia_properties.resize(nthreads);
   alquimia_state.resize(nthreads);
   alquimia_aux_in.resize(nthreads);
   alquimia_aux_out.resize(nthreads);
 
 
   for (int ithread = 0; ithread < nthreads; ithread++) {
-    engine->InitState(alquimia_material_properties[ithread],
+    engine->InitState(alquimia_properties[ithread],
                       alquimia_state[ithread],
                       alquimia_aux_in[ithread],
                       alquimia_aux_out[ithread]);
@@ -133,7 +133,7 @@ AlquimiaHelper_Structured::~AlquimiaHelper_Structured()
   nthreads = omp_get_max_threads();
 #endif
   for (int ithread = 0; ithread < nthreads; ithread++) {
-    engine->FreeState(alquimia_material_properties[ithread],
+    engine->FreeState(alquimia_properties[ithread],
                       alquimia_state[ithread],
                       alquimia_aux_in[ithread],
                       alquimia_aux_out[ithread]);
@@ -162,7 +162,7 @@ AlquimiaHelper_Structured::BL_to_Alquimia(const FArrayBox& aqueous_saturation,  
                                           const IntVect&               iv,
                                           Real                         water_density,
                                           Real                         temperature,
-                                          AlquimiaMaterialProperties&  mat_props,
+                                          AlquimiaProperties&  mat_props,
                                           AlquimiaState&               chem_state,
                                           AlquimiaAuxiliaryData&       aux_input,
                                           AlquimiaAuxiliaryOutputData& aux_output)
@@ -331,7 +331,7 @@ AlquimiaHelper_Structured::EnforceCondition(FArrayBox& primary_species_mobile,  
       BL_to_Alquimia(dumS,sDumS,dumP,sDumP,dumPhi,sDumPhi,dumV,sDumV,
                      primary_species_mobile,sPrimMob,
 		     auxiliary_data,iv,water_density,temperature,
-                     alquimia_material_properties[threadid],
+                     alquimia_properties[threadid],
                      alquimia_state[threadid],
                      alquimia_aux_in[threadid],
                      alquimia_aux_out[threadid]);
@@ -342,14 +342,14 @@ AlquimiaHelper_Structured::EnforceCondition(FArrayBox& primary_species_mobile,  
 	}
       }
       engine->EnforceCondition(condition_name,time,
-                               alquimia_material_properties[threadid],
+                               alquimia_properties[threadid],
                                alquimia_state[threadid],
                                alquimia_aux_in[threadid],
                                alquimia_aux_out[threadid]);
 
       Alquimia_to_BL(primary_species_mobile,   sPrimMob,
                      auxiliary_data, iv,
-                     alquimia_material_properties[threadid],
+                     alquimia_properties[threadid],
                      alquimia_state[threadid],
                      alquimia_aux_in[threadid],
                      alquimia_aux_out[threadid]);
@@ -393,7 +393,7 @@ AlquimiaHelper_Structured::Advance(const FArrayBox& aqueous_saturation,       in
                      volume,                   sVol,
                      primary_species_mobile,   sPrimMob,
                      aux_data, iv, water_density, temperature,
-                     alquimia_material_properties[threadid],
+                     alquimia_properties[threadid],
                      alquimia_state[threadid],
                      alquimia_aux_in[threadid],
                      alquimia_aux_out[threadid]);
@@ -402,21 +402,21 @@ AlquimiaHelper_Structured::Advance(const FArrayBox& aqueous_saturation,       in
 	std::cout << "************* GOING INTO engine->Advance: " << std::endl;
 	std::cout << "iv: " << iv << std::endl;
 	std::cout << "dt: " << dt << std::endl;
-	DumpAlquimiaStructures(std::cout,alquimia_material_properties[threadid],
+	DumpAlquimiaStructures(std::cout,alquimia_properties[threadid],
 			       alquimia_state[threadid],
 			       alquimia_aux_in[threadid],
 			       alquimia_aux_out[threadid]);
       }
 
       int newton_iters;
-      engine->Advance(dt,alquimia_material_properties[threadid],alquimia_state[threadid],
+      engine->Advance(dt,alquimia_properties[threadid],alquimia_state[threadid],
                       alquimia_aux_in[threadid],alquimia_aux_out[threadid],newton_iters);
 
       if (ParallelDescriptor::IOProcessor() && chem_verbose>0) {
 	std::cout << "************* COMING OUT OF engine->Advance: " << std::endl;
 	std::cout << "iv: " << iv << std::endl;
 	std::cout << "dt: " << dt << std::endl;
-	DumpAlquimiaStructures(std::cout,alquimia_material_properties[threadid],
+	DumpAlquimiaStructures(std::cout,alquimia_properties[threadid],
 			       alquimia_state[threadid],
 			       alquimia_aux_in[threadid],
 			       alquimia_aux_out[threadid]);
@@ -424,7 +424,7 @@ AlquimiaHelper_Structured::Advance(const FArrayBox& aqueous_saturation,       in
 
       Alquimia_to_BL(primary_species_mobile,   sPrimMob,
                      aux_data, iv,
-                     alquimia_material_properties[threadid],
+                     alquimia_properties[threadid],
                      alquimia_state[threadid],
                      alquimia_aux_in[threadid],
                      alquimia_aux_out[threadid]);
@@ -438,7 +438,7 @@ void
 AlquimiaHelper_Structured::Alquimia_to_BL(FArrayBox& primary_species_mobile,   int sPrimMob,
                                           FArrayBox&                   aux_data,
                                           const IntVect&               iv,
-                                          AlquimiaMaterialProperties&  mat_props,
+                                          AlquimiaProperties&  mat_props,
                                           AlquimiaState&               chem_state,
                                           AlquimiaAuxiliaryData&       aux_input,
                                           AlquimiaAuxiliaryOutputData& aux_output)
@@ -541,7 +541,7 @@ AlquimiaHelper_Structured::Alquimia_to_BL(FArrayBox& primary_species_mobile,   i
 
 void
 AlquimiaHelper_Structured::DumpAlquimiaStructures(std::ostream&                os,
-						  AlquimiaMaterialProperties&  mat_props,
+						  AlquimiaProperties&  mat_props,
 						  AlquimiaState&               chem_state,
 						  AlquimiaAuxiliaryData&       aux_input,
 						  AlquimiaAuxiliaryOutputData& aux_output)

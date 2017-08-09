@@ -351,8 +351,24 @@ void
 MeshLogical::cell_get_face_adj_cells(const Entity_ID cellid,
                                      const Parallel_type ptype,
                                      Entity_ID_List *fadj_cellids) const {
-  Errors::Message mesg("Not implemented."); // this could be implemented, just not sure we need it yet. --etc
-  Exceptions::amanzi_throw(mesg);
+  fadj_cellids->clear();
+  Entity_ID_List faces;
+  cell_get_faces_and_bisectors(cellid, &faces, NULL, false);
+  fadj_cellids->reserve(faces.size());
+  for (auto f : faces) {
+    Entity_ID_List cells;
+    face_get_cells(f, ptype, &cells);
+    if (cells[0] == cellid) {
+      if (cells.size() == 2) {
+        fadj_cellids->emplace_back(cells[1]);
+      }
+    } else if (cells.size() == 2 && cells[1] == cellid) {
+      fadj_cellids->emplace_back(cells[0]);
+    } else {
+      Errors::Message mesg("Topological issue in MeshLogical.");
+      Exceptions::amanzi_throw(mesg);
+    }
+  }
 }
 
 
@@ -488,7 +504,7 @@ MeshLogical::get_set_entities(const Set_ID setid,
 
   Teuchos::RCP<const AmanziGeometry::Region> rgn = geometric_model_->FindRegion(setid);
 
-  if (rgn->name() == "All" || rgn->name() == "all" || rgn->name() == "ALL") {
+  if (rgn->name() == "ENTIRE_MESH_REGION") {
     int nent = num_entities(kind, ptype);
     entids->resize(num_entities(kind, ptype));
     for (int i=0; i!=nent; ++i) {
@@ -625,6 +641,7 @@ int
 MeshLogical::build_columns_() const {
   Errors::Message mesg("No columns are buildable in MeshLogical.");
   Exceptions::amanzi_throw(mesg);
+  return -1;
 }
 
 
@@ -646,12 +663,14 @@ int
 MeshLogical::compute_cell_geometric_quantities_() const {
   Errors::Message mesg("DEVELOPER ERROR: cache should be created in finalize()");
   Exceptions::amanzi_throw(mesg);
+  return -1;
 }
 
 int
 MeshLogical::compute_face_geometric_quantities_() const {
   Errors::Message mesg("DEVELOPER ERROR: cache should be created in finalize()");
   Exceptions::amanzi_throw(mesg);
+  return -1;
 }
 
 }  // namespace AmanziMesh

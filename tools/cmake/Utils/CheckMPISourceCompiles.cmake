@@ -46,8 +46,8 @@ function(CHECK_MPI_SOURCE_COMPILES FLAG)
         #include \"mpi.h\"
         int main(int argc, char *argv[])
         {
-          MPI::Init(argc,argv);
-          MPI::Finalize();
+          MPI_Init(&argc,&argv);
+          MPI_Finalize();
           return 0;
         }")
     

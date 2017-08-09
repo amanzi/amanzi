@@ -28,9 +28,9 @@ For details on this test, see :ref:`about_farea`.
 Background
 ----------
 
-This problem intends to demonstrate the ASCEM capability of modeling complex geochemical reactions and contaminant transport. The model is based on the one developed at the Savannah River Site F-Area for predicting the uranium and acidic plume migration in the groundwater [Bea2013]_. 
+This problem intends to demonstrate the ASCEM capability of modeling complex geochemical reactions and contaminant transport. The model is based on the one developed at the Savannah River Site F-Area for predicting the uranium and acidic plume migration in the groundwater :cite:`fa-Bea_etal_UVI-plume_2013`. 
 
-The SRS is located in south-central South Carolina, near Aiken, approximately 100 miles from the Atlantic Coast. The SRS F-Area seepage basins received approximately 7.1 billion litters of acidic, low-level waste solutions from 1950 through 1989 [Millings2012]_. After the basins were closed and capped in 1991, the site has been under active remediation, including the pump-and-treat and hybrid funnel-and-gate system. 
+The SRS is located in south-central South Carolina, near Aiken, approximately 100 miles from the Atlantic Coast. The SRS F-Area seepage basins received approximately 7.1 billion litters of acidic, low-level waste solutions from 1950 through 1989 :cite:`fa-Millings_SRNL_2012`. After the basins were closed and capped in 1991, the site has been under active remediation, including the pump-and-treat and hybrid funnel-and-gate system. 
 
 The highly acidic plume including many radionuclides (e.g., uranium isotopes, strontium-90, iodine-129, technetium, and tritium) is developed from the basins to downgradient in groundwater. The concentration of U-238 and pH are of the current main interest at the site. Understanding and predicting the plume mobility and its fate requires modeling complex geochemistry, since pH is influenced by mineral dissolution and precipitation, and the uranium mobility is greatly influenced by pH.
 
@@ -45,7 +45,7 @@ See the :doc:`../tracer_1d/amanzi_u-1d-tracer` example.
 Geochemistry
 ~~~~~~~~~~~~
 
-The primary geochemical system consists of 13 reactive chemical components and 8 minerals [Bea2013]_. A detailed list of reactions and geochemical parameters is included in the tables below. Further detail can be found in [Freshley2012]_.
+The primary geochemical system consists of 13 reactive chemical components and 8 minerals :cite:`fa-Bea_etal_UVI-plume_2013`. A detailed list of reactions and geochemical parameters is included in the tables below. Further detail can be found in :cite:`fa-ASCEM_SITE_Phase_II`.
 
 The geochemical processes include:
 
@@ -54,7 +54,7 @@ The geochemical processes include:
 * Equilibrium ion exchange (Table 2)
 * Kinetically controlled mineral dissolution and precipitation (Table 3)
 
-The sorption model is based on a single-site equilibrium, pH-dependent surface complexation model, which provides the principal control on the uranium migration rate. The nonelectrostatic model used here is applied to the bulk sediment rather than to specific pure mineral phases that serve as sorbents in the conventional electrostatic model. Additionally, the nonelectrostatic model does not assume the presence of well-defined mineral phases [Davis1998]_. An ion exchange model includes reactions involving the major cations (:math:`Ca^{2+}`, :math:`Na{+}`, and :math:`Al^{3+}`, along with :math:`H^+`) and provides primary pH buffering along with the mineral reactions.
+The sorption model is based on a single-site equilibrium, pH-dependent surface complexation model, which provides the principal control on the uranium migration rate. The nonelectrostatic model used here is applied to the bulk sediment rather than to specific pure mineral phases that serve as sorbents in the conventional electrostatic model. Additionally, the nonelectrostatic model does not assume the presence of well-defined mineral phases :cite:`fa-Davis_1998`. An ion exchange model includes reactions involving the major cations (:math:`Ca^{2+}`, :math:`Na{+}`, and :math:`Al^{3+}`, along with :math:`H^+`) and provides primary pH buffering along with the mineral reactions.
 
 **Table 1. Aqueous complexes.**
 
@@ -161,26 +161,25 @@ The sorption model is based on a single-site equilibrium, pH-dependent surface c
 
 **Table 3. Mineral dissolution/precipitation reactions**
 
-+----------------------------------------------------------------------+---------------------+----------------------------------+
-| Reaction                                                             | logK (25ºC)         |  Reference                       |
-+======================================================================+=====================+==================================+
-| :math:`\ce{Quartz <=> SiO2(aq)}`                                     | -3.7501             | [SNL2007]_, [Guillaumont2003]_   |
-+----------------------------------------------------------------------+---------------------+----------------------------------+
-| :math:`\ce{Kaolinite <=> 5 H2O -6 H^+ +2 Al^{3+} + 2 SiO2(aq)}`      |  7.57               | [YangSteefel2008]_               |
-+----------------------------------------------------------------------+---------------------+----------------------------------+
-| :math:`\ce{Goethite <=> 2 H2O -3 H^+ + Fe^{3+}}`                     |  0.1758             |                                  |
-+----------------------------------------------------------------------+---------------------+----------------------------------+
-| :math:`\ce{Schoepite <=> 3 H2O -2 H^+ + UO2^{2+}}`                   |  4.8443             | [SNL2007]_, [Guillaumont2003]_   |
-+----------------------------------------------------------------------+---------------------+----------------------------------+
-| :math:`\ce{Gibbsite <=> 3 H2O -3 H^+ + Al^{3+}}`                     |  7.738              | [Pokrovskii-Helgeson1995]_       |
-+----------------------------------------------------------------------+---------------------+----------------------------------+ 
-| :math:`\ce{Jurbanite <=> 6 H2O -1 H^+ + Al^{3+} + SO4^{2-}}`         | -3.8                | [Nordstrom1982]_                 |
-+----------------------------------------------------------------------+---------------------+----------------------------------+ 
-| :math:`\ce{Basaluminite <=> 15 H2O -10 H^+ + 4 Al^{3+} + SO4^{2-}}`  | 22.251              | [Nordstrom1982]_                 |
-+----------------------------------------------------------------------+---------------------+----------------------------------+ 
-| :math:`\ce{Opal <=>  SiO2(aq)}`                                      | -3.005              | [Sonnenthal-Spycher2000]_        |
-+----------------------------------------------------------------------+---------------------+----------------------------------+ 
-
++----------------------------------------------------------------------+---------------------+--------------------------------------------------------------------+
+| Reaction                                                             | logK (25ºC)         |  Reference                                                         |
++======================================================================+=====================+====================================================================+
+| :math:`\ce{Quartz <=> SiO2(aq)}`                                     | -3.7501             | :cite:`fa-Wolery_thermo-data_2007,fa-Guillaumont_chem-thermo_2003` |
++----------------------------------------------------------------------+---------------------+--------------------------------------------------------------------+
+| :math:`\ce{Kaolinite <=> 5 H2O -6 H^+ +2 Al^{3+} + 2 SiO2(aq)}`      |  7.57               | :cite:`fa-Yang_Steefel_kaolinite_2008`                             |
++----------------------------------------------------------------------+---------------------+--------------------------------------------------------------------+
+| :math:`\ce{Goethite <=> 2 H2O -3 H^+ + Fe^{3+}}`                     |  0.1758             |                                                                    |
++----------------------------------------------------------------------+---------------------+--------------------------------------------------------------------+
+| :math:`\ce{Schoepite <=> 3 H2O -2 H^+ + UO2^{2+}}`                   |  4.8443             | :cite:`fa-Wolery_thermo-data_2007,fa-Guillaumont_chem-thermo_2003` |
++----------------------------------------------------------------------+---------------------+--------------------------------------------------------------------+
+| :math:`\ce{Gibbsite <=> 3 H2O -3 H^+ + Al^{3+}}`                     |  7.738              | :cite:`fa-Pokrovskii_thermo-props_1995`                            |
++----------------------------------------------------------------------+---------------------+--------------------------------------------------------------------+ 
+| :math:`\ce{Jurbanite <=> 6 H2O -1 H^+ + Al^{3+} + SO4^{2-}}`         | -3.8                | :cite:`fa-Nordstrom_oxidation_1982`                                |
++----------------------------------------------------------------------+---------------------+--------------------------------------------------------------------+ 
+| :math:`\ce{Basaluminite <=> 15 H2O -10 H^+ + 4 Al^{3+} + SO4^{2-}}`  | 22.251              | :cite:`fa-Nordstrom_oxidation_1982`                                |
++----------------------------------------------------------------------+---------------------+--------------------------------------------------------------------+ 
+| :math:`\ce{Opal <=>  SiO2(aq)}`                                      | -3.005              | :cite:`fa-Sonnenthal_YuccaMtn_2000`                                |
++----------------------------------------------------------------------+---------------------+--------------------------------------------------------------------+ 
 
 Problem Specification
 ---------------------
@@ -291,33 +290,17 @@ Results and Comparison
 Simulation results
 ~~~~~~~~~~~~~~~~~~
 
-.. plot:: prototype/chemistry/farea_1d/farea_1d.py
+.. plot:: farea_1d.py
 
 ..   :align: left
 
 References
 ----------
 
-.. [Bea2013] Sergio A. Bea, Haruko Wainwright, Nicolas Spycher, Boris Faybishenko, Susan S. Hubbard, Miles E. Denham (2013) Identifying key controls on the behavior of an acidic-U(VI) plume in the Savannah River Site using reactive transport modeling, Journal of Contaminant Hydrology, 151:34-54. 
-
-.. [Davis1998] Davis, J.A., J.A. Coston, D.B. Kent, and C. C. Fuller (1998). Application of the Surface Complexation Concept to Complex Mineral Assemblages, Environmental Science & Technology, Vo. 32, No. 19, 2820-2828.
-
-.. [Freshley2012] Freshley, M.S. Hubbard, et al. (2012) Advanced Simulation Capability for Environmental Management (ASCEM) Phase II Demonstration. ASCEM-SITE-2012-01; DOI 10.2172/1055500 `link <http://www.osti.gov/bridge/product.biblio.jsp?query_id=1&page=0&osti_id=1055500>`_ 
-
-.. [Guillaumont2003] Guillaumont, R., T. Fanghanel, J. Fuger, I. Grenthe, V. Neck, D.A. Palmer, and M. H. Rand.  (2003)  Update on the Chemical Thermodynamics of Uranium, Neptunium, Plutonium, Americium, and Technetium.  Chemical Thermodynamics 5, OECD Nuclear Energy Agency, etd., Elsevier, Amsterdam.
-
-.. [Pokrovskii-Helgeson1995] Pokrovskii, V.A. and Helgeson, H.C. (1995) Thermodynamic properties of aqueous species and the solubilities of minerals at high pressures and temperatures: the system Al2O3 –H2O–NaCl., Am. J. Sci. 295, 1255–1342.
-
-.. [Millings2012] M.R. Millings, B.B. Looney, M.E. Denham (2012) Geochemical modeling of F Area seepage basin composition and variability. `pdf file <http://sti.srs.gov/fulltext/SRNL-STI-2012-00269.pdf>`_
-
-.. [Nordstrom1982] Nordstrom, D.K. (1982) Aqueous pyrite oxidation and the consequent formation of secondary iron minerals. In Kittrick, J.A., Fanning, D.S. and Hossner, L.R. (eds.): Acid Sulfate Weathering. Soil Sci. Soc. Am. Publ.: 37—56.
-
-.. [SNL2007] SNL (Sandia National Laboratories) (2007)  Qualification of thermodynamic data for geochemical modeling of mineral–water interactions in dilute systems (eds. Wolery T. J. and Jove Colon C. F.), Report ANL-WIS-GS-000003 REV 01. Las Vegas, Nevada: Sandia National Laboratories. ACC: DOC.20070619.0007.
-
-.. [Sonnenthal-Spycher2000] Sonnenthal, E., and Spycher, N.  (2000) Drift-scale coupled processes model, Analysis and model report (AMR) N0120/U0110, Yucca Mountain Nuclear Waste Disposal Project, Lawrence Berkeley National Laboratory, Berkeley, California.
-
-.. [YangSteefel2008] Yang, L. and C.I. Steefel. (2008) Kaolinite dissolution and precipitation kinetics at 22°C and pH 4. Geochimica Cosmochimica Acta 72(1), 99-116. 
-
+.. bibliography:: /bib/ascem.bib
+   :filter: docname in docnames
+   :style:  alpha
+   :keyprefix: fa-
 
 .. _about_farea:
 

@@ -49,7 +49,7 @@ class TreeOperator {
  public:
   TreeOperator() {};
   TreeOperator(Teuchos::RCP<const TreeVectorSpace> tvs);
-  ~TreeOperator() {};
+  virtual ~TreeOperator() = default;
 
   void SetOperatorBlock(int i, int j, const Teuchos::RCP<const Operator>& op);
     

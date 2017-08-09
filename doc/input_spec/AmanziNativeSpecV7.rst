@@ -1130,8 +1130,8 @@ where
 The volumetric volumetric water contents are defined as
 
 .. math::
-  \theta_f = \phi_f\, \eta_l\, s_{lf},\quad
-  \theta_m = \phi_m\, \eta_l\, s_{lm},
+  \theta_f = \phi_f\, \eta_l\, s_{lf},\quad
+  \theta_m = \phi_m\, \eta_l\, s_{lm},
 
 where saturations :math:`s_{lf}` and :math:`s_{lm}` may use different capillary 
 pressure - saturation models.

@@ -8,7 +8,7 @@ For one-dimensional, steady-state, flow through a saturated porous medium with c
 the general governing differential equation expressing mass conservation and Darcy's law becomes simply
 
 	.. math:: \frac{d^2h}{dx^2} = 0
-		:label: ode
+		:label: ode_materials_serial
 
 where the total head (:math:`h`, [L]) is the sum of pressure head (:math:`P/\rho g`, [L]) 
 and elevation (:math:`z`, [L])
@@ -16,16 +16,16 @@ and elevation (:math:`z`, [L])
 	.. math:: h = \frac{P}{\rho g}+z
 
 :math:`\rho` = density [M/L\ :sup:`3`\ ], :math:`g` = gravitational acceleration [L/T\ :sup:`2`\ ], 
-and :math:`x` = horizontal distance [L]. The ordinary differential equation :eq:`ode` is easily solved by 
+and :math:`x` = horizontal distance [L]. The ordinary differential equation :eq:`ode_materials_serial` is easily solved by 
 direct integration as
 
 	.. math:: h = C_1 x + C_2
-		:label: generalSoln
+		:label: generalSoln_materials_serial
 
 where the integration constants :math:`C_1` and :math:`C_2` depend on the boundary conditions.
 
 For a simple heterogeneous porous medium composed of two constant-property materials in series, 
-Equation :eq:`generalSoln` can be applied to each subregion separately
+Equation :eq:`generalSoln_materials_serial` can be applied to each subregion separately
 with the interface conditions treated as boundary conditions for the two subregions. To analyze this 
 special case, let the subscripts *1* and *2* denote the subregions adjoining the :math:`x = 0` and :math:`x = L` 
 boundaries respectively, and the subscript *i* denote the interface.
@@ -39,14 +39,14 @@ When hydraulic head is prescribed at both boundaries as
 	.. math:: 
 		h(0) &= h_0\\
 		h(L) &= h_L
-		:label: BCs
+		:label: bc_materials_serial
 
-the analytic solutions :eq:`generalSoln` for hydraulic head in each subregion become
+the analytic solutions :eq:`generalSoln_materials_serial` for hydraulic head in each subregion become
 
 	.. math:: 
 		h_1 &= (h_i - h_0) \frac{x}{L_i} + h_0\\
 		h_2 &= (h_L - h_i) \frac{x-L_i}{L-L_i} + h_i
-		:label: specificSolns
+		:label: specificSolns_materials_serial
 
 where :math:`L` = domain length [L], :math:`L_i` = position of interface [L], and :math:`h_i` 
 is yet to be defined. 
@@ -54,37 +54,36 @@ The volumetric flowrate per unit area through a porous medium, or Darcy velocity
 is defined by Darcy's law as
 
 	.. math:: U = -\frac{k}{\mu\rho g}\frac{dh}{dx} = -K\frac{dh}{dx}
-		:label: DarcyVel
+		:label: DarcyVel_materials_serial
 
 where :math:`k` = intrinsic permeability [L\ :sup:`2`\ ],
 :math:`\mu` = viscosity [M/LT], and 
 :math:`K` = hydraulic conductivity [L/T]. 
-Applying Equation :eq:`DarcyVel` to each subregion using Equations :eq:`specificSolns` yields
+Applying Equation :eq:`DarcyVel_materials_serial` to each subregion using Equations :eq:`specificSolns_materials_serial` yields
 
 	.. math:: 
 		U_1 &= K_1\frac{h_0 - h_i}{L_i}\\
 		U_2 &= K_2\frac{h_i - h_L}{L-L_i}\\
-		:label: specificDarcyVels
+		:label: specificDarcyVels_materials_serial
 
 Mass conservation at the interface implies :math:`U_1 = U_2`, which after some algebra leads to
 an expression for hydraulic head at the interface:
 
 	.. math:: h_i = \frac{K_1(L-L_i)h_0+K_2L_ih_L}{K_1(L-L_i)+K_2L_i}
-		:label: interfaceHead
+		:label: interfaceHead_materials_serial
 
-Equations :eq:`specificSolns` and :eq:`interfaceHead` collectively define hydraulic head across the
-domain, and Equation :eq:`specificDarcyVels` or :eq:`interfaceHead` the Darcy velocity. One can also
+Equations :eq:`specificSolns_materials_serial` and :eq:`interfaceHead_materials_serial` collectively define hydraulic head across the domain, and Equation :eq:`specificDarcyVels_materials_serial` or :eq:`interfaceHead_materials_serial` the Darcy velocity. One can also
 show that
 
 	.. math:: 
 		U = K_h\frac{h_0 - h_L}{L}
-		:label: domainDarcyVel
+		:label: domainDarcyVel_materials_serial
 
 where :math:`K_h` is the harmonic mean
 
 	.. math:: 
 		K_h = \frac{K_1K_2L}{K_1(L-L_i) + K_2L_i}
-		:label: harmonicMean
+		:label: harmonicMean_materials_serial
 
 
 Amanzi verification test problem
@@ -119,16 +118,16 @@ To generate numerical results the following specifications are considered:
 For these input specifications, Amanzi simulation output is expected to closely match
 
 	.. math:: h_i = 19.090909m
-		:label: expectedH_i
+		:label: expectedH_i_materials_serial
 
-and exhibit a linear head profile within each subregion following Equations :eq:`specificSolns`.
-The harmonic mean is :math:`1.818181818	m/d` from Equation :eq:`harmonicMean` and thus the 
+and exhibit a linear head profile within each subregion following Equations :eq:`specificSolns_materials_serial`.
+The harmonic mean is :math:`1.818181818	m/d` from Equation :eq:`harmonicMean_materials_serial` and thus the 
 expected Darcy velocity is 
 
 	.. math:: U = 0.0181818 m/d 
-		:label: expectedU
+		:label: expectedU_materials_serial
 
-from Equation :eq:`domainDarcyVel`.
+from Equation :eq:`domainDarcyVel_materials_serial`.
 
 Amanzi verification test results
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
