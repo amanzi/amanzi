@@ -9,7 +9,8 @@
 
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 
-  Operations with polynomials in 2D and 3D.
+  Operations with polynomials. This includes three major classes: 
+  Iterator, Monomial and Polynomial.
 */
 
 #ifndef AMANZI_WHETSTONE_POLYNOMIAL_HH_
@@ -32,17 +33,21 @@ class Iterator {
   Iterator(int d) : d_(d) {};
   ~Iterator() {};
 
-  Iterator& begin() {
-    k_ = 0;
+  // set iterator to the monomials group of order k0
+  Iterator& begin(int k0 = 0) {
+    k_ = k0;
     m_ = 0;
-    multi_index_[0] = 0;
+    multi_index_[0] = k0;
     multi_index_[1] = 0;
     multi_index_[2] = 0;
 
     return *this;
   }
 
-  Iterator& operator++() {  // prefix only
+  // Move iterator either to the next monomial in the group or
+  // to the begining of the next group of monomials.
+  // Only prefix version of this operator is used in the code.
+  Iterator& operator++() {
     if (d_ == 2) {
       if (multi_index_[0] == 0) {
         k_++;  // next group of monomials
@@ -76,6 +81,9 @@ class Iterator {
     return *this;
   }
 
+  // One way to terminate a for-loop is to capture the moment when
+  // the iterator moved to the next group of monomials. Returning
+  // the current monomial order is not ideal solution, but robust.
   int end() { return k_; }
 
   // access
@@ -98,7 +106,7 @@ class Iterator {
 class Monomial {
  public:
   Monomial() : d_(0), order_(-1) {};
-  Monomial(int d, int order) : d_(d), order_(order) {
+  Monomial(int d, int order) : d_(d), order_(order), it_(d) {
     int nk = (order_ == 0) ? 1 : d_;
     for (int i = 1; i < order_; ++i) {
       nk *= d_ + i;
@@ -107,6 +115,10 @@ class Monomial {
     coefs_.resize(nk, 0.0);
   }
   ~Monomial() {};
+
+  // iterators
+  Iterator& begin() const { return it_.begin(order_); }
+  int end() const { return order_; }
 
   // access
   int order() const { return order_; }
@@ -121,6 +133,9 @@ class Monomial {
   const double& operator()(int i) const { return coefs_[i]; }
 
   friend class Polynomial;
+
+ protected:
+  mutable Iterator it_; 
 
  private:
   int d_, order_;

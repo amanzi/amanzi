@@ -70,11 +70,6 @@ class DG_Modal {
   void IntegrateMonomialsEdge_(
       const AmanziGeometry::Point& x1, const AmanziGeometry::Point& x2,
       double factor, Monomial& monomials);
-  double IntegrateMonomialsEdge_(
-      const AmanziGeometry::Point& x1, const AmanziGeometry::Point& x2,
-      int ix, int iy, int jx, int jy,
-      const std::vector<double>& factors, 
-      const AmanziGeometry::Point& xc1, const AmanziGeometry::Point& xc2);
 
  private:
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;

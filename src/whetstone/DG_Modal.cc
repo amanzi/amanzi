@@ -128,12 +128,15 @@ int DG_Modal::MassMatrix(int c, const Polynomial& K, DenseMatrix& A)
 ****************************************************************** */
 int DG_Modal::AdvectionMatrix(int f, const Polynomial& un, DenseMatrix& A)
 {
-  AmanziMesh::Entity_ID_List cells, nodes;
-
+  AmanziMesh::Entity_ID_List cells;
   mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
   int ncells = cells.size();
 
-  A.Reshape(ncells, ncells);  // hack
+  Polynomial poly(d_, order_);
+  int size = poly.size();
+
+  int nrows = ncells * size;
+  A.Reshape(nrows, nrows);
   A.PutScalar(0.0);
 
   // identify downwind cell
@@ -160,7 +163,7 @@ int DG_Modal::AdvectionMatrix(int f, const Polynomial& un, DenseMatrix& A)
 
 /* ******************************************************************
 * Integrate all specified monomials in cell c.
-* The cell must be star-shape w.r.t. to its centroid.
+* The origin for all monomials is the cell centroid. 
 ****************************************************************** */
 void DG_Modal::IntegrateMonomialsCell_(int c, Monomial& monomials)
 {
@@ -216,56 +219,24 @@ void DG_Modal::IntegrateMonomialsEdge_(
   AmanziGeometry::Point xm(d_);
   auto& coefs = monomials.coefs();
 
-  if (d_ == 2) {
-    int m = k / 2;  // calculate quadrature rule
+  // minimal quadrature rule
+  int m = k / 2;
 
-    for (int i = 0; i <= k; ++i) {
-      for (int n = 0; n <= m; ++n) { 
-        xm = x1 * q1d_points[m][n] + x2 * (1.0 - q1d_points[m][n]);
-        double a1 = std::pow(xm[0], k - i) * std::pow(xm[1], i);
-        coefs[i] += factor * a1 * q1d_weights[m][n];      
-      }
-    }
-  }
-}
-
-
-/* ******************************************************************
-* Integrate two monomials of order k on edge via quadrature rules.
-****************************************************************** */
-double DG_Modal::IntegrateMonomialsEdge_(
-    const AmanziGeometry::Point& x1, const AmanziGeometry::Point& x2,
-    int ix, int iy, int jx, int jy, 
-    const std::vector<double>& factors, 
-    const AmanziGeometry::Point& xc1, const AmanziGeometry::Point& xc2)
-{
-  double a1, a2, a3, tmp(0.0); 
-  AmanziGeometry::Point xm(d_), ym(d_), xe((x1 + x2) /2);
-
-  if (d_ == 2) {
-    int uk(std::pow(2 * factors.size(), 0.5) - 1);
-    int m((ix + iy + jx + jy + uk) / 2);  // calculate quadrature rule
+  for (auto it = monomials.begin(); it.end() <= k; ++it) {
+    const int* idx = it.multi_index();
+    int l = it.MonomialPosition();
 
     for (int n = 0; n <= m; ++n) { 
       xm = x1 * q1d_points[m][n] + x2 * (1.0 - q1d_points[m][n]);
 
-      a3 = factors[0];
-      if (uk > 0) {  // FIXME
-        ym = xm - xe;  
-        a3 += factors[1] * ym[0] + factors[2] * ym[1];
-      }      
+      double a1(factor);
+      for (int i = 0; i < d_; ++i) {
+        a1 *= std::pow(xm[i], idx[i]);
+      }
 
-      ym = xm - xc1;
-      a1 = std::pow(ym[0], ix) * std::pow(ym[1], iy);
-
-      xm -= xc2;
-      a2 = std::pow(xm[0], jx) * std::pow(xm[1], jy);
-
-      tmp += a1 * a2 * a3 * q1d_weights[m][n];      
+      coefs[l] += a1 * q1d_weights[m][n];      
     }
   }
-
-  return tmp;
 }
 
 }  // namespace WhetStone
