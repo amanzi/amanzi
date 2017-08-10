@@ -43,7 +43,7 @@ void MeshMaps_FEM::JacobianCellValue(
 
 /* ******************************************************************
 * Calculate determinant of the Jacobian at time t.
-* NOTE: We assume that cell c is a parallepiped.
+* NOTE: We assume that cell c is a parallepiped on mesh 0.
 ****************************************************************** */
 void MeshMaps_FEM::JacobianDet(
     int c, double t, const std::vector<VectorPolynomial>& vf, Polynomial& vc) const

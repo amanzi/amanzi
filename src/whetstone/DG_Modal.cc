@@ -128,12 +128,12 @@ int DG_Modal::MassMatrix(int c, const Polynomial& K, DenseMatrix& A)
 ****************************************************************** */
 int DG_Modal::AdvectionMatrix(int f, const Polynomial& un, DenseMatrix& A)
 {
-  AmanziMesh::Entity_ID_List cells;
+  AmanziMesh::Entity_ID_List cells, nodes;
   mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
   int ncells = cells.size();
 
-  Polynomial poly(d_, order_);
-  int size = poly.size();
+  Polynomial poly0(d_, order_), poly1(d_, order_);
+  int size = poly0.size();
 
   int nrows = ncells * size;
   A.Reshape(nrows, nrows);
@@ -145,25 +145,68 @@ int DG_Modal::AdvectionMatrix(int f, const Polynomial& un, DenseMatrix& A)
 
   int dir, id(0); 
   mesh_->face_normal(f, false, cells[0], &dir);
-  if (vel * dir > 0.0) {
+  double vel0 = vel * dir;
+  if (vel0 > 0.0) {
     if (ncells == 1) return 0;
     id = 1;
+  } else {
+    dir = -dir;
+  }
+  int col(id * size);
+  int row(size - col);
+
+  // integrate traces of polynomials on face f
+  mesh_->face_get_nodes(f, &nodes);
+
+  AmanziGeometry::Point x1(d_), x2(d_);
+  mesh_->node_get_coordinates(nodes[0], &x1);
+  mesh_->node_get_coordinates(nodes[1], &x2);
+
+  for (auto it = poly0.begin(); it.end() <= poly0.end(); ++it) {
+    const int* idx0 = it.multi_index();
+    int k = poly0.PolynomialPosition(idx0);
+
+    Polynomial p(d_, idx0);
+    p.set_origin(mesh_->cell_centroid(cells[id]));
+
+    for (auto jt = poly1.begin(); jt.end() <= poly1.end(); ++jt) {
+      const int* idx1 = jt.multi_index();
+      int l = poly1.PolynomialPosition(idx1);
+
+      Polynomial q(d_, idx1);
+      q.set_origin(mesh_->cell_centroid(cells[id]));
+
+      std::vector<Polynomial> polys;
+      polys.push_back(un);
+      polys.push_back(p);
+      polys.push_back(q);
+
+      double vel0 = IntegratePolynomialsEdge_(x1, x2, polys);
+      vel0 /= mesh_->face_area(f);
+      vel0 *= dir;  
+
+      if (ncells == 1) {
+        A(k, l) = vel0;
+      } else {
+        polys[2].set_origin(mesh_->cell_centroid(cells[1 - id]));
+
+        double vel1 = IntegratePolynomialsEdge_(x1, x2, polys);
+        vel1 /= mesh_->face_area(f);
+        vel1 *= dir;  
+
+        A(row + k, col + l) = vel1;
+        A(col + k, col + l) = -vel0;
+      }
+    }
   }
 
-  // integrate traces from downwind cell
-  double umod = fabs(vel);
-  if (ncells == 1) {
-    A(0, 0) = -umod;
-  } else {
-    A(id, id) = -umod;
-    A(1 - id, id) = umod;
-  }
+  return 0;
 }
 
 
 /* ******************************************************************
-* Integrate all specified monomials in cell c.
-* The origin for all monomials is the cell centroid. 
+* Integrate over cell c a group of non-normalized monomials of the
+* same order centered at the centroid of c.
 ****************************************************************** */
 void DG_Modal::IntegrateMonomialsCell_(int c, Monomial& monomials)
 {
@@ -192,7 +235,7 @@ void DG_Modal::IntegrateMonomialsCell_(int c, Monomial& monomials)
       mesh_->node_get_coordinates(nodes[0], &x1);
       mesh_->node_get_coordinates(nodes[1], &x2);
 
-      x1 -= xc;
+      x1 -= xc;  // simple change of origin
       x2 -= xc;
       IntegrateMonomialsEdge_(x1, x2, tmp, monomials);
     }
@@ -201,25 +244,27 @@ void DG_Modal::IntegrateMonomialsCell_(int c, Monomial& monomials)
 
 
 /* ******************************************************************
-* Integrate all monomials of order k on face.
+* Integrate over face f a group of non-normalized monomials of the
+* same order centered at the centroid of cell c.
 ****************************************************************** */
-void DG_Modal::IntegrateMonomialsFace_(int c, double factor, Monomial& monomials)
+void DG_Modal::IntegrateMonomialsFace_(int f, double factor, Monomial& monomials)
 {
 }
 
 
 /* ******************************************************************
-* Integrate all monomials of order k on edge via quadrature rules.
+* Integrate over edge (x1,x2) a group of non-normalized monomials of
+* the same order centered at zero. 
 ****************************************************************** */
 void DG_Modal::IntegrateMonomialsEdge_(
     const AmanziGeometry::Point& x1, const AmanziGeometry::Point& x2,
     double factor, Monomial& monomials)
 {
-  int k = monomials.order();
   AmanziGeometry::Point xm(d_);
   auto& coefs = monomials.coefs();
 
   // minimal quadrature rule
+  int k = monomials.order();
   int m = k / 2;
 
   for (auto it = monomials.begin(); it.end() <= k; ++it) {
@@ -237,6 +282,38 @@ void DG_Modal::IntegrateMonomialsEdge_(
       coefs[l] += a1 * q1d_weights[m][n];      
     }
   }
+}
+
+
+/* ******************************************************************
+* Integrate over edge (x1,x2) a product of polynomials that may have
+* different origins.
+****************************************************************** */
+double DG_Modal::IntegratePolynomialsEdge_(
+    const AmanziGeometry::Point& x1, const AmanziGeometry::Point& x2,
+    const std::vector<Polynomial>& polys) const
+{
+  // minimal quadrature rule
+  int k(0);
+  for (int i = 0; i < polys.size(); ++i) {
+    k += polys[i].order();
+  }
+  int m = k / 2;
+
+  AmanziGeometry::Point xm(d_);
+
+  double integral(0.0);
+  for (int n = 0; n <= m; ++n) { 
+    xm = x1 * q1d_points[m][n] + x2 * (1.0 - q1d_points[m][n]);
+
+    double a(q1d_weights[m][n]);
+    for (int i = 0; i < polys.size(); ++i) {
+      a *= polys[i].Value(xm);
+    }
+    integral += a;      
+  }
+
+  return integral * norm(x2 - x1);
 }
 
 }  // namespace WhetStone

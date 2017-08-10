@@ -52,7 +52,7 @@ void RemapTests2DExplicit(int order, std::string disc_name,
 
   Epetra_MpiComm comm(MPI_COMM_WORLD);
   int MyPID = comm.MyPID();
-  if (MyPID == 0) std::cout << "\nTest: remap of constant functions in 2D." << std::endl;
+  if (MyPID == 0) std::cout << "\nTest: remap of functions in 2D, order=" << order << std::endl;
 
   // polynomial space
   int nk = (order + 1) * (order + 2) / 2;
@@ -104,10 +104,10 @@ void RemapTests2DExplicit(int order, std::string disc_name,
 
   for (int c = 0; c < ncells_wghost; c++) {
     const AmanziGeometry::Point& xc = mesh0->cell_centroid(c);
-    p1c[0][c] = xc[0] + 2 * xc[1] * xc[1];
+    p1c[0][c] = 1.0; // xc[0] + 2 * xc[1] * xc[1];
     if (nk > 1) {
-      p1c[1][c] = 1.0;
-      p1c[2][c] = 4.0 * xc[1];
+      p1c[1][c] = 0.0;
+      p1c[2][c] = 0.0 * xc[1];
     }
   }
 
@@ -125,7 +125,7 @@ void RemapTests2DExplicit(int order, std::string disc_name,
       .set<std::string>("base", "face")
       .set<Teuchos::Array<std::string> >("location", std::vector<std::string>({"cell"}))
       .set<Teuchos::Array<std::string> >("type", std::vector<std::string>({"scalar"}))
-      .set<Teuchos::Array<int> >("number", std::vector<int>({1}));
+      .set<Teuchos::Array<int> >("number", std::vector<int>({nk}));
 
   plist.sublist("schema range") = plist.sublist("schema domain");
 
@@ -239,7 +239,8 @@ void RemapTests2DExplicit(int order, std::string disc_name,
     const AmanziGeometry::Point& xc = mesh1->cell_centroid(c);
     double area_c = mesh1->cell_volume(c);
 
-    double tmp = (xc[0] + 2 * xc[1] * xc[1]) - p2c[0][c];
+    // double tmp = (xc[0] + 2 * xc[1] * xc[1]) - p2c[0][c];
+    double tmp = 1.0 - p2c[0][c];
     pinf_err = std::max(pinf_err, fabs(tmp));
     pl2_err += tmp * tmp * area_c;
 

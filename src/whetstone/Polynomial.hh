@@ -147,6 +147,7 @@ class Polynomial {
  public:
   Polynomial() : d_(0), order_(-1), size_(0) {};
   Polynomial(int d, int order);
+  Polynomial(int d, const int* multi_index);
 
   // reshape polynomial with erase (optionally) memory
   void Reshape(int d, int order, bool reset = false);
@@ -155,6 +156,9 @@ class Polynomial {
   void Reset();
 
   // change the coordinate system
+  // -- without changing polynomial
+  void set_origin(const AmanziGeometry::Point& origin) { origin_ = origin; }
+  // -- polynomial is recalculated
   void ChangeOrigin(const AmanziGeometry::Point& origin);
 
   // typical operations with polynomials
@@ -205,6 +209,7 @@ class Polynomial {
   void Gradient(std::vector<Polynomial>& grad) const;
 
   // -- multi index defines both monomial order and current monomial
+  //    whenever possible, use faster Iterator's functions 
   int MonomialPosition(const int* multi_index) const;
   int PolynomialPosition(const int* multi_index) const;
 

@@ -65,11 +65,17 @@ class DG_Modal {
   void set_order(int order) { order_ = order; }
 
  private:
+  // specialized routines optimized for non-normalized Taylor basis
   void IntegrateMonomialsCell_(int c, Monomial& monomials);
   void IntegrateMonomialsFace_(int f, double factor, Monomial& monomials);
   void IntegrateMonomialsEdge_(
       const AmanziGeometry::Point& x1, const AmanziGeometry::Point& x2,
       double factor, Monomial& monomials);
+
+  // integration routine for a product of polynomials with different origins
+  double IntegratePolynomialsEdge_(
+      const AmanziGeometry::Point& x1, const AmanziGeometry::Point& x2,
+      const std::vector<Polynomial>& polys) const;
 
  private:
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
