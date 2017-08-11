@@ -283,7 +283,6 @@ void Chemistry_PK::InitializeSorptionSites(Teuchos::RCP<Teuchos::ParameterList> 
   number_ion_exchange_sites_ = 0;
   using_sorption_isotherms_ = false;
 
-  //if (state_list->sublist("initial conditions").isSublist("ion_exchange_sites")) {
   if (state_list->sublist("initial conditions").isSublist(ion_exchange_sites_key_)) {
     // there is currently only at most one site...
     using_sorption_ = true;

@@ -62,7 +62,7 @@ class Chemistry_PK : public PK_Physical {
 
   // -- output of error messages.
   void ErrorAnalysis(int ierr, std::string& internal_msg);
-  Key get_domain_name() {return domain_name_;};
+  Key get_domain_name() { return domain_name_; }
 
  protected:
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
@@ -86,6 +86,7 @@ class Chemistry_PK : public PK_Physical {
 
   int number_free_ion_, number_ion_exchange_sites_;
 
+  // names of state fields 
   Key tcc_key_;
   Key poro_key_;
   Key saturation_key_;
