@@ -74,23 +74,21 @@ Alquimia_PK::Alquimia_PK(Teuchos::ParameterList& pk_tree,
   saturation_key_ = cp_list_->get<std::string>("saturation key", Keys::getKey(domain_name_, "saturation_liquid"));
   fluid_den_key_ = cp_list_->get<std::string>("fluid density key", Keys::getKey(domain_name_, "fluid_density"));
 
-  min_vol_frac_key_ = Keys::getKey(domain_name_,"mineral_volume_fractions");
-  min_ssa_key_ = Keys::getKey(domain_name_,"mineral_specific_surface_area");
-  sorp_sites_key_ = Keys::getKey(domain_name_,"sorption_sites");
-  surf_cfsc_key_ = Keys::getKey(domain_name_,"surface_complex_free_site_conc");
-  total_sorbed_key_ = Keys::getKey(domain_name_,"total_sorbed");
-  isotherm_kd_key_ = Keys::getKey(domain_name_,"isotherm_kd");
-  isotherm_freundlich_n_key_ = Keys::getKey(domain_name_,"isotherm_freundlich_n");
-  isotherm_langmuir_b_key_ = Keys::getKey(domain_name_,"isotherm_langmuir_b");
-  free_ion_species_key_ = Keys::getKey(domain_name_,"free_ion_species");
-  primary_activity_coeff_key_ = Keys::getKey(domain_name_,"primary_activity_coeff");
+  min_vol_frac_key_ = Keys::getKey(domain_name_, "mineral_volume_fractions");
+  min_ssa_key_ = Keys::getKey(domain_name_, "mineral_specific_surface_area");
+  sorp_sites_key_ = Keys::getKey(domain_name_, "sorption_sites");
+  surf_cfsc_key_ = Keys::getKey(domain_name_, "surface_complex_free_site_conc");
+  total_sorbed_key_ = Keys::getKey(domain_name_, "total_sorbed");
+  isotherm_kd_key_ = Keys::getKey(domain_name_, "isotherm_kd");
+  isotherm_freundlich_n_key_ = Keys::getKey(domain_name_, "isotherm_freundlich_n");
+  isotherm_langmuir_b_key_ = Keys::getKey(domain_name_, "isotherm_langmuir_b");
+  free_ion_species_key_ = Keys::getKey(domain_name_, "free_ion_species");
+  primary_activity_coeff_key_ = Keys::getKey(domain_name_, "primary_activity_coeff");
 
-  ion_exchange_sites_key_ = Keys::getKey(domain_name_,"ion_exchange_sites");
-  //ion_exchange_sites_key_ = "ion_exchange_sites";
-
-  ion_exchange_ref_cation_conc_key_ = Keys::getKey(domain_name_,"ion_exchange_ref_cation_conc");
-  secondary_activity_coeff_key_ = Keys::getKey(domain_name_,"secondary_activity_coeff");
-  alquimia_aux_data_key_ = Keys::getKey(domain_name_,"alquimia_aux_data");
+  ion_exchange_sites_key_ = Keys::getKey(domain_name_, "ion_exchange_sites");
+  ion_exchange_ref_cation_conc_key_ = Keys::getKey(domain_name_, "ion_exchange_ref_cation_conc");
+  secondary_activity_coeff_key_ = Keys::getKey(domain_name_, "secondary_activity_coeff");
+  alquimia_aux_data_key_ = Keys::getKey(domain_name_, "alquimia_aux_data");
 
   // collect high-level information about the problem
   Teuchos::RCP<Teuchos::ParameterList> state_list = Teuchos::sublist(glist, "state", true);
@@ -427,7 +425,7 @@ void Alquimia_PK::XMLParameters()
     if (chem_initial_conditions_.empty()) {
       msg << "Alquimia_PK::XMLParameters(): \n";
       msg << "  No geochemical conditions were found in 'State->initial conditions->"
-          <<geochemical_list_key<<"'!\n";
+          << geochemical_list_key << "'!\n";
       Exceptions::amanzi_throw(msg);
     }
   }
@@ -496,25 +494,20 @@ void Alquimia_PK::CopyToAlquimia(int cell,
                                  AlquimiaAuxiliaryData& aux_data)
 {
   const Epetra_MultiVector& porosity = *S_->GetFieldData(poro_key_)->ViewComponent("cell", true);
-  //  double water_density = *S_->GetScalarData(fluid_den_key_);
-  double water_density = 998.2;
 
-  if (S_->GetField(fluid_den_key_)->type() == Amanzi::CONSTANT_SCALAR){
+  double water_density(998.2);
+  if (S_->GetField(fluid_den_key_)->type() == Amanzi::CONSTANT_SCALAR) {
     water_density = *S_->GetScalarData(fluid_den_key_);
-  }else if (S_->GetField(fluid_den_key_)->type() == Amanzi::COMPOSITE_VECTOR_FIELD){
+  } else if (S_->GetField(fluid_den_key_)->type() == Amanzi::COMPOSITE_VECTOR_FIELD) {
     const Epetra_MultiVector& fl_den = *S_->GetFieldData(fluid_den_key_)->ViewComponent("cell", true);
     water_density = fl_den[0][cell]; 
   }
-
-  //  std::cout<<*aqueous_components<<"\n";
 
   state.water_density = water_density;
   state.porosity = porosity[0][cell];
 
   for (int i = 0; i < number_aqueous_components_; i++) {
     state.total_mobile.data[i] = (*aqueous_components)[i][cell];
-    // if (cell==1149)
-    //    std::cout<<"cell "<<cell<<": "<<(*aqueous_components)[i][cell];
     if (using_sorption_) {
       const Epetra_MultiVector& sorbed = *S_->GetFieldData(total_sorbed_key_)->ViewComponent("cell", true);
       state.total_immobile.data[i] = sorbed[i][cell];

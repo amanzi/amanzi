@@ -62,11 +62,10 @@ class Chemistry_PK : public PK_Physical {
 
   // -- output of error messages.
   void ErrorAnalysis(int ierr, std::string& internal_msg);
-  Key get_domain_name() {return domain_name_;};
+  Key get_domain_name() { return domain_name_; }
 
  protected:
   void InitializeField_(std::string fieldname, double default_val);
-
 
  protected:
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
@@ -90,6 +89,7 @@ class Chemistry_PK : public PK_Physical {
 
   int number_free_ion_, number_ion_exchange_sites_;
 
+  // names of state fields 
   Key tcc_key_;
   Key poro_key_;
   Key saturation_key_;
@@ -104,8 +104,6 @@ class Chemistry_PK : public PK_Physical {
   Key ion_exchange_sites_key_, ion_exchange_ref_cation_conc_key_;
   Key secondary_activity_coeff_key_;
   Key alquimia_aux_data_key_;
-  
-
 
 #ifdef ALQUIMIA_ENABLED
   Teuchos::RCP<AmanziChemistry::ChemistryEngine> chem_engine_;
