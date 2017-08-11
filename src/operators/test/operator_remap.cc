@@ -104,10 +104,10 @@ void RemapTests2DExplicit(int order, std::string disc_name,
 
   for (int c = 0; c < ncells_wghost; c++) {
     const AmanziGeometry::Point& xc = mesh0->cell_centroid(c);
-    p1c[0][c] = 1.0; // xc[0] + 2 * xc[1] * xc[1];
+    p1c[0][c] = xc[0] + 2 * xc[1] * xc[1];
     if (nk > 1) {
-      p1c[1][c] = 0.0;
-      p1c[2][c] = 0.0 * xc[1];
+      p1c[1][c] = 1.0;
+      p1c[2][c] = 4.0 * xc[1];
     }
   }
 
@@ -174,6 +174,14 @@ void RemapTests2DExplicit(int order, std::string disc_name,
       WhetStone::Tensor C = J.Cofactors();
       AmanziGeometry::Point cn = C * mesh0->face_normal(f); 
 
+      // calculate j J^{-t} N dA
+      maps.JacobianFaceValue(f, vec_vel[f], xref, J);
+      J *= t + dt;
+      J += 1.0 - (t + dt);
+      C = J.Cofactors();
+      cn += C * mesh0->face_normal(f); 
+      cn /= 2;
+
       // calculate normal velocity component
       (*vel)[f] = vec_vel[f] * cn;
     }
@@ -239,8 +247,8 @@ void RemapTests2DExplicit(int order, std::string disc_name,
     const AmanziGeometry::Point& xc = mesh1->cell_centroid(c);
     double area_c = mesh1->cell_volume(c);
 
-    // double tmp = (xc[0] + 2 * xc[1] * xc[1]) - p2c[0][c];
-    double tmp = 1.0 - p2c[0][c];
+    double tmp = (xc[0] + 2 * xc[1] * xc[1]) - p2c[0][c];
+    // double tmp = 1.0 - p2c[0][c];
     pinf_err = std::max(pinf_err, fabs(tmp));
     pl2_err += tmp * tmp * area_c;
 
@@ -259,7 +267,7 @@ void RemapTests2DExplicit(int order, std::string disc_name,
     const Epetra_MultiVector& p2c = *p2.ViewComponent("cell");
     GMV::open_data_file(*mesh1, (std::string)"operators.gmv");
     GMV::start_data();
-    GMV::write_cell_data(p1c, 0, "remaped");
+    GMV::write_cell_data(p2c, 0, "remaped");
     GMV::close_data_file();
   }
 }

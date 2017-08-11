@@ -161,7 +161,7 @@ void ResistiveMHD2D(double dt, double tend,
     op_acc->SetBCs(bc1, bc1);
     op_acc->AddAccumulationTerm(phi, 1.0, "node");
 
-    // update BCs
+    // update electric boundary conditions
     std::vector<int>& bc_model = bc1->bc_model();
     std::vector<double>& bc_value = bc1->bc_value();
 
