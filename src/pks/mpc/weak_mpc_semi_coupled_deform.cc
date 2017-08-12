@@ -240,7 +240,8 @@ WeakMPCSemiCoupledDeform::CoupledSurfSubsurfColumns(double t_old, double t_new, 
   
   int nfailed_local_sf = nfailed_surf;
   S_->GetMesh("surface")->get_comm()->SumAll(&nfailed_local_sf, &nfailed_surf, 1);
- 
+
+
   if(nfailed_surf > 0){
     flag_star_surf=1;
     return true;
@@ -263,7 +264,6 @@ WeakMPCSemiCoupledDeform::CoupledSurfSubsurfColumns(double t_old, double t_new, 
       if(surfstar_pres[0][c] > 101325.00){
 	std::stringstream name;
 	int id = S_->GetMesh("surface")->cell_map(false).GID(c);
-	
 	name << "surface_column_" << id;
 	Epetra_MultiVector& surf_pres = *S_inter_->GetFieldData(Keys::getKey(name.str(),"pressure"), 
 								S_inter_->GetField(Keys::getKey(name.str(),"pressure"))->owner())->ViewComponent("cell", false);
@@ -305,6 +305,7 @@ WeakMPCSemiCoupledDeform::CoupledSurfSubsurfColumns(double t_old, double t_new, 
   }
   
   //copying temperatures
+  
   for (unsigned c=0; c<size_t; c++){
     std::stringstream name, name_ss;
     int id = S_->GetMesh("surface")->cell_map(false).GID(c);
@@ -324,7 +325,6 @@ WeakMPCSemiCoupledDeform::CoupledSurfSubsurfColumns(double t_old, double t_new, 
 						   S_inter_->GetField(Keys::getKey(name_ss.str(),"temperature"))->owner()).ptr());
   } 
   // NOTE: later do it in the setup --aj
-  
   
   for(int i=1; i<numPKs_; i++){
     Teuchos::RCP<PK> pk_domain =
@@ -470,14 +470,13 @@ WeakMPCSemiCoupledDeform::CoupledSurfSubsurfColumns(double t_old, double t_new, 
     
    
   }
-  
 
   MPI_Barrier(MPI_COMM_WORLD);  
 
   int nfailed_local = nfailed;
   S_->GetMesh("surface")->get_comm()->SumAll(&nfailed_local, &nfailed, 1);
  
-  
+  if (true)
   if (nfailed ==0){ 
     Epetra_MultiVector& surfstar_p = *S_next_->GetFieldData("surface_star-pressure",
 							    S_inter_->GetField("surface_star-pressure")->owner())
@@ -494,12 +493,13 @@ WeakMPCSemiCoupledDeform::CoupledSurfSubsurfColumns(double t_old, double t_new, 
       for (unsigned c=0; c<size_t; c++){
 	std::stringstream name;
 	int id = S_->GetMesh("surface")->cell_map(false).GID(c);
+
 	name << "surface_column_" << id;
 	const Epetra_MultiVector& surf_p = *S_next_->GetFieldData(Keys::getKey(name.str(),"pressure"))
 	  ->ViewComponent("cell", false);
 	const Epetra_MultiVector& surf_wc = *S_next_->GetFieldData(Keys::getKey(name.str(),"water_content"))
 	  ->ViewComponent("cell", false);
-	if(surf_p[0][0] > 101325.00){
+	if(surf_p[0][0] > 101325.0){
 	  surfstar_p[0][c] = surf_p[0][0];
 	  surfstar_wc[0][c] = surf_wc[0][0];
 	}

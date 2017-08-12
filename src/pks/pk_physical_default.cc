@@ -144,7 +144,13 @@ bool PK_Physical_Default::ValidStep() {
 // -----------------------------------------------------------------------------
 void PK_Physical_Default::ChangedSolutionPK(const Teuchos::Ptr<State>& S) {
   assert(S != Teuchos::null);
-  solution_evaluator_->SetFieldAsChanged(S.ptr());
+
+  Teuchos::RCP<FieldEvaluator> fm = S->GetFieldEvaluator(key_);
+
+  Teuchos::RCP<PrimaryVariableFieldEvaluator> solution_evaluator =
+    Teuchos::rcp_dynamic_cast<PrimaryVariableFieldEvaluator>(fm);
+  ASSERT(solution_evaluator != Teuchos::null);
+  solution_evaluator->SetFieldAsChanged(S);
 }
 
 

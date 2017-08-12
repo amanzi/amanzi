@@ -267,7 +267,7 @@ createMeshes(Teuchos::ParameterList& global_list,
       for (int c=0; c!=nc; ++c){
         int id = surface_mesh->cell_map(false).GID(c);
         std::stringstream name_ss, name_sf;
-        name_sf << "column_" << id << "_surface";
+        name_sf << "surface_column_" << id;
         vis_sf_plist.set("file name base", "visdump_"+name_sf.str());
         global_list.set("visualization " +name_sf.str(), vis_sf_plist);
       }
