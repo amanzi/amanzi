@@ -4,11 +4,10 @@
 #  ATS
 #    Constitutive relations for flow
 #
-
 include_directories(${Amanzi_TPL_MSTK_INCLUDE_DIRS})
 add_definitions("-DMSTK_HAVE_MPI")
 
-list(APPEND subdirs wrm porosity overland_conductivity elevation water_content)
+list(APPEND subdirs wrm porosity overland_conductivity elevation water_content sources)
 
 set(sources "")
 
