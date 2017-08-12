@@ -149,23 +149,6 @@ bool IndependentVariableFieldEvaluator::ProvidesKey(Key key) const { return key 
 
 
 // ---------------------------------------------------------------------------
-// Update the value in the state.
-// ---------------------------------------------------------------------------
-void IndependentVariableFieldEvaluator::UpdateField_(const Teuchos::Ptr<State>& S) {
-  // NOTE: IndependentVariableFieldEvaluators own their own data.
-  Teuchos::RCP<CompositeVector> cv = S->GetFieldData(my_key_, my_key_);
-  time_ = S->time();
-  try {
-    func_->Compute(time_, cv.ptr());
-  } catch(Errors::Message& e) {
-    Errors::Message msg;
-    msg << "IndependentVariableFieldEvaluator: \"" << my_key_ << "\": " << e.what();
-    Exceptions::amanzi_throw(msg);
-  }
-}
-
-
-// ---------------------------------------------------------------------------
 // String representation of this evaluator
 // ---------------------------------------------------------------------------
 std::string
