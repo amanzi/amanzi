@@ -30,35 +30,12 @@ Chemistry_PK::Chemistry_PK() :
     using_sorption_isotherms_(false),
     number_aqueous_kinetics_(0) {};
 
+
 /* ******************************************************************
 * Register fields and evaluators with the State
 ******************************************************************* */
 void Chemistry_PK::Setup(const Teuchos::Ptr<State>& S)
 {
-
-  // tcc_key_ = getKey(domain_name_, "total_component_concentration"); 
-  // poro_key_ = cp_list_->get<std::string>("porosity key", getKey(domain_name_, "porosity"));
-  // saturation_key_ = cp_list_->get<std::string>("saturation key", getKey(domain_name_, "saturation_liquid"));
-  // fluid_den_key_ = cp_list_->get<std::string>("fluid density key", getKey(domain_name_, "fluid_density"));
-
-  // min_vol_frac_key_ = getKey(domain_name_,"mineral_volume_fractions");
-  // min_ssa_key_ = getKey(domain_name_,"mineral_specific_surface_area");
-  // sorp_sites_key_ = getKey(domain_name_,"sorption_sites");
-  // surf_cfsc_key_ = getKey(domain_name_,"surface_complex_free_site_conc");
-  // total_sorbed_key_ = getKey(domain_name_,"total_sorbed");
-  // isotherm_kd_key_ = getKey(domain_name_,"isotherm_kd");
-  // isotherm_freundlich_n_key_ = getKey(domain_name_,"isotherm_freundlich_n");
-  // isotherm_langmuir_b_key_ = getKey(domain_name_,"isotherm_langmuir_b");
-  // free_ion_species_key_ = getKey(domain_name_,"free_ion_species");
-  // primary_activity_coeff_key_ = getKey(domain_name_,"primary_activity_coeff");
-
-  // //ion_exchange_sites_key_ = getKey(domain_name_,"ion_exchange_sites");
-  // ion_exchange_sites_key_ = "ion_exchange_sites";
-
-  // ion_exchange_ref_cation_conc_key_ = getKey(domain_name_,"ion_exchange_ref_cation_conc");
-  // secondary_activity_coeff_key_ = getKey(domain_name_,"secondary_activity_coeff");
-  // alquimia_aux_data_key_ = getKey(domain_name_,"alquimia_aux_data");
-
   mesh_ = S->GetMesh(domain_name_);
 
   // Require data from flow
@@ -325,7 +302,6 @@ void Chemistry_PK::InitializeSorptionSites(Teuchos::RCP<Teuchos::ParameterList> 
   number_ion_exchange_sites_ = 0;
   using_sorption_isotherms_ = false;
 
-  //if (state_list->sublist("initial conditions").isSublist("ion_exchange_sites")) {
   if (state_list->sublist("initial conditions").isSublist(ion_exchange_sites_key_)) {
     // there is currently only at most one site...
     using_sorption_ = true;

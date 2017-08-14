@@ -36,7 +36,6 @@ IndependentVariableFieldEvaluator::IndependentVariableFieldEvaluator(Teuchos::Pa
 IndependentVariableFieldEvaluator::IndependentVariableFieldEvaluator(const IndependentVariableFieldEvaluator& other) :
     FieldEvaluator(other),
     my_key_(other.my_key_),
-    func_(other.func_),
     temporally_variable_(other.temporally_variable_),
     time_(other.time_),
     computed_once_(other.computed_once_) {}
@@ -67,9 +66,9 @@ void IndependentVariableFieldEvaluator::EnsureCompatibility(const Teuchos::Ptr<S
   // Require the field and claim ownership.
   S->RequireField(my_key_, my_key_);
   // check plist for vis or checkpointing control
-  bool io_my_key = plist_.get<bool>(std::string("visualize ")+my_key_, true);
+  bool io_my_key = plist_.get<bool>("visualize", true);
   S->GetField(my_key_, my_key_)->set_io_vis(io_my_key);
-  bool checkpoint_my_key = plist_.get<bool>(std::string("checkpoint ")+my_key_, false);
+  bool checkpoint_my_key = plist_.get<bool>("checkpoint", false);
   S->GetField(my_key_, my_key_)->set_io_checkpoint(checkpoint_my_key);
   
 }
@@ -146,23 +145,6 @@ bool IndependentVariableFieldEvaluator::IsDependency(const Teuchos::Ptr<State>& 
 
 inline
 bool IndependentVariableFieldEvaluator::ProvidesKey(Key key) const { return key == my_key_; }
-
-
-// ---------------------------------------------------------------------------
-// Update the value in the state.
-// ---------------------------------------------------------------------------
-void IndependentVariableFieldEvaluator::UpdateField_(const Teuchos::Ptr<State>& S) {
-  // NOTE: IndependentVariableFieldEvaluators own their own data.
-  Teuchos::RCP<CompositeVector> cv = S->GetFieldData(my_key_, my_key_);
-  time_ = S->time();
-  try {
-    func_->Compute(time_, cv.ptr());
-  } catch(Errors::Message& e) {
-    Errors::Message msg;
-    msg << "IndependentVariableFieldEvaluator: \"" << my_key_ << "\": " << e.what();
-    Exceptions::amanzi_throw(msg);
-  }
-}
 
 
 // ---------------------------------------------------------------------------

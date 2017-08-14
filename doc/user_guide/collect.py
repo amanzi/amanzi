@@ -222,6 +222,7 @@ benchmark['chemistry'] = {
                                'calcite_1d',
                                'isotherms_1d',
                                'ion_exchange_1d',
+                               'surface_complexation_1d',
                                'farea_1d',
                              ]
             },
@@ -253,7 +254,7 @@ benchmark['chemistry'] = {
   'surface_complexation_1d': {
     'from_dir' : 'testing/benchmarking/chemistry/surface_complexation_1d',
     'dest_dir' : 'doc/user_guide/benchmarking/chemistry/surface_complexation_1d',
-    'index_entry' : 'surface_complexation_1d/amanzi_u-1d-surface_complexation.rst'
+    'index_entry' : 'surface_complexation_1d/amanzi_u-1d-surface-complexation.rst'
   },
   'farea_1d': {
     'from_dir' : 'testing/benchmarking/chemistry/farea_1d',
@@ -306,6 +307,7 @@ p.add_option('--tutorial', default=False, dest='tutorial', action='store_true')
 p.add_option('--verification', default=False, dest='verification', action='store_true')
 p.add_option('--parallel', default=False, dest='parallel', action='store_true')
 p.add_option('--benchmarking', default=False, dest='benchmarking', action='store_true')
+p.add_option('--run-tests', default=False, dest='run_tests', action='store_true')
 
 (opts,args) = p.parse_args()
 
@@ -394,7 +396,7 @@ print
 
 suffices = {"", "-a", "-b", "-c"}
 
-if ( opts.verification or opts.full_guide ):
+if ( opts.verification or opts.full_guide and opts.run_tests):
 
     for name in verification['index']['index_list']:
         for key in verification[name]['index']['index_list']:
@@ -419,7 +421,7 @@ if ( opts.verification or opts.full_guide ):
                             print("   ERROR: " + el)
             os.chdir(cwd)
 
-if ( opts.benchmarking or opts.full_guide ):
+if ( opts.benchmarking or opts.full_guide and opts.run_tests):
             
     for name in benchmark['index']['index_list']:
         for key in benchmark[name]['index']['index_list']:

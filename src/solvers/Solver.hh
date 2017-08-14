@@ -28,6 +28,8 @@ template<class Vector, class VectorSpace>
 class Solver {
  public:
 
+  virtual ~Solver() = default;
+  
   virtual void Init(const Teuchos::RCP<SolverFnBase<Vector> >& fn,
                     const VectorSpace& map) = 0;
 

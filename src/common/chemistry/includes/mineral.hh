@@ -90,7 +90,6 @@ class Mineral : public SecondarySpecies {
 
  private:
   Verbosity verbosity_;
-  double saturation_index_;
   double molar_volume_;     // [m^3 / moles]
   double specific_surface_area_;  // [m^2 mineral / m^3 bulk]
   double volume_fraction_;   // [m^3 mineral / m^3 bulk]

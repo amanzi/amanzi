@@ -63,7 +63,6 @@ class IndependentVariableFieldEvaluator : public FieldEvaluator {
 
  protected:
   Key my_key_;
-  Teuchos::RCP<Functions::CompositeVectorFunction> func_;
 
   double time_;
   bool temporally_variable_;

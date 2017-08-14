@@ -21,6 +21,7 @@
 #include "PK_DomainFunctionVolumeFraction.hh"
 #include "PK_DomainFunctionWeight.hh"
 #include "PK_DomainFunctionCoupling.hh"
+#include "PK_DomainFunctionSubgrid.hh"
 
 namespace Amanzi {
 
@@ -99,6 +100,12 @@ PK_DomainFunctionFactory<FunctionBase>::Create(
   else if (model == "domain coupling") {
     Teuchos::RCP<PK_DomainFunctionCoupling<FunctionBase> >
        func = Teuchos::rcp(new PK_DomainFunctionCoupling<FunctionBase>(mesh_));
+    func->Init(plist, keyword, kind);
+    return func;
+  }
+  else if (model == "subgrid") {
+    Teuchos::RCP<PK_DomainFunctionSubgrid<FunctionBase> >
+       func = Teuchos::rcp(new PK_DomainFunctionSubgrid<FunctionBase>(mesh_));
     func->Init(plist, keyword, kind);
     return func;
   }

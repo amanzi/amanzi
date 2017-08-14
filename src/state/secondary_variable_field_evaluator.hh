@@ -80,6 +80,7 @@ class SecondaryVariableFieldEvaluator : public FieldEvaluator {
   KeyPairSet deriv_requests_;
   KeySet dependencies_;
   bool check_derivative_;
+  bool nonlocal_dependencies_;
 
 }; // class FieldEvaluator
 

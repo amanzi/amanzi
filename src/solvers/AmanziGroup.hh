@@ -20,7 +20,7 @@ class AmanziGroup : public NOX::Abstract::Group {
   }
 
   NOX::Abstract::Group&
-  operator=(const NOX::Abstract::Group& source) {
+  operator=(const NOX::Abstract::Group& source) override {
     const AmanziGroup<VectorClass>& sourceGroup = dynamic_cast<const AmanziGroup<VectorClass>&>(source);
 
     fn_ = sourceGroup.fn_;
@@ -60,7 +60,7 @@ class AmanziGroup : public NOX::Abstract::Group {
   }
 
   NOX::Abstract::Group::ReturnType
-  computeF() {
+  computeF() override {
     assert(Teuchos::nonnull(x_));
     if(Teuchos::is_null(f_)) {
       f_ = Teuchos::rcp_dynamic_cast<NoxVector<VectorClass> >(x_->clone(NOX::ShapeCopy));

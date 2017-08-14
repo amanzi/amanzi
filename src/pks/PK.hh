@@ -105,6 +105,12 @@ class PK {
   // that may need PK's attention. 
   virtual bool AdvanceStep(double t_old, double t_new, bool reinit) = 0;
 
+  // Check whether the solution calculated for the new step is valid.
+  virtual bool ValidStep() { return true; }
+
+  // Tag the primary variable as changed in the DAG
+  virtual void ChangedSolutionPK() {}
+  
   // Update any needed secondary variables at time t_new from a sucessful step
   // from t_old. This is called after every successful AdvanceStep() call,
   // independent of coupling.
@@ -116,7 +122,6 @@ class PK {
   // Return PK's name
   virtual std::string name() { return name_; }
 
-  virtual bool ValidStep() { return true; }
 
   /////////////////////////////////////////////////////////////////////
 

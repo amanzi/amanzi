@@ -74,12 +74,18 @@ class OperatorAccumulation {
       mesh_(Teuchos::null)
   {
     AmanziMesh::Entity_kind entity;
-    if (plist.get<std::string>("entity kind") == "cell") {
+    std::string entity_kind = plist.get<std::string>("entity kind");
+    if (entity_kind == "cell") {
       entity = AmanziMesh::CELL;
-    } else if (plist.get<std::string>("entity kind") == "node") {
+    } else if (entity_kind == "node") {
       entity = AmanziMesh::NODE;
-    } else if (plist.get<std::string>("entity kind") == "face") {
+    } else if (entity_kind == "face") {
       entity = AmanziMesh::FACE;
+    } else {
+      Errors::Message msg;
+      msg << "OperatorAccumulation: Invalid parameter \"entity kind\"=\"" << entity_kind << "\", must be one of \"cell\", \"face\", or \"node\".";
+      Exceptions::amanzi_throw(msg);
+      entity = AmanziMesh::CELL;
     }
     InitAccumulation_(entity, plist.get<bool>("surface operator", false));
   }
@@ -90,13 +96,20 @@ class OperatorAccumulation {
       mesh_(mesh)
   {
     AmanziMesh::Entity_kind entity;
-    if (plist.get<std::string>("entity kind") == "cell") {
+    std::string entity_kind = plist.get<std::string>("entity kind");
+    if (entity_kind == "cell") {
       entity = AmanziMesh::CELL;
-    } else if (plist.get<std::string>("entity kind") == "node") {
+    } else if (entity_kind == "node") {
       entity = AmanziMesh::NODE;
-    } else if (plist.get<std::string>("entity kind") == "face") {
+    } else if (entity_kind == "face") {
       entity = AmanziMesh::FACE;
+    } else {
+      Errors::Message msg;
+      msg << "OperatorAccumulation: Invalid parameter \"entity kind\"=\"" << entity_kind << "\", must be one of \"cell\", \"face\", or \"node\".";
+      Exceptions::amanzi_throw(msg);
+      entity = AmanziMesh::CELL;
     }
+
     InitAccumulation_(entity, plist.get<bool>("surface operator", false));
   }
 
@@ -106,12 +119,18 @@ class OperatorAccumulation {
       mesh_(mesh)
   {
     AmanziMesh::Entity_kind entity;
-    if (plist.get<std::string>("entity kind") == "cell") {
+    std::string entity_kind = plist.get<std::string>("entity kind");
+    if (entity_kind == "cell") {
       entity = AmanziMesh::CELL;
-    } else if (plist.get<std::string>("entity kind") == "node") {
+    } else if (entity_kind == "node") {
       entity = AmanziMesh::NODE;
-    } else if (plist.get<std::string>("entity kind") == "face") {
+    } else if (entity_kind == "face") {
       entity = AmanziMesh::FACE;
+    } else {
+      Errors::Message msg;
+      msg << "OperatorAccumulation: Invalid parameter \"entity kind\"=\"" << entity_kind << "\", must be one of \"cell\", \"face\", or \"node\".";
+      Exceptions::amanzi_throw(msg);
+      entity = AmanziMesh::CELL;
     }
     InitAccumulation_(entity, plist.get<bool>("surface operator", false));
   }

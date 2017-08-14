@@ -83,6 +83,7 @@ class SolverNox : public Solver<VectorClass,VectorSpace> {
     solver_ = NOX::Solver::buildSolver(group_, tests_, noxList_);
     solver_->solve();
     *u = *dynamic_cast<const NoxVector<VectorClass>&>(group_->getX()).get_vector();
+    return 0;
   }
 
   // mutators

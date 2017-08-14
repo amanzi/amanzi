@@ -63,7 +63,6 @@ class SimpleThermoDatabase : public Beaker {
   SpeciesId primary_id_;
   SpeciesId aqueous_equilibrium_complex_id_;
   SpeciesId mineral_id_;
-  SpeciesId ion_exchange_site_id_;
   SpeciesId ion_exchange_complex_id_;
   SpeciesId surface_site_id_;
   SpeciesId surface_complex_id_;

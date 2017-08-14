@@ -476,7 +476,7 @@ void OperatorDiffusionNLFV::UpdateMatricesNewtonCorrection(
 /* ******************************************************************
 * Calculate one-sided fluxes (i0=0) or flux corrections (i0=1).
 ****************************************************************** */
-double OperatorDiffusionNLFV::OneSidedFluxCorrections_(
+void OperatorDiffusionNLFV::OneSidedFluxCorrections_(
   int i0, const CompositeVector& u, CompositeVector& flux_cv) 
 {
   // un-rolling composite vectors
@@ -544,6 +544,7 @@ double OperatorDiffusionNLFV::OneSidedFluxCorrections_(
 
   flux_cv.GatherGhostedToMaster();
   flux_cv.ScatterMasterToGhosted();
+  
 }
 
 
