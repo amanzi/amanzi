@@ -75,7 +75,7 @@ int DG_Modal::MassMatrixPoly(int c, const Polynomial& K, DenseMatrix& M)
   Polynomial Kcopy(K);
   Kcopy.ChangeOrigin(mesh_->cell_centroid(c));
 
-  // calculate monomials centered at cell centroid
+  // calculate integrals of monomials centered at cell centroid
   int uk(Kcopy.order());
   Polynomial integrals(d_, 2 * order_ + uk);
 
@@ -85,7 +85,7 @@ int DG_Modal::MassMatrixPoly(int c, const Polynomial& K, DenseMatrix& M)
     IntegrateMonomialsCell_(c, integrals.monomials(k));
   }
 
-  // copy integrals to mass matrix
+  // sum up integrals to the mass matrix
   int multi_index[3];
   Polynomial p(d_, order_), q(d_, order_);
 
@@ -125,8 +125,63 @@ int DG_Modal::MassMatrixPoly(int c, const Polynomial& K, DenseMatrix& M)
 /* ******************************************************************
 * Advection matrix for Taylor basis and cell-based velocity uc.
 ****************************************************************** */
-int DG_Modal::AdvectionMatrixPoly(int c, const VectorPolynomial& uc, DenseMatrix& A)
+int DG_Modal::AdvectionMatrixPoly(int c, const VectorPolynomial& u, DenseMatrix& A)
 {
+  // rebase the polynomial
+  VectorPolynomial ucopy(u);
+  for (int i = 0; i < d_; ++i) {
+    ucopy[i].ChangeOrigin(mesh_->cell_centroid(c));
+  }
+
+  // calculate integrals of monomials centered at cell centroid
+  int uk(ucopy[0].order());
+  Polynomial integrals(d_, 2 * order_ + uk - 1);
+  VectorPolynomial pgrad;
+
+  integrals.monomials(0).coefs()[0] = 0.0;
+
+  for (int k = 1; k <= integrals.order(); ++k) {
+    IntegrateMonomialsCell_(c, integrals.monomials(k));
+  }
+
+  // sum-up integrals to the advection matrix
+  int multi_index[3];
+  Polynomial p(d_, order_), q(d_, order_);
+
+  int nrows = p.size();
+  A.Reshape(nrows, nrows);
+  A.PutScalar(0.0);
+
+  for (auto it = p.begin(); it.end() <= p.end(); ++it) {
+    const int* idx_p = it.multi_index();
+    int k = p.PolynomialPosition(idx_p);
+
+    p.Gradient(pgrad);
+
+    /*
+    for (auto mt = ucopy.begin(); mt.end() <= ucopy.end(); ++mt) {
+      const int* idx_K = mt.multi_index();
+      int m = mt.MonomialPosition();
+      double factor = Kcopy.monomials(mt.end()).coefs()[m];
+
+      for (auto jt = q.begin(); jt.end() <= q.end(); ++jt) {
+        const int* idx_q = jt.multi_index();
+        int l = q.PolynomialPosition(idx_q);
+
+        int n(0);
+        for (int i = 0; i < d_; ++i) {
+          multi_index[i] = idx_p[i] + idx_q[i] + idx_K[i];
+          n += multi_index[i];
+        }
+
+        const auto& coefs = integrals.monomials(n).coefs();
+        A(k, l) += factor * coefs[p.MonomialPosition(multi_index)];
+      }
+    }
+    */
+  }
+
+  return 0;
 }
 
 

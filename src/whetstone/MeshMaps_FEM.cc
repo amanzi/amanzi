@@ -43,7 +43,7 @@ void MeshMaps_FEM::JacobianCellValue(
 
 /* ******************************************************************
 * Calculate determinant of the Jacobian at time t.
-* NOTE: We assume that cell c is a parallepiped on mesh 0.
+* NOTE: We assume that cell c is a rectangle on mesh 0.
 ****************************************************************** */
 void MeshMaps_FEM::JacobianDet(
     int c, double t, const std::vector<VectorPolynomial>& vf, Polynomial& vc) const
@@ -63,10 +63,16 @@ void MeshMaps_FEM::JacobianDet(
   AmanziGeometry::Point a0(p2 - p1), a1(p4 - p1);
   AmanziGeometry::Point b0(p3 - p4 - a0), b1(p3 - p2 - a1);
 
-  // By our assumption, the Jacobian is constant
+  // By our assumption, the Jacobian is constant and diagonal
   AmanziGeometry::Point xref(0.0, 0.0);
   Tensor J0 = JacobianValueInternal_(mesh0_, c, xref);
   J0.Inverse();
+
+  mesh0_->node_get_coordinates(nodes[0], &p1);
+  a0 -= b0 * (p1[1] * J0(1, 1));
+  a1 -= b1 * (p1[0] * J0(0, 0));
+  b0 *= J0(1, 1);
+  b1 *= J0(0, 0);
 
   a0 *= t * J0(0, 0);
   a1 *= t * J0(1, 1);

@@ -157,7 +157,7 @@ void RemapTests2DExplicit(int order, std::string disc_name,
   op_reac1->Setup(jac1);
 
   double t(0.0), tend(1.0);
-  WhetStone::MeshMaps_VEM maps(mesh0, mesh1);
+  WhetStone::MeshMaps_FEM maps(mesh0, mesh1);
 
   while(t < tend - dt/2) {
     // calculate face velocities
