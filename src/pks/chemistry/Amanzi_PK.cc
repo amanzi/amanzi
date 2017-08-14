@@ -116,7 +116,7 @@ Amanzi_PK::Amanzi_PK(Teuchos::ParameterList& pk_tree,
   number_total_sorbed_ = number_aqueous_components_;
 
   // verbosity object
-  vo_ = Teuchos::rcp(new VerboseObject("Chem::Amanzi"+domain_name_, *cp_list_)); 
+  vo_ = Teuchos::rcp(new VerboseObject("Chem::Amanzi" + domain_name_, *cp_list_)); 
   chem_out = &*vo_;
 }
 

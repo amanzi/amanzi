@@ -49,10 +49,13 @@ void IndependentVariableFieldEvaluatorFromFunction::UpdateField_(const Teuchos::
     func_ = Functions::CreateCompositeVectorFunction(plist_.sublist("function"), cv->Map());
   }
 
-  // NOTE: IndependentVariableFieldEvaluatorFromFunctions own their own data.
-  Teuchos::RCP<CompositeVector> cv = S->GetFieldData(my_key_, my_key_);
-  time_ = S->time();
-  func_->Compute(time_, cv.ptr());
+  if (temporally_variable_ || !computed_once_) {
+    // NOTE: IndependentVariableFieldEvaluatorFromFunctions own their own data.
+    Teuchos::RCP<CompositeVector> cv = S->GetFieldData(my_key_, my_key_);
+    time_ = S->time();
+    func_->Compute(time_, cv.ptr());
+    computed_once_ = true;
+  }
 }
 
 
