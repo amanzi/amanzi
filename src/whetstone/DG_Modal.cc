@@ -69,7 +69,7 @@ int DG_Modal::MassMatrix(int c, const Tensor& K, DenseMatrix& M)
 /* ******************************************************************
 * Mass matrix for Taylor basis and polynomial coefficient K.
 ****************************************************************** */
-int DG_Modal::MassMatrix(int c, const Polynomial& K, DenseMatrix& A)
+int DG_Modal::MassMatrixPoly(int c, const Polynomial& K, DenseMatrix& M)
 {
   // rebase the polynomial
   Polynomial Kcopy(K);
@@ -90,8 +90,8 @@ int DG_Modal::MassMatrix(int c, const Polynomial& K, DenseMatrix& A)
   Polynomial p(d_, order_), q(d_, order_);
 
   int nrows = p.size();
-  A.Reshape(nrows, nrows);
-  A.PutScalar(0.0);
+  M.Reshape(nrows, nrows);
+  M.PutScalar(0.0);
 
   for (auto it = p.begin(); it.end() <= p.end(); ++it) {
     const int* idx_p = it.multi_index();
@@ -113,7 +113,7 @@ int DG_Modal::MassMatrix(int c, const Polynomial& K, DenseMatrix& A)
         }
 
         const auto& coefs = integrals.monomials(n).coefs();
-        A(k, l) += factor * coefs[p.MonomialPosition(multi_index)];
+        M(k, l) += factor * coefs[p.MonomialPosition(multi_index)];
       }
     }
   }
@@ -123,10 +123,18 @@ int DG_Modal::MassMatrix(int c, const Polynomial& K, DenseMatrix& A)
 
 
 /* ******************************************************************
-* Advection matrix for Taylor basis and normal velocity u.n.
+* Advection matrix for Taylor basis and cell-based velocity uc.
+****************************************************************** */
+int DG_Modal::AdvectionMatrixPoly(int c, const VectorPolynomial& uc, DenseMatrix& A)
+{
+}
+
+
+/* ******************************************************************
+* Flux matrix for Taylor basis and normal velocity u.n.
 * Velocity is given in the face-based Taylor basis.
 ****************************************************************** */
-int DG_Modal::AdvectionMatrix(int f, const Polynomial& un, DenseMatrix& A)
+int DG_Modal::FluxMatrixPoly(int f, const Polynomial& un, DenseMatrix& A)
 {
   AmanziMesh::Entity_ID_List cells, nodes;
   mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
@@ -140,13 +148,12 @@ int DG_Modal::AdvectionMatrix(int f, const Polynomial& un, DenseMatrix& A)
   A.PutScalar(0.0);
 
   // identify downwind cell
-  const AmanziGeometry::Point& xf = mesh_->face_centroid(f);
-  double vel = un.Value(xf);
-
   int dir, id(0); 
   mesh_->face_normal(f, false, cells[0], &dir);
-  double vel0 = vel * dir;
-  if (vel0 > 0.0) {
+  const AmanziGeometry::Point& xf = mesh_->face_centroid(f);
+
+  double vel = un.Value(xf) * dir;
+  if (vel > 0.0) {
     if (ncells == 1) return 0;
     id = 1;
   } else {
@@ -181,21 +188,15 @@ int DG_Modal::AdvectionMatrix(int f, const Polynomial& un, DenseMatrix& A)
       polys.push_back(p);
       polys.push_back(q);
 
-      double vel0 = IntegratePolynomialsEdge_(x1, x2, polys);
-      vel0 /= mesh_->face_area(f);
-      vel0 *= dir;  
+      vel = IntegratePolynomialsEdge_(x1, x2, polys);
+      vel /= mesh_->face_area(f);
+      vel *= dir;  
 
       if (ncells == 1) {
-        A(k, l) = vel0;
+        A(k, l) = vel;
       } else {
-        polys[2].set_origin(mesh_->cell_centroid(cells[1 - id]));
-
-        double vel1 = IntegratePolynomialsEdge_(x1, x2, polys);
-        vel1 /= mesh_->face_area(f);
-        vel1 *= dir;  
-
-        A(row + k, col + l) = vel1;
-        A(col + k, col + l) = -vel0;
+        A(row + k, col + l) = vel;
+        A(col + k, col + l) = -vel;
       }
     }
   }

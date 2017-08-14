@@ -11,6 +11,7 @@
 
 #include <vector>
 
+#include "errors.hh"
 #include "MFD3DFactory.hh"
 
 #include "Abstract.hh"
@@ -98,17 +99,27 @@ void Abstract::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& u,
   WhetStone::MFD3DFactory factory;
   auto mfd = factory.Create(mesh_, method_, local_schema_col_.CreateUniqueName());
  
+  // identify type of coefficient
+  std::string coef("constant");
+  if (Kpoly_.get()) coef = "polynomial";
+  if (Kvec_.get()) coef = "vector polynomial";
+
   WhetStone::DenseMatrix Mcell, Acell;
   WhetStone::Tensor Kc(mesh_->space_dimension(), 1);
   Kc(0, 0) = 1.0;
 
-  if (matrix_ == "mass") {
+  if (matrix_ == "mass" && coef == "constant") {
     for (int c = 0; c < ncells_owned; ++c) {
       if (K_.get()) Kc = (*K_)[c];
       mfd->MassMatrix(c, Kc, Acell);
       matrix[c] = Acell;
     }
-  } else if (matrix_ == "stiffness") {
+  } else if (matrix_ == "mass" && coef == "polynomial") {
+    for (int c = 0; c < ncells_owned; ++c) {
+      mfd->MassMatrixPoly(c, (*Kpoly_)[c], Acell);
+      matrix[c] = Acell;
+    }
+  } else if (matrix_ == "stiffness" && coef == "constant") {
     for (int c = 0; c < ncells_owned; ++c) {
       if (K_.get()) Kc = (*K_)[c];
       mfd->StiffnessMatrix(c, Kc, Acell);
@@ -119,26 +130,26 @@ void Abstract::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& u,
       mfd->DivergenceMatrix(c, Acell);
       matrix[c] = Acell;
     }
-  } else if (matrix_ == "advection") {
-    int d(mesh_->space_dimension());
-    const Epetra_MultiVector& u_v = *u->ViewComponent("node", true);
+  } else if (matrix_ == "advection" && coef == "constant") {
+    const Epetra_MultiVector& u_c = *u->ViewComponent("cell", false);
 
     for (int c = 0; c < ncells_owned; ++c) {
-      mesh_->cell_get_nodes(c, &nodes);
-      int nnodes = nodes.size();
+      AmanziGeometry::Point vc(d);
+      for (int i = 0; i < d; ++i) vc[i] = u_c[i][c];
 
-      AmanziGeometry::Point vp(d);
-      std::vector<AmanziGeometry::Point> velocity;
-
-      for (int n = 0; n < nnodes; ++n) {
-        int v = nodes[n];
-        for (int i = 0; i < d; ++i) vp[i] = u_v[i][v];
-        velocity.push_back(vp);
-      }
-
-      mfd->AdvectionMatrix(c, velocity, Acell);
+      mfd->AdvectionMatrix(c, vc, Acell);
       matrix[c] = Acell;
     }
+  } else if (matrix_ == "advection" && coef == "vector polynomial") {
+    for (int c = 0; c < ncells_owned; ++c) {
+      mfd->AdvectionMatrixPoly(c, (*Kvec_)[c], Acell);
+      matrix[c] = Acell;
+    }
+  } else {
+    Errors::Message msg;
+    msg << "Unsupported combination matrix_=" << matrix_ 
+        << " and coef=" << coef << "\n";
+    Exceptions::amanzi_throw(msg);
   }
 }
 

@@ -40,7 +40,8 @@ class MFD3D_Elasticity : public virtual MFD3D {
       InnerProduct(mesh) {};
   ~MFD3D_Elasticity() {};
 
-  // main method use edge-based DOFs (part of DeRham complex) 
+  // required methods
+  // most methods use edge-based DOFs (part of DeRham complex) 
   // -- mass matrices
   virtual int L2consistency(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Mc, bool symmetry);
   virtual int MassMatrix(int c, const Tensor& T, DenseMatrix& M) { return WHETSTONE_ELEMENTAL_MATRIX_OK; } 
@@ -53,8 +54,14 @@ class MFD3D_Elasticity : public virtual MFD3D {
   virtual int H1consistency(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Mc);
   virtual int StiffnessMatrix(int c, const Tensor& T, DenseMatrix& A);
 
-  // -- other matrices
+  // -- divergence matrices
   virtual int DivergenceMatrix(int c, DenseMatrix& A) { return -1; }
+
+  // -- unsupported members
+  virtual int MassMatrixPoly(int c, const Polynomial& K, DenseMatrix& M) { return -1; }
+  virtual int StiffnessMatrixPoly(int c, const Polynomial& K, DenseMatrix& A) { return -1; }
+  virtual int AdvectionMatrix(int c, const AmanziGeometry::Point v, DenseMatrix& A) { return -1; }
+  virtual int AdvectionMatrixPoly(int c, const VectorPolynomial& v, DenseMatrix& A) { return -1; }
 
   // optimization methods (mainly for testing)
   int StiffnessMatrixOptimized(int c, const Tensor& T, DenseMatrix& A);

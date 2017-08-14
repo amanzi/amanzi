@@ -33,19 +33,26 @@ class MFD3D_Generalized_Diffusion : virtual public MFD3D {
       InnerProduct(mesh) {};
   ~MFD3D_Generalized_Diffusion() {};
 
-  // mass matrix
+  // required member functions
+  // -- mass matrices
   virtual int L2consistency(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Mc, bool symmetry);
   virtual int MassMatrix(int c, const Tensor& T, DenseMatrix& M); 
 
   virtual int L2consistencyInverse(int c, const Tensor& T, DenseMatrix& R, DenseMatrix& Wc, bool symmetry);
   virtual int MassMatrixInverse(int c, const Tensor& T, DenseMatrix& W); 
 
-  // stiffness matrix
+  // -- stiffness matrices
   virtual int H1consistency(int c, const Tensor& K, DenseMatrix& N, DenseMatrix& Ac) {};
   virtual int StiffnessMatrix(int c, const Tensor& K, DenseMatrix& A);
 
-  // other matrices
+  // -- adevction matrices
   virtual int DivergenceMatrix(int c, DenseMatrix& A);
+  virtual int AdvectionMatrix(int c, const AmanziGeometry::Point v, DenseMatrix& A) {};
+
+  // not implemented /supported member functions
+  virtual int MassMatrixPoly(int c, const Polynomial& K, DenseMatrix& M) {};
+  virtual int StiffnessMatrixPoly(int c, const Polynomial& K, DenseMatrix& A) {};
+  virtual int AdvectionMatrixPoly(int c, const VectorPolynomial& v, DenseMatrix& A) {};
 
  private:
   void CurvedFaceGeometry_(int f, int dirs,

@@ -28,6 +28,7 @@
 #include "Mesh.hh"
 #include "Point.hh"
 
+#include "BilinearForm.hh"
 #include "DenseMatrix.hh"
 #include "InnerProductH1.hh"
 #include "InnerProductL2.hh"
@@ -38,15 +39,10 @@
 namespace Amanzi {
 namespace WhetStone {
 
-class MFD3D : public virtual InnerProductL2,
-              public virtual InnerProductH1 { 
+class MFD3D : public virtual BilinearForm { 
  public:
   explicit MFD3D(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh);
   ~MFD3D() {};
-
-  // additional required members
-  virtual int DivergenceMatrix(int c, DenseMatrix& A) = 0;
-  virtual int AdvectionMatrix(int c, const std::vector<AmanziGeometry::Point>& v, DenseMatrix& A) {};
 
   // geometry methods
   void PolygonCentroidWeights(

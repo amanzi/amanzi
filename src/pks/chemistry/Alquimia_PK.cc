@@ -593,7 +593,6 @@ void Alquimia_PK::CopyToAlquimia(int cell,
       mat_props.aqueous_kinetic_rate_cnst.data[i] = aqueous_kinetics_rate[i][cell];
     }
   }
-
 }
 
 

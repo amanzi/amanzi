@@ -21,6 +21,7 @@
 // Amanzi
 #include "Polynomial.hh"
 #include "Tensor.hh"
+#include "WhetStone_typedefs.hh"
 
 // Operators
 #include "PDE_Helper.hh"
@@ -50,6 +51,7 @@ class Abstract : public PDE_Helper {
   // -- setup
   void Setup(const Teuchos::RCP<std::vector<WhetStone::Tensor> >& K) { K_ = K; }
   void Setup(const Teuchos::RCP<const std::vector<WhetStone::Polynomial> >& Kpoly) { Kpoly_ = Kpoly; }
+  void Setup(const Teuchos::RCP<const std::vector<WhetStone::VectorPolynomial> >& Kvec) { Kvec_ = Kvec; }
 
   // optional calculation of flux from potential p
   virtual void UpdateFlux(const Teuchos::Ptr<const CompositeVector>& p,
@@ -58,6 +60,7 @@ class Abstract : public PDE_Helper {
  protected:
   Teuchos::RCP<std::vector<WhetStone::Tensor> > K_;
   Teuchos::RCP<const std::vector<WhetStone::Polynomial> > Kpoly_;
+  Teuchos::RCP<const std::vector<WhetStone::VectorPolynomial> > Kvec_;
 
   Schema global_schema_row_, global_schema_col_;
   Schema local_schema_col_, local_schema_row_;

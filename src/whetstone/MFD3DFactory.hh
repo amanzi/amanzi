@@ -19,6 +19,8 @@
 
 #include "Mesh.hh"
 
+#include "BilinearForm.hh"
+#include "DG_Modal.hh"
 #include "MFD3D.hh"
 #include "MFD3D_BernardiRaugel.hh"
 #include "MFD3D_Diffusion.hh"
@@ -33,16 +35,16 @@ class MFD3DFactory {
   ~MFD3DFactory() {};
 
   // geometry methods
-  Teuchos::RCP<MFD3D> Create(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
-                             const std::string& physics,
-                             const std::string& schema_unique_name);
+  Teuchos::RCP<BilinearForm> Create(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
+                                    const std::string& physics,
+                                    const std::string& schema_unique_name);
 };
 
 
 /* ******************************************************************
 * Implementation of factory
 ****************************************************************** */
-Teuchos::RCP<MFD3D> MFD3DFactory::Create(
+Teuchos::RCP<BilinearForm> MFD3DFactory::Create(
     const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
     const std::string& physics, const std::string& schema_unique_name)
 {
@@ -57,6 +59,10 @@ Teuchos::RCP<MFD3D> MFD3DFactory::Create(
   }
   else if (physics == "BernardiRaugel") {
     Teuchos::RCP<MFD3D_BernardiRaugel> mfd = Teuchos::rcp(new MFD3D_BernardiRaugel(mesh));
+    return mfd;
+  } 
+  else if (physics == "dg modal") {
+    Teuchos::RCP<DG_Modal> mfd = Teuchos::rcp(new DG_Modal(mesh));
     return mfd;
   }
 }

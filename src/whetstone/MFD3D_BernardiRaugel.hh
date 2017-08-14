@@ -35,7 +35,7 @@ class MFD3D_BernardiRaugel : public virtual MFD3D {
       InnerProduct(mesh) {};
   ~MFD3D_BernardiRaugel() {};
 
-  // main methods
+  // required methods
   // -- mass matrices
   virtual int L2consistency(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Mc, bool symmetry) { return -1; }
   virtual int MassMatrix(int c, const Tensor& T, DenseMatrix& M) { return -1; } 
@@ -51,6 +51,12 @@ class MFD3D_BernardiRaugel : public virtual MFD3D {
   // -- other matrices
   virtual int DivergenceMatrix(int c, DenseMatrix& A);
   virtual int AdvectionMatrix(int c, const std::vector<AmanziGeometry::Point>& u, DenseMatrix& A);
+
+  // -- not relevant or unsupported members
+  virtual int MassMatrixPoly(int c, const Polynomial& K, DenseMatrix& M) { return -1; }
+  virtual int StiffnessMatrixPoly(int c, const Polynomial& K, DenseMatrix& A) { return -1; }
+  virtual int AdvectionMatrix(int c, const AmanziGeometry::Point v, DenseMatrix& A) { return -1; }
+  virtual int AdvectionMatrixPoly(int c, const VectorPolynomial& v, DenseMatrix& A) { return -1; }
 };
 
 }  // namespace WhetStone

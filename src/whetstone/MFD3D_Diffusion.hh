@@ -44,15 +44,22 @@ class MFD3D_Diffusion : public virtual MFD3D,
 
   // main methods 
   // -- default Derahm complex for the mass matrix is not used by Amanzi
-  // -- mass matrix is adjusted to reflect scaling of fluxes by area
+  // -- inverse mass matrix is adjusted to reflect scaling of fluxes by area
   virtual int MassMatrixInverse(int c, const Tensor& K, DenseMatrix& W); 
 
   // -- stiffness matrix
   virtual int H1consistency(int c, const Tensor& K, DenseMatrix& N, DenseMatrix& Ac);
   virtual int StiffnessMatrix(int c, const Tensor& K, DenseMatrix& A);
 
-  // -- other matrices
+  // -- divergence matrix
   virtual int DivergenceMatrix(int c, DenseMatrix& A);
+
+  // -- other interfaces not used yet by this class
+  virtual int MassMatrixPoly(int c, const Polynomial& K, DenseMatrix& M) {};
+  virtual int AdvectionMatrix(int c, const AmanziGeometry::Point v, DenseMatrix& A) {};
+
+  virtual int StiffnessMatrixPoly(int c, const Polynomial& K, DenseMatrix& A) {};
+  virtual int AdvectionMatrixPoly(int c, const VectorPolynomial& v, DenseMatrix& A) {};
 
   // other mimetic methods
   // -- bad consistency conditions (flux is scaled by area)

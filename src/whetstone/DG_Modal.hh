@@ -20,6 +20,7 @@
 #include "Mesh.hh"
 #include "Point.hh"
 
+#include "BilinearForm.hh"
 #include "DenseMatrix.hh"
 #include "Polynomial.hh"
 #include "Tensor.hh"
@@ -43,7 +44,7 @@ const double q1d_points[4][4] = {
     0.0694318442029737, 0.330009478207572, 0.669990521792428, 0.930568155797026
 };
 
-class DG_Modal { 
+class DG_Modal : public BilinearForm { 
  public:
   DG_Modal(Teuchos::RCP<const AmanziMesh::Mesh> mesh) 
     : order_(-1),
@@ -57,9 +58,27 @@ class DG_Modal {
 
   ~DG_Modal() {};
 
-  int MassMatrix(int c, const Tensor& K, DenseMatrix& M);
-  int MassMatrix(int c, const Polynomial& K, DenseMatrix& A);
-  int AdvectionMatrix(int f, const Polynomial& un, DenseMatrix& A);
+  // requires member functions
+  // -- mass matrices
+  virtual int MassMatrix(int c, const Tensor& K, DenseMatrix& M);
+  virtual int MassMatrixPoly(int c, const Polynomial& K, DenseMatrix& M);
+
+  // -- stiffness matrices (coming soon)
+  virtual int StiffnessMatrix(int c, const Tensor& T, DenseMatrix& A) {};
+  virtual int StiffnessMatrixPoly(int c, const Polynomial& K, DenseMatrix& A) {};
+
+  // -- advection matrices
+  virtual int AdvectionMatrix(int c, const AmanziGeometry::Point v, DenseMatrix& A) {};
+  virtual int AdvectionMatrixPoly(int c, const VectorPolynomial& uc, DenseMatrix& A);
+  int FluxMatrixPoly(int f, const Polynomial& uf, DenseMatrix& A);
+
+  // interfaces that are not used
+  virtual int L2consistency(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Mc, bool symmetry) {};
+  virtual int L2consistencyInverse(int c, const Tensor& T, DenseMatrix& R, DenseMatrix& Wc, bool symmetry) {};
+  virtual int H1consistency(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Mc) {};
+
+  virtual int MassMatrixInverse(int c, const Tensor& T, DenseMatrix& W) {};
+  virtual int DivergenceMatrix(int c, DenseMatrix& A) {};
 
   // miscalleneous
   void set_order(int order) { order_ = order; }

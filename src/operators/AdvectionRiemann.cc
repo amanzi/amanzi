@@ -122,11 +122,11 @@ void AdvectionRiemann::UpdateMatrices(
 
     if (space_col_ == DG0 && space_row_ == DG0) {
       dg.set_order(0);
-      dg.AdvectionMatrix(f, (*u)[f], Aface);
+      dg.FluxMatrixPoly(f, (*u)[f], Aface);
     }
     else if (space_col_ == DG1 && space_row_ == DG1) {
       dg.set_order(1);
-      dg.AdvectionMatrix(f, (*u)[f], Aface);
+      dg.FluxMatrixPoly(f, (*u)[f], Aface);
     }
 
     matrix[f] = Aface;
