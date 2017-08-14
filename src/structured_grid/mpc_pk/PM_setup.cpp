@@ -935,35 +935,49 @@ PorousMedia::variableSetUp ()
 
   if (rock_manager!=0  && do_tracer_chemistry!=0)
   {
-    if (rock_manager->UsingSorption())
+    // primary species concentration required
+    for (int i=0; i<tNames.size(); ++i) {
+      intern_reqd_der.push_back(tNames[i]+"_Free_Ion_Guess");
+    }
+
+    // SM: use PM_setup static variables in lieu of RockManager
+    //     this fixes incomplete translation from 2.x > parmparse format
+    //     and disconnect between RockManager and output -- with the
+    //     advantage that chemistry does not need to be in native parmparse
+
+    // sorption
+    //  if (rock_manager->UsingSorption()) 
+    if (using_sorption)
     {
       for (int i=0; i<tNames.size(); ++i) {
 	intern_reqd_der.push_back(tNames[i]+"_Sorbed_Concentration");
       }
-      for (int i=0; i<tNames.size(); ++i) {
-	intern_reqd_der.push_back(tNames[i]+"_Free_Ion_Guess");
-      }
-      for (int i=0; i<tNames.size(); ++i) {
-	intern_reqd_der.push_back(tNames[i]+"_Activity_Coefficient");
-      }
 
-      if (rock_manager->CationExchangeCapacityICs().size()>0) {
+      // cation exchange
+      //if (rock_manager->CationExchangeCapacityICs().size()>0) {
+      if (ncation_exchange>0) {
 	intern_reqd_der.push_back("Cation_Exchange_Capacity");
       }
 
-      const Array<std::string>& mineralNames = rock_manager->MineralNames();
-      for (int i=0; i<mineralNames.size(); ++i) {
-	intern_reqd_der.push_back(mineralNames[i]+"_Volume_Fraction");
+      // surface complexation
+      //const Array<std::string>& sorptionSiteNames = rock_manager->SorptionSiteNames();
+      const Array<std::string>& sorptionSiteNames = sorption_sites;
+      if (sorptionSiteNames.size()>0){
+	for (int i=0; i<sorptionSiteNames.size(); ++i) {
+	  intern_reqd_der.push_back(sorptionSiteNames[i]+"_Surface_Site_Density");
+	}
       }
-      for (int i=0; i<mineralNames.size(); ++i) {
-	intern_reqd_der.push_back(mineralNames[i]+"_Specific_Surface_Area");
-      }
-
-      const Array<std::string>& sorptionSiteNames = rock_manager->SorptionSiteNames();
-      for (int i=0; i<sorptionSiteNames.size(); ++i) {
-	intern_reqd_der.push_back(sorptionSiteNames[i]+"_Surface_Site_Density");
-      }
+    } //sorption
+    
+    // minerals
+    //const Array<std::string>& mineralNames = rock_manager->MineralNames();
+    const Array<std::string>& mineralNames = minerals;
+    for (int i=0; i<mineralNames.size(); ++i) {
+      intern_reqd_der.push_back(mineralNames[i]+"_Volume_Fraction");
     }
+    for (int i=0; i<mineralNames.size(); ++i) {
+      intern_reqd_der.push_back(mineralNames[i]+"_Specific_Surface_Area");
+    }  
   }
 
   intern_reqd_der.push_back("Material_ID");
@@ -1943,10 +1957,16 @@ void  PorousMedia::read_tracer()
         ppc.query(Chemistry_Engine_stru.c_str(),chemistry_engine_name);
         std::string chem_engine_input_filename; ppc.get(Chemistry_Engine_Input_stru.c_str(),chem_engine_input_filename);
         chemistry_engine = new Amanzi::AmanziChemistry::ChemistryEngine(chemistry_engine_name,chem_engine_input_filename);
+
+	//SM: alquimia helper chemistry_engine gets Alquimia engine
+	//    but overwriting amanzi's stuff with alquimia's (below)
+	//    does have any effect on output unless in PorousMedia::variableSetUp
+	//    PM_setup static variables set here are used there
         chemistry_helper = new AlquimiaHelper_Structured(chemistry_engine);
         
         //
         // FIXME: THIS WILL OVERWRITE THE LIST OF AMANZI TRACERS
+	// SM: FIX not needed for now: overwriting is good - see above and PorousMedia::variableSetUp
         //
         // convert arrays to those of PM internals
         std::vector<std::string> primarySpeciesNames;
@@ -1964,6 +1984,30 @@ void  PorousMedia::read_tracer()
         for (int i=0; i<nminerals; ++i) {
           minerals[i] = mineralNames[i];
         }
+
+	//SM: add isotherms, surface complexation, ion exchange below
+
+	//ion exchange
+        ncation_exchange = chemistry_engine->NumIonExchangeSites();
+
+	//surface complexation
+	std::vector<std::string> surfaceNames;
+        chemistry_engine->GetSurfaceSiteNames(surfaceNames);
+        nsorption_sites = surfaceNames.size();
+        sorption_sites.resize(nsorption_sites);
+        for (int i=0; i<nsorption_sites; ++i) {
+          sorption_sites[i] = surfaceNames[i];
+        }
+
+	//isotherms
+	nsorption_isotherms = chemistry_engine->NumIsothermSpecies();
+
+	//using_sorption
+	if (ncation_exchange ||
+	    nsorption_sites ||
+	    nsorption_isotherms) {
+	  using_sorption=true;
+	}
 #endif
       }
     }

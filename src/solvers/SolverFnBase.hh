@@ -26,6 +26,8 @@ namespace AmanziSolvers {
 template<class Vector>
 class SolverFnBase {
  public:
+  virtual ~SolverFnBase() = default;
+
   // computes the non-linear functional r = F(u)
   virtual void Residual(const Teuchos::RCP<Vector>& u,
                         const Teuchos::RCP<Vector>& r) = 0;

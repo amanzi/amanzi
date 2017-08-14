@@ -4,9 +4,7 @@ Transient Flow in a 2D Confined Aquifer with a Disc Embedded in A Matrix
 Introduction
 ------------
 
-Butler and Liu (1993) [Butler1993]_ developed 
-a semi-analytical solution for calculating drawdown in an aquifer system, in which a disc of one material is embedded in a matrix of different hydraulic properties. The problem of interest is the drawdown as a function of location and time due to pumping from a fully penetrating well located either in disc or the matrix. The differences on hydraulic properties between the disc and the matrix can be of any magnitude.
-The problem is solved analytically in the Laplace space and the drawdown is solved numerically by inversion from the Laplace space to the real space.
+Butler and Liu (1993) :cite:`pod-Butler_Liu_radially_asymmetric_1993` developed a semi-analytical solution for calculating drawdown in an aquifer system, in which a disc of one material is embedded in a matrix of different hydraulic properties. The problem of interest is the drawdown as a function of location and time due to pumping from a fully penetrating well located either in disc or the matrix. The differences on hydraulic properties between the disc and the matrix can be of any magnitude. The problem is solved analytically in the Laplace space and the drawdown is solved numerically by inversion from the Laplace space to the real space.
 
 Model
 -----
@@ -91,30 +89,27 @@ Boundary conditions: zero drawdown on four boundaries.
 Results and Comparison
 ----------------------
 
-.. _Plot:
+.. _Plot_ButlerPod2D:
 
 Plot  Analytic Solution and Amanzi Results
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. plot:: prototype/transient_butler_pod/amanzi_butler_pod_2d.py
-             :align: center
+.. plot:: amanzi_butler_pod_2d.py
+   :align: center
 
 
 The comparison shows that the results from the Amanzi model match the analytical solution very well at early time, and they deviate when the effect of pumping hits the constant head boundary of the domain. Note that, the analytical solution was developed for unbounded domain, and therefore it is expected that the two solutions will deviate each other at later time.
 To show that such a deviation is indeed caused by the boundary effect, we also conducted numerical simulations using
-FEHM, a widely used numerical simulator for simulating heat and mass flow in subsurface environment [Zyvoloski1997]_. It is showed that the results from Amanzi are almost the same as those from FEHM, see [Lu2014]_ for detailed comparison.
+FEHM, a widely used numerical simulator for simulating heat and mass flow in subsurface environment :cite:`pod-Zyvoloski_FEHM_summary_1997`. It is showed that the results from Amanzi are almost the same as those from FEHM, see :cite:`pod-Lu_Harp_Birdsell_benchmarking_2014` for detailed comparison.
 
 
 References
 ----------
 
-
-.. [Butler1993] Butler, J. J., and W. Liu, 1993. Pumping tests in nonuniform aquifers: the radially asymmetric case, Water Resources Research, 29 (2), 259-269. 
-
-.. [Lu2014] Lu, Z., D. Harp, and K. Birdsell, Comparison of the Amanzi Model against Analytical Solutions and the FEHM Model, Tech. Report LA-UR-14-20898, Los Alamos National Laboratory, Los Alamos, 2014.
-
-.. [Zyvoloski1997] Zyvoloski,G. A., B. A. Robinson, Z. V. Dash, and L. L. Trease, Summary of the Models and Methods for the FEHM Application, A Finite-Element Heat- and Mass-Transfer Code, Tech. Report LA-13307-MS, Los Alamos National Laboratory, Los Alamos, NM, 1997.
-
+.. bibliography:: /bib/ascem.bib
+   :filter: docname in docnames
+   :style:  alpha
+   :keyprefix: pod-
 
 About
 -----

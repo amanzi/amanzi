@@ -69,7 +69,13 @@
     <unstructured_controls>
       <unstr_flow_controls>
         <preconditioning_strategy>PC</preconditioning_strategy>
+        <constraints_linear_solver>
+          <method>gmres</method>
+          <max_iterations>100</max_iterations>
+          <tolerance>1e-12</tolerance>
+        </constraints_linear_solver>
       </unstr_flow_controls>
+
       <unstr_transport_controls>
         <algorithm>explicit first-order</algorithm>
         <sub_cycling>on</sub_cycling>
@@ -105,6 +111,7 @@
       </unstr_transient_controls>
 
       <unstr_linear_solver>
+        <method>pcg</method>
         <max_iterations>100</max_iterations>
         <tolerance>1e-20</tolerance>
       </unstr_linear_solver>

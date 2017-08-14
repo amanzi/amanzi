@@ -218,16 +218,14 @@ void OperatorAdvection::ApplyBCs(const Teuchos::RCP<BCs>& bc, bool primary)
       if (primary) { // advection only
         if (c2 < 0) {
           // pass
+          matrix[f](0, 0) = 0.0;
         } else if (c1 < 0) {
           matrix[f](0, 0) = 0.0;
           rhs_cell[0][c2] += bc_value[f] * mesh_->face_area(f);
         }
-      } else {
-        if (c2 < 0) {
-          // pass
-        } else {
-          matrix[f](0, 0) = 0.0;
-        }
+      } else { // advection-diffusion
+        // push the flux onto the diffusion operator
+        matrix[f](0, 0) = 0.0;
       }
     }
   }

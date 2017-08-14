@@ -190,6 +190,8 @@ void RK<Vector>::InitMethod_(const method_t method)
   case runge_kutta_4th_order:
     order_ = 4;
     break;
+  default:
+    order_ = -1;
   }
 
   a_.Shape(order_, order_);
@@ -268,6 +270,9 @@ void RK<Vector>::InitMethod_(const method_t method)
     c_[1] = 0.5;
     c_[2] = 0.5;
     c_[3] = 1.0;
+    break;
+    default:
+      break;
   }
 }
 

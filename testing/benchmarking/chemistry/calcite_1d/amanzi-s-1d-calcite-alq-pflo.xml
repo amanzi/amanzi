@@ -1,0 +1,201 @@
+<amanzi_input version="2.3" type="structured">
+
+  <echo_translated_input format="native" file_name=" amanzi-s-1d-calcite-alq-pflo_native.xml"/>
+  <model_description name="1D Flow and Transport w/ calcite dissolution">
+    <units>
+      <length_unit>m</length_unit>
+      <time_unit>s</time_unit>
+      <mass_unit>kg</mass_unit>
+      <conc_unit>molar</conc_unit>
+    </units>
+  </model_description>
+
+  <definitions>
+    <macros>
+      <time_macro name="Every_year">
+        <start>0.0</start>
+        <timestep_interval>31556926.0</timestep_interval>
+        <stop>-1</stop>
+      </time_macro>
+      <cycle_macro name="every_step">
+	<start>0 s</start>
+	<timestep_interval>1</timestep_interval>
+	<stop>-1</stop>
+      </cycle_macro>      
+    </macros>
+  </definitions>
+
+  <process_kernels>
+    <flow state="on" model="saturated"/>
+    <transport state="on" />
+    <chemistry state="on" engine="pflotran+" input_filename="1d-calcite-trim.in" database="calcite.dat"/>
+  </process_kernels>
+
+  <phases>
+    <liquid_phase name="water">
+      <eos>False</eos>
+      <viscosity>1.002e-03</viscosity>
+      <density>998.2</density>
+      <dissolved_components>
+        <primaries>
+          <primary>H+</primary>
+          <primary>HCO3-</primary>
+          <primary>Ca++</primary>
+        </primaries>
+        <secondaries>
+          <secondary>CO2(aq)</secondary>
+          <secondary>CO3--</secondary>
+          <secondary>CaCO3(aq)</secondary>
+          <secondary>CaHCO3+</secondary>
+          <secondary>CaOH+</secondary>
+          <secondary>OH-</secondary>
+        </secondaries>
+      </dissolved_components>
+    </liquid_phase>
+    <solid_phase>
+      <minerals>
+        <mineral rate_constant="1.0e-9">Calcite</mineral>
+      </minerals>
+    </solid_phase>
+    <gas_phase>
+      <gases>
+        <gas>CO2(g)</gas>
+      </gases>
+    </gas_phase>
+  </phases>
+
+  <execution_controls>
+      <comments> </comments>
+      <verbosity level="high"/>
+      <execution_control_defaults init_dt= "1.5768e+5"   max_dt="3.154e7"  reduction_factor="0.8"  increase_factor="1.25" mode="transient" method="bdf1"/>
+      <execution_control  start="0.0 y" end="0.0 y" init_dt= "1.5768e+5" max_dt="3.154e7"  reduction_factor="0.8"  increase_factor="1.25" mode="steady" method="bdf1"/>
+      <execution_control  start="0.0 y" end="1.5778463e9" mode = "transient" />
+  </execution_controls>
+
+  <numerical_controls>
+    <structured_controls>
+      <str_time_step_controls>
+      </str_time_step_controls>
+
+      <str_flow_controls>
+      	<gravity>0</gravity>
+      </str_flow_controls>
+
+      <str_transport_controls>
+      	<max_n_subcycle_transport>10</max_n_subcycle_transport>
+      </str_transport_controls>
+
+      <str_amr_controls>
+	<max_grid_size>64</max_grid_size>
+      </str_amr_controls>
+    </structured_controls>
+  </numerical_controls>
+
+  <mesh>
+    <dimension>2</dimension>
+    <generate>
+      <number_of_cells nx="100" ny="2"/>
+      <box high_coordinates="100.0, 1.0" low_coordinates="0.0, 0.0"/>
+    </generate>
+  </mesh>
+
+  <regions>
+  </regions>
+
+  <materials>
+    <material name="soil">
+      <mechanical_properties>
+        <porosity value="0.25"/>
+      </mechanical_properties>
+      <permeability x="1.0e-12" y="1.0e-12"/>
+      <assigned_regions>All</assigned_regions>
+      <minerals>
+        <mineral name="Calcite" volume_fraction="1.0e-5" specific_surface_area="1.0"/>
+      </minerals>
+    </material>
+  </materials>
+
+  <initial_conditions>  
+    <initial_condition name="initial_ic">
+      <assigned_regions>All</assigned_regions>
+      <liquid_phase name="water">
+        <liquid_component name="water">
+          <uniform_pressure value="201325.0"/>
+        </liquid_component>
+        <geochemistry_component>
+          <constraint name="initial"/>
+        </geochemistry_component>
+      </liquid_phase>
+    </initial_condition>
+  </initial_conditions>
+
+  <boundary_conditions> 
+    <boundary_condition name="west_bc">
+      <assigned_regions>XLOBC</assigned_regions>
+      <liquid_phase name="water">
+        <liquid_component name="water">
+          <inward_mass_flux value="7.91317859e-6" start="0" function="constant"/>
+        </liquid_component>
+        <geochemistry_component>
+          <constraint name= "west" start="0" function="constant"/>
+        </geochemistry_component>
+      </liquid_phase>
+    </boundary_condition>
+    <boundary_condition name="east_bc">
+      <assigned_regions>XHIBC</assigned_regions>
+      <liquid_phase name="water">
+        <liquid_component name="water">
+          <uniform_pressure value="201325.0" start="0" function="constant"/>
+        </liquid_component>
+        <geochemistry_component>
+          <constraint name= "initial" start="0" function="constant"/>
+        </geochemistry_component>
+      </liquid_phase>
+    </boundary_condition>
+  </boundary_conditions>
+  
+  <!--boundary_conditions> 
+    <boundary_condition name="west_bc">
+      <assigned_regions>west</assigned_regions>
+      <liquid_phase name="water">
+        <liquid_component name="water">
+          <inward_mass_flux value="7.91317859e-6" start="0" function="constant"/>
+        </liquid_component>
+        <geochemistry_component>
+          <constraint name="west" start = "0.0" function="constant"/>
+        </geochemistry_component>
+      </liquid_phase>
+    </boundary_condition>
+    <boundary_condition name="east_bc">
+      <assigned_regions>east</assigned_regions>
+      <liquid_phase name="water">
+        <liquid_component name="water">
+          <uniform_pressure value="201325.0" start="0" function="constant"/>
+        </liquid_component>
+      </liquid_phase>
+    </boundary_condition>
+  </boundary_conditions-->
+
+  <geochemistry>
+    <verbosity>silent</verbosity>
+    <constraints>
+      <constraint name="initial">
+      </constraint>
+      <constraint name="west">
+      </constraint>
+    </constraints>
+  </geochemistry>
+
+  <output>
+    <vis>
+      <base_filename>struct_amanzi-output-pflo/plt</base_filename>
+      <num_digits>5</num_digits>
+      <cycle_macros>every_step</cycle_macros>
+    </vis>
+    <checkpoint>
+      <base_filename>struct_amanzi-output-pflo/chk</base_filename>
+      <num_digits>5</num_digits>
+    </checkpoint>
+  </output>
+
+</amanzi_input>

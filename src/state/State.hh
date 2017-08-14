@@ -34,8 +34,6 @@
 #include "CompositeVector.hh"
 #include "CompositeVectorSpace.hh"
 
-#include "StateDefs.hh"
-
 #include "Visualization.hh"
 #include "checkpoint.hh"
 #include "ObservationData.hh"

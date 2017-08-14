@@ -127,7 +127,8 @@ MeshFactory::create(const std::string& filename,
   }
   e.add_data(boost::str(boost::format("%s: unable to read mesh file") %
                         filename).c_str());
-  amanzi_throw(e);
+  Exceptions::amanzi_throw(e);
+  return Teuchos::null;
 }
 
 /** 
@@ -205,7 +206,8 @@ MeshFactory::create(double x0, double y0, double z0,
     }
   }
   e.add_data("unable to generate mesh");
-  amanzi_throw(e);
+  Exceptions::amanzi_throw(e);
+  return Teuchos::null;
 }
 
 /** 
@@ -280,7 +282,8 @@ MeshFactory::create(double x0, double y0,
     }
   }
   e.add_data("unable to generate mesh");
-  amanzi_throw(e);
+  Exceptions::amanzi_throw(e);
+  return Teuchos::null;
 }
 
 /** 
@@ -327,7 +330,8 @@ MeshFactory::create(Teuchos::ParameterList &parameter_list,
     }
   }
   e.add_data("unable to generate mesh");
-  amanzi_throw(e);
+  Exceptions::amanzi_throw(e);
+  return Teuchos::null;
 }
 
 /** 
@@ -380,7 +384,8 @@ MeshFactory::create(const Mesh *inmesh,
     }
   }
   e.add_data("unable to extract mesh");
-  amanzi_throw(e);
+  Exceptions::amanzi_throw(e);
+  return Teuchos::null;
 }
 
 } // namespace AmanziMesh

@@ -134,7 +134,7 @@ void CycleDriver::Init_PK(int time_pr_id) {
     Exceptions::amanzi_throw(message);
   }
 
-  pk_ = pk_factory.CreatePK(pk_tree_list.sublist(pk_name), glist_, S_, soln_);
+  pk_ = pk_factory.CreatePK(pk_name, pk_tree_list, glist_, S_, soln_);
 }
 
 
@@ -194,7 +194,7 @@ void CycleDriver::Setup() {
 
       if (glist_->isSublist(plist_name)) {
         Teuchos::ParameterList& vis_plist = glist_->sublist(plist_name);
-        Teuchos::RCP<Visualization> vis = Teuchos::rcp(new Visualization(vis_plist, comm_));
+        Teuchos::RCP<Visualization> vis = Teuchos::rcp(new Visualization(vis_plist));
         vis->set_mesh(mesh->second.first);
         vis->CreateFiles();
         visualization_.push_back(vis);
@@ -210,7 +210,7 @@ void CycleDriver::Setup() {
       if (glist_->isSublist(fail_plist_name)) {
         Teuchos::ParameterList& fail_vis_plist = glist_->sublist(fail_plist_name);
         Teuchos::RCP<Visualization> fail_vis =
-          Teuchos::rcp(new Visualization(fail_vis_plist, comm_));
+          Teuchos::rcp(new Visualization(fail_vis_plist));
         fail_vis->set_mesh(mesh->second.first);
         fail_vis->CreateFiles();
         failed_visualization_.push_back(fail_vis);
