@@ -36,7 +36,6 @@ IndependentVariableFieldEvaluator::IndependentVariableFieldEvaluator(Teuchos::Pa
 IndependentVariableFieldEvaluator::IndependentVariableFieldEvaluator(const IndependentVariableFieldEvaluator& other) :
     FieldEvaluator(other),
     my_key_(other.my_key_),
-    func_(other.func_),
     temporally_variable_(other.temporally_variable_),
     time_(other.time_),
     computed_once_(other.computed_once_) {}
