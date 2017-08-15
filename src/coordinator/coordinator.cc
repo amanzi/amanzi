@@ -195,7 +195,8 @@ void Coordinator::initialize() {
 
       // vis successful timesteps
       auto vis = Teuchos::rcp(new Amanzi::Visualization(*sublist_p));
-      vis->set_mesh(mesh_p);    
+      vis->set_name(domain_name);
+      vis->set_mesh(mesh_p);
       vis->CreateFiles();
     
       visualization_.push_back(vis);
