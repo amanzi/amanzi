@@ -1,6 +1,6 @@
 diff -ruNbB crunchtope-160915.c31ecb9.0-source-orig/AssembleGlobal.F90 crunchtope-160915.c31ecb9.0-source/AssembleGlobal.F90
---- crunchtope-160915.c31ecb9.0-source-orig/AssembleGlobal.F90	2017-08-15 12:42:52.003347000 -0600
-+++ crunchtope-160915.c31ecb9.0-source/AssembleGlobal.F90	2017-08-15 12:24:49.534332000 -0600
+--- crunchtope-160915.c31ecb9.0-source-orig/AssembleGlobal.F90	2017-08-15 14:38:27.763960000 -0600
++++ crunchtope-160915.c31ecb9.0-source/AssembleGlobal.F90	2017-08-15 12:47:19.945649000 -0600
 @@ -60,7 +60,7 @@
  
  !*****************************PETSc include statements ********************
@@ -12,8 +12,8 @@ diff -ruNbB crunchtope-160915.c31ecb9.0-source-orig/AssembleGlobal.F90 crunchtop
  
 diff -ruNbB crunchtope-160915.c31ecb9.0-source-orig/CMakeLists.txt crunchtope-160915.c31ecb9.0-source/CMakeLists.txt
 --- crunchtope-160915.c31ecb9.0-source-orig/CMakeLists.txt	1969-12-31 17:00:00.000000000 -0700
-+++ crunchtope-160915.c31ecb9.0-source/CMakeLists.txt	2017-08-15 12:39:34.727281000 -0600
-@@ -0,0 +1,55 @@
++++ crunchtope-160915.c31ecb9.0-source/CMakeLists.txt	2017-08-15 14:36:40.430862000 -0600
+@@ -0,0 +1,57 @@
 +# Minimum CMake version.
 +cmake_minimum_required (VERSION 2.8.12)
 +set(CMAKE_BUILD_TYPE Release)
@@ -59,19 +59,21 @@ diff -ruNbB crunchtope-160915.c31ecb9.0-source-orig/CMakeLists.txt crunchtope-16
 +list(REMOVE_ITEM CRUNCH_SRC "${CRUNCHTOPE_SOURCE_DIR}/reactionNEW.F90")
 +list(REMOVE_ITEM CRUNCH_SRC "${CRUNCHTOPE_SOURCE_DIR}/read_kinetics.F90")
 +
++# install library and mod files
 +set(CRUNCHTOPE_LIB "crunchchem")
++file(GLOB CRUNCH_MOD "${PROJECT_BINARY_DIR}/*.mod")
++
 +include_directories(${PETSC_DIR}/include)
 +add_library(${CRUNCHTOPE_LIB} STATIC ${CRUNCH_SRC})
 +
-+message(DEBUG "${CRUNCHTOPE_LIB}")
-+message(DEBUG "${CMAKE_INSTALL_PREFIX}")
 +install(TARGETS ${CRUNCHTOPE_LIB} DESTINATION ${CMAKE_INSTALL_PREFIX}/lib)
++install(FILES ${CRUNCH_MOD} DESTINATION ${CMAKE_INSTALL_PREFIX}/lib)
 +
 +
 +
 diff -ruNbB crunchtope-160915.c31ecb9.0-source-orig/CrunchPETScFinalizeSolver.F90 crunchtope-160915.c31ecb9.0-source/CrunchPETScFinalizeSolver.F90
---- crunchtope-160915.c31ecb9.0-source-orig/CrunchPETScFinalizeSolver.F90	2017-08-15 12:42:52.032347000 -0600
-+++ crunchtope-160915.c31ecb9.0-source/CrunchPETScFinalizeSolver.F90	2017-08-15 12:24:49.555331000 -0600
+--- crunchtope-160915.c31ecb9.0-source-orig/CrunchPETScFinalizeSolver.F90	2017-08-15 14:38:27.812958000 -0600
++++ crunchtope-160915.c31ecb9.0-source/CrunchPETScFinalizeSolver.F90	2017-08-15 12:47:19.951653000 -0600
 @@ -47,7 +47,7 @@
  
  IMPLICIT NONE
@@ -82,8 +84,8 @@ diff -ruNbB crunchtope-160915.c31ecb9.0-source-orig/CrunchPETScFinalizeSolver.F9
  !  External variables and arrays
  
 diff -ruNbB crunchtope-160915.c31ecb9.0-source-orig/CrunchPETScInitializeChemistry.F90 crunchtope-160915.c31ecb9.0-source/CrunchPETScInitializeChemistry.F90
---- crunchtope-160915.c31ecb9.0-source-orig/CrunchPETScInitializeChemistry.F90	2017-08-15 12:42:52.034345000 -0600
-+++ crunchtope-160915.c31ecb9.0-source/CrunchPETScInitializeChemistry.F90	2017-08-15 12:24:49.558331000 -0600
+--- crunchtope-160915.c31ecb9.0-source-orig/CrunchPETScInitializeChemistry.F90	2017-08-15 14:38:27.813961000 -0600
++++ crunchtope-160915.c31ecb9.0-source/CrunchPETScInitializeChemistry.F90	2017-08-15 12:47:19.954653000 -0600
 @@ -48,7 +48,7 @@
  
  IMPLICIT NONE
@@ -94,8 +96,8 @@ diff -ruNbB crunchtope-160915.c31ecb9.0-source-orig/CrunchPETScInitializeChemist
  !  External variables and arrays
  
 diff -ruNbB crunchtope-160915.c31ecb9.0-source-orig/CrunchPETScInitializeDiffusion.F90 crunchtope-160915.c31ecb9.0-source/CrunchPETScInitializeDiffusion.F90
---- crunchtope-160915.c31ecb9.0-source-orig/CrunchPETScInitializeDiffusion.F90	2017-08-15 12:42:52.035346000 -0600
-+++ crunchtope-160915.c31ecb9.0-source/CrunchPETScInitializeDiffusion.F90	2017-08-15 12:24:49.561330000 -0600
+--- crunchtope-160915.c31ecb9.0-source-orig/CrunchPETScInitializeDiffusion.F90	2017-08-15 14:38:27.815959000 -0600
++++ crunchtope-160915.c31ecb9.0-source/CrunchPETScInitializeDiffusion.F90	2017-08-15 12:47:19.957651000 -0600
 @@ -49,7 +49,7 @@
  
  IMPLICIT NONE
@@ -106,8 +108,8 @@ diff -ruNbB crunchtope-160915.c31ecb9.0-source-orig/CrunchPETScInitializeDiffusi
  
  !  External variables and arrays
 diff -ruNbB crunchtope-160915.c31ecb9.0-source-orig/CrunchPETScInitializePressure.F90 crunchtope-160915.c31ecb9.0-source/CrunchPETScInitializePressure.F90
---- crunchtope-160915.c31ecb9.0-source-orig/CrunchPETScInitializePressure.F90	2017-08-15 12:42:52.037345000 -0600
-+++ crunchtope-160915.c31ecb9.0-source/CrunchPETScInitializePressure.F90	2017-08-15 12:24:49.564330000 -0600
+--- crunchtope-160915.c31ecb9.0-source-orig/CrunchPETScInitializePressure.F90	2017-08-15 14:38:27.817958000 -0600
++++ crunchtope-160915.c31ecb9.0-source/CrunchPETScInitializePressure.F90	2017-08-15 12:47:19.960653000 -0600
 @@ -47,7 +47,7 @@
  
  IMPLICIT NONE
@@ -118,8 +120,8 @@ diff -ruNbB crunchtope-160915.c31ecb9.0-source-orig/CrunchPETScInitializePressur
  !  External variables and arrays
  
 diff -ruNbB crunchtope-160915.c31ecb9.0-source-orig/CrunchPETScTolerances.F90 crunchtope-160915.c31ecb9.0-source/CrunchPETScTolerances.F90
---- crunchtope-160915.c31ecb9.0-source-orig/CrunchPETScTolerances.F90	2017-08-15 12:42:52.038347000 -0600
-+++ crunchtope-160915.c31ecb9.0-source/CrunchPETScTolerances.F90	2017-08-15 12:24:49.567330000 -0600
+--- crunchtope-160915.c31ecb9.0-source-orig/CrunchPETScTolerances.F90	2017-08-15 14:38:27.819957000 -0600
++++ crunchtope-160915.c31ecb9.0-source/CrunchPETScTolerances.F90	2017-08-15 12:47:19.963651000 -0600
 @@ -47,7 +47,7 @@
  USE solver, ONLY:  level, SolverMethod, PCMethod
  IMPLICIT NONE
@@ -130,8 +132,8 @@ diff -ruNbB crunchtope-160915.c31ecb9.0-source-orig/CrunchPETScTolerances.F90 cr
  !  External variables and arrays
  REAL(DP), INTENT(IN)                                                  :: rtolksp
 diff -ruNbB crunchtope-160915.c31ecb9.0-source-orig/CrunchTope.F90 crunchtope-160915.c31ecb9.0-source/CrunchTope.F90
---- crunchtope-160915.c31ecb9.0-source-orig/CrunchTope.F90	2017-08-15 12:42:52.041346000 -0600
-+++ crunchtope-160915.c31ecb9.0-source/CrunchTope.F90	2017-08-15 12:24:49.571331000 -0600
+--- crunchtope-160915.c31ecb9.0-source-orig/CrunchTope.F90	2017-08-15 14:38:27.822957000 -0600
++++ crunchtope-160915.c31ecb9.0-source/CrunchTope.F90	2017-08-15 12:47:19.968648000 -0600
 @@ -81,7 +81,7 @@
  
  !  **********  PETSc include statements *********************************
@@ -142,8 +144,8 @@ diff -ruNbB crunchtope-160915.c31ecb9.0-source-orig/CrunchTope.F90 crunchtope-16
  ! ******************* end PETSc include statements ***********************
  
 diff -ruNbB crunchtope-160915.c31ecb9.0-source-orig/GIMRTCrunchPETScTolerances.F90 crunchtope-160915.c31ecb9.0-source/GIMRTCrunchPETScTolerances.F90
---- crunchtope-160915.c31ecb9.0-source-orig/GIMRTCrunchPETScTolerances.F90	2017-08-15 12:42:52.095343000 -0600
-+++ crunchtope-160915.c31ecb9.0-source/GIMRTCrunchPETScTolerances.F90	2017-08-15 12:24:49.575329000 -0600
+--- crunchtope-160915.c31ecb9.0-source-orig/GIMRTCrunchPETScTolerances.F90	2017-08-15 14:38:27.858954000 -0600
++++ crunchtope-160915.c31ecb9.0-source/GIMRTCrunchPETScTolerances.F90	2017-08-15 12:47:19.972646000 -0600
 @@ -47,7 +47,7 @@
  USE solver, ONLY:  GIMRTlevel, GIMRT_SolverMethod, GIMRT_PCMethod
  IMPLICIT NONE
@@ -154,8 +156,8 @@ diff -ruNbB crunchtope-160915.c31ecb9.0-source-orig/GIMRTCrunchPETScTolerances.F
  !  External variables and arrays
  REAL(DP), INTENT(IN)                                                  :: rtolksp
 diff -ruNbB crunchtope-160915.c31ecb9.0-source-orig/Makefile crunchtope-160915.c31ecb9.0-source/Makefile
---- crunchtope-160915.c31ecb9.0-source-orig/Makefile	2017-08-15 12:42:52.147339000 -0600
-+++ crunchtope-160915.c31ecb9.0-source/Makefile	2017-08-15 12:24:49.578329000 -0600
+--- crunchtope-160915.c31ecb9.0-source-orig/Makefile	2017-08-15 14:38:27.896954000 -0600
++++ crunchtope-160915.c31ecb9.0-source/Makefile	2017-08-15 12:47:19.975646000 -0600
 @@ -625,11 +625,11 @@
  ## For PETSc 3.0X
  ##include ${PETSC_DIR}/conf/base
@@ -173,8 +175,8 @@ diff -ruNbB crunchtope-160915.c31ecb9.0-source-orig/Makefile crunchtope-160915.c
  CrunchMain : ${OBJSF} chkopts
  	-${FLINKER} -o CrunchTope ${OBJSF} ${PETSC_FORTRAN_LIB} ${PETSC_LIB} ${FFLAGS}
 diff -ruNbB crunchtope-160915.c31ecb9.0-source-orig/Pressure.F90 crunchtope-160915.c31ecb9.0-source/Pressure.F90
---- crunchtope-160915.c31ecb9.0-source-orig/Pressure.F90	2017-08-15 12:42:52.163342000 -0600
-+++ crunchtope-160915.c31ecb9.0-source/Pressure.F90	2017-08-15 12:24:49.583331000 -0600
+--- crunchtope-160915.c31ecb9.0-source-orig/Pressure.F90	2017-08-15 14:38:27.943955000 -0600
++++ crunchtope-160915.c31ecb9.0-source/Pressure.F90	2017-08-15 12:47:19.980648000 -0600
 @@ -56,7 +56,7 @@
  
  !*****************************PETSc include statements ********************
@@ -185,8 +187,8 @@ diff -ruNbB crunchtope-160915.c31ecb9.0-source-orig/Pressure.F90 crunchtope-1609
  !**************************** End PETSc include statements **************
  
 diff -ruNbB crunchtope-160915.c31ecb9.0-source-orig/ReadFlowField.F90 crunchtope-160915.c31ecb9.0-source/ReadFlowField.F90
---- crunchtope-160915.c31ecb9.0-source-orig/ReadFlowField.F90	2017-08-15 12:42:52.186337000 -0600
-+++ crunchtope-160915.c31ecb9.0-source/ReadFlowField.F90	2017-08-15 12:24:49.587328000 -0600
+--- crunchtope-160915.c31ecb9.0-source-orig/ReadFlowField.F90	2017-08-15 14:38:27.966949000 -0600
++++ crunchtope-160915.c31ecb9.0-source/ReadFlowField.F90	2017-08-15 12:47:19.991648000 -0600
 @@ -65,7 +65,7 @@
  
  !  **********  PETSc include statements *********************************
@@ -197,8 +199,8 @@ diff -ruNbB crunchtope-160915.c31ecb9.0-source-orig/ReadFlowField.F90 crunchtope
  ! ******************* end PETSc include statements ***********************
  
 diff -ruNbB crunchtope-160915.c31ecb9.0-source-orig/restart.F90 crunchtope-160915.c31ecb9.0-source/restart.F90
---- crunchtope-160915.c31ecb9.0-source-orig/restart.F90	2017-08-15 12:42:52.650313000 -0600
-+++ crunchtope-160915.c31ecb9.0-source/restart.F90	2017-08-15 12:24:49.590329000 -0600
+--- crunchtope-160915.c31ecb9.0-source-orig/restart.F90	2017-08-15 14:38:28.478923000 -0600
++++ crunchtope-160915.c31ecb9.0-source/restart.F90	2017-08-15 12:47:19.994648000 -0600
 @@ -81,7 +81,7 @@
  
  !  **********  PETSc include statements *********************************
@@ -209,8 +211,8 @@ diff -ruNbB crunchtope-160915.c31ecb9.0-source-orig/restart.F90 crunchtope-16091
  ! ******************* end PETSc include statements ***********************
  
 diff -ruNbB crunchtope-160915.c31ecb9.0-source-orig/SolveDiffuse.F90 crunchtope-160915.c31ecb9.0-source/SolveDiffuse.F90
---- crunchtope-160915.c31ecb9.0-source-orig/SolveDiffuse.F90	2017-08-15 12:42:52.191337000 -0600
-+++ crunchtope-160915.c31ecb9.0-source/SolveDiffuse.F90	2017-08-15 12:24:49.593328000 -0600
+--- crunchtope-160915.c31ecb9.0-source-orig/SolveDiffuse.F90	2017-08-15 14:38:27.971950000 -0600
++++ crunchtope-160915.c31ecb9.0-source/SolveDiffuse.F90	2017-08-15 12:47:19.997647000 -0600
 @@ -56,7 +56,7 @@
  
  !*****************************PETSc include statements ********************
@@ -221,8 +223,8 @@ diff -ruNbB crunchtope-160915.c31ecb9.0-source-orig/SolveDiffuse.F90 crunchtope-
  !**************************** End PETSc include statements **************
  
 diff -ruNbB crunchtope-160915.c31ecb9.0-source-orig/SolveDiffuseSpherical.F90 crunchtope-160915.c31ecb9.0-source/SolveDiffuseSpherical.F90
---- crunchtope-160915.c31ecb9.0-source-orig/SolveDiffuseSpherical.F90	2017-08-15 12:42:52.192339000 -0600
-+++ crunchtope-160915.c31ecb9.0-source/SolveDiffuseSpherical.F90	2017-08-15 12:24:49.595333000 -0600
+--- crunchtope-160915.c31ecb9.0-source-orig/SolveDiffuseSpherical.F90	2017-08-15 14:38:27.973951000 -0600
++++ crunchtope-160915.c31ecb9.0-source/SolveDiffuseSpherical.F90	2017-08-15 12:47:20.000648000 -0600
 @@ -55,7 +55,7 @@
  
  !*****************************PETSc include statements ********************
@@ -233,8 +235,8 @@ diff -ruNbB crunchtope-160915.c31ecb9.0-source-orig/SolveDiffuseSpherical.F90 cr
  !**************************** End PETSc include statements **************
  
 diff -ruNbB crunchtope-160915.c31ecb9.0-source-orig/SolveGasDiffuse.F90 crunchtope-160915.c31ecb9.0-source/SolveGasDiffuse.F90
---- crunchtope-160915.c31ecb9.0-source-orig/SolveGasDiffuse.F90	2017-08-15 12:42:52.194337000 -0600
-+++ crunchtope-160915.c31ecb9.0-source/SolveGasDiffuse.F90	2017-08-15 12:24:49.598332000 -0600
+--- crunchtope-160915.c31ecb9.0-source-orig/SolveGasDiffuse.F90	2017-08-15 14:38:27.975950000 -0600
++++ crunchtope-160915.c31ecb9.0-source/SolveGasDiffuse.F90	2017-08-15 12:47:20.003646000 -0600
 @@ -56,7 +56,7 @@
  
  !*****************************PETSc include statements ********************
