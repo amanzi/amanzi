@@ -213,7 +213,7 @@ void Field_CompositeVector::Initialize(Teuchos::ParameterList& plist) {
 
 
 void Field_CompositeVector::WriteVis(const Teuchos::Ptr<Visualization>& vis) {
-  if (io_vis_ && (vis->mesh() == data_->Mesh())) {
+  if (io_vis_ && (vis->name() == Keys::getDomain(fieldname_))) {
     EnsureSubfieldNames_();
 
     // loop over the components and dump them to the vis file if possible
