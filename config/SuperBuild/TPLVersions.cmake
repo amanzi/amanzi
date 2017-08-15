@@ -84,6 +84,7 @@
 #   0.94.3       - update MSTK to version 3.00 (incompatible - need to update #defines)
 #   0.94.4       - update MSTK to version 3.01
 #   0.94.5       - restored Alquimia to version 1.0.4
+#   0.94.6       - Added CrynchTope, hash version c31ecb9
 
 include(CMakeParseArguments)
 

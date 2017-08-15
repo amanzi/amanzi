@@ -706,14 +706,16 @@ if (ENABLE_Silo)
 	-DSilo_LIBRARY_DIR:PATH=${Silo_LIBRARY_DIR})
 endif()
 
-# Alquimia and PFlotran
+# Alquimia and chemical engines (PFloTran and CrunchTope)
 if ( NOT ENABLE_XSDK )
     option(ENABLE_ALQUIMIA "Build the Alquimia chemistry interface" FALSE)
     option(ENABLE_PFLOTRAN "Build the PFlotran chemistry package" FALSE)
+    option(ENABLE_CRUNCHTOPE "Build the CrunchTope chemistry package" FALSE)
     if (ENABLE_ALQUIMIA)
 	set(ENABLE_PFLOTRAN TRUE)
+	set(ENABLE_CRUNCHTOPE TRUE)
     endif()
-    if (ENABLE_PFLOTRAN)
+    if (ENABLE_PFLOTRAN OR ENABLE_CRUNCHTOPE)
 	if (NOT ENABLE_PETSC)
 	    set(ENABLE_PETSC TRUE)
 	    include(${SuperBuild_BUILD_FILES_DIR}/Build_PETSc.cmake)
@@ -728,6 +730,11 @@ else()
     build_library_name(pflotranchem PFLOTRAN_LIBRARIES APPEND_PATH ${TPL_INSTALL_PREFIX}/lib)
     set(PFLOTRAN_INCLUDE_DIRS ${TPL_INSTALL_PREFIX}/include)
     set(PFLOTRAN_DIR ${TPL_INSTALL_PREFIX})
+    
+    # crunchtope
+    build_library_name(crunchchem CRUNCHTOPE_LIBRARIES APPEND_PATH ${TPL_INSTALL_PREFIX}/lib)
+    set(CRUNCHTOPE_INCLUDE_DIRS ${TPL_INSTALL_PREFIX}/include)
+    set(CRUNCHTOPE_DIR ${TPL_INSTALL_PREFIX})
     
     # alquimia
     build_library_name(alquimia_c ALQUIMIA_C_LIB APPEND_PATH ${TPL_INSTALL_PREFIX}/lib)
