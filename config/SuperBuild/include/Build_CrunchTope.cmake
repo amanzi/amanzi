@@ -36,6 +36,7 @@ message(DEBUG " patch command " ${CRUNCHTOPE_PATCH_COMMAND})
 # Define the arguments passed to CMake.
 set(CRUNCHTOPE_CMAKE_ARGS "-DCMAKE_INSTALL_PREFIX:FILEPATH=${TPL_INSTALL_PREFIX}"
                           "-DBUILD_SHARED_LIBS:BOOL=OFF"
+                          "-DCMAKE_Fortran_FLAGS:STRING=-w -DALQUIMIA -Wall -Wno-unused-variable -ffree-line-length-0 -O3"
                           "-DPETSC_DIR=${PETSC_DIR}"
                           "-DPETSC_ARCH=.")
 
