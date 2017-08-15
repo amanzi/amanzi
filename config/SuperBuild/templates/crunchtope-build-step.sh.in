@@ -1,0 +1,19 @@
+#!/bin/bash
+
+# CMake generates this file 
+# Replaces each @VAR@ with value of ${VAR}
+
+# Ensure a uniform build with the correct compiler
+export CC=@CMAKE_C_COMPILER_USE@
+export CXX=@CMAKE_CXX_COMPILER_USE@
+export F77=@CMAKE_Fortran_COMPILER_USE@
+export FFLAGS='@Amanzi_COMMON_FCFLAGS@'
+export PETSC_DIR='@PETSC_DIR@'
+
+# crunchtope in-source build under src 
+cd @CRUNCHTOPE_source_dir@/src
+make -j1 all 
+rc=$?
+echo "make all returned $rc"
+
+exit $rc
