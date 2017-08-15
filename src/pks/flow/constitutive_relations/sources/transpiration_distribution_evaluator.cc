@@ -100,24 +100,29 @@ TranspirationDistributionEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
   
   for (int sc=0; sc!=trans_total.MyLength(); ++sc) {
     double column_total = 0.;
+    double f_root_total = 0.;
+    double wp_total = 0.;
     for (auto c : subsurf_mesh.cells_of_column(sc)) {
       double water_potential_factor = (wp_min_ - p[0][c]) / (wp_min_ - p_atm);
       water_potential_factor = water_potential_factor > 1.0 ? 1 :
                                (water_potential_factor < 0. ? 0. : water_potential_factor);
-
-      result_v[0][c] = trans_total[0][sc] * water_potential_factor * f_root[0][c];
-      column_total += result_v[0][c];
+      column_total += water_potential_factor * f_root[0][c] * cv[0][c];
+      result_v[0][c] = water_potential_factor * f_root[0][c];
     }
     if (column_total <= 0. && trans_total[0][sc] > 0.) {
       Errors::Message message("TranspirationDistributionEvaluator: Broken run, non-zero transpiration draw but no cells with some roots are above the wilting point.");
       Exceptions::amanzi_throw(message);
     }
-
+    
     if (column_total > 0.) {
-      double rescaling_factor = column_total / trans_total[0][sc];
       for (auto c : subsurf_mesh.cells_of_column(sc)) {
-        result_v[0][c] *= rescaling_factor;
+        result_v[0][c] = result_v[0][c] * trans_total[0][sc] * surf_cv[0][sc] / column_total;
       }
+    }
+
+    double new_col_total = 0.;
+    for (auto c : subsurf_mesh.cells_of_column(sc)) {
+      new_col_total += result_v[0][c] * cv[0][c];
     }
   }
 }

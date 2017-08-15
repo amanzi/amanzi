@@ -94,15 +94,7 @@ RootingDepthFractionEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
     int ncomp = result->size(*comp, false);
     for (int i=0; i!=ncomp; ++i) {
       result_v[0][i] = model_->RootingDepthFraction(z_v[0][i]);
-      integral[0][i] = result_v[0][i] * cv_v[0][i];
     }
-
-    // rescale to ensure the integral is 1
-    double total, surf_cv_total;
-    integral.Norm1(&total);
-    surf_cv->ViewComponent(*comp, false)->Norm1(&surf_cv_total);
-    double rescaling = total / surf_cv_total;
-    result_v.Scale(rescaling);
   }
 }
 
