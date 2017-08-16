@@ -1329,7 +1329,7 @@ ${cmake_binary} \
               -DENABLE_PETSC:BOOL=${petsc} \
               -DENABLE_ALQUIMIA:BOOL=${alquimia} \
               -DENABLE_PFLOTRAN:BOOL=${pflotran} \
-              -DENABLE_CRUCNTOPE:BOOL=${crunchtope} \
+              -DENABLE_CRUNCHTOPE:BOOL=${crunchtope} \
               -DBUILD_SHARED_LIBS:BOOL=${shared} \
               -DCCSE_BL_SPACEDIM:INT=${spacedim} \
 	      -DENABLE_Regression_Tests:BOOL=${reg_tests} \
