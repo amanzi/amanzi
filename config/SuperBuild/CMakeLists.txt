@@ -712,8 +712,10 @@ if ( NOT ENABLE_XSDK )
     option(ENABLE_PFLOTRAN "Build the PFlotran chemistry package" FALSE)
     option(ENABLE_CRUNCHTOPE "Build the CrunchTope chemistry package" FALSE)
     if (ENABLE_ALQUIMIA)
-	set(ENABLE_PFLOTRAN TRUE)
-	set(ENABLE_CRUNCHTOPE TRUE)
+	if (NOT ENABLE_PFLOTRAN AND NOT ENABLE_CRUNCHTOPE)
+	    set(ENABLE_PFLOTRAN TRUE)
+	    set(ENABLE_CRUNCHTOPE TRUE)
+        endif()
     endif()
     if (ENABLE_PFLOTRAN)
 	if (NOT ENABLE_PETSC)
@@ -755,7 +757,7 @@ endif()
 #  Final steps
 # ############################################################################ #
 
-#  --- Create a CMake cache scipt
+#  --- Create a CMake cache script
 set(SuperBuild_Amanzi_CACHE_SCRIPT amanzi-tpl-config.cmake)
 configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/${SuperBuild_Amanzi_CACHE_SCRIPT}.in
                ${SuperBuild_BINARY_DIR}/${SuperBuild_Amanzi_CACHE_SCRIPT}

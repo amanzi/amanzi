@@ -69,3 +69,4 @@ ExternalProject_Add(${CRUNCHTOPE_BUILD_TARGET}
 include(BuildLibraryName)
 build_library_name(crunchchem CRUNCHTOPE_LIB APPEND_PATH ${TPL_INSTALL_PREFIX}/lib)
 
+set(_ALQUIMIA_CRUNCH_LIBRARY:FILEPATH "${TPL_INSTALL_PREFIX}/lib/libcrunchchem.a")

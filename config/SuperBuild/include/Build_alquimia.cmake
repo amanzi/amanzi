@@ -67,5 +67,3 @@ build_library_name(alquimia_c ALQUIMIA_C_LIB APPEND_PATH ${TPL_INSTALL_PREFIX}/l
 build_library_name(alquimia_cutils ALQUIMIA_CUTILS_LIB APPEND_PATH ${TPL_INSTALL_PREFIX}/lib)
 build_library_name(alquimia_fortran ALQUIMIA_F_LIB APPEND_PATH ${TPL_INSTALL_PREFIX}/lib)
 
-#set(_ALQUIMIA_CRUNCH_LIBRARY:FILEPATH /home/smolins/crunchtope/libcrunchchem.a)
-#set(CRUNCH_DIR /home/smolins/crunchtope)
