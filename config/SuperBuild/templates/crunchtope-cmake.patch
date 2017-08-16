@@ -13,7 +13,7 @@ diff -ruNbB crunchtope-160915.c31ecb9.0-source-orig/AssembleGlobal.F90 crunchtop
 diff -ruNbB crunchtope-160915.c31ecb9.0-source-orig/CMakeLists.txt crunchtope-160915.c31ecb9.0-source/CMakeLists.txt
 --- crunchtope-160915.c31ecb9.0-source-orig/CMakeLists.txt	1969-12-31 17:00:00.000000000 -0700
 +++ crunchtope-160915.c31ecb9.0-source/CMakeLists.txt	2017-08-15 14:36:40.430862000 -0600
-@@ -0,0 +1,57 @@
+@@ -0,0 +1,52 @@
 +# Minimum CMake version.
 +cmake_minimum_required (VERSION 2.8.12)
 +set(CMAKE_BUILD_TYPE Release)
@@ -25,11 +25,6 @@ diff -ruNbB crunchtope-160915.c31ecb9.0-source-orig/CMakeLists.txt crunchtope-16
 +option(CMAKE_INSTALL_PREFIX "Sets installation prefix [/usr/local].")
 +option(XSDK_ENABLE_DEBUG "Enables Debug mode builds [OFF]." OFF)
 +option(BUILD_SHARED_LIBS "Builds shared libraries [ON]." ON)
-+
-+# For now, we disable shared libs on Macs.
-+if (APPLE)
-+  set(BUILD_SHARED_LIBS OFF)
-+endif()
 +
 +# Make sure compilers are set. This must be done before enabling languages.
 +if (NOT CMAKE_Fortran_COMPILER)
