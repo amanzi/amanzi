@@ -84,7 +84,7 @@
 #   0.94.3       - update MSTK to version 3.00 (incompatible - need to update #defines)
 #   0.94.4       - update MSTK to version 3.01
 #   0.94.5       - restored Alquimia to version 1.0.4
-#   0.94.6       - Added CrynchTope, hash version c31ecb9
+#   0.94.6       - Added CrunchTope package, hash version c31ecb9
 
 include(CMakeParseArguments)
 
@@ -134,7 +134,7 @@ endmacro(amanzi_tpl_version_write)
 
 set (AMANZI_TPLS_VERSION_MAJOR 0)
 set (AMANZI_TPLS_VERSION_MINOR 94)
-set (AMANZI_TPLS_VERSION_PATCH 5)
+set (AMANZI_TPLS_VERSION_PATCH 6)
 set (AMANZI_TPLS_VERSION ${AMANZI_TPLS_VERSION}.${AMANZI_TPLS_VERSION_MINOR}.${AMANZI_TPLS_VERSION_PATCH})
 #   Not sure how to create a meaningful hash key for the collection
 
