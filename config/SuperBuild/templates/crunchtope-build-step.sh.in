@@ -10,7 +10,7 @@ export F77=@CMAKE_Fortran_COMPILER_USE@
 export FFLAGS='@Amanzi_COMMON_FCFLAGS@'
 export PETSC_DIR='@PETSC_DIR@'
 
-# crunchtope in-source build under src 
+# crunchtope out-source build
 cd @CRUNCHTOPE_source_dir@/src
 make -j1 all 
 rc=$?
