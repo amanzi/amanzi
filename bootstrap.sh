@@ -114,6 +114,7 @@ petsc=${TRUE}
 hypre=${TRUE}
 alquimia=${FALSE}
 pflotran=${FALSE}
+crunchtope=${FALSE}
 shared=${FALSE}
 spacedim=2
 native=${FALSE}
@@ -300,6 +301,7 @@ Value in brackets indicates default setting.
   petsc                   build the PETSc solver APIs ['"${petsc}"']
 
   pflotran                build the PFlotran geochemistry backend ['"${pflotran}"']
+  crunchtope              build the CrunchTope geochemistry backend ['"${crunchtope}"']
   alquimia                build the Alquimia geochemistry solver APIs ['"${alquimia}"']
 
   test_suite              run Amanzi Test Suite before installing ['"${test_suite}"']
@@ -402,6 +404,7 @@ Build Features:
     petsc               ='"${petsc}"'
     alquimia            ='"${alquimia}"'
     pflotran            ='"${pflotran}"'
+    crunchtope          ='"${crunchtope}"'
     native              ='"${native}"'
     Spack               ='"${Spack}"'
     xsdk                ='"${xsdk}"'
@@ -1235,6 +1238,7 @@ if [ -z "${tpl_config_file}" ]; then
       -DENABLE_PETSC:BOOL=${petsc} \
       -DENABLE_ALQUIMIA:BOOL=${alquimia} \
       -DENABLE_PFLOTRAN:BOOL=${pflotran} \
+      -DENABLE_CRUNCHTOPE:BOOL=${crunchtope} \
       -DENABLE_Silo:BOOL=${silo} \
       -DBUILD_SHARED_LIBS:BOOL=${shared} \
       -DCCSE_BL_SPACEDIM:INT=${spacedim} \
@@ -1325,6 +1329,7 @@ ${cmake_binary} \
               -DENABLE_PETSC:BOOL=${petsc} \
               -DENABLE_ALQUIMIA:BOOL=${alquimia} \
               -DENABLE_PFLOTRAN:BOOL=${pflotran} \
+              -DENABLE_CRUNCHTOPE:BOOL=${crunchtope} \
               -DBUILD_SHARED_LIBS:BOOL=${shared} \
               -DCCSE_BL_SPACEDIM:INT=${spacedim} \
 	      -DENABLE_Regression_Tests:BOOL=${reg_tests} \

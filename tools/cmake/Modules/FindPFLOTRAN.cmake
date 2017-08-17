@@ -26,20 +26,15 @@ include(FindPackageHandleStandardArgs)
 include(PrintVariable)
 include(AddPackageDependency)
 
-message(STATUS "--- JDM: PFLOTRAN >>> In FindPFLOTRAN")
-
 if (PFLOTRAN_LIBRARIES)
 
     # Do nothing. Variables are set. No need to search again
 
 else()
 
-    message(STATUS "--- JDM: PFLOTRAN >>> PFLOTRAN_LIBRARIES not defined")
-
     # Cache variables
     if(PFLOTRAN_DIR)
       set(PFLOTRAN_DIR "${PFLOTRAN_DIR}" CACHE PATH "Path to search for PFLOTRAN include and library files")
-      message(STATUS "--- JDM: PFLOTRAN >>> PFLOTRAN_DIR = ${PFLOTRAN_DIR}")
     endif()
 
     if(PFLOTRAN_LIBRARY_DIR)
