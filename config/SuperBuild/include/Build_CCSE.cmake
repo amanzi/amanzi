@@ -73,9 +73,7 @@ ExternalProject_Add(${CCSE_BUILD_TARGET}
                     DOWNLOAD_DIR ${TPL_DOWNLOAD_DIR}              # Download directory
                     URL          ${CCSE_URL}                      # URL may be a web site OR a local file
                     URL_MD5      ${CCSE_MD5_SUM}                  # md5sum of the archive file
-                    # -- Patch 
-		    # PATCH_COMMAND ${CCSE_PATCH_COMMAND}                    
-		    PATCH_COMMAND
+		    PATCH_COMMAND ${CCSE_PATCH_COMMAND}                    
                     # -- Configure
                     SOURCE_DIR       ${CCSE_source_dir}           # Source directory
                     CMAKE_CACHE_ARGS ${CCSE_CMAKE_CACHE_ARGS}     # CMAKE_CACHE_ARGS or CMAKE_ARGS => CMake configure

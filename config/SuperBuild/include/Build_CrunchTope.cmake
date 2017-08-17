@@ -30,7 +30,6 @@ configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/crunchtope-patch-step.cmake.in
                @ONLY)
 # --- set the patch command
 set(CRUNCHTOPE_PATCH_COMMAND ${CMAKE_COMMAND} -P ${CRUNCHTOPE_cmake_patch})
-message(DEBUG " patch command " ${CRUNCHTOPE_PATCH_COMMAND})
 
 
 # Define the arguments passed to CMake.
