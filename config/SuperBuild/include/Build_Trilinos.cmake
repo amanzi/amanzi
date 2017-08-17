@@ -140,19 +140,19 @@ set(Trilinos_CMAKE_EXTRA_ARGS
 if ( CMAKE_BUILD_TYPE )
   list(APPEND Trilinos_CMAKE_EXTRA_ARGS
               "-DCMAKE_BUILD_TYPE:STRING=${CMAKE_BUILD_TYPE}")
-  message(DEBUG "CMAKE_BUILD_TYPE = ${CMAKE_BUILD_TYPE}")
+  message(DEBUG ": CMAKE_BUILD_TYPE = ${CMAKE_BUILD_TYPE}")
 
   if ( ${CMAKE_BUILD_TYPE} STREQUAL "Debug" )
     list(APPEND Trilinos_CMAKE_EXTRA_ARGS
               "-DEpetra_ENABLE_FATAL_MESSAGES:BOOL=ON")
   endif()
-  message(DEBUG "Trilinos_CMAKE_EXTRA_ARGS = ${Trilinos_CMAKE_EXTRA_ARGS}")
+  message(DEBUG ": Trilinos_CMAKE_EXTRA_ARGS = ${Trilinos_CMAKE_EXTRA_ARGS}")
 endif()
 
 if ( BUILD_SHARED_LIBS )
   list(APPEND Trilinos_CMAKE_EXTRA_ARGS
     "-DBUILD_SHARED_LIBS:BOOL=${BUILD_SHARED_LIBS}")
-  message(DEBUG "Trilinos_CMAKE_EXTRA_ARGS = ${Trilinos_CMAKE_EXTRA_ARGS}")
+  message(DEBUG ": Trilinos_CMAKE_EXTRA_ARGS = ${Trilinos_CMAKE_EXTRA_ARGS}")
 endif()
 
 

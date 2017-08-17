@@ -1,0 +1,243 @@
+diff -ruNbB crunchtope-160915.c31ecb9.0-source-orig/AssembleGlobal.F90 crunchtope-160915.c31ecb9.0-source/AssembleGlobal.F90
+--- crunchtope-160915.c31ecb9.0-source-orig/AssembleGlobal.F90	2017-08-14 15:54:41.000000000 -0600
++++ crunchtope-160915.c31ecb9.0-source/AssembleGlobal.F90	2017-08-16 12:40:36.748382591 -0600
+@@ -60,7 +60,7 @@
+ 
+ !*****************************PETSc include statements ********************
+ 
+-#include "petsc/finclude/petsc.h"
++#include "finclude/petsc.h"
+ 
+ !**************************** End PETSc include statements **************
+ 
+diff -ruNbB crunchtope-160915.c31ecb9.0-source-orig/CMakeLists.txt crunchtope-160915.c31ecb9.0-source/CMakeLists.txt
+--- crunchtope-160915.c31ecb9.0-source-orig/CMakeLists.txt	1969-12-31 17:00:00.000000000 -0700
++++ crunchtope-160915.c31ecb9.0-source/CMakeLists.txt	2017-08-16 17:50:22.601801936 -0600
+@@ -0,0 +1,52 @@
++# Minimum CMake version.
++cmake_minimum_required (VERSION 2.8.12)
++set(CMAKE_BUILD_TYPE Release)
++
++project(CRUNCHTOPE)
++
++# Options for building CrunchTope. These come from the xSDK compliance rules.
++option(USE_XSDK_DEFAULTS "Set to use xSDK defaults for options [ON]." ON)
++option(CMAKE_INSTALL_PREFIX "Sets installation prefix [/usr/local].")
++option(XSDK_ENABLE_DEBUG "Enables Debug mode builds [OFF]." OFF)
++option(BUILD_SHARED_LIBS "Builds shared libraries [ON]." ON)
++
++# Make sure compilers are set. This must be done before enabling languages.
++if (NOT CMAKE_Fortran_COMPILER)
++  message(FATAL_ERROR "Fortran compiler is not set")
++endif()
++enable_language(Fortran)
++
++message(STATUS "C compiler is ${CMAKE_C_COMPILER} (${CMAKE_C_COMPILER_ID})")
++message(STATUS "Fortran compiler is ${CMAKE_Fortran_COMPILER} (${CMAKE_Fortran_COMPILER_ID})")
++
++# Include the binary directory in the header file search path,
++# since it's where we place generated files.
++include_directories("${PROJECT_SOURCE_DIR}")
++
++# Now that we have gathered all tech information, we create a library
++add_definitions(-DALQUIMIA)
++file(GLOB CRUNCH_SRC "*.F90")
++list(REMOVE_ITEM CRUNCH_SRC "${CRUNCHTOPE_SOURCE_DIR}/AllocateCSD.F90")
++list(REMOVE_ITEM CRUNCH_SRC "${CRUNCHTOPE_SOURCE_DIR}/CalculateCSD.F90")
++list(REMOVE_ITEM CRUNCH_SRC "${CRUNCHTOPE_SOURCE_DIR}/CountSubstrings.F90")
++list(REMOVE_ITEM CRUNCH_SRC "${CRUNCHTOPE_SOURCE_DIR}/equilib.F90")
++list(REMOVE_ITEM CRUNCH_SRC "${CRUNCHTOPE_SOURCE_DIR}/FindFirstStringWithinBlock.F90")
++list(REMOVE_ITEM CRUNCH_SRC "${CRUNCHTOPE_SOURCE_DIR}/GraphicsXmgr.F90")
++list(REMOVE_ITEM CRUNCH_SRC "${CRUNCHTOPE_SOURCE_DIR}/parameters.F90")
++list(REMOVE_ITEM CRUNCH_SRC "${CRUNCHTOPE_SOURCE_DIR}/RateFactorNumerical.F90")
++list(REMOVE_ITEM CRUNCH_SRC "${CRUNCHTOPE_SOURCE_DIR}/ReactionNumerical.F90")
++list(REMOVE_ITEM CRUNCH_SRC "${CRUNCHTOPE_SOURCE_DIR}/reactionNEW.F90")
++list(REMOVE_ITEM CRUNCH_SRC "${CRUNCHTOPE_SOURCE_DIR}/read_kinetics.F90")
++
++# install library and mod files
++set(CRUNCHTOPE_LIB "crunchchem")
++set(CMAKE_Fortran_MODULE_DIRECTORY "${PROJECT_BINARY_DIR}/mod_files")
++
++include_directories(${PETSC_DIR}/include)
++add_library(${CRUNCHTOPE_LIB} STATIC ${CRUNCH_SRC})
++
++install(TARGETS ${CRUNCHTOPE_LIB} DESTINATION ${CMAKE_INSTALL_PREFIX}/lib)
++install(DIRECTORY ${CMAKE_Fortran_MODULE_DIRECTORY}/ DESTINATION ${CMAKE_INSTALL_PREFIX}/lib)
++
++
++
+diff -ruNbB crunchtope-160915.c31ecb9.0-source-orig/CrunchPETScFinalizeSolver.F90 crunchtope-160915.c31ecb9.0-source/CrunchPETScFinalizeSolver.F90
+--- crunchtope-160915.c31ecb9.0-source-orig/CrunchPETScFinalizeSolver.F90	2017-08-14 15:54:41.000000000 -0600
++++ crunchtope-160915.c31ecb9.0-source/CrunchPETScFinalizeSolver.F90	2017-08-16 12:40:36.748382591 -0600
+@@ -47,7 +47,7 @@
+ 
+ IMPLICIT NONE
+ 
+-#include "petsc/finclude/petsc.h"
++#include "finclude/petsc.h"
+ 
+ !  External variables and arrays
+ 
+diff -ruNbB crunchtope-160915.c31ecb9.0-source-orig/CrunchPETScInitializeChemistry.F90 crunchtope-160915.c31ecb9.0-source/CrunchPETScInitializeChemistry.F90
+--- crunchtope-160915.c31ecb9.0-source-orig/CrunchPETScInitializeChemistry.F90	2017-08-14 15:54:41.000000000 -0600
++++ crunchtope-160915.c31ecb9.0-source/CrunchPETScInitializeChemistry.F90	2017-08-16 12:40:36.748382591 -0600
+@@ -48,7 +48,7 @@
+ 
+ IMPLICIT NONE
+ 
+-#include "petsc/finclude/petsc.h"
++#include "finclude/petsc.h"
+ 
+ !  External variables and arrays
+ 
+diff -ruNbB crunchtope-160915.c31ecb9.0-source-orig/CrunchPETScInitializeDiffusion.F90 crunchtope-160915.c31ecb9.0-source/CrunchPETScInitializeDiffusion.F90
+--- crunchtope-160915.c31ecb9.0-source-orig/CrunchPETScInitializeDiffusion.F90	2017-08-14 15:54:41.000000000 -0600
++++ crunchtope-160915.c31ecb9.0-source/CrunchPETScInitializeDiffusion.F90	2017-08-16 12:40:36.748382591 -0600
+@@ -49,7 +49,7 @@
+ 
+ IMPLICIT NONE
+ 
+-#include "petsc/finclude/petsc.h"
++#include "finclude/petsc.h"
+ 
+ 
+ !  External variables and arrays
+diff -ruNbB crunchtope-160915.c31ecb9.0-source-orig/CrunchPETScInitializePressure.F90 crunchtope-160915.c31ecb9.0-source/CrunchPETScInitializePressure.F90
+--- crunchtope-160915.c31ecb9.0-source-orig/CrunchPETScInitializePressure.F90	2017-08-14 15:54:41.000000000 -0600
++++ crunchtope-160915.c31ecb9.0-source/CrunchPETScInitializePressure.F90	2017-08-16 12:40:36.748382591 -0600
+@@ -47,7 +47,7 @@
+ 
+ IMPLICIT NONE
+ 
+-#include "petsc/finclude/petsc.h"
++#include "finclude/petsc.h"
+ 
+ !  External variables and arrays
+ 
+diff -ruNbB crunchtope-160915.c31ecb9.0-source-orig/CrunchPETScTolerances.F90 crunchtope-160915.c31ecb9.0-source/CrunchPETScTolerances.F90
+--- crunchtope-160915.c31ecb9.0-source-orig/CrunchPETScTolerances.F90	2017-08-14 15:54:41.000000000 -0600
++++ crunchtope-160915.c31ecb9.0-source/CrunchPETScTolerances.F90	2017-08-16 12:40:36.748382591 -0600
+@@ -47,7 +47,7 @@
+ USE solver, ONLY:  level, SolverMethod, PCMethod
+ IMPLICIT NONE
+ 
+-#include "petsc/finclude/petsc.h"
++#include "finclude/petsc.h"
+ 
+ !  External variables and arrays
+ REAL(DP), INTENT(IN)                                                  :: rtolksp
+diff -ruNbB crunchtope-160915.c31ecb9.0-source-orig/CrunchTope.F90 crunchtope-160915.c31ecb9.0-source/CrunchTope.F90
+--- crunchtope-160915.c31ecb9.0-source-orig/CrunchTope.F90	2017-08-14 15:54:41.000000000 -0600
++++ crunchtope-160915.c31ecb9.0-source/CrunchTope.F90	2017-08-16 12:40:36.752382404 -0600
+@@ -81,7 +81,7 @@
+ 
+ !  **********  PETSc include statements *********************************
+ 
+-#include "petsc/finclude/petsc.h"
++#include "finclude/petsc.h"
+ 
+ ! ******************* end PETSc include statements ***********************
+ 
+diff -ruNbB crunchtope-160915.c31ecb9.0-source-orig/GIMRTCrunchPETScTolerances.F90 crunchtope-160915.c31ecb9.0-source/GIMRTCrunchPETScTolerances.F90
+--- crunchtope-160915.c31ecb9.0-source-orig/GIMRTCrunchPETScTolerances.F90	2017-08-14 15:54:41.000000000 -0600
++++ crunchtope-160915.c31ecb9.0-source/GIMRTCrunchPETScTolerances.F90	2017-08-16 12:40:36.752382404 -0600
+@@ -47,7 +47,7 @@
+ USE solver, ONLY:  GIMRTlevel, GIMRT_SolverMethod, GIMRT_PCMethod
+ IMPLICIT NONE
+ 
+-#include "petsc/finclude/petsc.h"
++#include "finclude/petsc.h"
+ 
+ !  External variables and arrays
+ REAL(DP), INTENT(IN)                                                  :: rtolksp
+diff -ruNbB crunchtope-160915.c31ecb9.0-source-orig/Makefile crunchtope-160915.c31ecb9.0-source/Makefile
+--- crunchtope-160915.c31ecb9.0-source-orig/Makefile	2017-08-14 15:54:41.000000000 -0600
++++ crunchtope-160915.c31ecb9.0-source/Makefile	2017-08-16 12:40:36.752382404 -0600
+@@ -625,11 +625,11 @@
+ ## For PETSc 3.0X
+ ##include ${PETSC_DIR}/conf/base
+ ## For PETSc 3.2X
+-##include ${PETSC_DIR}/conf/variables
+-##include ${PETSC_DIR}/conf/rules
++include ${PETSC_DIR}/conf/variables
++include ${PETSC_DIR}/conf/rules
+ ## For PETSc >3.6.0
+-include ${PETSC_DIR}/lib/petsc/conf/variables
+-include ${PETSC_DIR}/lib/petsc/conf/rules
++##include ${PETSC_DIR}/lib/petsc/conf/variables
++##include ${PETSC_DIR}/lib/petsc/conf/rules
+ 
+ CrunchMain : ${OBJSF} chkopts
+ 	-${FLINKER} -o CrunchTope ${OBJSF} ${PETSC_FORTRAN_LIB} ${PETSC_LIB} ${FFLAGS}
+diff -ruNbB crunchtope-160915.c31ecb9.0-source-orig/Pressure.F90 crunchtope-160915.c31ecb9.0-source/Pressure.F90
+--- crunchtope-160915.c31ecb9.0-source-orig/Pressure.F90	2017-08-14 15:54:41.000000000 -0600
++++ crunchtope-160915.c31ecb9.0-source/Pressure.F90	2017-08-16 12:40:36.756382217 -0600
+@@ -56,7 +56,7 @@
+ 
+ !*****************************PETSc include statements ********************
+ 
+-#include "petsc/finclude/petsc.h"
++#include "finclude/petsc.h"
+ 
+ !**************************** End PETSc include statements **************
+ 
+diff -ruNbB crunchtope-160915.c31ecb9.0-source-orig/ReadFlowField.F90 crunchtope-160915.c31ecb9.0-source/ReadFlowField.F90
+--- crunchtope-160915.c31ecb9.0-source-orig/ReadFlowField.F90	2017-08-14 15:54:41.000000000 -0600
++++ crunchtope-160915.c31ecb9.0-source/ReadFlowField.F90	2017-08-16 12:40:36.756382217 -0600
+@@ -65,7 +65,7 @@
+ 
+ !  **********  PETSc include statements *********************************
+ 
+-#include "petsc/finclude/petsc.h"
++#include "finclude/petsc.h"
+ 
+ ! ******************* end PETSc include statements ***********************
+ 
+diff -ruNbB crunchtope-160915.c31ecb9.0-source-orig/restart.F90 crunchtope-160915.c31ecb9.0-source/restart.F90
+--- crunchtope-160915.c31ecb9.0-source-orig/restart.F90	2017-08-14 15:54:41.000000000 -0600
++++ crunchtope-160915.c31ecb9.0-source/restart.F90	2017-08-16 12:40:36.756382217 -0600
+@@ -81,7 +81,7 @@
+ 
+ !  **********  PETSc include statements *********************************
+ 
+-#include "petsc/finclude/petsc.h"
++#include "finclude/petsc.h"
+ 
+ ! ******************* end PETSc include statements ***********************
+ 
+diff -ruNbB crunchtope-160915.c31ecb9.0-source-orig/SolveDiffuse.F90 crunchtope-160915.c31ecb9.0-source/SolveDiffuse.F90
+--- crunchtope-160915.c31ecb9.0-source-orig/SolveDiffuse.F90	2017-08-14 15:54:41.000000000 -0600
++++ crunchtope-160915.c31ecb9.0-source/SolveDiffuse.F90	2017-08-16 12:40:36.756382217 -0600
+@@ -56,7 +56,7 @@
+ 
+ !*****************************PETSc include statements ********************
+ 
+-#include "petsc/finclude/petsc.h"
++#include "finclude/petsc.h"
+ 
+ !**************************** End PETSc include statements **************
+ 
+diff -ruNbB crunchtope-160915.c31ecb9.0-source-orig/SolveDiffuseSpherical.F90 crunchtope-160915.c31ecb9.0-source/SolveDiffuseSpherical.F90
+--- crunchtope-160915.c31ecb9.0-source-orig/SolveDiffuseSpherical.F90	2017-08-14 15:54:41.000000000 -0600
++++ crunchtope-160915.c31ecb9.0-source/SolveDiffuseSpherical.F90	2017-08-16 12:40:36.756382217 -0600
+@@ -55,7 +55,7 @@
+ 
+ !*****************************PETSc include statements ********************
+ 
+-#include "petsc/finclude/petsc.h"
++#include "finclude/petsc.h"
+ 
+ !**************************** End PETSc include statements **************
+ 
+diff -ruNbB crunchtope-160915.c31ecb9.0-source-orig/SolveGasDiffuse.F90 crunchtope-160915.c31ecb9.0-source/SolveGasDiffuse.F90
+--- crunchtope-160915.c31ecb9.0-source-orig/SolveGasDiffuse.F90	2017-08-14 15:54:41.000000000 -0600
++++ crunchtope-160915.c31ecb9.0-source/SolveGasDiffuse.F90	2017-08-16 12:40:36.756382217 -0600
+@@ -56,7 +56,7 @@
+ 
+ !*****************************PETSc include statements ********************
+ 
+-#include "petsc/finclude/petsc.h"
++#include "finclude/petsc.h"
+ 
+ !**************************** End PETSc include statements **************
+ 

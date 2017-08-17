@@ -84,6 +84,7 @@
 #   0.94.3       - update MSTK to version 3.00 (incompatible - need to update #defines)
 #   0.94.4       - update MSTK to version 3.01
 #   0.94.5       - restored Alquimia to version 1.0.4
+#   0.94.6       - Added CrunchTope package, hash version c31ecb9
 
 include(CMakeParseArguments)
 
@@ -133,7 +134,7 @@ endmacro(amanzi_tpl_version_write)
 
 set (AMANZI_TPLS_VERSION_MAJOR 0)
 set (AMANZI_TPLS_VERSION_MINOR 94)
-set (AMANZI_TPLS_VERSION_PATCH 5)
+set (AMANZI_TPLS_VERSION_PATCH 6)
 set (AMANZI_TPLS_VERSION ${AMANZI_TPLS_VERSION}.${AMANZI_TPLS_VERSION_MINOR}.${AMANZI_TPLS_VERSION_PATCH})
 #   Not sure how to create a meaningful hash key for the collection
 
@@ -409,3 +410,15 @@ set(Silo_VERSION  ${Silo_VERSION_MAJOR}.${Silo_VERSION_MINOR}.${Silo_VERSION_PAT
 set(Silo_URL_STRING "https://wci.llnl.gov/content/assets/docs/simulation/computer-codes/silo/silo-4.10.2")
 set(Silo_ARCHIVE_FILE silo-4.10.2.tar.gz)
 set(Silo_MD5_SUM 9ceac777a2f2469ac8cef40f4fab49c8)
+
+#
+# TPL: CrunchTope
+#
+set(CRUNCHTOPE_VERSION_MAJOR 160915)
+set(CRUNCHTOPE_VERSION_MINOR c31ecb9)
+set(CRUNCHTOPE_VERSION_PATCH 0)
+set(CRUNCHTOPE_VERSION  ${CRUNCHTOPE_VERSION_MAJOR}.${CRUNCHTOPE_VERSION_MINOR}.${CRUNCHTOPE_VERSION_PATCH})
+set(CRUNCHTOPE_URL_STRING ${AMANZI_TPLS_DOWNLOAD_URL})
+set(CRUNCHTOPE_ARCHIVE_FILE CrunchTope_160915-c31ecb9.tgz)
+set(CRUNCHTOPE_MD5_SUM 84c38ca70da8f0e14cce3841dbbb4c0b)
+
