@@ -138,6 +138,9 @@ int main(int argc, char *argv[]) {
 #ifdef CCSE_MAJOR
         std::cout << "  CCSE           " << XSTR(CCSE_MAJOR) << "." << XSTR(CCSE_MINOR) << "." << XSTR(CCSE_PATCH) << std::endl;
 #endif
+#ifdef CRUNCHTOPE_MAJOR
+        std::cout << "  CRUNCHTOPE     " << XSTR(CRUNCHTOPE_MAJOR) << "." << XSTR(CRUNCHTOPE_MINOR) << "." << XSTR(CRUNCHTOPE_PATCH) << std::endl;
+#endif
 #ifdef CURL_MAJOR
         std::cout << "  CURL           " << XSTR(CURL_MAJOR) << "." << XSTR(CURL_MINOR) << "." << XSTR(CURL_PATCH) << std::endl;
 #endif
