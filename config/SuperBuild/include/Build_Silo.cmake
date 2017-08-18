@@ -55,7 +55,6 @@ configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/silo-patch-step.cmake.in
                @ONLY)
 # --- Set the patch command
 set(Silo_PATCH_COMMAND ${CMAKE_COMMAND} -P ${Silo_cmake_patch})
-message(DEBUG, "silo patch command = ${Silo_PATCH_COMMAND}")
 
 # --- Add external project build 
 ExternalProject_Add(${Silo_BUILD_TARGET}

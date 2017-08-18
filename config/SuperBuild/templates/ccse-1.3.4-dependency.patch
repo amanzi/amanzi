@@ -1,0 +1,39 @@
+diff -ruNbB ccse-1.3.4-source-orig/Src/C_BaseLib/FArrayBox.cpp ccse-1.3.4-source/Src/C_BaseLib/FArrayBox.cpp
+--- ccse-1.3.4-source-orig/Src/C_BaseLib/FArrayBox.cpp	2017-08-16 18:38:39.426026424 -0600
++++ ccse-1.3.4-source/Src/C_BaseLib/FArrayBox.cpp	2017-08-16 19:08:30.700988284 -0600
+@@ -19,10 +19,10 @@
+ #include <Looping.H>
+ #include <Utility.H>
+ 
+-#ifdef BL_Darwin
++// #ifdef BL_Darwin
+ using std::isinf;
+ using std::isnan;
+-#endif
++// #endif
+ 
+ static const char sys_name[] = "IEEE";
+ //
+diff -ruNbB ccse-1.3.4-source-orig/Src/CMakeLists.txt ccse-1.3.4-source/Src/CMakeLists.txt
+--- ccse-1.3.4-source-orig/Src/CMakeLists.txt	2017-08-16 18:38:39.352691335 -0600
++++ ccse-1.3.4-source/Src/CMakeLists.txt	2017-08-16 19:05:13.282728339 -0600
+@@ -44,3 +44,4 @@
+ 
+ add_subdirectory(Extern/gslib)
+ 
++add_dependencies(box_f box_c)
+diff -ruNbB ccse-1.3.4-source-orig/Src/LinearSolvers/C_CellMG/CGSolver.cpp ccse-1.3.4-source/Src/LinearSolvers/C_CellMG/CGSolver.cpp
+--- ccse-1.3.4-source-orig/Src/LinearSolvers/C_CellMG/CGSolver.cpp	2017-08-16 18:38:39.376025227 -0600
++++ ccse-1.3.4-source/Src/LinearSolvers/C_CellMG/CGSolver.cpp	2017-08-16 19:13:05.484420136 -0600
+@@ -4,9 +4,9 @@
+ #include <iomanip>
+ #include <cmath>
+ 
+-#ifdef BL_Darwin
++// #ifdef BL_Darwin
+ using std::isinf;
+-#endif
++// #endif
+ 
+ #include <ParmParse.H>
+ #include <ParallelDescriptor.H>
