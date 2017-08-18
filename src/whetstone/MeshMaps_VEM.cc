@@ -23,51 +23,12 @@ namespace Amanzi {
 namespace WhetStone {
 
 /* ******************************************************************
-* Calculation of Jacobian.
+* Calculate mesh velocity in cell c
 ****************************************************************** */
-void MeshMaps_VEM::JacobianCellValue(
-    int c, double t, const AmanziGeometry::Point& xref, Tensor& J) const
+void MeshMaps_VEM::VelocityCell(int f, VectorPolynomial& v) const
 {
-}
-
-
-/* ******************************************************************
-* Calculate determinant of a Jacobian. A prototype for the future 
-* projection scheme. Currently, we return a number.
-****************************************************************** */
-void MeshMaps_VEM::JacobianDet(
-    int c, double t, const std::vector<VectorPolynomial>& vf, Polynomial& vc) const
-{
-  AmanziGeometry::Point x(d_), cn(d_);
-  WhetStone::Tensor J(d_, 2); 
-
-  Entity_ID_List faces;
-  std::vector<int> dirs;
-
-  mesh0_->cell_get_faces_and_dirs(c, &faces, &dirs);
-  int nfaces = faces.size();
-
-  double sum(0.0);
-  for (int n = 0; n < nfaces; ++n) {
-    int f = faces[n];
-
-    // calculate j J^{-t} N dA
-    JacobianFaceValue(f, vf[n], x, J);
-
-    J *= t;
-    J += 1.0 - t;
-
-    Tensor C = J.Cofactors();
-    cn = C * mesh0_->face_normal(f); 
-
-    const AmanziGeometry::Point& xf0 = mesh0_->face_centroid(f);
-    const AmanziGeometry::Point& xf1 = mesh1_->face_centroid(f);
-    sum += (xf0 + t * (xf1 - xf0)) * cn * dirs[n];
-  }
-  sum /= 2 * mesh0_->cell_volume(c);
-
-  vc.Reshape(d_, 0);
-  vc.monomials(0).coefs()[0] = sum;
+  v.resize(d_);
+  for (int i = 0; i < d_; ++i) v[i].Reshape(d_, 2);
 }
 
 
@@ -113,6 +74,55 @@ void MeshMaps_VEM::VelocityFace(int f, VectorPolynomial& v) const
   // we change to the global coordinate system
   v[0].monomials(0).coefs()[0] -= b * xf0;
   v[1].monomials(0).coefs()[0] -= (b^xf0)[0];
+}
+
+
+/* ******************************************************************
+* Calculation of Jacobian.
+****************************************************************** */
+void MeshMaps_VEM::JacobianCellValue(
+    int c, double t, const AmanziGeometry::Point& xref, Tensor& J) const
+{
+}
+
+
+/* ******************************************************************
+* Calculate determinant of a Jacobian. A prototype for the future 
+* projection scheme. Currently, we return a number.
+****************************************************************** */
+void MeshMaps_VEM::JacobianDet(
+    int c, double t, const std::vector<VectorPolynomial>& vf, Polynomial& vc) const
+{
+  AmanziGeometry::Point x(d_), cn(d_);
+  WhetStone::Tensor J(d_, 2); 
+
+  Entity_ID_List faces;
+  std::vector<int> dirs;
+
+  mesh0_->cell_get_faces_and_dirs(c, &faces, &dirs);
+  int nfaces = faces.size();
+
+  double sum(0.0);
+  for (int n = 0; n < nfaces; ++n) {
+    int f = faces[n];
+
+    // calculate j J^{-t} N dA
+    JacobianFaceValue(f, vf[n], x, J);
+
+    J *= t;
+    J += 1.0 - t;
+
+    Tensor C = J.Cofactors();
+    cn = C * mesh0_->face_normal(f); 
+
+    const AmanziGeometry::Point& xf0 = mesh0_->face_centroid(f);
+    const AmanziGeometry::Point& xf1 = mesh1_->face_centroid(f);
+    sum += (xf0 + t * (xf1 - xf0)) * cn * dirs[n];
+  }
+  sum /= 2 * mesh0_->cell_volume(c);
+
+  vc.Reshape(d_, 0);
+  vc.monomials(0).coefs()[0] = sum;
 }
 
 

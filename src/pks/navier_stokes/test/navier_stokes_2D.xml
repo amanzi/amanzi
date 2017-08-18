@@ -49,7 +49,7 @@
 
       <ParameterList name="operators">
         <ParameterList name="elasticity operator">
-          <Parameter name="discretization" type="string" value="BernardiRaugel"/>
+          <Parameter name="method" type="string" value="BernardiRaugel"/>
           <ParameterList name="schema">
             <Parameter name="base" type="string" value="cell"/>
             <Parameter name="location" type="Array(string)" value="{node, face}"/>
@@ -59,7 +59,7 @@
         </ParameterList>
 
         <ParameterList name="divergence operator">
-          <Parameter name="mfd method" type="string" value="BernardiRaugel"/>
+          <Parameter name="method" type="string" value="BernardiRaugel"/>
           <Parameter name="matrix type" type="string" value="divergence"/>
           <ParameterList name="schema domain">
             <Parameter name="base" type="string" value="cell"/>
@@ -76,7 +76,7 @@
         </ParameterList>
 
         <ParameterList name="advection operator">
-          <Parameter name="mfd method" type="string" value="BernardiRaugel"/>
+          <Parameter name="method" type="string" value="BernardiRaugel"/>
           <Parameter name="matrix type" type="string" value="advection"/>
           <ParameterList name="schema domain">
             <Parameter name="base" type="string" value="cell"/>

@@ -66,7 +66,7 @@
 
     <!-- NODE 2, FACE 1 scheme -->
     <ParameterList name="elasticity operator">
-      <Parameter name="discretization" type="string" value="BernardiRaugel"/>
+      <Parameter name="method" type="string" value="BernardiRaugel"/>
       <ParameterList name="schema">
         <Parameter name="base" type="string" value="cell"/>
         <Parameter name="location" type="Array(string)" value="{node, face}"/>

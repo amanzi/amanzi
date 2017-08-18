@@ -39,6 +39,12 @@ class MeshMaps_FEM : public MeshMaps {
                Teuchos::RCP<const AmanziMesh::Mesh> mesh1) : MeshMaps(mesh0, mesh1) {};
   ~MeshMaps_FEM() {};
 
+  // Maps
+  // -- pseudo-velocity in cell c
+  virtual void VelocityCell(int c, VectorPolynomial& v) const override;
+  // -- pseudo-velocity on face f
+  virtual void VelocityFace(int f, VectorPolynomial& v) const override;
+
   // Jacobian
   // -- determinant of Jacobian
   virtual void JacobianDet(int c, double t, const std::vector<VectorPolynomial>& vf,
@@ -51,10 +57,6 @@ class MeshMaps_FEM : public MeshMaps {
   virtual void JacobianFaceValue(int f, const VectorPolynomial& v,
                                  const AmanziGeometry::Point& x,
                                  Tensor& J) const override;
-
-  // Maps
-  // -- pseudo-velocity on face f
-  virtual void VelocityFace(int f, VectorPolynomial& v) const override;
 
  private:
   AmanziGeometry::Point Map_(int c, const AmanziGeometry::Point& xref) const;

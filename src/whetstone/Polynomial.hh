@@ -199,8 +199,18 @@ class Polynomial {
   friend Polynomial operator*(const std::vector<Polynomial>& poly, const AmanziGeometry::Point& p) {
     int d(p.dim());
     Polynomial tmp(d, 0);
-    for (int i = 0; i < p.dim(); ++i) {
+    for (int i = 0; i < d; ++i) {
       tmp += poly[i] * p[i];
+    }
+    return tmp;
+  }
+
+  friend Polynomial operator*(const std::vector<Polynomial>& poly1, const std::vector<Polynomial>& poly2) {
+    ASSERT(poly1.size() == poly2.size());
+    int d(poly1[0].dimension());
+    Polynomial tmp(d, 0);
+    for (int i = 0; i < poly1.size(); ++i) {
+      tmp += poly1[i] * poly2[i];
     }
     return tmp;
   }

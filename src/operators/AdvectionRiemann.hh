@@ -55,12 +55,13 @@ class AdvectionRiemann : public Advection {
                           const Teuchos::Ptr<const CompositeVector>& u,
                           const Teuchos::RCP<BCs>& bc,
                           Teuchos::Ptr<CompositeVector>& flux);
-  
+
  private:
   void InitAdvection_(Teuchos::ParameterList& plist);
 
  private:
   std::string flux_, riemann_;
+  int method_order_;
 };
 
 }  // namespace Operators

@@ -50,8 +50,8 @@ class Abstract : public PDE_Helper {
   
   // -- setup
   void Setup(const Teuchos::RCP<std::vector<WhetStone::Tensor> >& K) { K_ = K; }
-  void Setup(const Teuchos::RCP<const std::vector<WhetStone::Polynomial> >& Kpoly) { Kpoly_ = Kpoly; }
-  void Setup(const Teuchos::RCP<const std::vector<WhetStone::VectorPolynomial> >& Kvec) { Kvec_ = Kvec; }
+  void SetupPoly(const Teuchos::RCP<const std::vector<WhetStone::Polynomial> >& Kpoly) { Kpoly_ = Kpoly; }
+  void SetupPolyVector(const Teuchos::RCP<const std::vector<WhetStone::VectorPolynomial> >& Kvec) { Kvec_ = Kvec; }
 
   // optional calculation of flux from potential p
   virtual void UpdateFlux(const Teuchos::Ptr<const CompositeVector>& p,
@@ -70,6 +70,7 @@ class Abstract : public PDE_Helper {
 
  private:
   std::string method_, matrix_;
+  int method_order_;
 };
 
 }  // namespace Operators

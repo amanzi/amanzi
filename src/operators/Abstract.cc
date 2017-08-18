@@ -78,7 +78,8 @@ void Abstract::Init_(Teuchos::ParameterList& plist)
 
   // parameters
   // -- discretization details
-  method_ = plist.get<std::string>("mfd method");
+  method_ = plist.get<std::string>("method");
+  method_order_ = plist.get<int>("method order", 0);
   matrix_ = plist.get<std::string>("matrix type");
 }
 
@@ -97,7 +98,7 @@ void Abstract::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& u,
   AmanziMesh::Entity_ID_List nodes;
 
   WhetStone::MFD3DFactory factory;
-  auto mfd = factory.Create(mesh_, method_, local_schema_col_.CreateUniqueName());
+  auto mfd = factory.Create(mesh_, method_, method_order_);
  
   // identify type of coefficient
   std::string coef("constant");

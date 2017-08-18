@@ -63,6 +63,8 @@ class Reaction : public PDE_Helper {
   Teuchos::RCP<const Epetra_MultiVector> K_;
   Teuchos::RCP<const std::vector<WhetStone::Polynomial> > poly_;
 
+  int method_order_;
+
  private:
   Schema global_schema_col_, global_schema_row_;
   Schema local_schema_col_, local_schema_row_;

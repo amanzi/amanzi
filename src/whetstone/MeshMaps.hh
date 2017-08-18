@@ -48,6 +48,12 @@ class MeshMaps {
 
   ~MeshMaps() {};
 
+  // Maps
+  // -- pseudo-velocity in cell c
+  virtual void VelocityCell(int c, VectorPolynomial& v) const = 0;
+  // -- pseudo-velocity on face f
+  virtual void VelocityFace(int f, VectorPolynomial& v) const = 0;
+
   // Jacobian
   // -- determinant of Jacobian
   virtual void JacobianDet(int c, double t, const std::vector<VectorPolynomial>& vf,
@@ -60,10 +66,6 @@ class MeshMaps {
   virtual void JacobianFaceValue(int f, const VectorPolynomial& v,
                                  const AmanziGeometry::Point& x,
                                  Tensor& J) const = 0;
-
-  // Maps
-  // -- pseudo-velocity on face f
-  virtual void VelocityFace(int f, VectorPolynomial& v) const = 0;
 
   // Miscalleneous
   // -- polynomial approximation of map x2 = F(x1)

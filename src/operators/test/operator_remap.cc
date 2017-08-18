@@ -33,6 +33,7 @@
 #include "WhetStone_typedefs.hh"
 
 // Amanzi::Operators
+#include "Abstract.hh"
 #include "Accumulation.hh"
 #include "AdvectionRiemann.hh"
 #include "OperatorDefs.hh"
@@ -117,9 +118,10 @@ void RemapTests2DExplicit(int order, std::string disc_name,
   CompositeVector p2(cvs2);
   Epetra_MultiVector& p2c = *p2.ViewComponent("cell", true);
 
-  // create advection operator
+  // create flux operator
   Teuchos::ParameterList plist;
-  plist.set<std::string>("discretization", disc_name);
+  plist.set<std::string>("method", disc_name)
+       .set<int>("method order", order);
 
   plist.sublist("schema domain")
       .set<std::string>("base", "face")
@@ -135,6 +137,19 @@ void RemapTests2DExplicit(int order, std::string disc_name,
   std::vector<WhetStone::VectorPolynomial> vec_vel(nfaces_owned);
   Teuchos::RCP<std::vector<WhetStone::Polynomial> > vel = 
       Teuchos::rcp(new std::vector<WhetStone::Polynomial>(nfaces_owned));
+
+  // Attach volumetric advection operator to the flux operator.
+  // We modify the existing parameter list.
+  plist.set<std::string>("matrix type", "advection");
+  plist.sublist("schema domain").set<std::string>("base", "cell");
+  plist.sublist("schema range") = plist.sublist("schema domain");
+
+  Teuchos::RCP<Abstract> op_adv = Teuchos::rcp(new Abstract(plist, global_op));
+
+  Teuchos::RCP<std::vector<WhetStone::VectorPolynomial> > cell_vel = 
+      Teuchos::rcp(new std::vector<WhetStone::VectorPolynomial>(ncells_owned));
+ 
+  op_adv->SetupPolyVector(cell_vel);
 
   // create accumulation operator re-using reaction operator
   plist.sublist("schema")
@@ -165,6 +180,7 @@ void RemapTests2DExplicit(int order, std::string disc_name,
       maps.VelocityFace(f, vec_vel[f]);
     }
 
+    // calculate normal component of face velocities
     for (int f = 0; f < nfaces_owned; ++f) {
       // calculate j J^{-t} N dA
       WhetStone::Tensor J(2, 2); 
@@ -186,6 +202,11 @@ void RemapTests2DExplicit(int order, std::string disc_name,
       (*vel)[f] = vec_vel[f] * cn;
     }
 
+    // calculate cell velocities
+    for (int c = 0; c < ncells_owned; ++c) {
+      maps.VelocityCell(c, (*cell_vel)[c]);
+    }
+
     // calculate determinant of Jacobian at time t
     Entity_ID_List faces;
     std::vector<int> dirs;
@@ -205,6 +226,7 @@ void RemapTests2DExplicit(int order, std::string disc_name,
 
     // populate operators
     op->UpdateMatrices(vel.ptr());
+    op_adv->UpdateMatrices();
     op_reac0->UpdateMatrices(p1.ptr());
 
     // predictor step
@@ -274,10 +296,10 @@ void RemapTests2DExplicit(int order, std::string disc_name,
 
 
 TEST(REMAP_DG0_EXPLICIT) {
-  RemapTests2DExplicit(0, "DG order 0", 20, 20, 0.1 / 2);
+  RemapTests2DExplicit(0, "dg modal", 20, 20, 0.1 / 2);
 }
 
 TEST(REMAP_DG1_EXPLICIT) {
-  RemapTests2DExplicit(1, "DG order 1", 20, 20, 0.1 / 2);
+  RemapTests2DExplicit(1, "dg modal", 20, 20, 0.1 / 2);
 }
 

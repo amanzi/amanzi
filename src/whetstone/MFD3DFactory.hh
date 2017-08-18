@@ -34,10 +34,9 @@ class MFD3DFactory {
   explicit MFD3DFactory() {};
   ~MFD3DFactory() {};
 
-  // geometry methods
+  // select numerical scheme using its name and order 
   Teuchos::RCP<BilinearForm> Create(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
-                                    const std::string& physics,
-                                    const std::string& schema_unique_name);
+                                    const std::string& method, int method_order);
 };
 
 
@@ -46,25 +45,28 @@ class MFD3DFactory {
 ****************************************************************** */
 Teuchos::RCP<BilinearForm> MFD3DFactory::Create(
     const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
-    const std::string& physics, const std::string& schema_unique_name)
+    const std::string& method, int method_order)
 {
-  if (physics == "diffusion") {
+  if (method == "diffusion") {
     Teuchos::RCP<MFD3D_Diffusion> mfd = Teuchos::rcp(new MFD3D_Diffusion(mesh));
     return mfd;
   }
-  else if (physics == "diffusion generalized") {
+  else if (method == "diffusion generalized") {
     Teuchos::RCP<MFD3D_Generalized_Diffusion> mfd = 
         Teuchos::rcp(new MFD3D_Generalized_Diffusion(mesh));
     return mfd;
   }
-  else if (physics == "BernardiRaugel") {
+  else if (method == "BernardiRaugel") {
     Teuchos::RCP<MFD3D_BernardiRaugel> mfd = Teuchos::rcp(new MFD3D_BernardiRaugel(mesh));
     return mfd;
   } 
-  else if (physics == "dg modal") {
+  else if (method == "dg modal") {
     Teuchos::RCP<DG_Modal> mfd = Teuchos::rcp(new DG_Modal(mesh));
+    mfd->set_order(method_order);
     return mfd;
   }
+
+  return Teuchos::null;
 }
 
 }  // namespace WhetStone

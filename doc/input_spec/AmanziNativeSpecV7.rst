@@ -3191,7 +3191,7 @@ This section to be written.
 
    <ParameterList name="operators">  <!-- parent list -->
      <ParameterList name="advection operator">
-       <Parameter name="discretization" type="string" value="upwind"/>
+       <Parameter name="method" type="string" value="upwind"/>
        <Parameter name="reconstruction order" type="int" value="0"/>
      </ParameterList>
    </ParameterList>
@@ -3262,7 +3262,7 @@ Elasticity operator
 
    <ParameterList name="operators">  <!-- parent list -->
      <ParameterList name="elasticity operator">
-       <Parameter name="discretization" type="string" value="BernardiRaugel"/>
+       <Parameter name="method" type="string" value="BernardiRaugel"/>
        <ParameterList name="schema">
          <Parameter name="base" type="string" value="cell"/>
          <Parameter name="location" type="Array(string)" value="{node, face}"/>
@@ -3297,7 +3297,7 @@ This section to be written.
 
    <ParameterList name="operators">  <!-- parent list -->
      <ParameterList name="divergence operator">
-       <Parameter name="discretization" type="string" value="BernardiRaugel"/>
+       <Parameter name="method" type="string" value="BernardiRaugel"/>
        <ParameterList name="schema domain">
          <Parameter name="base" type="string" value="cell"/>
          <Parameter name="location" type="Array(string)" value="{node, face}"/>
@@ -3615,7 +3615,7 @@ The structure of the schema is described in the previous section.
 
 * `"OPERATOR_NAME`" [list] a PK specific name for the advection operator.
 
-  * `"discretization`" [string] defines a discretization method. The available options 
+  * `"method`" [string] defines a discretization method. The available options 
     are `"DG order 0`", `"DG order 1`".
 
   * `"riemann problem`" [string] defines a method for calculating Riemann flux. 
@@ -3633,7 +3633,7 @@ The structure of the schema is described in the previous section.
 .. code-block:: xml
 
   <ParameterList name="OPERATOR_NAME">
-    <Parameter name="discretization" type="string" value="DG order 0"/>
+    <Parameter name="method" type="string" value="DG order 0"/>
     <Parameter name="reconstruction order" type="int" value="0"/>
     <Parameter name="riemann problem" type="string" value="average"/>
     <Parameter name="flux formula" type="string" value="NavierStokes"/>
@@ -3659,7 +3659,7 @@ The structure of the schema is described in the previous section.
 
 * `"OPERATOR_NAME`" [list] a PK specific name for the advection operator.
 
-  * `"discretization`" [string] defines a discretization method. The available 
+  * `"method`" [string] defines a discretization method. The available 
     options are `"DG order 0`", `"DG order 1`".
 
   * `"schema`" [list] defines a discretization schema for the operator domain.
@@ -3667,7 +3667,8 @@ The structure of the schema is described in the previous section.
 .. code-block:: xml
 
   <ParameterList name="OPERATOR_NAME">
-    <Parameter name="discretization" type="string" value="DG order 1"/>
+    <Parameter name="method" type="string" value="DG order 1"/>
+    <Parameter name="matrix type" type="string" value="mass"/>
     <ParameterList name="schema">
       <Parameter name="location" type="Array(string)" value="{cell}"/>
       <Parameter name="type" type="Array(string)" value="{scalar}"/>
@@ -3682,7 +3683,7 @@ Elasticity operator
 Elasticity operator is used for describing soil deformation or fluid flow (Stokes 
 and Navier-Stokes).
 
-* `"discretization`" [string] defines a discretization method. The available
+* `"method`" [string] defines a discretization method. The available
   options are `"BernardiRaugel`".
 
 * `"schema`" [list] defines a discretization schema.
@@ -3697,7 +3698,7 @@ and Navier-Stokes).
 .. code-block:: xml
 
     <ParameterList name="elasticity operator">
-      <Parameter name="discretization" type="string" value="BernardiRaugel"/>
+      <Parameter name="method" type="string" value="BernardiRaugel"/>
       <ParameterList name="schema">
         <Parameter name="location" type="Array(string)" value="{node, face}"/>
         <Parameter name="type" type="Array(string)" value="{scalar, normal component}"/>

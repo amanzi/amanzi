@@ -63,16 +63,14 @@ void Reaction::InitReaction_(Teuchos::ParameterList& plist)
   global_op_->OpPushBack(local_op_);
 
   // parameters
-  std::string name = plist.get<std::string>("discretization", "none");
-  if (name == "DG order 0") {
-    space_col_ = DG0;
-    space_row_ = DG0;
-  } else if (name == "DG order 1") {
-    space_col_ = DG1;
-    space_row_ = DG1;
+  std::string name = plist.get<std::string>("method");
+  method_order_ = plist.get<int>("method order", 0);
+  if (name == "dg modal") {
+    space_col_ = DG;
+    space_row_ = DG;
   } else {
     Errors::Message msg;
-    msg << "Discretization method is either missing or invalid.";
+    msg << "Reaction operator method \"" << name << "\" is invalid.";
     Exceptions::amanzi_throw(msg);
   }
 }
@@ -91,14 +89,7 @@ void Reaction::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& u,
   AmanziMesh::Entity_ID_List nodes;
   int d = mesh_->space_dimension();
 
-  int k(0);
-  if (space_col_ == DG0 && space_row_ == DG0) { 
-    k = 0;
-  } else if (space_col_ == DG1 && space_row_ == DG1) {  
-    k = 1;
-  }
-
-  WhetStone::DG_Modal dg(k, mesh_);
+  WhetStone::DG_Modal dg(method_order_, mesh_);
   WhetStone::DenseMatrix Mcell;
   WhetStone::Tensor Kc(d, 1);
 

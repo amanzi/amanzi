@@ -101,6 +101,7 @@ int DG_Modal::MassMatrixPoly(int c, const Polynomial& K, DenseMatrix& M)
       const int* idx_K = mt.multi_index();
       int m = mt.MonomialPosition();
       double factor = Kcopy.monomials(mt.end()).coefs()[m];
+      if (factor == 0.0) continue;
 
       for (auto jt = q.begin(); jt.end() <= q.end(); ++jt) {
         const int* idx_q = jt.multi_index();
@@ -152,17 +153,20 @@ int DG_Modal::AdvectionMatrixPoly(int c, const VectorPolynomial& u, DenseMatrix&
   A.Reshape(nrows, nrows);
   A.PutScalar(0.0);
 
+std::cout << A << std::endl;
   for (auto it = p.begin(); it.end() <= p.end(); ++it) {
     const int* idx_p = it.multi_index();
     int k = p.PolynomialPosition(idx_p);
+std::cout << k << std::endl;
 
     p.Gradient(pgrad);
+    Polynomial tmp(pgrad * ucopy);
 
-    /*
-    for (auto mt = ucopy.begin(); mt.end() <= ucopy.end(); ++mt) {
+    for (auto mt = tmp.begin(); mt.end() <= tmp.end(); ++mt) {
       const int* idx_K = mt.multi_index();
       int m = mt.MonomialPosition();
-      double factor = Kcopy.monomials(mt.end()).coefs()[m];
+      double factor = tmp.monomials(mt.end()).coefs()[m];
+      if (factor == 0.0) continue;
 
       for (auto jt = q.begin(); jt.end() <= q.end(); ++jt) {
         const int* idx_q = jt.multi_index();
@@ -170,7 +174,7 @@ int DG_Modal::AdvectionMatrixPoly(int c, const VectorPolynomial& u, DenseMatrix&
 
         int n(0);
         for (int i = 0; i < d_; ++i) {
-          multi_index[i] = idx_p[i] + idx_q[i] + idx_K[i];
+          multi_index[i] = idx_q[i] + idx_K[i];
           n += multi_index[i];
         }
 
@@ -178,7 +182,6 @@ int DG_Modal::AdvectionMatrixPoly(int c, const VectorPolynomial& u, DenseMatrix&
         A(k, l) += factor * coefs[p.MonomialPosition(multi_index)];
       }
     }
-    */
   }
 
   return 0;

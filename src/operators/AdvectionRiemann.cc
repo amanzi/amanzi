@@ -81,20 +81,20 @@ void AdvectionRiemann::InitAdvection_(Teuchos::ParameterList& plist)
 
   // parameters
   // -- discretization method
-  std::string name = plist.get<std::string>("discretization", "none");
-  if (name == "DG order 0") {
-    space_col_ = DG0;
-  } else if (name == "DG order 1") {
-    space_col_ = DG1;
+  std::string name = plist.get<std::string>("method");
+  method_order_ = plist.get<int>("method order", 0);
+  if (name == "dg modal") {
+    space_col_ = DG;
   } else {
     Errors::Message msg;
-    msg << "Discretization method is either missing or invalid.";
+    msg << "Advection operator method \"" << name << "\" is invalid.";
     Exceptions::amanzi_throw(msg);
   }
+
   if (local_schema_row_ == local_schema_col_) { 
     space_row_ = space_col_;
   } else {
-    space_row_ = P0;
+    space_row_ = P0;  // FIXME
   }
 
 
@@ -120,12 +120,8 @@ void AdvectionRiemann::UpdateMatrices(
   for (int f = 0; f < nfaces_owned; ++f) {
     WhetStone::DenseMatrix Aface;
 
-    if (space_col_ == DG0 && space_row_ == DG0) {
-      dg.set_order(0);
-      dg.FluxMatrixPoly(f, (*u)[f], Aface);
-    }
-    else if (space_col_ == DG1 && space_row_ == DG1) {
-      dg.set_order(1);
+    if (space_col_ == DG && space_row_ == DG) {
+      dg.set_order(method_order_);
       dg.FluxMatrixPoly(f, (*u)[f], Aface);
     }
 

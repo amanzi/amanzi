@@ -24,6 +24,61 @@ namespace Amanzi {
 namespace WhetStone {
 
 /* ******************************************************************
+* Calculate mesh velocity in cell c
+****************************************************************** */
+void MeshMaps_FEM::VelocityCell(int f, VectorPolynomial& v) const
+{
+  v.resize(d_);
+  for (int i = 0; i < d_; ++i) v[i].Reshape(d_, 2);
+}
+
+
+/* ******************************************************************
+* Calculate mesh velocity on face f.
+****************************************************************** */
+void MeshMaps_FEM::VelocityFace(int f, VectorPolynomial& v) const
+{
+  AmanziMesh::Entity_ID_List nodes;
+  AmanziGeometry::Point x0, x1;
+
+  const AmanziGeometry::Point& xf0 = mesh0_->face_centroid(f);
+  const AmanziGeometry::Point& xf1 = mesh1_->face_centroid(f);
+
+  // velocity order 0
+  v.resize(d_);
+  for (int i = 0; i < d_; ++i) {
+    v[i].Reshape(d_, 1);
+    v[i].monomials(0).coefs()[0] = xf1[i] - xf0[i];
+  }
+
+  // velocity order 1 (2D algorithm)
+  mesh0_->face_get_nodes(f, &nodes);
+  mesh0_->node_get_coordinates(nodes[0], &x0);
+  mesh1_->node_get_coordinates(nodes[0], &x1);
+
+  x0 -= xf0;
+  x1 -= xf1;
+
+  WhetStone::Tensor A(2, 2);
+  AmanziGeometry::Point b(2);
+
+  A(0, 0) = x0[0];
+  A(0, 1) = A(1, 0) = x0[1];
+  A(1, 1) = -x0[0];
+
+  A.Inverse();
+  b = A * (x1 - x0);
+
+  v[0].monomials(1).coefs() = { b[0], b[1]};
+  v[1].monomials(1).coefs() = {-b[1], b[0]};
+
+  // we change to the global coordinate system
+  v[0].monomials(0).coefs()[0] -= b * xf0;
+  v[1].monomials(0).coefs()[0] -= (b^xf0)[0];
+}
+
+
+/* ******************************************************************
 * Calculation of Jacobian for linearized map xi + t (F(xi) - xi).
 ****************************************************************** */
 void MeshMaps_FEM::JacobianCellValue(
@@ -89,51 +144,6 @@ void MeshMaps_FEM::JacobianDet(
   vc.monomials(1).coefs()[1] = b0[0] * a1[1] - b0[1] * a1[0];
 
   vc.monomials(2).coefs()[1] = b0[0] * b1[1] - b0[1] * b1[0];
-}
-
-
-/* ******************************************************************
-* Calculate mesh velocity on face f.
-****************************************************************** */
-void MeshMaps_FEM::VelocityFace(int f, VectorPolynomial& v) const
-{
-  AmanziMesh::Entity_ID_List nodes;
-  AmanziGeometry::Point x0, x1;
-
-  const AmanziGeometry::Point& xf0 = mesh0_->face_centroid(f);
-  const AmanziGeometry::Point& xf1 = mesh1_->face_centroid(f);
-
-  // velocity order 0
-  v.resize(d_);
-  for (int i = 0; i < d_; ++i) {
-    v[i].Reshape(d_, 1);
-    v[i].monomials(0).coefs()[0] = xf1[i] - xf0[i];
-  }
-
-  // velocity order 1 (2D algorithm)
-  mesh0_->face_get_nodes(f, &nodes);
-  mesh0_->node_get_coordinates(nodes[0], &x0);
-  mesh1_->node_get_coordinates(nodes[0], &x1);
-
-  x0 -= xf0;
-  x1 -= xf1;
-
-  WhetStone::Tensor A(2, 2);
-  AmanziGeometry::Point b(2);
-
-  A(0, 0) = x0[0];
-  A(0, 1) = A(1, 0) = x0[1];
-  A(1, 1) = -x0[0];
-
-  A.Inverse();
-  b = A * (x1 - x0);
-
-  v[0].monomials(1).coefs() = { b[0], b[1]};
-  v[1].monomials(1).coefs() = {-b[1], b[0]};
-
-  // we change to the global coordinate system
-  v[0].monomials(0).coefs()[0] -= b * xf0;
-  v[1].monomials(0).coefs()[0] -= (b^xf0)[0];
 }
 
 
