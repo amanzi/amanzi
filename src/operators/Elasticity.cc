@@ -114,14 +114,14 @@ void Elasticity::Init_(Teuchos::ParameterList& plist)
   K_ = Teuchos::null;
 
   // discretization method
-  std::string name = plist.get<std::string>("discretization", "none");
+  std::string name = plist.get<std::string>("method");
   if (name == "BernardiRaugel") {
     space_col_ = BERNARDI_RAUGEL;
   } else if (name == "mini") {
     space_col_ = MINI;
   } else {
     Errors::Message msg;
-    msg << "Name of the discretization method is missing.";
+    msg << "Elasticity operator's method \"" << name << "\" is not supported.";
     Exceptions::amanzi_throw(msg);
   }
   space_row_ = space_col_;

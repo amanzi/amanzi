@@ -190,6 +190,7 @@ void Polynomial::Gradient(std::vector<Polynomial>& grad) const
   int order = std::max(0, order_ - 1);
   for (int i = 0; i < d_; ++i) {
     grad[i].Reshape(d_, order, true);
+    grad[i].set_origin(origin_);
   }
 
   int index[3];

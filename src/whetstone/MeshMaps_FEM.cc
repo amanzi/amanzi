@@ -26,10 +26,36 @@ namespace WhetStone {
 /* ******************************************************************
 * Calculate mesh velocity in cell c
 ****************************************************************** */
-void MeshMaps_FEM::VelocityCell(int f, VectorPolynomial& v) const
+void MeshMaps_FEM::VelocityCell(int c, VectorPolynomial& v) const
 {
+  Entity_ID_List nodes;
+
+  mesh1_->cell_get_nodes(c, &nodes);
+  int nnodes = nodes.size();
+  ASSERT(nnodes == 4);
+
+  AmanziGeometry::Point p1(d_), p2(d_), p3(d_), p4(d_);
+  mesh1_->node_get_coordinates(nodes[0], &p1);
+  mesh1_->node_get_coordinates(nodes[1], &p2);
+  mesh1_->node_get_coordinates(nodes[2], &p3);
+  mesh1_->node_get_coordinates(nodes[3], &p4);
+
+  AmanziGeometry::Point p21(p2 - p1), p41(p4 - p1), p32(p3 - p2);
+  AmanziGeometry::Point pp(p32 - p41);
+
+  // By our assumption, the Jacobian is constant and diagonal
+  AmanziGeometry::Point xref(0.0, 0.0);
+  Tensor J0 = JacobianValueInternal_(mesh0_, c, xref);
+  J0.Inverse();
+
   v.resize(d_);
-  for (int i = 0; i < d_; ++i) v[i].Reshape(d_, 2);
+  for (int i = 0; i < d_; ++i) {
+    v[i].Reshape(d_, 2);
+    v[i].monomials(0).coefs()[0] = p1[i];
+    v[i].monomials(1).coefs()[0] = p21[i] * J0(0, 0);
+    v[i].monomials(1).coefs()[1] = p41[i] * J0(1, 1);
+    v[i].monomials(2).coefs()[1] = pp[i] * J0(0, 0) * J0(1, 1);
+  }
 }
 
 

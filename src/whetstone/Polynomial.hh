@@ -209,6 +209,8 @@ class Polynomial {
     ASSERT(poly1.size() == poly2.size());
     int d(poly1[0].dimension());
     Polynomial tmp(d, 0);
+    tmp.set_origin(poly1[0].origin());
+
     for (int i = 0; i < poly1.size(); ++i) {
       tmp += poly1[i] * poly2[i];
     }

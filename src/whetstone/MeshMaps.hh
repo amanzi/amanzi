@@ -26,12 +26,13 @@
 #include "Point.hh"
 
 #include "DenseMatrix.hh"
-#include "Polynomial.hh"
 #include "Tensor.hh"
 #include "WhetStone_typedefs.hh"
 
 namespace Amanzi {
 namespace WhetStone {
+
+class Polynomial;
 
 class MeshMaps { 
  public:

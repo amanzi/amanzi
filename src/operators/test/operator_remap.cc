@@ -202,9 +202,11 @@ void RemapTests2DExplicit(int order, std::string disc_name,
       (*vel)[f] = vec_vel[f] * cn;
     }
 
-    // calculate cell velocities
+    // calculate cell velocities and change sign due to integral
     for (int c = 0; c < ncells_owned; ++c) {
       maps.VelocityCell(c, (*cell_vel)[c]);
+      (*cell_vel)[c][0] *= -1;
+      (*cell_vel)[c][1] *= -1;
     }
 
     // calculate determinant of Jacobian at time t

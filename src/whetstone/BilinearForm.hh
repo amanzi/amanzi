@@ -24,12 +24,13 @@
 #include "DenseMatrix.hh"
 #include "InnerProductL2.hh"
 #include "InnerProductH1.hh"
-#include "Polynomial.hh"
 #include "Tensor.hh"
 #include "WhetStone_typedefs.hh"
 
 namespace Amanzi {
 namespace WhetStone {
+
+class Polynomial;
 
 class BilinearForm : public virtual InnerProductL2,
                      public virtual InnerProductH1 {

@@ -129,9 +129,10 @@ int DG_Modal::MassMatrixPoly(int c, const Polynomial& K, DenseMatrix& M)
 int DG_Modal::AdvectionMatrixPoly(int c, const VectorPolynomial& u, DenseMatrix& A)
 {
   // rebase the polynomial
+  const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
   VectorPolynomial ucopy(u);
   for (int i = 0; i < d_; ++i) {
-    ucopy[i].ChangeOrigin(mesh_->cell_centroid(c));
+    ucopy[i].ChangeOrigin(xc);
   }
 
   // calculate integrals of monomials centered at cell centroid
@@ -153,13 +154,15 @@ int DG_Modal::AdvectionMatrixPoly(int c, const VectorPolynomial& u, DenseMatrix&
   A.Reshape(nrows, nrows);
   A.PutScalar(0.0);
 
-std::cout << A << std::endl;
   for (auto it = p.begin(); it.end() <= p.end(); ++it) {
     const int* idx_p = it.multi_index();
     int k = p.PolynomialPosition(idx_p);
-std::cout << k << std::endl;
 
-    p.Gradient(pgrad);
+    // product of polynomials need to align origins
+    Polynomial pp(d_, idx_p);
+    pp.set_origin(xc);
+
+    pp.Gradient(pgrad);
     Polynomial tmp(pgrad * ucopy);
 
     for (auto mt = tmp.begin(); mt.end() <= tmp.end(); ++mt) {
