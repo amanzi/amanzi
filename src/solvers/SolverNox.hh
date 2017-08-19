@@ -22,7 +22,7 @@ namespace Amanzi {
 namespace AmanziSolvers {
 
 template<class VectorClass, class VectorSpace>
-class SolverNox : public Solver<VectorClass,VectorSpace> {
+class SolverNox : public Solver<VectorClass, VectorSpace> {
  public:
   SolverNox(Teuchos::ParameterList& plist)
   {
@@ -68,8 +68,7 @@ class SolverNox : public Solver<VectorClass,VectorSpace> {
 
   // still needs tests!
   void Init(const Teuchos::RCP<SolverFnBase<VectorClass> >& fn,
-            const VectorSpace& map)
-  {
+            const VectorSpace& map) {
     // wrap the base fn in a JF fn
     jf_fnbase_ = Teuchos::rcp(new SolverFnBaseJF<VectorClass,VectorSpace>(*plist_, fn, map));
 
@@ -93,12 +92,11 @@ class SolverNox : public Solver<VectorClass,VectorSpace> {
   
   // access 
   double tolerance() { return tol_; }
-  double residual() { assert(0); }
+  double residual() { return 0.0; }  // FIXME
   int num_itrs() { return solver_->getNumIterations(); }
-  int returned_code() { assert(0); }
-  int pc_calls() { assert(0); }
-  int pc_updates() { assert(0); }
-
+  int returned_code() { return 0; }
+  int pc_calls() { return 0; }
+  int pc_updates() { return 0; }
 
  private:
   Teuchos::RCP<AmanziGroup<VectorClass> > group_;
