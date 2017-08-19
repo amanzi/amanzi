@@ -233,8 +233,8 @@ void FlowBoundaryFunction::CalculateShiftWaterTable_(
       if (b < tol_edge && a > -0.01 && a < 1.01) {
         double z = edges[j][2] + a * p1[2];
         (*shift_water_table_)[f] = z * rho_g;
-        if (z > xf[2] && relative_to_top_ || 
-            z < xf[2] && relative_to_bottom_) {
+        if ((z > xf[2] && relative_to_top_) || 
+            (z < xf[2] && relative_to_bottom_)) {
           flag = 1;
           break;
         }
@@ -250,8 +250,8 @@ void FlowBoundaryFunction::CalculateShiftWaterTable_(
       for (int j = 0; j < nedges; j += 2) {
         p1 = (edges[j] + edges[j + 1]) / 2;
         d = L22(p1 - xf);
-        if ((p1[2] > xf[2] && relative_to_top_ || 
-             p1[2] < xf[2] && relative_to_bottom_) && d < dmin) {
+        if (((p1[2] > xf[2] && relative_to_top_) || 
+             (p1[2] < xf[2] && relative_to_bottom_)) && d < dmin) {
           dmin = d;
           z = p1[2];
         }
@@ -268,7 +268,7 @@ void FlowBoundaryFunction::CalculateShiftWaterTable_(
 #endif
 
   nedges_ = nedges / 2;
-};
+}
 
 
 /* ****************************************************************
