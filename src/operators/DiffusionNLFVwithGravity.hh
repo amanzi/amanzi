@@ -85,7 +85,7 @@ class DiffusionNLFVwithGravity : public DiffusionNLFV,
 
   // -- create an operator
   virtual void UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& flux,
-                              const Teuchos::Ptr<const CompositeVector>& u);
+                              const Teuchos::Ptr<const CompositeVector>& u) override;
 
   // -- after solving the problem: postrocessing
   virtual void UpdateFlux(const Teuchos::Ptr<const CompositeVector>& u,
@@ -94,12 +94,12 @@ class DiffusionNLFVwithGravity : public DiffusionNLFV,
                                      const Teuchos::Ptr<CompositeVector>& flux) override {};
 
   // -- modify an operator
-  virtual void ModifyMatrices(const CompositeVector& u) {};
-  virtual void ScaleMassMatrices(double s) {};
+  virtual void ModifyMatrices(const CompositeVector& u) override {};
+  virtual void ScaleMassMatrices(double s) override {};
 
   // Developments
   // -- interface to solvers for treating nonlinear BCs.
-  virtual double ComputeGravityFlux(int f) const {
+  virtual double ComputeGravityFlux(int f) const override {
     ASSERT(0);
     return 0.;
   };
@@ -107,7 +107,7 @@ class DiffusionNLFVwithGravity : public DiffusionNLFV,
   // virtual members from the base NLFV class
   // -- solution can be modified on boundary faces. This reflects specifics
   //    of nonlinear FV schemes.
-  virtual double MapBoundaryValue_(int f, double u);
+  virtual double MapBoundaryValue_(int f, double u) override;
 };
 
 }  // namespace Operators

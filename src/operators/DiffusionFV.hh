@@ -88,31 +88,31 @@ class DiffusionFV : public virtual Diffusion {
   // main virtual members
   // -- setup
   using Diffusion::Setup;
-  virtual void SetTensorCoefficient(const Teuchos::RCP<std::vector<WhetStone::Tensor> >& K);
+  virtual void SetTensorCoefficient(const Teuchos::RCP<std::vector<WhetStone::Tensor> >& K) override;
   virtual void SetScalarCoefficient(const Teuchos::RCP<const CompositeVector>& k,
-                                    const Teuchos::RCP<const CompositeVector>& dkdp);
+                                    const Teuchos::RCP<const CompositeVector>& dkdp) override;
 
   // -- create an operator
   virtual void UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& flux,
-                              const Teuchos::Ptr<const CompositeVector>& u);
+                              const Teuchos::Ptr<const CompositeVector>& u) override;
   virtual void UpdateMatricesNewtonCorrection(
       const Teuchos::Ptr<const CompositeVector>& flux,
       const Teuchos::Ptr<const CompositeVector>& u,
-      double scalar_limiter = 1.0);
+      double scalar_limiter = 1.0) override;
   virtual void UpdateFlux(const Teuchos::Ptr<const CompositeVector>& u,
                           const Teuchos::Ptr<CompositeVector>& flux) override;
   virtual void UpdateFluxNonManifold(const Teuchos::Ptr<const CompositeVector>& u,
-                                     const Teuchos::Ptr<CompositeVector>& flux);
+                                     const Teuchos::Ptr<CompositeVector>& flux) override;
 
   // -- modify an operator
-  virtual void ApplyBCs(bool primary, bool eliminate);
-  virtual void ModifyMatrices(const CompositeVector& u) {};
-  virtual void ScaleMassMatrices(double s) {};
+  virtual void ApplyBCs(bool primary, bool eliminate) override;
+  virtual void ModifyMatrices(const CompositeVector& u) override {};
+  virtual void ScaleMassMatrices(double s) override {};
 
   // Developments
   // -- interface to solvers for treating nonlinear BCs.
-  virtual double ComputeTransmissibility(int f) const;
-  virtual double ComputeGravityFlux(int f) const { return 0.0; }
+  virtual double ComputeTransmissibility(int f) const override;
+  virtual double ComputeGravityFlux(int f) const override { return 0.0; }
 
   // access
   const CompositeVector& transmissibility() { return *transmissibility_; }

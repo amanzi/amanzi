@@ -135,7 +135,7 @@ TEST(INTERFACE_LIBRARY_ADVANCE) {
     double diff = 200 * fabs(v0-v1) / (fabs(v0) + fabs(v1) + 1e-30);
 
     CHECK(diff < 0.1);
-    printf("%10s  %14.6g  -> %12.6g   diff:%5.2f%\n", species[i].c_str(), v0, v1, diff);
+    printf("%10s  %14.6g  -> %12.6g   diff:%5.2f\n", species[i].c_str(), v0, v1, diff);
   } 
 }
 

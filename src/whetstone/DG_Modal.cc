@@ -187,6 +187,8 @@ int DG_Modal::AdvectionMatrixPoly(int c, const VectorPolynomial& u, DenseMatrix&
     }
   }
 
+  if (nrows > 1) std::cout << A << std::endl;
+
   return 0;
 }
 

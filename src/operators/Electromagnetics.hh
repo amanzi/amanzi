@@ -56,7 +56,7 @@ class Electromagnetics : public PDE_Helper {
   //    Variable 'primary' indicates that we put 1 on the matrix diagonal.
   //    Variable 'eliminate' says that we eliminate essential BCs for the 
   //    trial function, i.e. zeros go in the corresponding matrix columns.
-  virtual void ApplyBCs(bool primary, bool eliminate);
+  virtual void ApplyBCs(bool primary, bool eliminate) override;
 
   // -- postprocessing: calculated flux u from potential p
   virtual void UpdateFlux(const Teuchos::Ptr<const CompositeVector>& p,

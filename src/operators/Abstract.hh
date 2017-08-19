@@ -46,7 +46,7 @@ class Abstract : public PDE_Helper {
   // -- required by the interface
   using PDE_Helper::UpdateMatrices;
   virtual void UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& u,
-                              const Teuchos::Ptr<const CompositeVector>& p);
+                              const Teuchos::Ptr<const CompositeVector>& p) override;
   
   // -- setup
   void Setup(const Teuchos::RCP<std::vector<WhetStone::Tensor> >& K) { K_ = K; }

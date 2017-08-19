@@ -113,7 +113,7 @@ class DiffusionMFDwithGravity : public DiffusionMFD,
   // main members
   // -- required by the base class
   virtual void UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& flux,
-                              const Teuchos::Ptr<const CompositeVector>& u);
+                              const Teuchos::Ptr<const CompositeVector>& u) override;
 
   virtual void UpdateFlux(const Teuchos::Ptr<const CompositeVector>& u,
                           const Teuchos::Ptr<CompositeVector>& flux) override;
@@ -145,7 +145,7 @@ class DiffusionMFDwithGravity : public DiffusionMFD,
 
   // Developments
   // -- interface to solvers for treating nonlinear BCs.
-  virtual double ComputeGravityFlux(int f) const;
+  virtual double ComputeGravityFlux(int f) const override;
 
  protected:
   virtual void AddGravityToRHS_();

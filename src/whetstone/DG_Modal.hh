@@ -64,21 +64,21 @@ class DG_Modal : public BilinearForm {
   virtual int MassMatrixPoly(int c, const Polynomial& K, DenseMatrix& M);
 
   // -- stiffness matrices (coming soon)
-  virtual int StiffnessMatrix(int c, const Tensor& T, DenseMatrix& A) {};
-  virtual int StiffnessMatrixPoly(int c, const Polynomial& K, DenseMatrix& A) {};
+  virtual int StiffnessMatrix(int c, const Tensor& T, DenseMatrix& A) { return 0; }
+  virtual int StiffnessMatrixPoly(int c, const Polynomial& K, DenseMatrix& A) { return 0; }
 
   // -- advection matrices
-  virtual int AdvectionMatrix(int c, const AmanziGeometry::Point v, DenseMatrix& A) {};
+  virtual int AdvectionMatrix(int c, const AmanziGeometry::Point v, DenseMatrix& A) { return 0; }
   virtual int AdvectionMatrixPoly(int c, const VectorPolynomial& uc, DenseMatrix& A);
   int FluxMatrixPoly(int f, const Polynomial& uf, DenseMatrix& A);
 
   // interfaces that are not used
-  virtual int L2consistency(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Mc, bool symmetry) {};
-  virtual int L2consistencyInverse(int c, const Tensor& T, DenseMatrix& R, DenseMatrix& Wc, bool symmetry) {};
-  virtual int H1consistency(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Mc) {};
+  virtual int L2consistency(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Mc, bool symmetry) { return 0; }
+  virtual int L2consistencyInverse(int c, const Tensor& T, DenseMatrix& R, DenseMatrix& Wc, bool symmetry) { return 0; }
+  virtual int H1consistency(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Mc) { return 0; }
 
-  virtual int MassMatrixInverse(int c, const Tensor& T, DenseMatrix& W) {};
-  virtual int DivergenceMatrix(int c, DenseMatrix& A) {};
+  virtual int MassMatrixInverse(int c, const Tensor& T, DenseMatrix& W) { return 0; }
+  virtual int DivergenceMatrix(int c, DenseMatrix& A) { return 0; }
 
   // miscalleneous
   void set_order(int order) { order_ = order; }

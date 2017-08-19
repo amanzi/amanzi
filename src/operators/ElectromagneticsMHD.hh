@@ -51,10 +51,10 @@ class ElectromagneticsMHD : public Electromagnetics {
                               const Teuchos::Ptr<const CompositeVector>& p) override;
 
   // -- before solving the problem
-  virtual void ModifyMatrices(CompositeVector& E, CompositeVector& B, double dt);
+  virtual void ModifyMatrices(CompositeVector& E, CompositeVector& B, double dt) override;
 
   // -- after solving the problem
-  virtual void ModifyFields(CompositeVector& E, CompositeVector& B, double dt);
+  virtual void ModifyFields(CompositeVector& E, CompositeVector& B, double dt) override;
 
   // physical quantities
   // -- energies

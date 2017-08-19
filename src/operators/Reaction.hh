@@ -54,7 +54,7 @@ class Reaction : public PDE_Helper {
                           const Teuchos::Ptr<CompositeVector>& u) override {};
   
   // boundary conditions
-  void ApplyBCs(bool primary, bool eliminate);
+  void ApplyBCs(bool primary, bool eliminate) override;
 
  private:
   void InitReaction_(Teuchos::ParameterList& plist);

@@ -475,7 +475,7 @@ void DiffusionNLFV::UpdateMatricesNewtonCorrection(
 /* ******************************************************************
 * Calculate one-sided fluxes (i0=0) or flux corrections (i0=1).
 ****************************************************************** */
-double DiffusionNLFV::OneSidedFluxCorrections_(
+void DiffusionNLFV::OneSidedFluxCorrections_(
   int i0, const CompositeVector& u, CompositeVector& flux_cv) 
 {
   // un-rolling composite vectors
@@ -543,14 +543,13 @@ double DiffusionNLFV::OneSidedFluxCorrections_(
 
   flux_cv.GatherGhostedToMaster();
   flux_cv.ScatterMasterToGhosted();
-  
 }
 
 
 /* ******************************************************************
 * Calculate one-sided fluxes (i0=0) or flux corrections (i0=1).
 ****************************************************************** */
-double DiffusionNLFV::OneSidedWeightFluxes_(
+void DiffusionNLFV::OneSidedWeightFluxes_(
     int i0, const CompositeVector& u, CompositeVector& flux_cv)
 {
   // un-rolling composite vectors

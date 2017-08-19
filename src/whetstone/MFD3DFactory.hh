@@ -13,7 +13,7 @@
 */
 
 #ifndef AMANZI_MFD3D_FACTORY_HH_
-#define AMANZI_MFD3D_FACOTRY_HH_
+#define AMANZI_MFD3D_FACTORY_HH_
 
 #include "Teuchos_RCP.hpp"
 

@@ -77,6 +77,8 @@ int MeshMaps::LeastSquareFit(int order,
   for (int i = 0; i < nk; ++i) {
     u.push_back(AmanziGeometry::Point(ux(i), uy(i)));
   }
+
+  return 0;
 }
 
 }  // namespace WhetStone
