@@ -46,15 +46,15 @@ class MeshMaps_VEM : public MeshMaps {
   // Jacobian
   // -- determinant of Jacobian
   virtual void JacobianDet(int c, double t, const std::vector<VectorPolynomial>& vf,
-                           Polynomial& vc) const;
+                           Polynomial& vc) const override;
 
   // -- Jacobian value at point x
   virtual void JacobianCellValue(int c,
                                  double t, const AmanziGeometry::Point& x,
-                                 Tensor& J) const;
+                                 Tensor& J) const override;
   virtual void JacobianFaceValue(int f, const VectorPolynomial& v,
                                  const AmanziGeometry::Point& x,
-                                 Tensor& J) const;
+                                 Tensor& J) const override;
 };
 
 }  // namespace WhetStone

@@ -68,16 +68,16 @@ class DiffusionNLFV : public virtual Diffusion {
   // main virtual members
   // -- setup
   using Diffusion::Setup;
-  virtual void SetTensorCoefficient(const Teuchos::RCP<std::vector<WhetStone::Tensor> >& K) { K_ = K; }
+  virtual void SetTensorCoefficient(const Teuchos::RCP<std::vector<WhetStone::Tensor> >& K) override { K_ = K; }
   virtual void SetScalarCoefficient(const Teuchos::RCP<const CompositeVector>& k,
-                                    const Teuchos::RCP<const CompositeVector>& dkdp);
+                                    const Teuchos::RCP<const CompositeVector>& dkdp) override;
 
   // -- create an operator
   virtual void UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& flux,
-                              const Teuchos::Ptr<const CompositeVector>& u);
+                              const Teuchos::Ptr<const CompositeVector>& u) override;
   virtual void UpdateMatricesNewtonCorrection(
           const Teuchos::Ptr<const CompositeVector>& flux,
-          const Teuchos::Ptr<const CompositeVector>& u, double scalar_limiter);
+          const Teuchos::Ptr<const CompositeVector>& u, double scalar_limiter) override;
 
   // -- after solving the problem: postrocessing
   virtual void UpdateFlux(const Teuchos::Ptr<const CompositeVector>& u,
@@ -86,13 +86,13 @@ class DiffusionNLFV : public virtual Diffusion {
                                      const Teuchos::Ptr<CompositeVector>& flux) override {};
 
   // -- modify an operator
-  virtual void ApplyBCs(bool primary, bool eliminate);
-  virtual void ModifyMatrices(const CompositeVector& u) {};
-  virtual void ScaleMassMatrices(double s) {};
+  virtual void ApplyBCs(bool primary, bool eliminate) override;
+  virtual void ModifyMatrices(const CompositeVector& u) override {};
+  virtual void ScaleMassMatrices(double s) override {};
 
   // -- interface to solvers for treating nonlinear BCs.
-  virtual double ComputeTransmissibility(int f) const { return 0.0; }
-  virtual double ComputeGravityFlux(int f) const { return 0.0; }
+  virtual double ComputeTransmissibility(int f) const override { return 0.0; }
+  virtual double ComputeGravityFlux(int f) const override { return 0.0; }
 
  protected:
   // virtual functions for derived clases
@@ -104,8 +104,8 @@ class DiffusionNLFV : public virtual Diffusion {
 
  protected:
   void InitStencils_();
-  double OneSidedFluxCorrections_(int i0, const CompositeVector& u, CompositeVector& sideflux);
-  double OneSidedWeightFluxes_(int i0, const CompositeVector& u, CompositeVector& sideflux);
+  void OneSidedFluxCorrections_(int i0, const CompositeVector& u, CompositeVector& sideflux);
+  void OneSidedWeightFluxes_(int i0, const CompositeVector& u, CompositeVector& sideflux);
   int OrderCellsByGlobalId_(const AmanziMesh::Entity_ID_List& cells, int& c1, int& c2);
   
  protected:

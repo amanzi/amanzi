@@ -112,8 +112,8 @@ class DiffusionFVwithGravity : public DiffusionFV,
   
   // main virtual members
   // -- setup
-  virtual void SetDensity(const Teuchos::RCP<const CompositeVector>& rho);
-  virtual void SetDensity(double rho);
+  virtual void SetDensity(const Teuchos::RCP<const CompositeVector>& rho) override;
+  virtual void SetDensity(double rho) override;
 
   void Setup(const Teuchos::RCP<std::vector<WhetStone::Tensor> >& K,
              const Teuchos::RCP<const CompositeVector>& k,
@@ -138,23 +138,23 @@ class DiffusionFVwithGravity : public DiffusionFV,
 
   // -- create a lineratized operator
   virtual void UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& flux,
-                              const Teuchos::Ptr<const CompositeVector>& u);
+                              const Teuchos::Ptr<const CompositeVector>& u) override;
   virtual void UpdateFlux(const Teuchos::Ptr<const CompositeVector>& u,
                           const Teuchos::Ptr<CompositeVector>& flux) override;
   virtual void UpdateFluxNonManifold(const Teuchos::Ptr<const CompositeVector>& u,
                                      const Teuchos::Ptr<CompositeVector>& flux) override;
 
   // -- modify an operator
-  virtual void ApplyBCs(bool primary, bool eliminate);
-  virtual void ModifyMatrices(const CompositeVector& u) {};
-  virtual void ScaleMassMatrices(double s) {
+  virtual void ApplyBCs(bool primary, bool eliminate) override;
+  virtual void ModifyMatrices(const CompositeVector& u) override {};
+  virtual void ScaleMassMatrices(double s) override {
     ComputeTransmissibility_(gravity_term_);
     transmissibility_->Scale(s);
   };
 
   // Developments
   // -- interface to solvers for treating nonlinear BCs.
-  virtual double ComputeGravityFlux(int f) const;
+  virtual double ComputeGravityFlux(int f) const override;
 
   // access
   const CompositeVector& gravity_terms() { return *gravity_term_; }
@@ -162,11 +162,11 @@ class DiffusionFVwithGravity : public DiffusionFV,
  protected:
   virtual void ComputeJacobianLocal_(
       int mcells, int f, int face_dir_0to1, int bc_model, double bc_value,
-      double *pres, double *dkdp_cell, WhetStone::DenseMatrix& Jpp);
+      double *pres, double *dkdp_cell, WhetStone::DenseMatrix& Jpp) override;
 
   void ComputeTransmissibility_(Teuchos::RCP<CompositeVector> g_cv);
 
-  virtual void InitDiffusion_(Teuchos::ParameterList& plist);
+  virtual void InitDiffusion_(Teuchos::ParameterList& plist) override;
 
  protected:
   Teuchos::RCP<CompositeVector> gravity_term_;

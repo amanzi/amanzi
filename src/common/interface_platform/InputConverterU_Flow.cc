@@ -879,6 +879,8 @@ Teuchos::ParameterList InputConverterU::TranslateFlowFractures_()
       }
     }
   }
+
+  return out_list;
 }
 
 

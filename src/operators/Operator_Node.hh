@@ -33,11 +33,11 @@ class Operator_Node : public Operator {
   }
 
   // rhs update which multiplies by cell
-  virtual void UpdateRHS(const CompositeVector& source, bool volume_included);
+  virtual void UpdateRHS(const CompositeVector& source, bool volume_included) override;
 
   // visit methods for Apply
   virtual int ApplyMatrixFreeOp(const Op_Cell_Node& op,
-          const CompositeVector& X, CompositeVector& Y) const;
+          const CompositeVector& X, CompositeVector& Y) const override;
 
   virtual int ApplyMatrixFreeOp(const Op_Node_Node& op,
           const CompositeVector& X, CompositeVector& Y) const override;
@@ -45,20 +45,20 @@ class Operator_Node : public Operator {
   // visit methods for symbolic assemble
   virtual void SymbolicAssembleMatrixOp(const Op_Cell_Node& op,
           const SuperMap& map, GraphFE& graph,
-          int my_block_row, int my_block_col) const;
+          int my_block_row, int my_block_col) const override;
 
   virtual void SymbolicAssembleMatrixOp(const Op_Node_Node& op,
           const SuperMap& map, GraphFE& graph,
-          int my_block_row, int my_block_col) const;
+          int my_block_row, int my_block_col) const override;
   
   // visit methods for assemble
   virtual void AssembleMatrixOp(const Op_Cell_Node& op,
           const SuperMap& map, MatrixFE& mat,
-          int my_block_row, int my_block_col) const;
+          int my_block_row, int my_block_col) const override;
 
   virtual void AssembleMatrixOp(const Op_Node_Node& op,
           const SuperMap& map, MatrixFE& mat,
-          int my_block_row, int my_block_col) const;
+          int my_block_row, int my_block_col) const override;
 };
 
 }  // namespace Operators

@@ -222,6 +222,8 @@ int MFD3D_Generalized_Diffusion::StiffnessMatrix(
     cntr -= add * area_div(i);
   }
   A(nx, nx) = cntr;
+
+  return WHETSTONE_ELEMENTAL_MATRIX_OK;
 }
 
 
