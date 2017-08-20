@@ -56,7 +56,7 @@ void MeshMaps_FEM::VelocityCell(int c, VectorPolynomial& v) const
     v[i].monomials(1).coefs()[1] = p41[i] * J0(1, 1);
     v[i].monomials(2).coefs()[1] = pp[i] * J0(0, 0) * J0(1, 1);
 
-    v[i].monomials(1).coefs()[i] -= J0(i, i);
+    v[i].monomials(1).coefs()[i] -= 1.0;
   }
 }
 

@@ -140,7 +140,7 @@ int DG_Modal::AdvectionMatrixPoly(int c, const VectorPolynomial& u, DenseMatrix&
   Polynomial integrals(d_, 2 * order_ + uk - 1);
   VectorPolynomial pgrad;
 
-  integrals.monomials(0).coefs()[0] = 0.0;
+  integrals.monomials(0).coefs()[0] = mesh_->cell_volume(c);
 
   for (int k = 1; k <= integrals.order(); ++k) {
     IntegrateMonomialsCell_(c, integrals.monomials(k));
@@ -186,8 +186,6 @@ int DG_Modal::AdvectionMatrixPoly(int c, const VectorPolynomial& u, DenseMatrix&
       }
     }
   }
-
-  if (nrows > 1) std::cout << A << std::endl;
 
   return 0;
 }

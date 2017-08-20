@@ -190,7 +190,6 @@ TEST(DG_MASS_MATRIX_POLYNOMIAL) {
  
   double tmp, integral[2];
   DenseMatrix A;
-  AmanziGeometry::Point zero(0.0, 0.0);
 
   for (int k = 0; k < 2; k++) {
     DG_Modal dg(1, mesh);
@@ -243,8 +242,6 @@ TEST(DG_ADVECTION_MATRIX_FACE) {
   meshfactory.preference(FrameworkPreference({MSTK}));
   Teuchos::RCP<Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 2, 2); 
  
-  AmanziGeometry::Point zero(0.0, 0.0);
-
   for (int k = 0; k < 2; k++) {
     DG_Modal dg(k, mesh);
     DenseMatrix A0, A1;
@@ -255,37 +252,30 @@ TEST(DG_ADVECTION_MATRIX_FACE) {
     // TEST1: constant u
     dg.FluxMatrixPoly(1, un, A0);
 
-    printf("Advection matrix (face-based) for order=%d  u=constant\n", k);
+    printf("Advection matrix (face-based) for order=%d  u.n=1\n", k);
     int nk = A0.NumRows();
     for (int i = 0; i < nk; i++) {
       for (int j = 0; j < nk; j++ ) printf("%8.4f ", A0(i, j)); 
       printf("\n");
     }
 
-    // TEST2: linear u with zero gradient
-    /*
-    u.push_back(zero);
-    u.push_back(zero);
-
-    dg.FluxMatrix(1, u, A1);
+    // TEST2: add zero gradient to polynomial un
+    un.Reshape(2, 1);
+    dg.FluxMatrixPoly(1, un, A1);
 
     A1 -= A0;
     CHECK_CLOSE(0.0, A1.NormInf(), 1e-12);
 
-    // TEST3: nonzero linear component of u
-    u.clear();
-    u.push_back(zero);
-    u.push_back(zero);
-    u.push_back(AmanziGeometry::Point(1.0, 0.0));
+    // TEST3: nonzero linear component polynomial un
+    un.monomials(1).coefs()[0] = 1.0;
 
-    dg.FluxMatrix(1, u, A1);
+    dg.FluxMatrixPoly(1, un, A1);
 
-    printf("Advection matrix (cell-based) for order=%d u=(y-y0,0)\n", k);
+    printf("Advection matrix (face-based) for order=%d u.n=1+x\n", k);
     for (int i = 0; i < nk; i++) {
       for (int j = 0; j < nk; j++ ) printf("%8.4f ", A1(i, j)); 
       printf("\n");
     }
-    */
   }
 
   delete comm;
@@ -293,7 +283,71 @@ TEST(DG_ADVECTION_MATRIX_FACE) {
 
 
 /* ****************************************************************
-* Test of polynomial approximation in cells
+* Test of DG advection matrices on a face
+**************************************************************** */
+TEST(DG_ADVECTION_MATRIX_CELL) {
+  using namespace Amanzi;
+  using namespace Amanzi::AmanziMesh;
+  using namespace Amanzi::WhetStone;
+
+  std::cout << "\nTest: DG advection matrices in cells" << std::endl;
+  Epetra_MpiComm *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
+
+  MeshFactory meshfactory(comm);
+  meshfactory.preference(FrameworkPreference({MSTK}));
+  Teuchos::RCP<Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 2, 2); 
+
+  for (int k = 0; k < 3; k++) {
+    DG_Modal dg(k, mesh);
+    DenseMatrix A0, A1;
+
+    VectorPolynomial u(2);
+    for (int i = 0; i < 2; ++i) u[i].Reshape(2, 2);
+
+    // TEST1: constant u
+    u[0].monomials(0).coefs()[0] = 1.0;
+    dg.AdvectionMatrixPoly(0, u, A0);
+
+    printf("Advection matrix (cell-based) for order=%d u=(1,0)\n", k);
+    int nk = A0.NumRows();
+    for (int i = 0; i < nk; i++) {
+      for (int j = 0; j < nk; j++ ) printf("%8.4f ", A0(i, j)); 
+      printf("\n");
+    }
+    CHECK_CLOSE(0.0, A0.NormInf(), mesh->cell_volume(0));
+
+    // TEST2: linear u
+    u[0].monomials(1).coefs()[0] = 1.0;
+    dg.AdvectionMatrixPoly(0, u, A0);
+
+    printf("Advection matrix (cell-based) for order=%d u=(1+x,0)\n", k);
+    nk = A0.NumRows();
+    for (int i = 0; i < nk; i++) {
+      for (int j = 0; j < nk; j++ ) printf("%8.4f ", A0(i, j)); 
+      printf("\n");
+    }
+
+    // accuracy test for functions 1+x and 1+x
+    if (k > 0) {
+      DenseVector v1(nk), v2(nk);
+      v1(0) = 1.25;
+      v1(1) = 1.0;
+      v2 = v1;
+ 
+      A0.Multiply(v1, v2, false);
+      double integral(v1 * v2);
+      printf("  inner product = %10.4f\n", integral);
+
+      CHECK_CLOSE(integral, 19.0 / 48.0, 1e-12);
+    }
+  }
+
+  delete comm;
+}
+
+ 
+/* ****************************************************************
+* Test of polynomial least-square approximation
 **************************************************************** */
 TEST(DG_MAP_APPROXIMATION_CELL) {
   using namespace Amanzi;
