@@ -46,6 +46,7 @@ const int USED  = 3;  // OWNED + GHOST
 class Polynomial;
 
 typedef std::vector<Polynomial> VectorPolynomial;
+typedef std::vector<std::vector<Polynomial> > MatrixPolynomial;
 
 }  // namespace WhetStone
 }  // namespace Amanzi

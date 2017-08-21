@@ -107,6 +107,14 @@ void MeshMaps_FEM::VelocityFace(int f, VectorPolynomial& v) const
 
 
 /* ******************************************************************
+* Calculation of matrix of cofactors
+****************************************************************** */
+void MeshMaps_FEM::Cofactors(int c, double t, MatrixPolynomial& C) const
+{
+}
+
+
+/* ******************************************************************
 * Calculation of Jacobian for linearized map xi + t (F(xi) - xi).
 ****************************************************************** */
 void MeshMaps_FEM::JacobianCellValue(

@@ -87,6 +87,7 @@ int DG_Modal::MassMatrixPoly(int c, const Polynomial& K, DenseMatrix& M)
 
   // sum up integrals to the mass matrix
   int multi_index[3];
+  double ak, bk, al, bl;
   Polynomial p(d_, order_), q(d_, order_);
 
   int nrows = p.size();
@@ -96,6 +97,7 @@ int DG_Modal::MassMatrixPoly(int c, const Polynomial& K, DenseMatrix& M)
   for (auto it = p.begin(); it.end() <= p.end(); ++it) {
     const int* idx_p = it.multi_index();
     int k = p.PolynomialPosition(idx_p);
+    // TaylorBasis_(integrals, idx_p, &ak, &bk);
 
     for (auto mt = Kcopy.begin(); mt.end() <= Kcopy.end(); ++mt) {
       const int* idx_K = mt.multi_index();
@@ -376,6 +378,42 @@ double DG_Modal::IntegratePolynomialsEdge_(
   }
 
   return integral * norm(x2 - x1);
+}
+
+
+/* ******************************************************************
+* Transform monomial \psi_k to monomial a (\psi_k - b \psi_0) where
+* factor b orthogonolizes to constant and factor normalizes to 1.
+****************************************************************** */
+void DG_Modal::TaylorBasis_(
+    const Polynomial& integrals, const int* multi_index, double* a, double* b)
+{
+  int n(0);
+  for (int i = 0; i < d_; ++i) {
+    n += multi_index[i];
+  }
+
+  // We do not modify the first function
+  if (n == 0) {
+    *a = 1.0;
+    *b = 0.0;
+  } else {
+    const auto& aux1 = integrals.monomials(n).coefs();
+    *b = aux1[integrals.MonomialPosition(multi_index)];
+
+    int index[d_]; 
+    for (int i = 0; i < d_; ++i) {
+      index[i] = 2 * multi_index[i];
+    }
+
+    const auto& aux2 = integrals.monomials(2 * n).coefs();
+    double norm = aux2[integrals.MonomialPosition(index)];
+
+    double volume = integrals.monomials(0).coefs()[0]; 
+    norm = norm * norm - (*b) * (*b) / volume;
+
+    *a = std::pow(volume / norm, 0.5);
+  }
 }
 
 }  // namespace WhetStone

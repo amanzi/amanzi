@@ -91,6 +91,9 @@ class DG_Modal : public BilinearForm {
       const AmanziGeometry::Point& x1, const AmanziGeometry::Point& x2,
       double factor, Monomial& monomials);
 
+  // modify Taylor basis: \psi_k -> a (\psi_k - b \psi_0)
+  void TaylorBasis_(const Polynomial& integrals, const int* multi_index, double* a, double* b);
+
   // integration routine for a product of polynomials with different origins
   double IntegratePolynomialsEdge_(
       const AmanziGeometry::Point& x1, const AmanziGeometry::Point& x2,
@@ -99,6 +102,7 @@ class DG_Modal : public BilinearForm {
  private:
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
   int order_, d_;
+  int basis_;
 };
 
 }  // namespace WhetStone

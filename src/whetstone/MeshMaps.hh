@@ -56,11 +56,12 @@ class MeshMaps {
   virtual void VelocityFace(int f, VectorPolynomial& v) const = 0;
 
   // Jacobian
-  // -- determinant of Jacobian
+  // -- tensors
+  virtual void Cofactors(int c, double t, MatrixPolynomial& C) const = 0;
+  // -- determinant
   virtual void JacobianDet(int c, double t, const std::vector<VectorPolynomial>& vf,
                            Polynomial& vc) const = 0;
-
-  // -- Jacobian value at point x
+  // -- value at point x
   virtual void JacobianCellValue(int c, 
                                  double t, const AmanziGeometry::Point& x,
                                  Tensor& J) const = 0;

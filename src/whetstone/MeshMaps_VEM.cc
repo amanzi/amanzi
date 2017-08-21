@@ -78,6 +78,14 @@ void MeshMaps_VEM::VelocityFace(int f, VectorPolynomial& v) const
 
 
 /* ******************************************************************
+* Calculation of matrix of cofactors
+****************************************************************** */
+void MeshMaps_VEM::Cofactors(int c, double t, MatrixPolynomial& C) const
+{
+}
+
+
+/* ******************************************************************
 * Calculation of Jacobian.
 ****************************************************************** */
 void MeshMaps_VEM::JacobianCellValue(

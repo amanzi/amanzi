@@ -195,7 +195,7 @@ class Polynomial {
     return tmp *= val;
   }
 
-  // -- operatios with vector polynomials
+  // -- operations with vector polynomials
   friend Polynomial operator*(const std::vector<Polynomial>& poly, const AmanziGeometry::Point& p) {
     int d(p.dim());
     Polynomial tmp(d, 0);
@@ -205,16 +205,51 @@ class Polynomial {
     return tmp;
   }
 
-  friend Polynomial operator*(const std::vector<Polynomial>& poly1, const std::vector<Polynomial>& poly2) {
-    ASSERT(poly1.size() == poly2.size());
-    int d(poly1[0].dimension());
-    Polynomial tmp(d, 0);
-    tmp.set_origin(poly1[0].origin());
+  // dot product v1 * v2
+  friend Polynomial operator*(const std::vector<Polynomial>& v1, const std::vector<Polynomial>& v2) {
+    ASSERT(v1.size() == v2.size());
 
-    for (int i = 0; i < poly1.size(); ++i) {
-      tmp += poly1[i] * poly2[i];
+    int d(v1[0].dimension());
+    Polynomial tmp(d, 0);
+    tmp.set_origin(v1[0].origin());
+
+    for (int i = 0; i < v1.size(); ++i) {
+      tmp += v1[i] * v2[i];
     }
     return tmp;
+  }
+
+  // matrix-vector product A * v
+  friend void Multiple(const std::vector<std::vector<Polynomial> >& A, 
+                       const std::vector<Polynomial>& v,
+                       std::vector<Polynomial>& av, bool transpose) {
+    int d(v[0].dimension());
+    int nrows(A.size());
+    int ncols(v.size());
+
+    if (!transpose) {
+      av.resize(nrows);
+
+      for (int i = 0; i < nrows; ++i) {
+        av[i].Reshape(d, 0);
+        av[i].set_origin(v[0].origin());
+
+        for (int k = 0; k < ncols; ++k) {
+          av[i] += A[i][k] * v[k];
+        }
+      }
+    } else {
+      av.resize(ncols);
+
+      for (int i = 0; i < ncols; ++i) {
+        av[i].Reshape(d, 0);
+        av[i].set_origin(v[0].origin());
+
+        for (int k = 0; k < nrows; ++k) {
+          av[i] += A[k][i] * v[k];
+        }
+      }
+    }
   }
 
   // -- derivatives

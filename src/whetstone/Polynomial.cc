@@ -373,7 +373,6 @@ std::ostream& operator << (std::ostream& os, const Polynomial& p)
   return os;
 }
 
-
 }  // namespace WhetStone
 }  // namespace Amanzi
 
