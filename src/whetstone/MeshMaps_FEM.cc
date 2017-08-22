@@ -111,6 +111,32 @@ void MeshMaps_FEM::VelocityFace(int f, VectorPolynomial& v) const
 ****************************************************************** */
 void MeshMaps_FEM::Cofactors(int c, double t, MatrixPolynomial& C) const
 {
+  Entity_ID_List nodes;
+
+  mesh1_->cell_get_nodes(c, &nodes);
+  int nnodes = nodes.size();
+  ASSERT(nnodes == 4);
+
+  AmanziGeometry::Point p1(d_), p2(d_), p3(d_), p4(d_);
+  mesh1_->node_get_coordinates(nodes[0], &p1);
+  mesh1_->node_get_coordinates(nodes[1], &p2);
+  mesh1_->node_get_coordinates(nodes[2], &p3);
+  mesh1_->node_get_coordinates(nodes[3], &p4);
+
+  AmanziGeometry::Point p21(p2 - p1), p41(p4 - p1), p32(p3 - p2);
+  
+  C[0][0].monomials(0).coefs()[0] = p41[1];
+  C[1][0].monomials(0).coefs()[0] = -p41[0];
+
+  C[0][1].monomials(0).coefs()[0] = -p21[1];
+  C[1][1].monomials(0).coefs()[0] = p21[0];
+
+  for (int i = 0; i < 2; ++i) {
+    for (int j = 0; j < 2; ++j) {
+      C[i][j] *= t;
+    }
+    C[i][i].monomials(0).coefs()[0] += 1.0 - t;
+  }
 }
 
 

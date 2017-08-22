@@ -40,6 +40,7 @@ class Iterator {
     multi_index_[0] = k0;
     multi_index_[1] = 0;
     multi_index_[2] = 0;
+    count_ = 0;
 
     return *this;
   }
@@ -78,6 +79,8 @@ class Iterator {
         multi_index_[2] = k_ - multi_index_[0] - multi_index_[1];
       }
     }
+    count_++;
+
     return *this;
   }
 
@@ -89,6 +92,7 @@ class Iterator {
   // access
   int MonomialOrder() const { return k_; }
   int MonomialPosition() const { return m_; }
+  int PolynomialPosition() const { return count_; }
   const int* multi_index() const { return multi_index_; }
 
  private:
@@ -100,6 +104,7 @@ class Iterator {
   int m_;  // current position in the list of monomials
   int multi_index_[3];
   int d_;
+  int count_;  // iterator count
 };
 
 

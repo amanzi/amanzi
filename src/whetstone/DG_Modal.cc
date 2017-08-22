@@ -62,6 +62,8 @@ int DG_Modal::MassMatrix(int c, const Tensor& K, DenseMatrix& M)
     }
   }
 
+  ChangeBasis(integrals, M);
+
   return 0;
 }
 
@@ -96,8 +98,7 @@ int DG_Modal::MassMatrixPoly(int c, const Polynomial& K, DenseMatrix& M)
 
   for (auto it = p.begin(); it.end() <= p.end(); ++it) {
     const int* idx_p = it.multi_index();
-    int k = p.PolynomialPosition(idx_p);
-    // TaylorBasis_(integrals, idx_p, &ak, &bk);
+    int k = it.PolynomialPosition();
 
     for (auto mt = Kcopy.begin(); mt.end() <= Kcopy.end(); ++mt) {
       const int* idx_K = mt.multi_index();
@@ -121,6 +122,8 @@ int DG_Modal::MassMatrixPoly(int c, const Polynomial& K, DenseMatrix& M)
     }
   }
 
+  ChangeBasis(integrals, M);
+
   return 0;
 }
 
@@ -135,11 +138,12 @@ int DG_Modal::AdvectionMatrixPoly(int c, const VectorPolynomial& u, DenseMatrix&
   VectorPolynomial ucopy(u);
   for (int i = 0; i < d_; ++i) {
     ucopy[i].ChangeOrigin(xc);
+    ucopy[i].Reshape(d_, 0);
   }
 
   // calculate integrals of monomials centered at cell centroid
   int uk(ucopy[0].order());
-  Polynomial integrals(d_, 2 * order_ + uk - 1);
+  Polynomial integrals(d_, 2 * order_ + std::max(0, uk - 1));
   VectorPolynomial pgrad;
 
   integrals.monomials(0).coefs()[0] = mesh_->cell_volume(c);
@@ -189,6 +193,8 @@ int DG_Modal::AdvectionMatrixPoly(int c, const VectorPolynomial& u, DenseMatrix&
     }
   }
 
+  ChangeBasis(integrals, A);
+
   return 0;
 }
 
@@ -225,6 +231,14 @@ int DG_Modal::FluxMatrixPoly(int f, const Polynomial& un, DenseMatrix& A)
   int col(id * size);
   int row(size - col);
 
+  // Calculate integrals needed for scaling (FIXME)
+  Polynomial integrals(d_, 2 * order_);
+
+  integrals.monomials(0).coefs()[0] = mesh_->cell_volume(cells[id]);
+  for (int k = 1; k <= integrals.order(); ++k) {
+    IntegrateMonomialsCell_(cells[id], integrals.monomials(k));
+  }
+
   // integrate traces of polynomials on face f
   mesh_->face_get_nodes(f, &nodes);
 
@@ -238,6 +252,10 @@ int DG_Modal::FluxMatrixPoly(int f, const Polynomial& un, DenseMatrix& A)
 
     Polynomial p(d_, idx0);
     p.set_origin(mesh_->cell_centroid(cells[id]));
+
+    // scaling basis functions in downwind cell
+    double ak, bk;
+    TaylorBasis_(integrals, it, &ak, &bk);
 
     for (auto jt = poly1.begin(); jt.end() <= poly1.end(); ++jt) {
       const int* idx1 = jt.multi_index();
@@ -254,6 +272,11 @@ int DG_Modal::FluxMatrixPoly(int f, const Polynomial& un, DenseMatrix& A)
       vel = IntegratePolynomialsEdge_(x1, x2, polys);
       vel /= mesh_->face_area(f);
       vel *= dir;  
+
+      // scaling basis functions in downwind cell
+      double al, bl;
+      TaylorBasis_(integrals, jt, &al, &bl);
+      vel *= ak * al;  // FIXME (up to linear basis functions)
 
       if (ncells == 1) {
         A(k, l) = vel;
@@ -382,12 +405,47 @@ double DG_Modal::IntegratePolynomialsEdge_(
 
 
 /* ******************************************************************
+* Change basis from unscaled monomials to Taylor basis
+****************************************************************** */
+void DG_Modal::ChangeBasis(const Polynomial& integrals, DenseMatrix& A)
+{
+  int nrows = A.NumRows();
+  double ak, bk;
+  std::vector<double> a(nrows), b(nrows);
+
+  Iterator it(d_);
+  for (it.begin(); it.end() <= order_; ++it) {
+    int k = it.PolynomialPosition();
+    TaylorBasis_(integrals, it, &ak, &bk);
+    a[k] = ak;
+    b[k] = -ak * bk;
+  }
+
+  // calculate A * R
+  for (int k = 1; k < nrows; ++k) {
+    for (int i = 0; i < nrows; ++i) {
+      A(i, k) = A(i, k) * a[k] + A(i, 0) * b[k];
+    }
+  }
+
+  // calculate R^T * A * R
+  for (int k = 1; k < nrows; ++k) {
+    for (int i = 0; i < nrows; ++i) {
+      A(k, i) = A(k, i) * a[k] + A(0, i) * b[k];
+    }
+  }
+}
+
+
+/* ******************************************************************
 * Transform monomial \psi_k to monomial a (\psi_k - b \psi_0) where
 * factor b orthogonolizes to constant and factor normalizes to 1.
 ****************************************************************** */
 void DG_Modal::TaylorBasis_(
-    const Polynomial& integrals, const int* multi_index, double* a, double* b)
+    const Polynomial& integrals, const Iterator& it, double* a, double* b)
 {
+  const int* multi_index = it.multi_index();
+
   int n(0);
   for (int i = 0; i < d_; ++i) {
     n += multi_index[i];
@@ -398,8 +456,9 @@ void DG_Modal::TaylorBasis_(
     *a = 1.0;
     *b = 0.0;
   } else {
+    double volume = integrals.monomials(0).coefs()[0]; 
     const auto& aux1 = integrals.monomials(n).coefs();
-    *b = aux1[integrals.MonomialPosition(multi_index)];
+    *b = aux1[integrals.MonomialPosition(multi_index)] / volume;
 
     int index[d_]; 
     for (int i = 0; i < d_; ++i) {
@@ -408,9 +467,7 @@ void DG_Modal::TaylorBasis_(
 
     const auto& aux2 = integrals.monomials(2 * n).coefs();
     double norm = aux2[integrals.MonomialPosition(index)];
-
-    double volume = integrals.monomials(0).coefs()[0]; 
-    norm = norm * norm - (*b) * (*b) / volume;
+    norm -= (*b) * (*b) * volume;
 
     *a = std::pow(volume / norm, 0.5);
   }

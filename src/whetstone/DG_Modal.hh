@@ -72,6 +72,9 @@ class DG_Modal : public BilinearForm {
   virtual int AdvectionMatrixPoly(int c, const VectorPolynomial& uc, DenseMatrix& A);
   int FluxMatrixPoly(int f, const Polynomial& uf, DenseMatrix& A);
 
+  // change of basis
+  void ChangeBasis(const Polynomial& integrals, DenseMatrix& A);
+
   // interfaces that are not used
   virtual int L2consistency(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Mc, bool symmetry) { return 0; }
   virtual int L2consistencyInverse(int c, const Tensor& T, DenseMatrix& R, DenseMatrix& Wc, bool symmetry) { return 0; }
@@ -92,7 +95,7 @@ class DG_Modal : public BilinearForm {
       double factor, Monomial& monomials);
 
   // modify Taylor basis: \psi_k -> a (\psi_k - b \psi_0)
-  void TaylorBasis_(const Polynomial& integrals, const int* multi_index, double* a, double* b);
+  void TaylorBasis_(const Polynomial& integrals, const Iterator& it, double* a, double* b);
 
   // integration routine for a product of polynomials with different origins
   double IntegratePolynomialsEdge_(
