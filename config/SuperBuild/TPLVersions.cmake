@@ -85,6 +85,7 @@
 #   0.94.4       - update MSTK to version 3.01
 #   0.94.5       - restored Alquimia to version 1.0.4
 #   0.94.6       - Added CrunchTope package, hash version c31ecb9
+#   0.94.7       - update UnitTest++ to version 2.0.0
 
 include(CMakeParseArguments)
 
@@ -134,7 +135,7 @@ endmacro(amanzi_tpl_version_write)
 
 set (AMANZI_TPLS_VERSION_MAJOR 0)
 set (AMANZI_TPLS_VERSION_MINOR 94)
-set (AMANZI_TPLS_VERSION_PATCH 6)
+set (AMANZI_TPLS_VERSION_PATCH 7)
 set (AMANZI_TPLS_VERSION ${AMANZI_TPLS_VERSION}.${AMANZI_TPLS_VERSION_MINOR}.${AMANZI_TPLS_VERSION_PATCH})
 #   Not sure how to create a meaningful hash key for the collection
 
@@ -213,12 +214,13 @@ set(CCSE_MD5_SUM        faa52bb553cea8ca9ea436c1a7135b12)
 #
 # TPL: UnitTest
 #
-set(UnitTest_VERSION_MAJOR 1)
-set(UnitTest_VERSION_MINOR 5)
-set(UnitTest_VERSION ${UnitTest_VERSION_MAJOR}.${UnitTest_VERSION_MINOR})
+set(UnitTest_VERSION_MAJOR 2)
+set(UnitTest_VERSION_MINOR 0)
+set(UnitTest_VERSION_PATCH 0)
+set(UnitTest_VERSION ${UnitTest_VERSION_MAJOR}.${UnitTest_VERSION_MINOR}.${UnitTest_VERSION_PATCH})
 set(UnitTest_URL_STRING     ${AMANZI_TPLS_DOWNLOAD_URL})
-set(UnitTest_ARCHIVE_FILE   unittest-cpp-${UnitTest_VERSION}.zip)
-set(UnitTest_MD5_SUM      6f6e05fa07eeb2d44e5b11bd1f38865d) 
+set(UnitTest_ARCHIVE_FILE   unittest-cpp-${UnitTest_VERSION}.tgz)
+set(UnitTest_MD5_SUM      29f958e355e516e7ab016b467974728d) 
 
 #
 # TPL: Boost
