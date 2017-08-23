@@ -17,16 +17,21 @@
 #ifndef ATS_AMANZI_SUBCYCLED_MPC_HH_
 #define ATS_AMANZI_SUBCYCLED_MPC_HH_
 
+#include "PK.hh"
 #include "mpc.hh"
 
 namespace Amanzi {
 
 class PK_MPCSubcycled_ATS : public MPC<PK> {
- public:
+
+public:
   PK_MPCSubcycled_ATS(Teuchos::ParameterList& pk_tree_or_fe_list,
                       const Teuchos::RCP<Teuchos::ParameterList>& global_list,
                       const Teuchos::RCP<State>& S,
                       const Teuchos::RCP<TreeVector>& soln);
+
+ // Virtual destructor
+  virtual ~PK_MPCSubcycled_ATS() = default;
 
   // PK methods
   // -- dt is the minimum of the sub pks
