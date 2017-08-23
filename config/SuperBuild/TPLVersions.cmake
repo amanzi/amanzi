@@ -86,6 +86,7 @@
 #   0.94.5       - restored Alquimia to version 1.0.4
 #   0.94.6       - Added CrunchTope package, hash version c31ecb9
 #   0.94.7       - update UnitTest++ to version 2.0.0
+#                - update Hypre to version 2.11.2    
 
 include(CMakeParseArguments)
 
@@ -312,12 +313,12 @@ set(MOAB_MD5_SUM        49da04e8905f6d730d92521e7ca7400e)
 # TPL: HYPRE
 #
 set(HYPRE_VERSION_MAJOR  2)
-set(HYPRE_VERSION_MINOR  10)
-set(HYPRE_VERSION_PATCH  0b)
+set(HYPRE_VERSION_MINOR  11)
+set(HYPRE_VERSION_PATCH  2)
 set(HYPRE_VERSION  ${HYPRE_VERSION_MAJOR}.${HYPRE_VERSION_MINOR}.${HYPRE_VERSION_PATCH})
 set(HYPRE_URL_STRING     "https://computation.llnl.gov/projects/hypre-scalable-linear-solvers-multigrid-methods/download")
 set(HYPRE_ARCHIVE_FILE   hypre-${HYPRE_VERSION}.tar.gz)
-set(HYPRE_MD5_SUM        768be38793a35bb5d055905b271f5b8e) 
+set(HYPRE_MD5_SUM        d507943a1a3ce5681c3308e2f3a6dd34) 
 
 #
 # TPL: ParMetis
