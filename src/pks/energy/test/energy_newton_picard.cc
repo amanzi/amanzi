@@ -374,7 +374,7 @@ TEST(NKA) {
 
     // checks
     CHECK(solver->num_itrs() < 9);
-    if (i == 1) CHECK(solver->residual() < 1e-9);
+    if (i == 1) CHECK(solver->residual() < 2e-9);
 
     Epetra_MultiVector p0(*problem->solution()->ViewComponent("cell"));
     Epetra_MultiVector& p1 = *problem->solution()->ViewComponent("cell");
