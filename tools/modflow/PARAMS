@@ -5,7 +5,8 @@ INPUT_BNDS=init_bnds.inf
 #INPUT_ELEV=
 
 # Exported mesh name
-EXPORT_NAME=for_terry.inp
+EXPORT_NAME=modflow_out.inp
+EXO_FILE=hex_fs_flat.exo
 
 # Set to number of rows & columns 
 NCOLS=284
@@ -21,3 +22,31 @@ HEIGHT=7.75
 # Starting position of lower left hand corner
 MINX=601650
 MINY=3566450
+
+# IBND values should be assigned according to
+# cell materials values
+IBND_ACTIVE=1
+IBND_NOFLOW=0
+IBND_HEAD=-1
+IBND_EDGE=-2
+IBND_HALITE=-3
+
+IMAT_ACTIVE=1
+IMAT_NOFLOW=2
+IMAT_HEAD=3
+IMAT_EDGE=4
+IMAT_HALITE=3
+
+# Define the different face sets
+FS_BOTTOM=1
+FS_TOP=2
+FS_EAST=3
+FS_NORTH=4
+FS_WEST=5
+FS_SOUTH=6
+FS_HALITE=7
+FS_HEAD=7
+FS_NOFLOW=8
+
+RMMAT_EDGE=4
+MAXMAT=1
