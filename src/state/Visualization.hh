@@ -67,6 +67,9 @@ class Visualization : public IOEvent {
     mesh_ = mesh;
   }
 
+  std::string name() const { return name_; }
+  void set_name(const std::string& name) { name_ = name; }
+
   // public interface for coordinator clients
   void CreateFiles();
   void CreateTimestep(const double& time, const int& cycle);
@@ -81,6 +84,7 @@ class Visualization : public IOEvent {
  protected:
   void ReadParameters_();
 
+  std::string name_;
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
   Teuchos::RCP<Output> visualization_output_;
 

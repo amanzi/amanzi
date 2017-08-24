@@ -263,9 +263,7 @@ if __name__ == "__main__":
     except: 
         alq = False
 
-    if(0):
-    ##try:
-
+    try:
         # Amanzi-Alquimia-Crunch
         input_filename = os.path.join("amanzi-u-1d-"+root+"-alq-crunch.xml")
         path_to_amanzi = "amanzi-alquimia-crunch-output"
@@ -284,8 +282,7 @@ if __name__ == "__main__":
               v_amanzi_alquimia_crunch[i][j] = c_amanzi_alquimia_crunch
 
         alq_crunch = True
-    else:
-    ##except: 
+    except: 
         alq_crunch = False
 
 

@@ -296,7 +296,7 @@ class bogus_mesh : public Amanzi::AmanziMesh::Mesh {
              const std::vector<double>& min_cell_volumes_in, 
              const Amanzi::AmanziMesh::Entity_ID_List& fixed_nodes,
              const bool move_vertical)
-  {};
+  { return 0; }
 
   void write_to_exodus_file(const std::string filename) const
   {};

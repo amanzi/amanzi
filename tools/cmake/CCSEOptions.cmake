@@ -76,9 +76,10 @@ if (ENABLE_PETSC)
     message(FATAL_ERROR "Must define env variable PETSC_DIR if ENABLE_PETSC=ON")
   endif()
 
-  if (${APPLE})
-    include_directories(/usr/local/include) # For Homebrew valgrind installs
-  endif()
+  # This adds undesirable path to the top of the search list and leads to conflicts. 
+  #if (${APPLE})
+  #  include_directories(/usr/local/include) # For Homebrew valgrind installs
+  #endif()
   include_directories(${PETSC_DIR}/include)
   list(APPEND BL_DEFINES BL_USE_PETSC)
   set(PETSC_LIB_DIR ${PETSC_DIR}/lib)

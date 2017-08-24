@@ -27,14 +27,14 @@ ifdef PFLOTRAN_DIR
 #		$(PFLOTRAN_DIR)/src/pflotran/libpflotranchem.a
 endif
 
-ifdef CRUNCH_DIR
+ifdef CRUNCHTOPE_DIR
       CFLAGS += -DHAVE_CRUNCH
       CXXFLAGS += ${PETSC_CC_INCLUDES}
-      FCFLAGS += -I$(CRUNCH_DIR) ${PETSC_FC_INCLUDES}
-      LDFLAGS += -L$(CRUNCH_DIR) -lcrunchchem 
+      FCFLAGS += -I$(CRUNCHTOPE_DIR) ${PETSC_FC_INCLUDES}
+      LDFLAGS += -L$(CRUNCHTOPE_DIR) -lcrunchchem 
       LDFLAGS += ${PETSC_LIB} ${LIB}
 #	DEPEND_LIBS += \
-#		$(CRUNCH_DIR)/src/libcrunch_chem.a
-#       LDFLAGS += -L$(CRUNCH_DIR)/src -lcrunch_chem
+#		$(CRUNCHTOPE_DIR)/src/libcrunchchem.a
+#       LDFLAGS += -L$(CRUNCHTOPE_DIR)/src -lcrunchchem
 endif
 
