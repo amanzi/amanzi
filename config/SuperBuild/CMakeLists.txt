@@ -669,9 +669,6 @@ else()
     set(PETSC_DIR ${TPL_INSTALL_PREFIX})
 endif()
 
-# SEACAS
-include(${SuperBuild_BUILD_FILES_DIR}/Build_SEACAS.cmake)
-
 # Trilinos  
 if ( NOT ENABLE_XSDK )
     include(${SuperBuild_BUILD_FILES_DIR}/Build_Trilinos.cmake)
@@ -682,6 +679,9 @@ endif()
 append_set(Amanzi_TPL_CMAKE_ARGS
     -DENABLE_STK_Mesh:BOOL=${ENABLE_STK_Mesh}
     -DTrilinos_INSTALL_PREFIX:PATH=${Trilinos_INSTALL_PREFIX})
+
+# SEACAS
+include(${SuperBuild_BUILD_FILES_DIR}/Build_SEACAS.cmake)
 
 # MSTK
 if ( ENABLE_MSTK_Mesh )

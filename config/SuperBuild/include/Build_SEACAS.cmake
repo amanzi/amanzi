@@ -10,7 +10,7 @@
 if ( NOT ENABLE_XSDK)
     define_external_project_args(SEACAS
                                  TARGET seacas
-				 DEPENDS ${MPI_PROJECT} HDF5 NetCDF)
+				 DEPENDS ${MPI_PROJECT} HDF5 NetCDF Trilinos)
 else()
     define_external_project_args(SEACAS
                                  TARGET seacas
@@ -64,6 +64,9 @@ set(SEACAS_CMAKE_CACHE_ARGS
                     ${Amanzi_CMAKE_Fortran_COMPILER_ARGS}
                     -DCMAKE_Fortran_COMPILER:FILEPATH=${CMAKE_Fortran_COMPILER_USE}
                     -DCMAKE_EXE_LINKER_FLAGS:STRING=${seacas_lflags}
+                    -DTrilinos_ENABLE_ALL_PACKAGES:BOOL=FALSE
+                    -DTrilinos_ENABLE_ALL_OPTIONAL_PACKAGES:BOOL=FALSE
+                    -DTrilinos_ENABLE_SEACAS:BOOL=TRUE
                     -DTPL_ENABLE_X11:BOOL=FALSE
                     -DTPL_ENABLE_Matio:BOOL=FALSE
                     -DTPL_Netcdf_LIBRARIES:STRING=${seacas_netcdf_libraries}

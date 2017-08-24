@@ -4,7 +4,7 @@
 # Build TPL: Trilinos
 #    
 # --- Define all the directories and common external project flags
-set(trilinos_depend_projects ${MPI_PROJECT} NetCDF SEACAS Boost)
+set(trilinos_depend_projects ${MPI_PROJECT} NetCDF Boost)
 if(ENABLE_HYPRE)
   list(APPEND trilinos_depend_projects HYPRE)
 endif()
