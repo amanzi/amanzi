@@ -87,6 +87,7 @@
 #   0.94.6       - Added CrunchTope package, hash version c31ecb9
 #   0.94.7       - update UnitTest++ to version 2.0.0
 #                - update Hypre to version 2.11.2    
+#   0.94.8       - removed ExodusII as independent TPL  
 
 include(CMakeParseArguments)
 
@@ -277,16 +278,6 @@ set(ASCEMIO_VERSION ${ASCEMIO_VERSION_MAJOR}.${ASCEMIO_VERSION_MINOR})
 set(ASCEMIO_URL_STRING    ${AMANZI_TPLS_DOWNLOAD_URL})
 set(ASCEMIO_ARCHIVE_FILE   ascem-io-${ASCEMIO_VERSION}.tar.gz)
 set(ASCEMIO_MD5_SUM       869820bacd4c289c8f320be58c1449a7)
-
-#
-# TPL: ExodusII
-#
-set(ExodusII_VERSION_MAJOR 6)
-set(ExodusII_VERSION_MINOR 06)
-set(ExodusII_VERSION ${ExodusII_VERSION_MAJOR}.${ExodusII_VERSION_MINOR})
-set(ExodusII_URL_STRING    ${AMANZI_TPLS_DOWNLOAD_URL})
-set(ExodusII_ARCHIVE_FILE  exodus-${ExodusII_VERSION}.tar.gz)
-set(ExodusII_MD5_SUM       cfd240dbc1251b08fb1d0ee2de40a44c)
 
 #
 # TPL: MSTK

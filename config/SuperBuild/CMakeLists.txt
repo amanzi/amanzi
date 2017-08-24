@@ -613,11 +613,6 @@ endif()
 append_set(Amanzi_TPL_CMAKE_ARGS
     -DNetCDF_FORTRAN_DIR:FILEPATH=${TPL_INSTALL_PREFIX})
 
-# ExodusII
-include(${SuperBuild_BUILD_FILES_DIR}/Build_ExodusII.cmake) 
-append_set(Amanzi_TPL_CMAKE_ARGS
-    -DExodusII_DIR:FILEPATH=${TPL_INSTALL_PREFIX})
-
 # MOAB
 if ( ENABLE_MOAB_Mesh )
     include(${SuperBuild_BUILD_FILES_DIR}/Build_MOAB.cmake)
@@ -674,6 +669,9 @@ else()
     set(PETSC_DIR ${TPL_INSTALL_PREFIX})
 endif()
 
+# SEACAS
+include(${SuperBuild_BUILD_FILES_DIR}/Build_SEACAS.cmake)
+
 # Trilinos  
 if ( NOT ENABLE_XSDK )
     include(${SuperBuild_BUILD_FILES_DIR}/Build_Trilinos.cmake)
@@ -684,9 +682,6 @@ endif()
 append_set(Amanzi_TPL_CMAKE_ARGS
     -DENABLE_STK_Mesh:BOOL=${ENABLE_STK_Mesh}
     -DTrilinos_INSTALL_PREFIX:PATH=${Trilinos_INSTALL_PREFIX})
-
-# SEACAS
-include(${SuperBuild_BUILD_FILES_DIR}/Build_SEACAS.cmake)
 
 # MSTK
 if ( ENABLE_MSTK_Mesh )
@@ -861,7 +856,6 @@ if ( BUILD_Amanzi )
   include(ExternalProject)
 
   set(Amanzi_DEPENDS 
-    ${ExodusII_BUILD_TARGET}
 	${HDF5_BUILD_TARGET}
 	${ASCEMIO_BUILD_TARGET}
 	${XERCES_BUILD_TARGET}

@@ -85,9 +85,6 @@ set(ASCEMIO_DIR @TPL_INSTALL_PREFIX@ CACHE PATH "ASCEM-IO installation prefix")
 # NetCDF
 set(NetCDF_DIR @TPL_INSTALL_PREFIX@ CACHE PATH "NetCDF installation prefix")
 
-# ExodusII
-set(ExodusII_DIR @TPL_INSTALL_PREFIX@ CACHE PATH "ExodusII installation prefix")
-
 # MSTK
 set(MSTK_INCLUDE_DIR @MSTK_INCLUDE_DIR@ CACHE PATH "MSTK include installation path")
 set(MSTK_LIBRARY_DIR @MSTK_LIBRARY_DIR@ CACHE PATH "MSTK include installation path")
