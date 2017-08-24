@@ -252,17 +252,6 @@ set_package_properties(NetCDF
 
 
 ##############################################################################
-# Exodus II -http://sourceforge.net/projects/exodusii
-##############################################################################
-find_package(ExodusII REQUIRED)
-set_package_properties(ExodusII
-		 PROPERTIES
-                 DESCRIPTION "File format library. Originated from Sandia."
-                 URL "http://sourceforge.net/projects/exodusii/"
-                 PURPOSE "Required by all the mesh frameworks to read mesh files")
-
-
-##############################################################################
 # XERCES-C - http://http://xerces.apache.org/xerces-c/
 ##############################################################################
 find_package(XERCES REQUIRED)
@@ -339,6 +328,11 @@ add_feature_info(MSTK_Mesh
                  )
 if (ENABLE_MSTK_Mesh)
     find_package(MSTK REQUIRED)
+    message(STATUS "MSTK Package information")
+    message(STATUS "\tMSTK_INCLUDE_DIR  =${MSTK_INCLUDE_DIR}")
+    message(STATUS "\tMSTK_INCLUDE_DIRS =${MSTK_INCLUDE_DIRS}")
+    message(STATUS "\tMSTK_LIBRARY      =${MSTK_LIBRARY}")
+    message(STATUS "\tMSTK_LIBRARIES    =${MSTK_LIBRARIES}")
 endif() 
 
 

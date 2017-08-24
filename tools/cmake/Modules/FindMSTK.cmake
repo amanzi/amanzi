@@ -37,15 +37,15 @@ if ( MSTK_LIBRARIES AND MSTK_INCLUDE_DIRS )
 else(MSTK_LIBRARIES AND MSTK_INCLUDE_DIRS)
 
     # Cache variables
-    if(MSTK_DIR)
+    if (MSTK_DIR)
         set(MSTK_DIR "${MSTK_DIR}" CACHE PATH "Path to search for MSTK include and library files")
     endif()
 
-    if(MSTK_INCLUDE_DIR)
+    if (MSTK_INCLUDE_DIR)
         set(MSTK_INCLUDE_DIR "${MSTK_INCLUDE_DIR}" CACHE PATH "Path to search for MSTK include files")
     endif()
 
-    if(MSTK_LIBRARY_DIR)
+    if (MSTK_LIBRARY_DIR)
         set(MSTK_LIBRARY_DIR "${MSTK_LIBRARY_DIR}" CACHE PATH "Path to search for MSTK library files")
     endif()
 
@@ -92,7 +92,6 @@ else(MSTK_LIBRARIES AND MSTK_INCLUDE_DIRS)
                  set(MSTK_INCLUDE_DIR "MSTK_INCLUDE_DIR-NOTFOUND")
             endif()    
 
-
         else()
 
             find_path(MSTK_INCLUDE_DIR
@@ -100,7 +99,6 @@ else(MSTK_LIBRARIES AND MSTK_INCLUDE_DIRS)
                       PATH_SUFFIXES ${mstk_inc_suffixes})
 
         endif()
-
     endif()
 
     if ( NOT MSTK_INCLUDE_DIR )
@@ -174,37 +172,30 @@ else(MSTK_LIBRARIES AND MSTK_INCLUDE_DIRS)
     # Define the dependent libs
     set(_MSTK_DEP_LIBS)
 
-    # MSTK depends on ExodusII
-    find_package(ExodusII QUIET REQUIRED)
-    list(APPEND MSTK_INCLUDE_DIRS ${ExodusII_INCLUDE_DIRS})			
-    list(APPEND _MSTK_DEP_LIBS ${ExodusII_LIBRARY})
+    # MSTK depends on ExodusII provided by SEACAS
+    list(APPEND MSTK_INCLUDE_DIRS ${SEACAS_DIR}/include)			
+    
+    set(exodus_lib_names "exoIIv2c" "exodus")
+    find_library(_ExodusII_LIBRARY
+                 NAMES ${exodus_lib_names}
+		 HINTS ${SEACAS_DIR}/lib
+                 NO_DEFAULT_PATH)
+
+    list(APPEND MSTK_LIBRARIES ${_ExodusII_LIBRARY})
+    list(APPEND _MSTK_DEP_LIBS ${_ExodusII_LIBRARY})
 
     # And METIS
-#    if (ENABLE_METIS)
-      find_package(METIS QUIET REQUIRED)
-      list(APPEND MSTK_INCLUDE_DIRS ${METIS_INCLUDE_DIRS})
-      list(APPEND _MSTK_DEP_LIBS ${METIS_LIBRARIES})
-#    endif()
+    find_package(METIS QUIET REQUIRED)
+    list(APPEND MSTK_INCLUDE_DIRS ${METIS_INCLUDE_DIRS})
+    list(APPEND _MSTK_DEP_LIBS ${METIS_LIBRARIES})
 
     # And Zoltan
-#    if (ENABLE_ZOLTAN)
-      find_package(Zoltan QUIET REQUIRED)
-      list(APPEND MSTK_INCLUDE_DIRS ${Zoltan_INCLUDE_DIRS})
-      list(APPEND _MSTK_DEP_LIBS ${Zoltan_LIBRARIES})
-#    endif()
+    find_package(Zoltan QUIET REQUIRED)
+    list(APPEND MSTK_INCLUDE_DIRS ${Zoltan_INCLUDE_DIRS})
+    list(APPEND _MSTK_DEP_LIBS ${Zoltan_LIBRARIES})
 
     set_target_properties(${MSTK_LIBRARY} PROPERTIES
                           IMPORTED_LINK_INTERFACE_LIBRARIES "${_MSTK_DEP_LIBS}")
-
-
-    # MSTK requires METIS - http://glaros.dtc.umn.edu/gkhome/metis/metis/download
-    #add_package_dependency(MSTK DEPENDS_ON METIS)
-
-    # MSTK depends on ExodusII
-    #add_package_dependency(MSTK DEPENDS_ON ExodusII)
-
-    # MSTK depends on NetCDF
-    #add_package_dependency(MSTK DEPENDS_ON NetCDF)
 
 endif(MSTK_LIBRARIES AND MSTK_INCLUDE_DIRS )    
 
@@ -250,8 +241,8 @@ endif()
 
 # Send useful message if everything is found
 find_package_handle_standard_args(MSTK DEFAULT_MSG
-                                           MSTK_LIBRARIES
-                                           MSTK_INCLUDE_DIRS)
+                                  MSTK_LIBRARIES
+                                  MSTK_INCLUDE_DIRS)
 
 # find_package_handle_standard_args should set MSTK_FOUND but it does not!
 if ( MSTK_LIBRARIES AND MSTK_INCLUDE_DIRS)

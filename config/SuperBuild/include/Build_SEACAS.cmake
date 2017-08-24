@@ -92,3 +92,6 @@ ExternalProject_Add(${SEACAS_BUILD_TARGET}
                     INSTALL_DIR      ${TPL_INSTALL_PREFIX}/SEACAS   # Install directory, NOT in the usual place!
                     # -- Output control
                     ${SEACAS_logging_args})
+
+# --- Useful variables for other packages that depend on SEACAS
+set(SEACAS_DIR ${TPL_INSTALL_PREFIX}/SEACAS)

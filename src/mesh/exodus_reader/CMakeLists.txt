@@ -30,7 +30,7 @@ include_directories(${MESH_DATA_SOURCE_DIR})
 # External (TPL) include directories
 include_directories(${Teuchos_INCLUDE_DIRS})
 include_directories(${Epetra_INCLUDE_DIRS})
-include_directories(${ExodusII_INCLUDE_DIRS})
+include_directories(${SEACAS_INCLUDE_DIRS})
 
 #
 # Library: exodus_reader
