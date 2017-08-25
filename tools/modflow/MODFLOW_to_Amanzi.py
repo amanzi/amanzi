@@ -217,8 +217,8 @@ def main(argv=None):
     
     # Final facesets for cropped mesh
     mo_surf = l.extract_surfmesh(name="mo_surf",cmo_in=hexmesh,stride=[1,0,0],append='external',reorder=False,resetpts_itp=False)
-    mo_surf.addatt("id_normal",type='vint',rank='scalar',length='nelements',interpolate='',persistence='',ioflag='',value='')
-    mo_surf.addatt("id_tmp",type='vint',rank='scalar',length='nelements',interpolate='',persistence='',ioflag='',value='')
+    mo_surf.addatt("id_normal",vtype='vint',rank='scalar',length='nelements',interpolate='',persistence='',ioflag='',value='')
+    mo_surf.addatt("id_tmp",vtype='vint',rank='scalar',length='nelements',interpolate='',persistence='',ioflag='',value='')
     l.sendline("cmo/select/mo_surf")
     mo_surf.settets(method='normal')
     mo_surf.copyatt('itetclr',attname_sink='id_normal',mo_src=mo_surf)
@@ -246,7 +246,7 @@ def main(argv=None):
     mo_surf.setatt('itetclr',fs_halite,stride=['eltset','get','etmp'])
     etmp.delete()
 
-    mo_surf.addatt('id_side',type='VINT',rank='scalar',length='nelements',interpolate='',persistence='',ioflag='',value='')
+    mo_surf.addatt('id_side',vtype='VINT',rank='scalar',length='nelements',interpolate='',persistence='',ioflag='',value='')
     mo_surf.copyatt('itetclr',attname_sink='id_side',mo_src=mo_surf)
     
     # Check for continuous connected boundary of 1
