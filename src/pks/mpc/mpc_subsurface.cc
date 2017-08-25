@@ -77,11 +77,11 @@ void MPCSubsurface::Setup(const Teuchos::Ptr<State>& S) {
   // Get the sub-blocks from the sub-PK's preconditioners.
   Teuchos::RCP<Operators::Operator> pcA = sub_pks_[0]->preconditioner();
   Teuchos::RCP<Operators::Operator> pcB = sub_pks_[1]->preconditioner();
-  if (pcA->DomainMap().HasComponent("face")) {
+  //if (pcA->DomainMap().HasComponent("face")) {
     is_fv_ = false;
-  } else {
-    is_fv_ = true;
-  }
+    //} else {
+    // is_fv_ = true;
+  // }
   
   // Create the combined operator
   Teuchos::RCP<TreeVectorSpace> tvs = Teuchos::rcp(new TreeVectorSpace());
@@ -136,8 +136,12 @@ void MPCSubsurface::Setup(const Teuchos::Ptr<State>& S) {
 
       // set up the operator
       Teuchos::ParameterList divq_plist(pks_list_->sublist(pk_order[0]).sublist("diffusion preconditioner"));
-      if (is_fv_) divq_plist.set("Newton correction", "true Jacobian");
-      else divq_plist.set("Newton correction", "approximate Jacobian");
+
+      // if (is_fv_) divq_plist.set("Newton correction", "true Jacobian");
+      // else divq_plist.set("Newton correction", "approximate Jacobian");
+      
+      divq_plist.set("Newton correction", "approximate Jacobian");
+
       divq_plist.set("exclude primary terms", true);
       Operators::OperatorDiffusionFactory opfactory;
       ddivq_dT_ = opfactory.CreateWithGravity(divq_plist, mesh_);
@@ -172,8 +176,10 @@ void MPCSubsurface::Setup(const Teuchos::Ptr<State>& S) {
 
       // set up the operator
       Teuchos::ParameterList ddivKgT_dp_plist(pks_list_->sublist(pk_order[1]).sublist("diffusion preconditioner"));
-      if (is_fv_) ddivKgT_dp_plist.set("Newton correction", "true Jacobian");
-      else ddivKgT_dp_plist.set("Newton correction", "approximate Jacobian");
+      // if (is_fv_) ddivKgT_dp_plist.set("Newton correction", "true Jacobian");
+      // else ddivKgT_dp_plist.set("Newton correction", "approximate Jacobian");
+      
+      ddivKgT_dp_plist.set("Newton correction", "approximate Jacobian");
 
       ddivKgT_dp_plist.set("exclude primary terms", true);
       Operators::OperatorDiffusionFactory opfactory;
@@ -192,8 +198,9 @@ void MPCSubsurface::Setup(const Teuchos::Ptr<State>& S) {
       // derivative with respect to pressure
       Teuchos::ParameterList divhq_dp_plist(pks_list_->sublist(pk_order[0]).sublist("diffusion preconditioner"));
 
-      if (is_fv_) divhq_dp_plist.set("Newton correction", "true Jacobian");
-      else divhq_dp_plist.set("Newton correction", "approximate Jacobian");
+      // if (is_fv_) divhq_dp_plist.set("Newton correction", "true Jacobian");
+      // else divhq_dp_plist.set("Newton correction", "approximate Jacobian");
+      divhq_dp_plist.set("Newton correction", "approximate Jacobian");
 
       Operators::OperatorDiffusionFactory opfactory;
       if (dE_dp_block_ == Teuchos::null) {
@@ -207,8 +214,9 @@ void MPCSubsurface::Setup(const Teuchos::Ptr<State>& S) {
       Teuchos::ParameterList divhq_dT_plist(pks_list_->sublist(pk_order[0]).sublist("diffusion preconditioner"));
       divhq_dT_plist.set("exclude primary terms", true);
 
-      if (is_fv_) divhq_dT_plist.set("Newton correction", "true Jacobian");
-      else divhq_dT_plist.set("Newton correction", "approximate Jacobian");
+      // if (is_fv_) divhq_dT_plist.set("Newton correction", "true Jacobian");
+      // else divhq_dT_plist.set("Newton correction", "approximate Jacobian");
+      divhq_dT_plist.set("Newton correction", "approximate Jacobian");
 
       ddivhq_dT_ = opfactory.CreateWithGravity(divhq_dT_plist, pcB);
 

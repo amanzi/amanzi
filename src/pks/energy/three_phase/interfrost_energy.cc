@@ -70,6 +70,7 @@ InterfrostEnergy::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> 
   // update state with the solution up.
   ASSERT(std::abs(S_next_->time() - t) <= 1.e-4*t);
   PK_PhysicalBDF_Default::Solution_to_State(*up, S_next_);
+  Teuchos::RCP<const CompositeVector> temp = S_next_->GetFieldData(key_);
 
   // update boundary conditions
   bc_temperature_->Compute(S_next_->time());
@@ -84,7 +85,7 @@ InterfrostEnergy::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> 
 
   preconditioner_->Init();
   preconditioner_diff_->SetScalarCoefficient(conductivity, Teuchos::null);
-  preconditioner_diff_->UpdateMatrices(Teuchos::null, Teuchos::null);
+  preconditioner_diff_->UpdateMatrices(Teuchos::null, temp.ptr());
 
   // update with accumulation terms
   // -- update the accumulation derivatives, de/dT

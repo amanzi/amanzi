@@ -69,7 +69,7 @@ void Richards::Functional(double t_old,
   // diffusion term, treated implicitly
   ApplyDiffusion_(S_next_.ptr(), res.ptr());
 
-  
+
   // if (vapor_diffusion_) AddVaporDiffusionResidual_(S_next_.ptr(), res.ptr());
 
 
@@ -109,6 +109,8 @@ void Richards::Functional(double t_old,
       AddSources_(S_next_.ptr(), res.ptr());
     }
   }
+  
+
 };
 
 // -----------------------------------------------------------------------------

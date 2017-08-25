@@ -30,6 +30,8 @@ void Richards::ApplyDiffusion_(const Teuchos::Ptr<State>& S,
   // update the matrix
   matrix_->Init();
 
+  Teuchos::RCP<const CompositeVector> pres =
+      S->GetFieldData(key_, name_);
   S->GetFieldEvaluator(mass_dens_key_)->HasFieldChanged(S, name_);
   Teuchos::RCP<const CompositeVector> rho = S->GetFieldData(mass_dens_key_);
   matrix_diff_->SetDensity(rho);
@@ -37,14 +39,15 @@ void Richards::ApplyDiffusion_(const Teuchos::Ptr<State>& S,
   Teuchos::RCP<const CompositeVector> rel_perm =
     S->GetFieldData(uw_coef_key_);
   matrix_diff_->SetScalarCoefficient(rel_perm, Teuchos::null);
-  matrix_diff_->UpdateMatrices(Teuchos::null, Teuchos::null);
+  // matrix_diff_->SetScalarCoefficient(Teuchos::null, Teuchos::null);
+  matrix_diff_->UpdateMatrices(Teuchos::null, pres.ptr());
 
   // derive fluxes
-  Teuchos::RCP<const CompositeVector> pres =
-      S->GetFieldData(key_, name_);
   Teuchos::RCP<CompositeVector> flux =
       S->GetFieldData(flux_key_, name_);
   matrix_diff_->UpdateFlux(*pres, *flux);
+
+
 
   // apply boundary conditions
   matrix_diff_->ApplyBCs(true, true);

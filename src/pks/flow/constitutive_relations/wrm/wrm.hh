@@ -35,6 +35,8 @@ public:
 
 };
 
+typedef double(WRM::*KRelFn)(double pc);
+
 } //namespace
 } //namespace
 

@@ -32,6 +32,7 @@ void RichardsSteadyState::UpdatePreconditioner(double t, Teuchos::RCP<const Tree
   PK_PhysicalBDF_Default::Solution_to_State(*up, S_next_);
   //PKDefaultBase::solution_to_state(*up, S_next_);
 
+  Teuchos::RCP<const CompositeVector> pres = S_next_ -> GetFieldData(key_);
   // update boundary conditions
   bc_pressure_->Compute(S_next_->time());
   bc_flux_->Compute(S_next_->time());
@@ -50,7 +51,7 @@ void RichardsSteadyState::UpdatePreconditioner(double t, Teuchos::RCP<const Tree
   preconditioner_diff_->SetDensity(rho);
 
   preconditioner_diff_->SetScalarCoefficient(rel_perm, Teuchos::null);
-  preconditioner_diff_->UpdateMatrices(Teuchos::null, Teuchos::null);
+  preconditioner_diff_->UpdateMatrices(Teuchos::null, pres.ptr());
 
   // Assemble and precompute the Schur complement for inversion.
   preconditioner_diff_->ApplyBCs(true, true);
@@ -180,6 +181,7 @@ void RichardsSteadyState::Functional(double t_old, double t_new, Teuchos::RCP<Tr
 
   // diffusion term, treated implicitly
   ApplyDiffusion_(S_next_.ptr(), res.ptr());
+
 
 #if DEBUG_FLAG
   // dump s_old, s_new
