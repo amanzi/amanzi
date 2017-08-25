@@ -1,4 +1,4 @@
-// Emacs Mode Line: -*- Mode:c++; c-default-style: "google"; indent-tabs-mode: nil -*-
+// Emacs Mode Line: -*- Mode:c++; indent-tabs-mode: nil -*-
 // -------------------------------------------------------------
 /**
  * @file   verify_hex.cc

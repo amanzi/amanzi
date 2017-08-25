@@ -1,4 +1,4 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+/* -*-  mode: c++; indent-tabs-mode: nil -*- */
 /* -------------------------------------------------------------------------
 
 ATS
@@ -27,6 +27,8 @@ This class is very light weight as it maintains only meta-data.
 
 namespace Amanzi {
 
+class CompositeVector;
+
 class CompositeVectorSpace {
 
 public:
@@ -35,6 +37,12 @@ public:
   CompositeVectorSpace(const CompositeVectorSpace& other);
   CompositeVectorSpace(const CompositeVectorSpace& other, bool ghosted);
 
+  // assignment
+  CompositeVectorSpace& operator=(const CompositeVectorSpace&) = default;
+  
+  // CompositeVectorSpace is a factory of CompositeVectors
+  Teuchos::RCP<CompositeVector> Create() const;
+  
   // Checks equality
   bool SameAs(const CompositeVectorSpace& other) const;
   bool SubsetOf(const CompositeVectorSpace& other) const;
@@ -108,9 +116,6 @@ public:
                 const std::vector<int>& num_dofs);
 
 private:
-  // private and unimplemented
-  CompositeVectorSpace& operator=(const CompositeVectorSpace&);
-
   // Indexing of name->int
   int Index_(std::string name) const {
     std::map<std::string, int>::const_iterator item = indexmap_.find(name);

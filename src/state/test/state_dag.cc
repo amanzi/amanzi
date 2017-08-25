@@ -18,8 +18,8 @@
 
 #include "Mesh.hh"
 #include "MeshFactory.hh"
-#include "primary_variable_field_evaluator.hh"
-#include "secondary_variable_field_evaluator.hh"
+#include "evaluator/EvaluatorPrimary.hh"
+#include "evaluator/EvaluatorSecondary.hh"
 #include "State.hh"
 
 using namespace Amanzi;
@@ -54,57 +54,44 @@ using namespace Amanzi::AmanziMesh;
 /* ******************************************************************
 * Equation A = 2*B + C*E*H
 ****************************************************************** */
-class AEvaluator : public SecondaryVariableFieldEvaluator {
+class AEvaluator : public EvaluatorSecondary<double,NullFactory> {
  public:
-  AEvaluator(Teuchos::ParameterList& plist) : 
-      SecondaryVariableFieldEvaluator(plist) {
-    my_key_ = std::string("fa");
-    dependencies_.insert(std::string("fb"));
-    dependencies_.insert(std::string("fc"));
-    dependencies_.insert(std::string("fe"));
-    dependencies_.insert(std::string("fh"));
+  AEvaluator(Teuchos::ParameterList& plist)
+    : EvaluatorSecondary<double,NullFactory>(plist) {
+    my_key_ = "fa";
+    dependencies_.insert("fb");
+    dependencies_.insert("fc");
+    dependencies_.insert("fe");
+    dependencies_.insert("fh");
   }
 
-  virtual Teuchos::RCP<FieldEvaluator> Clone() const {};
+  virtual Teuchos::RCP<Evaluator> Clone() const override {
+    return Teuchos::rcp(new AEvaluator(*this)); }
 
-  virtual void EvaluateField_(const Teuchos::Ptr<State>& S,
-          const Teuchos::Ptr<CompositeVector>& result) {
-    Epetra_MultiVector& result_c = *result->ViewComponent("cell");
-    const Epetra_MultiVector& fb_c = *S->GetFieldData("fb")->ViewComponent("cell");
-    const Epetra_MultiVector& fc_c = *S->GetFieldData("fc")->ViewComponent("cell");
-    const Epetra_MultiVector& fe_c = *S->GetFieldData("fe")->ViewComponent("cell");
-    const Epetra_MultiVector& fh_c = *S->GetFieldData("fh")->ViewComponent("cell");
+  virtual void Evaluate_(State& S,
+          double& result) override {
 
-    int ncells = result->size("cell", false);
-    for (int c = 0; c != ncells; ++c) {
-      result_c[0][c] = 2 * fb_c[0][c] + fc_c[0][c] * fe_c[0][c] * fh_c[0][c];
-    }
+    auto& fb = S.Get<double>("fb");
+    auto& fc = S.Get<double>("fc");
+    auto& fe = S.Get<double>("fe");
+    auto& fh = S.Get<double>("fh");
+    result = 2 * fb + fc * fe * fh;
   }
 
-  virtual void EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>& S,
-          Key wrt_key, const Teuchos::Ptr<CompositeVector>& result) {
-    Epetra_MultiVector& result_c = *result->ViewComponent("cell");
-    const Epetra_MultiVector& fc_c = *S->GetFieldData("fc")->ViewComponent("cell");
-    const Epetra_MultiVector& fe_c = *S->GetFieldData("fe")->ViewComponent("cell");
-    const Epetra_MultiVector& fh_c = *S->GetFieldData("fh")->ViewComponent("cell");
-
-    int ncells = result->size("cell", false);
+  virtual void EvaluatePartialDerivative_(State& S,
+          const Key& wrt_key, double& result) override {
+    auto& fc = S.Get<double>("fc");
+    auto& fe = S.Get<double>("fe");
+    auto& fh = S.Get<double>("fh");
+    
     if (wrt_key == "fb") {
-      for (int c = 0; c != ncells; ++c) {
-        result_c[0][c] = 2.0;
-      }
+      result = 2.0;
     } else if (wrt_key == "fc") {
-      for (int c = 0; c != ncells; ++c) {
-        result_c[0][c] = fe_c[0][c] * fh_c[0][c];
-      }
+      result = fe * fh;
     } else if (wrt_key == "fe") {
-      for (int c = 0; c != ncells; ++c) {
-        result_c[0][c] = fc_c[0][c] * fh_c[0][c];
-      }
+      result = fc * fh;
     } else if (wrt_key == "fh") {
-      for (int c = 0; c != ncells; ++c) {
-        result_c[0][c] = fc_c[0][c] * fe_c[0][c];
-      }
+      result = fc * fe;
     }
   }
 };
@@ -113,42 +100,32 @@ class AEvaluator : public SecondaryVariableFieldEvaluator {
 /* ******************************************************************
 * Equation C = 2*D + G
 ****************************************************************** */
-class CEvaluator : public SecondaryVariableFieldEvaluator {
+class CEvaluator : public EvaluatorSecondary<double,NullFactory> {
  public:
   CEvaluator(Teuchos::ParameterList& plist) : 
-      SecondaryVariableFieldEvaluator(plist) {
-    my_key_ = std::string("fc");
-    dependencies_.insert(std::string("fd"));
-    dependencies_.insert(std::string("fg"));
+    EvaluatorSecondary<double,NullFactory>(plist) {
+    my_key_ = "fc";
+    dependencies_.insert("fd");
+    dependencies_.insert("fg");
   }
 
-  virtual Teuchos::RCP<FieldEvaluator> Clone() const {};
+  virtual Teuchos::RCP<Evaluator> Clone() const override {
+    return Teuchos::rcp(new CEvaluator(*this)); }
 
-  virtual void EvaluateField_(const Teuchos::Ptr<State>& S,
-          const Teuchos::Ptr<CompositeVector>& result) {
-    Epetra_MultiVector& result_c = *result->ViewComponent("cell");
-    const Epetra_MultiVector& fd_c = *S->GetFieldData("fd")->ViewComponent("cell");
-    const Epetra_MultiVector& fg_c = *S->GetFieldData("fg")->ViewComponent("cell");
-
-    int ncells = result->size("cell", false);
-    for (int c = 0; c != ncells; ++c) {
-      result_c[0][c] = 2 * fd_c[0][c] + fg_c[0][c];
-    }
+  virtual void Evaluate_(State& S,
+          double& result) override {
+    auto& fd = S.Get<double>("fd");
+    auto& fg = S.Get<double>("fg");
+    result = 2 * fd + fg;
   }
 
-  virtual void EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>& S,
-          Key wrt_key, const Teuchos::Ptr<CompositeVector>& result) {
-    Epetra_MultiVector& result_c = *result->ViewComponent("cell");
-    int ncells = result->size("cell", false);
+  virtual void EvaluatePartialDerivative_(State& S,
+          const Key& wrt_key, double& result) override {
 
     if (wrt_key == "fd") {
-      for (int c = 0; c != ncells; ++c) {
-        result_c[0][c] = 2.0;
-      }
+      result = 2.;
     } else if (wrt_key == "fg") {
-      for (int c = 0; c != ncells; ++c) {
-        result_c[0][c] = 1.0;
-      }
+      result = 1.;
     }
   }
 };
@@ -157,36 +134,27 @@ class CEvaluator : public SecondaryVariableFieldEvaluator {
 /* ******************************************************************
 * Equation D = 2*G
 ****************************************************************** */
-class DEvaluator : public SecondaryVariableFieldEvaluator {
+class DEvaluator : public EvaluatorSecondary<double,NullFactory> {
  public:
-  DEvaluator(Teuchos::ParameterList& plist) : 
-      SecondaryVariableFieldEvaluator(plist) {
-    my_key_ = std::string("fd");
-    dependencies_.insert(std::string("fg"));
+  DEvaluator(Teuchos::ParameterList& plist)
+    : EvaluatorSecondary<double,NullFactory>(plist) {
+    my_key_ = "fd";
+    dependencies_.insert("fg");
   }
 
-  virtual Teuchos::RCP<FieldEvaluator> Clone() const {};
+  virtual Teuchos::RCP<Evaluator> Clone() const override {
+    return Teuchos::rcp(new DEvaluator(*this)); }
 
-  virtual void EvaluateField_(const Teuchos::Ptr<State>& S,
-          const Teuchos::Ptr<CompositeVector>& result) {
-    Epetra_MultiVector& result_c = *result->ViewComponent("cell");
-    const Epetra_MultiVector& fg_c = *S->GetFieldData("fg")->ViewComponent("cell");
-
-    int ncells = result->size("cell", false);
-    for (int c = 0; c != ncells; ++c) {
-      result_c[0][c] = 2 * fg_c[0][c];
-    }
+  virtual void Evaluate_(State& S,
+          double& result) override {
+    auto& fg = S.Get<double>("fg");
+    result = 2*fg;
   }
 
-  virtual void EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>& S,
-          Key wrt_key, const Teuchos::Ptr<CompositeVector>& result) {
-    Epetra_MultiVector& result_c = *result->ViewComponent("cell");
-    int ncells = result->size("cell", false);
-
+  virtual void EvaluatePartialDerivative_(State& S,
+          const Key& wrt_key, double& result) override {
     if (wrt_key == "fg") {
-      for (int c = 0; c != ncells; ++c) {
-        result_c[0][c] = 2.0;
-      }
+      result = 2.;
     }
   }
 };
@@ -195,44 +163,34 @@ class DEvaluator : public SecondaryVariableFieldEvaluator {
 /* ******************************************************************
 * Equation E = D*F
 ****************************************************************** */
-class EEvaluator : public SecondaryVariableFieldEvaluator {
+class EEvaluator : public EvaluatorSecondary<double,NullFactory> {
  public:
-  EEvaluator(Teuchos::ParameterList& plist) : 
-      SecondaryVariableFieldEvaluator(plist) {
-    my_key_ = std::string("fe");
-    dependencies_.insert(std::string("fd"));
-    dependencies_.insert(std::string("ff"));
+  EEvaluator(Teuchos::ParameterList& plist)
+    : EvaluatorSecondary<double,NullFactory>(plist) {
+    my_key_ = "fe";
+    dependencies_.insert("fd");
+    dependencies_.insert("ff");
   }
 
-  virtual Teuchos::RCP<FieldEvaluator> Clone() const {};
+  virtual Teuchos::RCP<Evaluator> Clone() const override {
+    return Teuchos::rcp(new EEvaluator(*this)); }
 
-  virtual void EvaluateField_(const Teuchos::Ptr<State>& S,
-          const Teuchos::Ptr<CompositeVector>& result) {
-    Epetra_MultiVector& result_c = *result->ViewComponent("cell");
-    const Epetra_MultiVector& fd_c = *S->GetFieldData("fd")->ViewComponent("cell");
-    const Epetra_MultiVector& ff_c = *S->GetFieldData("ff")->ViewComponent("cell");
-
-    int ncells = result->size("cell", false);
-    for (int c = 0; c != ncells; ++c) {
-      result_c[0][c] = fd_c[0][c] * ff_c[0][c];
-    }
+  virtual void Evaluate_(State& S,
+          double& result) override {
+    auto& fd = S.Get<double>("fd");
+    auto& ff = S.Get<double>("ff");
+    result = fd * ff;
   }
 
-  virtual void EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>& S,
-          Key wrt_key, const Teuchos::Ptr<CompositeVector>& result) {
-    Epetra_MultiVector& result_c = *result->ViewComponent("cell");
-    const Epetra_MultiVector& fd_c = *S->GetFieldData("fd")->ViewComponent("cell");
-    const Epetra_MultiVector& ff_c = *S->GetFieldData("ff")->ViewComponent("cell");
+  virtual void EvaluatePartialDerivative_(State& S,
+          const Key& wrt_key, double& result) override {
+    auto& fd = S.Get<double>("fd");
+    auto& ff = S.Get<double>("ff");
 
-    int ncells = result->size("cell", false);
     if (wrt_key == "fd") {
-      for (int c = 0; c != ncells; ++c) {
-        result_c[0][c] = ff_c[0][c];
-      }
+      result = ff;
     } else if (wrt_key == "ff") {
-      for (int c = 0; c != ncells; ++c) {
-        result_c[0][c] = fd_c[0][c];
-      }
+      result = fd;
     }
   }
 };
@@ -241,36 +199,28 @@ class EEvaluator : public SecondaryVariableFieldEvaluator {
 /* ******************************************************************
 * Equation F = 2*G
 ****************************************************************** */
-class FEvaluator : public SecondaryVariableFieldEvaluator {
+class FEvaluator : public EvaluatorSecondary<double,NullFactory> {
  public:
-  FEvaluator(Teuchos::ParameterList& plist) : 
-      SecondaryVariableFieldEvaluator(plist) {
-    my_key_ = std::string("ff");
-    dependencies_.insert(std::string("fg"));
+  FEvaluator(Teuchos::ParameterList& plist)
+    : EvaluatorSecondary<double,NullFactory>(plist) {
+    my_key_ = "ff";
+    dependencies_.insert("fg");
   }
 
-  virtual Teuchos::RCP<FieldEvaluator> Clone() const {};
+  virtual Teuchos::RCP<Evaluator> Clone() const override {
+    return Teuchos::rcp(new FEvaluator(*this)); }
 
-  virtual void EvaluateField_(const Teuchos::Ptr<State>& S,
-          const Teuchos::Ptr<CompositeVector>& result) {
-    Epetra_MultiVector& result_c = *result->ViewComponent("cell");
-    const Epetra_MultiVector& fg_c = *S->GetFieldData("fg")->ViewComponent("cell");
-
-    int ncells = result->size("cell", false);
-    for (int c = 0; c != ncells; ++c) {
-      result_c[0][c] = 2 * fg_c[0][c];
-    }
+  virtual void Evaluate_(State& S,
+          double& result) override {
+    auto& fg = S.Get<double>("fg");
+    result = 2*fg;
   }
 
-  virtual void EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>& S,
-          Key wrt_key, const Teuchos::Ptr<CompositeVector>& result) {
-    Epetra_MultiVector& result_c = *result->ViewComponent("cell");
-    int ncells = result->size("cell", false);
+  virtual void EvaluatePartialDerivative_(State& S,
+          const Key& wrt_key, double& result) override {
 
     if (wrt_key == "fg") {
-      for (int c = 0; c != ncells; ++c) {
-        result_c[0][c] = 2.0;
-      }
+      result = 2.;
     }
   }
 };
@@ -279,36 +229,27 @@ class FEvaluator : public SecondaryVariableFieldEvaluator {
 /* ******************************************************************
 * Equation H = 2*F
 ****************************************************************** */
-class HEvaluator : public SecondaryVariableFieldEvaluator {
+class HEvaluator : public EvaluatorSecondary<double,NullFactory> {
  public:
-  HEvaluator(Teuchos::ParameterList& plist) : 
-      SecondaryVariableFieldEvaluator(plist) {
-    my_key_ = std::string("fh");
-    dependencies_.insert(std::string("ff"));
+  HEvaluator(Teuchos::ParameterList& plist)
+    : EvaluatorSecondary<double,NullFactory>(plist) {
+    my_key_ = "fh";
+    dependencies_.insert("ff");
   }
 
-  virtual Teuchos::RCP<FieldEvaluator> Clone() const {};
+  virtual Teuchos::RCP<Evaluator> Clone() const override {
+    return Teuchos::rcp(new HEvaluator(*this)); }
 
-  virtual void EvaluateField_(const Teuchos::Ptr<State>& S,
-          const Teuchos::Ptr<CompositeVector>& result) {
-    Epetra_MultiVector& result_c = *result->ViewComponent("cell");
-    const Epetra_MultiVector& ff_c = *S->GetFieldData("ff")->ViewComponent("cell");
-
-    int ncells = result->size("cell", false);
-    for (int c = 0; c != ncells; ++c) {
-      result_c[0][c] = 2 * ff_c[0][c];
-    }
+  virtual void Evaluate_(State& S,
+          double& result) override {
+    auto& ff = S.Get<double>("ff");
+    result = 2.*ff;
   }
 
-  virtual void EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>& S,
-          Key wrt_key, const Teuchos::Ptr<CompositeVector>& result) {
-    Epetra_MultiVector& result_c = *result->ViewComponent("cell");
-    int ncells = result->size("cell", false);
-
+  virtual void EvaluatePartialDerivative_(State& S,
+          const Key& wrt_key, double& result) override {
     if (wrt_key == "ff") {
-      for (int c = 0; c != ncells; ++c) {
-        result_c[0][c] = 2.0;
-      }
+      result = 2.;
     }
   }
 };
@@ -317,141 +258,127 @@ class HEvaluator : public SecondaryVariableFieldEvaluator {
 class make_state {
  public:
   make_state() {
-    comm = new Epetra_MpiComm(MPI_COMM_WORLD);
-    MeshFactory meshfac(comm);
-    mesh = meshfac(0.0, 0.0, 0.0, 4.0, 4.0, 4.0, 2, 2, 2);
-    S = Teuchos::rcp(new State());
-    S->RegisterDomainMesh(mesh);
-
     Teuchos::ParameterList es_list, ep_list;
     es_list.sublist("verbose object").set<std::string>("verbosity level", "extreme");
+    ep_list.sublist("verbose object").set<std::string>("verbosity level", "extreme");
 
     // Secondary fields
-    // -- Field A and its evaluator
-    S->RequireField("fa", "fa")->SetMesh(mesh)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, 1);
+    // --  A and its evaluator
+    es_list.setName("fa");
+    S.Require<double>("fa", "", "fa");
     fa_eval = Teuchos::rcp(new AEvaluator(es_list));
-    S->SetFieldEvaluator("fa", fa_eval);
+    S.SetEvaluator("fa", fa_eval);
 
-    // -- Field C and its evaluator
-    S->RequireField("fc", "fc")->SetMesh(mesh)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, 1);
+    // --  C and its evaluator
+    es_list.setName("fc");
+    S.Require<double>("fc", "", "fc");
     fc_eval = Teuchos::rcp(new CEvaluator(es_list));
-    S->SetFieldEvaluator("fc", fc_eval);
+    S.SetEvaluator("fc", fc_eval);
 
-    // -- Field D and its evaluator
-    S->RequireField("fd", "fd")->SetMesh(mesh)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, 1);
+    // --  D and its evaluator
+    es_list.setName("fd");
+    S.Require<double>("fd", "", "fd");
     fd_eval = Teuchos::rcp(new DEvaluator(es_list));
-    S->SetFieldEvaluator("fd", fd_eval);
+    S.SetEvaluator("fd", fd_eval);
 
-    // -- Field E and its evaluator
-    S->RequireField("fe", "fe")->SetMesh(mesh)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, 1);
+    // --  E and its evaluator
+    es_list.setName("fe");
+    S.Require<double>("fe", "", "fe");
     fe_eval = Teuchos::rcp(new EEvaluator(es_list));
-    S->SetFieldEvaluator("fe", fe_eval);
+    S.SetEvaluator("fe", fe_eval);
 
-    // -- Field F and its evaluator
-    S->RequireField("ff", "ff")->SetMesh(mesh)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, 1);
+    // --  F and its evaluator
+    es_list.setName("ff");
+    S.Require<double>("ff", "", "ff");
     ff_eval = Teuchos::rcp(new FEvaluator(es_list));
-    S->SetFieldEvaluator("ff", ff_eval);
+    S.SetEvaluator("ff", ff_eval);
 
-    // -- Field H and its evaluator
-    S->RequireField("fh", "fh")->SetMesh(mesh)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, 1);
+    // --  H and its evaluator
+    es_list.setName("fh");
+    S.Require<double>("fh", "", "fh");
     fh_eval = Teuchos::rcp(new HEvaluator(es_list));
-    S->SetFieldEvaluator("fh", fh_eval);
+    S.SetEvaluator("fh", fh_eval);
 
     // Primary fields
+    ep_list.setName("fb");
     // -- field B and its evaluator
-    S->RequireField("fb", "fb")->SetMesh(mesh)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, 1);
-    ep_list.set<std::string>("evaluator name", "fb");
-    fb_eval = Teuchos::rcp(new PrimaryVariableFieldEvaluator(ep_list));
-    S->SetFieldEvaluator("fb", fb_eval);
+    S.Require<double>("fb", "", "fb");
+    fb_eval = Teuchos::rcp(new EvaluatorPrimary(ep_list));
+    S.SetEvaluator("fb", fb_eval);
 
     // -- field G and its evaluator
-    S->RequireField("fg", "fg")->SetMesh(mesh)->SetGhosted(true)->SetComponent("cell", AmanziMesh::CELL, 1);
-    ep_list.set<std::string>("evaluator name", "fg");
-    fg_eval = Teuchos::rcp(new PrimaryVariableFieldEvaluator(ep_list));
-    S->SetFieldEvaluator("fg", fg_eval);
+    ep_list.setName("fg");
+    S.Require<double>("fg", "", "fg");
+    fg_eval = Teuchos::rcp(new EvaluatorPrimary(ep_list));
+    S.SetEvaluator("fg", fg_eval);
 
-    // Setup fields and marked as initialized
-    S->Setup();
-    S->GetField("fb", "fb")->set_initialized();
-    S->GetField("fg", "fg")->set_initialized();
-    S->Initialize();
+    // Setup fields initialize
+    S.Setup();
+    S.GetW<double>("fb","fb") = 2.0;
+    S.GetRecordW("fb", "fb").set_initialized();
+    S.GetW<double>("fg","fg") = 3.0;
+    S.GetRecordW("fg", "fg").set_initialized();
+    S.Initialize();
   }
-  ~make_state() { delete comm; }
 
  public:
-  Epetra_MpiComm *comm;
-  Teuchos::RCP<Mesh> mesh;
-
-  Teuchos::RCP<State> S;
+  State S;
   Teuchos::RCP<AEvaluator> fa_eval;
   Teuchos::RCP<CEvaluator> fc_eval;
   Teuchos::RCP<DEvaluator> fd_eval;
   Teuchos::RCP<EEvaluator> fe_eval;
   Teuchos::RCP<FEvaluator> ff_eval;
   Teuchos::RCP<HEvaluator> fh_eval;
-  Teuchos::RCP<PrimaryVariableFieldEvaluator> fb_eval, fg_eval;
+  Teuchos::RCP<EvaluatorPrimary> fb_eval, fg_eval;
 };
 
 
 SUITE(DAG) {
   TEST_FIXTURE(make_state, DAG_TWO_FIELDS) {
-    // set primary fields
-    S->GetFieldData("fb", "fb")->PutScalar(2.0);
-    fb_eval->SetFieldAsChanged(S.ptr());
-
-    S->GetFieldData("fg", "fg")->PutScalar(3.0);
-    fg_eval->SetFieldAsChanged(S.ptr());
-
+    // check initialized properly
+    CHECK_CLOSE(2.0, S.Get<double>("fb"), 1e-12);
+    CHECK_CLOSE(3.0, S.Get<double>("fg"), 1e-12);
+    
     // calculate field A
     std::cout << "Calculate field A:" << std::endl;
-    fa_eval->HasFieldChanged(S.ptr(), "main");
-    const Epetra_MultiVector& fa = *S->GetFieldData("fa")->ViewComponent("cell");
-    CHECK_CLOSE(6484.0, fa[0][0], 1e-12);
+    bool changed = fa_eval->Update(S, "main");
+    CHECK_CLOSE(6484.0, S.Get<double>("fa"), 1e-12);
+    CHECK(changed);
 
+    // check intermediate steps got updated too
+    CHECK_CLOSE(6.0, S.Get<double>("fd"), 1e-12);
+    
     // calculate dA/dB
     std::cout << "Calculate derivative of field A wrt field B:" << std::endl;
-    fa_eval->HasFieldDerivativeChanged(S.ptr(), "fa", "fb");
-    const Epetra_MultiVector& dfa_dfb = *S->GetFieldData("dfa_dfb")->ViewComponent("cell");
-    CHECK_CLOSE(2.0, dfa_dfb[0][0], 1e-12);
+    changed = fa_eval->UpdateDerivative(S, "fa", "fb");
+    CHECK_CLOSE(2.0, S.Get<double>("dfa_dfb"), 1e-12);
+    CHECK(changed);
 
     // calculate dA/dG
     std::cout << "Calculate derivative of field A wrt field G:" << std::endl;
-    fa_eval->HasFieldDerivativeChanged(S.ptr(), "fa", "fg");
-    const Epetra_MultiVector& dfa_dfg = *S->GetFieldData("dfa_dfg")->ViewComponent("cell");
-    CHECK_CLOSE(8640.0, dfa_dfg[0][0], 1e-12);
-
-    // calculate dE/dD is not well defined.
-    // We keep the code which actually work correctly.
-    /*
-    fg_eval->SetFieldAsChanged(S.ptr());
-    std::cout << "Calculate derivative of field E wrt field D:" << std::endl;
-    fe_eval->HasFieldDerivativeChanged(S.ptr(), "fe", "fd");
-    const Epetra_MultiVector& dfe_dfd = *S->GetFieldData("dfe_dfd")->ViewComponent("cell");
-    CHECK_CLOSE(6.0, dfe_dfd[0][0], 1e-12);
-    */
-
-    // calculate dE/dB: This is really strange
-    /*
-    std::cout << "Calculate derivative of field E wrt field B:" << std::endl;
-    fe_eval->HasFieldDerivativeChanged(S.ptr(), "fe", "fb");
-    const Epetra_MultiVector& dfe_dfb = *S->GetFieldData("dfe_dfb")->ViewComponent("cell");
-    CHECK_CLOSE(0.0, dfe_dfb[0][0], 1e-12);
-    */
+    changed = fa_eval->UpdateDerivative(S, "fa", "fg");
+    CHECK_CLOSE(8640.0, S.Get<double>("dfa_dfg"), 1e-12);
+    CHECK(changed);
 
     // calculate dE/dG:
     std::cout << "Calculate derivative of field E wrt field G:" << std::endl;
-    fe_eval->HasFieldDerivativeChanged(S.ptr(), "fe", "fg");
-    const Epetra_MultiVector& dfe_dfg = *S->GetFieldData("dfe_dfg")->ViewComponent("cell");
-    CHECK_CLOSE(24.0, dfe_dfg[0][0], 1e-12);
+    changed = fe_eval->UpdateDerivative(S, "fe", "fg");
+    CHECK_CLOSE(24.0, S.Get<double>("dfe_dfg"), 1e-12);
+    CHECK(changed);
 
     // Now we repeat some calculations. Since no primary fields changed,
     // the result should be the same
     // calculate dA/dG
     std::cout << "Calculate derivative of field A wrt field G:" << std::endl;
-    fb_eval->SetFieldAsChanged(S.ptr());
-    fa_eval->HasFieldDerivativeChanged(S.ptr(), "fa", "fg");
-    const Epetra_MultiVector& dfa_dfg2 = *S->GetFieldData("dfa_dfg")->ViewComponent("cell");
-    CHECK_CLOSE(8640.0, dfa_dfg2[0][0], 1e-12);
+    changed = fa_eval->UpdateDerivative(S, "fa", "fg");
+    CHECK_CLOSE(8640.0, S.Get<double>("dfa_dfg"), 1e-12);
+    CHECK(!changed);
+
+    std::cout << "Calculate derivative of field A wrt field G:" << std::endl;
+    fb_eval->SetChanged();
+    changed = fa_eval->UpdateDerivative(S, "fa", "fg");
+    CHECK_CLOSE(8640.0, S.Get<double>("dfa_dfg"), 1e-12);
+    CHECK(changed);
   }
 }
 

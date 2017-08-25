@@ -22,8 +22,9 @@
 #include "MeshFactory.hh"
 
 // State
+#include "CompositeVector.hh"
 #include "State.hh"
-#include "Visualization.hh"
+#include "io/Visualization.hh"
 
 
 SUITE(VISUALIZATION) {
@@ -103,20 +104,21 @@ SUITE(VISUALIZATION) {
     meshfactory.preference(pref);
     Teuchos::RCP<Amanzi::AmanziMesh::Mesh> Mesh = meshfactory(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 8, 1, 1, gm);
 
-    Teuchos::ParameterList state_list = plist.get<Teuchos::ParameterList>("state");
-    Teuchos::Ptr<Amanzi::State> S0 = Teuchos::ptr(new Amanzi::State(state_list));
+    auto state_list = plist.sublist("state");
+    Amanzi::State S0(state_list);
 
-    S0->RegisterMesh("domain",Mesh);
-    S0->RequireField("celldata")->SetMesh(Mesh)->SetGhosted(false)->SetComponent("cell", Amanzi::AmanziMesh::CELL, 1);
-    S0->Setup();
-    S0->InitializeFields();
+    S0.RegisterMesh("domain",Mesh);
+    S0.Require<Amanzi::CompositeVector,Amanzi::CompositeVectorSpace>("celldata")
+      .SetMesh(Mesh)->SetGhosted(false)->SetComponent("cell", Amanzi::AmanziMesh::CELL, 1);
+    S0.Setup();
+    S0.InitializeFields();
     
-    S0->set_time(1.02);
+    S0.set_time(1.02);
 
     Teuchos::ParameterList visualization_list = plist.get<Teuchos::ParameterList>("visualization");
-    Teuchos::Ptr<Amanzi::Visualization> V = Teuchos::ptr( new Amanzi::Visualization(visualization_list));
-    V->set_mesh(Mesh);
-    V->CreateFiles();
+    Amanzi::Visualization V(visualization_list);
+    V.set_mesh(Mesh);
+    V.CreateFiles();
 
     WriteVis(V, S0);
   }

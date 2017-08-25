@@ -105,10 +105,18 @@ inline Key
 getDerivKey(Key var, Key wrt) {
   return std::string("d")+var+"_d"+wrt;
 }
-// Convencience function for requesting the name of a Key from an input spec.
+// Convenience function for requesting the name of a Key from an input spec.
 Key
 readKey(Teuchos::ParameterList& list, const Key& domain, const Key& basename,
         const Key& default_name="");
+
+
+// Convenience function to see if a map (or map-like) object has a key.
+template<typename T, typename K>
+bool
+hasKey(const T& container, const K& key) {
+  return container.count(key) > 0;
+}
 
 
 } // namespace Key

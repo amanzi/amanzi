@@ -1,4 +1,4 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+/* -*-  mode: c++; indent-tabs-mode: nil -*- */
 //! VerboseObject: a controller for writing log files on multiple cores with varying verbosity.
 
 /*

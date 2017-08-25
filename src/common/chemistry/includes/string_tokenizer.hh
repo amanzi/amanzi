@@ -1,4 +1,4 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+/* -*-  mode: c++; indent-tabs-mode: nil -*- */
 #ifndef AMANZI_CHEMISTRY_STRING_TOKENIZER_HH_
 #define AMANZI_CHEMISTRY_STRING_TOKENIZER_HH_
 

@@ -1,4 +1,4 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+/* -*-  mode: c++; indent-tabs-mode: nil -*- */
 /*
   A planar (infinite) region in space, defined by a point and a normal.
 

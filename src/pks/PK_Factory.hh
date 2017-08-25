@@ -73,7 +73,7 @@ class PKFactory {
   // Method to create a PK
   Teuchos::RCP<PK>
   CreatePK(std::string pk_name,
-           Teuchos::ParameterList& pk_tree,
+           const Teuchos::RCP<Teuchos::ParameterList>& pk_tree,
            const Teuchos::RCP<Teuchos::ParameterList>& global_list,
            const Teuchos::RCP<State>& state,
            const Teuchos::RCP<TreeVector>& soln);
@@ -82,7 +82,7 @@ class PKFactory {
   // typedef describing a map with string keys and PK constructor values, this
   // stores constructors for all known PK classes
   typedef std::map<std::string,
-                   PK* (*)(Teuchos::ParameterList&,
+                   PK* (*)(const Teuchos::RCP<Teuchos::ParameterList>&,
                            const Teuchos::RCP<Teuchos::ParameterList>&,
                            const Teuchos::RCP<State>&,
                            const Teuchos::RCP<TreeVector>&)> map_type;
@@ -102,7 +102,7 @@ class PKFactory {
 
 template<typename T>
 PK*
-CreateT(Teuchos::ParameterList& pk_tree,
+CreateT(const Teuchos::RCP<Teuchos::ParameterList>& pk_tree,
         const Teuchos::RCP<Teuchos::ParameterList>& global_list,
         const Teuchos::RCP<State>& state,
         const Teuchos::RCP<TreeVector>& soln)
@@ -119,7 +119,8 @@ class RegisteredPKFactory : public PKFactory {
   // call themselves the same thing) --etc
   RegisteredPKFactory(const std::string& s)
   {
-    GetMap()->insert(std::pair<std::string, PK* (*)(Teuchos::ParameterList&,
+    GetMap()->insert(std::pair<std::string, PK* (*)(
+            const Teuchos::RCP<Teuchos::ParameterList>&,
             const Teuchos::RCP<Teuchos::ParameterList>&,
             const Teuchos::RCP<State>&,
             const Teuchos::RCP<TreeVector>&)>(s, &CreateT<T>));

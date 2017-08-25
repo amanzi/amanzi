@@ -1,4 +1,4 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+/* -*-  mode: c++; indent-tabs-mode: nil -*- */
 /* -------------------------------------------------------------------------
    ATS
 
@@ -13,6 +13,7 @@
 #include "errors.hh"
 
 #include "CompositeVectorSpace.hh"
+#include "CompositeVector.hh"
 
 namespace Amanzi {
 
@@ -41,6 +42,11 @@ CompositeVectorSpace::CompositeVectorSpace(const CompositeVectorSpace& other,
     locations_(other.locations_),
     num_dofs_(other.num_dofs_) {}
 
+// CompositeVectorSpace is a factory of CompositeVectors
+Teuchos::RCP<CompositeVector>
+CompositeVectorSpace::Create() const {
+  return Teuchos::rcp(new CompositeVector(*this));
+}
 
 // Check equivalence of spaces.
 bool

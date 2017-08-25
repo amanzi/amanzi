@@ -1,4 +1,4 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+/* -*-  mode: c++; indent-tabs-mode: nil -*- */
 //!  Region: a geometric or discrete subdomain (abstract)
 /*
   Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 

@@ -18,6 +18,7 @@
 #include "UnitTest++.h"
 
 // Amanzi
+#include "CompositeVector.hh"
 #include "MeshFactory.hh"
 
 // State
@@ -46,34 +47,40 @@ TEST(FIELD_INITIALIZATION) {
   meshfactory.preference(pref);
   Teuchos::RCP<AmanziMesh::Mesh> mesh = meshfactory("test/cube3x3x3.exo", gm);
 
+  // create a state
   Teuchos::ParameterList state_list = plist.get<Teuchos::ParameterList>("state");
-  Teuchos::Ptr<State> S = Teuchos::ptr(new State(state_list));
+  State S(state_list);
 
-  S->RegisterMesh("domain", mesh);
-  S->RequireField("porosity")->SetMesh(mesh)->SetGhosted(false)
+  // populate state
+  S.RegisterMesh("domain", mesh);
+  S.Require<CompositeVector,CompositeVectorSpace>("porosity").SetMesh(mesh)->SetGhosted(false)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
-  S->RequireField("field")->SetMesh(mesh)->SetGhosted(false)
+  S.Require<CompositeVector,CompositeVectorSpace>("field").SetMesh(mesh)->SetGhosted(false)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
-  S->Setup();
-  S->RequireField("permeability")->SetMesh(mesh)->SetGhosted(false)
+  S.Setup();
+  S.Require<CompositeVector,CompositeVectorSpace>("permeability").SetMesh(mesh)->SetGhosted(false)
       ->SetComponent("cell", AmanziMesh::CELL, 3);
-  S->Setup();
-  S->InitializeFields();
+
+  // setup creates data
+  S.Setup();
+
+  // initialize data
+  S.InitializeFields();
 
   // check state's fields
   // -- porosity (simple field)
   int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
-  const Epetra_MultiVector& phi = *S->GetFieldData("porosity")->ViewComponent("cell");
+  const Epetra_MultiVector& phi = *S.Get<CompositeVector>("porosity").ViewComponent("cell");
   for (int c = 0; c < ncells; ++c) {
     CHECK_EQUAL(0.25, phi[0][c]);
   }
   // -- scalar field from a file
-  const Epetra_MultiVector& fld = *S->GetFieldData("field")->ViewComponent("cell");
+  const Epetra_MultiVector& fld = *S.Get<CompositeVector>("field").ViewComponent("cell");
   for (int c = 1; c < ncells; ++c) {
     CHECK_EQUAL(1.0e-11, fld[0][c]);
   }
   // -- permeability from a file
-  const Epetra_MultiVector& K = *S->GetFieldData("permeability")->ViewComponent("cell");
+  const Epetra_MultiVector& K = *S.Get<CompositeVector>("permeability").ViewComponent("cell");
   for (int c = 1; c < ncells; ++c) {
     CHECK_EQUAL(1.0e-11, K[0][c]);
     CHECK_EQUAL(1.0e-12, K[1][c]);

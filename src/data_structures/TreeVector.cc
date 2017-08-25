@@ -1,4 +1,4 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+/* -*-  mode: c++; indent-tabs-mode: nil -*- */
 /* -------------------------------------------------------------------------
    ATS
 
@@ -28,7 +28,7 @@ TreeVector::TreeVector(const TreeVectorSpace& space, InitMode mode) :
     comm_world_(MPI_COMM_WORLD)
 {
   map_ = Teuchos::rcp(new TreeVectorSpace(space));
-  InitMap_();
+  if (mode != INIT_MODE_NOALLOC) InitMap_();
   if (mode == INIT_MODE_ZERO) {
     PutScalar(0.);
   }
@@ -38,7 +38,7 @@ TreeVector::TreeVector(const TreeVector& other, InitMode mode) :
     comm_world_(MPI_COMM_WORLD)
 {
   map_ = Teuchos::rcp(new TreeVectorSpace(*other.map_));
-  InitMap_();
+  if (mode != INIT_MODE_NOALLOC) InitMap_();
   if (mode == INIT_MODE_ZERO) {
     PutScalar(0.);
   } else if (mode == INIT_MODE_COPY) {

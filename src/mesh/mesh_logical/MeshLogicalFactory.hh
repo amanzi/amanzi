@@ -1,4 +1,4 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+/* -*-  mode: c++; indent-tabs-mode: nil -*- */
 #ifndef AMANZI_LOGICAL_MESH_FACTORY_H_
 #define AMANZI_LOGICAL_MESH_FACTORY_H_
 

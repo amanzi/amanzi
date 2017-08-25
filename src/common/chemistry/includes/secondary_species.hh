@@ -1,4 +1,4 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+/* -*-  mode: c++; indent-tabs-mode: nil -*- */
 #ifndef AMANZI_CHEMISTRY_SECONDARY_SPECIES_HH_
 #define AMANZI_CHEMISTRY_SECONDARY_SPECIES_HH_
 // Base class for secondary species (aqueous equilibrium complexes,

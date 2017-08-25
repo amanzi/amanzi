@@ -1,4 +1,4 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+/* -*-  mode: c++; indent-tabs-mode: nil -*- */
 #ifndef AMANZI_CHEMISTRY_IONEXCHANGECOMPLEX_HH_
 #define AMANZI_CHEMISTRY_IONEXCHANGECOMPLEX_HH_
 

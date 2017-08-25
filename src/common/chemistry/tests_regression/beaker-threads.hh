@@ -1,4 +1,4 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+/* -*-  mode: c++; indent-tabs-mode: nil -*- */
 #ifndef __Beaker_Threads_hpp__
 #define __Beaker_Threads_hpp__
 

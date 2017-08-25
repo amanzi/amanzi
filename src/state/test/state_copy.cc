@@ -46,7 +46,7 @@ struct test_field {
     std::vector<int> num_dofs(2,1);
 
     Teuchos::RCP<CompositeVectorSpace> data_sp = Teuchos::rcp(new CompositeVectorSpace());
-    data_sp->SetMesh(mesh)->SetGhosted(false)->SetComponents(names,locations,num_dofs);
+    data_sp.SetMesh(mesh).SetGhosted(false).SetComponents(names,locations,num_dofs);
     Teuchos::RCP<CompositeVector> data =
         Teuchos::rcp(new CompositeVector(*data_sp));
     field = Teuchos::rcp(new Field_CompositeVector("fieldname", "owner", data));
@@ -94,8 +94,8 @@ struct test_state {
     std::vector<int> num_dofs(2,1);
 
     Teuchos::RCP<CompositeVectorSpace> vec_factory = state->RequireField("fieldname", "owner");
-    vec_factory->SetMesh(state->GetMesh());
-    vec_factory->SetComponents(names, locations, num_dofs);
+    vec_factory.SetMesh(state->GetMesh());
+    vec_factory.SetComponents(names, locations, num_dofs);
     state->Setup();
     state->GetField("fieldname", "owner")->set_initialized();
     state->Initialize();

@@ -18,7 +18,8 @@
 #include "Teuchos_Array.hpp"
 #include "UnitTest++.h"
 
-#include "checkpoint.hh"
+#include "CompositeVector.hh"
+#include "io/Checkpoint.hh"
 #include "MeshFactory.hh"
 #include "State.hh"
 
@@ -38,7 +39,7 @@ SUITE(RESTART) {
     plist.set<Teuchos::Array<int> >("cycles start period stop", csps);
 
     Epetra_MpiComm comm(MPI_COMM_WORLD);
-    Amanzi::Checkpoint R(plist, &comm);
+    Amanzi::Checkpoint R(plist, comm);
     
     // test the cycle stuff, the expected result is in cycles_ and 
     // we store the computed result in cycles
@@ -65,7 +66,7 @@ SUITE(RESTART) {
     plist.set<Teuchos::Array<int> >("cycles start period stop", csps);    
 
     Epetra_MpiComm comm(MPI_COMM_WORLD);
-    Amanzi::Checkpoint R(plist, &comm);
+    Amanzi::Checkpoint R(plist, comm);
 
     // test the cycle stuff, the expected result is in cycles_ and 
     // we store the computed result in cycles
@@ -92,7 +93,7 @@ SUITE(RESTART) {
     plist.set<Teuchos::Array<int> >("cycles start period stop", csps);    
 
     Epetra_MpiComm comm(MPI_COMM_WORLD);
-    Amanzi::Checkpoint R(plist, &comm);
+    Amanzi::Checkpoint R(plist, comm);
 
     // test the cycle stuff, the expected result is in cycles_ and 
     // we store the computed result in cycles
@@ -125,7 +126,7 @@ SUITE(RESTART) {
     plist.set<Teuchos::Array<int> >("cycles",cyc);
     
     Epetra_MpiComm comm(MPI_COMM_WORLD);
-    Amanzi::Checkpoint R(plist, &comm);
+    Amanzi::Checkpoint R(plist, comm);
 
     // test the cycle stuff, the expected result is in cycles_ and 
     // we store the computed result in cycles
@@ -159,7 +160,7 @@ SUITE(RESTART) {
     plist.set<Teuchos::Array<double> >("times",tim);
     
     Epetra_MpiComm comm(MPI_COMM_WORLD);
-    Amanzi::Checkpoint R(plist, &comm);
+    Amanzi::Checkpoint R(plist, comm);
 
     // test the cycle stuff, the expected result is in cycles_ and 
     // we store the computed result in cycles
@@ -206,38 +207,43 @@ SUITE(RESTART) {
 
     Teuchos::ParameterList state_list = plist.get<Teuchos::ParameterList>("state");
     // now populate the parameter list...
-    Teuchos::Ptr<Amanzi::State> S0 = Teuchos::ptr(new Amanzi::State(state_list) );
+    Amanzi::State S0(state_list);
 
-    S0->RegisterDomainMesh(Mesh);
+    S0.RegisterDomainMesh(Mesh);
 
-    S0->RequireField("celldata")->SetMesh(Mesh)->SetGhosted(false)->SetComponent("cell", Amanzi::AmanziMesh::CELL, 1);
+    S0.Require<Amanzi::CompositeVector,Amanzi::CompositeVectorSpace>("celldata", "", "state_restart")
+        .SetMesh(Mesh)
+        ->SetGhosted(false)
+        ->SetComponent("cell", Amanzi::AmanziMesh::CELL, 1);
 
-    S0->Setup();
-    S0->InitializeFields();
+    S0.Setup();
+    S0.InitializeFields();
     
-    S0->set_time(1.02);
+    S0.set_time(1.02);
 
     Teuchos::ParameterList checkpoint_list = plist.get<Teuchos::ParameterList>("checkpoint");
-    Teuchos::Ptr<Amanzi::Checkpoint> R = Teuchos::ptr( new Amanzi::Checkpoint(checkpoint_list, &comm));
+    Amanzi::Checkpoint R(checkpoint_list, comm);
+ 
+    WriteCheckpoint(R, comm, S0, 0.0);
 
-    WriteCheckpoint(R, S0, 0.0);
+    Amanzi::State S1(state_list);
+    S1.Require<Amanzi::CompositeVector,Amanzi::CompositeVectorSpace>("celldata", "", "state_restart").SetMesh(Mesh)
+        ->SetGhosted(false)
+        ->SetComponent("cell", Amanzi::AmanziMesh::CELL, 1);
 
-    Teuchos::Ptr<Amanzi::State> S1 = Teuchos::ptr(new Amanzi::State(state_list) );
-    S1->RequireField("celldata")->SetMesh(Mesh)->SetGhosted(false)->SetComponent("cell", Amanzi::AmanziMesh::CELL, 1);
-
-    S1->Setup();
-    S1->InitializeFields();    
+    S1.Setup();
+    S1.InitializeFields();    
 
     // fill with random data before reading checkpoint
-    Epetra_MultiVector& s1p = *S1->GetFieldData("celldata", "state")->ViewComponent("cell", false); 
+    Epetra_MultiVector& s1p = *S1.GetW<Amanzi::CompositeVector>("celldata", "state_restart").ViewComponent("cell", false); 
     s1p.Random();
 
-    ReadCheckpoint(&comm, S1, "restartdump00000.h5");
+    ReadCheckpoint(comm, S1, "restartdump00000.h5");
 
-    Epetra_MultiVector& s0p = *S0->GetFieldData("celldata", "state")->ViewComponent("cell", false);     
+    Epetra_MultiVector& s0p = *S0.GetW<Amanzi::CompositeVector>("celldata", "state_restart").ViewComponent("cell", false);     
 
     // and compare with the original
-    CHECK_EQUAL(S0->time(), S1->time());
+    CHECK_EQUAL(S0.time(), S1.time());
 
     CHECK_EQUAL(s0p.MyLength(), s1p.MyLength()); 
 

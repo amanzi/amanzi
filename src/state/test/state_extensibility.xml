@@ -1,0 +1,20 @@
+<ParameterList name="Main">
+
+  <ParameterList name="visualization">
+    <Parameter name="file name base" type="string" value="visdump"/>
+    <Parameter name="file name digits" type="int" value="5"/>    
+    <Parameter name="cycle start period stop" type="Array(double)" value="{0,1,10}"/>
+  </ParameterList>
+
+  <ParameterList name="checkpoint">
+    <Parameter name="cycle start period stop" type="Array(double)" value="{0,1,10}"/>
+  </ParameterList>
+
+  <ParameterList name="state">
+    <ParameterList name="initial conditions">
+      <ParameterList name="my_points">
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
+  
+</ParameterList>

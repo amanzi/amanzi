@@ -1,4 +1,4 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+/* -*-  mode: c++; indent-tabs-mode: nil -*- */
 //! MultiplicativeFunction: f(x,y) = f1(x,y) * f2(x,y)
 
 /*

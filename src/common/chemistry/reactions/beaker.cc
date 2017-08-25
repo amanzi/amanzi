@@ -1,4 +1,4 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+/* -*-  mode: c++; indent-tabs-mode: nil -*- */
 
 /*
 ** TODO(bandre): update mineral volume fractions to components.minerals after kinetics....

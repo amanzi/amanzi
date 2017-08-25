@@ -1,6 +1,4 @@
 /* -*-  mode: c++; indent-tabs-mode: nil -*- */
-//! The interface for a Process Kernel, an equation or system of equations.
-
 /*
   Amanzi is released under the three-clause BSD License. 
   The terms of use and "as is" disclaimer for this license are 
@@ -8,6 +6,8 @@
 
   Author: Ethan Coon (ecoon@lanl.gov)
 */
+
+//! The interface for a Process Kernel, an equation or system of equations.
 
 /*!  
 
@@ -57,97 +57,94 @@ Example:
 Developer's note:
 
 ``PK`` is a virtual interface for a Process Kernel. Note that PKs
-  deriving from this class must implement the commented constructor
+  deriving from this class must implement the constructor
   interface as well, and should add the private static member
   (following the Usage notes in src/pks/PK_Factory.hh) to register the
   derived PK with the PK factory.
+
 */
 
 #ifndef AMANZI_PK_HH_
 #define AMANZI_PK_HH_
 
 #include "Teuchos_RCP.hpp"
-
-#include "TreeVector.hh"
 #include "Teuchos_ParameterList.hpp"
+
+#include "Key.hh"
+#include "BDFFnBase.hh"
+#include "Explicit_TI_FnBase.hh"
 
 namespace Amanzi {
 
-class State;
+class Debugger;
+class TreeVector;
 
 class PK {
  public:
-  PK() {};
-  // Required constructor of the form:
-  PK(Teuchos::ParameterList& pk_tree,
-     const Teuchos::RCP<Teuchos::ParameterList>& global_plist,
-     const Teuchos::RCP<State>& S,
-     const Teuchos::RCP<TreeVector>& solution)
-    :  solution_(solution) {};
 
   // Virtual destructor
-  virtual ~PK() {};
+  virtual ~PK() = default;
 
-  // Setup
-  virtual void Setup(const Teuchos::Ptr<State>& S) = 0;
+  // construct all sub-PKs.  This is not a part of the constructor as it must
+  // be virtual.
+  virtual void ConstructChildren() = 0;
+  
+  // Setup: forms the DAG, pushes meta-data into State
+  virtual void Setup() = 0;
+  
+  // Initialize: set values for owned variables.
+  virtual void Initialize() = 0;
 
-  // Initialize owned (dependent) variables.
-  virtual void Initialize(const Teuchos::Ptr<State>& S) = 0;
+  // Advance PK from time tag old to time tag new
+  virtual bool AdvanceStep(const Key& tag_old, const Key& tag_new) = 0;
+
+  // Returns validity of the step taken from tag_old to tag_new
+  virtual bool ValidStep(const Key& tag_old, const Key& tag_new) = 0;
+
+  // Do work that can only be done if we know the step was successful.
+  virtual void CommitStep(const Key& tag_old, const Key& tag_new) = 0;
+
+  // Revert a step from tag_new back to tag_old
+  virtual void FailStep(const Key& tag_old, const Key& tag_new) = 0;
 
   // Choose a time step compatible with physics.
   virtual double get_dt() = 0;
-
-  // Set a time step for a PK.
-  virtual void set_dt(double dt) = 0;
-
-  // Advance PK from time t_old to time t_new. True value of the last 
-  // parameter indicates drastic change of boundary and/or source terms
-  // that may need PK's attention. 
-  virtual bool AdvanceStep(double t_old, double t_new, bool reinit) = 0;
-
-  // Check whether the solution calculated for the new step is valid.
-  virtual bool ValidStep() { return true; }
-
-  // Tag the primary variable as changed in the DAG
-  virtual void ChangedSolutionPK() {}
   
-  // Update any needed secondary variables at time t_new from a sucessful step
-  // from t_old. This is called after every successful AdvanceStep() call,
-  // independent of coupling.
-  virtual void CommitStep(double t_old, double t_new, const Teuchos::RCP<State>& S) = 0;
+  // Calculate any diagnostics at tag, currently used for visualization.
+  virtual void CalculateDiagnostics(const Key& tag) = 0;
 
-  // Calculate any diagnostics at S->time(), currently for visualization.
-  virtual void CalculateDiagnostics(const Teuchos::RCP<State>& S) = 0;
+  // Mark, as changed, any primary variable evaluator owned by this PK
+  virtual void ChangedSolutionPK(const Key& tag) = 0;
 
+  virtual void StateToSolution(TreeVector& soln, const Key& tag) = 0;
+  virtual void SolutionToState(TreeVector& soln, const Key& tag) = 0;
+  
   // Return PK's name
-  virtual std::string name() { return name_; }
+  virtual std::string name() = 0;
 
+  // Accessor for debugger, for use by coupling MPCs
+  virtual Teuchos::Ptr<Debugger> debugger() = 0;
 
-  /////////////////////////////////////////////////////////////////////
-
-  // -- set pointers to State, and point the solution vector to the data in S_next
-  virtual void set_states(const Teuchos::RCP<const State>& S,
-                          const Teuchos::RCP<State>& S_inter,
-                          const Teuchos::RCP<State>& S_next) = 0;
-
-  // -- transfer operators
-  virtual void State_to_Solution(const Teuchos::RCP<State>& S, TreeVector& soln) = 0;
-  virtual void Solution_to_State(TreeVector& soln, const Teuchos::RCP<State>& S) = 0;
-  virtual void Solution_to_State(const TreeVector& soln, const Teuchos::RCP<State>& S) = 0;
-
-protected:
-  Teuchos::RCP<Teuchos::ParameterList> plist_;
-  std::string name_;
-  Teuchos::RCP<TreeVector> solution_;
-
-  // states
-  Teuchos::RCP<const State> S_;
-  Teuchos::RCP<State> S_inter_;
-  Teuchos::RCP<State> S_next_;
-
-  // fancy IO
-  Teuchos::RCP<VerboseObject> vo_;
+  
 };
+
+template<typename Vector=TreeVector>
+class PK_BDF : public PK,
+               public BDFFnBase<Vector> {
+ public:
+  virtual ~PK_BDF() = default;
+};
+
+template<typename Vector=TreeVector>
+class PK_Explicit : public PK,
+                    public Explicit_TI::fnBase<Vector> {
+ public:
+  virtual ~PK_Explicit() = default;
+};
+  
+
+
+
 
 }  // namespace Amanzi
 

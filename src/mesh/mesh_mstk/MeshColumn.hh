@@ -1,4 +1,4 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+/* -*-  mode: c++; indent-tabs-mode: nil -*- */
 //
 // This is a mesh with a vertical column of prismatic cells (the
 // horizontal faces can be polygonal). Users of this class must note

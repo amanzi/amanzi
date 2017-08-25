@@ -1,4 +1,4 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+/* -*-  mode: c++; indent-tabs-mode: nil -*- */
 /* -------------------------------------------------------------------------
    ATS
 
@@ -15,14 +15,14 @@
 #include <vector>
 #include <set>
 
-#include "Teuchos_ParameterList.hpp"
-
 #include "Key.hh"
 
 namespace Amanzi {
 
-// Fields
-typedef enum { NULL_FIELD_TYPE, COMPOSITE_VECTOR_FIELD, CONSTANT_VECTOR, CONSTANT_SCALAR } FieldType;
+// Keys and containers
+typedef std::string Units;
+typedef bool NullFactory; // placeholder object for no factory required
+
 
 } // namespace
 

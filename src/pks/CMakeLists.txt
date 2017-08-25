@@ -18,6 +18,7 @@ include_directories(${DBC_SOURCE_DIR})
 include_directories(${ATK_SOURCE_DIR})
 include_directories(${MESH_SOURCE_DIR})
 include_directories(${MESH_DATA_SOURCE_DIR})
+include_directories(${MESH_FACTORY_SOURCE_DIR})
 include_directories(${DATA_STRUCTURES_SOURCE_DIR})
 include_directories(${GEOMETRY_SOURCE_DIR})
 include_directories(${WHETSTONE_SOURCE_DIR})
@@ -27,18 +28,32 @@ include_directories(${SOLVERS_SOURCE_DIR})
 include_directories(${FUNCS_SOURCE_DIR})
 include_directories(${MFUNCS_SOURCE_DIR})
 include_directories(${STATE_SOURCE_DIR})
+include_directories(${STATE_SOURCE_DIR}/data)
+include_directories(${STATE_SOURCE_DIR}/evaluator)
+include_directories(${STATE_SOURCE_DIR}/io)
 include_directories(${OUTPUT_SOURCE_DIR})
 
 # External (TPL) include directories
 include_directories(${Epetra_INCLUDE_DIRS})
 include_directories(${ASCEMIO_INCLUDE_DIR})
 
+# linking
+set(pks_tpl_libs
+  ${Boost_LIBRARIES}
+  ${Teuchos_LIBRARIES}
+  ${Epetra_LIBRARIES}
+  ${ExodusII_LIBRARIES})
+list(REVERSE pks_tpl_libs)
+list(REMOVE_DUPLICATES pks_tpl_libs)
+list(REVERSE pks_tpl_libs)
+
+
+
 #
 # Library: pks
 #
-set(pks_src_files PK_Factory.cc
-                  PK_Utils.cc
-                  PK_Physical.cc
+set(pks_src_files PK_Default.cc
+                  PK_Factory.cc
    )
 
 add_amanzi_library(pks
@@ -49,24 +64,11 @@ add_amanzi_library(pks
 # Install Targets
 #
 set(pks_inc_files 
-  CommonDefs.hh
   PK.hh
-  PK_BDF.hh
-  PK_Implicit.hh
-  PK_Explicit.hh
-  PK_Physical.hh
-  PK_PhysicalExplicit.hh
-  PK_PhysicalBDF.hh
-  PK_DomainFunction.hh
-  PK_DomainFunctionFactory.hh
-  PK_DomainFunctionSimple.hh
-  PK_DomainFunctionVolume.hh
-  PK_DomainFunctionVolumeFraction.hh
-  PK_DomainFunctionWeight.hh
-  PK_DomainFunctionCoupling.hh
-  PK_DomainFunctionSubgrid.hh
+  PK_Default.hh
+  PK_MixinLeaf.hh
   PK_Factory.hh
-  PK_Utils.hh)
+)
 
 add_install_include_file(${pks_inc_files})
 
@@ -74,24 +76,44 @@ add_install_include_file(${pks_inc_files})
 # No tests so far
 #
 if (BUILD_TESTS) 
+
+    set(pks_test_link_libs pks state error_handling atk mesh mesh_factory data_structures mesh_functions state solvers time_integration pks)
+
+    # Add UnitTest include directoy
+    include_directories(${UnitTest_INCLUDE_DIRS})
+
+    # Copy test directory files if an out of source build
+    if (NOT (${PKS_SOURCE_DIR} EQUAL ${PKS_BINARY_DIR}))
+        execute_process(COMMAND ${CMAKE_COMMAND} -E
+          copy_directory ${PKS_SOURCE_DIR}/test ${PKS_BINARY_DIR}/test)
+    endif()
+
+    # Add the solvers directory to the include paths
+    include_directories(${PKS_SOURCE_DIR})
+
+    add_amanzi_test(pks_ode_explicit pks_ode_explicit
+                    KIND unit
+                    SOURCE test/Main.cc test/pks_ode_explicit.cc
+                    LINK_LIBS ${pks_test_link_libs} ${UnitTest_LIBRARIES} ${pks_tpl_libs})
+
 endif()
 
-if (ENABLE_Physics)
-  add_subdirectory(eos)
+# if (ENABLE_Physics)
+#   add_subdirectory(eos)
 
-  add_subdirectory(flow)
-endif()
+#   add_subdirectory(flow)
+# endif()
 
-# chemistry isn't REALLY physics...
-add_subdirectory(chemistry)
+# # chemistry isn't REALLY physics...
+# add_subdirectory(chemistry)
 
-# ok, transport is probably physics but oh well
-add_subdirectory(transport)
+# # ok, transport is probably physics but oh well
+# add_subdirectory(transport)
 
-if (ENABLE_Physics)
-  add_subdirectory(energy)
-  add_subdirectory(dummy)
-endif()
+# if (ENABLE_Physics)
+#   add_subdirectory(energy)
+#   add_subdirectory(dummy)
+# endif()
 
-add_subdirectory(mpc_pk)
+# add_subdirectory(mpc_pk)
 

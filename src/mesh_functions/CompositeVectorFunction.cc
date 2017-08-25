@@ -38,15 +38,15 @@ CompositeVectorFunction::CompositeVectorFunction(
 }
 
 void CompositeVectorFunction::Compute(double time,
-        const Teuchos::Ptr<CompositeVector>& cv) {
+        CompositeVector& cv) {
   Teuchos::RCP<const AmanziMesh::Mesh> mesh = func_->mesh();
 
-  cv->PutScalar(0.);
+  cv.PutScalar(0.);
 
 #ifdef ENSURE_INITIALIZED_CVFUNCS  
   // ensure all components are touched
   std::map<std::string,bool> done;
-  for (auto compname : *cv) {
+  for (auto compname : cv) {
     done[compname] = false;
   }
 #endif
@@ -64,7 +64,7 @@ void CompositeVectorFunction::Compute(double time,
     done[compname] = true;
 #endif
     
-    Epetra_MultiVector& compvec = *cv->ViewComponent(compname,false);
+    Epetra_MultiVector& compvec = *cv.ViewComponent(compname,false);
     Teuchos::RCP<MeshFunction::Spec> spec = (*cv_spec)->second;
 
     AmanziMesh::Entity_kind kind = spec->first->second;
@@ -202,7 +202,7 @@ void CompositeVectorFunction::Compute(double time,
   }
 
 #ifdef ENSURE_INITIALIZED_CVFUNCS  
-  for (auto compname : *cv) {
+  for (auto compname : cv) {
     if (!done[compname]) {
       Errors::Message message;
       message << "CV: component \"" << compname << "\" was not set";

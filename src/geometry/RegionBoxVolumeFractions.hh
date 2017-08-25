@@ -1,4 +1,4 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+/* -*-  mode: c++; indent-tabs-mode: nil -*- */
 //! RegionBoxVolumeFractions: A rectangular region in space, defined by two corner points and normals to sides.
 
 /*
