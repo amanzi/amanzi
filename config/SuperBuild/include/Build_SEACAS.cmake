@@ -65,6 +65,7 @@ set(SEACAS_CMAKE_CACHE_ARGS
                     -DCMAKE_Fortran_COMPILER:FILEPATH=${CMAKE_Fortran_COMPILER_USE}
                     -DCMAKE_EXE_LINKER_FLAGS:STRING=${seacas_lflags}
                     -DBUILD_SHARED_LIBS:BOOL=OFF 
+                    -DSEACASProj_ENABLE_SEACASExodus:BOOL=TRUE
                     -DSEACASProj_ENABLE_ALL_PACKAGES:BOOL=OFF 
                     -DSEACASProj_ENABLE_ALL_OPTIONAL_PACKAGES:BOOL=OFF
                     -DSEACASProj_ENABLE_SECONDARY_TESTED_CODE:BOOL=OFF
