@@ -65,23 +65,29 @@ set(SEACAS_CMAKE_CACHE_ARGS
                     -DCMAKE_Fortran_COMPILER:FILEPATH=${CMAKE_Fortran_COMPILER_USE}
                     -DCMAKE_EXE_LINKER_FLAGS:STRING=${seacas_lflags}
                     -DBUILD_SHARED_LIBS:BOOL=OFF 
+		    -DSEACASProj_ENABLE_ALL_PACKAGES:BOOL=FALSE
                     -DSEACASProj_ENABLE_SEACASExodus:BOOL=TRUE
-                    -DSEACASProj_ENABLE_ALL_PACKAGES:BOOL=OFF 
-                    -DSEACASProj_ENABLE_ALL_OPTIONAL_PACKAGES:BOOL=OFF
-                    -DSEACASProj_ENABLE_SECONDARY_TESTED_CODE:BOOL=OFF
-                    -DSEACASProj_ENABLE_TESTS=OFF
+		    -DSEACASProj_ENABLE_SEACASNemslice:STRING=:BOOL=TRUE
+		    -DSEACASProj_ENABLE_SEACASNemspread:STRING=:BOOL=TRUE
+		    -DSEACASProj_ENABLE_SEACASExodiff:STRING=:BOOL=TRUE
+		    -DSEACASProj_ENABLE_SEACASExotxt:STRING=:BOOL=TRUE
+		    -DSEACASProj_ENABLE_SEACASExoformat:STRING=:BOOL=TRUE
+		    -DSEACASProj_ENABLE_SEACASDecomp:STRING=:BOOL=TRUE
+		    -DSEACASProj_ENABLE_ALL_OPTIONAL_PACKAGES:BOOL=FALSE
+		    -DSEACASProj_ENABLE_SECONDARY_TESTED_CODE:BOOL=FALSE
+		    -DSEACASProj_ENABLE_TESTS=FALSE
                     -DSEACASProj_SKIP_FORTRANCINTERFACE_VERIFY_TEST:BOOL=ON 
                     -DSEACASProj_HIDE_DEPRECATED_CODE:STRING="NO"
                     -DTPL_ENABLE_Netcdf:BOOL=TRUE
                     -DTPL_Netcdf_LIBRARIES:STRING=${seacas_netcdf_libraries}
                     -DNetcdf_INCLUDE_DIRS:STRING=${TPL_INSTALL_PREFIX}/include
-                    -DTPL_Netcdf_PARALLEL:BOOL=ON
+		    -DTPL_Netcdf_PARALLEL:BOOL=TRUE
                     -DTPL_ENABLE_Matio:BOOL=FALSE
                     -DTPL_ENABLE_X11:BOOL=FALSE
                     -DTPL_ENABLE_CGNS:BOOL=FALSE
                     -DTPL_ENABLE_MPI:BOOL=ON
-                    -DTPL_ENABLE_Pamgen:BOOL=OFF
-                    -DTPL_ENABLE_Pthread:BOOL=OFF
+		    -DTPL_ENABLE_Pamgen:BOOL=FALSE
+		    -DTPL_ENABLE_Pthread:BOOL=FALSE
                     -DSEACASExodus_ENABLE_THREADSAFE:BOOL=OFF
                     -DSEACASIoss_ENABLE_THREADSAFE:BOOL=OFF
                     )
