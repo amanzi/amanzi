@@ -10,7 +10,7 @@
 if ( NOT ENABLE_XSDK)
     define_external_project_args(SEACAS
                                  TARGET seacas
-				 DEPENDS ${MPI_PROJECT} HDF5 NetCDF Trilinos)
+				 DEPENDS ${MPI_PROJECT} HDF5 NetCDF)
 else()
     define_external_project_args(SEACAS
                                  TARGET seacas
@@ -49,7 +49,7 @@ set(seacas_netcdf_libraries
        ${seacas_hdf5_hl_library}
        ${seacas_hdf5_library} -ldl
        ${seacas_z_library})
-if ( (NOT BUILD_MPI) AND (NOT MPI_WRAPPERS_IN_USE) AND (MPI_C_LIBRARIES) )
+if ((NOT BUILD_MPI) AND (NOT MPI_WRAPPERS_IN_USE) AND (MPI_C_LIBRARIES))
   list(APPEND seacas_netcdf_libraries ${MPI_C_LIBRARIES})
 endif()
 
@@ -64,15 +64,32 @@ set(SEACAS_CMAKE_CACHE_ARGS
                     ${Amanzi_CMAKE_Fortran_COMPILER_ARGS}
                     -DCMAKE_Fortran_COMPILER:FILEPATH=${CMAKE_Fortran_COMPILER_USE}
                     -DCMAKE_EXE_LINKER_FLAGS:STRING=${seacas_lflags}
-                    -DTrilinos_ENABLE_ALL_PACKAGES:BOOL=FALSE
-                    -DTrilinos_ENABLE_ALL_OPTIONAL_PACKAGES:BOOL=FALSE
-                    -DTrilinos_ENABLE_SEACAS:BOOL=TRUE
-                    -DTPL_ENABLE_X11:BOOL=FALSE
-                    -DTPL_ENABLE_Matio:BOOL=FALSE
+                    -DBUILD_SHARED_LIBS:BOOL=OFF 
+		    -DSEACASProj_ENABLE_ALL_PACKAGES:BOOL=FALSE
+                    -DSEACASProj_ENABLE_SEACASExodus:BOOL=TRUE
+		    -DSEACASProj_ENABLE_SEACASNemslice:STRING=:BOOL=TRUE
+		    -DSEACASProj_ENABLE_SEACASNemspread:STRING=:BOOL=TRUE
+		    -DSEACASProj_ENABLE_SEACASExodiff:STRING=:BOOL=TRUE
+		    -DSEACASProj_ENABLE_SEACASExotxt:STRING=:BOOL=TRUE
+		    -DSEACASProj_ENABLE_SEACASExoformat:STRING=:BOOL=TRUE
+		    -DSEACASProj_ENABLE_SEACASDecomp:STRING=:BOOL=TRUE
+		    -DSEACASProj_ENABLE_ALL_OPTIONAL_PACKAGES:BOOL=FALSE
+		    -DSEACASProj_ENABLE_SECONDARY_TESTED_CODE:BOOL=FALSE
+		    -DSEACASProj_ENABLE_TESTS:BOOL=FALSE
+                    -DSEACASProj_SKIP_FORTRANCINTERFACE_VERIFY_TEST:BOOL=ON 
+                    -DSEACASProj_HIDE_DEPRECATED_CODE:STRING="NO"
+                    -DTPL_ENABLE_Netcdf:BOOL=TRUE
                     -DTPL_Netcdf_LIBRARIES:STRING=${seacas_netcdf_libraries}
                     -DNetcdf_INCLUDE_DIRS:STRING=${TPL_INSTALL_PREFIX}/include
-                    -DTPL_Netcdf_PARALLEL:BOOL=ON
+		    -DTPL_Netcdf_PARALLEL:BOOL=TRUE
+                    -DTPL_ENABLE_Matio:BOOL=FALSE
+                    -DTPL_ENABLE_X11:BOOL=FALSE
+                    -DTPL_ENABLE_CGNS:BOOL=FALSE
                     -DTPL_ENABLE_MPI:BOOL=ON
+		    -DTPL_ENABLE_Pamgen:BOOL=FALSE
+		    -DTPL_ENABLE_Pthread:BOOL=FALSE
+                    -DSEACASExodus_ENABLE_THREADSAFE:BOOL=OFF
+                    -DSEACASIoss_ENABLE_THREADSAFE:BOOL=OFF
                     )
 
 # --- Add external project build and tie to the SEACAS build target
@@ -95,3 +112,6 @@ ExternalProject_Add(${SEACAS_BUILD_TARGET}
                     INSTALL_DIR      ${TPL_INSTALL_PREFIX}/SEACAS   # Install directory, NOT in the usual place!
                     # -- Output control
                     ${SEACAS_logging_args})
+
+# --- Useful variables for other packages that depend on SEACAS
+set(SEACAS_DIR ${TPL_INSTALL_PREFIX}/SEACAS)

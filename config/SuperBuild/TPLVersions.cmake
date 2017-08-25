@@ -87,6 +87,7 @@
 #   0.94.6       - Added CrunchTope package, hash version c31ecb9
 #   0.94.7       - update UnitTest++ to version 2.0.0
 #                - update Hypre to version 2.11.2    
+#   0.94.8       - removed ExodusII as independent TPL  
 
 include(CMakeParseArguments)
 
@@ -279,16 +280,6 @@ set(ASCEMIO_ARCHIVE_FILE   ascem-io-${ASCEMIO_VERSION}.tar.gz)
 set(ASCEMIO_MD5_SUM       869820bacd4c289c8f320be58c1449a7)
 
 #
-# TPL: ExodusII
-#
-set(ExodusII_VERSION_MAJOR 6)
-set(ExodusII_VERSION_MINOR 06)
-set(ExodusII_VERSION ${ExodusII_VERSION_MAJOR}.${ExodusII_VERSION_MINOR})
-set(ExodusII_URL_STRING    ${AMANZI_TPLS_DOWNLOAD_URL})
-set(ExodusII_ARCHIVE_FILE  exodus-${ExodusII_VERSION}.tar.gz)
-set(ExodusII_MD5_SUM       cfd240dbc1251b08fb1d0ee2de40a44c)
-
-#
 # TPL: MSTK
 #
 set(MSTK_VERSION_MAJOR 3)
@@ -376,14 +367,14 @@ set(Trilinos_MD5_SUM        40f28628b63310f9bd17c26d9ebe32b1)
 
 #
 # TPL: SEACAS
-#  SEACAS is available in Trilinos 10.8 and above
-set(SEACAS_VERSION_MAJOR 12)
-set(SEACAS_VERSION_MINOR 10)
-set(SEACAS_VERSION_PATCH 1)
-set(SEACAS_VERSION ${SEACAS_VERSION_MAJOR}-${SEACAS_VERSION_MINOR}-${SEACAS_VERSION_PATCH})
-set(SEACAS_URL_STRING     "https://github.com/trilinos/Trilinos/archive/")
-set(SEACAS_ARCHIVE_FILE   trilinos-release-${SEACAS_VERSION}.tar.gz)
-set(SEACAS_MD5_SUM        40f28628b63310f9bd17c26d9ebe32b1)
+#
+set(SEACAS_VERSION_MAJOR 173a1e6)
+set(SEACAS_VERSION_MINOR 0)
+set(SEACAS_VERSION_PATCH 0)
+set(SEACAS_VERSION ${SEACAS_VERSION_MAJOR})
+set(SEACAS_URL_STRING     ${AMANZI_TPLS_DOWNLOAD_URL})
+set(SEACAS_ARCHIVE_FILE   seacas-${SEACAS_VERSION}.tgz)
+set(SEACAS_MD5_SUM        3235d1b885ee8e1a04408382f50bd0f0)
 
 #
 # TPL: PFlotran

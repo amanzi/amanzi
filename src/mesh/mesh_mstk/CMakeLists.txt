@@ -69,7 +69,6 @@ add_amanzi_library(mstk_mesh
 
 if (BUILD_TESTS)
     
-    # Add UnitTest ExodusII include directories
     include_directories(${UnitTest_INCLUDE_DIRS})
 
     # Need to copy files for the tests 
@@ -97,7 +96,7 @@ if (BUILD_TESTS)
                          test/test_hex_gen_3x3x3.cc
                          test/test_quad_gen_3x3.cc
                          test/test_extract_surface.cc
-			             test/test_extract_column.cc
+			 test/test_extract_column.cc
                          test/test_deform_vols.cc
                     LINK_LIBS mstk_mesh mesh_audit ${UnitTest_LIBRARIES}) 
 
@@ -124,7 +123,7 @@ if (BUILD_TESTS)
                     SOURCE
                           test/Main.cc 
                           test/test_column_mesh.cc 
-                    LINK_LIBS mstk_mesh geometry ${UnitTest_LIBRARIES})
+			  LINK_LIBS mstk_mesh geometry ${UnitTest_LIBRARIES})
     # Test: extracted surface from column_mesh
     add_amanzi_test(mstk_surface_column_mesh mstk_surface_column_mesh
                     KIND unit
