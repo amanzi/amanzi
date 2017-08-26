@@ -85,9 +85,6 @@ set(ASCEMIO_DIR @TPL_INSTALL_PREFIX@ CACHE PATH "ASCEM-IO installation prefix")
 # NetCDF
 set(NetCDF_DIR @TPL_INSTALL_PREFIX@ CACHE PATH "NetCDF installation prefix")
 
-# ExodusII
-set(ExodusII_DIR @TPL_INSTALL_PREFIX@ CACHE PATH "ExodusII installation prefix")
-
 # MSTK
 set(MSTK_INCLUDE_DIR @MSTK_INCLUDE_DIR@ CACHE PATH "MSTK include installation path")
 set(MSTK_LIBRARY_DIR @MSTK_LIBRARY_DIR@ CACHE PATH "MSTK include installation path")
@@ -99,7 +96,6 @@ set(MSTK_VERSION @MSTK_VERSION@ CACHE STRING "MSTK Version string")
 # Silo
 set(ENABLE_Silo @ENABLE_Silo@ CACHE BOOL "Build Silo output options")
 set(Silo_DIR @Silo_DIR@ CACHE PATH "Silo installation prefix")
-
 
 # MOAB
 set(MOAB_DIR @TPL_INSTALL_PREFIX@ CACHE PATH "MOAB installation prefix")
@@ -113,6 +109,9 @@ set(ENABLE_HYPRE @ENABLE_HYPRE@ CACHE BOOL "Enable HYPRE (Ifpack) solver interfa
 
 # Trilinos
 set(Trilinos_INSTALL_PREFIX @Trilinos_INSTALL_PREFIX@ CACHE PATH "Trilinos installation prefix")
+
+# SEACAS 
+set(SEACAS_DIR @SEACAS_DIR@ CACHE PATH "SEACAS installation prefix")
 
 # XERCES
 set(XERCES_DIR @TPL_INSTALL_PREFIX@ CACHE PATH "XERCES installation prefix")

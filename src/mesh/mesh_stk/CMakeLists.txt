@@ -30,7 +30,7 @@ include_directories(${EXO_SOURCE_DIR})
 include_directories(${Teuchos_INCLUDE_DIRS})
 include_directories(${Epetra_INCLUDE_DIRS})
 include_directories(${STK_INCLUDE_DIRS})
-include_directories(${ExodusII_INCLUDE_DIRS})
+include_directories(${SEACAS_INCLUDE_DIRS})
 
 #
 # Library: stk_mesh
@@ -39,7 +39,7 @@ file(GLOB stk_mesh_files "*.cc")
 file(GLOB stk_inc_files "*.hh")
 add_amanzi_library(stk_mesh
                    SOURCE ${stk_mesh_files} HEADERS ${stk_inc_files}
-                   LINK_LIBS geometry mesh mesh_data ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES} ${STK_LIBRARIES} ${ExodusII_LIBRARIES})
+                   LINK_LIBS geometry mesh mesh_data ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES} ${STK_LIBRARIES} ${SEACAS_LIBRARIES})
 
 if (BUILD_TESTS)
 

@@ -1,0 +1,20 @@
+Binary files unittest-cpp-2.0.0/tests/.TestTest.cpp.un~ and unittest-2.0.0-source/tests/.TestTest.cpp.un~ differ
+diff -ruNbB unittest-cpp-2.0.0/tests/TestTest.cpp unittest-2.0.0-source/tests/TestTest.cpp
+--- unittest-cpp-2.0.0/tests/TestTest.cpp	2017-07-08 09:06:47.000000000 -0600
++++ unittest-2.0.0-source/tests/TestTest.cpp	2017-08-25 21:09:30.000000000 -0600
+@@ -75,6 +75,7 @@
+ #if !defined(UNITTEST_MINGW) && !defined(UNITTEST_WIN32)
+ // Skip this test in debug because some debuggers don't like it.
+ #if defined(NDEBUG)
++   /* Result of cast is underfined and compiler dependent.
+    TEST(CrashingTestsAreReportedAsFailures)
+    {
+       class CrashingTest : public Test
+@@ -96,6 +97,7 @@
+ 
+       CHECK_EQUAL(1, results.GetFailureCount());
+    }
++   */
+ #endif
+ #endif
+ #endif
