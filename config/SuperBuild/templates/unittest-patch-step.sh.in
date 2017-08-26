@@ -4,9 +4,9 @@
 # Replaces each @VAR@ with value of ${VAR}
 
 # Source and build locations
-unittest_src_dir=@UNITTEST_source_dir@
+unittest_src_dir=@UnitTest_source_dir@
 
-patch_file=@SuperBuild_SOURCE_DIR@/templates/@UNITTEST_patch_file@
+patch_file=@SuperBuild_SOURCE_DIR@/templates/@UnitTest_patch_file@
 
 if [ ! -e "${patch_file}" ] ; then
   echo "Patch file ${patch_file} does not exist"

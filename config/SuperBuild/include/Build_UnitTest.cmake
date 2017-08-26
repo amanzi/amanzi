@@ -89,6 +89,7 @@ ExternalProject_add(${UnitTest_BUILD_TARGET}
                     DOWNLOAD_DIR ${TPL_DOWNLOAD_DIR}                  # Download directory
                     URL          ${UnitTest_URL}                      # URL may be a web site OR a local file
                     URL_MD5      ${UnitTest_MD5_SUM}                  # md5sum of the archive file
+                    PATCH_COMMAND ${UnitTest_PATCH_COMMAND}           # Mods to source
 		    # -- Configure
 		    SOURCE_DIR          ${UnitTest_source_dir}        # Defining forces CMake to mkdir SOURCE_DIR
 		    CMAKE_ARGS          ${Unittest_Config_File_ARGS}
