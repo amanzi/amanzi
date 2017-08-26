@@ -72,7 +72,7 @@ function(preprocess_boxlib_fortran OUTVAR)
 
       add_custom_command(
         OUTPUT ${of}
-        COMMAND ${CMAKE_C_COMPILER} -E ${PREPROCESS_FLAGS} ${inclflags} ${defflags} ${f} |
+	COMMAND ${CMAKE_Fortran_COMPILER} -E ${PREPROCESS_FLAGS} ${inclflags} ${defflags} ${f} |
                  ${PERL_EXECUTABLE} ${CCSE_PERL_DIR}/strip72 -c > ${of}
         DEPENDS ${f}
         COMMENT "Preprocessing ${f}..."
