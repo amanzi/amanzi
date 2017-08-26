@@ -516,8 +516,7 @@ endif()
 include(${SuperBuild_BUILD_FILES_DIR}/Build_CURL.cmake)
 
 # UnitTest
-append_set(Amanzi_TPL_CMAKE_ARGS
-    -DENABLE_TEST:BOOL=${ENABLE_TESTS})
+append_set(Amanzi_TPL_CMAKE_ARGS -DENABLE_TEST:BOOL=${ENABLE_TESTS})
 if (ENABLE_TESTS)
     include(${SuperBuild_BUILD_FILES_DIR}/Build_UnitTest.cmake)
     append_set(Amanzi_TPL_CMAKE_ARGS 
@@ -529,7 +528,7 @@ set(CCSE_BL_SPACEDIM_DFLT 2)
 if(NOT CCSE_BL_SPACEDIM )
     set(CCSE_BL_SPACEDIM ${CCSE_BL_SPACEDIM_DFLT})
 endif()
-if ( ENABLE_Structured )
+if (ENABLE_Structured)
     include(${SuperBuild_BUILD_FILES_DIR}/Build_CCSE.cmake) 
     append_set(Amanzi_TPL_CMAKE_ARGS
         -DCCSE_DIR:FILEPATH=${TPL_INSTALL_PREFIX}

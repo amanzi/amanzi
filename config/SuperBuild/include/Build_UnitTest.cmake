@@ -59,15 +59,28 @@ if(Unittest_Build_Config_File)
     message(DEBUG "Unittest_CMAKE_EXTRA_ARGS = ${Unittest_CMAKE_EXTRA_ARGS}")
 endif()    
 
-#  - Final CMake Arguments 
+# Patch unittest code
+set(UnitTest_patch_file unittest-cmake.patch)
+set(UnitTest_sh_patch ${UnitTest_prefix_dir}/unittest-patch-step.sh)
+configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/unittest-patch-step.sh.in
+               ${UnitTest_sh_patch}
+               @ONLY)
+# --- configure the CMake patch step
+set(UnitTest_cmake_patch ${UnitTest_prefix_dir}/unittest-patch-step.cmake)
+configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/unittest-patch-step.cmake.in
+               ${UnitTest_cmake_patch}
+               @ONLY)
+# --- set the patch command
+set(UnitTest_PATCH_COMMAND ${CMAKE_COMMAND} -P ${UnitTest_cmake_patch})
+
+
+# --- Add external project build 
 set(Unittest_CMAKE_ARGS 
    ${Unittest_CMAKE_PACKAGE_ARGS}
    ${Unittest_CMAKE_TPL_ARGS}
    ${Unittest_CMAKE_EXTRA_ARGS}
    ${Unittest_CMAKE_LANG_ARGS})
 
-
-# --- Add external project build and tie to the ZLIB build target
 ExternalProject_add(${UnitTest_BUILD_TARGET}
                     DEPENDS   ${UnitTest_PACKAGE_DEPENDS}             # Package dependency target
                     TMP_DIR   ${UnitTest_tmp_dir}                     # Temporary files directory

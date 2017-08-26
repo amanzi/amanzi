@@ -3,24 +3,16 @@
 # CMake generates this file 
 # Replaces each @VAR@ with value of ${VAR}
 
-# Change the compiler, C++ flags
-cxx_compiler=@CMAKE_CXX_COMPILER@
-cxx_flags='@Amanzi_COMMON_CXXFLAGS@'
-ldflags='-L@TPL_INSTALL_PREFIX@/lib @CMAKE_CXX_LINK_FLAGS@'
+# Source and build locations
+unittest_src_dir=@UNITTEST_source_dir@
 
-# Set the Makefile
-make_file=@UnitTest_source_dir@/Makefile
+patch_file=@SuperBuild_SOURCE_DIR@/templates/@UNITTEST_patch_file@
 
-echo "Patching file ${make_file}"
-@PERL_EXECUTABLE@ -p -i -e 's/\r\n$/\n/g' ${make_file}
-@PERL_EXECUTABLE@ -w -i -p -e "s:^CXX[\s]{0,}=.*:CXX = ${cxx_compiler}:" ${make_file}
-@PERL_EXECUTABLE@ -w -i -p -e "s:^CXXFLAGS[\s]{0,}\?=.*:CXXFLAGS ?= ${cxx_flags}:" ${make_file}
-@PERL_EXECUTABLE@ -w -i -p -e "s:^LDFLAGS[\s]{0,}\?=.*:LDFLAGS ?= ${ldflags}:" ${make_file}
+if [ ! -e "${patch_file}" ] ; then
+  echo "Patch file ${patch_file} does not exist"
+  exit 10
+fi
 
-# TestTestRunner.cpp has a bug in it which is described here:
-# http://comments.gmane.org/gmane.comp.lang.c%2B%2B.unittest%2B%2B.devel/394
-# We copy a fixed version into place before building unittest++.
-cp @SuperBuild_TEMPLATE_FILES_DIR@/unittest-TestTestRunner.cpp @UnitTest_source_dir@/src/tests/TestTestRunner.cpp
-cp @SuperBuild_TEMPLATE_FILES_DIR@/unittest-TestTestMacros.cpp @UnitTest_source_dir@/src/tests/TestTestMacros.cpp
-
+cd ${unittest_src_dir}
+patch -p1 < ${patch_file}
 exit $?
