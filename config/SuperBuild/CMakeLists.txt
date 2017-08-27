@@ -305,11 +305,10 @@ if ( NOT MPI_WRAPPERS_IN_USE AND NOT BUILD_MPI )
       message(STATUS "Update CMAKE_${lang}_FLAGS: ${CMAKE_${lang}_FLAGS}")
     endif()  
 
-
   endforeach()
-
   
 endif()
+
 
 # --- Define which compilers to use in MPI dependent projects
 #     If building MPI as an external project use MPI_* compiler
