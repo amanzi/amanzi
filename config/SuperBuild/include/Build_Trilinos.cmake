@@ -57,13 +57,6 @@ endif()
 # defining HAVE_TEUCHOS_ARRAY_BOUNDSCHECK.
 list(APPEND Trilinos_CMAKE_PACKAGE_ARGS "-DTeuchos_ENABLE_ABC:BOOL=ON")
 
-# Force STK to use Exodus from SEACAS
-if ( ENABLE_STK_Mesh )
-  list(APPEND Trilinos_CMAKE_PACKAGE_ARGS "-DTrilinos_ENABLE_SEACAS:STRING=ON")
-  list(APPEND Trilinos_CMAKE_PACKAGE_ARGS "-DSTK_ENABLE_SEACASExodus:STRING=ON")
-  list(APPEND Trilinos_CMAKE_PACKAGE_ARGS "-DSTK_ENABLE_SEACASNemesis:STRING=ON")
-endif()
-
 # Disable Pamgen ( doesn't compile with gnu++14 standard )
 list(APPEND Trilinos_CMAKE_PACKAGE_ARGS "-DTrilinos_ENABLE_Pamgen:STRING=OFF")
 
@@ -267,7 +260,7 @@ ExternalProject_Add(${Trilinos_BUILD_TARGET}
                                         ${Trilinos_CMAKE_ARGS}
                                         -DCMAKE_INSTALL_PREFIX:PATH=<INSTALL_DIR>
 					-DTrilinos_ENABLE_Stratimikos:BOOL=FALSE
-					-DTPL_ENABLE_Matio:BOOL=FALSE
+					-DTrilinos_ENABLE_SEACAS:BOOL=FALSE
                     # -- Build
                     BINARY_DIR        ${Trilinos_build_dir}        # Build directory 
                     BUILD_COMMAND     $(MAKE)                      # $(MAKE) enables parallel builds through make
