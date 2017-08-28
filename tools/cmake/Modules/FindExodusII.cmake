@@ -76,7 +76,7 @@ else(ExodusII_LIBRARIES AND ExodusII_INCLUDE_DIRS)
             set(ExodusII_INCLUDE_DIR "ExodusII_INCLUDE_DIR-NOTFOUND")
         endif()
 
-   else() 
+    else() 
 
         set(exodus_inc_suffixes "include")
         if(ExodusII_DIR)

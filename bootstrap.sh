@@ -1235,6 +1235,7 @@ if [ -z "${tpl_config_file}" ]; then
       -DCMAKE_C_COMPILER:STRING=${build_c_compiler} \
       -DCMAKE_CXX_COMPILER:STRING=${build_cxx_compiler} \
       -DCMAKE_Fortran_COMPILER:STRING=${build_fort_compiler} \
+      -DMPI_PREFIX:STRING="${mpi_root_dir}" \
       -DTPL_INSTALL_PREFIX:STRING=${tpl_install_prefix} \
       -DENABLE_Structured:BOOL=${structured} \
       -DENABLE_Unstructured:BOOL=${unstructured} \

@@ -75,7 +75,8 @@ def verify_params(dict):
     '''
     
     # List of parameter names to search for
-    params = ['nrows','ncols','input_bnds','export_name','dx','dy','height','minx','miny']
+    params = ['nrows','ncols','input_bnds','export_name','dx','dy','height','minx','miny',\
+                'exo_file']
     
     # Default values for select parameters
     default = {'dx':100,'dy':100,'minx':0,'miny':0,'export_name':'modflow_out.inp','input_bnds':'init_bnds.inf'}
@@ -95,6 +96,19 @@ def verify_params(dict):
                     print("ERROR: Unable to continue without {} value".format(key))
                     exit(1)
                     
+def write_fs_file(l):
+    commands = ["cmo / copy / mo_tmp / mo_surf",\
+    "cmo / select / mo_tmp",\
+    "eltset / e_keep / id_side / eq / SS_ID",\
+    "eltset / e_delete / not / e_keep",\
+    "rmpoint / element / eltset get e_delete",\
+    "rmpoint / compress",\
+    "cmo / DELATT / mo_tmp / id_side",\
+    "dump / avs2 / FILENAME / mo_tmp / 0 0 0 2",\
+    "cmo / delete / mo_tmp"]
+    
+    for command in commands:
+        l.sendline(command)
 
 # Main function
 def main(argv=None):
@@ -125,50 +139,39 @@ def main(argv=None):
     llcorner = [float(params['minx']),float(params['miny'])]
     D_XY=[float(params['dx']),float(params['dy'])]
     
-    # Edit later - initialize faceset variables
-    ibnd = {"active": 1, "noflow": 0, "head": -1, "edge": -2, "halite": -3}
-    imat = {"active": 1, "noflow": 2, "head":  3, "edge":  4, "halite":  3}
+    # IBND and IMAT materials properties
+    ibnd = {"active": int(params['ibnd_active']), "noflow": int(params['ibnd_noflow']),\
+            "head": int(params['ibnd_head']), "edge": int(params['ibnd_edge']), "halite": int(params['ibnd_halite'])}
+    imat = {"active": int(params['imat_active']), "noflow": int(params['imat_noflow']),\
+            "head": int(params['imat_head']), "edge": int(params['imat_edge']), "halite": int(params['imat_halite'])}
+
+    # Cycle through these keys instead of dictionary to preserve sequence
+    mat_keys = ['active','noflow','head','edge','halite']
+
+    fs_bottom = int(params['fs_bottom'])
+    fs_top = int(params['fs_top'])
+    fs_east = int(params['fs_east'])
+    fs_north = int(params['fs_north'])
+    fs_west = int(params['fs_west'])
+    fs_south = int(params['fs_south'])
+    fs_halite = int(params['fs_halite'])
+    fs_head = int(params['fs_head'])
+    fs_noflow = int(params['fs_noflow'])
     
-    '''
-    ibnd_active = 1
-    ibnd_noflow = 0
-    ibnd_head   = -1
-    ibnd_edge   = -2
-    ibnd_halite = -3
+    rmmat_edge = int(params['rmmat_edge'])
+    maxmat = int(params['maxmat'])
     
-    imat_active = 1
-    imat_noflow = 2
-    imat_head   = 3
-    imat_halite = 3
-    imat_edge   = 4
-    '''
-    
-    fs_bottom = 1
-    fs_top    = 2
-    fs_east   = 3
-    fs_north  = 4
-    fs_west   = 5
-    fs_south  = 6
-    fs_halite = 7
-    fs_head   = 7
-    fs_noflow = 8
-    
-    rmmat_edge = 4
-    maxmat = 1
+    EXO_FILE=params['exo_file']
     
     # Generate hexmesh with cell-centered materials and optional elevation
     hexmesh = l.read_modflow(input_bnds, nrows, ncols, DXY=D_XY, name=MESH_NAME)
     
     # Eltset stuff
+    for i, key in enumerate(mat_keys):
+        hexmesh.eltset_attribute("mod_bnds", ibnd[key], boolstr='eq', name="e{}".format(i+1))
+        hexmesh.setatt("itetclr",imat[key],stride=["eltset","get","e{}".format(i+1)])
     
-    # Cycle through all IMAT/IBND values and create & set eltsets
-    i = 0
-    for ibnd_key in ibnd:
-        for imat_key in imat:
-            if ibnd_key == imat_key:
-                i += 1
-                hexmesh.eltset_attribute("mod_bnds", ibnd[key], boolstr='eq', name="e{}".format(i))
-                hexmesh.setatt("itetclr",imat[key],stride=["eltset","get","e{}".format(i)])
+    l.sendline('cmo/select/{}'.format(hexmesh.name)) # tmp ---------------------------------------------------
     
     # Remove edge cells
     hexmesh.eltset_attribute("itetclr",rmmat_edge,boolstr='eq',name="eremove") # Find edge cells
@@ -176,10 +179,99 @@ def main(argv=None):
     hexmesh.rmpoint_compress(filter_bool=False, resetpts_itp=True) # compress and reset
     
     # Temp facesets for internal side interfaces
-    hexmesh.resetpts_itp()
+    mo_sides = l.extract_surfmesh(name="mo_sides",cmo_in=hexmesh,stride=[1,0,0],append='-all-',reorder=False,resetpts_itp=False)
+    l.sendline("cmo/select/mo_sides")
     
-    l.sendline("extract/surfmesh/1 0 0/mo_sides/{}/-all-".format(hexmesh.name))
+    # Create psets from attributes 1 & 2
+    ptop = mo_sides.pset_attribute("pts_topbot",2,comparison='eq',stride=(1,0,0),name="ptop")
+    pbot = mo_sides.pset_attribute("pts_topbot",1,comparison='eq',stride=(1,0,0),name="pbot")
     
+    # Generate eltsets from psets
+    etop = ptop.eltset(membership='exclusive',name='etop')
+    ebot = pbot.eltset(membership='exclusive',name='ebot')
+    
+    # Create a single eltset from the above two & remove
+    e_delete = mo_sides.eltset_bool([etop,ebot],boolstr='union',name='e_delete')
+    mo_sides.rmpoint_eltset("e_delete",compress=True,resetpts_itp=False)
+    
+    # NOFLOW faces (west corner)
+    mo_tmp = l.copy(mo_sides, name="mo_tmp")
+    edel = mo_tmp.eltset_attribute("itetclr0",imat["noflow"],boolstr='ne',name='edel')
+    mo_tmp.rmpoint_eltset("edel",compress=True,resetpts_itp=True)
+    mo_fs1 = l.copy(mo_tmp,name="mo_fs1")
+    mo_tmp.delete()
+    
+    # Halite faces (eastern curve)
+    mo_tmp = l.copy(mo_sides,name="mo_tmp")
+    l.sendline("cmo/select/mo_tmp")
+    edel = mo_tmp.eltset_attribute("itetclr0",imat["halite"],boolstr='ne',name='edel')
+    mo_tmp.rmpoint_eltset("edel",compress=True,resetpts_itp=True)
+    mo_fs2 = l.copy(mo_tmp,name="mo_fs2")
+    mo_tmp.delete()
+    
+    mo_sides.delete()
+    
+    l.sendline("cmo/select/{}".format(hexmesh.name))
+    edel = hexmesh.eltset_attribute("itetclr",maxmat,boolstr='gt',name='edel')
+    hexmesh.rmpoint_eltset("edel",compress=True,resetpts_itp=True)
+    
+    # Final facesets for cropped mesh
+    mo_surf = l.extract_surfmesh(name="mo_surf",cmo_in=hexmesh,stride=[1,0,0],append='external',reorder=False,resetpts_itp=False)
+    mo_surf.addatt("id_normal",vtype='vint',rank='scalar',length='nelements',interpolate='',persistence='',ioflag='',value='')
+    mo_surf.addatt("id_tmp",vtype='vint',rank='scalar',length='nelements',interpolate='',persistence='',ioflag='',value='')
+    l.sendline("cmo/select/mo_surf")
+    mo_surf.settets(method='normal')
+    mo_surf.copyatt('itetclr',attname_sink='id_normal',mo_src=mo_surf)
+    
+    # Tag top and bottom face sets
+    ptop = mo_surf.pset_attribute("pts_topbot",2,comparison='eq',stride=(1,0,0),name="ptop")
+    pbot = mo_surf.pset_attribute("pts_topbot",1,comparison='eq',stride=(1,0,0),name="pbot")
+    etop = ptop.eltset(membership='exclusive',name='etop')
+    ebot = pbot.eltset(membership='exclusive',name='ebot')
+    mo_surf.setatt("itetclr",2,stride=["eltset","get","etop"])
+    mo_surf.setatt("itetclr",1,stride=["eltset","get","ebot"])
+    
+    mo_fs1.setatt("itetclr",1)
+    mo_surf.setatt("id_tmp",0)
+    mo_surf.interpolate('map','id_tmp',mo_fs1,'itetclr',stride=[1,0,0])
+    etmp = mo_surf.eltset_attribute('id_tmp',1,boolstr='eq',name='etmp')
+    mo_surf.setatt('itetclr',fs_noflow,stride=['eltset','get','etmp'])
+    etmp.delete()
+
+    # Interface between material 1 and halite and head cells
+    mo_fs2.setatt('itetclr',1)
+    mo_surf.setatt('id_tmp',0)
+    mo_surf.interpolate('map','id_tmp',mo_fs2,'itetclr',stride=[1,0,0])
+    etmp = mo_surf.eltset_attribute('id_tmp',1,boolstr='eq',name='etmp')
+    mo_surf.setatt('itetclr',fs_halite,stride=['eltset','get','etmp'])
+    etmp.delete()
+
+    mo_surf.addatt('id_side',vtype='VINT',rank='scalar',length='nelements',interpolate='',persistence='',ioflag='',value='')
+    mo_surf.copyatt('itetclr',attname_sink='id_side',mo_src=mo_surf)
+    
+    # Check for continuous connected boundary of 1
+    mo_chk = l.copy(mo_surf,name='mo_chk')
+    l.boundary_components(style='element',reset=False)
+    mo_chk.delete()
+    
+    # Make sure to remove all attributes except idelem1 and idface1
+    bad_atts = ['id_normal','itetclr0','idnode0','idelem0','facecol','itetclr1','idface0','id_tmp','ncon50','nconbnd','icontab']
+    for att in bad_atts:
+        mo_surf.delatt(att)
+    
+    l.sendline("cmo/select/mo_surf")
+    filenames = ['bottom','top','east','north','west','south','head','noflow']
+    ss_ids = [1,2,3,4,5,6,7,8]
+    
+    # WRITE ALL FACESET FILES
+    for i in range(0,len(ss_ids)):
+        l.sendline('define/FILENAME/fs_{}.faceset'.format(filenames[i]))
+        l.sendline('define/SS_ID/{}'.format(ss_ids[i]))
+        write_fs_file(l)
+    
+    
+    #hexmesh.dump_exo(EXO_FILE,facesets=['fs_bottom.faceset','fs_top.faceset','fs_east.faceset'])
+    l.sendline('dump / exo / {} / {} / / / facesets &\n fs_bottom.faceset fs_top.faceset fs_east.faceset &\n fs_north.faceset fs_west.faceset fs_south.faceset &\n fs_head.faceset fs_noflow.faceset'.format(EXO_FILE, hexmesh.name))
     
     hexmesh.dump_avs2(export_name)
     

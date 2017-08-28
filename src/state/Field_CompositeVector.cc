@@ -525,11 +525,12 @@ void Field_CompositeVector::ReadVariableFromExodusII_(Teuchos::ParameterList& fi
                        &num_elem_blk, &num_node_sets, &num_side_sets); 
  
     int* ids = (int*) calloc(num_elem_blk, sizeof(int)); 
-    ierr = ex_get_elem_blk_ids(exoid, ids); 
+    ierr = ex_get_ids(exoid, EX_ELEM_BLOCK, ids); 
  
     // read number of variables 
     int num_vars;
-    ierr = ex_get_var_param(exoid, "e", &num_vars);
+    auto obj_type = ex_var_type_to_ex_entity_type('e');
+    ierr = ex_get_variable_param(exoid, obj_type, &num_vars);
     if (ierr < 0) printf("Exodus file has no variables.\n");
 
     char* var_names[num_vars];
@@ -537,7 +538,8 @@ void Field_CompositeVector::ReadVariableFromExodusII_(Teuchos::ParameterList& fi
       var_names[i] = (char*) calloc ((MAX_STR_LENGTH+1), sizeof(char));
     }
 
-    ierr = ex_get_var_names(exoid, "e", num_vars, var_names);
+    obj_type = ex_var_type_to_ex_entity_type('e');
+    ierr = ex_get_variable_names(exoid, obj_type, num_vars, var_names);
     if (ierr < 0) printf("Exodus file cannot read variable names.\n");
 
     int var_index(-1), ncells;
@@ -554,11 +556,11 @@ void Field_CompositeVector::ReadVariableFromExodusII_(Teuchos::ParameterList& fi
       char elem_type[MAX_LINE_LENGTH + 1]; 
       for (int i = 0; i < num_elem_blk; i++) { 
         int num_elem_this_blk, num_attr, num_nodes_elem; 
-        ierr = ex_get_elem_block(exoid, ids[i], elem_type, &num_elem_this_blk, 
-                                 &num_nodes_elem, &num_attr); 
+        ierr = ex_get_block(exoid, EX_ELEM_BLOCK, ids[i], elem_type, &num_elem_this_blk, 
+                            &num_nodes_elem, 0, 0, &num_attr); 
  
         double* var_values = (double*) calloc(num_elem_this_blk, sizeof(double)); 
-        ierr = ex_get_elem_var(exoid, 1, var_index, ids[i], num_elem_this_blk, var_values); 
+        ierr = ex_get_var(exoid, 1, EX_ELEM_BLOCK, var_index, ids[i], num_elem_this_blk, var_values); 
  
         for (int n = 0; n < num_elem_this_blk; n++) { 
           int c = n + offset; 

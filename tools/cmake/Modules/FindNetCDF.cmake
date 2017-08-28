@@ -349,17 +349,6 @@ if ( NetCDF_FIND_COMPONENTS )
 
 endif(NetCDF_FIND_COMPONENTS )    
 
-
-
-# Summary print out if NOT QUIET
-_netcdf_status("NetCDF Package:")
-_netcdf_status("              NetCDF_VERSION=${NetCDF_VERSION}")
-_netcdf_status("              NetCDF_INCLUDE_DIRS=${NetCDF_INCLUDE_DIRS}")
-_netcdf_status("              NetCDF_C_LIBRARIES=${NetCDF_C_LIBRARIES}")
-if ( NetCDF_CXX_FOUND )
-  _netcdf_status("              NetCDF_CXX_LIBRARIES=${NetCDF_CXX_LIBRARIES}")
-endif()
-
 # Send useful message if everything is found
 find_package_handle_standard_args(NetCDF DEFAULT_MSG
                                            NetCDF_VERSION
