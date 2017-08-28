@@ -259,4 +259,6 @@ std::ostream& operator<<(std::ostream& os, const NLScontrol& rhs)
   os << "  time_step_retry_factor_2 = " << rhs.time_step_retry_factor_2 << "\n";
   os << "  time_step_retry_factor_f = " << rhs.time_step_retry_factor_f << "\n";
   os << "}";
+
+  return os;
 }
