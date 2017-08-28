@@ -189,7 +189,6 @@ Parallel_Exodus_file::read_mesh(void)
 Teuchos::RCP<Epetra_Map>
 Parallel_Exodus_file::cellmap(void)
 {
-
   if (my_mesh.is_null()) {
     read_mesh();
   }
@@ -198,8 +197,7 @@ Parallel_Exodus_file::cellmap(void)
 
   std::vector<int> gids(myelem);
 
-  int ret_val = 
-    ex_get_elem_num_map(my_file->id, &gids[0]);
+  int ret_val = ex_get_id_map(my_file->id, EX_ELEM_MAP, &gids[0]);
   if (ret_val < 0) {
     std::string msg = 
       boost::str(boost::format("%s: error: cannot read element number map (%d)") %
@@ -214,13 +212,13 @@ Parallel_Exodus_file::cellmap(void)
   return cmap;
 }
 
+
 // -------------------------------------------------------------
 // Parallel_Exodus_file::vertexmap
 // -------------------------------------------------------------
 Teuchos::RCP<Epetra_Map>
 Parallel_Exodus_file::vertexmap(void)
 {
-
   if (my_mesh.is_null()) {
     read_mesh();
   }
@@ -229,8 +227,7 @@ Parallel_Exodus_file::vertexmap(void)
 
   std::vector<int> gids(myvert);
 
-  int ret_val = 
-    ex_get_node_num_map(my_file->id, &gids[0]);
+  int ret_val = ex_get_id_map(my_file->id, EX_NODE_MAP, &gids[0]);
   if (ret_val < 0) {
     std::string msg = 
       boost::str(boost::format("%s: error: cannot read vertex number map (%d)") %

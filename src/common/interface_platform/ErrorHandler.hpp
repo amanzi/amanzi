@@ -17,7 +17,7 @@ class AmanziErrorHandler : public xercesc::ErrorHandler
         void reportParseException(const xercesc::SAXParseException& ex)
         {
             char* msg = xercesc::XMLString::transcode(ex.getMessage());
-            fprintf(stderr, " at line %llu column %llu, %s\n",
+            fprintf(stderr, " at line %lu column %lu, %s\n",
                     ex.getLineNumber(), ex.getColumnNumber(), msg);
             xercesc::XMLString::release(&msg);
         }
@@ -27,7 +27,7 @@ class AmanziErrorHandler : public xercesc::ErrorHandler
         {
             //reportParseException(ex);
             char* msg = xercesc::XMLString::transcode(ex.getMessage());
-            fprintf(stderr, "WARNING at line %llu column %llu, %s\n",
+            fprintf(stderr, "WARNING at line %lu column %lu, %s\n",
                     ex.getLineNumber(), ex.getColumnNumber(), msg);
             xercesc::XMLString::release(&msg);
         }
@@ -36,7 +36,7 @@ class AmanziErrorHandler : public xercesc::ErrorHandler
         {
             //reportParseException(ex);
             char* msg = xercesc::XMLString::transcode(ex.getMessage());
-            fprintf(stderr, "ERROR at line %llu column %llu, %s\n",
+            fprintf(stderr, "ERROR at line %lu column %lu, %s\n",
                     ex.getLineNumber(), ex.getColumnNumber(), msg);
             xercesc::XMLString::release(&msg);
 	    Exceptions::amanzi_throw(Errors::Message("Errors occured while parsing the input file. Aborting."));
@@ -46,7 +46,7 @@ class AmanziErrorHandler : public xercesc::ErrorHandler
         {
             //reportParseException(ex);
             char* msg = xercesc::XMLString::transcode(ex.getMessage());
-            fprintf(stderr, "FATAL ERROR at line %llu column %llu, %s\n",
+            fprintf(stderr, "FATAL ERROR at line %lu column %lu, %s\n",
                     ex.getLineNumber(), ex.getColumnNumber(), msg);
             xercesc::XMLString::release(&msg);
 	    Exceptions::amanzi_throw(Errors::Message("Errors occured while parsing the input file. Aborting."));

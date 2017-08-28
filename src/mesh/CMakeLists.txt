@@ -77,7 +77,6 @@ add_subdirectory(mesh_factory)
 add_subdirectory(mesh_logical)
 
 
-
 if (BUILD_TESTS)
 
     # Include dirs for test
@@ -85,8 +84,6 @@ if (BUILD_TESTS)
     include_directories(${MESH_FACTORY_SOURCE_DIR})
     include_directories(${GEOMETRY_SOURCE_DIR})
     include_directories(${Epetra_INCLUDE_DIRS})
-
-    # Add UnitTest ExodusII include directories
     include_directories(${UnitTest_INCLUDE_DIRS})
 
     # Need to copy files for the tests 
