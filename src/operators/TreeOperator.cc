@@ -124,7 +124,7 @@ int TreeOperator::ApplyInverse(const TreeVector& X, TreeVector& Y) const
     for (int n = 0; n < tvs_->size(); ++n) {
       const CompositeVector& Xn = *X.SubVector(n)->Data();
       CompositeVector& Yn = *Y.SubVector(n)->Data();
-      code != blocks_[n][n]->ApplyInverse(Xn, Yn);
+      code |= blocks_[n][n]->ApplyInverse(Xn, Yn);
     }
   }
 

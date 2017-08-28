@@ -135,6 +135,8 @@ int CopyCompositeVectorToSuperVector(const SuperMap& smap, const CompositeVector
       for (int n = 0; n != data.MyLength(); ++n) sv[inds[n]] = data[k][n];
     }
   }
+
+  return 0;
 }
 
 
@@ -153,6 +155,8 @@ int CopySuperVectorToCompositeVector(const SuperMap& smap, const Epetra_Vector& 
       for (int n = 0; n != data.MyLength(); ++n) data[k][n] = sv[inds[n]];
     }
   }
+
+  return 0;
 }
 
 

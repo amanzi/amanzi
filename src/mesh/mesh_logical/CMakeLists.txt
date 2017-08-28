@@ -70,7 +70,7 @@ if (BUILD_TESTS)
    include_directories(${GEOMETRY_SOURCE_DIR})
    include_directories(${MSTK_INCLUDE_DIRS})
 
-   # Add UnitTest ExodusII include directories
+   # Add UnitTest include directories
    include_directories(${UnitTest_INCLUDE_DIRS})
 
    # Test link libraries

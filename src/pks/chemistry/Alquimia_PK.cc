@@ -19,7 +19,6 @@
 #include <string>
 
 // TPLs
-#include "boost/mpi.hpp"
 #include "boost/algorithm/string.hpp"
 #include "Epetra_MultiVector.h"
 #include "Epetra_Vector.h"

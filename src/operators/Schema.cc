@@ -218,6 +218,7 @@ std::string Schema::KindToString(AmanziMesh::Entity_kind kind) const
   } else if (kind == AmanziMesh::CELL) {
     return "cell";
   }
+  return "null";
 }
 
 
@@ -252,6 +253,7 @@ int Schema::StringToType(std::string& name) const
   } else if (name == "normal component") {
     return SCHEMA_DOFS_NORMAL_COMPONENT;
   }
+  return -1;
 }
 
 
