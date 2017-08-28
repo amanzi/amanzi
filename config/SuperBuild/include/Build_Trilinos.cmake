@@ -267,6 +267,7 @@ ExternalProject_Add(${Trilinos_BUILD_TARGET}
                                         ${Trilinos_CMAKE_ARGS}
                                         -DCMAKE_INSTALL_PREFIX:PATH=<INSTALL_DIR>
 					-DTrilinos_ENABLE_Stratimikos:BOOL=FALSE
+					-DTPL_ENABLE_Matio:BOOL=FALSE
                     # -- Build
                     BINARY_DIR        ${Trilinos_build_dir}        # Build directory 
                     BUILD_COMMAND     $(MAKE)                      # $(MAKE) enables parallel builds through make
