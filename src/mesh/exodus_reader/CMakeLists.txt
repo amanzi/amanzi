@@ -30,7 +30,7 @@ include_directories(${MESH_DATA_SOURCE_DIR})
 # External (TPL) include directories
 include_directories(${Teuchos_INCLUDE_DIRS})
 include_directories(${Epetra_INCLUDE_DIRS})
-include_directories(${ExodusII_INCLUDE_DIRS})
+include_directories(${SEACAS_INCLUDE_DIRS})
 
 #
 # Library: exodus_reader
@@ -41,8 +41,7 @@ add_amanzi_library(exodus_reader
                    SOURCE ${exo_source_files} HEADERS ${exo_inc_files}
                    LINK_LIBS 
                       error_handling mesh_data
-                      ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES} ${ExodusII_LIBRARIES} )
-
+                      ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES} ${SEACAS_LIBRARIES})
 
 #
 # Binary: exec_reader
@@ -56,7 +55,6 @@ add_amanzi_executable(exodus_read_test SOURCE test/exodus_read_test.cc LINK_LIBS
 
 
 if (BUILD_TESTS)
-
     # Add the UnitTest directory to the include paths
     include_directories(${UnitTest_INCLUDE_DIRS})
 

@@ -7470,7 +7470,7 @@ PorousMedia::derive_Aqueous_Pressure(Real      time,
     mf.mult(BL_ONEATM,dcomp,ncomp,ngrow);
   }
   else {
-    BoxLib::Abort(std::string("PorousMedia:: Aqueous_Pressure not yet implemented for " + flow_model).c_str());
+    BoxLib::Abort(std::string("PorousMedia:: Aqueous_Pressure not yet implemented for " + std::to_string(flow_model)).c_str());
   }
 }
 
@@ -7490,7 +7490,7 @@ PorousMedia::derive_Capillary_Pressure(Real      time,
     mf.mult(-BL_ONEATM,dcomp,ncomp,ngrow);
   }
   else {
-    BoxLib::Abort(std::string("PorousMedia:: Capillary_Pressure not yet implemented for " + flow_model).c_str());
+    BoxLib::Abort(std::string("PorousMedia:: Capillary_Pressure not yet implemented for " + std::to_string(flow_model)).c_str());
   }
 }
 
@@ -7528,7 +7528,7 @@ PorousMedia::derive_Hydraulic_Head(Real      time,
     }
   }
   else {
-    BoxLib::Abort(std::string("PorousMedia:: Hydraulic_Head not yet implemented for " + flow_model).c_str());
+    BoxLib::Abort(std::string("PorousMedia:: Hydraulic_Head not yet implemented for " + std::to_string(flow_model)).c_str());
   }
 }
 
@@ -7550,7 +7550,7 @@ PorousMedia::derive_Aqueous_Volumetric_Flux(Real      time,
   }
   else {
     BoxLib::Abort(std::string("PorousMedia::derive: Aqueous_Volumetric_Flux not yet implemented for "
-			      +flow_model).c_str());
+			      + std::to_string(flow_model)).c_str());
   }
 }
 

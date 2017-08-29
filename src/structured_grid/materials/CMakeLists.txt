@@ -66,7 +66,7 @@ include_directories(${CHEM_INCLUDES_DIR})
 include_directories(${Boost_INCLUDE_DIRS})
 include_directories(${Teuchos_INCLUDE_DIRS})
 include_directories(${Epetra_INCLUDE_DIRS})
-
+include_directories(${PETSC_INCLUDE_DIRS})
 include_directories(${PMAMR_INCLUDE_DIRS})
 
 preprocess_boxlib_fortran(FPP_out_files ${FPP_source_files})
