@@ -68,6 +68,8 @@ function(preprocess_boxlib_fortran OUTVAR)
         list(APPEND PREPROCESS_FLAGS "-traditional")
       elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
         list(APPEND PREPROCESS_FLAGS "-traditional")
+      elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Intel")
+        list(APPEND PREPROCESS_FLAGS "-extend-source")
       endif()
 
       add_custom_command(
