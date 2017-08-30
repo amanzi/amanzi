@@ -58,6 +58,14 @@ void MeshMaps_FEM::VelocityCell(int c, VectorPolynomial& v) const
 
     v[i].monomials(1).coefs()[i] -= 1.0;
   }
+
+  // change form local to global coordinate system
+  mesh0_->node_get_coordinates(nodes[0], &p1);
+  AmanziGeometry::Point zero(0.0, 0.0);
+  for (int i = 0; i < d_; ++i) {
+    v[i].set_origin(-p1);
+    v[i].ChangeOrigin(zero);
+  }
 }
 
 
@@ -123,13 +131,35 @@ void MeshMaps_FEM::Cofactors(int c, double t, MatrixPolynomial& C) const
   mesh1_->node_get_coordinates(nodes[2], &p3);
   mesh1_->node_get_coordinates(nodes[3], &p4);
 
-  AmanziGeometry::Point p21(p2 - p1), p41(p4 - p1), p32(p3 - p2);
+  AmanziGeometry::Point p21(p2 - p1), p41(p4 - p1), p32(p3 - p2), p34(p3 - p4);
   
+  // By our assumption, the Jacobian is constant and diagonal
+  AmanziGeometry::Point xref(0.0, 0.0);
+  Tensor J0 = JacobianValueInternal_(mesh0_, c, xref);
+  J0.Inverse();
+
+  // allocate memory for matrix
+  C.resize(2);
+  for (int i = 0; i < 2; ++i) {
+    C[i].resize(2);
+    for (int j = 0; j < 2; ++j) {
+      C[i][j].Reshape(2, 1);
+    }
+  } 
+
+  // constant part
   C[0][0].monomials(0).coefs()[0] = p41[1];
   C[1][0].monomials(0).coefs()[0] = -p41[0];
 
   C[0][1].monomials(0).coefs()[0] = -p21[1];
   C[1][1].monomials(0).coefs()[0] = p21[0];
+
+  // linear part
+  C[0][0].monomials(1).coefs()[0] = p32[1] - p41[1];
+  C[1][0].monomials(1).coefs()[0] = -(p32[0] - p41[0]);
+
+  C[0][1].monomials(1).coefs()[1] = -(p34[1] - p21[1]);
+  C[1][1].monomials(1).coefs()[1] = p34[0] - p21[0];
 
   for (int i = 0; i < 2; ++i) {
     for (int j = 0; j < 2; ++j) {
@@ -137,6 +167,11 @@ void MeshMaps_FEM::Cofactors(int c, double t, MatrixPolynomial& C) const
     }
     C[i][i].monomials(0).coefs()[0] += 1.0 - t;
   }
+
+for (int i = 0; i < 2; ++i) {
+for (int j = 0; j < 2; ++j) {
+std::cout << "cofactors: c=0" << i << " " << j << "\n" <<  C[i][j] << std::endl;  
+}}
 }
 
 
