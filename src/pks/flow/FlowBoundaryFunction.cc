@@ -15,9 +15,9 @@
 namespace Amanzi {
 namespace Flow {
 
-/* ****************************************************************
-* Extract attributes to setup a submodel.
-**************************************************************** */
+/* ******************************************************************
+* Constructor
+****************************************************************** */
 FlowBoundaryFunction::FlowBoundaryFunction(const Teuchos::ParameterList& plist)
 {
   rainfall_ = false;
@@ -278,7 +278,6 @@ void FlowBoundaryFunction::set_intersection_(const std::vector<AmanziMesh::Entit
                                              const std::vector<AmanziMesh::Entity_ID>& v2, 
                                              std::vector<AmanziMesh::Entity_ID>* vv)
 {
-
   int i(0), j(0), n1, n2;
 
   n1 = v1.size();
