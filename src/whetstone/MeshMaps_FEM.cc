@@ -48,6 +48,7 @@ void MeshMaps_FEM::VelocityCell(int c, VectorPolynomial& v) const
   Tensor J0 = JacobianValueInternal_(mesh0_, c, xref);
   J0.Inverse();
 
+  //calculate map in coordinate system centered at point 1
   v.resize(d_);
   for (int i = 0; i < d_; ++i) {
     v[i].Reshape(d_, 2);
@@ -55,16 +56,19 @@ void MeshMaps_FEM::VelocityCell(int c, VectorPolynomial& v) const
     v[i].monomials(1).coefs()[0] = p21[i] * J0(0, 0);
     v[i].monomials(1).coefs()[1] = p41[i] * J0(1, 1);
     v[i].monomials(2).coefs()[1] = pp[i] * J0(0, 0) * J0(1, 1);
-
-    v[i].monomials(1).coefs()[i] -= 1.0;
   }
 
-  // change form local to global coordinate system
+  // rebase polynomial to global coordinate system
   mesh0_->node_get_coordinates(nodes[0], &p1);
   AmanziGeometry::Point zero(0.0, 0.0);
   for (int i = 0; i < d_; ++i) {
-    v[i].set_origin(-p1);
+    v[i].set_origin(p1);
     v[i].ChangeOrigin(zero);
+  }
+
+  // calculate velocity u(X) = F(X) - X
+  for (int i = 0; i < d_; ++i) {
+    v[i].monomials(1).coefs()[i] -= 1.0;
   }
 }
 
@@ -163,15 +167,10 @@ void MeshMaps_FEM::Cofactors(int c, double t, MatrixPolynomial& C) const
 
   for (int i = 0; i < 2; ++i) {
     for (int j = 0; j < 2; ++j) {
-      C[i][j] *= t;
+      C[i][j] *= t * J0(j, j);
     }
     C[i][i].monomials(0).coefs()[0] += 1.0 - t;
   }
-
-for (int i = 0; i < 2; ++i) {
-for (int j = 0; j < 2; ++j) {
-std::cout << "cofactors: c=0" << i << " " << j << "\n" <<  C[i][j] << std::endl;  
-}}
 }
 
 

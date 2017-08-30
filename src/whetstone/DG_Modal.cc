@@ -123,7 +123,6 @@ int DG_Modal::MassMatrixPoly(int c, const Polynomial& K, DenseMatrix& M)
   }
 
   ChangeBasis(integrals, M);
-std::cout << "mass c=" << c << "\n" << M << std::endl;
 
   return 0;
 }
@@ -195,7 +194,6 @@ int DG_Modal::AdvectionMatrixPoly(int c, const VectorPolynomial& u, DenseMatrix&
   }
 
   ChangeBasis(integrals, A);
-std::cout << "advection: c=" << c << "\n" << A << " " << u[0] << u[1] << std::endl;
 
   return 0;
 }
@@ -301,7 +299,6 @@ int DG_Modal::FluxMatrixPoly(int f, const Polynomial& un, DenseMatrix& A)
       }
     }
   }
-if(f==1) std::cout << "flux f=" << f << "cc=" << cells[id] << "\n" << A << std::endl;
 
   return 0;
 }

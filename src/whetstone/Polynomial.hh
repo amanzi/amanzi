@@ -236,7 +236,7 @@ class Polynomial {
       av.resize(nrows);
 
       for (int i = 0; i < nrows; ++i) {
-        av[i].Reshape(d, 0);
+        av[i].Reshape(d, 0, true);
         av[i].set_origin(v[0].origin());
 
         for (int k = 0; k < ncols; ++k) {
@@ -247,7 +247,7 @@ class Polynomial {
       av.resize(ncols);
 
       for (int i = 0; i < ncols; ++i) {
-        av[i].Reshape(d, 0);
+        av[i].Reshape(d, 0, true);
         av[i].set_origin(v[0].origin());
 
         for (int k = 0; k < nrows; ++k) {

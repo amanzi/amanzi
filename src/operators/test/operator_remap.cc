@@ -87,8 +87,6 @@ void RemapTests2DExplicit(int order, std::string disc_name,
     for (int i = 0; i < 1000; ++i) {
       ux = 0.2 * std::sin(M_PI * xv[0]) * std::cos(M_PI * xv[1]);
       uy =-0.2 * std::cos(M_PI * xv[0]) * std::sin(M_PI * xv[1]);
-      if (xv[0] > 0.0 && xv[0] < 1.0) ux = 0.25 * xv[1];
-      uy = 0;
 
       xv[0] += ux * ds;
       xv[1] += uy * ds;
@@ -107,10 +105,10 @@ void RemapTests2DExplicit(int order, std::string disc_name,
 
   for (int c = 0; c < ncells_wghost; c++) {
     const AmanziGeometry::Point& xc = mesh0->cell_centroid(c);
-    p1c[0][c] = 1.0; // xc[0] + 2 * xc[1] * xc[1];
+    p1c[0][c] = 1.0;  // xc[0] + 2 * xc[1];
     if (nk > 1) {
-      p1c[1][c] = 0.0; // 1.0;
-      p1c[2][c] = 0.0; // 4.0 * xc[1];
+      p1c[1][c] = 0.0;  // 1.0 / 3.4641 / nx;
+      p1c[2][c] = 0.0;  // 2.0 / 3.4641 / ny;
     }
   }
 
@@ -256,9 +254,9 @@ void RemapTests2DExplicit(int order, std::string disc_name,
     AmanziSolvers::LinearOperatorPCG<Operator, CompositeVector, CompositeVectorSpace>
         pcg(global_reac1, global_reac1);
 
+    plist.set<double>("error tolerance", 1e-12);
     pcg.Init(plist);
     pcg.ApplyInverse(g, p2);
-std::cout << p2c << std::endl;
 
     // corrector step
     /*
@@ -279,7 +277,7 @@ std::cout << p2c << std::endl;
     const AmanziGeometry::Point& xc = mesh1->cell_centroid(c);
     double area_c = mesh1->cell_volume(c);
 
-    // double tmp = (xc[0] + 2 * xc[1] * xc[1]) - p2c[0][c];
+    // double tmp = (xc[0] + 2 * xc[1]) - p2c[0][c];
     double tmp = 1.0 - p2c[0][c];
     pinf_err = std::max(pinf_err, fabs(tmp));
     pl2_err += tmp * tmp * area_c;
@@ -305,13 +303,11 @@ std::cout << p2c << std::endl;
 }
 
 
-/*
 TEST(REMAP_DG0_EXPLICIT) {
-  RemapTests2DExplicit(0, "dg modal", 20, 20, 0.1 / 2);
+  RemapTests2DExplicit(0, "dg modal", 10, 10, 0.1);
 }
-*/
 
 TEST(REMAP_DG1_EXPLICIT) {
-  RemapTests2DExplicit(1, "dg modal", 2, 1, 0.5);
+  RemapTests2DExplicit(1, "dg modal", 10, 10, 0.1);
 }
 
