@@ -225,9 +225,9 @@ class Polynomial {
   }
 
   // matrix-vector product A * v
-  friend void Multiple(const std::vector<std::vector<Polynomial> >& A, 
-                       const std::vector<Polynomial>& v,
-                       std::vector<Polynomial>& av, bool transpose) {
+  void Multiply(const std::vector<std::vector<Polynomial> >& A, 
+                const std::vector<Polynomial>& v,
+                std::vector<Polynomial>& av, bool transpose) {
     int d(v[0].dimension());
     int nrows(A.size());
     int ncols(v.size());

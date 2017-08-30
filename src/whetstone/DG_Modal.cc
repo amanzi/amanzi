@@ -123,6 +123,7 @@ int DG_Modal::MassMatrixPoly(int c, const Polynomial& K, DenseMatrix& M)
   }
 
   ChangeBasis(integrals, M);
+std::cout << "mass c=" << c << "\n" << M << std::endl;
 
   return 0;
 }
@@ -194,6 +195,7 @@ int DG_Modal::AdvectionMatrixPoly(int c, const VectorPolynomial& u, DenseMatrix&
   }
 
   ChangeBasis(integrals, A);
+std::cout << "advection: c=" << c << "\n" << A << " " << u[0] << u[1] << std::endl;
 
   return 0;
 }
@@ -216,7 +218,7 @@ int DG_Modal::FluxMatrixPoly(int f, const Polynomial& un, DenseMatrix& A)
   A.Reshape(nrows, nrows);
   A.PutScalar(0.0);
 
-  // identify downwind cell
+  // identify index of downwind cell (id)
   int dir, id(0); 
   mesh_->face_normal(f, false, cells[0], &dir);
   const AmanziGeometry::Point& xf = mesh_->face_centroid(f);
@@ -226,17 +228,22 @@ int DG_Modal::FluxMatrixPoly(int f, const Polynomial& un, DenseMatrix& A)
     if (ncells == 1) return 0;
     id = 1;
   } else {
+    if (ncells == 1) return 0;  // Assume that u.n=0 FIXME
     dir = -dir;
   }
   int col(id * size);
   int row(size - col);
 
   // Calculate integrals needed for scaling (FIXME)
-  Polynomial integrals(d_, 2 * order_);
+  Polynomial integrals_dw(d_, 2 * order_);
+  Polynomial integrals_up(d_, 2 * order_);
 
-  integrals.monomials(0).coefs()[0] = mesh_->cell_volume(cells[id]);
-  for (int k = 1; k <= integrals.order(); ++k) {
-    IntegrateMonomialsCell_(cells[id], integrals.monomials(k));
+  integrals_dw.monomials(0).coefs()[0] = mesh_->cell_volume(cells[id]);
+  integrals_up.monomials(0).coefs()[0] = mesh_->cell_volume(cells[1 - id]);
+
+  for (int k = 1; k <= integrals_dw.order(); ++k) {
+    IntegrateMonomialsCell_(cells[id], integrals_dw.monomials(k));
+    IntegrateMonomialsCell_(cells[1 - id], integrals_up.monomials(k));
   }
 
   // integrate traces of polynomials on face f
@@ -253,9 +260,10 @@ int DG_Modal::FluxMatrixPoly(int f, const Polynomial& un, DenseMatrix& A)
     Polynomial p(d_, idx0);
     p.set_origin(mesh_->cell_centroid(cells[id]));
 
-    // scaling basis functions in downwind cell
-    double ak, bk;
-    TaylorBasis_(integrals, it, &ak, &bk);
+    // scaling of basis functions
+    double ak0, bk0, ak1, bk1, al1, bl1;
+    TaylorBasis_(integrals_dw, it, &ak1, &bk1);
+    TaylorBasis_(integrals_up, it, &ak0, &bk0);
 
     for (auto jt = poly1.begin(); jt.end() <= poly1.end(); ++jt) {
       const int* idx1 = jt.multi_index();
@@ -269,23 +277,31 @@ int DG_Modal::FluxMatrixPoly(int f, const Polynomial& un, DenseMatrix& A)
       polys.push_back(p);
       polys.push_back(q);
 
-      vel = IntegratePolynomialsEdge_(x1, x2, polys);
-      vel /= mesh_->face_area(f);
-      vel *= dir;  
+      // downwind-downwind integral
+      double vel1 = IntegratePolynomialsEdge_(x1, x2, polys);
+      vel1 /= mesh_->face_area(f);
+      vel1 *= dir;  
 
-      // scaling basis functions in downwind cell
-      double al, bl;
-      TaylorBasis_(integrals, jt, &al, &bl);
-      vel *= ak * al;  // FIXME (up to linear basis functions)
+      TaylorBasis_(integrals_dw, jt, &al1, &bl1);
+      vel1 *= ak1 * al1;  // FIXME (up to linear basis functions)
+
+      // upwind-downwind integral
+      polys[1].set_origin(mesh_->cell_centroid(cells[1 - id]));
+
+      double vel0 = IntegratePolynomialsEdge_(x1, x2, polys);
+      vel0 /= mesh_->face_area(f);
+      vel0 *= dir;  
+      vel0 *= ak0 * al1;
 
       if (ncells == 1) {
-        A(k, l) = vel;
+        A(k, l) = vel1;
       } else {
-        A(row + k, col + l) = vel;
-        A(col + k, col + l) = -vel;
+        A(row + k, col + l) = vel0;
+        A(col + k, col + l) = -vel1;
       }
     }
   }
+if(f==1) std::cout << "flux f=" << f << "cc=" << cells[id] << "\n" << A << std::endl;
 
   return 0;
 }

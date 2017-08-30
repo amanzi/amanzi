@@ -87,6 +87,8 @@ void RemapTests2DExplicit(int order, std::string disc_name,
     for (int i = 0; i < 1000; ++i) {
       ux = 0.2 * std::sin(M_PI * xv[0]) * std::cos(M_PI * xv[1]);
       uy =-0.2 * std::cos(M_PI * xv[0]) * std::sin(M_PI * xv[1]);
+      if (xv[0] > 0.0 && xv[0] < 1.0) ux = 0.25 * xv[1];
+      uy = 0;
 
       xv[0] += ux * ds;
       xv[1] += uy * ds;
@@ -105,10 +107,10 @@ void RemapTests2DExplicit(int order, std::string disc_name,
 
   for (int c = 0; c < ncells_wghost; c++) {
     const AmanziGeometry::Point& xc = mesh0->cell_centroid(c);
-    p1c[0][c] = xc[0] + 2 * xc[1] * xc[1];
+    p1c[0][c] = 1.0; // xc[0] + 2 * xc[1] * xc[1];
     if (nk > 1) {
-      p1c[1][c] = 1.0;
-      p1c[2][c] = 4.0 * xc[1];
+      p1c[1][c] = 0.0; // 1.0;
+      p1c[2][c] = 0.0; // 4.0 * xc[1];
     }
   }
 
@@ -203,8 +205,13 @@ void RemapTests2DExplicit(int order, std::string disc_name,
     }
 
     // calculate cell velocities and change sign due to integral
+    WhetStone::MatrixPolynomial C;
+    WhetStone::VectorPolynomial tmp;
     for (int c = 0; c < ncells_owned; ++c) {
-      maps.VelocityCell(c, (*cell_vel)[c]);
+      maps.Cofactors(c, t, C);
+      maps.VelocityCell(c, tmp);
+      tmp[0].Multiply(C, tmp, (*cell_vel)[c], true);
+
       (*cell_vel)[c][0] *= -1;
       (*cell_vel)[c][1] *= -1;
     }
@@ -251,6 +258,7 @@ void RemapTests2DExplicit(int order, std::string disc_name,
 
     pcg.Init(plist);
     pcg.ApplyInverse(g, p2);
+std::cout << p2c << std::endl;
 
     // corrector step
     /*
@@ -271,8 +279,8 @@ void RemapTests2DExplicit(int order, std::string disc_name,
     const AmanziGeometry::Point& xc = mesh1->cell_centroid(c);
     double area_c = mesh1->cell_volume(c);
 
-    double tmp = (xc[0] + 2 * xc[1] * xc[1]) - p2c[0][c];
-    // double tmp = 1.0 - p2c[0][c];
+    // double tmp = (xc[0] + 2 * xc[1] * xc[1]) - p2c[0][c];
+    double tmp = 1.0 - p2c[0][c];
     pinf_err = std::max(pinf_err, fabs(tmp));
     pl2_err += tmp * tmp * area_c;
 
@@ -297,11 +305,13 @@ void RemapTests2DExplicit(int order, std::string disc_name,
 }
 
 
+/*
 TEST(REMAP_DG0_EXPLICIT) {
   RemapTests2DExplicit(0, "dg modal", 20, 20, 0.1 / 2);
 }
+*/
 
 TEST(REMAP_DG1_EXPLICIT) {
-  RemapTests2DExplicit(1, "dg modal", 20, 20, 0.1 / 2);
+  RemapTests2DExplicit(1, "dg modal", 2, 1, 0.5);
 }
 
