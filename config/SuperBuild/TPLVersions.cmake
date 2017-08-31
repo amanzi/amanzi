@@ -90,6 +90,8 @@
 #   0.94.8       - removed ExodusII as independent TPL  
 #   0.94.9       - update PFloTran to version dev-c8df814cb6fa
 #                - update PETSc to 3.7.6
+#                - update SuperLU to 5.2.1
+#                - update SuperLU_dist 5.1.3
 
 include(CMakeParseArguments)
 
