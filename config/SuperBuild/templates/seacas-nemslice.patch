@@ -258,8 +258,8 @@ diff -ruBN /nh/u/rao/Downloads/seacas-173a1e64f47dbcc0d1cdf98f2bc079309af58e59/p
      problem.num_vertices = mesh.num_nodes;
 diff -ruBN /nh/u/rao/Downloads/seacas-173a1e64f47dbcc0d1cdf98f2bc079309af58e59/packages/seacas/applications/nem_slice/fix_column_partitions.C ./packages/seacas/applications/nem_slice/fix_column_partitions.C
 --- /nh/u/rao/Downloads/seacas-173a1e64f47dbcc0d1cdf98f2bc079309af58e59/packages/seacas/applications/nem_slice/fix_column_partitions.C	1969-12-31 17:00:00.000000000 -0700
-+++ ./packages/seacas/applications/nem_slice/fix_column_partitions.C	2017-08-30 13:41:22.728775000 -0600
-@@ -0,0 +1,353 @@
++++ ./packages/seacas/applications/nem_slice/fix_column_partitions.C	2017-08-31 12:55:12.964155000 -0600
+@@ -0,0 +1,354 @@
 +/* Copyright 2017 Los Alamos National Security, LLC */
 +
 +#include "elb.h" // for LB_Description<INT>, etc
@@ -270,6 +270,7 @@ diff -ruBN /nh/u/rao/Downloads/seacas-173a1e64f47dbcc0d1cdf98f2bc079309af58e59/p
 +#include <map>
 +#include <iostream>
 +#include <cstdio>  // for sprintf
++#include <cmath>
 +
 +namespace {
 +// Opposite side IDs in a hex according to Exodus II convention
