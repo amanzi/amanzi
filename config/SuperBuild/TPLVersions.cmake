@@ -88,6 +88,8 @@
 #   0.94.7       - update UnitTest++ to version 2.0.0
 #                - update Hypre to version 2.11.2    
 #   0.94.8       - removed ExodusII as independent TPL  
+#   0.94.9       - update PFloTran to version dev-c8df814cb6fa
+                 - update PETSc to 3.7.6
 
 include(CMakeParseArguments)
 
@@ -137,7 +139,7 @@ endmacro(amanzi_tpl_version_write)
 
 set (AMANZI_TPLS_VERSION_MAJOR 0)
 set (AMANZI_TPLS_VERSION_MINOR 94)
-set (AMANZI_TPLS_VERSION_PATCH 7)
+set (AMANZI_TPLS_VERSION_PATCH 9)
 set (AMANZI_TPLS_VERSION ${AMANZI_TPLS_VERSION}.${AMANZI_TPLS_VERSION_MINOR}.${AMANZI_TPLS_VERSION_PATCH})
 #   Not sure how to create a meaningful hash key for the collection
 
@@ -346,13 +348,13 @@ set(SuperLUDist_MD5_SUM        f4805659157d93a962500902c219046b)
 # TPL: PETSc
 #
 set(PETSc_VERSION_MAJOR  3)
-set(PETSc_VERSION_MINOR  5)
-set(PETSc_VERSION_PATCH  2)
+set(PETSc_VERSION_MINOR  7)
+set(PETSc_VERSION_PATCH  6)
 set(PETSc_VERSION  ${PETSc_VERSION_MAJOR}.${PETSc_VERSION_MINOR}.${PETSc_VERSION_PATCH})
 set(PETSc_ARCHIVE_VERSION ${PETSc_VERSION_MAJOR}.${PETSc_VERSION_MINOR}.${PETSc_VERSION_PATCH})
 set(PETSc_URL_STRING     "http://ftp.mcs.anl.gov/pub/petsc/release-snapshots")
 set(PETSc_ARCHIVE_FILE   petsc-${PETSc_ARCHIVE_VERSION}.tar.gz)
-set(PETSc_MD5_SUM        ad170802b3b058b5deb9cd1f968e7e13)
+set(PETSc_MD5_SUM        977aa84b85aa3146c695592cd0a11057)
 
 #
 # TPL: Trilinos
@@ -381,8 +383,8 @@ set(SEACAS_MD5_SUM        3235d1b885ee8e1a04408382f50bd0f0)
 #
 set(PFLOTRAN_VERSION_MAJOR 0)
 set(PFLOTRAN_URL_STRING     ${AMANZI_TPLS_DOWNLOAD_URL})
-set(PFLOTRAN_ARCHIVE_FILE   pflotran-dev-611092f80ddb.tar.gz)
-set(PFLOTRAN_MD5_SUM        e18997dd7de5523c9bef8489a0a2dd24)
+set(PFLOTRAN_ARCHIVE_FILE   pflotran-dev-c8df814cb6fa.tgz)
+set(PFLOTRAN_MD5_SUM        5168fa0dbc4777d071a2831c25ce6ea9)
 
 #
 # TPL: Alquimia
