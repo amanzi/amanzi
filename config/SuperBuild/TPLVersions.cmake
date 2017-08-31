@@ -89,7 +89,7 @@
 #                - update Hypre to version 2.11.2    
 #   0.94.8       - removed ExodusII as independent TPL  
 #   0.94.9       - update PFloTran to version dev-c8df814cb6fa
-                 - update PETSc to 3.7.6
+#                - update PETSc to 3.7.6
 
 include(CMakeParseArguments)
 
@@ -327,22 +327,24 @@ set(ParMetis_MD5_SUM        56ac6ebf6e7e8a522fa053c799dc7a92)
 #
 # TPL: SuperLU (Built by PETSc!)
 #
-set(SuperLU_VERSION_MAJOR  4)
-set(SuperLU_VERSION_MINOR  3)
-set(SuperLU_VERSION  ${SuperLU_VERSION_MAJOR}.${SuperLU_VERSION_MINOR})
+set(SuperLU_VERSION_MAJOR  5)
+set(SuperLU_VERSION_MINOR  2)
+set(SuperLU_VERSION_PATCH  1)
+set(SuperLU_VERSION  ${SuperLU_VERSION_MAJOR}.${SuperLU_VERSION_MINOR}.${SuperLU_VERSION_PATCH})
 set(SuperLU_URL_STRING     "http://crd-legacy.lbl.gov/~xiaoye/SuperLU")
 set(SuperLU_ARCHIVE_FILE   superlu_${SuperLU_VERSION}.tar.gz)
-set(SuperLU_MD5_SUM        b72c6309f25e9660133007b82621ba7c)
+set(SuperLU_MD5_SUM        3a1a9bff20cb06b7d97c46d337504447)
 
 #
 # TPL: SuperLU Distrib (Built by PETSc!)
 #
-set(SuperLUDist_VERSION_MAJOR  3)
-set(SuperLUDist_VERSION_MINOR  3)
-set(SuperLUDist_VERSION  ${SuperLUDist_VERSION_MAJOR}.${SuperLUDist_VERSION_MINOR})
+set(SuperLUDist_VERSION_MAJOR  5)
+set(SuperLUDist_VERSION_MINOR  1)
+set(SuperLUDist_VERSION_PATCH  3)
+set(SuperLUDist_VERSION  ${SuperLUDist_VERSION_MAJOR}.${SuperLUDist_VERSION_MINOR}.${SuperLUDist_VERSION_PATCH})
 set(SuperLUDist_URL_STRING     "http://crd-legacy.lbl.gov/~xiaoye/SuperLU")
 set(SuperLUDist_ARCHIVE_FILE   superlu_dist_${SuperLUDist_VERSION}.tar.gz)
-set(SuperLUDist_MD5_SUM        f4805659157d93a962500902c219046b)
+set(SuperLUDist_MD5_SUM        fec21a9207ef94f57501c9406da78285)
 
 #
 # TPL: PETSc

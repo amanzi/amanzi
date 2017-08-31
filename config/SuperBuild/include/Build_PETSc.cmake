@@ -33,24 +33,23 @@ foreach ( _pack ${petsc_packages} )
   else()
     if (DISABLE_EXTERNAL_DOWNLOAD)
       message(FATAL_ERROR "You have disabled external downloads, however"
-	                  " ${real_download_path}/${_archive} does not exist")
+                          " ${real_download_path}/${_archive} does not exist")
     else()
       message(STATUS ">>> Build_PETSc -- Downloading ${_archive} for PETSc")
       file(DOWNLOAD  "${_url}/${_archive}" "${real_download_path}/${_archive}"
                      INACTIVITY_TIMEOUT 180
                      EXPECTED_MD5 ${_md5sum}
-	             STATUS ${_pack}_DOWNLOAD_STATUS )
-      list(GET ${_pack}_DOWNLOAD_STATUS 0 _status)	
+                     STATUS ${_pack}_DOWNLOAD_STATUS )
+      list(GET ${_pack}_DOWNLOAD_STATUS 0 _status)
       if ( ${_status} EQUAL 0 )
-	message(STATUS ">>> Build_PETSc -- DOWNLOAD: successful!")
-      else( )
+        message(STATUS ">>> Build_PETSc -- DOWNLOAD: successful!")
+      else()
         message(FATAL_ERROR ">>> Build_PETSc -- DOWNLOAD: failed -- ${${_pack}_DOWNLOAD_STATUS}[1]")
       endif()
     endif()
   endif()  
 endforeach()
 
-         
 
 # --- Define configure parameters
 
@@ -81,26 +80,25 @@ endif()
 if ( "${${MPI_PROJECT}_BUILD_TARGET}" STREQUAL "" )
   set(petsc_mpi_flags --with-mpi=1)
 else()
-  set(petsc_mpi_flags 
-            --with-mpi=1 --with-mpi-dir=${TPL_INSTALL_PREFIX})
+  set(petsc_mpi_flags --with-mpi=1 --with-mpi-dir=${TPL_INSTALL_PREFIX})
 endif()
 
 # BLAS options
 if (BLAS_LIBRARIES) 
-  IF (NOT APPLE) # Macs are different.
+  if (NOT APPLE) # Macs are different.
     build_whitespace_string(petsc_blas_libs ${BLAS_LIBRARIES})
     set(petsc_blas_option --with-blas-libs='${petsc_blas_libs}')
-  ENDIF()
+  endif()
 else()
   set(petsc_blas_option)
 endif()
 
 # LAPACK options
 if ( LAPACK_LIBRARIES ) 
-  IF (NOT APPLE) # Macs are different.
+  if (NOT APPLE) # Macs are different.
     build_whitespace_string(petsc_lapack_libs ${LAPACK_LIBRARIES})
     set(petsc_lapack_option --with-lapack-libs='${petsc_lapack_libs}')
-  ENDIF()
+  endif()
 else()
   set(petsc_lapack_option)
 endif()
@@ -125,26 +123,26 @@ set(petsc_package_flags ${petsc_superlu_flags} ${petsc_parmetis_flags} ${petsc_s
 set(petsc_install_dir ${TPL_INSTALL_PREFIX}/${PETSc_BUILD_TARGET}-${PETSc_VERSION})
 
 if (BUILD_SHARED_LIBS)
-    set(CONFIG_PETSC_SHARED --with-shared-libraries=1)
+  set(CONFIG_PETSC_SHARED --with-shared-libraries=1)
 else()
-    set(CONFIG_PETSC_SHARED --with-shared-libraries=0)
+  set(CONFIG_PETSC_SHARED --with-shared-libraries=0)
 endif()
 
 # --- Set the name of the patch
-set(PETSC_patch_file petsc-3.5.2-mat-m0.patch petsc-3.5.2-install.patch)
+#set(PETSC_patch_file petsc-3.5.2-mat-m0.patch petsc-3.5.2-install.patch)
 # --- Configure the bash patch script
-set(PETSC_sh_patch ${PETSc_prefix_dir}/petsc-patch-step.sh)
-message(STATUS "PETSC_sh_patch: ${PETSC_sh_patch}")
-configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/petsc-patch-step.sh.in
-               ${PETSC_sh_patch}
-               @ONLY)
+#set(PETSC_sh_patch ${PETSc_prefix_dir}/petsc-patch-step.sh)
+#message(STATUS "PETSC_sh_patch: ${PETSC_sh_patch}")
+#configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/petsc-patch-step.sh.in
+#               ${PETSC_sh_patch}
+#               @ONLY)
 # --- Configure the CMake patch step
-set(PETSC_cmake_patch ${PETSc_prefix_dir}/petsc-patch-step.cmake)
-configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/petsc-patch-step.cmake.in
-               ${PETSC_cmake_patch}
-               @ONLY)
+#set(PETSC_cmake_patch ${PETSc_prefix_dir}/petsc-patch-step.cmake)
+#configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/petsc-patch-step.cmake.in
+#               ${PETSC_cmake_patch}
+#               @ONLY)
 # --- Set the patch command
-set(PETSC_PATCH_COMMAND ${CMAKE_COMMAND} -P ${PETSC_cmake_patch})     
+#set(PETSC_PATCH_COMMAND ${CMAKE_COMMAND} -P ${PETSC_cmake_patch})     
 
 # --- Add external project build 
 ExternalProject_Add(${PETSc_BUILD_TARGET}
@@ -156,7 +154,7 @@ ExternalProject_Add(${PETSc_BUILD_TARGET}
                     URL          ${PETSc_URL}                      # URL may be a web site OR a local file
                     URL_MD5      ${PETSc_MD5_SUM}                  # md5sum of the archive file
                     # -- Patch 
-                    PATCH_COMMAND ${PETSC_PATCH_COMMAND}
+                    # PATCH_COMMAND ${PETSC_PATCH_COMMAND}
                     # -- Configure
                     SOURCE_DIR        ${PETSc_source_dir}          # Source directory
                     CONFIGURE_COMMAND
@@ -170,18 +168,18 @@ ExternalProject_Add(${PETSc_BUILD_TARGET}
                                           --CXXFLAGS=${petsc_cxxflags}
                                           --without-x
                                           --with-debugging=${petsc_debug_flag}
-					  --without-valgring
+                                          --without-valgring
                                           ${petsc_mpi_flags}
                                           ${petsc_lapack_option}
                                           ${petsc_blas_option}
                                           ${petsc_package_flags}
                     # -- Build
-                    BINARY_DIR        ${PETSc_build_dir}           # Build directory 
-                    BUILD_COMMAND     $(MAKE) -j 1 PETSC_DIR=${PETSc_source_dir} # Run the CMake script to build
-                    BUILD_IN_SOURCE   ${PETSc_BUILD_IN_SOURCE}     # Flag for in source builds
+                    BINARY_DIR       ${PETSc_build_dir}           # Build directory 
+                    BUILD_COMMAND    $(MAKE) -j 1 PETSC_DIR=${PETSc_source_dir} # Run the CMake script to build
+                    BUILD_IN_SOURCE  ${PETSc_BUILD_IN_SOURCE}     # Flag for in source builds
                     # -- Install
-                    INSTALL_DIR       ${petsc_install_dir}  # Install directory, NOT in the usual directory
-                    INSTALL_COMMAND   $(MAKE) install PETSC_DIR=${PETSc_source_dir} # Install directory, NOT in the usual directory
+                    INSTALL_DIR      ${petsc_install_dir}  # Install directory, NOT in the usual directory
+                    INSTALL_COMMAND  $(MAKE) install PETSC_DIR=${PETSc_source_dir} # Install directory, NOT in the usual directory
                     # -- Output control
                     ${PETSc_logging_args})
 

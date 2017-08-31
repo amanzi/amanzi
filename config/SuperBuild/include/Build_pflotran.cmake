@@ -35,14 +35,14 @@ set(PFLOTRAN_CMAKE_CACHE_ARGS
 set(PFLOTRAN_sh_build ${PFLOTRAN_prefix_dir}/pflotran-build-step.sh)
 configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/pflotran-build-step.sh.in
                ${PFLOTRAN_sh_build}
-	       @ONLY)
+               @ONLY)
 
 # Configure the CMake command file
 set(PFLOTRAN_cmake_build ${PFLOTRAN_prefix_dir}/pflotran-build-step.cmake)
 configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/pflotran-build-step.cmake.in
                ${PFLOTRAN_cmake_build}
-	       @ONLY)
-set(PFLOTRAN_CMAKE_COMMAND ${CMAKE_COMMAND} -P ${PFLOTRAN_cmake_build})	
+               @ONLY)
+set(PFLOTRAN_CMAKE_COMMAND ${CMAKE_COMMAND} -P ${PFLOTRAN_cmake_build})
 
 # --- Define the install command
 
@@ -50,34 +50,34 @@ set(PFLOTRAN_CMAKE_COMMAND ${CMAKE_COMMAND} -P ${PFLOTRAN_cmake_build})
 set(PFLOTRAN_sh_install ${PFLOTRAN_prefix_dir}/pflotran-install-step.sh)
 configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/pflotran-install-step.sh.in
                ${PFLOTRAN_sh_install}
-	       @ONLY)
+               @ONLY)
 
 # Configure the CMake command file
 set(PFLOTRAN_cmake_install ${PFLOTRAN_prefix_dir}/pflotran-install-step.cmake)
 configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/pflotran-install-step.cmake.in
                ${PFLOTRAN_cmake_install}
-	       @ONLY)
-set(PFLOTRAN_INSTALL_COMMAND ${CMAKE_COMMAND} -P ${PFLOTRAN_cmake_install})	
+               @ONLY)
+set(PFLOTRAN_INSTALL_COMMAND ${CMAKE_COMMAND} -P ${PFLOTRAN_cmake_install})
 
 
 # --- Add external project build and tie to the PFLOTRAN build target
 ExternalProject_Add(${PFLOTRAN_BUILD_TARGET}
-                    DEPENDS   ${PFLOTRAN_PACKAGE_DEPENDS}             # Package dependency target
-                    TMP_DIR   ${PFLOTRAN_tmp_dir}                     # Temporary files directory
-                    STAMP_DIR ${PFLOTRAN_stamp_dir}                   # Timestamp and log directory
+                    DEPENDS   ${PFLOTRAN_PACKAGE_DEPENDS}         # Package dependency target
+                    TMP_DIR   ${PFLOTRAN_tmp_dir}                 # Temporary files directory
+                    STAMP_DIR ${PFLOTRAN_stamp_dir}               # Timestamp and log directory
                     # -- Download and URL definitions
                     DOWNLOAD_DIR ${TPL_DOWNLOAD_DIR}              # Download directory
-                    URL          ${PFLOTRAN_URL}                      # URL may be a web site OR a local file
-                    URL_MD5      ${PFLOTRAN_MD5_SUM}                  # md5sum of the archive file
+                    URL          ${PFLOTRAN_URL}                  # URL may be a web site OR a local file
+                    URL_MD5      ${PFLOTRAN_MD5_SUM}              # md5sum of the archive file
                     # -- Configure
                     SOURCE_DIR       ${PFLOTRAN_source_dir}       # Source directory
                     CONFIGURE_COMMAND ""
-#                    CMAKE_CACHE_ARGS ${PFLOTRAN_CMAKE_CACHE_ARGS}         # CMAKE_CACHE_ARGS or CMAKE_ARGS => CMake configure
-#                                     ${Amanzi_CMAKE_C_COMPILER_ARGS}  # Ensure uniform build
-#                                     -DCMAKE_C_COMPILER:FILEPATH=${CMAKE_C_COMPILER}
+                    # CMAKE_CACHE_ARGS ${PFLOTRAN_CMAKE_CACHE_ARGS}# CMAKE_CACHE_ARGS or CMAKE_ARGS => CMake configure
+                    #$ {Amanzi_CMAKE_C_COMPILER_ARGS}             # Ensure uniform build
+                    #   -DCMAKE_C_COMPILER:FILEPATH=${CMAKE_C_COMPILER}
                     # -- Build
-#                    BINARY_DIR        ${PFLOTRAN_build_dir}           # Build directory 
-                    BUILD_COMMAND     ${PFLOTRAN_CMAKE_COMMAND}            # $(MAKE) enables parallel builds through make
+                    # BINARY_DIR        ${PFLOTRAN_build_dir}     # Build directory 
+                    BUILD_COMMAND     ${PFLOTRAN_CMAKE_COMMAND}   # $(MAKE) enables parallel builds through make
                     BUILD_IN_SOURCE   1     # Flag for in source builds
                     # -- Install
                     INSTALL_DIR      ${TPL_INSTALL_PREFIX}        # Install directory
