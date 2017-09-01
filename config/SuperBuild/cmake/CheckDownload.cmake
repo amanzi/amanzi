@@ -15,7 +15,6 @@ include(PrintVariable)
 
 function(CHECK_DOWNLOAD)
 
-
   # Parse the arguments
   set(_flags    "")
   set(_oneValue "TEST_URL;TEST_FILE;TIMEOUT")

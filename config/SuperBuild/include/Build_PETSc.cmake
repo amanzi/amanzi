@@ -153,6 +153,7 @@ ExternalProject_Add(${PETSc_BUILD_TARGET}
                     DOWNLOAD_DIR ${TPL_DOWNLOAD_DIR}               # Download directory
                     URL          ${PETSc_URL}                      # URL may be a web site OR a local file
                     URL_MD5      ${PETSc_MD5_SUM}                  # md5sum of the archive file
+                    DOWNLOAD_NAME ${PETSc_SAVEAS_FILE}             # file name to store (if not end of URL)
                     # -- Patch 
                     # PATCH_COMMAND ${PETSC_PATCH_COMMAND}
                     # -- Configure
@@ -178,8 +179,8 @@ ExternalProject_Add(${PETSc_BUILD_TARGET}
                     BUILD_COMMAND    $(MAKE) -j 1 PETSC_DIR=${PETSc_source_dir} # Run the CMake script to build
                     BUILD_IN_SOURCE  ${PETSc_BUILD_IN_SOURCE}     # Flag for in source builds
                     # -- Install
-                    INSTALL_DIR      ${petsc_install_dir}  # Install directory, NOT in the usual directory
-                    INSTALL_COMMAND  $(MAKE) install PETSC_DIR=${PETSc_source_dir} # Install directory, NOT in the usual directory
+                    INSTALL_DIR      ${petsc_install_dir}         # Install directory, NOT in the usual directory
+                    INSTALL_COMMAND  $(MAKE) install PETSC_DIR=${PETSc_source_dir}
                     # -- Output control
                     ${PETSc_logging_args})
 
