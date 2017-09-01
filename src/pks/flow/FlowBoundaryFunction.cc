@@ -14,7 +14,10 @@
 namespace Amanzi {
 namespace Flow {
 
-FlowBoundaryFunction::FlowBoundaryFunction(const Teuchos::ParameterList& plist){
+/* ******************************************************************
+* Constructor
+****************************************************************** */
+FlowBoundaryFunction::FlowBoundaryFunction(const Teuchos::ParameterList& plist) {
   rainfall_ = false;
   if (plist.isParameter("rainfall")) 
     rainfall_ = plist.get<bool>("rainfall");
@@ -46,8 +49,12 @@ FlowBoundaryFunction::FlowBoundaryFunction(const Teuchos::ParameterList& plist){
 
   // for screen output
   nedges_ = 0;
-};
+}
 
+
+/* ******************************************************************
+* Process additional parameters
+****************************************************************** */
 void FlowBoundaryFunction::ComputeSubmodel(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
 {
   int dim = mesh->space_dimension();
@@ -87,13 +94,15 @@ void FlowBoundaryFunction::ComputeSubmodel(const Teuchos::RCP<const AmanziMesh::
       it->second[0] += (*shift_water_table_)[f];
     }
   }
+}
 
-};
 
+/* ******************************************************************
+* Preprocesing: calculate warter table coefficients.
+****************************************************************** */
 void FlowBoundaryFunction::CalculateShiftWaterTable_(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
-                                                                const std::string& region)
+                                                     const std::string& region)
 {
-
   double tol = 1e-6;
   Errors::Message msg;
 
@@ -257,11 +266,13 @@ void FlowBoundaryFunction::CalculateShiftWaterTable_(const Teuchos::RCP<const Am
 }
 
 
+/* ******************************************************************
+* Extension of operations with sets.
+****************************************************************** */
 void FlowBoundaryFunction::set_intersection_(const std::vector<AmanziMesh::Entity_ID>& v1,
                                              const std::vector<AmanziMesh::Entity_ID>& v2, 
                                              std::vector<AmanziMesh::Entity_ID>* vv)
 {
-
   int i(0), j(0), n1, n2;
 
   n1 = v1.size();
@@ -279,7 +290,6 @@ void FlowBoundaryFunction::set_intersection_(const std::vector<AmanziMesh::Entit
       j++;
     }
   }
-
 }
 
 }  // namespace Flow
