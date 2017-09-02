@@ -56,7 +56,7 @@ add_library(sflow OBJECT ${FPP_out_files}
 if (BUILD_TESTS)
 
   link_directories(${CCSE_LIBRARY_DIR})
-  if ( ENABLE_Unstructured )
+  if (ENABLE_Unstructured)
     set(unstructured_grid_libs udriv mpc state transport flow whetstone)
   else()
     set(unstructured_grid_libs)
@@ -65,7 +65,7 @@ if (BUILD_TESTS)
   # Note the following is rather icky...because of circular dependencies, these things have to be listed twice
   # This is similar to the main amanzi exec build, but worse.  Well....it works, for now.  Not sure what a better
   # long-term strategy is
-  set(structured_grid_libs structured_amanzi ${CCSE_LIBRARIES} structured_amanzi ${CCSE_LIBRARIES} ${PETSC_LIBRARIES})
+  set(structured_grid_libs structured_amanzi ${CCSE_LIBRARIES} structured_amanzi)
   if(CMAKE_Fortran_COMPILER_ID STREQUAL GNU) 
     if (${CMAKE_SYSTEM_NAME} STREQUAL Linux)
       list(APPEND structured_grid_libs gfortran)
@@ -116,7 +116,7 @@ if (BUILD_TESTS)
     add_amanzi_test(tRS_steady tRS_steady "tRS_steady.in"
                     KIND unit
                     SOURCE ${FPP_out_files_2} ${CXX_source_files_2} ${F90_source_files_2} ${F77_source_files_2}
-                    LINK_LIBS ${structured_grid_libs} ${GEOCHEM_LIBS} error_handling atk ${my_tpl_libs})
+		    LINK_LIBS ${structured_grid_libs} ${GEOCHEM_LIBS} error_handling atk ${my_tpl_libs})
   else()
     # (seems to require redundant lib listing to resolve everything....not sure why
     add_amanzi_test(tRS tRS "tRS_3D.in"

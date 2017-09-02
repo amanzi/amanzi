@@ -127,23 +127,51 @@ else(PETSC_LIBRARIES AND PETSC_INCLUDE_DIRS)
       set(_PETSC_Fortran_LIBRARY "PETSC_Fortran_LIBRARY-NOTFOUND")
     endif()
 
+<<<<<<< Updated upstream
   else() 
+=======
+    # Search for libraries 
+    # Search order preference:
+    #  (1) PETSC_LIBRARY_DIR - check existence of path AND if the library file exists
+    #  (2) PETSC_DIR/<lib,Lib>
+    #  (3) Default CMake paths See cmake --html-help=out.html file for more information.
+    #
+    set(petsc_lib_names "petsc;superlu;metis;superlu_dist;parmetis")
+    if (PETSC_LIBRARY_DIR)
 
-    list(APPEND petsc_lib_suffixes "lib" "Lib")
-    if (PETSC_DIR)
-      if (EXISTS "${PETSC_DIR}")
+        if (EXISTS "${PETSC_LIBRARY_DIR}")
 
-        find_library(_PETSC_LIBRARY
-                     NAMES ${petsc_lib_names}
-                     HINTS ${PETSC_DIR}
-                     PATH_SUFFIXES ${petsc_lib_suffixes}
-                     NO_DEFAULT_PATH)
-                
+            find_library(_PETSC_LIBRARY
+                         NAMES ${petsc_lib_names}
+                         HINTS ${PETSC_LIBRARY_DIR}
+                         NO_DEFAULT_PATH)
+
+        else()
+            message(SEND_ERROR "PETSC_LIBRARY_DIR=${PETSC_LIBRARY_DIR} does not exist")
+            set(_PETSC_LIBRARY "PETSC_LIBRARY-NOTFOUND")
+            set(_PETSC_Fortran_LIBRARY "PETSC_Fortran_LIBRARY-NOTFOUND")
+        endif()
+
       else()
         message(SEND_ERROR "PETSC_DIR=${PETSC_DIR} does not exist")
         set(PETSC_LIBRARY "PETSC_LIBRARY-NOTFOUND")
         set(PETSC_Fortran_LIBRARY "PETSC_Fortran_LIBRARY-NOTFOUND")
       endif()    
+            else()
+                 message(SEND_ERROR "PETSC_DIR=${PETSC_DIR} does not exist")
+                 set(PETSC_LIBRARY "PETSC_LIBRARY-NOTFOUND")
+                 set(PETSC_Fortran_LIBRARY "PETSC_Fortran_LIBRARY-NOTFOUND")
+            endif()    
+
+
+        else()
+
+            find_library(_PETSC_LIBRARY
+                         NAMES ${petsc_lib_names}
+                         PATH_SUFFIXES ${petsc_lib_suffixes})
+
+        endif()
+    endif()
 
     else()
 
@@ -180,6 +208,7 @@ else(PETSC_LIBRARIES AND PETSC_INCLUDE_DIRS)
 	list(APPEND PETSC_INCLUDE_DIRS ${PETSC_PACKAGE_INCLUDES})
 	list(REMOVE_DUPLICATES PETSC_INCLUDE_DIRS)
       endif()
+<<<<<<< Updated upstream
 
       # TPL libraries, some of the items in this list are not defined!
       if (PETSC_PACKAGE_LIBS)
@@ -191,6 +220,9 @@ else(PETSC_LIBRARIES AND PETSC_INCLUDE_DIRS)
       endif()  
     endif()
   endif()  
+=======
+    endif()  
+>>>>>>> Stashed changes
    
 endif(PETSC_LIBRARIES AND PETSC_INCLUDE_DIRS )    
 
