@@ -65,7 +65,7 @@ if (BUILD_TESTS)
   # Note the following is rather icky...because of circular dependencies, these things have to be listed twice
   # This is similar to the main amanzi exec build, but worse.  Well....it works, for now.  Not sure what a better
   # long-term strategy is
-  set(structured_grid_libs structured_amanzi ${CCSE_LIBRARIES} structured_amanzi)
+  set(structured_grid_libs structured_amanzi ${CCSE_LIBRARIES} structured_amanzi ${CCSE_LIBRARIES} ${PETSC_LIBRARIES})
   if(CMAKE_Fortran_COMPILER_ID STREQUAL GNU) 
     if (${CMAKE_SYSTEM_NAME} STREQUAL Linux)
       list(APPEND structured_grid_libs gfortran)
