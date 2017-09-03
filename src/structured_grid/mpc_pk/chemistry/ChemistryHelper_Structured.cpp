@@ -11,7 +11,8 @@ ChemistryHelper_Structured::SetupAuxVariables()
 
   for (int i=0; i<primarySpeciesNames.size(); ++i) {
     const std::string label=primarySpeciesNames[i] + "_Activity_Coefficient"; 
-    aux_chem_variables[label] = aux_chem_variables.size()-1;
+    int n = aux_chem_variables.size();
+    aux_chem_variables[label] = n;
     aux_chem_defaults[label] = 1;
   }
 
@@ -19,7 +20,8 @@ ChemistryHelper_Structured::SetupAuxVariables()
     BL_ASSERT(NfreeIonSpecies == Nmobile);
     for (int i=0; i<Nmobile; ++i) {
       const std::string label=primarySpeciesNames[i] + "_Free_Ion_Guess"; 
-      aux_chem_variables[label] = aux_chem_variables.size()-1;
+      int n = aux_chem_variables.size();
+      aux_chem_variables[label] = n;
       aux_chem_defaults[label] = 1.e-20;
     }
   }
