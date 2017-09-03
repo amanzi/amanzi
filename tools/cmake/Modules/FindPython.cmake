@@ -7,7 +7,7 @@
 include(FindPackageHandleStandardArgs)
 
 # Search for the Python executable
-if ( NOT PYTHON_EXECUTABLE )
+if (NOT PYTHON_EXECUTABLE)
 
   # Call PythonInterp to find the python executable
   find_package(PythonInterp)
@@ -51,23 +51,22 @@ if (PYTHON_EXECUTABLE AND (NOT PYTHON_VERSION_STRING) )
   if(ret)
     message(SEND_ERROR "Failed to define PYTHON_VERSION_PATCH")
   endif()
-
-
 endif()
 
+
 # Search for the PYTHON_INCLUDE_DIRS and PYTHON_LIBRARIES
-if ( PYTHON_EXECUTABLE AND (NOT PYTHON_INCLUDE_DIRS) )
+if (PYTHON_EXECUTABLE AND (NOT PYTHON_INCLUDE_DIRS))
 
   execute_process(COMMAND ${PYTHON_EXECUTABLE} -c "import sys; print(sys.prefix)"
                   OUTPUT_VARIABLE PYTHON_PREFIX
                   RESULT_VARIABLE ret
                   OUTPUT_STRIP_TRAILING_WHITESPACE)
   
-  if ( ret )
+  if (ret)
     message(SEND_ERROR "Failed to locate Python install prefix")
   endif()
 
-  if(PYTHON_PREFIX)
+  if (PYTHON_PREFIX)
     set(_python_search_paths ${PYTHON_PREFIX}/include)
     set(_python_suffixes  ${PYTHON_VERSION_MAJOR}.${PYTHON_VERSION_MINOR})
 
@@ -77,15 +76,9 @@ if ( PYTHON_EXECUTABLE AND (NOT PYTHON_INCLUDE_DIRS) )
               PATH_SUFFIXES python${PYTHON_VERSION_MAJOR}.${PYTHON_VERSION_MINOR}
               NO_DEFAULT_PATH)
   endif()
-                
-                  
-
-
-
 endif()
 
 FIND_PACKAGE_HANDLE_STANDARD_ARGS(Python DEFAULT_MSG 
                                   PYTHON_EXECUTABLE)
-
 
 
