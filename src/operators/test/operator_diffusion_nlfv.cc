@@ -93,6 +93,8 @@ void RunTestDiffusionNLFV_DMP(double gravity, bool testing) {
       double area = mesh->face_area(f);
       bc_model[f] = OPERATOR_BC_NEUMANN;
       bc_value[f] = ana.velocity_exact(xf, 0.0) * normal / area;
+      // bc_model[f] = OPERATOR_BC_DIRICHLET;
+      // bc_value[f] = ana.pressure_exact(xf, 0.0);
     }
   }
 

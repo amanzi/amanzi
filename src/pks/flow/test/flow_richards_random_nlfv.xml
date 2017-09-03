@@ -1,6 +1,6 @@
 <ParameterList name="main">
   <Parameter name="Native Unstructured Input" type="bool" value="true"/>
-  <Parameter name="number of meshes" type="int" value="2"/>
+  <Parameter name="number of meshes" type="int" value="3"/>
 
   <ParameterList name="domain">
     <Parameter name="spatial dimension" type="int" value="2"/>
