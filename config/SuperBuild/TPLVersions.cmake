@@ -88,6 +88,10 @@
 #   0.94.7       - update UnitTest++ to version 2.0.0
 #                - update Hypre to version 2.11.2    
 #   0.94.8       - removed ExodusII as independent TPL  
+#   0.94.9       - update PFloTran to version dev-c8df814cb6fa
+#                - update PETSc to 3.7.6
+#                - update SuperLU to 5.2.1
+#                - update SuperLU_dist 5.1.3
 
 include(CMakeParseArguments)
 
@@ -135,11 +139,16 @@ macro(amanzi_tpl_version_write)
 endmacro(amanzi_tpl_version_write)
 
 
-set (AMANZI_TPLS_VERSION_MAJOR 0)
-set (AMANZI_TPLS_VERSION_MINOR 94)
-set (AMANZI_TPLS_VERSION_PATCH 7)
-set (AMANZI_TPLS_VERSION ${AMANZI_TPLS_VERSION}.${AMANZI_TPLS_VERSION_MINOR}.${AMANZI_TPLS_VERSION_PATCH})
-#   Not sure how to create a meaningful hash key for the collection
+#
+# TPLs and XSDK versions 
+#
+set(AMANZI_TPLS_VERSION_MAJOR 0)
+set(AMANZI_TPLS_VERSION_MINOR 94)
+set(AMANZI_TPLS_VERSION_PATCH 9)
+set(AMANZI_TPLS_VERSION ${AMANZI_TPLS_VERSION}.${AMANZI_TPLS_VERSION_MINOR}.${AMANZI_TPLS_VERSION_PATCH})
+# Not sure how to create a meaningful hash key for the collection
+
+set(XSDK_VERSION "0.2.0")
 
 #
 # Default location on GitHub
@@ -325,34 +334,37 @@ set(ParMetis_MD5_SUM        56ac6ebf6e7e8a522fa053c799dc7a92)
 #
 # TPL: SuperLU (Built by PETSc!)
 #
-set(SuperLU_VERSION_MAJOR  4)
-set(SuperLU_VERSION_MINOR  3)
-set(SuperLU_VERSION  ${SuperLU_VERSION_MAJOR}.${SuperLU_VERSION_MINOR})
+set(SuperLU_VERSION_MAJOR  5)
+set(SuperLU_VERSION_MINOR  2)
+set(SuperLU_VERSION_PATCH  1)
+set(SuperLU_VERSION  ${SuperLU_VERSION_MAJOR}.${SuperLU_VERSION_MINOR}.${SuperLU_VERSION_PATCH})
 set(SuperLU_URL_STRING     "http://crd-legacy.lbl.gov/~xiaoye/SuperLU")
 set(SuperLU_ARCHIVE_FILE   superlu_${SuperLU_VERSION}.tar.gz)
-set(SuperLU_MD5_SUM        b72c6309f25e9660133007b82621ba7c)
+set(SuperLU_MD5_SUM        3a1a9bff20cb06b7d97c46d337504447)
 
 #
 # TPL: SuperLU Distrib (Built by PETSc!)
 #
-set(SuperLUDist_VERSION_MAJOR  3)
-set(SuperLUDist_VERSION_MINOR  3)
-set(SuperLUDist_VERSION  ${SuperLUDist_VERSION_MAJOR}.${SuperLUDist_VERSION_MINOR})
+set(SuperLUDist_VERSION_MAJOR  5)
+set(SuperLUDist_VERSION_MINOR  1)
+set(SuperLUDist_VERSION_PATCH  3)
+set(SuperLUDist_VERSION  ${SuperLUDist_VERSION_MAJOR}.${SuperLUDist_VERSION_MINOR}.${SuperLUDist_VERSION_PATCH})
 set(SuperLUDist_URL_STRING     "http://crd-legacy.lbl.gov/~xiaoye/SuperLU")
 set(SuperLUDist_ARCHIVE_FILE   superlu_dist_${SuperLUDist_VERSION}.tar.gz)
-set(SuperLUDist_MD5_SUM        f4805659157d93a962500902c219046b)
+set(SuperLUDist_MD5_SUM        fec21a9207ef94f57501c9406da78285)
 
 #
 # TPL: PETSc
 #
 set(PETSc_VERSION_MAJOR  3)
-set(PETSc_VERSION_MINOR  5)
-set(PETSc_VERSION_PATCH  2)
+set(PETSc_VERSION_MINOR  7)
+set(PETSc_VERSION_PATCH  5)
 set(PETSc_VERSION  ${PETSc_VERSION_MAJOR}.${PETSc_VERSION_MINOR}.${PETSc_VERSION_PATCH})
 set(PETSc_ARCHIVE_VERSION ${PETSc_VERSION_MAJOR}.${PETSc_VERSION_MINOR}.${PETSc_VERSION_PATCH})
-set(PETSc_URL_STRING     "http://ftp.mcs.anl.gov/pub/petsc/release-snapshots")
-set(PETSc_ARCHIVE_FILE   petsc-${PETSc_ARCHIVE_VERSION}.tar.gz)
-set(PETSc_MD5_SUM        ad170802b3b058b5deb9cd1f968e7e13)
+set(PETSc_URL_STRING     "https://bitbucket.org/petsc/petsc/get")
+set(PETSc_ARCHIVE_FILE   xsdk-${XSDK_VERSION}.tar.gz)
+set(PETSc_SAVEAS_FILE    petsc-${PETSc_ARCHIVE_VERSION}.tar.gz)
+set(PETSc_MD5_SUM        41a10be8bbf9d13f137873a2d52c6715)
 
 #
 # TPL: Trilinos
@@ -380,9 +392,13 @@ set(SEACAS_MD5_SUM        3235d1b885ee8e1a04408382f50bd0f0)
 # TPL: PFlotran
 #
 set(PFLOTRAN_VERSION_MAJOR 0)
-set(PFLOTRAN_URL_STRING     ${AMANZI_TPLS_DOWNLOAD_URL})
-set(PFLOTRAN_ARCHIVE_FILE   pflotran-dev-611092f80ddb.tar.gz)
-set(PFLOTRAN_MD5_SUM        e18997dd7de5523c9bef8489a0a2dd24)
+set(PFLOTRAN_VERSION_MINOR 2)
+set(PFLOTRAN_VERSION_PATCH 0)
+set(PFLOTRAN_VERSION ${PFLOTRAN_VERSION_MAJOR}.${PFLOTRAN_VERSION_MINOR}.${PFLOTRAN_VERSION_PATCH})
+set(PFLOTRAN_URL_STRING     "https://bitbucket.org/pflotran/pflotran/get")
+set(PFLOTRAN_ARCHIVE_FILE   xsdk-${XSDK_VERSION}-rc2.tar.gz)
+set(PFLOTRAN_SAVEAS_FILE    pflotran-${PFLOTRAN_VERSION}.tar.gz)
+set(PFLOTRAN_MD5_SUM        80a214c394bbd4230c2ddc0ba177c8ea)
 
 #
 # TPL: Alquimia
@@ -390,8 +406,9 @@ set(PFLOTRAN_MD5_SUM        e18997dd7de5523c9bef8489a0a2dd24)
 set(ALQUIMIA_VERSION_MAJOR 1)
 set(ALQUIMIA_VERSION_MINOR 0)
 set(ALQUIMIA_VERSION_PATCH 4)
+set(ALQUIMIA_VERSION ${ALQUIMIA_VERSION_MAJOR}.${ALQUIMIA_VERSION_MINOR}.${ALQUIMIA_VERSION_PATCH})
 set(ALQUIMIA_URL_STRING     ${AMANZI_TPLS_DOWNLOAD_URL})
-set(ALQUIMIA_ARCHIVE_FILE   alquimia-dev-1.0.4.tar.gz)
+set(ALQUIMIA_ARCHIVE_FILE   alquimia-dev-${ALQUIMIA_VERSION}.tar.gz)
 set(ALQUIMIA_MD5_SUM        437e5b0a2f3c7a7dace78344b7218b3c)
 
 #

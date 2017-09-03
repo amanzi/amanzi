@@ -1202,7 +1202,7 @@ std::string InputConverter::CreateINFile_(std::string& filename, int rank)
   std::stringstream decayrates;
   std::stringstream controls;
   
-  double first_cation;
+  int first_cation;
 
   // database filename and controls
   bool flag;
@@ -1526,7 +1526,7 @@ std::string InputConverter::CreateINFile_(std::string& filename, int rank)
     cations << "      CEC " << cec << "\n";
     cations << "      CATIONS\n";
     // print primary cation first (this matters to pflotran)
-    cations << "        " << names[first_cation] << " " << values[first_cation] << "\n";
+    cations << "        " << names[first_cation] << " " << values[first_cation] << " REFERENCE\n";
     for (int i = 0; i < names.size(); i++) {
       if (i != first_cation)  cations << "        " << names[i] << " " << values[i] << "\n";
     }
