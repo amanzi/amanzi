@@ -133,7 +133,7 @@ CHEMISTRY
       :MINERAL Kaolinite
       CEC 2.75  : [mol/m^3 bulk]
       CATIONS
-        Na+   1.0
+        Na+   1.0  REFERENCE
         Ca++  0.316227766017
         Al+++ 1.71132830416
         H+    0.0251188643151
