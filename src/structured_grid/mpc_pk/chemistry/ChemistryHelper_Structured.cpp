@@ -29,7 +29,8 @@ ChemistryHelper_Structured::SetupAuxVariables()
   if (using_sorption) {
     for (int i=0; i<primarySpeciesNames.size(); ++i) {
       const std::string label=primarySpeciesNames[i] + "_Sorbed_Concentration"; 
-      aux_chem_variables[label] = aux_chem_variables.size()-1;
+      int n = aux_chem_variables.size();
+      aux_chem_variables[label] = n;
       aux_chem_defaults[label] = 0;
     }
   }
@@ -37,12 +38,14 @@ ChemistryHelper_Structured::SetupAuxVariables()
   if (Nminerals > 0) {
     for (int i=0; i<mineralNames.size(); ++i) {
       const std::string label=mineralNames[i] + "_Volume_Fraction"; 
-      aux_chem_variables[label] = aux_chem_variables.size()-1;
+      int n = aux_chem_variables.size();
+      aux_chem_variables[label] = n;
       aux_chem_defaults[label] = 0;
     }
     for (int i=0; i<mineralNames.size(); ++i) {
       const std::string label=mineralNames[i] + "_Specific_Surface_Area"; 
-      aux_chem_variables[label] = aux_chem_variables.size()-1;
+      int n = aux_chem_variables.size();
+      aux_chem_variables[label] = n;
       aux_chem_defaults[label] = 1;
     }
   }
@@ -50,7 +53,8 @@ ChemistryHelper_Structured::SetupAuxVariables()
   if (NsorptionSites > 0) {
     for (int i=0; i<surfSiteNames.size(); ++i) {
       const std::string label=surfSiteNames[i] + "_Surface_Site_Density"; 
-      aux_chem_variables[label] = aux_chem_variables.size()-1;
+      int n = aux_chem_variables.size();
+      aux_chem_variables[label] = n;
       aux_chem_defaults[label] = 1;
     }
   }
@@ -59,12 +63,14 @@ ChemistryHelper_Structured::SetupAuxVariables()
     int ndigIES = std::log(NionExchange+1);
     for (int i=0; i<NionExchange; ++i) {
       const std::string label = BoxLib::Concatenate("Ion_Exchange_Site_Density_",i,ndigIES);
-      aux_chem_variables[label] = aux_chem_variables.size()-1;
+      int n = aux_chem_variables.size();
+      aux_chem_variables[label] = n;
       aux_chem_defaults[label] = 1;
     }
     for (int i=0; i<NionExchange; ++i) {
       const std::string label = BoxLib::Concatenate("Ion_Exchange_Reference_Cation_Concentration_",i,ndigIES);
-      aux_chem_variables[label] = aux_chem_variables.size()-1;
+      int n = aux_chem_variables.size();
+      aux_chem_variables[label] = n;
       aux_chem_defaults[label] = 1;
     }
   }
@@ -72,17 +78,20 @@ ChemistryHelper_Structured::SetupAuxVariables()
   if (using_isotherms) {
     for (int i=0; i<Nisotherms; ++i) {
       const std::string label=primarySpeciesNames[i] + "_Isotherm_Kd"; 
-      aux_chem_variables[label] = aux_chem_variables.size()-1;
+      int n = aux_chem_variables.size();
+      aux_chem_variables[label] = n;
       aux_chem_defaults[label] = -1;
     }
     for (int i=0; i<Nisotherms; ++i) {
       const std::string label=primarySpeciesNames[i] + "_Isotherm_Freundlich_n"; 
-      aux_chem_variables[label] = aux_chem_variables.size()-1;
+      int n = aux_chem_variables.size();
+      aux_chem_variables[label] = n;
       aux_chem_defaults[label] = 1;
     }
     for (int i=0; i<Nisotherms; ++i) {
       const std::string label=primarySpeciesNames[i] + "_Isotherm_Langmuir_b"; 
-      aux_chem_variables[label] = aux_chem_variables.size()-1;
+      int n = aux_chem_variables.size();
+      aux_chem_variables[label] = n;
       aux_chem_defaults[label] = 1;
     }
   }
