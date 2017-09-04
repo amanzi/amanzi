@@ -553,7 +553,7 @@ void DiffusionNLFV::OneSidedFluxCorrections_(
 /* ******************************************************************
 * Calculate one-sided fluxes (i0=0) or flux corrections (i0=1).
 ****************************************************************** */
-void OperatorDiffusionNLFV::OneSidedWeightFluxes_(
+void DiffusionNLFV::OneSidedWeightFluxes_(
     int i0, const CompositeVector& u, CompositeVector& flux_cv)
 {
   // un-rolling composite vectors
