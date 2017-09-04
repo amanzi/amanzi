@@ -549,62 +549,11 @@ void DiffusionNLFV::OneSidedFluxCorrections_(
   flux_cv.ScatterMasterToGhosted();
 }
 
-double OperatorDiffusionNLFV::OneSidedWeightFluxes_(int i0, const CompositeVector& u, CompositeVector& flux_cv) {
-
-  // un-rolling composite vectors
-  const Epetra_MultiVector& uc = *u.ViewComponent("cell", true);
-  Epetra_MultiVector& flux = *flux_cv.ViewComponent("face", true);
-
-  const std::vector<double>& bc_value = bcs_trial_[0]->bc_value();
-  const std::vector<int>& bc_model = bcs_trial_[0]->bc_model();
-  Epetra_MultiVector& flux_data = *stencil_data_->ViewComponent("flux_data", true);
-  Epetra_MultiVector& weight = *stencil_data_->ViewComponent("weight", true);
-
-  int c1, c2, c3, k1, k2, dir;
-  double gamma, tmp;
-  std::vector<int> dirs;
-  AmanziMesh::Entity_ID_List cells, cells_tmp, faces;
-
-  flux_cv.PutScalarMasterAndGhosted(0.0);
-  for (int c = 0; c < ncells_owned; ++c) {
-    mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
-    int nfaces = faces.size();
-    
-    for (int n = 0; n < nfaces; ++n) {
-      int f = faces[n];
-      mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
-
-      OrderCellsByGlobalId_(cells, c1, c2);
-      k1 = (c1 == c) ? 0 : 1;
-      k2 = k1 * dim_;      
-
-      double sideflux(0.0), neumann_flux(0.0);
-      for (int i = i0; i < dim_; ++i) {
-        c3 = (*stencil_cells_[i + k2])[f];       
-        int f1 = (*stencil_faces_[i + k2])[f];
-
-        if (c3 >= 0) {
-          sideflux +=  flux_data[i + k2][f] * (uc[0][c] - uc[0][c3]);
-        }else if (bc_model[f1] == OPERATOR_BC_DIRICHLET) {
-          sideflux += flux_data[i + k2][f] * (uc[0][c] - MapBoundaryValue_(f1, bc_value[f1])); 
-        }else if (bc_model[f1] == OPERATOR_BC_NEUMANN) {
-          neumann_flux += flux_data[i + k2][f] * bc_value[f1] * mesh_->face_area(f1);
-        }
-      }
-      flux[k1][f] = sideflux + neumann_flux;     
-    }
-  }
-
-  flux_cv.GatherGhostedToMaster();
-  flux_cv.ScatterMasterToGhosted();
-}  
-
-
 
 /* ******************************************************************
 * Calculate one-sided fluxes (i0=0) or flux corrections (i0=1).
 ****************************************************************** */
-void DiffusionNLFV::OneSidedWeightFluxes_(
+void OperatorDiffusionNLFV::OneSidedWeightFluxes_(
     int i0, const CompositeVector& u, CompositeVector& flux_cv)
 {
   // un-rolling composite vectors
@@ -641,9 +590,9 @@ void DiffusionNLFV::OneSidedWeightFluxes_(
 
         if (c3 >= 0) {
           sideflux +=  flux_data[i + k2][f] * (uc[0][c] - uc[0][c3]);
-        }else if (bc_model[f1] == OPERATOR_BC_DIRICHLET) {
+        } else if (bc_model[f1] == OPERATOR_BC_DIRICHLET) {
           sideflux += flux_data[i + k2][f] * (uc[0][c] - MapBoundaryValue_(f1, bc_value[f1])); 
-        }else if (bc_model[f1] == OPERATOR_BC_NEUMANN) {
+        } else if (bc_model[f1] == OPERATOR_BC_NEUMANN) {
           neumann_flux += flux_data[i + k2][f] * bc_value[f1] * mesh_->face_area(f1);
         }
       }
