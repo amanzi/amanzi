@@ -6,6 +6,19 @@
 # Standard CMake modules see CMAKE_ROOT/Modules
 include(FeatureSummary)
 
+message(STATUS "")
+message(STATUS ">>>>>>>> AmanziTPL.cmake")
+
+# Verify TPL compatibility
+set(AMANZI_TPLS_VERSION_REQUIRED "0.94.9")
+message(STATUS "\t >>>>>  Amanzi TPL Version: ${AMANZI_TPLS_VERSION}")
+message(STATUS "\t >>>>>  Required Version:   ${AMANZI_TPLS_VERSION_REQUIRED}")
+
+if (NOT ${AMANZI_TPLS_VERSION} STREQUAL ${AMANZI_TPLS_VERSION_REQUIRED}) 
+  message(WARNING "TPL version does not match the required version.")
+endif()
+
+
 # Amanzi CMake modules see <root source>/tools/cmake
 include(CheckMPISourceCompiles)
 include(TrilinosMacros)
