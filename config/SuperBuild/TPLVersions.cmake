@@ -91,7 +91,8 @@
 #   0.94.9       - update PFloTran to version dev-c8df814cb6fa
 #                - update PETSc to 3.7.6
 #                - update SuperLU to 5.2.1
-#                - update SuperLU_dist 5.1.3
+#                - update SuperLU_dist to 5.1.3
+#                - update Alquimia to xsdk-0.2.0
 
 include(CMakeParseArguments)
 
@@ -408,9 +409,10 @@ set(ALQUIMIA_VERSION_MAJOR 1)
 set(ALQUIMIA_VERSION_MINOR 0)
 set(ALQUIMIA_VERSION_PATCH 4)
 set(ALQUIMIA_VERSION ${ALQUIMIA_VERSION_MAJOR}.${ALQUIMIA_VERSION_MINOR}.${ALQUIMIA_VERSION_PATCH})
-set(ALQUIMIA_URL_STRING     ${AMANZI_TPLS_DOWNLOAD_URL})
-set(ALQUIMIA_ARCHIVE_FILE   alquimia-dev-${ALQUIMIA_VERSION}.tar.gz)
-set(ALQUIMIA_MD5_SUM        437e5b0a2f3c7a7dace78344b7218b3c)
+set(ALQUIMIA_URL_STRING     https://github.com/LBL-EESA/alquimia-dev/archive)
+set(ALQUIMIA_ARCHIVE_FILE   xsdk-${XSDK_VERSION}.tar.gz)
+set(ALQUIMIA_SAVEAS_FILE    alquimia-dev-${ALQUIMIA_VERSION}.tar.gz)
+set(ALQUIMIA_MD5_SUM        c9ad5100a4f064c3cdc49bcebd0e508e)
 
 #
 # TPL: Silo
