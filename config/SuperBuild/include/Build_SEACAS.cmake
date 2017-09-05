@@ -53,6 +53,24 @@ if ((NOT BUILD_MPI) AND (NOT MPI_WRAPPERS_IN_USE) AND (MPI_C_LIBRARIES))
   list(APPEND seacas_netcdf_libraries ${MPI_C_LIBRARIES})
 endif()
 
+#
+# --- Define the SEACAS patch step - mainly for nem_slice to be able
+# --- to handle columns
+#
+
+set(ENABLE_SEACAS_Patch ON)
+if (ENABLE_SEACAS_Patch)
+  set(SEACAS_patch_file seacas-nemslice.patch)
+  configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/seacas-patch-step.sh.in
+                 ${SEACAS_prefix_dir}/seacas-patch-step.sh
+                 @ONLY)
+  set(SEACAS_PATCH_COMMAND bash ${SEACAS_prefix_dir}/seacas-patch-step.sh)
+  message(STATUS "Applying SEACAS patches")
+else (ENABLE_SEACAS_Patch)
+  set(SEACAS_PATCH_COMMAND)
+  message(STATUS "Patch NOT APPLIED for SEACAS")
+endif (ENABLE_SEACAS_Patch)
+
 # The CMake cache args
 set(SEACAS_CMAKE_CACHE_ARGS
                     -DCMAKE_INSTALL_PREFIX:FILEPATH=<INSTALL_DIR>
@@ -101,6 +119,8 @@ ExternalProject_Add(${SEACAS_BUILD_TARGET}
                     DOWNLOAD_DIR ${TPL_DOWNLOAD_DIR}                # Download directory
                     URL          ${SEACAS_URL}                      # URL may be a web site OR a local file
                     URL_MD5      ${SEACAS_MD5_SUM}                  # md5sum of the archive file
+		    # -- Patch
+		    PATCH_COMMAND ${SEACAS_PATCH_COMMAND}
                     # -- Configure
                     SOURCE_DIR       ${SEACAS_source_dir}           # Source directory
                     CMAKE_CACHE_ARGS ${SEACAS_CMAKE_CACHE_ARGS}

@@ -57,7 +57,8 @@ AlquimiaHelper_Structured::AlquimiaHelper_Structured(Amanzi::AmanziChemistry::Ch
     int ndigits_ints = std::log(NauxInts + 1) + 1;
     for (int i=0; i<NauxInts; ++i) {
       const std::string label=BoxLib::Concatenate("Auxiliary_Integers_",i,ndigits_ints); 
-      aux_chem_variables[label] = aux_chem_variables.size()-1;
+      int n = aux_chem_variables.size();
+      aux_chem_variables[label] = n;
     }
   }
 
@@ -65,7 +66,8 @@ AlquimiaHelper_Structured::AlquimiaHelper_Structured(Amanzi::AmanziChemistry::Ch
     int ndigits_doubles = std::log(NauxDoubles + 1) + 1;
     for (int i=0; i<NauxDoubles; ++i) {
       const std::string label=BoxLib::Concatenate("Auxiliary_Doubles_",i,ndigits_doubles); 
-      aux_chem_variables[label] = aux_chem_variables.size()-1;
+      int n = aux_chem_variables.size();
+      aux_chem_variables[label] = n;
     }
   }
   

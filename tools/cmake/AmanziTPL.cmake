@@ -6,6 +6,19 @@
 # Standard CMake modules see CMAKE_ROOT/Modules
 include(FeatureSummary)
 
+message(STATUS "")
+message(STATUS ">>>>>>>> AmanziTPL.cmake")
+
+# Verify TPL compatibility
+set(AMANZI_TPLS_VERSION_REQUIRED "0.94.9")
+message(STATUS "\t >>>>>  Amanzi TPL Version: ${AMANZI_TPLS_VERSION}")
+message(STATUS "\t >>>>>  Required Version:   ${AMANZI_TPLS_VERSION_REQUIRED}")
+
+if (NOT ${AMANZI_TPLS_VERSION} STREQUAL ${AMANZI_TPLS_VERSION_REQUIRED}) 
+  message(WARNING "TPL version does not match the required version.")
+endif()
+
+
 # Amanzi CMake modules see <root source>/tools/cmake
 include(CheckMPISourceCompiles)
 include(TrilinosMacros)
@@ -101,6 +114,7 @@ message(STATUS "\tHDF5_INCLUDE_DIRS = ${HDF5_INCLUDE_DIRS}")
 message(STATUS "\tHDF5_LIBRARY_DIR  = ${HDF5_LIBRARY_DIR}")
 message(STATUS "\tHDF5_LIBRARY      = ${HDF5_LIBRARY}")
 message(STATUS "\tHDF5_LIBRARIES    = ${HDF5_LIBRARIES}")
+message(STATUS "")
 
 # Restore policy of preferring offical CMake modules over local ones.
 if (${ADJUST_POLICY})
@@ -241,6 +255,7 @@ if (Trilinos_FOUND)
   message(STATUS "\tTrilinos_LIBRARY_DIR  = ${Trilinos_LIBRARY_DIR}")
   message(STATUS "\tTrilinos_LIBRARY      = ${Trilinos_LIBRARY}")
   message(STATUS "\tTrilinos_LIBRARIES    = ${Trilinos_LIBRARIES}")
+  message(STATUS "")
 else()
   message(FATAL_ERROR "Can not locate Trilinos configuration file\n"
                       " Please define the location of your Trilinos installation\n"
@@ -266,6 +281,7 @@ message(STATUS "\tNetCDF_LIBRARY_DIR  = ${NetCDF_LIBRARY_DIR}")
 message(STATUS "\tNetCDF_C_LIBRARY    = ${NetCDF_C_LIBRARY}")
 message(STATUS "\tNetCDF_C_LIBRARIES  = ${NetCDF_C_LIBRARIES}")
 message(STATUS "\tNetCDF_CXX_LIBRARIES  = ${NetCDF_CXX_LIBRARIES}")
+message(STATUS "")
 
 
 ##############################################################################
@@ -284,6 +300,7 @@ if (XERCES_FOUND)
   message(STATUS "\tXERCES_LIBRARY      = ${XERCES_LIBRARY}")
   message(STATUS "\tXERCES_LIBRARIES    = ${XERCES_LIBRARIES}")
   message(STATUS "\tXERCES_ICU_LIBRARIES= ${XERCES_ICU_LIBRARIES}")
+  message(STATUS "")
 endif()
 
 
@@ -303,6 +320,7 @@ message(STATUS "\tSEACAS_INCLUDE_DIRS = ${SEACAS_INCLUDE_DIRS}")
 message(STATUS "\tSEACAS_LIBRARY_DIR  = ${SEACAS_LIBRARY_DIR}")
 message(STATUS "\tSEACAS_LIBRARY      = ${SEACAS_LIBRARY}")
 message(STATUS "\tSEACAS_LIBRARIES    = ${SEACAS_LIBRARIES}")
+message(STATUS "")
 
 
 ##############################################################################
@@ -321,6 +339,7 @@ if (ENABLE_Structured)
     message(STATUS "\tCCSE_LIBRARY_DIR  = ${CCSE_LIBRARY_DIR}")
     message(STATUS "\tCCSE_LIBRARY      = ${CCSE_LIBRARY}")
     message(STATUS "\tCCSE_LIBRARIES    = ${CCSE_LIBRARIES}")
+    message(STATUS "")
   endif()
 endif()
 
@@ -363,6 +382,7 @@ if (STK_MESH_FOUND)
   message(STATUS "\tSTK_Mesh_LIBRARY_DIR  = ${STK_Mesh_LIBRARY_DIR}")
   message(STATUS "\tSTK_Mesh_LIBRARY      = ${STK_Mesh_LIBRARY}")
   message(STATUS "\tSTK_Mesh_LIBRARIES    = ${STK_Mesh_LIBRARIES}")
+  message(STATUS "")
 endif()
 
 
@@ -376,6 +396,17 @@ add_feature_info(MOAB_Mesh
                  )
 if (ENABLE_MOAB_Mesh)
   find_package(MOAB REQUIRED)
+
+  if (MOAB_FOUND)
+    message(STATUS "MOAB Package information")
+    message(STATUS "\tMOAB_VERSION      = ${MOAB_VERSION}")
+    message(STATUS "\tMOAB_INCLUDE_DIR  = ${MOAB_INCLUDE_DIR}")
+    message(STATUS "\tMOAB_INCLUDE_DIRS = ${MOAB_INCLUDE_DIRS}")
+    message(STATUS "\tMOAB_LIBRARY_DIR  = ${MOAB_LIBRARY_DIR}")
+    message(STATUS "\tMOAB_LIBRARY      = ${MOAB_LIBRARY}")
+    message(STATUS "\tMOAB_LIBRARIES    = ${MOAB_LIBRARIES}")
+    message(STATUS "")
+  endif() 
 endif()
 
 
@@ -398,6 +429,7 @@ if (ENABLE_MSTK_Mesh)
     message(STATUS "\tMSTK_LIBRARY_DIR  = ${MSTK_LIBRARY_DIR}")
     message(STATUS "\tMSTK_LIBRARY      = ${MSTK_LIBRARY}")
     message(STATUS "\tMSTK_LIBRARIES    = ${MSTK_LIBRARIES}")
+    message(STATUS "")
   endif() 
 endif() 
 
@@ -416,6 +448,7 @@ if (ENABLE_Silo)
     message(STATUS "\tSilo_LIBRARY_DIR  = ${Silo_LIBRARY_DIR}")
     message(STATUS "\tSilo_LIBRARY      = ${Silo_LIBRARY}")
     message(STATUS "\tSilo_LIBRARIES    = ${Silo_LIBRARIES}")
+    message(STATUS "")
   endif() 
 endif() 
 
@@ -449,6 +482,7 @@ if (ASCEMIO_FOUND)
   message(STATUS "\tASCEMIO_LIBRARY_DIR  = ${ASCEMIO_LIBRARY_DIR}")
   message(STATUS "\tASCEMIO_LIBRARY      = ${ASCEMIO_LIBRARY}")
   message(STATUS "\tASCEMIO_LIBRARIES    = ${ASCEMIO_LIBRARIES}")
+  message(STATUS "")
 endif() 
 
 
@@ -471,6 +505,7 @@ if (ENABLE_UnitTest)
     message(STATUS "\tUnitTest_LIBRARY_DIR  = ${UnitTest_LIBRARY_DIR}")
     message(STATUS "\tUnitTest_LIBRARY      = ${UnitTest_LIBRARY}")
     message(STATUS "\tUnitTest_LIBRARIES    = ${UnitTest_LIBRARIES}")
+    message(STATUS "")
   endif() 
 endif()    
 
@@ -497,7 +532,6 @@ endif()
 ##############################################################################
 #option(ENABLE_PETSC "Enable PETSc APIs in the structured mesh" FALSE)
 option(ENABLE_PETSC "Enable PETSc APIs in the structured mesh" ON)
-message("enable petsc: ${ENABLE_PETSC}")
 if (ENABLE_Structured OR ENABLE_ALQUIMIA OR ENABLE_PETSC) # FIXME: Sloppy.
   find_package(PETSc)
   if (NOT PETSC_FOUND)
@@ -509,6 +543,7 @@ if (ENABLE_Structured OR ENABLE_ALQUIMIA OR ENABLE_PETSC) # FIXME: Sloppy.
     message(STATUS "\tPETSC_INCLUDE_DIRS = ${PETSC_INCLUDE_DIRS}")
     message(STATUS "\tPETSC_LIBRARY      = ${PETSC_LIBRARY}")
     message(STATUS "\tPETSC_LIBRARIES    = ${PETSC_LIBRARIES}")
+    message(STATUS "")
   endif()
 endif()
 
@@ -530,6 +565,7 @@ if (ENABLE_ALQUIMIA)
     message(STATUS "\tPFLOTRAN_LIBRARY_DIR  = ${PFLOTRAN_LIBRARY_DIR}")
     message(STATUS "\tPFLOTRAN_LIBRARY      = ${PFLOTRAN_LIBRARY}")
     message(STATUS "\tPFLOTRAN_LIBRARIES    = ${PFLOTRAN_LIBRARIES}")
+    message(STATUS "")
   endif()
 
   find_package(CrunchTope)
@@ -540,6 +576,7 @@ if (ENABLE_ALQUIMIA)
     message(STATUS "\tCRUNCHTOPE_LIBRARY_DIR  = ${CRUNCHTOPE_LIBRARY_DIR}")
     message(STATUS "\tCRUNCHTOPE_LIBRARY      = ${CRUNCHTOPE_LIBRARY}")
     message(STATUS "\tCRUNCHTOPE_LIBRARIES    = ${CRUNCHTOPE_LIBRARIES}")
+    message(STATUS "")
   endif()
 
   if ((NOT PFLOTRAN_FOUND) AND (NOT PFLOTRAN_FOUND))
@@ -556,6 +593,7 @@ if (ENABLE_ALQUIMIA)
     message(STATUS "\tALQUIMIA_LIBRARY_DIR  = ${ALQUIMIA_LIBRARY_DIR}")
     message(STATUS "\tALQUIMIA_LIBRARY      = ${ALQUIMIA_LIBRARY}")
     message(STATUS "\tALQUIMIA_LIBRARIES    = ${ALQUIMIA_LIBRARIES}")
+    message(STATUS "")
   endif()
 endif()
 

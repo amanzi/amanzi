@@ -22,6 +22,7 @@
 include(PrintVariable)
 include(InstallManager)
 
+message(STATUS "")
 message(STATUS ">>>>>>>> AmanziVersion.cmake")
 
 find_package(Git)
