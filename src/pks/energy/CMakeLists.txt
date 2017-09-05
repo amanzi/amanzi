@@ -115,7 +115,7 @@ set(energy_src_files Energy_PK.cc
                      TotalEnergyEvaluator.cc)
 
 set(energy_tpl_libs ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES})
-if ( Ifpack_ENABLE_HYPRE )
+if (Ifpack_ENABLE_HYPRE)
   list(APPEND energy_tpl_libs ${Ifpack_LIBRARIES})
 endif()
 add_amanzi_library(energy SOURCE ${energy_src_files}

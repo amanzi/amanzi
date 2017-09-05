@@ -18,7 +18,7 @@ export PETSC_DIR='@PETSC_DIR@'
 # NOTE: aren't expressed properly. The -j1 flag ensures that the build is 
 # NOTE: serial.
 cd @PFLOTRAN_source_dir@/src/pflotran
-make -j1 pflotran_rxn 
+make -j1 pflotran_rxn
 rc=$?
 echo "make pflotran_rxn returned $rc"
 

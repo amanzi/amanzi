@@ -25,45 +25,43 @@ include(FindPackageHandleStandardArgs)
 include(PrintVariable)
 include(AddPackageDependency)
 
-if ( ALQUIMIA_LIBRARIES AND ALQUIMIA_INCLUDE_DIRS )
+if (ALQUIMIA_LIBRARIES AND ALQUIMIA_INCLUDE_DIRS)
 
-    # Do nothing. Variables are set. No need to search again
+  # Do nothing. Variables are set. No need to search again
 
-elseif ( ALQUIMIA_DIR )
+elseif(ALQUIMIA_DIR)
 
-    set(ALQUIMIA_INCLUDE_DIR ${ALQUIMIA_DIR}/include/alquimia)
-    set(ALQUIMIA_LIBRARY_DIR ${ALQUIMIA_DIR}/lib)
-    set(ALQUIMIA_TARGET alquimia.a)
+  set(ALQUIMIA_INCLUDE_DIR ${ALQUIMIA_DIR}/include/alquimia)
+  set(ALQUIMIA_LIBRARY_DIR ${ALQUIMIA_DIR}/lib)
+  set(ALQUIMIA_TARGET alquimia.a)
 
-    find_library(_ALQUIMIA_LIBRARY
-                 NAMES alquimia
-                 PATHS ${ALQUIMIA_LIBRARY_DIR})
+  find_library(_ALQUIMIA_LIBRARY
+               NAMES alquimia
+               PATHS ${ALQUIMIA_LIBRARY_DIR})
 
-    if ( _ALQUIMIA_LIBRARY )
-      add_imported_library(${ALQUIMIA_TARGET} 
-                           LOCATION ${_ALQUIMIA_LIBRARY}
-                           LINK_LANGUAGES "C")
-      set(ALQUIMIA_LIBRARY ${ALQUIMIA_TARGET})
-    endif()    
+  if (_ALQUIMIA_LIBRARY)
+    add_imported_library(${ALQUIMIA_TARGET} 
+                         LOCATION ${_ALQUIMIA_LIBRARY}
+                         LINK_LANGUAGES "C")
+    set(ALQUIMIA_LIBRARY ${ALQUIMIA_TARGET})
+  endif()    
 
-    # Define the LIBRARIES and INCLUDE_DIRS
-    set(ALQUIMIA_INCLUDE_DIRS ${ALQUIMIA_INCLUDE_DIR})
-    set(ALQUIMIA_LIBRARIES ${ALQUIMIA_LIBRARY} ${CRUNCHTOPE_LIBRARY} ${PFLOTRAN_LIBRARIES})
-    message(STATUS "--- JDM: ALQUIMIA_LIBRARIES = ${ALQUIMIA_LIBRARIES}")
+  # Define the LIBRARIES and INCLUDE_DIRS
+  set(ALQUIMIA_INCLUDE_DIRS ${ALQUIMIA_INCLUDE_DIR})
+  set(ALQUIMIA_LIBRARIES ${ALQUIMIA_LIBRARY} ${CRUNCHTOPE_LIBRARY} ${PFLOTRAN_LIBRARIES})
 
-
-endif( ALQUIMIA_LIBRARIES AND ALQUIMIA_INCLUDE_DIRS )    
+endif(ALQUIMIA_LIBRARIES AND ALQUIMIA_INCLUDE_DIRS)    
 
 # Send useful message if everything is found
 find_package_handle_standard_args(ALQUIMIA DEFAULT_MSG
-                                           ALQUIMIA_INCLUDE_DIRS
-					   ALQUIMIA_LIBRARIES)
+                                  ALQUIMIA_INCLUDE_DIRS
+                                  ALQUIMIA_LIBRARIES)
 
 # find_package)handle)standard_args should set ALQUIMIA_FOUND but it does not!
 if (ALQUIMIA_LIBRARIES AND ALQUIMIA_INCLUDE_DIRS)
-    set(ALQUIMIA_FOUND TRUE)
+  set(ALQUIMIA_FOUND TRUE)
 else()
-    set(ALQUIMIA_FOUND FALSE)
+  set(ALQUIMIA_FOUND FALSE)
 endif()
 
 mark_as_advanced(

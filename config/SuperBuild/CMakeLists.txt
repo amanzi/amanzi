@@ -755,8 +755,8 @@ set(SuperBuild_Amanzi_CACHE_SCRIPT amanzi-tpl-config.cmake)
 configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/${SuperBuild_Amanzi_CACHE_SCRIPT}.in
                ${SuperBuild_BINARY_DIR}/${SuperBuild_Amanzi_CACHE_SCRIPT}
                @ONLY)
-install( FILES "${SuperBuild_BINARY_DIR}/${SuperBuild_Amanzi_CACHE_SCRIPT}"             
-         DESTINATION ${TPL_INSTALL_PREFIX}/share/cmake)
+install(FILES "${SuperBuild_BINARY_DIR}/${SuperBuild_Amanzi_CACHE_SCRIPT}"             
+        DESTINATION ${TPL_INSTALL_PREFIX}/share/cmake)
 
 # --- Create a Exodus split mesh script and add to the install target     
 set(SuperBuild_EXOSPLIT_SCRIPT splitexo)

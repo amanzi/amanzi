@@ -3,9 +3,10 @@
 # file: splitexo.sh
 #
 # This script is used to split ExodusII files for use with Amanzi when
-# the Mesh_maps_stk class is used.  I tries to encapuslate the use of
-# SEACAS utilities nem_slice and nem_spread and avoid their
-# idosyncrancies.  You need to have SEACAS installed in order 
+# It tries to encapuslate the use of SEACAS utilities nem_slice and 
+# nem_spread and avoid their idosyncrancies.  You need to have SEACAS 
+# installed with a patched version of nem_slice (for fix_columns)
+# in order for this to work
 #
 # Usage Example: 
 #
@@ -137,6 +138,7 @@ GRAPH TYPE                      = ELEMENTAL
 MACHINE DESCRIPTION             = MESH=$nproc
 DECOMPOSITION METHOD            = INERTIAL,KL, NUM_SECTS=1, CNCTD_DOM
 OUTPUT VISUALIZATION FILE       = false
+MISC OPTIONS                    = fix_columns
 EOF
 
 "$nem_slice" -a nem_slice.inp $infile

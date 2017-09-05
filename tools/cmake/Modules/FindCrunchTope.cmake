@@ -24,43 +24,43 @@ include(FindPackageHandleStandardArgs)
 include(PrintVariable)
 include(AddPackageDependency)
 
-if ( CRUNCHTOPE_LIBRARIES AND CRUNCHTOPE_INCLUDE_DIRS )
+if (CRUNCHTOPE_LIBRARIES AND CRUNCHTOPE_INCLUDE_DIRS)
 
-    # Do nothing. Variables are set. No need to search again
+  # Do nothing. Variables are set. No need to search again
 
-elseif ( CRUNCHTOPE_DIR )
+elseif (CRUNCHTOPE_DIR)
 
-    set(CRUNCHTOPE_INCLUDE_DIR ${CRUNCHTOPE_DIR}/lib)
-    set(CRUNCHTOPE_LIBRARY_DIR ${CRUNCHTOPE_DIR}/lib)
-    set(CRUNCHTOPE_TARGET crunchchem.a)
+  set(CRUNCHTOPE_INCLUDE_DIR ${CRUNCHTOPE_DIR}/lib)
+  set(CRUNCHTOPE_LIBRARY_DIR ${CRUNCHTOPE_DIR}/lib)
+  set(CRUNCHTOPE_TARGET crunchchem.a)
 
-    find_library(_CRUNCHTOPE_LIBRARY
-                 NAMES crunchchem
-                 PATHS ${CRUNCHTOPE_DIR}/lib)
+  find_library(_CRUNCHTOPE_LIBRARY
+               NAMES crunchchem
+               PATHS ${CRUNCHTOPE_DIR}/lib)
 
-    if ( _CRUNCHTOPE_LIBRARY )
-        add_imported_library(${CRUNCHTOPE_TARGET}
-	                     LOCATION ${_CRUNCHTOPE_LIBRARY}
-                             LINK_LANGUAGES "Fortran")
-        set(CRUNCHTOPE_LIBRARY ${CRUNCHTOPE_TARGET})
-    endif()    
+  if (_CRUNCHTOPE_LIBRARY)
+    add_imported_library(${CRUNCHTOPE_TARGET}
+                         LOCATION ${_CRUNCHTOPE_LIBRARY}
+                         LINK_LANGUAGES "Fortran")
+    set(CRUNCHTOPE_LIBRARY ${CRUNCHTOPE_TARGET})
+  endif()    
     
-    # Define the LIBRARIES and INCLUDE_DIRS
-    set(CRUNCHTOPE_INCLUDE_DIRS ${CRUNCHTOPE_INCLUDE_DIR})
-    set(CRUNCHTOPE_LIBRARIES ${CRUNCHTOPE_LIBRARY})
+  # Define the LIBRARIES and INCLUDE_DIRS
+  set(CRUNCHTOPE_INCLUDE_DIRS ${CRUNCHTOPE_INCLUDE_DIR})
+  set(CRUNCHTOPE_LIBRARIES ${CRUNCHTOPE_LIBRARY})
 
-endif( CRUNCHTOPE_LIBRARIES AND CRUNCHTOPE_INCLUDE_DIRS )
+endif (CRUNCHTOPE_LIBRARIES AND CRUNCHTOPE_INCLUDE_DIRS)
 
 # Send useful message if everything is found
 find_package_handle_standard_args(CRUNCHTOPE DEFAULT_MSG
-                                             CRUNCHTOPE_INCLUDE_DIRS
-					     CRUNCHTOPE_LIBRARIES)
+                                  CRUNCHTOPE_INCLUDE_DIRS
+                                  CRUNCHTOPE_LIBRARIES)
 
 # find_package should set CRUNCHTOPE_FOUND but it does not!
 if (CRUNCHTOPE_LIBRARIES AND CRUNCHTOPE_INCLUDE_DIRS)
-    set(CRUNCHTOPE_FOUND TRUE)
+  set(CRUNCHTOPE_FOUND TRUE)
 else()
-    set(CRUNCHTOPE_FOUND FALSE)
+  set(CRUNCHTOPE_FOUND FALSE)
 endif()
 
 mark_as_advanced(
