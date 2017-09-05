@@ -27,170 +27,163 @@ include(PrintVariable)
 include(AddPackageDependency)
 include(AddImportedLibrary)
 
-if ( MOAB_LIBRARIES AND MOAB_INCLUDE_DIRS )
+if (MOAB_LIBRARIES AND MOAB_INCLUDE_DIRS )
 
-    # Do nothing. Variables are set. No need to search again
+  # Do nothing. Variables are set. No need to search again
 
-else(MOAB_LIBRARIES AND MOAB_INCLUDE_DIRS)
+else()
 
-    # Cache variables
-    if(MOAB_DIR)
-        set(MOAB_DIR "${MOAB_DIR}" CACHE PATH "Path to search for MOAB include and library files")
-    endif()
+  # Cache variables
+  if (MOAB_DIR)
+    set(MOAB_DIR "${MOAB_DIR}" CACHE PATH "Path to search for MOAB include and library files")
+  endif()
 
-    if(MOAB_INCLUDE_DIR)
-        set(MOAB_INCLUDE_DIR "${MOAB_INCLUDE_DIR}" CACHE PATH "Path to search for MOAB include files")
-    endif()
+  if (MOAB_INCLUDE_DIR)
+    set(MOAB_INCLUDE_DIR "${MOAB_INCLUDE_DIR}" CACHE PATH "Path to search for MOAB include files")
+  endif()
 
-    if(MOAB_LIBRARY_DIR)
-        set(MOAB_LIBRARY_DIR "${MOAB_LIBRARY_DIR}" CACHE PATH "Path to search for MOAB library files")
-    endif()
+  if (MOAB_LIBRARY_DIR)
+    set(MOAB_LIBRARY_DIR "${MOAB_LIBRARY_DIR}" CACHE PATH "Path to search for MOAB library files")
+  endif()
 
     
-    # Search for include files
-    # Search order preference:
-    #  (1) MOAB_INCLUDE_DIR - check existence of path AND if the include files exist
-    #  (2) MOAB_DIR/<include>
-    #  (3) Default CMake paths See cmake --html-help=out.html file for more information.
-    #
-    set(moab_inc_names "MBCore.hpp")
-    if (MOAB_INCLUDE_DIR)
+  # Search for include files
+  # Search order preference:
+  #  (1) MOAB_INCLUDE_DIR - check existence of path AND if the include files exist
+  #  (2) MOAB_DIR/<include>
+  #  (3) Default CMake paths See cmake --html-help=out.html file for more information.
+  #
+  set(moab_inc_names "MOABConfig.h")
+  if (MOAB_INCLUDE_DIR)
+    if (EXISTS "${MOAB_INCLUDE_DIR}")
 
-        if (EXISTS "${MOAB_INCLUDE_DIR}")
+      find_path(moab_test_include_path
+                NAMES ${moab_inc_names}
+                HINTS ${MOAB_INCLUDE_DIR}
+                NO_DEFAULT_PATH)
 
-            find_path(moab_test_include_path
-                      NAMES ${moab_inc_names}
-                      HINTS ${MOAB_INCLUDE_DIR}
-                      NO_DEFAULT_PATH)
-            if(NOT moab_test_include_path)
-                message(SEND_ERROR "Can not locate ${moab_inc_names} in ${MOAB_INCLUDE_DIR}")
-            endif()
-            set(MOAB_INCLUDE_DIR "${moab_test_include_path}")
+      if (NOT moab_test_include_path)
+        message(SEND_ERROR "Can not locate ${moab_inc_names} in ${MOAB_INCLUDE_DIR}")
+      endif()
+      set(MOAB_INCLUDE_DIR "${moab_test_include_path}")
 
-        else()
-            message(SEND_ERROR "MOAB_INCLUDE_DIR=${MOAB_INCLUDE_DIR} does not exist")
-            set(MOAB_INCLUDE_DIR "MOAB_INCLUDE_DIR-NOTFOUND")
-        endif()
-
-   else() 
-
-        set(moab_inc_suffixes "include")
-        if(MOAB_DIR)
-
-            if (EXISTS "${MOAB_DIR}" )
-
-                find_path(MOAB_INCLUDE_DIR
-                          NAMES ${moab_inc_names}
-                          HINTS ${MOAB_DIR}
-                          PATH_SUFFIXES ${moab_inc_suffixes}
-                          NO_DEFAULT_PATH)
-
-            else()
-                 message(SEND_ERROR "MOAB_DIR=${MOAB_DIR} does not exist")
-                 set(MOAB_INCLUDE_DIR "MOAB_INCLUDE_DIR-NOTFOUND")
-            endif()    
-
-
-        else()
-
-            find_path(MOAB_INCLUDE_DIR
-                      NAMES ${moab_inc_names}
-                      PATH_SUFFIXES ${moab_inc_suffixes})
-
-        endif()
-
+    else()
+      message(SEND_ERROR "MOAB_INCLUDE_DIR=${MOAB_INCLUDE_DIR} does not exist")
+      set(MOAB_INCLUDE_DIR "MOAB_INCLUDE_DIR-NOTFOUND")
     endif()
 
-    if ( NOT MOAB_INCLUDE_DIR )
-        message(SEND_ERROR "Can not locate MOAB include directory")
-    endif()
+  else() 
 
-    # Search for libraries 
-    # Search order preference:
-    #  (1) MOAB_LIBRARY_DIR - check existence of path AND if the library file exists
-    #  (2) MOAB_DIR/<lib,Lib>
-    #  (3) Default CMake paths See cmake --html-help=out.html file for more information.
-    #
-    set(moab_lib_names "MOAB")
-    if (MOAB_LIBRARY_DIR)
+    set(moab_inc_suffixes "include/moab")
+    if (MOAB_DIR)
+      if (EXISTS "${MOAB_DIR}")
 
-        if (EXISTS "${MOAB_LIBRARY_DIR}")
+        find_path(MOAB_INCLUDE_DIR
+                  NAMES ${moab_inc_names}
+                  HINTS ${MOAB_DIR}
+                  PATH_SUFFIXES ${moab_inc_suffixes}
+                  NO_DEFAULT_PATH)
 
-            find_library(_MOAB_LIBRARY
-                         NAMES ${moab_lib_names}
-                         HINTS ${MOAB_LIBRARY_DIR}
-                         NO_DEFAULT_PATH)
-        else()
-            message(SEND_ERROR "MOAB_LIBRARY_DIR=${MOAB_LIBRARY_DIR} does not exist")
-            set(_MOAB_LIBRARY "_MOAB_LIBRARY-NOTFOUND")
-        endif()
+      else()
+        message(SEND_ERROR "MOAB_DIR=${MOAB_DIR} does not exist")
+        set(MOAB_INCLUDE_DIR "MOAB_INCLUDE_DIR-NOTFOUND")
+      endif()    
 
-    else() 
+    else()
 
-        list(APPEND moab_lib_suffixes "lib" "Lib")
-        if(MOAB_DIR)
-
-            if (EXISTS "${MOAB_DIR}" )
-
-                find_library(_MOAB_LIBRARY
-                             NAMES ${moab_lib_names}
-                             HINTS ${MOAB_DIR}
-                             PATH_SUFFIXES ${moab_lib_suffixes}
-                             NO_DEFAULT_PATH)
-
-            else()
-                 message(SEND_ERROR "MOAB_DIR=${MOAB_DIR} does not exist")
-                 set(_MOAB_LIBRARY "_MOAB_LIBRARY-NOTFOUND")
-            endif()    
-
-
-        else()
-
-            find_library(_MOAB_LIBRARY
-                         NAMES ${moab_lib_names}
-                         PATH_SUFFIXES ${moab_lib_suffixes})
-
-        endif()
+      find_path(MOAB_INCLUDE_DIR
+                NAMES ${moab_inc_names}
+                PATH_SUFFIXES ${moab_inc_suffixes})
 
     endif()
+  endif()
 
-    # Create the target
-    if ( _MOAB_LIBRARY )
-      set(MOAB_LIBRARY MOAB)
-      add_imported_library(${MOAB_LIBRARY}
-	                   LOCATION ${_MOAB_LIBRARY}
-			   LINK_LANGUAGES "C;CXX")
-    else()  			 
-      message(SEND_ERROR "Can not locate MOAB library")
-    endif()    
+  if (NOT MOAB_INCLUDE_DIR)
+    message(SEND_ERROR "Can not locate MOAB include directory")
+  endif()
 
-   
-    # Update the INCLUDE_DIRS and LIBRARIES variables
-    set(MOAB_INCLUDE_DIRS ${MOAB_INCLUDE_DIR})
-    set(MOAB_LIBRARIES    ${MOAB_LIBRARY})
+  # Search for libraries 
+  # Search order preference:
+  #  (1) MOAB_LIBRARY_DIR - check existence of path AND if the library file exists
+  #  (2) MOAB_DIR/<lib,Lib>
+  #  (3) Default CMake paths See cmake --html-help=out.html file for more information.
+  #
+  set(moab_lib_names "MOAB")
+  if (MOAB_LIBRARY_DIR)
+    if (EXISTS "${MOAB_LIBRARY_DIR}")
 
-    # Define the dependent libs
-    set(_MOAB_DEP_LIBS)
+      find_library(_MOAB_LIBRARY
+                   NAMES ${moab_lib_names}
+                   HINTS ${MOAB_LIBRARY_DIR}
+                   NO_DEFAULT_PATH)
+    else()
+      message(SEND_ERROR "MOAB_LIBRARY_DIR=${MOAB_LIBRARY_DIR} does not exist")
+      set(_MOAB_LIBRARY "_MOAB_LIBRARY-NOTFOUND")
+    endif()
 
-    # HDF5
-    find_package(HDF5 QUIET REQUIRED)
-    list(APPEND MOAB_INCLUDE_DIRS ${HDF5_INCLUDE_DIRS})
-    list(APPEND _MOAB_DEP_LIBS ${HDF5_LIBRARIES})
+  else() 
 
-    # NetCDF (This should come with the HDF5)
-    find_package(NetCDF QUIET REQUIRED)
-    list(APPEND MOAB_INCLUDE_DIRS ${NetCDF_INCLUDE_DIRS})
-    list(APPEND _MOAB_DEP_LIBS ${NetCDF_C_LIBRARIES})
+    list(APPEND moab_lib_suffixes "lib" "Lib")
+    if (MOAB_DIR)
+      if (EXISTS "${MOAB_DIR}")
 
-    set_target_properties(${MOAB_LIBRARY} PROPERTIES
-                          IMPORTED_LINK_INTERFACE_LIBRARIES "${_MOAB_DEP_LIBS}")
+        find_library(_MOAB_LIBRARY
+                     NAMES ${moab_lib_names}
+                     HINTS ${MOAB_DIR}
+                     PATH_SUFFIXES ${moab_lib_suffixes}
+                     NO_DEFAULT_PATH)
 
-endif(MOAB_LIBRARIES AND MOAB_INCLUDE_DIRS )    
+      else()
+        message(SEND_ERROR "MOAB_DIR=${MOAB_DIR} does not exist")
+        set(_MOAB_LIBRARY "_MOAB_LIBRARY-NOTFOUND")
+      endif()    
+
+    else()
+
+      find_library(_MOAB_LIBRARY
+                   NAMES ${moab_lib_names}
+                   PATH_SUFFIXES ${moab_lib_suffixes})
+
+    endif()
+  endif()
+
+  # Create the target
+  if (_MOAB_LIBRARY)
+    set(MOAB_LIBRARY MOAB)
+    add_imported_library(${MOAB_LIBRARY}
+                         LOCATION ${_MOAB_LIBRARY}
+                         LINK_LANGUAGES "C;CXX")
+  else()  			 
+    message(SEND_ERROR "Can not locate MOAB library")
+  endif()    
+
+  # Update the INCLUDE_DIRS and LIBRARIES variables
+  set(MOAB_INCLUDE_DIRS ${MOAB_INCLUDE_DIR})
+  set(MOAB_LIBRARIES    ${MOAB_LIBRARY})
+
+  # Define the dependent libs
+  set(_MOAB_DEP_LIBS)
+
+  # HDF5
+  find_package(HDF5 QUIET REQUIRED)
+  list(APPEND MOAB_INCLUDE_DIRS ${HDF5_INCLUDE_DIRS})
+  list(APPEND _MOAB_DEP_LIBS ${HDF5_LIBRARIES})
+
+  # NetCDF (This should come with the HDF5)
+  find_package(NetCDF QUIET REQUIRED)
+  list(APPEND MOAB_INCLUDE_DIRS ${NetCDF_INCLUDE_DIRS})
+  list(APPEND _MOAB_DEP_LIBS ${NetCDF_C_LIBRARIES})
+
+  set_target_properties(${MOAB_LIBRARY} PROPERTIES
+                        IMPORTED_LINK_INTERFACE_LIBRARIES "${_MOAB_DEP_LIBS}")
+
+endif(MOAB_LIBRARIES AND MOAB_INCLUDE_DIRS)
+
 
 # Send useful message if everything is found
 find_package_handle_standard_args(MOAB DEFAULT_MSG
-                                           MOAB_LIBRARIES
-                                           MOAB_INCLUDE_DIRS)
+                                  MOAB_LIBRARIES
+                                  MOAB_INCLUDE_DIRS)
 
 # Define the version
 

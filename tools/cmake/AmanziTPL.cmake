@@ -396,6 +396,17 @@ add_feature_info(MOAB_Mesh
                  )
 if (ENABLE_MOAB_Mesh)
   find_package(MOAB REQUIRED)
+
+  if (MOAB_FOUND)
+    message(STATUS "MOAB Package information")
+    message(STATUS "\tMOAB_VERSION      = ${MOAB_VERSION}")
+    message(STATUS "\tMOAB_INCLUDE_DIR  = ${MOAB_INCLUDE_DIR}")
+    message(STATUS "\tMOAB_INCLUDE_DIRS = ${MOAB_INCLUDE_DIRS}")
+    message(STATUS "\tMOAB_LIBRARY_DIR  = ${MOAB_LIBRARY_DIR}")
+    message(STATUS "\tMOAB_LIBRARY      = ${MOAB_LIBRARY}")
+    message(STATUS "\tMOAB_LIBRARIES    = ${MOAB_LIBRARIES}")
+    message(STATUS "")
+  endif() 
 endif()
 
 
