@@ -24,20 +24,21 @@ amanzi_tpl_version_write(FILENAME ${TPL_VERSIONS_INCLUDE_FILE}
 # --- Patch Alquimia code
 # Alquimia and Amanzi disagree about how to find PETSc, so we override 
 # Alquimia's method here using a patch command to turn $ENV{var} -> ${var}.
+set(ALQUIMIA_PATCH_COMMAND sh ${SuperBuild_TEMPLATE_FILES_DIR}/alquimia-patch-step.sh)
 # set(ALQUIMIA_PATCH_COMMAND sh ${SuperBuild_TEMPLATE_FILES_DIR}/alquimia-patch-step.sh)
 
-set(ALQUIMIA_patch_file alquimia-pflotran.patch)
-set(ALQUIMIA_sh_patch ${ALQUIMIA_prefix_dir}/alquimia-patch-step.sh)
-configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/alquimia-patch-step.sh.in
-               ${ALQUIMIA_sh_patch}
-               @ONLY)
+#set(ALQUIMIA_patch_file alquimia-pflotran.patch)
+#set(ALQUIMIA_sh_patch ${ALQUIMIA_prefix_dir}/alquimia-patch-step.sh)
+#configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/alquimia-patch-step.sh.in
+#               ${ALQUIMIA_sh_patch}
+#               @ONLY)
 # --- configure the CMake patch step
-set(ALQUIMIA_cmake_patch ${ALQUIMIA_prefix_dir}/alquimia-patch-step.cmake)
-configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/alquimia-patch-step.cmake.in
-               ${ALQUIMIA_cmake_patch}
-               @ONLY)
+#set(ALQUIMIA_cmake_patch ${ALQUIMIA_prefix_dir}/alquimia-patch-step.cmake)
+#configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/alquimia-patch-step.cmake.in
+#               ${ALQUIMIA_cmake_patch}
+#               @ONLY)
 # --- set the patch command
-set(ALQUIMIA_PATCH_COMMAND ${CMAKE_COMMAND} -P ${ALQUIMIA_cmake_patch})
+#set(ALQUIMIA_PATCH_COMMAND ${CMAKE_COMMAND} -P ${ALQUIMIA_cmake_patch})
 
 
 # --- Define the arguments passed to CMake.
@@ -54,22 +55,23 @@ set(ALQUIMIA_CMAKE_ARGS "-DCMAKE_INSTALL_PREFIX:FILEPATH=${TPL_INSTALL_PREFIX}"
 
 # --- Add external project build and tie to the ALQUIMIA build target
 ExternalProject_Add(${ALQUIMIA_BUILD_TARGET}
-                    DEPENDS   ${ALQUIMIA_PACKAGE_DEPENDS}             # Package dependency target
-                    TMP_DIR   ${ALQUIMIA_tmp_dir}                     # Temporary files directory
-                    STAMP_DIR ${ALQUIMIA_stamp_dir}                   # Timestamp and log directory
+                    DEPENDS   ${ALQUIMIA_PACKAGE_DEPENDS}         # Package dependency target
+                    TMP_DIR   ${ALQUIMIA_tmp_dir}                 # Temporary files directory
+                    STAMP_DIR ${ALQUIMIA_stamp_dir}               # Timestamp and log directory
                     # -- Download and URL definitions
                     DOWNLOAD_DIR ${TPL_DOWNLOAD_DIR}              # Download directory
-                    URL          ${ALQUIMIA_URL}                      # URL may be a web site OR a local file
-                    URL_MD5      ${ALQUIMIA_MD5_SUM}                  # md5sum of the archive file
+                    URL          ${ALQUIMIA_URL}                  # URL may be a web site OR a local file
+                    URL_MD5      ${ALQUIMIA_MD5_SUM}              # md5sum of the archive file
+                    DOWNLOAD_NAME ${ALQUIMIA_SAVEAS_FILE}         # file name to store (if not end of URL)
                     PATCH_COMMAND ${ALQUIMIA_PATCH_COMMAND}       # Mods to source
                     # -- Configure
-                    SOURCE_DIR       ${ALQUIMIA_source_dir}               # Source directory
-                    CMAKE_ARGS       ${ALQUIMIA_CMAKE_ARGS}         # CMAKE_CACHE_ARGS or CMAKE_ARGS => CMake configure
-                                     ${Amanzi_CMAKE_C_COMPILER_ARGS}  # Ensure uniform build
-                                     -DCMAKE_C_COMPILER:FILEPATH=${CMAKE_C_COMPILER}
-                                     -DCMAKE_Fortran_COMPILER:FILEPATH=${CMAKE_Fortran_COMPILER}
+                    SOURCE_DIR    ${ALQUIMIA_source_dir}          # Source directory
+                    CMAKE_ARGS    ${ALQUIMIA_CMAKE_ARGS}          # CMAKE_CACHE_ARGS or CMAKE_ARGS => CMake configure
+                                  ${Amanzi_CMAKE_C_COMPILER_ARGS} # Ensure uniform build
+                                  -DCMAKE_C_COMPILER:FILEPATH=${CMAKE_C_COMPILER}
+                                  -DCMAKE_Fortran_COMPILER:FILEPATH=${CMAKE_Fortran_COMPILER}
                     # -- Build
-                    BINARY_DIR        ${ALQUIMIA_build_dir}           # Build directory 
+                    BINARY_DIR        ${ALQUIMIA_build_dir}       # Build directory 
                     BUILD_COMMAND     $(MAKE)
                     # -- Install
                     INSTALL_DIR      ${TPL_INSTALL_PREFIX}        # Install directory
