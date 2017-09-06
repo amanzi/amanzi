@@ -1,19 +1,16 @@
-#include <UnitTest++.h>
-
 #include <iostream>
-
-
-#include "../Mesh_MOAB.hh"
 
 #include "Epetra_Map.h"
 #include "Epetra_MpiComm.h"
+#include "UnitTest++.h"
+
+#include "../Mesh_MOAB.hh"
 
 #include "mpi.h"
 
 
 TEST(MOAB_HEX1)
 {
-
   int i, j, k, err, nc, nv;
   Amanzi::AmanziMesh::Entity_ID_List nodes;
   Amanzi::AmanziMesh::Entity_ID_List faces;

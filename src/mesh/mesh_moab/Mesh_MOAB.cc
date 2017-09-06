@@ -1154,7 +1154,7 @@ void Mesh_MOAB::node_get_coordinates(Entity_ID node_id, AmanziGeometry::Point *n
     assert(result == MB_SUCCESS);
   }
 
-  ncoord->set(coords);
+  ncoord->set(space_dim_, coords);
 }
 
 
@@ -1673,11 +1673,11 @@ moab::Tag Mesh_MOAB::build_set(
 }
 
 
-void Mesh_MOAB::get_set_entities_vofs(const std::string setname, 
-                                      const Entity_kind kind, 
-                                      const Parallel_type ptype,
-                                      Entity_ID_List *setents,
-                                      std::vector<double> *vofs) const
+void Mesh_MOAB::get_set_entities_and_vofs(const std::string setname, 
+                                          const Entity_kind kind, 
+                                          const Parallel_type ptype,
+                                          Entity_ID_List *setents,
+                                          std::vector<double> *vofs) const
 {
   int idx, i, lid, one=1;
   bool found(false);
