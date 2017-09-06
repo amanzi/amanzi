@@ -77,6 +77,23 @@ WeakMPCSemiCoupledDeform::WeakMPCSemiCoupledDeform(Teuchos::ParameterList& pk_tr
     Teuchos::Array<std::string> pkorder2 = global_list_->sublist("PKs").sublist(pkorder1[1]).get<Teuchos::Array<std::string> >("PKs order");
     for (int i=0; i<pkorder2.size(); i++){
       
+      Teuchos::ParameterList& sub_list = global_list_->sublist("PKs").sublist(pkorder1[0]).sublist("initial condition");
+      if (sub_list.isParameter("restart files, cycles")){
+	std::cout<<"WEAK MPC: "<<sub_list <<"\n";
+	Teuchos::Array<std::string> restart = sub_list.get<Teuchos::Array<std::string> >("restart files, cycles");
+	  
+	std::stringstream res_file;
+	  
+	if(restart[0].rfind("/") == restart[0].size()-1){} //exact path
+	else
+	  restart[0] += "/";
+	
+	res_file << restart[0] << "checkpoint_" << rank << "_" << restart[1] << ".h5";
+	
+	sub_list.set("restart file", res_file.str());
+	
+      }
+      
       if (global_list_->sublist("PKs").sublist(pkorder2[i]).isSublist("initial condition")){
 	Teuchos::ParameterList& seb_list = global_list_->sublist("PKs").sublist(pkorder2[i]).sublist("initial condition");
 	if (seb_list.isParameter("restart files, cycles")){

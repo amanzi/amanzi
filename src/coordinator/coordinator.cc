@@ -114,11 +114,15 @@ void Coordinator::coordinator_init() {
         S_->RequireField(node_key)->SetMesh(mesh->second.first)->SetGhosted()
           ->AddComponent("node", Amanzi::AmanziMesh::NODE, mesh->second.first->space_dimension());
       }
-      else if (!parameter_list_->sublist("mesh").isSublist("column") && mesh->first != "domain"){
-        std::string node_key = mesh->first+std::string("-vertex_coordinate");
+      else if (!parameter_list_->sublist("mesh").isSublist("column")){
+        std::string node_key;
+        if (mesh->first != "domain")
+          node_key= mesh->first+std::string("-vertex_coordinate");
+        else
+          node_key = std::string("vertex_coordinate");
+
         S_->RequireField(node_key)->SetMesh(mesh->second.first)->SetGhosted()
-          ->AddComponent("node", Amanzi::AmanziMesh::NODE, mesh->second.first->space_dimension());
-        
+          ->AddComponent("node", Amanzi::AmanziMesh::NODE, mesh->second.first->space_dimension()); 
       }
     }
   }
@@ -555,11 +559,15 @@ bool Coordinator::advance(double t_old, double t_new) {
           mesh->second.first->deform(node_ids, old_positions, false, &final_positions);
         }
         
-        else if (!parameter_list_->sublist("mesh").isSublist("column") && mesh->first != "domain") {
+        else if (!parameter_list_->sublist("mesh").isSublist("column")) {
           // collect the old coordinates
           
-          std::string node_key = mesh->first+std::string("-vertex_coordinate");
-          
+          std::string node_key;
+          if (mesh->first != "domain")
+            node_key= mesh->first+std::string("-vertex_coordinate");
+          else
+            node_key = std::string("vertex_coordinate");
+
           Teuchos::RCP<const Amanzi::CompositeVector> vc_vec = S_->GetFieldData(node_key);
           vc_vec->ScatterMasterToGhosted();
           const Epetra_MultiVector& vc = *vc_vec->ViewComponent("node", true);
