@@ -26,7 +26,7 @@ include(FindPackageHandleStandardArgs)
 include(PrintVariable)
 include(AddPackageDependency)
 
-if ( XERCES_LIBRARIES AND XERCES_INCLUDE_DIRS )
+if (XERCES_LIBRARIES AND XERCES_INCLUDE_DIRS)
 
   # Do nothing. Variables are set. No need to search again
 
@@ -64,9 +64,9 @@ else(XERCES_LIBRARY_DIR AND XERCES_INCLUDE_DIR)
 
   set(xerces_inc_suffixes "include" "include/xercesc" )
     if (XERCES_DIR)
-      if (EXISTS "${XERCES_DIR}" )
+      if (EXISTS "${XERCES_DIR}")
         message (STATUS "EIB >>> trying to find ${xerces_inc_names} in "
-		        " ${XERCES_DIR} with ${xerces_inc_suffixes}")
+                        " ${XERCES_DIR} with ${xerces_inc_suffixes}")
 
         find_path(XERCES_INCLUDE_DIR
                   NAMES ${xerces_inc_names}

@@ -89,9 +89,11 @@
 #                - update Hypre to version 2.11.2    
 #   0.94.8       - removed ExodusII as independent TPL  
 #   0.94.9       - update PFloTran to version dev-c8df814cb6fa
-#                - update PETSc to 3.7.6
+#                - update PETSc to xsdk-0.2.0 (native 3.7.5)
 #                - update SuperLU to 5.2.1
-#                - update SuperLU_dist 5.1.3
+#                - update SuperLU_dist to xsdk-0.2.0 (native 5.1.3)
+#                - update Alquimia to xsdk-0.2.0 (native 1.0.4)
+#                - update Hypre to xsdk-0.2.0 (native 2.11.2)
 
 include(CMakeParseArguments)
 
@@ -302,12 +304,13 @@ set(MSTK_MD5_SUM        d0761665844b1f956ef7cb3d80d68d88)
 #
 # TPL: MOAB
 #
-set(MOAB_VERSION_MAJOR  r4276)
-set(MOAB_VERSION_MINOR  )
-set(MOAB_VERSION_PATCH  )
-set(MOAB_URL_STRING     ${AMANZI_TPLS_DOWNLOAD_URL})
-set(MOAB_ARCHIVE_FILE   MOAB-${MOAB_VERSION}.tar.gz)
-set(MOAB_MD5_SUM        49da04e8905f6d730d92521e7ca7400e) 
+set(MOAB_VERSION_MAJOR  5)
+set(MOAB_VERSION_MINOR  0)
+set(MOAB_VERSION_PATCH  0)
+set(MOAB_VERSION ${MOAB_VERSION_MAJOR}.${MOAB_VERSION_MINOR}.${MOAB_VERSION_PATCH})
+set(MOAB_URL_STRING     ftp://ftp.mcs.anl.gov/pub/fathom)
+set(MOAB_ARCHIVE_FILE   moab-${MOAB_VERSION}.tar.gz)
+set(MOAB_MD5_SUM        1840ca02366f4d3237d44af63e239e3b) 
 
 #
 # TPL: HYPRE
@@ -316,9 +319,10 @@ set(HYPRE_VERSION_MAJOR  2)
 set(HYPRE_VERSION_MINOR  11)
 set(HYPRE_VERSION_PATCH  2)
 set(HYPRE_VERSION  ${HYPRE_VERSION_MAJOR}.${HYPRE_VERSION_MINOR}.${HYPRE_VERSION_PATCH})
-set(HYPRE_URL_STRING     "https://computation.llnl.gov/projects/hypre-scalable-linear-solvers-multigrid-methods/download")
-set(HYPRE_ARCHIVE_FILE   hypre-${HYPRE_VERSION}.tar.gz)
-set(HYPRE_MD5_SUM        d507943a1a3ce5681c3308e2f3a6dd34) 
+set(HYPRE_URL_STRING     "https://github.com/LLNL/hypre/archive/")
+set(HYPRE_ARCHIVE_FILE   xsdk-${XSDK_VERSION}.tar.gz)
+set(HYPRE_SAVEAS_FILE    hypre-${HYPRE_VERSION}.tar.gz)
+set(HYPRE_MD5_SUM        fc9474058560602e9be2ce618db7fd14) 
 
 #
 # TPL: ParMetis
@@ -340,6 +344,7 @@ set(SuperLU_VERSION_PATCH  1)
 set(SuperLU_VERSION  ${SuperLU_VERSION_MAJOR}.${SuperLU_VERSION_MINOR}.${SuperLU_VERSION_PATCH})
 set(SuperLU_URL_STRING     "http://crd-legacy.lbl.gov/~xiaoye/SuperLU")
 set(SuperLU_ARCHIVE_FILE   superlu_${SuperLU_VERSION}.tar.gz)
+set(SuperLU_SAVEAS_FILE    superlu_${SuperLU_VERSION}.tar.gz)
 set(SuperLU_MD5_SUM        3a1a9bff20cb06b7d97c46d337504447)
 
 #
@@ -349,9 +354,10 @@ set(SuperLUDist_VERSION_MAJOR  5)
 set(SuperLUDist_VERSION_MINOR  1)
 set(SuperLUDist_VERSION_PATCH  3)
 set(SuperLUDist_VERSION  ${SuperLUDist_VERSION_MAJOR}.${SuperLUDist_VERSION_MINOR}.${SuperLUDist_VERSION_PATCH})
-set(SuperLUDist_URL_STRING     "http://crd-legacy.lbl.gov/~xiaoye/SuperLU")
-set(SuperLUDist_ARCHIVE_FILE   superlu_dist_${SuperLUDist_VERSION}.tar.gz)
-set(SuperLUDist_MD5_SUM        fec21a9207ef94f57501c9406da78285)
+set(SuperLUDist_URL_STRING     "https://github.com/xiaoyeli/superlu_dist/archive")
+set(SuperLUDist_ARCHIVE_FILE   xsdk-${XSDK_VERSION}.tar.gz)
+set(SuperLUDist_SAVEAS_FILE    superlu_dist_${SuperLUDist_VERSION}.tar.gz)
+set(SuperLUDist_MD5_SUM        9ccd1915dd06f167ed8dca7b14bbcedb)
 
 #
 # TPL: PETSc
@@ -407,9 +413,10 @@ set(ALQUIMIA_VERSION_MAJOR 1)
 set(ALQUIMIA_VERSION_MINOR 0)
 set(ALQUIMIA_VERSION_PATCH 4)
 set(ALQUIMIA_VERSION ${ALQUIMIA_VERSION_MAJOR}.${ALQUIMIA_VERSION_MINOR}.${ALQUIMIA_VERSION_PATCH})
-set(ALQUIMIA_URL_STRING     ${AMANZI_TPLS_DOWNLOAD_URL})
-set(ALQUIMIA_ARCHIVE_FILE   alquimia-dev-${ALQUIMIA_VERSION}.tar.gz)
-set(ALQUIMIA_MD5_SUM        437e5b0a2f3c7a7dace78344b7218b3c)
+set(ALQUIMIA_URL_STRING     https://github.com/LBL-EESA/alquimia-dev/archive)
+set(ALQUIMIA_ARCHIVE_FILE   xsdk-${XSDK_VERSION}.tar.gz)
+set(ALQUIMIA_SAVEAS_FILE    alquimia-dev-${ALQUIMIA_VERSION}.tar.gz)
+set(ALQUIMIA_MD5_SUM        c9ad5100a4f064c3cdc49bcebd0e508e)
 
 #
 # TPL: Silo

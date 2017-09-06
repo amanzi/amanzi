@@ -86,34 +86,33 @@ ExternalProject_Add(${CCSE_BUILD_TARGET}
                     # -- Output control
                     ${CCSE_logging_args}) 
 
-if ( ENABLE_CCSE_TOOLS )
-
 # --- This custom command builds fsnapshot.so, which is a Python module used 
 # --- to extract Amanzi-S plot data. It executes after the CCSE library is 
 # --- built, builds the module, and copies it into place.
-add_custom_command(TARGET ${CCSE_BUILD_TARGET}
-                   POST_BUILD
-                   COMMAND $(MAKE) BOXLIB_HOME=${CCSE_source_dir}
-                   COMMAND ${CMAKE_COMMAND} -E copy fsnapshot.so ${TPL_INSTALL_PREFIX}/lib
-                   DEPENDS ${CCSE_BUILD_TARGET}
-                   WORKING_DIRECTORY ${CCSE_source_dir}/Tools/Py_util)
+if (ENABLE_CCSE_TOOLS)
 
-# --- This guy right here builds AMRDeriveTecplot, an executable program for 
-# --- producing Tecplot/ASCII output from CCSE's native AMR output.
-# --- Like the fsnapshot.so command above, it executes after the CCSE library 
-# --- is built, builds the module, and copies it into place.
-##if (${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
-    # We need to link against libquadmath on Linux, it seems.
-##  set(AMRDERIVETECPLOT_ARGS "LDFLAGS=\"-lquadmath\"")
-##endif()
-##if (APPLE)
-##  set(AMRDERIVETECPLOT_ARGS "LDFLAGS=\"-lgfortran\"")
-##endif()
-##add_custom_command(TARGET ${CCSE_BUILD_TARGET}
-##                   POST_BUILD
-##                   COMMAND $(MAKE) BOXLIB_HOME=${CCSE_source_dir} ${AMRDERIVETECPLOT_ARGS}
-##                   COMMAND cp AmrDeriveTecplot*.ex ${TPL_INSTALL_PREFIX}/bin
-##                   DEPENDS ${CCSE_BUILD_TARGET}
-##                   WORKING_DIRECTORY ${CCSE_source_dir}/Tools/C_util/AmrDeriveTecplot)
+  add_custom_command(TARGET ${CCSE_BUILD_TARGET}
+                     POST_BUILD
+                     COMMAND $(MAKE) BOXLIB_HOME=${CCSE_source_dir}
+                     COMMAND ${CMAKE_COMMAND} -E copy fsnapshot.so ${TPL_INSTALL_PREFIX}/lib
+                     DEPENDS ${CCSE_BUILD_TARGET}
+                     WORKING_DIRECTORY ${CCSE_source_dir}/Tools/Py_util)
 
+  # --- This guy right here builds AMRDeriveTecplot, an executable program for 
+  # --- producing Tecplot/ASCII output from CCSE's native AMR output.
+  # --- Like the fsnapshot.so command above, it executes after the CCSE library 
+  # --- is built, builds the module, and copies it into place.
+  #if (${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
+  #  # We need to link against libquadmath on Linux, it seems.
+  #  set(AMRDERIVETECPLOT_ARGS "LDFLAGS=\"-lquadmath\"")
+  #endif()
+  #if (APPLE)
+  #  set(AMRDERIVETECPLOT_ARGS "LDFLAGS=\"-lgfortran\"")
+  #endif()
+  #add_custom_command(TARGET ${CCSE_BUILD_TARGET}
+  #                   POST_BUILD
+  #                   COMMAND $(MAKE) BOXLIB_HOME=${CCSE_source_dir} ${AMRDERIVETECPLOT_ARGS}
+  #                   COMMAND cp AmrDeriveTecplot*.ex ${TPL_INSTALL_PREFIX}/bin
+  #                   DEPENDS ${CCSE_BUILD_TARGET}
+  #                   WORKING_DIRECTORY ${CCSE_source_dir}/Tools/C_util/AmrDeriveTecplot)
 endif()

@@ -141,6 +141,7 @@ ExternalProject_Add(${HYPRE_BUILD_TARGET}
                     DOWNLOAD_DIR ${TPL_DOWNLOAD_DIR}               # Download directory
                     URL          ${HYPRE_URL}                      # URL may be a web site OR a local file
                     URL_MD5      ${HYPRE_MD5_SUM}                  # md5sum of the archive file
+                    DOWNLOAD_NAME ${HYPRE_SAVEAS_FILE}             # file name to store (if not end of URL)
                     # -- Patch 
                     PATCH_COMMAND ${HYPRE_PATCH_COMMAND}
                     # -- Configure
