@@ -67,7 +67,7 @@ class EvaluatorIndependent : public Evaluator {
   bool computed_once_;
 
   KeySet requests_;
-  Teuchos::ParameterList& plist_;
+  Teuchos::ParameterList plist_;
   VerboseObject vo_;
 
  private:

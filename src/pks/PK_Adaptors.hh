@@ -74,10 +74,12 @@ class PK_Adaptor : public PK,
     return Base_t::get_dt(); }
   virtual Teuchos::Ptr<Debugger> debugger() override final {
     return Base_t::debugger(); }
-  virtual void StateToSolution(TreeVector& soln, const Key& tag) override final {
-    Base_t::StateToSolution(soln, tag); }
-  virtual void SolutionToState(TreeVector& soln, const Key& tag) override final {
-    Base_t::SolutionToState(soln, tag); }
+  virtual void StateToSolution(TreeVector& soln, const Key& tag, const Key& suffix) override final {
+    Base_t::StateToSolution(soln, tag, suffix); }
+  virtual void SolutionToState(TreeVector& soln, const Key& tag, const Key& suffix) override final {
+    Base_t::SolutionToState(soln, tag, suffix); }
+  virtual void SolutionToState(const TreeVector& soln, const Key& tag, const Key& suffix) override final {
+    Base_t::SolutionToState(soln, tag, suffix); }
       
   
 };
@@ -119,10 +121,12 @@ class PK_Explicit_Adaptor : public PK_Explicit<>,
     return Base_t::get_dt(); }
   virtual Teuchos::Ptr<Debugger> debugger() override final {
     return Base_t::debugger(); }
-  virtual void StateToSolution(TreeVector& soln, const Key& tag) override final {
-    Base_t::StateToSolution(soln, tag); }
-  virtual void SolutionToState(TreeVector& soln, const Key& tag) override final {
-    Base_t::SolutionToState(soln, tag); }
+  virtual void StateToSolution(TreeVector& soln, const Key& tag, const Key& suffix) override final {
+    Base_t::StateToSolution(soln, tag, suffix); }
+  virtual void SolutionToState(TreeVector& soln, const Key& tag, const Key& suffix) override final {
+    Base_t::SolutionToState(soln, tag, suffix); }
+  virtual void SolutionToState(const TreeVector& soln, const Key& tag, const Key& suffix) override final {
+    Base_t::SolutionToState(soln, tag, suffix); }
 
   // the Explicit_TI::fnBase interface
   virtual void Functional(double t, const TreeVector& u, TreeVector& f) override final {
@@ -232,11 +236,14 @@ class PK_BDF_Adaptor : public PK_BDF<>,
     return Base_t::ReportStatistics();
   }
 
-  virtual void StateToSolution(TreeVector& soln, const Key& tag) override final {
-    Base_t::StateToSolution(soln, tag);
+  virtual void StateToSolution(TreeVector& soln, const Key& tag, const Key& suffix) override final {
+    Base_t::StateToSolution(soln, tag, suffix);
   }
-  virtual void SolutionToState(TreeVector& soln, const Key& tag) override final {
-    Base_t::SolutionToState(soln, tag);
+  virtual void SolutionToState(TreeVector& soln, const Key& tag, const Key& suffix) override final {
+    Base_t::SolutionToState(soln, tag, suffix);
+  }
+  virtual void SolutionToState(const TreeVector& soln, const Key& tag, const Key& suffix) override final {
+    Base_t::SolutionToState(soln, tag, suffix);
   }
   
 

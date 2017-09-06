@@ -34,13 +34,13 @@ class AEvaluator : public EvaluatorSecondary<double> {
   virtual Teuchos::RCP<Evaluator> Clone() const override {
     return Teuchos::rcp(new AEvaluator(*this)); };
 
-  virtual void Evaluate_(State& S,
+  virtual void Evaluate_(const State& S,
           double& result) override {
     auto& fb = S.Get<double>("fb");
     result = 2 * fb;
   }
 
-  virtual void EvaluatePartialDerivative_(State& S,
+  virtual void EvaluatePartialDerivative_(const State& S,
           const Key& wrt_key, double& result) override {
     if (wrt_key == "fb") {
       result = 2.0;

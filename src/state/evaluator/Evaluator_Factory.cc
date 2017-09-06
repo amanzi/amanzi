@@ -19,7 +19,7 @@ template<> Factory<Evaluator>::map_type* Factory<Evaluator>::map_;
 
 // method for instantiating Evaluator implementations
 Teuchos::RCP<Evaluator> Evaluator_Factory::createEvaluator(Teuchos::ParameterList& plist) {
-  std::string field_evaluator_typename = plist.get<std::string>("field evaluator type");
+  std::string field_evaluator_typename = plist.get<std::string>("evaluator type");
   return Teuchos::rcp(CreateInstance(field_evaluator_typename, plist));
 };
 

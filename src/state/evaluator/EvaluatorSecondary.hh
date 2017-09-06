@@ -65,9 +65,9 @@ class EvaluatorSecondary : public Evaluator {
 
  protected:
   // These do the actual work
-  virtual void Evaluate_(State& S,
+  virtual void Evaluate_(const State& S,
                          Data_t& result) = 0;
-  virtual void EvaluatePartialDerivative_(State& S,
+  virtual void EvaluatePartialDerivative_(const State& S,
           const Key& wrt_key, Data_t& result) = 0;
 
   // calls Evaluate with the correct data
@@ -89,7 +89,7 @@ class EvaluatorSecondary : public Evaluator {
   bool check_derivative_;
 
   VerboseObject vo_;
-  Teuchos::ParameterList& plist_;
+  Teuchos::ParameterList plist_;
   
 }; // class EvaluatorSecondary
 

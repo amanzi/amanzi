@@ -22,11 +22,11 @@ namespace Amanzi {
 EvaluatorIndependent::EvaluatorIndependent(Teuchos::ParameterList& plist) :
     time_(0.),
     computed_once_(false),
-    my_key_(plist.name()),
+    my_key_(Keys::cleanPListName(plist.name())),
     my_tag_(plist.get<std::string>("tag","")),
     temporally_variable_(!plist.get<bool>("constant in time", false)),
     plist_(plist),
-    vo_(plist.name(), plist) {}
+    vo_(Keys::cleanPListName(plist.name()), plist) {}
 
 
 // ---------------------------------------------------------------------------
@@ -35,6 +35,8 @@ EvaluatorIndependent::EvaluatorIndependent(Teuchos::ParameterList& plist) :
 void EvaluatorIndependent::EnsureCompatibility(State& S) {
   // Require the field and claim ownership.
   S.Require<CompositeVector,CompositeVectorSpace>(my_key_, my_tag_, my_key_);
+  S.GetRecordW(my_key_, my_tag_, my_key_).set_initialized();
+  
   // check plist for vis or checkpointing control
   auto vis_check = std::string{"visualize " + my_key_};
   bool io_my_key = plist_.get<bool>(vis_check, true);
@@ -64,7 +66,7 @@ bool EvaluatorIndependent::Update(State& S, const Key& request) {
     return true;
   }
 
-  if (temporally_variable_ && (S.time() != time_)) { // field is not current, update and clear requests
+  if (temporally_variable_ && (S.time(my_tag_) != time_)) { // field is not current, update and clear requests
     if (vo_.os_OK(Teuchos::VERB_EXTREME)) {
       *vo_.os() << "Independent field \"" << my_key_ << "\" requested by " << request 
                  << " is updating." << std::endl;

@@ -84,7 +84,7 @@ class EvaluatorSecondaries : public Evaluator {
   bool check_derivative_;
 
   VerboseObject vo_;
-  Teuchos::ParameterList& plist_;
+  Teuchos::ParameterList plist_;
   
 }; // class Evaluator
 

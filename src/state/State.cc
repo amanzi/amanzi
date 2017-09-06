@@ -177,8 +177,9 @@ State::RequireEvaluator(const Key& key, const Key& tag) {
 
     // -- Create and set the evaluator.
     Evaluator_Factory evaluator_factory;
+    sublist.set("tag", tag);
     auto evaluator = evaluator_factory.createEvaluator(sublist);
-    SetEvaluator(key, evaluator);
+    SetEvaluator(key, tag, evaluator);
     return evaluator;
   }
 
@@ -227,7 +228,6 @@ void State::SetEvaluator(const Key& key, const Key& tag, const Teuchos::RCP<Eval
   evaluators_[key][tag] = evaluator;
 };
 
-
 void State::WriteDependencyGraph() const {
   std::ofstream os("dependency_graph.txt", std::ios::out);
   for (auto& fe : evaluators_) {
@@ -269,7 +269,22 @@ void State::Setup() {
   Require<int>("cycle", "", "cycle");
   Require<int>("cycle", "next", "cycle");
 
-  // -- Ceate the data for all fields.
+  // Ensure compatibility of all the evaluators -- each evaluator's dependencies must
+  // provide what is required of that evaluator.
+  for (auto& e : evaluators_) {
+    for (auto& r : e.second) {
+      if (!r.second->ProvidesKey(e.first)) {
+        std::stringstream messagestream;
+        messagestream << "Evaluator \"" << e.first << "\" with tag \""
+                      << r.first << "\" does not provide its own key.";
+        Errors::Message message(messagestream.str());
+        Exceptions::amanzi_throw(message);
+      }
+      r.second->EnsureCompatibility(*this);
+    }
+  }
+
+  // -- Create the data for all fields.
   for (auto& f : data_) {
     f.second->CreateData();
   }
@@ -281,7 +296,7 @@ void State::Setup() {
   Set("cycle", "", "cycle", 0);
   GetRecordW("cycle", "cycle").set_initialized();
   Set("cycle", "next", "cycle", 0);
-  GetRecordW("cycle", "cycle").set_initialized();
+  GetRecordW("cycle", "next", "cycle").set_initialized();
 };
 
 
@@ -346,12 +361,13 @@ void State::Initialize(const State& other) {
 };
 
 void State::InitializeEvaluators() {
-  for (auto& f_it : evaluators_) {
-    for (auto& e : f_it.second) {
-      e.second->Update(*this, "state");
-      GetRecordW(f_it.first, e.first, f_it.first).set_initialized();
-    }
-  }
+  // for (auto& f_it : evaluators_) {
+  //   for (auto& e : f_it.second) {
+  //     std::cout << "Initing eval: \"" << f_it.first << "\" tag \"" << e.first << "\"" << std::endl;
+  //     e.second->Update(*this, "state");
+  //     GetRecordW(f_it.first, e.first, f_it.first).set_initialized();
+  //   }
+  // }
 };
 
 
@@ -401,33 +417,35 @@ void State::AliasEvaluators() {
 // initialized.  Such fields may be used by an evaluator field but are not in
 // the dependency tree due to poor design.
 bool State::CheckNotEvaluatedFieldsInitialized() {
-  for (auto& f_it : data_) {
-    Record& field = f_it.second->GetRecord("");
-    if (!HasEvaluator(f_it.first, "") && !field.initialized()) {
-      // No evaluator, not intialized... FAIL.
-      Errors::Message message;
-      message << "Field \"" << f_it.first << "\" was not initialized.";
-      throw(message);
-      return false;
-    }
-  }
+  // for (auto& f_it : data_) {
+  //   for (auto& field : *f_it.second) {
+  //     if (!HasEvaluator(f_it.first, field.first) && !field.second->initialized()) {
+  //       // No evaluator, not intialized... FAIL.
+  //       Errors::Message message;
+  //       message << "Field \"" << f_it.first << "\" at tag \"" << field.first
+  //               << "\" was not initialized.";
+  //       throw(message);
+  //       return false;
+  //     }
+  //   }
+  // }
   return true;
 };
 
 
 // Make sure all fields have gotten their IC, either from State or the owning PK.
 bool State::CheckAllFieldsInitialized() {
-  for (auto& f_it : data_) {
-    Record& field = f_it.second->GetRecord("");
-    if (!field.initialized()) {
-      // field was not initialized
-      std::stringstream messagestream;
-      messagestream << "Field \"" << f_it.first << "\" was not initialized.";
-      Errors::Message message(messagestream.str());
-      throw(message);
-      return false;
-    }
-  }
+  // for (auto& f_it : data_) {
+  //   Record& field = f_it.second->GetRecord("");
+  //   if (!field.initialized()) {
+  //     // field was not initialized
+  //     std::stringstream messagestream;
+  //     messagestream << "Field \"" << f_it.first << "\" was not initialized.";
+  //     Errors::Message message(messagestream.str());
+  //     throw(message);
+  //     return false;
+  //   }
+  // }
   return true;
 };
 

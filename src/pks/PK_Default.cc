@@ -22,8 +22,8 @@ PK_Default::PK_Default(const Teuchos::RCP<Teuchos::ParameterList>& pk_tree,
                        const Teuchos::RCP<State>& S,
                        const Teuchos::RCP<TreeVector>& solution)
     : S_(S),
-      name_(Keys::cleanPListName(pk_tree->name())),
-      solution_(solution)
+      solution_(solution),
+      name_(Keys::cleanPListName(pk_tree->name()))
 {
   // grab my sublist
   Teuchos::RCP<Teuchos::ParameterList> pks_list = Teuchos::sublist(global_plist, "PKs");

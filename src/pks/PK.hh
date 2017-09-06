@@ -116,8 +116,9 @@ class PK {
   // Mark, as changed, any primary variable evaluator owned by this PK
   virtual void ChangedSolutionPK(const Key& tag) = 0;
 
-  virtual void StateToSolution(TreeVector& soln, const Key& tag) = 0;
-  virtual void SolutionToState(TreeVector& soln, const Key& tag) = 0;
+  virtual void StateToSolution(TreeVector& soln, const Key& tag, const Key& suffix) = 0;
+  virtual void SolutionToState(TreeVector& soln, const Key& tag, const Key& suffix) = 0;
+  virtual void SolutionToState(const TreeVector& soln, const Key& tag, const Key& suffix) = 0;
   
   // Return PK's name
   virtual std::string name() = 0;

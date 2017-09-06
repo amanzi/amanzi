@@ -109,7 +109,7 @@ class PK_Default {
   
  protected:
   // my subtree of the solution vector
-  Teuchos::RCP<TreeVector> solution_;
+  //  Teuchos::RCP<TreeVector> solution_;
 
   // state
   Teuchos::RCP<State> S_;

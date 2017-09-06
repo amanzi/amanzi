@@ -21,7 +21,7 @@ namespace Amanzi {
 EvaluatorSecondaries::EvaluatorSecondaries(
             Teuchos::ParameterList& plist) :
     my_tag_(plist.get<std::string>("tag","")),
-    vo_(plist.name(), plist),
+    vo_(Keys::cleanPListName(plist.name()), plist),
     plist_(plist),
     check_derivative_(plist.get<bool>("check derivatives", false))
 {
@@ -298,6 +298,8 @@ void EvaluatorSecondaries::EnsureCompatibility(State& S) {
     // Ensure my field exists, and claim ownership.
     auto my_fac =
         S.Require<CompositeVector,CompositeVectorSpace>(*my_key, my_tag_, *my_key);
+    S.GetRecordW(*my_key, my_tag_, *my_key).set_initialized();
+
 
     // Check plist for vis or checkpointing control.
     bool io_my_key = plist_.get<bool>(std::string("visualize ")+*my_key, true);

@@ -212,7 +212,7 @@ EvaluatorSecondary<Data_t, DataFactory_t>::IsDependency(const State& S,
   } else {
     for (KeySet::const_iterator dep=dependencies_.begin();
          dep!=dependencies_.end(); ++dep) {
-      if (S.GetEvaluator(*dep)->IsDependency(S,key)) {
+      if (S.GetEvaluator(*dep, my_tag_)->IsDependency(S,key)) {
         return true;
       }
     }
@@ -234,7 +234,8 @@ EvaluatorSecondary<Data_t, DataFactory_t>::EnsureCompatibility(State& S) {
   // Ensure my field exists.  Requirements should be already set.
   ASSERT(my_key_ != std::string(""));
   auto my_fac = S.Require<Data_t,DataFactory_t>(my_key_, my_tag_, my_key_);
-
+  for (auto& dep : dependencies_) S.RequireEvaluator(dep, my_tag_);
+  
   // check plist for vis or checkpointing control
   bool io_my_key = plist_.get<bool>(std::string("visualize ")+my_key_, true);
   S.GetRecordW(my_key_, my_tag_, my_key_).set_io_vis(io_my_key);

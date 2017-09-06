@@ -18,9 +18,9 @@ namespace Amanzi {
 // Constructors
 // ---------------------------------------------------------------------------
 EvaluatorPrimary::EvaluatorPrimary(Teuchos::ParameterList& plist) :
-    my_key_(plist.name()),
+    my_key_(Keys::cleanPListName(plist.name())),
     my_tag_(plist.get<std::string>("tag", "")),
-    vo_(plist.name(), plist) {}
+    vo_(Keys::cleanPListName(plist.name()), plist) {}
 
 // ---------------------------------------------------------------------------
 // Virtual copy constructor.

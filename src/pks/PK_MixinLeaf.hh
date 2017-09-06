@@ -59,8 +59,11 @@ class PK_MixinLeaf : public Base_t {
   // Mark, as changed, any primary variable evaluator owned by this PK
   void ChangedSolutionPK(const Key& tag);
 
-  void StateToSolution(TreeVector& soln, const Key& tag);
-  void SolutionToState(TreeVector& soln, const Key& tag);
+  void StateToSolution(TreeVector& soln, const Key& tag, const Key& suffix);
+  void SolutionToState(const TreeVector& soln, const Key& tag, const Key& suffix);
+  void SolutionToState(TreeVector& soln, const Key& tag, const Key& suffix);
+
+  void CommitStep(const Key& tag_old, const Key& tag_new);
   
   // Accessor for debugger, for use by coupling MPCs
   Teuchos::Ptr<Debugger> debugger() { return db_.ptr(); }
@@ -95,7 +98,7 @@ PK_MixinLeaf<Base_t>::PK_MixinLeaf(const Teuchos::RCP<Teuchos::ParameterList>& p
   key_ = Keys::readKey(*plist_, domain_, "primary variable");
 
   // create the primary variable evaluator
-  S->FEList().sublist(key_).set("field evaluator type", "primary variable");
+  S->FEList().sublist(key_).set("evaluator type", "primary variable");
   
   // create a debugger
   db_ = Teuchos::rcp(new Debugger(mesh_, this->name(), *plist_));
@@ -119,31 +122,59 @@ PK_MixinLeaf<Base_t>::Setup()
 {
   Base_t::Setup();
 
-  // require primary variable evaluator
-  S_->RequireEvaluator(key_);
-  S_->template Require<CompositeVector,CompositeVectorSpace>(key_, "", key_)
-      .SetMesh(mesh_);
+  // // require primary variable evaluator
+  // S_->RequireEvaluator(key_);
+  // S_->template Require<CompositeVector,CompositeVectorSpace>(key_, "", key_)
+  //     .SetMesh(mesh_);
 };
+
+template<class Base_t>
+void
+PK_MixinLeaf<Base_t>::CommitStep(const Key& tag_old, const Key& tag_new)
+{
+  Base_t::CommitStep(tag_old, tag_new);
+  S_->template GetW<CompositeVector>(key_, tag_old, key_) =
+      S_->template Get<CompositeVector>(key_, tag_new);
+}
+
 
 
 template<class Base_t>
 void
-PK_MixinLeaf<Base_t>::StateToSolution(TreeVector& soln, const Key& tag) {
+PK_MixinLeaf<Base_t>::StateToSolution(TreeVector& soln, const Key& tag, const Key& suffix) {
+  Key key = key_+suffix;
   if (soln.Data() == Teuchos::null)
-    soln.SetData(S_->template GetPtrW<CompositeVector>(key_, tag, key_));
+    soln.SetData(S_->template GetPtrW<CompositeVector>(key, tag, key));
 
   // ASSERTS for now?
-  ASSERT(soln.Data() == S_->template GetPtr<CompositeVector>(key_, tag));
+  ASSERT(soln.Data() == S_->template GetPtr<CompositeVector>(key, tag));
 }
 
 template<class Base_t>
 void
-PK_MixinLeaf<Base_t>::SolutionToState(TreeVector& soln, const Key& tag) {
-  if (soln.Data() == Teuchos::null) {
-    S_->template Require<CompositeVector, CompositeVectorSpace>(key_, tag, key_);
-  } else {
-    // ASSERTS for now?
-    ASSERT(soln.Data() == S_->template GetPtr<CompositeVector>(key_, tag));
+PK_MixinLeaf<Base_t>::SolutionToState(const TreeVector& soln, const Key& tag, const Key& suffix) {
+  Key key = key_+suffix;
+  if (!S_->HasData(key, tag)) {
+    S_->template Require<CompositeVector, CompositeVectorSpace>(key, tag, key);
+  } else if (soln.Data() != Teuchos::null) {
+    if (suffix == "") {
+      ASSERT(soln.Data() == S_->template GetPtr<CompositeVector>(key, tag));
+    }
+  }
+}
+
+template<class Base_t>
+void
+PK_MixinLeaf<Base_t>::SolutionToState(TreeVector& soln, const Key& tag, const Key& suffix) {
+  Key key = key_+suffix;
+  if (!S_->HasData(key, tag)) {
+    S_->template Require<CompositeVector, CompositeVectorSpace>(key, tag, key);
+  } else if (soln.Data() != Teuchos::null) {
+    if (suffix == "") {
+      ASSERT(soln.Data() == S_->template GetPtr<CompositeVector>(key, tag));
+    } else {
+      S_->template SetPtr(key, tag, key, soln.Data());
+    }
   }
 }
 

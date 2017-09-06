@@ -48,6 +48,10 @@ class PK_MixinExplicit : public Base_t, public Explicit_TI::fnBase<TreeVector> {
 
   // previous solution
   Teuchos::RCP<TreeVector> solution_old_;
+  Teuchos::RCP<TreeVector> solution_intermediate_;
+
+  Key dudt_tag_;
+  bool method_requires_intermediate_;
   
   using Base_t::plist_;
   using Base_t::S_;
@@ -73,12 +77,26 @@ PK_MixinExplicit<Base_t>::Setup()
 {
   Base_t::Setup();
 
+  std::string methodname = plist_->sublist("time integrator")
+                           .template get<std::string>("RK method");
+  method_requires_intermediate_ = methodname != "forward euler";
+  
   // create the old solution
   solution_old_ = Teuchos::rcp(new TreeVector(*solution_, INIT_MODE_NOALLOC));
+  this->SolutionToState(*solution_old_, "", "");
 
-  // require default, previous copies of solution in the state
-  this->SolutionToState(*solution_, "next");
-  this->SolutionToState(*solution_old_, "");
+  // potentially create an intermediate tag for multistage algorithms
+  if (method_requires_intermediate_) {
+    dudt_tag_ = this->name()+" explicit ti intermediate";
+    solution_intermediate_ = Teuchos::rcp(new TreeVector(*solution_, INIT_MODE_NOALLOC));
+    this->SolutionToState(*solution_intermediate_, dudt_tag_, "");
+    S_->template Require<double>("time", dudt_tag_, "time");
+  } else {
+    solution_intermediate_ = solution_old_;
+  }
+  
+  // create the new solution
+  this->SolutionToState(*solution_, "next", "");
 }
 
 
@@ -88,8 +106,9 @@ PK_MixinExplicit<Base_t>::AdvanceStep(const Key& tag_old, const Key& tag_new)
 {
   if (!time_stepper_.get()) {
     // -- ensure state vectors are pushed into solution vectors
-    this->StateToSolution(*solution_, "next");
-    this->StateToSolution(*solution_old_, "");
+    this->StateToSolution(*solution_old_, "", "");
+    this->StateToSolution(*solution_intermediate_, dudt_tag_, "");
+    this->StateToSolution(*solution_, "next", "");
 
     // -- instantiate time stepper
     Teuchos::ParameterList& ti_plist = plist_->sublist("time integrator");
@@ -110,7 +129,8 @@ PK_MixinExplicit<Base_t>::AdvanceStep(const Key& tag_old, const Key& tag_new)
 
 
   // take a timestep
-  time_stepper_->TimeStep(t_old, dt, *solution_old_, *solution_);
+  time_stepper_->TimeStep(t_old, dt, *solution_old_, *solution_intermediate_);
+  *solution_ = *solution_intermediate_;
   return false;
 };
   

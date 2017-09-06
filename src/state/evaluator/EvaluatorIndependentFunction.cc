@@ -66,7 +66,7 @@ void EvaluatorIndependentFunction::Update_(State& S) {
   // NOTE: EvaluatorIndependentFunctions own their own data.
   CompositeVector& cv =
       S.GetW<CompositeVector>(my_key_, my_tag_, my_key_);
-  time_ = S.time();
+  time_ = S.time(my_tag_);
   func_->Compute(time_, cv);
 }
 

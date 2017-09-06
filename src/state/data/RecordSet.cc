@@ -72,12 +72,19 @@ const Record& RecordSet::GetRecord(const Key& tag) const {
 //   GetRecord(tag1).swap(GetRecord(tag2));
 // }
 
-void RecordSet::RequireRecord(const Key& tag, const Key& owner){
+void RecordSet::RequireRecord(const Key& tag, const Key& owner) {
   if (!HasRecord(tag)){
     records_.emplace(tag, std::make_unique<Record>(fieldname(),owner));
     auto& r = records_.at(tag);
     if (!tag.empty()) {
       r->set_vis_fieldname(vis_fieldname()+std::string("_")+tag);
+    }
+  } else if (!owner.empty()) {
+    auto& r = records_.at(tag);
+    if (r->owner().empty()) {
+      r->set_owner(owner);
+    } else {
+      r->AssertOwnerOrDie(owner);
     }
   }
 }

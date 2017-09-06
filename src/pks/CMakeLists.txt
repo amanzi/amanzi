@@ -91,11 +91,12 @@ if (BUILD_TESTS)
     # Add the solvers directory to the include paths
     include_directories(${PKS_SOURCE_DIR})
 
-    add_amanzi_test(pks_ode_explicit pks_ode_explicit
+    add_amanzi_test(pks_ode_forward_euler pks_ode_forward_euler
                     KIND unit
-                    SOURCE test/Main.cc test/pks_ode_explicit.cc
+                    SOURCE test/Main.cc test/pks_ode_forward_euler.cc
                     LINK_LIBS ${pks_test_link_libs} ${UnitTest_LIBRARIES} ${pks_tpl_libs})
 
+                  
 endif()
 
 # if (ENABLE_Physics)

@@ -68,7 +68,7 @@ class AEvaluator : public EvaluatorSecondary<double,NullFactory> {
   virtual Teuchos::RCP<Evaluator> Clone() const override {
     return Teuchos::rcp(new AEvaluator(*this)); }
 
-  virtual void Evaluate_(State& S,
+  virtual void Evaluate_(const State& S,
           double& result) override {
 
     auto& fb = S.Get<double>("fb");
@@ -78,7 +78,7 @@ class AEvaluator : public EvaluatorSecondary<double,NullFactory> {
     result = 2 * fb + fc * fe * fh;
   }
 
-  virtual void EvaluatePartialDerivative_(State& S,
+  virtual void EvaluatePartialDerivative_(const State& S,
           const Key& wrt_key, double& result) override {
     auto& fc = S.Get<double>("fc");
     auto& fe = S.Get<double>("fe");
@@ -112,14 +112,14 @@ class CEvaluator : public EvaluatorSecondary<double,NullFactory> {
   virtual Teuchos::RCP<Evaluator> Clone() const override {
     return Teuchos::rcp(new CEvaluator(*this)); }
 
-  virtual void Evaluate_(State& S,
+  virtual void Evaluate_(const State& S,
           double& result) override {
     auto& fd = S.Get<double>("fd");
     auto& fg = S.Get<double>("fg");
     result = 2 * fd + fg;
   }
 
-  virtual void EvaluatePartialDerivative_(State& S,
+  virtual void EvaluatePartialDerivative_(const State& S,
           const Key& wrt_key, double& result) override {
 
     if (wrt_key == "fd") {
@@ -145,13 +145,13 @@ class DEvaluator : public EvaluatorSecondary<double,NullFactory> {
   virtual Teuchos::RCP<Evaluator> Clone() const override {
     return Teuchos::rcp(new DEvaluator(*this)); }
 
-  virtual void Evaluate_(State& S,
+  virtual void Evaluate_(const State& S,
           double& result) override {
     auto& fg = S.Get<double>("fg");
     result = 2*fg;
   }
 
-  virtual void EvaluatePartialDerivative_(State& S,
+  virtual void EvaluatePartialDerivative_(const State& S,
           const Key& wrt_key, double& result) override {
     if (wrt_key == "fg") {
       result = 2.;
@@ -175,14 +175,14 @@ class EEvaluator : public EvaluatorSecondary<double,NullFactory> {
   virtual Teuchos::RCP<Evaluator> Clone() const override {
     return Teuchos::rcp(new EEvaluator(*this)); }
 
-  virtual void Evaluate_(State& S,
+  virtual void Evaluate_(const State& S,
           double& result) override {
     auto& fd = S.Get<double>("fd");
     auto& ff = S.Get<double>("ff");
     result = fd * ff;
   }
 
-  virtual void EvaluatePartialDerivative_(State& S,
+  virtual void EvaluatePartialDerivative_(const State& S,
           const Key& wrt_key, double& result) override {
     auto& fd = S.Get<double>("fd");
     auto& ff = S.Get<double>("ff");
@@ -210,13 +210,13 @@ class FEvaluator : public EvaluatorSecondary<double,NullFactory> {
   virtual Teuchos::RCP<Evaluator> Clone() const override {
     return Teuchos::rcp(new FEvaluator(*this)); }
 
-  virtual void Evaluate_(State& S,
+  virtual void Evaluate_(const State& S,
           double& result) override {
     auto& fg = S.Get<double>("fg");
     result = 2*fg;
   }
 
-  virtual void EvaluatePartialDerivative_(State& S,
+  virtual void EvaluatePartialDerivative_(const State& S,
           const Key& wrt_key, double& result) override {
 
     if (wrt_key == "fg") {
@@ -240,13 +240,13 @@ class HEvaluator : public EvaluatorSecondary<double,NullFactory> {
   virtual Teuchos::RCP<Evaluator> Clone() const override {
     return Teuchos::rcp(new HEvaluator(*this)); }
 
-  virtual void Evaluate_(State& S,
+  virtual void Evaluate_(const State& S,
           double& result) override {
     auto& ff = S.Get<double>("ff");
     result = 2.*ff;
   }
 
-  virtual void EvaluatePartialDerivative_(State& S,
+  virtual void EvaluatePartialDerivative_(const State& S,
           const Key& wrt_key, double& result) override {
     if (wrt_key == "ff") {
       result = 2.;

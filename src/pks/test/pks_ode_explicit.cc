@@ -28,52 +28,20 @@
 
 using namespace Amanzi;
 
-template<class Base_t>
-class PK_ODE_Explicit : public Base_t {
- public:
-  PK_ODE_Explicit(const Teuchos::RCP<Teuchos::ParameterList>& pk_tree,
-                  const Teuchos::RCP<Teuchos::ParameterList>& global_plist,
-                  const Teuchos::RCP<State>& S,
-                  const Teuchos::RCP<TreeVector>& solution) :
-      Base_t(pk_tree, global_plist, S, solution) {}
-
-  void Setup() {
-    Base_t::Setup();
-    
-    std::cout << "requiring: vector " << this->key_ << std::endl;
-    this->S_->template Require<CompositeVector,CompositeVectorSpace>(this->key_)
-        .SetComponent("cell",AmanziMesh::CELL,1)
-        ->SetGhosted(false);
-  }
-
-  void Initialize() {
-    Base_t::Initialize();
-    this->S_->template GetW<CompositeVector>("primary", "", "primary").PutScalar(1.);
-    this->S_->GetRecordW("primary", "primary").set_initialized();
-  }
-  
-  void Functional(double t, const TreeVector& u, TreeVector& f) { f.PutScalar(1.); }
-};
-
-
-
 
 Teuchos::RCP<PK>
-create(const Teuchos::RCP<State>& S) {
-  Teuchos::RCP<Teuchos::ParameterList> pk_tree = Teuchos::rcp(new Teuchos::ParameterList("my pk"));
+createForwardEuler(const Teuchos::RCP<State>& S, const std::string& eqn_name) {
+  std::string pk_name = eqn_name + ", forward euler"
+  std::cout << "Test: " << pk_name << std::endl;
+
+  Teuchos::RCP<Teuchos::ParameterList> pk_tree = Teuchos::rcp(new Teuchos::ParameterList(pk_name));
   Teuchos::RCP<Teuchos::ParameterList> global_list = Teuchos::rcp(new Teuchos::ParameterList("main"));
-  auto sublist = Teuchos::sublist(Teuchos::sublist(global_list, "PKs"), "my pk");
+  auto sublist = Teuchos::sublist(Teuchos::sublist(global_list, "PKs"), pk_name);
   sublist->set<std::string>("domain name", "domain");
   sublist->set<std::string>("primary variable key", "primary");
 
   // intentionally leaks memory
   Epetra_MpiComm* comm = new Epetra_MpiComm(MPI_COMM_WORLD);
-  
-  int MyPID = comm->MyPID();
-  if (MyPID == 0) std::cout << "Test: 2D transient Darcy, 2-layer model" << std::endl;
-
-  // read parameter list
-  std::string xmlFileName = "test/flow_darcy_transient_2D.xml";
 
   // create mesh
   Teuchos::ParameterList regions_list;
@@ -86,11 +54,20 @@ create(const Teuchos::RCP<State>& S) {
 
   Amanzi::AmanziMesh::MeshFactory meshfactory(comm);
   meshfactory.preference(pref);
-  Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh = meshfactory(0.0, -2.0, 1.0, 0.0, 18, 18, gm);
+  // make a 1x1 'mesh' for ODEs
+  Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 1, 1, gm);
   S->RegisterDomainMesh(mesh);
 
   Teuchos::RCP<TreeVector> soln = Teuchos::rcp(new TreeVector());
-  return Teuchos::rcp(new PK_Adaptor<PK_ODE_Explicit<PK_MixinExplicit<PK_MixinLeaf<PK_Default> > > >(pk_tree, global_list, S, soln));
+  if (eqn_name == "A") {
+    return Teuchos::rcp(new PK_Adaptor<PK_ODE_Explicit<PK_MixinExplicit<PK_MixinLeaf<PK_Default> >, DudtEvaluatorA> >(pk_tree, global_list, S, soln));
+  } else if (eqn_name == "B") {
+    return Teuchos::rcp(new PK_Adaptor<PK_ODE_Explicit<PK_MixinExplicit<PK_MixinLeaf<PK_Default> >, DudtEvaluatorB> >(pk_tree, global_list, S, soln));
+  } else if (eqn_name == "C") {
+    return Teuchos::rcp(new PK_Adaptor<PK_ODE_Explicit<PK_MixinExplicit<PK_MixinLeaf<PK_Default> >, DudtEvaluatorC> >(pk_tree, global_list, S, soln));
+  } else {
+    ASSERT(false);
+  }
 }
 
 
@@ -124,7 +101,7 @@ SUITE(PK_ODE_EXPLICIT) {
     
   }
 
-  TEST(Commit) {
+  TEST(Advance2) {
     auto S = Teuchos::rcp(new State());
     auto pk = create(S);
     pk->Setup();
@@ -132,6 +109,7 @@ SUITE(PK_ODE_EXPLICIT) {
     pk->Initialize();
     S->Initialize();
 
+    // take a single timestep
     double dt = pk->get_dt();
     S->advance_time("next", dt);
     S->advance_cycle("next", 1);
@@ -139,6 +117,19 @@ SUITE(PK_ODE_EXPLICIT) {
 
     CHECK_CLOSE(1.0, (*S->Get<CompositeVector>("primary", "").ViewComponent("cell",false))[0][0], 1.e-10);
     CHECK_CLOSE(2.0, (*S->Get<CompositeVector>("primary", "next").ViewComponent("cell",false))[0][0], 1.e-10);
+
+    pk->CommitStep("", "next");
+    S->advance_time("", dt);
+    S->advance_cycle("", 1);
+    
+    dt = pk->get_dt();
+    S->advance_time("next", dt);
+    S->advance_cycle("next", 1);
+    pk->AdvanceStep("", "next");
+
+    CHECK_CLOSE(2.0, (*S->Get<CompositeVector>("primary", "").ViewComponent("cell",false))[0][0], 1.e-10);
+    CHECK_CLOSE(3.0, (*S->Get<CompositeVector>("primary", "next").ViewComponent("cell",false))[0][0], 1.e-10);
+    
   }
 
     

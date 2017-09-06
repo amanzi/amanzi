@@ -49,7 +49,7 @@ EvaluatorSecondary<CompositeVector, CompositeVectorSpace>::EnsureCompatibility(S
     // Recurse into the tree to propagate info to leaves.
     for (KeySet::const_iterator key=dependencies_.begin();
          key!=dependencies_.end(); ++key) {
-      S.RequireEvaluator(*key)->EnsureCompatibility(S);
+      S.RequireEvaluator(*key, my_tag_)->EnsureCompatibility(S);
     }
   }
 }
@@ -87,7 +87,7 @@ void EvaluatorSecondary<CompositeVector,CompositeVectorSpace>::UpdateDerivative_
       EvaluatePartialDerivative_(S, wrt_key, tmp);
       dmy.Update(1., tmp, 1.);
 
-    } else if (S.GetEvaluator(*dep)->IsDependency(S, wrt_key)) {
+    } else if (S.GetEvaluator(*dep, my_tag_)->IsDependency(S, wrt_key)) {
       // partial F / partial dep * ddep/dx
       // -- ddep/dx
       Key ddep_key = std::string("d")+*dep+std::string("_d")+wrt_key;

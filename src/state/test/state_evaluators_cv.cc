@@ -34,7 +34,7 @@ class AEvaluator : public EvaluatorSecondary<CompositeVector,CompositeVectorSpac
   virtual Teuchos::RCP<Evaluator> Clone() const override {
     return Teuchos::rcp(new AEvaluator(*this)); };
 
-  virtual void Evaluate_(State& S,
+  virtual void Evaluate_(const State& S,
           CompositeVector& result) override {
     Epetra_MultiVector& result_c = *result.ViewComponent("cell");
     const Epetra_MultiVector& fb_c = *S.Get<CompositeVector>("fb").ViewComponent("cell");
@@ -45,7 +45,7 @@ class AEvaluator : public EvaluatorSecondary<CompositeVector,CompositeVectorSpac
     }
   }
 
-  virtual void EvaluatePartialDerivative_(State& S,
+  virtual void EvaluatePartialDerivative_(const State& S,
           const Key& wrt_key, CompositeVector& result) override {
     Epetra_MultiVector& result_c = *result.ViewComponent("cell");
 
