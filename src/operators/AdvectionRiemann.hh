@@ -62,6 +62,7 @@ class AdvectionRiemann : public Advection {
  private:
   std::string flux_, riemann_;
   int method_order_;
+  bool jump_on_test_;
 };
 
 }  // namespace Operators

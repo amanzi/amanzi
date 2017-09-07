@@ -81,6 +81,7 @@ void Abstract::Init_(Teuchos::ParameterList& plist)
   method_ = plist.get<std::string>("method");
   method_order_ = plist.get<int>("method order", 0);
   matrix_ = plist.get<std::string>("matrix type");
+  grad_on_test_ = plist.get<bool>("gradient operator on test function", true);
 }
 
 
@@ -138,12 +139,12 @@ void Abstract::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& u,
       AmanziGeometry::Point vc(d);
       for (int i = 0; i < d; ++i) vc[i] = u_c[i][c];
 
-      mfd->AdvectionMatrix(c, vc, Acell);
+      mfd->AdvectionMatrix(c, vc, Acell, grad_on_test_);
       matrix[c] = Acell;
     }
   } else if (matrix_ == "advection" && coef == "vector polynomial") {
     for (int c = 0; c < ncells_owned; ++c) {
-      mfd->AdvectionMatrixPoly(c, (*Kvec_)[c], Acell);
+      mfd->AdvectionMatrixPoly(c, (*Kvec_)[c], Acell, grad_on_test_);
       matrix[c] = Acell;
     }
   } else {

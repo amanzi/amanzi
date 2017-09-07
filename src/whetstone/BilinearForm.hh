@@ -41,14 +41,15 @@ class BilinearForm : public virtual InnerProductL2,
 
   // additional members
   // -- low-order schemes require constant vector/tensor coefficients
-  virtual int AdvectionMatrix(int c, const AmanziGeometry::Point v, DenseMatrix& A) = 0;
+  //    we also specify location of the gradient operator in a biliner form
+  virtual int AdvectionMatrix(int c, const AmanziGeometry::Point v, DenseMatrix& A, bool grad_on_test) = 0;
   virtual int DivergenceMatrix(int c, DenseMatrix& A) = 0;
 
   // -- high-order schemes may require polynomial coefficients
   //    We use ending "Poly" to simplify logic of derived classes (no keyword "using")
   virtual int MassMatrixPoly(int c, const Polynomial& K, DenseMatrix& M) = 0; 
   virtual int StiffnessMatrixPoly(int c, const Polynomial& K, DenseMatrix& A) = 0;
-  virtual int AdvectionMatrixPoly(int c, const VectorPolynomial& v, DenseMatrix& A) = 0;
+  virtual int AdvectionMatrixPoly(int c, const VectorPolynomial& v, DenseMatrix& A, bool grad_on_test) = 0;
 };
 
 }  // namespace WhetStone

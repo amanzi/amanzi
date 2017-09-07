@@ -101,6 +101,7 @@ void AdvectionRiemann::InitAdvection_(Teuchos::ParameterList& plist)
   // -- fluxes
   flux_ = plist.get<std::string>("flux formula", "remap");
   riemann_ = plist.get<std::string>("riemann problem", "average");
+  jump_on_test_ = plist.get<bool>("jump operator on test function", true);
 }
 
 
@@ -122,7 +123,7 @@ void AdvectionRiemann::UpdateMatrices(
 
     if (space_col_ == DG && space_row_ == DG) {
       dg.set_order(method_order_);
-      dg.FluxMatrixPoly(f, (*u)[f], Aface);
+      dg.FluxMatrixPoly(f, (*u)[f], Aface, jump_on_test_);
     }
 
     matrix[f] = Aface;

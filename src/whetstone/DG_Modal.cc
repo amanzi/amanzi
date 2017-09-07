@@ -131,7 +131,7 @@ int DG_Modal::MassMatrixPoly(int c, const Polynomial& K, DenseMatrix& M)
 /* ******************************************************************
 * Advection matrix for Taylor basis and cell-based velocity uc.
 ****************************************************************** */
-int DG_Modal::AdvectionMatrixPoly(int c, const VectorPolynomial& u, DenseMatrix& A)
+int DG_Modal::AdvectionMatrixPoly(int c, const VectorPolynomial& u, DenseMatrix& A, bool grad_on_test)
 {
   // rebase the polynomial
   const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
@@ -195,6 +195,12 @@ int DG_Modal::AdvectionMatrixPoly(int c, const VectorPolynomial& u, DenseMatrix&
 
   ChangeBasis(integrals, A);
 
+  // gradient operator is applied to solution
+  if (!grad_on_test) {
+    DenseMatrix Atmp(A);
+    A.Transpose(Atmp);
+  }
+
   return 0;
 }
 
@@ -202,8 +208,17 @@ int DG_Modal::AdvectionMatrixPoly(int c, const VectorPolynomial& u, DenseMatrix&
 /* ******************************************************************
 * Flux matrix for Taylor basis and normal velocity u.n.
 * Velocity is given in the face-based Taylor basis.
+* If jump_on_test=true, we calculate
+* 
+*   \Int { (u.n) \rho^* [\psi] } dS
+* 
+* where star means downwind, \psi is a test function, and \rho is 
+* a solution. Otherwise, we calculate 
+*
+*   \Int { (u.n) \psi^* [\rho] } dS
 ****************************************************************** */
-int DG_Modal::FluxMatrixPoly(int f, const Polynomial& un, DenseMatrix& A)
+int DG_Modal::FluxMatrixPoly(int f, const Polynomial& un, DenseMatrix& A,
+                             bool jump_on_test)
 {
   AmanziMesh::Entity_ID_List cells, nodes;
   mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
@@ -298,6 +313,12 @@ int DG_Modal::FluxMatrixPoly(int f, const Polynomial& un, DenseMatrix& A)
         A(col + k, col + l) = -vel1;
       }
     }
+  }
+
+  // gradient operator is applied to solution
+  if (!jump_on_test) {
+    DenseMatrix Atmp(A);
+    A.Transpose(Atmp);
   }
 
   return 0;

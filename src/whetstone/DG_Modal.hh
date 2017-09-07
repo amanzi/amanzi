@@ -68,9 +68,9 @@ class DG_Modal : public BilinearForm {
   virtual int StiffnessMatrixPoly(int c, const Polynomial& K, DenseMatrix& A) { return 0; }
 
   // -- advection matrices
-  virtual int AdvectionMatrix(int c, const AmanziGeometry::Point v, DenseMatrix& A) { return 0; }
-  virtual int AdvectionMatrixPoly(int c, const VectorPolynomial& uc, DenseMatrix& A);
-  int FluxMatrixPoly(int f, const Polynomial& uf, DenseMatrix& A);
+  virtual int AdvectionMatrix(int c, const AmanziGeometry::Point v, DenseMatrix& A, bool grad_on_test) { return 0; }
+  virtual int AdvectionMatrixPoly(int c, const VectorPolynomial& uc, DenseMatrix& A, bool grad_on_test);
+  int FluxMatrixPoly(int f, const Polynomial& uf, DenseMatrix& A, bool jump_on_test);
 
   // change of basis
   void ChangeBasis(const Polynomial& integrals, DenseMatrix& A);

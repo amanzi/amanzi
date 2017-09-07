@@ -60,8 +60,8 @@ class MFD3D_Elasticity : public virtual MFD3D {
   // -- unsupported members
   virtual int MassMatrixPoly(int c, const Polynomial& K, DenseMatrix& M) { return -1; }
   virtual int StiffnessMatrixPoly(int c, const Polynomial& K, DenseMatrix& A) { return -1; }
-  virtual int AdvectionMatrix(int c, const AmanziGeometry::Point v, DenseMatrix& A) { return -1; }
-  virtual int AdvectionMatrixPoly(int c, const VectorPolynomial& v, DenseMatrix& A) { return -1; }
+  virtual int AdvectionMatrix(int c, const AmanziGeometry::Point v, DenseMatrix& A, bool grad_on_test) { return -1; }
+  virtual int AdvectionMatrixPoly(int c, const VectorPolynomial& v, DenseMatrix& A, bool grad_on_test) { return -1; }
 
   // optimization methods (mainly for testing)
   int StiffnessMatrixOptimized(int c, const Tensor& T, DenseMatrix& A);

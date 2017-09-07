@@ -71,6 +71,7 @@ class Abstract : public PDE_Helper {
  private:
   std::string method_, matrix_;
   int method_order_;
+  bool grad_on_test_;
 };
 
 }  // namespace Operators
