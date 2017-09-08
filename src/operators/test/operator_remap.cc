@@ -271,23 +271,20 @@ void RemapTests2DExplicit(int order, std::string disc_name,
   // calculate error
   double pl2_err(0.0), pinf_err(0.0), area(0.0);
   for (int c = 0; c < ncells_owned; ++c) {
-    const AmanziGeometry::Point& xc = mesh1->cell_centroid(c);
-    double area_c = mesh1->cell_volume(c);
+    Entity_ID_List nodes;
+    AmanziGeometry::Point v(2), xg(2);
 
-    double tmp = (xc[0] + 2 * xc[1]) - p2c[0][c];
+    mesh1->cell_get_nodes(c, &nodes);
+    int nnodes = nodes.size();
+    for (int i = 0; i < nnodes; ++i) {
+      mesh1->node_get_coordinates(nodes[i], &v);
+      xg += v;
+    } 
+    xg /= nnodes;
+    double tmp = p2c[0][c] - (xg[0] + 2 * xg[1]);
     // double tmp = 1.0 - p2c[0][c];
 
-Entity_ID_List nodes;
-AmanziGeometry::Point v(2), xg(2);
-
-mesh1->cell_get_nodes(c, &nodes);
-for (int i = 0; i < nodes.size(); ++i) {
-  mesh1->node_get_coordinates(nodes[i], &v);
-  xg += v;
-} 
-xg /= nodes.size();
-tmp = p2c[0][c] - (xg[0] + 2 * xg[1]);
-
+    double area_c = mesh1->cell_volume(c);
     pinf_err = std::max(pinf_err, fabs(tmp));
     pl2_err += tmp * tmp * area_c;
 
@@ -321,6 +318,6 @@ TEST(REMAP_DG0_EXPLICIT) {
 */
 
 TEST(REMAP_DG1_EXPLICIT) {
-  RemapTests2DExplicit(1, "dg modal", 10, 10, 0.1);
+  RemapTests2DExplicit(1, "dg modal", 20, 20, 0.1);
 }
 

@@ -245,7 +245,7 @@ TEST(DG_ADVECTION_MATRIX_FACE) {
     un.monomials(0).coefs()[0] = 1.0;
 
     // TEST1: constant u
-    dg.FluxMatrixPoly(1, un, A0);
+    dg.FluxMatrixPoly(1, un, A0, false);
 
     printf("Advection matrix (face-based) for order=%d  u.n=1\n", k);
     int nk = A0.NumRows();
@@ -256,7 +256,7 @@ TEST(DG_ADVECTION_MATRIX_FACE) {
 
     // TEST2: add zero gradient to polynomial un
     un.Reshape(2, 1);
-    dg.FluxMatrixPoly(1, un, A1);
+    dg.FluxMatrixPoly(1, un, A1, false);
 
     A1 -= A0;
     CHECK_CLOSE(0.0, A1.NormInf(), 1e-12);
@@ -264,7 +264,7 @@ TEST(DG_ADVECTION_MATRIX_FACE) {
     // TEST3: nonzero linear component polynomial un
     un.monomials(1).coefs()[0] = 1.0;
 
-    dg.FluxMatrixPoly(1, un, A1);
+    dg.FluxMatrixPoly(1, un, A1, false);
 
     printf("Advection matrix (face-based) for order=%d u.n=1+x\n", k);
     for (int i = 0; i < nk; i++) {
@@ -278,7 +278,7 @@ TEST(DG_ADVECTION_MATRIX_FACE) {
 
 
 /* ****************************************************************
-* Test of DG advection matrices on a face
+* Test of DG advection matrices in a cell
 **************************************************************** */
 TEST(DG_ADVECTION_MATRIX_CELL) {
   using namespace Amanzi;
@@ -294,6 +294,8 @@ TEST(DG_ADVECTION_MATRIX_CELL) {
 
   for (int k = 0; k < 3; k++) {
     DG_Modal dg(k, mesh);
+    dg.set_basis(WhetStone::TAYLOR_BASIS_SIMPLE);
+
     DenseMatrix A0, A1;
 
     VectorPolynomial u(2);
@@ -301,7 +303,7 @@ TEST(DG_ADVECTION_MATRIX_CELL) {
 
     // TEST1: constant u
     u[0].monomials(0).coefs()[0] = 1.0;
-    dg.AdvectionMatrixPoly(0, u, A0);
+    dg.AdvectionMatrixPoly(0, u, A0, false);
 
     printf("Advection matrix (cell-based) for order=%d u=(1,0)\n", k);
     int nk = A0.NumRows();
@@ -313,7 +315,7 @@ TEST(DG_ADVECTION_MATRIX_CELL) {
 
     // TEST2: linear u
     u[0].monomials(1).coefs()[0] = 1.0;
-    dg.AdvectionMatrixPoly(0, u, A0);
+    dg.AdvectionMatrixPoly(0, u, A0, false);
 
     printf("Advection matrix (cell-based) for order=%d u=(1+x,0)\n", k);
     nk = A0.NumRows();
@@ -323,7 +325,7 @@ TEST(DG_ADVECTION_MATRIX_CELL) {
     }
 
     // accuracy test for functions 1+x and 1+x
-    if (k > 0) {
+    if (k == 1) {
       DenseVector v1(nk), v2(nk);
       v1(0) = 1.25;
       v1(1) = 1.0;
@@ -333,7 +335,7 @@ TEST(DG_ADVECTION_MATRIX_CELL) {
       double integral(v1 * v2);
       printf("  inner product = %10.4f\n", integral);
 
-      // CHECK_CLOSE(integral, 46.0 / 17.0, 1e-12);
+      CHECK_CLOSE(integral, 25.0 / 64.0, 1e-12);
     }
   }
 

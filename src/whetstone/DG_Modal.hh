@@ -48,11 +48,13 @@ class DG_Modal : public BilinearForm {
  public:
   DG_Modal(Teuchos::RCP<const AmanziMesh::Mesh> mesh) 
     : order_(-1),
+      basis_(TAYLOR_BASIS_NORMALIZED),
       mesh_(mesh),
       d_(mesh_->space_dimension()) {};
 
   DG_Modal(int order, Teuchos::RCP<const AmanziMesh::Mesh> mesh)
     : order_(order), 
+      basis_(TAYLOR_BASIS_NORMALIZED),
       mesh_(mesh),
       d_(mesh_->space_dimension()) {};
 
@@ -85,6 +87,7 @@ class DG_Modal : public BilinearForm {
 
   // miscalleneous
   void set_order(int order) { order_ = order; }
+  void set_basis(int basis) { basis_ = basis; }
 
  private:
   // specialized routines optimized for non-normalized Taylor basis
