@@ -52,9 +52,7 @@ public:
         pks_list_(Teuchos::sublist(global_list, "PKs"))        
   {
     // name the PK
-    name_ = pk_tree.name();
-    boost::iterator_range<std::string::iterator> res = boost::algorithm::find_last(name_,"->");
-    if (res.end() - name_.end() != 0) boost::algorithm::erase_head(name_, res.end() - name_.begin());
+    name_ = Keys::cleanPListName(pk_tree.name());
 
     // get my parameter list
     plist_ = Teuchos::sublist(pks_list_, name_);
@@ -94,7 +92,7 @@ public:
 
 
  protected:
-  // enables inheriting MPCs to do their own sub-pk construction
+  // this does not work.  fail etc
   void init_(const Teuchos::RCP<State>& S);
 
  protected:

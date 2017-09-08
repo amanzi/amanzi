@@ -42,6 +42,7 @@ add_library(mpc
   mpc_reactivetransport_pk.cc
   mpc_surface_subsurface_helpers.cc
   weak_mpc_semi_coupled_helper.cc
+  mpc_weak_subgrid.cc
   mpc_delegate_ewc.cc
 ##  mpc_delegate_ewc_surface.cc
   mpc_delegate_ewc_subsurface.cc
@@ -111,6 +112,11 @@ register_evaluator_with_factory(
 
 register_evaluator_with_factory(
   HEADERFILE weak_mpc_semi_coupled_reg.hh
+  LISTNAME   MPC_PK_FAC
+  )
+
+register_evaluator_with_factory(
+  HEADERFILE mpc_weak_subgrid_reg.hh
   LISTNAME   MPC_PK_FAC
   )
 

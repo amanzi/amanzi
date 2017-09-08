@@ -63,7 +63,7 @@ def water_energy(xml):
     else:
         etype = asearch.childByNamePath(energy, "field evaluator type")
         if ftype.value == "three phase water content":
-            etype.setValue("thee phase energy")
+            etype.setValue("three phase energy")
         elif ftype.value == "liquid+ice water content":
             etype.setValue("liquid+ice energy")
         elif ftype.value == "liquid+gas water content":
@@ -110,10 +110,18 @@ def primary_variable(xml):
             pv.setValue("surface-ponded_depth")
             
 def mesh_list(xml):
+    try:
+        xml.pop("Native Unstructured Input")
+    except aerrors.MissingXMLError:
+        pass
+
+    try:
+        xml.pop("grid_option")
+    except aerrors.MissingXMLError:
+        pass
+
+    # move domain mesh parameters to a sublist
     mesh = asearch.childByName(xml, "mesh")
-    if (mesh.isElement("domain")):
-        return
-    
     domain = mesh.sublist("domain")
     to_pop = []
     for el in mesh:
@@ -123,17 +131,66 @@ def mesh_list(xml):
             el.set("name", "column")
         elif el.get("name") == "column surface meshes":
             el.set("name", "column surface")
-        elif el.get("name") in ["surface", "column", "column surface", "domain"]:
+        elif el.get("name") in ["surface", "column", "column surface", "domain", "subgrid"]:
             pass
+        elif el.get("name") in ["framework"]:
+            to_pop.append(el)
         else:
             domain.append(el)
 
-    for el in domain:
-        mesh.pop(el.get("name"))
-    return
+    if domain.isElement("framework"):
+        domain.pop("framework")
             
+    for el in domain:
+        if mesh.isElement(el.get("name")):
+            mesh.pop(el.get("name"))
+    for el in to_pop:
+        mesh.pop(el.get("name"))        
+
+    # move surface mesh parameters to a sublist
+    if mesh.isElement("surface"):
+        surf_list = mesh.sublist("surface")
+        surf_p_list = surf_list.sublist("surface")
+        if surf_list.isElement("surface sideset name"):
+            surf_p_list.append(surf_list.pop("surface sideset name"))
+        if surf_list.isElement("surface sideset names"):
+            surf_p_list.append(surf_list.pop("surface sideset names"))
         
+    # make sure all left are mesh sublists, add a mesh type parameter
+    valid_types = ["read mesh file", "generate mesh", "logical mesh",
+                   "aliased", "surface", "column", "column surface", "subgrid"]    
+    for el in mesh:
+        if not el.isElement("mesh type"):
+            assert(el.get("type") == "ParameterList")
+            found = False
+            for valid_type in valid_types:
+                if el.isElement(valid_type):
+                    print "setting type: ", valid_type
+                    el.setParameter("mesh type", "string", valid_type)
+                    asearch.childByName(el, valid_type).set("name", valid_type+" parameters")
+                    found = True
+                    continue
+            assert(found)
+        
+    return
+
+
+def vis(xml):
+    if xml.isElement("visualization") and not asearch.childByName(xml, "visualization").isElement("domain"):
+        vis_domain = xml.pop("visualization")
+        vis_domain.set("name", "domain")
     
+        vis_list = xml.sublist("visualization")
+        vis_list.append(vis_domain)
+        if xml.isElement("visualization surface"):
+            vis_surf = xml.pop("visualization surface")
+            vis_surf.set("name", "surface")
+            vis_list.append(vis_surf)
+
+        if xml.isElement("visualization columns"):
+            vis_col = xml.pop("visualization columns")
+            vis_col.set("name", "column_*")
+            vis_list.append(vis_col)
 
 def update(xml):
     flatten_pks.flatten_pks(xml)
@@ -149,6 +206,7 @@ def update(xml):
     seepage_face_bcs(xml)
     primary_variable(xml)
     mesh_list(xml)
+    vis(xml)
 
 if __name__ == "__main__":
     import argparse

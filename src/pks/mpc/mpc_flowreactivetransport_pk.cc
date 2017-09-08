@@ -23,6 +23,7 @@ FlowReactiveTransport_PK_ATS::FlowReactiveTransport_PK_ATS(
     const Teuchos::RCP<Teuchos::ParameterList>& global_list,
     const Teuchos::RCP<State>& S,
     const Teuchos::RCP<TreeVector>& soln) :
+    PK(pk_tree, global_list, S, soln),
     PK_MPCSubcycled_ATS(pk_tree, global_list, S, soln) { 
 
   name_ = pk_tree.name();

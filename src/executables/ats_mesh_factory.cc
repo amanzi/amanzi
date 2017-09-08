@@ -25,29 +25,21 @@
 namespace ATS {
 
 void
-createMeshes(Teuchos::ParameterList& global_list,
-             const Teuchos::RCP<Epetra_MpiComm>& comm,
-             const Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel>& gm,
-             Amanzi::State& S) {
-
-  Teuchos::ParameterList& plist = global_list.sublist("mesh");
-  int num_procs = comm->NumProc();
-  int rank = comm->MyPID();
-
-  // create the MSTK factory
-  Amanzi::AmanziMesh::MeshFactory factory(comm.get());
-  Amanzi::AmanziMesh::FrameworkPreference prefs(factory.preference());
-  prefs.clear();
-  prefs.push_back(Amanzi::AmanziMesh::MSTK);
-
-  // -------------------------------------------------
-  // create the base mesh
-  Teuchos::ParameterList& mesh_plist = plist.sublist("domain");
-  Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh;
-
-  if (mesh_plist.isSublist("read mesh file")) {
+createMesh(Teuchos::ParameterList& mesh_plist,
+           const Teuchos::RCP<Epetra_MpiComm>& comm,
+           const Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel>& gm,
+           Amanzi::State& S)
+{
+  auto mesh_type = mesh_plist.get<std::string>("mesh type");
+  if (mesh_type == "read mesh file") {
+    // create the MSTK factory
+    Amanzi::AmanziMesh::MeshFactory factory(comm.get());
+    Amanzi::AmanziMesh::FrameworkPreference prefs(factory.preference());
+    prefs.clear();
+    prefs.push_back(Amanzi::AmanziMesh::MSTK);
+    
     // from file
-    Teuchos::ParameterList read_params = mesh_plist.sublist("read mesh file");
+    Teuchos::ParameterList read_params = mesh_plist.sublist("read mesh file parameters");
 
     // file name
     std::string file;
@@ -73,36 +65,174 @@ createMeshes(Teuchos::ParameterList& global_list,
       Errors::Message msg("\"read mesh file\" parameter \"format\" missing.");
       Exceptions::amanzi_throw(msg);
     }
+    auto mesh = factory.create(file, gm);
 
-    // create the mesh from the file
-    Teuchos::RCP<Teuchos::Time> volmeshtime = Teuchos::TimeMonitor::getNewCounter("volume mesh creation");
-    Teuchos::TimeMonitor timer(*volmeshtime);
-    mesh = factory.create(file, gm);
+    if (mesh_plist.isParameter("build columns from set")) {
+      std::string regionname = mesh_plist.get<std::string>("build columns from set");
+      mesh->build_columns(regionname);
+    }
 
+    bool deformable = mesh_plist.get<bool>("deformable mesh",false);
 
-  } else if (mesh_plist.isSublist("generate mesh")) {
+    checkVerifyMesh(mesh_plist, mesh);
+    S.RegisterMesh(Amanzi::Keys::cleanPListName(mesh_plist.name()), mesh, deformable);
+    
+  } else if (mesh_type == "generate mesh") {
+    // create the MSTK factory
+    Amanzi::AmanziMesh::MeshFactory factory(comm.get());
+    Amanzi::AmanziMesh::FrameworkPreference prefs(factory.preference());
+    prefs.clear();
+    prefs.push_back(Amanzi::AmanziMesh::MSTK);
+
     // generated mesh
-    Teuchos::ParameterList gen_params = mesh_plist.sublist("generate mesh");
-    mesh = factory.create(gen_params, gm);
+    auto mesh = factory.create(mesh_plist.sublist("generate mesh parameters"), gm);
+    bool deformable = mesh_plist.get<bool>("deformable mesh",false);
 
-  } else if (mesh_plist.isSublist("logical mesh")) {
+    checkVerifyMesh(mesh_plist, mesh);
+    S.RegisterMesh(Amanzi::Keys::cleanPListName(mesh_plist.name()), mesh, deformable);
+
+  } else if (mesh_type == "logical mesh") {
     // -- from logical mesh file
     Amanzi::AmanziMesh::MeshLogicalFactory fac(comm.get(), gm);
-    mesh = fac.Create(mesh_plist.sublist("logical mesh"));
+    auto mesh = fac.Create(mesh_plist.sublist("logical mesh parameters"));
+    bool deformable = mesh_plist.get<bool>("deformable mesh",false);
+
+    checkVerifyMesh(mesh_plist, mesh);
+    S.RegisterMesh(Amanzi::Keys::cleanPListName(mesh_plist.name()), mesh, deformable);
+
+  } else if (mesh_type == "aliased") {
+    S.AliasMesh(mesh_plist.sublist("aliased parameters").get<std::string>("alias"), Amanzi::Keys::cleanPListName(mesh_plist.name()));
     
-  } else if (mesh_plist.isSublist("embedded logical mesh")) {
-    Errors::Message msg("\"embedded logical mesh\" option not yet implemented.");
-    Exceptions::amanzi_throw(msg);
+  } else if (mesh_type == "surface") {
+    Teuchos::ParameterList& surface_plist = mesh_plist.sublist("surface parameters");
+    std::vector<std::string> setnames;
+    if (surface_plist.isParameter("surface sideset name")) {
+      setnames.push_back(surface_plist.get<std::string>("surface sideset name"));
+    } else if (surface_plist.isParameter("surface sideset names")) {
+      setnames = surface_plist.get<Teuchos::Array<std::string> >("surface sideset names").toVector();
+    } else {
+      Errors::Message message("Surface mesh sublist missing parameter \"surface sideset names\".");
+      Exceptions::amanzi_throw(message);
+    }
+
+    Teuchos::RCP<Amanzi::AmanziMesh::Mesh> surface3D_mesh = Teuchos::null;
+    Teuchos::RCP<Amanzi::AmanziMesh::Mesh> surface_mesh = Teuchos::null;
+
+    // create the MSTK factory
+    Amanzi::AmanziMesh::MeshFactory factory(comm.get());
+    Amanzi::AmanziMesh::FrameworkPreference prefs(factory.preference());
+    prefs.clear();
+    prefs.push_back(Amanzi::AmanziMesh::MSTK);
+
+    auto parent = S.GetMesh(surface_plist.get<std::string>("parent domain", "domain"));
+    if (parent->manifold_dimension() == 3) {
+      surface3D_mesh = factory.create(&*parent,setnames,Amanzi::AmanziMesh::FACE,false,false);
+      surface_mesh = factory.create(&*parent,setnames,Amanzi::AmanziMesh::FACE,true,false);
+    } else {
+      surface_mesh = factory.create(&*parent,setnames,Amanzi::AmanziMesh::CELL,true,false);
+    }
+    bool deformable = mesh_plist.get<bool>("deformable mesh",false);
+
+    if (surface3D_mesh.get()) {
+      S.RegisterMesh(Amanzi::Keys::cleanPListName(mesh_plist.name())+"_3d", surface3D_mesh, deformable);
+    } else {
+      S.AliasMesh(surface_plist.get<std::string>("parent domain", "domain"),
+                  Amanzi::Keys::cleanPListName(mesh_plist.name())+"_3d");
+    }
+    checkVerifyMesh(mesh_plist, surface_mesh);
+    S.RegisterMesh(Amanzi::Keys::cleanPListName(mesh_plist.name()), surface_mesh, deformable);
+
+  } else if (mesh_type == "column") {
+    Teuchos::ParameterList& column_list = mesh_plist.sublist("column parameters");
+    int lid = column_list.get<int>("entity LID");
+    auto parent = S.GetMesh(column_list.get<std::string>("parent domain", "domain"));
+    auto mesh = Teuchos::rcp(new Amanzi::AmanziMesh::MeshColumn(*parent, lid));
+    bool deformable = mesh_plist.get<bool>("deformable mesh",false);
+
+    checkVerifyMesh(mesh_plist, mesh);
+    S.RegisterMesh(Amanzi::Keys::cleanPListName(mesh_plist.name()), mesh, deformable);
+
+  } else if (mesh_type == "column surface") {
+    Teuchos::ParameterList& column_list = mesh_plist.sublist("column surface parameters");
+    std::string surface_setname = column_list.get<std::string>("subgrid set name", "surface");
+    std::string parent_domain_name = mesh_plist.name().substr(8,mesh_plist.name().size());
+    auto parent = S.GetMesh(parent_domain_name);
+    auto mesh = Teuchos::rcp(new Amanzi::AmanziMesh::MeshSurfaceCell(*parent, surface_setname));
+
+    bool deformable = mesh_plist.get<bool>("deformable mesh",false);
+
+    checkVerifyMesh(mesh_plist, mesh);
+    S.RegisterMesh(Amanzi::Keys::cleanPListName(mesh_plist.name()), mesh, deformable);
+
+  } else if (mesh_type == "subgrid") {
+    Teuchos::ParameterList& subgrid = mesh_plist.sublist("subgrid parameters");
+    auto kind_str = subgrid.get<std::string>("entity kind");
+
+    Amanzi::AmanziMesh::Entity_kind kind = Amanzi::AmanziMesh::entity_kind(kind_str);
+
+    auto regionname = subgrid.get<std::string>("subgrid region name");
+    std::string parent_domain_name = subgrid.get<std::string>("parent domain", "domain");
+    auto parent_mesh = S.GetMesh(parent_domain_name);
+
+    bool flyweight = subgrid.get<bool>("flyweight mesh", false);
+
+    // etc: Note that this explicitly and purposefully leaks the comm's
+    // memory.  This is due to poor design of the mesh infrastructure, where a
+    // bare pointer is stored instead of a reference counted pointer.  
+    Teuchos::RCP<Epetra_MpiComm> comm_self =
+        Teuchos::rcpFromRef(*(new Epetra_MpiComm(MPI_COMM_SELF)));
     
+    // for each id in the regions of the parent mesh on entity, create a subgrid mesh
+    Amanzi::AmanziMesh::Entity_ID_List entities;
+    parent_mesh->get_set_entities(regionname, kind, Amanzi::AmanziMesh::OWNED, &entities);
+    const Epetra_Map& map = parent_mesh->map(kind,false);
+    
+    for (auto lid : entities) {
+      Amanzi::AmanziMesh::Entity_ID gid = map.GID(lid);
+      std::stringstream name;
+      name << Amanzi::Keys::cleanPListName(mesh_plist.name()) << "_" << gid;
+
+      Teuchos::ParameterList subgrid_i_list;
+      if (subgrid.isSublist(name.str())) {
+        subgrid_i_list = subgrid.sublist(name.str());
+      } else {
+        subgrid_i_list = subgrid.sublist(Amanzi::Keys::cleanPListName(mesh_plist.name())+"_*");
+      }
+
+      subgrid_i_list.setName(name.str());
+      Teuchos::ParameterList& subgrid_i_param_list = subgrid_i_list.sublist(
+          subgrid_i_list.get<std::string>("mesh type")+" parameters");
+      if (!subgrid_i_param_list.isParameter("entity kind"))
+        subgrid_i_param_list.set("entity kind", kind_str);
+      if (!subgrid_i_param_list.isParameter("entity LID"))
+        subgrid_i_param_list.set("entity LID", lid);
+      if (!subgrid_i_param_list.isParameter("subgrid region name"))
+        subgrid_i_param_list.set("subgrid region name", regionname);
+      if (!subgrid_i_param_list.isParameter("parent domain"))
+        subgrid_i_param_list.set("parent domain", parent_domain_name);
+      createMesh(subgrid_i_list, comm_self, gm, S);
+    }
+
   } else {
-    Errors::Message msg("Must specify mesh sublist of type: \"read mesh file\", \"generate mesh\", or \"logical mesh\".");
+    Errors::Message msg;
+    msg << "ATS Mesh Factory: unknown \"mesh type\" parameter \"" << mesh_type
+        << "\" in mesh \"" << Amanzi::Keys::cleanPListName(mesh_plist.name()) << "\".";
     Exceptions::amanzi_throw(msg);
   }
+}
 
+
+bool checkVerifyMesh(Teuchos::ParameterList& mesh_plist,
+                     Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh)
+{
   // mesh verification
   ASSERT(!mesh.is_null());
   bool verify = mesh_plist.get<bool>("verify mesh", false);
   if (verify) {
+
+    int num_procs = mesh->get_comm()->NumProc();
+    int rank = mesh->get_comm()->MyPID();
+    
     if (rank == 0)
       std::cout << "Verifying mesh with Mesh Audit..." << std::endl;
     if (num_procs == 1) {
@@ -113,6 +243,7 @@ createMeshes(Teuchos::ParameterList& global_list,
       } else {
         Errors::Message msg("Mesh Audit could not verify correctness of mesh.");
         Exceptions::amanzi_throw(msg);
+        return false;
       }
     } else {
       std::ostringstream ofile;
@@ -126,158 +257,90 @@ createMeshes(Teuchos::ParameterList& global_list,
       int status = mesh_auditor.Verify();        // check the mesh
       if (status != 0) ierr = 1;
       
-      comm->SumAll(&ierr, &aerr, 1);
+      mesh->get_comm()->SumAll(&ierr, &aerr, 1);
       if (aerr == 0) {
-        if (rank == 0)
+        if (mesh->get_comm()->MyPID() == 0)
           std::cout << "Mesh Audit confirms that mesh is ok" << std::endl;
       } else {
         Errors::Message msg("Mesh Audit could not verify correctness of mesh.");
         Exceptions::amanzi_throw(msg);
+        return false;
       }
     }
   }  // if verify
+  return true;
+}
 
-  bool deformable = mesh_plist.get<bool>("deformable mesh",false);
-  S.RegisterDomainMesh(mesh, deformable);
-  
 
-  // -------------------------------------------------
-  // Create the surface mesh if needed
-  if (plist.isSublist("surface")) {
-    Teuchos::RCP<Amanzi::AmanziMesh::Mesh> surface_mesh = Teuchos::null;
-    Teuchos::RCP<Amanzi::AmanziMesh::Mesh> surface3D_mesh = Teuchos::null;
-    Teuchos::ParameterList& surface_plist = plist.sublist("surface");
-    if (surface_plist.get<bool>("aliased", false)) {
-      surface_mesh = mesh;
+void
+createMeshes(Teuchos::ParameterList& global_list,
+             const Teuchos::RCP<Epetra_MpiComm>& comm,
+             const Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel>& gm,
+             Amanzi::State& S)
+{
+  Teuchos::RCP<Teuchos::Time> volmeshtime =
+      Teuchos::TimeMonitor::getNewCounter("volume mesh creation");
+  Teuchos::TimeMonitor timer(*volmeshtime);
+  int rank =0;
+  //  int rank = S->GetMesh("surface").get_comm().MyPID();
+  Teuchos::ParameterList& meshes_list = global_list.sublist("mesh");
 
-    } else {
-      std::vector<std::string> setnames;
-      if (surface_plist.isParameter("surface sideset name")) {
-        setnames.push_back(surface_plist.get<std::string>("surface sideset name"));
-      } else if (surface_plist.isParameter("surface sideset names")) {
-        setnames = surface_plist.get<Teuchos::Array<std::string> >("surface sideset names").toVector();
-      } else {
-        Errors::Message message("Surface mesh sublist missing parameter \"surface sideset names\".");
-        Exceptions::amanzi_throw(message);
-      }
+  // always try to do the domain mesh first
+  if (meshes_list.isSublist("domain")) {
+    createMesh(meshes_list.sublist("domain"), comm, gm, S);
+  }
 
-      if (mesh->manifold_dimension() == 3) {
-        surface3D_mesh = factory.create(&*mesh,setnames,Amanzi::AmanziMesh::FACE,false,false);
-        surface_mesh = factory.create(&*mesh,setnames,Amanzi::AmanziMesh::FACE,true,false);
-      } else {
-        surface3D_mesh = mesh;
-        surface_mesh = factory.create(&*mesh,setnames,Amanzi::AmanziMesh::CELL,true,false);
-      }
+  // always try to do the surface mesh second
+  if (meshes_list.isSublist("surface")) {
+    createMesh(meshes_list.sublist("surface"), comm, gm, S);
+  }
 
-      bool surf_verify = surface_plist.get<bool>("verify mesh", false);
-      if (surf_verify) {
-        if (rank == 0)
-          std::cout << "Verifying surface mesh with Mesh Audit..." << std::endl;
-        if (num_procs == 1) {
-          Amanzi::MeshAudit surf_mesh_auditor(surface_mesh);
-          int status = surf_mesh_auditor.Verify();
-          if (status == 0) {
-            std::cout << "Mesh Audit confirms that surface mesh is ok" << std::endl;
-          } else {
-            Errors::Message msg("Mesh Audit could not verify correctness of surface mesh.");
-            Exceptions::amanzi_throw(msg);
-          }
-        } else {
-          std::ostringstream ofile;
-          ofile << "surf_mesh_audit_" << std::setfill('0') << std::setw(4) << rank << ".txt";
-          std::ofstream ofs(ofile.str().c_str());
-          if (rank == 0)
-            std::cout << "Writing Surface Mesh Audit output to " << ofile.str() << ", etc." << std::endl;
-        
-          int ierr = 0, aerr = 0;
-          Amanzi::MeshAudit surf_mesh_auditor(mesh, ofs);
-          int status = surf_mesh_auditor.Verify();        // check the mesh
-          if (status != 0) ierr = 1;
-        
-          comm->SumAll(&ierr, &aerr, 1);
-          if (aerr == 0 && rank == 0) {
-            std::cout << "Mesh Audit confirms that surface mesh is ok" << std::endl;
-          } else {
-            Errors::Message msg("Mesh Audit could not verify correctness of surface mesh.");
-            Exceptions::amanzi_throw(msg);
-          }
-        }
-      }  // if surf_verify
-
-      if (surface_plist.isParameter("export mesh to file")) {
-        std::string export_surf_mesh_filename =
-            surface_plist.get<std::string>("export mesh to file");
-        surface3D_mesh->write_to_exodus_file(export_surf_mesh_filename);
-      }
+  // now do the rest
+  for (auto sublist : meshes_list) {
+    if (sublist.first != "domain" && sublist.first != "surface" &&
+        meshes_list.isSublist(sublist.first)) {
+      createMesh(meshes_list.sublist(sublist.first), comm, gm, S);
     }
+  }
 
-    // register meshes with state
-    bool deformable_surface = surface_plist.get<bool>("deformable mesh", deformable);
-    if (surface3D_mesh != Teuchos::null)
-      S.RegisterMesh("surface_3d", surface3D_mesh, deformable_surface);
-    if (surface_mesh != Teuchos::null)
-      S.RegisterMesh("surface", surface_mesh, deformable_surface);
+  // FIXME --etc
+  // this should be dealt with somewhere else, and more generally
+  // generalize vis for columns
+  if (global_list.isSublist("visualization columns")) {
+    auto surface_mesh = S.GetMesh("surface");
+    Teuchos::ParameterList& vis_ss_plist = global_list.sublist("visualization columns"); 
+    int nc = surface_mesh->num_entities(Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::OWNED);
+   
+    for (int c=0; c!=nc; ++c){
+      int id = surface_mesh->cell_map(false).GID(c);
+      std::stringstream name_ss;
+      name_ss << "column_" << id;
+      vis_ss_plist.set("file name base", "visdump_"+name_ss.str());         
+      global_list.set("visualization " +name_ss.str(), vis_ss_plist);
+    }  
+    global_list.remove("visualization columns");
+  }
+  
+  // generalize vis for surface columns
+  if (global_list.isSublist("visualization surface cells")) {
+    auto surface_mesh = S.GetMesh("surface");
+    Teuchos::ParameterList& vis_sf_plist = global_list.sublist("visualization surface cells");
+    int nc = surface_mesh->num_entities(Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::OWNED);
+    for (int c=0; c!=nc; ++c){
+      int id = surface_mesh->cell_map(false).GID(c);
+      std::stringstream name_ss, name_sf;
+      name_sf << "surface_column_" << id;
+      vis_sf_plist.set("file name base", "visdump_"+name_sf.str());
+      global_list.set("visualization " +name_sf.str(), vis_sf_plist);
+    }
+    global_list.remove("visualization surface cells");
   }
 
 
-  // -------------------------------------------------
-  // Column meshes
-  if (plist.isSublist("column")) {
-    std::vector<Teuchos::RCP<Amanzi::AmanziMesh::Mesh> > col_meshes;
-    std::vector<Teuchos::RCP<Amanzi::AmanziMesh::Mesh> > col_surf_meshes;
-    auto surface_mesh = S.GetMesh("surface");
 
-    int nc = mesh->num_columns();
-    col_meshes.resize(nc, Teuchos::null);
-    col_surf_meshes.resize(nc, Teuchos::null);
-    for (int c=0; c!=nc; ++c) {
-      col_meshes[c] = Teuchos::rcp(new Amanzi::AmanziMesh::MeshColumn(*mesh, c));
-    }
-    if (plist.isSublist("column surface"))
-      for (int c1=0; c1!=nc; ++c1)
-        col_surf_meshes[c1] = Teuchos::rcp(new Amanzi::AmanziMesh::MeshSurfaceCell(*col_meshes[c1], "surface"));
-
-    bool deformable_columns = plist.sublist("column").get<bool>("deformable mesh", deformable);
-    for (int c=0; c!=col_meshes.size(); ++c) {
-      std::stringstream name_ss, name_surf;
-      int id = surface_mesh->cell_map(false).GID(c);
-      name_ss << "column_" << id;
-      name_surf << "surface_column_" << id;
-      S.RegisterMesh(name_ss.str(), col_meshes[c], deformable_columns);
-      if (plist.isSublist("column surface"))
-        S.RegisterMesh(name_surf.str(), col_surf_meshes[c], deformable_columns);
-    }
-    
-    // generalize vis for columns
-    if (global_list.isSublist("visualization columns")) {
-      Teuchos::ParameterList& vis_ss_plist = global_list.sublist("visualization columns"); 
-      for (int c=0; c!=nc; ++c){
-        int id = surface_mesh->cell_map(false).GID(c);
-        std::stringstream name_ss;
-        name_ss << "column_" << id;
-        vis_ss_plist.set("file name base", "visdump_"+name_ss.str());         
-        global_list.set("visualization " +name_ss.str(), vis_ss_plist);
-      }  
-      global_list.remove("visualization columns");
-    }
-
-    // generalize vis for surface columns
-    if (global_list.isSublist("visualization surface cells")) {
-      Teuchos::ParameterList& vis_sf_plist = global_list.sublist("visualization surface cells");
-      for (int c=0; c!=nc; ++c){
-        int id = surface_mesh->cell_map(false).GID(c);
-        std::stringstream name_ss, name_sf;
-        name_sf << "surface_column_" << id;
-        vis_sf_plist.set("file name base", "visdump_"+name_sf.str());
-        global_list.set("visualization " +name_sf.str(), vis_sf_plist);
-      }
-      global_list.remove("visualization surface cells");
-    }
-
-
-    //generalize checkpoint files for columns
-    
-    Teuchos::ParameterList& checkpoint_plist = global_list.sublist("checkpoints");
+  //generalize checkpoint files for columns
+  if(global_list.isSublist("checkpoints") && global_list.isSublist("column")){
+  Teuchos::ParameterList& checkpoint_plist = global_list.sublist("checkpoints");
     std::stringstream name_check;
     name_check << rank;
     if (global_list.isSublist("checkpoints"))
@@ -289,22 +352,10 @@ createMeshes(Teuchos::ParameterList& global_list,
         
   }
   
-  // -------------------------------------------------
-  // aliased domains
-  for (auto sub : plist) {
-    if (plist.isSublist(sub.first) &&
-        sub.first != "domain" && sub.first != "surface" &&
-        sub.first != "column" && sub.first != "column surface") {
-      std::string alias = plist.sublist(sub.first).get<std::string>("alias");
-      S.AliasMesh(alias, sub.first);
-    }
-  }
-
-  
   
   Teuchos::TimeMonitor::summarize();
   Teuchos::TimeMonitor::zeroOutTimers();
+  
+
 }
-
-
 } // namespace ATS
