@@ -138,7 +138,6 @@ int DG_Modal::AdvectionMatrixPoly(int c, const VectorPolynomial& u, DenseMatrix&
   VectorPolynomial ucopy(u);
   for (int i = 0; i < d_; ++i) {
     ucopy[i].ChangeOrigin(xc);
-    ucopy[i].Reshape(d_, 0);
   }
 
   // calculate integrals of monomials centered at cell centroid

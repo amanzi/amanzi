@@ -315,9 +315,10 @@ TEST(DG_ADVECTION_MATRIX_CELL) {
 
     // TEST2: linear u
     u[0].monomials(1).coefs()[0] = 1.0;
+    u[0].monomials(1).coefs()[1] = 1.0;
     dg.AdvectionMatrixPoly(0, u, A0, false);
 
-    printf("Advection matrix (cell-based) for order=%d u=(1+x,0)\n", k);
+    printf("Advection matrix (cell-based) for order=%d u=(1+x+y,0)\n", k);
     nk = A0.NumRows();
     for (int i = 0; i < nk; i++) {
       for (int j = 0; j < nk; j++ ) printf("%8.4f ", A0(i, j)); 
@@ -327,15 +328,15 @@ TEST(DG_ADVECTION_MATRIX_CELL) {
     // accuracy test for functions 1+x and 1+x
     if (k == 1) {
       DenseVector v1(nk), v2(nk);
-      v1(0) = 1.25;
-      v1(1) = 1.0;
+      v1(0) = 1.5;
+      v1(1) = v1(2) = 1.0;
       v2 = v1;
  
       A0.Multiply(v1, v2, false);
       double integral(v1 * v2);
       printf("  inner product = %10.4f\n", integral);
 
-      CHECK_CLOSE(integral, 25.0 / 64.0, 1e-12);
+      CHECK_CLOSE(integral, 55.0 / 96.0, 1e-12);
     }
   }
 

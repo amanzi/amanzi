@@ -177,7 +177,7 @@ void RemapTests2DExplicit(int order, std::string disc_name,
       maps.VelocityFace(f, vec_vel[f]);
     }
 
-    // calculate normal component of face velocities
+    // calculate normal component of face velocities and change its sign
     for (int f = 0; f < nfaces_owned; ++f) {
       // calculate j J^{-t} N dA
       WhetStone::Tensor J(2, 2); 
@@ -202,7 +202,7 @@ void RemapTests2DExplicit(int order, std::string disc_name,
       (*vel)[f] = vec_vel[f] * cn;
     }
 
-    // calculate cell velocities and change sign due to integral
+    // calculate cell velocities
     WhetStone::MatrixPolynomial C;
     WhetStone::VectorPolynomial tmp;
     for (int c = 0; c < ncells_owned; ++c) {
