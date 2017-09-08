@@ -188,12 +188,12 @@
 
   <output>
     <vis>
-      <base_filename>struct_amanzi-output-pflo/plt</base_filename>
+      <base_filename>plt</base_filename>
       <num_digits>5</num_digits>
       <cycle_macros>every_step</cycle_macros>
     </vis>
     <checkpoint>
-      <base_filename>struct_amanzi-output-pflo/chk</base_filename>
+      <base_filename>chk</base_filename>
       <num_digits>5</num_digits>
     </checkpoint>
   </output>

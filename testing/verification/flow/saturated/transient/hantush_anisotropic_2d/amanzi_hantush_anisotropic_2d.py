@@ -42,10 +42,10 @@ if __name__ == "__main__":
     import os
     import run_amanzi_standard
 
-    input_filename =os.path.join("amanzi_hantush_anisotropic_2d-isv2.xml")
+    input_file =os.path.join("amanzi_hantush_anisotropic_2d-u.xml")
 
     try: 
-        run_amanzi_standard.run_amanzi(input_filename, 1, ["porflow4_6.exo"])
+        run_amanzi_standard.run_amanzi(input_file, 1, ["porflow4_6.exo",input_file])
         obs_data = load_amanzi_obs()
 
         obsdata = []
