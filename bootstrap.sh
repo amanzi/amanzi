@@ -230,9 +230,8 @@ function set_feature()
   if echo $action | grep "enable" > /dev/null 2>/dev/null; then
     eval "${feature}=$TRUE"
   fi
-  echo ${!feature}
-
 }
+
 function parse_feature()
 {
   feature_opt=$1
@@ -422,13 +421,12 @@ Directories:
 function parse_argv()
 {
   argv=( "$@" )
-  echo "${argv[1]}"
   last=$(( ${#argv[@]} - 1 ))
   i=0
   while [ $i -le ${last} ]
   do
     opt=${argv[$i]}
-    echo "i: ${i} opt=$opt last: $last"
+    echo "opt:  $opt"
     case ${opt} in
 
       -h|--h|--help)
