@@ -13,7 +13,6 @@
 
 TEST(MOAB_HEX_2x2x1)
 {
-
   int i, j, k, err, nc, nf, nv;
   Amanzi::AmanziMesh::Entity_ID_List faces, cnodes, fnodes;
   std::vector<int> facedirs;
@@ -22,6 +21,7 @@ TEST(MOAB_HEX_2x2x1)
   int NV = 18;
   int NF = 20;
   int NC = 4;
+
   double xyz[18][3] = {{-0.5,-0.5, 0.25},
 		       {-0.5,-0.5,-0.25},
 		       {-0.5, 0,  -0.25},
@@ -112,25 +112,21 @@ TEST(MOAB_HEX_2x2x1)
     CHECK_ARRAY_EQUAL(cellfaces[i],faces,6);
     CHECK_ARRAY_EQUAL(cellfacedirs[i],facedirs,6);
 
-
     for (j = 0; j < 6; j++) {
-
       mesh.face_get_nodes(faces[j],&fnodes);
       mesh.face_get_coordinates(faces[j],&fcoords);
       
       for (k = 0; k < 4; k++) {
 	CHECK_EQUAL(facenodes[faces[j]][k],fnodes[k]);
-	CHECK_ARRAY_EQUAL(xyz[facenodes[faces[j]][k]],&(fcoords[3*k][0]),3);
+	CHECK_ARRAY_EQUAL(xyz[facenodes[faces[j]][k]],&(fcoords[k][0]),3);
       }
-
     }
 
-  
     mesh.cell_get_coordinates(i,&ccoords);
     
     for (j = 0; j < 8; j++) {
       CHECK_EQUAL(cellnodes[i][j],cnodes[j]);
-      CHECK_ARRAY_EQUAL(xyz[cellnodes[i][j]],&(ccoords[3*j][0]),3);
+      CHECK_ARRAY_EQUAL(xyz[cellnodes[i][j]],&(ccoords[j][0]),3);
     }
   }
 

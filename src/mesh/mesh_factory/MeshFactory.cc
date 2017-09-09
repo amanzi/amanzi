@@ -205,7 +205,7 @@ MeshFactory::create(double x0, double y0, double z0,
       if (aerr[0] > 0) amanzi_throw(e);
     }
   }
-  e.add_data("unable to generate mesh");
+  e.add_data("unable to generate 3D mesh");
   Exceptions::amanzi_throw(e);
   return Teuchos::null;
 }
@@ -281,7 +281,7 @@ MeshFactory::create(double x0, double y0,
       if (aerr[0] > 0) amanzi_throw(e);
     }
   }
-  e.add_data("unable to generate mesh");
+  e.add_data("unable to generate 2D mesh");
   Exceptions::amanzi_throw(e);
   return Teuchos::null;
 }

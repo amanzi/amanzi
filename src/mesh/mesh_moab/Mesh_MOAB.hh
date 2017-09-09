@@ -297,12 +297,9 @@ class Mesh_MOAB : public Mesh {
   // There are 4 types of lower dimensional entities 
   //
   // 1. OWNED - owned by this processor
-  //
   // 2. NOTOWNED - not owned by this processor
-  //
   // 3. USED - connected to at least one cell owned by this
   // processor (may or may not be owned by this processor)
-  //
   // 4. GHOST - neither the entity nor a cell connected to the
   // entity is owned by the processor
 
@@ -390,13 +387,11 @@ class Mesh_MOAB : public Mesh {
                                          std::vector<int> *face_dirs,
                                          const bool ordered=false) const;
 
-
   // Cells connected to a face
   void face_get_cells_internal_(const Entity_ID faceid, 
                                 const Parallel_type ptype,
                                 Entity_ID_List *cellids) const;
     
-
   // Edges of a cell
   void cell_get_edges_internal_(const Entity_ID cellid,
                                 Entity_ID_List *edgeids) const 
