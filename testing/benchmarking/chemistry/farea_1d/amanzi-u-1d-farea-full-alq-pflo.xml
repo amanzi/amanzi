@@ -41,43 +41,43 @@
                     <primary coefficient_of_diffusion="1.0E-9">UO2++</primary>
                 </primaries>
                 <secondaries>
+                    <secondary>OH-</secondary>
+                    <secondary>HCO3-</secondary>
+                    <secondary>CO3--</secondary>
+                    <secondary>NaHCO3(aq)</secondary>
+                    <secondary>NaCO3-</secondary>
+                    <secondary>NaOH(aq)</secondary>
+                    <secondary>AlOH++</secondary>
+                    <secondary>Al(OH)2+</secondary>
+                    <secondary>Al(OH)3(aq)</secondary>
+                    <secondary>Al(OH)4-</secondary>
+                    <secondary>CaOH+</secondary>
+                    <secondary>CaHCO3+</secondary>
+                    <secondary>CaCO3(aq)</secondary>
+                    <secondary>MgOH+</secondary>
+                    <secondary>MgHCO3+</secondary>
+                    <secondary>MgCO3(aq)</secondary>
                     <secondary>(UO2)2(OH)2++</secondary>
                     <secondary>(UO2)2CO3(OH)3-</secondary>
                     <secondary>(UO2)2OH+++</secondary>
                     <secondary>(UO2)3(CO3)6(6-)</secondary>
                     <secondary>(UO2)3(OH)4++</secondary>
+                    <secondary>UO2(OH)4--</secondary>
                     <secondary>(UO2)3(OH)5+</secondary>
                     <secondary>(UO2)3(OH)7-</secondary>
                     <secondary>(UO2)3O(OH)2(HCO3)+</secondary>
                     <secondary>(UO2)4(OH)7+</secondary>
-                    <secondary>Al(OH)2+</secondary>
-                    <secondary>Al(OH)3(aq)</secondary>
-                    <secondary>Al(OH)4-</secondary>
-                    <secondary>AlOH++</secondary>
-                    <secondary>CO3--</secondary>
-                    <secondary>Ca2UO2(CO3)3(aq)</secondary>
-                    <secondary>CaCO3(aq)</secondary>
-                    <secondary>CaHCO3+</secondary>
-                    <secondary>CaOH+</secondary>
-                    <secondary>CaUO2(CO3)3--</secondary>
-                    <secondary>MgCO3(aq)</secondary>
-                    <secondary>MgHCO3+</secondary>
-                    <secondary>MgOH+</secondary>
-                    <secondary>MgUO2(CO3)3--</secondary>
-                    <secondary>NaCO3-</secondary>
-                    <secondary>NaOH(aq)</secondary>
-                    <secondary>NaHCO3(aq)</secondary>
-                    <secondary>OH-</secondary>
-                    <secondary>UO2(CO3)2--</secondary>
-                    <secondary>UO2(CO3)3----</secondary>
-                    <secondary>UO2(OH)2(aq)</secondary>
-                    <secondary>UO2(OH)3-</secondary>
-                    <secondary>UO2(OH)4--</secondary>
-                    <secondary>UO2CO3(aq)</secondary>
                     <secondary>UO2NO3+</secondary>
                     <secondary>UO2OH+</secondary>
+                    <secondary>UO2(OH)2(aq)</secondary>
+                    <secondary>UO2(OH)3-</secondary>
+                    <secondary>UO2CO3(aq)</secondary>
+                    <secondary>Ca2UO2(CO3)3(aq)</secondary>
+                    <secondary>UO2(CO3)2--</secondary>
+                    <secondary>UO2(CO3)3----</secondary>
+                    <secondary>CaUO2(CO3)3--</secondary>
+                    <secondary>MgUO2(CO3)3--</secondary>
                     <secondary>UO2OSi(OH)3+</secondary>
-                    <secondary>HCO3-</secondary>
                 </secondaries>
                 <redox>
                     <redox>Fe+++</redox>
@@ -124,6 +124,7 @@
                 <activity_coefficients>timestep</activity_coefficients>
                 <max_time_step>1e+10</max_time_step>
                 <initial_time_step>1e+7</initial_time_step>
+                <max_residual_tolerance>1.0e-10</max_residual_tolerance>
             </unstr_chemistry_controls>
             <unstr_steady-state_controls>
                 <min_iterations>10</min_iterations>
