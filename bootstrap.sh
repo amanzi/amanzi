@@ -215,7 +215,6 @@ function download_file()
      error_message "Failed to download $file from $url"
      exit_now $status
   fi
-
 }
 
 # Command line functions

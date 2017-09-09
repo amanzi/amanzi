@@ -49,6 +49,10 @@ const int DIFFUSION_HEXAHEDRA_MONOTONE = 4;
 const int DIFFUSION_SUPPORT_OPERATOR = 7;
 const int DIFFUSION_TPFA = 5; 
 
+// various DG schemes
+const int TAYLOR_BASIS_NORMALIZED = 1;  // recommended
+const int TAYLOR_BASIS_SIMPLE = 2; 
+
 }  // namespace WhetStone
 }  // namespace Amanzi
 

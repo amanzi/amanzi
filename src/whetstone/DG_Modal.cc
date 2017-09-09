@@ -138,7 +138,6 @@ int DG_Modal::AdvectionMatrixPoly(int c, const VectorPolynomial& u, DenseMatrix&
   VectorPolynomial ucopy(u);
   for (int i = 0; i < d_; ++i) {
     ucopy[i].ChangeOrigin(xc);
-    ucopy[i].Reshape(d_, 0);
   }
 
   // calculate integrals of monomials centered at cell centroid
@@ -472,8 +471,9 @@ void DG_Modal::ChangeBasis(const Polynomial& integrals, DenseMatrix& A)
 
 
 /* ******************************************************************
-* Transform monomial \psi_k to monomial a (\psi_k - b \psi_0) where
+* Transform monomial \psi_k to polynomial a (\psi_k - b \psi_0) where
 * factor b orthogonolizes to constant and factor normalizes to 1.
+* NOTE: Both polynomilas are centered at cell centroid.
 ****************************************************************** */
 void DG_Modal::TaylorBasis_(
     const Polynomial& integrals, const Iterator& it, double* a, double* b)
@@ -487,6 +487,9 @@ void DG_Modal::TaylorBasis_(
 
   // We do not modify the first function
   if (n == 0) {
+    *a = 1.0;
+    *b = 0.0;
+  } else if (n == 1 && basis_ == TAYLOR_BASIS_SIMPLE) {
     *a = 1.0;
     *b = 0.0;
   } else {
