@@ -80,11 +80,10 @@ TEST(MOAB_HEX_2x2x1)
 			      {0,3,2,1},
 			      {4,5,6,7}};
 
-  std::auto_ptr<Epetra_MpiComm> comm_(new Epetra_MpiComm(MPI_COMM_WORLD));
+  std::shared_ptr<Epetra_MpiComm> comm_(new Epetra_MpiComm(MPI_COMM_WORLD));
 
 
-  // Load a single hex from the hex1.exo file
-
+  // Load four hexes from the ExodusII file
   Amanzi::AmanziMesh::Mesh_MOAB mesh("test/hex_2x2x1_ss.exo",comm_.get());
 
 
@@ -130,58 +129,19 @@ TEST(MOAB_HEX_2x2x1)
     }
   }
 
-
-  // Verify the sidesets
-
-  // int ns;
-  // ns = mesh.num_sets(Amanzi::AmanziMesh::FACE);
-  // CHECK_EQUAL(7,ns);
-
-  // std::vector<unsigned int> setids(7);
-  // unsigned int expsetids[7]={1,101,102,103,104,105,106};
-  // mesh.get_set_ids(Amanzi::AmanziMesh::FACE,&setids);
-  
-  // CHECK_ARRAY_EQUAL(expsetids,setids,7);
-
-  // unsigned int setsize, expsetsizes[7] = {16,4,4,2,2,2,2};
-  // unsigned int expsetfaces[7][16] = {{0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15},
-  //       			     {0,1,2,3,0,0,0,0,0,0,0,0,0,0,0,0},
-  //       			     {4,5,6,7,0,0,0,0,0,0,0,0,0,0,0,0},
-  //       			     {8,9,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
-  //       			     {10,11,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
-  //       			     {12,13,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
-  //       			     {14,15,0,0,0,0,0,0,0,0,0,0,0,0,0,0}};
-
-
-  // for (i = 0; i < ns; i++) {
-  //   unsigned int setfaces[16];
-
-  //   setsize = mesh.get_set_size(setids[i],Amanzi::AmanziMesh::FACE,Amanzi::AmanziMesh::OWNED);
-  //   CHECK_EQUAL(expsetsizes[i],setsize);
-
-
-  //   mesh.get_set(setids[i],Amanzi::AmanziMesh::FACE, Amanzi::AmanziMesh::OWNED, setfaces, setfaces+setsize);
-    
-  //   CHECK_ARRAY_EQUAL(expsetfaces[i],setfaces,setsize);
-  // }
-
-
-
+  // verify global IDs
   Amanzi::AmanziMesh::Entity_ID_List c2f;
   Epetra_Map cell_map(mesh.cell_map(true));
   Epetra_Map face_map(mesh.face_map(false));
 
-  for (int c=cell_map.MinLID(); c<=cell_map.MaxLID(); c++)
-    {
-      CHECK_EQUAL(cell_map.GID(c),mesh.GID(c,Amanzi::AmanziMesh::CELL));
-      mesh.cell_get_faces( c, &c2f, true );
-      for (int j=0; j<6; j++)
-	{
-	  int f = face_map.LID(mesh.GID(c2f[j],Amanzi::AmanziMesh::FACE));
-	  CHECK( f == c2f[j] );
-	}
+  for (int c = cell_map.MinLID(); c <= cell_map.MaxLID(); c++) {
+    CHECK_EQUAL(cell_map.GID(c),mesh.GID(c,Amanzi::AmanziMesh::CELL));
 
+    mesh.cell_get_faces( c, &c2f, true );
+    for (int j = 0; j < 6; ++j) {
+      int f = face_map.LID(mesh.GID(c2f[j],Amanzi::AmanziMesh::FACE));
+      CHECK(f == c2f[j]);
     }
-
+  }
 }
 

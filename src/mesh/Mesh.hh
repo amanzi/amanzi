@@ -56,8 +56,8 @@
 #include "errors.hh"
 #include "VerboseObject.hh"
 
-#include "Point.hh"
 #include "GeometricModel.hh"
+#include "Point.hh"
 #include "Region.hh"
 
 #include "MeshDefs.hh"

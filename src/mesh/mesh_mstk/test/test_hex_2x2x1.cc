@@ -62,7 +62,7 @@ TEST(MSTK_HEX_2x2x1)
   for (i = 0; i < nv; i++) {
     Amanzi::AmanziGeometry::Point coords(mesh->space_dimension());
     
-    //    coords.init(mesh->space_dimension()); 
+    // coords.init(mesh->space_dimension()); 
     
     mesh->node_get_coordinates(i,&coords);
     CHECK_EQUAL(xyz[i][0],coords[0]);
@@ -117,7 +117,6 @@ TEST(MSTK_HEX_2x2x1)
 	  CHECK_ARRAY_EQUAL(xyz[expfacenodes[(k0+4-k)%4]],fcoords[k],3);
 	}
       }
-      
     }
 
   
@@ -128,31 +127,24 @@ TEST(MSTK_HEX_2x2x1)
   }
 
 
-
-
   std::vector<Amanzi::AmanziMesh::Entity_ID>  c2f(6);
   Epetra_Map cell_map(mesh->cell_map(true));
   Epetra_Map face_map(mesh->face_map(false));
 
-  for (int c=cell_map.MinLID(); c<=cell_map.MaxLID(); c++)
-    {
-      CHECK_EQUAL(cell_map.GID(c),mesh->GID(c,Amanzi::AmanziMesh::CELL));
-      mesh->cell_get_faces(c, &c2f);
-      for (int j=0; j<6; j++)
-  	{
-  	  int f = face_map.LID(mesh->GID(c2f[j],Amanzi::AmanziMesh::FACE));
-  	  CHECK( f == c2f[j] );
-  	}
+  for (int c=cell_map.MinLID(); c<=cell_map.MaxLID(); c++) {
+    CHECK_EQUAL(cell_map.GID(c),mesh->GID(c,Amanzi::AmanziMesh::CELL));
+    mesh->cell_get_faces(c, &c2f);
 
+    for (int j=0; j<6; j++) {
+      int f = face_map.LID(mesh->GID(c2f[j],Amanzi::AmanziMesh::FACE));
+      CHECK( f == c2f[j] );
     }
+  }
 
   std::stringstream fname;
   fname << "test/mstk_hex_2x2x1.out";
   std::ofstream fout(fname.str().c_str());
   Amanzi::MeshAudit auditor(mesh,fout);
   auditor.Verify();
-
-
-  
 }
 

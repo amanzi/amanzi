@@ -22,7 +22,7 @@ TEST(MOAB_HEX_3x3x3)
   int NF = 108;
   int NC = 27;
 
-  std::auto_ptr<Epetra_MpiComm> comm_(new Epetra_MpiComm(MPI_COMM_WORLD));
+  std::shared_ptr<Epetra_MpiComm> comm_(new Epetra_MpiComm(MPI_COMM_WORLD));
 
   // Load a single hex from the hex1.exo file
 
