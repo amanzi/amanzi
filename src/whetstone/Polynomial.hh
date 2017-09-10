@@ -210,7 +210,7 @@ class Polynomial {
     return tmp;
   }
 
-  // dot product v1 * v2
+  // -- dot product v1 * v2
   friend Polynomial operator*(const std::vector<Polynomial>& v1, const std::vector<Polynomial>& v2) {
     ASSERT(v1.size() == v2.size());
 
@@ -224,44 +224,22 @@ class Polynomial {
     return tmp;
   }
 
-  // matrix-vector product A * v
+  // various convolutions
+  // -- matrix-vector product A * v
   void Multiply(const std::vector<std::vector<Polynomial> >& A, 
                 const std::vector<Polynomial>& v,
-                std::vector<Polynomial>& av, bool transpose) {
-    int d(v[0].dimension());
-    int nrows(A.size());
-    int ncols(v.size());
+                std::vector<Polynomial>& av, bool transpose);
 
-    if (!transpose) {
-      av.resize(nrows);
+  // -- matrix-point product A * p
+  void Multiply(const std::vector<std::vector<Polynomial> >& A, 
+                const AmanziGeometry::Point& p,
+                std::vector<Polynomial>& av, bool transpose);
 
-      for (int i = 0; i < nrows; ++i) {
-        av[i].Reshape(d, 0, true);
-        av[i].set_origin(v[0].origin());
-
-        for (int k = 0; k < ncols; ++k) {
-          av[i] += A[i][k] * v[k];
-        }
-      }
-    } else {
-      av.resize(ncols);
-
-      for (int i = 0; i < ncols; ++i) {
-        av[i].Reshape(d, 0, true);
-        av[i].set_origin(v[0].origin());
-
-        for (int k = 0; k < nrows; ++k) {
-          av[i] += A[k][i] * v[k];
-        }
-      }
-    }
-  }
-
-  // -- derivatives
+  // derivatives
   void Gradient(std::vector<Polynomial>& grad) const;
 
-  // -- multi index defines both monomial order and current monomial
-  //    whenever possible, use faster Iterator's functions 
+  // multi index defines both monomial order and current monomial
+  // whenever possible, use faster Iterator's functions 
   int MonomialPosition(const int* multi_index) const;
   int PolynomialPosition(const int* multi_index) const;
 

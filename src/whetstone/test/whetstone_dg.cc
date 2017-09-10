@@ -290,7 +290,8 @@ TEST(DG_ADVECTION_MATRIX_CELL) {
 
   MeshFactory meshfactory(comm);
   meshfactory.preference(FrameworkPreference({MSTK}));
-  Teuchos::RCP<Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 2, 2); 
+  // Teuchos::RCP<Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 2, 2); 
+  Teuchos::RCP<Mesh> mesh = meshfactory("test/one_quad.exo"); 
 
   for (int k = 0; k < 3; k++) {
     DG_Modal dg(k, mesh);
@@ -303,40 +304,61 @@ TEST(DG_ADVECTION_MATRIX_CELL) {
 
     // TEST1: constant u
     u[0].monomials(0).coefs()[0] = 1.0;
+    u[1].monomials(0).coefs()[0] = 1.0;
     dg.AdvectionMatrixPoly(0, u, A0, false);
 
-    printf("Advection matrix (cell-based) for order=%d u=(1,0)\n", k);
+    printf("Advection matrix (cell-based) for order=%d u=(1,1)\n", k);
     int nk = A0.NumRows();
     for (int i = 0; i < nk; i++) {
-      for (int j = 0; j < nk; j++ ) printf("%8.4f ", A0(i, j)); 
+      for (int j = 0; j < nk; j++ ) printf("%10.6f ", A0(i, j)); 
       printf("\n");
     }
-    // CHECK_CLOSE(0.0, A0.NormInf(), mesh->cell_volume(0));
 
     // TEST2: linear u
     u[0].monomials(1).coefs()[0] = 1.0;
     u[0].monomials(1).coefs()[1] = 1.0;
     dg.AdvectionMatrixPoly(0, u, A0, false);
 
-    printf("Advection matrix (cell-based) for order=%d u=(1+x+y,0)\n", k);
+    printf("Advection matrix (cell-based) for order=%d u=(1+x+y,1), f(x,y)=2+x+3y\n", k);
     nk = A0.NumRows();
     for (int i = 0; i < nk; i++) {
-      for (int j = 0; j < nk; j++ ) printf("%8.4f ", A0(i, j)); 
+      for (int j = 0; j < nk; j++ ) printf("%10.6f ", A0(i, j)); 
       printf("\n");
     }
 
     // accuracy test for functions 1+x and 1+x
-    if (k == 1) {
-      DenseVector v1(nk), v2(nk);
-      v1(0) = 1.5;
-      v1(1) = v1(2) = 1.0;
+    DenseVector v1(nk), v2(nk), v3(nk);
+    if (k > 0) {
+      const AmanziGeometry::Point& xc = mesh->cell_centroid(0);
+      v1.PutScalar(0.0);
+      v1(0) = 2 + xc[0] + 3 * xc[1];
+      v1(1) = 1.0;
+      v1(2) = 3.0;
       v2 = v1;
  
-      A0.Multiply(v1, v2, false);
-      double integral(v1 * v2);
-      printf("  inner product = %10.4f\n", integral);
+      A0.Multiply(v1, v3, false);
+      double integral(v2 * v3);
+      printf("  inner product = %10.6f\n", integral);
+      printf("  centroid = %10.6f %10.6f\n", xc[0], xc[1]);
 
-      CHECK_CLOSE(integral, 55.0 / 96.0, 1e-12);
+      CHECK_CLOSE(integral, 1891.0 / 48.0, 1e-12);
+    }
+
+    // TEST3: quadratic u
+    u[1].monomials(2).coefs()[0] = 1.0;
+    dg.AdvectionMatrixPoly(0, u, A0, false);
+
+    printf("Advection matrix (cell-based) for order=%d u=(1+x+y,1+x^2)\n", k);
+    nk = A0.NumRows();
+    for (int i = 0; i < nk; i++) {
+      for (int j = 0; j < nk; j++ ) printf("%10.6f ", A0(i, j)); 
+      printf("\n");
+    }
+
+    if (k > 0) {
+      A0.Multiply(v1, v3, false);
+      double integral(v2 * v3);
+      printf("  inner product = %10.6f\n", integral);
     }
   }
 

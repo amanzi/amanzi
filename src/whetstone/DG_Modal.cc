@@ -489,7 +489,7 @@ void DG_Modal::TaylorBasis_(
   if (n == 0) {
     *a = 1.0;
     *b = 0.0;
-  } else if (n == 1 && basis_ == TAYLOR_BASIS_SIMPLE) {
+  } else if (basis_ == TAYLOR_BASIS_SIMPLE) {
     *a = 1.0;
     *b = 0.0;
   } else {

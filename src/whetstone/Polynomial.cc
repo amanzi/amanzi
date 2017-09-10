@@ -181,6 +181,73 @@ Polynomial& Polynomial::operator*=(double val)
 
 
 /* ******************************************************************
+* Matrix-vector operatoions.
+***************************************************************** */
+void Polynomial::Multiply(const std::vector<std::vector<Polynomial> >& A, 
+                          const std::vector<Polynomial>& v,
+                          std::vector<Polynomial>& av, bool transpose)
+{
+  int d(v[0].dimension());
+  int nrows(A.size());
+  int ncols(v.size());
+
+  if (!transpose) {
+    av.resize(nrows);
+
+    for (int i = 0; i < nrows; ++i) {
+      av[i].Reshape(d, 0, true);
+      av[i].set_origin(v[0].origin());
+
+      for (int k = 0; k < ncols; ++k) {
+        av[i] += A[i][k] * v[k];
+      }
+    }
+  } else {
+    av.resize(ncols);
+
+    for (int i = 0; i < ncols; ++i) {
+      av[i].Reshape(d, 0, true);
+      av[i].set_origin(v[0].origin());
+
+      for (int k = 0; k < nrows; ++k) {
+        av[i] += A[k][i] * v[k];
+      }
+    }
+  }
+}
+
+
+void Polynomial::Multiply(const std::vector<std::vector<Polynomial> >& A, 
+                          const AmanziGeometry::Point& p,
+                          std::vector<Polynomial>& av, bool transpose)
+{
+  int d(p.dim());
+  ASSERT(A.size() == d);
+
+  av.resize(d);
+  if (!transpose) {
+    for (int i = 0; i < d; ++i) {
+      av[i].Reshape(d, 0, true);
+      av[i].set_origin(A[0][0].origin());
+
+      for (int k = 0; k < d; ++k) {
+        av[i] += A[i][k] * p[k];
+      }
+    }
+  } else {
+    for (int i = 0; i < d; ++i) {
+      av[i].Reshape(d, 0, true);
+      av[i].set_origin(A[0][0].origin());
+
+      for (int k = 0; k < d; ++k) {
+        av[i] += A[k][i] * p[k];
+      }
+    }
+  }
+}
+
+
+/* ******************************************************************
 * Compute gradient of a polynomial
 ***************************************************************** */
 void Polynomial::Gradient(std::vector<Polynomial>& grad) const

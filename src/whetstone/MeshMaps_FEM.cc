@@ -143,11 +143,11 @@ void MeshMaps_FEM::Cofactors(int c, double t, MatrixPolynomial& C) const
   J0.Inverse();
 
   // allocate memory for matrix
-  C.resize(2);
-  for (int i = 0; i < 2; ++i) {
+  C.resize(d_);
+  for (int i = 0; i < d_; ++i) {
     C[i].resize(2);
-    for (int j = 0; j < 2; ++j) {
-      C[i][j].Reshape(2, 1);
+    for (int j = 0; j < d_; ++j) {
+      C[i][j].Reshape(d_, 1);
     }
   } 
 
@@ -159,14 +159,24 @@ void MeshMaps_FEM::Cofactors(int c, double t, MatrixPolynomial& C) const
   C[1][1].monomials(0).coefs()[0] = p21[0];
 
   // linear part
-  C[0][0].monomials(1).coefs()[0] = p32[1] - p41[1];
-  C[1][0].monomials(1).coefs()[0] = -(p32[0] - p41[0]);
+  C[0][0].monomials(1).coefs()[0] = (p32[1] - p41[1]) * J0(1, 1);
+  C[1][0].monomials(1).coefs()[0] =-(p32[0] - p41[0]) * J0(0, 0);
 
-  C[0][1].monomials(1).coefs()[1] = -(p34[1] - p21[1]);
-  C[1][1].monomials(1).coefs()[1] = p34[0] - p21[0];
+  C[0][1].monomials(1).coefs()[1] =-(p34[1] - p21[1]) * J0(0, 0);
+  C[1][1].monomials(1).coefs()[1] = (p34[0] - p21[0]) * J0(1, 1);
 
-  for (int i = 0; i < 2; ++i) {
-    for (int j = 0; j < 2; ++j) {
+  // rebase polynomials to global coordinate system
+  mesh0_->node_get_coordinates(nodes[0], &p1);
+  AmanziGeometry::Point zero(0.0, 0.0);
+  for (int i = 0; i < d_; ++i) {
+    for (int j = 0; j < d_; ++j) {
+      C[i][j].set_origin(p1);
+      C[i][j].ChangeOrigin(zero);
+    }
+  }
+
+  for (int i = 0; i < d_; ++i) {
+    for (int j = 0; j < d_; ++j) {
       C[i][j] *= t * J0(j, j);
     }
     C[i][i].monomials(0).coefs()[0] += 1.0 - t;

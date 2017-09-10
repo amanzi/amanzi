@@ -178,33 +178,38 @@ void RemapTests2DExplicit(int order, std::string disc_name,
     }
 
     // calculate normal component of face velocities and change its sign
+    Entity_ID_List cells;
+    WhetStone::Polynomial poly;
+    WhetStone::VectorPolynomial cn;
+
     for (int f = 0; f < nfaces_owned; ++f) {
       // calculate j J^{-t} N dA
+      /*
       WhetStone::Tensor J(2, 2); 
       maps.JacobianFaceValue(f, vec_vel[f], xref, J);
       J *= t;
       J += 1.0 - t;
       WhetStone::Tensor C = J.Cofactors();
       AmanziGeometry::Point cn = C * mesh0->face_normal(f); 
-
-      // calculate j J^{-t} N dA
-      /*
-      maps.JacobianFaceValue(f, vec_vel[f], xref, J);
-      J *= t + dt;
-      J += 1.0 - (t + dt);
-      C = J.Cofactors();
-      cn += C * mesh0->face_normal(f); 
-      cn /= 2;
       */
 
+      WhetStone::MatrixPolynomial C;
+      mesh0->face_get_cells(f, AmanziMesh::USED, &cells);
+      maps.Cofactors(cells[0], t, C);
+
+      AmanziGeometry::Point normal = mesh0->face_normal(f);
+      normal *= -1.0;
+      poly.Multiply(C, normal, cn, false);
+
       // calculate normal velocity component
-      cn *= -1.0;
       (*vel)[f] = vec_vel[f] * cn;
     }
 
     // calculate cell velocities
+    // we reuse matrix of cofactors to calculate face-velocities
     WhetStone::MatrixPolynomial C;
     WhetStone::VectorPolynomial tmp;
+
     for (int c = 0; c < ncells_owned; ++c) {
       maps.Cofactors(c, t, C);
       maps.VelocityCell(c, tmp);
@@ -304,8 +309,10 @@ void RemapTests2DExplicit(int order, std::string disc_name,
     GMV::open_data_file(*mesh1, (std::string)"operators.gmv");
     GMV::start_data();
     GMV::write_cell_data(p2c, 0, "remaped");
-    GMV::write_cell_data(p2c, 1, "gradx");
-    GMV::write_cell_data(p2c, 2, "grady");
+    if (order > 0) {
+      GMV::write_cell_data(p2c, 1, "gradx");
+      GMV::write_cell_data(p2c, 2, "grady");
+    }
     GMV::close_data_file();
   }
 }
@@ -318,6 +325,6 @@ TEST(REMAP_DG0_EXPLICIT) {
 */
 
 TEST(REMAP_DG1_EXPLICIT) {
-  RemapTests2DExplicit(1, "dg modal", 20, 20, 0.1);
+  RemapTests2DExplicit(1, "dg modal", 10, 10, 0.1);
 }
 
