@@ -40,6 +40,9 @@ class MeshMaps_VEM : public MeshMaps {
   // Maps
   // -- pseudo-velocity in cell c
   virtual void VelocityCell(int c, VectorPolynomial& v) const override;
+  // -- Nanson formula
+  virtual void NansonFormula(int f, double t, const VectorPolynomial& v,
+                             VectorPolynomial& cn) const;
 
   // Jacobian
   // -- tensors

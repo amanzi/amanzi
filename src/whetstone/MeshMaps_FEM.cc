@@ -74,6 +74,23 @@ void MeshMaps_FEM::VelocityCell(int c, VectorPolynomial& v) const
 
 
 /* ******************************************************************
+* Transformation of normal is defined completely by face data.
+****************************************************************** */
+void MeshMaps_FEM::NansonFormula(
+    int f, double t, const VectorPolynomial& v, VectorPolynomial& cn) const
+{
+  Entity_ID_List cells;
+  mesh0_->face_get_cells(f, AmanziMesh::USED, &cells);
+
+  WhetStone::MatrixPolynomial C;
+  Cofactors(cells[0], t, C);
+
+  AmanziGeometry::Point normal = mesh0_->face_normal(f);
+  cn[0].Multiply(C, normal, cn, false);
+}
+
+
+/* ******************************************************************
 * Calculation of matrix of cofactors
 ****************************************************************** */
 void MeshMaps_FEM::Cofactors(int c, double t, MatrixPolynomial& C) const

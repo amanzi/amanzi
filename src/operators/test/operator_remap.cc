@@ -45,6 +45,7 @@
 * Remap of polynomilas in two dimensions. Explicit time scheme.
 ***************************************************************** */
 void RemapTests2DExplicit(int order, std::string disc_name,
+                          std::string maps_name,
                           int nx, int ny, double dt) {
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
@@ -53,7 +54,8 @@ void RemapTests2DExplicit(int order, std::string disc_name,
 
   Epetra_MpiComm comm(MPI_COMM_WORLD);
   int MyPID = comm.MyPID();
-  if (MyPID == 0) std::cout << "\nTest: remap of functions in 2D, order=" << order << std::endl;
+  if (MyPID == 0) std::cout << "\nTest: remap in 2D, order=" << order 
+                            << ", maps=" << maps_name << std::endl;
 
   // polynomial space
   int nk = (order + 1) * (order + 2) / 2;
@@ -171,31 +173,27 @@ void RemapTests2DExplicit(int order, std::string disc_name,
   op_reac->Setup(jac);
 
   double t(0.0), tend(1.0);
-  WhetStone::MeshMaps_FEM maps(mesh0, mesh1);
+  std::shared_ptr<WhetStone::MeshMaps> maps;
+  if (maps_name == "FEM") {
+    maps = std::make_shared<WhetStone::MeshMaps_FEM>(mesh0, mesh1);
+  } else if (maps_name == "VEM") {
+    maps = std::make_shared<WhetStone::MeshMaps_VEM>(mesh0, mesh1);
+  }
 
   while(t < tend - dt/2) {
     // calculate face velocities
     for (int f = 0; f < nfaces_owned; ++f) {
-      maps.VelocityFace(f, vec_vel[f]);
+      maps->VelocityFace(f, vec_vel[f]);
     }
 
     // calculate normal component of face velocities and change its sign
-    Entity_ID_List cells;
-    WhetStone::Polynomial poly;
-    WhetStone::VectorPolynomial cn;
-
     for (int f = 0; f < nfaces_owned; ++f) {
-      // calculate j J^{-t} N dA
-      WhetStone::MatrixPolynomial C;
-      mesh0->face_get_cells(f, AmanziMesh::USED, &cells);
-      maps.Cofactors(cells[0], t, C);
+      // cn = j J^{-t} N dA
+      WhetStone::VectorPolynomial cn;
+      maps->NansonFormula(f, t, vec_vel[f], cn);
 
-      AmanziGeometry::Point normal = mesh0->face_normal(f);
-      normal *= -1.0;
-      poly.Multiply(C, normal, cn, false);
-
-      // calculate normal velocity component
       (*vel)[f] = vec_vel[f] * cn;
+      (*vel)[f] *= -1.0;
     }
 
     // calculate cell velocities
@@ -204,8 +202,8 @@ void RemapTests2DExplicit(int order, std::string disc_name,
     WhetStone::VectorPolynomial tmp;
 
     for (int c = 0; c < ncells_owned; ++c) {
-      maps.Cofactors(c, t, C);
-      maps.VelocityCell(c, tmp);
+      maps->Cofactors(c, t, C);
+      maps->VelocityCell(c, tmp);
       tmp[0].Multiply(C, tmp, (*cell_vel)[c], true);
     }
 
@@ -222,7 +220,7 @@ void RemapTests2DExplicit(int order, std::string disc_name,
         vf.push_back(vec_vel[faces[n]]);
       }
 
-      maps.JacobianDet(c, t, vf, (*jac)[c]);
+      maps->JacobianDet(c, t, vf, (*jac)[c]);
     }
 
     // populate operators
@@ -289,7 +287,7 @@ void RemapTests2DExplicit(int order, std::string disc_name,
     area += area_c;
   }
   pl2_err = std::pow(pl2_err, 0.5);
-  CHECK(pl2_err < 0.8 / (order + 1));
+  CHECK(pl2_err < 0.08 / (order + 1));
 
   if (MyPID == 0) {
     printf("L2(p0)=%12.8g  Inf(p0)=%12.8g  Err(area)=%12.8g\n", 
@@ -311,11 +309,22 @@ void RemapTests2DExplicit(int order, std::string disc_name,
 }
 
 
-TEST(REMAP_DG0_EXPLICIT) {
-  RemapTests2DExplicit(0, "dg modal", 10, 10, 0.1);
+TEST(REMAP_DG0_EXPLICIT_FEM) {
+  RemapTests2DExplicit(0, "dg modal", "FEM", 10, 10, 0.1);
 }
 
-TEST(REMAP_DG1_EXPLICIT) {
-  RemapTests2DExplicit(1, "dg modal", 10, 10, 0.1);
+TEST(REMAP_DG1_EXPLICIT_FEM) {
+  RemapTests2DExplicit(1, "dg modal", "FEM", 10, 10, 0.1);
 }
+
+TEST(REMAP_DG0_EXPLICIT_VEM) {
+  RemapTests2DExplicit(0, "dg modal", "VEM", 10, 10, 0.1);
+}
+
+/*
+TEST(REMAP_DG1_EXPLICIT_VEM) {
+  RemapTests2DExplicit(1, "dg modal", "VEM", 10, 10, 0.1);
+}
+*/
+
 

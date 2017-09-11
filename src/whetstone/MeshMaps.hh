@@ -54,6 +54,9 @@ class MeshMaps {
   virtual void VelocityCell(int c, VectorPolynomial& v) const = 0;
   // -- pseudo-velocity on face f
   virtual void VelocityFace(int f, VectorPolynomial& v) const;
+  // -- Nanson formula
+  virtual void NansonFormula(int f, double t, const VectorPolynomial& v,
+                             VectorPolynomial& cn) const = 0;
 
   // Jacobian
   // -- tensors

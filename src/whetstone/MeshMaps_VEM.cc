@@ -33,6 +33,29 @@ void MeshMaps_VEM::VelocityCell(int c, VectorPolynomial& v) const
 
 
 /* ******************************************************************
+* Transformation of normal is defined completely by face data.
+* NOTE: Limited to P1 elements.
+****************************************************************** */
+void MeshMaps_VEM::NansonFormula(
+    int f, double t, const VectorPolynomial& v, VectorPolynomial& cn) const
+{
+  AmanziGeometry::Point p(d_);
+  WhetStone::Tensor J(d_, 2);
+
+  JacobianFaceValue(f, v, p, J);
+  J *= t;
+  J += 1.0 - t;
+  p = J * mesh0_->face_normal(f);
+
+  cn.resize(d_);
+  for (int i = 0; i < d_; ++i) {
+    cn[i].Reshape(d_, 0);
+    cn[i].monomials(0).coefs()[0] = p[i];
+  }
+}
+
+
+/* ******************************************************************
 * Calculation of matrix of cofactors
 ****************************************************************** */
 void MeshMaps_VEM::Cofactors(int c, double t, MatrixPolynomial& C) const
