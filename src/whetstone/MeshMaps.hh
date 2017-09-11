@@ -53,7 +53,7 @@ class MeshMaps {
   // -- pseudo-velocity in cell c
   virtual void VelocityCell(int c, VectorPolynomial& v) const = 0;
   // -- pseudo-velocity on face f
-  virtual void VelocityFace(int f, VectorPolynomial& v) const = 0;
+  virtual void VelocityFace(int f, VectorPolynomial& v) const;
 
   // Jacobian
   // -- tensors

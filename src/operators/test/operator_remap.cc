@@ -105,10 +105,12 @@ void RemapTests2DExplicit(int order, std::string disc_name,
 
   for (int c = 0; c < ncells_wghost; c++) {
     const AmanziGeometry::Point& xc = mesh0->cell_centroid(c);
-    p1c[0][c] = xc[0] + 2 * xc[1];
+    // p1c[0][c] = xc[0] + 2 * xc[1];
+    p1c[0][c] = std::sin(3 * xc[0]) * std::sin(6 * xc[1]);
     if (nk > 1) {
-      p1c[1][c] = 1.0 / 3.4641016 / nx;
-      p1c[2][c] = 2.0 / 3.4641016 / nx;
+      double scale = 3.4641016 * nx;
+      p1c[1][c] = 3 * std::cos(3 * xc[0]) * std::sin(6 * xc[1]) / scale;
+      p1c[2][c] = 6 * std::sin(3 * xc[0]) * std::cos(6 * xc[1]) / scale;
     }
   }
 
@@ -184,15 +186,6 @@ void RemapTests2DExplicit(int order, std::string disc_name,
 
     for (int f = 0; f < nfaces_owned; ++f) {
       // calculate j J^{-t} N dA
-      /*
-      WhetStone::Tensor J(2, 2); 
-      maps.JacobianFaceValue(f, vec_vel[f], xref, J);
-      J *= t;
-      J += 1.0 - t;
-      WhetStone::Tensor C = J.Cofactors();
-      AmanziGeometry::Point cn = C * mesh0->face_normal(f); 
-      */
-
       WhetStone::MatrixPolynomial C;
       mesh0->face_get_cells(f, AmanziMesh::USED, &cells);
       maps.Cofactors(cells[0], t, C);
@@ -286,8 +279,8 @@ void RemapTests2DExplicit(int order, std::string disc_name,
       xg += v;
     } 
     xg /= nnodes;
-    double tmp = p2c[0][c] - (xg[0] + 2 * xg[1]);
-    // double tmp = 1.0 - p2c[0][c];
+    double tmp = p2c[0][c] - std::sin(3 * xg[0]) * std::sin(6 * xg[1]);
+    // double tmp = p2c[0][c] - (xg[0] + 2 * xg[1]);
 
     double area_c = mesh1->cell_volume(c);
     pinf_err = std::max(pinf_err, fabs(tmp));
@@ -296,7 +289,7 @@ void RemapTests2DExplicit(int order, std::string disc_name,
     area += area_c;
   }
   pl2_err = std::pow(pl2_err, 0.5);
-  CHECK(pl2_err < 0.05);
+  CHECK(pl2_err < 0.8 / (order + 1));
 
   if (MyPID == 0) {
     printf("L2(p0)=%12.8g  Inf(p0)=%12.8g  Err(area)=%12.8g\n", 
@@ -318,11 +311,9 @@ void RemapTests2DExplicit(int order, std::string disc_name,
 }
 
 
-/*
 TEST(REMAP_DG0_EXPLICIT) {
   RemapTests2DExplicit(0, "dg modal", 10, 10, 0.1);
 }
-*/
 
 TEST(REMAP_DG1_EXPLICIT) {
   RemapTests2DExplicit(1, "dg modal", 10, 10, 0.1);

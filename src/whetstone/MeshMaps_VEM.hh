@@ -40,8 +40,6 @@ class MeshMaps_VEM : public MeshMaps {
   // Maps
   // -- pseudo-velocity in cell c
   virtual void VelocityCell(int c, VectorPolynomial& v) const override;
-  // -- pseudo-velocity on face f
-  virtual void VelocityFace(int f, VectorPolynomial& v) const override;
 
   // Jacobian
   // -- tensors
