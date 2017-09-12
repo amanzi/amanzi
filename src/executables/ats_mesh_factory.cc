@@ -339,7 +339,7 @@ createMeshes(Teuchos::ParameterList& global_list,
 
 
   //generalize checkpoint files for columns
-  if(global_list.isSublist("checkpoints") && global_list.isSublist("column")){
+  if(global_list.isSublist("checkpoints") && global_list.sublist("mesh").isSublist("column")){
   Teuchos::ParameterList& checkpoint_plist = global_list.sublist("checkpoints");
     std::stringstream name_check;
     name_check << rank;
