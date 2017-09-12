@@ -152,8 +152,8 @@
 
       <ion_exchange>
         <cations cec="750.0">
-          <cation name="Ca++" value="0.2953"/>
-          <cation name="Mg++" value="0.1666"/>
+          <cation name="Ca++" value="3.38638672536"/>
+          <cation name="Mg++" value="6.00240096038"/>
           <cation name="Na+" value="1.0"/>
         </cations>
       </ion_exchange>

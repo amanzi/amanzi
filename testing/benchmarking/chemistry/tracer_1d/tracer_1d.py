@@ -11,8 +11,7 @@ import matplotlib
 from matplotlib import pyplot as plt
 
 
-# ----------- AMANZI + ALQUIMIA -----------------------------------------------------------------
-
+# ----------- AMANZI U -----------------------------------------------------------------
 def GetXY_AmanziU(path,root,comp):
     dataname = os.path.join(path,root+"_data.h5")
     amanzi_file = h5py.File(dataname,'r')
@@ -34,6 +33,8 @@ def GetXY_AmanziU(path,root,comp):
     
     return (x_amanzi_alquimia, c_amanzi_alquimia)
 
+
+# ----------- AMANZI S -----------------------------------------------------------------
 def GetXY_AmanziS(path,root,comp):
     try:
         import fsnapshot
@@ -53,8 +54,8 @@ def GetXY_AmanziS(path,root,comp):
     
     return (x, y)
 
-# ----------- PFLOTRAN STANDALONE ------------------------------------------------------------
 
+# ----------- PFLOTRAN STANDALONE ------------------------------------------------------------
 def GetXY_PFloTran(path,root,time,comp):
 
     # read pflotran data
@@ -71,6 +72,7 @@ def GetXY_PFloTran(path,root,time,comp):
     pfdata.close()
 
     return (x_pflotran, c_pflotran)
+
 
 # ------------- CRUNCHFLOW ------------------------------------------------------------------
 def GetXY_CrunchFlow(path,root,cf_file,comp,ignore):
@@ -96,6 +98,7 @@ def GetXY_CrunchFlow(path,root,cf_file,comp,ignore):
     yv = np.array(yv)
 
     return (xv, yv)
+
 
 if __name__ == "__main__":
 
@@ -140,47 +143,48 @@ if __name__ == "__main__":
     CWD = os.getcwd()
     local_path = "" 
 
-    # amanziU - native
-
+    # AmanziU + Native chemistry
     try:
       comp = 'total_component_concentration.cell.tracer conc'
-      input_filename = os.path.join("amanzi-u-1d-"+root+".xml")
-      path_to_amanzi = "amanzi-u-native-output"
-      run_amanzi_standard.run_amanzi(input_filename, 1, [], path_to_amanzi)
+      input_file = os.path.join("amanzi-u-1d-"+root+".xml")
+      path_to_amanzi = "output-u"
+      run_amanzi_standard.run_amanzi(input_file, 1, [input_file], path_to_amanzi)
+
       x_amanzi_native, c_amanzi_native = GetXY_AmanziU(path_to_amanzi,root,comp)
       native = len(x_amanzi_native)
   
     except:
       native = 0
 
-    # amanziU - alquimia pflotran
-
+    # AmanziU + Alquimia + PFloTran chemistry
     try:
         comp = 'total_component_concentration.cell.tracer conc'
-        input_filename = os.path.join("amanzi-u-1d-"+root+"-alq-pflo.xml")
-        path_to_amanzi = "amanzi-u-alq-pflo-output"
-        run_amanzi_standard.run_amanzi(input_filename, 1, ["1d-"+root+".in",root+".dat"], path_to_amanzi)
+        input_file = os.path.join("amanzi-u-1d-"+root+"-alq-pflo.xml")
+        path_to_amanzi = "output-u-alq-pflo"
+        run_amanzi_standard.run_amanzi(input_file, 1, ["1d-"+root+".in",root+".dat",input_file], path_to_amanzi)
+
         x_amanzi_alquimia, c_amanzi_alquimia = GetXY_AmanziU(path_to_amanzi,root,comp)
         alq = len(x_amanzi_alquimia)
 
     except:
         alq = 0
 
-    # amanziS
     
+    # AmanziS + Alquimia + PFloTran chemistry
     try:
-        input_filename = os.path.join("amanzi-s-1d-"+root+"-alq-pflo.xml")
-        path_to_amanziS = "amanzi-s-alq-pflo-output"
-        run_amanzi_standard.run_amanzi(input_filename, 1, ["1d-"+root+".in",root+".dat"], path_to_amanziS)
+        input_file = os.path.join("amanzi-s-1d-"+root+"-alq-pflo.xml")
+        path_to_amanzi = "output-s-alq-pflo"
+        run_amanzi_standard.run_amanzi(input_file, 1, ["1d-"+root+".in",root+".dat",input_file], path_to_amanzi)
+
         root_amanziS = "plt00051"
-        compS = "Tracer_water_Concentration"
-        x_amanziS, c_amanziS = GetXY_AmanziS(path_to_amanziS,root_amanziS,compS)
+        compS = "tracer_water_Concentration"
+        x_amanziS, c_amanziS = GetXY_AmanziS(path_to_amanzi,root_amanziS,compS)
         struct = len(x_amanziS)
     except:
         struct = 0
 
-# plotting --------------------------------------------------------
 
+# plotting --------------------------------------------------------
 # subplots
     fig, ax = plt.subplots()
 

@@ -273,7 +273,9 @@ def AmanziResults(input_filename,subtests,obs_slices,overwrite=False):
             f.flush()
             f.close()
 
-            run_amanzi_standard.run_amanzi(tmp_filename, 8, ["amanzi_dispersion_45_point_2d.exo"], subtests[st]['directory'])
+            run_amanzi_standard.run_amanzi(tmp_filename, 8, 
+                                           ["amanzi_dispersion_45_point_2d.exo",tmp_filename],
+                                           subtests[st]['directory'])
             obs_xml[st]=loadInputXML(input_filename)
             obs_data[st]=loadDataFile(obs_xml[st],subtests[st]['directory'])
 

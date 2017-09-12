@@ -29,17 +29,18 @@ def run_amanzi(input_file, max_np, copyfiles=None, subdirectory=None):
 
     # set up the run directory
     if subdirectory is None:
-       run_directory = os.path.join(cwd, "amanzi-output")
+       run_directory = os.path.join(cwd, "output")
     else:
        run_directory = os.path.join(cwd, subdirectory)
 
     # set up the log file and verify it content
     run_stdout = os.path.join(run_directory, "stdout.out")
 
+    print "  trying ", input_file
     if os.path.isdir(run_directory):
        if os.path.isfile(run_stdout):
           if ( "Amanzi::SIMULATION_SUCCESSFUL" in open(run_stdout).read() ):
-             print("  data exist, skipping the test") 
+             print("    data exist, skipping the test") 
              os.chdir(cwd)
              return
     else:
@@ -57,15 +58,7 @@ def run_amanzi(input_file, max_np, copyfiles=None, subdirectory=None):
            shutil.copyfile(oldfile, newfile)
 
     # miscalleneous
-    xml_cmd = "--xml_file=../"
-
-    # changes for Amanzi-S
-    if subdirectory is None:
-       pass
-    else:
-       if (subdirectory[:7] == "struct_"):
-          xml_cmd = "--xml_file="
-          os.chdir(cwd)
+    xml_cmd = "--xml_file="
 
     # ensure that Amanzi's executable exists
     try:

@@ -1,5 +1,6 @@
 <amanzi_input version="2.3.0" type="structured">
-  <echo_translated_input file_name="alquimia-structured"/>
+
+  <echo_translated_input file_name="amanzi-s-1d-surface-complexation-alq-pflotran_native.xml"/>
   <model_description name="1D Flow and Transport w/ ion exchange">
     <units>
       <length_unit>m</length_unit>
@@ -28,7 +29,7 @@
     <flow state="on" model="saturated"/>
     <transport state="on" />
     <!--chemistry state="on" engine="pflotran" database="surface-complexation.dat" /-->
-    <chemistry state="on" engine="pflotran" input_filename="1d-surface-complexation.in" database="surface-complexation.dat"/>
+    <chemistry state="on" engine="pflotran+" input_filename="1d-surface-complexation.in" database="surface-complexation.dat"/>
   </process_kernels>
 
   <phases>
@@ -175,12 +176,12 @@
 
   <output>
     <vis>
-      <base_filename>struct_amanzi-pflotran-output/plt</base_filename>
+      <base_filename>plt</base_filename>
       <num_digits>5</num_digits>
       <cycle_macros>every_step</cycle_macros>
     </vis>
     <checkpoint>
-      <base_filename>struct_amanzi-pflotran-output/chk</base_filename>
+      <base_filename>chk</base_filename>
       <num_digits>5</num_digits>
     </checkpoint>
   </output>

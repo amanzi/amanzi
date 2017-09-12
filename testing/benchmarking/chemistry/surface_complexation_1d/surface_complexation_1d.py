@@ -11,8 +11,8 @@ matplotlib.use('Agg')
 from matplotlib import pyplot as plt
 
 
-# ----------- AMANZI + ALQUIMIA -----------------------------------------------------------------
-def GetXY_Amanzi(path,root,comp):
+# ----------- AMANZI U -----------------------------------------------------------------
+def GetXY_AmanziU(path,root,comp):
 
     # open amanzi concentration and mesh files
     dataname = os.path.join(path,root+"_data.h5")
@@ -34,6 +34,8 @@ def GetXY_Amanzi(path,root,comp):
     
     return (x_amanzi_alquimia, c_amanzi_alquimia)
 
+
+# ----------- AMANZI S -----------------------------------------------------------------
 def GetXY_AmanziS(path,root,time,comp):
     try:
         import fsnapshot
@@ -111,7 +113,7 @@ if __name__ == "__main__":
         sys.path.append('../../../../tools/amanzi_xml')
     except:
         pass
-    import run_amanzi_chem
+    import run_amanzi_standard
     import numpy as np
 
     try:
@@ -201,28 +203,30 @@ if __name__ == "__main__":
         crunch = False
 
 
-# Amanzi native chemistry --->
+# AmanziU  + Native chemistry --->
     try:
-        input_filename = os.path.join("amanzi-u-1d-"+root+".xml")
-        path_to_amanzi = "amanzi-native-output"
-        run_amanzi_chem.run_amanzi_chem("../"+input_filename,run_path=path_to_amanzi,chemfiles=[root+".bgd"])
+        input_file = os.path.join("amanzi-u-1d-"+root+".xml")
+        path_to_amanzi = "output-u"
+        run_amanzi_standard.run_amanzi(input_file, 1,
+                                       [root+".bgd",input_file],
+                                       path_to_amanzi)
         
         u_amanzi_native = [[[] for x in range(len(amanzi_totc))] for x in range(len(times))]
         for i, time in enumerate(times):
            for j, comp in enumerate(amanzi_totc):
-              x_amanzi_native, c_amanzi_native = GetXY_Amanzi(path_to_amanzi,root,comp)
+              x_amanzi_native, c_amanzi_native = GetXY_AmanziU(path_to_amanzi,root,comp)
               u_amanzi_native[i][j] = c_amanzi_native
 
         v_amanzi_native = [[[] for x in range(len(amanzi_sorb))] for x in range(len(times))]
         for i, time in enumerate(times):
            for j, comp in enumerate(amanzi_sorb):
-              x_amanzi_native, c_amanzi_native = GetXY_Amanzi(path_to_amanzi,root,comp)
+              x_amanzi_native, c_amanzi_native = GetXY_AmanziU(path_to_amanzi,root,comp)
               v_amanzi_native[i][j] = c_amanzi_native
 
         pH_amanzi_native = [ [] for x in range(len(times)) ]
         comp = 'free_ion_species.cell.H+'
         for i, time in enumerate(times):
-              x_amanzi_native, c_amanzi_native = GetXY_Amanzi(path_to_amanzi,root,comp)
+              x_amanzi_native, c_amanzi_native = GetXY_AmanziU(path_to_amanzi,root,comp)
               pH_amanzi_native[i] = -np.log10(c_amanzi_native)
 
 	native = True
@@ -231,28 +235,30 @@ if __name__ == "__main__":
         native = False
 
 
-# Amanzi-Alquimia-PFlotran --->
+# AmanziU +  Alquimia + PFlotran chemistry --->
     try:  
-        input_filename = os.path.join("amanzi-u-1d-"+root+"-alq-pflotran.xml")
-        path_to_amanzi = "amanzi-alquimia-pflotran-output"
-        run_amanzi_chem.run_amanzi_chem("../"+input_filename,run_path=path_to_amanzi,chemfiles=["1d-"+root+".in",root+".dat"])
+        input_file = os.path.join("amanzi-u-1d-"+root+"-alq-pflo.xml")
+        path_to_amanzi = "output-u-alq-pflo"
+        run_amanzi_standard.run_amanzi(input_file, 1,
+                                       ["1d-"+root+".in",root+".dat",input_file],
+                                       path_to_amanzi)
 
         u_amanzi_alquimia = [[[] for x in range(len(amanzi_totc))] for x in range(len(times))]
         for i, time in enumerate(times):
             for j, comp in enumerate(amanzi_totc):
-                x_amanzi_alquimia, c_amanzi_alquimia = GetXY_Amanzi(path_to_amanzi,root,comp)
+                x_amanzi_alquimia, c_amanzi_alquimia = GetXY_AmanziU(path_to_amanzi,root,comp)
                 u_amanzi_alquimia[i][j] = c_amanzi_alquimia
 
         v_amanzi_alquimia = [[[] for x in range(len(amanzi_sorb))] for x in range(len(times))]
         for i, time in enumerate(times):
            for j, comp in enumerate(amanzi_sorb):
-              x_amanzi_alquimia, c_amanzi_alquimia = GetXY_Amanzi(path_to_amanzi,root,comp)
+              x_amanzi_alquimia, c_amanzi_alquimia = GetXY_AmanziU(path_to_amanzi,root,comp)
               v_amanzi_alquimia[i][j] = c_amanzi_alquimia
 
         pH_amanzi_alquimia = [ [] for x in range(len(times)) ]
         comp = 'pH.cell.0'
         for i, time in enumerate(times):
-              x_amanzi_alquimia, c_amanzi_alquimia = GetXY_Amanzi(path_to_amanzi,root,comp)
+              x_amanzi_alquimia, c_amanzi_alquimia = GetXY_AmanziU(path_to_amanzi,root,comp)
               pH_amanzi_alquimia[i] = c_amanzi_alquimia ## -np.log10(c_amanzi_native)
 
         alq = True
@@ -261,28 +267,30 @@ if __name__ == "__main__":
         alq = False
 
 
-# Amanzi-Alquimia-Crunch --->
+# AmanziU + Alquimia + CrunchFlow chemistry --->
     try:
-        input_filename = os.path.join("amanzi-u-1d-surface-complexation-alq-crunch.xml")
-        path_to_amanzi = "amanzi-alquimia-crunch-output"
-        run_amanzi_chem.run_amanzi_chem("../"+input_filename,run_path=path_to_amanzi,chemfiles=["1d-surface-complexation-crunch.in","surface-complexation.dbs"])
+        input_file = os.path.join("amanzi-u-1d-surface-complexation-alq-crunch.xml")
+        path_to_amanzi = "output-u-alq-crunch"
+        run_amanzi_standard.run_amanzi(input_file, 1,
+                                       ["1d-surface-complexation-crunch.in","surface-complexation.dbs",input_file],
+                                       path_to_amanzi)
 
         u_amanzi_alquimia_crunch = [[[] for x in range(len(amanzi_totc))] for x in range(len(times))]
         for i, time in enumerate(times):
            for j, comp in enumerate(amanzi_totc):
-                x_amanzi_alquimia_crunch, c_amanzi_alquimia_crunch = GetXY_Amanzi(path_to_amanzi,root,comp)
+                x_amanzi_alquimia_crunch, c_amanzi_alquimia_crunch = GetXY_AmanziU(path_to_amanzi,root,comp)
                 u_amanzi_alquimia_crunch[i][j] = c_amanzi_alquimia_crunch
               
         v_amanzi_alquimia_crunch = [[[] for x in range(len(amanzi_sorb))] for x in range(len(times))]
         for i, time in enumerate(times):
            for j, comp in enumerate(amanzi_sorb):
-              x_amanzi_alquimia_crunch, c_amanzi_alquimia_crunch = GetXY_Amanzi(path_to_amanzi,root,comp)
+              x_amanzi_alquimia_crunch, c_amanzi_alquimia_crunch = GetXY_AmanziU(path_to_amanzi,root,comp)
               v_amanzi_alquimia_crunch[i][j] = c_amanzi_alquimia_crunch
 
         pH_amanzi_alquimia_crunch = [ [] for x in range(len(times)) ]
         comp = 'pH.cell.0'
         for i, time in enumerate(times):
-              x_amanzi_alquimia_crunch, c_amanzi_alquimia_crunch = GetXY_Amanzi(path_to_amanzi,root,comp)
+              x_amanzi_alquimia_crunch, c_amanzi_alquimia_crunch = GetXY_AmanziU(path_to_amanzi,root,comp)
               pH_amanzi_alquimia_crunch[i] = c_amanzi_alquimia_crunch ## -np.log10(c_amanzi_native)
 
         alq_crunch = True
@@ -291,20 +299,20 @@ if __name__ == "__main__":
         alq_crunch = False
 
 
-    # amanziS data  ------>
-    
-    # +pflotran
+# AmanziS + Alquimia + PFlowTran chemistry --->
     try:
-        input_filename = os.path.join("amanzi-s-1d-surface-complexation-alq-pflotran.xml")
-        path_to_amanziS = "struct_amanzi-pflotran-output"
-        run_amanzi_chem.run_amanzi_chem(input_filename,run_path=path_to_amanziS,chemfiles=None)
+        input_file = os.path.join("amanzi-s-1d-surface-complexation-alq-pflo.xml")
+        path_to_amanzi = "output-s-alq-pflo"
+        run_amanzi_standard.run_amanzi(input_file, 1,
+                                       ["1d-"+root+".in",root+".dat",input_file],
+                                       path_to_amanzi)
         root_amanziS = "plt00362"
 
         u_amanziS = [[[] for x in range(len(amanzi_totcS))] for x in range(len(times))]
         for i, time in enumerate(times):
            for j, comp in enumerate(amanzi_totcS):
                 #import pdb; pdb.set_trace()
-                x_amanziS, c_amanziS = GetXY_AmanziS(path_to_amanziS,root_amanziS,time,comp)
+                x_amanziS, c_amanziS = GetXY_AmanziS(path_to_amanzi,root_amanziS,time,comp)
                 u_amanziS[i][j] = c_amanziS
               
         struct = len(x_amanziS)
@@ -314,31 +322,34 @@ if __name__ == "__main__":
         v_amanziS = [[[] for x in range(len(amanzi_sorbS))] for x in range(len(times))]
         for i, time in enumerate(times):
            for j, comp in enumerate(amanzi_sorbS):
-              x_amanziS, c_amanziS = GetXY_AmanziS(path_to_amanziS,root_amanziS,time,comp)
+              x_amanziS, c_amanziS = GetXY_AmanziS(path_to_amanzi,root_amanziS,time,comp)
               v_amanziS[i][j] = c_amanziS
 
         pH_amanziS = [ [] for x in range(len(times)) ]
         comp = 'H+_Free_Ion_Guess'
         for i, time in enumerate(times):
-              x_amanziS, c_amanziS = GetXY_AmanziS(path_to_amanziS,root_amanziS,time,comp)
+              x_amanziS, c_amanziS = GetXY_AmanziS(path_to_amanzi,root_amanziS,time,comp)
               pH_amanziS[i] = -np.log10(c_amanziS)
 
     except:
         struct = 0
 
-    # +crunchflow
+
+# AmanziS + Alquimia + CrunchFlow chemistry --->
     try:
-        input_filename = os.path.join("amanzi-s-1d-surface-complexation-alq-crunch.xml")
-        path_to_amanziS = "struct_amanzi-crunch-output"
+        input_file = os.path.join("amanzi-s-1d-surface-complexation-alq-crunch.xml")
+        path_to_amanzi = "output-s-alq-crunch"
 #        import pdb; pdb.set_trace()
-        run_amanzi_chem.run_amanzi_chem(input_filename,run_path=path_to_amanziS,chemfiles=None)
+        run_amanzi_standard.run_amanzi(input_file, 1,
+                                       ["1d-surface-complexation-crunch.in","surface-complexation.dbs",input_file],
+                                       path_to_amanzi)
         root_amanziS = "plt00362"
 
         u_amanziS_crunch = [[[] for x in range(len(amanzi_totcS))] for x in range(len(times))]
         for i, time in enumerate(times):
            for j, comp in enumerate(amanzi_totcS):
 #                import pdb; pdb.set_trace()
-                x_amanziS_crunch, c_amanziS_crunch = GetXY_AmanziS(path_to_amanziS,root_amanziS,time,comp)
+                x_amanziS_crunch, c_amanziS_crunch = GetXY_AmanziS(path_to_amanzi,root_amanziS,time,comp)
                 u_amanziS_crunch[i][j] = c_amanziS_crunch
               
         struct_c = len(x_amanziS_crunch)
@@ -346,13 +357,13 @@ if __name__ == "__main__":
         v_amanziS_crunch = [[[] for x in range(len(amanzi_sorbS))] for x in range(len(times))]
         for i, time in enumerate(times):
            for j, comp in enumerate(amanzi_sorbS):
-              x_amanziS_crunch, c_amanziS_crunch = GetXY_AmanziS(path_to_amanziS,root_amanziS,time,comp)
+              x_amanziS_crunch, c_amanziS_crunch = GetXY_AmanziS(path_to_amanzi,root_amanziS,time,comp)
               v_amanziS_crunch[i][j] = c_amanziS_crunch
 
         pH_amanziS_crunch = [ [] for x in range(len(times)) ]
         comp = 'H+_Free_Ion_Guess'
         for i, time in enumerate(times):
-              x_amanziS_crunch, c_amanziS_crunch = GetXY_AmanziS(path_to_amanziS,root_amanziS,time,comp)
+              x_amanziS_crunch, c_amanziS_crunch = GetXY_AmanziS(path_to_amanzi,root_amanziS,time,comp)
               pH_amanziS_crunch[i] = -np.log10(c_amanziS_crunch)
 
     except:
