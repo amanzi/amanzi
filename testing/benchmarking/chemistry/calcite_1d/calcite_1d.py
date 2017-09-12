@@ -11,9 +11,8 @@ matplotlib.use('Agg')
 from matplotlib import pyplot as plt
 
 
-# ----------- AMANZI + ALQUIMIA -----------------------------------------------------------------
-
-def GetXY_Amanzi(path,root,comp):
+# ----------- AMANZI U ---------------------------------------------------------------------
+def GetXY_AmanziU(path,root,comp):
 
     # open amanzi concentration and mesh files
     dataname = os.path.join(path,root+"_data.h5")
@@ -36,6 +35,8 @@ def GetXY_Amanzi(path,root,comp):
     
     return (x_amanzi_alquimia, c_amanzi_alquimia)
 
+
+# ----------- AMANZI S ---------------------------------------------------------------------
 def GetXY_AmanziS(path,root,time,comp):
     try:
         import fsnapshot
@@ -59,8 +60,8 @@ def GetXY_AmanziS(path,root,time,comp):
     
     return (x, y)
 
-# ----------- PFLOTRAN STANDALONE ------------------------------------------------------------
 
+# ----------- PFLOTRAN STANDALONE ------------------------------------------------------------
 def GetXY_PFloTran(path,root,time,comp):
 
     # read pflotran data
@@ -77,6 +78,7 @@ def GetXY_PFloTran(path,root,time,comp):
     pfdata.close()
 
     return (x_pflotran, c_pflotran)
+
 
 # ------------- CRUNCHFLOW ------------------------------------------------------------------
 def GetXY_CrunchFlow(path,root,cf_file,comp,ignore):
@@ -241,140 +243,141 @@ if __name__ == "__main__":
     # subplots
     fig, ax = plt.subplots(3,sharex=True,figsize=(8,10))
     
+
+    # Amanzi U + Native chemistry
     try:
-        # Amanzi native chemistry
-        input_filename = os.path.join("amanzi-u-1d-calcite.xml")
-        path_to_amanzi = "amanzi-native-output"
-        run_amanzi_standard.run_amanzi(input_filename, 1, ["calcite.bgd"], path_to_amanzi)
+        input_file = os.path.join("amanzi-u-1d-calcite.xml")
+        path_to_amanzi = "output-u"
+        run_amanzi_standard.run_amanzi(input_file, 1, ["calcite.bgd",input_file], path_to_amanzi)
         
         comp = 'total_component_concentration.cell.Ca++ conc'
         Ca_amanzi_native = []
         for i, time in enumerate(times):
-           x_amanzi_native, c_amanzi_native = GetXY_Amanzi(path_to_amanzi,root,comp)
+           x_amanzi_native, c_amanzi_native = GetXY_AmanziU(path_to_amanzi,root,comp)
            Ca_amanzi_native = Ca_amanzi_native +[c_amanzi_native]
 
         comp = 'free_ion_species.cell.H+'
         pH_amanzi_native = []
         for i, time in enumerate(times):
-           x_amanzi_native, c_amanzi_native = GetXY_Amanzi(path_to_amanzi,root,comp)
+           x_amanzi_native, c_amanzi_native = GetXY_AmanziU(path_to_amanzi,root,comp)
            pH_amanzi_native = pH_amanzi_native +[-np.log10(c_amanzi_native)]
 
         comp = 'mineral_volume_fractions.cell.Calcite vol frac'
         VF_amanzi_native = []
         for i, time in enumerate(times):
-           x_amanzi_native, c_amanzi_native = GetXY_Amanzi(path_to_amanzi,root,comp)
+           x_amanzi_native, c_amanzi_native = GetXY_AmanziU(path_to_amanzi,root,comp)
            VF_amanzi_native = VF_amanzi_native +[c_amanzi_native]
 
         native = True
 
     except:
         native = False
-
         pass    
 
+
+    # Amanzi U + Alquimia + PFloTran chemistry
     try:
-        # Amanzi-Alquimia
-        input_filename = os.path.join("amanzi-u-1d-calcite-alq.xml")
-        path_to_amanzi = "amanzi-alquimia-output"
-        run_amanzi_standard.run_amanzi(input_filename, 1, ["1d-calcite-trim.in","calcite.dat"], path_to_amanzi)
+        input_file = os.path.join("amanzi-u-1d-calcite-alq-pflo.xml")
+        path_to_amanzi = "output-u-alq-pflo"
+        run_amanzi_standard.run_amanzi(input_file, 1, ["1d-calcite-trim.in","calcite.dat",input_file], path_to_amanzi)
 
         comp = 'total_component_concentration.cell.Ca++ conc'
         Ca_amanzi_alquimia = []
         for i, time in enumerate(times):
-           x_amanzi_alquimia, c_amanzi_alquimia = GetXY_Amanzi(path_to_amanzi,root,comp)
+           x_amanzi_alquimia, c_amanzi_alquimia = GetXY_AmanziU(path_to_amanzi,root,comp)
            Ca_amanzi_alquimia = Ca_amanzi_alquimia +[c_amanzi_alquimia]
 
         comp = 'free_ion_species.cell.H+'
         pH_amanzi_alquimia = []
         for i, time in enumerate(times):
-           x_amanzi_alquimia, c_amanzi_alquimia = GetXY_Amanzi(path_to_amanzi,root,comp)
+           x_amanzi_alquimia, c_amanzi_alquimia = GetXY_AmanziU(path_to_amanzi,root,comp)
            pH_amanzi_alquimia = pH_amanzi_alquimia +[-np.log10(c_amanzi_alquimia)]
 
         comp = 'mineral_volume_fractions.cell.Calcite vol frac'
         VF_amanzi_alquimia = []
         for i, time in enumerate(times):
-           x_amanzi_alquimia, c_amanzi_alquimia = GetXY_Amanzi(path_to_amanzi,root,comp)
+           x_amanzi_alquimia, c_amanzi_alquimia = GetXY_AmanziU(path_to_amanzi,root,comp)
            VF_amanzi_alquimia = VF_amanzi_alquimia +[c_amanzi_alquimia]
 
         alq = True
 
     except:
-        
         alq = False
 
+    # Amanzi U + Alquimia + CruchFlow chemistry
     try:
-        # Amanzi-Alquimia-Crunch
-        input_filename = os.path.join("amanzi-u-1d-calcite-alq-crunch.xml")
-        path_to_amanzi = "amanzi-alquimia-crunch-output"
-        run_amanzi_standard.run_amanzi(input_filename, 1, ["1d-calcite-crunch.in","calcite.dbs"], path_to_amanzi)
+        input_file = os.path.join("amanzi-u-1d-calcite-alq-crunch.xml")
+        path_to_amanzi = "output-u-alq-crunch"
+        run_amanzi_standard.run_amanzi(input_file, 1, ["1d-calcite-crunch.in","calcite.dbs",input_file], path_to_amanzi)
 
         comp = 'total_component_concentration.cell.Ca++ conc'
         Ca_amanzi_alquimia_crunch = []
         for i, time in enumerate(times):
-           x_amanzi_alquimia_crunch, c_amanzi_alquimia_crunch = GetXY_Amanzi(path_to_amanzi,root,comp)
+           x_amanzi_alquimia_crunch, c_amanzi_alquimia_crunch = GetXY_AmanziU(path_to_amanzi,root,comp)
            Ca_amanzi_alquimia_crunch = Ca_amanzi_alquimia_crunch +[c_amanzi_alquimia_crunch]
 
         comp = 'free_ion_species.cell.H+'
         pH_amanzi_alquimia_crunch = []
         for i, time in enumerate(times):
-           x_amanzi_alquimia_crunch, c_amanzi_alquimia_crunch = GetXY_Amanzi(path_to_amanzi,root,comp)
+           x_amanzi_alquimia_crunch, c_amanzi_alquimia_crunch = GetXY_AmanziU(path_to_amanzi,root,comp)
            pH_amanzi_alquimia_crunch = pH_amanzi_alquimia_crunch +[-np.log10(c_amanzi_alquimia_crunch)]
 
         comp = 'mineral_volume_fractions.cell.Calcite vol frac'
         VF_amanzi_alquimia_crunch = []
         for i, time in enumerate(times):
-           x_amanzi_alquimia_crunch, c_amanzi_alquimia_crunch = GetXY_Amanzi(path_to_amanzi,root,comp)
+           x_amanzi_alquimia_crunch, c_amanzi_alquimia_crunch = GetXY_AmanziU(path_to_amanzi,root,comp)
            VF_amanzi_alquimia_crunch = VF_amanzi_alquimia_crunch +[c_amanzi_alquimia_crunch]
 
         alq_crunch = True
 
     except:
-        
         alq_crunch = False
 
-    # amanziS data
     
-    # +pflotran
+    # Amanzi S + Alquimia + PFloTran chemistry
     try:
         # import pdb; pdb.set_trace()
-        input_filename = os.path.join("amanzi-s-1d-calcite-alq-pflo.xml")
-        path_to_amanziS = "struct_amanzi-output-pflo"
-        run_amanzi_standard.run_amanzi(input_filename, 1, [], path_to_amanziS)
+        input_file = os.path.join("amanzi-s-1d-calcite-alq-pflo.xml")
+        path_to_amanzi = "output-s-alq-pflo"
+        run_amanzi_standard.run_amanzi(input_file, 1, ["1d-calcite-trim.in","calcite.dat",input_file], path_to_amanzi)
+        
         root_amanziS = "plt00070"
         compS = "Ca++_water_Concentration"
-        x_amanziS, c_amanziS = GetXY_AmanziS(path_to_amanziS,root_amanziS,time,compS)
+        x_amanziS, c_amanziS = GetXY_AmanziS(path_to_amanzi,root_amanziS,time,compS)
         struct = len(x_amanziS)
         compS = "H+_Free_Ion_Guess"
-        x_amanziS, pH_amanziS = GetXY_AmanziS(path_to_amanziS,root_amanziS,time,compS)
+        x_amanziS, pH_amanziS = GetXY_AmanziS(path_to_amanzi,root_amanziS,time,compS)
         pH_amanziS =  -np.log10(pH_amanziS)
         compS = "Calcite_Volume_Fraction"
-        x_amanziS, VF_amanziS = GetXY_AmanziS(path_to_amanziS,root_amanziS,time,compS)
+        x_amanziS, VF_amanziS = GetXY_AmanziS(path_to_amanzi,root_amanziS,time,compS)
     except:
         struct = 0
 
-    # +crunchflow
+
+    # Amanzi S + Alquimia + CrunchFlow chemistry
     try:
         # import pdb; pdb.set_trace()
-        input_filename = os.path.join("amanzi-s-1d-calcite-alq-crunch.xml")
-        path_to_amanziS = "struct_amanzi-output-crunch"
-        run_amanzi_standard.run_amanzi(input_filename, 1, [], path_to_amanziS)
+        input_file = os.path.join("amanzi-s-1d-calcite-alq-crunch.xml")
+        path_to_amanzi = "output-s-alq-crunch"
+        run_amanzi_standard.run_amanzi(input_file, 1, ["1d-calcite-crunch.in","calcite.dbs",input_file], path_to_amanzi)
+
         root_amanziS = "plt00070"
         compS = "Ca++_water_Concentration"
-        x_amanziS_crunch, c_amanziS_crunch = GetXY_AmanziS(path_to_amanziS,root_amanziS,time,compS)
+        x_amanziS_crunch, c_amanziS_crunch = GetXY_AmanziS(path_to_amanzi,root_amanziS,time,compS)
         struct_c = len(x_amanziS_crunch)
         compS = "H+_Free_Ion_Guess"
-        x_amanziS_crunch, pH_amanziS_crunch = GetXY_AmanziS(path_to_amanziS,root_amanziS,time,compS)
+        x_amanziS_crunch, pH_amanziS_crunch = GetXY_AmanziS(path_to_amanzi,root_amanziS,time,compS)
         pH_amanziS_crunch = -np.log10(pH_amanziS_crunch)
         compS = "Calcite_Volume_Fraction"
-        x_amanziS_crunch, VF_amanziS_crunch = GetXY_AmanziS(path_to_amanziS,root_amanziS,time,compS)
+        x_amanziS_crunch, VF_amanziS_crunch = GetXY_AmanziS(path_to_amanzi,root_amanziS,time,compS)
     except:
         struct_c = 0
 
-        # subplots
-       # fig, ax = plt.subplots(3,sharex=True,figsize=(8,10))
+
+    # subplots
+    # fig, ax = plt.subplots(3,sharex=True,figsize=(8,10))
       
     for i, time in enumerate(times):
-
           # lines on axes
           if alq: 
                  ax[0].plot(x_amanzi_alquimia, Ca_amanzi_alquimia[i],'r-',linewidth=2)

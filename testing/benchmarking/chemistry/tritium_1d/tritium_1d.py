@@ -11,8 +11,7 @@ import matplotlib
 from matplotlib import pyplot as plt
 
 
-# ----------- AMANZI + ALQUIMIA -----------------------------------------------------------------
-
+# ----------- AMANZI U -----------------------------------------------------------------
 def GetXY_AmanziU(path,root,comp):
     dataname = os.path.join(path,root+"_data.h5")
     amanzi_file = h5py.File(dataname,'r')
@@ -34,6 +33,8 @@ def GetXY_AmanziU(path,root,comp):
     
     return (x_amanzi_alquimia, c_amanzi_alquimia)
 
+
+# ----------- AMANZI S -----------------------------------------------------------------
 def GetXY_AmanziS(path,root,comp):
     try:
         import fsnapshot
@@ -55,8 +56,8 @@ def GetXY_AmanziS(path,root,comp):
     
     return (x, y)
 
-# ----------- PFLOTRAN STANDALONE ------------------------------------------------------------
 
+# ----------- PFLOTRAN STANDALONE ------------------------------------------------------------
 def GetXY_PFloTran(path,root,time,comp):
 
     # read pflotran data
@@ -144,12 +145,13 @@ if __name__ == "__main__":
     # subplots
     fig, ax = plt.subplots() 
         
-    # amanziS
-    
+    # AmanziS + Alqumia + PFlotran chemistry
     try:
-        input_filename = os.path.join("amanzi-s-1d-"+root+"-alq.xml")
-        path_to_amanzi = "amanzi-s-alq-output"
-        run_amanzi_standard.run_amanzi(input_filename, 1, ["1d-"+root+"-trim.in",root+".dat"], path_to_amanzi)
+        input_file = os.path.join("amanzi-s-1d-"+root+"-alq-pflo.xml")
+        path_to_amanzi = "output-s-alq-pflo"
+        run_amanzi_standard.run_amanzi(input_file, 1,
+                                       ["1d-"+root+"-trim.in",root+".dat",input_file],
+                                       path_to_amanzi)
         root_amanzi = "plt00037"
         comp = "Tritium_water_Concentration"
         x_amanziS, c_amanziS = GetXY_AmanziS(path_to_amanzi,root_amanzi,comp)
@@ -157,12 +159,13 @@ if __name__ == "__main__":
     except:
         struct = 0
 
-    # amanziS crunch
-    
+    # AmanziS + Alqumia + CrunchFlow chemistry
     try:
-        input_filename = os.path.join("amanzi-s-1d-"+root+"-alq-crunch.xml")
-        path_to_amanzi = "amanzi-s-alq-crunch-output"
-        run_amanzi_standard.run_amanzi(input_filename, 1, ["1d-"+root+"-crunch.in",root+".dbs","aqueous.dbs"], path_to_amanzi)
+        input_file = os.path.join("amanzi-s-1d-"+root+"-alq-crunch.xml")
+        path_to_amanzi = "output-s-alq-crunch"
+        run_amanzi_standard.run_amanzi(input_file, 1, 
+                                       ["1d-"+root+"-crunch.in",root+".dbs","aqueous.dbs",input_file],
+                                       path_to_amanzi)
         root_amanzi = "plt00037"
         comp = "Tritium_water_Concentration"
         x_amanziS_crunch, c_amanziS_crunch = GetXY_AmanziS(path_to_amanzi,root_amanzi,comp)
@@ -170,38 +173,41 @@ if __name__ == "__main__":
     except:
         struct_crunch = 0
 
-    # amanziU
 
+    # AmanziU + Native chemistry
     try:
         comp = 'total_component_concentration.cell.Tritium conc'
-        input_filename = os.path.join("amanzi-u-1d-"+root+".xml")
-        path_to_amanzi = "amanzi-u-native-output"
-        run_amanzi_standard.run_amanzi(input_filename, 1, [root+".bgd"], path_to_amanzi)
+        input_file = os.path.join("amanzi-u-1d-"+root+".xml")
+        path_to_amanzi = "output-u"
+        run_amanzi_standard.run_amanzi(input_file, 1, [root+".bgd",input_file], path_to_amanzi)
+
         x_amanziU_native, c_amanziU_native = GetXY_AmanziU(path_to_amanzi,root,comp)
         native = len(x_amanziU_native)
     except:
         native = 0
 
-    # amanziU
 
+    # AmanziU + Alqumia + PFloTran chemistry
     try:
         comp = 'total_component_concentration.cell.Tritium conc'
-        input_filename = os.path.join("amanzi-u-1d-"+root+"-alq.xml")
-        path_to_amanzi = "amanzi-u-alq-output"
-        run_amanzi_standard.run_amanzi(input_filename, 1, ["1d-"+root+"-trim.in",root+".dat"], path_to_amanzi)
+        input_file = os.path.join("amanzi-u-1d-"+root+"-alq-pflo.xml")
+        path_to_amanzi = "output-u-alq-pflo"
+        run_amanzi_standard.run_amanzi(input_file, 1,
+                                       ["1d-"+root+"-trim.in",root+".dat",input_file],
+                                       path_to_amanzi)
         x_amanziU, c_amanziU = GetXY_AmanziU(path_to_amanzi,root,comp)
         unstruct = len(x_amanziU)
     except:
         unstruct = 0
 
-    # amanziU crunch
 
+    # AmanziU + Alqumia + CrunchFlow chemistry
     try:
         comp = 'total_component_concentration.cell.Tritium conc'
-        input_filename = os.path.join("amanzi-u-1d-"+root+"-alq-crunch.xml")
-        path_to_amanzi = "amanzi-u-alq-crunch-output"
-        run_amanzi_standard.run_amanzi(input_filename, 1, 
-                                       ["1d-"+root+"-crunch.in",root+".dbs","aqueous"+".dbs"],
+        input_file = os.path.join("amanzi-u-1d-"+root+"-alq-crunch.xml")
+        path_to_amanzi = "output-u-alq-crunch"
+        run_amanzi_standard.run_amanzi(input_file, 1, 
+                                       ["1d-"+root+"-crunch.in",root+".dbs","aqueous"+".dbs",input_file],
                                        path_to_amanzi)
         x_amanziU_crunch, c_amanziU_crunch = GetXY_AmanziU(path_to_amanzi,root,comp)
         unstruct_crunch = len(x_amanziU_crunch)
