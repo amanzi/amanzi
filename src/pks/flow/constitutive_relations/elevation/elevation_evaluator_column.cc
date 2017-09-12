@@ -125,9 +125,12 @@ void ElevationEvaluatorColumn::EvaluateElevationAndSlope_(const Teuchos::Ptr<Sta
 	slope_c[0][c] = (std::sqrt(std::pow(Nor_avg[0],2) + std::pow(Nor_avg[1],2)))/ std::abs(Nor_avg[2]);
         
       }
-      else{
+      else if (ngb_cells == 1){
 	PQ = my_centroid[c] - ngb_centroids[0];
 	slope_c[0][c] = std::abs(PQ[2]) / (std::sqrt(std::pow(PQ[0],2) + std::pow(PQ[1],2))); 
+      }
+      else if (ngb_cells == 0){
+	slope_c[0][c] = 0.0;
       }
     }
     

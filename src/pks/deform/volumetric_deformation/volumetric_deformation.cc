@@ -105,10 +105,12 @@ void VolumetricDeformation::Setup(const Teuchos::Ptr<State>& S) {
   domain_surf_ = plist_->get<std::string>("surface domain name", domain_surf_);
 
   if (S->HasMesh(domain_surf_)) {
-    surf_mesh_ = S->GetMesh(domain_surf_);
+    
 
-    surf_mesh_nc_ = S->GetDeformableMesh(domain_surf_);
+
     if (domain_surf_.find("column") == std::string::npos){
+      surf_mesh_ = S->GetMesh(domain_surf_);
+      surf_mesh_nc_ = S->GetDeformableMesh(domain_surf_);
       surf3d_mesh_ = S->GetMesh("surface_3d");
       surf3d_mesh_nc_ = S->GetDeformableMesh("surface_3d");
     }
