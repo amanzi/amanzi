@@ -381,7 +381,7 @@ set(Trilinos_VERSION_PATCH 1)
 set(Trilinos_VERSION ${Trilinos_VERSION_MAJOR}-${Trilinos_VERSION_MINOR}-${Trilinos_VERSION_PATCH})
 set(Trilinos_URL_STRING     "https://github.com/trilinos/Trilinos/archive")
 set(Trilinos_ARCHIVE_FILE   trilinos-release-${Trilinos_VERSION}.tar.gz)
-set(Trilinos_MD5_SUM        40f28628b63310f9bd17c26d9ebe32b1)
+set(Trilinos_MD5_SUM        667333dbd7c0f031d47d7c5511fd0810)
 
 #
 # TPL: SEACAS

@@ -107,8 +107,8 @@ void PK_DomainFunctionVolumeFraction<FunctionBase>::Compute(double t0, double t1
 
   int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
 
-  for (MaterialSpecList::const_iterator mspec = material_specs_[kind_]->begin();
-       mspec != material_specs_[kind_]->end(); ++mspec) {
+  for (MaterialSpecList::const_iterator mspec = material_specs_.at(kind_)->begin();
+       mspec != material_specs_.at(kind_)->end(); ++mspec) {
 
     Teuchos::RCP<MaterialMesh> ids = (*mspec)->second;
 

@@ -34,8 +34,8 @@ amanzi_source_dir=$(cd $(dirname "$0")/;pwd)
 
 # ASCEM Web address
 ascem_protocol=https
-ascem_site='software.lanl.gov/ascem'
-ascem_tpl_site="${ascem_site}/tpls"
+ascem_site='github.com/amanzi'
+ascem_tpl_site="${ascem_site}/amanzi-tpls"
 
 # Default root build and install prefix
 dflt_build_prefix=`pwd`
@@ -45,8 +45,8 @@ dflt_install_prefix=`pwd`
 amanzi_build_dir="${dflt_build_prefix}/build/amanzi"
 amanzi_install_prefix="${dflt_install_prefix}/install/amanzi"
 
-# Mercurial
-hg_binary=`which hg`
+# Git 
+git_binary=`which git`
 
 # CURL
 curl_binary=`which curl`
@@ -323,7 +323,7 @@ Tool definitions:
 
   --with-cmake[=FILE]        FILE is the CMake binary ['"${cmake_binary}"'] without FILE builds CMake
   --with-ctest=FILE          FILE is the CTest binary ['"${ctest_binary}"'], ignored if --with-cmake is set
-  --with-hg=FILE             FILE is the Mercurial binary ['"${hg_binary}"']
+  --with-git=FILE            FILE is the git binary ['"${git_binary}"']
   --with-curl=FILE           FILE is the CURL binary ['"${curl_binary}"']
 
   --with-mpi=DIR             use MPI installed in DIR. Will search for MPI 
@@ -362,7 +362,7 @@ echo '
 Tools:
     cmake_binary ='"${cmake_binary}"'
     ctest_binary ='"${ctest_binary}"'
-    hg_binary    ='"${hg_binary}"'
+    git_binary   ='"${git_binary}"'
     curl_binary  ='"${curl_binary}"'
     Spack_binary ='"${Spack_binary}"'
     mpi_root_dir ='"${mpi_root_dir}"'
@@ -523,9 +523,9 @@ function parse_argv()
                  cmake_binary=
                  ;;
 
-      --with-hg=*)
-                 tmp=`parse_option_with_equal "${opt}" 'with-hg'`
-                 hg_binary=`make_fullpath $tmp`
+      --with-git=*)
+                 tmp=`parse_option_with_equal "${opt}" 'with-git'`
+                 git_binary=`make_fullpath $tmp`
                  ;;
 
       --with-curl=*)
@@ -758,24 +758,24 @@ function build_cmake
 
 }
 
-# Mercury functions
-function ascem_hg_clone
+# Git functions
+function ascem_git_clone
 {
   repo=$1
-  ${hg_binary} clone ${ascem_protocol}://${ascem_site}/hg/$repo
+  ${git_binary} clone ${ascem_protocol}://${ascem_site}/$repo
   if [ $? -ne 0 ]; then
     error_message "Failed to clone ${repo} from ${ascem_site}"
     exit_now 30
   fi
 }
 
-function hg_change_branch()
+function git_change_branch()
 {
   branch=$1
   save_dir=`pwd`
   cd ${amanzi_source_dir}
-  status_message "Updating ${amanzi_source_dir} to branch ${branch}"
-  ${hg_binary} update ${branch}
+  status_message "In ${amanzi_source_dir} checking out ${branch}"
+  ${git_binary} checkout ${branch}
   if [ $? -ne 0 ]; then
     error_message "Failed to update ${amanzi_source_dir} to branch ${branch}"
     exit_now 30
@@ -1023,12 +1023,12 @@ version_compare()
 function check_tools
 {
 
-  # Check Mercurial
-  if [ ! -e "${hg_binary}" ]; then
-    error_message "Mercurial (hg) binary does not exist"
+  # Check Git
+  if [ ! -e "${git_binary}" ]; then
+    error_message "Git binary does not exist"
     exit_now 10
   fi
-  status_message "Mercury binary: ${hg_binary}"
+  status_message "Git binary: ${git_binary}"
 
   # Check CURL 
   if [ ! -e "${curl_binary}" ]; then
@@ -1165,7 +1165,7 @@ check_mpi_root
 # Define the compilers
 check_compilers
 
-# Check the cmake, hg and curl tools
+# Check the cmake, git and curl tools
 check_tools
 
 # add fpic?
@@ -1183,7 +1183,7 @@ fi
 
 # Change the branch
 if [ ! -z "${amanzi_branch}" ]; then
-  hg_change_branch ${amanzi_branch}
+  git_change_branch ${amanzi_branch}
 fi
 
 # Now build the TPLs if the config file is not defined
