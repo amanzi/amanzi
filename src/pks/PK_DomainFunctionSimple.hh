@@ -106,8 +106,8 @@ void PK_DomainFunctionSimple<FunctionBase>::Compute(double t0, double t1)
   int dim = mesh_->space_dimension();
   std::vector<double> args(1 + dim);
 
-  for (UniqueSpecList::const_iterator uspec = unique_specs_[kind_]->begin();
-       uspec != unique_specs_[kind_]->end(); ++uspec) {
+  for (UniqueSpecList::const_iterator uspec = unique_specs_.at(kind_)->begin();
+       uspec != unique_specs_.at(kind_)->end(); ++uspec) {
 
     args[0] = t1;
     Teuchos::RCP<MeshIDs> ids = (*uspec)->second;

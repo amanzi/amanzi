@@ -107,7 +107,7 @@ void PK_DomainFunctionVolume<FunctionBase>::Compute(double t0, double t1)
 
   int nowned = mesh_->num_entities(kind_, AmanziMesh::OWNED);
 
-  for (auto uspec = unique_specs_[kind_]->begin(); uspec != unique_specs_[kind_]->end(); ++uspec) {
+  for (auto uspec = unique_specs_.at(kind_)->begin(); uspec != unique_specs_.at(kind_)->end(); ++uspec) {
     Teuchos::RCP<MeshIDs> ids = (*uspec)->second;
 
     // calculate physical volume of region defined by domain. 
