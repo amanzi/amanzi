@@ -100,15 +100,22 @@ class DG_Modal : public BilinearForm {
   // modify Taylor basis: \psi_k -> a (\psi_k - b \psi_0)
   void TaylorBasis_(const Polynomial& integrals, const Iterator& it, double* a, double* b);
 
-  // integration routine for a product of polynomials with different origins
+  // integraton of a product of polynomials with potentialy different origins
   double IntegratePolynomialsEdge_(
       const AmanziGeometry::Point& x1, const AmanziGeometry::Point& x2,
       const std::vector<Polynomial>& polys) const;
 
  private:
+  void UpdateIntegrals_(int c, int order);
+
+ private:
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
   int order_, d_;
   int basis_;
+
+  VectorPolynomial integrals_;   // integrals of non-normalized monomials
+  std::vector<double> scale_a_;  // partial orthonormalization of Taylor basis
+  std::vector<double> scale_b_;
 };
 
 }  // namespace WhetStone

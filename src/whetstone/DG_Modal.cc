@@ -27,14 +27,9 @@ namespace WhetStone {
 ****************************************************************** */
 int DG_Modal::MassMatrix(int c, const Tensor& K, DenseMatrix& M)
 {
-  // calculate all monomials
-  Polynomial integrals(d_, 2 * order_);
-
-  integrals.monomials(0).coefs()[0] = mesh_->cell_volume(c);
-
-  for (int k = 1; k <= integrals.order(); ++k) {
-    IntegrateMonomialsCell_(c, integrals.monomials(k));
-  }
+  // extend list of integrals of monomials
+  UpdateIntegrals_(c, 2 * order_);
+  const Polynomial& integrals = integrals_[c];
    
   // copy integrals to mass matrix
   int multi_index[3];
@@ -77,16 +72,11 @@ int DG_Modal::MassMatrixPoly(int c, const Polynomial& K, DenseMatrix& M)
   Polynomial Kcopy(K);
   Kcopy.ChangeOrigin(mesh_->cell_centroid(c));
 
-  // calculate integrals of monomials centered at cell centroid
+  // extend list of integrals of monomials
   int uk(Kcopy.order());
-  Polynomial integrals(d_, 2 * order_ + uk);
-
-  integrals.monomials(0).coefs()[0] = mesh_->cell_volume(c);
-
-  for (int k = 1; k <= integrals.order(); ++k) {
-    IntegrateMonomialsCell_(c, integrals.monomials(k));
-  }
-
+  UpdateIntegrals_(c, 2 * order_ + uk);
+  const Polynomial& integrals = integrals_[c];
+   
   // sum up integrals to the mass matrix
   int multi_index[3];
   double ak, bk, al, bl;
@@ -507,6 +497,33 @@ void DG_Modal::TaylorBasis_(
     norm -= (*b) * (*b) * volume;
 
     *a = std::pow(volume / norm, 0.5);
+  }
+}
+
+
+/* ******************************************************************
+* Update integrals of non-normalized monomials.
+****************************************************************** */
+void DG_Modal::UpdateIntegrals_(int c, int order)
+{
+  if (integrals_.size() == 0) {
+    int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+    integrals_.resize(ncells_owned);
+
+    for (int n = 0; n < ncells_owned; ++n) {
+      integrals_[n].Reshape(d_, 0);
+      integrals_[n].monomials(0).coefs()[0] = mesh_->cell_volume(n);
+    }
+  }
+
+  // add optionally additional integrals of monomials
+  int k0 = integrals_[c].order();
+  if (k0 < order) {
+    integrals_[c].Reshape(d_, order);
+
+    for (int k = k0 + 1; k <= order; ++k) {
+      IntegrateMonomialsCell_(c, integrals_[c].monomials(k));
+    }
   }
 }
 

@@ -66,6 +66,7 @@ void RemapTests2DExplicit(int order, std::string disc_name,
 
   Teuchos::RCP<const Mesh> mesh0 = meshfactory(0.0, 0.0, 1.0, 1.0, nx, ny);
   // Teuchos::RCP<const Mesh> mesh0 = meshfactory("test/median32x33.exo", Teuchos::null);
+  // Teuchos::RCP<const Mesh> mesh0 = meshfactory("test/median15x16.exo", Teuchos::null);
 
   int ncells_owned = mesh0->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   int ncells_wghost = mesh0->num_entities(AmanziMesh::CELL, AmanziMesh::USED);
@@ -76,6 +77,7 @@ void RemapTests2DExplicit(int order, std::string disc_name,
   // create second and auxiliary mesh
   Teuchos::RCP<Mesh> mesh1 = meshfactory(0.0, 0.0, 1.0, 1.0, nx, ny);
   // Teuchos::RCP<Mesh> mesh1 = meshfactory("test/median32x33.exo", Teuchos::null);
+  // Teuchos::RCP<Mesh> mesh1 = meshfactory("test/median15x16.exo", Teuchos::null);
 
   // deform the second mesh
   AmanziGeometry::Point xv(2), xref(2);
@@ -177,7 +179,6 @@ void RemapTests2DExplicit(int order, std::string disc_name,
   if (maps_name == "FEM") {
     maps = std::make_shared<WhetStone::MeshMaps_FEM>(mesh0, mesh1);
   } else if (maps_name == "VEM") {
-std::cout << "HERE" << std::endl;
     maps = std::make_shared<WhetStone::MeshMaps_VEM>(mesh0, mesh1);
   }
 
@@ -279,7 +280,6 @@ std::cout << "HERE" << std::endl;
     } 
     xg /= nnodes;
     double tmp = p2c[0][c] - std::sin(3 * xg[0]) * std::sin(6 * xg[1]);
-    // double tmp = p2c[0][c] - (xg[0] + 2 * xg[1]);
 
     double area_c = mesh1->cell_volume(c);
     pinf_err = std::max(pinf_err, fabs(tmp));
