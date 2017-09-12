@@ -57,7 +57,7 @@ int DG_Modal::MassMatrix(int c, const Tensor& K, DenseMatrix& M)
     }
   }
 
-  ChangeBasis(integrals, M);
+  ChangeBasis_(c, M);
 
   return 0;
 }
@@ -112,7 +112,7 @@ int DG_Modal::MassMatrixPoly(int c, const Polynomial& K, DenseMatrix& M)
     }
   }
 
-  ChangeBasis(integrals, M);
+  ChangeBasis_(c, M);
 
   return 0;
 }
@@ -130,20 +130,15 @@ int DG_Modal::AdvectionMatrixPoly(int c, const VectorPolynomial& u, DenseMatrix&
     ucopy[i].ChangeOrigin(xc);
   }
 
-  // calculate integrals of monomials centered at cell centroid
+  // extend list of integrals of monomials
   int uk(ucopy[0].order());
-  Polynomial integrals(d_, 2 * order_ + std::max(0, uk - 1));
-  VectorPolynomial pgrad;
-
-  integrals.monomials(0).coefs()[0] = mesh_->cell_volume(c);
-
-  for (int k = 1; k <= integrals.order(); ++k) {
-    IntegrateMonomialsCell_(c, integrals.monomials(k));
-  }
-
+  UpdateIntegrals_(c, 2 * order_ + std::max(0, uk - 1));
+  const Polynomial& integrals = integrals_[c];
+   
   // sum-up integrals to the advection matrix
   int multi_index[3];
   Polynomial p(d_, order_), q(d_, order_);
+  VectorPolynomial pgrad;
 
   int nrows = p.size();
   A.Reshape(nrows, nrows);
@@ -182,7 +177,7 @@ int DG_Modal::AdvectionMatrixPoly(int c, const VectorPolynomial& u, DenseMatrix&
     }
   }
 
-  ChangeBasis(integrals, A);
+  ChangeBasis_(c, A);
 
   // gradient operator is applied to solution
   if (!grad_on_test) {
@@ -237,16 +232,11 @@ int DG_Modal::FluxMatrixPoly(int f, const Polynomial& un, DenseMatrix& A,
   int row(size - col);
 
   // Calculate integrals needed for scaling (FIXME)
-  Polynomial integrals_dw(d_, 2 * order_);
-  Polynomial integrals_up(d_, 2 * order_);
+  UpdateIntegrals_(cells[id], 2 * order_);
+  const Polynomial& integrals_dw = integrals_[cells[id]];
 
-  integrals_dw.monomials(0).coefs()[0] = mesh_->cell_volume(cells[id]);
-  integrals_up.monomials(0).coefs()[0] = mesh_->cell_volume(cells[1 - id]);
-
-  for (int k = 1; k <= integrals_dw.order(); ++k) {
-    IntegrateMonomialsCell_(cells[id], integrals_dw.monomials(k));
-    IntegrateMonomialsCell_(cells[1 - id], integrals_up.monomials(k));
-  }
+  UpdateIntegrals_(cells[1 - id], 2 * order_);
+  const Polynomial& integrals_up = integrals_[cells[1 - id]];
 
   // integrate traces of polynomials on face f
   mesh_->face_get_nodes(f, &nodes);
@@ -264,8 +254,8 @@ int DG_Modal::FluxMatrixPoly(int f, const Polynomial& un, DenseMatrix& A,
 
     // scaling of basis functions
     double ak0, bk0, ak1, bk1, al1, bl1;
-    TaylorBasis_(integrals_dw, it, &ak1, &bk1);
-    TaylorBasis_(integrals_up, it, &ak0, &bk0);
+    TaylorBasis(cells[id], it, &ak1, &bk1);
+    TaylorBasis(cells[1 - id], it, &ak0, &bk0);
 
     for (auto jt = poly1.begin(); jt.end() <= poly1.end(); ++jt) {
       const int* idx1 = jt.multi_index();
@@ -284,7 +274,7 @@ int DG_Modal::FluxMatrixPoly(int f, const Polynomial& un, DenseMatrix& A,
       vel1 /= mesh_->face_area(f);
       vel1 *= dir;  
 
-      TaylorBasis_(integrals_dw, jt, &al1, &bl1);
+      TaylorBasis(cells[id], jt, &al1, &bl1);
       vel1 *= ak1 * al1;  // FIXME (up to linear basis functions)
 
       // upwind-downwind integral
@@ -430,8 +420,11 @@ double DG_Modal::IntegratePolynomialsEdge_(
 /* ******************************************************************
 * Change basis from unscaled monomials to Taylor basis
 ****************************************************************** */
-void DG_Modal::ChangeBasis(const Polynomial& integrals, DenseMatrix& A)
+void DG_Modal::ChangeBasis_(int c, DenseMatrix& A)
 {
+  // optional update of integrals database
+  UpdateIntegrals_(c, 2 * order_);
+
   int nrows = A.NumRows();
   double ak, bk;
   std::vector<double> a(nrows), b(nrows);
@@ -439,7 +432,7 @@ void DG_Modal::ChangeBasis(const Polynomial& integrals, DenseMatrix& A)
   Iterator it(d_);
   for (it.begin(); it.end() <= order_; ++it) {
     int k = it.PolynomialPosition();
-    TaylorBasis_(integrals, it, &ak, &bk);
+    TaylorBasis(c, it, &ak, &bk);
     a[k] = ak;
     b[k] = -ak * bk;
   }
@@ -465,8 +458,7 @@ void DG_Modal::ChangeBasis(const Polynomial& integrals, DenseMatrix& A)
 * factor b orthogonolizes to constant and factor normalizes to 1.
 * NOTE: Both polynomilas are centered at cell centroid.
 ****************************************************************** */
-void DG_Modal::TaylorBasis_(
-    const Polynomial& integrals, const Iterator& it, double* a, double* b)
+void DG_Modal::TaylorBasis(int c, const Iterator& it, double* a, double* b)
 {
   const int* multi_index = it.multi_index();
 
@@ -483,20 +475,9 @@ void DG_Modal::TaylorBasis_(
     *a = 1.0;
     *b = 0.0;
   } else {
-    double volume = integrals.monomials(0).coefs()[0]; 
-    const auto& aux1 = integrals.monomials(n).coefs();
-    *b = aux1[integrals.MonomialPosition(multi_index)] / volume;
-
-    int index[d_]; 
-    for (int i = 0; i < d_; ++i) {
-      index[i] = 2 * multi_index[i];
-    }
-
-    const auto& aux2 = integrals.monomials(2 * n).coefs();
-    double norm = aux2[integrals.MonomialPosition(index)];
-    norm -= (*b) * (*b) * volume;
-
-    *a = std::pow(volume / norm, 0.5);
+    UpdateScales_(c, order_);
+    *a = scales_a_[c].monomials(n).coefs()[it.MonomialPosition()];
+    *b = scales_b_[c].monomials(n).coefs()[it.MonomialPosition()];
   }
 }
 
@@ -523,6 +504,64 @@ void DG_Modal::UpdateIntegrals_(int c, int order)
 
     for (int k = k0 + 1; k <= order; ++k) {
       IntegrateMonomialsCell_(c, integrals_[c].monomials(k));
+    }
+  }
+}
+
+
+/* ******************************************************************
+* Partial orthonormalization of Taylor basis functions.
+****************************************************************** */
+void DG_Modal::UpdateScales_(int c, int order)
+{
+  if (scales_a_.size() == 0) {
+    int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+    scales_a_.resize(ncells_owned);
+    scales_b_.resize(ncells_owned);
+
+    for (int n = 0; n < ncells_owned; ++n) {
+      scales_a_[n].Reshape(d_, order);
+      scales_b_[n].Reshape(d_, order);
+    }
+
+    // For the moment, we update everything in one shot
+    for (int n = 0; n < ncells_owned; ++n) {
+      UpdateIntegrals_(n, 2 * order);
+
+      const Polynomial& integrals = integrals_[n];
+      Polynomial poly(d_, order);
+
+      double a, b, norm;
+      double volume = integrals.monomials(0).coefs()[0]; 
+
+      for (auto it = poly.begin(); it.end() <= poly.end(); ++it) {
+        int k = it.MonomialPosition();
+        const int* multi_index = it.multi_index();
+        int index[d_]; 
+
+        int m(0);
+        for (int i = 0; i < d_; ++i) {
+          m += multi_index[i];
+          index[i] = 2 * multi_index[i];
+        }
+
+        if (m == 0) {
+          a = 1.0;
+          b = 0.0;
+        } else {
+          const auto& aux1 = integrals.monomials(m).coefs();
+          b = aux1[k] / volume;
+
+          const auto& aux2 = integrals.monomials(2 * m).coefs();
+          norm = aux2[integrals.MonomialPosition(index)];
+          norm -= b * b * volume;
+
+          a = std::pow(volume / norm, 0.5);
+
+          scales_a_[n].monomials(m).coefs()[k] = a;
+          scales_b_[n].monomials(m).coefs()[k] = b;
+        }
+      }
     }
   }
 }

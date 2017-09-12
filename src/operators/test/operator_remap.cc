@@ -64,8 +64,8 @@ void RemapTests2DExplicit(int order, std::string disc_name,
   MeshFactory meshfactory(&comm);
   meshfactory.preference(FrameworkPreference({MSTK}));
 
-  Teuchos::RCP<const Mesh> mesh0 = meshfactory(0.0, 0.0, 1.0, 1.0, nx, ny);
-  // Teuchos::RCP<const Mesh> mesh0 = meshfactory("test/median32x33.exo", Teuchos::null);
+  // Teuchos::RCP<const Mesh> mesh0 = meshfactory(0.0, 0.0, 1.0, 1.0, nx, ny);
+  Teuchos::RCP<const Mesh> mesh0 = meshfactory("test/median32x33.exo", Teuchos::null);
   // Teuchos::RCP<const Mesh> mesh0 = meshfactory("test/median15x16.exo", Teuchos::null);
 
   int ncells_owned = mesh0->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
@@ -75,8 +75,8 @@ void RemapTests2DExplicit(int order, std::string disc_name,
   int nnodes_owned = mesh0->num_entities(AmanziMesh::NODE, AmanziMesh::OWNED);
 
   // create second and auxiliary mesh
-  Teuchos::RCP<Mesh> mesh1 = meshfactory(0.0, 0.0, 1.0, 1.0, nx, ny);
-  // Teuchos::RCP<Mesh> mesh1 = meshfactory("test/median32x33.exo", Teuchos::null);
+  // Teuchos::RCP<Mesh> mesh1 = meshfactory(0.0, 0.0, 1.0, 1.0, nx, ny);
+  Teuchos::RCP<Mesh> mesh1 = meshfactory("test/median32x33.exo", Teuchos::null);
   // Teuchos::RCP<Mesh> mesh1 = meshfactory("test/median15x16.exo", Teuchos::null);
 
   // deform the second mesh
@@ -107,14 +107,22 @@ void RemapTests2DExplicit(int order, std::string disc_name,
   Teuchos::RCP<CompositeVector> p1 = Teuchos::rcp(new CompositeVector(cvs1));
   Epetra_MultiVector& p1c = *p1->ViewComponent("cell", true);
 
+  // we need dg to compute scaling of basis functions
+  WhetStone::DG_Modal dg(order, mesh0);
+
   for (int c = 0; c < ncells_wghost; c++) {
     const AmanziGeometry::Point& xc = mesh0->cell_centroid(c);
     // p1c[0][c] = xc[0] + 2 * xc[1];
     p1c[0][c] = std::sin(3 * xc[0]) * std::sin(6 * xc[1]);
     if (nk > 1) {
-      double scale = 3.4641016 * nx;
-      p1c[1][c] = 3 * std::cos(3 * xc[0]) * std::sin(6 * xc[1]) / scale;
-      p1c[2][c] = 6 * std::sin(3 * xc[0]) * std::cos(6 * xc[1]) / scale;
+      double a, b;
+      WhetStone::Iterator it(2);
+
+      it.begin(1);
+      dg.TaylorBasis(c, it, &a, &b);
+
+      p1c[1][c] = 3 * std::cos(3 * xc[0]) * std::sin(6 * xc[1]) / a;
+      p1c[2][c] = 6 * std::sin(3 * xc[0]) * std::cos(6 * xc[1]) / a;
     }
   }
 
@@ -319,11 +327,11 @@ TEST(REMAP_DG1_EXPLICIT_FEM) {
 }
 
 TEST(REMAP_DG0_EXPLICIT_VEM) {
-  RemapTests2DExplicit(0, "dg modal", "VEM", 10, 10, 0.1);
+  RemapTests2DExplicit(0, "dg modal", "VEM", 10, 10, 0.1 / 4);
 }
 
 TEST(REMAP_DG1_EXPLICIT_VEM) {
-  RemapTests2DExplicit(1, "dg modal", "VEM", 10, 10, 0.1);
+  RemapTests2DExplicit(1, "dg modal", "VEM", 10, 10, 0.1 / 4);
 }
 
 

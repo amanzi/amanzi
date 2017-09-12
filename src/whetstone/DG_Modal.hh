@@ -74,9 +74,6 @@ class DG_Modal : public BilinearForm {
   virtual int AdvectionMatrixPoly(int c, const VectorPolynomial& uc, DenseMatrix& A, bool grad_on_test);
   int FluxMatrixPoly(int f, const Polynomial& uf, DenseMatrix& A, bool jump_on_test);
 
-  // change of basis
-  void ChangeBasis(const Polynomial& integrals, DenseMatrix& A);
-
   // interfaces that are not used
   virtual int L2consistency(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Mc, bool symmetry) { return 0; }
   virtual int L2consistencyInverse(int c, const Tensor& T, DenseMatrix& R, DenseMatrix& Wc, bool symmetry) { return 0; }
@@ -84,6 +81,9 @@ class DG_Modal : public BilinearForm {
 
   virtual int MassMatrixInverse(int c, const Tensor& T, DenseMatrix& W) { return 0; }
   virtual int DivergenceMatrix(int c, DenseMatrix& A) { return 0; }
+
+  // scaling of Taylor basis function: \psi_k -> a (\psi_k - b \psi_0)
+  void TaylorBasis(int c, const Iterator& it, double* a, double* b);
 
   // miscalleneous
   void set_order(int order) { order_ = order; }
@@ -97,9 +97,6 @@ class DG_Modal : public BilinearForm {
       const AmanziGeometry::Point& x1, const AmanziGeometry::Point& x2,
       double factor, Monomial& monomials);
 
-  // modify Taylor basis: \psi_k -> a (\psi_k - b \psi_0)
-  void TaylorBasis_(const Polynomial& integrals, const Iterator& it, double* a, double* b);
-
   // integraton of a product of polynomials with potentialy different origins
   double IntegratePolynomialsEdge_(
       const AmanziGeometry::Point& x1, const AmanziGeometry::Point& x2,
@@ -107,15 +104,17 @@ class DG_Modal : public BilinearForm {
 
  private:
   void UpdateIntegrals_(int c, int order);
+  void UpdateScales_(int c, int order);
+  void ChangeBasis_(int c, DenseMatrix& A);
 
  private:
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
   int order_, d_;
   int basis_;
 
-  VectorPolynomial integrals_;   // integrals of non-normalized monomials
-  std::vector<double> scale_a_;  // partial orthonormalization of Taylor basis
-  std::vector<double> scale_b_;
+  VectorPolynomial integrals_;  // integrals of non-normalized monomials
+  VectorPolynomial scales_a_;   // partial orthonormalization of Taylor basis
+  VectorPolynomial scales_b_;  
 };
 
 }  // namespace WhetStone
