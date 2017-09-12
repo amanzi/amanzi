@@ -395,13 +395,14 @@ TEST(DG_MAP_APPROXIMATION_CELL) {
 
   // test identity map
   MeshMaps_VEM maps(mesh, mesh);
-  std::vector<AmanziGeometry::Point> u;
-  AmanziGeometry::Point ex(1.0, 0.0), ey(0.0, 1.0);
+  VectorPolynomial u;
 
   maps.LeastSquareFit(1, x1, x1, u);
-  CHECK_CLOSE(norm(u[0]), 0.0, 1e-12);
-  CHECK_CLOSE(norm(u[1] - ex), 0.0, 1e-12);
-  CHECK_CLOSE(norm(u[2] - ey), 0.0, 1e-12);
+  for (int i = 0; i < 2; ++i) {
+    CHECK_CLOSE(u[i].monomials(0).coefs()[0], 0.0, 1e-12);
+    CHECK_CLOSE(u[i].monomials(1).coefs()[i], 1.0, 1e-12);
+    CHECK_CLOSE(u[i].monomials(1).coefs()[1 - i], 0.0, 1e-12);
+  }
 
   // test linear map
   std::vector<AmanziGeometry::Point> x2(x1);
@@ -411,9 +412,11 @@ TEST(DG_MAP_APPROXIMATION_CELL) {
   }
 
   maps.LeastSquareFit(1, x1, x2, u);
-  CHECK_CLOSE(norm(u[0] - shift), 0.0, 1e-12);
-  CHECK_CLOSE(norm(u[1] - ex), 0.0, 1e-12);
-  CHECK_CLOSE(norm(u[2] - ey), 0.0, 1e-12);
+  for (int i = 0; i < 2; ++i) {
+    CHECK_CLOSE(u[i].monomials(0).coefs()[0], shift[i], 1e-12);
+    CHECK_CLOSE(u[i].monomials(1).coefs()[i], 1.0, 1e-12);
+    CHECK_CLOSE(u[i].monomials(1).coefs()[1 - i], 0.0, 1e-12);
+  }
 
   // test rotation map
   double s(std::sin(0.3)), c(std::cos(0.3));
@@ -423,9 +426,12 @@ TEST(DG_MAP_APPROXIMATION_CELL) {
   }
 
   maps.LeastSquareFit(1, x1, x2, u);
-  CHECK_CLOSE(norm(u[0]), 0.0, 1e-12);
-  CHECK_CLOSE(norm(u[1] - AmanziGeometry::Point(c, s)), 0.0, 1e-12);
-  CHECK_CLOSE(norm(u[2] - AmanziGeometry::Point(-s, c)), 0.0, 1e-12);
+  for (int i = 0; i < 2; ++i) {
+    CHECK_CLOSE(u[i].monomials(0).coefs()[0], 0.0, 1e-12);
+    CHECK_CLOSE(u[i].monomials(1).coefs()[i], c, 1e-12);
+  }
+  CHECK_CLOSE(u[0].monomials(1).coefs()[1], -s, 1e-12);
+  CHECK_CLOSE(u[1].monomials(1).coefs()[0],  s, 1e-12);
 
   // test non-linear deformation map
   x1.clear();
@@ -438,12 +444,9 @@ TEST(DG_MAP_APPROXIMATION_CELL) {
   x2[3] += AmanziGeometry::Point(0.1, 0.1);
 
   maps.LeastSquareFit(1, x1, x2, u);
+  std::cout << u[0] << " " << u[1] << std::endl;
 
-  for (int i = 0; i < u.size(); ++i) {
-    printf("u[%d] = %8.4g %8.4g\n", i, u[i][0], u[i][1]); 
-  }
-
-  CHECK_CLOSE(0.025, u[0][0], 1e-12);
+  CHECK_CLOSE(0.025, u[0].monomials(0).coefs()[0], 1e-12);
 
   delete comm;
 }

@@ -169,6 +169,8 @@ class Polynomial {
   // typical operations with polynomials
   // -- polynomial values
   double Value(const AmanziGeometry::Point& xp) const;
+  // -- polynomial norms
+  double NormMax() const;
 
   // -- operators (ring algebra)
   Polynomial& operator+=(const Polynomial& poly);

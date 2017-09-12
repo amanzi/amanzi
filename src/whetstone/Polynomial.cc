@@ -379,6 +379,23 @@ double Polynomial::Value(const AmanziGeometry::Point& xp) const
 }
 
 
+/* ******************************************************************
+* Calculate polynomial maximum norm
+****************************************************************** */
+double Polynomial::NormMax() const
+{
+  double tmp(0.0);
+
+  for (int n = 0; n < order_; ++n) {
+    const std::vector<double>& coefs = coefs_[n].coefs();
+    for (int i = 0; i < coefs.size(); ++i) {
+      tmp = std::max(tmp, coefs[i]);
+    }
+  }
+
+  return tmp;
+}
+
 
 /* ******************************************************************
 * Position in monomial defined by multi_index. 2D algorithm

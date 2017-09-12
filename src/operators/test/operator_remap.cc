@@ -177,6 +177,7 @@ void RemapTests2DExplicit(int order, std::string disc_name,
   if (maps_name == "FEM") {
     maps = std::make_shared<WhetStone::MeshMaps_FEM>(mesh0, mesh1);
   } else if (maps_name == "VEM") {
+std::cout << "HERE" << std::endl;
     maps = std::make_shared<WhetStone::MeshMaps_VEM>(mesh0, mesh1);
   }
 
@@ -321,10 +322,8 @@ TEST(REMAP_DG0_EXPLICIT_VEM) {
   RemapTests2DExplicit(0, "dg modal", "VEM", 10, 10, 0.1);
 }
 
-/*
 TEST(REMAP_DG1_EXPLICIT_VEM) {
   RemapTests2DExplicit(1, "dg modal", "VEM", 10, 10, 0.1);
 }
-*/
 
 

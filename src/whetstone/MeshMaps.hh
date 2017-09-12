@@ -77,7 +77,7 @@ class MeshMaps {
   int LeastSquareFit(int order,
                      const std::vector<AmanziGeometry::Point>& x1, 
                      const std::vector<AmanziGeometry::Point>& x2,
-                     std::vector<AmanziGeometry::Point>& u) const;
+                     VectorPolynomial& u) const;
 
  protected:
   Teuchos::RCP<const AmanziMesh::Mesh> mesh0_;  // initial mesh 

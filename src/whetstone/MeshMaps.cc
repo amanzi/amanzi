@@ -68,33 +68,37 @@ void MeshMaps::VelocityFace(int f, VectorPolynomial& v) const
 
 
 /* ******************************************************************
-* Polynomial approximation of map x2 = F(x1).
+* Polynomial approximation v of map x2 = F(x1).
 * We assume that vectors of vertices have a proper length.
 ****************************************************************** */
 int MeshMaps::LeastSquareFit(int order,
                              const std::vector<AmanziGeometry::Point>& x1, 
                              const std::vector<AmanziGeometry::Point>& x2,
-                             std::vector<AmanziGeometry::Point>& u) const
+                             VectorPolynomial& v) const
 {
-  int nk = (order + 1) * (order + 2) / 2;
+  Polynomial poly(d_, order);
+
+  int nk = poly.size();
   int nx = x1.size();
 
   // evaluate basis functions at given points
-  int i1(0);
   DenseMatrix psi(nk, nx);
 
-  for (int k = 0; k <= order; ++k) {
-    for (int i = 0; i < k + 1; ++i) {
-      for (int n = 0; n < nx; ++n) {
-        psi(i1, n) = std::pow(x1[n][0], k - i) * std::pow(x1[n][1], i);
+  for (auto it = poly.begin(); it.end() <= poly.end(); ++it) {
+    int i = it.PolynomialPosition();
+    const int* idx = it.multi_index();
+
+    for (int n = 0; n < nx; ++n) {
+      double val(1.0);
+      for (int k = 0; k < d_; ++k) {
+        val *= std::pow(x1[n][k], idx[k]);
       }
-      i1++;
+      psi(i, n) = val;
     }
   }
       
-  // form linear system
+  // form matrix of linear system
   DenseMatrix A(nk, nk);
-  DenseVector bx(nk), by(nk), ux(nk), uy(nk);
 
   for (int i = 0; i < nk; ++i) {
     for (int j = i; j < nk; ++j) {
@@ -104,23 +108,32 @@ int MeshMaps::LeastSquareFit(int order,
       }
       A(i, j) = A(j, i) = tmp;
     }
-
-    bx(i) = 0.0;
-    by(i) = 0.0;
-    for (int n = 0; n < nx; ++n) {
-      bx(i) += x2[n][0] * psi(i, n);
-      by(i) += x2[n][1] * psi(i, n);
-    }
   }
 
-  // solver linear systems
   A.Inverse();
-  A.Multiply(bx, ux, false);
-  A.Multiply(by, uy, false);
 
-  u.clear();
-  for (int i = 0; i < nk; ++i) {
-    u.push_back(AmanziGeometry::Point(ux(i), uy(i)));
+  // solver linear systems
+  DenseVector b(nk), u(nk);
+
+  v.resize(d_);
+  for (int k = 0; k < d_; ++k) { 
+    v[k].Reshape(d_, order);
+
+    for (int i = 0; i < nk; ++i) {
+      b(i) = 0.0;
+      for (int n = 0; n < nx; ++n) {
+        b(i) += x2[n][k] * psi(i, n);
+      }
+    }
+
+    A.Multiply(b, u, false);
+
+    for (auto it = poly.begin(); it.end() <= poly.end(); ++it) {
+      int n = it.MonomialOrder();
+      int m = it.MonomialPosition();
+      int i = it.PolynomialPosition();
+      v[k].monomials(n).coefs()[m] = u(i);
+    }
   }
 
   return 0;

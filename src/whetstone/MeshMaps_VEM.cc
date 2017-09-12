@@ -28,7 +28,29 @@ namespace WhetStone {
 void MeshMaps_VEM::VelocityCell(int c, VectorPolynomial& v) const
 {
   v.resize(d_);
-  for (int i = 0; i < d_; ++i) v[i].Reshape(d_, 2);
+  for (int i = 0; i < d_; ++i) v[i].Reshape(d_, 1);
+  
+  Entity_ID_List nodes;
+  mesh0_->cell_get_nodes(c, &nodes);
+  int nnodes = nodes.size();
+
+  AmanziGeometry::Point px;
+  std::vector<AmanziGeometry::Point> x1, x2, u;
+  for (int i = 0; i < nnodes; ++i) {
+    mesh0_->node_get_coordinates(nodes[i], &px);
+    x1.push_back(px);
+  }
+  for (int i = 0; i < nnodes; ++i) {
+    mesh1_->node_get_coordinates(nodes[i], &px);
+    x2.push_back(px);
+  }
+
+  LeastSquareFit(1, x1, x2, v);
+
+  // calculate velocity u(X) = F(X) - X
+  for (int i = 0; i < d_; ++i) {
+    v[i].monomials(1).coefs()[i] -= 1.0;
+  }
 }
 
 
@@ -60,6 +82,19 @@ void MeshMaps_VEM::NansonFormula(
 ****************************************************************** */
 void MeshMaps_VEM::Cofactors(int c, double t, MatrixPolynomial& C) const
 {
+  VectorPolynomial v;
+  VelocityCell(c, v);
+
+  C.resize(2);
+  for (int i = 0; i < d_; ++i) {
+    C[i].resize(2);
+    for (int j = 0; j < d_; ++j) {
+      double sgn = (i == j) ? t : -t;
+      C[i][j].Reshape(d_, 0);
+      C[i][j].monomials(0).coefs()[0] = sgn * v[1 - i].monomials(1).coefs()[1 - j];
+    }
+    C[i][i].monomials(0).coefs()[0] += 1.0;
+  }
 }
 
 
