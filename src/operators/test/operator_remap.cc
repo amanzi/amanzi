@@ -64,8 +64,7 @@ void RemapTests2DExplicit(int order, std::string disc_name,
   MeshFactory meshfactory(&comm);
   meshfactory.preference(FrameworkPreference({MSTK}));
 
-  // Teuchos::RCP<const Mesh> mesh0 = meshfactory(0.0, 0.0, 1.0, 1.0, nx, ny);
-  Teuchos::RCP<const Mesh> mesh0 = meshfactory("test/median32x33.exo", Teuchos::null);
+  Teuchos::RCP<const Mesh> mesh0 = meshfactory(0.0, 0.0, 1.0, 1.0, nx, ny);
   // Teuchos::RCP<const Mesh> mesh0 = meshfactory("test/median15x16.exo", Teuchos::null);
 
   int ncells_owned = mesh0->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
@@ -75,8 +74,7 @@ void RemapTests2DExplicit(int order, std::string disc_name,
   int nnodes_owned = mesh0->num_entities(AmanziMesh::NODE, AmanziMesh::OWNED);
 
   // create second and auxiliary mesh
-  // Teuchos::RCP<Mesh> mesh1 = meshfactory(0.0, 0.0, 1.0, 1.0, nx, ny);
-  Teuchos::RCP<Mesh> mesh1 = meshfactory("test/median32x33.exo", Teuchos::null);
+  Teuchos::RCP<Mesh> mesh1 = meshfactory(0.0, 0.0, 1.0, 1.0, nx, ny);
   // Teuchos::RCP<Mesh> mesh1 = meshfactory("test/median15x16.exo", Teuchos::null);
 
   // deform the second mesh
@@ -108,6 +106,7 @@ void RemapTests2DExplicit(int order, std::string disc_name,
   Epetra_MultiVector& p1c = *p1->ViewComponent("cell", true);
 
   // we need dg to compute scaling of basis functions
+  double mass0(0.0);
   WhetStone::DG_Modal dg(order, mesh0);
 
   for (int c = 0; c < ncells_wghost; c++) {
@@ -124,6 +123,8 @@ void RemapTests2DExplicit(int order, std::string disc_name,
       p1c[1][c] = 3 * std::cos(3 * xc[0]) * std::sin(6 * xc[1]) / a;
       p1c[2][c] = 6 * std::sin(3 * xc[0]) * std::cos(6 * xc[1]) / a;
     }
+
+    mass0 += p1c[0][c] * mesh0->cell_volume(c);
   }
 
   // allocate memory
@@ -275,6 +276,7 @@ void RemapTests2DExplicit(int order, std::string disc_name,
   }
 
   // calculate error
+  double mass1(0.0);
   double pl2_err(0.0), pinf_err(0.0), area(0.0);
   for (int c = 0; c < ncells_owned; ++c) {
     Entity_ID_List nodes;
@@ -294,13 +296,14 @@ void RemapTests2DExplicit(int order, std::string disc_name,
     pl2_err += tmp * tmp * area_c;
 
     area += area_c;
+    mass1 += p2c[0][c] * mesh1->cell_volume(c);
   }
   pl2_err = std::pow(pl2_err, 0.5);
   CHECK(pl2_err < 0.08 / (order + 1));
 
   if (MyPID == 0) {
-    printf("L2(p0)=%12.8g  Inf(p0)=%12.8g  Err(area)=%12.8g\n", 
-        pl2_err, pinf_err, 1.0 - area);
+    printf("L2(p0)=%12.8g  Inf(p0)=%12.8g  dMass=%12.8g  Err(area)=%12.8g\n", 
+        pl2_err, pinf_err, mass1 - mass0, 1.0 - area);
   }
 
   // visualization
@@ -327,11 +330,11 @@ TEST(REMAP_DG1_EXPLICIT_FEM) {
 }
 
 TEST(REMAP_DG0_EXPLICIT_VEM) {
-  RemapTests2DExplicit(0, "dg modal", "VEM", 10, 10, 0.1 / 4);
+  RemapTests2DExplicit(0, "dg modal", "VEM", 10, 10, 0.1);
 }
 
 TEST(REMAP_DG1_EXPLICIT_VEM) {
-  RemapTests2DExplicit(1, "dg modal", "VEM", 10, 10, 0.1 / 4);
+  RemapTests2DExplicit(1, "dg modal", "VEM", 10, 10, 0.1);
 }
 
 
