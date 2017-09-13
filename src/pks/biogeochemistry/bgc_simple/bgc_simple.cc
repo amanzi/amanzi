@@ -31,29 +31,29 @@ BGCSimple::BGCSimple(Teuchos::ParameterList& pk_tree,
   PK(pk_tree, global_list, S, solution),
   ncells_per_col_(-1) {
 
-  Teuchos::ParameterList& FElist = S->FEList();
-
+  // set up additional primary variables -- this is very hacky...
+  // -- surface energy source
+  domain_surf_ = plist_->get<std::string>("surface domain name", "surface");
 
   // set up additional primary variables -- this is very hacky...
+  Teuchos::ParameterList& FElist = S->FEList();
   // -- transpiration
+  trans_key_ = Keys::readKey(*plist_, domain_, "transpiration", "transpiration");
   Teuchos::ParameterList& trans_sublist =
-      FElist.sublist("transpiration");
-  trans_sublist.set("evaluator name", "transpiration");
+      FElist.sublist(trans_key_);
   trans_sublist.set("field evaluator type", "primary variable");
 
   // -- shortwave incoming shading
+  shaded_sw_key_ = Keys::readKey(*plist_, domain_surf_, "shaded shortwave radiation", "shaded_shortwave_radiation");
   Teuchos::ParameterList& sw_sublist =
-      FElist.sublist("shortwave_radiation_to_surface");
-  sw_sublist.set("evaluator name", "shortwave_radiation_to_surface");
+      FElist.sublist(shaded_sw_key_);
   sw_sublist.set("field evaluator type", "primary variable");
 
   // -- lai
+  total_lai_key_ = Keys::readKey(*plist_, domain_surf_, "total leaf area index", "total_leaf_area_index");
   Teuchos::ParameterList& lai_sublist =
-      FElist.sublist("total_leaf_area_index");
-  lai_sublist.set("evaluator name", "total_leaf_area_index");
+      FElist.sublist(total_lai_key_);
   lai_sublist.set("field evaluator type", "primary variable");
-
-  
 }
 
 // is a PK
@@ -65,7 +65,7 @@ void BGCSimple::Setup(const Teuchos::Ptr<State>& S) {
   dt_ = plist_->get<double>("initial time step", 1.);
 
   // my mesh is the subsurface mesh, but we need the surface mesh, index by column, as well
-  surf_mesh_ = S->GetMesh("surface");
+  mesh_surf_ = S->GetMesh("surface");
   soil_part_name_ = plist_->get<std::string>("soil partition name");
 
   // Create the additional, non-managed data structures
@@ -92,11 +92,11 @@ void BGCSimple::Setup(const Teuchos::Ptr<State>& S) {
     pft_names.push_back(pft_name);
   }
 
-  int ncols = surf_mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  int ncols = mesh_surf_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   pfts_old_.resize(ncols);
   pfts_.resize(ncols);
   for (unsigned int col=0; col!=ncols; ++col) {
-    int f = surf_mesh_->entity_get_parent(AmanziMesh::CELL, col);
+    int f = mesh_surf_->entity_get_parent(AmanziMesh::CELL, col);
     ColIterator col_iter(*mesh_, f);
     std::size_t ncol_cells = col_iter.size();
 
@@ -104,7 +104,7 @@ void BGCSimple::Setup(const Teuchos::Ptr<State>& S) {
     // -- col area is the true face area
     double col_area = mesh_->face_area(f);
     // -- col area is the projected face area
-    // double col_area = surf_mesh_->cell_volume(col);
+    // double col_area = mesh_surf_->cell_volume(col);
 
     if (ncells_per_col_ < 0) {
       ncells_per_col_ = ncol_cells;
@@ -128,7 +128,7 @@ void BGCSimple::Setup(const Teuchos::Ptr<State>& S) {
   soil_carbon_pools_.resize(ncols);
   for (unsigned int col=0; col!=ncols; ++col) {
     soil_carbon_pools_[col].resize(ncells_per_col_);
-    ColIterator col_iter(*mesh_, surf_mesh_->entity_get_parent(AmanziMesh::CELL, col), ncells_per_col_);
+    ColIterator col_iter(*mesh_, mesh_surf_->entity_get_parent(AmanziMesh::CELL, col), ncells_per_col_);
 
     for (std::size_t i=0; i!=col_iter.size(); ++i) {
       // col_iter[i] = cell id, mp[cell_id] = index into partition list, sc_params_[index] = correct params
@@ -141,31 +141,31 @@ void BGCSimple::Setup(const Teuchos::Ptr<State>& S) {
       ->SetComponent("cell", AmanziMesh::CELL, nPools);
 
   // requirements: other primary variables
-  S->RequireField("transpiration", name_)->SetMesh(mesh_)
+  S->RequireField(trans_key_, name_)->SetMesh(mesh_)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
-  S->RequireFieldEvaluator("transpiration");
+  S->RequireFieldEvaluator(trans_key_);
   trans_eval_ = Teuchos::rcp_dynamic_cast<PrimaryVariableFieldEvaluator>(
-      S->GetFieldEvaluator("transpiration"));
+      S->GetFieldEvaluator(trans_key_));
   if (trans_eval_ == Teuchos::null) {
     Errors::Message message("BGC: error, failure to initialize primary variable for transpiration");
     Exceptions::amanzi_throw(message);
   }
 
-  S->RequireField("shortwave_radiation_to_surface", name_)->SetMesh(surf_mesh_)
+  S->RequireField(shaded_sw_key_, name_)->SetMesh(mesh_surf_)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
-  S->RequireFieldEvaluator("shortwave_radiation_to_surface");
+  S->RequireFieldEvaluator(shaded_sw_key_);
   sw_eval_ = Teuchos::rcp_dynamic_cast<PrimaryVariableFieldEvaluator>(
-      S->GetFieldEvaluator("shortwave_radiation_to_surface"));
+      S->GetFieldEvaluator(shaded_sw_key_));
   if (sw_eval_ == Teuchos::null) {
     Errors::Message message("BGC: error, failure to initialize primary variable for shaded shortwave");
     Exceptions::amanzi_throw(message);
   }
 
-  S->RequireField("total_leaf_area_index", name_)->SetMesh(surf_mesh_)
+  S->RequireField(total_lai_key_, name_)->SetMesh(mesh_surf_)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
-  S->RequireFieldEvaluator("total_leaf_area_index");
+  S->RequireFieldEvaluator(total_lai_key_);
   lai_eval_ = Teuchos::rcp_dynamic_cast<PrimaryVariableFieldEvaluator>(
-      S->GetFieldEvaluator("total_leaf_area_index"));
+      S->GetFieldEvaluator(total_lai_key_));
   if (lai_eval_ == Teuchos::null) {
     Errors::Message message("BGC: error, failure to initialize primary variable for LAI");
     Exceptions::amanzi_throw(message);
@@ -174,15 +174,15 @@ void BGCSimple::Setup(const Teuchos::Ptr<State>& S) {
   // requirement: diagnostics
   S->RequireField("co2_decomposition", name_)->SetMesh(mesh_)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
-  S->RequireField("total_biomass", name_)->SetMesh(surf_mesh_)
+  S->RequireField("surface-total_biomass", name_)->SetMesh(mesh_surf_)
       ->SetComponent("cell", AmanziMesh::CELL, pft_names.size());
-  S->RequireField("leaf_biomass", name_)->SetMesh(surf_mesh_)
+  S->RequireField("surface-leaf_biomass", name_)->SetMesh(mesh_surf_)
       ->SetComponent("cell", AmanziMesh::CELL, pft_names.size());
-  S->RequireField("leaf_area_index", name_)->SetMesh(surf_mesh_)
+  S->RequireField("surface-leaf_area_index", name_)->SetMesh(mesh_surf_)
       ->SetComponent("cell", AmanziMesh::CELL, pft_names.size());
-  S->RequireField("c_sink_limit", name_)->SetMesh(surf_mesh_)
+  S->RequireField("surface-c_sink_limit", name_)->SetMesh(mesh_surf_)
       ->SetComponent("cell", AmanziMesh::CELL, pft_names.size());
-  S->RequireField("veg_total_transpiration", name_)->SetMesh(surf_mesh_)
+  S->RequireField("surface-veg_total_transpiration", name_)->SetMesh(mesh_surf_)
       ->SetComponent("cell", AmanziMesh::CELL, pft_names.size());
 
   // requirement: temp of each cell
@@ -194,28 +194,28 @@ void BGCSimple::Setup(const Teuchos::Ptr<State>& S) {
   S->RequireField("pressure")->SetMesh(mesh_)->AddComponent("cell", AmanziMesh::CELL, 1);
 
   // requirements: surface cell volume
-  S->RequireField("surface_cell_volume")->SetMesh(surf_mesh_)->AddComponent("cell", AmanziMesh::CELL, 1);
-  S->RequireFieldEvaluator("surface_cell_volume");
+  S->RequireField("surface-cell_volume")->SetMesh(mesh_surf_)->AddComponent("cell", AmanziMesh::CELL, 1);
+  S->RequireFieldEvaluator("surface-cell_volume");
 
   // requirements: Met data
-  S->RequireFieldEvaluator("incoming_shortwave_radiation");
-  S->RequireField("incoming_shortwave_radiation")->SetMesh(surf_mesh_)
+  S->RequireFieldEvaluator("surface-incoming_shortwave_radiation");
+  S->RequireField("surface-incoming_shortwave_radiation")->SetMesh(mesh_surf_)
       ->AddComponent("cell", AmanziMesh::CELL, 1);
 
-  S->RequireFieldEvaluator("air_temperature");
-  S->RequireField("air_temperature")->SetMesh(surf_mesh_)
+  S->RequireFieldEvaluator("surface-air_temperature");
+  S->RequireField("surface-air_temperature")->SetMesh(mesh_surf_)
       ->AddComponent("cell", AmanziMesh::CELL, 1);
 
-  S->RequireFieldEvaluator("relative_humidity");
-  S->RequireField("relative_humidity")->SetMesh(surf_mesh_)
+  S->RequireFieldEvaluator("surface-relative_humidity");
+  S->RequireField("surface-relative_humidity")->SetMesh(mesh_surf_)
       ->AddComponent("cell", AmanziMesh::CELL, 1);
 
-  S->RequireFieldEvaluator("wind_speed");
-  S->RequireField("wind_speed")->SetMesh(surf_mesh_)
+  S->RequireFieldEvaluator("surface-wind_speed");
+  S->RequireField("surface-wind_speed")->SetMesh(mesh_surf_)
       ->AddComponent("cell", AmanziMesh::CELL, 1);
 
-  S->RequireFieldEvaluator("co2_concentration");
-  S->RequireField("co2_concentration")->SetMesh(surf_mesh_)
+  S->RequireFieldEvaluator("surface-co2_concentration");
+  S->RequireField("surface-co2_concentration")->SetMesh(mesh_surf_)
       ->AddComponent("cell", AmanziMesh::CELL, 1);
 
   // parameters
@@ -234,23 +234,23 @@ void BGCSimple::Initialize(const Teuchos::Ptr<State>& S) {
   S->GetFieldData("co2_decomposition", name_)->PutScalar(0.);
   S->GetField("co2_decomposition", name_)->set_initialized();
 
-  S->GetFieldData("c_sink_limit", name_)->PutScalar(0.);
-  S->GetField("c_sink_limit", name_)->set_initialized();
+  S->GetFieldData("surface-c_sink_limit", name_)->PutScalar(0.);
+  S->GetField("surface-c_sink_limit", name_)->set_initialized();
 
-  S->GetFieldData("transpiration", name_)->PutScalar(0.);
-  S->GetField("transpiration", name_)->set_initialized();
+  S->GetFieldData(trans_key_, name_)->PutScalar(0.);
+  S->GetField(trans_key_, name_)->set_initialized();
 
-  S->GetFieldData("total_biomass", name_)->PutScalar(0.);
-  S->GetField("total_biomass", name_)->set_initialized();
+  S->GetFieldData("surface-total_biomass", name_)->PutScalar(0.);
+  S->GetField("surface-total_biomass", name_)->set_initialized();
 
-  S->GetFieldData("leaf_area_index", name_)->PutScalar(0.);
-  S->GetField("leaf_area_index", name_)->set_initialized();
+  S->GetFieldData("surface-leaf_area_index", name_)->PutScalar(0.);
+  S->GetField("surface-leaf_area_index", name_)->set_initialized();
 
-  S->GetFieldData("veg_total_transpiration", name_)->PutScalar(0.);
-  S->GetField("veg_total_transpiration", name_)->set_initialized();
+  S->GetFieldData("surface-veg_total_transpiration", name_)->PutScalar(0.);
+  S->GetField("surface-veg_total_transpiration", name_)->set_initialized();
   
   // potentially initial aboveground vegetation data
-  Teuchos::RCP<Field> leaf_biomass_field = S->GetField("leaf_biomass", name_);
+  Teuchos::RCP<Field> leaf_biomass_field = S->GetField("surface-leaf_biomass", name_);
 
   // -- set the subfield names
   Teuchos::RCP<Field_CompositeVector> leaf_biomass_field_cv =
@@ -271,10 +271,10 @@ void BGCSimple::Initialize(const Teuchos::Ptr<State>& S) {
       leaf_biomass_field->Initialize(ic_plist);
 
       // -- copy into PFTs
-      Epetra_MultiVector& bio = *S->GetFieldData("leaf_biomass", name_)
+      Epetra_MultiVector& bio = *S->GetFieldData("surface-leaf_biomass", name_)
           ->ViewComponent("cell", false);
       
-      int ncols = surf_mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+      int ncols = mesh_surf_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
       for (int col=0; col!=ncols; ++col) {
         for (int i=0; i!=npft; ++i) {
           pfts_old_[col][i]->Bleaf = bio[i][col];
@@ -284,7 +284,7 @@ void BGCSimple::Initialize(const Teuchos::Ptr<State>& S) {
     }
     
     if (!leaf_biomass_field->initialized()) {
-      S->GetFieldData("leaf_biomass", name_)->PutScalar(0.);
+      S->GetFieldData("surface-leaf_biomass", name_)->PutScalar(0.);
       leaf_biomass_field->set_initialized();
     }
   }
@@ -301,7 +301,7 @@ void BGCSimple::Initialize(const Teuchos::Ptr<State>& S) {
   const Epetra_Vector& temp = *(*S->GetFieldData("temperature")
 				->ViewComponent("cell",false))(0);
 
-  int ncols = surf_mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  int ncols = mesh_surf_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   for (int col=0; col!=ncols; ++col) {
     FieldToColumn_(col, temp, col_temp.ptr());
     ColDepthDz_(col, col_depth.ptr(), col_dz.ptr());
@@ -327,7 +327,7 @@ void BGCSimple::CommitStep(double told, double tnew, const Teuchos::RCP<State>& 
   // the step as succesful.
   double dt = tnew - told;
 
-  int ncols = surf_mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  int ncols = mesh_surf_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   int npft = pfts_old_[0].size();
   for (int col=0; col!=ncols; ++col) {
     for (int i=0; i!=npft; ++i) {
@@ -351,7 +351,7 @@ bool BGCSimple::AdvanceStep(double t_old, double t_new, bool reinit) {
   // Copy the PFT from old to new, in case we failed the previous attempt at
   // this timestep.  This is hackery to get around the fact that PFTs are not
   // (but should be) in state.
-  AmanziMesh::Entity_ID ncols = surf_mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  AmanziMesh::Entity_ID ncols = mesh_surf_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   for (AmanziMesh::Entity_ID col=0; col!=ncols; ++col) {
     int npft = pfts_old_[col].size();
     for (int i=0; i!=npft; ++i) {
@@ -364,21 +364,21 @@ bool BGCSimple::AdvanceStep(double t_old, double t_new, bool reinit) {
       ->ViewComponent("cell",false);
   Epetra_MultiVector& co2_decomp = *S_next_->GetFieldData("co2_decomposition", name_)
       ->ViewComponent("cell",false);
-  Epetra_MultiVector& trans = *S_next_->GetFieldData("transpiration", name_)
+  Epetra_MultiVector& trans = *S_next_->GetFieldData(trans_key_, name_)
       ->ViewComponent("cell",false);
-  Epetra_MultiVector& sw = *S_next_->GetFieldData("shortwave_radiation_to_surface", name_)
+  Epetra_MultiVector& sw = *S_next_->GetFieldData(shaded_sw_key_, name_)
       ->ViewComponent("cell",false);
-  Epetra_MultiVector& biomass = *S_next_->GetFieldData("total_biomass", name_)
+  Epetra_MultiVector& biomass = *S_next_->GetFieldData("surface-total_biomass", name_)
       ->ViewComponent("cell",false);
-  Epetra_MultiVector& leafbiomass = *S_next_->GetFieldData("leaf_biomass", name_)
+  Epetra_MultiVector& leafbiomass = *S_next_->GetFieldData("surface-leaf_biomass", name_)
       ->ViewComponent("cell",false);
-  Epetra_MultiVector& csink = *S_next_->GetFieldData("c_sink_limit", name_)
+  Epetra_MultiVector& csink = *S_next_->GetFieldData("surface-c_sink_limit", name_)
       ->ViewComponent("cell",false);
-  Epetra_MultiVector& total_lai = *S_next_->GetFieldData("total_leaf_area_index", name_)
+  Epetra_MultiVector& total_lai = *S_next_->GetFieldData(total_lai_key_, name_)
       ->ViewComponent("cell",false);
-  Epetra_MultiVector& lai = *S_next_->GetFieldData("leaf_area_index", name_)
+  Epetra_MultiVector& lai = *S_next_->GetFieldData("surface-leaf_area_index", name_)
       ->ViewComponent("cell",false);
-  Epetra_MultiVector& veg_total_transpiration = *S_next_->GetFieldData("veg_total_transpiration", name_)
+  Epetra_MultiVector& veg_total_transpiration = *S_next_->GetFieldData("surface-veg_total_transpiration", name_)
       ->ViewComponent("cell",false);
 
   S_next_->GetFieldEvaluator("temperature")->HasFieldChanged(S_next_.ptr(), name_);
@@ -389,32 +389,32 @@ bool BGCSimple::AdvanceStep(double t_old, double t_new, bool reinit) {
   const Epetra_MultiVector& pres = *S_inter_->GetFieldData("pressure")
       ->ViewComponent("cell",false);
 
-  S_inter_->GetFieldEvaluator("incoming_shortwave_radiation")->HasFieldChanged(S_inter_.ptr(), name_);
-  const Epetra_MultiVector& qSWin = *S_inter_->GetFieldData("incoming_shortwave_radiation")
+  S_inter_->GetFieldEvaluator("surface-incoming_shortwave_radiation")->HasFieldChanged(S_inter_.ptr(), name_);
+  const Epetra_MultiVector& qSWin = *S_inter_->GetFieldData("surface-incoming_shortwave_radiation")
       ->ViewComponent("cell",false);
 
-  S_inter_->GetFieldEvaluator("air_temperature")->HasFieldChanged(S_inter_.ptr(), name_);
-  const Epetra_MultiVector& air_temp = *S_inter_->GetFieldData("air_temperature")
+  S_inter_->GetFieldEvaluator("surface-air_temperature")->HasFieldChanged(S_inter_.ptr(), name_);
+  const Epetra_MultiVector& air_temp = *S_inter_->GetFieldData("surface-air_temperature")
       ->ViewComponent("cell",false);
 
-  S_inter_->GetFieldEvaluator("relative_humidity")->HasFieldChanged(S_inter_.ptr(), name_);
-  const Epetra_MultiVector& rel_hum = *S_inter_->GetFieldData("relative_humidity")
+  S_inter_->GetFieldEvaluator("surface-relative_humidity")->HasFieldChanged(S_inter_.ptr(), name_);
+  const Epetra_MultiVector& rel_hum = *S_inter_->GetFieldData("surface-relative_humidity")
       ->ViewComponent("cell",false);
 
-  S_inter_->GetFieldEvaluator("wind_speed")->HasFieldChanged(S_inter_.ptr(), name_);
-  const Epetra_MultiVector& wind_speed = *S_inter_->GetFieldData("wind_speed")
+  S_inter_->GetFieldEvaluator("surface-wind_speed")->HasFieldChanged(S_inter_.ptr(), name_);
+  const Epetra_MultiVector& wind_speed = *S_inter_->GetFieldData("surface-wind_speed")
       ->ViewComponent("cell",false);
 
-  S_inter_->GetFieldEvaluator("co2_concentration")->HasFieldChanged(S_inter_.ptr(), name_);
-  const Epetra_MultiVector& co2 = *S_inter_->GetFieldData("co2_concentration")
+  S_inter_->GetFieldEvaluator("surface-co2_concentration")->HasFieldChanged(S_inter_.ptr(), name_);
+  const Epetra_MultiVector& co2 = *S_inter_->GetFieldData("surface-co2_concentration")
       ->ViewComponent("cell",false);
 
   // note that this is used as the column area, which is maybe not always
   // right.  Likely correct for soil carbon calculations and incorrect for
   // surface vegetation calculations (where the subsurface's face area is more
   // correct?)
-  S_inter_->GetFieldEvaluator("surface_cell_volume")->HasFieldChanged(S_inter_.ptr(), name_);
-  const Epetra_MultiVector& scv = *S_inter_->GetFieldData("surface_cell_volume")
+  S_inter_->GetFieldEvaluator("surface-cell_volume")->HasFieldChanged(S_inter_.ptr(), name_);
+  const Epetra_MultiVector& scv = *S_inter_->GetFieldData("surface-cell_volume")
       ->ViewComponent("cell", false);
 
   // Create workspace arrays (these should be removed when data is correctly oriented).
@@ -444,7 +444,7 @@ bool BGCSimple::AdvanceStep(double t_old, double t_new, bool reinit) {
     ColDepthDz_(col, depth_c.ptr(), dz_c.ptr());
 
     // copy over the soil carbon arrays
-    ColIterator col_iter(*mesh_, surf_mesh_->entity_get_parent(AmanziMesh::CELL, col), ncells_per_col_);
+    ColIterator col_iter(*mesh_, mesh_surf_->entity_get_parent(AmanziMesh::CELL, col), ncells_per_col_);
     // -- serious cache thrash... --etc
     for (std::size_t i=0; i!=col_iter.size(); ++i) {
       AmanziGeometry::Point centroid = mesh_->cell_centroid(col_iter[i]);
@@ -517,7 +517,7 @@ void BGCSimple::FieldToColumn_(AmanziMesh::Entity_ID col, const Epetra_Vector& v
     col_vec = Teuchos::ptr(new Epetra_SerialDenseVector(ncells_per_col_));
   }
 
-  ColIterator col_iter(*mesh_, surf_mesh_->entity_get_parent(AmanziMesh::CELL, col), ncells_per_col_);
+  ColIterator col_iter(*mesh_, mesh_surf_->entity_get_parent(AmanziMesh::CELL, col), ncells_per_col_);
   for (std::size_t i=0; i!=col_iter.size(); ++i) {
     (*col_vec)[i] = vec[col_iter[i]];
   }
@@ -527,7 +527,7 @@ void BGCSimple::FieldToColumn_(AmanziMesh::Entity_ID col, const Epetra_Vector& v
 void BGCSimple::ColDepthDz_(AmanziMesh::Entity_ID col,
                             Teuchos::Ptr<Epetra_SerialDenseVector> depth,
                             Teuchos::Ptr<Epetra_SerialDenseVector> dz) {
-  AmanziMesh::Entity_ID f_above = surf_mesh_->entity_get_parent(AmanziMesh::CELL, col);
+  AmanziMesh::Entity_ID f_above = mesh_surf_->entity_get_parent(AmanziMesh::CELL, col);
   ColIterator col_iter(*mesh_, f_above, ncells_per_col_);
 
   AmanziGeometry::Point surf_centroid = mesh_->face_centroid(f_above);
