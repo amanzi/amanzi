@@ -1214,36 +1214,38 @@ std::string InputConverter::CreateINFile_(std::string& filename, int rank)
   controls << "  DATABASE " << datfilename.c_str() << "\n";
 
   base = GetUniqueElementByTagsString_("numerical_controls, unstructured_controls, unstr_chemistry_controls", flag);
-  node = GetUniqueElementByTagsString_(base, "activity_coefficients", flag);
-  std::string tmp("  ACTIVITY_COEFFICIENTS TIMESTEP");
   if (flag) {
-    std::string value = TrimString_(mm.transcode(node->getTextContent()));
-    if (value == "off") {
-      tmp =  "  ACTIVITY_COEFFICIENTS OFF";
+    node = GetUniqueElementByTagsString_(base, "activity_coefficients", flag);
+    std::string tmp("  ACTIVITY_COEFFICIENTS TIMESTEP");
+    if (flag) {
+      std::string value = TrimString_(mm.transcode(node->getTextContent()));
+      if (value == "off") {
+        tmp =  "  ACTIVITY_COEFFICIENTS OFF";
+      }
     }
-  }
-  controls << tmp << "\n";
+    controls << tmp << "\n";
 
-  node = GetUniqueElementByTagsString_(base, "log_formulation", flag);
-  if (flag) {
-    std::string value = TrimString_(mm.transcode(node->getTextContent()));
-    if (value == "on") {
+    node = GetUniqueElementByTagsString_(base, "log_formulation", flag);
+    if (flag) {
+      std::string value = TrimString_(mm.transcode(node->getTextContent()));
+      if (value == "on") {
+        controls << "  LOG_FORMULATION \n";
+      }
+    } else {
       controls << "  LOG_FORMULATION \n";
     }
-  } else {
-    controls << "  LOG_FORMULATION \n";
-  }
 
-  node = GetUniqueElementByTagsString_(base, "max_relative_change_tolerance", flag);
-  if (flag) {
-    std::string value = TrimString_(mm.transcode(node->getTextContent()));
-    controls << "  MAX_RELATIVE_CHANGE_TOLERANCE " << value << "\n";
-  }
+    node = GetUniqueElementByTagsString_(base, "max_relative_change_tolerance", flag);
+    if (flag) {
+      std::string value = TrimString_(mm.transcode(node->getTextContent()));
+      controls << "  MAX_RELATIVE_CHANGE_TOLERANCE " << value << "\n";
+    }
 
-  node = GetUniqueElementByTagsString_(base, "max_residual_tolerance", flag);
-  if (flag) {
-    std::string value = TrimString_(mm.transcode(node->getTextContent()));
-    controls << "  MAX_RESIDUAL_TOLERANCE " << value << "\n";
+    node = GetUniqueElementByTagsString_(base, "max_residual_tolerance", flag);
+    if (flag) {
+      std::string value = TrimString_(mm.transcode(node->getTextContent()));
+      controls << "  MAX_RESIDUAL_TOLERANCE " << value << "\n";
+    }
   }
 
   // set up Chemistry Options ParameterList

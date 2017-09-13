@@ -171,7 +171,7 @@ ExternalProject_Add(${PETSc_BUILD_TARGET}
                                           --CXXFLAGS=${petsc_cxxflags}
                                           --without-x
                                           --with-debugging=${petsc_debug_flag}
-                                          --without-valgring
+                                          --without-valgrind
                                           ${petsc_mpi_flags}
                                           ${petsc_lapack_option}
                                           ${petsc_blas_option}
