@@ -1721,15 +1721,18 @@ RichardRes_DpDt(SNES snes,Vec x,Vec f,void *dummy)
     BoxLib::Abort("Bad cast in RichardRes_DpDt");
   }
 
+  Vec xcopy;
+  ierr = VecDuplicate(x, &xcopy); CHKPETSC(ierr);
+  ierr = VecCopy(x, xcopy); CHKPETSC(ierr);
   if (rs->GetNLScontrol().scale_soln_before_solve) {
-    ierr = VecPointwiseMult(x,x,rs->GetSolnTypV()); CHKPETSC(ierr); // Unscale solution
+    ierr = VecPointwiseMult(xcopy,xcopy,rs->GetSolnTypV()); CHKPETSC(ierr); // Unscale solution
   }
 
   MFTower& xMFT = rs->GetPressureNp1();
   MFTower& fMFT = rs->GetResidual();
 
   Layout& layout = rs->GetLayout();
-  ierr = layout.VecToMFTower(xMFT,x,0); CHKPETSC(ierr);
+  ierr = layout.VecToMFTower(xMFT,xcopy,0); CHKPETSC(ierr);
 
   Real t = rs->GetTime();
   Real dt = rs->GetDt();
@@ -1749,9 +1752,7 @@ RichardRes_DpDt(SNES snes,Vec x,Vec f,void *dummy)
 
   ierr = layout.MFTowerToVec(f,fMFT,0); CHKPETSC(ierr);
 
-  if (rs->GetNLScontrol().scale_soln_before_solve) {
-    ierr = VecPointwiseMult(x,x,rs->GetSolnTypInvV()); CHKPETSC(ierr); // Reset solution scaling
-  }
+  ierr = VecDestroy(&xcopy); CHKPETSC(ierr);
   PetscFunctionReturn(0);
 }
 
@@ -1768,24 +1769,25 @@ RichardR2(SNES snes,Vec x,Vec f,void *dummy)
     BoxLib::Abort("Bad cast in RichardR2");
   }
 
+  Vec xcopy;
+  ierr = VecDuplicate(x, &xcopy); CHKPETSC(ierr);
+  ierr = VecCopy(x, xcopy); CHKPETSC(ierr);
   if (rs->GetNLScontrol().scale_soln_before_solve) {
-    ierr = VecPointwiseMult(x,x,rs->GetSolnTypV()); CHKPETSC(ierr); // Unscale solution
+    ierr = VecPointwiseMult(xcopy,xcopy,rs->GetSolnTypV()); CHKPETSC(ierr); // Unscale solution
   }
 
   MFTower& xMFT = rs->GetPressureNp1();
   MFTower& fMFT = rs->GetResidual();
 
   Layout& layout = rs->GetLayout();
-  ierr = layout.VecToMFTower(xMFT,x,0); CHKPETSC(ierr);
+  ierr = layout.VecToMFTower(xMFT,xcopy,0); CHKPETSC(ierr);
 
   Real t = rs->GetTime();
   rs->DivRhoU(fMFT,xMFT,t);
 
   ierr = layout.MFTowerToVec(f,fMFT,0); CHKPETSC(ierr);
 
-  if (rs->GetNLScontrol().scale_soln_before_solve) {
-    ierr = VecPointwiseMult(x,x,rs->GetSolnTypInvV()); CHKPETSC(ierr); // Reset solution scaling
-  }
+  ierr = VecDestroy(&xcopy); CHKPETSC(ierr);
   PetscFunctionReturn(0);
 }
 
