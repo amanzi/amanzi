@@ -231,7 +231,7 @@ int DG_Modal::FluxMatrixPoly(int f, const Polynomial& un, DenseMatrix& A,
   int col(id * size);
   int row(size - col);
 
-  // Calculate integrals needed for scaling (FIXME)
+  // Calculate integrals needed for scaling
   UpdateIntegrals_(cells[id], 2 * order_);
   const Polynomial& integrals_dw = integrals_[cells[id]];
 

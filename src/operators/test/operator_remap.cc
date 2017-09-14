@@ -201,24 +201,23 @@ void RemapTests2DExplicit(int order, std::string disc_name,
     for (int f = 0; f < nfaces_owned; ++f) {
       // cn = j J^{-t} N dA
       WhetStone::VectorPolynomial cn;
-      maps->NansonFormula(f, t, vec_vel[f], cn);
+      maps->NansonFormula(f, t + dt/2, vec_vel[f], cn);
 
       (*vel)[f] = vec_vel[f] * cn;
       (*vel)[f] *= -1.0;
     }
 
-    // calculate cell velocities
-    // we reuse matrix of cofactors to calculate face-velocities
+    // calculate cell velocities at time t+dt/2
     WhetStone::MatrixPolynomial C;
     WhetStone::VectorPolynomial tmp;
 
     for (int c = 0; c < ncells_owned; ++c) {
-      maps->Cofactors(c, t, C);
+      maps->Cofactors(c, t + dt/2, C);
       maps->VelocityCell(c, tmp);
       tmp[0].Multiply(C, tmp, (*cell_vel)[c], true);
     }
 
-    // calculate determinant of Jacobian at time t
+    // calculate determinant of Jacobian at time t+dt
     Entity_ID_List faces;
     std::vector<int> dirs;
 
@@ -231,7 +230,7 @@ void RemapTests2DExplicit(int order, std::string disc_name,
         vf.push_back(vec_vel[faces[n]]);
       }
 
-      maps->JacobianDet(c, t, vf, (*jac)[c]);
+      maps->JacobianDet(c, t + dt, vf, (*jac)[c]);
     }
 
     // populate operators
