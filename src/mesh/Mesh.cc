@@ -1447,6 +1447,7 @@ Mesh::build_single_column_(int colnum, Entity_ID top_face) const
 
   // Walk through the cells until we get to the bottom of the domain
   Entity_ID cur_cell = fcells[0];
+  bool is_ghost_column = (entity_get_ptype(CELL, cur_cell) == GHOST);
   Entity_ID bot_face = -1;
   Entity_ID_List fcells2, cfaces, colcells, colfaces;
   std::vector<int> cfdirs;
@@ -1459,8 +1460,9 @@ Mesh::build_single_column_(int colnum, Entity_ID top_face) const
   
   bool done = false;
   while (!done) {
-    if (entity_get_ptype(CELL, cur_cell) == GHOST) {
-      Errors::Message mesg("A cell in a column belongs to a different mesh partition!");
+    bool is_ghost_cell = (entity_get_ptype(CELL, cur_cell) == GHOST);
+    if (is_ghost_column != is_ghost_cell) {
+      Errors::Message mesg("A column contains cells from different mesh partitions!");
       Exceptions::amanzi_throw(mesg);
     }
     columnID_[cur_cell] = colnum;
