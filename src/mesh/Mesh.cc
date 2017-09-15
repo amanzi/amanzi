@@ -1363,7 +1363,7 @@ Mesh::build_columns(const std::string& setname) const
       Exceptions::amanzi_throw(mesg);
     }
 
-    build_column_(i, f);
+    build_single_column_(i, f);
   }
 
   columns_built_ = true;
@@ -1429,7 +1429,7 @@ Mesh::build_columns_() const
     //  2) n dot z < 0 --> downard pointing face
     if (dp < 1.e-10) continue;
 
-    build_column_(ncolumns, i);
+    build_single_column_(ncolumns, i);
     ncolumns++;
     if (i < nf_owned) num_owned_cols_++;
   }
@@ -1440,7 +1440,7 @@ Mesh::build_columns_() const
     
 
 void
-Mesh::build_column_(int colnum, Entity_ID top_face) const
+Mesh::build_single_column_(int colnum, Entity_ID top_face) const
 {
   Entity_ID_List fcells;
   face_get_cells(top_face,USED,&fcells);
@@ -1459,6 +1459,10 @@ Mesh::build_column_(int colnum, Entity_ID top_face) const
   
   bool done = false;
   while (!done) {
+    if (entity_get_ptype(CELL, cur_cell) == GHOST) {
+      Errors::Message mesg("A cell in a column belongs to a different mesh partition!");
+      Exceptions::amanzi_throw(mesg);
+    }
     columnID_[cur_cell] = colnum;
     colcells.push_back(cur_cell);
     colfaces.push_back(top_face);
