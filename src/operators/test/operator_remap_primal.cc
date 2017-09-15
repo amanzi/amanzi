@@ -120,8 +120,10 @@ void RemapTests2DPrimal(int order, std::string disc_name,
 
       it.begin(1);
       dg.TaylorBasis(c, it, &a, &b);
-
       p1c[1][c] = 3 * std::cos(3 * xc[0]) * std::sin(6 * xc[1]) / a;
+
+      ++it;
+      dg.TaylorBasis(c, it, &a, &b);
       p1c[2][c] = 6 * std::sin(3 * xc[0]) * std::cos(6 * xc[1]) / a;
     }
 
@@ -276,12 +278,10 @@ void RemapTests2DPrimal(int order, std::string disc_name,
   }
 
   // calculate error in the new basis
-  WhetStone::DG_Modal dg1(order, mesh1);
-
   double mass1(0.0);
   double pl2_err(0.0), pinf_err(0.0), area(0.0);
   for (int c = 0; c < ncells_owned; ++c) {
-    const AmanziGeometry::Point& xg = dg1.cell_geometric_center(c);
+    const AmanziGeometry::Point& xg = maps->cell_geometric_center(1, c);
     double area_c = mesh1->cell_volume(c);
 
     double tmp = p2c[0][c] - std::sin(3 * xg[0]) * std::sin(6 * xg[1]);

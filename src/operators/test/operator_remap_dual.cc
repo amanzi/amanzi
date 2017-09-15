@@ -67,7 +67,7 @@ void RemapTests2DDual(int order, std::string disc_name,
 
   // Teuchos::RCP<const Mesh> mesh0 = meshfactory(0.0, 0.0, 1.0, 1.0, nx, ny);
   // Teuchos::RCP<const Mesh> mesh0 = meshfactory("test/median15x16.exo", Teuchos::null);
-  Teuchos::RCP<const Mesh> mesh0 = meshfactory("test/random10.exo", Teuchos::null);
+  Teuchos::RCP<const Mesh> mesh0 = meshfactory("test/random20.exo", Teuchos::null);
 
   int ncells_owned = mesh0->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   int ncells_wghost = mesh0->num_entities(AmanziMesh::CELL, AmanziMesh::USED);
@@ -78,7 +78,7 @@ void RemapTests2DDual(int order, std::string disc_name,
   // create second and auxiliary mesh
   // Teuchos::RCP<Mesh> mesh1 = meshfactory(0.0, 0.0, 1.0, 1.0, nx, ny);
   // Teuchos::RCP<Mesh> mesh1 = meshfactory("test/median15x16.exo", Teuchos::null);
-  Teuchos::RCP<Mesh> mesh1 = meshfactory("test/random10.exo", Teuchos::null);
+  Teuchos::RCP<Mesh> mesh1 = meshfactory("test/random20.exo", Teuchos::null);
 
   // deform the second mesh
   AmanziGeometry::Point xv(2), xref(2);
@@ -122,8 +122,10 @@ void RemapTests2DDual(int order, std::string disc_name,
 
       it.begin(1);
       dg.TaylorBasis(c, it, &a, &b);
-
       p1c[1][c] = 3 * std::cos(3 * xc[0]) * std::sin(6 * xc[1]) / a;
+
+      ++it;
+      dg.TaylorBasis(c, it, &a, &b);
       p1c[2][c] = 6 * std::sin(3 * xc[0]) * std::cos(6 * xc[1]) / a;
     }
 
@@ -291,13 +293,11 @@ void RemapTests2DDual(int order, std::string disc_name,
   }
 
   // calculate error in the new basis
-  WhetStone::DG_Modal dg1(order, mesh1);
-
   double mass1(0.0);
   double pl2_err(0.0), pinf_err(0.0), area(0.0);
 
   for (int c = 0; c < ncells_owned; ++c) {
-    const AmanziGeometry::Point& xg = dg1.cell_geometric_center(c);
+    const AmanziGeometry::Point& xg = maps->cell_geometric_center(1, c);
     // const AmanziGeometry::Point& xg = mesh1->cell_centroid(c);
     double area_c = mesh1->cell_volume(c);
 
@@ -342,11 +342,11 @@ TEST(REMAP_DG1_DUAL_FEM) {
 */
 
 TEST(REMAP_DG0_DUAL_VEM) {
-  RemapTests2DDual(0, "dg modal", "VEM", 10, 10, 0.1);
+  RemapTests2DDual(0, "dg modal", "VEM", 10, 10, 0.1 / 2);
 }
 
 TEST(REMAP_DG1_DUAL_VEM) {
-  RemapTests2DDual(1, "dg modal", "VEM", 10, 10, 0.1);
+  RemapTests2DDual(1, "dg modal", "VEM", 10, 10, 0.1 / 4);
 }
 
 

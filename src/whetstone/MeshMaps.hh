@@ -79,6 +79,9 @@ class MeshMaps {
                      const std::vector<AmanziGeometry::Point>& x2,
                      VectorPolynomial& u) const;
 
+  // extension of mesh interface
+  AmanziGeometry::Point cell_geometric_center(int id, int c) const;
+
  protected:
   Teuchos::RCP<const AmanziMesh::Mesh> mesh0_;  // initial mesh 
   Teuchos::RCP<const AmanziMesh::Mesh> mesh1_;  // target mesh

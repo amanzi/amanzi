@@ -139,6 +139,30 @@ int MeshMaps::LeastSquareFit(int order,
   return 0;
 }
 
+
+/* ******************************************************************
+* Error calculation requires geometric center.
+****************************************************************** */
+AmanziGeometry::Point MeshMaps::cell_geometric_center(int id, int c) const
+{
+  Entity_ID_List nodes;
+  AmanziGeometry::Point v(d_), xg(d_);
+
+  mesh0_->cell_get_nodes(c, &nodes);
+  int nnodes = nodes.size();
+  for (int i = 0; i < nnodes; ++i) {
+    if (id == 0) {
+      mesh0_->node_get_coordinates(nodes[i], &v);
+    } else {
+      mesh1_->node_get_coordinates(nodes[i], &v);
+    }
+    xg += v;
+  } 
+  xg /= nnodes;
+  
+  return xg;
+}
+
 }  // namespace WhetStone
 }  // namespace Amanzi
 
