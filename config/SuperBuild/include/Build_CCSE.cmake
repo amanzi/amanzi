@@ -49,7 +49,7 @@ set(CCSE_CMAKE_CACHE_ARGS
 
 
 # --- Set the name of the patch
-set(CCSE_patch_file ccse-1.3.4-dependency.patch)
+set(CCSE_patch_file ccse-1.3.4-dependency.patch ccse-1.3.4-tools-compilers.patch)
 # --- Configure the bash patch script
 set(CCSE_sh_patch ${CCSE_prefix_dir}/ccse-patch-step.sh)
 configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/ccse-patch-step.sh.in
@@ -91,9 +91,68 @@ ExternalProject_Add(${CCSE_BUILD_TARGET}
 # --- built, builds the module, and copies it into place.
 if (ENABLE_CCSE_TOOLS)
 
+  message(STATUS "CCSE: Unwrapping MPI compilers to build shared libraries for python tools")
+  if ( CMAKE_C_COMPILER_USE MATCHES "mpi" )
+    execute_process(
+      COMMAND ${CMAKE_C_COMPILER_USE} -show
+      OUTPUT_VARIABLE  COMPILE_CMDLINE OUTPUT_STRIP_TRAILING_WHITESPACE
+      ERROR_VARIABLE   COMPILE_CMDLINE ERROR_STRIP_TRAILING_WHITESPACE
+      RESULT_VARIABLE  COMPILER_RETURN
+      )
+    # Extract the name of the compiler
+    if ( COMPILER_RETURN EQUAL 0)
+       string(REPLACE " " ";" COMPILE_CMDLINE_LIST ${COMPILE_CMDLINE})
+       list(GET COMPILE_CMDLINE_LIST 0 RAW_C_COMPILER)
+    else()
+       message (FATAL_ERROR "CCSE: Unable to determine the compiler command")
+    endif()
+  else()
+   set(RAW_CC_COMPILER ${CMAKE_C_COMPILER_USE})
+  endif()
+  message (STATUS "CCSE: RAW_C_COMPILER       = ${RAW_C_COMPILER}")
+
+
+  if ( CMAKE_CXX_COMPILER_USE MATCHES "mpi" )
+    execute_process(
+      COMMAND ${CMAKE_CXX_COMPILER_USE} -show
+      OUTPUT_VARIABLE  COMPILE_CMDLINE OUTPUT_STRIP_TRAILING_WHITESPACE
+      ERROR_VARIABLE   COMPILE_CMDLINE ERROR_STRIP_TRAILING_WHITESPACE
+      RESULT_VARIABLE  COMPILER_RETURN
+      )
+    # Extract the name of the compiler
+    if ( COMPILER_RETURN EQUAL 0)
+       string(REPLACE " " ";" COMPILE_CMDLINE_LIST ${COMPILE_CMDLINE})
+       list(GET COMPILE_CMDLINE_LIST 0 RAW_CXX_COMPILER)
+    else()
+       message (FATAL_ERROR "CCSE: Unable to determine the compiler command")
+    endif()
+  else()
+   set(RAW_CXX_COMPILER ${CMAKE_CXX_COMPILER_USE})
+  endif()
+  message (STATUS "CCSE: RAW_CXX_COMPILER     = ${RAW_CXX_COMPILER}")
+
+  if ( CMAKE_Fortran_COMPILER_USE MATCHES "mpi" )
+    execute_process(
+      COMMAND ${CMAKE_Fortran_COMPILER_USE} -show
+      OUTPUT_VARIABLE  COMPILE_CMDLINE OUTPUT_STRIP_TRAILING_WHITESPACE
+      ERROR_VARIABLE   COMPILE_CMDLINE ERROR_STRIP_TRAILING_WHITESPACE
+      RESULT_VARIABLE  COMPILER_RETURN
+      )
+    # Extract the name of the compiler
+    if ( COMPILER_RETURN EQUAL 0)
+       string(REPLACE " " ";" COMPILE_CMDLINE_LIST ${COMPILE_CMDLINE})
+       list(GET COMPILE_CMDLINE_LIST 0 RAW_Fortran_COMPILER)
+    else()
+       message (FATAL_ERROR "CCSE: Unable to determine the compiler command")
+    endif()
+  else()
+   set(RAW_Fortran_COMPILER ${CMAKE_Fortran_COMPILER_USE})
+  endif()
+  message (STATUS "CCSE: RAW_Fortran_COMPILER = ${RAW_Fortran_COMPILER}")
+
   add_custom_command(TARGET ${CCSE_BUILD_TARGET}
                      POST_BUILD
-                     COMMAND $(MAKE) BOXLIB_HOME=${CCSE_source_dir}
+                     COMMAND $(MAKE) BOXLIB_HOME=${CCSE_source_dir} BOXLIB_f2py_f90=${RAW_Fortran_COMPILER} CC=${RAW_C_COMPILER} CXX=${RAW_CXX_COMPILER} 3>&2 2>&1 > ${CCSE_stamp_dir}/CCSE-tools-build.log
                      COMMAND ${CMAKE_COMMAND} -E copy fsnapshot.so ${TPL_INSTALL_PREFIX}/lib
                      DEPENDS ${CCSE_BUILD_TARGET}
                      WORKING_DIRECTORY ${CCSE_source_dir}/Tools/Py_util)
