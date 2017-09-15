@@ -566,6 +566,26 @@ void DG_Modal::UpdateScales_(int c, int order)
   }
 }
 
+
+/* ******************************************************************
+* Error calculation requires geometric center.
+****************************************************************** */
+AmanziGeometry::Point DG_Modal::cell_geometric_center(int c) const
+{
+  Entity_ID_List nodes;
+  AmanziGeometry::Point v(d_), xg(d_);
+
+  mesh_->cell_get_nodes(c, &nodes);
+  int nnodes = nodes.size();
+  for (int i = 0; i < nnodes; ++i) {
+    mesh_->node_get_coordinates(nodes[i], &v);
+    xg += v;
+  } 
+  xg /= nnodes;
+  
+  return xg;
+}
+
 }  // namespace WhetStone
 }  // namespace Amanzi
 

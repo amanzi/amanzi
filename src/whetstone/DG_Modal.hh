@@ -89,6 +89,9 @@ class DG_Modal : public BilinearForm {
   void set_order(int order) { order_ = order; }
   void set_basis(int basis) { basis_ = basis; }
 
+  // extension of mesh interface
+  AmanziGeometry::Point cell_geometric_center(int c) const;
+
  private:
   // specialized routines optimized for non-normalized Taylor basis
   void IntegrateMonomialsCell_(int c, Monomial& monomials);

@@ -43,8 +43,9 @@
 
 /* *****************************************************************
 * Remap of polynomilas in two dimensions. Explicit time scheme.
+* Primal formulation uses gradient and jumps of a solution.
 ***************************************************************** */
-void RemapTests2DExplicit(int order, std::string disc_name,
+void RemapTests2DPrimal(int order, std::string disc_name,
                           std::string maps_name,
                           int nx, int ny, double dt) {
   using namespace Amanzi;
@@ -274,23 +275,16 @@ void RemapTests2DExplicit(int order, std::string disc_name,
     t += dt;
   }
 
-  // calculate error
+  // calculate error in the new basis
+  WhetStone::DG_Modal dg1(order, mesh1);
+
   double mass1(0.0);
   double pl2_err(0.0), pinf_err(0.0), area(0.0);
   for (int c = 0; c < ncells_owned; ++c) {
-    Entity_ID_List nodes;
-    AmanziGeometry::Point v(2), xg(2);
-
-    mesh1->cell_get_nodes(c, &nodes);
-    int nnodes = nodes.size();
-    for (int i = 0; i < nnodes; ++i) {
-      mesh1->node_get_coordinates(nodes[i], &v);
-      xg += v;
-    } 
-    xg /= nnodes;
-    double tmp = p2c[0][c] - std::sin(3 * xg[0]) * std::sin(6 * xg[1]);
-
+    const AmanziGeometry::Point& xg = dg1.cell_geometric_center(c);
     double area_c = mesh1->cell_volume(c);
+
+    double tmp = p2c[0][c] - std::sin(3 * xg[0]) * std::sin(6 * xg[1]);
     pinf_err = std::max(pinf_err, fabs(tmp));
     pl2_err += tmp * tmp * area_c;
 
@@ -320,20 +314,20 @@ void RemapTests2DExplicit(int order, std::string disc_name,
 }
 
 
-TEST(REMAP_DG0_EXPLICIT_FEM) {
-  RemapTests2DExplicit(0, "dg modal", "FEM", 10, 10, 0.1);
+TEST(REMAP_DG0_PRIMAL_FEM) {
+  RemapTests2DPrimal(0, "dg modal", "FEM", 10, 10, 0.1);
 }
 
-TEST(REMAP_DG1_EXPLICIT_FEM) {
-  RemapTests2DExplicit(1, "dg modal", "FEM", 10, 10, 0.1);
+TEST(REMAP_DG1_PRIMAL_FEM) {
+  RemapTests2DPrimal(1, "dg modal", "FEM", 10, 10, 0.1);
 }
 
-TEST(REMAP_DG0_EXPLICIT_VEM) {
-  RemapTests2DExplicit(0, "dg modal", "VEM", 10, 10, 0.1);
+TEST(REMAP_DG0_PRIMAL_VEM) {
+  RemapTests2DPrimal(0, "dg modal", "VEM", 10, 10, 0.1);
 }
 
-TEST(REMAP_DG1_EXPLICIT_VEM) {
-  RemapTests2DExplicit(1, "dg modal", "VEM", 10, 10, 0.1);
+TEST(REMAP_DG1_PRIMAL_VEM) {
+  RemapTests2DPrimal(1, "dg modal", "VEM", 10, 10, 0.1);
 }
 
 
