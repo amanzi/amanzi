@@ -1363,7 +1363,7 @@ Mesh::build_columns(const std::string& setname) const
       Exceptions::amanzi_throw(mesg);
     }
 
-    build_column_(i, f);
+    build_single_column_(i, f);
   }
 
   columns_built_ = true;
@@ -1429,7 +1429,7 @@ Mesh::build_columns_() const
     //  2) n dot z < 0 --> downard pointing face
     if (dp < 1.e-10) continue;
 
-    build_column_(ncolumns, i);
+    build_single_column_(ncolumns, i);
     ncolumns++;
     if (i < nf_owned) num_owned_cols_++;
   }
@@ -1440,13 +1440,14 @@ Mesh::build_columns_() const
     
 
 void
-Mesh::build_column_(int colnum, Entity_ID top_face) const
+Mesh::build_single_column_(int colnum, Entity_ID top_face) const
 {
   Entity_ID_List fcells;
   face_get_cells(top_face,USED,&fcells);
 
   // Walk through the cells until we get to the bottom of the domain
   Entity_ID cur_cell = fcells[0];
+  bool is_ghost_column = (entity_get_ptype(CELL, cur_cell) == GHOST);
   Entity_ID bot_face = -1;
   Entity_ID_List fcells2, cfaces, colcells, colfaces;
   std::vector<int> cfdirs;
@@ -1459,6 +1460,11 @@ Mesh::build_column_(int colnum, Entity_ID top_face) const
   
   bool done = false;
   while (!done) {
+    bool is_ghost_cell = (entity_get_ptype(CELL, cur_cell) == GHOST);
+    if (is_ghost_column != is_ghost_cell) {
+      Errors::Message mesg("A column contains cells from different mesh partitions!");
+      Exceptions::amanzi_throw(mesg);
+    }
     columnID_[cur_cell] = colnum;
     colcells.push_back(cur_cell);
     colfaces.push_back(top_face);
