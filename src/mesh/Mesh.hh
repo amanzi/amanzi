@@ -697,7 +697,7 @@ class Mesh {
   // Helper function to build columns
   virtual
   int build_columns_() const;
-  void build_column_(int colnum, Entity_ID top_face) const;
+  void build_single_column_(int colnum, Entity_ID top_face) const;
 
   // Beginning of new interface to regions using the base mesh.
   void get_set_entities_box_vofs_(
