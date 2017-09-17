@@ -66,8 +66,8 @@ void RemapTests2DDual(int order, std::string disc_name,
   meshfactory.preference(FrameworkPreference({MSTK}));
 
   // Teuchos::RCP<const Mesh> mesh0 = meshfactory(0.0, 0.0, 1.0, 1.0, nx, ny);
-  // Teuchos::RCP<const Mesh> mesh0 = meshfactory("test/median15x16.exo", Teuchos::null);
-  Teuchos::RCP<const Mesh> mesh0 = meshfactory("test/random20.exo", Teuchos::null);
+  Teuchos::RCP<const Mesh> mesh0 = meshfactory("test/median15x16.exo", Teuchos::null);
+  // Teuchos::RCP<const Mesh> mesh0 = meshfactory("test/random40.exo", Teuchos::null);
 
   int ncells_owned = mesh0->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   int ncells_wghost = mesh0->num_entities(AmanziMesh::CELL, AmanziMesh::USED);
@@ -77,8 +77,8 @@ void RemapTests2DDual(int order, std::string disc_name,
 
   // create second and auxiliary mesh
   // Teuchos::RCP<Mesh> mesh1 = meshfactory(0.0, 0.0, 1.0, 1.0, nx, ny);
-  // Teuchos::RCP<Mesh> mesh1 = meshfactory("test/median15x16.exo", Teuchos::null);
-  Teuchos::RCP<Mesh> mesh1 = meshfactory("test/random20.exo", Teuchos::null);
+  Teuchos::RCP<Mesh> mesh1 = meshfactory("test/median15x16.exo", Teuchos::null);
+  // Teuchos::RCP<Mesh> mesh1 = meshfactory("test/random40.exo", Teuchos::null);
 
   // deform the second mesh
   AmanziGeometry::Point xv(2), xref(2);
@@ -275,7 +275,10 @@ void RemapTests2DDual(int order, std::string disc_name,
     AmanziSolvers::LinearOperatorPCG<Operator, CompositeVector, CompositeVectorSpace>
         pcg(global_reac1, global_reac1);
 
-    plist.set<double>("error tolerance", 1e-12);
+    std::vector<std::string> criteria;
+    criteria.push_back("absolute residual");
+    plist.set<double>("error tolerance", 1e-12)
+         .set<Teuchos::Array<std::string> >("convergence criteria", criteria);
     pcg.Init(plist);
     pcg.ApplyInverse(g, p2);
 
@@ -297,19 +300,43 @@ void RemapTests2DDual(int order, std::string disc_name,
   double pl2_err(0.0), pinf_err(0.0), area(0.0);
 
   for (int c = 0; c < ncells_owned; ++c) {
-    const AmanziGeometry::Point& xg = maps->cell_geometric_center(1, c);
-    // const AmanziGeometry::Point& xg = mesh1->cell_centroid(c);
-    double area_c = mesh1->cell_volume(c);
+    double area_c(mesh1->cell_volume(c));
+    if (nk == 1) {
+      // const AmanziGeometry::Point& xg = maps->cell_geometric_center(1, c);
+      const AmanziGeometry::Point& xg = mesh1->cell_centroid(c);
+      double tmp = p2c[0][c] - std::sin(3 * xg[0]) * std::sin(6 * xg[1]);
 
-    double tmp = p2c[0][c] - std::sin(3 * xg[0]) * std::sin(6 * xg[1]);
-    pinf_err = std::max(pinf_err, fabs(tmp));
-    pl2_err += tmp * tmp * area_c;
+      pinf_err = std::max(pinf_err, fabs(tmp));
+      pl2_err += tmp * tmp * area_c;
+    }
+    else {
+      std::vector<double> data;
+      for (int i = 0; i < nk; ++i) {
+        data.push_back(p2c[i][c]);
+      }
+      WhetStone::Polynomial poly(dg.CalculatePolynomial(c, data));
+
+      Entity_ID_List nodes;
+      AmanziGeometry::Point v0(2), v1(2);
+
+      mesh0->cell_get_nodes(c, &nodes);
+      int nnodes = nodes.size();  
+      for (int i = 0; i < nnodes; ++i) {
+        mesh0->node_get_coordinates(nodes[i], &v0);
+        mesh1->node_get_coordinates(nodes[i], &v1);
+
+        double tmp = poly.Value(v0);
+        tmp -= std::sin(3 * v1[0]) * std::sin(6 * v1[1]);
+        pinf_err = std::max(pinf_err, fabs(tmp));
+        pl2_err += tmp * tmp * area_c / nnodes;
+      }
+    }
 
     area += area_c;
     mass1 += p2c[0][c] * mesh1->cell_volume(c);
   }
   pl2_err = std::pow(pl2_err, 0.5);
-  CHECK(pl2_err < 0.08 / (order + 1));
+  CHECK(pl2_err < 0.1 / (order + 1));
 
   if (MyPID == 0) {
     printf("L2(p0)=%12.8g  Inf(p0)=%12.8g  dMass=%12.8g  Err(area)=%12.8g\n", 
@@ -342,11 +369,11 @@ TEST(REMAP_DG1_DUAL_FEM) {
 */
 
 TEST(REMAP_DG0_DUAL_VEM) {
-  RemapTests2DDual(0, "dg modal", "VEM", 10, 10, 0.1 / 2);
+  RemapTests2DDual(0, "dg modal", "VEM", 20, 20, 0.1);
 }
 
 TEST(REMAP_DG1_DUAL_VEM) {
-  RemapTests2DDual(1, "dg modal", "VEM", 10, 10, 0.1 / 4);
+  RemapTests2DDual(1, "dg modal", "VEM", 20, 20, 0.1 / 16);
 }
 
 

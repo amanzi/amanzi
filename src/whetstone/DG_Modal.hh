@@ -84,6 +84,9 @@ class DG_Modal : public BilinearForm {
 
   // scaling of Taylor basis function: \psi_k -> a (\psi_k - b \psi_0)
   void TaylorBasis(int c, const Iterator& it, double* a, double* b);
+  
+  // calculate polynomial given coefficients
+  Polynomial CalculatePolynomial(int c, const std::vector<double>& coefs) const;
 
   // miscalleneous
   void set_order(int order) { order_ = order; }

@@ -355,6 +355,24 @@ void Polynomial::Reset()
 
 
 /* ******************************************************************
+* Takes coefficients from a vector
+****************************************************************** */
+void Polynomial::set_coefs(const std::vector<double>& coefs)
+{
+  ASSERT(size_ == coefs.size());
+
+  auto jt = coefs.begin();
+  for (int i = 0; i <= order_; ++i) {
+    std::vector<double>& tmp = coefs_[i].coefs();
+    for (auto it = tmp.begin(); it != tmp.end(); ++it) {
+      *it = *jt; 
+      ++jt;
+    }
+  }
+}
+
+
+/* ******************************************************************
 * Calculate polynomial value
 ****************************************************************** */
 double Polynomial::Value(const AmanziGeometry::Point& xp) const

@@ -483,6 +483,31 @@ void DG_Modal::TaylorBasis(int c, const Iterator& it, double* a, double* b)
 
 
 /* ******************************************************************
+* Calculate polynomial using basis and coefficients.
+* NOTE: Works for P1 only. FIXME
+****************************************************************** */
+Polynomial DG_Modal::CalculatePolynomial(int c, const std::vector<double>& coefs) const
+{
+  ASSERT(scales_a_.size() != 0);
+  ASSERT(scales_a_[c].size() == coefs.size());
+
+  Polynomial poly(scales_a_[c]);
+  poly.set_origin(mesh_->cell_centroid(c));
+
+  auto jt = coefs.begin();
+  for (auto it = poly.begin(); it.end() <= poly.end(); ++it) {
+    int m = it.MonomialOrder();
+    int k = it.MonomialPosition();
+
+    poly.monomials(m).coefs()[k] *= *jt; 
+    ++jt;
+  }
+
+  return poly;
+}
+
+
+/* ******************************************************************
 * Update integrals of non-normalized monomials.
 ****************************************************************** */
 void DG_Modal::UpdateIntegrals_(int c, int order)
@@ -557,10 +582,10 @@ void DG_Modal::UpdateScales_(int c, int order)
           norm -= b * b * volume;
 
           a = std::pow(volume / norm, 0.5);
-
-          scales_a_[n].monomials(m).coefs()[k] = a;
-          scales_b_[n].monomials(m).coefs()[k] = b;
         }
+
+        scales_a_[n].monomials(m).coefs()[k] = a;
+        scales_b_[n].monomials(m).coefs()[k] = b;
       }
     }
   }

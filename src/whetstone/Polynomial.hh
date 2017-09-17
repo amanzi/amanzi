@@ -157,8 +157,11 @@ class Polynomial {
   // reshape polynomial with erase (optionally) memory
   void Reshape(int d, int order, bool reset = false);
 
-  // resets all coefficients to zero
+  // initialization options
+  // -- resets all coefficients to zero
   void Reset();
+  // -- takes coefficients from a vector
+  void set_coefs(const std::vector<double>& coefs);
 
   // change the coordinate system
   // -- without changing polynomial
