@@ -92,9 +92,12 @@ MPCCoupledWater::Initialize(const Teuchos::Ptr<State>& S) {
 
   MPC<PK_PhysicalBDF_Default>::Initialize(S);
 
-  // ensure continuity of ICs... surface takes precedence.
-  CopySurfaceToSubsurface(*S->GetFieldData(Keys::getKey(domain_surf_,"pressure"), sub_pks_[1]->name()),
-			  S->GetFieldData(Keys::getKey(domain_ss_,"pressure"), sub_pks_[0]->name()).ptr());
+  // // ensure continuity of ICs... surface takes precedence.
+  // CopySurfaceToSubsurface(*S->GetFieldData(Keys::getKey(domain_surf_,"pressure"), sub_pks_[1]->name()),
+  //       		  S->GetFieldData(Keys::getKey(domain_ss_,"pressure"), sub_pks_[0]->name()).ptr());
+  // ensure continuity of ICs... subsurface takes precedence.
+  CopySubsurfaceToSurface(*S->GetFieldData(Keys::getKey(domain_ss_,"pressure"), sub_pks_[0]->name()),
+			  S->GetFieldData(Keys::getKey(domain_surf_,"pressure"), sub_pks_[1]->name()).ptr());
 
   // Initialize my timestepper.
   PK_BDF_Default::Initialize(S);
