@@ -85,6 +85,7 @@ class MPCCoupledWater : public StrongMPC<PK_PhysicalBDF_Default> {
   //         const Teuchos::RCP<TreeVector>& Pu);
 
  protected:
+  std::string domain_surf_, domain_ss_;
 
   // sub PKs
   Teuchos::RCP<PK_PhysicalBDF_Default> domain_flow_pk_;
@@ -111,7 +112,6 @@ class MPCCoupledWater : public StrongMPC<PK_PhysicalBDF_Default> {
   // factory registration
   static RegisteredPKFactory<MPCCoupledWater> reg_;
 
-  std::string domain_surf, domain_ss;
 
 };
 

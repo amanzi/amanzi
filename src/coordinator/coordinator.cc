@@ -445,11 +445,7 @@ bool Coordinator::advance(double t_old, double t_new) {
 
   if (!fail) {
     // commit the state
-
-    if (coordinator_list_->get<bool>("subcycle", false)){}
-    else{
-        pk_->CommitStep(t_old, t_new, S_next_);
-      }
+    pk_->CommitStep(t_old, t_new, S_next_);
 
     // make observations, vis, and checkpoints
     observations_->MakeObservations(*S_next_);

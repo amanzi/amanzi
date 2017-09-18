@@ -388,13 +388,6 @@ void OverlandPressureFlow::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S
       Teuchos::rcp(new Flow::OverlandConductivityEvaluator(cond_plist));
 
   S->SetFieldEvaluator(Keys::getKey(domain_,"overland_conductivity"), cond_evaluator);
-
-   if (domain_ == "surface_star"){
-    S->RequireField(Keys::getKey(domain_,"mass_density_ice"))->SetMesh(mesh_)->SetGhosted()
-      ->AddComponent("cell", AmanziMesh::CELL, 1);
-    S->RequireFieldEvaluator(Keys::getKey(domain_,"mass_density_ice"));
-  }
-
 }
 
 
