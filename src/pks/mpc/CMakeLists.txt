@@ -34,6 +34,7 @@ include_directories(${ATS_SOURCE_DIR}/src/operators/divgrad/upwind_scheme)
 
 add_library(mpc
   weak_mpc.cc
+  operator_split_mpc.cc
   weak_mpc_semi_coupled.cc
   mpc_coupled_cells.cc
   pk_mpcsubcycled_ats.cc
@@ -47,6 +48,8 @@ add_library(mpc
   mpc_delegate_ewc_subsurface.cc
   mpc_delegate_water.cc
   mpc_coupled_water.cc
+#  mpc_coupled_water_neumann_splitting.cc
+#  mpc_coupled_water_dirichlet_splitting.cc
   mpc_subsurface.cc
 ##  mpc_permafrost3.cc
   mpc_permafrost4.cc
@@ -64,6 +67,11 @@ register_evaluator_with_factory(
 
 register_evaluator_with_factory(
   HEADERFILE strong_mpc_reg.hh
+  LISTNAME   MPC_PK_FAC
+  )
+
+register_evaluator_with_factory(
+  HEADERFILE operator_split_mpc_reg.hh
   LISTNAME   MPC_PK_FAC
   )
 
@@ -102,6 +110,16 @@ register_evaluator_with_factory(
   HEADERFILE mpc_coupled_water_reg.hh
   LISTNAME   MPC_PK_FAC
   )
+
+# register_evaluator_with_factory(
+#   HEADERFILE mpc_coupled_water_neumann_splitting_reg.hh
+#   LISTNAME   MPC_PK_FAC
+#   )
+
+# register_evaluator_with_factory(
+#   HEADERFILE mpc_coupled_water_dirichlet_splitting_reg.hh
+#   LISTNAME   MPC_PK_FAC
+#   )
 
 register_evaluator_with_factory(
    HEADERFILE coupled_transport/mpc_coupled_transport_reg.hh
