@@ -153,20 +153,59 @@ void Coordinator::initialize() {
   // Currently not a true restart -- for a true restart this should also get:
   // -- timestep size dt
   // -- BDF history to allow projection to continue correctly.
+
+  int size = comm_->NumProc();
+
+
+  //---
   if (restart_) {
-    t0_ = Amanzi::ReadCheckpointInitialTime(comm_, restart_filename_);
-    S_->set_time(t0_);
+    if (parameter_list_->sublist("mesh").isSublist("column") && size >1){
+      MPI_Comm mpi_comm_self(MPI_COMM_SELF);
+      Epetra_MpiComm *comm_self = new Epetra_MpiComm(mpi_comm_self);
+      t0_ = Amanzi::ReadCheckpointInitialTime(comm_self, restart_filename_);
+      S_->set_time(t0_);
+    }
+    else{
+      t0_ = Amanzi::ReadCheckpointInitialTime(comm_, restart_filename_);
+      S_->set_time(t0_);
+    }
   }
 
   // Restart from checkpoint, part 2.
   if (restart_) {
-    ReadCheckpoint(comm_, S_.ptr(), restart_filename_);
-    t0_ = S_->time();
-    cycle0_ = S_->cycle();
-
-    DeformCheckpointMesh(S_.ptr());
+    if (parameter_list_->sublist("mesh").isSublist("column") && size >1){
+      MPI_Comm mpi_comm_self(MPI_COMM_SELF);
+      Epetra_MpiComm *comm_self = new Epetra_MpiComm(mpi_comm_self);
+      ReadCheckpoint(comm_self, S_.ptr(), restart_filename_);
+      t0_ = S_->time();
+      cycle0_ = S_->cycle();
+    }
+    else{
+      ReadCheckpoint(comm_, S_.ptr(), restart_filename_);
+      t0_ = S_->time();
+      cycle0_ = S_->cycle();
+    }
+    
+    for (Amanzi::State::mesh_iterator mesh=S_->mesh_begin();
+         mesh!=S_->mesh_end(); ++mesh) {
+      if (boost::starts_with(mesh->first, "column")){
+        DeformCheckpointMesh(S_.ptr(), mesh->first);
+      }
+    }
+    
+  }
+  
+  // double check columns
+  if(restart_){
+    for (Amanzi::State::mesh_iterator mesh=S_->mesh_begin();
+         mesh!=S_->mesh_end(); ++mesh) {
+      if (boost::starts_with(mesh->first, "column")){
+        DeformCheckpointMesh(S_.ptr(), mesh->first);
+      }
+    }
   }
 
+  
   // Initialize the state (initializes all dependent variables).
   //S_->Initialize();
   *S_->GetScalarData("dt", "coordinator") = 0.;
@@ -412,6 +451,16 @@ void Coordinator::read_parameter_list() {
   if (restart_) {
     restart_filename_ = coordinator_list_->get<std::string>("restart from checkpoint file");
     // likely should ensure the file exists here? --etc
+  }
+
+  int rank = comm_->MyPID();
+  
+  if (coordinator_list_->isSublist("restart from checkpoint columns")){
+    restart_ = true;
+    Teuchos::ParameterList list = coordinator_list_->sublist("restart from checkpoint columns");
+    std::stringstream name;
+    name << list.get<std::string>("checkpoint file") << "checkpoint_" << rank << "_" << list.get<std::string>("cycles") << ".h5";
+    restart_filename_  = name.str();
   }
 }
 

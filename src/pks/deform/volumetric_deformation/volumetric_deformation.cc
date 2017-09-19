@@ -250,7 +250,7 @@ void VolumetricDeformation::Initialize(const Teuchos::Ptr<State>& S) {
     AmanziGeometry::Point coords(dim);
     int nnodes = mesh_->num_entities(Amanzi::AmanziMesh::NODE,
                                      Amanzi::AmanziMesh::OWNED);
-      
+
     Epetra_MultiVector& vc = *S->GetFieldData(Keys::getKey(domain_,"vertex_coordinate"),name_)
       ->ViewComponent("node",false);
     for (int iV=0; iV!=nnodes; ++iV) {
@@ -406,9 +406,10 @@ bool VolumetricDeformation::AdvanceStep(double t_old, double t_new, bool reinit)
                                                                             // if we are not too overpressured
 	  frac = (structural_vol_frac_ - (fs + fi)) * time_factor;
         }
-             
+
         dcell_vol_c[0][*c] = -frac*cv[0][*c];
 
+        ASSERT(dcell_vol_c[0][*c] <=0);
 #if DEBUG
 	std::cout << "Cell " << *c << ": V, dV: " << cv[0][*c] << " " << dcell_vol_c[0][*c] << std::endl
 		  << "  poro_0 " << base_poro[0][*c] << " | poro " << poro[0][*c] << " | frac " << frac << " | time factor " << time_factor << std::endl
@@ -557,12 +558,13 @@ bool VolumetricDeformation::AdvanceStep(double t_old, double t_new, bool reinit)
 
 	// iterate up the column accumulating face displacements
 	double face_displacement = 0.;
-	for (int ci=0; ci!=col_cells.size(); ++ci) {
-	  int f_below = col_faces[ci];
-	  int f_above = col_faces[ci+1];
+	for (int ci=col_cells.size()-1; ci>=0; --ci) {
+	  int f_below = col_faces[ci+1];
+	  int f_above = col_faces[ci];
 
 	  double dz = mesh_->face_centroid(f_above)[z_index] - mesh_->face_centroid(f_below)[z_index];
-	  face_displacement += -dz * dcell_vol_c[0][col_cells[ci]] / cv[0][col_cells[ci]];
+          face_displacement += -dz * dcell_vol_c[0][col_cells[ci]] / cv[0][col_cells[ci]];
+
 	  ASSERT(face_displacement >= 0.);
 	  if (face_displacement > 0.) {
 	    std::cout << "  Shifting cell " << col_cells[ci] << ", with personal displacement of " << -dz * dcell_vol_c[0][col_cells[ci]] / cv[0][col_cells[ci]] << " and frac " << -dcell_vol_c[0][col_cells[ci]] / cv[0][col_cells[ci]] << std::endl;

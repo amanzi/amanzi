@@ -281,8 +281,7 @@ createMeshes(Teuchos::ParameterList& global_list,
   Teuchos::RCP<Teuchos::Time> volmeshtime =
       Teuchos::TimeMonitor::getNewCounter("volume mesh creation");
   Teuchos::TimeMonitor timer(*volmeshtime);
-  int rank =0;
-  //  int rank = S->GetMesh("surface").get_comm().MyPID();
+  
   Teuchos::ParameterList& meshes_list = global_list.sublist("mesh");
 
   // always try to do the domain mesh first
@@ -336,7 +335,8 @@ createMeshes(Teuchos::ParameterList& global_list,
     global_list.remove("visualization surface cells");
   }
 
-
+  int rank;
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
   //generalize checkpoint files for columns
   if(global_list.isSublist("checkpoints") && global_list.sublist("mesh").isSublist("column")){

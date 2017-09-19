@@ -57,10 +57,11 @@ void ElevationEvaluatorColumn::EvaluateElevationAndSlope_(const Teuchos::Ptr<Sta
     int id = S->GetMesh("surface_star")->cell_map(false).GID(c);
     my_name << "column_" << id;
     
-    int nfaces = S->GetMesh(my_name.str())->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
+    //int nfaces = S->GetMesh(my_name.str())->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
     
     std::vector<AmanziGeometry::Point> coord; 
-    S->GetMesh(my_name.str())->face_get_coordinates(nfaces-1, &coord);
+    // S->GetMesh(my_name.str())->face_get_coordinates(nfaces-1, &coord);
+    S->GetMesh(my_name.str())->face_get_coordinates(0, &coord); // 0 is the id of top face of the column mesh
     
     elev_c[0][c] = coord[0][2];
   }
@@ -115,8 +116,10 @@ void ElevationEvaluatorColumn::EvaluateElevationAndSlope_(const Teuchos::Ptr<Sta
             N *= -1.; // all normals upward
 	  Normal.push_back(N);
 	}
-        int nfaces = S->GetMesh(my_name.str())->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
-	AmanziGeometry::Point fnor = S->GetMesh(my_name.str())->face_normal(nfaces-1);
+
+        //        int nfaces = S->GetMesh(my_name.str())->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
+	//AmanziGeometry::Point fnor = S->GetMesh(my_name.str())->face_normal(nfaces-1);
+        AmanziGeometry::Point fnor = S->GetMesh(my_name.str())->face_normal(0); //0 is the id of top face
 	Nor_avg = (nface_pcell - Normal.size()) * fnor; 
 	for (int i=0; i <Normal.size(); i++)
 	  Nor_avg += Normal[i];
