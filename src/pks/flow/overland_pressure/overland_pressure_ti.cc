@@ -37,6 +37,9 @@ void OverlandPressureFlow::Functional( double t_old,
   // bookkeeping
   double h = t_new - t_old;
 
+  // pointer-copy temperature into state and update any auxilary data
+  Solution_to_State(*u_new, S_next_);
+
   //--  ASSERT(std::abs(S_inter_->time() - t_old) < 1.e-4*h);
   //--ASSERT(std::abs(S_next_->time() - t_new) < 1.e-4*h);
 
@@ -90,9 +93,6 @@ void OverlandPressureFlow::Functional( double t_old,
 
   db_->WriteVectors(vnames, vecs, true);
 #endif
-
-  // pointer-copy temperature into state and update any auxilary data
-  Solution_to_State(*u_new, S_next_);
 
   // update boundary conditions
   bc_head_->Compute(t_new);

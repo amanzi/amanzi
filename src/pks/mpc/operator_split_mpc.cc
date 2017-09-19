@@ -64,14 +64,19 @@ void OperatorSplitMPC::set_dt( double dt) {
 // Advance each sub-PK individually.
 // -----------------------------------------------------------------------------
 bool OperatorSplitMPC::AdvanceStep(double t_old, double t_new, bool reinit) {
+  if (S_next_->cycle() == 72) {
+    std::cout << "we is here" << std::endl;
+  }
+
   // Advance the star system 
   bool fail = false;
   ASSERT(sub_pks_.size() == 2);
-  sub_pks_[0]->AdvanceStep(t_old, t_new, reinit);
+  fail = sub_pks_[0]->AdvanceStep(t_old, t_new, reinit);
   if (fail) return fail;
 
   // Copy star's new value into primary's old value
   CopyStarToPrimary(S_next_, S_inter_);
+  CopyStarToPrimary(S_next_, S_next_);
 
   // BEGIN THE NON-GENERIC PART TO BE REMOVED
   // also copy and mark the subsurface system
@@ -80,6 +85,12 @@ bool OperatorSplitMPC::AdvanceStep(double t_old, double t_new, bool reinit) {
   auto eval = S_inter_->GetFieldEvaluator("pressure");
   auto eval_pvfe = Teuchos::rcp_dynamic_cast<PrimaryVariableFieldEvaluator>(eval);
   eval_pvfe->SetFieldAsChanged(S_inter_.ptr());
+
+  CopySurfaceToSubsurface(*S_next_->GetFieldData(primary_variable_),
+                          S_next_->GetFieldData("pressure",S_next_->GetField("pressure")->owner()).ptr());
+  auto eval2 = S_next_->GetFieldEvaluator("pressure");
+  auto eval_pvfe2 = Teuchos::rcp_dynamic_cast<PrimaryVariableFieldEvaluator>(eval2);
+  eval_pvfe2->SetFieldAsChanged(S_next_.ptr());
   // END THE NON-GENERIC PART TO BE REMOVED
 
 

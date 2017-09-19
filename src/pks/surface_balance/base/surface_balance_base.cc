@@ -96,6 +96,9 @@ SurfaceBalanceBase::Functional(double t_old, double t_new, Teuchos::RCP<TreeVect
   double dt = t_new - t_old;
   double T_eps = 0.0001;
 
+  // pointer-copy temperature into state and update any auxilary data
+  Solution_to_State(*u_new, S_next_);
+  
   bool debug = false;
   if (vo_->os_OK(Teuchos::VERB_EXTREME)) debug = true;
 
@@ -105,11 +108,10 @@ SurfaceBalanceBase::Functional(double t_old, double t_new, Teuchos::RCP<TreeVect
                << " t1 = " << t_new << " h = " << dt << std::endl;
     std::vector<std::string> vnames;
     std::vector< Teuchos::Ptr<const CompositeVector> > vecs;
-    vnames.push_back("u_new"); vnames.push_back("u_old");
+    vnames.push_back("u_old"); vnames.push_back("u_new");
+    vecs.push_back(S_inter_->GetFieldData(key_).ptr());
     vecs.push_back(u_new->Data().ptr());
-    vecs.push_back(u_old->Data().ptr());
     db_->WriteVectors(vnames, vecs, true);
-    db_->WriteDivider();
   }
 
   S_next_->GetFieldEvaluator(cell_vol_key_)->HasFieldChanged(S_next_.ptr(), name_);
@@ -121,18 +123,27 @@ SurfaceBalanceBase::Functional(double t_old, double t_new, Teuchos::RCP<TreeVect
     Teuchos::RCP<const CompositeVector> conserved1 = S_next_->GetFieldData(conserved_key_);
     Teuchos::RCP<const CompositeVector> conserved0 = S_inter_->GetFieldData(conserved_key_);
     g->Data()->Update(1.0/dt, *conserved1, -1.0/dt, *conserved0, 0.0);
+
+    if (vo_->os_OK(Teuchos::VERB_HIGH)) {
+      std::vector<std::string> vnames;
+      std::vector< Teuchos::Ptr<const CompositeVector> > vecs;
+      vnames.push_back("C_old"); vnames.push_back("C_new");
+      vecs.push_back(S_inter_->GetFieldData(conserved_key_).ptr());
+      vecs.push_back(S_next_->GetFieldData(conserved_key_).ptr());
+      db_->WriteVectors(vnames, vecs, true);
+    }
   } else {
     g->Update(1.0/dt, *u_new, -1.0/dt, *u_old, 0.0);
   }
+
+  db_->WriteDivider();
   db_->WriteVector("res(acc)", g->Data().ptr());
-  //  db_->WriteVector("  sM", S_next_->GetFieldData("macropore_saturation_liquid").ptr());
 
   if (theta_ < 1.0) {
     S_inter_->GetFieldEvaluator(source_key_)->HasFieldChanged(S_inter_.ptr(), name_);
     g->Data()->Multiply(-(1.0 - theta_), *S_inter_->GetFieldData(source_key_), *cv, 1.);
     if (vo_->os_OK(Teuchos::VERB_HIGH)) {
       db_->WriteVector("source0", S_inter_->GetFieldData(source_key_).ptr(), false);
-      //      db_->WriteVector(" drainage0", S_inter_->GetFieldData("litter_drainage").ptr(), false);
     }
   }
   if (theta_ > 0.0) {
@@ -140,7 +151,6 @@ SurfaceBalanceBase::Functional(double t_old, double t_new, Teuchos::RCP<TreeVect
     g->Data()->Multiply(-theta_, *S_next_->GetFieldData(source_key_), *cv, 1.);
     if (vo_->os_OK(Teuchos::VERB_HIGH)) {
       db_->WriteVector("source1", S_next_->GetFieldData(source_key_).ptr(), false);
-      //      db_->WriteVector(" drainage1", S_next_->GetFieldData("litter_drainage").ptr(), false);
     }
   }
   db_->WriteVector("res(source)", g->Data().ptr());
