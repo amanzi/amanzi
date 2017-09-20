@@ -75,8 +75,8 @@ bool OperatorSplitMPC::AdvanceStep(double t_old, double t_new, bool reinit) {
   if (fail) return fail;
 
   // Copy star's new value into primary's old value
-  CopyStarToPrimary(S_next_, S_inter_);
-  CopyStarToPrimary(S_next_, S_next_);
+  CopyStarToPrimary(S_next_.ptr(), S_inter_.ptr());
+  CopyStarToPrimary(S_next_.ptr(), S_next_.ptr());
 
   // BEGIN THE NON-GENERIC PART TO BE REMOVED
   // also copy and mark the subsurface system
@@ -99,7 +99,7 @@ bool OperatorSplitMPC::AdvanceStep(double t_old, double t_new, bool reinit) {
   if (fail) return fail;
 
   // Now copy back to star.
-  CopyPrimaryToStar(S_next_, S_next_);
+  CopyPrimaryToStar(S_next_.ptr(), S_next_.ptr());
   return fail;
 };
 
@@ -108,11 +108,19 @@ bool OperatorSplitMPC::AdvanceStep(double t_old, double t_new, bool reinit) {
 // Copy the primary variable to the star system
 // -----------------------------------------------------------------------------
 void
-OperatorSplitMPC::CopyPrimaryToStar(const Teuchos::RCP<const State>& S,
-                                    const Teuchos::RCP<State>& S_star) {
-  auto& pv_star = *S_star->GetFieldData(primary_variable_star_, S_star->GetField(primary_variable_star_)->owner());
-  auto& pv = *S->GetFieldData(primary_variable_);
-  pv_star = pv;
+OperatorSplitMPC::CopyPrimaryToStar(const Teuchos::Ptr<const State>& S,
+                                    const Teuchos::Ptr<State>& S_star) {
+  auto& pv_star = *S_star->GetFieldData(primary_variable_star_, S_star->GetField(primary_variable_star_)->owner())
+                  ->ViewComponent("cell",false);
+  auto& pv = *S->GetFieldData(primary_variable_)
+             ->ViewComponent("cell",false);
+  for (int c=0; c!=pv_star.MyLength(); ++c) {
+    if (pv[0][c] <= 101325.0) {
+      pv_star[0][c] = 101325.;
+    } else {
+      pv_star[0][c] = pv[0][c];
+    }
+  }
 
   auto eval = S_star->GetFieldEvaluator(primary_variable_star_);
   auto eval_pvfe = Teuchos::rcp_dynamic_cast<PrimaryVariableFieldEvaluator>(eval);
@@ -123,11 +131,17 @@ OperatorSplitMPC::CopyPrimaryToStar(const Teuchos::RCP<const State>& S,
 // Copy the star variable to the primary system
 // -----------------------------------------------------------------------------
 void
-OperatorSplitMPC::CopyStarToPrimary(const Teuchos::RCP<const State>& S_star,
-                                    const Teuchos::RCP<State>& S) {
-  auto& pv_star = *S_star->GetFieldData(primary_variable_star_);
-  auto& pv = *S->GetFieldData(primary_variable_, S->GetField(primary_variable_)->owner());
-  pv = pv_star;
+OperatorSplitMPC::CopyStarToPrimary(const Teuchos::Ptr<const State>& S_star,
+                                    const Teuchos::Ptr<State>& S) {
+  auto& pv_star = *S_star->GetFieldData(primary_variable_star_)
+                  ->ViewComponent("cell",false);
+  auto& pv = *S->GetFieldData(primary_variable_, S->GetField(primary_variable_)->owner())
+                  ->ViewComponent("cell",false);
+  for (int c=0; c!=pv_star.MyLength(); ++c) {
+    if (pv_star[0][c] > 101325.0) {
+      pv[0][c] = pv_star[0][c];
+    }
+  }
 
   auto eval = S->GetFieldEvaluator(primary_variable_);
   auto eval_pvfe = Teuchos::rcp_dynamic_cast<PrimaryVariableFieldEvaluator>(eval);
