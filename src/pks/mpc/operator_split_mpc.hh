@@ -40,6 +40,7 @@ class OperatorSplitMPC : public MPC<PK> {
   virtual void Initialize(const Teuchos::Ptr<State>& S) {
     sub_pks_[1]->Initialize(S);
     sub_pks_[0]->Initialize(S);
+    CopyPrimaryToStar(S, S);
   }
   
   // -- advance each sub pk dt.
@@ -47,10 +48,10 @@ class OperatorSplitMPC : public MPC<PK> {
 
   virtual void set_dt(double dt);
 
-  virtual void CopyPrimaryToStar(const Teuchos::RCP<const State>& S,
-          const Teuchos::RCP<State>& S_star);
-  virtual void CopyStarToPrimary(const Teuchos::RCP<const State>& S_star,
-          const Teuchos::RCP<State>& S);
+  virtual void CopyPrimaryToStar(const Teuchos::Ptr<const State>& S,
+          const Teuchos::Ptr<State>& S_star);
+  virtual void CopyStarToPrimary(const Teuchos::Ptr<const State>& S_star,
+          const Teuchos::Ptr<State>& S);
 
  protected:
   Key primary_variable_;
