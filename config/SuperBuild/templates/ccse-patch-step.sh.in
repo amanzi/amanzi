@@ -8,11 +8,12 @@ ccse_src_dir=@CCSE_source_dir@
 
 OIFS=$IFS
 IFS=";"
-patch_files=@CCSE_patch_file@
+patch_files="@CCSE_patch_file@"
 
 for i in ${patch_files}; do
 
  patch_file=@SuperBuild_SOURCE_DIR@/templates/${i}
+ echo "Applying patch: ${patch_file}"
 
  if [ ! -e "${patch_file}" ] ; then
   echo "Patch file ${patch_file} does not exist"
