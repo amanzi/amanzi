@@ -46,6 +46,8 @@ TEST(MSTK_DEFORM_VOLS_2D)
   Teuchos::RCP<Amanzi::AmanziMesh::Mesh> 
       mesh(new Amanzi::AmanziMesh::Mesh_MSTK(-5.0,0.0,5.0,10.0,10,10,comm_.get(),gm));
 
+  CHECK_EQUAL(mesh->build_columns(), 1);
+  
   int nc = 
     mesh->num_entities(Amanzi::AmanziMesh::CELL,Amanzi::AmanziMesh::USED);
 
@@ -123,6 +125,8 @@ TEST(MSTK_DEFORM_VOLS_3D)
   Teuchos::RCP<Amanzi::AmanziMesh::Mesh> 
       mesh(new Amanzi::AmanziMesh::Mesh_MSTK(0.0,0.0,0.0,10.0,1.0,10.0,10,1,10,comm_.get(),gm));
 
+  CHECK_EQUAL(mesh->build_columns(), 1);
+  
   int ncused = 
     mesh->num_entities(Amanzi::AmanziMesh::CELL,Amanzi::AmanziMesh::USED);
   int ncowned = 
