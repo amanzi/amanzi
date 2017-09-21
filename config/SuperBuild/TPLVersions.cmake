@@ -351,7 +351,7 @@ set(Trilinos_VERSION_PATCH 1)
 set(Trilinos_VERSION ${Trilinos_VERSION_MAJOR}-${Trilinos_VERSION_MINOR}-${Trilinos_VERSION_PATCH})
 set(Trilinos_URL_STRING     "https://github.com/trilinos/Trilinos/archive/")
 set(Trilinos_ARCHIVE_FILE   trilinos-release-${Trilinos_VERSION}.tar.gz)
-set(Trilinos_MD5_SUM        910d0c1c5d90c7cfc8edfa9a6b71608d)
+set(Trilinos_MD5_SUM        3fb92308f44f679a898e0d784ff1f850)
 
 
 #
@@ -363,7 +363,7 @@ set(SEACAS_VERSION_PATCH 1)
 set(SEACAS_VERSION ${SEACAS_VERSION_MAJOR}-${SEACAS_VERSION_MINOR}-${SEACAS_VERSION_PATCH})
 set(SEACAS_URL_STRING     "https://github.com/trilinos/Trilinos/archive/")
 set(SEACAS_ARCHIVE_FILE   trilinos-release-${SEACAS_VERSION}.tar.gz)
-set(SEACAS_MD5_SUM        910d0c1c5d90c7cfc8edfa9a6b71608d)
+set(SEACAS_MD5_SUM        3fb92308f44f679a898e0d784ff1f850)
 
 #
 # TPL: PFlotran
