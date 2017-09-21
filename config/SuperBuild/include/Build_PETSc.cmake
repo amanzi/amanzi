@@ -12,7 +12,7 @@ amanzi_tpl_version_write(FILENAME ${TPL_VERSIONS_INCLUDE_FILE}
                          VERSION ${PETSc_VERSION_MAJOR} ${PETSc_VERSION_MINOR} ${PETSc_VERSION_PATCH})
   
 # --- Download packages PETSc needs
-set(petsc_packages SuperLU SuperLUDist)
+set(petsc_packages SuperLU SuperLUDist Sowing)
 get_filename_component(real_download_path ${TPL_DOWNLOAD_DIR} REALPATH)
 
 message(STATUS ">>> Build_PETSc -- Checking PETSc required packages: ${petsc_packages}")
@@ -30,12 +30,12 @@ foreach (_pack ${petsc_packages})
   message(STATUS ">>> Build_PETSc -- SAVEAS_FILE: ${_saveas}")
   message(STATUS ">>> Build_PETSc -- MD5SUM: ${_md5sum}")
 
-  if (EXISTS "${real_download_path}/${_archive}")
-    message(STATUS "\tFound ${_archive}")
+  if (EXISTS "${real_download_path}/${_saveas}")
+    message(STATUS "\tFound ${_saveas}")
   else()
     if (DISABLE_EXTERNAL_DOWNLOAD)
       message(FATAL_ERROR "You have disabled external downloads, however"
-                          " ${real_download_path}/${_archive} does not exist")
+                          " ${real_download_path}/${_saveas} does not exist")
     else()
       message(STATUS ">>> Build_PETSc -- Downloading ${_archive} for PETSc")
       file(DOWNLOAD "${_url}/${_archive}" "${real_download_path}/${_saveas}"
@@ -115,11 +115,14 @@ endif()
 # information.
 set(petsc_superlu_flags --download-superlu=${real_download_path}/${SuperLU_SAVEAS_FILE})
 set(petsc_superlu_dist_flags --download-superlu_dist=${real_download_path}/${SuperLUDist_SAVEAS_FILE})
+set(petsc_sowing_flags --download-sowing=${real_download_path}/${Sowing_SAVEAS_FILE})
 set(petsc_metis_flags --with-metis=1 --with-metis-dir=${TPL_INSTALL_PREFIX})
 set(petsc_parmetis_flags --with-parmetis=1 --with-parmetis-dir=${TPL_INSTALL_PREFIX})
 set(petsc_hypre_flags --with-hypre=1 --with-hypre-dir=${TPL_INSTALL_PREFIX})
 
-set(petsc_package_flags ${petsc_superlu_flags} ${petsc_parmetis_flags} ${petsc_superlu_dist_flags} ${petsc_metis_flags} ${petsc_hypre_flags})
+set(petsc_package_flags ${petsc_superlu_flags} ${petsc_parmetis_flags} 
+                        ${petsc_superlu_dist_flags} ${petsc_sowing_flags}
+                        ${petsc_metis_flags} ${petsc_hypre_flags})
 
 # PETSc install directory
 set(petsc_install_dir ${TPL_INSTALL_PREFIX}/${PETSc_BUILD_TARGET}-${PETSc_VERSION})
