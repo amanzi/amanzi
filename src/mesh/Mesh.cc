@@ -1209,6 +1209,38 @@ Mesh::update_ghost_node_coordinates()
 // Deform the mesh according to a given set of new node positions
 // If keep_valid is true, the routine will cut back node displacement
 // if the cells connected to a moved node become invalid
+//
+// CAVEAT: this is not parallel, and so all deformations must be consistent
+// across ghost entities, and provided for ghost nodes.  User beware!
+int
+Mesh::deform(const Entity_ID_List& nodeids,
+             const AmanziGeometry::Point_List& new_positions) {
+  ASSERT(nodeids.size() == new_positions.size());
+
+  int nn = nodeids.size();
+  for (int j=0; j!=nn; ++j) {
+    node_set_coordinates(nodeids[j], new_positions[j]);
+  }
+
+  // recompute all geometric quantities
+  compute_cell_geometric_quantities_();
+  if (faces_requested_) compute_face_geometric_quantities_();
+  if (edges_requested_) compute_edge_geometric_quantities_();
+
+  int nc = num_entities(CELL,USED);
+  for (int c=0; c!=nc; ++c) {
+    if (cell_volume(c) < 0.) return 0;
+  }
+  return 1;
+}
+
+
+// Deform the mesh according to a given set of new node positions
+// If keep_valid is true, the routine will cut back node displacement
+// if the cells connected to a moved node become invalid
+//
+// CAVEAT: this is not parallel, and so all deformations must be consistent
+// across ghost entities, and provided for ghost nodes.  User beware!
 int
 Mesh::deform(const Entity_ID_List& nodeids,
              const AmanziGeometry::Point_List& new_positions,
