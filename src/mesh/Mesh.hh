@@ -568,10 +568,27 @@ class Mesh {
   void node_set_coordinates(const Entity_ID nodeid,
                             const double *ncoord) = 0;
 
-  // Deform the mesh by moving given nodes to given coordinates
-  // If the flag keep_valid is true, then the nodes are moved
-  // only as much as possible without making the mesh invalid
-  // The final positions of the nodes is returned in final_positions
+  // Just move the mesh.  Returns 0 if negative cell volumes generated, 1
+  // otherwise.
+  //
+  // This is a rudimentary capability that requires ghosts nodes
+  // also to be deformed. Amanzi does not have any built-in parallel 
+  // communication capabilities, other than Trilinos Epetra object
+  // communication or raw MPI. 
+  virtual
+  int deform(const Entity_ID_List& nodeids,
+             const AmanziGeometry::Point_List& new_positions);
+  
+  // Deform the mesh by moving given nodes to given coordinates, one at a
+  // time, ensuring validity at all points through the deformation, which is a
+  // really bad idea for deformations that move large numbers of nodes more
+  // than epsilon.  Really.  Just don't use this routine, it almost definitely
+  // isn't what you want.
+  //
+  // Deform the mesh by moving given nodes to given coordinates.  If the flag
+  // keep_valid is true, then the nodes are moved only as much as possible
+  // without making the mesh invalid.  The final positions of the nodes is
+  // returned in final_positions
   //
   // This is a rudimentary capability that requires ghosts nodes
   // also to be deformed. Amanzi does not have any built-in parallel 
