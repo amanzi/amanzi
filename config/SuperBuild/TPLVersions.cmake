@@ -94,6 +94,7 @@
 #                - update SuperLU_dist to xsdk-0.2.0 (native 5.1.3)
 #                - update Alquimia to xsdk-0.2.0 (native 1.0.4)
 #                - update Hypre to xsdk-0.2.0 (native 2.11.2)
+#  0.94.10       - update Alquimia to 1.0.5 (critical bug fixes)
 
 include(CMakeParseArguments)
 
@@ -146,7 +147,7 @@ endmacro(amanzi_tpl_version_write)
 #
 set(AMANZI_TPLS_VERSION_MAJOR 0)
 set(AMANZI_TPLS_VERSION_MINOR 94)
-set(AMANZI_TPLS_VERSION_PATCH 9)
+set(AMANZI_TPLS_VERSION_PATCH 10)
 set(AMANZI_TPLS_VERSION ${AMANZI_TPLS_VERSION_MAJOR}.${AMANZI_TPLS_VERSION_MINOR}.${AMANZI_TPLS_VERSION_PATCH})
 # Not sure how to create a meaningful hash key for the collection
 
@@ -440,12 +441,13 @@ set(PFLOTRAN_MD5_SUM        80a214c394bbd4230c2ddc0ba177c8ea)
 #
 set(ALQUIMIA_VERSION_MAJOR 1)
 set(ALQUIMIA_VERSION_MINOR 0)
-set(ALQUIMIA_VERSION_PATCH 4)
+set(ALQUIMIA_VERSION_PATCH 5)
 set(ALQUIMIA_VERSION ${ALQUIMIA_VERSION_MAJOR}.${ALQUIMIA_VERSION_MINOR}.${ALQUIMIA_VERSION_PATCH})
 set(ALQUIMIA_URL_STRING     https://github.com/LBL-EESA/alquimia-dev/archive)
-set(ALQUIMIA_ARCHIVE_FILE   xsdk-${XSDK_VERSION}.tar.gz)
+#set(ALQUIMIA_ARCHIVE_FILE   xsdk-${XSDK_VERSION}.tar.gz)
+set(ALQUIMIA_ARCHIVE_FILE   v${ALQUIMIA_VERSION}.tar.gz)
 set(ALQUIMIA_SAVEAS_FILE    alquimia-dev-${ALQUIMIA_VERSION}.tar.gz)
-set(ALQUIMIA_MD5_SUM        c9ad5100a4f064c3cdc49bcebd0e508e)
+set(ALQUIMIA_MD5_SUM        58d8cbb2f68381477068836fba35d41c)
 
 #
 # TPL: Silo
