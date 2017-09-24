@@ -28,23 +28,27 @@
 namespace Amanzi {
 
 class WalkaboutCheckpoint : public Checkpoint {
-
-public:
-
-  WalkaboutCheckpoint(Teuchos::ParameterList& plist, Epetra_MpiComm *comm): Checkpoint (plist, comm) {};
+ public:
+  WalkaboutCheckpoint(Teuchos::ParameterList& plist,
+                      Epetra_MpiComm *comm) : Checkpoint (plist, comm) {};
   WalkaboutCheckpoint() : Checkpoint() {};
 
+  // output of fields
   void WriteWalkabout(Teuchos::RCP<State>& S);
+
+  // supporting routines
+  // -- recontruct vector velocity
   void CalculateDarcyVelocity(Teuchos::RCP<State>& S,
                               std::vector<AmanziGeometry::Point>& xyz, 
                               std::vector<AmanziGeometry::Point>& velocity);
 
-  void CalculatePoreVelocity(Teuchos::RCP<State>& S,
-                             std::vector<AmanziGeometry::Point>& xyz, 
-                             std::vector<AmanziGeometry::Point>& velocity,
-                             std::vector<double>& porosity, std::vector<double>& saturation,
-                             std::vector<double>& pressure, std::vector<double>& isotherm_kd);
-
+ private:
+  void CalculateData_(Teuchos::RCP<State>& S,
+                      std::vector<AmanziGeometry::Point>& xyz, 
+                      std::vector<AmanziGeometry::Point>& velocity,
+                      std::vector<double>& porosity, std::vector<double>& saturation,
+                      std::vector<double>& pressure, std::vector<double>& isotherm_kd,
+                      std::vector<int>& material_ids);
 };
 
 }  // namespace Amanzi

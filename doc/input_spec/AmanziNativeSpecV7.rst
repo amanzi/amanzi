@@ -5772,6 +5772,13 @@ limited to file name generation and writing frequency, by numerical cycle number
 
   * `"times`" [Array(double)] an array of discrete times that at which a visualization dump shall be written.
 
+  * `"write regions`" [list] contains three lists of equal size with region names,
+    material names, and material ids to write into the output file.
+
+    * `"region names`" [Array(string)] specifies names of regions.
+    * `"material names`" [Array(int)] specifies names of materials. 
+    * `"material ids`" [Array(int)] specifies material ids. 
+
 .. code-block:: xml
 
    <ParameterList>  <!-- parent list -->
@@ -5785,6 +5792,12 @@ limited to file name generation and writing frequency, by numerical cycle number
        <Parameter name="times start period stop 0" type="Array(double)" value="{0.0, 10.0, 100.0}"/>
        <Parameter name="times start period stop 1" type="Array(double)" value="{100.0, 25.0, -1.0}"/>
        <Parameter name="times" type="Array(double)" value="{101.0, 303.0, 422.0}"/>
+
+       <ParameterList name="write regions">
+         <Parameter name="region names" type="Array(string)" value="{REGION1, REGION2}"/>
+         <Parameter name="material names" type="Array(string)" value="{MAT1, MAT2}"/>
+         <Parameter name="material ids" type="Array(int)" value="{1000, 2000}"/>
+       </ParameterList>
      </ParameterList>
    </ParameterList>
 

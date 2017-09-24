@@ -152,12 +152,13 @@ void WalkaboutCheckpoint::CalculateDarcyVelocity(
 * Calculating an extended vector of Darcy velocities. The velocity
 * is evaluated at cell-center and at boundary points.
 ****************************************************************** */
-void WalkaboutCheckpoint::CalculatePoreVelocity(
+void WalkaboutCheckpoint::CalculateData_(
     Teuchos::RCP<State>& S,
     std::vector<AmanziGeometry::Point>& xyz, 
     std::vector<AmanziGeometry::Point>& velocity,
     std::vector<double>& porosity, std::vector<double>& saturation,
-    std::vector<double>& pressure, std::vector<double>& isotherm_kd)
+    std::vector<double>& pressure, std::vector<double>& isotherm_kd,
+    std::vector<int>& material_ids)
 {
   const AmanziMesh::Mesh& mesh = *S->GetMesh();
   S->GetFieldData("porosity")->ScatterMasterToGhosted();
@@ -200,7 +201,8 @@ void WalkaboutCheckpoint::CalculatePoreVelocity(
     }
   }
 
-  // STEP 1: populate porosity and saturations in cell centers
+  // STEP 1: populate state data in cell centers
+  // -- physical fields
   porosity.clear();
   saturation.clear();
   pressure.clear();
@@ -213,8 +215,25 @@ void WalkaboutCheckpoint::CalculatePoreVelocity(
     if (flag) isotherm_kd.push_back((*kd)[0][c]);
   }
     
+  // -- material information
+  material_ids.resize(ncells_owned);
+
+  const Teuchos::ParameterList& tmp = plist_.sublist("write regions");
+  std::vector<std::string> regs = tmp.get<Teuchos::Array<std::string> >("region names").toVector();
+  std::vector<int> ids = tmp.get<Teuchos::Array<int> >("material ids").toVector();
+
+  for (int n = 0; n < regs.size(); ++n) {
+    AmanziMesh::Entity_ID_List cells;
+    mesh.get_set_entities(regs[n], AmanziMesh::CELL, AmanziMesh::OWNED, &cells);
+
+    for (auto it = cells.begin(); it != cells.end(); ++it) {
+      material_ids[*it] = ids[n];
+    }
+  }
+
   // STEP 2: recover porosity and saturation at boundary nodes
   double local_phi, local_ws, local_p, local_kd;
+  int local_id(-1);
 
   for (int v = 0; v < nnodes_owned; v++) {
     if (node_marker[v] > 0) {
@@ -231,6 +250,7 @@ void WalkaboutCheckpoint::CalculatePoreVelocity(
         local_ws += ws[0][c];
         local_p += p[0][c];
         if (flag) local_kd += (*kd)[0][c];
+        local_id = std::max(local_id, material_ids[c]);
       }
       local_phi /= ncells;
       porosity.push_back(local_phi);
@@ -245,6 +265,8 @@ void WalkaboutCheckpoint::CalculatePoreVelocity(
         local_kd /= ncells;
         isotherm_kd.push_back(local_kd);
       }
+
+      material_ids.push_back(local_id);
     }
   }
 
@@ -265,7 +287,10 @@ void WalkaboutCheckpoint::WriteWalkabout(Teuchos::RCP<State>& S)
     std::vector<AmanziGeometry::Point> velocity;
     std::vector<double> porosity, saturation;
     std::vector<double> pressure, isotherm_kd;
-    CalculatePoreVelocity(S, xyz, velocity, porosity, saturation, pressure, isotherm_kd);
+    std::vector<int> material_ids;
+
+    CalculateData_(S, xyz, velocity, porosity,
+                   saturation, pressure, isotherm_kd, material_ids);
     
     int n_loc = xyz.size();
     int n_glob;
@@ -334,6 +359,46 @@ void WalkaboutCheckpoint::WriteWalkabout(Teuchos::RCP<State>& S)
       WriteVector(*aux, name);
     } 
 
+    // dump material ids
+    aux = Teuchos::rcp(new Epetra_MultiVector(map, 1));
+
+    for (int n = 0; n < ndata; n++) {    
+      (*(*aux)(0))[n] = material_ids[n];
+    }
+
+    name.resize(0);
+    name.push_back("material ids");
+    WriteVector(*aux, name);
+
+    // dump pairs: material ids, material name
+    const Teuchos::ParameterList& tmp = plist_.sublist("write regions");
+    std::vector<std::string> names = tmp.get<Teuchos::Array<std::string> >("material names").toVector();
+    std::vector<int> ids = tmp.get<Teuchos::Array<int> >("material ids").toVector();
+ 
+    int nnames(names.size());
+
+    if (nnames > 0) {
+      int *tmp_ids; 
+      char **tmp_names;
+
+      tmp_ids = (int*)malloc(nnames * sizeof(int));
+      tmp_names = (char**)malloc(nnames * sizeof(char*));
+
+      for (int i = 0; i < nnames; ++i) {
+        tmp_ids[i] = ids[i];
+        tmp_names[i] = (char*)malloc((names[i].size() + 1) * sizeof(char));
+        strcpy(tmp_names[i], names[i].c_str());
+      }
+
+      checkpoint_output_->writeAttrInt(tmp_ids, nnames, "material_labels");
+      checkpoint_output_->writeDataString(tmp_names, nnames, "material_names");
+
+      for (int i = 0; i < nnames; ++i) free(tmp_names[i]);
+      free(tmp_names);
+      free(tmp_ids);
+    }
+
+    // timestamp and cycle number 
     WriteAttributes(S->time(), S->cycle());    
     Finalize();
   }

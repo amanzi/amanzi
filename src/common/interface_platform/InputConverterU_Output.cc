@@ -258,6 +258,12 @@ Teuchos::ParameterList InputConverterU::TranslateOutput_()
         ProcessMacros_("cycles", text, cmPL, chkPL);
       }
     }
+
+    chkPL.sublist("write regions")
+        .set<Teuchos::Array<std::string> >("region names", material_regions_)
+        .set<Teuchos::Array<std::string> >("material names", material_names_)
+        .set<Teuchos::Array<int> >("material ids", material_ids_);
+
     out_list.sublist("walkabout data") = chkPL;
   }
 

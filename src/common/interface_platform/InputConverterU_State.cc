@@ -83,6 +83,7 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
     DOMNode* inode = children->item(i);
     if (DOMNode::ELEMENT_NODE == inode->getNodeType()) {
       std::string mat_name = GetAttributeValueS_(static_cast<DOMElement*>(inode), "name");
+      int mat_id = GetAttributeValueL_(inode, "id", TYPE_NUMERICAL, false, -1);
 
       node = GetUniqueElementByTagsString_(inode, "assigned_regions", flag);
       std::vector<std::string> regions = CharToStrings_(mm.transcode(node->getTextContent()));
@@ -96,6 +97,13 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
           ss << "There is more than one material assigned to region \"" << regions[k] << "\".";
           Exceptions::amanzi_throw(Errors::Message(ss.str().c_str()));
         }
+      }
+
+      // record user material ID 
+      for (int k = 0; k < regions.size(); k++) {
+        material_regions_.push_back(regions[k]);
+        material_names_.push_back(mat_name);
+        material_ids_.push_back(mat_id);
       }
 
       // create regions string

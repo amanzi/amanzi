@@ -206,6 +206,11 @@ class InputConverterU : public InputConverter {
   // global output parameters
   std::string output_prefix_;
 
+  // global names for visualization
+  std::vector<std::string> material_regions_;
+  std::vector<std::string> material_names_;
+  std::vector<int> material_ids_;
+
   // for analysis
   std::vector<std::string> transport_diagnostics_;
 

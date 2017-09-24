@@ -161,7 +161,7 @@ class InputConverter {
   std::vector<std::string> GetAttributeVectorS_(
       xercesc::DOMElement* elem, const char* attr_name, bool exception = true);
 
-  // -- node is used uch more often
+  // -- node is used more often
   int GetAttributeValueL_(
       xercesc::DOMNode* node, const char* attr_name,
       const std::string& type = TYPE_NUMERICAL, bool exception = true, int val = 0) {
