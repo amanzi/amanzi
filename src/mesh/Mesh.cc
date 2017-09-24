@@ -1323,6 +1323,9 @@ Mesh::deform(const Entity_ID_List& nodeids,
 int
 Mesh::build_columns(const std::string& setname) const
 {
+
+  if (columns_built_) return 0;
+  
   // Allocate space and initialize.
   int nn = num_entities(NODE,USED);
   int nf = num_entities(FACE,USED);
@@ -1344,6 +1347,7 @@ Mesh::build_columns(const std::string& setname) const
   int ncolumns = top_faces.size();
   num_owned_cols_ = get_set_size(setname, FACE, OWNED);
 
+  int success = 1;
   for (int i = 0; i < ncolumns; i++) {
     Entity_ID f = top_faces[i];
     Entity_ID_List fcells;
@@ -1351,40 +1355,47 @@ Mesh::build_columns(const std::string& setname) const
 
     // not a boundary face?
     if (fcells.size() != 1) {
-      Errors::Message mesg("Mesh: Provided set for build_columns() includes faces that are not exterior faces.");
-      Exceptions::amanzi_throw(mesg);
+      std::cerr << "Mesh: Provided set for build_columns() includes faces that are not exterior faces.\n";
+      success = 0;
+      break;
     }
 
     // check that the normal points upward
     AmanziGeometry::Point normal = face_normal(f,false,fcells[0]);
     normal /= norm(normal);
     if (normal[2] < 1.e-10) {
-      Errors::Message mesg("Mesh: Provided set for build_columns() includes faces that don't point upward.");
-      Exceptions::amanzi_throw(mesg);
+      std::cerr << "Mesh: Provided set for build_columns() includes faces that don't point upward.\n";
+      success = 0;
+      break;
     }
 
-    build_single_column_(i, f);
+    success &= build_single_column_(i, f);
   }
 
-  columns_built_ = true;
-  return ncolumns;
+  int min_success;
+  get_comm()->MinAll(&success, &min_success, 1);
+  columns_built_ = (min_success == 1);
+  return columns_built_ ? 1 : 0;
 }
 
 
 // Figure out columns of cells in a semi-structured mesh and cache the
 // information for later.
 //
-// The columns are defined by identifying all boundary faces which have a
-// negative-z-direction normal, then collecting cells and faces upward.  As a
-// semi-structured mesh requires that all lateral faces have 0 z-normal, and
-// all top surface faces have positive z-normal, the set of bottom faces is
-// defined with no user input.
+// The columns are defined by identifying all boundary faces which
+// have a negative-z-direction normal, then collecting cells and faces
+// while travelling downward through the columns.  As a
+// semi-structured mesh requires that all lateral faces have 0
+// z-normal, and all top surface faces have positive z-normal, the set
+// of bottom faces is defined with no user input.
 //
 // NOTE: Currently ghost columns are built too because we didn't know that
 // they weren't necessary. --etc
 int
-Mesh::build_columns_() const
+Mesh::build_columns() const
 {
+  if (columns_built_) return 1;
+  
   // Allocate space and initialize.
   int nn = num_entities(NODE,USED);
   int nf = num_entities(FACE,USED);
@@ -1403,6 +1414,7 @@ Mesh::build_columns_() const
   // Find the faces at the top of the domain. We assume that these are all
   // the boundary faces whose normal points in the positive z-direction
   //
+  int success = 1;
   int ncolumns = 0;
   num_owned_cols_ = 0;
   for (int i = 0; i < nf; i++) {
@@ -1429,17 +1441,19 @@ Mesh::build_columns_() const
     //  2) n dot z < 0 --> downard pointing face
     if (dp < 1.e-10) continue;
 
-    build_single_column_(ncolumns, i);
+    success &= build_single_column_(ncolumns, i);
     ncolumns++;
     if (i < nf_owned) num_owned_cols_++;
   }
 
-  columns_built_ = true;
-  return ncolumns;
+  int min_success;
+  get_comm()->MinAll(&success, &min_success, 1);
+  columns_built_ = (min_success == 1);
+  return columns_built_ ? 1 : 0;
 }
     
 
-void
+int
 Mesh::build_single_column_(int colnum, Entity_ID top_face) const
 {
   Entity_ID_List fcells;
@@ -1457,13 +1471,18 @@ Mesh::build_single_column_(int colnum, Entity_ID top_face) const
     negzvec.set(0.0,-1.0);
   else if (space_dim_ == 3)
     negzvec.set(0.0,0.0,-1.0);
-  
+
+  int success = 1;
   bool done = false;
   while (!done) {
     bool is_ghost_cell = (entity_get_ptype(CELL, cur_cell) == GHOST);
     if (is_ghost_column != is_ghost_cell) {
-      Errors::Message mesg("A column contains cells from different mesh partitions!");
-      Exceptions::amanzi_throw(mesg);
+      //      Errors::Message mesg("A column contains cells from different mesh partitions!");
+      //      Exceptions::amanzi_throw(mesg);
+      std::cerr << "A column contains cells from different mesh partitions" << std::endl;
+      success = 0;
+      break;
+      
     }
     columnID_[cur_cell] = colnum;
     colcells.push_back(cur_cell);
@@ -1490,29 +1509,12 @@ Mesh::build_single_column_(int colnum, Entity_ID top_face) const
     }
 
     if (bot_face == top_face) {
-      std::cout << "Build Columns broke:" << std::endl
+      std::cerr << "Build Columns broke:" << std::endl
                 << "  on column = " << colnum << std::endl
                 << "  cell / face = " << cur_cell << "," << bot_face << std::endl
                 << "  candidates = " << cfaces[cfaces.size()-2] << "," << cfaces[cfaces.size()-1] << std::endl;
-      /*
-      Entity_ID f1 = cfaces[cfaces.size()-2];
-      Entity_ID_List nodes;
-      AmanziGeometry::Point cen;
-      std::cout << "Face " << f1 << " at " << face_centroid(f1) << " with normal " << face_normal(f1, false, cur_cell) << std::endl;
-      face_get_nodes(f1, &nodes);
-      for (int n = 0; n!=nodes.size(); ++n) {
-        node_get_coordinates(nodes[n], &cen);
-        std::cout << "  " << cen << std::endl;
-      }
-
-      Entity_ID f2 = cfaces[cfaces.size()-1];
-      std::cout << "Face " << f2 << " at " << face_centroid(f2) << " with normal " << face_normal(f2, false, cur_cell) << std::endl;
-      face_get_nodes(f2, &nodes);
-      for (int n = 0; n!=nodes.size(); ++n) {
-        node_get_coordinates(nodes[n], &cen);
-        std::cout << "  " << cen << std::endl;
-      }
-      */
+      success = 0;
+      break;
     }
     ASSERT(bot_face != top_face);
     ASSERT(bot_face != -1);
@@ -1521,8 +1523,9 @@ Mesh::build_single_column_(int colnum, Entity_ID top_face) const
     face_get_cells(bot_face,USED,&fcells2);
     if (fcells2.size() == 2) {
       if (cell_cellbelow_[cur_cell] != -1) {  // intersecting column of cells
-        Errors::Message mesg("Intersecting column of cells");
-        Exceptions::amanzi_throw(mesg);
+	std::cerr << "Intersecting column of cells\n";
+	success = 0;
+	break;
       }
 
       if (fcells2[0] == cur_cell) {
@@ -1536,8 +1539,9 @@ Mesh::build_single_column_(int colnum, Entity_ID top_face) const
         cur_cell = fcells2[0];
       }
       else {
-        Errors::Message mesg("Unlikely problem in face to cell connectivity");
-        Exceptions::amanzi_throw(mesg);
+	std::cerr << "Unlikely problem in face to cell connectivity\n";
+	success = 0;
+	break;
       }
     }
     else {
@@ -1555,8 +1559,9 @@ Mesh::build_single_column_(int colnum, Entity_ID top_face) const
     face_get_nodes(bot_face,&botnodes);
 
     if (topnodes.size() != botnodes.size()) {
-      Errors::Message mesg("Top and bottom face of columnar cell have different number of nodes.");
-      Exceptions::amanzi_throw(mesg);
+      std::cerr << "Top and bottom face of columnar cell have different number of nodes.\n";
+      success = 0;
+      break;
     }
 
     // match a node below to a node above
@@ -1584,8 +1589,9 @@ Mesh::build_single_column_(int colnum, Entity_ID top_face) const
     }
 
     if (!found) {
-      Errors::Message mesg("Could not find the right structure in mesh");
-      Exceptions::amanzi_throw(mesg);
+      std::cerr << "Could not find the right structure in mesh\n";
+      success = 0;
+      break;
     }
 
     // We have a matching topnode and botnode - now match up the rest
@@ -1617,9 +1623,13 @@ Mesh::build_single_column_(int colnum, Entity_ID top_face) const
     top_face = bot_face;
   } // while (!done)
 
-  colfaces.push_back(bot_face);
-  column_cells_.push_back(colcells);
-  column_faces_.push_back(colfaces);
+  if (success) {
+    colfaces.push_back(bot_face);
+    column_cells_.push_back(colcells);
+    column_faces_.push_back(colfaces);
+  }
+
+  return success;
 }  
 
     
