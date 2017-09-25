@@ -134,7 +134,7 @@ option(ENABLE_CCSE_TOOLS "Enable building CCSE post processing tools" FALSE)
 
 # Amanzi unstructured mesh API and frameworks
 option(ENABLE_Unstructured "Enable Amanzi unstructured mesh capability" TRUE)
-option(ENABLE_STK_Mesh "Enable the Unstructured STK Mesh Toolkit" TRUE)
+option(ENABLE_STK_Mesh "Enable the Unstructured STK Mesh Toolkit" FALSE)
 option(ENABLE_MSTK_Mesh "Enable the Unstructured MSTK Mesh Toolkit" TRUE)
 option(ENABLE_MOAB_Mesh "Enable the Unstructured MOAB Mesh Toolkit" FALSE)
 
@@ -305,11 +305,10 @@ if ( NOT MPI_WRAPPERS_IN_USE AND NOT BUILD_MPI )
       message(STATUS "Update CMAKE_${lang}_FLAGS: ${CMAKE_${lang}_FLAGS}")
     endif()  
 
-
   endforeach()
-
   
 endif()
+
 
 # --- Define which compilers to use in MPI dependent projects
 #     If building MPI as an external project use MPI_* compiler
@@ -516,8 +515,7 @@ endif()
 include(${SuperBuild_BUILD_FILES_DIR}/Build_CURL.cmake)
 
 # UnitTest
-append_set(Amanzi_TPL_CMAKE_ARGS
-    -DENABLE_TEST:BOOL=${ENABLE_TESTS})
+append_set(Amanzi_TPL_CMAKE_ARGS -DENABLE_TEST:BOOL=${ENABLE_TESTS})
 if (ENABLE_TESTS)
     include(${SuperBuild_BUILD_FILES_DIR}/Build_UnitTest.cmake)
     append_set(Amanzi_TPL_CMAKE_ARGS 
@@ -529,7 +527,7 @@ set(CCSE_BL_SPACEDIM_DFLT 2)
 if(NOT CCSE_BL_SPACEDIM )
     set(CCSE_BL_SPACEDIM ${CCSE_BL_SPACEDIM_DFLT})
 endif()
-if ( ENABLE_Structured )
+if (ENABLE_Structured)
     include(${SuperBuild_BUILD_FILES_DIR}/Build_CCSE.cmake) 
     append_set(Amanzi_TPL_CMAKE_ARGS
         -DCCSE_DIR:FILEPATH=${TPL_INSTALL_PREFIX}
@@ -613,11 +611,6 @@ endif()
 append_set(Amanzi_TPL_CMAKE_ARGS
     -DNetCDF_FORTRAN_DIR:FILEPATH=${TPL_INSTALL_PREFIX})
 
-# ExodusII
-include(${SuperBuild_BUILD_FILES_DIR}/Build_ExodusII.cmake) 
-append_set(Amanzi_TPL_CMAKE_ARGS
-    -DExodusII_DIR:FILEPATH=${TPL_INSTALL_PREFIX})
-
 # MOAB
 if ( ENABLE_MOAB_Mesh )
     include(${SuperBuild_BUILD_FILES_DIR}/Build_MOAB.cmake)
@@ -674,6 +667,9 @@ else()
     set(PETSC_DIR ${TPL_INSTALL_PREFIX})
 endif()
 
+# SEACAS
+include(${SuperBuild_BUILD_FILES_DIR}/Build_SEACAS.cmake)
+
 # Trilinos  
 if ( NOT ENABLE_XSDK )
     include(${SuperBuild_BUILD_FILES_DIR}/Build_Trilinos.cmake)
@@ -684,9 +680,6 @@ endif()
 append_set(Amanzi_TPL_CMAKE_ARGS
     -DENABLE_STK_Mesh:BOOL=${ENABLE_STK_Mesh}
     -DTrilinos_INSTALL_PREFIX:PATH=${Trilinos_INSTALL_PREFIX})
-
-# SEACAS
-include(${SuperBuild_BUILD_FILES_DIR}/Build_SEACAS.cmake)
 
 # MSTK
 if ( ENABLE_MSTK_Mesh )
@@ -706,12 +699,16 @@ if (ENABLE_Silo)
 	-DSilo_LIBRARY_DIR:PATH=${Silo_LIBRARY_DIR})
 endif()
 
-# Alquimia and PFlotran
+# Alquimia and chemical engines (PFloTran and CrunchTope)
 if ( NOT ENABLE_XSDK )
     option(ENABLE_ALQUIMIA "Build the Alquimia chemistry interface" FALSE)
     option(ENABLE_PFLOTRAN "Build the PFlotran chemistry package" FALSE)
+    option(ENABLE_CRUNCHTOPE "Build the CrunchTope chemistry package" FALSE)
+    # Alqumia cannot be build now without PFloTran
     if (ENABLE_ALQUIMIA)
-	set(ENABLE_PFLOTRAN TRUE)
+	if (NOT ENABLE_PFLOTRAN)
+	    set(ENABLE_PFLOTRAN TRUE)
+        endif()
     endif()
     if (ENABLE_PFLOTRAN)
 	if (NOT ENABLE_PETSC)
@@ -719,6 +716,13 @@ if ( NOT ENABLE_XSDK )
 	    include(${SuperBuild_BUILD_FILES_DIR}/Build_PETSc.cmake)
 	endif()
 	include(${SuperBuild_BUILD_FILES_DIR}/Build_pflotran.cmake)
+    endif()
+    if (ENABLE_CRUNCHTOPE)
+	if (NOT ENABLE_PETSC)
+	    set(ENABLE_PETSC TRUE)
+	    include(${SuperBuild_BUILD_FILES_DIR}/Build_PETSc.cmake)
+	endif()
+	include(${SuperBuild_BUILD_FILES_DIR}/Build_CrunchTope.cmake)
     endif()
     if (ENABLE_ALQUIMIA)
 	include(${SuperBuild_BUILD_FILES_DIR}/Build_alquimia.cmake)
@@ -728,6 +732,11 @@ else()
     build_library_name(pflotranchem PFLOTRAN_LIBRARIES APPEND_PATH ${TPL_INSTALL_PREFIX}/lib)
     set(PFLOTRAN_INCLUDE_DIRS ${TPL_INSTALL_PREFIX}/include)
     set(PFLOTRAN_DIR ${TPL_INSTALL_PREFIX})
+    
+    # crunchtope
+    build_library_name(crunchchem CRUNCHTOPE_LIBRARIES APPEND_PATH ${TPL_INSTALL_PREFIX}/lib)
+    set(CRUNCHTOPE_INCLUDE_DIRS ${TPL_INSTALL_PREFIX}/include)
+    set(CRUNCHTOPE_DIR ${TPL_INSTALL_PREFIX})
     
     # alquimia
     build_library_name(alquimia_c ALQUIMIA_C_LIB APPEND_PATH ${TPL_INSTALL_PREFIX}/lib)
@@ -741,13 +750,13 @@ endif()
 #  Final steps
 # ############################################################################ #
 
-#  --- Create a CMake cache scipt
+#  --- Create a CMake cache script
 set(SuperBuild_Amanzi_CACHE_SCRIPT amanzi-tpl-config.cmake)
 configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/${SuperBuild_Amanzi_CACHE_SCRIPT}.in
                ${SuperBuild_BINARY_DIR}/${SuperBuild_Amanzi_CACHE_SCRIPT}
                @ONLY)
-install( FILES "${SuperBuild_BINARY_DIR}/${SuperBuild_Amanzi_CACHE_SCRIPT}"             
-         DESTINATION ${TPL_INSTALL_PREFIX}/share/cmake)
+install(FILES "${SuperBuild_BINARY_DIR}/${SuperBuild_Amanzi_CACHE_SCRIPT}"             
+        DESTINATION ${TPL_INSTALL_PREFIX}/share/cmake)
 
 # --- Create a Exodus split mesh script and add to the install target     
 set(SuperBuild_EXOSPLIT_SCRIPT splitexo)
@@ -845,7 +854,6 @@ if ( BUILD_Amanzi )
   include(ExternalProject)
 
   set(Amanzi_DEPENDS 
-    ${ExodusII_BUILD_TARGET}
 	${HDF5_BUILD_TARGET}
 	${ASCEMIO_BUILD_TARGET}
 	${XERCES_BUILD_TARGET}

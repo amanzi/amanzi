@@ -300,8 +300,8 @@ int Beaker::Speciate(Beaker::BeakerComponents* components,
 
     max_residual = 0.;
     for (int i = 0; i < ncomp(); i++)
-      if (fabs(residual_.at(i)) > max_residual) {
-        max_residual = fabs(residual_.at(i));
+      if (std::fabs(residual_.at(i)) > max_residual) {
+        max_residual = std::fabs(residual_.at(i));
       }
 
     // if max_rel_change small enough, turn on activity coefficients
@@ -1641,7 +1641,7 @@ void Beaker::CalculateMaxRelChangeInMolality(double* max_rel_change, int* max_re
   *max_rel_change = 0.0;
   *max_rel_index = -1;
   for (int i = 0; i < ncomp(); i++) {
-    double delta = fabs(primary_species().at(i).molality() - prev_molal().at(i)) / 
+    double delta = std::fabs(primary_species().at(i).molality() - prev_molal().at(i)) / 
         prev_molal().at(i);
     if (delta > *max_rel_change) {
       *max_rel_change = delta;

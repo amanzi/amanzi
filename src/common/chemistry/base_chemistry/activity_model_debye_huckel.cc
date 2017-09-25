@@ -21,7 +21,7 @@ ActivityModelDebyeHuckel::~ActivityModelDebyeHuckel() {
 double ActivityModelDebyeHuckel::Evaluate(const Species& species) {
   // log(gamma_i) = - A * z_i^2 * sqrt(I) / (1 + a0 * B * sqrt(I)) + Bdot * I
   double gamma(0.0);
-  if (fabs(species.charge()) < 1.e-10) {
+  if (std::fabs(species.charge()) < 1.e-10) {
     // for now, neutral species activity = 1.
     gamma = 1.0;
   } else {
@@ -46,7 +46,7 @@ void ActivityModelDebyeHuckel::EvaluateVector(
   // For primary species
   for (std::vector<Species>::const_iterator i = prim.begin(); i != prim.end(); i++) {
     isp++;
-    if (fabs((*i).charge()) < 1.0e-10) {
+    if (std::fabs((*i).charge()) < 1.0e-10) {
       gamma->at(isp) = 1.0;
     } else {
       gamma->at(isp) = Evaluate(*i);
@@ -55,7 +55,7 @@ void ActivityModelDebyeHuckel::EvaluateVector(
   // For aqueous complexes
   for (std::vector<AqueousEquilibriumComplex>::const_iterator i = sec.begin(); i != sec.end(); i++) {
     isp++;
-    if (fabs((*i).charge()) < 1.0e-10) {
+    if (std::fabs((*i).charge()) < 1.0e-10) {
       gamma->at(isp) = 1.0;
     } else {
       gamma->at(isp) = Evaluate(*i);

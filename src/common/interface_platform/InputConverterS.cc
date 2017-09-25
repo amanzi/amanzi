@@ -1430,6 +1430,13 @@ void InputConverterS::ParseGeochemistry_()
       } else if (engine == "crunchflow") {
 	AddToTable(table, MakePPPrefix("Chemistry", "Engine"), MakePPEntry("CrunchFlow"));
 	file_location = "process_kernels, chemistry";
+      } else if (engine == "pflotran+") {
+	AddToTable(table, MakePPPrefix("Chemistry", "Engine"), MakePPEntry("PFloTran+"));
+	file_location = "process_kernels, chemistry";
+      } else if (engine == "crunchflow+") {
+	AddToTable(table, MakePPPrefix("Chemistry", "Engine"), MakePPEntry("CrunchFlow+"));
+	file_location = "process_kernels, chemistry";
+ 
       } else {
 	valid_engine = false;
       }
@@ -1711,7 +1718,7 @@ void InputConverterS::ParseMaterials_(bool& do_tracer_diffusion)
       {
         // Look for solutes.
         bool found;
-        vector<DOMNode*> solutes = GetChildren_(sorption_isotherms, "solute", found, true);
+        vector<DOMNode*> solutes = GetChildren_(sorption_isotherms, "primary", found, true);
         for (size_t i = 0; i < solutes.size(); ++i)
         {
           DOMElement* solute = static_cast<DOMElement*>(solutes[i]);

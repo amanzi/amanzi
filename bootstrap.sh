@@ -34,8 +34,8 @@ amanzi_source_dir=$(cd $(dirname "$0")/;pwd)
 
 # ASCEM Web address
 ascem_protocol=https
-ascem_site='software.lanl.gov/ascem'
-ascem_tpl_site="${ascem_site}/tpls"
+ascem_site='github.com/amanzi'
+ascem_tpl_site="${ascem_site}/amanzi-tpls"
 
 # Default root build and install prefix
 dflt_build_prefix=`pwd`
@@ -45,8 +45,8 @@ dflt_install_prefix=`pwd`
 amanzi_build_dir="${dflt_build_prefix}/build/amanzi"
 amanzi_install_prefix="${dflt_install_prefix}/install/amanzi"
 
-# Mercurial
-hg_binary=`which hg`
+# Git 
+git_binary=`which git`
 
 # CURL
 curl_binary=`which curl`
@@ -114,6 +114,7 @@ petsc=${TRUE}
 hypre=${TRUE}
 alquimia=${FALSE}
 pflotran=${FALSE}
+crunchtope=${FALSE}
 shared=${FALSE}
 spacedim=2
 native=${FALSE}
@@ -229,9 +230,8 @@ function set_feature()
   if echo $action | grep "enable" > /dev/null 2>/dev/null; then
     eval "${feature}=$TRUE"
   fi
-  echo ${!feature}
-
 }
+
 function parse_feature()
 {
   feature_opt=$1
@@ -300,6 +300,7 @@ Value in brackets indicates default setting.
   petsc                   build the PETSc solver APIs ['"${petsc}"']
 
   pflotran                build the PFlotran geochemistry backend ['"${pflotran}"']
+  crunchtope              build the CrunchTope geochemistry backend ['"${crunchtope}"']
   alquimia                build the Alquimia geochemistry solver APIs ['"${alquimia}"']
 
   test_suite              run Amanzi Test Suite before installing ['"${test_suite}"']
@@ -323,7 +324,7 @@ Tool definitions:
 
   --with-cmake[=FILE]        FILE is the CMake binary ['"${cmake_binary}"'] without FILE builds CMake
   --with-ctest=FILE          FILE is the CTest binary ['"${ctest_binary}"'], ignored if --with-cmake is set
-  --with-hg=FILE             FILE is the Mercurial binary ['"${hg_binary}"']
+  --with-git=FILE            FILE is the git binary ['"${git_binary}"']
   --with-curl=FILE           FILE is the CURL binary ['"${curl_binary}"']
 
   --with-mpi=DIR             use MPI installed in DIR. Will search for MPI 
@@ -362,7 +363,7 @@ echo '
 Tools:
     cmake_binary ='"${cmake_binary}"'
     ctest_binary ='"${ctest_binary}"'
-    hg_binary    ='"${hg_binary}"'
+    git_binary   ='"${git_binary}"'
     curl_binary  ='"${curl_binary}"'
     Spack_binary ='"${Spack_binary}"'
     mpi_root_dir ='"${mpi_root_dir}"'
@@ -402,6 +403,7 @@ Build Features:
     petsc               ='"${petsc}"'
     alquimia            ='"${alquimia}"'
     pflotran            ='"${pflotran}"'
+    crunchtope          ='"${crunchtope}"'
     native              ='"${native}"'
     Spack               ='"${Spack}"'
     xsdk                ='"${xsdk}"'
@@ -419,13 +421,12 @@ Directories:
 function parse_argv()
 {
   argv=( "$@" )
-  echo "${argv[1]}"
   last=$(( ${#argv[@]} - 1 ))
   i=0
   while [ $i -le ${last} ]
   do
     opt=${argv[$i]}
-    echo "i: ${i} opt=$opt last: $last"
+    echo "opt:  $opt"
     case ${opt} in
 
       -h|--h|--help)
@@ -523,9 +524,9 @@ function parse_argv()
                  cmake_binary=
                  ;;
 
-      --with-hg=*)
-                 tmp=`parse_option_with_equal "${opt}" 'with-hg'`
-                 hg_binary=`make_fullpath $tmp`
+      --with-git=*)
+                 tmp=`parse_option_with_equal "${opt}" 'with-git'`
+                 git_binary=`make_fullpath $tmp`
                  ;;
 
       --with-curl=*)
@@ -758,24 +759,24 @@ function build_cmake
 
 }
 
-# Mercury functions
-function ascem_hg_clone
+# Git functions
+function ascem_git_clone
 {
   repo=$1
-  ${hg_binary} clone ${ascem_protocol}://${ascem_site}/hg/$repo
+  ${git_binary} clone ${ascem_protocol}://${ascem_site}/$repo
   if [ $? -ne 0 ]; then
     error_message "Failed to clone ${repo} from ${ascem_site}"
     exit_now 30
   fi
 }
 
-function hg_change_branch()
+function git_change_branch()
 {
   branch=$1
   save_dir=`pwd`
   cd ${amanzi_source_dir}
-  status_message "Updating ${amanzi_source_dir} to branch ${branch}"
-  ${hg_binary} update ${branch}
+  status_message "In ${amanzi_source_dir} checking out ${branch}"
+  ${git_binary} checkout ${branch}
   if [ $? -ne 0 ]; then
     error_message "Failed to update ${amanzi_source_dir} to branch ${branch}"
     exit_now 30
@@ -1023,12 +1024,12 @@ version_compare()
 function check_tools
 {
 
-  # Check Mercurial
-  if [ ! -e "${hg_binary}" ]; then
-    error_message "Mercurial (hg) binary does not exist"
+  # Check Git
+  if [ ! -e "${git_binary}" ]; then
+    error_message "Git binary does not exist"
     exit_now 10
   fi
-  status_message "Mercury binary: ${hg_binary}"
+  status_message "Git binary: ${git_binary}"
 
   # Check CURL 
   if [ ! -e "${curl_binary}" ]; then
@@ -1165,7 +1166,7 @@ check_mpi_root
 # Define the compilers
 check_compilers
 
-# Check the cmake, hg and curl tools
+# Check the cmake, git and curl tools
 check_tools
 
 # add fpic?
@@ -1183,7 +1184,7 @@ fi
 
 # Change the branch
 if [ ! -z "${amanzi_branch}" ]; then
-  hg_change_branch ${amanzi_branch}
+  git_change_branch ${amanzi_branch}
 fi
 
 # Now build the TPLs if the config file is not defined
@@ -1223,6 +1224,7 @@ if [ -z "${tpl_config_file}" ]; then
       -DCMAKE_C_COMPILER:STRING=${build_c_compiler} \
       -DCMAKE_CXX_COMPILER:STRING=${build_cxx_compiler} \
       -DCMAKE_Fortran_COMPILER:STRING=${build_fort_compiler} \
+      -DMPI_PREFIX:STRING="${mpi_root_dir}" \
       -DTPL_INSTALL_PREFIX:STRING=${tpl_install_prefix} \
       -DENABLE_Structured:BOOL=${structured} \
       -DENABLE_Unstructured:BOOL=${unstructured} \
@@ -1235,6 +1237,7 @@ if [ -z "${tpl_config_file}" ]; then
       -DENABLE_PETSC:BOOL=${petsc} \
       -DENABLE_ALQUIMIA:BOOL=${alquimia} \
       -DENABLE_PFLOTRAN:BOOL=${pflotran} \
+      -DENABLE_CRUNCHTOPE:BOOL=${crunchtope} \
       -DENABLE_Silo:BOOL=${silo} \
       -DBUILD_SHARED_LIBS:BOOL=${shared} \
       -DCCSE_BL_SPACEDIM:INT=${spacedim} \
@@ -1243,6 +1246,7 @@ if [ -z "${tpl_config_file}" ]; then
       -DSPACK_BINARY:STRING=${Spack_binary} \
       -DBUILD_SPACK:BOOL=${build_Spack} \
       -DENABLE_XSDK:BOOL=${xsdk} \
+      -DTPL_DOWNLOAD_DIR:FILEPATH=${tpl_download_dir} \
       ${nersc_tpl_opts} \
       ${tpl_build_src_dir}
   
@@ -1325,6 +1329,7 @@ ${cmake_binary} \
               -DENABLE_PETSC:BOOL=${petsc} \
               -DENABLE_ALQUIMIA:BOOL=${alquimia} \
               -DENABLE_PFLOTRAN:BOOL=${pflotran} \
+              -DENABLE_CRUNCHTOPE:BOOL=${crunchtope} \
               -DBUILD_SHARED_LIBS:BOOL=${shared} \
               -DCCSE_BL_SPACEDIM:INT=${spacedim} \
 	      -DENABLE_Regression_Tests:BOOL=${reg_tests} \

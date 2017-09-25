@@ -78,11 +78,18 @@ clean:
 
 run_tests:
 	@echo "Setting up guide indexes, and running any tests for this build ..."
-	python collect.py $(AMANZI_SECTION_OPTIONS) 
+	export PYTHONPATH=$(NEW_PYTHONPATH);\
+	python collect.py $(AMANZI_SECTION_OPTIONS) --run-tests
 	@echo "TESTs finished."
 	@echo
 
 html:   run_tests
+	$(SPHINXBUILD) -b html $(ALLSPHINXOPTS) $(BUILDDIR)/html
+	@echo
+	@echo "Build finished. The HTML pages are in $(BUILDDIR)/html."
+
+html-norun:
+	export PYTHONPATH=$(NEW_PYTHONPATH); python collect.py $(AMANZI_SECTION_OPTIONS)
 	$(SPHINXBUILD) -b html $(ALLSPHINXOPTS) $(BUILDDIR)/html
 	@echo
 	@echo "Build finished. The HTML pages are in $(BUILDDIR)/html."

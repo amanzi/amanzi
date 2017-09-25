@@ -1,4 +1,6 @@
 <amanzi_input version="2.3" type="structured">
+
+  <echo_translated_input format="native" file_name=" amanzi-s-1d-tritium-alq-crunch_native.xml"/>
   <model_description name="1D Flow and Transport, tritium decay">
     <author>Sergi Molins</author>
     <units>
@@ -32,7 +34,7 @@
   <process_kernels>
     <flow state="on" model="saturated"/>
     <transport state="on"/>
-    <chemistry engine="crunchflow" state="on" input_filename="1d-tritium-crunch.in" database="tritium.dbs" />
+    <chemistry engine="crunchflow+" state="on" input_filename="1d-tritium-crunch.in" database="tritium.dbs" />
   </process_kernels>
 
   <phases>

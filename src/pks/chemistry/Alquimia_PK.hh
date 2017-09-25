@@ -61,7 +61,7 @@ class Alquimia_PK: public Chemistry_PK {
 
   // Copies the chemistry state in the given cell to the given Alquimia containers.
   void CopyToAlquimia(int cell_id,
-                      AlquimiaMaterialProperties& mat_props,
+                      AlquimiaProperties& mat_props,
                       AlquimiaState& state,
                       AlquimiaAuxiliaryData& aux_data);
   
@@ -70,14 +70,14 @@ class Alquimia_PK: public Chemistry_PK {
   // the aqueous components from the given multivector.
   void CopyToAlquimia(int cell_id,
                       Teuchos::RCP<const Epetra_MultiVector> aqueous_components,
-                      AlquimiaMaterialProperties& mat_props,
+                      AlquimiaProperties& mat_props,
                       AlquimiaState& state,
                       AlquimiaAuxiliaryData& aux_data);
 
   // Copy the data in the given Alquimia containers to the given cell state.
   // The aqueous components are placed into the given multivector.
   void CopyFromAlquimia(const int cell,
-                        const AlquimiaMaterialProperties& mat_props,
+                        const AlquimiaProperties& mat_props,
                         const AlquimiaState& state,
                         const AlquimiaAuxiliaryData& aux_data,
                         const AlquimiaAuxiliaryOutputData& aux_output,
@@ -92,7 +92,7 @@ class Alquimia_PK: public Chemistry_PK {
   void XMLParameters();
 
   void CopyAlquimiaStateToAmanzi(const int cell,
-                                 const AlquimiaMaterialProperties& mat_props,
+                                 const AlquimiaProperties& mat_props,
                                  const AlquimiaState& state,
                                  const AlquimiaAuxiliaryData& aux_data,
                                  const AlquimiaAuxiliaryOutputData& aux_output,
@@ -114,7 +114,7 @@ class Alquimia_PK: public Chemistry_PK {
 
   // Alquimia data structures for interface with Amanzi.
   AlquimiaState alq_state_;
-  AlquimiaMaterialProperties alq_mat_props_;
+  AlquimiaProperties alq_mat_props_;
   AlquimiaAuxiliaryData alq_aux_data_;
   AlquimiaAuxiliaryOutputData alq_aux_output_;
 

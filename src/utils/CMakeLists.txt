@@ -37,6 +37,7 @@ add_amanzi_library(atk
                           VerboseObject.cc
                           IOEvent.cc
                           Spline.cc
+                          Key.cc
                    HEADERS HDF5Reader.hh
                            Utils.hh
                            Units.hh
@@ -54,6 +55,7 @@ add_amanzi_library(atk
                            LeastSquare.hh
                            ObservationData.hh
                            Spline.hh
+                           Key.hh
                    )
 
 if (BUILD_TESTS)

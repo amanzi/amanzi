@@ -90,10 +90,10 @@ public:
   /* Access functions follow */
 
   /* The coarsen rule registered for a given property */
-  const Property::CoarsenRule coarsenRule (const std::string& property_name) const;
+  Property::CoarsenRule coarsenRule (const std::string& property_name) const;
 
   /* The refine rule registered for a given property */
-  const Property::RefineRule refineRule (const std::string& property_name) const;
+  Property::RefineRule refineRule (const std::string& property_name) const;
 
   /* The number of components this property will fill */
   int nComp(const std::string& property_name) const;

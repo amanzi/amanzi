@@ -207,7 +207,7 @@
           <Parameter name="upwind method" type="string" value="upwind: amanzi"/>
           <Parameter name="upwind frequency" type="string" value="every timestep"/>
           <ParameterList name="upwind parameters">
-            <Parameter name="tolerance" type="double" value="9.99e-13"/>
+            <Parameter name="tolerance" type="double" value="9.99e-5"/>
           </ParameterList>
         </ParameterList>
         <ParameterList name="water retention models">
@@ -352,7 +352,7 @@
             </ParameterList>
             <Parameter name="solver type" type="string" value="nka"/>
             <ParameterList name="nka parameters">
-              <Parameter name="nonlinear tolerance" type="double" value="1.0e-05"/>
+              <Parameter name="nonlinear tolerance" type="double" value="1.0e-07"/>
               <Parameter name="diverged tolerance" type="double" value="1.0e+10"/>
               <Parameter name="max du growth factor" type="double" value="1.0e+03"/>
               <Parameter name="max divergent iterations" type="int" value="3"/>

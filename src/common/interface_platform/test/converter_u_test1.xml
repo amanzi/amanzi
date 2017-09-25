@@ -172,7 +172,7 @@
   </regions>
 
   <materials>
-    <material name="Facies_1">
+    <material name="Facies_1" id="1000">
       <mechanical_properties>
         <porosity value="0.4082"/>
         <specific_storage value="0.0002"/>
@@ -186,7 +186,7 @@
       <assigned_regions>RegionMiddle</assigned_regions>
     </material>
 
-    <material name="Facies_2">
+    <material name="Facies_2" id="2000">
       <mechanical_properties>
         <porosity value="0.2206"/>
       </mechanical_properties>
@@ -199,7 +199,7 @@
       <assigned_regions>RegionBottom</assigned_regions>
     </material>
 
-    <material name="Facies_3">
+    <material name="Facies_3" id="3000">
       <mechanical_properties>
         <porosity value="0.234"/>
       </mechanical_properties>
@@ -310,6 +310,11 @@
       <num_digits>5</num_digits>
       <cycle_macros>Every100Cycles</cycle_macros>
     </vis>
+    <walkabout>
+      <base_filename>walkabout</base_filename>
+      <num_digits>5</num_digits>
+      <cycle_macros>Every100Cycles</cycle_macros>
+    </walkabout>
   </output>
 </amanzi_input>
   

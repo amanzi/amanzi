@@ -1,3 +1,4 @@
+
 /* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
 /* -------------------------------------------------------------------------
 Amanzi Chemistry
@@ -43,10 +44,12 @@ void CopyAlquimiaState(AlquimiaState* dest, AlquimiaState* src)
 }
 
 // These functions are going into the next release of Alquimia.
-void CopyAlquimiaMaterialProperties(AlquimiaMaterialProperties* dest, AlquimiaMaterialProperties* src)
+void CopyAlquimiaProperties(AlquimiaProperties* dest, AlquimiaProperties* src)
 {
   dest->volume = src->saturation;
   dest->saturation = src->saturation;
+  memcpy(dest->aqueous_kinetic_rate_cnst.data, src->aqueous_kinetic_rate_cnst.data, sizeof(double) * src->aqueous_kinetic_rate_cnst.size);
+  memcpy(dest->mineral_rate_cnst.data, src->mineral_rate_cnst.data, sizeof(double) * src->mineral_rate_cnst.size);
   memcpy(dest->isotherm_kd.data, src->isotherm_kd.data, sizeof(double) * src->isotherm_kd.size);
   memcpy(dest->freundlich_n.data, src->freundlich_n.data, sizeof(double) * src->freundlich_n.size);
   memcpy(dest->langmuir_b.data, src->langmuir_b.data, sizeof(double) * src->langmuir_b.size);
@@ -67,10 +70,25 @@ ChemistryEngine::ChemistryEngine(const std::string& engineName,
 {
   Errors::Message msg;
 
+  // NOTE: Alquimia now has a "hands-off" mode in which Alquimia relies on 
+  // NOTE: reaction properties from the engine as opposed to the ones provided
+  // NOTE: in Amanzi's input file. As stop-gap solution hands-off is indicated
+  // NOTE: by the + sign at end of engine name
+  bool hands_off = false;
+  if (chem_engine_name_ == "PFloTran+")
+  {
+    chem_engine_name_ = "PFloTran";
+    hands_off = true;
+  }
+  if (chem_engine_name_ == "CrunchFlow+")
+  {
+    chem_engine_name_ = "CrunchFlow";
+    hands_off = true;
+  }
   if (chem_engine_name_ != "PFloTran" && chem_engine_name_ != "CrunchFlow")
   {
     msg << "ChemistryEngine: Unsupported chemistry engine: '" << chem_engine_name_ << "'\n";
-    msg << "  Options are 'PFlotran'.\n";
+    msg << "  Options are 'PFlotran' or 'CrunchFlow'.\n";
     Exceptions::amanzi_throw(msg);
   }
 
@@ -86,6 +104,7 @@ ChemistryEngine::ChemistryEngine(const std::string& engineName,
 
   // Set up Alquimia, get sizes for data.
   chem_.Setup(chem_engine_inputfile_.c_str(),
+              hands_off,
               &engine_state_,
               &sizes_,
               &functionality_,
@@ -93,7 +112,7 @@ ChemistryEngine::ChemistryEngine(const std::string& engineName,
   if (chem_status_.error != 0) 
   {
     std::cout << chem_status_.message << std::endl;
-    PrintAlquimiaSizes(&sizes_);
+    PrintAlquimiaSizes(&sizes_, stdout);
     msg << "Error in creation of ChemistryEngine.";
     Exceptions::amanzi_throw(msg); 
   }
@@ -108,7 +127,7 @@ ChemistryEngine::ChemistryEngine(const std::string& engineName,
   if (chem_status_.error != 0) 
   {
     std::cout << chem_status_.message << std::endl;
-    PrintAlquimiaProblemMetaData(&chem_metadata_);
+    PrintAlquimiaProblemMetaData(&chem_metadata_, stdout);
     msg << "Error in ChemistryEngine::Initialize";
     Exceptions::amanzi_throw(msg); 
   }
@@ -125,7 +144,7 @@ ChemistryEngine::~ChemistryEngine()
   {
     FreeAlquimiaGeochemicalCondition(&iter->second->condition);
     FreeAlquimiaState(&iter->second->chem_state);
-    FreeAlquimiaMaterialProperties(&iter->second->mat_props);
+    FreeAlquimiaProperties(&iter->second->mat_props);
     FreeAlquimiaAuxiliaryData(&iter->second->aux_data);
     delete iter->second;
   }
@@ -177,7 +196,7 @@ void ChemistryEngine::GetPrimarySpeciesNames(std::vector<std::string>& species_n
 
 int ChemistryEngine::NumMinerals() const
 {
-  return sizes_.num_kinetic_minerals;
+  return sizes_.num_minerals;
 }
 
 void ChemistryEngine::GetMineralNames(std::vector<std::string>& mineral_names) const
@@ -272,6 +291,20 @@ void ChemistryEngine::GetAuxiliaryOutputNames(std::vector<std::string>& aux_name
   }
 }
 
+int ChemistryEngine::NumAqueousKinetics() const
+{
+  return sizes_.num_aqueous_kinetics;
+}
+
+void ChemistryEngine::GetAqueousKineticNames(std::vector<std::string>& kinetics_names) const
+{
+  const AlquimiaProblemMetaData* metadata = &chem_metadata_;
+  int N = metadata->aqueous_kinetic_names.size;
+  kinetics_names.resize(N);
+  for (int i = 0; i < N; ++i)
+    kinetics_names[i] = std::string(metadata->aqueous_kinetic_names.data[i]);
+}
+
 void ChemistryEngine::CreateCondition(const std::string& condition_name)
 {
   // NOTE: a condition with zero aqueous/mineral constraints is assumed to be defined in 
@@ -279,7 +312,7 @@ void ChemistryEngine::CreateCondition(const std::string& condition_name)
   GeochemicalConditionData* condition = new GeochemicalConditionData();
   condition->processed = false;
   int num_aq = 0, num_min = 0;
-  AllocateAlquimiaMaterialProperties(&sizes_, &condition->mat_props);
+  AllocateAlquimiaProperties(&sizes_, &condition->mat_props);
   AllocateAlquimiaGeochemicalCondition(kAlquimiaMaxStringLength, num_aq, num_min, &condition->condition);
   AllocateAlquimiaState(&sizes_, &condition->chem_state);
   AllocateAlquimiaAuxiliaryData(&sizes_, &condition->aux_data);
@@ -415,7 +448,7 @@ void ChemistryEngine::AddAqueousConstraint(const std::string& condition_name,
 
 void ChemistryEngine::EnforceCondition(const std::string& condition_name,
                                        const double time,
-                                       const AlquimiaMaterialProperties& mat_props,
+                                       const AlquimiaProperties& mat_props,
                                        AlquimiaState& chem_state,
                                        AlquimiaAuxiliaryData& aux_data,
                                        AlquimiaAuxiliaryOutputData& aux_output)
@@ -436,11 +469,11 @@ void ChemistryEngine::EnforceCondition(const std::string& condition_name,
 #endif 
 
   AlquimiaGeochemicalCondition* condition = &iter->second->condition;
-  AlquimiaMaterialProperties& nc_mat_props = const_cast<AlquimiaMaterialProperties&>(mat_props);
+  AlquimiaProperties& nc_mat_props = const_cast<AlquimiaProperties&>(mat_props);
   if (!iter->second->processed)
   {
     // Copy the given state data into place for this condition.
-    CopyAlquimiaMaterialProperties(&iter->second->mat_props, &nc_mat_props);
+    CopyAlquimiaProperties(&iter->second->mat_props, &nc_mat_props);
     CopyAlquimiaState(&iter->second->chem_state, &chem_state);
     CopyAlquimiaAuxiliaryData(&iter->second->aux_data, &aux_data);
 
@@ -453,7 +486,12 @@ void ChemistryEngine::EnforceCondition(const std::string& condition_name,
   }
 
   // Copy the constraint's data into place.
-  CopyAlquimiaMaterialProperties(&nc_mat_props, &iter->second->mat_props);
+  // Here, condition names are used but Alquimia properties are
+  // given as "Material" zones in Amanzi's inputthus disconnecting them
+  // from "Initial" conditions (i.e. condition names)
+  // For the sake of performance, we avoid here to re-process conditions
+  // but we need to retain materical properties as provided in Amanzi inputs
+  // CopyAlquimiaProperties(&nc_mat_props, &iter->second->mat_props);
   CopyAlquimiaState(&chem_state, &iter->second->chem_state);
   CopyAlquimiaAuxiliaryData(&aux_data, &iter->second->aux_data);
 
@@ -482,7 +520,7 @@ void ChemistryEngine::EnforceCondition(const std::string& condition_name,
 }
 
 bool ChemistryEngine::Advance(const double delta_time,
-                              const AlquimiaMaterialProperties& mat_props,
+                              const AlquimiaProperties& mat_props,
                               AlquimiaState& chem_state,
                               AlquimiaAuxiliaryData& aux_data,
                               AlquimiaAuxiliaryOutputData& aux_output,
@@ -493,21 +531,10 @@ bool ChemistryEngine::Advance(const double delta_time,
   int fpe_mask = fedisableexcept(FE_DIVBYZERO);
 #endif 
 
-  // std::cout<<"mat "<<"vol "<<mat_props.volume<<" sat "<<mat_props.saturation<<"\n";
-  // // std::cout<<"mat "<<mat_props.isotherm_kd.data[0]<<" "<<
-  // //   mat_props.freundlich_n.data[0]<<" "<<
-  // //   mat_props.langmuir_b.data[0]<<"\n";
-  // std::cout<<"state "<<"den "<<chem_state.water_density<<" poro "<<chem_state.porosity
-  //          <<" tcc "<<chem_state.total_mobile.data[0]<<"\n";
-  // std::cout<<"mineral_volume_fraction "<<
-  //   chem_state.mineral_volume_fraction.size<<
-  //   " mineral_volume_fraction "<<chem_state.mineral_specific_surface_area.size<<"\n";
-
-
   // Advance the chemical reaction all operator-split-like.
   chem_.ReactionStepOperatorSplit(&engine_state_,
-                                  (const_cast<double*>(&delta_time)),
-                                  &(const_cast<AlquimiaMaterialProperties&>(mat_props)),
+                                  delta_time,
+                                  &(const_cast<AlquimiaProperties&>(mat_props)),
                                   &chem_state,
                                   &aux_data,
                                   &chem_status_);
@@ -520,7 +547,7 @@ bool ChemistryEngine::Advance(const double delta_time,
 
   // Retrieve auxiliary output.
   chem_.GetAuxiliaryOutput(&engine_state_,
-                           &(const_cast<AlquimiaMaterialProperties&>(mat_props)),
+                           &(const_cast<AlquimiaProperties&>(mat_props)),
                            &chem_state,
                            &aux_data,
                            &aux_output,
@@ -530,6 +557,10 @@ bool ChemistryEngine::Advance(const double delta_time,
   if (chem_status_.error != kAlquimiaNoError)
     return false;
 
+  // Did we converge? 
+  if (!chem_status_.converged)
+    return false;
+  
   // Write down the (maximum) number of Newton iterations.
   num_iterations = chem_status_.num_newton_iterations;
   return true;
@@ -540,12 +571,12 @@ const AlquimiaSizes& ChemistryEngine::Sizes() const
   return sizes_;
 }
 
-void ChemistryEngine::InitState(AlquimiaMaterialProperties& mat_props,
+void ChemistryEngine::InitState(AlquimiaProperties& mat_props,
                                 AlquimiaState& chem_state, 
                                 AlquimiaAuxiliaryData& aux_data,
                                 AlquimiaAuxiliaryOutputData& aux_output)
 {
-  AllocateAlquimiaMaterialProperties(&sizes_, &mat_props);
+  AllocateAlquimiaProperties(&sizes_, &mat_props);
   AllocateAlquimiaState(&sizes_, &chem_state);
   AllocateAlquimiaAuxiliaryData(&sizes_, &aux_data);
   AllocateAlquimiaAuxiliaryOutputData(&sizes_, &aux_output);
@@ -555,12 +586,12 @@ void ChemistryEngine::InitState(AlquimiaMaterialProperties& mat_props,
   std::fill(aux_data.aux_doubles.data, aux_data.aux_doubles.data + aux_data.aux_doubles.size, 0.0);
 }
                  
-void ChemistryEngine::FreeState(AlquimiaMaterialProperties& mat_props,
+void ChemistryEngine::FreeState(AlquimiaProperties& mat_props,
                                 AlquimiaState& chem_state,
                                 AlquimiaAuxiliaryData& aux_data,
                                 AlquimiaAuxiliaryOutputData& aux_output)
 {
-  FreeAlquimiaMaterialProperties(&mat_props);
+  FreeAlquimiaProperties(&mat_props);
   FreeAlquimiaState(&chem_state);
   FreeAlquimiaAuxiliaryData(&aux_data);
   FreeAlquimiaAuxiliaryOutputData(&aux_output);

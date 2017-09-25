@@ -27,9 +27,9 @@
 namespace Amanzi {
 namespace WhetStone {
 
-const int WHETSTONE_TENSOR_SIZE[3][4] = {1, 1, 0, 1, 
-                                         1, 2, 0, 3,
-                                         1, 3, 0, 6};
+const int WHETSTONE_TENSOR_SIZE[3][4] = {{1, 1, 0, 1},
+                                         {1, 2, 0, 3},
+                                         {1, 3, 0, 6}};
 
 class Tensor {
  public:

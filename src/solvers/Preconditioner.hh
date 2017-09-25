@@ -26,8 +26,7 @@ namespace AmanziPreconditioners {
 
 class Preconditioner {
  public:
-  Preconditioner() {};
-  ~Preconditioner() {};
+  virtual ~Preconditioner() = default;
 
   // Initializes the solver with provided parameters.
   // This need not be called by preconditioners created using the factory.

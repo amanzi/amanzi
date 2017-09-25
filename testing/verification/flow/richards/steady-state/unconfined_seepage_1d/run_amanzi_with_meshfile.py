@@ -4,7 +4,7 @@ import os, sys, shutil, subprocess, re
 def run_amanzi(input_file, directory=None, parameters=None, mesh_file=None, overwrite=False):
 
     if not directory:
-        directory = "amanzi-output"
+        directory = "output"
 
     CWD =os.getcwd()
     run_directory= os.path.join(CWD,directory)

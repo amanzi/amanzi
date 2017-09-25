@@ -28,7 +28,7 @@
     <flow state="on" model="saturated"/>
     <transport state="on" />
     <!--chemistry state="on" engine="pflotran" database="calcite.dat" /-->
-    <chemistry state="on" engine="pflotran" input_filename="1d-calcite-trim.in" database="calcite.dat"/>
+    <chemistry state="on" engine="pflotran" input_filename="1d-calcite.in" database="calcite.dat"/>
   </process_kernels>
 
   <phases>
@@ -142,6 +142,14 @@
       <box low_coordinates= "0.0,0.0,0.0"     high_coordinates="100.0,1.0,1.0"/>
     </region>
 
+    <region name ="right">
+      <box low_coordinates= "25.0,0.0,0.0"     high_coordinates="100.0,1.0,1.0"/>
+    </region>
+
+    <region name ="left">
+      <box low_coordinates= "0.0,0.0,0.0"     high_coordinates="25.0,1.0,1.0"/>
+    </region>
+    
     <region name ="west">
       <box low_coordinates= "0.0,0.0,0.0"     high_coordinates="0.0,1.0,1.0"/>
     </region>
@@ -152,22 +160,38 @@
   </regions>
 
   <materials>
-    <material name="soil">
+    <material name="withCalcite">
       <mechanical_properties>
         <porosity value="0.25"/>
         <!--particle_density value="2720.0"/-->
       </mechanical_properties>
       <permeability x="1.0e-12" y="1.0e-12" z="1.0e-12"/>
-      <assigned_regions>All</assigned_regions>
+      <assigned_regions>right</assigned_regions>
       <minerals>
-        <mineral name="Calcite" volume_fraction="1.0e-5" specific_surface_area="1.0"/>
+	<!-- this has no effect if a pflotran file is provided -->
+        <mineral name="Calcite" volume_fraction="1.0e-5" specific_surface_area="100.0"/>
       </minerals>
     </material>
+
+    <material name="withoutCalcite">
+      <mechanical_properties>
+        <porosity value="0.25"/>
+        <!--particle_density value="2720.0"/-->
+      </mechanical_properties>
+      <permeability x="1.0e-12" y="1.0e-12" z="1.0e-12"/>
+      <assigned_regions>left</assigned_regions>
+      <minerals>
+	<!-- this has no effect if a pflotran file is provided -->
+        <mineral name="Calcite" volume_fraction="0.0" specific_surface_area="100.0"/>
+      </minerals>
+    </material>
+
   </materials>
 
   <initial_conditions>  
-    <initial_condition name="initial_ic">
-      <assigned_regions>All</assigned_regions>
+
+    <initial_condition name="initial_right">
+      <assigned_regions>right</assigned_regions>
       <liquid_phase name="water">
         <liquid_component name="water">
           <uniform_pressure value="201325.0"/>
@@ -177,6 +201,19 @@
         </geochemistry_component>
       </liquid_phase>
     </initial_condition>
+
+    <initial_condition name="initial_left">
+      <assigned_regions>left</assigned_regions>
+      <liquid_phase name="water">
+        <liquid_component name="water">
+          <uniform_pressure value="201325.0"/>
+        </liquid_component>
+        <geochemistry_component>
+          <constraint name="noCalcite"/>
+        </geochemistry_component>
+      </liquid_phase>
+    </initial_condition>
+
   </initial_conditions>
 
   <boundary_conditions> 
@@ -199,39 +236,33 @@
         </liquid_component>
       </liquid_phase>
     </boundary_condition>
-    <!-- EIB: problem I'm matching uses BC: Zero Gradient which doesn't actually exist, 
-         so removing BC to match target problem.
-    <boundary_condition name="east_bc">
-      <assigned_regions>east</assigned_regions>
-      <liquid_phase name="water">
-        <liquid_component name="water">
-          <uniform_pressure value="201325.0" start="0.0" function="constant"/>
-        </liquid_component>
-        <solute_component name="solute">
-          <aqueous_conc name = "A" start = "0.0" value= "0" function="constant"/>
-          <aqueous_conc name = "B" start = "0.0" value= "0" function="constant"/>
-          <aqueous_conc name = "C" start = "0.0" value= "0" function="constant"/>
-        </solute_component>
-      </liquid_phase>
-    </boundary_condition>
-                -->
   </boundary_conditions>
 
   <geochemistry>
     <verbosity>silent</verbosity>
     <constraints>
+
+      <!-- constraints here have no effect if a pflotran file is provided -->
       <constraint name="initial">
-        <primary mineral="Calcite" name="Ca++" type="mineral" value="5.0e-4"/>
+        <primary name="Ca++" type="mineral" mineral="Calcite" value="5.0e-4"/>
         <primary name="HCO3-" type="gas" value="1.0e-3" gas="CO2(g)"/>
         <primary name="H+" type="free_ion" value="1.0e-8"/>
-	<mineral name="Calcite"     volume_fraction="1.0e-5" specific_surface_area="100.0"/>
-	<!-- EIB: note existing IN file show 2.0 cm^2/cm^3, but default units are m^2/m^3; hence value change -->
+	<mineral name="Calcite" volume_fraction="1.0e-5" specific_surface_area="100.0"/>
       </constraint>
+
+      <constraint name="noCalcite">
+        <primary name="Ca++" type="mineral" mineral="Calcite" value="5.0e-4"/>
+        <primary name="HCO3-" type="gas" value="1.0e-3" gas="CO2(g)"/>
+        <primary name="H+" type="free_ion" value="1.0e-8"/>
+	<mineral name="Calcite" volume_fraction="0.0" specific_surface_area="100.0"/>
+      </constraint>
+      
       <constraint name="west">
         <primary name="Ca++" type="charge" value="1e-6"/>
         <primary name="HCO3-" type="total" value="1e-3"/>
         <primary name="H+" type="pH" value="5"/>
       </constraint>
+
     </constraints>
   </geochemistry>
 

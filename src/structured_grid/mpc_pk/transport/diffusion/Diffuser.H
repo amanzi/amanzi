@@ -10,7 +10,7 @@
     public:
       DiffuserOp(Op* _op, Vector* _W) : op(_op), W(_W) {}
 
-      Real ApplyOperator(Vector& Ax, Vector& x) {op->apply(Ax,x);}
+      Real ApplyOperator(Vector& Ax, Vector& x) {op->apply(Ax,x); return 0.0;}
       Real ScaleOperator() {
         if (op==0) return 1;
         Real a = op->get_alpha();
