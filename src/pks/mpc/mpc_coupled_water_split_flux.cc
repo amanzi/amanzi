@@ -1,0 +1,135 @@
+/* -*-  mode: c++; indent-tabs-mode: nil -*- */
+/* -------------------------------------------------------------------------
+ATS
+
+License: see $ATS_DIR/COPYRIGHT
+Author: Ethan Coon
+
+------------------------------------------------------------------------- */
+
+#include "primary_variable_field_evaluator.hh"
+#include "mpc_surface_subsurface_helpers.hh"
+
+#include "mpc_coupled_water_split_flux.hh"
+
+
+namespace Amanzi {
+
+MPCCoupledWaterSplitFlux::MPCCoupledWaterSplitFlux(Teuchos::ParameterList& FElist,
+                 const Teuchos::RCP<Teuchos::ParameterList>& plist,
+                 const Teuchos::RCP<State>& S,
+                 const Teuchos::RCP<TreeVector>& solution)
+    : PK(FElist, plist, S, solution),
+      MPC<PK>(FElist, plist, S, solution) {
+
+  std::string domain = plist_->get<std::string>("domain name");
+  primary_variable_ = Keys::readKey(*plist_, domain, "primary variable");
+  primary_variable_star_ = Keys::getKey(domain+"_star", Keys::getVarName(primary_variable_));
+  lateral_flow_source_ = Keys::readKey(*plist_, domain, "lateral flow source", "lateral_flow_source");
+  conserved_variable_star_ = Keys::readKey(*plist_, domain+"_star", "conserved quantity", "water_content");
+  cv_key_ = Keys::readKey(*plist_, domain, "cell volume", "cell_volume");
+  
+  // set up for a primary variable field evaluator for the flux
+  auto& sublist = S->FEList().sublist(lateral_flow_source_);
+  sublist.set("field evaluator type", "primary variable");
+
+  init_(S);
+};
+
+
+void MPCCoupledWaterSplitFlux::Setup(const Teuchos::Ptr<State>& S) {
+  MPC<PK>::Setup(S);
+
+  Teuchos::RCP<FieldEvaluator> fe = S->RequireFieldEvaluator(lateral_flow_source_);
+  eval_pvfe_ = Teuchos::rcp_dynamic_cast<PrimaryVariableFieldEvaluator>(fe);
+  ASSERT(eval_pvfe_ != Teuchos::null);
+}
+
+// -----------------------------------------------------------------------------
+// Calculate the min of sub PKs timestep sizes.
+// -----------------------------------------------------------------------------
+double MPCCoupledWaterSplitFlux::get_dt() {
+  double dt = 1.0e99;
+  for (MPC<PK>::SubPKList::iterator pk = sub_pks_.begin();
+       pk != sub_pks_.end(); ++pk) {
+    dt = std::min<double>(dt, (*pk)->get_dt());
+  }
+  return dt;
+};
+
+// -----------------------------------------------------------------------------
+// Set timestep for sub PKs 
+// -----------------------------------------------------------------------------
+void MPCCoupledWaterSplitFlux::set_dt( double dt) {
+  for (MPC<PK>::SubPKList::iterator pk = sub_pks_.begin();
+       pk != sub_pks_.end(); ++pk) {
+    (*pk)->set_dt(dt);
+  }
+
+};
+
+// -----------------------------------------------------------------------------
+// Advance each sub-PK individually.
+// -----------------------------------------------------------------------------
+bool MPCCoupledWaterSplitFlux::AdvanceStep(double t_old, double t_new, bool reinit) {
+  // Advance the star system 
+  bool fail = false;
+  ASSERT(sub_pks_.size() == 2);
+  fail = sub_pks_[0]->AdvanceStep(t_old, t_new, reinit);
+  if (fail) return fail;
+
+  // Copy star's new value into primary's old value
+  CopyStarToPrimary(S_inter_.ptr(), t_new - t_old);
+  CopyStarToPrimary(S_next_.ptr(), t_new - t_old);
+
+  // Now advance the primary
+  fail = sub_pks_[1]->AdvanceStep(t_old, t_new, reinit);
+  if (fail) return fail;
+
+  // Now copy back to star.
+  CopyPrimaryToStar(S_next_.ptr(), S_next_.ptr());
+  return fail;
+};
+
+
+// -----------------------------------------------------------------------------
+// Copy the primary variable to the star system
+// -----------------------------------------------------------------------------
+void
+MPCCoupledWaterSplitFlux::CopyPrimaryToStar(const Teuchos::Ptr<const State>& S,
+                                    const Teuchos::Ptr<State>& S_star) {
+  auto& pv_star = *S_star->GetFieldData(primary_variable_star_, S_star->GetField(primary_variable_star_)->owner())
+                  ->ViewComponent("cell",false);
+  auto& pv = *S->GetFieldData(primary_variable_)
+             ->ViewComponent("cell",false);
+  for (int c=0; c!=pv_star.MyLength(); ++c) {
+    if (pv[0][c] <= 101325.0) {
+      pv_star[0][c] = 101325.;
+    } else {
+      pv_star[0][c] = pv[0][c];
+    }
+  }
+
+  auto eval = S_star->GetFieldEvaluator(primary_variable_star_);
+  auto eval_pvfe = Teuchos::rcp_dynamic_cast<PrimaryVariableFieldEvaluator>(eval);
+  eval_pvfe->SetFieldAsChanged(S_star.ptr());
+}
+
+// -----------------------------------------------------------------------------
+// Copy the star time derivative to the source evaluator.
+// -----------------------------------------------------------------------------
+void
+MPCCoupledWaterSplitFlux::CopyStarToPrimary(const Teuchos::Ptr<State>& S, double dt) {
+  auto& q_div = *S->GetFieldData(lateral_flow_source_, S->GetField(lateral_flow_source_)->owner())
+                ->ViewComponent("cell",false);
+  q_div.Update(1.0/dt,
+               *S_next_->GetFieldData(conserved_variable_star_)->ViewComponent("cell",false),
+               -1.0/dt,
+               *S_inter_->GetFieldData(conserved_variable_star_)->ViewComponent("cell",false),
+               0.);
+  q_div.ReciprocalMultiply(1.0, *S->GetFieldData(cv_key_)->ViewComponent("cell",false), q_div, 0.);
+  eval_pvfe_->SetFieldAsChanged(S.ptr());
+}
+
+
+} // namespace

@@ -71,7 +71,6 @@ MPCDelegateWater::ModifyCorrection_WaterFaceLimiter(double h, Teuchos::RCP<const
       }
     }
   }
-
   return n_modified;
 }
 
