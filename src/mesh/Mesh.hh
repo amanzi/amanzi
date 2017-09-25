@@ -409,8 +409,16 @@ class Mesh {
 
   //
   virtual
-  int build_columns(const std::string& setname) const;
+  int build_columns(const std::string& Msetname) const;
 
+  // Build columns over the entire mesh. The columns are defined by
+  // starting from boundary faces which have a negative-z-direction
+  // normal, then collecting cells and faces while traveling downward
+  // through the columns.
+
+  virtual
+  int build_columns() const;
+  
   // Number of columns in mesh
   int num_columns(bool ghosted=false) const;
 
@@ -691,11 +699,9 @@ class Mesh {
   virtual
   void write_to_exodus_file(const std::string filename) const = 0;
 
- protected:
+protected:
   // Helper function to build columns
-  virtual
-  int build_columns_() const;
-  void build_single_column_(int colnum, Entity_ID top_face) const;
+  int build_single_column_(int colnum, Entity_ID top_face) const;
 
   // Beginning of new interface to regions using the base mesh.
   void get_set_entities_box_vofs_(

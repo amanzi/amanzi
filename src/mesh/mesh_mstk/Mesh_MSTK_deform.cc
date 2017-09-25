@@ -49,6 +49,14 @@ int Mesh_MSTK::deform(const std::vector<double>& target_cell_volumes_in,
   static const double macheps = 2.2e-16;
   static const double sqrt_macheps = sqrt(macheps);
 
+  // This is a specialized function designed for columnar meshes so make sure
+  // that we built the columns first
+
+  if (!Mesh::build_columns()) {
+    std::cerr << "Could not deform mesh as we could not build columns in mesh\n" << std::endl;
+    return 0;
+  }
+  
   // Initialize the deformation function constants
 
   k1 = min_vol_const1;
