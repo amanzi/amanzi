@@ -25,7 +25,8 @@ Mesh_MSTK::Mesh_MSTK(const char *filename, const Epetra_MpiComm *incomm_,
                      const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm,
                      const Teuchos::RCP<const VerboseObject>& verbobj,
                      const bool request_faces,
-                     const bool request_edges) :
+                     const bool request_edges,
+		     const Partitioner_type partitioner) :
     Mesh(verbobj,request_faces,request_edges), 
     mpicomm_(incomm_->GetMpiComm()), meshxyz(NULL), 
     faces_initialized(false), edges_initialized(false),
@@ -73,7 +74,7 @@ Mesh_MSTK::Mesh_MSTK(const char *filename, const Epetra_MpiComm *incomm_,
       opts[0] = 1;   // Partition the input mesh
       opts[1] = 0;   // Use the default method for distributing the mesh
       opts[2] = 1;   // Number of ghost layers
-      opts[3] = 1;   // Use Zoltan for partitioning if available
+      opts[3] = static_cast<int>(partitioner);
 
       ok = MESH_ImportFromExodusII(mesh,filename,opts,mpicomm_);
     }
@@ -158,7 +159,8 @@ Mesh_MSTK::Mesh_MSTK(const char *filename, const Epetra_MpiComm *incomm_,
                      const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm,
                      const Teuchos::RCP<const VerboseObject>& verbobj,
                      const bool request_faces,
-                     const bool request_edges) :
+                     const bool request_edges,
+		     const Partitioner_type partitioner) :
     Mesh(verbobj,request_faces,request_edges), 
     mpicomm_(incomm_->GetMpiComm()), meshxyz(NULL),
     faces_initialized(false), edges_initialized(false),
@@ -192,7 +194,7 @@ Mesh_MSTK::Mesh_MSTK(const char *filename, const Epetra_MpiComm *incomm_,
       opts[0] = 1;   // Partition the input mesh
       opts[1] = 0;   // Use the default method for distributing the mesh
       opts[2] = 1;   // Number of ghost layers
-      opts[3] = 1;   // Use Zoltan for partitioning if available
+      opts[3] = static_cast<int>(partitioner);
 
       ok = MESH_ImportFromExodusII(mesh,filename,opts,mpicomm_);
     }
@@ -250,7 +252,8 @@ Mesh_MSTK::Mesh_MSTK(const double x0, const double y0, const double z0,
                      const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm,
                      const Teuchos::RCP<const VerboseObject>& verbobj,
                      const bool request_faces,
-                     const bool request_edges) :
+                     const bool request_edges,
+		     const Partitioner_type partitioner) :
     Mesh(verbobj,request_faces,request_edges), 
     mpicomm_(incomm_->GetMpiComm()), meshxyz(NULL), 
     faces_initialized(false), edges_initialized(false),
@@ -283,7 +286,7 @@ Mesh_MSTK::Mesh_MSTK(const double x0, const double y0, const double z0,
     int ring = 1; // One layer of ghost cells in parallel meshes
     int with_attr = 1;  // update of attributes in parallel meshes
     int del_inmesh = 1; // delete input mesh as soon as possible
-    int method = 1; /* Partition with ZOLTAN */
+    int method = static_cast<int>(partitioner);
 
     
     if (myprocid == 0) {
@@ -335,7 +338,8 @@ Mesh_MSTK::Mesh_MSTK(const double x0, const double y0,
                      const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm,
                      const Teuchos::RCP<const VerboseObject>&verbobj,
                      const bool request_faces,
-                     const bool request_edges) :
+                     const bool request_edges,
+		     const Partitioner_type partitioner) :
     Mesh(verbobj,request_faces,request_edges), 
     mpicomm_(incomm_->GetMpiComm()), meshxyz(NULL), 
     faces_initialized(false), edges_initialized(false),
@@ -380,7 +384,7 @@ Mesh_MSTK::Mesh_MSTK(const double x0, const double y0,
     int ring = 1; // One layer of ghost cells in parallel meshes
     int with_attr = 1;  // update of attributes in parallel meshes
     int del_inmesh = 1; // delete input mesh at the earliest
-    int method = 1; /* Partition with ZOLTAN */
+    int method = static_cast<int>(partitioner);
 
     if (myprocid == 0) {
       globalmesh = MESH_New(F1);
@@ -429,7 +433,8 @@ Mesh_MSTK::Mesh_MSTK(const GenerationSpec& gspec,
                      const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm,
                      const Teuchos::RCP<const VerboseObject>&verbobj,
                      const bool request_faces,
-                     const bool request_edges) :
+                     const bool request_edges,
+		     const Partitioner_type partitioner) :
     Mesh(verbobj,request_faces,request_edges), 
     mpicomm_(incomm_->GetMpiComm()), meshxyz(NULL), 
     faces_initialized(false), edges_initialized(false),
@@ -481,7 +486,7 @@ Mesh_MSTK::Mesh_MSTK(const GenerationSpec& gspec,
     int ring = 1; // One layer of ghost cells in parallel meshes
     int with_attr = 1;  // update of attributes in parallel meshes
     int del_inmesh = 1; // delete global mesh
-    int method = 1; // Partition with ZOLTAN
+    int method = static_cast<int>(partitioner);
     
     if (myprocid == 0) {
       globalmesh = MESH_New(F1);
