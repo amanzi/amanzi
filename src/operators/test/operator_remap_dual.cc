@@ -66,8 +66,8 @@ void RemapTests2DDual(int order, std::string disc_name,
   meshfactory.preference(FrameworkPreference({MSTK}));
 
   // Teuchos::RCP<const Mesh> mesh0 = meshfactory(0.0, 0.0, 1.0, 1.0, nx, ny);
-  Teuchos::RCP<const Mesh> mesh0 = meshfactory("test/median15x16.exo", Teuchos::null);
-  // Teuchos::RCP<const Mesh> mesh0 = meshfactory("test/random40.exo", Teuchos::null);
+  // Teuchos::RCP<const Mesh> mesh0 = meshfactory("test/median15x16.exo", Teuchos::null);
+  Teuchos::RCP<const Mesh> mesh0 = meshfactory("test/random10.exo", Teuchos::null);
 
   int ncells_owned = mesh0->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   int ncells_wghost = mesh0->num_entities(AmanziMesh::CELL, AmanziMesh::USED);
@@ -77,8 +77,8 @@ void RemapTests2DDual(int order, std::string disc_name,
 
   // create second and auxiliary mesh
   // Teuchos::RCP<Mesh> mesh1 = meshfactory(0.0, 0.0, 1.0, 1.0, nx, ny);
-  Teuchos::RCP<Mesh> mesh1 = meshfactory("test/median15x16.exo", Teuchos::null);
-  // Teuchos::RCP<Mesh> mesh1 = meshfactory("test/random40.exo", Teuchos::null);
+  // Teuchos::RCP<Mesh> mesh1 = meshfactory("test/median15x16.exo", Teuchos::null);
+  Teuchos::RCP<Mesh> mesh1 = meshfactory("test/random10.exo", Teuchos::null);
 
   // deform the second mesh
   AmanziGeometry::Point xv(2), xref(2);
@@ -336,7 +336,7 @@ void RemapTests2DDual(int order, std::string disc_name,
     mass1 += p2c[0][c] * mesh1->cell_volume(c);
   }
   pl2_err = std::pow(pl2_err, 0.5);
-  CHECK(pl2_err < 0.1 / (order + 1));
+  CHECK(pl2_err < 0.12 / (order + 1));
 
   if (MyPID == 0) {
     printf("L2(p0)=%12.8g  Inf(p0)=%12.8g  dMass=%12.8g  Err(area)=%12.8g\n", 
@@ -373,7 +373,7 @@ TEST(REMAP_DG0_DUAL_VEM) {
 }
 
 TEST(REMAP_DG1_DUAL_VEM) {
-  RemapTests2DDual(1, "dg modal", "VEM", 20, 20, 0.1 / 16);
+  RemapTests2DDual(1, "dg modal", "VEM", 20, 20, 0.1);
 }
 
 

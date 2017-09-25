@@ -153,9 +153,9 @@ void RemapTests2DPrimal(int order, std::string disc_name,
   Teuchos::RCP<AdvectionRiemann> op = Teuchos::rcp(new AdvectionRiemann(plist, mesh0));
   auto global_op = op->global_operator();
 
-  std::vector<WhetStone::VectorPolynomial> vec_vel(nfaces_owned);
+  std::vector<WhetStone::VectorPolynomial> vec_vel(nfaces_wghost);
   Teuchos::RCP<std::vector<WhetStone::Polynomial> > vel = 
-      Teuchos::rcp(new std::vector<WhetStone::Polynomial>(nfaces_owned));
+      Teuchos::rcp(new std::vector<WhetStone::Polynomial>(nfaces_wghost));
 
   // Attach volumetric advection operator to the flux operator.
   // We modify the existing parameter list.
@@ -196,12 +196,12 @@ void RemapTests2DPrimal(int order, std::string disc_name,
 
   while(t < tend - dt/2) {
     // calculate face velocities
-    for (int f = 0; f < nfaces_owned; ++f) {
+    for (int f = 0; f < nfaces_wghost; ++f) {
       maps->VelocityFace(f, vec_vel[f]);
     }
 
     // calculate normal component of face velocities and change its sign
-    for (int f = 0; f < nfaces_owned; ++f) {
+    for (int f = 0; f < nfaces_wghost; ++f) {
       // cn = j J^{-t} N dA
       WhetStone::VectorPolynomial cn;
       maps->NansonFormula(f, t + dt/2, vec_vel[f], cn);

@@ -513,10 +513,10 @@ Polynomial DG_Modal::CalculatePolynomial(int c, const std::vector<double>& coefs
 void DG_Modal::UpdateIntegrals_(int c, int order)
 {
   if (integrals_.size() == 0) {
-    int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
-    integrals_.resize(ncells_owned);
+    int ncells_wghost = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+    integrals_.resize(ncells_wghost);
 
-    for (int n = 0; n < ncells_owned; ++n) {
+    for (int n = 0; n < ncells_wghost; ++n) {
       integrals_[n].Reshape(d_, 0);
       integrals_[n].monomials(0).coefs()[0] = mesh_->cell_volume(n);
     }
@@ -540,17 +540,17 @@ void DG_Modal::UpdateIntegrals_(int c, int order)
 void DG_Modal::UpdateScales_(int c, int order)
 {
   if (scales_a_.size() == 0) {
-    int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
-    scales_a_.resize(ncells_owned);
-    scales_b_.resize(ncells_owned);
+    int ncells_wghost = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::USED);
+    scales_a_.resize(ncells_wghost);
+    scales_b_.resize(ncells_wghost);
 
-    for (int n = 0; n < ncells_owned; ++n) {
+    for (int n = 0; n < ncells_wghost; ++n) {
       scales_a_[n].Reshape(d_, order);
       scales_b_[n].Reshape(d_, order);
     }
 
     // For the moment, we update everything in one shot
-    for (int n = 0; n < ncells_owned; ++n) {
+    for (int n = 0; n < ncells_wghost; ++n) {
       UpdateIntegrals_(n, 2 * order);
 
       const Polynomial& integrals = integrals_[n];
