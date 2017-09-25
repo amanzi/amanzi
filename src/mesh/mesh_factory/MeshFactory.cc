@@ -111,7 +111,7 @@ MeshFactory::create(const std::string& filename,
     if (framework_reads(*i, fmt, my_comm_->NumProc() > 1)) {
       try {
         result = framework_read(my_comm_, *i, filename, gm, vo_,
-                                request_faces, request_edges);
+                                request_faces, request_edges, partitioner_);
         return result;
       } catch (const Message& msg) {
         ierr[0] += 1;
@@ -191,7 +191,7 @@ MeshFactory::create(double x0, double y0, double z0,
                                     x0, y0, z0, x1, y1, z1, 
                                     nx, ny, nz,
                                     gm, vo_,
-                                    request_faces, request_edges);
+                                    request_faces, request_edges, partitioner_);
         return result;
       } catch (const Message& msg) {
         ierr[0] += 1;
@@ -267,7 +267,7 @@ MeshFactory::create(double x0, double y0,
                                     x0, y0, x1, y1,
                                     nx, ny,
                                     gm, vo_,
-                                    request_faces, request_edges);
+                                    request_faces, request_edges, partitioner_);
         return result;
       } catch (const Message& msg) {
         ierr[0] += 1;
@@ -315,7 +315,7 @@ MeshFactory::create(Teuchos::ParameterList &parameter_list,
     if (framework_generates(*i, my_comm_->NumProc() > 1, dim)) {
       try {
         result = framework_generate(my_comm_, *i, parameter_list, gm, vo_,
-                                    request_faces, request_edges);
+                                    request_faces, request_edges, partitioner_);
         return result;
       } catch (const Message& msg) {
         ierr[0] += 1;
