@@ -63,11 +63,11 @@ GenerationSpec::parse_(const Teuchos::ParameterList& parameter_list)
 
   if (parameter_list.isParameter("partitioner")) {
     std::string partitioner_str = parameter_list.get<std::string>("partitioner");
-    if (partitioner_str == "METIS")
+    if (partitioner_str == "METIS" || partitioner_str == "metis")
       partitioner_ = Partitioner_type::METIS;
-    else if (partitioner_str == "ZOLTAN_GRAPH")
+    else if (partitioner_str == "ZOLTAN_GRAPH" || partitioner_str == "zoltan_graph")
       partitioner_ = Partitioner_type::ZOLTAN_GRAPH;
-    else if (partitioner_str == "ZOLTAN_RCB")
+    else if (partitioner_str == "ZOLTAN_RCB" || partitioner_str == "zoltan_rcb")
       partitioner_ = Partitioner_type::ZOLTAN_RCB;
   }
   
