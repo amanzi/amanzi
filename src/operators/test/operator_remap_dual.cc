@@ -74,6 +74,7 @@ void RemapTests2DDual(int order, std::string disc_name,
   int nfaces_owned = mesh0->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
   int nfaces_wghost = mesh0->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
   int nnodes_owned = mesh0->num_entities(AmanziMesh::NODE, AmanziMesh::OWNED);
+  int nnodes_wghost = mesh0->num_entities(AmanziMesh::NODE, AmanziMesh::USED);
 
   // create second and auxiliary mesh
   // Teuchos::RCP<Mesh> mesh1 = meshfactory(0.0, 0.0, 1.0, 1.0, nx, ny);
@@ -85,7 +86,7 @@ void RemapTests2DDual(int order, std::string disc_name,
   Entity_ID_List nodeids;
   AmanziGeometry::Point_List new_positions, final_positions;
 
-  for (int v = 0; v < nnodes_owned; ++v) {
+  for (int v = 0; v < nnodes_wghost; ++v) {
     mesh1->node_get_coordinates(v, &xv);
 
     double ds(0.001), ux, uy;
@@ -109,7 +110,6 @@ void RemapTests2DDual(int order, std::string disc_name,
   Epetra_MultiVector& p1c = *p1->ViewComponent("cell", true);
 
   // we need dg to compute scaling of basis functions
-  double mass0(0.0);
   WhetStone::DG_Modal dg(order, mesh0);
 
   for (int c = 0; c < ncells_wghost; c++) {
@@ -128,7 +128,11 @@ void RemapTests2DDual(int order, std::string disc_name,
       dg.TaylorBasis(c, it, &a, &b);
       p1c[2][c] = 6 * std::sin(3 * xc[0]) * std::cos(6 * xc[1]) / a;
     }
+  }
 
+  // initial mass
+  double mass0(0.0);
+  for (int c = 0; c < ncells_owned; c++) {
     mass0 += p1c[0][c] * mesh0->cell_volume(c);
   }
 
