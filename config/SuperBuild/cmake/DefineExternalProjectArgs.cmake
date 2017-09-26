@@ -50,7 +50,7 @@ macro(DEFINE_EXTERNAL_PROJECT_ARGS prefix)
 
   # Download from the web unless DISABLE_EXTERNAL_DOWNLOADS is TRUE
   if ( DISABLE_EXTERNAL_DOWNLOAD )
-    set(${prefix}_URL ${TPL_DOWNLOAD_DIR}/${${prefix}_ARCHIVE_FILE})
+	  set(${prefix}_URL ${TPL_DOWNLOAD_DIR}/${${prefix}_SAVEAS_FILE})
 
     if ( NOT EXISTS "${${prefix}_URL}" )
       message(FATAL_ERROR "You have disabled external downloads (-DDISABLE_EXTERNAL_DOWNLOAD:BOOL=TRUE),"
