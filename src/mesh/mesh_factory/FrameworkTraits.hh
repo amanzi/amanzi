@@ -83,8 +83,7 @@ framework_generate(const Epetra_MpiComm *comm_, const Framework& f,
                    const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm = Teuchos::null,
                    const Teuchos::RCP<const VerboseObject>& vo = Teuchos::null,
                    const bool request_faces = true,
-                   const bool request_edges = false,
-		   const Partitioner_type partitioner = PARTITIONER_DEFAULT);
+                   const bool request_edges = false);
 
 extern Teuchos::RCP<Mesh>
 framework_extract(const Epetra_MpiComm *comm_, const Framework& f,
