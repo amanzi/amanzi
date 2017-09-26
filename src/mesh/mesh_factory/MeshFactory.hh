@@ -79,7 +79,7 @@ class MeshFactory {
   }
 
   /// Set the partitioner
-  void partitioner(Partitioner_type partitioner) {
+  void set_partitioner(Partitioner_type partitioner) {
     partitioner_ = partitioner;
   }
 

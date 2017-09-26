@@ -67,7 +67,7 @@ TEST(MESH_COLUMNS)
       prefs.push_back(the_framework);
 
       factory.preference(prefs);
-      factory.partitioner(Amanzi::AmanziMesh::Partitioner_type::ZOLTAN_RCB);
+      factory.set_partitioner(Amanzi::AmanziMesh::Partitioner_type::ZOLTAN_RCB);
 
       mesh = factory(0.0,0.0,0.0,1.0,1.0,1.0,4,4,4);
 
