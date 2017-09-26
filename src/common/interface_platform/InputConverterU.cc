@@ -58,11 +58,13 @@ Teuchos::ParameterList InputConverterU::Translate(int rank, int num_proc)
   out_list.sublist("domain").set<int>("spatial dimension", dim_);
   out_list.sublist("regions") = TranslateRegions_();
 
-  const Teuchos::ParameterList& tmp = TranslateOutput_();
-  for (auto it = tmp.begin(); it != tmp.end(); ++it)
-    out_list.sublist(it->first) = tmp.sublist(it->first);
-
   out_list.sublist("state") = TranslateState_();
+
+  const Teuchos::ParameterList& tmp = TranslateOutput_();
+  for (auto it = tmp.begin(); it != tmp.end(); ++it) {
+    out_list.sublist(it->first) = tmp.sublist(it->first);
+  }
+
   out_list.sublist("cycle driver") = TranslateCycleDriver_();
   Teuchos::ParameterList& cd_list = out_list.sublist("cycle driver");
   out_list.sublist("PKs") = TranslatePKs_(cd_list);
