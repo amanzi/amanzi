@@ -433,8 +433,7 @@ Mesh_MSTK::Mesh_MSTK(const GenerationSpec& gspec,
                      const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm,
                      const Teuchos::RCP<const VerboseObject>&verbobj,
                      const bool request_faces,
-                     const bool request_edges,
-		     const Partitioner_type partitioner) :
+                     const bool request_edges) :
     Mesh(verbobj,request_faces,request_edges), 
     mpicomm_(incomm_->GetMpiComm()), meshxyz(NULL), 
     faces_initialized(false), edges_initialized(false),
@@ -486,7 +485,7 @@ Mesh_MSTK::Mesh_MSTK(const GenerationSpec& gspec,
     int ring = 1; // One layer of ghost cells in parallel meshes
     int with_attr = 1;  // update of attributes in parallel meshes
     int del_inmesh = 1; // delete global mesh
-    int method = static_cast<int>(partitioner);
+    int method = static_cast<int>(gspec.partitioner());
     
     if (myprocid == 0) {
       globalmesh = MESH_New(F1);
