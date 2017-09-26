@@ -186,7 +186,18 @@ AmanziUnstructuredGridSimulationDriver::Run(const MPI_Comm& mpi_comm,
           s += ": specified mesh framework preference not understood";
           amanzi_throw(Errors::Message(s));
 	}
-      }   
+      }
+
+      bool partitioner_specified = expert_mesh_params.isParameter("partitioner");
+      if (partitioner_specified) {
+        std::string partitioner = expert_mesh_params.get<std::string>("partitioner");
+        if (partitioner == "METIS" || partitioner == "metis")
+          factory.partitioner(Amanzi::AmanziMesh::Partitioner_type::METIS);
+        else if (partitioner == "ZOLTAN_GRAPH" || partitioner == "zoltan_graph")
+          factory.partitioner(Amanzi::AmanziMesh::Partitioner_type::ZOLTAN_GRAPH);
+        else if (partitioner == "ZOLTAN_RCB" || partitioner == "zoltan_rcb")
+          factory.partitioner(Amanzi::AmanziMesh::Partitioner_type::ZOLTAN_RCB);
+      }
     }
 
     // Create a mesh factory with default or user preferences for a

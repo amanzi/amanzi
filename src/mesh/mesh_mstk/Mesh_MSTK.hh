@@ -46,7 +46,8 @@ class Mesh_MSTK : public Mesh {
             const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm = Teuchos::null,
             const Teuchos::RCP<const VerboseObject>& verbosity_obj = Teuchos::null,
 	    const bool request_faces = true,
-	    const bool request_edges = false);
+	    const bool request_edges = false,
+	    const Partitioner_type partitioner = PARTITIONER_DEFAULT);
 
   Mesh_MSTK(const char *filename, const Epetra_MpiComm *incomm_, 
             int space_dimension,
@@ -54,7 +55,8 @@ class Mesh_MSTK : public Mesh {
             Teuchos::null,
             const Teuchos::RCP<const VerboseObject>& verbosity_obj = Teuchos::null,
 	    const bool request_faces = true,
-	    const bool request_edges = false);
+	    const bool request_edges = false,
+	    const Partitioner_type partitioner = PARTITIONER_DEFAULT);
 
   // Constructors that generate a mesh internally (regular hexahedral mesh only)
 
@@ -67,7 +69,8 @@ class Mesh_MSTK : public Mesh {
             const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm = Teuchos::null,
             const Teuchos::RCP<const VerboseObject>& verbosity_obj = Teuchos::null,
 	    const bool request_faces = true,
-	    const bool request_edges = false);
+	    const bool request_edges = false,
+	    const Partitioner_type partitioner = PARTITIONER_DEFAULT);
 
   // 2D
   Mesh_MSTK(const double x0, const double y0,
@@ -77,7 +80,8 @@ class Mesh_MSTK : public Mesh {
             const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm = Teuchos::null,
             const Teuchos::RCP<const VerboseObject>& verbosity_obj = Teuchos::null,
 	    const bool request_faces = true,
-	    const bool request_edges = false);
+	    const bool request_edges = false,
+	    const Partitioner_type partitioner = PARTITIONER_DEFAULT);
 
   // Construct a hexahedral mesh from specs 
   Mesh_MSTK(const GenerationSpec& gspec,
