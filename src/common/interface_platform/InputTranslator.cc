@@ -632,6 +632,7 @@ Teuchos::ParameterList get_Mesh(DOMDocument* xmlDoc, Teuchos::ParameterList def_
   bool generate = true;
   bool read = false;
   char *framework;
+  char *partitioner;
   Teuchos::ParameterList mesh_list;
   bool all_good = false;
   Errors::Message msg;
@@ -661,6 +662,10 @@ Teuchos::ParameterList get_Mesh(DOMDocument* xmlDoc, Teuchos::ParameterList def_
         msg << "Amanzi::InputTranslator: ERROR - An error occurred during parsing mesh - " ;
         msg << "framework was missing or ill-formed. \n  Use default framework='mstk' if unsure.  Please correct and try again \n" ;
         Exceptions::amanzi_throw(msg);
+      }
+      if(elementMesh->hasAttribute(XMLString::transcode("partitioner"))) {
+        partitioner = XMLString::transcode(elementMesh->getAttribute(XMLString::transcode("partitioner")));
+	std::cerr << "\n\n" << "Partitioner specified as " << partitioner << "\n\n";
       }
     }
 
@@ -845,6 +850,18 @@ Teuchos::ParameterList get_Mesh(DOMDocument* xmlDoc, Teuchos::ParameterList def_
           msg << "unknown framework=" << framework << ". See the schema for acceptable types. \n  Please correct and try again \n" ;
           Exceptions::amanzi_throw(msg);
 	}
+
+        if (strcmp(partitioner,"METIS")==0) {
+          list.sublist("Unstructured").sublist("Expert").set<std:string>("Partitioner","METIS");
+        } else if (strcmp(partitioner,"ZOLTAN_GRAPH")==0) {
+          list.sublist("Unstructured").sublist("Expert").set<std:string>("Partitioner","ZOLTAN_GRAPH");
+        } else if (strcmp(partitioner,"ZOLTAN_RCB")==0) {
+          list.sublist("Unstructured").sublist("Expert").set<std:string>("Partitioner","ZOLTAN_RCB");
+        } else {
+          msg << "Amanzi::InputTranslator: ERROR - An error occurred during parsing mesh - " ;
+          msg << "unknown partitioner=" << partitioner << ". See the schema for acceptable types. \n  Please correct and try again \n";
+          Exceptions::amanzi_throw(msg);
+        }
       }
     }
 
