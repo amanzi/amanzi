@@ -12,6 +12,7 @@ Author: Ethan Coon
 
 #include "mpc_coupled_water_split_flux.hh"
 
+#include "PK_Physical.hh"
 
 namespace Amanzi {
 
@@ -20,7 +21,9 @@ MPCCoupledWaterSplitFlux::MPCCoupledWaterSplitFlux(Teuchos::ParameterList& FElis
                  const Teuchos::RCP<State>& S,
                  const Teuchos::RCP<TreeVector>& solution)
     : PK(FElist, plist, S, solution),
-      MPC<PK>(FElist, plist, S, solution) {
+      MPC<PK>(FElist, plist, S, solution),
+      eval_pvfe_(Teuchos::null)
+ {
 
   std::string domain = plist_->get<std::string>("domain name");
   primary_variable_ = Keys::readKey(*plist_, domain, "primary variable");
@@ -40,9 +43,7 @@ MPCCoupledWaterSplitFlux::MPCCoupledWaterSplitFlux(Teuchos::ParameterList& FElis
 void MPCCoupledWaterSplitFlux::Setup(const Teuchos::Ptr<State>& S) {
   MPC<PK>::Setup(S);
 
-  Teuchos::RCP<FieldEvaluator> fe = S->RequireFieldEvaluator(lateral_flow_source_);
-  eval_pvfe_ = Teuchos::rcp_dynamic_cast<PrimaryVariableFieldEvaluator>(fe);
-  ASSERT(eval_pvfe_ != Teuchos::null);
+  S->RequireFieldEvaluator(lateral_flow_source_);
 }
 
 // -----------------------------------------------------------------------------
@@ -79,8 +80,7 @@ bool MPCCoupledWaterSplitFlux::AdvanceStep(double t_old, double t_new, bool rein
   if (fail) return fail;
 
   // Copy star's new value into primary's old value
-  CopyStarToPrimary(S_inter_.ptr(), t_new - t_old);
-  CopyStarToPrimary(S_next_.ptr(), t_new - t_old);
+  CopyStarToPrimary(t_new - t_old);
 
   // Now advance the primary
   fail = sub_pks_[1]->AdvanceStep(t_old, t_new, reinit);
@@ -119,16 +119,31 @@ MPCCoupledWaterSplitFlux::CopyPrimaryToStar(const Teuchos::Ptr<const State>& S,
 // Copy the star time derivative to the source evaluator.
 // -----------------------------------------------------------------------------
 void
-MPCCoupledWaterSplitFlux::CopyStarToPrimary(const Teuchos::Ptr<State>& S, double dt) {
-  auto& q_div = *S->GetFieldData(lateral_flow_source_, S->GetField(lateral_flow_source_)->owner())
+MPCCoupledWaterSplitFlux::CopyStarToPrimary(double dt) {
+  if (eval_pvfe_ == Teuchos::null) {
+    Teuchos::RCP<FieldEvaluator> fe = S_next_->GetFieldEvaluator(lateral_flow_source_);
+    eval_pvfe_ = Teuchos::rcp_dynamic_cast<PrimaryVariableFieldEvaluator>(fe);
+    ASSERT(eval_pvfe_ != Teuchos::null);
+  }
+
+  auto star_pk = Teuchos::rcp_dynamic_cast<PK_Physical>(sub_pks_[0]);
+  ASSERT(star_pk.get());
+  star_pk->debugger()->WriteVector("WC0", S_inter_->GetFieldData(conserved_variable_star_).ptr());
+  star_pk->debugger()->WriteVector("WC1", S_next_->GetFieldData(conserved_variable_star_).ptr());
+
+  auto& q_div = *S_next_->GetFieldData(lateral_flow_source_, S_next_->GetField(lateral_flow_source_)->owner())
                 ->ViewComponent("cell",false);
   q_div.Update(1.0/dt,
                *S_next_->GetFieldData(conserved_variable_star_)->ViewComponent("cell",false),
                -1.0/dt,
                *S_inter_->GetFieldData(conserved_variable_star_)->ViewComponent("cell",false),
                0.);
-  q_div.ReciprocalMultiply(1.0, *S->GetFieldData(cv_key_)->ViewComponent("cell",false), q_div, 0.);
-  eval_pvfe_->SetFieldAsChanged(S.ptr());
+
+  q_div.ReciprocalMultiply(1.0, *S_next_->GetFieldData(cv_key_)->ViewComponent("cell",false), q_div, 0.);
+
+  star_pk->debugger()->WriteVector("qdiv", S_next_->GetFieldData(lateral_flow_source_).ptr());
+
+  eval_pvfe_->SetFieldAsChanged(S_next_.ptr());
 }
 
 

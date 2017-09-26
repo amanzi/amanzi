@@ -91,6 +91,7 @@ void OverlandPressureFlow::AddSourceTerms_(const Teuchos::Ptr<CompositeVector>& 
         ->HasFieldChanged(S_next_.ptr(), name_);
     const Epetra_MultiVector& source1 =
         *S_next_->GetFieldData(mass_source_key_)->ViewComponent("cell",false);
+    db_->WriteVector("mass source", S_next_->GetFieldData(mass_source_key_).ptr(), false);
 
     if (source_in_meters_) {
       // External source term is in [m water / s], not in [mols / s], so a
