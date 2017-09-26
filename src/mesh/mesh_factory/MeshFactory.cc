@@ -315,7 +315,7 @@ MeshFactory::create(Teuchos::ParameterList &parameter_list,
     if (framework_generates(*i, my_comm_->NumProc() > 1, dim)) {
       try {
         result = framework_generate(my_comm_, *i, parameter_list, gm, vo_,
-                                    request_faces, request_edges, partitioner_);
+                                    request_faces, request_edges);
         return result;
       } catch (const Message& msg) {
         ierr[0] += 1;
