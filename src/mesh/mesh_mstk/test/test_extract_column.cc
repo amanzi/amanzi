@@ -28,6 +28,7 @@ TEST(Extract_Column_MSTK)
   // Generate a mesh consisting of 3x3x3 elements 
   Amanzi::AmanziMesh::Mesh_MSTK mesh(0,0,0,1,1,1,3,3,3,comm_.get(),gm);
 
+  CHECK_EQUAL(1, mesh.build_columns());
   CHECK_EQUAL(9,mesh.num_columns());
 
   int cell0 = 0;
