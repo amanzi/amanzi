@@ -49,7 +49,7 @@ GenerationSpec::parse_(const Teuchos::ParameterList& parameter_list)
   Teuchos::Array<int> ncells = parameter_list.get< Teuchos::Array<int> >("number of cells");
   Teuchos::Array<double> low_corner = parameter_list.get< Teuchos::Array<double> >("domain low coordinate");
   Teuchos::Array<double> high_corner = parameter_list.get< Teuchos::Array<double> >("domain high coordinate");
-  
+
   unsigned int dimension = ncells.size();
 
   nx_ = ncells[0];
@@ -61,6 +61,15 @@ GenerationSpec::parse_(const Teuchos::ParameterList& parameter_list)
   p0.set(&(low_corner[0]));
   p1.set(&(high_corner[0]));
 
+  if (parameter_list.isParameter("partitioner")) {
+    std::string partitioner_str = parameter_list.get<std::string>("partitioner");
+    if (partitioner_str == "METIS")
+      partitioner_ = Partitioner_type::METIS;
+    else if (partitioner_str == "ZOLTAN_GRAPH")
+      partitioner_ = Partitioner_type::ZOLTAN_GRAPH;
+    else if (partitioner_str == "ZOLTAN_RCB")
+      partitioner_ = Partitioner_type::ZOLTAN_RCB;
+  }
   
   domain_ = Teuchos::rcp(new AmanziGeometry::RegionBox("GenDomain", 0, p0, p1));
 
