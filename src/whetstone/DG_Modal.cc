@@ -513,7 +513,7 @@ Polynomial DG_Modal::CalculatePolynomial(int c, const std::vector<double>& coefs
 void DG_Modal::UpdateIntegrals_(int c, int order)
 {
   if (integrals_.size() == 0) {
-    int ncells_wghost = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+    int ncells_wghost = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::USED);
     integrals_.resize(ncells_wghost);
 
     for (int n = 0; n < ncells_wghost; ++n) {

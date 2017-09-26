@@ -136,7 +136,7 @@ void RemapTests2DDual(int order, std::string disc_name,
   CompositeVectorSpace cvs2;
   cvs2.SetMesh(mesh1)->SetGhosted(true)->AddComponent("cell", AmanziMesh::CELL, nk);
   CompositeVector p2(cvs2);
-  Epetra_MultiVector& p2c = *p2.ViewComponent("cell", true);
+  Epetra_MultiVector& p2c = *p2.ViewComponent("cell");
 
   // create flux operator
   Teuchos::ParameterList plist;
@@ -345,7 +345,6 @@ void RemapTests2DDual(int order, std::string disc_name,
 
   // visualization
   if (MyPID == 0) {
-    const Epetra_MultiVector& p2c = *p2.ViewComponent("cell");
     GMV::open_data_file(*mesh1, (std::string)"operators.gmv");
     GMV::start_data();
     GMV::write_cell_data(p2c, 0, "remaped");
