@@ -148,7 +148,6 @@ void PK_DomainFunctionVolumeFraction<FunctionBase>::Compute(double t0, double t1
 
     if (submodel_ == "integrated source") {
       double dt = t1 - t0;
-      if (dt > 0.0) dt = 1.0 / dt;
 
       args[0] = t0;
       for (MaterialMesh::const_iterator it = ids->begin(); it != ids->end(); ++it) {
@@ -161,7 +160,7 @@ void PK_DomainFunctionVolumeFraction<FunctionBase>::Compute(double t0, double t1
 
         for (int i = 0; i < nfun; ++i) {
           value_[c][i] -= (*(*mspec)->first->second)(args)[i] * vofs / domain_volume_;
-          value_[c][i] *= dt;
+          if (dt > 0.0) value_[c][i] /= dt;
         }
       }
     }

@@ -107,8 +107,7 @@ bool entity_valid_ptype (const Parallel_type ptype) {
     
 // Standard element types and catchall (POLYGON/POLYHED)
 
-enum Cell_type 
-{
+enum Cell_type {
   CELLTYPE_UNKNOWN = 0,
   TRI = 1,
   QUAD,
@@ -126,6 +125,39 @@ bool cell_valid_type (const Cell_type type) {
   return (type >= TRI && type <= POLYHED); 
 }
 
+// Types of partitioners (partitioning scheme bundled into the name)
+enum class Partitioner_type : std::uint8_t {
+  METIS,
+  ZOLTAN_GRAPH,
+  ZOLTAN_RCB
+};
+
+constexpr int NUM_PARTITIONER_TYPES = 3;
+constexpr Partitioner_type PARTITIONER_DEFAULT = Partitioner_type::METIS;
+
+// Return an string description for each partitioner type
+inline
+std::string Partitioner_type_string(const Partitioner_type partitioner_type) {
+  static std::string partitioner_type_str[NUM_PARTITIONER_TYPES] =
+      {"Partitioner_type::METIS",
+       "Partitioner_type::ZOLTAN_GRAPH", "Partitioner_type::ZOLTAN_RCB"};
+
+  int iptype = static_cast<int>(partitioner_type);
+  return (iptype >= 0 && iptype < NUM_PARTITIONER_TYPES) ?
+      partitioner_type_str[iptype] : "";
+}
+
+// Output operator for Partitioner_type
+inline
+std::ostream& operator<<(std::ostream& os,
+                         const Partitioner_type& partitioner_type) {
+  os << " " << Partitioner_type_string(partitioner_type) << " ";
+  return os;
+}
+
+// Types of partitioning algorithms - Add as needed in the format METIS_RCB etc.
+enum class Partitioning_scheme {DEFAULT};
+  
 }  // namespace Amanzi 
 }  // namespace AmanziMesh
 

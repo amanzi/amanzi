@@ -19,7 +19,8 @@ Mesh_simple::Mesh_simple(double x0, double y0, double z0,
                          const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm,
                          const Teuchos::RCP<const VerboseObject>&verbosity_obj,
                          const bool request_faces,
-                         const bool request_edges)
+                         const bool request_edges,
+                         const Partitioner_type partitioner)
   : nx_(nx), ny_(ny), nz_(nz),
     x0_(x0), x1_(x1),
     y0_(y0), y1_(y1),
@@ -48,7 +49,8 @@ Mesh_simple::Mesh_simple(double x0, double y0,
                          const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm,
                          const Teuchos::RCP<const VerboseObject>&verbosity_obj,
                          const bool request_faces,
-                         const bool request_edges) 
+                         const bool request_edges,
+                         const Partitioner_type partitioner) 
 {
   Exceptions::amanzi_throw(Errors::Message("Simple mesh cannot generate 2D meshes"));
 }
@@ -60,7 +62,8 @@ Mesh_simple::Mesh_simple(Teuchos::ParameterList &parameter_list,
                          const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm,
                          const Teuchos::RCP<const VerboseObject>&verbosity_obj,
                          const bool request_faces,
-                         const bool request_edges)
+                         const bool request_edges,
+                         const Partitioner_type partitioner)
   : Mesh(verbosity_obj,request_faces,request_edges)
 {
   Mesh::set_comm(comm_unicator);
@@ -78,7 +81,8 @@ Mesh_simple::Mesh_simple(const GenerationSpec& gspec,
                          const Teuchos::RCP<const AmanziGeometry::GeometricModel> &gm,
                          const Teuchos::RCP<const VerboseObject>&verbosity_obj,
                          const bool request_faces,
-                         const bool request_edges)
+                         const bool request_edges,
+                         const Partitioner_type partitioner)
   : Mesh(verbosity_obj,request_faces,request_edges)
 {
   Mesh::set_comm(comm_unicator);

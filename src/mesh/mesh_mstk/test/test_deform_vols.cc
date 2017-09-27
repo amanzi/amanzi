@@ -43,8 +43,13 @@ TEST(MSTK_DEFORM_VOLS_2D)
       Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, regions_list, comm_.get()));
 
   // Generate a mesh consisting of 3x3 elements 
+  bool request_faces = true;
+  bool request_edges = true;
   Teuchos::RCP<Amanzi::AmanziMesh::Mesh> 
-      mesh(new Amanzi::AmanziMesh::Mesh_MSTK(-5.0,0.0,5.0,10.0,10,10,comm_.get(),gm));
+    mesh(new Amanzi::AmanziMesh::Mesh_MSTK(-5.0,0.0,5.0,10.0,10,10,comm_.get(),
+					   gm,Teuchos::null,
+					   request_faces,request_edges,
+					   Amanzi::AmanziMesh::Partitioner_type::ZOLTAN_RCB));
 
   CHECK_EQUAL(mesh->build_columns(), 1);
   
@@ -121,9 +126,14 @@ TEST(MSTK_DEFORM_VOLS_3D)
   Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm =
       Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, regions_list, comm_.get()));
 
-  // Generate a mesh consisting of 10x10 elements 
+  // Generate a mesh consisting of 10x10 elements
+  bool request_faces = true;
+  bool request_edges = true;
   Teuchos::RCP<Amanzi::AmanziMesh::Mesh> 
-      mesh(new Amanzi::AmanziMesh::Mesh_MSTK(0.0,0.0,0.0,10.0,1.0,10.0,10,1,10,comm_.get(),gm));
+    mesh(new Amanzi::AmanziMesh::Mesh_MSTK(0.0,0.0,0.0,10.0,1.0,10.0,10,1,10,
+					   comm_.get(),gm,Teuchos::null,
+					   request_faces,request_edges,
+					   Amanzi::AmanziMesh::Partitioner_type::ZOLTAN_RCB));
 
   CHECK_EQUAL(mesh->build_columns(), 1);
   

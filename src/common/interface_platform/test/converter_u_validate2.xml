@@ -12,6 +12,7 @@
     <ParameterList name="unstructured">
       <ParameterList name="expert">
         <Parameter name="framework" type="string" value="MSTK"/>
+        <Parameter name="partitioner" type="string" value="NOT_SPECIFIED"/>
       </ParameterList>
       <ParameterList name="generate mesh">
         <Parameter name="number of cells" type="Array(int)" value="{54, 60}"/>
