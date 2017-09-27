@@ -113,7 +113,7 @@ void RemapTests2DDual(int order, std::string disc_name,
   // we need dg to compute scaling of basis functions
   WhetStone::DG_Modal dg(order, mesh0);
 
-  for (int c = 0; c < ncells_owned; c++) {
+  for (int c = 0; c < ncells_wghost; c++) {
     const AmanziGeometry::Point& xc = mesh0->cell_centroid(c);
     // p1c[0][c] = xc[0] + 2 * xc[1];
     p1c[0][c] = std::sin(3 * xc[0]) * std::sin(6 * xc[1]);
@@ -136,6 +136,8 @@ void RemapTests2DDual(int order, std::string disc_name,
   for (int c = 0; c < ncells_owned; c++) {
     mass0 += p1c[0][c] * mesh0->cell_volume(c);
   }
+  double mass_tmp(mass0);
+  mesh0->get_comm()->SumAll(&mass_tmp, &mass0, 1);
 
   // allocate memory
   CompositeVectorSpace cvs2;
@@ -160,9 +162,9 @@ void RemapTests2DDual(int order, std::string disc_name,
   Teuchos::RCP<AdvectionRiemann> op = Teuchos::rcp(new AdvectionRiemann(plist, mesh0));
   auto global_op = op->global_operator();
 
-  std::vector<WhetStone::VectorPolynomial> vec_vel(nfaces_owned);
+  std::vector<WhetStone::VectorPolynomial> vec_vel(nfaces_wghost);
   Teuchos::RCP<std::vector<WhetStone::Polynomial> > vel = 
-      Teuchos::rcp(new std::vector<WhetStone::Polynomial>(nfaces_owned));
+      Teuchos::rcp(new std::vector<WhetStone::Polynomial>(nfaces_wghost));
 
   // Attach volumetric advection operator to the flux operator.
   // We modify the existing parameter list.
@@ -214,12 +216,12 @@ void RemapTests2DDual(int order, std::string disc_name,
 
   while(t < tend - dt/2) {
     // calculate face velocities
-    for (int f = 0; f < nfaces_owned; ++f) {
+    for (int f = 0; f < nfaces_wghost; ++f) {
       maps->VelocityFace(f, vec_vel[f]);
     }
 
     // calculate normal component of face velocities and change its sign
-    for (int f = 0; f < nfaces_owned; ++f) {
+    for (int f = 0; f < nfaces_wghost; ++f) {
       // cn = j J^{-t} N dA
       WhetStone::VectorPolynomial cn;
       maps->NansonFormula(f, t + dt/2, vec_vel[f], cn);
@@ -340,6 +342,21 @@ void RemapTests2DDual(int order, std::string disc_name,
     area += area_c;
     mass1 += p2c[0][c] * mesh1->cell_volume(c);
   }
+
+  // parallel colelctive operations
+  double err_tmp(pl2_err);
+  mesh1->get_comm()->SumAll(&err_tmp, &pl2_err, 1);
+
+  err_tmp = area;
+  mesh1->get_comm()->SumAll(&err_tmp, &area, 1);
+
+  err_tmp = pinf_err;
+  mesh1->get_comm()->MaxAll(&err_tmp, &pinf_err, 1);
+
+  mass_tmp = mass1;
+  mesh1->get_comm()->SumAll(&mass_tmp, &mass1, 1);
+
+  // error tests
   pl2_err = std::pow(pl2_err, 0.5);
   CHECK(pl2_err < 0.12 / (order + 1));
 

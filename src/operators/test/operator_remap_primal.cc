@@ -334,6 +334,7 @@ void RemapTests2DPrimal(int order, std::string disc_name,
   }
 }
 
+
 TEST(REMAP_DG0_PRIMAL_FEM) {
   RemapTests2DPrimal(0, "dg modal", "FEM", 12, 12, 0.1);
 }

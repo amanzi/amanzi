@@ -5016,6 +5016,15 @@ This specification format uses and describes the unstructured mesh only.
         * `"framework`" [string] one of `"stk::mesh`", `"MSTK`", `"MOAB`" or `"Simple`". 
         * `"verify mesh`" [bool] true or false. 
 
+        * `"partitioner`" [string] defines the partitioning algorithm for parallel unstructured meshes.
+          The available options are `"metis"` (default), `"zoltan_graph"` and `"zoltan_rcb"`. `"metis"`
+          and `"zoltan_graph"` perform a graph partitioning of the mesh with no regard to the geometry 
+          of the mesh. `"zoltan_rcb"` partitions meshes using Recursive Coordinate Bisection which 
+          can lead to better partitioning in meshes that are thin in a particular direction. 
+          Additionally, the use of `"zoltan_rcb"` with the MSTK framework triggers an option to 
+          detect columns of elements in a mesh and adjust the partitioning such that no column is 
+          split over multiple partitions. If no partitioner is specified, the default one is used.
+
 Example of *Unstructured* mesh generated internally:
 
 .. code-block:: xml
@@ -5030,6 +5039,11 @@ Example of *Unstructured* mesh generated internally:
              <Parameter name="domain high corner" type="Array(double)" value="{103.2, 1.0, 103.2}"/>
            </ParameterList>   
          </ParameterList>   
+
+         <ParameterList name="expert">
+           <Parameter name="framework" type="string" value="MSTK"/>
+           <Parameter name="partitioner" type="string" value="metis"/>
+         </ParameterList>
        </ParameterList>   
      </ParameterList>
    </ParameterList>
