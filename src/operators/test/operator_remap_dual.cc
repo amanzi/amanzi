@@ -63,6 +63,7 @@ void RemapTests2DDual(int order, std::string disc_name,
 
   // create initial mesh
   MeshFactory meshfactory(&comm);
+  meshfactory.set_partitioner(AmanziMesh::Partitioner_type::METIS);
   meshfactory.preference(FrameworkPreference({MSTK}));
 
   // Teuchos::RCP<const Mesh> mesh0 = meshfactory(0.0, 0.0, 1.0, 1.0, nx, ny);
@@ -112,7 +113,7 @@ void RemapTests2DDual(int order, std::string disc_name,
   // we need dg to compute scaling of basis functions
   WhetStone::DG_Modal dg(order, mesh0);
 
-  for (int c = 0; c < ncells_wghost; c++) {
+  for (int c = 0; c < ncells_owned; c++) {
     const AmanziGeometry::Point& xc = mesh0->cell_centroid(c);
     // p1c[0][c] = xc[0] + 2 * xc[1];
     p1c[0][c] = std::sin(3 * xc[0]) * std::sin(6 * xc[1]);

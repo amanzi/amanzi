@@ -63,6 +63,7 @@ void RemapTests2DPrimal(int order, std::string disc_name,
 
   // create initial mesh
   MeshFactory meshfactory(&comm);
+  meshfactory.set_partitioner(AmanziMesh::Partitioner_type::METIS);
   meshfactory.preference(FrameworkPreference({MSTK}));
 
   Teuchos::RCP<const Mesh> mesh0 = meshfactory(0.0, 0.0, 1.0, 1.0, nx, ny);
@@ -133,6 +134,8 @@ void RemapTests2DPrimal(int order, std::string disc_name,
   for (int c = 0; c < ncells_owned; c++) {
     mass0 += p1c[0][c] * mesh0->cell_volume(c);
   }
+  double mass_tmp(mass0);
+  mesh0->get_comm()->SumAll(&mass_tmp, &mass0, 1);
 
   // allocate memory
   CompositeVectorSpace cvs2;
@@ -295,6 +298,21 @@ void RemapTests2DPrimal(int order, std::string disc_name,
     area += area_c;
     mass1 += p2c[0][c] * mesh1->cell_volume(c);
   }
+
+  // parallel colelctive operations
+  double err_tmp(pl2_err);
+  mesh1->get_comm()->SumAll(&err_tmp, &pl2_err, 1);
+
+  err_tmp = area;
+  mesh1->get_comm()->SumAll(&err_tmp, &area, 1);
+
+  err_tmp = pinf_err;
+  mesh1->get_comm()->MaxAll(&err_tmp, &pinf_err, 1);
+
+  mass_tmp = mass1;
+  mesh1->get_comm()->SumAll(&mass_tmp, &mass1, 1);
+
+  // error tests
   pl2_err = std::pow(pl2_err, 0.5);
   CHECK(pl2_err < 0.08 / (order + 1));
 
@@ -315,7 +333,6 @@ void RemapTests2DPrimal(int order, std::string disc_name,
     GMV::close_data_file();
   }
 }
-
 
 TEST(REMAP_DG0_PRIMAL_FEM) {
   RemapTests2DPrimal(0, "dg modal", "FEM", 12, 12, 0.1);
