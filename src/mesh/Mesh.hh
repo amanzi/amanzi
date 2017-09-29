@@ -571,6 +571,11 @@ class Mesh {
   // If the flag keep_valid is true, then the nodes are moved
   // only as much as possible without making the mesh invalid
   // The final positions of the nodes is returned in final_positions
+  //
+  // This is a rudimentary capability that requires ghosts nodes
+  // also to be deformed. Amanzi does not have any built-in parallel 
+  // communication capabilities, other than Trilinos Epetra object
+  // communication or raw MPI. 
   virtual
   int deform(const Entity_ID_List& nodeids,
              const AmanziGeometry::Point_List& new_positions,
