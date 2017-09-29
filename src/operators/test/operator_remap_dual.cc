@@ -37,7 +37,6 @@
 #include "Accumulation.hh"
 #include "AdvectionRiemann.hh"
 #include "OperatorDefs.hh"
-#include "PK_Explicit.hh"
 #include "Reaction.hh"
 #include "RemapUtils.hh"
 
@@ -296,14 +295,13 @@ void RemapTests2DDual(int order, std::string disc_name,
     pcg.ApplyInverse(g, p2);
 
     // corrector step
-    /*
-    p2.Update(0.5, p1, 0.5);
+    p2.Update(0.5, *p1, 0.5);
     global_op->Apply(p2, g);
-    g.Update(1.0, rhs, 1.0);
+    g.Update(1.0, rhs, dt);
 
     pcg.ApplyInverse(g, p2);
-    */
 
+    // end timestep operations
     *p1->ViewComponent("cell") = *p2.ViewComponent("cell");
     t += dt;
   }
@@ -392,14 +390,14 @@ TEST(REMAP_DG0_DUAL_FEM) {
 TEST(REMAP_DG1_DUAL_FEM) {
   RemapTests2DDual(1, "dg modal", "FEM", 10, 10, 0.1);
 }
+*/
 
 TEST(REMAP_DG0_DUAL_VEM) {
   RemapTests2DDual(0, "dg modal", "VEM", 20, 20, 0.1);
 }
-*/
 
 TEST(REMAP_DG1_DUAL_VEM) {
-  RemapTests2DDual(1, "dg modal", "VEM", 20, 20, 0.1);
+  RemapTests2DDual(1, "dg modal", "VEM", 20, 20, 0.05);
 }
 
 
