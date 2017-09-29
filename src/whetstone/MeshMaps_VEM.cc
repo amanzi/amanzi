@@ -25,10 +25,11 @@ namespace WhetStone {
 /* ******************************************************************
 * Calculate mesh velocity in cell c
 ****************************************************************** */
-void MeshMaps_VEM::VelocityCell(int c, VectorPolynomial& v) const
+void MeshMaps_VEM::VelocityCell(
+    int c, const std::vector<VectorPolynomial>& vf, VectorPolynomial& vc) const
 {
-  v.resize(d_);
-  for (int i = 0; i < d_; ++i) v[i].Reshape(d_, 1);
+  vc.resize(d_);
+  for (int i = 0; i < d_; ++i) vc[i].Reshape(d_, 1);
   
   Entity_ID_List nodes;
   mesh0_->cell_get_nodes(c, &nodes);
@@ -45,12 +46,17 @@ void MeshMaps_VEM::VelocityCell(int c, VectorPolynomial& v) const
     x2.push_back(px);
   }
 
-  LeastSquareFit(1, x1, x2, v);
-
   // calculate velocity u(X) = F(X) - X
+  LeastSquareFit(1, x1, x2, vc);
+
   for (int i = 0; i < d_; ++i) {
-    v[i].monomials(1).coefs()[i] -= 1.0;
+    vc[i].monomials(1).coefs()[i] -= 1.0;
   }
+
+  // new method for velocity calculation
+  // VectorPolynomial tmp; 
+  EllipticProjectorP1(c, vf, vc);
+  // std::cout << c << " " << mesh0_->cell_centroid(c) << "\n" << vc[0] << vc[1] << tmp[0] << tmp[1] << "\n\n";
 }
 
 
@@ -80,18 +86,16 @@ void MeshMaps_VEM::NansonFormula(
 /* ******************************************************************
 * Calculation of matrix of cofactors
 ****************************************************************** */
-void MeshMaps_VEM::Cofactors(int c, double t, MatrixPolynomial& C) const
+void MeshMaps_VEM::Cofactors(
+    int c, double t, const VectorPolynomial& vc, MatrixPolynomial& C) const
 {
-  VectorPolynomial v;
-  VelocityCell(c, v);
-
   C.resize(2);
   for (int i = 0; i < d_; ++i) {
     C[i].resize(2);
     for (int j = 0; j < d_; ++j) {
       double sgn = (i == j) ? t : -t;
       C[i][j].Reshape(d_, 0);
-      C[i][j].monomials(0).coefs()[0] = sgn * v[1 - i].monomials(1).coefs()[1 - j];
+      C[i][j].monomials(0).coefs()[0] = sgn * vc[1 - i].monomials(1).coefs()[1 - j];
     }
     C[i][i].monomials(0).coefs()[0] += 1.0;
   }

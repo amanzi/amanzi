@@ -141,6 +141,53 @@ int MeshMaps::LeastSquareFit(int order,
 
 
 /* ******************************************************************
+* Elliptic projector on linear polynomials at time 0.
+****************************************************************** */
+void MeshMaps::EllipticProjectorP1(
+    int c, const std::vector<VectorPolynomial>& vf, VectorPolynomial& u) const
+{
+  Entity_ID_List faces;
+  std::vector<int> dirs;
+
+  mesh0_->cell_get_faces_and_dirs(c, &faces, &dirs);
+  int nfaces = faces.size();
+
+  double vol = mesh0_->cell_volume(c);
+
+  // create zero vector polynomial
+  u.resize(d_);
+  for (int i = 0; i < d_; ++i) { 
+    u[i].Reshape(d_, 1, true);
+  }
+
+  for (int n = 0; n < nfaces; ++n) {  
+    int f = faces[n];
+    const AmanziGeometry::Point& xf = mesh0_->face_centroid(f);
+    const AmanziGeometry::Point& normal = mesh0_->face_normal(f);
+
+    for (int i = 0; i < d_; ++i) {
+      double tmp = vf[n][i].Value(xf) * dirs[n] / vol;
+
+      for (int j = 0; j < d_; ++j) {
+        u[i].monomials(1).coefs()[j] += tmp * normal[j];
+      }
+    }
+  }
+
+  // fix the constant value
+  const AmanziGeometry::Point& xc0 = mesh0_->cell_centroid(c);
+  const AmanziGeometry::Point& xc1 = mesh1_->cell_centroid(c);
+  AmanziGeometry::Point zero(d_);
+
+  for (int i = 0; i < d_; ++i) {
+    u[i].monomials(0).coefs()[0] = xc1[i] - xc0[i];
+    u[i].set_origin(xc0);
+    u[i].ChangeOrigin(zero);
+  }
+}
+
+
+/* ******************************************************************
 * Error calculation requires geometric center.
 ****************************************************************** */
 AmanziGeometry::Point MeshMaps::cell_geometric_center(int id, int c) const

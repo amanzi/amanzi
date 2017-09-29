@@ -24,9 +24,10 @@ namespace Amanzi {
 namespace WhetStone {
 
 /* ******************************************************************
-* Calculate mesh velocity in cell c
+* Calculate mesh velocity in cell c. 
 ****************************************************************** */
-void MeshMaps_FEM::VelocityCell(int c, VectorPolynomial& v) const
+void MeshMaps_FEM::VelocityCell(
+    int c, const std::vector<VectorPolynomial>& vf, VectorPolynomial& vc) const
 {
   Entity_ID_List nodes;
 
@@ -49,26 +50,26 @@ void MeshMaps_FEM::VelocityCell(int c, VectorPolynomial& v) const
   J0.Inverse();
 
   //calculate map in coordinate system centered at point 1
-  v.resize(d_);
+  vc.resize(d_);
   for (int i = 0; i < d_; ++i) {
-    v[i].Reshape(d_, 2);
-    v[i].monomials(0).coefs()[0] = p1[i];
-    v[i].monomials(1).coefs()[0] = p21[i] * J0(0, 0);
-    v[i].monomials(1).coefs()[1] = p41[i] * J0(1, 1);
-    v[i].monomials(2).coefs()[1] = pp[i] * J0(0, 0) * J0(1, 1);
+    vc[i].Reshape(d_, 2);
+    vc[i].monomials(0).coefs()[0] = p1[i];
+    vc[i].monomials(1).coefs()[0] = p21[i] * J0(0, 0);
+    vc[i].monomials(1).coefs()[1] = p41[i] * J0(1, 1);
+    vc[i].monomials(2).coefs()[1] = pp[i] * J0(0, 0) * J0(1, 1);
   }
 
   // rebase polynomial to global coordinate system
   mesh0_->node_get_coordinates(nodes[0], &p1);
   AmanziGeometry::Point zero(0.0, 0.0);
   for (int i = 0; i < d_; ++i) {
-    v[i].set_origin(p1);
-    v[i].ChangeOrigin(zero);
+    vc[i].set_origin(p1);
+    vc[i].ChangeOrigin(zero);
   }
 
   // calculate velocity u(X) = F(X) - X
   for (int i = 0; i < d_; ++i) {
-    v[i].monomials(1).coefs()[i] -= 1.0;
+    vc[i].monomials(1).coefs()[i] -= 1.0;
   }
 }
 
@@ -77,13 +78,13 @@ void MeshMaps_FEM::VelocityCell(int c, VectorPolynomial& v) const
 * Transformation of normal is defined completely by face data.
 ****************************************************************** */
 void MeshMaps_FEM::NansonFormula(
-    int f, double t, const VectorPolynomial& v, VectorPolynomial& cn) const
+    int f, double t, const VectorPolynomial& vc, VectorPolynomial& cn) const
 {
   Entity_ID_List cells;
   mesh0_->face_get_cells(f, AmanziMesh::USED, &cells);
 
   WhetStone::MatrixPolynomial C;
-  Cofactors(cells[0], t, C);
+  Cofactors(cells[0], t, vc, C);
 
   AmanziGeometry::Point normal = mesh0_->face_normal(f);
   cn[0].Multiply(C, normal, cn, false);
@@ -93,7 +94,8 @@ void MeshMaps_FEM::NansonFormula(
 /* ******************************************************************
 * Calculation of matrix of cofactors
 ****************************************************************** */
-void MeshMaps_FEM::Cofactors(int c, double t, MatrixPolynomial& C) const
+void MeshMaps_FEM::Cofactors(
+    int c, double t, const VectorPolynomial& vc, MatrixPolynomial& C) const
 {
   Entity_ID_List nodes;
 

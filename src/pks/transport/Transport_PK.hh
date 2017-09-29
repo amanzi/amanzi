@@ -49,7 +49,7 @@ namespace Transport {
 
 typedef double AnalyticFunction(const AmanziGeometry::Point&, const double);
 
-  class Transport_PK : public PK_PhysicalExplicit<Epetra_Vector> {
+class Transport_PK : public PK_PhysicalExplicit<Epetra_Vector> {
   public:
     Transport_PK(Teuchos::ParameterList& pk_tree,
                  const Teuchos::RCP<Teuchos::ParameterList>& glist,

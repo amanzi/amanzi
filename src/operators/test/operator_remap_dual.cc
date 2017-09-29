@@ -37,6 +37,7 @@
 #include "Accumulation.hh"
 #include "AdvectionRiemann.hh"
 #include "OperatorDefs.hh"
+#include "PK_Explicit.hh"
 #include "Reaction.hh"
 #include "RemapUtils.hh"
 
@@ -67,8 +68,8 @@ void RemapTests2DDual(int order, std::string disc_name,
   meshfactory.preference(FrameworkPreference({MSTK}));
 
   // Teuchos::RCP<const Mesh> mesh0 = meshfactory(0.0, 0.0, 1.0, 1.0, nx, ny);
-  // Teuchos::RCP<const Mesh> mesh0 = meshfactory("test/median15x16.exo", Teuchos::null);
-  Teuchos::RCP<const Mesh> mesh0 = meshfactory("test/random10.exo", Teuchos::null);
+  Teuchos::RCP<const Mesh> mesh0 = meshfactory("test/median15x16.exo", Teuchos::null);
+  // Teuchos::RCP<const Mesh> mesh0 = meshfactory("test/random10.exo", Teuchos::null);
 
   int ncells_owned = mesh0->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   int ncells_wghost = mesh0->num_entities(AmanziMesh::CELL, AmanziMesh::USED);
@@ -79,8 +80,8 @@ void RemapTests2DDual(int order, std::string disc_name,
 
   // create second and auxiliary mesh
   // Teuchos::RCP<Mesh> mesh1 = meshfactory(0.0, 0.0, 1.0, 1.0, nx, ny);
-  // Teuchos::RCP<Mesh> mesh1 = meshfactory("test/median15x16.exo", Teuchos::null);
-  Teuchos::RCP<Mesh> mesh1 = meshfactory("test/random10.exo", Teuchos::null);
+  Teuchos::RCP<Mesh> mesh1 = meshfactory("test/median15x16.exo", Teuchos::null);
+  // Teuchos::RCP<Mesh> mesh1 = meshfactory("test/random10.exo", Teuchos::null);
 
   // deform the second mesh
   AmanziGeometry::Point xv(2), xref(2);
@@ -104,6 +105,14 @@ void RemapTests2DDual(int order, std::string disc_name,
   }
   mesh1->deform(nodeids, new_positions, false, &final_positions);
 
+  // little factory of mesh maps
+  std::shared_ptr<WhetStone::MeshMaps> maps;
+  if (maps_name == "FEM") {
+    maps = std::make_shared<WhetStone::MeshMaps_FEM>(mesh0, mesh1);
+  } else if (maps_name == "VEM") {
+    maps = std::make_shared<WhetStone::MeshMaps_VEM>(mesh0, mesh1);
+  }
+
   // create and initialize cell-based field 
   CompositeVectorSpace cvs1;
   cvs1.SetMesh(mesh0)->SetGhosted(true)->AddComponent("cell", AmanziMesh::CELL, nk);
@@ -115,7 +124,6 @@ void RemapTests2DDual(int order, std::string disc_name,
 
   for (int c = 0; c < ncells_wghost; c++) {
     const AmanziGeometry::Point& xc = mesh0->cell_centroid(c);
-    // p1c[0][c] = xc[0] + 2 * xc[1];
     p1c[0][c] = std::sin(3 * xc[0]) * std::sin(6 * xc[1]);
     if (nk > 1) {
       double a, b;
@@ -205,22 +213,15 @@ void RemapTests2DDual(int order, std::string disc_name,
 
   op_reac1->Setup(jac1);
 
-  // little factory of mesh maps
+  // explicit time integration
   double t(0.0), tend(1.0);
-  std::shared_ptr<WhetStone::MeshMaps> maps;
-  if (maps_name == "FEM") {
-    maps = std::make_shared<WhetStone::MeshMaps_FEM>(mesh0, mesh1);
-  } else if (maps_name == "VEM") {
-    maps = std::make_shared<WhetStone::MeshMaps_VEM>(mesh0, mesh1);
-  }
-
   while(t < tend - dt/2) {
     // calculate face velocities
     for (int f = 0; f < nfaces_wghost; ++f) {
       maps->VelocityFace(f, vec_vel[f]);
     }
 
-    // calculate normal component of face velocities and change its sign
+    // calculate normal component of face velocity at time t+dt/2 
     for (int f = 0; f < nfaces_wghost; ++f) {
       // cn = j J^{-t} N dA
       WhetStone::VectorPolynomial cn;
@@ -228,28 +229,33 @@ void RemapTests2DDual(int order, std::string disc_name,
       (*vel)[f] = vec_vel[f] * cn;
     }
 
-    // calculate cell velocities at time t+dt/2
+    // calculate cell velocity at time t+dt/2 and change its sign
+    Entity_ID_List faces;
     WhetStone::MatrixPolynomial C;
     WhetStone::VectorPolynomial tmp;
 
     for (int c = 0; c < ncells_owned; ++c) {
-      maps->Cofactors(c, t + dt/2, C);
-      maps->VelocityCell(c, tmp);
+      mesh0->cell_get_faces(c, &faces);
+      std::vector<WhetStone::VectorPolynomial> vf;
+
+      for (int n = 0; n < faces.size(); ++n) {
+        vf.push_back(vec_vel[faces[n]]);
+      }
+
+      maps->VelocityCell(c, vf, tmp);
+      maps->Cofactors(c, t + dt/2, tmp, C);
       tmp[0].Multiply(C, tmp, (*cell_vel)[c], true);
+
       (*cell_vel)[c][0] *= -1.0;
       (*cell_vel)[c][1] *= -1.0;
     }
 
     // calculate determinant of Jacobian at time t+dt
-    Entity_ID_List faces;
-    std::vector<int> dirs;
-
     for (int c = 0; c < ncells_owned; ++c) {
-      mesh0->cell_get_faces_and_dirs(c, &faces, &dirs);
-      int nfaces = faces.size();
+      mesh0->cell_get_faces(c, &faces);
       std::vector<WhetStone::VectorPolynomial> vf;
 
-      for (int n = 0; n < nfaces; ++n) {
+      for (int n = 0; n < faces.size(); ++n) {
         vf.push_back(vec_vel[faces[n]]);
       }
 
@@ -378,7 +384,6 @@ void RemapTests2DDual(int order, std::string disc_name,
   }
 }
 
-
 /*
 TEST(REMAP_DG0_DUAL_FEM) {
   RemapTests2DDual(0, "dg modal", "FEM", 10, 10, 0.1);
@@ -387,11 +392,11 @@ TEST(REMAP_DG0_DUAL_FEM) {
 TEST(REMAP_DG1_DUAL_FEM) {
   RemapTests2DDual(1, "dg modal", "FEM", 10, 10, 0.1);
 }
-*/
 
 TEST(REMAP_DG0_DUAL_VEM) {
   RemapTests2DDual(0, "dg modal", "VEM", 20, 20, 0.1);
 }
+*/
 
 TEST(REMAP_DG1_DUAL_VEM) {
   RemapTests2DDual(1, "dg modal", "VEM", 20, 20, 0.1);

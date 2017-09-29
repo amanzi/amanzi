@@ -51,16 +51,18 @@ class MeshMaps {
 
   // Maps
   // -- pseudo-velocity in cell c
-  virtual void VelocityCell(int c, VectorPolynomial& v) const = 0;
+  virtual void VelocityCell(int c, const std::vector<VectorPolynomial>& vf,
+                            VectorPolynomial& vc) const = 0;
   // -- pseudo-velocity on face f
-  virtual void VelocityFace(int f, VectorPolynomial& v) const;
+  void VelocityFace(int f, VectorPolynomial& v) const;
   // -- Nanson formula
   virtual void NansonFormula(int f, double t, const VectorPolynomial& v,
                              VectorPolynomial& cn) const = 0;
 
   // Jacobian
   // -- tensors
-  virtual void Cofactors(int c, double t, MatrixPolynomial& C) const = 0;
+  virtual void Cofactors(int c, double t, const VectorPolynomial& vc,
+                         MatrixPolynomial& C) const = 0;
   // -- determinant
   virtual void JacobianDet(int c, double t, const std::vector<VectorPolynomial>& vf,
                            Polynomial& vc) const = 0;
@@ -78,6 +80,10 @@ class MeshMaps {
                      const std::vector<AmanziGeometry::Point>& x1, 
                      const std::vector<AmanziGeometry::Point>& x2,
                      VectorPolynomial& u) const;
+
+  // -- elliptic projecto at tiem 0
+  void EllipticProjectorP1(int c, const std::vector<VectorPolynomial>& vf,
+                           VectorPolynomial& u) const;
 
   // extension of mesh interface
   AmanziGeometry::Point cell_geometric_center(int id, int c) const;

@@ -46,8 +46,8 @@
 * Primal formulation uses gradient and jumps of a solution.
 ***************************************************************** */
 void RemapTests2DPrimal(int order, std::string disc_name,
-                          std::string maps_name,
-                          int nx, int ny, double dt) {
+                        std::string maps_name,
+                        int nx, int ny, double dt) {
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::AmanziGeometry;
@@ -218,25 +218,29 @@ void RemapTests2DPrimal(int order, std::string disc_name,
     }
 
     // calculate cell velocities at time t+dt/2
+    Entity_ID_List faces;
     WhetStone::MatrixPolynomial C;
     WhetStone::VectorPolynomial tmp;
 
     for (int c = 0; c < ncells_owned; ++c) {
-      maps->Cofactors(c, t + dt/2, C);
-      maps->VelocityCell(c, tmp);
+      mesh0->cell_get_faces(c, &faces);
+      std::vector<WhetStone::VectorPolynomial> vf;
+
+      for (int n = 0; n < faces.size(); ++n) {
+        vf.push_back(vec_vel[faces[n]]);
+      }
+
+      maps->VelocityCell(c, vf, tmp);
+      maps->Cofactors(c, t + dt/2, tmp, C);
       tmp[0].Multiply(C, tmp, (*cell_vel)[c], true);
     }
 
     // calculate determinant of Jacobian at time t+dt
-    Entity_ID_List faces;
-    std::vector<int> dirs;
-
     for (int c = 0; c < ncells_owned; ++c) {
-      mesh0->cell_get_faces_and_dirs(c, &faces, &dirs);
-      int nfaces = faces.size();
+      mesh0->cell_get_faces(c, &faces);
       std::vector<WhetStone::VectorPolynomial> vf;
 
-      for (int n = 0; n < nfaces; ++n) {
+      for (int n = 0; n < faces.size(); ++n) {
         vf.push_back(vec_vel[faces[n]]);
       }
 

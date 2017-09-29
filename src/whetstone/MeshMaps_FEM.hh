@@ -41,14 +41,16 @@ class MeshMaps_FEM : public MeshMaps {
 
   // Maps
   // -- pseudo-velocity in cell c
-  virtual void VelocityCell(int c, VectorPolynomial& v) const override;
+  virtual void VelocityCell(int c, const std::vector<VectorPolynomial>& vf,
+                            VectorPolynomial& vc) const override;
   // -- Nanson formula
   virtual void NansonFormula(int f, double t, const VectorPolynomial& v,
                              VectorPolynomial& cn) const override;
 
   // Jacobian
   // -- tensors
-  virtual void Cofactors(int c, double t, MatrixPolynomial& C) const override;
+  virtual void Cofactors(int c, double t, const VectorPolynomial& vc,
+                         MatrixPolynomial& C) const override;
   // -- determinant
   virtual void JacobianDet(int c, double t, const std::vector<VectorPolynomial>& vf,
                            Polynomial& vc) const override;
