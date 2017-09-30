@@ -53,10 +53,10 @@ void MeshMaps_FEM::VelocityCell(
   vc.resize(d_);
   for (int i = 0; i < d_; ++i) {
     vc[i].Reshape(d_, 2);
-    vc[i].monomials(0).coefs()[0] = p1[i];
-    vc[i].monomials(1).coefs()[0] = p21[i] * J0(0, 0);
-    vc[i].monomials(1).coefs()[1] = p41[i] * J0(1, 1);
-    vc[i].monomials(2).coefs()[1] = pp[i] * J0(0, 0) * J0(1, 1);
+    vc[i](0, 0) = p1[i];
+    vc[i](1, 0) = p21[i] * J0(0, 0);
+    vc[i](1, 1) = p41[i] * J0(1, 1);
+    vc[i](2, 1) = pp[i] * J0(0, 0) * J0(1, 1);
   }
 
   // rebase polynomial to global coordinate system
@@ -69,7 +69,7 @@ void MeshMaps_FEM::VelocityCell(
 
   // calculate velocity u(X) = F(X) - X
   for (int i = 0; i < d_; ++i) {
-    vc[i].monomials(1).coefs()[i] -= 1.0;
+    vc[i](1, i) -= 1.0;
   }
 }
 
@@ -126,18 +126,18 @@ void MeshMaps_FEM::Cofactors(
   } 
 
   // constant part
-  C[0][0].monomials(0).coefs()[0] = p41[1];
-  C[1][0].monomials(0).coefs()[0] = -p41[0];
+  C[0][0](0, 0) = p41[1];
+  C[1][0](0, 0) = -p41[0];
 
-  C[0][1].monomials(0).coefs()[0] = -p21[1];
-  C[1][1].monomials(0).coefs()[0] = p21[0];
+  C[0][1](0, 0) = -p21[1];
+  C[1][1](0, 0) = p21[0];
 
   // linear part
-  C[0][0].monomials(1).coefs()[0] = (p32[1] - p41[1]) * J0(1, 1);
-  C[1][0].monomials(1).coefs()[0] =-(p32[0] - p41[0]) * J0(0, 0);
+  C[0][0](1, 0) = (p32[1] - p41[1]) * J0(1, 1);
+  C[1][0](1, 0) =-(p32[0] - p41[0]) * J0(0, 0);
 
-  C[0][1].monomials(1).coefs()[1] =-(p34[1] - p21[1]) * J0(0, 0);
-  C[1][1].monomials(1).coefs()[1] = (p34[0] - p21[0]) * J0(1, 1);
+  C[0][1](1, 1) =-(p34[1] - p21[1]) * J0(0, 0);
+  C[1][1](1, 1) = (p34[0] - p21[0]) * J0(1, 1);
 
   // rebase polynomials to global coordinate system
   mesh0_->node_get_coordinates(nodes[0], &p1);
@@ -153,7 +153,7 @@ void MeshMaps_FEM::Cofactors(
     for (int j = 0; j < d_; ++j) {
       C[i][j] *= t * J0(j, j);
     }
-    C[i][i].monomials(0).coefs()[0] += 1.0 - t;
+    C[i][i](0, 0) += 1.0 - t;
   }
 }
 
@@ -218,12 +218,12 @@ void MeshMaps_FEM::JacobianDet(
   a1[1] += 1.0 - t;
 
   vc.Reshape(2, 2);
-  vc.monomials(0).coefs()[0] = a0[0] * a1[1] - a0[1] * a1[0];
+  vc(0, 0) = a0[0] * a1[1] - a0[1] * a1[0];
 
-  vc.monomials(1).coefs()[0] = a0[0] * b1[1] - a0[1] * b1[0];
-  vc.monomials(1).coefs()[1] = b0[0] * a1[1] - b0[1] * a1[0];
+  vc(1, 0) = a0[0] * b1[1] - a0[1] * b1[0];
+  vc(1, 1) = b0[0] * a1[1] - b0[1] * a1[0];
 
-  vc.monomials(2).coefs()[1] = b0[0] * b1[1] - b0[1] * b1[0];
+  vc(2, 1) = b0[0] * b1[1] - b0[1] * b1[0];
 }
 
 

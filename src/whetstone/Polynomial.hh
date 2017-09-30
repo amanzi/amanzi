@@ -258,6 +258,9 @@ class Polynomial {
   int size() const { return size_; }
   const AmanziGeometry::Point& origin() const { return origin_; }
 
+  double& operator()(int i, int j) { return coefs_[i](j); }
+  const double& operator()(int i, int j) const { return coefs_[i](j); }
+
   Monomial& monomials(int i) { return coefs_[i]; }
   const Monomial& monomials(int i) const { return coefs_[i]; }
 

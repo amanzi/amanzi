@@ -50,7 +50,7 @@ void MeshMaps_VEM::VelocityCell(
   LeastSquareFit(1, x1, x2, vc);
 
   for (int i = 0; i < d_; ++i) {
-    vc[i].monomials(1).coefs()[i] -= 1.0;
+    vc[i](1, i) -= 1.0;
   }
 
   // new method for velocity calculation
@@ -78,7 +78,7 @@ void MeshMaps_VEM::NansonFormula(
   cn.resize(d_);
   for (int i = 0; i < d_; ++i) {
     cn[i].Reshape(d_, 0);
-    cn[i].monomials(0).coefs()[0] = p[i];
+    cn[i](0, 0) = p[i];
   }
 }
 
@@ -95,9 +95,9 @@ void MeshMaps_VEM::Cofactors(
     for (int j = 0; j < d_; ++j) {
       double sgn = (i == j) ? t : -t;
       C[i][j].Reshape(d_, 0);
-      C[i][j].monomials(0).coefs()[0] = sgn * vc[1 - i].monomials(1).coefs()[1 - j];
+      C[i][j](0, 0) = sgn * vc[1 - i](1, 1 - j);
     }
-    C[i][i].monomials(0).coefs()[0] += 1.0;
+    C[i][i](0, 0) += 1.0;
   }
 }
 
@@ -147,7 +147,7 @@ void MeshMaps_VEM::JacobianDet(
   sum /= 2 * mesh0_->cell_volume(c);
 
   vc.Reshape(d_, 0);
-  vc.monomials(0).coefs()[0] = sum;
+  vc(0, 0) = sum;
 }
 
 
@@ -161,7 +161,7 @@ void MeshMaps_VEM::JacobianFaceValue(
   // FIXME x is not used
   for (int i = 0; i < d_; ++i) {
     for (int j = 0; j < d_; ++j) {
-      J(i, j) = v[i].monomials(1).coefs()[j];
+      J(i, j) = v[i](1, j);
     }
   }
   J += 1.0;

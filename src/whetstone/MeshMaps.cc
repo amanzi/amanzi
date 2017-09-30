@@ -37,7 +37,7 @@ void MeshMaps::VelocityFace(int f, VectorPolynomial& v) const
   v.resize(d_);
   for (int i = 0; i < d_; ++i) {
     v[i].Reshape(d_, 1);
-    v[i].monomials(0).coefs()[0] = xf1[i] - xf0[i];
+    v[i](0, 0) = xf1[i] - xf0[i];
   }
 
   // velocity order 1 (2D algorithm)
@@ -62,8 +62,8 @@ void MeshMaps::VelocityFace(int f, VectorPolynomial& v) const
   v[1].monomials(1).coefs() = {-b[1], b[0]};
 
   // we change to the global coordinate system
-  v[0].monomials(0).coefs()[0] -= b * xf0;
-  v[1].monomials(0).coefs()[0] -= (b^xf0)[0];
+  v[0](0, 0) -= b * xf0;
+  v[1](0, 0) -= (b^xf0)[0];
 }
 
 
@@ -180,7 +180,7 @@ void MeshMaps::EllipticProjectorP1(
   AmanziGeometry::Point zero(d_);
 
   for (int i = 0; i < d_; ++i) {
-    u[i].monomials(0).coefs()[0] = xc1[i] - xc0[i];
+    u[i](0, 0) = xc1[i] - xc0[i];
     u[i].set_origin(xc0);
     u[i].ChangeOrigin(zero);
   }

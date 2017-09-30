@@ -518,7 +518,7 @@ void DG_Modal::UpdateIntegrals_(int c, int order)
 
     for (int n = 0; n < ncells_wghost; ++n) {
       integrals_[n].Reshape(d_, 0);
-      integrals_[n].monomials(0).coefs()[0] = mesh_->cell_volume(n);
+      integrals_[n](0, 0) = mesh_->cell_volume(n);
     }
   }
 
@@ -557,7 +557,7 @@ void DG_Modal::UpdateScales_(int c, int order)
       Polynomial poly(d_, order);
 
       double a, b, norm;
-      double volume = integrals.monomials(0).coefs()[0]; 
+      double volume = integrals(0, 0); 
 
       for (auto it = poly.begin(); it.end() <= poly.end(); ++it) {
         int k = it.MonomialPosition();
