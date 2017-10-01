@@ -60,10 +60,10 @@ Mesh_MOAB::Mesh_MOAB(const char *filename, const Epetra_MpiComm *comm_,
     // In the specification for the Ghosts we made the assumption 
     // that we are dealing with 3D meshes only
 
-    result = 
-      mbcore->load_file(filename,NULL,
-                        "PARALLEL=READ_DELETE;PARALLEL_RESOLVE_SHARED_ENTS;PARTITION=PARALLEL_PARTITION;PARALLEL_GHOSTS=3.0.1.2",
-                        NULL,NULL,0);
+    result = mbcore->load_file(
+        filename,NULL,
+        "PARALLEL=READ_DELETE;PARALLEL_RESOLVE_SHARED_ENTS;PARTITION=PARALLEL_PARTITION;PARALLEL_GHOSTS=3.0.1.2",
+        NULL,NULL,0);
       
     rank = mbcomm_->rank();
       
@@ -72,8 +72,7 @@ Mesh_MOAB::Mesh_MOAB(const char *filename, const Epetra_MpiComm *comm_,
 
     // Load serial mesh
 
-    result =
-      mbcore->load_file(filename,NULL,NULL,NULL,NULL,0);
+    result = mbcore->load_file(filename,NULL,NULL,NULL,NULL,0);
 
     rank = 0;
   }
@@ -86,14 +85,13 @@ Mesh_MOAB::Mesh_MOAB(const char *filename, const Epetra_MpiComm *comm_,
   }
       
       
-
   // Dimension of space, mesh cells, faces etc
-    
-  result = mbcore->get_dimension(space_dim_);
+  int ndim;  
+  result = mbcore->get_dimension(ndim);
+  space_dim_ = ndim;
     
 
   // Highest topological dimension
-    
   int nent;
   result = mbcore->get_number_entities_by_dimension(0,3,nent,false);
   if (result != MB_SUCCESS) {
@@ -119,9 +117,10 @@ Mesh_MOAB::Mesh_MOAB(const char *filename, const Epetra_MpiComm *comm_,
       assert(nent > 0);
     }
   }
+
+  set_manifold_dimension(celldim);
       
   // Set the geometric model that this mesh is related to
-
   set_geometric_model(gm);
 
   { // Keep together and in this order 
@@ -1307,22 +1306,23 @@ moab::Tag Mesh_MOAB::build_set(
     if (region->type() == AmanziGeometry::BOX ||
         region->type() == AmanziGeometry::COLORFUNCTION) {
 
-      mbcore->tag_get_handle(internal_name.c_str(),1,MB_TYPE_INTEGER,tag,
+      mbcore->tag_get_handle(internal_name.c_str(), 1, MB_TYPE_INTEGER, tag,
                              MB_TAG_CREAT|MB_TAG_SPARSE);
       
       int ncell = num_entities(CELL, USED);              
 
-      for (int icell = 0; icell < ncell; icell++)
-        if (region->inside(cell_centroid(icell)))
-          mbcore->tag_set_data(tag,&(cell_id_to_handle[icell]),1,&one);
-
+      for (int icell = 0; icell < ncell; icell++) {
+        if (region->inside(cell_centroid(icell))) {
+          mbcore->tag_set_data(tag, &(cell_id_to_handle[icell]), 1, &one);
+        }
+      }
     }
     else if (region->type() == AmanziGeometry::POINT) {
       AmanziGeometry::Point vpnt(space_dim_);
       AmanziGeometry::Point rgnpnt(space_dim_);
 
-      mbcore->tag_get_handle(internal_name.c_str(),1,MB_TYPE_INTEGER,tag,
-                           MB_TAG_CREAT|MB_TAG_SPARSE);
+      mbcore->tag_get_handle(internal_name.c_str(), 1, MB_TYPE_INTEGER, tag,
+                             MB_TAG_CREAT|MB_TAG_SPARSE);
       
       rgnpnt = Teuchos::rcp_static_cast<const AmanziGeometry::RegionPoint>(region)->point();
         
@@ -1714,72 +1714,62 @@ void Mesh_MOAB::get_set_entities_and_vofs(const std::string setname,
   // initialized from the input file
   
   if (rgn->type() == AmanziGeometry::LABELEDSET) {
-      Teuchos::RCP<const AmanziGeometry::RegionLabeledSet> lsrgn =
-          Teuchos::rcp_static_cast<const AmanziGeometry::RegionLabeledSet>(rgn);
-      std::string label = lsrgn->label();
-      std::stringstream labelstream(label);
-      int labelint;
-      labelstream >> labelint;
-      std::string entity_type = lsrgn->entity_str();
+    Teuchos::RCP<const AmanziGeometry::RegionLabeledSet> lsrgn =
+        Teuchos::rcp_static_cast<const AmanziGeometry::RegionLabeledSet>(rgn);
+    std::string label = lsrgn->label();
+    std::stringstream labelstream(label);
+    int labelint;
+    labelstream >> labelint;
+    std::string entity_type = lsrgn->entity_str();
 
-      if ((kind == CELL && entity_type != "CELL") ||
-          (kind == FACE && entity_type != "FACE") ||
-          (kind == NODE && entity_type != "NODE"))
-        {
-          std::stringstream mesg_stream;
-          mesg_stream << "Found labeled set region named " << setname 
-                      << " but it contains entities of type " << entity_type << ", not the requested type";
-          Errors::Message mesg(mesg_stream.str());
-          amanzi_throw(mesg);
-        } 
+    if ((kind == CELL && entity_type != "CELL") ||
+        (kind == FACE && entity_type != "FACE") ||
+        (kind == NODE && entity_type != "NODE")) {
+      std::stringstream mesg_stream;
+      mesg_stream << "Found labeled set region named " << setname 
+                  << " but it contains entities of type " << entity_type << ", not the requested type";
+      Errors::Message mesg(mesg_stream.str());
+      amanzi_throw(mesg);
+    } 
 
-      int *values[1] = {&labelint};
-      if (kind == CELL)
-        mbcore->get_entities_by_type_and_tag(0,MBENTITYSET,&mattag,
-                                             (void **)values,1,mset1);
-      else if (kind == FACE)
-        mbcore->get_entities_by_type_and_tag(0,MBENTITYSET,&sstag,
-                                             (void **)values,1,mset1);
-      else if (kind == NODE)
-        mbcore->get_entities_by_type_and_tag(0,MBENTITYSET,&nstag,
-                                             (void **)values,1,mset1);
-
-    }
+    int *values[1] = {&labelint};
+    if (kind == CELL)
+      mbcore->get_entities_by_type_and_tag(0, MBENTITYSET, &mattag, (void **)values, 1, mset1);
+    else if (kind == FACE)
+      mbcore->get_entities_by_type_and_tag(0, MBENTITYSET, &sstag, (void **)values, 1, mset1);
+    else if (kind == NODE)
+      mbcore->get_entities_by_type_and_tag(0, MBENTITYSET, &nstag, (void **)values, 1, mset1);
+  }
   else {
-      // Modify region/set name by prefixing it with the type of
-      // entity requested
+    // Modify region/set name by prefixing it with the type of entity requested
+    moab::Tag tag = 0;
+    bool created;
+    int *values[1] = {&one};
 
-      moab::Tag tag = 0;
-      bool created;
-      int *values[1] = {&one};
+    mbcore->tag_get_handle(internal_name.c_str(), 1, MB_TYPE_INTEGER, tag, MB_TAG_SPARSE);
+    if (!tag)
+      tag = build_set(rgn, kind);
 
-      mbcore->tag_get_handle(internal_name.c_str(),1,MB_TYPE_INTEGER,tag,
-                             MB_TAG_SPARSE);
-
-      if (!tag)
-        tag = build_set(rgn,kind);
-
-      switch(kind) {
+    switch(kind) {
       case CELL:
-        mbcore->get_entities_by_type_and_tag(0,MBHEX,&tag,(void **)values,1,mset1);
-      break;
+        mbcore->get_entities_by_type_and_tag(0, MBHEX, &tag, (void **)values, 1, mset1);
+        break;
       case FACE:
-        mbcore->get_entities_by_type_and_tag(0,MBQUAD,&tag,(void **)values,1,mset1);
+        mbcore->get_entities_by_type_and_tag(0, MBQUAD, &tag, (void **)values, 1, mset1);
         break;
       case NODE:
-        mbcore->get_entities_by_type_and_tag(0,MBVERTEX,&tag,(void **)values,1,mset1);
+        mbcore->get_entities_by_type_and_tag(0, MBVERTEX, &tag, (void **)values, 1, mset1);
         break;
-      }
     }
+  }
 
-  /* Check if no processor got any mesh entities */
-
+  // Check if no processor got any mesh entities
   int nent_loc = mset1.size();
 
 #ifdef DEBUG
   int nent_glob;
 
-  epcomm_->SumAll(&nent_loc,&nent_glob,1);
+  epcomm_->SumAll(&nent_loc, &nent_glob, 1);
   if (nent_glob == 0) {
     std::stringstream mesg_stream;
     mesg_stream << "Could not retrieve any mesh entities for set " << setname << std::endl;
@@ -1829,15 +1819,15 @@ void Mesh_MOAB::get_set_entities_and_vofs(const std::string setname,
     setents->resize(nent_loc);
   }
       
-    /* Check if there were no entities left on any processor after
-       extracting the appropriate category of entities */
-    
+  // Check if there were no entities left on any processor after
+  // extracting the appropriate category of entities 
 #ifdef DEBUG
   epcomm_->SumAll(&nent_loc,&nent_glob,1);
   
   if (nent_glob == 0) {
     std::stringstream mesg_stream;
-    mesg_stream << "Could not retrieve any mesh entities of type " << setkind << " for set " << setname << std::endl;
+    mesg_stream << "Could not retrieve any mesh entities of type " << setkind 
+                << " for set " << setname << std::endl;
     Errors::Message mesg(mesg_stream.str());
     Exceptions::amanzi_throw(mesg);
   }

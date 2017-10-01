@@ -310,8 +310,7 @@ MeshFactory::create(Teuchos::ParameterList &parameter_list,
   Teuchos::Array<int> ncells = parameter_list.get< Teuchos::Array<int> >("number of cells");
   unsigned int dim = ncells.size();
 
-  for (FrameworkPreference::const_iterator i = my_preference.begin(); 
-       i != my_preference.end(); i++) {
+  for (auto i = my_preference.begin(); i != my_preference.end(); i++) {
     if (framework_generates(*i, my_comm_->NumProc() > 1, dim)) {
       try {
         result = framework_generate(my_comm_, *i, parameter_list, gm, vo_,
