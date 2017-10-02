@@ -62,6 +62,7 @@ void Richards::Functional(double t_old,
   bc_head_->Compute(t_new);
   bc_flux_->Compute(t_new);
   UpdateBoundaryConditions_(S_next_.ptr());
+  db_->WriteBoundaryConditions(bc_markers_, bc_values_);
 
   // zero out residual
   Teuchos::RCP<CompositeVector> res = g->Data();
