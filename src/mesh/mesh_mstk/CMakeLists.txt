@@ -77,11 +77,24 @@ if (BUILD_TESTS)
           copy_directory ${MSTK_SOURCE_DIR}/test ${MSTK_BINARY_DIR}/test) 
     endif()
 
-    #Test: elim_degen_mstk
+    #Test: eliminate degeneracies for serial mesh
     add_amanzi_test(mstk_po_test mstk_po_test
                     KIND int
-                    SOURCE
-                         test/test_pinchouts.cc
+                    SOURCE test/Main.cc test/test_pinchouts.cc
+                    LINK_LIBS mstk_mesh mesh_factory mesh_audit ${UnitTest_LIBRARIES})
+
+    #Test: eliminate degeneracies in parallel mesh created from inline partitioning
+    add_amanzi_test(mstk_po_test_small_par mstk_po_test_small_par
+                    KIND int
+		    NPROCS 4
+                    SOURCE test/Main.cc test/test_pinchouts.cc
+                    LINK_LIBS mstk_mesh mesh_factory mesh_audit ${UnitTest_LIBRARIES})
+
+    #Test: eliminate degeneracies in pre-partitioned parallel mesh
+    add_amanzi_test(mstk_degen_prepart mstk_degen_prepart
+                    KIND int
+		    NPROCS 4
+                    SOURCE test/Main.cc test/test_degen_prepart.cc
                     LINK_LIBS mstk_mesh mesh_factory mesh_audit ${UnitTest_LIBRARIES})
 
     # Test: mstk_mesh
