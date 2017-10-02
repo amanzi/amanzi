@@ -20,9 +20,8 @@
 #include "../Mesh_MSTK.hh"
 
 
-int main(int argc, char *argv[])
+TEST(ELIM_DEGEN_INLINE_PARTITION)
 {
-  MPI_Init(&argc, &argv);
   
   std::string xml_filename = "test/po_test_pri.xml";
   std::string out_exo_filename = "test/po_mesh_out.exo";
@@ -198,8 +197,4 @@ int main(int argc, char *argv[])
   }
   
   mesh->write_to_exodus_file(out_exo_filename);
-  
-  MPI_Finalize();
-  
-  return 0;
 }

@@ -20,12 +20,9 @@
 #include "../Mesh_MSTK.hh"
 
 
-int main(int argc, char *argv[])
+TEST(ELIM_DEGEN_PREPARTITION)
 {
-  MPI_Init(&argc, &argv);
-  
   std::string xml_filename = "test/test_degen_prepart.xml";
-  std::string out_exo_filename = "test/output.exo";
   
   Teuchos::RCP<Epetra_MpiComm> comm_(new Epetra_MpiComm(MPI_COMM_WORLD));
   int num_procs = comm_->NumProc();
@@ -125,10 +122,4 @@ int main(int argc, char *argv[])
   Amanzi::AmanziMesh::Mesh_MSTK *mstk_mesh = 
       dynamic_cast<Amanzi::AmanziMesh::Mesh_MSTK *>(mesh.get());
   CHECK(mstk_mesh->run_internal_mstk_checks());
-    
-  mesh->write_to_exodus_file(out_exo_filename);
-  
-  MPI_Finalize();
-  
-  return 0;
 }
