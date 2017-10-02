@@ -14,7 +14,8 @@ Mesh_MOAB::Mesh_MOAB(const char *filename, const Epetra_MpiComm *comm_,
                      const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm,
                      const Teuchos::RCP<const VerboseObject>& vo,
                      const bool request_faces,
-                     const bool request_edges)
+                     const bool request_edges,
+		     const Partitioner_type partitioner)
   : Mesh(vo, request_faces, request_edges)
 {
   int result, rank;

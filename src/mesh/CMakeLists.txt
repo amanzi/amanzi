@@ -130,12 +130,12 @@ if (BUILD_TESTS)
 
     # Test: mesh columns
 
-#    set(test_src_files test/Main.cc test/test_columns.cc)
-#
-#    add_amanzi_test(mesh_columns mesh_columns
-#                    KIND unit
-#		    SOURCE ${test_src_files}
-#		    LINK_LIBS ${test_link_libs})
+    set(test_src_files test/Main.cc test/test_columns.cc)
+
+    add_amanzi_test(mesh_columns mesh_columns
+                    KIND unit
+		    SOURCE ${test_src_files}
+		    LINK_LIBS ${test_link_libs})
 
 endif()
   

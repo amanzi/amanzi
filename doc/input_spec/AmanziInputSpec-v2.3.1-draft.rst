@@ -881,17 +881,18 @@ Amanzi supports both structured and unstructured numerical solution approaches. 
 
 To internally generate a mesh the ``mesh`` element takes the following form.  The mesh framework attribute only applies to the `"unstructured`" and therefore is skipped for `"structured`" simulations.
 
+Also, for parallel unstructured meshes, it is possible to choose a Partitioner from the available options, `"metis"`, `"zoltan_graph"` and `"zoltan_rcb"`. `"metis"` and `"zoltan_graph"` perform a graph partitioning of the mesh with no regard to the geometry of the mesh. `"zoltan_rcb"` partitions meshes using Recursive Coordinate Bisection which can lead to better partitioning in meshes that are thin in a particular direction. Additionally, the use of `"zoltan_rcb"` with the MSTK framework triggers an option to detect columns of elements in a mesh and adjust the partitioning such that no column is split over multiple partitions. If no partitioner is specified, a default method is used (`"metis"`).
 
 .. code-block:: xml
 
    <mesh framework=["mstk"|"stk::mesh"|"simple"]>
       <comments> May be included in the Mesh element </comments>
       <dimension>3</dimension>
+      <partitioner>"some partitioner keyword"</partitioner>
       <generate>
          <number_of_cells nx = "integer value"  ny = "integer value"  nz = "integer value"/>
          <box  low_coordinates = "x_low,y_low,z_low" high_coordinates = "x_high,y_high,z_high"/>
       </generate>
-
    </mesh>
 
 For example:
@@ -900,6 +901,7 @@ For example:
 
   <mesh framework="mstk">
     <dimension>2</dimension>
+    <partitioner>"zoltan_rcb"</partitioner>
     <generate>
       <number_of_cells nx="54" nz="60" />
       <box high_coordinates="216.0,120.0" low_coordinates="0.0, 0.0" />
