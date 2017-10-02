@@ -62,10 +62,12 @@ TEST(COLUMN_MESH_3D)
               lx,ly,lz,nx,ny,nz,
               &comm_, gm));
 
+  CHECK_EQUAL(mesh->build_columns(), 1);
+  
   // Perturb the nodes above the base layer just a bit
   int nnodes = mesh->num_entities(Amanzi::AmanziMesh::NODE,
           Amanzi::AmanziMesh::OWNED);
-    
+
   for (int n = 0; n < nnodes; n++) {
     Amanzi::AmanziGeometry::Point xyz(3);
     mesh->node_get_coordinates(n,&xyz);

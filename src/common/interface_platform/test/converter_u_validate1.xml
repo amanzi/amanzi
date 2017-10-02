@@ -12,6 +12,16 @@
     <Parameter name="file name base" type="string" value="plot"/>
     <Parameter name="cycles start period stop 0" type="Array(int)" value="{0, 100, -1}"/>
   </ParameterList>
+  <ParameterList name="walkabout data">
+    <Parameter name="file name base" type="string" value="walkabout"/>
+    <Parameter name="file name digits" type="int" value="5"/>
+    <Parameter name="cycles start period stop 0" type="Array(int)" value="{0, 100, -1}"/>
+    <ParameterList name="write regions">
+      <Parameter name="region names" type="Array(string)" value="{RegionMiddle, RegionBottom, RegionTop}"/>
+      <Parameter name="material names" type="Array(string)" value="{Facies_1, Facies_2, Facies_3}"/>
+      <Parameter name="material ids" type="Array(int)" value="{1000, 2000, 3000}"/>
+    </ParameterList>
+  </ParameterList>
   <ParameterList name="regions">
     <ParameterList name="Bottom Surface">
       <ParameterList name="region: box">
@@ -95,6 +105,7 @@
       </ParameterList>
       <ParameterList name="expert">
         <Parameter name="framework" type="string" value="MSTK"/>
+        <Parameter name="partitioner" type="string" value="NOT_SPECIFIED"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="verbose object">

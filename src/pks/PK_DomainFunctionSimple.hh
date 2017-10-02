@@ -122,14 +122,14 @@ void PK_DomainFunctionSimple<FunctionBase>::Compute(double t0, double t1)
       for (int i = 0; i != dim; ++i) args[i + 1] = xc[i];
       
       // uspec->first is a RCP<Spec>, Spec's second is an RCP to the function.
-      for (int i=0; i<nfun; ++i) val_vec[i] = (*(*uspec)->first->second)(args)[i];
-
+      for (int i = 0; i < nfun; ++i) {
+        val_vec[i] = (*(*uspec)->first->second)(args)[i];
+      }
       value_[*c] = val_vec;
     }
 
     if (submodel_ == "integrated source") {
       double dt = t1 - t0;
-      if (dt > 0.0) dt = 1.0 / dt;
  
       args[0] = t0;
       for (MeshIDs::const_iterator c = ids->begin(); c != ids->end(); ++c) {
@@ -137,13 +137,10 @@ void PK_DomainFunctionSimple<FunctionBase>::Compute(double t0, double t1)
             mesh_->cell_centroid(*c) : mesh_->face_centroid(*c);
 
         for (int i = 0; i != dim; ++i) args[i + 1] = xc[i];
-        for (int i=0; i<nfun; ++i) {
+        for (int i = 0; i < nfun; ++i) {
           value_[*c][i] -= (*(*uspec)->first->second)(args)[i];
-          value_[*c][i] *= dt;
+          if (dt > 0.0) value_[*c][i] /= dt;
         }
-        // value_[*c] -= (*(*uspec)->first->second)(args)[0];
-        // value_[*c] -= (*(*uspec)->first->second)(args);
-        // value_[*c] *= dt;
       }
     }
   }

@@ -9,7 +9,7 @@ timestep_init   1.0d-10
 time_tolerance  0.01
 coordinate      rectangular
 correction_max  1.0
-debye-huckel    true
+debye-huckel    false
 database        ion-exchange.dbs
 !!master          H+
 speciate_only   false

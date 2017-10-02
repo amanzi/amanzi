@@ -409,27 +409,35 @@ class Mesh {
 
   //
   virtual
-  int build_columns(const std::string& setname) const;
+  int build_columns(const std::string& Msetname) const;
 
-  // Number of columns in mesh
+  // Build columns over the entire mesh. The columns are defined by
+  // starting from boundary faces which have a negative-z-direction
+  // normal, then collecting cells and faces while traveling downward
+  // through the columns.
+
+  virtual
+  int build_columns() const;
+  
+  // Number of columns in mesh - must call build_columns before calling
   int num_columns(bool ghosted=false) const;
 
-  // Given a column ID, get the cells of the column
+  // Given a column ID, get the cells of the column - must call build_columns before calling
   const Entity_ID_List& cells_of_column(const int columnID_) const;
 
-  // Given a column ID, get the cells of the column
+  // Given a column ID, get the cells of the column - must call build_columns before calling
   const Entity_ID_List& faces_of_column(const int columnID_) const;
 
-  // Given a cell, get its column ID
+  // Given a cell, get its column ID - must call build_columns before calling
   int column_ID(const Entity_ID cellid) const;
 
-  // Given a cell, get the id of the cell above it in the column.
+  // Given a cell, get the id of the cell above it in the column - must call build_columns before calling
   Entity_ID cell_get_cell_above(const Entity_ID cellid) const;
 
-  // Given a cell, get the id of the cell below it in the column.
+  // Given a cell, get the id of the cell below it in the column - must call build_columns before calling
   Entity_ID cell_get_cell_below(const Entity_ID cellid) const;
 
-  // Given a node, get the id of the node above it in the column.
+  // Given a node, get the id of the node above it in the column - must call build_columns before calling
   Entity_ID node_get_node_above(const Entity_ID nodeid) const;
 
 
@@ -561,6 +569,11 @@ class Mesh {
   // If the flag keep_valid is true, then the nodes are moved
   // only as much as possible without making the mesh invalid
   // The final positions of the nodes is returned in final_positions
+  //
+  // This is a rudimentary capability that requires ghosts nodes
+  // also to be deformed. Amanzi does not have any built-in parallel 
+  // communication capabilities, other than Trilinos Epetra object
+  // communication or raw MPI. 
   virtual
   int deform(const Entity_ID_List& nodeids,
              const AmanziGeometry::Point_List& new_positions,
@@ -691,11 +704,9 @@ class Mesh {
   virtual
   void write_to_exodus_file(const std::string filename) const = 0;
 
- protected:
+protected:
   // Helper function to build columns
-  virtual
-  int build_columns_() const;
-  void build_column_(int colnum, Entity_ID top_face) const;
+  int build_single_column_(int colnum, Entity_ID top_face) const;
 
   // Beginning of new interface to regions using the base mesh.
   void get_set_entities_box_vofs_(

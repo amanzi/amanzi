@@ -10,7 +10,7 @@ message(STATUS "")
 message(STATUS ">>>>>>>> AmanziTPL.cmake")
 
 # Verify TPL compatibility
-set(AMANZI_TPLS_VERSION_REQUIRED "0.94.9")
+set(AMANZI_TPLS_VERSION_REQUIRED "0.94.10")
 message(STATUS "\t >>>>>  Amanzi TPL Version: ${AMANZI_TPLS_VERSION}")
 message(STATUS "\t >>>>>  Required Version:   ${AMANZI_TPLS_VERSION_REQUIRED}")
 
