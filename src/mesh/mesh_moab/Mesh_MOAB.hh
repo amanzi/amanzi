@@ -315,14 +315,14 @@ class Mesh_MOAB : public Mesh {
   // tag handles
   moab::Tag lid_tag;  // Local ID
   moab::Tag gid_tag;  // Global ID
-  moab::Tag mattag;  // Material tag
-  moab::Tag sstag;  // Sideset tag
-  moab::Tag nstag;  // Nodeset tag
 
   // Local ID to MOAB handle map
-  std::vector<moab::EntityHandle> vtx_id_to_handle;
+  std::vector<moab::EntityHandle> node_id_to_handle;
   std::vector<moab::EntityHandle> face_id_to_handle;
   std::vector<moab::EntityHandle> cell_id_to_handle;
+
+  // Start MOAD IDs
+  int start_node_id_, start_face_id_, start_cell_id_;
 
   // Maps
   Epetra_Map *cell_map_wo_ghosts_, *face_map_wo_ghosts_, *node_map_wo_ghosts_;

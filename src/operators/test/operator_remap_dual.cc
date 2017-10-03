@@ -400,4 +400,7 @@ TEST(REMAP_DG1_DUAL_VEM) {
   RemapTests2DDual(1, "dg modal", "VEM", 20, 20, 0.05);
 }
 
+TEST(REMAP_DG2_DUAL_VEM) {
+  RemapTests2DDual(2, "dg modal", "VEM", 20, 20, 0.05);
+}
 
