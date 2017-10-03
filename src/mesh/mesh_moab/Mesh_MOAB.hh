@@ -315,6 +315,9 @@ class Mesh_MOAB : public Mesh {
   // tag handles
   moab::Tag lid_tag;  // Local ID
   moab::Tag gid_tag;  // Global ID
+  moab::Tag cstag;  // Material tag
+  moab::Tag sstag;  // Sideset tag
+  moab::Tag nstag;  // Nodeset tag
 
   // Local ID to MOAB handle map
   std::vector<moab::EntityHandle> node_id_to_handle;

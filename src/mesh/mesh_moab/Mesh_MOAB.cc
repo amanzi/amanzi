@@ -68,7 +68,8 @@ Mesh_MOAB::Mesh_MOAB(const char *filename, const Epetra_MpiComm *comm_,
   }
   else {
     // Load serial mesh
-    result = mbcore->load_file(filename, NULL, NULL, NULL, NULL, 0);
+    int block_id_list(1);
+    result = mbcore->load_file(filename, 0, 0, NULL, NULL, 0);
 
     rank = 0;
   }
@@ -228,6 +229,9 @@ void Mesh_MOAB::clear_internals_()
     
   lid_tag = 0;
   gid_tag = 0;
+  cstag = 0;
+  sstag = 0;
+  nstag = 0;
 
   space_dim_ = 3;
   celldim = -1;
@@ -737,6 +741,23 @@ void Mesh_MOAB::init_set_info()
   char setname[256];
   moab::Tag tag;
 
+  // Get element block, sideset and nodeset tags
+  result = mbcore->tag_get_handle(MATERIAL_SET_TAG_NAME, cstag);
+  if (result != MB_SUCCESS) {
+    std::cerr << "Could not get tag for material sets" << std::endl;
+    assert(result == MB_SUCCESS);
+  }
+  result = mbcore->tag_get_handle(NEUMANN_SET_TAG_NAME, sstag);
+  if (result != MB_SUCCESS) {
+    std::cerr << "Could not get tag for side sets" << std::endl;
+    assert(result == MB_SUCCESS);
+  }
+  result = mbcore->tag_get_handle(DIRICHLET_SET_TAG_NAME, nstag);
+  if (result != MB_SUCCESS) {
+    std::cerr << "Could not get tag for node sets" << std::endl;
+    assert(result == MB_SUCCESS);
+  }
+
   Teuchos::RCP<const AmanziGeometry::GeometricModel> gm = Mesh::geometric_model();
 
   if (gm == Teuchos::null) { 
@@ -766,7 +787,6 @@ void Mesh_MOAB::init_set_info()
 
       result = mbcore->tag_get_handle(internal_name.c_str(), 1, MB_TYPE_INTEGER,
                                       tag, MB_TAG_CREAT|MB_TAG_SPARSE);
-std::cout << "AAA:" << label << " " << internal_name << " " << tag << std::endl;
 
       if (result != MB_SUCCESS) {
         std::cerr << "Problem getting labeled set " << std::endl;
@@ -1382,6 +1402,7 @@ moab::Tag Mesh_MOAB::build_set(
     }
     else if (region->type() == AmanziGeometry::LABELEDSET) {
       // Nothing to do
+      tag = cstag;
     }
     else {
       Errors::Message mesg("Region type not applicable/supported for cell sets");
@@ -1428,10 +1449,10 @@ moab::Tag Mesh_MOAB::build_set(
         if (on_plane)
           mbcore->tag_set_data(tag,&(face_id_to_handle[iface]),1,&one);
       }
-
     }
     else if (region->type() == AmanziGeometry::LABELEDSET) {
       // Nothing to do
+      tag = sstag;
     }
     else if (region->type() == AmanziGeometry::LOGICAL) {
       // Will handle it later in the routine
@@ -1469,6 +1490,7 @@ moab::Tag Mesh_MOAB::build_set(
     }
     else if (region->type() == AmanziGeometry::LABELEDSET) {
       // Just retrieve and return the set
+      tag = nstag;
     }
     else if (region->type() == AmanziGeometry::LOGICAL) {
       // We will handle it later in the routine
@@ -1701,6 +1723,8 @@ void Mesh_MOAB::get_set_entities_and_vofs(const std::string setname,
   // Is there an appropriate region by this name?
   Teuchos::RCP<const AmanziGeometry::Region> rgn = gm->FindRegion(setname);
 
+  moab::Range mset1;
+
   // Did not find the region
   if (rgn == Teuchos::null) {
     std::stringstream mesg_stream;
@@ -1708,10 +1732,6 @@ void Mesh_MOAB::get_set_entities_and_vofs(const std::string setname,
     Errors::Message mesg(mesg_stream.str());
     amanzi_throw(mesg);
   }
-
-  std::string internal_name = internal_name_of_set(rgn,kind);
-
-  moab::Range mset1;
 
   // If region is of type labeled set and a mesh set should have been
   // initialized from the input file
@@ -1734,27 +1754,21 @@ void Mesh_MOAB::get_set_entities_and_vofs(const std::string setname,
       amanzi_throw(mesg);
     } 
 
-    int *values[1] = {&labelint};
-    std::string internal_name;
-    moab::Tag tag;
+    int* values[1] = { &labelint };
 
-    if (kind == CELL) {
-      internal_name = internal_name_of_set(rgn, CELL);
-    } else if (kind == FACE) {
-      internal_name = internal_name_of_set(rgn, FACE);
-    } else if (kind == NODE) {
-      internal_name = internal_name_of_set(rgn, NODE);
-    }
-    mbcore->tag_get_handle(internal_name.c_str(), tag);
-    mbcore->get_entities_by_type_and_tag(0, MBENTITYSET, &tag, (void **)values, 1, mset1);
-std::cout << "BBB:" << labelint << " " << internal_name << " " << tag << " size=" << mset1.size() << std::endl;
+    if (kind == CELL)
+      mbcore->get_entities_by_type_and_tag(0, MBENTITYSET, &cstag, (void **)values, 1, mset1);
+    else if (kind == FACE)
+      mbcore->get_entities_by_type_and_tag(0, MBENTITYSET, &sstag, (void **)values, 1, mset1);
+    else if (kind == NODE)
+      mbcore->get_entities_by_type_and_tag(0, MBENTITYSET, &nstag, (void **)values, 1, mset1);
   }
   else {
     // Modify region/set name by prefixing it with the type of entity requested
-    moab::Tag tag = 0;
-    bool created;
-    int *values[1] = {&one};
+    moab::Tag tag(0);
+    int* values[1] = { &one };
 
+    std::string internal_name = internal_name_of_set(rgn, kind);
     mbcore->tag_get_handle(internal_name.c_str(), 1, MB_TYPE_INTEGER, tag, MB_TAG_SPARSE);
     if (!tag)
       tag = build_set(rgn, kind);
