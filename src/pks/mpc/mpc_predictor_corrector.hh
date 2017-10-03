@@ -43,6 +43,15 @@ public:
                   const Teuchos::RCP<State>& S_inter,
                   const Teuchos::RCP<State>& S_next);
 
+  virtual double get_dt() {
+    return std::min(StrongMPC<PK_t>::get_dt(), predictor_pk_->get_dt());
+  }
+  virtual void set_dt(double dt) {
+    StrongMPC<PK_t>::set_dt(dt);
+    predictor_pk_->set_dt(dt);
+  }
+  
+  
   virtual void CommitStep(double t_old, double t_new,
                           const Teuchos::RCP<State>& S);
   
@@ -56,6 +65,13 @@ protected:
   Teuchos::RCP<PK> predictor_pk_;
   Teuchos::RCP<TreeVector> predictor_soln_;
   bool predictor_fail_;
+
+  int pred_fail_gi_fail_;
+  int pred_fail_gi_good_;
+  int pred_good_gi_fail_;
+  int pred_good_gi_itr0_;
+  int pred_good_gi_itrN_;
+  
   
 private:
   // factory registration
@@ -72,8 +88,13 @@ MPCPredictorCorrector<PK_t>::MPCPredictorCorrector(Teuchos::ParameterList& pk_tr
                            const Teuchos::RCP<State>& S,
                            const Teuchos::RCP<TreeVector>& soln) :
     PK(pk_tree, global_list, S, soln),
-    StrongMPC<PK_t>(pk_tree, global_list, S, soln) {
-
+    StrongMPC<PK_t>(pk_tree, global_list, S, soln),
+    pred_fail_gi_fail_(0),
+    pred_fail_gi_good_(0),
+    pred_good_gi_fail_(0),
+    pred_good_gi_itr0_(0),
+    pred_good_gi_itrN_(0)
+{
   // create the predictor PK
   Teuchos::RCP<Teuchos::ParameterList> pk_tree_list = Teuchos::sublist(this->plist_, "predictor PK tree");
   Teuchos::ParameterList::ConstIterator pk_item = pk_tree_list->begin();
@@ -123,10 +144,9 @@ void MPCPredictorCorrector<PK_t>::CommitStep(double t_old, double t_new,
 
   // copy the BDF solution to the explicit solution
   // NOTE special purpose
-  // copy surface to star
-  *predictor_soln_->SubVector(0) = *this->solution_->SubVector(0)->SubVector(1);
   *predictor_soln_->SubVector(1)->SubVector(1) = *this->solution_->SubVector(0)->SubVector(1);
   *predictor_soln_->SubVector(1)->SubVector(0) = *this->solution_->SubVector(0)->SubVector(0);
+  predictor_pk_->ChangedSolutionPK();
 
   // now commit the predictor, storing this solution
   predictor_pk_->CommitStep(t_old, t_new, S);
@@ -153,10 +173,20 @@ bool MPCPredictorCorrector<PK_t>::ModifyPredictor(double h, Teuchos::RCP<const T
 template<class PK_t>
 bool MPCPredictorCorrector<PK_t>::AdvanceStep(double t_old, double t_new, bool reinit) {
   bool fail = StrongMPC<PK_t>::AdvanceStep(t_old, t_new, reinit);
-  if (predictor_fail_ && !fail) {
-    std::cout << "ACTUALLY IT CAN HAPPEN!" << std::endl;
-    ASSERT(0);
+  if (predictor_fail_) {
+    if (fail) pred_fail_gi_fail_++;
+    else pred_fail_gi_good_++;
+  } else {
+    if (fail) pred_good_gi_fail_++;
+    else if (this->time_stepper_->number_nonlinear_steps() == 0) pred_good_gi_itr0_++;
+    else pred_good_gi_itrN_++;
   }
+
+  if (this->vo_->os_OK(Teuchos::VERB_HIGH)) {
+    *this->vo_->os() << "Tallies: [P_FAIL,GI_FAIL=" << pred_fail_gi_fail_ << "][P_FAIL,GI_GOOD=" << pred_fail_gi_good_
+                     << "][P_GOOD,GI_FAIL=" << pred_good_gi_fail_ << "][P_GOOD,GI_0=" << pred_good_gi_itr0_ << "][P_GOOD,GI_N=" << pred_good_gi_itrN_ << "]" << std::endl;
+  }
+  return fail;
 }
 
 
