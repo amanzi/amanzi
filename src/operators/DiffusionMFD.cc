@@ -581,7 +581,7 @@ void DiffusionMFD::ApplyBCs(bool primary, bool eliminate)
 * Apply BCs on face values.
 ****************************************************************** */
 void DiffusionMFD::ApplyBCs_Mixed_(BCs& bc_trial, BCs& bc_test,
-                                           bool primary, bool eliminate)
+                                   bool primary, bool eliminate)
 {
   // apply diffusion type BCs to FACE-CELL system
   AmanziMesh::Entity_ID_List faces;

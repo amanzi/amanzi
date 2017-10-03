@@ -94,7 +94,7 @@ class Mesh_MOAB : public Mesh {
    
   //
   // General mesh information
-  // -------------------------
+  // ------------------------
   //
     
   // Number of entities of any kind (cell, face, node) and in a
@@ -109,7 +109,7 @@ class Mesh_MOAB : public Mesh {
     
   //
   // Mesh Entity Adjacencies 
-  //-------------------------
+  //------------------------
 
   // Downward Adjacencies
   //---------------------
@@ -135,7 +135,7 @@ class Mesh_MOAB : public Mesh {
   {
     Errors::Message mesg("Edges not implemented in this framework. Use MSTK");
     amanzi_throw(mesg);
-  };
+  }
     
   // Get nodes of face 
   // On a distributed mesh, all nodes (OWNED or GHOST) of the face 
@@ -200,7 +200,7 @@ class Mesh_MOAB : public Mesh {
     
   //
   // Mesh entity geometry
-  //--------------
+  //---------------------
   //
     
   // Node coordinates - 3 in 3D and 2 in 2D
@@ -323,9 +323,6 @@ class Mesh_MOAB : public Mesh {
   std::vector<moab::EntityHandle> node_id_to_handle;
   std::vector<moab::EntityHandle> face_id_to_handle;
   std::vector<moab::EntityHandle> cell_id_to_handle;
-
-  // Start MOAD IDs
-  int start_node_id_, start_face_id_, start_cell_id_;
 
   // Maps
   Epetra_Map *cell_map_wo_ghosts_, *face_map_wo_ghosts_, *node_map_wo_ghosts_;

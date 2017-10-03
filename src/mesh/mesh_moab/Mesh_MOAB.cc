@@ -273,7 +273,6 @@ void Mesh_MOAB::init_id_handle_maps()
   node_id_to_handle.reserve(nv);
 
   i = 0;
-  start_node_id_ = 0;
   for (auto it = OwnedVerts.begin(); it != OwnedVerts.end(); ++it) {
     moab::EntityHandle handle = *it;
     result = mbcore->tag_set_data(lid_tag, &handle, 1, &i);
@@ -281,16 +280,6 @@ void Mesh_MOAB::init_id_handle_maps()
       std::cerr << "Problem getting local ID for vertex" << std::endl;
       assert(result == MB_SUCCESS);
     }
-
-    if (i == 0) {
-      start_node_id_ = mbcore->id_from_handle(handle) - i;
-    } else {
-      if (mbcore->id_from_handle(handle) != i + start_node_id_) {
-        Errors::Message mesg("Non-contigious local node ids");
-        amanzi_throw(mesg);
-      }
-    }
-
     node_id_to_handle[i++] = handle;
   }    
 
@@ -312,7 +301,7 @@ void Mesh_MOAB::init_id_handle_maps()
   i = 0;
   for (auto it = OwnedFaces.begin(); it != OwnedFaces.end(); ++it) {
     moab::EntityHandle face = *it;
-    result = mbcore->tag_set_data(lid_tag,&face,1,&i);
+    result = mbcore->tag_set_data(lid_tag, &face, 1, &i);
     if (result != MB_SUCCESS) {
       std::cerr << "Problem getting local ID for face" << std::endl;
       assert(result == MB_SUCCESS);
@@ -336,7 +325,6 @@ void Mesh_MOAB::init_id_handle_maps()
   cell_id_to_handle.reserve(nc);
 
   i = 0;
-  start_cell_id_ = 0;
   for (auto it = OwnedCells.begin(); it != OwnedCells.end(); ++it) {
     moab::EntityHandle handle = *it;
     result = mbcore->tag_set_data(lid_tag, &handle, 1, &i);
@@ -344,25 +332,17 @@ void Mesh_MOAB::init_id_handle_maps()
       std::cerr << "Problem getting local ID for cell" << std::endl;
       assert(result == MB_SUCCESS);
     }
-    if (i == 0) {
-      start_cell_id_ = mbcore->id_from_handle(handle) - i;
-    } else {
-      if (mbcore->id_from_handle(handle) != i + start_cell_id_) {
-        Errors::Message mesg("Non-contigious local cell ids");
-        amanzi_throw(mesg);
-      }
-    }
     cell_id_to_handle[i++] = handle;
   }
 
   for (auto it = GhostCells.begin(); it != GhostCells.end(); ++it) {
-    moab::EntityHandle cell = *it;
-    result = mbcore->tag_set_data(lid_tag,&cell,1,&i);
+    moab::EntityHandle handle = *it;
+    result = mbcore->tag_set_data(lid_tag, &handle, 1, &i);
     if (result != MB_SUCCESS) {
       std::cerr << "Problem getting local ID for cell" << std::endl;
       assert(result == MB_SUCCESS);
     }
-    cell_id_to_handle[i++] = cell;
+    cell_id_to_handle[i++] = handle;
   }
 }
 
@@ -376,7 +356,7 @@ void Mesh_MOAB::init_global_ids() {
   if (!serial_run) {
     // Ask Parallel Communicator to assign global IDs to entities
     bool largest_dim_only=false;
-    int start_id=0;
+    int start_id = 0;
     int largest_dim=celldim;
     result = mbcomm_->assign_global_ids(0, largest_dim, start_id, largest_dim_only);
     if (result != MB_SUCCESS) {
@@ -391,9 +371,9 @@ void Mesh_MOAB::init_global_ids() {
       assert(result == MB_SUCCESS);
     }
 
-    mbcomm_->exchange_tags(gid_tag,AllVerts);
-    mbcomm_->exchange_tags(gid_tag,AllFaces);
-    mbcomm_->exchange_tags(gid_tag,AllCells);
+    mbcomm_->exchange_tags(gid_tag, AllVerts);
+    mbcomm_->exchange_tags(gid_tag, AllFaces);
+    mbcomm_->exchange_tags(gid_tag, AllCells);
   }
   else {
     // Serial case - we assign global IDs ourselves
@@ -508,7 +488,7 @@ void Mesh_MOAB::init_pface_lists() {
   }
 
   // Get not owned faces 
-  result = mbcomm_->get_pstatus_entities(facedim,PSTATUS_NOT_OWNED,NotOwnedFaces);
+  result = mbcomm_->get_pstatus_entities(facedim, PSTATUS_NOT_OWNED, NotOwnedFaces);
   if (result != MB_SUCCESS) {
     std::cerr << "Could not get NotOwned 'faces'" << std::endl;
     assert(result == MB_SUCCESS);
@@ -525,11 +505,11 @@ void Mesh_MOAB::init_pface_lists() {
 //--------------------------------------------------------------------
 void Mesh_MOAB::init_pface_dirs()
 {
-  int result, zero=0, minus1=-1;
+  int result, zero(0), minus1(-1);
   int face_lid, face_gid, cell_gid;
   int sidenum, offset, facedir;
   moab::EntityHandle cell, face;
-  int DebugWait=1;
+  int DebugWait(1);
 
   // Do some additional processing to see if ghost faces and their masters
   // are oriented the same way; if not, turn on flag to flip them
@@ -537,16 +517,16 @@ void Mesh_MOAB::init_pface_dirs()
   // In this code, we increment local values of global IDs by 1 so
   // that we can distinguish between the lowest gid and no data
   moab::Tag tmp_fc0_tag, tmp_fc1_tag;
-  result = mbcore->tag_get_handle("TMP_FC0_TAG",1,
+  result = mbcore->tag_get_handle("TMP_FC0_TAG", 1,
                                   MB_TYPE_INTEGER, tmp_fc0_tag,
-                                  MB_TAG_CREAT|MB_TAG_DENSE,&zero);
+                                  MB_TAG_CREAT | MB_TAG_DENSE, &zero);
   if (result != MB_SUCCESS) {
     std::cerr << "Problem getting new tag handle" << std::endl;
     assert(result == MB_SUCCESS);
   }
-  result = mbcore->tag_get_handle("TMP_FC1_TAG",1,
+  result = mbcore->tag_get_handle("TMP_FC1_TAG", 1,
                                   MB_TYPE_INTEGER, tmp_fc1_tag,
-                                  MB_TAG_CREAT|MB_TAG_DENSE,&zero);
+                                  MB_TAG_CREAT | MB_TAG_DENSE, &zero);
   if (result != MB_SUCCESS) {
     std::cerr << "Problem getting new tag handle" << std::endl;
     assert(result == MB_SUCCESS);
@@ -562,12 +542,12 @@ void Mesh_MOAB::init_pface_dirs()
       assert(result == MB_SUCCESS);
     }
 
-    result = mbcore->tag_set_data(tmp_fc0_tag,&face,1,&zero);
+    result = mbcore->tag_set_data(tmp_fc0_tag, &face, 1, &zero);
     if (result != MB_SUCCESS) {
       std::cerr << "Problem setting tag data" << std::endl;
       assert(result == MB_SUCCESS);
     }
-    result = mbcore->tag_set_data(tmp_fc1_tag,&face,1,&zero);
+    result = mbcore->tag_set_data(tmp_fc1_tag, &face, 1, &zero);
     if (result != MB_SUCCESS) {
       std::cerr << "Problem setting tag data" << std::endl;
       assert(result == MB_SUCCESS);
@@ -581,7 +561,7 @@ void Mesh_MOAB::init_pface_dirs()
         assert(result == MB_SUCCESS);
       }
 
-      result = mbcore->tag_get_data(gid_tag,&cell,1,&cell_gid);
+      result = mbcore->tag_get_data(gid_tag, &cell, 1, &cell_gid);
       if (result != MB_SUCCESS) {
         std::cerr << "Problem getting tag data" << std::endl;
         assert(result == MB_SUCCESS);
@@ -589,14 +569,14 @@ void Mesh_MOAB::init_pface_dirs()
       cell_gid += 1; 
 
       if (facedir == 1) {
-        result = mbcore->tag_set_data(tmp_fc0_tag,&face,1,&cell_gid);
+        result = mbcore->tag_set_data(tmp_fc0_tag, &face, 1, &cell_gid);
         if (result != MB_SUCCESS) {
           std::cerr << "Problem setting tag data" << std::endl;
           assert(result == MB_SUCCESS);
         }
       }
       else {
-        result = mbcore->tag_set_data(tmp_fc1_tag,&face,1,&cell_gid);
+        result = mbcore->tag_set_data(tmp_fc1_tag, &face, 1, &cell_gid);
         if (result != MB_SUCCESS) {
           std::cerr << "Problem setting tag data" << std::endl;
           assert(result == MB_SUCCESS);
@@ -605,13 +585,13 @@ void Mesh_MOAB::init_pface_dirs()
     }
   }
 
-  result = mbcomm_->exchange_tags(tmp_fc0_tag,AllFaces);
+  result = mbcomm_->exchange_tags(tmp_fc0_tag, AllFaces);
   if (result != MB_SUCCESS) {
     std::cout << "Could not get exchange tag data successfully" << std::endl;
     assert(result == MB_SUCCESS);
   }
 
-  result = mbcomm_->exchange_tags(tmp_fc1_tag,AllFaces);
+  result = mbcomm_->exchange_tags(tmp_fc1_tag, AllFaces);
   if (result != MB_SUCCESS) {
     std::cout << "Could not get exchange tag data successfully" << std::endl;
     assert(result == MB_SUCCESS);
@@ -627,12 +607,12 @@ void Mesh_MOAB::init_pface_dirs()
 
     face = *it;
 
-    result = mbcore->tag_get_data(tmp_fc0_tag,&face,1,&master_cell0_gid);
+    result = mbcore->tag_get_data(tmp_fc0_tag, &face, 1, &master_cell0_gid);
     if (result != MB_SUCCESS) {
       std::cout << "Could not get face tag data" << std::endl;
       assert(result == MB_SUCCESS);
     }
-    result = mbcore->tag_get_data(tmp_fc1_tag,&face,1,&master_cell1_gid);
+    result = mbcore->tag_get_data(tmp_fc1_tag, &face, 1, &master_cell1_gid);
     if (result != MB_SUCCESS) {
       std::cout << "Could not get face tag data" << std::endl;
       assert(result == MB_SUCCESS);
@@ -654,7 +634,7 @@ void Mesh_MOAB::init_pface_dirs()
       }
 
       if (facedir == 1) {
-        result = mbcore->tag_get_data(gid_tag,&cell,1,&ghost_cell0_gid);
+        result = mbcore->tag_get_data(gid_tag, &cell, 1, &ghost_cell0_gid);
         if (result != MB_SUCCESS) {
           std::cerr << "Problem getting tag data" << std::endl;
           assert(result == MB_SUCCESS);
@@ -662,7 +642,7 @@ void Mesh_MOAB::init_pface_dirs()
         ghost_cell0_gid += 1;
       }
       else {
-        result = mbcore->tag_get_data(gid_tag,&cell,1,&ghost_cell1_gid);
+        result = mbcore->tag_get_data(gid_tag, &cell, 1, &ghost_cell1_gid);
         if (result != MB_SUCCESS) {
           std::cerr << "Problem getting tag data" << std::endl;
           assert(result == MB_SUCCESS);
@@ -676,7 +656,7 @@ void Mesh_MOAB::init_pface_dirs()
 
       // Both cells don't have to match because a ghost face may 
       // not have the cell on the other side
-      result = mbcore->tag_get_data(lid_tag,&face,1,&face_lid);
+      result = mbcore->tag_get_data(lid_tag, &face, 1, &face_lid);
       if (result != MB_SUCCESS) {
         std::cout << "Could not get face tag data" << std::endl;
         assert(result == MB_SUCCESS);
@@ -689,7 +669,7 @@ void Mesh_MOAB::init_pface_dirs()
           ghost_cell1_gid != master_cell1_gid) {
 
         // Problem if there is no match at all
-        result = mbcore->tag_get_data(gid_tag,&face,1,&face_gid);
+        result = mbcore->tag_get_data(gid_tag, &face, 1, &face_gid);
         if (result != MB_SUCCESS) {
           std::cerr << "Problem getting tag data" << std::endl;
           assert(result == MB_SUCCESS);
@@ -796,15 +776,15 @@ void Mesh_MOAB::init_set_info()
     //    else { /* General region - we have to account for all kinds of
     //              entities being queried in a set defined by this 
     //              region */
-    //      Entity_kind int_to_kind[3] = {NODE,FACE,CELL};
+    //      Entity_kind int_to_kind[3] = {NODE, FACE, CELL};
     //
     //      for (int k = 0; k < 3; k++) {
     //        Entity_kind kind = int_to_kind[k];
     //
     //      std::string internal_name = internal_name_of_set(rgn, kind);
     //
-    //  result = mbcore->tag_get_handle(internal_name.c_str(),1,MB_TYPE_INTEGER,
-    //                                  tag,MB_TAG_CREAT|MB_TAG_SPARSE);
+    //  result = mbcore->tag_get_handle(internal_name.c_str(), 1, MB_TYPE_INTEGER,
+    //                                  tag, MB_TAG_CREAT|MB_TAG_SPARSE);
     //    if (result != MB_SUCCESS) {
     //      std::cerr << "Could not create tag with name " << rgn->name() << 
     //      std::endl;
@@ -954,7 +934,6 @@ void Mesh_MOAB::cell_get_faces_and_dirs_internal_(const Entity_ID cellid,
         }
 
         // Check if this face has all the expected nodes
-
         bool all_present = true;
 
         for (int k = 0; k < 4; k++) {
@@ -1111,7 +1090,7 @@ void Mesh_MOAB::face_get_nodes(Entity_ID faceid, Entity_ID_List *fnodes) const
   face_nodeids = new int[nn];
   if (faceflip[faceid]) {
     for (int i = nn-1; i >= 0; i--) {
-      result = mbcore->tag_get_data(lid_tag,&(face_nodes[i]),1,&(face_nodeids[nn-i-1]));
+      result = mbcore->tag_get_data(lid_tag, &(face_nodes[i]), 1, &(face_nodeids[nn-i-1]));
       if (result != MB_SUCCESS) {
         std::cerr << "Problem getting tag data" << std::endl;
         assert(result == MB_SUCCESS);
@@ -1120,7 +1099,7 @@ void Mesh_MOAB::face_get_nodes(Entity_ID faceid, Entity_ID_List *fnodes) const
   }
   else {
     for (int i = 0; i < nn; i++) {
-      result = mbcore->tag_get_data(lid_tag,&(face_nodes[i]),1,&(face_nodeids[i]));
+      result = mbcore->tag_get_data(lid_tag, &(face_nodes[i]), 1, &(face_nodeids[i]));
       if (result != MB_SUCCESS) {
         std::cerr << "Problem getting tag data" << std::endl;
         assert(result == MB_SUCCESS);
@@ -1183,7 +1162,7 @@ void Mesh_MOAB::node_set_coordinates(const AmanziMesh::Entity_ID nodeid,
 {
   moab::EntityHandle v = node_id_to_handle[nodeid];
 
-  double coordarray[3] = {0.0,0.0,0.0};
+  double coordarray[3] = {0.0, 0.0, 0.0};
 
   for (int i = 0; i < space_dim_; i++)
     coordarray[i] = coords[i];
@@ -1392,7 +1371,7 @@ moab::Tag Mesh_MOAB::build_set(
           }
                   
           if (on_plane)
-            mbcore->tag_set_data(tag,&(cell_id_to_handle[ic]),1,&one);
+            mbcore->tag_set_data(tag, &(cell_id_to_handle[ic]), 1, &one);
         }
       }
 
@@ -1421,7 +1400,7 @@ moab::Tag Mesh_MOAB::build_set(
         
       for (int iface = 0; iface < nface; iface++) {
         if (region->inside(face_centroid(iface)))
-          mbcore->tag_set_data(tag,&(face_id_to_handle[iface]), 1, &one);
+          mbcore->tag_set_data(tag, &(face_id_to_handle[iface]), 1, &one);
 
       }
     }
@@ -1429,7 +1408,7 @@ moab::Tag Mesh_MOAB::build_set(
              region->type() == AmanziGeometry::POLYGON) {
 
       mbcore->tag_get_handle(internal_name.c_str(), 1, MB_TYPE_INTEGER, tag,
-                             MB_TAG_CREAT|MB_TAG_SPARSE);
+                             MB_TAG_CREAT | MB_TAG_SPARSE);
 
       int nface = num_entities(FACE, USED);
               
@@ -1447,7 +1426,7 @@ moab::Tag Mesh_MOAB::build_set(
         }
                   
         if (on_plane)
-          mbcore->tag_set_data(tag,&(face_id_to_handle[iface]),1,&one);
+          mbcore->tag_set_data(tag, &(face_id_to_handle[iface]), 1, &one);
       }
     }
     else if (region->type() == AmanziGeometry::LABELEDSET) {
@@ -1534,9 +1513,9 @@ moab::Tag Mesh_MOAB::build_set(
         amanzi_throw(mesg);
       }
         
-      internal_name = internal_name_of_set(rgn1,kind);
-      mbcore->tag_get_handle(internal_name.c_str(),1,MB_TYPE_INTEGER,tag1,
-                             MB_TAG_SPARSE);
+      internal_name = internal_name_of_set(rgn1, kind);
+      mbcore->tag_get_handle(internal_name.c_str(), 1, MB_TYPE_INTEGER,
+                             tag1, MB_TAG_SPARSE);
       if (!tag1)        
         tag1 = build_set(rgn1, kind);  // Recursive call
 
@@ -1545,7 +1524,6 @@ moab::Tag Mesh_MOAB::build_set(
 
     // Check the entity types of the sets are consistent with the
     // entity type of the requested set
-
     if (boolregion->operation() == AmanziGeometry::COMPLEMENT) {
       int *values[1] = {&one};
       moab::Range entset1, entset2;
@@ -1553,8 +1531,8 @@ moab::Tag Mesh_MOAB::build_set(
       switch (kind) {
       case CELL:
         for (int i = 0; i < tags.size(); i++) {
-          mbcore->get_entities_by_type_and_tag(0,MBHEX,&(tags[i]),
-                                               (void **)values,1,entset2);
+          mbcore->get_entities_by_type_and_tag(0, MBHEX, &(tags[i]),
+                                               (void **)values, 1, entset2);
           
           entset1.merge(entset2);
         }
@@ -1563,8 +1541,8 @@ moab::Tag Mesh_MOAB::build_set(
         break;
       case FACE:
         for (int i = 0; i < tags.size(); i++) {
-          mbcore->get_entities_by_type_and_tag(0,MBQUAD,&(tags[i]),
-                                               (void **)values,1,entset2);
+          mbcore->get_entities_by_type_and_tag(0, MBQUAD, &(tags[i]),
+                                               (void **)values, 1, entset2);
           
           entset1.merge(entset2);
         }
@@ -1573,8 +1551,8 @@ moab::Tag Mesh_MOAB::build_set(
         break;
       case NODE:
         for (int i = 0; i < tags.size(); i++) {
-          mbcore->get_entities_by_type_and_tag(0,MBVERTEX,&(tags[i]),
-                                               (void **)values,1,entset2);
+          mbcore->get_entities_by_type_and_tag(0, MBVERTEX, &(tags[i]),
+                                               (void **)values, 1, entset2);
           
           entset1.merge(entset2);
         }
@@ -1591,17 +1569,16 @@ moab::Tag Mesh_MOAB::build_set(
       for (int r = 0; r < nreg; r++)
         new_internal_name = new_internal_name + "+" + region_names[r];
       new_internal_name = "NOT_" + new_internal_name;
-
     }
-    else if (boolregion->operation() == AmanziGeometry::UNION) {
 
+    else if (boolregion->operation() == AmanziGeometry::UNION) {
       moab::Range entset, entset1;
       switch (kind) {
       case CELL:
         for (int i = 0; i < tags.size(); i++) {
           int *values[1] = {&one};
-          mbcore->get_entities_by_type_and_tag(0,MBHEX,&(tags[i]),
-                                               (void **)values,1,entset1);
+          mbcore->get_entities_by_type_and_tag(0, MBHEX, &(tags[i]),
+                                               (void **)values, 1, entset1);
 
           entset.merge(entset1);
         }
@@ -1609,8 +1586,8 @@ moab::Tag Mesh_MOAB::build_set(
       case FACE:
         for (int i = 0; i < tags.size(); i++) {
           int *values[1] = {&one};
-          mbcore->get_entities_by_type_and_tag(0,MBQUAD,&(tags[i]),
-                                               (void **)values,1,entset1);
+          mbcore->get_entities_by_type_and_tag(0, MBQUAD, &(tags[i]),
+                                               (void **)values, 1, entset1);
 
           entset.merge(entset1);
         }
@@ -1618,8 +1595,8 @@ moab::Tag Mesh_MOAB::build_set(
       case NODE:
         for (int i = 0; i < tags.size(); i++) {
           int *values[1] = {&one};
-          mbcore->get_entities_by_type_and_tag(0,MBVERTEX,&(tags[i]),
-                                               (void **)values,1,entset1);
+          mbcore->get_entities_by_type_and_tag(0, MBVERTEX, &(tags[i]),
+                                               (void **)values, 1, entset1);
 
           entset.merge(entset1);
         }
@@ -1635,37 +1612,38 @@ moab::Tag Mesh_MOAB::build_set(
       for (int r = 0; r < nreg; r++)
         new_internal_name = new_internal_name + "+" + region_names[r];
     }
+
     else if (boolregion->operation() == AmanziGeometry::SUBTRACT) {
-      int *values[1] = {&one};
+      int *values[1] = { &one };
       moab::Range entset1, entset2;
 
       switch (kind) {
       case CELL:
-        mbcore->get_entities_by_type_and_tag(0,MBHEX,&(tags[0]),
-                                             (void **)values,1,entset);
+        mbcore->get_entities_by_type_and_tag(0, MBHEX, &(tags[0]),
+                                             (void **)values, 1, entset);
         for (int i = 1; i < tags.size(); i++) {
-          mbcore->get_entities_by_type_and_tag(0,MBHEX,&(tags[i]),
-                                               (void **)values,1,entset1);
+          mbcore->get_entities_by_type_and_tag(0, MBHEX, &(tags[i]),
+                                               (void **)values, 1, entset1);
           
           entset.merge(entset1);
         }
         break;
       case FACE:
-        mbcore->get_entities_by_type_and_tag(0,MBQUAD,&(tags[0]),
-                                             (void **)values,1,entset);
+        mbcore->get_entities_by_type_and_tag(0, MBQUAD, &(tags[0]),
+                                             (void **)values, 1, entset);
         for (int i = 1; i < tags.size(); i++) {
-          mbcore->get_entities_by_type_and_tag(0,MBQUAD,&(tags[i]),
-                                               (void **)values,1,entset1);
+          mbcore->get_entities_by_type_and_tag(0, MBQUAD, &(tags[i]),
+                                               (void **)values, 1, entset1);
           
           entset.merge(entset1);
         }
         break;
       case NODE:
-        mbcore->get_entities_by_type_and_tag(0,MBVERTEX,&(tags[0]),
-                                             (void **)values,1,entset);
+        mbcore->get_entities_by_type_and_tag(0, MBVERTEX, &(tags[0]),
+                                             (void **)values, 1, entset);
         for (int i = 1; i < tags.size(); i++) {
-          mbcore->get_entities_by_type_and_tag(0,MBVERTEX,&(tags[i]),
-                                               (void **)values,1,entset1);
+          mbcore->get_entities_by_type_and_tag(0, MBVERTEX, &(tags[i]),
+                                               (void **)values, 1, entset1);
           
           entset.merge(entset1);
         }
@@ -1686,12 +1664,12 @@ moab::Tag Mesh_MOAB::build_set(
       amanzi_throw(mesg);
     }
 
-    mbcore->tag_get_handle(new_internal_name.c_str(),1,MB_TYPE_INTEGER,tag,
-                           MB_TAG_CREAT | MB_TAG_SPARSE);
+    mbcore->tag_get_handle(new_internal_name.c_str(), 1, MB_TYPE_INTEGER,
+                           tag, MB_TAG_CREAT | MB_TAG_SPARSE);
 
     for (auto it = entset.begin(); it != entset.end(); ++it) {
       moab::EntityHandle ent = *it;
-      mbcore->tag_set_data(tag,&ent,1,&one);
+      mbcore->tag_set_data(tag, &ent, 1, &one);
     }
   }
 
@@ -1819,9 +1797,9 @@ void Mesh_MOAB::get_set_entities_and_vofs(const std::string setname,
       for (auto it = mset1.begin(); it != mset1.end(); ++it) {
         moab::EntityHandle ent = *it;
 
-        mbcomm_->get_pstatus(ent,pstatus);
+        mbcomm_->get_pstatus(ent, pstatus);
         if ((pstatus & PSTATUS_NOT_OWNED) == 0) {
-          mbcore->tag_get_data(lid_tag,&ent,1,&lid);
+          mbcore->tag_get_data(lid_tag, &ent, 1, &lid);
           (*setents)[nent_loc++] = lid;
         }
       }
@@ -1830,9 +1808,9 @@ void Mesh_MOAB::get_set_entities_and_vofs(const std::string setname,
       for (auto it = mset1.begin(); it != mset1.end(); ++it) {
         moab::EntityHandle ent = *it;
 
-        mbcomm_->get_pstatus(ent,pstatus);
+        mbcomm_->get_pstatus(ent, pstatus);
         if ((pstatus & PSTATUS_NOT_OWNED) == 1) {
-          mbcore->tag_get_data(lid_tag,&ent,1,&lid);
+          mbcore->tag_get_data(lid_tag, &ent, 1, &lid);
           (*setents)[nent_loc++] = lid;
         }
       }
@@ -1841,7 +1819,7 @@ void Mesh_MOAB::get_set_entities_and_vofs(const std::string setname,
       for (auto it = mset1.begin(); it != mset1.end(); ++it) {
         moab::EntityHandle ent = *it;
 
-        mbcore->tag_get_data(lid_tag,&ent,1,&lid);
+        mbcore->tag_get_data(lid_tag, &ent, 1, &lid);
         (*setents)[nent_loc++] = lid;
       }
       break;
@@ -1853,7 +1831,7 @@ void Mesh_MOAB::get_set_entities_and_vofs(const std::string setname,
   // Check if there were no entities left on any processor after
   // extracting the appropriate category of entities 
 #ifdef DEBUG
-  epcomm_->SumAll(&nent_loc,&nent_glob,1);
+  epcomm_->SumAll(&nent_loc, &nent_glob, 1);
   
   if (nent_glob == 0) {
     std::stringstream mesg_stream;
@@ -1877,13 +1855,29 @@ void Mesh_MOAB::node_get_cells(const Entity_ID nodeid,
                                const Parallel_type ptype,
                                Entity_ID_List *cellids) const 
 {
+  unsigned char pstatus;
   std::vector<EntityHandle> ids;
-  mbcore->get_adjacencies(&(node_id_to_handle[nodeid]), 1, celldim, true, ids);
-  int nids = ids.size();
 
-  cellids->resize(nids);
+  mbcore->get_adjacencies(&(node_id_to_handle[nodeid]), 1, celldim, true, ids);
+  int lid, nids = ids.size();
+
+  cellids->clear();
   for (int i = 0; i < nids; ++i) {
-    (*cellids)[i] = mbcore->id_from_handle(ids[i]) - start_cell_id_;
+    mbcore->tag_get_data(lid_tag, &(ids[i]), 1, &lid);
+
+    if (ptype == USED) {
+      cellids->push_back(lid);
+    } if (ptype == OWNED) {
+      mbcomm_->get_pstatus(ids[i], pstatus);
+      if ((pstatus & PSTATUS_NOT_OWNED) == 0) {
+        cellids->push_back(lid);
+      }
+    } else if (ptype == GHOST) {
+      mbcomm_->get_pstatus(ids[i], pstatus);
+      if ((pstatus & PSTATUS_NOT_OWNED) == 1) {
+        cellids->push_back(lid);
+      }
+    }
   }
 }
     
@@ -1923,7 +1917,7 @@ void Mesh_MOAB::face_get_cells_internal_(const Entity_ID faceid,
   moab::EntityHandle face = face_id_to_handle[faceid];
   moab::Range fcells;
   
-  result = mbcore->get_adjacencies(&face,1,celldim,true,fcells,Core::UNION);
+  result = mbcore->get_adjacencies(&face, 1, celldim, true, fcells, Core::UNION);
   if (result != MB_SUCCESS) {
     std::cerr << "Could not get cells of face" << faceid << std::endl;
     assert(result == MB_SUCCESS);
@@ -1932,7 +1926,7 @@ void Mesh_MOAB::face_get_cells_internal_(const Entity_ID faceid,
   int nc = fcells.size();
   int fcellids[2];
 
-  result = mbcore->tag_get_data(lid_tag,fcells,(void *)fcellids);
+  result = mbcore->tag_get_data(lid_tag, fcells, (void *)fcellids);
   if (result != MB_SUCCESS) {
     std::cerr << "Problem getting id tag data" << std::endl;
     assert(result == MB_SUCCESS);
@@ -1953,7 +1947,7 @@ void Mesh_MOAB::face_get_cells_internal_(const Entity_ID faceid,
     break;
   case OWNED:
     for (int i = 0; i < nc; i++) {
-      result = mbcomm_->get_pstatus(fcells[i],pstatus);
+      result = mbcomm_->get_pstatus(fcells[i], pstatus);
       if ((pstatus & PSTATUS_NOT_OWNED) == 0) {
         *it = fcellids[i];
         ++it;
@@ -1963,7 +1957,7 @@ void Mesh_MOAB::face_get_cells_internal_(const Entity_ID faceid,
     break;
   case GHOST:
     for (int i = 0; i < nc; i++) {
-      result = mbcomm_->get_pstatus(fcells[i],pstatus);
+      result = mbcomm_->get_pstatus(fcells[i], pstatus);
       if ((pstatus & PSTATUS_NOT_OWNED) == 1) {
         *it = fcellids[i];
         ++it;
@@ -2078,7 +2072,7 @@ void Mesh_MOAB::init_face_map()
     // Also, put in owned cells before the ghost cells
     face_gids = new int[OwnedFaces.size()+NotOwnedFaces.size()];
     
-    result = mbcore->tag_get_data(gid_tag,OwnedFaces,face_gids);
+    result = mbcore->tag_get_data(gid_tag, OwnedFaces, face_gids);
     if (result != MB_SUCCESS) {
       std::cerr << "Problem getting tag data" << std::endl;
       assert(result == MB_SUCCESS);
@@ -2086,9 +2080,9 @@ void Mesh_MOAB::init_face_map()
 
     nface = OwnedFaces.size();
     
-    face_map_wo_ghosts_ = new Epetra_Map(-1,nface,face_gids,0,*epcomm_);
+    face_map_wo_ghosts_ = new Epetra_Map(-1, nface, face_gids, 0, *epcomm_);
 
-    result = mbcore->tag_get_data(gid_tag,NotOwnedFaces,&(face_gids[nface]));
+    result = mbcore->tag_get_data(gid_tag, NotOwnedFaces, &(face_gids[nface]));
     if (result != MB_SUCCESS) {
       std::cerr << "Problem getting tag data" << std::endl;
       assert(result == MB_SUCCESS);
@@ -2096,12 +2090,12 @@ void Mesh_MOAB::init_face_map()
     
     nface += NotOwnedFaces.size();
 
-    face_map_w_ghosts_ = new Epetra_Map(-1,nface,face_gids,0,*epcomm_);
+    face_map_w_ghosts_ = new Epetra_Map(-1, nface, face_gids, 0, *epcomm_);
   }
   else {
     face_gids = new int[AllFaces.size()];
 
-    result = mbcore->tag_get_data(gid_tag,AllFaces,face_gids);
+    result = mbcore->tag_get_data(gid_tag, AllFaces, face_gids);
     if (result != MB_SUCCESS) {
       std::cerr << "Problem getting tag data" << std::endl;
       assert(result == MB_SUCCESS);
@@ -2109,7 +2103,7 @@ void Mesh_MOAB::init_face_map()
 
     nface = AllFaces.size();
 
-    face_map_wo_ghosts_ = new Epetra_Map(-1,nface,face_gids,0,*epcomm_);
+    face_map_wo_ghosts_ = new Epetra_Map(-1, nface, face_gids, 0, *epcomm_);
   }
 
   delete [] face_gids;
@@ -2131,7 +2125,7 @@ void Mesh_MOAB::init_node_map()
     // Also, put in owned cells before the ghost verts
     vert_gids = new int[OwnedVerts.size()+NotOwnedVerts.size()];
     
-    result = mbcore->tag_get_data(gid_tag,OwnedVerts,vert_gids);
+    result = mbcore->tag_get_data(gid_tag, OwnedVerts, vert_gids);
     if (result != MB_SUCCESS) {
       std::cerr << "Problem getting tag data" << std::endl;
       assert(result == MB_SUCCESS);
@@ -2139,9 +2133,9 @@ void Mesh_MOAB::init_node_map()
 
     nvert = OwnedVerts.size();
     
-    node_map_wo_ghosts_ = new Epetra_Map(-1,nvert,vert_gids,0,*epcomm_);
+    node_map_wo_ghosts_ = new Epetra_Map(-1, nvert, vert_gids, 0, *epcomm_);
     
-    result = mbcore->tag_get_data(gid_tag,NotOwnedVerts,&(vert_gids[nvert]));
+    result = mbcore->tag_get_data(gid_tag, NotOwnedVerts, &(vert_gids[nvert]));
     if (result != MB_SUCCESS) {
       std::cerr << "Problem getting tag data" << std::endl;
       assert(result == MB_SUCCESS);
@@ -2149,12 +2143,12 @@ void Mesh_MOAB::init_node_map()
     
     nvert += NotOwnedVerts.size();
 
-    node_map_w_ghosts_ = new Epetra_Map(-1,nvert,vert_gids,0,*epcomm_);
+    node_map_w_ghosts_ = new Epetra_Map(-1, nvert, vert_gids, 0, *epcomm_);
   }
   else {
     vert_gids = new int[AllVerts.size()];
 
-    result = mbcore->tag_get_data(gid_tag,AllVerts,vert_gids);
+    result = mbcore->tag_get_data(gid_tag, AllVerts, vert_gids);
     if (result != MB_SUCCESS) {
       std::cerr << "Problem getting tag data" << std::endl;
       assert(result == MB_SUCCESS);
@@ -2162,7 +2156,7 @@ void Mesh_MOAB::init_node_map()
 
     nvert = AllVerts.size();
 
-    node_map_wo_ghosts_ = new Epetra_Map(-1,nvert,vert_gids,0,*epcomm_);
+    node_map_wo_ghosts_ = new Epetra_Map(-1, nvert, vert_gids, 0, *epcomm_);
   }
 
   delete [] vert_gids;
@@ -2189,11 +2183,12 @@ Entity_ID Mesh_MOAB::GID(Entity_ID lid, Entity_kind kind) const
   case CELL:
     ent = cell_id_to_handle[lid];
     break;
+
   default:
     std::cerr << "Global ID requested for unknown entity type" << std::endl;
   }
 
-  int result = mbcore->tag_get_data(gid_tag,&ent,1,&gid);
+  int result = mbcore->tag_get_data(gid_tag, &ent, 1, &gid);
   if (result != MB_SUCCESS) {
     std::cerr << "Problem getting tag data" << std::endl;
     assert(result == MB_SUCCESS);
@@ -2280,11 +2275,12 @@ Parallel_type Mesh_MOAB::entity_get_ptype(const Entity_kind kind,
   case CELL:
     ent = cell_id_to_handle[entid];
     break;
+
   default:
-   std::cerr << "Global ID requested for unknown entity type" << std::endl;
+    std::cerr << "Global ID requested for unknown entity type" << std::endl;
   }
 
-  mbcomm_->get_pstatus(ent,pstatus);
+  mbcomm_->get_pstatus(ent, pstatus);
   return ((pstatus & PSTATUS_NOT_OWNED) == 1) ? GHOST : OWNED;
 }
   
