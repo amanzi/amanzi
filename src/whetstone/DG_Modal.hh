@@ -109,6 +109,7 @@ class DG_Modal : public BilinearForm {
   void UpdateIntegrals_(int c, int order);
   void UpdateScales_(int c, int order);
   void ChangeBasis_(int c, DenseMatrix& A);
+  void ChangeBasis_(int c1, int c2, DenseMatrix& A);
 
  private:
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;

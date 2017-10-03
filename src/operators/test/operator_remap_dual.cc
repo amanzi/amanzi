@@ -45,9 +45,9 @@
 * Remap of polynomilas in two dimensions. Explicit time scheme.
 * Dual formulation places gradient and jumps on a test function.
 ***************************************************************** */
-void RemapTests2DDual(int order, std::string disc_name,
-                          std::string maps_name,
-                          int nx, int ny, double dt) {
+void RemapTests2DDual(int dim, int order, std::string disc_name,
+                      std::string maps_name,
+                      int nx, int ny, double dt) {
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::AmanziGeometry;
@@ -55,20 +55,25 @@ void RemapTests2DDual(int order, std::string disc_name,
 
   Epetra_MpiComm comm(MPI_COMM_WORLD);
   int MyPID = comm.MyPID();
-  if (MyPID == 0) std::cout << "\nTest: 2D remap, dual formulation: order=" << order 
-                            << ", maps=" << maps_name << std::endl;
+  if (MyPID == 0) std::cout << "\nTest: " << dim << "D remap, dual formulation: order=" 
+                            << order << ", maps=" << maps_name << std::endl;
 
   // polynomial space
-  int nk = (order + 1) * (order + 2) / 2;
+  WhetStone::Polynomial pp(dim, order);
+  int nk = pp.size();
 
   // create initial mesh
   MeshFactory meshfactory(&comm);
   meshfactory.set_partitioner(AmanziMesh::Partitioner_type::METIS);
   meshfactory.preference(FrameworkPreference({MSTK}));
 
-  // Teuchos::RCP<const Mesh> mesh0 = meshfactory(0.0, 0.0, 1.0, 1.0, nx, ny);
-  Teuchos::RCP<const Mesh> mesh0 = meshfactory("test/median15x16.exo", Teuchos::null);
-  // Teuchos::RCP<const Mesh> mesh0 = meshfactory("test/random10.exo", Teuchos::null);
+  Teuchos::RCP<const Mesh> mesh0;
+  if (dim == 2) {
+    // mesh0 = meshfactory(0.0, 0.0, 1.0, 1.0, nx, ny);
+    mesh0 = meshfactory("test/median15x16.exo", Teuchos::null);
+  } else {
+    mesh0 = meshfactory(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, nx, ny, ny);
+  }
 
   int ncells_owned = mesh0->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   int ncells_wghost = mesh0->num_entities(AmanziMesh::CELL, AmanziMesh::USED);
@@ -78,25 +83,34 @@ void RemapTests2DDual(int order, std::string disc_name,
   int nnodes_wghost = mesh0->num_entities(AmanziMesh::NODE, AmanziMesh::USED);
 
   // create second and auxiliary mesh
-  // Teuchos::RCP<Mesh> mesh1 = meshfactory(0.0, 0.0, 1.0, 1.0, nx, ny);
-  Teuchos::RCP<Mesh> mesh1 = meshfactory("test/median15x16.exo", Teuchos::null);
-  // Teuchos::RCP<Mesh> mesh1 = meshfactory("test/random10.exo", Teuchos::null);
+  Teuchos::RCP<Mesh> mesh1;
+  if (dim == 2) {
+    // mesh1 = meshfactory(0.0, 0.0, 1.0, 1.0, nx, ny);
+    mesh1 = meshfactory("test/median15x16.exo", Teuchos::null);
+  } else {
+    mesh1 = meshfactory(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, nx, ny, ny);
+  }
 
   // deform the second mesh
-  AmanziGeometry::Point xv(2), xref(2);
+  AmanziGeometry::Point xv(dim), xref(dim), uv(dim);
   Entity_ID_List nodeids;
   AmanziGeometry::Point_List new_positions, final_positions;
 
   for (int v = 0; v < nnodes_wghost; ++v) {
     mesh1->node_get_coordinates(v, &xv);
 
-    double ds(0.001), ux, uy;
+    double ds(0.001);
     for (int i = 0; i < 1000; ++i) {
-      ux = 0.2 * std::sin(M_PI * xv[0]) * std::cos(M_PI * xv[1]);
-      uy =-0.2 * std::cos(M_PI * xv[0]) * std::sin(M_PI * xv[1]);
+      if (dim == 2) {
+        uv[0] = 0.2 * std::sin(M_PI * xv[0]) * std::cos(M_PI * xv[1]);
+        uv[1] =-0.2 * std::cos(M_PI * xv[0]) * std::sin(M_PI * xv[1]);
+      } else {
+        uv[0] = 0.2 * std::sin(M_PI * xv[0]) * std::cos(M_PI * xv[1]) * std::cos(M_PI * xv[2]);
+        uv[1] =-0.1 * std::cos(M_PI * xv[0]) * std::sin(M_PI * xv[1]) * std::cos(M_PI * xv[2]);
+        uv[2] =-0.1 * std::cos(M_PI * xv[0]) * std::cos(M_PI * xv[1]) * std::sin(M_PI * xv[2]);
+      }
 
-      xv[0] += ux * ds;
-      xv[1] += uy * ds;
+      xv += uv * ds;
     }
 
     nodeids.push_back(v);
@@ -126,7 +140,7 @@ void RemapTests2DDual(int order, std::string disc_name,
     p1c[0][c] = std::sin(3 * xc[0]) * std::sin(6 * xc[1]);
     if (nk > 1) {
       double a, b;
-      WhetStone::Iterator it(2);
+      WhetStone::Iterator it(dim);
 
       it.begin(1);
       dg.TaylorBasis(c, it, &a, &b);
@@ -245,8 +259,9 @@ void RemapTests2DDual(int order, std::string disc_name,
       maps->Cofactors(c, t + dt/2, tmp, C);
       tmp[0].Multiply(C, tmp, (*cell_vel)[c], true);
 
-      (*cell_vel)[c][0] *= -1.0;
-      (*cell_vel)[c][1] *= -1.0;
+      for (int i = 0; i < dim; ++i) {
+        (*cell_vel)[c][i] *= -1.0;
+      }
     }
 
     // calculate determinant of Jacobian at time t+dt
@@ -328,7 +343,7 @@ void RemapTests2DDual(int order, std::string disc_name,
       WhetStone::Polynomial poly(dg.CalculatePolynomial(c, data));
 
       Entity_ID_List nodes;
-      AmanziGeometry::Point v0(2), v1(2);
+      AmanziGeometry::Point v0(dim), v1(dim);
 
       mesh0->cell_get_nodes(c, &nodes);
       int nnodes = nodes.size();  
@@ -383,24 +398,26 @@ void RemapTests2DDual(int order, std::string disc_name,
 }
 
 /*
-TEST(REMAP_DG0_DUAL_FEM) {
-  RemapTests2DDual(0, "dg modal", "FEM", 10, 10, 0.1);
+TEST(REMAP2D_DG0_DUAL_FEM) {
+  RemapTests2DDual(2, 0, "dg modal", "FEM", 10, 10, 0.1);
 }
 
-TEST(REMAP_DG1_DUAL_FEM) {
-  RemapTests2DDual(1, "dg modal", "FEM", 10, 10, 0.1);
+TEST(REMAP2D_DG1_DUAL_FEM) {
+  RemapTests2DDual(2, 1, "dg modal", "FEM", 10, 10, 0.1);
 }
 */
 
-TEST(REMAP_DG0_DUAL_VEM) {
-  RemapTests2DDual(0, "dg modal", "VEM", 20, 20, 0.1);
+TEST(REMAP2D_DG0_DUAL_VEM) {
+  RemapTests2DDual(2, 0, "dg modal", "VEM", 10, 10, 0.1);
 }
 
-TEST(REMAP_DG1_DUAL_VEM) {
-  RemapTests2DDual(1, "dg modal", "VEM", 20, 20, 0.05);
+TEST(REMAP2D_DG1_DUAL_VEM) {
+  RemapTests2DDual(2, 1, "dg modal", "VEM", 10, 10, 0.05);
 }
 
-TEST(REMAP_DG2_DUAL_VEM) {
-  RemapTests2DDual(2, "dg modal", "VEM", 20, 20, 0.05);
+/*
+TEST(REMAP3D_DG0_DUAL_VEM) {
+  RemapTests2DDual(3, 0, "dg modal", "VEM", 10, 10, 0.05);
 }
+*/
 

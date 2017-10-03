@@ -294,6 +294,24 @@ void DenseMatrix::Transpose(const DenseMatrix& A)
 }
 
 
+int DenseMatrix::Transpose() 
+{
+  if (m_ != n_) return 1;
+
+  for (int i = 0; i < m_; ++i) {
+    for (int j = i + 1; j < n_; ++j) {
+      double* aij = data_ + i * n_ + j; 
+      double* aji = data_ + j * n_ + i; 
+
+      double tmp(*aij);
+      *aij = *aji;
+      *aji = tmp;
+    }
+  } 
+  return 0;
+}
+
+
 /* ******************************************************************
 * Second level routine: inversion
 ****************************************************************** */

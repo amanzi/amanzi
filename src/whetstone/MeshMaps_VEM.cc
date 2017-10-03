@@ -47,16 +47,16 @@ void MeshMaps_VEM::VelocityCell(
   }
 
   // calculate velocity u(X) = F(X) - X
+  /*
   LeastSquareFit(1, x1, x2, vc);
 
   for (int i = 0; i < d_; ++i) {
     vc[i](1, i) -= 1.0;
   }
+  */
 
   // new method for velocity calculation
-  // VectorPolynomial tmp; 
   EllipticProjectorP1(c, vf, vc);
-  // std::cout << c << " " << mesh0_->cell_centroid(c) << "\n" << vc[0] << vc[1] << tmp[0] << tmp[1] << "\n\n";
 }
 
 
@@ -89,9 +89,9 @@ void MeshMaps_VEM::NansonFormula(
 void MeshMaps_VEM::Cofactors(
     int c, double t, const VectorPolynomial& vc, MatrixPolynomial& C) const
 {
-  C.resize(2);
+  C.resize(d_);
   for (int i = 0; i < d_; ++i) {
-    C[i].resize(2);
+    C[i].resize(d_);
     for (int j = 0; j < d_; ++j) {
       double sgn = (i == j) ? t : -t;
       C[i][j].Reshape(d_, 0);

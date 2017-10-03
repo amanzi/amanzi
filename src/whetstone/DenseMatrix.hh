@@ -154,8 +154,10 @@ class DenseMatrix {
   }
 
   // Second level routines
-  // -- matrix modification
+  // -- transpose creates new matrix
   void Transpose(const DenseMatrix& A);
+  // -- transpose modifies square matrix
+  int Transpose();
 
   // -- inversion is applicable for square matrices only
   int Inverse();

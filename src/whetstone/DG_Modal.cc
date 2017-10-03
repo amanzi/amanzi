@@ -181,8 +181,7 @@ int DG_Modal::AdvectionMatrixPoly(int c, const VectorPolynomial& u, DenseMatrix&
 
   // gradient operator is applied to solution
   if (!grad_on_test) {
-    DenseMatrix Atmp(A);
-    A.Transpose(Atmp);
+    A.Transpose();
   }
 
   return 0;
@@ -252,11 +251,6 @@ int DG_Modal::FluxMatrixPoly(int f, const Polynomial& un, DenseMatrix& A,
     Polynomial p(d_, idx0);
     p.set_origin(mesh_->cell_centroid(cells[id]));
 
-    // scaling of basis functions
-    double ak0, bk0, ak1, bk1, al1, bl1;
-    TaylorBasis(cells[id], it, &ak1, &bk1);
-    TaylorBasis(cells[1 - id], it, &ak0, &bk0);
-
     for (auto jt = poly1.begin(); jt.end() <= poly1.end(); ++jt) {
       const int* idx1 = jt.multi_index();
       int l = poly1.PolynomialPosition(idx1);
@@ -274,16 +268,12 @@ int DG_Modal::FluxMatrixPoly(int f, const Polynomial& un, DenseMatrix& A,
       vel1 /= mesh_->face_area(f);
       vel1 *= dir;  
 
-      TaylorBasis(cells[id], jt, &al1, &bl1);
-      vel1 *= ak1 * al1;  // FIXME (up to linear basis functions)
-
       // upwind-downwind integral
       polys[1].set_origin(mesh_->cell_centroid(cells[1 - id]));
 
       double vel0 = IntegratePolynomialsEdge_(x1, x2, polys);
       vel0 /= mesh_->face_area(f);
       vel0 *= dir;  
-      vel0 *= ak0 * al1;
 
       if (ncells == 1) {
         A(k, l) = vel1;
@@ -294,10 +284,11 @@ int DG_Modal::FluxMatrixPoly(int f, const Polynomial& un, DenseMatrix& A,
     }
   }
 
+  ChangeBasis_(cells[0], cells[1], A);
+
   // gradient operator is applied to solution
   if (!jump_on_test) {
-    DenseMatrix Atmp(A);
-    A.Transpose(Atmp);
+    A.Transpose();
   }
 
   return 0;
@@ -418,7 +409,7 @@ double DG_Modal::IntegratePolynomialsEdge_(
 
 
 /* ******************************************************************
-* Change basis from unscaled monomials to Taylor basis
+* Change basis from unscaled monomials to Taylor basis for a cell
 ****************************************************************** */
 void DG_Modal::ChangeBasis_(int c, DenseMatrix& A)
 {
@@ -435,6 +426,49 @@ void DG_Modal::ChangeBasis_(int c, DenseMatrix& A)
     TaylorBasis(c, it, &ak, &bk);
     a[k] = ak;
     b[k] = -ak * bk;
+  }
+
+  // calculate A * R
+  for (int k = 1; k < nrows; ++k) {
+    for (int i = 0; i < nrows; ++i) {
+      A(i, k) = A(i, k) * a[k] + A(i, 0) * b[k];
+    }
+  }
+
+  // calculate R^T * A * R
+  for (int k = 1; k < nrows; ++k) {
+    for (int i = 0; i < nrows; ++i) {
+      A(k, i) = A(k, i) * a[k] + A(0, i) * b[k];
+    }
+  }
+}
+
+
+/* ******************************************************************
+* Change basis from unscaled monomials to Taylor basis for a face
+****************************************************************** */
+void DG_Modal::ChangeBasis_(int c1, int c2, DenseMatrix& A)
+{
+  // optional update of integrals database
+  UpdateIntegrals_(c1, 2 * order_);
+  UpdateIntegrals_(c2, 2 * order_);
+
+  int m, nrows = A.NumRows();
+  double ak, bk;
+  std::vector<double> a(nrows), b(nrows);
+
+  m = nrows / 2;
+  Iterator it(d_);
+  for (it.begin(); it.end() <= order_; ++it) {
+    int k = it.PolynomialPosition();
+
+    TaylorBasis(c1, it, &ak, &bk);
+    a[k] = ak;
+    b[k] = -ak * bk;
+
+    TaylorBasis(c2, it, &ak, &bk);
+    a[m + k] = ak;
+    b[m + k] = -ak * bk;
   }
 
   // calculate A * R
@@ -484,7 +518,6 @@ void DG_Modal::TaylorBasis(int c, const Iterator& it, double* a, double* b)
 
 /* ******************************************************************
 * Calculate polynomial using basis and coefficients.
-* NOTE: Works for P1 only. FIXME
 ****************************************************************** */
 Polynomial DG_Modal::CalculatePolynomial(int c, const std::vector<double>& coefs) const
 {
@@ -499,7 +532,8 @@ Polynomial DG_Modal::CalculatePolynomial(int c, const std::vector<double>& coefs
     int m = it.MonomialOrder();
     int k = it.MonomialPosition();
 
-    poly.monomials(m).coefs()[k] *= *jt; 
+    poly(m, k) *= *jt; 
+    poly(0, 0) -= *jt * scales_b_[c](m, k);
     ++jt;
   }
 
