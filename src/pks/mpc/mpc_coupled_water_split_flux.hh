@@ -63,6 +63,9 @@ class MPCCoupledWaterSplitFlux : public MPC<PK> {
 
   virtual void set_dt(double dt);
 
+  virtual void CommitStep(double t_old, double t_new,
+                          const Teuchos::RCP<State>& S);
+  
   virtual void CopyPrimaryToStar(const Teuchos::Ptr<const State>& S,
           const Teuchos::Ptr<State>& S_star);
   virtual void CopyStarToPrimary(double dt);

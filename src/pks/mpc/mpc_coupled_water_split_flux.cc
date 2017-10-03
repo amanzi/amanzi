@@ -85,12 +85,16 @@ bool MPCCoupledWaterSplitFlux::AdvanceStep(double t_old, double t_new, bool rein
 
   // Now advance the primary
   fail = sub_pks_[1]->AdvanceStep(t_old, t_new, reinit);
-  if (fail) return fail;
-
-  // Now copy back to star.
-  CopyPrimaryToStar(S_next_.ptr(), S_next_.ptr());
   return fail;
 };
+
+
+void MPCCoupledWaterSplitFlux::CommitStep(double t_old, double t_new,
+        const Teuchos::RCP<State>& S) {
+  // Copy the primary into the star to advance
+  CopyPrimaryToStar(S.ptr(), S.ptr());
+  MPC<PK>::CommitStep(t_old, t_new, S);
+}
 
 
 // -----------------------------------------------------------------------------

@@ -1039,10 +1039,6 @@ void Richards::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& S, bool kr) 
       bc_values_[f] = flux[0][c] / mesh_->face_area(f);
 
       if (!kr && rel_perm[0][f] > 0.) bc_values_[f] /= rel_perm[0][f];
-      if ((surface->cell_map(false).GID(c) == 0) && vo_->os_OK(Teuchos::VERB_HIGH)) {
-        *vo_->os() << "  bc for coupled surface: val=" << bc_values_[f] << std::endl;
-      }
-      
     }
   }
 
