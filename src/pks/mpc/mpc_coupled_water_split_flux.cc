@@ -23,19 +23,21 @@ MPCCoupledWaterSplitFlux::MPCCoupledWaterSplitFlux(Teuchos::ParameterList& FElis
     : PK(FElist, plist, S, solution),
       MPC<PK>(FElist, plist, S, solution),
       eval_pvfe_(Teuchos::null)
- {
-
+{
+  // collect keys and names
   std::string domain = plist_->get<std::string>("domain name");
+  std::string domain_star = plist_->get<std::string>("star domain name", domain+"_star");
   primary_variable_ = Keys::readKey(*plist_, domain, "primary variable");
-  primary_variable_star_ = Keys::getKey(domain+"_star", Keys::getVarName(primary_variable_));
+  primary_variable_star_ = Keys::readKey(*plist_, domain_star, "primary variable star", Keys::getVarName(primary_variable_));
   lateral_flow_source_ = Keys::readKey(*plist_, domain, "lateral flow source", "lateral_flow_source");
-  conserved_variable_star_ = Keys::readKey(*plist_, domain+"_star", "conserved quantity", "water_content");
+  conserved_variable_star_ = Keys::readKey(*plist_, domain_star, "conserved quantity star", "water_content");
   cv_key_ = Keys::readKey(*plist_, domain, "cell volume", "cell_volume");
   
   // set up for a primary variable field evaluator for the flux
   auto& sublist = S->FEList().sublist(lateral_flow_source_);
   sublist.set("field evaluator type", "primary variable");
 
+  // init sub-pks
   init_(S);
 };
 
@@ -66,7 +68,6 @@ void MPCCoupledWaterSplitFlux::set_dt( double dt) {
        pk != sub_pks_.end(); ++pk) {
     (*pk)->set_dt(dt);
   }
-
 };
 
 // -----------------------------------------------------------------------------
@@ -120,6 +121,7 @@ MPCCoupledWaterSplitFlux::CopyPrimaryToStar(const Teuchos::Ptr<const State>& S,
 // -----------------------------------------------------------------------------
 void
 MPCCoupledWaterSplitFlux::CopyStarToPrimary(double dt) {
+  // make sure we have the evaluator at the new state timestep
   if (eval_pvfe_ == Teuchos::null) {
     Teuchos::RCP<FieldEvaluator> fe = S_next_->GetFieldEvaluator(lateral_flow_source_);
     eval_pvfe_ = Teuchos::rcp_dynamic_cast<PrimaryVariableFieldEvaluator>(fe);
@@ -128,9 +130,14 @@ MPCCoupledWaterSplitFlux::CopyStarToPrimary(double dt) {
 
   auto star_pk = Teuchos::rcp_dynamic_cast<PK_Physical>(sub_pks_[0]);
   ASSERT(star_pk.get());
+
+  // these updates should do nothing, but you never know
+  S_inter_->GetFieldEvaluator(conserved_variable_star_)->HasFieldChanged(S_inter_.ptr(), name_);
+  S_next_->GetFieldEvaluator(conserved_variable_star_)->HasFieldChanged(S_next_.ptr(), name_);
+
+  // grab the data, difference
   star_pk->debugger()->WriteVector("WC0", S_inter_->GetFieldData(conserved_variable_star_).ptr());
   star_pk->debugger()->WriteVector("WC1", S_next_->GetFieldData(conserved_variable_star_).ptr());
-
   auto& q_div = *S_next_->GetFieldData(lateral_flow_source_, S_next_->GetField(lateral_flow_source_)->owner())
                 ->ViewComponent("cell",false);
   q_div.Update(1.0/dt,
@@ -139,12 +146,12 @@ MPCCoupledWaterSplitFlux::CopyStarToPrimary(double dt) {
                *S_inter_->GetFieldData(conserved_variable_star_)->ViewComponent("cell",false),
                0.);
 
+  // scale by cell volume as this will get rescaled in the source calculation
   q_div.ReciprocalMultiply(1.0, *S_next_->GetFieldData(cv_key_)->ViewComponent("cell",false), q_div, 0.);
-
   star_pk->debugger()->WriteVector("qdiv", S_next_->GetFieldData(lateral_flow_source_).ptr());
 
+  // mark the source evaluator as changed to ensure the total source gets updated.
   eval_pvfe_->SetFieldAsChanged(S_next_.ptr());
 }
-
 
 } // namespace

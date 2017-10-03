@@ -73,9 +73,6 @@ void Coordinator::coordinator_init() {
 
   // create the pk
   Amanzi::PKFactory pk_factory;
-  Teuchos::RCP<Teuchos::ParameterList> pk_list = Teuchos::sublist(pks_list, pk_name);
-  pk_list->set("PK name", pk_name);
-
   pk_ = pk_factory.CreatePK(pk_name, pk_tree_list, parameter_list_, S_, soln_);
 
 

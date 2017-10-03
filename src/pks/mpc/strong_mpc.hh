@@ -93,8 +93,6 @@ public:
                        Teuchos::RCP<const TreeVector> u,
                        Teuchos::RCP<TreeVector> du);
 
-  virtual std::string name() {return "strong_mpc";};
-
 protected:
   using MPC<PK_t>::sub_pks_;
   using MPC<PK_t>::global_list_;
