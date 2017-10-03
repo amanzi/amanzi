@@ -10,7 +10,7 @@
            Ethan Coon (ecoon@lanl.gov)
 
   Operator whose unknowns are CELL + FACE, but which assembles the
-  CELL only system and Schur complements the face.
+  FACE only system and Schur complements cells.
 
   This uses special assembly.  Apply is done as if we had the full FACE+CELL
   system.  SymbolicAssembly() is done as if we had the CELL system, but with an
@@ -146,7 +146,7 @@ void Operator_FaceCellSff::AssembleMatrix(const SuperMap& map, MatrixFE& matrix,
   // Check preconditions -- Scc must have exactly one CELL+FACE schema,
   // and no other CELL schemas that are not simply diagonal CELL_CELL.
   // Additionally, collect the diagonal for inversion.
-  Epetra_MultiVector D_c(mesh_->cell_map(false),1);
+  Epetra_MultiVector D_c(mesh_->cell_map(false), 1);
   
   int num_with_cells = 0;
   for (const_op_iterator it = OpBegin(); it != OpEnd(); ++it) {
@@ -173,7 +173,7 @@ void Operator_FaceCellSff::AssembleMatrix(const SuperMap& map, MatrixFE& matrix,
   int i_schur = 0;
   for (const_op_iterator it = OpBegin(); it != OpEnd(); ++it) {
     if ((*it)->schema_old_ == (OPERATOR_SCHEMA_BASE_CELL |
-                          OPERATOR_SCHEMA_DOFS_CELL | OPERATOR_SCHEMA_DOFS_FACE)) {
+                               OPERATOR_SCHEMA_DOFS_CELL | OPERATOR_SCHEMA_DOFS_FACE)) {
       ASSERT((*it)->matrices.size() == ncells_owned);
 
       // create or get extra ops, and keep them for future use

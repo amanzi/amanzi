@@ -747,7 +747,7 @@ void Mesh_MOAB::init_set_info()
     std::cerr << "Could not get tag for material sets" << std::endl;
     assert(result == MB_SUCCESS);
   }
-  result = mbcore->tag_get_handle(NEUMANN_SET_TAG_NAME, sstag);
+  result = mbcore->tag_get_handle(NEUMANN_SET_TAG_NAME, 1, MB_TYPE_INTEGER, sstag);
   if (result != MB_SUCCESS) {
     std::cerr << "Could not get tag for side sets" << std::endl;
     assert(result == MB_SUCCESS);
@@ -1723,7 +1723,7 @@ void Mesh_MOAB::get_set_entities_and_vofs(const std::string setname,
   // Is there an appropriate region by this name?
   Teuchos::RCP<const AmanziGeometry::Region> rgn = gm->FindRegion(setname);
 
-  moab::Range mset1;
+  moab::Range mset1, sets;
 
   // Did not find the region
   if (rgn == Teuchos::null) {
@@ -1754,14 +1754,20 @@ void Mesh_MOAB::get_set_entities_and_vofs(const std::string setname,
       amanzi_throw(mesg);
     } 
 
-    int* values[1] = { &labelint };
+    Tag tag;
+    if (kind == CELL) tag = cstag;
+    else if (kind == FACE) tag = sstag;
+    else if (kind == NODE) tag = nstag;
 
-    if (kind == CELL)
-      mbcore->get_entities_by_type_and_tag(0, MBENTITYSET, &cstag, (void **)values, 1, mset1);
-    else if (kind == FACE)
-      mbcore->get_entities_by_type_and_tag(0, MBENTITYSET, &sstag, (void **)values, 1, mset1);
-    else if (kind == NODE)
-      mbcore->get_entities_by_type_and_tag(0, MBENTITYSET, &nstag, (void **)values, 1, mset1);
+    mbcore->get_entities_by_type_and_tag(0, MBENTITYSET, &tag, NULL, 1, sets);
+    for (auto it = sets.begin(); it != sets.end(); ++it) {
+      int set_id;
+      mbcore->tag_get_data(tag, &*it, 1, &set_id);
+      if (labelint == set_id) {
+        mbcore->get_entities_by_handle(*it, mset1);
+        break;
+      }
+    }
   }
   else {
     // Modify region/set name by prefixing it with the type of entity requested
