@@ -72,6 +72,11 @@ register_evaluator_with_factory(
   )
 
 register_evaluator_with_factory(
+  HEADERFILE mpc_predictor_corrector_reg.hh
+  LISTNAME   MPC_PK_FAC
+  )
+
+register_evaluator_with_factory(
   HEADERFILE operator_split_mpc_reg.hh
   LISTNAME   MPC_PK_FAC
   )
