@@ -285,7 +285,10 @@ class Mesh {
   void cell_get_nodes(const Entity_ID cellid,
                       Entity_ID_List *nodeids) const = 0;
 
-  // Get edges of a face and directions in which the face uses the edges
+  // Get edges of a face and directions in which the face uses the edges.
+  //
+  // In 3D, edge direction is 1 when it is oriented counter clockwise
+  // with respect to the face natural normal.
   //
   // On a distributed mesh, this will return all the edges of the
   // face, OWNED or GHOST. If ordered = true, the edges will be
@@ -529,13 +532,13 @@ class Mesh {
 
   // Edge vector
   //
-  // Not normalized (or normalized and weighted by length of the edge)
+  // Vector length equals to edge length.
   //
   // If recompute is TRUE, then the vector is recalculated using current
   // edge coordinates but not stored. (If the recomputed vector must be
   // stored, then call recompute_geometric_quantities).
   //
-  // If pointid is specified, the vector is the natural direction of
+  // If pointid is not specified, the vector is the natural direction of
   // the edge (from point0 to point1).  On the other hand, if pointid
   // is specified (has to be a point of the face), the vector is from
   // specified point to opposite point of edge.
