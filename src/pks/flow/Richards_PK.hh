@@ -161,7 +161,7 @@ class Richards_PK : public Flow_PK {
  
  private:
   const Teuchos::RCP<Teuchos::ParameterList> glist_;
-  Teuchos::RCP<Teuchos::ParameterList> rp_list_;
+  //Teuchos::RCP<Teuchos::ParameterList> rp_list_;
 
   // pointerds to primary field
   const Teuchos::RCP<TreeVector> soln_;

@@ -517,7 +517,7 @@
                   <ParameterList name="function2">
                     <ParameterList name="function-multiplicative">
                       <ParameterList name="function1">
-                        <ParameterList name="function-distance">
+                        <ParameterList name="function-squaredistance">
                           <Parameter name="x0" type="Array(double)" value="{0.00000000000000000e+00, 1.08000000000000000e+02, 3.38632799999999934e+00}"/>
                           <Parameter name="metric" type="Array(double)" value="{0.00000000000000000e+00, 1.00000000000000000e+00, 1.00000000000000000e+00}"/>
                         </ParameterList>

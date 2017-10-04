@@ -855,7 +855,7 @@ void InputConverterU::TranslateFunctionGaussian_(
   std::vector<double> metric(data_tmp.size(), 1.0);
   metric[0] = 0.0;  // ignore time distance
   data_tmp[0] = 0.0;
-  bc_tmp.sublist("function1").sublist("function-distance")
+  bc_tmp.sublist("function1").sublist("function-squaredistance")
       .set<Teuchos::Array<double> >("x0", data_tmp)
       .set<Teuchos::Array<double> >("metric", metric);
   bc_tmp.sublist("function2").sublist("function-constant")

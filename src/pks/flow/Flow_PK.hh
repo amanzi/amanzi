@@ -69,6 +69,8 @@ class Flow_PK : public PK_PhysicalBDF {
   void SeepageFaceFACT(const CompositeVector& u, int* nseepage, double* area_seepage);
 
   void AddSourceTerms(CompositeVector& rhs);
+  void ComputeWellIndex(Teuchos::ParameterList& spec);
+  bool IsWellIndexRequire(Teuchos::ParameterList& spec);
 
   // -- absolute permeability and derived quantities.
   void SetAbsolutePermeabilityTensor();
@@ -137,6 +139,7 @@ class Flow_PK : public PK_PhysicalBDF {
 
   Teuchos::RCP<State> S_;
   std::string passwd_;
+  bool peaceman_model_;
 
   // Stationary physical quantatities
   std::vector<WhetStone::Tensor> K; 
@@ -164,8 +167,10 @@ class Flow_PK : public PK_PhysicalBDF {
   // io
   Utils::Units units_;
   Teuchos::RCP<VerboseObject> vo_;
+  Teuchos::RCP<Teuchos::ParameterList> fp_list_;
 
  private:
+
   std::vector<int> bc_model_; 
   std::vector<double> bc_value_, bc_mixed_;
 };
