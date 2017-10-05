@@ -127,14 +127,14 @@ TEST(DG_TAYLOR_POLYNOMIALS) {
 
 
 /* ****************************************************************
-* Test of DG mass matrices: K is tensor
+* Test of 2D DG mass matrices: K is tensor
 **************************************************************** */
-TEST(DG_MASS_MATRIX) {
+TEST(DG_MASS_MATRIX_2D) {
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::WhetStone;
 
-  std::cout << "Test: DG mass matrices (tensors)" << std::endl;
+  std::cout << "Test: DG mass matrices in 2D (tensors)" << std::endl;
   Epetra_MpiComm *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
 
   MeshFactory meshfactory(comm);
@@ -160,6 +160,62 @@ TEST(DG_MASS_MATRIX) {
     double area = mesh->cell_volume(0);
     for (int i = 0; i < nk; ++i) {
       CHECK_CLOSE(M(i, i), area, 1e-12);
+    }
+  }
+
+  delete comm;
+}
+
+
+/* ****************************************************************
+* Test of 3D DG mass matrices: K is tensor
+**************************************************************** */
+TEST(DG_MASS_MATRIX_3D) {
+  using namespace Amanzi;
+  using namespace Amanzi::AmanziMesh;
+  using namespace Amanzi::WhetStone;
+
+  std::cout << "Test: DG mass matrices in 3D (tensors)" << std::endl;
+  Epetra_MpiComm *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
+
+  MeshFactory meshfactory(comm);
+  meshfactory.preference(FrameworkPreference({MSTK}));
+  Teuchos::RCP<Mesh> mesh = meshfactory(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1, 1, 1,
+                                        Teuchos::null, true, true); 
+
+  DenseMatrix M;
+  Tensor T(3, 1);
+  T(0, 0) = 1.0;
+
+  for (int k = 0; k < 3; k++) {
+    DG_Modal dg(k, mesh);
+
+    // natural Taylor basis
+    dg.set_basis(WhetStone::TAYLOR_BASIS_SIMPLE);
+    dg.MassMatrix(0, T, M);
+    int nk = M.NumRows();
+
+    if (k > 0) {
+      CHECK_CLOSE(M(2, 2), M(1, 1), 1e-12);
+      CHECK_CLOSE(M(3, 3), M(1, 1), 1e-12);
+    } 
+    if (k > 1) {
+      CHECK_CLOSE(M(7, 7), M(4, 4), 1e-12);
+      CHECK_CLOSE(M(9, 9), M(4, 4), 1e-12);
+    }
+
+    // partially orthonormalized Taylor basis
+    dg.set_basis(WhetStone::TAYLOR_BASIS_NORMALIZED);
+    dg.MassMatrix(0, T, M);
+
+    printf("Mass matrix for order=%d\n", k);
+    for (int i = 0; i < nk; i++) {
+      for (int j = 0; j < nk; j++ ) printf("%10.6f ", M(i, j)); 
+      printf("\n");
+    }
+
+    for (int i = 1; i < nk; ++i) {
+      CHECK_CLOSE(M(i, 0), 0.0, 1e-12);
     }
   }
 

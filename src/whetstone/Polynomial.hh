@@ -9,8 +9,19 @@
 
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 
-  Operations with polynomials. This includes three major classes: 
-  Iterator, Monomial and Polynomial.
+  Operations with polynomials of type p(x - x0) where x0 is a
+  constant vector. This file includes three major classes: 
+
+  1.Iterator: starts with a given monomial order (e.g. x^2) runs
+    through all monomials of the same order (resp., xy, y^2), and
+    jumps to the next order (resp., x^3). 
+
+  2.Monomial: a simple container of homogeneous polynomials of the
+    same order.
+
+  3.Polynomial: implements ring algebra for polynomials, a few
+    useful transformations, and limited extensions to vectors and
+    tensors of polynomials.
 */
 
 #ifndef AMANZI_WHETSTONE_POLYNOMIAL_HH_

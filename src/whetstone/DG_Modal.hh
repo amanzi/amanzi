@@ -95,7 +95,7 @@ class DG_Modal : public BilinearForm {
  private:
   // specialized routines optimized for non-normalized Taylor basis
   void IntegrateMonomialsCell_(int c, Monomial& monomials);
-  void IntegrateMonomialsFace_(int f, double factor, Monomial& monomials);
+  void IntegrateMonomialsFace_(int c, int f, double factor, Monomial& monomials);
   void IntegrateMonomialsEdge_(
       const AmanziGeometry::Point& x1, const AmanziGeometry::Point& x2,
       double factor, Monomial& monomials);
@@ -103,7 +103,7 @@ class DG_Modal : public BilinearForm {
   // integraton of a product of polynomials with potentialy different origins
   double IntegratePolynomialsEdge_(
       const AmanziGeometry::Point& x1, const AmanziGeometry::Point& x2,
-      const std::vector<Polynomial>& polys) const;
+      const std::vector<const Polynomial*>& polys) const;
 
  private:
   void UpdateIntegrals_(int c, int order);
