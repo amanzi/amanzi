@@ -23,7 +23,8 @@ namespace Amanzi {
 namespace WhetStone {
 
 /* ******************************************************************
-* Calculate mesh velocity on face f.
+* Calculate mesh velocity on face f
+* NOTE: 2D algorithm for P1 velocity
 ****************************************************************** */
 void MeshMaps::VelocityFace(int f, VectorPolynomial& v) const
 {
@@ -40,7 +41,7 @@ void MeshMaps::VelocityFace(int f, VectorPolynomial& v) const
     v[i](0, 0) = xf1[i] - xf0[i];
   }
 
-  // velocity order 1 (2D algorithm)
+  // velocity order 1
   mesh0_->face_get_nodes(f, &nodes);
   mesh0_->node_get_coordinates(nodes[0], &x0);
   mesh1_->node_get_coordinates(nodes[0], &x1);

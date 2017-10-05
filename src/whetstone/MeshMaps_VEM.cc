@@ -23,40 +23,89 @@ namespace Amanzi {
 namespace WhetStone {
 
 /* ******************************************************************
-* Calculate mesh velocity in cell c
+* Calculate mesh velocity in cell c: new algorithm
 ****************************************************************** */
 void MeshMaps_VEM::VelocityCell(
     int c, const std::vector<VectorPolynomial>& vf, VectorPolynomial& vc) const
 {
-  vc.resize(d_);
-  for (int i = 0; i < d_; ++i) vc[i].Reshape(d_, 1);
-  
-  Entity_ID_List nodes;
-  mesh0_->cell_get_nodes(c, &nodes);
-  int nnodes = nodes.size();
-
-  AmanziGeometry::Point px;
-  std::vector<AmanziGeometry::Point> x1, x2, u;
-  for (int i = 0; i < nnodes; ++i) {
-    mesh0_->node_get_coordinates(nodes[i], &px);
-    x1.push_back(px);
-  }
-  for (int i = 0; i < nnodes; ++i) {
-    mesh1_->node_get_coordinates(nodes[i], &px);
-    x2.push_back(px);
-  }
-
-  // calculate velocity u(X) = F(X) - X
-  /*
-  LeastSquareFit(1, x1, x2, vc);
-
-  for (int i = 0; i < d_; ++i) {
-    vc[i](1, i) -= 1.0;
-  }
-  */
-
-  // new method for velocity calculation
+  // VelocityCell_LeastSquare_(c, vf, vc);
   EllipticProjectorP1(c, vf, vc);
+}
+
+
+/* ******************************************************************
+* Calculate mesh velocity on face f.
+****************************************************************** */
+void MeshMaps_VEM::VelocityFace(int f, VectorPolynomial& vf) const
+{
+  if (d_ == 2) {
+    MeshMaps::VelocityFace(f, vf);
+  } else {
+    AmanziMesh::Entity_ID_List edges;
+    std::vector<int> dirs;
+
+    mesh0_->face_get_edges_and_dirs(f, &edges, &dirs);
+    int nedges = edges.size();
+
+    VectorPolynomial v;
+    std::vector<VectorPolynomial> ve;
+
+    for (int n = 0; n < nedges; ++n) {
+      int e = edges[n];
+      VelocityEdge_(e, v);
+      ve.push_back(v);
+    }
+
+    EllipticProjectorP1(f, ve, vf);
+  }
+}
+
+
+/* ******************************************************************
+* Calculate mesh velocity on edge e.
+****************************************************************** */
+void MeshMaps_VEM::VelocityEdge_(int e, VectorPolynomial& ve) const
+{
+  AmanziMesh::Entity_ID_List nodes;
+  AmanziGeometry::Point x0, x1;
+
+  const AmanziGeometry::Point& xe0 = mesh0_->edge_centroid(e);
+  const AmanziGeometry::Point& xe1 = mesh1_->edge_centroid(e);
+
+  // velocity order 0
+  ve.resize(d_);
+  for (int i = 0; i < d_; ++i) {
+    ve[i].Reshape(d_, 1);
+    ve[i](0, 0) = xe1[i] - xe0[i];
+  }
+
+  // velocity order 1
+  int n0, n1;
+  mesh0_->edge_get_nodes(e, &n0, &n1);
+  mesh0_->node_get_coordinates(n0, &x0);
+  mesh1_->node_get_coordinates(n0, &x1);
+
+  /*
+  x0 -= xe0;
+  x1 -= xe1;
+
+  WhetStone::Tensor A(2, 2);
+  AmanziGeometry::Point b(2);
+
+  A(0, 0) = x0[0];
+  A(0, 1) = A(1, 0) = x0[1];
+  A(1, 1) = -x0[0];
+
+  A.Inverse();
+  b = A * (x1 - x0);
+
+  v[0].monomials(1).coefs() = { b[0], b[1]};
+  v[1].monomials(1).coefs() = {-b[1], b[0]};
+
+  // we change to the global coordinate system
+  v[0](0, 0) -= b * xf0;
+  v[1](0, 0) -= (b^xf0)[0];
+  */
 }
 
 
@@ -165,6 +214,39 @@ void MeshMaps_VEM::JacobianFaceValue(
     }
   }
   J += 1.0;
+}
+
+
+/* ******************************************************************
+* Calculate mesh velocity in cell c: old algorithm
+****************************************************************** */
+void MeshMaps_VEM::VelocityCell_LeastSquare_(
+    int c, const std::vector<VectorPolynomial>& vf, VectorPolynomial& vc) const
+{
+  vc.resize(d_);
+  for (int i = 0; i < d_; ++i) vc[i].Reshape(d_, 1);
+  
+  Entity_ID_List nodes;
+  mesh0_->cell_get_nodes(c, &nodes);
+  int nnodes = nodes.size();
+
+  AmanziGeometry::Point px;
+  std::vector<AmanziGeometry::Point> x1, x2, u;
+  for (int i = 0; i < nnodes; ++i) {
+    mesh0_->node_get_coordinates(nodes[i], &px);
+    x1.push_back(px);
+  }
+  for (int i = 0; i < nnodes; ++i) {
+    mesh1_->node_get_coordinates(nodes[i], &px);
+    x2.push_back(px);
+  }
+
+  // calculate velocity u(X) = F(X) - X
+  LeastSquareFit(1, x1, x2, vc);
+
+  for (int i = 0; i < d_; ++i) {
+    vc[i](1, i) -= 1.0;
+  }
 }
 
 }  // namespace WhetStone

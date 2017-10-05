@@ -41,6 +41,8 @@ class MeshMaps_VEM : public MeshMaps {
   // -- pseudo-velocity in cell c
   virtual void VelocityCell(int c, const std::vector<VectorPolynomial>& vf,
                             VectorPolynomial& vc) const override;
+  // -- pseudo-velocity on face f
+  virtual void VelocityFace(int f, VectorPolynomial& vf) const override;
   // -- Nanson formula
   virtual void NansonFormula(int f, double t, const VectorPolynomial& v,
                              VectorPolynomial& cn) const override;
@@ -59,6 +61,14 @@ class MeshMaps_VEM : public MeshMaps {
   virtual void JacobianFaceValue(int f, const VectorPolynomial& v,
                                  const AmanziGeometry::Point& x,
                                  Tensor& J) const override;
+
+ private:
+  // pseudo-velocity on edge e
+  void VelocityEdge_(int e, VectorPolynomial& ve) const;
+
+  // old deprecated methods
+  void VelocityCell_LeastSquare_(int c, const std::vector<VectorPolynomial>& vf,
+                                 VectorPolynomial& vc) const;
 };
 
 }  // namespace WhetStone

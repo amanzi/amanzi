@@ -1823,6 +1823,11 @@ void Mesh_MOAB::get_set_entities_and_vofs(const std::string setname,
         (*setents)[nent_loc++] = lid;
       }
       break;
+
+    default:
+      Errors::Message mesg("Unknown geometric entity");
+      amanzi_throw(mesg);
+      break;
     }
     
     setents->resize(nent_loc);
@@ -1964,6 +1969,10 @@ void Mesh_MOAB::face_get_cells_internal_(const Entity_ID faceid,
         ++n;
       }
     }
+    break;
+  default:
+    Errors::Message mesg("Unknown geometric entity");
+    amanzi_throw(mesg);
     break;
   }
 
@@ -2342,6 +2351,7 @@ int Mesh_MOAB::deform(const std::vector<double>& target_cell_volumes_in,
 {
   Errors::Message mesg("Deformation not implemented for Mesh_MOAB");
   amanzi_throw(mesg);
+  return 1;
 }
 
 
