@@ -85,6 +85,7 @@ Mesh_MSTK::Mesh_MSTK(const char *filename, const Epetra_MpiComm *incomm_,
 
     opts[0] = 1;     // Parallel weave distributed meshes
     opts[1] = 1;     // Number of ghost layers
+    opts[2] = 1;     // Renumber Global IDs after read
 
     ok = MESH_ImportFromNemesisI(mesh,filename,opts,mpicomm_);
 
@@ -205,6 +206,7 @@ Mesh_MSTK::Mesh_MSTK(const char *filename, const Epetra_MpiComm *incomm_,
 
     opts[0] = 1;     // Parallel weave distributed meshes
     opts[1] = 1;     // Number of ghost layers
+    opts[2] = 1;     // Renumber Global IDs after read
 
     ok = MESH_ImportFromNemesisI(mesh,filename,opts,mpicomm_);
 
