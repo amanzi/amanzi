@@ -23,8 +23,8 @@ namespace Amanzi {
 namespace WhetStone {
 
 /* ******************************************************************
-* Calculate mesh velocity on face f
-* NOTE: 2D algorithm for P1 velocity
+* Calculate mesh velocity on face f.
+* NOTE: 2D algorithm for linear velocity.
 ****************************************************************** */
 void MeshMaps::VelocityFace(int f, VectorPolynomial& v) const
 {
@@ -34,14 +34,6 @@ void MeshMaps::VelocityFace(int f, VectorPolynomial& v) const
   const AmanziGeometry::Point& xf0 = mesh0_->face_centroid(f);
   const AmanziGeometry::Point& xf1 = mesh1_->face_centroid(f);
 
-  // velocity order 0
-  v.resize(d_);
-  for (int i = 0; i < d_; ++i) {
-    v[i].Reshape(d_, 1);
-    v[i](0, 0) = xf1[i] - xf0[i];
-  }
-
-  // velocity order 1
   mesh0_->face_get_nodes(f, &nodes);
   mesh0_->node_get_coordinates(nodes[0], &x0);
   mesh1_->node_get_coordinates(nodes[0], &x1);
@@ -49,22 +41,19 @@ void MeshMaps::VelocityFace(int f, VectorPolynomial& v) const
   x0 -= xf0;
   x1 -= xf1;
 
-  WhetStone::Tensor A(2, 2);
-  AmanziGeometry::Point b(2);
+  v.resize(d_);
+  for (int i = 0; i < d_; ++i) {
+    v[i].Reshape(d_, 1);
+  }
 
-  A(0, 0) = x0[0];
-  A(0, 1) = A(1, 0) = x0[1];
-  A(1, 1) = -x0[0];
-
-  A.Inverse();
-  b = A * (x1 - x0);
-
-  v[0].monomials(1).coefs() = { b[0], b[1]};
-  v[1].monomials(1).coefs() = {-b[1], b[0]};
-
-  // we change to the global coordinate system
-  v[0](0, 0) -= b * xf0;
-  v[1](0, 0) -= (b^xf0)[0];
+  x0 /= L22(x0);
+  for (int i = 0; i < d_; ++i) {
+    for (int j = 0; j < d_; ++j) {
+      v[i](1, j) = x1[i] * x0[j];
+    }
+    v[i](0, 0) = xf1[i] - x1[i] * (x0 * xf0);
+    v[i](1, i) -= 1.0;
+  }
 }
 
 

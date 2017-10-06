@@ -100,7 +100,7 @@ void MeshMaps_VEM::VelocityEdge_(int e, VectorPolynomial& ve) const
 
 /* ******************************************************************
 * Transformation of normal is defined completely by face data.
-* NOTE: Limited to P1 elements.
+* NOTE: Limited to P1 elements. FIXME
 ****************************************************************** */
 void MeshMaps_VEM::NansonFormula(
     int f, double t, const VectorPolynomial& v, VectorPolynomial& cn) const
@@ -111,7 +111,9 @@ void MeshMaps_VEM::NansonFormula(
   JacobianFaceValue(f, v, p, J);
   J *= t;
   J += 1.0 - t;
-  p = J * mesh0_->face_normal(f);
+
+  Tensor C = J.Cofactors();
+  p = C * mesh0_->face_normal(f);
 
   cn.resize(d_);
   for (int i = 0; i < d_; ++i) {
