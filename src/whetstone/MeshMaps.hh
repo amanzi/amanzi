@@ -82,7 +82,7 @@ class MeshMaps {
                      VectorPolynomial& u) const;
 
   // -- elliptic projecto at tiem 0
-  void EllipticProjectorP1(int c, const std::vector<VectorPolynomial>& vf,
+  void HarmonicProjectorH1(int c, const std::vector<VectorPolynomial>& vf,
                            VectorPolynomial& u) const;
 
   // extension of mesh interface

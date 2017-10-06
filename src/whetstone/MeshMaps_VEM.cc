@@ -29,7 +29,7 @@ void MeshMaps_VEM::VelocityCell(
     int c, const std::vector<VectorPolynomial>& vf, VectorPolynomial& vc) const
 {
   // VelocityCell_LeastSquare_(c, vf, vc);
-  EllipticProjectorP1(c, vf, vc);
+  HarmonicProjectorH1(c, vf, vc);
 }
 
 
@@ -56,19 +56,16 @@ void MeshMaps_VEM::VelocityFace(int f, VectorPolynomial& vf) const
       ve.push_back(v);
     }
 
-    EllipticProjectorP1(f, ve, vf);
+    HarmonicProjectorH1(f, ve, vf);
   }
 }
 
 
 /* ******************************************************************
-* Calculate mesh velocity on edge e.
+* Calculate mesh velocity on 2D or 3D edge e.
 ****************************************************************** */
 void MeshMaps_VEM::VelocityEdge_(int e, VectorPolynomial& ve) const
 {
-  AmanziMesh::Entity_ID_List nodes;
-  AmanziGeometry::Point x0, x1;
-
   const AmanziGeometry::Point& xe0 = mesh0_->edge_centroid(e);
   const AmanziGeometry::Point& xe1 = mesh1_->edge_centroid(e);
 
@@ -76,36 +73,28 @@ void MeshMaps_VEM::VelocityEdge_(int e, VectorPolynomial& ve) const
   ve.resize(d_);
   for (int i = 0; i < d_; ++i) {
     ve[i].Reshape(d_, 1);
-    ve[i](0, 0) = xe1[i] - xe0[i];
   }
 
   // velocity order 1
   int n0, n1;
+  AmanziGeometry::Point x0, x1;
+
   mesh0_->edge_get_nodes(e, &n0, &n1);
   mesh0_->node_get_coordinates(n0, &x0);
   mesh1_->node_get_coordinates(n0, &x1);
 
-  /*
   x0 -= xe0;
   x1 -= xe1;
 
-  WhetStone::Tensor A(2, 2);
-  AmanziGeometry::Point b(2);
-
-  A(0, 0) = x0[0];
-  A(0, 1) = A(1, 0) = x0[1];
-  A(1, 1) = -x0[0];
-
-  A.Inverse();
-  b = A * (x1 - x0);
-
-  v[0].monomials(1).coefs() = { b[0], b[1]};
-  v[1].monomials(1).coefs() = {-b[1], b[0]};
-
-  // we change to the global coordinate system
-  v[0](0, 0) -= b * xf0;
-  v[1](0, 0) -= (b^xf0)[0];
-  */
+  // operator F(\xi) = x_c + R (\xi - \xi_c) where R = x1 * x0^T
+  x0 /= L22(x0);
+  for (int i = 0; i < d_; ++i) {
+    for (int j = 0; j < d_; ++j) {
+      ve[i](1, j) = x1[i] * x0[j];
+    }
+    ve[i](0, 0) = xe1[i] - x1[i] * (x0 * xe0);
+    ve[i](1, i) -= 1.0;
+  }
 }
 
 

@@ -144,7 +144,7 @@ int MeshMaps::LeastSquareFit(int order,
 /* ******************************************************************
 * Elliptic projector on linear polynomials at time 0.
 ****************************************************************** */
-void MeshMaps::EllipticProjectorP1(
+void MeshMaps::HarmonicProjectorH1(
     int c, const std::vector<VectorPolynomial>& vf, VectorPolynomial& u) const
 {
   Entity_ID_List faces;
