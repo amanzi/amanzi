@@ -28,8 +28,8 @@ namespace WhetStone {
 void MeshMaps_VEM::VelocityCell(
     int c, const std::vector<VectorPolynomial>& vf, VectorPolynomial& vc) const
 {
-  // VelocityCell_LeastSquare_(c, vf, vc);
-  HarmonicProjectorH1(c, vf, vc);
+  // LeastSquareProjector_Cell_(c, vf, vc);
+  HarmonicProjectorH1_Cell(c, vf, vc);
 }
 
 
@@ -56,7 +56,7 @@ void MeshMaps_VEM::VelocityFace(int f, VectorPolynomial& vf) const
       ve.push_back(v);
     }
 
-    HarmonicProjectorH1(f, ve, vf);
+    HarmonicProjectorH1_Face(f, ve, vf);
   }
 }
 
@@ -129,13 +129,24 @@ void MeshMaps_VEM::NansonFormula(
 void MeshMaps_VEM::Cofactors(
     int c, double t, const VectorPolynomial& vc, MatrixPolynomial& C) const
 {
+  // Limited to linear velocities
+  Tensor T(d_, 2);
+  for (int i = 0; i < d_; ++i) {
+    for (int j = 0; j < d_; ++j) {
+      T(i, j) = vc[i](1, j);
+    }
+  }
+  T = T.Cofactors();
+
+  // convert constants to polynomials
   C.resize(d_);
   for (int i = 0; i < d_; ++i) {
     C[i].resize(d_);
     for (int j = 0; j < d_; ++j) {
       double sgn = (i == j) ? t : -t;
       C[i][j].Reshape(d_, 0);
-      C[i][j](0, 0) = sgn * vc[1 - i](1, 1 - j);
+      // C[i][j](0, 0) = sgn * vc[1 - i](1, 1 - j);
+      C[i][j](0, 0) = t * T(i, j);
     }
     C[i][i](0, 0) += 1.0;
   }
@@ -211,7 +222,7 @@ void MeshMaps_VEM::JacobianFaceValue(
 /* ******************************************************************
 * Calculate mesh velocity in cell c: old algorithm
 ****************************************************************** */
-void MeshMaps_VEM::VelocityCell_LeastSquare_(
+void MeshMaps_VEM::LeastSquareProjector_Cell_(
     int c, const std::vector<VectorPolynomial>& vf, VectorPolynomial& vc) const
 {
   vc.resize(d_);

@@ -67,8 +67,8 @@ class MeshMaps_VEM : public MeshMaps {
   void VelocityEdge_(int e, VectorPolynomial& ve) const;
 
   // old deprecated methods
-  void VelocityCell_LeastSquare_(int c, const std::vector<VectorPolynomial>& vf,
-                                 VectorPolynomial& vc) const;
+  void LeastSquareProjector_Cell_(int c, const std::vector<VectorPolynomial>& vf,
+                                  VectorPolynomial& vc) const;
 };
 
 }  // namespace WhetStone

@@ -81,9 +81,12 @@ class MeshMaps {
                      const std::vector<AmanziGeometry::Point>& x2,
                      VectorPolynomial& u) const;
 
-  // -- elliptic projecto at tiem 0
-  void HarmonicProjectorH1(int c, const std::vector<VectorPolynomial>& vf,
-                           VectorPolynomial& u) const;
+  // -- elliptic projector at time 0
+  void HarmonicProjectorH1_Cell(
+      int c, const std::vector<VectorPolynomial>& vf, VectorPolynomial& uc) const;
+
+  void HarmonicProjectorH1_Face(
+      int f, const std::vector<VectorPolynomial>& ve, VectorPolynomial& uf) const;
 
   // extension of mesh interface
   AmanziGeometry::Point cell_geometric_center(int id, int c) const;

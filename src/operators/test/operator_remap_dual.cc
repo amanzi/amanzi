@@ -72,7 +72,7 @@ void RemapTests2DDual(int dim, int order, std::string disc_name,
     // mesh0 = meshfactory(0.0, 0.0, 1.0, 1.0, nx, ny);
     mesh0 = meshfactory("test/median15x16.exo", Teuchos::null);
   } else {
-    mesh0 = meshfactory(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, nx, ny, ny);
+    mesh0 = meshfactory(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, nx, ny, ny, Teuchos::null, true, true);
   }
 
   int ncells_owned = mesh0->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
@@ -88,7 +88,7 @@ void RemapTests2DDual(int dim, int order, std::string disc_name,
     // mesh1 = meshfactory(0.0, 0.0, 1.0, 1.0, nx, ny);
     mesh1 = meshfactory("test/median15x16.exo", Teuchos::null);
   } else {
-    mesh1 = meshfactory(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, nx, ny, ny);
+    mesh1 = meshfactory(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, nx, ny, ny, Teuchos::null, true, true);
   }
 
   // deform the second mesh
@@ -105,9 +105,12 @@ void RemapTests2DDual(int dim, int order, std::string disc_name,
         uv[0] = 0.2 * std::sin(M_PI * xv[0]) * std::cos(M_PI * xv[1]);
         uv[1] =-0.2 * std::cos(M_PI * xv[0]) * std::sin(M_PI * xv[1]);
       } else {
-        uv[0] = 0.2 * std::sin(M_PI * xv[0]) * std::cos(M_PI * xv[1]) * std::cos(M_PI * xv[2]);
-        uv[1] =-0.1 * std::cos(M_PI * xv[0]) * std::sin(M_PI * xv[1]) * std::cos(M_PI * xv[2]);
-        uv[2] =-0.1 * std::cos(M_PI * xv[0]) * std::cos(M_PI * xv[1]) * std::sin(M_PI * xv[2]);
+        // uv[0] = 0.2 * std::sin(M_PI * xv[0]) * std::cos(M_PI * xv[1]) * std::cos(M_PI * xv[2]);
+        // uv[1] =-0.1 * std::cos(M_PI * xv[0]) * std::sin(M_PI * xv[1]) * std::cos(M_PI * xv[2]);
+        // uv[2] =-0.1 * std::cos(M_PI * xv[0]) * std::cos(M_PI * xv[1]) * std::sin(M_PI * xv[2]);
+        uv[0] = 0.2 * std::sin(M_PI * xv[0]) * std::cos(M_PI * xv[1]);
+        uv[1] =-0.2 * std::cos(M_PI * xv[0]) * std::sin(M_PI * xv[1]);
+        uv[2] = 0.0;
       }
 
       xv += uv * ds;
@@ -150,6 +153,7 @@ void RemapTests2DDual(int dim, int order, std::string disc_name,
       dg.TaylorBasis(c, it, &a, &b);
       p1c[2][c] = 6 * std::sin(3 * xc[0]) * std::cos(6 * xc[1]) / a;
     }
+if (dim == 3) p1c[0][c] = 1.0;
   }
 
   // initial mass
@@ -331,6 +335,7 @@ void RemapTests2DDual(int dim, int order, std::string disc_name,
       // const AmanziGeometry::Point& xg = maps->cell_geometric_center(1, c);
       const AmanziGeometry::Point& xg = mesh1->cell_centroid(c);
       double tmp = p2c[0][c] - std::sin(3 * xg[0]) * std::sin(6 * xg[1]);
+if (dim == 3) tmp = p2c[0][c] - 1.0;
 
       pinf_err = std::max(pinf_err, fabs(tmp));
       pl2_err += tmp * tmp * area_c;
@@ -408,16 +413,16 @@ TEST(REMAP2D_DG1_DUAL_FEM) {
 */
 
 TEST(REMAP2D_DG0_DUAL_VEM) {
-  RemapTests2DDual(2, 0, "dg modal", "VEM", 10, 10, 0.1);
+  RemapTests2DDual(2, 0, "dg modal", "VEM", 10, 10, 0.05);
 }
 
 TEST(REMAP2D_DG1_DUAL_VEM) {
   RemapTests2DDual(2, 1, "dg modal", "VEM", 10, 10, 0.05);
 }
-
 /*
+
 TEST(REMAP3D_DG0_DUAL_VEM) {
-  RemapTests2DDual(3, 0, "dg modal", "VEM", 10, 10, 0.05);
+  RemapTests2DDual(3, 0, "dg modal", "VEM", 10, 10, 0.1);
 }
 */
 
