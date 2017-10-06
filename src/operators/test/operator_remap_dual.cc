@@ -69,8 +69,8 @@ void RemapTests2DDual(int dim, int order, std::string disc_name,
 
   Teuchos::RCP<const Mesh> mesh0;
   if (dim == 2) {
-    // mesh0 = meshfactory(0.0, 0.0, 1.0, 1.0, nx, ny);
-    mesh0 = meshfactory("test/median15x16.exo", Teuchos::null);
+    mesh0 = meshfactory(0.0, 0.0, 1.0, 1.0, nx, ny);
+    // mesh0 = meshfactory("test/median15x16.exo", Teuchos::null);
   } else {
     mesh0 = meshfactory(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, nx, ny, ny, Teuchos::null, true, true);
   }
@@ -85,8 +85,8 @@ void RemapTests2DDual(int dim, int order, std::string disc_name,
   // create second and auxiliary mesh
   Teuchos::RCP<Mesh> mesh1;
   if (dim == 2) {
-    // mesh1 = meshfactory(0.0, 0.0, 1.0, 1.0, nx, ny);
-    mesh1 = meshfactory("test/median15x16.exo", Teuchos::null);
+    mesh1 = meshfactory(0.0, 0.0, 1.0, 1.0, nx, ny);
+    // mesh1 = meshfactory("test/median15x16.exo", Teuchos::null);
   } else {
     mesh1 = meshfactory(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, nx, ny, ny, Teuchos::null, true, true);
   }
@@ -413,16 +413,14 @@ TEST(REMAP2D_DG1_DUAL_FEM) {
 */
 
 TEST(REMAP2D_DG0_DUAL_VEM) {
-  RemapTests2DDual(2, 0, "dg modal", "VEM", 10, 10, 0.05);
+  RemapTests2DDual(2, 0, "dg modal", "VEM", 10, 10, 0.1);
 }
 
 TEST(REMAP2D_DG1_DUAL_VEM) {
-  RemapTests2DDual(2, 1, "dg modal", "VEM", 10, 10, 0.05);
+  RemapTests2DDual(2, 1, "dg modal", "VEM", 10, 10, 0.1);
 }
-/*
 
 TEST(REMAP3D_DG0_DUAL_VEM) {
   RemapTests2DDual(3, 0, "dg modal", "VEM", 10, 10, 0.1);
 }
-*/
 

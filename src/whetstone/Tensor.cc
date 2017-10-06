@@ -201,7 +201,7 @@ Tensor Tensor::Cofactors() const
     dataC[2] = -data_[1];
 
   } else if (size_ == 3) { 
-    dataC[0] = data_[6] * data_[8] - data_[5] * data_[7];
+    dataC[0] = data_[4] * data_[8] - data_[5] * data_[7];
     dataC[1] = data_[5] * data_[6] - data_[3] * data_[8];
     dataC[2] = data_[3] * data_[7] - data_[4] * data_[6];
 

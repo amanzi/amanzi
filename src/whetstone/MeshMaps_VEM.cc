@@ -145,7 +145,6 @@ void MeshMaps_VEM::Cofactors(
     for (int j = 0; j < d_; ++j) {
       double sgn = (i == j) ? t : -t;
       C[i][j].Reshape(d_, 0);
-      // C[i][j](0, 0) = sgn * vc[1 - i](1, 1 - j);
       C[i][j](0, 0) = t * T(i, j);
     }
     C[i][i](0, 0) += 1.0;
@@ -195,7 +194,7 @@ void MeshMaps_VEM::JacobianDet(
     const AmanziGeometry::Point& xf1 = mesh1_->face_centroid(f);
     sum += (xf0 + t * (xf1 - xf0)) * cn * dirs[n];
   }
-  sum /= 2 * mesh0_->cell_volume(c);
+  sum /= d_ * mesh0_->cell_volume(c);
 
   vc.Reshape(d_, 0);
   vc(0, 0) = sum;
