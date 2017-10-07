@@ -239,11 +239,6 @@ int DG_Modal::FluxMatrixPoly(int f, const Polynomial& un, DenseMatrix& A,
 
   // integrate traces of polynomials on face f
   std::vector<const Polynomial*> polys(3);
-  mesh_->face_get_nodes(f, &nodes);
-
-  AmanziGeometry::Point x1(d_), x2(d_);
-  mesh_->node_get_coordinates(nodes[0], &x1);
-  mesh_->node_get_coordinates(nodes[1], &x2);
 
   for (auto it = poly0.begin(); it.end() <= poly0.end(); ++it) {
     const int* idx0 = it.multi_index();
@@ -265,14 +260,14 @@ int DG_Modal::FluxMatrixPoly(int f, const Polynomial& un, DenseMatrix& A,
       polys[2] = &q;
 
       // downwind-downwind integral
-      double vel1 = IntegratePolynomialsEdge_(x1, x2, polys);
+      double vel1 = IntegratePolynomialsFace_(f, polys);
       vel1 /= mesh_->face_area(f);
       vel1 *= dir;  
 
       // upwind-downwind integral
       polys[1] = &p1;
 
-      double vel0 = IntegratePolynomialsEdge_(x1, x2, polys);
+      double vel0 = IntegratePolynomialsFace_(f, polys);
       vel0 /= mesh_->face_area(f);
       vel0 *= dir;  
 
@@ -430,6 +425,81 @@ void DG_Modal::IntegrateMonomialsEdge_(
       coefs[l] += a1 * q1d_weights[m][n];      
     }
   }
+}
+
+
+/* ******************************************************************
+* Integrate over face f the product of polynomials that may have
+* different origin. 
+****************************************************************** */
+double DG_Modal::IntegratePolynomialsFace_(
+    int f, const std::vector<const Polynomial*>& polys) const
+{
+  AmanziGeometry::Point enormal(d_), x1(d_), x2(d_);
+
+  if (d_ == 2) {
+    Entity_ID_List nodes;
+    mesh_->face_get_nodes(f, &nodes);
+
+    mesh_->node_get_coordinates(nodes[0], &x1);
+    mesh_->node_get_coordinates(nodes[1], &x2);
+    return IntegratePolynomialsEdge_(x1, x2, polys);
+  }
+
+  const AmanziGeometry::Point& xf = mesh_->face_centroid(f);
+
+  AmanziGeometry::Point fnormal = mesh_->face_normal(f);
+  double area = mesh_->face_area(f);
+  fnormal /= area;
+
+  // create a single polynomial centered at face centroid
+  Polynomial product(d_, 0);
+  product(0, 0) = 1.0;
+  product.ChangeOrigin(xf);
+
+  for (int i = 0; i < polys.size(); ++ i) {
+    Polynomial tmp(*polys[i]);
+    tmp.ChangeOrigin(xf);
+    product *= tmp;
+  }
+  
+  // Apply Euler theorem to each monomial
+  double sum(0.0);
+  Entity_ID_List edges;
+  std::vector<int> dirs;
+
+  mesh_->face_get_edges_and_dirs(f, &edges, &dirs);
+  int nedges = edges.size();
+
+  for (int n = 0; n < nedges; ++n) {
+    int e = edges[n];
+    const AmanziGeometry::Point& xe = mesh_->edge_centroid(e);
+    const AmanziGeometry::Point& tau = mesh_->edge_vector(e);
+    double length = mesh_->edge_length(e);
+
+    enormal = tau^fnormal;
+
+    // rescale polynomial coefficients
+    double tmp = dirs[n] * ((xe - xf) * enormal) / length;
+
+    Polynomial q(product);
+    for (auto it = q.begin(); it.end() <= q.end(); ++it) {
+      int m = it.MonomialOrder();
+      int k = it.MonomialPosition();
+      q(m, k) *= tmp / (m + 2);
+    }
+
+    // integrate along edge
+    int n0, n1; 
+    mesh_->edge_get_nodes(e, &n0, &n1);
+    mesh_->node_get_coordinates(n0, &x1);
+    mesh_->node_get_coordinates(n1, &x2);
+
+    std::vector<const Polynomial*> q_ptr(1, &q);
+    sum += IntegratePolynomialsEdge_(x1, x2, q_ptr);
+  }
+
+  return sum;
 }
 
 

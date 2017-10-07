@@ -85,8 +85,21 @@ class DG_Modal : public BilinearForm {
   // scaling of Taylor basis function: \psi_k -> a (\psi_k - b \psi_0)
   void TaylorBasis(int c, const Iterator& it, double* a, double* b);
   
-  // calculate polynomial given coefficients
+  // calculate polynomial given arrsy of its coefficients
   Polynomial CalculatePolynomial(int c, const std::vector<double>& coefs) const;
+
+  // integration tools
+  double IntegratePolynomialFace(int f, const Polynomial& poly) const {
+    const std::vector<const Polynomial*> polys(1, &poly);
+    return IntegratePolynomialsFace_(f, polys);
+  }
+
+  double IntegratePolynomialEdge(
+      const AmanziGeometry::Point& x1, const AmanziGeometry::Point& x2,
+      const Polynomial& poly) const {
+    const std::vector<const Polynomial*> polys(1, &poly);
+    return IntegratePolynomialsEdge_(x1, x2, polys);
+  }
 
   // miscalleneous
   void set_order(int order) { order_ = order; }
@@ -101,6 +114,9 @@ class DG_Modal : public BilinearForm {
       double factor, Monomial& monomials);
 
   // integraton of a product of polynomials with potentialy different origins
+  double IntegratePolynomialsFace_(
+      int f, const std::vector<const Polynomial*>& polys) const;
+
   double IntegratePolynomialsEdge_(
       const AmanziGeometry::Point& x1, const AmanziGeometry::Point& x2,
       const std::vector<const Polynomial*>& polys) const;
