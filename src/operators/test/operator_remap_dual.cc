@@ -233,6 +233,7 @@ void RemapTestsDual(int dim, int order, std::string disc_name,
   op_reac1->Setup(jac1);
 
   // explicit time integration
+  double gcl, gcl_err;
   double t(0.0), tend(1.0);
   while(t < tend - dt/2) {
     // calculate face velocities
@@ -250,6 +251,7 @@ void RemapTestsDual(int dim, int order, std::string disc_name,
 
     // calculate cell velocity at time t+dt/2 and change its sign
     Entity_ID_List faces;
+    std::vector<int> dirs;
     WhetStone::MatrixPolynomial C;
     WhetStone::VectorPolynomial tmp;
 
@@ -281,6 +283,20 @@ void RemapTestsDual(int dim, int order, std::string disc_name,
 
       maps->JacobianDet(c, t, vf, (*jac0)[c]);
       maps->JacobianDet(c, t + dt, vf, (*jac1)[c]);
+    }
+
+    // statistics: GCL
+    for (int c = 0; c < ncells_owned; ++c) {
+      double vol = mesh0->cell_volume(c);
+      mesh0->cell_get_faces_and_dirs(c, &faces, &dirs);
+      gcl = ((*jac1)[c](0, 0) - (*jac0)[c](0, 0)) * vol;
+
+      for (int n = 0; n < faces.size(); ++n) {
+        int f = faces[n];
+        double area = mesh0->face_area(f) * dirs[n];
+        gcl -= (*vel)[f].Value(mesh0->face_centroid(f)) * dirs[n] * dt;
+      }
+      gcl_err += (gcl * gcl) * mesh0->cell_volume(c); 
     }
 
     // populate operators
@@ -381,13 +397,18 @@ void RemapTestsDual(int dim, int order, std::string disc_name,
   mass_tmp = mass1;
   mesh1->get_comm()->SumAll(&mass_tmp, &mass1, 1);
 
+  err_tmp = gcl_err;
+  mesh1->get_comm()->SumAll(&err_tmp, &gcl_err, 1);
+
   // error tests
   pl2_err = std::pow(pl2_err, 0.5);
   CHECK(pl2_err < 0.12 / (order + 1));
 
+  gcl_err = std::pow(gcl_err, 0.5);
+
   if (MyPID == 0) {
-    printf("L2(p0)=%12.8g  Inf(p0)=%12.8g  dMass=%12.8g  Err(area)=%12.8g\n", 
-        pl2_err, pinf_err, mass1 - mass0, 1.0 - area);
+    printf("L2(p0)=%12.8g  Inf(p0)=%12.8g  dMass=%12.8g  GCL=%12.8g  Err(area)=%12.8g\n", 
+        pl2_err, pinf_err, mass1 - mass0, gcl_err, 1.0 - area);
   }
 
   // visualization
