@@ -25,7 +25,7 @@
 #include "InnerProductL2.hh"
 #include "InnerProductH1.hh"
 #include "Tensor.hh"
-#include "WhetStone_typedefs.hh"
+#include "VectorPolynomial.hh"
 
 namespace Amanzi {
 namespace WhetStone {

@@ -232,7 +232,7 @@ void RemapTests2DPrimal(int order, std::string disc_name,
 
       maps->VelocityCell(c, vf, tmp);
       maps->Cofactors(c, t + dt/2, tmp, C);
-      tmp[0].Multiply(C, tmp, (*cell_vel)[c], true);
+      (*cell_vel)[c].Multiply(C, tmp, true);
     }
 
     // calculate determinant of Jacobian at time t+dt

@@ -47,7 +47,7 @@ add_amanzi_library(whetstone
                           MFD3D_BernardiRaugel.cc
                           DG_Modal.cc nlfv.cc 
                           Tensor.cc DenseMatrix.cc
-                          Polynomial.cc
+                          Polynomial.cc VectorPolynomial.cc
                           MeshMaps.cc
                           MeshMaps_FEM.cc MeshMaps_VEM.cc
                    HEADERS DenseMatrix.hh DenseVector.hh
@@ -63,7 +63,7 @@ add_amanzi_library(whetstone
                            MFD3D_BernardiRaugel.hh
                            MFD3DFactory.hh
                            nlfv.hh
-                           Polynomial.hh Tensor.hh
+                           Polynomial.hh VectorPolynomial.hh Tensor.hh
                            MeshMaps.hh
                            MeshMaps_FEM.hh MeshMaps_VEM.hh
                            WhetStoneDefs.hh

@@ -106,12 +106,13 @@ void RemapTestsDual(int dim, int order, std::string disc_name,
         uv[0] = 0.2 * std::sin(M_PI * xv[0]) * std::cos(M_PI * xv[1]);
         uv[1] =-0.2 * std::cos(M_PI * xv[0]) * std::sin(M_PI * xv[1]);
       } else {
-        uv[0] = 0.2 * std::sin(M_PI * xv[0]) * std::cos(M_PI * xv[1]);
-        uv[1] =-0.2 * std::cos(M_PI * xv[0]) * std::sin(M_PI * xv[1]);
+        uv[0] = 0.2 * std::sin(M_PI * xv[0]) * std::cos(M_PI * xv[1]) * std::cos(M_PI * xv[2]);
+        uv[1] =-0.1 * std::cos(M_PI * xv[0]) * std::sin(M_PI * xv[1]) * std::cos(M_PI * xv[2]);
+        uv[2] =-0.1 * std::cos(M_PI * xv[0]) * std::cos(M_PI * xv[1]) * std::sin(M_PI * xv[2]);
       }
       xv += uv * ds;
     }
-    if (dim == 3) xv[2] = yv[2] * yv[2];
+    // if (dim == 3) xv[2] = (yv[2] + yv[2] * yv[2]) / 2;
 
     nodeids.push_back(v);
     new_positions.push_back(xv);
@@ -218,8 +219,8 @@ void RemapTestsDual(int dim, int order, std::string disc_name,
   Teuchos::RCP<Reaction> op_reac0 = Teuchos::rcp(new Reaction(plist, mesh0));
   auto global_reac0 = op_reac0->global_operator();
 
-  Teuchos::RCP<WhetStone::VectorPolynomial> jac0 = 
-     Teuchos::rcp(new WhetStone::VectorPolynomial(ncells_owned));
+  Teuchos::RCP<std::vector<WhetStone::Polynomial> > jac0 = 
+     Teuchos::rcp(new std::vector<WhetStone::Polynomial>(ncells_owned));
 
   op_reac0->Setup(jac0);
 
@@ -227,8 +228,8 @@ void RemapTestsDual(int dim, int order, std::string disc_name,
   Teuchos::RCP<Reaction> op_reac1 = Teuchos::rcp(new Reaction(plist, mesh0));
   auto global_reac1 = op_reac1->global_operator();
 
-  Teuchos::RCP<WhetStone::VectorPolynomial> jac1 = 
-     Teuchos::rcp(new WhetStone::VectorPolynomial(ncells_owned));
+  Teuchos::RCP<std::vector<WhetStone::Polynomial> > jac1 = 
+     Teuchos::rcp(new std::vector<WhetStone::Polynomial>(ncells_owned));
 
   op_reac1->Setup(jac1);
 
@@ -246,6 +247,17 @@ void RemapTestsDual(int dim, int order, std::string disc_name,
       // cn = j J^{-t} N dA
       WhetStone::VectorPolynomial cn;
       maps->NansonFormula(f, t + dt/2, vec_vel[f], cn);
+
+      if (dim == 3) {
+        cn *= 4.0 / 6.0;
+
+        WhetStone::VectorPolynomial cn1, cn2;
+        maps->NansonFormula(f, t, vec_vel[f], cn1);
+        maps->NansonFormula(f, t + dt, vec_vel[f], cn2);
+
+        cn += (1.0 / 6.0) * (cn1 + cn2);
+      }
+
       (*vel)[f] = vec_vel[f] * cn;
     }
 
@@ -265,7 +277,7 @@ void RemapTestsDual(int dim, int order, std::string disc_name,
 
       maps->VelocityCell(c, vf, tmp);
       maps->Cofactors(c, t + dt/2, tmp, C);
-      tmp[0].Multiply(C, tmp, (*cell_vel)[c], true);
+      (*cell_vel)[c].Multiply(C, tmp, true);
 
       for (int i = 0; i < dim; ++i) {
         (*cell_vel)[c][i] *= -1.0;
@@ -293,7 +305,6 @@ void RemapTestsDual(int dim, int order, std::string disc_name,
 
       for (int n = 0; n < faces.size(); ++n) {
         int f = faces[n];
-        double area = mesh0->face_area(f) * dirs[n];
         gcl -= (*vel)[f].Value(mesh0->face_centroid(f)) * dirs[n] * dt;
       }
       gcl_err += (gcl * gcl) * vol; 

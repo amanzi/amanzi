@@ -24,6 +24,7 @@
 #include "DenseMatrix.hh"
 #include "Polynomial.hh"
 #include "Tensor.hh"
+#include "VectorPolynomial.hh"
 #include "WhetStoneDefs.hh"
 #include "WhetStone_typedefs.hh"
 

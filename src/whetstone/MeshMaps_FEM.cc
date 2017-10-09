@@ -87,7 +87,7 @@ void MeshMaps_FEM::NansonFormula(
   Cofactors(cells[0], t, vc, C);
 
   AmanziGeometry::Point normal = mesh0_->face_normal(f);
-  cn[0].Multiply(C, normal, cn, false);
+  cn.Multiply(C, normal, false);
 }
 
 

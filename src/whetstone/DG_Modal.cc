@@ -17,6 +17,7 @@
 #include "DenseMatrix.hh"
 #include "DG_Modal.hh"
 #include "Polynomial.hh"
+#include "VectorPolynomial.hh"
 #include "WhetStoneDefs.hh"
 
 namespace Amanzi {
@@ -152,7 +153,7 @@ int DG_Modal::AdvectionMatrixPoly(int c, const VectorPolynomial& u, DenseMatrix&
     Polynomial pp(d_, idx_p);
     pp.set_origin(xc);
 
-    pp.Gradient(pgrad);
+    pgrad.Gradient(pp);
     Polynomial tmp(pgrad * ucopy);
 
     for (auto mt = tmp.begin(); mt.end() <= tmp.end(); ++mt) {

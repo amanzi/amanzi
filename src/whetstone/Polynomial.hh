@@ -19,9 +19,8 @@
   2.Monomial: a simple container of homogeneous polynomials of the
     same order.
 
-  3.Polynomial: implements ring algebra for polynomials, a few
-    useful transformations, and limited extensions to vectors and
-    tensors of polynomials.
+  3.Polynomial: implements ring algebra for polynomials and a few
+    useful transformations. See also class VectorPolynomial.
 */
 
 #ifndef AMANZI_WHETSTONE_POLYNOMIAL_HH_
@@ -215,44 +214,6 @@ class Polynomial {
     Polynomial tmp(poly);
     return tmp *= val;
   }
-
-  // -- operations with vector polynomials
-  friend Polynomial operator*(const std::vector<Polynomial>& poly, const AmanziGeometry::Point& p) {
-    int d(p.dim());
-    Polynomial tmp(d, 0);
-    for (int i = 0; i < d; ++i) {
-      tmp += poly[i] * p[i];
-    }
-    return tmp;
-  }
-
-  // -- dot product v1 * v2
-  friend Polynomial operator*(const std::vector<Polynomial>& v1, const std::vector<Polynomial>& v2) {
-    ASSERT(v1.size() == v2.size());
-
-    int d(v1[0].dimension());
-    Polynomial tmp(d, 0);
-    tmp.set_origin(v1[0].origin());
-
-    for (int i = 0; i < v1.size(); ++i) {
-      tmp += v1[i] * v2[i];
-    }
-    return tmp;
-  }
-
-  // various convolutions
-  // -- matrix-vector product A * v
-  void Multiply(const std::vector<std::vector<Polynomial> >& A, 
-                const std::vector<Polynomial>& v,
-                std::vector<Polynomial>& av, bool transpose);
-
-  // -- matrix-point product A * p
-  void Multiply(const std::vector<std::vector<Polynomial> >& A, 
-                const AmanziGeometry::Point& p,
-                std::vector<Polynomial>& av, bool transpose);
-
-  // derivatives
-  void Gradient(std::vector<Polynomial>& grad) const;
 
   // multi index defines both monomial order and current monomial
   // whenever possible, use faster Iterator's functions 
