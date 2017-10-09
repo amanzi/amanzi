@@ -92,12 +92,13 @@ void RemapTestsDual(int dim, int order, std::string disc_name,
   }
 
   // deform the second mesh
-  AmanziGeometry::Point xv(dim), xref(dim), uv(dim);
+  AmanziGeometry::Point xv(dim), yv(dim), xref(dim), uv(dim);
   Entity_ID_List nodeids;
   AmanziGeometry::Point_List new_positions, final_positions;
 
   for (int v = 0; v < nnodes_wghost; ++v) {
     mesh1->node_get_coordinates(v, &xv);
+    yv = xv;
 
     double ds(0.001);
     for (int i = 0; i < 1000; ++i) {
@@ -105,13 +106,12 @@ void RemapTestsDual(int dim, int order, std::string disc_name,
         uv[0] = 0.2 * std::sin(M_PI * xv[0]) * std::cos(M_PI * xv[1]);
         uv[1] =-0.2 * std::cos(M_PI * xv[0]) * std::sin(M_PI * xv[1]);
       } else {
-        uv[0] = 0.2 * std::sin(M_PI * xv[0]) * std::cos(M_PI * xv[1]) * std::cos(M_PI * xv[2]);
-        uv[1] =-0.1 * std::cos(M_PI * xv[0]) * std::sin(M_PI * xv[1]) * std::cos(M_PI * xv[2]);
-        uv[2] =-0.1 * std::cos(M_PI * xv[0]) * std::cos(M_PI * xv[1]) * std::sin(M_PI * xv[2]);
+        uv[0] = 0.2 * std::sin(M_PI * xv[0]) * std::cos(M_PI * xv[1]);
+        uv[1] =-0.2 * std::cos(M_PI * xv[0]) * std::sin(M_PI * xv[1]);
       }
-
       xv += uv * ds;
     }
+    if (dim == 3) xv[2] = yv[2] * yv[2];
 
     nodeids.push_back(v);
     new_positions.push_back(xv);
@@ -233,7 +233,7 @@ void RemapTestsDual(int dim, int order, std::string disc_name,
   op_reac1->Setup(jac1);
 
   // explicit time integration
-  double gcl, gcl_err;
+  double gcl, gcl_err(0.0);
   double t(0.0), tend(1.0);
   while(t < tend - dt/2) {
     // calculate face velocities
@@ -296,7 +296,7 @@ void RemapTestsDual(int dim, int order, std::string disc_name,
         double area = mesh0->face_area(f) * dirs[n];
         gcl -= (*vel)[f].Value(mesh0->face_centroid(f)) * dirs[n] * dt;
       }
-      gcl_err += (gcl * gcl) * mesh0->cell_volume(c); 
+      gcl_err += (gcl * gcl) * vol; 
     }
 
     // populate operators
