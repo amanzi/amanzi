@@ -37,6 +37,7 @@ add_amanzi_library(atk
                           VerboseObject.cc
                           IOEvent.cc
                           Spline.cc
+                          SplinedCurve.cc
                           Key.cc
                    HEADERS HDF5Reader.hh
                            Utils.hh
@@ -55,6 +56,7 @@ add_amanzi_library(atk
                            LeastSquare.hh
                            ObservationData.hh
                            Spline.hh
+                           SplinedCurve.hh
                            Key.hh
                    )
 
