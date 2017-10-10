@@ -276,6 +276,33 @@ Debugger::WriteVectors(const std::vector<std::string>& names,
 }
 
 
+// Write boundary condition data.
+void
+Debugger:: WriteBoundaryConditions(const std::vector<int>& flag,
+				   const std::vector<double>& data) {
+  std::stringstream formatstream;
+  formatstream << "%_" << width_ << "." << precision_ << "g";
+  std::string format = formatstream.str();
+
+  for (int i=0; i!=dc_.size(); ++i) {
+    AmanziMesh::Entity_ID c0 = dc_[i];
+    AmanziMesh::Entity_ID c0_gid = dc_gid_[i];
+    Teuchos::OSTab tab = dcvo_[i]->getOSTab();
+
+    if (dcvo_[i]->os_OK(verb_level_)) {
+      *dcvo_[i]->os() << FormatHeader_("BCs", c0_gid);
+      AmanziMesh::Entity_ID_List fnums0;
+      std::vector<int> dirs;
+      mesh_->cell_get_faces_and_dirs(c0, &fnums0, &dirs);
+
+      for (unsigned int n=0; n!=fnums0.size(); ++n)
+	*dcvo_[i]->os() << " " << flag[fnums0[n]] << "(" << Format_(data[fnums0[n]]) << ")";
+      *dcvo_[i]->os() << std::endl;
+    }
+  }
+}
+
+
 // call MPI_Comm_Barrier to sync between writing steps
 void
 Debugger::Barrier() {
