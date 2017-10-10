@@ -112,8 +112,8 @@ TEST(DG_TAYLOR_POLYNOMIALS) {
   CHECK_CLOSE(q4.Value(xyz), 0.0, 1e-10);
 
   // derivatives
-  std::vector<Polynomial> grad;
-  q_orig.Gradient(grad);
+  VectorPolynomial grad;
+  grad.Gradient(q_orig);
   std::cout << "Gradient of a polynomial:\n" << grad[0] << grad[1] << grad[2] << std::endl;
 
   // change coordinate system
@@ -129,7 +129,7 @@ TEST(DG_TAYLOR_POLYNOMIALS) {
 /* ****************************************************************
 * Test of 2D DG mass matrices: K is tensor
 **************************************************************** */
-TEST(DG_MASS_MATRIX_2D) {
+TEST(DG2D_MASS_MATRIX) {
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::WhetStone;
@@ -170,7 +170,7 @@ TEST(DG_MASS_MATRIX_2D) {
 /* ****************************************************************
 * Test of 3D DG mass matrices: K is tensor
 **************************************************************** */
-TEST(DG_MASS_MATRIX_3D) {
+TEST(DG3D_MASS_MATRIX) {
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::WhetStone;
@@ -226,7 +226,7 @@ TEST(DG_MASS_MATRIX_3D) {
 /* ****************************************************************
 * Test of DG mass matrices: K is polynomial
 **************************************************************** */
-TEST(DG_MASS_MATRIX_POLYNOMIAL) {
+TEST(DG2D_MASS_MATRIX_POLYNOMIAL) {
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::WhetStone;
@@ -279,14 +279,14 @@ TEST(DG_MASS_MATRIX_POLYNOMIAL) {
 
 
 /* ****************************************************************
-* Test of DG advection matrices on a face
+* Test of DG2D advection matrices on a face
 **************************************************************** */
-TEST(DG_ADVECTION_MATRIX_FACE) {
+TEST(DG2D_ADVECTION_MATRIX_FACE) {
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::WhetStone;
 
-  std::cout << "\nTest: DG advection matrices on faces" << std::endl;
+  std::cout << "\nTest: DG2D advection matrices on faces" << std::endl;
   Epetra_MpiComm *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
 
   MeshFactory meshfactory(comm);
@@ -334,14 +334,71 @@ TEST(DG_ADVECTION_MATRIX_FACE) {
 
 
 /* ****************************************************************
-* Test of DG advection matrices in a cell
+* Test of DG3D advection matrices on a face
 **************************************************************** */
-TEST(DG_ADVECTION_MATRIX_CELL) {
+TEST(DG3D_ADVECTION_MATRIX_FACE) {
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::WhetStone;
 
-  std::cout << "\nTest: DG advection matrices in cells" << std::endl;
+  std::cout << "\nTest: DG3D advection matrices on faces" << std::endl;
+  Epetra_MpiComm *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
+
+  MeshFactory meshfactory(comm);
+  meshfactory.preference(FrameworkPreference({MSTK}));
+  Teuchos::RCP<Mesh> mesh = meshfactory(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 2, 2, 2,
+                                        Teuchos::null, true, true); 
+ 
+  for (int k = 0; k < 2; k++) {
+    DG_Modal dg(k, mesh);
+    DenseMatrix A0, A1;
+
+    int d(3), f(4);
+    Polynomial un(d, 0);
+    un(0, 0) = 1.0;
+
+    // TEST1: constant u
+    dg.FluxMatrixPoly(f, un, A0, false);
+
+    printf("Advection matrix (face-based) for order=%d  u.n=1\n", k);
+    int nk = A0.NumRows();
+    for (int i = 0; i < nk; i++) {
+      for (int j = 0; j < nk; j++ ) printf("%8.4f ", A0(i, j)); 
+      printf("\n");
+    }
+
+    // TEST2: add zero gradient to polynomial un
+    un.Reshape(d, 1);
+    dg.FluxMatrixPoly(f, un, A1, false);
+
+    A1 -= A0;
+    CHECK_CLOSE(0.0, A1.NormInf(), 1e-12);
+
+    // TEST3: nonzero linear component polynomial un
+    un(1, 0) = 1.0;
+
+    dg.FluxMatrixPoly(f, un, A1, false);
+
+    printf("Advection matrix (face-based) for order=%d u.n=1+x\n", k);
+    for (int i = 0; i < nk; i++) {
+      for (int j = 0; j < nk; j++ ) printf("%8.4f ", A1(i, j)); 
+      printf("\n");
+    }
+  }
+
+  delete comm;
+}
+
+
+/* ****************************************************************
+* Test of DG advection matrices in a cell
+**************************************************************** */
+TEST(DG2D_ADVECTION_MATRIX_CELL) {
+  using namespace Amanzi;
+  using namespace Amanzi::AmanziMesh;
+  using namespace Amanzi::WhetStone;
+
+  std::cout << "\nTest: DG2D advection matrices in cells" << std::endl;
   Epetra_MpiComm *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
 
   MeshFactory meshfactory(comm);
@@ -353,9 +410,9 @@ TEST(DG_ADVECTION_MATRIX_CELL) {
     DG_Modal dg(k, mesh);
     dg.set_basis(WhetStone::TAYLOR_BASIS_SIMPLE);
 
-    DenseMatrix A0, A1;
+    DenseMatrix A0;
 
-    VectorPolynomial u(2);
+    VectorPolynomial u(2, 2);
     for (int i = 0; i < 2; ++i) u[i].Reshape(2, 2);
 
     // TEST1: constant u
@@ -415,6 +472,81 @@ TEST(DG_ADVECTION_MATRIX_CELL) {
       A0.Multiply(v1, v3, false);
       double integral(v2 * v3);
       printf("  inner product = %10.6f\n", integral);
+    }
+  }
+
+  delete comm;
+}
+
+ 
+/* ****************************************************************
+* Test of DG advection matrices in a cell
+**************************************************************** */
+TEST(DG3D_ADVECTION_MATRIX_CELL) {
+  using namespace Amanzi;
+  using namespace Amanzi::AmanziMesh;
+  using namespace Amanzi::WhetStone;
+
+  std::cout << "\nTest: DG3D advection matrices in cells" << std::endl;
+  Epetra_MpiComm *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
+
+  MeshFactory meshfactory(comm);
+  meshfactory.preference(FrameworkPreference({MSTK}));
+  Teuchos::RCP<Mesh> mesh = meshfactory(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 2, 2, 2,
+                                        Teuchos::null, true, true); 
+
+  int d(3);
+  for (int k = 0; k < 2; k++) {
+    DG_Modal dg(k, mesh);
+    dg.set_basis(WhetStone::TAYLOR_BASIS_SIMPLE);
+
+    DenseMatrix A0;
+
+    VectorPolynomial u(d, 3);
+    for (int i = 0; i < d; ++i) u[i].Reshape(d, 1, true);
+
+    // TEST1: constant u
+    u[0](0, 0) = 1.0;
+    u[1](0, 0) = 1.0;
+    u[2](0, 0) = 1.0;
+    dg.AdvectionMatrixPoly(0, u, A0, false);
+
+    printf("Advection matrix (cell-based) for order=%d u=(1,1,1)\n", k);
+    int nk = A0.NumRows();
+    for (int i = 0; i < nk; i++) {
+      for (int j = 0; j < nk; j++ ) printf("%10.6f ", A0(i, j)); 
+      printf("\n");
+    }
+
+    // TEST2: linear u
+    u[0](1, 0) = 1.0;
+    u[0](1, 1) = 1.0;
+    u[0](1, 2) = 1.0;
+    dg.AdvectionMatrixPoly(0, u, A0, false);
+
+    printf("Advection matrix (cell-based) for order=%d u=(1+x+y+z,1,1), f(x,y)=2+x+3y\n", k);
+    nk = A0.NumRows();
+    for (int i = 0; i < nk; i++) {
+      for (int j = 0; j < nk; j++ ) printf("%10.6f ", A0(i, j)); 
+      printf("\n");
+    }
+
+    // accuracy test for functions 1+x and 1+x
+    DenseVector v1(nk), v2(nk), v3(nk);
+    if (k > 0) {
+      const AmanziGeometry::Point& xc = mesh->cell_centroid(0);
+      v1.PutScalar(0.0);
+      v1(0) = 2 + xc[0] + 3 * xc[1];
+      v1(1) = 1.0;
+      v1(2) = 3.0;
+      v2 = v1;
+ 
+      A0.Multiply(v1, v3, false);
+      double integral(v2 * v3);
+      printf("  inner product = %10.6f\n", integral);
+      printf("  centroid = %10.6f %10.6f\n", xc[0], xc[1]);
+
+      CHECK_CLOSE(integral, 43.0 / 24.0, 1e-12);
     }
   }
 

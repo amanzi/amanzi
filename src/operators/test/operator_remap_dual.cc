@@ -106,13 +106,15 @@ void RemapTestsDual(int dim, int order, std::string disc_name,
         uv[0] = 0.2 * std::sin(M_PI * xv[0]) * std::cos(M_PI * xv[1]);
         uv[1] =-0.2 * std::cos(M_PI * xv[0]) * std::sin(M_PI * xv[1]);
       } else {
-        uv[0] = 0.2 * std::sin(M_PI * xv[0]) * std::cos(M_PI * xv[1]) * std::cos(M_PI * xv[2]);
-        uv[1] =-0.1 * std::cos(M_PI * xv[0]) * std::sin(M_PI * xv[1]) * std::cos(M_PI * xv[2]);
-        uv[2] =-0.1 * std::cos(M_PI * xv[0]) * std::cos(M_PI * xv[1]) * std::sin(M_PI * xv[2]);
+        // uv[0] = 0.2 * std::sin(M_PI * xv[0]) * std::cos(M_PI * xv[1]) * std::cos(M_PI * xv[2]);
+        // uv[1] =-0.1 * std::cos(M_PI * xv[0]) * std::sin(M_PI * xv[1]) * std::cos(M_PI * xv[2]);
+        // uv[2] =-0.1 * std::cos(M_PI * xv[0]) * std::cos(M_PI * xv[1]) * std::sin(M_PI * xv[2]);
+        uv[0] = 0.2 * std::sin(M_PI * xv[0]) * std::cos(M_PI * xv[1]);
+        uv[1] =-0.2 * std::cos(M_PI * xv[0]) * std::sin(M_PI * xv[1]);
       }
       xv += uv * ds;
     }
-    // if (dim == 3) xv[2] = (yv[2] + yv[2] * yv[2]) / 2;
+    if (dim == 3) xv[2] = (yv[2] + yv[2] * yv[2]) / 2;
 
     nodeids.push_back(v);
     new_positions.push_back(xv);
@@ -139,6 +141,7 @@ void RemapTestsDual(int dim, int order, std::string disc_name,
   for (int c = 0; c < ncells_wghost; c++) {
     const AmanziGeometry::Point& xc = mesh0->cell_centroid(c);
     p1c[0][c] = std::sin(3 * xc[0]) * std::sin(6 * xc[1]);
+    p1c[0][c] = 1.0;
     if (nk > 1) {
       double a, b;
       WhetStone::Iterator it(dim);
@@ -146,10 +149,12 @@ void RemapTestsDual(int dim, int order, std::string disc_name,
       it.begin(1);
       dg.TaylorBasis(c, it, &a, &b);
       p1c[1][c] = 3 * std::cos(3 * xc[0]) * std::sin(6 * xc[1]) / a;
+      p1c[1][c] = 0.0;
 
       ++it;
       dg.TaylorBasis(c, it, &a, &b);
       p1c[2][c] = 6 * std::sin(3 * xc[0]) * std::cos(6 * xc[1]) / a;
+      p1c[2][c] = 0.0;
 
       if (dim == 3) {
         ++it;
@@ -364,6 +369,7 @@ void RemapTestsDual(int dim, int order, std::string disc_name,
       // const AmanziGeometry::Point& xg = maps->cell_geometric_center(1, c);
       const AmanziGeometry::Point& xg = mesh1->cell_centroid(c);
       double tmp = p2c[0][c] - std::sin(3 * xg[0]) * std::sin(6 * xg[1]);
+      tmp = p2c[0][c] - 1.0;
 
       pinf_err = std::max(pinf_err, fabs(tmp));
       pl2_err += tmp * tmp * area_c;
@@ -385,7 +391,8 @@ void RemapTestsDual(int dim, int order, std::string disc_name,
         mesh1->node_get_coordinates(nodes[i], &v1);
 
         double tmp = poly.Value(v0);
-        tmp -= std::sin(3 * v1[0]) * std::sin(6 * v1[1]);
+        // tmp -= std::sin(3 * v1[0]) * std::sin(6 * v1[1]);
+        tmp -= 1.0;
         pinf_err = std::max(pinf_err, fabs(tmp));
         pl2_err += tmp * tmp * area_c / nnodes;
       }
@@ -457,9 +464,7 @@ TEST(REMAP3D_DG0_DUAL_VEM) {
   RemapTestsDual(3, 0, "dg modal", "VEM", 10, 10, 0.1);
 }
 
-/*
 TEST(REMAP3D_DG1_DUAL_VEM) {
   RemapTestsDual(3, 1, "dg modal", "VEM", 10, 10, 0.1);
 }
-*/
 
