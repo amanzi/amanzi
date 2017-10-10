@@ -416,7 +416,8 @@ void Flow_PK::ComputeWellIndex(Teuchos::ParameterList& spec)
   int dim = mesh_->space_dimension();
 
   std::vector<std::string> regions = spec.get<Teuchos::Array<std::string> >("regions").toVector();
-  rw = spec.get<double>("well radius");
+  Teuchos::ParameterList well_list = spec.sublist("well");
+  rw = well_list.get<double>("well radius");
 
   
   for (auto it = regions.begin(); it != regions.end(); ++it) {
