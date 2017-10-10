@@ -45,7 +45,7 @@
             <Parameter name="spatial distribution method" type="string" value="simple well"/>
             <ParameterList name="well">
               <Parameter name="submodel" type="string" value="bhp"/>
-              <Parameter name="depth" type="double" value="-2.5"/>
+              <Parameter name="depth" type="double" value="-1.75"/>
               <Parameter name="well radius" type="double" value="0.1"/>
               <ParameterList name="bhp">
                 <ParameterList name="function-constant">

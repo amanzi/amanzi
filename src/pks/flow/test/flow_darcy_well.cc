@@ -153,17 +153,17 @@ void RunTestMarshak(std::string controller) {
 }
 
 
-TEST(FLOW_2D_DARCY_WELL_STANDARD) {
-  RunTestMarshak("test/flow_darcy_well.xml");
-}
+// TEST(FLOW_2D_DARCY_WELL_STANDARD) {
+//   RunTestMarshak("test/flow_darcy_well.xml");
+// }
 
-TEST(FLOW_2D_DARCY_WELL_HETE_PERM) {
-   RunTestMarshak("test/flow_darcy_well_hete_perm.xml");
-}
+// TEST(FLOW_2D_DARCY_WELL_HETE_PERM) {
+//    RunTestMarshak("test/flow_darcy_well_hete_perm.xml");
+// }
 
-TEST(FLOW_2D_DARCY_WELL_ADAPRIVE) {
- RunTestMarshak("test/flow_darcy_well_adaptive.xml");
-}
+// TEST(FLOW_2D_DARCY_WELL_ADAPRIVE) {
+//  RunTestMarshak("test/flow_darcy_well_adaptive.xml");
+// }
 
 
 /* **************************************************************** */
@@ -264,9 +264,9 @@ void Run_3D_DarcyWell(std::string controller) {
 }
 
 
-TEST(FLOW_3D_DARCY_WELL) {
-   Run_3D_DarcyWell("test/flow_darcy_well_3D.xml");
-}
+// TEST(FLOW_3D_DARCY_WELL) {
+//    Run_3D_DarcyWell("test/flow_darcy_well_3D.xml");
+// }
 
 TEST(FLOW_3D_DARCY_PEACEMAN_WELL) {
   //  Run_3D_DarcyWell("test/flow_darcy_well_peaceman_3D.xml");
@@ -296,7 +296,7 @@ TEST(FLOW_3D_DARCY_PEACEMAN_WELL) {
 
   MeshFactory meshfactory(&comm);
   meshfactory.preference(pref);
-  RCP<const Mesh> mesh = meshfactory(-55.0, -55.0, -5.0, 55.0, 55.0, 0.0, 23, 23, 1, gm);
+  RCP<const Mesh> mesh = meshfactory(-55.0, -55.0, -2., 55.0, 55.0, 0.0, 23, 23, 4, gm);
 
   // create a simple state and populate it
   Amanzi::VerboseObject::hide_line_prefix = true;
