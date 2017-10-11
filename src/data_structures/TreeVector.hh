@@ -55,10 +55,8 @@ class TreeVector {
   // -- Accessors --
 
   // Access to ANY communicator (this may be ill-posed!)
-  const Epetra_MpiComm& Comm() {
-    if (data_ != Teuchos::null) return data_->Comm();
-    if (subvecs_.size() > 0) return subvecs_[0]->Comm();
-    return comm_world_;
+  const Epetra_MpiComm& Comm() const {
+    return Map().Comm();
   }
 
   // Access to the space.
@@ -155,7 +153,6 @@ class TreeVector {
 
   Teuchos::RCP<CompositeVector> data_;
   std::vector< Teuchos::RCP<TreeVector> > subvecs_;
-  Epetra_MpiComm comm_world_;
 };
 
 } // namespace
