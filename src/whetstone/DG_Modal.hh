@@ -61,7 +61,7 @@ class DG_Modal : public BilinearForm {
 
   ~DG_Modal() {};
 
-  // requires member functions
+  // required member functions
   // -- mass matrices
   virtual int MassMatrix(int c, const Tensor& K, DenseMatrix& M);
   virtual int MassMatrixPoly(int c, const Polynomial& K, DenseMatrix& M);
@@ -86,7 +86,7 @@ class DG_Modal : public BilinearForm {
   // scaling of Taylor basis function: \psi_k -> a (\psi_k - b \psi_0)
   void TaylorBasis(int c, const Iterator& it, double* a, double* b);
   
-  // calculate polynomial given arrsy of its coefficients
+  // create polynomial given array of its coefficients
   Polynomial CalculatePolynomial(int c, const std::vector<double>& coefs) const;
 
   // integration tools
@@ -101,6 +101,9 @@ class DG_Modal : public BilinearForm {
     const std::vector<const Polynomial*> polys(1, &poly);
     return IntegratePolynomialsEdge_(x1, x2, polys);
   }
+
+  // placeholder of elliptic projector
+  void CoVelocityCell(int c, const std::vector<const Polynomial*> vf, VectorPolynomial& vc);
 
   // miscalleneous
   void set_order(int order) { order_ = order; }
