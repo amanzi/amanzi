@@ -41,6 +41,10 @@ class Debugger {
                    const Teuchos::Ptr<const CompositeVector>& vec,
                    bool include_faces=false);
 
+  // Write boundary condition data.
+  void WriteBoundaryConditions(const std::vector<int>& flag,
+			       const std::vector<double>& data);
+
   // Write list of vectors.
   void WriteVectors(const std::vector<std::string>& names,
                     const std::vector<Teuchos::Ptr<const CompositeVector> >& vecs,
