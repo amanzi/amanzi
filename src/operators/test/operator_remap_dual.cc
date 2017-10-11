@@ -106,15 +106,15 @@ void RemapTestsDual(int dim, int order, std::string disc_name,
         uv[0] = 0.2 * std::sin(M_PI * xv[0]) * std::cos(M_PI * xv[1]);
         uv[1] =-0.2 * std::cos(M_PI * xv[0]) * std::sin(M_PI * xv[1]);
       } else {
-        // uv[0] = 0.2 * std::sin(M_PI * xv[0]) * std::cos(M_PI * xv[1]) * std::cos(M_PI * xv[2]);
-        // uv[1] =-0.1 * std::cos(M_PI * xv[0]) * std::sin(M_PI * xv[1]) * std::cos(M_PI * xv[2]);
-        // uv[2] =-0.1 * std::cos(M_PI * xv[0]) * std::cos(M_PI * xv[1]) * std::sin(M_PI * xv[2]);
-        uv[0] = 0.2 * std::sin(M_PI * xv[0]) * std::cos(M_PI * xv[1]);
-        uv[1] =-0.2 * std::cos(M_PI * xv[0]) * std::sin(M_PI * xv[1]);
+        uv[0] = 0.2 * std::sin(M_PI * xv[0]) * std::cos(M_PI * xv[1]) * std::cos(M_PI * xv[2]);
+        uv[1] =-0.1 * std::cos(M_PI * xv[0]) * std::sin(M_PI * xv[1]) * std::cos(M_PI * xv[2]);
+        uv[2] =-0.1 * std::cos(M_PI * xv[0]) * std::cos(M_PI * xv[1]) * std::sin(M_PI * xv[2]);
+        // uv[0] = 0.2 * std::sin(M_PI * xv[0]) * std::cos(M_PI * xv[1]);
+        // uv[1] =-0.2 * std::cos(M_PI * xv[0]) * std::sin(M_PI * xv[1]);
       }
       xv += uv * ds;
     }
-    if (dim == 3) xv[2] = (yv[2] + yv[2] * yv[2]) / 2;
+    // if (dim == 3) xv[2] = (yv[2] + yv[2] * yv[2]) / 2;
 
     nodeids.push_back(v);
     new_positions.push_back(xv);
@@ -464,10 +464,12 @@ TEST(REMAP2D_DG1_DUAL_VEM) {
 }
 
 TEST(REMAP3D_DG0_DUAL_VEM) {
-  RemapTestsDual(3, 0, "dg modal", "VEM", 20, 20, 0.1 / 2);
+  RemapTestsDual(3, 0, "dg modal", "VEM", 5, 5, 0.2);
 }
 
+/*
 TEST(REMAP3D_DG1_DUAL_VEM) {
-  RemapTestsDual(3, 1, "dg modal", "VEM", 20, 20, 0.1 / 2);
+  RemapTestsDual(3, 1, "dg modal", "VEM", 5, 5, 0.1);
 }
+*/
 
