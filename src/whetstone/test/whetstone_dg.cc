@@ -134,7 +134,7 @@ TEST(DG2D_MASS_MATRIX) {
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::WhetStone;
 
-  std::cout << "Test: DG mass matrices in 2D (tensors)" << std::endl;
+  std::cout << "Test: DG2D mass matrices (tensors)" << std::endl;
   Epetra_MpiComm *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
 
   MeshFactory meshfactory(comm);
@@ -175,47 +175,72 @@ TEST(DG3D_MASS_MATRIX) {
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::WhetStone;
 
-  std::cout << "Test: DG mass matrices in 3D (tensors)" << std::endl;
+  std::cout << "\nTest: DG3D mass matrices (tensors and polynomials)" << std::endl;
   Epetra_MpiComm *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
 
   MeshFactory meshfactory(comm);
   meshfactory.preference(FrameworkPreference({MSTK}));
-  Teuchos::RCP<Mesh> mesh = meshfactory(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1, 1, 1,
+  Teuchos::RCP<Mesh> mesh = meshfactory(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 2, 2, 2,
                                         Teuchos::null, true, true); 
 
-  DenseMatrix M;
+  DenseMatrix M0, M1;
   Tensor T(3, 1);
-  T(0, 0) = 1.0;
+  T(0, 0) = 2.0;
 
   for (int k = 0; k < 3; k++) {
     DG_Modal dg(k, mesh);
 
     // natural Taylor basis
     dg.set_basis(WhetStone::TAYLOR_BASIS_SIMPLE);
-    dg.MassMatrix(0, T, M);
-    int nk = M.NumRows();
+    dg.MassMatrix(0, T, M0);
+    int nk = M0.NumRows();
 
     if (k > 0) {
-      CHECK_CLOSE(M(2, 2), M(1, 1), 1e-12);
-      CHECK_CLOSE(M(3, 3), M(1, 1), 1e-12);
+      CHECK_CLOSE(M0(2, 2), M0(1, 1), 1e-12);
+      CHECK_CLOSE(M0(3, 3), M0(1, 1), 1e-12);
     } 
     if (k > 1) {
-      CHECK_CLOSE(M(7, 7), M(4, 4), 1e-12);
-      CHECK_CLOSE(M(9, 9), M(4, 4), 1e-12);
+      CHECK_CLOSE(M0(7, 7), M0(4, 4), 1e-12);
+      CHECK_CLOSE(M0(9, 9), M0(4, 4), 1e-12);
+    }
+
+    // polynomial, constant velocity u=2
+    Polynomial u(3, 0);
+    u(0, 0) = 2.0;
+
+    dg.MassMatrixPoly(0, u, M1);
+    M1 -= M0;
+    CHECK_CLOSE(M1.NormInf(), 0.0, 1e-12);
+
+    // accuracy test
+    if (k > 0) {
+      DenseVector v1(nk), v2(nk), v3(nk);
+      const AmanziGeometry::Point& xc = mesh->cell_centroid(0);
+      v1.PutScalar(0.0);
+      v1(0) = xc[0] + 2 * xc[1] + 3 * xc[2];
+      v1(1) = 1.0;
+      v1(2) = 2.0;
+      v1(3) = 3.0;
+      v2 = v1;
+ 
+      M0.Multiply(v1, v3, false);
+      double integral(v2 * v3);
+      printf("  inner product = %10.6f\n", integral);
+      CHECK_CLOSE(integral, 61.0 / 96.0, 1e-12);
     }
 
     // partially orthonormalized Taylor basis
     dg.set_basis(WhetStone::TAYLOR_BASIS_NORMALIZED);
-    dg.MassMatrix(0, T, M);
+    dg.MassMatrix(0, T, M0);
 
     printf("Mass matrix for order=%d\n", k);
     for (int i = 0; i < nk; i++) {
-      for (int j = 0; j < nk; j++ ) printf("%10.6f ", M(i, j)); 
+      for (int j = 0; j < nk; j++ ) printf("%10.6f ", M0(i, j)); 
       printf("\n");
     }
 
     for (int i = 1; i < nk; ++i) {
-      CHECK_CLOSE(M(i, 0), 0.0, 1e-12);
+      CHECK_CLOSE(M0(i, 0), 0.0, 1e-12);
     }
   }
 

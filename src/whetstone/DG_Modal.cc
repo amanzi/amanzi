@@ -133,7 +133,7 @@ int DG_Modal::AdvectionMatrixPoly(int c, const VectorPolynomial& u, DenseMatrix&
 
   // extend list of integrals of monomials
   int uk(ucopy[0].order());
-  UpdateIntegrals_(c, 2 * order_ + std::max(0, uk - 1));
+  UpdateIntegrals_(c, order_ + std::max(0, order_ - 1) + uk);
   const Polynomial& integrals = integrals_[c];
    
   // sum-up integrals to the advection matrix
@@ -456,7 +456,7 @@ double DG_Modal::IntegratePolynomialsFace_(
   // create a single polynomial centered at face centroid
   Polynomial product(d_, 0);
   product(0, 0) = 1.0;
-  product.ChangeOrigin(xf);
+  product.set_origin(xf);
 
   for (int i = 0; i < polys.size(); ++ i) {
     Polynomial tmp(*polys[i]);
@@ -617,7 +617,7 @@ void DG_Modal::ChangeBasis_(int c1, int c2, DenseMatrix& A)
 
 /* ******************************************************************
 * Transform monomial \psi_k to polynomial a (\psi_k - b \psi_0) where
-* factor b orthogonolizes to constant and factor normalizes to 1.
+* factor b orthogonolizes to constant and factor a normalizes to 1.
 * NOTE: Both polynomilas are centered at cell centroid.
 ****************************************************************** */
 void DG_Modal::TaylorBasis(int c, const Iterator& it, double* a, double* b)

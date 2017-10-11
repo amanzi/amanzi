@@ -141,7 +141,6 @@ void RemapTestsDual(int dim, int order, std::string disc_name,
   for (int c = 0; c < ncells_wghost; c++) {
     const AmanziGeometry::Point& xc = mesh0->cell_centroid(c);
     p1c[0][c] = std::sin(3 * xc[0]) * std::sin(6 * xc[1]);
-    p1c[0][c] = 1.0;
     if (nk > 1) {
       double a, b;
       WhetStone::Iterator it(dim);
@@ -149,17 +148,14 @@ void RemapTestsDual(int dim, int order, std::string disc_name,
       it.begin(1);
       dg.TaylorBasis(c, it, &a, &b);
       p1c[1][c] = 3 * std::cos(3 * xc[0]) * std::sin(6 * xc[1]) / a;
-      p1c[1][c] = 0.0;
 
       ++it;
       dg.TaylorBasis(c, it, &a, &b);
       p1c[2][c] = 6 * std::sin(3 * xc[0]) * std::cos(6 * xc[1]) / a;
-      p1c[2][c] = 0.0;
 
       if (dim == 3) {
         ++it;
         dg.TaylorBasis(c, it, &a, &b);
-        p1c[3][c] = 0.0;
       }
     }
   }
@@ -284,6 +280,35 @@ void RemapTestsDual(int dim, int order, std::string disc_name,
       maps->Cofactors(c, t + dt/2, tmp, C);
       (*cell_vel)[c].Multiply(C, tmp, true);
 
+{
+double a, b;
+AmanziGeometry::Point u0(dim);
+WhetStone::Monomial mono(dim, 1);
+
+mesh0->cell_get_faces_and_dirs(c, &faces, &dirs);
+
+for (int n = 0; n < faces.size(); ++n) {
+  int f = faces[n];
+  for (auto it = mono.begin(); it.end() <= 1; ++it) {
+    int k = it.MonomialPosition();
+
+    WhetStone::Polynomial pp(dim, it.multi_index());
+    pp.set_origin(mesh0->cell_centroid(c));
+
+    WhetStone::Polynomial qq((*vel)[f]);
+    qq *= (1.0 / mesh0->face_area(f));
+    qq.ChangeOrigin(mesh0->cell_centroid(c));
+    pp *= qq;
+
+    u0[k] += dirs[n] * dg.IntegratePolynomialFace(f, pp) / mesh0->cell_volume(c);
+  }
+}
+for (int i = 0; i < dim; ++i) {
+(*cell_vel)[c][i].ChangeOrigin(mesh0->cell_centroid(c));
+(*cell_vel)[c][i](0, 0) = u0[i];
+}
+}
+
       for (int i = 0; i < dim; ++i) {
         (*cell_vel)[c][i] *= -1.0;
       }
@@ -369,7 +394,6 @@ void RemapTestsDual(int dim, int order, std::string disc_name,
       // const AmanziGeometry::Point& xg = maps->cell_geometric_center(1, c);
       const AmanziGeometry::Point& xg = mesh1->cell_centroid(c);
       double tmp = p2c[0][c] - std::sin(3 * xg[0]) * std::sin(6 * xg[1]);
-      tmp = p2c[0][c] - 1.0;
 
       pinf_err = std::max(pinf_err, fabs(tmp));
       pl2_err += tmp * tmp * area_c;
@@ -391,8 +415,7 @@ void RemapTestsDual(int dim, int order, std::string disc_name,
         mesh1->node_get_coordinates(nodes[i], &v1);
 
         double tmp = poly.Value(v0);
-        // tmp -= std::sin(3 * v1[0]) * std::sin(6 * v1[1]);
-        tmp -= 1.0;
+        tmp -= std::sin(3 * v1[0]) * std::sin(6 * v1[1]);
         pinf_err = std::max(pinf_err, fabs(tmp));
         pl2_err += tmp * tmp * area_c / nnodes;
       }
@@ -457,7 +480,7 @@ TEST(REMAP2D_DG0_DUAL_VEM) {
 }
 
 TEST(REMAP2D_DG1_DUAL_VEM) {
-  RemapTestsDual(2, 1, "dg modal", "VEM", 10, 10, 0.1);
+  RemapTestsDual(2, 1, "dg modal", "VEM", 10, 10, 0.05 / 8);
 }
 
 TEST(REMAP3D_DG0_DUAL_VEM) {
