@@ -18,7 +18,6 @@
 #include <vector>
 
 #include "errors.hh"
-#include <algorithm>
 
 namespace Amanzi {
 namespace Utils {
