@@ -19,7 +19,6 @@
 
 #include "errors.hh"
 
-
 namespace Amanzi {
 namespace Utils {
 
