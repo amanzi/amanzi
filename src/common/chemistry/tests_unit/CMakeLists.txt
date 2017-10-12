@@ -37,7 +37,7 @@ add_amanzi_test(chemistry chemistry_tests
 	              test_kinetic_rate.cc
 	              test_beaker.cc	       
                  LINK_LIBS
-                      error_handling atk ${GEOCHEM_LIBS} ${Teuchos_LIBRARIES} ${UnitTest_LIBRARIES})
+                      error_handling atk ${GEOCHEM_LIBS} ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES} ${UnitTest_LIBRARIES})
 #
 # Install targets
 #
