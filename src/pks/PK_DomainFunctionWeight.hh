@@ -142,7 +142,6 @@ void PK_DomainFunctionWeight<FunctionBase>::Compute(double t0, double t1)
           value_[*c][i] -= (*(*uspec)->first->second)(args)[i] * (*weight_)[*c] / weight_volume;
           value_[*c][i] *= dt;
         }
-        //value_[*c] *= dt;
       }
     }
   }

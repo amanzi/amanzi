@@ -47,7 +47,8 @@ class Mesh_MOAB : public Mesh {
             const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm = Teuchos::null,
             const Teuchos::RCP<const VerboseObject>& vo = Teuchos::null,
             const bool request_faces = true,
-            const bool request_edges = false);
+            const bool request_edges = false,
+	    const Partitioner_type partitioner = PARTITIONER_DEFAULT);
 
   // Construct a mesh by extracting a subset of entities from another
   // mesh. In some cases like extracting a surface mesh from a volume

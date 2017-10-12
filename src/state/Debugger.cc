@@ -49,7 +49,7 @@ Debugger::Debugger(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
         vo_plist.sublist("verbose object");
         vo_plist.sublist("verbose object") = plist.sublist("verbose object");
         vo_plist.sublist("verbose object").set("write on rank", mesh->get_comm()->MyPID());
-        dcvo_.push_back(Teuchos::rcp(new VerboseObject(mesh_->get_comm(), name, vo_plist)));
+        dcvo_.push_back(Teuchos::rcp(new VerboseObject(*mesh_->get_comm(), name, vo_plist)));
       }
     }
   }
@@ -76,7 +76,7 @@ Debugger::Debugger(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
           vo_plist.sublist("verbose object");
           vo_plist.sublist("verbose object") = plist.sublist("verbose object");
           vo_plist.sublist("verbose object").set("write on rank", mesh->get_comm()->MyPID());
-          dcvo_.push_back(Teuchos::rcp(new VerboseObject(mesh_->get_comm(), name, vo_plist)));
+          dcvo_.push_back(Teuchos::rcp(new VerboseObject(*mesh_->get_comm(), name, vo_plist)));
         }
       }
     }
@@ -271,6 +271,33 @@ Debugger::WriteVectors(const std::vector<std::string>& names,
         }
         *dcvo_[i]->os() << std::endl;
       }
+    }
+  }
+}
+
+
+// Write boundary condition data.
+void
+Debugger:: WriteBoundaryConditions(const std::vector<int>& flag,
+				   const std::vector<double>& data) {
+  std::stringstream formatstream;
+  formatstream << "%_" << width_ << "." << precision_ << "g";
+  std::string format = formatstream.str();
+
+  for (int i=0; i!=dc_.size(); ++i) {
+    AmanziMesh::Entity_ID c0 = dc_[i];
+    AmanziMesh::Entity_ID c0_gid = dc_gid_[i];
+    Teuchos::OSTab tab = dcvo_[i]->getOSTab();
+
+    if (dcvo_[i]->os_OK(verb_level_)) {
+      *dcvo_[i]->os() << FormatHeader_("BCs", c0_gid);
+      AmanziMesh::Entity_ID_List fnums0;
+      std::vector<int> dirs;
+      mesh_->cell_get_faces_and_dirs(c0, &fnums0, &dirs);
+
+      for (unsigned int n=0; n!=fnums0.size(); ++n)
+	*dcvo_[i]->os() << " " << flag[fnums0[n]] << "(" << Format_(data[fnums0[n]]) << ")";
+      *dcvo_[i]->os() << std::endl;
     }
   }
 }

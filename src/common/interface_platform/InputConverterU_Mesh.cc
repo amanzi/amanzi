@@ -66,6 +66,7 @@ Teuchos::ParameterList InputConverterU::TranslateMesh_()
 
   bool flag, read(false), generate(false);
   std::string framework, verify;
+  std::string partitioner = "NOT_SPECIFIED";
   Errors::Message msg;
   Teuchos::ParameterList mesh_list;
     
@@ -86,6 +87,12 @@ Teuchos::ParameterList InputConverterU::TranslateMesh_()
 
   if (!flag || dim_ <= 0)
       ThrowErrorIllformed_("mesh", "dimension", "dimension");
+
+  // Define the parameter partitioner_
+  node = GetUniqueElementByTagsString_(inode, "partitioner", flag);
+  if (flag) {
+    partitioner = mm.transcode(node->getTextContent());
+  } 
 
   // Now we can properly parse the generate/read list.
   children = inode->getChildNodes();
@@ -195,6 +202,8 @@ Teuchos::ParameterList InputConverterU::TranslateMesh_()
     if (strcmp(verify.c_str(), "true") == 0) {
       tmp_list.set<bool>("verify mesh", (strcmp(verify.c_str(), "true") == 0));
     }
+    if (partitioner != "")
+      tmp_list.set<std::string>("partitioner",partitioner);
   }
 
   if (generate) {

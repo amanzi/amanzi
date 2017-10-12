@@ -90,7 +90,7 @@ BDF1_TI<Vector, VectorSpace>::BDF1_TI(BDFFnBase<Vector>& fn,
   fn_ = Teuchos::rcpFromRef(fn);
 
   // update the verbose options
-  vo_ = Teuchos::rcp(new VerboseObject("TI::BDF1", plist_));
+  vo_ = Teuchos::rcp(new VerboseObject(initvector->Comm(), "TI::BDF1", plist_));
   db_ = Teuchos::rcp(new AmanziSolvers::ResidualDebugger(plist_.sublist("residual debugger")));
 
   // Create the state.

@@ -105,6 +105,7 @@
       </ParameterList>
       <ParameterList name="expert">
         <Parameter name="framework" type="string" value="MSTK"/>
+        <Parameter name="partitioner" type="string" value="NOT_SPECIFIED"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="verbose object">

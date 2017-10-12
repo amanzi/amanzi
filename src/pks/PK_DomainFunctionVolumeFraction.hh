@@ -140,14 +140,14 @@ void PK_DomainFunctionVolumeFraction<FunctionBase>::Compute(double t0, double t1
       for (int i = 0; i != dim; ++i) args[i + 1] = xc[i];
 
       // mspec->first is a RCP<Spec>, Spec's second is an RCP to the function.
-      // value_[c] = (*(*mspec)->first->second)(args)[0] * vofs / domain_volume_;
-      for (int i=0; i<nfun; ++i) val_vec[i] = (*(*mspec)->first->second)(args)[i] * vofs / domain_volume_;
+      for (int i = 0; i < nfun; ++i) {
+        val_vec[i] = (*(*mspec)->first->second)(args)[i] * vofs / domain_volume_;
+      }
       value_[c] = val_vec;
     }
 
     if (submodel_ == "integrated source") {
       double dt = t1 - t0;
-      if (dt > 0.0) dt = 1.0 / dt;
 
       args[0] = t0;
       for (MaterialMesh::const_iterator it = ids->begin(); it != ids->end(); ++it) {
@@ -158,11 +158,10 @@ void PK_DomainFunctionVolumeFraction<FunctionBase>::Compute(double t0, double t1
             mesh_->cell_centroid(c) : mesh_->face_centroid(c);
         for (int i = 0; i != dim; ++i) args[i + 1] = xc[i];
 
-        for (int i=0; i<nfun; ++i) {
+        for (int i = 0; i < nfun; ++i) {
           value_[c][i] -= (*(*mspec)->first->second)(args)[i] * vofs / domain_volume_;
-          value_[c][i] *= dt;
+          if (dt > 0.0) value_[c][i] /= dt;
         }
-        //value_[c] *= dt;
       }
     }
   }

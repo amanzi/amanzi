@@ -99,8 +99,8 @@ double RegionLineSegment::intersect(
       v1 = p0_ + t*(p1_ - p0_);
       double diff_x = 0., diff_y = 0.;
       for (int j=0; j<plane.size(); j++){
-        diff_x += abs(plane[j].x() - v1.x());
-        diff_y += abs(plane[j].y() - v1.y());
+        diff_x += fabs(plane[j].x() - v1.x());
+        diff_y += fabs(plane[j].y() - v1.y());
       }
       if (diff_x < eps){ // projection to plane y-z
         vp[0] = v1[1]; vp[1] = v1[2];
@@ -120,7 +120,7 @@ double RegionLineSegment::intersect(
       intersct = point_in_polygon(vp, plane);
 
       if (intersct){
-        if (std::abs(t) < eps) t = 0;
+        if (std::fabs(t) < eps) t = 0;
         //std::cout << "intersection "<<v1<<" *** "<<t<<"\n";
         tau[num_line_int] = t;
         num_line_int++;
@@ -198,8 +198,8 @@ void RegionLineSegment::ComputeInterLinePoints(const std::vector<Point>& polytop
       v1 = p0_ + t*(p1_ - p0_);
       double diff_x = 0., diff_y = 0.;
       for (int j=0; j<plane.size(); j++){
-        diff_x += abs(plane[j].x() - v1.x());
-        diff_y += abs(plane[j].y() - v1.y());
+        diff_x += fabs(plane[j].x() - v1.x());
+        diff_y += fabs(plane[j].y() - v1.y());
       }
       if (diff_x < eps){ // projection to plane y-z
         vp[0] = v1[1]; vp[1] = v1[2];
@@ -219,7 +219,7 @@ void RegionLineSegment::ComputeInterLinePoints(const std::vector<Point>& polytop
       intersct = point_in_polygon(vp, plane);
 
       if (intersct){
-        if (std::abs(t) < eps) t = 0;
+        if (std::fabs(t) < eps) t = 0;
         tau[num_line_int] = t;
         num_line_int++;
         if ((t>=0)&&(t<=1)){
@@ -303,7 +303,7 @@ double PlaneLineIntersection(const std::vector<Point>& plane,
   //   for (int j=0;j<4;j++) std::cout<<smatr2[i + j*3]<<" ";std::cout<<"\n";
   // }
 
-  if (abs(t2) < 1e-10){
+  if (fabs(t2) < 1e-10){
     return nan("");
   }
 
