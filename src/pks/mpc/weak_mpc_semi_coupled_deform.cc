@@ -72,6 +72,7 @@ WeakMPCSemiCoupledDeform::WeakMPCSemiCoupledDeform(Teuchos::ParameterList& pk_tr
     Teuchos::RCP<PK> pk = pk_factory.CreatePK(subpks[i], pk_tree, global_list_, S, pk_soln);
     sub_pks_.push_back(pk);
 
+ 
     //check IC
     Teuchos::Array<std::string> pkorder1 = global_list_->sublist("PKs").sublist(subpks[i]).get<Teuchos::Array<std::string> >("PKs order");
     Teuchos::Array<std::string> pkorder2 = global_list_->sublist("PKs").sublist(pkorder1[1]).get<Teuchos::Array<std::string> >("PKs order");
@@ -79,7 +80,7 @@ WeakMPCSemiCoupledDeform::WeakMPCSemiCoupledDeform(Teuchos::ParameterList& pk_tr
       
       Teuchos::ParameterList& sub_list = global_list_->sublist("PKs").sublist(pkorder1[0]).sublist("initial condition");
       if (sub_list.isParameter("restart files, cycles")){
-	std::cout<<"WEAK MPC: "<<sub_list <<"\n";
+
 	Teuchos::Array<std::string> restart = sub_list.get<Teuchos::Array<std::string> >("restart files, cycles");
 	  
 	std::stringstream res_file;
@@ -184,7 +185,7 @@ void
 WeakMPCSemiCoupledDeform::Setup(const Teuchos::Ptr<State>& S) {
   S->AliasMesh("surface", "surface_star");
   MPC<PK>::Setup(S);
-  
+
   coupling_key_ = plist_->get<std::string>("coupling key"," ");
   subcycle_key_ = plist_->get<bool>("subcycle",false);
 
@@ -250,6 +251,8 @@ WeakMPCSemiCoupledDeform::CoupledSurfSubsurfColumns(double t_old, double t_new, 
     pk_sfstar->ChangedSolution();
   }
 
+  Teuchos::OSTab tab = vo_->getOSTab();
+
   fail = sub_pks_[0]->AdvanceStep(t_old, t_new, reinit);
   int nfailed_surf = 0;
   if (fail)
@@ -258,8 +261,13 @@ WeakMPCSemiCoupledDeform::CoupledSurfSubsurfColumns(double t_old, double t_new, 
   int nfailed_local_sf = nfailed_surf;
   S_->GetMesh("surface")->get_comm()->SumAll(&nfailed_local_sf, &nfailed_surf, 1);
 
+  if (vo_->os_OK(Teuchos::VERB_HIGH))
+    *vo_->os() << "surface_star system failed: "<< ((nfailed_surf >0) ? 1 : 0) << std::endl;
 
+ 
+  
   if(nfailed_surf > 0){
+    std::cout<<"surface_star system failed: "<< ((nfailed_surf >0) ? 1 : 0) << std::endl;  
     flag_star_surf=1;
     return true;
   }
@@ -350,6 +358,10 @@ WeakMPCSemiCoupledDeform::CoupledSurfSubsurfColumns(double t_old, double t_new, 
     pk_domain->ChangedSolutionPK(S_inter_.ptr()); 
   }
 
+
+  int rank;
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+
   int nfailed = 0;
   int count=0;
   double t0 = S_inter_->time();
@@ -357,11 +369,21 @@ WeakMPCSemiCoupledDeform::CoupledSurfSubsurfColumns(double t_old, double t_new, 
 
   auto sub_pk = sub_pks_.begin();
   ++sub_pk;
+  int c = 0;
   for (auto pk = sub_pk; pk!=sub_pks_.end(); ++pk){
+
+    std::stringstream name_ss;
+    int id = S_->GetMesh("surface")->cell_map(false).GID(c);
+    name_ss << "column_" << id;
 
     if(!subcycle_key_){  
       bool c_fail = (*pk)->AdvanceStep(t_old, t_new, reinit);
+      if (vo_->os_OK(Teuchos::VERB_HIGH))
+	*vo_->os() << name_ss.str() << "failed? "<< ((c_fail) ? 1 : 0) <<" rank: "<<rank<<std::endl ;
+      if (c_fail)
+	std::cout<<"-------- "<< name_ss.str() << " failed, rank "<<rank<<std::endl ;
       if (c_fail) nfailed++;
+      c++;
     }
     else
       {
