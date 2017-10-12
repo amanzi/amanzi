@@ -36,7 +36,7 @@ class ParameterList(base.TeuchosBaseXML):
 
     def __init__(self, name):
         """Initialize ParameterList with name"""
-        super(ParameterList, self).__init__('ParameterList',{'name': str(name)})
+        super(ParameterList, self).__init__('ParameterList',{'name': str(name), 'type': self._type})
 
     @classmethod
     def from_Element(cls, elem, validation=None):
@@ -45,7 +45,6 @@ class ParameterList(base.TeuchosBaseXML):
         this = super(ParameterList,cls).__new__(cls)
         # init the class with tag
         super(ParameterList,this).__init__('ParameterList')
-        this.set("type", cls._type)
 
         # pull in all named items from the Element
         for el in elem.items():
@@ -193,6 +192,8 @@ class ParameterList(base.TeuchosBaseXML):
     def pop(self, name):
         return self.getchildren().pop(self.getchildren().index(self.getElement(name)))
 
+    def setName(self, name):
+        self.set("name", name)
     
 # register
 parser.objects['ParameterList'] = ParameterList

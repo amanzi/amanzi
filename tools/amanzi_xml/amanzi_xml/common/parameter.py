@@ -108,6 +108,10 @@ class Parameter(base.TeuchosBaseXML):
         self.text = ""
         self.tail = "\n" + " "*ntabs*base._tabsize
 
+    def setName(self, name):
+        """Set the name.  Maintained for interface consistency"""
+        self.set('name', name)
+        
     def setType(self, ptype):
         """Set the type.  This invalidates any current value!"""
         if ptype in _valid_parameter_types:
