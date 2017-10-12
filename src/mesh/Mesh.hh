@@ -283,7 +283,10 @@ class Mesh {
   void cell_get_nodes(const Entity_ID cellid,
                       Entity_ID_List *nodeids) const = 0;
 
-  // Get edges of a face and directions in which the face uses the edges
+  // Get edges of a face and directions in which the face uses the edges.
+  //
+  // In 3D, edge direction is 1 when it is oriented counter clockwise
+  // with respect to the face natural normal.
   //
   // On a distributed mesh, this will return all the edges of the
   // face, OWNED or GHOST. If ordered = true, the edges will be
@@ -527,13 +530,13 @@ class Mesh {
 
   // Edge vector
   //
-  // Not normalized (or normalized and weighted by length of the edge)
+  // Vector length equals to edge length.
   //
   // If recompute is TRUE, then the vector is recalculated using current
   // edge coordinates but not stored. (If the recomputed vector must be
   // stored, then call recompute_geometric_quantities).
   //
-  // If pointid is specified, the vector is the natural direction of
+  // If pointid is not specified, the vector is the natural direction of
   // the edge (from point0 to point1).  On the other hand, if pointid
   // is specified (has to be a point of the face), the vector is from
   // specified point to opposite point of edge.
@@ -565,10 +568,27 @@ class Mesh {
   void node_set_coordinates(const Entity_ID nodeid,
                             const double *ncoord) = 0;
 
-  // Deform the mesh by moving given nodes to given coordinates
-  // If the flag keep_valid is true, then the nodes are moved
-  // only as much as possible without making the mesh invalid
-  // The final positions of the nodes is returned in final_positions
+  // Just move the mesh.  Returns 0 if negative cell volumes generated, 1
+  // otherwise.
+  //
+  // This is a rudimentary capability that requires ghosts nodes
+  // also to be deformed. Amanzi does not have any built-in parallel 
+  // communication capabilities, other than Trilinos Epetra object
+  // communication or raw MPI. 
+  virtual
+  int deform(const Entity_ID_List& nodeids,
+             const AmanziGeometry::Point_List& new_positions);
+  
+  // Deform the mesh by moving given nodes to given coordinates, one at a
+  // time, ensuring validity at all points through the deformation, which is a
+  // really bad idea for deformations that move large numbers of nodes more
+  // than epsilon.  Really.  Just don't use this routine, it almost definitely
+  // isn't what you want.
+  //
+  // Deform the mesh by moving given nodes to given coordinates.  If the flag
+  // keep_valid is true, then the nodes are moved only as much as possible
+  // without making the mesh invalid.  The final positions of the nodes is
+  // returned in final_positions
   //
   // This is a rudimentary capability that requires ghosts nodes
   // also to be deformed. Amanzi does not have any built-in parallel 
