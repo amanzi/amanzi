@@ -683,7 +683,7 @@ namespace BGC {
   double radi = met.qSWin;
   for (std::vector<Teuchos::RCP<PFT> >::iterator pft_iter=pftarr.begin();
        pft_iter!=pftarr.end(); ++pft_iter) {
-    std::cout << "wtf: (" << (*pft_iter)->pft_type << ") " << (*pft_iter)->LER << ", " << (*pft_iter)->lai << ", " << radi << std::endl;
+    //    std::cout << "wtf: (" << (*pft_iter)->pft_type << ") " << (*pft_iter)->LER << ", " << (*pft_iter)->lai << ", " << radi << std::endl;
     radi *= std::exp(-(*pft_iter)->LER * (*pft_iter)->lai);
    }
   sw_shaded = radi;

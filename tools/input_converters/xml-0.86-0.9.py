@@ -24,7 +24,7 @@ def fixEvaluator(xml, name, newname):
     except aerrors.MissingXMLError:
         pass
     else:
-        pd.set("name", newname)
+        pd.setName(newname)
     
 
 def compressibility(xml):
@@ -104,10 +104,12 @@ def seepage_face_bcs(xml):
 
 def primary_variable(xml):
     for pv in asearch.generateElementByNamePath(xml, "primary variable"):
-        pv.name = "primary variable key"
+        pv.setName("primary variable key")
     for pv in asearch.generateElementByNamePath(xml, "primary variable key"):
         if pv.value == "ponded_depth":
             pv.setValue("surface-ponded_depth")
+        if pv.value == "snow_depth":
+            pv.setValue("surface-snow_depth")
             
 def mesh_list(xml):
     try:
@@ -126,11 +128,11 @@ def mesh_list(xml):
     to_pop = []
     for el in mesh:
         if el.get("name") == "surface mesh":
-            el.set("name", "surface")
+            el.setName("surface")
         elif el.get("name") == "column meshes":
-            el.set("name", "column")
+            el.setName("column")
         elif el.get("name") == "column surface meshes":
-            el.set("name", "column surface")
+            el.setName("column surface")
         elif el.get("name") in ["surface", "column", "column surface", "domain", "subgrid"]:
             pass
         elif el.get("name") in ["framework"]:
@@ -161,13 +163,17 @@ def mesh_list(xml):
                    "aliased", "surface", "column", "column surface", "subgrid"]    
     for el in mesh:
         if not el.isElement("mesh type"):
-            assert(el.get("type") == "ParameterList")
+            if (el.get("type") != "ParameterList"):
+                print "I don't know what to do with: "
+                print str(el)
+                print el.get("type")
+                assert(el.get("type") == "ParameterList")
             found = False
             for valid_type in valid_types:
                 if el.isElement(valid_type):
                     print "setting type: ", valid_type
                     el.setParameter("mesh type", "string", valid_type)
-                    asearch.childByName(el, valid_type).set("name", valid_type+" parameters")
+                    asearch.childByName(el, valid_type).setName(valid_type+" parameters")
                     found = True
                     continue
             assert(found)
@@ -178,18 +184,18 @@ def mesh_list(xml):
 def vis(xml):
     if xml.isElement("visualization") and not asearch.childByName(xml, "visualization").isElement("domain"):
         vis_domain = xml.pop("visualization")
-        vis_domain.set("name", "domain")
+        vis_domain.setName("domain")
     
         vis_list = xml.sublist("visualization")
         vis_list.append(vis_domain)
         if xml.isElement("visualization surface"):
             vis_surf = xml.pop("visualization surface")
-            vis_surf.set("name", "surface")
+            vis_surf.setName("surface")
             vis_list.append(vis_surf)
 
         if xml.isElement("visualization columns"):
             vis_col = xml.pop("visualization columns")
-            vis_col.set("name", "column_*")
+            vis_col.setName("column_*")
             vis_list.append(vis_col)
 
 def update(xml):
@@ -199,6 +205,13 @@ def update(xml):
     fixEvaluator(xml, "manning_coefficient", "surface-manning_coefficient")
     fixEvaluator(xml, "unfrozen_fraction", "surface-unfrozen_fraction")
     fixEvaluator(xml, "unfrozen_effective_depth", "surface-unfrozen_effective_depth")
+    fixEvaluator(xml, "incoming_shortwave_radiation", "surface-incoming_shortwave_radiation")
+    fixEvaluator(xml, "precipitation_snow", "surface-precipitation_snow")
+    fixEvaluator(xml, "precipitation_rain", "surface-precipitation_rain")
+    fixEvaluator(xml, "relative_humidity", "surface-relative_humidity")
+    fixEvaluator(xml, "wind_speed", "surface-wind_speed")
+    fixEvaluator(xml, "incoming_longwave_radiation", "surface-incoming_longwave_radiation")
+    fixEvaluator(xml, "air_temperature", "surface-air_temperature")
     compressibility(xml)
     diffusion(xml)
     water_energy(xml)

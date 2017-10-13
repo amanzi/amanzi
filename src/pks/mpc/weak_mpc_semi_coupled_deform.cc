@@ -330,7 +330,6 @@ WeakMPCSemiCoupledDeform::CoupledSurfSubsurfColumns(double t_old, double t_new, 
   }
   
   //copying temperatures
-  
   for (unsigned c=0; c<size_t; c++){
     std::stringstream name, name_ss;
     int id = S_->GetMesh("surface")->cell_map(false).GID(c);
@@ -349,6 +348,7 @@ WeakMPCSemiCoupledDeform::CoupledSurfSubsurfColumns(double t_old, double t_new, 
 			    S_inter_->GetFieldData(Keys::getKey(name_ss.str(),"temperature"), 
 						   S_inter_->GetField(Keys::getKey(name_ss.str(),"temperature"))->owner()).ptr());
   } 
+
   // NOTE: later do it in the setup --aj
   
   for(int i=1; i<numPKs_; i++){
