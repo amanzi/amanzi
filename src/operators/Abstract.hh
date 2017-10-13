@@ -21,6 +21,7 @@
 // Amanzi
 #include "Polynomial.hh"
 #include "Tensor.hh"
+#include "VectorPolynomial.hh"
 #include "WhetStone_typedefs.hh"
 
 // Operators
