@@ -78,6 +78,11 @@ class MPCSubsurface : public StrongMPC<PK_PhysicalBDF_Default> {
   //                      Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> du);
 
   Teuchos::RCP<Operators::TreeOperator> preconditioner() { return preconditioner_; }
+
+  void ComputeDivCorrection( const Teuchos::RCP<const CompositeVector>& flux,
+                             const Teuchos::RCP<const CompositeVector>& k,
+                             const Teuchos::RCP<const CompositeVector>& dk,
+                             const Teuchos::RCP<Epetra_MultiVector>& res);
   
  protected:
 
@@ -145,6 +150,7 @@ class MPCSubsurface : public StrongMPC<PK_PhysicalBDF_Default> {
   Key mass_flux_key_;
   Key mass_flux_dir_key_;
   Key rho_key_;
+  Key ddivq_dT_key_, ddivKgT_dp_key_;
 
   bool is_fv_;
   
