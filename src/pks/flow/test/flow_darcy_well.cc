@@ -97,7 +97,7 @@ void RunTestMarshak(std::string controller) {
       K[1][c] = 2.0 + std::cos(xc[1]) * 0.4;
     }
     S->GetField("permeability", "flow")->set_initialized();
-  }else{
+  } else{
     for (int c = 0; c < K.MyLength(); c++) {
       const AmanziGeometry::Point xc = mesh->cell_centroid(c);
       diff_in_perm += abs(K[0][c] - (0.1 + std::sin(xc[0]) * 0.02)) + 
@@ -268,9 +268,10 @@ void Run_3D_DarcyWell(std::string controller) {
 //    Run_3D_DarcyWell("test/flow_darcy_well_3D.xml");
 // }
 
+
 TEST(FLOW_3D_DARCY_PEACEMAN_WELL) {
-  //  Run_3D_DarcyWell("test/flow_darcy_well_peaceman_3D.xml");
-    using namespace Teuchos;
+  // Run_3D_DarcyWell("test/flow_darcy_well_peaceman_3D.xml");
+  using namespace Teuchos;
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::AmanziGeometry;
@@ -392,8 +393,6 @@ TEST(FLOW_3D_DARCY_PEACEMAN_WELL) {
   //   std::cout<<r<<" "<<p_ex<<" "<<Q/(2*M_PI*k*h)<<" "<<log(rw)<<"\n";
   // }
 
-
-
   err = sqrt(err);
   sol = sqrt(sol);
   err = err/sol;
@@ -402,7 +401,6 @@ TEST(FLOW_3D_DARCY_PEACEMAN_WELL) {
   CHECK(err < 0.02);
 
   if (MyPID == 0) {
-
     GMV::open_data_file(*mesh, filename);
     GMV::start_data();
     GMV::write_cell_data(p, 0, "pressure");
@@ -414,9 +412,5 @@ TEST(FLOW_3D_DARCY_PEACEMAN_WELL) {
     }
     GMV::close_data_file();
   }
-  
-
-
-  
-
 }
+

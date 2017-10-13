@@ -69,8 +69,7 @@ class PK_DomainFunctionSimpleWell : public FunctionBase,
 * Initialization adds a single function to the list of unique specs.
 ****************************************************************** */
 template <class FunctionBase>
-void PK_DomainFunctionSimpleWell<FunctionBase>::Init(
-                                                     const Teuchos::ParameterList& plist,
+void PK_DomainFunctionSimpleWell<FunctionBase>::Init(const Teuchos::ParameterList& plist,
                                                      const std::string& keyword,
                                                      const Teuchos::RCP<const State>& S)
 {
@@ -82,7 +81,7 @@ void PK_DomainFunctionSimpleWell<FunctionBase>::Init(
   if (well_list.isParameter("submodel"))
     submodel_ = well_list.get<std::string>("submodel");
 
-  //well_index_key_ = plist.get<std::string>("well_index_key", "well_index");
+  // well_index_key_ = plist.get<std::string>("well_index_key", "well_index");
   well_index_key_ = "well_index";
   
   std::vector<std::string> regions = plist.get<Teuchos::Array<std::string> >("regions").toVector();
@@ -112,7 +111,6 @@ void PK_DomainFunctionSimpleWell<FunctionBase>::Init(
   // Add this source specification to the domain function.
   domain_ = Teuchos::rcp(new Domain(regions, kind_));
   AddSpec(Teuchos::rcp(new Spec(domain_, f)));
-
 }
 
 
@@ -128,8 +126,7 @@ void PK_DomainFunctionSimpleWell<FunctionBase>::Compute(double t0, double t1)
 
   int nowned = mesh_->num_entities(kind_, AmanziMesh::OWNED);
 
-  if (submodel_ == "rate"){
-  
+  if (submodel_ == "rate") {
     for (auto uspec = unique_specs_.at(kind_)->begin(); uspec != unique_specs_.at(kind_)->end(); ++uspec) {
       Teuchos::RCP<MeshIDs> ids = (*uspec)->second;
 
@@ -137,7 +134,7 @@ void PK_DomainFunctionSimpleWell<FunctionBase>::Compute(double t0, double t1)
       domain_volume_ = 0.0;
       for (MeshIDs::const_iterator c = ids->begin(); c != ids->end(); ++c) {
         if (*c < nowned) domain_volume_ += 
-                           (kind_ == AmanziMesh::CELL) ? mesh_->cell_volume(*c) : mesh_->face_area(*c);
+            (kind_ == AmanziMesh::CELL) ? mesh_->cell_volume(*c) : mesh_->face_area(*c);
       }
       double tmp(domain_volume_);
       mesh_->get_comm()->SumAll(&tmp, &domain_volume_, 1);
@@ -147,18 +144,17 @@ void PK_DomainFunctionSimpleWell<FunctionBase>::Compute(double t0, double t1)
       args[0] = t1;
       for (MeshIDs::const_iterator c = ids->begin(); c != ids->end(); ++c) {
         const AmanziGeometry::Point& xc = (kind_ == AmanziMesh::CELL) ?
-          mesh_->cell_centroid(*c) : mesh_->face_centroid(*c);
+            mesh_->cell_centroid(*c) : mesh_->face_centroid(*c);
 
         for (int i = 0; i != dim; ++i) args[i + 1] = xc[i];
 
         // uspec->first is a RCP<Spec>, Spec's second is an RCP to the function.
-        //value_[*c] = (*(*uspec)->first->second)(args)[0] / domain_volume_;
-        for (int i=0; i<nfun; ++i) val_vec[i] = (*(*uspec)->first->second)(args)[i] / domain_volume_;
+        for (int i = 0; i < nfun; ++i) val_vec[i] = (*(*uspec)->first->second)(args)[i] / domain_volume_;
         value_[*c] = val_vec;
       }
     }  
-  } else if (submodel_ == "bhp"){
 
+  } else if (submodel_ == "bhp") {
     double dim = mesh_->space_dimension();
     double g = fabs(gravity_[dim - 1]);
     const Epetra_MultiVector& wi = *S_->GetFieldData("well_index")->ViewComponent("cell");
@@ -176,17 +172,15 @@ void PK_DomainFunctionSimpleWell<FunctionBase>::Compute(double t0, double t1)
         for (int i = 0; i != dim; ++i) args[i + 1] = xc[i];
 
         double bhp;
-        for (int i=0; i<nfun; ++i){
+        for (int i = 0; i < nfun; ++i){
           bhp = (*(*uspec)->first->second)(args)[i] + rho_*g*(depth_ - xc[dim-1]);          
           val_vec[i] = bhp * wi[0][*c] / mesh_->cell_volume(*c);
         }
         value_[*c] = val_vec;
       }
     }
-    
   }
 }
-
 
 }  // namespace Amanzi
 

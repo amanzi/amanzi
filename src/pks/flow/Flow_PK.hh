@@ -170,7 +170,6 @@ class Flow_PK : public PK_PhysicalBDF {
   Teuchos::RCP<Teuchos::ParameterList> fp_list_;
 
  private:
-
   std::vector<int> bc_model_; 
   std::vector<double> bc_value_, bc_mixed_;
 };

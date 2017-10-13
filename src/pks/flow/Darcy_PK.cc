@@ -425,7 +425,7 @@ bool Darcy_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   op_acc_->AddAccumulationTerm(*solution, ss_g, dt_, "cell");
   op_acc_->AddAccumulationTerm(*solution, sy_g, "cell");
 
-  //if (peaceman_model_){
+  // Peaceman model
   if (S_->HasField("well_index")){
     const Epetra_MultiVector& wi = *S_->GetFieldData("well_index")->ViewComponent("cell");
     op_acc_->AddAccumulationTerm(wi);
