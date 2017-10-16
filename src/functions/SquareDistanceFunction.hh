@@ -16,7 +16,7 @@ A distance function calculates distance from reference point :math:`x_0`
 using by the following expression:
 
 .. math::
-  f(x) = \sqrt( \sum_{j=0}^{n} m_j (x_j - x_{0,j})^2 )
+  f(x) = \sum_{j=0}^{n} m_j (x_j - x_{0,j})^2
 
 Note that the first parameter in :math:`x` can be time.
 Here is an example of a distance function using isotropic metric:
@@ -24,15 +24,15 @@ Here is an example of a distance function using isotropic metric:
 Example:
 .. code-block:: xml
 
-  <ParameterList name="function-distance">
+  <ParameterList name="function-squaredistance">
     <Parameter name="x0" type="Array(double)" value="{1.0, 3.0, 0.0}"/>
     <Parameter name="metric" type="Array(double)" value="{1.0, 1.0, 1.0}"/>
   </ParameterList>
 
 */
   
-#ifndef AMANZI_DISTANCE_FUNCTION_HH_
-#define AMANZI_DISTANCE_FUNCTION_HH_
+#ifndef AMANZI_SQUAREDISTANCE_FUNCTION_HH_
+#define AMANZI_SQUAREDISTANCE_FUNCTION_HH_
 
 #include <vector>
 
@@ -40,11 +40,11 @@ Example:
 
 namespace Amanzi {
 
-class DistanceFunction : public Function {
+class SquareDistanceFunction : public Function {
  public:
-  DistanceFunction(const std::vector<double>& x0, const std::vector<double>& metric);
-  ~DistanceFunction() {}
-  DistanceFunction* Clone() const { return new DistanceFunction(*this); }
+  SquareDistanceFunction(const std::vector<double>& x0, const std::vector<double>& metric);
+  ~SquareDistanceFunction() {}
+  SquareDistanceFunction* Clone() const { return new SquareDistanceFunction(*this); }
   double operator()(const std::vector<double>& x) const;
 
  private:

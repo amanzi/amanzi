@@ -9,6 +9,7 @@
 #include "CompositionFunction.hh"
 #include "ConstantFunction.hh"
 #include "DistanceFunction.hh"
+#include "SquareDistanceFunction.hh"
 #include "FunctionFactory.hh"
 #include "LinearFunction.hh"
 #include "MonomialFunction.hh"
@@ -65,6 +66,8 @@ Function* FunctionFactory::Create(Teuchos::ParameterList& list) const
         f = create_bilinear(function_params);
       else if (function_type == "function-distance")
         f = create_distance(function_params);
+      else if (function_type == "function-squaredistance")
+        f = create_squaredistance(function_params);
       else {  // I don't recognize this function type
         if (f) delete f;
         Errors::Message m;
@@ -558,6 +561,26 @@ Function* FunctionFactory::create_distance(Teuchos::ParameterList& params) const
   catch (Errors::Message& msg) {
     Errors::Message m;
     m << "FunctionFactory: function-distance parameter error: " << msg.what();
+    Exceptions::amanzi_throw(m);
+  }
+  return f;
+}
+
+Function* FunctionFactory::create_squaredistance(Teuchos::ParameterList& params) const
+{
+  Function *f;
+  try {
+    std::vector<double> x0(params.get<Teuchos::Array<double> >("x0").toVector());
+    std::vector<double> metric(params.get<Teuchos::Array<double> >("metric").toVector());
+    f = new SquareDistanceFunction(x0, metric);
+  } catch (Teuchos::Exceptions::InvalidParameter& msg) {
+    Errors::Message m;
+    m << "FunctionFactory: function-squaredistance parameter error: " << msg.what();
+    Exceptions::amanzi_throw(m);
+  }
+  catch (Errors::Message& msg) {
+    Errors::Message m;
+    m << "FunctionFactory: function-squaredistance parameter error: " << msg.what();
     Exceptions::amanzi_throw(m);
   }
   return f;
