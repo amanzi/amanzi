@@ -29,7 +29,7 @@ DistanceFunction::DistanceFunction(const std::vector<double>& x0, const std::vec
 
 double DistanceFunction::operator()(const std::vector<double>& x) const
 {
-  double tmp(0.), y(0.0);
+  double tmp(0.0), y(0.0);
   if (x.size() < x0_.size()) {
     Errors::Message m;
     m << "DistanceFunction expects higher-dimensional argument.";
