@@ -23,6 +23,9 @@
 #include "InputConverterS.hh"
 
 
+void* getLevelBld() { return NULL; }
+
+
 /* **************************************************************** */
 TEST(CONVERTER_S) {
   using namespace Amanzi;

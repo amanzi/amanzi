@@ -109,9 +109,9 @@ if (BUILD_TESTS AND ENABLE_Unstructured)
                     KIND int
                     SOURCE test/Main.cc test/chemistry_amanzi_pk.cc
                     LINK_LIBS chemistry_pk state pks data_structures
-                              mesh_functions mesh mesh_factory error_handling 
-                              interface
-                              ${UnitTest_LIBRARIES} ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES})
+                              mesh_functions mesh mesh_factory error_handling interface
+                              ${UnitTest_LIBRARIES} ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES}
+                              ${XERCES_LIBRARIES} ${XERCES_ICU_LIBRARIES} ${NOX_LIBRARIES})
 
     # The following test is disabled in parallel environments. It has to be rewritten in order 
     # to function properly there.
@@ -120,6 +120,7 @@ if (BUILD_TESTS AND ENABLE_Unstructured)
                     SOURCE test/chemistry_benchmarks_1d.cc
                     LINK_LIBS chemistry_pk state pks data_structures
                               mesh_functions mesh mesh_factory error_handling interface
-                              ${UnitTest_LIBRARIES} 
-                              ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES} ${HDF5_LIBRARIES})
+                              ${UnitTest_LIBRARIES} ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES}
+                              ${HDF5_LIBRARIES} ${XERCESC_LIBRARIES} ${XERCES_ICU_LIBRARIES}
+                              ${NOX_LIBRARIES})
 endif()

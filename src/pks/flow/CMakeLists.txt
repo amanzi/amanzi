@@ -132,15 +132,15 @@ set(flow_src_files Flow_PK.cc
                    MultiscaleFlowPorosityFactory.cc MultiscaleFlowPorosityPartition.cc
                    MultiscaleFlowPorosity_DPM.cc
                    )
-set(flow_tpl_libs ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES})
-if ( Ifpack_ENABLE_HYPRE )
+set(flow_tpl_libs ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES} ${Boost_LIBRARIES} ${SEACAS_LIBRARIES})
+if (Ifpack_ENABLE_HYPRE)
   list(APPEND flow_tpl_libs ${Ifpack_LIBRARIES})
 endif()
 list(REVERSE flow_tpl_libs)
 list(REMOVE_DUPLICATES flow_tpl_libs)
 list(REVERSE flow_tpl_libs)
 add_amanzi_library(flow SOURCE ${flow_src_files}
-                   LINK_LIBS functions mesh_functions ${flow_tpl_libs} time_integration data_structures state)
+                   LINK_LIBS functions mesh_functions state ${flow_tpl_libs} time_integration data_structures)
 
 #
 # Install Targets

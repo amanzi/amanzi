@@ -38,33 +38,38 @@ build_whitespace_string(hypre_cppflags ${cpp_flags_list})
 #if ( ENABLE_OpenMP )
 # find_package(OpenMP)
 
- set(hypre_openmp_opt)
+set(hypre_openmp_opt)
 # if ( OPENMP_FOUND )
 #   set(hypre_openmp_opt --with-openmp)
 # endif()
 #else()
- set(hypre_openmp_opt --without-openmp)
+set(hypre_openmp_opt --without-openmp)
 #endif()
 
 # Locate LAPACK and BLAS
 
 set(hypre_blas_opt)
 find_package(BLAS)
-if ( BLAS_FOUND )
+if (BLAS_FOUND)
   set(hypre_blas_opt --with-blas)
 endif()
 
 set(hypre_lapack_opt)
 find_package(LAPACK)
-if ( LAPACK_FOUND )
+if (LAPACK_FOUND)
   set(hypre_lapack_opt --with-lapack)
 endif()
 
 set(hypre_fortran_opt --disable-fortran)
 
+# temporary work around for shared libraries. 
 set(hyper_superlu_opt)
 if (ENABLE_PETSC)
-  set(hypre_superlu_opt --without-superlu)
+  if (${BUILD_SHARED_LIBS}) 
+    set(hypre_superlu_opt --with-superlu)
+  else()
+    set(hypre_superlu_opt --without-superlu)
+  endif()
 endif()
 
 # shared/static libraries

@@ -1,12 +1,3 @@
-/*
-
-
-
-
- */
-
-
-
 #include <cstdlib>
 #include <cmath>
 #include <iostream>
@@ -20,6 +11,7 @@
 #include "UnitTest++.h"
 
 // Amanzi
+#include "eos_registration.hh"
 #include "GMVMesh.hh"
 #include "MeshFactory.hh"
 #include "MeshAudit.hh"

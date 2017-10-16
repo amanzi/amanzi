@@ -10,6 +10,8 @@ project(SUTILS)
 
 include_directories(${SUTILS_SOURCE_DIR})
 
+# we need to close all DSO objects
+include_directories(${ATK_SOURCE_DIR})
 
 if (AMANZI_CHEMEVOL_PKG STREQUAL "AMANZI")
   include_directories(${CHEM_SOURCE_DIR}/includes)
@@ -57,22 +59,28 @@ add_library(sutils OBJECT ${FPP_out_files}
 add_dependencies(sutils samr)
 
 if (BUILD_TESTS)
-
   include_directories(${CCSE_INCLUDE_DIRS})
   link_directories(${CCSE_LIBRARY_DIR})
 
-  set(structured_grid_libs structured_amanzi ${CCSE_LIBRARIES} ${PETSC_LIBRARIES})
+  set(structured_grid_libs structured_amanzi geochemistry
+                           interface interface_ext atk error_handling)
   if(CMAKE_Fortran_COMPILER_ID STREQUAL GNU) 
     if (${CMAKE_SYSTEM_NAME} STREQUAL Linux)
       list(APPEND structured_grid_libs gfortran)
     endif()
   endif()
 
-  set(tpl_libs ${Teuchos_LIBRARIES})
+  set(tpl_libs ${Teuchos_LIBRARIES} ${Boost_LIBRARIES} 
+               ${XERCES_LIBRARIES} ${XERCES_ICU_LIBRARIES}
+               ${CCSE_LIBRARIES} ${PETSC_LIBRARIES})
+
+  if (BUILD_SHARED_LIBS)
+    set(closing_dso ../shared_dso.f90)
+  endif()
 
   add_amanzi_test(tPPH tPPH
                   KIND unit
-                  SOURCE tParmParseHelpers.cpp
+                  SOURCE tParmParseHelpers.cpp ${closing_dso}
                   LINK_LIBS ${structured_grid_libs} ${tpl_libs})
 
   if (NOT (CMAKE_SOURCE_DIR EQUAL CMAKE_BINARY_DIR))
@@ -82,7 +90,7 @@ if (BUILD_TESTS)
 
   add_amanzi_test(tEC tEC
                   KIND unit
-                  SOURCE tEventCoord.cpp
+                  SOURCE tEventCoord.cpp ${closing_dso}
                   LINK_LIBS ${structured_grid_libs} ${tpl_libs})
 
 endif()

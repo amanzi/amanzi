@@ -72,18 +72,20 @@ if (BUILD_TESTS)
   add_amanzi_test(boundary_function boundary_function
                   KIND unit
                   SOURCE test/boundary_function.cc
-                  LINK_LIBS mesh_functions mesh_factory ${UnitTest_LIBRARIES})
+                  LINK_LIBS mesh_functions mesh_factory data_structures
+                            ${UnitTest_LIBRARIES} ${NOX_LIBRARIES})
 
   add_amanzi_test(material_function material_function
                   KIND unit
                   SOURCE test/material_function.cc
-                  LINK_LIBS mesh_functions mesh_factory ${UnitTest_LIBRARIES})
+                  LINK_LIBS mesh_functions mesh_factory data_structures
+                            ${UnitTest_LIBRARIES} ${NOX_LIBRARIES})
 
   add_amanzi_test(cv_function cv_function
                   KIND unit
                   SOURCE test/composite_vector_function.cc
                   LINK_LIBS  mesh_functions mesh_factory data_structures 
                              ${UnitTest_LIBRARIES} ${Boost_LIBRARIES} 
-                             ${MSTK_LIBRARIES})
+                             ${MSTK_LIBRARIES} ${NOX_LIBRARIES})
 
 endif()

@@ -106,7 +106,7 @@ else()
 endif()
 
 get_property(GEOCHEM_LIBS GLOBAL PROPERTY GEOCHEM_LIBS)
-set(ssc_common_libs error_handling ${GEOCHEM_LIBS} interface atk)
+set(ssc_common_libs error_handling ${GEOCHEM_LIBS} interface interface_ext atk)
 
 set(ssc_libs ${ssc_structured_grid_libs}
              ${ssc_unstructured_grid_libs}
@@ -120,6 +120,9 @@ set(ssc_tpl_libs ${amanzi_mesh_libs}
 
 if (ENABLE_Structured)
   list(APPEND ssc_tpl_libs ${CCSE_EXT_LIBRARIES})
+      if (BUILD_SHARED_LIBS)
+        set(closing_dso main_s_dso.f90)
+      endif()
 endif()
 
 # if (ENALE_ALQUIMIA)
@@ -132,26 +135,25 @@ list(APPEND ssc_tpl_libs ${PETSC_LIBRARIES})
 # Main: Amanzi (seems to require redundant lib listing to resolve everything....not sure why)
 #
 add_amanzi_executable(amanzi
-                      SOURCE Main.cc SimulatorFactory.cc
+                      SOURCE Main.cc SimulatorFactory.cc ${closing_dso}
                       LINK_LIBS ${ssc_libs} ${ssc_tpl_libs} ${ssc_libs}
                       OUTPUT_NAME amanzi
                       OUTPUT_DIRECTORY ${SSC_BINARY_DIR})
 
 if (BUILD_TESTS) 
-
     # Copy test directory files if an out of source build
     if (NOT (${SSC_SOURCE_DIR} EQUAL ${SSC_BINARY_DIR}) )
-        execute_process(COMMAND ${CMAKE_COMMAND} -E 
+      execute_process(COMMAND ${CMAKE_COMMAND} -E 
           copy_directory ${SSC_SOURCE_DIR}/test ${SSC_BINARY_DIR}/test) 
     endif()
 
     if (ENABLE_Structured)
-        # add_amanzi_test(ssc-structured-transport-0 amanzi "--xml_file=test/t0-structured-isv2.xml" KIND unit)
-        add_amanzi_test(ssc-structured-flow-1 amanzi "--xml_file=test/t1-structured-isv2.xml" KIND unit)
+      # add_amanzi_test(ssc-structured-transport-0 amanzi "--xml_file=test/t0-structured-isv2.xml" KIND unit)
+      add_amanzi_test(ssc-structured-flow-1 amanzi "--xml_file=test/t1-structured-isv2.xml" KIND unit)
     endif()
 
     if (ENABLE_Unstructured)
-        add_amanzi_test(ssc_chemistry_amanzi amanzi "--xml_file=test/ssc_chemistry_amanzi.xml" KIND unit)
+      add_amanzi_test(ssc_chemistry_amanzi amanzi "--xml_file=test/ssc_chemistry_amanzi.xml" KIND unit)
     endif()
 endif()
 

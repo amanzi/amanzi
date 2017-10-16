@@ -25,7 +25,6 @@ amanzi_tpl_version_write(FILENAME ${TPL_VERSIONS_INCLUDE_FILE}
 # Alquimia and Amanzi disagree about how to find PETSc, so we override 
 # Alquimia's method here using a patch command to turn $ENV{var} -> ${var}.
 set(ALQUIMIA_PATCH_COMMAND sh ${SuperBuild_TEMPLATE_FILES_DIR}/alquimia-patch-step.sh)
-# set(ALQUIMIA_PATCH_COMMAND sh ${SuperBuild_TEMPLATE_FILES_DIR}/alquimia-patch-step.sh)
 
 #set(ALQUIMIA_patch_file alquimia-pflotran.patch)
 #set(ALQUIMIA_sh_patch ${ALQUIMIA_prefix_dir}/alquimia-patch-step.sh)
@@ -42,16 +41,18 @@ set(ALQUIMIA_PATCH_COMMAND sh ${SuperBuild_TEMPLATE_FILES_DIR}/alquimia-patch-st
 
 
 # --- Define the arguments passed to CMake.
-set(ALQUIMIA_CMAKE_ARGS "-DCMAKE_INSTALL_PREFIX:FILEPATH=${TPL_INSTALL_PREFIX}"
-                        "-DBUILD_SHARED_LIBS:BOOL=OFF"
-                        "-DPETSC_DIR=${PETSC_DIR}"
-                        "-DPETSC_ARCH=."
-                        "-DXSDK_WITH_PFLOTRAN:BOOL=${ENABLE_PFLOTRAN}" 
-                        "-DTPL_PFLOTRAN_LIBRARIES:FILEPATH=${PFLOTRAN_DIR}/src/pflotran/libpflotranchem.a" 
-                        "-DTPL_PFLOTRAN_INCLUDE_DIRS:FILEPATH=${PFLOTRAN_INCLUDE_DIRS}"
- 			"-DXSDK_WITH_CRUNCHFLOW:BOOL=${ENABLE_CRUNCHTOPE}"
- 			"-DTPL_CRUNCHFLOW_LIBRARIES:FILEPATH=${TPL_INSTALL_PREFIX}/lib/libcrunchchem.a"
- 			"-DTPL_CRUNCHFLOW_INCLUDE_DIRS:FILEPATH=${TPL_INSTALL_PREFIX}/lib")
+set(ALQUIMIA_CMAKE_ARGS 
+      "-DCMAKE_INSTALL_PREFIX:FILEPATH=${TPL_INSTALL_PREFIX}"
+      "-DBUILD_SHARED_LIBS:BOOL=OFF"
+      "-DPETSC_DIR=${PETSC_DIR}"
+      "-DPETSC_ARCH=."
+      "-DXSDK_WITH_PFLOTRAN:BOOL=${ENABLE_PFLOTRAN}" 
+      "-DTPL_PFLOTRAN_LIBRARIES:FILEPATH=${PFLOTRAN_DIR}/src/pflotran/libpflotranchem.a" 
+      "-DTPL_PFLOTRAN_INCLUDE_DIRS:FILEPATH=${PFLOTRAN_INCLUDE_DIRS}"
+      "-DXSDK_WITH_CRUNCHFLOW:BOOL=${ENABLE_CRUNCHTOPE}"
+      "-DTPL_CRUNCHFLOW_LIBRARIES:FILEPATH=${TPL_INSTALL_PREFIX}/lib/libcrunchchem.a"
+      "-DTPL_CRUNCHFLOW_INCLUDE_DIRS:FILEPATH=${TPL_INSTALL_PREFIX}/lib"
+      "-DCMAKE_Fortran_FLAGS:STRING=-fPIC -w -Wno-unused-variable -ffree-line-length-0 -O3")
 
 # --- Add external project build and tie to the ALQUIMIA build target
 ExternalProject_Add(${ALQUIMIA_BUILD_TARGET}
