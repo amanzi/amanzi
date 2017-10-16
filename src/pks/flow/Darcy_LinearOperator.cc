@@ -32,7 +32,7 @@ void Darcy_PK::SolveFullySaturatedProblem(CompositeVector& u)
  
   if (S_->HasField("well_index")){
     const CompositeVector& wi = *S_->GetFieldData("well_index");
-    op_acc_->AddAccumulationTerm(wi, 1.0, "cell");
+    op_acc_->AddAccumulationTerm(wi, "cell");
   }
 
   op_diff_->ApplyBCs(true, true);

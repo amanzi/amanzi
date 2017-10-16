@@ -463,7 +463,7 @@ bool Darcy_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   // Peaceman model
   if (S_->HasField("well_index")){
     const CompositeVector& wi = *S_->GetFieldData("well_index");
-    op_acc_->AddAccumulationTerm(wi, 1.0, "cell");
+    op_acc_->AddAccumulationTerm(wi, "cell");
   }
 
   op_diff_->ApplyBCs(true, true);

@@ -72,7 +72,8 @@ void PK_Physical::set_states(const Teuchos::RCP<const State>& S,
 // -----------------------------------------------------------------------------
 // Populate state field
 // -----------------------------------------------------------------------------
-void PK_Physical::InitializeField(const Teuchos::RCP<State>& S, std::string& passwd,
+void PK_Physical::InitializeField(const Teuchos::RCP<State>& S, 
+                                  const std::string& passwd,
                                   std::string fieldname, double default_val)
 {
   Teuchos::OSTab tab = vo_->getOSTab();

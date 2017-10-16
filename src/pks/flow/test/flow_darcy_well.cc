@@ -167,7 +167,6 @@ TEST(FLOW_2D_DARCY_WELL_ADAPRIVE) {
 
 
 /* **************************************************************** */
-
 void Run_3D_DarcyWell(std::string controller) {
 
   using namespace Teuchos;

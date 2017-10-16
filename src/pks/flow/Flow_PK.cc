@@ -35,12 +35,12 @@ Flow_PK::Flow_PK(Teuchos::ParameterList& pk_tree,
                  const Teuchos::RCP<State>& S,
                  const Teuchos::RCP<TreeVector>& soln) :
   PK_PhysicalBDF(pk_tree, glist, S, soln),
-  passwd_("flow")
+  passwd_("flow"),
+  peaceman_model_(false)
 {
   vo_ = Teuchos::null;
   Teuchos::RCP<Teuchos::ParameterList> units_list = Teuchos::sublist(glist, "units");
   units_.Init(*units_list);
-  peaceman_model_ = false;
 };
 
 
@@ -70,7 +70,6 @@ void Flow_PK::Setup(const Teuchos::Ptr<State>& S)
   }
 
   // Wells
-  bool peaceman_model_ = false;
   if (!S->HasField("well_index")){
     if (fp_list_->isSublist("source terms")) {
       Teuchos::ParameterList& src_list = fp_list_->sublist("source terms");
@@ -180,7 +179,7 @@ void Flow_PK::InitializeFields_()
         *vo_->os() << "initilized gravity to default value -9.8" << std::endl;  
   }
 
-  InitializeField(S_, passwd_, "porosity", 0.2);
+  InitializeField(S_, "porosity", "porosity", 0.2);
   InitializeField(S_, passwd_, "permeability", 1.0);
 
   InitializeField(S_, passwd_, "specific_storage", 0.0);
@@ -362,7 +361,7 @@ void Flow_PK::ComputeWellIndex(Teuchos::ParameterList& spec)
 
   
   for (auto it = regions.begin(); it != regions.end(); ++it) {
-    mesh_-> get_set_entities(*it, AmanziMesh::CELL, AmanziMesh::OWNED, &cells);
+    mesh_->get_set_entities(*it, AmanziMesh::CELL, AmanziMesh::OWNED, &cells);
 
     for (int k = 0; k < cells.size(); k++) {
       int c = cells[k];

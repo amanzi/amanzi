@@ -111,8 +111,8 @@ class Accumulation : public BCsList {
 
   // update methods
   // -- modifiers for diagonal operators
-  void AddAccumulationTerm(const CompositeVector& du,
-                           double dT, const std::string& name);
+  void AddAccumulationTerm(const CompositeVector& du, const std::string& name);
+  void AddAccumulationTerm(const CompositeVector& du, double dT, const std::string& name);
 
   // -- linearized update methods with storage terms
   void AddAccumulationDelta(const CompositeVector& u0,

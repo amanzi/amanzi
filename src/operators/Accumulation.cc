@@ -27,6 +27,26 @@ namespace Amanzi {
 namespace Operators {
 
 /* ******************************************************************
+* Modifier for diagonal operators.  Op += du
+****************************************************************** */
+void Accumulation::AddAccumulationTerm(
+    const CompositeVector& du, const std::string& name)
+{
+  Teuchos::RCP<Op> op = FindOp_(name);
+  Epetra_MultiVector& diag = *op->diag;
+  const Epetra_MultiVector& duc = *du.ViewComponent(name);
+
+  int n = duc.MyLength();
+  int m = duc.NumVectors();
+  for (int k = 0; k < m; k++) {
+    for (int i = 0; i < n; i++) {
+      diag[k][i] += duc[k][i];
+    } 
+  }
+}
+
+
+/* ******************************************************************
 * Modifier for diagonal operators.  Op += du * vol / dt.
 ****************************************************************** */
 void Accumulation::AddAccumulationTerm(
