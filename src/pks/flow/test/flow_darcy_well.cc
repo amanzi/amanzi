@@ -126,11 +126,8 @@ void RunTestDarcyWell(std::string controller) {
   // initialize the Darcy process kernel
   DPK->Initialize(S.ptr());
 
-<<<<<<< HEAD
-=======
-  filename = controller.replace(controller.size()-4, 4, "_flow2D.gmv");
+  std::string filename = controller.replace(controller.size()-4, 4, "_flow2D.gmv");
 
->>>>>>> 0f9c348ca1caf2c409938255299d5b976a05467e
   // transient solution
   double t_old(0.0), t_new, dt(0.5);
   for (int n = 0; n < 10; n++) {
@@ -156,7 +153,6 @@ void RunTestDarcyWell(std::string controller) {
 }
 
 
-<<<<<<< HEAD
 TEST(FLOW_2D_DARCY_WELL_STANDARD) {
   RunTestDarcyWell("test/flow_darcy_well.xml");
 }
@@ -168,19 +164,6 @@ TEST(FLOW_2D_DARCY_WELL_FROMFILE) {
 TEST(FLOW_2D_DARCY_WELL_ADAPRIVE) {
  RunTestDarcyWell("test/flow_darcy_well_adaptive.xml");
 }
-=======
-// TEST(FLOW_2D_DARCY_WELL_STANDARD) {
-//   RunTestMarshak("test/flow_darcy_well.xml");
-// }
-
-// TEST(FLOW_2D_DARCY_WELL_HETE_PERM) {
-//    RunTestMarshak("test/flow_darcy_well_hete_perm.xml");
-// }
-
-// TEST(FLOW_2D_DARCY_WELL_ADAPRIVE) {
-//  RunTestMarshak("test/flow_darcy_well_adaptive.xml");
-// }
->>>>>>> 0f9c348ca1caf2c409938255299d5b976a05467e
 
 
 /* **************************************************************** */

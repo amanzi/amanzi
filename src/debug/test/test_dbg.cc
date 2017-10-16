@@ -1,6 +1,8 @@
 #include <iostream>
 #include "UnitTest++.h"
 
+#include "VerboseObject_objs.hh"
+
 #include "DataDebug.hh"
 
 TEST(DBG_HELPERS) {

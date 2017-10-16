@@ -194,7 +194,7 @@ void Darcy_PK::Setup(const Teuchos::Ptr<State>& S)
         ->SetComponent("cell", AmanziMesh::CELL, 1);
 
       Teuchos::RCP<Teuchos::ParameterList>
-          fpm_list = Teuchos::sublist(dp_list_, "fracture permeability models", true);
+          fpm_list = Teuchos::sublist(fp_list_, "fracture permeability models", true);
       Teuchos::RCP<FracturePermModelPartition> fpm = CreateFracturePermModelPartition(mesh_, fpm_list);
 
       Teuchos::ParameterList elist;
@@ -462,8 +462,8 @@ bool Darcy_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 
   // Peaceman model
   if (S_->HasField("well_index")){
-    const Epetra_MultiVector& wi = *S_->GetFieldData("well_index")->ViewComponent("cell");
-    op_acc_->AddAccumulationTerm(wi);
+    const CompositeVector& wi = *S_->GetFieldData("well_index");
+    op_acc_->AddAccumulationTerm(wi, 1.0, "cell");
   }
 
   op_diff_->ApplyBCs(true, true);

@@ -57,7 +57,7 @@ set(ns_src_files NavierStokes_PK.cc
                  NavierStokes_TI.cc
                  NavierStokesBoundaryFunction.cc
                  )
-set(ns_tpl_libs ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES})
+set(ns_tpl_libs ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES} ${Boost_LIBRARIES} ${SEACAS_LIBRARIES})
 if ( Ifpack_ENABLE_HYPRE )
   list(APPEND ns_tpl_libs ${Ifpack_LIBRARIES})
 endif()
