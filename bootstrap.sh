@@ -1247,6 +1247,7 @@ if [ -z "${tpl_config_file}" ]; then
       -DBUILD_SPACK:BOOL=${build_Spack} \
       -DENABLE_XSDK:BOOL=${xsdk} \
       -DTPL_DOWNLOAD_DIR:FILEPATH=${tpl_download_dir} \
+      -DTPL_PARALLEL_JOBS:INT=${parallel_jobs} \
       ${nersc_tpl_opts} \
       ${tpl_build_src_dir}
   
