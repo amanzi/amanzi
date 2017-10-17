@@ -487,11 +487,11 @@ include(DefineExternalProjectArgs)
 set(Amanzi_TPL_CMAKE_ARGS)
 
 # --- Begin the build definitions
-if ( BUILD_SPACK )
+if (BUILD_SPACK)
     include(${SuperBuild_BUILD_FILES_DIR}/Build_Spack.cmake)
 endif()
 
-if ( ENABLE_XSDK )    
+if (ENABLE_XSDK)    
     include(${SuperBuild_BUILD_FILES_DIR}/Build_xSDK.cmake)
     include(BuildLibraryName)
 endif()
@@ -503,12 +503,11 @@ if ( BUILD_MPI AND NOT ENABLE_XSDK)
 endif()
 
 # ZLIB
-if( NOT ENABLE_XSDK)
+if (NOT ENABLE_XSDK)
     include(${SuperBuild_BUILD_FILES_DIR}/Build_zlib.cmake) 
 else()
     build_library_name(z ZLIB_LIBRARIES APPEND_PATH ${TPL_INSTALL_PREFIX}/lib)
     set(ZLIB_INCLUDE_DIRS ${TPL_INSTALL_PREFIX}/include)
-    
 endif()
 
 # CURL
@@ -524,7 +523,7 @@ endif()
 
 # CCSE
 set(CCSE_BL_SPACEDIM_DFLT 2)
-if(NOT CCSE_BL_SPACEDIM )
+if (NOT CCSE_BL_SPACEDIM )
     set(CCSE_BL_SPACEDIM ${CCSE_BL_SPACEDIM_DFLT})
 endif()
 if (ENABLE_Structured)
@@ -538,7 +537,7 @@ if (ENABLE_Structured)
 endif()
 
 # Boost
-if ( NOT ENABLE_XSDK )
+if (NOT ENABLE_XSDK)
     include(${SuperBuild_BUILD_FILES_DIR}/Build_Boost.cmake) 
     #TESTINGinclude(${SuperBuild_BUILD_FILES_DIR}/Build_BoostCmake.cmake) 
     append_set(Amanzi_TPL_CMAKE_ARGS
@@ -557,7 +556,7 @@ else()
 endif()
 
 # HDF5  
-if ( NOT ENABLE_XSDK )
+if (NOT ENABLE_XSDK)
     include(${SuperBuild_BUILD_FILES_DIR}/Build_HDF5.cmake) 
     #BROKENinclude(${SuperBuild_BUILD_FILES_DIR}/Build_HDF5Cmake.cmake) 
     
@@ -579,7 +578,7 @@ append_set(Amanzi_TPL_CMAKE_ARGS
     -DASCEMIO_DIR:FILEPATH=${TPL_INSTALL_PREFIX})
 
 # XERCES
-if ( ENABLE_SPACK)
+if (ENABLE_SPACK)
     include(${SuperBuild_BUILD_FILES_DIR}/Build_XERCES_Spack.cmake) 
 else()
     include(${SuperBuild_BUILD_FILES_DIR}/Build_XERCES.cmake) 
@@ -588,7 +587,7 @@ append_set(Amanzi_TPL_CMAKE_ARGS
     -DXERCES_DIR:FILEPATH=${TPL_INSTALL_PREFIX})
 
 # NetCDF
-if ( NOT ENABLE_XSDK )
+if (NOT ENABLE_XSDK)
     include(${SuperBuild_BUILD_FILES_DIR}/Build_NetCDF.cmake) 
 else()
     build_library_name(netcdf NetCDF_C_LIBRARY APPEND_PATH ${TPL_INSTALL_PREFIX}/lib)
@@ -605,34 +604,39 @@ append_set(Amanzi_TPL_CMAKE_ARGS
     -DNetCDF_DIR:FILEPATH=${TPL_INSTALL_PREFIX})
 
 # NetCDF Fortran
-if ( NOT ENABLE_XSDK )
+if (NOT ENABLE_XSDK)
     include(${SuperBuild_BUILD_FILES_DIR}/Build_NetCDF_Fortran.cmake)
 endif()
 append_set(Amanzi_TPL_CMAKE_ARGS
     -DNetCDF_FORTRAN_DIR:FILEPATH=${TPL_INSTALL_PREFIX})
 
 # MOAB
-if ( ENABLE_MOAB_Mesh )
+if (ENABLE_MOAB_Mesh)
     include(${SuperBuild_BUILD_FILES_DIR}/Build_MOAB.cmake)
     append_set(Amanzi_TPL_CMAKE_ARGS
         -DENABLE_MOAB_Mesh:BOOL=${ENABLE_MOAB_Mesh}
 	-DMOAB_DIR:PATH=${TPL_INSTALL_PREFIX})
 endif()
+ 
+# SuperLU -- needs to go before HYPRE and PETSc because they needs it
+include(${SuperBuild_BUILD_FILES_DIR}/Build_SuperLU.cmake)
+append_set(Amanzi_TPL_CMAKE_ARGS
+    -DSuperLU_DIR:FILEPATH=${TPL_INSTALL_PREFIX})
 
 # HYPRE
-if ( NOT ENABLE_XSDK )
+if (NOT ENABLE_XSDK)
     option(ENABLE_HYPRE "Build the HYPRE solver package" TRUE)
-    if ( ENABLE_HYPRE )
+    if (ENABLE_HYPRE)
 	include(${SuperBuild_BUILD_FILES_DIR}/Build_HYPRE.cmake)
     endif()
 else()
     set(HYPRE_INCLUDE_DIRS "${TPL_INSTALL_PREFIX}/include")
     build_library_name(HYPRE HYPRE_LIBRARY APPEND_PATH ${TPL_INSTALL_PREFIX}/lib)
-    set(HYPRE_LIBRARIES    "${HYPRE_LIBRARY}")
+    set(HYPRE_LIBRARIES "${HYPRE_LIBRARY}")
 endif()
 
 # METIS -- needs to go before PETSc because PETSc needs it.
-if ( NOT ENABLE_XSDK )
+if (NOT ENABLE_XSDK)
     include(${SuperBuild_BUILD_FILES_DIR}/Build_METIS.cmake) 
 else()
     build_library_name(metis METIS_LIBRARIES SHARED APPEND_PATH ${TPL_INSTALL_PREFIX}/lib)
@@ -643,7 +647,7 @@ append_set(Amanzi_TPL_CMAKE_ARGS
     -DMETIS_DIR:FILEPATH=${METIS_DIR})
 
 # ParMetis -- needs to go before PETSc because PETSc needs it.
-if ( NOT ENABLE_XSDK )
+if (NOT ENABLE_XSDK)
     include(${SuperBuild_BUILD_FILES_DIR}/Build_ParMetis.cmake)
 else()
     build_library_name(z ParMetis_LIBRARIES APPEND_PATH ${TPL_INSTALL_PREFIX}/lib)
