@@ -109,7 +109,7 @@ class PK {
   virtual bool ValidStep() { return true; }
 
   // Tag the primary variable as changed in the DAG
-  virtual void ChangedSolutionPK() {}
+  virtual void ChangedSolutionPK(const Teuchos::Ptr<State>& S) {}
   
   // Update any needed secondary variables at time t_new from a sucessful step
   // from t_old. This is called after every successful AdvanceStep() call,
