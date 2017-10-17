@@ -4,7 +4,7 @@
 # Build TPL: MSTK 
 #    
 # --- Define all the directories and common external project flags
-if ( NOT ENABLE_XSDK )
+if (NOT ENABLE_XSDK)
     define_external_project_args(MSTK
                                  TARGET mstk
 				 DEPENDS ${MPI_PROJECT} HDF5 NetCDF SEACAS METIS Trilinos)
@@ -19,9 +19,23 @@ amanzi_tpl_version_write(FILENAME ${TPL_VERSIONS_INCLUDE_FILE}
   PREFIX MSTK
   VERSION ${MSTK_VERSION_MAJOR} ${MSTK_VERSION_MINOR} ${MSTK_VERSION_PATCH})
 
-# --- Define the configure parameters
+# Patch cruchtope code
+set(MSTK_patch_file mstk-libs-shared.patch)
+set(MSTK_sh_patch ${MSTK_prefix_dir}/mstk-patch-step.sh)
+configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/mstk-patch-step.sh.in
+               ${MSTK_sh_patch}
+               @ONLY)
+# --- configure the CMake patch step
+set(MSTK_cmake_patch ${MSTK_prefix_dir}/mstk-patch-step.cmake)
+configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/mstk-patch-step.cmake.in
+               ${MSTK_cmake_patch}
+               @ONLY)
+# --- set the patch command
+set(MSTK_PATCH_COMMAND ${CMAKE_COMMAND} -P ${MSTK_cmake_patch})
 
-# Compile flags
+
+# Define the configure parameters
+# --- compile flags
 set(mstk_cflags_list -I${TPL_INSTALL_PREFIX}/include ${Amanzi_COMMON_CFLAGS})
 build_whitespace_string(mstk_cflags ${mstk_cflags_list})
 
@@ -30,7 +44,7 @@ build_whitespace_string(mstk_ldflags ${mstk_ldflags_list})
 
 message(STATUS "JDM ----> PREFER_STATIC_LIBRARIES = ${PREFER_STATIC_LIBRARIES}")
 
-# The CMake cache args
+# --- CMake cache args
 set(MSTK_CMAKE_CACHE_ARGS
                     ${Amanzi_CMAKE_C_COMPILER_ARGS}
 		    -DCMAKE_BUILD_TYPE:STRING=${CMAKE_BUILD_TYPE}
@@ -65,7 +79,7 @@ set(MSTK_CMAKE_CACHE_ARGS
                     -DINSTALL_DIR:PATH=<INSTALL_DIR>
                     -DINSTALL_ADD_VERSION:BOOL=FALSE)
 
-# --- Add external project build and tie to the MSTK build target
+# Add external project build and tie to the MSTK build target
 ExternalProject_Add(${MSTK_BUILD_TARGET}
                     DEPENDS   ${MSTK_PACKAGE_DEPENDS}             # Package dependency target
                     TMP_DIR   ${MSTK_tmp_dir}                     # Temporary files directory
