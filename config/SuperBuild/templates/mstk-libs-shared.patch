@@ -1,6 +1,6 @@
 diff -ruNbB mstk-3.0.1-orig/CMakeLists.txt mstk-3.0.1-source/CMakeLists.txt
 --- mstk-3.0.1-orig/CMakeLists.txt	2017-06-23 15:03:58.000000000 -0600
-+++ mstk-3.0.1-source/CMakeLists.txt	2017-10-16 18:09:30.664835749 -0600
++++ mstk-3.0.1-source/CMakeLists.txt	2017-10-17 14:47:23.936177306 -0600
 @@ -91,15 +91,14 @@
  if (INSTALL_PREFIX_ARCHOS) 
    install(TARGETS ${MSTKLIB}
@@ -22,3 +22,24 @@ diff -ruNbB mstk-3.0.1-orig/CMakeLists.txt mstk-3.0.1-source/CMakeLists.txt
  endif ()
 Binary files mstk-3.0.1-orig/example/parallel_example and mstk-3.0.1-source/example/parallel_example differ
 Binary files mstk-3.0.1-orig/example/serial_example and mstk-3.0.1-source/example/serial_example differ
+diff -ruNbB mstk-3.0.1-orig/src/par/MSTK_Mesh_Distribute.c mstk-3.0.1-source/src/par/MSTK_Mesh_Distribute.c
+--- mstk-3.0.1-orig/src/par/MSTK_Mesh_Distribute.c	2017-06-23 15:03:58.000000000 -0600
++++ mstk-3.0.1-source/src/par/MSTK_Mesh_Distribute.c	2017-10-17 14:49:42.309998958 -0600
+@@ -67,7 +67,7 @@
+ 
+       free(toranks);
+ 
+-      fprintf(stderr,"Finished partioning and sending on rank 0\n");
++      /* fprintf(stderr,"Finished partioning and sending on rank 0\n"); */
+     }
+ 
+     if (part) free(part);
+@@ -89,7 +89,7 @@
+ 
+       MESH_RecvMesh(*mysubmesh, fromrank, with_attr, comm);
+ 
+-      fprintf(stderr,"Received mesh on rank %-d\n", rank);
++      /* fprintf(stderr,"Received mesh on rank %-d\n", rank); */
+     }
+ 
+ 
