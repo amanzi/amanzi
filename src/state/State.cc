@@ -1364,11 +1364,11 @@ void ReadCheckpointObservations(Epetra_MpiComm* comm,
 // Non-member function for deforming the mesh after reading a checkpoint file
 // that contains the vertex coordinate field (this is written by deformation pks)
   void DeformCheckpointMesh(const Teuchos::Ptr<State>& S, Key domain) {
-    if (S->HasField(Keys::getKey(domain,"vertex coordinate"))) { 
+    if (S->HasField(Keys::getKey(domain,"vertex_coordinate"))) { 
       // only deform mesh if vertex coordinate field exists
     AmanziMesh::Mesh * write_access_mesh_ =  const_cast<AmanziMesh::Mesh*>(&*S->GetMesh(domain));
     // get vertex coordinates state
-    Teuchos::RCP<const CompositeVector> vc = S->GetFieldData(Keys::getKey(domain,"vertex coordinate"));
+    Teuchos::RCP<const CompositeVector> vc = S->GetFieldData(Keys::getKey(domain,"vertex_coordinate"));
     vc->ScatterMasterToGhosted("node");
     const Epetra_MultiVector& vc_n = *vc->ViewComponent("node",true);
 
