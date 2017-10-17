@@ -10,6 +10,7 @@
 #include "UnitTest++.h"
 
 #include "CycleDriver.hh"
+#include "eos_registration.hh"
 #include "Domain.hh"
 #include "GeometricModel.hh"
 #include "Mesh.hh"
