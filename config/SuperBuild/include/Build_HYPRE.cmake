@@ -72,6 +72,8 @@ if (BUILD_SHARED_LIBS)
   set(hypre_shared_opt "-DHYPRE_SHARED:BOOL=TRUE")
 endif()
 
+set(hypre_install_opt "-DHYPRE_INSTALL_PREFIX:PATH=${TPL_INSTALL_PREFIX}")
+
 
 # --- Set the name of the patch
 #set(HYPRE_patch_file hypre-2.10.0b-print_level.patch)
@@ -90,8 +92,6 @@ endif()
 
 
 # --- Add external project build and tie to the ZLIB build target
-message(STATUS "KL >>> ${HYPRE_source_dir}")
-message(STATUS "KL >>> ${HYPRE_build_dir}")
 ExternalProject_Add(${HYPRE_BUILD_TARGET}
                     DEPENDS   ${HYPRE_PACKAGE_DEPENDS}         # Package dependency target
                     TMP_DIR   ${HYPRE_tmp_dir}                 # Temporary files directory
@@ -109,6 +109,7 @@ ExternalProject_Add(${HYPRE_BUILD_TARGET}
                     CMAKE_ARGS    ${hypre_openmp_opt} 
                                   ${hypre_lapack_opt} ${hypre_blas_opt}
                                   ${hypre_superlu_opt} ${hypre_shared_opt}
+                                  ${hypre_install_opt}
                     # -- Build
                     BINARY_DIR       ${HYPRE_build_dir}        # Build directory 
                     BUILD_COMMAND    ${MAKE} 
