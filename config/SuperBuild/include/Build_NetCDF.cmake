@@ -43,7 +43,6 @@ set(NetCDF_PATCH_COMMAND ${CMAKE_COMMAND} -P ${NetCDF_cmake_patch})
 option(ENABLE_NetCDF4 "Enable netCDF4 build" TRUE)
 set(NetCDF_netcdf4_opts)
 if (ENABLE_NetCDF4)
-
   list(APPEND NetCDF_PACKAGE_DEPENDS ${HDF5_BUILD_TARGET})
 
   append_set(NetCDF_netcdf4_opts --enable-netcdf-4)
@@ -93,40 +92,40 @@ endif()
 
 # --- Add external project build and tie to the ZLIB build target
 ExternalProject_Add(${NetCDF_BUILD_TARGET}
-                    DEPENDS   ${NetCDF_PACKAGE_DEPENDS}             # Package dependency target
-                    TMP_DIR   ${NetCDF_tmp_dir}                     # Temporary files directory
-                    STAMP_DIR ${NetCDF_stamp_dir}                   # Timestamp and log directory
+                    DEPENDS   ${NetCDF_PACKAGE_DEPENDS}   # Package dependency target
+                    TMP_DIR   ${NetCDF_tmp_dir}           # Temporary files directory
+                    STAMP_DIR ${NetCDF_stamp_dir}         # Timestamp and log directory
                     # -- Download and URL definitions
-                    DOWNLOAD_DIR ${TPL_DOWNLOAD_DIR}              # Download directory
-                    URL          ${NetCDF_URL}                    # URL may be a web site OR a local file
-                    URL_MD5      ${NetCDF_MD5_SUM}                # md5sum of the archive file
+                    DOWNLOAD_DIR ${TPL_DOWNLOAD_DIR}      # Download directory
+                    URL          ${NetCDF_URL}            # URL may be a web site OR a local file
+                    URL_MD5      ${NetCDF_MD5_SUM}        # md5sum of the archive file
                     # -- Patch 
                     PATCH_COMMAND ${NetCDF_PATCH_COMMAND}
                     # -- Configure
-                    SOURCE_DIR       ${NetCDF_source_dir}           # Source directory
+                    SOURCE_DIR       ${NetCDF_source_dir} # Source directory
                     CONFIGURE_COMMAND
-                                    <SOURCE_DIR>/configure
-                                                --prefix=<INSTALL_DIR>
-                                                --disable-examples
-                                                ${NetCDF_netcdf4_opts} 
-                                                --disable-dap
-                                                ${NetCDF_shared_opt}
-                                                --disable-fortran
-                                                --disable-f90
-                                                --disable-f77
-                                                --disable-fortran-compiler-check
-                                                CC=${CMAKE_C_COMPILER_USE}
-                                                CFLAGS=${netcdf_cflags}
-                                                CXX=${CMAKE_CXX_COMPILER_USE}
-                                                CXXFLAGS=${netcdf_cxxflags}
-                                                CPPFLAGS=${netcdf_cppflags}
-                                                LDFLAGS=${netcdf_ldflags}
+                        <SOURCE_DIR>/configure
+                        --prefix=<INSTALL_DIR>
+                        --disable-examples
+                        ${NetCDF_netcdf4_opts} 
+                        --disable-dap
+                        ${NetCDF_shared_opt}
+                        --disable-fortran
+                        --disable-f90
+                        --disable-f77
+                        --disable-fortran-compiler-check
+                        CC=${CMAKE_C_COMPILER_USE}
+                        CFLAGS=${netcdf_cflags}
+                        CXX=${CMAKE_CXX_COMPILER_USE}
+                        CXXFLAGS=${netcdf_cxxflags}
+                        CPPFLAGS=${netcdf_cppflags}
+                        LDFLAGS=${netcdf_ldflags}
                     # -- Build
-                    BINARY_DIR        ${NetCDF_build_dir}           # Build directory 
-                    BUILD_COMMAND     $(MAKE)                     # $(MAKE) enables parallel builds through make
-                    BUILD_IN_SOURCE   ${NetCDF_BUILD_IN_SOURCE}     # Flag for in source builds
+                    BINARY_DIR        ${NetCDF_build_dir}       # Build directory 
+                    BUILD_COMMAND     $(MAKE)                   # $(MAKE) enables parallel builds through make
+                    BUILD_IN_SOURCE   ${NetCDF_BUILD_IN_SOURCE} # Flag for in source builds
                     # -- Install
-                    INSTALL_DIR      ${TPL_INSTALL_PREFIX}        # Install directory
+                    INSTALL_DIR      ${TPL_INSTALL_PREFIX}      
                     # -- Output control
                     ${NetCDF_logging_args})
 

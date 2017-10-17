@@ -14,7 +14,7 @@ amanzi_tpl_version_write(FILENAME ${TPL_VERSIONS_INCLUDE_FILE}
   PREFIX SuperLU
   VERSION ${SuperLU_VERSION_MAJOR} ${SuperLU_VERSION_MINOR} ${SuperLU_VERSION_PATCH})
   
-# Patch cruchtope code
+# Patch the original code
 
 # Define the arguments passed to CMake.
 set(SuperLU_CMAKE_ARGS 
@@ -48,5 +48,5 @@ ExternalProject_Add(${SuperLU_BUILD_TARGET}
                     ${SuperLU_logging_args})
 
 include(BuildLibraryName)
-build_library_name(crunchchem SuperLU_LIB APPEND_PATH ${TPL_INSTALL_PREFIX}/lib)
+build_library_name(superlu SuperLU_LIB APPEND_PATH ${TPL_INSTALL_PREFIX}/lib)
 
