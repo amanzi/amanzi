@@ -58,6 +58,7 @@ ExternalProject_Add(${NetCDF_Fortran_BUILD_TARGET}
 		FCFLAGS=${Amanzi_COMMON_FCFLAGS}
 		CPPFLAGS=${netcdf_fortran_cppflags}
 		LDFLAGS=${netcdf_fortran_ldflags}
+                LD_LIBRARY_PATH=$LD_LIBRARY_PATH:${TPL_INSTALL_PREFIX}/lib
 
 	# -- Build
 
