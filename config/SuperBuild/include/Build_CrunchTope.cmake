@@ -51,6 +51,7 @@ ExternalProject_Add(${CRUNCHTOPE_BUILD_TARGET}
                     DOWNLOAD_DIR ${TPL_DOWNLOAD_DIR}                  # Download directory
                     URL          ${CRUNCHTOPE_URL}                    # URL may be a web site OR a local file
                     URL_MD5      ${CRUNCHTOPE_MD5_SUM}                # md5sum of the archive file
+                    # -- Patch 
                     PATCH_COMMAND ${CRUNCHTOPE_PATCH_COMMAND}         # Mods to source
                     # -- Configure
                     SOURCE_DIR    ${CRUNCHTOPE_source_dir}            # Source directory
