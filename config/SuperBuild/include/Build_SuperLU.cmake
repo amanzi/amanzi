@@ -15,6 +15,19 @@ amanzi_tpl_version_write(FILENAME ${TPL_VERSIONS_INCLUDE_FILE}
   VERSION ${SuperLU_VERSION_MAJOR} ${SuperLU_VERSION_MINOR} ${SuperLU_VERSION_PATCH})
   
 # Patch the original code
+set(SuperLU_patch_file superlu-osx-shared.patch)
+set(SuperLU_sh_patch ${SuperLU_prefix_dir}/superlu-patch-step.sh)
+configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/superlu-patch-step.sh.in
+               ${SuperLU_sh_patch}
+               @ONLY)
+# --- configure the CMake patch step
+set(SuperLU_cmake_patch ${SuperLU_prefix_dir}/superlu-patch-step.cmake)
+configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/superlu-patch-step.cmake.in
+               ${SuperLU_cmake_patch}
+               @ONLY)
+# --- set the patch command
+set(SuperLU_PATCH_COMMAND ${CMAKE_COMMAND} -P ${SuperLU_cmake_patch})
+
 
 # Define the arguments passed to CMake.
 set(SuperLU_CMAKE_ARGS 
