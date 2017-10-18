@@ -34,11 +34,11 @@ def transect_data(varnames, keys='all', directory=".", filename="visdump_data.h5
    
     Output:
       Output is an array of shape:
-      ( len(varnames+2), len(keys), n_cells )
+      ( len(varnames+2), len(keys), n_cells_coord_order[0], n_cells_coord_order[1] )
     
-      data[0,0,:] is the coord_order[0] centroid
-      data[1,0,:, is the coord_order[1] centroid
-      data[i+2,k,:] is the ith varname data at the kth requested timestep, sorted in 
+      data[0,0,:,:] is the coord_order[0] centroid
+      data[1,0,:,:] is the coord_order[1] centroid
+      data[i+2,k,:,:] is the ith varname data at the kth requested timestep, sorted in 
                       the same way as the centroids.
 
       Note that the data is re-ordered in INCREASING coordinate, i.e. bottom to top in z.
@@ -48,9 +48,6 @@ def transect_data(varnames, keys='all', directory=".", filename="visdump_data.h5
 
       // Pull saturation ice -- TD is where sat ice = 0."
       data = transect_data(['saturation_ice', 5)
-
-      // reshape the data to follow x,z ordering
-      data = data.reshape((data.shape[0], data.shape[1], NX, NZ))
 
       // x coordinate for plotting
       x = data[0,0,:,0]
@@ -90,15 +87,8 @@ def transect_data(varnames, keys='all', directory=".", filename="visdump_data.h5
         elif i == 'z':
             num_order.append(2)
 
-    print xyz.shape
-    print xyz[:,num_order].shape
     xyz_sort_order = np.array([tuple([xyz[i,x] for x in num_order]) for i in range(len(xyz))], dtype=dtype)
-    print coord_order
     xyz_sorting = xyz_sort_order.argsort(order=coord_order)
-    print xyz_sorting
-    print xyz[xyz_sorting,0]
-    print xyz[xyz_sorting,2]
-
 
     with h5py.File(os.path.join(directory,filename),'r') as dat:
         keys_avail = dat[fullname(varnames[0])].keys()
@@ -106,14 +96,20 @@ def transect_data(varnames, keys='all', directory=".", filename="visdump_data.h5
 
         if keys == 'all':
             keys = keys_avail
-        elif keys == '-1' or keys == -1:
-            keys = [keys_avail[-1]]
         elif type(keys) is str:
-            keys = [keys]
+            keys = [keys,]
         elif type(keys) is int:
-            keys = [str(keys)]
+            keys = [keys_avail[keys],]
         elif type(keys) is slice:
             keys = keys_avail[keys]
+        elif type(keys) is list:
+            if all(type(k) is int for k in keys):
+                keys = [keys_avail[k] for k in keys]
+            elif all(type(k) is str for k in keys):
+                pass
+            else:
+                raise RuntimeError("Keys requested cannot be processed -- should be 'all', int, or str key, or list of ints or strs.")
+                
 
         # get data
         vals = np.zeros((len(varnames)+2, len(keys), len(xyz)), 'd')
@@ -126,7 +122,14 @@ def transect_data(varnames, keys='all', directory=".", filename="visdump_data.h5
             for j,varname in enumerate(varnames):
                 vals[j+2,i,:] = dat[fullname(varname)][key][:,0][xyz_sorting]
 
-    return vals
+    # reshape the data
+    # determine nx
+    nx = len(set(vals[0,0,:]))
+    nz = vals.shape[2] / nx
+    if (nx * nz != vals.shape[2]):
+        raise RuntimeError("Assumption about first coordinate being cleanly binnable is falling apart -- ask Ethan to rethink this algorithm!")
+    shp = vals.shape
+    return vals.reshape(shp[0], shp[1], nx, nz)
 
 
 def plot(dataset, ax, cax=None, vmin=None, vmax=None, cmap="jet",
