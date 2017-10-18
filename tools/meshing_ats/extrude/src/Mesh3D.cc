@@ -61,7 +61,8 @@ Mesh3D::Mesh3D(const Mesh2D * const m_, int n_layers) :
 
 void
 Mesh3D::extrude(const std::vector<double>& dz,
-                const std::vector<int>& block_ids_) {
+                const std::vector<int>& block_ids_,
+                bool squash_zero_edges) {
   ASSERT(dz.size() == m->coords.size());
   ASSERT(block_ids_.size() == m->cell2node.size());
 
@@ -72,7 +73,7 @@ Mesh3D::extrude(const std::vector<double>& dz,
   
   // shift the up-node coordinates by dz
   for (int n=0; n!=dz.size(); ++n) {
-    if (dz[n] > 0.) {
+    if (!squash_zero_edges || dz[n] > 0.) {
       Point nc(coords[up_nodes[n]]);
       nc[2] -= dz[n];
       coords.emplace_back(std::move(nc));
@@ -82,8 +83,8 @@ Mesh3D::extrude(const std::vector<double>& dz,
 
   // add cells, faces
   for (int c=0; c!=m->ncells; ++c) {
-    if (std::any_of(m->cell2node[c].begin(), m->cell2node[c].end(),
-                    node_differs)) {
+    if (!squash_zero_edges ||
+        std::any_of(m->cell2node[c].begin(), m->cell2node[c].end(), node_differs)) {
       cells_in_col[c]++;
       
       // add the bottom face
@@ -109,15 +110,16 @@ Mesh3D::extrude(const std::vector<double>& dz,
         ASSERT(node_same_horiz(m->face2node[sf][0]));
         ASSERT(node_same_horiz(m->face2node[sf][1]));
         
-        if (std::any_of(m->face2node[sf].begin(), m->face2node[sf].end(),
+        if (!squash_zero_edges ||
+            std::any_of(m->face2node[sf].begin(), m->face2node[sf].end(),
                         node_differs)) {
           if (my_f < 0) {
             // may need to create the face
             my_f = face2node.size();
             auto side_nodes = std::vector<int>{ up_nodes[m->face2node[sf][1]], 
                                                 up_nodes[m->face2node[sf][0]] };
-            if (node_differs(m->face2node[sf][0])) side_nodes.push_back(dn_nodes[m->face2node[sf][0]]);
-            if (node_differs(m->face2node[sf][1])) side_nodes.push_back(dn_nodes[m->face2node[sf][1]]);
+            if (!squash_zero_edges || node_differs(m->face2node[sf][0])) side_nodes.push_back(dn_nodes[m->face2node[sf][0]]);
+            if (!squash_zero_edges || node_differs(m->face2node[sf][1])) side_nodes.push_back(dn_nodes[m->face2node[sf][1]]);
             face2node.emplace_back(std::move(side_nodes));
             cell_faces.push_back(my_f);
             this_layer_sides[sf] = my_f;

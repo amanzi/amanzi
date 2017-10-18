@@ -1,5 +1,5 @@
 ifeq (${ATS_BUILD_TYPE},Debug)
-	CXX_FLAGS = -g -O2 -DENABLE_DBC
+	CXX_FLAGS = -g -O0 -DENABLE_DBC
 else
 	CXX_FLAGS = -g -O3
 endif
