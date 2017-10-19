@@ -37,7 +37,7 @@ set(CRUNCHTOPE_PATCH_COMMAND ${CMAKE_COMMAND} -P ${CRUNCHTOPE_cmake_patch})
 # Define the arguments passed to CMake.
 set(CRUNCHTOPE_CMAKE_ARGS 
       "-DCMAKE_INSTALL_PREFIX:FILEPATH=${TPL_INSTALL_PREFIX}"
-      "-DBUILD_SHARED_LIBS:BOOL=OFF"
+      "-DBUILD_SHARED_LIBS:BOOL=${BUILD_SHARED_LIBS}"
       "-DCMAKE_Fortran_FLAGS:STRING=-w -DALQUIMIA -Wall -fPIC -Wno-unused-variable -ffree-line-length-0 -O3"
       "-DPETSC_DIR=${PETSC_DIR}"
       "-DPETSC_ARCH=.")
@@ -71,5 +71,6 @@ ExternalProject_Add(${CRUNCHTOPE_BUILD_TARGET}
 
 include(BuildLibraryName)
 build_library_name(crunchchem CRUNCHTOPE_LIB APPEND_PATH ${TPL_INSTALL_PREFIX}/lib)
-
+set(CRUNCHTOPE_INCLUDE_DIRS ${TPL_INSTALL_PREFIX})
+set(CRUNCHTOPE_DIR ${TPL_INSTALL_PREFIX})
 set(_ALQUIMIA_CRUNCH_LIBRARY:FILEPATH "${TPL_INSTALL_PREFIX}/lib/libcrunchchem.a")

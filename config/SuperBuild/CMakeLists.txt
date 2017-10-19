@@ -532,7 +532,6 @@ endif()
 # Boost
 if (NOT ENABLE_XSDK)
   include(${SuperBuild_BUILD_FILES_DIR}/Build_Boost.cmake) 
-  # TESTINGinclude(${SuperBuild_BUILD_FILES_DIR}/Build_BoostCmake.cmake) 
   append_set(Amanzi_TPL_CMAKE_ARGS
              -DBOOST_ROOT:FILEPATH=${TPL_INSTALL_PREFIX}
              -DBoost_USE_STATIC_LIBS:BOOL=TRUE
@@ -712,7 +711,7 @@ if (NOT ENABLE_XSDK)
       set(ENABLE_PETSC TRUE)
       include(${SuperBuild_BUILD_FILES_DIR}/Build_PETSc.cmake)
     endif()
-    include(${SuperBuild_BUILD_FILES_DIR}/Build_pflotran.cmake)
+    include(${SuperBuild_BUILD_FILES_DIR}/Build_PFloTran.cmake)
   endif()
 
   if (ENABLE_CRUNCHTOPE)
@@ -723,7 +722,7 @@ if (NOT ENABLE_XSDK)
     include(${SuperBuild_BUILD_FILES_DIR}/Build_CrunchTope.cmake)
   endif()
   if (ENABLE_ALQUIMIA)
-    include(${SuperBuild_BUILD_FILES_DIR}/Build_alquimia.cmake)
+    include(${SuperBuild_BUILD_FILES_DIR}/Build_Alquimia.cmake)
   endif()
 else()
   # pflotran

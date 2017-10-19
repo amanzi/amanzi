@@ -67,7 +67,7 @@ diff -ruNbB crunchtope_160915-c31ecb9/CMakeLists.txt crunchtope-160915.c31ecb9.0
 +set(CMAKE_Fortran_MODULE_DIRECTORY "${PROJECT_BINARY_DIR}/mod_files")
 +
 +include_directories(${PETSC_DIR}/include)
-+add_library(${CRUNCHTOPE_LIB} STATIC ${CRUNCH_SRC})
++add_library(${CRUNCHTOPE_LIB} ${CRUNCH_SRC})
 +
 +install(TARGETS ${CRUNCHTOPE_LIB} DESTINATION ${CMAKE_INSTALL_PREFIX}/lib)
 +install(DIRECTORY ${CMAKE_Fortran_MODULE_DIRECTORY}/ DESTINATION ${CMAKE_INSTALL_PREFIX}/lib)
