@@ -82,7 +82,7 @@ set(SEACAS_CMAKE_CACHE_ARGS
                     ${Amanzi_CMAKE_Fortran_COMPILER_ARGS}
                     -DCMAKE_Fortran_COMPILER:FILEPATH=${CMAKE_Fortran_COMPILER_USE}
                     -DCMAKE_EXE_LINKER_FLAGS:STRING=${seacas_lflags}
-                    -DBUILD_SHARED_LIBS:BOOL=OFF 
+                    -DBUILD_SHARED_LIBS:BOOL=${BUILD_SHARED_LIBS}
 		    -DSEACASProj_ENABLE_ALL_PACKAGES:BOOL=FALSE
                     -DSEACASProj_ENABLE_SEACASExodus:BOOL=TRUE
 		    -DSEACASProj_ENABLE_SEACASNemslice:STRING=:BOOL=TRUE

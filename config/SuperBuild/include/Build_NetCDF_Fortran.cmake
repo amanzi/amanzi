@@ -38,6 +38,7 @@ ExternalProject_Add(${NetCDF_Fortran_BUILD_TARGET}
                         <SOURCE_DIR>/configure
                         --prefix=<INSTALL_DIR>
                         --disable-fortran-compiler-check
+		        CC=${CMAKE_C_COMPILER}
 		        FC=${CMAKE_Fortran_COMPILER}
                         FCFLAGS=${Amanzi_COMMON_FCFLAGS}
                         CPPFLAGS=${netcdf_fortran_cppflags}
