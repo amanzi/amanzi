@@ -44,7 +44,7 @@ Teuchos::RCP<FieldEvaluator> WRMEvaluator::Clone() const {
 
 void WRMEvaluator::InitializeFromPlist_() {
   // my keys are for saturation, note that order matters, liquid -> gas
-  Key akey = plist_.get<std::string>("evaluator name");
+  Key akey = Keys::cleanPListName(plist_.name());
   Key domain_name = Keys::getDomain(akey);
 
   std::size_t liq_pos = akey.find("liquid");

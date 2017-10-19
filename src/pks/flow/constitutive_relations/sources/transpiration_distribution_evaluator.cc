@@ -19,12 +19,11 @@ TranspirationDistributionEvaluator::TranspirationDistributionEvaluator(Teuchos::
 // Copy constructor
 TranspirationDistributionEvaluator::TranspirationDistributionEvaluator(const TranspirationDistributionEvaluator& other) :
     SecondaryVariableFieldEvaluator(other),
-    p_key_(other.p_key_),
+    f_wp_key_(other.f_wp_key_),
     f_root_key_(other.f_root_key_),
     trans_total_key_(other.trans_total_key_),    
     cv_key_(other.cv_key_),
-    surf_cv_key_(other.surf_cv_key_),
-    wp_min_(other.wp_min_)
+    surf_cv_key_(other.surf_cv_key_)
 {}
 
 
@@ -57,8 +56,8 @@ TranspirationDistributionEvaluator::InitializeFromPlist_()
 
   // - pull Keys from plist
   // dependency: pressure
-  p_key_ = Keys::readKey(plist_, domain_name, "pressure", "pressure");
-  dependencies_.insert(p_key_);
+  f_wp_key_ = Keys::readKey(plist_, domain_name, "water potential fraction", "relative_permeability");
+  dependencies_.insert(f_wp_key_);
 
   // dependency: rooting_depth_fraction
   f_root_key_ = Keys::readKey(plist_, domain_name, "rooting depth fraction", "rooting_depth_fraction");
@@ -73,9 +72,6 @@ TranspirationDistributionEvaluator::InitializeFromPlist_()
   dependencies_.insert(cv_key_);
   surf_cv_key_ = Keys::readKey(plist_, surface_name, "surface cell volume", "cell_volume");
   dependencies_.insert(surf_cv_key_);
-
-  // wilting point
-  wp_min_ = plist_.get<double>("wilting point [Pa]", -2.0e6);
 }
 
 
@@ -84,7 +80,7 @@ TranspirationDistributionEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
         const Teuchos::Ptr<CompositeVector>& result)
 {
   // on the subsurface
-  const Epetra_MultiVector& p = *S->GetFieldData(p_key_)->ViewComponent("cell", false);
+  const Epetra_MultiVector& f_wp = *S->GetFieldData(f_wp_key_)->ViewComponent("cell", false);
   const Epetra_MultiVector& f_root = *S->GetFieldData(f_root_key_)->ViewComponent("cell", false);
   const Epetra_MultiVector& cv = *S->GetFieldData(cv_key_)->ViewComponent("cell", false);
 
@@ -101,13 +97,10 @@ TranspirationDistributionEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
   for (int sc=0; sc!=trans_total.MyLength(); ++sc) {
     double column_total = 0.;
     double f_root_total = 0.;
-    double wp_total = 0.;
+    double f_wp_total = 0.;
     for (auto c : subsurf_mesh.cells_of_column(sc)) {
-      double water_potential_factor = (wp_min_ - p[0][c]) / (wp_min_ - p_atm);
-      water_potential_factor = water_potential_factor > 1.0 ? 1 :
-                               (water_potential_factor < 0. ? 0. : water_potential_factor);
-      column_total += water_potential_factor * f_root[0][c] * cv[0][c];
-      result_v[0][c] = water_potential_factor * f_root[0][c];
+      column_total += f_wp[0][c] * f_root[0][c] * cv[0][c];
+      result_v[0][c] = f_wp[0][c] * f_root[0][c];
     }
     if (column_total <= 0. && trans_total[0][sc] > 0.) {
       Errors::Message message("TranspirationDistributionEvaluator: Broken run, non-zero transpiration draw but no cells with some roots are above the wilting point.");
@@ -158,7 +151,7 @@ TranspirationDistributionEvaluator::EnsureCompatibility(const Teuchos::Ptr<State
   Teuchos::RCP<CompositeVectorSpace> dep_fac =
       Teuchos::rcp(new CompositeVectorSpace(*my_fac));
   dep_fac->SetOwned(false);
-  S->RequireField(p_key_)->Update(*dep_fac);
+  S->RequireField(f_wp_key_)->Update(*dep_fac);
   S->RequireField(cv_key_)->Update(*dep_fac);
   S->RequireField(f_root_key_)->Update(*dep_fac);
 

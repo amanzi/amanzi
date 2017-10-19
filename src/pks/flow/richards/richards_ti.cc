@@ -62,6 +62,7 @@ void Richards::Functional(double t_old,
   bc_head_->Compute(t_new);
   bc_flux_->Compute(t_new);
   UpdateBoundaryConditions_(S_next_.ptr());
+  db_->WriteBoundaryConditions(bc_markers_, bc_values_);
 
   // zero out residual
   Teuchos::RCP<CompositeVector> res = g->Data();
@@ -78,10 +79,10 @@ void Richards::Functional(double t_old,
 #if DEBUG_FLAG
   // dump s_old, s_new
   vnames[0] = "sl_old"; vnames[1] = "sl_new";
-  vecs[0] = S_inter_->GetFieldData(Keys::getKey(domain_,"saturation_liquid")).ptr();
-  vecs[1] = S_next_->GetFieldData(Keys::getKey(domain_,"saturation_liquid")).ptr();
+  vecs[0] = S_inter_->GetFieldData(sat_key_).ptr();
+  vecs[1] = S_next_->GetFieldData(sat_key_).ptr();
 
-  if (S_next_->HasField(Keys::getKey(domain_,"saturation_ice"))) {
+  if (S_next_->HasField(sat_ice_key_)) {
     vnames.push_back("si_old");
     vnames.push_back("si_new");
     vnames.push_back("mass_den");

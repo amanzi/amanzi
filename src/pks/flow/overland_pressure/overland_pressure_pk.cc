@@ -291,8 +291,8 @@ void OverlandPressureFlow::SetupOverlandFlow_(const Teuchos::Ptr<State>& S) {
 
   // limiters
   p_limit_ = plist_->get<double>("limit correction to pressure change [Pa]", -1.);
-
   patm_limit_ = plist_->get<double>("limit correction when crossing atmospheric pressure [Pa]", -1.);
+  patm_hard_limit_ = plist_->get<bool>("allow no negative ponded depths", false);
 
   subgrid_model_ =  plist_->get<bool>("subgrid model", false);
   
@@ -395,13 +395,6 @@ void OverlandPressureFlow::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S
       Teuchos::rcp(new Flow::OverlandConductivityEvaluator(cond_plist));
 
   S->SetFieldEvaluator(Keys::getKey(domain_,"overland_conductivity"), cond_evaluator);
-
-  //  if (domain_ == "surface_star"){
-  //   S->RequireField(Keys::getKey(domain_,"mass_density_ice"))->SetMesh(mesh_)->SetGhosted()
-  //     ->AddComponent("cell", AmanziMesh::CELL, 1);
-  //   S->RequireFieldEvaluator(Keys::getKey(domain_,"mass_density_ice"));
-  // }
-
 }
 
 
@@ -1161,6 +1154,21 @@ OverlandPressureFlow::ModifyCorrection(double h, Teuchos::RCP<const TreeVector> 
       } else if ((u_c[0][c] > patm) &&
                  (u_c[0][c] - du_c[0][c] < patm - patm_limit_)) {
         du_c[0][c] = u_c[0][c] - (patm - patm_limit_);          
+        my_limited++;
+      }
+    }
+    mesh_->get_comm()->MaxAll(&my_limited, &n_limited_spurt, 1);
+  }
+
+  if (patm_hard_limit_) {
+    double patm = *S_next_->GetScalarData("atmospheric_pressure");
+
+    Epetra_MultiVector& du_c = *du->Data()->ViewComponent("cell",false);
+    const Epetra_MultiVector& u_c = *u->Data()->ViewComponent("cell",false);
+
+    for (int c=0; c!=du_c.MyLength(); ++c) {
+      if (u_c[0][c] - du_c[0][c] < patm) {
+        du_c[0][c] = u_c[0][c] - patm;          
         my_limited++;
       }
     }
