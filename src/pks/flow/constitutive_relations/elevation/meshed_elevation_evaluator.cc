@@ -39,7 +39,7 @@ void MeshedElevationEvaluator::EvaluateElevationAndSlope_(const Teuchos::Ptr<Sta
   Key domain = Keys::getDomain(my_keys_[0]);
   Key domain_ss;
   if (domain == "surface") {
-    domain_ss = "";
+    domain_ss = "domain";
   } else if(boost::starts_with(domain, "surface")) {
     domain_ss = plist_.get<std::string>("parent domain name", domain.substr(8,domain.size()));
   } else {

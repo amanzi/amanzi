@@ -281,7 +281,7 @@ createMeshes(Teuchos::ParameterList& global_list,
   Teuchos::RCP<Teuchos::Time> volmeshtime =
       Teuchos::TimeMonitor::getNewCounter("volume mesh creation");
   Teuchos::TimeMonitor timer(*volmeshtime);
-
+  
   Teuchos::ParameterList& meshes_list = global_list.sublist("mesh");
 
   // always try to do the domain mesh first
@@ -309,6 +309,7 @@ createMeshes(Teuchos::ParameterList& global_list,
     auto surface_mesh = S.GetMesh("surface");
     Teuchos::ParameterList& vis_ss_plist = global_list.sublist("visualization columns"); 
     int nc = surface_mesh->num_entities(Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::OWNED);
+   
     for (int c=0; c!=nc; ++c){
       int id = surface_mesh->cell_map(false).GID(c);
       std::stringstream name_ss;
@@ -318,7 +319,7 @@ createMeshes(Teuchos::ParameterList& global_list,
     }  
     global_list.remove("visualization columns");
   }
-
+  
   // generalize vis for surface columns
   if (global_list.isSublist("visualization surface cells")) {
     auto surface_mesh = S.GetMesh("surface");
@@ -327,16 +328,34 @@ createMeshes(Teuchos::ParameterList& global_list,
     for (int c=0; c!=nc; ++c){
       int id = surface_mesh->cell_map(false).GID(c);
       std::stringstream name_ss, name_sf;
-      name_sf << "column_" << id << "_surface";
+      name_sf << "surface_column_" << id;
       vis_sf_plist.set("file name base", "visdump_"+name_sf.str());
       global_list.set("visualization " +name_sf.str(), vis_sf_plist);
     }
     global_list.remove("visualization surface cells");
   }
+
+  int rank;
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+
+  //generalize checkpoint files for columns
+  if(global_list.isSublist("checkpoints") && global_list.sublist("mesh").isSublist("column")){
+  Teuchos::ParameterList& checkpoint_plist = global_list.sublist("checkpoints");
+    std::stringstream name_check;
+    name_check << rank;
+    if (global_list.isSublist("checkpoints"))
+      checkpoint_plist.set("file name base", "checkpoint_"+name_check.str() + "_");
+    else
+      checkpoint_plist.set("file name base", "checkpoint");
+    global_list.set("checkpoint " +name_check.str(), checkpoint_plist);
+    global_list.remove("checkpoints");
+        
+  }
+  
   
   Teuchos::TimeMonitor::summarize();
   Teuchos::TimeMonitor::zeroOutTimers();
+  
+
 }
-
-
 } // namespace ATS

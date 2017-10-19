@@ -351,6 +351,7 @@ protected:
   Key sat_key_;
   Key sat_gas_key_;
   Key sat_ice_key_;
+  Key sat_gas_key_;
 
  private:
   // factory registration

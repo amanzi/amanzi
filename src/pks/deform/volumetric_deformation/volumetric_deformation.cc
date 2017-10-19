@@ -34,15 +34,18 @@ VolumetricDeformation::VolumetricDeformation(Teuchos::ParameterList& pk_tree,
                         const Teuchos::RCP<Teuchos::ParameterList>& glist,
                         const Teuchos::RCP<State>& S,
                         const Teuchos::RCP<TreeVector>& solution):
-    PK(pk_tree, glist,  S, solution),
-    PK_Physical_Default(pk_tree, glist,  S, solution),
-    surf_mesh_(Teuchos::null)
+  PK(pk_tree, glist,  S, solution),
+  PK_Physical_Default(pk_tree, glist,  S, solution),
+  surf_mesh_(Teuchos::null)
 {
 
   dt_ = plist_->get<double>("max time step [s]", 1.e80);
   dt_max_ = dt_;
 
   domain_ = Keys::getDomain(key_);
+
+  if (domain_.empty())
+    domain_ = "domain";
 
   // The deformation mode describes how to calculate new cell volume from a
   // provided function and the old cell volume.
@@ -91,22 +94,27 @@ void VolumetricDeformation::Setup(const Teuchos::Ptr<State>& S) {
   PK_Physical_Default::Setup(S);
 
   // save the meshes
-  std::cout<<"VOLUM: Setup "<<domain_<<" "<<key_<<"\n";
   mesh_nc_ = S->GetDeformableMesh(domain_);
   
   domain_surf_ = "";
-  if (!boost::starts_with(domain_, "surface_column")) domain_surf_ = "surface";
+  if (boost::starts_with(domain_, "column"))
+    domain_surf_ = "surface_" + domain_;
+  else
+    domain_surf_ = "surface";
+
   domain_surf_ = plist_->get<std::string>("surface domain name", domain_surf_);
 
-  if (!domain_surf_.empty() && S->HasMesh(domain_surf_)) {
-    surf_mesh_ = S->GetMesh(domain_surf_);
-    surf3d_mesh_ = S->GetMesh("surface_3d");
-    surf_mesh_nc_ = S->GetDeformableMesh(domain_surf_);
-    surf3d_mesh_nc_ = S->GetDeformableMesh("surface_3d");
-  }
+  if (S->HasMesh(domain_surf_) && domain_surf_.find("column") == std::string::npos){
+      surf_mesh_ = S->GetMesh(domain_surf_);
+      surf_mesh_nc_ = S->GetDeformableMesh(domain_surf_);
+      surf3d_mesh_ = S->GetMesh("surface_3d");
+      surf3d_mesh_nc_ = S->GetDeformableMesh("surface_3d");
+    }
 
   // create storage for primary variable, rock volume
   S->RequireField(key_, name_)->SetMesh(mesh_)->SetComponent("cell", AmanziMesh::CELL, 1);
+  
+  
 
   // Create storage and a function for cell volume change
   Teuchos::RCP<CompositeVectorSpace> cv_fac =  S->RequireField(Keys::getKey(domain_,"cell_volume_change"), name_);
@@ -145,10 +153,13 @@ void VolumetricDeformation::Setup(const Teuchos::Ptr<State>& S) {
       ->SetMesh(mesh_)->SetGhosted()
       ->SetComponent("node", AmanziMesh::NODE, dim);
   if (surf_mesh_ != Teuchos::null) {
+
+    if (domain_surf_.find("column") == std::string::npos){
     S->RequireField(Keys::getKey("surface_3d","vertex_coordinate"), name_)
         ->SetMesh(surf3d_mesh_)->SetGhosted()
         ->SetComponent("node", AmanziMesh::NODE, dim);
-    
+    }
+
     S->RequireField(Keys::getKey(domain_surf_,"vertex_coordinate"), name_)
         ->SetMesh(surf_mesh_)->SetGhosted()
         ->SetComponent("node", AmanziMesh::NODE, dim-1);
@@ -229,22 +240,24 @@ void VolumetricDeformation::Initialize(const Teuchos::Ptr<State>& S) {
     }
     default: {}
   }
-  if (!boost::starts_with(domain_,"surface"))
-  { // initialize the vertex coordinate to the current mesh
-    int dim = mesh_->space_dimension();
-    AmanziGeometry::Point coords(dim);
-    int nnodes = mesh_->num_entities(Amanzi::AmanziMesh::NODE,
-            Amanzi::AmanziMesh::OWNED);
 
-    Epetra_MultiVector& vc = *S->GetFieldData(Keys::getKey(domain_,"vertex_coordinate"),name_)
-        ->ViewComponent("node",false);
-    for (int iV=0; iV!=nnodes; ++iV) {
-      // get the coords of the node
-      mesh_->node_get_coordinates(iV,&coords);
-      for (int s=0; s!=dim; ++s) vc[s][iV] = coords[s];
-    }
-    S->GetField(Keys::getKey(domain_,"vertex_coordinate"),name_)->set_initialized();
+  // initialize the vertex coordinate to the current mesh
+  
+  int dim = mesh_->space_dimension();
+  AmanziGeometry::Point coords(dim);
+  int nnodes = mesh_->num_entities(Amanzi::AmanziMesh::NODE,
+                                   Amanzi::AmanziMesh::OWNED);
+  
+  Epetra_MultiVector& vc = *S->GetFieldData(Keys::getKey(domain_,"vertex_coordinate"),name_)
+    ->ViewComponent("node",false);
+  
+  for (int iV=0; iV!=nnodes; ++iV) {
+    // get the coords of the node
+    mesh_->node_get_coordinates(iV,&coords);
+    for (int s=0; s!=dim; ++s) vc[s][iV] = coords[s];
   }
+  S->GetField(Keys::getKey(domain_,"vertex_coordinate"),name_)->set_initialized();
+  
   
   if (surf_mesh_ != Teuchos::null) {
     // initialize the vertex coordinates of the surface meshes
@@ -264,7 +277,8 @@ void VolumetricDeformation::Initialize(const Teuchos::Ptr<State>& S) {
   }
   
   
-  if (S->HasMesh("surface_3d")) {
+  if (S->HasMesh("surface_3d") && domain_surf_.find("column") == std::string::npos) {
+
     // initialize the vertex coordinates of the surface meshes
     int dim = surf3d_mesh_->space_dimension();
     AmanziGeometry::Point coords(dim);
@@ -390,9 +404,10 @@ bool VolumetricDeformation::AdvanceStep(double t_old, double t_new, bool reinit)
                                                                             // if we are not too overpressured
 	  frac = (structural_vol_frac_ - (fs + fi)) * time_factor;
         }
-             
+
         dcell_vol_c[0][*c] = -frac*cv[0][*c];
 
+        ASSERT(dcell_vol_c[0][*c] <=0);
 #if DEBUG
 	std::cout << "Cell " << *c << ": V, dV: " << cv[0][*c] << " " << dcell_vol_c[0][*c] << std::endl
 		  << "  poro_0 " << base_poro[0][*c] << " | poro " << poro[0][*c] << " | frac " << frac << " | time factor " << time_factor << std::endl
@@ -532,6 +547,7 @@ bool VolumetricDeformation::AdvanceStep(double t_old, double t_new, bool reinit)
       Epetra_MultiVector& nodal_dz = *nodal_dz_vec->ViewComponent("node", "true");
 
       nodal_dz.PutScalar(0.);
+      mesh_->build_columns();
       int ncols = mesh_->num_columns(false);
       int z_index = mesh_->space_dimension()-1;
       for (int col=0; col!=ncols; ++col) {
@@ -541,12 +557,13 @@ bool VolumetricDeformation::AdvanceStep(double t_old, double t_new, bool reinit)
 
 	// iterate up the column accumulating face displacements
 	double face_displacement = 0.;
-	for (int ci=0; ci!=col_cells.size(); ++ci) {
-	  int f_below = col_faces[ci];
-	  int f_above = col_faces[ci+1];
+	for (int ci=col_cells.size()-1; ci>=0; --ci) {
+	  int f_below = col_faces[ci+1];
+	  int f_above = col_faces[ci];
 
 	  double dz = mesh_->face_centroid(f_above)[z_index] - mesh_->face_centroid(f_below)[z_index];
-	  face_displacement += -dz * dcell_vol_c[0][col_cells[ci]] / cv[0][col_cells[ci]];
+          face_displacement += -dz * dcell_vol_c[0][col_cells[ci]] / cv[0][col_cells[ci]];
+
 	  ASSERT(face_displacement >= 0.);
 	  if (face_displacement > 0.) {
 	    std::cout << "  Shifting cell " << col_cells[ci] << ", with personal displacement of " << -dz * dcell_vol_c[0][col_cells[ci]] / cv[0][col_cells[ci]] << " and frac " << -dcell_vol_c[0][col_cells[ci]] / cv[0][col_cells[ci]] << std::endl;
@@ -642,7 +659,7 @@ bool VolumetricDeformation::AdvanceStep(double t_old, double t_new, bool reinit)
   // now we have to adapt the surface mesh to the new volume mesh
   // extract the correct new coordinates for the surface from the domain
   // mesh and update the surface mesh accordingly
-  if (surf_mesh_ != Teuchos::null) {
+  if (surf_mesh_ != Teuchos::null && domain_surf_.find("column") == std::string::npos) {
     // WORKAROUND for non-communication in deform() by Mesh
     //    int nsurfnodes = surf_mesh_->num_entities(Amanzi::AmanziMesh::NODE,
     //            Amanzi::AmanziMesh::OWNED);
@@ -701,7 +718,7 @@ bool VolumetricDeformation::AdvanceStep(double t_old, double t_new, bool reinit)
     }
   }
 
-  if (S_next_->HasMesh("surface_3d")) {
+  if (S_next_->HasMesh("surface_3d") && domain_surf_.find("column") == std::string::npos) {
     // update vertex coordinates in state (for checkpointing and error recovery)
     Epetra_MultiVector& vc =
       *S_next_->GetFieldData(Keys::getKey("surface_3d","vertex_coordinate"),name_)

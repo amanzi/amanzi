@@ -36,6 +36,7 @@ add_library(mpc
   weak_mpc.cc
   operator_split_mpc.cc
   weak_mpc_semi_coupled.cc
+  weak_mpc_semi_coupled_deform.cc
   mpc_coupled_cells.cc
   pk_mpcsubcycled_ats.cc
   mpc_flowreactivetransport_pk.cc
@@ -145,6 +146,11 @@ register_evaluator_with_factory(
 
 register_evaluator_with_factory(
   HEADERFILE mpc_weak_subgrid_reg.hh
+  LISTNAME   MPC_PK_FAC
+  )
+
+register_evaluator_with_factory(
+  HEADERFILE weak_mpc_semi_coupled_deform_reg.hh
   LISTNAME   MPC_PK_FAC
   )
 
