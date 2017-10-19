@@ -22,8 +22,7 @@ amanzi_tpl_version_write(FILENAME ${TPL_VERSIONS_INCLUDE_FILE}
 # NO WHITESPACE between -D and VAR. Parser blows up otherwise.
 set(ZLIB_CMAKE_CACHE_ARGS
                   -DCMAKE_BUILD_TYPE:STRING=${CMAKE_BUILD_TYPE}
-                  -DCMAKE_INSTALL_PREFIX:STRING=<INSTALL_DIR>
-                  -DBUILD_SHARED_LIBS:BOOL=FALSE)
+                  -DCMAKE_INSTALL_PREFIX:STRING=<INSTALL_DIR>)
 
 # --- Add external project build and tie to the ZLIB build target
 ExternalProject_Add(${ZLIB_BUILD_TARGET}
