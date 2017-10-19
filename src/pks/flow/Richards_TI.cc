@@ -1,6 +1,6 @@
 /*
   Flow PK 
-
+ 
   Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
   The terms of use and "as is" disclaimer for this license are 
@@ -479,8 +479,8 @@ AmanziSolvers::FnBaseDefs::ModifyCorrectionResult
   AmanziGeometry::Point face_centr, cell_cntr;
   double max_sat_pert(0.25), damping_factor(0.5);
   
-  if (rp_list_->isSublist("clipping parameters")) {
-    Teuchos::ParameterList& clip_list = rp_list_->sublist("clipping parameters");
+  if (fp_list_->isSublist("clipping parameters")) {
+    Teuchos::ParameterList& clip_list = fp_list_->sublist("clipping parameters");
     max_sat_pert = clip_list.get<double>("maximum saturation change", 0.25);
     damping_factor = clip_list.get<double>("pressure damping factor", 0.5);
   }

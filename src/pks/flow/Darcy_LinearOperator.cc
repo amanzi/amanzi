@@ -29,9 +29,23 @@ void Darcy_PK::SolveFullySaturatedProblem(CompositeVector& u)
 {
   // add diffusion operator
   op_->RestoreCheckPoint();
+ 
+  if (S_->HasField("well_index")){
+    const Epetra_MultiVector& wi = *S_->GetFieldData("well_index")->ViewComponent("cell");
+    // for (int c = 0; c < ncells_owned; c++) {
+    //   wi[0][c] *= mesh_->cell_volume(c);
+    // }
+    op_acc_->AddAccumulationTerm(wi);
+  }
+
   op_diff_->ApplyBCs(true, true);
+  CompositeVector& rhs = *op_->rhs();
+  AddSourceTerms(rhs);
+
   op_->AssembleMatrix();
   op_->InitPreconditioner(preconditioner_name_, *preconditioner_list_);
+
+
 
   AmanziSolvers::LinearOperatorFactory<Operators::Operator, CompositeVector, CompositeVectorSpace> sfactory;
   Teuchos::RCP<AmanziSolvers::LinearOperator<Operators::Operator, CompositeVector, CompositeVectorSpace> >
@@ -39,7 +53,6 @@ void Darcy_PK::SolveFullySaturatedProblem(CompositeVector& u)
 
   solver->add_criteria(AmanziSolvers::LIN_SOLVER_MAKE_ONE_ITERATION);  // Make at least one iteration
 
-  CompositeVector& rhs = *op_->rhs();
   int ierr = solver->ApplyInverse(rhs, *solution);
 
   if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
