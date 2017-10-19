@@ -95,6 +95,7 @@ ExternalProject_add(${UnitTest_BUILD_TARGET}
 		    CMAKE_ARGS          ${Unittest_Config_File_ARGS}
                     CMAKE_CACHE_ARGS    ${Unittest_CMAKE_ARGS}
                                         -DCMAKE_INSTALL_PREFIX:PATH=<INSTALL_DIR>
+                                        -DBUILD_SHARED_LIBS:BOOL=${BUILD_SHARED_LIBS}
 		    # -- Build
 		    BUILD_COMMAND       $(MAKE)                       # Run make in build directory $(MAKE) enables parallel build
 		    BINARY_DIR          ${UnitTest_build_dir}         # Define the build directory
