@@ -21,6 +21,7 @@
 #include "Teuchos_XMLParameterListHelpers.hpp"
 #include "UnitTest++.h"
 #include "XMLParameterListWriter.hh"
+#include "Epetra_MpiComm.h"
 
 // Amanzi
 #include "InputConverterU.hh"

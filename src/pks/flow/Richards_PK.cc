@@ -69,12 +69,12 @@ Richards_PK::Richards_PK(Teuchos::ParameterList& pk_tree,
   // We need the flow list
   Teuchos::RCP<Teuchos::ParameterList> pk_list = Teuchos::sublist(glist, "PKs", true);
   Teuchos::RCP<Teuchos::ParameterList> flow_list = Teuchos::sublist(pk_list, pk_name, true);
-  rp_list_ = Teuchos::sublist(flow_list, "Richards problem", true);
+  fp_list_ = Teuchos::sublist(flow_list, "Richards problem", true);
   
   // We also need miscaleneous sublists
   preconditioner_list_ = Teuchos::sublist(glist, "preconditioners", true);
   linear_operator_list_ = Teuchos::sublist(glist, "solvers", true);
-  ti_list_ = Teuchos::sublist(rp_list_, "time integrator");
+  ti_list_ = Teuchos::sublist(fp_list_, "time integrator");
 
   vo_ = Teuchos::null;
 }
@@ -96,12 +96,12 @@ Richards_PK::Richards_PK(const Teuchos::RCP<Teuchos::ParameterList>& glist,
   // We need the flow list
   Teuchos::RCP<Teuchos::ParameterList> pk_list = Teuchos::sublist(glist, "PKs", true);
   Teuchos::RCP<Teuchos::ParameterList> flow_list = Teuchos::sublist(pk_list, pk_list_name, true);
-  rp_list_ = Teuchos::sublist(flow_list, "Richards problem", true);
+  fp_list_ = Teuchos::sublist(flow_list, "Richards problem", true);
  
   // We also need miscaleneous sublists
   preconditioner_list_ = Teuchos::sublist(glist, "preconditioners", true);
   linear_operator_list_ = Teuchos::sublist(glist, "solvers", true);
-  ti_list_ = Teuchos::sublist(rp_list_, "time integrator");
+  ti_list_ = Teuchos::sublist(fp_list_, "time integrator");
 
   ms_itrs_ = 0;
   ms_calls_ = 0;
@@ -135,7 +135,7 @@ void Richards_PK::Setup(const Teuchos::Ptr<State>& S)
 
   // Our decision can be affected by the list of models
   Teuchos::RCP<Teuchos::ParameterList> physical_models =
-      Teuchos::sublist(rp_list_, "physical models and assumptions");
+      Teuchos::sublist(fp_list_, "physical models and assumptions");
   std::string vwc_model = physical_models->get<std::string>("water content model", "constant density");
   std::string multiscale_model = physical_models->get<std::string>("multiscale model", "single porosity");
 
@@ -144,7 +144,7 @@ void Richards_PK::Setup(const Teuchos::Ptr<State>& S)
   std::vector<AmanziMesh::Entity_kind> locations;
   std::vector<int> ndofs;
 
-  Teuchos::RCP<Teuchos::ParameterList> list1 = Teuchos::sublist(rp_list_, "operators", true);
+  Teuchos::RCP<Teuchos::ParameterList> list1 = Teuchos::sublist(fp_list_, "operators", true);
   Teuchos::RCP<Teuchos::ParameterList> list2 = Teuchos::sublist(list1, "diffusion operator", true);
   Teuchos::RCP<Teuchos::ParameterList> list3 = Teuchos::sublist(list2, "matrix", true);
   std::string name = list3->get<std::string>("discretization primary");
@@ -199,7 +199,7 @@ void Richards_PK::Setup(const Teuchos::Ptr<State>& S)
       S->SetFieldEvaluator("pressure_matrix", pressure_matrix_eval_);
     }
 
-    Teuchos::RCP<Teuchos::ParameterList> msp_list = Teuchos::sublist(rp_list_, "multiscale models", true);
+    Teuchos::RCP<Teuchos::ParameterList> msp_list = Teuchos::sublist(fp_list_, "multiscale models", true);
     msp_ = CreateMultiscaleFlowPorosityPartition(mesh_, msp_list);
 
     if (!S->HasField("water_content_matrix")) {
@@ -241,12 +241,12 @@ void Richards_PK::Setup(const Teuchos::Ptr<State>& S)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
 
     Teuchos::RCP<Teuchos::ParameterList> physical_models = 
-        Teuchos::sublist(rp_list_, "physical models and assumptions");
+        Teuchos::sublist(fp_list_, "physical models and assumptions");
     std::string pom_name = physical_models->get<std::string>("porosity model", "constant porosity");
 
     if (pom_name == "compressible: pressure function") {
       Teuchos::RCP<Teuchos::ParameterList>
-          pom_list = Teuchos::sublist(rp_list_, "porosity models", true);
+          pom_list = Teuchos::sublist(fp_list_, "porosity models", true);
       Teuchos::RCP<PorosityModelPartition> pom = CreatePorosityModelPartition(mesh_, pom_list);
 
       Teuchos::ParameterList elist;
@@ -291,7 +291,7 @@ void Richards_PK::Setup(const Teuchos::Ptr<State>& S)
   
   // -- saturation
   Teuchos::RCP<Teuchos::ParameterList>
-      wrm_list = Teuchos::sublist(rp_list_, "water retention models", true);
+      wrm_list = Teuchos::sublist(fp_list_, "water retention models", true);
   wrm_ = CreateWRMPartition(mesh_, wrm_list);
 
   if (!S->HasField("saturation_liquid")) {
@@ -326,7 +326,7 @@ void Richards_PK::Setup(const Teuchos::Ptr<State>& S)
   S->SetFieldEvaluator("darcy_velocity", eval);
 
   // Require additional components for the existing fields
-  Teuchos::ParameterList abs_perm = rp_list_->sublist("absolute permeability");
+  Teuchos::ParameterList abs_perm = fp_list_->sublist("absolute permeability");
   coordinate_system_ = abs_perm.get<std::string>("coordinate system", "cartesian");
   int noff = abs_perm.get<int>("off-diagonal components", 0);
  
@@ -362,7 +362,7 @@ void Richards_PK::Initialize(const Teuchos::Ptr<State>& S)
 
   // Create verbosity object to print out initialiation statistics.
   Teuchos::ParameterList vlist;
-  vlist.sublist("verbose object") = rp_list_->sublist("verbose object");
+  vlist.sublist("verbose object") = fp_list_->sublist("verbose object");
   vo_ = Teuchos::rcp(new VerboseObject("FlowPK::Richards", vlist)); 
 
   if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
@@ -378,11 +378,11 @@ void Richards_PK::Initialize(const Teuchos::Ptr<State>& S)
   UpdateLocalFields_(S);
 
   // Create BCs and source terms.
-  InitializeBCsSources_(*rp_list_);
+  InitializeBCsSources_(*fp_list_);
 
   // relative permeability
   // -- create basic fields, factories and control variables
-  Teuchos::RCP<Teuchos::ParameterList> upw_list = Teuchos::sublist(rp_list_, "relative permeability", true);
+  Teuchos::RCP<Teuchos::ParameterList> upw_list = Teuchos::sublist(fp_list_, "relative permeability", true);
   relperm_ = Teuchos::rcp(new RelPerm(*upw_list, mesh_, atm_pressure_, wrm_));
 
   Operators::UpwindFactory<RelPerm> upwind_factory;
@@ -407,7 +407,7 @@ void Richards_PK::Initialize(const Teuchos::Ptr<State>& S)
 
   // -- coupling with other physical PKs
   Teuchos::RCP<Teuchos::ParameterList> physical_models = 
-      Teuchos::sublist(rp_list_, "physical models and assumptions");
+      Teuchos::sublist(fp_list_, "physical models and assumptions");
   vapor_diffusion_ = physical_models->get<bool>("vapor diffusion", false);
   multiscale_porosity_ = (physical_models->get<std::string>(
       "multiscale model", "single porosity") != "single porosity");
@@ -416,12 +416,12 @@ void Richards_PK::Initialize(const Teuchos::Ptr<State>& S)
   SetAbsolutePermeabilityTensor();
 
   // Select a proper matrix class. 
-  const Teuchos::ParameterList& tmp_list = rp_list_->sublist("operators")
+  const Teuchos::ParameterList& tmp_list = fp_list_->sublist("operators")
                                                     .sublist("diffusion operator");
   Teuchos::ParameterList oplist_matrix = tmp_list.sublist("matrix");
   Teuchos::ParameterList oplist_pc = tmp_list.sublist("preconditioner");
 
-  std::string name = rp_list_->sublist("relative permeability").get<std::string>("upwind method");
+  std::string name = fp_list_->sublist("relative permeability").get<std::string>("upwind method");
   std::string nonlinear_coef("standard: cell");
   if (name == "upwind: darcy velocity") {
     nonlinear_coef = "upwind: face";
@@ -499,7 +499,7 @@ void Richards_PK::Initialize(const Teuchos::Ptr<State>& S)
   Teuchos::ParameterList& bdf1_list = ti_list_->sublist("BDF1");
 
   if (! bdf1_list.isSublist("verbose object"))
-      bdf1_list.sublist("verbose object") = rp_list_->sublist("verbose object");
+      bdf1_list.sublist("verbose object") = fp_list_->sublist("verbose object");
 
   bdf1_dae = Teuchos::rcp(new BDF1_TI<TreeVector, TreeVectorSpace>(*this, bdf1_list, soln_));
 
@@ -651,7 +651,7 @@ void Richards_PK::Initialize(const Teuchos::Ptr<State>& S)
   }
 
   // Development: miscalleneous
-  algebraic_water_content_balance_ = rp_list_->get<bool>("algebraic water content balance", false);
+  algebraic_water_content_balance_ = fp_list_->get<bool>("algebraic water content balance", false);
   if (algebraic_water_content_balance_) {
     CompositeVectorSpace cvs; 
     cvs.SetMesh(mesh_)->SetGhosted(false)

@@ -107,7 +107,6 @@ class Darcy_PK : public Flow_PK {
   Teuchos::RCP<TreeVector> soln_;
   
  private:
-  Teuchos::RCP<Teuchos::ParameterList> dp_list_;
   Teuchos::RCP<Operators::Operator> op_;
   Teuchos::RCP<Operators::OperatorDiffusion> op_diff_;
   Teuchos::RCP<Operators::OperatorAccumulation> op_acc_;

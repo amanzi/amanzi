@@ -192,11 +192,11 @@ AmanziUnstructuredGridSimulationDriver::Run(const MPI_Comm& mpi_comm,
       if (partitioner_specified) {
         std::string partitioner = expert_mesh_params.get<std::string>("partitioner");
         if (partitioner == "METIS" || partitioner == "metis")
-          factory.partitioner(Amanzi::AmanziMesh::Partitioner_type::METIS);
+          factory.set_partitioner(Amanzi::AmanziMesh::Partitioner_type::METIS);
         else if (partitioner == "ZOLTAN_GRAPH" || partitioner == "zoltan_graph")
-          factory.partitioner(Amanzi::AmanziMesh::Partitioner_type::ZOLTAN_GRAPH);
+          factory.set_partitioner(Amanzi::AmanziMesh::Partitioner_type::ZOLTAN_GRAPH);
         else if (partitioner == "ZOLTAN_RCB" || partitioner == "zoltan_rcb")
-          factory.partitioner(Amanzi::AmanziMesh::Partitioner_type::ZOLTAN_RCB);
+          factory.set_partitioner(Amanzi::AmanziMesh::Partitioner_type::ZOLTAN_RCB);
       }
     }
 

@@ -605,7 +605,7 @@ SUITE(distance_factory) {
   TEST(create)
   {
     Teuchos::ParameterList list;
-    Teuchos::ParameterList& sublist = list.sublist("function-distance");
+    Teuchos::ParameterList& sublist = list.sublist("function-squaredistance");
     Teuchos::Array<double> x0(2), metric(2);
     x0[0] = 1.0;
     x0[1] = 0.0;
