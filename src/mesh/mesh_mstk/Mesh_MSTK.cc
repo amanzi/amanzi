@@ -1013,8 +1013,9 @@ void Mesh_MSTK::extract_mstk_mesh(const Epetra_MpiComm *incomm,
             
         MFace_ptr mf_new = MF_New(mesh);
         MF_Set_Edges(mf_new,nfe,fedges_new,fedirs);
-        MF_Set_GEntDim(mf_new,MF_GEntDim(mf));
-        MF_Set_GEntID(mf_new,MF_GEntID(mf));
+        MF_Set_GEntDim(mf_new,2);  // This has to be surface mesh
+        if (MF_GEntDim(mf) == 2)
+          MF_Set_GEntID(mf_new,MF_GEntID(mf));
 
         MEnt_Set_AttVal(mf,copyatt,ival,rval,mf_new);
         MEnt_Set_AttVal(mf_new,fparentatt,0,0.0,mf);
@@ -1056,8 +1057,10 @@ void Mesh_MSTK::extract_mstk_mesh(const Epetra_MpiComm *incomm,
           ME_Set_Vertex(me_new,j,mv_new);
         }
 
+        if (ME_GEntDim(me) == 1)
+          ME_Set_GEntDim(me_new, 1);        
         MEnt_Set_AttVal(me,copyatt,ival,rval,me_new);
-        MEnt_Set_AttVal(me,eparentatt,0,0.0,me);
+        MEnt_Set_AttVal(me_new,eparentatt,0,0.0,me);
       }
 
       break;
@@ -4770,7 +4773,7 @@ void Mesh_MSTK::collapse_degen_edges()
   delete [] merged_ents_info_global;
   delete [] offset;
 
-  /* Go through all mesh sets and replace any merged entities */
+  // Go through all mesh sets and replace any merged entities
 
   MEntity_ptr delent, keepent;
   int nsets = MESH_Num_MSets(mesh);
@@ -4789,8 +4792,8 @@ void Mesh_MSTK::collapse_degen_edges()
     }
   }
 
-  /* Go through all mesh sets and remove entities that were deleted
-   * (not merged) */
+  // Go through all mesh sets and remove entities that were deleted
+  // (not merged)
 
   idx = 0;
   while ((delent = List_Next_Entry(deleted_ents_all, &idx))) {
@@ -4806,7 +4809,6 @@ void Mesh_MSTK::collapse_degen_edges()
     }
   }
 
-
   // ME_Collapse only marked these entities as DELETED but now
   // delete them for good
   idx = 0;
@@ -4818,8 +4820,11 @@ void Mesh_MSTK::collapse_degen_edges()
 
   // Now renumber global IDs to make them contiguous
 
-  if (entities_deleted)
+  if (entities_deleted) {
+    std::cerr << "Entities deleted in collapse_degen_edges ..." << "\n";
     MESH_Renumber_GlobalIDs(mesh, MALLTYPE, 0, NULL, mpicomm_);
+  }
+
 #endif
 }
 
