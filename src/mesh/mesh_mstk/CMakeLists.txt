@@ -78,20 +78,20 @@ if (BUILD_TESTS)
     endif()
 
     #Test: eliminate degeneracies for serial mesh
-    add_amanzi_test(mstk_po_test mstk_po_test
+    add_amanzi_test(mstk_pinchout_test mstk_pinchout_test
                     KIND int
                     SOURCE test/Main.cc test/test_pinchouts.cc
                     LINK_LIBS mstk_mesh mesh_factory mesh_audit ${UnitTest_LIBRARIES})
 
     #Test: eliminate degeneracies in parallel mesh created from inline partitioning
-    add_amanzi_test(mstk_po_test_small_par mstk_po_test_small_par
+    add_amanzi_test(mstk_pinchout_test_par mstk_pinchout_test_par
                     KIND int
 		    NPROCS 4
                     SOURCE test/Main.cc test/test_pinchouts.cc
                     LINK_LIBS mstk_mesh mesh_factory mesh_audit ${UnitTest_LIBRARIES})
 
     #Test: eliminate degeneracies in pre-partitioned parallel mesh
-    add_amanzi_test(mstk_degen_prepart mstk_degen_prepart
+    add_amanzi_test(mstk_pinchout_test_prepart mstk_pinchout_test_prepart
                     KIND int
 		    NPROCS 4
                     SOURCE test/Main.cc test/test_degen_prepart.cc
