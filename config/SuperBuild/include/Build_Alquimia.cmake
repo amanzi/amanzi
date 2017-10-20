@@ -20,7 +20,6 @@ amanzi_tpl_version_write(FILENAME ${TPL_VERSIONS_INCLUDE_FILE}
                          PREFIX ALQUIMIA
                          VERSION ${ALQUIMIA_VERSION_MAJOR} ${ALQUIMIA_VERSION_MINOR} ${ALQUIMIA_VERSION_PATCH})
   
-
 # --- Patch Alquimia code
 # Alquimia and Amanzi disagree about how to find PETSc, so we override 
 # Alquimia's method here using a patch command to turn $ENV{var} -> ${var}.
@@ -39,11 +38,15 @@ set(ALQUIMIA_PATCH_COMMAND sh ${SuperBuild_TEMPLATE_FILES_DIR}/alquimia-patch-st
 # --- set the patch command
 #set(ALQUIMIA_PATCH_COMMAND ${CMAKE_COMMAND} -P ${ALQUIMIA_cmake_patch})
 
-
 # --- Define the arguments passed to CMake.
-find_library(_crunchtope_library
-             NAMES crunchchem
-             PATHS ${CRUNCHTOPE_DIR}/lib)
+set(suffix "a")
+if (BUILD_SHARED_LIBS)
+  if (APPLE)
+    set(suffix "dylib")
+  else()
+    set(suffix "so")
+  endif()
+endif()
 
 set(ALQUIMIA_CMAKE_ARGS 
       "-DCMAKE_INSTALL_PREFIX:FILEPATH=${TPL_INSTALL_PREFIX}"
@@ -54,7 +57,7 @@ set(ALQUIMIA_CMAKE_ARGS
       "-DTPL_PFLOTRAN_LIBRARIES:FILEPATH=${PFLOTRAN_DIR}/src/pflotran/libpflotranchem.a" 
       "-DTPL_PFLOTRAN_INCLUDE_DIRS:FILEPATH=${PFLOTRAN_INCLUDE_DIRS}"
       "-DXSDK_WITH_CRUNCHFLOW:BOOL=${ENABLE_CRUNCHTOPE}"
-      "-DTPL_CRUNCHFLOW_LIBRARIES:FILEPATH=${_crunchtope_library}"
+      "-DTPL_CRUNCHFLOW_LIBRARIES:FILEPATH=${CRUNCHTOPE_DIR}/lib/libcrunchchem.${suffix}"
       "-DTPL_CRUNCHFLOW_INCLUDE_DIRS:FILEPATH=${TPL_INSTALL_PREFIX}/lib"
       "-DCMAKE_Fortran_FLAGS:STRING=-fPIC -w -Wno-unused-variable -ffree-line-length-0 -O3")
 
