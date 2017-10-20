@@ -78,6 +78,10 @@ set(MSTK_CMAKE_CACHE_ARGS
                     -DENABLE_Tests:BOOL=FALSE
                     -DINSTALL_DIR:PATH=<INSTALL_DIR>
                     -DINSTALL_ADD_VERSION:BOOL=FALSE)
+if (APPLE)
+  list(APPEND MSTK_CMAKE_CACHE_ARGS  "-DCMAKE_INSTALL_RPATH:PATH=${CMAKE_INSTALL_RPATH}")
+  list(APPEND MSTK_CMAKE_CACHE_ARGS  "-DCMAKE_INSTALL_NAME_DIR:PATH=${CMAKE_INSTALL_RPATH}")
+endif()
 
 # Add external project build and tie to the MSTK build target
 ExternalProject_Add(${MSTK_BUILD_TARGET}

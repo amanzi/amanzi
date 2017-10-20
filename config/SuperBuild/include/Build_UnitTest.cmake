@@ -81,6 +81,11 @@ set(Unittest_CMAKE_ARGS
    ${Unittest_CMAKE_EXTRA_ARGS}
    ${Unittest_CMAKE_LANG_ARGS})
 
+if (APPLE)
+  list(APPEND Unittest_CMAKE_ARGS  "-DCMAKE_INSTALL_RPATH:PATH=${CMAKE_INSTALL_RPATH}")
+  list(APPEND Unittest_CMAKE_ARGS  "-DCMAKE_INSTALL_NAME_DIR:PATH=${CMAKE_INSTALL_RPATH}")
+endif()
+
 ExternalProject_add(${UnitTest_BUILD_TARGET}
                     DEPENDS   ${UnitTest_PACKAGE_DEPENDS}             # Package dependency target
                     TMP_DIR   ${UnitTest_tmp_dir}                     # Temporary files directory

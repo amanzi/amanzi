@@ -49,6 +49,10 @@ set(CCSE_CMAKE_CACHE_ARGS
                        -DCMAKE_Fortran_FLAGS_${BUILD_TYPE_UPPER}:STRING=${Amanzi_COMMON_FCFLAGS}
                        -DVERBOSE:BOOL=ON)
 
+if (APPLE)
+  list(APPEND CCSE_CMAKE_CACHE_ARGS  "-DCMAKE_INSTALL_RPATH:PATH=${CMAKE_INSTALL_RPATH}")
+  list(APPEND CCSE_CMAKE_CACHE_ARGS  "-DCMAKE_INSTALL_NAME_DIR:PATH=${CMAKE_INSTALL_RPATH}")
+endif()
 
 # --- Set the name of the patch
 set(CCSE_patch_file ccse-1.3.4-dependency.patch ccse-1.3.4-tools-compilers.patch)

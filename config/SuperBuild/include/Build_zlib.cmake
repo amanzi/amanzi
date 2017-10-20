@@ -24,6 +24,11 @@ set(ZLIB_CMAKE_CACHE_ARGS
                   -DCMAKE_BUILD_TYPE:STRING=${CMAKE_BUILD_TYPE}
                   -DCMAKE_INSTALL_PREFIX:STRING=<INSTALL_DIR>)
 
+if (APPLE)
+  list(APPEND ZLIB_CMAKE_CACHE_ARGS  "-DCMAKE_INSTALL_RPATH:PATH=${CMAKE_INSTALL_RPATH}")
+  list(APPEND ZLIB_CMAKE_CACHE_ARGS  "-DCMAKE_INSTALL_NAME_DIR:PATH=${CMAKE_INSTALL_RPATH}")
+endif()
+
 # --- Add external project build and tie to the ZLIB build target
 ExternalProject_Add(${ZLIB_BUILD_TARGET}
                     DEPENDS   ${ZLIB_PACKAGE_DEPENDS}             # Package dependency target

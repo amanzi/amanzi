@@ -73,6 +73,10 @@ if (BUILD_SHARED_LIBS)
 endif()
 
 set(hypre_install_opt "-DHYPRE_INSTALL_PREFIX:PATH=${TPL_INSTALL_PREFIX}")
+if (APPLE)
+  list(APPEND hypre_install_opt  "-DCMAKE_INSTALL_RPATH:PATH=${CMAKE_INSTALL_RPATH}")
+  list(APPEND hypre_install_opt  "-DCMAKE_INSTALL_NAME_DIR:PATH=${CMAKE_INSTALL_RPATH}")
+endif()
 
 
 # --- Set the name of the patch

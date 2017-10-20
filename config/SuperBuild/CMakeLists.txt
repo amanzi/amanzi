@@ -13,6 +13,14 @@ cmake_minimum_required(VERSION 3.2)
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+if (APPLE) 
+  set(CMAKE_SKIP_BUILD_RPATH FALSE)
+  set(CMAKE_SKIP_INSTALL_RPATH FALSE)
+  set(CMAKE_BUILD_WITH_INSTALL_RPATH FALSE)
+  set(CMAKE_INSTALL_RPATH "${TPL_INSTALL_PREFIX}/lib")
+  set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE) 
+endif()
+
 # ############################################################################ #
 # Compiler Definition Warnings
 # ############################################################################ #
