@@ -4570,35 +4570,6 @@ void Mesh_MSTK::init_set_info()
             if (MEnt_Dim(ent) == MDELETED)
               MSet_Rem(mset, ent);
           }
-  
-//        Deleted entities all have MEnt_dim == MDELETED, hence we will never enter any of
-//        the switch cases below
-/*
-          entdim = MSet_EntDim(mset);
-          int idx=0;
-          switch (entdim) {
-          case MREGION:
-            MRegion_ptr region;
-            while ((region = List_Next_Entry(deleted_regions,&idx)))
-              MSet_Rem(mset,region);
-            break;
-          case MFACE:
-            MFace_ptr face;
-            while ((face = List_Next_Entry(deleted_faces,&idx)))
-              MSet_Rem(mset,face);
-            break;
-          case MEDGE:
-            MEdge_ptr edge;
-            while ((edge = List_Next_Entry(deleted_edges,&idx)))
-              MSet_Rem(mset,edge);
-            break;
-          case MVERTEX:
-            MVertex_ptr vertex;
-            while ((vertex = List_Next_Entry(deleted_vertices,&idx)))
-              MSet_Rem(mset,vertex);
-            break;
-          }
-*/
         }
       }
     }
@@ -4622,35 +4593,6 @@ void Mesh_MSTK::init_set_info()
               if (MEnt_Dim(ent) == MDELETED)
                 MSet_Rem(mset, ent);
             }
-            
-//          Deleted entities all have MEnt_dim == MDELETED, hence we will never enter any of
-//          the switch cases below
-/*
-            entdim = MSet_EntDim(mset);
-            int idx=0;
-            switch (entdim) {
-            case MREGION:
-              MRegion_ptr region;
-              while ((region = List_Next_Entry(deleted_regions,&idx)))
-                MSet_Rem(mset,region);
-              break;
-            case MFACE:
-              MFace_ptr face;
-              while ((face = List_Next_Entry(deleted_faces,&idx)))
-                MSet_Rem(mset,face);
-              break;
-            case MEDGE:
-              MEdge_ptr edge;
-              while ((edge = List_Next_Entry(deleted_edges,&idx)))
-                MSet_Rem(mset,edge);
-              break;
-            case MVERTEX:
-              MVertex_ptr vertex;
-              while ((vertex = List_Next_Entry(deleted_vertices,&idx)))
-                MSet_Rem(mset,vertex);
-              break;
-            }
-*/
           }
         }
       }
