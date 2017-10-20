@@ -661,6 +661,8 @@ Mesh_MSTK::Mesh_MSTK(const Mesh& inmesh,
     extface_map_w_ghosts_(NULL), extface_map_wo_ghosts_(NULL),
     owned_to_extface_importer_(NULL)
 {  
+  Mesh_ptr inmesh_mstk = ((Mesh_MSTK&) inmesh).mesh;
+
   // store pointers to the MESH_XXXFromID functions so that they can
   // be called without a switch statement 
 
@@ -669,7 +671,13 @@ Mesh_MSTK::Mesh_MSTK(const Mesh& inmesh,
 
   MType entity_dim = ((Mesh_MSTK&) inmesh).entity_kind_to_mtype(entity_kind);
 
-  Mesh_ptr inmesh_mstk = ((Mesh_MSTK&) inmesh).mesh;
+  // Also make sure that the mesh object can do fast queries on local IDs
+  //
+  // Commented out for now to avoid another backwards incompatible
+  // change and if the mesh has no modifications it is fast. Also, its
+  // a one time setup cost but it would be good to enable it sometime
+  //
+  // MESH_Enable_LocalIDSearch(inmesh_mstk);
 
   int nent = entity_ids.size();
   List_ptr src_ents = List_New(nent);
@@ -701,6 +709,8 @@ Mesh_MSTK::Mesh_MSTK(const Epetra_MpiComm *comm_,
     extface_map_w_ghosts_(NULL), extface_map_wo_ghosts_(NULL),
     owned_to_extface_importer_(NULL)
 {  
+  Mesh_ptr inmesh_mstk = ((Mesh_MSTK&) inmesh).mesh;
+
   // store pointers to the MESH_XXXFromID functions so that they can
   // be called without a switch statement 
 
@@ -709,7 +719,13 @@ Mesh_MSTK::Mesh_MSTK(const Epetra_MpiComm *comm_,
 
   MType entity_dim = ((Mesh_MSTK&) inmesh).entity_kind_to_mtype(entity_kind);
 
-  Mesh_ptr inmesh_mstk = ((Mesh_MSTK&) inmesh).mesh;
+  // Also make sure that the mesh object can do fast queries on local IDs
+  //
+  // Commented out for now to avoid another backwards incompatible
+  // change and if the mesh has no modifications it is fast. Also, its
+  // a one time setup cost but it would be good to enable it sometime
+  //
+  // MESH_Enable_LocalIDSearch(inmesh_mstk);
 
   int nent = entity_ids.size();
   List_ptr src_ents = List_New(nent);
@@ -815,6 +831,9 @@ void Mesh_MSTK::extract_mstk_mesh(const Epetra_MpiComm *incomm,
     amanzi_throw(mesg);
   }
 
+  // Make sure Global ID searches are enabled
+
+  MESH_Enable_GlobalIDSearch(inmesh_mstk);
 
   if (flatten || extrude) {
     if (entity_dim == MREGION || entity_dim == MVERTEX) {
@@ -903,7 +922,7 @@ void Mesh_MSTK::extract_mstk_mesh(const Epetra_MpiComm *incomm,
   rparentatt = MAttrib_New(mesh,"rparentatt",POINTER,MREGION);
   
   switch (entity_dim) {
-    case MREGION: {
+    case MREGION: {  // Extracting a subset of a solid mesh
       
       idx = 0; 
       MRegion_ptr mr;
@@ -965,7 +984,8 @@ void Mesh_MSTK::extract_mstk_mesh(const Epetra_MpiComm *incomm,
 
       break;
     }
-    case MFACE: {
+    case MFACE: {  // Extracting a surface from a solid mesh or subset of 
+      //           // a surface mesh
 
       idx = 0; 
       MFace_ptr mf = nullptr;
@@ -1023,7 +1043,7 @@ void Mesh_MSTK::extract_mstk_mesh(const Epetra_MpiComm *incomm,
 
       break;
     }
-    case MEDGE: {
+    case MEDGE: {  // Extracting a wire mesh from a solid or surface mesh
 
       idx = 0;
       MEdge_ptr me = nullptr;
