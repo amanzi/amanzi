@@ -24,10 +24,6 @@ set(ZLIB_CMAKE_CACHE_ARGS
                   -DCMAKE_BUILD_TYPE:STRING=${CMAKE_BUILD_TYPE}
                   -DCMAKE_INSTALL_PREFIX:STRING=<INSTALL_DIR>)
 
-if (APPLE)
-  list(APPEND ZLIB_CMAKE_CACHE_ARGS  "-DCMAKE_INSTALL_RPATH:PATH=${CMAKE_INSTALL_RPATH}")
-  list(APPEND ZLIB_CMAKE_CACHE_ARGS  "-DCMAKE_INSTALL_NAME_DIR:PATH=${CMAKE_INSTALL_RPATH}")
-endif()
 
 # --- Add external project build and tie to the ZLIB build target
 ExternalProject_Add(${ZLIB_BUILD_TARGET}
@@ -40,7 +36,8 @@ ExternalProject_Add(${ZLIB_BUILD_TARGET}
                     URL_MD5      ${ZLIB_MD5_SUM}                  # md5sum of the archive file
                     # -- Configure
                     SOURCE_DIR       ${ZLIB_source_dir}               # Source directory
-                    CMAKE_CACHE_ARGS ${ZLIB_CMAKE_CACHE_ARGS}         # CMAKE_CACHE_ARGS or CMAKE_ARGS => CMake configure
+                    CMAKE_CACHE_ARGS ${AMANZI_CMAKE_CACHE_ARGS}       # Global definitions from root CMakeList
+                                     ${ZLIB_CMAKE_CACHE_ARGS}
                                      ${Amanzi_CMAKE_C_COMPILER_ARGS}  # Ensure uniform build
                                      -DCMAKE_C_COMPILER:FILEPATH=${CMAKE_C_COMPILER}
                                      -DBUILD_SHARED_LIBS:BOOL=${BUILD_SHARED_LIBS}

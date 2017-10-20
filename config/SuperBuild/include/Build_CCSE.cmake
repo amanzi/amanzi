@@ -49,10 +49,6 @@ set(CCSE_CMAKE_CACHE_ARGS
                        -DCMAKE_Fortran_FLAGS_${BUILD_TYPE_UPPER}:STRING=${Amanzi_COMMON_FCFLAGS}
                        -DVERBOSE:BOOL=ON)
 
-if (APPLE)
-  list(APPEND CCSE_CMAKE_CACHE_ARGS  "-DCMAKE_INSTALL_RPATH:PATH=${CMAKE_INSTALL_RPATH}")
-  list(APPEND CCSE_CMAKE_CACHE_ARGS  "-DCMAKE_INSTALL_NAME_DIR:PATH=${CMAKE_INSTALL_RPATH}")
-endif()
 
 # --- Set the name of the patch
 set(CCSE_patch_file ccse-1.3.4-dependency.patch ccse-1.3.4-tools-compilers.patch)
@@ -82,7 +78,8 @@ ExternalProject_Add(${CCSE_BUILD_TARGET}
 		    PATCH_COMMAND ${CCSE_PATCH_COMMAND}                    
                     # -- Configure
                     SOURCE_DIR       ${CCSE_source_dir}           # Source directory
-                    CMAKE_CACHE_ARGS ${CCSE_CMAKE_CACHE_ARGS}     # CMAKE_CACHE_ARGS or CMAKE_ARGS => CMake configure
+		    CMAKE_CACHE_ARGS ${AMANZI_CMAKE_CACHE_ARGS}   # Global definitions from root CMakeList
+		                     ${CCSE_CMAKE_CACHE_ARGS}     
                     # -- Build
                     BINARY_DIR        ${CCSE_build_dir}           # Build directory 
                     BUILD_COMMAND     $(MAKE)                     # $(MAKE) enables parallel builds through make

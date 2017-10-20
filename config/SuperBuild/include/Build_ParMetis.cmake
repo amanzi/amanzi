@@ -27,10 +27,7 @@ set(ParMetis_CMAKE_CACHE_ARGS
                   -DSHARED:BOOL=${BUILD_SHARED_LIBS}
                   -DGKLIB_PATH:PATH=${ParMetis_GKLIB_DIR}
                   -DMETIS_PATH:PATH=${ParMetis_METIS_DIR})
-if (APPLE)
-  list(APPEND ParMetis_CMAKE_CACHE_ARGS  "-DCMAKE_INSTALL_RPATH:PATH=${CMAKE_INSTALL_RPATH}")
-  list(APPEND ParMetis_CMAKE_CACHE_ARGS  "-DCMAKE_INSTALL_NAME_DIR:PATH=${CMAKE_INSTALL_RPATH}")
-endif()
+
 
 # --- Add external project build and tie to the ParMetis build target
 ExternalProject_Add(${ParMetis_BUILD_TARGET}
@@ -38,12 +35,13 @@ ExternalProject_Add(${ParMetis_BUILD_TARGET}
                     TMP_DIR   ${ParMetis_tmp_dir}                     # Temporary files directory
                     STAMP_DIR ${ParMetis_stamp_dir}                   # Timestamp and log directory
                     # -- Download and URL definitions
-                    DOWNLOAD_DIR ${TPL_DOWNLOAD_DIR}              # Download directory
+                    DOWNLOAD_DIR ${TPL_DOWNLOAD_DIR} 
                     URL          ${ParMetis_URL}                      # URL may be a web site OR a local file
                     URL_MD5      ${ParMetis_MD5_SUM}                  # md5sum of the archive file
                     # -- Configure
-                    SOURCE_DIR       ${ParMetis_source_dir}               # Source directory
-                    CMAKE_CACHE_ARGS ${ParMetis_CMAKE_CACHE_ARGS}         # CMAKE_CACHE_ARGS or CMAKE_ARGS => CMake configure
+                    SOURCE_DIR       ${ParMetis_source_dir}           # Source directory
+                    CMAKE_CACHE_ARGS ${AMANZI_CMAKE_CACHE_ARGS}       # Global definitions from root CMakeList
+                                     ${ParMetis_CMAKE_CACHE_ARGS}     
                                      ${Amanzi_CMAKE_C_COMPILER_ARGS}  # Ensure uniform build
                                      -DCMAKE_C_COMPILER:FILEPATH=${CMAKE_C_COMPILER}
                     # -- Build

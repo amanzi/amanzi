@@ -81,11 +81,6 @@ set(Unittest_CMAKE_ARGS
    ${Unittest_CMAKE_EXTRA_ARGS}
    ${Unittest_CMAKE_LANG_ARGS})
 
-if (APPLE)
-  list(APPEND Unittest_CMAKE_ARGS  "-DCMAKE_INSTALL_RPATH:PATH=${CMAKE_INSTALL_RPATH}")
-  list(APPEND Unittest_CMAKE_ARGS  "-DCMAKE_INSTALL_NAME_DIR:PATH=${CMAKE_INSTALL_RPATH}")
-endif()
-
 ExternalProject_add(${UnitTest_BUILD_TARGET}
                     DEPENDS   ${UnitTest_PACKAGE_DEPENDS}             # Package dependency target
                     TMP_DIR   ${UnitTest_tmp_dir}                     # Temporary files directory
@@ -98,7 +93,8 @@ ExternalProject_add(${UnitTest_BUILD_TARGET}
 		    # -- Configure
 		    SOURCE_DIR          ${UnitTest_source_dir}        # Defining forces CMake to mkdir SOURCE_DIR
 		    CMAKE_ARGS          ${Unittest_Config_File_ARGS}
-                    CMAKE_CACHE_ARGS    ${Unittest_CMAKE_ARGS}
+		    CMAKE_CACHE_ARGS    ${AMANZI_CMAKE_CACHE_ARGS}    # Global definitions from root CMakeList
+                                        ${Unittest_CMAKE_ARGS}
                                         -DCMAKE_INSTALL_PREFIX:PATH=<INSTALL_DIR>
                                         -DBUILD_SHARED_LIBS:BOOL=${BUILD_SHARED_LIBS}
 		    # -- Build

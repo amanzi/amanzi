@@ -73,10 +73,6 @@ if (BUILD_SHARED_LIBS)
 endif()
 
 set(hypre_install_opt "-DHYPRE_INSTALL_PREFIX:PATH=${TPL_INSTALL_PREFIX}")
-if (APPLE)
-  list(APPEND hypre_install_opt  "-DCMAKE_INSTALL_RPATH:PATH=${CMAKE_INSTALL_RPATH}")
-  list(APPEND hypre_install_opt  "-DCMAKE_INSTALL_NAME_DIR:PATH=${CMAKE_INSTALL_RPATH}")
-endif()
 
 
 # --- Set the name of the patch
@@ -110,7 +106,8 @@ ExternalProject_Add(${HYPRE_BUILD_TARGET}
                     # -- Configure
                     SOURCE_DIR    ${HYPRE_source_dir}
                     SOURCE_SUBDIR src
-                    CMAKE_ARGS    ${hypre_openmp_opt} 
+		    CMAKE_ARGS    ${AMANZI_CMAKE_CACHE_ARGS}   # Global definitions from root CMakeList
+                                  ${hypre_openmp_opt} 
                                   ${hypre_lapack_opt} ${hypre_blas_opt}
                                   ${hypre_superlu_opt} ${hypre_shared_opt}
                                   ${hypre_install_opt}

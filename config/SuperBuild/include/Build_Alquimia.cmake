@@ -71,7 +71,8 @@ ExternalProject_Add(${ALQUIMIA_BUILD_TARGET}
                     PATCH_COMMAND ${ALQUIMIA_PATCH_COMMAND}       # Mods to source
                     # -- Configure
                     SOURCE_DIR    ${ALQUIMIA_source_dir}          # Source directory
-                    CMAKE_ARGS    ${ALQUIMIA_CMAKE_ARGS}          # CMAKE_CACHE_ARGS or CMAKE_ARGS => CMake configure
+		    CMAKE_ARGS    ${AMANZI_CMAKE_CACHE_ARGS}      # Global definitions from root CMakeList
+                                  ${ALQUIMIA_CMAKE_ARGS}
                                   ${Amanzi_CMAKE_C_COMPILER_ARGS} # Ensure uniform build
                                   -DCMAKE_C_COMPILER:FILEPATH=${CMAKE_C_COMPILER}
                                   -DCMAKE_Fortran_COMPILER:FILEPATH=${CMAKE_Fortran_COMPILER}

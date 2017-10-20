@@ -3,14 +3,6 @@
 # Global definitions of standards
 # add_definitions(-DBOOST_NO_CXX11_VARIADIC_TEMPLATES)
 
-if (APPLE) 
-  set(CMAKE_SKIP_BUILD_RPATH FALSE)
-  set(CMAKE_SKIP_INSTALL_RPATH FALSE)
-  set(CMAKE_BUILD_WITH_INSTALL_RPATH FALSE)
-  set(CMAKE_INSTALL_RPATH "${TPL_INSTALL_PREFIX}/lib")
-  set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE) 
-endif()
-
 # Standard utilities
 add_subdirectory(error_handling)
 add_subdirectory(utils)

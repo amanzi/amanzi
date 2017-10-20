@@ -1,7 +1,17 @@
-diff -ruNbB mstk-3.0.1-orig/CMakeLists.txt mstk-3.0.1-source/CMakeLists.txt
---- mstk-3.0.1-orig/CMakeLists.txt	2017-06-23 15:03:58.000000000 -0600
-+++ mstk-3.0.1-source/CMakeLists.txt	2017-10-17 14:47:23.936177306 -0600
-@@ -91,15 +91,14 @@
+diff -ruNbB mstk-3.0.1/CMakeLists.txt mstk-3.0.1-source/CMakeLists.txt
+--- mstk-3.0.1/CMakeLists.txt	2017-06-23 15:03:58.000000000 -0600
++++ mstk-3.0.1-source/CMakeLists.txt	2017-10-20 14:15:02.000000000 -0600
+@@ -78,6 +78,9 @@
+ endif ()
+ 
+ add_library(${MSTKLIB} ${mstkfiles})
++if (APPLE)
++	set_target_properties(${MSTKLIB} PROPERTIES LINK_FLAGS "-Wl,-undefined,dynamic_lookup")
++endif()
+ message(STATUS "Building library " ${MSTKLIB})
+ 
+ 
+@@ -91,15 +94,14 @@
  if (INSTALL_PREFIX_ARCHOS) 
    install(TARGETS ${MSTKLIB}
      EXPORT mstk
@@ -20,11 +30,11 @@ diff -ruNbB mstk-3.0.1-orig/CMakeLists.txt mstk-3.0.1-source/CMakeLists.txt
      CONFIGURATIONS ${CMAKE_BUILD_TYPE}
    )
  endif ()
-Binary files mstk-3.0.1-orig/example/parallel_example and mstk-3.0.1-source/example/parallel_example differ
-Binary files mstk-3.0.1-orig/example/serial_example and mstk-3.0.1-source/example/serial_example differ
-diff -ruNbB mstk-3.0.1-orig/src/par/MSTK_Mesh_Distribute.c mstk-3.0.1-source/src/par/MSTK_Mesh_Distribute.c
---- mstk-3.0.1-orig/src/par/MSTK_Mesh_Distribute.c	2017-06-23 15:03:58.000000000 -0600
-+++ mstk-3.0.1-source/src/par/MSTK_Mesh_Distribute.c	2017-10-17 14:49:42.309998958 -0600
+Binary files mstk-3.0.1/example/parallel_example and mstk-3.0.1-source/example/parallel_example differ
+Binary files mstk-3.0.1/example/serial_example and mstk-3.0.1-source/example/serial_example differ
+diff -ruNbB mstk-3.0.1/src/par/MSTK_Mesh_Distribute.c mstk-3.0.1-source/src/par/MSTK_Mesh_Distribute.c
+--- mstk-3.0.1/src/par/MSTK_Mesh_Distribute.c	2017-06-23 15:03:58.000000000 -0600
++++ mstk-3.0.1-source/src/par/MSTK_Mesh_Distribute.c	2017-10-20 13:21:36.000000000 -0600
 @@ -67,7 +67,7 @@
  
        free(toranks);

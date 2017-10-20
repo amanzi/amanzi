@@ -13,12 +13,18 @@ cmake_minimum_required(VERSION 3.2)
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+# ############################################################################ #
+# SHARED LIBRARIES DEFINITION
+# ############################################################################ #
 if (APPLE) 
   set(CMAKE_SKIP_BUILD_RPATH FALSE)
   set(CMAKE_SKIP_INSTALL_RPATH FALSE)
   set(CMAKE_BUILD_WITH_INSTALL_RPATH FALSE)
   set(CMAKE_INSTALL_RPATH "${TPL_INSTALL_PREFIX}/lib")
   set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE) 
+
+  set(AMANZI_CMAKE_CACHE_ARGS  "-DCMAKE_INSTALL_RPATH:PATH=${CMAKE_INSTALL_RPATH}")
+  list(APPEND AMANZI_CMAKE_CACHE_ARGS  "-DCMAKE_INSTALL_NAME_DIR:PATH=${CMAKE_INSTALL_RPATH}")
 endif()
 
 # ############################################################################ #

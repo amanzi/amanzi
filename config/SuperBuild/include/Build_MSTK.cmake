@@ -44,6 +44,7 @@ build_whitespace_string(mstk_ldflags ${mstk_ldflags_list})
 
 message(STATUS "JDM ----> PREFER_STATIC_LIBRARIES = ${PREFER_STATIC_LIBRARIES}")
 
+
 # --- CMake cache args
 set(MSTK_CMAKE_CACHE_ARGS
                     ${Amanzi_CMAKE_C_COMPILER_ARGS}
@@ -78,10 +79,7 @@ set(MSTK_CMAKE_CACHE_ARGS
                     -DENABLE_Tests:BOOL=FALSE
                     -DINSTALL_DIR:PATH=<INSTALL_DIR>
                     -DINSTALL_ADD_VERSION:BOOL=FALSE)
-if (APPLE)
-  list(APPEND MSTK_CMAKE_CACHE_ARGS  "-DCMAKE_INSTALL_RPATH:PATH=${CMAKE_INSTALL_RPATH}")
-  list(APPEND MSTK_CMAKE_CACHE_ARGS  "-DCMAKE_INSTALL_NAME_DIR:PATH=${CMAKE_INSTALL_RPATH}")
-endif()
+
 
 # Add external project build and tie to the MSTK build target
 ExternalProject_Add(${MSTK_BUILD_TARGET}
@@ -98,7 +96,8 @@ ExternalProject_Add(${MSTK_BUILD_TARGET}
                     # -- Configure
                     SOURCE_DIR       ${MSTK_source_dir}           # Source directory
                     CMAKE_ARGS       -Wno-dev
-                    CMAKE_CACHE_ARGS ${MSTK_CMAKE_CACHE_ARGS}
+                    CMAKE_CACHE_ARGS ${AMANZI_CMAKE_CACHE_ARGS}   # Global definitions from root CMakeList
+                                     ${MSTK_CMAKE_CACHE_ARGS}
                     # -- Build
                     BINARY_DIR        ${MSTK_build_dir}           # Build directory 
                     BUILD_COMMAND     $(MAKE)                     # $(MAKE) enables parallel builds through make

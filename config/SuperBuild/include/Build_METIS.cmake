@@ -26,10 +26,6 @@ set(METIS_CMAKE_CACHE_ARGS
       -DBUILD_SHARED_LIBS:BOOL=${BUILD_SHARED_LIBS}
       -DSHARED:BOOL=${BUILD_SHARED_LIBS}
       -DGKLIB_PATH:PATH=${METIS_GKLIB_DIR})
-if (APPLE)
-  list(APPEND METIS_CMAKE_CACHE_ARGS  "-DCMAKE_INSTALL_RPATH:PATH=${CMAKE_INSTALL_RPATH}")
-  list(APPEND METIS_CMAKE_CACHE_ARGS  "-DCMAKE_INSTALL_NAME_DIR:PATH=${CMAKE_INSTALL_RPATH}")
-endif()
 
 # --- Add external project build and tie to the METIS build target
 ExternalProject_Add(${METIS_BUILD_TARGET}
@@ -42,7 +38,8 @@ ExternalProject_Add(${METIS_BUILD_TARGET}
                     URL_MD5      ${METIS_MD5_SUM}                 # md5sum of the archive file
                     # -- Configure
                     SOURCE_DIR   ${METIS_source_dir}              # Source directory
-		    CMAKE_ARGS   ${METIS_CMAKE_CACHE_ARGS}        # CMAKE_CACHE_ARGS or CMAKE_ARGS => CMake configure
+                    CMAKE_ARGS   ${AMANZI_CMAKE_CACHE_ARGS}       # Global definitions from root CMakeList
+		                 ${METIS_CMAKE_CACHE_ARGS}  
                                  ${Amanzi_CMAKE_C_COMPILER_ARGS}  # Ensure uniform build
                                  -DCMAKE_C_COMPILER:FILEPATH=${CMAKE_C_COMPILER}
                     # -- Build
