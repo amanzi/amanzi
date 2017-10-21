@@ -52,8 +52,9 @@ set(interface_src_files  InputConverter.cc InputConverterU.cc
 add_amanzi_library(interface 
                    SOURCE ${interface_src_files}
                    HEADERS ${interface_inc_files}
-                   LINK_LIBS error_handling geometry 
-                             ${Teuchos_LIBRARIES} ${XERCES_LIBRARIES} ${XERCES_ICU_LIBRARIES})
+                   LINK_LIBS error_handling geometry atk
+		             ${Teuchos_LIBRARIES} ${Boost_LIBRARIES}
+                             ${XERCES_LIBRARIES} ${XERCES_ICU_LIBRARIES})
 
 if (ENABLE_Structured)
   add_definitions("-DENABLE_Structured")
@@ -63,7 +64,8 @@ if (ENABLE_Structured)
   add_amanzi_library(interface_ext
                      SOURCE InputConverterS.cc
                      HEADERS ${interface_inc_files}
-                     LINK_LIBS error_handling geometry ${Teuchos_LIBRARIES})
+		     LINK_LIBS error_handling geometry
+                               ${Teuchos_LIBRARIES})
 endif()
 
 if (BUILD_TESTS) 

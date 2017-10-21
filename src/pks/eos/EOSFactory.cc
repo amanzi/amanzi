@@ -13,6 +13,7 @@
 
 #include <string>
 #include "EOSFactory.hh"
+#include "eos_registration.hh"
 
 // explicity instantitate the static data of Factory<EOS>
 // template<> 

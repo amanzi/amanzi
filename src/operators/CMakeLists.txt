@@ -47,7 +47,7 @@ add_definitions("-DMSTK_HAVE_MPI")
 #
 add_amanzi_library(operators_audit 
                    SOURCE OperatorAudit.cc 
-                   LINK_LIBS ${flow_tpl_libs})
+		   LINK_LIBS whetstone ${Epetra_LIBRARIES})
 
 #
 # Library: operators

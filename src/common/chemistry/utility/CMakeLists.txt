@@ -18,6 +18,7 @@ set(SRCS
 	 ./chemistry_verbosity.cc
 )
 
-add_amanzi_library(geochemutil SOURCE ${SRCS}) 
+add_amanzi_library(geochemutil SOURCE ${SRCS}
+	                       LINK_LIBS ${Teuchos_LIBRARIES}) 
 
 

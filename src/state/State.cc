@@ -25,6 +25,7 @@ initialized (as independent variables are owned by state, not by any PK).
 #include "FieldEvaluator_Factory.hh"
 #include "cell_volume_evaluator.hh"
 #include "rank_evaluator.hh"
+#include "state_evaluators_registration.hh"
 
 #include "State.hh"
 

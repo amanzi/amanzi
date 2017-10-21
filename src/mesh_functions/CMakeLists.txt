@@ -49,7 +49,7 @@ add_amanzi_library(mesh_functions
                            MeshFunction.hh
                            UniqueMeshFunction.hh
                            MaterialMeshFunction.hh
-                   LINK_LIBS error_handling functions mesh ${Teuchos_LIBRARIES})
+                   LINK_LIBS mesh data_structures error_handling functions ${Teuchos_LIBRARIES})
 
 # Define all tests at the of the file. BUILD_TESTS gates test building.
 if (BUILD_TESTS)

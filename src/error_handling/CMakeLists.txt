@@ -28,7 +28,6 @@ file(GLOB dbc_inc_files "*.hh")
 add_amanzi_library(error_handling SOURCE ${dbc_lib_files} HEADERS ${dbc_inc_files})
 
 if (BUILD_TESTS)
-   
   # Get the UnitTest libraries
   if ( NOT UnitTest_FOUND ) 
       find_package(UnitTest REQUIRED)
@@ -43,7 +42,6 @@ if (BUILD_TESTS)
                   KIND unit
 		  SOURCE test/Main.cc ${error_test_files}
 		  LINK_LIBS error_handling ${UnitTest_LIBRARIES})
-
 endif()
 
 

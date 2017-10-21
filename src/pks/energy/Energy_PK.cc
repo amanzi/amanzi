@@ -14,6 +14,7 @@
 
 #include "Teuchos_ParameterList.hpp"
 
+#include "eos_registration.hh"
 #include "GMVMesh.hh"
 #include "Mesh.hh"
 #include "mfd3d.hh"

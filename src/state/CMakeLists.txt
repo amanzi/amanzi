@@ -81,7 +81,6 @@ set(state_inc_files
   UnstructuredObservations.hh
   Debugger.hh)
 
-set(state_tpl_list ${Boost_LIBRARIES} ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES})
 add_amanzi_library(state 
                    SOURCE State.cc
                           checkpoint.cc
@@ -107,7 +106,8 @@ add_amanzi_library(state
                           Visualization.cc
                           Debugger.cc
                    HEADERS ${state_inc_files}
-                   LINK_LIBS atk functions output mesh ${state_tpl_libs})
+		   LINK_LIBS data_structures functions mesh_functions output mesh atk
+		   ${Boost_LIBRARIES} ${SEACAS_LIBRARIES})
 set_property(GLOBAL PROPERTY STATE_SOURCE_DIR ${MPC_SOURCE_DIR})
 set_property(GLOBAL PROPERTY STATE_BINARY_DIR ${MPC_BINARY_DIR})
 

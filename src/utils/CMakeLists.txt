@@ -58,6 +58,7 @@ add_amanzi_library(atk
                            Spline.hh
                            SplinedCurve.hh
                            Key.hh
+                    LINK_LIBS error_handling ${Teuchos_LIBRARIES} 
                    )
 
 if (BUILD_TESTS)
