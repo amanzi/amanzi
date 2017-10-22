@@ -58,8 +58,13 @@ add_amanzi_library(atk
                            Spline.hh
                            SplinedCurve.hh
                            Key.hh
-                    LINK_LIBS error_handling ${Teuchos_LIBRARIES} 
+                    LINK_LIBS error_handling atk_ext ${Teuchos_LIBRARIES} 
                    )
+
+add_amanzi_library(atk_ext
+	           SOURCE VerboseObject_objs.cc
+		   HEADERS VerboseObject_objs.hh
+                   LINK_LIBS ${Teuchos_LIBRARIES})
 
 if (BUILD_TESTS)
   

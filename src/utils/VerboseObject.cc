@@ -18,7 +18,6 @@
 #include "Epetra_Comm.h"
 
 #include "VerboseObject.hh"
-#include "VerboseObject_objs.hh"
 
 namespace Amanzi {
 
