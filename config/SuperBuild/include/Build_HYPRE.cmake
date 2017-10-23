@@ -63,7 +63,8 @@ endif()
 # Locate SuperLU
 set(hyper_superlu_opt)
 if (ENABLE_PETSC)
-  set(hypre_superlu_opt "-DHYPRE_USING_SUPERLU:BOOL=FALSE")
+  set(hypre_superlu_opt "-DHYPRE_USING_SUPERLU:BOOL=FALSE"
+                        "-DHYPRE_USING_FEI:BOOL=FALSE")
 endif()
 
 # shared/static libraries (shared FEI is broken in HYPRE)
