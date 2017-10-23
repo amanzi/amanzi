@@ -53,19 +53,12 @@ Transport_PK_ATS::Transport_PK_ATS(Teuchos::ParameterList& pk_tree,
   S_(S),
   soln_(soln)
 {
-  std::string pk_name = pk_tree.name();
-  const char* result = pk_name.data();
-
-  boost::iterator_range<std::string::iterator> res = boost::algorithm::find_last(pk_name,"->"); 
-  if (res.end() - pk_name.end() != 0) boost::algorithm::erase_head(pk_name,  res.end() - pk_name.begin());
-
+  name_ = Keys::cleanPListName(pk_tree.name());
   
-// Create miscaleneous lists.
+  // Create miscaleneous lists.
   Teuchos::RCP<Teuchos::ParameterList> pk_list = Teuchos::sublist(glist, "PKs", true);
   //std::cout<<*pk_list;
-  tp_list_ = Teuchos::sublist(pk_list, pk_name, true);
-
-
+  tp_list_ = Teuchos::sublist(pk_list, name_, true);
 
   if (tp_list_->isParameter("component names")) {
     component_names_ = tp_list_->get<Teuchos::Array<std::string> >("component names").toVector();
@@ -122,19 +115,6 @@ Transport_PK_ATS::Transport_PK_ATS(const Teuchos::RCP<Teuchos::ParameterList>& g
 
 
 /* ******************************************************************
-* Routine processes parameter list. It needs to be called only once
-* on each processor.                                                     
-****************************************************************** */
-Transport_PK_ATS::~Transport_PK_ATS()
-{ 
-  if (vo_ != Teuchos::null) {
-    vo_ = Teuchos::null;
-  }
-
-}
-
-
-/* ******************************************************************
 * Setup for Alquimia.
 ****************************************************************** */
 #ifdef ALQUIMIA_ENABLED
@@ -179,25 +159,15 @@ void Transport_PK_ATS::Setup(const Teuchos::Ptr<State>& S)
 
   domain_name_ = tp_list_->get<std::string>("domain name", "domain");
 
-  saturation_key_ = tp_list_->get<std::string>("saturation_key", 
-                                               getKey(domain_name_, "saturation_liquid"));
-  prev_saturation_key_ = tp_list_->get<std::string>("prev_saturation_key", 
-                                                    getKey(domain_name_, "prev_saturation_liquid"));
-  flux_key_ = tp_list_->get<std::string>("flux_key", 
-                                         getKey(domain_name_, "mass_flux"));
-  darcy_flux_key_ = tp_list_->get<std::string>("darcy_flux_key", 
-                                               getKey(domain_name_, "mass_flux"));
-  permeability_key_ = tp_list_->get<std::string>("permeability_key", 
-                                                 getKey(domain_name_, "permeability"));
-  tcc_key_ = tp_list_->get<std::string>("concentration_key", 
-                                        getKey(domain_name_, "total_component_concentration"));
-  porosity_key_ = tp_list_->get<std::string>("porosity_key", getKey(domain_name_, "porosity"));
-  molar_density_key_ = tp_list_->get<std::string>("molar_density_key", getKey(domain_name_, "molar_density_liquid"));
-  tcc_matrix_key_ = tp_list_->get<std::string>("tcc_matrix_key", 
-                                               getKey(domain_name_, "total_component_concentraion_matrix"));
-
-
-  // molar_density_key_ = tp_list_->get<std::string>("molar_density_key_", getKey(domain_name_, "molar_density")); 
+  saturation_key_ = Keys::readKey(*tp_list_, domain_name_, "saturation liquid", "saturation_liquid");
+  prev_saturation_key_ = Keys::readKey(*tp_list_, domain_name_, "previous saturation liquid", "prev_saturation_liquid");
+  flux_key_ = Keys::readKey(*tp_list_, domain_name_, "mass flux", "mass_flux");
+  darcy_flux_key_ = Keys::readKey(*tp_list_, domain_name_, "darcy flux", "mass_flux");
+  permeability_key_ = Keys::readKey(*tp_list_, domain_name_, "permeability", "permeability");
+  tcc_key_ = Keys::readKey(*tp_list_, domain_name_, "concentration", "total_component_concentration");
+  porosity_key_ = Keys::readKey(*tp_list_, domain_name_, "porosity", "porosity");
+  molar_density_key_ = Keys::readKey(*tp_list_, domain_name_, "molar density", "molar_density_liquid");
+  tcc_matrix_key_ = Keys::readKey(*tp_list_, domain_name_, "tcc matrix", "total_component_concentration_matrix");
 
 
   mesh_ = S->GetMesh(domain_name_);
@@ -224,6 +194,7 @@ void Transport_PK_ATS::Setup(const Teuchos::Ptr<State>& S)
     S->RequireFieldEvaluator(flux_key_);
   }
 
+  
   S->RequireField(saturation_key_)->SetMesh(mesh_)->SetGhosted(true)
       ->AddComponent("cell", AmanziMesh::CELL, 1);
   S->RequireFieldEvaluator(saturation_key_);
@@ -290,6 +261,10 @@ void Transport_PK_ATS::Initialize(const Teuchos::Ptr<State>& S)
   double time = S->time();
   if (time >= 0.0) t_physics_ = time;
 
+  if (tp_list_->isSublist("initial conditions")) {
+    S->GetField(tcc_key_,passwd_)->Initialize(tp_list_->sublist("initial conditions"));
+  }
+  
   
   dispersion_preconditioner = "identity";
 
@@ -412,10 +387,32 @@ void Transport_PK_ATS::Initialize(const Teuchos::Ptr<State>& S)
       std::string name = it->first;
       if (clist.isSublist(name)) {
         Teuchos::ParameterList& bc_list = clist.sublist(name);
-        if (name=="coupling") {
+        if (name == "coupling") {
           Teuchos::ParameterList::ConstIterator it1 = bc_list.begin();
           std::string specname = it1->first;
           Teuchos::ParameterList& spec = bc_list.sublist(specname);
+          Teuchos::RCP<TransportDomainFunction> 
+            bc = factory.Create(spec, "boundary concentration", AmanziMesh::FACE, Kxy);
+
+          for (int i = 0; i < component_names_.size(); i++){
+            bc->tcc_names().push_back(component_names_[i]);
+            bc->tcc_index().push_back(i);
+          }
+          //          std::cout << "tcc_names "<<tcc_names<<"\n";
+          //std::cout << "tcc_index "<<tcc_index<<"\n";
+          
+          bc->set_state(S_);
+          bcs_.push_back(bc);
+        } else if (name == "subgrid") {
+          Teuchos::ParameterList::ConstIterator it1 = bc_list.begin();
+          std::string specname = it1->first;
+          Teuchos::ParameterList& spec = bc_list.sublist(specname);
+          Teuchos::Array<std::string> regions(1, domain_name_);
+
+          std::size_t last_of = domain_name_.find_last_of("_");
+          ASSERT(last_of != std::string::npos);
+          int gid = std::stoi(domain_name_.substr(last_of+1, domain_name_.size()));
+          spec.set("entity_gid_out", gid);
           Teuchos::RCP<TransportDomainFunction> 
             bc = factory.Create(spec, "boundary concentration", AmanziMesh::FACE, Kxy);
 
@@ -587,8 +584,8 @@ void Transport_PK_ATS::InitializeFields_(const Teuchos::Ptr<State>& S)
         if (!S->GetField(prev_saturation_key_, passwd_)->initialized()) {
           // S->GetFieldData(prev_saturation_key_, passwd_)->PutScalar(1.0);
           // S->GetField(prev_saturation_key_, passwd_)->set_initialized();
-          // if (S->HasFieldEvaluator(getKey(domain_,saturation_key_))){
-          //   S->GetFieldEvaluator(getKey(domain_,saturation_key_))->HasFieldChanged(S.ptr(), "transport");
+          // if (S->HasFieldEvaluator(Keys::getKey(domain_,saturation_key_))){
+          //   S->GetFieldEvaluator(Keys::getKey(domain_,saturation_key_))->HasFieldChanged(S.ptr(), "transport");
           // }
           InitializeFieldFromField_(prev_saturation_key_, saturation_key_, S, true, true);
           S->GetField(prev_saturation_key_, passwd_)->set_initialized();

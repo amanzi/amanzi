@@ -27,6 +27,7 @@ class MPCDelegateEWC {
  public:
 
   MPCDelegateEWC(Teuchos::ParameterList& plist);
+  virtual ~MPCDelegateEWC() = default;
 
   virtual void setup(const Teuchos::Ptr<State>& S);
   virtual void initialize(const Teuchos::Ptr<State>& S);

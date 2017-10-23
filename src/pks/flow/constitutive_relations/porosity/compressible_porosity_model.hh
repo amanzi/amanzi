@@ -1,10 +1,12 @@
 /* -*-  mode: c++; indent-tabs-mode: nil -*- */
+
 //! A simple model for allowing porosity to vary with pressure.
 
 /*
   ATS is released under the three-clause BSD License. 
   The terms of use and "as is" disclaimer for this license are 
   provided in the top-level COPYRIGHT file.
+
 
   Authors: Ethan Coon (ecoon@lanl.gov)
 */
@@ -42,6 +44,7 @@ Example:
 */
 
 
+
 #ifndef AMANZI_FLOWRELATIONS_COMPRESSIBLE_POROSITY_MODEL_HH_
 #define AMANZI_FLOWRELATIONS_COMPRESSIBLE_POROSITY_MODEL_HH_
 
@@ -59,7 +62,7 @@ class CompressiblePorosityModel {
     InitializeFromPlist_();
   }
 
-  virtual double Porosity(double base_poro, double pres, double patm) {
+  double Porosity(double base_poro, double pres, double patm) {
     double poro = base_poro;
     double p_over = pres - patm;
     if (p_over > cutoff_) {
@@ -71,7 +74,7 @@ class CompressiblePorosityModel {
     return poro > 1. ? 1. : poro;
   }
 
-  virtual double DPorosityDPressure(double base_poro, double pres, double patm) {
+  double DPorosityDPressure(double base_poro, double pres, double patm) {
     double p_over = pres - patm;
     double poro = Porosity(base_poro, pres, patm);
     if (poro == 1.) {
@@ -85,7 +88,7 @@ class CompressiblePorosityModel {
     return 0.;
   }
 
-  virtual double DPorosityDBasePorosity(double base_poro, double pres, double patm) {
+  double DPorosityDBasePorosity(double base_poro, double pres, double patm) {
     return pres > patm ? (Porosity(base_poro, pres, patm) > 1.0 ? 0. : 1.) : 1.;
   }
 

@@ -8,8 +8,8 @@
 
    Default base with default implementations of methods for a physical PK.
    ------------------------------------------------------------------------- */
+#include "StateDefs.hh"
 #include "pk_physical_default.hh"
-
 
 namespace Amanzi {
 
@@ -20,27 +20,28 @@ PK_Physical_Default::PK_Physical_Default(Teuchos::ParameterList& pk_tree,
     PK(pk_tree, glist, S, solution),
     PK_Physical(pk_tree, glist, S, solution)
 {
-  domain_ = plist_->get<std::string>("domain name", std::string("domain"));
-  key_ = plist_->get<std::string>("primary variable");
-
-  Teuchos::ParameterList& FElist = S->FEList();
+  domain_ = plist_->get<std::string>("domain name", "");
+  key_ = Keys::readKey(*plist_, domain_, "primary variable");
+  
   // set up the primary variable solution, and its evaluator
+  Teuchos::ParameterList& FElist = S->FEList();
   Teuchos::ParameterList& pv_sublist = FElist.sublist(key_);
   pv_sublist.set("evaluator name", key_);
   pv_sublist.set("field evaluator type", "primary variable");
 
   // primary variable max change
   max_valid_change_ = plist_->get<double>("max valid change", -1.0);
+
+  // verbose object
+  vo_ = Teuchos::rcp(new VerboseObject(name_, *plist_));
 }
 
 // -----------------------------------------------------------------------------
 // Construction of data.
 // -----------------------------------------------------------------------------
+
 void PK_Physical_Default::Setup(const Teuchos::Ptr<State>& S) {
   //PKDefaultBase::setup(S);
-
-  // set up the VerboseObject
-  vo_ = Teuchos::rcp(new VerboseObject(name_, *plist_));
 
   // get the mesh
   mesh_ = S->GetMesh(domain_);
@@ -135,6 +136,21 @@ bool PK_Physical_Default::ValidStep() {
     }
   }
   return true;
+}
+
+
+// -----------------------------------------------------------------------------
+//  Marks as changed
+// -----------------------------------------------------------------------------
+void PK_Physical_Default::ChangedSolutionPK(const Teuchos::Ptr<State>& S) {
+  assert(S != Teuchos::null);
+
+  Teuchos::RCP<FieldEvaluator> fm = S->GetFieldEvaluator(key_);
+
+  Teuchos::RCP<PrimaryVariableFieldEvaluator> solution_evaluator =
+    Teuchos::rcp_dynamic_cast<PrimaryVariableFieldEvaluator>(fm);
+  ASSERT(solution_evaluator != Teuchos::null);
+  solution_evaluator->SetFieldAsChanged(S);
 }
 
 

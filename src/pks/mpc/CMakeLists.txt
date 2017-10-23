@@ -34,16 +34,24 @@ include_directories(${ATS_SOURCE_DIR}/src/operators/divgrad/upwind_scheme)
 
 add_library(mpc
   weak_mpc.cc
+  operator_split_mpc.cc
+  weak_mpc_semi_coupled.cc
+  weak_mpc_semi_coupled_deform.cc
   mpc_coupled_cells.cc
   pk_mpcsubcycled_ats.cc
   mpc_flowreactivetransport_pk.cc
   mpc_reactivetransport_pk.cc
   mpc_surface_subsurface_helpers.cc
+  weak_mpc_semi_coupled_helper.cc
+  mpc_weak_subgrid.cc
   mpc_delegate_ewc.cc
 ##  mpc_delegate_ewc_surface.cc
   mpc_delegate_ewc_subsurface.cc
   mpc_delegate_water.cc
   mpc_coupled_water.cc
+  mpc_coupled_water_split_flux.cc
+#  mpc_coupled_water_neumann_splitting.cc
+#  mpc_coupled_water_dirichlet_splitting.cc
   mpc_subsurface.cc
 ##  mpc_permafrost3.cc
   mpc_permafrost4.cc
@@ -61,6 +69,16 @@ register_evaluator_with_factory(
 
 register_evaluator_with_factory(
   HEADERFILE strong_mpc_reg.hh
+  LISTNAME   MPC_PK_FAC
+  )
+
+register_evaluator_with_factory(
+  HEADERFILE mpc_predictor_corrector_reg.hh
+  LISTNAME   MPC_PK_FAC
+  )
+
+register_evaluator_with_factory(
+  HEADERFILE operator_split_mpc_reg.hh
   LISTNAME   MPC_PK_FAC
   )
 
@@ -101,10 +119,40 @@ register_evaluator_with_factory(
   )
 
 register_evaluator_with_factory(
+  HEADERFILE mpc_coupled_water_split_flux_reg.hh
+  LISTNAME   MPC_PK_FAC
+  )
+
+# register_evaluator_with_factory(
+#   HEADERFILE mpc_coupled_water_neumann_splitting_reg.hh
+#   LISTNAME   MPC_PK_FAC
+#   )
+
+# register_evaluator_with_factory(
+#   HEADERFILE mpc_coupled_water_dirichlet_splitting_reg.hh
+#   LISTNAME   MPC_PK_FAC
+#   )
+
+register_evaluator_with_factory(
    HEADERFILE coupled_transport/mpc_coupled_transport_reg.hh
    LISTNAME   MPC_PK_FAC
   )
 
+
+register_evaluator_with_factory(
+  HEADERFILE weak_mpc_semi_coupled_reg.hh
+  LISTNAME   MPC_PK_FAC
+  )
+
+register_evaluator_with_factory(
+  HEADERFILE mpc_weak_subgrid_reg.hh
+  LISTNAME   MPC_PK_FAC
+  )
+
+register_evaluator_with_factory(
+  HEADERFILE weak_mpc_semi_coupled_deform_reg.hh
+  LISTNAME   MPC_PK_FAC
+  )
 
 generate_evaluators_registration_header(
   HEADERFILE mpc_registration.hh

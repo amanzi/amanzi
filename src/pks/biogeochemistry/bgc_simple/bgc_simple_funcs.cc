@@ -62,17 +62,21 @@ namespace BGC {
   if (doy == 0) doy = 365;
   double daylen = DayLength(met.lat, doy);
 
+
   for (int k=0; k!=ncells; ++k) {
      TransArr[k] = 0.0 ;
   }
+
 
   double PAR = met.qSWin * 2.3 * 24.0 *60.0 / daylen; // convert to PAR at the daytime
 
   // determine the thaw depth
   double thawD = PermafrostDepth(SoilTArr,SoilThicknessArr,273.15);
 
+
   //----------------------------------------------------------------------
   // loop through the list of PFTs
+
   for (std::vector<Teuchos::RCP<PFT> >::iterator pft_iter=pftarr.begin();
        pft_iter!=pftarr.end(); ++pft_iter) {
 
@@ -281,11 +285,13 @@ namespace BGC {
         rootresp = leafresp / pft.leaf2rootratio * pft.root2leafrespratio;
         stemresp = leafresp / pft.leaf2stemratio * pft.stem2leafrespratio;
         double NPP = - leafresp - rootresp - stemresp;
+
         for (int leaf_layer=0; leaf_layer!=max_leaf_layers; ++leaf_layer) {
           relCLNCa = -0.1802 * pft.LER * leaf_layer +1.0; //see Ali et al 2015
           relCLNCa = std::max(0.2,relCLNCa);
           relCLNCa = std:: min(1.0,relCLNCa);
           pft.annCBalance[leaf_layer] += NPP *  relCLNCa ;
+
         }
 
         leafresptotal = dt * Cv*leafresp*gridarea;
@@ -677,12 +683,13 @@ namespace BGC {
   double radi = met.qSWin;
   for (std::vector<Teuchos::RCP<PFT> >::iterator pft_iter=pftarr.begin();
        pft_iter!=pftarr.end(); ++pft_iter) {
-    std::cout << "wtf: (" << (*pft_iter)->pft_type << ") " << (*pft_iter)->LER << ", " << (*pft_iter)->lai << ", " << radi << std::endl;
+    //    std::cout << "wtf: (" << (*pft_iter)->pft_type << ") " << (*pft_iter)->LER << ", " << (*pft_iter)->lai << ", " << radi << std::endl;
     radi *= std::exp(-(*pft_iter)->LER * (*pft_iter)->lai);
    }
   sw_shaded = radi;
 
       
+
  //=========================================================================
   // do soil decomposition
   for (int k=0; k!=ncells; ++k) {

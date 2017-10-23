@@ -17,6 +17,7 @@ Evaluates the z-coordinate and the magnitude of the slope :math:``|\nambla_h z|`
 * `"elevation key`" ``[string]`` **elevation** Name the elevation variable. [m]
 * `"slope magnitude key`" ``[string]`` **slope_magnitude** Name the elevation variable. [-]
 * `"dynamic mesh`" ``[bool]`` **false** Lets the evaluator know that the elevation changes in time, and adds the `"deformation`" dependency.
+* `"parent domain name`" ``[string]`` **DOMAIN** Domain name of the parent mesh, which is the 3D version of this domain.  Attempts to generate an intelligent default by stripping "surface" from this domain.
 
 Example:
 

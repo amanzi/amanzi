@@ -15,11 +15,14 @@ namespace Flow {
 UnfrozenFractionEvaluator::UnfrozenFractionEvaluator(Teuchos::ParameterList& plist) :
     SecondaryVariableFieldEvaluator(plist) {
 
-  temp_key_ = plist_.get<std::string>("temperature key", "surface-temperature");
+  Key domain = Keys::getDomain(my_key_);
+
+  temp_key_ = plist_.get<std::string>("temperature key", Keys::getKey(domain,"temperature"));
   dependencies_.insert(temp_key_);
 
   if (my_key_ == std::string("")) {
-    my_key_ = "unfrozen_fraction";
+    my_key_ = "surface-unfrozen_fraction";
+
   }
 
   // create the model, hard-coded until we have a 2nd model

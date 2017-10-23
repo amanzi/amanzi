@@ -23,6 +23,7 @@ namespace Amanzi {
 class EWCModelBase : public EWCModel {
  public:
   EWCModelBase() {}
+  virtual ~EWCModelBase() = default;
   
   virtual int Evaluate(double T, double p, double& energy, double& wc);
   virtual int InverseEvaluate(double energy, double wc, double& T, double& p, bool verbose=false);

@@ -35,7 +35,9 @@ class OverlandPressureWaterContentEvaluator : public SecondaryVariableFieldEvalu
           Key wrt_key, const Teuchos::Ptr<CompositeVector>& result);
 
  protected:
-  Key pres_key_;
+
+  Key pres_key_, cv_key_;
+
   double M_;
   bool bar_;  // bar'd variable indicates this is potentially negative for
               // pressures less than atmospheric

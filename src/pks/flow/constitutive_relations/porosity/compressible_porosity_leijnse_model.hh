@@ -71,7 +71,7 @@ class CompressiblePorosityLeijnseModel {
     InitializeFromPlist_();
   }
 
-  virtual double Porosity(double base_poro, double pres, double patm) {
+  double Porosity(double base_poro, double pres, double patm) {
     double poro = base_poro;
     double p_over = pres - patm;
     if (p_over > cutoff_) {
@@ -87,7 +87,7 @@ class CompressiblePorosityLeijnseModel {
     return poro;
   }
 
-  virtual double DPorosityDPressure(double base_poro, double pres, double patm) {
+  double DPorosityDPressure(double base_poro, double pres, double patm) {
     double p_over = pres - patm;
     double poro = Porosity(base_poro, pres, patm);
     if (poro == 1.0) {
@@ -102,7 +102,7 @@ class CompressiblePorosityLeijnseModel {
     return 0.;
   }
 
-  virtual double DPorosityDBasePorosity(double base_poro, double pres, double patm) {
+  double DPorosityDBasePorosity(double base_poro, double pres, double patm) {
     std::cout<<"Derivative of Porosity w.r.t base porosity not implemented for Leijnse model \n!!"; abort();
     return pres > patm ? (Porosity(base_poro, pres, patm) > 1.0 ? 0. : 1.) : 1.;
   }

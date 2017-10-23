@@ -17,10 +17,10 @@ InterceptionEvaluator::InterceptionEvaluator(Teuchos::ParameterList& plist) :
   std::string domain = plist_.get<std::string>("layer name");
   
   // Set up my dependencies.
-  ai_key_ = plist_.get<std::string>("area index key", getKey(domain, "area_index"));
+  ai_key_ = plist_.get<std::string>("area index key", Keys::getKey(domain, "area_index"));
   dependencies_.insert(ai_key_);
 
-  source_key_ = plist_.get<std::string>("source key", getKey(domain, "source"));
+  source_key_ = plist_.get<std::string>("source key", Keys::getKey(domain, "source"));
   dependencies_.insert(source_key_);
   
   source_in_meters_ = plist_.get<bool>("source in meters", false);

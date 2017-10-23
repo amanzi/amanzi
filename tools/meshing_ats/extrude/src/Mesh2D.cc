@@ -26,10 +26,10 @@ Mesh2D::Mesh2D(std::vector<Point>& coords_,
     v1.set(coords[c[1]][0] - coords[c[0]][0], coords[c[1]][1] - coords[c[0]][1]);
     v2.set(coords[c[2]][0] - coords[c[0]][0], coords[c[2]][1] - coords[c[0]][1]);
     Point cross = v1^v2;
-    if (cross[0] < 0) {
+    if (is_greater(0.0, cross[0])) {
       std::reverse(c.begin(), c.end());
     }
-    if (std::abs(cross[0]) < area_eps) {
+    if (is_greater(area_eps, std::abs(cross[0]))) {
       std::cout << "Zero area triangle:" << std::endl
                 << " " << coords[c[0]] << std::endl
                 << " " << coords[c[1]] << std::endl

@@ -6,6 +6,8 @@
 #include "Mesh2D.hh"
 #include "Mesh3D.hh"
 
+#define logically_structured
+
 namespace Amanzi {
 namespace AmanziGeometry {
 
@@ -67,17 +69,22 @@ Mesh3D::extrude(const std::vector<double>& dz,
 
   auto this_layer_sides = std::vector<int>(m->face2node.size(), -1);
   auto node_differs = [this](int n) {return this->dn_nodes[n] != this->up_nodes[n];};
-  auto node_same_horiz = [this](int n) {return coords[this->dn_nodes[n]][0] == coords[this->up_nodes[n]][0]
-                                        && coords[this->dn_nodes[n]][1] == coords[this->up_nodes[n]][1];};
-  
+  auto node_same_horiz = [this](int n) {return is_equal(coords[this->dn_nodes[n]][0],
+                                                        coords[this->up_nodes[n]][0])
+                                            && is_equal(coords[this->dn_nodes[n]][1],
+                                                        coords[this->up_nodes[n]][1]);};
   // shift the up-node coordinates by dz
   for (int n=0; n!=dz.size(); ++n) {
-    if (dz[n] > 0.) {
+#ifndef logically_structured
+    if (is_greater(dz[n], 0.0)) {
+#endif
       Point nc(coords[up_nodes[n]]);
       nc[2] -= dz[n];
       coords.emplace_back(std::move(nc));
       dn_nodes[n] = coords.size()-1;
+#ifndef logically_structured
     }
+#endif
   }
 
   // add cells, faces

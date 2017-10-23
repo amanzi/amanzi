@@ -25,7 +25,7 @@
 namespace Amanzi {
 
 void
-SurfaceIceModel::InitializeModel(const Teuchos::Ptr<State>& S) {
+SurfaceIceModel::InitializeModel(const Teuchos::Ptr<State>& S, Teuchos::ParameterList& plist) {
   M_ = 0.0180153;
 
   // these are not yet initialized

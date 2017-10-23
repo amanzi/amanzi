@@ -48,6 +48,12 @@ namespace Amanzi {
       }
     }
 
+    subsurface_flux_key_ =  plist_->get<std::string>("flux_key", 
+                                                     Keys::getKey(subsurface_name_, "mass_flux"));
+
+    surface_flux_key_ =  plist_->get<std::string>("flux_key", 
+                                                  Keys::getKey(surface_name_, "mass_flux"));
+
 
   }
 
@@ -61,6 +67,7 @@ double CoupledTransport_PK::get_dt() {
   double surf_dt = sub_pks_[surf_id_]->get_dt();
   double subsurf_dt = sub_pks_[subsurf_id_]->get_dt();
 
+  Teuchos::OSTab tab = vo_->getOSTab();
   *vo_->os()<< "surface transport dt = "<<surf_dt<<"\n";
   *vo_->os()<< "sub surface transport dt = "<<subsurf_dt<<"\n";
 
@@ -92,7 +99,7 @@ void CoupledTransport_PK::Setup(const Teuchos::Ptr<State>& S){
 void CoupledTransport_PK::Initialize(const Teuchos::Ptr<State>& S){
 
   WeakMPC::Initialize(S);
- 
+
 }
 
 
@@ -110,14 +117,14 @@ bool CoupledTransport_PK::AdvanceStep(double t_old, double t_new, bool reinit) {
      It will be removed when we convert to one State
   */
 
-  // Teuchos::RCP<const CompositeVector> next_darcy = S_next_->GetFieldData(vol_darcy_key_);
-  // Key flux_owner = S_next_->GetField(vol_darcy_key_)->owner();
-  // Teuchos::RCP<CompositeVector>  next_darcy_copy = S_->GetFieldCopyData(vol_darcy_key_, "next_timestep", flux_owner);
+  // Teuchos::RCP<const CompositeVector> next_darcy = S_next_->GetFieldData(subsurface_flux_key_);
+  // Key flux_owner = S_next_->GetField(subsurface_flux_key_)->owner();
+  // Teuchos::RCP<CompositeVector>  next_darcy_copy = S_copy -> GetFieldCopyData(subsurface_flux_key_, "next_timestep", flux_owner);
   // *next_darcy_copy = *next_darcy;
 
-  // Teuchos::RCP<const CompositeVector> next_sur_flux = S_next_->GetFieldData(surf_vol_darcy_key_);
-  // flux_owner = S_next_->GetField(surf_vol_darcy_key_)->owner();
-  // Teuchos::RCP<CompositeVector>  next_sur_flux_copy = S_->GetFieldCopyData(surf_vol_darcy_key_, "next_timestep", flux_owner);
+  // Teuchos::RCP<const CompositeVector> next_sur_flux = S_next_->GetFieldData(surface_flux_key_);
+  // flux_owner = S_next_->GetField(surface_flux_key_)->owner();
+  // Teuchos::RCP<CompositeVector>  next_sur_flux_copy = S_copy -> GetFieldCopyData(surface_flux_key_, "next_timestep", flux_owner);
   // *next_sur_flux_copy = *next_sur_flux;
 
 

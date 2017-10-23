@@ -7,7 +7,6 @@
   and a simple way to provide a non-elliptic, diagonal term for helping
   solvers to converge.
 
-
   Authors: Ethan Coon (ecoon@lanl.gov)
 */
 

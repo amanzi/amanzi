@@ -13,6 +13,7 @@ namespace Amanzi {
 class MPCPermafrost4 : public MPCSubsurface {
  public:
 
+
   MPCPermafrost4(Teuchos::ParameterList& FElist,
                  const Teuchos::RCP<Teuchos::ParameterList>& plist,
                  const Teuchos::RCP<State>& S,
@@ -54,6 +55,8 @@ class MPCPermafrost4 : public MPCSubsurface {
   Teuchos::RCP<PK_PhysicalBDF_Default> surf_energy_pk_;
 
   // sub meshes
+  Key domain_surf_;
+  Key domain_subsurf_;
   Teuchos::RCP<const AmanziMesh::Mesh> domain_mesh_;
   Teuchos::RCP<const AmanziMesh::Mesh> surf_mesh_;
 
@@ -74,6 +77,8 @@ class MPCPermafrost4 : public MPCSubsurface {
  private:
   // factory registration
   static RegisteredPKFactory<MPCPermafrost4> reg_;
+
+  Key domain_surf, domain_ss;
 
 };
 

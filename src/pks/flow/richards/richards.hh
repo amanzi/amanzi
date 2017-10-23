@@ -134,6 +134,7 @@ namespace Flow {
 class Richards : public PK_PhysicalBDF_Default {
 
 public:
+
   Richards(Teuchos::ParameterList& FElist,
            const Teuchos::RCP<Teuchos::ParameterList>& plist,
            const Teuchos::RCP<State>& S,
@@ -355,6 +356,7 @@ protected:
   Key source_key_;
   Key ss_flux_key_;
   Key sat_key_;
+  Key sat_gas_key_;
   Key sat_ice_key_;
 
  private:

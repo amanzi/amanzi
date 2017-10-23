@@ -25,7 +25,10 @@ PK_MPCSubcycled_ATS::PK_MPCSubcycled_ATS(Teuchos::ParameterList& pk_tree,
                            const Teuchos::RCP<Teuchos::ParameterList>& global_list,
                            const Teuchos::RCP<State>& S,
                            const Teuchos::RCP<TreeVector>& soln) :
+  PK(pk_tree, global_list, S, soln),
   MPC<PK>(pk_tree, global_list, S, soln) {
+
+  init_(S);
 
   S_ = S;
 
@@ -34,7 +37,8 @@ PK_MPCSubcycled_ATS::PK_MPCSubcycled_ATS(Teuchos::ParameterList& pk_tree,
   slave_ = master_ == 1 ? 0 : 1;
 
   if (sub_pks_.size() != 2 || master_ > 1) {
-    Errors::Message message("PK_MPCSubcycled_ATS: only MPCs with two sub-PKs can currently be subcycled.");
+    Errors::Message message("PK_MPCSubcycled_ATS: only MPCs with two sub-PKs can currently be subcycled");
+    std::cout<<name_<<" sub pks size "<<sub_pks_.size() <<" master "<<master_<<"\n";
     Exceptions::amanzi_throw(message);
   }
 

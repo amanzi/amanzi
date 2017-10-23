@@ -32,10 +32,11 @@ template <class PK_t>
 class StrongMPC :  public MPC<PK_t>, public PK_BDF_Default {
 
 public:
-  StrongMPC(Teuchos::ParameterList& pk_tree,
-            const Teuchos::RCP<Teuchos::ParameterList>& global_list,
+
+  StrongMPC(Teuchos::ParameterList& FElist,
+            const Teuchos::RCP<Teuchos::ParameterList>& plist,
             const Teuchos::RCP<State>& S,
-            const Teuchos::RCP<TreeVector>& soln);
+            const Teuchos::RCP<TreeVector>& solution);
 
   // Virtual destructor
   virtual ~StrongMPC() {}
@@ -74,6 +75,9 @@ public:
   // -- Experimental approach -- calling this indicates that the time
   //    integration scheme is changing the value of the solution in
   //    state.
+
+  virtual void ChangedSolution(const Teuchos::Ptr<State>& S);
+
   virtual void ChangedSolution();
 
   // -- Admissibility of the solution.
@@ -88,8 +92,6 @@ public:
       ModifyCorrection(double h, Teuchos::RCP<const TreeVector> res,
                        Teuchos::RCP<const TreeVector> u,
                        Teuchos::RCP<TreeVector> du);
-
-  virtual std::string name() {return "strong_mpc";};
 
 protected:
   using MPC<PK_t>::sub_pks_;
@@ -110,29 +112,11 @@ template<class PK_t>
 StrongMPC<PK_t>::StrongMPC(Teuchos::ParameterList& pk_tree,
                            const Teuchos::RCP<Teuchos::ParameterList>& global_list,
                            const Teuchos::RCP<State>& S,
-                           const Teuchos::RCP<TreeVector>& soln):
-  PK(pk_tree, global_list, S, soln),
-  MPC<PK_t>(pk_tree, global_list, S, soln),
-  PK_BDF_Default(pk_tree, global_list, S, soln) {
-
-  // name the PK
-  name_ = pk_tree.name();
-  boost::iterator_range<std::string::iterator> res = boost::algorithm::find_last(name_,"->");
-  if (res.end() - name_.end() != 0) boost::algorithm::erase_head(name_, res.end() - name_.begin());
-
-  Teuchos::RCP<Teuchos::ParameterList> pks_list = Teuchos::sublist(global_list, "PKs");
-
-  if (pks_list->isSublist(name_)) {
-    plist_ = Teuchos::sublist(pks_list, name_); 
-  }else{
-    std::stringstream messagestream;
-    messagestream << "There is no sublist for PK "<<name_<<"in PKs list\n";
-    Errors::Message message(messagestream.str());
-    Exceptions::amanzi_throw(message);
-  }
-
-  plist_->set("PK name", name_);
-
+                           const Teuchos::RCP<TreeVector>& soln) :
+    PK(pk_tree, global_list, S, soln),
+    MPC<PK_t>(pk_tree, global_list, S, soln),
+    PK_BDF_Default(pk_tree, global_list, S, soln) {
+  MPC<PK_t>::init_(S);
 }
 
 
@@ -141,18 +125,8 @@ StrongMPC<PK_t>::StrongMPC(Teuchos::ParameterList& pk_tree,
 // -----------------------------------------------------------------------------
 template<class PK_t>
 void StrongMPC<PK_t>::Setup(const Teuchos::Ptr<State>& S) {
-  // tweak the sub-PK parameter lists
-  // Teuchos::RCP<Teuchos::ParameterList> pks_list = Teuchos::sublist(plist_, "PKs");
-  // for (Teuchos::ParameterList::ConstIterator param=pks_list->begin();
-  //      param!=pks_list->end(); ++param) {
-  //   std::string pname = param->first;
-  //   if (pks_list->isSublist(pname)) {
-  //     pks_list->sublist(pname).set("strongly coupled PK", true);
-  //   } else {
-  //     ASSERT(0);
-  //   }
-  // }
-
+  // push on a parameter to indicate that sub-pks need not assemble their
+  // operators, as we will do that here (or above here)
   Teuchos::Array<std::string> pk_order = plist_->get< Teuchos::Array<std::string> >("PKs order");
   int npks = pk_order.size();
   for (int i=0; i!=npks; ++i){
@@ -164,7 +138,6 @@ void StrongMPC<PK_t>::Setup(const Teuchos::Ptr<State>& S) {
     }
   }
 
-
   MPC<PK_t>::Setup(S);
   PK_BDF_Default::Setup(S);
 
@@ -174,7 +147,6 @@ void StrongMPC<PK_t>::Setup(const Teuchos::Ptr<State>& S) {
        pk != MPC<PK_t>::sub_pks_.end(); ++pk) {
     dt_ = std::min<double>(dt_, (*pk)->get_dt());
   }
-
 };
 
 
@@ -337,6 +309,20 @@ void StrongMPC<PK_t>::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVect
 // -----------------------------------------------------------------------------
 // Experimental approach -- calling this indicates that the time integration
 // scheme is changing the value of the solution in state.
+// -----------------------------------------------------------------------------
+template<class PK_t>
+void StrongMPC<PK_t>::ChangedSolution(const Teuchos::Ptr<State>& S) {
+  // loop over sub-PKs
+  for (typename MPC<PK_t>::SubPKList::iterator pk = MPC<PK_t>::sub_pks_.begin();
+       pk != MPC<PK_t>::sub_pks_.end(); ++pk) {
+    (*pk)->ChangedSolution(S);
+  }
+};
+
+  
+// -----------------------------------------------------------------------------
+// Calling this indicates that the time integration scheme is changing
+// the value of the solution in state.
 // -----------------------------------------------------------------------------
 template<class PK_t>
 void StrongMPC<PK_t>::ChangedSolution() {

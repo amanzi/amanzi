@@ -162,7 +162,7 @@ void AdvectionDiffusion::UpdateBoundaryConditions_() {
 
 
 // Add a boundary marker to owned faces.
-void AdvectionDiffusion::ApplyBoundaryConditions_(const Teuchos::RCP<CompositeVector>& temperature) {
+void AdvectionDiffusion::ApplyBoundaryConditions_(const Teuchos::Ptr<CompositeVector>& temperature) {
   Epetra_MultiVector& temp_f = *temperature->ViewComponent("face",true);
   int nfaces = temperature->size("face",false);
   for (int f=0; f!=nfaces; ++f) {

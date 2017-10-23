@@ -141,7 +141,7 @@ void EnergyBase::AddSourcesToPrecon_(const Teuchos::Ptr<State>& S, double h) {
 
     S->GetFieldEvaluator(source_key_)->HasFieldDerivativeChanged(S, name_, key_);
     const Epetra_MultiVector& dsource_dT =
-        *S->GetFieldData(dsource_dT_key_)->ViewComponent("cell",false);
+        *S->GetFieldData(Keys::getDerivKey(source_key_, key_))->ViewComponent("cell",false);
     unsigned int ncells = dsource_dT.MyLength();
     for (unsigned int c=0; c!=ncells; ++c) {
       Acc_cells[c] -= dsource_dT[0][c];

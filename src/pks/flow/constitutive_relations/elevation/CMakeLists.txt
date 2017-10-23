@@ -13,6 +13,7 @@ add_library(flow_relations_elevation
   pres_elev_evaluator.cc
   elevation_evaluator.cc
   meshed_elevation_evaluator.cc
+  elevation_evaluator_column.cc
   standalone_elevation_evaluator.cc
 #  snow_distribution_evaluator.cc
 #  explicit_snow_distribution_evaluator.cc
