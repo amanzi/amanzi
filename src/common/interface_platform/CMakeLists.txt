@@ -61,11 +61,12 @@ if (ENABLE_Structured)
   include_directories(../../structured_grid/mpc_pk) 
   link_directories(${CCSE_LIBRARY_DIR})
 
-  add_amanzi_library(interface_ext
+  add_amanzi_library(interface_s
                      SOURCE InputConverterS.cc
                      HEADERS ${interface_inc_files}
-		     LINK_LIBS error_handling geometry
-                               ${Teuchos_LIBRARIES})
+		     LINK_LIBS error_handling geometry interface
+		     ${Teuchos_LIBRARIES} ${Boost_LIBRARIES} ${CCSE_LIBRARIES}
+                               ${XERCES_LIBRARIES} ${XERCES_ICU_LIBRARIES})
 endif()
 
 if (BUILD_TESTS) 
@@ -96,7 +97,7 @@ if (BUILD_TESTS)
       add_amanzi_test(converter_s converter_s
                       KIND int
                       SOURCE test/Main.cc test/converter_s.cc ${closing_dso}
-                      LINK_LIBS interface interface_ext atk 
+                      LINK_LIBS interface interface_s atk 
                                 ${UnitTest_LIBRARIES} ${Boost_LIBRARIES}
                                 ${CCSE_LIBRARIES} ${XERCES_LIBRARIES} ${XERCES_ICU_LIBRARIES})
     endif()

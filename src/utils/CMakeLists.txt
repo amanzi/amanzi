@@ -58,16 +58,13 @@ add_amanzi_library(atk
                            Spline.hh
                            SplinedCurve.hh
                            Key.hh
-                    LINK_LIBS error_handling atk_ext ${Teuchos_LIBRARIES} 
-                   )
+                    LINK_LIBS error_handling ${Teuchos_LIBRARIES})
 
-add_amanzi_library(atk_ext
-	           SOURCE VerboseObject_objs.cc
-		   HEADERS VerboseObject_objs.hh
-                   LINK_LIBS ${Teuchos_LIBRARIES})
+if (APPLE AND BUILD_SHARED_LIBS)
+  set_target_properties(atk PROPERTIES LINK_FLAGS "-Wl,-undefined,dynamic_lookup")
+endif()			  
 
 if (BUILD_TESTS)
-  
     # Add UnitTest include directoy
     include_directories(${UnitTest_INCLUDE_DIRS})
 
@@ -102,14 +99,5 @@ if (BUILD_TESTS)
                     KIND unit
                     SOURCE test/Main.cc test/utils_spline.cc
                     LINK_LIBS atk error_handling atk ${UnitTest_LIBRARIES} ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES})
-                  
 endif()
-
-
-
-
-
-
-
-
 

@@ -54,7 +54,6 @@ add_library(sflow OBJECT ${FPP_out_files}
                          ${h_inc_files})
 
 if (BUILD_TESTS)
-
   link_directories(${CCSE_LIBRARY_DIR})
   if (ENABLE_Unstructured)
     set(unstructured_grid_libs udriv mpc state transport flow whetstone)
@@ -67,7 +66,7 @@ if (BUILD_TESTS)
   # long-term strategy is
   set(structured_grid_libs structured_amanzi ${CCSE_LIBRARIES} 
                            structured_amanzi ${CCSE_LIBRARIES}
-                           error_handling interface interface_ext atk)
+                           error_handling interface interface_s atk)
 
   if(CMAKE_Fortran_COMPILER_ID STREQUAL GNU) 
     if (${CMAKE_SYSTEM_NAME} STREQUAL Linux)

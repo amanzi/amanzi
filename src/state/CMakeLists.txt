@@ -110,6 +110,9 @@ add_amanzi_library(state
 		   ${Boost_LIBRARIES} ${SEACAS_LIBRARIES})
 set_property(GLOBAL PROPERTY STATE_SOURCE_DIR ${MPC_SOURCE_DIR})
 set_property(GLOBAL PROPERTY STATE_BINARY_DIR ${MPC_BINARY_DIR})
+if (APPLE AND BUILD_SHARED_LIBS)
+  set_target_properties(state PROPERTIES LINK_FLAGS "-Wl,-undefined,dynamic_lookup")
+endif()			  
 
 #
 # Install Target

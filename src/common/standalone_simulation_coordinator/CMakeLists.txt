@@ -95,7 +95,7 @@ else()
 endif()
 
 if(ENABLE_Structured)
-  set(ssc_structured_grid_libs interface_ext structured_amanzi ${CCSE_LIBRARIES} structured_amanzi)
+  set(ssc_structured_grid_libs interface_s structured_amanzi ${CCSE_LIBRARIES} structured_amanzi)
   if(CMAKE_Fortran_COMPILER_ID STREQUAL GNU) 
     if (${CMAKE_SYSTEM_NAME} STREQUAL Linux)
       list(APPEND ssc_structured_grid_libs gfortran)

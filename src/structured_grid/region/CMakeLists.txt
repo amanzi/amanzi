@@ -55,7 +55,7 @@ if (BUILD_TESTS)
   add_definitions("-DENABLE_Structured")
 
   set(structured_grid_libs structured_amanzi geochemistry
-                           interface interface_ext atk)
+                           interface interface_s atk)
 
   if(CMAKE_Fortran_COMPILER_ID STREQUAL GNU)
     if (${CMAKE_SYSTEM_NAME} STREQUAL Linux)
