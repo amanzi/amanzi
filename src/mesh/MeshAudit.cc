@@ -1151,7 +1151,7 @@ bool MeshAudit::check_face_to_nodes_ghost_data() const
             " has different nodes than its master " << std::endl;
         std::cerr << "ghost face nodes (GIDs): ";
         for (int k = 0; k < fnode.size(); ++k)
-          std::cerr << node_map.GID(fnode[k]) << " ";
+          std::cerr << fnode[k] << " ";
         std::cerr << std::endl;
         std::cerr << "master face nodes (GIDs): ";
         for (int k = 0; k < fnode_ref.size(); ++k)
@@ -1164,7 +1164,7 @@ bool MeshAudit::check_face_to_nodes_ghost_data() const
         std::cerr << "P " << comm_.MyPID() << ": ghost face " << j << ", has different orientation than its master " << std::endl;
         std::cerr << "ghost face nodes (GIDs): ";
         for (int k = 0; k < fnode.size(); ++k)
-          std::cerr << node_map.GID(fnode[k]);
+          std::cerr << fnode[k];
         std::cerr << std::endl;
         std::cerr << "master face nodes (GIDs): ";
         for (int k = 0; k < fnode_ref.size(); ++k)
