@@ -32,7 +32,8 @@ set(SuperLU_PATCH_COMMAND ${CMAKE_COMMAND} -P ${SuperLU_cmake_patch})
 # Define the arguments passed to CMake.
 set(SuperLU_CMAKE_ARGS 
       "-DCMAKE_INSTALL_PREFIX:FILEPATH=${TPL_INSTALL_PREFIX}"
-      "-DBUILD_SHARED_LIBS:BOOL=${BUILD_SHARED_LIBS}")
+      "-DBUILD_SHARED_LIBS:BOOL=${BUILD_SHARED_LIBS}"
+      "-Denable_blaslib:BOOL=FALSE")
 
 # Add external project build and tie to the SuperLU build target
 ExternalProject_Add(${SuperLU_BUILD_TARGET}
