@@ -165,6 +165,7 @@ set(Trilinos_CMAKE_ARGS
    ${Trilinos_CMAKE_EXTRA_ARGS}
    )
 
+
 # - Final language ARGS
 set(Trilinos_CMAKE_LANG_ARGS
                    ${Amanzi_CMAKE_C_COMPILER_ARGS}
@@ -261,6 +262,8 @@ ExternalProject_Add(${Trilinos_BUILD_TARGET}
                                         -DCMAKE_INSTALL_PREFIX:PATH=<INSTALL_DIR>
 					-DTrilinos_ENABLE_Stratimikos:BOOL=FALSE
 					-DTrilinos_ENABLE_SEACAS:BOOL=FALSE
+		                        -DCMAKE_INSTALL_RPATH:PATH=${Trilinos_install_dir}/lib
+		                        -DCMAKE_INSTALL_NAME_DIR:PATH=${Trilinos_install_dir}/lib
                     # -- Build
                     BINARY_DIR        ${Trilinos_build_dir}        # Build directory 
                     BUILD_COMMAND     $(MAKE)                      # $(MAKE) enables parallel builds through make
@@ -271,5 +274,6 @@ ExternalProject_Add(${Trilinos_BUILD_TARGET}
                     ${Trilinos_logging_args})
 
 # --- Useful variables for packages that depends on Trilinos
+message(STATUS "KL >>> ${Trilinos_install_dir}")
 set(Trilinos_INSTALL_PREFIX  ${Trilinos_install_dir})
 set(Zoltan_INSTALL_PREFIX "${Trilinos_install_dir}")
