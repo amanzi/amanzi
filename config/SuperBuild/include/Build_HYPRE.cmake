@@ -77,19 +77,19 @@ set(hypre_install_opt "-DHYPRE_INSTALL_PREFIX:PATH=${TPL_INSTALL_PREFIX}")
 
 
 # --- Set the name of the patch
-#set(HYPRE_patch_file hypre-2.10.0b-print_level.patch)
+set(HYPRE_patch_file hypre-cmake3_7.patch)
 # --- Configure the bash patch script
-#set(HYPRE_sh_patch ${HYPRE_prefix_dir}/hypre-patch-step.sh)
-#configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/hypre-patch-step.sh.in
-#               ${HYPRE_sh_patch}
-#               @ONLY)
+set(HYPRE_sh_patch ${HYPRE_prefix_dir}/hypre-patch-step.sh)
+configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/hypre-patch-step.sh.in
+               ${HYPRE_sh_patch}
+               @ONLY)
 # --- Configure the CMake patch step
-#set(HYPRE_cmake_patch ${HYPRE_prefix_dir}/hypre-patch-step.cmake)
-#configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/hypre-patch-step.cmake.in
-#               ${HYPRE_cmake_patch}
-#               @ONLY)
+set(HYPRE_cmake_patch ${HYPRE_prefix_dir}/hypre-patch-step.cmake)
+configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/hypre-patch-step.cmake.in
+               ${HYPRE_cmake_patch}
+               @ONLY)
 # --- Set the patch command
-#set(HYPRE_PATCH_COMMAND ${CMAKE_COMMAND} -P ${HYPRE_cmake_patch})     
+set(HYPRE_PATCH_COMMAND ${CMAKE_COMMAND} -P ${HYPRE_cmake_patch})     
 
 
 # --- Add external project build and tie to the ZLIB build target
@@ -106,8 +106,10 @@ ExternalProject_Add(${HYPRE_BUILD_TARGET}
                     PATCH_COMMAND  ${HYPRE_PATCH_COMMAND}
                     # -- Configure
                     SOURCE_DIR    ${HYPRE_source_dir}
-                    SOURCE_SUBDIR src
+                    # SOURCE_SUBDIR src   # cmake 3.7+ feature 
 		    CMAKE_ARGS    ${AMANZI_CMAKE_CACHE_ARGS}   # Global definitions from root CMakeList
+                                  -DCMAKE_C_COMPILER:FILEPATH=${CMAKE_C_COMPILER}
+                                  -DCMAKE_CXX_COMPILER:FILEPATH=${CMAKE_CXX_COMPILER}
                                   ${hypre_openmp_opt} 
                                   ${hypre_lapack_opt} ${hypre_blas_opt}
                                   ${hypre_superlu_opt} ${hypre_shared_opt}
