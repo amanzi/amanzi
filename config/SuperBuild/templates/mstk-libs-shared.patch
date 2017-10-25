@@ -20,11 +20,13 @@ diff -ruNbB mstk-3.0.1/CMakeLists.txt mstk-3.0.1-source/CMakeLists.txt
      CONFIGURATIONS ${CMAKE_BUILD_TYPE}
    )
  endif ()
-@@ -335,6 +334,7 @@
+@@ -335,6 +334,9 @@
  
  set(MSTK_TPL_LIBRARIES ${METIS_LIBRARIES} ${ZOLTAN_LIBRARIES} 
    ${ExodusII_LIBRARIES} ${NetCDF_LIBRARIES} ${HDF5_LIBRARIES})
++if (APPLE)
 +target_link_libraries(${MSTKLIB} ${METIS_LIBRARIES} ${ZOLTAN_LIBRARIES} ${ExodusII_LIBRARIES} ${NetCDF_LIBRARIES} ${HDF5_LIBRARIES})
++endif()
  
  # Make a separate variables where the HDF5 libraries are not targets
  # but expanded library paths. This will be exported for use by other
