@@ -14,7 +14,7 @@ set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # ############################################################################ #
-# SHARED LIBRARIES DEFINITION
+# SHARED LIBRARIES DEFINITIONS
 # ############################################################################ #
 set(CMAKE_SKIP_BUILD_RPATH FALSE)
 set(CMAKE_SKIP_INSTALL_RPATH FALSE)
@@ -24,7 +24,21 @@ set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 
 set(AMANZI_CMAKE_CACHE_ARGS  "-DCMAKE_INSTALL_RPATH:PATH=${CMAKE_INSTALL_RPATH}")
 list(APPEND AMANZI_CMAKE_CACHE_ARGS  "-DCMAKE_INSTALL_NAME_DIR:PATH=${CMAKE_INSTALL_RPATH}")
+ 
+if (BUILD_SHARED_LIBS)
+  set(_shared_flags "-fPIC")
+  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${_shared_flags}")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${_shared_flags}")
+  set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} ${_shared_flags}")
 
+  set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} ${_shared_flags}")
+  set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} ${_shared_flags}")
+  set(CMAKE_Fortran_FLAGS_RELEASE "${CMAKE_Fortran_FLAGS_RELEASE} ${_shared_flags}")
+
+  set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} ${_shared_flags}")
+  set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} ${_shared_flags}")
+  set(CMAKE_Fortran_FLAGS_DEBUG "${CMAKE_Fortran_FLAGS_DEBUG} ${_shared_flags}")
+endif()
 
 # ############################################################################ #
 # Compiler Definition Warnings
@@ -547,8 +561,7 @@ if (NOT ENABLE_XSDK)
   include(${SuperBuild_BUILD_FILES_DIR}/Build_Boost.cmake) 
   append_set(Amanzi_TPL_CMAKE_ARGS
              -DBOOST_ROOT:FILEPATH=${TPL_INSTALL_PREFIX}
-             -DBoost_USE_STATIC_LIBS:BOOL=TRUE
-            -DBoost_NO_SYSTEM_PATHS:BOOL=TRUE)
+             -DBoost_NO_SYSTEM_PATHS:BOOL=TRUE)
 else()
   amanzi_tpl_version_write(FILENAME ${TPL_VERSIONS_INCLUDE_FILE}
                            PREFIX Boost
@@ -556,7 +569,6 @@ else()
   append_set(Amanzi_TPL_CMAKE_ARGS
              -DBOOST_ROOT:FILEPATH=${TPL_INSTALL_PREFIX}
              -DBOOST_INCLUDEDIR=${TPL_INSTALL_PREFIX}/include/boost
-             -DBoost_USE_STATIC_LIBS:BOOL=TRUE
              -DBoost_NO_SYSTEM_PATHS:BOOL=TRUE)
 endif()
 

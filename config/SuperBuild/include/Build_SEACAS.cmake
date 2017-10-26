@@ -111,7 +111,6 @@ set(SEACAS_CMAKE_CACHE_ARGS
 		    -DCMAKE_INSTALL_RPATH:PATH=${CMAKE_INSTALL_PREFIX}/SEACAS/lib
 		    -DCMAKE_INSTALL_NAME_DIR:PATH=${CMAKE_INSTALL_PREFIX}/SEACAS/lib
                     )
-message(STATUS "KL >>> ${CMAKE_INSTALL_PREFIX}/SEACAS/lib")
 
 # --- Add external project build and tie to the SEACAS build target
 ExternalProject_Add(${SEACAS_BUILD_TARGET}

@@ -18,30 +18,38 @@ amanzi_tpl_version_write(FILENAME ${TPL_VERSIONS_INCLUDE_FILE}
 set(Boost_projects "system,filesystem,program_options,regex,graph")
 
 # --- Define the configure command
-message("  etc: BOOST FLAGS ISSUES")
+# bjam args escape spaces not quote them
 set(Boost_bjam_args "cxxflags=${Amanzi_COMMON_CXXFLAGS}")
 string(REPLACE " " "\\ " Boost_bjam_args ${Boost_bjam_args})
-message("  etc: bjam args escape spaces not quote them: ${Boost_bjam_args}")
 
+# determin link type
+if (BUILD_SHARED_LIBS)
+  set(Boost_libs_type "shared")
+else()
+  set(Boost_libs_type "static")
+endif()
 
-# Determine toolset type
+# determine toolset type
+message(STATUS "BOOST: Boost_bjam_args (ini)= ${Boost_bjam_args}")
+message(STATUS "BOOST: CMAKE_SYSTEM         = ${CMAKE_SYSTEM}")
+message(STATUS "BOOST: CMAKE_SYSTEM_VERSION = ${CMAKE_SYSTEM_VERSION}")
+message(STATUS "BOOST: compiler_id_lc       = ${compiler_id_lc}")
+
 set(Boost_toolset)
 string(TOLOWER ${CMAKE_C_COMPILER_ID} compiler_id_lc)
 
 if (compiler_id_lc)
   if (APPLE)
-    message(STATUS "BOOST: CMAKE_SYSTEM         = ${CMAKE_SYSTEM}")
-    message(STATUS "BOOST: CMAKE_SYSTEM_VERSION = ${CMAKE_SYSTEM_VERSION}")
-    message(STATUS "BOOST: compiler_id_lc       = ${compiler_id_lc}")
     # CMAKE_SYSTEM of the form Darwin-12.5.0
     # CMAKE_SYSTEM_VERSION is 12.5.0 corresponds to OSX 10.8.5
     STRING(REGEX REPLACE "\\..*" "" OS_VERSION_MAJOR ${CMAKE_SYSTEM_VERSION})
-    #
-    if ( ${compiler_id_lc} STREQUAL "intel" )
+ 
+    if (${compiler_id_lc} STREQUAL "intel")
       set(Boost_toolset intel-darwin)
     else()  
       set(Boost_toolset clang)
     endif()  
+
     # some extra hints.
     if (${compiler_id_lc} STREQUAL "gnu")
       # On Mac OS 10.9, Clang has switched from using libstdc++ to libc++, so 
@@ -56,10 +64,10 @@ if (compiler_id_lc)
         endif()
       endif()
       # On Mac OS 10.10, we don't know what to do yet
-      if ( ${OS_VERSION_MAJOR} GREATER 13 ) # OSX 10.9.x -> Darwin-13.x.y
-        message (STATUS "BOOST: CMAKE_CXX_COMPILER   = ${CMAKE_CXX_COMPILER}")
+      if (${OS_VERSION_MAJOR} GREATER 13) # OSX 10.9.x -> Darwin-13.x.y
+        message (STATUS "BOOST: CMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}")
         # Check if it looks like an mpi wrapper
-	if ( CMAKE_CXX_COMPILER MATCHES "mpi" )
+	if (CMAKE_CXX_COMPILER MATCHES "mpi")
           execute_process(
             COMMAND ${CMAKE_CXX_COMPILER} -show
             OUTPUT_VARIABLE  COMPILE_CMDLINE OUTPUT_STRIP_TRAILING_WHITESPACE
@@ -67,10 +75,10 @@ if (compiler_id_lc)
             RESULT_VARIABLE  COMPILER_RETURN
             )
             # Extract the name of the compiler
-	    if ( COMPILER_RETURN EQUAL 0)
+	    if (COMPILER_RETURN EQUAL 0)
 	        string(REPLACE " " ";" COMPILE_CMDLINE_LIST ${COMPILE_CMDLINE})
 	        list(GET COMPILE_CMDLINE_LIST 0 RAW_CXX_COMPILER)
-		message (STATUS "BOOST: RAW_CXX_COMPILER     = ${RAW_CXX_COMPILER}")
+		message (STATUS "BOOST: RAW_CXX_COMPILER=${RAW_CXX_COMPILER}")
 	    else()
 	        message (FATAL_ERROR "BOOST: Unable to determine the compiler command")
             endif()
@@ -87,49 +95,50 @@ if (compiler_id_lc)
         )
 
         # Test to see if it is macports or clang
-        if ( _version_string MATCHES "MacPorts" OR _version_string MATCHES "Homebrew")
-          message (STATUS "BOOST: compiler is MacPorts or Homebrew" )
-          message (STATUS "BOOST: compiler version     = ${CMAKE_CXX_COMPILER_VERSION}")
+        if (_version_string MATCHES "MacPorts" OR _version_string MATCHES "Homebrew")
+          message(STATUS "BOOST: compiler is MacPorts or Homebrew" )
+          message(STATUS "BOOST: compiler version     = ${CMAKE_CXX_COMPILER_VERSION}")
           set(BOOST_user_jam "/Users/ftuser/user-config.jam")
           set(BOOST_using "using gcc : ${CMAKE_CXX_COMPILER_VERSION} : ${RAW_CXX_COMPILER} \;")
-          message (STATUS "BOOST: ${BOOST_using}")
-	  message (STATUS "BOOST: Boost_build_dir = ${Boost_build_dir}" )
+          message(STATUS "BOOST: ${BOOST_using}")
+	  message(STATUS "BOOST: Boost_build_dir = ${Boost_build_dir}")
           file (MAKE_DIRECTORY ${Boost_build_dir})
-	  file (WRITE ${Boost_build_dir}/user-config.jam ${BOOST_using} \n )
+	  file (WRITE ${Boost_build_dir}/user-config.jam ${BOOST_using} \n)
           set(Boost_bootstrap_args)
-          set(Boost_bjam_args "toolset=gcc-${CMAKE_CXX_COMPILER_VERSION} link=static" )
+          set(Boost_bjam_args "toolset=gcc-${CMAKE_CXX_COMPILER_VERSION}")
           set(Boost_toolset darwin)
-        elseif( _version_string MATCHES "LLVM" )
-	  message (STATUS "BOOST: compiler is Clang" )
+        elseif ( _version_string MATCHES "LLVM")
+	  message(STATUS "BOOST: compiler is Clang")
         endif()
       endif()
     endif()
 
   elseif(UNIX)
-    if ( ${compiler_id_lc} STREQUAL "gnu" )
+    if (${compiler_id_lc} STREQUAL "gnu")
         set(Boost_toolset gcc)
-    elseif(${compiler_id_lc} STREQUAL "intel")
+    elseif (${compiler_id_lc} STREQUAL "intel")
         set(Boost_toolset intel-linux)
-    elseif(${compiler_id_lc} STREQUAL "pgi")
+    elseif (${compiler_id_lc} STREQUAL "pgi")
         set(Boost_toolset pgi)
-    elseif(${compiler_id_lc} STREQUAL "pathscale")
+    elseif (${compiler_id_lc} STREQUAL "pathscale")
         set(Boost_toolset pathscale)
-    elseif(${compiler_id_lc} STREQUAL "clang")
+    elseif (${compiler_id_lc} STREQUAL "clang")
         set(Boost_toolset clang)
     endif()
   endif()
 endif()
+message(STATUS "BOOST: Boost_bjam_args (fin)= ${Boost_bjam_args}")
 
 configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/boost-configure-step.cmake.in
                ${Boost_prefix_dir}/boost-configure-step.cmake
-        @ONLY)
+               @ONLY)
 set(Boost_CONFIGURE_COMMAND ${CMAKE_COMMAND} -P ${Boost_prefix_dir}/boost-configure-step.cmake)
 
-# --- Define the build command
 
+# --- Define the build command
 configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/boost-build-step.cmake.in
                ${Boost_prefix_dir}/boost-build-step.cmake
-       @ONLY)
+               @ONLY)
 
 set(Boost_BUILD_COMMAND ${CMAKE_COMMAND} -P ${Boost_prefix_dir}/boost-build-step.cmake)     
 
