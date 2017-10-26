@@ -313,31 +313,33 @@ void OverlandPressureFlow::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S
   names2[1] = "face";
   
   // -- evaluator for surface geometry.
-
-  S->RequireField(Keys::getKey(domain_,"elevation"))->SetMesh(S->GetMesh(domain_))->SetGhosted()
+  Key elev_key = Keys::readKey(*plist_, domain_, "elevation", "elevation");
+  S->RequireField(elev_key)->SetMesh(S->GetMesh(domain_))->SetGhosted()
       ->AddComponents(names2, locations2, num_dofs2);
 
-  S->RequireField(Keys::getKey(domain_,"slope_magnitude"))->SetMesh(S->GetMesh(domain_))
+  Key slope_key = Keys::readKey(*plist_, domain_, "slope magnitude", "slope_magnitude");
+  S->RequireField(slope_key)->SetMesh(S->GetMesh(domain_))
       ->AddComponent("cell", AmanziMesh::CELL, 1);
 
   Teuchos::RCP<Flow::ElevationEvaluator> elev_evaluator;
-  if (standalone_mode_) {
-    ASSERT(plist_->isSublist("elevation evaluator"));
-    Teuchos::ParameterList elev_plist = plist_->sublist("elevation evaluator");
-    elev_plist.set("evaluator name", Keys::getKey(domain_, "elevation"));
-    elev_evaluator = Teuchos::rcp(new Flow::StandaloneElevationEvaluator(elev_plist));
+  if (S->FEList().isSublist(elev_key)) {
+    S->RequireFieldEvaluator(elev_key);
+    S->RequireFieldEvaluator(slope_key);
   } else {
-    Teuchos::ParameterList elev_plist = plist_->sublist("elevation evaluator");
-    elev_plist.set("evaluator name", Keys::getKey(domain_, "elevation"));
-    if (!boost::starts_with(domain_,"surface_"))
+    if (standalone_mode_) {
+      ASSERT(plist_->isSublist("elevation evaluator"));
+      Teuchos::ParameterList elev_plist = plist_->sublist("elevation evaluator");
+      elev_plist.set("evaluator name", Keys::getKey(domain_, "elevation"));
+      elev_evaluator = Teuchos::rcp(new Flow::StandaloneElevationEvaluator(elev_plist));
+    } else {
+      Teuchos::ParameterList elev_plist = plist_->sublist("elevation evaluator");
+      elev_plist.set("evaluator name", Keys::getKey(domain_, "elevation"));
       elev_evaluator = Teuchos::rcp(new Flow::MeshedElevationEvaluator(elev_plist));
-    else{
-      elev_evaluator = Teuchos::rcp(new Flow::ElevationEvaluatorColumn(elev_plist));
     }
-  }
 
-  S->SetFieldEvaluator(Keys::getKey(domain_,"elevation"), elev_evaluator);
-  S->SetFieldEvaluator(Keys::getKey(domain_,"slope_magnitude"), elev_evaluator);
+    S->SetFieldEvaluator(elev_key, elev_evaluator);
+    S->SetFieldEvaluator(slope_key, elev_evaluator);
+  }
 
   // -- evaluator for potential field, h + z
   S->RequireField(Keys::getKey(domain_,"pres_elev"))->Update(matrix_->RangeMap())->SetGhosted();
@@ -355,7 +357,6 @@ void OverlandPressureFlow::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S
     source_in_meters_ = plist_->get<bool>("mass source in meters", true);
     
     // source term itself [m/s]
-
     mass_source_key_ = plist_->get<std::string>("source key", Keys::getKey(domain_,"mass_source"));
 
     S->RequireField(mass_source_key_)->SetMesh(mesh_)
