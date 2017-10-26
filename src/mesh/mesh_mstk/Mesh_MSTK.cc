@@ -85,6 +85,7 @@ Mesh_MSTK::Mesh_MSTK(const char *filename, const Epetra_MpiComm *incomm_,
 
     opts[0] = 1;     // Parallel weave distributed meshes
     opts[1] = 1;     // Number of ghost layers
+    opts[2] = 1;     // Renumber Global IDs after read
 
     ok = MESH_ImportFromNemesisI(mesh,filename,opts,mpicomm_);
 
@@ -205,6 +206,7 @@ Mesh_MSTK::Mesh_MSTK(const char *filename, const Epetra_MpiComm *incomm_,
 
     opts[0] = 1;     // Parallel weave distributed meshes
     opts[1] = 1;     // Number of ghost layers
+    opts[2] = 1;     // Renumber Global IDs after read
 
     ok = MESH_ImportFromNemesisI(mesh,filename,opts,mpicomm_);
 
@@ -659,6 +661,8 @@ Mesh_MSTK::Mesh_MSTK(const Mesh& inmesh,
     extface_map_w_ghosts_(NULL), extface_map_wo_ghosts_(NULL),
     owned_to_extface_importer_(NULL)
 {  
+  Mesh_ptr inmesh_mstk = ((Mesh_MSTK&) inmesh).mesh;
+
   // store pointers to the MESH_XXXFromID functions so that they can
   // be called without a switch statement 
 
@@ -667,7 +671,13 @@ Mesh_MSTK::Mesh_MSTK(const Mesh& inmesh,
 
   MType entity_dim = ((Mesh_MSTK&) inmesh).entity_kind_to_mtype(entity_kind);
 
-  Mesh_ptr inmesh_mstk = ((Mesh_MSTK&) inmesh).mesh;
+  // Also make sure that the mesh object can do fast queries on local IDs
+  //
+  // Commented out for now to avoid another backwards incompatible
+  // change and if the mesh has no modifications it is fast. Also, its
+  // a one time setup cost but it would be good to enable it sometime
+  //
+  // MESH_Enable_LocalIDSearch(inmesh_mstk);
 
   int nent = entity_ids.size();
   List_ptr src_ents = List_New(nent);
@@ -699,6 +709,8 @@ Mesh_MSTK::Mesh_MSTK(const Epetra_MpiComm *comm_,
     extface_map_w_ghosts_(NULL), extface_map_wo_ghosts_(NULL),
     owned_to_extface_importer_(NULL)
 {  
+  Mesh_ptr inmesh_mstk = ((Mesh_MSTK&) inmesh).mesh;
+
   // store pointers to the MESH_XXXFromID functions so that they can
   // be called without a switch statement 
 
@@ -707,7 +719,13 @@ Mesh_MSTK::Mesh_MSTK(const Epetra_MpiComm *comm_,
 
   MType entity_dim = ((Mesh_MSTK&) inmesh).entity_kind_to_mtype(entity_kind);
 
-  Mesh_ptr inmesh_mstk = ((Mesh_MSTK&) inmesh).mesh;
+  // Also make sure that the mesh object can do fast queries on local IDs
+  //
+  // Commented out for now to avoid another backwards incompatible
+  // change and if the mesh has no modifications it is fast. Also, its
+  // a one time setup cost but it would be good to enable it sometime
+  //
+  // MESH_Enable_LocalIDSearch(inmesh_mstk);
 
   int nent = entity_ids.size();
   List_ptr src_ents = List_New(nent);
@@ -813,6 +831,9 @@ void Mesh_MSTK::extract_mstk_mesh(const Epetra_MpiComm *incomm,
     amanzi_throw(mesg);
   }
 
+  // Make sure Global ID searches are enabled
+
+  MESH_Enable_GlobalIDSearch(inmesh_mstk);
 
   if (flatten || extrude) {
     if (entity_dim == MREGION || entity_dim == MVERTEX) {
@@ -901,7 +922,7 @@ void Mesh_MSTK::extract_mstk_mesh(const Epetra_MpiComm *incomm,
   rparentatt = MAttrib_New(mesh,"rparentatt",POINTER,MREGION);
   
   switch (entity_dim) {
-    case MREGION: {
+    case MREGION: {  // Extracting a subset of a solid mesh
       
       idx = 0; 
       MRegion_ptr mr;
@@ -963,7 +984,8 @@ void Mesh_MSTK::extract_mstk_mesh(const Epetra_MpiComm *incomm,
 
       break;
     }
-    case MFACE: {
+    case MFACE: {  // Extracting a surface from a solid mesh or subset of 
+      //           // a surface mesh
 
       idx = 0; 
       MFace_ptr mf = nullptr;
@@ -1011,8 +1033,9 @@ void Mesh_MSTK::extract_mstk_mesh(const Epetra_MpiComm *incomm,
             
         MFace_ptr mf_new = MF_New(mesh);
         MF_Set_Edges(mf_new,nfe,fedges_new,fedirs);
-        MF_Set_GEntDim(mf_new,MF_GEntDim(mf));
-        MF_Set_GEntID(mf_new,MF_GEntID(mf));
+        MF_Set_GEntDim(mf_new,2);  // This has to be surface mesh
+        if (MF_GEntDim(mf) == 2)
+          MF_Set_GEntID(mf_new,MF_GEntID(mf));
 
         MEnt_Set_AttVal(mf,copyatt,ival,rval,mf_new);
         MEnt_Set_AttVal(mf_new,fparentatt,0,0.0,mf);
@@ -1020,7 +1043,7 @@ void Mesh_MSTK::extract_mstk_mesh(const Epetra_MpiComm *incomm,
 
       break;
     }
-    case MEDGE: {
+    case MEDGE: {  // Extracting a wire mesh from a solid or surface mesh
 
       idx = 0;
       MEdge_ptr me = nullptr;
@@ -1054,8 +1077,10 @@ void Mesh_MSTK::extract_mstk_mesh(const Epetra_MpiComm *incomm,
           ME_Set_Vertex(me_new,j,mv_new);
         }
 
+        if (ME_GEntDim(me) == 1)
+          ME_Set_GEntDim(me_new, 1);        
         MEnt_Set_AttVal(me,copyatt,ival,rval,me_new);
-        MEnt_Set_AttVal(me,eparentatt,0,0.0,me);
+        MEnt_Set_AttVal(me_new,eparentatt,0,0.0,me);
       }
 
       break;
@@ -4568,35 +4593,6 @@ void Mesh_MSTK::init_set_info()
             if (MEnt_Dim(ent) == MDELETED)
               MSet_Rem(mset, ent);
           }
-  
-//        Deleted entities all have MEnt_dim == MDELETED, hence we will never enter any of
-//        the switch cases below
-/*
-          entdim = MSet_EntDim(mset);
-          int idx=0;
-          switch (entdim) {
-          case MREGION:
-            MRegion_ptr region;
-            while ((region = List_Next_Entry(deleted_regions,&idx)))
-              MSet_Rem(mset,region);
-            break;
-          case MFACE:
-            MFace_ptr face;
-            while ((face = List_Next_Entry(deleted_faces,&idx)))
-              MSet_Rem(mset,face);
-            break;
-          case MEDGE:
-            MEdge_ptr edge;
-            while ((edge = List_Next_Entry(deleted_edges,&idx)))
-              MSet_Rem(mset,edge);
-            break;
-          case MVERTEX:
-            MVertex_ptr vertex;
-            while ((vertex = List_Next_Entry(deleted_vertices,&idx)))
-              MSet_Rem(mset,vertex);
-            break;
-          }
-*/
         }
       }
     }
@@ -4620,35 +4616,6 @@ void Mesh_MSTK::init_set_info()
               if (MEnt_Dim(ent) == MDELETED)
                 MSet_Rem(mset, ent);
             }
-            
-//          Deleted entities all have MEnt_dim == MDELETED, hence we will never enter any of
-//          the switch cases below
-/*
-            entdim = MSet_EntDim(mset);
-            int idx=0;
-            switch (entdim) {
-            case MREGION:
-              MRegion_ptr region;
-              while ((region = List_Next_Entry(deleted_regions,&idx)))
-                MSet_Rem(mset,region);
-              break;
-            case MFACE:
-              MFace_ptr face;
-              while ((face = List_Next_Entry(deleted_faces,&idx)))
-                MSet_Rem(mset,face);
-              break;
-            case MEDGE:
-              MEdge_ptr edge;
-              while ((edge = List_Next_Entry(deleted_edges,&idx)))
-                MSet_Rem(mset,edge);
-              break;
-            case MVERTEX:
-              MVertex_ptr vertex;
-              while ((vertex = List_Next_Entry(deleted_vertices,&idx)))
-                MSet_Rem(mset,vertex);
-              break;
-            }
-*/
           }
         }
       }
@@ -4826,7 +4793,7 @@ void Mesh_MSTK::collapse_degen_edges()
   delete [] merged_ents_info_global;
   delete [] offset;
 
-  /* Go through all mesh sets and replace any merged entities */
+  // Go through all mesh sets and replace any merged entities
 
   MEntity_ptr delent, keepent;
   int nsets = MESH_Num_MSets(mesh);
@@ -4845,8 +4812,8 @@ void Mesh_MSTK::collapse_degen_edges()
     }
   }
 
-  /* Go through all mesh sets and remove entities that were deleted
-   * (not merged) */
+  // Go through all mesh sets and remove entities that were deleted
+  // (not merged)
 
   idx = 0;
   while ((delent = List_Next_Entry(deleted_ents_all, &idx))) {
@@ -4862,7 +4829,6 @@ void Mesh_MSTK::collapse_degen_edges()
     }
   }
 
-
   // ME_Collapse only marked these entities as DELETED but now
   // delete them for good
   idx = 0;
@@ -4874,8 +4840,11 @@ void Mesh_MSTK::collapse_degen_edges()
 
   // Now renumber global IDs to make them contiguous
 
-  if (entities_deleted)
+  if (entities_deleted) {
+    std::cerr << "Entities deleted in collapse_degen_edges ..." << "\n";
     MESH_Renumber_GlobalIDs(mesh, MALLTYPE, 0, NULL, mpicomm_);
+  }
+
 #endif
 }
 
