@@ -18,6 +18,84 @@ namespace AmanziMesh {
 
 char kind_to_string[4][256] = {"NODE","EDGE","FACE","CELL"};
 
+void Mesh_MSTK::init_mesh_from_file_(std::string const filename,
+                                     const Partitioner_type partitioner) {
+
+  int ok = 0;
+
+  mesh = MESH_New(F1);
+
+  int len = filename.size();
+  if (filename.find(".exo") != std::string::npos) {  // Exodus file
+
+    // Read the mesh on processor 0
+    ok = MESH_ImportFromExodusII(mesh, filename.c_str(), NULL, mpicomm_);
+
+    // Collapse any degenerate edges in the mesh
+    collapse_degen_edges();  // Assumes its operating on member var 'mesh'
+
+    // Renumber local IDs to be contiguous
+    MESH_Renumber(mesh, 0, MALLTYPE);
+
+    if (numprocs > 1) {
+      // Distribute the mesh to all the processors
+      int topo_dim = MESH_Num_Regions(mesh) ? 3 : 2;
+      int num_ghost_layers = 1;
+      int with_attr = 1;  // Redistribute any attributes and sets
+      int method = static_cast<int>(partitioner);
+      int del_inmesh = 1;  // Delete input mesh (on P0) after distribution
+      
+      Mesh_ptr globalmesh = mesh;
+      mesh = MESH_New(F1);
+      
+      ok &= MSTK_Mesh_Distribute(globalmesh, &mesh, &topo_dim,
+                                 num_ghost_layers, with_attr, method,
+                                 del_inmesh, mpicomm_);
+    }
+  } else if (filename.find(".par") != std::string::npos) {  // Nemesis file
+
+    // Read the individual partitions on each processor
+    ok = MESH_ImportFromNemesisI(mesh, filename.c_str(), NULL, mpicomm_);
+
+    // Collapse any degenerate edges in the mesh
+    collapse_degen_edges();
+
+    // Renumber local IDs to be contiguous
+    MESH_Renumber(mesh, 0, MALLTYPE);
+
+    // Weave the meshes together to form interprocessor connections
+    int num_ghost_layers = 1;
+    int input_type = 1;  // We are given partitioned meshes with a
+    //                   // unique global ID on each mesh vertex
+    int topo_dim = MESH_Num_Regions(mesh) ? 3 : 2;
+
+    ok &= MSTK_Weave_DistributedMeshes(mesh, topo_dim, num_ghost_layers,
+                                       input_type, mpicomm_);
+
+    // Global IDs are discontinuous due to elimination of degeneracies
+    // but we cannot renumber global IDs until interprocessor
+    // connectivity has been established
+
+    ok &= MESH_Renumber_GlobalIDs(mesh, MALLTYPE, 0, NULL, mpicomm_);
+
+  } else {
+    std::stringstream mesg_stream;
+    mesg_stream << "Cannot identify file type from extension of input file " <<
+        filename << " on processor " << myprocid << std::endl;
+    Errors::Message mesg(mesg_stream.str());
+    amanzi_throw(mesg);
+  }
+
+  if (!ok) {
+    std::stringstream mesg_stream;
+    mesg_stream << "Failed to load " << filename << " on processor " <<
+        myprocid << std::endl;
+    Errors::Message mesg(mesg_stream.str());
+    amanzi_throw(mesg);
+  }
+}
+
+
 //--------------------------------------
 // Constructor - load up mesh from file
 //--------------------------------------
@@ -53,56 +131,12 @@ Mesh_MSTK::Mesh_MSTK(const char *filename, const Epetra_MpiComm *incomm_,
   int space_dim = 3;
   pre_create_steps_(space_dim, incomm_, gm);
 
-
   if (myprocid == 0) {
     int DebugWait=0;
     while (DebugWait);
   }
 
-
-  mesh = MESH_New(F1);
-
-  int len = strlen(filename);
-  if (len > 4 && strncmp(&(filename[len-4]),".exo",4) == 0) { // Exodus file 
-
-    if (numprocs == 1) {
-      ok = MESH_ImportFromExodusII(mesh,filename,NULL,mpicomm_);
-    }
-    else {
-      int opts[5] = {0,0,0,0,0};
-
-      opts[0] = 1;   // Partition the input mesh
-      opts[1] = 0;   // Use the default method for distributing the mesh
-      opts[2] = 1;   // Number of ghost layers
-      opts[3] = static_cast<int>(partitioner);
-
-      ok = MESH_ImportFromExodusII(mesh,filename,opts,mpicomm_);
-    }
-
-  }
-  else if (len > 4 && strncmp(&(filename[len-4]),".par",4) == 0) { // Nemesis file 
-    int opts[5] = {0,0,0,0,0};
-
-    opts[0] = 1;     // Parallel weave distributed meshes
-    opts[1] = 1;     // Number of ghost layers
-    opts[2] = 1;     // Renumber Global IDs after read
-
-    ok = MESH_ImportFromNemesisI(mesh,filename,opts,mpicomm_);
-
-  }
-  else {
-    std::stringstream mesg_stream;
-    mesg_stream << "Cannot identify file type from extension of input file " << filename << " on processor " << myprocid << std::endl;
-    Errors::Message mesg(mesg_stream.str());
-    amanzi_throw(mesg);
-  }
-
-  if (!ok) {
-    std::stringstream mesg_stream;
-    mesg_stream << "Failed to load " << filename << " on processor " << myprocid << std::endl;
-    Errors::Message mesg(mesg_stream.str());
-    amanzi_throw(mesg);
-  }
+  init_mesh_from_file_(filename);
 
   int cell_dim = MESH_Num_Regions(mesh) ? 3 : 2;
   
@@ -181,49 +215,7 @@ Mesh_MSTK::Mesh_MSTK(const char *filename, const Epetra_MpiComm *incomm_,
     while (DebugWait);
   }
 
-  mesh = MESH_New(F1);
-
-  int len = strlen(filename);
-  if (len > 4 && strncmp(&(filename[len-4]),".exo",4) == 0) { // Exodus file
-
-    if (numprocs == 1) {
-      ok = MESH_ImportFromExodusII(mesh,filename,NULL,mpicomm_);
-    }
-    else {
-      int opts[5] = {0,0,0,0,0};
-
-      opts[0] = 1;   // Partition the input mesh
-      opts[1] = 0;   // Use the default method for distributing the mesh
-      opts[2] = 1;   // Number of ghost layers
-      opts[3] = static_cast<int>(partitioner);
-
-      ok = MESH_ImportFromExodusII(mesh,filename,opts,mpicomm_);
-    }
-
-  }
-  else if (len > 4 && strncmp(&(filename[len-4]),".par",4) == 0) { // Nemesis file 
-    int opts[5] = {0,0,0,0,0};
-
-    opts[0] = 1;     // Parallel weave distributed meshes
-    opts[1] = 1;     // Number of ghost layers
-    opts[2] = 1;     // Renumber Global IDs after read
-
-    ok = MESH_ImportFromNemesisI(mesh,filename,opts,mpicomm_);
-
-  }
-  else {
-    std::stringstream mesg_stream;
-    mesg_stream << "Cannot identify file type from extension of input file " << filename << " on processor " << myprocid << std::endl;
-    Errors::Message mesg(mesg_stream.str());
-    amanzi_throw(mesg);
-  }
-
-  if (!ok) {
-    std::stringstream mesg_stream;
-    mesg_stream << "Failed to load " << filename << " on processor " << myprocid << std::endl;
-    Errors::Message mesg(mesg_stream.str());
-    amanzi_throw(mesg);
-  }
+  init_mesh_from_file_(filename);
 
   int cell_dim = MESH_Num_Regions(mesh) ? 3 : 2;
   
@@ -3885,10 +3877,6 @@ Entity_ID Mesh_MSTK::GID(const Entity_ID lid, const Entity_kind kind) const
 void Mesh_MSTK::post_create_steps_(const bool request_faces, 
                                    const bool request_edges)
 {
-  // Pre-process the mesh to remove degenerate edges
-  
-  collapse_degen_edges();
-
   label_celltype();
 
   // Initialize data structures for various entities - vertices/nodes
@@ -4840,10 +4828,10 @@ void Mesh_MSTK::collapse_degen_edges()
 
   // Now renumber global IDs to make them contiguous
 
-  if (entities_deleted) {
-    std::cerr << "Entities deleted in collapse_degen_edges ..." << "\n";
-    MESH_Renumber_GlobalIDs(mesh, MALLTYPE, 0, NULL, mpicomm_);
-  }
+  //  if (entities_deleted) {
+  //   std::cerr << "Entities deleted in collapse_degen_edges ..." << "\n";
+  //   MESH_Renumber_GlobalIDs(mesh, MALLTYPE, 0, NULL, mpicomm_);
+  //  }
 
 #endif
 }
@@ -5493,8 +5481,8 @@ void Mesh_MSTK::pre_create_steps_(const int space_dimension,
 
   set_space_dimension(space_dimension);
 
-  MPI_Comm_rank(mpicomm_,&myprocid);
-  MPI_Comm_size(mpicomm_,&numprocs);
+  MPI_Comm_rank(mpicomm_, &myprocid);
+  MPI_Comm_size(mpicomm_, &numprocs);
 
   serial_run =  (!mpicomm_ || numprocs == 1) ? true : false;
 
