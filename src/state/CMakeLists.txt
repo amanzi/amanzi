@@ -168,7 +168,7 @@ if (BUILD_TESTS)
                     SOURCE
 	  	          test/Main.cc
 	 		  test/state_dag.cc
-                    LINK_LIBS state mesh_factory mesh data_structures mesh_functions functions 
+                    LINK_LIBS state mesh_factory mesh data_structures mesh_functions functions
                               ${UnitTest_LIBRARIES} ${NOX_LIBRARIES})
 
     add_amanzi_test(state_init state_init

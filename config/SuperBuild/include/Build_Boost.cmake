@@ -102,8 +102,7 @@ if (compiler_id_lc)
           file (MAKE_DIRECTORY ${Boost_build_dir})
 	  file (WRITE ${Boost_build_dir}/user-config.jam ${BOOST_using} \n)
           set(Boost_bootstrap_args)
-          set(Boost_bjam_args "toolset=darwin")
-          set(Boost_toolset darwin)
+	  set(Boost_toolset "gcc-macports}")
         elseif ( _version_string MATCHES "LLVM")
 	  message(STATUS "BOOST: compiler is Clang")
         endif()
@@ -161,3 +160,4 @@ ExternalProject_Add(${Boost_BUILD_TARGET}
                     INSTALL_COMMAND  ""
                     # -- Output control
                     ${Boost_logging_args})
+
