@@ -89,6 +89,7 @@ void EnergyBase::ApplyDiffusion_(const Teuchos::Ptr<State>& S,
   matrix_diff_->global_operator()->Init();
   matrix_diff_->SetScalarCoefficient(conductivity, Teuchos::null);
   matrix_diff_->UpdateMatrices(Teuchos::null, temp.ptr());
+  //matrix_diff_->UpdateMatrices(Teuchos::null, Teuchos::null);
 
 
   // update the flux if needed

@@ -392,6 +392,7 @@ void EnergyBase::CommitStep(double t_old, double t_new, const Teuchos::RCP<State
   matrix_diff_->global_operator()->Init();
   matrix_diff_->SetScalarCoefficient(conductivity, Teuchos::null);
   matrix_diff_->UpdateMatrices(Teuchos::null, temp.ptr());
+  //matrix_diff_->UpdateMatrices(Teuchos::null, Teuchos::null);
 
 
   Teuchos::RCP<CompositeVector> eflux = S->GetFieldData(energy_flux_key_, name_);
@@ -802,6 +803,7 @@ void EnergyBase::CalculateConsistentFaces(const Teuchos::Ptr<CompositeVector>& u
   matrix_diff_->global_operator()->Init();
   matrix_diff_->SetScalarCoefficient(conductivity, Teuchos::null);
   matrix_diff_->UpdateMatrices(Teuchos::null, u);
+  //matrix_diff_->UpdateMatrices(Teuchos::null, Teuchos::null);
   matrix_diff_->ApplyBCs(true, true);
 
   // derive the consistent faces, involves a solve

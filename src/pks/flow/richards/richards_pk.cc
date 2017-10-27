@@ -491,7 +491,7 @@ void Richards::Initialize(const Teuchos::Ptr<State>& S) {
 
   // absolute perm
   SetAbsolutePermeabilityTensor_(S);
-
+  
   // operators
   Teuchos::RCP<const Epetra_Vector> gvec = S->GetConstantVectorData("gravity");
   AmanziGeometry::Point g(3);
@@ -711,19 +711,21 @@ bool Richards::UpdatePermeabilityData_(const Teuchos::Ptr<State>& S) {
       Teuchos::RCP<const CompositeVector> rho = S->GetFieldData(mass_dens_key_);
       face_matrix_diff_->SetDensity(rho);
 
-
-
       Teuchos::RCP<CompositeVector> flux_dir = S->GetFieldData(flux_dir_key_, name_);
       Teuchos::RCP<const CompositeVector> pres = S->GetFieldData(key_);
 
+      // std::cout<<*flux_dir->ViewComponent("face")<<"\n\n";
+
       face_matrix_diff_->UpdateMatrices(Teuchos::null, pres.ptr());
-
-      face_matrix_diff_->UpdateFlux(*pres, *flux_dir);
-
+      //face_matrix_diff_->UpdateMatrices(Teuchos::null, Teuchos::null);
+    
       if (!pres->HasComponent("face"))
         face_matrix_diff_->ApplyBCs(true, true);
 
+      face_matrix_diff_->UpdateFlux(*pres, *flux_dir);
 
+      // std::cout<<*flux_dir->ViewComponent("face")<<"\n";
+      // exit(-1);
 
       if (clobber_boundary_flux_dir_) {
         Epetra_MultiVector& flux_dir_f = *flux_dir->ViewComponent("face",false);

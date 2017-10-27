@@ -91,8 +91,8 @@ void MPCSubsurface::Setup(const Teuchos::Ptr<State>& S) {
   Teuchos::ParameterList& diff0_list = pks_list_->sublist(pk_order[0]).sublist("diffusion");
   Teuchos::ParameterList& diff1_list = pks_list_->sublist(pk_order[1]).sublist("diffusion");
   
-  if ((diff0_list.get("discretization primary") == "fv:default") &&
-      (diff1_list.get("discretization primary") == "fv:default")){
+  if ((diff0_list.get<std::string>("discretization primary") == "fv:default") &&
+      (diff1_list.get<std::string>("discretization primary") == "fv:default")){
     is_fv_ = true;
   } else {
     is_fv_ = false;
@@ -331,7 +331,7 @@ void MPCSubsurface::Setup(const Teuchos::Ptr<State>& S) {
     }
 
     
-    // Key dE_dp_key = getDerivKey(e_key_, pres_key_);
+    // Key dE_dp_key = Keys::getDerivKey(e_key_, pres_key_);
     // S->RequireField( dE_dp_key, e_key_)
     //    ->SetMesh(mesh_)->SetGhosted()->SetComponent("cell", AmanziMesh::CELL, 1);
     // S->GetField(dE_dp_key, e_key_)->set_io_vis(true);
@@ -381,12 +381,12 @@ void MPCSubsurface::Initialize(const Teuchos::Ptr<State>& S) {
   ASSERT(richards_pk_ != Teuchos::null);
 
   if (precon_type_ != PRECON_NONE && precon_type_ != PRECON_BLOCK_DIAGONAL) {
-    Key dWC_dT_key = getDerivKey(wc_key_, temp_key_);
+    Key dWC_dT_key = Keys::getDerivKey(wc_key_, temp_key_);
     if (S->HasField(dWC_dT_key)){
       S->GetFieldData(dWC_dT_key, wc_key_)->PutScalar(0.0);
       S->GetField(dWC_dT_key, wc_key_)->set_initialized();
     }
-    Key dE_dp_key = getDerivKey(e_key_, pres_key_);
+    Key dE_dp_key = Keys::getDerivKey(e_key_, pres_key_);
     if (S->HasField(dE_dp_key)){
       S->GetFieldData(dE_dp_key, e_key_)->PutScalar(0.0);
       S->GetField(dE_dp_key, e_key_)->set_initialized();
