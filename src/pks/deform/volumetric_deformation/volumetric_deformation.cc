@@ -565,9 +565,11 @@ bool VolumetricDeformation::AdvanceStep(double t_old, double t_new, bool reinit)
           face_displacement += -dz * dcell_vol_c[0][col_cells[ci]] / cv[0][col_cells[ci]];
 
 	  ASSERT(face_displacement >= 0.);
+#if DEBUG
 	  if (face_displacement > 0.) {
 	    std::cout << "  Shifting cell " << col_cells[ci] << ", with personal displacement of " << -dz * dcell_vol_c[0][col_cells[ci]] / cv[0][col_cells[ci]] << " and frac " << -dcell_vol_c[0][col_cells[ci]] / cv[0][col_cells[ci]] << std::endl;
 	  }
+#endif
 
 	  // shove the face changes into the nodal averages
 	  Entity_ID_List nodes;
@@ -747,10 +749,12 @@ bool VolumetricDeformation::AdvanceStep(double t_old, double t_new, bool reinit)
   int ncells = base_poro.MyLength();
   for (int c=0; c!=ncells; ++c) {
     base_poro[0][c] = 1. - (1. - base_poro_old[0][c]) * cv[0][c]/cv_new[0][c];
+#if DEBUG
     if (fabs(cv_new[0][c] - cv[0][c]) > 1.e-12) {
       std::cout << "Deformed Cell " << c << ": V,V_new " << cv[0][c] << " " << cv_new[0][c] << std::endl
 		<< "             result porosity " << base_poro_old[0][c] << " " << base_poro[0][c] << std::endl;
     }
+#endif
   }  
 
   return false;
