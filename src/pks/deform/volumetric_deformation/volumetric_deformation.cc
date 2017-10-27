@@ -299,15 +299,13 @@ void VolumetricDeformation::Initialize(const Teuchos::Ptr<State>& S) {
 
 
 bool VolumetricDeformation::AdvanceStep(double t_old, double t_new, bool reinit) {
-  
-  double dt = t_new - t_old;
-
-  Teuchos::OSTab tab = vo_->getOSTab();
-  if (vo_->os_OK(Teuchos::VERB_MEDIUM))
-    *vo_->os() << "Advancing deformation PK from time " << S_->time() << " to "
-               << S_next_->time() << " with step size " << dt << std::endl
+  double dt = t_new -t_old;
+  Teuchos::OSTab out = vo_->getOSTab();
+  if (vo_->os_OK(Teuchos::VERB_HIGH))
+    *vo_->os() << "----------------------------------------------------------------" << std::endl
+               << "Advancing: t0 = " << S_inter_->time()
+               << " t1 = " << S_next_->time() << " h = " << dt << std::endl
                << "----------------------------------------------------------------" << std::endl;
-
 
   std::vector<double> ss(1,S_next_->time());
   double ss0 = S_->time();
@@ -328,18 +326,29 @@ bool VolumetricDeformation::AdvanceStep(double t_old, double t_new, bool reinit)
     }
 
     case (DEFORM_MODE_SATURATION): {
+      S_next_->GetFieldEvaluator(Keys::getKey(domain_,"cell_volume"))
+          ->HasFieldChanged(S_next_.ptr(), name_);
+      S_next_->GetFieldEvaluator(Keys::getKey(domain_,"saturation_liquid"))
+          ->HasFieldChanged(S_next_.ptr(), name_);
+      S_next_->GetFieldEvaluator(Keys::getKey(domain_,"saturation_ice"))
+          ->HasFieldChanged(S_next_.ptr(), name_);
+      S_next_->GetFieldEvaluator(Keys::getKey(domain_,"saturation_gas"))
+          ->HasFieldChanged(S_next_.ptr(), name_);
+      S_next_->GetFieldEvaluator(Keys::getKey(domain_,"porosity"))
+          ->HasFieldChanged(S_next_.ptr(), name_);
+      
       const Epetra_MultiVector& cv =
-        *S_->GetFieldData(Keys::getKey(domain_,"cell_volume"))->ViewComponent("cell",true);
+        *S_next_->GetFieldData(Keys::getKey(domain_,"cell_volume"))->ViewComponent("cell",true);
       const Epetra_MultiVector& s_liq =
-        *S_->GetFieldData(Keys::getKey(domain_,"saturation_liquid"))->ViewComponent("cell",false);
+        *S_next_->GetFieldData(Keys::getKey(domain_,"saturation_liquid"))->ViewComponent("cell",false);
       const Epetra_MultiVector& s_ice =
-        *S_->GetFieldData(Keys::getKey(domain_,"saturation_ice"))->ViewComponent("cell",false);
+        *S_next_->GetFieldData(Keys::getKey(domain_,"saturation_ice"))->ViewComponent("cell",false);
       const Epetra_MultiVector& s_gas =
-        *S_->GetFieldData(Keys::getKey(domain_,"saturation_gas"))->ViewComponent("cell",false);      
+        *S_next_->GetFieldData(Keys::getKey(domain_,"saturation_gas"))->ViewComponent("cell",false);      
       const Epetra_MultiVector& poro =
-        *S_->GetFieldData(Keys::getKey(domain_,"porosity"))->ViewComponent("cell",false);
+        *S_next_->GetFieldData(Keys::getKey(domain_,"porosity"))->ViewComponent("cell",false);
       const Epetra_MultiVector& base_poro =
-        *S_->GetFieldData(Keys::getKey(domain_,"base_porosity"))->ViewComponent("cell",false);
+        *S_next_->GetFieldData(Keys::getKey(domain_,"base_porosity"))->ViewComponent("cell",false);
 
       Epetra_MultiVector& dcell_vol_c = *dcell_vol_vec->ViewComponent("cell",false);
       int dim = mesh_->space_dimension();
@@ -375,17 +384,29 @@ bool VolumetricDeformation::AdvanceStep(double t_old, double t_new, bool reinit)
     }
 
     case (DEFORM_MODE_STRUCTURAL): {
-      const Epetra_MultiVector& cv = *S_next_->GetFieldData(Keys::getKey(domain_,"cell_volume"))->ViewComponent("cell",true);
+      S_next_->GetFieldEvaluator(Keys::getKey(domain_,"cell_volume"))
+          ->HasFieldChanged(S_next_.ptr(), name_);
+      S_next_->GetFieldEvaluator(Keys::getKey(domain_,"saturation_liquid"))
+          ->HasFieldChanged(S_next_.ptr(), name_);
+      S_next_->GetFieldEvaluator(Keys::getKey(domain_,"saturation_ice"))
+          ->HasFieldChanged(S_next_.ptr(), name_);
+      S_next_->GetFieldEvaluator(Keys::getKey(domain_,"saturation_gas"))
+          ->HasFieldChanged(S_next_.ptr(), name_);
+      S_next_->GetFieldEvaluator(Keys::getKey(domain_,"porosity"))
+          ->HasFieldChanged(S_next_.ptr(), name_);
+
+      const Epetra_MultiVector& cv =
+          *S_->GetFieldData(Keys::getKey(domain_,"cell_volume"))->ViewComponent("cell",true);
       const Epetra_MultiVector& s_liq =
-        *S_->GetFieldData(Keys::getKey(domain_,"saturation_liquid"))->ViewComponent("cell",false);
+        *S_next_->GetFieldData(Keys::getKey(domain_,"saturation_liquid"))->ViewComponent("cell",false);
       const Epetra_MultiVector& s_ice =
-        *S_->GetFieldData(Keys::getKey(domain_,"saturation_ice"))->ViewComponent("cell",false);
+        *S_next_->GetFieldData(Keys::getKey(domain_,"saturation_ice"))->ViewComponent("cell",false);
       const Epetra_MultiVector& s_gas =
-        *S_->GetFieldData(Keys::getKey(domain_,"saturation_gas"))->ViewComponent("cell",false);      
+        *S_next_->GetFieldData(Keys::getKey(domain_,"saturation_gas"))->ViewComponent("cell",false);      
       const Epetra_MultiVector& poro =
-        *S_->GetFieldData(Keys::getKey(domain_,"porosity"))->ViewComponent("cell",false);
+        *S_next_->GetFieldData(Keys::getKey(domain_,"porosity"))->ViewComponent("cell",false);
       const Epetra_MultiVector& base_poro =
-        *S_->GetFieldData(Keys::getKey(domain_,"base_porosity"))->ViewComponent("cell",false);
+        *S_next_->GetFieldData(Keys::getKey(domain_,"base_porosity"))->ViewComponent("cell",false);
 
       Epetra_MultiVector& dcell_vol_c = *dcell_vol_vec->ViewComponent("cell",false);
       int dim = mesh_->space_dimension();
@@ -450,14 +471,14 @@ bool VolumetricDeformation::AdvanceStep(double t_old, double t_new, bool reinit)
     case (DEFORM_STRATEGY_MSTK) : {
       // collect needed data, ghosted
       // -- cell vol
-      Teuchos::RCP<const CompositeVector> cv_vec = S_->GetFieldData(Keys::getKey(domain_,"cell_volume"));
+      Teuchos::RCP<const CompositeVector> cv_vec = S_next_->GetFieldData(Keys::getKey(domain_,"cell_volume"));
       const Epetra_MultiVector& cv = *cv_vec->ViewComponent("cell");
 
-      Teuchos::RCP<const CompositeVector> poro_vec = S_->GetFieldData(Keys::getKey(domain_,"porosity"));
+      Teuchos::RCP<const CompositeVector> poro_vec = S_next_->GetFieldData(Keys::getKey(domain_,"porosity"));
       const Epetra_MultiVector& poro = *poro_vec->ViewComponent("cell");
 
       const Epetra_MultiVector& s_ice =
-        *S_->GetFieldData(Keys::getKey(domain_,"saturation_ice"))->ViewComponent("cell",false);
+        *S_next_->GetFieldData(Keys::getKey(domain_,"saturation_ice"))->ViewComponent("cell",false);
     
       // -- dcell vol
       const Epetra_MultiVector& dcell_vol_c =
@@ -565,9 +586,11 @@ bool VolumetricDeformation::AdvanceStep(double t_old, double t_new, bool reinit)
           face_displacement += -dz * dcell_vol_c[0][col_cells[ci]] / cv[0][col_cells[ci]];
 
 	  ASSERT(face_displacement >= 0.);
+#if DEBUG
 	  if (face_displacement > 0.) {
 	    std::cout << "  Shifting cell " << col_cells[ci] << ", with personal displacement of " << -dz * dcell_vol_c[0][col_cells[ci]] / cv[0][col_cells[ci]] << " and frac " << -dcell_vol_c[0][col_cells[ci]] / cv[0][col_cells[ci]] << std::endl;
 	  }
+#endif
 
 	  // shove the face changes into the nodal averages
 	  Entity_ID_List nodes;
@@ -747,10 +770,12 @@ bool VolumetricDeformation::AdvanceStep(double t_old, double t_new, bool reinit)
   int ncells = base_poro.MyLength();
   for (int c=0; c!=ncells; ++c) {
     base_poro[0][c] = 1. - (1. - base_poro_old[0][c]) * cv[0][c]/cv_new[0][c];
+#if DEBUG
     if (fabs(cv_new[0][c] - cv[0][c]) > 1.e-12) {
       std::cout << "Deformed Cell " << c << ": V,V_new " << cv[0][c] << " " << cv_new[0][c] << std::endl
 		<< "             result porosity " << base_poro_old[0][c] << " " << base_poro[0][c] << std::endl;
     }
+#endif
   }  
 
   return false;
