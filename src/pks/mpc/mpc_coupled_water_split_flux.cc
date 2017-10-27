@@ -91,6 +91,8 @@ bool MPCCoupledWaterSplitFlux::AdvanceStep(double t_old, double t_new, bool rein
 
 void MPCCoupledWaterSplitFlux::CommitStep(double t_old, double t_new,
         const Teuchos::RCP<State>& S) {
+  // commit before copy to ensure record for extrapolation in star system uses
+  // its own solutions
   MPC<PK>::CommitStep(t_old, t_new, S);
 
   // Copy the primary into the star to advance

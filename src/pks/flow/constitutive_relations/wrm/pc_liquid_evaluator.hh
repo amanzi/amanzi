@@ -38,6 +38,12 @@ class PCLiquidEvaluator : public SecondaryVariableFieldEvaluator {
     SecondaryVariableFieldEvaluator::EnsureCompatibility(S);
   }
 
+  virtual void EnsureCompatibility(const Teuchos::Ptr<State>& S) {
+    S->RequireScalar("atmospheric_pressure");
+    SecondaryVariableFieldEvaluator::EnsureCompatibility(S);
+  }
+
+  
   Teuchos::RCP<PCLiqAtm> get_PCLiqAtm() { return model_; }
 
  protected:
