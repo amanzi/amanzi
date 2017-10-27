@@ -427,7 +427,7 @@ def get_axs():
     fig, axs = plt.subplots(3,2, figsize=(10,12))
     return axs.flatten()
 
-def plot(sim, axs, color='b', symbol=None, label=None, skip_first=False):
+def plot(sim, axs, color='b', symbol=None, label=None, derived_runoff=True, derived_seepage=True):
     """Plots the mass balance for a given simulation."""
     if symbol is None:
         style = '-'
@@ -438,25 +438,29 @@ def plot(sim, axs, color='b', symbol=None, label=None, skip_first=False):
     
     # units to convert from mol/s to m/day
     conv = 86400.0 / sim.surface_area / sim.typical_density
-    axs[0].plot(sim.times, sim.vectorize('precipitation')*conv, style, color=color, label=label)
+    precip = sim.vectorize('precipitation')*conv
+    axs[0].plot(sim.times, precip, style, color=color, label=label)
     axs[1].plot(sim.times, (sim.vectorize('transpiration') + sim.vectorize('evaporation'))               
                 *conv, dash, color=color)
 
     to_m = 1.0 / sim.surface_area / sim.typical_density
-    if skip_first:
-        axs[2].plot(sim.times[1:], (sim.vectorize('surfaceWC')*to_m)[1:], style, color=color)
-        axs[3].plot(sim.times[1:], (sim.vectorize('WC')*to_m)[1:], style, color=color)
-    else:
-        axs[2].plot(sim.times, sim.vectorize('surfaceWC')*to_m, style, color=color)
-        axs[3].plot(sim.times, sim.vectorize('WC')*to_m, style, color=color)
+    axs[2].plot(sim.times, sim.vectorize('surfaceWC')*to_m, style, color=color)
+    axs[3].plot(sim.times, sim.vectorize('WC')*to_m, style, color=color)
 
-    half_times = sim.half_times()
-    if skip_first:
-        axs[4].plot(half_times[1:], (sim.half_times_vectorize('runoff')/sim.typical_density)[1:], style, color=color)
-        axs[5].plot(half_times[1:], (sim.half_times_vectorize('seepage')/sim.typical_density)[1:], style, color=color)
-    else:
+    if derived_runoff:
+        half_times = sim.half_times()
         axs[4].plot(half_times, sim.half_times_vectorize('runoff')/sim.typical_density, style, color=color)
+        axs[4].plot(half_times, (precip[1:] + precip[:-1])/2. * sim.surface_area / 86400.0, 'k--')
+    else:
+        axs[4].plot(sim.times, sim.vectorize('runoff')/sim.typical_density, style, color=color)
+        axs[4].plot(sim.times, precip * sim.surface_area / 86400.0, 'k--')
+
+    if derived_seepage:
+        half_times = sim.half_times()
         axs[5].plot(half_times, sim.half_times_vectorize('seepage')/sim.typical_density, style, color=color)
+    else:
+        axs[5].plot(sim.times, sim.vectorize('seepage')/sim.typical_density, style, color=color)
+
     
 def decorate(axs):
     """Decorates the axes with labels"""
