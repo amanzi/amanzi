@@ -30,13 +30,14 @@ else()
 endif()
 
 # determine toolset type
-message(STATUS "BOOST: Boost_bjam_args (ini)= ${Boost_bjam_args}")
+set(Boost_toolset)
+string(TOLOWER ${CMAKE_C_COMPILER_ID} compiler_id_lc)
+
+message(STATUS "BOOST: CMAKE_CXX_COMPILER   = ${CMAKE_CXX_COMPILER}")
+message(STATUS "BOOST: Boost_bjam_args (ini): ${Boost_bjam_args}")
 message(STATUS "BOOST: CMAKE_SYSTEM         = ${CMAKE_SYSTEM}")
 message(STATUS "BOOST: CMAKE_SYSTEM_VERSION = ${CMAKE_SYSTEM_VERSION}")
 message(STATUS "BOOST: compiler_id_lc       = ${compiler_id_lc}")
-
-set(Boost_toolset)
-string(TOLOWER ${CMAKE_C_COMPILER_ID} compiler_id_lc)
 
 if (compiler_id_lc)
   if (APPLE)
@@ -65,23 +66,21 @@ if (compiler_id_lc)
       endif()
       # On Mac OS 10.10, we don't know what to do yet
       if (${OS_VERSION_MAJOR} GREATER 13) # OSX 10.9.x -> Darwin-13.x.y
-        message (STATUS "BOOST: CMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}")
         # Check if it looks like an mpi wrapper
 	if (CMAKE_CXX_COMPILER MATCHES "mpi")
-          execute_process(
-            COMMAND ${CMAKE_CXX_COMPILER} -show
-            OUTPUT_VARIABLE  COMPILE_CMDLINE OUTPUT_STRIP_TRAILING_WHITESPACE
-            ERROR_VARIABLE   COMPILE_CMDLINE ERROR_STRIP_TRAILING_WHITESPACE
-            RESULT_VARIABLE  COMPILER_RETURN
-            )
-            # Extract the name of the compiler
-	    if (COMPILER_RETURN EQUAL 0)
-	        string(REPLACE " " ";" COMPILE_CMDLINE_LIST ${COMPILE_CMDLINE})
-	        list(GET COMPILE_CMDLINE_LIST 0 RAW_CXX_COMPILER)
-		message (STATUS "BOOST: RAW_CXX_COMPILER=${RAW_CXX_COMPILER}")
-	    else()
-	        message (FATAL_ERROR "BOOST: Unable to determine the compiler command")
-            endif()
+          execute_process(COMMAND ${CMAKE_CXX_COMPILER} -show
+                          OUTPUT_VARIABLE  COMPILE_CMDLINE OUTPUT_STRIP_TRAILING_WHITESPACE
+                          ERROR_VARIABLE   COMPILE_CMDLINE ERROR_STRIP_TRAILING_WHITESPACE
+                          RESULT_VARIABLE  COMPILER_RETURN)
+
+          # Extract the name of the compiler
+	  if (COMPILER_RETURN EQUAL 0)
+	    string(REPLACE " " ";" COMPILE_CMDLINE_LIST ${COMPILE_CMDLINE})
+	    list(GET COMPILE_CMDLINE_LIST 0 RAW_CXX_COMPILER)
+            message (STATUS "BOOST: RAW_CXX_COMPILER=${RAW_CXX_COMPILER}")
+	  else()
+	    message (FATAL_ERROR "BOOST: Unable to determine the compiler command")
+          endif()
 	else()
           set(RAW_CXX_COMPILER ${CMAKE_CXX_COMPILER})
         endif()
@@ -97,15 +96,13 @@ if (compiler_id_lc)
         # Test to see if it is macports or clang
         if (_version_string MATCHES "MacPorts" OR _version_string MATCHES "Homebrew")
           message(STATUS "BOOST: compiler is MacPorts or Homebrew" )
-          message(STATUS "BOOST: compiler version     = ${CMAKE_CXX_COMPILER_VERSION}")
+          message(STATUS "BOOST: compiler version: ${CMAKE_CXX_COMPILER_VERSION}")
           set(BOOST_user_jam "/Users/ftuser/user-config.jam")
           set(BOOST_using "using gcc : ${CMAKE_CXX_COMPILER_VERSION} : ${RAW_CXX_COMPILER} \;")
-          message(STATUS "BOOST: ${BOOST_using}")
-	  message(STATUS "BOOST: Boost_build_dir = ${Boost_build_dir}")
           file (MAKE_DIRECTORY ${Boost_build_dir})
 	  file (WRITE ${Boost_build_dir}/user-config.jam ${BOOST_using} \n)
           set(Boost_bootstrap_args)
-          set(Boost_bjam_args "toolset=gcc-${CMAKE_CXX_COMPILER_VERSION}")
+          set(Boost_bjam_args "toolset=darwin")
           set(Boost_toolset darwin)
         elseif ( _version_string MATCHES "LLVM")
 	  message(STATUS "BOOST: compiler is Clang")
@@ -127,7 +124,8 @@ if (compiler_id_lc)
     endif()
   endif()
 endif()
-message(STATUS "BOOST: Boost_bjam_args (fin)= ${Boost_bjam_args}")
+message(STATUS "BOOST: Boost_bjam_args (fin): ${Boost_bjam_args}")
+message(STATUS "BOOST: Boost_toolset        = ${Boost_toolset}")
 
 configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/boost-configure-step.cmake.in
                ${Boost_prefix_dir}/boost-configure-step.cmake
