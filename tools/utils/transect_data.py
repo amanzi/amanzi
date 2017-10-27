@@ -133,8 +133,7 @@ def transect_data(varnames, keys='all', directory=".", filename="visdump_data.h5
 
 
 def plot(dataset, ax, cax=None, vmin=None, vmax=None, cmap="jet",
-         label=None,
-    mesh_filename="visdump_mesh.h5", directory="."):
+         label=None, mesh_filename="visdump_mesh.h5", directory=".", y_coord=0.0):
     """Draws a dataset on an ax."""
     if vmin is None:
         vmin = dataset.min()
@@ -146,9 +145,36 @@ def plot(dataset, ax, cax=None, vmin=None, vmax=None, cmap="jet",
     if etype is not 'HEX':
         raise RuntimeError("Only works for Hexs")
 
-    coords2 = np.array([[coords[i][0::2] for i in c if coords[i][1] == 0.0] for c in conn])
-    assert coords2.shape[2] == 2
-    assert coords2.shape[1] == 4
+    coords2 = np.array([[coords[i][0::2] for i in c[1:] if abs(coords[i][1] - y_coord) < 1.e-8] for c in conn])
+    try:
+        assert coords2.shape[2] == 2
+        assert coords2.shape[1] == 4
+    except AssertionError:
+        print coords2.shape
+        for c in conn:
+            if len(c) != 9:
+                print c
+                raise RuntimeError("what is a conn?")
+            coords3 = np.array([coords[i][:] for i in c[1:] if abs(coords[i][1] - y_coord) < 1.e-8])
+            if coords3.shape[0] != 4:
+                print coords
+                raise RuntimeError("Unable to squash to 2D")
+
+    # reorder anti-clockwise
+    for i,c in enumerate(coords2):
+        centroid = c.mean(axis=0)
+        def angle(p1,p2):
+            a1 = np.arctan2((p1[1]-centroid[1]),(p1[0]-centroid[0]))
+            a2 = np.arctan2((p2[1]-centroid[1]),(p2[0]-centroid[0]))
+            if a1 < a2:
+                return -1
+            elif a2 < a1:
+                return 1
+            else:
+                return 0
+
+        c2 = np.array(sorted(c,angle))
+        coords2[i] = c2
 
     polygons = matplotlib.collections.PolyCollection(coords2, edgecolor='k', cmap=cmap)
     polygons.set_array(dataset)

@@ -33,6 +33,10 @@ class PCLiquidEvaluator : public SecondaryVariableFieldEvaluator {
           const Teuchos::Ptr<CompositeVector>& result);
   virtual void EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>& S,
           Key wrt_key, const Teuchos::Ptr<CompositeVector>& result);
+  virtual void EnsureCompatibility(const Teuchos::Ptr<State>& S) {
+    S->RequireScalar("atmospheric_pressure");
+    SecondaryVariableFieldEvaluator::EnsureCompatibility(S);
+  }
 
   virtual void EnsureCompatibility(const Teuchos::Ptr<State>& S) {
     S->RequireScalar("atmospheric_pressure");
