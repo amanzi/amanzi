@@ -40,6 +40,8 @@ enum UpwindMethod {
 class Upwinding {
 
  public:
+  virtual ~Upwinding() = default;
+
   virtual void
   Update(const Teuchos::Ptr<State>& S, const Teuchos::Ptr<Debugger>& db=Teuchos::null) = 0;
 

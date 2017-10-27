@@ -4,6 +4,7 @@ Manning's coefficient that varies based on litter thickness and ponded depth.
   Generated via evaluator_generator.
 */
 
+#include "boost/algorithm/string/predicate.hpp"
 
 #include "manning_coefficient_litter_evaluator.hh"
 #include "manning_coefficient_litter_model.hh"
@@ -46,17 +47,27 @@ ManningCoefficientLitterEvaluator::InitializeFromPlist_()
 {
   // Set up my dependencies
   // - defaults to prefixed via domain
-  Key domain_name = getDomainPrefix(my_key_);
+  Key domain_name = Keys::getDomain(my_key_);
 
   // - pull Keys from plist
   // dependency: litter_thickness
+  Key litter_domain_name;
+  if (domain_name == "surface") {
+    litter_domain_name = "litter";
+    litter_domain_name = plist_.get<std::string>("litter domain name", litter_domain_name);
+  } else if (boost::starts_with(domain_name, "surface")) {
+    litter_domain_name = Key("litter")+domain_name.substr(7,domain_name.size());
+    litter_domain_name = plist_.get<std::string>("litter domain name", litter_domain_name);
+  }
+
+  
   ld_key_ = plist_.get<std::string>("litter thickness key",
-          domain_name+"litter-thickness");
+          Keys::getKey(litter_domain_name, "thickness"));
   dependencies_.insert(ld_key_);
 
   // dependency: ponded_depth
   pd_key_ = plist_.get<std::string>("ponded depth key",
-          domain_name+"ponded_depth");
+          Keys::getKey(domain_name,"ponded_depth"));
   dependencies_.insert(pd_key_);
 }
 

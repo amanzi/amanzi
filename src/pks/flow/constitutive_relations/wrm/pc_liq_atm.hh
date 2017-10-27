@@ -20,9 +20,9 @@ public:
   explicit PCLiqAtm(Teuchos::ParameterList& plist) {}
 
   // required methods from the base class
-  virtual double CapillaryPressure(double p, double p_atm) { return p_atm - p; }
-  virtual double DCapillaryPressureDp(double p, double p_atm) { return -1.; }
-  virtual double DCapillaryPressureDpatm(double p, double p_atm) { return 1.; }
+  double CapillaryPressure(double p, double p_atm) { return p_atm - p; }
+  double DCapillaryPressureDp(double p, double p_atm) { return -1.; }
+  double DCapillaryPressureDpatm(double p, double p_atm) { return 1.; }
 };
 
 } //namespace

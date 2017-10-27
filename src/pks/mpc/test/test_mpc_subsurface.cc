@@ -62,12 +62,11 @@ TEST(MPC_SUBSURFACE_HYDROLOGY) {
   Teuchos::RCP<Teuchos::ParameterList> pk_list = Teuchos::sublist(global_list, "PK");
   Teuchos::RCP<Teuchos::ParameterList> fe_list = Teuchos::sublist(state_list, "field evaluators");
 
-
   Teuchos::RCP<State> S = Teuchos::rcp(new State(*state_list));
   S->RegisterDomainMesh(mesh);
 
   Flow::Permafrost mpc(*fe_list, pk_list,  S, soln);
- 
+
   mpc.Setup(S.ptr());
 
   Teuchos::ParameterList temp_eval_plist;
@@ -160,7 +159,6 @@ TEST(MPC_SUBSURFACE_ENERGY) {
   Teuchos::RCP<State> S = Teuchos::rcp(new State(*state_list));
   S->RegisterDomainMesh(mesh);
   S->RequireScalar("atmospheric_pressure");
-
 
   Energy::ThreePhase mpc(*fe_list, pk_list, S, soln); 
   mpc.Setup(S.ptr());
@@ -256,16 +254,20 @@ TEST(MPC_SUBSURFACE_ENERGY) {
 
 // //   Teuchos::RCP<Teuchos::ParameterList> state_list = Teuchos::sublist(global_list, "state");
 
+
 // //   Teuchos::RCP<TreeVector> soln = Teuchos::rcp(new TreeVector());
 // //   Teuchos::RCP<Teuchos::ParameterList> pk_list = Teuchos::sublist(global_list, "PK");
 // //   Teuchos::RCP<Teuchos::ParameterList> fe_list = Teuchos::sublist(state_list, "field evaluators");
 // //   MPCSubsurface mpc(pk_list, *fe_list, soln);
 
+
 // //   Teuchos::RCP<State> S = Teuchos::rcp(new State(*state_list));
 // //   S->RegisterDomainMesh(mesh);
  
+
 // //   mpc.setup(S.ptr());
 // //   S->Setup();
+
 
 // //   // initialize manually
 // //   Teuchos::ParameterList pressure_list;

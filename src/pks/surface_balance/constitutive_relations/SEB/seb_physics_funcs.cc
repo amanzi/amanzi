@@ -5,7 +5,7 @@
 #include <iostream>
 #include <cmath>
 #include <algorithm>
-#include <boost/math/tools/roots.hpp>
+#include "boost/math/tools/roots.hpp"
 
 #include "dbc.hh"
 
@@ -277,18 +277,18 @@ void UpdateMassBalance(const SEB& seb, MassBalance& mb, EnergyBalance& eb, SnowP
     mb.MWg_temp = (seb.in.met.vp_air.temp > 273.15) ? seb.in.met.vp_air.temp: 273.15;
     mb.MWg = seb.in.met.Pr;
     mb.MWg_subsurf = 0.;
-    if (mb.Me > 0.) {
+    //    if (mb.Me > 0.) {
       mb.MWg += mb.Me;
 
-    } else {
-      double surf_p = seb.in.vp_ground.pressure;
-      double trans_factor = surf_p > seb.params.Apa*1000. ? 0. :
-          surf_p < seb.params.Apa*1000. - seb.params.evap_transition_width ? 1. :
-          (seb.params.Apa*1000. - surf_p) / seb.params.evap_transition_width;
+    // } else {
+    //   double surf_p = seb.in.vp_ground.pressure;
+    //   double trans_factor = surf_p > seb.params.Apa*1000. ? 0. :
+    //       surf_p < seb.params.Apa*1000. - seb.params.evap_transition_width ? 1. :
+    //       (seb.params.Apa*1000. - surf_p) / seb.params.evap_transition_width;
 
-      mb.MWg += (1-trans_factor) * mb.Me;
-      mb.MWg_subsurf += trans_factor * mb.Me;
-    }
+    //   mb.MWg += (1-trans_factor) * mb.Me;
+    //   mb.MWg_subsurf += trans_factor * mb.Me;
+    // }
   }
 
   if (debug) {
@@ -340,7 +340,7 @@ double DetermineSnowTemperature(const SEB& seb, ThermoProperties& vp_snow,
     res_right = func(right);
     while (res_right > 0.) {
       left = right;
-      res_left = res_left;
+      res_left = res_right;
       right = right + 1.;
       res_right = func(right);
     }
@@ -424,7 +424,9 @@ void CalculateSurfaceBalance(SEB& seb, bool debug, const Teuchos::RCP<VerboseObj
               << "    Snow Melt:\n"
               << "      old ht   = " << seb.in.snow_old.ht << std::endl
               << "      new ht   = " << seb.out.snow_new.ht << std::endl
-              << "      new age  = " << seb.out.snow_new.age << std::endl
+              << "      old age  = " << seb.in.snow_old.age << std::endl
+	      << "      new age  = " << seb.out.snow_new.age << std::endl
+	      << "      old dens = " << seb.in.snow_old.density << std::endl
               << "      new dens = " << seb.out.snow_new.density << std::endl
               << "      SWE      = " << seb.out.snow_new.SWE << std::endl
               << "    Water Balance:\n"

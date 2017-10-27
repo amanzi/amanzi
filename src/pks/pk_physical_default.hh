@@ -62,9 +62,8 @@ class PK_Physical_Default : public PK_Physical {
                         const Teuchos::RCP<State>& S,
                         const Teuchos::RCP<TreeVector>& solution);
 
-
   // Virtual destructor
-  virtual ~PK_Physical_Default() {}
+  virtual ~PK_Physical_Default() = default;
 
   // Default implementations of PK methods.
   // -- transfer operators -- pointer copies only
@@ -83,6 +82,9 @@ class PK_Physical_Default : public PK_Physical {
 
   virtual bool ValidStep();
 
+  // Tag the primary variable as changed in the DAG
+  virtual void ChangedSolutionPK(const Teuchos::Ptr<State>& S);
+  
   // -- setup
   virtual void Setup(const Teuchos::Ptr<State>& S);
 

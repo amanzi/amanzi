@@ -59,8 +59,7 @@ namespace Amanzi {
     Teuchos::RCP<Teuchos::ParameterList> subsurface_transport_list_;
     int subsurf_id_, surf_id_;
 
-
-    Key vol_darcy_key_, surf_vol_darcy_key_;
+    Key subsurface_flux_key_, surface_flux_key_;
     Key surface_name_, subsurface_name_;
     Key mass_darcy_key, surf_mass_darcy_key;
     Key mol_density_key, surf_mol_density_key;

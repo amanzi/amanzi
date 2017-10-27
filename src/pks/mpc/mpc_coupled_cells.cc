@@ -58,8 +58,7 @@ void MPCCoupledCells::Setup(const Teuchos::Ptr<State>& S) {
   mesh_ = S->GetMesh(mesh_key);
 
   // set up debugger
-  db_ = Teuchos::rcp(new Debugger(mesh_, name_, *plist_));
-
+  db_ = sub_pks_[0]->debugger();
 
   // Get the sub-blocks from the sub-PK's preconditioners.
   Teuchos::RCP<Operators::Operator> pcA = sub_pks_[0]->preconditioner();
@@ -79,7 +78,8 @@ void MPCCoupledCells::Setup(const Teuchos::Ptr<State>& S) {
   S->RequireField(y2_key_)->SetMesh(mesh_)->AddComponent("cell", AmanziMesh::CELL, 1);
   S->RequireFieldEvaluator(A_key_);
   S->RequireFieldEvaluator(y2_key_);
-  if (S->GetFieldEvaluator(A_key_)->IsDependency(S, y2_key_)) {
+
+  if (!plist_->get<bool>("no dA/dy2 block", false)) {
     Teuchos::ParameterList& acc_pc_plist = plist_->sublist("dA_dy2 accumulation preconditioner");
     acc_pc_plist.set("entity kind", "cell");
     dA_dy2_ = Teuchos::rcp(new Operators::OperatorAccumulation(acc_pc_plist, mesh_));
@@ -90,7 +90,8 @@ void MPCCoupledCells::Setup(const Teuchos::Ptr<State>& S) {
   S->RequireField(y1_key_)->SetMesh(mesh_)->AddComponent("cell", AmanziMesh::CELL, 1);
   S->RequireFieldEvaluator(B_key_);
   S->RequireFieldEvaluator(y1_key_);
-  if (S->GetFieldEvaluator(B_key_)->IsDependency(S, y1_key_)) {
+
+  if (!plist_->get<bool>("no dB/dy1 block", false)) {
     Teuchos::ParameterList& acc_pc_plist = plist_->sublist("dB_dy1 accumulation preconditioner");
     acc_pc_plist.set("entity kind", "cell");
     dB_dy1_ = Teuchos::rcp(new Operators::OperatorAccumulation(acc_pc_plist, mesh_));
@@ -121,7 +122,9 @@ void MPCCoupledCells::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVect
         double h) {
   StrongMPC<PK_PhysicalBDF_Default>::UpdatePreconditioner(t,up,h);
 
-  if (dA_dy2_ != Teuchos::null) {
+  if (dA_dy2_ != Teuchos::null &&
+      S_next_->GetFieldEvaluator(A_key_)->IsDependency(S_next_.ptr(), y2_key_)) {
+    dA_dy2_->global_operator()->Init();
     S_next_->GetFieldEvaluator(A_key_)
         ->HasFieldDerivativeChanged(S_next_.ptr(), name_, y2_key_);
     Teuchos::RCP<const CompositeVector> dA_dy2_v = S_next_->GetFieldData(dA_dy2_key_);
@@ -132,7 +135,9 @@ void MPCCoupledCells::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVect
     dA_dy2_->AddAccumulationTerm(dA_dy2, h);
   }
 
-  if (dB_dy1_ != Teuchos::null) {
+  if (dB_dy1_ != Teuchos::null &&
+      S_next_->GetFieldEvaluator(B_key_)->IsDependency(S_next_.ptr(), y1_key_)) {
+    dB_dy1_->global_operator()->Init();
     S_next_->GetFieldEvaluator(B_key_)
         ->HasFieldDerivativeChanged(S_next_.ptr(), name_, y1_key_);
     Teuchos::RCP<const CompositeVector> dB_dy1_v = S_next_->GetFieldData(dB_dy1_key_);
@@ -152,7 +157,29 @@ void MPCCoupledCells::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVect
 
 // applies preconditioner to u and returns the result in Pu
 int MPCCoupledCells::ApplyPreconditioner(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> Pu) {
+  // write residuals
+  if (vo_->os_OK(Teuchos::VERB_HIGH)) {
+    *vo_->os() << "Residuals:" << std::endl;
+    std::vector<std::string> vnames;
+    vnames.push_back("  r_p"); vnames.push_back("  r_T"); 
+    std::vector< Teuchos::Ptr<const CompositeVector> > vecs;
+    vecs.push_back(u->SubVector(0)->Data().ptr()); 
+    vecs.push_back(u->SubVector(1)->Data().ptr()); 
+    db_->WriteVectors(vnames, vecs, true);
+  }
+  
   int ierr = linsolve_preconditioner_->ApplyInverse(*u, *Pu);
+
+  if (vo_->os_OK(Teuchos::VERB_HIGH)) {
+    *vo_->os() << "PC * residuals:" << std::endl;
+    std::vector<std::string> vnames;
+    vnames.push_back("  PC*r_p"); vnames.push_back("  PC*r_T"); 
+    std::vector< Teuchos::Ptr<const CompositeVector> > vecs;
+    vecs.push_back(Pu->SubVector(0)->Data().ptr()); 
+    vecs.push_back(Pu->SubVector(1)->Data().ptr()); 
+    db_->WriteVectors(vnames, vecs, true);
+  }
+
   return (ierr > 0) ? 0 : 1;
 }
 

@@ -45,7 +45,7 @@ def flatten(pks, flat_pks, cd_pks):
 def flatten_pks(xml):
     try:
         cycle_driver = asearch.childByName(xml, "cycle driver")
-    except aerrors.MissingXMLError():
+    except aerrors.MissingXMLError:
         pass
     else:
         return

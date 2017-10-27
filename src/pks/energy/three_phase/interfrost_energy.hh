@@ -23,6 +23,7 @@ namespace Energy {
 class InterfrostEnergy : public ThreePhase {
 
 public:
+
   InterfrostEnergy(Teuchos::ParameterList& FElist,
                    const Teuchos::RCP<Teuchos::ParameterList>& plist,
                    const Teuchos::RCP<State>& S,

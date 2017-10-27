@@ -123,7 +123,7 @@ InterfrostEnergy::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> 
     Teuchos::RCP<const CompositeVector> mass_flux = S_next_->GetFieldData("mass_flux");
     S_next_->GetFieldEvaluator(enthalpy_key_)
         ->HasFieldDerivativeChanged(S_next_.ptr(), name_, key_);
-    Teuchos::RCP<const CompositeVector> dhdT = S_next_->GetFieldData(denthalpy_key_);
+    Teuchos::RCP<const CompositeVector> dhdT = S_next_->GetFieldData(Keys::getDerivKey(enthalpy_key_,key_));
     preconditioner_adv_->Setup(*mass_flux);
     preconditioner_adv_->UpdateMatrices(*mass_flux, *dhdT);
     ApplyDirichletBCsToEnthalpy_(S_next_.ptr());

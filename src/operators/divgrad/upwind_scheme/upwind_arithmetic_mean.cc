@@ -17,12 +17,12 @@
 namespace Amanzi {
 namespace Operators {
 
-UpwindArithmeticMean::UpwindArithmeticMean(std::string pkname,
-        std::string cell_coef,
-        std::string face_coef) :
-    pkname_(pkname),
-    cell_coef_(cell_coef),
-    face_coef_(face_coef) {};
+UpwindArithmeticMean::UpwindArithmeticMean(Key pkname,
+        Key cell_coef,
+        Key face_coef) :
+    pkname_(std::move(pkname)),
+    cell_coef_(std::move(cell_coef)),
+    face_coef_(std::move(face_coef)) {};
 
 
 void UpwindArithmeticMean::Update(const Teuchos::Ptr<State>& S,
@@ -81,7 +81,7 @@ void UpwindArithmeticMean::CalculateCoefficientsOnFaces(
 
 void
 UpwindArithmeticMean::UpdateDerivatives(const Teuchos::Ptr<State>& S,
-                                        std::string potential_key, 
+                                        Key potential_key, 
                                         const CompositeVector& dconductivity,
                                         const std::vector<int>& bc_markers,
                                         const std::vector<double>& bc_values,

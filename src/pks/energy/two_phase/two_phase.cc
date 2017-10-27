@@ -23,12 +23,14 @@ namespace Energy {
 // -------------------------------------------------------------
 // Constructor
 // -------------------------------------------------------------
+
 TwoPhase::TwoPhase(Teuchos::ParameterList& FElist,
                    const Teuchos::RCP<Teuchos::ParameterList>& plist,
                    const Teuchos::RCP<State>& S,
                    const Teuchos::RCP<TreeVector>& solution) :
     PK(FElist, plist, S, solution),
     EnergyBase(FElist, plist, S, solution) {}
+
 
 // -------------------------------------------------------------
 // Create the physical evaluators for energy, enthalpy, thermal
@@ -46,6 +48,7 @@ void TwoPhase::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
     ->SetGhosted()->AddComponent("cell", AmanziMesh::CELL, 1);
   Teuchos::ParameterList tcm_plist =
     plist_->sublist("thermal conductivity evaluator");
+  tcm_plist.set("evaluator name", conductivity_key_);
   Teuchos::RCP<Energy::ThermalConductivityTwoPhaseEvaluator> tcm =
     Teuchos::rcp(new Energy::ThermalConductivityTwoPhaseEvaluator(tcm_plist));
   S->SetFieldEvaluator(conductivity_key_, tcm);
@@ -66,14 +69,14 @@ void TwoPhase::Initialize(const Teuchos::Ptr<State>& S) {
   // require a model based on p,T.
   // This will be removed once boundary faces are implemented.
   Teuchos::RCP<FieldEvaluator> eos_fe =
-    S->GetFieldEvaluator(getKey(domain_, "molar_density_liquid"));
+    S->GetFieldEvaluator(Keys::getKey(domain_, "molar_density_liquid"));
   Teuchos::RCP<Relations::EOSEvaluator> eos_eval =
     Teuchos::rcp_dynamic_cast<Relations::EOSEvaluator>(eos_fe);
   ASSERT(eos_eval != Teuchos::null);
   eos_liquid_ = eos_eval->get_EOS();
 
   Teuchos::RCP<FieldEvaluator> iem_fe =
-    S->GetFieldEvaluator(getKey(domain_, "internal_energy_liquid"));
+    S->GetFieldEvaluator(Keys::getKey(domain_, "internal_energy_liquid"));
   Teuchos::RCP<Energy::IEMEvaluator> iem_eval =
     Teuchos::rcp_dynamic_cast<Energy::IEMEvaluator>(iem_fe);
   ASSERT(iem_eval != Teuchos::null);
@@ -91,7 +94,7 @@ void TwoPhase::Initialize(const Teuchos::Ptr<State>& S) {
 //   // NOTE this boundary flux is in enthalpy, and
 //   // h = n(T,p) * u_l(T) + p_l
 //   Teuchos::RCP<const Epetra_MultiVector> pres;
-//   Key pres_key = getKey(domain_, "pressure");
+//   Key pres_key = Keys::getKey(domain_, "pressure");
 //   if (S->GetFieldData(pres_key)->HasComponent("face")) {
 //     pres = S->GetFieldData(pres_key)->ViewComponent("face",false);
 //   }

@@ -19,6 +19,8 @@ d theta(u)
 #ifndef PK_SURFACE_BALANCE_BASE_HH_
 #define PK_SURFACE_BALANCE_BASE_HH_
 
+#include "Operator.hh"
+#include "OperatorAccumulation.hh"
 #include "PK_Factory.hh"
 #include "pk_physical_bdf_default.hh"
 
@@ -28,6 +30,7 @@ namespace SurfaceBalance {
 class SurfaceBalanceBase : public PK_PhysicalBDF_Default {
 
  public:
+
   SurfaceBalanceBase(Teuchos::ParameterList& pk_tree,
                      const Teuchos::RCP<Teuchos::ParameterList>& global_list,
                      const Teuchos::RCP<State>& S,
@@ -51,8 +54,6 @@ class SurfaceBalanceBase : public PK_PhysicalBDF_Default {
   virtual int ApplyPreconditioner(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> Pu);
 
   virtual void set_dt(double dt) {dt_ = dt;}
-
-  virtual std::string name() { return "SurfaceBalanceBase"; }
   
  protected:
 
@@ -62,7 +63,9 @@ class SurfaceBalanceBase : public PK_PhysicalBDF_Default {
 
   double theta_;
 
-  Teuchos::RCP<CompositeVector> jac_;
+  bool precon_used_;
+  Teuchos::RCP<Operators::OperatorAccumulation> preconditioner_acc_;
+  Teuchos::RCP<Operators::Operator> lin_solver_;
   
  private:
   // factory registration

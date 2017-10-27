@@ -23,11 +23,11 @@ PCLiquidEvaluator::PCLiquidEvaluator(Teuchos::ParameterList& plist) :
   }
 
   // dependencies
-  Key domain_name = getDomain(my_key_);
+  Key domain_name = Keys::getDomain(my_key_);
   
   // -- pressure
   pres_key_ = plist_.get<std::string>("pressure key",
-          getKey(domain_name, "pressure"));
+          Keys::getKey(domain_name, "pressure"));
   dependencies_.insert(pres_key_);
 
   p_atm_key_ = plist_.get<std::string>("atmospheric pressure key",

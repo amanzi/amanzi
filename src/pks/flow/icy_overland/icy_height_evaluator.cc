@@ -16,11 +16,14 @@ namespace Flow {
 
 IcyHeightEvaluator::IcyHeightEvaluator(Teuchos::ParameterList& plist) :
     HeightEvaluator(plist) {
+
+  Key domain = Keys::getDomain(my_key_);
   // my extra dependencies
-  dens_ice_key_ = plist_.get<std::string>("ice mass density key", "surface-mass_density_ice");
+  dens_ice_key_ = plist_.get<std::string>("ice mass density key", Keys::getKey(domain,"mass_density_ice"));  
   dependencies_.insert(dens_ice_key_);
 
-  unfrozen_frac_key_ = plist_.get<std::string>("unfrozen fraction key", "unfrozen_fraction");
+  unfrozen_frac_key_ = plist_.get<std::string>("unfrozen fraction key", Keys::getKey(domain,"unfrozen_fraction"));
+
   dependencies_.insert(unfrozen_frac_key_);
 
   // model

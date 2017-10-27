@@ -85,7 +85,6 @@ class VolumetricDeformation : public PK_Physical_Default {
   double overpressured_limit_;
 
   std::string deform_region_;
-
   // DEFORM_MODE_DVDT
   Teuchos::RCP<Functions::CompositeVectorFunction> deform_func_;
 
@@ -98,6 +97,7 @@ class VolumetricDeformation : public PK_Physical_Default {
   double dt_, dt_max_;
 
   // meshes
+  Key domain_,domain_surf_;
   Teuchos::RCP<const AmanziMesh::Mesh> surf_mesh_;
   Teuchos::RCP<const AmanziMesh::Mesh> surf3d_mesh_;
   Teuchos::RCP<AmanziMesh::Mesh> mesh_nc_;

@@ -27,6 +27,7 @@ namespace Flow {
 class SnowDistribution : public PK_PhysicalBDF_Default {
 
 public:
+
   SnowDistribution(Teuchos::ParameterList& FElist,
                    const Teuchos::RCP<Teuchos::ParameterList>& plist,
                    const Teuchos::RCP<State>& S,
