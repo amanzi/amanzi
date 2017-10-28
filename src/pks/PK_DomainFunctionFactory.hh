@@ -22,7 +22,9 @@
 #include "PK_DomainFunctionVolumeFraction.hh"
 #include "PK_DomainFunctionWeight.hh"
 #include "PK_DomainFunctionCoupling.hh"
+#include "PK_DomainFunctionExponentialDecay.hh"
 #include "PK_DomainFunctionSubgrid.hh"
+#include "PK_DomainFunctionSubgridReturn.hh"
 #include "PK_DomainFunctionSimpleWell.hh"
 
 namespace Amanzi {
@@ -109,10 +111,25 @@ PK_DomainFunctionFactory<FunctionBase>::Create(
     func->Init(plist, keyword, kind);
     return func;
   }
+  else if (model == "exponential decay") {
+    ASSERT(kind == AmanziMesh::CELL);
+    Teuchos::RCP<PK_DomainFunctionExponentialDecay<FunctionBase> >
+        func = Teuchos::rcp(new PK_DomainFunctionExponentialDecay<FunctionBase>(mesh_, plist, kind));
+    func->Init(plist, keyword);
+    return func;
+  }
   else if (model == "subgrid") {
+    ASSERT(kind == AmanziMesh::FACE);
     Teuchos::RCP<PK_DomainFunctionSubgrid<FunctionBase> >
        func = Teuchos::rcp(new PK_DomainFunctionSubgrid<FunctionBase>(mesh_));
     func->Init(plist, keyword, kind);
+    return func;
+  }
+  else if (model == "subgrid return") {
+    ASSERT(kind == AmanziMesh::CELL);
+    Teuchos::RCP<PK_DomainFunctionSubgridReturn<FunctionBase> >
+        func = Teuchos::rcp(new PK_DomainFunctionSubgridReturn<FunctionBase>(mesh_, plist));
+    func->Init(plist, keyword);
     return func;
   }
   else if (model == "simple well") {
