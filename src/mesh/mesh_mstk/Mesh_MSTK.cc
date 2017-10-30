@@ -12,6 +12,11 @@
 
 using namespace std;
 
+// Temporary declaration - CAN GO AWAY WHEN MSTK IS UPDATED TO NEXT VERSION
+extern "C" {
+void MESH_Enable_GlobalIDSearch(Mesh_ptr mesh);
+}
+
 namespace Amanzi {
 
 namespace AmanziMesh {
@@ -93,8 +98,6 @@ void Mesh_MSTK::init_mesh_from_file_(std::string const filename,
     Errors::Message mesg(mesg_stream.str());
     amanzi_throw(mesg);
   }
-}
-
 
 //--------------------------------------
 // Constructor - load up mesh from file
