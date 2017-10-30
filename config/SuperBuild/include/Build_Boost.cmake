@@ -55,7 +55,7 @@ if (compiler_id_lc)
     if (${compiler_id_lc} STREQUAL "gnu")
       # On Mac OS 10.9, Clang has switched from using libstdc++ to libc++, so 
       # we need to tell it to do the opposite.
-      if ( ${OS_VERSION_MAJOR} EQUAL 13 ) # OSX 10.9.x -> Darwin-13.x.y
+      if (${OS_VERSION_MAJOR} EQUAL 13) # OSX 10.9.x -> Darwin-13.x.y
         execute_process(COMMAND g++ -v ERROR_VARIABLE GXX_IS_CLANG)
         string(FIND ${GXX_IS_CLANG} "LLVM" LLVM_INDEX)
         if (NOT ${LLVM_INDEX} EQUAL -1)
@@ -98,13 +98,18 @@ if (compiler_id_lc)
           message(STATUS "BOOST: compiler is MacPorts or Homebrew" )
           message(STATUS "BOOST: compiler version: ${CMAKE_CXX_COMPILER_VERSION}")
 
-          set(BOOST_using "using gcc : ${CMAKE_CXX_COMPILER_VERSION} : ${RAW_CXX_COMPILER} \;")
+          if (BUILD_SHARED_LIBS)
+            set(Boost_user_key darwin)
+          else()
+            set(Boost_user_key gcc)
+          endif() 
+          set(BOOST_using "using ${Boost_user_key} : ${CMAKE_CXX_COMPILER_VERSION} : ${RAW_CXX_COMPILER} \;")
           file (MAKE_DIRECTORY ${Boost_build_dir})
 	  file (WRITE ${Boost_build_dir}/user-config.jam ${BOOST_using} \n)
 
 	  set(Boost_bjam_args "${Boost_bjam_args} --user-config=${Boost_build_dir}/user-config.jam")
           set(Boost_bootstrap_args)
-	  set(Boost_toolset "gcc")
+	  set(Boost_toolset ${Boost_user_key})
         elseif ( _version_string MATCHES "LLVM")
 	  message(STATUS "BOOST: compiler is Clang")
         endif()
