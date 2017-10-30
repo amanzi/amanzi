@@ -4834,6 +4834,22 @@ void Mesh_MSTK::collapse_degen_edges()
   //  }
 
 #endif
+
+#ifdef DEBUG
+  if (MESH_Num_Regions(mesh) > 0) {  // 3D mesh
+    idx = 0;
+    while ((face = MESH_Next_Face(mesh, &idx))) {
+      List_ptr fregs = MF_Regions(face);
+      if (fregs)
+        List_Delete(fregs);
+      else {
+        std::cerr << "Dangling mesh face with no connected cells AFTER COLLAPSE\n on P" << myprocid << "\n";
+        MF_Print(face,3);
+      }
+    }
+  }
+#endif
+
 }
 
 
