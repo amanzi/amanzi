@@ -17,7 +17,7 @@ def fullname(varname):
 
 
 def transect_data(varnames, keys='all', directory=".", filename="visdump_data.h5",
-                mesh_filename="visdump_mesh.h5", coord_order=None, deformable=False):
+                  mesh_filename="visdump_mesh.h5", coord_order=None, deformable=False, return_map=False):
     """Pulls simulation output into structured 2D arrays for transect-based, (i,j) indexing.
 
     Input:
@@ -31,6 +31,7 @@ def transect_data(varnames, keys='all', directory=".", filename="visdump_data.h5
       coord_order    | Order of the transect coordinates.  Defaults to ['x','z'].  The 
                      |  mesh is sorted in this order.
       deformable     | Is the mesh deforming?
+      return_map     | See return value below.
    
     Output:
       Output is an array of shape:
@@ -42,6 +43,11 @@ def transect_data(varnames, keys='all', directory=".", filename="visdump_data.h5
                       the same way as the centroids.
 
       Note that the data is re-ordered in INCREASING coordinate, i.e. bottom to top in z.
+
+      If return_map is True, then returns a tuple, (data, map) where
+      map is a (NX,NZ) array of integers specifying which global id
+      corresponds to the (i,j) cell.  This is useful for mapping input
+      data back INTO the unstructured mesh.
 
     Example usage:  
       Calculate and plot the thaw depth at step 5.
@@ -73,8 +79,8 @@ def transect_data(varnames, keys='all', directory=".", filename="visdump_data.h5
     # get centroids
     xyz = mesh.meshElemCentroids(mesh_filename, directory)
 
-    # round to the nearest 0.1
-    xyz = 0.1 * np.round(10*xyz)
+    # round to avoid issues
+    xyz = np.round(xyz, decimals=5)
 
     # get ordering of centroids
     dtype = [(coord_order[0], float), (coord_order[1], float)]
@@ -129,7 +135,11 @@ def transect_data(varnames, keys='all', directory=".", filename="visdump_data.h5
     if (nx * nz != vals.shape[2]):
         raise RuntimeError("Assumption about first coordinate being cleanly binnable is falling apart -- ask Ethan to rethink this algorithm!")
     shp = vals.shape
-    return vals.reshape(shp[0], shp[1], nx, nz)
+
+    if not return_map:
+        return vals.reshape(shp[0], shp[1], nx, nz)
+    else:
+        return vals.reshape(shp[0], shp[1], nx, nz), xyz_sorting.reshape(nx, nz)
 
 
 def plot(dataset, ax, cax=None, vmin=None, vmax=None, cmap="jet",
