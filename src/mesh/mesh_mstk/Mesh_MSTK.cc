@@ -12,11 +12,6 @@
 
 using namespace std;
 
-// Temporary declaration - CAN GO AWAY WHEN MSTK IS UPDATED TO NEXT VERSION
-extern "C" {
-void MESH_Enable_GlobalIDSearch(Mesh_ptr mesh);
-}
-
 namespace Amanzi {
 
 namespace AmanziMesh {
