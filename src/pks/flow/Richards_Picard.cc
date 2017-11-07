@@ -30,7 +30,7 @@ int Richards_PK::AdvanceToSteadyState_Picard(Teuchos::ParameterList& plist)
   std::vector<double>& bc_value = op_bc_->bc_value();
 
   // create verbosity object
-  VerboseObject* vo = new VerboseObject("Amanzi::Picard", *rp_list_); 
+  VerboseObject* vo = new VerboseObject("Amanzi::Picard", *fp_list_); 
 
   CompositeVector  solution_old(*solution);
   CompositeVector& solution_new = *solution;

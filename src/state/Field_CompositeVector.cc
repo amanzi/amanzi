@@ -369,6 +369,7 @@ void Field_CompositeVector::InitializeFromColumn_(Teuchos::ParameterList& plist)
     Exceptions::amanzi_throw(message);
   }
 
+  data_->Mesh()->build_columns();
   // evaluate
   Epetra_MultiVector& vec = *data_->ViewComponent("cell",false);
   if (orientation == "depth") {
