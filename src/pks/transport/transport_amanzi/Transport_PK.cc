@@ -214,21 +214,36 @@ void Transport_PK_ATS::Setup(const Teuchos::Ptr<State>& S)
   if (!S->HasField(permeability_key_) && abs_perm) {
     S->RequireField(permeability_key_)->SetMesh(mesh_)->SetGhosted(true)
       ->AddComponent("cell", AmanziMesh::CELL, dim);
+    S->RequireFieldEvaluator(permeability_key_);
   }
 
   if (!S->HasField(flux_key_)) {
     S->RequireField(flux_key_)->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponent("face", AmanziMesh::FACE, 1);
+    S->RequireFieldEvaluator(flux_key_);
   }
 
   if (!S->HasField(saturation_key_)) {
     S->RequireField(saturation_key_)->SetMesh(mesh_)->SetGhosted(true)
       ->AddComponent("cell", AmanziMesh::CELL, 1);
+    S->RequireFieldEvaluator(saturation_key_);
   }
   if (!S->HasField(prev_saturation_key_)) {
     S->RequireField(prev_saturation_key_)->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
     S->GetField(prev_saturation_key_, passwd_)->set_io_vis(false);
+  }
+
+  if (!S->HasField(porosity_key_)){
+    S->RequireField(porosity_key_, porosity_key_)->SetMesh(mesh_)->SetGhosted(true)
+      ->SetComponent("cell", AmanziMesh::CELL, 1);
+    S->RequireFieldEvaluator(porosity_key_);
+  }
+
+  if (!S->HasField(molar_density_key_)){
+    S->RequireField(molar_density_key_, molar_density_key_)->SetMesh(mesh_)->SetGhosted(true)
+      ->SetComponent("cell", AmanziMesh::CELL, 1);
+    S->RequireFieldEvaluator(molar_density_key_);
   }
 
   //S->RequireFieldEvaluator(flux_key_);
@@ -250,19 +265,6 @@ void Transport_PK_ATS::Setup(const Teuchos::Ptr<State>& S)
       ->AddComponent("cell", AmanziMesh::CELL, ncomponents);
   }
 
-
-  //testing evaluators
-  if (!S->HasField(porosity_key_)) {
-    S->RequireField(porosity_key_, porosity_key_)->SetMesh(mesh_)->SetGhosted(true)
-      ->SetComponent("cell", AmanziMesh::CELL, 1);
-    S->RequireFieldEvaluator(porosity_key_);
-  }
-
-  // if (!S->HasField(molar_density_key_)){
-  //   S->RequireField(molar_density_key_, molar_density_key_)->SetMesh(mesh_)->SetGhosted(true)
-  //     ->SetComponent("cell", AmanziMesh::CELL, 1);
-  //   S->RequireFieldEvaluator(molar_density_key_);
-  // }
 
   // require multiscale fields
   multiscale_porosity_ = false;
@@ -341,7 +343,7 @@ void Transport_PK_ATS::Initialize(const Teuchos::Ptr<State>& S)
   // ws_subcycle_end = S->GetFieldCopyData(saturation_key_, "subcycle_end", passwd_)
   //   ->ViewComponent("cell");
 
-  S->RequireFieldCopy(flux_key_, "next_timestep", passwd_);
+  //S->RequireFieldCopy(flux_key_, "next_timestep", passwd_);
 
 
   // S->RequireFieldCopy(saturation_key_, "subcycle_end", passwd_);
@@ -1624,6 +1626,8 @@ void Transport_PK_ATS::ComputeAddSourceTerms(double tp, double dtp,
         int i = tcc_index[k];
         if (i < n0 || i > n1) continue;
 
+        if (c >= ncells_owned) continue;
+        
         int imap = i;
         if (num_vectors == 1) imap = 0;
 
