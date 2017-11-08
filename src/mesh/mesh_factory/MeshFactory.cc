@@ -111,7 +111,7 @@ MeshFactory::create(const std::string& filename,
     if (framework_reads(*i, fmt, my_comm_->NumProc() > 1)) {
       try {
         result = framework_read(my_comm_, *i, filename, gm, vo_,
-                                request_faces, request_edges);
+                                request_faces, request_edges, partitioner_);
         return result;
       } catch (const Message& msg) {
         ierr[0] += 1;
@@ -127,7 +127,8 @@ MeshFactory::create(const std::string& filename,
   }
   e.add_data(boost::str(boost::format("%s: unable to read mesh file") %
                         filename).c_str());
-  amanzi_throw(e);
+  Exceptions::amanzi_throw(e);
+  return Teuchos::null;
 }
 
 /** 
@@ -190,7 +191,7 @@ MeshFactory::create(double x0, double y0, double z0,
                                     x0, y0, z0, x1, y1, z1, 
                                     nx, ny, nz,
                                     gm, vo_,
-                                    request_faces, request_edges);
+                                    request_faces, request_edges, partitioner_);
         return result;
       } catch (const Message& msg) {
         ierr[0] += 1;
@@ -205,7 +206,8 @@ MeshFactory::create(double x0, double y0, double z0,
     }
   }
   e.add_data("unable to generate mesh");
-  amanzi_throw(e);
+  Exceptions::amanzi_throw(e);
+  return Teuchos::null;
 }
 
 /** 
@@ -265,7 +267,7 @@ MeshFactory::create(double x0, double y0,
                                     x0, y0, x1, y1,
                                     nx, ny,
                                     gm, vo_,
-                                    request_faces, request_edges);
+                                    request_faces, request_edges, partitioner_);
         return result;
       } catch (const Message& msg) {
         ierr[0] += 1;
@@ -280,7 +282,8 @@ MeshFactory::create(double x0, double y0,
     }
   }
   e.add_data("unable to generate mesh");
-  amanzi_throw(e);
+  Exceptions::amanzi_throw(e);
+  return Teuchos::null;
 }
 
 /** 
@@ -327,7 +330,8 @@ MeshFactory::create(Teuchos::ParameterList &parameter_list,
     }
   }
   e.add_data("unable to generate mesh");
-  amanzi_throw(e);
+  Exceptions::amanzi_throw(e);
+  return Teuchos::null;
 }
 
 /** 
@@ -380,7 +384,8 @@ MeshFactory::create(const Mesh *inmesh,
     }
   }
   e.add_data("unable to extract mesh");
-  amanzi_throw(e);
+  Exceptions::amanzi_throw(e);
+  return Teuchos::null;
 }
 
 } // namespace AmanziMesh

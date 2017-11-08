@@ -14,7 +14,10 @@
 namespace Amanzi {
 namespace Flow {
 
-FlowBoundaryFunction::FlowBoundaryFunction(const Teuchos::ParameterList& plist){
+/* ******************************************************************
+* Constructor
+****************************************************************** */
+FlowBoundaryFunction::FlowBoundaryFunction(const Teuchos::ParameterList& plist) {
   rainfall_ = false;
   if (plist.isParameter("rainfall")) 
     rainfall_ = plist.get<bool>("rainfall");
@@ -46,8 +49,12 @@ FlowBoundaryFunction::FlowBoundaryFunction(const Teuchos::ParameterList& plist){
 
   // for screen output
   nedges_ = 0;
-};
+}
 
+
+/* ******************************************************************
+* Process additional parameters
+****************************************************************** */
 void FlowBoundaryFunction::ComputeSubmodel(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
 {
   int dim = mesh->space_dimension();
@@ -87,13 +94,15 @@ void FlowBoundaryFunction::ComputeSubmodel(const Teuchos::RCP<const AmanziMesh::
       it->second[0] += (*shift_water_table_)[f];
     }
   }
+}
 
-};
 
+/* ******************************************************************
+* Preprocesing: calculate warter table coefficients.
+****************************************************************** */
 void FlowBoundaryFunction::CalculateShiftWaterTable_(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
-                                                                const std::string& region)
+                                                     const std::string& region)
 {
-
   double tol = 1e-6;
   Errors::Message msg;
 
@@ -219,8 +228,8 @@ void FlowBoundaryFunction::CalculateShiftWaterTable_(const Teuchos::RCP<const Am
       if (b < tol_edge && a > -0.01 && a < 1.01) {
         double z = edges[j][2] + a * p1[2];
         (*shift_water_table_)[f] = z * rho_g;
-        if (z > xf[2] && relative_to_top_ || 
-            z < xf[2] && relative_to_bottom_) {
+        if ((z > xf[2] && relative_to_top_) || 
+            (z < xf[2] && relative_to_bottom_)) {
           flag = 1;
           break;
         }
@@ -236,8 +245,8 @@ void FlowBoundaryFunction::CalculateShiftWaterTable_(const Teuchos::RCP<const Am
       for (int j = 0; j < nedges; j += 2) {
         p1 = (edges[j] + edges[j + 1]) / 2;
         d = L22(p1 - xf);
-        if ((p1[2] > xf[2] && relative_to_top_ || 
-             p1[2] < xf[2] && relative_to_bottom_) && d < dmin) {
+        if (((p1[2] > xf[2] && relative_to_top_) || 
+             (p1[2] < xf[2] && relative_to_bottom_)) && d < dmin) {
           dmin = d;
           z = p1[2];
         }
@@ -254,15 +263,16 @@ void FlowBoundaryFunction::CalculateShiftWaterTable_(const Teuchos::RCP<const Am
 #endif
 
   nedges_ = nedges / 2;
+}
 
-};
 
-
+/* ******************************************************************
+* Extension of operations with sets.
+****************************************************************** */
 void FlowBoundaryFunction::set_intersection_(const std::vector<AmanziMesh::Entity_ID>& v1,
                                              const std::vector<AmanziMesh::Entity_ID>& v2, 
                                              std::vector<AmanziMesh::Entity_ID>* vv)
 {
-
   int i(0), j(0), n1, n2;
 
   n1 = v1.size();
@@ -280,7 +290,6 @@ void FlowBoundaryFunction::set_intersection_(const std::vector<AmanziMesh::Entit
       j++;
     }
   }
-
 }
 
 }  // namespace Flow

@@ -39,7 +39,6 @@ add_amanzi_library(geometry
 # Unit tests
 #
 if (BUILD_TESTS)
-   # Add UnitTest ExodusII include directories
    include_directories(${UnitTest_INCLUDE_DIRS})
 
    # Copy test directory files if an out of source build

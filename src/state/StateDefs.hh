@@ -15,34 +15,11 @@
 #include <vector>
 #include <set>
 
+#include "Teuchos_ParameterList.hpp"
+
+#include "Key.hh"
+
 namespace Amanzi {
-
-// Keys and containers
-typedef std::string Key;
-
-inline Key
-getKey(Key domain, Key name) { return (domain.empty() || domain == std::string("domain") ) ? name : domain+"-"+name; }
-
-inline Key
-getDomain(Key name) {
-  std::size_t pos = name.find('-');
-  return pos == std::string::npos ? Key("") : name.substr(0,pos);
-}
-
-inline Key
-getDomainPrefix(Key name) {
-  std::size_t pos = name.find('-');
-  return pos == std::string::npos ? Key("") : name.substr(0,pos+1);
-}
-
-inline Key
-getDerivKey(Key var, Key wrt) {
-  return std::string("d")+var+"_d"+wrt;
-}
-
-typedef std::set<Key> KeySet;
-typedef std::vector<Key> KeyVector;
-typedef std::set<std::pair<Key, Key> > KeyPairSet;
 
 // Fields
 typedef enum { NULL_FIELD_TYPE, COMPOSITE_VECTOR_FIELD, CONSTANT_VECTOR, CONSTANT_SCALAR } FieldType;

@@ -232,6 +232,11 @@ class Mesh {
   // returned in a standard order according to Exodus II convention
   // for standard cells; in all other situations (ordered = false or
   // non-standard cells), the list of faces will be in arbitrary order
+  //
+  // EXTENSIONS: MSTK FRAMEWORK: by the way the parallel partitioning,
+  // send-receive protocols and mesh query operators are designed, a side 
+  // effect of this is that master and ghost entities will have the same
+  // hierarchical topology. 
   void cell_get_faces(const Entity_ID cellid,
                       Entity_ID_List *faceids,
                       const bool ordered=false) const;
@@ -278,7 +283,10 @@ class Mesh {
   void cell_get_nodes(const Entity_ID cellid,
                       Entity_ID_List *nodeids) const = 0;
 
-  // Get edges of a face and directions in which the face uses the edges
+  // Get edges of a face and directions in which the face uses the edges.
+  //
+  // In 3D, edge direction is 1 when it is oriented counter clockwise
+  // with respect to the face natural normal.
   //
   // On a distributed mesh, this will return all the edges of the
   // face, OWNED or GHOST. If ordered = true, the edges will be
@@ -402,25 +410,37 @@ class Mesh {
   // are computed for all cells the first time one of these routines
   // is called and then cached
 
-  // Number of columns in mesh
+  //
+  virtual
+  int build_columns(const std::string& Msetname) const;
+
+  // Build columns over the entire mesh. The columns are defined by
+  // starting from boundary faces which have a negative-z-direction
+  // normal, then collecting cells and faces while traveling downward
+  // through the columns.
+
+  virtual
+  int build_columns() const;
+  
+  // Number of columns in mesh - must call build_columns before calling
   int num_columns(bool ghosted=false) const;
 
-  // Given a column ID, get the cells of the column
+  // Given a column ID, get the cells of the column - must call build_columns before calling
   const Entity_ID_List& cells_of_column(const int columnID_) const;
 
-  // Given a column ID, get the cells of the column
+  // Given a column ID, get the cells of the column - must call build_columns before calling
   const Entity_ID_List& faces_of_column(const int columnID_) const;
 
-  // Given a cell, get its column ID
+  // Given a cell, get its column ID - must call build_columns before calling
   int column_ID(const Entity_ID cellid) const;
 
-  // Given a cell, get the id of the cell above it in the column.
+  // Given a cell, get the id of the cell above it in the column - must call build_columns before calling
   Entity_ID cell_get_cell_above(const Entity_ID cellid) const;
 
-  // Given a cell, get the id of the cell below it in the column.
+  // Given a cell, get the id of the cell below it in the column - must call build_columns before calling
   Entity_ID cell_get_cell_below(const Entity_ID cellid) const;
 
-  // Given a node, get the id of the node above it in the column.
+  // Given a node, get the id of the node above it in the column - must call build_columns before calling
   Entity_ID node_get_node_above(const Entity_ID nodeid) const;
 
 
@@ -457,11 +477,24 @@ class Mesh {
   // Length of edge
   double edge_length(const Entity_ID edgeid, const bool recompute=false) const;
 
-  // Centroid of cell
+  // Centroid of cell (center of gravity not just average of node coordinates)
+  //
+  // The cell centroid is computed as the volume weighted average of the
+  // centroids of tetrahedra from a symmetric tetrahedral
+  // decomposition of the cell. The tetrahedral decomposition is
+  // formed by connecting the cell center (average of cell nodes), a
+  // face center (average of face nodes) and the two nodes of an edge
+  // of the face
   AmanziGeometry::Point cell_centroid(const Entity_ID cellid,
                                       const bool recompute=false) const;
 
-  // Centroid of face
+  // Centroid of face (center of gravity not just the average of node coordinates)
+  //
+  // The face centroid is computed as the area weighted average of the
+  // centroids of the triangles from a symmetric triangular
+  // decomposition of the face. Each triangular facet is formed by the
+  // connecting the face center (average of face nodes) to the two
+  // nodes of an edge of the face
   AmanziGeometry::Point face_centroid(const Entity_ID faceid,
                                       const bool recompute=false) const;
 
@@ -497,13 +530,13 @@ class Mesh {
 
   // Edge vector
   //
-  // Not normalized (or normalized and weighted by length of the edge)
+  // Vector length equals to edge length.
   //
   // If recompute is TRUE, then the vector is recalculated using current
   // edge coordinates but not stored. (If the recomputed vector must be
   // stored, then call recompute_geometric_quantities).
   //
-  // If pointid is specified, the vector is the natural direction of
+  // If pointid is not specified, the vector is the natural direction of
   // the edge (from point0 to point1).  On the other hand, if pointid
   // is specified (has to be a point of the face), the vector is from
   // specified point to opposite point of edge.
@@ -535,10 +568,33 @@ class Mesh {
   void node_set_coordinates(const Entity_ID nodeid,
                             const double *ncoord) = 0;
 
-  // Deform the mesh by moving given nodes to given coordinates
-  // If the flag keep_valid is true, then the nodes are moved
-  // only as much as possible without making the mesh invalid
-  // The final positions of the nodes is returned in final_positions
+  // Just move the mesh.  Returns 0 if negative cell volumes generated, 1
+  // otherwise.
+  //
+  // This is a rudimentary capability that requires ghosts nodes
+  // also to be deformed. Amanzi does not have any built-in parallel 
+  // communication capabilities, other than Trilinos Epetra object
+  // communication or raw MPI. 
+  virtual
+  int deform(const Entity_ID_List& nodeids,
+             const AmanziGeometry::Point_List& new_positions);
+  
+  // Deform the mesh by moving given nodes to given coordinates, one at a
+  // time, ensuring validity at all points through the deformation, which is a
+  // really bad idea for deformations that move large numbers of nodes more
+  // than epsilon.  Really.  Just don't use this routine, it almost definitely
+  // isn't what you want.
+  //
+  // Deform the mesh by moving given nodes to given coordinates.  If the flag
+  // keep_valid is true, then the nodes are moved only as much as possible
+  // without making the mesh invalid.  The final positions of the nodes is
+  // returned in final_positions
+  //
+  // This is a rudimentary capability that requires ghosts nodes
+  // also to be deformed. Amanzi does not have any built-in parallel 
+  // communication capabilities, other than Trilinos Epetra object
+  // communication or raw MPI. 
+  virtual
   int deform(const Entity_ID_List& nodeids,
              const AmanziGeometry::Point_List& new_positions,
              const bool keep_valid,
@@ -563,7 +619,17 @@ class Mesh {
   //
   // Epetra maps
   //------------
-
+  const Epetra_Map& map(Entity_kind kind, bool include_ghost) const {
+    if (kind == CELL) return cell_map(include_ghost);
+    else if (kind == FACE) return face_map(include_ghost);
+    else if (kind == EDGE) return edge_map(include_ghost);
+    else if (kind == NODE) return node_map(include_ghost);
+    else if (kind == BOUNDARY_FACE) return exterior_face_map(include_ghost);
+    Errors::Message mesg("No such map type.");
+    Exceptions::amanzi_throw(mesg);
+    throw(mesg);
+  }
+  
   // Get cell map
   virtual
   const Epetra_Map& cell_map(bool include_ghost) const = 0;
@@ -578,8 +644,8 @@ class Mesh {
   const Epetra_Map& edge_map(bool include_ghost) const
   {
     Errors::Message mesg("Edges are not implemented in this framework.");
-    amanzi_throw(mesg);
-    return edge_map(include_ghost);  // avoids clang warnings for every file.
+    Exceptions::amanzi_throw(mesg);
+    throw(mesg);
   }
 
   // Get node map
@@ -658,11 +724,9 @@ class Mesh {
   virtual
   void write_to_exodus_file(const std::string filename) const = 0;
 
-
- protected:
+protected:
   // Helper function to build columns
-  virtual
-  int build_columns_() const;
+  int build_single_column_(int colnum, Entity_ID top_face) const;
 
   // Beginning of new interface to regions using the base mesh.
   void get_set_entities_box_vofs_(
@@ -755,8 +819,8 @@ class Mesh {
   int compute_face_geometry_(const Entity_ID faceid,
                              double *area,
                              AmanziGeometry::Point *centroid,
-                             AmanziGeometry::Point *normal0,
-                             AmanziGeometry::Point *normal1) const;
+                             std::vector<AmanziGeometry::Point> *normals) const;
+
   virtual
   int compute_edge_geometry_(const Entity_ID edgeid,
                              double *length,
@@ -784,8 +848,12 @@ class Mesh {
   mutable std::vector<double> cell_volumes_, face_areas_, edge_lengths_;
   mutable std::vector<AmanziGeometry::Point> cell_centroids_, face_centroids_;
 
-  // -- for a given face, its normal to face_get_cells()[0] is face_normal0_, resp 1.
-  mutable std::vector<AmanziGeometry::Point> face_normal0_, face_normal1_;
+  // -- Have to account for the fact that a "face" for a non-manifold
+  // surface mesh can have more than one cell connected to
+  // it. Therefore, we have to store as many normals for a face as
+  // there are cells connected to it. For a given face, its normal to
+  // face_get_cells()[i] is face_normals_[i]
+  mutable std::vector<std::vector<AmanziGeometry::Point>> face_normals_;
 
   mutable std::vector<AmanziGeometry::Point> edge_vectors_;
 

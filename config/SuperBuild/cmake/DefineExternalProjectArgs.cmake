@@ -15,7 +15,7 @@ include(SetMacros)
 macro(DEFINE_EXTERNAL_PROJECT_ARGS prefix)
  
   # --- Parse the arguments
-  set(_flags    "BUILD_IN_SOURCE")
+  set(_flags "BUILD_IN_SOURCE")
   set(_oneValue "TARGET")
   set(_multiValue "DEPENDS")
   cmake_parse_arguments(PARSE "${_flags}" "${_oneValue}" "${_multiValue}" ${ARGN})
@@ -50,7 +50,7 @@ macro(DEFINE_EXTERNAL_PROJECT_ARGS prefix)
 
   # Download from the web unless DISABLE_EXTERNAL_DOWNLOADS is TRUE
   if ( DISABLE_EXTERNAL_DOWNLOAD )
-    set(${prefix}_URL ${TPL_DOWNLOAD_DIR}/${${prefix}_ARCHIVE_FILE})
+	  set(${prefix}_URL ${TPL_DOWNLOAD_DIR}/${${prefix}_SAVEAS_FILE})
 
     if ( NOT EXISTS "${${prefix}_URL}" )
       message(FATAL_ERROR "You have disabled external downloads (-DDISABLE_EXTERNAL_DOWNLOAD:BOOL=TRUE),"
@@ -85,6 +85,5 @@ macro(DEFINE_EXTERNAL_PROJECT_ARGS prefix)
 
   # Set the build in source flag
   set(${prefix}_BUILD_IN_SOURCE ${PARSE_BUILD_IN_SOURCE})
-
 
 endmacro(DEFINE_EXTERNAL_PROJECT_ARGS)

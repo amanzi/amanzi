@@ -1,16 +1,18 @@
 Steady-State Flow in an Unconfined Aquifer: Head, and Flux Boundary Conditions
 ------------------------------------------------------------------------------
 
-Flow in an unconfined aquifer is inherently multi-dimensional, 
-which generally precludes simple closed-form analytic solutions. 
-In many practical applications however, vertical gradients and velocities are small relative
-to their horizontal counterparts and can be neglected following Dupuit (1863) and Forchheimer (1930).
-The Dupuit-Forchheimer theory of free-surface flow assumes that (Freeze and Cherry, 1979):
-1) flow is horizontal and equipotential lines are vertical, and 
-2) hydraulic gradient is equal to the slope of the free surface. With these assumptions and 
+Flow in an unconfined aquifer is inherently multi-dimensional, which generally
+precludes simple closed-form analytic solutions. In many practical applications however,
+vertical gradients and velocities are small relative to their horizontal counterparts
+and can be neglected following Dupuit :cite:`ur-Dupuit_1863` and Forchheimer :cite:`ur-Forchheimer_1930`.
+The Dupuit-Forchheimer theory of free-surface flow assumes that :cite:`ur-Freeze_1979`:
+
+#. flow is horizontal and equipotential lines are vertical, and 
+#. hydraulic gradient is equal to the slope of the free surface. With these assumptions and
+   
 assuming the Cartesian :math:`x`- and :math:`y`-coordinates align with the 
 principal axes of the hydraulic conductivity tensor,
-the general expression for saturated flow in an unconfined aquifer becomes (e.g. de Marsily, 1986)
+the general expression for saturated flow in an unconfined aquifer becomes (e.g., :cite:`ur-deMarsily_1986`)
 
 	.. math:: \frac{\partial}{\partial x} \left[\int_\sigma^h K_{xx}dz\frac{\partial h}{\partial x}\right]
 		+ \frac{\partial}{\partial y} \left[\int_\sigma^h K_{yy}dz\frac{\partial h}{\partial y}\right]
@@ -43,21 +45,10 @@ direct integration as
 
 where the integration constants :math:`C_1` and :math:`C_2` depend on the boundary conditions
 and volumetric sink :math:`Q`.  
-Following Aleman (2007, Section 4.2), two particular solutions are considered
+Following :cite:`ur-Aleman_PORFLOW_2007`, Section 4.2), two particular solutions are considered
 for testing *Amanzi* implementation of prescribed hydraulic head, no-flow, and recharge boundary conditions, 
 Darcy's law, and mass conservation on a problem involving variably saturated conditions and quasi 2D flow
 (approximately horizontal in the saturated zone and approximately vertical in the unsaturated zone).
-
-Aleman, S. 2007. *PORFLOW Testing and Verification Document*. Savannah River National Laboratory technical report WSRC-STI-2007-00150 Rev 0. 193 p.
-
-de Marsily, G. 1986. *Quantitative Hydrogeology: Groundwater Hydrology for Engineers*, Academic Press, Inc., Orlando Florida.
-
-Dupuit, J. 1863. *Estudes Thèoriques et Pratiques sur le mouvement des Eaux dans les canaux dècouverts et à travers les terrains permèables* (Second Edition ed.). Paris: Dunod.
-
-Forchheimer, P. 1930. *Hydraulik*. 3d ed., Teubner, Leipzig, Berlin. 
-
-Freeze, R.A. and J.A. Cherry. 1979. *Groundwater*. Prentice-Hall, Inc. Englewood Cliffs, NJ. 604 p.
-
 
 Analytic solution #1: Prescribed head at boundaries
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -99,7 +90,7 @@ Amanzi verification test problem #1
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
  
 To generate numerical results the following specifications are considered for 
-analytic solution #1 (Aleman 2007, Figure 4.2.1):
+analytic solution #1 (:cite:`ur-Aleman_PORFLOW_2007`, Figure 4.2.1):
 
 	.. image:: schematic/porflow_4.2.1.png
 		:scale: 35 %
@@ -134,7 +125,7 @@ are selected. Input parameters for the numerical simulation are summarized as:
 	* :math:`\rho = 998.2 \: kg/m^3, \mu = 1.002e-3 \: Pa\cdot s, g = 9.807 \: m/s^2` 
 	* :math:`K_{xx} = 10^{-3} ft/s`
 	* :math:`K_{zz} = 10 \cdot K_{xx}` 
-	* van Genuchten (1980) - Mualem (1976) parameters for a gravel based on Phifer et al. (2006):
+	* van Genuchten :cite:`ur-vanGenuchten_1980` - Mualem :cite:`ur-Mualem_1976` parameters for a gravel based on :cite:`ur-Phifer_data_2006`:
 		* :math:`\alpha = 0.143 cm^{-1} (1.46e-3 Pa^{-1})`
 		* :math:`S_r = 0.052`
 		* :math:`m = 0.314`
@@ -150,15 +141,6 @@ For these input specifications, *Amanzi* simulation output is expected to closel
 
 from Equation :eq:`specificSoln1`. 
 
-Mualem, Y. 1976. *A new model predicting the hydraulic conductivity of unsaturated porous media*. Water Resour. Res. 12:513-522.
-
-Phifer, M. A., M. R. Millings, and G. P. Flach. 2006. *Hydraulic Property Data Package for the E-Area and Z-Area Soils, 
-Cementitious Materials, and Waste Zones*. Savannah River National Laboratory technical report WSRC-STI-2006-00198 Rev 0. 325 p.
-
-Richards, L.A. 1931. *Capillary conduction of liquids through porous mediums*. Physics 1 (5): 318-333.
-
-van Genuchten, M. Th. 1980. *A Closed-form Equation for Predicting the Hydraulic Conductivity of Unsaturated Soils*. Soil Sci. Soc. Am. J. 44: 892-898.
-
 
 Amanzi verification test problem #2
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -166,7 +148,7 @@ Amanzi verification test problem #2
 Similarly, to generate numerical results for analytic solution #2 
 the following specifications are considered (Aleman 2007, Figure 4.2.2):
 
-	.. image:: ../unconfined_recharge/schematic/porflow_4.2.2.png
+	.. image:: ../unconfined_recharge_1d/schematic/porflow_4.2.2.png
 		:scale: 35 %
 		:align: center
 
@@ -188,7 +170,7 @@ Input parameters for the numerical simulation are summarized as:
 	* :math:`\rho = 998.2 \: kg/m^3, \mu = 1.002e-3 \: Pa\cdot s, g = 9.807 \: m/s^2` 
 	* :math:`K_{xx} = 3.28 ft/d`
 	* :math:`K_{zz} = 10 \cdot K_{xx}` 
-	* van Genuchten (1980) - Mualem (1976) parameters for a gravel based on Phifer et al. (2006):
+	* van Genuchten :cite:`ur-vanGenuchten_1980` - Mualem :cite:`ur-Mualem_1976` parameters for a gravel based on :cite:`ur-Phifer_data_2006`:
 		* :math:`\alpha = 0.143 cm^{-1} (1.46e-3 Pa^{-1})`
 		* :math:`S_r = 0.052`
 		* :math:`m = 0.314`
@@ -215,6 +197,20 @@ Amanzi verification test results
    :width: 4in
    :align: center
 
+References
+----------
 
+.. bibliography:: /bib/ascem.bib
+   :filter: docname in docnames
+   :style:  alpha
+   :keyprefix: ur-
+
+.. _about_unconfined_no_recharge:
+	    
+About
+-----
+
+Status
+------
 
 

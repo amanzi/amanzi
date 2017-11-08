@@ -1,14 +1,12 @@
-/*
-  Operators
+// OperatorDiffusionMFDwithGravity: Discrete gravity operator blended with the MFD diffusion operator.
 
+/*
   Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
   The terms of use and "as is" disclaimer for this license are 
   provided in the top-level COPYRIGHT file.
 
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
-
-  Discrete gravity operator blended with the MFD diffusion operator.
 */
 
 #ifndef AMANZI_OPERATOR_DIFFUSION_MFD_WITH_GRAVITY_HH_
@@ -23,6 +21,17 @@
 #include "OperatorDefs.hh"
 #include "OperatorDiffusionMFD.hh"
 #include "OperatorDiffusionWithGravity.hh"
+
+/*!
+Additional options for MFD with the gravity term include:
+  
+* `"gravity term discretization`" [string] selects a model for discretizing the 
+   gravity term. Available options are `"hydraulic head`" [default] and `"finite volume`". 
+   The first option starts with equation for the shifted solution, i.e. the hydraulic head,
+   and derives gravity discretization by the reserve shifting.
+   The second option is based on the divergence formula.
+*/
+
 
 namespace Amanzi {
 namespace Operators {

@@ -25,7 +25,7 @@
 // MPC
 #include "FlexibleObservations.hh"
 #include "ObservableFactory.hh"
-#include "Observable.hh"
+#include "ObservableAmanzi.hh"
 
 namespace Amanzi {
 

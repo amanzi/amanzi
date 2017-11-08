@@ -16,11 +16,14 @@
 #include "Teuchos_ParameterList.hpp"
 
 #include "Mesh.hh"
+#include "State.hh"
 #include "PK_DomainFunctionSimple.hh"
 #include "PK_DomainFunctionVolume.hh"
 #include "PK_DomainFunctionVolumeFraction.hh"
 #include "PK_DomainFunctionWeight.hh"
 #include "PK_DomainFunctionCoupling.hh"
+#include "PK_DomainFunctionSubgrid.hh"
+#include "PK_DomainFunctionSimpleWell.hh"
 
 namespace Amanzi {
 
@@ -29,7 +32,10 @@ template <class FunctionBase>
 class PK_DomainFunctionFactory : public FunctionBase {
  public:
   PK_DomainFunctionFactory(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
-      : mesh_(mesh) {};
+    : mesh_(mesh) {};
+  PK_DomainFunctionFactory(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
+                           const Teuchos::RCP<const State>& S)
+    : mesh_(mesh), S_(S) {};
   ~PK_DomainFunctionFactory() {};
 
   Teuchos::RCP<FunctionBase> Create(const Teuchos::ParameterList& plist,
@@ -43,6 +49,7 @@ class PK_DomainFunctionFactory : public FunctionBase {
 
  protected:
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
+  Teuchos::RCP<const State> S_;
 };
 
 
@@ -100,6 +107,18 @@ PK_DomainFunctionFactory<FunctionBase>::Create(
     Teuchos::RCP<PK_DomainFunctionCoupling<FunctionBase> >
        func = Teuchos::rcp(new PK_DomainFunctionCoupling<FunctionBase>(mesh_));
     func->Init(plist, keyword, kind);
+    return func;
+  }
+  else if (model == "subgrid") {
+    Teuchos::RCP<PK_DomainFunctionSubgrid<FunctionBase> >
+       func = Teuchos::rcp(new PK_DomainFunctionSubgrid<FunctionBase>(mesh_));
+    func->Init(plist, keyword, kind);
+    return func;
+  }
+  else if (model == "simple well") {
+    Teuchos::RCP<PK_DomainFunctionSimpleWell<FunctionBase> >
+       func = Teuchos::rcp(new PK_DomainFunctionSimpleWell<FunctionBase>(mesh_));
+    func->Init(plist, keyword, S_);
     return func;
   }
   else {

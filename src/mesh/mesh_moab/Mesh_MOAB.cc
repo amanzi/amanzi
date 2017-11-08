@@ -1,33 +1,29 @@
 #include "Mesh_MOAB.hh"
-//#include <Teuchos_RCP.hpp>
 
 #include "dbc.hh"
 #include "errors.hh"
 
-using namespace std;
 using namespace moab;
-
 
 namespace Amanzi {
 namespace AmanziMesh {
 
-  // Constructor - load up mesh from file
+// Constructor - load up mesh from file
 
-  Mesh_MOAB::Mesh_MOAB(const char *filename, const Epetra_MpiComm *comm_, 
-                       const AmanziGeometry::GeometricModelPtr& gm,
-                       const VerboseObject *verbosity_obj)
-    : const bool request_faces,
-      const bool request_edges,
-      Mesh(verbosity_obj,request_faces,request_edges)
+Mesh_MOAB::Mesh_MOAB(const char *filename, const Epetra_MpiComm *comm_, 
+                     const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm,
+                     const Teuchos::RCP<const VerboseObject>& vo,
+                     const bool request_faces,
+                     const bool request_edges,
+		     const Partitioner_type partitioner)
+  : Mesh(vo, request_faces, request_edges)
 {
   int result, rank;
   
   clear_internals_();
 
-    
   // Core MOAB object
-    
-  mbcore = new MBCore();
+  mbcore = new moab::Core();
 
   if (comm_) {
     // MOAB's parallel comm_unicator
@@ -35,7 +31,7 @@ namespace AmanziMesh {
     mbcomm_ = new ParallelComm(mbcore,comm_->GetMpiComm(),&mbcomm_id);
 
     if (!mbcomm_) {
-      cerr << "Failed to initialize MOAB comm_unicator\n";
+      std::cerr << "Failed to initialize MOAB comm_unicator\n";
       assert(mbcomm_ == 0);
     }
   }
@@ -154,7 +150,7 @@ namespace AmanziMesh {
   // Initialize some info about the global number of sets, global set
   // IDs and set types
 
-  if (Mesh::geometric_model() != NULL)
+  if (Mesh::geometric_model() != Teuchos::null)
     init_set_info();
 }
 
@@ -252,11 +248,12 @@ void Mesh_MOAB::clear_internals_()
   nsets = 0;
   setids_ = setdims_ = NULL;
 
-  Mesh::set_geometric_model((Amanzi::AmanziGeometry::GeometricModelPtr) NULL);
+  Mesh::set_geometric_model(Teuchos::null);
 }
 
 
-void Mesh_MOAB::init_id_handle_maps() {
+void Mesh_MOAB::init_id_handle_maps()
+{
   int i, nv, nf, nc;
   int result;
 
@@ -277,8 +274,8 @@ void Mesh_MOAB::init_id_handle_maps() {
   vtx_id_to_handle.reserve(nv);
 
   i = 0;
-  for (MBRange::iterator it = OwnedVerts.begin(); it != OwnedVerts.end(); ++it) {
-    MBEntityHandle vtx = *it;
+  for (auto it = OwnedVerts.begin(); it != OwnedVerts.end(); ++it) {
+    moab::EntityHandle vtx = *it;
     result = mbcore->tag_set_data(lid_tag,&vtx,1,&i);
     if (result != MB_SUCCESS) {
       std::cerr << "Problem getting local ID for vertex" << std::endl;
@@ -286,8 +283,9 @@ void Mesh_MOAB::init_id_handle_maps() {
     }
     vtx_id_to_handle[i++] = vtx;
   }    
-  for (MBRange::iterator it = NotOwnedVerts.begin(); it != NotOwnedVerts.end(); ++it) {
-    MBEntityHandle vtx = *it;
+
+  for (auto it = NotOwnedVerts.begin(); it != NotOwnedVerts.end(); ++it) {
+    moab::EntityHandle vtx = *it;
     result = mbcore->tag_set_data(lid_tag,&vtx,1,&i);
     if (result != MB_SUCCESS) {
       std::cerr << "Problem getting local ID for vertex" << std::endl;
@@ -302,8 +300,8 @@ void Mesh_MOAB::init_id_handle_maps() {
   face_id_to_handle.reserve(nf);
 
   i = 0;
-  for (MBRange::iterator it = OwnedFaces.begin(); it != OwnedFaces.end(); ++it) {
-    MBEntityHandle face = *it;
+  for (auto it = OwnedFaces.begin(); it != OwnedFaces.end(); ++it) {
+    moab::EntityHandle face = *it;
     result = mbcore->tag_set_data(lid_tag,&face,1,&i);
     if (result != MB_SUCCESS) {
       std::cerr << "Problem getting local ID for face" << std::endl;
@@ -311,8 +309,9 @@ void Mesh_MOAB::init_id_handle_maps() {
     }
     face_id_to_handle[i++] = face;
   }
-  for (MBRange::iterator it = NotOwnedFaces.begin(); it != NotOwnedFaces.end(); ++it) {
-    MBEntityHandle face = *it;
+
+  for (auto it = NotOwnedFaces.begin(); it != NotOwnedFaces.end(); ++it) {
+    moab::EntityHandle face = *it;
     result = mbcore->tag_set_data(lid_tag,&face,1,&i);
     if (result != MB_SUCCESS) {
       std::cerr << "Problem getting local ID for face" << std::endl;
@@ -327,8 +326,8 @@ void Mesh_MOAB::init_id_handle_maps() {
   cell_id_to_handle.reserve(nc);
 
   i = 0;
-  for (MBRange::iterator it = OwnedCells.begin(); it != OwnedCells.end(); ++it) {
-    MBEntityHandle cell = *it;
+  for (auto it = OwnedCells.begin(); it != OwnedCells.end(); ++it) {
+    moab::EntityHandle cell = *it;
     result = mbcore->tag_set_data(lid_tag,&cell,1,&i);
     if (result != MB_SUCCESS) {
       std::cerr << "Problem getting local ID for cell" << std::endl;
@@ -336,8 +335,9 @@ void Mesh_MOAB::init_id_handle_maps() {
     }
     cell_id_to_handle[i++] = cell;
   }
-  for (MBRange::iterator it = GhostCells.begin(); it != GhostCells.end(); ++it) {
-    MBEntityHandle cell = *it;
+
+  for (auto it = GhostCells.begin(); it != GhostCells.end(); ++it) {
+    moab::EntityHandle cell = *it;
     result = mbcore->tag_set_data(lid_tag,&cell,1,&i);
     if (result != MB_SUCCESS) {
       std::cerr << "Problem getting local ID for cell" << std::endl;
@@ -476,11 +476,11 @@ void Mesh_MOAB::init_pface_lists() {
   // 2D). We do this by looping over the cells and asking for their
   // faces with the create_if_missing=true option
 
-  for (MBRange::iterator it = AllCells.begin(); it != AllCells.end(); it++) {
-    MBEntityHandle cell = *it;
-    MBRange cfaces;
+  for (auto it = AllCells.begin(); it != AllCells.end(); it++) {
+    moab::EntityHandle cell = *it;
+    moab::Range cfaces;
       
-    result = mbcore->get_adjacencies(&cell,1,facedim,true,cfaces,MBCore::UNION);
+    result = mbcore->get_adjacencies(&cell,1,facedim,true,cfaces,Core::UNION);
     if (result != MB_SUCCESS) {
       std::cerr << "Could not get faces of cell" << cell << std::endl;
       assert(result == MB_SUCCESS);
@@ -510,11 +510,12 @@ void Mesh_MOAB::init_pface_lists() {
 }
 
 
-void Mesh_MOAB::init_pface_dirs() {
+void Mesh_MOAB::init_pface_dirs()
+{
   int result, zero=0, minus1=-1;
   int face_lid, face_gid, cell_gid;
   int sidenum, offset, facedir;
-  MBEntityHandle cell, face;
+  moab::EntityHandle cell, face;
   int DebugWait=1;
 
   // Do some additional processing to see if ghost faces and their masters
@@ -524,7 +525,7 @@ void Mesh_MOAB::init_pface_dirs() {
   /* In this code, we increment local values of global IDs by 1 so
      that we can distinguish between the lowest gid and no data */
 
-  MBTag tmp_fc0_tag, tmp_fc1_tag;
+  moab::Tag tmp_fc0_tag, tmp_fc1_tag;
   result = mbcore->tag_get_handle("TMP_FC0_TAG",1,
                                   MB_TYPE_INTEGER, tmp_fc0_tag,
                                   MB_TAG_CREAT|MB_TAG_DENSE,&zero);
@@ -541,11 +542,11 @@ void Mesh_MOAB::init_pface_dirs() {
   }
 
   
-  for (MBRange::iterator it = OwnedFaces.begin(); it != OwnedFaces.end(); it++) {
-    MBRange fcells;
+  for (auto it = OwnedFaces.begin(); it != OwnedFaces.end(); it++) {
+    moab::Range fcells;
     face = *it;
 
-    result = mbcore->get_adjacencies(&face,1,celldim,false,fcells,MBCore::UNION);
+    result = mbcore->get_adjacencies(&face,1,celldim,false,fcells,Core::UNION);
     if (result != MB_SUCCESS) {
       std::cout << "Could not get cells of face" << std::endl;
       assert(result == MB_SUCCESS);
@@ -563,12 +564,11 @@ void Mesh_MOAB::init_pface_dirs() {
     }
 
 
-    for (MBRange::iterator jt = fcells.begin(); jt != fcells.end(); ++jt) {
-
+    for (auto jt = fcells.begin(); jt != fcells.end(); ++jt) {
       cell = *jt;
       result = mbcore->side_number(cell,face,sidenum,facedir,offset);
       if (result != MB_SUCCESS) {
-        cout << "Could not get face dir w.r.t. cell" << std::endl;
+        std::cout << "Could not get face dir w.r.t. cell" << std::endl;
         assert(result == MB_SUCCESS);
       }
 
@@ -613,8 +613,8 @@ void Mesh_MOAB::init_pface_dirs() {
   faceflip = new bool[AllFaces.size()];
   for (int i = 0; i < AllFaces.size(); i++) faceflip[i] = false;
 
-  for (MBRange::iterator it = NotOwnedFaces.begin(); it != NotOwnedFaces.end(); it++) {
-    MBRange fcells;
+  for (auto it = NotOwnedFaces.begin(); it != NotOwnedFaces.end(); it++) {
+    moab::Range fcells;
     int ghost_cell0_gid = 0, ghost_cell1_gid = 0;
     int master_cell0_gid = 0, master_cell1_gid = 0;
 
@@ -633,19 +633,19 @@ void Mesh_MOAB::init_pface_dirs() {
     }
 
 
-    result = mbcore->get_adjacencies(&face,1,celldim,false,fcells,MBCore::UNION);
+    result = mbcore->get_adjacencies(&face,1,celldim,false,fcells,Core::UNION);
     if (result != MB_SUCCESS) {
       std::cout << "Could not get cells of face" << std::endl;
       assert(result == MB_SUCCESS);
     }
 
 
-    for (MBRange::iterator jt = fcells.begin(); jt != fcells.end(); ++jt) {
+    for (auto jt = fcells.begin(); jt != fcells.end(); ++jt) {
       cell = *jt;
 
       result = mbcore->side_number(cell,face,sidenum,facedir,offset);
       if (result != MB_SUCCESS) {
-        cout << "Could not get face dir w.r.t. cell" << std::endl;
+        std::cout << "Could not get face dir w.r.t. cell" << std::endl;
         assert(result == MB_SUCCESS);
       }
 
@@ -675,7 +675,7 @@ void Mesh_MOAB::init_pface_dirs() {
       
       result = mbcore->tag_get_data(lid_tag,&face,1,&face_lid);
       if (result != MB_SUCCESS) {
-        cout << "Could not get face tag data" << std::endl;
+        std::cout << "Could not get face tag data" << std::endl;
         assert(result == MB_SUCCESS);
       }
       faceflip[face_lid] = true;
@@ -695,10 +695,11 @@ void Mesh_MOAB::init_pface_dirs() {
         }
         //
 
-        cout << "Face cells mismatch between master and ghost (processor " << mbcomm_->rank() << ")" << std::endl;
-        cout << " Face " << face_gid << std::endl;
-        cout << "Master cells " << master_cell0_gid << " " << master_cell1_gid << std::endl;
-        cout << "Ghost cells " << ghost_cell0_gid << " " << ghost_cell1_gid << std::endl;
+        std::cout << "Face cells mismatch between master and ghost (processor " 
+                  << mbcomm_->rank() << ")" << std::endl;
+        std::cout << " Face " << face_gid << std::endl;
+        std::cout << "Master cells " << master_cell0_gid << " " << master_cell1_gid << std::endl;
+        std::cout << "Ghost cells " << ghost_cell0_gid << " " << ghost_cell1_gid << std::endl;
       }
     }
   }
@@ -731,10 +732,11 @@ void Mesh_MOAB::init_pcell_lists() {
 }
 
 
-void Mesh_MOAB::init_set_info() {
+void Mesh_MOAB::init_set_info()
+{
   int maxnsets, result;
   char setname[256];
-  MBTag tag;
+  moab::Tag tag;
 
   // Get element block, sideset and nodeset tags
 
@@ -755,34 +757,34 @@ void Mesh_MOAB::init_set_info() {
   }
 
 
-  AmanziGeometry::GeometricModelPtr gm = Mesh::geometric_model();
+  Teuchos::RCP<const AmanziGeometry::GeometricModel> gm = Mesh::geometric_model();
 
-  if (gm == NULL) { 
+  if (gm == Teuchos::null) { 
     Errors::Message mesg("Need region definitions to initialize sets");
     amanzi_throw(mesg);
   }
     
 
-  unsigned int ngr = gm->Num_Regions();
+  unsigned int ngr = gm->RegionSize();
 
   for (int i = 0; i < ngr; i++) {
-    AmanziGeometry::RegionPtr rgn = gm->Region_i(i);
+    Teuchos::RCP<const AmanziGeometry::Region> rgn = gm->FindRegion(i);
 
     if (rgn->type() == AmanziGeometry::LABELEDSET) {
 
-      AmanziGeometry::LabeledSetRegionPtr lsrgn =
-        dynamic_cast<AmanziGeometry::LabeledSetRegionPtr> (rgn);
+      Teuchos::RCP<const AmanziGeometry::RegionLabeledSet> lsrgn =
+          Teuchos::rcp_static_cast<const AmanziGeometry::RegionLabeledSet>(rgn);
 
       std::string internal_name;
       std::string label = lsrgn->label();
       std::string entity_type_str = lsrgn->entity_str();
 
       if (entity_type_str == "CELL")
-        internal_name = internal_name_of_set(rgn,CELL);
+        internal_name = internal_name_of_set(rgn, CELL);
       else if (entity_type_str == "FACE")
-        internal_name = internal_name_of_set(rgn,FACE);
+        internal_name = internal_name_of_set(rgn, FACE);
       else if (entity_type_str == "NODE")
-        internal_name = internal_name_of_set(rgn,NODE);
+        internal_name = internal_name_of_set(rgn, NODE);
 
       result = mbcore->tag_get_handle(internal_name.c_str(),1,MB_TYPE_INTEGER,
                                       tag,MB_TAG_CREAT|MB_TAG_SPARSE);
@@ -898,9 +900,9 @@ void Mesh_MOAB::cell_get_faces_and_dirs_internal_(const Entity_ID cellid,
                                                   std::vector<int> *face_dirs,
                                                   const bool ordered) const
 {
-  MBEntityHandle cell;
-  MBRange cell_faces;
-  std::vector<MBEntityHandle> cell_nodes, face_nodes;
+  moab::EntityHandle cell;
+  moab::Range cell_faces;
+  std::vector<moab::EntityHandle> cell_nodes, face_nodes;
   int *cell_faceids, *cell_facedirs;
   int nf, result;
   int cfstd[6][4] = {{0,1,5,4},    // Expected cell-face-node pattern
@@ -913,7 +915,7 @@ void Mesh_MOAB::cell_get_faces_and_dirs_internal_(const Entity_ID cellid,
   cell = cell_id_to_handle[cellid];
 
   result = mbcore->get_adjacencies(&cell, 1, facedim, true, cell_faces, 
-                          MBInterface::INTERSECT);
+                                   moab::Interface::INTERSECT);
   if (result != MB_SUCCESS) {
     std::cerr << "Problem getting faces of cell" << std::endl;
     assert(result == MB_SUCCESS);
@@ -930,9 +932,9 @@ void Mesh_MOAB::cell_get_faces_and_dirs_internal_(const Entity_ID cellid,
 
   if (ordered && nf == 6) { // Hex
 
-    MBEntityHandle *ordfaces, face;
+    moab::EntityHandle *ordfaces, face;
 
-    ordfaces = new MBEntityHandle[6];
+    ordfaces = new moab::EntityHandle[6];
 
     result = mbcore->get_connectivity(&cell, 1, cell_nodes);
     if (result != MB_SUCCESS) {
@@ -989,12 +991,12 @@ void Mesh_MOAB::cell_get_faces_and_dirs_internal_(const Entity_ID cellid,
 
     if (face_dirs) {
       for (int i = 0; i < nf; i++) {
-        MBEntityHandle face = ordfaces[i];
+        moab::EntityHandle face = ordfaces[i];
         int sidenum, offset;
         
         result = mbcore->side_number(cell,face,sidenum,cell_facedirs[i],offset);
         if (result != MB_SUCCESS) {
-          cerr << "Could not find face dir in cell" << std::endl;
+          std::cerr << "Could not find face dir in cell" << std::endl;
           assert(result == MB_SUCCESS);
         }
         
@@ -1017,12 +1019,12 @@ void Mesh_MOAB::cell_get_faces_and_dirs_internal_(const Entity_ID cellid,
 
     if (face_dirs) {
       for (int i = 0; i < nf; i++) {
-        MBEntityHandle face = cell_faces[i];
+        moab::EntityHandle face = cell_faces[i];
         int sidenum, offset;
         
         result = mbcore->side_number(cell,face,sidenum,cell_facedirs[i],offset);
         if (result != MB_SUCCESS) {
-          cerr << "Could not find face dir in cell" << std::endl;
+          std::cerr << "Could not find face dir in cell" << std::endl;
           assert(result == MB_SUCCESS);
         }
         
@@ -1054,8 +1056,8 @@ void Mesh_MOAB::cell_get_faces_and_dirs_internal_(const Entity_ID cellid,
 
 void Mesh_MOAB::cell_get_nodes(Entity_ID cellid, Entity_ID_List *cnodes) const
 {
-  MBEntityHandle cell;
-  std::vector<MBEntityHandle> cell_nodes;
+  moab::EntityHandle cell;
+  std::vector<moab::EntityHandle> cell_nodes;
   int *cell_nodeids;
   int nn, result;
 
@@ -1093,8 +1095,8 @@ void Mesh_MOAB::cell_get_nodes(Entity_ID cellid, Entity_ID_List *cnodes) const
 
 void Mesh_MOAB::face_get_nodes(Entity_ID faceid, Entity_ID_List *fnodes) const 
 {
-  MBEntityHandle face;
-  std::vector<MBEntityHandle> face_nodes;
+  moab::EntityHandle face;
+  std::vector<moab::EntityHandle> face_nodes;
   int *face_nodeids;
   int nn, result;
 
@@ -1142,7 +1144,7 @@ void Mesh_MOAB::face_get_nodes(Entity_ID faceid, Entity_ID_List *fnodes) const
 
 void Mesh_MOAB::node_get_coordinates(Entity_ID node_id, AmanziGeometry::Point *ncoord) const 
 {
-  MBEntityHandle node;
+  moab::EntityHandle node;
   double coords[3];
 
   node = vtx_id_to_handle[node_id];
@@ -1153,8 +1155,7 @@ void Mesh_MOAB::node_get_coordinates(Entity_ID node_id, AmanziGeometry::Point *n
     assert(result == MB_SUCCESS);
   }
 
-  ncoord->init(space_dim_);
-  ncoord->set(coords);
+  ncoord->set(space_dim_, coords);
 }
 
 
@@ -1164,7 +1165,7 @@ void Mesh_MOAB::node_get_coordinates(Entity_ID node_id, AmanziGeometry::Point *n
 void Mesh_MOAB::node_set_coordinates(const AmanziMesh::Entity_ID nodeid, 
                                      const double *coords)
 {
-  MBEntityHandle v = vtx_id_to_handle[nodeid];
+  moab::EntityHandle v = vtx_id_to_handle[nodeid];
 
   int result = mbcore->set_coords(&v, 1, coords);
   if (result != MB_SUCCESS) {
@@ -1177,7 +1178,7 @@ void Mesh_MOAB::node_set_coordinates(const AmanziMesh::Entity_ID nodeid,
 void Mesh_MOAB::node_set_coordinates(const AmanziMesh::Entity_ID nodeid, 
                                      const AmanziGeometry::Point coords)
 {
-  MBEntityHandle v = vtx_id_to_handle[nodeid];
+  moab::EntityHandle v = vtx_id_to_handle[nodeid];
 
   double coordarray[3] = {0.0,0.0,0.0};
 
@@ -1194,8 +1195,8 @@ void Mesh_MOAB::node_set_coordinates(const AmanziMesh::Entity_ID nodeid,
 
 void Mesh_MOAB::cell_get_coordinates(Entity_ID cellid, std::vector<AmanziGeometry::Point> *ccoords) const
 {
-  MBEntityHandle cell;
-  std::vector<MBEntityHandle> cell_nodes;
+  moab::EntityHandle cell;
+  std::vector<moab::EntityHandle> cell_nodes;
   double *coords;
   int nn, result;
 
@@ -1233,8 +1234,8 @@ void Mesh_MOAB::cell_get_coordinates(Entity_ID cellid, std::vector<AmanziGeometr
 
 void Mesh_MOAB::face_get_coordinates(Entity_ID faceid, std::vector<AmanziGeometry::Point> *fcoords) const
 {
-  MBEntityHandle face;
-  std::vector<MBEntityHandle> face_nodes;
+  moab::EntityHandle face;
+  std::vector<moab::EntityHandle> face_nodes;
   double *coords;
   int nn, result;
 
@@ -1284,18 +1285,19 @@ void Mesh_MOAB::face_get_coordinates(Entity_ID faceid, std::vector<AmanziGeometr
 }
   
 
-MBTag Mesh_MOAB::build_set(const AmanziGeometry::RegionPtr region,
-                           const Entity_kind kind) const {
-
+moab::Tag Mesh_MOAB::build_set(
+    const Teuchos::RCP<const AmanziGeometry::Region>& region,
+    const Entity_kind kind) const
+{
   int celldim = Mesh::manifold_dimension();
   int space_dim_ = Mesh::space_dimension();
-  AmanziGeometry::GeometricModelPtr gm = Mesh::geometric_model();
+  Teuchos::RCP<const AmanziGeometry::GeometricModel> gm = Mesh::geometric_model();
   int one = 1;
-  MBTag tag;
+  moab::Tag tag;
 
   // Modify region/set name by prefixing it with the type of entity requested
 
-  std::string internal_name = internal_name_of_set(region,kind);
+  std::string internal_name = internal_name_of_set(region, kind);
 
   // Create entity set based on the region defintion  
 
@@ -1322,7 +1324,7 @@ MBTag Mesh_MOAB::build_set(const AmanziGeometry::RegionPtr region,
       mbcore->tag_get_handle(internal_name.c_str(),1,MB_TYPE_INTEGER,tag,
                            MB_TAG_CREAT|MB_TAG_SPARSE);
       
-      rgnpnt = ((AmanziGeometry::PointRegionPtr)region)->point();
+      rgnpnt = Teuchos::rcp_static_cast<const AmanziGeometry::RegionPoint>(region)->point();
         
       int nnode = num_entities(NODE, USED);
       double mindist2 = 1.e+16;
@@ -1499,21 +1501,22 @@ MBTag Mesh_MOAB::build_set(const AmanziGeometry::RegionPtr region,
   if (region->type() == AmanziGeometry::LOGICAL) {
     std::string new_internal_name;
 
-    AmanziGeometry::LogicalRegionPtr boolregion = (AmanziGeometry::LogicalRegionPtr) region;
+    Teuchos::RCP<const AmanziGeometry::RegionLogical> boolregion =
+        Teuchos::rcp_static_cast<const AmanziGeometry::RegionLogical>(region);
     std::vector<std::string> region_names = boolregion->component_regions();
     int nreg = region_names.size();
     
-    std::vector<MBTag> tags;
-    std::vector<AmanziGeometry::RegionPtr> regions;
-    MBTag tag1;
-    MBRange entset;
+    std::vector<moab::Tag> tags;
+    std::vector<Teuchos::RCP<const AmanziGeometry::Region> > regions;
+    moab::Tag tag1;
+    moab::Range entset;
     
     for (int r = 0; r < nreg; r++) {
-      AmanziGeometry::RegionPtr rgn1 = gm->FindRegion(region_names[r]);
+      Teuchos::RCP<const AmanziGeometry::Region> rgn1 = gm->FindRegion(region_names[r]);
       regions.push_back(rgn1);
 
       // Did not find the region
-      if (rgn1 == NULL) {
+      if (rgn1 == Teuchos::null) {
         std::stringstream mesg_stream;
         mesg_stream << "Geometric model has no region named " << 
           region_names[r];
@@ -1535,7 +1538,7 @@ MBTag Mesh_MOAB::build_set(const AmanziGeometry::RegionPtr region,
 
     if (boolregion->operation() == AmanziGeometry::COMPLEMENT) {
       int *values[1] = {&one};
-      MBRange entset1, entset2;
+      moab::Range entset1, entset2;
 
       switch (kind) {
       case CELL:
@@ -1577,7 +1580,7 @@ MBTag Mesh_MOAB::build_set(const AmanziGeometry::RegionPtr region,
     }
     else if (boolregion->operation() == AmanziGeometry::UNION) {
 
-      MBRange entset, entset1;
+      moab::Range entset, entset1;
       switch (kind) {
       case CELL:
         for (int i = 0; i < tags.size(); i++) {
@@ -1614,7 +1617,7 @@ MBTag Mesh_MOAB::build_set(const AmanziGeometry::RegionPtr region,
     }
     else if (boolregion->operation() == AmanziGeometry::SUBTRACT) {
       int *values[1] = {&one};
-      MBRange entset1, entset2;
+      moab::Range entset1, entset2;
 
       switch (kind) {
       case CELL:
@@ -1661,8 +1664,8 @@ MBTag Mesh_MOAB::build_set(const AmanziGeometry::RegionPtr region,
     mbcore->tag_get_handle(new_internal_name.c_str(),1,MB_TYPE_INTEGER,tag,
                            MB_TAG_CREAT | MB_TAG_SPARSE);
 
-    for (MBRange::iterator it = entset.begin(); it != entset.end(); ++it) {
-      MBEntityHandle ent = *it;
+    for (auto it = entset.begin(); it != entset.end(); ++it) {
+      moab::EntityHandle ent = *it;
       mbcore->tag_set_data(tag,&ent,1,&one);
     }
   }
@@ -1687,15 +1690,15 @@ void Mesh_MOAB::get_set_entities_and_vofs(const std::string setname,
   
   setents->clear();
 
-  AmanziGeometry::GeometricModelPtr gm = Mesh::geometric_model();
+  Teuchos::RCP<const AmanziGeometry::GeometricModel> gm = Mesh::geometric_model();
 
   // Is there an appropriate region by this name?
 
-  AmanziGeometry::RegionPtr rgn = gm->FindRegion(setname);
+  Teuchos::RCP<const AmanziGeometry::Region> rgn = gm->FindRegion(setname);
 
   // Did not find the region
   
-  if (rgn == NULL) {
+  if (rgn == Teuchos::null) {
     std::stringstream mesg_stream;
     mesg_stream << "Geometric model has no region named " << setname;
     Errors::Message mesg(mesg_stream.str());
@@ -1705,14 +1708,14 @@ void Mesh_MOAB::get_set_entities_and_vofs(const std::string setname,
 
   std::string internal_name = internal_name_of_set(rgn,kind);
 
-  MBRange mset1;
+  moab::Range mset1;
 
   // If region is of type labeled set and a mesh set should have been
   // initialized from the input file
   
-  if (rgn->type() == AmanziGeometry::LABELEDSET)
-    {
-      AmanziGeometry::LabeledSetRegionPtr lsrgn = dynamic_cast<AmanziGeometry::LabeledSetRegionPtr> (rgn);
+  if (rgn->type() == AmanziGeometry::LABELEDSET) {
+      Teuchos::RCP<const AmanziGeometry::RegionLabeledSet> lsrgn =
+          Teuchos::rcp_static_cast<const AmanziGeometry::RegionLabeledSet>(rgn);
       std::string label = lsrgn->label();
       std::stringstream labelstream(label);
       int labelint;
@@ -1742,12 +1745,11 @@ void Mesh_MOAB::get_set_entities_and_vofs(const std::string setname,
                                              (void **)values,1,mset1);
 
     }
-  else
-    {
+  else {
       // Modify region/set name by prefixing it with the type of
       // entity requested
 
-      MBTag tag = 0;
+      moab::Tag tag = 0;
       bool created;
       int *values[1] = {&one};
 
@@ -1793,8 +1795,8 @@ void Mesh_MOAB::get_set_entities_and_vofs(const std::string setname,
 
     switch (ptype) {
     case OWNED:
-      for (MBRange::iterator it = mset1.begin(); it != mset1.end(); ++it) {
-        MBEntityHandle ent = *it;
+      for (auto it = mset1.begin(); it != mset1.end(); ++it) {
+        moab::EntityHandle ent = *it;
 
         mbcomm_->get_pstatus(ent,pstatus);
         if ((pstatus & PSTATUS_NOT_OWNED) == 0) {
@@ -1804,8 +1806,8 @@ void Mesh_MOAB::get_set_entities_and_vofs(const std::string setname,
       }
       break;
     case GHOST:
-      for (MBRange::iterator it = mset1.begin(); it != mset1.end(); ++it) {
-        MBEntityHandle ent = *it;
+      for (auto it = mset1.begin(); it != mset1.end(); ++it) {
+        moab::EntityHandle ent = *it;
 
         mbcomm_->get_pstatus(ent,pstatus);
         if ((pstatus & PSTATUS_NOT_OWNED) == 1) {
@@ -1815,8 +1817,8 @@ void Mesh_MOAB::get_set_entities_and_vofs(const std::string setname,
       }
       break;
     case USED:
-      for (MBRange::iterator it = mset1.begin(); it != mset1.end(); ++it) {
-        MBEntityHandle ent = *it;
+      for (auto it = mset1.begin(); it != mset1.end(); ++it) {
+        moab::EntityHandle ent = *it;
 
         mbcore->tag_get_data(lid_tag,&ent,1,&lid);
         (*setents)[nent_loc++] = lid;
@@ -1890,10 +1892,10 @@ void Mesh_MOAB::face_get_cells_internal_(const Entity_ID faceid,
                                          Entity_ID_List *cellids) const
 {
   int result;
-  MBEntityHandle face = face_id_to_handle[faceid];
-  MBRange fcells;
+  moab::EntityHandle face = face_id_to_handle[faceid];
+  moab::Range fcells;
   
-  result = mbcore->get_adjacencies(&face,1,celldim,true,fcells,MBCore::UNION);
+  result = mbcore->get_adjacencies(&face,1,celldim,true,fcells,Core::UNION);
   if (result != MB_SUCCESS) {
     std::cerr << "Could not get cells of face" << faceid << std::endl;
     assert(result == MB_SUCCESS);
@@ -2154,7 +2156,7 @@ void Mesh_MOAB::init_node_map()
 
 Entity_ID Mesh_MOAB::GID(Entity_ID lid, Entity_kind kind) const
 {
-  MBEntityHandle ent;
+  moab::EntityHandle ent;
   Entity_ID gid;
 
   switch (kind) {
@@ -2234,7 +2236,7 @@ const Epetra_Import& Mesh_MOAB::exterior_face_importer(void) const
 Parallel_type Mesh_MOAB::entity_get_ptype(const Entity_kind kind, 
                                           const Entity_ID entid) const
 {
-  MBEntityHandle ent;
+  moab::EntityHandle ent;
   unsigned char pstatus;
 
   switch (kind) {
@@ -2268,15 +2270,15 @@ Cell_type Mesh_MOAB::cell_get_type(const Entity_ID cellid) const
     
 
 std::string 
-Mesh_MOAB::internal_name_of_set(const AmanziGeometry::RegionPtr r,
+Mesh_MOAB::internal_name_of_set(const Teuchos::RCP<const AmanziGeometry::Region>& r,
                                 const Entity_kind entity_kind) const
 {
   std::string internal_name;
   
   if (r->type() == AmanziGeometry::LABELEDSET) {
     
-    AmanziGeometry::LabeledSetRegionPtr lsrgn = 
-      dynamic_cast<AmanziGeometry::LabeledSetRegionPtr> (r);
+    Teuchos::RCP<const AmanziGeometry::RegionLabeledSet> lsrgn =
+        Teuchos::rcp_static_cast<const AmanziGeometry::RegionLabeledSet>(r);
     std::string label = lsrgn->label();
 
     if (entity_kind == CELL)

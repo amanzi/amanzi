@@ -26,7 +26,7 @@ set(GEOCHEM_LIBS
 
 add_executable(${BATCH_EXE_NAME} ${BATCH_EXE_SRCS})
 target_link_libraries(${BATCH_EXE_NAME}
-                      ${GEOCHEM_LIBS} atk error_handling ${Teuchos_LIBRARIES})
+                      ${GEOCHEM_LIBS} atk error_handling ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES})
 
 if (NOT (${CHEM_SOURCE_DIR} EQUAL ${CHEM_BINARY_DIR}))
   execute_process(COMMAND ${CMAKE_COMMAND} -E 

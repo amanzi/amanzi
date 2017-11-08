@@ -83,6 +83,8 @@ class SecondaryVariablesFieldEvaluator : public FieldEvaluator {
   KeySet dependencies_;
   bool check_derivative_;
 
+  bool nonlocal_dependencies_;
+  
 }; // class FieldEvaluator
 
 } // namespace Amanzi

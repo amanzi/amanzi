@@ -9,6 +9,7 @@
 #include "CompositionFunction.hh"
 #include "ConstantFunction.hh"
 #include "DistanceFunction.hh"
+#include "SquareDistanceFunction.hh"
 #include "FunctionFactory.hh"
 #include "LinearFunction.hh"
 #include "MonomialFunction.hh"
@@ -65,6 +66,8 @@ Function* FunctionFactory::Create(Teuchos::ParameterList& list) const
         f = create_bilinear(function_params);
       else if (function_type == "function-distance")
         f = create_distance(function_params);
+      else if (function_type == "function-squaredistance")
+        f = create_squaredistance(function_params);
       else {  // I don't recognize this function type
         if (f) delete f;
         Errors::Message m;
@@ -430,7 +433,7 @@ Function* FunctionFactory::create_composition(Teuchos::ParameterList& params) co
 
 Function* FunctionFactory::create_static_head(Teuchos::ParameterList& params) const
 {
-  Function *f;
+  Function *f = nullptr;
   FunctionFactory factory;
   try {
     double p0 = params.get<double>("p0");
@@ -482,20 +485,26 @@ Function* FunctionFactory::create_standard_math(Teuchos::ParameterList& params) 
 
 Function* FunctionFactory::create_bilinear(Teuchos::ParameterList& params) const
 {
-  Function *f;
+  Function *f = nullptr;
 
   if (params.isParameter("file")) {
     try {
       std::string filename = params.get<std::string>("file");
       HDF5Reader reader(filename);
 
-      int xi, yi; // input indices
+      int xi, yi = 0; // input indices
       std::string x = params.get<std::string>("row header");
       std::string xdim = params.get<std::string>("row coordinate");
       if (xdim.compare(0,1,"t") == 0) xi = 0;  
       else if (xdim.compare(0,1,"x") == 0) xi = 1;  
       else if (xdim.compare(0,1,"y") == 0) xi = 2;  
       else if (xdim.compare(0,1,"z") == 0) xi = 3;  
+      else {
+        Errors::Message m;
+        m << "FunctionFactory: function-bilinear parameter error: invalid \"row coordinate\" \""<< xdim << "\" must be one of \"t,\" \"x,\" \"y,\" \"z.\"";
+        Exceptions::amanzi_throw(m);
+        xi = 0;
+      }
 
       std::string y = params.get<std::string>("column header");
       std::string ydim = params.get<std::string>("column coordinate");
@@ -503,7 +512,13 @@ Function* FunctionFactory::create_bilinear(Teuchos::ParameterList& params) const
       else if (ydim.compare(0,1,"x") == 0) yi = 1;  
       else if (ydim.compare(0,1,"y") == 0) yi = 2;  
       else if (ydim.compare(0,1,"z") == 0) yi = 3;  
-
+      else {
+        Errors::Message m;
+        m << "FunctionFactory: function-bilinear parameter error: invalid \"column coordinate\" \""<< ydim << "\" must be one of \"t,\" \"x,\" \"y,\" \"z.\"";
+        Exceptions::amanzi_throw(m);
+        yi = 0;
+      }
+      
       std::vector<double> vec_x;
       std::vector<double> vec_y;
       std::string v = params.get<std::string>("value header");
@@ -544,6 +559,26 @@ Function* FunctionFactory::create_distance(Teuchos::ParameterList& params) const
   catch (Errors::Message& msg) {
     Errors::Message m;
     m << "FunctionFactory: function-distance parameter error: " << msg.what();
+    Exceptions::amanzi_throw(m);
+  }
+  return f;
+}
+
+Function* FunctionFactory::create_squaredistance(Teuchos::ParameterList& params) const
+{
+  Function *f;
+  try {
+    std::vector<double> x0(params.get<Teuchos::Array<double> >("x0").toVector());
+    std::vector<double> metric(params.get<Teuchos::Array<double> >("metric").toVector());
+    f = new SquareDistanceFunction(x0, metric);
+  } catch (Teuchos::Exceptions::InvalidParameter& msg) {
+    Errors::Message m;
+    m << "FunctionFactory: function-squaredistance parameter error: " << msg.what();
+    Exceptions::amanzi_throw(m);
+  }
+  catch (Errors::Message& msg) {
+    Errors::Message m;
+    m << "FunctionFactory: function-squaredistance parameter error: " << msg.what();
     Exceptions::amanzi_throw(m);
   }
   return f;

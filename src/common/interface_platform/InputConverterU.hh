@@ -80,6 +80,8 @@ class InputConverterU : public InputConverter {
   Teuchos::ParameterList TranslateTrilinosML_();
   Teuchos::ParameterList TranslateHypreAMG_();
   Teuchos::ParameterList TranslateBILU_();
+  Teuchos::ParameterList TranslateLinearSolvers_(
+      std::string tags, std::string method_default, std::string method_enforce);
   Teuchos::ParameterList TranslateSolvers_();
   Teuchos::ParameterList TranslateState_();
   Teuchos::ParameterList TranslateMaterialsPartition_();
@@ -200,6 +202,11 @@ class InputConverterU : public InputConverter {
 
   // global output parameters
   std::string output_prefix_;
+
+  // global names for visualization
+  std::vector<std::string> material_regions_;
+  std::vector<std::string> material_names_;
+  std::vector<int> material_ids_;
 
   // for analysis
   std::vector<std::string> transport_diagnostics_;

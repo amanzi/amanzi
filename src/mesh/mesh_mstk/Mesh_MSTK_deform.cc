@@ -49,6 +49,14 @@ int Mesh_MSTK::deform(const std::vector<double>& target_cell_volumes_in,
   static const double macheps = 2.2e-16;
   static const double sqrt_macheps = sqrt(macheps);
 
+  // This is a specialized function designed for columnar meshes so make sure
+  // that we built the columns first
+
+  if (!Mesh::build_columns()) {
+    std::cerr << "Could not deform mesh as we could not build columns in mesh\n" << std::endl;
+    return 0;
+  }
+  
   // Initialize the deformation function constants
 
   k1 = min_vol_const1;
@@ -1282,15 +1290,13 @@ void Mesh_MSTK::deform_hessian(const int nodeid, double const * const nodexyz,
 
 double Mesh_MSTK::mineigenvalue(const double A[3][3]) const {
   int ndim = space_dimension();
-  double min;
+  double min = 0;
 
   if (ndim == 2) {
     min = (A[0][0] + A[1][1] - sqrt((A[0][0]-A[1][1])*(A[0][0]-A[1][1]) +
                                     4*A[0][1]*A[1][0]))/2.0;
   }
   else {
-    double min = -1;
-    
     double pi = 3.141592;
     double p, q, r, phi;
     double eye[3][3]={ {1,0,0}, {0,1,0}, {0,0,1}};

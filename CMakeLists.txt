@@ -14,6 +14,8 @@ cmake_minimum_required(VERSION 3.1.3)
 # cmake_policy(SET CMP0048 OLD)
 
 set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+#set(CMAKE_CXX_EXTENSIONS OFF)
 
 # Enable testing, ctest needs this
 # all add_test commands are ignored unless this is called!
@@ -49,7 +51,9 @@ include(AmanziOptions)
 include(AmanziTPL)
 # The following line allows us to link third-party libraries not explicitly 
 # found by the logic in AmanziTPL.cmake.
-link_directories(${CMAKE_INSTALL_PREFIX}/tpls/lib)
+#
+# ETC: this is wrong, should point to TPLs, but not necessarily installed here, meaning that lots of ld warnings show up.
+#link_directories(${CMAKE_INSTALL_PREFIX}/tpls/lib)
 
 # Check the mesh framework choice
 if ( (ENABLE_Unstructured)  AND

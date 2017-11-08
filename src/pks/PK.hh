@@ -1,17 +1,66 @@
-/*
-  Process Kernels
+/* -*-  mode: c++; indent-tabs-mode: nil -*- */
+//! The interface for a Process Kernel, an equation or system of equations.
 
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+/*
   Amanzi is released under the three-clause BSD License. 
   The terms of use and "as is" disclaimer for this license are 
   provided in the top-level COPYRIGHT file.
 
-  Author: Ethan Coon
+  Author: Ethan Coon (ecoon@lanl.gov)
+*/
 
-  Virtual interface for Process Kernels. Note that PKs deriving from this
-  class must implement the commented constructor interface as well, and should
-  add the private static member (following the Usage notes in
-  src/pks/PK_Factory.hh) to register the derived PK with the PK factory.
+/*!  
+
+A process kernel represents a single or system of partial/ordinary
+differential equation(s) or conservation law(s), and is used as the
+fundamental unit for coupling strategies.
+
+Implementations of this interface typically are either an MPC
+(multi-process coupler) whose job is to heirarchically couple several
+other PKs and represent the system of equations, or a Physical PK,
+which represents a single equation.
+
+All PKs have the following parameters in their spec:
+
+* `"PK type`" ``[string]``
+
+  The PK type is a special key-word which corresponds to a given class in the PK factory.  See available PK types listed below.
+
+* `"PK name`" ``[string]`` **LIST-NAME**
+
+  This is automatically written as the `"name`" attribute of the containing PK sublist, and need not be included by the user.
+
+Example:
+
+.. code-block:: xml
+
+  <ParameterList name="PKs">
+    <ParameterList name="my cool PK">
+      <Parameter name="PK type" type="string" value="my cool PK"/>
+       ...
+    </ParameterList>
+  </ParameterList>
+
+.. code-block:: xml
+
+  <ParameterList name="PKs">
+    <ParameterList name="Top level MPC">
+      <Parameter name="PK type" type="string" value="strong MPC"/>
+       ...
+    </ParameterList>
+  </ParameterList>
+
+ */
+
+
+/*
+Developer's note:
+
+``PK`` is a virtual interface for a Process Kernel. Note that PKs
+  deriving from this class must implement the commented constructor
+  interface as well, and should add the private static member
+  (following the Usage notes in src/pks/PK_Factory.hh) to register the
+  derived PK with the PK factory.
 */
 
 #ifndef AMANZI_PK_HH_
@@ -56,6 +105,13 @@ class PK {
   // that may need PK's attention. 
   virtual bool AdvanceStep(double t_old, double t_new, bool reinit) = 0;
 
+  // Check whether the solution calculated for the new step is valid.
+  virtual bool ValidStep() { return true; }
+
+  // Tag the primary variable as changed in the DAG
+  virtual void ChangedSolutionPK(const Teuchos::Ptr<State>& S) {}
+  virtual void ChangedSolutionPK() { ChangedSolutionPK(S_next_.ptr()); }
+  
   // Update any needed secondary variables at time t_new from a sucessful step
   // from t_old. This is called after every successful AdvanceStep() call,
   // independent of coupling.
@@ -67,7 +123,6 @@ class PK {
   // Return PK's name
   virtual std::string name() { return name_; }
 
-  virtual bool ValidStep() { return true; }
 
   /////////////////////////////////////////////////////////////////////
 

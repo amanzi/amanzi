@@ -34,8 +34,8 @@ amanzi_source_dir=$(cd $(dirname "$0")/;pwd)
 
 # ASCEM Web address
 ascem_protocol=https
-ascem_site='software.lanl.gov/ascem'
-ascem_tpl_site="${ascem_site}/tpls"
+ascem_site='github.com/amanzi'
+ascem_tpl_site="${ascem_site}/amanzi-tpls"
 
 # Default root build and install prefix
 dflt_build_prefix=`pwd`
@@ -45,8 +45,8 @@ dflt_install_prefix=`pwd`
 amanzi_build_dir="${dflt_build_prefix}/build/amanzi"
 amanzi_install_prefix="${dflt_install_prefix}/install/amanzi"
 
-# Mercurial
-hg_binary=`which hg`
+# Git 
+git_binary=`which git`
 
 # CURL
 curl_binary=`which curl`
@@ -78,6 +78,16 @@ mpi_root_dir=
 
 # TPL (Third Party Libraries)
 
+
+# Spack
+Spack=$FALSE
+Spack_binary=`which spack`
+build_Spack=$FALSE
+
+# xSDK installation (optional)
+xsdk=$FALSE #default is to not use
+xsdk_root_dir=
+
 # Point to a configuration file
 tpl_config_file=
 
@@ -104,6 +114,7 @@ petsc=${TRUE}
 hypre=${TRUE}
 alquimia=${FALSE}
 pflotran=${FALSE}
+crunchtope=${FALSE}
 shared=${FALSE}
 spacedim=2
 native=${FALSE}
@@ -219,9 +230,8 @@ function set_feature()
   if echo $action | grep "enable" > /dev/null 2>/dev/null; then
     eval "${feature}=$TRUE"
   fi
-  echo ${!feature}
-
 }
+
 function parse_feature()
 {
   feature_opt=$1
@@ -290,13 +300,16 @@ Value in brackets indicates default setting.
   petsc                   build the PETSc solver APIs ['"${petsc}"']
 
   pflotran                build the PFlotran geochemistry backend ['"${pflotran}"']
+  crunchtope              build the CrunchTope geochemistry backend ['"${crunchtope}"']
   alquimia                build the Alquimia geochemistry solver APIs ['"${alquimia}"']
 
   test_suite              run Amanzi Test Suite before installing ['"${test_suite}"']
   reg_tests               build regression tests into Amanzi Test Suite ['"${reg_tests}"']
   shared                  build Amanzi and tpls using shared libraries ['"${shared}"']
   native                  build Amanzi with native xml output for debugging enabled ['"${native}"']
-
+  Spack                   build TPLs using the Spack package manager when appropriate ['"${Spack}"']
+  xsdk                    build TPLs available in xSDK first, then supplement with additional 
+                          individual TPL builds ['"${xsdk}"']
 Tool definitions:
 
   --with-c-compiler=FILE     FILE is the C compiler
@@ -311,11 +324,13 @@ Tool definitions:
 
   --with-cmake[=FILE]        FILE is the CMake binary ['"${cmake_binary}"'] without FILE builds CMake
   --with-ctest=FILE          FILE is the CTest binary ['"${ctest_binary}"'], ignored if --with-cmake is set
-  --with-hg=FILE             FILE is the Mercurial binary ['"${hg_binary}"']
+  --with-git=FILE            FILE is the git binary ['"${git_binary}"']
   --with-curl=FILE           FILE is the CURL binary ['"${curl_binary}"']
 
   --with-mpi=DIR             use MPI installed in DIR. Will search for MPI 
                              compiler wrappers under this directory. ['"${mpi_root_dir}"']
+  --with-xsdk=DIR            use libraries already available in xSDK installation in lieu of
+                             downloading and installing them individually. ['"${xsdk_root_dir}"']
 
 
 
@@ -348,8 +363,9 @@ echo '
 Tools:
     cmake_binary ='"${cmake_binary}"'
     ctest_binary ='"${ctest_binary}"'
-    hg_binary    ='"${hg_binary}"'
+    git_binary   ='"${git_binary}"'
     curl_binary  ='"${curl_binary}"'
+    Spack_binary ='"${Spack_binary}"'
     mpi_root_dir ='"${mpi_root_dir}"'
 
 Compilers:
@@ -387,7 +403,10 @@ Build Features:
     petsc               ='"${petsc}"'
     alquimia            ='"${alquimia}"'
     pflotran            ='"${pflotran}"'
+    crunchtope          ='"${crunchtope}"'
     native              ='"${native}"'
+    Spack               ='"${Spack}"'
+    xsdk                ='"${xsdk}"'
 
 Directories:
     prefix                 ='"${prefix}"'
@@ -402,13 +421,12 @@ Directories:
 function parse_argv()
 {
   argv=( "$@" )
-  echo "${argv[1]}"
   last=$(( ${#argv[@]} - 1 ))
   i=0
   while [ $i -le ${last} ]
   do
     opt=${argv[$i]}
-    echo "i: ${i} opt=$opt last: $last"
+    echo "opt:  $opt"
     case ${opt} in
 
       -h|--h|--help)
@@ -506,9 +524,9 @@ function parse_argv()
                  cmake_binary=
                  ;;
 
-      --with-hg=*)
-                 tmp=`parse_option_with_equal "${opt}" 'with-hg'`
-                 hg_binary=`make_fullpath $tmp`
+      --with-git=*)
+                 tmp=`parse_option_with_equal "${opt}" 'with-git'`
+                 git_binary=`make_fullpath $tmp`
                  ;;
 
       --with-curl=*)
@@ -520,6 +538,12 @@ function parse_argv()
                  tmp=`parse_option_with_equal "${opt}" 'with-mpi'`
                  mpi_root_dir=`make_fullpath $tmp`
                  ;;
+
+      --with-xsdk=*)
+                 tmp=`parse_option_with_equal "${opt}" 'with-xsdk'`
+                 xsdk_root_dir=`make_fullpath $tmp`
+                 XSDK=TRUE
+		 ;;
 
       --amanzi-build-dir=*)
                  tmp=`parse_option_with_equal "${opt}" 'amanzi-build-dir'`
@@ -735,24 +759,24 @@ function build_cmake
 
 }
 
-# Mercury functions
-function ascem_hg_clone
+# Git functions
+function ascem_git_clone
 {
   repo=$1
-  ${hg_binary} clone ${ascem_protocol}://${ascem_site}/hg/$repo
+  ${git_binary} clone ${ascem_protocol}://${ascem_site}/$repo
   if [ $? -ne 0 ]; then
     error_message "Failed to clone ${repo} from ${ascem_site}"
     exit_now 30
   fi
 }
 
-function hg_change_branch()
+function git_change_branch()
 {
   branch=$1
   save_dir=`pwd`
   cd ${amanzi_source_dir}
-  status_message "Updating ${amanzi_source_dir} to branch ${branch}"
-  ${hg_binary} update ${branch}
+  status_message "In ${amanzi_source_dir} checking out ${branch}"
+  ${git_binary} checkout ${branch}
   if [ $? -ne 0 ]; then
     error_message "Failed to update ${amanzi_source_dir} to branch ${branch}"
     exit_now 30
@@ -781,6 +805,66 @@ function check_mpi_root
       error_message "MPI root directory ${mpi_root_dir} does not exist"
       exit_now 30
     fi
+
+  fi
+}
+
+# xSDK Check
+function check_xsdk_root
+{
+  if [ -z "${xsdk_root_dir}" ]; then
+
+    xsdk_root_env="${XSDKROOT} ${XSDK_ROOT} ${XSDKHOME} ${XSDK_HOME} ${XSDK_PREFIX}"
+    for env_try in ${xsdk_root_env}; do
+      if [ -e "${env_try}" ]; then
+        xsdk_root_dir="${env_try}"
+        status_message "Located xSDK installation in ${xsdk_root_dir}"
+        break
+      fi
+    done
+
+  else
+
+    if [ ! -e "${xsdk_root_dir}" ] ; then
+      error_message "xSDK root directory ${xsdk_root_dir} does not exist"
+      status_message "Installing xSDK as a TPL"
+    fi
+
+  fi
+}
+
+# Spack Check
+function check_Spack
+{
+
+  if [ ! -e "${Spack_binary}" ]; then
+    error_message "Spack binary does not exist - Will try to locate..."
+
+    if [ ! -e ${tpl_install_prefix}/spack/bin/spack ]; then
+      error_message "Could not locate Spack - Downloading and installing as a TPL"
+#      build_Spack=$TRUE
+#      status_message "build_Spack: ${build_Spack}"
+
+      pwd_save=`pwd`
+      if [ ! -e ${tpl_install_prefix} ]; then
+	  mkdir_now ${tpl_install_prefix}
+      fi
+      cd ${tpl_install_prefix}
+      git clone https://github.com/LLNL/spack.git
+      
+#      if [ ${xsdk} == ${TRUE} ]; then
+#	  cd ${tpl_install_prefix}/spack
+#	  git checkout barry/xsdk
+#	  git pull
+#     fi
+      cd ${pwd_save}
+    fi
+
+      Spack_binary=${tpl_install_prefix}/spack/bin/spack
+      status_message "Spack binary: ${Spack_binary}"
+
+  else
+    status_message "Spack binary: ${Spack_binary}"
 
   fi
 }
@@ -940,12 +1024,12 @@ version_compare()
 function check_tools
 {
 
-  # Check Mercurial
-  if [ ! -e "${hg_binary}" ]; then
-    error_message "Mercurial (hg) binary does not exist"
+  # Check Git
+  if [ ! -e "${git_binary}" ]; then
+    error_message "Git binary does not exist"
     exit_now 10
   fi
-  status_message "Mercury binary: ${hg_binary}"
+  status_message "Git binary: ${git_binary}"
 
   # Check CURL 
   if [ ! -e "${curl_binary}" ]; then
@@ -978,6 +1062,7 @@ function check_tools
     test_suite=${FALSE}
     reg_tests=${FALSE}
   fi
+
   status_message "CMake binary: ${cmake_binary}"
   status_message "CTest binary: ${ctest_binary}"
 
@@ -1081,7 +1166,7 @@ check_mpi_root
 # Define the compilers
 check_compilers
 
-# Check the cmake, hg and curl tools
+# Check the cmake, git and curl tools
 check_tools
 
 # add fpic?
@@ -1099,7 +1184,7 @@ fi
 
 # Change the branch
 if [ ! -z "${amanzi_branch}" ]; then
-  hg_change_branch ${amanzi_branch}
+  git_change_branch ${amanzi_branch}
 fi
 
 # Now build the TPLs if the config file is not defined
@@ -1108,75 +1193,98 @@ if [ -z "${tpl_config_file}" ]; then
   # Return to this directory once the TPL build is complete
   pwd_save=`pwd`
 
+  # Check for Spack
+  if [ "${Spack}" -eq "${TRUE}" ]; then
+      status_message "Building with Spack"
+      check_Spack
+  fi
 
+  # Are we using xSDK?  If so, make sure Spack in enabled
+  if [ "${xsdk}" -eq "${TRUE}" ]; then 
+      status_message "Building with xSDK"
+
+      if [ "${Spack}" -eq "${FALSE}" ]; then
+	status_message "Enabling Spack"
+	Spack=$TRUE
+	check_Spack
+      fi
+
+  fi
   # Define the TPL build source directory
   tpl_build_src_dir=${amanzi_source_dir}/config/SuperBuild
-
+  
   # Configure the TPL build
   cd ${tpl_build_dir}
   ${cmake_binary} \
-      	        -DCMAKE_C_FLAGS:STRING="${build_c_flags}" \
-                -DCMAKE_CXX_FLAGS:STRING="${build_cxx_flags}" \
-                -DCMAKE_Fortran_FLAGS:STRING="${build_fort_flags}" \
-                -DCMAKE_EXE_LINKER_FLAGS:STRING="${build_link_flags}" \
-                -DCMAKE_BUILD_TYPE:STRING=${build_type} \
-                -DCMAKE_C_COMPILER:STRING=${build_c_compiler} \
-                -DCMAKE_CXX_COMPILER:STRING=${build_cxx_compiler} \
-                -DCMAKE_Fortran_COMPILER:STRING=${build_fort_compiler} \
-                -DTPL_INSTALL_PREFIX:STRING=${tpl_install_prefix} \
-                -DENABLE_Structured:BOOL=${structured} \
-                -DENABLE_Unstructured:BOOL=${unstructured} \
-                -DENABLE_CCSE_TOOLS:BOOL=${ccse_tools} \
-                -DENABLE_STK_Mesh:BOOL=${stk_mesh} \
-                -DENABLE_MOAB_Mesh:BOOL=${moab_mesh} \
-                -DENABLE_MSTK_Mesh:BOOL=${mstk_mesh} \
-                -DENABLE_NetCDF4:BOOL=${netcdf4} \
-                -DENABLE_HYPRE:BOOL=${hypre} \
-                -DENABLE_PETSC:BOOL=${petsc} \
-                -DENABLE_ALQUIMIA:BOOL=${alquimia} \
-                -DENABLE_PFLOTRAN:BOOL=${plotran} \
-                -DENABLE_Silo:BOOL=${silo} \
-                -DBUILD_SHARED_LIBS:BOOL=${shared} \
-                -DCCSE_BL_SPACEDIM:INT=${spacedim} \
-                -DPREFER_STATIC_LIBRARIES:BOOL=${static} \
-                ${nersc_tpl_opts} \
-                ${tpl_build_src_dir}
-
+      -DCMAKE_C_FLAGS:STRING="${build_c_flags}" \
+      -DCMAKE_CXX_FLAGS:STRING="${build_cxx_flags}" \
+      -DCMAKE_Fortran_FLAGS:STRING="${build_fort_flags}" \
+      -DCMAKE_EXE_LINKER_FLAGS:STRING="${build_link_flags}" \
+      -DCMAKE_BUILD_TYPE:STRING=${build_type} \
+      -DCMAKE_C_COMPILER:STRING=${build_c_compiler} \
+      -DCMAKE_CXX_COMPILER:STRING=${build_cxx_compiler} \
+      -DCMAKE_Fortran_COMPILER:STRING=${build_fort_compiler} \
+      -DMPI_PREFIX:STRING="${mpi_root_dir}" \
+      -DTPL_INSTALL_PREFIX:STRING=${tpl_install_prefix} \
+      -DENABLE_Structured:BOOL=${structured} \
+      -DENABLE_Unstructured:BOOL=${unstructured} \
+      -DENABLE_CCSE_TOOLS:BOOL=${ccse_tools} \
+      -DENABLE_STK_Mesh:BOOL=${stk_mesh} \
+      -DENABLE_MOAB_Mesh:BOOL=${moab_mesh} \
+      -DENABLE_MSTK_Mesh:BOOL=${mstk_mesh} \
+      -DENABLE_NetCDF4:BOOL=${netcdf4} \
+      -DENABLE_HYPRE:BOOL=${hypre} \
+      -DENABLE_PETSC:BOOL=${petsc} \
+      -DENABLE_ALQUIMIA:BOOL=${alquimia} \
+      -DENABLE_PFLOTRAN:BOOL=${pflotran} \
+      -DENABLE_CRUNCHTOPE:BOOL=${crunchtope} \
+      -DENABLE_Silo:BOOL=${silo} \
+      -DBUILD_SHARED_LIBS:BOOL=${shared} \
+      -DCCSE_BL_SPACEDIM:INT=${spacedim} \
+      -DPREFER_STATIC_LIBRARIES:BOOL=${static} \
+      -DENABLE_SPACK:BOOL=${Spack} \
+      -DSPACK_BINARY:STRING=${Spack_binary} \
+      -DBUILD_SPACK:BOOL=${build_Spack} \
+      -DENABLE_XSDK:BOOL=${xsdk} \
+      -DTPL_DOWNLOAD_DIR:FILEPATH=${tpl_download_dir} \
+      ${nersc_tpl_opts} \
+      ${tpl_build_src_dir}
+  
   if [ $? -ne 0 ]; then
-    error_message "Failed to configure TPL build"
-    exit_now 30
+      error_message "Failed to configure TPL build"
+      exit_now 30
   fi
   status_message "TPL configure complete"
-
+  
   # TPL make 
   cd ${tpl_build_dir}
   make -j ${parallel_jobs}
   if [ $? -ne 0 ]; then
-    error_message "Failed to build TPLs"
-    exit_now 30
+      error_message "Failed to build TPLs"
+      exit_now 30
   fi
-
+  
   # TPL Install
   cd ${tpl_build_dir}
-  make install
-  if [ $? -ne 0 ]; then
-    error_message "Failed to install configure script"
-    exit_now 30
-  fi
-
-  tpl_config_file=${tpl_install_prefix}/share/cmake/amanzi-tpl-config.cmake
-
-  cd ${pwd_save}
-
-  status_message "TPL build complete"
-  status_message "For future Amanzi builds use ${tpl_config_file}"
-
+      make install
+      if [ $? -ne 0 ]; then
+	  error_message "Failed to install configure script"
+	  exit_now 30
+      fi
+      
+      tpl_config_file=${tpl_install_prefix}/share/cmake/amanzi-tpl-config.cmake
+      
+      cd ${pwd_save}
+      
+      status_message "TPL build complete"
+      status_message "For future Amanzi builds use ${tpl_config_file}"
+      
 else 
 
   status_message "Checking configuration file ${tpl_config_file}"
 
   if [ ! -e "${tpl_config_file}" ]; then
-    error_message "Configure file ${amanzi_config_file} does not exist"
+    error_message "Configure file ${tpl_config_file} does not exist"
     exit_now 30
   fi
 
@@ -1220,7 +1328,8 @@ ${cmake_binary} \
               -DENABLE_HYPRE:BOOL=${hypre} \
               -DENABLE_PETSC:BOOL=${petsc} \
               -DENABLE_ALQUIMIA:BOOL=${alquimia} \
-              -DENABLE_PFLOTRAN:BOOL=${plotran} \
+              -DENABLE_PFLOTRAN:BOOL=${pflotran} \
+              -DENABLE_CRUNCHTOPE:BOOL=${crunchtope} \
               -DBUILD_SHARED_LIBS:BOOL=${shared} \
               -DCCSE_BL_SPACEDIM:INT=${spacedim} \
 	      -DENABLE_Regression_Tests:BOOL=${reg_tests} \

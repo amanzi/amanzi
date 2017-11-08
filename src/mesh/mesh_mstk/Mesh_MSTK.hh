@@ -46,7 +46,8 @@ class Mesh_MSTK : public Mesh {
             const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm = Teuchos::null,
             const Teuchos::RCP<const VerboseObject>& verbosity_obj = Teuchos::null,
 	    const bool request_faces = true,
-	    const bool request_edges = false);
+	    const bool request_edges = false,
+	    const Partitioner_type partitioner = PARTITIONER_DEFAULT);
 
   Mesh_MSTK(const char *filename, const Epetra_MpiComm *incomm_, 
             int space_dimension,
@@ -54,7 +55,8 @@ class Mesh_MSTK : public Mesh {
             Teuchos::null,
             const Teuchos::RCP<const VerboseObject>& verbosity_obj = Teuchos::null,
 	    const bool request_faces = true,
-	    const bool request_edges = false);
+	    const bool request_edges = false,
+	    const Partitioner_type partitioner = PARTITIONER_DEFAULT);
 
   // Constructors that generate a mesh internally (regular hexahedral mesh only)
 
@@ -67,7 +69,8 @@ class Mesh_MSTK : public Mesh {
             const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm = Teuchos::null,
             const Teuchos::RCP<const VerboseObject>& verbosity_obj = Teuchos::null,
 	    const bool request_faces = true,
-	    const bool request_edges = false);
+	    const bool request_edges = false,
+	    const Partitioner_type partitioner = PARTITIONER_DEFAULT);
 
   // 2D
   Mesh_MSTK(const double x0, const double y0,
@@ -77,7 +80,8 @@ class Mesh_MSTK : public Mesh {
             const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm = Teuchos::null,
             const Teuchos::RCP<const VerboseObject>& verbosity_obj = Teuchos::null,
 	    const bool request_faces = true,
-	    const bool request_edges = false);
+	    const bool request_edges = false,
+	    const Partitioner_type partitioner = PARTITIONER_DEFAULT);
 
   // Construct a hexahedral mesh from specs 
   Mesh_MSTK(const GenerationSpec& gspec,
@@ -298,6 +302,8 @@ class Mesh_MSTK : public Mesh {
                                  std::vector<double> *vofs) const;
 
 
+  using Mesh::deform; // note this pulls back the node-based deform as well, so that it can be called when referencing a Mesh_MSTK object
+  
   // Deform a mesh so that cell volumes conform as closely as possible
   // to target volumes without dropping below the minimum volumes.  If
   // move_vertical = true, nodes will be allowed to move only in the
@@ -348,6 +354,11 @@ class Mesh_MSTK : public Mesh {
 
   // Miscellaneous
   void write_to_exodus_file(const std::string filename) const;
+
+  // Run MSTK's internal checks - meant for debugging only
+  // Returns true if everything is ok, false otherwise
+
+  bool run_internal_mstk_checks() const;
 
  private:
   MPI_Comm mpicomm_;
@@ -457,6 +468,8 @@ class Mesh_MSTK : public Mesh {
   void init_pedge_dirs();
   void init_pface_lists();
   void init_pface_dirs();
+  void init_pface_dirs_3();
+  void init_pface_dirs_2();
   void init_pcell_lists();
   
   void init_vertex_id2handle_maps();
@@ -476,7 +489,7 @@ class Mesh_MSTK : public Mesh {
   void init_cells();
 
   void init_set_info();
-  void inherit_labeled_sets(MAttrib_ptr copyatt);
+  void inherit_labeled_sets(MAttrib_ptr copyatt, List_ptr src_entities);
   std::string internal_name_of_set(const Teuchos::RCP<const AmanziGeometry::Region>& region,
                                    const Entity_kind entity_kind) const;
   std::string other_internal_name_of_set(const Teuchos::RCP<const AmanziGeometry::Region>& r,

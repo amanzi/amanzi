@@ -37,7 +37,7 @@ XERCES_CPP_NAMESPACE_USE
 Teuchos::ParameterList InputConverterU::TranslateFlow_(const std::string& mode)
 {
   Teuchos::ParameterList out_list;
-  Teuchos::ParameterList* flow_list;
+  Teuchos::ParameterList* flow_list = nullptr;
 
   if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH)
     *vo_->os() << "Translating flow, mode=" << mode << std::endl;
@@ -263,7 +263,7 @@ Teuchos::ParameterList InputConverterU::TranslateWRM_()
           file_list.set<std::string>("file", name.str());
           file_list.set<int>("number of points", 1000);
 
-          *vo_->os() << "water retention curve file:" << name.str() << std::endl;
+          *vo_->os() << "water retention curve file: wrm_" << name.str() << std::endl;
         }
       }
     } else if (strcmp(model.c_str(), "brooks_corey")) {
@@ -855,7 +855,7 @@ void InputConverterU::TranslateFunctionGaussian_(
   std::vector<double> metric(data_tmp.size(), 1.0);
   metric[0] = 0.0;  // ignore time distance
   data_tmp[0] = 0.0;
-  bc_tmp.sublist("function1").sublist("function-distance")
+  bc_tmp.sublist("function1").sublist("function-squaredistance")
       .set<Teuchos::Array<double> >("x0", data_tmp)
       .set<Teuchos::Array<double> >("metric", metric);
   bc_tmp.sublist("function2").sublist("function-constant")

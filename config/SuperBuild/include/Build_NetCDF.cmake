@@ -130,7 +130,7 @@ ExternalProject_Add(${NetCDF_BUILD_TARGET}
                     # -- Output control
                     ${NetCDF_logging_args})
 
-# --- Useful variables for packages that depend on NetCDF (Trilinos, ExodusII)
+# --- Useful variables for packages that depend on NetCDF (Trilinos)
 include(BuildLibraryName)
 build_library_name(netcdf NetCDF_C_LIBRARY APPEND_PATH ${TPL_INSTALL_PREFIX}/lib)
 build_library_name(netcdf_c++ NetCDF_CXX_LIBRARY APPEND_PATH ${TPL_INSTALL_PREFIX}/lib)

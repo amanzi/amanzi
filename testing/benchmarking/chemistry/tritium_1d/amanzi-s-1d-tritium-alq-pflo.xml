@@ -1,0 +1,174 @@
+<amanzi_input version="2.3" type="structured">
+
+  <echo_translated_input format="native" file_name=" amanzi-s-1d-tritium-alq-pflo_native.xml"/>
+
+  <model_description name="1D Flow and Transport, tritium decay">
+    <author>Sergi Molins</author>
+    <units>
+      <length_unit>m</length_unit>
+      <time_unit>y</time_unit>
+      <mass_unit>kg</mass_unit>
+      <conc_unit>molar</conc_unit>
+    </units>
+  </model_description>
+
+  <definitions>
+    <macros>
+      <cycle_macro name="every_step">
+        <start>0</start>
+        <timestep_interval>1</timestep_interval>
+        <stop>-1</stop>
+      </cycle_macro>
+      <time_macro name="every_0.05_year">
+        <start>0</start>
+        <timestep_interval>1.5768e6</timestep_interval>
+        <stop>-1</stop>
+      </time_macro>
+      <time_macro name="every_year">
+        <start>0</start>
+        <timestep_interval>31556926.0</timestep_interval>
+        <stop>-1</stop>
+      </time_macro>
+    </macros>
+  </definitions>
+
+  <process_kernels>
+    <flow state="on" model="saturated"/>
+    <transport state="on"/>
+    <chemistry engine="pflotran+" state="on" database="tritium.dat" />
+  </process_kernels>
+
+  <phases>
+    <liquid_phase name="water">
+      <viscosity>1.002e-3</viscosity>
+      <density>998.2</density>
+      <dissolved_components>
+        <primaries>
+          <primary coefficient_of_diffusion="1.0E-9" first_order_decay_constant="1.78577e-09">Tritium</primary>
+        </primaries>
+      </dissolved_components>
+    </liquid_phase>
+  </phases>
+
+  <execution_controls>
+      <comments> </comments>
+      <verbosity level="high"/>
+      <execution_control_defaults init_dt="1.5768e+5"
+				  max_dt="6.0e+10"
+				  reduction_factor="0.8"
+				  increase_factor="1.25"
+				  mode="transient"
+				  method="bdf1"/>
+      <execution_control start="0.0"
+			 end="1.0"
+			 init_dt= "1.0"
+			 max_dt="6.0e+10"
+			 reduction_factor="0.8"
+			 increase_factor="1.25"
+			 mode="steady"
+			 method="bdf1"/>
+      <execution_control start="1.0" end="1.5778463e9"/>
+  </execution_controls>
+
+  <numerical_controls>
+    <structured_controls>
+      <str_time_step_controls>
+      </str_time_step_controls>
+
+      <str_flow_controls>
+      	<!-- <petsc_options_file>DOTpetsc_hypre</petsc_options_file> -->
+      	<gravity>0</gravity>
+      </str_flow_controls>
+
+      <str_transport_controls>
+      	<max_n_subcycle_transport>10</max_n_subcycle_transport>
+      </str_transport_controls>
+
+      <str_amr_controls>
+	<max_grid_size>64</max_grid_size>
+      </str_amr_controls>
+    </structured_controls>
+  </numerical_controls>
+
+  <mesh>
+    <dimension>2</dimension>
+    <generate>
+      <number_of_cells nx="100" ny="2"/>
+      <box high_coordinates="100.0, 1.0" low_coordinates="0.0, 0.0"/>
+    </generate>
+  </mesh>
+
+  <regions>
+  </regions>
+
+  <geochemistry>
+      <verbosity>silent</verbosity>
+      <constraints>
+        <constraint name="initial">
+          <primary name="Tritium" type="total" value="1.0e-20"/>
+        </constraint>
+        <constraint name="west">
+          <primary name="Tritium" type="total" value="1e-3"/>
+        </constraint>
+      </constraints>
+  </geochemistry>
+
+  <materials>
+    <material name="soil">
+      <mechanical_properties>
+        <porosity value="0.25"/>
+        <!--particle_density value="2720.0"/-->
+      </mechanical_properties>
+      <permeability x="1.0e-12" y="1.0e-12"/>
+      <assigned_regions>All</assigned_regions>
+    </material>
+  </materials>
+
+  <initial_conditions>  
+    <initial_condition name="initial_ic">
+      <assigned_regions>All</assigned_regions>
+      <liquid_phase name="water">
+        <liquid_component name="water">
+          <uniform_pressure value="201325.0"/>
+        </liquid_component>
+        <geochemistry_component>
+          <constraint name="initial"/>
+        </geochemistry_component>
+      </liquid_phase>
+    </initial_condition>
+  </initial_conditions>
+
+  <boundary_conditions>
+    <boundary_condition name="west">
+      <assigned_regions>XLOBC</assigned_regions>
+      <liquid_phase name="water">
+        <liquid_component name="water">
+          <inward_mass_flux value="7.91317859e-6" start="0" function="constant"/>
+        </liquid_component>
+        <geochemistry_component>
+          <constraint name="west" function="constant" start="0.0"/>
+        </geochemistry_component>
+      </liquid_phase>
+    </boundary_condition>
+    <boundary_condition name="east">
+      <assigned_regions>XHIBC</assigned_regions>
+      <liquid_phase name="water">
+        <liquid_component name="water">
+          <uniform_pressure value="201325.0" start="0" function="constant"/>
+        </liquid_component>
+      </liquid_phase>
+    </boundary_condition>
+  </boundary_conditions>
+
+  <output>
+    <vis>
+      <base_filename>plt</base_filename>
+      <num_digits>5</num_digits>
+      <cycle_macros>every_step</cycle_macros>
+    </vis>
+    <checkpoint>
+      <base_filename>chk</base_filename>
+      <num_digits>5</num_digits>
+    </checkpoint>
+  </output>
+</amanzi_input>

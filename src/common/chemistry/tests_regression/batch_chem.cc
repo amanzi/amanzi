@@ -544,7 +544,7 @@ void ParseComponentValue(const std::string& raw_line,
   // if param.size() == 0 then we have a blank line
   if (param.size() != 0) {
     ac::StringTokenizer param_value(param.at(1), spaces);
-    double value;
+    double value = 0.;
     if (param_value.size() > 0) {
       value = std::atof(param_value.at(0).c_str());
     }

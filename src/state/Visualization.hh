@@ -47,7 +47,6 @@ Example:
 #include <string>
 
 #include "Teuchos_ParameterList.hpp"
-#include "Epetra_Comm.h"
 #include "Epetra_MultiVector.h"
 
 #include "Mesh.hh"
@@ -60,13 +59,16 @@ class Output;
 
 class Visualization : public IOEvent {
  public:
-  Visualization(Teuchos::ParameterList& plist, Epetra_MpiComm *comm);
+  Visualization(Teuchos::ParameterList& plist);
   Visualization();
 
   Teuchos::RCP<const AmanziMesh::Mesh> mesh() const { return mesh_; }
   void set_mesh(const Teuchos::RCP<const AmanziMesh::Mesh> mesh) {
     mesh_ = mesh;
   }
+
+  std::string name() const { return name_; }
+  void set_name(const std::string& name) { name_ = name; }
 
   // public interface for coordinator clients
   void CreateFiles();
@@ -82,6 +84,7 @@ class Visualization : public IOEvent {
  protected:
   void ReadParameters_();
 
+  std::string name_;
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
   Teuchos::RCP<Output> visualization_output_;
 

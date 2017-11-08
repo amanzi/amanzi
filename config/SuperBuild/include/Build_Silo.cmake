@@ -27,18 +27,34 @@ set(cpp_flag_list
 list(REMOVE_DUPLICATES cpp_flag_list)
 build_whitespace_string(silo_cppflags ${cpp_flags_list})
 
+
 build_whitespace_string(silo_fcflags
                        ${Amanzi_COMMON_FCFLAGS})
-
 
 # Silo install directory
 set(silo_install_dir ${TPL_INSTALL_PREFIX})
 
+# Silo shared libraries
 if (BUILD_SHARED_LIBS)
     set(CONFIG_SILO_SHARED --enable-shared=1)
 else()
     set(CONFIG_SILO_SHARED --enable-shared=0)
 endif()
+
+# --- Set the name of the patch 
+set(Silo_patch_file silo-4.10.2-remove-mpiposix.patch)
+
+set(Silo_sh_patch ${Silo_prefix_dir}/silo-patch-step.sh)
+configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/silo-patch-step.sh.in
+               ${Silo_sh_patch}
+               @ONLY)
+# --- Configure the CMake patch step
+set(Silo_cmake_patch ${Silo_prefix_dir}/silo-patch-step.cmake)
+configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/silo-patch-step.cmake.in
+               ${Silo_cmake_patch}
+               @ONLY)
+# --- Set the patch command
+set(Silo_PATCH_COMMAND ${CMAKE_COMMAND} -P ${Silo_cmake_patch})
 
 # --- Add external project build 
 ExternalProject_Add(${Silo_BUILD_TARGET}
@@ -49,6 +65,8 @@ ExternalProject_Add(${Silo_BUILD_TARGET}
                     DOWNLOAD_DIR ${TPL_DOWNLOAD_DIR}               # Download directory
                     URL          ${Silo_URL}                      # URL may be a web site OR a local file
                     URL_MD5      ${Silo_MD5_SUM}                  # md5sum of the archive file
+                    # -- Patch 
+                    PATCH_COMMAND ${Silo_PATCH_COMMAND}
                     # -- Configure
                     SOURCE_DIR        ${Silo_source_dir}          # Source directory
                     CONFIGURE_COMMAND
@@ -58,10 +76,12 @@ ExternalProject_Add(${Silo_BUILD_TARGET}
                                           --with-x=0
                                           --with-hdf5=${TPL_INSTALL_PREFIX}/include,${TPL_INSTALL_PREFIX}/lib
                                           --enable-fortran=0
+                                          FC=${CMAKE_Fortran_COMPILER_USE}
                                           CC=${CMAKE_C_COMPILER_USE}
                                           CXX=${CMAKE_CXX_COMPILER_USE}
                                           CFLAGS=${silo_cflags}
                                           CXXFLAGS=${silo_cxxflags}
+					  LIBS=-ldl
                                           
                     # -- Build
                     BINARY_DIR        ${Silo_build_dir}           # Build directory 

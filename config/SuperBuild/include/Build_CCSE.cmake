@@ -49,20 +49,21 @@ set(CCSE_CMAKE_CACHE_ARGS
 
 
 # --- Set the name of the patch
-## set(CCSE_patch_file ccse-1.3.0-tools-vpath.patch)
+set(CCSE_patch_file ccse-1.3.4-dependency.patch ccse-1.3.4-tools-compilers.patch)
 # --- Configure the bash patch script
-# set(CCSE_sh_patch ${CCSE_prefix_dir}/ccse-patch-step.sh)
-## configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/ccse-patch-step.sh.in
-##               ${CCSE_sh_patch}
-##               @ONLY)
+set(CCSE_sh_patch ${CCSE_prefix_dir}/ccse-patch-step.sh)
+configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/ccse-patch-step.sh.in
+               ${CCSE_sh_patch}
+               @ONLY)
 # --- Configure the CMake patch step
-##set(CCSE_cmake_patch ${CCSE_prefix_dir}/ccse-patch-step.cmake)
-##configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/ccse-patch-step.cmake.in
-##               ${CCSE_cmake_patch}
-##               @ONLY)
+set(CCSE_cmake_patch ${CCSE_prefix_dir}/ccse-patch-step.cmake)
+configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/ccse-patch-step.cmake.in
+               ${CCSE_cmake_patch}
+               @ONLY)
 # --- Set the patch command
-## set(CCSE_PATCH_COMMAND ${CMAKE_COMMAND} -P ${CCSE_cmake_patch})     
+set(CCSE_PATCH_COMMAND ${CMAKE_COMMAND} -P ${CCSE_cmake_patch})     
 
+  
 # --- Add external project build and tie to the CCSE build target
 ExternalProject_Add(${CCSE_BUILD_TARGET}
                     DEPENDS   ${CCSE_PACKAGE_DEPENDS}             # Package dependency target
@@ -72,9 +73,7 @@ ExternalProject_Add(${CCSE_BUILD_TARGET}
                     DOWNLOAD_DIR ${TPL_DOWNLOAD_DIR}              # Download directory
                     URL          ${CCSE_URL}                      # URL may be a web site OR a local file
                     URL_MD5      ${CCSE_MD5_SUM}                  # md5sum of the archive file
-                    # -- Patch 
-		    # PATCH_COMMAND ${CCSE_PATCH_COMMAND}                    
-		    PATCH_COMMAND
+		    PATCH_COMMAND ${CCSE_PATCH_COMMAND}                    
                     # -- Configure
                     SOURCE_DIR       ${CCSE_source_dir}           # Source directory
                     CMAKE_CACHE_ARGS ${CCSE_CMAKE_CACHE_ARGS}     # CMAKE_CACHE_ARGS or CMAKE_ARGS => CMake configure
@@ -87,34 +86,92 @@ ExternalProject_Add(${CCSE_BUILD_TARGET}
                     # -- Output control
                     ${CCSE_logging_args}) 
 
-if ( ENABLE_CCSE_TOOLS )
-
 # --- This custom command builds fsnapshot.so, which is a Python module used 
 # --- to extract Amanzi-S plot data. It executes after the CCSE library is 
 # --- built, builds the module, and copies it into place.
-add_custom_command(TARGET ${CCSE_BUILD_TARGET}
-                   POST_BUILD
-                   COMMAND $(MAKE) BOXLIB_HOME=${CCSE_source_dir}
-                   COMMAND ${CMAKE_COMMAND} -E copy fsnapshot.so ${TPL_INSTALL_PREFIX}/lib
-                   DEPENDS ${CCSE_BUILD_TARGET}
-                   WORKING_DIRECTORY ${CCSE_source_dir}/Tools/Py_util)
+if (ENABLE_CCSE_TOOLS)
 
-# --- This guy right here builds AMRDeriveTecplot, an executable program for 
-# --- producing Tecplot/ASCII output from CCSE's native AMR output.
-# --- Like the fsnapshot.so command above, it executes after the CCSE library 
-# --- is built, builds the module, and copies it into place.
-if (${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
-    # We need to link against libquadmath on Linux, it seems.
-  set(AMRDERIVETECPLOT_ARGS "LDFLAGS=\"-lquadmath\"")
-endif()
-if (APPLE)
-  set(AMRDERIVETECPLOT_ARGS "LDFLAGS=\"-lgfortran\"")
-endif()
-add_custom_command(TARGET ${CCSE_BUILD_TARGET}
-                   POST_BUILD
-                   COMMAND $(MAKE) BOXLIB_HOME=${CCSE_source_dir} ${AMRDERIVETECPLOT_ARGS}
-                   COMMAND cp AmrDeriveTecplot*.ex ${TPL_INSTALL_PREFIX}/bin
-                   DEPENDS ${CCSE_BUILD_TARGET}
-                   WORKING_DIRECTORY ${CCSE_source_dir}/Tools/C_util/AmrDeriveTecplot)
+  message(STATUS "CCSE: Unwrapping MPI compilers to build shared libraries for python tools")
+  if ( CMAKE_C_COMPILER_USE MATCHES "mpi" )
+    execute_process(
+      COMMAND ${CMAKE_C_COMPILER_USE} -show
+      OUTPUT_VARIABLE  COMPILE_CMDLINE OUTPUT_STRIP_TRAILING_WHITESPACE
+      ERROR_VARIABLE   COMPILE_CMDLINE ERROR_STRIP_TRAILING_WHITESPACE
+      RESULT_VARIABLE  COMPILER_RETURN
+      )
+    # Extract the name of the compiler
+    if ( COMPILER_RETURN EQUAL 0)
+       string(REPLACE " " ";" COMPILE_CMDLINE_LIST ${COMPILE_CMDLINE})
+       list(GET COMPILE_CMDLINE_LIST 0 RAW_C_COMPILER)
+    else()
+       message (FATAL_ERROR "CCSE: Unable to determine the compiler command")
+    endif()
+  else()
+   set(RAW_CC_COMPILER ${CMAKE_C_COMPILER_USE})
+  endif()
+  message (STATUS "CCSE: RAW_C_COMPILER       = ${RAW_C_COMPILER}")
 
+
+  if ( CMAKE_CXX_COMPILER_USE MATCHES "mpi" )
+    execute_process(
+      COMMAND ${CMAKE_CXX_COMPILER_USE} -show
+      OUTPUT_VARIABLE  COMPILE_CMDLINE OUTPUT_STRIP_TRAILING_WHITESPACE
+      ERROR_VARIABLE   COMPILE_CMDLINE ERROR_STRIP_TRAILING_WHITESPACE
+      RESULT_VARIABLE  COMPILER_RETURN
+      )
+    # Extract the name of the compiler
+    if ( COMPILER_RETURN EQUAL 0)
+       string(REPLACE " " ";" COMPILE_CMDLINE_LIST ${COMPILE_CMDLINE})
+       list(GET COMPILE_CMDLINE_LIST 0 RAW_CXX_COMPILER)
+    else()
+       message (FATAL_ERROR "CCSE: Unable to determine the compiler command")
+    endif()
+  else()
+   set(RAW_CXX_COMPILER ${CMAKE_CXX_COMPILER_USE})
+  endif()
+  message (STATUS "CCSE: RAW_CXX_COMPILER     = ${RAW_CXX_COMPILER}")
+
+  if ( CMAKE_Fortran_COMPILER_USE MATCHES "mpi" )
+    execute_process(
+      COMMAND ${CMAKE_Fortran_COMPILER_USE} -show
+      OUTPUT_VARIABLE  COMPILE_CMDLINE OUTPUT_STRIP_TRAILING_WHITESPACE
+      ERROR_VARIABLE   COMPILE_CMDLINE ERROR_STRIP_TRAILING_WHITESPACE
+      RESULT_VARIABLE  COMPILER_RETURN
+      )
+    # Extract the name of the compiler
+    if ( COMPILER_RETURN EQUAL 0)
+       string(REPLACE " " ";" COMPILE_CMDLINE_LIST ${COMPILE_CMDLINE})
+       list(GET COMPILE_CMDLINE_LIST 0 RAW_Fortran_COMPILER)
+    else()
+       message (FATAL_ERROR "CCSE: Unable to determine the compiler command")
+    endif()
+  else()
+   set(RAW_Fortran_COMPILER ${CMAKE_Fortran_COMPILER_USE})
+  endif()
+  message (STATUS "CCSE: RAW_Fortran_COMPILER = ${RAW_Fortran_COMPILER}")
+
+  add_custom_command(TARGET ${CCSE_BUILD_TARGET}
+                     POST_BUILD
+                     COMMAND $(MAKE) BOXLIB_HOME=${CCSE_source_dir} BOXLIB_f2py_f90=${RAW_Fortran_COMPILER} CC=${RAW_C_COMPILER} CXX=${RAW_CXX_COMPILER} 3>&2 2>&1 > ${CCSE_stamp_dir}/CCSE-tools-build.log
+                     COMMAND ${CMAKE_COMMAND} -E copy fsnapshot.so ${TPL_INSTALL_PREFIX}/lib
+                     DEPENDS ${CCSE_BUILD_TARGET}
+                     WORKING_DIRECTORY ${CCSE_source_dir}/Tools/Py_util)
+
+  # --- This guy right here builds AMRDeriveTecplot, an executable program for 
+  # --- producing Tecplot/ASCII output from CCSE's native AMR output.
+  # --- Like the fsnapshot.so command above, it executes after the CCSE library 
+  # --- is built, builds the module, and copies it into place.
+  #if (${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
+  #  # We need to link against libquadmath on Linux, it seems.
+  #  set(AMRDERIVETECPLOT_ARGS "LDFLAGS=\"-lquadmath\"")
+  #endif()
+  #if (APPLE)
+  #  set(AMRDERIVETECPLOT_ARGS "LDFLAGS=\"-lgfortran\"")
+  #endif()
+  #add_custom_command(TARGET ${CCSE_BUILD_TARGET}
+  #                   POST_BUILD
+  #                   COMMAND $(MAKE) BOXLIB_HOME=${CCSE_source_dir} ${AMRDERIVETECPLOT_ARGS}
+  #                   COMMAND cp AmrDeriveTecplot*.ex ${TPL_INSTALL_PREFIX}/bin
+  #                   DEPENDS ${CCSE_BUILD_TARGET}
+  #                   WORKING_DIRECTORY ${CCSE_source_dir}/Tools/C_util/AmrDeriveTecplot)
 endif()

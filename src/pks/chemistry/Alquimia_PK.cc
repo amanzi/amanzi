@@ -19,7 +19,6 @@
 #include <string>
 
 // TPLs
-#include "boost/mpi.hpp"
 #include "boost/algorithm/string.hpp"
 #include "Epetra_MultiVector.h"
 #include "Epetra_Vector.h"
@@ -72,31 +71,27 @@ Alquimia_PK::Alquimia_PK(Teuchos::ParameterList& pk_tree,
 
   domain_name_ = cp_list_->get<std::string>("domain name", "domain");
 
-  mesh_ = S_->GetMesh(domain_name_);
+  tcc_key_ = Keys::getKey(domain_name_, "total_component_concentration"); 
+  poro_key_ = cp_list_->get<std::string>("porosity key", Keys::getKey(domain_name_, "porosity"));
+  saturation_key_ = cp_list_->get<std::string>("saturation key", Keys::getKey(domain_name_, "saturation_liquid"));
+  fluid_den_key_ = cp_list_->get<std::string>("fluid density key", Keys::getKey(domain_name_, "fluid_density"));
 
-  tcc_key_ = getKey(domain_name_, "total_component_concentration"); 
-  poro_key_ = cp_list_->get<std::string>("porosity key", getKey(domain_name_, "porosity"));
-  saturation_key_ = cp_list_->get<std::string>("saturation key", getKey(domain_name_, "saturation_liquid"));
-  fluid_den_key_ = cp_list_->get<std::string>("fluid density key", getKey(domain_name_, "fluid_density"));
-  molar_fluid_den_key_ = cp_list_->get<std::string>("molar fluid density key", getKey(domain_name_, "molar_density_liquid"));
+  min_vol_frac_key_ = Keys::getKey(domain_name_, "mineral_volume_fractions");
+  min_ssa_key_ = Keys::getKey(domain_name_, "mineral_specific_surface_area");
+  sorp_sites_key_ = Keys::getKey(domain_name_, "sorption_sites");
+  surf_cfsc_key_ = Keys::getKey(domain_name_, "surface_complex_free_site_conc");
+  total_sorbed_key_ = Keys::getKey(domain_name_, "total_sorbed");
+  isotherm_kd_key_ = Keys::getKey(domain_name_, "isotherm_kd");
+  isotherm_freundlich_n_key_ = Keys::getKey(domain_name_, "isotherm_freundlich_n");
+  isotherm_langmuir_b_key_ = Keys::getKey(domain_name_, "isotherm_langmuir_b");
+  free_ion_species_key_ = Keys::getKey(domain_name_, "free_ion_species");
+  primary_activity_coeff_key_ = Keys::getKey(domain_name_, "primary_activity_coeff");
 
-  min_vol_frac_key_ = getKey(domain_name_,"mineral_volume_fractions");
-  min_ssa_key_ = getKey(domain_name_,"mineral_specific_surface_area");
-  sorp_sites_key_ = getKey(domain_name_,"sorption_sites");
-  surf_cfsc_key_ = getKey(domain_name_,"surface_complex_free_site_conc");
-  total_sorbed_key_ = getKey(domain_name_,"total_sorbed");
-  isotherm_kd_key_ = getKey(domain_name_,"isotherm_kd");
-  isotherm_freundlich_n_key_ = getKey(domain_name_,"isotherm_freundlich_n");
-  isotherm_langmuir_b_key_ = getKey(domain_name_,"isotherm_langmuir_b");
-  free_ion_species_key_ = getKey(domain_name_,"free_ion_species");
-  primary_activity_coeff_key_ = getKey(domain_name_,"primary_activity_coeff");
+  ion_exchange_sites_key_ = Keys::getKey(domain_name_, "ion_exchange_sites");
+  ion_exchange_ref_cation_conc_key_ = Keys::getKey(domain_name_, "ion_exchange_ref_cation_conc");
+  secondary_activity_coeff_key_ = Keys::getKey(domain_name_, "secondary_activity_coeff");
+  alquimia_aux_data_key_ = Keys::getKey(domain_name_, "alquimia_aux_data");
 
-  ion_exchange_sites_key_ = getKey(domain_name_,"ion_exchange_sites");
-  //ion_exchange_sites_key_ = "ion_exchange_sites";
-
-  ion_exchange_ref_cation_conc_key_ = getKey(domain_name_,"ion_exchange_ref_cation_conc");
-  secondary_activity_coeff_key_ = getKey(domain_name_,"secondary_activity_coeff");
-  alquimia_aux_data_key_ = getKey(domain_name_,"alquimia_aux_data");
 
   convert2mole_fraction_ = cp_list_->get<bool>("use mole fraction units", false);
 
@@ -129,6 +124,9 @@ Alquimia_PK::Alquimia_PK(Teuchos::ParameterList& pk_tree,
   number_free_ion_ = number_aqueous_components_;
   number_total_sorbed_ = number_aqueous_components_;
 
+  chem_engine_->GetAqueousKineticNames(aqueous_kinetics_names_);
+  number_aqueous_kinetics_ = aqueous_kinetics_names_.size();
+  
   // verbosity object
   vo_ = Teuchos::rcp(new VerboseObject("Chem::Alquimia "+domain_name_, *cp_list_));
   chem_out = &*vo_;
@@ -160,7 +158,7 @@ void Alquimia_PK::Setup(const Teuchos::Ptr<State>& S)
   for (size_t i = 0; i < aux_names.size(); ++i) {
     std::vector<std::vector<std::string> > subname(1);
     subname[0].push_back("0");
-    aux_names[i] = getKey(domain_name_, aux_names[i]);
+    aux_names[i] = Keys::getKey(domain_name_, aux_names[i]);
 
     if (!S->HasField(aux_names[i])) {
       S->RequireField(aux_names[i], passwd_, subname)
@@ -174,7 +172,7 @@ void Alquimia_PK::Setup(const Teuchos::Ptr<State>& S)
       cp_list_->get<Teuchos::Array<std::string> >("auxiliary data");  
     
     for (Teuchos::Array<std::string>::const_iterator it = names.begin(); it != names.end(); ++it) {
-      Key aux_field_name = getKey(domain_name_, *it);
+      Key aux_field_name = Keys::getKey(domain_name_, *it);
       if (!S->HasField(aux_field_name)) {
         std::vector<std::vector<std::string> > subname(1);
         subname[0].push_back("0");
@@ -219,7 +217,7 @@ void Alquimia_PK::Initialize(const Teuchos::Ptr<State>& S)
 
 
   for (size_t i = 0; i < aux_names.size(); ++i) {
-    aux_names[i] = getKey(domain_name_, aux_names[i]);
+    aux_names[i] = Keys::getKey(domain_name_, aux_names[i]);
     InitializeField_(S, aux_names[i], 0.0);
   }
 
@@ -274,7 +272,7 @@ void Alquimia_PK::Initialize(const Teuchos::Ptr<State>& S)
   // now publish auxiliary data to state
   if (aux_output_ != Teuchos::null) {
     for (int i = 0; i < aux_output_->NumVectors(); ++i) {
-      Key full_name = getKey(domain_name_, aux_names_[i]);
+      Key full_name = Keys::getKey(domain_name_, aux_names_[i]);
       Epetra_MultiVector& aux_state = *S->GetFieldData(full_name, passwd_)->ViewComponent("cell", true);
       aux_state[0] = (*aux_output_)[i];
     }
@@ -460,14 +458,14 @@ void Alquimia_PK::XMLParameters()
   }
   Teuchos::ParameterList& state_list = glist_->sublist("state");
   Teuchos::ParameterList& initial_conditions = state_list.sublist("initial conditions");
-  Key geochemical_list_key = getKey(domain_name_,"geochemical conditions");
+  Key geochemical_list_key = Keys::getKey(domain_name_,"geochemical conditions");
   if (initial_conditions.isSublist(geochemical_list_key)) {
     Teuchos::ParameterList geochem_conditions = initial_conditions.sublist(geochemical_list_key);
     ParseChemicalConditionRegions(geochem_conditions, chem_initial_conditions_);
     if (chem_initial_conditions_.empty()) {
       msg << "Alquimia_PK::XMLParameters(): \n";
       msg << "  No geochemical conditions were found in 'State->initial conditions->"
-          <<geochemical_list_key<<"'!\n";
+          << geochemical_list_key << "'!\n";
       Exceptions::amanzi_throw(msg);
     }
   }
@@ -516,7 +514,7 @@ void Alquimia_PK::XMLParameters()
 *
 ******************************************************************* */
 void Alquimia_PK::CopyToAlquimia(int cell,
-                                 AlquimiaMaterialProperties& mat_props,
+                                 AlquimiaProperties& mat_props,
                                  AlquimiaState& state,
                                  AlquimiaAuxiliaryData& aux_data)
 {
@@ -531,22 +529,19 @@ void Alquimia_PK::CopyToAlquimia(int cell,
 ******************************************************************* */
 void Alquimia_PK::CopyToAlquimia(int cell,
                                  Teuchos::RCP<const Epetra_MultiVector> aqueous_components,
-                                 AlquimiaMaterialProperties& mat_props,
+                                 AlquimiaProperties& mat_props,
                                  AlquimiaState& state,
                                  AlquimiaAuxiliaryData& aux_data)
 {
   const Epetra_MultiVector& porosity = *S_->GetFieldData(poro_key_)->ViewComponent("cell", true);
-  //  double water_density = *S_->GetScalarData(fluid_den_key_);
-  double water_density = 998.2;
 
-  if (S_->GetField(fluid_den_key_)->type() == Amanzi::CONSTANT_SCALAR){
+  double water_density(998.2);
+  if (S_->GetField(fluid_den_key_)->type() == Amanzi::CONSTANT_SCALAR) {
     water_density = *S_->GetScalarData(fluid_den_key_);
-  }else if (S_->GetField(fluid_den_key_)->type() == Amanzi::COMPOSITE_VECTOR_FIELD){
+  } else if (S_->GetField(fluid_den_key_)->type() == Amanzi::COMPOSITE_VECTOR_FIELD) {
     const Epetra_MultiVector& fl_den = *S_->GetFieldData(fluid_den_key_)->ViewComponent("cell", true);
     water_density = fl_den[0][cell]; 
   }
-
-  //  std::cout<<*aqueous_components<<"\n";
 
   state.water_density = water_density;
   state.porosity = porosity[0][cell];
@@ -562,12 +557,15 @@ void Alquimia_PK::CopyToAlquimia(int cell,
   // minerals
   assert(state.mineral_volume_fraction.size == number_minerals_);
   assert(state.mineral_specific_surface_area.size == number_minerals_);
+  assert(mat_props.mineral_rate_cnst.size == number_minerals_);
 
   if (number_minerals_ > 0) {
     const Epetra_MultiVector& mineral_vf = *S_->GetFieldData(min_vol_frac_key_)->ViewComponent("cell", true);
     const Epetra_MultiVector& mineral_ssa = *S_->GetFieldData(min_ssa_key_)->ViewComponent("cell", true);
+    const Epetra_MultiVector& mineral_rate = *S_->GetFieldData( mineral_rate_constant_key_)->ViewComponent("cell", true);
     for (unsigned int i = 0; i < number_minerals_; ++i) {
       state.mineral_volume_fraction.data[i] = mineral_vf[i][cell];
+      mat_props.mineral_rate_cnst.data[i] = mineral_rate[i][cell];
       state.mineral_specific_surface_area.data[i] = mineral_ssa[i][cell];
     }
   }
@@ -628,6 +626,15 @@ void Alquimia_PK::CopyToAlquimia(int cell,
       mat_props.langmuir_b.data[i] = isotherm_langmuir_b[i][cell];
     }
   }
+  
+  // first order reaction rate cnst
+  if (number_aqueous_kinetics_ > 0) {
+    const Epetra_MultiVector& aqueous_kinetics_rate = *S_->GetFieldData(first_order_decay_constant_key_)->ViewComponent("cell", true);
+    for (unsigned int i = 0; i < number_aqueous_kinetics_; ++i) {
+      mat_props.aqueous_kinetic_rate_cnst.data[i] = aqueous_kinetics_rate[i][cell];
+    }
+  }
+
 }
 
 
@@ -636,7 +643,7 @@ void Alquimia_PK::CopyToAlquimia(int cell,
 ******************************************************************* */
 void Alquimia_PK::CopyAlquimiaStateToAmanzi(
     const int cell,
-    const AlquimiaMaterialProperties& mat_props,
+    const AlquimiaProperties& mat_props,
     const AlquimiaState& state,
     const AlquimiaAuxiliaryData& aux_data,
     const AlquimiaAuxiliaryOutputData& aux_output,
@@ -726,7 +733,7 @@ void Alquimia_PK::CopyAlquimiaStateToAmanzi(
 x * 
 ******************************************************************* */
 void Alquimia_PK::CopyFromAlquimia(const int cell,
-                                   const AlquimiaMaterialProperties& mat_props,
+                                   const AlquimiaProperties& mat_props,
                                    const AlquimiaState& state,
                                    const AlquimiaAuxiliaryData& aux_data,
                                    const AlquimiaAuxiliaryOutputData& aux_output,
@@ -764,10 +771,12 @@ void Alquimia_PK::CopyFromAlquimia(const int cell,
   if (number_minerals_ > 0) {
     const Epetra_MultiVector& mineral_vf = *S_->GetFieldData(min_vol_frac_key_)->ViewComponent("cell", true);
     const Epetra_MultiVector& mineral_ssa = *S_->GetFieldData(min_ssa_key_)->ViewComponent("cell", true);
+    const Epetra_MultiVector& mineral_rate = *S_->GetFieldData( mineral_rate_constant_key_)->ViewComponent("cell", true);
 
     for (int i = 0; i < number_minerals_; ++i) {
       mineral_vf[i][cell] = state.mineral_volume_fraction.data[i];
       mineral_ssa[i][cell] = state.mineral_specific_surface_area.data[i];
+      mineral_rate[i][cell] = mat_props.mineral_rate_cnst.data[i];
     }
   }
 
@@ -827,7 +836,7 @@ int Alquimia_PK::AdvanceSingleCell(
     double dt, Teuchos::RCP<Epetra_MultiVector>& aqueous_components,
     int cell)
 {
-  // Copy the state and material information from Amanzi's state within 
+  // Copy the state and property information from Amanzi's state within 
   // this cell to Alquimia.
   CopyToAlquimia(cell, aqueous_components, 
                  alq_mat_props_, alq_state_, alq_aux_data_);
@@ -937,7 +946,7 @@ bool Alquimia_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   // now publish auxiliary data to state
   if (aux_output_ != Teuchos::null) {
     for (int i = 0; i < aux_output_->NumVectors(); ++i) {
-      Key full_name = getKey(domain_name_, aux_names_[i]);
+      Key full_name = Keys::getKey(domain_name_, aux_names_[i]);
       Epetra_MultiVector& aux_state = *S_->GetFieldData(full_name, passwd_)->ViewComponent("cell", true);
       aux_state[0] = (*aux_output_)[i];
     }
@@ -990,7 +999,7 @@ void Alquimia_PK::CopyFieldstoNewState(const Teuchos::RCP<State>& S_next){
   for (size_t i = 0; i < aux_names.size(); ++i) {
     std::vector<std::vector<std::string> > subname(1);
     subname[0].push_back("0");
-    aux_names[i] = getKey(domain_name_, aux_names[i]);
+    aux_names[i] = Keys::getKey(domain_name_, aux_names[i]);
     if (S_->HasField(aux_names[i])&&S_next->HasField(aux_names[i])){
       *S_next->GetFieldData(aux_names[i], passwd_)->ViewComponent("cell", false) =
         *S_->GetFieldData(aux_names[i], passwd_)->ViewComponent("cell", false);
@@ -1003,7 +1012,7 @@ void Alquimia_PK::CopyFieldstoNewState(const Teuchos::RCP<State>& S_next){
       cp_list_->get<Teuchos::Array<std::string> >("auxiliary data");  
     
     for (Teuchos::Array<std::string>::const_iterator it = names.begin(); it != names.end(); ++it) {
-      Key aux_field_name = getKey(domain_name_, *it);
+      Key aux_field_name = Keys::getKey(domain_name_, *it);
       if (S_->HasField(aux_field_name) && S_next->HasField(aux_field_name) ) {
         *S_next->GetFieldData(aux_field_name, passwd_)->ViewComponent("cell", false) =
           *S_->GetFieldData(aux_field_name, passwd_)->ViewComponent("cell", false);

@@ -34,8 +34,6 @@
 #include "CompositeVector.hh"
 #include "CompositeVectorSpace.hh"
 
-#include "StateDefs.hh"
-
 #include "Visualization.hh"
 #include "checkpoint.hh"
 #include "ObservationData.hh"
@@ -376,7 +374,7 @@ void ReadCheckpointObservations(Epetra_MpiComm* comm,
                                 std::string filename,
                                 Amanzi::ObservationData& obs_data);
 
-void DeformCheckpointMesh(const Teuchos::Ptr<State>& S);
+  void DeformCheckpointMesh(const Teuchos::Ptr<State>& S, Key domain);
 
 }  // namespace Amanzi
 

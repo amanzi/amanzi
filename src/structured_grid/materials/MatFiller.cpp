@@ -600,14 +600,14 @@ MatFiller::FillCoarseCells(Real               t,
   return true;
 }
 
-const Property::CoarsenRule
+Property::CoarsenRule
 MatFiller::coarsenRule(const std::string& pname) const
 {
   std::map<std::string,Property::CoarsenRule>::const_iterator it = property_cRules.find(pname);
   return ( it == property_cRules.end() ? Property::INVALID_CR : it->second );
 }
 
-const Property::RefineRule
+Property::RefineRule
 MatFiller::refineRule(const std::string& pname) const
 {
   std::map<std::string,Property::RefineRule>::const_iterator it = property_rRules.find(pname);

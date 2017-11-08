@@ -49,12 +49,12 @@ if __name__ == "__main__":
     import os
     import run_amanzi_standard
 
-    input_filename =os.path.join("amanzi_butler_pod_2d.xml")
+    input_file =os.path.join("amanzi_butler_pod_2d.xml")
 
     cwd = os.getcwd()
     try: 
-        run_amanzi_standard.run_amanzi(input_filename, 10, {"mesh_cylinder.exo"})
-        obs_xml = loadInputXML(input_filename)
+        run_amanzi_standard.run_amanzi(input_file, 10, ["mesh_cylinder.exo",input_file])
+        obs_xml = loadInputXML(input_file)
         obs_data = load_amanzi_obs()
 
         obsdata = []

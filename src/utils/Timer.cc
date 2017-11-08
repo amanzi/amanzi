@@ -183,7 +183,6 @@ double Timer::getTime()
   }
   else
   {
-    double time(0.0);
     switch (_type)
     {
       case AVERAGE:

@@ -4,7 +4,7 @@
 # Build TPL: Trilinos
 #    
 # --- Define all the directories and common external project flags
-set(trilinos_depend_projects ${MPI_PROJECT} NetCDF ExodusII Boost)
+set(trilinos_depend_projects ${MPI_PROJECT} NetCDF Boost SEACAS)
 if(ENABLE_HYPRE)
   list(APPEND trilinos_depend_projects HYPRE)
 endif()
@@ -56,13 +56,6 @@ endif()
 # Trilinos 11.0.3 has some C++ compile errors in it that we can sidestep by 
 # defining HAVE_TEUCHOS_ARRAY_BOUNDSCHECK.
 list(APPEND Trilinos_CMAKE_PACKAGE_ARGS "-DTeuchos_ENABLE_ABC:BOOL=ON")
-
-# Remove SEACAS from the build and force STK to use external Exodus
-if ( ENABLE_STK_Mesh )
-  list(APPEND Trilinos_CMAKE_PACKAGE_ARGS "-DTrilinos_ENABLE_SEACAS:STRING=OFF")
-  list(APPEND Trilinos_CMAKE_PACKAGE_ARGS "-DSTK_ENABLE_SEACASExodus:STRING=OFF")
-  list(APPEND Trilinos_CMAKE_PACKAGE_ARGS "-DSTK_ENABLE_SEACASNemesis:STRING=OFF")
-endif()
 
 # Disable Pamgen ( doesn't compile with gnu++14 standard )
 list(APPEND Trilinos_CMAKE_PACKAGE_ARGS "-DTrilinos_ENABLE_Pamgen:STRING=OFF")
@@ -140,19 +133,19 @@ set(Trilinos_CMAKE_EXTRA_ARGS
 if ( CMAKE_BUILD_TYPE )
   list(APPEND Trilinos_CMAKE_EXTRA_ARGS
               "-DCMAKE_BUILD_TYPE:STRING=${CMAKE_BUILD_TYPE}")
-  message(DEBUG "CMAKE_BUILD_TYPE = ${CMAKE_BUILD_TYPE}")
+  message(DEBUG ": CMAKE_BUILD_TYPE = ${CMAKE_BUILD_TYPE}")
 
   if ( ${CMAKE_BUILD_TYPE} STREQUAL "Debug" )
     list(APPEND Trilinos_CMAKE_EXTRA_ARGS
               "-DEpetra_ENABLE_FATAL_MESSAGES:BOOL=ON")
   endif()
-  message(DEBUG "Trilinos_CMAKE_EXTRA_ARGS = ${Trilinos_CMAKE_EXTRA_ARGS}")
+  message(DEBUG ": Trilinos_CMAKE_EXTRA_ARGS = ${Trilinos_CMAKE_EXTRA_ARGS}")
 endif()
 
 if ( BUILD_SHARED_LIBS )
   list(APPEND Trilinos_CMAKE_EXTRA_ARGS
     "-DBUILD_SHARED_LIBS:BOOL=${BUILD_SHARED_LIBS}")
-  message(DEBUG "Trilinos_CMAKE_EXTRA_ARGS = ${Trilinos_CMAKE_EXTRA_ARGS}")
+  message(DEBUG ": Trilinos_CMAKE_EXTRA_ARGS = ${Trilinos_CMAKE_EXTRA_ARGS}")
 endif()
 
 
@@ -267,6 +260,7 @@ ExternalProject_Add(${Trilinos_BUILD_TARGET}
                                         ${Trilinos_CMAKE_ARGS}
                                         -DCMAKE_INSTALL_PREFIX:PATH=<INSTALL_DIR>
 					-DTrilinos_ENABLE_Stratimikos:BOOL=FALSE
+					-DTrilinos_ENABLE_SEACAS:BOOL=FALSE
                     # -- Build
                     BINARY_DIR        ${Trilinos_build_dir}        # Build directory 
                     BUILD_COMMAND     $(MAKE)                      # $(MAKE) enables parallel builds through make

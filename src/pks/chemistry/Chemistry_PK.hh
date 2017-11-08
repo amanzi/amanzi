@@ -64,11 +64,10 @@ class Chemistry_PK : public PK_Physical {
 
   // -- output of error messages.
   void ErrorAnalysis(int ierr, std::string& internal_msg);
-  Key get_domain_name() {return domain_name_;};
+  Key get_domain_name() { return domain_name_; }
 
  protected:
   void InitializeField_(const Teuchos::Ptr<State>& S, std::string fieldname, double default_val);
-
 
  protected:
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
@@ -83,12 +82,16 @@ class Chemistry_PK : public PK_Physical {
   int number_minerals_;
   std::vector<std::string> mineral_names_;
 
+  int number_aqueous_kinetics_;
+  std::vector<std::string> aqueous_kinetics_names_;
+  
   int number_sorption_sites_, number_total_sorbed_;
   std::vector<std::string> sorption_site_names_;
   bool using_sorption_, using_sorption_isotherms_, convert2mole_fraction_;
 
   int number_free_ion_, number_ion_exchange_sites_;
 
+  // names of state fields 
   Key tcc_key_;
   Key poro_key_;
   Key saturation_key_;
@@ -103,8 +106,8 @@ class Chemistry_PK : public PK_Physical {
   Key ion_exchange_sites_key_, ion_exchange_ref_cation_conc_key_;
   Key secondary_activity_coeff_key_;
   Key alquimia_aux_data_key_;
-  
-
+  Key mineral_rate_constant_key_;
+  Key first_order_decay_constant_key_;
 
 #ifdef ALQUIMIA_ENABLED
   Teuchos::RCP<AmanziChemistry::ChemistryEngine> chem_engine_;

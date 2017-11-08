@@ -1051,7 +1051,7 @@ void OperatorDiffusionMFD::UpdateFlux(const CompositeVector& u, CompositeVector&
 
   AmanziMesh::Entity_ID_List faces;
   std::vector<int> dirs;
-  std::vector<int> flag(nfaces_wghost, 0);
+  std::vector<int> hits(nfaces_wghost, 0);
 
   for (int c = 0; c < ncells_owned; c++) {
     mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
@@ -1071,11 +1071,15 @@ void OperatorDiffusionMFD::UpdateFlux(const CompositeVector& u, CompositeVector&
 
     for (int n = 0; n < nfaces; n++) {
       int f = faces[n];
-      if (f < nfaces_owned && !flag[f]) {
+      if (f < nfaces_owned) {
         flux_data[0][f] -= av(n) * dirs[n];
-        flag[f] = 1;
+        hits[f]++;
       }
     }
+  }
+
+  for (int f = 0; f != nfaces_owned; ++f) {
+    flux_data[0][f] /= hits[f];
   }
 }
 

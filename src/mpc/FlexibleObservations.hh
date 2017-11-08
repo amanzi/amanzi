@@ -25,7 +25,7 @@
 #include "TimeStepManager.hh"
 #include "Units.hh"
 #include "VerboseObject.hh"
-#include "Observable.hh"
+#include "ObservableAmanzi.hh"
 
 
 namespace Amanzi {

@@ -12,6 +12,16 @@
     <Parameter name="file name base" type="string" value="plot"/>
     <Parameter name="cycles start period stop 0" type="Array(int)" value="{0, 100, -1}"/>
   </ParameterList>
+  <ParameterList name="walkabout data">
+    <Parameter name="file name base" type="string" value="walkabout"/>
+    <Parameter name="file name digits" type="int" value="5"/>
+    <Parameter name="cycles start period stop 0" type="Array(int)" value="{0, 100, -1}"/>
+    <ParameterList name="write regions">
+      <Parameter name="region names" type="Array(string)" value="{RegionMiddle, RegionBottom, RegionTop}"/>
+      <Parameter name="material names" type="Array(string)" value="{Facies_1, Facies_2, Facies_3}"/>
+      <Parameter name="material ids" type="Array(int)" value="{1000, 2000, 3000}"/>
+    </ParameterList>
+  </ParameterList>
   <ParameterList name="regions">
     <ParameterList name="Bottom Surface">
       <ParameterList name="region: box">
@@ -69,14 +79,14 @@
     </ParameterList>
     <ParameterList name="Well">
       <ParameterList name="region: box">
-        <Parameter name="low coordinate" type="Array(double)" value="{3.29183999999999983e+01, 4.00000000000000000e+01}"/>
-        <Parameter name="high coordinate" type="Array(double)" value="{3.41375999999999920e+01, 6.00000000000000000e+01}"/>
+        <Parameter name="low coordinate" type="Array(double)" value="{3.29184e+01, 4.0e+01}"/>
+        <Parameter name="high coordinate" type="Array(double)" value="{3.41376e+01, 6.0e+01}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Well2">
       <ParameterList name="region: line segment">
-        <Parameter name="end coordinate" type="Array(double)" value="{3.29183999999999983e+01, 3.04799999999999960e-01}"/>
-        <Parameter name="opposite end coordinate" type="Array(double)" value="{3.29183999999999983e+01, 3.38632799999999934e+00}"/>
+        <Parameter name="end coordinate" type="Array(double)" value="{3.29184e+01, 3.048e-01}"/>
+        <Parameter name="opposite end coordinate" type="Array(double)" value="{3.29184e+01, 3.386328e+00}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="All">
@@ -95,6 +105,7 @@
       </ParameterList>
       <ParameterList name="expert">
         <Parameter name="framework" type="string" value="MSTK"/>
+        <Parameter name="partitioner" type="string" value="NOT_SPECIFIED"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="verbose object">
@@ -322,12 +333,10 @@
   <ParameterList name="solvers">
     <ParameterList name="AztecOO">
       <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
-      <Parameter name="iterative method" type="string" value="gmres"/>
-      <ParameterList name="gmres parameters">
-        <Parameter name="error tolerance" type="double" value="1.0e-20"/>
+      <Parameter name="iterative method" type="string" value="pcg"/>
+      <ParameterList name="pcg parameters">
+        <Parameter name="error tolerance" type="double" value="9.99999999999999945e-21"/>
         <Parameter name="maximum number of iterations" type="int" value="100"/>
-        <Parameter name="controller training start" type="int" value="0"/>
-        <Parameter name="controller training end" type="int" value="3"/>
         <ParameterList name="verbose object">
           <Parameter name="verbosity level" type="string" value="high"/>
         </ParameterList>
@@ -339,6 +348,19 @@
       <ParameterList name="pcg parameters">
         <Parameter name="error tolerance" type="double" value="1.0e-20"/>
         <Parameter name="maximum number of iterations" type="int" value="100"/>
+        <ParameterList name="verbose object">
+          <Parameter name="verbosity level" type="string" value="high"/>
+        </ParameterList>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="GMRES with Hypre AMG">
+      <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
+      <Parameter name="iterative method" type="string" value="gmres"/>
+      <ParameterList name="gmres parameters">
+        <Parameter name="error tolerance" type="double" value="9.99999999999999980e-13"/>
+        <Parameter name="maximum number of iterations" type="int" value="100"/>
+        <Parameter name="controller training start" type="int" value="0"/>
+        <Parameter name="controller training end" type="int" value="3"/>
         <ParameterList name="verbose object">
           <Parameter name="verbosity level" type="string" value="high"/>
         </ParameterList>
@@ -496,7 +518,7 @@
                   <ParameterList name="function2">
                     <ParameterList name="function-multiplicative">
                       <ParameterList name="function1">
-                        <ParameterList name="function-distance">
+                        <ParameterList name="function-squaredistance">
                           <Parameter name="x0" type="Array(double)" value="{0.00000000000000000e+00, 1.08000000000000000e+02, 3.38632799999999934e+00}"/>
                           <Parameter name="metric" type="Array(double)" value="{0.00000000000000000e+00, 1.00000000000000000e+00, 1.00000000000000000e+00}"/>
                         </ParameterList>
@@ -537,7 +559,7 @@
           <ParameterList name="pressure-lambda constraints">
             <Parameter name="method" type="string" value="projection"/>
             <Parameter name="inflow krel correction" type="bool" value="true"/>
-            <Parameter name="linear solver" type="string" value="AztecOO"/>
+            <Parameter name="linear solver" type="string" value="GMRES with Hypre AMG"/>
           </ParameterList>
           <Parameter name="time integration method" type="string" value="BDF1"/>
           <ParameterList name="BDF1">
@@ -825,7 +847,7 @@
                   <ParameterList name="function2">
                     <ParameterList name="function-multiplicative">
                       <ParameterList name="function1">
-                        <ParameterList name="function-distance">
+                        <ParameterList name="function-squaredistance">
                           <Parameter name="x0" type="Array(double)" value="{0.00000000000000000e+00, 1.08000000000000000e+02, 3.38632799999999934e+00}"/>
                           <Parameter name="metric" type="Array(double)" value="{0.00000000000000000e+00, 1.00000000000000000e+00, 1.00000000000000000e+00}"/>
                         </ParameterList>
@@ -866,7 +888,7 @@
           <ParameterList name="pressure-lambda constraints">
             <Parameter name="method" type="string" value="projection"/>
             <Parameter name="inflow krel correction" type="bool" value="true"/>
-            <Parameter name="linear solver" type="string" value="AztecOO"/>
+            <Parameter name="linear solver" type="string" value="GMRES with Hypre AMG"/>
           </ParameterList>
           <Parameter name="time integration method" type="string" value="BDF1"/>
           <ParameterList name="BDF1">

@@ -114,20 +114,20 @@ if __name__ == "__main__":
     import os
     import run_amanzi_standard
 
-    input_filename = "amanzi_unconfined_seepage_1d-isv2.xml"
+    input_file = "amanzi_unconfined_seepage_1d-u.xml"
     try: 
-        run_amanzi_standard.run_amanzi(input_filename, 1, ["porflow4_4.exo"])
-        obs_xml=loadInputXML(input_filename)
+        run_amanzi_standard.run_amanzi(input_file, 1, ["porflow4_4.exo",input_file])
+        obs_xml=loadInputXML(input_file)
         
         obs_data=loadDataFile(obs_xml)
 
         fig1 = plt.figure()
         axes1=fig1.add_axes([.15,.15,.80,.80])
        
-        MakeTable(obs_data,obs_xml,input_filename)
+        MakeTable(obs_data,obs_xml,input_file)
 
         cmap = plotTestObservations(obs_xml,obs_data,axes1)
-        plotTestModel(input_filename,cmap,axes1,obs_xml,obs_data)
+        plotTestModel(input_file,cmap,axes1,obs_xml,obs_data)
         # plt.show()
 
     finally:

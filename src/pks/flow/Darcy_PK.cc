@@ -54,12 +54,12 @@ Darcy_PK::Darcy_PK(Teuchos::ParameterList& pk_tree,
   // We need the flow list
   Teuchos::RCP<Teuchos::ParameterList> pk_list = Teuchos::sublist(glist, "PKs", true);
   Teuchos::RCP<Teuchos::ParameterList> flow_list = Teuchos::sublist(pk_list, pk_name, true);
-  dp_list_ = Teuchos::sublist(flow_list, "Darcy problem", true);
+  fp_list_ = Teuchos::sublist(flow_list, "Darcy problem", true);
 
   // We also need iscaleneous sublists
   preconditioner_list_ = Teuchos::sublist(glist, "preconditioners", true);
   linear_operator_list_ = Teuchos::sublist(glist, "solvers", true);
-  ti_list_ = Teuchos::sublist(dp_list_, "time integrator", true);
+  ti_list_ = Teuchos::sublist(fp_list_, "time integrator", true);
 }
 
 
@@ -76,12 +76,12 @@ Darcy_PK::Darcy_PK(const Teuchos::RCP<Teuchos::ParameterList>& glist,
   // We need the flow list
   Teuchos::RCP<Teuchos::ParameterList> pk_list = Teuchos::sublist(glist, "PKs", true);
   Teuchos::RCP<Teuchos::ParameterList> flow_list = Teuchos::sublist(pk_list, pk_list_name, true);
-  dp_list_ = Teuchos::sublist(flow_list, "Darcy problem", true);
+  fp_list_ = Teuchos::sublist(flow_list, "Darcy problem", true);
 
   // We also need iscaleneous sublists
   preconditioner_list_ = Teuchos::sublist(glist, "preconditioners", true);
   linear_operator_list_ = Teuchos::sublist(glist, "solvers", true);
-  ti_list_ = Teuchos::sublist(dp_list_, "time integrator", true);
+  ti_list_ = Teuchos::sublist(fp_list_, "time integrator", true);
 }
 
 
@@ -107,7 +107,7 @@ void Darcy_PK::Setup(const Teuchos::Ptr<State>& S)
 
   // Our decision can be affected by the list of models
   Teuchos::RCP<Teuchos::ParameterList> physical_models =
-      Teuchos::sublist(dp_list_, "physical models and assumptions");
+      Teuchos::sublist(fp_list_, "physical models and assumptions");
   std::string mu_model = physical_models->get<std::string>("viscosity model", "constant viscosity");
   if (mu_model != "constant viscosity") {
     Errors::Message msg;
@@ -120,7 +120,7 @@ void Darcy_PK::Setup(const Teuchos::Ptr<State>& S)
   std::vector<AmanziMesh::Entity_kind> locations;
   std::vector<int> ndofs;
 
-  Teuchos::RCP<Teuchos::ParameterList> list1 = Teuchos::sublist(dp_list_, "operators", true);
+  Teuchos::RCP<Teuchos::ParameterList> list1 = Teuchos::sublist(fp_list_, "operators", true);
   Teuchos::RCP<Teuchos::ParameterList> list2 = Teuchos::sublist(list1, "diffusion operator", true);
   Teuchos::RCP<Teuchos::ParameterList> list3 = Teuchos::sublist(list2, "matrix", true);
   std::string name = list3->get<std::string>("discretization primary");
@@ -198,7 +198,7 @@ void Darcy_PK::Setup(const Teuchos::Ptr<State>& S)
   }
 
   // Require additional components for the existing fields
-  Teuchos::ParameterList abs_perm = dp_list_->sublist("absolute permeability");
+  Teuchos::ParameterList abs_perm = fp_list_->sublist("absolute permeability");
   coordinate_system_ = abs_perm.get<std::string>("coordinate system", "cartesian");
   int noff = abs_perm.get<int>("off-diagonal components", 0);
  
@@ -228,7 +228,7 @@ void Darcy_PK::Initialize(const Teuchos::Ptr<State>& S)
 
   // Create verbosity object to print out initialization statisticsr.,
   Teuchos::ParameterList vlist;
-  vlist.sublist("verbose object") = dp_list_->sublist("verbose object");
+  vlist.sublist("verbose object") = fp_list_->sublist("verbose object");
   vo_ = Teuchos::rcp(new VerboseObject("FlowPK::Darcy", vlist)); 
 
   // Initilize various base class data.
@@ -237,6 +237,7 @@ void Darcy_PK::Initialize(const Teuchos::Ptr<State>& S)
   // Initialize local fields and evaluators. 
   InitializeFields_();
   UpdateLocalFields_(S);
+
 
   // Create solution and auxiliary data for time history.
   solution = S->GetFieldData("pressure", passwd_);
@@ -271,7 +272,7 @@ void Darcy_PK::Initialize(const Teuchos::Ptr<State>& S)
 
   // Create and initialize boundary conditions and source terms.
   flux_units_ = 1.0;
-  InitializeBCsSources_(*dp_list_);
+  InitializeBCsSources_(*fp_list_);
   UpdateSourceBoundaryData(t_ini, t_ini, pressure);
 
   // Initialize diffusion operator and solver.
@@ -279,7 +280,7 @@ void Darcy_PK::Initialize(const Teuchos::Ptr<State>& S)
   double mu = *S->GetScalarData("fluid_viscosity");
   SetAbsolutePermeabilityTensor();
 
-  Teuchos::ParameterList& oplist = dp_list_->sublist("operators")
+  Teuchos::ParameterList& oplist = fp_list_->sublist("operators")
                                             .sublist("diffusion operator")
                                             .sublist("matrix");
   Operators::OperatorDiffusionFactory opfactory;
@@ -317,6 +318,7 @@ void Darcy_PK::Initialize(const Teuchos::Ptr<State>& S)
 
   // Verbose output of initialization statistics.
   InitializeStatistics_(init_darcy);
+
 }
 
 
@@ -419,15 +421,23 @@ bool Darcy_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   sy_g.Scale(factor);
 
   op_->RestoreCheckPoint();
+
   op_acc_->AddAccumulationTerm(*solution, ss_g, dt_, "cell");
   op_acc_->AddAccumulationTerm(*solution, sy_g, "cell");
 
+  // Peaceman model
+  if (S_->HasField("well_index")){
+    const Epetra_MultiVector& wi = *S_->GetFieldData("well_index")->ViewComponent("cell");
+    op_acc_->AddAccumulationTerm(wi);
+  }
+
   op_diff_->ApplyBCs(true, true);
-  op_->AssembleMatrix();
-  op_->InitPreconditioner(preconditioner_name_, *preconditioner_list_);
 
   CompositeVector& rhs = *op_->rhs();
   AddSourceTerms(rhs);
+
+  op_->AssembleMatrix();
+  op_->InitPreconditioner(preconditioner_name_, *preconditioner_list_);
 
   // save pressure at time t^n.
   std::string dt_control = ti_list_->sublist("BDF1").get<std::string>("timestep controller type");

@@ -1,0 +1,181 @@
+<amanzi_input type="structured" version="2.3.0">
+  <echo_translated_input format="native" file_name="non_grid_aligned-s-alq-pflo-native.xml"/>
+  <model_description name="Flow and Transport w/ calcite dissolution">
+    <units>
+      <length_unit>m</length_unit>
+      <time_unit>s</time_unit>
+      <mass_unit>kg</mass_unit>
+      <conc_unit>molar</conc_unit>
+    </units>
+  </model_description>
+  <definitions>
+    <macros>
+      <time_macro name="Observation Times">
+        <time>1.2096E+08</time>
+      </time_macro>
+      <time_macro name="EveryYear">
+        <start>0.0</start>
+        <timestep_interval>1.0e+7</timestep_interval>
+        <stop>1.0e+9</stop>
+      </time_macro>
+      <cycle_macro name="EveryCycle">
+        <start>0</start>
+        <timestep_interval>100</timestep_interval>
+        <stop>-1</stop>
+      </cycle_macro>
+    </macros>
+  </definitions>
+
+  <process_kernels>
+    <flow model="constant" state="on"/>
+    <transport state="on" />
+    <chemistry engine="pflotran+" process_model="none" state="on" input_filename="calcite_pflotran.in" database="calcite_dbs.dat" />
+  </process_kernels>
+
+  <phases>
+    <liquid_phase name="water">
+      <eos>false</eos>
+      <viscosity>1.0E-03</viscosity>
+      <density>1000.0</density>
+      <dissolved_components>
+        <primaries>
+          <primary coefficient_of_diffusion="0.0">CO3--</primary>
+          <primary coefficient_of_diffusion="0.0">Ca++</primary>
+	  <primary coefficient_of_diffusion="0.0">Tracer</primary>
+        </primaries>
+      </dissolved_components>
+    </liquid_phase>
+    <solid_phase name="rock">
+      <minerals>
+        <mineral>Calcite</mineral>
+      </minerals>     
+    </solid_phase>
+  </phases>
+
+  <execution_controls>
+    <verbosity level="high" />
+    <execution_control_defaults init_dt="1.0" mode="steady" max_dt="0.2" reduction_factor="1.0" increase_factor="1.0" method="bdf1"/>
+    <execution_control end="0.0" mode="steady" start="0.0" max_dt="0.2"/>
+    <execution_control end="72.0" mode="transient" start="0.0" increase_factor="1.0" init_dt="0.2" max_dt="0.2"/>
+  </execution_controls>
+
+  <numerical_controls>
+    <structured_controls>
+      <str_time_step_controls>
+      </str_time_step_controls>
+
+      <str_flow_controls>
+      	<gravity>9.80665</gravity>
+      </str_flow_controls>
+
+      <str_transport_controls>
+      	<max_n_subcycle_transport>10</max_n_subcycle_transport>
+      </str_transport_controls>
+
+      <str_amr_controls>
+	<max_grid_size>64</max_grid_size>
+      </str_amr_controls>
+    </structured_controls>
+  </numerical_controls>
+
+  <mesh>
+    <dimension>2</dimension>
+    <generate>
+      <number_of_cells nx="120" ny="100"/>
+      <box high_coordinates="0.6, 0.5" low_coordinates="0.0, 0.0"/>
+    </generate>
+  </mesh>
+
+  <regions>
+    <box name="Left bottom" high_coordinates="0.0, 0.25" low_coordinates="0.0, 0.0" />
+    <box name="Left top" high_coordinates="0.0, 0.5" low_coordinates="0.0, 0.25" />
+    <box name="Right" high_coordinates="0.6, 0.5" low_coordinates="0.6, 0.0" />
+  </regions>
+
+  <materials>
+    <material name="Aquifers">
+      <mechanical_properties>
+        <porosity value="0.38"/>
+        <dispersion_tensor type="uniform_isotropic" alpha_l="0.0001" alpha_t="0.0001"/>
+        <tortuosity value="0.0"/>  
+      </mechanical_properties>
+      <hydraulic_conductivity x="0.38e-2" y="0.38e-2" />
+      <assigned_regions>All</assigned_regions>
+      <minerals>
+        <mineral name="Calcite" volume_fraction="0.0" specific_surface_area="250.0"/>
+      </minerals>
+    </material>
+  </materials>
+
+  <initial_conditions>
+    <initial_condition name="All">
+      <assigned_regions>All</assigned_regions>
+      <liquid_phase name="water">
+        <liquid_component name="water">
+          <uniform_pressure name="IC1" value="101325.0" />
+        </liquid_component>
+        <geochemistry_component>
+          <constraint name="initial"/>
+        </geochemistry_component>
+      </liquid_phase>
+    </initial_condition>
+  </initial_conditions>
+
+ <boundary_conditions>
+   <boundary_condition name="BC For Left top">
+      <assigned_regions>Left top</assigned_regions>
+      <liquid_phase name="water">
+        <liquid_component name="water">
+          <inward_mass_flux function="uniform" start="0.0" value="0.50e+1"/>
+        </liquid_component>
+	<geochemistry_component>
+          <constraint name="top" function="constant" start="0.0"/>
+	</geochemistry_component>
+      </liquid_phase>
+   </boundary_condition>
+
+    <boundary_condition name="BC For Left Bottom">
+      <assigned_regions>Left bottom</assigned_regions>
+      <liquid_phase name="water">
+        <liquid_component name="water">
+          <inward_mass_flux function="uniform" start="0.0" value="0.26e+1"/>
+        </liquid_component>
+        <geochemistry_component>
+          <constraint name="bottom" function="constant" start="0.0"/>
+        </geochemistry_component>
+      </liquid_phase>
+    </boundary_condition>
+
+    <boundary_condition name="BC For Right">
+      <assigned_regions>Right</assigned_regions>
+      <liquid_phase name="water">
+        <liquid_component name="water">
+          <hydrostatic function="uniform" start="0.0" value="1.0"/>
+        </liquid_component>
+      </liquid_phase>
+    </boundary_condition>
+ </boundary_conditions>
+
+ <geochemistry>
+    <verbosity>silent</verbosity>
+    <constraints>
+      <constraint name="initial">
+      </constraint>
+      <constraint name="top">
+      </constraint>
+      <constraint name="bottom">
+      </constraint>
+    </constraints>
+  </geochemistry>
+
+
+  <output>
+    <vis>
+      <base_filename>plt</base_filename>
+      <num_digits>5</num_digits>
+      <cycle_macros>EveryCycle</cycle_macros>
+    </vis>
+  </output>
+</amanzi_input>
+
+

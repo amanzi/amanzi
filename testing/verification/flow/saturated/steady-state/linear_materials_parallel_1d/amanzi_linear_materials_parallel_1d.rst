@@ -8,7 +8,7 @@ For one-dimensional, steady-state, flow through a saturated porous medium with c
 the general governing differential equation expressing mass conservation and Darcy's law becomes simply
 
 	.. math:: \frac{d^2h}{dx^2} = 0
-		:label: ode
+		:label: ode_materials_parallel
 
 where the total head (:math:`h`, [L]) is the sum of pressure head (:math:`P/\rho g`, [L]) 
 and elevation (:math:`z`, [L])
@@ -16,16 +16,16 @@ and elevation (:math:`z`, [L])
 	.. math:: h = \frac{P}{\rho g}+z
 
 :math:`\rho` = density [M/L\ :sup:`3`\ ], :math:`g` = gravitational acceleration [L/T\ :sup:`2`\ ], 
-and :math:`x` = horizontal distance [L]. The ordinary differential equation :eq:`ode` is easily solved by 
+and :math:`x` = horizontal distance [L]. The ordinary differential equation :eq:`ode_materials_parallel` is easily solved by 
 direct integration as
 
 	.. math:: h = C_1 x + C_2
-		:label: generalSoln
+		:label: generalSoln_materials_parallel
 
 where the integration constants :math:`C_1` and :math:`C_2` depend on the boundary conditions.
 
 For a simple heterogeneous porous medium composed of two constant-property materials in parallel, 
-Equation :eq:`generalSoln` can be applied to each subregion separately. To analyze this 
+Equation :eq:`generalSoln_materials_parallel` can be applied to each subregion separately. To analyze this 
 special case, let the subscripts *1* and *2* denote the two subregions.
 
 
@@ -37,28 +37,28 @@ When hydraulic head is prescribed at both boundaries as
 	.. math:: 
 		h(0) &= h_0\\
 		h(L) &= h_L
-		:label: BCs
+		:label: bc_materials_parallel
 
 the analytic solution :eq:`generalSoln` for hydraulic head in each subregion (:math:`h_i`, [L]) becomes
 
 	.. math:: 
 		h_i &= (h_L - h_0) \frac{x}{L} + h_0, i=1,2
-		:label: specificSoln
+		:label: specificSoln_materials_parallel
 
 where :math:`L` = domain length [L]. The volumetric flowrate per unit area through a porous medium, 
 or Darcy velocity (:math:`U`, [L/T]), is defined by Darcy's law as
 
 	.. math:: U = -\frac{k}{\mu\rho g}\frac{dh}{dx} = -K\frac{dh}{dx}
-		:label: DarcyVel
+		:label: DarcyVel_materials_parallel
 
 where :math:`k` = intrinsic permeability [L\ :sup:`2`\ ],
 :math:`\mu` = viscosity [M/LT], and 
 :math:`K` = hydraulic conductivity [L/T]. 
-Applying Equation :eq:`DarcyVel` to each subregion using Equation :eq:`specificSoln` yields
+Applying Equation :eq:`DarcyVel_materials_parallel` to each subregion using Equation :eq:`specificSoln_materials_parallel` yields
 
 	.. math:: 
 		U_i &= K_i\frac{h_0 - h_L}{L}, i=1,2
-		:label: specificDarcyVel
+		:label: specificDarcyVel_materials_parallel
 
 Note that the hydraulic head and Darcy velocity in each subregion are independent of the properties of
 the other subregion.
@@ -95,16 +95,16 @@ To generate numerical results the following specifications are considered:
 For these input specifications, Amanzi simulation output is expected to closely match
 
 	.. math:: h_i = 20m -\frac{x}{100m}, i=1,2
-		:label: expectedH
+		:label: expectedH_materials_parallel
 
 and
 
 	.. math:: 
 		U_1 &= 0.01 m/d\\
 		U_2 &= 0.1 m/d
-		:label: expectedUs
+		:label: expectedU_materials_parallel
 
-following Equations :eq:`specificSoln` and :eq:`specificDarcyVel`.
+following Equations :eq:`specificSoln_materials_parallel` and :eq:`specificDarcyVel_materials_parallel`.
 
 Amanzi verification test results
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

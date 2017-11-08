@@ -10,7 +10,7 @@ time_tolerance  0.01
 correction_max  1.0
 debye-huckel    true
 database        tracer.dbs
-master          Tracer
+master          tracer
 speciate_only   false
 database_sweep  false
 screen_output   10
@@ -26,7 +26,7 @@ spatial_profile          10 20 30 40 50
 END
 
 PRIMARY_SPECIES
-Tracer
+tracer
 END
 
 SECONDARY_SPECIES 
@@ -38,13 +38,13 @@ END
 Condition initial
 units     mol/kg
 temperature      25.0
-Tracer                1.0d-10
+tracer                1.0d-10
 END
 
 Condition west
 units     mol/kg
 temperature      25.0
-Tracer                0.001
+tracer                0.001
 END
  
 POROSITY

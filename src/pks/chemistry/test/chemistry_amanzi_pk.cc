@@ -149,6 +149,7 @@ SUITE(GeochemistryTestsChemistryPK) {
       cpk_->Setup(state_.ptr());
       state_->Setup();
       state_->InitializeFields();
+      state_->InitializeEvaluators();
       cpk_->Initialize(state_.ptr());
     } catch (std::exception e) {
       std::cout << e.what() << std::endl;
@@ -164,6 +165,7 @@ SUITE(GeochemistryTestsChemistryPK) {
       cpk_->Setup(state_.ptr());
       state_->Setup();
       state_->InitializeFields();
+      state_->InitializeEvaluators();
       cpk_->Initialize(state_.ptr());
     } catch (std::exception e) {
       std::cout << e.what() << std::endl;

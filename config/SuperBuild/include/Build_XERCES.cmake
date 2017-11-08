@@ -58,13 +58,14 @@ if (APPLE)
 endif()
 
 #
-#  Hopper cannot build the "samples"
+#  Building "samples" on NERSC can fail, and the latest Anaconda (4.4.0)
+#  has a libstdc++ version mismatch that also causes problems on Linux 
 #
-if ( DEFINED ENV{NERSC_HOST})
-  set(XERCES_CMAKE_COMMAND ${CMAKE_COMMAND} -P ${XERCES_cmake_build})	
-else()
-  set(XERCES_CMAKE_COMMAND ${MAKE})
-endif()
+set(XERCES_CMAKE_COMMAND ${CMAKE_COMMAND} -P ${XERCES_cmake_build})	
+#
+#  To build "samples" uncomment the following
+#  set(XERCES_CMAKE_COMMAND ${MAKE})
+
 
 # --- Add external project build and tie to the ZLIB build target
 ExternalProject_Add(${XERCES_BUILD_TARGET}

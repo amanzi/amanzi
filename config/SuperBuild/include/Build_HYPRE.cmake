@@ -117,19 +117,19 @@ configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/hypre-install-step.cmake.in
 set(HYPRE_INSTALL_COMMAND ${CMAKE_COMMAND} -P ${HYPRE_cmake_install})	
 
 # --- Set the name of the patch
-set(HYPRE_patch_file hypre-2.10.0b-print_level.patch)
+#set(HYPRE_patch_file hypre-2.10.0b-print_level.patch)
 # --- Configure the bash patch script
-set(HYPRE_sh_patch ${HYPRE_prefix_dir}/hypre-patch-step.sh)
-configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/hypre-patch-step.sh.in
-               ${HYPRE_sh_patch}
-               @ONLY)
+#set(HYPRE_sh_patch ${HYPRE_prefix_dir}/hypre-patch-step.sh)
+#configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/hypre-patch-step.sh.in
+#               ${HYPRE_sh_patch}
+#               @ONLY)
 # --- Configure the CMake patch step
-set(HYPRE_cmake_patch ${HYPRE_prefix_dir}/hypre-patch-step.cmake)
-configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/hypre-patch-step.cmake.in
-               ${HYPRE_cmake_patch}
-               @ONLY)
+#set(HYPRE_cmake_patch ${HYPRE_prefix_dir}/hypre-patch-step.cmake)
+#configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/hypre-patch-step.cmake.in
+#               ${HYPRE_cmake_patch}
+#               @ONLY)
 # --- Set the patch command
-set(HYPRE_PATCH_COMMAND ${CMAKE_COMMAND} -P ${HYPRE_cmake_patch})     
+#set(HYPRE_PATCH_COMMAND ${CMAKE_COMMAND} -P ${HYPRE_cmake_patch})     
 
 
 # --- Add external project build and tie to the ZLIB build target
@@ -141,6 +141,7 @@ ExternalProject_Add(${HYPRE_BUILD_TARGET}
                     DOWNLOAD_DIR ${TPL_DOWNLOAD_DIR}               # Download directory
                     URL          ${HYPRE_URL}                      # URL may be a web site OR a local file
                     URL_MD5      ${HYPRE_MD5_SUM}                  # md5sum of the archive file
+                    DOWNLOAD_NAME ${HYPRE_SAVEAS_FILE}             # file name to store (if not end of URL)
                     # -- Patch 
                     PATCH_COMMAND ${HYPRE_PATCH_COMMAND}
                     # -- Configure

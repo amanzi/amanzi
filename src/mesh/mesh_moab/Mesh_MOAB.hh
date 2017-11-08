@@ -4,27 +4,28 @@
 // MOAB include files - for some reason they have to be first -
 // if not the compiler cannot find MPI_COMM_WORLD
 
-#include "MBmpi.h"
-#include "MBTypes.h"
-#include "MBCore.hpp"
-#include "MBRange.hpp"
+#include "moab_mpi.h"
+#include "Types.hpp"
+#include "Core.hpp"
+#include "Range.hpp"
 #include "MBTagConventions.hpp"
-#include "MBReadUtilIface.hpp"
+#include "ReadUtilIface.hpp"
 #include "MBParallelConventions.h"
-#include "MBParallelComm.hpp"
+#include "ParallelComm.hpp"
 
-#include <Epetra_Map.h>
-#include <Epetra_MpiComm.h>
-#include <Epetra_SerialComm.h>
+#include "Epetra_Map.h"
+#include "Epetra_MpiComm.h"
+#include "Epetra_SerialComm.h"
+#include "Teuchos_RCP.hpp"
 
-#include <Mesh.hh>
-#include <GeometricModel.hh>
-#include <Point.hh>
-#include <GeometricModel.hh>
-#include <LabeledSetRegion.hh>
-#include <PointRegion.hh>
-#include <LogicalRegion.hh>
-#include <GenerationSpec.hh>
+#include "Mesh.hh"
+#include "GeometricModel.hh"
+#include "Point.hh"
+#include "GeometricModel.hh"
+#include "RegionLabeledSet.hh"
+#include "RegionPoint.hh"
+#include "RegionLogical.hh"
+#include "GenerationSpec.hh"
 #include <VerboseObject.hh>
 
 #include <memory>
@@ -43,11 +44,11 @@ class Mesh_MOAB : public Mesh {
   // we could "delete" the illegal version of the call effectively
   // blocking the implicit conversion.
   Mesh_MOAB(const char *filename, const Epetra_MpiComm *comm_,
-            const AmanziGeometry::GeometricModelPtr& gm = 
-               (AmanziGeometry::GeometricModelPtr) NULL,
-            const VerboseObject *verbosity_obj = (VerboseObject *) NULL, 
+            const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm = Teuchos::null,
+            const Teuchos::RCP<const VerboseObject>& vo = Teuchos::null,
             const bool request_faces = true,
-            const bool request_edges = false);
+            const bool request_edges = false,
+	    const Partitioner_type partitioner = PARTITIONER_DEFAULT);
 
   // Construct a mesh by extracting a subset of entities from another
   // mesh. In some cases like extracting a surface mesh from a volume
@@ -149,8 +150,8 @@ class Mesh_MOAB : public Mesh {
   // Get nodes of edge
   void edge_get_nodes(const Entity_ID edgeid, Entity_ID *nodeid0,
                       Entity_ID *nodeid1) const {
-    Errors::Message mesg("Edges not implemented in this framework. Use MSTK");
-    amanzi_throw(mesg);
+    Errors::Message msg("Edges not implemented in this framework. Use MSTK");
+    amanzi_throw(msg);
   }
 
 
@@ -249,11 +250,11 @@ class Mesh_MOAB : public Mesh {
   //----------------------------
     
   // Get list of entities of type 'category' in set
-  void get_set_entities_vofs(const std::string setname, 
-                             const Entity_kind kind, 
-                             const Parallel_type ptype, 
-                             std::vector<Entity_ID> *entids,
-                             std::vector<double> *vofs) const;
+  void get_set_entities_and_vofs(const std::string setname, 
+                                 const Entity_kind kind, 
+                                 const Parallel_type ptype, 
+                                 std::vector<Entity_ID> *entids,
+                                 std::vector<double> *vofs) const;
 
   // Deform a mesh so that cell volumes conform as closely as possible
   // to target volumes without dropping below the minimum volumes.  If
@@ -272,8 +273,8 @@ class Mesh_MOAB : public Mesh {
   void write_to_exodus_file(const std::string filename) const;
 
  private:
-  MBCore *mbcore;
-  MBParallelComm *mbcomm_;
+  moab::Core *mbcore;
+  moab::ParallelComm *mbcomm_;
 
   int serial_run;
 
@@ -311,21 +312,21 @@ class Mesh_MOAB : public Mesh {
 
   // ALL = OWNED + NOTOWNED or USED + GHOST
 
-  MBRange AllVerts, OwnedVerts, NotOwnedVerts;
-  MBRange AllFaces, OwnedFaces, NotOwnedFaces;
-  MBRange AllCells, OwnedCells, GhostCells;
+  moab::Range AllVerts, OwnedVerts, NotOwnedVerts;
+  moab::Range AllFaces, OwnedFaces, NotOwnedFaces;
+  moab::Range AllCells, OwnedCells, GhostCells;
 
   // tag handles
-  MBTag lid_tag;  // Local ID
-  MBTag gid_tag;  // Global ID
-  MBTag mattag;  // Material tag
-  MBTag sstag;  // Sideset tag
-  MBTag nstag;  // Nodeset tag
+  moab::Tag lid_tag;  // Local ID
+  moab::Tag gid_tag;  // Global ID
+  moab::Tag mattag;  // Material tag
+  moab::Tag sstag;  // Sideset tag
+  moab::Tag nstag;  // Nodeset tag
 
   // Local ID to MOAB handle map
-  std::vector<MBEntityHandle> vtx_id_to_handle;
-  std::vector<MBEntityHandle> face_id_to_handle;
-  std::vector<MBEntityHandle> cell_id_to_handle;
+  std::vector<moab::EntityHandle> vtx_id_to_handle;
+  std::vector<moab::EntityHandle> face_id_to_handle;
+  std::vector<moab::EntityHandle> cell_id_to_handle;
 
   // Maps
   Epetra_Map *cell_map_wo_ghosts_, *face_map_wo_ghosts_, *node_map_wo_ghosts_;
@@ -365,9 +366,9 @@ class Mesh_MOAB : public Mesh {
 
   void init_set_info();
 
-  MBTag build_set(AmanziGeometry::RegionPtr rgn, Entity_kind kind) const;
+  moab::Tag build_set(const Teuchos::RCP<const AmanziGeometry::Region>& rgn, Entity_kind kind) const;
 
-  std::string internal_name_of_set(const AmanziGeometry::RegionPtr r,
+  std::string internal_name_of_set(const Teuchos::RCP<const AmanziGeometry::Region>& r,
                                    const Entity_kind entity_kind) const;
 
   // Get faces of a cell and directions in which the cell uses the face 
@@ -415,6 +416,7 @@ class Mesh_MOAB : public Mesh {
   }
 
   // Edges and edge directions of a face
+  /*
   void face_get_edges_and_dirs_internal_(const Entity_ID cellid,
                                          Entity_ID_List *edgeids,
                                          std::vector<int> *edgedirs,
@@ -422,7 +424,8 @@ class Mesh_MOAB : public Mesh {
   {
     Errors::Message mesg("Edges not implemented in this framework. Use MSTK");
     amanzi_throw(mesg);
-  };
+  }
+  */
 };
 
 }  // namespace AmanziMesh

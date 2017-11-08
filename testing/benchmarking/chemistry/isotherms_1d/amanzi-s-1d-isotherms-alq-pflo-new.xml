@@ -1,0 +1,178 @@
+<amanzi_input version="2.3.0" type="structured">
+<!--  <echo_translated_input format="native" file_name="struct_oldspec.xml"/> -->
+  <echo_translated_input format="native" file_name="sergi.xml"/>
+  <model_description name="1D Flow and Transport w/Kd">
+    <units>
+      <length_unit>m</length_unit>
+      <time_unit>s</time_unit>
+      <mass_unit>kg</mass_unit>
+      <conc_unit>molar</conc_unit>
+    </units>
+  </model_description>
+
+  <definitions>
+    <macros>
+      <time_macro name="every_year">
+	<start>0 s</start>
+	<timestep_interval>31556926.0 s</timestep_interval>
+	<stop>1.5778463e9 s</stop>
+      </time_macro>
+      <cycle_macro name="every_step">
+	<start>0 s</start>
+	<timestep_interval>1</timestep_interval>
+	<stop>-1</stop>
+      </cycle_macro>
+    </macros>
+  </definitions>
+
+  <process_kernels>
+    <flow state="on" model="saturated"/>
+    <transport state="on" />
+    <!--chemistry state="on" engine="pflotran" database="isotherms.dat" /-->
+    <chemistry state="on" engine="pflotran" input_filename="1d-isotherms-trim.in" database="isotherms.dat" />
+  </process_kernels>
+
+  <phases>
+    <liquid_phase name="water">
+      <eos>False</eos>
+      <viscosity>1.002e-3</viscosity>
+      <density>998.2</density>
+      <dissolved_components>
+        <primaries>
+          <primary>A</primary>
+          <primary>B</primary>
+          <primary>C</primary>
+        </primaries>
+      </dissolved_components>
+    </liquid_phase>
+  </phases>
+
+  <execution_controls>
+    <comments> </comments>
+    <verbosity level="extreme"/>
+    <execution_control_defaults init_dt= "1.5768e+5"   max_dt="6.0e+10"  reduction_factor="0.8"  increase_factor="1.25" mode="transient" method="bdf1"/>
+    <execution_control  start="0.0 y" end="0.0 y" init_dt= "1.5768e+5" max_dt="6.0e+10"  reduction_factor="0.8"  increase_factor="1.25" mode="steady" method="bdf1"/>
+    <execution_control  start="0.0 y" end="1.5778463e9" mode = "transient" />
+  </execution_controls>
+
+  <numerical_controls>
+
+     <structured_controls>
+      <str_time_step_controls>
+      </str_time_step_controls>
+
+      <str_flow_controls>
+      	<gravity>0</gravity>
+      </str_flow_controls>
+
+      <str_transport_controls>
+      	<max_n_subcycle_transport>10</max_n_subcycle_transport>
+      </str_transport_controls>
+
+      <str_amr_controls>
+	<max_grid_size>64</max_grid_size>
+      </str_amr_controls>
+    </structured_controls>
+
+  </numerical_controls>
+
+  <mesh>
+    <dimension>2</dimension>
+    <generate>
+      <number_of_cells nx="100" ny="2"/>
+      <box high_coordinates="100.0, 1.0" low_coordinates="0.0, 0.0"/>
+    </generate>
+  </mesh>
+
+  <regions>
+  </regions>
+
+  <materials>
+    <material name="soil">
+      <mechanical_properties>
+        <porosity value="0.25"/>
+        <!--particle_density value="2720.0"/-->
+      </mechanical_properties>
+      <!-- Begin proposed isotherm section using Amanzi native chemistry -->
+      <sorption_isotherms>
+        <primary name = "A">
+          <kd_model model = "linear" kd = "10.0"/>
+        </primary>
+        <primary name = "B">
+          <kd_model model = "langmuir" kd = "30.0" b = "0.1"/>
+        </primary>
+        <primary name = "C">
+          <kd_model model = "freundlich" kd = "1.5" n = "0.8"/>
+        </primary>
+      </sorption_isotherms>
+      <!-- End proposed isotherm section -->
+      <permeability x="1.0e-12" y="1.0e-12" z="1.0e-12"/>
+      <assigned_regions>All</assigned_regions>
+    </material>
+  </materials>
+
+  <geochemistry>
+    <verbosity>silent</verbosity>
+    <constraints>
+      <constraint name="initial">
+        <primary name="A" type="total" value="1.0e-20"/>
+        <primary name="B" type="total" value="1.0e-20"/>
+        <primary name="C" type="total" value="1.0e-20"/>
+      </constraint>
+      <constraint name="west">
+        <primary name="A" type="total" value="1e-3"/>
+        <primary name="B" type="total" value="1e-3"/>
+        <primary name="C" type="total" value="1e-3"/>
+      </constraint>
+    </constraints>
+  </geochemistry>
+
+  <initial_conditions>  
+    <initial_condition name="initial_ic">
+      <assigned_regions>All</assigned_regions>
+      <liquid_phase name="water">
+        <liquid_component name="water">
+          <uniform_pressure value="201325.0"/>
+        </liquid_component>
+        <geochemistry_component>
+          <constraint name= "initial" />
+        </geochemistry_component>
+      </liquid_phase>
+    </initial_condition>
+  </initial_conditions>
+
+  <boundary_conditions> 
+    <boundary_condition name="west_bc">
+      <assigned_regions>XLOBC</assigned_regions>
+      <liquid_phase name="water">
+        <liquid_component name="water">
+          <inward_mass_flux value="7.91317859e-6" start="0" function="constant"/>
+        </liquid_component>
+        <geochemistry_component>
+          <constraint name= "west" start="0" function="constant"/>
+        </geochemistry_component>
+      </liquid_phase>
+    </boundary_condition>
+    <boundary_condition name="east_bc">
+      <assigned_regions>XHIBC</assigned_regions>
+      <liquid_phase name="water">
+        <liquid_component name="water">
+          <uniform_pressure value="201325.0" start="0" function="constant"/>
+        </liquid_component>
+      </liquid_phase>
+    </boundary_condition>
+  </boundary_conditions>
+
+  <output>
+    <vis>
+      <base_filename>plt</base_filename>
+      <num_digits>5</num_digits>
+      <cycle_macros>every_step</cycle_macros>
+    </vis>
+    <checkpoint>
+      <base_filename>chk</base_filename>
+      <num_digits>5</num_digits>
+    </checkpoint>
+  </output>
+
+</amanzi_input>

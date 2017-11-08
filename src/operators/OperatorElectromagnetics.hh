@@ -56,6 +56,8 @@ class OperatorElectromagnetics {
     InitElectromagnetics_(plist);
   }
 
+  virtual ~OperatorElectromagnetics() = default;
+  
   // main virtual members
   // -- setup 
   virtual void SetTensorCoefficient(const Teuchos::RCP<std::vector<WhetStone::Tensor> >& K);
