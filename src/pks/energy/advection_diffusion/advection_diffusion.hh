@@ -1,4 +1,4 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+/* -*-  mode: c++; indent-tabs-mode: nil -*- */
 
 /* -------------------------------------------------------------------------
 ATS
@@ -30,12 +30,14 @@ class AdvectionDiffusion : public PK_PhysicalBDF_Default {
 
 public:
 
+
   AdvectionDiffusion(Teuchos::ParameterList& FElist,
                      const Teuchos::RCP<Teuchos::ParameterList>& plist,
                      const Teuchos::RCP<State>& S,
                      const Teuchos::RCP<TreeVector>& solution) :
     PK(FElist, plist, S, solution),
     PK_PhysicalBDF_Default(FElist, plist, S, solution) {}
+
 
   // Virtual destructor
   virtual ~AdvectionDiffusion() {}
@@ -77,7 +79,7 @@ private:
 
   // methods for applying/using the discretization/operators
   void UpdateBoundaryConditions_();
-  void ApplyBoundaryConditions_(const Teuchos::RCP<CompositeVector>& temperature);
+  void ApplyBoundaryConditions_(const Teuchos::Ptr<CompositeVector>& temperature);
 
   // misc setup information
   double dt_;

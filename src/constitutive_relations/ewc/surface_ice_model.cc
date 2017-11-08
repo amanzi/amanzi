@@ -1,4 +1,4 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+/* -*-  mode: c++; indent-tabs-mode: nil -*- */
 
 /*
   Ugly hackjob to enable direct evaluation of the full model, on a single
@@ -25,7 +25,7 @@
 namespace Amanzi {
 
 void
-SurfaceIceModel::InitializeModel(const Teuchos::Ptr<State>& S) {
+SurfaceIceModel::InitializeModel(const Teuchos::Ptr<State>& S, Teuchos::ParameterList& plist) {
   M_ = 0.0180153;
 
   // these are not yet initialized
@@ -49,29 +49,29 @@ SurfaceIceModel::InitializeModel(const Teuchos::Ptr<State>& S) {
 
   // -- iem for liquid
   me = S->GetFieldEvaluator("surface_internal_energy_liquid");
-  Teuchos::RCP<Energy::EnergyRelations::IEMEvaluator> iem_liquid_me =
-      Teuchos::rcp_dynamic_cast<Energy::EnergyRelations::IEMEvaluator>(me);
+  Teuchos::RCP<Energy::IEMEvaluator> iem_liquid_me =
+      Teuchos::rcp_dynamic_cast<Energy::IEMEvaluator>(me);
   ASSERT(iem_liquid_me != Teuchos::null);
   liquid_iem_ = iem_liquid_me->get_IEM();
 
   // -- iem for ice
   me = S->GetFieldEvaluator("surface_internal_energy_ice");
-  Teuchos::RCP<Energy::EnergyRelations::IEMEvaluator> iem_ice_me =
-      Teuchos::rcp_dynamic_cast<Energy::EnergyRelations::IEMEvaluator>(me);
+  Teuchos::RCP<Energy::IEMEvaluator> iem_ice_me =
+      Teuchos::rcp_dynamic_cast<Energy::IEMEvaluator>(me);
   ASSERT(iem_ice_me != Teuchos::null);
   ice_iem_ = iem_ice_me->get_IEM();
 
   // -- ponded depth evaluator
   me = S->GetFieldEvaluator("ponded_depth");
-  Teuchos::RCP<Flow::FlowRelations::IcyHeightEvaluator> icy_h_me =
-      Teuchos::rcp_dynamic_cast<Flow::FlowRelations::IcyHeightEvaluator>(me);
+  Teuchos::RCP<Flow::IcyHeightEvaluator> icy_h_me =
+      Teuchos::rcp_dynamic_cast<Flow::IcyHeightEvaluator>(me);
   ASSERT(icy_h_me != Teuchos::null);
   pd_ = icy_h_me->get_IcyModel();
 
   // -- unfrozen fraction evaluator
   me = S->GetFieldEvaluator("unfrozen_fraction");
-  Teuchos::RCP<Flow::FlowRelations::UnfrozenFractionEvaluator> uf_me =
-      Teuchos::rcp_dynamic_cast<Flow::FlowRelations::UnfrozenFractionEvaluator>(me);
+  Teuchos::RCP<Flow::UnfrozenFractionEvaluator> uf_me =
+      Teuchos::rcp_dynamic_cast<Flow::UnfrozenFractionEvaluator>(me);
   ASSERT(uf_me != Teuchos::null);
   uf_ = uf_me->get_Model();
   

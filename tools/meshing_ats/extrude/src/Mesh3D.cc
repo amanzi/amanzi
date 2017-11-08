@@ -6,6 +6,8 @@
 #include "Mesh2D.hh"
 #include "Mesh3D.hh"
 
+#define logically_structured
+
 namespace Amanzi {
 namespace AmanziGeometry {
 
@@ -61,18 +63,20 @@ Mesh3D::Mesh3D(const Mesh2D * const m_, int n_layers) :
 
 void
 Mesh3D::extrude(const std::vector<double>& dz,
-                const std::vector<int>& block_ids_) {
+                const std::vector<int>& block_ids_,
+                bool squash_zero_edges) {
   ASSERT(dz.size() == m->coords.size());
   ASSERT(block_ids_.size() == m->cell2node.size());
 
   auto this_layer_sides = std::vector<int>(m->face2node.size(), -1);
   auto node_differs = [this](int n) {return this->dn_nodes[n] != this->up_nodes[n];};
-  auto node_same_horiz = [this](int n) {return coords[this->dn_nodes[n]][0] == coords[this->up_nodes[n]][0]
-                                        && coords[this->dn_nodes[n]][1] == coords[this->up_nodes[n]][1];};
-  
+  auto node_same_horiz = [this](int n) {return is_equal(coords[this->dn_nodes[n]][0],
+                                                        coords[this->up_nodes[n]][0])
+                                            && is_equal(coords[this->dn_nodes[n]][1],
+                                                        coords[this->up_nodes[n]][1]);};
   // shift the up-node coordinates by dz
   for (int n=0; n!=dz.size(); ++n) {
-    if (dz[n] > 0.) {
+    if (!squash_zero_edges || dz[n] > 0.) {
       Point nc(coords[up_nodes[n]]);
       nc[2] -= dz[n];
       coords.emplace_back(std::move(nc));
@@ -82,8 +86,7 @@ Mesh3D::extrude(const std::vector<double>& dz,
 
   // add cells, faces
   for (int c=0; c!=m->ncells; ++c) {
-    if (std::any_of(m->cell2node[c].begin(), m->cell2node[c].end(),
-                    node_differs)) {
+    if (std::any_of(m->cell2node[c].begin(), m->cell2node[c].end(), node_differs)) {
       cells_in_col[c]++;
       
       // add the bottom face

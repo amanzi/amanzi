@@ -1,4 +1,4 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+/* -*-  mode: c++; indent-tabs-mode: nil -*- */
 
 /*
  Evaluates the conductivity of surface flow as a function of ponded
@@ -10,7 +10,6 @@
 
 namespace Amanzi {
 namespace Flow {
-namespace FlowRelations {
 
 PondedDepthPassthroughConductivityModel::PondedDepthPassthroughConductivityModel(Teuchos::ParameterList& plist) :
     plist_(plist) {}
@@ -24,6 +23,5 @@ double PondedDepthPassthroughConductivityModel::DConductivityDDepth(double depth
 }
 
 
-} // namespace
 } // namespace
 } // namespace

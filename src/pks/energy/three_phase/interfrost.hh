@@ -1,4 +1,4 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+/* -*-  mode: c++; indent-tabs-mode: nil -*- */
 
 /* -------------------------------------------------------------------------
 ATS
@@ -24,6 +24,7 @@ namespace Energy {
 class Interfrost : public ThreePhase {
 
 public:
+
   Interfrost(Teuchos::ParameterList& FElist,
              const Teuchos::RCP<Teuchos::ParameterList>& plist,
              const Teuchos::RCP<State>& S,
@@ -33,6 +34,7 @@ public:
     plist_ = plist;
     solution_ = solution;
   }
+
 
   // Virtual destructor
   virtual ~Interfrost() {}

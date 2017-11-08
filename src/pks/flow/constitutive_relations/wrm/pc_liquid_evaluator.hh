@@ -1,4 +1,4 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+/* -*-  mode: c++; indent-tabs-mode: nil -*- */
 
 /*
   PCLiquidEvaluator is the interface between state/data and the model, an EOS.
@@ -15,7 +15,6 @@
 
 namespace Amanzi {
 namespace Flow {
-namespace FlowRelations {
 
 class PCLiqAtm;
 
@@ -32,9 +31,16 @@ class PCLiquidEvaluator : public SecondaryVariableFieldEvaluator {
   // Required methods from SecondaryVariableFieldEvaluator
   virtual void EvaluateField_(const Teuchos::Ptr<State>& S,
           const Teuchos::Ptr<CompositeVector>& result);
+
   virtual void EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>& S,
           Key wrt_key, const Teuchos::Ptr<CompositeVector>& result);
 
+  virtual void EnsureCompatibility(const Teuchos::Ptr<State>& S) {
+    S->RequireScalar("atmospheric_pressure");
+    SecondaryVariableFieldEvaluator::EnsureCompatibility(S);
+  }
+
+  
   Teuchos::RCP<PCLiqAtm> get_PCLiqAtm() { return model_; }
 
  protected:
@@ -51,7 +57,6 @@ class PCLiquidEvaluator : public SecondaryVariableFieldEvaluator {
 
 };
 
-} // namespace
 } // namespace
 } // namespace
 

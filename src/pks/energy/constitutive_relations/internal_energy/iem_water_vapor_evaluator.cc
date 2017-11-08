@@ -1,4 +1,4 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+/* -*-  mode: c++; indent-tabs-mode: nil -*- */
 
 /*
   The WRM Evaluator simply calls the WRM with the correct arguments.
@@ -10,7 +10,6 @@
 
 namespace Amanzi {
 namespace Energy {
-namespace EnergyRelations {
 
 IEMWaterVaporEvaluator::IEMWaterVaporEvaluator(Teuchos::ParameterList& plist) :
     SecondaryVariableFieldEvaluator(plist) {
@@ -44,16 +43,16 @@ void IEMWaterVaporEvaluator::InitializeFromPlist_() {
   }
 
   // Set up my dependencies.
-  Key domain_name = getDomain(my_key_);
+  Key domain_name = Keys::getDomain(my_key_);
 
   // -- temperature
   temp_key_ = plist_.get<std::string>("temperature key",
-                                      getKey(domain_name,std::string("temperature")));
+                                      Keys::getKey(domain_name,std::string("temperature")));
   dependencies_.insert(temp_key_);
 
   // -- molar fraction of water vapor in the gaseous phase
   mol_frac_key_ = plist_.get<std::string>("vapor molar fraction key",
-                                          getKey(domain_name,std::string("mol_frac_gas")));
+                                          Keys::getKey(domain_name,std::string("mol_frac_gas")));
   dependencies_.insert(mol_frac_key_);
 }
 
@@ -113,6 +112,5 @@ void IEMWaterVaporEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::Ptr<
 }
 
 
-} //namespace
 } //namespace
 } //namespace

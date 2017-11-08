@@ -1,4 +1,4 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+/* -*-  mode: c++; indent-tabs-mode: nil -*- */
 
 /*
   Interface for a thermal conductivity model with two phases.
@@ -14,7 +14,6 @@
 
 namespace Amanzi {
 namespace Energy {
-namespace EnergyRelations {
 
 class ThermalConductivitySurfaceEvaluator :
     public SecondaryVariableFieldEvaluator {
@@ -35,14 +34,14 @@ class ThermalConductivitySurfaceEvaluator :
  protected:
   // dependencies
   Key uf_key_;
-  Key height_key_;
+  Key height_key_, vpd_key_;
 
   double K_liq_;
   double K_ice_;
   double min_K_;
+  bool sg_model_;
 };
 
-} // namespace
 } // namespace
 } // namespace
 

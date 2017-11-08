@@ -1,4 +1,4 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+/* -*-  mode: c++; indent-tabs-mode: nil -*- */
 
 /*
   The elevation evaluator gets the surface elevation, slope, and updates pres + elev.
@@ -6,25 +6,36 @@
   Authors: Ethan Coon (ecoon@lanl.gov)
 */
 
+#include "boost/algorithm/string/predicate.hpp"
 #include "snow_skin_potential_evaluator.hh"
 
 namespace Amanzi {
 namespace Flow {
-namespace FlowRelations {
 
 SnowSkinPotentialEvaluator::SnowSkinPotentialEvaluator(Teuchos::ParameterList& plist) :
     SecondaryVariableFieldEvaluator(plist) {
 
-  if (my_key_.empty()) 
-    my_key_ = plist_.get<std::string>("potential key", "snow_skin_potential");
-
-  pd_key_ = plist_.get<std::string>("ponded depth key", "ponded_depth");
+  Key domain = Keys::getDomain(my_key_);
+  Key surf_domain;
+  if (domain == "snow") {
+    surf_domain = "surface";
+    surf_domain = plist_.get<std::string>("surface domain", surf_domain);
+  } else if (boost::starts_with(domain, "snow")) {
+    surf_domain = Key("surface")+domain.substr(4,domain.size());
+  } else {
+    surf_domain = "surface";
+  }
+  
+  pd_key_ = Keys::readKey(plist_, surf_domain, "ponded depth", "ponded_depth");
   dependencies_.insert(pd_key_);
-  sd_key_ = plist_.get<std::string>("snow depth key", "snow_depth");
+
+  sd_key_ = Keys::readKey(plist_, domain, "snow depth", "snow_depth");
   dependencies_.insert(sd_key_);
-  precip_key_ = plist_.get<std::string>("precipitation snow key", "precipitation_snow");
+
+  precip_key_ = Keys::readKey(plist_, domain, "snow precipitation", "precipitation_snow");
   dependencies_.insert(precip_key_);
-  elev_key_ = plist_.get<std::string>("elevation key", "elevation");
+
+  elev_key_ = Keys::readKey(plist_, surf_domain, "elevation", "elevation");
   dependencies_.insert(elev_key_);
 
   factor_ = plist_.get<double>("dt factor");
@@ -68,6 +79,5 @@ void SnowSkinPotentialEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::
   result->PutScalar(1.0);
 }
 
-} //namespace
 } //namespace
 } //namespace

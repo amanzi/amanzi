@@ -1,4 +1,4 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+/* -*-  mode: c++; indent-tabs-mode: nil -*- */
 
 /*
   A collection of WRMs along with a Mesh Partition.
@@ -14,7 +14,6 @@
 
 namespace Amanzi {
 namespace Flow {
-namespace FlowRelations {
 
 typedef std::vector<Teuchos::RCP<WRM> > WRMList;
 typedef std::pair<Teuchos::RCP<Functions::MeshPartition>, WRMList> WRMPartition;
@@ -30,7 +29,6 @@ Teuchos::RCP<WRMPermafrostModelPartition>
 createWRMPermafrostModelPartition(Teuchos::ParameterList& plist,
         Teuchos::RCP<WRMPartition>& wrms);
 
-} // namespace
 } // namespace
 } // namespace
 

@@ -18,24 +18,26 @@ DrainageEvaluator::DrainageEvaluator(Teuchos::ParameterList& plist) :
   
   // Set up my dependencies.
   // -- the extent of material, LAI for 
-  ai_key_ = plist_.get<std::string>("area index key", getKey(domain, "area_index"));
+  ai_key_ = plist_.get<std::string>("area index key", Keys::getKey(domain, "area_index"));
   dependencies_.insert(ai_key_);
 
   // -- water content of the layer drained
-  wc_key_ = plist_.get<std::string>("water content key", getKey(domain, "water_content"));
+  wc_key_ = plist_.get<std::string>("water content key", Keys::getKey(domain, "water_content"));
   dependencies_.insert(wc_key_);
 
   // -- uptake, i.e. rewetting of layer from surface water
   is_uptake_ = plist_.get<bool>("wet layer from surface water", false);
+
   pd_key_ = "";
+
   if (is_uptake_) {
     pd_key_ = plist_.get<std::string>("ponded depth key",
-				      "ponded_depth");
+				      "surface-ponded_depth");
     dependencies_.insert(pd_key_);
   }
 
   // -- source of water into the layer
-  source_key_ = plist_.get<std::string>("source key", getKey(domain, "interception"));
+  source_key_ = plist_.get<std::string>("source key", Keys::getKey(domain, "interception"));
   dependencies_.insert(source_key_);
 
 
@@ -94,12 +96,14 @@ void DrainageEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
     } else {
       double wc_sat = n_liq_ * ai[0][c] * cv[0][c] * wc_sat_;
       if (wc[0][c] > wc_sat) {
+
         //  is oversaturated and draining
         res_c[0][c] = (wc[0][c] - wc_sat) / tau_;
       } else if (is_uptake_) {
         //  is undersaturated and there is surface water to be absorbed
         double wetting = std::min((*pd)[0][c] / ai[0][c], 1.0);
         res_c[0][c] = wetting * (wc[0][c] - wc_sat) / tau_;
+
       }
     }
 
@@ -131,6 +135,7 @@ void DrainageEvaluator::EvaluateFieldPartialDerivative_(
   if (wrt_key == wc_key_) {
     for (int c=0; c!=res_c.MyLength(); ++c) {
       if (ai[0][c] == 0.) {
+
         res_c[0][c] = 0.;
       } else {
         double wc_sat = n_liq_ * ai[0][c] * cv[0][c] * wc_sat_;
@@ -142,6 +147,7 @@ void DrainageEvaluator::EvaluateFieldPartialDerivative_(
           double wetting = std::min((*pd)[0][c] / ai[0][c], 1.0);
           res_c[0][c] = wetting / tau_;
         }
+
       }
       // turn back into mols / (m^2 s)
       res_c[0][c] /= cv[0][c];
@@ -150,6 +156,7 @@ void DrainageEvaluator::EvaluateFieldPartialDerivative_(
   } else if (wrt_key == ai_key_) {
     for (int c=0; c!=res_c.MyLength(); ++c) {
       if (ai[0][c] == 0.) {
+
         res_c[0][c] = 0.;
       } else {
         double wc_sat = n_liq_ * ai[0][c] * cv[0][c] * wc_sat_;
@@ -160,10 +167,12 @@ void DrainageEvaluator::EvaluateFieldPartialDerivative_(
           double wetting = std::min((*pd)[0][c] / ai[0][c], 1.0);
           res_c[0][c] = -wetting * n_liq_ * cv[0][c] * wc_sat_ / tau_;
         }
+
       }
       // turn back into mols / (m^2 s)
       res_c[0][c] /= cv[0][c];
     }
+
 
   } else if (wrt_key == source_key_) {
     for (int c=0; c!=res_c.MyLength(); ++c) {
@@ -171,10 +180,12 @@ void DrainageEvaluator::EvaluateFieldPartialDerivative_(
         res_c[0][c] = 1.;
       } else {
         res_c[0][c] = 0.;
+
       }
       // turn back into mols / (m^2 s)
       res_c[0][c] /= cv[0][c];
     }
+
 
   } else if (is_uptake_ && wrt_key == pd_key_) {
     for (int c=0; c!=res_c.MyLength(); ++c) {
@@ -190,6 +201,7 @@ void DrainageEvaluator::EvaluateFieldPartialDerivative_(
           double wetting = (*pd)[0][c] > ai[0][c] ? 0. : 1./ai[0][c];
           res_c[0][c] = wetting * (wc[0][c] - wc_sat) / tau_;
         }
+
       }
       // turn back into mols / (m^2 s)
       res_c[0][c] /= cv[0][c];

@@ -1,4 +1,4 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+/* -*-  mode: c++; indent-tabs-mode: nil -*- */
 
 /*
   Specifies a value on the surface from the value in the cell just below the
@@ -6,6 +6,9 @@
 
   Authors: Ethan Coon (ecoon@lanl.gov)
 */
+
+#include "boost/algorithm/string/predicate.hpp"
+
 
 #include "surface_top_cells_evaluator.hh"
 
@@ -15,8 +18,10 @@ namespace Relations {
 
 SurfaceTopCellsEvaluator::SurfaceTopCellsEvaluator(Teuchos::ParameterList& plist) :
     SecondaryVariableFieldEvaluator(plist) {
-  my_key_ = plist_.get<std::string>("surface key");
-  dependency_key_ = plist_.get<std::string>("subsurface key");
+  if (boost::starts_with(my_key_, "surface"))
+    dependency_key_ = plist_.get<std::string>("subsurface key", my_key_.substr(8,my_key_.size()));
+  else
+    dependency_key_ = plist_.get<std::string>("subsurface key");
   dependencies_.insert(dependency_key_);
 }
 
@@ -57,7 +62,7 @@ SurfaceTopCellsEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
 void
 SurfaceTopCellsEvaluator::EnsureCompatibility(const Teuchos::Ptr<State>& S) {
   // Ensure my field exists.  Requirements should be already set.  Claim ownership.
-  ASSERT(my_key_ != std::string(""));
+  ASSERT(!my_key_.empty());
   Teuchos::RCP<CompositeVectorSpace> my_fac = S->RequireField(my_key_, my_key_);
 
   // check plist for vis or checkpointing control

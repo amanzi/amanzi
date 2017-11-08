@@ -1,4 +1,4 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+/* -*-  mode: c++; indent-tabs-mode: nil -*- */
 
 /*
   The elevation evaluator gets the surface elevation and slope.
@@ -18,7 +18,6 @@
 
 namespace Amanzi {
 namespace Flow {
-namespace FlowRelations {
 
 class ElevationEvaluator : public SecondaryVariablesFieldEvaluator {
 
@@ -45,7 +44,6 @@ protected:
 
 };
 
-} //namespace
 } //namespace
 } //namespace
 

@@ -19,6 +19,14 @@
 
 #include "dbc.hh"
 
+#include <limits>
+inline bool is_equal(double x, double y) {
+  return (std::fabs(x-y) <= std::numeric_limits<double>::epsilon());
+}
+inline bool is_greater(double x, double y) {
+  return (x-y > std::numeric_limits<double>::epsilon());
+}
+
 namespace Amanzi {
 namespace AmanziGeometry {
 

@@ -1,4 +1,4 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+/* -*-  mode: c++; indent-tabs-mode: nil -*- */
 
 /*
   A capillary pressure model based upon something other than p_atm - p.
@@ -13,7 +13,6 @@
 
 namespace Amanzi {
 namespace Flow {
-namespace FlowRelations {
 
 class PCLiqAtm {
 
@@ -21,12 +20,11 @@ public:
   explicit PCLiqAtm(Teuchos::ParameterList& plist) {}
 
   // required methods from the base class
-  virtual double CapillaryPressure(double p, double p_atm) { return p_atm - p; }
-  virtual double DCapillaryPressureDp(double p, double p_atm) { return -1.; }
-  virtual double DCapillaryPressureDpatm(double p, double p_atm) { return 1.; }
+  double CapillaryPressure(double p, double p_atm) { return p_atm - p; }
+  double DCapillaryPressureDp(double p, double p_atm) { return -1.; }
+  double DCapillaryPressureDpatm(double p, double p_atm) { return 1.; }
 };
 
-} //namespace
 } //namespace
 } //namespace
 

@@ -1,4 +1,4 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+/* -*-  mode: c++; indent-tabs-mode: nil -*- */
 
 /*
   Evaluates the unfrozen effective depth, h * eta
@@ -14,7 +14,6 @@
 
 namespace Amanzi {
 namespace Flow {
-namespace FlowRelations {
 
 class UnfrozenEffectiveDepthModel;
 
@@ -42,7 +41,6 @@ protected:
 
 };
 
-} //namespace
 } //namespace
 } //namespace
 

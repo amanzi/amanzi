@@ -74,7 +74,7 @@ typedef double AnalyticFunction(const AmanziGeometry::Point&, const double);
                  const std::string& pk_list_name,
                  std::vector<std::string>& component_names);
 
-    ~Transport_PK_ATS();
+    ~Transport_PK_ATS() = default;
 
   // members required by PK interface
   virtual void Setup(const Teuchos::Ptr<State>& S);

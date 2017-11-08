@@ -1,6 +1,6 @@
 /*
   The richards water content evaluator is an algebraic evaluator of a given model.
-Richards water content with no vapor.  
+Richards water content evaluator: the standard form as a function of liquid saturation.  
   Generated via evaluator_generator.
 */
 
@@ -45,7 +45,7 @@ RichardsWaterContentEvaluator::InitializeFromPlist_()
 {
   // Set up my dependencies
   // - defaults to prefixed via domain
-  Key domain_name = getDomainPrefix(my_key_);
+  Key domain_name = Keys::getDomainPrefix(my_key_);
 
   // - pull Keys from plist
   // dependency: porosity

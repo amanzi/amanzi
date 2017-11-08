@@ -1,4 +1,4 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+/* -*-  mode: c++; indent-tabs-mode: nil -*- */
 
 /* -------------------------------------------------------------------------
 ATS
@@ -14,7 +14,6 @@ Linear interpolant of thermal conductivity.
 
 namespace Amanzi {
 namespace Energy {
-namespace EnergyRelations {
 
 ThermalConductivityThreePhaseSutraHacked::ThermalConductivityThreePhaseSutraHacked(
       Teuchos::ParameterList& plist) : plist_(plist) {
@@ -41,4 +40,3 @@ void ThermalConductivityThreePhaseSutraHacked::InitializeFromPlist_() {
 
 } // namespace Relations
 } // namespace Energy
-} // namespace Amanzi

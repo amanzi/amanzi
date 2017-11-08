@@ -1,4 +1,4 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+/* -*-  mode: c++; indent-tabs-mode: nil -*- */
 
 /*
   Determining the molar fraction of a gas component within a gas mixture.
@@ -35,10 +35,10 @@ MolarFractionGasEvaluator::MolarFractionGasEvaluator(Teuchos::ParameterList& pli
   } else {
     domain_name = domain_name+std::string("_");
   }
-  domain_name =getDomain(my_key_);
+  domain_name =Keys::getDomain(my_key_);
   
   temp_key_= plist_.get<std::string>("temperature key",
-                                     getKey(domain_name,"temperature"));
+                                     Keys::getKey(domain_name,"temperature"));
   dependencies_.insert(temp_key_);
 }
 

@@ -1,4 +1,4 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+/* -*-  mode: c++; indent-tabs-mode: nil -*- */
 
 /*
   ViscosityEvaluator is the interface between state/data and the model, a VPM.
@@ -22,11 +22,11 @@ ViscosityEvaluator::ViscosityEvaluator(Teuchos::ParameterList& plist) :
   }
 
   // Set up my dependencies.
-  Key domain_name = getDomain(my_key_);
+  Key domain_name = Keys::getDomain(my_key_);
 
   // -- temperature
   temp_key_ = plist_.get<std::string>("temperature key",
-          getKey(domain_name, "temperature"));
+          Keys::getKey(domain_name, "temperature"));
   dependencies_.insert(temp_key_);
 
   // Construct my Viscosity model

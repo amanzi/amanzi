@@ -1,4 +1,4 @@
-/* -*-  mode++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+/* -*-  mode++; indent-tabs-mode: nil -*- */
 
 /* -------------------------------------------------------------------------
 ATS
@@ -67,7 +67,7 @@ void EnergyBase::AddAdvection_(const Teuchos::Ptr<State>& S,
   S->GetFieldEvaluator(enthalpy_key_)->HasFieldChanged(S.ptr(), name_);
   Teuchos::RCP<const CompositeVector> enth = S->GetFieldData(enthalpy_key_);;
   ApplyDirichletBCsToEnthalpy_(S.ptr());
-  matrix_adv_->ApplyBCs(bc_adv_, true);
+  matrix_adv_->ApplyBCs(bc_adv_, false);
 
   // apply
   matrix_adv_->global_operator()->ComputeNegativeResidual(*enth, *g, false);
@@ -124,11 +124,10 @@ void EnergyBase::AddSources_(const Teuchos::Ptr<State>& S,
       g_c[0][c] -= source1[0][c];
     }
 
-    if (vo_->os_OK(Teuchos::VERB_EXTREME)) {
+    if (vo_->os_OK(Teuchos::VERB_EXTREME))
       *vo_->os() << "Adding external source term" << std::endl;
-      db_->WriteVector("  Q_ext", S->GetFieldData(source_key_).ptr(), false);
-      db_->WriteVector("res (src)", g, false);
-    }
+    db_->WriteVector("  Q_ext", S->GetFieldData(source_key_).ptr(), false);
+    db_->WriteVector("res (src)", g, false);
   }
 }
 
@@ -140,7 +139,7 @@ void EnergyBase::AddSourcesToPrecon_(const Teuchos::Ptr<State>& S, double h) {
 
     S->GetFieldEvaluator(source_key_)->HasFieldDerivativeChanged(S, name_, key_);
     const Epetra_MultiVector& dsource_dT =
-        *S->GetFieldData(dsource_dT_key_)->ViewComponent("cell",false);
+        *S->GetFieldData(Keys::getDerivKey(source_key_, key_))->ViewComponent("cell",false);
     unsigned int ncells = dsource_dT.MyLength();
     for (unsigned int c=0; c!=ncells; ++c) {
       Acc_cells[c] -= dsource_dT[0][c];

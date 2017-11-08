@@ -1,4 +1,4 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+/* -*-  mode: c++; indent-tabs-mode: nil -*- */
 
 /*
   The WRM Evaluator simply calls the WRM with the correct arguments.
@@ -11,7 +11,6 @@
 
 namespace Amanzi {
 namespace Energy {
-namespace EnergyRelations {
 
 
 IEMEvaluator::IEMEvaluator(Teuchos::ParameterList& plist) :
@@ -47,16 +46,12 @@ IEMEvaluator::Clone() const {
 
 
 void IEMEvaluator::InitializeFromPlist_() {
-  if (my_key_.empty()) {
-    my_key_ = plist_.get<std::string>("internal energy key");
-  }
-
   // Set up my dependencies.
-  std::string domain_name = getDomain(my_key_);
+  std::string domain_name = Keys::getDomain(my_key_);
 
   // -- temperature
   temp_key_ = plist_.get<std::string>("temperature key",
-          getKey(domain_name, "temperature"));
+          Keys::getKey(domain_name, "temperature"));
   dependencies_.insert(temp_key_);
 }
 
@@ -96,6 +91,5 @@ void IEMEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>& S,
 }
 
 
-} //namespace
 } //namespace
 } //namespace

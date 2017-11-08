@@ -16,9 +16,11 @@ include_directories(${ATS_SOURCE_DIR}/src/pks/flow/icy_overland)
 add_library(relations_ewc
 #  thermal_richards_model.cc
   ewc_model_base.cc
+  liquid_ice_model.cc
   permafrost_model.cc
   surface_ice_model.cc
   )
+
 
 install(TARGETS relations_ewc DESTINATION lib )
 

@@ -1,4 +1,4 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+/* -*-  mode: c++; indent-tabs-mode: nil -*- */
 
 /*
   Interface for a thermal conductivity model with two phases.
@@ -15,7 +15,6 @@
 
 namespace Amanzi {
 namespace Energy {
-namespace EnergyRelations {
 
 // Equation of State model
 class ThermalConductivityTwoPhaseEvaluator :
@@ -43,7 +42,6 @@ class ThermalConductivityTwoPhaseEvaluator :
   Key sat_key_;
 };
 
-} // namespace
 } // namespace
 } // namespace
 

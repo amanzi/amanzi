@@ -1,10 +1,85 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+/* -*-  mode: c++; indent-tabs-mode: nil -*- */
+//! Overland flow using the diffusion wave equation.
 
-/* -----------------------------------------------------------------------------
-This is the overland flow component of ATS.
-License: BSD
-Authors: Ethan Coon (ecoon@lanl.gov)
------------------------------------------------------------------------------ */
+/*
+  ATS is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
+
+  Authors: Ethan Coon (ecoon@lanl.gov)
+*/
+
+
+/*!
+
+Solves the diffusion wave equation for overland flow with pressure as a primary variable:
+
+.. math::
+  \frac{\partial \Theta}{\partial t} - \nabla n_l k \nabla h(p) = Q_w
+
+
+Options:
+
+Variable naming:
+
+* `"domain`" ``[string]`` **"surface"**  Defaults to the extracted surface mesh.
+
+* `"primary variable`" ``[string]`` The primary variable associated with this PK, typically `"DOMAIN-pressure`"
+
+
+Other variable names, typically not set as the default is basically always good:
+
+* `"conserved quantity suffix`" ``[string]`` **"water_content"**  If set, changes the conserved quantity key.
+
+* `"conserved quantity key`" ``[string]`` **"DOMAIN-CONSERVED_QUANTITY_SUFFIX"** Typically not set, default is good. ``[mol]``
+
+Discretization control:
+
+* `"diffusion`" ``[list]`` An OperatorDiffusion_ spec describing the (forward) diffusion operator
+
+* `"diffusion preconditioner`" ``[list]`` An OperatorDiffusion_ spec describing the diffusive parts of the preconditioner.
+
+Time integration and timestep control:
+
+* `"initial time step`" ``[double]`` **1.** Max initial time step size ``[s]``.
+
+* `"time integrator`" ``[time-integrator-spec]`` is a TimeIntegrator_ spec.
+  Note that this is only used if this PK is not strongly coupled to other PKs.
+
+* `"linear solver`" ``[linear-solver-spec]`` is a LinearSolver_ spec.  Note
+  that this is only used if this PK is not strongly coupled to other PKs.
+
+* `"preconditioner`" ``[preconditioner-spec]`` is a Preconditioner_ spec.
+  Note that this is only used if this PK is not strongly coupled to other PKs.
+
+* `"initial condition`" ``[initial-condition-spec]`` See InitialConditions_.
+  Additionally, the following parameter is supported:
+
+  - `"initialize faces from cell`" ``[bool]`` **false** Indicates that the
+    primary variable field has both CELL and FACE objects, and the FACE values
+    are calculated as the average of the neighboring cells.
+
+Error control:
+
+* `"absolute error tolerance`" [double] **DERIVED** Defaults to 1 cm of water.  A small, but significant, amount of water.
+
+* `"relative error tolerance`" [double] **1** Take the error relative to the amount of water present in that cell.
+
+* `"flux tolerance`" [double] **1** Multiplies the error in flux (on a face)
+  relative to the min of water in the neighboring cells.  Typically only
+  changed if infiltration is very small and the boundary condition is not
+  converging, at which point it can be decreased by an order of magnitude at a
+  time until the boundary condition is satisfied.
+
+Boundary conditions:
+
+* `"boundary conditions`" ``[surface-flow-bc-spec]`` **defaults to Neuman, 0 normal flux**
+
+
+May inherit options from PKPhysicalBDFBase_.
+
+*/
+
 
 #ifndef PK_FLOW_OVERLAND_HEAD_HH_
 #define PK_FLOW_OVERLAND_HEAD_HH_
@@ -24,17 +99,17 @@ Authors: Ethan Coon (ecoon@lanl.gov)
 namespace Amanzi {
 
 class MPCSurfaceSubsurfaceDirichletCoupler;
+
 namespace Flow {
 
-namespace FlowRelations {
-  class OverlandConductivityModel;
-  class HeightModel;
-}
+class OverlandConductivityModel;
+class HeightModel;
 
 //class OverlandPressureFlow : public PKPhysicalBDFBase {
 class OverlandPressureFlow : public PK_PhysicalBDF_Default {
 
 public:
+
   OverlandPressureFlow(Teuchos::ParameterList& pk_tree,
                        const Teuchos::RCP<Teuchos::ParameterList>& global_list,
                        const Teuchos::RCP<State>& S,
@@ -97,9 +172,6 @@ protected:
   virtual void FixBCsForPrecon_(const Teuchos::Ptr<State>& S);
   // virtual void FixBCsForConsistentFaces_(const Teuchos::Ptr<State>& S);
 
-  virtual void ApplyBoundaryConditions_(const Teuchos::RCP<State>& S,
-          const Teuchos::RCP<CompositeVector>& pres );
-
   // computational concerns in managing abs, rel perm
   // -- builds tensor K, along with faced-based Krel if needed by the rel-perm method
   virtual bool UpdatePermeabilityDerivativeData_(const Teuchos::Ptr<State>& S);
@@ -135,16 +207,23 @@ protected:
   bool symmetric_;
   bool perm_update_required_;
   bool source_only_if_unfrozen_;
-  bool smoothed_ponded_accumulation_;
-
+  bool subgrid_model_;
+  
   double p_limit_;
   double patm_limit_;
+  bool patm_hard_limit_;
 
   // coupling term
   bool coupled_to_subsurface_via_head_;
   bool coupled_to_subsurface_via_flux_;
   Key mass_source_key_;
+
+  // newton correction
   bool jacobian_;
+  int iter_;
+  double iter_counter_time_;
+  int jacobian_lag_;
+  
 
   // work data space
   Teuchos::RCP<Operators::Upwinding> upwinding_;
@@ -170,7 +249,7 @@ protected:
   Teuchos::RCP<Functions::BoundaryFunction> bc_level_;
   
   // needed physical models
-  Teuchos::RCP<FlowRelations::OverlandConductivityModel> cond_model_;
+  Teuchos::RCP<Flow::OverlandConductivityModel> cond_model_;
 
   int niter_;
 
@@ -178,7 +257,7 @@ protected:
   static RegisteredPKFactory<OverlandPressureFlow> reg_;
 };
 
-}  // namespace AmanziFlow
+}  // namespace Flow
 }  // namespace Amanzi
 
 #endif

@@ -1,4 +1,4 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+/* -*-  mode: c++; indent-tabs-mode: nil -*- */
 
 /* -----------------------------------------------------------------------------
 This is the overland flow component of ATS.
@@ -53,7 +53,7 @@ void OverlandFlow::Functional( double t_old,
 #endif
 
   // unnecessary here if not debeugging, but doesn't hurt either
-  S_next_->GetFieldEvaluator("pres_elev")->HasFieldChanged(S_next_.ptr(), name_);
+  S_next_->GetFieldEvaluator(Keys::getKey(domain_, "pres_elev"))->HasFieldChanged(S_next_.ptr(), name_);
 
 #if DEBUG_FLAG
   // dump u_old, u_new
@@ -65,10 +65,10 @@ void OverlandFlow::Functional( double t_old,
   vnames.push_back("h+z");
 
   std::vector< Teuchos::Ptr<const CompositeVector> > vecs;
-  vecs.push_back(S_inter_->GetFieldData("elevation").ptr());
-  vecs.push_back(S_inter_->GetFieldData("ponded_depth").ptr());
-  vecs.push_back(S_next_->GetFieldData("ponded_depth").ptr());
-  vecs.push_back(S_next_->GetFieldData("pres_elev").ptr());
+  vecs.push_back(S_inter_->GetFieldData(Keys::getKey(domain_,"elevation")).ptr());
+  vecs.push_back(S_inter_->GetFieldData(Keys::getKey(domain_,"ponded_depth")).ptr());
+  vecs.push_back(S_next_->GetFieldData(Keys::getKey(domain_,"ponded_depth")).ptr());
+  vecs.push_back(S_next_->GetFieldData(Keys::getKey(domain_, "pres_elev")).ptr());
 
   db_->WriteVectors(vnames, vecs, true);
 #endif
@@ -88,8 +88,8 @@ void OverlandFlow::Functional( double t_old,
 #if DEBUG_FLAG
   vnames.resize(2); vecs.resize(2);
   vnames[0] = "k_s"; vnames[1] = "uw k_s";
-  vecs[0] = S_next_->GetFieldData("overland_conductivity").ptr();
-  vecs[1] = S_next_->GetFieldData("upwind_overland_conductivity").ptr();
+  vecs[0] = S_next_->GetFieldData(Keys::getKey(domain_,"overland_conductivity")).ptr();
+  vecs[1] = S_next_->GetFieldData(Keys::getKey(domain_,"upwind_overland_conductivity")).ptr();
   db_->WriteVectors(vnames, vecs, true);
   db_->WriteVector("res (diff)", res.ptr(), true);
 #endif
@@ -160,14 +160,16 @@ void OverlandFlow::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector>
   if (jacobian_) UpdatePermeabilityDerivativeData_(S_next_.ptr());
 
   Teuchos::RCP<const CompositeVector> cond =
-    S_next_->GetFieldData("upwind_overland_conductivity");
+      S_next_->GetFieldData(Keys::getKey(domain_,"upwind_overland_conductivity"));
   Teuchos::RCP<const CompositeVector> dcond = Teuchos::null;
 
   if (jacobian_) {
     if (preconditioner_->RangeMap().HasComponent("face")) {
-      dcond = S_next_->GetFieldData("dupwind_overland_conductivity_dponded_depth");
+      Key dkey = Keys::getDerivKey(Keys::getKey(domain_,"upwind_overland_conductivity"),key_);
+      dcond = S_next_->GetFieldData(dkey);
     } else {
-      dcond = S_next_->GetFieldData("doverland_conductivity_dponded_depth");
+      Key dkey = Keys::getDerivKey(Keys::getKey(domain_,"overland_conductivity"),key_);
+      dcond = S_next_->GetFieldData(dkey);
     }
   }
 
@@ -182,8 +184,8 @@ void OverlandFlow::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector>
       flux = S_next_->GetFieldData("surface-mass_flux", name_);
       preconditioner_diff_->UpdateFlux(*pres_elev, *flux);
     } else {
-      S_next_->GetFieldEvaluator("pres_elev")->HasFieldChanged(S_next_.ptr(), name_);
-      pres_elev = S_next_->GetFieldData("pres_elev");
+      S_next_->GetFieldEvaluator(Keys::getKey(domain_, "pres_elev"))->HasFieldChanged(S_next_.ptr(), name_);
+      pres_elev = S_next_->GetFieldData(Keys::getKey(domain_, "pres_elev"));
     }
     preconditioner_diff_->UpdateMatricesNewtonCorrection(flux.ptr(), pres_elev.ptr());
   }
@@ -258,7 +260,7 @@ double OverlandFlow::ErrorNorm(Teuchos::RCP<const TreeVector> u,
       int nfaces = dvec->size(*comp, false);
       bool scaled_constraint = plist_->sublist("diffusion").get<bool>("scaled constraint equation", true);
       double constraint_scaling_cutoff = plist_->sublist("diffusion").get<double>("constraint equation scaling cutoff", 1.0);
-      const Epetra_MultiVector& kr_f = *S_next_->GetFieldData("upwind_overland_conductivity")
+      const Epetra_MultiVector& kr_f = *S_next_->GetFieldData(Keys::getDerivKey(Keys::getKey(domain_,"upwind_overland_conductivity"), key_))
         ->ViewComponent("face",false);
 
       for (unsigned int f=0; f!=nfaces; ++f) {

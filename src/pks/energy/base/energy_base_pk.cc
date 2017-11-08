@@ -1,4 +1,4 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+/* -*-  mode: c++; indent-tabs-mode: nil -*- */
 
 /* -------------------------------------------------------------------------
 ATS
@@ -52,14 +52,13 @@ EnergyBase::EnergyBase(Teuchos::ParameterList& FElist,
 
   // set a default absolute tolerance
   if (!plist_->isParameter("absolute error tolerance")) {
-    if (domain_ == "surface") {
+
+    if (domain_.find("surface") != std::string::npos) {
       // h * nl * u at 1C in MJ/mol
       plist_->set("absolute error tolerance", .01 * 55000. * 76.e-6);
-    } else if ((domain_ == "domain") || (boost::starts_with(domain_, "column"))) {
+    } else {
       // phi * s * nl * u at 1C in MJ/mol
       plist_->set("absolute error tolerance", .5 * .1 * 55000. * 76.e-6);
-    } else {
-      ASSERT(0);
     }
   }
 }
@@ -79,49 +78,16 @@ void EnergyBase::Setup(const Teuchos::Ptr<State>& S) {
 
 void EnergyBase::SetupEnergy_(const Teuchos::Ptr<State>& S) {
   // Set up keys if they were not already set.
-  if (energy_key_.empty()) {
-    energy_key_ = plist_->get<std::string>("energy key",
-            getKey(domain_, "energy"));
-  }
-  if (enthalpy_key_.empty()) {
-    enthalpy_key_ = plist_->get<std::string>("enthalpy key",
-            getKey(domain_, "enthalpy"));
-  }
-  if (denthalpy_key_.empty()) {
-    denthalpy_key_ = plist_->get<std::string>("enthalpy derivative key",
-            std::string("d")+enthalpy_key_+std::string("_d")+key_);
-  }
-  if (flux_key_.empty()) {
-    flux_key_ = plist_->get<std::string>("flux key",
-            getKey(domain_, "mass_flux"));
-  }
-  if (energy_flux_key_.empty()) {
-    energy_flux_key_ = plist_->get<std::string>("energy flux key",
-            getKey(domain_, "energy_flux"));
-  }
-  if (adv_energy_flux_key_.empty()) {
-    adv_energy_flux_key_ = plist_->get<std::string>("advected energy flux key",
-            getKey(domain_, "advected_energy_flux"));
-  }
-  if (conductivity_key_.empty()) {
-    conductivity_key_ = plist_->get<std::string>("conductivity key",
-            getKey(domain_, "thermal_conductivity"));
-  }
-  if (uw_conductivity_key_.empty()) {
-    uw_conductivity_key_ = plist_->get<std::string>("upwind conductivity key",
-            getKey(domain_, "upwind_thermal_conductivity"));
-  }
-  if (de_dT_key_.empty()) {
-    de_dT_key_ = plist_->get<std::string>("de/dT key",
-            std::string("d")+energy_key_+std::string("_d")+key_);
-  }
-  if (source_key_.empty()) {
-    source_key_ = plist_->get<std::string>("source key",
-            getKey(domain_, "total_energy_source"));
-  }
-  if (dsource_dT_key_.empty()) {
-    dsource_dT_key_ = std::string("d")+source_key_+std::string("_d")+key_;
-  }
+  energy_key_ = Keys::readKey(*plist_, domain_, "energy", "energy");
+  enthalpy_key_ = Keys::readKey(*plist_, domain_, "enthalpy", "enthalpy");
+  flux_key_ = Keys::readKey(*plist_, domain_, "mass flux", "mass_flux");
+  energy_flux_key_ = Keys::readKey(*plist_, domain_, "diffusive energy flux", "diffusive_energy_flux");
+  adv_energy_flux_key_ = Keys::readKey(*plist_, domain_, "advected energy flux", "advected_energy_flux");
+  conductivity_key_ = Keys::readKey(*plist_, domain_, "thermal conductivity", "thermal_conductivity");
+  uw_conductivity_key_ = Keys::readKey(*plist_, domain_, "upwinded thermal conductivity", "upwind_thermal_conductivity");
+  source_key_ = Keys::readKey(*plist_, domain_, "energy source", "total_energy_source");
+
+
 
   // Get data for special-case entities.
   S->RequireField(cell_vol_key_)->SetMesh(mesh_)
@@ -212,8 +178,8 @@ void EnergyBase::SetupEnergy_(const Teuchos::Ptr<State>& S) {
   if (jacobian_) {
     if (preconditioner_->RangeMap().HasComponent("face")) {
       // MFD -- upwind required
-      dconductivity_key_ = getDerivKey(conductivity_key_, key_);
-      duw_conductivity_key_ = getDerivKey(uw_conductivity_key_, key_);
+      dconductivity_key_ = Keys::getDerivKey(conductivity_key_, key_);
+      duw_conductivity_key_ = Keys::getDerivKey(uw_conductivity_key_, key_);
         
       S->RequireField(duw_conductivity_key_, name_)
         ->SetMesh(mesh_)->SetGhosted()
@@ -227,14 +193,17 @@ void EnergyBase::SetupEnergy_(const Teuchos::Ptr<State>& S) {
 
     } else {
       // FV -- no upwinding
-      dconductivity_key_ = getDerivKey(conductivity_key_, key_);
-      duw_conductivity_key_ = std::string();
+      dconductivity_key_ = Keys::getDerivKey(conductivity_key_, key_);
+      duw_conductivity_key_ = "";
     }
+  } else {
+    dconductivity_key_ = "";
+    duw_conductivity_key_ = "";
   }
   
 
   // -- accumulation terms
-  Teuchos::ParameterList& acc_pc_plist = plist_->sublist("Accumulation PC");
+  Teuchos::ParameterList& acc_pc_plist = plist_->sublist("accumulation preconditioner");
   acc_pc_plist.set("entity kind", "cell");
   preconditioner_acc_ = Teuchos::rcp(new Operators::OperatorAccumulation(acc_pc_plist, preconditioner_));
 
@@ -244,7 +213,7 @@ void EnergyBase::SetupEnergy_(const Teuchos::Ptr<State>& S) {
     implicit_advection_in_pc_ = !plist_->get<bool>("supress advective terms in preconditioner", false);
 
     if (implicit_advection_in_pc_) {
-      Teuchos::ParameterList advect_plist = plist_->sublist("Advection PC");
+      Teuchos::ParameterList advect_plist = plist_->sublist("advection preconditioner");
       preconditioner_adv_ = Teuchos::rcp(new Operators::OperatorAdvection(advect_plist, preconditioner_));
     }
   }
@@ -288,12 +257,15 @@ void EnergyBase::SetupEnergy_(const Teuchos::Ptr<State>& S) {
   coupled_to_surface_via_flux_ =
       plist_->get<bool>("coupled to surface via flux", false);
   if (coupled_to_surface_via_flux_) {
-    if (ss_flux_key_.empty()) {
-      ss_flux_key_ = plist_->get<std::string>("surface-subsurface energy flux key",
-              getKey(domain_, "surface_subsurface_energy_flux"));
+    std::string domain_surf;
+    if (domain_ == "domain" || domain_ == "") {
+      domain_surf = plist_->get<std::string>("surface domain name", "surface");
+    } else {
+      domain_surf = plist_->get<std::string>("surface domain name", "surface_"+domain_);
     }
+    ss_flux_key_ = Keys::readKey(*plist_, domain_surf, "surface-subsurface energy flux", "surface_subsurface_energy_flux");
     S->RequireField(ss_flux_key_)
-        ->SetMesh(S->GetMesh("surface"))
+        ->SetMesh(S->GetMesh(domain_surf))
         ->AddComponent("cell", AmanziMesh::CELL, 1);
   }
 
@@ -524,7 +496,7 @@ void EnergyBase::UpdateBoundaryConditions_(
   // Dirichlet temperature boundary conditions from a coupled surface.
   if (coupled_to_surface_via_temp_) {
     // Face is Dirichlet with value of surface temp
-    Teuchos::RCP<const AmanziMesh::Mesh> surface = S->GetMesh("surface");
+    Teuchos::RCP<const AmanziMesh::Mesh> surface = S->GetMesh(Keys::getDomain(ss_flux_key_));
     const Epetra_MultiVector& temp = *S->GetFieldData("surface_temperature")
         ->ViewComponent("cell",false);
 
@@ -546,10 +518,9 @@ void EnergyBase::UpdateBoundaryConditions_(
   if (coupled_to_surface_via_flux_) {
     // Diffusive fluxes are given by the residual of the surface equation.
     // Advective fluxes are given by the surface temperature and whatever flux we have.
-    Teuchos::RCP<const AmanziMesh::Mesh> surface = S->GetMesh("surface");
+    Teuchos::RCP<const AmanziMesh::Mesh> surface = S->GetMesh(Keys::getDomain(ss_flux_key_));
     const Epetra_MultiVector& flux =
-        *S->GetFieldData("surface_subsurface_energy_flux")
-        ->ViewComponent("cell",false);
+      *S->GetFieldData(ss_flux_key_)->ViewComponent("cell",false);
 
     int ncells_surface = flux.MyLength();
     for (int c=0; c!=ncells_surface; ++c) {
@@ -559,7 +530,7 @@ void EnergyBase::UpdateBoundaryConditions_(
 
       // -- set that value to Neumann
       bc_markers_[f] = Operators::OPERATOR_BC_NEUMANN;
-      // flux is in units of J / s, whereas Neumann BCs are J/s/A
+      // flux provided by the coupler is in units of J / s, whereas Neumann BCs are J/s/A
       bc_values_[f] = flux[0][c] / mesh_->face_area(f);
 
       // -- mark advective BCs as Dirichlet: this ensures the surface
@@ -569,7 +540,7 @@ void EnergyBase::UpdateBoundaryConditions_(
     }
   }
 
-  // mark all remaining boundary conditions as zero flux conditions
+  // mark all remaining boundary conditions as zero diffusive flux conditions
   AmanziMesh::Entity_ID_List cells;
   int nfaces_owned = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
   for (int f = 0; f < nfaces_owned; f++) {
@@ -580,7 +551,7 @@ void EnergyBase::UpdateBoundaryConditions_(
       if (ncells == 1) {
         bc_markers_[f] = Operators::OPERATOR_BC_NEUMANN;
         bc_values_[f] = 0.0;
-        bc_markers_adv_[f] = Operators::OPERATOR_BC_NEUMANN;
+        bc_markers_adv_[f] = Operators::OPERATOR_BC_DIRICHLET;
         bc_values_adv_[f] = 0.0;
       }
     }
@@ -660,8 +631,9 @@ bool EnergyBase::IsAdmissible(Teuchos::RCP<const TreeVector> up) {
       local_maxT_c.value = maxT_c;
       local_maxT_c.gid = temp_c.Map().GID(max_c);
 
-      MPI_Allreduce(&local_minT_c, &global_minT_c, 1, MPI_DOUBLE_INT, MPI_MINLOC, MPI_COMM_WORLD);
-      MPI_Allreduce(&local_maxT_c, &global_maxT_c, 1, MPI_DOUBLE_INT, MPI_MAXLOC, MPI_COMM_WORLD);
+      MPI_Allreduce(&local_minT_c, &global_minT_c, 1, MPI_DOUBLE_INT, MPI_MINLOC, mesh_->get_comm()->Comm());
+      MPI_Allreduce(&local_maxT_c, &global_maxT_c, 1, MPI_DOUBLE_INT, MPI_MAXLOC, mesh_->get_comm()->Comm());
+
       *vo_->os() << "   cells (min/max): [" << global_minT_c.gid << "] " << global_minT_c.value
                  << ", [" << global_maxT_c.gid << "] " << global_maxT_c.value << std::endl;
 
@@ -675,8 +647,9 @@ bool EnergyBase::IsAdmissible(Teuchos::RCP<const TreeVector> up) {
         local_maxT_f.value = maxT_f;
         local_maxT_f.gid = temp_f.Map().GID(max_f);
         
-        MPI_Allreduce(&local_minT_f, &global_minT_f, 1, MPI_DOUBLE_INT, MPI_MINLOC, MPI_COMM_WORLD);
-        MPI_Allreduce(&local_maxT_f, &global_maxT_f, 1, MPI_DOUBLE_INT, MPI_MAXLOC, MPI_COMM_WORLD);
+
+        MPI_Allreduce(&local_minT_f, &global_minT_f, 1, MPI_DOUBLE_INT, MPI_MINLOC, mesh_->get_comm()->Comm());
+        MPI_Allreduce(&local_maxT_f, &global_maxT_f, 1, MPI_DOUBLE_INT, MPI_MAXLOC, mesh_->get_comm()->Comm());
         *vo_->os() << "   cells (min/max): [" << global_minT_f.gid << "] " << global_minT_f.value
                    << ", [" << global_maxT_f.gid << "] " << global_maxT_f.value << std::endl;
       }

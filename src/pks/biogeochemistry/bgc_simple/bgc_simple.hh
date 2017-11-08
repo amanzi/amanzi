@@ -1,4 +1,4 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+/* -*-  mode: c++; indent-tabs-mode: nil -*- */
 /* -------------------------------------------------------------------------
    ATS
 
@@ -33,9 +33,11 @@ namespace BGC {
 class BGCSimple : public PK_Physical_Default {
 
  public:
+
   BGCSimple(Teuchos::ParameterList& pk_tree,
             const Teuchos::RCP<Teuchos::ParameterList>& glist,
             const Teuchos::RCP<State>& S,
+
             const Teuchos::RCP<TreeVector>& solution);
 
   // is a PK
@@ -102,8 +104,9 @@ class BGCSimple : public PK_Physical_Default {
 
  protected:
   double dt_;
-  Teuchos::RCP<const AmanziMesh::Mesh> surf_mesh_;
-
+  Teuchos::RCP<const AmanziMesh::Mesh> mesh_surf_;
+  Key domain_surf_;
+  
   // physical structs needed by model
   std::vector<Teuchos::RCP<SoilCarbonParameters> > sc_params_;
   std::vector<std::vector<Teuchos::RCP<PFT> > > pfts_;       // this also contains state data!
@@ -122,6 +125,11 @@ class BGCSimple : public PK_Physical_Default {
   int ncells_per_col_;
   std::string soil_part_name_;
 
+  // keys
+  Key trans_key_;
+  Key shaded_sw_key_;
+  Key total_lai_key_;
+  
  private:
   // factory registration
   static RegisteredPKFactory<BGCSimple> reg_;

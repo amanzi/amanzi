@@ -1,4 +1,4 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+/* -*-  mode: c++; indent-tabs-mode: nil -*- */
 
 /*
   An evaluator for pulling the darcy flux, at the surface, from the
@@ -18,7 +18,6 @@ namespace Amanzi {
 namespace Operators { class MatrixMFD; }
 
 namespace Flow {
-namespace FlowRelations {
 
 class NonlinearSourceFromSubsurfaceEvaluator :
     public SecondaryVariableFieldEvaluator {
@@ -56,7 +55,6 @@ protected:
 
 };
 
-} //namespace
 } //namespace
 } //namespace
 

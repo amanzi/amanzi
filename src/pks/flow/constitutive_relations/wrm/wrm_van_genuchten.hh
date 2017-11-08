@@ -1,4 +1,4 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+/* -*-  mode: c++; indent-tabs-mode: nil -*- */
 //! WRMVanGenuchten : water retention model using van Genuchten's parameterization
 
 /*
@@ -33,7 +33,6 @@
 
 namespace Amanzi {
 namespace Flow {
-namespace FlowRelations {
 
 class WRMVanGenuchten : public WRM {
 
@@ -62,13 +61,15 @@ public:
 
   int function_;
   double s0_;  // regularization threshold in saturation
-  Amanzi::Utils::Spline fit_;
+  Amanzi::Utils::Spline fit_kr_;
+
+  double pc0_;
+  Amanzi::Utils::Spline fit_s_;
   
 
   static Utils::RegisteredFactory<WRM,WRMVanGenuchten> factory_;
 };
 
-} //namespace
 } //namespace
 } //namespace
 

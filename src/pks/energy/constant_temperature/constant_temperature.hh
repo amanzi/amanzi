@@ -1,4 +1,4 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+/* -*-  mode: c++; indent-tabs-mode: nil -*- */
 /* -------------------------------------------------------------------------
 ATS
 
@@ -41,6 +41,7 @@ public:
                       const Teuchos::RCP<TreeVector>& solution) :
     PK(FElist, plist, S, solution),
     PK_PhysicalBDF_Default(FElist, plist, S, solution) {
+
     plist_->set("solution key", "temperature");
   }
 

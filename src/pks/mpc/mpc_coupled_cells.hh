@@ -1,4 +1,4 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+/* -*-  mode: c++; indent-tabs-mode: nil -*- */
 /* -------------------------------------------------------------------------
 ATS
 
@@ -39,17 +39,17 @@ d_temperature and d_energy / d_pressure.
 
 namespace Amanzi {
 
-namespace Operators { class TreeOperator; }
+namespace Operators { class TreeOperator; class OperatorAccumulation; }
 
 class MPCCoupledCells : public StrongMPC<PK_PhysicalBDF_Default> {
  public:
+
   MPCCoupledCells(Teuchos::ParameterList& FElist,
                   const Teuchos::RCP<Teuchos::ParameterList>& plist,
                   const Teuchos::RCP<State>& S,
                   const Teuchos::RCP<TreeVector>& solution):
     PK(FElist, plist, S, solution),
-    StrongMPC<PK_PhysicalBDF_Default>(FElist, plist, S, solution),
-    decoupled_(false) {}
+    StrongMPC<PK_PhysicalBDF_Default>(FElist, plist, S, solution) {}
 
   virtual void Setup(const Teuchos::Ptr<State>& S);
 
@@ -70,10 +70,18 @@ class MPCCoupledCells : public StrongMPC<PK_PhysicalBDF_Default> {
   Teuchos::RCP<Operators::TreeOperator> linsolve_preconditioner_;
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
 
-  bool decoupled_;
+  Teuchos::RCP<Operators::OperatorAccumulation> dA_dy2_;
+  Teuchos::RCP<Operators::OperatorAccumulation> dB_dy1_;
+  
+  bool precon_used_;
 
   // cruft for easier global debugging
   Teuchos::RCP<Debugger> db_;
+
+private:
+  // factory registration
+  static RegisteredPKFactory<MPCCoupledCells> reg_;
+
 };
 
 

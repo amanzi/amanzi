@@ -1,4 +1,4 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+/* -*-  mode: c++; indent-tabs-mode: nil -*- */
 /* -------------------------------------------------------------------------
 
    ATS
@@ -12,7 +12,6 @@
 
 namespace Amanzi {
 namespace Flow {
-namespace FlowRelations {
 
 // method for instantiating WRM implementations
 Teuchos::RCP<WRM> WRMFactory::createWRM(Teuchos::ParameterList& plist) {
@@ -20,7 +19,6 @@ Teuchos::RCP<WRM> WRMFactory::createWRM(Teuchos::ParameterList& plist) {
   return Teuchos::rcp(CreateInstance(wrm_typename, plist));
 };
 
-} // namespace
 } // namespace
 } // namespace
 

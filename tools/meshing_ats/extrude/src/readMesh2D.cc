@@ -42,7 +42,7 @@ readMesh2D_text(const std::string& filename,
        >> p3[0] >> p3[1] >> p3[2] >> depths[2]
        >> veg_type >> soil_type >> bedrock_type;
 
-    if (c[0] < x_max && c[1] < y_max) {
+    if (is_greater(x_max, c[0]) && is_greater(y_max, c[1])) {
       veg_types.push_back(veg_type);
       soil_types.push_back(soil_type);
       bedrock_types.push_back(bedrock_type);

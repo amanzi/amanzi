@@ -1,4 +1,4 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+/* -*-  mode: c++; indent-tabs-mode: nil -*- */
 
 /*
   A capillary pressure model based upon something other than p_atm - p.
@@ -13,7 +13,6 @@
 
 namespace Amanzi {
 namespace Flow {
-namespace FlowRelations {
 
 class PCIceWater {
 
@@ -22,9 +21,9 @@ public:
 
   // required methods from the base class
   bool IsMolarBasis() { return molar_basis_; }
-  virtual double CapillaryPressure(double T, double dens);
-  virtual double DCapillaryPressureDT(double T, double dens);
-  virtual double DCapillaryPressureDRho(double T, double dens);
+  double CapillaryPressure(double T, double dens);
+  double DCapillaryPressureDT(double T, double dens);
+  double DCapillaryPressureDRho(double T, double dens);
 
 private:
   void InitializeFromPlist_();
@@ -40,7 +39,6 @@ private:
   double halfwidth_;
 };
 
-} //namespace
 } //namespace
 } //namespace
 

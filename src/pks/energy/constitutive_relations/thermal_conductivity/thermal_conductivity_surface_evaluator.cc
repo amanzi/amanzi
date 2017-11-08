@@ -1,4 +1,4 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+/* -*-  mode: c++; indent-tabs-mode: nil -*- */
 
 /*
   Interface for a thermal conductivity model with two phases.
@@ -11,7 +11,6 @@
 
 namespace Amanzi {
 namespace Energy {
-namespace EnergyRelations {
 
 ThermalConductivitySurfaceEvaluator::ThermalConductivitySurfaceEvaluator(
       Teuchos::ParameterList& plist) :
@@ -21,11 +20,22 @@ ThermalConductivitySurfaceEvaluator::ThermalConductivitySurfaceEvaluator(
             "surface-thermal_conductivity");
   }
 
-  uf_key_ = plist_.get<std::string>("unfrozen fraction key", "unfrozen_fraction");
+
+  Key domain = Keys::getDomain(my_key_);
+  uf_key_ = plist_.get<std::string>("unfrozen fraction key", Keys::getKey(domain,"unfrozen_fraction"));
   dependencies_.insert(uf_key_);
 
-  height_key_ = plist_.get<std::string>("height key", "ponded_depth");
+  height_key_ = plist_.get<std::string>("height key", Keys::getKey(domain, "ponded_depth"));
+
   dependencies_.insert(height_key_);
+
+
+  sg_model_ = plist.get<bool>("subgrid model",false);
+  
+  if(sg_model_){
+    vpd_key_ = plist.get<std::string>("volumetric height key", Keys::getKey(domain,"volumetric_ponded_depth"));    
+    dependencies_.insert(vpd_key_);
+  }
 
   ASSERT(plist_.isSublist("thermal conductivity parameters"));
   Teuchos::ParameterList sublist = plist_.sublist("thermal conductivity parameters");
@@ -43,7 +53,9 @@ ThermalConductivitySurfaceEvaluator::ThermalConductivitySurfaceEvaluator(
     height_key_(other.height_key_),
     K_liq_(other.K_liq_),
     K_ice_(other.K_ice_),
-    min_K_(other.min_K_) {}
+    vpd_key_(other.vpd_key_),
+    min_K_(other.min_K_),
+    sg_model_(other.sg_model_){}
 
 
 Teuchos::RCP<FieldEvaluator>
@@ -67,10 +79,18 @@ void ThermalConductivitySurfaceEvaluator::EvaluateField_(
     Epetra_MultiVector& result_v = *result->ViewComponent(*comp,false);
 
     int ncomp = result->size(*comp, false);
-    for (int i=0; i!=ncomp; ++i) {
-      result_v[0][i] = std::max(min_K_,
-              height_v[0][i] * (K_liq_ * eta_v[0][i] + K_ice_ * (1. - eta_v[0][i])));
-
+    if(!sg_model_){
+      for (int i=0; i!=ncomp; ++i) {
+        result_v[0][i] = std::max(min_K_,
+                                  height_v[0][i] * (K_liq_ * eta_v[0][i] + K_ice_ * (1. - eta_v[0][i])));
+      }
+    }
+    else{
+      const Epetra_MultiVector& vpd = *S->GetFieldData(vpd_key_)->ViewComponent("cell",false);
+      for (int i=0; i!=ncomp; ++i) {
+        result_v[0][i] = std::max(min_K_,
+                                  vpd[0][i] * (K_liq_ * eta_v[0][i] + K_ice_ * (1. - eta_v[0][i])));
+      }
     }
   }
 
@@ -81,10 +101,10 @@ void ThermalConductivitySurfaceEvaluator::EvaluateField_(
 void ThermalConductivitySurfaceEvaluator::EvaluateFieldPartialDerivative_(
       const Teuchos::Ptr<State>& S, Key wrt_key,
       const Teuchos::Ptr<CompositeVector>& result) {
+  std::cout<<"THERMAL CONDUCITIVITY: Derivative not implemented yet!"<<wrt_key<<"\n";
   ASSERT(0); // not implemented, not yet needed
   result->Scale(1.e-6); // convert to MJ
 }
 
-} //namespace
 } //namespace
 } //namespace

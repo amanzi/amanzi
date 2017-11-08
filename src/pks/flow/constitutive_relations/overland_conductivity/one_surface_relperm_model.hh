@@ -1,5 +1,5 @@
 
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+/* -*-  mode: c++; indent-tabs-mode: nil -*- */
 
 /*
   No special limits as p_surf -> p_atm.
@@ -17,7 +17,6 @@
 
 namespace Amanzi {
 namespace Flow {
-namespace FlowRelations {
 
 class OneSurfaceRelPermModel : public SurfaceRelPermModel {
  public:
@@ -43,7 +42,6 @@ class OneSurfaceRelPermModel : public SurfaceRelPermModel {
   
 };
 
-} // namespace
 } // namespace
 } // namespace
 

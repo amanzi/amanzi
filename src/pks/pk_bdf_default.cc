@@ -1,4 +1,4 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+/* -*-  mode: c++; indent-tabs-mode: nil -*- */
 
 /* -------------------------------------------------------------------------
 ATS
@@ -23,9 +23,6 @@ namespace Amanzi {
 // -----------------------------------------------------------------------------
 void PK_BDF_Default::Setup(const Teuchos::Ptr<State>& S) {
   
-  // set up the VerboseObject
-  vo_ = Teuchos::rcp(new VerboseObject(name_, *plist_));
-
   // initial timestep
   dt_ = plist_->get<double>("initial time step", 1.);
 

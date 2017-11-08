@@ -1,4 +1,4 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+/* -*-  mode: c++; indent-tabs-mode: nil -*- */
 
 /*
   Evaluates the conductivity of surface flow.
@@ -14,7 +14,6 @@
 
 namespace Amanzi {
 namespace Flow {
-namespace FlowRelations {
 
 class OverlandConductivityModel;
 
@@ -40,8 +39,9 @@ private:
   Key slope_key_;
   Key coef_key_;
   Key dens_key_;
-
-  bool dt_;
+  Key pdd_key_, drag_exp_key_;
+  Key frac_cond_key_, vpd_key_;
+  bool dt_,sg_model_;
   double factor_;
   bool dens_;
 
@@ -49,7 +49,6 @@ private:
   static Utils::RegisteredFactory<FieldEvaluator,OverlandConductivityEvaluator> factory_;
 };
 
-} //namespace
 } //namespace
 } //namespace
 

@@ -1,4 +1,4 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+/* -*-  mode: c++; indent-tabs-mode: nil -*- */
 
 /* -------------------------------------------------------------------------
 ATS
@@ -18,7 +18,6 @@ UNITS: J/{mol/kg}
 
 namespace Amanzi {
 namespace Energy {
-namespace EnergyRelations {
 
 class IEM {
 
@@ -31,7 +30,6 @@ public:
   virtual double DInternalEnergyDT(double temp) = 0;
 };
 
-}
 }
 }
 

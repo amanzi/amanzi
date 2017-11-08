@@ -1,4 +1,4 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+/* -*-  mode: c++; indent-tabs-mode: nil -*- */
 /* -------------------------------------------------------------------------
 ATS
 
@@ -65,7 +65,8 @@ int SimulationDriver::Run(
   Teuchos::RCP<Amanzi::State> S = Teuchos::rcp(new Amanzi::State(state_plist));
 
   // create and register meshes
-  ATS::createMeshes(plist.sublist("mesh"), comm, gm, *S);
+  //ATS::createMeshes(plist.sublist("mesh"), comm, gm, *S);
+  ATS::createMeshes(plist, comm, gm, *S);
   
   // create the top level Coordinator
   ATS::Coordinator coordinator(plist, S, comm.get());

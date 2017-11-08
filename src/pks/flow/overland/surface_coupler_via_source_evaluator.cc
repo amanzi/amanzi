@@ -1,4 +1,4 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+/* -*-  mode: c++; indent-tabs-mode: nil -*- */
 
 /*
   An evaluator for pulling the darcy flux, at the surface, from the
@@ -11,7 +11,6 @@
 
 namespace Amanzi {
 namespace Flow {
-namespace FlowRelations {
 
 SurfaceCouplerViaSourceEvaluator::SurfaceCouplerViaSourceEvaluator(
         Teuchos::ParameterList& plist) :
@@ -151,6 +150,5 @@ void SurfaceCouplerViaSourceEvaluator::EvaluateFieldPartialDerivative_(const Teu
   // don't do for now.
 }
 
-} // namespace
 } // namespace
 } // namespace

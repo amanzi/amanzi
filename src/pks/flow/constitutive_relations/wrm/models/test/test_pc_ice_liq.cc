@@ -5,7 +5,7 @@
 
 
 TEST(pcIL_Derivs) {
-  using namespace Amanzi::Flow::FlowRelations;
+  using namespace Amanzi::Flow::Flow;
   double eps = 1.e-4;
 
   Teuchos::ParameterList plist3;

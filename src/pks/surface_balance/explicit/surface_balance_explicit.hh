@@ -1,4 +1,4 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+/* -*-  mode: c++; indent-tabs-mode: nil -*- */
 
 /* -------------------------------------------------------------------------
    ATS
@@ -26,6 +26,7 @@ namespace SurfaceBalance {
 class SurfaceBalanceExplicit : public PK_Physical_Default {
 
 public:
+
   SurfaceBalanceExplicit(Teuchos::ParameterList& pk_tree,
                     const Teuchos::RCP<Teuchos::ParameterList>& global_list,
                     const Teuchos::RCP<State>& S,

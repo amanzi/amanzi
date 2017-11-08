@@ -1,4 +1,4 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+/* -*-  mode: c++; indent-tabs-mode: nil -*- */
 /* -------------------------------------------------------------------------
    Amanzi
 
@@ -56,7 +56,9 @@ public:
   EnergyTestOne(Teuchos::RCP<Teuchos::ParameterList> plist,
                 const Teuchos::RCP<AmanziMesh::Mesh>& mesh,
                 int num_components) :
-      EnergyTest(plist, mesh, num_components) {}      
+
+    EnergyTest(plist, mesh, num_components) {}      
+
 
   virtual double my_f(const AmanziGeometry::Point& x, double t) { return 1.; }
   virtual double my_K() { return 1.; }
@@ -73,7 +75,8 @@ public:
   EnergyTestStep(Teuchos::RCP<Teuchos::ParameterList> plist,
                  const Teuchos::RCP<AmanziMesh::Mesh>& mesh,
                  int num_components) :
-      EnergyTest(plist, mesh, num_components) {}      
+
+    EnergyTest(plist, mesh, num_components) {}
 
 
   virtual double my_f(const AmanziGeometry::Point& x, double t) {
@@ -93,7 +96,7 @@ public:
   EnergyTestDiffusedStep(Teuchos::RCP<Teuchos::ParameterList> plist,
                          const Teuchos::RCP<AmanziMesh::Mesh>& mesh,
                          int num_components) :
-      EnergyTest(plist, mesh, num_components) {}      
+    EnergyTest(plist, mesh, num_components) {}
 
   virtual double my_f(const AmanziGeometry::Point& x, double t) {
     if (x[0] <= t) return 1.0;
@@ -112,7 +115,7 @@ public:
   EnergyTestAdvDiffusedStep(Teuchos::RCP<Teuchos::ParameterList> plist,
                          const Teuchos::RCP<AmanziMesh::Mesh>& mesh,
                          int num_components) :
-      EnergyTest(plist, mesh, num_components) {}      
+    EnergyTest(plist, mesh, num_components) {}
 
   virtual double my_f(const AmanziGeometry::Point& x, double t) {
     if (x[0] <= t) return 1.0;
@@ -131,7 +134,8 @@ public:
   EnergyTestSmooth(Teuchos::RCP<Teuchos::ParameterList> plist,
                    const Teuchos::RCP<AmanziMesh::Mesh>& mesh,
                    int num_components) :
-            EnergyTest(plist, mesh, num_components) {}      
+    
+    EnergyTest(plist, mesh, num_components) {}
 
 
   virtual double my_f(const AmanziGeometry::Point& x, double t);
@@ -142,7 +146,8 @@ public:
   EnergyTestCubic(Teuchos::RCP<Teuchos::ParameterList> plist,
                   const Teuchos::RCP<AmanziMesh::Mesh>& mesh,
                   int num_components) :
-      EnergyTest(plist, mesh, num_components) {}      
+
+    EnergyTest(plist, mesh, num_components) {}
 
   virtual double my_f(const AmanziGeometry::Point& x, double t);
 };
@@ -152,7 +157,8 @@ public:
   EnergyTestTwoDOne(Teuchos::RCP<Teuchos::ParameterList> plist,
                     const Teuchos::RCP<AmanziMesh::Mesh>& mesh,
                     int num_components) :
-      EnergyTest(plist, mesh, num_components) {}      
+
+      EnergyTest(plist, mesh, num_components) {}
 
   virtual double my_f(const AmanziGeometry::Point& x, double t);
   virtual AmanziGeometry::Point my_u(const AmanziGeometry::Point& x, double t);

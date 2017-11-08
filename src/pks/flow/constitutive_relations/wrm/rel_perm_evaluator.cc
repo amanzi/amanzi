@@ -1,4 +1,4 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+/* -*-  mode: c++; indent-tabs-mode: nil -*- */
 
 /*
   Rel perm( pc ( sat ) ).
@@ -10,7 +10,6 @@
 
 namespace Amanzi {
 namespace Flow {
-namespace FlowRelations {
 
 RelPermEvaluator::RelPermEvaluator(Teuchos::ParameterList& plist) :
     SecondaryVariableFieldEvaluator(plist),
@@ -39,7 +38,7 @@ RelPermEvaluator::RelPermEvaluator(const RelPermEvaluator& other) :
     surf_rel_perm_key_(other.surf_rel_perm_key_),
     is_dens_visc_(other.is_dens_visc_),
     is_surf_(other.is_surf_),
-    surf_mesh_key_(other.surf_mesh_key_),
+    surf_domain_(other.surf_domain_),
     perm_scale_(other.perm_scale_),
     min_val_(other.min_val_) {}
 
@@ -57,32 +56,35 @@ void RelPermEvaluator::InitializeFromPlist_() {
   }
 
   // dependencies
-  Key domain_name = getDomain(my_key_);
-  
+  Key domain_name = Keys::getDomain(my_key_);
+
   // -- saturation liquid
   sat_key_ = plist_.get<std::string>("saturation key",
-          getKey(domain_name, "saturation_liquid"));
+          Keys::getKey(domain_name, "saturation_liquid"));
   dependencies_.insert(sat_key_);
 
   is_dens_visc_ = plist_.get<bool>("use density on viscosity in rel perm", true);
   if (is_dens_visc_) {
     dens_key_ = plist_.get<std::string>("density key",
-            getKey(domain_name, "molar_density_liquid"));
+            Keys::getKey(domain_name, "molar_density_liquid"));
     dependencies_.insert(dens_key_);
 
     visc_key_ = plist_.get<std::string>("viscosity key",
-            getKey(domain_name, "viscosity_liquid"));
+            Keys::getKey(domain_name, "viscosity_liquid"));
     dependencies_.insert(visc_key_);
   }
 
   // surface alterations
   is_surf_ = plist_.get<bool>("use surface rel perm", false);
   if (is_surf_) {
-    surf_rel_perm_key_ = plist_.get<std::string>("surface rel perm key",
-            "surface-relative_permeability");
+    if (domain_name.empty()) {
+      surf_domain_ = Key("surface");
+    } else {
+      surf_domain_ = Key("surface_")+domain_name;
+    }
+    surf_domain_ = plist_.get<std::string>("surface domain", surf_domain_);
+    surf_rel_perm_key_ = Keys::readKey(plist_, surf_domain_, "surface relative permeability", Keys::getVarName(my_key_));
     dependencies_.insert(surf_rel_perm_key_);
-
-    surf_mesh_key_ = plist_.get<std::string>("surface mesh key", "surface");
   }
   
   // cutoff above 0?
@@ -131,9 +133,12 @@ void RelPermEvaluator::EnsureCompatibility(const Teuchos::Ptr<State>& S) {
       }
 
       // Check the dependency for surf rel perm
+
+      Key domain = Keys::getDomain(surf_rel_perm_key_);
       S->RequireField(surf_rel_perm_key_)
-          ->SetMesh(S->GetMesh("surface"))
+          ->SetMesh(S->GetMesh(domain))
           ->AddComponent("cell",AmanziMesh::CELL,1);
+
       S->RequireFieldEvaluator(surf_rel_perm_key_)->EnsureCompatibility(S);
       
     }
@@ -192,7 +197,7 @@ void RelPermEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
         ->ViewComponent("cell",false);
     Epetra_MultiVector& res_bf = *result->ViewComponent("boundary_face",false);
 
-    Teuchos::RCP<const AmanziMesh::Mesh> surf_mesh = S->GetMesh(surf_mesh_key_);
+    Teuchos::RCP<const AmanziMesh::Mesh> surf_mesh = S->GetMesh(surf_domain_);
     Teuchos::RCP<const AmanziMesh::Mesh> mesh = result->Mesh();
     const Epetra_Map& vandelay_map = mesh->exterior_face_map(false);
     const Epetra_Map& face_map = mesh->face_map(false);
@@ -296,7 +301,7 @@ void RelPermEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>
           ->ViewComponent("cell",false);
       Epetra_MultiVector& res_bf = *result->ViewComponent("boundary_face",false);
 
-      Teuchos::RCP<const AmanziMesh::Mesh> surf_mesh = S->GetMesh(surf_mesh_key_);
+      Teuchos::RCP<const AmanziMesh::Mesh> surf_mesh = S->GetMesh(surf_domain_);
       Teuchos::RCP<const AmanziMesh::Mesh> mesh = result->Mesh();
       const Epetra_Map& vandelay_map = mesh->exterior_face_map(false);
       const Epetra_Map& face_map = mesh->face_map(false);
@@ -412,6 +417,5 @@ void RelPermEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>
 
 
 
-} //namespace
 } //namespace
 } //namespace

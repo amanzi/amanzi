@@ -1,4 +1,4 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+/* -*-  mode: c++; indent-tabs-mode: nil -*- */
 /* -------------------------------------------------------------------------
 ATS
 
@@ -15,6 +15,16 @@ See additional documentation in the base class src/pks/mpc/MPC.hh
 #include "weak_mpc.hh"
 
 namespace Amanzi {
+
+WeakMPC::WeakMPC(Teuchos::ParameterList& FElist,
+                 const Teuchos::RCP<Teuchos::ParameterList>& plist,
+                 const Teuchos::RCP<State>& S,
+                 const Teuchos::RCP<TreeVector>& solution)
+    : PK(FElist, plist, S, solution),
+      MPC<PK>(FElist, plist, S, solution) {
+  init_(S);
+};
+
 
 // -----------------------------------------------------------------------------
 // Calculate the min of sub PKs timestep sizes.

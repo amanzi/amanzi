@@ -1,8 +1,39 @@
-// Rewrite of permafrost PK to simplify
-//
+/* -*-  mode: c++; indent-tabs-mode: nil -*- */
+//! MPCCoupledWater: coupler which integrates surface and subsurface flow.
+
+/*
+  ATS is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
+
+  Authors: Ethan Coon (ecoon@lanl.gov)
+*/
+
 
 #ifndef PKS_MPC_COUPLED_WATER_HH_
 #define PKS_MPC_COUPLED_WATER_HH_
+
+/*!
+
+Couples Richards equation to surface water through continuity of both pressure and fluxes.
+
+Currently requires that the subsurface discretization is a face-based
+discretization, i.e. one of the MFD methods.  Then the surface equations are
+directly added into the subsurface discrete equations.
+
+* `"PKs order`" ``[Array(string)]`` Supplies the names of the coupled PKs.
+  The order must be {subsurface_flow_pk, surface_flow_pk} (subsurface first).
+
+* `"linear solver`" ``[linear-solver-spec]`` A LinearSolver_ spec.  Only used
+  if this PK is not itself coupled by other strong couplers.
+
+* `"preconditioner`" ``[preconditioner-spec]`` A Preconditioner_ spec.  Only used
+  if this PK is not itself coupled by other strong couplers.
+
+* `"water delegate`" ``[list]`` 
+
+*/
+
 
 #include "Operator.hh"
 #include "mpc_delegate_water.hh"
@@ -14,6 +45,7 @@ namespace Amanzi {
 
 class MPCCoupledWater : public StrongMPC<PK_PhysicalBDF_Default> {
  public:
+
 
   MPCCoupledWater(Teuchos::ParameterList& FElist,
                   const Teuchos::RCP<Teuchos::ParameterList>& plist,
@@ -53,6 +85,7 @@ class MPCCoupledWater : public StrongMPC<PK_PhysicalBDF_Default> {
   //         const Teuchos::RCP<TreeVector>& Pu);
 
  protected:
+  std::string domain_surf_, domain_ss_;
 
   // sub PKs
   Teuchos::RCP<PK_PhysicalBDF_Default> domain_flow_pk_;
@@ -78,6 +111,7 @@ class MPCCoupledWater : public StrongMPC<PK_PhysicalBDF_Default> {
  private:
   // factory registration
   static RegisteredPKFactory<MPCCoupledWater> reg_;
+
 
 };
 

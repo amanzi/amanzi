@@ -1,4 +1,4 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+/* -*-  mode: c++; indent-tabs-mode: nil -*- */
 
 /*
   A base three-phase, thermal Richard's equation with water, water vapor, and
@@ -46,6 +46,7 @@ friend class MPCCoupledFlowEnergy;
 
 public:
   // Constructors.
+
   Permafrost(Teuchos::ParameterList& FElist,
              const Teuchos::RCP<Teuchos::ParameterList>& plist,
              const Teuchos::RCP<State>& S,

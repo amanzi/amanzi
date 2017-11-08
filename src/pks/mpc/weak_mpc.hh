@@ -1,4 +1,4 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+/* -*-  mode: c++; indent-tabs-mode: nil -*- */
 /* -------------------------------------------------------------------------
 ATS
 
@@ -23,15 +23,14 @@ namespace Amanzi {
 class WeakMPC : public MPC<PK> {
 
 public:
+
   WeakMPC(Teuchos::ParameterList& FElist,
           const Teuchos::RCP<Teuchos::ParameterList>& plist,
           const Teuchos::RCP<State>& S,
-          const Teuchos::RCP<TreeVector>& solution) :
-    PK(FElist, plist, S, solution),
-    MPC<PK>(FElist, plist, S, solution) {};
+          const Teuchos::RCP<TreeVector>& solution);
 
   // Virtual destructor
-  virtual ~WeakMPC() {}
+  virtual ~WeakMPC() = default;
 
   // PK methods
   // -- dt is the minimum of the sub pks
@@ -41,8 +40,6 @@ public:
   virtual bool AdvanceStep(double t_old, double t_new, bool reinit);
 
   virtual void set_dt(double dt);
-
-  virtual std::string name() {return "weak_mpc";};
 
 private:
   // factory registration

@@ -49,10 +49,10 @@ namespace Amanzi {
     }
 
     subsurface_flux_key_ =  plist_->get<std::string>("flux_key", 
-                                                     getKey(subsurface_name_, "mass_flux"));
+                                                     Keys::getKey(subsurface_name_, "mass_flux"));
 
     surface_flux_key_ =  plist_->get<std::string>("flux_key", 
-                                                  getKey(surface_name_, "mass_flux"));
+                                                  Keys::getKey(surface_name_, "mass_flux"));
 
 
   }
@@ -91,7 +91,6 @@ double CoupledTransport_PK::get_dt() {
 void CoupledTransport_PK::Setup(const Teuchos::Ptr<State>& S){
 
   //passwd_ = "coupled_transport";  // owner's password
-  //passwd_ = "state";  // owner's password
 
   WeakMPC::Setup(S);
 }
@@ -101,6 +100,7 @@ void CoupledTransport_PK::Initialize(const Teuchos::Ptr<State>& S){
   WeakMPC::Initialize(S);
 
 }
+
 
 
 // -----------------------------------------------------------------------------

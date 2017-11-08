@@ -150,9 +150,9 @@ writeMesh3D_exodus(const Mesh3D& m, const std::string& filename) {
       elems_copy[i] = cell_map[s.first[i]] + 1;
     }
     for (auto& e : faces_copy) e++;
-    ierr |= ex_put_side_set_param(fid, m.side_sets_id[lcvs], elems_copy.size(), 0);
+    ierr |= ex_put_set_param(fid, EX_SIDE_SET, m.side_sets_id[lcvs], elems_copy.size(), 0);
     ASSERT(!ierr);
-    ierr |= ex_put_side_set(fid, m.side_sets_id[lcvs], &elems_copy[0], &faces_copy[0]);
+    ierr |= ex_put_set(fid, EX_SIDE_SET, m.side_sets_id[lcvs], &elems_copy[0], &faces_copy[0]);
     ASSERT(!ierr);
   }
 

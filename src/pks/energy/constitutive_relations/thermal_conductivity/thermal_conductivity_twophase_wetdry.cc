@@ -1,4 +1,4 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+/* -*-  mode: c++; indent-tabs-mode: nil -*- */
 
 /* -------------------------------------------------------------------------
 ATS
@@ -20,7 +20,6 @@ See ATS process model documentation's permafrost model for details.
 
 namespace Amanzi {
 namespace Energy {
-namespace EnergyRelations {
 
 // constructor
 ThermalConductivityTwoPhaseWetDry::ThermalConductivityTwoPhaseWetDry(
@@ -45,4 +44,3 @@ void ThermalConductivityTwoPhaseWetDry::InitializeFromPlist_() {
 
 } // namespace Relations
 } // namespace Energy
-} // namespace Amanzi

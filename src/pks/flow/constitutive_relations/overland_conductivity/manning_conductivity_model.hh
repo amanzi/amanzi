@@ -1,4 +1,4 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+/* -*-  mode: c++; indent-tabs-mode: nil -*- */
 
 /*
   Evaluates the conductivity of surface flow as a function of ponded
@@ -15,7 +15,6 @@
 
 namespace Amanzi {
 namespace Flow {
-namespace FlowRelations {
 
 class ManningConductivityModel : public OverlandConductivityModel {
 public:
@@ -26,16 +25,19 @@ public:
 
   virtual double DConductivityDDepth(double depth, double slope, double coef);
 
+  //Added for the subgrid Model
+  virtual double Conductivity(double depth, double slope, double coef, double pd_depth, double frac_cond, double beta);  
+  virtual double DConductivityDDepth(double depth, double slope, double coef, double pd_depth, double frac, double beta);
+
 protected:
   Teuchos::ParameterList plist_;
 
   double slope_regularization_;
-  double manning_exp_;
+  double manning_exp_, beta_exp_;
   double manning_coef_;
 
 };
 
-} // namespace
 } // namespace
 } // namespace
 

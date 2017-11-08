@@ -1,4 +1,4 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+/* -*-  mode: c++; indent-tabs-mode: nil -*- */
 /* -------------------------------------------------------------------------
    ATS
 
@@ -66,7 +66,6 @@ class VolumetricDeformation : public PK_Physical_Default {
   }
 
  private:
-  Key poro_key_;
 
   // strategy for calculating nodal deformation from cell volume change
   enum DeformStrategy {
@@ -76,13 +75,8 @@ class VolumetricDeformation : public PK_Physical_Default {
   };
   DeformStrategy strategy_;
 
-  // fixed regions (bottom faces/nodes)
-  std::vector<std::string> fixed_regions_;
-  std::string fixed_region_type_;
-
   // function describing d(cv)/dT
   enum DeformMode {
-    DEFORM_MODE_THAW_FRONT,
     DEFORM_MODE_DVDT,
     DEFORM_MODE_SATURATION,
     DEFORM_MODE_STRUCTURAL
@@ -91,10 +85,6 @@ class VolumetricDeformation : public PK_Physical_Default {
   double overpressured_limit_;
 
   std::string deform_region_;
-
-  // DEFORM_MODE_THAW_FRONT
-  Teuchos::RCP<Function> thaw_front_func_;
-
   // DEFORM_MODE_DVDT
   Teuchos::RCP<Functions::CompositeVectorFunction> deform_func_;
 
@@ -107,6 +97,7 @@ class VolumetricDeformation : public PK_Physical_Default {
   double dt_, dt_max_;
 
   // meshes
+  Key domain_,domain_surf_;
   Teuchos::RCP<const AmanziMesh::Mesh> surf_mesh_;
   Teuchos::RCP<const AmanziMesh::Mesh> surf3d_mesh_;
   Teuchos::RCP<AmanziMesh::Mesh> mesh_nc_;

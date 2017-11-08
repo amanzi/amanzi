@@ -1,4 +1,4 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+/* -*-  mode: c++; indent-tabs-mode: nil -*- */
 /* -------------------------------------------------------------------------
 
    ATS
@@ -12,7 +12,6 @@
 
 namespace Amanzi {
 namespace Energy {
-namespace EnergyRelations {
 
 // method for instantiating implementations
 Teuchos::RCP<ThermalConductivityTwoPhase> ThermalConductivityTwoPhaseFactory::createThermalConductivityModel(Teuchos::ParameterList& plist) {
@@ -20,7 +19,6 @@ Teuchos::RCP<ThermalConductivityTwoPhase> ThermalConductivityTwoPhaseFactory::cr
   return Teuchos::rcp(CreateInstance(tc_typename, plist));
 };
 
-} // namespace
 } // namespace
 } // namespace
 

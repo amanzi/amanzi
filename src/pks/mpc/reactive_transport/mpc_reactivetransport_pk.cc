@@ -129,8 +129,8 @@ bool ReactiveTransport_PK_ATS::AdvanceStep(double t_old, double t_new, bool rein
   chem_step_succeeded = false;
 
   Key domain_name = tranport_pk_->get_domain_name();
-  Key tcc_key = getKey(domain_name, "total_component_concentration");
-  Key mol_den_key = getKey(domain_name,  "molar_density_liquid");
+  Key tcc_key = Keys::getKey(domain_name, "total_component_concentration");
+  Key mol_den_key = Keys::getKey(domain_name,  "molar_density_liquid");
 
   // First we do a transport step.
   bool pk_fail = tranport_pk_->AdvanceStep(t_old, t_new, reinit);

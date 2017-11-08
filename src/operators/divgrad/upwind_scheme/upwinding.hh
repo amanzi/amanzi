@@ -1,4 +1,4 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+/* -*-  mode: c++; indent-tabs-mode: nil -*- */
 
 // -----------------------------------------------------------------------------
 // ATS
@@ -40,6 +40,8 @@ enum UpwindMethod {
 class Upwinding {
 
  public:
+  virtual ~Upwinding() = default;
+
   virtual void
   Update(const Teuchos::Ptr<State>& S, const Teuchos::Ptr<Debugger>& db=Teuchos::null) = 0;
 

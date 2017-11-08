@@ -2,7 +2,7 @@
   The richards water content model is an algebraic model with dependencies.
 
   Generated via evaluator_generator with:
-Richards water content with no vapor.
+Richards water content evaluator: the standard form as a function of liquid saturation.
     
   Authors: Ethan Coon (ecoon@lanl.gov)
 */

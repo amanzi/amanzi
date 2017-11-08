@@ -1,4 +1,4 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+/* -*-  mode: c++; indent-tabs-mode: nil -*- */
 
 /*
   A linear sat-pc curve, plus a constant rel perm, makes the system linear, so
@@ -14,11 +14,12 @@
 
 namespace Amanzi {
 namespace Flow {
-namespace FlowRelations {
 
 const int FLOW_WRM_MUALEM = 1;
 const int FLOW_WRM_BURDINE = 2;
+
 const int FLOW_WRM_ONE = 3;
+
 
 class WRM {
 
@@ -36,7 +37,6 @@ public:
 
 };
 
-} //namespace
 } //namespace
 } //namespace
 

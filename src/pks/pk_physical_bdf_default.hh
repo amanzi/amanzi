@@ -1,4 +1,4 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+/* -*-  mode: c++; indent-tabs-mode: nil -*- */
 //! Standard base for most implemented PKs, this combines both domains/meshes of PKPhysicalBase and BDF methods of PKBDFBase.
 
 /*
@@ -55,6 +55,7 @@ class PK_PhysicalBDF_Default : public PK_BDF_Default,
                                public PK_Physical_Default {
 
  public:
+
   PK_PhysicalBDF_Default(Teuchos::ParameterList& pk_tree,
                           const Teuchos::RCP<Teuchos::ParameterList>& glist,
                           const Teuchos::RCP<State>& S,
@@ -98,6 +99,9 @@ class PK_PhysicalBDF_Default : public PK_BDF_Default,
   // -- Experimental approach -- calling this indicates that the time
   //    integration scheme is changing the value of the solution in
   //    state.
+
+  virtual void ChangedSolution(const Teuchos::Ptr<State>& S);
+
   virtual void ChangedSolution();
 
   virtual double BoundaryValue(const Teuchos::RCP<const Amanzi::CompositeVector>& solution, int face_id);

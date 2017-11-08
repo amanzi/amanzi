@@ -1,4 +1,4 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+/* -*-  mode: c++; indent-tabs-mode: nil -*- */
 //! Simple wrapper that takes a ParameterList and generates all needed meshes.
 
 /*
@@ -159,6 +159,17 @@ Example:
 
 
 namespace ATS {
+
+bool
+checkVerifyMesh(Teuchos::ParameterList& mesh_plist,
+                Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh);
+
+void
+createMesh(Teuchos::ParameterList& plist,
+           const Teuchos::RCP<Epetra_MpiComm>& comm,
+           const Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel>& gm,
+           Amanzi::State& s);
+
 
 void
 createMeshes(Teuchos::ParameterList& plist,

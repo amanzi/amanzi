@@ -1,4 +1,4 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+/* -*-  mode: c++; indent-tabs-mode: nil -*- */
 
 /*
   The IEM Evaluator simply calls the IEM with the correct arguments.
@@ -15,7 +15,6 @@
 
 namespace Amanzi {
 namespace Energy {
-namespace EnergyRelations {
 
 class IEMEvaluator : public SecondaryVariableFieldEvaluator {
 
@@ -47,7 +46,6 @@ class IEMEvaluator : public SecondaryVariableFieldEvaluator {
 
 };
 
-} //namespace
 } //namespace
 } //namespace
 

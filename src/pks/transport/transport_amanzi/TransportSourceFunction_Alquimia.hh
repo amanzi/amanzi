@@ -63,7 +63,7 @@ class TransportSourceFunction_Alquimia : public TransportDomainFunction {
 
   // Containers for interacting with the chemistry engine.
   AlquimiaState alq_state_;
-  AlquimiaMaterialProperties alq_mat_props_;
+  AlquimiaProperties alq_mat_props_;
   AlquimiaAuxiliaryData alq_aux_data_;
   AlquimiaAuxiliaryOutputData alq_aux_output_;
 };

@@ -12,7 +12,6 @@ Painter's permafrost model with freezing point depression.
 
 namespace Amanzi {
 namespace Flow {
-namespace FlowRelations {
 
 WRMFPDSmoothedPermafrostModel::WRMFPDSmoothedPermafrostModel(Teuchos::ParameterList& plist) :
     WRMPermafrostModel(plist)
@@ -145,6 +144,5 @@ WRMFPDSmoothedPermafrostModel::dsaturations_dpc_ice(double pc_liq, double pc_ice
   }
 }
 
-} // namespace FlowRelations
 } // namespace Flow
-} // namespace Amanzi
+} // namespace Flow

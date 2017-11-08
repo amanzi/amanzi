@@ -1,4 +1,4 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+/* -*-  mode: c++; indent-tabs-mode: nil -*- */
 
 /* -------------------------------------------------------------------------
 ATS
@@ -21,13 +21,16 @@ namespace Amanzi {
 class MPCDiagonalFlowEnergy;
 class MPCCoupledFlowEnergy;
 namespace Relations { class EOS; }
-namespace Energy { namespace EnergyRelations { class IEM; } }
 
 namespace Energy {
+
+class IEM;
+
 
 class TwoPhase : public EnergyBase {
 
 public:
+
   TwoPhase(Teuchos::ParameterList& FElist,
            const Teuchos::RCP<Teuchos::ParameterList>& plist,
            const Teuchos::RCP<State>& S,
@@ -48,16 +51,11 @@ protected:
   //    faces.
   //  virtual void ApplyDirichletBCsToEnthalpy_(const Teuchos::Ptr<State>& S);
 
-  // -- No source terms needed.
-  virtual void AddSources_(const Teuchos::Ptr<State>& S,
-                           const Teuchos::Ptr<CompositeVector>& f) {}
-  virtual void AddSourcesToPrecon_(const Teuchos::Ptr<State>& S, double h) {}
-
 
  protected:
   // models for evaluating enthalpy
-  Teuchos::RCP<Relations::EOS> eos_liquid_;
-  Teuchos::RCP<EnergyRelations::IEM> iem_liquid_;
+  Teuchos::RCP<Amanzi::Relations::EOS> eos_liquid_;
+  Teuchos::RCP<Energy::IEM> iem_liquid_;
 
 private:
   // factory registration

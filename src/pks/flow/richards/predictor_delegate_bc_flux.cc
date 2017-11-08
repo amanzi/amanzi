@@ -1,4 +1,4 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+/* -*-  mode: c++; indent-tabs-mode: nil -*- */
 
 /*
   Delegate for modifying the predictor in the case of infiltration into dry soil.
@@ -7,7 +7,7 @@
   Authors: Ethan Coon (ATS version) (ecoon@lanl.gov)
 */
 
-#include <boost/math/tools/roots.hpp>
+#include "boost/math/tools/roots.hpp"
 #include "predictor_delegate_bc_flux.hh"
 
 #include "Op.hh"

@@ -7,13 +7,12 @@
 #include <iostream>
 #include <cmath>
 #include <algorithm>
-#include <boost/math/tools/roots.hpp>
+#include "boost/math/tools/roots.hpp"
 #include "dbc.hh"
 #include "wrm_plants_christoffersen.hh"
 
 namespace Amanzi {
 namespace Flow {
-namespace FlowRelations {
 
 const double FLOW_WRM_TOLERANCE = 1e-10;
 
@@ -340,6 +339,5 @@ void WRMPlantChristoffersen::InitializeFromPlist_() {
   */
 };
 
-}  // namespace
 }  // namespace
 }  // namespace

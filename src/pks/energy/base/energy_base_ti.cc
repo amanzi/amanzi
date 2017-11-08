@@ -1,4 +1,4 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+/* -*-  mode: c++; indent-tabs-mode: nil -*- */
 
 /* -------------------------------------------------------------------------
 ATS
@@ -7,8 +7,8 @@ License: see $ATS_DIR/COPYRIGHT
 Author: Ethan Coon
 ------------------------------------------------------------------------- */
 
-#include <boost/math/special_functions/fpclassify.hpp>
-#include <boost/test/floating_point_comparison.hpp>
+#include "boost/math/special_functions/fpclassify.hpp"
+#include "boost/test/floating_point_comparison.hpp"
 
 #include "Debugger.hh"
 #include "BoundaryFunction.hh"
@@ -150,8 +150,10 @@ void EnergyBase::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> u
     *vo_->os() << "Precon update at t = " << t << std::endl;
 
   // update state with the solution up.
+
   ASSERT(std::abs(S_next_->time() - t) <= 1.e-4*t);
   PK_PhysicalBDF_Default::Solution_to_State(*up, S_next_);
+
 
   // update boundary conditions
   bc_temperature_->Compute(S_next_->time());
@@ -194,11 +196,11 @@ void EnergyBase::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> u
   // -- update the accumulation derivatives, de/dT
   S_next_->GetFieldEvaluator(energy_key_)
       ->HasFieldDerivativeChanged(S_next_.ptr(), name_, key_);
-  const Epetra_MultiVector& de_dT = *S_next_->GetFieldData(de_dT_key_)
+  const Epetra_MultiVector& de_dT = *S_next_->GetFieldData(Keys::getDerivKey(energy_key_, key_))
       ->ViewComponent("cell",false);
 
 #if DEBUG_FLAG
-  db_->WriteVector("    de_dT", S_next_->GetFieldData(de_dT_key_).ptr());
+  db_->WriteVector("    de_dT", S_next_->GetFieldData(Keys::getDerivKey(energy_key_, key_)).ptr());
 #endif
 
   // -- get the matrices/rhs that need updating
@@ -209,7 +211,7 @@ void EnergyBase::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> u
 
   if (coupled_to_subsurface_via_temp_ || coupled_to_subsurface_via_flux_) {
     // do not add in de/dT if the height is 0
-    const Epetra_MultiVector& pres = *S_next_->GetFieldData("surface-pressure")
+    const Epetra_MultiVector& pres = *S_next_->GetFieldData(Keys::getKey(domain_,"pressure"))
         ->ViewComponent("cell",false);
     const double& patm = *S_next_->GetScalarData("atmospheric_pressure");
     for (unsigned int c=0; c!=ncells; ++c) {
@@ -231,7 +233,7 @@ void EnergyBase::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> u
     Teuchos::RCP<const CompositeVector> mass_flux = S_next_->GetFieldData(flux_key_);
     S_next_->GetFieldEvaluator(enthalpy_key_)
         ->HasFieldDerivativeChanged(S_next_.ptr(), name_, key_);
-    Teuchos::RCP<const CompositeVector> dhdT = S_next_->GetFieldData(denthalpy_key_);
+    Teuchos::RCP<const CompositeVector> dhdT = S_next_->GetFieldData(Keys::getDerivKey(enthalpy_key_, key_));
     preconditioner_adv_->Setup(*mass_flux);
     preconditioner_adv_->UpdateMatrices(*mass_flux, *dhdT);
     ApplyDirichletBCsToEnthalpy_(S_next_.ptr());

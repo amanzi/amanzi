@@ -1,4 +1,4 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+/* -*-  mode: c++; indent-tabs-mode: nil -*- */
 /* -------------------------------------------------------------------------
 
    ATS
@@ -11,6 +11,6 @@
 
 // explicity instantitate the static data of Factory<EOS>
 template<> 
-Amanzi::Utils::Factory<Amanzi::Energy::EnergyRelations::ThermalConductivityThreePhase>::map_type* 
-Amanzi::Utils::Factory<Amanzi::Energy::EnergyRelations::ThermalConductivityThreePhase>::map_;
+Amanzi::Utils::Factory<Amanzi::Energy::ThermalConductivityThreePhase>::map_type* 
+Amanzi::Utils::Factory<Amanzi::Energy::ThermalConductivityThreePhase>::map_;
 

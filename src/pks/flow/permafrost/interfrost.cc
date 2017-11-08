@@ -1,4 +1,4 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+/* -*-  mode: c++; indent-tabs-mode: nil -*- */
 
 /* -------------------------------------------------------------------------
 This is the flow component of the Amanzi code. 
@@ -111,7 +111,7 @@ Interfrost::UpdatePreconditioner(double t,
   Teuchos::RCP<const CompositeVector> rho = S_next_->GetFieldData(mass_dens_key_);
   preconditioner_diff_->SetDensity(rho);
 
-  Key dkrdp_key = getDerivKey(uw_coef_key_, key_);
+  Key dkrdp_key = Keys::getDerivKey(uw_coef_key_, key_);
   Teuchos::RCP<const CompositeVector> dkrdp = S_next_->GetFieldData(dkrdp_key);
    preconditioner_diff_->SetScalarCoefficient(rel_perm_modified, dkrdp);
   preconditioner_diff_->UpdateMatrices(Teuchos::null, Teuchos::null);
@@ -125,7 +125,7 @@ Interfrost::UpdatePreconditioner(double t,
       ->HasFieldDerivativeChanged(S_next_.ptr(), name_, key_);
 
   // -- get the accumulation deriv
-  Key dwc_dp_key = getDerivKey(conserved_key_, key_);
+  Key dwc_dp_key = Keys::getDerivKey(conserved_key_, key_);
   const Epetra_MultiVector& dwc_dp =
       *S_next_->GetFieldData(dwc_dp_key)->ViewComponent("cell",false);
   const Epetra_MultiVector& pres =

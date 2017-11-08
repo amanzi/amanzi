@@ -1,4 +1,4 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+/* -*-  mode: c++; indent-tabs-mode: nil -*- */
 
 /*
   The elevation evaluator gets the surface elevation, slope, and updates pres + elev.
@@ -10,14 +10,16 @@
 
 namespace Amanzi {
 namespace Flow {
-namespace FlowRelations {
 
 ElevationEvaluator::ElevationEvaluator(Teuchos::ParameterList& plist) :
     SecondaryVariablesFieldEvaluator(plist),
     updated_once_(false), 
     dynamic_mesh_(false) {
-  my_keys_.push_back(plist_.get<std::string>("elevation key", "elevation"));
-  my_keys_.push_back(plist_.get<std::string>("slope magnitude key", "slope_magnitude"));
+
+  Key domain = Keys::getDomain(plist_.get<std::string>("evaluator name"));
+  my_keys_.push_back(plist_.get<std::string>("elevation key", Keys::getKey(domain,"elevation")));
+  my_keys_.push_back(plist_.get<std::string>("slope magnitude key", Keys::getKey(domain,"slope_magnitude")));
+  
 
   // If the mesh changes dynamically (e.g. due to the presence of a deformation
   // pk, then we must make sure that elevation is recomputed every time the 
@@ -110,6 +112,5 @@ void ElevationEvaluator::EnsureCompatibility(const Teuchos::Ptr<State>& S) {
 
 
 
-} //namespace
 } //namespace
 } //namespace

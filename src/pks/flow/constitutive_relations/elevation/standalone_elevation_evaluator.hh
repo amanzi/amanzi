@@ -1,4 +1,4 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+/* -*-  mode: c++; indent-tabs-mode: nil -*- */
 
 /*
   An elevation evaluator getting values from the volumetric mesh.
@@ -14,7 +14,6 @@
 
 namespace Amanzi {
 namespace Flow {
-namespace FlowRelations {
 
 class StandaloneElevationEvaluator : public ElevationEvaluator {
 
@@ -33,7 +32,6 @@ class StandaloneElevationEvaluator : public ElevationEvaluator {
 
 };
 
-} //namespace
 } //namespace
 } //namespace
 

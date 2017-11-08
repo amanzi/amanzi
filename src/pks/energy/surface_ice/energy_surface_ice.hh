@@ -1,4 +1,4 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+/* -*-  mode: c++; indent-tabs-mode: nil -*- */
 
 /* -------------------------------------------------------------------------
 ATS
@@ -20,20 +20,19 @@ namespace Amanzi {
 // forward declarations
 class Function;
 namespace Relations { class EOS; }
-namespace Energy { namespace EnergyRelations { class IEM; } }
 
 namespace Energy {
+
+class IEM; 
 
 class EnergySurfaceIce : public EnergyBase {
 
 public:
+
   EnergySurfaceIce(Teuchos::ParameterList& FElist,
                    const Teuchos::RCP<Teuchos::ParameterList>& plist,
                    const Teuchos::RCP<State>& S,
                    const Teuchos::RCP<TreeVector>& solution);
-
-  // -- set up data structures
-  virtual void Setup(const Teuchos::Ptr<State>& S);
 
   // -- Initialize owned (dependent) variables.
   virtual void Initialize(const Teuchos::Ptr<State>& S);
@@ -53,8 +52,8 @@ protected:
 
  protected:
   // models for evaluating enthalpy manually... remove me once boundary faces get in
-  Teuchos::RCP<Relations::EOS> eos_liquid_;
-  Teuchos::RCP<EnergyRelations::IEM> iem_liquid_;
+  Teuchos::RCP<Amanzi::Relations::EOS> eos_liquid_;
+  Teuchos::RCP<Energy::IEM> iem_liquid_;
 
   // simple heat condution term, q = K_s2a * (Tair - Tsurf)
   // air temperature function of time (not space)
@@ -67,6 +66,9 @@ protected:
   bool is_air_conductivity_;
   bool mass_source_only_if_unfrozen_;
 
+  // keys
+  Key domain_ss_;
+  
 private:
   // factory registration
   static RegisteredPKFactory<EnergySurfaceIce> reg_;

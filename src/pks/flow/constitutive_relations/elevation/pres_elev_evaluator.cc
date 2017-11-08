@@ -1,4 +1,4 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+/* -*-  mode: c++; indent-tabs-mode: nil -*- */
 
 /*
   The elevation evaluator gets the surface elevation, slope, and updates pres + elev.
@@ -10,17 +10,14 @@
 
 namespace Amanzi {
 namespace Flow {
-namespace FlowRelations {
 
 PresElevEvaluator::PresElevEvaluator(Teuchos::ParameterList& plist) :
     SecondaryVariableFieldEvaluator(plist) {
+  Key domain = Keys::getDomain(my_key_);
 
-  if (my_key_.empty())
-    my_key_ = plist_.get<std::string>("potential key", "pres_elev");
-
-  pres_key_ = plist_.get<std::string>("height key", "ponded_depth");
+  pres_key_ = plist_.get<std::string>("height key", Keys::getKey(domain,"ponded_depth"));
   dependencies_.insert(pres_key_);
-  elev_key_ = plist_.get<std::string>("elevation key", "elevation");
+  elev_key_ = plist_.get<std::string>("elevation key", Keys::getKey(domain,"elevation"));
   dependencies_.insert(elev_key_);
 }
 
@@ -53,6 +50,5 @@ void PresElevEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State
   result->PutScalar(1.0);
 }
 
-} //namespace
 } //namespace
 } //namespace

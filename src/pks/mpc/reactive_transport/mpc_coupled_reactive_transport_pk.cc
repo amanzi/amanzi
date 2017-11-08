@@ -127,8 +127,8 @@ void Coupled_ReactiveTransport_PK_ATS::Setup(const Teuchos::Ptr<State>& S){
 
 //   // Key subsurface_domain_key = tranport_pk_subsurface_->get_domain_name();
 //   // Key overland_domain_key = tranport_pk_overland_->get_domain_name();
-//   // Key tcc_sub_key = getKey(subsurface_domain_key, "total_component_concentration");
-//   // Key tcc_over_key = getKey(overland_domain_key, "total_component_concentration");
+//   // Key tcc_sub_key = Keys::getKey(subsurface_domain_key, "total_component_concentration");
+//   // Key tcc_over_key = Keys::getKey(overland_domain_key, "total_component_concentration");
 
 //   // ttc_sub_stor_ = Teuchos::rcp(new Epetra_MultiVector(*S->GetFieldCopyData(tcc_sub_key,"subcycling")
 //   //                                            ->ViewComponent("cell", true)));
@@ -146,10 +146,10 @@ bool Coupled_ReactiveTransport_PK_ATS::AdvanceStep(double t_old, double t_new, b
   chem_step_succeeded = false;
   Key subsurface_domain_key = tranport_pk_subsurface_->get_domain_name();
   Key overland_domain_key = tranport_pk_overland_->get_domain_name();
-  Key tcc_sub_key = getKey(subsurface_domain_key, "total_component_concentration");
-  Key tcc_over_key = getKey(overland_domain_key, "total_component_concentration");
-  Key sub_mol_den_key = getKey(subsurface_domain_key,  "molar_density_liquid");
-  Key over_mol_den_key = getKey(overland_domain_key,  "molar_density_liquid");
+  Key tcc_sub_key = Keys::getKey(subsurface_domain_key, "total_component_concentration");
+  Key tcc_over_key = Keys::getKey(overland_domain_key, "total_component_concentration");
+  Key sub_mol_den_key = Keys::getKey(subsurface_domain_key,  "molar_density_liquid");
+  Key over_mol_den_key = Keys::getKey(overland_domain_key,  "molar_density_liquid");
 
 
   if (!storage_created){

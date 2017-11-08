@@ -1,4 +1,4 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+/* -*-  mode: c++; indent-tabs-mode: nil -*- */
 
 /*
   PCIceEvaluator is the interface between state/data and the model, an EOS.
@@ -15,7 +15,6 @@
 
 namespace Amanzi {
 namespace Flow {
-namespace FlowRelations {
 
 class PCIceWater;
 
@@ -51,7 +50,6 @@ class PCIceEvaluator : public SecondaryVariableFieldEvaluator {
 
 };
 
-} // namespace
 } // namespace
 } // namespace
 

@@ -1,4 +1,4 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+/* -*-  mode: c++; indent-tabs-mode: nil -*- */
 //! A base class with default implementations of methods for a PK that can be implicitly integrated in time.
 
 /*
@@ -63,6 +63,7 @@ class PK_BDF_Default : public PK_BDF {
 
  public:
 
+
   PK_BDF_Default(Teuchos::ParameterList& pk_tree,
                  const Teuchos::RCP<Teuchos::ParameterList>& glist,
                  const Teuchos::RCP<State>& S,
@@ -119,6 +120,14 @@ class PK_BDF_Default : public PK_BDF {
     return AmanziSolvers::FnBaseDefs::CORRECTION_NOT_MODIFIED;
   }
 
+
+  // experimental approach -- calling this indicates that the time
+  // integration scheme is changing the value of the solution in
+  // state.
+  virtual void ChangedSolution() = 0;
+  virtual void ChangedSolution(const Teuchos::Ptr<State>& S) = 0;
+
+ 
  protected: // data
   // preconditioner assembly control
   bool assemble_preconditioner_;

@@ -1,4 +1,4 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+/* -*-  mode: c++; indent-tabs-mode: nil -*- */
 //! Two-phase, variable density Richards equation.
 
 /*
@@ -11,6 +11,7 @@
 
 
 /*!
+
 Solves Richards equation:
 
 .. math::
@@ -52,23 +53,33 @@ Other variable names, typically not set as the default is basically always good:
 
 * `"saturation key`" ``[string]`` **"DOMAIN-saturation_liquid"** volume fraction of the liquid phase ``[-]``
 
+Discretization control:
+
+* `"diffusion`" ``[list]`` An OperatorDiffusion_ spec describing the (forward) diffusion operator
+
+* `"diffusion preconditioner`" ``[list]`` An OperatorDiffusion_ spec describing the diffusive parts of the preconditioner.
+
 
 Time integration and timestep control:
 
-* `"initial time step`" ``[double]`` **1.** Max initial time step size ``[s]``.
+* `"initial time step`" ``[double]`` **1.** Max initial time step size ``[s]``
 
-* `"time integrator`" ``[time-integrator-spec]`` is a TimeIntegrator_.
+* `"time integrator`" ``[time-integrator-spec]`` is a TimeIntegrator_.  Note
+  that this is only provided if this Richards PK is not strongly coupled to
+  other PKs.
 
-  Note that this is only provided if this Richards PK is not strongly coupled to other PKs.
+* `"linear solver`" ``[linear-solver-spec]`` is a LinearSolver_ spec.  Note
+  that this is only used if this PK is not strongly coupled to other PKs.
 
-* `"initial condition`" ``[initial-condition-spec]``  See InitialConditions_.
+* `"preconditioner`" ``[preconditioner-spec]`` is a Preconditioner_ spec.
+  Note that this is only used if this PK is not strongly coupled to other PKs.
 
+* `"initial condition`" ``[initial-condition-spec]`` See InitialConditions_.
   Additionally, the following parameter is supported:
 
- - `"initialize faces from cell`" ``[bool]`` **false**
-
-   Indicates that the primary variable field has both CELL and FACE objects,
-   and the FACE values are calculated as the average of the neighboring cells.
+  - `"initialize faces from cell`" ``[bool]`` **false** Indicates that the
+    primary variable field has both CELL and FACE objects, and the FACE values
+    are calculated as the average of the neighboring cells.
 
 Error control:
 
@@ -86,16 +97,15 @@ Error control:
 
 Boundary conditions:
 
-* `"boundary conditions`" ``[subsurface-flow-bc-spec]`` **defaults to Neuman, 0 normal flux**
+* `"boundary conditions`" ``[subsurface-flow-bc-spec]`` **defaults to Neuman, 0 normal flux**  See `Flow-specific Boundary Conditions`_
 
 Physics control:
 
 * `"permeability rescaling`" ``[double]`` **1** Typically 1e7 or order :math:`sqrt(K)` is about right.  This rescales things to stop from multiplying by small numbers (permeability) and then by large number (:math:`\rho / \mu`).
 
+May inherit options from PKPhysicalBDFBase_
 
-
-  
- */
+*/
 
 #ifndef PK_FLOW_RICHARDS_HH_
 #define PK_FLOW_RICHARDS_HH_
@@ -124,6 +134,7 @@ namespace Flow {
 class Richards : public PK_PhysicalBDF_Default {
 
 public:
+
   Richards(Teuchos::ParameterList& FElist,
            const Teuchos::RCP<Teuchos::ParameterList>& plist,
            const Teuchos::RCP<State>& S,
@@ -271,7 +282,7 @@ protected:
   Teuchos::RCP<std::vector<WhetStone::Tensor> > K_;  // absolute permeability
   Teuchos::RCP<Operators::Upwinding> upwinding_;
   Teuchos::RCP<Operators::Upwinding> upwinding_deriv_;
-  Teuchos::RCP<FlowRelations::WRMPartition> wrms_;
+  Teuchos::RCP<Flow::WRMPartition> wrms_;
   bool upwind_from_prev_flux_;
 
   // mathematical operators
@@ -284,6 +295,9 @@ protected:
 
   // flag to do jacobian and therefore coef derivs
   bool jacobian_;
+  int iter_;
+  double iter_counter_time_;
+  int jacobian_lag_;
   
 
   // residual vector for vapor diffusion
@@ -335,6 +349,7 @@ protected:
   Key source_key_;
   Key ss_flux_key_;
   Key sat_key_;
+  Key sat_gas_key_;
   Key sat_ice_key_;
 
  private:

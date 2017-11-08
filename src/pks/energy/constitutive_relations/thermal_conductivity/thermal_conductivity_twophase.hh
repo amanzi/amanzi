@@ -1,4 +1,4 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+/* -*-  mode: c++; indent-tabs-mode: nil -*- */
 
 /* -------------------------------------------------------------------------
 ATS
@@ -16,7 +16,6 @@ UNITS: ????
 
 namespace Amanzi {
 namespace Energy {
-namespace EnergyRelations {
 
 class ThermalConductivityTwoPhase {
 
@@ -25,7 +24,6 @@ public:
   virtual double ThermalConductivity(double porosity, double sat_liq) = 0;
 };
 
-} // namespace
 } // namespace
 } // namespace
 

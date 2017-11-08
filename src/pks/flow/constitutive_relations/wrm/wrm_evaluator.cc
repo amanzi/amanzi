@@ -1,4 +1,4 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+/* -*-  mode: c++; indent-tabs-mode: nil -*- */
 
 /*
   The WRM Evaluator simply calls the WRM with the correct arguments.
@@ -12,7 +12,6 @@
 
 namespace Amanzi {
 namespace Flow {
-namespace FlowRelations {
 
 WRMEvaluator::WRMEvaluator(Teuchos::ParameterList& plist) :
     SecondaryVariablesFieldEvaluator(plist),
@@ -44,20 +43,32 @@ Teuchos::RCP<FieldEvaluator> WRMEvaluator::Clone() const {
 }
 
 void WRMEvaluator::InitializeFromPlist_() {
-  // my keys are for saturation
-  my_keys_.push_back(plist_.get<std::string>("saturation key", "saturation_liquid"));
+  // my keys are for saturation, note that order matters, liquid -> gas
+  Key akey = Keys::cleanPListName(plist_.name());
+  Key domain_name = Keys::getDomain(akey);
 
-  Key domain_name = getDomain(my_keys_[0]);
-  
-  calc_other_sat_ = plist_.get<bool>("calculate minor saturation", true);
-  if (calc_other_sat_) {
-    my_keys_.push_back(plist_.get<std::string>("other saturation key",
-            getKey(domain_name, "saturation_gas")));
+  std::size_t liq_pos = akey.find("liquid");
+  if (liq_pos != std::string::npos) {
+    my_keys_.push_back(plist_.get<std::string>("saturation key", akey));
+    Key otherkey = akey.substr(0,liq_pos)+"gas"+akey.substr(liq_pos+6);
+    my_keys_.push_back(plist_.get<std::string>("other saturation key", otherkey));
+  } else {
+    std::size_t gas_pos = akey.find("gas");
+    if (gas_pos != std::string::npos) {
+      Key otherkey = akey.substr(0,gas_pos)+"liquid"+akey.substr(gas_pos+3);
+      my_keys_.push_back(plist_.get<std::string>("saturation key", otherkey));
+      my_keys_.push_back(plist_.get<std::string>("other saturation key", akey));
+    } else {
+      my_keys_.push_back(plist_.get<std::string>("saturation key",
+              Keys::getKey(domain_name, "saturation_liquid")));
+      my_keys_.push_back(plist_.get<std::string>("other saturation key",
+              Keys::getKey(domain_name, "saturation_gas")));
+    }
   }
 
   // my dependencies are capillary pressure.
   cap_pres_key_ = plist_.get<std::string>("capillary pressure key",
-          getKey(domain_name, "capillary_pressure_gas_liq"));
+          Keys::getKey(domain_name, "capillary_pressure_gas_liq"));
   dependencies_.insert(cap_pres_key_);
 }
 
@@ -194,6 +205,5 @@ void WRMEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>& S,
 }
 
 
-} //namespace
 } //namespace
 } //namespace

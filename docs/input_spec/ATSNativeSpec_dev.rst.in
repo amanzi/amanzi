@@ -203,7 +203,6 @@ Base PKs
 
 There are several types of PKs, and each PK has its own valid input spec.  However, there are three main types of PKs, from which nearly all PKs derive.  Note that none of these are true PKs and cannot stand alone.
 
-
 PKPhysicalBase
 ----------------
 
@@ -242,6 +241,8 @@ Overland Flow, head primary variable PK
 
 Overland Flow, pressure primary variable, PK
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+{ overland_pressure }
 
 
 Snow Distribution PK
@@ -321,13 +322,15 @@ Physical MPCs
 Coupled Water MPC
 --------------------
 
+{ mpc_coupled_water }
+{ mpc_delegate_water }
+
 
 Subsurface MPC
 --------------------
 
 Permafrost MPC
 --------------------
-
 
 State
 ##############
@@ -348,6 +351,7 @@ example:
       ...
     </ParameterList>
   </ParameterList>
+
  
 
 Field Evaluators
@@ -409,14 +413,18 @@ SnowSurfacePotential
 { snow_skin_potential_evaluator }
 
 
+
 Generic Evaluators
 ---------------------------------
 
 Several generic evaluators are provided.
 
+AdditiveEvaluator
+^^^^^^^^^^^^^^^^^^^^^^
 
 
-
+MultiplicativeEvaluator
+^^^^^^^^^^^^^^^^^^^^^^^^^
 
 
 
@@ -424,16 +432,17 @@ Several generic evaluators are provided.
 InitialConditions
 =================
 
-Initial condition specs are used in two places -- in the PK_ spec
-which describes the initial condition of primary variables, and in the
-initial conditions sublist of state, in which the value of atomic
-constants are provided.  In Amanzi, this list is also used for initial
-conditions of primary variables are specified here, not within the PK
-list (hence the name of this sublist).  In ATS, this sublist is pretty
-much only used for constant scalars and constant vectors.
+Initial condition specs are used in two places:
 
-This list needs to be renamed -- it has nothing to do with inital conditions anymore.
+* within the PK_ spec which describes the initial condition of primary variables (true
+  initial conditions), and
 
+* in the `"initial conditions`" sublist of state, in which the value
+  of atomic constants are provided (not really initial conditions and
+  should be renamed).  These atomic values are not controlled by
+  evaluators, and are not included in the DaG.  Likely these should be
+  removed entirely.
+  
 Initialization of constant scalars
 ------------------------------------
 
@@ -562,6 +571,20 @@ example:
 
 
 
+BoundaryConditions
+===================
+
+{ bc_factory }
+
+Flow-specific Boundary Conditions
+----------------------------------
+
+{ flow_bc_factory }
+
+
+
+
+
 
 Time integrators, solvers, and other mathematical specs
 ####################################################################################
@@ -571,6 +594,29 @@ Common specs for all solvers and time integrators, used in PKs.
 
 TimeIntegrator
 =================
+
+{ TimestepControllerFactory }
+
+TimestepControllerFixed
+--------------------------
+{ TimestepControllerFixed }
+
+
+TimestepControllerStandard
+----------------------------
+{ TimestepControllerStandard }
+
+TimestepControllerSmarter
+----------------------------
+{ TimestepControllerSmarter }
+
+TimestepControllerFromFile
+----------------------------
+{ TimestepControllerFromFile }
+
+
+
+
 
 Linear Solver Spec
 ===================
@@ -724,6 +770,31 @@ Standard Math Function
 
 
 
+Operator
+===================
+
+{ Operator }
+
+OperatorAccumulation
+-------------------------
+
+{ OperatorAccumulation }
+
+OperatorDiffusion
+------------------
+{ OperatorDiffusionFactory }
+
+{ OperatorDiffusionMFD }
+
+{ OperatorDiffusionMFDwithGravity }
+
+{ OperatorDiffusion }
+
+
+OperatorAdvection
+-------------------------
+
+{ OperatorAdvection }
 
 
 

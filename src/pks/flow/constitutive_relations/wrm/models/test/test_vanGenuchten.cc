@@ -4,7 +4,7 @@
 #include "wrm_van_genuchten.hh"
 
 TEST(vanGenuchten) {
-  using namespace Amanzi::Flow::FlowRelations;
+  using namespace Amanzi::Flow::Flow;
 
   double m = 0.5;
   double alpha = 0.1;

@@ -1,4 +1,4 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+/* -*-  mode: c++; indent-tabs-mode: nil -*- */
 
 // -----------------------------------------------------------------------------
 // ATS
@@ -13,6 +13,7 @@
 #ifndef AMANZI_UPWINDING_ARITHMETICMEAN_SCHEME_
 #define AMANZI_UPWINDING_ARITHMETICMEAN_SCHEME_
 
+#include "Key.hh"
 #include "upwinding.hh"
 
 namespace Amanzi {
@@ -26,9 +27,11 @@ class UpwindArithmeticMean : public Upwinding {
 
 public:
 
-  UpwindArithmeticMean(std::string pkname,
-                     std::string cell_coef,
-                     std::string face_coef);
+  UpwindArithmeticMean(Key pkname,
+                     Key cell_coef,
+                     Key face_coef);
+  UpwindArithmeticMean(const UpwindArithmeticMean& other) = delete;
+  UpwindArithmeticMean& operator=(const UpwindArithmeticMean& other) = delete;
 
   virtual void Update(const Teuchos::Ptr<State>& S,
                       const Teuchos::Ptr<Debugger>& db=Teuchos::null);
@@ -39,7 +42,7 @@ public:
 
   virtual void
   UpdateDerivatives(const Teuchos::Ptr<State>& S, 
-                    std::string potential_key,
+                    Key potential_key,
                     const CompositeVector& dconductivity,
                     const std::vector<int>& bc_markers,
                     const std::vector<double>& bc_values,
@@ -50,10 +53,10 @@ public:
   
 
 private:
-
-  std::string pkname_;
-  std::string cell_coef_;
-  std::string face_coef_;
+  
+  Key pkname_;
+  Key cell_coef_;
+  Key face_coef_;
 };
 
 } // namespace

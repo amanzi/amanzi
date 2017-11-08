@@ -1,4 +1,4 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+/* -*-  mode: c++; indent-tabs-mode: nil -*- */
 
 /* -------------------------------------------------------------------------
 ATS
@@ -13,7 +13,6 @@ Linear interpolant of thermal conductivity.
 
 namespace Amanzi {
 namespace Energy {
-namespace EnergyRelations {
 
 // registry of method
 Utils::RegisteredFactory<ThermalConductivityTwoPhase,
@@ -22,4 +21,3 @@ Utils::RegisteredFactory<ThermalConductivityTwoPhase,
 
 } // namespace Relations
 } // namespace Energy
-} // namespace Amanzi

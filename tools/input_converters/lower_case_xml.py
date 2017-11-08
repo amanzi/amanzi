@@ -67,26 +67,40 @@ changes_mesh = ["Number of Cells",
 def lower_case(xml):
     """Converts an xml object, in-place"""
 
-    regions = xml_search.getElementByNamePath(xml, "Regions")
-    for label in changes_regions:
-        for param in xml_search.generateElementByNamePath(regions, label):
-            param.set('name', label.lower())
+    try:
+        regions = xml_search.getElementByNamePath(xml, "Regions")
+    except xml_errors.MissingXMLError:
+        pass
 
-    for param in xml_search.generateElementByNamePath(xml, "Region: Plane/location"):
-        param.set('name', 'point')
-    for param in xml_search.generateElementByNamePath(xml, "Region: Plane/direction"):
-        param.set('name', 'normal')
-    regions.set('name', "regions")
+    else:
+        for label in changes_regions:
+            for param in xml_search.generateElementByNamePath(regions, label):
+                param.set('name', label.lower())
+
+        for param in xml_search.generateElementByNamePath(xml, "Region: Plane/location"):
+            param.set('name', 'point')
+        for param in xml_search.generateElementByNamePath(xml, "Region: Plane/direction"):
+            param.set('name', 'normal')
+        regions.set('name', "regions")
+
         
-    mesh = xml_search.getElementByNamePath(xml, "Mesh")
-    for label in changes_mesh:
-        for param in xml_search.generateElementByNamePath(mesh, label):
-            param.set('name', label.lower())
+    try:
+        mesh = xml_search.getElementByNamePath(xml, "Mesh")
+    except xml_errors.MissingXMLError:
+        pass
+    else:
+        for label in changes_mesh:
+            for param in xml_search.generateElementByNamePath(mesh, label):
+                param.set('name', label.lower())
 
-    mesh.set('name', "mesh")
+        mesh.set('name', "mesh")
 
-    domain = xml_search.getElementByNamePath(xml, "Domain")
-    xml.remove(domain)
+    try:
+        domain = xml_search.getElementByNamePath(xml, "Domain")
+    except xml_errors.MissingXMLError:
+        pass
+    else:
+        xml.remove(domain)
 
 
 if __name__ == "__main__":

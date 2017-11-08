@@ -1,4 +1,4 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+/* -*-  mode: c++; indent-tabs-mode: nil -*- */
 
 /*
   EffectivePressureEvaluator evaluates p_eff = max(p_atm, p_liquid), which is used for EOS.

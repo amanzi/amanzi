@@ -1,4 +1,4 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+/* -*-  mode: c++; indent-tabs-mode: nil -*- */
 
 /*
   PCLiquidEvaluator is the interface between state/data and the model, a PC relation.
@@ -12,11 +12,9 @@
 
 namespace Amanzi {
 namespace Flow {
-namespace FlowRelations {
 
 // registry of method
 Utils::RegisteredFactory<FieldEvaluator,PCLiquidEvaluator> PCLiquidEvaluator::factory_("capillary pressure, atmospheric gas over liquid");
 
-} // namespace
 } // namespace
 } // namespace

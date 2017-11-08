@@ -7,7 +7,7 @@
 
 
 TEST(permafrost) {
-  using namespace Amanzi::Flow::FlowRelations;
+  using namespace Amanzi::Flow::Flow;
 
   double m = 0.8;
   double alpha = 1.5e-4;

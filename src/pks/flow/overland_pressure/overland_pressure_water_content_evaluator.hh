@@ -1,4 +1,4 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+/* -*-  mode: c++; indent-tabs-mode: nil -*- */
 
 /*
   Evaluator for determining height( rho, head )
@@ -14,7 +14,6 @@
 
 namespace Amanzi {
 namespace Flow {
-namespace FlowRelations {
 
 class OverlandPressureWaterContentEvaluator : public SecondaryVariableFieldEvaluator {
 
@@ -36,7 +35,9 @@ class OverlandPressureWaterContentEvaluator : public SecondaryVariableFieldEvalu
           Key wrt_key, const Teuchos::Ptr<CompositeVector>& result);
 
  protected:
-  Key pres_key_;
+
+  Key pres_key_, cv_key_;
+
   double M_;
   bool bar_;  // bar'd variable indicates this is potentially negative for
               // pressures less than atmospheric
@@ -47,7 +48,6 @@ class OverlandPressureWaterContentEvaluator : public SecondaryVariableFieldEvalu
 
 };
 
-} //namespace
 } //namespace
 } //namespace
 

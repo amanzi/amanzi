@@ -1,4 +1,4 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+/* -*-  mode: c++; indent-tabs-mode: nil -*- */
 
 /* -------------------------------------------------------------------------
 ATS
@@ -13,6 +13,7 @@ Process kernel for energy equation for Richard's flow.
 
 namespace Amanzi {
 namespace BGC {
+
 
 CarbonSimple::CarbonSimple(Teuchos::ParameterList& pk_tree,
                             const Teuchos::RCP<Teuchos::ParameterList>& glist,
