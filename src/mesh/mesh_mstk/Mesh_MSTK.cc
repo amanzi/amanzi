@@ -93,6 +93,7 @@ void Mesh_MSTK::init_mesh_from_file_(std::string const filename,
     Errors::Message mesg(mesg_stream.str());
     amanzi_throw(mesg);
   }
+}
 
 //--------------------------------------
 // Constructor - load up mesh from file
