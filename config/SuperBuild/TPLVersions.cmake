@@ -95,6 +95,7 @@
 #                - update Alquimia to xsdk-0.2.0 (native 1.0.4)
 #                - update Hypre to xsdk-0.2.0 (native 2.11.2)
 #  0.94.10       - update Alquimia to 1.0.5 (critical bug fixes)
+#  0.94.11       - update MSTK to 3.0.3 (critical bug fixes)
 
 include(CMakeParseArguments)
 
@@ -147,7 +148,7 @@ endmacro(amanzi_tpl_version_write)
 #
 set(AMANZI_TPLS_VERSION_MAJOR 0)
 set(AMANZI_TPLS_VERSION_MINOR 94)
-set(AMANZI_TPLS_VERSION_PATCH 10)
+set(AMANZI_TPLS_VERSION_PATCH 11)
 set(AMANZI_TPLS_VERSION ${AMANZI_TPLS_VERSION_MAJOR}.${AMANZI_TPLS_VERSION_MINOR}.${AMANZI_TPLS_VERSION_PATCH})
 # Not sure how to create a meaningful hash key for the collection
 
@@ -308,12 +309,12 @@ set(ASCEMIO_MD5_SUM       869820bacd4c289c8f320be58c1449a7)
 #
 set(MSTK_VERSION_MAJOR 3)
 set(MSTK_VERSION_MINOR 0)
-set(MSTK_VERSION_PATCH 1)
+set(MSTK_VERSION_PATCH 3)
 set(MSTK_VERSION ${MSTK_VERSION_MAJOR}.${MSTK_VERSION_MINOR}.${MSTK_VERSION_PATCH})
 set(MSTK_URL_STRING     ${AMANZI_TPLS_DOWNLOAD_URL})
 set(MSTK_ARCHIVE_FILE   mstk-${MSTK_VERSION}.tar.gz)
 set(MSTK_SAVEAS_FILE    ${MSTK_ARCHIVE_FILE})
-set(MSTK_MD5_SUM        d0761665844b1f956ef7cb3d80d68d88)
+set(MSTK_MD5_SUM        a9561f1175da2c2863c517b08abe5f16)
 
 #
 # TPL: MOAB
