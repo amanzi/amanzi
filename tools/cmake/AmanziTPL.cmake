@@ -9,10 +9,32 @@ include(FeatureSummary)
 message(STATUS "")
 message(STATUS ">>>>>>>> AmanziTPL.cmake")
 
+set(AMANZI_TPLS_VERSION_CMAKE "${CMAKE_SOURCE_DIR}/config/SuperBuild/TPLVersions.cmake")
+file(STRINGS ${AMANZI_TPLS_VERSION_CMAKE} AMANZI_TPLS_VERSION_CMAKE_lines)
+
+FOREACH(line ${AMANZI_TPLS_VERSION_CMAKE_lines})
+  IF ( ${line} MATCHES "AMANZI_TPLS_VERSION " )
+    # message(STATUS "\t >>>>>> Skipping ....")
+  ELSEIF ( ${line} MATCHES "AMANZI_TPLS_VERSION_MAJOR" )
+    STRING(REGEX REPLACE ".*AMANZI_TPLS_VERSION_MAJOR ([0-9]+).*" "\\1" AMANZI_TPLS_VERSION_MAJOR_SRC "${line}")
+    # message(STATUS "\t >>>>>> ${AMANZI_TPLS_VERSION_MAJOR_SRC}")
+  ELSEIF ( ${line} MATCHES "AMANZI_TPLS_VERSION_MINOR" )
+    STRING(REGEX REPLACE ".*AMANZI_TPLS_VERSION_MINOR ([0-9]+).*" "\\1" AMANZI_TPLS_VERSION_MINOR_SRC "${line}")
+    # message(STATUS "\t >>>>>> ${AMANZI_TPLS_VERSION_MINOR_SRC}")
+  ELSEIF ( ${line} MATCHES "AMANZI_TPLS_VERSION_PATCH" )
+    STRING(REGEX REPLACE ".*AMANZI_TPLS_VERSION_PATCH ([0-9]+).*" "\\1" AMANZI_TPLS_VERSION_PATCH_SRC "${line}")
+    # message(STATUS "\t >>>>>> ${AMANZI_TPLS_VERSION_PATCH_SRC}")
+  ENDIF()
+ENDFOREACH()
+
+set(AMANZI_TPLS_VERSION_REQUIRED ${AMANZI_TPLS_VERSION_MAJOR_SRC}.${AMANZI_TPLS_VERSION_MINOR_SRC}.${AMANZI_TPLS_VERSION_PATCH_SRC})
+
 # Verify TPL compatibility
-set(AMANZI_TPLS_VERSION_REQUIRED "0.94.10")
-message(STATUS "\t >>>>>  Amanzi TPL Version: ${AMANZI_TPLS_VERSION}")
-message(STATUS "\t >>>>>  Required Version:   ${AMANZI_TPLS_VERSION_REQUIRED}")
+# - should be able to report the path to the TPLs install, need to write it in cache.
+message(STATUS "\t >>>>>> Amanzi Source Path:       ${CMAKE_SOURCE_DIR}")
+message(STATUS "\t >>>>>  Amanzi Required Version:  ${AMANZI_TPLS_VERSION_REQUIRED}")
+message(STATUS "\t >>>>>  Amanzi TPL Version:       ${AMANZI_TPLS_VERSION}\n")
+
 
 if (NOT ${AMANZI_TPLS_VERSION} STREQUAL ${AMANZI_TPLS_VERSION_REQUIRED}) 
   message(WARNING "TPL version does not match the required version.")
