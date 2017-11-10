@@ -61,6 +61,7 @@ set(state_inc_files
   independent_variable_field_evaluator.hh
   independent_variable_field_evaluator_fromfunction.hh
   independent_variable_field_evaluator_fromfile.hh
+  secondary_variable_field_evaluator_fromfunction.hh
   constant_variable_field_evaluator.hh
   deforming_cell_volume_evaluator.hh
   deforming_cell_volume_evaluator_reg.hh
@@ -98,6 +99,7 @@ add_amanzi_library(state
                           primary_variable_field_evaluator.cc
                           secondary_variable_field_evaluator.cc
                           secondary_variables_field_evaluator.cc
+                          secondary_variable_field_evaluator_fromfunction.cc
                           independent_variable_field_evaluator.cc
                           independent_variable_field_evaluator_fromfunction.cc
                           independent_variable_field_evaluator_fromfile.cc
@@ -120,6 +122,7 @@ register_evaluator_with_factory(HEADERFILE cell_volume_evaluator_reg.hh   LISTNA
 register_evaluator_with_factory(HEADERFILE rank_evaluator_reg.hh          LISTNAME REGISTER_AMANZI_STATE_EVALUATORS)
 register_evaluator_with_factory(HEADERFILE primary_variable_field_evaluator_reg.hh LISTNAME REGISTER_AMANZI_STATE_EVALUATORS)
 register_evaluator_with_factory(HEADERFILE independent_variable_field_evaluator_fromfunction_reg.hh LISTNAME REGISTER_AMANZI_STATE_EVALUATORS)
+register_evaluator_with_factory(HEADERFILE secondary_variable_field_evaluator_fromfunction_reg.hh LISTNAME REGISTER_AMANZI_STATE_EVALUATORS)
 register_evaluator_with_factory(HEADERFILE independent_variable_field_evaluator_fromfile_reg.hh LISTNAME REGISTER_AMANZI_STATE_EVALUATORS)
 register_evaluator_with_factory(HEADERFILE constant_variable_field_evaluator_reg.hh LISTNAME REGISTER_AMANZI_STATE_EVALUATORS)
 register_evaluator_with_factory(HEADERFILE deforming_cell_volume_evaluator_reg.hh LISTNAME REGISTER_AMANZI_STATE_EVALUATORS)
@@ -164,6 +167,14 @@ if (BUILD_TESTS)
 	  	          test/Main.cc
 	 		  test/state_dag.cc
                     LINK_LIBS state mesh_factory mesh data_structures mesh_functions functions ${UnitTest_LIBRARIES})
+
+    add_amanzi_test(state_functional_evaluators state_functional_evaluators
+                    KIND int
+                    SOURCE
+	  	          test/Main.cc
+	 		  test/state_functional_evaluators.cc
+                    LINK_LIBS state mesh_factory mesh data_structures mesh_functions functions ${UnitTest_LIBRARIES})
+
 
     add_amanzi_test(state_init state_init
                     KIND int
