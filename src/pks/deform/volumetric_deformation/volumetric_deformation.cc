@@ -8,11 +8,14 @@
 
    Interface for the Volumetric Deformation PK.
 
+   FIXME THIS IS INCORRECT
    <ParameterList name="volumetric deformation">
-   <Parameter name="PK model" type="string" value="Prescibed Mesh Deformation"/>
-   <Parameter name="Deformation method" type="string" value="method name"/>
+     <Parameter name="PK type" type="string" value="volumetric deformation"/>
+     <Parameter name="primary variable" type="string" value="base_porosity"/>
+     <Parameter name="domain name" type="string" value="domain"/>
    </ParameterList>
-
+   /FIXME
+   
    ------------------------------------------------------------------------- */
 #include "Teuchos_XMLParameterListHelpers.hpp"
 
@@ -28,8 +31,6 @@ namespace Deform {
      
 using namespace Amanzi::AmanziMesh;
 
-// RegisteredPKFactory<VolumetricDeformation> VolumetricDeformation::reg_("volumetric deformation");
-
 VolumetricDeformation::VolumetricDeformation(Teuchos::ParameterList& pk_tree,
                         const Teuchos::RCP<Teuchos::ParameterList>& glist,
                         const Teuchos::RCP<State>& S,
@@ -41,11 +42,6 @@ VolumetricDeformation::VolumetricDeformation(Teuchos::ParameterList& pk_tree,
 
   dt_ = plist_->get<double>("max time step [s]", 1.e80);
   dt_max_ = dt_;
-
-  domain_ = Keys::getDomain(key_);
-
-  if (domain_.empty())
-    domain_ = "domain";
 
   // The deformation mode describes how to calculate new cell volume from a
   // provided function and the old cell volume.
@@ -59,7 +55,7 @@ VolumetricDeformation::VolumetricDeformation(Teuchos::ParameterList& pk_tree,
     time_scale_ = plist_->get<double>("deformation relaxation time [s]", 60.);
     structural_vol_frac_ = plist_->get<double>("volume fraction of solids required to be structural [-]", 0.45);
     overpressured_limit_ = plist_->get<double>("overpressured relative compressibility limit", 0.2);
-    
+
   } else if (mode_name == "saturation") {
     deform_mode_ = DEFORM_MODE_SATURATION;
     deform_region_ = plist_->get<std::string>("deformation region");
