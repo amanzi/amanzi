@@ -547,7 +547,6 @@ bool VolumetricDeformation::AdvanceStep(double t_old, double t_new, bool reinit)
       Epetra_MultiVector& nodal_dz = *nodal_dz_vec->ViewComponent("node", "true");
 
       nodal_dz.PutScalar(0.);
-      mesh_->build_columns();
       int ncols = mesh_->num_columns(false);
       int z_index = mesh_->space_dimension()-1;
       for (int col=0; col!=ncols; ++col) {
