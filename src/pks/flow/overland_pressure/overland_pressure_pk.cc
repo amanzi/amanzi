@@ -291,8 +291,8 @@ void OverlandPressureFlow::SetupOverlandFlow_(const Teuchos::Ptr<State>& S) {
 
   // limiters
   p_limit_ = plist_->get<double>("limit correction to pressure change [Pa]", -1.);
-
   patm_limit_ = plist_->get<double>("limit correction when crossing atmospheric pressure [Pa]", -1.);
+  patm_hard_limit_ = plist_->get<bool>("allow no negative ponded depths", false);
 
   subgrid_model_ =  plist_->get<bool>("subgrid model", false);
   
@@ -313,31 +313,33 @@ void OverlandPressureFlow::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S
   names2[1] = "face";
   
   // -- evaluator for surface geometry.
-
-  S->RequireField(Keys::getKey(domain_,"elevation"))->SetMesh(S->GetMesh(domain_))->SetGhosted()
+  Key elev_key = Keys::readKey(*plist_, domain_, "elevation", "elevation");
+  S->RequireField(elev_key)->SetMesh(S->GetMesh(domain_))->SetGhosted()
       ->AddComponents(names2, locations2, num_dofs2);
 
-  S->RequireField(Keys::getKey(domain_,"slope_magnitude"))->SetMesh(S->GetMesh(domain_))
+  Key slope_key = Keys::readKey(*plist_, domain_, "slope magnitude", "slope_magnitude");
+  S->RequireField(slope_key)->SetMesh(S->GetMesh(domain_))
       ->AddComponent("cell", AmanziMesh::CELL, 1);
 
   Teuchos::RCP<Flow::ElevationEvaluator> elev_evaluator;
-  if (standalone_mode_) {
-    ASSERT(plist_->isSublist("elevation evaluator"));
-    Teuchos::ParameterList elev_plist = plist_->sublist("elevation evaluator");
-    elev_plist.set("evaluator name", Keys::getKey(domain_, "elevation"));
-    elev_evaluator = Teuchos::rcp(new Flow::StandaloneElevationEvaluator(elev_plist));
+  if (S->FEList().isSublist(elev_key)) {
+    S->RequireFieldEvaluator(elev_key);
+    S->RequireFieldEvaluator(slope_key);
   } else {
-    Teuchos::ParameterList elev_plist = plist_->sublist("elevation evaluator");
-    elev_plist.set("evaluator name", Keys::getKey(domain_, "elevation"));
-    if (!boost::starts_with(domain_,"surface_"))
+    if (standalone_mode_) {
+      ASSERT(plist_->isSublist("elevation evaluator"));
+      Teuchos::ParameterList elev_plist = plist_->sublist("elevation evaluator");
+      elev_plist.set("evaluator name", Keys::getKey(domain_, "elevation"));
+      elev_evaluator = Teuchos::rcp(new Flow::StandaloneElevationEvaluator(elev_plist));
+    } else {
+      Teuchos::ParameterList elev_plist = plist_->sublist("elevation evaluator");
+      elev_plist.set("evaluator name", Keys::getKey(domain_, "elevation"));
       elev_evaluator = Teuchos::rcp(new Flow::MeshedElevationEvaluator(elev_plist));
-    else{
-      elev_evaluator = Teuchos::rcp(new Flow::ElevationEvaluatorColumn(elev_plist));
     }
-  }
 
-  S->SetFieldEvaluator(Keys::getKey(domain_,"elevation"), elev_evaluator);
-  S->SetFieldEvaluator(Keys::getKey(domain_,"slope_magnitude"), elev_evaluator);
+    S->SetFieldEvaluator(elev_key, elev_evaluator);
+    S->SetFieldEvaluator(slope_key, elev_evaluator);
+  }
 
   // -- evaluator for potential field, h + z
   S->RequireField(Keys::getKey(domain_,"pres_elev"))->Update(matrix_->RangeMap())->SetGhosted();
@@ -355,7 +357,6 @@ void OverlandPressureFlow::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S
     source_in_meters_ = plist_->get<bool>("mass source in meters", true);
     
     // source term itself [m/s]
-
     mass_source_key_ = plist_->get<std::string>("source key", Keys::getKey(domain_,"mass_source"));
 
     S->RequireField(mass_source_key_)->SetMesh(mesh_)
@@ -395,13 +396,6 @@ void OverlandPressureFlow::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S
       Teuchos::rcp(new Flow::OverlandConductivityEvaluator(cond_plist));
 
   S->SetFieldEvaluator(Keys::getKey(domain_,"overland_conductivity"), cond_evaluator);
-
-  //  if (domain_ == "surface_star"){
-  //   S->RequireField(Keys::getKey(domain_,"mass_density_ice"))->SetMesh(mesh_)->SetGhosted()
-  //     ->AddComponent("cell", AmanziMesh::CELL, 1);
-  //   S->RequireFieldEvaluator(Keys::getKey(domain_,"mass_density_ice"));
-  // }
-
 }
 
 
@@ -1161,6 +1155,21 @@ OverlandPressureFlow::ModifyCorrection(double h, Teuchos::RCP<const TreeVector> 
       } else if ((u_c[0][c] > patm) &&
                  (u_c[0][c] - du_c[0][c] < patm - patm_limit_)) {
         du_c[0][c] = u_c[0][c] - (patm - patm_limit_);          
+        my_limited++;
+      }
+    }
+    mesh_->get_comm()->MaxAll(&my_limited, &n_limited_spurt, 1);
+  }
+
+  if (patm_hard_limit_) {
+    double patm = *S_next_->GetScalarData("atmospheric_pressure");
+
+    Epetra_MultiVector& du_c = *du->Data()->ViewComponent("cell",false);
+    const Epetra_MultiVector& u_c = *u->Data()->ViewComponent("cell",false);
+
+    for (int c=0; c!=du_c.MyLength(); ++c) {
+      if (u_c[0][c] - du_c[0][c] < patm) {
+        du_c[0][c] = u_c[0][c] - patm;          
         my_limited++;
       }
     }

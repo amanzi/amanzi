@@ -62,7 +62,29 @@ SurfaceBalanceBase::Setup(const Teuchos::Ptr<State>& S) {
     S->RequireField(conserved_key_)->SetMesh(mesh_)
         ->AddComponent("cell", AmanziMesh::CELL, 1);
     S->RequireFieldEvaluator(conserved_key_);
-  }    
+  }
+
+  // operator for inverse
+  Teuchos::ParameterList& acc_plist = plist_->sublist("accumulation preconditioner");
+  acc_plist.set("entity kind", "cell");
+  preconditioner_acc_ = Teuchos::rcp(new Operators::OperatorAccumulation(acc_plist, mesh_));
+  preconditioner_ = preconditioner_acc_->global_operator();
+
+  //    symbolic assemble
+  precon_used_ = plist_->isSublist("preconditioner");
+  if (precon_used_) {
+    preconditioner_->SymbolicAssembleMatrix();
+  }
+
+  //    Potentially create a linear solver
+  if (plist_->isSublist("linear solver")) {
+    Teuchos::ParameterList& linsolve_sublist = plist_->sublist("linear solver");
+    AmanziSolvers::LinearOperatorFactory<Operators::Operator,CompositeVector,CompositeVectorSpace> fac;
+
+    lin_solver_ = fac.Create(linsolve_sublist, preconditioner_);
+  } else {
+    lin_solver_ = preconditioner_;
+  }
 }
 
 
@@ -74,6 +96,9 @@ SurfaceBalanceBase::Functional(double t_old, double t_new, Teuchos::RCP<TreeVect
   double dt = t_new - t_old;
   double T_eps = 0.0001;
 
+  // pointer-copy temperature into state and update any auxilary data
+  Solution_to_State(*u_new, S_next_);
+  
   bool debug = false;
   if (vo_->os_OK(Teuchos::VERB_EXTREME)) debug = true;
 
@@ -83,11 +108,10 @@ SurfaceBalanceBase::Functional(double t_old, double t_new, Teuchos::RCP<TreeVect
                << " t1 = " << t_new << " h = " << dt << std::endl;
     std::vector<std::string> vnames;
     std::vector< Teuchos::Ptr<const CompositeVector> > vecs;
-    vnames.push_back("u_new"); vnames.push_back("u_old");
+    vnames.push_back("u_old"); vnames.push_back("u_new");
+    vecs.push_back(S_inter_->GetFieldData(key_).ptr());
     vecs.push_back(u_new->Data().ptr());
-    vecs.push_back(u_old->Data().ptr());
     db_->WriteVectors(vnames, vecs, true);
-    db_->WriteDivider();
   }
 
   S_next_->GetFieldEvaluator(cell_vol_key_)->HasFieldChanged(S_next_.ptr(), name_);
@@ -99,18 +123,27 @@ SurfaceBalanceBase::Functional(double t_old, double t_new, Teuchos::RCP<TreeVect
     Teuchos::RCP<const CompositeVector> conserved1 = S_next_->GetFieldData(conserved_key_);
     Teuchos::RCP<const CompositeVector> conserved0 = S_inter_->GetFieldData(conserved_key_);
     g->Data()->Update(1.0/dt, *conserved1, -1.0/dt, *conserved0, 0.0);
+
+    if (vo_->os_OK(Teuchos::VERB_HIGH)) {
+      std::vector<std::string> vnames;
+      std::vector< Teuchos::Ptr<const CompositeVector> > vecs;
+      vnames.push_back("C_old"); vnames.push_back("C_new");
+      vecs.push_back(S_inter_->GetFieldData(conserved_key_).ptr());
+      vecs.push_back(S_next_->GetFieldData(conserved_key_).ptr());
+      db_->WriteVectors(vnames, vecs, true);
+    }
   } else {
     g->Update(1.0/dt, *u_new, -1.0/dt, *u_old, 0.0);
   }
+
+  db_->WriteDivider();
   db_->WriteVector("res(acc)", g->Data().ptr());
-  //  db_->WriteVector("  sM", S_next_->GetFieldData("macropore_saturation_liquid").ptr());
 
   if (theta_ < 1.0) {
     S_inter_->GetFieldEvaluator(source_key_)->HasFieldChanged(S_inter_.ptr(), name_);
     g->Data()->Multiply(-(1.0 - theta_), *S_inter_->GetFieldData(source_key_), *cv, 1.);
     if (vo_->os_OK(Teuchos::VERB_HIGH)) {
       db_->WriteVector("source0", S_inter_->GetFieldData(source_key_).ptr(), false);
-      //      db_->WriteVector(" drainage0", S_inter_->GetFieldData("litter_drainage").ptr(), false);
     }
   }
   if (theta_ > 0.0) {
@@ -118,7 +151,6 @@ SurfaceBalanceBase::Functional(double t_old, double t_new, Teuchos::RCP<TreeVect
     g->Data()->Multiply(-theta_, *S_next_->GetFieldData(source_key_), *cv, 1.);
     if (vo_->os_OK(Teuchos::VERB_HIGH)) {
       db_->WriteVector("source1", S_next_->GetFieldData(source_key_).ptr(), false);
-      //      db_->WriteVector(" drainage1", S_next_->GetFieldData("litter_drainage").ptr(), false);
     }
   }
   db_->WriteVector("res(source)", g->Data().ptr());
@@ -134,22 +166,18 @@ SurfaceBalanceBase::UpdatePreconditioner(double t,
   PK_Physical_Default::Solution_to_State(*up, S_next_);
 
   if (conserved_quantity_) {
-    if (jac_ == Teuchos::null) {
-      jac_ = Teuchos::rcp(new CompositeVector(*up->Data()));
-    }
-
     S_next_->GetFieldEvaluator(conserved_key_)
         ->HasFieldDerivativeChanged(S_next_.ptr(), name_, key_);
     std::string dkey = std::string("d")+conserved_key_+std::string("_d")+key_;
-    *jac_ = *S_next_->GetFieldData(dkey);
-    jac_->Scale(1./h);
+    db_->WriteVector("d(cons)/d(prim)", S_next_->GetFieldData(dkey).ptr());
+    preconditioner_acc_->AddAccumulationTerm(*S_next_->GetFieldData(dkey)->ViewComponent("cell",false), h);
 
     if (S_next_->GetFieldEvaluator(source_key_)->IsDependency(S_next_.ptr(), key_)) {
       S_next_->GetFieldEvaluator(source_key_)
           ->HasFieldDerivativeChanged(S_next_.ptr(), name_, key_);
       std::string dkey = std::string("d")+source_key_+std::string("_d")+key_;
-      jac_->Multiply(-theta_, *S_next_->GetFieldData(dkey),
-                     *S_next_->GetFieldData(cell_vol_key_), 1.);
+      db_->WriteVector("d(Q)/d(prim)", S_next_->GetFieldData(dkey).ptr());
+      preconditioner_acc_->AddAccumulationTerm(*S_next_->GetFieldData(dkey), -1.0/theta_, "cell");
     }      
   }
 }
@@ -164,8 +192,7 @@ int SurfaceBalanceBase::ApplyPreconditioner(Teuchos::RCP<const TreeVector> u,
 
   if (conserved_quantity_) {
     db_->WriteVector("seb_res", u->Data().ptr(), true);
-    Pu->Data()->ReciprocalMultiply(1., *jac_, *u->Data(), 0.);
-    db_->WriteVector("jac", jac_.ptr(), true);
+    lin_solver_->ApplyInverse(*u->Data(), *Pu->Data());
     db_->WriteVector("PC*p_res", Pu->Data().ptr(), true);
   } else {
     *Pu = *u;

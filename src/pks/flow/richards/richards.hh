@@ -349,8 +349,8 @@ protected:
   Key source_key_;
   Key ss_flux_key_;
   Key sat_key_;
-  Key sat_ice_key_;
   Key sat_gas_key_;
+  Key sat_ice_key_;
 
  private:
   // factory registration

@@ -105,6 +105,7 @@ void Richards::SetupRichardsFlow_(const Teuchos::Ptr<State>& S) {
   flux_dir_key_ = Keys::readKey(*plist_, domain_, "darcy flux direction", "mass_flux_direction");
   velocity_key_ = Keys::readKey(*plist_, domain_, "darcy velocity", "darcy_velocity");
   sat_key_ = Keys::readKey(*plist_, domain_, "saturation", "saturation_liquid");
+  sat_gas_key_ = Keys::readKey(*plist_, domain_, "saturation gas", "saturation_gas");
   sat_ice_key_ = Keys::readKey(*plist_, domain_, "saturation ice", "saturation_ice");
 
   // Get data for special-case entities.
@@ -385,14 +386,13 @@ void Richards::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
   // -- Water retention evaluators
   // -- saturation
   Teuchos::ParameterList& wrm_plist = plist_->sublist("water retention evaluator");
-  wrm_plist.set("evaluator name", Keys::getKey(domain_,"saturation_liquid"));
+  wrm_plist.setName(sat_key_);
   Teuchos::RCP<Flow::WRMEvaluator> wrm =
       Teuchos::rcp(new Flow::WRMEvaluator(wrm_plist));
 
-
-  if (!S->HasFieldEvaluator(Keys::getKey(domain_,"saturation_liquid"))){
-    S->SetFieldEvaluator(Keys::getKey(domain_,"saturation_liquid"), wrm);
-    S->SetFieldEvaluator(Keys::getKey(domain_,"saturation_gas"), wrm);
+  if (!S->HasFieldEvaluator(sat_key_)) {
+    S->SetFieldEvaluator(sat_key_, wrm);
+    S->SetFieldEvaluator(sat_gas_key_, wrm);
   }
 
   // -- rel perm
@@ -1038,10 +1038,6 @@ void Richards::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& S, bool kr) 
       bc_values_[f] = flux[0][c] / mesh_->face_area(f);
 
       if (!kr && rel_perm[0][f] > 0.) bc_values_[f] /= rel_perm[0][f];
-      if ((surface->cell_map(false).GID(c) == 0) && vo_->os_OK(Teuchos::VERB_HIGH)) {
-        *vo_->os() << "  bc for coupled surface: val=" << bc_values_[f] << std::endl;
-      }
-      
     }
   }
 

@@ -70,6 +70,15 @@ void OverlandPressureFlow::AddAccumulation_(const Teuchos::Ptr<CompositeVector>&
   Teuchos::RCP<const CompositeVector> wc0 =
       S_inter_->GetFieldData(conserved_key_);
 
+  if (vo_->os_OK(Teuchos::VERB_HIGH)) {
+    std::vector<std::string> vnames;
+    std::vector< Teuchos::Ptr<const CompositeVector> > vecs;
+    vnames.push_back("  WC_old"); vnames.push_back("  WC_new");
+    vecs.push_back(wc0.ptr());
+    vecs.push_back(wc1.ptr());
+    db_->WriteVectors(vnames, vecs, true);
+  }
+  
   // Water content only has cells, while the residual has cells and faces.
   g->ViewComponent("cell",false)->Update(1.0/dt, *wc1->ViewComponent("cell",false),
           -1.0/dt, *wc0->ViewComponent("cell",false), 1.0);
@@ -91,6 +100,7 @@ void OverlandPressureFlow::AddSourceTerms_(const Teuchos::Ptr<CompositeVector>& 
         ->HasFieldChanged(S_next_.ptr(), name_);
     const Epetra_MultiVector& source1 =
         *S_next_->GetFieldData(mass_source_key_)->ViewComponent("cell",false);
+    db_->WriteVector("mass source", S_next_->GetFieldData(mass_source_key_).ptr(), false);
 
     if (source_in_meters_) {
       // External source term is in [m water / s], not in [mols / s], so a

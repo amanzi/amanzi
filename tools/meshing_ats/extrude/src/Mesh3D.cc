@@ -63,7 +63,8 @@ Mesh3D::Mesh3D(const Mesh2D * const m_, int n_layers) :
 
 void
 Mesh3D::extrude(const std::vector<double>& dz,
-                const std::vector<int>& block_ids_) {
+                const std::vector<int>& block_ids_,
+                bool squash_zero_edges) {
   ASSERT(dz.size() == m->coords.size());
   ASSERT(block_ids_.size() == m->cell2node.size());
 
@@ -75,22 +76,17 @@ Mesh3D::extrude(const std::vector<double>& dz,
                                                         coords[this->up_nodes[n]][1]);};
   // shift the up-node coordinates by dz
   for (int n=0; n!=dz.size(); ++n) {
-#ifndef logically_structured
-    if (is_greater(dz[n], 0.0)) {
-#endif
+    if (!squash_zero_edges || dz[n] > 0.) {
       Point nc(coords[up_nodes[n]]);
       nc[2] -= dz[n];
       coords.emplace_back(std::move(nc));
       dn_nodes[n] = coords.size()-1;
-#ifndef logically_structured
     }
-#endif
   }
 
   // add cells, faces
   for (int c=0; c!=m->ncells; ++c) {
-    if (std::any_of(m->cell2node[c].begin(), m->cell2node[c].end(),
-                    node_differs)) {
+    if (std::any_of(m->cell2node[c].begin(), m->cell2node[c].end(), node_differs)) {
       cells_in_col[c]++;
       
       // add the bottom face

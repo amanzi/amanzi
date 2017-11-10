@@ -29,11 +29,11 @@ MPCCoupledWater::Setup(const Teuchos::Ptr<State>& S) {
   pks_list_->sublist(names[1]).sublist("accumulation preconditioner").set("surface operator", true);
 
   
-  domain_surf = plist_->sublist(names[1]).get<std::string>("domain name","surface");
-  domain_ss = plist_->sublist(names[0]).get<std::string>("domain name","domain");
+  domain_ss_ = plist_->get<std::string>("subsurface domain name","domain");
+  domain_surf_ = plist_->get<std::string>("surface domain name","surface");
   // grab the meshes 
-  surf_mesh_ = S->GetMesh(domain_surf);
-  domain_mesh_ = S->GetMesh(domain_ss);
+  surf_mesh_ = S->GetMesh(domain_surf_);
+  domain_mesh_ = S->GetMesh(domain_ss_);
   
   // cast the PKs
   domain_flow_pk_ = sub_pks_[0];
@@ -44,7 +44,7 @@ MPCCoupledWater::Setup(const Teuchos::Ptr<State>& S) {
   StrongMPC<PK_PhysicalBDF_Default>::Setup(S);
 
   // require the coupling fields, claim ownership
-  S->RequireField(Keys::getKey(domain_surf,"surface_subsurface_flux"), name_)
+  S->RequireField(Keys::getKey(domain_surf_,"surface_subsurface_flux"), name_)
     ->SetMesh(surf_mesh_)->SetComponent("cell", AmanziMesh::CELL, 1);
 
   // Create the preconditioner.
@@ -73,7 +73,7 @@ MPCCoupledWater::Setup(const Teuchos::Ptr<State>& S) {
   
   // set up the Water delegate
   Teuchos::RCP<Teuchos::ParameterList> water_list = Teuchos::sublist(plist_, "water delegate");
-  water_ = Teuchos::rcp(new MPCDelegateWater(water_list, domain_ss));
+  water_ = Teuchos::rcp(new MPCDelegateWater(water_list, domain_ss_));
   water_->set_indices(0,1);
 
   // grab the debuggers
@@ -86,15 +86,18 @@ void
 
 MPCCoupledWater::Initialize(const Teuchos::Ptr<State>& S) {
    // initialize coupling terms
-  S->GetFieldData(Keys::getKey(domain_surf,"surface_subsurface_flux"), name_)->PutScalar(0.);
-  S->GetField(Keys::getKey(domain_surf,"surface_subsurface_flux"), name_)->set_initialized();
+  S->GetFieldData(Keys::getKey(domain_surf_,"surface_subsurface_flux"), name_)->PutScalar(0.);
+  S->GetField(Keys::getKey(domain_surf_,"surface_subsurface_flux"), name_)->set_initialized();
   // Initialize all sub PKs.
 
   MPC<PK_PhysicalBDF_Default>::Initialize(S);
 
-  // ensure continuity of ICs... surface takes precedence.
-  CopySurfaceToSubsurface(*S->GetFieldData(Keys::getKey(domain_surf,"pressure"), sub_pks_[1]->name()),
-			  S->GetFieldData(Keys::getKey(domain_ss,"pressure"), sub_pks_[0]->name()).ptr());
+  // // ensure continuity of ICs... surface takes precedence.
+  // CopySurfaceToSubsurface(*S->GetFieldData(Keys::getKey(domain_surf_,"pressure"), sub_pks_[1]->name()),
+  //       		  S->GetFieldData(Keys::getKey(domain_ss_,"pressure"), sub_pks_[0]->name()).ptr());
+  // ensure continuity of ICs... subsurface takes precedence.
+  CopySubsurfaceToSurface(*S->GetFieldData(Keys::getKey(domain_ss_,"pressure"), sub_pks_[0]->name()),
+			  S->GetFieldData(Keys::getKey(domain_surf_,"pressure"), sub_pks_[1]->name()).ptr());
 
   // Initialize my timestepper.
   PK_BDF_Default::Initialize(S);
@@ -124,7 +127,7 @@ MPCCoupledWater::Functional(double t_old, double t_new, Teuchos::RCP<TreeVector>
   // The residual of the surface flow equation provides the mass flux from
   // subsurface to surface.
 
-  Epetra_MultiVector& source = *S_next_->GetFieldData(Keys::getKey(domain_surf,"surface_subsurface_flux"),
+  Epetra_MultiVector& source = *S_next_->GetFieldData(Keys::getKey(domain_surf_,"surface_subsurface_flux"),
           name_)->ViewComponent("cell",false);
   source = *g->SubVector(1)->Data()->ViewComponent("cell",false);
 
@@ -208,8 +211,8 @@ MPCCoupledWater::ModifyPredictor(double h, Teuchos::RCP<const TreeVector> u0,
   // Merge surface cells with subsurface faces
   if (modified) {
 
-    S_next_->GetFieldEvaluator(Keys::getKey(domain_surf,"relative_permeability"))->HasFieldChanged(S_next_.ptr(),name_);
-    Teuchos::RCP<const CompositeVector> h_prev = S_inter_->GetFieldData(Keys::getKey(domain_surf,"ponded_depth"));
+    S_next_->GetFieldEvaluator(Keys::getKey(domain_surf_,"relative_permeability"))->HasFieldChanged(S_next_.ptr(),name_);
+    Teuchos::RCP<const CompositeVector> h_prev = S_inter_->GetFieldData(Keys::getKey(domain_surf_,"ponded_depth"));
     MergeSubsurfaceAndSurfacePressure(*h_prev, u->SubVector(0)->Data().ptr(),
             u->SubVector(1)->Data().ptr());
   }

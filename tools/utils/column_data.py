@@ -38,12 +38,10 @@ def column_data(varnames, keys='all', directory=".", filename="visdump_data.h5",
 
         if keys == 'all':
             keys = keys_avail
-        elif keys == '-1' or keys == -1:
-            keys = [keys_avail[-1]]
         elif type(keys) is str:
-            keys = [keys]
+            keys = [keys,]
         elif type(keys) is int:
-            keys = [str(keys)]
+            keys = [keys_avail[keys],]
         elif type(keys) is slice:
             keys = keys_avail[keys]
 
