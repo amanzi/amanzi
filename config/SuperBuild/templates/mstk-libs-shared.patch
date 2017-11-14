@@ -1,25 +1,6 @@
 diff -ruNbB mstk-3.0.1/CMakeLists.txt mstk-3.0.1-source/CMakeLists.txt
 --- mstk-3.0.1/CMakeLists.txt	2017-06-23 15:03:58.000000000 -0600
 +++ mstk-3.0.1-source/CMakeLists.txt	2017-10-21 22:32:21.000000000 -0600
-@@ -91,15 +91,14 @@
- if (INSTALL_PREFIX_ARCHOS) 
-   install(TARGETS ${MSTKLIB}
-     EXPORT mstk
--    ARCHIVE
--    DESTINATION ${INSTALL_DIR}/lib/${ARCHOS}
-+    ARCHIVE DESTINATION ${INSTALL_DIR}/lib/${ARCHOS}
-     CONFIGURATIONS ${CMAKE_BUILD_TYPE}
-   )
- else ()
-   install(TARGETS ${MSTKLIB}
-     EXPORT mstk
--    ARCHIVE
--    DESTINATION ${INSTALL_DIR}/lib
-+    ARCHIVE DESTINATION ${INSTALL_DIR}/lib
-+    LIBRARY DESTINATION ${INSTALL_DIR}/lib
-     CONFIGURATIONS ${CMAKE_BUILD_TYPE}
-   )
- endif ()
 @@ -335,6 +334,9 @@
  
  set(MSTK_TPL_LIBRARIES ${METIS_LIBRARIES} ${ZOLTAN_LIBRARIES} 
@@ -30,26 +11,5 @@ diff -ruNbB mstk-3.0.1/CMakeLists.txt mstk-3.0.1-source/CMakeLists.txt
  
  # Make a separate variables where the HDF5 libraries are not targets
  # but expanded library paths. This will be exported for use by other
-Binary files mstk-3.0.1/example/parallel_example and mstk-3.0.1-source/example/parallel_example differ
-Binary files mstk-3.0.1/example/serial_example and mstk-3.0.1-source/example/serial_example differ
-diff -ruNbB mstk-3.0.1/src/par/MSTK_Mesh_Distribute.c mstk-3.0.1-source/src/par/MSTK_Mesh_Distribute.c
---- mstk-3.0.1/src/par/MSTK_Mesh_Distribute.c	2017-06-23 15:03:58.000000000 -0600
-+++ mstk-3.0.1-source/src/par/MSTK_Mesh_Distribute.c	2017-10-20 13:21:36.000000000 -0600
-@@ -67,7 +67,7 @@
- 
-       free(toranks);
- 
--      fprintf(stderr,"Finished partioning and sending on rank 0\n");
-+      /* fprintf(stderr,"Finished partioning and sending on rank 0\n"); */
-     }
- 
-     if (part) free(part);
-@@ -89,7 +89,7 @@
- 
-       MESH_RecvMesh(*mysubmesh, fromrank, with_attr, comm);
- 
--      fprintf(stderr,"Received mesh on rank %-d\n", rank);
-+      /* fprintf(stderr,"Received mesh on rank %-d\n", rank); */
-     }
  
  
