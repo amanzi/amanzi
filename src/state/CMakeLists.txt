@@ -82,7 +82,6 @@ set(state_inc_files
   UnstructuredObservations.hh
   Debugger.hh)
 
-set(state_tpl_list ${Boost_LIBRARIES} ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES})
 add_amanzi_library(state 
                    SOURCE State.cc
                           checkpoint.cc
@@ -109,9 +108,13 @@ add_amanzi_library(state
                           Visualization.cc
                           Debugger.cc
                    HEADERS ${state_inc_files}
-                   LINK_LIBS atk functions output mesh ${state_tpl_libs})
+		   LINK_LIBS data_structures functions mesh_functions output mesh atk
+		   ${Boost_LIBRARIES} ${SEACAS_LIBRARIES})
 set_property(GLOBAL PROPERTY STATE_SOURCE_DIR ${MPC_SOURCE_DIR})
 set_property(GLOBAL PROPERTY STATE_BINARY_DIR ${MPC_BINARY_DIR})
+if (APPLE AND BUILD_SHARED_LIBS)
+  set_target_properties(state PROPERTIES LINK_FLAGS "-Wl,-undefined,dynamic_lookup")
+endif()			  
 
 #
 # Install Target
@@ -152,21 +155,24 @@ if (BUILD_TESTS)
 	  	          test/Main.cc
 	 		  test/state_restart.cc
 	 		  test/state_vis.cc
-                    LINK_LIBS state mesh_factory mesh data_structures mesh_functions functions ${UnitTest_LIBRARIES})
+                    LINK_LIBS state mesh_factory mesh data_structures mesh_functions functions 
+                              ${UnitTest_LIBRARIES} ${NOX_LIBRARIES})
 
     add_amanzi_test(state_copy state_copy
                     KIND int
                     SOURCE
 	  	          test/Main.cc
 	 		  test/state_copy.cc
-                    LINK_LIBS state mesh_factory mesh data_structures mesh_functions functions ${UnitTest_LIBRARIES})
+                    LINK_LIBS state mesh_factory mesh data_structures mesh_functions functions 
+                              ${UnitTest_LIBRARIES} ${NOX_LIBRARIES})
 
     add_amanzi_test(state_dag state_dag
                     KIND int
                     SOURCE
 	  	          test/Main.cc
 	 		  test/state_dag.cc
-                    LINK_LIBS state mesh_factory mesh data_structures mesh_functions functions ${UnitTest_LIBRARIES})
+                    LINK_LIBS state mesh_factory mesh data_structures mesh_functions functions
+                              ${UnitTest_LIBRARIES} ${NOX_LIBRARIES})
 
     add_amanzi_test(state_functional_evaluators state_functional_evaluators
                     KIND int
@@ -181,6 +187,7 @@ if (BUILD_TESTS)
                     SOURCE
 	  	          test/Main.cc
 	 		  test/state_init.cc
-                    LINK_LIBS state mesh_factory mesh data_structures mesh_functions functions ${UnitTest_LIBRARIES})
+                    LINK_LIBS state mesh_factory mesh data_structures mesh_functions functions 
+                              ${UnitTest_LIBRARIES} ${NOX_LIBRARIES})
 endif()
 

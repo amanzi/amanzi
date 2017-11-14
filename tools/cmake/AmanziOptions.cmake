@@ -19,12 +19,12 @@ enable_language(Fortran)
 
 # No idea why we need this.
 # I think it was required for Franklin build. -- lpritch
-if(PREFER_STATIC_LIBRARIES)
+if (PREFER_STATIC_LIBRARIES)
   # Prefer static libraries, but don't require that everything must be static. 
   set(CMAKE_FIND_LIBRARY_SUFFIXES .a .lib)
 endif(PREFER_STATIC_LIBRARIES)
 
-if(BUILD_STATIC_EXECUTABLES)
+if (BUILD_STATIC_EXECUTABLES)
     set(CMAKE_EXE_LINKER_FLAGS -static)
     set(CMAKE_FIND_LIBRARY_SUFFIXES .a)
     set(CMAKE_EXE_LINK_DYNAMIC_C_FLAGS)       # remove -Wl,-Bdynamic
@@ -44,8 +44,8 @@ option(ENABLE_DBC "Enable Design By Contract (DBC) checking" ON)
 add_feature_info(DBC
                  ENABLE_DBC
                  "Toggle design by contract (DBC) checking")
-if ( ENABLE_DBC )
-    add_definitions("-D ENABLE_DBC")
+if (ENABLE_DBC)
+  add_definitions("-D ENABLE_DBC")
 endif()    
 
 # Trilinos error checking is defined in macros
@@ -65,7 +65,7 @@ add_feature_info(TESTS
                  ENABLE_TESTS
                  "Toggle for unit tests")
 if (ENABLE_TESTS)
-    set(BUILD_TESTS 1)
+  set(BUILD_TESTS 1)
 endif()    
 
 if (DEFINED ENABLE_PETSC)

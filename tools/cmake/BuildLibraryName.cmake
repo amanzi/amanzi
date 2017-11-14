@@ -18,7 +18,7 @@ function(BUILD_LIBRARY_NAME library output_name)
   set(multiValue "")
   cmake_parse_arguments(PARSE "${options}" "${oneValue}" "${multiValue}" ${ARGN})
 
-  if ( PARSE_SHARED AND PARSE_STATIC ) 
+  if (PARSE_SHARED AND PARSE_STATIC) 
     message(FATAL_ERROR "Can not ask for STATIC and SHARED library names")
   endif()
 
@@ -33,12 +33,11 @@ function(BUILD_LIBRARY_NAME library output_name)
     set(lib_prefix ${CMAKE_STATIC_LIBRARY_PREFIX})
   endif()
 
-  if ( PARSE_APPEND_PATH )
+  if (PARSE_APPEND_PATH)
     set(${output_name} "${PARSE_APPEND_PATH}/${lib_prefix}${library}${lib_suffix}" PARENT_SCOPE)
   else()  
     set(${output_name} "${lib_prefix}${library}${lib_suffix}" PARENT_SCOPE)
   endif()  
-
 
 endfunction(BUILD_LIBRARY_NAME)
                      

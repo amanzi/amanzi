@@ -277,7 +277,6 @@ void SecondaryVariableFieldEvaluator::UpdateFieldDerivative_(const Teuchos::Ptr<
 }
 
 
-inline
 bool SecondaryVariableFieldEvaluator::IsDependency(const Teuchos::Ptr<State>& S,
         Key key) const {
   if (dependencies_.find(key) != dependencies_.end()) {
@@ -294,7 +293,6 @@ bool SecondaryVariableFieldEvaluator::IsDependency(const Teuchos::Ptr<State>& S,
 }
 
 
-inline
 bool SecondaryVariableFieldEvaluator::ProvidesKey(Key key) const {
   return (key == my_key_);
 }

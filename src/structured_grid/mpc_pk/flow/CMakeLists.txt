@@ -54,7 +54,6 @@ add_library(sflow OBJECT ${FPP_out_files}
                          ${h_inc_files})
 
 if (BUILD_TESTS)
-
   link_directories(${CCSE_LIBRARY_DIR})
   if (ENABLE_Unstructured)
     set(unstructured_grid_libs udriv mpc state transport flow whetstone)
@@ -65,7 +64,10 @@ if (BUILD_TESTS)
   # Note the following is rather icky...because of circular dependencies, these things have to be listed twice
   # This is similar to the main amanzi exec build, but worse.  Well....it works, for now.  Not sure what a better
   # long-term strategy is
-  set(structured_grid_libs structured_amanzi ${CCSE_LIBRARIES} structured_amanzi ${CCSE_LIBRARIES} ${PETSC_LIBRARIES})
+  set(structured_grid_libs structured_amanzi ${CCSE_LIBRARIES} 
+                           structured_amanzi ${CCSE_LIBRARIES}
+                           error_handling interface interface_s atk)
+
   if(CMAKE_Fortran_COMPILER_ID STREQUAL GNU) 
     if (${CMAKE_SYSTEM_NAME} STREQUAL Linux)
       list(APPEND structured_grid_libs gfortran)
@@ -73,28 +75,23 @@ if (BUILD_TESTS)
   endif()
 
   get_property(GEOCHEM_LIBS GLOBAL PROPERTY GEOCHEM_LIBS)
-  set(my_common_libs ${GEOCHEM_LIBS} error_handling interface atk)
 
-  set(my_libs ${structured_grid_libs}
-              ${unstructured_grid_libs}
-              ${my_common_libs})
-  set(my_tpl_libs ${amanzi_mesh_libs}
-                  ${Teuchos_LIBRARIES}
-                  ${Epetra_LIBRARIES}
-                  ${Boost_LIBRARIES}
-                  ${XERCES_LIBRARIES}
-                  ${XERCES_ICU_LIBRARIES}
-                  ${PETSC_LIBRARIES})
+  set(tpl_libs ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES}
+               ${CCSE_EXT_LIBRARIES} ${PETSC_LIBRARIES}
+               ${XERCES_LIBRARIES} ${XERCES_ICU_LIBRARIES}
+               ${Boost_LIBRARIES})
 
-  list(APPEND my_tpl_libs ${CCSE_EXT_LIBRARIES})
+  if (BUILD_SHARED_LIBS)
+    set(closing_dso ../../shared_dso.f90)
+  endif()
 
   set(FLOWTEST "${SFLOW_SOURCE_DIR}/test")
   include_directories(${FLOWTEST})
   set(CXX_header_files_1 ${FLOWTEST}/RStdata.H)
   set(CXX_source_files_1 ${FLOWTEST}/tRS.cpp ${FLOWTEST}/RStdata.cpp)
-  set(F90_source_files_1 )
-  set(F77_source_files_1 )
-  set(FPP_source_files_1 )
+  set(F90_source_files_1)
+  set(F77_source_files_1)
+  set(FPP_source_files_1)
 
   preprocess_boxlib_fortran(FPP_out_files_1 ${FPP_source_files_1})
 
@@ -110,19 +107,22 @@ if (BUILD_TESTS)
     # (seems to require redundant lib listing to resolve everything....not sure why
     add_amanzi_test(tRS tRS "tRS.in"
                     KIND unit
-                    SOURCE ${FPP_out_files_1} ${CXX_source_files_1} ${F90_source_files_1} ${F77_source_files_1}
-                    LINK_LIBS ${structured_grid_libs} ${GEOCHEM_LIBS} error_handling atk ${my_tpl_libs})
+                    SOURCE ${FPP_out_files_1} ${CXX_source_files_1} ${F90_source_files_1} 
+                           ${F77_source_files_1} ${closing_dso}
+                    LINK_LIBS ${structured_grid_libs} ${GEOCHEM_LIBS} ${tpl_libs})
 
     add_amanzi_test(tRS_steady tRS_steady "tRS_steady.in"
                     KIND unit
-                    SOURCE ${FPP_out_files_2} ${CXX_source_files_2} ${F90_source_files_2} ${F77_source_files_2}
-		    LINK_LIBS ${structured_grid_libs} ${GEOCHEM_LIBS} error_handling atk ${my_tpl_libs})
+                    SOURCE ${FPP_out_files_2} ${CXX_source_files_2} ${F90_source_files_2} 
+                           ${F77_source_files_2} ${closing_dso}
+		    LINK_LIBS ${structured_grid_libs} ${GEOCHEM_LIBS} ${tpl_libs})
   else()
     # (seems to require redundant lib listing to resolve everything....not sure why
     add_amanzi_test(tRS tRS "tRS_3D.in"
                     KIND unit
-                    SOURCE ${FPP_out_files_1} ${CXX_source_files_1} ${F90_source_files_1} ${F77_source_files_1}
-                    LINK_LIBS ${my_libs} ${my_tpl_libs} ${my_libs})
+                    SOURCE ${FPP_out_files_1} ${CXX_source_files_1} ${F90_source_files_1} 
+                           ${F77_source_files_1}
+                    LINK_LIBS ${structured_grid_libs} ${tpl_libs})
   endif()
 
   if (NOT (CMAKE_SOURCE_DIR EQUAL CMAKE_BINARY_DIR))

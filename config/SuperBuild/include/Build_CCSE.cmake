@@ -4,8 +4,6 @@
 # Build TPL:  CCSE 
 #  
 
-message(STATUS "JDM>> CCSE: Entering BUILD_CCSE.cmake")
-
 # --- Define all the directories and common external project flags
 define_external_project_args(CCSE TARGET ccse DEPENDS ${MPI_PROJECT})
 
@@ -28,6 +26,9 @@ if (ENABLE_OpenMP)
   set(ENABLE_OpenMP_INT 1)
 endif (ENABLE_OpenMP)
 message(STATUS "Build CCSE with space dimension ${CCSE_BL_SPACEDIM}")
+
+string(TOUPPER ${CMAKE_BUILD_TYPE} BUILD_TYPE_UPPER)
+
 set(CCSE_CMAKE_CACHE_ARGS
                        -DENABLE_Config_Report:BOOL=TRUE
                        -DENABLE_MPI:INT=1
@@ -40,11 +41,12 @@ set(CCSE_CMAKE_CACHE_ARGS
                        -DCMAKE_BUILD_TYPE:STRING=${CMAKE_BUILD_TYPE}
                        -DBUILD_SHARED_LIBS:BOOL=${BUILD_SHARED_LIBS}
                        -DCMAKE_C_COMPILER:FILEPATH=${CMAKE_C_COMPILER_USE}
-                       -DCMAKE_C_FLAGS_${CMAKE_BUILD_TYPE}:STRING=${Amanzi_COMMON_CFLAGS}
+                       -DCMAKE_C_FLAGS_${BUILD_TYPE_UPPER}:STRING=${Amanzi_COMMON_CFLAGS}
                        -DCMAKE_CXX_COMPILER:FILEPATH=${CMAKE_CXX_COMPILER_USE}
-                       -DCMAKE_CXX_FLAGS_${CMAKE_BUILD_TYPE}:STRING=${Amanzi_COMMON_CXXFLAGS}
+                       -DCMAKE_CXX_FLAGS_${BUILD_TYPE_UPPER}:STRING=${Amanzi_COMMON_CXXFLAGS}
+                       -DCMAKE_CXX_FLAGS_RELEASE:STRING=${Amanzi_COMMON_CXXFLAGS}
                        -DCMAKE_Fortran_COMPILER:FILEPATH=${CMAKE_Fortran_COMPILER_USE}
-                       -DCMAKE_Fortran_FLAGS_${CMAKE_BUILD_TYPE}:STRING=${Amanzi_COMMON_FCFLAGS}
+                       -DCMAKE_Fortran_FLAGS_${BUILD_TYPE_UPPER}:STRING=${Amanzi_COMMON_FCFLAGS}
                        -DVERBOSE:BOOL=ON)
 
 
@@ -76,7 +78,8 @@ ExternalProject_Add(${CCSE_BUILD_TARGET}
 		    PATCH_COMMAND ${CCSE_PATCH_COMMAND}                    
                     # -- Configure
                     SOURCE_DIR       ${CCSE_source_dir}           # Source directory
-                    CMAKE_CACHE_ARGS ${CCSE_CMAKE_CACHE_ARGS}     # CMAKE_CACHE_ARGS or CMAKE_ARGS => CMake configure
+		    CMAKE_CACHE_ARGS ${AMANZI_CMAKE_CACHE_ARGS}   # Global definitions from root CMakeList
+		                     ${CCSE_CMAKE_CACHE_ARGS}     
                     # -- Build
                     BINARY_DIR        ${CCSE_build_dir}           # Build directory 
                     BUILD_COMMAND     $(MAKE)                     # $(MAKE) enables parallel builds through make

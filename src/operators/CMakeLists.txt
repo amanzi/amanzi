@@ -47,7 +47,7 @@ add_definitions("-DMSTK_HAVE_MPI")
 #
 add_amanzi_library(operators_audit 
                    SOURCE OperatorAudit.cc 
-                   LINK_LIBS ${flow_tpl_libs})
+		   LINK_LIBS whetstone ${Epetra_LIBRARIES})
 
 #
 # Library: operators
@@ -156,7 +156,7 @@ if (BUILD_TESTS)
         add_amanzi_test(operators_parabolic_surface operators_parabolic_surface
                         KIND unit
                         SOURCE test/Main.cc test/operator_parabolic_surface.cc
-                        LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+			LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
         add_amanzi_test(operators_marshak operators_marshak
                         KIND unit
                         SOURCE test/Main.cc test/operator_marshak.cc

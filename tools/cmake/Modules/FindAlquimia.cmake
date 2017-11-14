@@ -33,7 +33,7 @@ elseif(ALQUIMIA_DIR)
 
   set(ALQUIMIA_INCLUDE_DIR ${ALQUIMIA_DIR}/include/alquimia)
   set(ALQUIMIA_LIBRARY_DIR ${ALQUIMIA_DIR}/lib)
-  set(ALQUIMIA_TARGET alquimia.a)
+  set(ALQUIMIA_TARGET alquimia)
 
   find_library(_ALQUIMIA_LIBRARY
                NAMES alquimia

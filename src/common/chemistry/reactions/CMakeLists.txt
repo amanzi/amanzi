@@ -35,5 +35,5 @@ set(SRCS
 	./sorption_isotherm_rxn.cc 
 )
 
-add_amanzi_library(geochemrxns SOURCE ${SRCS}) 
-
+add_amanzi_library(geochemrxns SOURCE ${SRCS}
+                               LINK_LIBS geochembase geochemsolvers geochemutil atk)
