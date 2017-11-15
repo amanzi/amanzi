@@ -10,10 +10,6 @@
 #include "VerboseObject_objs.hh"
 
 
-#include "state_evaluators_registration.hh"
-#include "VerboseObject_objs.hh"
-
-
 // This computes the L2 error norm for the given component in the output file by comparing 
 // its values with those in the given reference file.
 double ComputeL2Error(hid_t output, const std::string& output_component_name,

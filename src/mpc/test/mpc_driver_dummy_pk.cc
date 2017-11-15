@@ -11,13 +11,15 @@
 #include "Teuchos_ParameterXMLFileReader.hpp"
 
 #include "CycleDriver.hh"
+#include "Domain.hh"
 #include "eos_registration.hh"
+#include "MeshFactory.hh"
+#include "Mesh.hh"
 #include "PK_Factory.hh"
 #include "PK.hh"
 #include "pks_dummy_registration.hh"
 #include "State.hh"
 
-#include "State.hh"
 
 TEST(NEW_DRIVER_DUMMY_PK) {
 
