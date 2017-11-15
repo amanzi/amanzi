@@ -1,6 +1,10 @@
 #include <iostream>
 #include <fstream>
 #include <iomanip>
+
+// closing DSO objects
+#include "VerboseObject_objs.hh"
+
 using std::cout;
 using std::endl;
 #include <ParmParse.H>

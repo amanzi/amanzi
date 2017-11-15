@@ -1169,11 +1169,11 @@ check_compilers
 check_tools
 
 # add fpic?
-if [ "${shared}" -eq "${TRUE}" ]; then
-  build_c_flags="${build_c_flags} -fPIC"
-  build_fort_flags="${build_fort_flags} -fPIC"
-  build_cxx_flags="${build_cxx_flags} -fPIC"
-fi
+#if [ "${shared}" -eq "${TRUE}" ]; then
+#  build_c_flags="${build_c_flags} -fPIC"
+#  build_fort_flags="${build_fort_flags} -fPIC"
+#  build_cxx_flags="${build_cxx_flags} -fPIC"
+#fi
 
 # Print and exit if --print is set
 if [ "${print_exit}" -eq "${TRUE}" ]; then
@@ -1246,6 +1246,7 @@ if [ -z "${tpl_config_file}" ]; then
       -DBUILD_SPACK:BOOL=${build_Spack} \
       -DENABLE_XSDK:BOOL=${xsdk} \
       -DTPL_DOWNLOAD_DIR:FILEPATH=${tpl_download_dir} \
+      -DTPL_PARALLEL_JOBS:INT=${parallel_jobs} \
       ${nersc_tpl_opts} \
       ${tpl_build_src_dir}
   

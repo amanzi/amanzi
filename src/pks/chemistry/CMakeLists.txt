@@ -116,7 +116,6 @@ if (BUILD_TESTS AND ENABLE_Unstructured)
                               ${UnitTest_LIBRARIES} ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES}
                               ${XERCES_LIBRARIES} ${XERCES_ICU_LIBRARIES} ${NOX_LIBRARIES})
 
-
     add_amanzi_test(chemistry_alquimia_pk chemistry_alquimia_pk
                     KIND int
                     SOURCE test/Main.cc test/chemistry_alquimia_pk.cc

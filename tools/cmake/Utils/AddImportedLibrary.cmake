@@ -60,15 +60,14 @@ function(ADD_IMPORTED_LIBRARY target_name)
   # --- Set the properties
   set_target_properties(${target_name} PROPERTIES
                         IMPORTED_LOCATION ${PARSE_LOCATION})
-  if ( PARSE_LINK_LANGUAGES )
+  if (PARSE_LINK_LANGUAGES)
     set_target_properties(${target_name} PROPERTIES
                         IMPORTED_LINK_INTERFACE_LANGUAGES "${PARSE_LINK_LANGUAGES}")
   endif()
-  if ( PARSE_LINK_INTERFACE_LIBRARIES )
+  if (PARSE_LINK_INTERFACE_LIBRARIES)
     set_target_properties(${target_name} PROPERTIES
                           IMPORTED_LINK_INTERFACE_LIBRARIES "${PARSE_LINK_INTERFACE_LIBRARIES}")
   endif()
      
-  
 endfunction(ADD_IMPORTED_LIBRARY)
 

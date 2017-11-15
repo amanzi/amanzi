@@ -80,7 +80,8 @@ set(mpc_tree_src_files
 
 set(mpc_tree_tpl_libs ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES})
 add_amanzi_library(mpc_tree SOURCE ${mpc_tree_src_files}
-                   LINK_LIBS ${mpc_tree_tpl_libs} time_integration data_structures state)
+                   LINK_LIBS pks transport time_integration data_structures state
+                             ${mpc_tree_tpl_libs})
 
 #
 # Install Targets

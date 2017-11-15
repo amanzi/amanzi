@@ -32,7 +32,7 @@ elseif (CRUNCHTOPE_DIR)
 
   set(CRUNCHTOPE_INCLUDE_DIR ${CRUNCHTOPE_DIR}/lib)
   set(CRUNCHTOPE_LIBRARY_DIR ${CRUNCHTOPE_DIR}/lib)
-  set(CRUNCHTOPE_TARGET crunchchem.a)
+  set(CRUNCHTOPE_TARGET crunchchem)
 
   find_library(_CRUNCHTOPE_LIBRARY
                NAMES crunchchem

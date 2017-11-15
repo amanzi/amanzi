@@ -47,11 +47,11 @@ function(ADD_AMANZI_LIBRARY target)
   cmake_parse_arguments(AMANZI_LIB "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
 
   # --- Check the input
-  if ( NOT AMANZI_LIB_SOURCE )
+  if (NOT AMANZI_LIB_SOURCE)
     message(FATAL "Can not define library ${target} without source files.")
   endif()
 
-  if ( AMANZI_LIB_SHARED AND AMANZI_LIB_STATIC )
+  if (AMANZI_LIB_SHARED AND AMANZI_LIB_STATIC)
     message(FATAL "Library ${target} must either be STATIC or SHARED")
   endif()
 
@@ -65,12 +65,12 @@ function(ADD_AMANZI_LIBRARY target)
   add_library(${target} ${shared_flag} ${static_flag} ${AMANZI_LIB_SOURCE})
 
   # --- Add link libraries
-  if ( AMANZI_LIB_LINK_LIBS )
+  if (AMANZI_LIB_LINK_LIBS)
     target_link_libraries(${target} ${AMANZI_LIB_LINK_LIBS})
   endif()
 
   # --- Add target to the install target
-  if ( NOT "${AMANZI_LIB_NO_INSTALL}" )
+  if (NOT "${AMANZI_LIB_NO_INSTALL}")
     add_install_library(${target})
   endif()
 
@@ -78,7 +78,6 @@ function(ADD_AMANZI_LIBRARY target)
   if ( NOT "${AMANZI_LIB_NO_INSTALL_HEADERS}" )
     add_install_include_file(${AMANZI_LIB_HEADERS})
   endif()
-
 
 endfunction(ADD_AMANZI_LIBRARY)
 

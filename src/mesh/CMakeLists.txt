@@ -38,7 +38,8 @@ add_amanzi_library(mesh SOURCE Mesh.cc
 #
 # Library: mesh_audit
 #
-add_amanzi_library(mesh_audit SOURCE MeshAudit.cc LINK_LIBS error_handling ${Epetra_LIBRARIES})
+add_amanzi_library(mesh_audit SOURCE MeshAudit.cc 
+	                      LINK_LIBS mesh error_handling ${Epetra_LIBRARIES})
 
 #
 # Install Header files

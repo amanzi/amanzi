@@ -458,6 +458,9 @@ class Mesh_MSTK : public Mesh {
                          const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm);
   void post_create_steps_(const bool request_faces, const bool request_edges);
 
+  void init_mesh_from_file_(const std::string filename,
+                            const Partitioner_type partitioner = PARTITIONER_DEFAULT);
+
   void collapse_degen_edges();
   Cell_type MFace_Celltype(MFace_ptr f);
   Cell_type MRegion_Celltype(MRegion_ptr r);

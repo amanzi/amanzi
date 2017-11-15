@@ -14,7 +14,6 @@ namespace Amanzi {
 
 // explicity instantitate the static data of Factory<FieldEvaluator>
 namespace Utils {
-// template<> Utils::Factory<FieldEvaluator>::map_type* Utils::Factory<FieldEvaluator>::map_;
 template<> Factory<FieldEvaluator>::map_type* Factory<FieldEvaluator>::map_;
 } // namespace Utils
 

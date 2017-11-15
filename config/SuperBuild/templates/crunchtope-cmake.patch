@@ -21,7 +21,7 @@ diff -ruNbB crunchtope_160915-c31ecb9/AssembleGlobal.F90 crunchtope-160915.c31ec
 diff -ruNbB crunchtope_160915-c31ecb9/CMakeLists.txt crunchtope-160915.c31ecb9.0-source/CMakeLists.txt
 --- crunchtope_160915-c31ecb9/CMakeLists.txt	1969-12-31 17:00:00.000000000 -0700
 +++ crunchtope-160915.c31ecb9.0-source/CMakeLists.txt	2017-09-01 11:31:58.831168408 -0600
-@@ -0,0 +1,52 @@
+@@ -0,0 +1,57 @@
 +# Minimum CMake version.
 +cmake_minimum_required (VERSION 2.8.12)
 +set(CMAKE_BUILD_TYPE Release)
@@ -67,7 +67,12 @@ diff -ruNbB crunchtope_160915-c31ecb9/CMakeLists.txt crunchtope-160915.c31ecb9.0
 +set(CMAKE_Fortran_MODULE_DIRECTORY "${PROJECT_BINARY_DIR}/mod_files")
 +
 +include_directories(${PETSC_DIR}/include)
-+add_library(${CRUNCHTOPE_LIB} STATIC ${CRUNCH_SRC})
++add_library(${CRUNCHTOPE_LIB} ${CRUNCH_SRC})
++if (APPLE AND BUILD_SHARED_LIBS)
++  set_target_properties(${CRUNCHTOPE_LIB} 
++                        PROPERTIES INSTALL_NAME_DIR ${CMAKE_INSTALL_PREFIX}/lib
++                                   LINK_FLAGS "-Wl,-undefined,dynamic_lookup")
++endif()
 +
 +install(TARGETS ${CRUNCHTOPE_LIB} DESTINATION ${CMAKE_INSTALL_PREFIX}/lib)
 +install(DIRECTORY ${CMAKE_Fortran_MODULE_DIRECTORY}/ DESTINATION ${CMAKE_INSTALL_PREFIX}/lib)

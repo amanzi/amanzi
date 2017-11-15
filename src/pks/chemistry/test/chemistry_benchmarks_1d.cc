@@ -1,14 +1,15 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
-#include <UnitTest++.h>
 #include <vector>
 #include <cstdlib>
 #include <cmath>
 #include <iostream>
 #include <float.h>
 #include <TestReporterStdout.h>
-#include <iostream>
-
+#include "UnitTest++.h"
 #include "hdf5.h"
+#include "state_evaluators_registration.hh"
+#include "VerboseObject_objs.hh"
+
+
 #include "state_evaluators_registration.hh"
 #include "VerboseObject_objs.hh"
 

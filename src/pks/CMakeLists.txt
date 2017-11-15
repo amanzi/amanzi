@@ -38,12 +38,13 @@ include_directories(${ASCEMIO_INCLUDE_DIR})
 #
 set(pks_src_files PK_Factory.cc
                   PK_Utils.cc
-                  PK_Physical.cc
-   )
+                  PK_Physical.cc)
 
 add_amanzi_library(pks
-                   SOURCE ${pks_src_files} HEADERS ${pks_inc_files}
-                   LINK_LIBS )
+                   SOURCE ${pks_src_files}
+                   HEADERS ${pks_inc_files}
+		   LINK_LIBS state data_structures error_handling atk
+                             ${Epetra_LIBRARIES})
 
 #
 # Install Targets

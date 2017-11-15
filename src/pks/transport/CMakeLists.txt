@@ -142,7 +142,7 @@ if (ENABLE_ALQUIMIA)
 endif()
 add_amanzi_library(transport 
                    SOURCE ${transport_src_files} HEADERS ${transport_inc_files}
-                   LINK_LIBS geometry mesh error_handling state data_structures 
+                   LINK_LIBS geometry operators mesh error_handling state data_structures 
                              ${geochem_lib} chemistry_pk time_integration ${Epetra_LIBRARIES})
 
 

@@ -162,7 +162,7 @@ TEST(FLOW_2D_DARCY_WELL_FROMFILE) {
 }
 
 TEST(FLOW_2D_DARCY_WELL_ADAPRIVE) {
- RunTestDarcyWell("test/flow_darcy_well_adaptive.xml");
+  RunTestDarcyWell("test/flow_darcy_well_adaptive.xml");
 }
 
 

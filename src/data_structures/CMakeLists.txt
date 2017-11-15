@@ -61,7 +61,9 @@ file(GLOB data_structures_inc_files "*.hh")
 add_amanzi_library(data_structures 
                    SOURCE ${data_structures_src_files}
                    HEADERS ${data_structures_inc_files}
-		           LINK_LIBS mesh error_handling ${Teuchos_Libraries} ${Epetra_Libraries} ${Thyra_Libraries})
+		   LINK_LIBS mesh error_handling 
+                             ${Teuchos_Libraries} ${Epetra_Libraries}
+                             ${Thyra_Libraries} ${NOX_LIBRARIES})
 
 #
 # Install Target
@@ -102,7 +104,6 @@ if (BUILD_TESTS)
                     SOURCE test/Main.cc test/graph_fe_test.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${NOX_LIBRARIES})
 
-
     add_amanzi_test(matrix_fe_test matrix_fe_test
                     KIND unit
                     SOURCE test/Main.cc test/matrix_fe_test.cc
@@ -120,18 +121,14 @@ if (BUILD_TESTS)
 
     # add_amanzi_test(matrix_fe_test_speed matrix_fe_test_speed
     #                 KIND unit
-	# 	            SOURCE test/Main.cc test/matrix_fe_test_speed.cc
-	# 	            LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+    # 	              SOURCE test/Main.cc test/matrix_fe_test_speed.cc
+    # 	              LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
-#    add_amanzi_test(test_access test_access_times
-#                    KIND int
-#		    SOURCE test/Main.cc test/test_cv_access.cc
-#		    LINK_LIBS
-#		             data_structures
-#			     mesh
-#			     geometry
-#			     mesh_factory
-#			     simple_mesh
-#			     ${UnitTest_LIBRARIES})
-
+    # add_amanzi_test(test_access test_access_times
+    #                 KIND int
+    #		      SOURCE test/Main.cc test/test_cv_access.cc
+    #		      LINK_LIBS data_structures mesh
+    #	                        geometry mesh_factory
+    #                           simple_mesh
+    #	                        ${UnitTest_LIBRARIES})
 endif()

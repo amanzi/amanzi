@@ -3,6 +3,7 @@
 <Primary Species
 CO3--  ;   4.50 ;  -2.00 ;  60.00920
 Ca++   ;   6.00 ;   2.00 ;  40.08
+Tracer ;   1.00 ;   0.00 ;  1.0
 
 <Aqueous Equilibrium Complexes
 

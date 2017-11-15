@@ -49,9 +49,9 @@ foreach(package ${Trilinos_PACKAGE_LIST})
 endforeach()
 
 # Build PyTrilinos if shared
-if (BUILD_SHARED_LIBS)
-  list(APPEND Trilinos_CMAKE_PACKAGE_ARGS "-DTrilinos_ENABLE_PyTrilinos:BOOL=ON")
-endif()
+# if (BUILD_SHARED_LIBS)
+#   list(APPEND Trilinos_CMAKE_PACKAGE_ARGS "-DTrilinos_ENABLE_PyTrilinos:BOOL=ON")
+#endif()
 
 # Trilinos 11.0.3 has some C++ compile errors in it that we can sidestep by 
 # defining HAVE_TEUCHOS_ARRAY_BOUNDSCHECK.
@@ -165,6 +165,7 @@ set(Trilinos_CMAKE_ARGS
    ${Trilinos_CMAKE_EXTRA_ARGS}
    )
 
+
 # - Final language ARGS
 set(Trilinos_CMAKE_LANG_ARGS
                    ${Amanzi_CMAKE_C_COMPILER_ARGS}
@@ -261,6 +262,8 @@ ExternalProject_Add(${Trilinos_BUILD_TARGET}
                                         -DCMAKE_INSTALL_PREFIX:PATH=<INSTALL_DIR>
 					-DTrilinos_ENABLE_Stratimikos:BOOL=FALSE
 					-DTrilinos_ENABLE_SEACAS:BOOL=FALSE
+		                        -DCMAKE_INSTALL_RPATH:PATH=${Trilinos_install_dir}/lib
+		                        -DCMAKE_INSTALL_NAME_DIR:PATH=${Trilinos_install_dir}/lib
                     # -- Build
                     BINARY_DIR        ${Trilinos_build_dir}        # Build directory 
                     BUILD_COMMAND     $(MAKE)                      # $(MAKE) enables parallel builds through make
