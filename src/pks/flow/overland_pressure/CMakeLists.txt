@@ -8,6 +8,7 @@ include_directories(${ATS_SOURCE_DIR}/src/pks/flow/constitutive_relations/overla
 include_directories(${ATS_SOURCE_DIR}/src/pks/flow/constitutive_relations/elevation)
 include_directories(${ATS_SOURCE_DIR}/src/operators/divgrad)
 include_directories(${ATS_SOURCE_DIR}/src/operators/divgrad/upwind_scheme)
+include_directories(${ATS_SOURCE_DIR}/src/pks/flow/constitutive_relations/thaw_depth)
 include_directories(${Amanzi_TPL_MSTK_INCLUDE_DIRS})
 
 add_library(pk_flow_overland_pressure

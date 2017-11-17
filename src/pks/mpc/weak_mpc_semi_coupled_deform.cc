@@ -6,13 +6,13 @@
 
 #include "weak_mpc_semi_coupled_deform.hh"
 #include "weak_mpc_semi_coupled_helper.hh"
-
+#include <iomanip>
 
 
 namespace Amanzi {
 
-  unsigned WeakMPCSemiCoupledDeform::flag_star = 0;
-  unsigned WeakMPCSemiCoupledDeform::flag_star_surf = 0;
+unsigned WeakMPCSemiCoupledDeform::flag_star = 0;
+unsigned WeakMPCSemiCoupledDeform::flag_star_surf = 0;
 
 
 WeakMPCSemiCoupledDeform::WeakMPCSemiCoupledDeform(Teuchos::ParameterList& pk_tree,
@@ -21,13 +21,12 @@ WeakMPCSemiCoupledDeform::WeakMPCSemiCoupledDeform(Teuchos::ParameterList& pk_tr
         const Teuchos::RCP<TreeVector>& solution)
     : PK(pk_tree, global_plist, S, solution),
       MPC<PK>(pk_tree, global_plist, S, solution),
-      sg_model_(false)
-{
+      sg_model_(false), dynamic_sg_model_(false){
   // grab the list of subpks
   auto subpks = plist_->get<Teuchos::Array<std::string> >("PKs order");
   std::string colname = subpks[subpks.size()-1];
   subpks.pop_back();
-
+  
   KeyTriple col_triple;
   bool is_ds = Keys::splitDomainSet(colname, col_triple);
   if (!is_ds) {
@@ -35,7 +34,7 @@ WeakMPCSemiCoupledDeform::WeakMPCSemiCoupledDeform(Teuchos::ParameterList& pk_tr
     msg << "WeakMPCSemiCoupledDeform subpk: \"" << colname << "\" should be a domain-set PK of the form column_*-NAME";
     Exceptions::amanzi_throw(msg);
   }
-
+  
   // add for the various columns based on GIDs of the surface system
   Teuchos::RCP<const AmanziMesh::Mesh> surf_mesh = S->GetMesh("surface");
   int ncols = surf_mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
@@ -45,16 +44,16 @@ WeakMPCSemiCoupledDeform::WeakMPCSemiCoupledDeform(Teuchos::ParameterList& pk_tr
     domain_name_stream << std::get<0>(col_triple) << "_" << gid;
     subpks.push_back(Keys::getKey(domain_name_stream.str(), std::get<2>(col_triple)));
   }
-
+  
   numPKs_ = subpks.size();
-
+  
   PKFactory pk_factory;
-
+  
   // create the star pk
   // -- create the solution vector
   Teuchos::RCP<TreeVector> pk_soln = Teuchos::rcp(new TreeVector());
   solution_->PushBack(pk_soln);
-
+  
   // -- create the PK
   Teuchos::RCP<PK> pk = pk_factory.CreatePK(subpks[0], pk_tree, global_list_, S, pk_soln);
   sub_pks_.push_back(pk);
@@ -71,8 +70,8 @@ WeakMPCSemiCoupledDeform::WeakMPCSemiCoupledDeform(Teuchos::ParameterList& pk_tr
     // create the PK
     Teuchos::RCP<PK> pk = pk_factory.CreatePK(subpks[i], pk_tree, global_list_, S, pk_soln);
     sub_pks_.push_back(pk);
-
- 
+    
+    
     //check IC
     Teuchos::Array<std::string> pkorder1 = global_list_->sublist("PKs").sublist(subpks[i]).get<Teuchos::Array<std::string> >("PKs order");
     Teuchos::Array<std::string> pkorder2 = global_list_->sublist("PKs").sublist(pkorder1[1]).get<Teuchos::Array<std::string> >("PKs order");
@@ -80,11 +79,11 @@ WeakMPCSemiCoupledDeform::WeakMPCSemiCoupledDeform(Teuchos::ParameterList& pk_tr
       
       Teuchos::ParameterList& sub_list = global_list_->sublist("PKs").sublist(pkorder1[0]).sublist("initial condition");
       if (sub_list.isParameter("restart files, cycles")){
-
+	
 	Teuchos::Array<std::string> restart = sub_list.get<Teuchos::Array<std::string> >("restart files, cycles");
-	  
+	
 	std::stringstream res_file;
-	  
+	
 	if(restart[0].rfind("/") == restart[0].size()-1){} //exact path
 	else
 	  restart[0] += "/";
@@ -109,11 +108,8 @@ WeakMPCSemiCoupledDeform::WeakMPCSemiCoupledDeform(Teuchos::ParameterList& pk_tr
 	  
 	  res_file << restart[0] << "checkpoint_" << rank << "_" << restart[1] << ".h5";
 	  
-	  seb_list.set("restart file", res_file.str());
-	  
-	}
-	
-	
+	  seb_list.set("restart file", res_file.str()); 
+	}	
       }
       else if(global_list_->sublist("PKs").sublist(pkorder2[i]).isParameter("PKs order")) {
 
@@ -133,11 +129,8 @@ WeakMPCSemiCoupledDeform::WeakMPCSemiCoupledDeform(Teuchos::ParameterList& pk_tr
 	    
 	    res_file << restart[0] << "checkpoint_" << rank << "_" << restart[1] << ".h5";
 	    
-	    seb_list.set("restart file", res_file.str());
-	    
+	    seb_list.set("restart file", res_file.str()); 
 	  }
-	  
-
 	}
       } //PSS end
 
@@ -190,8 +183,14 @@ WeakMPCSemiCoupledDeform::Setup(const Teuchos::Ptr<State>& S) {
   subcycle_key_ = plist_->get<bool>("subcycle",false);
 
   // by default sg_model_ is false
-  if (S->FEList().isSublist("surface_star-depression_depth"))
+  if (S->FEList().isSublist("surface_star-thaw_depth")){
     sg_model_ = true;
+    dynamic_sg_model_= true;
+  }
+  else if (S->FEList().isSublist("surface_star-depression_depth") && !dynamic_sg_model_){
+    sg_model_ = true;
+    dynamic_sg_model_ = false;
+  }
   else
     sg_model_ = false;
 
@@ -200,7 +199,8 @@ WeakMPCSemiCoupledDeform::Setup(const Teuchos::Ptr<State>& S) {
 
 };
 
-  // surface_column cells are initialized from the subsurface columns, and then surface_star is initialized from surface cells, so order is important
+
+// surface_column cells are initialized from the subsurface columns, and then surface_star is initialized from surface cells, so order is important
 void 
 WeakMPCSemiCoupledDeform::Initialize(const Teuchos::Ptr<State>& S){
 
@@ -214,8 +214,6 @@ WeakMPCSemiCoupledDeform::Initialize(const Teuchos::Ptr<State>& S){
 
 }
 
-//-------------------------------------------------------------------------------------
-// Semi coupled thermal hydrology
 bool 
 WeakMPCSemiCoupledDeform::AdvanceStep(double t_old, double t_new, bool reinit) {
   bool fail = false;
@@ -240,19 +238,34 @@ WeakMPCSemiCoupledDeform::CoupledSurfSubsurfColumns(double t_old, double t_new, 
 
   //ensure the star solution is marked as changed when the subsurface columns fail
   if (flag_star || flag_star_surf){
-    
+
     flag_star = 0;
     flag_star_surf=0;
     
     Teuchos::RCP<PK_BDF_Default> pk_sfstar =
       Teuchos::rcp_dynamic_cast<PK_BDF_Default>(sub_pks_[0]);
     
+    
     ASSERT(pk_sfstar.get());
     pk_sfstar->ChangedSolution();
+
+    for(int i=1; i<0; i++){
+    Teuchos::RCP<PK> pk_domain =
+      Teuchos::rcp_dynamic_cast<PK>(sub_pks_[i]);
+    ASSERT(pk_domain.get());
+    pk_domain->ChangedSolutionPK(S_next_.ptr()); 
+    }
   }
+  
+
+  const Epetra_MultiVector& pd_max = *S_next_->GetFieldData("surface_star-maximum_ponded_depth")
+    ->ViewComponent("cell", false);
+ const Epetra_MultiVector& pd_min = *S_inter_->GetFieldData("surface_star-maximum_ponded_depth")
+   ->ViewComponent("cell", false);
+  const Epetra_MultiVector& td = *S_next_->GetFieldData("surface_star-thaw_depth")
+    ->ViewComponent("cell", false);
 
   Teuchos::OSTab tab = vo_->getOSTab();
-
   fail = sub_pks_[0]->AdvanceStep(t_old, t_new, reinit);
   int nfailed_surf = 0;
   if (fail)
@@ -264,8 +277,6 @@ WeakMPCSemiCoupledDeform::CoupledSurfSubsurfColumns(double t_old, double t_new, 
   if (vo_->os_OK(Teuchos::VERB_HIGH))
     *vo_->os() << "surface_star system failed: "<< ((nfailed_surf >0) ? 1 : 0) << std::endl;
 
- 
-  
   if(nfailed_surf > 0){
     std::cout<<"surface_star system failed: "<< ((nfailed_surf >0) ? 1 : 0) << std::endl;  
     flag_star_surf=1;
@@ -291,7 +302,7 @@ WeakMPCSemiCoupledDeform::CoupledSurfSubsurfColumns(double t_old, double t_new, 
 	int id = S_->GetMesh("surface")->cell_map(false).GID(c);
 	name << "surface_column_" << id;
 	Epetra_MultiVector& surf_pres = *S_inter_->GetFieldData(Keys::getKey(name.str(),"pressure"), 
-								S_inter_->GetField(Keys::getKey(name.str(),"pressure"))->owner())->ViewComponent("cell", false);
+					 S_inter_->GetField(Keys::getKey(name.str(),"pressure"))->owner())->ViewComponent("cell", false);
 	surf_pres[0][0] = surfstar_pres[0][c];
       }
       else {}
@@ -337,27 +348,27 @@ WeakMPCSemiCoupledDeform::CoupledSurfSubsurfColumns(double t_old, double t_new, 
     name_ss << "column_" << id;
    
     Epetra_MultiVector& surf_temp = *S_inter_->GetFieldData(Keys::getKey(name.str(),"temperature"), 
-							    S_inter_->GetField(Keys::getKey(name.str(),"temperature"))->owner())->ViewComponent("cell", false);
+				     S_inter_->GetField(Keys::getKey(name.str(),"temperature"))->owner())->ViewComponent("cell", false);
+
     surf_temp[0][0] = surfstar_temp[0][c];
     
     CopySurfaceToSubsurface(*S_inter_->GetFieldData(Keys::getKey(name.str(),"pressure")),
-			    S_inter_->GetFieldData(Keys::getKey(name_ss.str(),"pressure"), 
-						   S_inter_->GetField(Keys::getKey(name_ss.str(),"pressure"))->owner()).ptr());
+			     S_inter_->GetFieldData(Keys::getKey(name_ss.str(),"pressure"), 
+			     S_inter_->GetField(Keys::getKey(name_ss.str(),"pressure"))->owner()).ptr());
     
     CopySurfaceToSubsurface(*S_inter_->GetFieldData(Keys::getKey(name.str(),"temperature")),
-			    S_inter_->GetFieldData(Keys::getKey(name_ss.str(),"temperature"), 
-						   S_inter_->GetField(Keys::getKey(name_ss.str(),"temperature"))->owner()).ptr());
+			     S_inter_->GetFieldData(Keys::getKey(name_ss.str(),"temperature"), 
+			     S_inter_->GetField(Keys::getKey(name_ss.str(),"temperature"))->owner()).ptr());
   } 
 
   // NOTE: later do it in the setup --aj
-  
+
   for(int i=1; i<numPKs_; i++){
     Teuchos::RCP<PK> pk_domain =
       Teuchos::rcp_dynamic_cast<PK>(sub_pks_[i]);
     ASSERT(pk_domain.get());
     pk_domain->ChangedSolutionPK(S_inter_.ptr()); 
   }
-
 
   int rank;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
@@ -370,162 +381,162 @@ WeakMPCSemiCoupledDeform::CoupledSurfSubsurfColumns(double t_old, double t_new, 
   auto sub_pk = sub_pks_.begin();
   ++sub_pk;
   int c = 0;
-  for (auto pk = sub_pk; pk!=sub_pks_.end(); ++pk){
 
+  // Loop over all subsurface PKs (columns)
+
+  for (auto pk = sub_pk; pk!=sub_pks_.end(); ++pk){
+    
     std::stringstream name_ss;
     int id = S_->GetMesh("surface")->cell_map(false).GID(c);
     name_ss << "column_" << id;
-
+    
     if(!subcycle_key_){  
       bool c_fail = (*pk)->AdvanceStep(t_old, t_new, reinit);
       if (vo_->os_OK(Teuchos::VERB_HIGH))
 	*vo_->os() << name_ss.str() << "failed? "<< ((c_fail) ? 1 : 0) <<" rank: "<<rank<<std::endl ;
+      
       if (c_fail)
-	std::cout<<"-------- "<< name_ss.str() << " failed, rank "<<rank<<std::endl ;
+	std::cout<<"WeakMPCSemiCoupled | "<< name_ss.str() << " failed, rank "<<rank<<std::endl ;
+      
       if (c_fail) nfailed++;
       c++;
     }
     else
       {
-      std::stringstream name, name_ss;
-      int id = S_->GetMesh("surface")->cell_map(false).GID(count);
-      name << "surface_column_" << id;
-      name_ss << "column_" << id;
-      
-      double loc_dt =0;//revisit dt;      
-          
-      bool done = false;
-      double t = 0;
-      bool cyc_flag  = false;
-      //      S_inter_->set_time(t0+t);
-      //S_next_->set_time(t0 + t + loc_dt);
-      //lets put dt=0 for a while---revisit
-      double dt =0;
-      while(!done){
-	bool fail_pk = false; //----revisit= (*pk)->advance(loc_dt);
-	//fail_pk |= !(*pk)->valid_step();
-		
-	if(!fail_pk){
-
-	  //--revisit (*pk)->commit_state(loc_dt, S_next_);
-	  t = t + loc_dt;
-	  double loc_dt_old = loc_dt;
-
-	  double loc_dt_new = (*pk)->get_dt();
-	  if (dt - (t+loc_dt_new) < 1.)
-	    loc_dt_new = dt -t;
-	  else if ( t + loc_dt_new < dt && (t+2*loc_dt_new > dt ) )
-	    loc_dt_new = 0.5*(dt - t);
-
-	  loc_dt = std::min<double>(loc_dt_new, dt - t);
+	std::stringstream name, name_ss;
+	int id = S_->GetMesh("surface")->cell_map(false).GID(count);
+	name << "surface_column_" << id;
+	name_ss << "column_" << id;
+	
+	double loc_dt =0;//revisit dt;      
+	
+	bool done = false;
+	double t = 0;
+	bool cyc_flag  = false;
+	//      S_inter_->set_time(t0+t);
+	//S_next_->set_time(t0 + t + loc_dt);
+	//lets put dt=0 for a while---revisit
+	double dt =0;
+	while(!done){
+	  bool fail_pk = false; //----revisit= (*pk)->advance(loc_dt);
+	  //fail_pk |= !(*pk)->valid_step();
 	  
-	  if (loc_dt <= 1.e-10){
-	    done = true;
-	    if (cyc_flag)
-	      S_inter_->set_time(t0);
+	  if(!fail_pk){
+	    
+	    //--revisit (*pk)->commit_state(loc_dt, S_next_);
+	    t = t + loc_dt;
+	    double loc_dt_old = loc_dt;
+	    
+	    double loc_dt_new = (*pk)->get_dt();
+	    if (dt - (t+loc_dt_new) < 1.)
+	      loc_dt_new = dt -t;
+	    else if ( t + loc_dt_new < dt && (t+2*loc_dt_new > dt ) )
+	      loc_dt_new = 0.5*(dt - t);
+	    
+	    loc_dt = std::min<double>(loc_dt_new, dt - t);
+	    
+	    if (loc_dt <= 1.e-10){
+	      done = true;
+	      if (cyc_flag)
+		S_inter_->set_time(t0);
 	    }
+	    else{
+	      
+	      UpdateIntermediateStateParameters(S_next_, S_inter_,id);
+	      
+	      Teuchos::RCP<PrimaryVariableFieldEvaluator> pfe1 = 
+		Teuchos::rcp_dynamic_cast<PrimaryVariableFieldEvaluator>
+		(S_inter_->GetFieldEvaluator(Keys::getKey(name.str(),"mass_source_temperature")));
+	      
+	      pfe1->SetFieldAsChanged(S_inter_.ptr());
+	      
+	      Teuchos::RCP<PrimaryVariableFieldEvaluator> pfe2 = 
+		Teuchos::rcp_dynamic_cast<PrimaryVariableFieldEvaluator>
+		(S_inter_->GetFieldEvaluator(Keys::getKey(name.str(),"conducted_energy_source")));
+	      
+	      pfe2->SetFieldAsChanged(S_inter_.ptr());
+	      
+	      Teuchos::RCP<PrimaryVariableFieldEvaluator> pfe3 = 
+		Teuchos::rcp_dynamic_cast<PrimaryVariableFieldEvaluator>
+		(S_inter_->GetFieldEvaluator(Keys::getKey(name.str(),"mass_source")));
+	      
+	      pfe3->SetFieldAsChanged(S_inter_.ptr());
+	      
+	      Teuchos::RCP<PrimaryVariableFieldEvaluator> pfe4 = 
+		Teuchos::rcp_dynamic_cast<PrimaryVariableFieldEvaluator>
+		(S_inter_->GetFieldEvaluator(Keys::getKey(name_ss.str(),"mass_source")));
+	      
+	      pfe4->SetFieldAsChanged(S_inter_.ptr());
+	      
+	      Teuchos::RCP<PK_PhysicalBDF_Default> pk_domain =
+		Teuchos::rcp_dynamic_cast<PK_PhysicalBDF_Default>(sub_pks_[count+1]);
+	      ASSERT(pk_domain.get()); // make sure the pk_domain is not empty
+	      pk_domain->ChangedSolution(S_inter_.ptr());
+	      
+	      S_inter_->set_time(t0+t);
+	      S_next_->set_time( t0 + t + loc_dt);
+	      
+	    }
+	    
+	  }
 	  else{
-
-	    UpdateIntermediateStateParameters(S_next_, S_inter_,id);
-
-	   Teuchos::RCP<PrimaryVariableFieldEvaluator> pfe1 = 
-	     Teuchos::rcp_dynamic_cast<PrimaryVariableFieldEvaluator>
-	     (S_inter_->GetFieldEvaluator(Keys::getKey(name.str(),"mass_source_temperature")));
-	   
-	   pfe1->SetFieldAsChanged(S_inter_.ptr());
-
-	   Teuchos::RCP<PrimaryVariableFieldEvaluator> pfe2 = 
-	     Teuchos::rcp_dynamic_cast<PrimaryVariableFieldEvaluator>
-	     (S_inter_->GetFieldEvaluator(Keys::getKey(name.str(),"conducted_energy_source")));
-	   
-	   pfe2->SetFieldAsChanged(S_inter_.ptr());
-
-	   Teuchos::RCP<PrimaryVariableFieldEvaluator> pfe3 = 
-	     Teuchos::rcp_dynamic_cast<PrimaryVariableFieldEvaluator>
-	     (S_inter_->GetFieldEvaluator(Keys::getKey(name.str(),"mass_source")));
-	   
-	   pfe3->SetFieldAsChanged(S_inter_.ptr());
-
-	   Teuchos::RCP<PrimaryVariableFieldEvaluator> pfe4 = 
-	     Teuchos::rcp_dynamic_cast<PrimaryVariableFieldEvaluator>
-	     (S_inter_->GetFieldEvaluator(Keys::getKey(name_ss.str(),"mass_source")));
-	   
-	   pfe4->SetFieldAsChanged(S_inter_.ptr());
-	  
-	   Teuchos::RCP<PK_PhysicalBDF_Default> pk_domain =
-	     Teuchos::rcp_dynamic_cast<PK_PhysicalBDF_Default>(sub_pks_[count+1]);
-	   ASSERT(pk_domain.get()); // make sure the pk_domain is not empty
-	   pk_domain->ChangedSolution(S_inter_.ptr());
-	   
-	   S_inter_->set_time(t0+t);
-	   S_next_->set_time( t0 + t + loc_dt);
-	   
+	    cyc_flag = true;
+	    
+	    UpdateNextStateParameters(S_next_, S_inter_, id);
+	    
+	    Teuchos::RCP<PrimaryVariableFieldEvaluator> pfe1 = 
+	      Teuchos::rcp_dynamic_cast<PrimaryVariableFieldEvaluator>
+	      (S_next_->GetFieldEvaluator(Keys::getKey(name.str(),"mass_source_temperature")));
+	    
+	    pfe1->SetFieldAsChanged(S_next_.ptr());
+	    
+	    Teuchos::RCP<PrimaryVariableFieldEvaluator> pfe2 = 
+	      Teuchos::rcp_dynamic_cast<PrimaryVariableFieldEvaluator>
+	      (S_next_->GetFieldEvaluator(Keys::getKey(name.str(),"conducted_energy_source")));
+	    
+	    pfe2->SetFieldAsChanged(S_next_.ptr());
+	    
+	    Teuchos::RCP<PrimaryVariableFieldEvaluator> pfe3 = 
+	      Teuchos::rcp_dynamic_cast<PrimaryVariableFieldEvaluator>
+	      (S_next_->GetFieldEvaluator(Keys::getKey(name.str(),"mass_source")));
+	    
+	    pfe3->SetFieldAsChanged(S_next_.ptr());
+	    
+	    Teuchos::RCP<PrimaryVariableFieldEvaluator> pfe4 = 
+	      Teuchos::rcp_dynamic_cast<PrimaryVariableFieldEvaluator>
+	      (S_next_->GetFieldEvaluator(Keys::getKey(name_ss.str(),"mass_source")));
+	    
+	    pfe4->SetFieldAsChanged(S_next_.ptr());
+	    
+	    Teuchos::RCP<PK_PhysicalBDF_Default> pk_domain =
+	      Teuchos::rcp_dynamic_cast<PK_PhysicalBDF_Default>(sub_pks_[count+1]);
+	    ASSERT(pk_domain.get()); // make sure the pk_domain is not empty
+	    pk_domain->ChangedSolution(S_next_.ptr());
+	    
+	    loc_dt = (*pk)->get_dt();
+	    S_inter_->set_time(t0+t);
+	    // revisit S_next_->set_time(t0 + t + loc_dt);
 	  }
 	  
 	}
-	else{
-	  cyc_flag = true;
-	  
-	  UpdateNextStateParameters(S_next_, S_inter_, id);
-
-	   Teuchos::RCP<PrimaryVariableFieldEvaluator> pfe1 = 
-	     Teuchos::rcp_dynamic_cast<PrimaryVariableFieldEvaluator>
-	     (S_next_->GetFieldEvaluator(Keys::getKey(name.str(),"mass_source_temperature")));
-	   
-	   pfe1->SetFieldAsChanged(S_next_.ptr());
-
-	   Teuchos::RCP<PrimaryVariableFieldEvaluator> pfe2 = 
-	     Teuchos::rcp_dynamic_cast<PrimaryVariableFieldEvaluator>
-	     (S_next_->GetFieldEvaluator(Keys::getKey(name.str(),"conducted_energy_source")));
-	   
-	   pfe2->SetFieldAsChanged(S_next_.ptr());
-
-	   Teuchos::RCP<PrimaryVariableFieldEvaluator> pfe3 = 
-	     Teuchos::rcp_dynamic_cast<PrimaryVariableFieldEvaluator>
-	     (S_next_->GetFieldEvaluator(Keys::getKey(name.str(),"mass_source")));
-	   
-	   pfe3->SetFieldAsChanged(S_next_.ptr());
-
-	   Teuchos::RCP<PrimaryVariableFieldEvaluator> pfe4 = 
-	     Teuchos::rcp_dynamic_cast<PrimaryVariableFieldEvaluator>
-	     (S_next_->GetFieldEvaluator(Keys::getKey(name_ss.str(),"mass_source")));
-	   
-	   pfe4->SetFieldAsChanged(S_next_.ptr());
-
-
-	   Teuchos::RCP<PK_PhysicalBDF_Default> pk_domain =
-	     Teuchos::rcp_dynamic_cast<PK_PhysicalBDF_Default>(sub_pks_[count+1]);
-	   ASSERT(pk_domain.get()); // make sure the pk_domain is not empty
-	   pk_domain->ChangedSolution(S_next_.ptr());
-	   
-	   loc_dt = (*pk)->get_dt();
-	   S_inter_->set_time(t0+t);
-	   // revisit S_next_->set_time(t0 + t + loc_dt);
-	}
-
+	count++;	
       }
-      count++;	
-    }
     
-   
+    
   }
-
+  
   MPI_Barrier(MPI_COMM_WORLD);  
 
   int nfailed_local = nfailed;
   S_->GetMesh("surface")->get_comm()->SumAll(&nfailed_local, &nfailed, 1);
  
-  if (true)
-  if (nfailed ==0){ 
+  if (nfailed == 0){ 
     Epetra_MultiVector& surfstar_p = *S_next_->GetFieldData("surface_star-pressure",
-							    S_inter_->GetField("surface_star-pressure")->owner())
-      ->ViewComponent("cell", false);
+				      S_inter_->GetField("surface_star-pressure")->owner())->ViewComponent("cell", false);
     Epetra_MultiVector& surfstar_t = *S_next_->GetFieldData("surface_star-temperature",
-							    S_inter_->GetField("surface_star-temperature")->owner())
-      ->ViewComponent("cell", false);
+				      S_inter_->GetField("surface_star-temperature")->owner())->ViewComponent("cell", false);
     Epetra_MultiVector& surfstar_wc = *S_next_->GetFieldData("surface_star-water_content",
-							     S_inter_->GetField("surface_star-water_content")->owner())
-      ->ViewComponent("cell", false);
+				       S_inter_->GetField("surface_star-water_content")->owner())->ViewComponent("cell", false);
     
     
     if (!sg_model_){
@@ -599,9 +610,9 @@ WeakMPCSemiCoupledDeform::CoupledSurfSubsurfColumns(double t_old, double t_new, 
 	else 
 	  surfstar_p[0][c]=101325.0;
       }
+
       
     }
-
     
     
     for (unsigned c=0; c<size_t; c++){
@@ -618,13 +629,14 @@ WeakMPCSemiCoupledDeform::CoupledSurfSubsurfColumns(double t_old, double t_new, 
       Teuchos::rcp_dynamic_cast<PK_BDF_Default>(sub_pks_[0]);
     ASSERT(pk_surf.get());
     pk_surf->ChangedSolution();
+
     MPC<PK>::SubPKList::iterator pk1 = sub_pks_.begin();
 
     if(subcycle_key_)
       (*pk1)->CommitStep(t_old, t_new,S_next_);
     
   }
-
+  
   if (nfailed > 0){
     flag_star = 1; 
     return true;
@@ -740,7 +752,52 @@ WeakMPCSemiCoupledDeform::VolumetricHead(double x, double a, double b, double d)
   double r = a*std::pow(x,3) + b*std::pow(x,2) - d;
   return r;
 }
+
+  /*
+void
+WeakMPCSemiCoupledDeform::UpdateSubgridModelParameters(bool fail){
   
+  bool sg_change1 = S_next_->GetFieldEvaluator("surface_star-thaw_depth")->HasFieldChanged(S_next_.ptr(),  
+  						       S_next_->GetField("surface_star-thaw_depth")->owner());
+
+  bool sg_change = S_next_->GetFieldEvaluator("surface_star-maximum_ponded_depth")->HasFieldChanged(S_next_.ptr(),  
+  					           S_next_->GetField("surface_star-maximum_ponded_depth")->owner());
+
+  sg_change = S_next_->GetFieldEvaluator("surface_star-excluded_volume")->HasFieldChanged(S_next_.ptr(),  
+  S_next_->GetField("surface_star-excluded_volume")->owner());
+  
+  const Epetra_MultiVector td_old = *S_inter_->GetFieldData("surface_star-thaw_depth")->ViewComponent("cell", false);
+  Epetra_MultiVector& td_new = *S_next_->GetFieldData("surface_star-thaw_depth", 
+				      S_next_->GetField("surface_star-thaw_depth")->owner())->ViewComponent("cell",false);
+
+  const Epetra_MultiVector dmax_old = *S_inter_->GetFieldData("surface_star-maximum_ponded_depth")->ViewComponent("cell", false);
+  Epetra_MultiVector& dmax_new = *S_next_->GetFieldData("surface_star-maximum_ponded_depth", 
+					S_next_->GetField("surface_star-maximum_ponded_depth")->owner())->ViewComponent("cell",false);
+  const Epetra_MultiVector dex_old = *S_inter_->GetFieldData("surface_star-excluded_volume")->ViewComponent("cell", false);
+  Epetra_MultiVector& dex_new = *S_next_->GetFieldData("surface_star-excluded_volume", 
+				       S_next_->GetField("surface_star-excluded_volume")->owner())->ViewComponent("cell",false);
+  int size_t = dex_new.MyLength();
+  for (int c=0; c!= size_t;c++){
+    double td = td_old[0][c] - td_new[0][c]; 
+    if (td > 1.0e-6){
+      td_new[0][c] = td_old[0][c];
+      dmax_new[0][c] = dmax_old[0][c];
+      dex_new[0][c] = dex_old[0][c];
+
+    }
+  }
+  
+  bool sg_change = S_next_->GetFieldEvaluator("surface_star-thaw_depth")->HasFieldChanged(S_next_.ptr(),  
+  					 S_next_->GetField("surface_star-thaw_depth")->owner());
+  sg_change = S_next_->GetFieldEvaluator("surface_star-maximum_ponded_depth")->HasFieldChanged(S_next_.ptr(),  
+  					 S_next_->GetField("surface_star-maximum_ponded_depth")->owner());
+  sg_change = S_next_->GetFieldEvaluator("surface_star-excluded_volume")->HasFieldChanged(S_next_.ptr(),  
+											  S_next_->GetField("surface_star-excluded_volume")->owner());
+  
+}
+  */
+
+
 } // namespace Amanzi
 
 

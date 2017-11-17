@@ -31,7 +31,7 @@ class WeakMPCSemiCoupledDeform : public MPC<PK> {
   
   double FindVolumetricHead(double d, double delta_max, double delta_ex);
   double VolumetricHead(double x, double a, double b, double d);
-
+  //void UpdateSubgridModelParameters(bool fg);
   
 private :
   static RegisteredPKFactory<WeakMPCSemiCoupledDeform> reg_;
@@ -39,9 +39,7 @@ private :
   static unsigned flag_star, flag_star_surf;
   Key coupling_key_ ;
   bool subcycle_key_ ;
-  
-
-  bool sg_model_;
+  bool sg_model_, dynamic_sg_model_;
 };
 
   
