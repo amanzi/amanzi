@@ -146,7 +146,7 @@ void MPCPredictorCorrector<PK_t>::CommitStep(double t_old, double t_new,
   // NOTE special purpose
   *predictor_soln_->SubVector(1)->SubVector(1) = *this->solution_->SubVector(0)->SubVector(1);
   *predictor_soln_->SubVector(1)->SubVector(0) = *this->solution_->SubVector(0)->SubVector(0);
-  predictor_pk_->ChangedSolutionPK();
+  predictor_pk_->ChangedSolutionPK(S.ptr());
 
   // now commit the predictor, storing this solution
   predictor_pk_->CommitStep(t_old, t_new, S);

@@ -37,7 +37,6 @@ void ElevationEvaluatorColumn::EvaluateElevationAndSlope_(const Teuchos::Ptr<Sta
   Epetra_MultiVector& elev_c = *elev->ViewComponent("cell", false);
   Epetra_MultiVector& slope_c = *slope->ViewComponent("cell", false);
  
-  
   // Get the elevation and slope values from the domain mesh.
   Key domain = Keys::getDomain(my_keys_[0]);
  
@@ -96,7 +95,6 @@ void ElevationEvaluatorColumn::EvaluateElevationAndSlope_(const Teuchos::Ptr<Sta
       for(unsigned i=0; i<ngb_cells; i++){
         AmanziGeometry::Point P2 = S->GetMesh("surface_star")->cell_centroid(nadj_cellids[i]);
         ngb_centroids[i].set(P2[0], P2[1], elev_ngb_c[0][nadj_cellids[i]]);
-        //std::cout<<"NEIGHB: Centroid: "<<c<<" "<<my_centroid[c]<<" : "<<nadj_cellids[i]<<" "<< ngb_centroids[i]<<"\n";
       }
 
     
@@ -117,8 +115,6 @@ void ElevationEvaluatorColumn::EvaluateElevationAndSlope_(const Teuchos::Ptr<Sta
 	  Normal.push_back(N);
 	}
 
-        //        int nfaces = S->GetMesh(my_name.str())->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
-	//AmanziGeometry::Point fnor = S->GetMesh(my_name.str())->face_normal(nfaces-1);
         AmanziGeometry::Point fnor = S->GetMesh(my_name.str())->face_normal(0); //0 is the id of top face
 	Nor_avg = (nface_pcell - Normal.size()) * fnor; 
 	for (int i=0; i <Normal.size(); i++)
