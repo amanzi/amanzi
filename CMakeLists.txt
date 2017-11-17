@@ -55,27 +55,24 @@ include(AmanziTPL)
 # ETC: this is wrong, should point to TPLs, but not necessarily installed here, meaning that lots of ld warnings show up.
 #link_directories(${CMAKE_INSTALL_PREFIX}/tpls/lib)
 
-# shared libraries tweaks for OSX
-if (APPLE) 
-  set(CMAKE_SKIP_BUILD_RPATH FALSE)
-  set(CMAKE_SKIP_INSTALL_RPATH FALSE)
-  set(CMAKE_BUILD_WITH_INSTALL_RPATH FALSE)
-  set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE) 
-  set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
-  set(CMAKE_INSTALL_NAME_DIR "${CMAKE_INSTALL_RPATH}")
-endif()
+# shared libraries tweaks: enforcing absolute path
+set(CMAKE_SKIP_BUILD_RPATH FALSE)
+set(CMAKE_SKIP_INSTALL_RPATH FALSE)
+set(CMAKE_BUILD_WITH_INSTALL_RPATH FALSE)
+set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE) 
+set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
+set(CMAKE_INSTALL_NAME_DIR "${CMAKE_INSTALL_RPATH}")
 
 # Check the mesh framework choice
-if ( (ENABLE_Unstructured)  AND
-     (NOT ENABLE_STK_Mesh)  AND
-     (NOT ENABLE_MOAB_Mesh) AND
-     (NOT ENABLE_MSTK_Mesh)
-   )
-    message(FATAL_ERROR "Missing a mesh framework\n"
-                        "Please enable at least one of the following mesh frameworks\n"
-                        "-D ENABLE_MOAB_Mesh:BOOL=ON\n"
-                        "-D ENABLE_STK_Mesh:BOOL=ON\n"
-                        "-D ENABLE_MSTK_Mesh:BOOL=ON\n")
+if ((ENABLE_Unstructured)  AND
+    (NOT ENABLE_STK_Mesh)  AND
+    (NOT ENABLE_MOAB_Mesh) AND
+    (NOT ENABLE_MSTK_Mesh))
+  message(FATAL_ERROR "Missing a mesh framework\n"
+                      "Please enable at least one of the following mesh frameworks\n"
+                      "-D ENABLE_MOAB_Mesh:BOOL=ON\n"
+                      "-D ENABLE_STK_Mesh:BOOL=ON\n"
+                      "-D ENABLE_MSTK_Mesh:BOOL=ON\n")
 endif()    
 
 
