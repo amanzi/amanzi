@@ -58,14 +58,15 @@ set(ns_src_files NavierStokes_PK.cc
                  NavierStokesBoundaryFunction.cc
                  )
 set(ns_tpl_libs ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES} ${Boost_LIBRARIES} ${SEACAS_LIBRARIES})
-if ( Ifpack_ENABLE_HYPRE )
+if (Ifpack_ENABLE_HYPRE)
   list(APPEND ns_tpl_libs ${Ifpack_LIBRARIES})
 endif()
 list(REVERSE ns_tpl_libs)
 list(REMOVE_DUPLICATES ns_tpl_libs)
 list(REVERSE ns_tpl_libs)
 add_amanzi_library(navier_stokes SOURCE ${ns_src_files}
-                   LINK_LIBS functions mesh_functions ${ns_tpl_libs} time_integration data_structures state)
+                   LINK_LIBS functions mesh_functions time_integration data_structures state
+                             pks operators ${ns_tpl_libs})
 
 #
 # Install Targets
