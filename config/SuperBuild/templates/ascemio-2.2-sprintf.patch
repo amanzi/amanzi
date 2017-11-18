@@ -1,7 +1,7 @@
 diff -ruNbB ascem-io-2.2/CMakeLists.txt ascemio-2.2-source/CMakeLists.txt
 --- ascem-io-2.2/CMakeLists.txt	1969-12-31 17:00:00.000000000 -0700
 +++ ascemio-2.2-source/CMakeLists.txt	2017-11-17 15:44:59.094905427 -0700
-@@ -0,0 +1,38 @@
+@@ -0,0 +1,44 @@
 +# Minimum CMake version.
 +cmake_minimum_required (VERSION 2.8.12)
 +set(CMAKE_BUILD_TYPE Release)
@@ -31,12 +31,18 @@ diff -ruNbB ascem-io-2.2/CMakeLists.txt ascemio-2.2-source/CMakeLists.txt
 +                "${ASCEMIO_SOURCE_DIR}/src/parallelIOread.c"
 +                "${ASCEMIO_SOURCE_DIR}/src/parallelIOwrite.c")
 +
-+# install library and mod files
++# install library
 +set(ASCEMIO_LIB "ascemio")
 +
 +include_directories(${ASCEMIO_SOURCE_DIR}/src)
 +add_library(${ASCEMIO_LIB} ${ASCEMIO_SRC})
 +install(TARGETS ${ASCEMIO_LIB} DESTINATION ${CMAKE_INSTALL_PREFIX}/lib)
++install(FILES 
++        ${ASCEMIO_SOURCE_DIR}/src/ascemio_util.h
++        ${ASCEMIO_SOURCE_DIR}/src/parallelIO.h
++        ${ASCEMIO_SOURCE_DIR}/src/parallelIOf.h
++        ${ASCEMIO_SOURCE_DIR}/src/piof.h
++        DESTINATION ${CMAKE_INSTALL_PREFIX}/include)
 +
 +
 +
