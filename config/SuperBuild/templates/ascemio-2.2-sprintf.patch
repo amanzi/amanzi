@@ -1,7 +1,7 @@
 diff -ruNbB ascem-io-2.2/CMakeLists.txt ascemio-2.2-source/CMakeLists.txt
 --- ascem-io-2.2/CMakeLists.txt	1969-12-31 17:00:00.000000000 -0700
 +++ ascemio-2.2-source/CMakeLists.txt	2017-11-17 15:44:59.094905427 -0700
-@@ -0,0 +1,44 @@
+@@ -0,0 +1,43 @@
 +# Minimum CMake version.
 +cmake_minimum_required (VERSION 2.8.12)
 +set(CMAKE_BUILD_TYPE Release)
@@ -27,7 +27,6 @@ diff -ruNbB ascem-io-2.2/CMakeLists.txt ascemio-2.2-source/CMakeLists.txt
 +# Now that we have gathered all tech information, we create a library
 +set(ASCEMIO_SRC "${ASCEMIO_SOURCE_DIR}/src/ascemio_util.c"
 +                "${ASCEMIO_SOURCE_DIR}/src/parallelIO.c"
-+                "${ASCEMIO_SOURCE_DIR}/src/parallelIOf.c"
 +                "${ASCEMIO_SOURCE_DIR}/src/parallelIOread.c"
 +                "${ASCEMIO_SOURCE_DIR}/src/parallelIOwrite.c")
 +
