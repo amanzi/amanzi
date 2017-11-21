@@ -201,6 +201,27 @@ void MeshMaps_VEM::JacobianDet(
 
 
 /* ******************************************************************
+* Calculate determinant of a Jacobian. Different version
+****************************************************************** */
+void MeshMaps_VEM::JacobianDet(
+    double t, const VectorPolynomial& vc, Polynomial& jac) const
+{
+  Tensor T(d_, 2);
+  for (int i = 0; i < d_; ++i) {
+    for (int j = 0; j < d_; ++j) {
+      T(i, j) = vc[i](1, j);
+    }
+  }
+
+  T *= t;
+  T += 1.0;
+
+  jac.Reshape(d_, 0);
+  jac(0, 0) = T.Det();
+}
+
+
+/* ******************************************************************
 * Calculate Jacobian at point x of face f 
 ****************************************************************** */
 void MeshMaps_VEM::JacobianFaceValue(

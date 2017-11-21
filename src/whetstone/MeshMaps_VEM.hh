@@ -54,6 +54,8 @@ class MeshMaps_VEM : public MeshMaps {
   // -- determinant
   virtual void JacobianDet(int c, double t, const std::vector<VectorPolynomial>& vf,
                            Polynomial& vc) const override;
+  void JacobianDet(double t, const VectorPolynomial& vc, Polynomial& jac) const;
+
   // -- value at point x
   virtual void JacobianCellValue(int c,
                                  double t, const AmanziGeometry::Point& x,
