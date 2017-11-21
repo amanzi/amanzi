@@ -14,7 +14,7 @@ set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # ############################################################################ #
-# SHARED LIBRARIES DEFINITIONS
+# Shared Libraries Definitions
 # ############################################################################ #
 set(CMAKE_SKIP_BUILD_RPATH FALSE)
 set(CMAKE_SKIP_INSTALL_RPATH FALSE)
@@ -39,6 +39,16 @@ if (BUILD_SHARED_LIBS)
   set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} ${_shared_flags}")
   set(CMAKE_Fortran_FLAGS_DEBUG "${CMAKE_Fortran_FLAGS_DEBUG} ${_shared_flags}")
 endif()
+
+
+# ############################################################################ #
+# Static Libraries Definitions
+# ############################################################################ #
+set(BUILD_STATIC_LIBS TRUE)
+if (BUILD_SHARED_LIBS)
+  set(BUILD_STATIC_LIBS FALSE)
+endif()
+
 
 # ############################################################################ #
 # Compiler Definition Warnings
