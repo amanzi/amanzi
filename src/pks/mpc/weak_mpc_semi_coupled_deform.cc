@@ -1,6 +1,5 @@
 #include "Teuchos_XMLParameterListHelpers.hpp"
 
-//#include "pk_physical_bdf_base.hh"
 #include "mpc_surface_subsurface_helpers.hh"
 #include "strong_mpc.hh"
 
@@ -72,7 +71,7 @@ WeakMPCSemiCoupledDeform::WeakMPCSemiCoupledDeform(Teuchos::ParameterList& pk_tr
     sub_pks_.push_back(pk);
     
     
-    //check IC
+    //check IC -- restart columns on their respective processors
     Teuchos::Array<std::string> pkorder1 = global_list_->sublist("PKs").sublist(subpks[i]).get<Teuchos::Array<std::string> >("PKs order");
     Teuchos::Array<std::string> pkorder2 = global_list_->sublist("PKs").sublist(pkorder1[1]).get<Teuchos::Array<std::string> >("PKs order");
     for (int i=0; i<pkorder2.size(); i++){
@@ -183,18 +182,16 @@ WeakMPCSemiCoupledDeform::Setup(const Teuchos::Ptr<State>& S) {
   subcycle_key_ = plist_->get<bool>("subcycle",false);
 
   // by default sg_model_ is false
-  if (S->FEList().isSublist("surface_star-thaw_depth")){
+  if (S->FEList().isSublist("surface_star-depression_depth")){
     sg_model_ = true;
-    dynamic_sg_model_= true;
-  }
-  else if (S->FEList().isSublist("surface_star-depression_depth") && !dynamic_sg_model_){
-    sg_model_ = true;
-    dynamic_sg_model_ = false;
+    if (S->FEList().isSublist("surface_star-thaw_depth")){
+      dynamic_sg_model_= true; }
+    else{
+      dynamic_sg_model_ = false; }
   }
   else
     sg_model_ = false;
-
-  //  sync_time_ = plist_->get<double>("sync time"); //provide default value later!!
+  
   ASSERT(!(coupling_key_.empty()));
 
 };
@@ -222,7 +219,7 @@ WeakMPCSemiCoupledDeform::AdvanceStep(double t_old, double t_new, bool reinit) {
     fail = CoupledSurfSubsurfColumns(t_old, t_new, reinit);
   }
   else if(coupling_key_ == "surface subsurface system: 3D"){
-    fail = CoupledSurfSubsurf3D(t_old, t_new, reinit);
+    // can be used for 3D subsurface and surface_star coupling as well.
   }
   
   return fail;
@@ -234,37 +231,19 @@ WeakMPCSemiCoupledDeform::CoupledSurfSubsurfColumns(double t_old, double t_new, 
   bool fail = false;
   double M_ = 0.0180153; //molar mass
 
-  // advance surface_star-pressure from t_n to t_(n+1)
-
   //ensure the star solution is marked as changed when the subsurface columns fail
   if (flag_star || flag_star_surf){
-
     flag_star = 0;
     flag_star_surf=0;
     
     Teuchos::RCP<PK_BDF_Default> pk_sfstar =
       Teuchos::rcp_dynamic_cast<PK_BDF_Default>(sub_pks_[0]);
-    
-    
+
     ASSERT(pk_sfstar.get());
     pk_sfstar->ChangedSolution();
-
-    for(int i=1; i<0; i++){
-    Teuchos::RCP<PK> pk_domain =
-      Teuchos::rcp_dynamic_cast<PK>(sub_pks_[i]);
-    ASSERT(pk_domain.get());
-    pk_domain->ChangedSolutionPK(S_next_.ptr()); 
-    }
   }
   
-
-  const Epetra_MultiVector& pd_max = *S_next_->GetFieldData("surface_star-maximum_ponded_depth")
-    ->ViewComponent("cell", false);
- const Epetra_MultiVector& pd_min = *S_inter_->GetFieldData("surface_star-maximum_ponded_depth")
-   ->ViewComponent("cell", false);
-  const Epetra_MultiVector& td = *S_next_->GetFieldData("surface_star-thaw_depth")
-    ->ViewComponent("cell", false);
-
+  
   Teuchos::OSTab tab = vo_->getOSTab();
   fail = sub_pks_[0]->AdvanceStep(t_old, t_new, reinit);
   int nfailed_surf = 0;
@@ -288,6 +267,7 @@ WeakMPCSemiCoupledDeform::CoupledSurfSubsurfColumns(double t_old, double t_new, 
  
   const Epetra_MultiVector& surfstar_temp = *S_next_->GetFieldData("surface_star-temperature")
     ->ViewComponent("cell", false);
+
   unsigned int size_t = surfstar_temp.MyLength();
 
   assert(size_t == numPKs_ -1); // check if the subsurface columns are equal to the surface cells
@@ -361,8 +341,7 @@ WeakMPCSemiCoupledDeform::CoupledSurfSubsurfColumns(double t_old, double t_new, 
 			     S_inter_->GetField(Keys::getKey(name_ss.str(),"temperature"))->owner()).ptr());
   } 
 
-  // NOTE: later do it in the setup --aj
-
+  // successful surface_star system updates columns -- changes previous solution.
   for(int i=1; i<numPKs_; i++){
     Teuchos::RCP<PK> pk_domain =
       Teuchos::rcp_dynamic_cast<PK>(sub_pks_[i]);
@@ -382,8 +361,8 @@ WeakMPCSemiCoupledDeform::CoupledSurfSubsurfColumns(double t_old, double t_new, 
   ++sub_pk;
   int c = 0;
 
-  // Loop over all subsurface PKs (columns)
 
+  // Loop over all subsurface PKs (columns)
   for (auto pk = sub_pk; pk!=sub_pks_.end(); ++pk){
     
     std::stringstream name_ss;
@@ -403,6 +382,7 @@ WeakMPCSemiCoupledDeform::CoupledSurfSubsurfColumns(double t_old, double t_new, 
     }
     else
       {
+	//subcycling needs to be fixed and cleaned.
 	std::stringstream name, name_ss;
 	int id = S_->GetMesh("surface")->cell_map(false).GID(count);
 	name << "surface_column_" << id;
@@ -624,7 +604,6 @@ WeakMPCSemiCoupledDeform::CoupledSurfSubsurfColumns(double t_old, double t_new, 
     }
 
     // Mark surface_star-pressure evaluator as changed.
-    // NOTE: later do it in the setup --aj
     Teuchos::RCP<PK_BDF_Default> pk_surf =
       Teuchos::rcp_dynamic_cast<PK_BDF_Default>(sub_pks_[0]);
     ASSERT(pk_surf.get());
@@ -648,73 +627,6 @@ WeakMPCSemiCoupledDeform::CoupledSurfSubsurfColumns(double t_old, double t_new, 
 
 }
   
-
-bool 
-WeakMPCSemiCoupledDeform::CoupledSurfSubsurf3D(double t_old, double t_new, bool reinit) {
-  bool fail = false;
-  MPC<PK>::SubPKList::iterator pk = sub_pks_.begin();
-
-  // advance surface_star-pressure from t_n to t_(n+1)
-  fail = (*pk)->AdvanceStep(t_old, t_new, reinit);
-  
-  Epetra_MultiVector& surf_pr = *S_inter_->GetFieldData("surface-pressure", S_inter_->GetField("surface-pressure")->owner())->ViewComponent("cell", false);
-  const Epetra_MultiVector& surfstar_pr = *S_next_->GetFieldData("surface_star-pressure")->ViewComponent("cell", false);
-
-  for (unsigned c=0; c<surf_pr.MyLength(); c++){
-    if(surfstar_pr[0][c] > 101325.0)
-      surf_pr[0][c] = surfstar_pr[0][c];
-    else {}
-  }
-  
-  *S_inter_->GetFieldData("surface-temperature",S_inter_->GetField("surface-temperature")->owner()) =
-  *S_next_->GetFieldData("surface_star-temperature"); 
-  
-  
-  CopySurfaceToSubsurface(*S_inter_->GetFieldData("surface-pressure"),
-			  S_inter_->GetFieldData("pressure", S_inter_->GetField("pressure")->owner()).ptr());
-
-  CopySurfaceToSubsurface(*S_inter_->GetFieldData("surface-temperature"),
-			 S_inter_->GetFieldData("temperature", S_inter_->GetField("temperature")->owner()).ptr());
-  
-  // NOTE: later do it in the setup --aj
-  
-  Teuchos::RCP<PK_PhysicalBDF_Default> pk_domain =
-    Teuchos::rcp_dynamic_cast<PK_PhysicalBDF_Default>(sub_pks_[1]);
-  ASSERT(pk_domain.get()); // make sure the pk_domain is not empty
-  pk_domain->ChangedSolution(S_inter_.ptr());
-  
-  if(fail) return fail;  
-  // advance surface-pressure from t_n to t_(n+1)
-  ++pk;
-  fail += (*pk)->AdvanceStep(t_old, t_new, reinit);
-  if (fail) return fail;
-  
-  
-  const Epetra_MultiVector& surf_p = *S_next_->GetFieldData("surface-pressure")->ViewComponent("cell", false);
-  Epetra_MultiVector& surfstar_p = *S_next_->GetFieldData("surface_star-pressure",
-				   S_inter_->GetField("surface_star-pressure")->owner())->ViewComponent("cell", false);
-  
-  for (unsigned c=0; c<surf_p.MyLength(); c++){
-    if(surf_p[0][c] > 101325.0)
-      surfstar_p[0][c] = surf_p[0][c];
-    else
-      surfstar_p[0][c]=101325.0;
-  }
-  
-  *S_next_->GetFieldData("surface_star-temperature",S_inter_->GetField("surface_star-temperature")->owner()) = 
-    *S_next_->GetFieldData("surface-temperature");
-
-
-  // Mark surface_star-pressure evaluator as changed.
-  // NOTE: later do it in the setup --aj
-  Teuchos::RCP<PK_PhysicalBDF_Default> pk_surf =
-    Teuchos::rcp_dynamic_cast<PK_PhysicalBDF_Default>(sub_pks_[0]);
-  ASSERT(pk_surf.get());
-  pk_surf->ChangedSolution();
-  
-  return fail;
-};
-
 
 double 
 WeakMPCSemiCoupledDeform::FindVolumetricHead(double d, double delta_max, double delta_ex){
@@ -752,50 +664,6 @@ WeakMPCSemiCoupledDeform::VolumetricHead(double x, double a, double b, double d)
   double r = a*std::pow(x,3) + b*std::pow(x,2) - d;
   return r;
 }
-
-  /*
-void
-WeakMPCSemiCoupledDeform::UpdateSubgridModelParameters(bool fail){
-  
-  bool sg_change1 = S_next_->GetFieldEvaluator("surface_star-thaw_depth")->HasFieldChanged(S_next_.ptr(),  
-  						       S_next_->GetField("surface_star-thaw_depth")->owner());
-
-  bool sg_change = S_next_->GetFieldEvaluator("surface_star-maximum_ponded_depth")->HasFieldChanged(S_next_.ptr(),  
-  					           S_next_->GetField("surface_star-maximum_ponded_depth")->owner());
-
-  sg_change = S_next_->GetFieldEvaluator("surface_star-excluded_volume")->HasFieldChanged(S_next_.ptr(),  
-  S_next_->GetField("surface_star-excluded_volume")->owner());
-  
-  const Epetra_MultiVector td_old = *S_inter_->GetFieldData("surface_star-thaw_depth")->ViewComponent("cell", false);
-  Epetra_MultiVector& td_new = *S_next_->GetFieldData("surface_star-thaw_depth", 
-				      S_next_->GetField("surface_star-thaw_depth")->owner())->ViewComponent("cell",false);
-
-  const Epetra_MultiVector dmax_old = *S_inter_->GetFieldData("surface_star-maximum_ponded_depth")->ViewComponent("cell", false);
-  Epetra_MultiVector& dmax_new = *S_next_->GetFieldData("surface_star-maximum_ponded_depth", 
-					S_next_->GetField("surface_star-maximum_ponded_depth")->owner())->ViewComponent("cell",false);
-  const Epetra_MultiVector dex_old = *S_inter_->GetFieldData("surface_star-excluded_volume")->ViewComponent("cell", false);
-  Epetra_MultiVector& dex_new = *S_next_->GetFieldData("surface_star-excluded_volume", 
-				       S_next_->GetField("surface_star-excluded_volume")->owner())->ViewComponent("cell",false);
-  int size_t = dex_new.MyLength();
-  for (int c=0; c!= size_t;c++){
-    double td = td_old[0][c] - td_new[0][c]; 
-    if (td > 1.0e-6){
-      td_new[0][c] = td_old[0][c];
-      dmax_new[0][c] = dmax_old[0][c];
-      dex_new[0][c] = dex_old[0][c];
-
-    }
-  }
-  
-  bool sg_change = S_next_->GetFieldEvaluator("surface_star-thaw_depth")->HasFieldChanged(S_next_.ptr(),  
-  					 S_next_->GetField("surface_star-thaw_depth")->owner());
-  sg_change = S_next_->GetFieldEvaluator("surface_star-maximum_ponded_depth")->HasFieldChanged(S_next_.ptr(),  
-  					 S_next_->GetField("surface_star-maximum_ponded_depth")->owner());
-  sg_change = S_next_->GetFieldEvaluator("surface_star-excluded_volume")->HasFieldChanged(S_next_.ptr(),  
-											  S_next_->GetField("surface_star-excluded_volume")->owner());
-  
-}
-  */
 
 
 } // namespace Amanzi
