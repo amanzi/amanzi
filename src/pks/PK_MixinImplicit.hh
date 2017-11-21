@@ -35,28 +35,27 @@ class PK_MixinImplicit
                    const Teuchos::RCP<State>& S,
                    const Teuchos::RCP<TreeVector>& solution);
 
-  void Setup();
-  bool AdvanceStep(const Key& tag_old, const Key& tag_new);
-  bool CommitStep(const Key& tag_old, const Key& tag_new);
+  void Setup(const TreeVector& soln);
+  bool AdvanceStep(const Key& tag_old, const Teuchos::RCP<TreeVector>& soln_old,
+                   const Key& tag_new, const Teuchos::RCP<TreeVector>& soln_new);
+  void CommitStep(const Key& tag_old, const Teuchos::RCP<TreeVector>& soln_old,
+                  const Key& tag_new, const Teuchos::RCP<TreeVector>& soln_new);
 
   double get_dt() { return dt_; }
-  void set_dt(double dt) {dt_ = dt;}
-
 
  protected:
   // timestep size
   double dt_;
   bool assemble_preconditioner_;
 
+  // tags for start and end of step
+  Key tag_old_, tag_new_;
+  
   // timestep algorithm
   Teuchos::RCP<BDF1_TI<TreeVector,TreeVectorSpace> > time_stepper_;
 
-  // previous solution
-  Teuchos::RCP<TreeVector> solution_old_;
-  
   using Base_t::plist_;
   using Base_t::S_;
-  using Base_t::solution_;
   using Base_t::vo_;
 };
 
@@ -74,41 +73,42 @@ PK_MixinImplicit<Base_t>::PK_MixinImplicit(const Teuchos::RCP<Teuchos::Parameter
 
 template<class Base_t>
 void
-PK_MixinImplicit<Base_t>::Setup()
+PK_MixinImplicit<Base_t>::Setup(const TreeVector& soln)
 {
-  Base_t::Setup();
-
-  // create the old solution
-  solution_old_ = Teuchos::rcp(new TreeVector(*solution_, INIT_MODE_NOALLOC));
-  this->SolutionToState(*solution_old_, "", "");
-  this->SolutionToState(*solution_, "next", "");
+  Base_t::Setup(soln);
 
   // preconditioner assembly
   assemble_preconditioner_ = plist_->template get<bool>("assemble preconditioner", true);
 
+  tag_old_ = "";
+  tag_new_ = "next";
 }
 
 
 template<class Base_t>
 bool 
-PK_MixinImplicit<Base_t>::AdvanceStep(const Key& tag_old, const Key& tag_new)
+PK_MixinImplicit<Base_t>::AdvanceStep(const Key& tag_old, const Teuchos::RCP<TreeVector>& soln_old,
+        const Key& tag_new, const Teuchos::RCP<TreeVector>& soln_new)
 {
-  if (!time_stepper_.get()) {
-    // -- ensure state vectors are pushed into solution vectors
-    this->StateToSolution(*solution_old_, "", "");
-    this->StateToSolution(*solution_, "next", "");
+  tag_old_ = tag_old;
+  tag_new_ = tag_new;
 
+  // -- ensure state vectors are pushed into solution vectors
+  this->StateToSolution(*soln_old, tag_old, "");
+  this->StateToSolution(*soln_new, tag_new, "");
+
+  if (!time_stepper_.get()) {
     // -- instantiate time stepper
     Teuchos::ParameterList& bdf_plist = plist_->sublist("time integrator");
     bdf_plist.set("initial time", S_->time(tag_old));
-    time_stepper_ = Teuchos::rcp(new BDF1_TI<TreeVector,TreeVectorSpace>(*this, bdf_plist, solution_));
+    time_stepper_ = Teuchos::rcp(new BDF1_TI<TreeVector,TreeVectorSpace>(*this, bdf_plist, soln_new));
 
     // -- initialize time derivative
-    auto solution_dot = Teuchos::rcp(new TreeVector(*solution_, INIT_MODE_ZERO));
+    auto solution_dot = Teuchos::rcp(new TreeVector(*soln_old, INIT_MODE_ZERO));
 
     // -- set initial state
-    *solution_ = *solution_old_;    
-    time_stepper_->SetInitialState(S_->time(tag_old), solution_, solution_dot);
+    *soln_old = *soln_new;
+    time_stepper_->SetInitialState(S_->time(tag_old), soln_old, solution_dot);
   }
 
   double t_new = S_->time(tag_new);
@@ -125,11 +125,11 @@ PK_MixinImplicit<Base_t>::AdvanceStep(const Key& tag_old, const Key& tag_new)
 
   // take a bdf timestep
   double dt_solver;
-  bool fail = time_stepper_->TimeStep(dt, solution_old_, solution_, dt_solver);
+  bool fail = time_stepper_->TimeStep(dt, soln_old, soln_new, dt_solver);
 
   if (!fail) {
     // check step validity
-    bool valid = this->ValidStep(tag_old, tag_new);
+    bool valid = this->ValidStep(tag_old, soln_old, tag_new, soln_new);
     if (valid) {
       // update the timestep size
       if (dt_solver < dt_ && dt_solver >= dt) {
@@ -140,7 +140,7 @@ PK_MixinImplicit<Base_t>::AdvanceStep(const Key& tag_old, const Key& tag_new)
         dt_ = dt_solver;
       }
     } else {
-      time_stepper_->CommitSolution(dt_, solution_, valid);
+      time_stepper_->CommitSolution(dt_, soln_new, valid);
       dt_ = 0.5*dt_;
     }
   } else {
@@ -154,19 +154,15 @@ PK_MixinImplicit<Base_t>::AdvanceStep(const Key& tag_old, const Key& tag_new)
   
 // -- Commit any secondary (dependent) variables.
 template<class Base_t>
-bool 
-PK_MixinImplicit<Base_t>::CommitStep(const Key& tag_old, const Key& tag_new)
+void
+PK_MixinImplicit<Base_t>::CommitStep(const Key& tag_old, const Teuchos::RCP<TreeVector>& soln_old,
+        const Key& tag_new, const Teuchos::RCP<TreeVector>& soln_new)
 {
-  Base_t::CommitStep(tag_old, tag_new);  
+  Base_t::CommitStep(tag_old, soln_old, tag_new, soln_new);  
 
-  double t_new = S_->time(tag_new);
-  double t_old = S_->time(tag_old);
-  double dt = t_new - t_old;  
-
+  double dt = S_->time(tag_new) - S_->time(tag_old);
   if (dt > 0. && time_stepper_ != Teuchos::null)
-    time_stepper_->CommitSolution(dt, solution_, true);
-
-  return true;
+    time_stepper_->CommitSolution(dt, soln_new, true);
 }
 
 

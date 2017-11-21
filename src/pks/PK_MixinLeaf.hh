@@ -54,7 +54,7 @@ class PK_MixinLeaf : public Base_t {
   void ConstructChildren() {};
 
   // Sets up primary evaluator
-  void Setup();
+  void Setup(const TreeVector& soln);
   
   // Mark, as changed, any primary variable evaluator owned by this PK
   void ChangedSolutionPK(const Key& tag);
@@ -63,7 +63,10 @@ class PK_MixinLeaf : public Base_t {
   void SolutionToState(const TreeVector& soln, const Key& tag, const Key& suffix);
   void SolutionToState(TreeVector& soln, const Key& tag, const Key& suffix);
 
-  void CommitStep(const Key& tag_old, const Key& tag_new);
+  void CommitStep(const Key& tag_old, const Teuchos::RCP<TreeVector>& soln_old,
+                  const Key& tag_new, const Teuchos::RCP<TreeVector>& soln_new);
+  void FailStep(const Key& tag_old, const Teuchos::RCP<TreeVector>& soln_old,
+                const Key& tag_new, const Teuchos::RCP<TreeVector>& soln_new);
   
   // Accessor for debugger, for use by coupling MPCs
   Teuchos::Ptr<Debugger> debugger() { return db_.ptr(); }
@@ -118,9 +121,9 @@ PK_MixinLeaf<Base_t>::ChangedSolutionPK(const Key& tag)
   
 template<class Base_t>
 void
-PK_MixinLeaf<Base_t>::Setup()
+PK_MixinLeaf<Base_t>::Setup(const TreeVector& soln)
 {
-  Base_t::Setup();
+  Base_t::Setup(soln);
 
   // // require primary variable evaluator
   // S_->RequireEvaluator(key_);
@@ -130,13 +133,29 @@ PK_MixinLeaf<Base_t>::Setup()
 
 template<class Base_t>
 void
-PK_MixinLeaf<Base_t>::CommitStep(const Key& tag_old, const Key& tag_new)
+PK_MixinLeaf<Base_t>::CommitStep(const Key& tag_old, const Teuchos::RCP<TreeVector>& soln_old,
+        const Key& tag_new, const Teuchos::RCP<TreeVector>& soln_new)
 {
-  Base_t::CommitStep(tag_old, tag_new);
+  Base_t::CommitStep(tag_old, soln_old, tag_new, soln_new);
+  this->StateToSolution(*soln_old, tag_old, "");
+  this->StateToSolution(*soln_new, tag_new, "");
   S_->template GetW<CompositeVector>(key_, tag_old, key_) =
       S_->template Get<CompositeVector>(key_, tag_new);
 }
 
+
+template<class Base_t>
+void
+PK_MixinLeaf<Base_t>::FailStep(const Key& tag_old, const Teuchos::RCP<TreeVector>& soln_old,
+        const Key& tag_new, const Teuchos::RCP<TreeVector>& soln_new)
+{
+  Base_t::FailStep(tag_old, soln_old, tag_new, soln_new);
+  this->StateToSolution(*soln_old, tag_old, "");
+  this->StateToSolution(*soln_new, tag_new, "");
+  S_->template GetW<CompositeVector>(key_, tag_new, key_) =
+      S_->template Get<CompositeVector>(key_, tag_old);
+  this->ChangedSolutionPK(tag_new);
+}
 
 
 template<class Base_t>
@@ -149,6 +168,7 @@ PK_MixinLeaf<Base_t>::StateToSolution(TreeVector& soln, const Key& tag, const Ke
   // ASSERTS for now?
   ASSERT(soln.Data() == S_->template GetPtr<CompositeVector>(key, tag));
 }
+
 
 template<class Base_t>
 void

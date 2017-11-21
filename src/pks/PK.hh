@@ -90,22 +90,27 @@ class PK {
   virtual void ConstructChildren() = 0;
   
   // Setup: forms the DAG, pushes meta-data into State
-  virtual void Setup() = 0;
+  virtual void Setup(const TreeVector& soln) = 0;
   
   // Initialize: set values for owned variables.
   virtual void Initialize() = 0;
 
   // Advance PK from time tag old to time tag new
-  virtual bool AdvanceStep(const Key& tag_old, const Key& tag_new) = 0;
+  virtual bool AdvanceStep(const Key& tag_old, const Teuchos::RCP<TreeVector>& soln_old,
+                           const Key& tag_new, const Teuchos::RCP<TreeVector>& soln_new) = 0;
 
   // Returns validity of the step taken from tag_old to tag_new
-  virtual bool ValidStep(const Key& tag_old, const Key& tag_new) = 0;
+  virtual bool ValidStep(const Key& tag_old, const Teuchos::RCP<TreeVector>& soln_old,
+                         const Key& tag_new, const Teuchos::RCP<TreeVector>& soln_new) = 0;
+
 
   // Do work that can only be done if we know the step was successful.
-  virtual void CommitStep(const Key& tag_old, const Key& tag_new) = 0;
+  virtual void CommitStep(const Key& tag_old, const Teuchos::RCP<TreeVector>& soln_old,
+                          const Key& tag_new, const Teuchos::RCP<TreeVector>& soln_new) = 0;
 
   // Revert a step from tag_new back to tag_old
-  virtual void FailStep(const Key& tag_old, const Key& tag_new) = 0;
+  virtual void FailStep(const Key& tag_old, const Teuchos::RCP<TreeVector>& soln_old,
+                        const Key& tag_new, const Teuchos::RCP<TreeVector>& soln_new) = 0;
 
   // Choose a time step compatible with physics.
   virtual double get_dt() = 0;

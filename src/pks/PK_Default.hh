@@ -84,19 +84,22 @@ class PK_Default {
      const Teuchos::RCP<TreeVector>& solution);
 
   // Setup: forms the DAG, pushes meta-data into State
-  void Setup() {}
+  void Setup(const TreeVector& soln) {}
   
   // Initialize: set values for owned variables.
   void Initialize() {}
   
   // Returns validity of the step taken from tag_old to tag_new
-  bool ValidStep(const Key& tag_old, const Key& tag_new) { return true; }
+  bool ValidStep(const Key& tag_old, const Teuchos::RCP<TreeVector>& soln_old,
+                 const Key& tag_new, const Teuchos::RCP<TreeVector>& soln_new) { return true; }
 
   // Do work that can only be done if we know the step was successful.
-  void CommitStep(const Key& tag_old, const Key& tag_new) {}
+  void CommitStep(const Key& tag_old, const Teuchos::RCP<TreeVector>& soln_old,
+                  const Key& tag_new, const Teuchos::RCP<TreeVector>& soln_new) {}
 
   // Revert a step from tag_new back to tag_old
-  void FailStep(const Key& tag_old, const Key& tag_new) {}
+  void FailStep(const Key& tag_old, const Teuchos::RCP<TreeVector>& soln_old,
+                const Key& tag_new, const Teuchos::RCP<TreeVector>& soln_new) {}
 
   // Calculate any diagnostics at tag, currently used for visualization.
   void CalculateDiagnostics(const Key& tag) {}

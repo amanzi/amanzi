@@ -25,10 +25,7 @@ class MyPK : public MyMixin< ... < PK_Default > > {
   static RegisteredPKFactory<PK_Adaptor<MyPK> > reg_;
 };
 
-
-
-   
- */
+*/
 
 
 #ifndef AMANZI_PK_ADAPTOR_HH_
@@ -52,18 +49,22 @@ class PK_Adaptor : public PK,
 
   virtual void ConstructChildren() override final {
     Base_t::ConstructChildren(); }
-  virtual void Setup() override final {
-    Base_t::Setup(); }
+  virtual void Setup(const TreeVector& soln) override final {
+    Base_t::Setup(soln); }
   virtual void Initialize() override final {
     Base_t::Initialize(); }
-  virtual bool AdvanceStep(const Key& tag_old, const Key& tag_new) override final {
-    return Base_t::AdvanceStep(tag_old, tag_new); }
-  virtual bool ValidStep(const Key& tag_old, const Key& tag_new) override final {
-    return Base_t::ValidStep(tag_old, tag_new); }
-  virtual void CommitStep(const Key& tag_old, const Key& tag_new) override final {
-    Base_t::CommitStep(tag_old, tag_new); }
-  virtual void FailStep(const Key& tag_old, const Key& tag_new) override final {
-    Base_t::FailStep(tag_old, tag_new); }
+  virtual bool AdvanceStep(const Key& tag_old, const Teuchos::RCP<TreeVector>& soln_old,
+                           const Key& tag_new, const Teuchos::RCP<TreeVector>& soln_new) override final {
+    return Base_t::AdvanceStep(tag_old, soln_old, tag_new, soln_new); }
+  virtual bool ValidStep(const Key& tag_old, const Teuchos::RCP<TreeVector>& soln_old,
+                         const Key& tag_new, const Teuchos::RCP<TreeVector>& soln_new) override final {
+    return Base_t::ValidStep(tag_old, soln_old, tag_new, soln_new); }
+  virtual void CommitStep(const Key& tag_old, const Teuchos::RCP<TreeVector>& soln_old,
+                          const Key& tag_new, const Teuchos::RCP<TreeVector>& soln_new) override final {
+    Base_t::CommitStep(tag_old, soln_old, tag_new, soln_new); }
+  virtual void FailStep(const Key& tag_old, const Teuchos::RCP<TreeVector>& soln_old,
+                        const Key& tag_new, const Teuchos::RCP<TreeVector>& soln_new) override final {
+    Base_t::FailStep(tag_old, soln_old, tag_new, soln_new); }
   virtual void CalculateDiagnostics(const Key& tag) override final {
     Base_t::CalculateDiagnostics(tag); }
   virtual void ChangedSolutionPK(const Key& tag) override final {
@@ -99,18 +100,22 @@ class PK_Explicit_Adaptor : public PK_Explicit<>,
   // the PK interface
   virtual void ConstructChildren() override final {
     Base_t::ConstructChildren(); }
-  virtual void Setup() override final {
-    Base_t::Setup(); }
+  virtual void Setup(const TreeVector& soln) override final {
+    Base_t::Setup(soln); }
   virtual void Initialize() override final {
     Base_t::Initialize(); }
-  virtual bool AdvanceStep(const Key& tag_old, const Key& tag_new) override final {
-    return Base_t::AdvanceStep(tag_old, tag_new); }
-  virtual bool ValidStep(const Key& tag_old, const Key& tag_new) override final {
-    return Base_t::ValidStep(tag_old, tag_new); }
-  virtual void CommitStep(const Key& tag_old, const Key& tag_new) override final {
-    Base_t::CommitStep(tag_old, tag_new); }
-  virtual void FailStep(const Key& tag_old, const Key& tag_new) override final {
-    Base_t::FailStep(tag_old, tag_new); }
+  virtual bool AdvanceStep(const Key& tag_old, const Teuchos::RCP<TreeVector>& soln_old,
+                           const Key& tag_new, const Teuchos::RCP<TreeVector>& soln_new) override final {
+    return Base_t::AdvanceStep(tag_old, soln_old, tag_new, soln_new); }
+  virtual bool ValidStep(const Key& tag_old, const Teuchos::RCP<TreeVector>& soln_old,
+                         const Key& tag_new, const Teuchos::RCP<TreeVector>& soln_new) override final {
+    return Base_t::ValidStep(tag_old, soln_old, tag_new, soln_new); }
+  virtual void CommitStep(const Key& tag_old, const Teuchos::RCP<TreeVector>& soln_old,
+                          const Key& tag_new, const Teuchos::RCP<TreeVector>& soln_new) override final {
+    Base_t::CommitStep(tag_old, soln_old, tag_new, soln_new); }
+  virtual void FailStep(const Key& tag_old, const Teuchos::RCP<TreeVector>& soln_old,
+                        const Key& tag_new, const Teuchos::RCP<TreeVector>& soln_new) override final {
+    Base_t::FailStep(tag_old, soln_old, tag_new, soln_new); }
   virtual void CalculateDiagnostics(const Key& tag) override final {
     Base_t::CalculateDiagnostics(tag); }
   virtual void ChangedSolutionPK(const Key& tag) override final {
@@ -148,18 +153,22 @@ class PK_BDF_Adaptor : public PK_BDF<>,
   // the PK interface
   virtual void ConstructChildren() override final {
     Base_t::ConstructChildren(); }
-  virtual void Setup() override final {
-    Base_t::Setup(); }
+  virtual void Setup(const TreeVector& soln) override final {
+    Base_t::Setup(soln); }
   virtual void Initialize() override final {
     Base_t::Initialize(); }
-  virtual bool AdvanceStep(const Key& tag_old, const Key& tag_new) override final {
-    return Base_t::AdvanceStep(tag_old, tag_new); }
-  virtual bool ValidStep(const Key& tag_old, const Key& tag_new) override final {
-    return Base_t::ValidStep(tag_old, tag_new); }
-  virtual void CommitStep(const Key& tag_old, const Key& tag_new) override final {
-    Base_t::CommitStep(tag_old, tag_new); }
-  virtual void FailStep(const Key& tag_old, const Key& tag_new) override final {
-    Base_t::FailStep(tag_old, tag_new); }
+  virtual bool AdvanceStep(const Key& tag_old, const Teuchos::RCP<TreeVector>& soln_old,
+                           const Key& tag_new, const Teuchos::RCP<TreeVector>& soln_new) override final {
+    return Base_t::AdvanceStep(tag_old, soln_old, tag_new, soln_new); }
+  virtual bool ValidStep(const Key& tag_old, const Teuchos::RCP<TreeVector>& soln_old,
+                         const Key& tag_new, const Teuchos::RCP<TreeVector>& soln_new) override final {
+    return Base_t::ValidStep(tag_old, soln_old, tag_new, soln_new); }
+  virtual void CommitStep(const Key& tag_old, const Teuchos::RCP<TreeVector>& soln_old,
+                          const Key& tag_new, const Teuchos::RCP<TreeVector>& soln_new) override final {
+    Base_t::CommitStep(tag_old, soln_old, tag_new, soln_new); }
+  virtual void FailStep(const Key& tag_old, const Teuchos::RCP<TreeVector>& soln_old,
+                        const Key& tag_new, const Teuchos::RCP<TreeVector>& soln_new) override final {
+    Base_t::FailStep(tag_old, soln_old, tag_new, soln_new); }
   virtual void CalculateDiagnostics(const Key& tag) override final {
     Base_t::CalculateDiagnostics(tag); }
   virtual void ChangedSolutionPK(const Key& tag) override final {

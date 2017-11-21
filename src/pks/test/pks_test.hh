@@ -120,8 +120,8 @@ class PK_ODE_Explicit : public Base_t {
     dudt_key_ = this->key_ + "_t";
   }
 
-  void Setup() {
-    Base_t::Setup();
+  void Setup(const TreeVector& soln) {
+    Base_t::Setup(soln);
 
     this->S_->template Require<CompositeVector,CompositeVectorSpace>(this->key_, "", this->key_)
         .SetMesh(this->mesh_)
@@ -173,21 +173,21 @@ class PK_ODE_Implicit : public Base_t {
     dudt_key_ = this->key_ + "_t";
   }
 
-  void Setup() {
-    Base_t::Setup();
+  void Setup(const TreeVector& soln) {
+    Base_t::Setup(soln);
     
-    this->S_->template Require<CompositeVector,CompositeVectorSpace>(this->key_, "next", this->key_)
+    this->S_->template Require<CompositeVector,CompositeVectorSpace>(this->key_, tag_new_, this->key_)
         .SetMesh(this->mesh_)
         ->SetComponent("cell",AmanziMesh::CELL,1);
 
-    this->S_->template Require<CompositeVector,CompositeVectorSpace>(dudt_key_, "next", dudt_key_)
+    this->S_->template Require<CompositeVector,CompositeVectorSpace>(dudt_key_, tag_new_, dudt_key_)
         .SetMesh(this->mesh_)
         ->SetComponent("cell",AmanziMesh::CELL, 1);
 
     Teuchos::ParameterList plist(dudt_key_);
-    plist.set("tag", "next");
+    plist.set("tag", tag_new_);
     auto dudt_eval = Teuchos::rcp(new Eval_t(plist));
-    this->S_->SetEvaluator(dudt_key_, "next", dudt_eval);
+    this->S_->SetEvaluator(dudt_key_, tag_new_, dudt_eval);
   }
 
   void Initialize() {
@@ -196,19 +196,16 @@ class PK_ODE_Implicit : public Base_t {
     this->S_->GetRecordW("primary", "primary").set_initialized();
   }
   
-  void Functional(double t, const TreeVector& u, TreeVector& f) {
-  }
-
   virtual void Functional(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
                           Teuchos::RCP<TreeVector> u_new, Teuchos::RCP<TreeVector> f) override {
-    this->SolutionToState(*u_new, "next", "");
-    this->SolutionToState(*u_old, "", "");
-    ASSERT(std::abs(t_old - S_->time("")) < 1.e-12);
-    ASSERT(std::abs(t_new - S_->time("next")) < 1.e-12);
-    this->SolutionToState(*f, "next", "_t");
+    this->SolutionToState(*u_new, tag_new_, "");
+    this->SolutionToState(*u_old, tag_old_, "");
+    ASSERT(std::abs(t_old - S_->time(tag_old_)) < 1.e-12);
+    ASSERT(std::abs(t_new - S_->time(tag_new_)) < 1.e-12);
+    this->SolutionToState(*f, tag_new_, "_t");
 
-    this->S_->GetEvaluator(dudt_key_,"next")->Update(*this->S_, this->name());
-    this->StateToSolution(*f, "next", "_t");
+    this->S_->GetEvaluator(dudt_key_,tag_new_)->Update(*this->S_, this->name());
+    this->StateToSolution(*f, tag_new_, "_t");
 
     std::cout << "  At time t = " << t_new << ": u = " << (*u_new->Data()->ViewComponent("cell",false))[0][0]
               << ", du/dt = " << (*f->Data()->ViewComponent("cell", false))[0][0] << std::endl;
@@ -220,7 +217,7 @@ class PK_ODE_Implicit : public Base_t {
 
   virtual int ApplyPreconditioner(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> Pu) override {
     Key deriv_key = Keys::getDerivKey(this->dudt_key_, this->key_);
-    *Pu->Data() = S_->template Get<CompositeVector>(deriv_key, "next");
+    *Pu->Data() = S_->template Get<CompositeVector>(deriv_key, tag_new_);
     Pu->Data()->Shift(1.0/h_);
     Pu->ReciprocalMultiply(1.0, *Pu, *u, 0.);
     return 0;
@@ -235,8 +232,8 @@ class PK_ODE_Implicit : public Base_t {
 
   virtual void UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> up, double h) override {
     h_ = h;
-    this->SolutionToState(*up, "next", "");
-    this->S_->GetEvaluator(dudt_key_,"next")->UpdateDerivative(*this->S_, this->name(), this->key_);
+    this->SolutionToState(*up, tag_new_, "");
+    this->S_->GetEvaluator(dudt_key_,tag_new_)->UpdateDerivative(*this->S_, this->name(), this->key_);
   }
 
   virtual bool IsAdmissible(Teuchos::RCP<const TreeVector> up) override { return true; }
@@ -251,7 +248,7 @@ class PK_ODE_Implicit : public Base_t {
     return AmanziSolvers::FnBaseDefs::CORRECTION_NOT_MODIFIED; }
 
   virtual void ChangedSolution() override {
-    this->ChangedSolutionPK("next");
+    this->ChangedSolutionPK(tag_new_);
   }
 
   
@@ -259,6 +256,8 @@ class PK_ODE_Implicit : public Base_t {
   double h_;
   Key dudt_key_;
 
+  using Base_t::tag_old_;
+  using Base_t::tag_new_;
   using Base_t::S_;
 };
 

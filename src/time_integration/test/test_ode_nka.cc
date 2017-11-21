@@ -79,8 +79,11 @@ SUITE(ODEIntegrationTests) {
     Teuchos::RCP<Amanzi::BDF1_TI<Epetra_Vector, Epetra_BlockMap> > TS =
         Teuchos::rcp(new BDF1_TI<Epetra_Vector, Epetra_BlockMap>(NF, plist, init));
 
+    Teuchos::RCP<Epetra_Vector> u0 = Teuchos::rcp(new Epetra_Vector(*u));
+
     // initial value
     u->PutScalar(-1.0);
+    *u0 = *u;
     u_dot->PutScalar(1.0);
 
     // initial time
@@ -108,7 +111,7 @@ SUITE(ODEIntegrationTests) {
 
       bool redo(false);
       do {
-        redo = TS->TimeStep(h, hnext, u);
+        redo = TS->TimeStep(h, u0, u, hnext);
       } while (redo);
 
       u->Print(std::cout);
@@ -159,10 +162,12 @@ SUITE(ODEIntegrationTests) {
     // create the time stepper
     Teuchos::RCP<Amanzi::BDF1_TI<Epetra_Vector, Epetra_BlockMap> > TS =
         Teuchos::rcp(new BDF1_TI<Epetra_Vector, Epetra_BlockMap>(NF, plist, init));
+    Teuchos::RCP<Epetra_Vector> u0 = Teuchos::rcp(new Epetra_Vector(*u));
 
     // initial value
     u->PutScalar(-1.0);
     u_dot->PutScalar(1.0);
+    *u0 = *u;
 
     // initial time
     double t=0.0;
@@ -189,7 +194,7 @@ SUITE(ODEIntegrationTests) {
 
       bool redo(false);
       do {
-        redo = TS->TimeStep(h, hnext, u);
+        redo = TS->TimeStep(h, u0, u, hnext);
       } while (redo);
 
       u->Print(std::cout);

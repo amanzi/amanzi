@@ -35,15 +35,28 @@
 using namespace Amanzi;
 
 
+struct Run {
+  Run(const Teuchos::RCP<State>& S_,
+      const Teuchos::RCP<PK>& pk_,
+      const Teuchos::RCP<TreeVector>& soln_)
+      : S(S_),
+        pk(pk_),
+        soln(soln_) {}
+
+  Teuchos::RCP<State> S;
+  Teuchos::RCP<PK> pk;
+  Teuchos::RCP<TreeVector> soln;
+};
+
 //
 // Creates an explicit PK
 // ============================================================================
-std::pair<Teuchos::RCP<PK>,Teuchos::RCP<State> >
+std::unique_ptr<Run>
 createExplicit(const std::string& eqn_name, const std::string& ti_name) {
   std::string pk_name = eqn_name + ", " + ti_name;
   std::cout << "Test: " << pk_name << std::endl;
 
-  auto global_list = Teuchos::getParametersFromXmlFile("test/pks_ode_forward_euler.xml");
+  auto global_list = Teuchos::getParametersFromXmlFile("test/pks_ode.xml");
   auto pk_tree = Teuchos::rcp(new Teuchos::ParameterList(pk_name));
 
   auto S = Teuchos::rcp(new State(global_list->sublist("state")));
@@ -78,19 +91,19 @@ createExplicit(const std::string& eqn_name, const std::string& ti_name) {
     ASSERT(false);
   }
 
-  return std::make_pair(pk, S);
+  return std::make_unique<Run>(S,pk,soln);
 }
 
 
 //
 // Creates an implicit PK
 // ============================================================================
-std::pair<Teuchos::RCP<PK>,Teuchos::RCP<State> >
+std::unique_ptr<Run>
 createImplicit(const std::string& eqn_name) {
   std::string pk_name = eqn_name + ", backward euler";
   std::cout << "Test: " << pk_name << std::endl;
 
-  auto global_list = Teuchos::getParametersFromXmlFile("test/pks_ode_forward_euler.xml");
+  auto global_list = Teuchos::getParametersFromXmlFile("test/pks_ode.xml");
   auto pk_tree = Teuchos::rcp(new Teuchos::ParameterList(pk_name));
 
   auto S = Teuchos::rcp(new State(global_list->sublist("state")));
@@ -125,19 +138,21 @@ createImplicit(const std::string& eqn_name) {
     ASSERT(false);
   }
 
-  return std::make_pair(pk, S);
+  return std::make_unique<Run>(S,pk,soln);
 }
 
 
+
 //
-// Creates an implicit PK that always takes the recommended step size
+// Creates a subcycled implicit PK.  These don't fail, they simply subcycle as
+// needed to match the full timestep.
 // ============================================================================
-std::pair<Teuchos::RCP<PK>,Teuchos::RCP<State> >
-createImplicitSubcyled(const std::string& eqn_name) {
+std::unique_ptr<Run>
+createImplicitSubcycled(const std::string& eqn_name) {
   std::string pk_name = eqn_name + ", backward euler subcycled";
   std::cout << "Test: " << pk_name << std::endl;
 
-  auto global_list = Teuchos::getParametersFromXmlFile("test/pks_ode_forward_euler.xml");
+  auto global_list = Teuchos::getParametersFromXmlFile("test/pks_ode.xml");
   auto pk_tree = Teuchos::rcp(new Teuchos::ParameterList(pk_name));
 
   auto S = Teuchos::rcp(new State(global_list->sublist("state")));
@@ -172,19 +187,32 @@ createImplicitSubcyled(const std::string& eqn_name) {
     ASSERT(false);
   }
 
-  return std::make_pair(pk, S);
+  return std::make_unique<Run>(S,pk,soln);
 }
+
 
 
 //
 // Helper function that mocks a coordinator to run the test.
 // ================================================================================
-std::pair<double,double> run_test(const Teuchos::RCP<PK>& pk,
-                                  const Teuchos::RCP<State>& S) {
-  pk->Setup();
+std::pair<double,double> run_test(const Teuchos::RCP<State>& S,
+        const Teuchos::RCP<PK>& pk,
+        const Teuchos::RCP<TreeVector>& soln_next) {
+
+  auto soln_old = Teuchos::rcp(new TreeVector(*soln_next, INIT_MODE_NOALLOC));
+  pk->SolutionToState(*soln_old, "", "");
+  pk->SolutionToState(*soln_next, "next", "");
+
+  pk->Setup(*soln_next);
   S->Setup();
+
+  pk->StateToSolution(*soln_old, "", "");
+  pk->StateToSolution(*soln_next, "next", "");
+
   pk->Initialize();
   S->Initialize();
+
+  *soln_next = *soln_old;
 
   int nsteps_good = 0;
   int nsteps_bad = 0;
@@ -192,16 +220,17 @@ std::pair<double,double> run_test(const Teuchos::RCP<PK>& pk,
   double t_final = 1.0;
   bool done = false;
   while (!done) {
-    double dt = pk->get_dt();
+    double dt = std::min(pk->get_dt(), 1.0);
     S->set_time("next", S->time()+dt);
     S->set_cycle("next", S->cycle()+1);
-    bool fail = pk->AdvanceStep("", "next");
+
+    bool fail = pk->AdvanceStep("", soln_old, "next", soln_next);
 
     if (fail) {
-      pk->FailStep("", "next");
+      pk->FailStep("", soln_old, "next", soln_next);
       nsteps_bad++;
     } else {
-      pk->CommitStep("", "next");
+      pk->CommitStep("", soln_old, "next", soln_next);
       S->set_time("", S->time("next"));
       S->set_cycle("", S->cycle("next"));
       nsteps_good++;
@@ -214,35 +243,35 @@ std::pair<double,double> run_test(const Teuchos::RCP<PK>& pk,
 
 
 
-SUITE(PK_ODE_FORWARD_EULER) {
+SUITE(PKS_ODE) {
 
   // Forward Euler tests with each of 3 PKs
   TEST(A_FORWARD_EULER) {
-    auto pkS = createExplicit("A", "forward euler");
-    auto nsteps = run_test(pkS.first, pkS.second);
-    CHECK_CLOSE(2.0, (*pkS.second->Get<CompositeVector>("primary")
+    auto run = createExplicit("A", "forward euler");
+    auto nsteps = run_test(run->S, run->pk, run->soln);
+    CHECK_CLOSE(2.0, (*run->S->Get<CompositeVector>("primary")
                       .ViewComponent("cell",false))[0][0], 1.e-5);
     CHECK_EQUAL(10, nsteps.first);
     CHECK_EQUAL(0, nsteps.second);
   }
 
   TEST(B_FORWARD_EULER) {
-    auto pkS = createExplicit("B", "forward euler");
-    auto nsteps = run_test(pkS.first, pkS.second);
-    CHECK_CLOSE(std::exp(1), (*pkS.second->Get<CompositeVector>("primary")
+    auto run = createExplicit("B", "forward euler");
+    auto nsteps = run_test(run->S, run->pk, run->soln);
+    CHECK_CLOSE(std::exp(1), (*run->S->Get<CompositeVector>("primary")
                       .ViewComponent("cell",false))[0][0], 0.15);
-    CHECK_CLOSE(2.59374, (*pkS.second->Get<CompositeVector>("primary")
+    CHECK_CLOSE(2.59374, (*run->S->Get<CompositeVector>("primary")
                       .ViewComponent("cell",false))[0][0], 1.e-4);
     CHECK_EQUAL(10, nsteps.first);
     CHECK_EQUAL(0, nsteps.second);
   }
 
   TEST(C_FORWARD_EULER) {
-    auto pkS = createExplicit("C", "forward euler");
-    auto nsteps = run_test(pkS.first, pkS.second);
-    CHECK_CLOSE(std::exp(1), (*pkS.second->Get<CompositeVector>("primary")
+    auto run = createExplicit("C", "forward euler");
+    auto nsteps = run_test(run->S, run->pk, run->soln);
+    CHECK_CLOSE(std::exp(1), (*run->S->Get<CompositeVector>("primary")
                       .ViewComponent("cell",false))[0][0], 0.4);
-    CHECK_CLOSE(2.33463, (*pkS.second->Get<CompositeVector>("primary")
+    CHECK_CLOSE(2.33463, (*run->S->Get<CompositeVector>("primary")
                       .ViewComponent("cell",false))[0][0], 1.e-4);
     CHECK_EQUAL(10, nsteps.first);
     CHECK_EQUAL(0, nsteps.second);
@@ -251,100 +280,99 @@ SUITE(PK_ODE_FORWARD_EULER) {
 
   // Runge Kutta (multistage explicit) tests with each of 3 PKs
   TEST(A_RK4) {
-    auto pkS = createExplicit("A", "RK4");
-    auto nsteps = run_test(pkS.first, pkS.second);
-    CHECK_CLOSE(2, (*pkS.second->Get<CompositeVector>("primary")
+    auto run = createExplicit("A", "RK4");
+    auto nsteps = run_test(run->S, run->pk, run->soln);
+    CHECK_CLOSE(2, (*run->S->Get<CompositeVector>("primary")
                       .ViewComponent("cell",false))[0][0], 1.e-5);
     CHECK_EQUAL(10, nsteps.first);
     CHECK_EQUAL(0, nsteps.second);
   }
 
   TEST(B_RK4) {
-    auto pkS = createExplicit("B", "RK4");
-    auto nsteps = run_test(pkS.first, pkS.second);
-    CHECK_CLOSE(std::exp(1), (*pkS.second->Get<CompositeVector>("primary")
+    auto run = createExplicit("B", "RK4");
+    auto nsteps = run_test(run->S, run->pk, run->soln);
+    CHECK_CLOSE(std::exp(1), (*run->S->Get<CompositeVector>("primary")
                       .ViewComponent("cell",false))[0][0], 1.e-5);
     CHECK_EQUAL(10, nsteps.first);
     CHECK_EQUAL(0, nsteps.second);
   }
 
   TEST(C_RK4) {
-    auto pkS = createExplicit("C", "RK4");
-    auto nsteps = run_test(pkS.first, pkS.second);
-    CHECK_CLOSE(std::exp(1), (*pkS.second->Get<CompositeVector>("primary")
+    auto run = createExplicit("C", "RK4");
+    auto nsteps = run_test(run->S, run->pk, run->soln);
+    CHECK_CLOSE(std::exp(1), (*run->S->Get<CompositeVector>("primary")
                       .ViewComponent("cell",false))[0][0], 1.e-4);
     CHECK_EQUAL(10, nsteps.first);
     CHECK_EQUAL(0, nsteps.second);
   }
 
-  
+
   // Implicit (single stage)
   TEST(A_BACKWARD_EULER) {
-    auto pkS = createImplicit("A");
-    auto nsteps = run_test(pkS.first, pkS.second);
-    CHECK_CLOSE(2, (*pkS.second->Get<CompositeVector>("primary")
+    auto run = createImplicit("A");
+    auto nsteps = run_test(run->S, run->pk, run->soln);
+    CHECK_CLOSE(2, (*run->S->Get<CompositeVector>("primary")
                       .ViewComponent("cell",false))[0][0], 1.e-8);
     CHECK_EQUAL(10, nsteps.first);
     CHECK_EQUAL(0, nsteps.second);
   }
 
   TEST(B_BACKWARD_EULER) {
-    auto pkS = createImplicit("B");
-    auto nsteps = run_test(pkS.first, pkS.second);
-    CHECK_CLOSE(std::exp(1.0), (*pkS.second->Get<CompositeVector>("primary")
+    auto run = createImplicit("B");
+    auto nsteps = run_test(run->S, run->pk, run->soln);
+    CHECK_CLOSE(std::exp(1.0), (*run->S->Get<CompositeVector>("primary")
                       .ViewComponent("cell",false))[0][0], 0.15);
-    CHECK_CLOSE(2.867971990790009, (*pkS.second->Get<CompositeVector>("primary")
+    CHECK_CLOSE(2.867971990790009, (*run->S->Get<CompositeVector>("primary")
                       .ViewComponent("cell",false))[0][0], 1.e-8);
     CHECK_EQUAL(10, nsteps.first);
     CHECK_EQUAL(0, nsteps.second);
   }
 
   TEST(C_BACKWARD_EULER) {
-    auto pkS = createImplicit("C");
-    auto nsteps = run_test(pkS.first, pkS.second);
-    CHECK_CLOSE(std::exp(1.0), (*pkS.second->Get<CompositeVector>("primary")
+    auto run = createImplicit("C");
+    auto nsteps = run_test(run->S, run->pk, run->soln);
+    CHECK_CLOSE(std::exp(1.0), (*run->S->Get<CompositeVector>("primary")
                       .ViewComponent("cell",false))[0][0], 0.6);
-    CHECK_CLOSE(3.27476584420779, (*pkS.second->Get<CompositeVector>("primary")
+    CHECK_CLOSE(3.27476584420779, (*run->S->Get<CompositeVector>("primary")
                       .ViewComponent("cell",false))[0][0], 1.e-8);
     CHECK_EQUAL(10, nsteps.first);
     CHECK_EQUAL(0, nsteps.second);
   }
 
-
-  // Implicit (potentially multistage)
+  
+  // Implicit (subcycled)
   TEST(A_BACKWARD_EULER_SUBCYCLED) {
-    auto pkS = createImplicitSubcyled("A");
-    auto nsteps = run_test(pkS.first, pkS.second);
-
-    CHECK_CLOSE(2, (*pkS.second->Get<CompositeVector>("primary")
+    auto run = createImplicitSubcycled("A");
+    auto nsteps = run_test(run->S, run->pk, run->soln);
+    CHECK_CLOSE(2, (*run->S->Get<CompositeVector>("primary")
                       .ViewComponent("cell",false))[0][0], 1.e-8);
-    CHECK_EQUAL(10, nsteps.first);
+    CHECK_EQUAL(1, nsteps.first);
     CHECK_EQUAL(0, nsteps.second);
   }
 
   TEST(B_BACKWARD_EULER_SUBCYCLED) {
-    auto pkS = createImplicitSubcyled("B");
-    auto nsteps = run_test(pkS.first, pkS.second);
-
-    CHECK_CLOSE(std::exp(1.0), (*pkS.second->Get<CompositeVector>("primary")
-                      .ViewComponent("cell",false))[0][0], 0.15);
-    CHECK_CLOSE(2.867971990790009, (*pkS.second->Get<CompositeVector>("primary")
-                      .ViewComponent("cell",false))[0][0], 1.e-8);
-    CHECK_EQUAL(10, nsteps.first);
+    auto run = createImplicitSubcycled("B");
+    auto nsteps = run_test(run->S, run->pk, run->soln);
+    CHECK_CLOSE(std::exp(1.0), (*run->S->Get<CompositeVector>("primary")
+                      .ViewComponent("cell",false))[0][0], 0.03);
+    CHECK_CLOSE(2.74052, (*run->S->Get<CompositeVector>("primary")
+            .ViewComponent("cell",false))[0][0], 1.e-4);
+    CHECK_EQUAL(1, nsteps.first);
     CHECK_EQUAL(0, nsteps.second);
   }
 
   TEST(C_BACKWARD_EULER_SUBCYCLED) {
-    auto pkS = createImplicitSubcyled("C");
-    auto nsteps = run_test(pkS.first, pkS.second);
-
-    CHECK_CLOSE(std::exp(1.0), (*pkS.second->Get<CompositeVector>("primary")
-                      .ViewComponent("cell",false))[0][0], 0.6);
-    CHECK_CLOSE(3.27476584420779, (*pkS.second->Get<CompositeVector>("primary")
-                      .ViewComponent("cell",false))[0][0], 1.e-8);
-    CHECK_EQUAL(10, nsteps.first);
+    auto run = createImplicitSubcycled("C");
+    auto nsteps = run_test(run->S, run->pk, run->soln);
+    CHECK_CLOSE(std::exp(1.0), (*run->S->Get<CompositeVector>("primary")
+                      .ViewComponent("cell",false))[0][0], 0.08);
+    CHECK_CLOSE(2.79458, (*run->S->Get<CompositeVector>("primary")
+                      .ViewComponent("cell",false))[0][0], 1.e-4);
+    CHECK_EQUAL(1, nsteps.first);
     CHECK_EQUAL(0, nsteps.second);
   }
+  
+
   
 }
 
