@@ -44,6 +44,8 @@ class PK_MixinExplicit : public Base_t, public Explicit_TI::fnBase<TreeVector> {
   // timestep size
   double dt_;
 
+  Key tag_old_, tag_new_;
+  
   // timestep algorithm
   Teuchos::RCP<Explicit_TI::RK<TreeVector> > time_stepper_;
 
@@ -64,7 +66,8 @@ PK_MixinExplicit<Base_t>::PK_MixinExplicit(const Teuchos::RCP<Teuchos::Parameter
                          const Teuchos::RCP<Teuchos::ParameterList>& global_plist,
                          const Teuchos::RCP<State>& S,
                          const Teuchos::RCP<TreeVector>& solution)
-    : Base_t(pk_tree, global_plist, S, solution)
+    : Base_t(pk_tree, global_plist, S, solution),
+      method_requires_intermediate_(false)
 {
   // initial timestep
   dt_ = plist_->template get<double>("initial time step", 1.);
@@ -88,6 +91,9 @@ PK_MixinExplicit<Base_t>::Setup(const TreeVector& soln)
     this->SolutionToState(*solution_intermediate_, dudt_tag_, "");
     S_->template Require<double>("time", dudt_tag_, "time");
   }
+
+  tag_old_ = "";
+  tag_new_ = "next";
 }
 
 
@@ -96,15 +102,22 @@ bool
 PK_MixinExplicit<Base_t>::AdvanceStep(const Key& tag_old, const Teuchos::RCP<TreeVector>& soln_old,
         const Key& tag_new, const Teuchos::RCP<TreeVector>& soln_new)
 {
-  if (solution_intermediate_ == Teuchos::null) solution_intermediate_ = soln_old;
+  tag_old_ = tag_old;
+  tag_new_ = tag_new;
 
+  if (solution_intermediate_ == Teuchos::null) {
+    solution_intermediate_ = soln_old;
+    dudt_tag_ = tag_old;
+  }
+
+  // -- ensure state vectors are pushed into solution vectors
+  this->StateToSolution(*soln_old, tag_old, "");
+  this->StateToSolution(*solution_intermediate_, dudt_tag_, "");
+  this->StateToSolution(*soln_new, tag_new, "");
+  
+  
+  // -- instantiate time stepper if needed
   if (!time_stepper_.get()) {
-    // -- ensure state vectors are pushed into solution vectors
-    this->StateToSolution(*soln_old, "", "");
-    this->StateToSolution(*solution_intermediate_, dudt_tag_, "");
-    this->StateToSolution(*soln_new, "next", "");
-
-    // -- instantiate time stepper
     Teuchos::ParameterList& ti_plist = plist_->sublist("time integrator");
     ti_plist.set("initial time", S_->time());
     time_stepper_ = Teuchos::rcp(new Explicit_TI::RK<TreeVector>(*this, ti_plist, *soln_new));

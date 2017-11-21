@@ -43,7 +43,6 @@ add_amanzi_library(mesh_functions
                           MeshPartition.cc
                           MaterialMeshFunction.cc
                           ColumnMeshFunction.cc
-                          ExodusIIMeshFunction.cc
                    HEADERS BoundaryFunction.hh
                            CompositeVectorFunction.hh
                            CompositeVectorFunctionFactory.hh
@@ -52,7 +51,6 @@ add_amanzi_library(mesh_functions
                            UniqueMeshFunction.hh
                            MaterialMeshFunction.hh
                            ColumnMeshFunction.hh
-                           ExodusIIMeshFunction.hh
                    LINK_LIBS mesh data_structures error_handling functions ${Teuchos_LIBRARIES})
 
 # Define all tests at the of the file. BUILD_TESTS gates test building.

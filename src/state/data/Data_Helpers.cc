@@ -12,7 +12,6 @@ Helpers that know how to read/write/etc data.
 #include "Data_Helpers.hh"
 
 #include "ColumnMeshFunction.hh"
-#include "ExodusIIMeshFunction.hh"
 #include "CompositeVectorFunction.hh"
 #include "CompositeVectorFunctionFactory.hh"
 
@@ -198,16 +197,16 @@ Initialize<CompositeVector>(Teuchos::ParameterList& plist, CompositeVector& t,
     return true;
   }
 
-  // ------ Try to set values from an file -----
-  if (plist.isSublist("exodus file initialization")) {
-    // data must be pre-initialized to zero in case Exodus file does not
-    // provide all values.
-    t.PutScalar(0.0);
+  // // ------ Try to set values from an file -----
+  // if (plist.isSublist("exodus file initialization")) {
+  //   // data must be pre-initialized to zero in case Exodus file does not
+  //   // provide all values.
+  //   t.PutScalar(0.0);
 
-    Teuchos::ParameterList& file_list = plist.sublist("exodus file initialization");
-    Functions::ReadExodusIIMeshFunction(file_list, t);
-    return true;
-  }
+  //   Teuchos::ParameterList& file_list = plist.sublist("exodus file initialization");
+  //   Functions::ReadExodusIIMeshFunction(file_list, t);
+  //   return true;
+  // }
 
   // ------ Set values using a constant -----
   if (plist.isParameter("constant")) {

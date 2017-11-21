@@ -48,7 +48,9 @@ class PK_MixinImplicit
   double dt_;
   bool assemble_preconditioner_;
 
-  // tags for start and end of step
+  // tags for start and end of step Note these are here to limit how tightly
+  // integrated time integration is to a PK/dag.  If time integrators worked
+  // with tags we would not need these.
   Key tag_old_, tag_new_;
   
   // timestep algorithm

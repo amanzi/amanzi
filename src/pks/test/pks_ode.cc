@@ -26,6 +26,7 @@
 #include "PK_Default.hh"
 #include "PK_MixinLeaf.hh"
 #include "PK_MixinExplicit.hh"
+#include "PK_MixinExplicitSubcycled.hh"
 #include "PK_MixinImplicit.hh"
 #include "PK_MixinImplicitSubcycled.hh"
 #include "PK_Adaptors.hh"
@@ -96,6 +97,53 @@ createExplicit(const std::string& eqn_name, const std::string& ti_name) {
 
 
 //
+// Creates an explicit subcycled PK
+// ============================================================================
+std::unique_ptr<Run>
+createExplicitSubcycled(const std::string& eqn_name, const std::string& ti_name) {
+  std::string pk_name = eqn_name + ", " + ti_name + " subcycled";
+  std::cout << "Test: " << pk_name << std::endl;
+
+  auto global_list = Teuchos::getParametersFromXmlFile("test/pks_ode.xml");
+  auto pk_tree = Teuchos::rcp(new Teuchos::ParameterList(pk_name));
+
+  auto S = Teuchos::rcp(new State(global_list->sublist("state")));
+  
+  // intentionally leaks memory
+  Epetra_MpiComm* comm = new Epetra_MpiComm(MPI_COMM_WORLD);
+
+  // create mesh
+  Teuchos::ParameterList& regions_list = global_list->sublist("regions");
+  Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm =
+      Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(2, regions_list, comm));
+
+  Amanzi::AmanziMesh::FrameworkPreference pref;
+  pref.clear();
+  pref.push_back(Amanzi::AmanziMesh::MSTK);
+
+  Amanzi::AmanziMesh::MeshFactory meshfactory(comm);
+  meshfactory.preference(pref);
+  // make a 1x1 'mesh' for ODEs
+  Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 1, 1, gm);
+  S->RegisterDomainMesh(mesh);
+
+  Teuchos::RCP<TreeVector> soln = Teuchos::rcp(new TreeVector());
+  Teuchos::RCP<PK> pk;
+  if (eqn_name == "A") {
+    pk = Teuchos::rcp(new PK_Adaptor<PK_ODE_Explicit<PK_MixinExplicitSubcycled<PK_MixinLeaf<PK_Default> >, DudtEvaluatorA> >(pk_tree, global_list, S, soln));
+  } else if (eqn_name == "B") {
+    pk = Teuchos::rcp(new PK_Adaptor<PK_ODE_Explicit<PK_MixinExplicitSubcycled<PK_MixinLeaf<PK_Default> >, DudtEvaluatorB> >(pk_tree, global_list, S, soln));
+  } else if (eqn_name == "C") {
+    pk = Teuchos::rcp(new PK_Adaptor<PK_ODE_Explicit<PK_MixinExplicitSubcycled<PK_MixinLeaf<PK_Default> >, DudtEvaluatorC> >(pk_tree, global_list, S, soln));
+  } else {
+    ASSERT(false);
+  }
+
+  return std::make_unique<Run>(S,pk,soln);
+}
+
+
+//
 // Creates an implicit PK
 // ============================================================================
 std::unique_ptr<Run>
@@ -151,7 +199,7 @@ std::unique_ptr<Run>
 createImplicitSubcycled(const std::string& eqn_name) {
   std::string pk_name = eqn_name + ", backward euler subcycled";
   std::cout << "Test: " << pk_name << std::endl;
-
+  
   auto global_list = Teuchos::getParametersFromXmlFile("test/pks_ode.xml");
   auto pk_tree = Teuchos::rcp(new Teuchos::ParameterList(pk_name));
 
@@ -250,7 +298,7 @@ SUITE(PKS_ODE) {
     auto run = createExplicit("A", "forward euler");
     auto nsteps = run_test(run->S, run->pk, run->soln);
     CHECK_CLOSE(2.0, (*run->S->Get<CompositeVector>("primary")
-                      .ViewComponent("cell",false))[0][0], 1.e-5);
+                      .ViewComponent("cell",false))[0][0], 1.e-10);
     CHECK_EQUAL(10, nsteps.first);
     CHECK_EQUAL(0, nsteps.second);
   }
@@ -306,6 +354,68 @@ SUITE(PKS_ODE) {
     CHECK_EQUAL(0, nsteps.second);
   }
 
+  // Subcycled Forward Euler tests with each of 3 PKs.  Note that this answer
+  // is identical to the Forward Euler -- it takes 10 subcycled steps for an
+  // outer step that is 10 times as big.
+  TEST(A_FORWARD_EULER_SUBCYCLED) {
+    auto run = createExplicitSubcycled("A", "forward euler");
+    auto nsteps = run_test(run->S, run->pk, run->soln);
+    CHECK_CLOSE(2.0, (*run->S->Get<CompositeVector>("primary")
+                      .ViewComponent("cell",false))[0][0], 1.e-10);
+    CHECK_EQUAL(1, nsteps.first);
+    CHECK_EQUAL(0, nsteps.second);
+  }
+
+  TEST(B_FORWARD_EULER_SUBCYCLED) {
+    auto run = createExplicitSubcycled("B", "forward euler");
+    auto nsteps = run_test(run->S, run->pk, run->soln);
+    CHECK_CLOSE(std::exp(1), (*run->S->Get<CompositeVector>("primary")
+                      .ViewComponent("cell",false))[0][0], 0.15);
+    CHECK_CLOSE(2.59374, (*run->S->Get<CompositeVector>("primary")
+                      .ViewComponent("cell",false))[0][0], 1.e-4);
+    CHECK_EQUAL(1, nsteps.first);
+    CHECK_EQUAL(0, nsteps.second);
+  }
+
+  TEST(C_FORWARD_EULER_SUBCYCLED) {
+    auto run = createExplicitSubcycled("C", "forward euler");
+    auto nsteps = run_test(run->S, run->pk, run->soln);
+    CHECK_CLOSE(std::exp(1), (*run->S->Get<CompositeVector>("primary")
+                      .ViewComponent("cell",false))[0][0], 0.4);
+    CHECK_CLOSE(2.33463, (*run->S->Get<CompositeVector>("primary")
+                      .ViewComponent("cell",false))[0][0], 1.e-4);
+    CHECK_EQUAL(1, nsteps.first);
+    CHECK_EQUAL(0, nsteps.second);
+  }
+  
+  TEST(A_RK4_SUBCYCLED) {
+    auto run = createExplicitSubcycled("A", "RK4");
+    auto nsteps = run_test(run->S, run->pk, run->soln);
+    CHECK_CLOSE(2.0, (*run->S->Get<CompositeVector>("primary")
+                      .ViewComponent("cell",false))[0][0], 1.e-10);
+    CHECK_EQUAL(1, nsteps.first);
+    CHECK_EQUAL(0, nsteps.second);
+  }
+
+
+  TEST(B_RK4_SUBCYCLED) {
+    auto run = createExplicitSubcycled("B", "RK4");
+    auto nsteps = run_test(run->S, run->pk, run->soln);
+    CHECK_CLOSE(std::exp(1), (*run->S->Get<CompositeVector>("primary")
+                      .ViewComponent("cell",false))[0][0], 1.e-5);
+    CHECK_EQUAL(1, nsteps.first);
+    CHECK_EQUAL(0, nsteps.second);
+  }
+
+  TEST(C_RK4_SUBCYCLED) {
+    auto run = createExplicitSubcycled("C", "RK4");
+    auto nsteps = run_test(run->S, run->pk, run->soln);
+    CHECK_CLOSE(std::exp(1), (*run->S->Get<CompositeVector>("primary")
+                      .ViewComponent("cell",false))[0][0], 1.e-4);
+    CHECK_EQUAL(1, nsteps.first);
+    CHECK_EQUAL(0, nsteps.second);
+  }
+  
 
   // Implicit (single stage)
   TEST(A_BACKWARD_EULER) {
@@ -354,8 +464,8 @@ SUITE(PKS_ODE) {
     auto run = createImplicitSubcycled("B");
     auto nsteps = run_test(run->S, run->pk, run->soln);
     CHECK_CLOSE(std::exp(1.0), (*run->S->Get<CompositeVector>("primary")
-                      .ViewComponent("cell",false))[0][0], 0.03);
-    CHECK_CLOSE(2.74052, (*run->S->Get<CompositeVector>("primary")
+                      .ViewComponent("cell",false))[0][0], 0.15);
+    CHECK_CLOSE(2.86608, (*run->S->Get<CompositeVector>("primary")
             .ViewComponent("cell",false))[0][0], 1.e-4);
     CHECK_EQUAL(1, nsteps.first);
     CHECK_EQUAL(0, nsteps.second);
@@ -365,14 +475,12 @@ SUITE(PKS_ODE) {
     auto run = createImplicitSubcycled("C");
     auto nsteps = run_test(run->S, run->pk, run->soln);
     CHECK_CLOSE(std::exp(1.0), (*run->S->Get<CompositeVector>("primary")
-                      .ViewComponent("cell",false))[0][0], 0.08);
-    CHECK_CLOSE(2.79458, (*run->S->Get<CompositeVector>("primary")
+                      .ViewComponent("cell",false))[0][0], 0.3);
+    CHECK_CLOSE(3.01043, (*run->S->Get<CompositeVector>("primary")
                       .ViewComponent("cell",false))[0][0], 1.e-4);
     CHECK_EQUAL(1, nsteps.first);
     CHECK_EQUAL(0, nsteps.second);
   }
-  
-
   
 }
 

@@ -123,7 +123,7 @@ class PK_ODE_Explicit : public Base_t {
   void Setup(const TreeVector& soln) {
     Base_t::Setup(soln);
 
-    this->S_->template Require<CompositeVector,CompositeVectorSpace>(this->key_, "", this->key_)
+    this->S_->template Require<CompositeVector,CompositeVectorSpace>(this->key_, tag_old_, this->key_)
         .SetMesh(this->mesh_)
         ->SetComponent("cell",AmanziMesh::CELL,1);
 
@@ -140,7 +140,7 @@ class PK_ODE_Explicit : public Base_t {
   void Initialize() {
     Base_t::Initialize();
     this->S_->template GetW<CompositeVector>("primary", "", "primary").PutScalar(1.);
-    this->S_->GetRecordW("primary", "primary").set_initialized();
+    this->S_->GetRecordW("primary", "", "primary").set_initialized();
   }
   
   void Functional(double t, const TreeVector& u, TreeVector& f) {
@@ -158,6 +158,9 @@ class PK_ODE_Explicit : public Base_t {
  protected:
   Key dudt_key_;
   using Base_t::dudt_tag_;
+
+  using Base_t::tag_old_;
+  using Base_t::tag_new_;
   
 };
 

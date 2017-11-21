@@ -34,66 +34,102 @@ class PK_MixinExplicitSubcycled
                             const Teuchos::RCP<State>& S,
                             const Teuchos::RCP<TreeVector>& solution);
 
-  void Setup();
-  bool AdvanceStep(const Key& tag_old, const Key& tag_new);
-
-  double get_dt() { return 1.e10; }
+  void Setup(const TreeVector& soln);
+  bool AdvanceStep(const Key& tag_old, const Teuchos::RCP<TreeVector>& soln_old,
+                   const Key& tag_new, const Teuchos::RCP<TreeVector>& soln_new);
 
  protected:
+  Teuchos::RCP<TreeVector> inner_soln_old_;
+  Teuchos::RCP<TreeVector> inner_soln_new_;
+
+  using PK_MixinExplicit<Base_t>::tag_old_;
+  using PK_MixinExplicit<Base_t>::tag_new_;
+  using PK_MixinExplicit<Base_t>::dudt_tag_;
+
+  using PK_MixinExplicit<Base_t>::vo_;
   using PK_MixinExplicit<Base_t>::plist_;
   using PK_MixinExplicit<Base_t>::S_;
   int subcycled_count_;
-}
+};
 
 
 template<class Base_t>
-PK_MixinExplicitSubcycled(const Teuchos::RCP<Teuchos::ParameterList>& pk_tree,
-                          const Teuchos::RCP<Teuchos::ParameterList>& global_plist,
-                          const Teuchos::RCP<State>& S,
-                          const Teuchos::RCP<TreeVector>& solution) :
-    PK_MixinExplicit<Base_t>(pk_tree, global_plist, S, solution)
+PK_MixinExplicitSubcycled<Base_t>::PK_MixinExplicitSubcycled(
+    const Teuchos::RCP<Teuchos::ParameterList>& pk_tree,
+    const Teuchos::RCP<Teuchos::ParameterList>& global_plist,
+    const Teuchos::RCP<State>& S,
+    const Teuchos::RCP<TreeVector>& solution)
+    : PK_MixinExplicit<Base_t>(pk_tree, global_plist, S, solution)
 {
-  subcycled_count_ = plist_->template get<double>("subcycling substeps count");
+  // this could be generalized, for now just take 1/Nth step size
+  subcycled_count_ = plist_->template get<int>("subcycling substeps per outer step");
 }
-
 
 template<class Base_t>
-void 
-PK_MixinExplicit<Base_t>::Setup()
+void
+PK_MixinExplicitSubcycled<Base_t>::Setup(const TreeVector& soln)
 {
-  S_->template Require<double>("time", this->name()+"_explicit");
+  PK_MixinExplicit<Base_t>::Setup(soln);
+
+  // reserve space for inner step
+  tag_old_ = this->name() + " explicit subcycled inner";
+  S_->template Require<double>("time", tag_old_, "time");
+  S_->template Require<int>("cycle", tag_old_, "cycle");
+  inner_soln_old_ = Teuchos::rcp(new TreeVector(soln, INIT_MODE_NOALLOC));
+  this->SolutionToState(*inner_soln_old_, tag_old_, "");
+
+  tag_new_ = this->name() + " explicit subcycled inner next";
+  S_->template Require<double>("time", tag_new_, "time");
+  S_->template Require<int>("cycle", tag_new_, "cycle");
+  inner_soln_new_ = Teuchos::rcp(new TreeVector(soln, INIT_MODE_NOALLOC));
+  this->SolutionToState(*inner_soln_new_, tag_new_, "");
+
+  // reset dudt to be the INNER old tag, unless an intermediate was created
+  if (!PK_MixinExplicit<Base_t>::method_requires_intermediate_)
+    dudt_tag_ = tag_old_;
 }
+
 
 template<class Base_t>
 bool 
-PK_MixinExplicitSubcycled<Base_t>::AdvanceStep(const Key& tag_old, const Key& tag_new)
+PK_MixinExplicitSubcycled<Base_t>::AdvanceStep(const Key& tag_old,
+        const Teuchos::RCP<TreeVector>& soln_old,
+        const Key& tag_new,
+        const Teuchos::RCP<TreeVector>& soln_new)
 {
-  // take a bdf timestep
-  double dt_solver;
-  bool fail = time_stepper_->TimeStep(dt, dt_solver, solution_);
+  double t_start = S_->time(tag_old);
+  double t_final = S_->time(tag_new);
+  double dt_inner = (t_final - t_start) / subcycled_count_;
+  
+  Teuchos::OSTab out = vo_->getOSTab();
+  if (vo_->os_OK(Teuchos::VERB_HIGH))
+    *vo_->os() << "----------------------------------------------------------------" << std::endl
+               << "Subcycling, Outer step: t0 = " << t_start
+               << " t1 = " <<  t_final << " h = " << t_final - t_start << std::endl
+               << "----------------------------------------------------------------" << std::endl;
 
-  if (!fail) {
-    // check step validity
-    bool valid = this->ValidStep(tag_old, tag_new);
-    if (valid) {
-      // update the timestep size
-      if (dt_solver < dt_ && dt_solver >= dt) {
-        // We took a smaller step than we recommended, and it worked fine (not
-        // suprisingly).  Likely this was due to constraints from other PKs or
-        // vis.  Do not reduce our recommendation.
-      } else {
-        dt_ = dt_solver;
-      }
-    } else {
-      time_stepper_->CommitSolution(dt_, solution_, valid);
-      dt_ = 0.5*dt_;
-    }
-  } else {
-    // take the decreased timestep size
-    dt_ = dt_solver;
-  }
+  this->CommitStep(tag_old_, inner_soln_old_, tag_old, soln_old);
+  this->CommitStep(tag_new_, inner_soln_new_, tag_old, soln_old);
+  S_->set_cycle(tag_old_, 0);
+  
+  for (int k=0; k!=subcycled_count_; ++k) {
+    double t_inner_start = t_start + dt_inner*k;
+    double t_inner_end = t_start + dt_inner*(k+1);
 
-  return fail;
+    S_->set_time(tag_old_, t_inner_start);
+    S_->set_time(tag_new_, t_inner_end);
+    S_->set_cycle(tag_new_, S_->cycle(tag_old_)+1);
+
+    bool fail = PK_MixinExplicit<Base_t>::AdvanceStep(tag_old_, inner_soln_old_,
+            tag_new_, inner_soln_new_);
+    ASSERT(!fail);
+    this->CommitStep(tag_old_, inner_soln_old_, tag_new_, inner_soln_new_);
+  }    
+
+  this->CommitStep(tag_new, soln_new, tag_new_, inner_soln_new_);
+  return false;
+
+
 };
 
 } // namespace Amanzi
