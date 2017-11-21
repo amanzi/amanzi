@@ -16,7 +16,7 @@ A distance function calculates distance from reference point :math:`x_0`
 using by the following expression:
 
 .. math::
-  f(x) = \sum_{j=0}^{n} m_j (x_j - x_{0,j})^2
+  f(x) = \sqrt( \sum_{j=0}^{n} m_j (x_j - x_{0,j})^2 )
 
 Note that the first parameter in :math:`x` can be time.
 Here is an example of a distance function using isotropic metric:

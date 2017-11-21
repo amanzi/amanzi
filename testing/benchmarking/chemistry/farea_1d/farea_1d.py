@@ -10,9 +10,8 @@ import matplotlib
 from matplotlib import pyplot as plt
 
 
-# ----------- AMANZI + ALQUIMIA -----------------------------------------------------------------
-
-def GetXY_Amanzi(path,root,time,comp,last=False):
+# ----------- AMANZI U -----------------------------------------------------------------
+def GetXY_AmanziU(path,root,time,comp,last=False):
 
 #    import pdb; pdb.set_trace()
    
@@ -42,8 +41,8 @@ def GetXY_Amanzi(path,root,time,comp,last=False):
     
     return (x_amanzi_alquimia, c_amanzi_alquimia)
 
-# ----------- PFLOTRAN STANDALONE ------------------------------------------------------------
 
+# ----------- PFLOTRAN STANDALONE ------------------------------------------------------------
 def GetXY_PFloTran(path,root,time,comp):
 
     # read pflotran data
@@ -150,30 +149,31 @@ if __name__ == "__main__":
     CWD = os.getcwd()
     local_path = "" 
     
+
+    # Amanzi + Native chemistry
     try:
-        # Amanzi native chemistry
-        input_filename = os.path.join("amanzi-u-1d-"+root+".xml")
-        path_to_amanzi = "amanzi-native-output"
-        run_amanzi_standard.run_amanzi(input_filename, 1, [root+".bgd"], path_to_amanzi)
+        input_file = os.path.join("amanzi-u-1d-"+root+".xml")
+        path_to_amanzi = "output-u"
+        run_amanzi_standard.run_amanzi(input_file, 1, [root+".bgd",input_file], path_to_amanzi)
 
         time = timesama[0]
 
         # tot conc
         u_amanzi_native = [[] for x in range(len(totcama))]
         for j, comp in enumerate(totcama):
-              x_amanzi_native, c_amanzi_native = GetXY_Amanzi(path_to_amanzi,'farea-1d',time,comp,last=True)
+              x_amanzi_native, c_amanzi_native = GetXY_AmanziU(path_to_amanzi,'farea-1d',time,comp,last=True)
               u_amanzi_native[j] = c_amanzi_native
 
         # sorb conc
         v_amanzi_native = [[] for x in range(len(sorbama))]
         for j, sorb in enumerate(sorbama):
-              x_amanzi_native, c_amanzi_native = GetXY_Amanzi(path_to_amanzi,'farea-1d',time,sorb,last=True)
+              x_amanzi_native, c_amanzi_native = GetXY_AmanziU(path_to_amanzi,'farea-1d',time,sorb,last=True)
               v_amanzi_native[j] = c_amanzi_native
 
         # mineral volume fraction
         w_amanzi_native = [[] for x in range(len(vfama))]
         for j, vf in enumerate(vfama):
-              x_amanzi_native, c_amanzi_native = GetXY_Amanzi(path_to_amanzi,'farea-1d',time,vf,last=True)
+              x_amanzi_native, c_amanzi_native = GetXY_AmanziU(path_to_amanzi,'farea-1d',time,vf,last=True)
               w_amanzi_native[j] = c_amanzi_native
 
         native = True
@@ -182,12 +182,12 @@ if __name__ == "__main__":
         native = False
 
 
+    # Amanzi + Alquimia + PFloTran chemistry
     try:  
-        # Amanzi-Alquimia
-        input_filename = os.path.join("amanzi-u-1d-"+root+"-alq.xml")
-        path_to_amanzi = "amanzi-alquimia-output"
-        run_amanzi_standard.run_amanzi(input_filename, 1, 
-                                       ["1d-"+root+"-trim.in", root+".dat"],
+        input_file = os.path.join("amanzi-u-1d-"+root+"-alq-pflo.xml")
+        path_to_amanzi = "output-u-alq-pflo"
+        run_amanzi_standard.run_amanzi(input_file, 1, 
+                                       ["1d-"+root+"-trim.in", root+".dat",input_file],
                                        path_to_amanzi)
 
 #        import pdb; pdb.set_trace()
@@ -197,19 +197,19 @@ if __name__ == "__main__":
         # tot concentration
         u_amanzi_alquimia = [[] for x in range(len(totcama))]
         for j, comp in enumerate(totcama):
-              x_amanzi_alquimia, c_amanzi_alquimia = GetXY_Amanzi(path_to_amanzi,"farea-1d",time,comp,last=True)
+              x_amanzi_alquimia, c_amanzi_alquimia = GetXY_AmanziU(path_to_amanzi,"farea-1d",time,comp,last=True)
               u_amanzi_alquimia[j] = c_amanzi_alquimia  
 
         # sorbed concentration
         v_amanzi_alquimia = [[] for x in range(len(sorbama))]
         for j, sorb in enumerate(sorbama):
-              x_amanzi_alquimia, c_amanzi_alquimia = GetXY_Amanzi(path_to_amanzi,"farea-1d",time,sorb,last=True)
+              x_amanzi_alquimia, c_amanzi_alquimia = GetXY_AmanziU(path_to_amanzi,"farea-1d",time,sorb,last=True)
               v_amanzi_alquimia[j] = c_amanzi_alquimia
 
         # mineral volume fraction
         w_amanzi_alquimia = [[] for x in range(len(vfama))]
         for j, vf in enumerate(vfama):
-              x_amanzi_alquimia, c_amanzi_alquimia = GetXY_Amanzi(path_to_amanzi,"farea-1d",time,vf,last=True)
+              x_amanzi_alquimia, c_amanzi_alquimia = GetXY_AmanziU(path_to_amanzi,"farea-1d",time,vf,last=True)
               w_amanzi_alquimia[j] = c_amanzi_alquimia
 
         alq = True

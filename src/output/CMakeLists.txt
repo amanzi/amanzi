@@ -34,7 +34,7 @@ include_directories(${Epetra_INCLUDE_DIRS})
 include_directories(${HDF5_C_INCLUDE_DIR})
 include_directories(${ASCEMIO_INCLUDE_DIR})
 
-if(ENABLE_Silo)
+if (ENABLE_Silo)
   include_directories(${Silo_INCLUDE_DIRS})
 endif(ENABLE_Silo)    
 
@@ -56,7 +56,7 @@ list(APPEND output_source_files "${hdf5mpi_source}")
 list(APPEND output_source_files "OutputXDMF.cc")
 list(APPEND output_tpl_list ${ASCEMIO_LIBRARIES})
 
-if(ENABLE_Silo)
+if (ENABLE_Silo)
   list(APPEND output_source_files "OutputSilo.cc")
   list(APPEND output_tpl_list ${Silo_LIBRARIES})
   add_definitions(-DENABLE_Silo)
@@ -69,8 +69,8 @@ add_amanzi_library(output
                    LINK_LIBS mesh geometry error_handling ${output_tpl_list})
 
 foreach( lib ${output_tpl_list} )
-    print_variable(lib)
-    # message(STATUS "DEBUG: lib=$lib")
+  #print_variable(lib)
+  # message(STATUS "DEBUG: lib=$lib")
 endforeach()
 
 #
@@ -94,49 +94,49 @@ add_amanzi_executable(unscramble_restart
 #
 if (BUILD_TESTS)
 
-    include_directories(${MESH_FACTORY_SOURCE_DIR})
+  include_directories(${MESH_FACTORY_SOURCE_DIR})
 
-    # Add UnitTest
-    include_directories(${UnitTest_INCLUDE_DIRS})
+  # Add UnitTest
+  include_directories(${UnitTest_INCLUDE_DIRS})
 
-    # Copy test directory files if an out of source build
-    if (NOT (${OUTPUT_SOURCE_DIR} EQUAL ${OUTPUT_BINARY_DIR}))
-        execute_process(COMMAND ${CMAKE_COMMAND} -E
-          copy_directory ${OUTPUT_SOURCE_DIR}/test ${OUTPUT_BINARY_DIR}/test)
-    endif()
+  # Copy test directory files if an out of source build
+  if (NOT (${OUTPUT_SOURCE_DIR} EQUAL ${OUTPUT_BINARY_DIR}))
+      execute_process(COMMAND ${CMAKE_COMMAND} -E
+      copy_directory ${OUTPUT_SOURCE_DIR}/test ${OUTPUT_BINARY_DIR}/test)
+  endif()
 
     
-    # Test: gmv_output
-    add_amanzi_test(output_gmv output_gmv
-                    SOURCE     test/Main.cc test/test_gmv.cc
-		    LINK_LIBS  output mesh_factory ${UnitTest_LIBRARIES}
-		    KIND unit)
+  # Test: gmv_output
+  add_amanzi_test(output_gmv output_gmv
+                  SOURCE     test/Main.cc test/test_gmv.cc
+                  LINK_LIBS  output mesh_factory ${UnitTest_LIBRARIES}
+                  KIND unit)
 
-    # Test: hdf5_output
-    add_amanzi_test(output_hdf5 output_hdf5
-                    SOURCE      test/Main.cc test/test_hdf5.cc
-		    LINK_LIBS   output mesh_factory ${UnitTest_LIBRARIES}
-		    KIND int)
+  # Test: hdf5_output
+  add_amanzi_test(output_hdf5 output_hdf5
+                  SOURCE      test/Main.cc test/test_hdf5.cc
+                  LINK_LIBS   output mesh_factory ${UnitTest_LIBRARIES}
+                  KIND int)
 
-    # Test: hdf5_mpi_output
-    add_amanzi_test(output_hdf5mpi output_hdf5mpi
-                    SOURCE         test/Main.cc test/test_hdf5mpi.cc
-		            LINK_LIBS      output mesh_factory mstk_mesh ${UnitTest_LIBRARIES}
-			        NPROCS         2
-		            KIND           int)
+  # Test: hdf5_mpi_output
+  add_amanzi_test(output_hdf5mpi output_hdf5mpi
+                  SOURCE         test/Main.cc test/test_hdf5mpi.cc
+                  LINK_LIBS      output mesh_factory mstk_mesh ${UnitTest_LIBRARIES}
+                  NPROCS         2
+                  KIND           int)
 
+  # Test: uses the Output interface
+  add_amanzi_test(output_xdmf output_xdmf
+                  SOURCE         test/Main.cc test/test_xdmf.cc
+                  LINK_LIBS      output mesh_factory mstk_mesh ${UnitTest_LIBRARIES}
+                  KIND           int)
+
+  if (ENABLE_Silo)
     # Test: uses the Output interface
-    add_amanzi_test(output_xdmf output_xdmf
-                    SOURCE         test/Main.cc test/test_xdmf.cc
-		            LINK_LIBS      output mesh_factory mstk_mesh ${UnitTest_LIBRARIES}
-		            KIND           int)
-
-    if(ENABLE_Silo)
-      # Test: uses the Output interface
-      add_amanzi_test(output_silo output_silo
-                      SOURCE      test/Main.cc test/test_silo.cc
-		      LINK_LIBS   output mesh_factory mstk_mesh ${UnitTest_LIBRARIES}
-		      KIND        int)
-    endif(ENABLE_Silo)
+    add_amanzi_test(output_silo output_silo
+                    SOURCE      test/Main.cc test/test_silo.cc
+                    LINK_LIBS   output mesh_factory mstk_mesh ${UnitTest_LIBRARIES}
+                    KIND        int)
+  endif()
                   
 endif(BUILD_TESTS)

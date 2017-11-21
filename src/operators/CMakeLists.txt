@@ -45,7 +45,9 @@ add_definitions("-DMSTK_HAVE_MPI")
 #
 # Library: operator audit
 #
-add_amanzi_library(operators_audit SOURCE OperatorAudit.cc LINK_LIBS ${flow_tpl_libs})
+add_amanzi_library(operators_audit 
+                   SOURCE OperatorAudit.cc 
+		   LINK_LIBS whetstone ${Epetra_LIBRARIES})
 
 #
 # Library: operators
@@ -125,13 +127,13 @@ add_amanzi_library(operators
                    LINK_LIBS geometry mesh error_handling whetstone solvers data_structures ${Epetra_LIBRARIES})
 
 
-if ( BUILD_TESTS )
+if (BUILD_TESTS)
     # Add UnitTest includes
     include_directories(${UnitTest_INCLUDE_DIRS})
     include_directories(${MESH_SIMPLE_SOURCE_DIR})
 
     # Copy test directory files if an out of source build
-    if (NOT (${OPERATORS_SOURCE_DIR} EQUAL ${OPERATORS_BINARY_DIR}) )
+    if (NOT (${OPERATORS_SOURCE_DIR} EQUAL ${OPERATORS_BINARY_DIR}))
         file(GLOB DataFiles "${OPERATORS_SOURCE_DIR}/test/*.xml"
                             "${OPERATORS_SOURCE_DIR}/test/*.exo")
         file(COPY ${DataFiles} DESTINATION ${OPERATORS_BINARY_DIR}/test/)
@@ -145,9 +147,8 @@ if ( BUILD_TESTS )
                     SOURCE test/Main.cc test/operator_utils.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
-    
 
-    if ( ENABLE_INDIVIDUAL_TESTS_OPERATORS OR ENABLE_INDIVIDUAL_TESTS )
+    if (ENABLE_INDIVIDUAL_TESTS_OPERATORS OR ENABLE_INDIVIDUAL_TESTS)
         add_amanzi_test(operators_laplace_beltrami operators_laplace_beltrami
                         KIND unit
                         SOURCE test/Main.cc test/operator_laplace_beltrami.cc 
@@ -155,7 +156,7 @@ if ( BUILD_TESTS )
         add_amanzi_test(operators_parabolic_surface operators_parabolic_surface
                         KIND unit
                         SOURCE test/Main.cc test/operator_parabolic_surface.cc
-                        LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+			LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
         add_amanzi_test(operators_marshak operators_marshak
                         KIND unit
                         SOURCE test/Main.cc test/operator_marshak.cc

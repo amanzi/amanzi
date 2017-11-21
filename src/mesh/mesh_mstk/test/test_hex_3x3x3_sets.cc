@@ -11,18 +11,18 @@
 
 TEST(MSTK_HEX_3x3x3_SETS)
 {
-  std::string expcsetnames[15] = {"Bottom LS", "Middle LS", "Top LS", 
+  std::vector<std::string> expcsetnames{"Bottom LS", "Middle LS", "Top LS", 
                                   "Bottom+Middle Box", "Top Box",
                                   "Sample Point InCell", "Sample Point OnFace",
                                   "Sample Point OnEdge", "Sample Point OnVertex",
                                   "Bottom ColFunc", "Middle ColFunc", "Top ColFunc",
-                                  "Cell Set 1", "Cell Set 2", "Cell Set 3"};
+                                  "Cell Set 1", "Cell Set 2", "Cell Set 3", "Entire Mesh"};
   
-  std::string expfsetnames[8] = {"Face 101", "Face 102", 
+  std::vector<std::string> expfsetnames{"Face 101", "Face 102", 
                                  "Face 10005", "Face 20004", "Face 30004",
-                                 "ZLO FACE Plane", "YLO FACE Box", "Domain Boundary"};
+                                 "ZLO FACE Plane", "YLO FACE Box", "Domain Boundary", "Entire Mesh"};
 
-  std::string expnsetnames[2] = {"INTERIOR XY PLANE", "TOP BOX"};
+  std::vector<std::string> expnsetnames{"INTERIOR XY PLANE", "TOP BOX", "Entire Mesh"};
 
   Teuchos::RCP<Epetra_MpiComm> comm_(new Epetra_MpiComm(MPI_COMM_WORLD));
 
@@ -62,7 +62,66 @@ TEST(MSTK_HEX_3x3x3_SETS)
 
     std::string shape = reg_params.name(j);
 
-    if (shape == "region: plane") {
+    if (shape == "region: all") {
+      // CELLs
+      CHECK(mesh->valid_set_name(reg_name, Amanzi::AmanziMesh::CELL));
+
+      int nents = mesh->num_entities(Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::OWNED);
+      int set_size = mesh->get_set_size(reg_name,Amanzi::AmanziMesh::CELL,Amanzi::AmanziMesh::OWNED);
+      CHECK_EQUAL(nents, set_size);
+      
+      // Verify that we can retrieve the set entities, and that all are there
+      Amanzi::AmanziMesh::Entity_ID_List setents;
+      mesh->get_set_entities(reg_name,Amanzi::AmanziMesh::CELL,Amanzi::AmanziMesh::OWNED,&setents);
+      for (int i=0; i!=nents; ++i) CHECK_EQUAL(i, setents[i]);
+
+      nents = mesh->num_entities(Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::USED);
+      set_size = mesh->get_set_size(reg_name,Amanzi::AmanziMesh::CELL,Amanzi::AmanziMesh::USED);
+      CHECK_EQUAL(nents, set_size);
+      
+      // Verify that we can retrieve the set entities, and that all are there
+      mesh->get_set_entities(reg_name,Amanzi::AmanziMesh::CELL,Amanzi::AmanziMesh::USED,&setents);
+      for (int i=0; i!=nents; ++i) CHECK_EQUAL(i, setents[i]);
+      
+      // FACEs
+      CHECK(mesh->valid_set_name(reg_name, Amanzi::AmanziMesh::FACE));
+
+      nents = mesh->num_entities(Amanzi::AmanziMesh::FACE, Amanzi::AmanziMesh::OWNED);
+      set_size = mesh->get_set_size(reg_name,Amanzi::AmanziMesh::FACE,Amanzi::AmanziMesh::OWNED);
+      CHECK_EQUAL(nents, set_size);
+      
+      // Verify that we can retrieve the set entities, and that all are there
+      mesh->get_set_entities(reg_name,Amanzi::AmanziMesh::FACE,Amanzi::AmanziMesh::OWNED,&setents);
+      for (int i=0; i!=nents; ++i) CHECK_EQUAL(i, setents[i]);
+
+      nents = mesh->num_entities(Amanzi::AmanziMesh::FACE, Amanzi::AmanziMesh::USED);
+      set_size = mesh->get_set_size(reg_name,Amanzi::AmanziMesh::FACE,Amanzi::AmanziMesh::USED);
+      CHECK_EQUAL(nents, set_size);
+      
+      // Verify that we can retrieve the set entities, and that all are there
+      mesh->get_set_entities(reg_name,Amanzi::AmanziMesh::FACE,Amanzi::AmanziMesh::USED,&setents);
+      for (int i=0; i!=nents; ++i) CHECK_EQUAL(i, setents[i]);
+      
+      // NODEs
+      CHECK(mesh->valid_set_name(reg_name, Amanzi::AmanziMesh::NODE));
+
+      nents = mesh->num_entities(Amanzi::AmanziMesh::NODE, Amanzi::AmanziMesh::OWNED);
+      set_size = mesh->get_set_size(reg_name,Amanzi::AmanziMesh::NODE,Amanzi::AmanziMesh::OWNED);
+      CHECK_EQUAL(nents, set_size);
+      
+      // Verify that we can retrieve the set entities, and that all are there
+      mesh->get_set_entities(reg_name,Amanzi::AmanziMesh::NODE,Amanzi::AmanziMesh::OWNED,&setents);
+      for (int i=0; i!=nents; ++i) CHECK_EQUAL(i, setents[i]);
+
+      nents = mesh->num_entities(Amanzi::AmanziMesh::NODE, Amanzi::AmanziMesh::USED);
+      set_size = mesh->get_set_size(reg_name,Amanzi::AmanziMesh::NODE,Amanzi::AmanziMesh::USED);
+      CHECK_EQUAL(nents, set_size);
+      
+      // Verify that we can retrieve the set entities, and that all are there
+      mesh->get_set_entities(reg_name,Amanzi::AmanziMesh::NODE,Amanzi::AmanziMesh::USED,&setents);
+      for (int i=0; i!=nents; ++i) CHECK_EQUAL(i, setents[i]);
+      
+    } else if (shape == "region: plane") {
 
       if (reg_name == "ZLO FACE Plane") {
 

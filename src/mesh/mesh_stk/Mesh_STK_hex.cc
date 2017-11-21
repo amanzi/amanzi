@@ -99,7 +99,8 @@ Mesh_STK::Mesh_STK(const Epetra_MpiComm *comm_,
                    const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm,
                    const Teuchos::RCP<const VerboseObject>& verbobj,
                    const bool request_faces,
-                   const bool request_edges) 
+                   const bool request_edges,
+                   const Partitioner_type partitioner) 
 : mesh_(), 
   map_owned_(), map_used_(),
   Mesh(verbobj,request_faces,request_edges)
@@ -120,7 +121,8 @@ Mesh_STK::Mesh_STK(const double x0, const double y0, const double z0,
                    const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm,
                    const Teuchos::RCP<const VerboseObject>& verbobj,
                    const bool request_faces,
-                   const bool request_edges)
+                   const bool request_edges,
+                   const Partitioner_type partitioner)
   : mesh_(), 
     map_owned_(), map_used_(),
     Mesh(verbobj,request_faces,request_edges)  
@@ -154,7 +156,8 @@ Mesh_STK::Mesh_STK (const double x0,
                     const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm,
                     const Teuchos::RCP<const VerboseObject>& verbobj,
 		    const bool request_faces,
-		    const bool request_edges) 
+		    const bool request_edges,
+                    const Partitioner_type partitioner) 
   : mesh_(),
     map_owned_(), map_used_(),
     Mesh(verbobj,request_faces,request_edges)
@@ -170,7 +173,8 @@ Mesh_STK::Mesh_STK(Teuchos::ParameterList &parameter_list,
                    const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm,
                    const Teuchos::RCP<const VerboseObject>& verbobj,
                    const bool request_faces,
-                   const bool request_edges)
+                   const bool request_edges,
+                   const Partitioner_type partitioner)
   : mesh_(), 
     map_owned_(), map_used_(),
     Mesh(verbobj,request_faces,request_edges)
@@ -191,7 +195,8 @@ Mesh_STK::Mesh_STK(const GenerationSpec& gspec,
                    const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm,
                    const Teuchos::RCP<const VerboseObject>& verbobj,
                    const bool request_faces,
-                   const bool request_edges)
+                   const bool request_edges,
+                   const Partitioner_type partitioner)
   : mesh_(), 
     map_owned_(), map_used_(),
     Mesh(verbobj,request_faces,request_edges)

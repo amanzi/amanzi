@@ -63,6 +63,8 @@ TEST(SURFACE_COLUMN_MESH_3D)
               lx,ly,lz,nx,ny,nz,
               &comm, gm));
 
+  CHECK_EQUAL(1, mesh->build_columns());
+  
   // Perturb the nodes above the base layer just a bit
   int nnodes = mesh->num_entities(Amanzi::AmanziMesh::NODE,
           Amanzi::AmanziMesh::OWNED);
@@ -138,6 +140,9 @@ TEST(SURFACE_COLUMN_MESH_3D_UNSTRUCTURED)
       Teuchos::rcp(new Amanzi::AmanziMesh::Mesh_MSTK("test/slab-0.05-5x4x25.exo", &comm, 3, gm));
 
   CHECK_EQUAL(20, mesh->get_set_size("surface",Amanzi::AmanziMesh::FACE, Amanzi::AmanziMesh::USED));
+
+  // Build columns in the mesh
+  CHECK_EQUAL(1, mesh->build_columns());
   
   // Create a column mesh from one of the columns
   Amanzi::AmanziMesh::MeshColumn colmesh(*mesh,10);

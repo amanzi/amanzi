@@ -38,7 +38,8 @@ add_amanzi_library(mesh SOURCE Mesh.cc
 #
 # Library: mesh_audit
 #
-add_amanzi_library(mesh_audit SOURCE MeshAudit.cc LINK_LIBS error_handling ${Epetra_LIBRARIES})
+add_amanzi_library(mesh_audit SOURCE MeshAudit.cc 
+	                      LINK_LIBS mesh error_handling ${Epetra_LIBRARIES})
 
 #
 # Install Header files
@@ -77,7 +78,6 @@ add_subdirectory(mesh_factory)
 add_subdirectory(mesh_logical)
 
 
-
 if (BUILD_TESTS)
 
     # Include dirs for test
@@ -85,8 +85,6 @@ if (BUILD_TESTS)
     include_directories(${MESH_FACTORY_SOURCE_DIR})
     include_directories(${GEOMETRY_SOURCE_DIR})
     include_directories(${Epetra_INCLUDE_DIRS})
-
-    # Add UnitTest ExodusII include directories
     include_directories(${UnitTest_INCLUDE_DIRS})
 
     # Need to copy files for the tests 

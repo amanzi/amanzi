@@ -14,6 +14,7 @@
 
 #include "Region.hh"
 #include "RegionBox.hh"
+#include "MeshDefs.hh"
 
 namespace Teuchos {
   class ParameterList;
@@ -63,6 +64,8 @@ class GenerationSpec {
   AmanziGeometry::RegionVector::const_iterator block_end(void) const
   { return blocks_.end(); }
 
+  Partitioner_type partitioner() const { return partitioner_; }
+
  protected:
   
   /// overall mesh domain  FIXME: We already have a domain
@@ -74,6 +77,8 @@ class GenerationSpec {
   unsigned int nz_;                     /**< number of cells in the y-direction */
 
   AmanziGeometry::RegionVector blocks_; /**< list of mesh subdomains */
+
+  Partitioner_type partitioner_ = PARTITIONER_DEFAULT;  /**< partitioner type */
 
   /// fill attributes from specified list
   void parse_(const Teuchos::ParameterList &parameter_list);

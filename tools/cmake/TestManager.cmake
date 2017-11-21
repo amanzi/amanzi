@@ -8,18 +8,16 @@ include(CMakeParseArguments)
 include(PrintVariable)
 
 function(_APPEND_TEST_LABEL test_name label)
-
   get_test_property(${test_name} LABELS current_labels)
   if (current_labels)
     set_tests_properties(${test_name} PROPERTIES LABELS "${current_labels};${label}")
   else()  
     set_tests_properties(${test_name} PROPERTIES LABELS "${label}")
   endif()
-
 endfunction(_APPEND_TEST_LABEL)
 
-function(_ADD_TEST_KIND_LABEL test_name kind_in)
 
+function(_ADD_TEST_KIND_LABEL test_name kind_in)
   set(kind_prefixes UNIT INT REG AMANZI)
 
   string(TOUPPER "${kind_in}" kind)
@@ -36,7 +34,6 @@ function(_ADD_TEST_KIND_LABEL test_name kind_in)
   else()
     message(FATAL_ERROR "Invalid test label ${kind_in} (Valid Labels:${kind_prefixes})")
   endif()
-
 endfunction(_ADD_TEST_KIND_LABEL)
 
 
@@ -88,7 +85,6 @@ endfunction(_ADD_TEST_KIND_LABEL)
 # test_name
 
 function(ADD_AMANZI_TEST test_name)
-
   # --- Initialize 
 
   # Check test_name
@@ -176,7 +172,6 @@ function(ADD_AMANZI_TEST test_name)
     if(AMANZI_TEST_LINK_LIBS)
       target_link_libraries(${test_exec} ${AMANZI_TEST_LINK_LIBS})
     endif()
-
   endif()  
 
   
@@ -191,7 +186,6 @@ function(ADD_AMANZI_TEST test_name)
     endif()
 
     set(test_args "--xml_file=${AMANZI_TEST_AMANZI_INPUT};${test_args}")
-
   endif()  
 
   # --- Add test

@@ -23,12 +23,16 @@
 #include "InputConverterS.hh"
 
 
+void* getLevelBld() { return NULL; }
+
+
 /* **************************************************************** */
 TEST(CONVERTER_S) {
   using namespace Amanzi;
 
   int rank;
-  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+  // MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+  rank = 0;
   if (rank == 0) std::cout << "Test: convert v2.x -> ParmParse test" << std::endl;
 
   // read parameter list

@@ -4,8 +4,6 @@
 #include "RegionEnumerated.hh"
 #include "MeshLogicalFactory.hh"
 
-#include "plant_1D_mesh.hh"
-
 namespace Amanzi {
 namespace AmanziMesh {
 
@@ -501,14 +499,6 @@ MeshLogicalFactory::AddSet(const std::string& set_name,
 // One-stop shop -- create the whole thing from PList  
 Teuchos::RCP<MeshLogical>
 MeshLogicalFactory::Create(Teuchos::ParameterList& plist) {
-  // check for compiled meshes
-  if (plist.isParameter("plant mesh")) {
-    std::string meshname = plist.get<std::string>("plant mesh");
-    if (meshname == "1D test mesh") {
-      return Testing::plantMesh(comm_, gm_, true);
-    }
-  }
-  
   // Create each segment
   // - map to store metadata about previously inserted segments
   std::map<std::string, Entity_ID_List> seg_cells;

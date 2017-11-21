@@ -10,6 +10,7 @@
 #include "UnitTest++.h"
 
 #include "CycleDriver.hh"
+#include "eos_registration.hh"
 #include "MeshFactory.hh"
 #include "Mesh.hh"
 #include "PK_Factory.hh"

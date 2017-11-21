@@ -53,7 +53,7 @@ add_amanzi_library(mesh_functions
                            MaterialMeshFunction.hh
                            ColumnMeshFunction.hh
                            ExodusIIMeshFunction.hh
-                   LINK_LIBS error_handling functions mesh ${Teuchos_LIBRARIES})
+                   LINK_LIBS mesh data_structures error_handling functions ${Teuchos_LIBRARIES})
 
 # Define all tests at the of the file. BUILD_TESTS gates test building.
 if (BUILD_TESTS)
@@ -76,18 +76,20 @@ if (BUILD_TESTS)
   add_amanzi_test(boundary_function boundary_function
                   KIND unit
                   SOURCE test/boundary_function.cc
-                  LINK_LIBS mesh_functions mesh_factory ${UnitTest_LIBRARIES})
+                  LINK_LIBS mesh_functions mesh_factory data_structures
+                            ${UnitTest_LIBRARIES} ${NOX_LIBRARIES})
 
   add_amanzi_test(material_function material_function
                   KIND unit
                   SOURCE test/material_function.cc
-                  LINK_LIBS mesh_functions mesh_factory ${UnitTest_LIBRARIES})
+                  LINK_LIBS mesh_functions mesh_factory data_structures
+                            ${UnitTest_LIBRARIES} ${NOX_LIBRARIES})
 
   add_amanzi_test(cv_function cv_function
                   KIND unit
                   SOURCE test/composite_vector_function.cc
                   LINK_LIBS  mesh_functions mesh_factory data_structures 
                              ${UnitTest_LIBRARIES} ${Boost_LIBRARIES} 
-                             ${MSTK_LIBRARIES})
+                             ${MSTK_LIBRARIES} ${NOX_LIBRARIES})
 
 endif()

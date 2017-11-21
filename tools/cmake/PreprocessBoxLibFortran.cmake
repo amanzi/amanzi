@@ -68,11 +68,13 @@ function(preprocess_boxlib_fortran OUTVAR)
         list(APPEND PREPROCESS_FLAGS "-traditional")
       elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
         list(APPEND PREPROCESS_FLAGS "-traditional")
+      elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Intel")
+        list(APPEND PREPROCESS_FLAGS "-extend-source")
       endif()
 
       add_custom_command(
         OUTPUT ${of}
-        COMMAND ${CMAKE_C_COMPILER} -E ${PREPROCESS_FLAGS} ${inclflags} ${defflags} ${f} |
+	COMMAND ${CMAKE_Fortran_COMPILER} -E ${PREPROCESS_FLAGS} ${inclflags} ${defflags} ${f} |
                  ${PERL_EXECUTABLE} ${CCSE_PERL_DIR}/strip72 -c > ${of}
         DEPENDS ${f}
         COMMENT "Preprocessing ${f}..."

@@ -10,11 +10,12 @@
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_ParameterXMLFileReader.hpp"
 
-#include "State.hh"
 #include "CycleDriver.hh"
+#include "eos_registration.hh"
 #include "PK_Factory.hh"
 #include "PK.hh"
 #include "pks_dummy_registration.hh"
+#include "State.hh"
 
 #include "MeshFactory.hh"
 #include "Mesh.hh"

@@ -1184,6 +1184,7 @@ std::string InputConverter::CreateINFile_(std::string& filename, int rank)
 {
   MemoryManager mm;
   DOMNode* node;
+  DOMNode* base;
   DOMElement* element;
 
   std::ofstream in_file;
@@ -1202,7 +1203,7 @@ std::string InputConverter::CreateINFile_(std::string& filename, int rank)
   std::stringstream decayrates;
   std::stringstream controls;
   
-  double first_cation;
+  int first_cation;
 
   // database filename and controls
   bool flag;
@@ -1212,33 +1213,39 @@ std::string InputConverter::CreateINFile_(std::string& filename, int rank)
   
   controls << "  DATABASE " << datfilename.c_str() << "\n";
 
-  node = GetUniqueElementByTagsString_("numerical_controls, unstructured_controls, unstr_chemistry_controls, activity_coefficients", flag);
-  std::string tmp("  ACTIVITY_COEFFICIENTS TIMESTEP");
+  base = GetUniqueElementByTagsString_("numerical_controls, unstructured_controls, unstr_chemistry_controls", flag);
   if (flag) {
-    std::string value = TrimString_(mm.transcode(node->getTextContent()));
-    if (value == "off") {
-      tmp =  "  ACTIVITY_COEFFICIENTS OFF";
+    node = GetUniqueElementByTagsString_(base, "activity_coefficients", flag);
+    std::string tmp("  ACTIVITY_COEFFICIENTS TIMESTEP");
+    if (flag) {
+      std::string value = TrimString_(mm.transcode(node->getTextContent()));
+      if (value == "off") {
+        tmp =  "  ACTIVITY_COEFFICIENTS OFF";
+      }
     }
-  }
-  controls << tmp << "\n";
-  node = GetUniqueElementByTagsString_("numerical_controls, unstructured_controls, unstr_chemistry_controls, log_formulation", flag);
-  if (flag) {
-    std::string value = TrimString_(mm.transcode(node->getTextContent()));
-    if (value == "on") {
+    controls << tmp << "\n";
+
+    node = GetUniqueElementByTagsString_(base, "log_formulation", flag);
+    if (flag) {
+      std::string value = TrimString_(mm.transcode(node->getTextContent()));
+      if (value == "on") {
+        controls << "  LOG_FORMULATION \n";
+      }
+    } else {
       controls << "  LOG_FORMULATION \n";
     }
-  } else {
-    controls << "  LOG_FORMULATION \n";
-  }
-  node = GetUniqueElementByTagsString_("numerical_controls, unstructured_controls, unstr_chemistry_controls, max_relative_change_tolerance", flag);
-  if (flag) {
-    std::string value = TrimString_(mm.transcode(node->getTextContent()));
-    controls << "  MAX_RELATIVE_CHANGE_TOLERANCE " << value << "\n";
-  }
-  node = GetUniqueElementByTagsString_("numerical_controls, unstructured_controls, unstr_chemistry_controls, max_residual_tolerance", flag);
-  if (flag) {
-    std::string value = TrimString_(mm.transcode(node->getTextContent()));
-    controls << "  MAX_RESIDUAL_TOLERANCE " << value << "\n";
+
+    node = GetUniqueElementByTagsString_(base, "max_relative_change_tolerance", flag);
+    if (flag) {
+      std::string value = TrimString_(mm.transcode(node->getTextContent()));
+      controls << "  MAX_RELATIVE_CHANGE_TOLERANCE " << value << "\n";
+    }
+
+    node = GetUniqueElementByTagsString_(base, "max_residual_tolerance", flag);
+    if (flag) {
+      std::string value = TrimString_(mm.transcode(node->getTextContent()));
+      controls << "  MAX_RESIDUAL_TOLERANCE " << value << "\n";
+    }
   }
 
   // set up Chemistry Options ParameterList
@@ -1316,15 +1323,17 @@ std::string InputConverter::CreateINFile_(std::string& filename, int rank)
       
       element = static_cast<DOMElement*>(inode);
       double rate = GetAttributeValueD_(element, "rate_constant", TYPE_NUMERICAL, "", false, 0.0);
+      // double val = GetAttributeValueD_(element, "rate_constant", TYPE_NUMERICAL, "mol/m^2/s", false, 0.0);
+      // double rate = units_.ConvertUnitD(val, "mol/m^2/s", "mol/cm^2/s", -1.0, flag);
+      
       mineral_kinetics << "    " << name << "\n";
-      mineral_kinetics << "      RATE_CONSTANT " << rate << "\n";
+      mineral_kinetics << "      RATE_CONSTANT " << rate << " mol/cm^2-sec\n";
 
       if (element->hasAttribute(mm.transcode("prefactor_species"))) {
 	std::string species = GetAttributeValueS_(element, "prefactor_species");
         double alpha = GetAttributeValueD_(element, "alpha");
         mineral_kinetics << "      PREFACTOR\n";
-        //mineral_kinetics << "        RATE_CONSTANT " << rate/10000. << "  mol/cm^2-sec\n";
-        mineral_kinetics << "        RATE_CONSTANT " << rate << "\n";
+        mineral_kinetics << "        RATE_CONSTANT " << rate << " mol/cm^2-sec\n";
         mineral_kinetics << "        PREFACTOR_SPECIES " << species << "\n";
         mineral_kinetics << "          ALPHA " << alpha << "\n";
         mineral_kinetics << "        /\n";
@@ -1526,7 +1535,7 @@ std::string InputConverter::CreateINFile_(std::string& filename, int rank)
     cations << "      CEC " << cec << "\n";
     cations << "      CATIONS\n";
     // print primary cation first (this matters to pflotran)
-    cations << "        " << names[first_cation] << " " << values[first_cation] << "\n";
+    cations << "        " << names[first_cation] << " " << values[first_cation] << " REFERENCE\n";
     for (int i = 0; i < names.size(); i++) {
       if (i != first_cation)  cations << "        " << names[i] << " " << values[i] << "\n";
     }

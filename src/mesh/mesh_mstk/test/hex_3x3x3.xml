@@ -1,4 +1,9 @@
 <ParameterList name="regions">
+  <ParameterList name="Entire Mesh">
+    <ParameterList name="region: all">
+      <Parameter name="entity" type="string" value="cell"/>
+    </ParameterList>
+  </ParameterList>
   <ParameterList name="Bottom LS">
     <ParameterList name="region: labeled set">
       <Parameter name="label" type="string" value="10000"/>

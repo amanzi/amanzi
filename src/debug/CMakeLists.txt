@@ -28,10 +28,9 @@ include_directories(${ATK_SOURCE_DIR})
 add_amanzi_library(dbg
                    SOURCE DataDebug.cc InputAnalysis.cc
                    HEADERS DataDebug.hh InputAnalysis.hh
-		   LINK_LIBS mesh geometry error_handling ${Teuchos_LIBRARIES}  
-                   )
+		   LINK_LIBS mesh geometry atk error_handling ${Teuchos_LIBRARIES})
+
 if (BUILD_TESTS)
-  
     # Add UnitTest include directoy
     include_directories(${UnitTest_INCLUDE_DIRS})
 
@@ -47,8 +46,7 @@ if (BUILD_TESTS)
     ADD_AMANZI_TEST(utils test_dbg
                     KIND unit
                     SOURCE test/Main.cc test/test_dbg.cc
-                    LINK_LIBS dbg ${UnitTest_LIBRARIES} )
-
+                    LINK_LIBS dbg atk error_handling ${UnitTest_LIBRARIES})
 endif()
 
 

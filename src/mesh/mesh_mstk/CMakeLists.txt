@@ -69,7 +69,6 @@ add_amanzi_library(mstk_mesh
 
 if (BUILD_TESTS)
     
-    # Add UnitTest ExodusII include directories
     include_directories(${UnitTest_INCLUDE_DIRS})
 
     # Need to copy files for the tests 
@@ -78,11 +77,24 @@ if (BUILD_TESTS)
           copy_directory ${MSTK_SOURCE_DIR}/test ${MSTK_BINARY_DIR}/test) 
     endif()
 
-    #Test: elim_degen_mstk
-    add_amanzi_test(mstk_po_test mstk_po_test
+    #Test: eliminate degeneracies for serial mesh
+    add_amanzi_test(mstk_pinchout_test mstk_pinchout_test
                     KIND int
-                    SOURCE
-                         test/test_pinchouts.cc
+                    SOURCE test/Main.cc test/test_pinchouts.cc
+                    LINK_LIBS mstk_mesh mesh_factory mesh_audit ${UnitTest_LIBRARIES})
+
+    #Test: eliminate degeneracies in parallel mesh created from inline partitioning
+    add_amanzi_test(mstk_pinchout_test_par mstk_pinchout_test_par
+                    KIND int
+		    NPROCS 4
+                    SOURCE test/Main.cc test/test_pinchouts.cc
+                    LINK_LIBS mstk_mesh mesh_factory mesh_audit ${UnitTest_LIBRARIES})
+
+    #Test: eliminate degeneracies in pre-partitioned parallel mesh
+    add_amanzi_test(mstk_pinchout_test_prepart mstk_pinchout_test_prepart
+                    KIND int
+		    NPROCS 4
+                    SOURCE test/Main.cc test/test_degen_prepart.cc
                     LINK_LIBS mstk_mesh mesh_factory mesh_audit ${UnitTest_LIBRARIES})
 
     # Test: mstk_mesh
@@ -97,9 +109,10 @@ if (BUILD_TESTS)
                          test/test_hex_gen_3x3x3.cc
                          test/test_quad_gen_3x3.cc
                          test/test_extract_surface.cc
-			             test/test_extract_column.cc
+ 			 test/test_extract_column.cc
                          test/test_deform_vols.cc
                     LINK_LIBS mstk_mesh mesh_audit ${UnitTest_LIBRARIES}) 
+
 
     # Test: mstk_mesh_parallel
     add_amanzi_test(mstk_mesh_parallel mstk_mesh_parallel
@@ -112,9 +125,9 @@ if (BUILD_TESTS)
                          test/test_hex_3x3x3_par_read_4P.cc
                          test/test_quad_gen_3x3_4P.cc
                          test/test_hex_gen_3x3x3_4P.cc
-			             test/test_edges_4P.cc
-    			         test/test_extract_surface_4P.cc
-    			         test/test_extface_map_4P.cc
+                         test/test_edges_4P.cc
+                         test/test_extract_surface_4P.cc
+		         test/test_extface_map_4P.cc
                          test/test_deform_vols.cc
                     LINK_LIBS mstk_mesh mesh_audit ${UnitTest_LIBRARIES})
 
@@ -124,7 +137,7 @@ if (BUILD_TESTS)
                     SOURCE
                           test/Main.cc 
                           test/test_column_mesh.cc 
-                    LINK_LIBS mstk_mesh geometry ${UnitTest_LIBRARIES})
+			  LINK_LIBS mstk_mesh geometry ${UnitTest_LIBRARIES})
     # Test: extracted surface from column_mesh
     add_amanzi_test(mstk_surface_column_mesh mstk_surface_column_mesh
                     KIND unit

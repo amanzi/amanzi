@@ -57,8 +57,10 @@ set(pks_src_files PK_Default.cc
    )
 
 add_amanzi_library(pks
-                   SOURCE ${pks_src_files} HEADERS ${pks_inc_files}
-                   LINK_LIBS )
+                   SOURCE ${pks_src_files}
+                   HEADERS ${pks_inc_files}
+		   LINK_LIBS state data_structures error_handling atk
+                             ${Epetra_LIBRARIES})
 
 #
 # Install Targets

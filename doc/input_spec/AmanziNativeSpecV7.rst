@@ -1641,19 +1641,35 @@ Again, constant functions can be replaced by any of the available functions.
 
 * `"spatial distribution method`" [string] is the method for distributing
   source Q over the specified regions. The available options are `"volume`",
-  `"none`", and `"permeability`".
+  `"none`", `"permeability`" and `"simple well`".
   For option `"none`", the source term function Q is measured in [kg/m^3/s]. 
   For the other options, it is measured in [kg/s]. 
   When the source function is defined over a few regions, Q is distributed over their union.
-  Option `"volume fraction`" can be used when the region geometric model support volume fractions.
+  Option `"volume fraction`" can be used when the region geometric
+  model support volume fractions. Option `"simple well`" provides
+  capability to model source term by Peaceman model. The well flux is
+  defined as q_w = WI(p - p_w), where WI is the well index and p_w is
+  the well pressure and q_w [kg/s] is the well flux. The pressure in
+  a well is assumed to be hydrostatic.
 
 * `"use volume fractions`" instructs the code to use all available volume fractions. 
   Note that the region geometric model supports volume fractions only for a few regions.
 
-* `"submodel`" [string] refines definition of the source. Available options are `"rate`"
-  and `"integrated source`". The first option defines the source in a natural way as the rate 
+* `"submodel`" [string] refines definition of the source. Available options are `"rate`",
+  `"integrated source`" and `"bhp"`. The first option defines the source in a natural way as the rate 
   of change `q`. The second option defines the indefinite integral `Q` of the rate 
-  of change, i.e. the source term is calculated as `q = dQ/dt`. Default is `"rate`".
+  of change, i.e. the source term is calculated as `q =
+  dQ/dt`. Default is `"rate`". In the case of `"simple well`"
+  distribution method two submodel options are available: `"rate`" and
+  `"bhp`" (bottom hole pressure)
+
+* In the case of a `"simple well`" model and `"bhp`" submodel the
+  following parameters has to be defined: `"depth"`, `"well radius`"
+  and `"bhp`" pressure. In the case of  `"simple well`" model and
+  `"rate`" submodel only rate function has to be defined. `"integrated
+  source`" is not supported for `"simple well`".
+
+
 
 .. code-block:: xml
 
@@ -1679,6 +1695,37 @@ Again, constant functions can be replaced by any of the available functions.
            </ParameterList>
          </ParameterList>
        </ParameterList>
+
+       <ParameterList name="SRC 2">
+         <Parameter name="regions" type="Array(string)" value="{WellCenter}"/>
+           <Parameter name="spatial distribution method" type="string" value="simple well"/>    
+           <ParameterList name="well">
+             <Parameter name="submodel" type="string" value="bhp"/>
+             <Parameter name="depth" type="double" value="-2.5"/>
+             <Parameter name="well radius" type="double" value="0.1"/>
+             <ParameterList name="bhp">
+               <ParameterList name="function-constant">
+                 <Parameter name="value" type="double" value="10.0"/>
+               </ParameterList>
+             </ParameterList>
+           </ParameterList>
+         </ParameterList>
+       </ParameterList>
+
+       <ParameterList name="SRC 3">
+         <Parameter name="regions" type="Array(string)" value="{WellCenter2}"/>
+           <Parameter name="spatial distribution method" type="string" value="simple well"/>
+           <ParameterList name="well">
+             <Parameter name="submodel" type="string" value="rate"/>
+             <ParameterList name="rate">
+               <ParameterList name="function-constant">
+                 <Parameter name="value" type="double" value="100.0"/>
+               </ParameterList>
+             </ParameterList>
+           </ParameterList>
+         </ParameterList>
+       </ParameterList>
+
      </ParameterList>
    </ParameterList>
 
@@ -5467,6 +5514,13 @@ limited to file name generation and writing frequency, by numerical cycle number
 
   * `"times`" [Array(double)] an array of discrete times that at which a visualization dump shall be written.
 
+  * `"write regions`" [list] contains three lists of equal size with region names,
+    material names, and material ids to write into the output file.
+
+    * `"region names`" [Array(string)] specifies names of regions.
+    * `"material names`" [Array(int)] specifies names of materials. 
+    * `"material ids`" [Array(int)] specifies material ids. 
+
 .. code-block:: xml
 
    <ParameterList>  <!-- parent list -->
@@ -5480,6 +5534,12 @@ limited to file name generation and writing frequency, by numerical cycle number
        <Parameter name="times start period stop 0" type="Array(double)" value="{0.0, 10.0, 100.0}"/>
        <Parameter name="times start period stop 1" type="Array(double)" value="{100.0, 25.0, -1.0}"/>
        <Parameter name="times" type="Array(double)" value="{101.0, 303.0, 422.0}"/>
+
+       <ParameterList name="write regions">
+         <Parameter name="region names" type="Array(string)" value="{REGION1, REGION2}"/>
+         <Parameter name="material names" type="Array(string)" value="{MAT1, MAT2}"/>
+         <Parameter name="material ids" type="Array(int)" value="{1000, 2000}"/>
+       </ParameterList>
      </ParameterList>
    </ParameterList>
 

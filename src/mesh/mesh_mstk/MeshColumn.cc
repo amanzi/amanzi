@@ -33,7 +33,7 @@ MeshColumn::MeshColumn(const Mesh& inmesh,
   set_space_dimension(3);
   set_manifold_dimension(3);
   //  set_manifold_dimension(1); // ETC: this should be done, but it breaks overland flow
-  
+
   // compute special geometric quantities for column entities (node
   // coordinates, face centroids, cell centroids, face areas)
   compute_special_node_coordinates_();
@@ -105,6 +105,9 @@ void MeshColumn::compute_special_node_coordinates_() {
   // are vertical and the face is symmetrical about the centroid, the
   // error will be zero.
 
+  // First build info about column topology
+  extracted_.build_columns();
+  
   // Get the ordered face indexes of the column
   const Entity_ID_List& colfaces = extracted_.faces_of_column(0);
   column_faces_ = colfaces;

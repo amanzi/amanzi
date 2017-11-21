@@ -4,14 +4,15 @@
 #include "Epetra_Vector.h"
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_VerboseObject.hpp"
+
 #include "Mesh.hh"
+#include "VerboseObject_objs.hh"
 
 namespace Amanzi {
 
 class DataDebug {
 
  public:
-  
   explicit DataDebug(Teuchos::RCP<AmanziMesh::Mesh> mesh);
   ~DataDebug() {}
 

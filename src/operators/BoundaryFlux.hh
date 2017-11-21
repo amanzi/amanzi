@@ -20,9 +20,9 @@ namespace Amanzi {
 #define DEBUG_FLAG 0
 
 /* ******************************************************************
-* Nonlinear function F(x) = k(p0 - x) * [(T*d) * (p - x) + g] - bc
+* Nonlinear function F(x) = k(p0 - x) * [(T*dir) * (p - x) + g] - bc
 * where k is the nonlinear function provided by the model
-* and p0, T, d, p, g, bc are constant parameters.
+* and p0, T, dir, p, g, bc are constant parameters.
 ****************************************************************** */
 template <class Model>
 class BoundaryFluxFn {

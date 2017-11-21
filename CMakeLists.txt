@@ -14,6 +14,8 @@ cmake_minimum_required(VERSION 3.1.3)
 # cmake_policy(SET CMP0048 OLD)
 
 set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+#set(CMAKE_CXX_EXTENSIONS OFF)
 
 # Enable testing, ctest needs this
 # all add_test commands are ignored unless this is called!
@@ -53,6 +55,16 @@ include(AmanziTPL)
 # ETC: this is wrong, should point to TPLs, but not necessarily installed here, meaning that lots of ld warnings show up.
 #link_directories(${CMAKE_INSTALL_PREFIX}/tpls/lib)
 
+# shared libraries tweaks for OSX
+if (APPLE) 
+  set(CMAKE_SKIP_BUILD_RPATH FALSE)
+  set(CMAKE_SKIP_INSTALL_RPATH FALSE)
+  set(CMAKE_BUILD_WITH_INSTALL_RPATH FALSE)
+  set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE) 
+  set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
+  set(CMAKE_INSTALL_NAME_DIR "${CMAKE_INSTALL_RPATH}")
+endif()
+
 # Check the mesh framework choice
 if ( (ENABLE_Unstructured)  AND
      (NOT ENABLE_STK_Mesh)  AND
@@ -85,7 +97,7 @@ add_subdirectory(src)
 # EIB - uncommenting this will include the verification/benchmarking tests
 include(CTest)
 if (ENABLE_Regression_Tests)
-    add_subdirectory(testing) 
+  add_subdirectory(testing) 
 endif()
 
 
@@ -104,22 +116,21 @@ set(AMANZI_CONFIG_LOG "${AMANZI_BINARY_DIR}/amanzi-config.log"
     CACHE string "Amanzi configuration log file")
 include(AmanziConfigReport)
 if (ENABLE_Config_Report)
-    set(cat_exec "cat")
-    if (WIN32)
-        if( NOT UNIX)
-            set(cat_exec "type")
-        endif(NOT UNIX)
-    endif(WIN32)
+  set(cat_exec "cat")
+  if (WIN32)
+    if (NOT UNIX)
+      set(cat_exec "type")
+    endif(NOT UNIX)
+  endif(WIN32)
 
-    execute_process(COMMAND "${cat_exec}" "${AMANZI_CONFIG_LOG}" OUTPUT_VARIABLE config_output)
-    print_variable(cat_exec)
-    print_variable(AMANZI_CONFIG_LOG)
-    print_variable(config_output)
-    message(STATUS "********************************************************************************")
-    message(STATUS "begin configuration output --\n${config_output}")
-    message(STATUS "end configuration output --")
-    message(STATUS "********************************************************************************")
-
+  execute_process(COMMAND "${cat_exec}" "${AMANZI_CONFIG_LOG}" OUTPUT_VARIABLE config_output)
+  print_variable(cat_exec)
+  print_variable(AMANZI_CONFIG_LOG)
+  print_variable(config_output)
+  message(STATUS "********************************************************************************")
+  message(STATUS "begin configuration output --\n${config_output}")
+  message(STATUS "end configuration output --")
+  message(STATUS "********************************************************************************")
 endif() 
 
 #

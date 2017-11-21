@@ -116,22 +116,22 @@ if __name__ == "__main__":
     import os
     import run_amanzi_standard
 
-    input_filename =os.path.join("amanzi_theis_isotropic_1d-isv2.xml")
+    input_file =os.path.join("amanzi_theis_isotropic_1d-u.xml")
 
     cwd = os.getcwd()
     try: 
         max_np = 10
-        run_amanzi_standard.run_amanzi(input_filename, max_np)
-        obs_xml=loadInputXML(input_filename)
+        run_amanzi_standard.run_amanzi(input_file, max_np, [input_file])
+        obs_xml=loadInputXML(input_file)
         obs_data=loadDataFile(obs_xml)
 
         fig1= plt.figure()
         axes1=fig1.add_axes([.1,.1,.8,.8])
        
         cmap = plotTheisObservations(obs_xml,obs_data,axes1)
-        plotTheisAnalytic(input_filename,cmap,axes1,obs_xml,obs_data)
+        plotTheisAnalytic(input_file,cmap,axes1,obs_xml,obs_data)
         # plt.show()
-        MakeTable(obs_data,obs_xml,input_filename)
+        MakeTable(obs_data,obs_xml,input_file)
 
     finally:
         os.chdir(cwd)

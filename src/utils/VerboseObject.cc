@@ -15,7 +15,7 @@
 */
 
 #include "Teuchos_VerboseObjectParameterListHelpers.hpp"
-#include "Epetra_MpiComm.h"
+#include "Epetra_Comm.h"
 
 #include "VerboseObject.hh"
 
@@ -24,8 +24,7 @@ namespace Amanzi {
 /* ******************************************************************
 * Create parameter list with the given verbosity.
 ****************************************************************** */
-VerboseObject::VerboseObject(std::string name, const std::string& verbosity) :
-    comm_(NULL)
+VerboseObject::VerboseObject(std::string name, const std::string& verbosity)
 {
   setDefaultVerbLevel(global_default_level);
   set_name(name);
@@ -45,8 +44,7 @@ VerboseObject::VerboseObject(std::string name, const std::string& verbosity) :
 /* ******************************************************************
 * Read verbosity from a parameter list
 ****************************************************************** */
-VerboseObject::VerboseObject(std::string name, Teuchos::ParameterList& plist) :
-    comm_(NULL)
+VerboseObject::VerboseObject(std::string name, Teuchos::ParameterList& plist)
 {
   // Set up the default level.
   setDefaultVerbLevel(global_default_level);
@@ -78,11 +76,11 @@ VerboseObject::VerboseObject(std::string name, Teuchos::ParameterList& plist) :
 }
 
 
-VerboseObject::VerboseObject(const Epetra_MpiComm* const comm, std::string name,
+VerboseObject::VerboseObject(const Epetra_Comm& comm, std::string name,
                              Teuchos::ParameterList& plist) :
-    comm_(comm)
+    comm_(Teuchos::rcp(comm.Clone()))
 {
-  int root = -1;
+  int root = 0;
   // Check if we are in the mode of writing only a specific rank.
   if (plist.sublist("verbose object").isParameter("write on rank")) {
     root = plist.sublist("verbose object").get<int>("write on rank");

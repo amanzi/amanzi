@@ -41,6 +41,7 @@
         <solutes>
           <solute coefficient_of_diffusion="0.0">CO3--</solute>
           <solute coefficient_of_diffusion="0.0">Ca++</solute>
+	  <solute coefficient_of_diffusion="0.0">Tracer</solute>
         </solutes>
       </dissolved_components>
     </liquid_phase>
@@ -152,6 +153,7 @@
         <solute_component name="solute">
           <uniform_conc name="CO3--" value="1e-10" />
           <uniform_conc name="Ca++" value="1e-10" />
+	  <uniform_conc name="Tracer" value="1e-10" />
         </solute_component>
       </liquid_phase>
     </initial_condition>
@@ -167,6 +169,7 @@
         <solute_component name="solute">
           <aqueous_conc name="CO3--" value="1e-10" function="constant" start="0.0"/>
           <aqueous_conc name="Ca++" value="5e-2" function="constant" start="0.0"/>
+	  <aqueous_conc name="Tracer" value="1e-2" function="constant" start="0.0"/>
         </solute_component> 
       </liquid_phase>
     </boundary_condition>
@@ -180,6 +183,7 @@
         <solute_component name="solute">
           <aqueous_conc name="CO3--" value="5e-2" function="constant" start="0.0"/>
           <aqueous_conc name="Ca++" value="1e-10" function="constant" start="0.0"/>
+	  <aqueous_conc name="Tracer" value="1e-10" function="constant" start="0.0"/>
         </solute_component> 
       </liquid_phase>
     </boundary_condition>

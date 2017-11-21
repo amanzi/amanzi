@@ -56,10 +56,11 @@ class MeshFactory {
 
   Teuchos::RCP<const VerboseObject> vo_;
 
+  Partitioner_type partitioner_ = PARTITIONER_DEFAULT;
  public:
 
   /// Default constructor.
-  explicit MeshFactory(const Epetra_MpiComm *comm_unicator, 
+  explicit MeshFactory(const Epetra_MpiComm *communicator, 
                        const Teuchos::RCP<const VerboseObject>& vo = Teuchos::null);
 
   /// Destructor
@@ -71,6 +72,16 @@ class MeshFactory {
 
   /// Set the framework preference
   void preference(const FrameworkPreference& pref);
+
+  /// Get the partitioner for meshes to be created
+  Partitioner_type partitioner(void) const {
+    return partitioner_;
+  }
+
+  /// Set the partitioner
+  void set_partitioner(Partitioner_type partitioner) {
+    partitioner_ = partitioner;
+  }
 
   /// Create a mesh by reading the specified file (or set of files)
   Teuchos::RCP<Mesh> create(const std::string& filename, 

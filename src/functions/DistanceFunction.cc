@@ -11,6 +11,7 @@
 
 #include "DistanceFunction.hh"
 #include "errors.hh"
+#include <cmath>
 
 namespace Amanzi {
 
@@ -28,7 +29,7 @@ DistanceFunction::DistanceFunction(const std::vector<double>& x0, const std::vec
 
 double DistanceFunction::operator()(const std::vector<double>& x) const
 {
-  double tmp, y(0.0);
+  double tmp(0.0), y(0.0);
   if (x.size() < x0_.size()) {
     Errors::Message m;
     m << "DistanceFunction expects higher-dimensional argument.";
@@ -38,6 +39,8 @@ double DistanceFunction::operator()(const std::vector<double>& x) const
     tmp = x[j] - x0_[j];
     y += metric_[j] * tmp * tmp;
   }
+  y = std::sqrt(y);
+
   return y;
 }
 

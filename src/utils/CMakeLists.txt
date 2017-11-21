@@ -37,6 +37,7 @@ add_amanzi_library(atk
                           VerboseObject.cc
                           IOEvent.cc
                           Spline.cc
+                          SplinedCurve.cc
                           Key.cc
                    HEADERS HDF5Reader.hh
                            Utils.hh
@@ -55,11 +56,15 @@ add_amanzi_library(atk
                            LeastSquare.hh
                            ObservationData.hh
                            Spline.hh
+                           SplinedCurve.hh
                            Key.hh
-                   )
+                    LINK_LIBS error_handling ${Teuchos_LIBRARIES})
+
+if (APPLE AND BUILD_SHARED_LIBS)
+  set_target_properties(atk PROPERTIES LINK_FLAGS "-Wl,-undefined,dynamic_lookup")
+endif()			  
 
 if (BUILD_TESTS)
-  
     # Add UnitTest include directoy
     include_directories(${UnitTest_INCLUDE_DIRS})
 
@@ -75,30 +80,24 @@ if (BUILD_TESTS)
     ADD_AMANZI_TEST(utils_time_step_manager utils_time_step_manager
                     KIND unit
                     SOURCE test/Main.cc test/utils_time_step_manager.cc
-                    LINK_LIBS atk ${UnitTest_LIBRARIES} ${Teuchos_LIBRARIES})
+                    LINK_LIBS atk error_handling 
+                              ${UnitTest_LIBRARIES} ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES})
 
     ADD_AMANZI_TEST(utils_verbosity utils_verbosity
                     KIND unit
                     SOURCE test/Main.cc test/utils_verboseobject.cc
-                    LINK_LIBS atk ${UnitTest_LIBRARIES} ${Teuchos_LIBRARIES})
+                    LINK_LIBS atk error_handling 
+                              ${UnitTest_LIBRARIES} ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES})
 
     ADD_AMANZI_TEST(utils_units utils_units
                     KIND unit
                     SOURCE test/Main.cc test/utils_units.cc
-                    LINK_LIBS atk ${UnitTest_LIBRARIES} ${Teuchos_LIBRARIES})
+                    LINK_LIBS atk error_handling 
+                              ${UnitTest_LIBRARIES} ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES})
 
     ADD_AMANZI_TEST(utils_spline utils_spline
                     KIND unit
                     SOURCE test/Main.cc test/utils_spline.cc
-                    LINK_LIBS atk error_handling atk ${UnitTest_LIBRARIES} ${Teuchos_LIBRARIES})
-                  
+                    LINK_LIBS atk error_handling atk ${UnitTest_LIBRARIES} ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES})
 endif()
-
-
-
-
-
-
-
-
 

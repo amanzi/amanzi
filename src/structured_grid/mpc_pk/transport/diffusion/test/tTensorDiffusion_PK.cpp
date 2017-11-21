@@ -6,6 +6,9 @@
 #include <iomanip>
 #include <string>
 
+// closing DSO objects
+#include "VerboseObject_objs.hh"
+
 #include <VisMF.H>
 #include <Utility.H>
 #include <MCCGSolver.H>

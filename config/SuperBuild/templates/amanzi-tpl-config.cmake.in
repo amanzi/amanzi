@@ -30,7 +30,6 @@ set(CMAKE_Fortran_FLAGS_MINSIZEREL "@CMAKE_Fortran_FLAGS_MINSIZEREL@" CACHE STRI
 set(CMAKE_Fortran_FLAGS_RELWITHDEBINFO "@CMAKE_Fortran_FLAGS_RELWITHDEBINFO@" CACHE STRING "SuperBuild Fortran compiler flags")
 
 
-
 # Mesh type settings
 set(ENABLE_Structured @ENABLE_Structured@ CACHE BOOL "Enable structured mesh capability")
 set(ENABLE_Unstructured @ENABLE_Unstructured@ CACHE BOOL "Enable unstructured mesh capability")
@@ -38,6 +37,10 @@ set(ENABLE_Unstructured @ENABLE_Unstructured@ CACHE BOOL "Enable unstructured me
 set(ENABLE_STK_Mesh  @ENABLE_STK_Mesh@ CACHE BOOL "Enable STK Unstructured Mesh Toolkit")
 set(ENABLE_MSTK_Mesh @ENABLE_MSTK_Mesh@ CACHE BOOL "Enable MSTK Unstructured Mesh Toolkit")
 set(ENABLE_MOAB_Mesh @ENABLE_MOAB_Mesh@ CACHE BOOL "Enable MOAB Unstructured Mesh Toolkit")
+
+
+# TPL version
+set(AMANZI_TPLS_VERSION @AMANZI_TPLS_VERSION@ CACHE STRING "TPLs version")
 
 
 # --------------------------------------------------------------------------- #
@@ -71,7 +74,6 @@ set(AMANZI_SPACEDIM @CCSE_BL_SPACEDIM@ CACHE STRING "BoxLib Space dimension")
 
 # Boost
 set(BOOST_ROOT @TPL_INSTALL_PREFIX@ CACHE PATH "Boost installation prefix")
-set(Boost_USE_STATIC_LIBS TRUE CACHE BOOL "Use only static Boost libraries")
 set(Boost_NO_SYSTEM_PATHS TRUE CACHE BOOL "Do not search for Boost libraries in system paths")
 set(Boost_NO_BOOST_CMAKE  TRUE CACHE BOOL "Prevent FindBoost from looking for a Boost CMake config file")  
 
@@ -85,9 +87,6 @@ set(ASCEMIO_DIR @TPL_INSTALL_PREFIX@ CACHE PATH "ASCEM-IO installation prefix")
 # NetCDF
 set(NetCDF_DIR @TPL_INSTALL_PREFIX@ CACHE PATH "NetCDF installation prefix")
 
-# ExodusII
-set(ExodusII_DIR @TPL_INSTALL_PREFIX@ CACHE PATH "ExodusII installation prefix")
-
 # MSTK
 set(MSTK_INCLUDE_DIR @MSTK_INCLUDE_DIR@ CACHE PATH "MSTK include installation path")
 set(MSTK_LIBRARY_DIR @MSTK_LIBRARY_DIR@ CACHE PATH "MSTK include installation path")
@@ -99,7 +98,6 @@ set(MSTK_VERSION @MSTK_VERSION@ CACHE STRING "MSTK Version string")
 # Silo
 set(ENABLE_Silo @ENABLE_Silo@ CACHE BOOL "Build Silo output options")
 set(Silo_DIR @Silo_DIR@ CACHE PATH "Silo installation prefix")
-
 
 # MOAB
 set(MOAB_DIR @TPL_INSTALL_PREFIX@ CACHE PATH "MOAB installation prefix")
@@ -114,6 +112,9 @@ set(ENABLE_HYPRE @ENABLE_HYPRE@ CACHE BOOL "Enable HYPRE (Ifpack) solver interfa
 # Trilinos
 set(Trilinos_INSTALL_PREFIX @Trilinos_INSTALL_PREFIX@ CACHE PATH "Trilinos installation prefix")
 
+# SEACAS 
+set(SEACAS_DIR @SEACAS_DIR@ CACHE PATH "SEACAS installation prefix")
+
 # XERCES
 set(XERCES_DIR @TPL_INSTALL_PREFIX@ CACHE PATH "XERCES installation prefix")
 
@@ -122,3 +123,6 @@ set(ALQUIMIA_DIR @TPL_INSTALL_PREFIX@ CACHE PATH "ALQUIMIA installation prefix")
 
 # PFLOTRAN
 set(PFLOTRAN_DIR @TPL_INSTALL_PREFIX@ CACHE PATH "PFLOTRAN installation prefix")
+
+# CRUNCHTOPE
+set(CRUNCHTOPE_DIR @TPL_INSTALL_PREFIX@ CACHE PATH "CRUNCHTOPE installation prefix")

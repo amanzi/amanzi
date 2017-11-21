@@ -73,7 +73,8 @@ class Mesh_STK : public Amanzi::AmanziMesh::Mesh {
            const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm = Teuchos::null,
            const Teuchos::RCP<const VerboseObject>& verbosity_obj = Teuchos::null,
            const bool request_faces = true,
-           const bool request_edges = false);
+           const bool request_edges = false,
+           const Partitioner_type partitioner = PARTITIONER_DEFAULT);
   
   /// Construct hexahedral mesh (Mesh_simple alternative)
   Mesh_STK(double x0, double y0, double z0,
@@ -83,7 +84,8 @@ class Mesh_STK : public Amanzi::AmanziMesh::Mesh {
            const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm = Teuchos::null,
            const Teuchos::RCP<const VerboseObject>& verbosity_obj = Teuchos::null,
            const bool request_faces = true,
-           const bool request_edges = false);
+           const bool request_edges = false,
+           const Partitioner_type partitioner = PARTITIONER_DEFAULT);
 
   Mesh_STK(const double x0, 
            const double y0,
@@ -95,7 +97,8 @@ class Mesh_STK : public Amanzi::AmanziMesh::Mesh {
            const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm = Teuchos::null,
            const Teuchos::RCP<const VerboseObject>& verbosity_obj = Teuchos::null,
            const bool request_faces = true,
-           const bool request_edges = false);
+           const bool request_edges = false,
+           const Partitioner_type partitioner = PARTITIONER_DEFAULT);
   
   /// Construct a hexedral mesh from a parameter list (Mesh_simple alternative)
   Mesh_STK(Teuchos::ParameterList &parameter_list,
@@ -103,7 +106,8 @@ class Mesh_STK : public Amanzi::AmanziMesh::Mesh {
            const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm = Teuchos::null,
            const Teuchos::RCP<const VerboseObject>& verbosity_obj = Teuchos::null,
            const bool request_faces = true,
-           const bool request_edges = false);
+           const bool request_edges = false
+           const Partitioner_type partitioner = PARTITIONER_DEFAULT);
 
   /// Construct a hexedral mesh from specs (Mesh_simple alternative)
   Mesh_STK(const GenerationSpec& gspec,
@@ -111,7 +115,8 @@ class Mesh_STK : public Amanzi::AmanziMesh::Mesh {
            const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm = Teuchos::null,
            const Teuchos::RCP<const VerboseObject>& verbosity_obj = Teuchos::null,
            const bool request_faces = true,
-           const bool request_edges = false);
+           const bool request_edges = false,
+           const Partitioner_type partitioner = PARTITIONER_DEFAULT);
 
   /// Construct a mesh from a Exodus II file or file set
   Mesh_STK(const Epetra_MpiComm *comm_, 
@@ -119,14 +124,16 @@ class Mesh_STK : public Amanzi::AmanziMesh::Mesh {
            const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm = Teuchos::null,
            const Teuchos::RCP<const VerboseObject>& verbosity_obj = Teuchos::null,
            const bool request_faces = true,
-           const bool request_edges = false);
+           const bool request_edges = false,
+           const Partitioner_type partitioner = PARTITIONER_DEFAULT);
 
   /// Construct a mesh from a Exodus II file or file set
   Mesh_STK(const char *filename, const Epetra_MpiComm *comm,
            const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm = Teuchos::null,
            const Teuchos::RCP<const VerboseObject>& verbosity_obj = Teuchos::null,
            const bool request_faces = true,
-           const bool request_edges = false);
+           const bool request_edges = false,
+           const Partitioner_type partitioner = PARTITIONER_DEFAULT);
 
   // Construct a mesh by extracting a subset of entities from another
   // mesh. In some cases like extracting a surface mesh from a volume

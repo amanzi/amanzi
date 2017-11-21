@@ -14,9 +14,9 @@ CHEMISTRY
     ION_EXCHANGE_RXN
       CEC 750. eq/m^3
       CATIONS
-        Na+   1.
-        Ca++  0.2953  ! 1.84
-        Mg++  0.1666  ! 2.45
+        Ca++  3.38638672536d0 ! big K = 1.84
+        Na+   1.d0 REFERENCE
+        Mg++  6.00240096038d0 ! big K = 2.45
       /
     /
   /

@@ -26,7 +26,7 @@ project(MESH_FACTORY)
 include_directories(${Teuchos_INCLUDE_DIRS})
 include_directories(${Epetra_INCLUDE_DIRS})
 include_directories(${STK_INCLUDE_DIRS})
-include_directories(${ExodusII_INCLUDE_DIRS})
+include_directories(${SEACAS_INCLUDE_DIRS})
 include_directories(${Boost_INCLUDE_DIRS})
 
 # Amanzi include directories
