@@ -68,8 +68,12 @@ class MeshMaps_VEM : public MeshMaps {
   // pseudo-velocity on edge e
   void VelocityEdge_(int e, VectorPolynomial& ve) const;
 
+  // support of development 
+  void Cofactors_P1_(int c, double t, const VectorPolynomial& vc, MatrixPolynomial& C) const;
+  void Cofactors_Pk_(int c, double t, const VectorPolynomial& vc, MatrixPolynomial& C) const;
+
   // old deprecated methods
-  void LeastSquareProjector_Cell_(int c, const std::vector<VectorPolynomial>& vf,
+  void LeastSquareProjector_Cell_(int order, int c, const std::vector<VectorPolynomial>& vf,
                                   VectorPolynomial& vc) const;
 };
 

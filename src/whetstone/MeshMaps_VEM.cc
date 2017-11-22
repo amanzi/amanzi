@@ -28,7 +28,7 @@ namespace WhetStone {
 void MeshMaps_VEM::VelocityCell(
     int c, const std::vector<VectorPolynomial>& vf, VectorPolynomial& vc) const
 {
-  // LeastSquareProjector_Cell_(c, vf, vc);
+  // LeastSquareProjector_Cell_(1, c, vf, vc);
   HarmonicProjectorH1_Cell(c, vf, vc);
 }
 
@@ -129,7 +129,23 @@ void MeshMaps_VEM::NansonFormula(
 void MeshMaps_VEM::Cofactors(
     int c, double t, const VectorPolynomial& vc, MatrixPolynomial& C) const
 {
-  // Limited to linear velocities
+  if (vc[0].order() == 1 || d_ == 3) {
+    Cofactors_P1_(c, t, vc, C);
+  } else {
+    Cofactors_Pk_(c, t, vc, C);
+  }
+}
+
+
+/* ******************************************************************
+* Calculation of matrix of cofactors: linear velocity
+****************************************************************** */
+void MeshMaps_VEM::Cofactors_P1_(
+    int c, double t, const VectorPolynomial& vc, MatrixPolynomial& C) const
+{
+  ASSERT(vc[0].order() == 1);
+
+  // gradient of linear velocity is constant tensor
   Tensor T(d_, 2);
   for (int i = 0; i < d_; ++i) {
     for (int j = 0; j < d_; ++j) {
@@ -152,6 +168,42 @@ void MeshMaps_VEM::Cofactors(
 
 
 /* ******************************************************************
+* Calculation of matrix of cofactors: nonlinear velocity
+****************************************************************** */
+void MeshMaps_VEM::Cofactors_Pk_(
+    int c, double t, const VectorPolynomial& vc, MatrixPolynomial& C) const
+{
+  ASSERT(d_ == 2);
+
+  // allocate memory for matrix of cofactors
+  C.resize(d_);
+  for (int i = 0; i < d_; ++i) {
+    C[i].resize(d_);
+  }
+
+  // copy velocity gradients to C
+  VectorPolynomial tmp(d_, 0);
+  tmp.Gradient(vc[0]);
+  C[1][1] = tmp[0];
+  C[1][0] = tmp[1];
+  C[1][0] *= -1.0;
+
+  tmp.Gradient(vc[1]);
+  C[0][0] = tmp[1];
+  C[0][1] = tmp[0];
+  C[0][1] *= -1.0;
+
+  // add time dependence
+  for (int i = 0; i < d_; ++i) {
+    for (int j = 0; j < d_; ++j) {
+      C[i][j](0, 0) *= t;
+    }
+    C[i][i](0, 0) += 1.0;
+  }
+}
+
+
+/* ******************************************************************
 * Calculation of Jacobian.
 ****************************************************************** */
 void MeshMaps_VEM::JacobianCellValue(
@@ -165,7 +217,7 @@ void MeshMaps_VEM::JacobianCellValue(
 * projection scheme. Currently, we return a number.
 ****************************************************************** */
 void MeshMaps_VEM::JacobianDet(
-    int c, double t, const std::vector<VectorPolynomial>& vf, Polynomial& vc) const
+    int c, double t, const std::vector<VectorPolynomial>& vf, Polynomial& jac) const
 {
   AmanziGeometry::Point x(d_), cn(d_);
   WhetStone::Tensor J(d_, 2); 
@@ -195,8 +247,8 @@ void MeshMaps_VEM::JacobianDet(
   }
   sum /= d_ * mesh0_->cell_volume(c);
 
-  vc.Reshape(d_, 0);
-  vc(0, 0) = sum;
+  jac.Reshape(d_, 0);
+  jac(0, 0) = sum;
 }
 
 
@@ -242,7 +294,7 @@ void MeshMaps_VEM::JacobianFaceValue(
 * Calculate mesh velocity in cell c: old algorithm
 ****************************************************************** */
 void MeshMaps_VEM::LeastSquareProjector_Cell_(
-    int c, const std::vector<VectorPolynomial>& vf, VectorPolynomial& vc) const
+    int order, int c, const std::vector<VectorPolynomial>& vf, VectorPolynomial& vc) const
 {
   vc.resize(d_);
   for (int i = 0; i < d_; ++i) vc[i].Reshape(d_, 1);
@@ -263,7 +315,7 @@ void MeshMaps_VEM::LeastSquareProjector_Cell_(
   }
 
   // calculate velocity u(X) = F(X) - X
-  LeastSquareFit(1, x1, x2, vc);
+  LeastSquareFit(order, x1, x2, vc);
 
   for (int i = 0; i < d_; ++i) {
     vc[i](1, i) -= 1.0;
