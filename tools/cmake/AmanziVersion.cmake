@@ -44,7 +44,7 @@ if ( (EXISTS ${CMAKE_SOURCE_DIR}/.git/) AND (GIT_FOUND) )
     exit()
   endif()
 
-  # message(STATUS ">>>> JDM: AMANZI_GIT_STATUS:      ${AMANZI_GIT_STATUS}")
+  message(STATUS ">>>> JDM: AMANZI_GIT_STATUS:      ${AMANZI_GIT_STATUS}")
 
   # Put the status in a list
   STRING(REPLACE "\n" ";" AMANZI_GIT_STATUS_LIST ${AMANZI_GIT_STATUS})
@@ -58,7 +58,7 @@ if ( (EXISTS ${CMAKE_SOURCE_DIR}/.git/) AND (GIT_FOUND) )
     STRING(REPLACE "On branch " "" AMANZI_GIT_BRANCH ${AMANZI_GIT_STATUS})
   endif()
 
-  # message(STATUS ">>>> JDM: AMANZI_GIT_BRANCH = ${AMANZI_GIT_BRANCH}")
+  message(STATUS ">>>> JDM: AMANZI_GIT_BRANCH = ${AMANZI_GIT_BRANCH}")
 
   # Extract the lastest tag of the form amanzi-*
 
@@ -89,19 +89,27 @@ if ( (EXISTS ${CMAKE_SOURCE_DIR}/.git/) AND (GIT_FOUND) )
                   OUTPUT_STRIP_TRAILING_WHITESPACE
                   ERROR_STRIP_TRAILING_WHITESPACE)
 
-   # MESSAGE(STATUS ">>>> JDM: GIT_EXEC        = ${GIT_EXECUTABLE}")
-   # MESSAGE(STATUS ">>>> JDM: GIT_ARGS        = ${GIT_ARGS}")
-   # MESSAGE(STATUS ">>>> JDM: RESULT_VARIABLE = ${err_occurred}")
-   # MESSAGE(STATUS ">>>> JDM: AMANZI_GIT_LATEST_TAG = ${AMANZI_GIT_LATEST_TAG}")
-
    # Put the tags in a list
    STRING(REPLACE "\n" ";" AMANZI_GIT_LATEST_TAG_LIST ${AMANZI_GIT_LATEST_TAG})
    # Extract the lastest tag of the form amanzi-*
-   FOREACH(atag ${AMANZI_GIT_LATEST_TAG_LIST})
-     IF ( ${atag} MATCHES "^amanzi-.*" )
-       set ( AMANZI_GIT_LATEST_TAG ${atag} )
-     ENDIF()
-   ENDFOREACH()
+   IF ( ${AMANZI_GIT_BRANCH} MATCHES "master" ) 
+     FOREACH(atag ${AMANZI_GIT_LATEST_TAG_LIST})
+       IF ( ${atag} MATCHES "^amanzi-.*-dev" )
+         set ( AMANZI_GIT_LATEST_TAG ${atag} )
+       ENDIF()
+     ENDFOREACH()
+   ELSE()
+     FOREACH(atag ${AMANZI_GIT_LATEST_TAG_LIST})
+       IF ( ${atag} MATCHES "^amanzi-[0-9]\\.[0-9][0-9]\\.[0-9]" )
+         set ( AMANZI_GIT_LATEST_TAG ${atag} )
+       ENDIF()
+     ENDFOREACH()
+   ENDIF()
+
+   # message(STATUS ">>>> JDM: GIT_EXEC        = ${GIT_EXECUTABLE}")
+   # message(STATUS ">>>> JDM: GIT_ARGS        = ${GIT_ARGS}")
+   # message(STATUS ">>>> JDM: RESULT_VARIABLE = ${err_occurred}")
+   # message(STATUS ">>>> JDM: AMANZI_GIT_LATEST_TAG = ${AMANZI_GIT_LATEST_TAG}")
 
    STRING(REGEX REPLACE "amanzi-" "" AMANZI_GIT_LATEST_TAG_VER ${AMANZI_GIT_LATEST_TAG})	
    STRING(REGEX REPLACE "\\..*" "" AMANZI_GIT_LATEST_TAG_MAJOR ${AMANZI_GIT_LATEST_TAG_VER})	
