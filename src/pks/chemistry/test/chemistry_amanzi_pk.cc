@@ -45,11 +45,9 @@ SUITE(GeochemistryTestsChemistryPK) {
   namespace ag = Amanzi::AmanziGeometry;
   namespace am = Amanzi::AmanziMesh;
 
-  /*****************************************************************************
-   **
-   **  Common testing code
-   **
-   *****************************************************************************/
+  /* **************************************************************************
+   * Common testing code
+   * *************************************************************************/
   class ChemistryPKTest {
    public:
     ChemistryPKTest();
@@ -88,12 +86,8 @@ SUITE(GeochemistryTestsChemistryPK) {
     Teuchos::ParameterList region_parameter_list = glist_->sublist("regions");
     gm_ = Teuchos::rcp(new ag::GeometricModel(3, region_parameter_list, (const Epetra_MpiComm *)comm_));
   
-    am::FrameworkPreference pref;
-    pref.clear();
-    pref.push_back(am::Simple);
-
     am::MeshFactory meshfactory((Epetra_MpiComm *)comm_);
-    meshfactory.preference(pref);
+    meshfactory.preference(am::FrameworkPreference({am::Simple}));
 
     mesh_ = meshfactory(mesh_parameter_list, gm_);
 
@@ -124,11 +118,9 @@ SUITE(GeochemistryTestsChemistryPK) {
   void ChemistryPKTest::RunTest(const std::string name, double * gamma) {};
 
 
-  /*****************************************************************************
-   **
-   **  individual tests
-   **
-   *****************************************************************************/
+  /* ***************************************************************************
+   * Individual tests
+   * **************************************************************************/
   TEST_FIXTURE(ChemistryPKTest, ChemistryPK_constructor) {
     // just make sure that we can have all the pieces together to set
     // up a chemistry process kernel....
@@ -139,7 +131,8 @@ SUITE(GeochemistryTestsChemistryPK) {
     } catch (std::exception e) {
       std::cout << e.what() << std::endl;
     }
-  }  // end TEST_FIXTURE()
+  }  
+
 
   TEST_FIXTURE(ChemistryPKTest, ChemistryPK_initialize) {
     // make sure that we can initialize the pk and internal chemistry
@@ -156,7 +149,8 @@ SUITE(GeochemistryTestsChemistryPK) {
     }
     // assume all is right with the world if we exited w/o an error
     CHECK_EQUAL(0, 0);
-  }  // end TEST_FIXTURE()
+  }
+
 
   TEST_FIXTURE(ChemistryPKTest, ChemistryPK_get_chem_output_names) {
     try {
@@ -172,6 +166,5 @@ SUITE(GeochemistryTestsChemistryPK) {
     std::vector<std::string> names;
     cpk_->set_chemistry_output_names(&names);
     CHECK_EQUAL(names.at(0), "pH");
-  }  // end TEST_FIXTURE()
-
-}  // end SUITE(GeochemistryTestChemistryPK)
+  }
+}

@@ -23,17 +23,17 @@
 
 // Amanzi
 #include "GMVMesh.hh"
-#include "LinearOperatorFactory.hh"
+#include "LinearOperatorPCG.hh"
 #include "MeshFactory.hh"
 #include "Mesh_MSTK.hh"
-#include "mfd3d_diffusion.hh"
 #include "Tensor.hh"
 
 // Amanzi::Operators
+#include "Accumulation.hh"
+#include "DiffusionMFD.hh"
 #include "Operator.hh"
-#include "OperatorAccumulation.hh"
 #include "OperatorDefs.hh"
-#include "OperatorDiffusionMFD.hh"
+
 #include "Verification.hh"
 
 
@@ -62,12 +62,8 @@ void RunTest(std::string op_list_name) {
   ParameterList region_list = plist.get<Teuchos::ParameterList>("Regions Closed");
   Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(3, region_list, &comm));
 
-  FrameworkPreference pref;
-  pref.clear();
-  pref.push_back(MSTK);
-
   MeshFactory meshfactory(&comm);
-  meshfactory.preference(pref);
+  meshfactory.preference(FrameworkPreference({MSTK}));
   RCP<const Mesh> mesh = meshfactory("test/sphere.exo", gm);
   RCP<const Mesh_MSTK> mesh_mstk = rcp_static_cast<const Mesh_MSTK>(mesh);
 
@@ -91,10 +87,9 @@ void RunTest(std::string op_list_name) {
   double rho(1.0), mu(1.0);
 
   // create boundary data (no mixed bc)
-  std::vector<int> bc_model(nfaces_wghost, OPERATOR_BC_NONE);
-  std::vector<double> bc_value(nfaces_wghost);
-  std::vector<double> bc_mixed;
-  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(OPERATOR_BC_TYPE_FACE, bc_model, bc_value, bc_mixed));
+  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(surfmesh, AmanziMesh::FACE, SCHEMA_DOFS_SCALAR));
+  std::vector<int>& bc_model = bc->bc_model();
+  std::vector<double>& bc_value = bc->bc_value();
 
   // create diffusion operator 
   Teuchos::RCP<CompositeVectorSpace> cvs = Teuchos::rcp(new CompositeVectorSpace());
@@ -125,7 +120,7 @@ void RunTest(std::string op_list_name) {
   // add the diffusion operator
   Teuchos::ParameterList olist = plist.get<Teuchos::ParameterList>("PK operator")
                                       .get<Teuchos::ParameterList>(op_list_name);
-  OperatorDiffusionMFD op(olist, surfmesh);
+  DiffusionMFD op(olist, surfmesh);
   op.SetBCs(bc, bc);
   op.Setup(K, Teuchos::null, Teuchos::null);
   op.UpdateMatrices(Teuchos::null, Teuchos::null);
@@ -134,8 +129,8 @@ void RunTest(std::string op_list_name) {
   Teuchos::RCP<Operator> global_op = op.global_operator();
 
   // add accumulation terms
-  OperatorAccumulation op_acc(AmanziMesh::CELL, global_op);
-  op_acc.AddAccumulationTerm(solution, phi, dT, "cell");
+  Accumulation op_acc(AmanziMesh::CELL, global_op);
+  op_acc.AddAccumulationDelta(solution, phi, phi, dT, "cell");
 
   // apply BCs and assemble
   global_op->UpdateRHS(source, false);
@@ -148,24 +143,24 @@ void RunTest(std::string op_list_name) {
   global_op->InitPreconditioner("Hypre AMG", slist);
 
   // Test SPD properties of the matrix and preconditioner.
-  Verification ver(global_op);
+  VerificationCV ver(global_op);
   ver.CheckMatrixSPD();
   ver.CheckPreconditionerSPD();
 
   // solve the problem
-  ParameterList lop_list = plist.get<Teuchos::ParameterList>("solvers");
-  AmanziSolvers::LinearOperatorFactory<Operator, CompositeVector, CompositeVectorSpace> factory;
-  Teuchos::RCP<AmanziSolvers::LinearOperator<Operator, CompositeVector, CompositeVectorSpace> >
-      solver = factory.Create("AztecOO CG", lop_list, global_op);
+  ParameterList lop_list = plist.sublist("solvers").sublist("AztecOO CG").sublist("pcg parameters");
+  AmanziSolvers::LinearOperatorPCG<Operator, CompositeVector, CompositeVectorSpace>
+      solver(global_op, global_op);
+  solver.Init(lop_list);
 
   CompositeVector rhs = *global_op->rhs();
   solution.PutScalar(0.0);
-  int ierr = solver->ApplyInverse(rhs, solution);
+  int ierr = solver.ApplyInverse(rhs, solution);
 
   if (MyPID == 0) {
-    std::cout << "pressure solver (" << solver->name() 
-              << "): ||r||=" << solver->residual() << " itr=" << solver->num_itrs()
-              << " code=" << solver->returned_code() << std::endl;
+    std::cout << "pressure solver (pcg): ||r||=" << solver.residual() 
+              << " itr=" << solver.num_itrs()
+              << " code=" << solver.returned_code() << std::endl;
   }
 
   // repeat the above without destroying the operators.
@@ -173,7 +168,7 @@ void RunTest(std::string op_list_name) {
   global_op->rhs()->PutScalar(0.);
 
   op.UpdateMatrices(Teuchos::null, Teuchos::null);
-  op_acc.AddAccumulationTerm(solution, phi, dT, "cell");
+  op_acc.AddAccumulationDelta(solution, phi, phi, dT, "cell");
 
   global_op->UpdateRHS(source, false);
   op.ApplyBCs(true, true);
@@ -181,15 +176,15 @@ void RunTest(std::string op_list_name) {
   global_op->AssembleMatrix();
   global_op->InitPreconditioner("Hypre AMG", slist);
 
-  ierr = solver->ApplyInverse(rhs, solution);
+  ierr = solver.ApplyInverse(rhs, solution);
 
-  int num_itrs = solver->num_itrs();
+  int num_itrs = solver.num_itrs();
   CHECK(num_itrs > 5 && num_itrs < 10);
 
   if (MyPID == 0) {
-    std::cout << "pressure solver (" << solver->name() 
-              << "): ||r||=" << solver->residual() << " itr=" << num_itrs
-              << " code=" << solver->returned_code() << std::endl;
+    std::cout << "pressure solver (pcg): ||r||=" << solver.residual() 
+              << " itr=" << num_itrs
+              << " code=" << solver.returned_code() << std::endl;
 
     // visualization
     const Epetra_MultiVector& p = *solution.ViewComponent("cell");

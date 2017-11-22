@@ -13,6 +13,7 @@
 #include <vector>
 
 #include "Epetra_Vector.h"
+#include "Epetra_MultiVector.h"
 #include "Teuchos_RCP.hpp"
 
 #include "Mesh.hh"
@@ -164,6 +165,35 @@ void Transport_PK::VV_PrintSoluteExtrema(const Epetra_MultiVector& tcc_next, dou
 }
 
 
+/* *******************************************************************
+* Fancy output of limiter statistics
+******************************************************************* */
+void Transport_PK::VV_PrintLimiterStatistics()
+{
+  if (vo_->getVerbLevel() > Teuchos::VERB_MEDIUM) {
+    Teuchos::OSTab tab = vo_->getOSTab();
+    for (int n = 0; n < runtime_solutes_.size(); n++) {
+      std::string& name = runtime_solutes_[n];
+
+      if (FindComponentNumber(name) == current_component_) {
+        const Epetra_Vector& limiter = *lifting_->limiter();
+        double vmin(1e+99), vavg(0.0), vmax(-1e+99);
+
+        for (int c = 0; c < ncells_owned; ++c) {
+          vmin = std::min(vmin, limiter[c]);
+          vmax = std::max(vmax, limiter[c]);
+          vavg += limiter[c];
+        }
+        vavg /= ncells_owned;
+
+        *vo_->os() << name << ": limiter min/avg/max: " 
+                   << vmin << " " << vavg<< " " << vmax << std::endl;
+      }
+    }
+  }
+}
+
+
 /********************************************************************
 * Check completeness of influx boundary conditions.                        
 ****************************************************************** */
@@ -291,15 +321,15 @@ double Transport_PK::VV_SoluteVolumeChangePerSecond(int idx_tracer)
         for (auto it = bcs_[m]->begin(); it != bcs_[m]->end(); ++it) {
           int f = it->first;
 
-          //WhetStone::DenseVector& values = it->second;
           std::vector<double>& values = it->second; 
 
+          if (downwind_cells_[f].size() > 0) {
+            int c2 = downwind_cells_[f][0];
 
-          int c2 = (*downwind_cell_)[f];
-
-          if (f < nfaces_owned && c2 >= 0) {
-            double u = fabs((*darcy_flux)[0][f]);
-            volume += u * values[i];
+            if (f < nfaces_owned && c2 >= 0) {
+              double u = fabs((*darcy_flux)[0][f]);
+              volume += u * values[i];
+            }
           }
         }
       }

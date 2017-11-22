@@ -134,9 +134,9 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
         Exceptions::amanzi_throw(msg);
       }
 
-      // -- permeability.
+      // -- permeability. We parse matrix and fractures together.
       double perm_x, perm_y, perm_z;
-      bool perm_init_from_file(false), conductivity(false);
+      bool perm_err(false), perm_init_from_file(false), conductivity(false);
       std::string perm_file, perm_attribute, perm_format, unit("m^2");
 
       node = GetUniqueElementByTagsString_(inode, "permeability", flag);
@@ -176,7 +176,7 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
       Teuchos::ParameterList& permeability_ic = out_ic.sublist("permeability");
       permeability_ic.set<bool>("write checkpoint", false);
 
-      if (file == 2){
+      if (file == 2) {
         permeability_ic.set<std::string>("restart file", file_name);
         kx = ky = kz = 1.0;
       }
@@ -201,10 +201,20 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
           kz = 0.0;
         }
       } else {
+        perm_err = true;
+      }
+      if (kx < 0.0 || ky < 0.0 || kz < 0.0 || perm_err) {
         ThrowErrorIllformed_("materials", "permeability/hydraulic_conductivity", "file/filename/x/y/z");
       }
-      if (kx < 0.0 || ky < 0.0 || kz < 0.0) {
-        ThrowErrorIllformed_("materials", "permeability/hydraulic_conductivity", "file/filename/x/y/z");
+
+      // -- fracture permeability and aperture
+      node = GetUniqueElementByTagsString_(inode, "fracture_permeability", flag);
+      if (flag) {
+        fractures_ = true;
+        TranslateFieldEvaluator_(node, "fracture_aperture", "m", reg_str, regions, out_ic, out_ev, "aperture");
+      } else if (fractures_) {
+        msg << "fracture_permeability element must be specified for all materials or none.";
+        Exceptions::amanzi_throw(msg);
       }
 
       // -- specific_yield
@@ -462,7 +472,8 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
 void InputConverterU::TranslateFieldEvaluator_(
     DOMNode* node, std::string field, std::string unit,
     const std::string& reg_str, const std::vector<std::string>& regions,
-    Teuchos::ParameterList& out_ic, Teuchos::ParameterList& out_ev)
+    Teuchos::ParameterList& out_ic, Teuchos::ParameterList& out_ev,
+    std::string data_key)
 {
   std::string type = GetAttributeValueS_(node, "type", TYPE_NONE, false, "");
   if (type == "file") {
@@ -473,7 +484,7 @@ void InputConverterU::TranslateFieldEvaluator_(
     Teuchos::ParameterList& field_ev = out_ev.sublist(field);
     field_ev.set<std::string>("field evaluator type", "constant variable");
   } else {
-    double val = GetAttributeValueD_(node, "value", TYPE_NUMERICAL, unit);
+    double val = GetAttributeValueD_(node, data_key.c_str(), TYPE_NUMERICAL, unit);
 
     Teuchos::ParameterList& field_ev = out_ev.sublist(field);
     field_ev.sublist("function").sublist(reg_str)

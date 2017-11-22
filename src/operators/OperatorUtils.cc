@@ -14,6 +14,7 @@
 #include "CompositeVector.hh"
 #include "OperatorDefs.hh"
 #include "OperatorUtils.hh"
+#include "Schema.hh"
 #include "SuperMap.hh"
 #include "TreeVector.hh"
 
@@ -120,6 +121,46 @@ int AddSuperVectorToCompositeVector(const SuperMap& smap, const Epetra_Vector& s
 
 
 /* ******************************************************************
+* Copy super vector to composite vector: complex schema version.
+****************************************************************** */
+int CopyCompositeVectorToSuperVector(const SuperMap& smap, const CompositeVector& cv,
+                                     Epetra_Vector& sv, const Schema& schema)
+{
+  for (auto it = schema.begin(); it != schema.end(); ++it) {
+    std::string name(schema.KindToString(it->kind));
+
+    for (int k = 0; k < it->num; ++k) {
+      const std::vector<int>& inds = smap.Indices(name, k);
+      const Epetra_MultiVector& data = *cv.ViewComponent(name);
+      for (int n = 0; n != data.MyLength(); ++n) sv[inds[n]] = data[k][n];
+    }
+  }
+
+  return 0;
+}
+
+
+/* ******************************************************************
+* Copy super vector to composite vector: complex schema version
+****************************************************************** */
+int CopySuperVectorToCompositeVector(const SuperMap& smap, const Epetra_Vector& sv,
+                                     CompositeVector& cv, const Schema& schema)
+{
+  for (auto it = schema.begin(); it != schema.end(); ++it) {
+    std::string name(schema.KindToString(it->kind));
+
+    for (int k = 0; k < it->num; ++k) {
+      const std::vector<int>& inds = smap.Indices(name, k);
+      Epetra_MultiVector& data = *cv.ViewComponent(name);
+      for (int n = 0; n != data.MyLength(); ++n) data[k][n] = sv[inds[n]];
+    }
+  }
+
+  return 0;
+}
+
+
+/* ******************************************************************
 * Nonmember: copy TreeVector to/from Super-vector
 ****************************************************************** */
 int CopyTreeVectorToSuperVector(const SuperMap& map, const TreeVector& tv,
@@ -128,8 +169,7 @@ int CopyTreeVectorToSuperVector(const SuperMap& map, const TreeVector& tv,
   ASSERT(tv.Data() == Teuchos::null);
   int ierr(0);
   int my_dof = 0;
-  for (TreeVector::const_iterator it = tv.begin();
-       it != tv.end(); ++it) {
+  for (TreeVector::const_iterator it = tv.begin(); it != tv.end(); ++it) {
     ASSERT((*it)->Data() != Teuchos::null);
     ierr |= CopyCompositeVectorToSuperVector(map, *(*it)->Data(), sv, my_dof);
     my_dof++;            
@@ -145,8 +185,7 @@ int CopySuperVectorToTreeVector(const SuperMap& map,const Epetra_Vector& sv,
   ASSERT(tv.Data() == Teuchos::null);
   int ierr(0);
   int my_dof = 0;
-  for (TreeVector::iterator it = tv.begin();
-       it != tv.end(); ++it) {
+  for (TreeVector::iterator it = tv.begin(); it != tv.end(); ++it) {
     ASSERT((*it)->Data() != Teuchos::null);
     ierr |= CopySuperVectorToCompositeVector(map, sv, *(*it)->Data(), my_dof);
     my_dof++;            
@@ -177,7 +216,7 @@ int AddSuperVectorToTreeVector(const SuperMap& map,const Epetra_Vector& sv,
 
 
 /* ******************************************************************
-* Create super map.
+* Create super map: compatibility version
 ****************************************************************** */
 Teuchos::RCP<SuperMap> CreateSuperMap(const CompositeVectorSpace& cvs, int schema, int n_dofs)
 {
@@ -231,6 +270,29 @@ Teuchos::RCP<SuperMap> CreateSuperMap(const CompositeVectorSpace& cvs, int schem
 
 
 /* ******************************************************************
+* Create super map: general version
+****************************************************************** */
+Teuchos::RCP<SuperMap> CreateSuperMap(const CompositeVectorSpace& cvs, Schema& schema)
+{
+  std::vector<std::string> compnames;
+  std::vector<int> dofnums;
+  std::vector<Teuchos::RCP<const Epetra_Map> > maps;
+  std::vector<Teuchos::RCP<const Epetra_Map> > ghost_maps;
+
+  for (auto it = schema.items().begin(); it != schema.items().end(); ++it) {
+    compnames.push_back(schema.KindToString(it->kind));
+    dofnums.push_back(it->num);
+    std::pair<Teuchos::RCP<const Epetra_Map>, Teuchos::RCP<const Epetra_Map> > meshmaps =
+        getMaps(*cvs.Mesh(), it->kind);
+    maps.push_back(meshmaps.first);
+    ghost_maps.push_back(meshmaps.second);
+  }
+
+  return Teuchos::rcp(new SuperMap(cvs.Comm(), compnames, dofnums, maps, ghost_maps));
+}
+
+
+/* ******************************************************************
 * Estimate size of the matrix graph.
 ****************************************************************** */
 unsigned int MaxRowSize(const AmanziMesh::Mesh& mesh, int schema, unsigned int n_dofs)
@@ -257,6 +319,33 @@ unsigned int MaxRowSize(const AmanziMesh::Mesh& mesh, int schema, unsigned int n
   }
 
   return row_size * n_dofs;
+}    
+
+
+/* ******************************************************************
+* Estimate size of the matrix graph: general version
+****************************************************************** */
+unsigned int MaxRowSize(const AmanziMesh::Mesh& mesh, Schema& schema)
+{
+  unsigned int row_size(0);
+  int dim = mesh.space_dimension();
+
+  for (auto it = schema.items().begin(); it != schema.items().end(); ++it) {
+    int ndofs;
+    if (it->kind == AmanziMesh::FACE) {
+      ndofs = (dim == 2) ? OPERATOR_QUAD_FACES : OPERATOR_HEX_FACES;
+    } else if (it->kind == AmanziMesh::CELL) {
+      ndofs = 1;
+    } else if (it->kind == AmanziMesh::NODE) {
+      ndofs = (dim == 2) ? OPERATOR_QUAD_NODES : OPERATOR_HEX_NODES;
+    } else if (it->kind == AmanziMesh::EDGE) {
+      ndofs = (dim == 2) ? OPERATOR_QUAD_EDGES : OPERATOR_HEX_EDGES;
+    }
+
+    row_size += ndofs * it->num;
+  }
+
+  return row_size;
 }    
 
 }  // namespace Operators

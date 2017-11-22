@@ -8,7 +8,7 @@
 
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 
-  Linear vector field and constant tensor, time-dependent
+  Relaxation of magnetic lines, trivial steady-state solution 
 */
 
 #ifndef AMANZI_OPERATOR_ANALYTIC_ELECTROMAGNETICS_04_HH_
@@ -23,7 +23,7 @@ class AnalyticElectromagnetics04 : public AnalyticElectromagneticsBase {
   ~AnalyticElectromagnetics04() {};
 
   Amanzi::WhetStone::Tensor Tensor(const Amanzi::AmanziGeometry::Point& p, double t) {
-    Amanzi::WhetStone::Tensor K(3, 1);
+    Amanzi::WhetStone::Tensor K(p.dim(), 1);
     K(0, 0) = 1.0;
     return K;
   }
@@ -33,9 +33,12 @@ class AnalyticElectromagnetics04 : public AnalyticElectromagneticsBase {
   }
 
   Amanzi::AmanziGeometry::Point magnetic_exact(const Amanzi::AmanziGeometry::Point& p, double t) { 
+    if (t > 0.0) 
+      return Amanzi::AmanziGeometry::Point(0.0, 0.0, 1.0);
+
     double x = p[0];
     double y = p[1];
-    double z = p[2];
+    double z = (p.dim() == 2) ? 1.0 : p[2];
 
     double phi = 3.1415926 / 4;
     double tmp = phi * std::exp(-(x * x + y * y) / 2 - z * z / 4);

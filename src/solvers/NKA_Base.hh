@@ -81,8 +81,8 @@ class NKA_Base {
 
   void Relax();
   void Restart();
-  void Correction(const Vector&, Vector&,
-                  const Teuchos::Ptr<const Vector>& oldv=Teuchos::null);
+  void Correction(const Vector& f, Vector& v,
+                  const Teuchos::Ptr<const Vector>& oldv = Teuchos::null);
 
  private:
   int subspace_;  // boolean: a nonempty subspace

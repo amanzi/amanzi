@@ -17,15 +17,6 @@
 #include "Operator.hh"
 #include "Op_Face_Cell.hh"
 
-/*
-  Op classes are small structs that play two roles:
-
-  1. They provide a class name to the schema, enabling visitor patterns.
-  2. They are a container for local matrices.
-  
-  This Op class is a little odd, in that in maps from surface cells into subsurface faces.
-*/
-
 namespace Amanzi {
 namespace Operators {
 

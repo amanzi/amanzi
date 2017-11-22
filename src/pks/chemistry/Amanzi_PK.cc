@@ -20,7 +20,6 @@
 #include <algorithm>
 
 // TPLs
-#include "boost/mpi.hpp"
 #include "boost/algorithm/string.hpp"
 #include "Epetra_MultiVector.h"
 #include "Epetra_Vector.h"
@@ -60,7 +59,7 @@ Amanzi_PK::Amanzi_PK(Teuchos::ParameterList& pk_tree,
     saved_time_(0.0)
 {
   S_ = S;
-  //mesh_ = S_->GetMesh();
+  // mesh_ = S_->GetMesh();
   glist_ = glist;
 
   // extract pk name
@@ -73,6 +72,7 @@ Amanzi_PK::Amanzi_PK(Teuchos::ParameterList& pk_tree,
   cp_list_ = Teuchos::sublist(pk_list, pk_name, true);
   domain_name_ = cp_list_->get<std::string>("domain name", "domain");
 
+  // obtain key of fields
   tcc_key_ = Keys::getKey(domain_name_, "total_component_concentration"); 
   poro_key_ = cp_list_->get<std::string>("porosity key", Keys::getKey(domain_name_, "porosity"));
   saturation_key_ = cp_list_->get<std::string>("saturation key", Keys::getKey(domain_name_, "saturation_liquid"));

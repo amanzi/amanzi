@@ -8,6 +8,10 @@
 
   Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
            Ethan Coon (ecoon@lanl.gov)
+
+  Special purpose operator, this takes FaceCell Ops and assembles 
+  a matrix with only the Face entries, enabling the solution of
+  consistent faces.
 */
 
 #ifndef AMANZI_OPERATOR_WITH_CONSISTENT_FACE_HH_
@@ -17,23 +21,16 @@
 #include "OperatorDefs.hh"
 #include "Operator.hh"
 
-/* ******************************************************************
-Special purpose operator, this takes FaceCell Ops and assembles a matrix
-with only the Face entries, enabling the solution of consistent faces.
-****************************************************************** */ 
-
 namespace Amanzi {
 namespace Operators {
 
 class Operator_ConsistentFace : public Operator {
  public:
-  // constuctors
   // main constructor
   //   The CVS is the domain and range of the operator
   Operator_ConsistentFace(const Teuchos::RCP<const CompositeVectorSpace>& cvs,
-                    Teuchos::ParameterList& plist) :
-      Operator(cvs, plist,
-               OPERATOR_SCHEMA_BASE_CELL | OPERATOR_SCHEMA_DOFS_FACE) {};
+                          Teuchos::ParameterList& plist) :
+      Operator(cvs, plist, OPERATOR_SCHEMA_BASE_CELL | OPERATOR_SCHEMA_DOFS_FACE) {};
 
   // visit methods for Apply
   virtual int ApplyMatrixFreeOp(const Op_Cell_FaceCell& op,

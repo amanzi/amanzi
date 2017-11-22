@@ -23,17 +23,16 @@
 
 // Amanzi
 #include "GMVMesh.hh"
-#include "LinearOperatorFactory.hh"
+#include "LinearOperatorGMRES.hh"
 #include "MeshFactory.hh"
 #include "Mesh_MSTK.hh"
-#include "mfd3d_diffusion.hh"
 #include "Tensor.hh"
 
-// Operators
+// Amanzi::Operators
+#include "Accumulation.hh"
+#include "DiffusionFactory.hh"
 #include "Operator.hh"
-#include "OperatorAccumulation.hh"
 #include "OperatorDefs.hh"
-#include "OperatorDiffusionFactory.hh"
 #include "UpwindFlux.hh"
 
 #include "operator_marshak_testclass.hh"
@@ -59,13 +58,8 @@ void RunTestMarshak(std::string op_list_name, double TemperatureFloor) {
   ParameterList region_list = plist.get<Teuchos::ParameterList>("regions");
   Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(2, region_list, &comm));
 
-  FrameworkPreference pref;
-  pref.clear();
-  pref.push_back(MSTK);
-  pref.push_back(STKMESH);
-
   MeshFactory meshfactory(&comm);
-  meshfactory.preference(pref);
+  meshfactory.preference(FrameworkPreference({MSTK, STKMESH}));
   // RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 3.0, 1.0, 200, 10, gm);
   RCP<const Mesh> mesh = meshfactory("test/marshak.exo", gm);
 
@@ -84,9 +78,9 @@ void RunTestMarshak(std::string op_list_name, double TemperatureFloor) {
   }
 
   // create boundary data (no mixed bc)
-  std::vector<int> bc_model(nfaces_wghost, OPERATOR_BC_NONE);
-  std::vector<double> bc_value(nfaces_wghost);
-  std::vector<double> bc_mixed;
+  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(mesh, AmanziMesh::FACE, SCHEMA_DOFS_SCALAR));
+  std::vector<int>& bc_model = bc->bc_model();
+  std::vector<double>& bc_value = bc->bc_value();
 
   for (int f = 0; f < nfaces_wghost; f++) {
     const Point& xf = mesh->face_centroid(f);
@@ -102,7 +96,6 @@ void RunTestMarshak(std::string op_list_name, double TemperatureFloor) {
       bc_value[f] = knc->TemperatureFloor;
     }
   }
-  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(OPERATOR_BC_TYPE_FACE, bc_model, bc_value, bc_mixed));
 
   // Create and initialize solution (temperature) field.
   Teuchos::RCP<CompositeVectorSpace> cvs = Teuchos::rcp(new CompositeVectorSpace());
@@ -158,8 +151,8 @@ void RunTestMarshak(std::string op_list_name, double TemperatureFloor) {
 
     // add diffusion operator
     Teuchos::ParameterList olist = plist.sublist("PK operator").sublist(op_list_name);
-    OperatorDiffusionFactory diff_factory;
-    Teuchos::RCP<OperatorDiffusion> op = diff_factory.Create(olist, mesh, bc);
+    DiffusionFactory diff_factory;
+    Teuchos::RCP<Diffusion> op = diff_factory.Create(olist, mesh, bc);
 
     int schema_dofs = op->schema_dofs();
     int schema_prec_dofs = op->schema_prec_dofs();
@@ -171,8 +164,8 @@ void RunTestMarshak(std::string op_list_name, double TemperatureFloor) {
     Teuchos::RCP<Operator> global_op = op->global_operator();
 
     // add accumulation terms
-    OperatorAccumulation op_acc(AmanziMesh::CELL, global_op);
-    op_acc.AddAccumulationTerm(*solution, heat_capacity, dt, "cell");
+    Accumulation op_acc(AmanziMesh::CELL, global_op);
+    op_acc.AddAccumulationDelta(*solution, heat_capacity, heat_capacity, dt, "cell");
 
     // apply BCs and assemble
     op->ApplyBCs(true, true);
@@ -184,17 +177,18 @@ void RunTestMarshak(std::string op_list_name, double TemperatureFloor) {
     global_op->InitPreconditioner("Hypre AMG", slist);
 
     // solve the problem
-    ParameterList lop_list = plist.get<Teuchos::ParameterList>("solvers");
-    AmanziSolvers::LinearOperatorFactory<Operator, CompositeVector, CompositeVectorSpace> factory;
-    Teuchos::RCP<AmanziSolvers::LinearOperator<Operator, CompositeVector, CompositeVectorSpace> >
-       solver = factory.Create("Amanzi GMRES", lop_list, global_op);
+    ParameterList lop_list = plist.sublist("solvers")
+                                  .sublist("Amanzi GMRES").sublist("gmres parameters");
+    AmanziSolvers::LinearOperatorGMRES<Operator, CompositeVector, CompositeVectorSpace>
+        solver(global_op, global_op);
+    solver.Init(lop_list);
 
     Epetra_MultiVector& sol_new = *solution->ViewComponent("cell");
     Epetra_MultiVector sol_old(sol_new);
 
     CompositeVector rhs = *global_op->rhs();
-    solver->add_criteria(AmanziSolvers::LIN_SOLVER_MAKE_ONE_ITERATION);
-    int ierr = solver->ApplyInverse(rhs, *solution);
+    solver.add_criteria(AmanziSolvers::LIN_SOLVER_MAKE_ONE_ITERATION);
+    int ierr = solver.ApplyInverse(rhs, *solution);
 
     step++;
     t += dt;
@@ -203,7 +197,7 @@ void RunTestMarshak(std::string op_list_name, double TemperatureFloor) {
 
     if (MyPID == 0) {
       printf("%3d  ||r||=%11.6g  itr=%2d  ||sol||=%11.6g  t=%7.4f  dt=%7.4f\n",
-          step, solver->residual(), solver->num_itrs(), snorm, t, dt);
+          step, solver.residual(), solver.num_itrs(), snorm, t, dt);
     }
 
     // Change time step based on solution change.

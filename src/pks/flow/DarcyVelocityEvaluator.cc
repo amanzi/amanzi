@@ -11,7 +11,7 @@
   Evaluator for darcy_velocity(darcy_flux)
 */
 
-#include "mfd3d_diffusion.hh"
+#include "MFD3D_Diffusion.hh"
 
 #include "DarcyVelocityEvaluator.hh"
 

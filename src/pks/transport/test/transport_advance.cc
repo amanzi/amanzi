@@ -36,7 +36,8 @@ TEST(ADVANCE_WITH_MESH_FRAMEWORK) {
   framework_name.push_back("MSTK");
   framework_name.push_back("STK");
   framework_name.push_back("SIMPLE");
-  Framework framework[3] = {MSTK, STKMESH, Simple};   
+  framework_name.push_back("MOAB");
+  Framework framework[4] = {MSTK, STKMESH, Simple, MOAB};   
 
   for (int frm = 0; frm < 3; frm++) {
     std::cout << "Test: advance with framework " << framework_name[frm] << std::endl;
@@ -64,10 +65,10 @@ TEST(ADVANCE_WITH_MESH_FRAMEWORK) {
     MeshFactory meshfactory(comm);
     meshfactory.preference(pref);
     RCP<const Mesh> mesh;
-    if (frm < 2) {
-      mesh = meshfactory("test/hex_3x3x3_ss.exo", gm);
-    } else {
+    if (frm == 2) {
       mesh = meshfactory(0.0,0.0,0.0, 1.0,1.0,1.0, 20, 1, 1, gm); 
+    } else {
+      mesh = meshfactory("test/hex_3x3x3_ss.exo", gm);
     }
   
     // create a simple state and populate it

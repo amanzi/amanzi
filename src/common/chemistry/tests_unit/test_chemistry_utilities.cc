@@ -26,7 +26,7 @@ SUITE(amanzi_chemistry_unit_tests_ChemistryUtilities) {
     double value3 = -2.71828;
     double value4 = 2.71827;
     double value5 = -2.71829;
-    CHECK(!acu::CompareFabs(value1, value2));  // std::fabs are equal --> false
+    CHECK(!acu::CompareFabs(value1, value2));  // fabs are equal --> false
     CHECK(!acu::CompareFabs(value3, value4));  // 2.71828 > 2.71827 --> false
     CHECK(acu::CompareFabs(value4, value3));  // 2.71827 < 2.71828 --> true
     CHECK(!acu::CompareFabs(value5, value3));  // 2.71829 > 2.71828 --> false

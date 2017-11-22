@@ -25,15 +25,15 @@
 // Amanzi
 #include "MeshFactory.hh"
 #include "GMVMesh.hh"
-#include "LinearOperatorFactory.hh"
+#include "LinearOperatorPCG.hh"
 #include "Tensor.hh"
 
 // Operators
 #include "Analytic02.hh"
 
+#include "DiffusionMFDwithGravity.hh"
+#include "DiffusionFV.hh"
 #include "OperatorDefs.hh"
-#include "OperatorDiffusionMFDwithGravity.hh"
-#include "OperatorDiffusionFV.hh"
 #include "UpwindSecondOrder.hh"
 
 
@@ -69,13 +69,8 @@ void RunTestDiffusionMixed(double gravity) {
   ParameterList region_list = plist.get<Teuchos::ParameterList>("regions");
   Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(2, region_list, &comm));
 
-  FrameworkPreference pref;
-  pref.clear();
-  pref.push_back(MSTK);
-  pref.push_back(STKMESH);
-
   MeshFactory meshfactory(&comm);
-  meshfactory.preference(pref);
+  meshfactory.preference(FrameworkPreference({MSTK, STKMESH}));
   // RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 10, 1, gm);
   RCP<const Mesh> mesh = meshfactory("test/median32x33.exo", gm);
 
@@ -94,8 +89,10 @@ void RunTestDiffusionMixed(double gravity) {
   }
 
   // create boundary data
-  std::vector<int> bc_model(nfaces_wghost, Operators::OPERATOR_BC_NONE);
-  std::vector<double> bc_value(nfaces_wghost, 0.0), bc_mixed(nfaces_wghost, 0.0);
+  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(mesh, AmanziMesh::FACE, SCHEMA_DOFS_SCALAR));
+  std::vector<int>& bc_model = bc->bc_model();
+  std::vector<double>& bc_value = bc->bc_value();
+  std::vector<double>& bc_mixed = bc->bc_mixed();
 
   for (int f = 0; f < nfaces_wghost; f++) {
     const Point& xf = mesh->face_centroid(f);
@@ -118,13 +115,12 @@ void RunTestDiffusionMixed(double gravity) {
       bc_value[f] = ana.pressure_exact(xf, 0.0);
     }
   }
-  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(Operators::OPERATOR_BC_TYPE_FACE, bc_model, bc_value, bc_mixed));
 
   // create diffusion operator 
   double rho(1.0);
   AmanziGeometry::Point g(0.0, -gravity);
   ParameterList op_list = plist.get<Teuchos::ParameterList>("PK operator").sublist("diffusion operator mixed");
-  Teuchos::RCP<OperatorDiffusion> op = Teuchos::rcp(new OperatorDiffusionMFDwithGravity(op_list, mesh, rho, g));
+  Teuchos::RCP<Diffusion> op = Teuchos::rcp(new DiffusionMFDwithGravity(op_list, mesh, rho, g));
   op->SetBCs(bc, bc);
   const CompositeVectorSpace& cvs = op->global_operator()->DomainMap();
 
@@ -165,43 +161,45 @@ void RunTestDiffusionMixed(double gravity) {
   CHECK(bhb > 0.0);
 
   // solve the problem
-  ParameterList lop_list = plist.get<Teuchos::ParameterList>("solvers");
-  AmanziSolvers::LinearOperatorFactory<Operator, CompositeVector, CompositeVectorSpace> factory;
-  Teuchos::RCP<AmanziSolvers::LinearOperator<Operator, CompositeVector, CompositeVectorSpace> >
-     solver = factory.Create("AztecOO CG", lop_list, global_op);
+  ParameterList lop_list = plist.sublist("solvers")
+                                .sublist("AztecOO CG").sublist("pcg parameters");
+  AmanziSolvers::LinearOperatorPCG<Operator, CompositeVector, CompositeVectorSpace>
+      solver(global_op, global_op);
+  solver.Init(lop_list);
 
   CompositeVector rhs = *global_op->rhs();
-  CompositeVector solution(rhs), flux(rhs);
-  solution.PutScalar(0.0);
+  Teuchos::RCP<CompositeVector> solution = Teuchos::rcp(new CompositeVector(rhs));
+  Teuchos::RCP<CompositeVector> flux = Teuchos::rcp(new CompositeVector(rhs));
+  solution->PutScalar(0.0);
 
-  int ierr = solver->ApplyInverse(rhs, solution);
+  int ierr = solver.ApplyInverse(rhs, *solution);
 
   if (MyPID == 0) {
-    std::cout << "pressure solver (" << solver->name() 
-              << "): ||r||=" << solver->residual() << " itr=" << solver->num_itrs()
-              << " code=" << solver->returned_code() << std::endl;
+    std::cout << "pressure solver (pcg): ||r||=" << solver.residual() 
+              << " itr=" << solver.num_itrs()
+              << " code=" << solver.returned_code() << std::endl;
   }
 
   // compute pressure error
-  Epetra_MultiVector& p = *solution.ViewComponent("cell", false);
+  Epetra_MultiVector& p = *solution->ViewComponent("cell", false);
   double pnorm, pl2_err, pinf_err;
   ana.ComputeCellError(p, 0.0, pnorm, pl2_err, pinf_err);
 
   // calculate flux error
-  Epetra_MultiVector& flx = *flux.ViewComponent("face", true);
+  Epetra_MultiVector& flx = *flux->ViewComponent("face", true);
   double unorm, ul2_err, uinf_err;
 
-  op->UpdateFlux(solution, flux);
+  op->UpdateFlux(solution.ptr(), flux.ptr());
   ana.ComputeFaceError(flx, 0.0, unorm, ul2_err, uinf_err);
 
   if (MyPID == 0) {
     pl2_err /= pnorm; 
     ul2_err /= unorm;
     printf("L2(p)=%9.6f  Inf(p)=%9.6f  L2(u)=%9.6g  Inf(u)=%9.6f  itr=%3d\n",
-        pl2_err, pinf_err, ul2_err, uinf_err, solver->num_itrs());
+        pl2_err, pinf_err, ul2_err, uinf_err, solver.num_itrs());
 
     CHECK(pl2_err < 1e-12 && ul2_err < 1e-12);
-    CHECK(solver->num_itrs() < 10);
+    CHECK(solver.num_itrs() < 10);
   }
 }
 
@@ -240,13 +238,8 @@ TEST(OPERATOR_DIFFUSION_CELL_EXACTNESS) {
   ParameterList region_list = plist.get<Teuchos::ParameterList>("regions");
   Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(2, region_list, &comm));
 
-  FrameworkPreference pref;
-  pref.clear();
-  pref.push_back(MSTK);
-  pref.push_back(STKMESH);
-
   MeshFactory meshfactory(&comm);
-  meshfactory.preference(pref);
+  meshfactory.preference(FrameworkPreference({MSTK, STKMESH}));
   RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 15, 8, gm);
 
   // modify diffusion coefficient
@@ -270,8 +263,9 @@ TEST(OPERATOR_DIFFUSION_CELL_EXACTNESS) {
   AmanziGeometry::Point g(0.0, -1.0);
 
   // create boundary data.
-  std::vector<int> bc_model(nfaces_wghost, Operators::OPERATOR_BC_NONE);
-  std::vector<double> bc_value(nfaces_wghost, 0.0), bc_mixed(nfaces_wghost, 0.0);
+  Teuchos::RCP<BCs> bc_f = Teuchos::rcp(new BCs(mesh, AmanziMesh::FACE, SCHEMA_DOFS_SCALAR));
+  std::vector<int>& bc_model = bc_f->bc_model();
+  std::vector<double>& bc_value = bc_f->bc_value();
 
   for (int f = 0; f < nfaces_wghost; f++) {
     const Point& xf = mesh->face_centroid(f);
@@ -295,11 +289,10 @@ TEST(OPERATOR_DIFFUSION_CELL_EXACTNESS) {
       bc_value[f] = ana.pressure_exact(xf, 0.0);
     }
   }
-  Teuchos::RCP<BCs> bc_f = Teuchos::rcp(new BCs(OPERATOR_BC_TYPE_FACE, bc_model, bc_value, bc_mixed));
 
   // create diffusion operator 
   ParameterList op_list = plist.get<Teuchos::ParameterList>("PK operator").sublist("diffusion operator cell");
-  Teuchos::RCP<OperatorDiffusion> op = Teuchos::rcp(new OperatorDiffusionFV(op_list, mesh));
+  Teuchos::RCP<Diffusion> op = Teuchos::rcp(new DiffusionFV(op_list, mesh));
   op->SetBCs(bc_f, bc_f);
   const CompositeVectorSpace& cvs = op->global_operator()->DomainMap();
 
@@ -318,21 +311,22 @@ TEST(OPERATOR_DIFFUSION_CELL_EXACTNESS) {
   global_op->InitPreconditioner("Hypre AMG", slist);
 
   // solve the problem
-  ParameterList lop_list = plist.get<Teuchos::ParameterList>("solvers");
-  AmanziSolvers::LinearOperatorFactory<Operator, CompositeVector, CompositeVectorSpace> factory;
-  Teuchos::RCP<AmanziSolvers::LinearOperator<Operator, CompositeVector, CompositeVectorSpace> >
-     solver = factory.Create("AztecOO CG", lop_list, global_op);
+  ParameterList lop_list = plist.sublist("solvers")
+                                .sublist("AztecOO CG").sublist("pcg parameters");
+  AmanziSolvers::LinearOperatorPCG<Operator, CompositeVector, CompositeVectorSpace>
+      solver(global_op, global_op);
+  solver.Init(lop_list);
 
   CompositeVector rhs = *global_op->rhs();
   CompositeVector solution(rhs);
   solution.PutScalar(0.0);
 
-  int ierr = solver->ApplyInverse(rhs, solution);
+  int ierr = solver.ApplyInverse(rhs, solution);
 
   if (MyPID == 0) {
-    std::cout << "pressure solver (" << solver->name() 
-              << "): ||r||=" << solver->residual() << " itr=" << solver->num_itrs()
-              << " code=" << solver->returned_code() << std::endl;
+    std::cout << "pressure solver (pcg): ||r||=" << solver.residual() 
+              << " itr=" << solver.num_itrs()
+              << " code=" << solver.returned_code() << std::endl;
   }
 
   // compute pressure error
@@ -342,10 +336,10 @@ TEST(OPERATOR_DIFFUSION_CELL_EXACTNESS) {
 
   if (MyPID == 0) {
     pl2_err /= pnorm; 
-    printf("L2(p)=%9.6f  Inf(p)=%9.6f  itr=%3d\n", pl2_err, pinf_err, solver->num_itrs());
+    printf("L2(p)=%9.6f  Inf(p)=%9.6f  itr=%3d\n", pl2_err, pinf_err, solver.num_itrs());
 
     CHECK(pl2_err < 1e-5);
-    CHECK(solver->num_itrs() < 10);
+    CHECK(solver.num_itrs() < 10);
   }
 }
 

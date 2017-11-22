@@ -30,8 +30,8 @@
 
 // Operators
 #include "Analytic05.hh"
+#include "DiffusionMFD.hh"
 #include "OperatorDefs.hh"
-#include "OperatorDiffusionMFD.hh"
 #include "UpwindSecondOrder.hh"
 
 
@@ -84,8 +84,9 @@ TEST(OPERATOR_DIFFUSION_NONSYMMETRIC) {
   AmanziGeometry::Point g(0.0, -1.0);
 
   // create boundary data
-  std::vector<int> bc_model(nfaces_wghost, Operators::OPERATOR_BC_NONE);
-  std::vector<double> bc_value(nfaces_wghost, 0.0), bc_mixed(nfaces_wghost, 0.0);
+  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(mesh, AmanziMesh::FACE, SCHEMA_DOFS_SCALAR));
+  std::vector<int>& bc_model = bc->bc_model();
+  std::vector<double>& bc_value = bc->bc_value();
 
   for (int f = 0; f < nfaces_wghost; f++) {
     const Point& xf = mesh->face_centroid(f);
@@ -99,16 +100,15 @@ TEST(OPERATOR_DIFFUSION_NONSYMMETRIC) {
       bc_value[f] = ana.velocity_exact(xf, 0.0) * normal / area;
     }
   }
-  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(Operators::OPERATOR_BC_TYPE_FACE, bc_model, bc_value, bc_mixed));
 
   // create diffusion operator 
-  Teuchos::RCP<OperatorDiffusion> op = Teuchos::rcp(new OperatorDiffusionMFD(op_list, mesh));
+  Teuchos::RCP<Diffusion> op = Teuchos::rcp(new DiffusionMFD(op_list, mesh));
   op->SetBCs(bc, bc);
   const CompositeVectorSpace& cvs = op->global_operator()->DomainMap();
 
   // create and initialize state variables.
-  CompositeVector solution(cvs);
-  solution.PutScalar(0.0);
+  Teuchos::RCP<CompositeVector> solution = Teuchos::rcp(new CompositeVector(cvs));
+  solution->PutScalar(0.0);
 
   // create source 
   CompositeVector source(cvs);
@@ -141,7 +141,7 @@ TEST(OPERATOR_DIFFUSION_NONSYMMETRIC) {
      solver = factory.Create("Belos GMRES", lop_list, global_op);
 
   CompositeVector& rhs = *global_op->rhs();
-  int ierr = solver->ApplyInverse(rhs, solution);
+  int ierr = solver->ApplyInverse(rhs, *solution);
 
   if (MyPID == 0) {
     std::cout << "pressure solver (" << solver->name() 
@@ -150,7 +150,7 @@ TEST(OPERATOR_DIFFUSION_NONSYMMETRIC) {
   }
 
   // compute pressure error
-  Epetra_MultiVector& p = *solution.ViewComponent("cell", false);
+  Epetra_MultiVector& p = *solution->ViewComponent("cell", false);
   double pnorm, pl2_err, pinf_err;
   ana.ComputeCellError(p, 0.0, pnorm, pl2_err, pinf_err);
 
@@ -158,7 +158,7 @@ TEST(OPERATOR_DIFFUSION_NONSYMMETRIC) {
   Teuchos::RCP<CompositeVector> flux = Teuchos::rcp(new CompositeVector(cvs));
   Epetra_MultiVector& flx = *flux->ViewComponent("face", true);
 
-  op->UpdateFlux(solution, *flux);
+  op->UpdateFlux(solution.ptr(), flux.ptr());
   double unorm, ul2_err, uinf_err;
   ana.ComputeFaceError(flx, 0.0, unorm, ul2_err, uinf_err);
 

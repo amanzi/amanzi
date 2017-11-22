@@ -80,14 +80,14 @@ endif()
 
 if (ENABLE_Physics)
   add_subdirectory(eos)
-
   add_subdirectory(flow)
+  add_subdirectory(navier_stokes)
 endif()
 
 # chemistry isn't REALLY physics...
 add_subdirectory(chemistry)
 
-# ok, transport is probably physics but oh well
+# ok, transport is physics but oh well...
 add_subdirectory(transport)
 
 if (ENABLE_Physics)

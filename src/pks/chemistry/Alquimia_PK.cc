@@ -54,7 +54,6 @@ Alquimia_PK::Alquimia_PK(Teuchos::ParameterList& pk_tree,
     saved_time_(0.0)
 {
   S_ = S;
-  //mesh_ = S_->GetMesh();
   glist_ = glist;
 
   // extract pk name
@@ -68,6 +67,7 @@ Alquimia_PK::Alquimia_PK(Teuchos::ParameterList& pk_tree,
 
   domain_name_ = cp_list_->get<std::string>("domain name", "domain");
 
+  // obtain key of fields
   tcc_key_ = Keys::getKey(domain_name_, "total_component_concentration"); 
   poro_key_ = cp_list_->get<std::string>("porosity key", Keys::getKey(domain_name_, "porosity"));
   saturation_key_ = cp_list_->get<std::string>("saturation key", Keys::getKey(domain_name_, "saturation_liquid"));
@@ -122,7 +122,7 @@ Alquimia_PK::Alquimia_PK(Teuchos::ParameterList& pk_tree,
   number_aqueous_kinetics_ = aqueous_kinetics_names_.size();
   
   // verbosity object
-  vo_ = Teuchos::rcp(new VerboseObject("Chem::Alquimia "+domain_name_, *cp_list_));
+  vo_ = Teuchos::rcp(new VerboseObject("Chem::Alquimia:" + domain_name_, *cp_list_));
   chem_out = &*vo_;
 }
 
@@ -204,7 +204,7 @@ void Alquimia_PK::Initialize(const Teuchos::Ptr<State>& S)
   }
 
   for (auto it = aux_names.begin(); it != aux_names.end(); ++it) {
-    InitializeField_(*it, 0.0);
+    InitializeField(S_, passwd_, *it, 0.0);
   }
 
   // Read XML parameters from our input file.
@@ -592,7 +592,6 @@ void Alquimia_PK::CopyToAlquimia(int cell,
       mat_props.aqueous_kinetic_rate_cnst.data[i] = aqueous_kinetics_rate[i][cell];
     }
   }
-
 }
 
 

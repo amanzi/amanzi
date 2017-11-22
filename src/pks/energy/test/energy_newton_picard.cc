@@ -19,17 +19,17 @@
 #include "Epetra_MpiComm.h"
 
 // Amanzi
+#include "Accumulation.hh"
+#include "DiffusionFactory.hh"
+#include "DiffusionMFD.hh"
 #include "GMVMesh.hh"
 #include "MeshFactory.hh"
 #include "Operator.hh"
-#include "OperatorDiffusionMFD.hh"
-#include "OperatorAdvection.hh"
-#include "OperatorAccumulation.hh"
-#include "OperatorDiffusionFactory.hh"
 #include "SolverFactory.hh"
 #include "SolverFnBase.hh"
 #include "UpwindFlux.hh"
 
+// Amanzi::Energy
 #include "Energy_PK.hh"
 
 const double TemperatureSource = 1.0; 
@@ -80,12 +80,10 @@ class HeatConduction : public AmanziSolvers::SolverFnBase<CompositeVector> {
 
   Teuchos::RCP<CompositeVectorSpace> cvs_;
   Teuchos::RCP<Operators::Operator> op_;
-  Teuchos::RCP<Operators::OperatorDiffusion> op_diff_;
-  Teuchos::RCP<Operators::OperatorAccumulation> op_acc_;
+  Teuchos::RCP<Operators::Diffusion> op_diff_;
+  Teuchos::RCP<Operators::Accumulation> op_acc_;
 
   Teuchos::RCP<Operators::BCs> bc_;  
-  std::vector<int> bc_model;
-  std::vector<double> bc_value, bc_mixed;
 
   std::vector<WhetStone::Tensor> K;
   Teuchos::RCP<CompositeVector> k, dkdT;
@@ -144,8 +142,9 @@ void HeatConduction::Init(
   int ncells_owned = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
 
-  bc_model.assign(nfaces_wghost, Operators::OPERATOR_BC_NONE);
-  bc_value.assign(nfaces_wghost, 0.0);
+  bc_ = Teuchos::rcp(new Operators::BCs(mesh, AmanziMesh::FACE, Operators::SCHEMA_DOFS_SCALAR));
+  std::vector<int>& bc_model = bc_->bc_model();
+  std::vector<double>& bc_value = bc_->bc_value();
 
   for (int f = 0; f < nfaces_wghost; f++) {
     const AmanziGeometry::Point& xf = mesh->face_centroid(f);
@@ -161,7 +160,6 @@ void HeatConduction::Init(
       bc_value[f] = TemperatureFloor;
     }
   }
-  bc_ = Teuchos::rcp(new Operators::BCs(Operators::OPERATOR_BC_TYPE_FACE, bc_model, bc_value, bc_mixed));
 
   // constant accumulation term
   dT = 5e-3;
@@ -190,10 +188,10 @@ void HeatConduction::Init(
 
   // create the operators
   Teuchos::ParameterList olist = plist.sublist("PK operator").sublist(op_name_);
-  op_diff_ = Teuchos::rcp(new Operators::OperatorDiffusionMFD(olist, mesh_));
+  op_diff_ = Teuchos::rcp(new Operators::DiffusionMFD(olist, mesh_));
   op_diff_->SetBCs(bc_, bc_);
   op_ = op_diff_->global_operator();
-  op_acc_ = Teuchos::rcp(new Operators::OperatorAccumulation(AmanziMesh::CELL, op_));
+  op_acc_ = Teuchos::rcp(new Operators::Accumulation(AmanziMesh::CELL, op_));
   op_->Init();
 
   // set up the local matrices
@@ -201,7 +199,7 @@ void HeatConduction::Init(
   op_diff_->Setup(Kptr, k, dkdT);
   op_diff_->UpdateMatrices(flux_.ptr(), solution_.ptr());
   op_diff_->UpdateMatricesNewtonCorrection(flux_.ptr(), solution_.ptr(), 1.0);
-  op_acc_->AddAccumulationTerm(*solution0_, *phi_, dT, "cell");
+  op_acc_->AddAccumulationDelta(*solution0_, *phi_, *phi_, dT, "cell");
 
   // form the global matrix
   op_diff_->ApplyBCs(true, true);
@@ -250,7 +248,7 @@ void HeatConduction::Residual(const Teuchos::RCP<CompositeVector>& u,
   op_->Init();
   UpdateValues(*u);
   op_diff_->UpdateMatrices(Teuchos::null, u.ptr());
-  op_acc_->AddAccumulationTerm(*solution0_, *phi_, dT, "cell");
+  op_acc_->AddAccumulationDelta(*solution0_, *phi_, *phi_, dT, "cell");
   op_diff_->ApplyBCs(true, true);
   op_->ComputeNegativeResidual(*u, *f);
 }
@@ -261,14 +259,14 @@ void HeatConduction::Residual(const Teuchos::RCP<CompositeVector>& u,
 ****************************************************************** */
 void HeatConduction::UpdatePreconditioner(const Teuchos::RCP<const CompositeVector>& up)
 {
-  op_diff_->UpdateFlux(*up, *flux_);
+  op_diff_->UpdateFlux(up.ptr(), flux_.ptr());
 
   // Calculate new matrix.
   UpdateValues(*up);
   op_->Init();
   op_diff_->UpdateMatrices(flux_.ptr(), up.ptr());
   op_diff_->UpdateMatricesNewtonCorrection(flux_.ptr(), up.ptr(), 1.0);
-  op_acc_->AddAccumulationTerm(*solution0_, *phi_, dT, "cell");
+  op_acc_->AddAccumulationDelta(*solution0_, *phi_, *phi_, dT, "cell");
   op_diff_->ApplyBCs(true, true);
 
   // Assemble matrix and calculate preconditioner.
@@ -316,6 +314,8 @@ void HeatConduction::UpdateValues(const CompositeVector& u)
     dkdT_c[0][c] = ConductionDerivative(c, u);
   }
 
+  std::vector<int>& bc_model = bc_->bc_model();
+  std::vector<double>& bc_value = bc_->bc_value();
   upwind_->Compute(*flux_, u, bc_model, bc_value, *k, &HeatConduction::Conduction);
   upwind_->Compute(*flux_, u, bc_model, bc_value, *dkdT, &HeatConduction::ConductionDerivative);
 }

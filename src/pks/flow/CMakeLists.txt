@@ -1,5 +1,3 @@
-# -*- mode: cmake -*-
-
 #
 #  Amanzi
 #   Flow process kernel
@@ -131,6 +129,7 @@ set(flow_src_files Flow_PK.cc
                    DarcyVelocityEvaluator.cc
                    MultiscaleFlowPorosityFactory.cc MultiscaleFlowPorosityPartition.cc
                    MultiscaleFlowPorosity_DPM.cc
+                   FracturePermModelPartition.cc FracturePermModelEvaluator.cc
                    )
 set(flow_tpl_libs ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES} ${Boost_LIBRARIES} ${SEACAS_LIBRARIES})
 if (Ifpack_ENABLE_HYPRE)
@@ -150,6 +149,11 @@ set(flow_inc_files
   FlowBoundaryFunction.hh
   Flow_PK.hh
   FlowTypeDefs.hh
+  FracturePermModel.hh
+  FracturePermModel_CubicLaw.hh
+  FracturePermModel_Linear.hh
+  FracturePermModelPartition.hh
+  FracturePermModelEvaluator.hh
   MultiscaleFlowPorosity.hh
   MultiscaleFlowPorosity_DPM.hh
   MultiscaleFlowPorosityFactory.hh
@@ -175,14 +179,13 @@ if (BUILD_TESTS)
     include_directories(${UnitTest_INCLUDE_DIRS})
     include_directories(${MESH_FACTORY_SOURCE_DIR})
 
-
     # Copy test directory files if any out of source build
     if (NOT (${FLOW_SOURCE_DIR} EQUAL ${FLOW_BINARY_DIR}) )
         # execute_process(COMMAND ${CMAKE_COMMAND} -E 
         #   copy_directory ${FLOW_SOURCE_DIR}/test ${FLOW_BINARY_DIR}/test) 
         file(GLOB DataFiles "${FLOW_SOURCE_DIR}/test/*.xml"
                             "${FLOW_SOURCE_DIR}/test/*.exo"
-                            "${FLOW_SOURCE_DIR}/test/perm.h5")
+                            "${FLOW_SOURCE_DIR}/test/*.h5")
         file(COPY ${DataFiles} DESTINATION ${FLOW_BINARY_DIR}/test/)
     endif()
 

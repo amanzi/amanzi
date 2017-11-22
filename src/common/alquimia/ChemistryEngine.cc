@@ -1,14 +1,16 @@
+/*
+  Alquimia
 
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
-/* -------------------------------------------------------------------------
-Amanzi Chemistry
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
 
-License: see COPYRIGHT
-Author: Jeffrey Johnson
+  Authors: Jeffrey Johnson
+           Sergi Molins <smolins@lbl.gov>
 
-This implements the Alquimia chemistry engine.
-
- ------------------------------------------------------------------------- */
+  This implements the Alquimia chemistry engine.
+*/
 
 #include <iostream>
 #include <cstring>
@@ -61,10 +63,11 @@ void CopyAlquimiaAuxiliaryData(AlquimiaAuxiliaryData* dest, AlquimiaAuxiliaryDat
   memcpy(dest->aux_doubles.data, src->aux_doubles.data, sizeof(double) * src->aux_doubles.size);
 }
 
-}
+} // namespace
+
 
 ChemistryEngine::ChemistryEngine(const std::string& engineName, 
-                                 const std::string& inputFile):
+                                 const std::string& inputFile) :
   chem_engine_name_(engineName),
   chem_engine_inputfile_(inputFile)
 {
@@ -88,7 +91,7 @@ ChemistryEngine::ChemistryEngine(const std::string& engineName,
   if (chem_engine_name_ != "PFloTran" && chem_engine_name_ != "CrunchFlow")
   {
     msg << "ChemistryEngine: Unsupported chemistry engine: '" << chem_engine_name_ << "'\n";
-    msg << "  Options are 'PFlotran' or 'CrunchFlow'.\n";
+    msg << "  Options are 'PFloTran' or 'CrunchFlow'.\n";
     Exceptions::amanzi_throw(msg);
   }
 
@@ -322,7 +325,8 @@ void ChemistryEngine::CreateCondition(const std::string& condition_name)
   chem_conditions_[condition_name] = condition;
 }
 
-  /* Mineral constraints will be discontinued in Alquimia -- see Sergi
+
+/* Mineral constraints will be discontinued in Alquimia -- see Sergi
 
 void ChemistryEngine::AddMineralConstraint(const std::string& condition_name,
                                            const std::string& mineral_name,
@@ -370,6 +374,7 @@ void ChemistryEngine::AddMineralConstraint(const std::string& condition_name,
   }
 }
 Mineral constraints will be discontinued in Alquimia -- see Sergi */
+
 
 void ChemistryEngine::AddAqueousConstraint(const std::string& condition_name,
                                            const std::string& primary_species_name,

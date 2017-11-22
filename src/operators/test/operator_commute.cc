@@ -23,17 +23,17 @@
 
 // Amanzi
 #include "MeshFactory.hh"
-#include "mfd3d_diffusion.hh"
 #include "LinearOperatorFactory.hh"
 #include "Tensor.hh"
 
-// Operators
+// Amanzi::Operators
+#include "AdvectionUpwind.hh"
+#include "DiffusionFV.hh"
+#include "DiffusionFactory.hh"
+#include "DiffusionMFD.hh"
 #include "Operator_FaceCell.hh"
-#include "OperatorAdvection.hh"
 #include "OperatorDefs.hh"
-#include "OperatorDiffusionMFD.hh"
-#include "OperatorDiffusionFV.hh"
-#include "OperatorDiffusionFactory.hh"
+
 
 /* *****************************************************************
 * This test verified that operators can be computed in arbitrary
@@ -69,7 +69,6 @@ TEST(ADVECTION_DIFFUSION_COMMUTE) {
   RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 40, 40, gm);
 
   // modify diffusion coefficient.
-  // -- since rho=mu=1.0, we do not need additional special steps.
   Teuchos::RCP<std::vector<WhetStone::Tensor> > K = Teuchos::rcp(new std::vector<WhetStone::Tensor>());
   int ncells_owned = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
@@ -79,12 +78,11 @@ TEST(ADVECTION_DIFFUSION_COMMUTE) {
     Kc(0, 0) = 1.0;
     K->push_back(Kc);
   }
-  double rho(1.0), mu(1.0);
 
   // create boundary data
-  std::vector<int> bc_model(nfaces_wghost, OPERATOR_BC_NONE);
-  std::vector<double> bc_value(nfaces_wghost);
-  std::vector<double> bc_mixed;
+  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(mesh, AmanziMesh::FACE, SCHEMA_DOFS_SCALAR));
+  std::vector<int>& bc_model = bc->bc_model();
+  std::vector<double>& bc_value = bc->bc_value();
 
   for (int f = 0; f < nfaces_wghost; f++) {
     const Point& xf = mesh->face_centroid(f);
@@ -94,7 +92,6 @@ TEST(ADVECTION_DIFFUSION_COMMUTE) {
       bc_value[f] = xf[1] * xf[1];
     }
   }
-  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(OPERATOR_BC_TYPE_FACE, bc_model, bc_value, bc_mixed));
 
   // create the global operator space
   Teuchos::RCP<CompositeVectorSpace> cvs = Teuchos::rcp(new CompositeVectorSpace());
@@ -103,8 +100,8 @@ TEST(ADVECTION_DIFFUSION_COMMUTE) {
   cvs->AddComponent("face", AmanziMesh::FACE, 1);
 
   // create velocity field
-  CompositeVector u(*cvs);
-  Epetra_MultiVector& uf = *u.ViewComponent("face");
+  Teuchos::RCP<CompositeVector> u = Teuchos::rcp(new CompositeVector(*cvs));
+  Epetra_MultiVector& uf = *u->ViewComponent("face");
   int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
   Point vel(4.0, 4.0);
   for (int f = 0; f < nfaces; f++) {
@@ -117,14 +114,14 @@ TEST(ADVECTION_DIFFUSION_COMMUTE) {
   
   // create advection operator
   Teuchos::ParameterList alist;
-  Teuchos::RCP<OperatorAdvection> op1 = Teuchos::rcp(new OperatorAdvection(alist, global_op));
-  op1->Setup(u);
-  op1->UpdateMatrices(u);
+  Teuchos::RCP<AdvectionUpwind> op1 = Teuchos::rcp(new AdvectionUpwind(alist, global_op));
+  op1->Setup(*u);
+  op1->UpdateMatrices(u.ptr());
 
   // add the diffusion operator
   Teuchos::ParameterList olist = plist.get<Teuchos::ParameterList>("PK operator")
                                       .get<Teuchos::ParameterList>("diffusion operator mfd");
-  Teuchos::RCP<OperatorDiffusion> op2 = Teuchos::rcp(new OperatorDiffusionMFD(olist, global_op));
+  Teuchos::RCP<Diffusion> op2 = Teuchos::rcp(new DiffusionMFD(olist, global_op));
   op2->SetBCs(bc, bc);
   op2->Setup(K, Teuchos::null, Teuchos::null);
   op2->UpdateMatrices(Teuchos::null, Teuchos::null);
@@ -141,15 +138,15 @@ TEST(ADVECTION_DIFFUSION_COMMUTE) {
   
   Teuchos::ParameterList olist2 = plist.get<Teuchos::ParameterList>("PK operator")
                                        .get<Teuchos::ParameterList>("diffusion operator mfd");
-  Teuchos::RCP<OperatorDiffusion> op3 = Teuchos::rcp(new OperatorDiffusionMFD(olist2, global_op2));
+  Teuchos::RCP<Diffusion> op3 = Teuchos::rcp(new DiffusionMFD(olist2, global_op2));
   op3->SetBCs(bc, bc);
   op3->Setup(K, Teuchos::null, Teuchos::null);
   op3->UpdateMatrices(Teuchos::null, Teuchos::null);
 
   Teuchos::ParameterList alist2;
-  Teuchos::RCP<OperatorAdvection> op4 = Teuchos::rcp(new OperatorAdvection(alist2, global_op2));
-  op4->Setup(u);
-  op4->UpdateMatrices(u);
+  Teuchos::RCP<AdvectionUpwind> op4 = Teuchos::rcp(new AdvectionUpwind(alist2, global_op2));
+  op4->Setup(*u);
+  op4->UpdateMatrices(u.ptr());
 
   // create a preconditioner
   op3->ApplyBCs(true, true);
@@ -199,7 +196,6 @@ TEST(ADVECTION_DIFFUSION_COMMUTE_FV) {
   RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 40, 40, gm);
 
   // modify diffusion coefficient
-  // -- since rho=mu=1.0, we do need additional special steps.
   Teuchos::RCP<std::vector<WhetStone::Tensor> > K = Teuchos::rcp(new std::vector<WhetStone::Tensor>());
   int ncells_owned = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
@@ -209,12 +205,11 @@ TEST(ADVECTION_DIFFUSION_COMMUTE_FV) {
     Kc(0, 0) = 1.0;
     K->push_back(Kc);
   }
-  double rho(1.0), mu(1.0);
 
   // create boundary data
-  std::vector<int> bc_model(nfaces_wghost, OPERATOR_BC_NONE);
-  std::vector<double> bc_value(nfaces_wghost);
-  std::vector<double> bc_mixed;
+  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(mesh, AmanziMesh::FACE, SCHEMA_DOFS_SCALAR));
+  std::vector<int>& bc_model = bc->bc_model();
+  std::vector<double>& bc_value = bc->bc_value();
 
   for (int f = 0; f < nfaces_wghost; f++) {
     const Point& xf = mesh->face_centroid(f);
@@ -224,7 +219,6 @@ TEST(ADVECTION_DIFFUSION_COMMUTE_FV) {
       bc_value[f] = xf[1] * xf[1];
     }
   }
-  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(OPERATOR_BC_TYPE_FACE, bc_model, bc_value, bc_mixed));
 
   // create the global operator space
   Teuchos::RCP<CompositeVectorSpace> cvs = Teuchos::rcp(new CompositeVectorSpace());
@@ -233,8 +227,8 @@ TEST(ADVECTION_DIFFUSION_COMMUTE_FV) {
   cvs->AddComponent("face", AmanziMesh::FACE, 1);
 
   // create velocity field
-  CompositeVector u(*cvs);
-  Epetra_MultiVector& uf = *u.ViewComponent("face");
+  Teuchos::RCP<CompositeVector> u = Teuchos::rcp(new CompositeVector(*cvs));
+  Epetra_MultiVector& uf = *u->ViewComponent("face");
   int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
   Point vel(4.0, 4.0);
   for (int f = 0; f < nfaces; f++) {
@@ -247,14 +241,14 @@ TEST(ADVECTION_DIFFUSION_COMMUTE_FV) {
   
   // create advection operator
   Teuchos::ParameterList alist;
-  Teuchos::RCP<OperatorAdvection> op1 = Teuchos::rcp(new OperatorAdvection(alist, global_op));
-  op1->Setup(u);
-  op1->UpdateMatrices(u);
+  Teuchos::RCP<AdvectionUpwind> op1 = Teuchos::rcp(new AdvectionUpwind(alist, global_op));
+  op1->Setup(*u);
+  op1->UpdateMatrices(u.ptr());
 
   // add the diffusion operator
   Teuchos::ParameterList olist = plist.get<Teuchos::ParameterList>("PK operator")
                                       .get<Teuchos::ParameterList>("diffusion operator fv");
-  Teuchos::RCP<OperatorDiffusion> op2 = Teuchos::rcp(new OperatorDiffusionFV(olist, global_op));
+  Teuchos::RCP<Diffusion> op2 = Teuchos::rcp(new DiffusionFV(olist, global_op));
   op2->SetBCs(bc, bc);
   op2->Setup(K, Teuchos::null, Teuchos::null);
   op2->UpdateMatrices(Teuchos::null, Teuchos::null);
@@ -271,15 +265,15 @@ TEST(ADVECTION_DIFFUSION_COMMUTE_FV) {
   
   Teuchos::ParameterList olist2 = plist.get<Teuchos::ParameterList>("PK operator")
                                       .get<Teuchos::ParameterList>("diffusion operator fv");
-  Teuchos::RCP<OperatorDiffusion> op3 = Teuchos::rcp(new OperatorDiffusionFV(olist2, global_op2));
+  Teuchos::RCP<Diffusion> op3 = Teuchos::rcp(new DiffusionFV(olist2, global_op2));
   op3->SetBCs(bc, bc);
   op3->Setup(K, Teuchos::null, Teuchos::null);
   op3->UpdateMatrices(Teuchos::null, Teuchos::null);
 
   Teuchos::ParameterList alist2;
-  Teuchos::RCP<OperatorAdvection> op4 = Teuchos::rcp(new OperatorAdvection(alist2, global_op2));
-  op4->Setup(u);
-  op4->UpdateMatrices(u);
+  Teuchos::RCP<AdvectionUpwind> op4 = Teuchos::rcp(new AdvectionUpwind(alist2, global_op2));
+  op4->Setup(*u);
+  op4->UpdateMatrices(u.ptr());
 
   // create a preconditioner
   op3->ApplyBCs(false, true);

@@ -18,7 +18,7 @@
 #include <vector>
 
 #include "CommonDefs.hh"
-#include "FieldMaps.hh"
+#include "RemapUtils.hh"
 #include "LinearOperatorFactory.hh"
 
 #include "Richards_PK.hh"
@@ -312,7 +312,7 @@ void Richards_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVector>
 
   // -- Darcy flux
   if (upwind_frequency_ == FLOW_UPWIND_UPDATE_ITERATION) {
-    op_matrix_diff_->UpdateFlux(*solution, *darcy_flux_copy);
+    op_matrix_diff_->UpdateFlux(solution.ptr(), darcy_flux_copy.ptr());
     Epetra_MultiVector& flux = *darcy_flux_copy->ViewComponent("face");
     for (int f = 0; f < nfaces_owned; f++) flux[0][f] /= molar_rho_;
   }
@@ -345,7 +345,7 @@ void Richards_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVector>
     S_->GetFieldEvaluator("water_content")->HasFieldDerivativeChanged(S_.ptr(), passwd_, "pressure");
     CompositeVector& dwc_dp = *S_->GetFieldData("dwater_content_dpressure", "water_content");
 
-    op_acc_->AddAccumulationTerm(*u->Data(), dwc_dp, dtp, "cell");
+    op_acc_->AddAccumulationDelta(*u->Data(), dwc_dp, dwc_dp, dtp, "cell");
  
     // estimate CNLS limiters
     if (algebraic_water_content_balance_) {

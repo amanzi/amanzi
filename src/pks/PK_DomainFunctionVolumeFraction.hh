@@ -101,7 +101,7 @@ void PK_DomainFunctionVolumeFraction<FunctionBase>::Init(
 template <class FunctionBase>
 void PK_DomainFunctionVolumeFraction<FunctionBase>::Compute(double t0, double t1)
 {
-   // create the input tuple (time + space)
+  // create the input tuple (time + space)
   int dim = (*mesh_).space_dimension();
   std::vector<double> args(1 + dim);
 

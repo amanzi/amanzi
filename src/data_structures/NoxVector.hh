@@ -5,21 +5,21 @@
  *      Author: amklinv
  */
 
-#ifndef SRC_SOLVERS_NOXVECTOR_HH_
-#define SRC_SOLVERS_NOXVECTOR_HH_
+#ifndef AMANZI_NOXVECTOR_HH_
+#define AMANZI_NOXVECTOR_HH_
 
 #include "Epetra_Vector.h"
-#include <NOX_Abstract_Vector.H>
-#include <data_structures_types.hh>
+#include "NOX_Abstract_Vector.H"
+
+#include "data_structures_types.hh"
 
 namespace Amanzi {
 
 template<class VectorClass>
-class NoxVector : public NOX::Abstract::Vector
-{
+class NoxVector : public NOX::Abstract::Vector {
 public:
   NoxVector(const Teuchos::RCP<VectorClass>& vec) :
-      vec_(vec) {}
+      vec_(vec) {};
 
   NoxVector(const NoxVector& other, NOX::CopyType type=NOX::DeepCopy);
 
@@ -121,7 +121,6 @@ public:
   Teuchos::RCP<VectorClass> vec_;
 };
 
-
 } // namespace
 
-#endif /* SRC_SOLVERS_NOXVECTOR_HH_ */
+#endif

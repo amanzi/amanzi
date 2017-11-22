@@ -33,7 +33,9 @@
 #ifndef AMANZI_OPERATOR_ANALYTIC_BASE_HH_
 #define AMANZI_OPERATOR_ANALYTIC_BASE_HH_
 
-#include "mfd3d_diffusion.hh"
+#include "Epetra_MultiVector.h"
+
+#include "MFD3D_Diffusion.hh"
 #include "Mesh.hh"
 
 class AnalyticBase {
@@ -47,7 +49,7 @@ class AnalyticBase {
 
   // -- scalar component of the coefficient
   virtual double ScalarCoefficient(const Amanzi::AmanziGeometry::Point& p, double t) {
-    return 1.; }
+    return 1.0; }
 
   // -- analytic solution p
   virtual double pressure_exact(const Amanzi::AmanziGeometry::Point& p, double t) = 0;

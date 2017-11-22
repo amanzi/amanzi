@@ -1,5 +1,11 @@
 /*
-  The transport component of the Amanzi code, serial unit tests.
+  Transport PK 
+
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
+
   License: BSD
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 */
@@ -26,7 +32,7 @@
 #include "Transport_PK.hh"
 
 /* **************************************************************** */
-TEST(ADVANCE_WITH_2D_MESH) {
+void runTest(double switch_time) {
   using namespace Teuchos;
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
@@ -40,7 +46,7 @@ std::cout << "Test: Advance on a 2D square mesh" << std::endl;
   Epetra_SerialComm* comm = new Epetra_SerialComm();
 #endif
 
-  /* read parameter list */
+  // read parameter list
   std::string xmlFileName = "test/transport_2D.xml";
   Teuchos::RCP<Teuchos::ParameterList> plist = Teuchos::getParametersFromXmlFile(xmlFileName);
 
@@ -49,16 +55,11 @@ std::cout << "Test: Advance on a 2D square mesh" << std::endl;
   Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm =
       Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(2, region_list, comm));
 
-  FrameworkPreference pref;
-  pref.clear();
-  pref.push_back(MSTK);
-  pref.push_back(STKMESH);
-
   MeshFactory meshfactory(comm);
-  meshfactory.preference(pref);
+  meshfactory.preference(FrameworkPreference({MSTK, STKMESH}));
   RCP<const Mesh> mesh = meshfactory("test/rect2D_10x10_ss.exo", gm);
 
-  /* create a simple state and populate it */
+  // create a simple state and populate it
   Amanzi::VerboseObject::hide_line_prefix = true;
 
   std::vector<std::string> component_names;
@@ -77,29 +78,36 @@ std::cout << "Test: Advance on a 2D square mesh" << std::endl;
   S->InitializeFields();
   S->InitializeEvaluators();
 
-  /* modify the default state for the problem at hand */
+  // modify the default state for the problem at hand
   std::string passwd("state"); 
-  Teuchos::RCP<Epetra_MultiVector> 
-      flux = S->GetFieldData("darcy_flux", passwd)->ViewComponent("face", false);
+  Epetra_MultiVector& flux = *S->GetFieldData("darcy_flux", passwd)->ViewComponent("face", false);
 
   AmanziGeometry::Point velocity(1.0, 1.0);
   int nfaces_owned = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
   for (int f = 0; f < nfaces_owned; f++) {
     const AmanziGeometry::Point& normal = mesh->face_normal(f);
-    (*flux)[0][f] = velocity * normal;
+    flux[0][f] = velocity * normal;
   }
 
-  /* initialize a transport process kernel from a transport state */
+  // initialize a transport process kernel from a transport state
   TPK.Initialize(S.ptr());
 
-  /* advance the transport state */
+  // advance the transport state 
   int iter, k;
   double t_old(0.0), t_new(0.0), dt;
+  bool flag(true);
+
   Teuchos::RCP<Epetra_MultiVector> 
       tcc = S->GetFieldData("total_component_concentration", passwd)->ViewComponent("cell", false);
 
   iter = 0;
   while (t_new < 0.5) {
+    if (t_new > switch_time && flag) {
+      flag = false;
+      flux.Scale(-1.0);
+      std::cout << "Changing Darcy velocity direction to opposite.\n\n";
+    }
+
     dt = TPK.StableTimeStep();
     t_new = t_old + dt;
 
@@ -128,15 +136,28 @@ std::cout << "Test: Advance on a 2D square mesh" << std::endl;
   }
 
 
-  /* check that the final state is constant */
-  for (int k=0; k<10; k++) {
-    CHECK_CLOSE(1.0, (*tcc)[0][k], 1e-6);
+  // check that the final state is constant for no swicth time
+  if (switch_time > 0.5) {
+    for (int k = 0; k < 10; k++) {
+      CHECK_CLOSE(1.0, (*tcc)[0][k], 1e-6);
+    }
+  } else {
+    for (int k = 0; k < 10; k++) {
+      CHECK_CLOSE(0.0, (*tcc)[0][k], 1e-6);
+    }
   }
 
   delete comm;
 }
 
 
+TEST(ADVANCE_WITH_2D_MESH) {
+  runTest(1.0);  // no velocity swicth
+}
 
+
+TEST(ADVANCE_WITH_2D_MESH_SWITCH_FLOW) {
+  runTest(0.16);
+}
 
 

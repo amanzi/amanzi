@@ -33,10 +33,10 @@
 // Operators
 #include "OperatorDefs.hh"
 #include "BCs.hh"
+#include "DiffusionMFD.hh"
+#include "DiffusionFV.hh"
+#include "DiffusionFactory.hh"
 #include "TreeOperator.hh"
-#include "OperatorDiffusionMFD.hh"
-#include "OperatorDiffusionFV.hh"
-#include "OperatorDiffusionFactory.hh"
 
 // test classes
 #include "AnalyticNonlinearCoupled00.hh"
@@ -44,13 +44,13 @@
 
 using namespace Amanzi;
 
-
 int BoundaryFaceGetCell(const AmanziMesh::Mesh& mesh, int f)
 {
   AmanziMesh::Entity_ID_List cells;
   mesh.face_get_cells(f, AmanziMesh::USED, &cells);
   return cells[0];
 }
+
 
 double BoundaryFaceGetValue(Operators::BCs& bc, const CompositeVector& u, int f) {
   if (bc.bc_model()[f] == Operators::OPERATOR_BC_DIRICHLET) {
@@ -85,12 +85,10 @@ struct Problem {
 
   void Setup() {
     MakeBCs();
-
   }
   
   void FillCoefs(const CompositeVector& u,
                  const CompositeVector& v) {
-
     int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
     int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
     int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
@@ -229,69 +227,49 @@ struct Problem {
   }
 
   void MakeBCs() {
-    int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
+    bc0 = Teuchos::rcp(new Operators::BCs(mesh, AmanziMesh::FACE, Operators::SCHEMA_DOFS_SCALAR));
+    std::vector<int>& bc_model0 = bc0->bc_model();
+    std::vector<double>& bc_value0 = bc0->bc_value();
 
-    // this is bad memory management but is required by bad design of BCs struct
-    std::vector<int>* bc_model0 =
-        new std::vector<int>(nfaces_wghost, Operators::OPERATOR_BC_NONE);
-    std::vector<double>* bc_value0 =
-        new std::vector<double>(nfaces_wghost, 0.0);
-    std::vector<double>* bc_mixed0 =
-        new std::vector<double>(nfaces_wghost, 0.0);
-
-    std::vector<int>* bc_model1 =
-        new std::vector<int>(nfaces_wghost, Operators::OPERATOR_BC_NONE);
-    std::vector<double>* bc_value1 =
-        new std::vector<double>(nfaces_wghost, 0.0);
-    std::vector<double>* bc_mixed1 =
-        new std::vector<double>(nfaces_wghost, 0.0);
+    bc1 = Teuchos::rcp(new Operators::BCs(mesh, AmanziMesh::FACE, Operators::SCHEMA_DOFS_SCALAR));
+    std::vector<int>& bc_model1 = bc1->bc_model();
+    std::vector<double>& bc_value1 = bc1->bc_value();
   
+    int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
     for (int f = 0; f < nfaces_wghost; f++) {
       const AmanziGeometry::Point& xf = mesh->face_centroid(f);
       double area = mesh->face_area(f);
       int dir, c = BoundaryFaceGetCell(*mesh, f);
       const AmanziGeometry::Point& normal = mesh->face_normal(f, false, c, &dir);
 
-      // if (fabs(xf[0]) < 1e-12 || fabs(xf[1]) < 1e-12 || fabs(xf[0] - 1.0) < 1e-12 || fabs(xf[1] - 1.0) < 1e-12) {
-      //   (*bc_model0)[f] = Operators::OPERATOR_BC_DIRICHLET;
-      //   (*bc_value0)[f] = ana->exact0(xf, 0.0);
-      //   (*bc_model1)[f] = Operators::OPERATOR_BC_DIRICHLET;
-      //   (*bc_value1)[f] = ana->exact1(xf, 0.0);      
-      // }
-      
       if (fabs(xf[0]) < 1e-12) {
-        (*bc_model0)[f] = Operators::OPERATOR_BC_NEUMANN;
-        (*bc_value0)[f] = ana->velocity_exact0(xf, 0.0) * normal / area;
-        (*bc_model1)[f] = Operators::OPERATOR_BC_NEUMANN;
-        (*bc_value1)[f] = ana->velocity_exact1(xf, 0.0) * normal / area;
+        bc_model0[f] = Operators::OPERATOR_BC_NEUMANN;
+        bc_value0[f] = ana->velocity_exact0(xf, 0.0) * normal / area;
+        bc_model1[f] = Operators::OPERATOR_BC_NEUMANN;
+        bc_value1[f] = ana->velocity_exact1(xf, 0.0) * normal / area;
         
       } else if(fabs(xf[1]) < 1e-12) {
         // y = 0 boundary
-        (*bc_model0)[f] = Operators::OPERATOR_BC_DIRICHLET;
-        (*bc_value0)[f] = ana->exact0(xf, 0.0);
-        (*bc_model1)[f] = Operators::OPERATOR_BC_NEUMANN;
-        (*bc_value1)[f] = ana->velocity_exact1(xf, 0.0) * normal / area;
+        bc_model0[f] = Operators::OPERATOR_BC_DIRICHLET;
+        bc_value0[f] = ana->exact0(xf, 0.0);
+        bc_model1[f] = Operators::OPERATOR_BC_NEUMANN;
+        bc_value1[f] = ana->velocity_exact1(xf, 0.0) * normal / area;
         
       } else if(fabs(xf[0] - 1.0) < 1e-12) {
         // x = 1 boundary
-        (*bc_model0)[f] = Operators::OPERATOR_BC_NEUMANN;
-        (*bc_value0)[f] = ana->velocity_exact0(xf, 0.0) * normal / area;
-        (*bc_model1)[f] = Operators::OPERATOR_BC_DIRICHLET;
-        (*bc_value1)[f] = ana->exact1(xf, 0.0);
+        bc_model0[f] = Operators::OPERATOR_BC_NEUMANN;
+        bc_value0[f] = ana->velocity_exact0(xf, 0.0) * normal / area;
+        bc_model1[f] = Operators::OPERATOR_BC_DIRICHLET;
+        bc_value1[f] = ana->exact1(xf, 0.0);
         
       } else if (fabs(xf[1] - 1.0) < 1e-12) {
         // y = 1 boudaries
-        (*bc_model0)[f] = Operators::OPERATOR_BC_DIRICHLET;
-        (*bc_value0)[f] = ana->exact0(xf, 0.0);
-        (*bc_model1)[f] = Operators::OPERATOR_BC_DIRICHLET;
-        (*bc_value1)[f] = ana->exact1(xf, 0.0);      
+        bc_model0[f] = Operators::OPERATOR_BC_DIRICHLET;
+        bc_value0[f] = ana->exact0(xf, 0.0);
+        bc_model1[f] = Operators::OPERATOR_BC_DIRICHLET;
+        bc_value1[f] = ana->exact1(xf, 0.0);      
       }
     }
-    
-    bc0 = Teuchos::rcp(new Operators::BCs(Operators::OPERATOR_BC_TYPE_FACE,
-            (*bc_model0), (*bc_value0), *bc_mixed0));
-    bc1 = Teuchos::rcp(new Operators::BCs(Operators::OPERATOR_BC_TYPE_FACE,
-            (*bc_model1), (*bc_value1), *bc_mixed1));
   }
     
   void MakeTensorCoefs() {
@@ -333,7 +311,6 @@ struct Problem {
       WhetStone::Tensor Kc1 = ana->Tensor11(xc, 0.0);
       Kc1 *= ana->ScalarCoefficient11(u,v);
       K11->push_back(Kc1);
-
     }
   }
   
@@ -429,7 +406,7 @@ struct Problem {
   
   
   void CreateBlockOperators(bool upwind) {
-    Operators::OperatorDiffusionFactory fac;
+    Operators::DiffusionFactory fac;
     Teuchos::RCP<const AmanziMesh::Mesh> mesh_c = mesh;
 
     Teuchos::ParameterList op_list00;
@@ -458,7 +435,7 @@ struct Problem {
 
 
   void CreateBlockPCs(bool jac_ondiag, bool jac_offdiag, bool upwind) {
-    Operators::OperatorDiffusionFactory fac;
+    Operators::DiffusionFactory fac;
     Teuchos::RCP<const AmanziMesh::Mesh> mesh_c = mesh;
 
     Teuchos::ParameterList op_list00;
@@ -578,15 +555,6 @@ struct Problem {
     std::cout << "Kr1 = ";
     kr1->Print(std::cout);
     std::cout << "-------------------------" << std::endl;
-    // std::cout << "BC: face, marker0, val0, marker1, val1:" << std::endl;
-    // for (int f=0; f!=bc0->bc_model().size(); ++f) {
-    //   std::cout << " " << f << " "
-    //             << bc0->bc_model()[f] << " " << bc0->bc_value()[f]
-    //             << " : " 
-    //             << bc0->bc_model()[f] << " " << bc0->bc_value()[f]
-    //             << std::endl;
-    // }
-    // std::cout << "-------------------------" << std::endl;
   }
 
   void ReportError(const std::string& filename,
@@ -620,8 +588,6 @@ struct Problem {
     }      
     fid.close();
   }
-
-
   
  public:
   Teuchos::RCP<Operators::BCs> bc0;
@@ -643,13 +609,13 @@ struct Problem {
   Teuchos::RCP<CompositeVector> q0;
   Teuchos::RCP<CompositeVector> q1;
   
-  Teuchos::RCP<Operators::OperatorDiffusion> op00;
-  Teuchos::RCP<Operators::OperatorDiffusion> op11;
+  Teuchos::RCP<Operators::Diffusion> op00;
+  Teuchos::RCP<Operators::Diffusion> op11;
 
-  Teuchos::RCP<Operators::OperatorDiffusion> pc00;
-  Teuchos::RCP<Operators::OperatorDiffusion> pc11;
-  Teuchos::RCP<Operators::OperatorDiffusion> pc01;
-  Teuchos::RCP<Operators::OperatorDiffusion> pc10;
+  Teuchos::RCP<Operators::Diffusion> pc00;
+  Teuchos::RCP<Operators::Diffusion> pc11;
+  Teuchos::RCP<Operators::Diffusion> pc01;
+  Teuchos::RCP<Operators::Diffusion> pc10;
 
   Teuchos::RCP<Operators::TreeOperator> op;
   Teuchos::RCP<Operators::TreeOperator> pc;
@@ -664,10 +630,9 @@ struct Problem {
 };
 
 
-Teuchos::RCP<Problem>
-getProblem(const std::string& discretization,
-               bool upwind,
-               int nx, int ny) {
+Teuchos::RCP<Problem> getProblem(const std::string& discretization,
+                                 bool upwind,
+                                 int nx, int ny) {
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::AmanziGeometry;
@@ -700,13 +665,12 @@ getProblem(const std::string& discretization,
 }
 
 
-//
+// -----------------------------------------------------------------------------
 // Creates the linear operator with the correct coefficients, checks the error
 // in the forward application of the Operator to the true solution relative to
 // the rhs.
 //
 // Returns the l2, linf errors as a pair.
-// 
 // -----------------------------------------------------------------------------
 std::pair<double,double> RunForwardProblem(
     const std::string& discretization,
@@ -781,13 +745,12 @@ std::pair<double,double> RunForwardProblem(
 }
 
 
-//
+// -----------------------------------------------------------------------------
 // Creates the linear operator with the correct coefficients, checks the error
 // in the forward application of the Operator to the true solution relative to
 // the rhs.
 //
 // Returns the l2, linf errors as a pair.
-// 
 // -----------------------------------------------------------------------------
 std::pair<double,double> RunForwardProblem_Assembled(
     const std::string& discretization,
@@ -869,14 +832,12 @@ std::pair<double,double> RunForwardProblem_Assembled(
 }
 
 
-
-//
+// -----------------------------------------------------------------------------
 // Creates the linear operator with the correct coefficients, checks the error
 // in the inverse application of the Operator to the rhs relative to the true
 // solution.
 //
 // Returns the l2, linf errors as a pair.
-// 
 // -----------------------------------------------------------------------------
 std::pair<double,double> RunInverseProblem(
     const std::string& discretization,
@@ -995,12 +956,10 @@ std::pair<double,double> RunInverseProblem(
 }
 
 
-
-//
+// -----------------------------------------------------------------------------
 // Solves the full nonlinear problem->
 //
 // Returns the l2, linf errors as a pair.
-// 
 // -----------------------------------------------------------------------------
 std::pair<double,double> RunNonlinearProblem(
     const std::string& discretization,
@@ -1018,11 +977,11 @@ std::pair<double,double> RunNonlinearProblem(
   // test the forward solution
   problem->CreateBlockOperators(upwind);
   if (jacobian == "none") {
-    problem->CreateBlockPCs(false,false,upwind);
+    problem->CreateBlockPCs(false, false, upwind);
   } else if (jacobian == "diagonal") {
-    problem->CreateBlockPCs(true,false,upwind);
+    problem->CreateBlockPCs(true, false, upwind);
   } else if (jacobian == "full") {
-    problem->CreateBlockPCs(true,true,upwind);
+    problem->CreateBlockPCs(true, true, upwind);
   } else {
     ASSERT(0);
   }
@@ -1118,8 +1077,8 @@ std::pair<double,double> RunNonlinearProblem(
     if (error <= 1.e-8) continue;
 
     // update fluxes
-    problem->op00->UpdateFlux(*u, *problem->q0);
-    problem->op11->UpdateFlux(*v, *problem->q1);
+    problem->op00->UpdateFlux(u.ptr(), problem->q0.ptr());
+    problem->op11->UpdateFlux(v.ptr(), problem->q1.ptr());
     
     // assemble the preconditioner
     problem->pc00->global_operator()->Init();
@@ -1225,8 +1184,7 @@ std::pair<double,double> RunNonlinearProblem(
 }
 
 
-
-//
+// -----------------------------------------------------------------------------
 // Creates the linear operator with the correct coefficients, checks the error
 // in the inverse application of the Operator to the rhs relative to the true
 // solution.  Uses the block-diagonal operator by inverting each system
@@ -1234,7 +1192,6 @@ std::pair<double,double> RunNonlinearProblem(
 // Solution than an actual test of the Operators class.
 //
 // Returns the l2, linf errors as a pair.
-// 
 // -----------------------------------------------------------------------------
 std::pair<double,double> RunInverseProblem_Diag(
     const std::string& discretization,
@@ -1354,8 +1311,6 @@ std::pair<double,double> RunInverseProblem_Diag(
 
   return std::make_pair(log2(error_l2), log2(error_linf));
 }
-
-
 
 
 void RunForwardTest(const std::string& discretization, bool upwind) {
@@ -1489,6 +1444,7 @@ void RunNonlinearTest(const std::string& discretization, const std::string& jaco
   CHECK(rateinf > 0.8);
 }
 
+// -----------------------------------------------------------------------------
 // Full Suite is the following 12 tests
 // -----------------------------------------------------------------------------
 // TEST(OPERATOR_COUPLED_DIFFUSION_FORWARD_HARMONIC_CONVERGENCE_FV) {

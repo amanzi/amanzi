@@ -26,14 +26,14 @@
 #include "LinearOperatorFactory.hh"
 #include "MeshFactory.hh"
 #include "Mesh_MSTK.hh"
-#include "mfd3d_diffusion.hh"
 #include "Tensor.hh"
 
-// Amanzi::Operators
+// Operators
+#include "Accumulation.hh"
+#include "DiffusionMFD.hh"
 #include "Operator.hh"
-#include "OperatorAccumulation.hh"
 #include "OperatorDefs.hh"
-#include "OperatorDiffusionMFD.hh"
+
 #include "Verification.hh"
 
 namespace Amanzi{
@@ -110,12 +110,8 @@ void RunTest(std::string op_list_name) {
   ParameterList region_list = plist.get<Teuchos::ParameterList>("Regions Closed");
   Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(3, region_list, &comm));
 
-  FrameworkPreference pref;
-  pref.clear();
-  pref.push_back(MSTK);
-
   MeshFactory meshfactory(&comm);
-  meshfactory.preference(pref);
+  meshfactory.preference(FrameworkPreference({MSTK}));
   RCP<const Mesh> mesh = meshfactory("test/sphere.exo", gm);
   RCP<const Mesh_MSTK> mesh_mstk = rcp_static_cast<const Mesh_MSTK>(mesh);
 
@@ -126,7 +122,6 @@ void RunTest(std::string op_list_name) {
   RCP<Mesh> surfmesh = Teuchos::rcp(new Mesh_MSTK(*mesh_mstk, setnames, AmanziMesh::FACE));
 
   // modify diffusion coefficient
-  // -- since rho=mu=1.0, we do not need to scale the nonlinear coefficient.
   Teuchos::RCP<std::vector<WhetStone::Tensor> > K = Teuchos::rcp(new std::vector<WhetStone::Tensor>());
   int ncells_owned = surfmesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   int nfaces_wghost = surfmesh->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
@@ -136,13 +131,11 @@ void RunTest(std::string op_list_name) {
     Kc(0, 0) = 1.0;
     K->push_back(Kc);
   }
-  double rho(1.0), mu(1.0);
 
   // create boundary data (no mixed bc)
-  std::vector<int> bc_model(nfaces_wghost, OPERATOR_BC_NONE);
-  std::vector<double> bc_value(nfaces_wghost);
-  std::vector<double> bc_mixed;
-  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(OPERATOR_BC_TYPE_FACE, bc_model, bc_value, bc_mixed));
+  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(surfmesh, AmanziMesh::FACE, SCHEMA_DOFS_SCALAR));
+  std::vector<int>& bc_model = bc->bc_model();
+  std::vector<double>& bc_value = bc->bc_value();
 
   // create solution map.
   Teuchos::RCP<CompositeVectorSpace> cvs = Teuchos::rcp(new CompositeVectorSpace());
@@ -153,10 +146,9 @@ void RunTest(std::string op_list_name) {
   cvs->AddComponent("face", AmanziMesh::FACE, 1);
 
   // create and initialize state variables.
+  Teuchos::RCP<CompositeVector> solution = Teuchos::rcp(new CompositeVector(*cvs));
   Teuchos::RCP<CompositeVector> flux = Teuchos::rcp(new CompositeVector(*cvs));
-
-  CompositeVector solution(*cvs);
-  solution.PutScalar(0.0);  // solution at time T=0
+  solution->PutScalar(0.0);  // solution at time T=0
 
   CompositeVector phi(*cvs);
   phi.PutScalar(0.2);
@@ -177,12 +169,12 @@ void RunTest(std::string op_list_name) {
   double dT = 1.0;
   for (int loop = 0; loop < 3; loop++) {
     // create diffusion operator
-    solution.ScatterMasterToGhosted();
-    knc->UpdateValues(solution);
+    solution->ScatterMasterToGhosted();
+    knc->UpdateValues(*solution);
 
     Teuchos::ParameterList olist = plist.get<Teuchos::ParameterList>("PK operator")
                                         .get<Teuchos::ParameterList>(op_list_name);
-    OperatorDiffusionMFD op(olist, surfmesh);
+    DiffusionMFD op(olist, surfmesh);
     op.SetBCs(bc, bc);
 
     // get the global operator
@@ -194,8 +186,8 @@ void RunTest(std::string op_list_name) {
     op.UpdateMatrices(flux.ptr(), Teuchos::null);
 
     // add accumulation terms
-    OperatorAccumulation op_acc(AmanziMesh::CELL, global_op);
-    op_acc.AddAccumulationTerm(solution, phi, dT, "cell");
+    Accumulation op_acc(AmanziMesh::CELL, global_op);
+    op_acc.AddAccumulationDelta(*solution, phi, phi, dT, "cell");
 
     // apply BCs and assemble
     global_op->UpdateRHS(source, false);
@@ -209,7 +201,7 @@ void RunTest(std::string op_list_name) {
 
     // Test SPD properties of the matrix and preconditioner.
     if (loop == 2) {
-      Verification ver(global_op);
+      VerificationCV ver(global_op);
       ver.CheckMatrixSPD(true, true);
       ver.CheckPreconditionerSPD(true, true);
     }
@@ -221,7 +213,7 @@ void RunTest(std::string op_list_name) {
        solver = factory.Create("Amanzi GMRES", lop_list, global_op);
 
     CompositeVector rhs = *global_op->rhs();
-    int ierr = solver->ApplyInverse(rhs, solution);
+    int ierr = solver->ApplyInverse(rhs, *solution);
 
     int num_itrs = solver->num_itrs();
     CHECK(num_itrs > 5 && num_itrs < 15);
@@ -236,7 +228,7 @@ void RunTest(std::string op_list_name) {
     }
 
     // derive diffusion flux.
-    op.UpdateFlux(solution, *flux);
+    op.UpdateFlux(solution.ptr(), flux.ptr());
 
     // turn off the source
     source.PutScalar(0.0);
@@ -244,7 +236,7 @@ void RunTest(std::string op_list_name) {
  
   if (MyPID == 0) {
     // visualization
-    const Epetra_MultiVector& p = *solution.ViewComponent("cell");
+    const Epetra_MultiVector& p = *solution->ViewComponent("cell");
     GMV::open_data_file(*surfmesh, (std::string)"operators.gmv");
     GMV::start_data();
     GMV::write_cell_data(p, 0, "solution");

@@ -33,8 +33,10 @@
 #include "Op_Cell_FaceCell.hh"
 #include "Op_Cell_Face.hh"
 #include "Op_Cell_Node.hh"
+#include "Op_Cell_Schema.hh"
 #include "Op_Edge_Edge.hh"
 #include "Op_Face_Cell.hh"
+#include "Op_Face_Schema.hh"
 #include "Op_Node_Node.hh"
 #include "Op_SurfaceCell_SurfaceCell.hh"
 #include "Op_SurfaceFace_SurfaceCell.hh"
@@ -51,12 +53,56 @@ namespace Operators {
 Operator::Operator(const Teuchos::RCP<const CompositeVectorSpace>& cvs,
                    Teuchos::ParameterList& plist,
                    int schema) :
-    cvs_(cvs),
-    schema_(schema),
+    cvs_row_(cvs),
+    cvs_col_(cvs),
+    schema_row_(schema),
+    schema_col_(schema),
     shift_(0.0)
 {
-  mesh_ = cvs_->Mesh();
-  rhs_ = Teuchos::rcp(new CompositeVector(*cvs_, true));
+  mesh_ = cvs_col_->Mesh();
+  rhs_ = Teuchos::rcp(new CompositeVector(*cvs_row_, true));
+
+  ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  nfaces_owned = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
+  nnodes_owned = mesh_->num_entities(AmanziMesh::NODE, AmanziMesh::OWNED);
+
+  ncells_wghost = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::USED);
+  nfaces_wghost = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
+  nnodes_wghost = mesh_->num_entities(AmanziMesh::NODE, AmanziMesh::USED);
+
+  if (mesh_->valid_edges()) {
+    nedges_owned = mesh_->num_entities(AmanziMesh::EDGE, AmanziMesh::OWNED);
+    nedges_wghost = mesh_->num_entities(AmanziMesh::EDGE, AmanziMesh::USED);
+  } else {
+    nedges_owned = 0;
+    nedges_wghost = 0;
+  }
+
+  Teuchos::ParameterList vo_list = plist.sublist("Verbose Object");
+  vo_ = Teuchos::rcp(new VerboseObject("Operators", vo_list));
+
+  shift_ = plist.get<double>("diagonal shift", 0.0);
+
+  apply_calls_ = 0; 
+}
+
+
+/* ******************************************************************
+* New default constructor. Code of two constructors can be optimized.
+****************************************************************** */
+Operator::Operator(const Teuchos::RCP<const CompositeVectorSpace>& cvs_row,
+                   const Teuchos::RCP<const CompositeVectorSpace>& cvs_col,
+                   Teuchos::ParameterList& plist,
+                   const Schema& schema_row,
+                   const Schema& schema_col) :
+    cvs_row_(cvs_row),
+    cvs_col_(cvs_col),
+    schema_row_(schema_row),
+    schema_col_(schema_col),
+    shift_(0.0)
+{
+  mesh_ = cvs_col_->Mesh();
+  rhs_ = Teuchos::rcp(new CompositeVector(*cvs_row_, true));
 
   ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   nfaces_owned = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
@@ -98,13 +144,13 @@ void Operator::Init()
 
 
 /* ******************************************************************
-* Create structure of a global matrix.
+* Create structure of a global square matrix.
 ****************************************************************** */
 void Operator::SymbolicAssembleMatrix()
 {
   // Create the supermap given a space (set of possible schemas) and a
   // specific schema (assumed/checked to be consistent with the space).
-  smap_ = CreateSuperMap(*cvs_, schema(), 1);
+  smap_ = CreateSuperMap(*cvs_col_, schema(), 1);
 
   // create the graph
   int row_size = MaxRowSize(*mesh_, schema(), 1);
@@ -223,21 +269,46 @@ int Operator::Apply(const CompositeVector& X, CompositeVector& Y, double scalar)
     Y.PutScalarGhosted(0.0);
   }
 
-  int ierr(0);
   apply_calls_++;
 
   for (const_op_iterator it = OpBegin(); it != OpEnd(); ++it) {
     (*it)->ApplyMatrixFreeOp(this, X, Y);
   }
 
-  return ierr;
+  return 0;
+}
+
+
+/* ******************************************************************
+* Parallel matvec product Y = A^T * X.
+******************************************************************* */
+int Operator::ApplyTranspose(const CompositeVector& X, CompositeVector& Y, double scalar) const
+{
+  X.ScatterMasterToGhosted();
+
+  // initialize ghost elements
+  if (scalar == 0.0) {
+    Y.PutScalarMasterAndGhosted(0.0);
+  } else if (scalar == 1.0) {
+    Y.PutScalarGhosted(0.0);
+  } else {
+    Y.Scale(scalar);
+    Y.PutScalarGhosted(0.0);
+  }
+
+  apply_calls_++;
+
+  for (const_op_iterator it = OpBegin(); it != OpEnd(); ++it) {
+    (*it)->ApplyTransposeMatrixFreeOp(this, X, Y);
+  }
+
+  return 0;
 }
 
 
 /* ******************************************************************
 * Parallel matvec product Y = A * X.
-*
-* This method mainly for debugging!  Matrix-free is likely better here!
+* This method is mainly for debugging! Matrix-free apply could better.
 ******************************************************************* */
 int Operator::ApplyAssembled(const CompositeVector& X, CompositeVector& Y, double scalar) const
 {
@@ -255,10 +326,17 @@ int Operator::ApplyAssembled(const CompositeVector& X, CompositeVector& Y, doubl
 
   Epetra_Vector Xcopy(A_->RowMap());
   Epetra_Vector Ycopy(A_->RowMap());
+
   int ierr = CopyCompositeVectorToSuperVector(*smap_, X, Xcopy, 0);
   ierr |= A_->Apply(Xcopy, Ycopy);
   ierr |= AddSuperVectorToCompositeVector(*smap_, Ycopy, Y, 0);
-  ASSERT(!ierr);
+
+  if (ierr) {
+    Errors::Message msg;
+    msg << "Operators: ApplyAssemble failed.\n";
+    Exceptions::amanzi_throw(msg);
+  }
+
   apply_calls_++;
 
   return ierr;
@@ -270,11 +348,11 @@ int Operator::ApplyAssembled(const CompositeVector& X, CompositeVector& Y, doubl
 ******************************************************************* */
 int Operator::ApplyInverse(const CompositeVector& X, CompositeVector& Y) const
 {
-  // Y = X;
-  // return 0;
-  Epetra_Vector Xcopy(A_->RowMap());
-  Epetra_Vector Ycopy(A_->RowMap());
-  int ierr = CopyCompositeVectorToSuperVector(*smap_, X, Xcopy, 0);
+  int ierr(1);
+
+  Epetra_Vector Xcopy(*smap_->Map());
+  Epetra_Vector Ycopy(*smap_->Map());
+  ierr = CopyCompositeVectorToSuperVector(*smap_, X, Xcopy, 0);
 
   // dump the schur complement
   // std::stringstream filename_s2;
@@ -283,7 +361,11 @@ int Operator::ApplyInverse(const CompositeVector& X, CompositeVector& Y) const
 
   ierr |= preconditioner_->ApplyInverse(Xcopy, Ycopy);
   ierr |= CopySuperVectorToCompositeVector(*smap_, Ycopy, Y, 0);
-  ASSERT(!ierr);
+
+  if (ierr) {
+    Errors::Message msg("Operator: ApplyInverse failed.\n");
+    Exceptions::amanzi_throw(msg);
+  }
 
   return ierr;
 }
@@ -318,8 +400,7 @@ void Operator::InitPreconditioner(Teuchos::ParameterList& plist)
 * Note that derived classes may reimplement this with a volume term.
 ****************************************************************** */
 void Operator::UpdateRHS(const CompositeVector& source, bool volume_included) {
-  for (CompositeVector::name_iterator it = rhs_->begin();
-       it != rhs_->end(); ++it) {
+  for (auto it = rhs_->begin(); it != rhs_->end(); ++it) {
     if (source.HasComponent(*it)) {
       rhs_->ViewComponent(*it, false)->Update(1.0, *source.ViewComponent(*it, false), 1.0);
     }
@@ -464,7 +545,7 @@ void Operator::OpExtend(op_iterator begin, op_iterator end)
 int Operator::SchemaMismatch_(const std::string& schema1, const std::string& schema2) const
 {
   std::stringstream err;
-  err << "Scheme mismatch " << schema1 << " |= " << schema2;
+  err << "Schemas mismatch " << schema1 << " != " << schema2;
   Errors::Message message(err.str());
   Exceptions::amanzi_throw(message);
   return 1;
@@ -517,6 +598,13 @@ int Operator::ApplyMatrixFreeOp(const Op_Cell_Cell& op,
 }
 
 
+int Operator::ApplyMatrixFreeOp(const Op_Cell_Schema& op,
+                                const CompositeVector& X, CompositeVector& Y) const
+{
+  return SchemaMismatch_(op.schema_string, schema_string_);
+}
+
+
 /* ******************************************************************
 * Visit methods for Apply: Face
 ****************************************************************** */
@@ -525,6 +613,12 @@ int Operator::ApplyMatrixFreeOp(const Op_Face_Cell& op,
   return SchemaMismatch_(op.schema_string, schema_string_);
 }
 
+
+int Operator::ApplyMatrixFreeOp(const Op_Face_Schema& op,
+                                const CompositeVector& X, CompositeVector& Y) const
+{
+  return SchemaMismatch_(op.schema_string, schema_string_);
+}
 
 /* ******************************************************************
 * Visit methods for Apply: Edges
@@ -559,6 +653,23 @@ int Operator::ApplyMatrixFreeOp(const Op_SurfaceCell_SurfaceCell& op,
 ****************************************************************** */
 int Operator::ApplyMatrixFreeOp(const Op_SurfaceFace_SurfaceCell& op,
                                 const CompositeVector& X, CompositeVector& Y) const
+{
+  return SchemaMismatch_(op.schema_string, schema_string_);
+}
+
+
+/* ******************************************************************
+* Visit methods for ApplyTranspose: Cell
+****************************************************************** */
+int Operator::ApplyTransposeMatrixFreeOp(const Op_Cell_Schema& op,
+                                         const CompositeVector& X, CompositeVector& Y) const
+{
+  return SchemaMismatch_(op.schema_string, schema_string_);
+}
+
+
+int Operator::ApplyTransposeMatrixFreeOp(const Op_Face_Schema& op,
+                                         const CompositeVector& X, CompositeVector& Y) const
 {
   return SchemaMismatch_(op.schema_string, schema_string_);
 }
@@ -602,10 +713,24 @@ void Operator::SymbolicAssembleMatrixOp(const Op_Cell_Cell& op,
 }
 
 
+void Operator::SymbolicAssembleMatrixOp(const Op_Cell_Schema& op,
+                                        const SuperMap& map, GraphFE& graph,
+                                        int my_block_row, int my_block_col) const {
+  SchemaMismatch_(op.schema_string, schema_string_);
+}
+
+
 /* ******************************************************************
 * Visit methods for symbolic assemble: Face.
 ****************************************************************** */
 void Operator::SymbolicAssembleMatrixOp(const Op_Face_Cell& op,
+                                        const SuperMap& map, GraphFE& graph,
+                                        int my_block_row, int my_block_col) const {
+  SchemaMismatch_(op.schema_string, schema_string_);
+}
+
+
+void Operator::SymbolicAssembleMatrixOp(const Op_Face_Schema& op,
                                         const SuperMap& map, GraphFE& graph,
                                         int my_block_row, int my_block_col) const {
   SchemaMismatch_(op.schema_string, schema_string_);
@@ -700,10 +825,24 @@ void Operator::AssembleMatrixOp(const Op_Cell_Cell& op,
 }
 
 
+void Operator::AssembleMatrixOp(const Op_Cell_Schema& op,
+                                const SuperMap& map, MatrixFE& mat,
+                                int my_block_row, int my_block_col) const {
+  SchemaMismatch_(op.schema_string, schema_string_);
+}
+
+
 /* ******************************************************************
 * Visit methods for assemble: Face.
 ****************************************************************** */
 void Operator::AssembleMatrixOp(const Op_Face_Cell& op,
+                                const SuperMap& map, MatrixFE& mat,
+                                int my_block_row, int my_block_col) const {
+  SchemaMismatch_(op.schema_string, schema_string_);
+}
+
+
+void Operator::AssembleMatrixOp(const Op_Face_Schema& op,
                                 const SuperMap& map, MatrixFE& mat,
                                 int my_block_row, int my_block_col) const {
   SchemaMismatch_(op.schema_string, schema_string_);
@@ -757,6 +896,41 @@ void Operator::AssembleMatrixOp(const Op_SurfaceFace_SurfaceCell& op,
       << " cannot be used with a matrix on " << schema_string_;
   Errors::Message message(err.str());
   Exceptions::amanzi_throw(message);
+}
+
+
+/* ******************************************************************
+* Local assemble routines (for new schema)
+****************************************************************** */
+void Operator::ExtractVectorCellOp(int c, const Schema& schema,
+                                   WhetStone::DenseVector& v, const CompositeVector& X) const
+{
+  Errors::Message msg("Extracton fo local cell-based vector is missing for this operator");
+  Exceptions::amanzi_throw(msg);
+}
+
+
+void Operator::AssembleVectorCellOp(int c, const Schema& schema,
+                                    const WhetStone::DenseVector& v, CompositeVector& X) const
+{
+  Errors::Message msg("Extracton fo local cell-based vector is missing for this operator");
+  Exceptions::amanzi_throw(msg);
+}
+
+
+void Operator::ExtractVectorFaceOp(int c, const Schema& schema,
+                                   WhetStone::DenseVector& v, const CompositeVector& X) const
+{
+  Errors::Message msg("Extracton fo local cell-based vector is missing for this operator");
+  Exceptions::amanzi_throw(msg);
+}
+
+
+void Operator::AssembleVectorFaceOp(int c, const Schema& schema,
+                                    const WhetStone::DenseVector& v, CompositeVector& X) const
+{
+  Errors::Message msg("Extracton fo local cell-based vector is missing for this operator");
+  Exceptions::amanzi_throw(msg);
 }
 
 }  // namespace Operators

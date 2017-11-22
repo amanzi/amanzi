@@ -492,29 +492,31 @@ Function* FunctionFactory::create_bilinear(Teuchos::ParameterList& params) const
       std::string filename = params.get<std::string>("file");
       HDF5Reader reader(filename);
 
-      int xi, yi = 0; // input indices
+      int xi, yi(0);  // input indices
       std::string x = params.get<std::string>("row header");
       std::string xdim = params.get<std::string>("row coordinate");
-      if (xdim.compare(0,1,"t") == 0) xi = 0;  
-      else if (xdim.compare(0,1,"x") == 0) xi = 1;  
-      else if (xdim.compare(0,1,"y") == 0) xi = 2;  
-      else if (xdim.compare(0,1,"z") == 0) xi = 3;  
+      if (xdim.compare(0, 1, "t") == 0) xi = 0;  
+      else if (xdim.compare(0, 1, "x") == 0) xi = 1;  
+      else if (xdim.compare(0, 1, "y") == 0) xi = 2;  
+      else if (xdim.compare(0, 1, "z") == 0) xi = 3;  
       else {
         Errors::Message m;
-        m << "FunctionFactory: function-bilinear parameter error: invalid \"row coordinate\" \""<< xdim << "\" must be one of \"t,\" \"x,\" \"y,\" \"z.\"";
+        m << "FunctionFactory: function-bilinear parameter error: invalid \"row coordinate\" \""
+          << xdim << "\" must be one of \"t,\" \"x,\" \"y,\" \"z.\"";
         Exceptions::amanzi_throw(m);
         xi = 0;
       }
 
       std::string y = params.get<std::string>("column header");
       std::string ydim = params.get<std::string>("column coordinate");
-      if (ydim.compare(0,1,"t") == 0) yi = 0;  
-      else if (ydim.compare(0,1,"x") == 0) yi = 1;  
-      else if (ydim.compare(0,1,"y") == 0) yi = 2;  
-      else if (ydim.compare(0,1,"z") == 0) yi = 3;  
+      if (ydim.compare(0, 1, "t") == 0) yi = 0;  
+      else if (ydim.compare(0, 1, "x") == 0) yi = 1;  
+      else if (ydim.compare(0, 1, "y") == 0) yi = 2;  
+      else if (ydim.compare(0, 1, "z") == 0) yi = 3;  
       else {
         Errors::Message m;
-        m << "FunctionFactory: function-bilinear parameter error: invalid \"column coordinate\" \""<< ydim << "\" must be one of \"t,\" \"x,\" \"y,\" \"z.\"";
+        m << "FunctionFactory: function-bilinear parameter error: invalid \"column coordinate\" \""
+          << ydim << "\" must be one of \"t,\" \"x,\" \"y,\" \"z.\"";
         Exceptions::amanzi_throw(m);
         yi = 0;
       }

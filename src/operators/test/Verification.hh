@@ -10,16 +10,19 @@
 
 #include "Mesh.hh"
 
+#include "CompositeVector.hh"
+#include "Operator.hh"
+#include "TreeOperator.hh"
+#include "TreeVector.hh"
+
+template <class Vector, class Operator>
 class Verification {
  public:
-  Verification(Teuchos::RCP<const Amanzi::Operators::Operator> op) : op_(op) {
-    MyPID = op_->A()->DomainMap().Comm().MyPID();
-  };
+  Verification(Teuchos::RCP<const Operator> op) : op_(op) {};
   ~Verification() {};
 
   void CheckMatrixSPD(bool symmetry = true, bool pos_def = true) {
-    const Amanzi::CompositeVectorSpace& cvs = op_->DomainMap();
-    Amanzi::CompositeVector a(cvs), ha(cvs), b(cvs), hb(cvs);
+    Vector a(op_->DomainMap()), ha(a), b(a), hb(a);
 
     a.Random();
     b.Random();
@@ -32,7 +35,7 @@ class Verification {
     a.Dot(ha, &aha);
     b.Dot(hb, &bhb);
 
-    if (MyPID == 0) {
+    if (a.Comm().MyPID() == 0) {
       std::cout << "Matrix:\n";
       if (symmetry)
           std::cout << "  Symmetry test: " << ahb << " = " << bha << std::endl;
@@ -47,8 +50,7 @@ class Verification {
   }
 
   void CheckPreconditionerSPD(bool symmetry = true, bool pos_def = true) {
-    const Amanzi::CompositeVectorSpace& cvs = op_->DomainMap();
-    Amanzi::CompositeVector a(cvs), ha(cvs), b(cvs), hb(cvs);
+    Vector a(op_->DomainMap()), ha(a), b(a), hb(a);
 
     a.Random();
     b.Random();
@@ -61,8 +63,9 @@ class Verification {
     a.Dot(ha, &aha);
     b.Dot(hb, &bhb);
 
-    if (MyPID == 0) {
-      std::cout << "Preconditioner: size=" << op_->A()->NumGlobalRows() << "\n";
+    if (a.Comm().MyPID() == 0) {
+      int size = (op_->A() != Teuchos::null) ? op_->A()->NumGlobalRows() : -1;
+      std::cout << "Preconditioner: size=" << size << "\n";
       if (symmetry)
           std::cout << "  Symmetry test: " << ahb << " = " << bha << std::endl;
       if (pos_def)
@@ -76,9 +79,11 @@ class Verification {
   }
 
  private:
-  Teuchos::RCP<const Amanzi::Operators::Operator> op_;
-  int MyPID;
+  Teuchos::RCP<const Operator> op_;
 };
+
+typedef Verification<Amanzi::CompositeVector, Amanzi::Operators::Operator> VerificationCV;
+typedef Verification<Amanzi::TreeVector, Amanzi::Operators::TreeOperator> VerificationTV;
 
 #endif
 

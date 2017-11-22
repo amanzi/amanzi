@@ -24,15 +24,15 @@
 // Amanzi
 #include "MeshFactory.hh"
 #include "GMVMesh.hh"
-#include "LinearOperatorFactory.hh"
+#include "LinearOperatorPCG.hh"
 #include "Tensor.hh"
 
 // Operators
 #include "Analytic03.hh"
 #include "HeatConduction.hh"
 
+#include "DiffusionMFD.hh"
 #include "OperatorDefs.hh"
-#include "OperatorDiffusionMFD.hh"
 #include "UpwindSecondOrder.hh"
 #include "UpwindFlux.hh"
 
@@ -59,13 +59,8 @@ void RunTestDiffusionDivK2D(std::string diffusion_list, std::string upwind_list)
   Teuchos::ParameterList op_list = plist.get<Teuchos::ParameterList>("PK operator").sublist(diffusion_list);
 
   // create an SIMPLE mesh framework
-  FrameworkPreference pref;
-  pref.clear();
-  pref.push_back(MSTK);
-  pref.push_back(STKMESH);
-
   MeshFactory meshfactory(&comm);
-  meshfactory.preference(pref);
+  meshfactory.preference(FrameworkPreference({MSTK, STKMESH}));
   // Teuchos::RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 10, 10, Teuchos::null);
   std::string file = op_list.get<std::string>("file name", "test/random20.exo");
   Teuchos::RCP<const Mesh> mesh = meshfactory(file, Teuchos::null);
@@ -87,8 +82,9 @@ void RunTestDiffusionDivK2D(std::string diffusion_list, std::string upwind_list)
   AmanziGeometry::Point g(0.0, -1.0);
 
   // create boundary data
-  std::vector<int> bc_model(nfaces_wghost, Operators::OPERATOR_BC_NONE);
-  std::vector<double> bc_value(nfaces_wghost, 0.0), bc_mixed(nfaces_wghost, 0.0);
+  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(mesh, AmanziMesh::FACE, SCHEMA_DOFS_SCALAR));
+  std::vector<int>& bc_model = bc->bc_model();
+  std::vector<double>& bc_value = bc->bc_value();
 
   for (int f = 0; f < nfaces_wghost; f++) {
     const Point& xf = mesh->face_centroid(f);
@@ -98,16 +94,15 @@ void RunTestDiffusionDivK2D(std::string diffusion_list, std::string upwind_list)
       bc_value[f] = ana.pressure_exact(xf, 0.0);
     }
   }
-  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(Operators::OPERATOR_BC_TYPE_FACE, bc_model, bc_value, bc_mixed));
 
   // create diffusion operator 
-  Teuchos::RCP<OperatorDiffusion> op = Teuchos::rcp(new OperatorDiffusionMFD(op_list, mesh));
+  Teuchos::RCP<Diffusion> op = Teuchos::rcp(new DiffusionMFD(op_list, mesh));
   op->SetBCs(bc, bc);
   const CompositeVectorSpace& cvs = op->global_operator()->DomainMap();
 
   // create and initialize state variables.
-  CompositeVector solution(cvs);
-  solution.PutScalar(0.0);
+  Teuchos::RCP<CompositeVector> solution = Teuchos::rcp(new CompositeVector(cvs));
+  solution->PutScalar(0.0);
 
   Teuchos::RCP<CompositeVector> flux = Teuchos::rcp(new CompositeVector(cvs));
   Epetra_MultiVector& flx = *flux->ViewComponent("face", true);
@@ -128,7 +123,7 @@ void RunTestDiffusionDivK2D(std::string diffusion_list, std::string upwind_list)
 
   knc->UpdateValues(*flux);  // argument is not used
   ModelUpwindFn func = &HeatConduction::Conduction;
-  upwind.Compute(*flux, solution, bc_model, bc_value, *knc->values(), func);
+  upwind.Compute(*flux, *solution, bc_model, bc_value, *knc->values(), func);
 
   if (upwind_list == "upwind second-order") knc->UpdateValuesPostUpwind();
 
@@ -143,7 +138,7 @@ void RunTestDiffusionDivK2D(std::string diffusion_list, std::string upwind_list)
 
   // populate the diffusion operator
   op->Setup(K, knc->values(), knc->derivatives());
-  op->UpdateMatrices(flux.ptr(), Teuchos::null);
+  op->UpdateMatrices(flux.ptr());
 
   // get and assemble the global operator
   Teuchos::RCP<Operator> global_op = op->global_operator();
@@ -157,27 +152,28 @@ void RunTestDiffusionDivK2D(std::string diffusion_list, std::string upwind_list)
   global_op->InitPreconditioner("Hypre AMG", slist);
 
   // solve the problem
-  Teuchos::ParameterList lop_list = plist.get<Teuchos::ParameterList>("solvers");
-  AmanziSolvers::LinearOperatorFactory<Operator, CompositeVector, CompositeVectorSpace> factory;
-  Teuchos::RCP<AmanziSolvers::LinearOperator<Operator, CompositeVector, CompositeVectorSpace> >
-     solver = factory.Create("AztecOO CG", lop_list, global_op);
+  Teuchos::ParameterList lop_list = plist.sublist("solvers")
+                                         .sublist("AztecOO CG").sublist("pcg parameters");
+  AmanziSolvers::LinearOperatorPCG<Operator, CompositeVector, CompositeVectorSpace>
+      solver(global_op, global_op);
+  solver.Init(lop_list);
 
   CompositeVector& rhs = *global_op->rhs();
-  int ierr = solver->ApplyInverse(rhs, solution);
+  int ierr = solver.ApplyInverse(rhs, *solution);
 
   if (MyPID == 0) {
-    std::cout << "pressure solver (" << solver->name() 
-              << "): ||r||=" << solver->residual() << " itr=" << solver->num_itrs()
-              << " code=" << solver->returned_code() << std::endl;
+    std::cout << "pressure solver (pcg): ||r||=" << solver.residual() 
+              << " itr=" << solver.num_itrs()
+              << " code=" << solver.returned_code() << std::endl;
   }
 
   // compute pressure error
-  Epetra_MultiVector& p = *solution.ViewComponent("cell", false);
+  Epetra_MultiVector& p = *solution->ViewComponent("cell", false);
   double pnorm, pl2_err, pinf_err;
   ana.ComputeCellError(p, 0.0, pnorm, pl2_err, pinf_err);
 
   // calculate flux error
-  op->UpdateFlux(solution, *flux);
+  op->UpdateFlux(solution.ptr(), flux.ptr());
   double unorm, ul2_err, uinf_err;
   ana.ComputeFaceError(flx, 0.0, unorm, ul2_err, uinf_err);
 
@@ -185,10 +181,10 @@ void RunTestDiffusionDivK2D(std::string diffusion_list, std::string upwind_list)
     pl2_err /= pnorm; 
     ul2_err /= unorm;
     printf("L2(p)=%12.8g  Inf(p)=%12.8g  L2(u)=%12.8g  Inf(u)=%12.8g  itr=%3d\n",
-        pl2_err, pinf_err, ul2_err, uinf_err, solver->num_itrs());
+        pl2_err, pinf_err, ul2_err, uinf_err, solver.num_itrs());
 
     CHECK(pl2_err < 0.03 && ul2_err < 0.1);
-    CHECK(solver->num_itrs() < 10);
+    CHECK(solver.num_itrs() < 10);
   }
 }
 
@@ -222,13 +218,8 @@ TEST(OPERATOR_DIFFUSION_DIVK_AVERAGE_3D) {
   Teuchos::ParameterList plist = xmlreader.getParameters();
 
   // create an SIMPLE mesh framework
-  FrameworkPreference pref;
-  pref.clear();
-  pref.push_back(MSTK);
-  pref.push_back(STKMESH);
-
   MeshFactory meshfactory(&comm);
-  meshfactory.preference(pref);
+  meshfactory.preference(FrameworkPreference({MSTK, STKMESH}));
   Teuchos::RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 10, 10, 10, Teuchos::null);
   // Teuchos::RCP<const Mesh> mesh = meshfactory("test/mesh.exo", Teuchos::null);
 
@@ -252,8 +243,9 @@ TEST(OPERATOR_DIFFUSION_DIVK_AVERAGE_3D) {
   AmanziGeometry::Point g(0.0, 0.0, -1.0);
 
   // create boundary data
-  std::vector<int> bc_model(nfaces_wghost, Operators::OPERATOR_BC_NONE);
-  std::vector<double> bc_value(nfaces_wghost, 0.0), bc_mixed(nfaces_wghost, 0.0);
+  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(mesh, AmanziMesh::FACE, SCHEMA_DOFS_SCALAR));
+  std::vector<int>& bc_model = bc->bc_model();
+  std::vector<double>& bc_value = bc->bc_value();
 
   for (int f = 0; f < nfaces_wghost; f++) {
     const Point& xf = mesh->face_centroid(f);
@@ -264,17 +256,16 @@ TEST(OPERATOR_DIFFUSION_DIVK_AVERAGE_3D) {
       bc_value[f] = ana.pressure_exact(xf, 0.0);
     }
   }
-  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(Operators::OPERATOR_BC_TYPE_FACE, bc_model, bc_value, bc_mixed));
 
   // create diffusion operator 
   Teuchos::ParameterList op_list = plist.get<Teuchos::ParameterList>("PK operator").sublist("diffusion operator divk");
-  Teuchos::RCP<OperatorDiffusion> op = Teuchos::rcp(new OperatorDiffusionMFD(op_list, mesh));
+  Teuchos::RCP<Diffusion> op = Teuchos::rcp(new DiffusionMFD(op_list, mesh));
   op->SetBCs(bc, bc);
   const CompositeVectorSpace& cvs = op->global_operator()->DomainMap();
 
   // create and initialize state variables.
-  CompositeVector solution(cvs);
-  solution.PutScalar(0.0);
+  Teuchos::RCP<CompositeVector> solution = Teuchos::rcp(new CompositeVector(cvs));
+  solution->PutScalar(0.0);
 
   Teuchos::RCP<CompositeVector> flux = Teuchos::rcp(new CompositeVector(cvs));
   Epetra_MultiVector& flx = *flux->ViewComponent("face", true);
@@ -295,7 +286,7 @@ TEST(OPERATOR_DIFFUSION_DIVK_AVERAGE_3D) {
 
   knc->UpdateValues(*flux);  // argument is not used
   ModelUpwindFn func = &HeatConduction::Conduction;
-  upwind.Compute(*flux, solution, bc_model, bc_value, *knc->values(), func);
+  upwind.Compute(*flux, *solution, bc_model, bc_value, *knc->values(), func);
 
   // create source 
   CompositeVector source(cvs);
@@ -308,7 +299,7 @@ TEST(OPERATOR_DIFFUSION_DIVK_AVERAGE_3D) {
 
   // populate the diffusion operator
   op->SetScalarCoefficient(knc->values(), knc->derivatives());
-  op->UpdateMatrices(flux.ptr(), Teuchos::null);
+  op->UpdateMatrices(flux.ptr());
 
   // get and assmeble the global operator
   Teuchos::RCP<Operator> global_op = op->global_operator();
@@ -322,27 +313,28 @@ TEST(OPERATOR_DIFFUSION_DIVK_AVERAGE_3D) {
   global_op->InitPreconditioner("Hypre AMG", slist);
 
   // solve the problem
-  Teuchos::ParameterList lop_list = plist.get<Teuchos::ParameterList>("solvers");
-  AmanziSolvers::LinearOperatorFactory<Operator, CompositeVector, CompositeVectorSpace> factory;
-  Teuchos::RCP<AmanziSolvers::LinearOperator<Operator, CompositeVector, CompositeVectorSpace> >
-     solver = factory.Create("AztecOO CG", lop_list, global_op);
+  Teuchos::ParameterList lop_list = plist.sublist("solvers")
+                                         .sublist("AztecOO CG").sublist("pcg parameters");
+  AmanziSolvers::LinearOperatorPCG<Operator, CompositeVector, CompositeVectorSpace>
+      solver(global_op, global_op);
+  solver.Init(lop_list);
 
   CompositeVector rhs = *global_op->rhs();
-  int ierr = solver->ApplyInverse(rhs, solution);
+  int ierr = solver.ApplyInverse(rhs, *solution);
 
   if (MyPID == 0) {
-    std::cout << "pressure solver (" << solver->name() 
-              << "): ||r||=" << solver->residual() << " itr=" << solver->num_itrs()
-              << " code=" << solver->returned_code() << std::endl;
+    std::cout << "pressure solver (pcg): ||r||=" << solver.residual() 
+              << " itr=" << solver.num_itrs()
+              << " code=" << solver.returned_code() << std::endl;
   }
 
   // compute pressure error
-  Epetra_MultiVector& p = *solution.ViewComponent("cell", false);
+  Epetra_MultiVector& p = *solution->ViewComponent("cell", false);
   double pnorm, pl2_err, pinf_err;
   ana.ComputeCellError(p, 0.0, pnorm, pl2_err, pinf_err);
 
   // calculate flux error
-  op->UpdateFlux(solution, *flux);
+  op->UpdateFlux(solution.ptr(), flux.ptr());
   double unorm, ul2_err, uinf_err;
   ana.ComputeFaceError(flx, 0.0, unorm, ul2_err, uinf_err);
 
@@ -350,10 +342,10 @@ TEST(OPERATOR_DIFFUSION_DIVK_AVERAGE_3D) {
     pl2_err /= pnorm; 
     ul2_err /= unorm;
     printf("L2(p)=%9.6f  Inf(p)=%9.6f  L2(u)=%9.6g  Inf(u)=%9.6f  itr=%3d\n",
-        pl2_err, pinf_err, ul2_err, uinf_err, solver->num_itrs());
+        pl2_err, pinf_err, ul2_err, uinf_err, solver.num_itrs());
 
     CHECK(pl2_err < 0.03 && ul2_err < 0.1);
-    CHECK(solver->num_itrs() < 10);
+    CHECK(solver.num_itrs() < 10);
   }
 }
 

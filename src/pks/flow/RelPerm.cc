@@ -9,6 +9,7 @@
   Author: Ethan Coon (ecoon@lanl.gov)
 
   Relative permeability is a function of saturation: f(pc(sat)).
+  Format: saturation, relative premeability, capillary pressure.
 */
 
 #include "FlowDefs.hh"
@@ -99,10 +100,9 @@ void RelPerm::PlotWRMcurves()
 
   int ndata(1000);
   for (int n = 0; n < wrm_->second.size(); ++n) {
-    std::stringstream fname;
-    fname << "wrm_curves_" << n << ".txt";
     std::ofstream ofile;
-    ofile.open(fname.str().c_str());
+    std::string filename("wrm_" + wrm_->second[n]->region() + ".txt");
+    ofile.open(filename.c_str());
 
     double sr = wrm_->second[n]->residualSaturation();
     double ds = (1.0 - sr) / ndata;
