@@ -1,6 +1,4 @@
 /* -*-  mode: c++; indent-tabs-mode: nil -*- */
-//! A mixin class with default implementations of methods for an BDF integrated PK.
-
 /*
   Amanzi is released under the three-clause BSD License. 
   The terms of use and "as is" disclaimer for this license are 
@@ -9,8 +7,15 @@
   Authors: Ethan Coon (ecoon@lanl.gov)
 */
 
+//! A mixin class with default implementations of methods for a subcycled BDF integrated PK.
 
 /*!
+
+``PK_MixinImplicitSubcycled`` is a mixin class providing functionality for
+implicitly integrated PKs which cannot fail over the requested timestep.  The
+implicit step is subcycled until the entire integrated step is met.
+
+Note this inherits everything in ``PK_MixinImplicit_``
 
 */
 

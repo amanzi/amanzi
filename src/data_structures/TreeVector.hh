@@ -146,7 +146,7 @@ class TreeVector {
  private:
   // Init's version of PushBack, which does not add to the space.
   void InitPushBack_(const Teuchos::RCP<TreeVector>& subvec);
-  void InitMap_();
+  void InitMap_(InitMode mode);
 
  private:
   Teuchos::RCP<TreeVectorSpace> map_;

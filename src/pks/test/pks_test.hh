@@ -28,7 +28,7 @@ class DudtEvaluatorA : public EvaluatorSecondary<CompositeVector,CompositeVector
  public:
   DudtEvaluatorA(Teuchos::ParameterList& plist) :
       EvaluatorSecondary(plist) {
-    dependencies_.insert("primary");
+    dependencies_.insert("primaryA");
   }
 
   DudtEvaluatorA(const DudtEvaluatorA& other) = default;
@@ -54,7 +54,7 @@ class DudtEvaluatorB : public EvaluatorSecondary<CompositeVector,CompositeVector
  public:
   DudtEvaluatorB(Teuchos::ParameterList& plist) :
       EvaluatorSecondary(plist) {
-    dependencies_.insert("primary");
+    dependencies_.insert("primaryB");
   }
 
   DudtEvaluatorB(const DudtEvaluatorB& other) = default;
@@ -80,7 +80,7 @@ class DudtEvaluatorC : public EvaluatorSecondary<CompositeVector,CompositeVector
  public:
   DudtEvaluatorC(Teuchos::ParameterList& plist) :
       EvaluatorSecondary(plist) {
-    dependencies_.insert("primary");
+    dependencies_.insert("primaryC");
     dependencies_.insert("scaling");
   }
 
@@ -92,17 +92,17 @@ class DudtEvaluatorC : public EvaluatorSecondary<CompositeVector,CompositeVector
  protected:
   void Evaluate_(const State& S,
                  CompositeVector& result) {
-    const auto& u = S.Get<CompositeVector>("primary", my_tag_);
+    const auto& u = S.Get<CompositeVector>("primaryC", my_tag_);
     const auto& scaling = S.Get<CompositeVector>("scaling", my_tag_);
     result.Multiply(1.0, scaling, u, 0.);
   }
 
   void EvaluatePartialDerivative_(const State& S,
           const Key& wrt_key, CompositeVector& result) {
-    if (wrt_key == "primary") {
+    if (wrt_key == "primaryC") {
       result = S.Get<CompositeVector>("scaling", my_tag_);
     } else if (wrt_key == "scaling") {
-      result = S.Get<CompositeVector>("primary", my_tag_);
+      result = S.Get<CompositeVector>("primaryC", my_tag_);
     } else {
       ASSERT(false);
     }
@@ -139,8 +139,8 @@ class PK_ODE_Explicit : public Base_t {
 
   void Initialize() {
     Base_t::Initialize();
-    this->S_->template GetW<CompositeVector>("primary", "", "primary").PutScalar(1.);
-    this->S_->GetRecordW("primary", "", "primary").set_initialized();
+    this->S_->template GetW<CompositeVector>(this->key_, "", this->key_).PutScalar(1.);
+    this->S_->GetRecordW(this->key_, "", this->key_).set_initialized();
   }
   
   void Functional(double t, const TreeVector& u, TreeVector& f) {
@@ -195,8 +195,8 @@ class PK_ODE_Implicit : public Base_t {
 
   void Initialize() {
     Base_t::Initialize();
-    this->S_->template GetW<CompositeVector>("primary", "", "primary").PutScalar(1.);
-    this->S_->GetRecordW("primary", "primary").set_initialized();
+    this->S_->template GetW<CompositeVector>(this->key_, "", this->key_).PutScalar(1.);
+    this->S_->GetRecordW(this->key_, this->key_).set_initialized();
   }
   
   virtual void Functional(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,

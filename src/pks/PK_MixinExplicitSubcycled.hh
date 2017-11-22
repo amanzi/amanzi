@@ -1,6 +1,4 @@
 /* -*-  mode: c++; indent-tabs-mode: nil -*- */
-//! A mixin class with default implementations of methods for an BDF integrated PK.
-
 /*
   Amanzi is released under the three-clause BSD License. 
   The terms of use and "as is" disclaimer for this license are 
@@ -9,8 +7,24 @@
   Authors: Ethan Coon (ecoon@lanl.gov)
 */
 
+//! A mixin class with default implementations of methods for a subcycled explicit time integrator.
 
 /*!
+
+``PK_MixinExplicitSubcycled`` is a mixin class providing functionality for
+explicitly integrated PKs.  Manages the creation of intermediate data and
+AdvanceStep().  This uses an extremely simple strategy of taking 1/Nth of the
+requested timestep, where N is provided by the user.
+
+TODO: This isn't very useful, as the timestep should likely be set by a CFL or
+some other quantity of interest in a physical way.  Might think of ways of
+extending the (protected) interface to allow this.
+
+Note this inherits everything in ``PK_MixinExplicit_``
+
+* `"subcycling substeps per outer step`" ``[int]``
+
+  N above.  Number of steps per outer step requested.
 
 */
 

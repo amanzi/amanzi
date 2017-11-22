@@ -81,8 +81,6 @@ class PK_Adaptor : public PK,
     Base_t::SolutionToState(soln, tag, suffix); }
   virtual void SolutionToState(const TreeVector& soln, const Key& tag, const Key& suffix) override final {
     Base_t::SolutionToState(soln, tag, suffix); }
-      
-  
 };
 
 
@@ -140,11 +138,11 @@ class PK_Explicit_Adaptor : public PK_Explicit<>,
 
 
 template<class Base_t>
-class PK_BDF_Adaptor : public PK_BDF<>,
+class PK_Implicit_Adaptor : public PK_Implicit<>,
                             public Base_t {
  public:
 
-  PK_BDF_Adaptor(const Teuchos::RCP<Teuchos::ParameterList>& pk_tree,
+  PK_Implicit_Adaptor(const Teuchos::RCP<Teuchos::ParameterList>& pk_tree,
                  const Teuchos::RCP<Teuchos::ParameterList>& global_plist,
                  const Teuchos::RCP<State>& S,
                  const Teuchos::RCP<TreeVector>& solution) :

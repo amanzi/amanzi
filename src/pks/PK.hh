@@ -15,6 +15,13 @@ A process kernel represents a single or system of partial/ordinary
 differential equation(s) or conservation law(s), and is used as the
 fundamental unit for coupling strategies.
 
+Three purely-virtual interfaces are defined here:
+
+ - ``PK``, the default purely-virtual interface
+ - ``PK_Explicit``, the composition of PK and Explicit_TI::fnBase
+ - ``PK_Implicit``, the composition of PK and BDFFnBase
+
+
 Implementations of this interface typically are either an MPC
 (multi-process coupler) whose job is to heirarchically couple several
 other PKs and represent the system of equations, or a Physical PK,
@@ -54,15 +61,160 @@ Example:
 
 
 /*
-Developer's note:
+Developer's documentation:
+===============================
 
-``PK`` is a virtual interface for a Process Kernel. Note that PKs
-  deriving from this class must implement the constructor
-  interface as well, and should add the private static member
-  (following the Usage notes in src/pks/PK_Factory.hh) to register the
-  derived PK with the PK factory.
+PKs are designed under the concept of Mixins.  Mixin classes are a collection
+of orthogonal concepts which implement some part of a class's functionality,
+and allow multiple implementations of each concept.  These classes can be
+combined in any number of ways to implement the entire functionality of the
+class.
 
+This gets after the issue that the PK interface is external-facing and
+logically holds together, but the implmementation is an extremely complex set
+of sub-functionalities, from data management to time integration to dealing
+with successful and failed timesteps, to coupling multiple children PKs, etc
+etc.
+
+Mixins work through the Curiously Recurring Template Pattern, in which
+template arguments are the base class.  See references below for more:
+
+https://stackoverflow.com/questions/18773367/what-are-mixins-as-a-concept
+http://www.thinkbottomup.com.au/site/blog/C%20%20_Mixins_-_Reuse_through_inheritance_is_good
+
+The PK interface is then split into the following (nearly) orthogonal concepts:
+
+1. Leaf PK vs MPC.  MPCs couple their children.  Leafs have no children.  MPCs
+   may span multiple meshes or domains, while leaf PKs live on a single domain.
+   This governs much of setup and initialization, checks for validity, and allows
+   common functionality to be implemented in a single place.
+
+   See PK_MixinLeaf and PK_MixinMPC.
+
+2. Implicit vs Explicit time integration.  This governs the AdvanceStep()
+   method, the construction of a time integrator, and the interface composition
+   with Explicit_TI::fnBase and BDFFnBase.
+
+   See PK_MixinImplicit and PK_MixinExplicit.
+
+3. Subcycling.  Both explicit and implicit PKs may be subcycled, but this
+   requires extra temporary/internal storage, etc.
+
+   See PK_MixinImplicitSubcyled and PK_MixinExplicitSubcycled
+
+3. get_dt().  Is an internal dt stored, is dt the min of all children, or is a
+   special-purpose coupler in charge of this functionality?
+
+
+Currently these are the concepts implemented here, but it is very easy for
+developers to introduce new concepts and provide mixins implementing those
+concepts (see an example below).
+
+To ensure that all functionality is implemented, and be able to store PKs
+through pointers to the generic, virtual interfaces PK, PK_Explicit, and
+PK_Implicit, we use an Adaptor as the highest level class.  This adaptor
+simply brings the virtual interface in so that users need only worry about the
+interface, and not the class heirarchy.
+
+This adaptor brings together the virtual interface with the Mixin heirarchy.
+At the bottom of the Mixin heirarchy, PK_Default makes sure that the Mixins
+can call their Base class's methods without knowing what their base class
+actually is.  For instance, all Setup() methods MUST call their base class's
+Setup() method, as each Mixin may do some Setup.  PK_Default simply makes sure
+that the last Mixin can do this without knowing it is the last Mixin.
+
+
+Example 1
+----------
+
+So, consider the simplest case, in which a user implements their own
+AdvanceStep() method and doesn't use Implicit or Explicit time integrators.
+The class heirarchy might look like:
+
+                      PK_Adaptor
+                      /        \
+               PK_MyPhysics      PK
+                  |
+               PK_MixinLeaf
+                  |
+               PK_Default
+
+Users get a pointer to PK, and all its virtual interface.  MyPhysics,
+MixinLeaf, and Default implement NON-virtual methods implementing the
+functionality.  This object would typically be typedef'd as:
+
+typedef PK_Adaptor<PK_MyPhysics<PK_MixinLeaf<PK_Default> > > > PK_MyPhysics_t;
+PK* pk = new PK_MyPhysics_t(...);
+
+Example 2
+----------
+
+A Richards PK might be developed to be used with an implicit time integrator.
+This PK, called PK_Richards, implements the BDFfnBase interface, sets up the
+dag, etc.  Its class heirarchy might look like:
+
+                      PK_Implicit_Adaptor
+                      /                \
+               PK_Richards             PK_Implicit
+                  |                        /      \     
+               PK_MixinImplicit           PK      BDFFnBase
+                  |
+               PK_MixinLeaf
+                  |
+               PK_Default
+      
+
+and would be typedef'd:
+
+typedef PK_Implicit_Adaptor<PK_Richards<PK_MixinImplicit<PK_MixinLeaf<PK_Default> > > > PK_Richards_t;
+
+
+
+This concepts-based design is very extensible.  For instance, a physics
+library developer might want to make all of their physics PKs able to be
+limited to a max change in a given timestep as a form of error control.  They
+could implement a ValidStep() Mixin, which solely implements that method.
+Then they would insert their Mixin class into the typedef for all their PKs,
+register the typedef'd class with the factory, and be done with it.
+
+
+In practice, this splits the interface into two types of methods: those that
+are truely orthogonal and assume that no other Mixin implements this method,
+and those that are not and assume that all Mixins implement this method.
+
+1. Truely or nearly Orthogonal methods:
+    - get_dt()
+    - SolutionToState(),
+    - StateToSolution(),
+    - AdvanceStep(),
+    - ChangedSolutionPK(),
+    - ConstructChildren(),
+    - name(),
+    - debugger()
+
+   effectively assume that there is one Mixin class that
+   does the work.  The slight exception to this is AdvanceStep(), in which a
+   subcyling Mixin may call a non-subcycling Mixin for Advancing the internal,
+   subcycled step.
+
+2. Shared methods:
+    - Setup(),
+    - Initialize(),
+    - CalculateDiagnostics(),
+    - CommitStep(),
+    - FailStep(),
+    - ValidStep()
+
+   each MUST call their base class's variant of the method.  These methods are
+   additive in the sense that multiple mixins might do Setup, and the
+   functionality for Setup is the combined functionality.  These shared
+   methods MUST then be implemented in PK_Default, as they must have a
+   bottom-most implementation.  One of the key concepts of Mixins is that, if
+   Mixin concepts are orthogonal, then order shouldn't matter too much.
+
+Note that this is a work in progress.   
 */
+
 
 #ifndef AMANZI_PK_HH_
 #define AMANZI_PK_HH_
@@ -92,7 +244,7 @@ class PK {
   // Setup: forms the DAG, pushes meta-data into State
   virtual void Setup(const TreeVector& soln) = 0;
   
-  // Initialize: set values for owned variables.
+  // Initialize: initial conditions for owned variables.
   virtual void Initialize() = 0;
 
   // Advance PK from time tag old to time tag new
@@ -121,7 +273,25 @@ class PK {
   // Mark, as changed, any primary variable evaluator owned by this PK
   virtual void ChangedSolutionPK(const Key& tag) = 0;
 
+  // Ensure consistency between a time integrator's view of data (TreeVector)
+  // and the dag's view of data (dictionary of CompositeVectors).
+  //
+  // Pull data from the state into a TreeVector.  If the TreeVector has no
+  // data, copy pointers.  Otherwise ensure pointers are equal.
+  //
+  // These almost certainly are implemented by default.
   virtual void StateToSolution(TreeVector& soln, const Key& tag, const Key& suffix) = 0;
+
+
+  // Ensure consistency between a time integrator's view of data (TreeVector)
+  // and the dag's view of data (dictionary of CompositeVectors).
+  //
+  // Push data from a TreeVector into State.  If the State has no data,
+  // require it (allowing time integrators to require intermediate steps,
+  // etc).  If the TreeVector has data and State doesn't, copy pointers.  If
+  // the State does have this data, ensure consistency.
+  //
+  // These almost certainly are implemented by default.
   virtual void SolutionToState(TreeVector& soln, const Key& tag, const Key& suffix) = 0;
   virtual void SolutionToState(const TreeVector& soln, const Key& tag, const Key& suffix) = 0;
   
@@ -135,10 +305,10 @@ class PK {
 };
 
 template<typename Vector=TreeVector>
-class PK_BDF : public PK,
+class PK_Implicit : public PK,
                public BDFFnBase<Vector> {
  public:
-  virtual ~PK_BDF() = default;
+  virtual ~PK_Implicit() = default;
 };
 
 template<typename Vector=TreeVector>

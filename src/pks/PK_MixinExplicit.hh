@@ -1,6 +1,4 @@
 /* -*-  mode: c++; indent-tabs-mode: nil -*- */
-//! A mixin class with default implementations of methods for an explicotly integrated PK.
-
 /*
   Amanzi is released under the three-clause BSD License. 
   The terms of use and "as is" disclaimer for this license are 
@@ -9,8 +7,18 @@
   Authors: Ethan Coon (ecoon@lanl.gov)
 */
 
+//! A mixin class with default implementations of methods for an explicotly integrated PK.
 
 /*!
+
+``PK_MixinExplicit`` is a mixin class providing functionality for ixplicitly
+integrated PKs.  Manages the creation of intermediate data and AdvanceStep().
+
+* `"initial time step`" ``[double]``
+
+  The initial time step size, in seconds.
+
+* `"time integrator`" ``[time-integrator-spec]``  See ``TimeIntegratorExplicit_``.
 
 */
 

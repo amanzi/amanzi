@@ -1,6 +1,4 @@
 /* -*-  mode: c++; indent-tabs-mode: nil -*- */
-//! A base class with default implementations of methods for a leaf of the PK tree (a conservation equation, or similar).
-
 /*
   ATS is released under the three-clause BSD License. 
   The terms of use and "as is" disclaimer for this license are 
@@ -9,12 +7,13 @@
   Authors: Ethan Coon (ecoon@lanl.gov)
 */
 
+//! A base class with default implementations of methods for a leaf of the PK tree (a conservation equation, or similar).
 
 /*!
 
-``PKLeafBase`` is a mixin class providing some functionality for PKs which
+``PK_MixinLeaf`` is a mixin class providing some functionality for PKs which
 are defined on a single mesh, and represent a single process model.  Typically
-all leaves of the PK tree will inherit from ``PKLeafBase``.
+all leaves of the PK tree will inherit from ``PK_MixinLeaf``.
 
 * `"domain`" ``[string]`` **""**, e.g. `"surface`".
 
@@ -23,9 +22,6 @@ all leaves of the PK tree will inherit from ``PKLeafBase``.
 * `"primary variable`" ``[string]``
 
   The primary variable associated with this PK, i.e. `"pressure`", `"temperature`", `"surface_pressure`", etc.
-
-
-NOTE: ``PKLeafBase (v)-->`` PKDefaultBase_
 
 */
 
@@ -54,7 +50,7 @@ class PK_MixinLeaf : public Base_t {
   void ConstructChildren() {};
 
   // Sets up primary evaluator
-  void Setup(const TreeVector& soln);
+  //  void Setup(const TreeVector& soln);
   
   // Mark, as changed, any primary variable evaluator owned by this PK
   void ChangedSolutionPK(const Key& tag);
@@ -119,17 +115,17 @@ PK_MixinLeaf<Base_t>::ChangedSolutionPK(const Key& tag)
   eval_primary->SetChanged();
 };
   
-template<class Base_t>
-void
-PK_MixinLeaf<Base_t>::Setup(const TreeVector& soln)
-{
-  Base_t::Setup(soln);
+// template<class Base_t>
+// void
+// PK_MixinLeaf<Base_t>::Setup(const TreeVector& soln)
+// {
+//   Base_t::Setup(soln);
 
-  // // require primary variable evaluator
-  // S_->RequireEvaluator(key_);
-  // S_->template Require<CompositeVector,CompositeVectorSpace>(key_, "", key_)
-  //     .SetMesh(mesh_);
-};
+//   // // require primary variable evaluator
+//   // S_->RequireEvaluator(key_);
+//   // S_->template Require<CompositeVector,CompositeVectorSpace>(key_, "", key_)
+//   //     .SetMesh(mesh_);
+// };
 
 template<class Base_t>
 void
