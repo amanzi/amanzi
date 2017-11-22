@@ -36,29 +36,29 @@ void ThawDepthEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
   
   int ncells = res_c.MyLength();
   
-  AmanziGeometry::Point z_centroid;
+  
 
   for (int c=0; c!=ncells; c++){
+    AmanziGeometry::Point z_centroid;
     int id = S->GetMesh("surface_star")->cell_map(false).GID(c);
     std::stringstream domain;
     domain << "column_" << id;
     const Epetra_MultiVector& temp_c =*S->GetFieldData(Keys::getKey(domain.str(),"temperature"))->ViewComponent("cell", false);
     int col_cells = temp_c.MyLength();
     for (int i=0; i!= col_cells; i++)
-      if (temp_c[0][i] > 273.15){
+      if (temp_c[0][i] >= 273.25){
         z_centroid = S->GetMesh(domain.str())->face_centroid(i+1);
-        
       }
-
+    
     double thaw_depth = 0;
     if (z_centroid[2] == 0)
-       thaw_depth = 0;
+      thaw_depth = 0;
     else
       thaw_depth = S->GetMesh(domain.str())->face_centroid(0)[2] - z_centroid[2];
     
     res_c[0][c] = thaw_depth;
   }
-
+  
 }
   
 void ThawDepthEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>& S,
