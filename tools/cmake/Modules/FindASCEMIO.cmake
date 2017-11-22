@@ -124,7 +124,7 @@ else(ASCEMIO_LIBRARIES AND ASCEMIO_INCLUDE_DIRS)
       if (EXISTS "${ASCEMIO_DIR}" )
 
         find_library(_ASCEMIO_LIBRARY
-                     NAMES ascemio
+                     NAMES ascemio parallelio
                      HINTS ${ASCEMIO_DIR}
                      PATH_SUFFIXES "lib" "Lib"
                      NO_DEFAULT_PATH)
@@ -137,7 +137,7 @@ else(ASCEMIO_LIBRARIES AND ASCEMIO_INCLUDE_DIRS)
     else()
 
       find_library(_ASCEMIO_LIBRARY
-                   NAMES ascemio
+                   NAMES ascemio parallelio
                    PATH_SUFFIXES ${ascemio_lib_suffixes})
 
     endif()
