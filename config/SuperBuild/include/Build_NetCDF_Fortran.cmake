@@ -38,12 +38,14 @@ ExternalProject_Add(${NetCDF_Fortran_BUILD_TARGET}
                         <SOURCE_DIR>/configure
                         --prefix=<INSTALL_DIR>
                         --disable-fortran-compiler-check
+                        --enable-shared=${BUILD_SHARED_LIBS}
+                        --enable-static=${BUILD_STATIC_LIBS}
 		        CC=${CMAKE_C_COMPILER}
 		        FC=${CMAKE_Fortran_COMPILER}
                         FCFLAGS=${Amanzi_COMMON_FCFLAGS}
                         CPPFLAGS=${netcdf_fortran_cppflags}
                         LDFLAGS=${netcdf_fortran_ldflags}
-                        LD_LIBRARY_PATH=${TPL_INSTALL_PREFIX}/lib
+                        LD_LIBRARY_PATH=${TPL_INSTALL_PREFIX}/lib:$ENV{LD_LIBRARY_PATH}
 	            # -- Build
 	            BINARY_DIR ${NetCDF_Fortran_build_dir}    # Build directory 
 	            BUILD_COMMAND $(MAKE)                     # $(MAKE) enables parallel builds through make
