@@ -2803,6 +2803,14 @@ MSet_ptr Mesh_MSTK::build_set(const Teuchos::RCP<const AmanziGeometry::Region>& 
           MSet_Add(mset,cell_id_to_handle[icell]);
 
     }
+    else if (region->type() == AmanziGeometry::ALL)  {
+
+      int ncell = num_entities(CELL, USED);              
+
+      for (int icell = 0; icell < ncell; icell++)
+        MSet_Add(mset,cell_id_to_handle[icell]);
+
+    }
     else if (region->type() == AmanziGeometry::POINT) {
       AmanziGeometry::Point vpnt(space_dim_);
       AmanziGeometry::Point rgnpnt(space_dim_);
@@ -2944,6 +2952,14 @@ MSet_ptr Mesh_MSTK::build_set(const Teuchos::RCP<const AmanziGeometry::Region>& 
           MSet_Add(mset,face_id_to_handle[iface]);
       }
     }
+    else if (region->type() == AmanziGeometry::ALL)  {
+
+      int nface = num_entities(FACE, USED);
+        
+      for (int iface = 0; iface < nface; iface++) {
+        MSet_Add(mset,face_id_to_handle[iface]);
+      }
+    }
     else if (region->type() == AmanziGeometry::PLANE ||
              region->type() == AmanziGeometry::POLYGON) {
 
@@ -3036,6 +3052,14 @@ MSet_ptr Mesh_MSTK::build_set(const Teuchos::RCP<const AmanziGeometry::Region>& 
             break;      
         }
       }
+    }
+    else if (region->type() == AmanziGeometry::ALL)  {
+
+      int nnode = num_entities(NODE, USED);
+
+      for (int inode = 0; inode < nnode; inode++)
+        MSet_Add(mset,vtx_id_to_handle[inode]);
+
     }
     else if (region->type() == AmanziGeometry::LABELEDSET) {
       // Just retrieve and return the set
