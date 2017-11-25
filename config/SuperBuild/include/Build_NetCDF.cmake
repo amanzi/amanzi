@@ -54,7 +54,7 @@ if (ENABLE_NetCDF4)
 endif() 
 
 # share libraries -- disabled by default
-list(APPEND NetCDF_CMAKE_CACH_ARGS ${BUILD_SHARED_LIBS})
+list(APPEND NetCDF_CMAKE_CACHE_ARGS "-DBUILD_SHARED_LIBS:BOOL=${BUILD_SHARED_LIBS}")
 
 # Build compiler flag strings for C, C++ and Fortran
 include(BuildWhitespaceString)
