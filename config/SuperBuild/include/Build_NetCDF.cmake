@@ -38,31 +38,23 @@ configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/netcdf-patch-step.cmake.in
 set(NetCDF_PATCH_COMMAND ${CMAKE_COMMAND} -P ${NetCDF_cmake_patch})     
 
 # --- Define the configure command
+set(NetCDF_CMAKE_CACHE_ARGS "-DCMAKE_INSTALL_PREFIX:FILEPATH=${TPL_INSTALL_PREFIX}")
+list(APPEND NetCDF_CMAKE_CACHE_ARGS "-DCMAKE_BUILD_TYPE:STRING=${CMAKE_BUILD_TYPE}")
+list(APPEND NetCDF_CMAKE_CACHE_ARGS "-DCMAKE_INSTALL_LIBDIR:FILEPATH=${TPL_INSTALL_PREFIX}/lib")
+list(APPEND NetCDF_CMAKE_CACHE_ARGS "-DCMAKE_INSTALL_BINDIR:FILEPATH=${TPL_INSTALL_PREFIX}/bin")
+list(APPEND NetCDF_CMAKE_CACHE_ARGS "-DENABLE_DAP:BOOL=FALSE")
+list(APPEND NetCDF_CMAKE_CACHE_ARGS "-DENABLE_PARALLEL4:BOOL=TRUE")
+list(APPEND NetCDF_CMAKE_CACHE_ARGS "-DHDF5_PARALLEL:BOOL=TRUE")
 
 # Default is to build with NetCDF4 which depends on HDF5
 option(ENABLE_NetCDF4 "Enable netCDF4 build" TRUE)
-set(NetCDF_netcdf4_opts)
 if (ENABLE_NetCDF4)
   list(APPEND NetCDF_PACKAGE_DEPENDS ${HDF5_BUILD_TARGET})
-
-  append_set(NetCDF_netcdf4_opts --enable-netcdf-4)
-
-  # These options were removed in version 4.1.3 _sigh_
-  if ( ${NetCDF_VERSION} VERSION_LESS 4.1.3 )
-    append_set(NetCDF_netcdf4_opts
-                        --with-netcdf=${HDF5_install_dir}
-                        --with-zlib=${ZLIB_install_dir})
-  endif()  
-
-else()   
-  set(NetCDF_netcdf4_opts --disable-netcdf-4)
+  list(APPEND NetCDF_CMAKE_CACHE_ARGS "-DENABLE_NETCDF_4:BOOL=TRUE")
 endif() 
 
 # share libraries -- disabled by default
-set(NetCDF_shared_opt --disable-shared) 
-if (BUILD_SHARED_LIBS)
-  set(NetCDF_shared_opt --enable-shared)
-endif()
+list(APPEND NetCDF_CMAKE_CACH_ARGS ${BUILD_SHARED_LIBS})
 
 # Build compiler flag strings for C, C++ and Fortran
 include(BuildWhitespaceString)
@@ -103,23 +95,12 @@ ExternalProject_Add(${NetCDF_BUILD_TARGET}
                     PATCH_COMMAND ${NetCDF_PATCH_COMMAND}
                     # -- Configure
                     SOURCE_DIR       ${NetCDF_source_dir} # Source directory
-                    CONFIGURE_COMMAND
-                        <SOURCE_DIR>/configure
-                        --prefix=<INSTALL_DIR>
-                        --disable-examples
-                        ${NetCDF_netcdf4_opts} 
-                        --disable-dap
-                        ${NetCDF_shared_opt}
-                        --disable-fortran
-                        --disable-f90
-                        --disable-f77
-                        --disable-fortran-compiler-check
-                        CC=${CMAKE_C_COMPILER_USE}
-                        CFLAGS=${netcdf_cflags}
-                        CXX=${CMAKE_CXX_COMPILER_USE}
-                        CXXFLAGS=${netcdf_cxxflags}
-                        CPPFLAGS=${netcdf_cppflags}
-                        LDFLAGS=${netcdf_ldflags}
+                    CMAKE_CACHE_ARGS ${AMANZI_CMAKE_CACHE_ARGS}   # Global definitions from root CMakeList
+                                     ${NetCDF_CMAKE_CACHE_ARGS}
+                                     ${Amanzi_CMAKE_C_COMPILER_ARGS}  # Ensure uniform build
+                                     -DCMAKE_C_COMPILER:FILEPATH=${CMAKE_C_COMPILER}
+                                     ${Amanzi_CMAKE_CXX_COMPILER_ARGS}
+                                     -DCMAKE_CXX_COMPILER:FILEPATH=${CMAKE_CXX_COMPILER}
                     # -- Build
                     BINARY_DIR        ${NetCDF_build_dir}       # Build directory 
                     BUILD_COMMAND     $(MAKE)                   # $(MAKE) enables parallel builds through make
