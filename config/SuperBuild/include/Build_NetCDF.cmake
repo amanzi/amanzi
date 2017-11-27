@@ -91,6 +91,7 @@ ExternalProject_Add(${NetCDF_BUILD_TARGET}
                     DOWNLOAD_DIR ${TPL_DOWNLOAD_DIR}      # Download directory
                     URL          ${NetCDF_URL}            # URL may be a web site OR a local file
                     URL_MD5      ${NetCDF_MD5_SUM}        # md5sum of the archive file
+		    DOWNLOAD_NAME ${NetCDF_SAVEAS_FILE}   # file name to store (if not end of URL)
                     # -- Patch 
                     PATCH_COMMAND ${NetCDF_PATCH_COMMAND}
                     # -- Configure

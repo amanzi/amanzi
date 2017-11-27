@@ -32,6 +32,7 @@ ExternalProject_Add(${NetCDF_Fortran_BUILD_TARGET}
 	            DOWNLOAD_DIR ${TPL_DOWNLOAD_DIR}
 	            URL ${NetCDF_Fortran_URL}                 # URL may be a web site OR a local file
 	            URL_MD5 ${NetCDF_Fortran_MD5_SUM}         # md5sum of the archive file
+		    DOWNLOAD_NAME ${NetCDF_Fortran_SAVEAS_FILE}  # file name to store
 	            # -- Configure
 	            SOURCE_DIR ${NetCDF_Fortran_source_dir}   # Source directory
 	            CONFIGURE_COMMAND 
