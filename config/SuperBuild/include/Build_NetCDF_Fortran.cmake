@@ -13,6 +13,21 @@ amanzi_tpl_version_write(FILENAME ${TPL_VERSIONS_INCLUDE_FILE}
   PREFIX NetCDF_Fortran
   VERSION ${NetCDF_Fortran_VERSION_MAJOR} ${NetCDF_Fortran_VERSION_MINOR} ${NetCDF_Fortran_VERSION_PATCH})
   
+# --- Patch original code
+set(NetCDF_Fortran_patch_file netcdf-fortran-osx.patch)
+set(NetCDF_Fortran_sh_patch ${NetCDF_Fortran_prefix_dir}/netcdf-fortran-patch-step.sh)
+configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/netcdf-fortran-patch-step.sh.in
+               ${NetCDF_Fortran_sh_patch}
+               @ONLY)
+
+# configure the CMake patch step
+set(NetCDF_Fortran_cmake_patch ${NetCDF_Fortran_prefix_dir}/netcdf-fortran-patch-step.cmake)
+configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/netcdf-fortran-patch-step.cmake.in
+               ${NetCDF_Fortran_cmake_patch}
+               @ONLY)
+
+set(NetCDF_Fortran_PATCH_COMMAND ${CMAKE_COMMAND} -P ${NetCDF_Fortran_cmake_patch})
+
 # --- Define the configure command
 set(NetCDF_Fortran_CMAKE_CACHE_ARGS "-DCMAKE_INSTALL_PREFIX:FILEPATH=${TPL_INSTALL_PREFIX}")
 list(APPEND NetCDF_Fortran_CMAKE_CACHE_ARGS "-DCMAKE_BUILD_TYPE:STRING=${CMAKE_BUILD_TYPE}")
@@ -20,7 +35,6 @@ list(APPEND NetCDF_Fortran_CMAKE_CACHE_ARGS "-DBUILD_SHARED_LIBS:BOOL=${BUILD_SH
 list(APPEND NetCDF_Fortran_CMAKE_CACHE_ARGS "-DENABLE_TESTS:BOOL=FALSE")
 
 # --- Add external project build 
-# Default build produces shared libraries
 ExternalProject_Add(${NetCDF_Fortran_BUILD_TARGET}
 	            DEPENDS ${NetCDF_Fortran_PACKAGE_DEPENDS} # Package dependency target
 	            TMP_DIR ${NetCDF_Fortran_tmp_dir}         # Temporary files directory
@@ -30,6 +44,7 @@ ExternalProject_Add(${NetCDF_Fortran_BUILD_TARGET}
 	            URL ${NetCDF_Fortran_URL}                 # URL may be a web site OR a local file
 	            URL_MD5 ${NetCDF_Fortran_MD5_SUM}         # md5sum of the archive file
 		    DOWNLOAD_NAME ${NetCDF_Fortran_SAVEAS_FILE}  # file name to store
+		    PATCH_COMMAND ${NetCDF_Fortran_PATCH_COMMAND} 
 	            # -- Configure
 	            SOURCE_DIR ${NetCDF_Fortran_source_dir}   # Source directory
                     CMAKE_CACHE_ARGS ${AMANZI_CMAKE_CACHE_ARGS}   # Global definitions from root CMakeList
