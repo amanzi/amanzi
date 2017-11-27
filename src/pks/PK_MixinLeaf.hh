@@ -49,9 +49,6 @@ class PK_MixinLeaf : public Base_t {
   // do
   void ConstructChildren() {};
 
-  // Sets up primary evaluator
-  //  void Setup(const TreeVector& soln);
-  
   // Mark, as changed, any primary variable evaluator owned by this PK
   void ChangedSolutionPK(const Key& tag);
 
@@ -116,17 +113,6 @@ PK_MixinLeaf<Base_t>::ChangedSolutionPK(const Key& tag)
   eval_primary->SetChanged();
 };
   
-// template<class Base_t>
-// void
-// PK_MixinLeaf<Base_t>::Setup(const TreeVector& soln)
-// {
-//   Base_t::Setup(soln);
-
-//   // // require primary variable evaluator
-//   // S_->RequireEvaluator(key_);
-//   // S_->template Require<CompositeVector,CompositeVectorSpace>(key_, "", key_)
-//   //     .SetMesh(mesh_);
-// };
 
 template<class Base_t>
 void

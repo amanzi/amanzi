@@ -16,8 +16,7 @@ PK_MixinMPC.
 
 E.g, the following should be instantiable as a globally implicit MPC:
 
-PK_Implicit_Adaptor< PK_MixinMPCGetDtMin< PK_MixinImplicit<
-        PK_MixinMPCImplicit< PK_MixinMPC< PK_Default, PK_Implicit > > > > >
+PK_Implicit_Adaptor<PK_MixinImplicit<PK_MixinMPCImplicit<PK_Default, PK_Implicit<TreeVector> > > > 
 
 */
 
