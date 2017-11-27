@@ -96,6 +96,8 @@
 #                - update Hypre to xsdk-0.2.0 (native 2.11.2)
 #  0.94.10       - update Alquimia to 1.0.5 (critical bug fixes)
 #  0.94.11       - update MSTK to 3.0.3 (critical bug fixes)
+                   update NetCDF to 4.5.0
+		   update NetCDF-Fortran to 4.4.4
 
 include(CMakeParseArguments)
 
@@ -274,24 +276,26 @@ set(HDF5_MD5_SUM        dd2148b740713ca0295442ec683d7b1c)
 # TPL: NetCDF
 #
 set(NetCDF_VERSION_MAJOR 4)
-set(NetCDF_VERSION_MINOR 4)
-set(NetCDF_VERSION_PATCH 1.1)
+set(NetCDF_VERSION_MINOR 5)
+set(NetCDF_VERSION_PATCH 0)
 set(NetCDF_VERSION ${NetCDF_VERSION_MAJOR}.${NetCDF_VERSION_MINOR}.${NetCDF_VERSION_PATCH})
-set(NetCDF_URL_STRING     ${AMANZI_TPLS_DOWNLOAD_URL})
-set(NetCDF_ARCHIVE_FILE   netcdf-${NetCDF_VERSION}.tar.gz)
-set(NetCDF_SAVEAS_FILE    ${NetCDF_ARCHIVE_FILE})
-set(NetCDF_MD5_SUM        503a2d6b6035d116ed53b1d80c811bda)
+set(NetCDF_URL_STRING     "https://github.com/Unidata/netcdf-c/archive/")
+set(NetCDF_ARCHIVE_FILE   v${NetCDF_VERSION}.tar.gz)
+set(NetCDF_SAVEAS_FILE    netcdf-${NetCDF_VERSION}.tar.gz)
+set(NetCDF_MD5_SUM        a523ad253bd832efa632847940c2317e)
 
 #
 # TPL: NetCDF Fortran
 #
 set(NetCDF_Fortran_VERSION_MAJOR 4)
-set(NetCDF_Fortran_VERSION_MINOR 2)
-set(NetCDF_Fortran_VERSION ${NetCDF_Fortran_VERSION_MAJOR}.${NetCDF_Fortran_VERSION_MINOR})
+set(NetCDF_Fortran_VERSION_MINOR 4)
+set(NetCDF_Fortran_VERSION_PATCH 4)
+set(NetCDF_Fortran_VERSION ${NetCDF_Fortran_VERSION_MAJOR}.${NetCDF_Fortran_VERSION_MINOR}.${NetCDF_Fortran_VERSION_PATCH})
 set(NetCDF_Fortran_URL_STRING     ${AMANZI_TPLS_DOWNLOAD_URL})
-set(NetCDF_Fortran_ARCHIVE_FILE   netcdf-fortran-${NetCDF_Fortran_VERSION}.tar.gz)
-set(NetCDF_Fortran_SAVEAS_FILE    ${NetCDF_Fortran_ARCHIVE_FILE})
-set(NetCDF_Fortran_MD5_SUM        cc3bf530223e8f4aff93793b9f197bf3) 
+set(NetCDF_Fortran_URL_STRING     "https://github.com/Unidata/netcdf-fortran/archive/")
+set(NetCDF_Fortran_ARCHIVE_FILE   v${NetCDF_Fortran_VERSION}.tar.gz)
+set(NetCDF_Fortran_SAVEAS_FILE    netcdf-fortran-${NetCDF_VERSION}.tar.gz)
+set(NetCDF_Fortran_MD5_SUM        418c7e998e63e6d76b2da14019fa9c8f) 
 
 #
 # ASCEM-IO
