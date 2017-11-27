@@ -32,6 +32,15 @@ TreeVector::TreeVector(const TreeVectorSpace& space, InitMode mode)
   }
 }
 
+TreeVector::TreeVector(const Teuchos::RCP<TreeVectorSpace>& space, InitMode mode)
+{
+  map_ = space;
+  InitMap_(mode);
+  if (mode == INIT_MODE_ZERO) {
+    PutScalar(0.);
+  }
+}
+
 TreeVector::TreeVector(const TreeVector& other, InitMode mode)
 {
   map_ = Teuchos::rcp(new TreeVectorSpace(*other.map_));
@@ -50,9 +59,9 @@ void TreeVector::InitMap_(InitMode mode) {
     data_ = Teuchos::rcp(new CompositeVector(*map_->Data()));
   }
 
-  for (TreeVectorSpace::const_iterator i=map_->begin();
+  for (TreeVectorSpace::iterator i=map_->begin();
        i!=map_->end(); ++i) {
-    InitPushBack_(Teuchos::rcp(new TreeVector(**i, mode)));
+    InitPushBack_(Teuchos::rcp(new TreeVector(*i, mode)));
   }
 }
 

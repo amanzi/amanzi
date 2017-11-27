@@ -45,6 +45,7 @@ class TreeVector {
   // Basic constructors of a TreeVector
   TreeVector();
   explicit TreeVector(const TreeVectorSpace& space, InitMode mode=INIT_MODE_NONE);
+  explicit TreeVector(const Teuchos::RCP<TreeVectorSpace>& space, InitMode mode=INIT_MODE_NONE);
 
   // copy constructors
   TreeVector(const TreeVector& other, InitMode mode=INIT_MODE_COPY);
@@ -152,7 +153,7 @@ class TreeVector {
   Teuchos::RCP<TreeVectorSpace> map_;
 
   Teuchos::RCP<CompositeVector> data_;
-  std::vector< Teuchos::RCP<TreeVector> > subvecs_;
+  std::vector<Teuchos::RCP<TreeVector> > subvecs_;
 };
 
 } // namespace
