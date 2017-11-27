@@ -41,7 +41,7 @@ class PK_MixinImplicit
   PK_MixinImplicit(const Teuchos::RCP<Teuchos::ParameterList>& pk_tree,
                    const Teuchos::RCP<Teuchos::ParameterList>& global_plist,
                    const Teuchos::RCP<State>& S,
-                   const Teuchos::RCP<TreeVector>& solution);
+                   const Teuchos::RCP<TreeVectorSpace>& soln_map);
 
   void Setup(const TreeVector& soln);
   bool AdvanceStep(const Key& tag_old, const Teuchos::RCP<TreeVector>& soln_old,
@@ -73,8 +73,8 @@ template<class Base_t>
 PK_MixinImplicit<Base_t>::PK_MixinImplicit(const Teuchos::RCP<Teuchos::ParameterList>& pk_tree,
                          const Teuchos::RCP<Teuchos::ParameterList>& global_plist,
                          const Teuchos::RCP<State>& S,
-                         const Teuchos::RCP<TreeVector>& solution)
-    : Base_t(pk_tree, global_plist, S, solution)
+                         const Teuchos::RCP<TreeVectorSpace>& soln_map)
+    : Base_t(pk_tree, global_plist, S, soln_map)
 {
   // initial timestep
   dt_ = plist_->template get<double>("initial time step", 1.);
@@ -168,11 +168,10 @@ void
 PK_MixinImplicit<Base_t>::CommitStep(const Key& tag_old, const Teuchos::RCP<TreeVector>& soln_old,
         const Key& tag_new, const Teuchos::RCP<TreeVector>& soln_new)
 {
-  Base_t::CommitStep(tag_old, soln_old, tag_new, soln_new);  
-
   double dt = S_->time(tag_new) - S_->time(tag_old);
   if (dt > 0. && time_stepper_ != Teuchos::null)
     time_stepper_->CommitSolution(dt, soln_new, true);
+  Base_t::CommitStep(tag_old, soln_old, tag_new, soln_new);  
 }
 
 

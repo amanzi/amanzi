@@ -291,9 +291,12 @@ class PK {
   // etc).  If the TreeVector has data and State doesn't, copy pointers.  If
   // the State does have this data, ensure consistency.
   //
-  // These almost certainly are implemented by default.
+  // These almost certainly should use the default implementation.
   virtual void SolutionToState(TreeVector& soln, const Key& tag, const Key& suffix) = 0;
   virtual void SolutionToState(const TreeVector& soln, const Key& tag, const Key& suffix) = 0;
+
+  // Copy data, as needed, from one tag to another.
+  virtual void StateToState(const Key& tag_from, const Key& tag_to) = 0;
   
   // Return PK's name
   virtual std::string name() = 0;

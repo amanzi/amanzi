@@ -25,7 +25,7 @@
   <ParameterList name="PKs" type="ParameterList">
     <ParameterList name="A, forward euler" type="ParameterList">
       <Parameter name="domain name" type="string" value="domain" />
-      <Parameter name="primary variable key" type="string" value="primary" />
+      <Parameter name="primary variable key" type="string" value="primaryA" />
       <Parameter name="initial time step" type="double" value="0.1" />
       <ParameterList name="time integrator" type="ParameterList">
         <Parameter name="RK method" type="string" value="forward euler" />
@@ -34,7 +34,7 @@
 
     <ParameterList name="B, forward euler" type="ParameterList">
       <Parameter name="domain name" type="string" value="domain" />
-      <Parameter name="primary variable key" type="string" value="primary" />
+      <Parameter name="primary variable key" type="string" value="primaryB" />
       <Parameter name="initial time step" type="double" value="0.1" />
       <ParameterList name="time integrator" type="ParameterList">
         <Parameter name="RK method" type="string" value="forward euler" />
@@ -43,7 +43,7 @@
 
     <ParameterList name="C, forward euler" type="ParameterList">
       <Parameter name="domain name" type="string" value="domain" />
-      <Parameter name="primary variable key" type="string" value="primary" />
+      <Parameter name="primary variable key" type="string" value="primaryC" />
       <Parameter name="initial time step" type="double" value="0.1" />
       <ParameterList name="time integrator" type="ParameterList">
         <Parameter name="RK method" type="string" value="forward euler" />
@@ -52,7 +52,7 @@
 
     <ParameterList name="A, RK4" type="ParameterList">
       <Parameter name="domain name" type="string" value="domain" />
-      <Parameter name="primary variable key" type="string" value="primary" />
+      <Parameter name="primary variable key" type="string" value="primaryA" />
       <Parameter name="initial time step" type="double" value="0.1" />
       <ParameterList name="time integrator" type="ParameterList">
         <Parameter name="RK method" type="string" value="runge kutta 4th order" />
@@ -61,16 +61,28 @@
 
     <ParameterList name="B, RK4" type="ParameterList">
       <Parameter name="domain name" type="string" value="domain" />
-      <Parameter name="primary variable key" type="string" value="primary" />
+      <Parameter name="primary variable key" type="string" value="primaryB" />
       <Parameter name="initial time step" type="double" value="0.1" />
       <ParameterList name="time integrator" type="ParameterList">
         <Parameter name="RK method" type="string" value="runge kutta 4th order" />
       </ParameterList>
     </ParameterList>
 
+    <ParameterList name="B, RK4, large step" type="ParameterList">
+      <Parameter name="domain name" type="string" value="domain" />
+      <Parameter name="primary variable key" type="string" value="primaryB" />
+      <Parameter name="initial time step" type="double" value="1.0" />
+      <ParameterList name="time integrator" type="ParameterList">
+        <Parameter name="RK method" type="string" value="runge kutta 4th order" />
+      </ParameterList>
+      <ParameterList name="verbose object" type="ParameterList">
+        <Parameter name="verbosity level" type="string" value="high" />
+      </ParameterList>
+    </ParameterList>
+
     <ParameterList name="C, RK4" type="ParameterList">
       <Parameter name="domain name" type="string" value="domain" />
-      <Parameter name="primary variable key" type="string" value="primary" />
+      <Parameter name="primary variable key" type="string" value="primaryC" />
       <Parameter name="initial time step" type="double" value="0.1" />
       <ParameterList name="time integrator" type="ParameterList">
         <Parameter name="RK method" type="string" value="runge kutta 4th order" />
@@ -79,7 +91,7 @@
 
     <ParameterList name="A, forward euler subcycled" type="ParameterList">
       <Parameter name="domain name" type="string" value="domain" />
-      <Parameter name="primary variable key" type="string" value="primary" />
+      <Parameter name="primary variable key" type="string" value="primaryA" />
       <Parameter name="subcycling substeps per outer step" type="int" value="10" />
       <Parameter name="initial time step" type="double" value="1." />
       <ParameterList name="time integrator" type="ParameterList">
@@ -89,7 +101,7 @@
 
     <ParameterList name="B, forward euler subcycled" type="ParameterList">
       <Parameter name="domain name" type="string" value="domain" />
-      <Parameter name="primary variable key" type="string" value="primary" />
+      <Parameter name="primary variable key" type="string" value="primaryB" />
       <Parameter name="subcycling substeps per outer step" type="int" value="10" />
       <Parameter name="initial time step" type="double" value="1." />
       <ParameterList name="time integrator" type="ParameterList">
@@ -99,7 +111,7 @@
 
     <ParameterList name="C, forward euler subcycled" type="ParameterList">
       <Parameter name="domain name" type="string" value="domain" />
-      <Parameter name="primary variable key" type="string" value="primary" />
+      <Parameter name="primary variable key" type="string" value="primaryC" />
       <Parameter name="subcycling substeps per outer step" type="int" value="10" />
       <Parameter name="initial time step" type="double" value="1." />
       <ParameterList name="time integrator" type="ParameterList">
@@ -110,7 +122,7 @@
     
     <ParameterList name="A, RK4 subcycled" type="ParameterList">
       <Parameter name="domain name" type="string" value="domain" />
-      <Parameter name="primary variable key" type="string" value="primary" />
+      <Parameter name="primary variable key" type="string" value="primaryA" />
       <Parameter name="subcycling substeps per outer step" type="int" value="10" />
       <Parameter name="initial time step" type="double" value="1." />
       <ParameterList name="time integrator" type="ParameterList">
@@ -120,7 +132,7 @@
 
     <ParameterList name="B, RK4 subcycled" type="ParameterList">
       <Parameter name="domain name" type="string" value="domain" />
-      <Parameter name="primary variable key" type="string" value="primary" />
+      <Parameter name="primary variable key" type="string" value="primaryB" />
       <Parameter name="subcycling substeps per outer step" type="int" value="10" />
       <Parameter name="initial time step" type="double" value="1." />
       <ParameterList name="time integrator" type="ParameterList">
@@ -130,7 +142,7 @@
 
     <ParameterList name="C, RK4 subcycled" type="ParameterList">
       <Parameter name="domain name" type="string" value="domain" />
-      <Parameter name="primary variable key" type="string" value="primary" />
+      <Parameter name="primary variable key" type="string" value="primaryC" />
       <Parameter name="subcycling substeps per outer step" type="int" value="10" />
       <Parameter name="initial time step" type="double" value="1." />
       <ParameterList name="time integrator" type="ParameterList">
@@ -141,7 +153,7 @@
     
     <ParameterList name="A, backward euler" type="ParameterList">
       <Parameter name="domain name" type="string" value="domain" />
-      <Parameter name="primary variable key" type="string" value="primary" />
+      <Parameter name="primary variable key" type="string" value="primaryA" />
       <Parameter name="initial time step" type="double" value="0.1" />
       <ParameterList name="time integrator" type="ParameterList">
         <Parameter name="solver type" type="string" value="Newton" />
@@ -156,7 +168,7 @@
 
     <ParameterList name="B, backward euler" type="ParameterList">
       <Parameter name="domain name" type="string" value="domain" />
-      <Parameter name="primary variable key" type="string" value="primary" />
+      <Parameter name="primary variable key" type="string" value="primaryB" />
       <Parameter name="initial time step" type="double" value="0.1" />
       <ParameterList name="time integrator" type="ParameterList">
         <Parameter name="solver type" type="string" value="Newton" />
@@ -171,7 +183,7 @@
 
     <ParameterList name="C, backward euler" type="ParameterList">
       <Parameter name="domain name" type="string" value="domain" />
-      <Parameter name="primary variable key" type="string" value="primary" />
+      <Parameter name="primary variable key" type="string" value="primaryC" />
       <Parameter name="initial time step" type="double" value="0.1" />
       <ParameterList name="time integrator" type="ParameterList">
         <Parameter name="solver type" type="string" value="Newton" />
@@ -184,9 +196,39 @@
       </ParameterList>
     </ParameterList>
     
+    <ParameterList name="C, backward euler, large step" type="ParameterList">
+      <Parameter name="domain name" type="string" value="domain" />
+      <Parameter name="primary variable key" type="string" value="primaryC" />
+      <Parameter name="initial time step" type="double" value="1." />
+      <ParameterList name="time integrator" type="ParameterList">
+        <ParameterList name="verbose object" type="ParameterList">
+          <Parameter name="verbosity level" type="string" value="high" />
+        </ParameterList>
+        <Parameter name="solver type" type="string" value="Newton" />
+        <ParameterList name="Newton parameters" type="ParameterList">
+          <ParameterList name="verbose object" type="ParameterList">
+            <Parameter name="verbosity level" type="string" value="high" />
+          </ParameterList>
+          <Parameter name="nonlinear tolerance" type="double" value="1.e-12" />
+        </ParameterList>
+        <Parameter name="timestep controller type" type="string" value="standard" />
+        <ParameterList name="timestep controller standard parameters" type="ParameterList">
+          <Parameter name="time step increase factor" type="double" value="2" />
+          <Parameter name="time step reduction factor" type="double" value="0.5" />
+          <Parameter name="max time step" type="double" value="1" />
+          <Parameter name="min time step" type="double" value="0.0001" />
+          <Parameter name="min iterations" type="int" value="4" />
+          <Parameter name="max iterations" type="int" value="7" />
+        </ParameterList>
+      </ParameterList>
+      <ParameterList name="verbose object" type="ParameterList">
+        <Parameter name="verbosity level" type="string" value="high" />
+      </ParameterList>
+    </ParameterList>
+    
     <ParameterList name="A, backward euler subcycled" type="ParameterList">
       <Parameter name="domain name" type="string" value="domain" />
-      <Parameter name="primary variable key" type="string" value="primary" />
+      <Parameter name="primary variable key" type="string" value="primaryA" />
       <Parameter name="initial time step" type="double" value="1.0" />
       <ParameterList name="time integrator" type="ParameterList">
         <Parameter name="solver type" type="string" value="Newton" />
@@ -207,7 +249,7 @@
 
     <ParameterList name="B, backward euler subcycled" type="ParameterList">
       <Parameter name="domain name" type="string" value="domain" />
-      <Parameter name="primary variable key" type="string" value="primary" />
+      <Parameter name="primary variable key" type="string" value="primaryB" />
       <Parameter name="initial time step" type="double" value="1.0" />
       <ParameterList name="time integrator" type="ParameterList">
         <Parameter name="solver type" type="string" value="Newton" />
@@ -228,7 +270,7 @@
 
     <ParameterList name="C, backward euler subcycled" type="ParameterList">
       <Parameter name="domain name" type="string" value="domain" />
-      <Parameter name="primary variable key" type="string" value="primary" />
+      <Parameter name="primary variable key" type="string" value="primaryC" />
       <Parameter name="initial time step" type="double" value="0.1" />
       <ParameterList name="time integrator" type="ParameterList">
         <Parameter name="solver type" type="string" value="Newton" />
@@ -247,6 +289,26 @@
       </ParameterList>
     </ParameterList>
     
+    <ParameterList name="BC weak forward euler" type="ParameterList">
+      <ParameterList name="verbose object" type="ParameterList">
+        <Parameter name="verbosity level" type="string" value="high" />
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="BC weak mixed explicit" type="ParameterList">
+      <ParameterList name="verbose object" type="ParameterList">
+        <Parameter name="verbosity level" type="string" value="high" />
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="BC weak imex" type="ParameterList">
+      <ParameterList name="verbose object" type="ParameterList">
+        <Parameter name="verbosity level" type="string" value="high" />
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="BC weak imex variable dt" type="ParameterList">
+      <ParameterList name="verbose object" type="ParameterList">
+        <Parameter name="verbosity level" type="string" value="high" />
+      </ParameterList>
+    </ParameterList>
 
   </ParameterList>
 

@@ -35,16 +35,16 @@ namespace Amanzi {
 template <class Base_t>
 class PK_MixinMPCAdvanceStepWeak : public Base_t {
  public:
-  PK_MixinMPCAdvanceStepWeak(const Teuchos::RCP<Teuchos::ParameterList>& pk_tree,
-                             const Teuchos::RCP<Teuchos::ParameterList>& global_plist,
-                             const Teuchos::RCP<State>& S,
-                             const Teuchos::RCP<TreeVector>& solution)
-      : Base_t(pk_tree, global_plist, S, solution) {}
+  using Base_t::Base_t;
 
   // Advance PK from time tag old to time tag new
   bool AdvanceStep(const Key& tag_old, const Teuchos::RCP<TreeVector>& soln_old,
                    const Key& tag_new, const Teuchos::RCP<TreeVector>& soln_new);
 
+ protected:
+  using Base_t::vo_;
+  using Base_t::S_;
+  
 };
 
 
@@ -57,6 +57,16 @@ PK_MixinMPCAdvanceStepWeak<Base_t>::AdvanceStep(
     const Key& tag_old, const Teuchos::RCP<TreeVector>& soln_old,
     const Key& tag_new, const Teuchos::RCP<TreeVector>& soln_new)
 {
+  double t_old = S_->time(tag_old);
+  double t_new = S_->time(tag_new);
+
+  Teuchos::OSTab out = vo_->getOSTab();
+  if (vo_->os_OK(Teuchos::VERB_HIGH))
+    *vo_->os() << "----------------------------------------------------------------" << std::endl
+               << "Advancing: t0 = " << t_old
+               << " t1 = " << t_new << " h = " << t_new - t_old << std::endl
+               << "----------------------------------------------------------------" << std::endl;
+
   int i = 0;
   for (auto& pk : this->sub_pks_) {
     bool fail = pk->AdvanceStep(tag_old, soln_old->SubVector(i),

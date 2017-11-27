@@ -46,7 +46,7 @@ class PK_MixinExplicitSubcycled
   PK_MixinExplicitSubcycled(const Teuchos::RCP<Teuchos::ParameterList>& pk_tree,
                             const Teuchos::RCP<Teuchos::ParameterList>& global_plist,
                             const Teuchos::RCP<State>& S,
-                            const Teuchos::RCP<TreeVector>& solution);
+                            const Teuchos::RCP<TreeVectorSpace>& soln_map);
 
   void Setup(const TreeVector& soln);
   bool AdvanceStep(const Key& tag_old, const Teuchos::RCP<TreeVector>& soln_old,
@@ -72,8 +72,8 @@ PK_MixinExplicitSubcycled<Base_t>::PK_MixinExplicitSubcycled(
     const Teuchos::RCP<Teuchos::ParameterList>& pk_tree,
     const Teuchos::RCP<Teuchos::ParameterList>& global_plist,
     const Teuchos::RCP<State>& S,
-    const Teuchos::RCP<TreeVector>& solution)
-    : PK_MixinExplicit<Base_t>(pk_tree, global_plist, S, solution)
+    const Teuchos::RCP<TreeVectorSpace>& soln_map)
+    : PK_MixinExplicit<Base_t>(pk_tree, global_plist, S, soln_map)
 {
   // this could be generalized, for now just take 1/Nth step size
   subcycled_count_ = plist_->template get<int>("subcycling substeps per outer step");

@@ -81,6 +81,8 @@ class PK_Adaptor : public PK,
     Base_t::SolutionToState(soln, tag, suffix); }
   virtual void SolutionToState(const TreeVector& soln, const Key& tag, const Key& suffix) override final {
     Base_t::SolutionToState(soln, tag, suffix); }
+  virtual void StateToState(const Key& tag_from, const Key& tag_to) override final {
+    Base_t::StateToState(tag_from, tag_to); }
 };
 
 
@@ -88,12 +90,7 @@ template<class Base_t>
 class PK_Explicit_Adaptor : public PK_Explicit<>,
                             public Base_t {
  public:
-
-  PK_Explicit_Adaptor(const Teuchos::RCP<Teuchos::ParameterList>& pk_tree,
-                      const Teuchos::RCP<Teuchos::ParameterList>& global_plist,
-                      const Teuchos::RCP<State>& S,
-                      const Teuchos::RCP<TreeVector>& solution) :
-      Base_t(pk_tree, global_plist, S, solution) {}
+  using Base_t::Base_t;
 
   // the PK interface
   virtual void ConstructChildren() override final {
@@ -130,6 +127,8 @@ class PK_Explicit_Adaptor : public PK_Explicit<>,
     Base_t::SolutionToState(soln, tag, suffix); }
   virtual void SolutionToState(const TreeVector& soln, const Key& tag, const Key& suffix) override final {
     Base_t::SolutionToState(soln, tag, suffix); }
+  virtual void StateToState(const Key& tag_from, const Key& tag_to) override final {
+    Base_t::StateToState(tag_from, tag_to); }
 
   // the Explicit_TI::fnBase interface
   virtual void Functional(double t, const TreeVector& u, TreeVector& f) override final {
@@ -141,12 +140,7 @@ template<class Base_t>
 class PK_Implicit_Adaptor : public PK_Implicit<>,
                             public Base_t {
  public:
-
-  PK_Implicit_Adaptor(const Teuchos::RCP<Teuchos::ParameterList>& pk_tree,
-                 const Teuchos::RCP<Teuchos::ParameterList>& global_plist,
-                 const Teuchos::RCP<State>& S,
-                 const Teuchos::RCP<TreeVector>& solution) :
-      Base_t(pk_tree, global_plist, S, solution) {}
+  using Base_t::Base_t;
 
   // the PK interface
   virtual void ConstructChildren() override final {
@@ -251,6 +245,9 @@ class PK_Implicit_Adaptor : public PK_Implicit<>,
   }
   virtual void SolutionToState(const TreeVector& soln, const Key& tag, const Key& suffix) override final {
     Base_t::SolutionToState(soln, tag, suffix);
+  }
+  virtual void StateToState(const Key& tag_from, const Key& tag_to) override final {
+    Base_t::StateToState(tag_from, tag_to);
   }
   
 

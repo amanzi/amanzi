@@ -34,11 +34,7 @@ namespace Amanzi {
 template <class Base_t>
 class PK_MixinMPCGetDtMin : public Base_t {
  public:
-  PK_MixinMPCGetDtMin(const Teuchos::RCP<Teuchos::ParameterList>& pk_tree,
-                      const Teuchos::RCP<Teuchos::ParameterList>& global_plist,
-                      const Teuchos::RCP<State>& S,
-                      const Teuchos::RCP<TreeVector>& solution)
-      : Base_t(pk_tree, global_plist, S, solution) {}
+  using Base_t::Base_t;
 
   // Get the dt as the min of all children PKs.
   double get_dt();

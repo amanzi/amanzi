@@ -39,7 +39,7 @@ class PK_MixinExplicit : public Base_t, public Explicit_TI::fnBase<TreeVector> {
   PK_MixinExplicit(const Teuchos::RCP<Teuchos::ParameterList>& pk_tree,
                    const Teuchos::RCP<Teuchos::ParameterList>& global_plist,
                    const Teuchos::RCP<State>& S,
-                   const Teuchos::RCP<TreeVector>& solution);
+                   const Teuchos::RCP<TreeVectorSpace>& soln_map);
 
   void Setup(const TreeVector& soln);
   bool AdvanceStep(const Key& tag_old, const Teuchos::RCP<TreeVector>& soln_old,
@@ -73,8 +73,8 @@ template<class Base_t>
 PK_MixinExplicit<Base_t>::PK_MixinExplicit(const Teuchos::RCP<Teuchos::ParameterList>& pk_tree,
                          const Teuchos::RCP<Teuchos::ParameterList>& global_plist,
                          const Teuchos::RCP<State>& S,
-                         const Teuchos::RCP<TreeVector>& solution)
-    : Base_t(pk_tree, global_plist, S, solution),
+                         const Teuchos::RCP<TreeVectorSpace>& soln_map)
+    : Base_t(pk_tree, global_plist, S, soln_map),
       method_requires_intermediate_(false)
 {
   // initial timestep

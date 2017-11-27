@@ -115,8 +115,8 @@ class PK_ODE_Explicit : public Base_t {
   PK_ODE_Explicit(const Teuchos::RCP<Teuchos::ParameterList>& pk_tree,
          const Teuchos::RCP<Teuchos::ParameterList>& global_plist,
          const Teuchos::RCP<State>& S,
-         const Teuchos::RCP<TreeVector>& solution) :
-      Base_t(pk_tree, global_plist, S, solution) {
+         const Teuchos::RCP<TreeVectorSpace>& soln_map) :
+      Base_t(pk_tree, global_plist, S, soln_map) {
     dudt_key_ = this->key_ + "_t";
   }
 
@@ -147,7 +147,10 @@ class PK_ODE_Explicit : public Base_t {
     this->S_->set_time(dudt_tag_, t);
     this->SolutionToState(u, dudt_tag_, "");
     this->SolutionToState(f, dudt_tag_, "_t");
+
+    // this call is here because the explicit ti is not aware that it should call it
     this->ChangedSolutionPK(dudt_tag_);
+    
     this->S_->GetEvaluator(dudt_key_,dudt_tag_)->Update(*this->S_, this->name());
     this->StateToSolution(f, dudt_tag_, "_t");
 
@@ -171,8 +174,8 @@ class PK_ODE_Implicit : public Base_t {
   PK_ODE_Implicit(const Teuchos::RCP<Teuchos::ParameterList>& pk_tree,
          const Teuchos::RCP<Teuchos::ParameterList>& global_plist,
          const Teuchos::RCP<State>& S,
-         const Teuchos::RCP<TreeVector>& solution) :
-      Base_t(pk_tree, global_plist, S, solution) {
+         const Teuchos::RCP<TreeVectorSpace>& soln_map) :
+      Base_t(pk_tree, global_plist, S, soln_map) {
     dudt_key_ = this->key_ + "_t";
   }
 

@@ -49,10 +49,7 @@ class PK_MixinMPC : public Base_t {
  public:
   typedef std::vector<Teuchos::RCP<PK_Contained_t> > SubPKList;
 
-  PK_MixinMPC(const Teuchos::RCP<Teuchos::ParameterList>& pk_tree,
-          const Teuchos::RCP<Teuchos::ParameterList>& global_plist,
-          const Teuchos::RCP<State>& S,
-          const Teuchos::RCP<TreeVector>& solution);
+  using Base_t::Base_t;
 
   // IMPLEMENT ME!
   void ConstructChildren() {}
@@ -68,26 +65,26 @@ class PK_MixinMPC : public Base_t {
   void Setup(const TreeVector& soln);
 
   // -- calls all sub-PK initialize() methods
-  virtual void Initialize();
+  void Initialize();
 
   // Returns validity of the step taken from tag_old to tag_new
-  virtual bool ValidStep(const Key& tag_old, const Teuchos::RCP<TreeVector>& soln_old,
+  bool ValidStep(const Key& tag_old, const Teuchos::RCP<TreeVector>& soln_old,
                          const Key& tag_new, const Teuchos::RCP<TreeVector>& soln_new);
 
 
   // Do work that can only be done if we know the step was successful.
-  virtual void CommitStep(const Key& tag_old, const Teuchos::RCP<TreeVector>& soln_old,
+  void CommitStep(const Key& tag_old, const Teuchos::RCP<TreeVector>& soln_old,
                           const Key& tag_new, const Teuchos::RCP<TreeVector>& soln_new);
 
   // Revert a step from tag_new back to tag_old
-  virtual void FailStep(const Key& tag_old, const Teuchos::RCP<TreeVector>& soln_old,
+  void FailStep(const Key& tag_old, const Teuchos::RCP<TreeVector>& soln_old,
                         const Key& tag_new, const Teuchos::RCP<TreeVector>& soln_new);
 
   // Calculate any diagnostics at tag, currently used for visualization.
-  virtual void CalculateDiagnostics(const Key& tag);
+  void CalculateDiagnostics(const Key& tag);
 
   // Mark, as changed, any primary variable evaluator owned by this PK
-  virtual void ChangedSolutionPK(const Key& tag);
+  void ChangedSolutionPK(const Key& tag);
 
   // Ensure consistency between a time integrator's view of data (TreeVector)
   // and the dag's view of data (dictionary of CompositeVectors).
@@ -96,7 +93,7 @@ class PK_MixinMPC : public Base_t {
   // data, copy pointers.  Otherwise ensure pointers are equal.
   //
   // These almost certainly are implemented by default.
-  virtual void StateToSolution(TreeVector& soln, const Key& tag, const Key& suffix);
+  void StateToSolution(TreeVector& soln, const Key& tag, const Key& suffix);
 
 
   // Ensure consistency between a time integrator's view of data (TreeVector)
@@ -108,25 +105,15 @@ class PK_MixinMPC : public Base_t {
   // the State does have this data, ensure consistency.
   //
   // These almost certainly are implemented by default.
-  virtual void SolutionToState(TreeVector& soln, const Key& tag, const Key& suffix);
-  virtual void SolutionToState(const TreeVector& soln, const Key& tag, const Key& suffix);
+  void SolutionToState(TreeVector& soln, const Key& tag, const Key& suffix);
+  void SolutionToState(const TreeVector& soln, const Key& tag, const Key& suffix);
 
+  void StateToState(const Key& tag_from, const Key& tag_to);
+  
  protected:
   // list of the PKs coupled by this MPC
   SubPKList sub_pks_;
 };
-
-
-// -----------------------------------------------------------------------------
-// Setup of PK hierarchy from PList
-// -----------------------------------------------------------------------------
-template <class Base_t, class PK_Contained_t>
-PK_MixinMPC<Base_t,PK_Contained_t>::PK_MixinMPC(const Teuchos::RCP<Teuchos::ParameterList>& pk_tree,
-        const Teuchos::RCP<Teuchos::ParameterList>& global_plist,
-        const Teuchos::RCP<State>& S,
-        const Teuchos::RCP<TreeVector>& solution)
-    : Base_t(pk_tree, global_plist, S, solution)
-{}
 
 
 // -----------------------------------------------------------------------------
@@ -287,6 +274,15 @@ PK_MixinMPC<Base_t,PK_Contained_t>::SolutionToState(const TreeVector& soln, cons
     ++i;
   }
 }
+
+
+template <class Base_t, class PK_Contained_t>
+void
+PK_MixinMPC<Base_t,PK_Contained_t>::StateToState(const Key& tag_from, const Key& tag_to)
+{
+  for (auto& pk : sub_pks_) pk->StateToState(tag_from, tag_to);
+}
+
 
 }  // namespace Amanzi
 
