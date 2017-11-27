@@ -32,6 +32,7 @@ For more, see PK.hh
 
 #include "StateDefs.hh"
 #include "TreeVector.hh"
+#include "PK.hh"
 
 namespace Amanzi {
 

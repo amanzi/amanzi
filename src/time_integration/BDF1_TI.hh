@@ -305,7 +305,7 @@ void BDF1_TI<Vector,VectorSpace>::ReportStatistics_()
     oss << " FS:" << state_->failed_solve;
     oss << " NS:" << state_->solve_itrs;
     oss << " PC:" << state_->pc_updates << " " << state_->pc_calls;
-    oss << " LS:" << fn_->ReportStatistics();
+    //    oss << " LS:" << fn_->ReportStatistics();
 
     oss << " dt:";
     oss.precision(4);

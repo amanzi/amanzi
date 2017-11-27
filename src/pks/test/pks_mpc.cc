@@ -37,6 +37,7 @@ These tests that functionality with a series of ODEs.
 #include "PK_MixinMPC.hh"
 #include "PK_MixinMPCAdvanceStepWeak.hh"
 #include "PK_MixinMPCGetDtMin.hh"
+#include "PK_MixinMPCImplicit.hh"
 
 #include "pks_test.hh"
 
@@ -71,6 +72,10 @@ std::pair<double,double> run_test(const Teuchos::RCP<State>& S,
   S->Setup();
 
   pk->StateToSolution(*soln_old, "", "");
+
+  // GOTHCA!
+  CHECK(soln_old->Map().SubVector(0)->SameAs(soln_old->SubVector(0)->Map()));
+  
   pk->StateToSolution(*soln_next, "next", "");
 
   pk->Initialize();
@@ -109,7 +114,7 @@ std::pair<double,double> run_test(const Teuchos::RCP<State>& S,
 //
 // Creates an explicitly integrable PK
 // ============================================================================
-template<class MPC_t, class PK_A_t, class PK_B_t>
+template<class MPC_t, class PK_A_t, class PK_B_t, class PK_t=Amanzi::PK>
 std::unique_ptr<Run>
 createRun(const std::string& mpc_name, const std::string& pk_A_name, const std::string& pk_B_name) {
   std::cout << "Test: " << mpc_name << std::endl;
@@ -142,9 +147,6 @@ createRun(const std::string& mpc_name, const std::string& pk_A_name, const std::
   soln->PushBack(sv1);
   soln->PushBack(sv2);
 
-  Teuchos::RCP<PK> pk_mpc;
-
-  
   auto pk_tree_mpc = Teuchos::rcp(new Teuchos::ParameterList(mpc_name));
   auto mpc = Teuchos::rcp(new MPC_t(pk_tree_mpc, global_list, S, soln));
 
@@ -153,7 +155,7 @@ createRun(const std::string& mpc_name, const std::string& pk_A_name, const std::
 
   auto pk_tree_B = Teuchos::rcp(new Teuchos::ParameterList(pk_B_name));
   auto pk_b = Teuchos::rcp(new PK_B_t(pk_tree_B, global_list, S, sv2));
-  auto sub_pks = std::vector<Teuchos::RCP<PK> >{pk_a, pk_b};
+  auto sub_pks = std::vector<Teuchos::RCP<PK_t> >{pk_a, pk_b};
   mpc->SetChildren(sub_pks);
 
   return std::make_unique<Run>(S,mpc,soln);
@@ -164,8 +166,8 @@ SUITE(PKS_MPC) {
 
   // weak MPC coupling two FE PKs
   TEST(WEAK_BC_FORWARD_EULER) {
-    typedef PK_Adaptor<PK_ODE_Explicit<PK_MixinExplicit<PK_MixinLeaf<PK_Default> >, DudtEvaluatorB> > PK_B_t;
-    typedef PK_Adaptor<PK_ODE_Explicit<PK_MixinExplicit<PK_MixinLeaf<PK_Default> >, DudtEvaluatorC> > PK_C_t;
+    typedef PK_Explicit_Adaptor<PK_ODE_Explicit<PK_MixinExplicit<PK_MixinLeaf<PK_Default> >, DudtEvaluatorB> > PK_B_t;
+    typedef PK_Explicit_Adaptor<PK_ODE_Explicit<PK_MixinExplicit<PK_MixinLeaf<PK_Default> >, DudtEvaluatorC> > PK_C_t;
     typedef PK_Adaptor<PK_MixinMPCAdvanceStepWeak<PK_MixinMPCGetDtMin<PK_MixinMPC<PK_Default,PK> > > > MPC_t;
 
     auto run = createRun<MPC_t, PK_B_t, PK_C_t>("BC weak forward euler", "B, forward euler", "C, forward euler");
@@ -188,8 +190,8 @@ SUITE(PKS_MPC) {
 
   // weak MPC coupling one FE and one RK4 PKs
   TEST(WEAK_BC_FE_RK) {
-    typedef PK_Adaptor<PK_ODE_Explicit<PK_MixinExplicit<PK_MixinLeaf<PK_Default> >, DudtEvaluatorB> > PK_B_t;
-    typedef PK_Adaptor<PK_ODE_Explicit<PK_MixinExplicit<PK_MixinLeaf<PK_Default> >, DudtEvaluatorC> > PK_C_t;
+    typedef PK_Explicit_Adaptor<PK_ODE_Explicit<PK_MixinExplicit<PK_MixinLeaf<PK_Default> >, DudtEvaluatorB> > PK_B_t;
+    typedef PK_Explicit_Adaptor<PK_ODE_Explicit<PK_MixinExplicit<PK_MixinLeaf<PK_Default> >, DudtEvaluatorC> > PK_C_t;
     typedef PK_Adaptor<PK_MixinMPCAdvanceStepWeak<PK_MixinMPCGetDtMin<PK_MixinMPC<PK_Default,PK> > > > MPC_t;
 
     auto run = createRun<MPC_t, PK_B_t, PK_C_t>("BC weak mixed explicit", "B, RK4", "C, forward euler");
@@ -211,8 +213,8 @@ SUITE(PKS_MPC) {
 
   // weak MPC coupling one FE and one implicit BDF with a fixed timestep 
   TEST(WEAK_BC_FE_BDF) {
-    typedef PK_Adaptor<PK_ODE_Explicit<PK_MixinExplicit<PK_MixinLeaf<PK_Default> >, DudtEvaluatorB> > PK_B_t;
-    typedef PK_Adaptor<PK_ODE_Implicit<PK_MixinImplicit<PK_MixinLeaf<PK_Default> >, DudtEvaluatorC> > PK_C_t;
+    typedef PK_Explicit_Adaptor<PK_ODE_Explicit<PK_MixinExplicit<PK_MixinLeaf<PK_Default> >, DudtEvaluatorB> > PK_B_t;
+    typedef PK_Implicit_Adaptor<PK_ODE_Implicit<PK_MixinImplicit<PK_MixinLeaf<PK_Default> >, DudtEvaluatorC> > PK_C_t;
     typedef PK_Adaptor<PK_MixinMPCAdvanceStepWeak<PK_MixinMPCGetDtMin<PK_MixinMPC<PK_Default,PK> > > > MPC_t;
 
     auto run = createRun<MPC_t, PK_B_t, PK_C_t>("BC weak imex", "B, forward euler", "C, backward euler");
@@ -239,8 +241,8 @@ SUITE(PKS_MPC) {
   // weak MPC coupling one FE and one implicit BDF with a variable timestep in
   // which the BDF DOES fail, forcing the explicit to back up
   TEST(WEAK_BC_FE_BDF_FAILING) {
-    typedef PK_Adaptor<PK_ODE_Explicit<PK_MixinExplicit<PK_MixinLeaf<PK_Default> >, DudtEvaluatorB> > PK_B_t;
-    typedef PK_Adaptor<PK_ODE_Implicit<PK_MixinImplicit<PK_MixinLeaf<PK_Default> >, DudtEvaluatorC> > PK_C_t;
+    typedef PK_Explicit_Adaptor<PK_ODE_Explicit<PK_MixinExplicit<PK_MixinLeaf<PK_Default> >, DudtEvaluatorB> > PK_B_t;
+    typedef PK_Implicit_Adaptor<PK_ODE_Implicit<PK_MixinImplicit<PK_MixinLeaf<PK_Default> >, DudtEvaluatorC> > PK_C_t;
     typedef PK_Adaptor<PK_MixinMPCAdvanceStepWeak<PK_MixinMPCGetDtMin<PK_MixinMPC<PK_Default,PK> > > > MPC_t;
 
     auto run = createRun<MPC_t, PK_B_t, PK_C_t>("BC weak imex variable dt", "B, RK4, large step", "C, backward euler, large step");
@@ -268,8 +270,8 @@ SUITE(PKS_MPC) {
   // weak MPC coupling one FE and one implicit BDF with a variable timestep in
   // which the BDF DOES fail, and subcycles to keep up with the explicit
   TEST(WEAK_BC_FE_BDF_FAILING2) {
-    typedef PK_Adaptor<PK_ODE_Explicit<PK_MixinExplicit<PK_MixinLeaf<PK_Default> >, DudtEvaluatorB> > PK_B_t;
-    typedef PK_Adaptor<PK_ODE_Implicit<PK_MixinImplicitSubcycled<PK_MixinLeaf<PK_Default> >, DudtEvaluatorC> > PK_C_t;
+    typedef PK_Explicit_Adaptor<PK_ODE_Explicit<PK_MixinExplicit<PK_MixinLeaf<PK_Default> >, DudtEvaluatorB> > PK_B_t;
+    typedef PK_Implicit_Adaptor<PK_ODE_Implicit<PK_MixinImplicitSubcycled<PK_MixinLeaf<PK_Default> >, DudtEvaluatorC> > PK_C_t;
     typedef PK_Adaptor<PK_MixinMPCAdvanceStepWeak<PK_MixinMPCGetDtMin<PK_MixinMPC<PK_Default,PK> > > > MPC_t;
 
     auto run = createRun<MPC_t, PK_B_t, PK_C_t>("BC weak imex variable dt", "B, RK4", "C, backward euler, large step");
@@ -291,4 +293,51 @@ SUITE(PKS_MPC) {
     CHECK_EQUAL(10, nsteps.first);
   }
 
+  // Globally implicit, fixed timestep
+  TEST(STRONG_BC) {
+    typedef PK_Implicit_Adaptor<PK_ODE_Implicit<PK_MixinImplicit<PK_MixinLeaf<PK_Default> >, DudtEvaluatorB> > PK_B_t;
+    typedef PK_Implicit_Adaptor<PK_ODE_Implicit<PK_MixinImplicit<PK_MixinLeaf<PK_Default> >, DudtEvaluatorC> > PK_C_t;
+    typedef PK_Implicit_Adaptor<PK_MixinImplicit<PK_MixinMPCImplicit<PK_Default, PK_Implicit<TreeVector> > > > MPC_t;
+    auto run = createRun<MPC_t, PK_B_t, PK_C_t, PK_Implicit<> >("BC global implicit", "B, backward euler", "C, backward euler");
+    auto nsteps = run_test(run->S, run->pk, run->soln_map);
+
+
+    // check B soln, same as B_BACKWARD_EULER
+    CHECK_CLOSE(std::exp(1.0), (*run->S->Get<CompositeVector>("primaryB")
+                      .ViewComponent("cell",false))[0][0], 0.15);
+    CHECK_CLOSE(2.867971990790009, (*run->S->Get<CompositeVector>("primaryB")
+                      .ViewComponent("cell",false))[0][0], 1.e-8);
+
+    // check C soln, same as C_BACKWARD_EULER
+    CHECK_CLOSE(std::exp(1.0), (*run->S->Get<CompositeVector>("primaryC")
+                      .ViewComponent("cell",false))[0][0], 0.6);
+    CHECK_CLOSE(3.27476584420779, (*run->S->Get<CompositeVector>("primaryC")
+                      .ViewComponent("cell",false))[0][0], 1.e-8);
+    
+  }
+
+
+  // Globally implicit, variable timestep
+  TEST(STRONG_BC_VARIABLE_TS) {
+    typedef PK_Implicit_Adaptor<PK_ODE_Implicit<PK_MixinImplicit<PK_MixinLeaf<PK_Default> >, DudtEvaluatorB> > PK_B_t;
+    typedef PK_Implicit_Adaptor<PK_ODE_Implicit<PK_MixinImplicit<PK_MixinLeaf<PK_Default> >, DudtEvaluatorC> > PK_C_t;
+    typedef PK_Implicit_Adaptor<PK_MixinImplicit<PK_MixinMPCImplicit<PK_Default, PK_Implicit<TreeVector> > > > MPC_t;
+    auto run = createRun<MPC_t, PK_B_t, PK_C_t, PK_Implicit<> >("BC global implicit variable", "B, backward euler", "C, backward euler");
+    auto nsteps = run_test(run->S, run->pk, run->soln_map);
+
+
+    // check B soln
+    CHECK_CLOSE(std::exp(1.0), (*run->S->Get<CompositeVector>("primaryB")
+                      .ViewComponent("cell",false))[0][0], 0.04);
+    CHECK_CLOSE(2.74284, (*run->S->Get<CompositeVector>("primaryB")
+                      .ViewComponent("cell",false))[0][0], 1.e-4);
+
+    // check C soln
+    CHECK_CLOSE(std::exp(1.0), (*run->S->Get<CompositeVector>("primaryC")
+                      .ViewComponent("cell",false))[0][0], 0.08);
+    CHECK_CLOSE(2.77256, (*run->S->Get<CompositeVector>("primaryC")
+                      .ViewComponent("cell",false))[0][0], 1.e-4);
+    
+  }
+  
 }

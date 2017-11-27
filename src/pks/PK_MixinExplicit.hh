@@ -34,13 +34,15 @@ integrated PKs.  Manages the creation of intermediate data and AdvanceStep().
 namespace Amanzi {
 
 template<class Base_t>
-class PK_MixinExplicit : public Base_t, public Explicit_TI::fnBase<TreeVector> {
+class PK_MixinExplicit : public Base_t {
  public:
   PK_MixinExplicit(const Teuchos::RCP<Teuchos::ParameterList>& pk_tree,
                    const Teuchos::RCP<Teuchos::ParameterList>& global_plist,
                    const Teuchos::RCP<State>& S,
                    const Teuchos::RCP<TreeVectorSpace>& soln_map);
 
+  virtual ~PK_MixinExplicit() = default; // here to make this polymorphic and therefore castable
+  
   void Setup(const TreeVector& soln);
   bool AdvanceStep(const Key& tag_old, const Teuchos::RCP<TreeVector>& soln_old,
                    const Key& tag_new, const Teuchos::RCP<TreeVector>& soln_new);
@@ -128,7 +130,9 @@ PK_MixinExplicit<Base_t>::AdvanceStep(const Key& tag_old, const Teuchos::RCP<Tre
   if (!time_stepper_.get()) {
     Teuchos::ParameterList& ti_plist = plist_->sublist("time integrator");
     ti_plist.set("initial time", S_->time());
-    time_stepper_ = Teuchos::rcp(new Explicit_TI::RK<TreeVector>(*this, ti_plist, *soln_new));
+    auto this_as_explicit_p = dynamic_cast<Explicit_TI::fnBase<TreeVector>* >(this);
+    ASSERT(this_as_explicit_p);
+    time_stepper_ = Teuchos::rcp(new Explicit_TI::RK<TreeVector>(*this_as_explicit_p, ti_plist, *soln_new));
   }
 
   double t_new = S_->time(tag_new);

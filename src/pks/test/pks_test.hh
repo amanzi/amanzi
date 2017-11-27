@@ -202,8 +202,8 @@ class PK_ODE_Implicit : public Base_t {
     this->S_->GetRecordW(this->key_, this->key_).set_initialized();
   }
   
-  virtual void Functional(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
-                          Teuchos::RCP<TreeVector> u_new, Teuchos::RCP<TreeVector> f) override {
+  void Functional(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
+                          Teuchos::RCP<TreeVector> u_new, Teuchos::RCP<TreeVector> f) {
     this->SolutionToState(*u_new, tag_new_, "");
     this->SolutionToState(*u_old, tag_old_, "");
     ASSERT(std::abs(t_old - S_->time(tag_old_)) < 1.e-12);
@@ -221,7 +221,7 @@ class PK_ODE_Implicit : public Base_t {
   }
       
 
-  virtual int ApplyPreconditioner(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> Pu) override {
+  int ApplyPreconditioner(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> Pu) {
     Key deriv_key = Keys::getDerivKey(this->dudt_key_, this->key_);
     *Pu->Data() = S_->template Get<CompositeVector>(deriv_key, tag_new_);
     Pu->Data()->Shift(1.0/h_);
@@ -230,33 +230,35 @@ class PK_ODE_Implicit : public Base_t {
   }
 
   
-  virtual double ErrorNorm(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<const TreeVector> du) override {
+  double ErrorNorm(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<const TreeVector> du) {
     double norm = 0.;
     du->NormInf(&norm);
     return norm;
   }
 
-  virtual void UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> up, double h) override {
+  void UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> up, double h) {
     h_ = h;
     this->SolutionToState(*up, tag_new_, "");
     this->S_->GetEvaluator(dudt_key_,tag_new_)->UpdateDerivative(*this->S_, this->name(), this->key_);
   }
 
-  virtual bool IsAdmissible(Teuchos::RCP<const TreeVector> up) override { return true; }
+  bool IsAdmissible(Teuchos::RCP<const TreeVector> up) { return true; }
 
-  virtual bool ModifyPredictor(double h, Teuchos::RCP<const TreeVector> u0, Teuchos::RCP<TreeVector> u) override {
+  bool ModifyPredictor(double h, Teuchos::RCP<const TreeVector> u0, Teuchos::RCP<TreeVector> u) {
     return false;
   }
 
-  virtual AmanziSolvers::FnBaseDefs::ModifyCorrectionResult 
+  AmanziSolvers::FnBaseDefs::ModifyCorrectionResult 
   ModifyCorrection(double h, Teuchos::RCP<const TreeVector> res,
-                   Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> du) override {
+                   Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> du) {
     return AmanziSolvers::FnBaseDefs::CORRECTION_NOT_MODIFIED; }
 
-  virtual void ChangedSolution() override {
+  void ChangedSolution() {
     this->ChangedSolutionPK(tag_new_);
   }
 
+  void UpdateContinuationParameter(double lambda) {};
+  
   
  protected:
   double h_;

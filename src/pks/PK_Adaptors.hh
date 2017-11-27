@@ -137,7 +137,7 @@ class PK_Explicit_Adaptor : public PK_Explicit<>,
 
 
 template<class Base_t>
-class PK_Implicit_Adaptor : public PK_Implicit<>,
+class PK_Implicit_Adaptor : public PK_Implicit<TreeVector>,
                             public Base_t {
  public:
   using Base_t::Base_t;
@@ -230,11 +230,6 @@ class PK_Implicit_Adaptor : public PK_Implicit<>,
   // state.
   virtual void ChangedSolution() override final {
     Base_t::ChangedSolution();
-  }
-
-  // experimental routine -- returns the number of linear iterations.
-  virtual int ReportStatistics() override final {
-    return Base_t::ReportStatistics();
   }
 
   virtual void StateToSolution(TreeVector& soln, const Key& tag, const Key& suffix) override final {
