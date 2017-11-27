@@ -56,33 +56,7 @@ endif()
 # share libraries -- disabled by default
 list(APPEND NetCDF_CMAKE_CACHE_ARGS "-DBUILD_SHARED_LIBS:BOOL=${BUILD_SHARED_LIBS}")
 
-# Build compiler flag strings for C, C++ and Fortran
-include(BuildWhitespaceString)
-build_whitespace_string(netcdf_cflags 
-                        -I${TPL_INSTALL_PREFIX}/include ${Amanzi_COMMON_CFLAGS} )
-
-build_whitespace_string(netcdf_cxxflags 
-                        -I${TPL_INSTALL_PREFIX}/include ${Amanzi_COMMON_CXXFLAGS} )
-
-set(cpp_flags_list
-    -I${TPL_INSTALL_PREFIX}/include
-    ${Amanzi_COMMON_CFLAGS})
-#    ${Amanzi_COMMON_CXXFLAGS})
-list(REMOVE_DUPLICATES cpp_flags_list)
-build_whitespace_string(netcdf_cppflags ${cpp_flags_list})
-
-build_whitespace_string(netcdf_fcflags 
-                        ${Amanzi_COMMON_FCFLAGS} )
-
-# Add MPI C libraries 
-if ( ( NOT BUILD_MPI) AND ( NOT MPI_WRAPPERS_IN_USE ) AND (MPI_C_LIBRARIES) )
-  build_whitespace_string(netcdf_ldflags -L${TPL_INSTALL_PREFIX}/lib ${MPI_C_LIBRARIES} ${CMAKE_EXE_LINKER_FLAGS})
-else()
-  build_whitespace_string(netcdf_ldflags -L${TPL_INSTALL_PREFIX}/lib ${CMAKE_EXE_LINKER_FLAGS})
-endif()  
-
-
-# --- Add external project build and tie to the ZLIB build target
+# --- Add external project build 
 ExternalProject_Add(${NetCDF_BUILD_TARGET}
                     DEPENDS   ${NetCDF_PACKAGE_DEPENDS}   # Package dependency target
                     TMP_DIR   ${NetCDF_tmp_dir}           # Temporary files directory

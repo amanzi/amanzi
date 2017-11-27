@@ -1,7 +1,7 @@
 #  -*- mode: cmake -*-
 
 #
-# Build TPL: NetCDF-fortran
+# Build TPL: NetCDF-Fortran
 # 
 
 # --- Define all the directories and common external project flags
@@ -13,16 +13,13 @@ amanzi_tpl_version_write(FILENAME ${TPL_VERSIONS_INCLUDE_FILE}
   PREFIX NetCDF_Fortran
   VERSION ${NetCDF_Fortran_VERSION_MAJOR} ${NetCDF_Fortran_VERSION_MINOR} ${NetCDF_Fortran_VERSION_PATCH})
   
-#set(cpp_flags_list -I${NetCDF_prefix_dir}/include)
+# --- Define the configure command
+set(NetCDF_Fortran_CMAKE_CACHE_ARGS "-DCMAKE_INSTALL_PREFIX:FILEPATH=${TPL_INSTALL_PREFIX}")
+list(APPEND NetCDF_Fortran_CMAKE_CACHE_ARGS "-DCMAKE_BUILD_TYPE:STRING=${CMAKE_BUILD_TYPE}")
+list(APPEND NetCDF_Fortran_CMAKE_CACHE_ARGS "-DBUILD_SHARED_LIBS:BOOL=${BUILD_SHARED_LIBS}")
+list(APPEND NetCDF_Fortran_CMAKE_CACHE_ARGS "-DENABLE_TESTS:BOOL=FALSE")
 
-set(cpp_flags_list -I${TPL_INSTALL_PREFIX}/include)
-set(ld_flags_list -L${TPL_INSTALL_PREFIX}/lib)
-list(REMOVE_DUPLICATES cpp_flags_list)
-list(REMOVE_DUPLICATES ld_flags_list)
-build_whitespace_string(netcdf_fortran_cppflags ${cpp_flags_list})
-build_whitespace_string(netcdf_fortran_ldflags ${ld_flags_list})
-
-# --- Add external project build and tie to the ZLIB build target
+# --- Add external project build 
 # Default build produces shared libraries
 ExternalProject_Add(${NetCDF_Fortran_BUILD_TARGET}
 	            DEPENDS ${NetCDF_Fortran_PACKAGE_DEPENDS} # Package dependency target
@@ -35,24 +32,21 @@ ExternalProject_Add(${NetCDF_Fortran_BUILD_TARGET}
 		    DOWNLOAD_NAME ${NetCDF_Fortran_SAVEAS_FILE}  # file name to store
 	            # -- Configure
 	            SOURCE_DIR ${NetCDF_Fortran_source_dir}   # Source directory
-	            CONFIGURE_COMMAND 
-                        <SOURCE_DIR>/configure
-                        --prefix=<INSTALL_DIR>
-                        --disable-fortran-compiler-check
-                        --enable-shared=${BUILD_SHARED_LIBS}
-                        --enable-static=${BUILD_STATIC_LIBS}
-		        CC=${CMAKE_C_COMPILER}
-		        FC=${CMAKE_Fortran_COMPILER}
-                        FCFLAGS=${Amanzi_COMMON_FCFLAGS}
-                        CPPFLAGS=${netcdf_fortran_cppflags}
-                        LDFLAGS=${netcdf_fortran_ldflags}
-                        LD_LIBRARY_PATH=${TPL_INSTALL_PREFIX}/lib:$ENV{LD_LIBRARY_PATH}
+                    CMAKE_CACHE_ARGS ${AMANZI_CMAKE_CACHE_ARGS}   # Global definitions from root CMakeList
+                                     ${NetCDF_Fortran_CMAKE_CACHE_ARGS}
+                                     ${Amanzi_CMAKE_C_COMPILER_ARGS}  # Ensure uniform build
+                                     -DCMAKE_C_COMPILER:FILEPATH=${CMAKE_C_COMPILER}
+                                     ${Amanzi_CMAKE_CXX_COMPILER_ARGS}
+                                     -DCMAKE_CXX_COMPILER:FILEPATH=${CMAKE_CXX_COMPILER}
+                                     ${Amanzi_CMAKE_Fortran_COMPILER_ARGS}
+                                     -DCMAKE_Fortran_COMPILER:FILEPATH=${CMAKE_Fortran_COMPILER}
 	            # -- Build
-	            BINARY_DIR ${NetCDF_Fortran_build_dir}    # Build directory 
-	            BUILD_COMMAND $(MAKE)                     # $(MAKE) enables parallel builds through make
+	            BINARY_DIR      ${NetCDF_Fortran_build_dir}  
+	            BUILD_COMMAND   $(MAKE)                      # $(MAKE) enables parallel builds through make
 	            BUILD_IN_SOURCE ${NetCDF_Fortran_BUILD_IN_SOURCE}
 	            # -- Install
 	            INSTALL_DIR ${TPL_INSTALL_PREFIX}
 	            # -- Output control
 	            ${NetCDF_Fortran_logging_args})
+
 
