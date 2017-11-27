@@ -91,6 +91,7 @@ class Visualization : public IOEvent {
   std::map<std::string, Teuchos::Array<std::string> > regions_;
   bool write_partition_;
   bool dynamic_mesh_;
+  bool write_mesh_exo_;
 };
 
 } // Amanzi namespace

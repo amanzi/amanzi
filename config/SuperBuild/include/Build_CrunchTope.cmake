@@ -35,11 +35,12 @@ set(CRUNCHTOPE_PATCH_COMMAND ${CMAKE_COMMAND} -P ${CRUNCHTOPE_cmake_patch})
 
 
 # Define the arguments passed to CMake.
-set(CRUNCHTOPE_CMAKE_ARGS "-DCMAKE_INSTALL_PREFIX:FILEPATH=${TPL_INSTALL_PREFIX}"
-                          "-DBUILD_SHARED_LIBS:BOOL=OFF"
-                          "-DCMAKE_Fortran_FLAGS:STRING=-w -DALQUIMIA -Wall -Wno-unused-variable -ffree-line-length-0 -O3"
-                          "-DPETSC_DIR=${PETSC_DIR}"
-                          "-DPETSC_ARCH=.")
+set(CRUNCHTOPE_CMAKE_ARGS 
+      "-DCMAKE_INSTALL_PREFIX:FILEPATH=${TPL_INSTALL_PREFIX}"
+      "-DBUILD_SHARED_LIBS:BOOL=${BUILD_SHARED_LIBS}"
+      "-DCMAKE_Fortran_FLAGS:STRING=-w -DALQUIMIA -Wall -fPIC -Wno-unused-variable -ffree-line-length-0 -O3"
+      "-DPETSC_DIR=${PETSC_DIR}"
+      "-DPETSC_ARCH=.")
 
 # Add external project build and tie to the CRUNCHTOPE build target
 ExternalProject_Add(${CRUNCHTOPE_BUILD_TARGET}
@@ -50,6 +51,7 @@ ExternalProject_Add(${CRUNCHTOPE_BUILD_TARGET}
                     DOWNLOAD_DIR ${TPL_DOWNLOAD_DIR}                  # Download directory
                     URL          ${CRUNCHTOPE_URL}                    # URL may be a web site OR a local file
                     URL_MD5      ${CRUNCHTOPE_MD5_SUM}                # md5sum of the archive file
+                    # -- Patch 
                     PATCH_COMMAND ${CRUNCHTOPE_PATCH_COMMAND}         # Mods to source
                     # -- Configure
                     SOURCE_DIR    ${CRUNCHTOPE_source_dir}            # Source directory
@@ -69,5 +71,5 @@ ExternalProject_Add(${CRUNCHTOPE_BUILD_TARGET}
 
 include(BuildLibraryName)
 build_library_name(crunchchem CRUNCHTOPE_LIB APPEND_PATH ${TPL_INSTALL_PREFIX}/lib)
-
-set(_ALQUIMIA_CRUNCH_LIBRARY:FILEPATH "${TPL_INSTALL_PREFIX}/lib/libcrunchchem.a")
+set(CRUNCHTOPE_INCLUDE_DIRS ${TPL_INSTALL_PREFIX})
+set(CRUNCHTOPE_DIR ${TPL_INSTALL_PREFIX})

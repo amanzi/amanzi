@@ -13,4 +13,5 @@ set(SRCS
 	 ./newton.cc 
 )
 
-add_amanzi_library(geochemsolvers SOURCE ${SRCS}) 
+add_amanzi_library(geochemsolvers SOURCE ${SRCS}
+	                          LINK_LIBS geochemutil) 

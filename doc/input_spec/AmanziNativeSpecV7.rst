@@ -4829,7 +4829,7 @@ User-defined regions are constructed using the following syntax
    * Shape [list] Geometric model primitive, choose exactly one of the following: 
      `"region: point`", `"region: box`", `"region: plane`", `"region: labeled set`", 
      `"region: layer`", `"region: surface`", `"region: boundary`",
-     `"region: box volume fractions`", or `"region: line segment"`.
+     `"region: box volume fractions`", `"region: line segment"`, or `"region: all"`.
 
 Amanzi supports parameterized forms for a number of analytic shapes, as well as more complex 
 definitions based on triangulated surface files.  
@@ -5123,6 +5123,20 @@ points.
     </ParameterList>     
 
 
+All
+....................
+
+List *region: all* desribes a region which matches all entities in the
+mesh.  No parameters are required.
+
+.. code-block:: xml
+
+   <ParameterList name="ENTIRE MESH"> <!-- parent list -->
+      <ParameterList name="region: all">
+      </ParameterList>
+    </ParameterList>     
+    
+
 Notes and example
 -----------------
 
@@ -5191,10 +5205,13 @@ Notes and example
                                                                  -0.5, 0.5, 0.5}"/>
           </ParameterList>
        </ParameterList>
+       <ParameterList name="ENTIRE MESH">
+         <ParameterList name="region: all"\>
+       </ParameterList>
      </ParameterList>
    </ParameterList>
 
-In this example, *TOP SESCTION*, *MIDDLE SECTION* and *BOTTOM SECTION*
+In this example, *TOP SECTION*, *MIDDLE SECTION* and *BOTTOM SECTION*
 are three box-shaped volumetric regions. *INFLOW SURFACE* is a
 surface region defined in an Exodus II-formatted labeled set
 file and *OUTFLOW PLANE* is a planar region. *BLOODY SAND* is a volumetric

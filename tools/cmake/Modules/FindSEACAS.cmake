@@ -98,7 +98,8 @@ else()
   endif()
 
   # Search for libraries 
-  set(exodus_lib_names "exoIIv2c" "exodus")
+  # set(exodus_lib_names "exoIIv2c" "exodus")
+  set(exodus_lib_names "exodus")
   if (SEACAS_LIBRARY_DIR)
     if (EXISTS "${SEACAS_LIBRARY_DIR}")
 

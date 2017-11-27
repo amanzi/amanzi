@@ -1,7 +1,6 @@
 #!/bin/sh
 
 # CMake generates this file 
-# Replaces each @VAR@ with value of ${VAR}
 
 # Source and build locations
 crunchtope_src_dir=@CRUNCHTOPE_source_dir@

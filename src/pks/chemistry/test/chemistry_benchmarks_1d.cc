@@ -1,13 +1,16 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
-#include <UnitTest++.h>
 #include <vector>
 #include <cstdlib>
 #include <cmath>
 #include <iostream>
 #include <float.h>
 #include <TestReporterStdout.h>
-#include <iostream>
+
+#include "UnitTest++.h"
 #include "hdf5.h"
+
+#include "state_evaluators_registration.hh"
+#include "VerboseObject_objs.hh"
+
 
 // This computes the L2 error norm for the given component in the output file by comparing 
 // its values with those in the given reference file.

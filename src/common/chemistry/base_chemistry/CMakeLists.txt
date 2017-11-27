@@ -18,4 +18,5 @@ set(SRCS
 	./surface_site.cc
 )
 
-add_amanzi_library(geochembase SOURCE ${SRCS}) 
+add_amanzi_library(geochembase SOURCE ${SRCS}
+	                       LINK_LIBS geochemutil) 

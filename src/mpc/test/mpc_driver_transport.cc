@@ -11,6 +11,7 @@
 
 #include "CycleDriver.hh"
 #include "Domain.hh"
+#include "eos_registration.hh"
 #include "GeometricModel.hh"
 #include "Mesh.hh"
 #include "MeshFactory.hh"

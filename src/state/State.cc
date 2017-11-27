@@ -178,6 +178,8 @@ Teuchos::RCP<const AmanziMesh::Mesh> State::GetMesh(Key key) const {
 
 
 Teuchos::RCP<AmanziMesh::Mesh> State::GetDeformableMesh(Key key) {
+  if (key.empty()) key = "domain";
+
   mesh_iterator lb = meshes_.lower_bound(key);
   if (lb != meshes_.end() && !(meshes_.key_comp()(key, lb->first))) {
     if (lb->second.second) {

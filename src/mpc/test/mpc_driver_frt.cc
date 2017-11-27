@@ -11,6 +11,7 @@
 #include "Teuchos_ParameterXMLFileReader.hpp"
 
 #include "CycleDriver.hh"
+#include "eos_registration.hh"
 #include "Mesh.hh"
 #include "MeshFactory.hh"
 #include "mpc_pks_registration.hh"

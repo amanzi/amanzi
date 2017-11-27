@@ -95,11 +95,10 @@ include_directories(${ASCEMIO_INCLUDE_DIR})
 
 add_amanzi_library(udriv
                    SOURCE AmanziUnstructuredGridSimulationDriver.cc
-                   LINK_LIBS 
-                            ${Epetra_LIBRARIES} 
-                            ${Teuchos_LIBRARIES}
-                            mesh mesh_audit state mpc error_handling
-			                ${Boost_LIBRARIES})
+                   LINK_LIBS mesh mesh_audit mesh_factory state mpc eos flow energy
+                             interface error_handling
+                             ${Epetra_LIBRARIES} ${Teuchos_LIBRARIES} ${Boost_LIBRARIES}
+                             ${XERCES_LIBRARIES} ${XERCES_ICU_LIBRARIES})
 
 #
 # Binary: verify_mesh
