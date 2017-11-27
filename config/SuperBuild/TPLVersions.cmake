@@ -96,8 +96,8 @@
 #                - update Hypre to xsdk-0.2.0 (native 2.11.2)
 #  0.94.10       - update Alquimia to 1.0.5 (critical bug fixes)
 #  0.94.11       - update MSTK to 3.0.3 (critical bug fixes)
-                   update NetCDF to 4.5.0
-		   update NetCDF-Fortran to 4.4.4
+#                - update NetCDF to 4.5.0
+#	         - update NetCDF-Fortran to 4.4.4
 
 include(CMakeParseArguments)
 
