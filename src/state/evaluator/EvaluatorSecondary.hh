@@ -1,18 +1,22 @@
 /* -*-  mode: c++; indent-tabs-mode: nil -*- */
-/* -------------------------------------------------------------------------
-ATS
+/*
+  Copyright 2010-201x held jointly, see COPYRIGHT.
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
 
-License: see $ATS_DIR/COPYRIGHT
-Author: Ethan Coon
+  Author: Ethan Coon
+*/
 
-A field evaluator base for secondary variables.  A Evaluator is a node in the
-Phalanx-like dependency tree.
+//! EvaluatorSecondary is an evaluator that depends upon other evaluators.
+
+/*!
 
 Secondary variable evaluators, such as equations of state, water retention evaluators,
 internal energy evaluators, etc should inherit this class, implementing the
 missing Update_() and UpdateFieldDerivative_() methods.
 
-------------------------------------------------------------------------- */
+*/
 
 #ifndef STATE_EVALUATOR_SECONDARY_HH_
 #define STATE_EVALUATOR_SECONDARY_HH_
@@ -94,8 +98,8 @@ class EvaluatorSecondary : public Evaluator {
 }; // class EvaluatorSecondary
 
 #include "EvaluatorSecondary_Impl.hh"
-#include "EvaluatorSecondaryDouble_Impl.hh"
-#include "EvaluatorSecondaryCompositeVector_Impl.hh"
+//#include "EvaluatorSecondaryDouble_Impl.hh"
+//#include "EvaluatorSecondaryCompositeVector_Impl.hh"
 
 } // namespace Amanzi
 

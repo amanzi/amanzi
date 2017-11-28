@@ -17,6 +17,9 @@ CompositeVectors.
 
 ------------------------------------------------------------------------- */
 
+#include "EvaluatorSecondary.hh"
+
+namespace Amanzi {
 
 // ---------------------------------------------------------------------------
 // Ensures that dependencies provide the vector structure we need for this.
@@ -100,3 +103,5 @@ void EvaluatorSecondary<CompositeVector,CompositeVectorSpace>::UpdateDerivative_
     }
   }
 }
+
+} // namespace

@@ -1,11 +1,9 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
-
+/* -*-  mode: c++; indent-tabs-mode: nil -*- */
 /*
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Copyright 2010-201x held jointly, see COPYRIGHT.
   Amanzi is released under the three-clause BSD License. 
   The terms of use and "as is" disclaimer for this license are 
   provided in the top-level COPYRIGHT file.
-  See $ATS_DIR/COPYRIGHT
 
   Author: Ethan Coon
 */
@@ -21,9 +19,6 @@ For example, one might write a dependency:
 
 as:
 
-Note this is not done by region currently, but could easily be extended to do
-so if it was found useful.
-
 Example:
 ..xml:
     <ParameterList name="VARNAME">
@@ -38,10 +33,13 @@ Example:
       </ParameterList>
     </ParameterList>
 
- */
 
-#ifndef STATE_SECONDARY_VARIABLE_FIELD_EVALUATOR_FROMFILE_HH_
-#define STATE_SECONDARY_VARIABLE_FIELD_EVALUATOR_FROMFILE_HH_
+Note this is not done by region currently, but could easily be extended to do
+so if it was found useful.
+*/
+
+#ifndef STATE_EVALUATOR_SECONDARY_FROMFUNCTION_HH_
+#define STATE_EVALUATOR_SECONDARY_FROMFUNCTION_HH_
 
 #include <string>
 #include <vector>
@@ -50,40 +48,40 @@ Example:
 #include "Teuchos_RCP.hpp"
 
 #include "State.hh"
-#include "FieldEvaluator.hh"
-#include "FieldEvaluator_Factory.hh"
-#include "secondary_variable_field_evaluator.hh"
+#include "EvaluatorSecondary.hh"
+#include "Evaluator_Factory.hh"
+#include "CompositeVectorSpace.hh"
+#include "CompositeVector.hh"
 
 namespace Amanzi {
 
 class Function;
 
-class SecondaryVariableFieldEvaluatorFromFunction : public SecondaryVariableFieldEvaluator {
+class EvaluatorSecondaryFromFunction :
+      public EvaluatorSecondary<CompositeVector,CompositeVectorSpace> {
 
  public:
   explicit
-  SecondaryVariableFieldEvaluatorFromFunction(Teuchos::ParameterList& plist);
-  SecondaryVariableFieldEvaluatorFromFunction(const SecondaryVariableFieldEvaluatorFromFunction& other);
-  virtual Teuchos::RCP<FieldEvaluator> Clone() const;
+  EvaluatorSecondaryFromFunction(Teuchos::ParameterList& plist);
+  EvaluatorSecondaryFromFunction(const EvaluatorSecondaryFromFunction& other);
+  virtual Teuchos::RCP<Evaluator> Clone() const;
 
  protected:
   // These do the actual work
-  virtual void EvaluateField_(const Teuchos::Ptr<State>& S,
-          const Teuchos::Ptr<CompositeVector>& result);
+  virtual void Evaluate_(const State& S, CompositeVector& result);
 
   // This should get some careful thought of the right strategy.  Punting for now --etc
-  virtual void EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>& S,
-          Key wrt_key, const Teuchos::Ptr<CompositeVector>& result) {
-    result->PutScalar(0.);
+  virtual void EvaluatePartialDerivative_(const State& S, const Key& wrt_key, CompositeVector& result) {
+    result.PutScalar(0.);
   }
 
  protected:
-  Teuchos::RCP<Function> func_;
+  Teuchos::RCP<const Function> func_;
 
  private:
-  static Utils::RegisteredFactory<FieldEvaluator,SecondaryVariableFieldEvaluatorFromFunction> fac_;
+  static Utils::RegisteredFactory<Evaluator,EvaluatorSecondaryFromFunction> fac_;
 
-}; // class FieldEvaluator
+}; // class
 
 } // namespace Amanzi
 

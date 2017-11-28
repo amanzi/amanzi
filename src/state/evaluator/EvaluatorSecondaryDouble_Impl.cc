@@ -17,6 +17,10 @@ doubles.
 
 ------------------------------------------------------------------------- */
 
+#include "EvaluatorSecondary.hh"
+
+
+namespace Amanzi {
 
 // ---------------------------------------------------------------------------
 // Updates the derivative for doubles
@@ -67,3 +71,5 @@ void EvaluatorSecondary<double>::UpdateDerivative_(State& S, const Key& wrt_key)
     }
   }
 }
+
+} // namespace
