@@ -3,15 +3,25 @@
 #
 # Amanzi SuperBuild
 #       Amanzi TPL Build Targets
+
+#
+# Set minimum required version of CMake
+# NB: Must go before project() call.
+#
 cmake_minimum_required(VERSION 3.2)
 
-# cmake_policy(SET CMP0017 NEW)
-# cmake_policy(SET CMP0022 NEW)
-# cmake_policy(SET CMP0037 OLD)
-# cmake_policy(SET CMP0048 OLD)
-
+#
+# Language standard
+# NB: Seems like a good idea to have this before project() call.
+#
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+# ############################################################################ #
+# Define project name (SuperBuild_SOURCE_DIR and SuperBuild_BINARY_DIR)
+# ############################################################################ #
+message(STATUS "\n-- CMake: Configuring Amanzi TPLs build/install.\n--")
+project(SuperBuild C CXX Fortran)
 
 # ############################################################################ #
 # Shared Libraries Definitions
@@ -24,7 +34,7 @@ set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 
 set(AMANZI_CMAKE_CACHE_ARGS  "-DCMAKE_INSTALL_RPATH:PATH=${CMAKE_INSTALL_RPATH}")
 list(APPEND AMANZI_CMAKE_CACHE_ARGS  "-DCMAKE_INSTALL_NAME_DIR:PATH=${CMAKE_INSTALL_RPATH}")
- 
+
 if (BUILD_SHARED_LIBS)
   set(_shared_flags "-fPIC")
   set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${_shared_flags}")
@@ -39,7 +49,6 @@ if (BUILD_SHARED_LIBS)
   set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} ${_shared_flags}")
   set(CMAKE_Fortran_FLAGS_DEBUG "${CMAKE_Fortran_FLAGS_DEBUG} ${_shared_flags}")
 endif()
-
 
 # ############################################################################ #
 # Static Libraries Definitions
@@ -68,11 +77,6 @@ endif()
 #if (NOT SPACK_BINARY)
 #  message(WARNING "Spack binary not defined. Disabling spack builds.")
 #endif()
-
-# ############################################################################ #
-# Define project name (SuperBuild_SOURCE_DIR and SuperBuild_BINARY_DIR)
-# ############################################################################ #
-project(SuperBuild C CXX Fortran)
 
 # ############################################################################ #
 # Define Amanzi directories 
@@ -135,6 +139,8 @@ if (NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE ${SuperBuild_BUILD_TYPE_DFLT})
 endif()
 message(STATUS "Setting build type -- ${CMAKE_BUILD_TYPE}")
+
+message(STATUS ">>> JDM: L142  - CMAKE_C_FLAGS = ${CMAKE_C_FLAGS}")
 
 # Download directory TPL_DOWNLOAD_DIR
 set(TPL_DOWNLOAD_DIR_DFLT ${SuperBuild_BINARY_DIR}/Downloads)
@@ -214,6 +220,9 @@ option(ENABLE_XSDK "Use xSDK Libraries" FALSE)
 option(ENABLE_SPACK "Build with the Spack package manager where appropriate" FALSE)
 option(BUILD_SPACK "Clone spack from git and treat as a TPL that needs to be built" FALSE)
 
+message(STATUS ">>> JDM: L220  - CMAKE_C_FLAGS = ${CMAKE_C_FLAGS}")
+
+
 # ############################################################################ #
 # MPI Configuration 
 # ############################################################################ #
@@ -260,6 +269,7 @@ endif()
 #     MPIEXEC_PREFLAGS
 #     MPIEXEC_POSTFLAGS
 find_package(MPI)
+
 
 # The FindMPI package uses FindPackageHandleStandardArgs
 # to MPI_<lang>_FOUND. For consistency, I set MPI_FORTRAN_FOUND
@@ -341,6 +351,8 @@ if (NOT MPI_WRAPPERS_IN_USE AND NOT BUILD_MPI)
     endif()  
   endforeach()
 endif()
+
+message(STATUS ">>> JDM: L352  - CMAKE_C_FLAGS = ${CMAKE_C_FLAGS}")
 
 
 # --- Define which compilers to use in MPI dependent projects

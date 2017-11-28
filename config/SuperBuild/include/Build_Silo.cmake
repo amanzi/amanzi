@@ -36,9 +36,9 @@ set(silo_install_dir ${TPL_INSTALL_PREFIX})
 
 # Silo shared libraries
 if (BUILD_SHARED_LIBS)
-    set(CONFIG_SILO_SHARED --enable-shared=1)
+    set(CONFIG_SILO_SHARED --enable-shared --disable-static)
 else()
-    set(CONFIG_SILO_SHARED --enable-shared=0)
+    set(CONFIG_SILO_SHARED --disable-shared --enable-static)
 endif()
 
 # --- Set the name of the patch 
