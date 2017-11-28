@@ -39,17 +39,14 @@ class PK_MixinImplicit
  public:
   PK_MixinImplicit(const Teuchos::RCP<Teuchos::ParameterList>& pk_tree,
                    const Teuchos::RCP<Teuchos::ParameterList>& global_plist,
-                   const Teuchos::RCP<State>& S,
-                   const Teuchos::RCP<TreeVectorSpace>& soln_map);
+                   const Teuchos::RCP<State>& S);
 
   virtual ~PK_MixinImplicit() = default; // here to make this polymorphic and therefore castable
 
   
-  void Setup(const TreeVector& soln);
-  bool AdvanceStep(const Key& tag_old, const Teuchos::RCP<TreeVector>& soln_old,
-                   const Key& tag_new, const Teuchos::RCP<TreeVector>& soln_new);
-  void CommitStep(const Key& tag_old, const Teuchos::RCP<TreeVector>& soln_old,
-                  const Key& tag_new, const Teuchos::RCP<TreeVector>& soln_new);
+  void Setup();
+  bool AdvanceStep(const Key& tag_old,const Key& tag_new);
+  void CommitStep(const Key& tag_old, const Key& tag_new);
 
   double get_dt() { return dt_; }
 
@@ -73,10 +70,9 @@ class PK_MixinImplicit
 
 template<class Base_t>
 PK_MixinImplicit<Base_t>::PK_MixinImplicit(const Teuchos::RCP<Teuchos::ParameterList>& pk_tree,
-                         const Teuchos::RCP<Teuchos::ParameterList>& global_plist,
-                         const Teuchos::RCP<State>& S,
-                         const Teuchos::RCP<TreeVectorSpace>& soln_map)
-    : Base_t(pk_tree, global_plist, S, soln_map)
+        const Teuchos::RCP<Teuchos::ParameterList>& global_plist,
+        const Teuchos::RCP<State>& S)
+    : Base_t(pk_tree, global_plist, S)
 {
   // initial timestep
   dt_ = plist_->template get<double>("initial time step", 1.);
@@ -85,31 +81,53 @@ PK_MixinImplicit<Base_t>::PK_MixinImplicit(const Teuchos::RCP<Teuchos::Parameter
 
 template<class Base_t>
 void
-PK_MixinImplicit<Base_t>::Setup(const TreeVector& soln)
+PK_MixinImplicit<Base_t>::Setup()
 {
-  Base_t::Setup(soln);
+  Base_t::Setup();
 
   // preconditioner assembly
   assemble_preconditioner_ = plist_->template get<bool>("assemble preconditioner", true);
 
+  // set up tags
   tag_old_ = "";
   tag_new_ = "next";
+
+  // require data at the new and old times
+  this->SolutionToState(tag_new_, "");
+  this->SolutionToState(tag_old_, "");
 }
 
 
 template<class Base_t>
 bool 
-PK_MixinImplicit<Base_t>::AdvanceStep(const Key& tag_old, const Teuchos::RCP<TreeVector>& soln_old,
-        const Key& tag_new, const Teuchos::RCP<TreeVector>& soln_new)
+PK_MixinImplicit<Base_t>::AdvanceStep(const Key& tag_old, const Key& tag_new)
 {
+  // my local tags, used in physics PKs?  Can we get rid of these? --etc
   tag_old_ = tag_old;
   tag_new_ = tag_new;
 
-  if (!time_stepper_.get()) {
-    // -- ensure state vectors are pushed into solution vectors
-    this->StateToSolution(*soln_old, tag_old, "");
-    this->StateToSolution(*soln_new, tag_new, "");
+  // times associated with those tags
+  double t_new = S_->time(tag_new);
+  double t_old = S_->time(tag_old);
+  double dt = t_new - t_old;  
 
+  // logging
+  Teuchos::OSTab out = vo_->getOSTab();
+  if (vo_->os_OK(Teuchos::VERB_HIGH))
+    *vo_->os() << "----------------------------------------------------------------" << std::endl
+               << "Advancing: t0 = " << t_old
+               << " t1 = " << t_new << " h = " << dt << std::endl
+               << "----------------------------------------------------------------" << std::endl;
+  
+  // create solution vectors, old and new, which are pointers into state data
+  auto soln_old = Teuchos::rcp(new TreeVector());
+  this->StateToSolution(*soln_old, tag_old, "");
+
+  auto soln_new = Teuchos::rcp(new TreeVector());
+  this->StateToSolution(*soln_new, tag_new, "");
+
+  // create the time integrator if first call
+  if (!time_stepper_.get()) {
     // -- instantiate time stepper
     Teuchos::ParameterList& bdf_plist = plist_->sublist("time integrator");
     bdf_plist.set("initial time", S_->time(tag_old));
@@ -118,24 +136,13 @@ PK_MixinImplicit<Base_t>::AdvanceStep(const Key& tag_old, const Teuchos::RCP<Tre
     ASSERT(this_as_bdf_p);
     time_stepper_ = Teuchos::rcp(new BDF1_TI<TreeVector,TreeVectorSpace>(*this_as_bdf_p, bdf_plist, soln_new));
 
-    // -- initialize time derivative
+    // -- initialize time derivative at 0, used in higher order BDF methods?  Can we remove this? --etc
     auto solution_dot = Teuchos::rcp(new TreeVector(*soln_old, INIT_MODE_ZERO));
 
     // -- set initial state
-    *soln_old = *soln_new;
+    this->StateToState(tag_old, tag_new); // assures new and old time are both the IC
     time_stepper_->SetInitialState(S_->time(tag_old), soln_old, solution_dot);
   }
-
-  double t_new = S_->time(tag_new);
-  double t_old = S_->time(tag_old);
-  double dt = t_new - t_old;  
-  
-  Teuchos::OSTab out = vo_->getOSTab();
-  if (vo_->os_OK(Teuchos::VERB_HIGH))
-    *vo_->os() << "----------------------------------------------------------------" << std::endl
-               << "Advancing: t0 = " << t_old
-               << " t1 = " << t_new << " h = " << dt << std::endl
-               << "----------------------------------------------------------------" << std::endl;
 
 
   // take a bdf timestep
@@ -144,7 +151,7 @@ PK_MixinImplicit<Base_t>::AdvanceStep(const Key& tag_old, const Teuchos::RCP<Tre
 
   if (!fail) {
     // check step validity
-    bool valid = this->ValidStep(tag_old, soln_old, tag_new, soln_new);
+    bool valid = this->ValidStep(tag_old, tag_new);
     if (valid) {
       // update the timestep size
       if (dt_solver < dt_ && dt_solver >= dt) {
@@ -170,13 +177,19 @@ PK_MixinImplicit<Base_t>::AdvanceStep(const Key& tag_old, const Teuchos::RCP<Tre
 // -- Commit any secondary (dependent) variables.
 template<class Base_t>
 void
-PK_MixinImplicit<Base_t>::CommitStep(const Key& tag_old, const Teuchos::RCP<TreeVector>& soln_old,
-        const Key& tag_new, const Teuchos::RCP<TreeVector>& soln_new)
+PK_MixinImplicit<Base_t>::CommitStep(const Key& tag_old, const Key& tag_new)
 {
   double dt = S_->time(tag_new) - S_->time(tag_old);
-  if (dt > 0. && time_stepper_ != Teuchos::null)
+
+  // this should eventually be removed -- it is manipulating internal state of
+  // the time integrator, and that state should go away --etc
+  if (dt > 0. && time_stepper_ != Teuchos::null) {
+    auto soln_new = Teuchos::rcp(new TreeVector());
+    this->StateToSolution(*soln_new, tag_new, "");
     time_stepper_->CommitSolution(dt, soln_new, true);
-  Base_t::CommitStep(tag_old, soln_old, tag_new, soln_new);  
+  }
+
+  Base_t::CommitStep(tag_old, tag_new);  
 }
 
 

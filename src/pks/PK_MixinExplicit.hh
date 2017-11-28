@@ -38,14 +38,12 @@ class PK_MixinExplicit : public Base_t {
  public:
   PK_MixinExplicit(const Teuchos::RCP<Teuchos::ParameterList>& pk_tree,
                    const Teuchos::RCP<Teuchos::ParameterList>& global_plist,
-                   const Teuchos::RCP<State>& S,
-                   const Teuchos::RCP<TreeVectorSpace>& soln_map);
+                   const Teuchos::RCP<State>& S);
 
   virtual ~PK_MixinExplicit() = default; // here to make this polymorphic and therefore castable
   
-  void Setup(const TreeVector& soln);
-  bool AdvanceStep(const Key& tag_old, const Teuchos::RCP<TreeVector>& soln_old,
-                   const Key& tag_new, const Teuchos::RCP<TreeVector>& soln_new);
+  void Setup();
+  bool AdvanceStep(const Key& tag_old, const Key& tag_new);
 
   double get_dt() { return dt_; }
 
@@ -59,12 +57,8 @@ class PK_MixinExplicit : public Base_t {
   // timestep algorithm
   Teuchos::RCP<Explicit_TI::RK<TreeVector> > time_stepper_;
 
-  // previous solution
-  Teuchos::RCP<TreeVector> solution_intermediate_;
-
   // tag at which evaluators are needed
-  Key dudt_tag_;
-  bool method_requires_intermediate_;
+  Key tag_inter_;
   
   using Base_t::plist_;
   using Base_t::S_;
@@ -73,11 +67,9 @@ class PK_MixinExplicit : public Base_t {
 
 template<class Base_t>
 PK_MixinExplicit<Base_t>::PK_MixinExplicit(const Teuchos::RCP<Teuchos::ParameterList>& pk_tree,
-                         const Teuchos::RCP<Teuchos::ParameterList>& global_plist,
-                         const Teuchos::RCP<State>& S,
-                         const Teuchos::RCP<TreeVectorSpace>& soln_map)
-    : Base_t(pk_tree, global_plist, S, soln_map),
-      method_requires_intermediate_(false)
+        const Teuchos::RCP<Teuchos::ParameterList>& global_plist,
+        const Teuchos::RCP<State>& S)
+    : Base_t(pk_tree, global_plist, S)
 {
   // initial timestep
   dt_ = plist_->template get<double>("initial time step", 1.);
@@ -86,59 +78,43 @@ PK_MixinExplicit<Base_t>::PK_MixinExplicit(const Teuchos::RCP<Teuchos::Parameter
 
 template<class Base_t>
 void
-PK_MixinExplicit<Base_t>::Setup(const TreeVector& soln)
+PK_MixinExplicit<Base_t>::Setup()
 {
-  Base_t::Setup(soln);
+  Base_t::Setup();
 
   std::string methodname = plist_->sublist("time integrator")
                            .template get<std::string>("RK method");
   
-  // potentially create an intermediate tag for multistage algorithms
-  method_requires_intermediate_ = methodname != "forward euler";
-  if (method_requires_intermediate_) {
-    dudt_tag_ = this->name()+" explicit ti intermediate";
-    solution_intermediate_ = Teuchos::rcp(new TreeVector(soln, INIT_MODE_NOALLOC));
-    this->SolutionToState(*solution_intermediate_, dudt_tag_, "");
-    S_->template Require<double>("time", dudt_tag_, "time");
-  }
+  // create an intermediate tag for derivative evaluation, potentially at multiple stages
+  tag_inter_ = this->name()+" explicit ti intermediate";
+  this->SolutionToState(tag_inter_, "");
+  S_->template Require<double>("time", tag_inter_, "time");
+  S_->template Require<int>("cycle", tag_inter_, "cycle");
 
+  // set up tags
   tag_old_ = "";
   tag_new_ = "next";
+
+  // require data at the new and old times
+  this->SolutionToState(tag_new_, "");
+  this->SolutionToState(tag_old_, "");
 }
 
 
 template<class Base_t>
 bool 
-PK_MixinExplicit<Base_t>::AdvanceStep(const Key& tag_old, const Teuchos::RCP<TreeVector>& soln_old,
-        const Key& tag_new, const Teuchos::RCP<TreeVector>& soln_new)
+PK_MixinExplicit<Base_t>::AdvanceStep(const Key& tag_old, const Key& tag_new)
 {
+  // my local tags, used in physics PKs?  Can we get rid of these? --etc
   tag_old_ = tag_old;
   tag_new_ = tag_new;
-
-  if (solution_intermediate_ == Teuchos::null) {
-    solution_intermediate_ = soln_old;
-    dudt_tag_ = tag_old;
-  }
-
-  // -- ensure state vectors are pushed into solution vectors
-  this->StateToSolution(*soln_old, tag_old, "");
-  this->StateToSolution(*solution_intermediate_, dudt_tag_, "");
-  this->StateToSolution(*soln_new, tag_new, "");
   
-  
-  // -- instantiate time stepper if needed
-  if (!time_stepper_.get()) {
-    Teuchos::ParameterList& ti_plist = plist_->sublist("time integrator");
-    ti_plist.set("initial time", S_->time());
-    auto this_as_explicit_p = dynamic_cast<Explicit_TI::fnBase<TreeVector>* >(this);
-    ASSERT(this_as_explicit_p);
-    time_stepper_ = Teuchos::rcp(new Explicit_TI::RK<TreeVector>(*this_as_explicit_p, ti_plist, *soln_new));
-  }
-
+  // times associated with those tags
   double t_new = S_->time(tag_new);
   double t_old = S_->time(tag_old);
   double dt = t_new - t_old;  
   
+  // logging
   Teuchos::OSTab out = vo_->getOSTab();
   if (vo_->os_OK(Teuchos::VERB_HIGH))
     *vo_->os() << "----------------------------------------------------------------" << std::endl
@@ -146,10 +122,25 @@ PK_MixinExplicit<Base_t>::AdvanceStep(const Key& tag_old, const Teuchos::RCP<Tre
                << " t1 = " << t_new << " h = " << dt << std::endl
                << "----------------------------------------------------------------" << std::endl;
 
+  // create solution vectors, old and intermediate, which are pointers into state data
+  auto soln_old = Teuchos::rcp(new TreeVector());
+  this->StateToSolution(*soln_old, tag_old, "");
+
+  auto soln_inter = Teuchos::rcp(new TreeVector());
+  this->StateToSolution(*soln_inter, tag_inter_, "");
+  
+  // -- instantiate time stepper if needed
+  if (!time_stepper_.get()) {
+    Teuchos::ParameterList& ti_plist = plist_->sublist("time integrator");
+    ti_plist.set("initial time", S_->time());
+    auto this_as_explicit_p = dynamic_cast<Explicit_TI::fnBase<TreeVector>* >(this);
+    ASSERT(this_as_explicit_p);
+    time_stepper_ = Teuchos::rcp(new Explicit_TI::RK<TreeVector>(*this_as_explicit_p, ti_plist, *soln_inter));
+  }
 
   // take a timestep
-  time_stepper_->TimeStep(t_old, dt, *soln_old, *solution_intermediate_);
-  *soln_new = *solution_intermediate_;
+  time_stepper_->TimeStep(t_old, dt, *soln_old, *soln_inter);
+  this->StateToState(tag_inter_, tag_new_);
   return false;
 };
   

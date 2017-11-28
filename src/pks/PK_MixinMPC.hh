@@ -62,23 +62,20 @@ class PK_MixinMPC : public Base_t {
   
   // PK methods
   // -- sets up sub-PKs
-  void Setup(const TreeVector& soln);
+  void Setup();
 
   // -- calls all sub-PK initialize() methods
   void Initialize();
 
   // Returns validity of the step taken from tag_old to tag_new
-  bool ValidStep(const Key& tag_old, const Teuchos::RCP<TreeVector>& soln_old,
-                         const Key& tag_new, const Teuchos::RCP<TreeVector>& soln_new);
+  bool ValidStep(const Key& tag_old, const Key& tag_new);
 
 
   // Do work that can only be done if we know the step was successful.
-  void CommitStep(const Key& tag_old, const Teuchos::RCP<TreeVector>& soln_old,
-                          const Key& tag_new, const Teuchos::RCP<TreeVector>& soln_new);
+  void CommitStep(const Key& tag_old, const Key& tag_new);
 
   // Revert a step from tag_new back to tag_old
-  void FailStep(const Key& tag_old, const Teuchos::RCP<TreeVector>& soln_old,
-                        const Key& tag_new, const Teuchos::RCP<TreeVector>& soln_new);
+  void FailStep(const Key& tag_old, const Key& tag_new);
 
   // Calculate any diagnostics at tag, currently used for visualization.
   void CalculateDiagnostics(const Key& tag);
@@ -86,6 +83,7 @@ class PK_MixinMPC : public Base_t {
   // Mark, as changed, any primary variable evaluator owned by this PK
   void ChangedSolutionPK(const Key& tag);
 
+ protected:
   // Ensure consistency between a time integrator's view of data (TreeVector)
   // and the dag's view of data (dictionary of CompositeVectors).
   //
@@ -105,8 +103,7 @@ class PK_MixinMPC : public Base_t {
   // the State does have this data, ensure consistency.
   //
   // These almost certainly are implemented by default.
-  void SolutionToState(TreeVector& soln, const Key& tag, const Key& suffix);
-  void SolutionToState(const TreeVector& soln, const Key& tag, const Key& suffix);
+  void SolutionToState(const Key& tag, const Key& suffix);
 
   void StateToState(const Key& tag_from, const Key& tag_to);
   
@@ -121,14 +118,14 @@ class PK_MixinMPC : public Base_t {
 // -----------------------------------------------------------------------------
 template <class Base_t, class PK_Contained_t>
 void
-PK_MixinMPC<Base_t,PK_Contained_t>::Setup(const TreeVector& soln)
+PK_MixinMPC<Base_t,PK_Contained_t>::Setup()
 {
   int i = 0;
   for (auto& pk : sub_pks_) {
-    pk->Setup(*soln.SubVector(i));
+    pk->Setup();
     ++i;
   }
-  Base_t::Setup(soln);
+  Base_t::Setup();
 }
 
 
@@ -149,13 +146,11 @@ PK_MixinMPC<Base_t,PK_Contained_t>::Initialize()
 // -----------------------------------------------------------------------------
 template <class Base_t, class PK_Contained_t>
 bool
-PK_MixinMPC<Base_t,PK_Contained_t>::ValidStep(const Key& tag_old, const Teuchos::RCP<TreeVector>& soln_old,
-        const Key& tag_new, const Teuchos::RCP<TreeVector>& soln_new)
+PK_MixinMPC<Base_t,PK_Contained_t>::ValidStep(const Key& tag_old, const Key& tag_new)
 {
   int i = 0;
   for (auto& pk : sub_pks_) {
-    if (!pk->ValidStep(tag_old, soln_old->SubVector(i), tag_new, soln_new->SubVector(i)))
-      return false;
+    if (!pk->ValidStep(tag_old, tag_new)) return false;
     ++i;
   }
   return true;
@@ -167,12 +162,11 @@ PK_MixinMPC<Base_t,PK_Contained_t>::ValidStep(const Key& tag_old, const Teuchos:
 // -----------------------------------------------------------------------------
 template <class Base_t, class PK_Contained_t>
 void
-PK_MixinMPC<Base_t,PK_Contained_t>::CommitStep(const Key& tag_old, const Teuchos::RCP<TreeVector>& soln_old,
-                          const Key& tag_new, const Teuchos::RCP<TreeVector>& soln_new)
+PK_MixinMPC<Base_t,PK_Contained_t>::CommitStep(const Key& tag_old, const Key& tag_new)
 {
   int i = 0;
   for (auto& pk : sub_pks_) {
-    pk->CommitStep(tag_old, soln_old->SubVector(i), tag_new, soln_new->SubVector(i));
+    pk->CommitStep(tag_old, tag_new);
     ++i;
   }
 }
@@ -182,12 +176,11 @@ PK_MixinMPC<Base_t,PK_Contained_t>::CommitStep(const Key& tag_old, const Teuchos
 // -----------------------------------------------------------------------------
 template <class Base_t, class PK_Contained_t>
 void
-PK_MixinMPC<Base_t,PK_Contained_t>::FailStep(const Key& tag_old, const Teuchos::RCP<TreeVector>& soln_old,
-                        const Key& tag_new, const Teuchos::RCP<TreeVector>& soln_new)
+PK_MixinMPC<Base_t,PK_Contained_t>::FailStep(const Key& tag_old, const Key& tag_new)
 {
   int i = 0;
   for (auto& pk : sub_pks_) {
-    pk->FailStep(tag_old, soln_old->SubVector(i), tag_new, soln_new->SubVector(i));
+    pk->FailStep(tag_old, tag_new);
     ++i;
   }
 }
@@ -227,13 +220,19 @@ template <class Base_t, class PK_Contained_t>
 void
 PK_MixinMPC<Base_t,PK_Contained_t>::StateToSolution(TreeVector& soln, const Key& tag, const Key& suffix)
 {
+  if (soln.size() != sub_pks_.size()) {
+    ASSERT(soln.size() == 0);
+    for (auto& pk : sub_pks_) {
+      auto tv = Teuchos::rcp(new TreeVector());
+      soln.PushBack(tv);
+    }
+  }
+
   int i = 0;
   for (auto& pk : sub_pks_) {
     pk->StateToSolution(*soln.SubVector(i), tag, suffix);
     ++i;
   }
-
-  
 }
 
 // -----------------------------------------------------------------------------
@@ -247,36 +246,10 @@ PK_MixinMPC<Base_t,PK_Contained_t>::StateToSolution(TreeVector& soln, const Key&
 // -----------------------------------------------------------------------------
 template <class Base_t, class PK_Contained_t>
 void
-PK_MixinMPC<Base_t,PK_Contained_t>::SolutionToState(TreeVector& soln, const Key& tag, const Key& suffix)
+PK_MixinMPC<Base_t,PK_Contained_t>::SolutionToState(const Key& tag, const Key& suffix)
 {
-  int i = 0;
-  for (auto& pk : sub_pks_) {
-    pk->SolutionToState(*soln.SubVector(i), tag, suffix);
-    ++i;
-  }
+  for (auto& pk : sub_pks_) pk->SolutionToState(tag, suffix);
 }
-
-
-// -----------------------------------------------------------------------------
-// Ensure consistency between a time integrator's view of data (TreeVector)
-// and the dag's view of data (dictionary of CompositeVectors).  Const version.
-//
-// Push data from a TreeVector into State.  If the State has no data,
-// require it (allowing time integrators to require intermediate steps,
-// etc).  If the TreeVector has data and State doesn't, copy pointers.  If
-// the State does have this data, ensure consistency.
-// -----------------------------------------------------------------------------
-template <class Base_t, class PK_Contained_t>
-void
-PK_MixinMPC<Base_t,PK_Contained_t>::SolutionToState(const TreeVector& soln, const Key& tag, const Key& suffix)
-{
-  int i = 0;
-  for (auto& pk : sub_pks_) {
-    pk->SolutionToState(*soln.SubVector(i), tag, suffix);
-    ++i;
-  }
-}
-
 
 template <class Base_t, class PK_Contained_t>
 void

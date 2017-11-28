@@ -45,20 +45,15 @@ class PK_MixinExplicitSubcycled
  public:
   PK_MixinExplicitSubcycled(const Teuchos::RCP<Teuchos::ParameterList>& pk_tree,
                             const Teuchos::RCP<Teuchos::ParameterList>& global_plist,
-                            const Teuchos::RCP<State>& S,
-                            const Teuchos::RCP<TreeVectorSpace>& soln_map);
+                            const Teuchos::RCP<State>& S);
 
-  void Setup(const TreeVector& soln);
-  bool AdvanceStep(const Key& tag_old, const Teuchos::RCP<TreeVector>& soln_old,
-                   const Key& tag_new, const Teuchos::RCP<TreeVector>& soln_new);
+  void Setup();
+  bool AdvanceStep(const Key& tag_old, const Key& tag_new);
 
  protected:
-  Teuchos::RCP<TreeVector> inner_soln_old_;
-  Teuchos::RCP<TreeVector> inner_soln_new_;
-
   using PK_MixinExplicit<Base_t>::tag_old_;
   using PK_MixinExplicit<Base_t>::tag_new_;
-  using PK_MixinExplicit<Base_t>::dudt_tag_;
+  using PK_MixinExplicit<Base_t>::tag_inter_;
 
   using PK_MixinExplicit<Base_t>::vo_;
   using PK_MixinExplicit<Base_t>::plist_;
@@ -71,9 +66,8 @@ template<class Base_t>
 PK_MixinExplicitSubcycled<Base_t>::PK_MixinExplicitSubcycled(
     const Teuchos::RCP<Teuchos::ParameterList>& pk_tree,
     const Teuchos::RCP<Teuchos::ParameterList>& global_plist,
-    const Teuchos::RCP<State>& S,
-    const Teuchos::RCP<TreeVectorSpace>& soln_map)
-    : PK_MixinExplicit<Base_t>(pk_tree, global_plist, S, soln_map)
+    const Teuchos::RCP<State>& S)
+    : PK_MixinExplicit<Base_t>(pk_tree, global_plist, S)
 {
   // this could be generalized, for now just take 1/Nth step size
   subcycled_count_ = plist_->template get<int>("subcycling substeps per outer step");
@@ -81,40 +75,33 @@ PK_MixinExplicitSubcycled<Base_t>::PK_MixinExplicitSubcycled(
 
 template<class Base_t>
 void
-PK_MixinExplicitSubcycled<Base_t>::Setup(const TreeVector& soln)
+PK_MixinExplicitSubcycled<Base_t>::Setup()
 {
-  PK_MixinExplicit<Base_t>::Setup(soln);
+  PK_MixinExplicit<Base_t>::Setup();
 
   // reserve space for inner step
   tag_old_ = this->name() + " explicit subcycled inner";
   S_->template Require<double>("time", tag_old_, "time");
   S_->template Require<int>("cycle", tag_old_, "cycle");
-  inner_soln_old_ = Teuchos::rcp(new TreeVector(soln, INIT_MODE_NOALLOC));
-  this->SolutionToState(*inner_soln_old_, tag_old_, "");
+  this->SolutionToState(tag_old_, "");
 
   tag_new_ = this->name() + " explicit subcycled inner next";
   S_->template Require<double>("time", tag_new_, "time");
   S_->template Require<int>("cycle", tag_new_, "cycle");
-  inner_soln_new_ = Teuchos::rcp(new TreeVector(soln, INIT_MODE_NOALLOC));
-  this->SolutionToState(*inner_soln_new_, tag_new_, "");
-
-  // reset dudt to be the INNER old tag, unless an intermediate was created
-  if (!PK_MixinExplicit<Base_t>::method_requires_intermediate_)
-    dudt_tag_ = tag_old_;
+  this->SolutionToState(tag_new_, "");
 }
 
 
 template<class Base_t>
 bool 
-PK_MixinExplicitSubcycled<Base_t>::AdvanceStep(const Key& tag_old,
-        const Teuchos::RCP<TreeVector>& soln_old,
-        const Key& tag_new,
-        const Teuchos::RCP<TreeVector>& soln_new)
+PK_MixinExplicitSubcycled<Base_t>::AdvanceStep(const Key& tag_old, const Key& tag_new)
 {
+  // times associated with inner and outer steps
   double t_start = S_->time(tag_old);
   double t_final = S_->time(tag_new);
   double dt_inner = (t_final - t_start) / subcycled_count_;
-  
+
+  // logging
   Teuchos::OSTab out = vo_->getOSTab();
   if (vo_->os_OK(Teuchos::VERB_HIGH))
     *vo_->os() << "----------------------------------------------------------------" << std::endl
@@ -122,28 +109,37 @@ PK_MixinExplicitSubcycled<Base_t>::AdvanceStep(const Key& tag_old,
                << " t1 = " <<  t_final << " h = " << t_final - t_start << std::endl
                << "----------------------------------------------------------------" << std::endl;
 
-  this->CommitStep(tag_old_, inner_soln_old_, tag_old, soln_old);
-  this->CommitStep(tag_new_, inner_soln_new_, tag_old, soln_old);
+  // copy initial condition to inner
+  this->StateToState(tag_old, tag_old_);
+
+  // create solution vectors, old and intermediate, which are pointers into state data
+  auto soln_old = Teuchos::rcp(new TreeVector());
+  this->StateToSolution(*soln_old, tag_old_, "");
+
+  auto soln_inter = Teuchos::rcp(new TreeVector());
+  this->StateToSolution(*soln_inter, tag_inter_, "");
+
+  // set the initial inner cycle
   S_->set_cycle(tag_old_, 0);
-  
+
+  // loop through the inner steps til done
   for (int k=0; k!=subcycled_count_; ++k) {
     double t_inner_start = t_start + dt_inner*k;
     double t_inner_end = t_start + dt_inner*(k+1);
 
     S_->set_time(tag_old_, t_inner_start);
     S_->set_time(tag_new_, t_inner_end);
-    S_->set_cycle(tag_new_, S_->cycle(tag_old_)+1);
+    S_->set_cycle(tag_old_, k);
+    S_->set_cycle(tag_new_, k+1);
 
-    bool fail = PK_MixinExplicit<Base_t>::AdvanceStep(tag_old_, inner_soln_old_,
-            tag_new_, inner_soln_new_);
+    bool fail = PK_MixinExplicit<Base_t>::AdvanceStep(tag_old_, tag_new_);
     ASSERT(!fail);
-    this->CommitStep(tag_old_, inner_soln_old_, tag_new_, inner_soln_new_);
+    this->CommitStep(tag_old_, tag_new_);
   }    
 
-  this->CommitStep(tag_new, soln_new, tag_new_, inner_soln_new_);
+  // copy from inner result to outer result
+  this->StateToState(tag_new_, tag_new);
   return false;
-
-
 };
 
 } // namespace Amanzi

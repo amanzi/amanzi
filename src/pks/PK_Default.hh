@@ -31,7 +31,6 @@ For more, see PK.hh
 #include "Teuchos_ParameterList.hpp"
 
 #include "StateDefs.hh"
-#include "TreeVector.hh"
 #include "PK.hh"
 
 namespace Amanzi {
@@ -44,14 +43,13 @@ class PK_Default {
 
   // lone constructor
   PK_Default(const Teuchos::RCP<Teuchos::ParameterList>& pk_tree,
-     const Teuchos::RCP<Teuchos::ParameterList>& global_plist,
-     const Teuchos::RCP<State>& S,
-     const Teuchos::RCP<TreeVectorSpace>& soln_map);
+             const Teuchos::RCP<Teuchos::ParameterList>& global_plist,
+             const Teuchos::RCP<State>& S);
 
 
   // Setup: forms the DAG, pushes meta-data into State
   // Default: no setup
-  void Setup(const TreeVector& soln) {}
+  void Setup() {}
   
   // Initialize: initial conditions for owned variables.
   // Default: no initialization
@@ -59,18 +57,15 @@ class PK_Default {
   
   // Returns validity of the step taken from tag_old to tag_new
   // Default: step is valid
-  bool ValidStep(const Key& tag_old, const Teuchos::RCP<TreeVector>& soln_old,
-                 const Key& tag_new, const Teuchos::RCP<TreeVector>& soln_new) { return true; }
+  bool ValidStep(const Key& tag_old, const Key& tag_new) { return true; }
 
   // Do work that can only be done if we know the step was successful.
   // Default: no work to be done
-  void CommitStep(const Key& tag_old, const Teuchos::RCP<TreeVector>& soln_old,
-                  const Key& tag_new, const Teuchos::RCP<TreeVector>& soln_new) {}
+  void CommitStep(const Key& tag_old, const Key& tag_new) {}
 
   // Revert a step from tag_new back to tag_old
   // Default: no work to be done
-  void FailStep(const Key& tag_old, const Teuchos::RCP<TreeVector>& soln_old,
-                const Key& tag_new, const Teuchos::RCP<TreeVector>& soln_new) {}
+  void FailStep(const Key& tag_old, const Key& tag_new) {}
 
   // Calculate any diagnostics at tag, currently used for visualization.
   // Default: no work to be done

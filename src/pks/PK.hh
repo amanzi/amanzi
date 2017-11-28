@@ -89,6 +89,10 @@ The PK interface is then split into the following (nearly) orthogonal concepts:
    This governs much of setup and initialization, checks for validity, and allows
    common functionality to be implemented in a single place.
 
+   These are the most important classification, and this classification sets
+   defaults for many methods.  As a result, it is cleanest if these are the
+   base Mixin, i.e, the second-from-last that derives from PK_Default.
+   
    See PK_MixinLeaf and PK_MixinMPC.
 
 2. Implicit vs Explicit time integration.  This governs the AdvanceStep()
@@ -242,27 +246,22 @@ class PK {
   virtual void ConstructChildren() = 0;
   
   // Setup: forms the DAG, pushes meta-data into State
-  virtual void Setup(const TreeVector& soln) = 0;
+  virtual void Setup() = 0;
   
   // Initialize: initial conditions for owned variables.
   virtual void Initialize() = 0;
 
   // Advance PK from time tag old to time tag new
-  virtual bool AdvanceStep(const Key& tag_old, const Teuchos::RCP<TreeVector>& soln_old,
-                           const Key& tag_new, const Teuchos::RCP<TreeVector>& soln_new) = 0;
+  virtual bool AdvanceStep(const Key& tag_old, const Key& tag_new) = 0;
 
   // Returns validity of the step taken from tag_old to tag_new
-  virtual bool ValidStep(const Key& tag_old, const Teuchos::RCP<TreeVector>& soln_old,
-                         const Key& tag_new, const Teuchos::RCP<TreeVector>& soln_new) = 0;
-
+  virtual bool ValidStep(const Key& tag_old, const Key& tag_new) = 0;
 
   // Do work that can only be done if we know the step was successful.
-  virtual void CommitStep(const Key& tag_old, const Teuchos::RCP<TreeVector>& soln_old,
-                          const Key& tag_new, const Teuchos::RCP<TreeVector>& soln_new) = 0;
+  virtual void CommitStep(const Key& tag_old, const Key& tag_new) = 0;
 
   // Revert a step from tag_new back to tag_old
-  virtual void FailStep(const Key& tag_old, const Teuchos::RCP<TreeVector>& soln_old,
-                        const Key& tag_new, const Teuchos::RCP<TreeVector>& soln_new) = 0;
+  virtual void FailStep(const Key& tag_old, const Key& tag_new) = 0;
 
   // Choose a time step compatible with physics.
   virtual double get_dt() = 0;
@@ -273,37 +272,18 @@ class PK {
   // Mark, as changed, any primary variable evaluator owned by this PK
   virtual void ChangedSolutionPK(const Key& tag) = 0;
 
-  // Ensure consistency between a time integrator's view of data (TreeVector)
-  // and the dag's view of data (dictionary of CompositeVectors).
-  //
-  // Pull data from the state into a TreeVector.  If the TreeVector has no
-  // data, copy pointers.  Otherwise ensure pointers are equal.
-  //
-  // These almost certainly are implemented by default.
-  virtual void StateToSolution(TreeVector& soln, const Key& tag, const Key& suffix) = 0;
-
-
-  // Ensure consistency between a time integrator's view of data (TreeVector)
-  // and the dag's view of data (dictionary of CompositeVectors).
-  //
-  // Push data from a TreeVector into State.  If the State has no data,
-  // require it (allowing time integrators to require intermediate steps,
-  // etc).  If the TreeVector has data and State doesn't, copy pointers.  If
-  // the State does have this data, ensure consistency.
-  //
-  // These almost certainly should use the default implementation.
-  virtual void SolutionToState(TreeVector& soln, const Key& tag, const Key& suffix) = 0;
-  virtual void SolutionToState(const TreeVector& soln, const Key& tag, const Key& suffix) = 0;
-
-  // Copy data, as needed, from one tag to another.
-  virtual void StateToState(const Key& tag_from, const Key& tag_to) = 0;
-  
   // Return PK's name
   virtual std::string name() = 0;
 
   // Accessor for debugger, for use by coupling MPCs
   virtual Teuchos::Ptr<Debugger> debugger() = 0;
 
+  // these methods require data, or move data around, or copy data around, but
+  // are not to be used by clients of PK.  Instead they are used internally by
+  // time integrators.
+  virtual void StateToSolution(TreeVector& soln, const Key& tag, const Key& suffix) = 0;
+  virtual void SolutionToState(const Key& tag, const Key& suffix) = 0;
+  virtual void StateToState(const Key& tag_from, const Key& tag_to) = 0;
   
 };
 

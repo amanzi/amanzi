@@ -38,8 +38,7 @@ class PK_MixinMPCAdvanceStepWeak : public Base_t {
   using Base_t::Base_t;
 
   // Advance PK from time tag old to time tag new
-  bool AdvanceStep(const Key& tag_old, const Teuchos::RCP<TreeVector>& soln_old,
-                   const Key& tag_new, const Teuchos::RCP<TreeVector>& soln_new);
+  bool AdvanceStep(const Key& tag_old, const Key& tag_new);
 
  protected:
   using Base_t::vo_;
@@ -53,13 +52,13 @@ class PK_MixinMPCAdvanceStepWeak : public Base_t {
 // -----------------------------------------------------------------------------
 template <class Base_t>
 bool
-PK_MixinMPCAdvanceStepWeak<Base_t>::AdvanceStep(
-    const Key& tag_old, const Teuchos::RCP<TreeVector>& soln_old,
-    const Key& tag_new, const Teuchos::RCP<TreeVector>& soln_new)
+PK_MixinMPCAdvanceStepWeak<Base_t>::AdvanceStep(const Key& tag_old, const Key& tag_new)
 {
+  // times associated with tags
   double t_old = S_->time(tag_old);
   double t_new = S_->time(tag_new);
 
+  // logging
   Teuchos::OSTab out = vo_->getOSTab();
   if (vo_->os_OK(Teuchos::VERB_HIGH))
     *vo_->os() << "----------------------------------------------------------------" << std::endl
@@ -67,12 +66,10 @@ PK_MixinMPCAdvanceStepWeak<Base_t>::AdvanceStep(
                << " t1 = " << t_new << " h = " << t_new - t_old << std::endl
                << "----------------------------------------------------------------" << std::endl;
 
-  int i = 0;
+  // advance each sequentially, failing all if one fails
   for (auto& pk : this->sub_pks_) {
-    bool fail = pk->AdvanceStep(tag_old, soln_old->SubVector(i),
-            tag_new, soln_new->SubVector(i));
+    bool fail = pk->AdvanceStep(tag_old, tag_new);
     if (fail) return fail;
-    ++i;
   }
   return false;
 }

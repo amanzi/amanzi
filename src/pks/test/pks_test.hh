@@ -114,27 +114,26 @@ class PK_ODE_Explicit : public Base_t {
  public:
   PK_ODE_Explicit(const Teuchos::RCP<Teuchos::ParameterList>& pk_tree,
          const Teuchos::RCP<Teuchos::ParameterList>& global_plist,
-         const Teuchos::RCP<State>& S,
-         const Teuchos::RCP<TreeVectorSpace>& soln_map) :
-      Base_t(pk_tree, global_plist, S, soln_map) {
+         const Teuchos::RCP<State>& S) :
+      Base_t(pk_tree, global_plist, S) {
     dudt_key_ = this->key_ + "_t";
   }
 
-  void Setup(const TreeVector& soln) {
-    Base_t::Setup(soln);
+  void Setup() {
+    Base_t::Setup();
 
     this->S_->template Require<CompositeVector,CompositeVectorSpace>(this->key_, tag_old_, this->key_)
         .SetMesh(this->mesh_)
         ->SetComponent("cell",AmanziMesh::CELL,1);
 
-    this->S_->template Require<CompositeVector,CompositeVectorSpace>(dudt_key_, this->dudt_tag_, dudt_key_)
+    this->S_->template Require<CompositeVector,CompositeVectorSpace>(dudt_key_, this->tag_inter_, dudt_key_)
         .SetMesh(this->mesh_)
         ->SetComponent("cell",AmanziMesh::CELL, 1);
 
     Teuchos::ParameterList plist(dudt_key_);
-    plist.set("tag", this->dudt_tag_);
+    plist.set("tag", this->tag_inter_);
     auto dudt_eval = Teuchos::rcp(new Eval_t(plist));
-    this->S_->SetEvaluator(dudt_key_, this->dudt_tag_, dudt_eval);
+    this->S_->SetEvaluator(dudt_key_, this->tag_inter_, dudt_eval);
   }
 
   void Initialize() {
@@ -144,15 +143,13 @@ class PK_ODE_Explicit : public Base_t {
   }
   
   void Functional(double t, const TreeVector& u, TreeVector& f) {
-    this->S_->set_time(dudt_tag_, t);
-    this->SolutionToState(u, dudt_tag_, "");
-    this->SolutionToState(f, dudt_tag_, "_t");
+    // these calls are here because the explicit ti is not aware that it should call it
+    this->S_->set_time(tag_inter_, t);
+    this->ChangedSolutionPK(tag_inter_);
 
-    // this call is here because the explicit ti is not aware that it should call it
-    this->ChangedSolutionPK(dudt_tag_);
-    
-    this->S_->GetEvaluator(dudt_key_,dudt_tag_)->Update(*this->S_, this->name());
-    this->StateToSolution(f, dudt_tag_, "_t");
+    // evaluate the derivative
+    this->S_->GetEvaluator(dudt_key_,tag_inter_)->Update(*this->S_, this->name());
+    *f.Data() = this->S_->template Get<CompositeVector>(dudt_key_, tag_inter_);
 
     std::cout << std::setprecision(16) << "  At time t = " << t << ": u = " << (*u.Data()->ViewComponent("cell",false))[0][0]
               << ", du/dt = " << (*f.Data()->ViewComponent("cell", false))[0][0] << std::endl;
@@ -160,7 +157,7 @@ class PK_ODE_Explicit : public Base_t {
 
  protected:
   Key dudt_key_;
-  using Base_t::dudt_tag_;
+  using Base_t::tag_inter_;
 
   using Base_t::tag_old_;
   using Base_t::tag_new_;
@@ -173,14 +170,13 @@ class PK_ODE_Implicit : public Base_t {
  public:
   PK_ODE_Implicit(const Teuchos::RCP<Teuchos::ParameterList>& pk_tree,
          const Teuchos::RCP<Teuchos::ParameterList>& global_plist,
-         const Teuchos::RCP<State>& S,
-         const Teuchos::RCP<TreeVectorSpace>& soln_map) :
-      Base_t(pk_tree, global_plist, S, soln_map) {
+         const Teuchos::RCP<State>& S) :
+      Base_t(pk_tree, global_plist, S) {
     dudt_key_ = this->key_ + "_t";
   }
 
-  void Setup(const TreeVector& soln) {
-    Base_t::Setup(soln);
+  void Setup() {
+    Base_t::Setup();
     
     this->S_->template Require<CompositeVector,CompositeVectorSpace>(this->key_, tag_new_, this->key_)
         .SetMesh(this->mesh_)
@@ -204,14 +200,11 @@ class PK_ODE_Implicit : public Base_t {
   
   void Functional(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
                           Teuchos::RCP<TreeVector> u_new, Teuchos::RCP<TreeVector> f) {
-    this->SolutionToState(*u_new, tag_new_, "");
-    this->SolutionToState(*u_old, tag_old_, "");
     ASSERT(std::abs(t_old - S_->time(tag_old_)) < 1.e-12);
     ASSERT(std::abs(t_new - S_->time(tag_new_)) < 1.e-12);
-    this->SolutionToState(*f, tag_new_, "_t");
 
     this->S_->GetEvaluator(dudt_key_,tag_new_)->Update(*this->S_, this->name());
-    this->StateToSolution(*f, tag_new_, "_t");
+    *f->Data() = this->S_->template Get<CompositeVector>(dudt_key_, tag_new_);
 
     std::cout << "  At time t = " << t_new << ": u = " << (*u_new->Data()->ViewComponent("cell",false))[0][0]
               << ", du/dt = " << (*f->Data()->ViewComponent("cell", false))[0][0] << std::endl;
@@ -238,7 +231,6 @@ class PK_ODE_Implicit : public Base_t {
 
   void UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> up, double h) {
     h_ = h;
-    this->SolutionToState(*up, tag_new_, "");
     this->S_->GetEvaluator(dudt_key_,tag_new_)->UpdateDerivative(*this->S_, this->name(), this->key_);
   }
 

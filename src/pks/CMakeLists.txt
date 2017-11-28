@@ -98,10 +98,10 @@ if (BUILD_TESTS)
                        SOURCE test/Main.cc test/pks_mpc.cc
                        LINK_LIBS ${pks_test_link_libs} ${UnitTest_LIBRARIES} ${pks_tpl_libs})
 
-       add_amanzi_test(pks_ode pks_ode
-                    KIND unit
-                    SOURCE test/Main.cc test/pks_ode.cc
-                    LINK_LIBS ${pks_test_link_libs} ${UnitTest_LIBRARIES} ${pks_tpl_libs})
+       # add_amanzi_test(pks_ode pks_ode
+       #              KIND unit
+       #              SOURCE test/Main.cc test/pks_ode.cc
+       #              LINK_LIBS ${pks_test_link_libs} ${UnitTest_LIBRARIES} ${pks_tpl_libs})
 
 
                   
