@@ -1,9 +1,24 @@
+/* -*-  mode: c++; indent-tabs-mode: nil -*- */
+
+/*
+  This is a semi weak mpc which couples subsurface columns (no lateral flow) to surface_star system.
+  surface_star system distributes water and energy and updates columns
+  
+  Algorithm:
+  1 - Advance surface_star system (Pres*, Temp*)
+  2 - Update subsurface columns' pressures and temperatures (Pres, Temp)
+  3 - Advance the subsurface columns. Just loop over all the columns.
+  4 - Update the surface_star system
+  5 - commit state if timestep was successfull
+  6 - take next timestep and repeart (steps 1-5)
+  
+  Authors: Ahmad Jan (jana@ornl.gov)
+*/
+
 #ifndef WEAK_MPC_SEMI_COUPLED_DEFORM_HH_
 #define WEAK_MPC_SEMI_COUPLED_DEFORM_HH_
 
-//#include "pk_physical_bdf_base.hh"
 #include "pk_physical_bdf_default.hh"
-//#include "weak_mpc.hh"
 #include "mpc.hh"
 #include "PK.hh"
 
@@ -24,9 +39,6 @@ class WeakMPCSemiCoupledDeform : public MPC<PK> {
   virtual void Setup(const Teuchos::Ptr<State>& S);
   virtual void Initialize(const Teuchos::Ptr<State>& S);
 
-  //  void generalize_inputspec(const Teuchos::Ptr<State>& S);
-  bool CoupledSurfSubsurf3D(double t_old, double t_new, bool reinit);
-
   bool CoupledSurfSubsurfColumns(double t_old, double t_new, bool reinit);
   
   double FindVolumetricHead(double d, double delta_max, double delta_ex);
@@ -39,9 +51,7 @@ private :
   static unsigned flag_star, flag_star_surf;
   Key coupling_key_ ;
   bool subcycle_key_ ;
-  
-
-  bool sg_model_;
+  bool sg_model_, dynamic_sg_model_;
 };
 
   

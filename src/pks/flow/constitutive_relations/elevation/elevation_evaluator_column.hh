@@ -23,8 +23,8 @@ Example:
 
 .. code-block:: xml
 
-  <ParameterList name="elevation">
-    <Parameter name="evaluator type" type="string" value="elevation evaluator"/>
+  <ParameterList name="surface_star-elevation">
+    <Parameter name="field evaluator type" type="string" value="column elevation"/>
   </ParameterList>
 
 */

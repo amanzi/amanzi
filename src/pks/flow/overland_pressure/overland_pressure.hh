@@ -167,6 +167,8 @@ protected:
 
   // boundary condition members
   virtual void UpdateBoundaryConditions_(const Teuchos::Ptr<State>& S);
+  virtual void ApplyBoundaryConditions_(const Teuchos::Ptr<CompositeVector>& u,
+          const Teuchos::Ptr<const CompositeVector>& elev);
 
   virtual void FixBCsForOperator_(const Teuchos::Ptr<State>& S);
   virtual void FixBCsForPrecon_(const Teuchos::Ptr<State>& S);
@@ -242,6 +244,7 @@ protected:
   // boundary condition data
   Teuchos::RCP<Functions::BoundaryFunction> bc_zero_gradient_;
   Teuchos::RCP<Functions::BoundaryFunction> bc_head_;
+  Teuchos::RCP<Functions::BoundaryFunction> bc_pressure_;
   Teuchos::RCP<Functions::BoundaryFunction> bc_flux_;
   Teuchos::RCP<Functions::BoundaryFunction> bc_seepage_head_;
   Teuchos::RCP<Functions::BoundaryFunction> bc_seepage_pressure_;
