@@ -99,16 +99,15 @@ The PK interface is then split into the following (nearly) orthogonal concepts:
    method, the construction of a time integrator, and the interface composition
    with Explicit_TI::fnBase and BDFFnBase.
 
-   See PK_MixinImplicit and PK_MixinExplicit.
+   See PK_MixinImplicit and PK_MixinExplicit
 
 3. Subcycling.  Both explicit and implicit PKs may be subcycled, but this
    requires extra temporary/internal storage, etc.
 
    See PK_MixinImplicitSubcyled and PK_MixinExplicitSubcycled
 
-3. get_dt().  Is an internal dt stored, is dt the min of all children, or is a
+4. get_dt().  Is an internal dt stored, is dt the min of all children, or is a
    special-purpose coupler in charge of this functionality?
-
 
 Currently these are the concepts implemented here, but it is very easy for
 developers to introduce new concepts and provide mixins implementing those
@@ -173,7 +172,6 @@ and would be typedef'd:
 typedef PK_Implicit_Adaptor<PK_Richards<PK_MixinImplicit<PK_MixinLeaf<PK_Default> > > > PK_Richards_t;
 
 
-
 This concepts-based design is very extensible.  For instance, a physics
 library developer might want to make all of their physics PKs able to be
 limited to a max change in a given timestep as a form of error control.  They
@@ -199,7 +197,7 @@ and those that are not and assume that all Mixins implement this method.
    effectively assume that there is one Mixin class that
    does the work.  The slight exception to this is AdvanceStep(), in which a
    subcyling Mixin may call a non-subcycling Mixin for Advancing the internal,
-   subcycled step.
+   subcycled step.  These replace the default implementation.
 
 2. Shared methods:
     - Setup(),
@@ -214,9 +212,9 @@ and those that are not and assume that all Mixins implement this method.
    functionality for Setup is the combined functionality.  These shared
    methods MUST then be implemented in PK_Default, as they must have a
    bottom-most implementation.  One of the key concepts of Mixins is that, if
-   Mixin concepts are orthogonal, then order shouldn't matter too much.
+   Mixin concepts are orthogonal, then order shouldn't matter too much.  These
+   enhance the default implementation.
 
-Note that this is a work in progress.   
 */
 
 
@@ -278,15 +276,24 @@ class PK {
   // Accessor for debugger, for use by coupling MPCs
   virtual Teuchos::Ptr<Debugger> debugger() = 0;
 
-  // these methods require data, or move data around, or copy data around, but
-  // are not to be used by clients of PK.  Instead they are used internally by
-  // time integrators.
+  // Builds a TreeVector from the impled PK tree and data in State, at tag.
+  // Each component is optionally suffixed (usually as "_t") to get other
+  // vectors (usually the time derivative for explicit PKs.
   virtual void StateToSolution(TreeVector& soln, const Key& tag, const Key& suffix) = 0;
+
+  // Issue Require() calls to State for a TreeVector to be formed at this tag.
+  // This is how time integrators get work space they they need in the dag.
   virtual void SolutionToState(const Key& tag, const Key& suffix) = 0;
+
+  // Copy anything needed from one tag to another.  Typically this is the
+  // primary variable, but may also be conserved quantities used in DAEs, etc.
   virtual void StateToState(const Key& tag_from, const Key& tag_to) = 0;
   
 };
 
+//
+// Combines the PK interface with the BDF implicit function interface.
+//
 template<typename Vector=TreeVector>
 class PK_Implicit : public PK,
                public BDFFnBase<Vector> {
@@ -294,6 +301,9 @@ class PK_Implicit : public PK,
   virtual ~PK_Implicit() = default;
 };
 
+//
+// Combines the PK interface with the Explicit function interface
+//
 template<typename Vector=TreeVector>
 class PK_Explicit : public PK,
                     public Explicit_TI::fnBase<Vector> {
