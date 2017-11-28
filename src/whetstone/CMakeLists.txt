@@ -50,6 +50,7 @@ add_amanzi_library(whetstone
                           Polynomial.cc VectorPolynomial.cc
                           MeshMaps.cc
                           MeshMaps_FEM.cc MeshMaps_VEM.cc
+                          ProjectorH1.cc
                    HEADERS DenseMatrix.hh DenseVector.hh
                            DG_Modal.hh
                            lapack.hh
@@ -66,6 +67,7 @@ add_amanzi_library(whetstone
                            Polynomial.hh VectorPolynomial.hh Tensor.hh
                            MeshMaps.hh
                            MeshMaps_FEM.hh MeshMaps_VEM.hh
+                           ProjectorH1.hh
                            WhetStoneDefs.hh
                            WhetStone_typedefs.hh
                    LINK_LIBS geometry mesh error_handling ${Epetra_LIBRARIES})

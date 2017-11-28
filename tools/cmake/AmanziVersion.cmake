@@ -38,13 +38,13 @@ if ( (EXISTS ${CMAKE_SOURCE_DIR}/.git/) AND (GIT_FOUND) )
                   ERROR_VARIABLE err
                   OUTPUT_STRIP_TRAILING_WHITESPACE
                   ERROR_STRIP_TRAILING_WHITESPACE)
-  if(err_occurred)
+  if (err_occurred)
     message(WARNING "Error executing git:\n ${cmd}\n${err}")
     set(cmd_output cmd_output-NOTFOUND)
     exit()
   endif()
 
-  message(STATUS ">>>> JDM: AMANZI_GIT_STATUS:      ${AMANZI_GIT_STATUS}")
+  # message(STATUS ">>>> JDM: AMANZI_GIT_STATUS:      ${AMANZI_GIT_STATUS}")
 
   # Put the status in a list
   STRING(REPLACE "\n" ";" AMANZI_GIT_STATUS_LIST ${AMANZI_GIT_STATUS})

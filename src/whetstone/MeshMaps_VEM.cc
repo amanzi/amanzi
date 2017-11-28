@@ -29,7 +29,8 @@ void MeshMaps_VEM::VelocityCell(
     int c, const std::vector<VectorPolynomial>& vf, VectorPolynomial& vc) const
 {
   // LeastSquareProjector_Cell_(1, c, vf, vc);
-  HarmonicProjectorH1_Cell(c, vf, vc);
+  AmanziGeometry::Point p0(mesh1_->cell_centroid(c) - mesh0_->cell_centroid(c));
+  projector.HarmonicP0_Cell(c, p0, vf, vc);
 }
 
 
@@ -56,7 +57,8 @@ void MeshMaps_VEM::VelocityFace(int f, VectorPolynomial& vf) const
       ve.push_back(v);
     }
 
-    HarmonicProjectorH1_Face(f, ve, vf);
+    AmanziGeometry::Point p0(mesh1_->face_centroid(f) - mesh0_->face_centroid(f));
+    projector.HarmonicP0_Face(f, p0, ve, vf);
   }
 }
 

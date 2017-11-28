@@ -24,6 +24,7 @@
 #include "DenseMatrix.hh"
 #include "MeshMaps.hh"
 #include "Polynomial.hh"
+#include "ProjectorH1.hh"
 #include "Tensor.hh"
 #include "WhetStone_typedefs.hh"
 
@@ -32,9 +33,13 @@ namespace WhetStone {
 
 class MeshMaps_VEM : public MeshMaps { 
  public:
-  MeshMaps_VEM(Teuchos::RCP<const AmanziMesh::Mesh> mesh) : MeshMaps(mesh) {};
+  MeshMaps_VEM(Teuchos::RCP<const AmanziMesh::Mesh> mesh) :
+      MeshMaps(mesh),
+      projector(mesh) {};
   MeshMaps_VEM(Teuchos::RCP<const AmanziMesh::Mesh> mesh0,
-               Teuchos::RCP<const AmanziMesh::Mesh> mesh1) : MeshMaps(mesh0, mesh1) {};
+               Teuchos::RCP<const AmanziMesh::Mesh> mesh1) :
+      MeshMaps(mesh0, mesh1),
+      projector(mesh0) {};
   ~MeshMaps_VEM() {};
 
   // Maps
@@ -75,6 +80,9 @@ class MeshMaps_VEM : public MeshMaps {
   // old deprecated methods
   void LeastSquareProjector_Cell_(int order, int c, const std::vector<VectorPolynomial>& vf,
                                   VectorPolynomial& vc) const;
+
+  // elliptic projectors
+  ProjectorH1 projector;
 };
 
 }  // namespace WhetStone
