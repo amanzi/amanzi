@@ -33,8 +33,8 @@ list(REMOVE_DUPLICATES cpp_flag_list)
 build_whitespace_string(hdf5_cppflags ${cpp_flags_list})
 
 # Add
-if ( ( NOT BUILD_MPI) AND ( NOT MPI_WRAPPERS_IN_USE ) AND (MPI_C_LIBRARIES) )
-  build_whitespace_string(hdf5_ldflags -L${TPL_INSTALL_PREFIX}/lib ${MPI_C_LIBRARIES} ${CMAKE_EXE_LINKER_FLAGS} )
+if (( NOT BUILD_MPI) AND ( NOT MPI_WRAPPERS_IN_USE ) AND (MPI_C_LIBRARIES))
+  build_whitespace_string(hdf5_ldflags -L${TPL_INSTALL_PREFIX}/lib ${MPI_C_LIBRARIES} ${CMAKE_EXE_LINKER_FLAGS})
 else()
   build_whitespace_string(hdf5_ldflags -L${TPL_INSTALL_PREFIX}/lib ${CMAKE_EXE_LINKER_FLAGS} )
 endif()  

@@ -98,6 +98,7 @@
 #  0.94.11       - update MSTK to 3.0.3 (critical bug fixes)
 #                - update NetCDF to 4.5.0
 #	         - update NetCDF-Fortran to 4.4.4
+#	         - update curl to 7.56.1
 
 include(CMakeParseArguments)
 
@@ -189,13 +190,13 @@ set(OpenMPI_MD5_SUM        e58a1ea7b8af62453aaa0ddaee5f26a0)
 # TPL: CURL
 #
 set(CURL_VERSION_MAJOR 7)
-set(CURL_VERSION_MINOR 37)
-set(CURL_VERSION_PATCH 0)
+set(CURL_VERSION_MINOR 56)
+set(CURL_VERSION_PATCH 1)
 set(CURL_VERSION ${CURL_VERSION_MAJOR}.${CURL_VERSION_MINOR}.${CURL_VERSION_PATCH})
-set(CURL_URL_STRING     ${AMANZI_TPLS_DOWNLOAD_URL})
-set(CURL_ARCHIVE_FILE   curl-${CURL_VERSION}.tar.bz2)
-set(CURL_SAVEAS_FILE    ${CURL_ARCHIVE_FILE})
-set(CURL_MD5_SUM        7dda0cc2e4136f78d5801ac347be696b)
+set(CURL_URL_STRING     "https://github.com/curl/curl/archive")
+set(CURL_ARCHIVE_FILE   curl-${CURL_VERSION_MAJOR}_${CURL_VERSION_MINOR}_${CURL_VERSION_PATCH}.tar.gz)
+set(CURL_SAVEAS_FILE    curl-${CURL_VERSION}.tar.gz)
+set(CURL_MD5_SUM        48c0db0d7b1407e19c51e8ef4f798d78)
 
 #
 # TPL: zlib
