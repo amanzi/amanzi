@@ -24,9 +24,9 @@ system_arch=`uname -m`
 print_exit=${FALSE}
 
 # Known compiler lists
-known_c_compilers="mpicc cc gcc icc clang"
-known_cxx_compilers="mpicxx mpiCC CC g++ icpc clang++"
-known_fortran_compilers="mpif90 ftn gfortran ifort"
+known_c_compilers="cc gcc icc clang"
+known_cxx_compilers="CC g++ icpc clang++"
+known_fortran_compilers="ftn gfortran ifort"
 
 # Directory information
 start_directory=$PWD
@@ -582,7 +582,7 @@ function parse_argv()
 
       --with-mpi=*)
                  tmp=`parse_option_with_equal "${opt}" 'with-mpi'`
-                 mpi_root_dir=`make_fullpath $tmp`
+                 mpi_root_dir=$tmp
                  ;;
 
       --with-xsdk=*)
