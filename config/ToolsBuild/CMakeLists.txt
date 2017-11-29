@@ -18,7 +18,9 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 # ############################################################################ #
 # Define project name (ToolsBuild_SOURCE_DIR and ToolsBuild_BINARY_DIR)
 # ############################################################################ #
-message(STATUS "\n-- CMake: Configuring Amanzi Tools build/install.\n--")
+message(STATUS "------------------------------------------------")
+message(STATUS "\n-- CMake: Configuring Amanzi Tools build/install\n--")
+message(STATUS "------------------------------------------------")
 project(ToolsBuild C CXX Fortran)
 
 

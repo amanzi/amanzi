@@ -20,7 +20,9 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 # ############################################################################ #
 # Define project name (SuperBuild_SOURCE_DIR and SuperBuild_BINARY_DIR)
 # ############################################################################ #
+message(STATUS "\n------------------------------------------------")
 message(STATUS "\n-- CMake: Configuring Amanzi TPLs build/install.\n--")
+message(STATUS "------------------------------------------------")
 project(SuperBuild C CXX Fortran)
 
 # ############################################################################ #

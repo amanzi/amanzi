@@ -30,7 +30,8 @@ known_fortran_compilers="mpif90 ftn gfortran ifort"
 
 # Directory information
 start_directory=$PWD
-amanzi_source_dir=$(cd $(dirname "$0")/;pwd)
+#amanzi_source_dir=$(cd $(dirname "$0")/;pwd)
+amanzi_source_dir=/Users/lipnikov/ASCEM/amanzi-orig
 
 # ASCEM Web address
 ascem_protocol=https
@@ -335,8 +336,9 @@ Tool definitions:
   --with-git=FILE            FILE is the git binary ['"${git_binary}"']
   --with-curl=FILE           FILE is the CURL binary ['"${curl_binary}"']
 
-  --with-mpi=DIR             use MPI installed in DIR. Will search for MPI 
-                             compiler wrappers under this directory. ['"${mpi_root_dir}"']
+  --with-mpi=DIR             use MPI installed in DIR ['"${mpi_root_dir}"'].
+                             Will search for MPI compiler wrappers under this directory. It this
+                             option is missing, OpenMPI will be build using the provided compiler.
   --with-xsdk=DIR            use libraries already available in xSDK installation in lieu of
                              downloading and installing them individually. ['"${xsdk_root_dir}"']
 
@@ -362,13 +364,14 @@ Directory and file names:
   --tpl-download-dir=DIR         direct downloads of Amanzi TPLs to DIR
                                  ['"${tpl_download_dir}"']
 
-  --tools-install-prefix=DIR     install Amanzi Tools in tree rooted at DIR
-                                 ['"${tools_install_prefix}"']
+  --tools-install-prefix=DIR     install Amanzi tools in tree rooted at DIR
+                                 ['"${tools_install_prefix}"']. The list of tools includes
+                                 currently OpenMPI.
   
-  --tools-build-dir=DIR          build Amanzi Tools in DIR
+  --tools-build-dir=DIR          build Amanzi tools in DIR
                                  ['"${tools_build_dir}"']
 
-  --tools-download-dir=DIR       direct downloads of Amanzi Tools to DIR
+  --tools-download-dir=DIR       direct downloads of Amanzi tools to DIR
                                  ['"${tools_download_dir}"']
 '
 }
@@ -1281,17 +1284,25 @@ if [ ! -n "${mpi_root_dir}" ]; then
   fi
       
   tools_config_file=${tools_install_prefix}/share/cmake/amanzi-tools-config.cmake
-  mpi_root_dir=${tools_build_dir}
+  mpi_root_dir=${tools_install_prefix}
+  build_c_compiler=${tools_install_prefix}/bin/mpicc
+  build_cxx_compiler=${tools_install_prefix}/bin/mpicxx
+  build_fort_compiler=${tools_install_prefix}/bin/mpif90
       
   cd ${pwd_save}
       
-  status_message "Tools build complete"
+  status_message "Tools build complete: new MPI root=${mpi_root_dir}"
+  status_message "  new MPI root=${mpi_root_dir}"
+  status_message "  new C compiler=${build_c_compiler}"
   status_message "For future Amanzi builds use ${tools_config_file}"
 fi
   
 
 # Check the MPI root value 
 check_mpi_root
+
+# Define the compilers
+check_compilers
 
 
 # ---------------------------------------------------------------------------- #
