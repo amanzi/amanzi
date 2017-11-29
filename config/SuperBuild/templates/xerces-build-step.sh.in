@@ -4,8 +4,8 @@
 # Replaces each @VAR@ with value of ${VAR}
 
 # Ensure a uniform build with the correct compiler
-export CC=@CMAKE_C_COMPILER_USE@
-export CXX=@CMAKE_CXX_COMPILER_USE@
+export CC=@CMAKE_C_COMPILER@
+export CXX=@CMAKE_CXX_COMPILER@
 
 cd @XERCES_source_dir@
 # Backup the original Makefile

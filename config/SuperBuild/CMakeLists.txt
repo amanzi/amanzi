@@ -118,8 +118,9 @@ if (NOT MPI_WRAPPERS_IN_USE)
   See previous error messages to determine missing compiler.")
 endif()
 
-
+# Include the TPL version information
 include(${SuperBuild_SOURCE_DIR}/TPLVersions.cmake)
+
 # prepare the version numbers file
 set(TPL_VERSIONS_INCLUDE_FILE ${CMAKE_BINARY_DIR}/tpl_versions.h)
 file(WRITE ${TPL_VERSIONS_INCLUDE_FILE} "")
@@ -132,15 +133,11 @@ amanzi_tpl_version_write(FILENAME ${TPL_VERSIONS_INCLUDE_FILE}
 # ############################################################################ #
 # Build options
 # ############################################################################ #
-
-message(STATUS "Setting build type")
 set(SuperBuild_BUILD_TYPE_DFLT "Release")
 if (NOT CMAKE_BUILD_TYPE) 
   set(CMAKE_BUILD_TYPE ${SuperBuild_BUILD_TYPE_DFLT})
 endif()
 message(STATUS "Setting build type -- ${CMAKE_BUILD_TYPE}")
-
-message(STATUS ">>> JDM: L142  - CMAKE_C_FLAGS = ${CMAKE_C_FLAGS}")
 
 # Download directory TPL_DOWNLOAD_DIR
 set(TPL_DOWNLOAD_DIR_DFLT ${SuperBuild_BINARY_DIR}/Downloads)
@@ -219,8 +216,6 @@ option(ENABLE_XSDK "Use xSDK Libraries" FALSE)
 # Use Spack package manager
 option(ENABLE_SPACK "Build with the Spack package manager where appropriate" FALSE)
 option(BUILD_SPACK "Clone spack from git and treat as a TPL that needs to be built" FALSE)
-
-message(STATUS ">>> JDM: L220  - CMAKE_C_FLAGS = ${CMAKE_C_FLAGS}")
 
 
 # ############################################################################ #
@@ -351,23 +346,6 @@ if (NOT MPI_WRAPPERS_IN_USE AND NOT BUILD_MPI)
     endif()  
   endforeach()
 endif()
-
-message(STATUS ">>> JDM: L352  - CMAKE_C_FLAGS = ${CMAKE_C_FLAGS}")
-
-
-# --- Define which compilers to use in MPI dependent projects
-#     If building MPI as an external project use MPI_* compiler
-#     otherwise use the CMAKE_* compilers which are either
-#     MPI compiler wrappers OR have the neccessary flags to build.
-if (BUILD_MPI)
-  set(CMAKE_C_COMPILER_USE       ${MPI_C_COMPILER})
-  set(CMAKE_CXX_COMPILER_USE     ${MPI_CXX_COMPILER})
-  set(CMAKE_Fortran_COMPILER_USE ${MPI_Fortran_COMPILER})
-else()  
-  set(CMAKE_C_COMPILER_USE       ${CMAKE_C_COMPILER})
-  set(CMAKE_CXX_COMPILER_USE     ${CMAKE_CXX_COMPILER})
-  set(CMAKE_Fortran_COMPILER_USE ${CMAKE_Fortran_COMPILER})
-endif()  
 
 # --- Amanzi uses MPI_EXEC* not MPIEXEC* variables. This allows the user to 
 #     override the find package results.
@@ -516,9 +494,6 @@ add_custom_target(.NOTPARALLEL)
 set_property(DIRECTORY PROPERTY
              EP_STEP_TARGETS download patch configure build install test)
 
-# Include the TPL version information
-include(${SuperBuild_SOURCE_DIR}/TPLVersions.cmake)
-
 # Include the CMake module ExternalProject
 include(ExternalProject)
 
@@ -536,12 +511,6 @@ endif()
 if (ENABLE_XSDK)    
   include(${SuperBuild_BUILD_FILES_DIR}/Build_xSDK.cmake)
   include(BuildLibraryName)
-endif()
-
-# MPI
-if (BUILD_MPI AND NOT ENABLE_XSDK)
-  include(${SuperBuild_BUILD_FILES_DIR}/Build_OpenMPI.cmake)
-  set(MPI_PROJECT OpenMPI)
 endif()
 
 # ZLIB
@@ -923,11 +892,11 @@ if (BUILD_Amanzi)
     UPDATE_COMMAND ""
     CMAKE_ARGS	${Amanzi_CMAKE_ARGS}
                 ${Amanzi_CMAKE_C_COMPILER_ARGS}
-                -DCMAKE_C_COMPILER:FILEPATH=${CMAKE_C_COMPILER_USE}
+                -DCMAKE_C_COMPILER:FILEPATH=${CMAKE_C_COMPILER}
 			    ${Amanzi_CMAKE_CXX_COMPILER_ARGS}
-                -DCMAKE_CXX_COMPILER:FILEPATH=${CMAKE_CXX_COMPILER_USE}
+                -DCMAKE_CXX_COMPILER:FILEPATH=${CMAKE_CXX_COMPILER}
 			    ${Amanzi_CMAKE_Fortran_COMPILER_ARGS}
-                -DCMAKE_Fortran_COMPILER:FILEPATH=${CMAKE_Fortran_COMPILER_USE}
+                -DCMAKE_Fortran_COMPILER:FILEPATH=${CMAKE_Fortran_COMPILER}
     INSTALL_DIR ${Amanzi_INSTALL_PREFIX} )
 endif()        
                

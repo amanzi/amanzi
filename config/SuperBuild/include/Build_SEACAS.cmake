@@ -76,11 +76,11 @@ set(SEACAS_CMAKE_CACHE_ARGS
                     -DCMAKE_INSTALL_PREFIX:FILEPATH=<INSTALL_DIR>
                     -DCMAKE_BUILD_TYPE:STRING=${CMAKE_BUILD_TYPE}
                     ${Amanzi_CMAKE_C_COMPILER_ARGS}
-                    -DCMAKE_C_COMPILER:FILEPATH=${CMAKE_C_COMPILER_USE}
+                    -DCMAKE_C_COMPILER:FILEPATH=${CMAKE_C_COMPILER}
                     ${Amanzi_CMAKE_CXX_COMPILER_ARGS}
-                    -DCMAKE_CXX_COMPILER:FILEPATH=${CMAKE_CXX_COMPILER_USE}
+                    -DCMAKE_CXX_COMPILER:FILEPATH=${CMAKE_CXX_COMPILER}
                     ${Amanzi_CMAKE_Fortran_COMPILER_ARGS}
-                    -DCMAKE_Fortran_COMPILER:FILEPATH=${CMAKE_Fortran_COMPILER_USE}
+                    -DCMAKE_Fortran_COMPILER:FILEPATH=${CMAKE_Fortran_COMPILER}
                     -DCMAKE_EXE_LINKER_FLAGS:STRING=${seacas_lflags}
                     -DBUILD_SHARED_LIBS:BOOL=${BUILD_SHARED_LIBS}
 		    -DSEACASProj_ENABLE_ALL_PACKAGES:BOOL=FALSE

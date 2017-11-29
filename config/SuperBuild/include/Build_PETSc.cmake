@@ -170,9 +170,9 @@ ExternalProject_Add(${PETSc_BUILD_TARGET}
                               <SOURCE_DIR>/configure
                                           ${CONFIG_PETSC_SHARED}
                                           --prefix=<INSTALL_DIR>
-                                          --with-cc=${CMAKE_C_COMPILER_USE}
-                                          --with-cxx=${CMAKE_CXX_COMPILER_USE}
-                                          --with-fc=${CMAKE_Fortran_COMPILER_USE}
+                                          --with-cc=${CMAKE_C_COMPILER}
+                                          --with-cxx=${CMAKE_CXX_COMPILER}
+                                          --with-fc=${CMAKE_Fortran_COMPILER}
                                           --CFLAGS=${petsc_cflags}
                                           --CXXFLAGS=${petsc_cxxflags}
                                           --without-x

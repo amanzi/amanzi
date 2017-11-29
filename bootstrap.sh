@@ -78,7 +78,6 @@ mpi_root_dir=
 
 # TPL (Third Party Libraries)
 
-
 # Spack
 Spack=$FALSE
 Spack_binary=`which spack`
@@ -87,6 +86,11 @@ build_Spack=$FALSE
 # xSDK installation (optional)
 xsdk=$FALSE #default is to not use
 xsdk_root_dir=
+
+# Tools build parameters
+tools_build_dir=${dflt_build_prefix}/build/tools
+tools_download_dir=${tools_build_dir}/Downloads
+tools_install_prefix=${dflt_install_prefix}/install/tools
 
 # Point to a configuration file
 tpl_config_file=
@@ -357,6 +361,15 @@ Directory and file names:
 
   --tpl-download-dir=DIR         direct downloads of Amanzi TPLs to DIR
                                  ['"${tpl_download_dir}"']
+
+  --tools-install-prefix=DIR     install Amanzi Tools in tree rooted at DIR
+                                 ['"${tools_install_prefix}"']
+  
+  --tools-build-dir=DIR          build Amanzi Tools in DIR
+                                 ['"${tools_build_dir}"']
+
+  --tools-download-dir=DIR       direct downloads of Amanzi Tools to DIR
+                                 ['"${tools_download_dir}"']
 '
 }
 
@@ -419,6 +432,9 @@ Directories:
     tpl_install_prefix     ='"${tpl_install_prefix}"'
     tpl_build_dir          ='"${tpl_build_dir}"'
     tpl_download_dir       ='"${tpl_download_dir}"'
+    tools_install_prefix   ='"${tools_install_prefix}"'
+    tools_build_dir        ='"${tools_build_dir}"'
+    tools_download_dir     ='"${tpl_download_dir}"'
     
 '    
 }  
@@ -580,6 +596,21 @@ function parse_argv()
                  tpl_config_file=`make_fullpath $tmp`
                  ;;
 
+      --tools-install-prefix=*)
+                 tmp=`parse_option_with_equal "${opt}" 'tools-install-prefix'`
+                 tools_install_prefix=`make_fullpath $tmp`
+                 ;;
+
+      --tools-build-dir=*)
+                 tmp=`parse_option_with_equal "${opt}" 'tools-build-dir'`
+                 tools_build_dir=`make_fullpath $tmp`
+                 ;;
+
+      --tools-download-dir=*)
+                 tmp=`parse_option_with_equal "${opt}" 'tools-download-dir'`
+                 tools_download_dir=`make_fullpath $tmp`
+                 ;;
+      
       --print)
                  print_exit=${TRUE}
 		 ;;
@@ -1062,11 +1093,11 @@ function check_tools
   # Check CMake and CTest
   if [ -z "${cmake_binary}" ]; then 
     status_message "CMake not defined. Will build"
-    build_cmake ${tpl_build_dir} ${tpl_install_prefix} ${tpl_download_dir} 
+    build_cmake ${tools_build_dir} ${tools_install_prefix} ${tools_download_dir} 
   fi
   if [ ! -e "${cmake_binary}" ]; then
     error_message "CMake binary does not exist. Will build."
-    build_cmake ${tpl_build_dir} ${tpl_install_prefix} ${tpl_download_dir} 
+    build_cmake ${tools_build_dir} ${tools_install_prefix} ${tools_download_dir} 
   else
     # CMake binary does exist, not check the version number
     ver_string=`${cmake_binary} --version | sed 's/cmake version[ ]*//'`
@@ -1075,7 +1106,7 @@ function check_tools
     result=$?
     if [ ${result} -eq 2 ]; then
       status_message "CMake version is less than required version. Will build CMake version 2.8.8"
-      build_cmake ${tpl_build_dir} ${tpl_install_prefix} ${tpl_download_dir} 
+      build_cmake ${tools_build_dir} ${tools_install_prefix} ${tools_download_dir} 
     fi
   fi
   if [ ! -e "${ctest_binary}" ]; then
@@ -1110,6 +1141,16 @@ function define_build_directories
   # The TPL download directory
   if [ ! -e "${tpl_download_dir}" ]; then
     mkdir_now "${tpl_download_dir}"
+  fi
+
+  # Tools build directory
+  if [ ! -e "${tools_build_dir}" ]; then
+    mkdir_now "${tools_build_dir}"
+  fi
+
+  # Tools download directory
+  if [ ! -e "${tools_download_dir}" ]; then
+    mkdir_now "${tools_download_dir}"
   fi
 
   status_message "Build directories ready"
@@ -1206,7 +1247,54 @@ if [ ! -z "${amanzi_branch}" ]; then
   git_change_branch ${amanzi_branch}
 fi
 
+
+# ---------------------------------------------------------------------------- #
+# Configure tools
+# ---------------------------------------------------------------------------- #
+if [ ! -z "${mpi_root_dir}" ]; then
+  cd ${tools_build_dir}
+  ${cmake_binary} \
+      -DCMAKE_C_FLAGS:STRING="${build_c_flags}" \
+      -DCMAKE_CXX_FLAGS:STRING="${build_cxx_flags}" \
+      -DCMAKE_Fortran_FLAGS:STRING="${build_fort_flags}" \
+      -DCMAKE_EXE_LINKER_FLAGS:STRING="${build_link_flags}" \
+      -DCMAKE_BUILD_TYPE:STRING=${build_type} \
+      -DCMAKE_C_COMPILER:STRING=${build_c_compiler} \
+      -DCMAKE_CXX_COMPILER:STRING=${build_cxx_compiler} \
+      -DCMAKE_Fortran_COMPILER:STRING=${build_fort_compiler} \
+      -DTOOLS_INSTALL_PREFIX:STRING=${tools_install_prefix} \
+      -DTOOLS_DOWNLOAD_DIR:FILEPATH=${tools_download_dir} \
+      -DTOOLS_PARALLEL_JOBS:INT=${parallel_jobs} \
+      ${tools_build_src_dir}
+
+  if [ $? -ne 0 ]; then
+    error_message "Failed to build tools"
+    exit_now 30
+  fi
+  status_message "Tools configure complete"
+  
+  # Tools install
+  cd ${tools_build_dir}
+  make install
+  if [ $? -ne 0 ]; then
+    error_message "Failed to install configure script"
+    exit_now 30
+  fi
+      
+  tools_config_file=${tools_install_prefix}/share/cmake/amanzi-tools-config.cmake
+  mpi_root_dir=${tools_build_dir}
+      
+  cd ${pwd_save}
+      
+  status_message "Tools build complete"
+  status_message "For future Amanzi builds use ${tools_config_file}"
+      
+fi
+  
+
+# ---------------------------------------------------------------------------- #
 # Now build the TPLs if the config file is not defined
+# ---------------------------------------------------------------------------- #
 if [ -z "${tpl_config_file}" ]; then
 
   # Return to this directory once the TPL build is complete
@@ -1286,18 +1374,18 @@ if [ -z "${tpl_config_file}" ]; then
   
   # TPL Install
   cd ${tpl_build_dir}
-    make install
-    if [ $? -ne 0 ]; then
-      error_message "Failed to install configure script"
-      exit_now 30
-    fi
+  make install
+  if [ $? -ne 0 ]; then
+    error_message "Failed to install configure script"
+    exit_now 30
+  fi
       
-    tpl_config_file=${tpl_install_prefix}/share/cmake/amanzi-tpl-config.cmake
+  tpl_config_file=${tpl_install_prefix}/share/cmake/amanzi-tpl-config.cmake
       
-    cd ${pwd_save}
+  cd ${pwd_save}
       
-    status_message "TPL build complete"
-    status_message "For future Amanzi builds use ${tpl_config_file}"
+  status_message "TPL build complete"
+  status_message "For future Amanzi builds use ${tpl_config_file}"
       
 else 
 

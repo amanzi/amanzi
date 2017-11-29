@@ -51,9 +51,9 @@ ExternalProject_Add(${MOAB_BUILD_TARGET}
                                                 --with-mpi=${MPI_PREFIX}
                                                 --with-hdf5=${TPL_INSTALL_PREFIX}
                                                 --with-netcdf=${TPL_INSTALL_PREFIX}
-                                                CC=${CMAKE_C_COMPILER_USE}
+                                                CC=${CMAKE_C_COMPILER}
                                                 CFLAGS=${moab_cflags}
-                                                CXX=${CMAKE_CXX_COMPILER_USE}
+                                                CXX=${CMAKE_CXX_COMPILER}
                                                 CFLAGS=${moab_cxxflags}
                                                 LDFLAGS=${moab_ldflags}
                     # -- Build

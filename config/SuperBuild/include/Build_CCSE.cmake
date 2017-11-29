@@ -40,12 +40,12 @@ set(CCSE_CMAKE_CACHE_ARGS
                        -DCMAKE_INSTALL_PREFIX:STRING=<INSTALL_DIR>
                        -DCMAKE_BUILD_TYPE:STRING=${CMAKE_BUILD_TYPE}
                        -DBUILD_SHARED_LIBS:BOOL=${BUILD_SHARED_LIBS}
-                       -DCMAKE_C_COMPILER:FILEPATH=${CMAKE_C_COMPILER_USE}
+                       -DCMAKE_C_COMPILER:FILEPATH=${CMAKE_C_COMPILER}
                        -DCMAKE_C_FLAGS_${BUILD_TYPE_UPPER}:STRING=${Amanzi_COMMON_CFLAGS}
-                       -DCMAKE_CXX_COMPILER:FILEPATH=${CMAKE_CXX_COMPILER_USE}
+                       -DCMAKE_CXX_COMPILER:FILEPATH=${CMAKE_CXX_COMPILER}
                        -DCMAKE_CXX_FLAGS_${BUILD_TYPE_UPPER}:STRING=${Amanzi_COMMON_CXXFLAGS}
                        -DCMAKE_CXX_FLAGS_RELEASE:STRING=${Amanzi_COMMON_CXXFLAGS}
-                       -DCMAKE_Fortran_COMPILER:FILEPATH=${CMAKE_Fortran_COMPILER_USE}
+                       -DCMAKE_Fortran_COMPILER:FILEPATH=${CMAKE_Fortran_COMPILER}
                        -DCMAKE_Fortran_FLAGS_${BUILD_TYPE_UPPER}:STRING=${Amanzi_COMMON_FCFLAGS}
                        -DVERBOSE:BOOL=ON)
 
@@ -95,9 +95,9 @@ ExternalProject_Add(${CCSE_BUILD_TARGET}
 if (ENABLE_CCSE_TOOLS)
 
   message(STATUS "CCSE: Unwrapping MPI compilers to build shared libraries for python tools")
-  if ( CMAKE_C_COMPILER_USE MATCHES "mpi" )
+  if ( CMAKE_C_COMPILER MATCHES "mpi" )
     execute_process(
-      COMMAND ${CMAKE_C_COMPILER_USE} -show
+      COMMAND ${CMAKE_C_COMPILER} -show
       OUTPUT_VARIABLE  COMPILE_CMDLINE OUTPUT_STRIP_TRAILING_WHITESPACE
       ERROR_VARIABLE   COMPILE_CMDLINE ERROR_STRIP_TRAILING_WHITESPACE
       RESULT_VARIABLE  COMPILER_RETURN
@@ -110,14 +110,14 @@ if (ENABLE_CCSE_TOOLS)
        message (FATAL_ERROR "CCSE: Unable to determine the compiler command")
     endif()
   else()
-   set(RAW_CC_COMPILER ${CMAKE_C_COMPILER_USE})
+   set(RAW_CC_COMPILER ${CMAKE_C_COMPILER})
   endif()
   message (STATUS "CCSE: RAW_C_COMPILER       = ${RAW_C_COMPILER}")
 
 
-  if ( CMAKE_CXX_COMPILER_USE MATCHES "mpi" )
+  if ( CMAKE_CXX_COMPILER MATCHES "mpi")
     execute_process(
-      COMMAND ${CMAKE_CXX_COMPILER_USE} -show
+      COMMAND ${CMAKE_CXX_COMPILER} -show
       OUTPUT_VARIABLE  COMPILE_CMDLINE OUTPUT_STRIP_TRAILING_WHITESPACE
       ERROR_VARIABLE   COMPILE_CMDLINE ERROR_STRIP_TRAILING_WHITESPACE
       RESULT_VARIABLE  COMPILER_RETURN
@@ -130,13 +130,13 @@ if (ENABLE_CCSE_TOOLS)
        message (FATAL_ERROR "CCSE: Unable to determine the compiler command")
     endif()
   else()
-   set(RAW_CXX_COMPILER ${CMAKE_CXX_COMPILER_USE})
+   set(RAW_CXX_COMPILER ${CMAKE_CXX_COMPILER})
   endif()
   message (STATUS "CCSE: RAW_CXX_COMPILER     = ${RAW_CXX_COMPILER}")
 
-  if ( CMAKE_Fortran_COMPILER_USE MATCHES "mpi" )
+  if ( CMAKE_Fortran_COMPILER MATCHES "mpi" )
     execute_process(
-      COMMAND ${CMAKE_Fortran_COMPILER_USE} -show
+      COMMAND ${CMAKE_Fortran_COMPILER} -show
       OUTPUT_VARIABLE  COMPILE_CMDLINE OUTPUT_STRIP_TRAILING_WHITESPACE
       ERROR_VARIABLE   COMPILE_CMDLINE ERROR_STRIP_TRAILING_WHITESPACE
       RESULT_VARIABLE  COMPILER_RETURN
@@ -149,7 +149,7 @@ if (ENABLE_CCSE_TOOLS)
        message (FATAL_ERROR "CCSE: Unable to determine the compiler command")
     endif()
   else()
-   set(RAW_Fortran_COMPILER ${CMAKE_Fortran_COMPILER_USE})
+   set(RAW_Fortran_COMPILER ${CMAKE_Fortran_COMPILER})
   endif()
   message (STATUS "CCSE: RAW_Fortran_COMPILER = ${RAW_Fortran_COMPILER}")
 

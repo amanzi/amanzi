@@ -89,9 +89,9 @@ ExternalProject_Add(${XERCES_BUILD_TARGET}
 		                      <SOURCE_DIR>/configure
 				                  --prefix=<INSTALL_DIR> 
                                                   ${XERCES_CONFIGURE_OPTIONS}
-                                                  CC=${CMAKE_C_COMPILER_USE}
+                                                  CC=${CMAKE_C_COMPILER}
                                                   CFLAGS=${CFLAGS}
-                                                  CXX=${CMAKE_CXX_COMPILER_USE}
+                                                  CXX=${CMAKE_CXX_COMPILER}
                                                   CXXFLAGS=${CXXFLAGS}
                     # -- Build
                     BINARY_DIR        ${XERCES_build_dir}           # Build directory 

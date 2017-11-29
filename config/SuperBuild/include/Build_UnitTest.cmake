@@ -44,11 +44,11 @@ endif()
 # - Final language ARGS
 set(Unittest_CMAKE_LANG_ARGS
                    ${Amanzi_CMAKE_C_COMPILER_ARGS}
-		           -DCMAKE_C_COMPILER:FILEPATH=${CMAKE_C_COMPILER_USE}
+		   -DCMAKE_C_COMPILER:FILEPATH=${CMAKE_C_COMPILER}
                    ${Amanzi_CMAKE_CXX_COMPILER_ARGS}
-		           -DCMAKE_CXX_COMPILER:FILEPATH=${CMAKE_CXX_COMPILER_USE}
+		   -DCMAKE_CXX_COMPILER:FILEPATH=${CMAKE_CXX_COMPILER}
                    ${Amanzi_CMAKE_Fortran_COMPILER_ARGS}
-                   -DCMAKE_Fortran_COMPILER:FILEPATH=${CMAKE_Fortran_COMPILER_USE})
+                   -DCMAKE_Fortran_COMPILER:FILEPATH=${CMAKE_Fortran_COMPILER})
 
 
 #  - Add CMake configuration file
