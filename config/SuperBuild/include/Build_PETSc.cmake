@@ -70,27 +70,21 @@ set(cpp_flag_list
     ${Amanzi_COMMON_CXXFLAGS})
 list(REMOVE_DUPLICATES cpp_flag_list)
 build_whitespace_string(petsc_cppflags ${cpp_flags_list})
-
-build_whitespace_string(petsc_fcflags
-                       ${Amanzi_COMMON_FCFLAGS})
+build_whitespace_string(petsc_fcflags ${Amanzi_COMMON_FCFLAGS})
 
 # Set PETSc debug flag
-if ( "${CMAKE_BUILD_TYPE}" STREQUAL "Release" )
+if ("${CMAKE_BUILD_TYPE}" STREQUAL "Release")
   set(petsc_debug_flag 0)
 else()
   set(petsc_debug_flag 1)
 endif()
 
 # Point PETSc to the MPI build
-if ( "${${MPI_PROJECT}_BUILD_TARGET}" STREQUAL "" )
-  set(petsc_mpi_flags --with-mpi=1)
-else()
-  set(petsc_mpi_flags --with-mpi=1 --with-mpi-dir=${TPL_INSTALL_PREFIX})
-endif()
+set(petsc_mpi_flags --with-mpi=1 --with-mpi-dir=${MPI_PREFIX})
 
 # BLAS options
 if (BLAS_LIBRARIES) 
-  if (NOT APPLE) # Macs are different.
+  if (NOT APPLE)
     build_whitespace_string(petsc_blas_libs ${BLAS_LIBRARIES})
     set(petsc_blas_option --with-blas-libs='${petsc_blas_libs}')
   endif()

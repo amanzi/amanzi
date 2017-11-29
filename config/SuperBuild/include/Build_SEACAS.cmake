@@ -49,7 +49,7 @@ set(seacas_netcdf_libraries
        ${seacas_hdf5_hl_library}
        ${seacas_hdf5_library} -ldl
        ${seacas_z_library})
-if ((NOT BUILD_MPI) AND (NOT MPI_WRAPPERS_IN_USE) AND (MPI_C_LIBRARIES))
+if ((NOT MPI_WRAPPERS_IN_USE) AND (MPI_C_LIBRARIES))
   list(APPEND seacas_netcdf_libraries ${MPI_C_LIBRARIES})
 endif()
 

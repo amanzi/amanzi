@@ -172,7 +172,6 @@ endif()
 # Begin MPI builds 
 # ############################################################################ #
 
-set(BUILD_MPI TRUE)
 set(MPI_C_COMPILER        ${TOOLS_INSTALL_PREFIX}/bin/mpicc)
 set(MPI_CXX_COMPILER      ${TOOLS_INSTALL_PREFIX}/bin/mpicxx)
 set(MPI_Fortran_COMPILER  ${TOOLS_INSTALL_PREFIX}/bin/mpif90)
@@ -194,11 +193,8 @@ include(ExternalProject)
 # Include the macro that defines uniform build, install and Add_ExternalProject args
 include(DefineExternalProjectArgs)
 
-# MPI
-if (BUILD_MPI)
-  include(${ToolsBuild_BUILD_FILES_DIR}/Build_OpenMPI.cmake)
-  set(MPI_PROJECT OpenMPI)
-endif()
+# MPI 
+include(${ToolsBuild_BUILD_FILES_DIR}/Build_OpenMPI.cmake)
 
 
 # ############################################################################ #

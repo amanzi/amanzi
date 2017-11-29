@@ -115,9 +115,7 @@ include(CheckMPISourceCompiles)
 check_mpi_source_compiles(MPI_WRAPPERS_IN_USE)
 if (NOT MPI_WRAPPERS_IN_USE)
   # MPI_WRAPPERS_IN_USE is FALSE if any of the compilers fail to compile an MPI app
-  #message(FATAL_ERROR "Missing a compiler type for MPI applications -- exiting.
-  message(WARING "Missing a compiler type for MPI applications.
-  See previous error messages to determine missing compiler.")
+  message(FATAL_ERROR "Missing a compiler type for MPI applications -- exiting.")
 endif()
 
 # Include the TPL version information
@@ -286,13 +284,12 @@ if (NOT MPI_Fortran_FOUND)
   message(WARNING "Failed to locate MPI Fortran include and library files")
 endif()
 
-# Add MPI to the build if any MPI_*_FOUND == FALSE
+# Fail configuration if any MPI_*_FOUND == FALSE
 if (MPI_C_FOUND AND MPI_CXX_FOUND AND MPI_Fortran_FOUND)
-  message(STATUS "Found MPI")
-  set(BUILD_MPI FALSE)
+  message(STATUS "Found MPI: MPIEXEC=${MPIEXEC}")
   set(mpi_var_list COMPILER COMPILE_FLAGS INCLUDE_PATH LINK_FLAGS LIBRARIES)
-  foreach ( lang C CXX Fortran )
-    foreach ( var ${mpi_var_list} )
+  foreach(lang C CXX Fortran)
+    foreach(var ${mpi_var_list})
       set(var MPI_${lang}_${var})
       if ("${var}")
 	message(STATUS "      ${var}: ${${var}}")
@@ -300,18 +297,12 @@ if (MPI_C_FOUND AND MPI_CXX_FOUND AND MPI_Fortran_FOUND)
     endforeach()
   endforeach()  
 else()
-  message(STATUS "Will build MPI with the other TPLs")
-  set(BUILD_MPI TRUE)
-  set(MPI_C_COMPILER        ${TPL_INSTALL_PREFIX}/bin/mpicc)
-  set(MPI_CXX_COMPILER      ${TPL_INSTALL_PREFIX}/bin/mpicxx)
-  set(MPI_Fortran_COMPILER  ${TPL_INSTALL_PREFIX}/bin/mpif90)
-  set(MPIEXEC               ${TPL_INSTALL_PREFIX}/bin/mpirun)
-  set(MPI_EXEC              ${TPL_INSTALL_PREFIX}/bin/mpirun)
+  message(FATAL_ERROR "MPI was not found.")
 endif()
 
-# --- Add the include paths, link flags and libraries if using a 
-#     user requested MPI but not the wrappers from this MPI installation.
-if (NOT MPI_WRAPPERS_IN_USE AND NOT BUILD_MPI)
+# Add the include paths, link flags and libraries if using a 
+# user requested MPI but not the wrappers from this MPI installation.
+if (NOT MPI_WRAPPERS_IN_USE)
   foreach (lang C CXX Fortran)
     # Build MPI compile flags
     set(add_mpi_flags_list)
