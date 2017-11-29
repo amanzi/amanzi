@@ -377,7 +377,7 @@ Directory and file names:
 
 
 Example with pre-existing MPI installation that builds dynamic libraries
-and executables for TPLs and Amanzi:
+and executables for external packages (TPLs) and then for Amanzi:
 
   ./bootstrap.sh --tpl-install-prefix=$HOME/TPLs-clang-0.94 
                  --with-mpi=/opt/local 
@@ -386,8 +386,8 @@ and executables for TPLs and Amanzi:
                  --enable-alquimia --enable-pflotran --enable-crunchtope 
                  --enable-petsc --disable-stk_mesh 
 
-Example that builds OpenMPI, TPLs, and Amanzi. It uses OSX C and C++ compilers 
-and Fortran compiler from MacPort:
+Example that builds first OpenMPI, then TPLs, and finally Amanzi. It uses 
+OSX C and C++ compilers and Fortran compiler from MacPorts:
 
   ./bootstrap.sh --tpl-install-prefix=$HOME/TPLs-clang-0.94 
                  --with-c-compiler=/usr/bin/clang
