@@ -56,7 +56,7 @@ set(Amanzi_MODULE_PATH ${Amanzi_SOURCE_DIR}/tools/cmake
                        ${Amanzi_SOURCE_DIR}/tools/cmake/Modules)
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} 
-	              ${SuperBuild_SOURCE_DIR}/cmake
+	              ${ToolsBuild_SOURCE_DIR}/../SuperBuild/cmake
 	              ${Amanzi_MODULE_PATH})
 
 
@@ -76,15 +76,6 @@ FortranCInterface_VERIFY()
 include(DefineCompilerVersion)
 define_compiler_version()
 
-include(CheckMPISourceCompiles)
-check_mpi_source_compiles(MPI_WRAPPERS_IN_USE)
-if (NOT MPI_WRAPPERS_IN_USE)
-  # MPI_WRAPPERS_IN_USE is FALSE if any of the compilers fail to compile an MPI app
-  #message(FATAL_ERROR "Missing a compiler type for MPI applications -- exiting.
-  message(WARING "Missing a compiler type for MPI applications.
-                  See previous error messages to determine missing compiler.")
-endif()
-
 
 # ############################################################################ #
 # Build options
@@ -99,14 +90,14 @@ endif()
 message(STATUS "Download Tools files in ${TOOLS_DOWNLOAD_DIR}") 
 
 # Disable external web downloads
-include(${SuperBuild_SOURCE_DIR}/TPLVersions.cmake)
+include(${ToolsBuild_SOURCE_DIR}/../SuperBuild/TPLVersions.cmake)
 option(DISABLE_EXTERNAL_DOWNLOAD "Flag to disable external web downloads" FALSE)
 if (DISABLE_EXTERNAL_DOWNLOAD)
   message(STATUS "Will not download files from the web, instead will search "
                  "for archive files in ${TOOLS_DOWNLOAD_DIR}")
 else()
   include(CheckDownload)
-  check_download(TEST_FILE MD5SUMS TEST_URL ${AMANZI_TOOLS_DOWNLOAD_URL})
+  check_download(TEST_FILE MD5SUMS TEST_URL ${AMANZI_TPLS_DOWNLOAD_URL})
 endif()
 
 # Tools install location
@@ -117,190 +108,6 @@ message(STATUS "Install Tools in ${TOOLS_INSTALL_PREFIX}")
 
 # also set the CMAKE_INSTALL_PREFIX accordingly
 set(CMAKE_INSTALL_PREFIX ${TOOLS_INSTALL_PREFIX})
-
-
-# ############################################################################ #
-# MPI Configuration 
-# ############################################################################ #
-# --- The FindMPI package for CMake for versions 2.8.6> use compiler wrappers
-#     to determine include paths, link flags and libraries for each language.
-if (MPI_WRAPPERS_IN_USE)
-  set(MPI_C_COMPILER ${CMAKE_C_COMPILER})
-  set(MPI_CXX_COMPILER ${CMAKE_CXX_COMPILER})
-  set(MPI_Fortran_COMPILER ${CMAKE_Fortran_COMPILER})
-
-else()
-  message(STATUS "Searching for MPI compiler wrappers to define"
-                 " compile and link flags")
-
-  find_program(MPI_C_COMPILER
-               NAME mpicc
-               HINTS ${MPI_INSTALL_PREFIX} ENV MPIROOT ENV MPI_ROOT ENV MPI_HOME ENV MPIHOME ENV MPICH_ROOT 
-               PATH_SUFFIXES bin Bin
-               )
-
-  find_program(MPI_CXX_COMPILER
-               NAMES mpicxx mpic++ mpiCC
-               HINTS ${MPI_INSTALL_PREFIX} ENV MPIROOT ENV MPI_ROOT ENV MPI_HOME ENV MPIHOME ENV MPICH_ROOT 
-               PATH_SUFFIXES bin Bin
-               )
-
-  find_program(MPI_Fortran_COMPILER
-               NAMES mpif90
-               HINTS ${MPI_INSTALL_PREFIX} ENV MPIROOT ENV MPI_ROOT ENV MPI_HOME ENV MPIHOME ENV MPICH_ROOT 
-               PATH_SUFFIXES bin Bin
-               )
-endif()
-
-# --- This package find call will set
-#     MPI_<lang>_FOUND
-#     MPI_<lang>_COMPILE_FLAGS
-#     MPI_<lang>_INCLUDE_PATH
-#     MPI_<lang>_LINK_FLAGS
-#     MPI_<lang>_LIBRARIES
-#
-#     MPIEXEC
-#     MPIEXEC_NUMPROC_FLAG
-#     MPIEXEC_PREFLAGS
-#     MPIEXEC_POSTFLAGS
-find_package(MPI)
-
-
-# The FindMPI package uses FindPackageHandleStandardArgs
-# to MPI_<lang>_FOUND. For consistency, I set MPI_FORTRAN_FOUND
-# to MPI_Fortran_FOUND
-set(MPI_Fortran_FOUND ${MPI_FORTRAN_FOUND})
-
-# Warn the user if MPI information is not found
-if (NOT MPI_C_FOUND)
-  message(WARNING "Failed to locate MPI C include and library files")
-endif()
-
-if (NOT MPI_CXX_FOUND)
-  message(WARNING "Failed to locate MPI C++ include and library files")
-endif()
-
-if (NOT MPI_Fortran_FOUND)
-  message(WARNING "Failed to locate MPI Fortran include and library files")
-endif()
-
-# Add MPI to the build if any MPI_*_FOUND == FALSE
-if (MPI_C_FOUND AND MPI_CXX_FOUND AND MPI_Fortran_FOUND)
-  message(STATUS "Found MPI")
-  set(BUILD_MPI FALSE)
-  set(mpi_var_list COMPILER COMPILE_FLAGS INCLUDE_PATH LINK_FLAGS LIBRARIES)
-  foreach ( lang C CXX Fortran )
-    foreach ( var ${mpi_var_list} )
-      set(var MPI_${lang}_${var})
-      if ("${var}")
-	message(STATUS "      ${var}: ${${var}}")
-      endif()
-    endforeach()
-  endforeach()  
-
-else()
-  message(STATUS "Will build MPI with the other Tools")
-  set(BUILD_MPI TRUE)
-  set(MPI_C_COMPILER        ${TOOLS_INSTALL_PREFIX}/bin/mpicc)
-  set(MPI_CXX_COMPILER      ${TOOLS_INSTALL_PREFIX}/bin/mpicxx)
-  set(MPI_Fortran_COMPILER  ${TOOLS_INSTALL_PREFIX}/bin/mpif90)
-  set(MPIEXEC               ${TOOLS_INSTALL_PREFIX}/bin/mpirun)
-  set(MPI_EXEC              ${TOOLS_INSTALL_PREFIX}/bin/mpirun)
-endif()
-
-# --- Add the include paths, link flags and libraries if using a 
-#     user requested MPI but not the wrappers from this MPI installation.
-if (NOT MPI_WRAPPERS_IN_USE AND NOT BUILD_MPI)
-  foreach (lang C CXX Fortran)
-    # Build MPI compile flags
-    set(add_mpi_flags_list)
-    if (MPI_${lang}_COMPILE_FLAGS)
-      foreach (flag ${MPI_${lang}_COMPILE_FLAGS} )
-	list(APPEND add_mpi_flags_list ${flag})
-      endforeach()
-    endif()
-
-    if (MPI_${lang}_INCLUDE_PATH)
-      foreach (dir ${MPI_${lang}_INCLUDE_PATH} )
-	list(APPEND add_mpi_flags_list "-I${dir}")
-      endforeach()
-    endif() 
-
-    if (MPI_${lang}_LINK_FLAGS)
-      foreach (flag ${MPI_${lang}_LINK_FLAGS} )
-	list(APPEND add_mpi_flags_list ${flag})
-      endforeach()
-    endif()
-
-    list(REMOVE_DUPLICATES add_mpi_flags_list)
-    list(LENGTH add_mpi_flags_list num_flags)
-
-    if ("${num_flags}" GREATER "0")
-      include(BuildWhitespaceString)
-      if (CMAKE_${lang}_FLAGS)
-	build_whitespace_string(new_compile_flags ${CMAKE_${lang}_FLAGS} ${add_mpi_flags_list})
-      else()	
-	build_whitespace_string(new_compile_flags ${add_mpi_flags_list})
-      endif()
-      set(CMAKE_${lang}_FLAGS "${new_compile_flags}")
-      message(STATUS "Update CMAKE_${lang}_FLAGS: ${CMAKE_${lang}_FLAGS}")
-    endif()  
-  endforeach()
-endif()
-
-# --- Amanzi uses MPI_EXEC* not MPIEXEC* variables. This allows the user to 
-#     override the find package results.
-
-# - MPI execute binary
-if (NOT MPI_EXEC)
-  if (MPIEXEC)
-    set(MPI_EXEC "${MPIEXEC}" CACHE STRING "Select MPI executable from FindMPI results")
-  else()
-    find_program(MPI_EXEC
-                 NAMES mpirun mpiexec aprun openmpirun
-                 HINTS ENV MPI_ROOT ENV MPIROOT ENV MPI_PREFIX ENV MPI_HOME ENV MPIHOME)
-  endif()
-endif()
-
-# - Number of MPI ranks flag
-set(MPI_EXEC_NUMPROCS_FLAG_DFLT -n)
-if (NOT MPI_EXEC_NUMPROCS_FLAG)
-  if (MPIEXEC_NUMPROC_FLAG)
-    set(MPI_EXEC_NUMPROCS_FLAG "${MPIEXEC_NUMPROC_FLAG}" CACHE STRING "Set MPI number of procs flag from FindMPI")
-  else()
-    set(MPI_EXEC_NUMPROCS_FLAG ${MPI_EXEC_NUMPROCS_FLAG_DFLT})
-  endif()
-endif()
-
-# - Maximum number of processors. This is a limit for the test suite
-#   Some tests require too many processors and it increases the execution time
-#   considerably. 
-set(MPI_EXEC_MAX_NUMPROCS_DFLT 8)
-if (NOT MPI_EXEC_MAX_NUMPROCS)
-  include(ProcessorCount)
-  ProcessorCount(proc_count)
-  if (NOT proc_count EQUAL 0)
-    math(EXPR MPI_EXEC_MAX_NUMPROCS "${proc_count} * 2") 
-    message(STATUS "Detected ${proc_count} processors and will set maximum to ${MPI_EXEC_MAX_NUMPROCS}")
-  else()
-    set(MPI_EXEC_MAX_NUMPROCS ${MPI_EXEC_MAX_NUMPROCS_DFLT})
-  endif()
-endif()  
-
-# - Set the pre and post flags
-#   Usage:
-#   ${MPI_EXEC} ${MPI_EXEC_NUMPROCS_FLAG} PROCS ${MPI_EXEC_PREFLAGS} EXECUTABLE ${MPI_EXEC_POSTFLAGS}
-if (NOT MPI_EXEC_PREFLAGS)
-  if (MPIEXEC_PREFLAGS)
-    set(MPI_EXEC_PREFLAGS "${MPIEXEC_PRFLAGS}" CACHE STRING "Set MPI execute pre flags")
-  endif()
-endif()
-
-if (NOT MPI_EXEC_POSTFLAGS)
-  if (MPIEXEC_POSTFLAGS)
-    set(MPI_EXEC_POSTFLAGS "${MPIEXEC_PRFLAGS}" CACHE STRING "Set MPI execute post flags")
-  endif()
-endif()
 
 
 # ############################################################################ #
@@ -362,6 +169,13 @@ endif()
 # ############################################################################ #
 # Begin MPI builds 
 # ############################################################################ #
+
+set(BUILD_MPI TRUE)
+set(MPI_C_COMPILER        ${TOOLS_INSTALL_PREFIX}/bin/mpicc)
+set(MPI_CXX_COMPILER      ${TOOLS_INSTALL_PREFIX}/bin/mpicxx)
+set(MPI_Fortran_COMPILER  ${TOOLS_INSTALL_PREFIX}/bin/mpif90)
+set(MPIEXEC               ${TOOLS_INSTALL_PREFIX}/bin/mpirun)
+set(MPI_EXEC              ${TOOLS_INSTALL_PREFIX}/bin/mpirun)
 
 # --- Add .NOTPARALLEL target in order to force the top level make to 
 #     execute serially

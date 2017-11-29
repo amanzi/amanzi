@@ -6,9 +6,9 @@
 
 # --- Define all the directories and common external project flags
 if ( NOT ENABLE_XSDK )
-    set(unittest_depend_projects ZLIB ${MPI_PROJECT})
+    set(unittest_depend_projects ZLIB)
 else()
-    set(unittest_depend_projects ${MPI_PROJECT} XSDK)
+    set(unittest_depend_projects XSDK)
 endif()
 
 define_external_project_args(UnitTest

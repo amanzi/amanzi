@@ -24,8 +24,8 @@ system_arch=`uname -m`
 print_exit=${FALSE}
 
 # Known compiler lists
-known_c_compilers="mpicc cc gcc icc"
-known_cxx_compilers="mpicxx mpiCC CC g++ icpc"
+known_c_compilers="mpicc cc gcc icc clang"
+known_cxx_compilers="mpicxx mpiCC CC g++ icpc clang++"
 known_fortran_compilers="mpif90 ftn gfortran ifort"
 
 # Directory information
@@ -1118,7 +1118,7 @@ function check_tools
   status_message "CMake binary: ${cmake_binary}"
   status_message "CTest binary: ${ctest_binary}"
 
-  status_message "Tool check complete"
+  status_message "Tools check complete"
 }
 
 
@@ -1220,9 +1220,6 @@ define_install_directories
 # Create the build directories
 define_build_directories
 
-# Check the MPI root value 
-check_mpi_root
-
 # Define the compilers
 check_compilers
 
@@ -1251,7 +1248,9 @@ fi
 # ---------------------------------------------------------------------------- #
 # Configure tools
 # ---------------------------------------------------------------------------- #
-if [ ! -z "${mpi_root_dir}" ]; then
+if [ ! -n "${mpi_root_dir}" ]; then
+  tools_build_src_dir=${amanzi_source_dir}/config/ToolsBuild
+
   cd ${tools_build_dir}
   ${cmake_binary} \
       -DCMAKE_C_FLAGS:STRING="${build_c_flags}" \
@@ -1288,9 +1287,12 @@ if [ ! -z "${mpi_root_dir}" ]; then
       
   status_message "Tools build complete"
   status_message "For future Amanzi builds use ${tools_config_file}"
-      
 fi
   
+
+# Check the MPI root value 
+check_mpi_root
+
 
 # ---------------------------------------------------------------------------- #
 # Now build the TPLs if the config file is not defined

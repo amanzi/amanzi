@@ -10,11 +10,11 @@
 if (NOT ENABLE_XSDK)
     define_external_project_args(SEACAS
                                  TARGET seacas
-				 DEPENDS ${MPI_PROJECT} HDF5 NetCDF)
+				 DEPENDS HDF5 NetCDF)
 else()
     define_external_project_args(SEACAS
                                  TARGET seacas
-				 DEPENDS XSDK ${MPI_PROJECT})
+				 DEPENDS XSDK)
 endif()
 
 
