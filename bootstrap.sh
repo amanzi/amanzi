@@ -373,6 +373,29 @@ Directory and file names:
 
   --tools-download-dir=DIR       direct downloads of Amanzi tools to DIR
                                  ['"${tools_download_dir}"']
+
+
+
+Example with pre-existing MPI installation that builds dynamic libraries
+and executables for TPLs and Amanzi:
+
+  ./bootstrap.sh --tpl-install-prefix=$HOME/TPLs-clang-0.94 
+                 --with-mpi=/opt/local 
+                 --parallel=8 
+                 --enable-shared
+                 --enable-alquimia --enable-pflotran --enable-crunchtope 
+                 --enable-petsc --disable-stk_mesh 
+
+Example that builds OpenMPI, TPLs, and Amanzi. It uses OSX C and C++ compilers 
+and Fortran compiler from MacPort:
+
+  ./bootstrap.sh --tpl-install-prefix=$HOME/TPLs-clang-0.94 
+                 --with-c-compiler=/usr/bin/clang
+                 --with-cxx-compiler=/usr/bin/clang++
+                 --with-fort-compiler=/opt/local/bin/gfortran-mp-6
+                 --parallel=8 
+                 --enable-alquimia --enable-pflotran --enable-crunchtope 
+                 --enable-petsc --disable-stk_mesh 
 '
 }
 
