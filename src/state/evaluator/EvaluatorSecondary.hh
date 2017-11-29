@@ -98,8 +98,9 @@ class EvaluatorSecondary : public Evaluator {
 }; // class EvaluatorSecondary
 
 #include "EvaluatorSecondary_Impl.hh"
-//#include "EvaluatorSecondaryDouble_Impl.hh"
-//#include "EvaluatorSecondaryCompositeVector_Impl.hh"
+#include "EvaluatorSecondaryDouble_Impl.hh"
+#include "EvaluatorSecondaryCompositeVector_Impl.hh"
+
 
 } // namespace Amanzi
 

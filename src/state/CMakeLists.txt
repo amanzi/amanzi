@@ -71,6 +71,8 @@ set(state_inc_files
   evaluator/EvaluatorSecondaries.hh
   evaluator/EvaluatorSecondary.hh
   evaluator/EvaluatorSecondary_Impl.hh
+  evaluator/EvaluatorSecondaryCompositeVector_Impl.hh
+  evaluator/EvaluatorSecondaryDouble_Impl.hh
   evaluator/EvaluatorSecondaryFromFunction.hh
 #  evaluator/cell_volume_evaluator.hh
 #  evaluator/cell_volume_evaluator_reg.hh
