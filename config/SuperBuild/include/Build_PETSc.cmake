@@ -79,9 +79,6 @@ else()
   set(petsc_debug_flag 1)
 endif()
 
-# Point PETSc to the MPI build
-set(petsc_mpi_flags --with-mpi=1 --with-mpi-dir=${MPI_PREFIX})
-
 # BLAS options
 if (BLAS_LIBRARIES) 
   if (NOT APPLE)
@@ -164,15 +161,13 @@ ExternalProject_Add(${PETSc_BUILD_TARGET}
                               <SOURCE_DIR>/configure
                                           ${CONFIG_PETSC_SHARED}
                                           --prefix=<INSTALL_DIR>
-                                          --with-cc=${CMAKE_C_COMPILER}
-                                          --with-cxx=${CMAKE_CXX_COMPILER}
-                                          --with-fc=${CMAKE_Fortran_COMPILER}
+                                          --with-mpi=1
+                                          --with-mpi-dir=${MPI_PREFIX}
                                           --CFLAGS=${petsc_cflags}
                                           --CXXFLAGS=${petsc_cxxflags}
                                           --without-x
                                           --with-debugging=${petsc_debug_flag}
                                           --without-valgrind
-                                          ${petsc_mpi_flags}
                                           ${petsc_lapack_option}
                                           ${petsc_blas_option}
                                           ${petsc_package_flags}
