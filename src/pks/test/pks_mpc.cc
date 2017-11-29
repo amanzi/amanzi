@@ -91,7 +91,7 @@ createRun(const std::string& mpc_name, const std::string& pk_A_name, const std::
 SUITE(PKS_MPC) {
 
   // weak MPC coupling two FE PKs
-  TEST(WEAK_BC_FORWARD_EULER) {
+  TEST(SEQUENTIAL_BC_FORWARD_EULER) {
     typedef PK_Explicit_Adaptor<PK_ODE_Explicit<PK_MixinExplicit<PK_MixinLeaf<PK_Default> >, DudtEvaluatorB> > PK_B_t;
     typedef PK_Explicit_Adaptor<PK_ODE_Explicit<PK_MixinExplicit<PK_MixinLeaf<PK_Default> >, DudtEvaluatorC> > PK_C_t;
     typedef PK_Adaptor<PK_MixinMPCAdvanceStepWeak<PK_MixinMPCGetDtMin<PK_MixinMPC<PK_Default,PK> > > > MPC_t;
@@ -115,7 +115,7 @@ SUITE(PKS_MPC) {
   }
 
   // weak MPC coupling one FE and one RK4 PKs
-  TEST(WEAK_BC_FE_RK) {
+  TEST(SEQUENTIAL_BC_FE_RK) {
     typedef PK_Explicit_Adaptor<PK_ODE_Explicit<PK_MixinExplicit<PK_MixinLeaf<PK_Default> >, DudtEvaluatorB> > PK_B_t;
     typedef PK_Explicit_Adaptor<PK_ODE_Explicit<PK_MixinExplicit<PK_MixinLeaf<PK_Default> >, DudtEvaluatorC> > PK_C_t;
     typedef PK_Adaptor<PK_MixinMPCAdvanceStepWeak<PK_MixinMPCGetDtMin<PK_MixinMPC<PK_Default,PK> > > > MPC_t;
@@ -139,7 +139,7 @@ SUITE(PKS_MPC) {
   }
 
   // weak MPC coupling one FE and one implicit BDF with a fixed timestep 
-  TEST(WEAK_BC_FE_BDF) {
+  TEST(SEQUENTIAL_BC_FE_BDF) {
     typedef PK_Explicit_Adaptor<PK_ODE_Explicit<PK_MixinExplicit<PK_MixinLeaf<PK_Default> >, DudtEvaluatorB> > PK_B_t;
     typedef PK_Implicit_Adaptor<PK_ODE_Implicit<PK_MixinImplicit<PK_MixinLeaf<PK_Default> >, DudtEvaluatorC> > PK_C_t;
     typedef PK_Adaptor<PK_MixinMPCAdvanceStepWeak<PK_MixinMPCGetDtMin<PK_MixinMPC<PK_Default,PK> > > > MPC_t;
@@ -167,7 +167,7 @@ SUITE(PKS_MPC) {
 
   // weak MPC coupling one FE and one implicit BDF with a variable timestep in
   // which the BDF DOES fail, forcing the explicit to back up
-  TEST(WEAK_BC_FE_BDF_FAILING) {
+  TEST(SEQUENTIAL_BC_FE_BDF_FAILING) {
     typedef PK_Explicit_Adaptor<PK_ODE_Explicit<PK_MixinExplicit<PK_MixinLeaf<PK_Default> >, DudtEvaluatorB> > PK_B_t;
     typedef PK_Implicit_Adaptor<PK_ODE_Implicit<PK_MixinImplicit<PK_MixinLeaf<PK_Default> >, DudtEvaluatorC> > PK_C_t;
     typedef PK_Adaptor<PK_MixinMPCAdvanceStepWeak<PK_MixinMPCGetDtMin<PK_MixinMPC<PK_Default,PK> > > > MPC_t;
@@ -194,7 +194,7 @@ SUITE(PKS_MPC) {
 
   // weak MPC coupling one FE and one implicit BDF with a variable timestep in
   // which the BDF DOES fail, and subcycles to keep up with the explicit
-  TEST(WEAK_BC_FE_BDF_FAILING2) {
+  TEST(SEQUENTIAL_BC_FE_BDF_FAILING2) {
     typedef PK_Explicit_Adaptor<PK_ODE_Explicit<PK_MixinExplicit<PK_MixinLeaf<PK_Default> >, DudtEvaluatorB> > PK_B_t;
     typedef PK_Implicit_Adaptor<PK_ODE_Implicit<PK_MixinImplicitSubcycled<PK_MixinLeaf<PK_Default> >, DudtEvaluatorC> > PK_C_t;
     typedef PK_Adaptor<PK_MixinMPCAdvanceStepWeak<PK_MixinMPCGetDtMin<PK_MixinMPC<PK_Default,PK> > > > MPC_t;
@@ -218,7 +218,7 @@ SUITE(PKS_MPC) {
   }
 
   // Globally implicit, fixed timestep
-  TEST(STRONG_BC) {
+  TEST(IMPLICIT_BC) {
     typedef PK_Implicit_Adaptor<PK_ODE_Implicit<PK_MixinImplicit<PK_MixinLeaf<PK_Default> >, DudtEvaluatorB> > PK_B_t;
     typedef PK_Implicit_Adaptor<PK_ODE_Implicit<PK_MixinImplicit<PK_MixinLeaf<PK_Default> >, DudtEvaluatorC> > PK_C_t;
     typedef PK_Implicit_Adaptor<PK_MixinImplicit<PK_MixinMPCImplicit<PK_Default, PK_Implicit<TreeVector> > > > MPC_t;
@@ -244,7 +244,7 @@ SUITE(PKS_MPC) {
 
 
   // Globally implicit, variable timestep
-  TEST(STRONG_BC_VARIABLE_TS) {
+  TEST(IMPLICIT_BC_VARIABLE_TS) {
     typedef PK_Implicit_Adaptor<PK_ODE_Implicit<PK_MixinImplicit<PK_MixinLeaf<PK_Default> >, DudtEvaluatorB> > PK_B_t;
     typedef PK_Implicit_Adaptor<PK_ODE_Implicit<PK_MixinImplicit<PK_MixinLeaf<PK_Default> >, DudtEvaluatorC> > PK_C_t;
     typedef PK_Implicit_Adaptor<PK_MixinImplicit<PK_MixinMPCImplicit<PK_Default, PK_Implicit<TreeVector> > > > MPC_t;

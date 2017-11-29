@@ -107,12 +107,12 @@ createRun(const std::string& mpc_A_name, const std::string& pk_A_name,
 
 SUITE(PKS_MPC_THREE) {
 
-  // weak MPC coupling
-  TEST(WEAK_ABC_FORWARD_EULER) {
-    typedef PK_Explicit_Adaptor<PK_ODE_Explicit<PK_MixinExplicit<PK_MixinLeaf<PK_Default> >, DudtEvaluatorA> > PK_A_t;
-    typedef PK_Explicit_Adaptor<PK_ODE_Explicit<PK_MixinExplicit<PK_MixinLeaf<PK_Default> >, DudtEvaluatorB> > PK_B_t;
-    typedef PK_Explicit_Adaptor<PK_ODE_Explicit<PK_MixinExplicit<PK_MixinLeaf<PK_Default> >, DudtEvaluatorC> > PK_C_t;
-    typedef PK_Adaptor<PK_MixinMPCAdvanceStepWeak<PK_MixinMPCGetDtMin<PK_MixinMPC<PK_Default,PK> > > > MPC_t;
+  // Sequential coupling of all, min dt
+  TEST(SEQUENTIAL_ABC) {
+    using PK_A_t = PK_Explicit_Adaptor<PK_ODE_Explicit<PK_MixinExplicit<PK_MixinLeaf<PK_Default> >, DudtEvaluatorA> >;
+    using PK_B_t = PK_Explicit_Adaptor<PK_ODE_Explicit<PK_MixinExplicit<PK_MixinLeaf<PK_Default> >, DudtEvaluatorB> >;
+    using PK_C_t = PK_Explicit_Adaptor<PK_ODE_Explicit<PK_MixinExplicit<PK_MixinLeaf<PK_Default> >, DudtEvaluatorC> >;
+    using MPC_t = PK_Adaptor<PK_MixinMPCAdvanceStepWeak<PK_MixinMPCGetDtMin<PK_MixinMPC<PK_Default,PK> > > >;
 
     auto run = createRun<MPC_t, PK, PK_A_t, MPC_t, PK, PK_B_t, PK_C_t>("ABC weak forward euler", "A, forward euler",
             "BC weak forward euler", "B, forward euler", "C, forward euler");
@@ -137,4 +137,69 @@ SUITE(PKS_MPC_THREE) {
     CHECK_EQUAL(10, nsteps.first);
     CHECK_EQUAL(0, nsteps.second);
   }
+
+
+  // sequentially couple A to implicitly coupled B&C.  Min dt
+  TEST(SEQUENTIAL_A_IMPLICIT_BC) {
+    using PK_A_t = PK_Explicit_Adaptor<PK_ODE_Explicit<PK_MixinExplicit<PK_MixinLeaf<PK_Default> >, DudtEvaluatorA> >;
+    using PK_B_t = PK_Implicit_Adaptor<PK_ODE_Implicit<PK_MixinImplicit<PK_MixinLeaf<PK_Default> >, DudtEvaluatorB> >;
+    using PK_C_t = PK_Implicit_Adaptor<PK_ODE_Implicit<PK_MixinImplicit<PK_MixinLeaf<PK_Default> >, DudtEvaluatorC> >;
+    using MPC_A_t = PK_Adaptor<PK_MixinMPCAdvanceStepWeak<PK_MixinMPCGetDtMin<PK_MixinMPC<PK_Default,PK> > > >;
+    using MPC_B_t = PK_Implicit_Adaptor<PK_MixinImplicit<PK_MixinMPCImplicit<PK_Default, PK_Implicit<TreeVector> > > >;
+
+    auto run = createRun<MPC_A_t, PK, PK_A_t, MPC_B_t, PK_Implicit<TreeVector>, PK_B_t, PK_C_t>("ABC weak forward euler", "A, forward euler",
+            "BC global implicit variable", "B, backward euler", "C, backward euler");
+    auto nsteps = run_test(run->S, run->pk);
+
+    // check A soln
+    CHECK_CLOSE(2.0, (*run->S->Get<CompositeVector>("primaryA")
+                      .ViewComponent("cell",false))[0][0], 1.e-10);
+
+    // check B soln -- same as IMPLICIT_BC_VARIABLE_TS
+    CHECK_CLOSE(std::exp(1.0), (*run->S->Get<CompositeVector>("primaryB")
+                      .ViewComponent("cell",false))[0][0], 0.04);
+    CHECK_CLOSE(2.74863, (*run->S->Get<CompositeVector>("primaryB")
+                      .ViewComponent("cell",false))[0][0], 1.e-4);
+
+    // check C soln -- same as IMPLICIT_BC_VARIABLE_TS
+    CHECK_CLOSE(std::exp(1.0), (*run->S->Get<CompositeVector>("primaryC")
+                      .ViewComponent("cell",false))[0][0], 0.08);
+    CHECK_CLOSE(2.79308, (*run->S->Get<CompositeVector>("primaryC")
+                      .ViewComponent("cell",false))[0][0], 1.e-4);
+    
+    CHECK_EQUAL(96, nsteps.first);
+    CHECK_EQUAL(0, nsteps.second);
+  }
+
+  // implicitly couple everything heirarchically
+  TEST(IMPLICIT_ABC) {
+    using PK_A_t = PK_Implicit_Adaptor<PK_ODE_Implicit<PK_MixinImplicit<PK_MixinLeaf<PK_Default> >, DudtEvaluatorA> >;
+    using PK_B_t = PK_Implicit_Adaptor<PK_ODE_Implicit<PK_MixinImplicit<PK_MixinLeaf<PK_Default> >, DudtEvaluatorB> >;
+    using PK_C_t = PK_Implicit_Adaptor<PK_ODE_Implicit<PK_MixinImplicit<PK_MixinLeaf<PK_Default> >, DudtEvaluatorC> >;
+    using MPC_t = PK_Implicit_Adaptor<PK_MixinImplicit<PK_MixinMPCImplicit<PK_Default, PK_Implicit<TreeVector> > > >;
+
+    auto run = createRun<MPC_t, PK_Implicit<TreeVector>, PK_A_t, MPC_t, PK_Implicit<TreeVector>, PK_B_t, PK_C_t>("BC global implicit variable", "A, backward euler",
+            "BC global implicit variable", "B, backward euler", "C, backward euler");
+    auto nsteps = run_test(run->S, run->pk);
+
+    // check A soln
+    CHECK_CLOSE(2.0, (*run->S->Get<CompositeVector>("primaryA")
+                      .ViewComponent("cell",false))[0][0], 1.e-10);
+
+    // check B soln -- same as IMPLICIT_BC_VARIABLE_TS
+    CHECK_CLOSE(std::exp(1.0), (*run->S->Get<CompositeVector>("primaryB")
+                      .ViewComponent("cell",false))[0][0], 0.04);
+    CHECK_CLOSE(2.74863, (*run->S->Get<CompositeVector>("primaryB")
+                      .ViewComponent("cell",false))[0][0], 1.e-4);
+
+    // check C soln -- same as IMPLICIT_BC_VARIABLE_TS
+    CHECK_CLOSE(std::exp(1.0), (*run->S->Get<CompositeVector>("primaryC")
+                      .ViewComponent("cell",false))[0][0], 0.08);
+    CHECK_CLOSE(2.79308, (*run->S->Get<CompositeVector>("primaryC")
+                      .ViewComponent("cell",false))[0][0], 1.e-4);
+    
+    CHECK_EQUAL(96, nsteps.first);
+    CHECK_EQUAL(0, nsteps.second);
+  }
+
 }
