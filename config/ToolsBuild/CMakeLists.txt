@@ -56,7 +56,7 @@ set(Amanzi_MODULE_PATH ${Amanzi_SOURCE_DIR}/tools/cmake
                        ${Amanzi_SOURCE_DIR}/tools/cmake/Modules)
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} 
-	              ${ToolsBuild_SOURCE_DIR}/../SuperBuild/cmake
+	              ${ToolsBuild_SOURCE_DIR}/cmake
 	              ${Amanzi_MODULE_PATH})
 
 

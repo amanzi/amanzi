@@ -18,19 +18,18 @@ build_whitespace_string(openmpi_fcflags
                         -I${TPL_INSTALL_PREFIX}/include ${Amanzi_COMMON_FCFLAGS} )
 
 # --- Add RPATH to the link flags for the compiler wrappers
-set(openmpi_extra_ldflags "-Wl,-rpath,${TPL_INSTALL_PREFIX}/lib")
+set(openmpi_extra_ldflags "-Wl,-rpath,${TOOLS_INSTALL_PREFIX}/lib")
 message(STATUS "openmpi_extra_ldflags = ${openmpi_extra_ldflags}")
 find_package(Threads)
 
 
 # --- Add external project build and tie to the OpenMPI build target
-message(STATUS "KL >>>>>>>>>>>>>>>> ${OpenMPI_tmp_dir}")
 ExternalProject_Add(${OpenMPI_BUILD_TARGET}
                     DEPENDS   ${OpenMPI_PACKAGE_DEPENDS}             # Package dependency target
                     TMP_DIR   ${OpenMPI_tmp_dir}                     # Temporary files directory
                     STAMP_DIR ${OpenMPI_stamp_dir}                   # Timestamp and log directory
                     # -- Download and URL definitions
-                    DOWNLOAD_DIR ${TPL_DOWNLOAD_DIR}                 # Download directory
+                    DOWNLOAD_DIR ${TOOLS_DOWNLOAD_DIR}
                     URL          ${OpenMPI_URL}                      # URL may be a web site OR a local file
                     URL_MD5      ${OpenMPI_MD5_SUM}                  # md5sum of the archive file
                     # -- Configure
@@ -54,7 +53,7 @@ ExternalProject_Add(${OpenMPI_BUILD_TARGET}
                     BUILD_COMMAND     $(MAKE)                     # $(MAKE) enables parallel builds through make
                     BUILD_IN_SOURCE   ${OpenMPI_BUILD_IN_SOURCE}     # Flag for in source builds
                     # -- Install
-                    INSTALL_DIR      ${TPL_INSTALL_PREFIX}        # Install directory
+                    INSTALL_DIR      ${TOOLS_INSTALL_PREFIX}
                     # -- Output control
                     ${OpenMPI_logging_args})
 

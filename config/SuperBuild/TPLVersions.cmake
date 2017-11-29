@@ -177,15 +177,14 @@ set(XERCES_MD5_SUM        d987b8bb576aea456e92454781fe3615 )
 #
 # TPL: OpenMPI
 #
-set(OpenMPI_VERSION_MAJOR 1)
-set(OpenMPI_VERSION_MINOR 4)
-set(OpenMPI_VERSION_PATCH 4)
+set(OpenMPI_VERSION_MAJOR 2)
+set(OpenMPI_VERSION_MINOR 1)
+set(OpenMPI_VERSION_PATCH 2)
 set(OpenMPI_VERSION ${OpenMPI_VERSION_MAJOR}.${OpenMPI_VERSION_MINOR}.${OpenMPI_VERSION_PATCH})
-set(OpenMPI_URL_STRING     ${ASCEM_TPLS_DOWNLOAD_URL})
+set(OpenMPI_URL_STRING     "https://www.open-mpi.org/software/ompi/v2.1/downloads/")
 set(OpenMPI_ARCHIVE_FILE   openmpi-${OpenMPI_VERSION}.tar.bz2)
 set(OpenMPI_SAVEAS_FILE    ${OpenMPI_ARCHIVE_FILE})
-set(OpenMPI_MD5_SUM        e58a1ea7b8af62453aaa0ddaee5f26a0) 
-
+set(OpenMPI_MD5_SUM        ff2e55cc529802e7b0738cf87acd3ee4)
 #
 # TPL: CURL
 #
