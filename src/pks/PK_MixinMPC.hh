@@ -120,11 +120,7 @@ template <class Base_t, class PK_Contained_t>
 void
 PK_MixinMPC<Base_t,PK_Contained_t>::Setup()
 {
-  int i = 0;
-  for (auto& pk : sub_pks_) {
-    pk->Setup();
-    ++i;
-  }
+  for (auto& pk : sub_pks_) pk->Setup();
   Base_t::Setup();
 }
 
@@ -148,10 +144,8 @@ template <class Base_t, class PK_Contained_t>
 bool
 PK_MixinMPC<Base_t,PK_Contained_t>::ValidStep(const Key& tag_old, const Key& tag_new)
 {
-  int i = 0;
   for (auto& pk : sub_pks_) {
     if (!pk->ValidStep(tag_old, tag_new)) return false;
-    ++i;
   }
   return true;
 }
@@ -164,11 +158,7 @@ template <class Base_t, class PK_Contained_t>
 void
 PK_MixinMPC<Base_t,PK_Contained_t>::CommitStep(const Key& tag_old, const Key& tag_new)
 {
-  int i = 0;
-  for (auto& pk : sub_pks_) {
-    pk->CommitStep(tag_old, tag_new);
-    ++i;
-  }
+  for (auto& pk : sub_pks_) pk->CommitStep(tag_old, tag_new);
 }
 
 // -----------------------------------------------------------------------------
@@ -178,11 +168,7 @@ template <class Base_t, class PK_Contained_t>
 void
 PK_MixinMPC<Base_t,PK_Contained_t>::FailStep(const Key& tag_old, const Key& tag_new)
 {
-  int i = 0;
-  for (auto& pk : sub_pks_) {
-    pk->FailStep(tag_old, tag_new);
-    ++i;
-  }
+  for (auto& pk : sub_pks_) pk->FailStep(tag_old, tag_new);
 }
 
 

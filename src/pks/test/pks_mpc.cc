@@ -46,7 +46,7 @@ using namespace Amanzi;
 
 
 //
-// Creates an explicitly integrable PK
+// Creates an three-PK tree, consisting of two leafs (A,B) and one MPC
 // ============================================================================
 template<class MPC_t, class PK_A_t, class PK_B_t, class PK_t=Amanzi::PK>
 std::unique_ptr<Run>
@@ -99,13 +99,13 @@ SUITE(PKS_MPC) {
     auto run = createRun<MPC_t, PK_B_t, PK_C_t>("BC weak forward euler", "B, forward euler", "C, forward euler");
     auto nsteps = run_test(run->S, run->pk);
 
-    // check B soln
+    // check B soln -- same as B_FORWARD_EULER
     CHECK_CLOSE(std::exp(1), (*run->S->Get<CompositeVector>("primaryB")
                       .ViewComponent("cell",false))[0][0], 0.15);
     CHECK_CLOSE(2.59374, (*run->S->Get<CompositeVector>("primaryB")
                       .ViewComponent("cell",false))[0][0], 1.e-4);
 
-    // check C soln
+    // check C soln -- same as C_FORWARD_EULER
     CHECK_CLOSE(std::exp(1), (*run->S->Get<CompositeVector>("primaryC")
                       .ViewComponent("cell",false))[0][0], 0.4);
     CHECK_CLOSE(2.33463, (*run->S->Get<CompositeVector>("primaryC")

@@ -369,6 +369,12 @@
         </ParameterList>
       </ParameterList>
     </ParameterList>
+
+    <ParameterList name="ABC weak forward euler" type="ParameterList">
+      <ParameterList name="verbose object" type="ParameterList">
+        <Parameter name="verbosity level" type="string" value="high" />
+      </ParameterList>
+    </ParameterList>
     
   </ParameterList>
 
