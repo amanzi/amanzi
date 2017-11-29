@@ -24,9 +24,9 @@ system_arch=`uname -m`
 print_exit=${FALSE}
 
 # Known compiler lists
-known_c_compilers="cc gcc icc clang"
-known_cxx_compilers="CC g++ icpc clang++"
-known_fortran_compilers="ftn gfortran ifort"
+known_c_compilers="gcc icc clang"
+known_cxx_compilers="g++ icpc clang++"
+known_fortran_compilers="gfortran ifort"
 
 # Directory information
 start_directory=$PWD
