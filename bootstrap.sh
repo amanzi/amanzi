@@ -9,7 +9,7 @@
 # ############################################################################ #
 
 # ---------------------------------------------------------------------------- #
-# Initialize
+# Initialization
 # ---------------------------------------------------------------------------- #
 
 # Logic parameters
@@ -125,14 +125,14 @@ nersc_amanzi_opts=
 
 
 # ---------------------------------------------------------------------------- #
-#
-# Begin Functions
+# Functions: basic messages and exit functions
+# ---------------------------------------------------------------------------- #
 
-# Basic messages and exiting functions
 function exit_now()
 {
   exit $1
 }
+
 function status_message()
 {
 
@@ -142,8 +142,8 @@ function status_message()
   else
     echo -e "[`date`]\033[$GREEN $1\033[m"
   fi  
-
 }
+
 function error_message()
 {
   local RED='31m'
@@ -170,7 +170,10 @@ function fatal_message()
   exit_now 10
 }
 
-# Utilities
+
+# ---------------------------------------------------------------------------- #
+# Functions: utilities
+# ---------------------------------------------------------------------------- #
 
 function make_fullpath()
 {
@@ -215,10 +218,13 @@ function download_file()
      error_message "Failed to download $file from $url"
      exit_now $status
   fi
-
 }
 
-# Command line functions
+
+# ---------------------------------------------------------------------------- #
+# Functions: command line functions
+# ---------------------------------------------------------------------------- #
+
 function set_feature()
 {
   feature=$1
@@ -242,7 +248,6 @@ function parse_feature()
   if echo ${feature_opt} | grep "^--enable-" > /dev/null 2> /dev/null; then
     echo ${feature_opt} | sed "s/^--enable-//"
   fi
-    
 }
 
 function parse_option_with_equal()
@@ -253,7 +258,6 @@ function parse_option_with_equal()
   if echo $a | grep "^--${opt_name}=" > /dev/null 2> /dev/null; then
     echo $a | sed "s/^--${opt_name}=//"
   fi
-
 }
 
 function print_usage()
@@ -418,6 +422,7 @@ Directories:
     
 '    
 }  
+
 function parse_argv()
 {
   argv=( "$@" )
@@ -587,10 +592,12 @@ function parse_argv()
 
       i=$[$i+1]
   done
-
 }
 
+
+# ---------------------------------------------------------------------------- #
 # CURL functions
+# ---------------------------------------------------------------------------- #
 
 curl_version()
 {
@@ -616,7 +623,10 @@ curl_test_protocol()
   fi
 }  
 
+
+# ---------------------------------------------------------------------------- #
 # CMake functions
+# ---------------------------------------------------------------------------- #
 
 function cmake_version
 {
@@ -640,8 +650,6 @@ function download_cmake
    cd ${pwd_save}
 
    status_message "CMake download complete"
-
-
 }
 
 function unpack_cmake
@@ -707,8 +715,6 @@ function configure_cmake
   cd ${pwd_save}
 
   status_message "Configure CMake complete"
-
-
 }
 
 function build_cmake
@@ -756,10 +762,13 @@ function build_cmake
   ctest_binary=${root_install_dir}/bin/ctest
 
   status_message "CMake build complete"
-
 }
 
+
+# ---------------------------------------------------------------------------- #
 # Git functions
+# ---------------------------------------------------------------------------- #
+
 function ascem_git_clone
 {
   repo=$1
@@ -782,10 +791,12 @@ function git_change_branch()
     exit_now 30
   fi
   cd ${save_dir}
- 
 }
 
-# MPI Check
+
+# ---------------------------------------------------------------------------- #
+# MPI functions
+# ---------------------------------------------------------------------------- #
 function check_mpi_root
 {
   if [ -z "${mpi_root_dir}" ]; then
@@ -809,7 +820,11 @@ function check_mpi_root
   fi
 }
 
-# xSDK Check
+
+# ---------------------------------------------------------------------------- #
+# xSDK functions: check
+# ---------------------------------------------------------------------------- #
+
 function check_xsdk_root
 {
   if [ -z "${xsdk_root_dir}" ]; then
@@ -833,17 +848,20 @@ function check_xsdk_root
   fi
 }
 
-# Spack Check
+
+# ---------------------------------------------------------------------------- #
+# Spack functions: check
+# ---------------------------------------------------------------------------- #
+
 function check_Spack
 {
-
   if [ ! -e "${Spack_binary}" ]; then
     error_message "Spack binary does not exist - Will try to locate..."
 
     if [ ! -e ${tpl_install_prefix}/spack/bin/spack ]; then
       error_message "Could not locate Spack - Downloading and installing as a TPL"
-#      build_Spack=$TRUE
-#      status_message "build_Spack: ${build_Spack}"
+#     build_Spack=$TRUE
+#     status_message "build_Spack: ${build_Spack}"
 
       pwd_save=`pwd`
       if [ ! -e ${tpl_install_prefix} ]; then
@@ -852,10 +870,10 @@ function check_Spack
       cd ${tpl_install_prefix}
       git clone https://github.com/LLNL/spack.git
       
-#      if [ ${xsdk} == ${TRUE} ]; then
-#	  cd ${tpl_install_prefix}/spack
-#	  git checkout barry/xsdk
-#	  git pull
+#     if [ ${xsdk} == ${TRUE} ]; then
+#       cd ${tpl_install_prefix}/spack
+#       git checkout barry/xsdk
+#       git pull
 #     fi
       cd ${pwd_save}
     fi
@@ -869,7 +887,11 @@ function check_Spack
   fi
 }
 
+
+# ---------------------------------------------------------------------------- #
 # Compiler functions
+# ---------------------------------------------------------------------------- #
+
 function define_c_compiler
 {
   if [ -z "${build_c_compiler}" ]; then
@@ -905,7 +927,6 @@ function define_c_compiler
 
   status_message "Build with C compiler: ${build_c_compiler}"
   export CC=${build_c_compiler}
-
 }
 
 function define_cxx_compiler
@@ -944,7 +965,6 @@ function define_cxx_compiler
 
   status_message "Build with C++ compiler: ${build_cxx_compiler}"
   export CXX=${build_cxx_compiler}
-
 }
 
 function define_fort_compiler
@@ -987,13 +1007,11 @@ function define_fort_compiler
 
 function check_compilers
 {
-
   define_c_compiler
   define_cxx_compiler
   define_fort_compiler
 
   status_message "Compiler Check complete"
-
 }
 
 version_compare_element()
@@ -1020,10 +1038,13 @@ version_compare()
   return $?
 }
 
-# Tool Checks
+
+# ---------------------------------------------------------------------------- #
+# Tools functions: checks
+# ---------------------------------------------------------------------------- #
+
 function check_tools
 {
-
   # Check Git
   if [ ! -e "${git_binary}" ]; then
     error_message "Git binary does not exist"
@@ -1067,10 +1088,13 @@ function check_tools
   status_message "CTest binary: ${ctest_binary}"
 
   status_message "Tool check complete"
-
 }
 
+
+# ---------------------------------------------------------------------------- #
 # Directory functions
+# ---------------------------------------------------------------------------- #
+
 function define_build_directories
 {
   # The amanzi build directory
@@ -1089,7 +1113,6 @@ function define_build_directories
   fi
 
   status_message "Build directories ready"
-
 }
 
 function define_install_directories
@@ -1103,7 +1126,6 @@ function define_install_directories
 
   status_message "Amanzi installation: ${amanzi_install_prefix}"
   status_message "TPL installation: ${tpl_install_prefix}"
-
 }    
 
 function define_unstructured_dependencies
@@ -1132,9 +1154,6 @@ function define_nersc_options
   fi
 }
 
-#
-# End functions
-# ---------------------------------------------------------------------------- #
 
 
 # ---------------------------------------------------------------------------- #
@@ -1195,21 +1214,21 @@ if [ -z "${tpl_config_file}" ]; then
 
   # Check for Spack
   if [ "${Spack}" -eq "${TRUE}" ]; then
-      status_message "Building with Spack"
-      check_Spack
+    status_message "Building with Spack"
+    check_Spack
   fi
 
   # Are we using xSDK?  If so, make sure Spack in enabled
   if [ "${xsdk}" -eq "${TRUE}" ]; then 
-      status_message "Building with xSDK"
+    status_message "Building with xSDK"
 
-      if [ "${Spack}" -eq "${FALSE}" ]; then
-	status_message "Enabling Spack"
-	Spack=$TRUE
-	check_Spack
-      fi
-
+    if [ "${Spack}" -eq "${FALSE}" ]; then
+      status_message "Enabling Spack"
+      Spack=$TRUE
+      check_Spack
+    fi
   fi
+
   # Define the TPL build source directory
   tpl_build_src_dir=${amanzi_source_dir}/config/SuperBuild
   
@@ -1252,8 +1271,8 @@ if [ -z "${tpl_config_file}" ]; then
       ${tpl_build_src_dir}
   
   if [ $? -ne 0 ]; then
-      error_message "Failed to configure TPL build"
-      exit_now 30
+    error_message "Failed to configure TPL build"
+    exit_now 30
   fi
   status_message "TPL configure complete"
   
@@ -1261,24 +1280,24 @@ if [ -z "${tpl_config_file}" ]; then
   cd ${tpl_build_dir}
   make -j ${parallel_jobs}
   if [ $? -ne 0 ]; then
-      error_message "Failed to build TPLs"
-      exit_now 30
+    error_message "Failed to build TPLs"
+    exit_now 30
   fi
   
   # TPL Install
   cd ${tpl_build_dir}
-      make install
-      if [ $? -ne 0 ]; then
-	  error_message "Failed to install configure script"
-	  exit_now 30
-      fi
+    make install
+    if [ $? -ne 0 ]; then
+      error_message "Failed to install configure script"
+      exit_now 30
+    fi
       
-      tpl_config_file=${tpl_install_prefix}/share/cmake/amanzi-tpl-config.cmake
+    tpl_config_file=${tpl_install_prefix}/share/cmake/amanzi-tpl-config.cmake
       
-      cd ${pwd_save}
+    cd ${pwd_save}
       
-      status_message "TPL build complete"
-      status_message "For future Amanzi builds use ${tpl_config_file}"
+    status_message "TPL build complete"
+    status_message "For future Amanzi builds use ${tpl_config_file}"
       
 else 
 
@@ -1299,44 +1318,41 @@ else
     exit_now 30
   fi
 
-
 fi
 
 
 status_message "Build Amanzi with configure file ${tpl_config_file}"
 
+# Configure the Amanzi build
 # Amanzi Configure
 cd ${amanzi_build_dir}
-
-# -- Amanzi options
-
 ${cmake_binary} \
-              -C${tpl_config_file} \
-      	      -DCMAKE_C_FLAGS:STRING="${build_c_flags}" \
-      	      -DCMAKE_CXX_FLAGS:STRING="${build_cxx_flags}" \
-      	      -DCMAKE_Fortran_FLAGS:STRING="${build_fort_flags}" \
-      	      -DCMAKE_EXE_LINKER_FLAGS:STRING="${build_link_flags}" \
-              -DCMAKE_INSTALL_PREFIX:STRING=${amanzi_install_prefix} \
-              -DCMAKE_BUILD_TYPE:STRING=${build_type} \
-              -DCMAKE_C_COMPILER:STRING=${build_c_compiler} \
-              -DCMAKE_CXX_COMPILER:STRING=${build_cxx_compiler} \
-              -DCMAKE_Fortran_COMPILER:STRING=${build_fort_compiler} \
-              -DENABLE_Structured:BOOL=${structured} \
-              -DENABLE_Unstructured:BOOL=${unstructured} \
-              -DENABLE_STK_Mesh:BOOL=${stk_mesh} \
-              -DENABLE_MOAB_Mesh:BOOL=${moab_mesh} \
-              -DENABLE_MSTK_Mesh:BOOL=${mstk_mesh} \
-              -DENABLE_HYPRE:BOOL=${hypre} \
-              -DENABLE_PETSC:BOOL=${petsc} \
-              -DENABLE_ALQUIMIA:BOOL=${alquimia} \
-              -DENABLE_PFLOTRAN:BOOL=${pflotran} \
-              -DENABLE_CRUNCHTOPE:BOOL=${crunchtope} \
-              -DBUILD_SHARED_LIBS:BOOL=${shared} \
-              -DCCSE_BL_SPACEDIM:INT=${spacedim} \
-	      -DENABLE_Regression_Tests:BOOL=${reg_tests} \
-	      -DENABLE_NATIVE_XML_OUTPUT:BOOL=${native} \
-              ${nersc_amanzi_opts} \
-              ${amanzi_source_dir}
+    -C${tpl_config_file} \
+    -DCMAKE_C_FLAGS:STRING="${build_c_flags}" \
+    -DCMAKE_CXX_FLAGS:STRING="${build_cxx_flags}" \
+    -DCMAKE_Fortran_FLAGS:STRING="${build_fort_flags}" \
+    -DCMAKE_EXE_LINKER_FLAGS:STRING="${build_link_flags}" \
+    -DCMAKE_INSTALL_PREFIX:STRING=${amanzi_install_prefix} \
+    -DCMAKE_BUILD_TYPE:STRING=${build_type} \
+    -DCMAKE_C_COMPILER:STRING=${build_c_compiler} \
+    -DCMAKE_CXX_COMPILER:STRING=${build_cxx_compiler} \
+    -DCMAKE_Fortran_COMPILER:STRING=${build_fort_compiler} \
+    -DENABLE_Structured:BOOL=${structured} \
+    -DENABLE_Unstructured:BOOL=${unstructured} \
+    -DENABLE_STK_Mesh:BOOL=${stk_mesh} \
+    -DENABLE_MOAB_Mesh:BOOL=${moab_mesh} \
+    -DENABLE_MSTK_Mesh:BOOL=${mstk_mesh} \
+    -DENABLE_HYPRE:BOOL=${hypre} \
+    -DENABLE_PETSC:BOOL=${petsc} \
+    -DENABLE_ALQUIMIA:BOOL=${alquimia} \
+    -DENABLE_PFLOTRAN:BOOL=${pflotran} \
+    -DENABLE_CRUNCHTOPE:BOOL=${crunchtope} \
+    -DBUILD_SHARED_LIBS:BOOL=${shared} \
+    -DCCSE_BL_SPACEDIM:INT=${spacedim} \
+    -DENABLE_Regression_Tests:BOOL=${reg_tests} \
+    -DENABLE_NATIVE_XML_OUTPUT:BOOL=${native} \
+    ${nersc_amanzi_opts} \
+    ${amanzi_source_dir}
 
 
 if [ $? -ne 0 ]; then
@@ -1375,3 +1391,4 @@ status_message "Amanzi install complete"
 status_message "Bootstrap complete"
 
 exit_now 0
+

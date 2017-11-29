@@ -14,24 +14,20 @@ amanzi_tpl_version_write(FILENAME ${TPL_VERSIONS_INCLUDE_FILE}
   PREFIX NetCDF
   VERSION ${NetCDF_VERSION_MAJOR} ${NetCDF_VERSION_MINOR} ${NetCDF_VERSION_PATCH})
 
-# --- Define the patch command
-# Need Perl to patch the files
-find_package(Perl)
-if (NOT PERL_FOUND)
-  message(FATAL_ERROR "Can not locate Perl. Unable to patch and build netCDF")
-endif()
-
-# Configure the bash patch script
+# --- Patch original code
+set(NetCDF_patch_file netcdf-cmake.patch)
 set(NetCDF_sh_patch ${NetCDF_prefix_dir}/netcdf-patch-step.sh)
 configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/netcdf-patch-step.sh.in
                ${NetCDF_sh_patch}
                @ONLY)
 
-# Configure the CMake command file
+# configure the CMake patch step
 set(NetCDF_cmake_patch ${NetCDF_prefix_dir}/netcdf-patch-step.cmake)
 configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/netcdf-patch-step.cmake.in
                ${NetCDF_cmake_patch}
                @ONLY)
+
+# configure the CMake command file
 set(NetCDF_PATCH_COMMAND ${CMAKE_COMMAND} -P ${NetCDF_cmake_patch})     
 
 # --- Define the configure command
