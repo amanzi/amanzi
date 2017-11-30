@@ -92,6 +92,12 @@ Alquimia_PK::Alquimia_PK(Teuchos::ParameterList& pk_tree,
   secondary_activity_coeff_key_ = Keys::getKey(domain_name_, "secondary_activity_coeff");
   alquimia_aux_data_key_ = Keys::getKey(domain_name_, "alquimia_aux_data");
 
+  ion_exchange_ref_cation_conc_key_ = Keys::getKey(domain_name_,"ion_exchange_ref_cation_conc");
+  secondary_activity_coeff_key_ = Keys::getKey(domain_name_,"secondary_activity_coeff");
+  alquimia_aux_data_key_ = Keys::getKey(domain_name_,"alquimia_aux_data");
+  mineral_rate_constant_key_ = Keys::getKey(domain_name_,"mineral_rate_constant");
+  first_order_decay_constant_key_ = Keys::getKey(domain_name_,"first_order_decay_constant");
+
 
   convert2mole_fraction_ = cp_list_->get<bool>("use mole fraction units", false);
 
