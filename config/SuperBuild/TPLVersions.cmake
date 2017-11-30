@@ -99,6 +99,7 @@
 #                - update NetCDF to 4.5.0
 #	         - update NetCDF-Fortran to 4.4.4
 #	         - update curl to 7.56.1
+#	         - update xerces-c to 3.2.0
 
 include(CMakeParseArguments)
 
@@ -166,13 +167,13 @@ set (AMANZI_TPLS_DOWNLOAD_URL "https://raw.githubusercontent.com/amanzi/amanzi-t
 # TPL: Xerces
 #
 set(XERCES_VERSION_MAJOR 3)
-set(XERCES_VERSION_MINOR 1)
-set(XERCES_VERSION_PATCH 2)
+set(XERCES_VERSION_MINOR 2)
+set(XERCES_VERSION_PATCH 0)
 set(XERCES_VERSION ${XERCES_VERSION_MAJOR}.${XERCES_VERSION_MINOR}.${XERCES_VERSION_PATCH})
 set(XERCES_URL_STRING     ${AMANZI_TPLS_DOWNLOAD_URL})
 set(XERCES_ARCHIVE_FILE   xerces-c-${XERCES_VERSION}.tar.bz2)
 set(XERCES_SAVEAS_FILE    ${XERCES_ARCHIVE_FILE})
-set(XERCES_MD5_SUM        d987b8bb576aea456e92454781fe3615 ) 
+set(XERCES_MD5_SUM        7b1394c32abbdd87841d94a8404c2ac6) 
 
 #
 # TPL: OpenMPI
