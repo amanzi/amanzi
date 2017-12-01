@@ -93,6 +93,11 @@ if (BUILD_TESTS)
     # Add the solvers directory to the include paths
     include_directories(${PKS_SOURCE_DIR})
 
+    add_amanzi_test(pks_increment pks_increment
+                    KIND unit
+                    SOURCE test/Main.cc test/pks_increment.cc
+                    LINK_LIBS ${pks_test_link_libs} ${UnitTest_LIBRARIES} ${pks_tpl_libs})
+
     add_amanzi_test(pks_mpc_heirarchy pks_mpc_heirarchy
                     KIND unit
                     SOURCE test/Main.cc test/pks_mpc_heirarchy.cc

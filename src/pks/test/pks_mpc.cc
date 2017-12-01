@@ -39,64 +39,20 @@ These tests that functionality with a series of ODEs.
 #include "PK_MixinMPCGetDtMin.hh"
 #include "PK_MixinMPCImplicit.hh"
 
-#include "pks_test.hh"
+#include "test_pks.hh"
 #include "pks_test_harness.hh"
 
 using namespace Amanzi;
-
-
-//
-// Creates an three-PK tree, consisting of two leafs (A,B) and one MPC
-// ============================================================================
-template<class MPC_t, class PK_A_t, class PK_B_t, class PK_t=Amanzi::PK>
-std::unique_ptr<Run>
-createRun(const std::string& mpc_name, const std::string& pk_A_name, const std::string& pk_B_name) {
-  std::cout << "Test: " << mpc_name << std::endl;
-
-  auto global_list = Teuchos::getParametersFromXmlFile("test/pks_ode.xml");
-  auto S = Teuchos::rcp(new State(global_list->sublist("state")));
-
-  Epetra_MpiComm* comm = new Epetra_MpiComm(MPI_COMM_WORLD);
-
-  // create mesh
-  Teuchos::ParameterList& regions_list = global_list->sublist("regions");
-  Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm =
-      Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(2, regions_list, comm));
-
-  Amanzi::AmanziMesh::FrameworkPreference pref;
-  pref.clear();
-  pref.push_back(Amanzi::AmanziMesh::MSTK);
-
-  Amanzi::AmanziMesh::MeshFactory meshfactory(comm);
-  meshfactory.preference(pref);
-  // make a 1x1 'mesh' for ODEs
-  Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 1, 1, gm);
-  S->RegisterDomainMesh(mesh);
-
-  // create the PKs/MPCs
-  auto pk_tree_mpc = Teuchos::rcp(new Teuchos::ParameterList(mpc_name));
-  auto mpc = Teuchos::rcp(new MPC_t(pk_tree_mpc, global_list, S));
-
-  auto pk_tree_A = Teuchos::rcp(new Teuchos::ParameterList(pk_A_name));
-  auto pk_a = Teuchos::rcp(new PK_A_t(pk_tree_A, global_list, S));
-
-  auto pk_tree_B = Teuchos::rcp(new Teuchos::ParameterList(pk_B_name));
-  auto pk_b = Teuchos::rcp(new PK_B_t(pk_tree_B, global_list, S));
-  mpc->SetChildren(std::vector<Teuchos::RCP<PK_t> >{pk_a, pk_b});
-
-  return std::make_unique<Run>(S,mpc);
-}
-
 
 SUITE(PKS_MPC) {
 
   // weak MPC coupling two FE PKs
   TEST(SEQUENTIAL_BC_FORWARD_EULER) {
-    typedef PK_Explicit_Adaptor<PK_ODE_Explicit<PK_MixinExplicit<PK_MixinLeaf<PK_Default> >, DudtEvaluatorB> > PK_B_t;
-    typedef PK_Explicit_Adaptor<PK_ODE_Explicit<PK_MixinExplicit<PK_MixinLeaf<PK_Default> >, DudtEvaluatorC> > PK_C_t;
+    typedef PK_Explicit_Adaptor<PK_ODE_Explicit<PK_MixinExplicit<PK_MixinLeafCompositeVector<PK_Default> >, DudtEvaluatorB> > PK_B_t;
+    typedef PK_Explicit_Adaptor<PK_ODE_Explicit<PK_MixinExplicit<PK_MixinLeafCompositeVector<PK_Default> >, DudtEvaluatorC> > PK_C_t;
     typedef PK_Adaptor<PK_MixinMPCAdvanceStepWeak<PK_MixinMPCGetDtMin<PK_MixinMPC<PK_Default,PK> > > > MPC_t;
 
-    auto run = createRun<MPC_t, PK_B_t, PK_C_t>("BC weak forward euler", "B, forward euler", "C, forward euler");
+    auto run = createRunMPC<MPC_t, PK_B_t, PK_C_t>("BC weak forward euler", "B, forward euler", "C, forward euler");
     auto nsteps = run_test(run->S, run->pk);
 
     // check B soln -- same as B_FORWARD_EULER
@@ -116,11 +72,11 @@ SUITE(PKS_MPC) {
 
   // weak MPC coupling one FE and one RK4 PKs
   TEST(SEQUENTIAL_BC_FE_RK) {
-    typedef PK_Explicit_Adaptor<PK_ODE_Explicit<PK_MixinExplicit<PK_MixinLeaf<PK_Default> >, DudtEvaluatorB> > PK_B_t;
-    typedef PK_Explicit_Adaptor<PK_ODE_Explicit<PK_MixinExplicit<PK_MixinLeaf<PK_Default> >, DudtEvaluatorC> > PK_C_t;
+    typedef PK_Explicit_Adaptor<PK_ODE_Explicit<PK_MixinExplicit<PK_MixinLeafCompositeVector<PK_Default> >, DudtEvaluatorB> > PK_B_t;
+    typedef PK_Explicit_Adaptor<PK_ODE_Explicit<PK_MixinExplicit<PK_MixinLeafCompositeVector<PK_Default> >, DudtEvaluatorC> > PK_C_t;
     typedef PK_Adaptor<PK_MixinMPCAdvanceStepWeak<PK_MixinMPCGetDtMin<PK_MixinMPC<PK_Default,PK> > > > MPC_t;
 
-    auto run = createRun<MPC_t, PK_B_t, PK_C_t>("BC weak mixed explicit", "B, RK4", "C, forward euler");
+    auto run = createRunMPC<MPC_t, PK_B_t, PK_C_t>("BC weak mixed explicit", "B, RK4", "C, forward euler");
     auto nsteps = run_test(run->S, run->pk);
 
 
@@ -140,11 +96,11 @@ SUITE(PKS_MPC) {
 
   // weak MPC coupling one FE and one implicit BDF with a fixed timestep 
   TEST(SEQUENTIAL_BC_FE_BDF) {
-    typedef PK_Explicit_Adaptor<PK_ODE_Explicit<PK_MixinExplicit<PK_MixinLeaf<PK_Default> >, DudtEvaluatorB> > PK_B_t;
-    typedef PK_Implicit_Adaptor<PK_ODE_Implicit<PK_MixinImplicit<PK_MixinLeaf<PK_Default> >, DudtEvaluatorC> > PK_C_t;
+    typedef PK_Explicit_Adaptor<PK_ODE_Explicit<PK_MixinExplicit<PK_MixinLeafCompositeVector<PK_Default> >, DudtEvaluatorB> > PK_B_t;
+    typedef PK_Implicit_Adaptor<PK_ODE_Implicit<PK_MixinImplicit<PK_MixinLeafCompositeVector<PK_Default> >, DudtEvaluatorC> > PK_C_t;
     typedef PK_Adaptor<PK_MixinMPCAdvanceStepWeak<PK_MixinMPCGetDtMin<PK_MixinMPC<PK_Default,PK> > > > MPC_t;
 
-    auto run = createRun<MPC_t, PK_B_t, PK_C_t>("BC weak imex", "B, forward euler", "C, backward euler");
+    auto run = createRunMPC<MPC_t, PK_B_t, PK_C_t>("BC weak imex", "B, forward euler", "C, backward euler");
     auto nsteps = run_test(run->S, run->pk);
 
 
@@ -168,11 +124,11 @@ SUITE(PKS_MPC) {
   // weak MPC coupling one FE and one implicit BDF with a variable timestep in
   // which the BDF DOES fail, forcing the explicit to back up
   TEST(SEQUENTIAL_BC_FE_BDF_FAILING) {
-    typedef PK_Explicit_Adaptor<PK_ODE_Explicit<PK_MixinExplicit<PK_MixinLeaf<PK_Default> >, DudtEvaluatorB> > PK_B_t;
-    typedef PK_Implicit_Adaptor<PK_ODE_Implicit<PK_MixinImplicit<PK_MixinLeaf<PK_Default> >, DudtEvaluatorC> > PK_C_t;
+    typedef PK_Explicit_Adaptor<PK_ODE_Explicit<PK_MixinExplicit<PK_MixinLeafCompositeVector<PK_Default> >, DudtEvaluatorB> > PK_B_t;
+    typedef PK_Implicit_Adaptor<PK_ODE_Implicit<PK_MixinImplicit<PK_MixinLeafCompositeVector<PK_Default> >, DudtEvaluatorC> > PK_C_t;
     typedef PK_Adaptor<PK_MixinMPCAdvanceStepWeak<PK_MixinMPCGetDtMin<PK_MixinMPC<PK_Default,PK> > > > MPC_t;
 
-    auto run = createRun<MPC_t, PK_B_t, PK_C_t>("BC weak imex variable dt", "B, RK4, large step", "C, backward euler, large step");
+    auto run = createRunMPC<MPC_t, PK_B_t, PK_C_t>("BC weak imex variable dt", "B, RK4, large step", "C, backward euler, large step");
     auto nsteps = run_test(run->S, run->pk);
 
 
@@ -195,11 +151,11 @@ SUITE(PKS_MPC) {
   // weak MPC coupling one FE and one implicit BDF with a variable timestep in
   // which the BDF DOES fail, and subcycles to keep up with the explicit
   TEST(SEQUENTIAL_BC_FE_BDF_FAILING2) {
-    typedef PK_Explicit_Adaptor<PK_ODE_Explicit<PK_MixinExplicit<PK_MixinLeaf<PK_Default> >, DudtEvaluatorB> > PK_B_t;
-    typedef PK_Implicit_Adaptor<PK_ODE_Implicit<PK_MixinImplicitSubcycled<PK_MixinLeaf<PK_Default> >, DudtEvaluatorC> > PK_C_t;
+    typedef PK_Explicit_Adaptor<PK_ODE_Explicit<PK_MixinExplicit<PK_MixinLeafCompositeVector<PK_Default> >, DudtEvaluatorB> > PK_B_t;
+    typedef PK_Implicit_Adaptor<PK_ODE_Implicit<PK_MixinImplicitSubcycled<PK_MixinLeafCompositeVector<PK_Default> >, DudtEvaluatorC> > PK_C_t;
     typedef PK_Adaptor<PK_MixinMPCAdvanceStepWeak<PK_MixinMPCGetDtMin<PK_MixinMPC<PK_Default,PK> > > > MPC_t;
 
-    auto run = createRun<MPC_t, PK_B_t, PK_C_t>("BC weak imex variable dt", "B, RK4", "C, backward euler, large step");
+    auto run = createRunMPC<MPC_t, PK_B_t, PK_C_t>("BC weak imex variable dt", "B, RK4", "C, backward euler, large step");
     auto nsteps = run_test(run->S, run->pk);
 
 
@@ -219,10 +175,10 @@ SUITE(PKS_MPC) {
 
   // Globally implicit, fixed timestep
   TEST(IMPLICIT_BC) {
-    typedef PK_Implicit_Adaptor<PK_ODE_Implicit<PK_MixinImplicit<PK_MixinLeaf<PK_Default> >, DudtEvaluatorB> > PK_B_t;
-    typedef PK_Implicit_Adaptor<PK_ODE_Implicit<PK_MixinImplicit<PK_MixinLeaf<PK_Default> >, DudtEvaluatorC> > PK_C_t;
+    typedef PK_Implicit_Adaptor<PK_ODE_Implicit<PK_MixinImplicit<PK_MixinLeafCompositeVector<PK_Default> >, DudtEvaluatorB> > PK_B_t;
+    typedef PK_Implicit_Adaptor<PK_ODE_Implicit<PK_MixinImplicit<PK_MixinLeafCompositeVector<PK_Default> >, DudtEvaluatorC> > PK_C_t;
     typedef PK_Implicit_Adaptor<PK_MixinImplicit<PK_MixinMPCImplicit<PK_Default, PK_Implicit<TreeVector> > > > MPC_t;
-    auto run = createRun<MPC_t, PK_B_t, PK_C_t, PK_Implicit<> >("BC global implicit", "B, backward euler", "C, backward euler");
+    auto run = createRunMPC<MPC_t, PK_B_t, PK_C_t, PK_Implicit<> >("BC global implicit", "B, backward euler", "C, backward euler");
     auto nsteps = run_test(run->S, run->pk);
 
 
@@ -245,10 +201,10 @@ SUITE(PKS_MPC) {
 
   // Globally implicit, variable timestep
   TEST(IMPLICIT_BC_VARIABLE_TS) {
-    typedef PK_Implicit_Adaptor<PK_ODE_Implicit<PK_MixinImplicit<PK_MixinLeaf<PK_Default> >, DudtEvaluatorB> > PK_B_t;
-    typedef PK_Implicit_Adaptor<PK_ODE_Implicit<PK_MixinImplicit<PK_MixinLeaf<PK_Default> >, DudtEvaluatorC> > PK_C_t;
+    typedef PK_Implicit_Adaptor<PK_ODE_Implicit<PK_MixinImplicit<PK_MixinLeafCompositeVector<PK_Default> >, DudtEvaluatorB> > PK_B_t;
+    typedef PK_Implicit_Adaptor<PK_ODE_Implicit<PK_MixinImplicit<PK_MixinLeafCompositeVector<PK_Default> >, DudtEvaluatorC> > PK_C_t;
     typedef PK_Implicit_Adaptor<PK_MixinImplicit<PK_MixinMPCImplicit<PK_Default, PK_Implicit<TreeVector> > > > MPC_t;
-    auto run = createRun<MPC_t, PK_B_t, PK_C_t, PK_Implicit<> >("BC global implicit variable", "B, backward euler", "C, backward euler");
+    auto run = createRunMPC<MPC_t, PK_B_t, PK_C_t, PK_Implicit<> >("BC global implicit variable", "B, backward euler", "C, backward euler");
     auto nsteps = run_test(run->S, run->pk);
 
     // no analogue for either of these

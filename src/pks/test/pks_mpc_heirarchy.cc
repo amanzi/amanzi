@@ -39,7 +39,7 @@ These tests that functionality with a series of ODEs.
 #include "PK_MixinMPCGetDtMin.hh"
 #include "PK_MixinMPCImplicit.hh"
 
-#include "pks_test.hh"
+#include "test_pks.hh"
 #include "pks_test_harness.hh"
 
 using namespace Amanzi;
@@ -109,9 +109,9 @@ SUITE(PKS_MPC_THREE) {
 
   // Sequential coupling of all, min dt
   TEST(SEQUENTIAL_ABC) {
-    using PK_A_t = PK_Explicit_Adaptor<PK_ODE_Explicit<PK_MixinExplicit<PK_MixinLeaf<PK_Default> >, DudtEvaluatorA> >;
-    using PK_B_t = PK_Explicit_Adaptor<PK_ODE_Explicit<PK_MixinExplicit<PK_MixinLeaf<PK_Default> >, DudtEvaluatorB> >;
-    using PK_C_t = PK_Explicit_Adaptor<PK_ODE_Explicit<PK_MixinExplicit<PK_MixinLeaf<PK_Default> >, DudtEvaluatorC> >;
+    using PK_A_t = PK_Explicit_Adaptor<PK_ODE_Explicit<PK_MixinExplicit<PK_MixinLeafCompositeVector<PK_Default> >, DudtEvaluatorA> >;
+    using PK_B_t = PK_Explicit_Adaptor<PK_ODE_Explicit<PK_MixinExplicit<PK_MixinLeafCompositeVector<PK_Default> >, DudtEvaluatorB> >;
+    using PK_C_t = PK_Explicit_Adaptor<PK_ODE_Explicit<PK_MixinExplicit<PK_MixinLeafCompositeVector<PK_Default> >, DudtEvaluatorC> >;
     using MPC_t = PK_Adaptor<PK_MixinMPCAdvanceStepWeak<PK_MixinMPCGetDtMin<PK_MixinMPC<PK_Default,PK> > > >;
 
     auto run = createRun<MPC_t, PK, PK_A_t, MPC_t, PK, PK_B_t, PK_C_t>("ABC weak forward euler", "A, forward euler",
@@ -141,9 +141,9 @@ SUITE(PKS_MPC_THREE) {
 
   // sequentially couple A to implicitly coupled B&C.  Min dt
   TEST(SEQUENTIAL_A_IMPLICIT_BC) {
-    using PK_A_t = PK_Explicit_Adaptor<PK_ODE_Explicit<PK_MixinExplicit<PK_MixinLeaf<PK_Default> >, DudtEvaluatorA> >;
-    using PK_B_t = PK_Implicit_Adaptor<PK_ODE_Implicit<PK_MixinImplicit<PK_MixinLeaf<PK_Default> >, DudtEvaluatorB> >;
-    using PK_C_t = PK_Implicit_Adaptor<PK_ODE_Implicit<PK_MixinImplicit<PK_MixinLeaf<PK_Default> >, DudtEvaluatorC> >;
+    using PK_A_t = PK_Explicit_Adaptor<PK_ODE_Explicit<PK_MixinExplicit<PK_MixinLeafCompositeVector<PK_Default> >, DudtEvaluatorA> >;
+    using PK_B_t = PK_Implicit_Adaptor<PK_ODE_Implicit<PK_MixinImplicit<PK_MixinLeafCompositeVector<PK_Default> >, DudtEvaluatorB> >;
+    using PK_C_t = PK_Implicit_Adaptor<PK_ODE_Implicit<PK_MixinImplicit<PK_MixinLeafCompositeVector<PK_Default> >, DudtEvaluatorC> >;
     using MPC_A_t = PK_Adaptor<PK_MixinMPCAdvanceStepWeak<PK_MixinMPCGetDtMin<PK_MixinMPC<PK_Default,PK> > > >;
     using MPC_B_t = PK_Implicit_Adaptor<PK_MixinImplicit<PK_MixinMPCImplicit<PK_Default, PK_Implicit<TreeVector> > > >;
 
@@ -173,9 +173,9 @@ SUITE(PKS_MPC_THREE) {
 
   // implicitly couple everything heirarchically
   TEST(IMPLICIT_ABC) {
-    using PK_A_t = PK_Implicit_Adaptor<PK_ODE_Implicit<PK_MixinImplicit<PK_MixinLeaf<PK_Default> >, DudtEvaluatorA> >;
-    using PK_B_t = PK_Implicit_Adaptor<PK_ODE_Implicit<PK_MixinImplicit<PK_MixinLeaf<PK_Default> >, DudtEvaluatorB> >;
-    using PK_C_t = PK_Implicit_Adaptor<PK_ODE_Implicit<PK_MixinImplicit<PK_MixinLeaf<PK_Default> >, DudtEvaluatorC> >;
+    using PK_A_t = PK_Implicit_Adaptor<PK_ODE_Implicit<PK_MixinImplicit<PK_MixinLeafCompositeVector<PK_Default> >, DudtEvaluatorA> >;
+    using PK_B_t = PK_Implicit_Adaptor<PK_ODE_Implicit<PK_MixinImplicit<PK_MixinLeafCompositeVector<PK_Default> >, DudtEvaluatorB> >;
+    using PK_C_t = PK_Implicit_Adaptor<PK_ODE_Implicit<PK_MixinImplicit<PK_MixinLeafCompositeVector<PK_Default> >, DudtEvaluatorC> >;
     using MPC_t = PK_Implicit_Adaptor<PK_MixinImplicit<PK_MixinMPCImplicit<PK_Default, PK_Implicit<TreeVector> > > >;
 
     auto run = createRun<MPC_t, PK_Implicit<TreeVector>, PK_A_t, MPC_t, PK_Implicit<TreeVector>, PK_B_t, PK_C_t>("BC global implicit variable", "A, backward euler",

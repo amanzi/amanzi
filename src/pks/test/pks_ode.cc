@@ -35,7 +35,7 @@ These tests that functionality with a series of ODEs.
 #include "PK_Adaptors.hh"
 
 
-#include "pks_test.hh"
+#include "test_pks.hh"
 #include "pks_test_harness.hh"
 
 using namespace Amanzi;
@@ -75,11 +75,11 @@ createExplicit(const std::string& eqn_name, const std::string& ti_name) {
 
   Teuchos::RCP<PK_Explicit<> > pk;
   if (eqn_name == "A") {
-    pk = Teuchos::rcp(new PK_Explicit_Adaptor<PK_ODE_Explicit<PK_MixinExplicit<PK_MixinLeaf<PK_Default> >, DudtEvaluatorA> >(pk_tree, global_list, S));
+    pk = Teuchos::rcp(new PK_Explicit_Adaptor<PK_ODE_Explicit<PK_MixinExplicit<PK_MixinLeafCompositeVector<PK_Default> >, DudtEvaluatorA> >(pk_tree, global_list, S));
   } else if (eqn_name == "B") {
-    pk = Teuchos::rcp(new PK_Explicit_Adaptor<PK_ODE_Explicit<PK_MixinExplicit<PK_MixinLeaf<PK_Default> >, DudtEvaluatorB> >(pk_tree, global_list, S));
+    pk = Teuchos::rcp(new PK_Explicit_Adaptor<PK_ODE_Explicit<PK_MixinExplicit<PK_MixinLeafCompositeVector<PK_Default> >, DudtEvaluatorB> >(pk_tree, global_list, S));
   } else if (eqn_name == "C") {
-    pk = Teuchos::rcp(new PK_Explicit_Adaptor<PK_ODE_Explicit<PK_MixinExplicit<PK_MixinLeaf<PK_Default> >, DudtEvaluatorC> >(pk_tree, global_list, S));
+    pk = Teuchos::rcp(new PK_Explicit_Adaptor<PK_ODE_Explicit<PK_MixinExplicit<PK_MixinLeafCompositeVector<PK_Default> >, DudtEvaluatorC> >(pk_tree, global_list, S));
   } else {
     ASSERT(false);
   }
@@ -121,11 +121,11 @@ createExplicitSubcycled(const std::string& eqn_name, const std::string& ti_name)
 
   Teuchos::RCP<PK_Explicit<> > pk;
   if (eqn_name == "A") {
-    pk = Teuchos::rcp(new PK_Explicit_Adaptor<PK_ODE_Explicit<PK_MixinExplicitSubcycled<PK_MixinLeaf<PK_Default> >, DudtEvaluatorA> >(pk_tree, global_list, S));
+    pk = Teuchos::rcp(new PK_Explicit_Adaptor<PK_ODE_Explicit<PK_MixinExplicitSubcycled<PK_MixinLeafCompositeVector<PK_Default> >, DudtEvaluatorA> >(pk_tree, global_list, S));
   } else if (eqn_name == "B") {
-    pk = Teuchos::rcp(new PK_Explicit_Adaptor<PK_ODE_Explicit<PK_MixinExplicitSubcycled<PK_MixinLeaf<PK_Default> >, DudtEvaluatorB> >(pk_tree, global_list, S));
+    pk = Teuchos::rcp(new PK_Explicit_Adaptor<PK_ODE_Explicit<PK_MixinExplicitSubcycled<PK_MixinLeafCompositeVector<PK_Default> >, DudtEvaluatorB> >(pk_tree, global_list, S));
   } else if (eqn_name == "C") {
-    pk = Teuchos::rcp(new PK_Explicit_Adaptor<PK_ODE_Explicit<PK_MixinExplicitSubcycled<PK_MixinLeaf<PK_Default> >, DudtEvaluatorC> >(pk_tree, global_list, S));
+    pk = Teuchos::rcp(new PK_Explicit_Adaptor<PK_ODE_Explicit<PK_MixinExplicitSubcycled<PK_MixinLeafCompositeVector<PK_Default> >, DudtEvaluatorC> >(pk_tree, global_list, S));
   } else {
     ASSERT(false);
   }
@@ -168,11 +168,11 @@ createImplicit(const std::string& eqn_name, const std::string& qualifier="") {
 
   Teuchos::RCP<PK_Implicit<> > pk;
   if (eqn_name == "A") {
-    pk = Teuchos::rcp(new PK_Implicit_Adaptor<PK_ODE_Implicit<PK_MixinImplicit<PK_MixinLeaf<PK_Default> >, DudtEvaluatorA> >(pk_tree, global_list, S));
+    pk = Teuchos::rcp(new PK_Implicit_Adaptor<PK_ODE_Implicit<PK_MixinImplicit<PK_MixinLeafCompositeVector<PK_Default> >, DudtEvaluatorA> >(pk_tree, global_list, S));
   } else if (eqn_name == "B") {
-    pk = Teuchos::rcp(new PK_Implicit_Adaptor<PK_ODE_Implicit<PK_MixinImplicit<PK_MixinLeaf<PK_Default> >, DudtEvaluatorB> >(pk_tree, global_list, S));
+    pk = Teuchos::rcp(new PK_Implicit_Adaptor<PK_ODE_Implicit<PK_MixinImplicit<PK_MixinLeafCompositeVector<PK_Default> >, DudtEvaluatorB> >(pk_tree, global_list, S));
   } else if (eqn_name == "C") {
-    pk = Teuchos::rcp(new PK_Implicit_Adaptor<PK_ODE_Implicit<PK_MixinImplicit<PK_MixinLeaf<PK_Default> >, DudtEvaluatorC> >(pk_tree, global_list, S));
+    pk = Teuchos::rcp(new PK_Implicit_Adaptor<PK_ODE_Implicit<PK_MixinImplicit<PK_MixinLeafCompositeVector<PK_Default> >, DudtEvaluatorC> >(pk_tree, global_list, S));
   } else {
     ASSERT(false);
   }
@@ -218,11 +218,11 @@ createImplicitSubcycled(const std::string& eqn_name, const std::string& qualifie
 
   Teuchos::RCP<PK_Implicit<> > pk;
   if (eqn_name == "A") {
-    pk = Teuchos::rcp(new PK_Implicit_Adaptor<PK_ODE_Implicit<PK_MixinImplicitSubcycled<PK_MixinLeaf<PK_Default> >, DudtEvaluatorA> >(pk_tree, global_list, S));
+    pk = Teuchos::rcp(new PK_Implicit_Adaptor<PK_ODE_Implicit<PK_MixinImplicitSubcycled<PK_MixinLeafCompositeVector<PK_Default> >, DudtEvaluatorA> >(pk_tree, global_list, S));
   } else if (eqn_name == "B") {
-    pk = Teuchos::rcp(new PK_Implicit_Adaptor<PK_ODE_Implicit<PK_MixinImplicitSubcycled<PK_MixinLeaf<PK_Default> >, DudtEvaluatorB> >(pk_tree, global_list, S));
+    pk = Teuchos::rcp(new PK_Implicit_Adaptor<PK_ODE_Implicit<PK_MixinImplicitSubcycled<PK_MixinLeafCompositeVector<PK_Default> >, DudtEvaluatorB> >(pk_tree, global_list, S));
   } else if (eqn_name == "C") {
-    pk = Teuchos::rcp(new PK_Implicit_Adaptor<PK_ODE_Implicit<PK_MixinImplicitSubcycled<PK_MixinLeaf<PK_Default> >, DudtEvaluatorC> >(pk_tree, global_list, S));
+    pk = Teuchos::rcp(new PK_Implicit_Adaptor<PK_ODE_Implicit<PK_MixinImplicitSubcycled<PK_MixinLeafCompositeVector<PK_Default> >, DudtEvaluatorC> >(pk_tree, global_list, S));
   } else {
     ASSERT(false);
   }
