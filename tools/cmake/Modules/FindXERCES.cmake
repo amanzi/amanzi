@@ -150,7 +150,9 @@ else(XERCES_LIBRARY_DIR AND XERCES_INCLUDE_DIR)
   file (STRINGS ${XERCES_DIR}/lib/pkgconfig/xerces-c.pc XERCES_LIBRARY_DEPS REGEX "Libs.private:*")
 
   if (NOT "${XERCES_LIBRARY_DEPS}" STREQUAL "")
-    STRING(REGEX REPLACE "Libs.private:  " "" XERCES_LIBRARY_DEPS ${XERCES_LIBRARY_DEPS})
+    # The number of white spaces may vary.
+    STRING(REGEX REPLACE "Libs.private: " "" XERCES_LIBRARY_DEPS ${XERCES_LIBRARY_DEPS})
+    STRING(REGEX REPLACE " " "" XERCES_LIBRARY_DEPS ${XERCES_LIBRARY_DEPS})
   endif()
 
   # For now we don't recurse on *.la files

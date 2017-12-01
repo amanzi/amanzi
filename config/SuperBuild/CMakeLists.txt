@@ -22,7 +22,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 # ############################################################################ #
 message(STATUS "\n------------------------------------------------")
 message(STATUS "\n-- CMake: Configuring Amanzi TPLs build/install.\n--")
-message(STATUS "------------------------------------------------")
+message(STATUS "---------------------------------------------")
 project(SuperBuild C CXX Fortran)
 
 # ############################################################################ #
