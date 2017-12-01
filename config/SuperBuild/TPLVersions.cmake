@@ -99,7 +99,7 @@
 #                - update NetCDF to 4.5.0
 #	         - update NetCDF-Fortran to 4.4.4
 #	         - update curl to 7.56.1
-#	         - update xerces-c to 3.2.0
+#  0.94.12       - update xerces-c to 3.2.0 (CMake build)
 
 include(CMakeParseArguments)
 
@@ -152,7 +152,7 @@ endmacro(amanzi_tpl_version_write)
 #
 set(AMANZI_TPLS_VERSION_MAJOR 0)
 set(AMANZI_TPLS_VERSION_MINOR 94)
-set(AMANZI_TPLS_VERSION_PATCH 11)
+set(AMANZI_TPLS_VERSION_PATCH 12)
 set(AMANZI_TPLS_VERSION ${AMANZI_TPLS_VERSION_MAJOR}.${AMANZI_TPLS_VERSION_MINOR}.${AMANZI_TPLS_VERSION_PATCH})
 # Not sure how to create a meaningful hash key for the collection
 
