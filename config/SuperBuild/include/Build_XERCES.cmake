@@ -12,13 +12,27 @@ amanzi_tpl_version_write(FILENAME ${TPL_VERSIONS_INCLUDE_FILE}
   PREFIX XERCES
   VERSION ${XERCES_VERSION_MAJOR} ${XERCES_VERSION_MINOR} ${XERCES_VERSION_PATCH})
 
+# --- Patch original code
+set(XERCES_patch_file xerces-libicu.patch)
+set(XERCES_sh_patch ${XERCES_prefix_dir}/xerces-patch-step.sh)
+configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/xerces-patch-step.sh.in
+               ${XERCES_sh_patch}
+               @ONLY)
+
+# configure the CMake patch step
+set(XERCES_cmake_patch ${XERCES_prefix_dir}/xerces-patch-step.cmake)
+configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/xerces-patch-step.cmake.in
+               ${XERCES_cmake_patch}
+               @ONLY)
+
+set(XERCES_PATCH_COMMAND ${CMAKE_COMMAND} -P ${XERCES_cmake_patch})
+
 # -- Set Xerces configuration options
 set(XERCES_CMAKE_ARGS "-DBUILD_SHARED_LIBS=${BUILD_SHARED_LIBS}")
 list(APPEND XERCES_CMAKE_ARGS "-DCMAKE_INSTALL_BINDIR:PATH=${TPL_INSTALL_PREFIX}/bin")
 list(APPEND XERCES_CMAKE_ARGS "-DCMAKE_INSTALL_LIBDIR:PATH=${TPL_INSTALL_PREFIX}/lib")
 list(APPEND XERCES_CMAKE_ARGS "-DCMAKE_INSTALL_DOCDIR:PATH=${TPL_INSTALL_PREFIX}/doc/xerces")
 list(APPEND XERCES_CMAKE_ARGS "-DCMAKE_INSTALL_INCLUDEDIR:PATH=${TPL_INSTALL_PREFIX}/include")
-list(APPEND XERCES_CMAKE_ARGS "-DXERCES_USE_TRANSCODER_ICU:BOOL=TRUE")
 list(APPEND XERCES_CMAKE_ARGS "-Dnetwork:BOOL=FALSE")
 # Force OSX to use its CoreServices Framework
 if (APPLE)
@@ -32,9 +46,10 @@ ExternalProject_Add(${XERCES_BUILD_TARGET}
                     TMP_DIR   ${XERCES_tmp_dir}                # Temporary files directory
                     STAMP_DIR ${XERCES_stamp_dir}              # Timestamp and log directory
                     # -- Download and URL definitions
-                    DOWNLOAD_DIR ${TPL_DOWNLOAD_DIR}       
-                    URL          ${XERCES_URL}                 # URL may be a web site OR a local file
-                    URL_MD5      ${XERCES_MD5_SUM}             # md5sum of the archive file
+                    DOWNLOAD_DIR  ${TPL_DOWNLOAD_DIR}       
+                    URL           ${XERCES_URL}                # URL may be a web site OR a local file
+                    URL_MD5       ${XERCES_MD5_SUM}            # md5sum of the archive file
+		    PATCH_COMMAND ${XERCES_PATCH_COMMAND} 
                     # -- Configure
                     SOURCE_DIR   ${XERCES_source_dir}          # Source directory
                     CMAKE_ARGS   ${AMANZI_CMAKE_CACHE_ARGS}    # CMAKE_CACHE_ARGS or CMAKE_ARGS => CMake configure

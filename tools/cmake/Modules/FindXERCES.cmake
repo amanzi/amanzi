@@ -146,17 +146,12 @@ else(XERCES_LIBRARY_DIR AND XERCES_INCLUDE_DIR)
     message(SEND_ERROR "Can not locate XERCES library")
   endif()    
 
-  # Grab the library dependencies from the libtool files lib*.la
-  STRING(REGEX REPLACE "\\.a" ".la" XERCES_LIBTOOL_FILE ${XERCES_LIBRARY})
-  file (STRINGS ${XERCES_LIBTOOL_FILE} XERCES_LIBRARY_DEPS REGEX "dependency_libs=.*")
+  # Grab the library dependencies from the setting file xerces-c.pc
+  file (STRINGS ${XERCES_DIR}/lib/pkgconfig/xerces-c.pc XERCES_LIBRARY_DEPS REGEX "Libs.private:*")
 
   if (NOT "${XERCES_LIBRARY_DEPS}" STREQUAL "")
-    STRING(REGEX REPLACE "^dependency_libs='" "" XERCES_LIBRARY_DEPS ${XERCES_LIBRARY_DEPS})
-    if (NOT "${XERCES_LIBRARY_DEPS}" STREQUAL "")
-      STRING(REGEX REPLACE "'$" "" XERCES_LIBRARY_DEPS ${XERCES_LIBRARY_DEPS})
-      STRING(REPLACE " " ";" XERCES_LIBRARY_DEPS "${XERCES_LIBRARY_DEPS}")
-    endif()
-  endif(NOT "${XERCES_LIBRARY_DEPS}" STREQUAL "")
+    STRING(REGEX REPLACE "Libs.private:  " "" XERCES_LIBRARY_DEPS ${XERCES_LIBRARY_DEPS})
+  endif()
 
   # For now we don't recurse on *.la files
   set(XERCES_ICU_LIBRARIES "")
@@ -177,7 +172,8 @@ else(XERCES_LIBRARY_DIR AND XERCES_INCLUDE_DIR)
 
   # Define the LIBRARIES and INCLUDE_DORS
   set(XERCES_INCLUDE_DIRS ${XERCES_INCLUDE_DIR})
-  set(XERCES_LIBRARIES    ${XERCES_LIBRARY})
+  set(XERCES_LIBRARIES ${XERCES_LIBRARY})
+  list(APPEND XERCES_LIBRARIES ${XERCES_LIBRARY_DEPS})
 
 endif(XERCES_LIBRARIES AND XERCES_INCLUDE_DIRS )    
 
