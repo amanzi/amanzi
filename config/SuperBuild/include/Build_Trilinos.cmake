@@ -274,5 +274,5 @@ ExternalProject_Add(${Trilinos_BUILD_TARGET}
                     ${Trilinos_logging_args})
 
 # --- Useful variables for packages that depends on Trilinos
-set(Trilinos_INSTALL_PREFIX  ${Trilinos_install_dir})
-set(Zoltan_INSTALL_PREFIX "${Trilinos_install_dir}")
+global_set(Trilinos_INSTALL_PREFIX  ${Trilinos_install_dir})
+global_set(Zoltan_INSTALL_PREFIX "${Trilinos_install_dir}")
