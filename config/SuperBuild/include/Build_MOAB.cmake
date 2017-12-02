@@ -33,7 +33,7 @@ build_whitespace_string(moab_ldflags
                         -L${TPL_INSTALL_PREFIX}/lib
                         -lz)
 
-# --- Add external project build and tie to the ZLIB build target
+# --- Add external project and tie to the MOAB build target
 ExternalProject_Add(${MOAB_BUILD_TARGET}
                     DEPENDS   ${MOAB_PACKAGE_DEPENDS}             # Package dependency target
                     TMP_DIR   ${MOAB_tmp_dir}                     # Temporary files directory
@@ -51,6 +51,8 @@ ExternalProject_Add(${MOAB_BUILD_TARGET}
                                                 --with-mpi=${MPI_PREFIX}
                                                 --with-hdf5=${TPL_INSTALL_PREFIX}
                                                 --with-netcdf=${TPL_INSTALL_PREFIX}
+                                                --enable-shared=${BUILD_SHARED_LIBS}
+                                                --enable-static=${BUILD_STATIC_LIBS}
                                                 CC=${CMAKE_C_COMPILER}
                                                 CFLAGS=${moab_cflags}
                                                 CXX=${CMAKE_CXX_COMPILER}
