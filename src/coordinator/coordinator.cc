@@ -235,8 +235,8 @@ void Coordinator::initialize() {
     if (S_->HasMesh(domain_name)) {
       // visualize standard domain
       auto mesh_p = S_->GetMesh(domain_name);
-      if (domain_name == "surface" && S_->HasMesh("surface_3d") && !vis_list->get<bool>("polygonal cells", false))
-        mesh_p = S_->GetMesh("surface_3d");
+      if (vis_list->get<bool>("visualize on 3D mesh", false) && S_->HasMesh(domain_name+"_3d"))
+        mesh_p = S_->GetMesh(domain_name+"_3d");
       
       auto sublist_p = Teuchos::sublist(vis_list, domain_name);
 
