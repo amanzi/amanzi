@@ -16,21 +16,6 @@ amanzi_tpl_version_write(FILENAME ${TPL_VERSIONS_INCLUDE_FILE}
 
 
 # --- Define configure parameters
-# Use the common cflags, cxxflags
-include(BuildWhitespaceString)
-build_whitespace_string(hypre_cflags
-                        -I${TPL_INSTALL_PREFIX}/include
-                        ${Amanzi_COMMON_CFLAGS})
-
-build_whitespace_string(hypre_cxxflags
-                        -I${TPL_INSTALL_PREFIX}/include
-                        ${Amanzi_COMMON_CXXFLAGS})
-set(cpp_flag_list 
-    -I${TPL_INSTALL_PREFIX}/include
-    ${Amanzi_COMMON_CFLAGS}
-    ${Amanzi_COMMON_CXXFLAGS})
-list(REMOVE_DUPLICATES cpp_flag_list)
-build_whitespace_string(hypre_cppflags ${cpp_flags_list})
 
 # Disable OpenMP with HYPRE for now
 # Is OpenMP available
@@ -108,12 +93,14 @@ ExternalProject_Add(${HYPRE_BUILD_TARGET}
                     SOURCE_DIR    ${HYPRE_source_dir}
                     # SOURCE_SUBDIR src   # cmake 3.7+ feature 
 		    CMAKE_ARGS    ${AMANZI_CMAKE_CACHE_ARGS}   # Global definitions from root CMakeList
-                                  -DCMAKE_C_COMPILER:FILEPATH=${CMAKE_C_COMPILER}
-                                  -DCMAKE_CXX_COMPILER:FILEPATH=${CMAKE_CXX_COMPILER}
                                   ${hypre_openmp_opt} 
                                   ${hypre_lapack_opt} ${hypre_blas_opt}
                                   ${hypre_superlu_opt} ${hypre_shared_opt}
                                   ${hypre_install_opt}
+                                  -DCMAKE_C_FLAGS:STRING=${Amanzi_COMMON_CFLAGS}  # Ensure uniform build
+                                  -DCMAKE_C_COMPILER:FILEPATH=${CMAKE_C_COMPILER}
+                                  -DCMAKE_CXX_FLAGS:STRING=${Amanzi_COMMON_CXXFLAGS}
+                                  -DCMAKE_CXX_COMPILER:FILEPATH=${CMAKE_CXX_COMPILER}
                     # -- Build
                     BINARY_DIR       ${HYPRE_build_dir}        # Build directory 
                     BUILD_COMMAND    ${MAKE} 

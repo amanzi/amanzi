@@ -3,7 +3,6 @@
 #
 # Build TPL: NetCDF 
 # 
-
 # --- Define all the directories and common external project flags
 define_external_project_args(NetCDF 
                              TARGET netcdf
@@ -14,7 +13,7 @@ amanzi_tpl_version_write(FILENAME ${TPL_VERSIONS_INCLUDE_FILE}
   PREFIX NetCDF
   VERSION ${NetCDF_VERSION_MAJOR} ${NetCDF_VERSION_MINOR} ${NetCDF_VERSION_PATCH})
 
-# --- Patch original code
+# --- Patch the original code
 set(NetCDF_patch_file netcdf-cmake.patch)
 set(NetCDF_sh_patch ${NetCDF_prefix_dir}/netcdf-patch-step.sh)
 configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/netcdf-patch-step.sh.in
@@ -64,16 +63,16 @@ ExternalProject_Add(${NetCDF_BUILD_TARGET}
                     DOWNLOAD_DIR ${TPL_DOWNLOAD_DIR}      # Download directory
                     URL          ${NetCDF_URL}            # URL may be a web site OR a local file
                     URL_MD5      ${NetCDF_MD5_SUM}        # md5sum of the archive file
-		    DOWNLOAD_NAME ${NetCDF_SAVEAS_FILE}   # file name to store (if not end of URL)
+                    DOWNLOAD_NAME ${NetCDF_SAVEAS_FILE}   # file name to store (if not end of URL)
                     # -- Patch 
                     PATCH_COMMAND ${NetCDF_PATCH_COMMAND}
                     # -- Configure
-                    SOURCE_DIR       ${NetCDF_source_dir} # Source directory
-                    CMAKE_CACHE_ARGS ${AMANZI_CMAKE_CACHE_ARGS}   # Global definitions from root CMakeList
+                    SOURCE_DIR       ${NetCDF_source_dir}
+                    CMAKE_CACHE_ARGS ${AMANZI_CMAKE_CACHE_ARGS}  # Global definitions from root CMakeList
                                      ${NetCDF_CMAKE_CACHE_ARGS}
-                                     ${Amanzi_CMAKE_C_COMPILER_ARGS}  # Ensure uniform build
+                                     -DCMAKE_C_FLAGS:STRING=${Amanzi_COMMON_CFLAGS}  # Ensure uniform build
                                      -DCMAKE_C_COMPILER:FILEPATH=${CMAKE_C_COMPILER}
-                                     ${Amanzi_CMAKE_CXX_COMPILER_ARGS}
+                                     -DCMAKE_CXX_FLAGS:STRING=${Amanzi_COMMON_CXXFLAGS}
                                      -DCMAKE_CXX_COMPILER:FILEPATH=${CMAKE_CXX_COMPILER}
                     # -- Build
                     BINARY_DIR        ${NetCDF_build_dir}       # Build directory 

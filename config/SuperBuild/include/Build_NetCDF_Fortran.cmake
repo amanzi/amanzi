@@ -3,7 +3,6 @@
 #
 # Build TPL: NetCDF-Fortran
 # 
-
 # --- Define all the directories and common external project flags
 define_external_project_args(NetCDF_Fortran TARGET netcdf-fortran
                              DEPENDS NetCDF)
@@ -36,32 +35,31 @@ list(APPEND NetCDF_Fortran_CMAKE_CACHE_ARGS "-DENABLE_TESTS:BOOL=FALSE")
 
 # --- Add external project build 
 ExternalProject_Add(${NetCDF_Fortran_BUILD_TARGET}
-	            DEPENDS ${NetCDF_Fortran_PACKAGE_DEPENDS} # Package dependency target
-	            TMP_DIR ${NetCDF_Fortran_tmp_dir}         # Temporary files directory
-	            STAMP_DIR ${NetCDF_Fortran_stamp_dir}     # Timestamp and log directory
-	            # -- Downloads
-	            DOWNLOAD_DIR ${TPL_DOWNLOAD_DIR}
-	            URL ${NetCDF_Fortran_URL}                 # URL may be a web site OR a local file
-	            URL_MD5 ${NetCDF_Fortran_MD5_SUM}         # md5sum of the archive file
-		    DOWNLOAD_NAME ${NetCDF_Fortran_SAVEAS_FILE}  # file name to store
-		    PATCH_COMMAND ${NetCDF_Fortran_PATCH_COMMAND} 
-	            # -- Configure
-	            SOURCE_DIR ${NetCDF_Fortran_source_dir}   # Source directory
+                    DEPENDS ${NetCDF_Fortran_PACKAGE_DEPENDS} # Package dependency target
+                    TMP_DIR ${NetCDF_Fortran_tmp_dir}         # Temporary files directory
+                    STAMP_DIR ${NetCDF_Fortran_stamp_dir}     # Timestamp and log directory
+                    # -- Downloads
+                    DOWNLOAD_DIR ${TPL_DOWNLOAD_DIR}
+                    URL ${NetCDF_Fortran_URL}                 # URL may be a web site OR a local file
+                    URL_MD5 ${NetCDF_Fortran_MD5_SUM}         # md5sum of the archive file
+                    DOWNLOAD_NAME ${NetCDF_Fortran_SAVEAS_FILE}  # file name to store
+                    PATCH_COMMAND ${NetCDF_Fortran_PATCH_COMMAND} 
+                    # -- Configure
+                    SOURCE_DIR ${NetCDF_Fortran_source_dir}
                     CMAKE_CACHE_ARGS ${AMANZI_CMAKE_CACHE_ARGS}   # Global definitions from root CMakeList
                                      ${NetCDF_Fortran_CMAKE_CACHE_ARGS}
-                                     ${Amanzi_CMAKE_C_COMPILER_ARGS}  # Ensure uniform build
+                                     -DCMAKE_C_FLAGS:STRING=${Amanzi_COMMON_CFLAGS}  # Ensure uniform build
                                      -DCMAKE_C_COMPILER:FILEPATH=${CMAKE_C_COMPILER}
-                                     ${Amanzi_CMAKE_CXX_COMPILER_ARGS}
+                                     -DCMAKE_CXX_FLAGS:STRING=${Amanzi_COMMON_CXXFLAGS}
                                      -DCMAKE_CXX_COMPILER:FILEPATH=${CMAKE_CXX_COMPILER}
-                                     ${Amanzi_CMAKE_Fortran_COMPILER_ARGS}
+                                     -DCMAKE_Fortran_FLAGS:STRING=${Amanzi_COMMON_FCFLAGS}
                                      -DCMAKE_Fortran_COMPILER:FILEPATH=${CMAKE_Fortran_COMPILER}
-	            # -- Build
-	            BINARY_DIR      ${NetCDF_Fortran_build_dir}  
-	            BUILD_COMMAND   $(MAKE)                      # $(MAKE) enables parallel builds through make
-	            BUILD_IN_SOURCE ${NetCDF_Fortran_BUILD_IN_SOURCE}
-	            # -- Install
-	            INSTALL_DIR ${TPL_INSTALL_PREFIX}
-	            # -- Output control
-	            ${NetCDF_Fortran_logging_args})
-
+                    # -- Build
+                    BINARY_DIR      ${NetCDF_Fortran_build_dir}  
+                    BUILD_COMMAND   $(MAKE)                       # enables parallel builds through make
+                    BUILD_IN_SOURCE ${NetCDF_Fortran_BUILD_IN_SOURCE}
+                    # -- Install
+                    INSTALL_DIR ${TPL_INSTALL_PREFIX}
+                    # -- Output control
+                    ${NetCDF_Fortran_logging_args})
 

@@ -2,7 +2,6 @@
 #
 # Build TPL: XERCES 
 #  
-
 # --- Define all the directories and common external project flags
 define_external_project_args(XERCES 
                              TARGET xerces)
@@ -49,21 +48,21 @@ ExternalProject_Add(${XERCES_BUILD_TARGET}
                     DOWNLOAD_DIR  ${TPL_DOWNLOAD_DIR}       
                     URL           ${XERCES_URL}                # URL may be a web site OR a local file
                     URL_MD5       ${XERCES_MD5_SUM}            # md5sum of the archive file
-		    PATCH_COMMAND ${XERCES_PATCH_COMMAND} 
+                    PATCH_COMMAND ${XERCES_PATCH_COMMAND} 
                     # -- Configure
                     SOURCE_DIR   ${XERCES_source_dir}          # Source directory
                     CMAKE_ARGS   ${AMANZI_CMAKE_CACHE_ARGS}    # CMAKE_CACHE_ARGS or CMAKE_ARGS => CMake configure
                                  ${XERCES_CMAKE_ARGS}
-                                 ${Amanzi_CMAKE_C_COMPILER_ARGS}  # Ensure uniform build
+                                 -DCMAKE_C_FLAGS:STRING=${Amanzi_COMMON_CFLAGS}  # Ensure uniform build
                                  -DCMAKE_C_COMPILER:FILEPATH=${CMAKE_C_COMPILER}
-                                 ${Amanzi_CMAKE_CXX_COMPILER_ARGS}
+                                 -DCMAKE_CXX_FLAGS:STRING=${Amanzi_COMMON_CXXFLAGS}
                                  -DCMAKE_CXX_COMPILER:FILEPATH=${CMAKE_CXX_COMPILER}
                     # -- Build
-                    BINARY_DIR       ${XERCES_build_dir}            # Build directory 
+                    BINARY_DIR       ${XERCES_build_dir}       # Build directory 
                     BUILD_COMMAND    $(MAKE)
-                    BUILD_IN_SOURCE  FALSE                          # Flag for in source builds
+                    BUILD_IN_SOURCE  FALSE                     # Flag for in source builds
                     # -- Install
-                    INSTALL_DIR      ${TPL_INSTALL_PREFIX}          # Install directory
+                    INSTALL_DIR      ${TPL_INSTALL_PREFIX}     # Install directory
                     # -- Output control
                     ${XERCES_logging_args})
 

@@ -443,14 +443,6 @@ set(Amanzi_CMAKE_LINKER_ARGS
 
 message("AMANZI: SHARED LINKER FLAGS = ${Amanzi_CMAKE_LINKER_ARGS}")
 
-# GNU configure static/shared
-if(BUILD_SHARED_LIBS)
-  set(Amanzi_SHARED_SWITCH "--enable-shared")
-else()
-  set(Amanzi_SHARED_SWITCH "--disable-shared")
-endif()
-
-
 # Common compiler flags to ensure a uniform build in projects that do not use CMake
 include(BuildWhitespaceString)
 string(TOUPPER "${CMAKE_BUILD_TYPE}" build_type_uc)
@@ -461,15 +453,17 @@ message(STATUS "Common compile flags for build type ${CMAKE_BUILD_TYPE}")
 build_whitespace_string(Amanzi_COMMON_CFLAGS ${CMAKE_C_FLAGS} ${build_c_flags}) 
 build_whitespace_string(Amanzi_COMMON_CXXFLAGS ${CMAKE_CXX_FLAGS} ${build_cxx_flags}) 
 build_whitespace_string(Amanzi_COMMON_FCFLAGS ${CMAKE_Fortran_FLAGS} ${build_fortran_flags}) 
-message(STATUS "\tC flags\t\t${Amanzi_COMMON_CFLAGS}")
-message(STATUS "\tC++ flags\t${Amanzi_COMMON_CXXFLAGS}")
-message(STATUS "\tFortran flags\t${Amanzi_COMMON_FCFLAGS}")
 
 # Common link flags for projects that do not use CMake
 set(Amanzi_COMMON_LDFLAGS)
 if (CMAKE_EXE_LINK_FLAGS)
   build_whitespace_string(Amanzi_COMMON_LDFLAGS ${CMAKE_EXE_LINK_FLAGS})
 endif()
+
+message(STATUS "\tcommon C flags\t\t${Amanzi_COMMON_CFLAGS}")
+message(STATUS "\tcommon C++ flags\t${Amanzi_COMMON_CXXFLAGS}")
+message(STATUS "\tcommon Fortran flags\t${Amanzi_COMMON_FCFLAGS}")
+message(STATUS "\tcommon Linker flags\t${Amanzi_COMMON_LDFLAGS}")
 
 
 # ############################################################################ #

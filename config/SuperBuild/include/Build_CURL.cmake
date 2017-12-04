@@ -3,7 +3,6 @@
 #
 # Build TPL: CURL 
 #
-
 # --- Define all the directories and common external project flags
 if (NOT ENABLE_XSDK)
   define_external_project_args(CURL
@@ -38,14 +37,14 @@ ExternalProject_Add(${CURL_BUILD_TARGET}
                     DOWNLOAD_DIR ${TPL_DOWNLOAD_DIR}       
                     URL          ${CURL_URL}               # URL may be a web site OR a local file
                     URL_MD5      ${CURL_MD5_SUM}           # md5sum of the archive file
-		    DOWNLOAD_NAME ${CURL_SAVEAS_FILE}      # file name to store (if not end of URL)
+                    DOWNLOAD_NAME ${CURL_SAVEAS_FILE}      # file name to store (if not end of URL)
                     # -- Configure
                     SOURCE_DIR   ${CURL_source_dir}    
                     CMAKE_CACHE_ARGS ${AMANZI_CMAKE_CACHE_ARGS}   # Global definitions from root CMakeList
                                      ${CURL_CMAKE_CACHE_ARGS}
-                                     ${Amanzi_CMAKE_C_COMPILER_ARGS}  # Ensure uniform build
+                                     -DCMAKE_C_FLAGS:STRING=${Amanzi_COMMON_CFLAGS}  # Ensure uniform build
                                      -DCMAKE_C_COMPILER:FILEPATH=${CMAKE_C_COMPILER}
-                                     ${Amanzi_CMAKE_CXX_COMPILER_ARGS}
+                                     -DCMAKE_CXX_FLAGS:STRING=${Amanzi_COMMON_CXXFLAGS}
                                      -DCMAKE_CXX_COMPILER:FILEPATH=${CMAKE_CXX_COMPILER}
                     # -- Build
                     BINARY_DIR        ${CURL_build_dir}           # Build directory 
