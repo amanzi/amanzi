@@ -304,9 +304,9 @@ void SecondaryVariableFieldEvaluator::EnsureCompatibility(const Teuchos::Ptr<Sta
   Teuchos::RCP<CompositeVectorSpace> my_fac = S->RequireField(my_key_, my_key_);
 
   // check plist for vis or checkpointing control
-  bool io_my_key = plist_.get<bool>(std::string("visualize ")+my_key_, true);
+  bool io_my_key = plist_.get<bool>"visualize", true);
   S->GetField(my_key_, my_key_)->set_io_vis(io_my_key);
-  bool checkpoint_my_key = plist_.get<bool>(std::string("checkpoint ")+my_key_, false);
+  bool checkpoint_my_key = plist_.get<bool>("checkpoint", false);
   S->GetField(my_key_, my_key_)->set_io_checkpoint(checkpoint_my_key);
 
   // If my requirements have not yet been set, we'll have to hope they
