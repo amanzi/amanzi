@@ -611,7 +611,7 @@ MeshEmbeddedLogical::get_set_entities(const Set_ID setid,
   Teuchos::RCP<const AmanziGeometry::Region> rgn =
       geometric_model_->FindRegion(setid);
 
-  if (rgn->name() == "All" || rgn->name() == "all" || rgn->name() == "ALL") {
+  if (rgn->type() == AmanziGeometry::ALL) {
     int nent = num_entities(kind, ptype);
     entids->resize(num_entities(kind, ptype));
     for (int i=0; i!=nent; ++i) {

@@ -50,14 +50,30 @@ class MeshLogical : public Mesh {
   //                              is area
   //  - cell_centroids_          : (optional, for plotting) length ncell
   //                              array of centroids
-  MeshLogical(const Epetra_MpiComm* comm,
-              const std::vector<double>& cell_volume,
-              const std::vector<std::vector<int> >& face_cell_list,
-              const std::vector<std::vector<double> >& face_cell_lengths,
-              const std::vector<AmanziGeometry::Point>& face_area_normals,
-              const std::vector<AmanziGeometry::Point>* cell_centroids_=NULL,
+  MeshLogical(const Epetra_MpiComm *comm,
+              const std::vector<Entity_ID_List>& face_cell_ids,
+              const std::vector<AmanziGeometry::Point>& face_normals,
               const Teuchos::RCP<const VerboseObject>& verbosity_obj=Teuchos::null);
 
+  MeshLogical(const Epetra_MpiComm *comm,
+              const std::vector<double>& cell_volumes,
+              const std::vector<Entity_ID_List>& face_cell_ids,
+              const std::vector<std::vector<double> >& face_cell_lengths,
+              const std::vector<AmanziGeometry::Point>& face_area_normals,
+              const std::vector<AmanziGeometry::Point>* cell_centroids=NULL,
+              const Teuchos::RCP<const VerboseObject>& verbosity_obj=Teuchos::null);
+
+  
+  void get_logical_geometry(std::vector<double>* const cell_volumes,
+                            std::vector<std::vector<double> >* const cell_face_lengths,
+                            std::vector<double>* const face_areas,
+                            std::vector<AmanziGeometry::Point>* const cell_centroids) const;
+      
+  void set_logical_geometry(std::vector<double> const* const cell_volumes,
+                            std::vector<std::vector<double> > const* const cell_face_lengths,
+                            std::vector<double> const* const face_areas,
+                            std::vector<AmanziGeometry::Point> const* const cell_centroids=NULL);
+      
 
   // for testing
   bool operator==(const MeshLogical& other);

@@ -4,15 +4,15 @@
 # Replaces each @VAR@ with value of ${VAR}
 
 # Source and build locations
-netcdf_src_dir=@NetCDF_source_dir@
+netcdf_fortran_src_dir=@NetCDF_Fortran_source_dir@
 
-patch_file=@SuperBuild_SOURCE_DIR@/templates/@NetCDF_patch_file@
+patch_file=@SuperBuild_SOURCE_DIR@/templates/@NetCDF_Fortran_patch_file@
 
 if [ ! -e "${patch_file}" ] ; then
   echo "Patch file ${patch_file} does not exist"
   exit 10
 fi
 
-cd ${netcdf_src_dir}
+cd ${netcdf_fortran_src_dir}
 patch -p1 < ${patch_file}
 exit $?
