@@ -44,7 +44,8 @@ if ( (EXISTS ${CMAKE_SOURCE_DIR}/.git/) AND (GIT_FOUND) )
     exit()
   endif()
 
-  message(STATUS ">>>> JDM: AMANZI_GIT_STATUS:      ${AMANZI_GIT_STATUS}")
+  # too noisy command...
+  # message(STATUS ">>>> JDM: AMANZI_GIT_STATUS:      ${AMANZI_GIT_STATUS}")
 
   # Put the status in a list
   STRING(REPLACE "\n" ";" AMANZI_GIT_STATUS_LIST ${AMANZI_GIT_STATUS})

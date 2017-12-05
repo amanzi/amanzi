@@ -96,6 +96,10 @@
 #                - update Hypre to xsdk-0.2.0 (native 2.11.2)
 #  0.94.10       - update Alquimia to 1.0.5 (critical bug fixes)
 #  0.94.11       - update MSTK to 3.0.3 (critical bug fixes)
+#                - update NetCDF to 4.5.0
+#	         - update NetCDF-Fortran to 4.4.4
+#	         - update curl to 7.56.1
+#  0.94.12       - update xerces-c to 3.2.0 (CMake build)
 
 include(CMakeParseArguments)
 
@@ -148,7 +152,7 @@ endmacro(amanzi_tpl_version_write)
 #
 set(AMANZI_TPLS_VERSION_MAJOR 0)
 set(AMANZI_TPLS_VERSION_MINOR 94)
-set(AMANZI_TPLS_VERSION_PATCH 11)
+set(AMANZI_TPLS_VERSION_PATCH 12)
 set(AMANZI_TPLS_VERSION ${AMANZI_TPLS_VERSION_MAJOR}.${AMANZI_TPLS_VERSION_MINOR}.${AMANZI_TPLS_VERSION_PATCH})
 # Not sure how to create a meaningful hash key for the collection
 
@@ -163,37 +167,36 @@ set (AMANZI_TPLS_DOWNLOAD_URL "https://raw.githubusercontent.com/amanzi/amanzi-t
 # TPL: Xerces
 #
 set(XERCES_VERSION_MAJOR 3)
-set(XERCES_VERSION_MINOR 1)
-set(XERCES_VERSION_PATCH 2)
+set(XERCES_VERSION_MINOR 2)
+set(XERCES_VERSION_PATCH 0)
 set(XERCES_VERSION ${XERCES_VERSION_MAJOR}.${XERCES_VERSION_MINOR}.${XERCES_VERSION_PATCH})
 set(XERCES_URL_STRING     ${AMANZI_TPLS_DOWNLOAD_URL})
 set(XERCES_ARCHIVE_FILE   xerces-c-${XERCES_VERSION}.tar.bz2)
 set(XERCES_SAVEAS_FILE    ${XERCES_ARCHIVE_FILE})
-set(XERCES_MD5_SUM        d987b8bb576aea456e92454781fe3615 ) 
+set(XERCES_MD5_SUM        7b1394c32abbdd87841d94a8404c2ac6) 
 
 #
 # TPL: OpenMPI
 #
-set(OpenMPI_VERSION_MAJOR 1)
-set(OpenMPI_VERSION_MINOR 4)
-set(OpenMPI_VERSION_PATCH 4)
+set(OpenMPI_VERSION_MAJOR 2)
+set(OpenMPI_VERSION_MINOR 1)
+set(OpenMPI_VERSION_PATCH 2)
 set(OpenMPI_VERSION ${OpenMPI_VERSION_MAJOR}.${OpenMPI_VERSION_MINOR}.${OpenMPI_VERSION_PATCH})
-set(OpenMPI_URL_STRING     ${ASCEM_TPLS_DOWNLOAD_URL})
+set(OpenMPI_URL_STRING     "https://www.open-mpi.org/software/ompi/v2.1/downloads/")
 set(OpenMPI_ARCHIVE_FILE   openmpi-${OpenMPI_VERSION}.tar.bz2)
 set(OpenMPI_SAVEAS_FILE    ${OpenMPI_ARCHIVE_FILE})
-set(OpenMPI_MD5_SUM        e58a1ea7b8af62453aaa0ddaee5f26a0) 
-
+set(OpenMPI_MD5_SUM        ff2e55cc529802e7b0738cf87acd3ee4)
 #
 # TPL: CURL
 #
 set(CURL_VERSION_MAJOR 7)
-set(CURL_VERSION_MINOR 37)
-set(CURL_VERSION_PATCH 0)
+set(CURL_VERSION_MINOR 56)
+set(CURL_VERSION_PATCH 1)
 set(CURL_VERSION ${CURL_VERSION_MAJOR}.${CURL_VERSION_MINOR}.${CURL_VERSION_PATCH})
-set(CURL_URL_STRING     ${AMANZI_TPLS_DOWNLOAD_URL})
-set(CURL_ARCHIVE_FILE   curl-${CURL_VERSION}.tar.bz2)
-set(CURL_SAVEAS_FILE    ${CURL_ARCHIVE_FILE})
-set(CURL_MD5_SUM        7dda0cc2e4136f78d5801ac347be696b)
+set(CURL_URL_STRING     "https://github.com/curl/curl/archive")
+set(CURL_ARCHIVE_FILE   curl-${CURL_VERSION_MAJOR}_${CURL_VERSION_MINOR}_${CURL_VERSION_PATCH}.tar.gz)
+set(CURL_SAVEAS_FILE    curl-${CURL_VERSION}.tar.gz)
+set(CURL_MD5_SUM        48c0db0d7b1407e19c51e8ef4f798d78)
 
 #
 # TPL: zlib
@@ -274,24 +277,26 @@ set(HDF5_MD5_SUM        dd2148b740713ca0295442ec683d7b1c)
 # TPL: NetCDF
 #
 set(NetCDF_VERSION_MAJOR 4)
-set(NetCDF_VERSION_MINOR 4)
-set(NetCDF_VERSION_PATCH 1.1)
+set(NetCDF_VERSION_MINOR 5)
+set(NetCDF_VERSION_PATCH 0)
 set(NetCDF_VERSION ${NetCDF_VERSION_MAJOR}.${NetCDF_VERSION_MINOR}.${NetCDF_VERSION_PATCH})
-set(NetCDF_URL_STRING     ${AMANZI_TPLS_DOWNLOAD_URL})
-set(NetCDF_ARCHIVE_FILE   netcdf-${NetCDF_VERSION}.tar.gz)
-set(NetCDF_SAVEAS_FILE    ${NetCDF_ARCHIVE_FILE})
-set(NetCDF_MD5_SUM        503a2d6b6035d116ed53b1d80c811bda)
+set(NetCDF_URL_STRING     "https://github.com/Unidata/netcdf-c/archive/")
+set(NetCDF_ARCHIVE_FILE   v${NetCDF_VERSION}.tar.gz)
+set(NetCDF_SAVEAS_FILE    netcdf-${NetCDF_VERSION}.tar.gz)
+set(NetCDF_MD5_SUM        a523ad253bd832efa632847940c2317e)
 
 #
 # TPL: NetCDF Fortran
 #
 set(NetCDF_Fortran_VERSION_MAJOR 4)
-set(NetCDF_Fortran_VERSION_MINOR 2)
-set(NetCDF_Fortran_VERSION ${NetCDF_Fortran_VERSION_MAJOR}.${NetCDF_Fortran_VERSION_MINOR})
+set(NetCDF_Fortran_VERSION_MINOR 4)
+set(NetCDF_Fortran_VERSION_PATCH 4)
+set(NetCDF_Fortran_VERSION ${NetCDF_Fortran_VERSION_MAJOR}.${NetCDF_Fortran_VERSION_MINOR}.${NetCDF_Fortran_VERSION_PATCH})
 set(NetCDF_Fortran_URL_STRING     ${AMANZI_TPLS_DOWNLOAD_URL})
-set(NetCDF_Fortran_ARCHIVE_FILE   netcdf-fortran-${NetCDF_Fortran_VERSION}.tar.gz)
-set(NetCDF_Fortran_SAVEAS_FILE    ${NetCDF_Fortran_ARCHIVE_FILE})
-set(NetCDF_Fortran_MD5_SUM        cc3bf530223e8f4aff93793b9f197bf3) 
+set(NetCDF_Fortran_URL_STRING     "https://github.com/Unidata/netcdf-fortran/archive/")
+set(NetCDF_Fortran_ARCHIVE_FILE   v${NetCDF_Fortran_VERSION}.tar.gz)
+set(NetCDF_Fortran_SAVEAS_FILE    netcdf-fortran-${NetCDF_Fortran_VERSION}.tar.gz)
+set(NetCDF_Fortran_MD5_SUM        418c7e998e63e6d76b2da14019fa9c8f) 
 
 #
 # ASCEM-IO
@@ -445,7 +450,6 @@ set(ALQUIMIA_VERSION_MINOR 0)
 set(ALQUIMIA_VERSION_PATCH 5)
 set(ALQUIMIA_VERSION ${ALQUIMIA_VERSION_MAJOR}.${ALQUIMIA_VERSION_MINOR}.${ALQUIMIA_VERSION_PATCH})
 set(ALQUIMIA_URL_STRING     https://github.com/LBL-EESA/alquimia-dev/archive)
-#set(ALQUIMIA_ARCHIVE_FILE   xsdk-${XSDK_VERSION}.tar.gz)
 set(ALQUIMIA_ARCHIVE_FILE   v${ALQUIMIA_VERSION}.tar.gz)
 set(ALQUIMIA_SAVEAS_FILE    alquimia-dev-${ALQUIMIA_VERSION}.tar.gz)
 set(ALQUIMIA_MD5_SUM        58d8cbb2f68381477068836fba35d41c)
