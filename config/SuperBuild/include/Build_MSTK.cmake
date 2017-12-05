@@ -45,9 +45,9 @@ set(MSTK_CMAKE_CACHE_ARGS
                     -DENABLE_ZOLTAN:BOOL=TRUE
                     -DENABLE_METIS:BOOL=TRUE
                     -DMETIS_MAJOR_VER:STRING=5
-                    -DHDF5_DIR:PATH=${TPL_INSTALL_PREFIX}
+                    -DHDF5_DIR:PATH=${HDF5_DIR}
                     -DHDF5_NO_SYSTEM_PATHS:BOOL=TRUE
-                    -DNetCDF_DIR:PATH=${TPL_INSTALL_PREFIX} 
+                    -DNetCDF_DIR:PATH=${NetCDF_DIR} 
                     -DExodusII_DIR:PATH=${TPL_INSTALL_PREFIX}/SEACAS
                     -DZOLTAN_DIR:PATH=${Zoltan_INSTALL_PREFIX}
                     -DMetis_DIR:PATH=${METIS_DIR} 

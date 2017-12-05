@@ -29,8 +29,8 @@ ExternalProject_Add(${XSDK_BUILD_TARGET}
     
     CONFIGURE_COMMAND ls
     
-    BUILD_COMMAND ${SPACK_BINARY} install xsdk 
+    BUILD_COMMAND ls #${SPACK_BINARY} install xsdk 
     
-    INSTALL_COMMAND ${SPACK_BINARY} view symlink ${TPL_INSTALL_PREFIX} xsdk 
+    INSTALL_COMMAND ls #${SPACK_BINARY} view symlink ${TPL_INSTALL_PREFIX} xsdk 
 )
 
