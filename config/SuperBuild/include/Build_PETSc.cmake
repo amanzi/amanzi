@@ -180,6 +180,6 @@ ExternalProject_Add(${PETSc_BUILD_TARGET}
                     INSTALL_COMMAND  $(MAKE) install PETSC_DIR=${PETSc_source_dir}
                     # -- Output control
                     ${PETSc_logging_args})
-		    )
+
 # --- Useful variables for other packages that depend on PETSc
 set(PETSC_DIR ${petsc_install_dir})
