@@ -1,0 +1,39 @@
+FROM ubuntu:latest
+LABEL Description="This image builds all of the third-party libraries needed by Amanzi (based on the alexis/docker branch)"
+
+RUN apt-get -q update -y && apt-get -qq install -y \
+  apt-utils \
+  cmake \
+  curl \
+  g++ \
+  gfortran \
+  git \
+  libblas3 \
+  libblas-dev \
+  liblapacke-dev \
+  liblapack-dev \
+  libopenmpi-dev \
+  m4 \
+  make \
+  mercurial \
+  python2.7 \
+  wget 
+
+RUN groupadd -r amanzi_user \
+  && useradd -r -m -g amanzi_user amanzi_user
+USER amanzi_user
+
+WORKDIR /home/amanzi_user
+RUN git clone https://github.com/amanzi/amanzi.git \
+  && cd amanzi \
+  && git checkout alexis/docker \
+  && git pull
+
+ENV PATH=/home/amanzi_user/local/tpls/bin:$PATH 
+WORKDIR /home/amanzi_user/amanzi
+RUN ./bootstrap.sh --prefix=/home/amanzi_user/local \
+  --amanzi-build-dir=/home/amanzi_user/amanzi_builddir/amanzi \
+  --tpl-build-dir=/home/amanzi_user/amanzi_builddir/tpls \
+  --tpl-download-dir=/home/amanzi_user/amanzi_builddir/tpls/Downloads \
+  --enable-tpls_only \
+  && rm -r /home/amanzi_user/amanzi_builddir

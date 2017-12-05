@@ -100,6 +100,9 @@ tpl_build_dir=${dflt_build_prefix}/build/tpls
 tpl_download_dir=${tpl_build_dir}/Downloads
 tpl_install_prefix=${dflt_install_prefix}/install/tpls
 
+# only build the TPLs
+tpls_only=$FALSE
+
 # Color output display
 no_color=$FALSE
 
@@ -318,6 +321,8 @@ Value in brackets indicates default setting.
   Spack                   build TPLs using the Spack package manager when appropriate ['"${Spack}"']
   xsdk                    build TPLs available in xSDK first, then supplement with additional 
                           individual TPL builds ['"${xsdk}"']
+  tpls_only               only build the TPLs, do not build Amanzi itself
+
 Tool definitions:
 
   --with-c-compiler=FILE     FILE is the C compiler
@@ -926,10 +931,10 @@ function check_Spack
       cd ${tpl_install_prefix}
       git clone https://github.com/LLNL/spack.git
       
-#     if [ ${xsdk} == ${TRUE} ]; then
-#       cd ${tpl_install_prefix}/spack
-#       git checkout barry/xsdk
-#       git pull
+#      if [ ${xsdk} == ${TRUE} ]; then
+#	  cd ${tpl_install_prefix}/spack
+#	  git checkout 44653fa4884c754c7925d5e031fdb9b5f2eec232
+#	  git pull
 #     fi
       cd ${pwd_save}
     fi
@@ -1355,6 +1360,10 @@ if [ -z "${tpl_config_file}" ]; then
   # Define the TPL build source directory
   tpl_build_src_dir=${amanzi_source_dir}/config/SuperBuild
   
+  if [ "${tpls_only}" -eq "${TRUE}" ]; then
+    status_message "Only building TPLs, stopping before building Amanzi itself"
+  fi
+
   # Configure the TPL build
   cd ${tpl_build_dir}
   ${cmake_binary} \
@@ -1443,6 +1452,9 @@ else
 
 fi
 
+if [ "${tpls_only}" -eq "${TRUE}" ]; then
+    exit_now 0
+fi
 
 status_message "Build Amanzi with configure file ${tpl_config_file}"
 
