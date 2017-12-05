@@ -34,7 +34,7 @@ Teuchos::RCP<Amanzi::AmanziMesh::MeshLogical>
 demoMeshLogicalY();
 
 Teuchos::RCP<Amanzi::AmanziMesh::MeshLogical>
-demoMeshLogicalYFromXML();
+demoMeshLogicalYFromXML(const std::string& meshname="logical mesh Y");
 
 Teuchos::RCP<Amanzi::AmanziMesh::MeshEmbeddedLogical>
 demoMeshLogicalYEmbedded();

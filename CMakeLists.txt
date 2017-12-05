@@ -27,6 +27,10 @@ enable_testing()
 #     AMANZI_BINARY_DIR
 project(AMANZI)
 
+message(STATUS "\n-------------------------------------------")
+message(STATUS "\n-- CMake: Configuring Amanzi build/install.\n--")
+message(STATUS "----------------------------------------")
+
 # Useful variables pointing to directories in the source tree
 set(AMANZI_SOURCE_SRC_DIR      "${AMANZI_SOURCE_DIR}/src")
 set(AMANZI_SOURCE_TOOLS_DIR    "${AMANZI_SOURCE_DIR}/tools")
