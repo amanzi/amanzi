@@ -266,7 +266,8 @@ ExternalProject_Add(${Trilinos_BUILD_TARGET}
                     # -- Install
                     INSTALL_DIR      ${Trilinos_install_dir}        # Install directory
                     # -- Output control
-                    ${Trilinos_logging_args})
+                    ${Trilinos_logging_args}
+		    )
 
 # --- Useful variables for packages that depends on Trilinos
 global_set(Trilinos_INSTALL_PREFIX  ${Trilinos_install_dir})
