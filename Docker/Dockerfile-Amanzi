@@ -5,10 +5,12 @@ USER amanzi_user
 
 WORKDIR /home/amanzi_user/amanzi
 RUN git pull
+ENV CC=mpicc CXX=mpic++ FC=mpif90
 RUN ./bootstrap.sh --prefix=/home/amanzi_user/local \
    --amanzi-build-dir=/home/amanzi_user/amanzi_builddir/amanzi \
    --tpl-config-file=/home/amanzi_user/local/tpls/share/cmake/amanzi-tpl-config.cmake \
    --parallel=8 \
    --disable-structured \
    --enable-test_suite \
+   --with-mpi=/usr/bin \
    && rm -r /home/amanzi_user/amanzi_builddir/
