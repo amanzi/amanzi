@@ -3,10 +3,8 @@
 #
 # Build TPL: OpenMPI 
 # 
-
 # --- Define all the directories and common external project flags
 define_external_project_args(OpenMPI TARGET openmpi)
-
 
 # Build compiler *FLAGS strings. Pick up the CMAKE_BUILD_TYPE flags
 include(BuildWhitespaceString)
@@ -14,12 +12,10 @@ build_whitespace_string(openmpi_cflags ${Amanzi_COMMON_CFLAGS})
 build_whitespace_string(openmpi_cxxflags ${Amanzi_COMMON_CXXFLAGS})
 build_whitespace_string(openmpi_fcflags ${Amanzi_COMMON_FCFLAGS})
 
-
 # --- Add RPATH to the link flags for the compiler wrappers
 set(openmpi_extra_ldflags "-Wl,-rpath,${TOOLS_INSTALL_PREFIX}/lib")
 message(STATUS "openmpi_extra_ldflags = ${openmpi_extra_ldflags}")
 find_package(Threads)
-
 
 # --- Add external project build and tie to the OpenMPI build target
 ExternalProject_Add(${OpenMPI_BUILD_TARGET}
@@ -47,7 +43,7 @@ ExternalProject_Add(${OpenMPI_BUILD_TARGET}
                                                 FC=${CMAKE_Fortran_COMPILER}
                     # -- Build
                     BINARY_DIR        ${OpenMPI_build_dir}        # Build directory 
-                    BUILD_COMMAND     $(MAKE)                     # $(MAKE) enables parallel builds through make
+                    BUILD_COMMAND     make -j ${TOOLS_PARALLEL_JOBS}  # $(MAKE) enables parallel builds through make
                     BUILD_IN_SOURCE   ${OpenMPI_BUILD_IN_SOURCE}  # Flag for in source builds
                     # -- Install
                     INSTALL_DIR      ${TOOLS_INSTALL_PREFIX}
