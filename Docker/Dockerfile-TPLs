@@ -1,4 +1,5 @@
-FROM ubuntu:artful
+FROM ubuntu:bionic
+#FROM ubuntu:artful
 #FROM ubuntu:latest
 LABEL Description="This image builds all of the third-party libraries needed by Amanzi (based on the alexis/docker branch)"
 
@@ -42,5 +43,5 @@ RUN ./bootstrap.sh --prefix=/home/amanzi_user/local \
   --tpl-build-dir=/home/amanzi_user/amanzi_builddir/tpls \
   --tpl-download-dir=/home/amanzi_user/amanzi_builddir/tpls/Downloads \
   --enable-tpls_only \
-  --with-mpi=/usr/bin \
+  --with-mpi=/usr \
   && rm -r /home/amanzi_user/amanzi_builddir
