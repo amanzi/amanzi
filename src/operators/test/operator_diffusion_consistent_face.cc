@@ -31,8 +31,8 @@
 // Operators
 #include "Analytic02.hh"
 
-#include "DiffusionMFD.hh"
 #include "OperatorDefs.hh"
+#include "PDE_DiffusionMFD.hh"
 
 int BoundaryFaceGetCell(const Amanzi::AmanziMesh::Mesh& mesh, int f)
 {
@@ -124,7 +124,7 @@ TEST(OPERATOR_DIFFUSION_MIXED) {
 
   // create diffusion operator 
   ParameterList op_list = plist.get<Teuchos::ParameterList>("PK operator").sublist("diffusion operator mixed");
-  Teuchos::RCP<DiffusionMFD> op = Teuchos::rcp(new DiffusionMFD(op_list, mesh));
+  Teuchos::RCP<PDE_DiffusionMFD> op = Teuchos::rcp(new PDE_DiffusionMFD(op_list, mesh));
   op->SetBCs(bc, bc);
   const CompositeVectorSpace& cvs = op->global_operator()->DomainMap();
 

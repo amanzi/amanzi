@@ -23,13 +23,13 @@
 
 // Amanzi
 #include "Accumulation.hh"
-#include "Diffusion.hh"
-#include "DiffusionFactory.hh"
 #include "EnergyTwoPhase_PK.hh"
 #include "GMVMesh.hh"
 #include "MeshFactory.hh"
 #include "Operator.hh"
 #include "PDE_AdvectionUpwind.hh"
+#include "PDE_Diffusion.hh"
+#include "PDE_DiffusionFactory.hh"
 #include "State.hh"
 
 /* **************************************************************** 
@@ -123,8 +123,8 @@ std::cout << "Passed EPK.Initilize()" << std::endl;
   Teuchos::ParameterList oplist = elist.sublist("operators")
                                        .sublist("diffusion operator")
                                        .sublist("preconditioner");
-  DiffusionFactory opfactory;
-  Teuchos::RCP<Diffusion> op1 = opfactory.Create(oplist, mesh, bc);
+  PDE_DiffusionFactory opfactory;
+  Teuchos::RCP<PDE_Diffusion> op1 = opfactory.Create(oplist, mesh, bc);
   op1->SetBCs(bc, bc);
 
   // populate the diffusion operator

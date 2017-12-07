@@ -13,12 +13,12 @@
 #include <vector>
 #include <boost/math/tools/roots.hpp>
 
-#include "DiffusionFVwithGravity.hh"
-#include "OperatorDefs.hh"
 #include "Op.hh"
 #include "Op_SurfaceFace_SurfaceCell.hh"
 #include "Op_Face_Cell.hh"
+#include "OperatorDefs.hh"
 #include "Operator_Cell.hh"
+#include "PDE_DiffusionFVwithGravity.hh"
 
 namespace Amanzi {
 namespace Operators {
@@ -26,7 +26,7 @@ namespace Operators {
 /* ******************************************************************
 * This completes initialization of the base class.
 ****************************************************************** */
-void DiffusionFVwithGravity::InitDiffusion_(Teuchos::ParameterList& plist)
+void PDE_DiffusionFVwithGravity::InitDiffusion_(Teuchos::ParameterList& plist)
 {
   gravity_term_ = Teuchos::rcp(new CompositeVector(*transmissibility_));
 }
@@ -35,16 +35,16 @@ void DiffusionFVwithGravity::InitDiffusion_(Teuchos::ParameterList& plist)
 /* ******************************************************************
 * This completes initialization of the base class.
 ****************************************************************** */
-void DiffusionFVwithGravity::SetDensity(
+void PDE_DiffusionFVwithGravity::SetDensity(
     const Teuchos::RCP<const CompositeVector>& rho)
 {
-  DiffusionWithGravity::SetDensity(rho);
+  PDE_DiffusionWithGravity::SetDensity(rho);
   transmissibility_initialized_ = false;
 }
 
 
-void DiffusionFVwithGravity::SetDensity(double rho) {
-  DiffusionWithGravity::SetDensity(rho);
+void PDE_DiffusionFVwithGravity::SetDensity(double rho) {
+  PDE_DiffusionWithGravity::SetDensity(rho);
   transmissibility_initialized_ = false;
 }
 
@@ -52,13 +52,13 @@ void DiffusionFVwithGravity::SetDensity(double rho) {
 /* ******************************************************************
 * Populate face-based matrices.
 ****************************************************************** */
-void DiffusionFVwithGravity::UpdateMatrices(
+void PDE_DiffusionFVwithGravity::UpdateMatrices(
     const Teuchos::Ptr<const CompositeVector>& flux,
     const Teuchos::Ptr<const CompositeVector>& u)
 {
   if (!transmissibility_initialized_) ComputeTransmissibility_(gravity_term_);
 
-  DiffusionFV::UpdateMatrices(flux, u);
+  PDE_DiffusionFV::UpdateMatrices(flux, u);
 
   // populating right-hand side
   if (!exclude_primary_terms_) {
@@ -92,9 +92,9 @@ void DiffusionFVwithGravity::UpdateMatrices(
 /* ******************************************************************
 * Special implementation of boundary conditions.
 ****************************************************************** */
-void DiffusionFVwithGravity::ApplyBCs(bool primary, bool eliminate)
+void PDE_DiffusionFVwithGravity::ApplyBCs(bool primary, bool eliminate)
 {
-  DiffusionFV::ApplyBCs(primary, eliminate);
+  PDE_DiffusionFV::ApplyBCs(primary, eliminate);
 
   Epetra_MultiVector* gravity_face = &*gravity_term_->ViewComponent("face", true);
   const std::vector<int>& bc_model = bcs_trial_[0]->bc_model();
@@ -110,11 +110,11 @@ void DiffusionFVwithGravity::ApplyBCs(bool primary, bool eliminate)
 /* ******************************************************************
 * Calculate flux from cell-centered data
 ****************************************************************** */
-void DiffusionFVwithGravity::UpdateFlux(
+void PDE_DiffusionFVwithGravity::UpdateFlux(
     const Teuchos::Ptr<const CompositeVector>& solution,
     const Teuchos::Ptr<CompositeVector>& darcy_mass_flux)
 {
-  DiffusionFV::UpdateFlux(solution, darcy_mass_flux);
+  PDE_DiffusionFV::UpdateFlux(solution, darcy_mass_flux);
 
   // add gravity term
   Epetra_MultiVector& flux = *darcy_mass_flux->ViewComponent("face", false);
@@ -133,7 +133,7 @@ void DiffusionFVwithGravity::UpdateFlux(
 * Computation of a local submatrix of the analytical Jacobian 
 * (its nonlinear part) on face f.
 ****************************************************************** */
-void DiffusionFVwithGravity::ComputeJacobianLocal_(
+void PDE_DiffusionFVwithGravity::ComputeJacobianLocal_(
     int mcells, int f, int face_dir_0to1, int bc_model_f, double bc_value_f,
     double *pres, double *dkdp_cell, WhetStone::DenseMatrix& Jpp)
 {
@@ -194,7 +194,7 @@ void DiffusionFVwithGravity::ComputeJacobianLocal_(
 /* ******************************************************************
 * Calculate flux from cell-centered data
 ****************************************************************** */
-void DiffusionFVwithGravity::UpdateFluxNonManifold(
+void PDE_DiffusionFVwithGravity::UpdateFluxNonManifold(
     const Teuchos::Ptr<const CompositeVector>& u,
     const Teuchos::Ptr<CompositeVector>& flux)
 {
@@ -207,7 +207,7 @@ void DiffusionFVwithGravity::UpdateFluxNonManifold(
 /* ******************************************************************
 * Compute transmissibilities on faces. Requires K, g, rho.
 ****************************************************************** */
-void DiffusionFVwithGravity::ComputeTransmissibility_(
+void PDE_DiffusionFVwithGravity::ComputeTransmissibility_(
    Teuchos::RCP<CompositeVector> g_cv)
 {
   Epetra_MultiVector& trans_face = *transmissibility_->ViewComponent("face", true);
@@ -304,7 +304,7 @@ void DiffusionFVwithGravity::ComputeTransmissibility_(
 /* ******************************************************************
 * Return value of the gravity flux on the given face f.
 ****************************************************************** */
-double DiffusionFVwithGravity::ComputeGravityFlux(int f) const
+double PDE_DiffusionFVwithGravity::ComputeGravityFlux(int f) const
 {
   const Epetra_MultiVector& gravity_face = *gravity_term_->ViewComponent("face", true); 
   return gravity_face[0][f];

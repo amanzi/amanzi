@@ -13,12 +13,12 @@
 #include <vector>
 
 // Operators
-#include "OperatorDefs.hh"
-#include "DiffusionFV.hh"
 #include "Op.hh"
 #include "Op_SurfaceFace_SurfaceCell.hh"
 #include "Op_Face_Cell.hh"
+#include "OperatorDefs.hh"
 #include "Operator_Cell.hh"
+#include "PDE_DiffusionFV.hh"
 
 namespace Amanzi {
 namespace Operators {
@@ -26,7 +26,7 @@ namespace Operators {
 /* ******************************************************************
 * Initialization
 ****************************************************************** */
-void DiffusionFV::InitDiffusion_(Teuchos::ParameterList& plist)
+void PDE_DiffusionFV::InitDiffusion_(Teuchos::ParameterList& plist)
 {
   // Define stencil for the FV diffusion method.
   local_op_schema_ = OPERATOR_SCHEMA_BASE_FACE | OPERATOR_SCHEMA_DOFS_CELL;
@@ -133,7 +133,7 @@ void DiffusionFV::InitDiffusion_(Teuchos::ParameterList& plist)
 /* ******************************************************************
 * Setup methods: scalar coefficients
 ****************************************************************** */
-void DiffusionFV::SetTensorCoefficient(const Teuchos::RCP<std::vector<WhetStone::Tensor> >& K)
+void PDE_DiffusionFV::SetTensorCoefficient(const Teuchos::RCP<std::vector<WhetStone::Tensor> >& K)
 {
   transmissibility_initialized_ = false;
   K_ = K;
@@ -144,8 +144,8 @@ void DiffusionFV::SetTensorCoefficient(const Teuchos::RCP<std::vector<WhetStone:
 * Setup methods: krel and deriv -- must be called after calling a
 * setup with K absolute
 ****************************************************************** */
-void DiffusionFV::SetScalarCoefficient(const Teuchos::RCP<const CompositeVector>& k,
-                                       const Teuchos::RCP<const CompositeVector>& dkdp)
+void PDE_DiffusionFV::SetScalarCoefficient(const Teuchos::RCP<const CompositeVector>& k,
+                                           const Teuchos::RCP<const CompositeVector>& dkdp)
 {
   transmissibility_initialized_ = false;
   k_ = k;
@@ -172,8 +172,8 @@ void DiffusionFV::SetScalarCoefficient(const Teuchos::RCP<const CompositeVector>
 * Populate face-based 2x2 matrices on interior faces and 1x1 matrices
 * on boundary faces.
 ****************************************************************** */
-void DiffusionFV::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& flux,
-                                 const Teuchos::Ptr<const CompositeVector>& u)
+void PDE_DiffusionFV::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& flux,
+                                     const Teuchos::Ptr<const CompositeVector>& u)
 {
   if (!transmissibility_initialized_) ComputeTransmissibility_();
 
@@ -220,7 +220,7 @@ void DiffusionFV::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& flux
 * Populate face-based 2x2 matrices on interior faces and 1x1 matrices
 * on boundary faces with Newton information
 ****************************************************************** */
-void DiffusionFV::UpdateMatricesNewtonCorrection(
+void PDE_DiffusionFV::UpdateMatricesNewtonCorrection(
     const Teuchos::Ptr<const CompositeVector>& flux,
     const Teuchos::Ptr<const CompositeVector>& u,
     double scalar_limiter)
@@ -235,7 +235,7 @@ void DiffusionFV::UpdateMatricesNewtonCorrection(
 /* ******************************************************************
 * Special implementation of boundary conditions.
 ****************************************************************** */
-void DiffusionFV::ApplyBCs(bool primary, bool eliminate)
+void PDE_DiffusionFV::ApplyBCs(bool primary, bool eliminate)
 {
   const Epetra_MultiVector& trans_face = *transmissibility_->ViewComponent("face", true);
 
@@ -291,8 +291,8 @@ void DiffusionFV::ApplyBCs(bool primary, bool eliminate)
 /* ******************************************************************
 * Calculate mass flux from cell-centered data
 ****************************************************************** */
-void DiffusionFV::UpdateFlux(const Teuchos::Ptr<const CompositeVector>& solution,
-                             const Teuchos::Ptr<CompositeVector>& darcy_mass_flux)
+void PDE_DiffusionFV::UpdateFlux(const Teuchos::Ptr<const CompositeVector>& solution,
+                                 const Teuchos::Ptr<CompositeVector>& darcy_mass_flux)
 {
   const Epetra_MultiVector& trans_face = *transmissibility_->ViewComponent("face", true);
 
@@ -356,8 +356,8 @@ void DiffusionFV::UpdateFlux(const Teuchos::Ptr<const CompositeVector>& solution
 /* ******************************************************************
 * Calculate flux from cell-centered data
 ****************************************************************** */
-void DiffusionFV::UpdateFluxNonManifold(const Teuchos::Ptr<const CompositeVector>& u,
-                                        const Teuchos::Ptr<CompositeVector>& flux)
+void PDE_DiffusionFV::UpdateFluxNonManifold(const Teuchos::Ptr<const CompositeVector>& u,
+                                            const Teuchos::Ptr<CompositeVector>& flux)
 {
   Errors::Message msg;
   msg << "DiffusionFV: missing support for non-manifolds.";
@@ -370,7 +370,7 @@ void DiffusionFV::UpdateFluxNonManifold(const Teuchos::Ptr<const CompositeVector
 * of the relative permeability wrt to capillary pressure. They must
 * be added to the existing matrix structure.
 ****************************************************************** */
-void DiffusionFV::AnalyticJacobian_(const CompositeVector& u)
+void PDE_DiffusionFV::AnalyticJacobian_(const CompositeVector& u)
 {
   const std::vector<int>& bc_model = bcs_trial_[0]->bc_model();
   const std::vector<double>& bc_value = bcs_trial_[0]->bc_value();
@@ -423,7 +423,7 @@ void DiffusionFV::AnalyticJacobian_(const CompositeVector& u)
 * Computation of a local submatrix of the analytical Jacobian 
 * (its nonlinear part) on face f.
 ****************************************************************** */
-void DiffusionFV::ComputeJacobianLocal_(
+void PDE_DiffusionFV::ComputeJacobianLocal_(
     int mcells, int f, int face_dir_0to1, int bc_model_f, double bc_value_f,
     double *pres, double *dkdp_cell, WhetStone::DenseMatrix& Jpp)
 {
@@ -474,7 +474,7 @@ void DiffusionFV::ComputeJacobianLocal_(
 /* ******************************************************************
 * Compute transmissibilities on faces 
 ****************************************************************** */
-void DiffusionFV::ComputeTransmissibility_()
+void PDE_DiffusionFV::ComputeTransmissibility_()
 {
   Epetra_MultiVector& trans_face = *transmissibility_->ViewComponent("face", true);
 
@@ -535,7 +535,7 @@ void DiffusionFV::ComputeTransmissibility_()
 /* ******************************************************************
 * Return transmissibility value on the given face f.
 ****************************************************************** */
-double DiffusionFV::ComputeTransmissibility(int f) const
+double PDE_DiffusionFV::ComputeTransmissibility(int f) const
 {
   const Epetra_MultiVector& trans_face = *transmissibility_->ViewComponent("face", true);
   return trans_face[0][f];

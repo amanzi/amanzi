@@ -1,4 +1,4 @@
-// DiffusionMFD: elliptic operators using the MFD family of discretizations.
+// PDE_DiffusionMFD: elliptic operators using the MFD family of discretizations.
 
 /*
   Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL.
@@ -10,8 +10,8 @@
           Ethan Coon (ecoon@lanl.gov)
 */
 
-#ifndef AMANZI_OPERATOR_DIFFUSION_MFD_HH_
-#define AMANZI_OPERATOR_DIFFUSION_MFD_HH_
+#ifndef AMANZI_OPERATOR_PDE_DIFFUSION_MFD_HH_
+#define AMANZI_OPERATOR_PDE_DIFFUSION_MFD_HH_
 
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
@@ -23,9 +23,9 @@
 #include "DenseMatrix.hh"
 
 #include "BCs.hh"
-#include "Diffusion.hh"
 #include "Operator.hh"
 #include "OperatorDefs.hh"
+#include "PDE_Diffusion.hh"
 
 /*!
 Additional options available only for the MFD family of discretizations include:
@@ -71,11 +71,11 @@ Additional options available only for the MFD family of discretizations include:
 namespace Amanzi {
 namespace Operators {
 
-class DiffusionMFD : public virtual Diffusion {
+class PDE_DiffusionMFD : public virtual PDE_Diffusion {
  public:
-  DiffusionMFD(Teuchos::ParameterList& plist,
-               const Teuchos::RCP<Operator>& global_op) :
-      Diffusion(global_op),
+  PDE_DiffusionMFD(Teuchos::ParameterList& plist,
+                   const Teuchos::RCP<Operator>& global_op) :
+      PDE_Diffusion(global_op),
       plist_(plist),
       factor_(1.0)
   {
@@ -83,9 +83,9 @@ class DiffusionMFD : public virtual Diffusion {
     InitDiffusion_(plist);
   }
 
-  DiffusionMFD(Teuchos::ParameterList& plist,
-               const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) :
-      Diffusion(mesh),
+  PDE_DiffusionMFD(Teuchos::ParameterList& plist,
+                   const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) :
+      PDE_Diffusion(mesh),
       plist_(plist),
       factor_(1.0)
   {
@@ -93,9 +93,9 @@ class DiffusionMFD : public virtual Diffusion {
     InitDiffusion_(plist);
   }
 
-  DiffusionMFD(Teuchos::ParameterList& plist,
-               const Teuchos::RCP<AmanziMesh::Mesh>& mesh) :
-      Diffusion(mesh),
+  PDE_DiffusionMFD(Teuchos::ParameterList& plist,
+                   const Teuchos::RCP<AmanziMesh::Mesh>& mesh) :
+      PDE_Diffusion(mesh),
       plist_(plist),
       factor_(1.0)
   {

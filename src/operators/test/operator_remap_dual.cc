@@ -33,9 +33,9 @@
 #include "WhetStone_typedefs.hh"
 
 // Amanzi::Operators
-#include "Abstract.hh"
 #include "Accumulation.hh"
 #include "OperatorDefs.hh"
+#include "PDE_Abstract.hh"
 #include "PDE_AdvectionRiemann.hh"
 #include "PDE_Reaction.hh"
 #include "RemapUtils.hh"
@@ -211,7 +211,7 @@ void RemapTestsDual(int dim, int order, std::string disc_name,
   plist.sublist("schema domain").set<std::string>("base", "cell");
   plist.sublist("schema range") = plist.sublist("schema domain");
 
-  Teuchos::RCP<Abstract> op_adv = Teuchos::rcp(new Abstract(plist, global_op));
+  Teuchos::RCP<PDE_Abstract> op_adv = Teuchos::rcp(new PDE_Abstract(plist, global_op));
 
   Teuchos::RCP<std::vector<WhetStone::VectorPolynomial> > cell_vel = 
       Teuchos::rcp(new std::vector<WhetStone::VectorPolynomial>(ncells_owned));
@@ -219,10 +219,10 @@ void RemapTestsDual(int dim, int order, std::string disc_name,
   op_adv->SetupPolyVector(cell_vel);
 
 #ifdef DEBUG
-  Teuchos::RCP<Abstract> op_adv_dbg0 = Teuchos::rcp(new Abstract(plist, mesh0));
+  Teuchos::RCP<PDE_Abstract> op_adv_dbg0 = Teuchos::rcp(new PDE_Abstract(plist, mesh0));
   op_adv_dbg0->SetupPolyVector(cell_vel);
 
-  Teuchos::RCP<Abstract> op_adv_dbg1 = Teuchos::rcp(new Abstract(plist, mesh0));
+  Teuchos::RCP<PDE_Abstract> op_adv_dbg1 = Teuchos::rcp(new PDE_Abstract(plist, mesh0));
   Teuchos::RCP<std::vector<WhetStone::VectorPolynomial> > cell_vel_dbg = 
       Teuchos::rcp(new std::vector<WhetStone::VectorPolynomial>(ncells_owned));
   op_adv_dbg1->SetupPolyVector(cell_vel_dbg);

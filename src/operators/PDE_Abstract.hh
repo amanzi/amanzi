@@ -12,8 +12,8 @@
   interface for creating stiffness, mass and divergence matrices.
 */
 
-#ifndef AMANZI_OPERATOR_ABSTRACT_HH_
-#define AMANZI_OPERATOR_ABSTRACT_HH_
+#ifndef AMANZI_OPERATOR_PDE_ABSTRACT_HH_
+#define AMANZI_OPERATOR_PDE_ABSTRACT_HH_
 
 #include <string>
 #include <vector>
@@ -30,14 +30,14 @@
 namespace Amanzi {
 namespace Operators {
 
-class Abstract : public PDE_Helper {
+class PDE_Abstract : public PDE_Helper {
  public:
-  Abstract(Teuchos::ParameterList& plist, Teuchos::RCP<Operator> global_op) :
+  PDE_Abstract(Teuchos::ParameterList& plist, Teuchos::RCP<Operator> global_op) :
       PDE_Helper(global_op) {
     Init_(plist);
   }
 
-  Abstract(Teuchos::ParameterList& plist, Teuchos::RCP<const AmanziMesh::Mesh> mesh) :
+  PDE_Abstract(Teuchos::ParameterList& plist, Teuchos::RCP<const AmanziMesh::Mesh> mesh) :
       PDE_Helper(mesh) {
     global_op_ = Teuchos::null;
     Init_(plist);

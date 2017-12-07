@@ -21,9 +21,9 @@
 #include "Teuchos_RCP.hpp"
 
 // Amanzi
-#include "Abstract.hh"
 #include "Accumulation.hh"
 #include "BDF1_TI.hh"
+#include "PDE_Abstract.hh"
 #include "PDE_Elasticity.hh"
 #include "PK.hh"
 #include "PK_Factory.hh"
@@ -146,8 +146,8 @@ class NavierStokes_PK : public PK_PhysicalBDF {
   Teuchos::RCP<Operators::TreeOperator> op_matrix_, op_preconditioner_, op_pc_solver_;
   Teuchos::RCP<Operators::PDE_Elasticity> op_matrix_elas_, op_preconditioner_elas_;
   Teuchos::RCP<Operators::Accumulation> op_matrix_acc_, op_preconditioner_acc_, op_mass_;
-  Teuchos::RCP<Operators::Abstract> op_matrix_div_;
-  Teuchos::RCP<Operators::Abstract> op_matrix_conv_, op_preconditioner_conv_;
+  Teuchos::RCP<Operators::PDE_Abstract> op_matrix_div_;
+  Teuchos::RCP<Operators::PDE_Abstract> op_matrix_conv_, op_preconditioner_conv_;
   std::string preconditioner_name_, solver_name_;
  
  private:

@@ -40,7 +40,7 @@
 #include "Operator_Node.hh"
 #include "Operator_ConsistentFace.hh"
 
-#include "DiffusionMFD.hh"
+#include "PDE_DiffusionMFD.hh"
 
 namespace Amanzi {
 namespace Operators {
@@ -48,7 +48,8 @@ namespace Operators {
 /* ******************************************************************
 * Initialization of the operator, scalar coefficient.
 ****************************************************************** */
-void DiffusionMFD::SetTensorCoefficient(const Teuchos::RCP<std::vector<WhetStone::Tensor> >& K)
+void PDE_DiffusionMFD::SetTensorCoefficient(
+    const Teuchos::RCP<std::vector<WhetStone::Tensor> >& K)
 {
   K_ = K;
 
@@ -65,8 +66,8 @@ void DiffusionMFD::SetTensorCoefficient(const Teuchos::RCP<std::vector<WhetStone
 /* ******************************************************************
 * Initialization of the operator: nonlinear coefficient.
 ****************************************************************** */
-void DiffusionMFD::SetScalarCoefficient(const Teuchos::RCP<const CompositeVector>& k,
-                                        const Teuchos::RCP<const CompositeVector>& dkdp)
+void PDE_DiffusionMFD::SetScalarCoefficient(const Teuchos::RCP<const CompositeVector>& k,
+                                            const Teuchos::RCP<const CompositeVector>& dkdp)
 {
   k_ = k;
   dkdp_ = dkdp;
@@ -101,7 +102,7 @@ void DiffusionMFD::SetScalarCoefficient(const Teuchos::RCP<const CompositeVector
 /* ******************************************************************
 * Calculate elemental matrices.
 ****************************************************************** */
-void DiffusionMFD::UpdateMatrices(
+void PDE_DiffusionMFD::UpdateMatrices(
     const Teuchos::Ptr<const CompositeVector>& flux,
     const Teuchos::Ptr<const CompositeVector>& u)
 {
@@ -128,7 +129,7 @@ void DiffusionMFD::UpdateMatrices(
 * Add stable approximation of Jacobian. It is done typically for 
 * the preconditioner.
 ****************************************************************** */
-void DiffusionMFD::UpdateMatricesNewtonCorrection(
+void PDE_DiffusionMFD::UpdateMatricesNewtonCorrection(
     const Teuchos::Ptr<const CompositeVector>& flux,
     const Teuchos::Ptr<const CompositeVector>& u,
     double scalar_limiter)
@@ -138,7 +139,7 @@ void DiffusionMFD::UpdateMatricesNewtonCorrection(
     if (global_op_schema_ & OPERATOR_SCHEMA_DOFS_CELL) {
       AddNewtonCorrectionCell_(flux, u, scalar_limiter);
     } else {
-      Errors::Message msg("DiffusionMFD: Newton correction may only be applied to schemas that include CELL dofs.");
+      Errors::Message msg("PDE_DiffusionMFD: Newton correction may only be applied to schemas that include CELL dofs.");
       Exceptions::amanzi_throw(msg);
     }
   }
@@ -150,7 +151,7 @@ void DiffusionMFD::UpdateMatricesNewtonCorrection(
 * This member of DIVK-pamily of methods requires to recalcualte all
 * mass matrices.
 ****************************************************************** */
-void DiffusionMFD::UpdateMatricesMixedWithGrad_(
+void PDE_DiffusionMFD::UpdateMatricesMixedWithGrad_(
     const Teuchos::Ptr<const CompositeVector>& flux)
 {
   ASSERT(!scaled_constraint_);
@@ -225,7 +226,7 @@ void DiffusionMFD::UpdateMatricesMixedWithGrad_(
 /* ******************************************************************
 * Basic routine for each operator: creation of elemental matrices.
 ****************************************************************** */
-void DiffusionMFD::UpdateMatricesMixed_(
+void PDE_DiffusionMFD::UpdateMatricesMixed_(
     const Teuchos::Ptr<const CompositeVector>& flux)
 {
   // un-rolling little-k data
@@ -356,7 +357,7 @@ void DiffusionMFD::UpdateMatricesMixed_(
 /* ******************************************************************
 * Calculate elemental stiffness matrices: nodal DOFs.
 ****************************************************************** */
-void DiffusionMFD::UpdateMatricesNodal_()
+void PDE_DiffusionMFD::UpdateMatricesNodal_()
 {
   ASSERT(!scaled_constraint_);
 
@@ -408,7 +409,7 @@ void DiffusionMFD::UpdateMatricesNodal_()
 /* ******************************************************************
 * Calculate elemental stiffness matrices: edge DOFs.
 ****************************************************************** */
-void DiffusionMFD::UpdateMatricesEdge_()
+void PDE_DiffusionMFD::UpdateMatricesEdge_()
 {
   ASSERT(!scaled_constraint_);
 
@@ -451,7 +452,7 @@ void DiffusionMFD::UpdateMatricesEdge_()
 * Calculate and assemble fluxes using the TPFA scheme.
 * This routine does not use little k.
 ****************************************************************** */
-void DiffusionMFD::UpdateMatricesTPFA_()
+void PDE_DiffusionMFD::UpdateMatricesTPFA_()
 {
   // populate transmissibilities
   WhetStone::MFD3D_Diffusion mfd(mesh_);
@@ -524,7 +525,7 @@ void DiffusionMFD::UpdateMatricesTPFA_()
 * NONE 1. Nodal scheme handles only the case trialBC = testBC.
 * NONE 2. Jacobian term handles only trial BCs.
 ****************************************************************** */
-void DiffusionMFD::ApplyBCs(bool primary, bool eliminate)
+void PDE_DiffusionMFD::ApplyBCs(bool primary, bool eliminate)
 {
   if (!exclude_primary_terms_) {
     if (local_op_schema_ == (OPERATOR_SCHEMA_BASE_CELL
@@ -580,8 +581,8 @@ void DiffusionMFD::ApplyBCs(bool primary, bool eliminate)
 /* ******************************************************************
 * Apply BCs on face values.
 ****************************************************************** */
-void DiffusionMFD::ApplyBCs_Mixed_(BCs& bc_trial, BCs& bc_test,
-                                   bool primary, bool eliminate)
+void PDE_DiffusionMFD::ApplyBCs_Mixed_(BCs& bc_trial, BCs& bc_test,
+                                       bool primary, bool eliminate)
 {
   // apply diffusion type BCs to FACE-CELL system
   AmanziMesh::Entity_ID_List faces;
@@ -714,8 +715,8 @@ void DiffusionMFD::ApplyBCs_Mixed_(BCs& bc_trial, BCs& bc_test,
 /* ******************************************************************
 * Apply BCs on cell operators
 ****************************************************************** */
-void DiffusionMFD::ApplyBCs_Cell_(BCs& bc_trial, BCs& bc_test,
-                                          bool primary, bool eliminate)
+void PDE_DiffusionMFD::ApplyBCs_Cell_(BCs& bc_trial, BCs& bc_test,
+                                      bool primary, bool eliminate)
 {
   // apply diffusion type BCs to CELL system
   AmanziMesh::Entity_ID_List cells;
@@ -761,9 +762,9 @@ void DiffusionMFD::ApplyBCs_Cell_(BCs& bc_trial, BCs& bc_test,
 /* ******************************************************************
 * Apply BCs on nodal operators
 ****************************************************************** */
-void DiffusionMFD::ApplyBCs_Nodal_(const Teuchos::Ptr<BCs>& bc_f,
-                                           const Teuchos::Ptr<BCs>& bc_v,
-                                           bool primary, bool eliminate)
+void PDE_DiffusionMFD::ApplyBCs_Nodal_(const Teuchos::Ptr<BCs>& bc_f,
+                                       const Teuchos::Ptr<BCs>& bc_v,
+                                       bool primary, bool eliminate)
 {
   AmanziMesh::Entity_ID_List faces, nodes, cells;
 
@@ -877,8 +878,8 @@ void DiffusionMFD::ApplyBCs_Nodal_(const Teuchos::Ptr<BCs>& bc_f,
 /* ******************************************************************
 * Apply BCs on edge operators
 ****************************************************************** */
-void DiffusionMFD::ApplyBCs_Edge_(BCs& bc_trial, BCs& bc_test,
-                                          bool primary, bool eliminate)
+void PDE_DiffusionMFD::ApplyBCs_Edge_(BCs& bc_trial, BCs& bc_test,
+                                      bool primary, bool eliminate)
 {
   AmanziMesh::Entity_ID_List edges;
 
@@ -945,7 +946,7 @@ void DiffusionMFD::ApplyBCs_Edge_(BCs& bc_trial, BCs& bc_test,
 * where h is enthalpy and can be negative. I think that the current
 * treatment is inadequate.
 ****************************************************************** */
-void DiffusionMFD::AddNewtonCorrectionCell_(
+void PDE_DiffusionMFD::AddNewtonCorrectionCell_(
     const Teuchos::Ptr<const CompositeVector>& flux,
     const Teuchos::Ptr<const CompositeVector>& u,
     double scalar_limiter)
@@ -1000,7 +1001,7 @@ void DiffusionMFD::AddNewtonCorrectionCell_(
 /* ******************************************************************
 * Given pressures, reduce the problem to Lagrange multipliers.
 ****************************************************************** */
-void DiffusionMFD::ModifyMatrices(const CompositeVector& u)
+void PDE_DiffusionMFD::ModifyMatrices(const CompositeVector& u)
 {
   if (local_op_schema_ != (OPERATOR_SCHEMA_BASE_CELL |
                            OPERATOR_SCHEMA_DOFS_CELL | OPERATOR_SCHEMA_DOFS_FACE)) {
@@ -1039,8 +1040,8 @@ void DiffusionMFD::ModifyMatrices(const CompositeVector& u)
 * Richards equation), we derive it only once (using flag) and in 
 * exactly the same manner as other routines.
 * **************************************************************** */
-void DiffusionMFD::UpdateFlux(const Teuchos::Ptr<const CompositeVector>& u,
-                              const Teuchos::Ptr<CompositeVector>& flux)
+void PDE_DiffusionMFD::UpdateFlux(const Teuchos::Ptr<const CompositeVector>& u,
+                                  const Teuchos::Ptr<CompositeVector>& flux)
 {
   // Initialize intensity in ghost faces.
   flux->PutScalar(0.0);
@@ -1089,8 +1090,9 @@ void DiffusionMFD::UpdateFlux(const Teuchos::Ptr<const CompositeVector>& u,
 * Calculates one-sided (cell-based) exterior fluxes that satisfy 
 * proper continuity equations.
 * **************************************************************** */
-void DiffusionMFD::UpdateFluxNonManifold(const Teuchos::Ptr<const CompositeVector>& u,
-                                         const Teuchos::Ptr<CompositeVector>& flux)
+void PDE_DiffusionMFD::UpdateFluxNonManifold(
+    const Teuchos::Ptr<const CompositeVector>& u,
+    const Teuchos::Ptr<CompositeVector>& flux)
 {
   // Initialize intensity in ghost faces.
   flux->PutScalar(0.0);
@@ -1129,7 +1131,7 @@ void DiffusionMFD::UpdateFluxNonManifold(const Teuchos::Ptr<const CompositeVecto
 /* ******************************************************************
 * Calculate elemental inverse mass matrices.
 ****************************************************************** */
-void DiffusionMFD::CreateMassMatrices_()
+void PDE_DiffusionMFD::CreateMassMatrices_()
 {
   WhetStone::MFD3D_Diffusion mfd(mesh_);
   WhetStone::DenseMatrix Wff;
@@ -1185,7 +1187,7 @@ void DiffusionMFD::CreateMassMatrices_()
     Wff_cells_[c] = Wff;
 
     if (ok == WhetStone::WHETSTONE_ELEMENTAL_MATRIX_FAILED) {
-      Errors::Message msg("Diffusion: unexpected failure in WhetStone.");
+      Errors::Message msg("PDE_DiffusionMFD: unexpected failure in WhetStone.");
       Exceptions::amanzi_throw(msg);
     }
   }
@@ -1197,7 +1199,7 @@ void DiffusionMFD::CreateMassMatrices_()
 /* ******************************************************************
 * Scale elemental inverse mass matrices. Use case is saturated flow.
 ****************************************************************** */
-void DiffusionMFD::ScaleMassMatrices(double s)
+void PDE_DiffusionMFD::ScaleMassMatrices(double s)
 {
   for (int c = 0; c < ncells_owned; c++) {
     Wff_cells_[c] *= s;
@@ -1208,7 +1210,7 @@ void DiffusionMFD::ScaleMassMatrices(double s)
 /* ******************************************************************
 * Put here stuff that has to be done in constructor.
 ****************************************************************** */
-void DiffusionMFD::InitDiffusion_(Teuchos::ParameterList& plist)
+void PDE_DiffusionMFD::InitDiffusion_(Teuchos::ParameterList& plist)
 {
   // Determine discretization
   std::string primary = plist.get<std::string>("discretization primary");
@@ -1230,7 +1232,7 @@ void DiffusionMFD::InitDiffusion_(Teuchos::ParameterList& plist)
     mfd_primary_ = WhetStone::DIFFUSION_POLYHEDRA_SCALED;
   } else {
     Errors::Message msg;
-    msg << "Diffusion: primary discretization method \"" << primary << "\" is not supported.";
+    msg << "PDE_DiffusionMFD: primary discretization method \"" << primary << "\" is not supported.";
     Exceptions::amanzi_throw(msg);
   }
 
@@ -1245,7 +1247,7 @@ void DiffusionMFD::InitDiffusion_(Teuchos::ParameterList& plist)
     mfd_secondary_ = WhetStone::DIFFUSION_POLYHEDRA_SCALED;
   } else {
     Errors::Message msg;
-    msg << "Diffusion: secondary discretization method \"" << secondary << "\" is not supported.";
+    msg << "PDE_DiffusionMFD: secondary discretization method \"" << secondary << "\" is not supported.";
     Exceptions::amanzi_throw(msg);
   }
 
@@ -1283,7 +1285,7 @@ void DiffusionMFD::InitDiffusion_(Teuchos::ParameterList& plist)
     local_op_schema_ = OPERATOR_SCHEMA_BASE_FACE | OPERATOR_SCHEMA_DOFS_CELL;
   } else {
     Errors::Message msg;
-    msg << "Diffusion: \"schema\" must be CELL, FACE+CELL, NODE, or EDGE";
+    msg << "PDE_DiffusionMFD: \"schema\" must be CELL, FACE+CELL, NODE, or EDGE";
     Exceptions::amanzi_throw(msg);
   }
 
@@ -1346,7 +1348,7 @@ void DiffusionMFD::InitDiffusion_(Teuchos::ParameterList& plist)
     } 
     else {
       Errors::Message msg;
-      msg << "Diffusion: \"preconditioner schema\" must be NODE, CELL, FACE, or FACE+CELL";
+      msg << "PDE_DiffusionMFD: \"preconditioner schema\" must be NODE, CELL, FACE, or FACE+CELL";
       Exceptions::amanzi_throw(msg);
     }
 
@@ -1434,12 +1436,12 @@ void DiffusionMFD::InitDiffusion_(Teuchos::ParameterList& plist)
     newton_correction_ = OPERATOR_DIFFUSION_JACOBIAN_NONE;
   } else if (jacobian == "true Jacobian") {
     newton_correction_ = OPERATOR_DIFFUSION_JACOBIAN_TRUE;
-    Errors::Message msg("DiffusionMFD: \"true Jacobian\" not supported -- maybe you mean \"approximate Jacobian\"?");
+    Errors::Message msg("PDE_DiffusionMFD: \"true Jacobian\" not supported -- maybe you mean \"approximate Jacobian\"?");
     Exceptions::amanzi_throw(msg);
   } else if (jacobian == "approximate Jacobian") {
     // cannot do jacobian terms without cells
     if (!(schema_prec_dofs & OPERATOR_SCHEMA_DOFS_CELL)) {
-      Errors::Message msg("DiffusionMFD: incompatible options.  \"approximate Jacobian\" terms require CELL quantities, and the requested preconditioner schema does not include CELL.");
+      Errors::Message msg("PDE_DiffusionMFD: incompatible options.  \"approximate Jacobian\" terms require CELL quantities, and the requested preconditioner schema does not include CELL.");
       Exceptions::amanzi_throw(msg);
     }
     newton_correction_ = OPERATOR_DIFFUSION_JACOBIAN_APPROXIMATE;
@@ -1450,7 +1452,8 @@ void DiffusionMFD::InitDiffusion_(Teuchos::ParameterList& plist)
     global_op_->OpPushBack(jac_op_);
   } else {
     Errors::Message msg;
-    msg << "DiffusionMFD: invalid parameter \"" << jacobian << "\" for option \"Newton correction\" -- valid are: \"none\", \"approximate Jacobian\"";
+    msg << "PDE_DiffusionMFD: invalid parameter \"" << jacobian 
+        << "\" for option \"Newton correction\" -- valid are: \"none\", \"approximate Jacobian\"";
     Exceptions::amanzi_throw(msg);
   }
 
@@ -1467,7 +1470,7 @@ void DiffusionMFD::InitDiffusion_(Teuchos::ParameterList& plist)
 * equations:
 *   x_f = Aff^-1 * (y_f - Afc * x_c)
 ****************************************************************** */
-int DiffusionMFD::UpdateConsistentFaces(CompositeVector& u)
+int PDE_DiffusionMFD::UpdateConsistentFaces(CompositeVector& u)
 {
   if (consistent_face_op_ == Teuchos::null) {
     // create the op
@@ -1528,7 +1531,7 @@ int DiffusionMFD::UpdateConsistentFaces(CompositeVector& u)
 /* ******************************************************************
 * Calculates transmissibility value on the given BOUNDARY face f.
 ****************************************************************** */
-double DiffusionMFD::ComputeTransmissibility(int f) const
+double PDE_DiffusionMFD::ComputeTransmissibility(int f) const
 {
   WhetStone::MFD3D_Diffusion mfd(mesh_);
 

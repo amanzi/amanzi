@@ -9,12 +9,12 @@
   Authors: Daniil Svyatskiy (dasvyat@lanl.gov)
            Konstantin Lipnikov (lipnikov@lanl.gov)
 
-  DiffusionNLFV implements the Diffusion interface 
+  PDE_DiffusionNLFV implements the PDE_Diffusion interface 
   using nonlinear finite volumes.
 */
 
-#ifndef AMANZI_OPERATOR_DIFFUSION_NLFV_HH_
-#define AMANZI_OPERATOR_DIFFUSION_NLFV_HH_
+#ifndef AMANZI_OPERATOR_PDE_DIFFUSION_NLFV_HH_
+#define AMANZI_OPERATOR_PDE_DIFFUSION_NLFV_HH_
 
 #include <string>
 #include <vector>
@@ -29,36 +29,36 @@
 #include "DenseMatrix.hh"
 #include "Preconditioner.hh"
 
-#include "Diffusion.hh"
+#include "PDE_Diffusion.hh"
 
 namespace Amanzi {
 namespace Operators {
 
 class BCs;
 
-class DiffusionNLFV : public virtual Diffusion {
+class PDE_DiffusionNLFV : public virtual PDE_Diffusion {
  public:
-  DiffusionNLFV(Teuchos::ParameterList& plist,
-                const Teuchos::RCP<Operator>& global_op) :
-      Diffusion(global_op),
+  PDE_DiffusionNLFV(Teuchos::ParameterList& plist,
+                    const Teuchos::RCP<Operator>& global_op) :
+      PDE_Diffusion(global_op),
       stencil_initialized_(false)
   {
     operator_type_ = OPERATOR_DIFFUSION_NLFV;
     InitDiffusion_(plist);
   }
 
-  DiffusionNLFV(Teuchos::ParameterList& plist,
-                const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) :
-      Diffusion(mesh),
+  PDE_DiffusionNLFV(Teuchos::ParameterList& plist,
+                    const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) :
+      PDE_Diffusion(mesh),
       stencil_initialized_(false)
   {
     operator_type_ = OPERATOR_DIFFUSION_NLFV;
     InitDiffusion_(plist);
   }
 
-  DiffusionNLFV(Teuchos::ParameterList& plist,
-                const Teuchos::RCP<AmanziMesh::Mesh>& mesh) :
-      Diffusion(mesh),
+  PDE_DiffusionNLFV(Teuchos::ParameterList& plist,
+                    const Teuchos::RCP<AmanziMesh::Mesh>& mesh) :
+      PDE_Diffusion(mesh),
       stencil_initialized_(false)
   {
     operator_type_ = OPERATOR_DIFFUSION_NLFV;
@@ -67,7 +67,7 @@ class DiffusionNLFV : public virtual Diffusion {
 
   // main virtual members
   // -- setup
-  using Diffusion::Setup;
+  using PDE_Diffusion::Setup;
   virtual void SetTensorCoefficient(const Teuchos::RCP<std::vector<WhetStone::Tensor> >& K) override { K_ = K; }
   virtual void SetScalarCoefficient(const Teuchos::RCP<const CompositeVector>& k,
                                     const Teuchos::RCP<const CompositeVector>& dkdp) override;
@@ -120,6 +120,5 @@ class DiffusionNLFV : public virtual Diffusion {
 
 }  // namespace Operators
 }  // namespace Amanzi
-
 
 #endif

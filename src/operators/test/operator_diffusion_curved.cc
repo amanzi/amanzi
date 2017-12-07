@@ -30,8 +30,8 @@
 // Operators
 #include "Analytic02.hh"
 
-#include "Abstract.hh"
 #include "OperatorDefs.hh"
+#include "PDE_Abstract.hh"
 
 
 /* *****************************************************************
@@ -97,7 +97,7 @@ void RunTestDiffusionCurved() {
 
   // create diffusion operator 
   ParameterList op_list = plist.sublist("PK operator").sublist("diffusion operator curved");
-  Teuchos::RCP<Abstract> op = Teuchos::rcp(new Abstract(op_list, mesh));
+  Teuchos::RCP<PDE_Abstract> op = Teuchos::rcp(new PDE_Abstract(op_list, mesh));
   op->SetBCs(bc, bc);
   const CompositeVectorSpace& cvs = op->global_operator()->DomainMap();
 

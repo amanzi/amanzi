@@ -14,10 +14,10 @@
 #include "errors.hh"
 #include "MFD3DFactory.hh"
 
-#include "Abstract.hh"
-#include "OperatorDefs.hh"
 #include "Operator_Schema.hh"
 #include "Op_Cell_Schema.hh"
+#include "OperatorDefs.hh"
+#include "PDE_Abstract.hh"
 
 namespace Amanzi {
 namespace Operators {
@@ -25,7 +25,7 @@ namespace Operators {
 /* ******************************************************************
 * Initialize operator from parameter list.
 ****************************************************************** */
-void Abstract::Init_(Teuchos::ParameterList& plist)
+void PDE_Abstract::Init_(Teuchos::ParameterList& plist)
 {
   Teuchos::ParameterList& range = plist.sublist("schema range");
   Teuchos::ParameterList& domain = plist.sublist("schema domain");
@@ -89,8 +89,8 @@ void Abstract::Init_(Teuchos::ParameterList& plist)
 * Populate containers of elemental matrices using MFD factory.
 * NOTE: input parameters are not yet used.
 ****************************************************************** */
-void Abstract::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& u,
-                              const Teuchos::Ptr<const CompositeVector>& p)
+void PDE_Abstract::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& u,
+                                  const Teuchos::Ptr<const CompositeVector>& p)
 {
   std::vector<WhetStone::DenseMatrix>& matrix = local_op_->matrices;
   std::vector<WhetStone::DenseMatrix>& matrix_shadow = local_op_->matrices_shadow;
@@ -157,3 +157,4 @@ void Abstract::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& u,
 
 }  // namespace Operators
 }  // namespace Amanzi
+

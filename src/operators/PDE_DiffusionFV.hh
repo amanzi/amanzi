@@ -34,8 +34,8 @@
     the current mesh interface.
 */
 
-#ifndef AMANZI_OPERATOR_DIFFUSION_FV_HH_
-#define AMANZI_OPERATOR_DIFFUSION_FV_HH_
+#ifndef AMANZI_OPERATOR_PDE_DIFFUSION_FV_HH_
+#define AMANZI_OPERATOR_PDE_DIFFUSION_FV_HH_
 
 #include <strings.h>
 
@@ -49,36 +49,36 @@
 #include "Preconditioner.hh"
 
 // Opertors
-#include "Diffusion.hh"
+#include "PDE_Diffusion.hh"
 
 namespace Amanzi {
 namespace Operators {
 
 class BCs;
 
-class DiffusionFV : public virtual Diffusion {
+class PDE_DiffusionFV : public virtual PDE_Diffusion {
  public:
-  DiffusionFV(Teuchos::ParameterList& plist,
-              const Teuchos::RCP<Operator>& global_op) :
-      Diffusion(global_op),
+  PDE_DiffusionFV(Teuchos::ParameterList& plist,
+                  const Teuchos::RCP<Operator>& global_op) :
+      PDE_Diffusion(global_op),
       transmissibility_initialized_(false)
   {
     operator_type_ = OPERATOR_DIFFUSION_FV;
     InitDiffusion_(plist);
   }
 
-  DiffusionFV(Teuchos::ParameterList& plist,
-              const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) :
-      Diffusion(mesh),
+  PDE_DiffusionFV(Teuchos::ParameterList& plist,
+                  const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) :
+      PDE_Diffusion(mesh),
       transmissibility_initialized_(false)
   {
     operator_type_ = OPERATOR_DIFFUSION_FV;
     InitDiffusion_(plist);
   }
 
-  DiffusionFV(Teuchos::ParameterList& plist,
-              const Teuchos::RCP<AmanziMesh::Mesh>& mesh) :
-      Diffusion(mesh),
+  PDE_DiffusionFV(Teuchos::ParameterList& plist,
+                  const Teuchos::RCP<AmanziMesh::Mesh>& mesh) :
+      PDE_Diffusion(mesh),
       transmissibility_initialized_(false)
   {
     operator_type_ = OPERATOR_DIFFUSION_FV;
@@ -87,7 +87,7 @@ class DiffusionFV : public virtual Diffusion {
 
   // main virtual members
   // -- setup
-  using Diffusion::Setup;
+  using PDE_Diffusion::Setup;
   virtual void SetTensorCoefficient(const Teuchos::RCP<std::vector<WhetStone::Tensor> >& K) override;
   virtual void SetScalarCoefficient(const Teuchos::RCP<const CompositeVector>& k,
                                     const Teuchos::RCP<const CompositeVector>& dkdp) override;

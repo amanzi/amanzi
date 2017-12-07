@@ -10,8 +10,8 @@
            Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
-#ifndef AMANZI_OPERATOR_DIFFUSION_FV_WITH_GRAVITY_HH_
-#define AMANZI_OPERATOR_DIFFUSION_FV_WITH_GRAVITY_HH_
+#ifndef AMANZI_OPERATOR_PDE_DIFFUSION_FV_WITH_GRAVITY_HH_
+#define AMANZI_OPERATOR_PDE_DIFFUSION_FV_WITH_GRAVITY_HH_
 
 #include <strings.h>
 
@@ -25,56 +25,43 @@
 #include "Preconditioner.hh"
 
 // Operators
-#include "DiffusionFV.hh"
-#include "DiffusionWithGravity.hh"
+#include "PDE_DiffusionFV.hh"
+#include "PDE_DiffusionWithGravity.hh"
 
 namespace Amanzi {
 namespace Operators {
 
 class BCs;
 
-class DiffusionFVwithGravity : public DiffusionFV,
-                               public DiffusionWithGravity {
+class PDE_DiffusionFVwithGravity : public PDE_DiffusionFV,
+                                   public PDE_DiffusionWithGravity {
  public:
-  DiffusionFVwithGravity(Teuchos::ParameterList& plist,
-                         const Teuchos::RCP<Operator>& global_op) :
-      DiffusionFV(plist, global_op),
-      DiffusionWithGravity(global_op),
-      Diffusion(global_op)
+  PDE_DiffusionFVwithGravity(Teuchos::ParameterList& plist,
+                             const Teuchos::RCP<Operator>& global_op) :
+      PDE_DiffusionFV(plist, global_op),
+      PDE_DiffusionWithGravity(global_op),
+      PDE_Diffusion(global_op)
   {
     operator_type_ = OPERATOR_DIFFUSION_FV_GRAVITY;
     InitDiffusion_(plist);
   }
 
-  DiffusionFVwithGravity(Teuchos::ParameterList& plist,
-                         const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) :
-      DiffusionFV(plist, mesh),
-      DiffusionWithGravity(mesh),
-      Diffusion(mesh)
+  PDE_DiffusionFVwithGravity(Teuchos::ParameterList& plist,
+                             const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) :
+      PDE_DiffusionFV(plist, mesh),
+      PDE_DiffusionWithGravity(mesh),
+      PDE_Diffusion(mesh)
   {
     operator_type_ = OPERATOR_DIFFUSION_FV_GRAVITY;
     InitDiffusion_(plist);
   }
 
-  DiffusionFVwithGravity(Teuchos::ParameterList& plist,
-                         const Teuchos::RCP<Operator>& global_op,
-                         const AmanziGeometry::Point& g) :
-      DiffusionFV(plist, global_op),
-      DiffusionWithGravity(global_op),
-      Diffusion(global_op)
-  {
-    operator_type_ = OPERATOR_DIFFUSION_FV_GRAVITY;
-    InitDiffusion_(plist);
-
-    SetGravity(g);
-  }
-
-  DiffusionFVwithGravity(Teuchos::ParameterList& plist,
-                         const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
-                         const AmanziGeometry::Point& g) :
-      DiffusionFV(plist, mesh),
-      DiffusionWithGravity(mesh),
-      Diffusion(mesh)
+  PDE_DiffusionFVwithGravity(Teuchos::ParameterList& plist,
+                             const Teuchos::RCP<Operator>& global_op,
+                             const AmanziGeometry::Point& g) :
+      PDE_DiffusionFV(plist, global_op),
+      PDE_DiffusionWithGravity(global_op),
+      PDE_Diffusion(global_op)
   {
     operator_type_ = OPERATOR_DIFFUSION_FV_GRAVITY;
     InitDiffusion_(plist);
@@ -82,12 +69,25 @@ class DiffusionFVwithGravity : public DiffusionFV,
     SetGravity(g);
   }
 
-  DiffusionFVwithGravity(Teuchos::ParameterList& plist,
-                         const Teuchos::RCP<Operator>& global_op,
-                         double rho, const AmanziGeometry::Point& g) :
-      DiffusionFV(plist, global_op),
-      DiffusionWithGravity(global_op),
-      Diffusion(global_op)
+  PDE_DiffusionFVwithGravity(Teuchos::ParameterList& plist,
+                             const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
+                             const AmanziGeometry::Point& g) :
+      PDE_DiffusionFV(plist, mesh),
+      PDE_DiffusionWithGravity(mesh),
+      PDE_Diffusion(mesh)
+  {
+    operator_type_ = OPERATOR_DIFFUSION_FV_GRAVITY;
+    InitDiffusion_(plist);
+
+    SetGravity(g);
+  }
+
+  PDE_DiffusionFVwithGravity(Teuchos::ParameterList& plist,
+                             const Teuchos::RCP<Operator>& global_op,
+                             double rho, const AmanziGeometry::Point& g) :
+      PDE_DiffusionFV(plist, global_op),
+      PDE_DiffusionWithGravity(global_op),
+      PDE_Diffusion(global_op)
   {
     operator_type_ = OPERATOR_DIFFUSION_FV_GRAVITY;
     InitDiffusion_(plist);
@@ -96,12 +96,12 @@ class DiffusionFVwithGravity : public DiffusionFV,
     SetDensity(rho);
   }
 
-  DiffusionFVwithGravity(Teuchos::ParameterList& plist,
-                         const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
-                         double rho, const AmanziGeometry::Point& g) :
-      DiffusionFV(plist, mesh),
-      DiffusionWithGravity(mesh),
-      Diffusion(mesh)
+  PDE_DiffusionFVwithGravity(Teuchos::ParameterList& plist,
+                             const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
+                             double rho, const AmanziGeometry::Point& g) :
+      PDE_DiffusionFV(plist, mesh),
+      PDE_DiffusionWithGravity(mesh),
+      PDE_Diffusion(mesh)
   {
     operator_type_ = OPERATOR_DIFFUSION_FV_GRAVITY;
     InitDiffusion_(plist);

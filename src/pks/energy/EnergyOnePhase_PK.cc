@@ -13,8 +13,8 @@
 */
 
 // Amanzi
-#include "DiffusionFactory.hh"
 #include "EOSEvaluator.hh"
+#include "PDE_DiffusionFactory.hh"
 
 // Amanzi::Energy
 #include "EnergyOnePhase_PK.hh"
@@ -110,7 +110,7 @@ void EnergyOnePhase_PK::Initialize(const Teuchos::Ptr<State>& S)
   Teuchos::ParameterList oplist_matrix = tmp_list.sublist("matrix");
   Teuchos::ParameterList oplist_pc = tmp_list.sublist("preconditioner");
 
-  Operators::DiffusionFactory opfactory;
+  Operators::PDE_DiffusionFactory opfactory;
   op_matrix_diff_ = opfactory.Create(oplist_matrix, mesh_, op_bc_);
   op_matrix_diff_->SetBCs(op_bc_, op_bc_);
   op_matrix_ = op_matrix_diff_->global_operator();

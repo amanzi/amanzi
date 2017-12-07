@@ -10,8 +10,8 @@
           Ethan Coon (ecoon@lanl.gov)
 */
 
-#ifndef AMANZI_OPERATOR_DIFFUSION_HH_
-#define AMANZI_OPERATOR_DIFFUSION_HH_
+#ifndef AMANZI_OPERATOR_PDE_DIFFUSION_HH_
+#define AMANZI_OPERATOR_PDE_DIFFUSION_HH_
 
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
@@ -56,30 +56,30 @@ Example:
 namespace Amanzi {
 namespace Operators {
 
-class Diffusion : public PDE_Helper {
+class PDE_Diffusion : public PDE_Helper {
  public:
-  Diffusion(const Teuchos::RCP<Operator>& global_op) :
+  PDE_Diffusion(const Teuchos::RCP<Operator>& global_op) :
       PDE_Helper(global_op),
       K_(Teuchos::null),
       k_(Teuchos::null),
       dkdp_(Teuchos::null)
   {};
 
-  Diffusion(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) :
+  PDE_Diffusion(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) :
       PDE_Helper(mesh),
       K_(Teuchos::null),
       k_(Teuchos::null),
       dkdp_(Teuchos::null)
   {};
 
-  Diffusion(const Teuchos::RCP<AmanziMesh::Mesh>& mesh) :
+  PDE_Diffusion(const Teuchos::RCP<AmanziMesh::Mesh>& mesh) :
       PDE_Helper(mesh),
       K_(Teuchos::null),
       k_(Teuchos::null),
       dkdp_(Teuchos::null)
   {};
 
-  virtual ~Diffusion() = default;
+  virtual ~PDE_Diffusion() = default;
   
   // main virtual members
   // -- setup 

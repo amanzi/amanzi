@@ -10,29 +10,29 @@
           Ethan Coon (ecoon@lanl.gov)
 */
 
-#ifndef AMANZI_OPERATOR_DIFFUSION_WITH_GRAVITY_HH_
-#define AMANZI_OPERATOR_DIFFUSION_WITH_GRAVITY_HH_
+#ifndef AMANZI_OPERATOR_PDE_DIFFUSION_WITH_GRAVITY_HH_
+#define AMANZI_OPERATOR_PDE_DIFFUSION_WITH_GRAVITY_HH_
 
-#include "Diffusion.hh"
+#include "PDE_Diffusion.hh"
 
 namespace Amanzi {
 namespace Operators {
 
-class DiffusionWithGravity : public virtual Diffusion {
+class PDE_DiffusionWithGravity : public virtual PDE_Diffusion {
  public:
-  DiffusionWithGravity(const Teuchos::RCP<Operator>& global_op) :
-      Diffusion(global_op),
+  PDE_DiffusionWithGravity(const Teuchos::RCP<Operator>& global_op) :
+      PDE_Diffusion(global_op),
       is_scalar_(false) {};
 
-  DiffusionWithGravity(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) :
-      Diffusion(mesh),
+  PDE_DiffusionWithGravity(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) :
+      PDE_Diffusion(mesh),
       is_scalar_(false) {};
 
-  DiffusionWithGravity(const Teuchos::RCP<AmanziMesh::Mesh>& mesh) :
-      Diffusion(mesh),
+  PDE_DiffusionWithGravity(const Teuchos::RCP<AmanziMesh::Mesh>& mesh) :
+      PDE_Diffusion(mesh),
       is_scalar_(false) {};
 
-  virtual ~DiffusionWithGravity() = default;
+  virtual ~PDE_DiffusionWithGravity() = default;
   
   virtual void SetGravity(const AmanziGeometry::Point& g) { g_ = g; }
   

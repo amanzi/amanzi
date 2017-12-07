@@ -1,4 +1,4 @@
-// DiffusionMFDwithGravity prescribes an elliptic operator with gravity using MFD family of discretizations.
+// PDE_DiffusionMFDwithGravity prescribes an elliptic operator with gravity using MFD family of discretizations.
 
 /*
   Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
@@ -12,7 +12,7 @@
 #include <vector>
 
 #include "OperatorDefs.hh"
-#include "DiffusionMFDwithGravity.hh"
+#include "PDE_DiffusionMFDwithGravity.hh"
 
 
 namespace Amanzi {
@@ -21,11 +21,11 @@ namespace Operators {
 /* ******************************************************************
 * Add a gravity term to the diffusion operator.
 ****************************************************************** */
-void DiffusionMFDwithGravity::UpdateMatrices(
+void PDE_DiffusionMFDwithGravity::UpdateMatrices(
     const Teuchos::Ptr<const CompositeVector>& flux,
     const Teuchos::Ptr<const CompositeVector>& u)
 {
-  DiffusionMFD::UpdateMatrices(flux, u);
+  PDE_DiffusionMFD::UpdateMatrices(flux, u);
 
   ASSERT(little_k_ != OPERATOR_LITTLE_K_DIVK_TWIN_GRAD);
   AddGravityToRHS_();
@@ -35,7 +35,7 @@ void DiffusionMFDwithGravity::UpdateMatrices(
 /* ******************************************************************
 * Add a gravity term to the RHS of the operator
 ****************************************************************** */
-void DiffusionMFDwithGravity::AddGravityToRHS_()
+void PDE_DiffusionMFDwithGravity::AddGravityToRHS_()
 {
   // vector or scalar rho?
   const Epetra_MultiVector* rho_c = NULL;
@@ -160,11 +160,11 @@ void DiffusionMFDwithGravity::AddGravityToRHS_()
 * WARNING: Since gravity flux is not continuous, we derive it only once
 * (using flag) and in exactly the same manner as in other routines.
 * **************************************************************** */
-void DiffusionMFDwithGravity::UpdateFlux(const Teuchos::Ptr<const CompositeVector>& u,
-                                         const Teuchos::Ptr<CompositeVector>& flux)
+void PDE_DiffusionMFDwithGravity::UpdateFlux(const Teuchos::Ptr<const CompositeVector>& u,
+                                             const Teuchos::Ptr<CompositeVector>& flux)
 {
   // Calculate diffusive part of the flux.
-  DiffusionMFD::UpdateFlux(u, flux);
+  PDE_DiffusionMFD::UpdateFlux(u, flux);
 
   // vector or scalar rho?
   const Epetra_MultiVector* rho_c = NULL;
@@ -275,12 +275,12 @@ void DiffusionMFDwithGravity::UpdateFlux(const Teuchos::Ptr<const CompositeVecto
 /* ******************************************************************
 * Add "gravity flux" to the Darcy flux. 
 * **************************************************************** */
-void DiffusionMFDwithGravity::UpdateFluxNonManifold(
+void PDE_DiffusionMFDwithGravity::UpdateFluxNonManifold(
     const Teuchos::Ptr<const CompositeVector>& u,
     const Teuchos::Ptr<CompositeVector>& flux)
 {
   // Calculate diffusive part of the flux.
-  DiffusionMFD::UpdateFluxNonManifold(u, flux);
+  PDE_DiffusionMFD::UpdateFluxNonManifold(u, flux);
 
   // preparing little-k data
   Teuchos::RCP<const Epetra_MultiVector> k_cell = Teuchos::null;
@@ -343,7 +343,7 @@ void DiffusionMFDwithGravity::UpdateFluxNonManifold(
 /* ******************************************************************
 * Put here stuff that has to be done in constructor, i.e. only once.
 ****************************************************************** */
-void DiffusionMFDwithGravity::Init_(Teuchos::ParameterList& plist)
+void PDE_DiffusionMFDwithGravity::Init_(Teuchos::ParameterList& plist)
 {
   gravity_special_projection_ = (mfd_primary_ == WhetStone::DIFFUSION_TPFA);
 
@@ -360,7 +360,7 @@ void DiffusionMFDwithGravity::Init_(Teuchos::ParameterList& plist)
 * Compute non-normalized unsigned direction to the next cell needed
 * to project gravity vector in the MFD-TPFA discretization method.
 ****************************************************************** */
-AmanziGeometry::Point DiffusionMFDwithGravity::GravitySpecialDirection_(int f) const
+AmanziGeometry::Point PDE_DiffusionMFDwithGravity::GravitySpecialDirection_(int f) const
 {
   AmanziMesh::Entity_ID_List cells;
   mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
@@ -377,7 +377,7 @@ AmanziGeometry::Point DiffusionMFDwithGravity::GravitySpecialDirection_(int f) c
 /* ******************************************************************
 * Return value of the gravity flux on the given face f.
 ****************************************************************** */
-double DiffusionMFDwithGravity::ComputeGravityFlux(int f) const
+double PDE_DiffusionMFDwithGravity::ComputeGravityFlux(int f) const
 {
   AmanziMesh::Entity_ID_List cells;
   mesh_->face_get_cells(f, AmanziMesh::USED, &cells);

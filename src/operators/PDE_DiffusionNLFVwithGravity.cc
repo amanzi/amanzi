@@ -16,8 +16,8 @@
 #include "DenseMatrix.hh"
 
 // Operators
-#include "DiffusionNLFVwithGravity.hh"
 #include "Op_Face_Cell.hh"
+#include "PDE_DiffusionNLFVwithGravity.hh"
 
 namespace Amanzi {
 namespace Operators {
@@ -25,7 +25,7 @@ namespace Operators {
 /* ******************************************************************
 * Populate face-based matrices.
 ****************************************************************** */
-void DiffusionNLFVwithGravity::UpdateMatrices(
+void PDE_DiffusionNLFVwithGravity::UpdateMatrices(
     const Teuchos::Ptr<const CompositeVector>& flux,
     const Teuchos::Ptr<const CompositeVector>& u)
 {
@@ -40,7 +40,7 @@ void DiffusionNLFVwithGravity::UpdateMatrices(
     hh_c[0][c] = u_c[0][c] + rho_g * zc;
   }
 
-  DiffusionNLFV::UpdateMatrices(flux, hh.ptr());
+  PDE_DiffusionNLFV::UpdateMatrices(flux, hh.ptr());
 
   // add gravity fluxes to the right-hand side.
   global_op_->rhs()->PutScalarGhosted(0.0);
@@ -84,8 +84,8 @@ void DiffusionNLFVwithGravity::UpdateMatrices(
 /* ******************************************************************
 * Calculate flux using cell-centered data.
 * **************************************************************** */
-void DiffusionNLFVwithGravity::UpdateFlux(const Teuchos::Ptr<const CompositeVector>& u,
-                                          const Teuchos::Ptr<CompositeVector>& flux) 
+void PDE_DiffusionNLFVwithGravity::UpdateFlux(const Teuchos::Ptr<const CompositeVector>& u,
+                                              const Teuchos::Ptr<CompositeVector>& flux) 
 {
   const std::vector<int>& bc_model = bcs_trial_[0]->bc_model();
 
@@ -101,14 +101,14 @@ void DiffusionNLFVwithGravity::UpdateFlux(const Teuchos::Ptr<const CompositeVect
     hh_c[0][c] = u_c[0][c] + rho_g * zc;
   }
 
-  DiffusionNLFV::UpdateFlux(hh.ptr(), flux);
+  PDE_DiffusionNLFV::UpdateFlux(hh.ptr(), flux);
 }
 
 
 /* ******************************************************************
 * BCs are typically given in base system and must be re-mapped.
 * **************************************************************** */
-double DiffusionNLFVwithGravity::MapBoundaryValue_(int f, double u)
+double PDE_DiffusionNLFVwithGravity::MapBoundaryValue_(int f, double u)
 {
   double rho_g = rho_ * fabs(g_[dim_ - 1]); 
   double zf = (mesh_->face_centroid(f))[dim_ - 1];

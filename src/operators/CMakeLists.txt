@@ -52,7 +52,6 @@ add_amanzi_library(operators_audit
 # Library: operators
 #
 set(operators_inc_files
-    Abstract.hh
     BCs.hh
     BCsList.hh
     RemapUtils.hh
@@ -78,18 +77,19 @@ set(operators_inc_files
     Operator_Edge.hh
     BoundaryFlux.hh
     Accumulation.hh
-    Diffusion.hh
-    DiffusionWithGravity.hh
-    DiffusionFactory.hh
-    DiffusionMFD.hh
-    DiffusionMFDwithGravity.hh
-    DiffusionFV.hh
-    DiffusionFVwithGravity.hh
-    DiffusionNLFV.hh
-    DiffusionNLFVwithGravity.hh
+    PDE_Abstract.hh
     PDE_Advection.hh
     PDE_AdvectionUpwind.hh
     PDE_AdvectionRiemann.hh
+    PDE_Diffusion.hh
+    PDE_DiffusionWithGravity.hh
+    PDE_DiffusionFactory.hh
+    PDE_DiffusionMFD.hh
+    PDE_DiffusionMFDwithGravity.hh
+    PDE_DiffusionFV.hh
+    PDE_DiffusionFVwithGravity.hh
+    PDE_DiffusionNLFV.hh
+    PDE_DiffusionNLFVwithGravity.hh
     PDE_Elasticity.hh
     PDE_Electromagnetics.hh
     PDE_ElectromagneticsMHD.hh
@@ -121,12 +121,12 @@ add_amanzi_library(operators
                           Operator_ConsistentFace.cc
                           Operator_Schema.cc
                           PDE_Helper.cc
-                          Abstract.cc
-                          DiffusionMFD.cc DiffusionMFDwithGravity.cc
-                          DiffusionFV.cc DiffusionFVwithGravity.cc
-                          DiffusionNLFV.cc DiffusionNLFVwithGravity.cc
-                          DiffusionFactory.cc                   
                           Accumulation.cc
+                          PDE_Abstract.cc
+                          PDE_DiffusionMFD.cc PDE_DiffusionMFDwithGravity.cc
+                          PDE_DiffusionFV.cc PDE_DiffusionFVwithGravity.cc
+                          PDE_DiffusionNLFV.cc PDE_DiffusionNLFVwithGravity.cc
+                          PDE_DiffusionFactory.cc                   
                           PDE_AdvectionUpwind.cc PDE_AdvectionRiemann.cc
                           PDE_Elasticity.cc
                           PDE_Electromagnetics.cc PDE_ElectromagneticsMHD.cc PDE_ElectromagneticsMHD_TM.cc

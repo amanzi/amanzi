@@ -17,10 +17,10 @@
 #include "nlfv.hh"
 #include "ParallelCommunication.hh"
 
-#include "DiffusionNLFV.hh"
-#include "OperatorDefs.hh"
 #include "Op_Face_Cell.hh"
+#include "OperatorDefs.hh"
 #include "Operator_Cell.hh"
+#include "PDE_DiffusionNLFV.hh"
 
 namespace Amanzi {
 namespace Operators {
@@ -28,7 +28,7 @@ namespace Operators {
 /* ******************************************************************
 * Initialization
 ****************************************************************** */
-void DiffusionNLFV::InitDiffusion_(Teuchos::ParameterList& plist)
+void PDE_DiffusionNLFV::InitDiffusion_(Teuchos::ParameterList& plist)
 {
   // Define stencil for the FV diffusion method.
   local_op_schema_ = OPERATOR_SCHEMA_BASE_FACE | OPERATOR_SCHEMA_DOFS_CELL;
@@ -63,13 +63,13 @@ void DiffusionNLFV::InitDiffusion_(Teuchos::ParameterList& plist)
   if (uwname == "none") {
     little_k_ = OPERATOR_LITTLE_K_NONE;
   // } else {
-  //   msg << "DiffusionNLFV: unknown or not supported upwind scheme specified.";
+  //   msg << "PDE_DiffusionNLFV: unknown or not supported upwind scheme specified.";
   //   Exceptions::amanzi_throw(msg);
   }
 
   // DEPRECATED INPUT -- remove this error eventually --etc
   if (plist.isParameter("newton correction")) {
-    msg << "DiffusionNLFV: DEPRECATED: \"newton correction\" has been removed in favor of \"Newton correction\"";
+    msg << "PDE_DiffusionNLFV: DEPRECATED: \"newton correction\" has been removed in favor of \"Newton correction\"";
     Exceptions::amanzi_throw(msg);
   }
 
@@ -86,10 +86,11 @@ void DiffusionNLFV::InitDiffusion_(Teuchos::ParameterList& plist)
     global_op_->OpPushBack(jac_op_);
   } else if (jacobian == "true Jacobian") {
     newton_correction_ = OPERATOR_DIFFUSION_JACOBIAN_TRUE;
-    Errors::Message msg("DiffusionNLFV: \"true Jacobian\" not supported -- maybe you mean \"approximate Jacobian\"?");
+    Errors::Message msg("PDE_DiffusionNLFV: \"true Jacobian\" not supported -- maybe you mean \"approximate Jacobian\"?");
     Exceptions::amanzi_throw(msg);
   } else {
-    msg << "DiffusionNLFV: invalid parameter \"" << jacobian << "\" for option \"Newton correction\" -- valid are: \"none\", \"approximate Jacobian\"";
+    msg << "PDE_DiffusionNLFV: invalid parameter \"" << jacobian 
+        << "\" for option \"Newton correction\" -- valid are: \"none\", \"approximate Jacobian\"";
     Exceptions::amanzi_throw(msg);
   }
 
@@ -102,7 +103,7 @@ void DiffusionNLFV::InitDiffusion_(Teuchos::ParameterList& plist)
 * Setup methods: krel and dkdp must be called after calling a
 * setup with K absolute
 ****************************************************************** */
-void DiffusionNLFV::SetScalarCoefficient(
+void PDE_DiffusionNLFV::SetScalarCoefficient(
     const Teuchos::RCP<const CompositeVector>& k,
     const Teuchos::RCP<const CompositeVector>& dkdp)
 {
@@ -125,7 +126,7 @@ void DiffusionNLFV::SetScalarCoefficient(
 * and the positive decomposition of face conormals. The face-based
 * data from left and right cells are ordered by the global cells ids.
 ****************************************************************** */
-void DiffusionNLFV::InitStencils_()
+void PDE_DiffusionNLFV::InitStencils_()
 {
   const std::vector<int>& bc_model = bcs_trial_[0]->bc_model();
 
@@ -283,7 +284,7 @@ void DiffusionNLFV::InitStencils_()
 * on boundary faces. We avoid round-off operations since the stencils 
 * already incorporate them.
 ****************************************************************** */
-void DiffusionNLFV::UpdateMatrices(
+void PDE_DiffusionNLFV::UpdateMatrices(
     const Teuchos::Ptr<const CompositeVector>& flux,
     const Teuchos::Ptr<const CompositeVector>& u)
 {
@@ -419,7 +420,7 @@ void DiffusionNLFV::UpdateMatrices(
 * Modify operator by adding an upwind approximation of the Newton 
 * correction term.
 ****************************************************************** */
-void DiffusionNLFV::UpdateMatricesNewtonCorrection(
+void PDE_DiffusionNLFV::UpdateMatricesNewtonCorrection(
     const Teuchos::Ptr<const CompositeVector>& flux,
     const Teuchos::Ptr<const CompositeVector>& u, double scalar_limiter)
 {
@@ -477,7 +478,7 @@ void DiffusionNLFV::UpdateMatricesNewtonCorrection(
 /* ******************************************************************
 * Calculate one-sided fluxes (i0=0) or flux corrections (i0=1).
 ****************************************************************** */
-void DiffusionNLFV::OneSidedFluxCorrections_(
+void PDE_DiffusionNLFV::OneSidedFluxCorrections_(
   int i0, const CompositeVector& u, CompositeVector& flux_cv) 
 {
   // un-rolling composite vectors
@@ -551,7 +552,7 @@ void DiffusionNLFV::OneSidedFluxCorrections_(
 /* ******************************************************************
 * Calculate one-sided fluxes (i0=0) or flux corrections (i0=1).
 ****************************************************************** */
-void DiffusionNLFV::OneSidedWeightFluxes_(
+void PDE_DiffusionNLFV::OneSidedWeightFluxes_(
     int i0, const CompositeVector& u, CompositeVector& flux_cv)
 {
   // un-rolling composite vectors
@@ -607,7 +608,7 @@ void DiffusionNLFV::OneSidedWeightFluxes_(
 /* ******************************************************************
 * Matrix-based implementation of boundary conditions.
 ****************************************************************** */
-void DiffusionNLFV::ApplyBCs(bool primary, bool eliminate)
+void PDE_DiffusionNLFV::ApplyBCs(bool primary, bool eliminate)
 {
   const std::vector<int>& bc_model = bcs_trial_[0]->bc_model();
   const std::vector<double>& bc_value = bcs_trial_[0]->bc_value();
@@ -648,8 +649,8 @@ void DiffusionNLFV::ApplyBCs(bool primary, bool eliminate)
 /* ******************************************************************
 * Calculate flux using cell-centered data.
 * **************************************************************** */
-void DiffusionNLFV::UpdateFlux(const Teuchos::Ptr<const CompositeVector>& u,
-                               const Teuchos::Ptr<CompositeVector>& flux) 
+void PDE_DiffusionNLFV::UpdateFlux(const Teuchos::Ptr<const CompositeVector>& u,
+                                   const Teuchos::Ptr<CompositeVector>& flux) 
 {
   const std::vector<int>& bc_model = bcs_trial_[0]->bc_model();
   const std::vector<double>& bc_value = bcs_trial_[0]->bc_value();
@@ -696,7 +697,7 @@ void DiffusionNLFV::UpdateFlux(const Teuchos::Ptr<const CompositeVector>& u,
 /* ******************************************************************
 * Order cells by their global ids. Returns 1 if cells were swapped.
 ****************************************************************** */
-int DiffusionNLFV::OrderCellsByGlobalId_(
+int PDE_DiffusionNLFV::OrderCellsByGlobalId_(
     const AmanziMesh::Entity_ID_List& cells, int& c1, int& c2)
 {
   c1 = cells[0];

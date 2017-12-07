@@ -31,11 +31,11 @@
 #include "Tensor.hh"
 
 // Operators
-#include "OperatorDefs.hh"
 #include "BCs.hh"
-#include "DiffusionMFD.hh"
-#include "DiffusionFV.hh"
-#include "DiffusionFactory.hh"
+#include "OperatorDefs.hh"
+#include "PDE_DiffusionMFD.hh"
+#include "PDE_DiffusionFV.hh"
+#include "PDE_DiffusionFactory.hh"
 #include "TreeOperator.hh"
 
 // test classes
@@ -406,7 +406,7 @@ struct Problem {
   
   
   void CreateBlockOperators(bool upwind) {
-    Operators::DiffusionFactory fac;
+    Operators::PDE_DiffusionFactory fac;
     Teuchos::RCP<const AmanziMesh::Mesh> mesh_c = mesh;
 
     Teuchos::ParameterList op_list00;
@@ -435,7 +435,7 @@ struct Problem {
 
 
   void CreateBlockPCs(bool jac_ondiag, bool jac_offdiag, bool upwind) {
-    Operators::DiffusionFactory fac;
+    Operators::PDE_DiffusionFactory fac;
     Teuchos::RCP<const AmanziMesh::Mesh> mesh_c = mesh;
 
     Teuchos::ParameterList op_list00;
@@ -609,13 +609,13 @@ struct Problem {
   Teuchos::RCP<CompositeVector> q0;
   Teuchos::RCP<CompositeVector> q1;
   
-  Teuchos::RCP<Operators::Diffusion> op00;
-  Teuchos::RCP<Operators::Diffusion> op11;
+  Teuchos::RCP<Operators::PDE_Diffusion> op00;
+  Teuchos::RCP<Operators::PDE_Diffusion> op11;
 
-  Teuchos::RCP<Operators::Diffusion> pc00;
-  Teuchos::RCP<Operators::Diffusion> pc11;
-  Teuchos::RCP<Operators::Diffusion> pc01;
-  Teuchos::RCP<Operators::Diffusion> pc10;
+  Teuchos::RCP<Operators::PDE_Diffusion> pc00;
+  Teuchos::RCP<Operators::PDE_Diffusion> pc11;
+  Teuchos::RCP<Operators::PDE_Diffusion> pc01;
+  Teuchos::RCP<Operators::PDE_Diffusion> pc10;
 
   Teuchos::RCP<Operators::TreeOperator> op;
   Teuchos::RCP<Operators::TreeOperator> pc;

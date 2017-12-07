@@ -1,4 +1,4 @@
-// DiffusionFactory constructs objects which implement the interface for a Diffusion.
+// PDE_DiffusionFactory constructs objects which implement the interface for a PDE_Diffusion.
 
 /*
   Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
@@ -12,20 +12,20 @@
   here because the input spec for Diffusion objects is defined/used here.
 */
 
-#ifndef AMANZI_OPERATOR_DIFFUSION_FACTORY_HH_
-#define AMANZI_OPERATOR_DIFFUSION_FACTORY_HH_
+#ifndef AMANZI_OPERATOR_PDE_DIFFUSION_FACTORY_HH_
+#define AMANZI_OPERATOR_PDE_DIFFUSION_FACTORY_HH_
 
 #include <vector>
 
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
 
-#include "Diffusion.hh"
-#include "DiffusionWithGravity.hh"
+#include "PDE_Diffusion.hh"
+#include "PDE_DiffusionWithGravity.hh"
 
 /*!
 
-``Diffusion`` forms local ``Op`` s and global ``Operator`` s for elliptic equations:
+``PDE_Diffusion`` forms local ``Op`` s and global ``Operator`` s for elliptic equations:
 
 .. math::
   \nabla \cdot k \nabla u
@@ -83,17 +83,17 @@ namespace Operators {
 
 class BCs;
 
-struct DiffusionFactory {
-  // Diffusion operators with optional gravity.
+struct PDE_DiffusionFactory {
+  // Diffusion-type PDEs with optional gravity.
   // Decision is made based on data in the parameter list.
-  Teuchos::RCP<Diffusion>
+  Teuchos::RCP<PDE_Diffusion>
   Create(Teuchos::ParameterList& oplist,
          const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
          const Teuchos::RCP<BCs>& bc,
          double rho,
          const AmanziGeometry::Point& g);
 
-  Teuchos::RCP<Diffusion>
+  Teuchos::RCP<PDE_Diffusion>
   Create(Teuchos::ParameterList& oplist,
          const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
          const Teuchos::RCP<BCs>& bc,
@@ -101,35 +101,35 @@ struct DiffusionFactory {
          const AmanziGeometry::Point& g);
 
   // Diffusion operators without gravity.
-  Teuchos::RCP<Diffusion>
+  Teuchos::RCP<PDE_Diffusion>
   Create(Teuchos::ParameterList& oplist,
          const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
          const Teuchos::RCP<BCs>& bc);
 
-  Teuchos::RCP<Diffusion>
+  Teuchos::RCP<PDE_Diffusion>
   Create(Teuchos::ParameterList& oplist,
          const Teuchos::RCP<const AmanziMesh::Mesh>& mesh);
   
-  Teuchos::RCP<Diffusion>
+  Teuchos::RCP<PDE_Diffusion>
   Create(Teuchos::ParameterList& oplist,
          const Teuchos::RCP<Operator>& global_op);
 
   // Diffusion operators with gravity.
-  Teuchos::RCP<DiffusionWithGravity>
+  Teuchos::RCP<PDE_DiffusionWithGravity>
   CreateWithGravity(Teuchos::ParameterList& oplist,
                     const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
                     const Teuchos::RCP<BCs>& bc);
                     
-  Teuchos::RCP<DiffusionWithGravity>
+  Teuchos::RCP<PDE_DiffusionWithGravity>
   CreateWithGravity(Teuchos::ParameterList& oplist,
                     const Teuchos::RCP<Operator>& global_op,
                     const Teuchos::RCP<BCs>& bc);
 
-  Teuchos::RCP<DiffusionWithGravity>
+  Teuchos::RCP<PDE_DiffusionWithGravity>
   CreateWithGravity(Teuchos::ParameterList& oplist,
                     const Teuchos::RCP<const AmanziMesh::Mesh>& mesh);
                     
-  Teuchos::RCP<DiffusionWithGravity>
+  Teuchos::RCP<PDE_DiffusionWithGravity>
   CreateWithGravity(Teuchos::ParameterList& oplist,
                     const Teuchos::RCP<Operator>& global_op);
   
