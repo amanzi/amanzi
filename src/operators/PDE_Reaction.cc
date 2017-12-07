@@ -39,7 +39,7 @@ void PDE_Reaction::InitReaction_(Teuchos::ParameterList& plist)
     Teuchos::RCP<CompositeVectorSpace> cvs = Teuchos::rcp(new CompositeVectorSpace());
     cvs->SetMesh(mesh_)->SetGhosted(true);
 
-    for (auto it = global_schema_row_.items().begin(); it != global_schema_row_.items().end(); ++it) {
+    for (auto it = global_schema_row_.begin(); it != global_schema_row_.end(); ++it) {
       std::string name(local_schema_row_.KindToString(it->kind));
       cvs->AddComponent(name, it->kind, it->num);
     }

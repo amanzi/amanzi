@@ -94,7 +94,7 @@ void PDE_Elasticity::Init_(Teuchos::ParameterList& plist)
     Teuchos::RCP<CompositeVectorSpace> cvs = Teuchos::rcp(new CompositeVectorSpace());
     cvs->SetMesh(mesh_)->SetGhosted(true);
 
-    for (auto it = my_schema.items().begin(); it != my_schema.items().end(); ++it) {
+    for (auto it = my_schema.begin(); it != my_schema.end(); ++it) {
       std::string name(my_schema.KindToString(it->kind));
       cvs->AddComponent(name, it->kind, it->num);
     }

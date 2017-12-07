@@ -40,7 +40,7 @@ void PDE_AdvectionRiemann::InitAdvection_(Teuchos::ParameterList& plist)
     Teuchos::RCP<CompositeVectorSpace> cvs_row = Teuchos::rcp(new CompositeVectorSpace());
     cvs_row->SetMesh(mesh_)->SetGhosted(true);
 
-    for (auto it = global_schema_row_.items().begin(); it != global_schema_row_.items().end(); ++it) {
+    for (auto it = global_schema_row_.begin(); it != global_schema_row_.end(); ++it) {
       std::string name(local_schema_row_.KindToString(it->kind));
       cvs_row->AddComponent(name, it->kind, it->num);
     }
@@ -52,7 +52,7 @@ void PDE_AdvectionRiemann::InitAdvection_(Teuchos::ParameterList& plist)
     Teuchos::RCP<CompositeVectorSpace> cvs_col = Teuchos::rcp(new CompositeVectorSpace());
     cvs_col->SetMesh(mesh_)->SetGhosted(true);
 
-    for (auto it = global_schema_col_.items().begin(); it != global_schema_col_.items().end(); ++it) {
+    for (auto it = global_schema_col_.begin(); it != global_schema_col_.end(); ++it) {
       std::string name(local_schema_col_.KindToString(it->kind));
       cvs_col->AddComponent(name, it->kind, it->num);
     }

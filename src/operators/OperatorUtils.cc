@@ -279,7 +279,7 @@ Teuchos::RCP<SuperMap> CreateSuperMap(const CompositeVectorSpace& cvs, Schema& s
   std::vector<Teuchos::RCP<const Epetra_Map> > maps;
   std::vector<Teuchos::RCP<const Epetra_Map> > ghost_maps;
 
-  for (auto it = schema.items().begin(); it != schema.items().end(); ++it) {
+  for (auto it = schema.begin(); it != schema.end(); ++it) {
     compnames.push_back(schema.KindToString(it->kind));
     dofnums.push_back(it->num);
     std::pair<Teuchos::RCP<const Epetra_Map>, Teuchos::RCP<const Epetra_Map> > meshmaps =
@@ -330,7 +330,7 @@ unsigned int MaxRowSize(const AmanziMesh::Mesh& mesh, Schema& schema)
   unsigned int row_size(0);
   int dim = mesh.space_dimension();
 
-  for (auto it = schema.items().begin(); it != schema.items().end(); ++it) {
+  for (auto it = schema.begin(); it != schema.end(); ++it) {
     int ndofs;
     if (it->kind == AmanziMesh::FACE) {
       ndofs = (dim == 2) ? OPERATOR_QUAD_FACES : OPERATOR_HEX_FACES;
