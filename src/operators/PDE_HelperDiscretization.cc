@@ -13,7 +13,7 @@
 
 #include "errors.hh"
 
-#include "PDE_Helper.hh"
+#include "PDE_HelperDiscretization.hh"
 
 namespace Amanzi {
 namespace Operators {
@@ -21,11 +21,11 @@ namespace Operators {
 /* ******************************************************************
 * Simple constructors.
 ****************************************************************** */
-PDE_Helper::PDE_Helper(const Teuchos::RCP<Operator>& global_op) :
+PDE_HelperDiscretization::PDE_HelperDiscretization(const Teuchos::RCP<Operator>& global_op) :
     global_op_(global_op)
 {
   if (global_op == Teuchos::null) {
-    Errors::Message msg("PDE_Helper: Constructor received null global operator");
+    Errors::Message msg("PDE_HelperDiscretization: Constructor received null global operator");
     Exceptions::amanzi_throw(msg);
   }
 
@@ -34,14 +34,14 @@ PDE_Helper::PDE_Helper(const Teuchos::RCP<Operator>& global_op) :
 }
 
 
-PDE_Helper::PDE_Helper(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) :
+PDE_HelperDiscretization::PDE_HelperDiscretization(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) :
      mesh_(mesh)
 {
   PopulateDimensions_();
 }
 
 
-PDE_Helper::PDE_Helper(const Teuchos::RCP<AmanziMesh::Mesh>& mesh) :
+PDE_HelperDiscretization::PDE_HelperDiscretization(const Teuchos::RCP<AmanziMesh::Mesh>& mesh) :
      mesh_(mesh)
 {
   PopulateDimensions_();
@@ -51,7 +51,7 @@ PDE_Helper::PDE_Helper(const Teuchos::RCP<AmanziMesh::Mesh>& mesh) :
 /* ******************************************************************
 * Supporting private routines.
 ****************************************************************** */
-void PDE_Helper::PopulateDimensions_()
+void PDE_HelperDiscretization::PopulateDimensions_()
 {
   ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   nfaces_owned = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
@@ -74,7 +74,7 @@ void PDE_Helper::PopulateDimensions_()
 * options: (a) eliminate or not, (b) if eliminate, then put 1 on
 * the diagonal or not.
 ****************************************************************** */
-void PDE_Helper::ApplyBCs(bool primary, bool eliminate)
+void PDE_HelperDiscretization::ApplyBCs(bool primary, bool eliminate)
 {
   for (auto bc = bcs_trial_.begin(); bc != bcs_trial_.end(); ++bc) {
     if ((*bc)->type() == SCHEMA_DOFS_SCALAR ||
@@ -88,7 +88,7 @@ void PDE_Helper::ApplyBCs(bool primary, bool eliminate)
       ApplyBCs_Cell_Vector_(bc->ptr(), local_op_, primary, eliminate);
     }
     else {
-      Errors::Message msg("PDE_Helper: Unsupported boundary condition.\n");
+      Errors::Message msg("PDE_HelperDiscretization: Unsupported boundary condition.\n");
       Exceptions::amanzi_throw(msg);
     }
   }
@@ -98,7 +98,7 @@ void PDE_Helper::ApplyBCs(bool primary, bool eliminate)
 /* ******************************************************************
 * Apply BCs of scalar type. The code is based on face (f) DOFs.
 ****************************************************************** */
-void PDE_Helper::ApplyBCs_Cell_Scalar_(
+void PDE_HelperDiscretization::ApplyBCs_Cell_Scalar_(
     const Teuchos::Ptr<BCs>& bc, Teuchos::RCP<Op> op,
     bool primary, bool eliminate)
 {
@@ -206,7 +206,7 @@ void PDE_Helper::ApplyBCs_Cell_Scalar_(
 /* ******************************************************************
 * Apply BCs of scalar type. The code is limited to node DOFs.
 ****************************************************************** */
-void PDE_Helper::ApplyBCs_Cell_Point_(
+void PDE_HelperDiscretization::ApplyBCs_Cell_Point_(
     const Teuchos::Ptr<BCs>& bc, Teuchos::RCP<Op> op,
     bool primary, bool eliminate)
 {
@@ -315,7 +315,7 @@ void PDE_Helper::ApplyBCs_Cell_Point_(
 /* ******************************************************************
 * Apply BCs of vector type. The code is based on face (f) DOFs.
 ****************************************************************** */
-void PDE_Helper::ApplyBCs_Cell_Vector_(
+void PDE_HelperDiscretization::ApplyBCs_Cell_Vector_(
     const Teuchos::Ptr<BCs>& bc, Teuchos::RCP<Op> op,
     bool primary, bool eliminate)
 {

@@ -25,27 +25,27 @@
 #include "WhetStone_typedefs.hh"
 
 // Operators
-#include "PDE_Helper.hh"
+#include "PDE_HelperDiscretization.hh"
 
 namespace Amanzi {
 namespace Operators {
 
-class PDE_Abstract : public PDE_Helper {
+class PDE_Abstract : public PDE_HelperDiscretization {
  public:
   PDE_Abstract(Teuchos::ParameterList& plist, Teuchos::RCP<Operator> global_op) :
-      PDE_Helper(global_op) {
+      PDE_HelperDiscretization(global_op) {
     Init_(plist);
   }
 
   PDE_Abstract(Teuchos::ParameterList& plist, Teuchos::RCP<const AmanziMesh::Mesh> mesh) :
-      PDE_Helper(mesh) {
+      PDE_HelperDiscretization(mesh) {
     global_op_ = Teuchos::null;
     Init_(plist);
   }
 
   // main members 
   // -- required by the interface
-  using PDE_Helper::UpdateMatrices;
+  using PDE_HelperDiscretization::UpdateMatrices;
   virtual void UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& u,
                               const Teuchos::Ptr<const CompositeVector>& p) override;
   

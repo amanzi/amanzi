@@ -15,7 +15,7 @@
 #ifndef AMANZI_OPERATOR_PDE_ADVECTION_HH_
 #define AMANZI_OPERATOR_PDE_ADVECTION_HH_
 
-#include "PDE_Helper.hh"
+#include "PDE_HelperDiscretization.hh"
 #include "Operator.hh"
 #include "OperatorDefs.hh"
 #include "Schema.hh"
@@ -24,13 +24,13 @@
 namespace Amanzi {
 namespace Operators {
 
-class PDE_Advection : public PDE_Helper {
+class PDE_Advection : public PDE_HelperDiscretization {
  public:
   PDE_Advection(Teuchos::ParameterList& plist,
-               Teuchos::RCP<Operator> global_op) : PDE_Helper(global_op) {};
+               Teuchos::RCP<Operator> global_op) : PDE_HelperDiscretization(global_op) {};
 
   PDE_Advection(Teuchos::ParameterList& plist,
-                Teuchos::RCP<const AmanziMesh::Mesh> mesh) : PDE_Helper(mesh) {
+                Teuchos::RCP<const AmanziMesh::Mesh> mesh) : PDE_HelperDiscretization(mesh) {
     global_op_ = Teuchos::null;
   }
 

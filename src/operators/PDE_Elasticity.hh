@@ -19,19 +19,19 @@
 #include "Tensor.hh"
 #include "CompositeVector.hh"
 
-#include "PDE_Helper.hh"
 #include "Operator.hh"
 #include "OperatorDefs.hh"
+#include "PDE_HelperDiscretization.hh"
 #include "Schema.hh"
 
 namespace Amanzi {
 namespace Operators {
 
-class PDE_Elasticity : public PDE_Helper {
+class PDE_Elasticity : public PDE_HelperDiscretization {
  public:
   PDE_Elasticity(Teuchos::ParameterList& plist,
                  const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) :
-      PDE_Helper(mesh),
+      PDE_HelperDiscretization(mesh),
       plist_(plist),
       K_(Teuchos::null),
       K_default_(1.0)
@@ -47,7 +47,7 @@ class PDE_Elasticity : public PDE_Helper {
   void SetTensorCoefficient(double K);
 
   // -- creation of an operator
-  using PDE_Helper::UpdateMatrices;
+  using PDE_HelperDiscretization::UpdateMatrices;
   virtual void UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& u,
                               const Teuchos::Ptr<const CompositeVector>& p) override;
 

@@ -21,20 +21,20 @@
 
 #include "Operator.hh"
 #include "OperatorDefs.hh"
-#include "PDE_Helper.hh"
+#include "PDE_HelperDiscretization.hh"
 
 namespace Amanzi {
 namespace Operators {
 
-class PDE_Electromagnetics : public PDE_Helper {
+class PDE_Electromagnetics : public PDE_HelperDiscretization {
  public:
   PDE_Electromagnetics(const Teuchos::RCP<Operator>& global_op) :
-      PDE_Helper(global_op),
+      PDE_HelperDiscretization(global_op),
       K_(Teuchos::null) {};
 
   PDE_Electromagnetics(Teuchos::ParameterList& plist,
                        const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) :
-      PDE_Helper(mesh),
+      PDE_HelperDiscretization(mesh),
       plist_(plist),
       K_(Teuchos::null)
   {
@@ -49,7 +49,7 @@ class PDE_Electromagnetics : public PDE_Helper {
   // -- setup 
   virtual void SetTensorCoefficient(const Teuchos::RCP<std::vector<WhetStone::Tensor> >& K);
   // -- creation of a linearized operator
-  using PDE_Helper::UpdateMatrices;
+  using PDE_HelperDiscretization::UpdateMatrices;
   virtual void UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& u,
                               const Teuchos::Ptr<const CompositeVector>& p) override;
   // -- modification of the operator due to boundary conditions

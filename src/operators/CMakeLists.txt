@@ -53,7 +53,6 @@ add_amanzi_library(operators_audit
 #
 set(operators_inc_files
     BCs.hh
-    BCsList.hh
     RemapUtils.hh
     OperatorDefs.hh
     OperatorUtils.hh
@@ -94,7 +93,8 @@ set(operators_inc_files
     PDE_Electromagnetics.hh
     PDE_ElectromagneticsMHD.hh
     PDE_ElectromagneticsMHD_TM.hh
-    PDE_Helper.hh
+    PDE_HelperBCsList.hh
+    PDE_HelperDiscretization.hh
     PDE_Reaction.hh
     Schema.hh
     TreeOperator.hh
@@ -120,14 +120,14 @@ add_amanzi_library(operators
                           Operator_FaceCellSff.cc
                           Operator_ConsistentFace.cc
                           Operator_Schema.cc
-                          PDE_Helper.cc
                           Accumulation.cc
                           PDE_Abstract.cc
+                          PDE_AdvectionUpwind.cc PDE_AdvectionRiemann.cc
                           PDE_DiffusionMFD.cc PDE_DiffusionMFDwithGravity.cc
                           PDE_DiffusionFV.cc PDE_DiffusionFVwithGravity.cc
                           PDE_DiffusionNLFV.cc PDE_DiffusionNLFVwithGravity.cc
                           PDE_DiffusionFactory.cc                   
-                          PDE_AdvectionUpwind.cc PDE_AdvectionRiemann.cc
+                          PDE_HelperDiscretization.cc
                           PDE_Elasticity.cc
                           PDE_Electromagnetics.cc PDE_ElectromagneticsMHD.cc PDE_ElectromagneticsMHD_TM.cc
                           PDE_Reaction.cc

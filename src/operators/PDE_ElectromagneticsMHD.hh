@@ -46,7 +46,7 @@ class PDE_ElectromagneticsMHD : public PDE_Electromagnetics {
 
   // main virtual members
   // -- create a linearized operator
-  using PDE_Helper::UpdateMatrices;
+  using PDE_HelperDiscretization::UpdateMatrices;
   virtual void UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& u,
                               const Teuchos::Ptr<const CompositeVector>& p) override;
 

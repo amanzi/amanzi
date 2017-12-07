@@ -13,29 +13,29 @@
   common functionality.
 */
 
-#ifndef AMANZI_OPERATOR_PDE_HELPER_HH_
-#define AMANZI_OPERATOR_PDE_HELPER_HH_
+#ifndef AMANZI_OPERATOR_PDE_HELPER_DISCRETIZATION_HH_
+#define AMANZI_OPERATOR_PDE_HELPER_DISCRETIZATION_HH_
 
 #include "Teuchos_RCP.hpp"
 
 #include "BCs.hh"
-#include "BCsList.hh"
 #include "Mesh.hh"
 #include "Op.hh"
 #include "Operator.hh"
 #include "OperatorDefs.hh"
+#include "PDE_HelperBCsList.hh"
 #include "Schema.hh"
 
 namespace Amanzi {
 namespace Operators {
 
-class PDE_Helper : public BCsList {
+class PDE_HelperDiscretization : public PDE_HelperBCsList {
  public:
-  PDE_Helper() {};
-  PDE_Helper(const Teuchos::RCP<Operator>& global_op);
-  PDE_Helper(const Teuchos::RCP<AmanziMesh::Mesh>& mesh);
-  PDE_Helper(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh);
-  ~PDE_Helper() {};
+  PDE_HelperDiscretization() {};
+  PDE_HelperDiscretization(const Teuchos::RCP<Operator>& global_op);
+  PDE_HelperDiscretization(const Teuchos::RCP<AmanziMesh::Mesh>& mesh);
+  PDE_HelperDiscretization(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh);
+  ~PDE_HelperDiscretization() {};
 
   // generate linearized operator
   // -- generate matrix. We can use parameter to define coefficeints

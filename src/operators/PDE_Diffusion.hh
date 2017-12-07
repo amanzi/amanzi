@@ -24,7 +24,7 @@
 
 #include "Operator.hh"
 #include "OperatorDefs.hh"
-#include "PDE_Helper.hh"
+#include "PDE_HelperDiscretization.hh"
 
 /*!
 Example:
@@ -56,24 +56,24 @@ Example:
 namespace Amanzi {
 namespace Operators {
 
-class PDE_Diffusion : public PDE_Helper {
+class PDE_Diffusion : public PDE_HelperDiscretization {
  public:
   PDE_Diffusion(const Teuchos::RCP<Operator>& global_op) :
-      PDE_Helper(global_op),
+      PDE_HelperDiscretization(global_op),
       K_(Teuchos::null),
       k_(Teuchos::null),
       dkdp_(Teuchos::null)
   {};
 
   PDE_Diffusion(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) :
-      PDE_Helper(mesh),
+      PDE_HelperDiscretization(mesh),
       K_(Teuchos::null),
       k_(Teuchos::null),
       dkdp_(Teuchos::null)
   {};
 
   PDE_Diffusion(const Teuchos::RCP<AmanziMesh::Mesh>& mesh) :
-      PDE_Helper(mesh),
+      PDE_HelperDiscretization(mesh),
       K_(Teuchos::null),
       k_(Teuchos::null),
       dkdp_(Teuchos::null)

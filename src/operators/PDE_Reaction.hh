@@ -22,13 +22,13 @@
 #include "Polynomial.hh"
 
 // Amanzi::Operators
-#include "PDE_Helper.hh"
+#include "PDE_HelperDiscretization.hh"
 #include "Schema.hh"
 
 namespace Amanzi {
 namespace Operators {
 
-class PDE_Reaction : public PDE_Helper {
+class PDE_Reaction : public PDE_HelperDiscretization {
  public:
   PDE_Reaction(Teuchos::ParameterList& plist, Teuchos::RCP<Operator> global_op) :
       K_(Teuchos::null) {
@@ -37,7 +37,7 @@ class PDE_Reaction : public PDE_Helper {
 
   PDE_Reaction(Teuchos::ParameterList& plist, Teuchos::RCP<const AmanziMesh::Mesh> mesh) : 
       K_(Teuchos::null),
-      PDE_Helper(mesh) {
+      PDE_HelperDiscretization(mesh) {
     InitReaction_(plist);
   }
 
@@ -46,7 +46,7 @@ class PDE_Reaction : public PDE_Helper {
   virtual void Setup(Teuchos::RCP<Epetra_MultiVector>& K) { K_ = K; }
   virtual void Setup(Teuchos::RCP<std::vector<WhetStone::Polynomial> >& poly) { poly_ = poly; }
   // -- generate a linearized operator 
-  using PDE_Helper::UpdateMatrices;
+  using PDE_HelperDiscretization::UpdateMatrices;
   virtual void UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& u,
                               const Teuchos::Ptr<const CompositeVector>& p) override;
   // -- flux calculation has yet no meaning for this operator

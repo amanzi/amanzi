@@ -19,10 +19,10 @@
 namespace Amanzi {
 namespace Operators {
 
-class BCsList {
+class PDE_HelperBCsList {
  public:
-  BCsList() {};
-  ~BCsList() {};
+  PDE_HelperBCsList() {};
+  ~PDE_HelperBCsList() {};
   
   // boundary conditions (BC) require information on test and
   // trial spaces. For a single PDE, these BCs could be the same.
