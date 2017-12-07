@@ -16,7 +16,7 @@
 #include "Op_Cell_Schema.hh"
 #include "OperatorDefs.hh"
 #include "Operator_Schema.hh"
-#include "Reaction.hh"
+#include "PDE_Reaction.hh"
 
 namespace Amanzi {
 namespace Operators {
@@ -24,7 +24,7 @@ namespace Operators {
 /* ******************************************************************
 * Initialize operator from parameter list.
 ****************************************************************** */
-void Reaction::InitReaction_(Teuchos::ParameterList& plist)
+void PDE_Reaction::InitReaction_(Teuchos::ParameterList& plist)
 {
   Teuchos::ParameterList& range = plist.sublist("schema");
 
@@ -80,8 +80,8 @@ void Reaction::InitReaction_(Teuchos::ParameterList& plist)
 * Collection of local matrices.
 * NOTE: Not all input parameters are used yet.
 ****************************************************************** */
-void Reaction::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& u,
-                              const Teuchos::Ptr<const CompositeVector>& p)
+void PDE_Reaction::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& u,
+                                  const Teuchos::Ptr<const CompositeVector>& p)
 {
   std::vector<WhetStone::DenseMatrix>& matrix = local_op_->matrices;
   std::vector<WhetStone::DenseMatrix>& matrix_shadow = local_op_->matrices_shadow;
@@ -109,7 +109,7 @@ void Reaction::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& u,
 /* *******************************************************************
 * Apply boundary condition to the local matrices
 ******************************************************************* */
-void Reaction::ApplyBCs(bool primary, bool eliminate)
+void PDE_Reaction::ApplyBCs(bool primary, bool eliminate)
 {
   for (auto bc = bcs_trial_.begin(); bc != bcs_trial_.end(); ++bc) {
   }

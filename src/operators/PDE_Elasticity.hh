@@ -9,8 +9,8 @@
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
-#ifndef AMANZI_OPERATOR_ELASTICITY_HH_
-#define AMANZI_OPERATOR_ELASTICITY_HH_
+#ifndef AMANZI_OPERATOR_PDE_ELASTICITY_HH_
+#define AMANZI_OPERATOR_PDE_ELASTICITY_HH_
 
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
@@ -27,10 +27,10 @@
 namespace Amanzi {
 namespace Operators {
 
-class Elasticity : public PDE_Helper {
+class PDE_Elasticity : public PDE_Helper {
  public:
-  Elasticity(Teuchos::ParameterList& plist,
-             const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) :
+  PDE_Elasticity(Teuchos::ParameterList& plist,
+                 const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) :
       PDE_Helper(mesh),
       plist_(plist),
       K_(Teuchos::null),

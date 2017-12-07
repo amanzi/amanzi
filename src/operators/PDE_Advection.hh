@@ -12,8 +12,8 @@
   Base class for advection operators.
 */
 
-#ifndef AMANZI_OPERATOR_ADVECTION_HH_
-#define AMANZI_OPERATOR_ADVECTION_HH_
+#ifndef AMANZI_OPERATOR_PDE_ADVECTION_HH_
+#define AMANZI_OPERATOR_PDE_ADVECTION_HH_
 
 #include "PDE_Helper.hh"
 #include "Operator.hh"
@@ -24,13 +24,13 @@
 namespace Amanzi {
 namespace Operators {
 
-class Advection : public PDE_Helper {
+class PDE_Advection : public PDE_Helper {
  public:
-  Advection(Teuchos::ParameterList& plist,
-            Teuchos::RCP<Operator> global_op) : PDE_Helper(global_op) {};
+  PDE_Advection(Teuchos::ParameterList& plist,
+               Teuchos::RCP<Operator> global_op) : PDE_Helper(global_op) {};
 
-  Advection(Teuchos::ParameterList& plist,
-            Teuchos::RCP<const AmanziMesh::Mesh> mesh) : PDE_Helper(mesh) {
+  PDE_Advection(Teuchos::ParameterList& plist,
+                Teuchos::RCP<const AmanziMesh::Mesh> mesh) : PDE_Helper(mesh) {
     global_op_ = Teuchos::null;
   }
 

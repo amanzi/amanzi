@@ -18,20 +18,20 @@
 #include "Teuchos_ParameterList.hpp"
 
 // Amanzi::Operators
-#include "ElectromagneticsMHD.hh"
+#include "PDE_ElectromagneticsMHD.hh"
 
 namespace Amanzi {
 namespace Operators {
 
-class ElectromagneticsMHD_TM : public ElectromagneticsMHD {
+class PDE_ElectromagneticsMHD_TM : public PDE_ElectromagneticsMHD {
  public:
-  ElectromagneticsMHD_TM(const Teuchos::RCP<Operator>& global_op)
-    : ElectromagneticsMHD(global_op)
+  PDE_ElectromagneticsMHD_TM(const Teuchos::RCP<Operator>& global_op)
+    : PDE_ElectromagneticsMHD(global_op)
   {};
 
-  ElectromagneticsMHD_TM(Teuchos::ParameterList& plist,
-                         const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
-    : ElectromagneticsMHD(plist, mesh)
+  PDE_ElectromagneticsMHD_TM(Teuchos::ParameterList& plist,
+                             const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
+    : PDE_ElectromagneticsMHD(plist, mesh)
   {};
 
   // main virtual members

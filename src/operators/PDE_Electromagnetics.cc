@@ -24,7 +24,7 @@
 #include "WhetStoneDefs.hh"
 
 // Amanzi::Operators
-#include "Electromagnetics.hh"
+#include "PDE_Electromagnetics.hh"
 #include "Op.hh"
 #include "Op_Cell_Edge.hh"
 #include "Op_Cell_Node.hh"
@@ -38,7 +38,7 @@ namespace Operators {
 /* ******************************************************************
 * Initialization of the operator, scalar coefficient.
 ****************************************************************** */
-void Electromagnetics::SetTensorCoefficient(
+void PDE_Electromagnetics::SetTensorCoefficient(
     const Teuchos::RCP<std::vector<WhetStone::Tensor> >& K)
 {
   K_ = K;
@@ -53,7 +53,7 @@ void Electromagnetics::SetTensorCoefficient(
 * Calculate elemental matrices.
 * NOTE: The input parameters are not yet used.
 ****************************************************************** */
-void Electromagnetics::UpdateMatrices(
+void PDE_Electromagnetics::UpdateMatrices(
     const Teuchos::Ptr<const CompositeVector>& u,
     const Teuchos::Ptr<const CompositeVector>& p)
 {
@@ -77,7 +77,7 @@ void Electromagnetics::UpdateMatrices(
 * options: (a) eliminate or not, (b) if eliminate, then put 1 on
 * the diagonal or not.
 ****************************************************************** */
-void Electromagnetics::ApplyBCs(bool primary, bool eliminate)
+void PDE_Electromagnetics::ApplyBCs(bool primary, bool eliminate)
 {
   if (local_op_schema_ == (OPERATOR_SCHEMA_BASE_CELL
                          | OPERATOR_SCHEMA_DOFS_EDGE)) {
@@ -97,9 +97,9 @@ void Electromagnetics::ApplyBCs(bool primary, bool eliminate)
 /* ******************************************************************
 * Apply BCs on cell operators
 ****************************************************************** */
-void Electromagnetics::ApplyBCs_Edge_(const Teuchos::Ptr<BCs>& bc_f,
-                                      const Teuchos::Ptr<BCs>& bc_e,
-                                      bool primary, bool eliminate)
+void PDE_Electromagnetics::ApplyBCs_Edge_(const Teuchos::Ptr<BCs>& bc_f,
+                                          const Teuchos::Ptr<BCs>& bc_e,
+                                          bool primary, bool eliminate)
 {
   AmanziMesh::Entity_ID_List edges, faces, cells;
   std::vector<int> edirs, fdirs;
@@ -226,7 +226,7 @@ void Electromagnetics::ApplyBCs_Edge_(const Teuchos::Ptr<BCs>& bc_f,
 /* ******************************************************************
 * Put here stuff that has to be done in constructor.
 ****************************************************************** */
-void Electromagnetics::Init_(Teuchos::ParameterList& plist)
+void PDE_Electromagnetics::Init_(Teuchos::ParameterList& plist)
 {
   // Determine discretization
   std::string primary = plist.get<std::string>("discretization primary");

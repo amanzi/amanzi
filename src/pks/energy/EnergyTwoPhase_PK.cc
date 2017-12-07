@@ -135,7 +135,7 @@ void EnergyTwoPhase_PK::Initialize(const Teuchos::Ptr<State>& S)
   op_matrix_diff_->SetScalarCoefficient(S->GetFieldData(conductivity_key_), Teuchos::null);
 
   Teuchos::ParameterList oplist_adv = ep_list_->sublist("operators").sublist("advection operator");
-  op_matrix_advection_ = Teuchos::rcp(new Operators::AdvectionUpwind(oplist_adv, mesh_));
+  op_matrix_advection_ = Teuchos::rcp(new Operators::PDE_AdvectionUpwind(oplist_adv, mesh_));
 
   const CompositeVector& flux = *S->GetFieldData("darcy_flux");
   op_matrix_advection_->Setup(flux);
@@ -149,7 +149,7 @@ void EnergyTwoPhase_PK::Initialize(const Teuchos::Ptr<State>& S)
   op_preconditioner_diff_->SetScalarCoefficient(S->GetFieldData(conductivity_key_), Teuchos::null);
 
   op_acc_ = Teuchos::rcp(new Operators::Accumulation(AmanziMesh::CELL, op_preconditioner_));
-  op_preconditioner_advection_ = Teuchos::rcp(new Operators::AdvectionUpwind(oplist_adv, op_preconditioner_));
+  op_preconditioner_advection_ = Teuchos::rcp(new Operators::PDE_AdvectionUpwind(oplist_adv, op_preconditioner_));
 
   op_preconditioner_->SymbolicAssembleMatrix();
 

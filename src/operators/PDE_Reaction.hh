@@ -11,8 +11,8 @@
   Reaction operator. 
 */
 
-#ifndef AMANZI_OPERATOR_REACTION_HH_
-#define AMANZI_OPERATOR_REACTION_HH_
+#ifndef AMANZI_OPERATOR_PDE_REACTION_HH_
+#define AMANZI_OPERATOR_PDE_REACTION_HH_
 
 #include <string>
 
@@ -28,14 +28,14 @@
 namespace Amanzi {
 namespace Operators {
 
-class Reaction : public PDE_Helper {
+class PDE_Reaction : public PDE_Helper {
  public:
-  Reaction(Teuchos::ParameterList& plist, Teuchos::RCP<Operator> global_op) :
+  PDE_Reaction(Teuchos::ParameterList& plist, Teuchos::RCP<Operator> global_op) :
       K_(Teuchos::null) {
     InitReaction_(plist);
   }
 
-  Reaction(Teuchos::ParameterList& plist, Teuchos::RCP<const AmanziMesh::Mesh> mesh) : 
+  PDE_Reaction(Teuchos::ParameterList& plist, Teuchos::RCP<const AmanziMesh::Mesh> mesh) : 
       K_(Teuchos::null),
       PDE_Helper(mesh) {
     InitReaction_(plist);

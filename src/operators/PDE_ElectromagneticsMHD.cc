@@ -19,7 +19,7 @@
 #include "MFD3D_Electromagnetics.hh"
 
 // Amanzi::Operators
-#include "ElectromagneticsMHD.hh"
+#include "PDE_ElectromagneticsMHD.hh"
 #include "Op.hh"
 
 namespace Amanzi {
@@ -29,7 +29,7 @@ namespace Operators {
 * Populate contains of elemental matrices.
 * NOTE: The input parameters are not yet used.
 ****************************************************************** */
-void ElectromagneticsMHD::UpdateMatrices(
+void PDE_ElectromagneticsMHD::UpdateMatrices(
     const Teuchos::Ptr<const CompositeVector>& u,
     const Teuchos::Ptr<const CompositeVector>& p)
 {
@@ -53,7 +53,7 @@ void ElectromagneticsMHD::UpdateMatrices(
 * System modification before solving the problem:
 * A := invK I + dt/2 A   and  f += Curl M B 
 * **************************************************************** */
-void ElectromagneticsMHD::ModifyMatrices(
+void PDE_ElectromagneticsMHD::ModifyMatrices(
    CompositeVector& E, CompositeVector& B, double dt)
 {
   const Epetra_MultiVector& Bf = *B.ViewComponent("face", true);
@@ -102,7 +102,7 @@ void ElectromagneticsMHD::ModifyMatrices(
 /* ******************************************************************
 * Solution postprocessing
 * **************************************************************** */
-void ElectromagneticsMHD::ModifyFields(
+void PDE_ElectromagneticsMHD::ModifyFields(
    CompositeVector& E, CompositeVector& B, double dt)
 {
   B.ScatterMasterToGhosted("face");
@@ -147,7 +147,7 @@ void ElectromagneticsMHD::ModifyFields(
 /* ******************************************************************
 * Calculates Ohmic heating
 ****************************************************************** */
-double ElectromagneticsMHD::CalculateOhmicHeating(const CompositeVector& E)
+double PDE_ElectromagneticsMHD::CalculateOhmicHeating(const CompositeVector& E)
 {
   const Epetra_MultiVector& Ee = *E.ViewComponent("edge", true);
 
@@ -180,7 +180,7 @@ double ElectromagneticsMHD::CalculateOhmicHeating(const CompositeVector& E)
 /* ******************************************************************
 * Calculates integral of 1/2 |B|^2
 ****************************************************************** */
-double ElectromagneticsMHD::CalculateMagneticEnergy(const CompositeVector& B)
+double PDE_ElectromagneticsMHD::CalculateMagneticEnergy(const CompositeVector& B)
 {
   const Epetra_MultiVector& Bf = *B.ViewComponent("face", true);
 
@@ -212,7 +212,7 @@ double ElectromagneticsMHD::CalculateMagneticEnergy(const CompositeVector& B)
 /* ******************************************************************
 * Useful tools
 * **************************************************************** */
-double ElectromagneticsMHD::CalculateDivergence(
+double PDE_ElectromagneticsMHD::CalculateDivergence(
     int c, const CompositeVector& B)
 {
   const Epetra_MultiVector& Bf = *B.ViewComponent("face", false);
@@ -237,7 +237,7 @@ double ElectromagneticsMHD::CalculateDivergence(
 /* ******************************************************************
 * Put here stuff that has to be done in constructor.
 ****************************************************************** */
-void ElectromagneticsMHD::InitElectromagneticsMHD_()
+void PDE_ElectromagneticsMHD::InitElectromagneticsMHD_()
 {
   mass_op_.resize(ncells_owned);
   curl_op_.resize(ncells_owned);

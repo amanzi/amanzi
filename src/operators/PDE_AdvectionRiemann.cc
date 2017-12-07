@@ -14,11 +14,11 @@
 #include "DG_Modal.hh"
 #include "MFD3D_BernardiRaugel.hh"
 
-#include "AdvectionRiemann.hh"
 #include "OperatorDefs.hh"
 #include "Operator_Schema.hh"
 #include "Op_Cell_Schema.hh"
 #include "Op_Face_Schema.hh"
+#include "PDE_AdvectionRiemann.hh"
 
 namespace Amanzi {
 namespace Operators {
@@ -26,7 +26,7 @@ namespace Operators {
 /* ******************************************************************
 * Initialize operator from parameter list.
 ****************************************************************** */
-void AdvectionRiemann::InitAdvection_(Teuchos::ParameterList& plist)
+void PDE_AdvectionRiemann::InitAdvection_(Teuchos::ParameterList& plist)
 {
   Teuchos::ParameterList& range = plist.sublist("schema range");
   Teuchos::ParameterList& domain = plist.sublist("schema domain");
@@ -109,7 +109,7 @@ void AdvectionRiemann::InitAdvection_(Teuchos::ParameterList& plist)
 * A simple first-order transport method of the form div (u C), where 
 * u is the given velocity field and C is the advected field.
 ****************************************************************** */
-void AdvectionRiemann::UpdateMatrices(
+void PDE_AdvectionRiemann::UpdateMatrices(
     const Teuchos::Ptr<const std::vector<WhetStone::Polynomial> >& u)
 {
   std::vector<WhetStone::DenseMatrix>& matrix = local_op_->matrices;
@@ -134,7 +134,7 @@ void AdvectionRiemann::UpdateMatrices(
 /* *******************************************************************
 * Identify the advected flux of u
 ******************************************************************* */
-void AdvectionRiemann::UpdateFlux(
+void PDE_AdvectionRiemann::UpdateFlux(
     const Teuchos::Ptr<const CompositeVector>& h,
     const Teuchos::Ptr<const CompositeVector>& u,
     const Teuchos::RCP<BCs>& bc, Teuchos::Ptr<CompositeVector>& flux)

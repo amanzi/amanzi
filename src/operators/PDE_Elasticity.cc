@@ -23,7 +23,7 @@
 #include "WhetStoneDefs.hh"
 
 // Amanzi::Operators
-#include "Elasticity.hh"
+#include "PDE_Elasticity.hh"
 #include "Op.hh"
 #include "Op_Cell_Schema.hh"
 #include "OperatorDefs.hh"
@@ -36,13 +36,13 @@ namespace Operators {
 /* ******************************************************************
 * Initialization of the operator, scalar coefficient.
 ****************************************************************** */
-void Elasticity::SetTensorCoefficient(
+void PDE_Elasticity::SetTensorCoefficient(
     const Teuchos::RCP<std::vector<WhetStone::Tensor> >& K) {
   K_ = K;
   K_default_ = 1.0;
 }
 
-void Elasticity::SetTensorCoefficient(double K) {
+void PDE_Elasticity::SetTensorCoefficient(double K) {
   K_ = Teuchos::null;
   K_default_ = K;
 }
@@ -52,8 +52,8 @@ void Elasticity::SetTensorCoefficient(double K) {
 * Calculate elemental matrices.
 * NOTE: The input parameters are not yet used.
 ****************************************************************** */
-void Elasticity::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& u,
-                                const Teuchos::Ptr<const CompositeVector>& p)
+void PDE_Elasticity::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& u,
+                                    const Teuchos::Ptr<const CompositeVector>& p)
 {
   WhetStone::MFD3D_BernardiRaugel mfd(mesh_);
   WhetStone::DenseMatrix Acell;
@@ -75,7 +75,7 @@ void Elasticity::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& u,
 /* ******************************************************************
 * Put here stuff that has to be done in constructor.
 ****************************************************************** */
-void Elasticity::Init_(Teuchos::ParameterList& plist)
+void PDE_Elasticity::Init_(Teuchos::ParameterList& plist)
 {
   // Read schema for the mimetic discretization method.
   Schema my_schema;

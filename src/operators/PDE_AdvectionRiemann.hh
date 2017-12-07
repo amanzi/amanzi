@@ -13,28 +13,28 @@
   fluxes. We shall start with the existing node2-face1 schema.
 */
 
-#ifndef AMANZI_OPERATOR_ADVECTION_RIEMANN_HH_
-#define AMANZI_OPERATOR_ADVECTION_RIEMANN_HH_
+#ifndef AMANZI_OPERATOR_PDE_ADVECTION_RIEMANN_HH_
+#define AMANZI_OPERATOR_PDE_ADVECTION_RIEMANN_HH_
 
 #include <string>
 
-#include "Advection.hh"
+#include "PDE_Advection.hh"
 
 namespace Amanzi {
 namespace Operators {
 
-class AdvectionRiemann : public Advection {
+class PDE_AdvectionRiemann : public PDE_Advection {
  public:
-  AdvectionRiemann(Teuchos::ParameterList& plist,
-                   Teuchos::RCP<Operator> global_op) :
-      Advection(plist, global_op)
+  PDE_AdvectionRiemann(Teuchos::ParameterList& plist,
+                       Teuchos::RCP<Operator> global_op) :
+      PDE_Advection(plist, global_op)
   {
     InitAdvection_(plist);
   }
 
-  AdvectionRiemann(Teuchos::ParameterList& plist,
-                   Teuchos::RCP<const AmanziMesh::Mesh> mesh) :
-      Advection(plist, mesh)
+  PDE_AdvectionRiemann(Teuchos::ParameterList& plist,
+                       Teuchos::RCP<const AmanziMesh::Mesh> mesh) :
+      PDE_Advection(plist, mesh)
   {
     InitAdvection_(plist);
   }

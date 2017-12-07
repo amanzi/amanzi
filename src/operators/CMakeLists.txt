@@ -78,9 +78,6 @@ set(operators_inc_files
     Operator_Edge.hh
     BoundaryFlux.hh
     Accumulation.hh
-    Advection.hh
-    AdvectionUpwind.hh
-    AdvectionRiemann.hh
     Diffusion.hh
     DiffusionWithGravity.hh
     DiffusionFactory.hh
@@ -90,12 +87,15 @@ set(operators_inc_files
     DiffusionFVwithGravity.hh
     DiffusionNLFV.hh
     DiffusionNLFVwithGravity.hh
-    Elasticity.hh
-    Electromagnetics.hh
-    ElectromagneticsMHD.hh
-    ElectromagneticsMHD_TM.hh
-    Reaction.hh
+    PDE_Advection.hh
+    PDE_AdvectionUpwind.hh
+    PDE_AdvectionRiemann.hh
+    PDE_Elasticity.hh
+    PDE_Electromagnetics.hh
+    PDE_ElectromagneticsMHD.hh
+    PDE_ElectromagneticsMHD_TM.hh
     PDE_Helper.hh
+    PDE_Reaction.hh
     Schema.hh
     TreeOperator.hh
     Reconstruction.hh
@@ -126,11 +126,11 @@ add_amanzi_library(operators
                           DiffusionFV.cc DiffusionFVwithGravity.cc
                           DiffusionNLFV.cc DiffusionNLFVwithGravity.cc
                           DiffusionFactory.cc                   
-                          Elasticity.cc
-                          Electromagnetics.cc ElectromagneticsMHD.cc ElectromagneticsMHD_TM.cc
                           Accumulation.cc
-                          AdvectionUpwind.cc AdvectionRiemann.cc
-                          Reaction.cc
+                          PDE_AdvectionUpwind.cc PDE_AdvectionRiemann.cc
+                          PDE_Elasticity.cc
+                          PDE_Electromagnetics.cc PDE_ElectromagneticsMHD.cc PDE_ElectromagneticsMHD_TM.cc
+                          PDE_Reaction.cc
                           Schema.cc
                           TreeOperator.cc
                           ReconstructionCell.cc

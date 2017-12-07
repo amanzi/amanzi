@@ -29,7 +29,7 @@
 
 // Amanzi::Operators
 #include "Accumulation.hh"
-#include "Electromagnetics.hh"
+#include "PDE_Electromagnetics.hh"
 #include "OperatorDefs.hh"
 
 #include "AnalyticElectromagnetics01.hh"
@@ -119,7 +119,7 @@ void CurlCurl(double c_t, double tolerance, bool initial_guess) {
   // create electromagnetics operator
   Teuchos::ParameterList olist = plist.get<Teuchos::ParameterList>("PK operator")
                                       .get<Teuchos::ParameterList>("electromagnetics operator");
-  Teuchos::RCP<Electromagnetics> op_curlcurl = Teuchos::rcp(new Electromagnetics(olist, mesh));
+  Teuchos::RCP<PDE_Electromagnetics> op_curlcurl = Teuchos::rcp(new PDE_Electromagnetics(olist, mesh));
   op_curlcurl->SetBCs(bc, bc);
   const CompositeVectorSpace& cvs = op_curlcurl->global_operator()->DomainMap();
 

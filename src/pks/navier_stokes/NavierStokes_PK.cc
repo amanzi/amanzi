@@ -180,8 +180,8 @@ void NavierStokes_PK::Initialize(const Teuchos::Ptr<State>& S)
   // -- create elastic block
   Teuchos::ParameterList& tmp1 = ns_list_->sublist("operators")
                                           .sublist("elasticity operator");
-  op_matrix_elas_ = Teuchos::rcp(new Operators::Elasticity(tmp1, mesh_));
-  op_preconditioner_elas_ = Teuchos::rcp(new Operators::Elasticity(tmp1, mesh_));
+  op_matrix_elas_ = Teuchos::rcp(new Operators::PDE_Elasticity(tmp1, mesh_));
+  op_preconditioner_elas_ = Teuchos::rcp(new Operators::PDE_Elasticity(tmp1, mesh_));
 
   // -- create divergence block
   Teuchos::ParameterList& tmp2 = ns_list_->sublist("operators")

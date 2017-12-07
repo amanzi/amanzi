@@ -35,9 +35,9 @@
 // Amanzi::Operators
 #include "Abstract.hh"
 #include "Accumulation.hh"
-#include "AdvectionRiemann.hh"
 #include "OperatorDefs.hh"
-#include "Reaction.hh"
+#include "PDE_AdvectionRiemann.hh"
+#include "PDE_Reaction.hh"
 #include "RemapUtils.hh"
 
 // #define DEBUG
@@ -197,7 +197,7 @@ void RemapTestsDual(int dim, int order, std::string disc_name,
 
   plist.sublist("schema range") = plist.sublist("schema domain");
 
-  Teuchos::RCP<AdvectionRiemann> op = Teuchos::rcp(new AdvectionRiemann(plist, mesh0));
+  Teuchos::RCP<PDE_AdvectionRiemann> op = Teuchos::rcp(new PDE_AdvectionRiemann(plist, mesh0));
   auto global_op = op->global_operator();
 
   std::vector<WhetStone::VectorPolynomial> vec_vel(nfaces_wghost);
@@ -238,7 +238,7 @@ void RemapTestsDual(int dim, int order, std::string disc_name,
       .set<Teuchos::Array<std::string> >("type", std::vector<std::string>({"scalar"}))
       .set<Teuchos::Array<int> >("number", std::vector<int>({nk}));
 
-  Teuchos::RCP<Reaction> op_reac0 = Teuchos::rcp(new Reaction(plist, mesh0));
+  Teuchos::RCP<PDE_Reaction> op_reac0 = Teuchos::rcp(new PDE_Reaction(plist, mesh0));
   auto global_reac0 = op_reac0->global_operator();
 
   Teuchos::RCP<std::vector<WhetStone::Polynomial> > jac0 = 
@@ -247,7 +247,7 @@ void RemapTestsDual(int dim, int order, std::string disc_name,
   op_reac0->Setup(jac0);
 
   // -- right-hand-side
-  Teuchos::RCP<Reaction> op_reac1 = Teuchos::rcp(new Reaction(plist, mesh0));
+  Teuchos::RCP<PDE_Reaction> op_reac1 = Teuchos::rcp(new PDE_Reaction(plist, mesh0));
   auto global_reac1 = op_reac1->global_operator();
 
   Teuchos::RCP<std::vector<WhetStone::Polynomial> > jac1 = 
@@ -258,7 +258,7 @@ void RemapTestsDual(int dim, int order, std::string disc_name,
 #ifdef DEBUG
   Teuchos::RCP<std::vector<WhetStone::Polynomial> > jac0_dbg = 
      Teuchos::rcp(new std::vector<WhetStone::Polynomial>(ncells_owned));
-  Teuchos::RCP<Reaction> op_reac0_dbg = Teuchos::rcp(new Reaction(plist, mesh0));
+  Teuchos::RCP<PDE_Reaction> op_reac0_dbg = Teuchos::rcp(new PDE_Reaction(plist, mesh0));
   op_reac0_dbg->Setup(jac0_dbg);
 
   double mme_err(0.0);

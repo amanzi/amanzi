@@ -29,7 +29,7 @@
 #include "Tensor.hh"
 
 // Amanzi::Operators
-#include "Elasticity.hh"
+#include "PDE_Elasticity.hh"
 
 #include "AnalyticElasticity01.hh"
 #include "Verification.hh"
@@ -110,7 +110,7 @@ TEST(OPERATOR_ELASTICITY_EXACTNESS) {
   }
 
   // create diffusion operator 
-  Teuchos::RCP<Elasticity> op = Teuchos::rcp(new Elasticity(op_list, mesh));
+  Teuchos::RCP<PDE_Elasticity> op = Teuchos::rcp(new PDE_Elasticity(op_list, mesh));
   op->SetBCs(bcf, bcf);
   op->AddBCs(bcv, bcv);
   const CompositeVectorSpace& cvs = op->global_operator()->DomainMap();

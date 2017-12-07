@@ -12,15 +12,15 @@
   Upwind-based advection operator for a scalar field.
 */
 
-#ifndef AMANZI_OPERATOR_ADVECTION_UPWIND_HH_
-#define AMANZI_OPERATOR_ADVECTION_UPWIND_HH_
+#ifndef AMANZI_OPERATOR_PDE_ADVECTION_UPWIND_HH_
+#define AMANZI_OPERATOR_PDE_ADVECTION_UPWIND_HH_
 
 #include "Epetra_IntVector.h"
 
-#include "Advection.hh"
+#include "PDE_Advection.hh"
 
 /*!
-``AdvectionUpwind`` assembles the discrete form of:
+``PDE_AdvectionUpwind`` assembles the discrete form of:
 
 .. math::
   \nabla \cdot (q C)
@@ -34,18 +34,18 @@ for use in diffusion-dominated advection-diffusion equations.
 namespace Amanzi {
 namespace Operators {
 
-class AdvectionUpwind : public Advection {
+class PDE_AdvectionUpwind : public PDE_Advection {
  public:
-  AdvectionUpwind(Teuchos::ParameterList& plist,
-                  Teuchos::RCP<Operator> global_op) :
-      Advection(plist, global_op)
+  PDE_AdvectionUpwind(Teuchos::ParameterList& plist,
+                      Teuchos::RCP<Operator> global_op) :
+      PDE_Advection(plist, global_op)
   {
     InitAdvection_(plist);
   }
 
-  AdvectionUpwind(Teuchos::ParameterList& plist,
-                  Teuchos::RCP<const AmanziMesh::Mesh> mesh) :
-      Advection(plist, mesh)
+  PDE_AdvectionUpwind(Teuchos::ParameterList& plist,
+                      Teuchos::RCP<const AmanziMesh::Mesh> mesh) :
+      PDE_Advection(plist, mesh)
   {
     InitAdvection_(plist);
   }

@@ -23,22 +23,22 @@
 
 // Amanzi::Operators
 #include "BCs.hh"
-#include "Electromagnetics.hh"
+#include "PDE_Electromagnetics.hh"
 #include "Operator.hh"
 #include "OperatorDefs.hh"
 
 namespace Amanzi {
 namespace Operators {
 
-class ElectromagneticsMHD : public Electromagnetics {
+class PDE_ElectromagneticsMHD : public PDE_Electromagnetics {
  public:
-  ElectromagneticsMHD(const Teuchos::RCP<Operator>& global_op)
-    : Electromagnetics(global_op)
+  PDE_ElectromagneticsMHD(const Teuchos::RCP<Operator>& global_op)
+    : PDE_Electromagnetics(global_op)
   {};
 
-  ElectromagneticsMHD(Teuchos::ParameterList& plist,
-                      const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
-    : Electromagnetics(plist, mesh)
+  PDE_ElectromagneticsMHD(Teuchos::ParameterList& plist,
+                          const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
+    : PDE_Electromagnetics(plist, mesh)
   {
     operator_type_ = OPERATOR_ELECTROMAGNETICS_MHD;
     InitElectromagneticsMHD_();
