@@ -310,7 +310,19 @@ class PK_Explicit : public PK,
  public:
   virtual ~PK_Explicit() = default;
 };
-  
+
+
+//
+// Combines PK, explicit, and implicit interfaces
+//
+template<typename Vector=TreeVector>
+class PK_ImplicitExplicit : public PK,
+                            public BDFFnBase<Vector>,
+                            public Explicit_TI::fnBase<Vector> {
+ public:
+  virtual ~PK_ImplicitExplicit() = default;
+};
+
 
 
 

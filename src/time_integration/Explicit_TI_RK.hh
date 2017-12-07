@@ -300,7 +300,7 @@ void RK<Vector>::TimeStep(const double t, const double h, const Vector& y, Vecto
         y_new.Update(a_(i,j), *k_[j], 1.0);
       }
     }
-    fn_.Functional(sum_time, y_new, *k_[i]);
+    fn_.Dudt(sum_time, y_new, *k_[i]);
     k_[i]->Scale(h);
   }
 

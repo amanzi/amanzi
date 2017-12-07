@@ -71,6 +71,18 @@ class PK_Default {
   // Default: no work to be done
   void CalculateDiagnostics(const Key& tag) {}
 
+  bool IsAdmissible(Teuchos::RCP<const TreeVector> up) { return true; }
+
+  bool ModifyPredictor(double h, Teuchos::RCP<const TreeVector> u0, Teuchos::RCP<TreeVector> u) {
+    return false;
+  }
+
+  AmanziSolvers::FnBaseDefs::ModifyCorrectionResult 
+  ModifyCorrection(double h, Teuchos::RCP<const TreeVector> res,
+                   Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> du) {
+    return AmanziSolvers::FnBaseDefs::CORRECTION_NOT_MODIFIED; }
+
+  
   // Return PK's name
   std::string name() { return name_; }
 

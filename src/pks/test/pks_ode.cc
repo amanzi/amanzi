@@ -32,6 +32,7 @@ These tests that functionality with a series of ODEs.
 #include "PK_MixinExplicitSubcycled.hh"
 #include "PK_MixinImplicit.hh"
 #include "PK_MixinImplicitSubcycled.hh"
+#include "PK_MixinPredictorCorrector.hh"
 #include "PK_Adaptors.hh"
 
 
@@ -448,6 +449,22 @@ SUITE(PKS_ODE) {
 
     // this is not the total count, but the count of the last outer step's inner steps
     CHECK_EQUAL(17, run->S->Get<int>("cycle", "C, backward euler subcycled, forced implicit inner next"));
+  }
+
+
+  TEST(C_PREDICTOR_CORRECTOR) {
+    using PK_t = PK_ImplicitExplicit_Adaptor<PK_ODE_Implicit<PK_ODE_Explicit<PK_MixinPredictorCorrector<PK_MixinLeafCompositeVector<PK_Default>>, DudtEvaluatorC>, DudtEvaluatorC>>;
+    auto run = createRunODE<PK_t>("C predictor corrector");
+    auto nsteps = run_test(run->S, run->pk);
+
+    // note, worse error, but fewer timesteps, than the implicit version with linear extrapolation
+    CHECK_CLOSE(std::exp(1.0), (*run->S->Get<CompositeVector>("primaryC")
+                      .ViewComponent("cell",false))[0][0], 0.6);
+    CHECK_CLOSE(3.02976, (*run->S->Get<CompositeVector>("primaryC")
+                      .ViewComponent("cell",false))[0][0], 1.e-4);
+    CHECK_EQUAL(65, nsteps.first);
+    CHECK_EQUAL(2, nsteps.second);
+
   }
   
 }

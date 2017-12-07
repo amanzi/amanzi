@@ -82,9 +82,6 @@ PK_MixinExplicit<Base_t>::Setup()
 {
   Base_t::Setup();
 
-  std::string methodname = plist_->sublist("time integrator")
-                           .template get<std::string>("RK method");
-  
   // create an intermediate tag for derivative evaluation, potentially at multiple stages
   tag_inter_ = this->name()+" explicit ti intermediate";
   this->SolutionToState(tag_inter_, "");

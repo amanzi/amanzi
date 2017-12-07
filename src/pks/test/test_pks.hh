@@ -142,7 +142,7 @@ class PK_ODE_Explicit : public Base_t {
     this->S_->GetRecordW(this->key_, "", this->key_).set_initialized();
   }
   
-  void Functional(double t, const TreeVector& u, TreeVector& f) {
+  void Dudt(double t, const TreeVector& u, TreeVector& f) {
     // these calls are here because the explicit ti is not aware that it should call it
     this->S_->set_time(tag_inter_, t);
     this->ChangedSolutionPK(tag_inter_);
@@ -163,6 +163,7 @@ class PK_ODE_Explicit : public Base_t {
   using Base_t::tag_new_;
   
 };
+
 
 
 template<class Base_t, class Eval_t>
@@ -226,6 +227,7 @@ class PK_ODE_Implicit : public Base_t {
   double ErrorNorm(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<const TreeVector> du) {
     double norm = 0.;
     du->NormInf(&norm);
+    std::cout << "     error = " << norm << std::endl;
     return norm;
   }
 
@@ -233,17 +235,6 @@ class PK_ODE_Implicit : public Base_t {
     h_ = h;
     this->S_->GetEvaluator(dudt_key_,tag_new_)->UpdateDerivative(*this->S_, this->name(), this->key_);
   }
-
-  bool IsAdmissible(Teuchos::RCP<const TreeVector> up) { return true; }
-
-  bool ModifyPredictor(double h, Teuchos::RCP<const TreeVector> u0, Teuchos::RCP<TreeVector> u) {
-    return false;
-  }
-
-  AmanziSolvers::FnBaseDefs::ModifyCorrectionResult 
-  ModifyCorrection(double h, Teuchos::RCP<const TreeVector> res,
-                   Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> du) {
-    return AmanziSolvers::FnBaseDefs::CORRECTION_NOT_MODIFIED; }
 
   void ChangedSolution() {
     this->ChangedSolutionPK(tag_new_);
@@ -260,5 +251,6 @@ class PK_ODE_Implicit : public Base_t {
   using Base_t::tag_new_;
   using Base_t::S_;
 };
+
 
 

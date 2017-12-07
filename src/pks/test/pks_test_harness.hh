@@ -100,6 +100,42 @@ createRunMPC(const std::string& mpc_name, const std::string& pk_A_name, const st
 }
 
 
+//
+// Helper function for creating a run with one MPC and two PKs
+// ============================================================================
+template<class PK_t>
+std::unique_ptr<Run>
+createRunODE(const std::string& pk_name) {
+  std::cout << "Test: " << pk_name << std::endl;
+
+  auto global_list = Teuchos::getParametersFromXmlFile("test/pks_ode.xml");
+  auto S = Teuchos::rcp(new State(global_list->sublist("state")));
+
+  Epetra_MpiComm* comm = new Epetra_MpiComm(MPI_COMM_WORLD);
+
+  // create mesh
+  Teuchos::ParameterList& regions_list = global_list->sublist("regions");
+  Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm =
+      Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(2, regions_list, comm));
+
+  Amanzi::AmanziMesh::FrameworkPreference pref;
+  pref.clear();
+  pref.push_back(Amanzi::AmanziMesh::MSTK);
+
+  Amanzi::AmanziMesh::MeshFactory meshfactory(comm);
+  meshfactory.preference(pref);
+  // make a 1x1 'mesh' for ODEs
+  Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 1, 1, gm);
+  S->RegisterDomainMesh(mesh);
+
+  // create the PKs/MPCs
+  auto pk_tree = Teuchos::rcp(new Teuchos::ParameterList(pk_name));
+  auto pk = Teuchos::rcp(new PK_t(pk_tree, global_list, S));
+
+  return std::make_unique<Run>(S,pk);
+}
+
+
 
 
 
