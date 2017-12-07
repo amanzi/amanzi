@@ -3,7 +3,6 @@
 #
 # Build TPL: ASCEMIO 
 #  
-
 # --- Define all the directories and common external project flags
 define_external_project_args(ASCEMIO 
                              TARGET ascemio)
@@ -15,23 +14,21 @@ amanzi_tpl_version_write(FILENAME ${TPL_VERSIONS_INCLUDE_FILE}
   PREFIX ASCEMIO
   VERSION ${ASCEMIO_VERSION_MAJOR} ${ASCEMIO_VERSION_MINOR} ${ASCEMIO_VERSION_PATCH})  
 
-
-# Build the patch script
+# --- Patch the original code
 set(ASCEMIO_patch_file ascemio-2.2-sprintf.patch)
 set(ASCEMIO_sh_patch ${ASCEMIO_prefix_dir}/ascemio-patch-step.sh)
 configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/ascemio-patch-step.sh.in
                ${ASCEMIO_sh_patch}
                @ONLY)
-# --- configure the CMake patch step
+# configure the CMake patch step
 set(ASCEMIO_cmake_patch ${ASCEMIO_prefix_dir}/ascemio-patch-step.cmake)
 configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/ascemio-patch-step.cmake.in
                ${ASCEMIO_cmake_patch}
                @ONLY)
-# --- set the patch command
+# set the patch command
 set(ASCEMIO_PATCH_COMMAND ${CMAKE_COMMAND} -P ${ASCEMIO_cmake_patch})     
 
-
-# Define the arguments passed to CMake.
+# --- Define the arguments passed to CMake.
 set(ASCEMIO_CMAKE_ARGS 
       "-DCMAKE_INSTALL_PREFIX:FILEPATH=${TPL_INSTALL_PREFIX}"
       "-DBUILD_SHARED_LIBS:BOOL=${BUILD_SHARED_LIBS}")
@@ -51,7 +48,7 @@ ExternalProject_Add(${ASCEMIO_BUILD_TARGET}
                     SOURCE_DIR  ${ASCEMIO_source_dir} 
                     CMAKE_ARGS  ${AMANZI_CMAKE_CACHE_ARGS}        # CMAKE_CACHE_ARGS or CMAKE_ARGS => CMake configure
                                 ${ASCEMIO_CMAKE_ARGS}
-                                ${Amanzi_CMAKE_C_COMPILER_ARGS}   # Ensure uniform build
+                                -DCMAKE_C_FLAGS:STRING=${Amanzi_COMMON_CFLAGS}   # Ensure uniform build
                                 -DCMAKE_C_COMPILER:FILEPATH=${CMAKE_C_COMPILER}
                     # -- Build
                     BINARY_DIR       ${ASCEMIO_build_dir}         # Build directory 
@@ -59,7 +56,7 @@ ExternalProject_Add(${ASCEMIO_BUILD_TARGET}
                     BUILD_IN_SOURCE  FALSE                        # Flag for in source builds
                     # -- Install
                     INSTALL_DIR      ${TPL_INSTALL_PREFIX}        # Install directory
-      		    INSTALL_COMMAND  $(MAKE) install
+                    INSTALL_COMMAND  $(MAKE) install
                     # -- Output control
                     ${ASCEMIO_logging_args})
 

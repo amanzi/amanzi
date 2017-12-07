@@ -1,0 +1,10 @@
+diff -ruNbB xerces-c-3.2.0/xerces-c.pc.in xerces-3.2.0-source/xerces-c.pc.in
+--- xerces-c-3.2.0/xerces-c.pc.in	2017-06-21 15:05:33.000000000 -0600
++++ xerces-3.2.0-source/xerces-c.pc.in	2017-11-30 20:46:54.000000000 -0700
+@@ -7,5 +7,5 @@
+ Description: Validating XML parser library for C++
+ Version: @VERSION@
+ Libs: -L${libdir} -lxerces-c
+-Libs.private: @CURL_LIBS@
++Libs.private: @CURL_LIBS@ @ICU_LIBRARIES@
+ Cflags: -I${includedir}

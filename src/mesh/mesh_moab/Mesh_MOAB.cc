@@ -2210,7 +2210,7 @@ Entity_ID Mesh_MOAB::GID(Entity_ID lid, Entity_kind kind) const
 //--------------------------------------------------------------------
 // TBW
 //--------------------------------------------------------------------
-inline const Epetra_Map& Mesh_MOAB::cell_map(bool include_ghost) const
+const Epetra_Map& Mesh_MOAB::cell_map(bool include_ghost) const
 {
   if (serial_run)
     return *cell_map_wo_ghosts_;
@@ -2222,7 +2222,7 @@ inline const Epetra_Map& Mesh_MOAB::cell_map(bool include_ghost) const
 //--------------------------------------------------------------------
 // TBW
 //--------------------------------------------------------------------
-inline const Epetra_Map& Mesh_MOAB::face_map(bool include_ghost) const
+const Epetra_Map& Mesh_MOAB::face_map(bool include_ghost) const
 {
   if (serial_run)
     return *face_map_wo_ghosts_;
@@ -2234,7 +2234,7 @@ inline const Epetra_Map& Mesh_MOAB::face_map(bool include_ghost) const
 //--------------------------------------------------------------------
 // TBW
 //--------------------------------------------------------------------
-inline const Epetra_Map& Mesh_MOAB::node_map(bool include_ghost) const
+const Epetra_Map& Mesh_MOAB::node_map(bool include_ghost) const
 {
   if (serial_run)
     return *node_map_wo_ghosts_;
@@ -2246,7 +2246,7 @@ inline const Epetra_Map& Mesh_MOAB::node_map(bool include_ghost) const
 //--------------------------------------------------------------------
 // TBW
 //--------------------------------------------------------------------
-inline const Epetra_Map& Mesh_MOAB::exterior_face_map(bool include_ghost) const {
+const Epetra_Map& Mesh_MOAB::exterior_face_map(bool include_ghost) const {
   throw std::exception(); // Not implemented
 }
 

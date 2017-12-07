@@ -21,7 +21,7 @@ namespace WhetStone {
 * Enegy projector on space of linear polynomials in cell c.
 * Uniquness require to specify its value at cell centroid.
 ****************************************************************** */
-void ProjectorH1::HarmonicP0_Cell(
+void ProjectorH1::HarmonicP1_Cell(
     int c, const AmanziGeometry::Point& p0,
     const std::vector<VectorPolynomial>& vf, VectorPolynomial& uc) const
 {
@@ -69,7 +69,7 @@ void ProjectorH1::HarmonicP0_Cell(
 * Energy projector on space of linear polynomials in face f.
 * Uniquness require to specy its value at cell centroid.
 ****************************************************************** */
-void ProjectorH1::HarmonicP0_Face(
+void ProjectorH1::HarmonicP1_Face(
     int f, const AmanziGeometry::Point& p0,
     const std::vector<VectorPolynomial>& ve, VectorPolynomial& uf) const
 {

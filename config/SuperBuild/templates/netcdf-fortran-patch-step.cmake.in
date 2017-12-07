@@ -1,14 +1,15 @@
-# CMake ExodusII configure file
+# CMake NetCDF-Fortran patch file
 
 # Now run the patch script
-set(command sh @ExodusII_sh_configure@)
+set(command sh @NetCDF_Fortran_sh_patch@)
 execute_process(
   COMMAND ${command}
-  WORKING_DIRECTORY "@ExodusII_source_dir@"
+  WORKING_DIRECTORY "@NetCDF_Fortran_source_dir@"
   RESULT_VARIABLE result
 )
+
 if (result)
-  set(msg "ExodusII configure command failed")
+  set(msg "NetCDF-Fortran patch command failed")
   foreach(arg IN LISTS command )
     set(msg "${msg} '${arg}'")
   endforeach()
