@@ -33,9 +33,9 @@
 
 // Amanzi::Operators
 #include "Accumulation.hh"
-#include "DiffusionFV.hh"
 #include "OperatorDefs.hh"
 #include "Operator.hh"
+#include "PDE_DiffusionFV.hh"
 #include "UpwindFlux.hh"
 
 #include "operator_marshak_testclass.hh"
@@ -157,7 +157,7 @@ void RunTestMarshakLogical(std::string op_list_name) {
 
     // add diffusion operator
     Teuchos::ParameterList olist = plist.sublist("PK operator").sublist(op_list_name);
-    DiffusionFV op(olist, mesh);
+    PDE_DiffusionFV op(olist, mesh);
     op.SetBCs(bc, bc);
 
     int schema_dofs = op.schema_dofs();

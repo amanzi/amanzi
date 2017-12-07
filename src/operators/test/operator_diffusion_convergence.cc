@@ -32,10 +32,10 @@
 // Operators
 #include "Analytic06.hh"
 
-#include "DiffusionFactory.hh"
-#include "DiffusionMFD.hh"
-#include "DiffusionFV.hh"
 #include "OperatorDefs.hh"
+#include "PDE_DiffusionFactory.hh"
+#include "PDE_DiffusionMFD.hh"
+#include "PDE_DiffusionFV.hh"
 
 
 int BoundaryFaceGetCell(const Amanzi::AmanziMesh::Mesh& mesh, int f)
@@ -106,10 +106,9 @@ std::pair<double, double> RunForwardProblem(const std::string& discretization,
   op_list.set("discretization primary", discretization);
   op_list.set("nonlinear coefficient", "none");
 
-  Operators::DiffusionFactory fac;
+  Operators::PDE_DiffusionFactory fac;
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_c = mesh;
-  Teuchos::RCP<Diffusion> op =
-      fac.Create(op_list, mesh_c);
+  Teuchos::RCP<PDE_Diffusion> op = fac.Create(op_list, mesh_c);
   op->SetBCs(bc, bc);
   op->SetTensorCoefficient(K);
   op->SetScalarCoefficient(Teuchos::null, Teuchos::null);
@@ -237,9 +236,9 @@ std::pair<double, double> RunInverseProblem(const std::string& discretization,
   op_list.set("discretization primary", discretization);
   op_list.set("nonlinear coefficient", "none");
 
-  Operators::DiffusionFactory fac;
+  Operators::PDE_DiffusionFactory fac;
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_c = mesh;
-  Teuchos::RCP<Diffusion> op = fac.Create(op_list, mesh_c);
+  Teuchos::RCP<PDE_Diffusion> op = fac.Create(op_list, mesh_c);
   op->SetBCs(bc, bc);
   op->SetTensorCoefficient(K);
   op->SetScalarCoefficient(Teuchos::null, Teuchos::null);

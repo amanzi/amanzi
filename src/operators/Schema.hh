@@ -78,9 +78,9 @@ class Schema {
 
   // access
   AmanziMesh::Entity_kind base() const { return base_; }
-  const std::vector<SchemaItem>& items() const { return items_; } 
   std::vector<SchemaItem>::const_iterator begin() const { return items_.begin(); }
   std::vector<SchemaItem>::const_iterator end() const { return items_.end(); }
+  int size() const { return items_.size(); }
 
   // output 
   friend std::ostream& operator << (std::ostream& os, const Schema& s) {
@@ -106,15 +106,12 @@ class Schema {
 // -- comparison operators
 inline bool operator==(const Schema& s1, const Schema& s2) {
   if (s1.base() != s2.base()) return false;
-  if (s1.items().size() != s2.items().size()) return false;
+  if (s1.size() != s2.size()) return false;
 
-  const std::vector<SchemaItem>& it1 = s1.items();
-  const std::vector<SchemaItem>& it2 = s2.items();
-
-  for (int i = 0; i < it1.size(); ++i) {
-    if (it1[i].kind != it2[i].kind) return false; 
-    if (it1[i].type != it2[i].type) return false; 
-    if (it1[i].num != it2[i].num) return false; 
+  for (auto it1 = s1.begin(), it2 = s2.begin(); it1 != s1.end(); ++it1, ++it2) {
+    if (it1->kind != it2->kind) return false; 
+    if (it1->type != it2->type) return false; 
+    if (it1->num != it2->num) return false; 
   }
   return true;
 }

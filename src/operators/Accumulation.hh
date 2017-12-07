@@ -20,7 +20,7 @@
 #include "CompositeVector.hh"
 
 #include "BCs.hh"
-#include "BCsList.hh"
+#include "PDE_HelperBCsList.hh"
 #include "Operator.hh"
 #include "OperatorDefs.hh"
 #include "Schema.hh"
@@ -42,7 +42,7 @@ No options are available here.
 namespace Amanzi {
 namespace Operators {
 
-class Accumulation : public BCsList {
+class Accumulation : public PDE_HelperBCsList {
  public:
   Accumulation(AmanziMesh::Entity_kind entity, Teuchos::RCP<Operator> global_op)
     : global_op_(global_op),

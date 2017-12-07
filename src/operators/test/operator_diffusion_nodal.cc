@@ -31,9 +31,9 @@
 #include "Analytic01.hh"
 #include "Analytic02.hh"
 
-#include "DiffusionFactory.hh"
-#include "DiffusionMFD.hh"
 #include "OperatorDefs.hh"
+#include "PDE_DiffusionFactory.hh"
+#include "PDE_DiffusionMFD.hh"
 
 
 /* *****************************************************************
@@ -103,7 +103,7 @@ TEST(OPERATOR_DIFFUSION_NODAL) {
 
   // create diffusion operator 
   ParameterList op_list = plist.get<Teuchos::ParameterList>("PK operator").sublist("diffusion operator nodal");
-  Teuchos::RCP<Diffusion> op = Teuchos::rcp(new DiffusionMFD(op_list, mesh));
+  Teuchos::RCP<PDE_Diffusion> op = Teuchos::rcp(new PDE_DiffusionMFD(op_list, mesh));
   op->SetBCs(bc, bc);
   const CompositeVectorSpace& cvs = op->global_operator()->DomainMap();
 
@@ -304,8 +304,8 @@ TEST(OPERATOR_DIFFUSION_NODAL_EXACTNESS) {
 
   // create diffusion operator 
   ParameterList op_list = plist.get<Teuchos::ParameterList>("PK operator").sublist("diffusion operator nodal");
-  DiffusionFactory opfactory;
-  Teuchos::RCP<Diffusion> op = opfactory.Create(op_list, mesh, bc_v, rho, g);
+  PDE_DiffusionFactory opfactory;
+  Teuchos::RCP<PDE_Diffusion> op = opfactory.Create(op_list, mesh, bc_v, rho, g);
   op->AddBCs(bc_f, bc_f);
   
   // populate the diffusion operator
@@ -357,7 +357,4 @@ TEST(OPERATOR_DIFFUSION_NODAL_EXACTNESS) {
     CHECK(solver.num_itrs() < 10);
   }
 }
-
-
-
 

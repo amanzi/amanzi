@@ -30,7 +30,7 @@ void MeshMaps_VEM::VelocityCell(
 {
   // LeastSquareProjector_Cell_(1, c, vf, vc);
   AmanziGeometry::Point p0(mesh1_->cell_centroid(c) - mesh0_->cell_centroid(c));
-  projector.HarmonicP0_Cell(c, p0, vf, vc);
+  projector.HarmonicP1_Cell(c, p0, vf, vc);
 }
 
 
@@ -58,7 +58,7 @@ void MeshMaps_VEM::VelocityFace(int f, VectorPolynomial& vf) const
     }
 
     AmanziGeometry::Point p0(mesh1_->face_centroid(f) - mesh0_->face_centroid(f));
-    projector.HarmonicP0_Face(f, p0, ve, vf);
+    projector.HarmonicP1_Face(f, p0, ve, vf);
   }
 }
 

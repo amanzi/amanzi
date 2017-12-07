@@ -23,7 +23,7 @@
 // Amanzi
 #include "Accumulation.hh"
 #include "BDF1_TI.hh"
-#include "Diffusion.hh"
+#include "PDE_Diffusion.hh"
 #include "PK_Factory.hh"
 #include "TreeVector.hh"
 #include "Upwind.hh"
@@ -174,14 +174,14 @@ class Richards_PK : public Flow_PK {
 
   // solvers
   Teuchos::RCP<Operators::Operator> op_matrix_, op_preconditioner_, op_pc_solver_;
-  Teuchos::RCP<Operators::Diffusion> op_matrix_diff_, op_preconditioner_diff_;
+  Teuchos::RCP<Operators::PDE_Diffusion> op_matrix_diff_, op_preconditioner_diff_;
   Teuchos::RCP<Operators::Accumulation> op_acc_;
   Teuchos::RCP<Operators::Upwind<RelPerm> > upwind_;
   std::string preconditioner_name_, solver_name_, solver_name_constraint_;
 
   // coupling with energy
   Teuchos::RCP<Operators::Operator> op_vapor_;
-  Teuchos::RCP<Operators::Diffusion> op_vapor_diff_;
+  Teuchos::RCP<Operators::PDE_Diffusion> op_vapor_diff_;
   bool vapor_diffusion_;
 
   // multiscale models

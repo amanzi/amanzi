@@ -24,8 +24,6 @@
 // Amanzi
 #include "Accumulation.hh"
 #include "BCs.hh"
-#include "Diffusion.hh"
-#include "DiffusionFactory.hh"
 #include "errors.hh"
 #include "Explicit_TI_RK.hh"
 #include "FieldEvaluator.hh"
@@ -34,6 +32,8 @@
 #include "LinearOperatorFactory.hh"
 #include "Mesh.hh"
 #include "OperatorDefs.hh"
+#include "PDE_Diffusion.hh"
+#include "PDE_DiffusionFactory.hh"
 #include "PK_DomainFunctionFactory.hh"
 #include "PK_Utils.hh"
 
@@ -770,8 +770,8 @@ bool Transport_PK::AdvanceStep(double t_old, double t_new, bool reinit)
     Teuchos::RCP<Operators::BCs> bc_dummy = 
         Teuchos::rcp(new Operators::BCs(mesh_, AmanziMesh::FACE, Operators::SCHEMA_DOFS_SCALAR));
 
-    Operators::DiffusionFactory opfactory;
-    Teuchos::RCP<Operators::Diffusion> op1 = opfactory.Create(op_list, mesh_, bc_dummy);
+    Operators::PDE_DiffusionFactory opfactory;
+    Teuchos::RCP<Operators::PDE_Diffusion> op1 = opfactory.Create(op_list, mesh_, bc_dummy);
     op1->SetBCs(bc_dummy, bc_dummy);
     Teuchos::RCP<Operators::Operator> op = op1->global_operator();
     Teuchos::RCP<Operators::Accumulation> op2 =

@@ -31,10 +31,10 @@
 #include "Analytic03.hh"
 #include "HeatConduction.hh"
 
-#include "DiffusionMFD.hh"
 #include "OperatorDefs.hh"
-#include "UpwindSecondOrder.hh"
+#include "PDE_DiffusionMFD.hh"
 #include "UpwindFlux.hh"
+#include "UpwindSecondOrder.hh"
 
 using namespace Amanzi;
 using namespace Amanzi::AmanziMesh;
@@ -96,7 +96,7 @@ void RunTestDiffusionDivK2D(std::string diffusion_list, std::string upwind_list)
   }
 
   // create diffusion operator 
-  Teuchos::RCP<Diffusion> op = Teuchos::rcp(new DiffusionMFD(op_list, mesh));
+  Teuchos::RCP<PDE_Diffusion> op = Teuchos::rcp(new PDE_DiffusionMFD(op_list, mesh));
   op->SetBCs(bc, bc);
   const CompositeVectorSpace& cvs = op->global_operator()->DomainMap();
 
@@ -259,7 +259,7 @@ TEST(OPERATOR_DIFFUSION_DIVK_AVERAGE_3D) {
 
   // create diffusion operator 
   Teuchos::ParameterList op_list = plist.get<Teuchos::ParameterList>("PK operator").sublist("diffusion operator divk");
-  Teuchos::RCP<Diffusion> op = Teuchos::rcp(new DiffusionMFD(op_list, mesh));
+  Teuchos::RCP<PDE_Diffusion> op = Teuchos::rcp(new PDE_DiffusionMFD(op_list, mesh));
   op->SetBCs(bc, bc);
   const CompositeVectorSpace& cvs = op->global_operator()->DomainMap();
 
