@@ -54,8 +54,8 @@ curl_binary=`which curl`
 # CMake
 cmake_binary=`which cmake`
 ctest_binary=`which ctest`
-cmake_version=3.6.1
-cmake_url=https://cmake.org/files/v3.6
+cmake_version=3.2.1
+cmake_url=https://cmake.org/files/v3.2
 cmake_archive_file=cmake-${cmake_version}.tar.gz
 
 # Build configuration
@@ -1135,7 +1135,7 @@ function check_tools
     ( version_compare "$ver_string" "$cmake_version" )
     result=$?
     if [ ${result} -eq 2 ]; then
-      status_message "CMake version is less than required version. Will build CMake version 3.6.1"
+      status_message "CMake version is less than required version. Will build CMake version 3.2.1"
       build_cmake ${tools_build_dir} ${tools_install_prefix} ${tools_download_dir} 
     fi
   fi
