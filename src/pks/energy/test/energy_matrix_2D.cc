@@ -22,11 +22,11 @@
 #include "UnitTest++.h"
 
 // Amanzi
-#include "Accumulation.hh"
 #include "EnergyTwoPhase_PK.hh"
 #include "GMVMesh.hh"
 #include "MeshFactory.hh"
 #include "Operator.hh"
+#include "PDE_Accumulation.hh"
 #include "PDE_AdvectionUpwind.hh"
 #include "PDE_Diffusion.hh"
 #include "PDE_DiffusionFactory.hh"
@@ -134,7 +134,7 @@ std::cout << "Passed EPK.Initilize()" << std::endl;
   Teuchos::RCP<Operator> op = op1->global_operator();
 
   // add accumulation term
-  Teuchos::RCP<Accumulation> op2 = Teuchos::rcp(new Accumulation(AmanziMesh::CELL, op));
+  Teuchos::RCP<PDE_Accumulation> op2 = Teuchos::rcp(new PDE_Accumulation(AmanziMesh::CELL, op));
   double dT = 1.0;
   CompositeVector solution(op->DomainMap());
 

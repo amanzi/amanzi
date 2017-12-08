@@ -29,9 +29,9 @@
 #include "Tensor.hh"
 
 // Amanzi::Operators
-#include "Accumulation.hh"
 #include "Operator.hh"
 #include "OperatorDefs.hh"
+#include "PDE_Accumulation.hh"
 #include "PDE_DiffusionFactory.hh"
 #include "UpwindFlux.hh"
 
@@ -164,7 +164,7 @@ void RunTestMarshak(std::string op_list_name, double TemperatureFloor) {
     Teuchos::RCP<Operator> global_op = op->global_operator();
 
     // add accumulation terms
-    Accumulation op_acc(AmanziMesh::CELL, global_op);
+    PDE_Accumulation op_acc(AmanziMesh::CELL, global_op);
     op_acc.AddAccumulationDelta(*solution, heat_capacity, heat_capacity, dt, "cell");
 
     // apply BCs and assemble

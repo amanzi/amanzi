@@ -19,9 +19,9 @@
 #include "Teuchos_RCP.hpp"
 
 // Amanzi
-#include "Accumulation.hh"
 #include "CompositeVector.hh"
 #include "Operator.hh"
+#include "PDE_Accumulation.hh"
 #include "PDE_AdvectionUpwind.hh"
 #include "PDE_Diffusion.hh"
 #include "PK.hh"
@@ -130,7 +130,7 @@ class Energy_PK : public PK_PhysicalBDF {
 
   // operators and solvers
   Teuchos::RCP<Operators::PDE_Diffusion> op_matrix_diff_, op_preconditioner_diff_;
-  Teuchos::RCP<Operators::Accumulation> op_acc_;
+  Teuchos::RCP<Operators::PDE_Accumulation> op_acc_;
   Teuchos::RCP<Operators::PDE_AdvectionUpwind> op_matrix_advection_, op_preconditioner_advection_;
   Teuchos::RCP<Operators::Operator> op_matrix_, op_preconditioner_, op_advection_;
   Teuchos::RCP<Operators::BCs> op_bc_;

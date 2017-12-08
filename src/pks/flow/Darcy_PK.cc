@@ -329,7 +329,7 @@ void Darcy_PK::Initialize(const Teuchos::Ptr<State>& S)
   op_ = op_diff_->global_operator();
 
   // -- accumulation operator.
-  op_acc_ = Teuchos::rcp(new Operators::Accumulation(AmanziMesh::CELL, op_));
+  op_acc_ = Teuchos::rcp(new Operators::PDE_Accumulation(AmanziMesh::CELL, op_));
 
   op_->SymbolicAssembleMatrix();
   op_->CreateCheckPoint();

@@ -29,9 +29,9 @@
 #include "Tensor.hh"
 
 // Operators
-#include "Accumulation.hh"
 #include "Operator.hh"
 #include "OperatorDefs.hh"
+#include "PDE_Accumulation.hh"
 #include "PDE_DiffusionMFD.hh"
 
 #include "Verification.hh"
@@ -186,7 +186,7 @@ void RunTest(std::string op_list_name) {
     op.UpdateMatrices(flux.ptr(), Teuchos::null);
 
     // add accumulation terms
-    Accumulation op_acc(AmanziMesh::CELL, global_op);
+    PDE_Accumulation op_acc(AmanziMesh::CELL, global_op);
     op_acc.AddAccumulationDelta(*solution, phi, phi, dT, "cell");
 
     // apply BCs and assemble

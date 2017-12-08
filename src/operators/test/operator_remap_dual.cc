@@ -33,7 +33,6 @@
 #include "WhetStone_typedefs.hh"
 
 // Amanzi::Operators
-#include "Accumulation.hh"
 #include "OperatorDefs.hh"
 #include "PDE_Abstract.hh"
 #include "PDE_AdvectionRiemann.hh"

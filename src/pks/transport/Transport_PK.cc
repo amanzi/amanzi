@@ -22,7 +22,6 @@
 #include "Teuchos_RCP.hpp"
 
 // Amanzi
-#include "Accumulation.hh"
 #include "BCs.hh"
 #include "errors.hh"
 #include "Explicit_TI_RK.hh"
@@ -32,6 +31,7 @@
 #include "LinearOperatorFactory.hh"
 #include "Mesh.hh"
 #include "OperatorDefs.hh"
+#include "PDE_Accumulation.hh"
 #include "PDE_Diffusion.hh"
 #include "PDE_DiffusionFactory.hh"
 #include "PK_DomainFunctionFactory.hh"
@@ -774,8 +774,8 @@ bool Transport_PK::AdvanceStep(double t_old, double t_new, bool reinit)
     Teuchos::RCP<Operators::PDE_Diffusion> op1 = opfactory.Create(op_list, mesh_, bc_dummy);
     op1->SetBCs(bc_dummy, bc_dummy);
     Teuchos::RCP<Operators::Operator> op = op1->global_operator();
-    Teuchos::RCP<Operators::Accumulation> op2 =
-        Teuchos::rcp(new Operators::Accumulation(AmanziMesh::CELL, op));
+    Teuchos::RCP<Operators::PDE_Accumulation> op2 =
+        Teuchos::rcp(new Operators::PDE_Accumulation(AmanziMesh::CELL, op));
 
     const CompositeVectorSpace& cvs = op1->global_operator()->DomainMap();
     CompositeVector sol(cvs), factor(cvs), factor0(cvs), source(cvs), zero(cvs);

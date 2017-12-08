@@ -131,7 +131,7 @@ void EnergyOnePhase_PK::Initialize(const Teuchos::Ptr<State>& S)
   op_preconditioner_->Init();
   op_preconditioner_diff_->SetScalarCoefficient(S->GetFieldData(conductivity_key_), Teuchos::null);
 
-  op_acc_ = Teuchos::rcp(new Operators::Accumulation(AmanziMesh::CELL, op_preconditioner_));
+  op_acc_ = Teuchos::rcp(new Operators::PDE_Accumulation(AmanziMesh::CELL, op_preconditioner_));
   op_preconditioner_advection_ = Teuchos::rcp(new Operators::PDE_AdvectionUpwind(oplist_adv, op_preconditioner_));
   op_preconditioner_->SymbolicAssembleMatrix();
 
