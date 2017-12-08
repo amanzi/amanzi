@@ -62,8 +62,12 @@ if (BUILD_TESTS)
   include_directories(${CCSE_INCLUDE_DIRS})
   link_directories(${CCSE_LIBRARY_DIR})
 
-  set(structured_grid_libs structured_amanzi geochemistry
-                           interface interface_s atk error_handling)
+  set(structured_grid_libs structured_amanzi interface interface_s atk error_handling)
+
+  if (ENABLE_ALQUIMIA)
+    list(APPEND structured_grid_libs geochemistry)
+  endif()
+
   if(CMAKE_Fortran_COMPILER_ID STREQUAL GNU) 
     if (${CMAKE_SYSTEM_NAME} STREQUAL Linux)
       list(APPEND structured_grid_libs gfortran)
