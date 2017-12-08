@@ -19,3 +19,4 @@ after_success:
       docker login -u="$DOCKER_USERNAME" -p="$DOCKER_PASSWORD" || travis_terminate 1;
       docker push "$DOCKER_USERNAME"/amanzi || travis_terminate 1;
     fi
+
