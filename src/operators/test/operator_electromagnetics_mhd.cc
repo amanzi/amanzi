@@ -30,10 +30,10 @@
 
 // Amanzi::Operators
 #include "Accumulation.hh"
-#include "ElectromagneticsMHD.hh"
-#include "ElectromagneticsMHD_TM.hh"
 #include "Operator.hh"
 #include "OperatorDefs.hh"
+#include "PDE_ElectromagneticsMHD.hh"
+#include "PDE_ElectromagneticsMHD_TM.hh"
 
 #include "AnalyticElectromagnetics04.hh"
 #include "AnalyticElectromagnetics05.hh"
@@ -104,7 +104,7 @@ void ResistiveMHD2D(double dt, double tend,
   // create electromagnetics operator
   Teuchos::ParameterList olist = plist.get<Teuchos::ParameterList>("PK operator")
                                       .get<Teuchos::ParameterList>("electromagnetics operator");
-  Teuchos::RCP<ElectromagneticsMHD_TM> op_mhd = Teuchos::rcp(new ElectromagneticsMHD_TM(olist, mesh));
+  Teuchos::RCP<PDE_ElectromagneticsMHD_TM> op_mhd = Teuchos::rcp(new PDE_ElectromagneticsMHD_TM(olist, mesh));
   op_mhd->SetBCs(bc1, bc1);
 
   // create/extract solution maps
@@ -346,7 +346,7 @@ void ResistiveMHD3D(double dt, double tend, bool convergence,
   // create electromagnetics operator
   Teuchos::ParameterList olist = plist.get<Teuchos::ParameterList>("PK operator")
                                       .get<Teuchos::ParameterList>("electromagnetics operator");
-  Teuchos::RCP<ElectromagneticsMHD> op_mhd = Teuchos::rcp(new ElectromagneticsMHD(olist, mesh));
+  Teuchos::RCP<PDE_ElectromagneticsMHD> op_mhd = Teuchos::rcp(new PDE_ElectromagneticsMHD(olist, mesh));
   op_mhd->SetBCs(bc1, bc1);
   if (!convergence) op_mhd->AddBCs(bc2, bc2);
 

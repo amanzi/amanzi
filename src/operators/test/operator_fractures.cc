@@ -29,9 +29,9 @@
 #include "Tensor.hh"
 
 // Amanzi::Operators
-#include "DiffusionFactory.hh"
 #include "Operator.hh"
 #include "OperatorDefs.hh"
+#include "PDE_DiffusionFactory.hh"
 
 
 /* *****************************************************************
@@ -119,8 +119,8 @@ void RunTest(int icase, bool gravity) {
   Teuchos::ParameterList olist = plist.sublist("PK operator").sublist("diffusion operator");
   olist.set<bool>("gravity", gravity);
 
-  Operators::DiffusionFactory opfactory;
-  Teuchos::RCP<Operators::Diffusion> op = opfactory.Create(olist, surfmesh, bc, rho, g);
+  Operators::PDE_DiffusionFactory opfactory;
+  Teuchos::RCP<Operators::PDE_Diffusion> op = opfactory.Create(olist, surfmesh, bc, rho, g);
   op->SetBCs(bc, bc);
 
   Teuchos::RCP<Operator> global_op = op->global_operator();

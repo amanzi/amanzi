@@ -23,11 +23,11 @@
 #include "BoundaryFlux.hh"
 #include "CommonDefs.hh"
 #include "dbc.hh"
-#include "DiffusionFactory.hh"
 #include "exceptions.hh"
 #include "independent_variable_field_evaluator_fromfunction.hh"
 #include "Mesh.hh"
 #include "OperatorDefs.hh"
+#include "PDE_DiffusionFactory.hh"
 #include "PK_Utils.hh"
 #include "Point.hh"
 #include "primary_variable_field_evaluator.hh"
@@ -441,7 +441,7 @@ void Richards_PK::Initialize(const Teuchos::Ptr<State>& S)
   oplist_matrix.set<std::string>("nonlinear coefficient", nonlinear_coef);
   oplist_pc.set<std::string>("nonlinear coefficient", nonlinear_coef);
 
-  Operators::DiffusionFactory opfactory;
+  Operators::PDE_DiffusionFactory opfactory;
   op_matrix_diff_ = opfactory.Create(oplist_matrix, mesh_, op_bc_, rho_, gravity_);
   op_matrix_ = op_matrix_diff_->global_operator();
   op_preconditioner_diff_ = opfactory.Create(oplist_pc, mesh_, op_bc_, rho_, gravity_);

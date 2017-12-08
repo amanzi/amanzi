@@ -29,8 +29,8 @@
 
 // Amanzi::Operators
 #include "Accumulation.hh"
-#include "DiffusionNLFVwithGravity.hh"
 #include "OperatorDefs.hh"
+#include "PDE_DiffusionNLFVwithGravity.hh"
 
 #include "Analytic01.hh"
 #include "Analytic02.hh"
@@ -101,7 +101,7 @@ void RunTestDiffusionNLFV_DMP(double gravity, bool testing) {
   // create diffusion operator 
   double rho(1.0);
   AmanziGeometry::Point g(0.0, -gravity);
-  Teuchos::RCP<Diffusion> op = Teuchos::rcp(new DiffusionNLFVwithGravity(op_list, mesh, rho, g));
+  Teuchos::RCP<PDE_Diffusion> op = Teuchos::rcp(new PDE_DiffusionNLFVwithGravity(op_list, mesh, rho, g));
   Teuchos::RCP<Operator> global_op = op->global_operator();
   op->SetBCs(bc, bc);
   const CompositeVectorSpace& cvs = global_op->DomainMap();

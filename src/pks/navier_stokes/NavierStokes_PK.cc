@@ -180,13 +180,13 @@ void NavierStokes_PK::Initialize(const Teuchos::Ptr<State>& S)
   // -- create elastic block
   Teuchos::ParameterList& tmp1 = ns_list_->sublist("operators")
                                           .sublist("elasticity operator");
-  op_matrix_elas_ = Teuchos::rcp(new Operators::Elasticity(tmp1, mesh_));
-  op_preconditioner_elas_ = Teuchos::rcp(new Operators::Elasticity(tmp1, mesh_));
+  op_matrix_elas_ = Teuchos::rcp(new Operators::PDE_Elasticity(tmp1, mesh_));
+  op_preconditioner_elas_ = Teuchos::rcp(new Operators::PDE_Elasticity(tmp1, mesh_));
 
   // -- create divergence block
   Teuchos::ParameterList& tmp2 = ns_list_->sublist("operators")
                                           .sublist("divergence operator");
-  op_matrix_div_ = Teuchos::rcp(new Operators::Abstract(tmp2, mesh_));
+  op_matrix_div_ = Teuchos::rcp(new Operators::PDE_Abstract(tmp2, mesh_));
 
   // -- create accumulation term (velocity block, only nodal unknowns)
   Operators::Schema schema(AmanziMesh::NODE, 2);  // FIXME
@@ -196,8 +196,8 @@ void NavierStokes_PK::Initialize(const Teuchos::Ptr<State>& S)
   // -- create convection term
   Teuchos::ParameterList& tmp3 = ns_list_->sublist("operators")
                                           .sublist("advection operator");
-  op_matrix_conv_ = Teuchos::rcp(new Operators::Abstract(tmp3, op_matrix_elas_->global_operator()));
-  op_preconditioner_conv_ = Teuchos::rcp(new Operators::Abstract(tmp3, op_preconditioner_elas_->global_operator()));
+  op_matrix_conv_ = Teuchos::rcp(new Operators::PDE_Abstract(tmp3, op_matrix_elas_->global_operator()));
+  op_preconditioner_conv_ = Teuchos::rcp(new Operators::PDE_Abstract(tmp3, op_preconditioner_elas_->global_operator()));
 
   // -- create pressure block (for preconditioner)
   op_mass_ = Teuchos::rcp(new Operators::Accumulation(AmanziMesh::CELL, mesh_));

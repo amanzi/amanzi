@@ -31,9 +31,9 @@
 // Operators
 #include "Analytic02.hh"
 
-#include "DiffusionMFDwithGravity.hh"
-#include "DiffusionFV.hh"
 #include "OperatorDefs.hh"
+#include "PDE_DiffusionFV.hh"
+#include "PDE_DiffusionMFDwithGravity.hh"
 #include "UpwindSecondOrder.hh"
 
 
@@ -120,7 +120,7 @@ void RunTestDiffusionMixed(double gravity) {
   double rho(1.0);
   AmanziGeometry::Point g(0.0, -gravity);
   ParameterList op_list = plist.get<Teuchos::ParameterList>("PK operator").sublist("diffusion operator mixed");
-  Teuchos::RCP<Diffusion> op = Teuchos::rcp(new DiffusionMFDwithGravity(op_list, mesh, rho, g));
+  Teuchos::RCP<PDE_Diffusion> op = Teuchos::rcp(new PDE_DiffusionMFDwithGravity(op_list, mesh, rho, g));
   op->SetBCs(bc, bc);
   const CompositeVectorSpace& cvs = op->global_operator()->DomainMap();
 
@@ -292,7 +292,7 @@ TEST(OPERATOR_DIFFUSION_CELL_EXACTNESS) {
 
   // create diffusion operator 
   ParameterList op_list = plist.get<Teuchos::ParameterList>("PK operator").sublist("diffusion operator cell");
-  Teuchos::RCP<Diffusion> op = Teuchos::rcp(new DiffusionFV(op_list, mesh));
+  Teuchos::RCP<PDE_Diffusion> op = Teuchos::rcp(new PDE_DiffusionFV(op_list, mesh));
   op->SetBCs(bc_f, bc_f);
   const CompositeVectorSpace& cvs = op->global_operator()->DomainMap();
 

@@ -33,12 +33,12 @@
 #include "WhetStone_typedefs.hh"
 
 // Amanzi::Operators
-#include "Abstract.hh"
 #include "Accumulation.hh"
-#include "AdvectionRiemann.hh"
 #include "OperatorDefs.hh"
-#include "Reaction.hh"
 #include "RemapUtils.hh"
+#include "PDE_Abstract.hh"
+#include "PDE_AdvectionRiemann.hh"
+#include "PDE_Reaction.hh"
 
 
 /* *****************************************************************
@@ -157,7 +157,7 @@ void RemapTests2DPrimal(int order, std::string disc_name,
 
   plist.sublist("schema range") = plist.sublist("schema domain");
 
-  Teuchos::RCP<AdvectionRiemann> op = Teuchos::rcp(new AdvectionRiemann(plist, mesh0));
+  Teuchos::RCP<PDE_AdvectionRiemann> op = Teuchos::rcp(new PDE_AdvectionRiemann(plist, mesh0));
   auto global_op = op->global_operator();
 
   std::vector<WhetStone::VectorPolynomial> vec_vel(nfaces_wghost);
@@ -171,7 +171,7 @@ void RemapTests2DPrimal(int order, std::string disc_name,
   plist.sublist("schema domain").set<std::string>("base", "cell");
   plist.sublist("schema range") = plist.sublist("schema domain");
 
-  Teuchos::RCP<Abstract> op_adv = Teuchos::rcp(new Abstract(plist, global_op));
+  Teuchos::RCP<PDE_Abstract> op_adv = Teuchos::rcp(new PDE_Abstract(plist, global_op));
 
   Teuchos::RCP<std::vector<WhetStone::VectorPolynomial> > cell_vel = 
       Teuchos::rcp(new std::vector<WhetStone::VectorPolynomial>(ncells_owned));
@@ -185,7 +185,7 @@ void RemapTests2DPrimal(int order, std::string disc_name,
       .set<Teuchos::Array<std::string> >("type", std::vector<std::string>({"scalar"}))
       .set<Teuchos::Array<int> >("number", std::vector<int>({nk}));
 
-  Teuchos::RCP<Reaction> op_reac = Teuchos::rcp(new Reaction(plist, mesh0));
+  Teuchos::RCP<PDE_Reaction> op_reac = Teuchos::rcp(new PDE_Reaction(plist, mesh0));
   auto global_reac = op_reac->global_operator();
 
   Teuchos::RCP<std::vector<WhetStone::Polynomial> > jac = 

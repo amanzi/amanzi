@@ -29,9 +29,9 @@
 #include "Tensor.hh"
 
 // Amanzi::Operators
-#include "Abstract.hh"
 #include "Accumulation.hh"
-#include "Elasticity.hh"
+#include "PDE_Abstract.hh"
+#include "PDE_Elasticity.hh"
 #include "TreeOperator.hh"
 
 #include "AnalyticElasticity02.hh"
@@ -117,14 +117,14 @@ TEST(OPERATOR_STOKES_EXACTNESS) {
 
   // create elasticity operator 
   Teuchos::ParameterList op_list = plist.get<Teuchos::ParameterList>("PK operator").sublist("elasticity operator");
-  Teuchos::RCP<Elasticity> op00 = Teuchos::rcp(new Elasticity(op_list, mesh));
+  Teuchos::RCP<PDE_Elasticity> op00 = Teuchos::rcp(new PDE_Elasticity(op_list, mesh));
   op00->SetTensorCoefficient(K);
   op00->SetBCs(bcf, bcf);
   op00->AddBCs(bcv, bcv);
 
   // create divergence operator
   op_list = plist.get<Teuchos::ParameterList>("PK operator").sublist("divergence operator");
-  Teuchos::RCP<Abstract> op10 = Teuchos::rcp(new Abstract(op_list, mesh));
+  Teuchos::RCP<PDE_Abstract> op10 = Teuchos::rcp(new PDE_Abstract(op_list, mesh));
   op10->SetBCs(bcf, bcf);
   op10->AddBCs(bcv, bcv);
 

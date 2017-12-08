@@ -18,11 +18,11 @@
 #include "boost/algorithm/string.hpp"
 
 // Amanzi
-#include "DiffusionFactory.hh"
 #include "errors.hh"
 #include "exceptions.hh"
 #include "LinearOperatorFactory.hh"
 #include "MFD3D_Diffusion.hh"
+#include "PDE_DiffusionFactory.hh"
 #include "primary_variable_field_evaluator.hh"
 #include "TimestepControllerFactory.hh"
 #include "Tensor.hh"
@@ -310,7 +310,7 @@ void Darcy_PK::Initialize(const Teuchos::Ptr<State>& S)
   Teuchos::ParameterList& oplist = fp_list_->sublist("operators")
                                             .sublist("diffusion operator")
                                             .sublist("matrix");
-  Operators::DiffusionFactory opfactory;
+  Operators::PDE_DiffusionFactory opfactory;
   op_diff_ = opfactory.Create(oplist, mesh_, op_bc_, rho_ * rho_ / mu, gravity_);
   op_diff_->SetBCs(op_bc_, op_bc_);
 

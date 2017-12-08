@@ -30,8 +30,8 @@
 
 // Operators
 #include "Analytic05.hh"
-#include "DiffusionMFD.hh"
 #include "OperatorDefs.hh"
+#include "PDE_DiffusionMFD.hh"
 #include "UpwindSecondOrder.hh"
 
 
@@ -102,7 +102,7 @@ TEST(OPERATOR_DIFFUSION_NONSYMMETRIC) {
   }
 
   // create diffusion operator 
-  Teuchos::RCP<Diffusion> op = Teuchos::rcp(new DiffusionMFD(op_list, mesh));
+  Teuchos::RCP<PDE_Diffusion> op = Teuchos::rcp(new PDE_DiffusionMFD(op_list, mesh));
   op->SetBCs(bc, bc);
   const CompositeVectorSpace& cvs = op->global_operator()->DomainMap();
 
