@@ -28,9 +28,9 @@
 #include "Tensor.hh"
 
 // Amanzi::Operators
-#include "Accumulation.hh"
-#include "PDE_Electromagnetics.hh"
 #include "OperatorDefs.hh"
+#include "PDE_Accumulation.hh"
+#include "PDE_Electromagnetics.hh"
 
 #include "AnalyticElectromagnetics01.hh"
 #include "AnalyticElectromagnetics02.hh"
@@ -167,7 +167,7 @@ void CurlCurl(double c_t, double tolerance, bool initial_guess) {
   phi.PutScalar(c_t);
 
   Teuchos::RCP<Operator> global_op = op_curlcurl->global_operator();
-  Teuchos::RCP<Accumulation> op_acc = Teuchos::rcp(new Accumulation(AmanziMesh::EDGE, global_op));
+  Teuchos::RCP<PDE_Accumulation> op_acc = Teuchos::rcp(new PDE_Accumulation(AmanziMesh::EDGE, global_op));
 
   double dT = 1.0;
   op_acc->AddAccumulationDelta(solution, phi, phi, dT, "edge");

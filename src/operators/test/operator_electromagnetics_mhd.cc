@@ -29,9 +29,9 @@
 #include "Tensor.hh"
 
 // Amanzi::Operators
-#include "Accumulation.hh"
 #include "Operator.hh"
 #include "OperatorDefs.hh"
+#include "PDE_Accumulation.hh"
 #include "PDE_ElectromagneticsMHD.hh"
 #include "PDE_ElectromagneticsMHD_TM.hh"
 
@@ -157,7 +157,7 @@ void ResistiveMHD2D(double dt, double tend,
     CompositeVector phi(cvs_e);
     phi.PutScalar(1.0 / Kc(0,0));
 
-    Teuchos::RCP<Accumulation> op_acc = Teuchos::rcp(new Accumulation(AmanziMesh::NODE, global_op));
+    Teuchos::RCP<PDE_Accumulation> op_acc = Teuchos::rcp(new PDE_Accumulation(AmanziMesh::NODE, global_op));
     op_acc->SetBCs(bc1, bc1);
     op_acc->AddAccumulationTerm(phi, 1.0, "node");
 

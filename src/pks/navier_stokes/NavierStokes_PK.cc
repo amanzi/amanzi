@@ -190,8 +190,8 @@ void NavierStokes_PK::Initialize(const Teuchos::Ptr<State>& S)
 
   // -- create accumulation term (velocity block, only nodal unknowns)
   Operators::Schema schema(AmanziMesh::NODE, 2);  // FIXME
-  op_matrix_acc_ = Teuchos::rcp(new Operators::Accumulation(schema, op_matrix_elas_->global_operator()));
-  op_preconditioner_acc_ = Teuchos::rcp(new Operators::Accumulation(schema, op_preconditioner_elas_->global_operator()));
+  op_matrix_acc_ = Teuchos::rcp(new Operators::PDE_Accumulation(schema, op_matrix_elas_->global_operator()));
+  op_preconditioner_acc_ = Teuchos::rcp(new Operators::PDE_Accumulation(schema, op_preconditioner_elas_->global_operator()));
 
   // -- create convection term
   Teuchos::ParameterList& tmp3 = ns_list_->sublist("operators")
@@ -200,7 +200,7 @@ void NavierStokes_PK::Initialize(const Teuchos::Ptr<State>& S)
   op_preconditioner_conv_ = Teuchos::rcp(new Operators::PDE_Abstract(tmp3, op_preconditioner_elas_->global_operator()));
 
   // -- create pressure block (for preconditioner)
-  op_mass_ = Teuchos::rcp(new Operators::Accumulation(AmanziMesh::CELL, mesh_));
+  op_mass_ = Teuchos::rcp(new Operators::PDE_Accumulation(AmanziMesh::CELL, mesh_));
 
   // -- matrix and preconditioner
   op_matrix_ = Teuchos::rcp(new Operators::TreeOperator(Teuchos::rcpFromRef(soln_->Map())));

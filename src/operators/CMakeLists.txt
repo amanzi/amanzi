@@ -75,8 +75,8 @@ set(operators_inc_files
     Operator_Node.hh
     Operator_Edge.hh
     BoundaryFlux.hh
-    Accumulation.hh
     PDE_Abstract.hh
+    PDE_Accumulation.hh
     PDE_Advection.hh
     PDE_AdvectionUpwind.hh
     PDE_AdvectionRiemann.hh
@@ -120,7 +120,7 @@ add_amanzi_library(operators
                           Operator_FaceCellSff.cc
                           Operator_ConsistentFace.cc
                           Operator_Schema.cc
-                          Accumulation.cc
+                          PDE_Accumulation.cc
                           PDE_Abstract.cc
                           PDE_AdvectionUpwind.cc PDE_AdvectionRiemann.cc
                           PDE_DiffusionMFD.cc PDE_DiffusionMFDwithGravity.cc

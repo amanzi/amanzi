@@ -26,7 +26,7 @@
 #include "Schema.hh"
 
 /*!
-``Accumulation`` assembles the discrete form of :math:`\frac{\partial A}{\partial t}`.
+``PDE_Accumulation`` assembles the discrete form of :math:`\frac{\partial A}{\partial t}`.
 
 This class is usually used as part of a preconditioner, providing the linearization:
 
@@ -42,9 +42,9 @@ No options are available here.
 namespace Amanzi {
 namespace Operators {
 
-class Accumulation : public PDE_HelperBCsList {
+class PDE_Accumulation : public PDE_HelperBCsList {
  public:
-  Accumulation(AmanziMesh::Entity_kind entity, Teuchos::RCP<Operator> global_op)
+  PDE_Accumulation(AmanziMesh::Entity_kind entity, Teuchos::RCP<Operator> global_op)
     : global_op_(global_op),
       mesh_(Teuchos::null)
   {
@@ -52,7 +52,7 @@ class Accumulation : public PDE_HelperBCsList {
     InitAccumulation_(schema);
   }
 
-  Accumulation(AmanziMesh::Entity_kind entity, Teuchos::RCP<AmanziMesh::Mesh> mesh)
+  PDE_Accumulation(AmanziMesh::Entity_kind entity, Teuchos::RCP<AmanziMesh::Mesh> mesh)
     : global_op_(Teuchos::null),
       mesh_(mesh)
   {
@@ -60,7 +60,7 @@ class Accumulation : public PDE_HelperBCsList {
     InitAccumulation_(schema);
   }
 
-  Accumulation(AmanziMesh::Entity_kind entity, Teuchos::RCP<const AmanziMesh::Mesh> mesh)
+  PDE_Accumulation(AmanziMesh::Entity_kind entity, Teuchos::RCP<const AmanziMesh::Mesh> mesh)
     : global_op_(Teuchos::null),
       mesh_(mesh)
   {
@@ -68,7 +68,7 @@ class Accumulation : public PDE_HelperBCsList {
     InitAccumulation_(schema);
   }
 
-  Accumulation(Teuchos::ParameterList& plist, Teuchos::RCP<Operator> global_op)
+  PDE_Accumulation(Teuchos::ParameterList& plist, Teuchos::RCP<Operator> global_op)
     : global_op_(global_op),
       mesh_(Teuchos::null)
   {
@@ -79,7 +79,7 @@ class Accumulation : public PDE_HelperBCsList {
     InitAccumulation_(schema, plist.get<bool>("surface operator", false));
   }
 
-  Accumulation(Teuchos::ParameterList& plist, Teuchos::RCP<AmanziMesh::Mesh> mesh)
+  PDE_Accumulation(Teuchos::ParameterList& plist, Teuchos::RCP<AmanziMesh::Mesh> mesh)
     : global_op_(Teuchos::null),
       mesh_(mesh)
   {
@@ -90,7 +90,7 @@ class Accumulation : public PDE_HelperBCsList {
     InitAccumulation_(schema, plist.get<bool>("surface operator", false));
   }
 
-  Accumulation(Teuchos::ParameterList& plist, Teuchos::RCP<const AmanziMesh::Mesh> mesh)
+  PDE_Accumulation(Teuchos::ParameterList& plist, Teuchos::RCP<const AmanziMesh::Mesh> mesh)
     : global_op_(Teuchos::null),
       mesh_(mesh)
   {
@@ -102,7 +102,7 @@ class Accumulation : public PDE_HelperBCsList {
     InitAccumulation_(schema, surface);
   }
   
-  Accumulation(const Schema& schema, Teuchos::RCP<Operator> global_op)
+  PDE_Accumulation(const Schema& schema, Teuchos::RCP<Operator> global_op)
     : global_op_(global_op),
       mesh_(Teuchos::null)
   {

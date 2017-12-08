@@ -14,7 +14,6 @@
 
 #include "MFD3D_Diffusion.hh"
 
-#include "Accumulation.hh"
 #include "Operator_Cell.hh"
 #include "Operator_Edge.hh"
 #include "Operator_Node.hh"
@@ -22,6 +21,7 @@
 #include "Op_Edge_Edge.hh"
 #include "Op_Node_Node.hh"
 #include "Op_SurfaceCell_SurfaceCell.hh"
+#include "PDE_Accumulation.hh"
 
 namespace Amanzi {
 namespace Operators {
@@ -29,7 +29,7 @@ namespace Operators {
 /* ******************************************************************
 * Modifier for diagonal operators.  Op += du
 ****************************************************************** */
-void Accumulation::AddAccumulationTerm(
+void PDE_Accumulation::AddAccumulationTerm(
     const CompositeVector& du, const std::string& name)
 {
   Teuchos::RCP<Op> op = FindOp_(name);
@@ -49,7 +49,7 @@ void Accumulation::AddAccumulationTerm(
 /* ******************************************************************
 * Modifier for diagonal operators.  Op += du * vol / dt.
 ****************************************************************** */
-void Accumulation::AddAccumulationTerm(
+void PDE_Accumulation::AddAccumulationTerm(
     const CompositeVector& du, double dT, const std::string& name)
 {
   Teuchos::RCP<Op> op = FindOp_(name);
@@ -76,7 +76,7 @@ void Accumulation::AddAccumulationTerm(
 * Op  += ss * vol / dt
 * RHS += s0 * vol * u0 / dt
 ****************************************************************** */
-void Accumulation::AddAccumulationDelta(
+void PDE_Accumulation::AddAccumulationDelta(
     const CompositeVector& u0,
     const CompositeVector& s0, const CompositeVector& ss,
     double dT, const std::string& name)
@@ -111,7 +111,7 @@ void Accumulation::AddAccumulationDelta(
 * Op  += vol / dt
 * RHS += vol * u0 / dt
 ****************************************************************** */
-void Accumulation::AddAccumulationDelta(
+void PDE_Accumulation::AddAccumulationDelta(
     const CompositeVector& u0,
     double dT, const std::string& name)
 {
@@ -142,7 +142,7 @@ void Accumulation::AddAccumulationDelta(
 * Op  += ss
 * RHS += ss * u0
 ****************************************************************** */
-void Accumulation::AddAccumulationDeltaNoVolume(
+void PDE_Accumulation::AddAccumulationDeltaNoVolume(
     const CompositeVector& u0, const CompositeVector& ss, const std::string& name)
 {
   if (!ss.HasComponent(name)) ASSERT(false);
@@ -169,7 +169,7 @@ void Accumulation::AddAccumulationDeltaNoVolume(
 /* ******************************************************************
 * Calculate entity volume for component "name" of vector ss.
 ****************************************************************** */
-void Accumulation::CalculateEntityVolume_(
+void PDE_Accumulation::CalculateEntityVolume_(
     CompositeVector& volume, const std::string& name)
 {
   AmanziMesh::Entity_ID_List nodes, edges;
@@ -231,7 +231,7 @@ void Accumulation::CalculateEntityVolume_(
 * Note: When complex schema is used to create a set of local ops, the
 * the local local_op_ is not well defined.
 ****************************************************************** */
-void Accumulation::InitAccumulation_(const Schema& schema, bool surf)
+void PDE_Accumulation::InitAccumulation_(const Schema& schema, bool surf)
 {
   Errors::Message msg;
 
@@ -340,7 +340,7 @@ void Accumulation::InitAccumulation_(const Schema& schema, bool surf)
 /* ******************************************************************
 * Apply boundary conditions to 
 ****************************************************************** */
-void Accumulation::ApplyBCs()
+void PDE_Accumulation::ApplyBCs()
 {
   for (auto bc = bcs_trial_.begin(); bc != bcs_trial_.end(); ++bc) {
     const std::vector<int>& bc_model = (*bc)->bc_model();
@@ -367,7 +367,7 @@ void Accumulation::ApplyBCs()
 /* ******************************************************************
 * Return operator with the given base.
 ****************************************************************** */
-Teuchos::RCP<Op> Accumulation::FindOp_(const std::string& name) const
+Teuchos::RCP<Op> PDE_Accumulation::FindOp_(const std::string& name) const
 {
   for (auto it = local_ops_.begin(); it != local_ops_.end(); ++it) {
     const Schema& schema = (*it)->schema_row();

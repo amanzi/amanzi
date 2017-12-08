@@ -29,7 +29,7 @@
 #include "Tensor.hh"
 
 // Amanzi::Operators
-#include "Accumulation.hh"
+#include "PDE_Accumulation.hh"
 #include "PDE_Abstract.hh"
 #include "PDE_Elasticity.hh"
 #include "TreeOperator.hh"
@@ -129,7 +129,7 @@ TEST(OPERATOR_STOKES_EXACTNESS) {
   op10->AddBCs(bcv, bcv);
 
   // create pressure block (for preconditioner)
-  Teuchos::RCP<Accumulation> pc11 = Teuchos::rcp(new Accumulation(AmanziMesh::CELL, mesh));
+  Teuchos::RCP<PDE_Accumulation> pc11 = Teuchos::rcp(new PDE_Accumulation(AmanziMesh::CELL, mesh));
   Teuchos::RCP<Operator> global11 = pc11->global_operator();
 
   // create tree operator

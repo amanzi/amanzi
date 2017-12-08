@@ -19,10 +19,10 @@
 #include "Epetra_MpiComm.h"
 
 // Amanzi
-#include "Accumulation.hh"
 #include "GMVMesh.hh"
 #include "MeshFactory.hh"
 #include "Operator.hh"
+#include "PDE_Accumulation.hh"
 #include "PDE_DiffusionFactory.hh"
 #include "PDE_DiffusionMFD.hh"
 #include "SolverFactory.hh"
@@ -81,7 +81,7 @@ class HeatConduction : public AmanziSolvers::SolverFnBase<CompositeVector> {
   Teuchos::RCP<CompositeVectorSpace> cvs_;
   Teuchos::RCP<Operators::Operator> op_;
   Teuchos::RCP<Operators::PDE_Diffusion> op_diff_;
-  Teuchos::RCP<Operators::Accumulation> op_acc_;
+  Teuchos::RCP<Operators::PDE_Accumulation> op_acc_;
 
   Teuchos::RCP<Operators::BCs> bc_;  
 
@@ -191,7 +191,7 @@ void HeatConduction::Init(
   op_diff_ = Teuchos::rcp(new Operators::PDE_DiffusionMFD(olist, mesh_));
   op_diff_->SetBCs(bc_, bc_);
   op_ = op_diff_->global_operator();
-  op_acc_ = Teuchos::rcp(new Operators::Accumulation(AmanziMesh::CELL, op_));
+  op_acc_ = Teuchos::rcp(new Operators::PDE_Accumulation(AmanziMesh::CELL, op_));
   op_->Init();
 
   // set up the local matrices

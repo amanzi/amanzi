@@ -32,7 +32,7 @@
 #include "Tensor.hh"
 
 // Amanzi::Operators
-#include "Accumulation.hh"
+#include "PDE_Accumulation.hh"
 #include "OperatorDefs.hh"
 #include "Operator.hh"
 #include "PDE_DiffusionFV.hh"
@@ -170,7 +170,7 @@ void RunTestMarshakLogical(std::string op_list_name) {
     Teuchos::RCP<Operator> global_op = op.global_operator();
 
     // add accumulation terms
-    Accumulation op_acc(AmanziMesh::CELL, global_op);
+    PDE_Accumulation op_acc(AmanziMesh::CELL, global_op);
     op_acc.AddAccumulationDelta(solution, heat_capacity, heat_capacity, dT, "cell");
 
     // apply BCs and assemble

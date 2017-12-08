@@ -28,7 +28,6 @@
 #include "Tensor.hh"
 
 // Amanzi::Operators
-#include "Accumulation.hh"
 #include "OperatorDefs.hh"
 #include "PDE_DiffusionNLFVwithGravity.hh"
 
