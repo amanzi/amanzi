@@ -116,14 +116,16 @@ if (BUILD_TESTS AND ENABLE_Unstructured)
                               ${UnitTest_LIBRARIES} ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES}
                               ${XERCES_LIBRARIES} ${XERCES_ICU_LIBRARIES} ${NOX_LIBRARIES})
 
-    add_amanzi_test(chemistry_alquimia_pk chemistry_alquimia_pk
-                    KIND int
-                    SOURCE test/Main.cc test/chemistry_alquimia_pk.cc
-                    LINK_LIBS chemistry_pk state pks data_structures
-                              mesh_functions mesh mesh_factory error_handling interface
-                              ${UnitTest_LIBRARIES} ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES}
-                              ${HDF5_LIBRARIES} ${XERCESC_LIBRARIES} ${XERCES_ICU_LIBRARIES}
-                              ${NOX_LIBRARIES})
+    if (ENABLE_ALQUIMIA)
+      add_amanzi_test(chemistry_alquimia_pk chemistry_alquimia_pk
+                      KIND int
+                      SOURCE test/Main.cc test/chemistry_alquimia_pk.cc
+                      LINK_LIBS chemistry_pk state pks data_structures
+                                mesh_functions mesh mesh_factory error_handling interface
+                                ${UnitTest_LIBRARIES} ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES}
+                                ${HDF5_LIBRARIES} ${XERCESC_LIBRARIES} ${XERCES_ICU_LIBRARIES}
+                                ${NOX_LIBRARIES})
+    endif()
 
     # The following test is disabled in parallel environments. It has to be rewritten in order 
     # to function properly there.
