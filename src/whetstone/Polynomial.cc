@@ -344,6 +344,37 @@ int Polynomial::PolynomialPosition(const int* multi_index) const
 
 
 /* ******************************************************************
+* Change coordinates (x -> s) in the form x = x0 + B * s 
+****************************************************************** */
+void Polynomial::ChangeCoordinates(const AmanziGeometry::Point& x0,
+                                   const std::vector<AmanziGeometry::Point>& tau)
+{
+  int dnew = tau.size();
+  ASSERT(dnew > 0);
+
+  // new polynomial will be centered at x0
+  ChangeOrigin(x0);
+
+  // populate new polynomial using different algorithms
+  Polynomial tmp(dnew, order_);
+  for (auto it = begin(); it.end() <= end(); ++it) {
+    const int* multi_index = it.multi_index();
+    int m = it.MonomialOrder();
+    int k = it.MonomialPosition();
+    if (dnew == 1) {
+      double coef(coefs_[m](k));
+      for (int i = 0; i < d_; ++i) {
+        coef *= std::pow(tau[0][i], multi_index[i]);  
+      }
+      tmp(m, 0) += coef;
+    }
+  }  
+  
+  *this = tmp;
+}
+
+
+/* ******************************************************************
 * Fancy I/O
 ****************************************************************** */
 std::ostream& operator << (std::ostream& os, const Polynomial& p)

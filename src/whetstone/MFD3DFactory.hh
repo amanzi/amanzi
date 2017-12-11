@@ -23,6 +23,7 @@
 #include "DG_Modal.hh"
 #include "MFD3D.hh"
 #include "MFD3D_BernardiRaugel.hh"
+#include "MFD3D_CrouzeixRaviart.hh"
 #include "MFD3D_Diffusion.hh"
 #include "MFD3D_Generalized_Diffusion.hh"
 
@@ -58,6 +59,11 @@ Teuchos::RCP<BilinearForm> MFD3DFactory::Create(
   }
   else if (method == "BernardiRaugel") {
     Teuchos::RCP<MFD3D_BernardiRaugel> mfd = Teuchos::rcp(new MFD3D_BernardiRaugel(mesh));
+    return mfd;
+  } 
+  else if (method == "CrouzeixRaviart") {
+    Teuchos::RCP<MFD3D_CrouzeixRaviart> mfd = Teuchos::rcp(new MFD3D_CrouzeixRaviart(mesh));
+    mfd->set_order(method_order);
     return mfd;
   } 
   else if (method == "dg modal") {

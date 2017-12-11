@@ -67,6 +67,8 @@ class VectorPolynomial {
   friend Polynomial operator*(const VectorPolynomial& poly, const AmanziGeometry::Point& p) {
     int d(p.dim());
     Polynomial tmp(d, 0);
+    tmp.set_origin(poly[0].origin());
+
     for (int i = 0; i < d; ++i) {
       tmp += poly[i] * p[i];
     }

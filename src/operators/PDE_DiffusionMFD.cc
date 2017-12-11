@@ -19,6 +19,7 @@
 #include "LinearOperator.hh"
 #include "LinearOperatorFactory.hh"
 #include "MatrixFE.hh"
+#include "MFD3D_CrouzeixRaviart.hh"
 #include "MFD3D_Diffusion.hh"
 #include "PreconditionerFactory.hh"
 #include "SuperMap.hh"
@@ -414,7 +415,7 @@ void PDE_DiffusionMFD::UpdateMatricesEdge_()
   ASSERT(!scaled_constraint_);
 
   // update matrix blocks
-  WhetStone::MFD3D_Diffusion mfd(mesh_);
+  WhetStone::MFD3D_CrouzeixRaviart mfd(mesh_);
   mfd.ModifyStabilityScalingFactor(factor_);
 
   AmanziMesh::Entity_ID_List edges;
@@ -435,7 +436,7 @@ void PDE_DiffusionMFD::UpdateMatricesEdge_()
     int method = mfd_primary_;
     int ok = WhetStone::WHETSTONE_ELEMENTAL_MATRIX_FAILED;
 
-    ok = mfd.StiffnessMatrixEdge(c, K, Acell);
+    ok = mfd.StiffnessMatrix(c, K, Acell);
     method = mfd_secondary_;
 
     if (ok == WhetStone::WHETSTONE_ELEMENTAL_MATRIX_FAILED) {

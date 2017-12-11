@@ -7,6 +7,8 @@
   provided in the top-level COPYRIGHT file.
 
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
+
+  Example of usage this operator is in test/operators_elasticity.cc
 */
 
 #ifndef AMANZI_OPERATOR_PDE_ELASTICITY_HH_

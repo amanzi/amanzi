@@ -41,7 +41,7 @@ class BilinearForm : public virtual InnerProductL2,
 
   // additional members
   // -- low-order schemes require constant vector/tensor coefficients
-  //    we also specify location of the gradient operator in a biliner form
+  //    we also specify function to which gradient operator is applied
   virtual int AdvectionMatrix(int c, const AmanziGeometry::Point v, DenseMatrix& A, bool grad_on_test) = 0;
   virtual int DivergenceMatrix(int c, DenseMatrix& A) = 0;
 

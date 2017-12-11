@@ -40,11 +40,12 @@ add_amanzi_library(whetstone
                    SOURCE InnerProduct.cc 
                           DeRham_Node.cc DeRham_Edge.cc DeRham_Face.cc
                           MFD3D.cc
+                          MFD3D_BernardiRaugel.cc
+			  MFD3D_CrouzeixRaviart.cc
                           MFD3D_Diffusion.cc MFD3D_Diffusion_Surface.cc MFD3D_Diffusion_Other.cc 
                           MFD3D_Elasticity.cc 
                           MFD3D_Electromagnetics.cc MFD3D_Electromagnetics_Surface.cc
                           MFD3D_Generalized_Diffusion.cc
-                          MFD3D_BernardiRaugel.cc
                           DG_Modal.cc nlfv.cc 
                           Tensor.cc DenseMatrix.cc
                           Polynomial.cc VectorPolynomial.cc
@@ -57,11 +58,12 @@ add_amanzi_library(whetstone
                            InnerProductL2.hh InnerProductH1.hh BilinearForm.hh
                            DeRham_Node.hh DeRham_Edge.hh DeRham_Face.hh
                            MFD3D.hh
+                           MFD3D_BernardiRaugel.hh
+			   MFD3D_CrouzeixRaviart.hh
                            MFD3D_Diffusion.hh
                            MFD3D_Elasticity.hh
                            MFD3D_Electromagnetics.hh
                            MFD3D_Generalized_Diffusion.hh
-                           MFD3D_BernardiRaugel.hh
                            MFD3DFactory.hh
                            nlfv.hh
                            Polynomial.hh VectorPolynomial.hh Tensor.hh
@@ -127,7 +129,9 @@ if ( BUILD_TESTS )
     # Test: matrices for DG methods
     add_amanzi_test(whetstone_dg whetstone_dg
                     KIND unit
-                    SOURCE test/Main.cc test/whetstone_dg.cc
+                    SOURCE test/Main.cc test/whetstone_polynomials.cc
+                                        test/whetstone_dg.cc
+                                        test/whetstone_projectors.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
     # Test: matrices for Derham complex
