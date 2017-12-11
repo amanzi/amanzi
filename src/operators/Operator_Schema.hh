@@ -29,8 +29,8 @@ namespace Operators {
 
 class Operator_Schema : public Operator {
  public:
-  // main constructor
-  // The input CVS is the domain and range of the operator.
+  // constructors
+  // general rectangular operator
   Operator_Schema(const Teuchos::RCP<const CompositeVectorSpace>& cvs_row,
                   const Teuchos::RCP<const CompositeVectorSpace>& cvs_col,
                   Teuchos::ParameterList& plist,
@@ -38,6 +38,14 @@ class Operator_Schema : public Operator {
                   const Schema& schema_col) :
       Operator(cvs_row, cvs_col, plist, schema_row, schema_col) {
     set_schema_string(schema_col.CreateUniqueName());
+  }
+
+  // bijective (square) operator
+  Operator_Schema(const Teuchos::RCP<const CompositeVectorSpace>& cvs,
+                  Teuchos::ParameterList& plist,
+                  const Schema& schema) :
+      Operator(cvs, cvs, plist, schema, schema) {
+    set_schema_string(schema.CreateUniqueName());
   }
 
   // required methods

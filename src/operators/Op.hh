@@ -27,8 +27,8 @@
   1. They provide a class name to the schema, enabling visitor patterns.
   2. They are a container for local matrices.
   
-  This Op class is for storing local matrices of length ncells and with dofs
-  on cells and faces.
+  This Op class is a container for storing local matrices that spans 
+  the whole mesh. The dofs vary and defined by operator's schema.
 */
 
 namespace Amanzi {

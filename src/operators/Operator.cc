@@ -48,7 +48,7 @@ namespace Amanzi {
 namespace Operators {
 
 /* ******************************************************************
-* Default constructor.
+* Deprecated constructor: still supported for compatability
 ****************************************************************** */
 Operator::Operator(const Teuchos::RCP<const CompositeVectorSpace>& cvs,
                    Teuchos::ParameterList& plist,
@@ -88,7 +88,8 @@ Operator::Operator(const Teuchos::RCP<const CompositeVectorSpace>& cvs,
 
 
 /* ******************************************************************
-* New default constructor. Code of two constructors can be optimized.
+* New default constructor for general (rectangular) operator.
+* Code of two constructors can be optimized.
 ****************************************************************** */
 Operator::Operator(const Teuchos::RCP<const CompositeVectorSpace>& cvs_row,
                    const Teuchos::RCP<const CompositeVectorSpace>& cvs_col,

@@ -99,7 +99,7 @@ void PDE_Elasticity::Init_(Teuchos::ParameterList& plist)
       cvs->AddComponent(name, it->kind, it->num);
     }
 
-    global_op_ = Teuchos::rcp(new Operator_Schema(cvs, cvs, plist, my_schema, my_schema));
+    global_op_ = Teuchos::rcp(new Operator_Schema(cvs, plist, my_schema));
   } else {
     // constructor was given an Operator
     global_schema_col_ = global_op_->schema_col();

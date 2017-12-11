@@ -143,19 +143,27 @@ class Op_SurfaceFace_SurfaceCell;
 
 class Operator {
  public:
-  // main constructor
+  // constructors
   // At the moment CVS is the domain and range of the operator
   Operator() { apply_calls_ = 0; }
 
+  // deprecated but yet supported
   Operator(const Teuchos::RCP<const CompositeVectorSpace>& cvs,
            Teuchos::ParameterList& plist,
            int schema);
 
-  Operator(const Teuchos::RCP<const CompositeVectorSpace>& cvs_row_,
-           const Teuchos::RCP<const CompositeVectorSpace>& cvs_col_,
+  // general operator (domain may differ from range)
+  Operator(const Teuchos::RCP<const CompositeVectorSpace>& cvs_row,
+           const Teuchos::RCP<const CompositeVectorSpace>& cvs_col,
            Teuchos::ParameterList& plist,
-           const Schema& schema_row_,
-           const Schema& schema_col_);
+           const Schema& schema_row,
+           const Schema& schema_col);
+
+  // bijective operator (domain = range)
+  Operator(const Teuchos::RCP<const CompositeVectorSpace>& cvs,
+           Teuchos::ParameterList& plist,
+           const Schema& schema) :
+      Operator(cvs, cvs, plist, schema, schema) {};
 
   virtual ~Operator() = default;
   
@@ -244,6 +252,7 @@ class Operator {
   typedef std::vector<Teuchos::RCP<Op> >::iterator op_iterator;
   op_iterator OpBegin() { return ops_.begin(); }
   op_iterator OpEnd() { return ops_.end(); }
+  int OpSize() { return ops_.size(); }
   op_iterator FindMatrixOp(int schema_dofs, int matching_rule, bool action);
 
   // block mutate
