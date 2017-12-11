@@ -48,24 +48,29 @@ TEST(OPERATOR_ELASTICITY_EXACTNESS) {
   if (MyPID == 0) std::cout << "\nTest: 2D elasticity: exactness test" << std::endl;
 
   // read parameter list
+  // -- it specifies details of the mesh, elasticity operator, and solver
   std::string xmlFileName = "test/operator_elasticity.xml";
   Teuchos::ParameterXMLFileReader xmlreader(xmlFileName);
   Teuchos::ParameterList plist = xmlreader.getParameters();
   Teuchos::ParameterList op_list = plist.get<Teuchos::ParameterList>("PK operator")
                                         .sublist("elasticity operator");
 
-  // create an SIMPLE mesh framework
+  // create the MSTK mesh framework 
+  // -- geometric model is not created. Instead, we specify boundary conditions
+  // -- using centroids of mesh faces.
   MeshFactory meshfactory(&comm);
   meshfactory.preference(FrameworkPreference({MSTK, STKMESH}));
   Teuchos::RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 4, 5, Teuchos::null);
 
-  // modify diffusion coefficient
+  // -- general information about mesh
   int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   int nnodes = mesh->num_entities(AmanziMesh::NODE, AmanziMesh::OWNED);
   int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
   int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
   int nnodes_wghost = mesh->num_entities(AmanziMesh::NODE, AmanziMesh::USED);
 
+  // select an analytic solution for error calculations and setup of
+  // boundary conditions
   AnalyticElasticity01 ana(mesh);
 
   Teuchos::RCP<std::vector<WhetStone::Tensor> > K = Teuchos::rcp(new std::vector<WhetStone::Tensor>());
@@ -75,8 +80,8 @@ TEST(OPERATOR_ELASTICITY_EXACTNESS) {
     K->push_back(Kc);
   }
 
-  // create boundary data
-  // -- on faces
+  // populate boundary conditions: type (called model) and value
+  // -- normal component of velocity on boundary faces (a scalar)
   Teuchos::RCP<BCs> bcf = Teuchos::rcp(new BCs(mesh, AmanziMesh::FACE, SCHEMA_DOFS_SCALAR));
   std::vector<int>& bcf_model = bcf->bc_model();
   std::vector<double>& bcf_value = bcf->bc_value();
@@ -93,7 +98,7 @@ TEST(OPERATOR_ELASTICITY_EXACTNESS) {
     }
   }
 
-  // -- at nodes
+  // -- full velocity at boundary nodes (a vector)
   Point xv(2);
   Teuchos::RCP<BCs> bcv = Teuchos::rcp(new BCs(mesh, AmanziMesh::NODE, SCHEMA_DOFS_POINT));
   std::vector<int>& bcv_model = bcv->bc_model();
@@ -109,13 +114,15 @@ TEST(OPERATOR_ELASTICITY_EXACTNESS) {
     }
   }
 
-  // create diffusion operator 
+  // create a PDE: operator and boundary conditions
+  // -- XML list speficies discretization method and location of degrees of freedom
+  // -- (called schema). This seems redundant but only when use a low-order method.
   Teuchos::RCP<PDE_Elasticity> op = Teuchos::rcp(new PDE_Elasticity(op_list, mesh));
   op->SetBCs(bcf, bcf);
   op->AddBCs(bcv, bcv);
   const CompositeVectorSpace& cvs = op->global_operator()->DomainMap();
 
-  // create and initialize state variables.
+  // create and initialize solution
   CompositeVector solution(cvs);
   solution.PutScalar(0.0);
 

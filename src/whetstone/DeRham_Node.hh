@@ -9,7 +9,7 @@
 
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 
-  Derham complex: mimetic inner products on faces.
+  Derham complex: mimetic inner products at nodes.
 */
 
 #ifndef AMANZI_DERHAM_NODE_HH_

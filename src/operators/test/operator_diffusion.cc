@@ -61,14 +61,18 @@ void RunTestDiffusionMixed(double gravity) {
                             << " for mixed discretization, g=" << gravity << std::endl;
 
   // read parameter list
+  // -- it specifies details of the mesh, diffusion operator, and solver
   std::string xmlFileName = "test/operator_diffusion.xml";
   ParameterXMLFileReader xmlreader(xmlFileName);
   ParameterList plist = xmlreader.getParameters();
 
-  // create an SIMPLE mesh framework
+  // create the MSTK mesh framework 
+  // -- geometric model is defined in the region sublist of XML list
   ParameterList region_list = plist.get<Teuchos::ParameterList>("regions");
   Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(2, region_list, &comm));
 
+  // -- provide at lest one framework to the mesh factory. The first available
+  // -- framework will be used
   MeshFactory meshfactory(&comm);
   meshfactory.preference(FrameworkPreference({MSTK, STKMESH}));
   // RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 10, 1, gm);

@@ -75,10 +75,6 @@ class MFD3D_Diffusion : public virtual MFD3D,
   int StiffnessMatrixOptimized(int c, const Tensor& K, DenseMatrix& A);
   int StiffnessMatrixMMatrix(int c, const Tensor& K, DenseMatrix& A);
 
-  // -- edge-based degrees of freedom
-  int H1consistencyEdge(int cell, const Tensor& T, DenseMatrix& N, DenseMatrix& Ac);
-  int StiffnessMatrixEdge(int c, const Tensor& K, DenseMatrix& A);
-
   // -- tensor is product k K
   int L2consistencyInverseDivKScaled(int c, const Tensor& K,
                                      double kmean, const AmanziGeometry::Point& kgrad,
