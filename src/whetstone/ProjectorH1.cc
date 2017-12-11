@@ -12,6 +12,7 @@
   Algorithms underpinning elliptic projectors.
 */
 
+#include "MFD3D_CrouzeixRaviart.hh"
 #include "ProjectorH1.hh"
 
 namespace Amanzi {
@@ -116,6 +117,24 @@ void ProjectorH1::HarmonicP1_Face(
     uf[i].set_origin(xf0);
     uf[i].ChangeOrigin(zero);
   }
+}
+
+
+/* ******************************************************************
+* Enegy projector on space of polynomials of order k in cell c.
+* Uniquness require to specify its value at cell centroid.
+****************************************************************** */
+void ProjectorH1::HarmonicPk_Cell(
+    int c, const AmanziGeometry::Point& p0, int order,
+    const std::vector<VectorPolynomial>& vf, VectorPolynomial& uc) const
+{
+  // calculate stiffness matrix
+  Tensor T(d_, 0);
+  DenseMatrix N, R, Ac, A, Gramm;
+  MFD3D_CrouzeixRaviart mfd(mesh_);
+
+  T(0, 0) = 1.0;
+  mfd.H1consistencyHO(c, order, T, N, R, Ac, Gramm);  
 }
 
 }  // namespace WhetStone

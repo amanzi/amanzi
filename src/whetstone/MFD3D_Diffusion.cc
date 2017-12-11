@@ -216,73 +216,6 @@ int MFD3D_Diffusion::H1consistency(
 
 
 /* ******************************************************************
-* Consistency condition for stiffness matrix in heat conduction. 
-* Only the upper triangular part of Ac is calculated.
-* The degrees of freedom are on edges.
-****************************************************************** */
-int MFD3D_Diffusion::H1consistencyEdge(
-    int c, const Tensor& K, DenseMatrix& N, DenseMatrix& Ac)
-{
-  ASSERT(d_ == 2);
-
-  Entity_ID_List edges, faces, face_edges;
-  std::vector<int> dirs, map;
-
-  mesh_->cell_get_edges(c, &edges);
-  int nedges = edges.size();
-
-  N.Reshape(nedges, d_ + 1);
-  Ac.Reshape(nedges, nedges);
-
-  mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
-  int num_faces = faces.size();
-
-  // to calculate matrix R, we use temporary matrix N 
-  N.PutScalar(0.0);
-
-  for (int i = 0; i < num_faces; i++) {
-    int f = faces[i];
-    const AmanziGeometry::Point& normal = mesh_->face_normal(f);
-
-    if (d_ == 2) {
-      for (int k = 0; k < d_; k++) N(i, k) += normal[k] * dirs[i];
-    } else {
-      mesh_->face_to_cell_edge_map(f, c, &map);
-      int num_face_edges = map.size();
-
-      for (int j = 0; j < num_face_edges; j++) {
-        for (int k = 0; k < d_; k++) N(map[j], k) += normal[k] * dirs[i];
-      }
-    }
-  }
-
-  // calculate R K R^T / volume
-  AmanziGeometry::Point v1(d_), v2(d_);
-  double volume = mesh_->cell_volume(c);
-  for (int i = 0; i < nedges; i++) {
-    for (int k = 0; k < d_; k++) v1[k] = N(i, k);
-    v2 = K * v1;
-
-    for (int j = i; j < nedges; j++) {
-      for (int k = 0; k < d_; k++) v1[k] = N(j, k);
-      Ac(i, j) = (v1 * v2) / volume;
-    }
-  }
-
-  // calculate N
-  const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
-  for (int i = 0; i < nedges; i++) {
-    int e = edges[i];
-    const AmanziGeometry::Point& xe = mesh_->edge_centroid(e);
-    for (int k = 0; k < d_; k++) N(i, k) = xe[k] - xc[k];
-    N(i, d_) = 1;  // additional column is added to the consistency condition
-  }
-
-  return WHETSTONE_ELEMENTAL_MATRIX_OK;
-}
-
-
-/* ******************************************************************
 * Mass matrix in space of fluxes.
 ****************************************************************** */
 int MFD3D_Diffusion::MassMatrixScaledArea(int c, const Tensor& K, DenseMatrix& M)
@@ -383,21 +316,6 @@ int MFD3D_Diffusion::StiffnessMatrixMMatrix(int c, const Tensor& K, DenseMatrix&
 
   A *= s;
   simplex_functional_ *= s;
-  return WHETSTONE_ELEMENTAL_MATRIX_OK;
-}
-
-
-/* ******************************************************************
-* Stiffness matrix: the standard algorithm. DOFs are on edges.
-****************************************************************** */
-int MFD3D_Diffusion::StiffnessMatrixEdge(int c, const Tensor& K, DenseMatrix& A)
-{
-  DenseMatrix N;
-
-  int ok = H1consistencyEdge(c, K, N, A);
-  if (ok) return ok;
-
-  StabilityScalar_(N, A);
   return WHETSTONE_ELEMENTAL_MATRIX_OK;
 }
 

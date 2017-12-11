@@ -19,6 +19,7 @@
 #include "MeshAudit.hh"
 #include "Point.hh"
 
+#include "MFD3D_CrouzeixRaviart.hh"
 #include "MFD3D_Diffusion.hh"
 #include "MFD3D_Generalized_Diffusion.hh"
 #include "Tensor.hh"
@@ -186,7 +187,7 @@ TEST(DARCY_MASS_3D) {
 
 
 /* **************************************************************** */
-TEST(DARCY_MASS_3D_GENERALIZED_POYHEDRON) {
+TEST(DARCY_MASS_3D_GENERALIZED_POLYHEDRON) {
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::WhetStone;
@@ -603,7 +604,7 @@ TEST(DARCY_STIFFNESS_2D_EDGE) {
   // RCP<Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 1, 1); 
   RCP<Mesh> mesh = meshfactory("test/one_cell2.exo", Teuchos::null, true, true); 
  
-  MFD3D_Diffusion mfd(mesh);
+  MFD3D_CrouzeixRaviart mfd(mesh);
 
   int nedges = 5, cell = 0;
   Tensor T(2, 1);
@@ -612,7 +613,7 @@ TEST(DARCY_STIFFNESS_2D_EDGE) {
   DenseMatrix A;
   for (int method = 0; method < 1; method++) {
     if (method == 0) {
-      mfd.StiffnessMatrixEdge(cell, T, A);
+      mfd.StiffnessMatrix(cell, T, A);
     }
 
     printf("Stiffness matrix for cell %3d\n", cell);

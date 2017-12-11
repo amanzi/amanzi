@@ -59,7 +59,11 @@ class Iterator {
   // to the begining of the next group of monomials.
   // Only prefix version of this operator is used in the code.
   Iterator& operator++() {
-    if (d_ == 2) {
+    if (d_ == 1) {
+      k_++;
+      m_ = 0;
+      multi_index_[0] = k_;
+    } else if (d_ == 2) {
       if (multi_index_[0] == 0) {
         k_++;  // next group of monomials
         m_ = 0;
@@ -223,6 +227,9 @@ class Polynomial {
   // iterators
   Iterator& begin() const { return it_.begin(); }
   int end() const { return order_; }
+
+  void ChangeCoordinates(const AmanziGeometry::Point& xf,
+                         const std::vector<AmanziGeometry::Point>& tau);
 
   // access
   int dimension() const { return d_; }
