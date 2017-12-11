@@ -21,9 +21,9 @@
 // Amanzi
 #include "CompositeVector.hh"
 #include "Operator.hh"
-#include "OperatorAccumulation.hh"
-#include "OperatorAdvection.hh"
-#include "OperatorDiffusion.hh"
+#include "PDE_Accumulation.hh"
+#include "PDE_AdvectionUpwind.hh"
+#include "PDE_Diffusion.hh"
 #include "PK.hh"
 #include "PK_BDF.hh"
 #include "PK_DomainFunction.hh"
@@ -32,7 +32,6 @@
 #include "Tensor.hh"
 #include "TreeVector.hh"
 #include "VerboseObject.hh"
-
 
 namespace Amanzi {
 namespace Energy {
@@ -125,17 +124,14 @@ class Energy_PK : public PK_PhysicalBDF {
   std::vector<WhetStone::Tensor> K; 
 
   // boundary conditons
-  std::vector<Teuchos::RCP<PK_DomainFunction > > bc_temperature_; 
-  std::vector<Teuchos::RCP<PK_DomainFunction > > bc_flux_; 
-
-  std::vector<int> bc_model_; 
-  std::vector<double> bc_value_, bc_mixed_; 
+  std::vector<Teuchos::RCP<PK_DomainFunction> > bc_temperature_; 
+  std::vector<Teuchos::RCP<PK_DomainFunction> > bc_flux_; 
   int dirichlet_bc_faces_;
 
   // operators and solvers
-  Teuchos::RCP<Operators::OperatorDiffusion> op_matrix_diff_, op_preconditioner_diff_;
-  Teuchos::RCP<Operators::OperatorAccumulation> op_acc_;
-  Teuchos::RCP<Operators::OperatorAdvection> op_matrix_advection_, op_preconditioner_advection_;
+  Teuchos::RCP<Operators::PDE_Diffusion> op_matrix_diff_, op_preconditioner_diff_;
+  Teuchos::RCP<Operators::PDE_Accumulation> op_acc_;
+  Teuchos::RCP<Operators::PDE_AdvectionUpwind> op_matrix_advection_, op_preconditioner_advection_;
   Teuchos::RCP<Operators::Operator> op_matrix_, op_preconditioner_, op_advection_;
   Teuchos::RCP<Operators::BCs> op_bc_;
 

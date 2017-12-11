@@ -12,7 +12,7 @@ class Message : public Exceptions::Amanzi_exception {
   explicit Message() : message_() {};
   explicit Message(const char* message) : message_(message) {};
   explicit Message(const std::string& message) : message_(message) {};
-  ~Message() noexcept {}
+  ~Message() noexcept {};
 
   const char* what() const noexcept override { return message_.c_str(); }
 

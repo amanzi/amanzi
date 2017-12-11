@@ -17,16 +17,6 @@
 #include "Operator.hh"
 #include "Op.hh"
 
-/*
-  Op classes are small structs that play two roles:
-
-  1. They provide a class name to the schema, enabling visitor patterns.
-  2. They are a container for local matrices.
-  
-  This Op class is for storing local matrices of length ncells and with dofs
-  on cells and faces, i.e. for MFD methods.
-*/
-
 namespace Amanzi {
 namespace Operators {
 
@@ -43,6 +33,11 @@ class Op_Cell_FaceCell : public Op {
   }
 
   virtual void ApplyMatrixFreeOp(const Operator* assembler,
+          const CompositeVector& X, CompositeVector& Y) const {
+    assembler->ApplyMatrixFreeOp(*this, X, Y);
+  }
+
+  virtual void ApplyTransposeMatrixFreeOp(const Operator* assembler,
           const CompositeVector& X, CompositeVector& Y) const {
     assembler->ApplyMatrixFreeOp(*this, X, Y);
   }

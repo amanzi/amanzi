@@ -84,7 +84,7 @@ void PorosityModelEvaluator::EvaluateField_(
 void PorosityModelEvaluator::EvaluateFieldPartialDerivative_(
     const Teuchos::Ptr<State>& S,
     Key wrt_key,
-    const std::vector<Teuchos::Ptr<CompositeVector> > & results)
+    const std::vector<Teuchos::Ptr<CompositeVector> >& results)
 {
   Epetra_MultiVector& phi_c = *results[0]->ViewComponent("cell", false);
   const Epetra_MultiVector& pres_c = *S->GetFieldData(pressure_key_)->ViewComponent("cell", false);

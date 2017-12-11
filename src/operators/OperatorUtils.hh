@@ -13,6 +13,7 @@
 #define AMANZI_OPERATORS_UTILS_HH_
 
 #include "Teuchos_RCP.hpp"
+#include "Schema.hh"
 
 class Epetra_Vector;
 
@@ -24,29 +25,40 @@ class TreeVector;
 namespace Operators {
 
 class SuperMap;
+class Schema;
 
 // Nonmember CompositeVector to/from Super-vector
+// -- simple schema version
 int CopyCompositeVectorToSuperVector(const SuperMap& map, const CompositeVector& cv,
                                      Epetra_Vector& sv, int dofnum = 0);
-
 int CopySuperVectorToCompositeVector(const SuperMap& map, const Epetra_Vector& sv,
                                      CompositeVector& cv, int dofnum = 0);
-
 int AddSuperVectorToCompositeVector(const SuperMap& map, const Epetra_Vector& sv,
                                     CompositeVector& cv, int dofnum = 0);
 
+// -- complex schema version
+int CopyCompositeVectorToSuperVector(const SuperMap& map, const CompositeVector& cv,
+                                     Epetra_Vector& sv, const Schema& schema);
+int CopySuperVectorToCompositeVector(const SuperMap& map, const Epetra_Vector& sv,
+                                     CompositeVector& cv, const Schema& schema);
+
+
 // Nonmember TreeVector to/from Super-vector
+// -- simple schema version
 int CopyTreeVectorToSuperVector(const SuperMap& map, const TreeVector& cv, Epetra_Vector& sv);
 int CopySuperVectorToTreeVector(const SuperMap& map, const Epetra_Vector& sv, TreeVector& cv);
-
 int AddSuperVectorToTreeVector(const SuperMap& map, const Epetra_Vector& sv, TreeVector& cv);
 
-// supermap factory from CV and schema
+
+// Supermap factory from CV and schema
 Teuchos::RCP<SuperMap> CreateSuperMap(const CompositeVectorSpace& cv, int schema, int n_dofs);
+Teuchos::RCP<SuperMap> CreateSuperMap(const CompositeVectorSpace& cv, Schema& schema);
+
 
 // Estimate the max number of unknowns per row. Note this can be an
 // overestimate, but shouldn't be an underestimate.
 unsigned int MaxRowSize(const AmanziMesh::Mesh& mesh, int schema, unsigned int n_dofs = 1);
+unsigned int MaxRowSize(const AmanziMesh::Mesh& mesh, Schema& schema); 
 
 }  // namespace Operators
 }  // namespace Amanzi

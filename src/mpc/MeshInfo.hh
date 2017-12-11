@@ -1,5 +1,5 @@
 /*
-  MPC
+  Multi-Process Coordinator
 
   Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
@@ -28,12 +28,10 @@ namespace Amanzi {
 class MeshInfo : public Checkpoint {
 
 public:
-
   MeshInfo(Teuchos::ParameterList& plist, Epetra_MpiComm *comm): Checkpoint (plist, comm) {};
   MeshInfo() : Checkpoint() {};
 
   void WriteMeshCentroids( const AmanziMesh::Mesh& mesh );
-
 };
 
 }  // namespace Amanzi

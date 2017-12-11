@@ -66,7 +66,7 @@ Teuchos::ParameterList InputConverterU::TranslateTransport_()
   out_list.set<std::string>("flow mode", "transient");
 
   out_list.set<std::string>("solver", "PCG with Hypre AMG");
-  out_list.set<std::string>("enable internal tests", "no");
+  out_list.set<bool>("enable internal tests", false);
   out_list.set<bool>("transport subcycling", TRANSPORT_SUBCYCLING);
 
   // overwrite data from expert parameters  
@@ -86,6 +86,16 @@ Teuchos::ParameterList InputConverterU::TranslateTransport_()
     } else if (order == "explicit second-order") {
       out_list.set<int>("spatial discretization order", 2);
       out_list.set<int>("temporal discretization order", 2);
+      poly_order = 1;
+    } else if (order == "explicit third-order") {
+      out_list.set<int>("spatial discretization order", 2);
+      out_list.set<int>("temporal discretization order", 3);
+      out_list.set<bool>("generic RK implementation", true);
+      poly_order = 1;
+    } else if (order == "explicit fourth-order") {
+      out_list.set<int>("spatial discretization order", 2);
+      out_list.set<int>("temporal discretization order", 4);
+      out_list.set<bool>("generic RK implementation", true);
       poly_order = 1;
     }
   }
@@ -695,6 +705,9 @@ void InputConverterU::TranslateTransportSourcesGroup_(
     } else if (strcmp(text, "flow_weighted_conc") == 0) {
       element = static_cast<DOMElement*>(phase_l);
       node_list = element->getElementsByTagName(mm.transcode("liquid_component")); 
+      if (node_list->getLength() == 0)
+        ThrowErrorIllformed_(srcname, "liquid_component", text);
+
       GetSameChildNodes_(node_list->item(0), srctype_flow, flag, true);
       weight = (srctype_flow == "volume_weighted") ? "volume" : "permeability";
     } else if (strcmp(text, "flow_mass_fraction_conc") == 0) {

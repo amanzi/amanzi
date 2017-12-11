@@ -65,9 +65,6 @@ class Chemistry_PK : public PK_Physical {
   Key get_domain_name() { return domain_name_; }
 
  protected:
-  void InitializeField_(std::string fieldname, double default_val);
-
- protected:
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
   Teuchos::RCP<State> S_;
   std::string passwd_;
@@ -113,9 +110,6 @@ class Chemistry_PK : public PK_Physical {
   int num_iterations_, num_successful_steps_;
   double initial_conditions_time_;
   Key domain_name_;
-
-  // verbosity object thatis not shared with common chemistry
-  Teuchos::RCP<VerboseObject> vo_;
 };
 
 }  // namespace AmanziChemistry

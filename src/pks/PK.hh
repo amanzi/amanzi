@@ -10,7 +10,6 @@
 */
 
 /*!  
-
 A process kernel represents a single or system of partial/ordinary
 differential equation(s) or conservation law(s), and is used as the
 fundamental unit for coupling strategies.
@@ -49,8 +48,7 @@ Example:
        ...
     </ParameterList>
   </ParameterList>
-
- */
+*/
 
 
 /*
@@ -136,7 +134,7 @@ class PK {
   virtual void Solution_to_State(TreeVector& soln, const Teuchos::RCP<State>& S) = 0;
   virtual void Solution_to_State(const TreeVector& soln, const Teuchos::RCP<State>& S) = 0;
 
-protected:
+ protected:
   Teuchos::RCP<Teuchos::ParameterList> plist_;
   std::string name_;
   Teuchos::RCP<TreeVector> solution_;

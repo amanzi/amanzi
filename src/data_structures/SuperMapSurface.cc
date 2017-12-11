@@ -18,7 +18,7 @@ namespace Operators {
 SuperMapSurface::SuperMapSurface(const SuperMap& map,
         const Teuchos::RCP<const AmanziMesh::Mesh>& surf_mesh):
     SuperMap(map),
-    surf_mesh_(surf_mesh) {}
+    surf_mesh_(surf_mesh) {};
 
 const std::vector<int>&
 SuperMapSurface::CreateIndices_(const std::string& surf_compname, int dofnum, bool ghosted) const

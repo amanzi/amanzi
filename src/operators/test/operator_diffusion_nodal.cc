@@ -24,7 +24,7 @@
 // Amanzi
 #include "MeshFactory.hh"
 #include "GMVMesh.hh"
-#include "LinearOperatorFactory.hh"
+#include "LinearOperatorPCG.hh"
 #include "Tensor.hh"
 
 // Operators
@@ -32,8 +32,8 @@
 #include "Analytic02.hh"
 
 #include "OperatorDefs.hh"
-#include "OperatorDiffusionFactory.hh"
-#include "OperatorDiffusionMFD.hh"
+#include "PDE_DiffusionFactory.hh"
+#include "PDE_DiffusionMFD.hh"
 
 
 /* *****************************************************************
@@ -88,9 +88,9 @@ TEST(OPERATOR_DIFFUSION_NODAL) {
 
   // create boundary data
   Point xv(2);
-  std::vector<int> bc_model(nnodes_wghost, Operators::OPERATOR_BC_NONE);
-  std::vector<double> bc_value(nnodes_wghost);
-  std::vector<double> bc_mixed;
+  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(mesh, AmanziMesh::NODE, SCHEMA_DOFS_SCALAR));
+  std::vector<int>& bc_model = bc->bc_model();
+  std::vector<double>& bc_value = bc->bc_value();
 
   for (int v = 0; v < nnodes_wghost; v++) {
     mesh->node_get_coordinates(v, &xv);
@@ -100,11 +100,10 @@ TEST(OPERATOR_DIFFUSION_NODAL) {
       bc_value[v] = ana.pressure_exact(xv, 0.0);
     }
   }
-  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(OPERATOR_BC_TYPE_NODE, bc_model, bc_value, bc_mixed));
 
   // create diffusion operator 
   ParameterList op_list = plist.get<Teuchos::ParameterList>("PK operator").sublist("diffusion operator nodal");
-  Teuchos::RCP<OperatorDiffusion> op = Teuchos::rcp(new OperatorDiffusionMFD(op_list, mesh));
+  Teuchos::RCP<PDE_Diffusion> op = Teuchos::rcp(new PDE_DiffusionMFD(op_list, mesh));
   op->SetBCs(bc, bc);
   const CompositeVectorSpace& cvs = op->global_operator()->DomainMap();
 
@@ -168,21 +167,22 @@ TEST(OPERATOR_DIFFUSION_NODAL) {
   CHECK(bhb > 0.0);
 
   // solve the problem
-  ParameterList lop_list = plist.get<Teuchos::ParameterList>("solvers");
-  AmanziSolvers::LinearOperatorFactory<Operator, CompositeVector, CompositeVectorSpace> factory;
-  Teuchos::RCP<AmanziSolvers::LinearOperator<Operator, CompositeVector, CompositeVectorSpace> >
-     solver = factory.Create("AztecOO CG", lop_list, global_op);
+  ParameterList lop_list = plist.sublist("solvers")
+                                .sublist("AztecOO CG").sublist("pcg parameters");
+  AmanziSolvers::LinearOperatorPCG<Operator, CompositeVector, CompositeVectorSpace>
+      solver(global_op, global_op);
+  solver.Init(lop_list);
 
   CompositeVector rhs = *global_op->rhs();
   CompositeVector solution(rhs);
   solution.PutScalar(0.0);
 
-  int ierr = solver->ApplyInverse(rhs, solution);
+  int ierr = solver.ApplyInverse(rhs, solution);
 
   if (MyPID == 0) {
-    std::cout << "pressure solver (" << solver->name() 
-              << "): ||r||=" << solver->residual() << " itr=" << solver->num_itrs()
-              << " code=" << solver->returned_code() << std::endl;
+    std::cout << "pressure solver (pcg): ||r||=" << solver.residual() 
+              << " itr=" << solver.num_itrs()
+              << " code=" << solver.returned_code() << std::endl;
 
     // visualization
     const Epetra_MultiVector& p = *solution.ViewComponent("node");
@@ -192,7 +192,7 @@ TEST(OPERATOR_DIFFUSION_NODAL) {
     GMV::close_data_file();
   }
 
-  CHECK(solver->num_itrs() < 10);
+  CHECK(solver.num_itrs() < 10);
 
   // compute pressure error
   solution.ScatterMasterToGhosted();
@@ -204,10 +204,10 @@ TEST(OPERATOR_DIFFUSION_NODAL) {
   if (MyPID == 0) {
     pl2_err /= pnorm;
     ph1_err /= hnorm;
-    printf("L2(p)=%9.6f  H1(p)=%9.6f  itr=%3d\n", pl2_err, ph1_err, solver->num_itrs());
+    printf("L2(p)=%9.6f  H1(p)=%9.6f  itr=%3d\n", pl2_err, ph1_err, solver.num_itrs());
 
     CHECK(pl2_err < 3e-3 && ph1_err < 2e-2);
-    CHECK(solver->num_itrs() < 10);
+    CHECK(solver.num_itrs() < 10);
   }
 }
 
@@ -267,9 +267,9 @@ TEST(OPERATOR_DIFFUSION_NODAL_EXACTNESS) {
 
   // create boundary data (no mixed bc)
   Point xv(2);
-  std::vector<int> bc_model_v(nnodes_wghost, Operators::OPERATOR_BC_NONE);
-  std::vector<double> bc_value_v(nnodes_wghost, 0.0);
-  std::vector<double> bc_mixed_v;
+  Teuchos::RCP<BCs> bc_v = Teuchos::rcp(new BCs(mesh, AmanziMesh::NODE, SCHEMA_DOFS_SCALAR));
+  std::vector<int>& bc_model_v = bc_v->bc_model();
+  std::vector<double>& bc_value_v = bc_v->bc_value();
 
   for (int v = 0; v < nnodes_wghost; v++) {
     mesh->node_get_coordinates(v, &xv);
@@ -278,10 +278,11 @@ TEST(OPERATOR_DIFFUSION_NODAL_EXACTNESS) {
       bc_value_v[v] = ana.pressure_exact(xv, 0.0);
     }
   }
-  Teuchos::RCP<BCs> bc_v = Teuchos::rcp(new BCs(OPERATOR_BC_TYPE_NODE, bc_model_v, bc_value_v, bc_mixed_v));
 
-  std::vector<int> bc_model_f(nfaces_wghost, Operators::OPERATOR_BC_NONE);
-  std::vector<double> bc_value_f(nfaces_wghost, 0.0), bc_mixed_f(nfaces_wghost, 0.0);
+  Teuchos::RCP<BCs> bc_f = Teuchos::rcp(new BCs(mesh, AmanziMesh::FACE, SCHEMA_DOFS_SCALAR));
+  std::vector<int>& bc_model_f = bc_f->bc_model();
+  std::vector<double>& bc_value_f = bc_f->bc_value();
+  std::vector<double>& bc_mixed_f = bc_f->bc_mixed();
 
   int nn=0; int nm=0;
   for (int f = 0; f < nfaces_wghost; f++) {
@@ -300,12 +301,11 @@ TEST(OPERATOR_DIFFUSION_NODAL_EXACTNESS) {
       bc_value_f[f] -= bc_mixed_f[f] * tmp;
     }
   }
-  Teuchos::RCP<BCs> bc_f = Teuchos::rcp(new BCs(OPERATOR_BC_TYPE_FACE, bc_model_f, bc_value_f, bc_mixed_f));
 
   // create diffusion operator 
   ParameterList op_list = plist.get<Teuchos::ParameterList>("PK operator").sublist("diffusion operator nodal");
-  OperatorDiffusionFactory opfactory;
-  Teuchos::RCP<OperatorDiffusion> op = opfactory.Create(op_list, mesh, bc_v, rho, g);
+  PDE_DiffusionFactory opfactory;
+  Teuchos::RCP<PDE_Diffusion> op = opfactory.Create(op_list, mesh, bc_v, rho, g);
   op->AddBCs(bc_f, bc_f);
   
   // populate the diffusion operator
@@ -323,21 +323,22 @@ TEST(OPERATOR_DIFFUSION_NODAL_EXACTNESS) {
   global_op->InitPreconditioner("Hypre AMG", slist);
 
   // solve the problem
-  ParameterList lop_list = plist.get<Teuchos::ParameterList>("solvers");
-  AmanziSolvers::LinearOperatorFactory<Operator, CompositeVector, CompositeVectorSpace> factory;
-  Teuchos::RCP<AmanziSolvers::LinearOperator<Operator, CompositeVector, CompositeVectorSpace> >
-     solver = factory.Create("AztecOO CG", lop_list, global_op);
+  ParameterList lop_list = plist.sublist("solvers")
+                                .sublist("AztecOO CG").sublist("pcg parameters");
+  AmanziSolvers::LinearOperatorPCG<Operator, CompositeVector, CompositeVectorSpace>
+      solver(global_op, global_op);
+  solver.Init(lop_list);
 
   CompositeVector rhs = *global_op->rhs();
   CompositeVector solution(rhs);
   solution.PutScalar(0.0);
 
-  int ierr = solver->ApplyInverse(rhs, solution);
+  int ierr = solver.ApplyInverse(rhs, solution);
 
   if (MyPID == 0) {
-    std::cout << "pressure solver (" << solver->name() 
-              << "): ||r||=" << solver->residual() << " itr=" << solver->num_itrs()
-              << " code=" << solver->returned_code() << std::endl;
+    std::cout << "pressure solver (pcg): ||r||=" << solver.residual() 
+              << " itr=" << solver.num_itrs()
+              << " code=" << solver.returned_code() << std::endl;
   }
 
   // compute pressure error
@@ -350,13 +351,10 @@ TEST(OPERATOR_DIFFUSION_NODAL_EXACTNESS) {
   if (MyPID == 0) {
     pl2_err /= pnorm;
     ph1_err /= hnorm;
-    printf("L2(p)=%9.6f  H1(p)=%9.6f  itr=%3d\n", pl2_err, ph1_err, solver->num_itrs());
+    printf("L2(p)=%9.6f  H1(p)=%9.6f  itr=%3d\n", pl2_err, ph1_err, solver.num_itrs());
 
     CHECK(pl2_err < 1e-5 && ph1_err < 2e-5);
-    CHECK(solver->num_itrs() < 10);
+    CHECK(solver.num_itrs() < 10);
   }
 }
-
-
-
 

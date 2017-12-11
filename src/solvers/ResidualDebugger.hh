@@ -24,7 +24,7 @@
 #include "IOEvent.hh"
 #include "TreeVector.hh"
 #include "TreeVector_Utils.hh"
-#include "hdf5mpi_mesh.hh"
+#include "HDF5_MPI.hh"
 
 namespace Amanzi {
 namespace AmanziSolvers {

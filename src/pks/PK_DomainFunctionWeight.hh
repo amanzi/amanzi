@@ -129,7 +129,9 @@ void PK_DomainFunctionWeight<FunctionBase>::Compute(double t0, double t1)
     for (MeshIDs::const_iterator c = ids->begin(); c != ids->end(); ++c) {
       const AmanziGeometry::Point& xc = mesh_->cell_centroid(*c);
       for (int i = 0; i != dim; ++i) args[i + 1] = xc[i];
-      for (int i=0; i<nfun; ++i) val_vec[i] = (*(*uspec)->first->second)(args)[i] * (*weight_)[*c] / weight_volume;
+      for (int i = 0; i < nfun; ++i) {
+        val_vec[i] = (*(*uspec)->first->second)(args)[i] * (*weight_)[*c] / weight_volume;
+      }
       value_[*c] = val_vec;
     }      
 
@@ -138,7 +140,7 @@ void PK_DomainFunctionWeight<FunctionBase>::Compute(double t0, double t1)
       for (MeshIDs::const_iterator c = ids->begin(); c != ids->end(); ++c) {
         const AmanziGeometry::Point& xc = mesh_->cell_centroid(*c);
         for (int i = 0; i != dim; ++i) args[i + 1] = xc[i];
-        for (int i=0; i<nfun; ++i) {
+        for (int i = 0; i < nfun; ++i) {
           value_[*c][i] -= (*(*uspec)->first->second)(args)[i] * (*weight_)[*c] / weight_volume;
           value_[*c][i] *= dt;
         }

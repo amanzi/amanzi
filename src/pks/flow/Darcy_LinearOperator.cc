@@ -12,7 +12,7 @@
 #include <vector>
 
 #include "OperatorDefs.hh"
-#include "OperatorDiffusion.hh"
+#include "PDE_Diffusion.hh"
 
 #include "Darcy_PK.hh"
 #include "LinearOperatorFactory.hh"
@@ -31,11 +31,8 @@ void Darcy_PK::SolveFullySaturatedProblem(CompositeVector& u)
   op_->RestoreCheckPoint();
  
   if (S_->HasField("well_index")){
-    const Epetra_MultiVector& wi = *S_->GetFieldData("well_index")->ViewComponent("cell");
-    // for (int c = 0; c < ncells_owned; c++) {
-    //   wi[0][c] *= mesh_->cell_volume(c);
-    // }
-    op_acc_->AddAccumulationTerm(wi);
+    const CompositeVector& wi = *S_->GetFieldData("well_index");
+    op_acc_->AddAccumulationTerm(wi, "cell");
   }
 
   op_diff_->ApplyBCs(true, true);
@@ -44,8 +41,6 @@ void Darcy_PK::SolveFullySaturatedProblem(CompositeVector& u)
 
   op_->AssembleMatrix();
   op_->InitPreconditioner(preconditioner_name_, *preconditioner_list_);
-
-
 
   AmanziSolvers::LinearOperatorFactory<Operators::Operator, CompositeVector, CompositeVectorSpace> sfactory;
   Teuchos::RCP<AmanziSolvers::LinearOperator<Operators::Operator, CompositeVector, CompositeVectorSpace> >

@@ -1,5 +1,5 @@
 /*
-  WhetStone, version 2.0
+  WhetStone, version 2.1
   Release name: naka-to.
 
   Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
@@ -8,6 +8,8 @@
   provided in the top-level COPYRIGHT file.
 
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
+
+  Dense matrices and operations with them.
 */
 
 #ifndef AMANZI_DENSE_MATRIX_HH_
@@ -37,18 +39,20 @@ class DenseMatrix {
   ~DenseMatrix() { if (data_ != NULL && access_ == WHETSTONE_DATA_ACCESS_COPY) { delete[] data_; } }
   
   // primary members 
-  void clear() { for (int i = 0; i < m_ * n_; i++) data_[i] = 0.0; } 
+  // -- reshape can be applied only to a matrix that owns data
+  void Reshape(int mrow, int ncol);
 
   double& operator()(int i, int j) { return data_[j * m_ + i]; }
   const double& operator()(int i, int j) const { return data_[j * m_ + i]; }
 
   DenseMatrix& operator=(const DenseMatrix& B) {
     if (this != &B) {
-      if (m_ * n_ != B.m_ * B.n_ && B.m_ * B.n_ != 0) {
+      if (mem_ < B.m_ * B.n_) {
         if (data_ != NULL) {
           delete [] data_;
         }
-        data_ = new double[B.m_ * B.n_];
+        mem_ = B.m_ * B.n_;
+        data_ = new double[mem_];
       }
       n_ = B.n_;
       m_ = B.m_;
@@ -78,6 +82,11 @@ class DenseMatrix {
     return *this;
   }
 
+  DenseMatrix& operator-=(const DenseMatrix& A) {
+    for (int i = 0; i < m_ * n_; i++) data_[i] -= A.data_[i];
+    return *this;
+  }
+
   int Multiply(const DenseMatrix& A, const DenseMatrix& B, bool transposeA);
   int Multiply(const DenseVector& A, DenseVector& B, bool transpose) const;
 
@@ -104,10 +113,10 @@ class DenseMatrix {
     }
     return os;
   }
-  void PrintMatrix() const {
+  void PrintMatrix(const char* format = "12.5f") const {
     for (int i = 0; i < m_; i++) {
       for (int j = 0; j < n_; j++) {
-        printf("%12.5f", *(data_ + j * m_ + i));
+        printf(format, *(data_ + j * m_ + i));
       }
       printf("\n");
     }
@@ -134,11 +143,22 @@ class DenseMatrix {
     return a;
   }
 
+  double Norm2() {
+    double a = 0.0;
+    for (int i = 0; i < m_ * n_; i++) a += data_[i] * data_[i];
+    return std::sqrt(a);
+  }
+
   void Scale(double value) {
     for (int i = 0; i < m_ * n_; i++) data_[i] *= value;
   }
 
   // Second level routines
+  // -- transpose creates new matrix
+  void Transpose(const DenseMatrix& A);
+  // -- transpose modifies square matrix
+  int Transpose();
+
   // -- inversion is applicable for square matrices only
   int Inverse();
   int NullSpace(DenseMatrix& D);
@@ -152,7 +172,7 @@ class DenseMatrix {
   void SwapColumns(int n1, int n2);
 
  private:
-  int m_, n_, access_;
+  int m_, n_, mem_, access_;
   double* data_;                       
 };
 

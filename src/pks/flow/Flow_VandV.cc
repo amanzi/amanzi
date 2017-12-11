@@ -202,7 +202,8 @@ void Flow_PK::VV_PrintHeadExtrema(const CompositeVector& pressure) const
   mesh_->get_comm()->MaxAll(&tmp, &hmax, 1);
 
   Teuchos::OSTab tab = vo_->getOSTab();
-  *vo_->os() << "boundary head (BCs): min=" << hmin << " max=" << hmax << " [m]" << std::endl;
+  *vo_->os() << "boundary head (BCs): min=" << units_.OutputLength(hmin) 
+             << ", max=" << units_.OutputLength(hmax) << std::endl;
 
   // process cell-based quantaties
   const Epetra_MultiVector& pcells = *pressure.ViewComponent("cell");
@@ -217,7 +218,8 @@ void Flow_PK::VV_PrintHeadExtrema(const CompositeVector& pressure) const
   mesh_->get_comm()->MinAll(&tmp, &vmin, 1);
   tmp = vmax;
   mesh_->get_comm()->MaxAll(&tmp, &vmax, 1);
-  *vo_->os() << "domain head (cells): min=" << vmin << " max=" << vmax << " [m]" << std::endl;
+  *vo_->os() << "domain head (cells): min=" << units_.OutputLength(vmin) 
+             << ", max=" << units_.OutputLength(vmax) << std::endl;
 
   // process face-based quantaties (if any)
   if (pressure.HasComponent("face")) {
@@ -233,7 +235,8 @@ void Flow_PK::VV_PrintHeadExtrema(const CompositeVector& pressure) const
     mesh_->get_comm()->MinAll(&tmp, &vmin, 1);
     tmp = vmax;
     mesh_->get_comm()->MaxAll(&tmp, &vmax, 1);
-    *vo_->os() << "domain head (cells + faces): min=" << vmin << " max=" << vmax << " [m]" << std::endl;
+    *vo_->os() << "domain head (cells + faces): min=" << units_.OutputLength(vmin) 
+               << ", max=" << units_.OutputLength(vmax) << std::endl;
   }
 }
 

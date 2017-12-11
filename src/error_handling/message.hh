@@ -1,5 +1,5 @@
-#ifndef _UTILS_MESSAGE_H_
-#define _UTILS_MESSAGE_H_
+#ifndef AMANZI_UTILS_MESSAGE_HH_
+#define AMANZI_UTILS_MESSAGE_HH_
 
 #include <algorithm>
 #include <string>

@@ -1,12 +1,15 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+/*
+  Process Kernels
 
-/* -------------------------------------------------------------------------
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
 
+  Author: Ethan Coon
 
-Author: Ethan Coon
-
-Default base with a few methods implemented in standard ways.
-------------------------------------------------------------------------- */
+  Default base with a few methods implemented in standard ways.
+*/
 
 #ifndef AMANZI_PK_PHYSICAL_BDF_HH_
 #define AMANZI_PK_PHYSICAL_BDF_HH_

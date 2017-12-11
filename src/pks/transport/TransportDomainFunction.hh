@@ -23,7 +23,6 @@
 
 #include "CommonDefs.hh"
 #include "Mesh.hh"
-//#include "DenseVector.hh"
 
 namespace Amanzi {
 namespace Transport {

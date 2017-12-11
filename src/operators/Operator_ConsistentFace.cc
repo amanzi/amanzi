@@ -8,6 +8,8 @@
 
   Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
            Ethan Coon (ecoon@lanl.gov)
+
+  Operator whose unknowns are CELL
 */
 
 #include "DenseMatrix.hh"
@@ -18,15 +20,8 @@
 #include "MatrixFE.hh"
 #include "Operator_ConsistentFace.hh"
 
-/* ******************************************************************
-Operator whose unknowns are CELL
-
-See Operator_ConsistentFace.hh for more detail.
-****************************************************************** */
-
 namespace Amanzi {
 namespace Operators {
-
 
 /* ******************************************************************
 * Visit methods for Apply.

@@ -29,7 +29,6 @@
 #include "checkpoint.hh"
 #include "CompositeVectorSpace.hh"
 #include "independent_variable_field_evaluator_fromfunction.hh"
-#include "PK.hh"
 #include "PK_DomainFunction.hh"
 #include "PK_PhysicalBDF.hh"
 #include "primary_variable_field_evaluator.hh"
@@ -166,7 +165,6 @@ class Flow_PK : public PK_PhysicalBDF {
 
   // io
   Utils::Units units_;
-  Teuchos::RCP<VerboseObject> vo_;
   Teuchos::RCP<Teuchos::ParameterList> fp_list_;
 
  private:

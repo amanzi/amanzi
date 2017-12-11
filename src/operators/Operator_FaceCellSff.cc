@@ -8,6 +8,14 @@
 
   Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
            Ethan Coon (ecoon@lanl.gov)
+
+  Operator whose unknowns are CELL + FACE, but which assembles the
+  FACE only system and Schur complements cells.
+
+  This uses special assembly.  Apply is done as if we had the full FACE+CELL
+  system.  SymbolicAssembly() is done as if we had the CELL system, but with an
+  additional step to get the layout due to the Schur'd system on FACE+CELL.
+  Assemble, however, is done using a totally different approach.
 */
 
 #include <vector>
@@ -25,16 +33,6 @@
 #include "Op_Cell_Face.hh"
 #include "Operator_FaceCellSff.hh"
 
-/* ******************************************************************
-Operator whose unknowns are CELL + FACE, but which assembles the CELL only
-system and Schur complements the face.
-
-This uses special assembly.  Apply is done as if we had the full FACE+CELL
-system.  SymbolicAssembly() is done as if we had the CELL system, but with an
-additional step to get the layout due to the Schur'd system on FACE+CELL.
-Assemble, however, is done using a totally different approach.
-****************************************************************** */
-
 namespace Amanzi {
 namespace Operators {
 
@@ -50,12 +48,12 @@ int Operator_FaceCellSff::ApplyInverse(const CompositeVector& X, CompositeVector
   
   int num_with_cells = 0;
   for (const_op_iterator it = OpBegin(); it != OpEnd(); ++it) {
-    if ((*it)->schema & OPERATOR_SCHEMA_DOFS_CELL) {
-      if (((*it)->schema == (OPERATOR_SCHEMA_BASE_CELL | OPERATOR_SCHEMA_DOFS_CELL))
-          && ((*it)->vals.size() == ncells_owned)) {
+    if ((*it)->schema_old_ & OPERATOR_SCHEMA_DOFS_CELL) {
+      if (((*it)->schema_old_ == (OPERATOR_SCHEMA_BASE_CELL | OPERATOR_SCHEMA_DOFS_CELL))
+          && ((*it)->diag->MyLength() == ncells_owned)) {
         // diagonal schema
         for (int c = 0; c != ncells_owned; ++c) {
-          D_c[0][c] += (*it)->vals[c];
+          D_c[0][c] += (*(*it)->diag)[0][c];
         }
       } else {
         num_with_cells++;
@@ -81,8 +79,8 @@ int Operator_FaceCellSff::ApplyInverse(const CompositeVector& X, CompositeVector
   T.PutScalarGhosted(0.0);
 
   for (const_op_iterator it = OpBegin(); it != OpEnd(); ++it) {
-    if ((*it)->schema == (OPERATOR_SCHEMA_BASE_CELL |
-                          OPERATOR_SCHEMA_DOFS_CELL | OPERATOR_SCHEMA_DOFS_FACE)) {
+    if ((*it)->schema_old_ == (OPERATOR_SCHEMA_BASE_CELL |
+                               OPERATOR_SCHEMA_DOFS_CELL | OPERATOR_SCHEMA_DOFS_FACE)) {
 
       // FORWARD ELIMINATION:  Tf = Xf - Afc inv(Acc) Xc
       AmanziMesh::Entity_ID_List faces;
@@ -148,16 +146,16 @@ void Operator_FaceCellSff::AssembleMatrix(const SuperMap& map, MatrixFE& matrix,
   // Check preconditions -- Scc must have exactly one CELL+FACE schema,
   // and no other CELL schemas that are not simply diagonal CELL_CELL.
   // Additionally, collect the diagonal for inversion.
-  Epetra_MultiVector D_c(mesh_->cell_map(false),1);
+  Epetra_MultiVector D_c(mesh_->cell_map(false), 1);
   
   int num_with_cells = 0;
   for (const_op_iterator it = OpBegin(); it != OpEnd(); ++it) {
-    if ((*it)->schema & OPERATOR_SCHEMA_DOFS_CELL) {
-      if (((*it)->schema == (OPERATOR_SCHEMA_BASE_CELL | OPERATOR_SCHEMA_DOFS_CELL))
-          && ((*it)->vals.size() == ncells_owned)) {
+    if ((*it)->schema_old_ & OPERATOR_SCHEMA_DOFS_CELL) {
+      if (((*it)->schema_old_ == (OPERATOR_SCHEMA_BASE_CELL | OPERATOR_SCHEMA_DOFS_CELL))
+          && ((*it)->diag->MyLength() == ncells_owned)) {
         // diagonal schema
         for (int c = 0; c != ncells_owned; ++c) {
-          D_c[0][c] += (*it)->vals[c];
+          D_c[0][c] += (*(*it)->diag)[0][c];
         }
       } else {
         num_with_cells++;
@@ -174,8 +172,8 @@ void Operator_FaceCellSff::AssembleMatrix(const SuperMap& map, MatrixFE& matrix,
   // schur complement
   int i_schur = 0;
   for (const_op_iterator it = OpBegin(); it != OpEnd(); ++it) {
-    if ((*it)->schema == (OPERATOR_SCHEMA_BASE_CELL |
-                          OPERATOR_SCHEMA_DOFS_CELL | OPERATOR_SCHEMA_DOFS_FACE)) {
+    if ((*it)->schema_old_ == (OPERATOR_SCHEMA_BASE_CELL |
+                               OPERATOR_SCHEMA_DOFS_CELL | OPERATOR_SCHEMA_DOFS_FACE)) {
       ASSERT((*it)->matrices.size() == ncells_owned);
 
       // create or get extra ops, and keep them for future use
@@ -240,9 +238,9 @@ void Operator_FaceCellSff::AssembleMatrix(const SuperMap& map, MatrixFE& matrix,
 
       // Assemble this Schur Op into matrix
       schur_op->AssembleMatrixOp(this, map, matrix, my_block_row, my_block_col);
-    } else if (((*it)->schema ==
+    } else if (((*it)->schema_old_ ==
                 (OPERATOR_SCHEMA_BASE_CELL | OPERATOR_SCHEMA_DOFS_CELL))
-               && ((*it)->vals.size() == ncells_owned)) {
+               && ((*it)->diag->MyLength() == ncells_owned)) {
       // pass, already part of cell inverse
     } else {
       (*it)->AssembleMatrixOp(this, map, matrix, my_block_row, my_block_col);
@@ -302,7 +300,7 @@ void Operator_FaceCellSff::SymbolicAssembleMatrix()
 {
   // SuperMap for Sff is face only
   CompositeVectorSpace smap_space;
-  smap_space.SetMesh(cvs_->Mesh())->SetComponent("face", AmanziMesh::FACE, 1);
+  smap_space.SetMesh(mesh_)->SetComponent("face", AmanziMesh::FACE, 1);
   smap_ = CreateSuperMap(smap_space, schema(), 1);
 
   // create the graph

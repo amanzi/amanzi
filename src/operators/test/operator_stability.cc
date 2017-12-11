@@ -25,7 +25,6 @@
 #include "MeshFactory.hh"
 #include "GMVMesh.hh"
 #include "LinearOperatorFactory.hh"
-#include "mfd3d_diffusion.hh"
 #include "Tensor.hh"
 
 // Operators
@@ -33,7 +32,8 @@
 #include "Analytic02.hh"
 #include "BCs.hh"
 #include "OperatorDefs.hh"
-#include "OperatorDiffusionMFD.hh"
+#include "PDE_DiffusionMFD.hh"
+
 
 /* *****************************************************************
 * This test replaves tensor and boundary conditions by continuous
@@ -86,13 +86,13 @@ TEST(OPERATOR_MIXED_DIFFUSION) {
   double rho(1.0), mu(1.0);
 
   // create boundary data
+  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(mesh, AmanziMesh::FACE, SCHEMA_DOFS_SCALAR));
+  std::vector<int>& bc_model = bc->bc_model();
+  std::vector<double>& bc_value = bc->bc_value();
+
   int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
   int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
   Point xv(2);
-  std::vector<int> bc_model(nfaces_wghost, Operators::OPERATOR_BC_NONE);
-  std::vector<double> bc_value(nfaces_wghost);
-  std::vector<double> bc_mixed;
-
   for (int f = 0; f < nfaces_wghost; f++) {
     const Point& xf = mesh->face_centroid(f);
     if (fabs(xf[0]) < 1e-6 || fabs(xf[0] - 1.0) < 1e-6 ||
@@ -101,7 +101,6 @@ TEST(OPERATOR_MIXED_DIFFUSION) {
       bc_model[f] = Operators::OPERATOR_BC_DIRICHLET;
     }
   }
-  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(Operators::OPERATOR_BC_TYPE_FACE, bc_model, bc_value, bc_mixed));
 
   // create space for diffusion operator 
   Teuchos::RCP<CompositeVectorSpace> cvs = Teuchos::rcp(new CompositeVectorSpace());
@@ -111,7 +110,8 @@ TEST(OPERATOR_MIXED_DIFFUSION) {
   cvs->SetOwned(false);
   cvs->AddComponent("face", AmanziMesh::FACE, 1);
 
-  CompositeVector solution(*cvs), flux(*cvs);
+  Teuchos::RCP<CompositeVector> solution = Teuchos::rcp(new CompositeVector(*cvs));
+  Teuchos::RCP<CompositeVector> flux = Teuchos::rcp(new CompositeVector(*cvs));
 
   // create source 
   CompositeVector source(*cvs);
@@ -130,7 +130,7 @@ TEST(OPERATOR_MIXED_DIFFUSION) {
     // create the local diffusion operator
     Teuchos::ParameterList olist = plist.get<Teuchos::ParameterList>("PK operators")
                                         .get<Teuchos::ParameterList>("mixed diffusion");
-    OperatorDiffusionMFD op2(olist, mesh);
+    PDE_DiffusionMFD op2(olist, mesh);
     op2.SetBCs(bc, bc);
 
     int schema_dofs = op2.schema_dofs();
@@ -143,7 +143,7 @@ TEST(OPERATOR_MIXED_DIFFUSION) {
             
     op2.set_factor(factor);  // for developers only
     op2.Setup(K, Teuchos::null, Teuchos::null);
-    op2.UpdateMatrices(Teuchos::null, Teuchos::null);
+    op2.UpdateMatrices();
 
     // get and assemeble the global operator
     Teuchos::RCP<Operator> global_op = op2.global_operator();
@@ -157,25 +157,25 @@ TEST(OPERATOR_MIXED_DIFFUSION) {
 
     // solve the problem
     Teuchos::ParameterList lop_list = plist.get<Teuchos::ParameterList>("solvers");
-    solution.PutScalar(0.0);
+    solution->PutScalar(0.0);
     AmanziSolvers::LinearOperatorFactory<Operator, CompositeVector, CompositeVectorSpace> factory;
     Teuchos::RCP<AmanziSolvers::LinearOperator<Operator, CompositeVector, CompositeVectorSpace> >
        solver = factory.Create("AztecOO CG", lop_list, global_op);
 
     CompositeVector& rhs = *global_op->rhs();
-    int ierr = solver->ApplyInverse(rhs, solution);
+    int ierr = solver->ApplyInverse(rhs, *solution);
 
     // calculate pressure errors
-    Epetra_MultiVector& p = *solution.ViewComponent("cell", false);
+    Epetra_MultiVector& p = *solution->ViewComponent("cell", false);
     double pnorm, pl2_err, pinf_err;
     ana.ComputeCellError(p, 0.0, pnorm, pl2_err, pinf_err);
 
     // calculate flux errors
-    Epetra_MultiVector& flx = *flux.ViewComponent("face", true);
+    Epetra_MultiVector& flx = *flux->ViewComponent("face", true);
     double unorm, ul2_err, uinf_err;
 
-    op2.UpdateFlux(solution, flux);
-    flux.ScatterMasterToGhosted();
+    op2.UpdateFlux(solution.ptr(), flux.ptr());
+    flux->ScatterMasterToGhosted();
     ana.ComputeFaceError(flx, 0.0, unorm, ul2_err, uinf_err);
 
     if (MyPID == 0) {
@@ -188,7 +188,7 @@ TEST(OPERATOR_MIXED_DIFFUSION) {
     }
   }
 
-  Epetra_MultiVector& p = *solution.ViewComponent("cell", false);
+  Epetra_MultiVector& p = *solution->ViewComponent("cell", false);
   GMV::open_data_file(*mesh, (std::string)"operators.gmv");
   GMV::start_data();
   GMV::write_cell_data(p, 0, "pressure");
@@ -249,9 +249,9 @@ TEST(OPERATOR_NODAL_DIFFUSION) {
 
   // create boundary data (no mixed bc)
   Point xv(2);
-  std::vector<int> bc_model(nnodes_wghost);
-  std::vector<double> bc_value(nnodes_wghost);
-  std::vector<double> bc_mixed;
+  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(mesh, AmanziMesh::NODE, SCHEMA_DOFS_SCALAR));
+  std::vector<int>& bc_model = bc->bc_model();
+  std::vector<double>& bc_value = bc->bc_value();
 
   for (int v = 0; v < nnodes_wghost; v++) {
     mesh->node_get_coordinates(v, &xv);
@@ -261,7 +261,6 @@ TEST(OPERATOR_NODAL_DIFFUSION) {
       bc_model[v] = Operators::OPERATOR_BC_DIRICHLET;
     }
   }
-  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(Operators::OPERATOR_BC_TYPE_NODE, bc_model, bc_value, bc_mixed));
 
   // create diffusion operator 
   Teuchos::RCP<CompositeVectorSpace> cvs = Teuchos::rcp(new CompositeVectorSpace());
@@ -290,7 +289,7 @@ TEST(OPERATOR_NODAL_DIFFUSION) {
     // create the local diffusion operator
     Teuchos::ParameterList olist = plist.get<Teuchos::ParameterList>("PK operators")
                                         .get<Teuchos::ParameterList>("nodal diffusion");
-    OperatorDiffusionMFD op2(olist, mesh);
+    PDE_DiffusionMFD op2(olist, mesh);
     op2.SetBCs(bc, bc);
 
     int schema_dofs = op2.schema_dofs();
