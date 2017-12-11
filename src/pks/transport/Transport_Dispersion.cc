@@ -15,7 +15,7 @@
 #include "Epetra_Vector.h"
 #include "Epetra_MultiVector.h"
 
-#include "mfd3d_diffusion.hh"
+#include "MFD3D_Diffusion.hh"
 #include "nlfv.hh"
 #include "Tensor.hh"
 #include "PreconditionerFactory.hh"

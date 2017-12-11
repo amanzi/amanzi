@@ -1,5 +1,5 @@
 /*
-  WhetStone, version 2.0
+  WhetStone, version 2.1
   Release name: naka-to.
 
   Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
@@ -15,13 +15,17 @@
 
 #include <vector>
 
+#include "GeometryDefs.hh"
+#include "MeshDefs.hh"
+
+// This variable allows usage of WhetStone as a standalone library.
 #define AMANZI_CODE
 
 namespace Amanzi {
 namespace WhetStone {
 
 #ifdef AMANZI_CODE
-typedef AmanziMesh::Entity_ID Entity_ID;
+typedef AmanziGeometry::Entity_ID Entity_ID;
 typedef std::vector<Entity_ID> Entity_ID_List;
 typedef AmanziMesh::Parallel_type ParallelTypeCast;
 
@@ -38,6 +42,9 @@ const int OWNED = 1;  // Owned by this processor
 const int GHOST = 2;  // Owned by another processor
 const int USED  = 3;  // OWNED + GHOST
 #endif
+
+class Polynomial;
+typedef std::vector<std::vector<Polynomial> > MatrixPolynomial;
 
 }  // namespace WhetStone
 }  // namespace Amanzi

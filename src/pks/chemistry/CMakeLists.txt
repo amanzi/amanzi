@@ -88,7 +88,8 @@ add_install_include_file(${chem_inc_files})
 add_amanzi_library(chemistry_pk
                    SOURCE ${chem_src_files}
                    HEADERS ${chem_inc_files}
-                   LINK_LIBS ${GEOCHEM_LIBS} pks ${Epetra_LIBRARIES})
+                   LINK_LIBS ${GEOCHEM_LIBS} pks ${Epetra_LIBRARIES}
+                             ${XERCES_LIBRARIES} ${XERCES_ICU_LIBRARIES})
 
 if (BUILD_TESTS AND ENABLE_Unstructured)
     # Add UnitTest include directory
@@ -101,7 +102,9 @@ if (BUILD_TESTS AND ENABLE_Unstructured)
     # Copy test directory files if any out of source build
     if (NOT (${CMAKE_SOURCE_DIR} EQUAL ${CMAKE_BINARY_DIR}))
         file(GLOB DataFiles "${CHEMPK_SOURCE_DIR}/test/*.xml"
-                            "${CHEMPK_SOURCE_DIR}/test/*.bgd")
+                            "${CHEMPK_SOURCE_DIR}/test/*.bgd"
+                            "${CHEMPK_SOURCE_DIR}/test/*.in"
+                            "${CHEMPK_SOURCE_DIR}/test/*.dat")
         file(COPY ${DataFiles} DESTINATION ${CHEMPK_BINARY_DIR}/test/)
     endif()
 
@@ -112,6 +115,15 @@ if (BUILD_TESTS AND ENABLE_Unstructured)
                               mesh_functions mesh mesh_factory error_handling interface
                               ${UnitTest_LIBRARIES} ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES}
                               ${XERCES_LIBRARIES} ${XERCES_ICU_LIBRARIES} ${NOX_LIBRARIES})
+
+    add_amanzi_test(chemistry_alquimia_pk chemistry_alquimia_pk
+                    KIND int
+                    SOURCE test/Main.cc test/chemistry_alquimia_pk.cc
+                    LINK_LIBS chemistry_pk state pks data_structures
+                              mesh_functions mesh mesh_factory error_handling interface
+                              ${UnitTest_LIBRARIES} ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES}
+                              ${HDF5_LIBRARIES} ${XERCESC_LIBRARIES} ${XERCES_ICU_LIBRARIES}
+                              ${NOX_LIBRARIES})
 
     # The following test is disabled in parallel environments. It has to be rewritten in order 
     # to function properly there.

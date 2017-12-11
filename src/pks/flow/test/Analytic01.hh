@@ -102,7 +102,7 @@ double CalculateDarcyDivergenceError(Teuchos::RCP<const Mesh> mesh,
       div += flux[0][f] * dirs[i];
     }
     error_L2 += div*div / mesh->cell_volume(c);
-    // std::cout << c << " div=" << div << " exact=0.0" << std::endl;
+    //std::cout << c << " div=" << div << " exact=0.0" << std::endl;
   }
   return sqrt(error_L2);
 }

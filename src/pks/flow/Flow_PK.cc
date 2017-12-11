@@ -17,7 +17,6 @@
 
 #include "GMVMesh.hh"
 #include "Mesh.hh"
-#include "mfd3d.hh"
 #include "OperatorDefs.hh"
 #include "PK_DomainFunctionFactory.hh"
 #include "PK_Utils.hh"
@@ -36,18 +35,16 @@ Flow_PK::Flow_PK(Teuchos::ParameterList& pk_tree,
                  const Teuchos::RCP<State>& S,
                  const Teuchos::RCP<TreeVector>& soln) :
   PK_PhysicalBDF(pk_tree, glist, S, soln),
-  vo_(Teuchos::null),
-  passwd_("flow")
+  passwd_("flow"),
+  peaceman_model_(false)
 {
+  vo_ = Teuchos::null;
   Teuchos::RCP<Teuchos::ParameterList> units_list = Teuchos::sublist(glist, "units");
   units_.Init(*units_list);
-  peaceman_model_ = false;
 };
 
 
-Flow_PK::Flow_PK() :
-  vo_(Teuchos::null),
-  passwd_("flow") {};
+Flow_PK::Flow_PK() : passwd_("flow") { vo_ = Teuchos::null; }
 
 
 /* ******************************************************************
@@ -73,7 +70,6 @@ void Flow_PK::Setup(const Teuchos::Ptr<State>& S)
   }
 
   // Wells
-  bool peaceman_model_ = false;
   if (!S->HasField("well_index")){
     if (fp_list_->isSublist("source terms")) {
       Teuchos::ParameterList& src_list = fp_list_->sublist("source terms");
@@ -91,7 +87,6 @@ void Flow_PK::Setup(const Teuchos::Ptr<State>& S)
       }
     }
   }    
-
 }
 
 
@@ -144,16 +139,6 @@ void Flow_PK::InitializeFields_()
   Teuchos::OSTab tab = vo_->getOSTab();
 
   // set popular default values for missed fields.
-  if (S_->GetField("porosity")->owner() == "porosity") {
-    if (!S_->GetField("porosity", "porosity")->initialized()) {
-      S_->GetFieldData("porosity", "porosity")->PutScalar(0.2);
-      S_->GetField("porosity", "porosity")->set_initialized();
-
-      if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM)
-          *vo_->os() << "initilized porosity to default value 0.2" << std::endl;  
-    }
-  }
-
   if (S_->GetField("fluid_density")->owner() == passwd_) {
     if (!S_->GetField("fluid_density", passwd_)->initialized()) {
       *(S_->GetScalarData("fluid_density", passwd_)) = 1000.0;
@@ -194,57 +179,16 @@ void Flow_PK::InitializeFields_()
         *vo_->os() << "initilized gravity to default value -9.8" << std::endl;  
   }
 
-  if (!S_->GetField("permeability", passwd_)->initialized()) {
-    S_->GetFieldData("permeability", passwd_)->PutScalar(1.0);
-    S_->GetField("permeability", passwd_)->set_initialized();
+  InitializeField(S_, "porosity", "porosity", 0.2);
+  InitializeField(S_, passwd_, "permeability", 1.0);
 
-    if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM)
-        *vo_->os() << "initilized permeability to default value 1.0" << std::endl;  
-  }
+  InitializeField(S_, passwd_, "specific_storage", 0.0);
+  InitializeField(S_, passwd_, "specific_yield", 0.0);
 
-  if (S_->HasField("specific_storage")) {
-    if (!S_->GetField("specific_storage", passwd_)->initialized()) {
-      S_->GetFieldData("specific_storage", passwd_)->PutScalar(0.0);
-      S_->GetField("specific_storage", passwd_)->set_initialized();
+  InitializeField(S_, passwd_, "pressure", 0.0);
+  InitializeField(S_, passwd_, "hydraulic_head", 0.0);
 
-      if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM)
-          *vo_->os() << "initilized specific_storage to default value 0.0" << std::endl;  
-    }
-  }
-
-  if (S_->HasField("specific_yield")) {
-    if (!S_->GetField("specific_yield", passwd_)->initialized()) {
-      S_->GetFieldData("specific_yield", passwd_)->PutScalar(0.0);
-      S_->GetField("specific_yield", passwd_)->set_initialized();
-
-      if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM)
-          *vo_->os() << "initilized specific_yield to default value 0.0" << std::endl;  
-    }
-  }
-
-  if (!S_->GetField("pressure", passwd_)->initialized()) {
-    S_->GetFieldData("pressure", passwd_)->PutScalar(0.0);
-    S_->GetField("pressure", passwd_)->set_initialized();
-
-    if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM)
-        *vo_->os() << "initilized pressure to default value 0.0" << std::endl;  
-  }
-
-  if (!S_->GetField("hydraulic_head", passwd_)->initialized()) {
-    S_->GetFieldData("hydraulic_head", passwd_)->PutScalar(0.0);
-    S_->GetField("hydraulic_head", passwd_)->set_initialized();
-
-    if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM)
-        *vo_->os() << "initilized hydraulic_head to default value 0.0" << std::endl;  
-  }
-
-  if (!S_->GetField("darcy_flux", passwd_)->initialized()) {
-    S_->GetFieldData("darcy_flux", passwd_)->PutScalar(0.0);
-    S_->GetField("darcy_flux", passwd_)->set_initialized();
-
-    if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM)
-        *vo_->os() << "initilized darcy_flux to default value 0.0" << std::endl;  
-  }
+  InitializeField(S_, passwd_, "darcy_flux", 0.0);
 }
 
 
@@ -288,10 +232,7 @@ void Flow_PK::InitializeBCsSources_(Teuchos::ParameterList& plist)
 
   // Create the BC objects
   // -- memory
-  bc_model_.resize(nfaces_wghost, 0);
-  bc_value_.resize(nfaces_wghost, 0.0);
-  bc_mixed_.resize(nfaces_wghost, 0.0);
-  op_bc_ = Teuchos::rcp(new Operators::BCs(Operators::OPERATOR_BC_TYPE_FACE, bc_model_, bc_value_, bc_mixed_));
+  op_bc_ = Teuchos::rcp(new Operators::BCs(mesh_, AmanziMesh::FACE, Operators::SCHEMA_DOFS_SCALAR));
 
   Teuchos::RCP<FlowBoundaryFunction> bc;
   Teuchos::RCP<Teuchos::ParameterList>
@@ -419,7 +360,7 @@ void Flow_PK::ComputeWellIndex(Teuchos::ParameterList& spec)
   rw = well_list.get<double>("well radius");
   
   for (auto it = regions.begin(); it != regions.end(); ++it) {
-    mesh_-> get_set_entities(*it, AmanziMesh::CELL, AmanziMesh::OWNED, &cells);
+    mesh_->get_set_entities(*it, AmanziMesh::CELL, AmanziMesh::OWNED, &cells);
 
     for (int k = 0; k < cells.size(); k++) {
       int c = cells[k];

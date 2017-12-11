@@ -1,12 +1,17 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+/*
+  Process Kernels
 
-/* -------------------------------------------------------------------------
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
 
+  Authors: Daniil Svyatsky
+           Ethan Coon
 
-Author: Daniil Svyatsky, Ethan Coon
+  Default base with a few methods implemented in standard ways.
+*/
 
-Default base with a few methods implemented in standard ways.
-------------------------------------------------------------------------- */
 #ifndef AMANZI_PK_PHYSICAL_EXPLICIT_HH_
 #define AMANZI_PK_PHYSICAL_EXPLICIT_HH_
 
@@ -20,11 +25,11 @@ template <class Vector>
 class PK_PhysicalExplicit : virtual public PK_Physical, public PK_Explicit<Vector> {
 
 public:
-  PK_PhysicalExplicit(){};
+  PK_PhysicalExplicit() {};
   PK_PhysicalExplicit(Teuchos::ParameterList& pk_tree,
-                 const Teuchos::RCP<Teuchos::ParameterList>& glist,
-                 const Teuchos::RCP<State>& S,
-                 const Teuchos::RCP<TreeVector>& soln):
+                      const Teuchos::RCP<Teuchos::ParameterList>& glist,
+                      const Teuchos::RCP<State>& S,
+                      const Teuchos::RCP<TreeVector>& soln) :
     PK(pk_tree, glist, S, soln),
     PK_Physical(pk_tree, glist, S, soln)  {};
    

@@ -78,7 +78,6 @@ void TransportBoundaryFunction_Alquimia::Init_(const std::vector<std::string>& r
     AmanziMesh::Entity_ID_List cells;
     for (int n = 0; n < nblock; ++n) {
       int f = block[n];
-      //value_[f] = WhetStone::DenseVector(chem_engine_->NumPrimarySpecies());
       value_[f].resize(chem_engine_->NumPrimarySpecies());
 
       mesh_->face_get_cells(f, AmanziMesh::OWNED, &cells);
@@ -109,7 +108,6 @@ void TransportBoundaryFunction_Alquimia::Compute(double t_old, double t_new)
     chem_engine_->EnforceCondition(cond_name, t_new, alq_mat_props_, alq_state_, alq_aux_data_, alq_aux_output_);
 
     // Move the concentrations into place.
-    //WhetStone::DenseVector& values = it->second;
     std::vector<double>& values = it->second;
     for (int i = 0; i < values.size(); i++) {
       values[i] = alq_state_.total_mobile.data[i];

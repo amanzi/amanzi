@@ -36,14 +36,10 @@ TEST(ADVANCE_WITH_MSTK_PARALLEL) {
   using namespace Amanzi::Transport;
   using namespace Amanzi::AmanziGeometry;
 
-  std::cout << "Test: advance with MSTK in parallel" << std::endl;
-#ifdef HAVE_MPI
+  std::cout << "Test: second-order transport with parallel MSTK framework" << std::endl;
   Epetra_MpiComm* comm = new Epetra_MpiComm(MPI_COMM_WORLD);
-#else
-  Epetra_SerialComm* comm = new Epetra_SerialComm();
-#endif
 
-  /* read parameter list */
+  // read parameter list
   std::string xmlFileName = "test/transport_parallel_mstk.xml";
   Teuchos::RCP<Teuchos::ParameterList> plist = Teuchos::getParametersFromXmlFile(xmlFileName);
 
@@ -52,12 +48,8 @@ TEST(ADVANCE_WITH_MSTK_PARALLEL) {
   Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm =
       Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, region_list, comm));
 
-  FrameworkPreference pref;
-  pref.clear();
-  pref.push_back(MSTK);
-
   MeshFactory meshfactory(comm);
-  meshfactory.preference(pref);
+  meshfactory.preference(FrameworkPreference({MSTK}));
   RCP<const Mesh> mesh = meshfactory("test/hex_3x3x3_ss.exo", gm);
   
   /* create a simple state and populate it */
@@ -89,16 +81,15 @@ TEST(ADVANCE_WITH_MSTK_PARALLEL) {
     (*flux)[0][f] = velocity * normal;
   }
 
-  Teuchos::RCP<Epetra_MultiVector>
-      tcc = S->GetFieldData("total_component_concentration", passwd)->ViewComponent("cell", false);
+  Epetra_MultiVector& tcc = *S->GetFieldData("total_component_concentration", passwd)->ViewComponent("cell");
 
   int ncells_owned = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   for (int c = 0; c < ncells_owned; c++) {
     const AmanziGeometry::Point& xc = mesh->cell_centroid(c);
-    (*tcc)[0][c] = f_step(xc, 0.0);
+    tcc[0][c] = f_step(xc, 0.0);
   }
 
-  /* initialize a transport process kernel */
+  // initialize a transport process kernel
   TPK.Initialize(S.ptr());
 
   /* advance the state */
@@ -107,7 +98,7 @@ TEST(ADVANCE_WITH_MSTK_PARALLEL) {
   t_new = t_old + dt;
   TPK.AdvanceStep(t_old, t_new);
 
-  /* print cell concentrations */
+  // print cell concentrations
   int iter = 0;
   while(t_new < 1.0) {
     dt = TPK.StableTimeStep();
@@ -121,12 +112,17 @@ TEST(ADVANCE_WITH_MSTK_PARALLEL) {
 
     if (iter < 10 && TPK.MyPID == 3) {
       printf("T=%7.2f  C_0(x):", t_new);
-      for (int k = 0; k < 2; k++) printf("%7.4f", (*tcc)[0][k]); std::cout << std::endl;
+      for (int k = 0; k < 2; k++) printf("%7.4f", tcc[0][k]); std::cout << std::endl;
     }
+
+    for (int k = 0; k < ncells_owned; ++k) 
+      CHECK(tcc[0][k] >= 0.0 && tcc[0][k] <= 1.0);
   }
 
-  //for (int k=0; k<12; k++) 
-  //  CHECK_CLOSE((*tcc_next)[0][k], 1.0, 1e-6);
+  for (int k = 0; k < ncells_owned; ++k) 
+    CHECK_CLOSE(tcc[0][k], 1.0, 1e-6);
+
+  delete comm;
 }
  
  

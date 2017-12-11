@@ -22,7 +22,7 @@
 #include "Mesh.hh"
 #include "Point.hh"
 
-#include "mfd3d_elasticity.hh"
+#include "MFD3D_Elasticity.hh"
 #include "Tensor.hh"
 
 
@@ -41,12 +41,8 @@ TEST(ELASTICITY_STIFFNESS_2D) {
   Epetra_SerialComm *comm = new Epetra_SerialComm();
 #endif
 
-  FrameworkPreference pref;
-  pref.clear();
-  pref.push_back(MSTK);
-
   MeshFactory meshfactory(comm);
-  meshfactory.preference(pref);
+  meshfactory.preference(FrameworkPreference({MSTK}));
   // RCP<Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 1, 1); 
   RCP<Mesh> mesh = meshfactory("test/one_cell2.exo"); 
  
@@ -134,12 +130,8 @@ TEST(ELASTICITY_STIFFNESS_3D) {
   Epetra_SerialComm *comm = new Epetra_SerialComm();
 #endif
 
-  FrameworkPreference pref;
-  pref.clear();
-  pref.push_back(MSTK);
-
   MeshFactory meshfactory(comm);
-  meshfactory.preference(pref);
+  meshfactory.preference(FrameworkPreference({MSTK}));
   // RCP<Mesh> mesh = meshfactory(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1, 1, 1); 
   RCP<Mesh> mesh = meshfactory("test/one_cell.exo"); 
  

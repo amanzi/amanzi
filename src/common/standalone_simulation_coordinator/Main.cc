@@ -13,7 +13,6 @@
 #include "Teuchos_CommandLineProcessor.hpp"
 #include "Teuchos_StandardParameterEntryValidators.hpp"
 
-#include "DOMTreeErrorReporter.hpp"
 #include "ErrorHandler.hpp"
 #include "SimulatorFactory.hh"
 #include "XMLParameterListWriter.hh"

@@ -43,6 +43,6 @@ void amanzi_throw(const E& exception)
       abort ();
 }
 
-} // exceptions error
+} // namespace Exceptions
 
 #endif 

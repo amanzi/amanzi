@@ -27,13 +27,12 @@
 #include "Tensor.hh"
 
 // Operators
-#include "HeatConduction.hh"
-
 #include "OperatorDefs.hh"
-#include "OperatorDiffusion.hh"
-#include "OperatorDiffusionFactory.hh"
+#include "PDE_Diffusion.hh"
+#include "PDE_DiffusionFactory.hh"
 #include "UpwindFlux.hh"
 
+#include "HeatConduction.hh"
 
 /* *****************************************************************
 * Comparison of gravity models with constant and vector density.
@@ -79,9 +78,9 @@ void RunTestGravity(std::string op_list_name) {
   AmanziGeometry::Point g(0.0, -1.0);
 
   // create homogeneous boundary data
-  std::vector<int> bc_model(nfaces_wghost, Operators::OPERATOR_BC_NONE);
-  std::vector<double> bc_value(nfaces_wghost, 0.0), bc_mixed(nfaces_wghost, 0.0);
-  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(Operators::OPERATOR_BC_TYPE_FACE, bc_model, bc_value, bc_mixed));
+  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(mesh, AmanziMesh::FACE, SCHEMA_DOFS_SCALAR));
+  std::vector<int>& bc_model = bc->bc_model();
+  std::vector<double>& bc_value = bc->bc_value();
 
   // create fluid densities
   CompositeVectorSpace cvs;
@@ -118,14 +117,14 @@ void RunTestGravity(std::string op_list_name) {
   upwind.Compute(*flux, u, bc_model, bc_value, *knc->values(), func);
 
   // create first diffusion operator using constant density
-  Operators::OperatorDiffusionFactory opfactory;
-  Teuchos::RCP<OperatorDiffusion> op1 = opfactory.Create(op_list, mesh, bc, rho, g);
+  Operators::PDE_DiffusionFactory opfactory;
+  Teuchos::RCP<PDE_Diffusion> op1 = opfactory.Create(op_list, mesh, bc, rho, g);
 
   op1->Setup(K, knc->values(), knc->derivatives());
   op1->UpdateMatrices(flux.ptr(), Teuchos::null);
 
   // create and populate the second operator using vector density
-  Teuchos::RCP<OperatorDiffusion> op2 = opfactory.Create(op_list, mesh, bc, rho_cv, g);
+  Teuchos::RCP<PDE_Diffusion> op2 = opfactory.Create(op_list, mesh, bc, rho_cv, g);
 
   op2->Setup(K, knc->values(), knc->derivatives());
   op2->UpdateMatrices(flux.ptr(), Teuchos::null);
@@ -147,7 +146,7 @@ void RunTestGravity(std::string op_list_name) {
 
 
 /* *****************************************************************
-* Two tests fo rMFd and FV methods.
+* Two tests for MFD and FV methods.
 * **************************************************************** */
 TEST(OPERATOR_DIFFUSION_GRAVITY_MFD) {
   RunTestGravity("diffusion operator gravity mfd");

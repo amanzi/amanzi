@@ -7,6 +7,7 @@
   provided in the top-level COPYRIGHT file.
 
   Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
+           Sergi Molins <smolins@lbl.gov>
 */
 
 #include <algorithm>
@@ -63,7 +64,13 @@ Teuchos::ParameterList InputConverterU::TranslateChemistry_()
     if (flag) {
       bgdfilename = GetAttributeValueS_(node, "input_filename", TYPE_NONE, false, "");
       if (bgdfilename == "") {
-        bgdfilename = CreateBGDFile(xmlfilename_);
+        int status;
+        bgdfilename = CreateBGDFile_(xmlfilename_, rank_, status);
+        if (!status && vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
+          Teuchos::OSTab tab = vo_->getOSTab();
+          *vo_->os() << "File \"" << bgdfilename.c_str() 
+                     << "\" exists, skipping its creation." << std::endl;
+        }
       }
       format = GetAttributeValueS_(node, "format", TYPE_NONE, false, format);
     }
@@ -448,155 +455,6 @@ Teuchos::ParameterList InputConverterU::TranslateChemistry_()
   out_list.sublist("verbose object") = verb_list_.sublist("verbose object");
   return out_list;
 }
-
-
-/* ******************************************************************
-* Adds kd values to a bgd file (using the first material).
-* Returns the name of this file.  
-****************************************************************** */
-std::string InputConverterU::CreateBGDFile(std::string& filename)
-{
-  DOMNode* node;
-  DOMElement* element;
-
-  std::ofstream bgd_file;
-  std::stringstream species;
-  std::stringstream isotherms;
-  MemoryManager mm;
-
-  // get and write list of primaries/solutes
-  bool flag;
-  node = GetUniqueElementByTagsString_("phases, liquid_phase, dissolved_components, primaries", flag);
-  if (flag) {
-    std::string name;
-    bool flag2;
-    std::vector<DOMNode*> children = GetSameChildNodes_(node, name, flag, false);
-    for (int i = 0; i < children.size(); ++i) {
-      DOMNode* inode = children[i];
-      name = mm.transcode(inode->getTextContent());
-      species << name << " ;   0.00 ;   0.00 ;   1.00 \n";
-    }
-  } else {
-    node = GetUniqueElementByTagsString_("phases, liquid_phase, dissolved_components, solutes", flag);
-
-    if (flag) {
-      std::string name;
-      bool flag2;
-      std::vector<DOMNode*> children = GetSameChildNodes_(node, name, flag, false);
-      for (int i = 0; i < children.size(); ++i) {
-        DOMNode* inode = children[i];
-        name = mm.transcode(inode->getTextContent());
-        species << name << " ;   0.00 ;   0.00 ;   1.00 \n";
-      }
-    }
-  }
-  
-  // loop over materials to get kd information
-  node = GetUniqueElementByTagsString_("materials", flag);
-  if (flag ) {
-    // get kd information from all materials
-    Teuchos::ParameterList IsothermsPL;
-    std::string name;
-    std::vector<DOMNode*> mat_list = GetSameChildNodes_(node, name, flag, false);
-
-    for (int i = 0; i < mat_list.size(); ++i) {
-      bool flag2;
-      DOMElement* child_elem;
-      
-      DOMNode* inode = mat_list[i];
-      element = static_cast<DOMElement*>(inode);
-      name = GetAttributeValueS_(element, "name");
-      
-      // look for sorption_isotherms
-      child_elem = GetChildByName_(inode, "sorption_isotherms", flag2, false);
-      if (flag2) {
-        // loop over sublist of primaries to get Kd information
-        std::vector<DOMNode*> primary_list = GetSameChildNodes_(static_cast<DOMNode*>(child_elem), name, flag2, false);
-        if (flag2) {
-          
-          for (int j = 0; j < primary_list.size(); ++j) {
-            DOMNode* jnode = primary_list[j];
-            std::string primary_name = GetAttributeValueS_(static_cast<DOMElement*>(jnode), "name");
-            DOMNode* kd_node = GetUniqueElementByTagsString_(jnode, "kd_model", flag2);
-            DOMElement* kd_elem = static_cast<DOMElement*>(kd_node);
-            
-            if (flag2) {
-              Teuchos::ParameterList kd_list;
-              double kd = GetAttributeValueD_(kd_elem, "kd");
-              std::string model = GetAttributeValueS_(kd_elem, "model");
-              kd_list.set<std::string>("model", model);
-              kd_list.set<double>("kd", kd);
-              
-              if (model == "langmuir") {
-                double b = GetAttributeValueD_(kd_elem, "b");
-                kd_list.set<double>("b", b);
-              } else if (model == "freundlich") {
-                double n = GetAttributeValueD_(kd_elem, "n");
-                kd_list.set<double>("n", n);
-              }
-              
-              IsothermsPL.sublist(primary_name) = kd_list;
-            }
-          }
-        }
-      }
-    }
-    
-    // create text for kds
-    for (auto iter = IsothermsPL.begin(); iter != IsothermsPL.end(); ++iter) {
-      
-      std::string primary = IsothermsPL.name(iter);
-      Teuchos::ParameterList& curprimary = IsothermsPL.sublist(primary);
-      std::string model = curprimary.get<std::string>("model");
-      double kd = curprimary.get<double>("kd");
-      
-      if (model == "langmuir") {
-        double b = curprimary.get<double>("b");
-        isotherms << primary << " ; langmuir ; " << kd << " " << b << std::endl;
-      } else if (model == "freundlich") {
-        double n = curprimary.get<double>("n");
-        isotherms << primary << " ; freundlich ; " << kd << " " << n << std::endl;
-      } else {
-        isotherms << primary << " ; linear ; " << kd << std::endl;
-      }
-    }
-  }
-
-  // build bgd filename
-  std::string bgdfilename(filename);
-  std::string new_extension(".bgd");
-  size_t pos = bgdfilename.find(".xml");
-  bgdfilename.replace(pos, (size_t)4, new_extension, (size_t)0, (size_t)4);
-
-  // open output bgd file
-  if (rank_ == 0) {
-    struct stat buffer;
-    int status = stat(bgdfilename.c_str(), &buffer);
-    if (!status) {
-      if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
-        Teuchos::OSTab tab = vo_->getOSTab();
-        *vo_->os() << "File \"" << bgdfilename.c_str() 
-                   << "\" exists, skipping its creation." << std::endl;
-      }
-    } else {
-      bgd_file.open(bgdfilename.c_str());
-
-      // <Primary Species
-      bgd_file << "<Primary Species\n";
-      bgd_file << species.str();
-
-      //<Isotherms
-      bgd_file << "<Isotherms\n";
-      bgd_file << "# Note, these values will be overwritten by the xml file\n";
-      bgd_file << isotherms.str();
-
-      bgd_file.close();
-    }
-  }
-
-  return bgdfilename;
-}
-
 
 }  // namespace AmanziInput
 }  // namespace Amanzi

@@ -19,11 +19,16 @@ Changes V6 -> V7
 * Dual porosity model to flow and transport.
 * Support of units in output of observations.
 * New regions: with volume fractions and line segments.
-* Finer control of IO of state fields. 
+* Finer control of IO of state fields via blacklisting
 * New functions: distance and monomial.
 * Support of Trilinos solvers: Belos GMRES and NOX.
 * Simple back-tracking and continuation algorithms.
 * More submodels for boundary conditions.
+* New permeability models for flow in fractures.
+* Support of higher-order transport, 3rd and 4th.
+* New time step controller "from file".
+* Experimental support of Stokes and Navier Stokes flows
+* Better layout, less typos.
 
 
 ParameterList XML
@@ -1175,6 +1180,9 @@ Combination of both approaches may lead to a more efficient code.
 * `"vapor diffusion`" [bool] is set up automatically by a high-level PK,
   e.g. by EnergyFlow PK. The default value is `"false`".
 
+* `"flow in fractures`" [bool] indicates that Darcy flow is calculated in fractures. 
+  This option is ignored is mesh dimentionaly equals to manifold dimensionality.
+
 * `"multiscale model`" [string] specifies a multiscale model.
   Available options are `"single porosity`" (default) and `"dual porosity`".
 
@@ -1836,56 +1844,11 @@ Time step controller and nonlinear solver
 `````````````````````````````````````````
 
 The time step is controlled by parameter *time step controller type*
-and the related list of options.
+and the related list of options, see section TimeStepController_ for the list
+of supported parameter.
 Nonlinear solver is controlled by parameter *solver type*  and related list of options.
 Amanzi supports a few nonlinear solvers described in details in a separate section.
 
-* `"time step controller type`" [list]
-  Available options are `"fixed`", `"standard`", `"smarter`", and `"adaptive`".
-  The later is under development and is based on a posteriori error estimates.
-
-  * `"max preconditioner lag iterations`" [int] specifies frequency of 
-    preconditioner recalculation.
-
-  * `"extrapolate initial guess`" [bool] identifies forward time extrapolation
-    of the initial guess. Default is `"true`".
-
-  * `"restart tolerance relaxation factor`" [double] changes the nonlinear
-    tolerance. The time integrator is usually restarted when a boundary condition 
-    changes drastically. It may be beneficial to loosen the nonlinear 
-    tolerance on the first several time steps after the time integrator restart. 
-    The default value is 1, while a reasonable value may be as large as 1000. 
-
-  * `"restart tolerance relaxation factor damping`" controls how fast the loosened 
-    nonlinear tolerance will revert back to the one specified in `"nonlinear tolerance"`.
-    If the nonlinear tolerance is `"tol`", the relaxation factor is `"factor`", and 
-    the damping is `"d`", and the time step count is `"n`" then the actual nonlinear 
-    tolerance is `"tol * max(1.0, factor * d ** n)`".
-    The default value is 1, while reasonable values are between 0 and 1.
-
-  * `"time step increase factor`" [double] defines geometric grow rate for the
-    initial time step. This factor is applied when nonlinear solver converged
-    in less than `"min iterations`" iterations. Default is 1.0.
-
-  * `"time step reduction factor`" [double] defines abrupt time step reduction
-    when nonlinear solver failed or did not converge in  `"max iterations`" iterations.
-
-  * `"max time step`" [double] is the maximum allowed time step.
-
-  * `"min time step`" [double] is the minimum allowed time step.
-
-  * `"solver type`" [string] defines nonlinear solver used on each time step for
-    a nonlinear algebraic system :math:`F(x) = 0`. 
-    The available options `"aa`", `"nka`" and `"Newton`".
-
-  * `"nka parameters`" [list] internal parameters for the nonlinear
-    solver NKA.
-
-  * `"aa parameters`" [list] internal parameters for the nonlinear
-    solver AA (Anderson acceleration).
-
-  * `"residual debugger`" [list] a residual debugger specification.
-    
 .. code-block:: xml
 
    <ParameterList name="Richards problem">  <!-- parent list -->
@@ -2091,10 +2054,12 @@ and temporal accuracy, and verbosity:
 * `"cfl`" [double] Time step limiter, a number less than 1. Default value is 1.
    
 * `"spatial discretization order`" [int] defines accuracy of spatial discretization.
-  It allows values 1 or 2. Default value is 1. 
+  It permits values 1 or 2. Default value is 1. 
   
 * `"temporal discretization order`" [int] defines accuracy of temporal discretization.
-  It allows values 1 or 2. Default value is 1.
+  It permits values 1 or 2 and values 3 or 4 when expert parameter 
+  `"generic RK implementation`" is set to true. Note that RK3 is not monotone.
+  Default value is 1.
 
 * `"reconstruction`" [list] collects reconstruction parameters. The available options are
   describe in the separate section below.
@@ -2441,8 +2406,11 @@ Developer parameters
 
 The remaining parameters that can be used by a developer include
 
-* `"enable internal tests`" [string] various internal tests will be executed during
-  the run time. The default value is `"no`".
+* `"enable internal tests`" [bool] turns on various internal tests during
+  run time. Default value is `"false`".
+   
+* `"generic RK implementation`" [bool] leads to generic implementation of 
+  all Runge-Kutta methods. Default value is `"false`".
    
 * `"internal tests tolerance`" [double] tolerance for internal tests such as the 
   divergence-free condition. The default value is 1e-6.
@@ -3200,16 +3168,17 @@ Operators
 .........
 
 This section contains sublist for diffusion and advection operators.
-It also has one global parameters.
+It also has one global parameter.
 
 * `"operators`" [list] 
-  
+
   * `"include enthalpy in preconditioner`" [bool] allows us to study impact (usually positive) 
     of including enthalpy term in the preconditioner. Default value is *true*.
-
+  
   * `"diagonal shift`" [double] allows for a constant shift to be applied to
     the diagonal of the assembled operator, which can b useful for dealing
     with singular or near-singular matrices.  Default is *0.0*.
+
 
 Diffusion operator
 ``````````````````
@@ -3269,8 +3238,126 @@ This section to be written.
 
    <ParameterList name="operators">  <!-- parent list -->
      <ParameterList name="advection operator">
-       <Parameter name="discretization primary" type="string" value="upwind"/>
-     <Parameter name="reconstruction order" type="int" value="0"/>
+       <Parameter name="method" type="string" value="upwind"/>
+       <Parameter name="reconstruction order" type="int" value="0"/>
+     </ParameterList>
+   </ParameterList>
+
+
+Navier Stokes PK
+----------------
+
+The conceptual PDE model for the incompressible Navier Stokes equations are
+
+.. math::
+  \frac{\partial (\rho \boldsymbol{u})}{\partial t} 
+  + \boldsymbol{\nabla} \cdot (\rho \boldsymbol{u} \otimes \boldsymbol{u})
+  =
+  - \boldsymbol{\nabla} p 
+  + \boldsymbol{\nabla} \cdot \boldsymbol{\sigma} 
+  + \rho \boldsymbol{g}
+
+where 
+:math:`\rho` is the fluid density,
+:math:`p` is the pressure,
+:math:`\boldsymbol{\sigma}` is the deviatoric stress tensor,
+:math:`\boldsymbol{g}` is the gravity vector, 
+and :math:`u \otimes v = u \times v^T`.
+The Stokes stress contitutive law for incompressible viscous fluid is
+
+.. math::
+  \boldsymbol{\sigma} = 
+  \mu \left(\boldsymbol{\nabla} \boldsymbol{u} + 
+            \boldsymbol{\nabla} \boldsymbol{u}^{T}\right),
+
+where 
+:math:`\mu` is the dynamic viscosity. It can depend on density and pressure. 
+
+
+Physical models and assumptions
+...............................
+
+This list is used to summarize physical models and assumptions, such as
+coupling with other PKs.
+This list is often generated on a fly by a high-level MPC PK.
+
+* `"gravity`" [bool] is set up automatically by a high-level PK.
+  The default value is `"false`".
+
+.. code-block:: xml
+
+   <ParameterList name="Navier Stokes">  <!-- parent list -->
+     <ParameterList name="physical models and assumptions">
+       <Parameter name="gravity" type="bool" value="false"/>
+     </ParameterList>
+   </ParameterList>
+
+
+Operators
+.........
+
+This section contains sublist for diffusion and advection operators.
+It also has one global parameter.
+
+* `"operators`" [list] 
+
+
+Elasticity operator
+```````````````````
+
+.. code-block:: xml
+
+   <ParameterList name="operators">  <!-- parent list -->
+     <ParameterList name="elasticity operator">
+       <Parameter name="method" type="string" value="BernardiRaugel"/>
+       <ParameterList name="schema">
+         <Parameter name="base" type="string" value="cell"/>
+         <Parameter name="location" type="Array(string)" value="{node, face}"/>
+         <Parameter name="type" type="Array(string)" value="{vector, normal component}"/>
+         <Parameter name="number" type="Array(int)" value="{2, 1}"/>
+       </ParameterList>
+     </ParameterList>
+   </ParameterList>
+
+
+Convection operator
+```````````````````
+
+This section to be written.
+
+.. code-block:: xml
+
+   <ParameterList name="operators">  <!-- parent list -->
+     <ParameterList name="convection operator">
+       <Parameter name="flux formula" type="string" value="NavierStokes"/>
+       <Parameter name="riemann problem" type="string" value="continuous"/>
+     </ParameterList>
+   </ParameterList>
+
+
+Divergence operator
+```````````````````
+
+This section to be written.
+
+.. code-block:: xml
+
+   <ParameterList name="operators">  <!-- parent list -->
+     <ParameterList name="divergence operator">
+       <Parameter name="method" type="string" value="BernardiRaugel"/>
+       <ParameterList name="schema domain">
+         <Parameter name="base" type="string" value="cell"/>
+         <Parameter name="location" type="Array(string)" value="{node, face}"/>
+         <Parameter name="type" type="Array(string)" value="{scalar, normal component}"/>
+         <Parameter name="number" type="Array(int)" value="{2, 1}"/>
+       </ParameterList>
+       <ParameterList name="schema range">
+         <Parameter name="base" type="string" value="cell"/>
+         <Parameter name="location" type="Array(string)" value="{cell}"/>
+         <Parameter name="type" type="Array(string)" value="{scalar}"/>
+         <Parameter name="number" type="Array(int)" value="{1}"/>
+       </ParameterList>
+     </ParameterList>
    </ParameterList>
 
 
@@ -3464,16 +3551,17 @@ Operators
 
 Operators are discrete forms of linearized PDEs operators.
 They form a layer between physical process kernels and solvers
-and include diffusion, advection, and source operators.
+and include diffusion, advection, elasticity, and source operators.
 A PK decides which collection of operators must be used to build a preconditioner.
 
-Operators use a few generic tools that are generic in nature and can be used 
-independently by PKs. 
+Operators use a few tools that are generic in nature and can be used independently by PKs. 
 The list includes reconstruction and limiting algorithms. 
 
 
 Diffusion operator
 ..................
+
+Diffusion is the most frequently used operator.
 
 * `"OPERATOR_NAME`" [list] a PK specific name for the diffusion operator.
 
@@ -3569,20 +3657,101 @@ Schur complement.
 Advection operator
 ..................
 
-This section is under construction.
+An advection operator may have different domain and range and therefore requires two schemas.
+The structure of the schema is described in the previous section.
 
 * `"OPERATOR_NAME`" [list] a PK specific name for the advection operator.
 
-  * `"discretization primary`" defines a discretization method. The only available option is `"upwind`".
+  * `"method`" [string] defines a discretization method. The available options 
+    are `"DG order 0`", `"DG order 1`".
 
-  * `"reconstruction order`" defines accuracy of this discrete operator.
+  * `"riemann problem`" [string] defines a method for calculating Riemann flux. 
+    are `"upwind`", `"downwind`", `"average`".
+
+  * `"flux formula`" [string] defines type of the flux. The available options 
+    are `"NavierStokes`", `nd "remap`".
+
+  * `"reconstruction order`" [int] defines accuracy of this discrete operator.
+
+  * `"schema domain`" [list] defines a discretization schema for the operator domain.
+
+  * `"schema range`" [list] defines a discretization schema for the operator range. 
 
 .. code-block:: xml
 
   <ParameterList name="OPERATOR_NAME">
-    <Parameter name="discretization primary" type="string" value="upwind"/>
+    <Parameter name="method" type="string" value="DG order 0"/>
     <Parameter name="reconstruction order" type="int" value="0"/>
+    <Parameter name="riemann problem" type="string" value="average"/>
+    <Parameter name="flux formula" type="string" value="NavierStokes"/>
+    <ParameterList name="schema domain">
+      <Parameter name="location" type="Array(string)" value="{node, face}"/>
+      <Parameter name="type" type="Array(string)" value="{scalar, normal component}"/>
+      <Parameter name="number" type="Array(int)" value="{2, 1}"/>
+    </ParameterList>
+    <ParameterList name="schema range">
+      <Parameter name="location" type="Array(string)" value="{cell}"/>
+      <Parameter name="type" type="Array(string)" value="{scalar}"/>
+      <Parameter name="number" type="Array(int)" value="{1}"/>
+    </ParameterList>
   </ParameterList>
+
+
+Reaction operator
+.................
+
+A reaction operator may represent either reaction of identity operator.
+It is symmetric so far and requires one schema.
+The structure of the schema is described in the previous section.
+
+* `"OPERATOR_NAME`" [list] a PK specific name for the advection operator.
+
+  * `"method`" [string] defines a discretization method. The available 
+    options are `"DG order 0`", `"DG order 1`".
+
+  * `"schema`" [list] defines a discretization schema for the operator domain.
+
+.. code-block:: xml
+
+  <ParameterList name="OPERATOR_NAME">
+    <Parameter name="method" type="string" value="DG order 1"/>
+    <Parameter name="matrix type" type="string" value="mass"/>
+    <ParameterList name="schema">
+      <Parameter name="location" type="Array(string)" value="{cell}"/>
+      <Parameter name="type" type="Array(string)" value="{scalar}"/>
+      <Parameter name="number" type="Array(int)" value="{3}"/>
+    </ParameterList>
+  </ParameterList>
+
+
+Elasticity operator
+...................
+
+Elasticity operator is used for describing soil deformation or fluid flow (Stokes 
+and Navier-Stokes).
+
+* `"method`" [string] defines a discretization method. The available
+  options are `"BernardiRaugel`".
+
+* `"schema`" [list] defines a discretization schema.
+
+  * `"location`" [Array(string)] defines geometric location of degrees of freedom.
+
+  * `"type`" [Array(string)] defines type of degrees of freedom. The available options 
+    are `"scalar`" and `"normal component`".
+
+  * `"number`" [Array(int)] indicates how many time this degree of freedom is repeated.
+
+.. code-block:: xml
+
+    <ParameterList name="elasticity operator">
+      <Parameter name="method" type="string" value="BernardiRaugel"/>
+      <ParameterList name="schema">
+        <Parameter name="location" type="Array(string)" value="{node, face}"/>
+        <Parameter name="type" type="Array(string)" value="{scalar, normal component}"/>
+        <Parameter name="number" type="Array(int)" value="{2, 1}"/>
+      </ParameterList>
+    </ParameterList>
 
 
 Reconstruction and limiters
@@ -3615,6 +3784,142 @@ and their extensions for various PKs.
     <Parameter name="limiter" type="string" value="tensorial"/>
     <Parameter name="limiter extension for transport" type="bool" value="false"/>
   </ParameterList>
+
+
+.. _TimeStepController:
+
+Time step controller
+--------------------
+
+The time step is controlled by parameter *time step controller type*
+and the related list of options.
+Nonlinear solver is controlled by parameter *solver type*  and related list of options.
+Amanzi supports a few nonlinear solvers described in details in a separate section.
+
+The time step controller *standard* is a simple timestep control mechanism
+which sets the next timestep based upon the previous timestep and how many
+nonlinear iterations the previous timestep took to converge.
+The next time step is given by the following rule:
+
+* if :math:`N_k > N^{max}` then :math:`\Delta t_{k+1} = f_{reduction} \Delta t_{k}`
+* if :math:`N_k < N^{min}` then :math:`\Delta t_{k+1} = f_{increase} \Delta t_{k}`
+* otherwise :math:`\Delta t_{k+1} = \Delta t_{k}`
+
+where :math:`\Delta t_{k}` is the previous timestep and :math:`N_k` is the number of nonlinear 
+iterations required to solve step :math:`k`.
+
+The time step controller *smart* is based on *standard*, but also tries to be a bit 
+smarter to avoid repeated increase/decrease loops where the step size decreases, 
+converges in few iterations, increases, but then fails again.  It also tries to grow 
+the time step geometrically to more quickly recover from tricky nonlinearities.
+
+The time step controller *from file* loads a timestep history from a file, then
+advances the step size with those values.  This is mostly used for testing
+purposes, where we need to force the same timestep history as previous runs to
+do regression testing.  Otherwise roundoff errors can eventually alter
+number of iterations enough to alter the timestep history, resulting in
+solutions which are enough different to cause doubt over their correctness.
+
+* `"time step controller type`" [list]
+  Available options are `"fixed`", `"standard`", `"smarter`",  `"adaptive`", and `"from file`"
+  The later is under development and is based on a posteriori error estimates.
+
+  * `"max preconditioner lag iterations`" [int] specifies frequency of 
+    preconditioner recalculation.
+
+  * `"extrapolate initial guess`" [bool] identifies forward time extrapolation
+    of the initial guess. Default is `"true`".
+
+  * `"restart tolerance relaxation factor`" [double] changes the nonlinear
+    tolerance. The time integrator is usually restarted when a boundary condition 
+    changes drastically. It may be beneficial to loosen the nonlinear 
+    tolerance on the first several time steps after the time integrator restart. 
+    The default value is 1, while a reasonable value may be as large as 1000. 
+
+  * `"restart tolerance relaxation factor damping`" controls how fast the loosened 
+    nonlinear tolerance will revert back to the one specified in `"nonlinear tolerance"`.
+    If the nonlinear tolerance is `"tol`", the relaxation factor is `"factor`", and 
+    the damping is `"d`", and the time step count is `"n`" then the actual nonlinear 
+    tolerance is `"tol * max(1.0, factor * d ** n)`".
+    The default value is 1, while reasonable values are between 0 and 1.
+
+  * `"time step increase factor`" [double] defines geometric grow rate for the
+    initial time step. This factor is applied when nonlinear solver converged
+    in less than `"min iterations`" iterations. 
+    This value can be modified geometrically by the smart controller in the 
+    case of repeated successful steps. Default is 1.
+
+  * `"min iterations`" [int]  triggers increase of the time step if the previous step 
+    took less than this.
+
+  * `"time step reduction factor`" [double] defines abrupt time step reduction
+    when nonlinear solver failed or did not converge in `"max iterations`" iterations.
+
+  * `"max iterations`" [int] itriggers decrease of the time step if the previous step 
+    took more than this.
+
+  * `"max time step`" [double] is the maximum allowed time step.
+
+  * `"min time step`" [double] is the minimum allowed time step.
+
+  * `"solver type`" [string] defines nonlinear solver used on each time step for
+    a nonlinear algebraic system :math:`F(x) = 0`. 
+    The available options `"aa`", `"nka`" and `"Newton`".
+
+  * `"nka parameters`" [list] internal parameters for the nonlinear
+    solver NKA.
+
+  * `"aa parameters`" [list] internal parameters for the nonlinear
+    solver AA (Anderson acceleration).
+
+  * `"file name`" [string] is the path to hdf5 file containing timestep information. 
+    The parameter is used by only one controller.
+
+  * `"timestep header`" [string] is the name of the dataset containing the history 
+    of timestep sizes. The parameter is used by only one controller.
+
+  * `"max time step increase factor`" [double] specifies the maximum value for 
+    parameter `"time step increase factor`" in the smart controller. Default is 10.
+
+  * `"growth wait after fail`" [int] defined the number of skipped timesteps before
+    attempting to grow the timestep after a failed timestep. 
+    This parameter is used by the smart controller only.
+
+  * `"count before increasing increase factor`" [int] defines the number of successive 
+    increasions before multiplying parameter `"time step increase factor`". 
+    This parameter is used by the smart controller only.
+ 
+  * `"residual debugger`" [list] a residual debugger specification.
+    
+.. code-block:: xml
+
+   <ParameterList name="Richards problem">  <!-- parent list -->
+     <ParameterList name="time integrator">
+       <Parameter name="max preconditioner lag iterations" type="int" value="5"/>
+       <Parameter name="extrapolate initial guess" type="bool" value="true"/>
+       <Parameter name="restart tolerance relaxation factor" type="double" value="1000.0"/>
+       <Parameter name="restart tolerance relaxation factor damping" type="double" value="0.9"/>
+
+       <Parameter name="time integration method" type="string" value="BDF1"/>
+       <ParameterList name="BDF1">
+         <Parameter name="timestep controller type" type="string" value="standard"/>
+         <ParameterList name="timestep controller standard parameters">
+           <Parameter name="min iterations" type="int" value="10"/>
+           <Parameter name="max iterations" type="int" value="15"/>
+           <Parameter name="time step increase factor" type="double" value="1.2"/>
+           <Parameter name="time step reduction factor" type="double" value="0.5"/>
+           <Parameter name="max time step" type="double" value="1e+9"/>
+           <Parameter name="min time step" type="double" value="0.0"/>
+         </ParameterList>
+       </ParameterList>
+     </ParameterList>
+   </ParameterList>
+
+In this example, the time step is increased by factor 1.2 when the nonlinear
+solver converges in 10 or less iterations. 
+The time step is not changed when the number of nonlinear iterations is
+between 11 and 15.
+The time step will be cut twice if the number of nonlinear iterations exceeds 15.
 
 
 .. _Functions:
@@ -4758,6 +5063,15 @@ This specification format uses and describes the unstructured mesh only.
         * `"framework`" [string] one of `"stk::mesh`", `"MSTK`", `"MOAB`" or `"Simple`". 
         * `"verify mesh`" [bool] true or false. 
 
+        * `"partitioner`" [string] defines the partitioning algorithm for parallel unstructured meshes.
+          The available options are `"metis"` (default), `"zoltan_graph"` and `"zoltan_rcb"`. `"metis"`
+          and `"zoltan_graph"` perform a graph partitioning of the mesh with no regard to the geometry 
+          of the mesh. `"zoltan_rcb"` partitions meshes using Recursive Coordinate Bisection which 
+          can lead to better partitioning in meshes that are thin in a particular direction. 
+          Additionally, the use of `"zoltan_rcb"` with the MSTK framework triggers an option to 
+          detect columns of elements in a mesh and adjust the partitioning such that no column is 
+          split over multiple partitions. If no partitioner is specified, the default one is used.
+
 Example of *Unstructured* mesh generated internally:
 
 .. code-block:: xml
@@ -4772,6 +5086,11 @@ Example of *Unstructured* mesh generated internally:
              <Parameter name="domain high corner" type="Array(double)" value="{103.2, 1.0, 103.2}"/>
            </ParameterList>   
          </ParameterList>   
+
+         <ParameterList name="expert">
+           <Parameter name="framework" type="string" value="MSTK"/>
+           <Parameter name="partitioner" type="string" value="metis"/>
+         </ParameterList>
        </ParameterList>   
      </ParameterList>
    </ParameterList>
@@ -5318,7 +5637,7 @@ for its evaluation.  The observations are evaluated during the simulation and re
       function applied to compute observation. Works ONLY with
       Line Segment region at the moment. Available options `"flux norm`"
       and `"none`". Default is `"none`". `"flux norm`" is the absolute
-      value of the darcy flux in a cell.
+      value of the Darcy flux in a cell.
 
 The following observation functionals are currently supported.
 All of them operate on the variables identified.

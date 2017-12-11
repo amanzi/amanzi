@@ -32,8 +32,8 @@
 #include "Analytic04.hh"
 #include "HeatConduction.hh"
 
+#include "DiffusionTPFA.hh"
 #include "OperatorDefs.hh"
-#include "OperatorDiffusionTPFA.hh"
 #include "OperatorSource.hh"
 #include "UpwindSecondOrder.hh"
 #include "UpwindStandard.hh"
@@ -152,7 +152,7 @@ TEST(OPERATOR_DIFFUSION_TPFA_ZEROCOEF) {
   g[0] = 0.0;
   g[1] = 0.0;
 
-  Teuchos::RCP<OperatorDiffusionTPFA> op2 = Teuchos::rcp(new OperatorDiffusionTPFA(*op1, op_list, bc));
+  Teuchos::RCP<DiffusionTPFA> op2 = Teuchos::rcp(new DiffusionTPFA(*op1, op_list, bc));
   op2->SetUpwind(0);
   op2->SetGravity(g);
   

@@ -198,82 +198,8 @@ void AddToTable(list<ParmParse::PP_entry>& table,
   table.push_back(ParmParse::PP_entry(entry_name, entry));
 }
 
-} // end anonymous namespace
+} // anonymous namespace
 
-/* ******************************************************************
-* Adds kd values to a bgd file (using the first material).
-* Returns the name of this file.  
-* FIXME: STOLEN from U code, shouldn't this be in common???
-****************************************************************** */
-std::string InputConverterS::CreateBGDFile(std::string& filename)
-{
-  DOMNode* node;
-  DOMElement* element;
-
-  std::ofstream bgd_file;
-  std::stringstream species;
-  std::stringstream isotherms;
-
-  bool flag;
-  node = GetUniqueElementByTagsString_("materials, material, sorption_isotherms", flag);
-  if (flag) {
-    std::string name;
-    std::vector<DOMNode*> children = GetSameChildNodes_(node, name, flag, false);
-    for (int i = 0; i < children.size(); ++i) {
-      DOMNode* inode = children[i];
-      element = static_cast<DOMElement*>(inode);
-      name = GetAttributeValueS_(element, "name");
-      species << name << " ;   0.00 ;   0.00 ;   1.00 \n";
-
-      DOMNode* knode = GetUniqueElementByTagsString_(inode, "kd_model", flag);
-      element = static_cast<DOMElement*>(knode);
-      if (flag) {
-        double kd = GetAttributeValueD_(element, "kd");
-        std::string model = GetAttributeValueS_(element, "model");
-        if (model == "langmuir") {
-          double b = GetAttributeValueD_(element, "b");
-          isotherms << name << " ; langmuir ; " << kd << " " << b << std::endl;
-        } else if (model == "freundlich") {
-          double n = GetAttributeValueD_(element, "n");
-          isotherms << name << " ; freundlich ; " << kd << " " << n << std::endl;
-        } else {
-          isotherms << name << " ; linear ; " << kd << std::endl;
-        }
-      }
-    }
-  }
-  
-  // build bgd filename
-  std::string bgdfilename(filename);
-  std::string new_extension(".bgd");
-  size_t pos = bgdfilename.find(".xml");
-  bgdfilename.replace(pos, (size_t)4, new_extension, (size_t)0, (size_t)4);
-
-  // open output bgd file
-  if (rank_ == 0) {
-    struct stat buffer;
-    int status = stat(bgdfilename.c_str(), &buffer);
-    if (!status) {
-      std::cout << "File \"" << bgdfilename.c_str() 
-		<< "\" exists, skipping its creation." << std::endl;
-    } else {
-      bgd_file.open(bgdfilename.c_str());
-
-      // <Primary Species
-      bgd_file << "<Primary Species\n";
-      bgd_file << species.str();
-
-      //<Isotherms
-      bgd_file << "<Isotherms\n";
-      bgd_file << "# Note, these values will be overwritten by the xml file\n";
-      bgd_file << isotherms.str();
-
-      bgd_file.close();
-    }
-  }
-
-  return bgdfilename;
-}
 
 // Helper for parsing a mechanical property.
 bool InputConverterS::ParseMechProperty_(DOMElement* mech_prop_node, 
@@ -1412,7 +1338,8 @@ void InputConverterS::ParseGeochemistry_()
 	bgdfilename = GetAttributeValueS_(element, "file");
 	format = GetAttributeValueS_(element, "format", TYPE_NONE, false, format);
       } else {
-	bgdfilename = CreateBGDFile(xmlfilename_);
+        int status;
+	bgdfilename = CreateBGDFile_(xmlfilename_, rank_, status);
       }
 
       AddToTable(table, MakePPPrefix("Chemistry", "Thermodynamic_Database_File"), MakePPEntry(bgdfilename));

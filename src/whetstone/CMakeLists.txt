@@ -37,21 +37,39 @@ include_directories(${Boost_INCLUDE_DIRS})
 # Library: whetstone
 #
 add_amanzi_library(whetstone
-                   SOURCE mfd3d.cc
-                          mfd3d_diffusion.cc mfd3d_diffusion_surface.cc 
-                          mfd3d_diffusion_other.cc 
-                          mfd3d_elasticity.cc 
-                          mfd3d_electromagnetics.cc mfd3d_electromagnetics_surface.cc 
-                          nlfv.cc Tensor.cc DenseMatrix.cc
-                   HEADERS DenseMatrix.hh
-                           DenseVector.hh
+                   SOURCE InnerProduct.cc 
+                          DeRham_Node.cc DeRham_Edge.cc DeRham_Face.cc
+                          MFD3D.cc
+                          MFD3D_BernardiRaugel.cc
+			  MFD3D_CrouzeixRaviart.cc
+                          MFD3D_Diffusion.cc MFD3D_Diffusion_Surface.cc MFD3D_Diffusion_Other.cc 
+                          MFD3D_Elasticity.cc 
+                          MFD3D_Electromagnetics.cc MFD3D_Electromagnetics_Surface.cc
+                          MFD3D_Generalized_Diffusion.cc
+                          DG_Modal.cc nlfv.cc 
+                          Tensor.cc DenseMatrix.cc
+                          Polynomial.cc VectorPolynomial.cc
+                          MeshMaps.cc
+                          MeshMaps_FEM.cc MeshMaps_VEM.cc
+                          ProjectorH1.cc
+                   HEADERS DenseMatrix.hh DenseVector.hh
+                           DG_Modal.hh
                            lapack.hh
-                           mfd3d.hh
-                           mfd3d_diffusion.hh
-                           mfd3d_elasticity.hh
-                           mfd3d_electromagnetics.hh
+                           InnerProductL2.hh InnerProductH1.hh BilinearForm.hh
+                           DeRham_Node.hh DeRham_Edge.hh DeRham_Face.hh
+                           MFD3D.hh
+                           MFD3D_BernardiRaugel.hh
+			   MFD3D_CrouzeixRaviart.hh
+                           MFD3D_Diffusion.hh
+                           MFD3D_Elasticity.hh
+                           MFD3D_Electromagnetics.hh
+                           MFD3D_Generalized_Diffusion.hh
+                           MFD3DFactory.hh
                            nlfv.hh
-                           Tensor.hh
+                           Polynomial.hh VectorPolynomial.hh Tensor.hh
+                           MeshMaps.hh
+                           MeshMaps_FEM.hh MeshMaps_VEM.hh
+                           ProjectorH1.hh
                            WhetStoneDefs.hh
                            WhetStone_typedefs.hh
                    LINK_LIBS geometry mesh error_handling ${Epetra_LIBRARIES})
@@ -71,15 +89,16 @@ if ( BUILD_TESTS )
     set(amanzi_libs geometry mesh mesh_audit mesh_factory whetstone)
 
     # Test: matrices for diffusion
-    add_amanzi_test(whetstone_darcy whetstone_darcy
+    add_amanzi_test(whetstone_diffusion whetstone_diffusion
                     KIND unit
-                    SOURCE test/Main.cc test/whetstone_darcy.cc
+                    SOURCE test/Main.cc test/whetstone_diffusion.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
     # Test: matrices for elasticity
     add_amanzi_test(whetstone_elasticity whetstone_elasticity
                     KIND unit
                     SOURCE test/Main.cc test/whetstone_elasticity.cc
+                           test/whetstone_elasticity_other.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
     # Test: matrices for electromagnetics
@@ -89,9 +108,10 @@ if ( BUILD_TESTS )
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
     # Test: various operations with tensors 
-    add_amanzi_test(whetstone_tensors whetstone_tensors
+    add_amanzi_test(whetstone_tensors_geometry whetstone_tensors_geometry
                     KIND unit
                     SOURCE test/Main.cc test/whetstone_tensors.cc
+                                        test/whetstone_geometry.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
     # Test: surface matrices for diffusion
@@ -105,6 +125,21 @@ if ( BUILD_TESTS )
                     KIND unit
                     SOURCE test/Main.cc test/whetstone_nlfv.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+
+    # Test: matrices for DG methods
+    add_amanzi_test(whetstone_dg whetstone_dg
+                    KIND unit
+                    SOURCE test/Main.cc test/whetstone_polynomials.cc
+                                        test/whetstone_dg.cc
+                                        test/whetstone_projectors.cc
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+
+    # Test: matrices for Derham complex
+    add_amanzi_test(whetstone_derham whetstone_derham
+                    KIND unit
+                    SOURCE test/Main.cc test/whetstone_derham.cc
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+
 endif()
 
 

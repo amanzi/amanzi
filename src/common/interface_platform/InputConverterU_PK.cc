@@ -304,7 +304,7 @@ Teuchos::ParameterList InputConverterU::TranslateInitialization_(
 
   if (method == "picard") {
     Teuchos::ParameterList& pic_list = out_list.sublist("picard parameters");
-    pic_list.set<std::string>("linear solver", "GMRES with Hypre AMG");
+    out_list.set<std::string>("linear solver", "GMRES with Hypre AMG");
     pic_list.set<double>("convergence tolerance", PICARD_TOLERANCE);
     pic_list.set<int>("maximum number of iterations", PICARD_MAX_ITERATIONS);
 

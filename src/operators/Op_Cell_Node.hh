@@ -17,16 +17,6 @@
 #include "Operator.hh"
 #include "Op.hh"
 
-/*
-  Op classes are small structs that play two roles:
-
-  1. They provide a class name to the schema, enabling visitor patterns.
-  2. They are a container for local matrices.
-  
-  This Op class is for storing local matrices of length ncells and with dofs
-  on nodes, e.g. Lagrange elements.
-*/
-
 namespace Amanzi {
 namespace Operators {
 
@@ -46,6 +36,11 @@ class Op_Cell_Node : public Op {
     assembler->ApplyMatrixFreeOp(*this, X, Y);
   }
 
+  virtual void ApplyTransposeMatrixFreeOp(const Operator* assembler,
+          const CompositeVector& X, CompositeVector& Y) const {
+    assembler->ApplyMatrixFreeOp(*this, X, Y);
+  }
+
   virtual void SymbolicAssembleMatrixOp(const Operator* assembler,
           const SuperMap& map, GraphFE& graph,
           int my_block_row, int my_block_col) const {
@@ -58,13 +53,6 @@ class Op_Cell_Node : public Op {
     assembler->AssembleMatrixOp(*this, map, mat, my_block_row, my_block_col);
   }
   
-  virtual bool ApplyBC(BCs& bc,
-                       const Teuchos::Ptr<CompositeVector>& rhs,                       
-                       bool bc_previously_applied) {
-    ASSERT(0);
-    return false;
-  }
-
   // rescaling columns of local matrices
   virtual void Rescale(const CompositeVector& scaling) {
     if (scaling.HasComponent("node")) {

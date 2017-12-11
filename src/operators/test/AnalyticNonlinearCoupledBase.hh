@@ -12,13 +12,11 @@
 
     - div( k00(u,v) K00 grad(u) ) - div( k01(u,v) K01 grad(v) ) = f0
     - div( k10(u,v) K10 grad(u) ) - div( k11(u,v) K11 grad(v) ) = f1
-
 */
 
 #ifndef AMANZI_OPERATOR_ANALYTIC_NONLINEAR_BASE_HH_
 #define AMANZI_OPERATOR_ANALYTIC_NONLINEAR_BASE_HH_
 
-#include "mfd3d_diffusion.hh"
 #include "Mesh.hh"
 
 class AnalyticNonlinearCoupledBase {

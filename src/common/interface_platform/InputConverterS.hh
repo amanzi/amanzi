@@ -37,8 +37,6 @@ class InputConverterS : public InputConverter {
   void Translate(int rank_);
 
  private:
-  std::string CreateBGDFile(std::string& filename);
-
   void ParseUnits_();
   void ParseDefinitions_();
   void ParseExecutionControls_();

@@ -1,0 +1,86 @@
+/*
+  The discretization component of Amanzi.
+  License: BSD
+  Author: Konstantin Lipnikov (lipnikov@lanl.gov)
+*/
+
+#include <cstdlib>
+#include <cmath>
+#include <iostream>
+#include <vector>
+
+#include "Teuchos_ParameterList.hpp"
+#include "Teuchos_RCP.hpp"
+#include "Teuchos_XMLParameterListHelpers.hpp"
+#include "UnitTest++.h"
+
+#include "Mesh.hh"
+#include "MeshFactory.hh"
+#include "MeshAudit.hh"
+#include "Point.hh"
+
+#include "DeRham_Node.hh"
+#include "Tensor.hh"
+
+
+/* ****************************************************************
+* DeRham complex for nodes
+**************************************************************** */
+TEST(DERHAM_COMPLEX_NODE) {
+  using namespace Amanzi;
+  using namespace Amanzi::AmanziMesh;
+  using namespace Amanzi::WhetStone;
+
+  std::cout << "Test: Mass matrix for nodes" << std::endl;
+  Epetra_MpiComm *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
+
+  MeshFactory meshfactory(comm);
+  meshfactory.preference(FrameworkPreference({MSTK}));
+  Teuchos::RCP<Mesh> mesh = meshfactory(0.0, 0.0, 0.5, 1.0, 1, 1); 
+ 
+  DeRham_Node drc(mesh);
+
+  int nnodes(4), cell(0);
+  DenseMatrix M(nnodes, nnodes);
+
+  Tensor T(2, 1);
+  T(0, 0) = 1.0;
+
+  drc.MassMatrix(cell, T, M);
+
+  printf("Mass matrix for cell %3d\n", cell);
+  M.PrintMatrix("%8.4f ");
+
+  // verify SPD propery
+  for (int i = 0; i < nnodes; ++i) CHECK(M(i, i) > 0.0);
+
+  // verify exact integration property
+  AmanziMesh::Entity_ID_List nodes;
+  mesh->cell_get_nodes(cell, &nodes);
+    
+  double xi, yi, xj, yj;
+  double vxx = 0.0, vxy = 0.0, volume = mesh->cell_volume(cell); 
+  AmanziGeometry::Point p1(2), p2(2);
+
+  for (int i = 0; i < nnodes; i++) {
+    int v1 = nodes[i];
+    mesh->node_get_coordinates(v1, &p1);
+    for (int j = 0; j < nnodes; j++) {
+      int v2 = nodes[j];
+
+      xi = 1.0; // p1[0];
+      yi = 1.0; // p1[1];
+      xj = 1.0; // p2[0];
+
+      vxx += M(i, j) * xi * xj;
+      vxy += M(i, j) * yi * xj;
+    }
+  }
+
+  CHECK_CLOSE(T(0,0) * volume, vxx, 1e-10);
+  CHECK_CLOSE(T(0,0) * volume, vxy, 1e-10);
+
+  delete comm;
+}
+
+

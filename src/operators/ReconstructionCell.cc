@@ -78,7 +78,7 @@ void ReconstructionCell::Init(Teuchos::RCP<const Epetra_MultiVector> field,
 void ReconstructionCell::Compute()
 {
   Teuchos::RCP<Epetra_MultiVector> grad = gradient_->ViewComponent("cell", false);
-  AmanziMesh::Entity_ID_List cells;
+  AmanziGeometry::Entity_ID_List cells;
   AmanziGeometry::Point xcc(dim);
 
   WhetStone::DenseMatrix matrix(dim, dim);
@@ -87,10 +87,11 @@ void ReconstructionCell::Compute()
   for (int c = 0; c < ncells_owned; c++) {
     const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
 
-    mesh_->cell_get_face_adj_cells(c, AmanziMesh::USED, &cells);
+    // mesh_->cell_get_face_adj_cells(c, AmanziMesh::USED, &cells);
+    CellFaceAdjCellsNonManifold_(c, AmanziMesh::USED, cells);
     int ncells = cells.size();
 
-    matrix.clear();
+    matrix.PutScalar(0.0);
     rhs.clear();
 
     for (int n = 0; n < ncells; n++) {
@@ -98,7 +99,7 @@ void ReconstructionCell::Compute()
       for (int i = 0; i < dim; i++) xcc[i] = xc2[i] - xc[i];
 
       double value = (*field_)[component_][cells[n]] - (*field_)[component_][c];
-      PopulateLeastSquareSystem(xcc, value, matrix, rhs);
+      PopulateLeastSquareSystem_(xcc, value, matrix, rhs);
     }
 
     // improve robustness w.r.t degenerate matrices
@@ -109,7 +110,6 @@ void ReconstructionCell::Compute()
       norm *= OPERATOR_RECONSTRUCTION_MATRIX_CORRECTION;
       for (int i = 0; i < dim; i++) matrix(i, i) += norm;
     }
-    // PrintLeastSquareSystem(matrix, rhs);
 
     int info, nrhs = 1;
     WhetStone::DPOSV_F77("U", &dim, &nrhs, matrix.Values(), &dim, rhs.Values(), &dim, &info);
@@ -130,24 +130,24 @@ void ReconstructionCell::Compute()
 * in specied cells and internal structures are not modified.
 ****************************************************************** */
 void ReconstructionCell::ComputeGradient(
-    const AmanziMesh::Entity_ID_List& ids,
+    const AmanziGeometry::Entity_ID_List& ids,
     std::vector<AmanziGeometry::Point>& gradient)
 {
-  AmanziMesh::Entity_ID_List cells;
+  AmanziGeometry::Entity_ID_List cells;
   AmanziGeometry::Point xcc(dim), grad(dim);
 
   WhetStone::DenseMatrix matrix(dim, dim);
   WhetStone::DenseVector rhs(dim);
 
   gradient.clear();
-  for (AmanziMesh::Entity_ID_List::const_iterator it = ids.begin(); it != ids.end(); ++it) {
+  for (auto it = ids.begin(); it != ids.end(); ++it) {
     int c = *it;
     const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
 
     mesh_->cell_get_face_adj_cells(c, AmanziMesh::USED, &cells);
     int ncells = cells.size();
 
-    matrix.clear();
+    matrix.PutScalar(0.0);
     rhs.clear();
 
     for (int n = 0; n < ncells; n++) {
@@ -155,7 +155,7 @@ void ReconstructionCell::ComputeGradient(
       for (int i = 0; i < dim; i++) xcc[i] = xc2[i] - xc[i];
 
       double value = (*field_)[component_][cells[n]] - (*field_)[component_][c];
-      PopulateLeastSquareSystem(xcc, value, matrix, rhs);
+      PopulateLeastSquareSystem_(xcc, value, matrix, rhs);
     }
 
     // improve robustness w.r.t degenerate matrices
@@ -185,14 +185,31 @@ void ReconstructionCell::ComputeGradient(
 void ReconstructionCell::ApplyLimiter(
     const std::vector<int>& bc_model, const std::vector<double>& bc_value)
 {
+  ASSERT(upwind_cells_.size() > 0);
+  ASSERT(downwind_cells_.size() > 0);
+
+  limiter_ = Teuchos::rcp(new Epetra_Vector(mesh_->cell_map(true)));
   if (limiter_id_ == OPERATOR_LIMITER_BARTH_JESPERSEN) {
-    Teuchos::RCP<Epetra_Vector> limiter = Teuchos::rcp(new Epetra_Vector(mesh_->cell_map(true)));
-    LimiterBarthJespersen_(bc_model, bc_value, limiter);
-    ApplyLimiter(limiter);
+    LimiterBarthJespersen_(bc_model, bc_value, limiter_);
+    ApplyLimiter(limiter_);
   } else if (limiter_id_ == OPERATOR_LIMITER_TENSORIAL) {
     LimiterTensorial_(bc_model, bc_value);
   } else if (limiter_id_ == OPERATOR_LIMITER_KUZMIN) {
     LimiterKuzmin_(bc_model, bc_value);
+  }
+}
+
+
+/* ******************************************************************
+* Apply internal limiter over set of cells.
+****************************************************************** */
+void ReconstructionCell::ApplyLimiter(AmanziGeometry::Entity_ID_List& ids,
+                                      std::vector<AmanziGeometry::Point>& gradient)
+{
+  if (limiter_id_ == OPERATOR_LIMITER_KUZMIN) {
+    LimiterKuzminSet_(ids, gradient);   
+  } else {
+    ASSERT(0);
   }
 }
 
@@ -209,14 +226,6 @@ void ReconstructionCell::ApplyLimiter(Teuchos::RCP<Epetra_MultiVector> limiter)
   }
 }
 
-void ReconstructionCell::ApplyLimiter(AmanziMesh::Entity_ID_List& ids,
-                                      std::vector<AmanziGeometry::Point>& gradient){
-
-  if (limiter_id_ == OPERATOR_LIMITER_KUZMIN) {
-    LimiterKuzminonSet_(ids, gradient);   
-  }
-
-}
 
 /* ******************************************************************
 * Calculates reconstructed value at point p.
@@ -251,10 +260,9 @@ double ReconstructionCell::getValue(
 /* ******************************************************************
 * Assemble a SPD least square matrix
 ****************************************************************** */
-void ReconstructionCell::PopulateLeastSquareSystem(AmanziGeometry::Point& centroid,
-                                                   double field_value,
-                                                   WhetStone::DenseMatrix& matrix,
-                                                   WhetStone::DenseVector& rhs)
+void ReconstructionCell::PopulateLeastSquareSystem_(
+    AmanziGeometry::Point& centroid, double field_value,
+    WhetStone::DenseMatrix& matrix, WhetStone::DenseVector& rhs)
 {
   for (int i = 0; i < dim; i++) {
     double xyz = centroid[i];
@@ -268,19 +276,51 @@ void ReconstructionCell::PopulateLeastSquareSystem(AmanziGeometry::Point& centro
 
 
 /* ******************************************************************
- * IO routines
+* On intersecting manifolds, we extract neighboors living in the same 
+* manifold using a smoothness criterion.
 ****************************************************************** */
-void ReconstructionCell::PrintLeastSquareSystem(
-    WhetStone::DenseMatrix& matrix, WhetStone::DenseVector& rhs)
+void ReconstructionCell::CellFaceAdjCellsNonManifold_(
+    AmanziGeometry::Entity_ID c, AmanziMesh::Parallel_type ptype,
+    std::vector<AmanziGeometry::Entity_ID>& cells) const
 {
-  for (int i = 0; i < dim; i++) {
-    for (int j = 0; j < dim; j++) std::printf("%6.3f ", matrix(i, j));
-    std::printf("  f[%1d] =%8.5f\n", i, rhs(i));
+  AmanziGeometry::Entity_ID_List faces, fcells;
+  std::vector<int> dirs;
+
+  mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+  int nfaces = faces.size();
+
+  cells.clear();
+
+  for (int n = 0; n < nfaces; ++n) {
+    AmanziGeometry::Entity_ID f = faces[n];
+    mesh_->face_get_cells(f, ptype, &fcells);
+    int ncells = fcells.size();
+
+    if (ncells == 2) {
+      cells.push_back(fcells[0] + fcells[1] - c);
+    } else if (ncells > 2) {
+      int dir;
+      double dmax(0.0);
+      AmanziGeometry::Entity_ID cmax;
+      const AmanziGeometry::Point& normal0 = mesh_->face_normal(f, false, c, &dir);
+
+      for (int i = 0; i < ncells; ++i) {
+        AmanziGeometry::Entity_ID c1 = fcells[i];
+        if (c1 != c) {
+          const AmanziGeometry::Point& normal1 = mesh_->face_normal(f, false, c1, &dir);
+          double d = fabs(normal0 * normal1) / norm(normal1);
+          if (d > dmax) {
+            dmax = d;
+            cmax = c1; 
+          }
+        }
+      } 
+
+      cells.push_back(cmax);
+    }
   }
-  std::printf("\n");
 }
 
-
-}  // namespace Transport
+}  // namespace Operator
 }  // namespace Amanzi
 

@@ -65,7 +65,7 @@
       </ParameterList>
 
       <!-- developers parameters --> 
-      <Parameter name="enable internal tests" type="string" value="yes"/>   
+      <Parameter name="enable internal tests" type="bool" value="true"/>   
       <Parameter name="internal tests tolerance" type="double" value="1e-5"/>   
       <!-- end of developers parameters -->
 

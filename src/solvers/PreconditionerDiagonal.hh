@@ -28,7 +28,7 @@ class PreconditionerDiagonal : public Preconditioner {
   PreconditionerDiagonal() {};
   ~PreconditionerDiagonal() {};
 
-  void Init(const std::string& name, const Teuchos::ParameterList& list) {};
+  void Init(const std::string& name, const Teuchos::ParameterList& plist) {};
   void Update(const Teuchos::RCP<Epetra_RowMatrix>& A) {
     diagonal_ = Teuchos::rcp(new Epetra_Vector(A->Map()));
     A->ExtractDiagonalCopy(*diagonal_);
