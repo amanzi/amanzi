@@ -1,7 +1,7 @@
 AMANZI: The Multi-Process HPC Simulator 
 ===================================================
 [![Build Status](https://travis-ci.org/amanzi/amanzi.svg?branch=master)](https://travis-ci.org/amanzi/amanzi)
------------------------------------------------
+
 BACKGROUND
 -----------------------------------------------
 
@@ -31,13 +31,13 @@ scientists, and applied mathematicians.  This broader community is
 leveraging its extensive experience, existing capabilities, and
 untapped advances from their areas of expertise to develop Amanzi.
 
------------------------------------------------
+
 BUILDING/INSTALLING AND RUNNING AMANZI
 -----------------------------------------------
 
 See the INSTALL file in this directory.
 
------------------------------------------------
+
 COPYRIGHT AND LICENSE (getting write access):
 -----------------------------------------------
 
