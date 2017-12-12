@@ -33,9 +33,10 @@ WORKDIR /home/amanzi_user
 RUN git clone https://github.com/amanzi/amanzi.git 
 
 ENV PATH=/home/amanzi_user/local/tpls/bin:$PATH \
- CC=mpicc \
- CXX=mpic++ \
- FC=mpif90 
+    CC=mpicc \
+    CXX=mpic++ \
+    FC=mpif90 \
+    LD_LIBRARY_PATH=/home/amanzi_user/local/tpls/lib:/home/amanzi_user/local/tpls/petsc-3.7.5/lib:/home/amanzi_user/local/tpls/trilinos-12-10-1/lib:/home/amanzi_user/local/tpls/SEACAS/lib:$LD_LIBRARY_PATH
 
 WORKDIR /home/amanzi_user/amanzi
 RUN ./bootstrap.sh --prefix=/home/amanzi_user/local \
