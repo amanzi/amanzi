@@ -47,9 +47,8 @@ are contributing code to ASCEM.  If you are a developer that would
 like write permission on the repository you must send an e-mail to 
 David Moulton (moulton@lanl.gov), containing the following statement:
 
->>>>>>>>>>>>>>>
-
-I <insert name>, am currently employed by <insert lab>.  I have read
+---------------
+I [insert name], am currently employed by [insert lab].  I have read
 and accept the terms and conditions presented in the COPYRIGHT file of
 the Amanzi repository.  In particular, I understand that
 
@@ -70,9 +69,9 @@ If I change employers I will either terminate my write (push) permission
 or submit a new e-mail confirmation with my updated information 
 in advance of the transition to my new job.
 
-Sincerely, <insert name>
+Sincerely, [insert name]
 
->>>>>>>>>>>>>>>>>>>>>>>>>
+-------------------------
 
 If your laboratory is not represented in the COPYRIGHT file, you
 should verify that the copyright assertion for your laboratory is in
