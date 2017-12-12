@@ -34,23 +34,40 @@ TEST(CROUZEIX_RAVIART) {
 
   MeshFactory meshfactory(comm);
   meshfactory.preference(FrameworkPreference({MSTK}));
-  Teuchos::RCP<Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 1, 1); 
+  Teuchos::RCP<const Amanzi::AmanziGeometry::GeometricModel> gm;
+  Teuchos::RCP<Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 1, 1, gm, true, true); 
  
   MFD3D_CrouzeixRaviart mfd(mesh);
 
-  int nfaces = 4, cell = 0;
-  DenseMatrix N, R, Ac, G;
+  int cell(0);
+  DenseMatrix N, R, Ac, A1, Ak, G;
 
   Tensor T(2, 1);
   T(0, 0) = 1.0;
 
-  mfd.H1consistencyHO(cell, 1, T, N, R, Ac, G);
+  // 1st-order scheme
+  mfd.StiffnessMatrix(cell, T, A1);
 
-  printf("Mass matrix for cell %3d\n", cell);
-  Ac.PrintMatrix("%8.4f ");
+  // 1st-order scheme (new algorithm)
+  mfd.StiffnessMatrixHO(cell, 1, T, Ak);
+
+  printf("Stiffness matrix for order = 1\n");
+  Ak.PrintMatrix("%8.4f ");
+
+  A1 -= Ak;
+  CHECK(A1.NormInf() <= 1e-10);
+
+  // 2nd-order scheme (new algorithm)
+  mfd.H1consistencyHO(cell, 2, T, N, R, Ac, G);
+  mfd.StiffnessMatrixHO(cell, 2, T, Ak);
+
+  /*
+  printf("Stiffness matrix for order = 2\n");
+  Ak.PrintMatrix("%8.4f ");
 
   // verify SPD propery
-  for (int i=0; i<nfaces; i++) CHECK(Ac(i, i) > 0.0);
+  int nrows = Ak.NumRows();
+  for (int i = 0; i < nrows; i++) CHECK(Ak(i, i) > 0.0);
 
   // verify exact integration property
   AmanziMesh::Entity_ID_List faces;
@@ -59,22 +76,23 @@ TEST(CROUZEIX_RAVIART) {
     
   double xi, yi, xj, yj;
   double vxx = 0.0, vxy = 0.0, volume = mesh->cell_volume(cell); 
-  for (int i = 0; i < nfaces; i++) {
+  for (int i = 0; i < nrows; i++) {
     int f1 = faces[i];
-    for (int j = 0; j < nfaces; j++) {
+    for (int j = 0; j < nrows; j++) {
       int f2 = faces[j];
 
       xi = mesh->face_centroid(f1)[0];
       yi = mesh->face_centroid(f1)[1];
       xj = mesh->face_centroid(f2)[0];
 
-      vxx += Ac(i, j) * xi * xj;
-      vxy += Ac(i, j) * yi * xj;
+      vxx += Ak(i, j) * xi * xj;
+      vxy += Ak(i, j) * yi * xj;
     }
   }
 
-  // CHECK_CLOSE(T(0,0) * volume, vxx, 1e-10);
-  // CHECK_CLOSE(T(0,0) * volume, vxy, 1e-10);
+  CHECK_CLOSE(T(0,0) * volume, vxx, 1e-10);
+  CHECK_CLOSE(0.0, vxy, 1e-10);
+  */
 
   delete comm;
 }

@@ -136,35 +136,46 @@ int MFD3D_CrouzeixRaviart::H1consistencyHO(
   Ac.Reshape(ndof, ndof);
   G.Reshape(nd, nd);
 
-  // matrix R: ddegrees of freedom on faces 
+  // matrices N and R: degrees of freedom on faces 
   std::vector<AmanziGeometry::Point> tau(d_ - 1);
   R.PutScalar(0.0);
 
   for (auto it = poly.begin(); it.end() <= poly.end(); ++it) { 
     const int* multi_index = it.multi_index();
-    Polynomial tmp(d_, multi_index);
-    tmp.set_origin(xc);  
+    Polynomial mono(d_, multi_index);
+    mono.set_origin(xc);  
 
     VectorPolynomial grad;
-    grad.Gradient(tmp);
+    grad.Gradient(mono);
      
     int col = it.PolynomialPosition();
     int row(0);
 
     for (int i = 0; i < nfaces; i++) {
       int f = faces[i];
-      const AmanziGeometry::Point& normal = mesh_->face_normal(f);
+      AmanziGeometry::Point normal = mesh_->face_normal(f) * dirs[i];
       const AmanziGeometry::Point& xf = mesh_->face_centroid(f); 
 
-      tmp = grad * normal;
-      tmp.ChangeCoordinates(xf, tau);
+      // local coordinate system with origin at face centroid
+      if (d_ == 2) {
+        tau[0] = AmanziGeometry::Point(-normal[1], normal[0]);
+      }
 
-      for (auto jt = tmp.begin(); jt.end() <= tmp.end(); ++jt) {
+      Polynomial tmp1 = grad * normal;
+      tmp1.ChangeCoordinates(xf, tau);
+
+      Polynomial tmp2(mono);
+      tmp2.ChangeCoordinates(xf, tau);
+
+      for (auto jt = tmp1.begin(); jt.end() <= tmp1.end(); ++jt) {
         int m = jt.MonomialOrder();
         int k = jt.MonomialPosition();
-        R(row, col) = tmp(m, k);
-        row++;
+        int n = jt.PolynomialPosition();
+
+        R(row + n, col) = tmp1(m, k);
+        N(row + n, col) = tmp2(m, k);
       }
+      row += ndf;
     }
   }
 
@@ -182,17 +193,22 @@ int MFD3D_CrouzeixRaviart::H1consistencyHO(
   Rtmp.Transpose(R);
   Ac.Multiply(RG, Rtmp, false);
 
-  // calculate N
-  /*
-  const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
-  for (int i = 0; i < nedges; i++) {
-    int e = edges[i];
-    const AmanziGeometry::Point& xe = mesh_->edge_centroid(e);
-    for (int k = 0; k < d_; k++) N(i, k) = xe[k] - xc[k];
-    N(i, d_) = 1;  // additional column is added to the consistency condition
-  }
-  */
+  return WHETSTONE_ELEMENTAL_MATRIX_OK;
+}
 
+
+/* ******************************************************************
+* Stiffness matrix for a high-order scheme.
+****************************************************************** */
+int MFD3D_CrouzeixRaviart::StiffnessMatrixHO(
+    int c, int order, const Tensor& K, DenseMatrix& A)
+{
+  DenseMatrix N, R, G;
+
+  int ok = H1consistencyHO(c, order, K, N, R, A, G);
+  if (ok) return ok;
+
+  StabilityScalar_(N, A);
   return WHETSTONE_ELEMENTAL_MATRIX_OK;
 }
 
