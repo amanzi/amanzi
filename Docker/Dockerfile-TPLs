@@ -1,21 +1,27 @@
-FROM ubuntu:latest
-LABEL Description="This image builds all of the third-party libraries needed by Amanzi (based on the alexis/docker branch)"
+FROM ubuntu:artful
+#FROM ubuntu:latest
+LABEL Description="This image builds all of the third-party libraries needed by Amanzi (based on the master branch)"
 
 RUN apt-get -q update -y && apt-get -qq install -y \
   apt-utils \
   cmake \
   curl \
+  emacs \
   g++ \
   gfortran \
   git \
+  groff \
   libblas3 \
   libblas-dev \
   liblapacke-dev \
   liblapack-dev \
   libopenmpi-dev \
+  libssl1.0.0 \
+  libssl-dev \
   m4 \
   make \
   mercurial \
+  openssl \
   python2.7 \
   wget 
 
@@ -24,17 +30,20 @@ RUN groupadd -r amanzi_user \
 USER amanzi_user
 
 WORKDIR /home/amanzi_user
-RUN git clone https://github.com/amanzi/amanzi.git \
-  && cd amanzi \
-  && git checkout alexis/docker \
-  && git pull
+RUN git clone https://github.com/amanzi/amanzi.git 
 
-ENV PATH=/home/amanzi_user/local/tpls/bin:$PATH 
+ENV PATH=/home/amanzi_user/local/tpls/bin:$PATH \
+    CC=mpicc \
+    CXX=mpic++ \
+    FC=mpif90 \
+    LD_LIBRARY_PATH=/home/amanzi_user/local/tpls/lib:/home/amanzi_user/local/tpls/petsc-3.7.5/lib:/home/amanzi_user/local/tpls/trilinos-12-10-1/lib:/home/amanzi_user/local/tpls/SEACAS/lib:$LD_LIBRARY_PATH
+
 WORKDIR /home/amanzi_user/amanzi
 RUN ./bootstrap.sh --prefix=/home/amanzi_user/local \
   --amanzi-build-dir=/home/amanzi_user/amanzi_builddir/amanzi \
   --tpl-build-dir=/home/amanzi_user/amanzi_builddir/tpls \
   --tpl-download-dir=/home/amanzi_user/amanzi_builddir/tpls/Downloads \
   --enable-tpls_only \
-  --with-mpi=/usr/bin \
+  --with-mpi=/usr \
+  --enable-shared \
   && rm -r /home/amanzi_user/amanzi_builddir
