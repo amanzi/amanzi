@@ -22,6 +22,7 @@
 
 #include "BilinearForm.hh"
 #include "DenseMatrix.hh"
+#include "NumericalIntegration.hh"
 #include "Polynomial.hh"
 #include "Tensor.hh"
 #include "VectorPolynomial.hh"
@@ -31,32 +32,20 @@
 namespace Amanzi {
 namespace WhetStone {
 
-// Gauss quadrature on interval (0,1)
-const double q1d_weights[4][4] = {
-    1.0, 0.0, 0.0, 0.0,
-    0.5, 0.5, 0.0, 0.0,
-    0.277777777777778, 0.444444444444444, 0.277777777777778, 0.0,
-    0.173927422568727, 0.326072577431273, 0.326072577431273, 0.173927422568727
-};
-const double q1d_points[4][4] = {
-    0.5, 0.0, 0.0, 0.0,
-    0.211324865405187, 0.788675134594813, 0.0, 0.0,
-    0.112701665379258, 0.5, 0.887298334620742, 0.0,
-    0.0694318442029737, 0.330009478207572, 0.669990521792428, 0.930568155797026
-};
-
-class DG_Modal : public BilinearForm { 
+class DG_Modal : public BilinearForm {
  public:
   DG_Modal(Teuchos::RCP<const AmanziMesh::Mesh> mesh) 
-    : order_(-1),
-      basis_(TAYLOR_BASIS_NORMALIZED),
+    : numi_(0, mesh),
       mesh_(mesh),
+      order_(-1),
+      basis_(TAYLOR_BASIS_NORMALIZED),
       d_(mesh_->space_dimension()) {};
 
   DG_Modal(int order, Teuchos::RCP<const AmanziMesh::Mesh> mesh)
-    : order_(order), 
-      basis_(TAYLOR_BASIS_NORMALIZED),
+    : numi_(order, mesh),
+      order_(order), 
       mesh_(mesh),
+      basis_(TAYLOR_BASIS_NORMALIZED),
       d_(mesh_->space_dimension()) {};
 
   ~DG_Modal() {};
@@ -89,41 +78,12 @@ class DG_Modal : public BilinearForm {
   // create polynomial given array of its coefficients
   Polynomial CalculatePolynomial(int c, const std::vector<double>& coefs) const;
 
-  // integration tools
-  double IntegratePolynomialFace(int f, const Polynomial& poly) const {
-    const std::vector<const Polynomial*> polys(1, &poly);
-    return IntegratePolynomialsFace_(f, polys);
-  }
-
-  double IntegratePolynomialEdge(
-      const AmanziGeometry::Point& x1, const AmanziGeometry::Point& x2,
-      const Polynomial& poly) const {
-    const std::vector<const Polynomial*> polys(1, &poly);
-    return IntegratePolynomialsEdge_(x1, x2, polys);
-  }
-
   // placeholder of elliptic projector
   void CoVelocityCell(int c, const std::vector<const Polynomial*> vf, VectorPolynomial& vc);
 
   // miscalleneous
   void set_order(int order) { order_ = order; }
   void set_basis(int basis) { basis_ = basis; }
-
- private:
-  // specialized routines optimized for non-normalized Taylor basis
-  void IntegrateMonomialsCell_(int c, Monomial& monomials);
-  void IntegrateMonomialsFace_(int c, int f, double factor, Monomial& monomials);
-  void IntegrateMonomialsEdge_(
-      const AmanziGeometry::Point& x1, const AmanziGeometry::Point& x2,
-      double factor, Monomial& monomials);
-
-  // integraton of a product of polynomials with potentialy different origins
-  double IntegratePolynomialsFace_(
-      int f, const std::vector<const Polynomial*>& polys) const;
-
-  double IntegratePolynomialsEdge_(
-      const AmanziGeometry::Point& x1, const AmanziGeometry::Point& x2,
-      const std::vector<const Polynomial*>& polys) const;
 
  private:
   void UpdateIntegrals_(int c, int order);
@@ -133,6 +93,7 @@ class DG_Modal : public BilinearForm {
 
  private:
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
+  NumericalIntegration numi_;
   int order_, d_;
   int basis_;
 

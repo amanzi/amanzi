@@ -49,6 +49,7 @@ add_amanzi_library(whetstone
                           DG_Modal.cc nlfv.cc 
                           Tensor.cc DenseMatrix.cc
                           Polynomial.cc VectorPolynomial.cc
+                          NumericalIntegration.cc
                           MeshMaps.cc
                           MeshMaps_FEM.cc MeshMaps_VEM.cc
                           ProjectorH1.cc
@@ -67,6 +68,7 @@ add_amanzi_library(whetstone
                            MFD3DFactory.hh
                            nlfv.hh
                            Polynomial.hh VectorPolynomial.hh Tensor.hh
+                           NumericalIntegration.hh
                            MeshMaps.hh
                            MeshMaps_FEM.hh MeshMaps_VEM.hh
                            ProjectorH1.hh
