@@ -396,7 +396,7 @@ void Polynomial::InverseChangeCoordinates(
 
     for (auto it = begin(); it.end() <= end(); ++it) {
       int m = it.MonomialOrder();
-      tmp(m, 0) = coefs_[m](0) * std::pow(scale, m);
+      tmp(m, i * m) = coefs_[m](0) * std::pow(scale, m);
     }
   }  
   

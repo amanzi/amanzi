@@ -168,13 +168,14 @@ int MFD3D_CrouzeixRaviart::H1consistencyHO(
 
     for (int i = 0; i < nfaces; i++) {
       int f = faces[i];
-      AmanziGeometry::Point normal = mesh_->face_normal(f) * dirs[i];
       const AmanziGeometry::Point& xf = mesh_->face_centroid(f); 
 
       // local coordinate system with origin at face centroid
+      AmanziGeometry::Point normal = mesh_->face_normal(f);
       if (d_ == 2) {
         tau[0] = AmanziGeometry::Point(-normal[1], normal[0]);
       }
+      normal *= dirs[i];
 
       Polynomial tmp = grad * normal;
       tmp.ChangeCoordinates(xf, tau);
@@ -208,32 +209,28 @@ int MFD3D_CrouzeixRaviart::H1consistencyHO(
         int n = jt.PolynomialPosition();
 
         R(row + n, col) = -tmp(m, k);
+      }
+    }
+
+    if (order > 1) {
+      for (auto jt = pc.begin(); jt.end() <= pc.end(); ++jt) {
+        int n = jt.PolynomialPosition();
+        const int* jndex = jt.multi_index();
 
         int nm(0);
-        const int* jndex = jt.multi_index();
         int multi_index[3];
         for (int i = 0; i < d_; ++i) {
           multi_index[i] = index[i] + jndex[i];
           nm += multi_index[i];
         }
 
-        double sum(0.0), tmp;
-        for (int i = 0; i < d_; ++i) {
-          if (index[i] > 1) {
-            multi_index[i] -= 2;
-            const auto& coefs = integrals.monomials(nm - 2).coefs();
-            tmp = coefs[poly.MonomialPosition(multi_index)]; 
-            sum += tmp * index[i] * (index[i] - 1);
-            multi_index[i] += 2;
-          }
-        }
-
-        N(row + n, col) = K(0, 0) * sum;
+        const auto& coefs = integrals.monomials(nm).coefs();
+        N(row + n, col) = coefs[poly.MonomialPosition(multi_index)]; 
       }
     }
   }
 
-  // set the Gramm-Schidt matrix for polynomials
+  // set the Gramm-Schidt matrix for gradients of polynomials
   G.PutScalar(0.0);
 
   for (auto it = poly.begin(); it.end() <= poly.end(); ++it) {
@@ -269,7 +266,10 @@ int MFD3D_CrouzeixRaviart::H1consistencyHO(
   // calculate R inv(G) R^T
   DenseMatrix RG(ndof, nd), Rtmp(nd, ndof);
 
+  // to invert generate matrix, we add and subtruct positive number
+  G(0, 0) = 1.0;
   G.Inverse();
+  G(0, 0) = 0.0;
   RG.Multiply(R, G, false);
 
   Rtmp.Transpose(R);

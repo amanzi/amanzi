@@ -71,9 +71,11 @@ TEST(CROUZEIX_RAVIART) {
   // verify exact integration property
   DenseMatrix G1(G);
   G1.Multiply(N, R, true);
-  //std::cout << "R="<< R << std::endl;
-  //std::cout << "N=" << N << std::endl;
-  //std::cout << G1 << std::endl;
+  G1(0, 0) = 1.0;
+  G1.Inverse();
+  G1(0, 0) = 0.0;
+  G1 -= G;
+  CHECK(G1.NormInf() <= 1e-10);
     
   delete comm;
 }
