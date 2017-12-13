@@ -21,6 +21,7 @@
 #include "errors.hh"
 
 #include "MFD3D_CrouzeixRaviart.hh"
+#include "NumericalIntegration.hh"
 #include "Tensor.hh"
 
 namespace Amanzi {
@@ -136,18 +137,32 @@ int MFD3D_CrouzeixRaviart::H1consistencyHO(
   Ac.Reshape(ndof, ndof);
   G.Reshape(nd, nd);
 
-  // matrices N and R: degrees of freedom on faces 
+  // pre-calculate integrals of monomials 
+  NumericalIntegration numi(mesh_);
+  Polynomial integrals(d_, 2 * order - 2);
+
+  for (int k = 0; k <= 2 * order - 2; ++k) {
+    numi.IntegrateMonomialsCell(c, integrals.monomials(k));
+  }
+
+  // populate matrices N and R
   std::vector<AmanziGeometry::Point> tau(d_ - 1);
   R.PutScalar(0.0);
+  N.PutScalar(0.0);
+
+  std::vector<const Polynomial*> polys(2);
 
   for (auto it = poly.begin(); it.end() <= poly.end(); ++it) { 
-    const int* multi_index = it.multi_index();
-    Polynomial mono(d_, multi_index);
-    mono.set_origin(xc);  
+    const int* index = it.multi_index();
+    Polynomial cmono(d_, index);
+    cmono.set_origin(xc);  
 
+    // N and R: degrees of freedom on faces 
     VectorPolynomial grad;
-    grad.Gradient(mono);
+    grad.Gradient(cmono);
      
+    polys[0] = &cmono;
+
     int col = it.PolynomialPosition();
     int row(0);
 
@@ -161,33 +176,100 @@ int MFD3D_CrouzeixRaviart::H1consistencyHO(
         tau[0] = AmanziGeometry::Point(-normal[1], normal[0]);
       }
 
-      Polynomial tmp1 = grad * normal;
-      tmp1.ChangeCoordinates(xf, tau);
+      Polynomial tmp = grad * normal;
+      tmp.ChangeCoordinates(xf, tau);
 
-      Polynomial tmp2(mono);
-      tmp2.ChangeCoordinates(xf, tau);
+      for (auto jt = tmp.begin(); jt.end() <= tmp.end(); ++jt) {
+        int m = jt.MonomialOrder();
+        int k = jt.MonomialPosition();
+        int n = jt.PolynomialPosition();
+        R(row + n, col) = tmp(m, k);
+      }
 
-      for (auto jt = tmp1.begin(); jt.end() <= tmp1.end(); ++jt) {
+      for (auto jt = pf.begin(); jt.end() <= pf.end(); ++jt) {
+        const int* jndex = jt.multi_index();
+        Polynomial fmono(d_ - 1, jndex);
+        fmono.InverseChangeCoordinates(xf, tau);  
+
+        polys[1] = &fmono;
+
+        int n = jt.PolynomialPosition();
+        N(row + n, col) = numi.IntegratePolynomialsFace(f, polys);
+      }
+      row += ndf;
+    }
+
+    // N and R: degrees of freedom in cells
+    if (cmono.order() > 1) {
+      Polynomial tmp = cmono.Laplacian();
+      for (auto jt = tmp.begin(); jt.end() <= tmp.end(); ++jt) {
         int m = jt.MonomialOrder();
         int k = jt.MonomialPosition();
         int n = jt.PolynomialPosition();
 
-        R(row + n, col) = tmp1(m, k);
-        N(row + n, col) = tmp2(m, k);
+        R(row + n, col) = -tmp(m, k);
+
+        int nm(0);
+        const int* jndex = jt.multi_index();
+        int multi_index[3];
+        for (int i = 0; i < d_; ++i) {
+          multi_index[i] = index[i] + jndex[i];
+          nm += multi_index[i];
+        }
+
+        double sum(0.0), tmp;
+        for (int i = 0; i < d_; ++i) {
+          if (index[i] > 1) {
+            multi_index[i] -= 2;
+            const auto& coefs = integrals.monomials(nm - 2).coefs();
+            tmp = coefs[poly.MonomialPosition(multi_index)]; 
+            sum += tmp * index[i] * (index[i] - 1);
+            multi_index[i] += 2;
+          }
+        }
+
+        N(row + n, col) = K(0, 0) * sum;
       }
-      row += ndf;
     }
   }
 
   // set the Gramm-Schidt matrix for polynomials
   G.PutScalar(0.0);
-  for (int i = 0; i < nd; ++i) {
-    G(i, i) = 1.0;
-  }
-  G.Inverse();
 
-  // calculate R G R^T
+  for (auto it = poly.begin(); it.end() <= poly.end(); ++it) {
+    const int* index = it.multi_index();
+    int k = it.PolynomialPosition();
+
+    for (auto jt = it; jt.end() <= poly.end(); ++jt) {
+      const int* jndex = jt.multi_index();
+      int l = jt.PolynomialPosition();
+      
+      int n(0);
+      int multi_index[3];
+      for (int i = 0; i < d_; ++i) {
+        multi_index[i] = index[i] + jndex[i];
+        n += multi_index[i];
+      }
+
+      double sum(0.0), tmp;
+      for (int i = 0; i < d_; ++i) {
+        if (index[i] > 0 && jndex[i] > 0) {
+          multi_index[i] -= 2;
+          const auto& coefs = integrals.monomials(n - 2).coefs();
+          tmp = coefs[poly.MonomialPosition(multi_index)]; 
+          sum += tmp * index[i] * jndex[i];
+          multi_index[i] += 2;
+        }
+      }
+
+      G(l, k) = G(k, l) = K(0, 0) * sum; 
+    }
+  }
+
+  // calculate R inv(G) R^T
   DenseMatrix RG(ndof, nd), Rtmp(nd, ndof);
+
+  G.Inverse();
   RG.Multiply(R, G, false);
 
   Rtmp.Transpose(R);

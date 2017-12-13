@@ -77,7 +77,7 @@ TEST(DG_TAYLOR_POLYNOMIALS) {
     int m = q.MonomialPosition(index);
     q.monomials(index[0] + index[1] + index[2]).coefs()[m] = pos;
   }
-  std::cout << q << std::endl; 
+  std::cout << "Original polynomial\n" << q << std::endl; 
   CHECK(q.size() == 20);
   Polynomial q_orig(q);
 
@@ -108,6 +108,9 @@ TEST(DG_TAYLOR_POLYNOMIALS) {
   VectorPolynomial grad;
   grad.Gradient(q_orig);
   std::cout << "Gradient of a polynomial:\n" << grad[0] << grad[1] << grad[2] << std::endl;
+
+  Polynomial lp = q_orig.Laplacian();
+  std::cout << "Laplacian of original polynomial:\n" << lp << std::endl;
 
   // change origin of coordinate system
   AmanziGeometry::Point origin(0.5, 0.3, 0.2);

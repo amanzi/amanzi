@@ -41,9 +41,8 @@ const double q1d_points[4][4] = {
 
 class NumericalIntegration { 
  public:
-  NumericalIntegration(int order, Teuchos::RCP<const AmanziMesh::Mesh> mesh)
-    : order_(order), 
-      mesh_(mesh),
+  NumericalIntegration(Teuchos::RCP<const AmanziMesh::Mesh> mesh)
+    : mesh_(mesh),
       d_(mesh_->space_dimension()) {};
 
   ~NumericalIntegration() {};
@@ -73,7 +72,7 @@ class NumericalIntegration {
     return IntegratePolynomialsEdge(x1, x2, polys);
   }
 
-  // miscalleneous
+  // miscalleneous: order is not used yet
   void set_order(int order) { order_ = order; }
 
  private:

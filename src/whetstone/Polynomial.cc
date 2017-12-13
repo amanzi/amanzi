@@ -344,15 +344,16 @@ int Polynomial::PolynomialPosition(const int* multi_index) const
 
 
 /* ******************************************************************
-* Change coordinates (x -> s) in the form x = x0 + B * s 
+* Change of coordinates: x = x0 + B * s 
+* Note: resulting polynomial is centered at new origin.
 ****************************************************************** */
-void Polynomial::ChangeCoordinates(const AmanziGeometry::Point& x0,
-                                   const std::vector<AmanziGeometry::Point>& tau)
+void Polynomial::ChangeCoordinates(
+    const AmanziGeometry::Point& x0, const std::vector<AmanziGeometry::Point>& B)
 {
-  int dnew = tau.size();
+  int dnew = B.size();
   ASSERT(dnew > 0);
 
-  // new polynomial will be centered at x0
+  // center polynomial at x0
   ChangeOrigin(x0);
 
   // populate new polynomial using different algorithms
@@ -364,13 +365,75 @@ void Polynomial::ChangeCoordinates(const AmanziGeometry::Point& x0,
     if (dnew == 1) {
       double coef(coefs_[m](k));
       for (int i = 0; i < d_; ++i) {
-        coef *= std::pow(tau[0][i], multi_index[i]);  
+        coef *= std::pow(B[0][i], multi_index[i]);  
       }
       tmp(m, 0) += coef;
     }
   }  
   
   *this = tmp;
+}
+
+
+/* ******************************************************************
+* Inverse change of coordinates: s = B^+ (x - x0) 
+* Note: resulting polynomial is centered at x0.
+****************************************************************** */
+void Polynomial::InverseChangeCoordinates(
+    const AmanziGeometry::Point& x0, const std::vector<AmanziGeometry::Point>& B)
+{
+  int dnew = x0.dim();
+
+  // new polynomial will be centered at x0
+  Polynomial tmp(dnew, order_);
+  tmp.set_origin(x0);
+
+  // populate new polynomial using different algorithms
+  if (d_ == 1) {
+    int i = 0;
+    if (fabs(B[0][0]) < fabs(B[0][1])) i = 1;
+    double scale = B[0][i] / AmanziGeometry::L22(B[0]);
+
+    for (auto it = begin(); it.end() <= end(); ++it) {
+      int m = it.MonomialOrder();
+      tmp(m, 0) = coefs_[m](0) * std::pow(scale, m);
+    }
+  }  
+  
+  *this = tmp;
+}
+
+
+/* ******************************************************************
+* Special operations: Laplacian
+****************************************************************** */
+Polynomial Polynomial::Laplacian()
+{
+  int order = std::max(0, order_ - 2);
+
+  Polynomial tmp(d_, order);
+
+  int index[3];
+  for (auto it = begin(); it.end() <= end(); ++it) {
+    int k = it.MonomialOrder();
+    if (k > 1) {
+      const int* idx = it.multi_index();
+      int m = it.MonomialPosition();
+      double val = coefs_[k](m);
+
+      for (int i = 0; i < d_; ++i) {
+        for (int j = 0; j < d_; ++j) index[j] = idx[j];
+
+        if (index[i] > 1) {
+          index[i] -= 2;
+          m = MonomialPosition(index);
+          tmp(k - 2, m) += val * idx[i] * (idx[i] - 1);
+        }
+      }
+    }
+  }
+
+  return tmp;
 }
 
 
