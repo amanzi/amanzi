@@ -112,7 +112,7 @@ int MFD3D_CrouzeixRaviart::StiffnessMatrix(int c, const Tensor& K, DenseMatrix& 
 ****************************************************************** */
 int MFD3D_CrouzeixRaviart::H1consistencyHO(
     int c, int order, const Tensor& K,
-    DenseMatrix& N, DenseMatrix& R, DenseMatrix& Ac, DenseMatrix& G)
+    DenseMatrix& N, DenseMatrix& R, DenseMatrix& G, DenseMatrix& Ac)
 {
   Entity_ID_List faces;
   std::vector<int> dirs;
@@ -175,7 +175,7 @@ int MFD3D_CrouzeixRaviart::H1consistencyHO(
       if (d_ == 2) {
         tau[0] = AmanziGeometry::Point(-normal[1], normal[0]);
       }
-      normal *= dirs[i];
+      normal *= dirs[i] / norm(normal);
 
       Polynomial tmp = grad * normal;
       tmp.ChangeCoordinates(xf, tau);
@@ -283,11 +283,12 @@ int MFD3D_CrouzeixRaviart::H1consistencyHO(
 * Stiffness matrix for a high-order scheme.
 ****************************************************************** */
 int MFD3D_CrouzeixRaviart::StiffnessMatrixHO(
-    int c, int order, const Tensor& K, DenseMatrix& A)
+    int c, int order, const Tensor& K,
+    DenseMatrix& R, DenseMatrix& G, DenseMatrix& A)
 {
-  DenseMatrix N, R, G;
+  DenseMatrix N;
 
-  int ok = H1consistencyHO(c, order, K, N, R, A, G);
+  int ok = H1consistencyHO(c, order, K, N, R, G, A);
   if (ok) return ok;
 
   StabilityScalar_(N, A);

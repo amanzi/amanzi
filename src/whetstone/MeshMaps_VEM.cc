@@ -30,7 +30,8 @@ void MeshMaps_VEM::VelocityCell(
 {
   // LeastSquareProjector_Cell_(1, c, vf, vc);
   AmanziGeometry::Point p0(mesh1_->cell_centroid(c) - mesh0_->cell_centroid(c));
-  projector.HarmonicP1_Cell(c, p0, vf, vc);
+  // projector.HarmonicP1_Cell(c, p0, vf, vc);
+  projector.HarmonicPk_Cell(c, p0, 2, vf, vc);
 }
 
 

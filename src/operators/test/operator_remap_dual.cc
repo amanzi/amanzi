@@ -541,21 +541,21 @@ TEST(REMAP2D_DG1_DUAL_FEM) {
 const int N = 1;
 
 TEST(REMAP2D_DG0_DUAL_VEM) {
-  // RemapTestsDual(2, 0, "dg modal", "VEM", 16 * N, 16 * N, 0.05 / N);
-  RemapTestsDual(2, 0, "dg modal", "VEM", 0, 0, 0.05 / N);
+  RemapTestsDual(2, 0, "dg modal", "VEM", 16 * N, 16 * N, 0.05 / N);
+  // RemapTestsDual(2, 0, "dg modal", "VEM", 0, 0, 0.05 / N);
 }
 
 TEST(REMAP2D_DG1_DUAL_VEM) {
-  // RemapTestsDual(2, 1, "dg modal", "VEM", 16 * N, 16 * N, 0.05 / N);
-  RemapTestsDual(2, 1, "dg modal", "VEM", 0, 0, 0.05 / N);
+  RemapTestsDual(2, 1, "dg modal", "VEM", 16 * N, 16 * N, 0.05 / N);
+  // RemapTestsDual(2, 1, "dg modal", "VEM", 0, 0, 0.05 / N);
 }
 
+/*
 TEST(REMAP3D_DG0_DUAL_VEM) {
   RemapTestsDual(3, 0, "dg modal", "VEM", 5, 5, 0.2);
 }
 
 
-/*
 TEST(REMAP3D_DG1_DUAL_VEM) {
   RemapTestsDual(3, 1, "dg modal", "VEM", 5, 5, 0.1);
 }

@@ -276,6 +276,28 @@ void DenseMatrix::MaxRowMagnitude(int irow, int jmin, int jmax, int* j, double* 
 
 
 /* ******************************************************************
+* Second level routine: submatrix in rows [ib,ie) and columns [jb,je)
+****************************************************************** */
+DenseMatrix DenseMatrix::SubMatrix(int ib, int ie, int jb, int je) 
+{
+  int mrows(ie - ib), ncols(je - jb);
+  DenseMatrix tmp(mrows, ncols);
+  double* dataB = tmp.Values();
+
+  for (int j = jb; j < je; ++j) {
+    const double* dataA = data_ + j * m_ + ib;
+    for (int i = ib; i < ie; ++i) {
+      *dataB = *dataA;
+      dataA++; 
+      dataB++; 
+    }
+  } 
+
+  return tmp;
+}
+
+
+/* ******************************************************************
 * Second level routine: transpose
 ****************************************************************** */
 void DenseMatrix::Transpose(const DenseMatrix& A) 

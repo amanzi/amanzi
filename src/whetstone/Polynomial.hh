@@ -34,6 +34,8 @@
 
 #include "Point.hh"
 
+#include "DenseVector.hh"
+
 namespace Amanzi {
 namespace WhetStone {
 
@@ -175,7 +177,7 @@ class Polynomial {
   // -- resets all coefficients to zero
   void Reset();
   // -- takes coefficients from a vector
-  void set_coefs(const std::vector<double>& coefs);
+  void set_coefs(const DenseVector& coefs);
 
   // change the coordinate system
   // -- without changing polynomial

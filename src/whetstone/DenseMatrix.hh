@@ -154,6 +154,9 @@ class DenseMatrix {
   }
 
   // Second level routines
+  // -- submatrix in rows [ib, ie) and colums [jb, je) 
+  DenseMatrix SubMatrix(int ib, int ie, int jb, int je);
+ 
   // -- transpose creates new matrix
   void Transpose(const DenseMatrix& A);
   // -- transpose modifies square matrix

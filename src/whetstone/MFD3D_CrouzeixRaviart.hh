@@ -61,8 +61,9 @@ class MFD3D_CrouzeixRaviart : public virtual MFD3D {
 
   // high-order methods
   int H1consistencyHO(int c, int order, const Tensor& T,
-                      DenseMatrix& N, DenseMatrix& R, DenseMatrix& Ac, DenseMatrix& G);
-  int StiffnessMatrixHO(int c, int order, const Tensor& T, DenseMatrix& A);
+                      DenseMatrix& N, DenseMatrix& R, DenseMatrix& G, DenseMatrix& Ac);
+  int StiffnessMatrixHO(int c, int order, const Tensor& T,
+                        DenseMatrix& R, DenseMatrix& G, DenseMatrix& A);
 
   // miscalleneous
   void set_order(int order) { order_ = order; }
