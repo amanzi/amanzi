@@ -66,8 +66,8 @@ class Chemistry_PK : public PK_Physical {
   void ErrorAnalysis(int ierr, std::string& internal_msg);
   Key get_domain_name() { return domain_name_; }
 
- protected:
-  void InitializeField_(const Teuchos::Ptr<State>& S, std::string fieldname, double default_val);
+ // protected:
+ //  void InitializeField_(const Teuchos::Ptr<State>& S, std::string fieldname, double default_val);
 
  protected:
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
