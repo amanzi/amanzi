@@ -224,7 +224,7 @@ void Alquimia_PK::Initialize(const Teuchos::Ptr<State>& S)
 
   for (size_t i = 0; i < aux_names.size(); ++i) {
     aux_names[i] = Keys::getKey(domain_name_, aux_names[i]);
-    InitializeField(S, passwd_, aux_names[i], 0.0);
+    InitializeField_(S, aux_names[i], 0.0);
   }
 
 
