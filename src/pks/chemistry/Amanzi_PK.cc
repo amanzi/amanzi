@@ -88,13 +88,15 @@ Amanzi_PK::Amanzi_PK(Teuchos::ParameterList& pk_tree,
   isotherm_langmuir_b_key_ = Keys::getKey(domain_name_,"isotherm_langmuir_b");
   free_ion_species_key_ = Keys::getKey(domain_name_,"free_ion_species");
   primary_activity_coeff_key_ = Keys::getKey(domain_name_,"primary_activity_coeff");
-
   ion_exchange_sites_key_ = Keys::getKey(domain_name_,"ion_exchange_sites");
+
   //ion_exchange_sites_key_ = "ion_exchange_sites";
 
   ion_exchange_ref_cation_conc_key_ = Keys::getKey(domain_name_,"ion_exchange_ref_cation_conc");
   secondary_activity_coeff_key_ = Keys::getKey(domain_name_,"secondary_activity_coeff");
   alquimia_aux_data_key_ = Keys::getKey(domain_name_,"alquimia_aux_data");
+  mineral_rate_constant_key_ = Keys::getKey(domain_name_,"mineral_rate_constant");
+  first_order_decay_constant_key_ = Keys::getKey(domain_name_,"first_order_decay_constant");
 
   // collect high-level information about the problem
   Teuchos::RCP<Teuchos::ParameterList> state_list = Teuchos::sublist(glist, "state", true);
@@ -170,8 +172,10 @@ void Amanzi_PK::Initialize(const Teuchos::Ptr<State>& S)
   // initialization using base class
   Chemistry_PK::Initialize(S);
 
-  Teuchos::RCP<Epetra_MultiVector> tcc = 
-      S->GetFieldData(tcc_key_, passwd_)->ViewComponent("cell", true);
+  Teuchos::RCP<Epetra_MultiVector> tcc;
+  if (!S->HasField(tcc_key_)){
+    tcc =  S->GetFieldData(tcc_key_, passwd_)->ViewComponent("cell", true);
+  }
 
   XMLParameters();
 
@@ -554,8 +558,15 @@ void Amanzi_PK::CopyCellStateToBeakerStructures(
   // copy data from state arrays into the beaker parameters
   const Epetra_MultiVector& porosity = *S_->GetFieldData(poro_key_)->ViewComponent("cell", true);
   const Epetra_MultiVector& water_saturation = *S_->GetFieldData(saturation_key_)->ViewComponent("cell", true);
-  double water_density = *S_->GetScalarData(fluid_den_key_);
 
+  double water_density = 998.2;
+  if (S_->GetField(fluid_den_key_)->type() == Amanzi::CONSTANT_SCALAR){
+    water_density = *S_->GetScalarData(fluid_den_key_);
+  }else if (S_->GetField(fluid_den_key_)->type() == Amanzi::COMPOSITE_VECTOR_FIELD){
+     const Epetra_MultiVector& fl_den = *S_->GetFieldData(fluid_den_key_)->ViewComponent("cell", true);
+     water_density = fl_den[0][cell_id];
+  }
+    
   beaker_parameters_.water_density = water_density;
   beaker_parameters_.porosity = porosity[0][cell_id];
   beaker_parameters_.saturation = water_saturation[0][cell_id];
@@ -732,6 +743,13 @@ bool Amanzi_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 }
 
 
+void Amanzi_PK::CopyFieldstoNewState(const Teuchos::RCP<State>& S_next){
+
+  Chemistry_PK::CopyFieldstoNewState(S_next);
+
+}
+
+
 /* ******************************************************************
 * The MPC will call this function to signal to the process kernel 
 * that it has accepted the state update, thus, the PK should update
@@ -739,6 +757,7 @@ bool Amanzi_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 ******************************************************************* */
 void Amanzi_PK::CommitStep(double t_old, double t_new, const Teuchos::RCP<State>& S)
 {
+  if (S_ != S) CopyFieldstoNewState(S);
   saved_time_ = t_new;
 
   if (dt_control_method_ == "simple") {
