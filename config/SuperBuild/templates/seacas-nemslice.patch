@@ -1,6 +1,6 @@
-diff -ruBN /u/rao/Downloads/seacas-173a1e64f47dbcc0d1cdf98f2bc079309af58e59/packages/seacas/applications/nem_slice/elb_elem.C seacas/packages/seacas/applications/nem_slice/elb_elem.C
---- /u/rao/Downloads/seacas-173a1e64f47dbcc0d1cdf98f2bc079309af58e59/packages/seacas/applications/nem_slice/elb_elem.C	2017-08-24 14:52:33.000000000 -0600
-+++ seacas/packages/seacas/applications/nem_slice/elb_elem.C	2017-09-02 14:31:02.585698000 -0600
+diff -ruBN /nh/u/rao/Downloads/seacas-173a1e64f47dbcc0d1cdf98f2bc079309af58e59/packages/seacas/applications/nem_slice/elb_elem.C seacas-173a1e6/packages/seacas/applications/nem_slice/elb_elem.C
+--- /nh/u/rao/Downloads/seacas-173a1e64f47dbcc0d1cdf98f2bc079309af58e59/packages/seacas/applications/nem_slice/elb_elem.C	2017-08-24 14:52:33.000000000 -0600
++++ seacas-173a1e6/packages/seacas/applications/nem_slice/elb_elem.C	2017-08-29 13:18:03.505636000 -0600
 @@ -308,6 +308,40 @@
  /*****************************************************************************/
  /*****************************************************************************/
@@ -52,9 +52,9 @@ diff -ruBN /u/rao/Downloads/seacas-173a1e64f47dbcc0d1cdf98f2bc079309af58e59/pack
      }
      else {
        Gen_Error(0, "fatal: not all side nodes in connect table for element");
-diff -ruBN /u/rao/Downloads/seacas-173a1e64f47dbcc0d1cdf98f2bc079309af58e59/packages/seacas/applications/nem_slice/elb_elem.h seacas/packages/seacas/applications/nem_slice/elb_elem.h
---- /u/rao/Downloads/seacas-173a1e64f47dbcc0d1cdf98f2bc079309af58e59/packages/seacas/applications/nem_slice/elb_elem.h	2017-08-24 14:52:33.000000000 -0600
-+++ seacas/packages/seacas/applications/nem_slice/elb_elem.h	2017-09-02 14:31:02.588697000 -0600
+diff -ruBN /nh/u/rao/Downloads/seacas-173a1e64f47dbcc0d1cdf98f2bc079309af58e59/packages/seacas/applications/nem_slice/elb_elem.h seacas-173a1e6/packages/seacas/applications/nem_slice/elb_elem.h
+--- /nh/u/rao/Downloads/seacas-173a1e64f47dbcc0d1cdf98f2bc079309af58e59/packages/seacas/applications/nem_slice/elb_elem.h	2017-08-24 14:52:33.000000000 -0600
++++ seacas-173a1e6/packages/seacas/applications/nem_slice/elb_elem.h	2017-08-29 13:17:05.373757000 -0600
 @@ -129,4 +129,10 @@
   */
  #define MAX_ELEM_SIDES 6
@@ -66,9 +66,9 @@ diff -ruBN /u/rao/Downloads/seacas-173a1e64f47dbcc0d1cdf98f2bc079309af58e59/pack
 +int is_3d_element(E_Type etype);
 +
  #endif /* _ELB_ELM_CONST_H */
-diff -ruBN /u/rao/Downloads/seacas-173a1e64f47dbcc0d1cdf98f2bc079309af58e59/packages/seacas/applications/nem_slice/elb.h seacas/packages/seacas/applications/nem_slice/elb.h
---- /u/rao/Downloads/seacas-173a1e64f47dbcc0d1cdf98f2bc079309af58e59/packages/seacas/applications/nem_slice/elb.h	2017-08-24 14:52:33.000000000 -0600
-+++ seacas/packages/seacas/applications/nem_slice/elb.h	2017-09-02 14:36:58.727032000 -0600
+diff -ruBN /nh/u/rao/Downloads/seacas-173a1e64f47dbcc0d1cdf98f2bc079309af58e59/packages/seacas/applications/nem_slice/elb.h seacas-173a1e6/packages/seacas/applications/nem_slice/elb.h
+--- /nh/u/rao/Downloads/seacas-173a1e64f47dbcc0d1cdf98f2bc079309af58e59/packages/seacas/applications/nem_slice/elb.h	2017-08-24 14:52:33.000000000 -0600
++++ seacas-173a1e6/packages/seacas/applications/nem_slice/elb.h	2017-10-30 14:50:08.192947000 -0600
 @@ -153,6 +153,7 @@
    int   mech_add_procs;   /* adds processors in cases of mechanisms       */
    int   dsd_add_procs;    /* adds processors in cases of disconnected subdomains */
@@ -88,9 +88,9 @@ diff -ruBN /u/rao/Downloads/seacas-173a1e64f47dbcc0d1cdf98f2bc079309af58e59/pack
    {
    }
  };
-diff -ruBN /u/rao/Downloads/seacas-173a1e64f47dbcc0d1cdf98f2bc079309af58e59/packages/seacas/applications/nem_slice/elb_inp.C seacas/packages/seacas/applications/nem_slice/elb_inp.C
---- /u/rao/Downloads/seacas-173a1e64f47dbcc0d1cdf98f2bc079309af58e59/packages/seacas/applications/nem_slice/elb_inp.C	2017-08-24 14:52:33.000000000 -0600
-+++ seacas/packages/seacas/applications/nem_slice/elb_inp.C	2017-09-02 14:31:02.595696000 -0600
+diff -ruBN /nh/u/rao/Downloads/seacas-173a1e64f47dbcc0d1cdf98f2bc079309af58e59/packages/seacas/applications/nem_slice/elb_inp.C seacas-173a1e6/packages/seacas/applications/nem_slice/elb_inp.C
+--- /nh/u/rao/Downloads/seacas-173a1e64f47dbcc0d1cdf98f2bc079309af58e59/packages/seacas/applications/nem_slice/elb_inp.C	2017-08-24 14:52:33.000000000 -0600
++++ seacas-173a1e6/packages/seacas/applications/nem_slice/elb_inp.C	2017-08-30 17:09:28.148249000 -0600
 @@ -173,6 +173,14 @@
        prob->face_adj = 1;
        break;
@@ -145,9 +145,9 @@ diff -ruBN /u/rao/Downloads/seacas-173a1e64f47dbcc0d1cdf98f2bc079309af58e59/pack
      printf(" -h\t\tusage information\n");
      printf(" -a ascii file\tget info from ascii input file name\n");
    }
-diff -ruBN /u/rao/Downloads/seacas-173a1e64f47dbcc0d1cdf98f2bc079309af58e59/packages/seacas/applications/nem_slice/elb_loadbal.C seacas/packages/seacas/applications/nem_slice/elb_loadbal.C
---- /u/rao/Downloads/seacas-173a1e64f47dbcc0d1cdf98f2bc079309af58e59/packages/seacas/applications/nem_slice/elb_loadbal.C	2017-08-24 14:52:33.000000000 -0600
-+++ seacas/packages/seacas/applications/nem_slice/elb_loadbal.C	2017-09-02 14:31:02.599698000 -0600
+diff -ruBN /nh/u/rao/Downloads/seacas-173a1e64f47dbcc0d1cdf98f2bc079309af58e59/packages/seacas/applications/nem_slice/elb_loadbal.C seacas-173a1e6/packages/seacas/applications/nem_slice/elb_loadbal.C
+--- /nh/u/rao/Downloads/seacas-173a1e64f47dbcc0d1cdf98f2bc079309af58e59/packages/seacas/applications/nem_slice/elb_loadbal.C	2017-08-24 14:52:33.000000000 -0600
++++ seacas-173a1e6/packages/seacas/applications/nem_slice/elb_loadbal.C	2017-08-29 13:16:07.113944000 -0600
 @@ -57,6 +57,7 @@
  #include "elb_graph.h"  // for generate_graph
  #include "elb_groups.h" // for get_group_info
@@ -192,7 +192,7 @@ diff -ruBN /u/rao/Downloads/seacas-173a1e64f47dbcc0d1cdf98f2bc079309af58e59/pack
  int ilog2i(size_t n)
  {
    size_t       i  = 0;
-@@ -948,6 +920,18 @@
+@@ -948,6 +923,18 @@
        printf("============================================================\n");
        printf("\n");
      }
@@ -211,9 +211,9 @@ diff -ruBN /u/rao/Downloads/seacas-173a1e64f47dbcc0d1cdf98f2bc079309af58e59/pack
    } // problem->type == ELEMENTAL
  
    /* since Chaco didn't free the graph, need to do it here */
-diff -ruBN /u/rao/Downloads/seacas-173a1e64f47dbcc0d1cdf98f2bc079309af58e59/packages/seacas/applications/nem_slice/elb_main.C seacas/packages/seacas/applications/nem_slice/elb_main.C
---- /u/rao/Downloads/seacas-173a1e64f47dbcc0d1cdf98f2bc079309af58e59/packages/seacas/applications/nem_slice/elb_main.C	2017-08-24 14:52:33.000000000 -0600
-+++ seacas/packages/seacas/applications/nem_slice/elb_main.C	2017-09-02 14:31:02.602699000 -0600
+diff -ruBN /nh/u/rao/Downloads/seacas-173a1e64f47dbcc0d1cdf98f2bc079309af58e59/packages/seacas/applications/nem_slice/elb_main.C seacas-173a1e6/packages/seacas/applications/nem_slice/elb_main.C
+--- /nh/u/rao/Downloads/seacas-173a1e64f47dbcc0d1cdf98f2bc079309af58e59/packages/seacas/applications/nem_slice/elb_main.C	2017-08-24 14:52:33.000000000 -0600
++++ seacas-173a1e6/packages/seacas/applications/nem_slice/elb_main.C	2017-08-29 13:15:14.757811000 -0600
 @@ -332,6 +332,19 @@
      problem.alloc_graph = ELB_FALSE;
    }
@@ -234,21 +234,21 @@ diff -ruBN /u/rao/Downloads/seacas-173a1e64f47dbcc0d1cdf98f2bc079309af58e59/pack
    /* Allocate necessary memory */
    if (problem.type == NODAL) {
      problem.num_vertices = mesh.num_nodes;
-diff -ruBN /u/rao/Downloads/seacas-173a1e64f47dbcc0d1cdf98f2bc079309af58e59/packages/seacas/applications/nem_slice/fix_column_partitions.C seacas/packages/seacas/applications/nem_slice/fix_column_partitions.C
---- /u/rao/Downloads/seacas-173a1e64f47dbcc0d1cdf98f2bc079309af58e59/packages/seacas/applications/nem_slice/fix_column_partitions.C	1969-12-31 17:00:00.000000000 -0700
-+++ seacas/packages/seacas/applications/nem_slice/fix_column_partitions.C	2017-09-26 09:10:56.331267000 -0600
+diff -ruBN /nh/u/rao/Downloads/seacas-173a1e64f47dbcc0d1cdf98f2bc079309af58e59/packages/seacas/applications/nem_slice/fix_column_partitions.C seacas-173a1e6/packages/seacas/applications/nem_slice/fix_column_partitions.C
+--- /nh/u/rao/Downloads/seacas-173a1e64f47dbcc0d1cdf98f2bc079309af58e59/packages/seacas/applications/nem_slice/fix_column_partitions.C	1969-12-31 17:00:00.000000000 -0700
++++ seacas-173a1e6/packages/seacas/applications/nem_slice/fix_column_partitions.C	2017-10-30 14:59:34.143567000 -0600
 @@ -0,0 +1,358 @@
 +/* Copyright 2017 Los Alamos National Security, LLC */
 +
 +#include "elb.h" // for LB_Description<INT>, etc
-+#include "elb_err.h"
 +#include "elb_elem.h"
++#include "elb_err.h"
 +#include "fix_column_partitions.h"
-+#include <vector>
-+#include <map>
-+#include <iostream>
-+#include <cstdio>  // for sprintf
 +#include <cmath>
++#include <cstdio> // for sprintf
++#include <iostream>
++#include <map>
++#include <vector>
 +
 +namespace {
 +// Opposite side IDs in a hex according to Exodus II convention
@@ -275,8 +275,8 @@ diff -ruBN /u/rao/Downloads/seacas-173a1e64f47dbcc0d1cdf98f2bc079309af58e59/pack
 +
 +  // Get nodes of this side (face) of the element
 +
-+  int nsnodes = is_hex(etype) ? 4 : 3; 
-+  INT side_nodes[4];
++    int nsnodes = is_hex(etype) ? 4 : 3;
++    INT side_nodes[9]; // SHELL9 has 9 nodes on a face.
 +
 +  INT *elnodes = mesh->connect[cur_elem];
 +  ss_to_node_list(etype, elnodes, side_id, side_nodes);
@@ -284,8 +284,8 @@ diff -ruBN /u/rao/Downloads/seacas-173a1e64f47dbcc0d1cdf98f2bc079309af58e59/pack
 +  // How would these side's nodes be if they were viewed from the
 +  // adjacent element
 +
-+  INT side_nodes_flipped[4];
-+  get_ss_mirror(etype, side_nodes, side_id, side_nodes_flipped);
++    INT side_nodes_flipped[9]; // Realistically: 4, max possible: 9
++    get_ss_mirror(etype, side_nodes, side_id, side_nodes_flipped);
 +
 +  for (int i = 0; i < nadj; i++) {
 +    INT adj_elem_id = adj[i]-1;  // Adjacency graph entries start from 1
@@ -371,7 +371,7 @@ diff -ruBN /u/rao/Downloads/seacas-173a1e64f47dbcc0d1cdf98f2bc079309af58e59/pack
 +    
 +    int count = 0;
 +    for (int j = 0; j < nelfaces; j++) {
-+      INT fnodes[4];
++      INT fnodes[9]; // Should only need 4, but ss_to_node_list can potentially access 9 (SHELL9).
 +
 +      int nfn = 4;
 +      if (is_wedge(etype)) {
@@ -431,7 +431,7 @@ diff -ruBN /u/rao/Downloads/seacas-173a1e64f47dbcc0d1cdf98f2bc079309af58e59/pack
 +      }
 +      if (fabs(normal[2]) > 1.0e-12) { // non-zero
 +        if (normal[2] > 0.0)
-+          top_side0 = j+1;  // side id counting starts from 1
++          top_side0 = j+1; // side id counting starts from 1
 +        else
 +          bot_side0 = j+1;
 +        count++;
@@ -458,11 +458,11 @@ diff -ruBN /u/rao/Downloads/seacas-173a1e64f47dbcc0d1cdf98f2bc079309af58e59/pack
 +    std::vector<INT> above_list;
 +    std::vector<INT> below_list;
 +
-+    INT cur_elem = i;
-+    INT adj_elem = -1;
-+    int adj_side = -1;
-+    int bot_side = bot_side0;
-+    int top_side = top_side0;
++    INT  cur_elem      = i;
++    INT  adj_elem      = -1;
++    int  adj_side      = -1;
++    int  bot_side      = bot_side0;
++    int  top_side      = top_side0;
 +    bool upsearch_done = false;
 +    while (!upsearch_done) {
 +
@@ -491,9 +491,9 @@ diff -ruBN /u/rao/Downloads/seacas-173a1e64f47dbcc0d1cdf98f2bc079309af58e59/pack
 +    }  // while (!upsearch_done)
 +    int nabove = above_list.size();
 +
-+    cur_elem = i;
-+    bot_side = bot_side0;
-+    top_side = top_side0;
++    cur_elem             = i;
++    bot_side             = bot_side0;
++    top_side             = top_side0;
 +    bool downsearch_done = false;
 +    while (!downsearch_done) {
 +
@@ -533,7 +533,7 @@ diff -ruBN /u/rao/Downloads/seacas-173a1e64f47dbcc0d1cdf98f2bc079309af58e59/pack
 +      colelems.push_back(*rit);
 +      rit++;
 +    }
-+    colelems.push_back(cur_elem);
++    colelems.push_back(i);
 +
 +    typename std::vector<INT>::iterator it = below_list.begin();
 +    while (it != below_list.end()) {
@@ -596,9 +596,9 @@ diff -ruBN /u/rao/Downloads/seacas-173a1e64f47dbcc0d1cdf98f2bc079309af58e59/pack
 +  return nmoved;
 +}  // fix_column_partitions.C
 +
-diff -ruBN /u/rao/Downloads/seacas-173a1e64f47dbcc0d1cdf98f2bc079309af58e59/packages/seacas/applications/nem_slice/fix_column_partitions.h seacas/packages/seacas/applications/nem_slice/fix_column_partitions.h
---- /u/rao/Downloads/seacas-173a1e64f47dbcc0d1cdf98f2bc079309af58e59/packages/seacas/applications/nem_slice/fix_column_partitions.h	1969-12-31 17:00:00.000000000 -0700
-+++ seacas/packages/seacas/applications/nem_slice/fix_column_partitions.h	2017-09-02 14:31:02.607696000 -0600
+diff -ruBN /nh/u/rao/Downloads/seacas-173a1e64f47dbcc0d1cdf98f2bc079309af58e59/packages/seacas/applications/nem_slice/fix_column_partitions.h seacas-173a1e6/packages/seacas/applications/nem_slice/fix_column_partitions.h
+--- /nh/u/rao/Downloads/seacas-173a1e64f47dbcc0d1cdf98f2bc079309af58e59/packages/seacas/applications/nem_slice/fix_column_partitions.h	1969-12-31 17:00:00.000000000 -0700
++++ seacas-173a1e6/packages/seacas/applications/nem_slice/fix_column_partitions.h	2017-08-29 13:15:34.233744000 -0600
 @@ -0,0 +1,24 @@
 +/* Copyright 2017 Los Alamos National Security, LLC */
 +

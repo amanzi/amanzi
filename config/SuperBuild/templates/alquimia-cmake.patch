@@ -1,0 +1,61 @@
+diff -ruNbB alquimia-dev-1.0.5/CMakeLists.txt alquimia-1.0.5-source/CMakeLists.txt
+--- alquimia-dev-1.0.5/CMakeLists.txt	2017-09-20 11:18:31.000000000 -0600
++++ alquimia-1.0.5-source/CMakeLists.txt	2017-10-24 14:42:28.000000000 -0600
+@@ -27,24 +27,24 @@
+ 
+ # Make sure compilers are set. This must be done before enabling languages.
+ if (NOT CMAKE_C_COMPILER)
+-  if (NOT $ENV{CC} STREQUAL "")
+-    set(CMAKE_C_COMPILER $ENV{CC})
++  if (NOT ${CC} STREQUAL "")
++    set(CMAKE_C_COMPILER ${CC})
+   else()
+     set(CMAKE_C_COMPILER cc)
+   endif()
+ endif()
+ if (NOT CMAKE_C_FLAGS)
+-  set(CMAKE_C_FLAGS $ENV{CFLAGS})
++  set(CMAKE_C_FLAGS ${CFLAGS})
+ endif()
+ if (NOT CMAKE_Fortran_COMPILER)
+-  if (NOT $ENV{FC} STREQUAL "")
+-    set(CMAKE_Fortran_COMPILER $ENV{FC})
++  if (NOT ${FC} STREQUAL "")
++    set(CMAKE_Fortran_COMPILER ${FC})
+   else()
+     set(CMAKE_Fortran_COMPILER gfortran)
+   endif()
+ endif()
+ if (NOT CMAKE_Fortran_FLAGS)
+-  set(CMAKE_Fortran_FLAGS $ENV{FCFLAGS})
++  set(CMAKE_Fortran_FLAGS ${FCFLAGS})
+ endif()
+ enable_language(C)
+ enable_language(Fortran)
+@@ -185,12 +185,12 @@
+ 
+ # If needed, Check for PETSc and set things up.
+ if (ALQUIMIA_NEED_PETSC)
+-  if ($ENV{PETSC_DIR} STREQUAL "")
++  if (${PETSC_DIR} STREQUAL "")
+     message(FATAL_ERROR "PETSC_DIR must be set for the requested engines to be enabled.")
+   endif()
+-  set(PETSC_DIR $ENV{PETSC_DIR})
++  set(PETSC_DIR ${PETSC_DIR})
+   if(DEFINED ENV{PETSC_ARCH})
+-    set(PETSC_ARCH $ENV{PETSC_ARCH})
++    set(PETSC_ARCH ${PETSC_ARCH})
+   endif()
+ 
+   message(STATUS "--- SM: PETSC_DIR >>> ${PETSC_DIR}")
+diff -ruNbB alquimia-dev-1.0.5/alquimia/CMakeLists.txt alquimia-1.0.5-source/alquimia/CMakeLists.txt
+--- alquimia-dev-1.0.5/alquimia/CMakeLists.txt	2017-09-20 11:18:31.000000000 -0600
++++ alquimia-1.0.5-source/alquimia/CMakeLists.txt	2017-10-24 14:44:27.000000000 -0600
+@@ -20,6 +20,7 @@
+ 
+ # CrunchFlow engine.
+ if (ALQUIMIA_HAVE_CRUNCHFLOW)
++  list(APPEND ALQUIMIA_TPLS lapack)
+   list(APPEND ALQUIMIA_TPLS ${TPL_CRUNCHFLOW_LIBRARIES})
+   list(APPEND ALQUIMIA_INCLUDE_DIRS ${TPL_CRUNCHFLOW_INCLUDE_DIRS})
+   list(APPEND ALQUIMIA_SOURCES crunch_alquimia_interface.F90 crunch_alquimia_wrappers.F90)

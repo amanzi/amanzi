@@ -23,11 +23,11 @@ list(APPEND PFLOTRAN_PACKAGE_DEPENDS ${PETSc_BUILD_TARGET})
 # Note:
 #      CMAKE_CACHE_ARGS requires -DVAR:<TYPE>=VALUE syntax
 #      CMAKE_ARGS -DVAR=VALUE OK
-# NO WHITESPACE between -D and VAR. Parser blows up otherwise.
 set(PFLOTRAN_CMAKE_CACHE_ARGS
-                  -DCMAKE_BUILD_TYPE:STRING=${CMAKE_BUILD_TYPE}
-                  -DCMAKE_INSTALL_PREFIX:STRING=<INSTALL_DIR>
-                  -DBUILD_SHARED_LIBS:BOOL=FALSE)
+      "-DCMAKE_BUILD_TYPE:STRING=${CMAKE_BUILD_TYPE}"
+      "-DCMAKE_INSTALL_PREFIX:STRING=<INSTALL_DIR>"
+      "-DBUILD_SHARED_LIBS:BOOL=${BUILD_SHARED_LIBS}"
+      "-DCMAKE_Fortran_FLAGS:STRING=-fPIC -w -Wno-unused-variable -ffree-line-length-0 -O3")
 
 # --- Define the build command
 
@@ -73,9 +73,10 @@ ExternalProject_Add(${PFLOTRAN_BUILD_TARGET}
                     # -- Configure
                     SOURCE_DIR    ${PFLOTRAN_source_dir}          # Source directory
                     CONFIGURE_COMMAND ""
-                    # CMAKE_CACHE_ARGS ${PFLOTRAN_CMAKE_CACHE_ARGS}# CMAKE_CACHE_ARGS or CMAKE_ARGS => CMake configure
-                    #$ {Amanzi_CMAKE_C_COMPILER_ARGS}             # Ensure uniform build
-                    #   -DCMAKE_C_COMPILER:FILEPATH=${CMAKE_C_COMPILER}
+                    CMAKE_ARGS    ${PFLOTRAN_CMAKE_CACHE_ARGS}    # CMAKE_CACHE_ARGS or CMAKE_ARGS => CMake configure
+                                  ${Amanzi_CMAKE_C_COMPILER_ARGS}  # Ensure uniform build
+                                  -DCMAKE_C_COMPILER:FILEPATH=${CMAKE_C_COMPILER}
+                                  -DCMAKE_Fortran_COMPILER:FILEPATH=${CMAKE_Fortran_COMPILER}
                     # -- Build
                     # BINARY_DIR      ${PFLOTRAN_build_dir}       # Build directory 
                     BUILD_COMMAND     ${PFLOTRAN_CMAKE_COMMAND}   # $(MAKE) enables parallel builds through make

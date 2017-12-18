@@ -35,4 +35,7 @@ add_library(structured_amanzi $<TARGET_OBJECTS:samr>
                               $<TARGET_OBJECTS:sflow>
                               $<TARGET_OBJECTS:schem>)
 
-SET_TARGET_PROPERTIES(structured_amanzi PROPERTIES LINKER_LANGUAGE C)
+set_target_properties(structured_amanzi PROPERTIES LINKER_LANGUAGE C)
+if (APPLE AND BUILD_SHARED_LIBS)
+  set_target_properties(structured_amanzi PROPERTIES LINK_FLAGS "-Wl,-undefined,dynamic_lookup")
+endif()			  

@@ -1,19 +1,18 @@
-# CMake ASCEMIO configure file
+# CMake SuperLU patch file
 
 # Now run the patch script
-set(command sh;@ASCEMIO_sh_build@)
+set(command sh @SuperLU_sh_patch@)
 execute_process(
   COMMAND ${command}
+  WORKING_DIRECTORY "@SuperLU_source_dir@"
   RESULT_VARIABLE result
-  WORKING_DIRECTORY "@ASCEMIO_source_dir@"
 )
 
 if (result)
-  set(msg "ASCEMIO build command failed")
+  set(msg "SuperLU patch command failed")
   foreach(arg IN LISTS command )
     set(msg "${msg} '${arg}'")
   endforeach()
   message(FATAL_ERROR ${msg})
 endif()  
-
                

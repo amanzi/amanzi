@@ -9,6 +9,7 @@
 include_directories(${CHEM_INCLUDES_DIR})
 
 set(SRCS 
+         ./block.cc
 	 ./matrix_block.cc 
 	 ./file_io.cc 
 	 ./chemistry_exception.cc
@@ -17,6 +18,7 @@ set(SRCS
 	 ./chemistry_verbosity.cc
 )
 
-add_amanzi_library(geochemutil SOURCE ${SRCS}) 
+add_amanzi_library(geochemutil SOURCE ${SRCS}
+	                       LINK_LIBS ${Teuchos_LIBRARIES}) 
 
 

@@ -417,7 +417,6 @@ void Flow_PK::ComputeWellIndex(Teuchos::ParameterList& spec)
   std::vector<std::string> regions = spec.get<Teuchos::Array<std::string> >("regions").toVector();
   Teuchos::ParameterList well_list = spec.sublist("well");
   rw = well_list.get<double>("well radius");
-
   
   for (auto it = regions.begin(); it != regions.end(); ++it) {
     mesh_-> get_set_entities(*it, AmanziMesh::CELL, AmanziMesh::OWNED, &cells);
@@ -523,9 +522,6 @@ void Flow_PK::ComputeOperatorBCs(const CompositeVector& u)
         int f = it->first;
         bc_model[f] = Operators::OPERATOR_BC_DIRICHLET;
         bc_value[f] = it->second[0];
-        // const AmanziGeometry::Point& xf = mesh_->face_centroid(f);
-        // double r = sqrt(xf[0]*xf[0] + xf[1]*xf[1]);
-        // std::cout<<f<<" "<<xf<<" : "<<bc_value[f]<<" -- "<<r<<"\n";
       }
     }
 

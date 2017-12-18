@@ -5,6 +5,9 @@
 #include "Teuchos_ParameterListAcceptorDefaultBase.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
 
+// closing DSO objects
+#include "VerboseObject_objs.hh"
+
 #include "Utility.H"
 #include "ParmParseHelpers.H"
 #include "ccse-mpi.H"

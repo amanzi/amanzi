@@ -7,7 +7,7 @@
 
 # SEACAS does not call MPI directly, however HDF5 requires
 # MPI and to resolve links we need MPI compile wrappers.
-if ( NOT ENABLE_XSDK)
+if (NOT ENABLE_XSDK)
     define_external_project_args(SEACAS
                                  TARGET seacas
 				 DEPENDS ${MPI_PROJECT} HDF5 NetCDF)
@@ -35,7 +35,7 @@ build_whitespace_string(seacas_cflags ${seacas_cxxflags_list})
 set(seacas_fcflags_list -I${TPL_INSTALL_PREFIX}/include ${Amanzi_COMMON_FCFLAGS})
 build_whitespace_string(seacas_fcflags ${seacas_fcflags_list})
 
-set(seacas_lflags_list )
+set(seacas_lflags_list)
 build_whitespace_string(seacas_lflags ${seacas_lflags_list})
 
 # Build the NetCDF libraries string
@@ -82,7 +82,7 @@ set(SEACAS_CMAKE_CACHE_ARGS
                     ${Amanzi_CMAKE_Fortran_COMPILER_ARGS}
                     -DCMAKE_Fortran_COMPILER:FILEPATH=${CMAKE_Fortran_COMPILER_USE}
                     -DCMAKE_EXE_LINKER_FLAGS:STRING=${seacas_lflags}
-                    -DBUILD_SHARED_LIBS:BOOL=OFF 
+                    -DBUILD_SHARED_LIBS:BOOL=${BUILD_SHARED_LIBS}
 		    -DSEACASProj_ENABLE_ALL_PACKAGES:BOOL=FALSE
                     -DSEACASProj_ENABLE_SEACASExodus:BOOL=TRUE
 		    -DSEACASProj_ENABLE_SEACASNemslice:STRING=:BOOL=TRUE
@@ -108,6 +108,8 @@ set(SEACAS_CMAKE_CACHE_ARGS
 		    -DTPL_ENABLE_Pthread:BOOL=FALSE
                     -DSEACASExodus_ENABLE_THREADSAFE:BOOL=OFF
                     -DSEACASIoss_ENABLE_THREADSAFE:BOOL=OFF
+		    -DCMAKE_INSTALL_RPATH:PATH=${CMAKE_INSTALL_PREFIX}/SEACAS/lib
+		    -DCMAKE_INSTALL_NAME_DIR:PATH=${CMAKE_INSTALL_PREFIX}/SEACAS/lib
                     )
 
 # --- Add external project build and tie to the SEACAS build target
@@ -123,7 +125,7 @@ ExternalProject_Add(${SEACAS_BUILD_TARGET}
 		    PATCH_COMMAND ${SEACAS_PATCH_COMMAND}
                     # -- Configure
                     SOURCE_DIR       ${SEACAS_source_dir}           # Source directory
-                    CMAKE_CACHE_ARGS ${SEACAS_CMAKE_CACHE_ARGS}
+		    CMAKE_CACHE_ARGS ${SEACAS_CMAKE_CACHE_ARGS}
                     # -- Build
                     BINARY_DIR        ${SEACAS_build_dir}           # Build directory 
                     BUILD_COMMAND     $(MAKE)                       # $(MAKE) enables parallel builds through make
