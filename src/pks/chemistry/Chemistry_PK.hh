@@ -87,7 +87,7 @@ class Chemistry_PK : public PK_Physical {
   
   int number_sorption_sites_, number_total_sorbed_;
   std::vector<std::string> sorption_site_names_;
-  bool using_sorption_, using_sorption_isotherms_, convert2mole_fraction_;
+  bool using_sorption_, using_sorption_isotherms_;
 
   int number_free_ion_, number_ion_exchange_sites_;
 

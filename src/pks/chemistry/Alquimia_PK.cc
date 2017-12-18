@@ -99,8 +99,6 @@ Alquimia_PK::Alquimia_PK(Teuchos::ParameterList& pk_tree,
   first_order_decay_constant_key_ = Keys::getKey(domain_name_,"first_order_decay_constant");
 
 
-  convert2mole_fraction_ = cp_list_->get<bool>("use mole fraction units", false);
-
   // collect high-level information about the problem
   Teuchos::RCP<Teuchos::ParameterList> state_list = Teuchos::sublist(glist, "state", true);
 

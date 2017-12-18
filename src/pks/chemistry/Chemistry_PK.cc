@@ -27,8 +27,7 @@ Chemistry_PK::Chemistry_PK() :
     number_ion_exchange_sites_(0),
     number_sorption_sites_(0),
     using_sorption_(false),
-    using_sorption_isotherms_(false),
-    convert2mole_fraction_(false),
+    using_sorption_isotherms_(false),    
     number_aqueous_kinetics_(0)
     {};
 
