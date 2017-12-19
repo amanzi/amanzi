@@ -20,8 +20,8 @@
 
 // Amanzi
 #include "CompositeVector.hh"
+#include "DenseVector.hh"
 #include "DiffusionPhase.hh"
-#include "Explicit_TI_FnBase.hh"
 #include "MaterialProperties.hh"
 #include "PK.hh"
 #include "PK_PhysicalExplicit.hh"
@@ -32,7 +32,6 @@
 #include "Units.hh"
 #include "VerboseObject.hh"
 #include "PK_Explicit.hh"
-#include "DenseVector.hh"
 
 #ifdef ALQUIMIA_ENABLED
 #include "Alquimia_PK.hh"
@@ -50,7 +49,7 @@ namespace Transport {
 
 typedef double AnalyticFunction(const AmanziGeometry::Point&, const double);
 
-  class Transport_PK : public  PK_PhysicalExplicit<Epetra_Vector> {
+class Transport_PK : public PK_PhysicalExplicit<Epetra_Vector> {
   public:
     Transport_PK(Teuchos::ParameterList& pk_tree,
                  const Teuchos::RCP<Teuchos::ParameterList>& glist,
@@ -102,6 +101,7 @@ typedef double AnalyticFunction(const AmanziGeometry::Point&, const double);
   void VV_CheckInfluxBC() const;
   void VV_PrintSoluteExtrema(const Epetra_MultiVector& tcc_next, double dT_MPC);
   double VV_SoluteVolumeChangePerSecond(int idx_solute);
+  void VV_PrintLimiterStatistics();
 
   void CalculateLpErrors(AnalyticFunction f, double t, Epetra_Vector* sol, double* L1, double* L2);
 
@@ -120,23 +120,23 @@ typedef double AnalyticFunction(const AmanziGeometry::Point&, const double);
   bool ComputeBCs_(std::vector<int>& bc_model, std::vector<double>& bc_value, int component);
 
   // advection members
+  // -- advection in volume
   void AdvanceDonorUpwind(double dT);
-  void AdvanceSecondOrderUpwindGeneric(double dT);
+  void AdvanceSecondOrderUpwindRKn(double dT);
   void AdvanceSecondOrderUpwindRK1(double dT);
   void AdvanceSecondOrderUpwindRK2(double dT);
+  // -- advection on non-manifolds
+  void AdvanceDonorUpwindNonManifold(double dT);
 
   // time integration members
-    void Functional(const double t, const Epetra_Vector& component, Epetra_Vector& f_component);
-    //  void Functional(const double t, const Epetra_Vector& component, TreeVector& f_component);
+  void FunctionalOld(double t, const Epetra_Vector& component, Epetra_Vector& f_component);
+  void Functional(double t, const Epetra_Vector& component, Epetra_Vector& f_component);
 
   void IdentifyUpwindCells();
 
   void InterpolateCellVector(
       const Epetra_MultiVector& v0, const Epetra_MultiVector& v1, 
       double dT_int, double dT, Epetra_MultiVector& v_int);
-
-  const Teuchos::RCP<Epetra_IntVector>& upwind_cell() { return upwind_cell_; }
-  const Teuchos::RCP<Epetra_IntVector>& downwind_cell() { return downwind_cell_; }  
 
   // physical models
   // -- dispersion and diffusion
@@ -177,8 +177,8 @@ typedef double AnalyticFunction(const AmanziGeometry::Point&, const double);
   int spatial_disc_order, temporal_disc_order, limiter_model;
 
   int nsubcycles;  // output information
-  int internal_tests;
-  double tests_tolerance;
+  bool internal_tests_, genericRK_;
+  double internal_tests_tol_;
 
  protected:
   Teuchos::RCP<TreeVector> soln_;
@@ -201,8 +201,9 @@ typedef double AnalyticFunction(const AmanziGeometry::Point&, const double);
   Teuchos::RCP<AmanziChemistry::ChemistryEngine> chem_engine_;
 #endif
 
-  Teuchos::RCP<Epetra_IntVector> upwind_cell_;
-  Teuchos::RCP<Epetra_IntVector> downwind_cell_;
+  std::vector<std::vector<int> > upwind_cells_;  // fracture friendly 
+  std::vector<std::vector<int> > downwind_cells_;
+  std::vector<std::vector<double> > upwind_flux_, downwind_flux_;
 
   Teuchos::RCP<const Epetra_MultiVector> ws_start, ws_end;  // data for subcycling 
   Teuchos::RCP<Epetra_MultiVector> ws_subcycle_start, ws_subcycle_end;
@@ -252,7 +253,6 @@ typedef double AnalyticFunction(const AmanziGeometry::Point&, const double);
 
   // io
   Utils::Units units_;
-  Teuchos::RCP<VerboseObject> vo_;
 
   // Forbidden.
   Transport_PK(const Transport_PK&);

@@ -15,20 +15,21 @@
 #include <string>
 #include <vector>
 
-#include "UnitTest++.h"
-
+// TPLs
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_ParameterXMLFileReader.hpp"
+#include "UnitTest++.h"
 
+// Amanzi
 #include "EnergyTwoPhase_PK.hh"
-#include "MeshFactory.hh"
 #include "GMVMesh.hh"
+#include "MeshFactory.hh"
 #include "Operator.hh"
-#include "OperatorDiffusion.hh"
-#include "OperatorAdvection.hh"
-#include "OperatorAccumulation.hh"
-#include "OperatorDiffusionFactory.hh"
+#include "PDE_Accumulation.hh"
+#include "PDE_AdvectionUpwind.hh"
+#include "PDE_Diffusion.hh"
+#include "PDE_DiffusionFactory.hh"
 #include "State.hh"
 
 /* **************************************************************** 
@@ -103,9 +104,9 @@ std::cout << "Passed EPK.Initilize()" << std::endl;
 
   // create boundary data
   int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
-  std::vector<int> bc_model(nfaces_wghost, Operators::OPERATOR_BC_NONE);
-  std::vector<double> bc_value(nfaces_wghost);
-  std::vector<double> bc_mixed(nfaces_wghost);
+  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(mesh, AmanziMesh::FACE, Operators::SCHEMA_DOFS_SCALAR));
+  std::vector<int>& bc_model = bc->bc_model();
+  std::vector<double>& bc_value = bc->bc_value();
   
   for (int f = 0; f < nfaces_wghost; f++) {
     const AmanziGeometry::Point& xf = mesh->face_centroid(f);
@@ -115,7 +116,6 @@ std::cout << "Passed EPK.Initilize()" << std::endl;
       bc_value[f] = 200.0;
     }
   }
-  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(OPERATOR_BC_TYPE_FACE, bc_model, bc_value, bc_mixed));
   
   // create diffusion operator 
   const Teuchos::ParameterList& elist = plist->sublist("PKs").sublist("energy")
@@ -123,8 +123,8 @@ std::cout << "Passed EPK.Initilize()" << std::endl;
   Teuchos::ParameterList oplist = elist.sublist("operators")
                                        .sublist("diffusion operator")
                                        .sublist("preconditioner");
-  OperatorDiffusionFactory opfactory;
-  Teuchos::RCP<OperatorDiffusion> op1 = opfactory.Create(oplist, mesh, bc);
+  PDE_DiffusionFactory opfactory;
+  Teuchos::RCP<PDE_Diffusion> op1 = opfactory.Create(oplist, mesh, bc);
   op1->SetBCs(bc, bc);
 
   // populate the diffusion operator
@@ -134,14 +134,14 @@ std::cout << "Passed EPK.Initilize()" << std::endl;
   Teuchos::RCP<Operator> op = op1->global_operator();
 
   // add accumulation term
-  Teuchos::RCP<OperatorAccumulation> op2 = Teuchos::rcp(new OperatorAccumulation(AmanziMesh::CELL, op));
+  Teuchos::RCP<PDE_Accumulation> op2 = Teuchos::rcp(new PDE_Accumulation(AmanziMesh::CELL, op));
   double dT = 1.0;
   CompositeVector solution(op->DomainMap());
 
   S->GetFieldEvaluator("energy")->HasFieldDerivativeChanged(S.ptr(), passwd, "temperature");
   const CompositeVector& dEdT = *S->GetFieldData("denergy_dtemperature");
 
-  op2->AddAccumulationTerm(solution, dEdT, dT, "cell");
+  op2->AddAccumulationDelta(solution, dEdT, dEdT, dT, "cell");
 
   // add advection term: u = q_l n_l c_v
   // we do not upwind n_l c_v  in this test.
@@ -150,8 +150,8 @@ std::cout << "Passed EPK.Initilize()" << std::endl;
       ->ViewComponent("cell", true);
   const Epetra_MultiVector& n_l = *S->GetFieldData("molar_density_liquid")->ViewComponent("cell", true);
 
-  CompositeVector flux(op->DomainMap());
-  Epetra_MultiVector& q_l = *flux.ViewComponent("face");
+  Teuchos::RCP<CompositeVector> flux = Teuchos::rcp(new CompositeVector(op->DomainMap()));
+  Epetra_MultiVector& q_l = *flux->ViewComponent("face");
 
   AmanziMesh::Entity_ID_List cells;
 
@@ -171,9 +171,9 @@ std::cout << "Passed EPK.Initilize()" << std::endl;
   }
 
   Teuchos::ParameterList alist;
-  Teuchos::RCP<OperatorAdvection> op3 = Teuchos::rcp(new OperatorAdvection(alist, op));
-  op3->Setup(flux);
-  op3->UpdateMatrices(flux);
+  Teuchos::RCP<PDE_AdvectionUpwind> op3 = Teuchos::rcp(new PDE_AdvectionUpwind(alist, op));
+  op3->Setup(*flux);
+  op3->UpdateMatrices(flux.ptr());
 
   // build the matrix
   op1->ApplyBCs(true, true);

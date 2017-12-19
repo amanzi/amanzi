@@ -19,9 +19,9 @@
 #include "Teuchos_RCP.hpp"
 
 #include "CommonDefs.hh"
+#include "DenseVector.hh"
 #include "Mesh.hh"
 #include "UniqueMeshFunction.hh"
-#include "DenseVector.hh"
 
 
 namespace Amanzi {
@@ -48,7 +48,6 @@ class PK_DomainFunctionSimple : public FunctionBase,
   // member functions
   void Init(const Teuchos::ParameterList& plist, const std::string& keyword);
 
-
   // required member functions
   virtual void Compute(double t0, double t1);
   virtual std::string name() const { return "simple"; }
@@ -56,7 +55,6 @@ class PK_DomainFunctionSimple : public FunctionBase,
  protected:
   using FunctionBase::value_;
   using FunctionBase::keyword_;
-
 
  private:
   std::string submodel_;

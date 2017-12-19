@@ -26,16 +26,15 @@
 #include "exceptions.hh"
 #include "independent_variable_field_evaluator_fromfunction.hh"
 #include "Mesh.hh"
-#include "mfd3d_diffusion.hh"
 #include "OperatorDefs.hh"
-#include "OperatorDiffusionFactory.hh"
+#include "PDE_DiffusionFactory.hh"
 #include "PK_Utils.hh"
 #include "Point.hh"
 #include "primary_variable_field_evaluator.hh"
 #include "UpwindFactory.hh"
 #include "XMLParameterListWriter.hh"
 
-// Flow
+// Amanzi::Flow
 #include "DarcyVelocityEvaluator.hh"
 #include "PorosityModelEvaluator.hh"
 #include "RelPermEvaluator.hh"
@@ -224,6 +223,12 @@ void Richards_PK::Setup(const Teuchos::Ptr<State>& S)
   }
 
   // Require additional fields and evaluators for this PK.
+  // -- absolute permeability
+  if (!S->HasField("permeability")) {
+    S->RequireField("permeability", passwd_)->SetMesh(mesh_)->SetGhosted(true)
+      ->SetComponent("cell", AmanziMesh::CELL, dim);
+  }
+
   // -- darcy flux
   if (!S->HasField("darcy_flux")) {
     S->RequireField("darcy_flux", passwd_)->SetMesh(mesh_)->SetGhosted(true)
@@ -436,12 +441,12 @@ void Richards_PK::Initialize(const Teuchos::Ptr<State>& S)
   oplist_matrix.set<std::string>("nonlinear coefficient", nonlinear_coef);
   oplist_pc.set<std::string>("nonlinear coefficient", nonlinear_coef);
 
-  Operators::OperatorDiffusionFactory opfactory;
+  Operators::PDE_DiffusionFactory opfactory;
   op_matrix_diff_ = opfactory.Create(oplist_matrix, mesh_, op_bc_, rho_, gravity_);
   op_matrix_ = op_matrix_diff_->global_operator();
   op_preconditioner_diff_ = opfactory.Create(oplist_pc, mesh_, op_bc_, rho_, gravity_);
   op_preconditioner_ = op_preconditioner_diff_->global_operator();
-  op_acc_ = Teuchos::rcp(new Operators::OperatorAccumulation(AmanziMesh::CELL, op_preconditioner_));
+  op_acc_ = Teuchos::rcp(new Operators::PDE_Accumulation(AmanziMesh::CELL, op_preconditioner_));
 
   if (vapor_diffusion_) {
     Teuchos::ParameterList oplist_vapor = tmp_list.sublist("vapor matrix");
@@ -533,13 +538,10 @@ void Richards_PK::Initialize(const Teuchos::Ptr<State>& S)
   }
 
   // -- generic linear solver for maost cases
-  ASSERT(ti_list_->isParameter("linear solver"));
   solver_name_ = ti_list_->get<std::string>("linear solver");
 
   // -- preconditioner or encapsulated preconditioner
-  ASSERT(ti_list_->isParameter("preconditioner"));
   preconditioner_name_ = ti_list_->get<std::string>("preconditioner");
-  ASSERT(preconditioner_list_->isSublist(preconditioner_name_));
   
   op_pc_solver_ = op_preconditioner_;
 
@@ -561,8 +563,8 @@ void Richards_PK::Initialize(const Teuchos::Ptr<State>& S)
     initialize_with_darcy_ = false;
     Teuchos::ParameterList& ini_list = ti_list_->sublist("initialization");
  
-    std::string solver_name_ini = ini_list.get<std::string>("method", "none");
-    if (solver_name_ini == "saturated solver") {
+    std::string ini_method_name = ini_list.get<std::string>("method", "none");
+    if (ini_method_name == "saturated solver") {
       std::string name = ini_list.get<std::string>("linear solver");
       SolveFullySaturatedProblem(t_ini, *solution, name);
 
@@ -584,7 +586,7 @@ void Richards_PK::Initialize(const Teuchos::Ptr<State>& S)
 
       if (clip && vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
         Teuchos::OSTab tab = vo_->getOSTab();
-        *vo_->os() << "Clipped pressure field." << std::endl;
+        *vo_->os() << "\nClipped pressure field.\n" << std::endl;
       }
 
       if (clip && solution->HasComponent("face")) {
@@ -593,8 +595,8 @@ void Richards_PK::Initialize(const Teuchos::Ptr<State>& S)
         DeriveFaceValuesFromCellValues(p, lambda);
       }
     }
-    else if (solver_name_ini == "picard") {
-      AdvanceToSteadyState_Picard(ti_list_->sublist("initialization").sublist("picard parameters"));
+    else if (ini_method_name == "picard") {
+      AdvanceToSteadyState_Picard(ti_list_->sublist("initialization"));
     }
     pressure_eval_->SetFieldAsChanged(S.ptr());
 
@@ -625,7 +627,7 @@ void Richards_PK::Initialize(const Teuchos::Ptr<State>& S)
   double tmp;
   darcy_flux_copy->Norm2(&tmp);
   if (tmp == 0.0) {
-    op_matrix_diff_->UpdateFlux(*solution, *darcy_flux_copy);
+    op_matrix_diff_->UpdateFlux(solution.ptr(), darcy_flux_copy.ptr());
 
     Epetra_MultiVector& flux = *darcy_flux_copy->ViewComponent("face", true);
     for (int f = 0; f < nfaces_owned; f++) flux[0][f] /= molar_rho_;
@@ -642,7 +644,7 @@ void Richards_PK::Initialize(const Teuchos::Ptr<State>& S)
       // update mass flux
       op_matrix_->Init();
       op_matrix_diff_->UpdateMatrices(Teuchos::null, solution.ptr());
-      op_matrix_diff_->UpdateFlux(*solution, *darcy_flux_copy);
+      op_matrix_diff_->UpdateFlux(solution.ptr(), darcy_flux_copy.ptr());
 
       // normalize to Darcy flux, m/s
       Epetra_MultiVector& flux = *darcy_flux_copy->ViewComponent("face", true);
@@ -797,7 +799,7 @@ void Richards_PK::InitializeStatistics_()
 
 /* ******************************************************************* 
 * Performs one time step from time t_old to time t_new either for
-* steady-state or transient sumulation. If reinit=true, enforce 
+* steady-state or transient simulation. If reinit=true, enforce 
 * p-lambda constraints.
 ******************************************************************* */
 bool Richards_PK::AdvanceStep(double t_old, double t_new, bool reinit)
@@ -915,10 +917,10 @@ bool Richards_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 void Richards_PK::CommitStep(double t_old, double t_new, const Teuchos::RCP<State>& S)
 {
   // calculate Darcy flux.
-  CompositeVector& darcy_flux = *S->GetFieldData("darcy_flux", passwd_);
-  op_matrix_diff_->UpdateFlux(*solution, darcy_flux);
+  Teuchos::RCP<CompositeVector> darcy_flux = S->GetFieldData("darcy_flux", passwd_);
+  op_matrix_diff_->UpdateFlux(solution.ptr(), darcy_flux.ptr());
 
-  Epetra_MultiVector& flux = *darcy_flux.ViewComponent("face", true);
+  Epetra_MultiVector& flux = *darcy_flux->ViewComponent("face", true);
   for (int f = 0; f < nfaces_owned; f++) flux[0][f] /= molar_rho_;
   *darcy_flux_copy->ViewComponent("face", true) = flux;
 

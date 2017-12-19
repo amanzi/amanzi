@@ -42,7 +42,6 @@ void MeshInfo::WriteMeshCentroids(const AmanziMesh::Mesh& mesh) {
 
   WriteVector(*aux, name);
 
-
   checkpoint_output_->close_h5file(); 
 }
 

@@ -117,9 +117,6 @@ class Chemistry_PK : public PK_Physical {
   int num_iterations_, num_successful_steps_;
   double initial_conditions_time_;
   Key domain_name_;
-
-  // verbosity object thatis not shared with common chemistry
-  Teuchos::RCP<VerboseObject> vo_;
 };
 
 }  // namespace AmanziChemistry

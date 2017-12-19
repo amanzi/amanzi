@@ -9,12 +9,12 @@
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
-#include "FieldMaps.hh"
 #include "LinearOperatorFactory.hh"
 // #include "OperatorAudit.hh"
 #include "OperatorDefs.hh"
-#include "OperatorDiffusion.hh"
-#include "OperatorDiffusionFactory.hh"
+#include "PDE_Diffusion.hh"
+#include "PDE_DiffusionFactory.hh"
+#include "RemapUtils.hh"
 
 #include "Richards_PK.hh"
 

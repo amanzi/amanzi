@@ -27,7 +27,6 @@
 
 namespace Amanzi {
 
-
 template <class FunctionBase>
 class PK_DomainFunctionFactory : public FunctionBase {
  public:
@@ -39,13 +38,13 @@ class PK_DomainFunctionFactory : public FunctionBase {
   ~PK_DomainFunctionFactory() {};
 
   Teuchos::RCP<FunctionBase> Create(const Teuchos::ParameterList& plist,
-                                                AmanziMesh::Entity_kind kind,
-                                                Teuchos::RCP<const Epetra_Vector> weight);
+                                    AmanziMesh::Entity_kind kind,
+                                    Teuchos::RCP<const Epetra_Vector> weight);
 
   Teuchos::RCP<FunctionBase> Create(const Teuchos::ParameterList& plist,
-                                                const std::string& keyword,
-                                                AmanziMesh::Entity_kind kind,
-                                                Teuchos::RCP<const Epetra_Vector> weight);
+                                    const std::string& keyword,
+                                    AmanziMesh::Entity_kind kind,
+                                    Teuchos::RCP<const Epetra_Vector> weight);
 
  protected:
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
@@ -54,8 +53,7 @@ class PK_DomainFunctionFactory : public FunctionBase {
 
 
 template <class FunctionBase>
-Teuchos::RCP<FunctionBase> 
-PK_DomainFunctionFactory<FunctionBase>::Create(
+Teuchos::RCP<FunctionBase> PK_DomainFunctionFactory<FunctionBase>::Create(
     const Teuchos::ParameterList& plist,
     const std::string& keyword,
     AmanziMesh::Entity_kind kind,
@@ -134,9 +132,9 @@ PK_DomainFunctionFactory<FunctionBase>::Create(
 
 template <class FunctionBase>
 Teuchos::RCP<FunctionBase> PK_DomainFunctionFactory<FunctionBase>::Create(
-                                               const Teuchos::ParameterList& plist,
-                                               AmanziMesh::Entity_kind kind,
-                                               Teuchos::RCP<const Epetra_Vector> weight)
+    const Teuchos::ParameterList& plist,
+    AmanziMesh::Entity_kind kind,
+    Teuchos::RCP<const Epetra_Vector> weight)
 {
   int n(0);
   std::string keyword;

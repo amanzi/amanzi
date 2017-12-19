@@ -27,6 +27,10 @@ enable_testing()
 #     AMANZI_BINARY_DIR
 project(AMANZI)
 
+message(STATUS "\n-------------------------------------------")
+message(STATUS "\n-- CMake: Configuring Amanzi build/install.\n--")
+message(STATUS "----------------------------------------")
+
 # Useful variables pointing to directories in the source tree
 set(AMANZI_SOURCE_SRC_DIR      "${AMANZI_SOURCE_DIR}/src")
 set(AMANZI_SOURCE_TOOLS_DIR    "${AMANZI_SOURCE_DIR}/tools")
@@ -139,7 +143,7 @@ endif()
 #
 SET(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Amanzi flow and reactive transport simulator.")
 SET(CPACK_PACKAGE_VENDOR "Amanzi Development Team (LANL, LBNL, PNNL)")
-SET(CPACK_PACKAGE_DESCRIPTION_FILE "${CMAKE_CURRENT_SOURCE_DIR}/README")
+SET(CPACK_PACKAGE_DESCRIPTION_FILE "${CMAKE_CURRENT_SOURCE_DIR}/README.md")
 SET(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_CURRENT_SOURCE_DIR}/COPYRIGHT")
 SET(CPACK_PACKAGE_VERSION_MAJOR ${AMANZI_VERSION_MAJOR})
 SET(CPACK_PACKAGE_VERSION_MINOR ${AMANZI_VERSION_MINOR})

@@ -16,16 +16,6 @@
 #include "Operator.hh"
 #include "Op.hh"
 
-/*
-  Op classes are small structs that play two roles:
-
-  1. They provide a class name to the schema, enabling visitor patterns.
-  2. They are a container for local matrices.
-  
-  This Op class is for storing local matrices of length nedges and with dofs
-  on edges, i.e. accumulation.
-*/
-
 namespace Amanzi {
 namespace Operators {
 
@@ -35,11 +25,16 @@ class Op_Edge_Edge : public Op {
                const Teuchos::RCP<const AmanziMesh::Mesh> mesh) :
       Op(OPERATOR_SCHEMA_BASE_EDGE |
          OPERATOR_SCHEMA_DOFS_EDGE, name, mesh) {
-    vals.resize(mesh->num_entities(AmanziMesh::EDGE, AmanziMesh::OWNED), 0.0);
-    vals_shadow = vals;
+    diag = Teuchos::rcp(new Epetra_MultiVector(mesh->edge_map(false), 1));
+    diag_shadow = Teuchos::rcp(new Epetra_MultiVector(mesh->edge_map(false), 1));
   }
 
   virtual void ApplyMatrixFreeOp(const Operator* assembler,
+          const CompositeVector& X, CompositeVector& Y) const {
+    assembler->ApplyMatrixFreeOp(*this, X, Y);
+  }
+
+  virtual void ApplyTransposeMatrixFreeOp(const Operator* assembler,
           const CompositeVector& X, CompositeVector& Y) const {
     assembler->ApplyMatrixFreeOp(*this, X, Y);
   }
@@ -60,9 +55,11 @@ class Op_Edge_Edge : public Op {
   
   virtual void Rescale(const CompositeVector& scaling) {
     if (scaling.HasComponent("edge")) {
-      const Epetra_MultiVector& s_c = *scaling.ViewComponent("edge",false);
-      for (int i = 0; i != vals.size(); ++i) {
-        vals[i] *= s_c[0][i];
+      const Epetra_MultiVector& s_e = *scaling.ViewComponent("edge", false);
+      for (int k = 0; k != s_e.NumVectors(); ++k) {
+        for (int i = 0; i != s_e.MyLength(); ++i) {
+          (*diag)[k][i] *= s_e[0][i];
+        }
       }
     }
   }

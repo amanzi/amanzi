@@ -21,9 +21,9 @@ The timestep for step :math:`k+1`, :math:`\Delta t_{k+1}`, is given by:
 * if :math:`N_k < N^{min}` then :math:`\Delta t_{k+1} = f_{increase} * \Delta t_{k}`
 * otherwise :math:`\Delta t_{k+1} = \Delta t_{k}`
 
-where :math:`\Delta t_{k}` is the previous timestep and :math:`N_k` is the number of nonlinear iterations required to solve step :math:`k`:.
+where :math:`\Delta t_{k}` is the previous timestep and :math:`N_k` is the number of 
+nonlinear iterations required to solve step :math:`k`:.
 
-                   
 * `"max iterations`" ``[int]`` :math:`N^{max}`, decrease the timestep if the previous step took more than this.
 * `"min iterations`" ``[int]`` :math:`N^{min}`, increase the timestep if the previous step took less than this.
 * `"time step reduction factor`" ``[double]`` :math:`f_reduction`, reduce the previous timestep by this multiple.

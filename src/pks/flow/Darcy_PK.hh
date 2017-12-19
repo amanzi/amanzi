@@ -20,13 +20,13 @@
 // Amanzi
 #include "FnBaseDefs.hh"
 #include "Operator.hh"
-#include "OperatorDiffusion.hh"
-#include "OperatorAccumulation.hh"
+#include "PDE_Accumulation.hh"
+#include "PDE_Diffusion.hh"
 #include "PK_Factory.hh"
 #include "TimestepController.hh"
 #include "TreeVector.hh"
 
-// Flow
+// Amanzi::Flow
 #include "Flow_PK.hh"
 
 namespace Amanzi {
@@ -108,8 +108,8 @@ class Darcy_PK : public Flow_PK {
   
  private:
   Teuchos::RCP<Operators::Operator> op_;
-  Teuchos::RCP<Operators::OperatorDiffusion> op_diff_;
-  Teuchos::RCP<Operators::OperatorAccumulation> op_acc_;
+  Teuchos::RCP<Operators::PDE_Diffusion> op_diff_;
+  Teuchos::RCP<Operators::PDE_Accumulation> op_acc_;
 
   int error_control_;
   double dt_desirable_, dt_factor_;
@@ -118,6 +118,8 @@ class Darcy_PK : public Flow_PK {
   std::string preconditioner_name_, solver_name_;
   bool initialize_with_darcy_;
   int num_itrs_;
+
+  bool flow_in_fractures_;
 
   Teuchos::RCP<CompositeVector> solution;  // next pressure state
   Teuchos::RCP<Epetra_Vector> pdot_cells_prev;  // time derivative of pressure

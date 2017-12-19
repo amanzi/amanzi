@@ -16,8 +16,6 @@
 #ifndef AMANZI_FAKE_MODEL_HH_
 #define AMANZI_FAKE_MODEL_HH_
 
-#include "Teuchos_ParameterList.hpp"
-
 #include "factory.hh"
 
 #include "WRM.hh"

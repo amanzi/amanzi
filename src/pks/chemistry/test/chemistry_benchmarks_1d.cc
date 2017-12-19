@@ -4,10 +4,8 @@
 #include <iostream>
 #include <float.h>
 #include <TestReporterStdout.h>
-
 #include "UnitTest++.h"
 #include "hdf5.h"
-
 #include "state_evaluators_registration.hh"
 #include "VerboseObject_objs.hh"
 
@@ -64,8 +62,8 @@ double ComputeL2Error(hid_t output, const std::string& output_component_name,
   return L2;
 }
 
-SUITE(ChemistryBenchmarkTests) {
 
+SUITE(ChemistryBenchmarkTests) {
   class Chemistry1DBenchmarkTest {
    public:
     Chemistry1DBenchmarkTest();
@@ -79,8 +77,6 @@ SUITE(ChemistryBenchmarkTests) {
   };  
 
   Chemistry1DBenchmarkTest::Chemistry1DBenchmarkTest() {
-
-    // Initialize the HDF5 library.
     H5open();
 
     // Figure out where Amanzi lives. 
@@ -91,17 +87,13 @@ SUITE(ChemistryBenchmarkTests) {
   }
 
   Chemistry1DBenchmarkTest::~Chemistry1DBenchmarkTest() {
-
-    // Close the HDF5 library.
     H5close();
   }
 
-  void Chemistry1DBenchmarkTest::RunTest(const std::string name, double * gamma) {
-  }  // end Chemistry1DBenchmarkTest::RunTest()
+  void Chemistry1DBenchmarkTest::RunTest(const std::string name, double * gamma) {};
 
   // Amanzi U Calcite benchmark.
   TEST_FIXTURE(Chemistry1DBenchmarkTest, AmanziUCalcite) {
-
     // Construct the Calcite benchmark directory.
     char test_dir[1024];
     snprintf(test_dir, 1024, "%s/calcite_1d", benchmark_dir_.c_str());
@@ -113,6 +105,7 @@ SUITE(ChemistryBenchmarkTests) {
 
     // Run Amanzi.
     snprintf(command, 1024, "%s --xml_file=%s/amanzi-u-1d-calcite.xml", amanzi_exe_.c_str(), test_dir);
+    std::cout<<command<<"\n";
     status = std::system(command);
     CHECK_EQUAL(0, status);
 
@@ -138,10 +131,8 @@ SUITE(ChemistryBenchmarkTests) {
     // Close the files.
     H5Fclose(output);
     H5Fclose(reference);
-
-  }  // end TEST_FIXTURE()
-
-}  // end SUITE(ChemistryBenchmarkTests)
+  }
+}
 
 int main(int argc, char* argv[]) {
   return UnitTest::RunAllTests();

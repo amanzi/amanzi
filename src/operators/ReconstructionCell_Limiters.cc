@@ -7,6 +7,8 @@
   provided in the top-level COPYRIGHT file.
 
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
+
+  Implementation of three different limiters.
 */
 
 #include <algorithm>
@@ -37,9 +39,6 @@ void ReconstructionCell::InitLimiter(Teuchos::RCP<const Epetra_MultiVector> flux
 void ReconstructionCell::LimiterTensorial_(
     const std::vector<int>& bc_model, const std::vector<double>& bc_value)
 {
-  ASSERT(upwind_cell_.size() > 0);
-  ASSERT(downwind_cell_.size() > 0);
-
   double u1, u2, u1f, u2f, umin, umax, L22normal_new;
   AmanziGeometry::Point gradient_c1(dim), gradient_c2(dim);
   AmanziGeometry::Point normal_new(dim), direction(dim), p(dim);
@@ -48,6 +47,7 @@ void ReconstructionCell::LimiterTensorial_(
 
   std::vector<AmanziGeometry::Point> normals;
   AmanziMesh::Entity_ID_List faces;
+  Teuchos::RCP<Epetra_Vector> limiter = Teuchos::rcp(new Epetra_Vector(mesh_->cell_map(false)));
 
   // Step 1: limit gradient to a feasiable set excluding Dirichlet boundary
   for (int c = 0; c < ncells_owned; c++) {
@@ -56,22 +56,33 @@ void ReconstructionCell::LimiterTensorial_(
 
     const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
     for (int i = 0; i < dim; i++) gradient_c1[i] = grad[i][c];
+    (*limiter_)[c] = norm(gradient_c1); 
 
     normals.clear();  // normals to planes that define a feasiable set
     for (int loop = 0; loop < 2; loop++) {
       for (int i = 0; i < nfaces; ++i) {
         int f = faces[i];
-        int c1 = upwind_cell_[f];
-        int c2 = downwind_cell_[f];
+        // Limiting on inflow boundary is done in Step 2.
+        if (upwind_cells_[f].size() == 0) continue;
 
-        if (c1 >= 0 && c2 >= 0) {
+        // We enforce non-decreasing reconstruction on outflow boundary.
+        if (downwind_cells_[f].size() == 0) {
+          u1 = u2 = (*field_)[component_][c];
+        } else {
+          int c1 = upwind_cells_[f][0];
+          for (int n = 1; n < upwind_cells_[f].size(); ++n) {
+            if (upwind_cells_[f][n] == c) c1 = c;
+          }   
+
+          int c2 = downwind_cells_[f][0];
+          for (int n = 1; n < downwind_cells_[f].size(); ++n) {
+            if (downwind_cells_[f][n] == c) c2 = c;
+          }
+
           u1 = (*field_)[component_][c];
           u2 = (*field_)[component_][c1 + c2 - c];
-        } else if (c1 == c) {
-          u1 = u2 = (*field_)[component_][c];
-        } else {  // limiting on upwind face is done separately.
-          continue;
         }
+
         umin = std::min(u1, u2);
         umax = std::max(u1, u2);
 
@@ -124,8 +135,8 @@ void ReconstructionCell::LimiterTensorial_(
   // Step 2: limit gradient on the Dirichlet boundary
   for (int f = 0; f < nfaces_owned; f++) {
     if (bc_model[f] == OPERATOR_BC_DIRICHLET) {
-      int c1 = upwind_cell_[f];
-      int c2 = downwind_cell_[f];
+      int c1 = (upwind_cells_[f].size() > 0) ? upwind_cells_[f][0] : -1;
+      int c2 = (downwind_cells_[f].size() > 0) ? downwind_cells_[f][0] : -1;
 
       if (c2 >= 0 && c2 < ncells_owned) {
         u2 = (*field_)[component_][c2];
@@ -157,19 +168,30 @@ void ReconstructionCell::LimiterTensorial_(
     }
   }
 
-  // Step 3: enforcing a priori time step estimate (division of dT by 2).
+  // Step 3: enforce a priori time step estimate (division of dT by 2).
   if (limiter_correction_) {
     LimiterExtensionTransportTensorial_(field_local_min, field_local_max);
   }    
 
   gradient_->ScatterMasterToGhosted("cell");
+
+  // approximate estimate of scalar limiter (mainly for statistics)
+  for (int c = 0; c < ncells_owned; c++) {
+    double grad_norm0 = (*limiter_)[c];
+    if (grad_norm0 == 0.0) { 
+      (*limiter_)[c] = 1.0;
+    } else {
+      for (int i = 0; i < dim; i++) gradient_c1[i] = grad[i][c];
+      (*limiter_)[c] = norm(gradient_c1) / grad_norm0;
+    }
+  }
 }
 
 
 /* *******************************************************************
 * Extension of the tensorial limiter. Routine changes gradient to 
 * satisfy an a prioty estimate of the stable time step. That estimate
-* assumes that the weigthed flux is smaller that the first-order flux.
+* assumes that the weigthed flux is smaller than the first-order flux.
 ******************************************************************* */
 void ReconstructionCell::LimiterExtensionTransportTensorial_(
     const std::vector<double>& field_local_min, const std::vector<double>& field_local_max)
@@ -187,7 +209,7 @@ void ReconstructionCell::LimiterExtensionTransportTensorial_(
     double flux, outflux = 0.0, outflux_weigted = 0.0;
     for (int i = 0; i < nfaces; i++) {
       int f = faces[i];
-      int c1 = upwind_cell_[f];
+      int c1 = (upwind_cells_[f].size() > 0) ? upwind_cells_[f][0] : -1;
 
       if (c == c1) {
         const AmanziGeometry::Point& xcf = mesh_->face_centroid(f);
@@ -230,9 +252,6 @@ void ReconstructionCell::LimiterBarthJespersen_(
     const std::vector<int>& bc_model, const std::vector<double>& bc_value,
     Teuchos::RCP<Epetra_Vector> limiter)
 {
-  ASSERT(upwind_cell_.size() > 0);
-  ASSERT(downwind_cell_.size() > 0);
-
   limiter->PutScalar(1.0);
   Teuchos::RCP<Epetra_MultiVector> grad = gradient_->ViewComponent("cell", false);
 
@@ -241,9 +260,8 @@ void ReconstructionCell::LimiterBarthJespersen_(
 
   // Step 1: limiting gradient inside domain
   for (int f = 0; f < nfaces_owned; f++) {
-    int c1, c2;
-    c1 = upwind_cell_[f];
-    c2 = downwind_cell_[f];
+    int c1 = (upwind_cells_[f].size() > 0) ? upwind_cells_[f][0] : -1;
+    int c2 = (downwind_cells_[f].size() > 0) ? downwind_cells_[f][0] : -1;
     if (c1 < 0 || c2 < 0) continue;
 
     u1 = (*field_)[component_][c1];
@@ -296,9 +314,9 @@ void ReconstructionCell::LimiterBarthJespersen_(
   // Step 2: limiting gradient on the Dirichlet boundary
   for (int f = 0; f < nfaces_owned; ++f) {
     if (bc_model[f] == OPERATOR_BC_DIRICHLET) {
-      int c2 = downwind_cell_[f];
+      if (downwind_cells_[f].size() > 0) {
+        int c2 = downwind_cells_[f][0];
 
-      if (c2 >= 0) {
         u2 = (*field_)[component_][c2];
         u1 = bc_value[f];
         umin = std::min(u1, u2);
@@ -357,7 +375,7 @@ void ReconstructionCell::LimiterExtensionTransportBarthJespersen_(
     double flux, outflux = 0.0, outflux_weigted = 0.0;
     for (int i = 0; i < nfaces; i++) {
       int f = faces[i];
-      int c1 = upwind_cell_[f];
+      int c1 = (upwind_cells_[f].size() > 0) ? upwind_cells_[f][0] : -1;
 
       if (c == c1) {
         const AmanziGeometry::Point& xcf = mesh_->face_centroid(f);
@@ -396,9 +414,6 @@ void ReconstructionCell::LimiterExtensionTransportBarthJespersen_(
 void ReconstructionCell::LimiterKuzmin_(
     const std::vector<int>& bc_model, const std::vector<double>& bc_value)
 {
-  ASSERT(upwind_cell_.size() > 0);
-  ASSERT(downwind_cell_.size() > 0);
-
   Teuchos::RCP<Epetra_MultiVector> grad = gradient_->ViewComponent("cell", false);
 
   // Step 1: local extrema are calculated here at nodes and updated later
@@ -423,8 +438,8 @@ void ReconstructionCell::LimiterKuzmin_(
 
   // Update min/max at nodes from influx boundary data
   for (int f = 0; f < nfaces_owned; ++f) {
-    int c1 = upwind_cell_[f];
-    int c2 = downwind_cell_[f];
+    int c1 = (upwind_cells_[f].size() > 0) ? upwind_cells_[f][0] : -1;
+    int c2 = (downwind_cells_[f].size() > 0) ? downwind_cells_[f][0] : -1;
 
     if (c2 >= 0 && c1 < 0) {
       mesh_->face_get_nodes(f, &nodes);
@@ -494,9 +509,12 @@ void ReconstructionCell::LimiterKuzmin_(
 
 
 
-void ReconstructionCell::LimiterKuzminonSet_(AmanziMesh::Entity_ID_List& ids,
-                                             std::vector<AmanziGeometry::Point>& gradient){
-
+/* *******************************************************************
+* Kuzmin's limiter over a subset of cells.  
+******************************************************************* */
+void ReconstructionCell::LimiterKuzminSet_(AmanziMesh::Entity_ID_List& ids,
+                                           std::vector<AmanziGeometry::Point>& gradient)
+{
   // Step 1: local extrema are calculated here at nodes and updated later
   std::vector<double> field_node_min(nnodes_wghost);
   std::vector<double> field_node_max(nnodes_wghost);
@@ -508,17 +526,17 @@ void ReconstructionCell::LimiterKuzminonSet_(AmanziMesh::Entity_ID_List& ids,
   field_node_max.assign(nnodes_wghost, -OPERATOR_LIMITER_INFINITY);
   bc_scaling_ = 1.0;
 
-  for (int c = 0; c < ncells_wghost; c++) {
+  for (int c = 0; c < ncells_wghost; ++c) {
     mesh_->cell_get_nodes(c, &nodes);
     double value = (*field_)[component_][c];
-    for (int i = 0; i < nodes.size(); i++) {
+    for (int i = 0; i < nodes.size(); ++i) {
       int v = nodes[i];
       field_node_min[v] = std::min(field_node_min[v], value);
       field_node_max[v] = std::max(field_node_max[v], value);
     }
   }
 
-  for (int k=0; k<ids.size(); k++){
+  for (int k = 0; k < ids.size(); ++k){
     int c = ids[k];
     mesh_->cell_get_nodes(c, &nodes);
     int nnodes = nodes.size();
@@ -529,22 +547,18 @@ void ReconstructionCell::LimiterKuzminonSet_(AmanziMesh::Entity_ID_List& ids,
     }
     LimiterKuzminCell_(c, gradient[k], field_min_cell, field_max_cell);
   }
-
 }
 
 
-
 /* *******************************************************************
-* Kuzmin's limiter use all neighbors of a computational cell and limit 
-* gradient on one cell only.  
+* Kuzmin's limiter use all neighbors of the given cell and limit 
+* gradient in this cell only.  
 ******************************************************************* */
- void ReconstructionCell::LimiterKuzminCell_(int cell,
-                                             AmanziGeometry::Point& gradient_c,
-                                             const std::vector<double>& field_node_min_c,
-                                             const std::vector<double>& field_node_max_c)
+void ReconstructionCell::LimiterKuzminCell_(int cell,
+                                            AmanziGeometry::Point& gradient_c,
+                                            const std::vector<double>& field_node_min_c,
+                                            const std::vector<double>& field_node_max_c)
 {
-  
-  // Step 2: limit reconstructed gradients at cell nodes
   double umin, umax, up, u1;
   AmanziGeometry::Point xp(dim);
 
@@ -592,7 +606,6 @@ void ReconstructionCell::LimiterKuzminonSet_(AmanziMesh::Entity_ID_List& ids,
     double grad_norm = norm(gradient_c);
     if (grad_norm < OPERATOR_LIMITER_TOLERANCE * bc_scaling_) gradient_c.set(0.0);
   }
-
 }
 
 
@@ -618,7 +631,7 @@ void ReconstructionCell::LimiterExtensionTransportKuzmin_(
     double flux, outflux = 0.0, outflux_weigted = 0.0;
     for (int i = 0; i < nfaces; i++) {
       int f = faces[i];
-      int c1 = upwind_cell_[f];
+      int c1 = (upwind_cells_[f].size() > 0) ? upwind_cells_[f][0] : -1;
 
       if (c == c1) {
         mesh_->face_get_nodes(f, &nodes);
@@ -714,27 +727,29 @@ void ReconstructionCell::ApplyDirectionalLimiter_(AmanziGeometry::Point& normal,
 ******************************************************************* */
 void ReconstructionCell::IdentifyUpwindCells_()
 {
-  upwind_cell_.assign(nfaces_wghost, -1);
-  downwind_cell_.assign(nfaces_wghost, -1);
+  upwind_cells_.clear();
+  downwind_cells_.clear();
+
+  upwind_cells_.resize(nfaces_wghost);
+  downwind_cells_.resize(nfaces_wghost);
 
   AmanziMesh::Entity_ID_List faces;
   std::vector<int> dirs;
 
   for (int c = 0; c < ncells_wghost; c++) {
     mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
-    int nfaces = faces.size();
 
-    for (int i = 0; i < nfaces; i++) {
+    for (int i = 0; i < faces.size(); i++) {
       int f = faces[i];
       double tmp = (*flux_)[0][f] * dirs[i];
       if (tmp > 0.0) {
-        upwind_cell_[f] = c;
+        upwind_cells_[f].push_back(c);
       } else if (tmp < 0.0) {
-        downwind_cell_[f] = c;
+        downwind_cells_[f].push_back(c);
       } else if (dirs[i] > 0) {
-        upwind_cell_[f] = c;
+        upwind_cells_[f].push_back(c);
       } else {
-        downwind_cell_[f] = c;
+        downwind_cells_[f].push_back(c);
       }
     }
   }

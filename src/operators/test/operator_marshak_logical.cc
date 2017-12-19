@@ -26,21 +26,19 @@
 #include "UnitTest++.h"
 
 // Amanzi
+#include "LinearOperatorFactory.hh"
 #include "MeshLogicalFactory.hh"
 #include "MeshLogical.hh"
-#include "mfd3d_diffusion.hh"
 #include "Tensor.hh"
 
-// Operators
-#include "LinearOperatorFactory.hh"
+// Amanzi::Operators
+#include "PDE_Accumulation.hh"
 #include "OperatorDefs.hh"
 #include "Operator.hh"
-#include "OperatorAccumulation.hh"
-#include "OperatorDiffusionFV.hh"
+#include "PDE_DiffusionFV.hh"
 #include "UpwindFlux.hh"
 
 #include "operator_marshak_testclass.hh"
-
 
 void RunTestMarshakLogical(std::string op_list_name) {
   using namespace Teuchos;
@@ -90,9 +88,9 @@ void RunTestMarshakLogical(std::string op_list_name) {
   double rho(1.0), mu(1.0);
 
   // create boundary data (no mixed bc)
-  std::vector<int> bc_model(nfaces_wghost, OPERATOR_BC_NONE);
-  std::vector<double> bc_value(nfaces_wghost);
-  std::vector<double> bc_mixed;
+  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(mesh, AmanziMesh::FACE, SCHEMA_DOFS_SCALAR));
+  std::vector<int>& bc_model = bc->bc_model();
+  std::vector<double>& bc_value = bc->bc_value();
 
   for (int f = 0; f < nfaces_wghost; f++) {
     const Point& xf = mesh->face_centroid(f);
@@ -108,7 +106,6 @@ void RunTestMarshakLogical(std::string op_list_name) {
       bc_value[f] = knc->TemperatureFloor;
     }
   }
-  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(OPERATOR_BC_TYPE_FACE, bc_model, bc_value, bc_mixed));
 
   // create solution map.
   Teuchos::RCP<CompositeVectorSpace> cvs = Teuchos::rcp(new CompositeVectorSpace());
@@ -160,7 +157,7 @@ void RunTestMarshakLogical(std::string op_list_name) {
 
     // add diffusion operator
     Teuchos::ParameterList olist = plist.sublist("PK operator").sublist(op_list_name);
-    OperatorDiffusionFV op(olist, mesh);
+    PDE_DiffusionFV op(olist, mesh);
     op.SetBCs(bc, bc);
 
     int schema_dofs = op.schema_dofs();
@@ -173,8 +170,8 @@ void RunTestMarshakLogical(std::string op_list_name) {
     Teuchos::RCP<Operator> global_op = op.global_operator();
 
     // add accumulation terms
-    OperatorAccumulation op_acc(AmanziMesh::CELL, global_op);
-    op_acc.AddAccumulationTerm(solution, heat_capacity, dT, "cell");
+    PDE_Accumulation op_acc(AmanziMesh::CELL, global_op);
+    op_acc.AddAccumulationDelta(solution, heat_capacity, heat_capacity, dT, "cell");
 
     // apply BCs and assemble
     op.ApplyBCs(true, true);

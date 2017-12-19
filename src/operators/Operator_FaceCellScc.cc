@@ -8,6 +8,15 @@
 
   Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
            Ethan Coon (ecoon@lanl.gov)
+
+  Operator whose unknowns are CELL + FACE, but which assembles the
+  CELL only system and Schur complements the face.
+
+  This uses special assembly. Apply is done as if we had the full 
+  FACE+CELL system. SymbolicAssembly() is done as if we had the CELL 
+  system, but with an additional step to get the layout due to the 
+  Schur'd system on FACE+CELL. Assemble, however, is done using a 
+  totally different approach.
 */
 
 #include <vector>
@@ -26,16 +35,6 @@
 #include "Op_Cell_FaceCell.hh"
 #include "Op_Face_Cell.hh"
 #include "Operator_FaceCellScc.hh"
-
-/* ******************************************************************
-Operator whose unknowns are CELL + FACE, but which assembles the CELL only
-system and Schur complements the face.
-
-This uses special assembly.  Apply is done as if we had the full FACE+CELL
-system.  SymbolicAssembly() is done as if we had the CELL system, but with an
-additional step to get the layout due to the Schur'd system on FACE+CELL.
-Assemble, however, is done using a totally different approach.
-****************************************************************** */
 
 namespace Amanzi {
 namespace Operators {
@@ -59,8 +58,8 @@ int Operator_FaceCellScc::ApplyInverse(const CompositeVector& X, CompositeVector
   AmanziMesh::Entity_ID_List faces;
 
   for (const_op_iterator it = OpBegin(); it != OpEnd(); ++it) {
-    if ((*it)->schema == (OPERATOR_SCHEMA_BASE_CELL |
-                          OPERATOR_SCHEMA_DOFS_CELL | OPERATOR_SCHEMA_DOFS_FACE)) {
+    if ((*it)->schema_old_ == (OPERATOR_SCHEMA_BASE_CELL |
+                               OPERATOR_SCHEMA_DOFS_CELL | OPERATOR_SCHEMA_DOFS_FACE)) {
       for (int c = 0; c != ncells_owned; c++) {
         mesh_->cell_get_faces(c, &faces);
         int nfaces = faces.size();
@@ -81,8 +80,8 @@ int Operator_FaceCellScc::ApplyInverse(const CompositeVector& X, CompositeVector
   X.ScatterMasterToGhosted("face");
 
   for (const_op_iterator it = OpBegin(); it != OpEnd(); ++it) {
-    if ((*it)->schema == (OPERATOR_SCHEMA_BASE_CELL |
-                          OPERATOR_SCHEMA_DOFS_CELL | OPERATOR_SCHEMA_DOFS_FACE)) {
+    if ((*it)->schema_old_ == (OPERATOR_SCHEMA_BASE_CELL |
+                               OPERATOR_SCHEMA_DOFS_CELL | OPERATOR_SCHEMA_DOFS_FACE)) {
       for (int c = 0; c < ncells_owned; c++) {
         mesh_->cell_get_faces(c, &faces);
         int nfaces = faces.size();
@@ -110,8 +109,8 @@ int Operator_FaceCellScc::ApplyInverse(const CompositeVector& X, CompositeVector
     Yf = Xf;
 
     for (const_op_iterator it = OpBegin(); it != OpEnd(); ++it) {
-      if ((*it)->schema == (OPERATOR_SCHEMA_BASE_CELL |
-                            OPERATOR_SCHEMA_DOFS_CELL | OPERATOR_SCHEMA_DOFS_FACE)) {
+      if ((*it)->schema_old_ == (OPERATOR_SCHEMA_BASE_CELL |
+                                 OPERATOR_SCHEMA_DOFS_CELL | OPERATOR_SCHEMA_DOFS_FACE)) {
         for (int c = 0; c < ncells_owned; c++) {
           mesh_->cell_get_faces(c, &faces);
           int nfaces = faces.size();
@@ -144,7 +143,7 @@ void Operator_FaceCellScc::AssembleMatrix(const SuperMap& map, MatrixFE& matrix,
   // first check preconditions -- Scc must have exactly one face-based schema (a FACE+CELL)
   int num_with_faces = 0;
   for (const_op_iterator it = OpBegin(); it != OpEnd(); ++it) {
-    if ((*it)->schema & OPERATOR_SCHEMA_DOFS_FACE) {
+    if ((*it)->schema_old_ & OPERATOR_SCHEMA_DOFS_FACE) {
       num_with_faces++;
     }
   }
@@ -158,8 +157,8 @@ void Operator_FaceCellScc::AssembleMatrix(const SuperMap& map, MatrixFE& matrix,
   // FACE_CELL schema, -Acf*(Aff^-1)*Afc.
   int i_schur = 0;
   for (const_op_iterator it = OpBegin(); it != OpEnd(); ++it) {
-    if ((*it)->schema == (OPERATOR_SCHEMA_BASE_CELL |
-                          OPERATOR_SCHEMA_DOFS_CELL | OPERATOR_SCHEMA_DOFS_FACE)) {
+    if ((*it)->schema_old_ == (OPERATOR_SCHEMA_BASE_CELL |
+                               OPERATOR_SCHEMA_DOFS_CELL | OPERATOR_SCHEMA_DOFS_FACE)) {
       ASSERT((*it)->matrices.size() == ncells_owned);
 
       // create or get extra ops, and keep them for future use
@@ -189,17 +188,16 @@ void Operator_FaceCellScc::AssembleMatrix(const SuperMap& map, MatrixFE& matrix,
       }
 
       // set the size of the local val vectors
-      std::vector<double>& vals = diag_op->vals;
+      Epetra_MultiVector& diag = *diag_op->diag;
 
       // populate the diagonal component
       for (int c = 0; c != ncells_owned; ++c) {
         WhetStone::DenseMatrix& Acell = (*it)->matrices[c];
         int n = Acell.NumCols() - 1;
-        vals[c] = (*it)->matrices[c](n,n);
-        if (vals[c] > 1.e30 || vals[c] < -1.e30) {
+        diag[0][c] = (*it)->matrices[c](n,n);
+        if (diag[0][c] > 1.e30 || diag[0][c] < -1.e30) {
           ASSERT(0);
         }
-        
       }
 
       // populate the schur component
@@ -271,7 +269,6 @@ void Operator_FaceCellScc::AssembleMatrix(const SuperMap& map, MatrixFE& matrix,
         if (coef == 0.0) continue;
 
         mat(0,0) = -a1 * a1 / coef;
-        std::cout << "LMat (f=" << f << "): " << mat(0,0);
         if (mat(0,0) > 1.e30 || mat(0,0) < -1.e30) {
           ASSERT(0);
         }
@@ -279,14 +276,12 @@ void Operator_FaceCellScc::AssembleMatrix(const SuperMap& map, MatrixFE& matrix,
           mat(0,1) = -a1 * a2 / coef;
           mat(1,0) = -a1 * a2 / coef;
           mat(1,1) = -a2 * a2 / coef;
-          std::cout << ", " << mat(0,1) << ", " << mat(1,0) << ", " << mat(1,1);
           if (mat(1,0) > 1.e30 || mat(1,0) < -1.e30
               || mat(0,1) > 1.e30 || mat(0,1) < -1.e30
               || mat(1,1) > 1.e30 || mat(1,1) < -1.e30) {
             ASSERT(0);
           }
         }
-        std::cout << std::endl;
       }
 
       // assemble
@@ -352,7 +347,7 @@ void Operator_FaceCellScc::SymbolicAssembleMatrix()
 {
   // SuperMap for Sff is face only
   CompositeVectorSpace smap_space;
-  smap_space.SetMesh(cvs_->Mesh())->SetComponent("cell", AmanziMesh::CELL, 1);
+  smap_space.SetMesh(mesh_)->SetComponent("cell", AmanziMesh::CELL, 1);
   smap_ = CreateSuperMap(smap_space, schema(), 1);
 
   // create the graph

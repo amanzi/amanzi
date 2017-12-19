@@ -1,5 +1,5 @@
 /*
-  WhetStone, version 2.0
+  WhetStone, version 2.1
   Release name: naka-to.
 
   Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
@@ -79,8 +79,8 @@ class DenseVector {
   }
 
   // -- access to components
-  inline double& operator()(int i) { return data_[i]; }
-  inline const double& operator()(int i) const { return data_[i]; }
+  double& operator()(int i) { return data_[i]; }
+  const double& operator()(int i) const { return data_[i]; }
 
   // -- dot products
   int Dot(const DenseVector& B, double* result) {

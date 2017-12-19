@@ -15,11 +15,12 @@ amanzi_tpl_version_write(FILENAME ${TPL_VERSIONS_INCLUDE_FILE}
 
 set(METIS_DIR ${TPL_INSTALL_PREFIX})
 set(METIS_GKLIB_DIR ${METIS_source_dir}/GKlib)
+
 # --- Define the CMake configure parameters
 # Note:
 #      CMAKE_CACHE_ARGS requires -DVAR:<TYPE>=VALUE syntax
 #      CMAKE_ARGS -DVAR=VALUE OK
-# NO WHITESPACE between -D and VAR. Parser blows up otherwise.
+# NO WHITESPCE between -D and VAR. Parser blows up otherwise.
 set(METIS_CMAKE_CACHE_ARGS
       -DCMAKE_BUILD_TYPE:STRING=${CMAKE_BUILD_TYPE}
       -DCMAKE_INSTALL_PREFIX:FILEPATH=${TPL_INSTALL_PREFIX}
@@ -39,8 +40,8 @@ ExternalProject_Add(${METIS_BUILD_TARGET}
                     # -- Configure
                     SOURCE_DIR   ${METIS_source_dir}              # Source directory
                     CMAKE_ARGS   ${AMANZI_CMAKE_CACHE_ARGS}       # Global definitions from root CMakeList
-		                 ${METIS_CMAKE_CACHE_ARGS}  
-                                 ${Amanzi_CMAKE_C_COMPILER_ARGS}  # Ensure uniform build
+                                 ${METIS_CMAKE_CACHE_ARGS}  
+                                 -DCMAKE_C_FLAGS:STRING=${Amanzi_COMMON_CFLAGS}  # Ensure uniform build
                                  -DCMAKE_C_COMPILER:FILEPATH=${CMAKE_C_COMPILER}
                     # -- Build
                     BINARY_DIR       ${METIS_build_dir}           # Build directory

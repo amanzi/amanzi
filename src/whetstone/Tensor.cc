@@ -1,5 +1,5 @@
 /*
-  WhetStone, version 2.0
+  WhetStone, version 2.1
   Release name: naka-to.
 
   Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
@@ -81,7 +81,7 @@ int Tensor::Init(int d, int rank)
 
 
 /* ******************************************************************
-* Assign constan value to the tensor entries 
+* Assign constant value to the tensor entries 
 ****************************************************************** */
 void Tensor::PutScalar(double val)
 {
@@ -183,6 +183,42 @@ void Tensor::PseudoInverse()
 
 
 /* ******************************************************************
+* Matrix of co-factors
+****************************************************************** */
+Tensor Tensor::Cofactors() const
+{
+  Tensor C(d_, rank_);
+  double* dataC = C.data();
+
+  if (size_ == 1) {
+    dataC[0] = 1.0;
+
+  } else if (size_ == 2) {
+    dataC[0] = data_[3];
+    dataC[3] = data_[0];
+
+    dataC[1] = -data_[2];
+    dataC[2] = -data_[1];
+
+  } else if (size_ == 3) { 
+    dataC[0] = data_[4] * data_[8] - data_[5] * data_[7];
+    dataC[1] = data_[5] * data_[6] - data_[3] * data_[8];
+    dataC[2] = data_[3] * data_[7] - data_[4] * data_[6];
+
+    dataC[3] = data_[2] * data_[7] - data_[1] * data_[8];
+    dataC[4] = data_[0] * data_[8] - data_[2] * data_[6];
+    dataC[5] = data_[1] * data_[6] - data_[0] * data_[7];
+
+    dataC[6] = data_[1] * data_[5] - data_[2] * data_[4];
+    dataC[7] = data_[2] * data_[3] - data_[0] * data_[5];
+    dataC[8] = data_[0] * data_[4] - data_[1] * data_[3];
+  }
+
+  return C;
+}
+
+
+/* ******************************************************************
 * Transpose operator for non-symmetric tensors.
 ****************************************************************** */
 void Tensor::Transpose()
@@ -210,7 +246,7 @@ void Tensor::Transpose()
 /* ******************************************************************
 * Determinant of second-order tensors.
 ****************************************************************** */
-double Tensor::Det()
+double Tensor::Det() const
 {
   double det = 0.0;
   if (rank_ == 2 && d_ == 2) {
@@ -378,16 +414,43 @@ Tensor operator*(const Tensor& T1, const Tensor& T2)
 
   Tensor T3;
 
-  if (d == 2 && rank1 == 4 && rank2 == 2) {
-    double a0, b0, c0;
-    a0 = T2(0, 0);
-    b0 = T2(1, 1);
-    c0 = T2(0, 1);
+  if (rank1 == 4 && rank2 == 2) {
+    int n = d * (d + 1) / 2;
+    double *tmp1 = new double[n];
+    double *tmp2 = new double[n];
+
+    tmp1[0] = data2[0];
+    tmp1[1] = data2[d + 1];
+    if (d == 2) {
+      tmp1[2] = data2[1] + data2[2];
+    } else if (d == 3) {
+      tmp1[2] = data2[8];
+      tmp1[3] = data2[1] + data2[3];
+      tmp1[4] = data2[5] + data2[7];
+      tmp1[5] = data2[2] + data2[6];
+    }
 
     T3.Init(d, rank2);
-    T3(0, 0) = T1(0, 0) * a0 + T1(0, 1) * b0 + T1(0, 2) * c0;
-    T3(1, 1) = T1(1, 0) * a0 + T1(1, 1) * b0 + T1(1, 2) * c0;
-    T3(1, 0) = T3(0, 1) = T1(2, 0) * a0 + T1(2, 1) * b0 + T1(2, 2) * c0;
+
+    for (int i = 0; i < n; i++) {
+      double s(0.0);
+      for (int j = 0; j < n; j++) s += T1(i, j) * tmp1[j];
+      tmp2[i] = s;
+    }
+
+    T3(0, 0) = tmp2[0];
+    T3(1, 1) = tmp2[1];
+    if (d == 2) {
+      T3(1, 0) = T3(0, 1) = tmp2[2];
+    } else if (d == 3) {
+      T3(2, 3) = tmp2[2];
+      T3(0, 1) = T3(1, 0) = tmp2[3];
+      T3(1, 2) = T3(2, 1) = tmp2[4];
+      T3(0, 2) = T3(2, 0) = tmp2[5];
+    }
+
+    delete [] tmp1;
+    delete [] tmp2;
 
   } else if (rank1 == 1) {
     int mem = T3.Init(d, rank2);
@@ -410,6 +473,33 @@ Tensor operator*(const Tensor& T1, const Tensor& T2)
   }
 
   return T3;
+}
+
+
+/* ******************************************************************
+* Dot product of tensors of equal rank.
+****************************************************************** */
+double DotTensor(const Tensor& T1, const Tensor& T2)
+{
+  double *data1 = T1.data(), *data2 = T2.data();
+  int mem = T1.size() * T1.size();
+
+  double s(0.0); 
+  for (int i = 0; i < mem; i++ ) s += data1[i] * data2[i];
+  return s;
+}
+
+
+/* ******************************************************************
+* Miscaleneous routines: diagonal tensor
+****************************************************************** */
+void Tensor::MakeDiagonal(double s)
+{
+  if (! data_) return;
+
+  int mem = size_ * size_;
+  for (int i = 1; i < mem; i++) data_[i] = 0.0;
+  for (int i = 0; i < mem; i += d_ + 1) data_[i] = s; 
 }
 
 

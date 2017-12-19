@@ -166,10 +166,8 @@ clock_t Timer::getTicks()
  */
 double Timer::getTime()
 {
-  if ( _running )
-  {
-    switch (_type)
-    {
+  if (_running ) {
+    switch (_type) {
       case ACCUMULATE:
         return ( _runningTotal+(clock() - _startTime) ) / static_cast<double>(CLOCKS_PER_SEC);
         break;
@@ -181,10 +179,8 @@ double Timer::getTime()
         break;
     }
   }
-  else
-  {
-    switch (_type)
-    {
+  else {
+    switch (_type) {
       case AVERAGE:
         return ( _runningTotal / _numInvocations ) / static_cast<double>(CLOCKS_PER_SEC);
         break;
@@ -206,8 +202,9 @@ double Timer::getTime()
   }
 }
 
-void Timer::parSync(MPI_Comm comm) {
 
+void Timer::parSync(MPI_Comm comm)
+{
   double elapsed = getTime();
 
   MPI_Allreduce(&elapsed, &_max_elapsed, 1, MPI_DOUBLE, MPI_MAX, comm);
@@ -216,8 +213,8 @@ void Timer::parSync(MPI_Comm comm) {
   int numpe(1);
   MPI_Comm_size(comm, &numpe);
   _avg_elapsed /= static_cast<double>(numpe);
-
 }
+
 
 /**
  *  \fn      friend ostream operator<<
@@ -235,5 +232,4 @@ std::ostream& operator<<(std::ostream& os, Timer& t)
   return os;
 }
 
-
-} //end of namespace Amanzi
+}  // namespace Amanzi

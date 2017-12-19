@@ -24,7 +24,7 @@
 #include "Mesh.hh"
 #include "Point.hh"
 
-#include "mfd3d_electromagnetics.hh"
+#include "MFD3D_Electromagnetics.hh"
 #include "Tensor.hh"
 
 
@@ -43,15 +43,12 @@ TEST(MASS_MATRIX_2D) {
   Epetra_SerialComm *comm = new Epetra_SerialComm();
 #endif
 
-  FrameworkPreference pref;
-  pref.clear();
-  pref.push_back(MSTK);
-
   MeshFactory factory(comm);
-  factory.preference(pref);
+  factory.preference(FrameworkPreference({MSTK}));
 
   bool request_faces(true), request_edges(true);
-  // Teuchos::RCP<Mesh> mesh = factory(0.0, 0.0, 1.0, 1.0, 1, 1,NULL, true, true); 
+  // Teuchos::RCP<const Amanzi::AmanziGeometry::GeometricModel> gm;
+  // Teuchos::RCP<Mesh> mesh = factory(0.0, 0.0, 1.0, 1.0, 20, 20, gm, true, true); 
   Teuchos::RCP<Mesh> mesh = factory("test/two_cell2.exo", Teuchos::null, request_faces, request_edges); 
  
   MFD3D_Electromagnetics mfd(mesh);
@@ -86,7 +83,7 @@ TEST(MASS_MATRIX_2D) {
 
     printf("Mass matrix for cell %3d method=%d\n", cell, method);
     for (int i = 0; i < nrows; i++) {
-      for (int j = 0; j < nrows; j++ ) printf("%8.4f ", M(i, j)); 
+      for (int j = 0; j < nrows; j++ ) printf("%9.5f ", M(i, j)); 
       printf("\n");
     }
 
@@ -135,12 +132,8 @@ void MassMatrix3D(std::string mesh_file, int max_row) {
   Epetra_SerialComm *comm = new Epetra_SerialComm();
 #endif
 
-  FrameworkPreference pref;
-  pref.clear();
-  pref.push_back(MSTK);
-
   MeshFactory meshfactory(comm);
-  meshfactory.preference(pref);
+  meshfactory.preference(FrameworkPreference({MSTK}));
 
   bool request_faces(true), request_edges(true);
 
@@ -244,12 +237,8 @@ TEST(STIFFNESS_MATRIX_2D) {
   Epetra_SerialComm *comm = new Epetra_SerialComm();
 #endif
 
-  FrameworkPreference pref;
-  pref.clear();
-  pref.push_back(MSTK);
-
   MeshFactory factory(comm);
-  factory.preference(pref);
+  factory.preference(FrameworkPreference({MSTK}));
 
   bool request_faces(true), request_edges(true);
   // Teuchos::RCP<Mesh> mesh = factory(0.0, 0.0, 1.0, 1.0, 1, 1, Teuchos::null, true, true); 
@@ -333,12 +322,8 @@ void StiffnessMatrix3D(std::string mesh_file, int max_row) {
   Epetra_SerialComm *comm = new Epetra_SerialComm();
 #endif
 
-  FrameworkPreference pref;
-  pref.clear();
-  pref.push_back(MSTK);
-
   MeshFactory meshfactory(comm);
-  meshfactory.preference(pref);
+  meshfactory.preference(FrameworkPreference({MSTK}));
 
   bool request_faces(true), request_edges(true);
 

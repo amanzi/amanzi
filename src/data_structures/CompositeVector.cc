@@ -92,6 +92,8 @@ the code.
 DOCUMENT VANDELAY HERE! FIX ME --etc
 ------------------------------------------------------------------------- */
 
+#include "Epetra_Vector.h"
+
 #include "dbc.hh"
 #include "errors.hh"
 #include "CompositeVector.hh"
@@ -556,6 +558,7 @@ int CompositeVector::Multiply(double scalarAB, const CompositeVector& A,
   return ierr;
 };
 
+
 // -- this <- scalarAB * B / A + scalarThis*this  (/ is the elementwise division
 int CompositeVector::ReciprocalMultiply(double scalarAB, const CompositeVector& A,
                                         const CompositeVector& B, double scalarThis) {
@@ -569,6 +572,61 @@ int CompositeVector::ReciprocalMultiply(double scalarAB, const CompositeVector& 
               *A.ViewComponent(*lcv,false), *B.ViewComponent(*lcv,false), scalarThis);
   }
   return ierr;
+};
+
+
+// Mathematical operations
+// -- minimum value by component
+void CompositeVector::MinValue(std::map<std::string, double>& value) const {
+  value.clear();
+
+  for (int n = 0; n != names_.size(); ++n) {
+    double tmp(1e+50), value_loc[1];
+    const Epetra_MultiVector& comp = *ViewComponent(names_[n]);
+
+    for (int i = 0; i != comp.NumVectors(); ++i) {
+      comp(i)->MinValue(value_loc);
+      tmp = std::min(tmp, value_loc[0]);
+    }
+    value[names_[n]] = tmp;
+  }
+};
+
+
+// -- maximum value by component
+void CompositeVector::MaxValue(std::map<std::string, double>& value) const {
+  value.clear();
+
+  for (int n = 0; n != names_.size(); ++n) {
+    double tmp(-1e+50), value_loc[1];
+    const Epetra_MultiVector& comp = *ViewComponent(names_[n]);
+
+    for (int i = 0; i != comp.NumVectors(); ++i) {
+      comp(i)->MaxValue(value_loc);
+      tmp = std::max(tmp, value_loc[0]);
+    }
+    value[names_[n]] = tmp;
+  }
+};
+
+
+// -- mean value by component
+void CompositeVector::MeanValue(std::map<std::string, double>& value) const {
+  value.clear();
+
+  for (int n = 0; n != names_.size(); ++n) {
+    int ni, nt(0);
+    double tmp(0.0), value_loc[1];
+    const Epetra_MultiVector& comp = *ViewComponent(names_[n]);
+
+    for (int i = 0; i != comp.NumVectors(); ++i) {
+      ni = comp(i)->GlobalLength(); 
+      comp(i)->MeanValue(value_loc);
+      tmp += value_loc[0] * ni;
+      nt += ni;
+    }
+    value[names_[n]] = tmp / nt;
+  }
 };
 
 

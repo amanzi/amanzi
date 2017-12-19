@@ -160,33 +160,27 @@ if (BUILD_TESTS)
 
     add_amanzi_test(state_copy state_copy
                     KIND int
-                    SOURCE
-	  	          test/Main.cc
-	 		  test/state_copy.cc
+                    SOURCE test/Main.cc test/state_copy.cc
                     LINK_LIBS state mesh_factory mesh data_structures mesh_functions functions 
                               ${UnitTest_LIBRARIES} ${NOX_LIBRARIES})
 
     add_amanzi_test(state_dag state_dag
                     KIND int
-                    SOURCE
-	  	          test/Main.cc
-	 		  test/state_dag.cc
-                    LINK_LIBS state mesh_factory mesh data_structures mesh_functions functions
+                    SOURCE test/Main.cc test/state_dag.cc
+                    LINK_LIBS state mesh_factory mesh data_structures mesh_functions functions 
                               ${UnitTest_LIBRARIES} ${NOX_LIBRARIES})
 
     add_amanzi_test(state_functional_evaluators state_functional_evaluators
                     KIND int
-                    SOURCE
-	  	          test/Main.cc
-	 		  test/state_functional_evaluators.cc
+                    SOURCE test/Main.cc
+	 		   test/state_functional_evaluators.cc
                     LINK_LIBS state mesh_factory mesh data_structures mesh_functions functions ${UnitTest_LIBRARIES})
 
 
     add_amanzi_test(state_init state_init
                     KIND int
-                    SOURCE
-	  	          test/Main.cc
-	 		  test/state_init.cc
+                    SOURCE test/Main.cc
+	 		   test/state_init.cc
                     LINK_LIBS state mesh_factory mesh data_structures mesh_functions functions 
                               ${UnitTest_LIBRARIES} ${NOX_LIBRARIES})
 endif()

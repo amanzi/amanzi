@@ -14,7 +14,6 @@
 
 TEST(MOAB_HEX_3x3x3)
 {
-
   int i, j, k, err, nc, nf, nv;
   Amanzi::AmanziMesh::Entity_ID_List faces, nodes;
   Amanzi::AmanziGeometry::Point ccoords, fcoords;
@@ -23,8 +22,7 @@ TEST(MOAB_HEX_3x3x3)
   int NF = 108;
   int NC = 27;
 
-
-  std::auto_ptr<Epetra_MpiComm> comm_(new Epetra_MpiComm(MPI_COMM_WORLD));
+  std::shared_ptr<Epetra_MpiComm> comm_(new Epetra_MpiComm(MPI_COMM_WORLD));
 
   // Load a single hex from the hex1.exo file
 
@@ -40,16 +38,13 @@ TEST(MOAB_HEX_3x3x3)
   Amanzi::AmanziMesh::Entity_ID_List c2f;
   Epetra_Map cell_map(mesh.cell_map(false));
   Epetra_Map face_map(mesh.face_map(false));
-  for (int c=cell_map.MinLID(); c<=cell_map.MaxLID(); c++)
-    {
-      mesh.cell_get_faces( c, &c2f, true);
-      for (int j=0; j<6; j++)
-	{
-	  int f = face_map.LID(c2f[j]);
-	  CHECK( f == c2f[j] );
-	}
-
+  for (int c=cell_map.MinLID(); c<=cell_map.MaxLID(); c++) {
+    mesh.cell_get_faces( c, &c2f, true);
+    for (int j=0; j<6; j++) {
+       int f = face_map.LID(c2f[j]);
+       CHECK(f == c2f[j]);
     }
+  }
   
   int ns;
 
@@ -127,7 +122,6 @@ TEST(MOAB_HEX_3x3x3)
   //       			      {45,46,47,48,49,50,51,52,53}};
 			   
 
-
   // for (i = 0; i < ns-1; i++) {
   //   unsigned int setfaces[9];
 
@@ -141,7 +135,5 @@ TEST(MOAB_HEX_3x3x3)
     
   //   CHECK_ARRAY_EQUAL(expfsetfaces[i],setfaces,fsetsize);
   // }
-
-
 }
 
