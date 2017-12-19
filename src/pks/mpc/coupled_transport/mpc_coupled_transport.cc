@@ -17,6 +17,7 @@ namespace Amanzi {
                                            const Teuchos::RCP<Teuchos::ParameterList>& global_list,
                                            const Teuchos::RCP<State>& S,
                                            const Teuchos::RCP<TreeVector>& soln) :
+    PK(pk_tree_or_fe_list, global_list, S, soln),
     WeakMPC(pk_tree_or_fe_list, global_list, S, soln)
   {
 
