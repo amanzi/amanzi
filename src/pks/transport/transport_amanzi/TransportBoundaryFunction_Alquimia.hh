@@ -39,7 +39,7 @@ class TransportBoundaryFunction_Alquimia : public TransportDomainFunction {
   
   void Compute(double t_old, double t_new);
 
-  void set_mol_dens_data_( Teuchos::RCP<Epetra_MultiVector> data) {mol_dens_data_ = data;}
+  void set_mol_dens_data_( Teuchos::RCP<const Epetra_MultiVector> data) {mol_dens_data_ = data;}
 
  private:
   void Init_(const std::vector<std::string> &regions);

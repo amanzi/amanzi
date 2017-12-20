@@ -69,8 +69,10 @@ double CoupledTransport_PK::get_dt() {
   double subsurf_dt = sub_pks_[subsurf_id_]->get_dt();
 
   Teuchos::OSTab tab = vo_->getOSTab();
-  *vo_->os()<< "surface transport dt = "<<surf_dt<<"\n";
-  *vo_->os()<< "sub surface transport dt = "<<subsurf_dt<<"\n";
+  if (vo_->getVerbLevel() >= Teuchos::VERB_EXTREME){
+    *vo_->os()<< "surface transport dt = "<<surf_dt<<"\n";
+    *vo_->os()<< "sub surface transport dt = "<<subsurf_dt<<"\n";
+  }
 
   double dt = std::min(surf_dt, subsurf_dt);
   set_dt(dt);
@@ -136,19 +138,30 @@ bool CoupledTransport_PK::AdvanceStep(double t_old, double t_new, bool reinit) {
   const Epetra_MultiVector& surf_tcc = *S_->GetFieldCopyData("surface-total_component_concentration", "subcycling")->ViewComponent("cell",false);  
   const Epetra_MultiVector& tcc = *S_->GetFieldCopyData("total_component_concentration", "subcycling")->ViewComponent("cell",false);
 
-  int num_components = 1;
+
+  const std::vector<std::string>&  component_names_sub =
+    Teuchos::rcp_dynamic_cast<Transport::Transport_PK_ATS>(sub_pks_[subsurf_id_])->component_names();
+  
+  // const std::vector<std::string>&  component_names_surf =
+  //   Teuchos::rcp_dynamic_cast<Transport::Transport_PK_ATS>(sub_pks_[surf_id_])->component_names();
+  //ASSERT( component_names_sub.size() == component_names_surf.size());
+  
+  int num_components =  Teuchos::rcp_dynamic_cast<Transport::Transport_PK_ATS>(sub_pks_[subsurf_id_]) -> num_aqueous_component();
+  
   std::vector<double> mass_subsurface(num_components, 0.), mass_surface(num_components, 0.);
 
   
   if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM){
+    std::cout<<"num_components "<< num_components<<"\n";
+    
     for (int i=0; i<num_components; i++){
+      *vo_->os() << component_names_sub[i]<< ":";
       mass_subsurface[i] = Teuchos::rcp_dynamic_cast<Transport::Transport_PK_ATS>(sub_pks_[subsurf_id_])
         ->ComputeSolute(tcc, i);
       mass_surface[i] = Teuchos::rcp_dynamic_cast<Transport::Transport_PK_ATS>(sub_pks_[surf_id_])
         ->ComputeSolute(surf_tcc, i);
       Teuchos::OSTab tab = vo_->getOSTab();
-
-      *vo_->os() <<"subsurface =" << mass_subsurface[i] << " mol";
+      *vo_->os() <<" subsurface =" << mass_subsurface[i] << " mol";
       *vo_->os() <<", surface =" << mass_surface[i]<< " mol";
       *vo_->os() <<", ToTaL =" << mass_surface[i]+mass_subsurface[i]<< " mol" <<std::endl;
     }

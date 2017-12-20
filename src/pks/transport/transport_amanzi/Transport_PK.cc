@@ -209,11 +209,6 @@ void Transport_PK_ATS::Setup(const Teuchos::Ptr<State>& S)
     S->RequireFieldEvaluator(porosity_key_);
   }
 
-  if (!S->HasField(solid_residue_mass_key_)){
-    S->RequireField(solid_residue_mass_key_,  passwd_)->SetMesh(mesh_)->SetGhosted(true)
-      ->SetComponent("cell", AmanziMesh::CELL, 1);
-  }
-
   if (!S->HasField(molar_density_key_)){
     S->RequireField(molar_density_key_, molar_density_key_)->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
@@ -234,6 +229,11 @@ void Transport_PK_ATS::Setup(const Teuchos::Ptr<State>& S)
   S->RequireField(tcc_key_, passwd_, subfield_names)
       ->SetMesh(mesh_)->SetGhosted(true)
       ->AddComponent("cell", AmanziMesh::CELL, ncomponents);
+
+  if (!S->HasField(solid_residue_mass_key_)){
+    S->RequireField(solid_residue_mass_key_,  passwd_)->SetMesh(mesh_)->SetGhosted(true)
+      ->SetComponent("cell", AmanziMesh::CELL, ncomponents);
+  }
 
 
   // require multiscale fields
@@ -460,6 +460,7 @@ void Transport_PK_ATS::Initialize(const Teuchos::Ptr<State>& S)
       Teuchos::RCP<TransportBoundaryFunction_Alquimia> 
         bc = Teuchos::rcp(new TransportBoundaryFunction_Alquimia(spec, mesh_, chem_pk_, chem_engine_));
 
+      bc->set_mol_dens_data_(mol_dens_);
       std::vector<int>& tcc_index = bc->tcc_index();
       std::vector<std::string>& tcc_names = bc->tcc_names();
       
@@ -535,6 +536,8 @@ void Transport_PK_ATS::Initialize(const Teuchos::Ptr<State>& S)
 
       Teuchos::RCP<TransportSourceFunction_Alquimia> 
           src = Teuchos::rcp(new TransportSourceFunction_Alquimia(spec, mesh_, chem_pk_, chem_engine_));
+
+      //src->set_mol_dens_data_(mol_dens_);
 
       std::vector<int>& tcc_index = src->tcc_index();
       std::vector<std::string>& tcc_names = src->tcc_names();
@@ -826,7 +829,8 @@ bool Transport_PK_ATS::AdvanceStep(double t_old, double t_new, bool reinit)
     dt_global = S_->final_time() - S_->initial_time();
   }
 
-  StableTimeStep();
+  //StableTimeStep();
+  dt_ = dt_MPC;
   double dt_stable = dt_;  // advance routines override dt_
 
  
@@ -836,8 +840,11 @@ bool Transport_PK_ATS::AdvanceStep(double t_old, double t_new, bool reinit)
 
   if ((t_old > S_->initial_time())||(t_new < S_->final_time())) interpolate_ws = 1;
 
+
+  if (vo_->getVerbLevel() >= Teuchos::VERB_EXTREME){
   *vo_->os() << "DOMAIN "<<domain_name_<<" dt_ "<<dt_<<" dt_MPC "<<dt_MPC<<" dt_global "<<dt_global<<" time "<<time<<" initial "
              <<S_->initial_time()<<" final "<<S_->final_time()<<" interpolate "<<interpolate_ws<<"\n";
+  }
 
     // start subcycling
   double dt_sum = 0.0;
@@ -882,8 +889,8 @@ bool Transport_PK_ATS::AdvanceStep(double t_old, double t_new, bool reinit)
     double dt_try = dt_MPC - dt_sum;
     double tol = 1e-10 * (dt_try + dt_stable); 
     bool final_cycle = false;
-    *vo_->os() <<std::setprecision(10)<<"dt_MPC "<<dt_MPC<<" dt_cycle "<<dt_cycle<<" dt_sum "<<dt_sum<<" dt_stable "<<
-      dt_stable<<" dt_try "<<dt_try<<" "<<dt_try - (dt_stable + tol)<<" tol "<<tol<<"\n";
+    // *vo_->os() <<std::setprecision(10)<<"dt_MPC "<<dt_MPC<<" dt_cycle "<<dt_cycle<<" dt_sum "<<dt_sum<<" dt_stable "<<
+    //   dt_stable<<" dt_try "<<dt_try<<" "<<dt_try - (dt_stable + tol)<<" tol "<<tol<<"\n";
     
     if (dt_try >= 2 * dt_stable) {
       dt_cycle = dt_stable;
@@ -1416,7 +1423,7 @@ void Transport_PK_ATS::AdvanceDonorUpwind(double dt_cycle)
     for (int i = 0; i < num_advect; i++) {
       if (vol_phi_ws_den > 1e-4 && (*conserve_qty_)[i][c] > 0) {
         tcc_next[i][c] = (*conserve_qty_)[i][c] / vol_phi_ws_den;
-        if (domain_name_ == "surface")  std::cout<<MyPID<<": compute tcc "<<c<<" "<<(*conserve_qty_)[i][c]<<" "<<vol_phi_ws_den<<" "<<tcc_next[i][c]<<"\n";
+        // if (domain_name_ == "surface")  std::cout<<MyPID<<": compute tcc "<<c<<" "<<(*conserve_qty_)[i][c]<<" "<<vol_phi_ws_den<<" "<<tcc_next[i][c]<<"\n";
       }
       else  {
         (*solid_qty_)[i][c] += std::max((*conserve_qty_)[i][c], 0.);

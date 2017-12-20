@@ -38,8 +38,7 @@ FlowReactiveTransport_PK_ATS::FlowReactiveTransport_PK_ATS(
   vo_ = Teuchos::null;
   Teuchos::ParameterList vlist;
   vlist.sublist("verbose object") = pk_list -> sublist("verbose object");
-
-  vo_ =  Teuchos::rcp(new VerboseObject("FlowandTransportPK", vlist)); 
+  vo_ =  Teuchos::rcp(new VerboseObject("Flow&TransportPK", vlist)); 
 
 }
 
@@ -78,12 +77,17 @@ bool FlowReactiveTransport_PK_ATS::AdvanceStep(double t_old, double t_new, bool 
   bool fail = false;
 
   // advance the master PK using the full step size
+
+
   
   fail = sub_pks_[master_]->AdvanceStep(t_old, t_new, reinit);
   fail |= !sub_pks_[master_]->ValidStep();
   
   if (fail) {
-    if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) *vo_->os()<<"Master step is failed\n";
+    if (vo_->getVerbLevel() >= Teuchos::VERB_EXTREME) {
+      Teuchos::OSTab tab = vo_->getOSTab();
+      *vo_->os()<<"Master step is failed\n";
+    }
     return fail;
   }
 
@@ -96,12 +100,12 @@ bool FlowReactiveTransport_PK_ATS::AdvanceStep(double t_old, double t_new, bool 
   Teuchos::RCP<Epetra_MultiVector> flux_copy = S_->GetFieldCopyData("mass_flux", "next_timestep", copy_owner)->ViewComponent("face", true);
   *flux_copy = *S_next_->GetFieldData("mass_flux")->ViewComponent("face", true);
  
-  if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) *vo_->os()<<"Master step is successful\n";
+  if (vo_->getVerbLevel() > Teuchos::VERB_EXTREME) *vo_->os()<<"Master step is successful\n";
 
 
   slave_dt_ = sub_pks_[slave_]->get_dt(); 
   if (slave_dt_ > master_dt_) slave_dt_ = master_dt_;
-  if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) *vo_->os()<<"Slave dt="<<slave_dt_<<"\n";
+  if (vo_->getVerbLevel() > Teuchos::VERB_EXTREME) *vo_->os()<<"Slave dt="<<slave_dt_<<"\n";
 
   // advance the slave, subcycling if needed
   S_->set_intermediate_time(t_old);
@@ -142,10 +146,10 @@ bool FlowReactiveTransport_PK_ATS::AdvanceStep(double t_old, double t_new, bool 
 
   if (std::abs(t_old + dt_done - t_new) / (t_new - t_old) < 0.1*min_dt_) {
     // done, success
-    if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) *vo_->os()<<"Slave step is successful\n";
+    if (vo_->getVerbLevel() >= Teuchos::VERB_EXTREME) *vo_->os()<<"Slave step is successful\n";
     return false;
   } else {
-    if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) *vo_->os()<<"Slave step is failed\n";
+    if (vo_->getVerbLevel() >= Teuchos::VERB_EXTREME) *vo_->os()<<"Slave step is failed\n";
     return true;
   }  
 }
