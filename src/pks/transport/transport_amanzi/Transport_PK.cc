@@ -170,10 +170,7 @@ void Transport_PK_ATS::Setup(const Teuchos::Ptr<State>& S)
 
   mesh_ = S->GetMesh(domain_name_);
   dim = mesh_->space_dimension();
-
-  //Teuchos::OSTab tab = vo_->getOSTab();
-  std::cout<< "flux_key_ "<<flux_key_<<"\n";
-  
+ 
   // cross-coupling of PKs
   Teuchos::RCP<Teuchos::ParameterList> physical_models =
       Teuchos::sublist(tp_list_, "physical models and assumptions");
