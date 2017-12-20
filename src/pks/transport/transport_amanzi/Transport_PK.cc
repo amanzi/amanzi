@@ -161,7 +161,6 @@ void Transport_PK_ATS::Setup(const Teuchos::Ptr<State>& S)
   saturation_key_ = Keys::readKey(*tp_list_, domain_name_, "saturation liquid", "");
   prev_saturation_key_ = Keys::readKey(*tp_list_, domain_name_, "previous saturation liquid", "");
   flux_key_ = Keys::readKey(*tp_list_, domain_name_, "mass flux", "mass_flux");
-  darcy_flux_key_ = Keys::readKey(*tp_list_, domain_name_, "darcy flux", "mass_flux");
   permeability_key_ = Keys::readKey(*tp_list_, domain_name_, "permeability", "permeability");
   tcc_key_ = Keys::readKey(*tp_list_, domain_name_, "concentration", "total_component_concentration");
   porosity_key_ = Keys::readKey(*tp_list_, domain_name_, "porosity", "porosity");
@@ -172,6 +171,9 @@ void Transport_PK_ATS::Setup(const Teuchos::Ptr<State>& S)
   mesh_ = S->GetMesh(domain_name_);
   dim = mesh_->space_dimension();
 
+  //Teuchos::OSTab tab = vo_->getOSTab();
+  std::cout<< "flux_key_ "<<flux_key_<<"\n";
+  
   // cross-coupling of PKs
   Teuchos::RCP<Teuchos::ParameterList> physical_models =
       Teuchos::sublist(tp_list_, "physical models and assumptions");
@@ -680,20 +682,12 @@ double Transport_PK_ATS::StableTimeStep()
 {
   S_next_->GetFieldData(flux_key_)->ScatterMasterToGhosted("face");
 
-  // if (vol_flux_conversion_){
-  //   vol_flux = S_next_->GetFieldData(flux_key_, passwd_)->ViewComponent("face", true);
-  //   ComputeVolumeDarcyFlux(S_next_->GetFieldData(darcy_flux_key_)->ViewComponent("face", true),
-  //                          S_next_->GetFieldData(molar_density_key_)->ViewComponent("cell", true),
-  //                          vol_flux);
-
-  // }
-  
   flux_ = S_next_->GetFieldData(flux_key_)->ViewComponent("face", true);
+  *flux_copy_ = *flux_; // copy flux vector from S_next_ to S_; 
 
-  double flux_next_norm=0., flux_norm=0.;
-  flux_->NormInf(&flux_next_norm);
-  S_->GetFieldData(flux_key_)->ViewComponent("face", true)->NormInf(&flux_norm);
-  
+  // double flux_next_norm=0., flux_norm=0.;
+  // flux_->NormInf(&flux_next_norm);
+  // S_->GetFieldData(flux_key_)->ViewComponent("face", true)->NormInf(&flux_norm); 
   // if (vo_->getVerbLevel() >= Teuchos::VERB_EXTREME){
   //   if (flux_key_=="surface-mass_flux"){
   //     *vo_->os()<<"Stable step: "<<flux_key_<<" ||flux_next||="<<flux_next_norm<<" ||flux||="<<flux_norm<<"\n";
@@ -808,8 +802,8 @@ bool Transport_PK_ATS::AdvanceStep(double t_old, double t_new, bool reinit)
   bool failed = false;
   double dt_MPC = t_new - t_old;
 
-  flux_ = S_next_->GetFieldData(flux_key_)->ViewComponent("face", true);
-  *flux_copy_ = *flux_; // copy flux vector from S_next_ to S_; 
+  // flux_ = S_next_->GetFieldData(flux_key_)->ViewComponent("face", true);
+  // *flux_copy_ = *flux_; // copy flux vector from S_next_ to S_; 
 
   ws_ = S_next_->GetFieldData(saturation_key_)->ViewComponent("cell", false);
   mol_dens_ = S_next_->GetFieldData(molar_density_key_)->ViewComponent("cell", false);

@@ -216,10 +216,12 @@ void Coordinator::initialize() {
 
   // Initialize the process kernels (initializes all independent variables)
   pk_->Initialize(S_.ptr());
- // Final checks.
-  S_->CheckNotEvaluatedFieldsInitialized();
-  //S_->WriteStatistics(vo_);
 
+   
+  // Final checks.
+  S_->CheckNotEvaluatedFieldsInitialized();
+
+  //Restore consistency with evaluators
   S_->InitializeEvaluators();
 
   S_->CheckAllFieldsInitialized();

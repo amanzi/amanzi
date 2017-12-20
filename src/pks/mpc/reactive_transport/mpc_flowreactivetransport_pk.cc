@@ -78,14 +78,13 @@ bool FlowReactiveTransport_PK_ATS::AdvanceStep(double t_old, double t_new, bool 
 
   // advance the master PK using the full step size
 
-
+  Teuchos::OSTab tab = vo_->getOSTab();
   
   fail = sub_pks_[master_]->AdvanceStep(t_old, t_new, reinit);
   fail |= !sub_pks_[master_]->ValidStep();
   
   if (fail) {
     if (vo_->getVerbLevel() >= Teuchos::VERB_EXTREME) {
-      Teuchos::OSTab tab = vo_->getOSTab();
       *vo_->os()<<"Master step is failed\n";
     }
     return fail;
@@ -95,17 +94,15 @@ bool FlowReactiveTransport_PK_ATS::AdvanceStep(double t_old, double t_new, bool 
   master_dt_ = t_new - t_old;
   sub_pks_[master_]->CommitStep(t_old, t_new, S_next_);
 
-  Teuchos::RCP<const Field> field_tmp = S_->GetFieldCopy("mass_flux", "next_timestep");
-  Key copy_owner = field_tmp->owner();
-  Teuchos::RCP<Epetra_MultiVector> flux_copy = S_->GetFieldCopyData("mass_flux", "next_timestep", copy_owner)->ViewComponent("face", true);
-  *flux_copy = *S_next_->GetFieldData("mass_flux")->ViewComponent("face", true);
- 
-  if (vo_->getVerbLevel() > Teuchos::VERB_EXTREME) *vo_->os()<<"Master step is successful\n";
-
+  // Teuchos::RCP<const Field> field_tmp = S_->GetFieldCopy("mass_flux", "next_timestep");
+  // Key copy_owner = field_tmp->owner();
+  // Teuchos::RCP<Epetra_MultiVector> flux_copy = S_->GetFieldCopyData("mass_flux", "next_timestep", copy_owner)->ViewComponent("face", true);
+  // *flux_copy = *S_next_->GetFieldData("mass_flux")->ViewComponent("face", true);
+  // if (vo_->getVerbLevel() > Teuchos::VERB_EXTREME) *vo_->os()<<"Master step is successful\n";
 
   slave_dt_ = sub_pks_[slave_]->get_dt(); 
   if (slave_dt_ > master_dt_) slave_dt_ = master_dt_;
-  if (vo_->getVerbLevel() > Teuchos::VERB_EXTREME) *vo_->os()<<"Slave dt="<<slave_dt_<<"\n";
+  if (vo_->getVerbLevel() >= Teuchos::VERB_EXTREME) *vo_->os()<<"Slave dt="<<slave_dt_<<"\n";
 
   // advance the slave, subcycling if needed
   S_->set_intermediate_time(t_old);
