@@ -37,11 +37,10 @@ class ProjectorH1 {
 
   // -- elliptic projector
   void HarmonicP1_Cell(
-      int c, const AmanziGeometry::Point& p0,
-      const std::vector<VectorPolynomial>& vf, VectorPolynomial& uc) const;
+      int c, const std::vector<VectorPolynomial>& vf, VectorPolynomial& uc) const;
 
   void HarmonicPk_Cell(
-      int c, const AmanziGeometry::Point& p0, int order,
+      int c, int order,
       const std::vector<VectorPolynomial>& vf, VectorPolynomial& uc) const;
 
   void HarmonicP1_Face(

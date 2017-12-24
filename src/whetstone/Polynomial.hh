@@ -174,10 +174,12 @@ class Polynomial {
   void Reshape(int d, int order, bool reset = false);
 
   // initialization options
-  // -- resets all coefficients to zero
-  void Reset();
-  // -- takes coefficients from a vector
-  void set_coefs(const DenseVector& coefs);
+  // -- reset all coefficients to a scalar
+  void PutScalar(double val);
+  // -- set polynomial coefficients from a vector
+  void SetPolynomialCoefficients(const DenseVector& coefs);
+  // -- copy polynomial coefficients to a vector 
+  void GetPolynomialCoefficients(DenseVector& coefs) const;
 
   // change the coordinate system
   // -- without changing polynomial

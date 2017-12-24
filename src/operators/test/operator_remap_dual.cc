@@ -72,7 +72,7 @@ void RemapTestsDual(int dim, int order, std::string disc_name,
     if (nx != 0) 
       mesh0 = meshfactory(0.0, 0.0, 1.0, 1.0, nx, ny);
     else 
-      mesh0 = meshfactory("test/median15x16.exo", Teuchos::null);
+      mesh0 = meshfactory("test/median127x128.exo", Teuchos::null);
   } else {
     mesh0 = meshfactory(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, nx, ny, ny, Teuchos::null, true, true);
   }
@@ -90,7 +90,7 @@ void RemapTestsDual(int dim, int order, std::string disc_name,
     if (nx != 0) 
       mesh1 = meshfactory(0.0, 0.0, 1.0, 1.0, nx, ny);
     else 
-      mesh1 = meshfactory("test/median15x16.exo", Teuchos::null);
+      mesh1 = meshfactory("test/median127x128.exo", Teuchos::null);
   } else {
     mesh1 = meshfactory(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, nx, ny, ny, Teuchos::null, true, true);
   }
@@ -295,7 +295,7 @@ void RemapTestsDual(int dim, int order, std::string disc_name,
     // calculate cell velocity at time t+dt/2 and change its sign
     Entity_ID_List faces;
     std::vector<int> dirs;
-    WhetStone::MatrixPolynomial C;
+    WhetStone::MatrixPolynomial C, C1;
     WhetStone::VectorPolynomial tmp;
 
     for (int c = 0; c < ncells_owned; ++c) {
@@ -306,11 +306,13 @@ void RemapTestsDual(int dim, int order, std::string disc_name,
         vvf.push_back(vec_vel[faces[n]]);
       }
 
+// auto maps_dbg = std::make_shared<WhetStone::MeshMaps_FEM>(mesh0, mesh1);
       maps->VelocityCell(c, vvf, tmp);
       maps->Cofactors(c, t + dt/2, tmp, C);
       (*cell_vel)[c].Multiply(C, tmp, true);
 
       // selecting new mean value
+      /*
       std::vector<const WhetStone::Polynomial*> nvf;
       if (maps_name == "VEM") {
         for (int n = 0; n < faces.size(); ++n) {
@@ -318,6 +320,7 @@ void RemapTestsDual(int dim, int order, std::string disc_name,
         }
         dg.CoVelocityCell(c, nvf, (*cell_vel)[c]);
       }
+      */
 
       for (int i = 0; i < dim; ++i) {
         (*cell_vel)[c][i] *= -1.0;
@@ -424,9 +427,14 @@ if(fabs(it * dtref - t) < 1e-12) {
     std::vector<std::string> criteria;
     criteria.push_back("absolute residual");
     plist.set<double>("error tolerance", 1e-12)
-         .set<Teuchos::Array<std::string> >("convergence criteria", criteria);
+         .set<Teuchos::Array<std::string> >("convergence criteria", criteria)
+         .sublist("verbose object")
+         .set<std::string>("verbosity level", "none");
     pcg.Init(plist);
     pcg.ApplyInverse(g, p2);
+
+    if (MyPID == 0)
+      printf("time=%8.5f  pcg=%d\n", t, pcg.num_itrs());
 
     // corrector step
     p2.Update(0.5, *p1, 0.5);
@@ -540,17 +548,18 @@ TEST(REMAP2D_DG1_DUAL_FEM) {
 
 const int N = 1;
 
+/*
 TEST(REMAP2D_DG0_DUAL_VEM) {
   RemapTestsDual(2, 0, "dg modal", "VEM", 16 * N, 16 * N, 0.05 / N);
   // RemapTestsDual(2, 0, "dg modal", "VEM", 0, 0, 0.05 / N);
 }
+*/
 
 TEST(REMAP2D_DG1_DUAL_VEM) {
-  RemapTestsDual(2, 1, "dg modal", "VEM", 16 * N, 16 * N, 0.05 / N);
-  // RemapTestsDual(2, 1, "dg modal", "VEM", 0, 0, 0.05 / N);
+  // RemapTestsDual(2, 1, "dg modal", "VEM", 16 * N, 16 * N, 0.05 / N);
+  RemapTestsDual(2, 1, "dg modal", "VEM", 0, 0, 0.05 / N);
 }
 
-/*
 TEST(REMAP3D_DG0_DUAL_VEM) {
   RemapTestsDual(3, 0, "dg modal", "VEM", 5, 5, 0.2);
 }
@@ -559,7 +568,6 @@ TEST(REMAP3D_DG0_DUAL_VEM) {
 TEST(REMAP3D_DG1_DUAL_VEM) {
   RemapTestsDual(3, 1, "dg modal", "VEM", 5, 5, 0.1);
 }
-*/
 
 
 /*

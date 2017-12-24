@@ -29,9 +29,8 @@ void MeshMaps_VEM::VelocityCell(
     int c, const std::vector<VectorPolynomial>& vf, VectorPolynomial& vc) const
 {
   // LeastSquareProjector_Cell_(1, c, vf, vc);
-  AmanziGeometry::Point p0(mesh1_->cell_centroid(c) - mesh0_->cell_centroid(c));
-  // projector.HarmonicP1_Cell(c, p0, vf, vc);
-  projector.HarmonicPk_Cell(c, p0, 2, vf, vc);
+  // projector.HarmonicP1_Cell(c, vf, vc);
+  projector.HarmonicPk_Cell(c, 2, vf, vc);
 }
 
 
@@ -199,7 +198,7 @@ void MeshMaps_VEM::Cofactors_Pk_(
   // add time dependence
   for (int i = 0; i < d_; ++i) {
     for (int j = 0; j < d_; ++j) {
-      C[i][j](0, 0) *= t;
+      C[i][j] *= t;
     }
     C[i][i](0, 0) += 1.0;
   }

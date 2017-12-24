@@ -37,9 +37,14 @@ class VectorPolynomial {
   Polynomial& operator[](int i) { return polys_[i]; }
   const Polynomial& operator[](int i) const { return polys_[i]; }
 
+  // typical operations with polynomials
+  void PutScalar(double val);
+  double NormMax() const;
+
   // ring algebra
   VectorPolynomial& operator*=(double val);
   VectorPolynomial& operator+=(const VectorPolynomial& vp);
+  VectorPolynomial& operator-=(const VectorPolynomial& vp);
 
   friend VectorPolynomial operator+(const VectorPolynomial& vp1, const VectorPolynomial& vp2) {
     VectorPolynomial tmp(vp1);

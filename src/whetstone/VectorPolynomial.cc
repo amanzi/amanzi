@@ -32,6 +32,17 @@ VectorPolynomial::VectorPolynomial(int d, int size) : d_(d)
 
 
 /* ******************************************************************
+* Reset all coefficients to thesame number
+****************************************************************** */
+void VectorPolynomial::PutScalar(double val)
+{
+  for (int i = 0; i < size(); ++i) {
+    polys_[i].PutScalar(val);
+  }
+}
+
+
+/* ******************************************************************
 * Create object using gradient of a polynomial
 ****************************************************************** */
 void VectorPolynomial::Gradient(const Polynomial p)
@@ -152,6 +163,28 @@ VectorPolynomial& VectorPolynomial::operator+=(const VectorPolynomial& vp)
     polys_[i] += vp[i];
   }
   return *this;
+}
+
+
+VectorPolynomial& VectorPolynomial::operator-=(const VectorPolynomial& vp)
+{
+  for (int i = 0; i < polys_.size(); ++i) {
+    polys_[i] -= vp[i];
+  }
+  return *this;
+}
+
+
+/* ******************************************************************
+* Ring algebra
+****************************************************************** */
+double VectorPolynomial::NormMax() const
+{
+  double tmp(0.0);
+  for (int i = 0; i < polys_.size(); ++i) {
+    tmp = std::max(tmp, polys_[i].NormMax());
+  }
+  return tmp;
 }
 
 }  // namespace WhetStone

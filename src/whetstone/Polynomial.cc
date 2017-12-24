@@ -83,7 +83,7 @@ void Polynomial::Reshape(int d, int order, bool reset)
     size_ += coefs_[i].size();
   }
 
-  if (reset) Reset();
+  if (reset) PutScalar(0.0);
 }
 
 
@@ -241,21 +241,21 @@ void Polynomial::ChangeOrigin(const AmanziGeometry::Point& origin)
 
 
 /* ******************************************************************
-* Resets all coefficients to zero
+* Reset all coefficients to the same number
 ****************************************************************** */
-void Polynomial::Reset()
+void Polynomial::PutScalar(double val)
 {
   for (int i = 0; i <= order_; ++i) {
     std::vector<double>& tmp = coefs_[i].coefs();
-    for (auto it = tmp.begin(); it != tmp.end(); ++it) *it = 0.0;
+    for (auto it = tmp.begin(); it != tmp.end(); ++it) *it = val;
   }
 }
 
 
 /* ******************************************************************
-* Takes coefficients from a vector
+* Set polynomial coefficients to entries of the given vector.
 ****************************************************************** */
-void Polynomial::set_coefs(const DenseVector& coefs)
+void Polynomial::SetPolynomialCoefficients(const DenseVector& coefs)
 {
   ASSERT(size_ == coefs.NumRows());
 
@@ -264,6 +264,24 @@ void Polynomial::set_coefs(const DenseVector& coefs)
     std::vector<double>& tmp = coefs_[i].coefs();
     for (auto it = tmp.begin(); it != tmp.end(); ++it) {
       *it = *data; 
+      data++;
+    }
+  }
+}
+
+
+/* ******************************************************************
+* Copy polynomial coefficients to a vector
+****************************************************************** */
+void Polynomial::GetPolynomialCoefficients(DenseVector& coefs) const
+{
+  ASSERT(size_ == coefs.NumRows());
+
+  double* data = coefs.Values();
+  for (int i = 0; i <= order_; ++i) {
+    const std::vector<double>& tmp = coefs_[i].coefs();
+    for (auto it = tmp.begin(); it != tmp.end(); ++it) {
+      *data = *it; 
       data++;
     }
   }
@@ -302,10 +320,10 @@ double Polynomial::NormMax() const
 {
   double tmp(0.0);
 
-  for (int n = 0; n < order_; ++n) {
+  for (int n = 0; n <= order_; ++n) {
     const std::vector<double>& coefs = coefs_[n].coefs();
     for (int i = 0; i < coefs.size(); ++i) {
-      tmp = std::max(tmp, coefs[i]);
+      tmp = std::max(tmp, fabs(coefs[i]));
     }
   }
 
@@ -390,9 +408,8 @@ void Polynomial::InverseChangeCoordinates(
 
   // populate new polynomial using different algorithms
   if (d_ == 1) {
-    int i = 0;
-    if (fabs(B[0][0]) < fabs(B[0][1])) i = 1;
-    double scale = B[0][i] / AmanziGeometry::L22(B[0]);
+    int i = (fabs(B[0][0]) > fabs(B[0][1])) ? 0 : 1;
+    double scale = 1.0 / B[0][i];
 
     for (auto it = begin(); it.end() <= end(); ++it) {
       int m = it.MonomialOrder();

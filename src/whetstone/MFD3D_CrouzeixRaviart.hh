@@ -23,6 +23,7 @@
 
 #include "DenseMatrix.hh"
 #include "MFD3D.hh"
+#include "Polynomial.hh"
 #include "Tensor.hh"
 
 namespace Amanzi {
@@ -68,8 +69,13 @@ class MFD3D_CrouzeixRaviart : public virtual MFD3D {
   // miscalleneous
   void set_order(int order) { order_ = order; }
 
+  // access 
+  // -- integrals of monomials in high-order schemes could be reused
+  const Polynomial& integrals() const { return integrals_; }
+
  private:
   int order_;
+  Polynomial integrals_;
 };
 
 }  // namespace WhetStone

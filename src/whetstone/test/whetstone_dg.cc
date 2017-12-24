@@ -164,7 +164,7 @@ TEST(DG2D_MASS_MATRIX_POLYNOMIAL) {
   MeshFactory meshfactory(comm);
   meshfactory.preference(FrameworkPreference({MSTK}));
   // Teuchos::RCP<Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 1, 1); 
-  Teuchos::RCP<Mesh> mesh = meshfactory("test/one_cell2.exo");
+  Teuchos::RCP<Mesh> mesh = meshfactory("test/one_pentagon.exo");
  
   double tmp, integral[3];
   DenseMatrix A;
@@ -494,7 +494,7 @@ TEST(DG_MAP_APPROXIMATION_CELL) {
 
   MeshFactory meshfactory(comm);
   meshfactory.preference(FrameworkPreference({MSTK}));
-  Teuchos::RCP<Mesh> mesh = meshfactory("test/one_cell2.exo");
+  Teuchos::RCP<Mesh> mesh = meshfactory("test/one_pentagon.exo");
 
   // extract polygon from the mesh
   Entity_ID_List nodes;

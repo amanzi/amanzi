@@ -20,12 +20,10 @@ namespace Amanzi {
 namespace WhetStone {
 
 /* ******************************************************************
-* Enegy projector on space of linear polynomials in cell c.
-* Uniquness require to specify its value at cell centroid.
+* Energy projector on the space of linear polynomials in cell c.
 ****************************************************************** */
 void ProjectorH1::HarmonicP1_Cell(
-    int c, const AmanziGeometry::Point& p0,
-    const std::vector<VectorPolynomial>& vf, VectorPolynomial& uc) const
+    int c, const std::vector<VectorPolynomial>& vf, VectorPolynomial& uc) const
 {
   Entity_ID_List faces;
   std::vector<int> dirs;
@@ -33,6 +31,7 @@ void ProjectorH1::HarmonicP1_Cell(
   mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
   int nfaces = faces.size();
 
+  const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
   double vol = mesh_->cell_volume(c);
 
   // create zero vector polynomial
@@ -55,13 +54,30 @@ void ProjectorH1::HarmonicP1_Cell(
     }
   }
 
-  // set projector zero term to the given p0
-  const AmanziGeometry::Point& xc0 = mesh_->cell_centroid(c);
-  AmanziGeometry::Point zero(d_);
-
+  // calculate projector's low-order term
+  AmanziGeometry::Point grad(d_), zero(d_);
   for (int i = 0; i < d_; ++i) {
-    uc[i](0, 0) = p0[i];
-    uc[i].set_origin(xc0);
+    for (int j = 0; j < d_; ++j) {
+      grad[j] = uc[i](1, j);
+    }
+    
+    double a1(0.0), a2(0.0), tmp;
+    for (int n = 0; n < nfaces; ++n) {  
+      int f = faces[n];
+      const AmanziGeometry::Point& xf = mesh_->face_centroid(f);
+      double area = mesh_->face_area(f);
+       
+      tmp = vf[n][i].Value(xf) - grad * (xf - xc);
+      a1 += tmp * area;
+      a2 += area;
+    }
+
+    uc[i](0, 0) = a1 / a2;
+  }
+
+  // clean-up: fix the origin
+  for (int i = 0; i < d_; ++i) {
+    uc[i].set_origin(xc);
     uc[i].ChangeOrigin(zero);
   }
 }
@@ -122,11 +138,11 @@ void ProjectorH1::HarmonicP1_Face(
 
 
 /* ******************************************************************
-* Enegy projector on space of polynomials of order k in cell c.
+* Energy projector on space of polynomials of order k in cell c.
 * Uniquness require to specify its value at cell centroid.
 ****************************************************************** */
 void ProjectorH1::HarmonicPk_Cell(
-    int c, const AmanziGeometry::Point& p0, int order,
+    int c, int order,
     const std::vector<VectorPolynomial>& vf, VectorPolynomial& uc) const
 {
   ASSERT(d_ == 2);
@@ -136,6 +152,9 @@ void ProjectorH1::HarmonicPk_Cell(
 
   mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
   int nfaces = faces.size();
+
+  const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
+  double volume = mesh_->cell_volume(c);
 
   // calculate stiffness matrix
   Tensor T(d_, 1);
@@ -155,9 +174,12 @@ void ProjectorH1::HarmonicPk_Cell(
   int ndof_f(nfaces * ndf);
   int ndof_c(ndof - ndof_f);
 
-  DenseMatrix Acf = A.SubMatrix(ndof_f, ndof, 0, ndof_f);
-  DenseMatrix Acc = A.SubMatrix(ndof_f, ndof, ndof_f, ndof);
-  Acc.Inverse();
+  DenseMatrix Acf, Acc;
+  if (ndof_c > 0) {
+    Acf = A.SubMatrix(ndof_f, ndof, 0, ndof_f);
+    Acc = A.SubMatrix(ndof_f, ndof, ndof_f, ndof);
+    Acc.Inverse();
+  }
   
   // create zero vector polynomial
   uc.resize(d_);
@@ -176,6 +198,7 @@ void ProjectorH1::HarmonicPk_Cell(
     for (int n = 0; n < nfaces; ++n) {
       int f = faces[n];
       const AmanziGeometry::Point& xf = mesh_->face_centroid(f); 
+      double area = mesh_->face_area(f);
 
       // local coordinate system with origin at face centroid
       const AmanziGeometry::Point& normal = mesh_->face_normal(f);
@@ -192,23 +215,25 @@ void ProjectorH1::HarmonicPk_Cell(
 
         polys[1] = &fmono;
 
-        vdof(row) = numi.IntegratePolynomialsFace(f, polys);
+        vdof(row) = numi.IntegratePolynomialsFace(f, polys) / area;
         row++;
       }
     }
 
     // harmonic extension inside cell
-    DenseVector v1(ndof_f), v2(ndof_c), v3(ndof_c);
+    if (ndof_c > 0) {
+      DenseVector v1(ndof_f), v2(ndof_c), v3(ndof_c);
 
-    for (int n = 0; n < ndof_f; ++n) {
-      v1(n) = vdof(n);
-    }
+      for (int n = 0; n < ndof_f; ++n) {
+        v1(n) = vdof(n);
+      }
 
-    Acf.Multiply(v1, v2, false);
-    Acc.Multiply(v2, v3, false);
+      Acf.Multiply(v1, v2, false);
+      Acc.Multiply(v2, v3, false);
 
-    for (int n = 0; n < ndof_c; ++n) {
-      vdof(row + n) = -v3(n);
+      for (int n = 0; n < ndof_c; ++n) {
+        vdof(row + n) = -v3(n);
+      }
     }
 
     // calculate polynomial coefficients
@@ -216,16 +241,37 @@ void ProjectorH1::HarmonicPk_Cell(
     R.Multiply(vdof, v4, true);
     Gpoly.Multiply(v4, v5, false);
 
-    uc[i].set_coefs(v5);
-  }
+    uc[i].SetPolynomialCoefficients(v5);
 
-  // set projector zero term to the given p0
-  const AmanziGeometry::Point& xc0 = mesh_->cell_centroid(c);
-  AmanziGeometry::Point zero(d_);
+    // calculate the constant value
+    if (order == 1) {
+      AmanziGeometry::Point grad(d_), zero(d_);
+      for (int j = 0; j < d_; ++j) {
+        grad[j] = uc[i](1, j);
+      }
+    
+      double a1(0.0), a2(0.0), tmp;
+      for (int n = 0; n < nfaces; ++n) {  
+        int f = faces[n];
+        const AmanziGeometry::Point& xf = mesh_->face_centroid(f);
+        double area = mesh_->face_area(f);
+       
+        tmp = vf[n][i].Value(xf) - grad * (xf - xc);
+        a1 += tmp * area;
+        a2 += area;
+      }
 
-  for (int i = 0; i < d_; ++i) {
-    uc[i](0, 0) = p0[i];
-    uc[i].set_origin(xc0);
+      uc[i](0, 0) = a1 / a2;
+    } else if (order >= 2) {
+      mfd.integrals().GetPolynomialCoefficients(v4);
+      uc[i](0, 0) = vdof(row) - (v4 * v5) / volume;
+    } else {
+      ASSERT(0);
+    }
+
+    // set origin to zero
+    AmanziGeometry::Point zero(d_);
+    uc[i].set_origin(xc);
     uc[i].ChangeOrigin(zero);
   }
 }

@@ -121,6 +121,7 @@ int MFD3D_CrouzeixRaviart::H1consistencyHO(
   int nfaces = faces.size();
 
   const AmanziGeometry::Point& xc = mesh_->cell_centroid(c); 
+  double volume = mesh_->cell_volume(c); 
 
   // calculate degrees of freedom 
   Polynomial poly(d_, order), pf(d_ - 1, order - 1), pc;
@@ -139,10 +140,10 @@ int MFD3D_CrouzeixRaviart::H1consistencyHO(
 
   // pre-calculate integrals of monomials 
   NumericalIntegration numi(mesh_);
-  Polynomial integrals(d_, 2 * order - 2);
+  integrals_.Reshape(d_, 2 * order - 2, true);
 
   for (int k = 0; k <= 2 * order - 2; ++k) {
-    numi.IntegrateMonomialsCell(c, integrals.monomials(k));
+    numi.IntegrateMonomialsCell(c, integrals_.monomials(k));
   }
 
   // populate matrices N and R
@@ -169,13 +170,14 @@ int MFD3D_CrouzeixRaviart::H1consistencyHO(
     for (int i = 0; i < nfaces; i++) {
       int f = faces[i];
       const AmanziGeometry::Point& xf = mesh_->face_centroid(f); 
+      double area = mesh_->face_area(f);
 
       // local coordinate system with origin at face centroid
       AmanziGeometry::Point normal = mesh_->face_normal(f);
       if (d_ == 2) {
         tau[0] = AmanziGeometry::Point(-normal[1], normal[0]);
       }
-      normal *= dirs[i] / norm(normal);
+      normal *= dirs[i];
 
       Polynomial tmp = grad * normal;
       tmp.ChangeCoordinates(xf, tau);
@@ -195,7 +197,7 @@ int MFD3D_CrouzeixRaviart::H1consistencyHO(
         polys[1] = &fmono;
 
         int n = jt.PolynomialPosition();
-        N(row + n, col) = numi.IntegratePolynomialsFace(f, polys);
+        N(row + n, col) = numi.IntegratePolynomialsFace(f, polys) / area;
       }
       row += ndf;
     }
@@ -208,7 +210,7 @@ int MFD3D_CrouzeixRaviart::H1consistencyHO(
         int k = jt.MonomialPosition();
         int n = jt.PolynomialPosition();
 
-        R(row + n, col) = -tmp(m, k);
+        R(row + n, col) = -tmp(m, k) * volume;
       }
     }
 
@@ -224,8 +226,8 @@ int MFD3D_CrouzeixRaviart::H1consistencyHO(
           nm += multi_index[i];
         }
 
-        const auto& coefs = integrals.monomials(nm).coefs();
-        N(row + n, col) = coefs[poly.MonomialPosition(multi_index)]; 
+        const auto& coefs = integrals_.monomials(nm).coefs();
+        N(row + n, col) = coefs[poly.MonomialPosition(multi_index)] / volume; 
       }
     }
   }
@@ -252,7 +254,7 @@ int MFD3D_CrouzeixRaviart::H1consistencyHO(
       for (int i = 0; i < d_; ++i) {
         if (index[i] > 0 && jndex[i] > 0) {
           multi_index[i] -= 2;
-          const auto& coefs = integrals.monomials(n - 2).coefs();
+          const auto& coefs = integrals_.monomials(n - 2).coefs();
           tmp = coefs[poly.MonomialPosition(multi_index)]; 
           sum += tmp * index[i] * jndex[i];
           multi_index[i] += 2;

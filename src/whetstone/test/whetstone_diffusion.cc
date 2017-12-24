@@ -528,7 +528,7 @@ TEST(DARCY_STIFFNESS_2D_NODE) {
   MeshFactory meshfactory(comm);
   meshfactory.preference(FrameworkPreference({MSTK}));
   // RCP<Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 1, 1); 
-  RCP<Mesh> mesh = meshfactory("test/one_cell2.exo"); 
+  RCP<Mesh> mesh = meshfactory("test/one_pentagon.exo"); 
  
   MFD3D_Diffusion mfd(mesh);
 
@@ -602,7 +602,7 @@ TEST(DARCY_STIFFNESS_2D_EDGE) {
   MeshFactory meshfactory(comm);
   meshfactory.preference(FrameworkPreference({MSTK}));
   // RCP<Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 1, 1); 
-  RCP<Mesh> mesh = meshfactory("test/one_cell2.exo", Teuchos::null, true, true); 
+  RCP<Mesh> mesh = meshfactory("test/one_pentagon.exo", Teuchos::null, true, true); 
  
   MFD3D_CrouzeixRaviart mfd(mesh);
 
