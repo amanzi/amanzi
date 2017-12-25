@@ -35,11 +35,13 @@ class MeshMaps_VEM : public MeshMaps {
  public:
   MeshMaps_VEM(Teuchos::RCP<const AmanziMesh::Mesh> mesh) :
       MeshMaps(mesh),
-      projector(mesh) {};
+      projector(mesh),
+      order_(2) {};
   MeshMaps_VEM(Teuchos::RCP<const AmanziMesh::Mesh> mesh0,
                Teuchos::RCP<const AmanziMesh::Mesh> mesh1) :
       MeshMaps(mesh0, mesh1),
-      projector(mesh0) {};
+      projector(mesh0),
+      order_(2) {};
   ~MeshMaps_VEM() {};
 
   // Maps
@@ -69,6 +71,9 @@ class MeshMaps_VEM : public MeshMaps {
                                  const AmanziGeometry::Point& x,
                                  Tensor& J) const override;
 
+  // access
+  void set_order(int order) { order_ = order; }
+
  private:
   // pseudo-velocity on edge e
   void VelocityEdge_(int e, VectorPolynomial& ve) const;
@@ -81,7 +86,8 @@ class MeshMaps_VEM : public MeshMaps {
   void LeastSquareProjector_Cell_(int order, int c, const std::vector<VectorPolynomial>& vf,
                                   VectorPolynomial& vc) const;
 
-  // elliptic projectors
+ private:
+  int order_;
   ProjectorH1 projector;
 };
 

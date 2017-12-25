@@ -271,11 +271,11 @@ void Polynomial::SetPolynomialCoefficients(const DenseVector& coefs)
 
 
 /* ******************************************************************
-* Copy polynomial coefficients to a vector
+* Copy polynomial coefficients to a vector. Vector is resized.
 ****************************************************************** */
 void Polynomial::GetPolynomialCoefficients(DenseVector& coefs) const
 {
-  ASSERT(size_ == coefs.NumRows());
+  coefs.Reshape(size_);
 
   double* data = coefs.Values();
   for (int i = 0; i <= order_; ++i) {

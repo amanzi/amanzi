@@ -264,9 +264,8 @@ void ProjectorH1::HarmonicPk_Cell(
       uc[i](0, 0) = a1 / a2;
     } else if (order >= 2) {
       mfd.integrals().GetPolynomialCoefficients(v4);
+      v4.Reshape(nd);
       uc[i](0, 0) = vdof(row) - (v4 * v5) / volume;
-    } else {
-      ASSERT(0);
     }
 
     // set origin to zero

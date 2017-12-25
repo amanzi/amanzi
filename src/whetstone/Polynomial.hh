@@ -176,9 +176,11 @@ class Polynomial {
   // initialization options
   // -- reset all coefficients to a scalar
   void PutScalar(double val);
-  // -- set polynomial coefficients from a vector
+  // -- set polynomial coefficients from a vector.
+  //    The vector size should match that of polynomial.
   void SetPolynomialCoefficients(const DenseVector& coefs);
-  // -- copy polynomial coefficients to a vector 
+  // -- copy polynomial coefficients to a vector. 
+  //    The vector is resized  to accomodate data.
   void GetPolynomialCoefficients(DenseVector& coefs) const;
 
   // change the coordinate system

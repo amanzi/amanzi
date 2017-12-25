@@ -72,7 +72,7 @@ void RemapTestsDual(int dim, int order, std::string disc_name,
     if (nx != 0) 
       mesh0 = meshfactory(0.0, 0.0, 1.0, 1.0, nx, ny);
     else 
-      mesh0 = meshfactory("test/median127x128.exo", Teuchos::null);
+      mesh0 = meshfactory("test/median15x16.exo", Teuchos::null);
   } else {
     mesh0 = meshfactory(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, nx, ny, ny, Teuchos::null, true, true);
   }
@@ -90,7 +90,7 @@ void RemapTestsDual(int dim, int order, std::string disc_name,
     if (nx != 0) 
       mesh1 = meshfactory(0.0, 0.0, 1.0, 1.0, nx, ny);
     else 
-      mesh1 = meshfactory("test/median127x128.exo", Teuchos::null);
+      mesh1 = meshfactory("test/median15x16.exo", Teuchos::null);
   } else {
     mesh1 = meshfactory(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, nx, ny, ny, Teuchos::null, true, true);
   }
@@ -129,7 +129,10 @@ void RemapTestsDual(int dim, int order, std::string disc_name,
   if (maps_name == "FEM") {
     maps = std::make_shared<WhetStone::MeshMaps_FEM>(mesh0, mesh1);
   } else if (maps_name == "VEM") {
-    maps = std::make_shared<WhetStone::MeshMaps_VEM>(mesh0, mesh1);
+    std::shared_ptr<WhetStone::MeshMaps_VEM> maps_vem;
+    maps_vem = std::make_shared<WhetStone::MeshMaps_VEM>(mesh0, mesh1);
+    maps_vem->set_order(order + 1);
+    maps = maps_vem;
   }
 
   // create and initialize cell-based field 
@@ -565,9 +568,9 @@ TEST(REMAP3D_DG0_DUAL_VEM) {
 }
 
 
-TEST(REMAP3D_DG1_DUAL_VEM) {
-  RemapTestsDual(3, 1, "dg modal", "VEM", 5, 5, 0.1);
-}
+// TEST(REMAP3D_DG1_DUAL_VEM) {
+//   RemapTestsDual(3, 1, "dg modal", "VEM", 5, 5, 0.1);
+// }
 
 
 /*

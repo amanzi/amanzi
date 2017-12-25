@@ -36,8 +36,8 @@ TEST(CROUZEIX_RAVIART) {
   MeshFactory meshfactory(comm);
   meshfactory.preference(FrameworkPreference({MSTK}));
   Teuchos::RCP<const Amanzi::AmanziGeometry::GeometricModel> gm;
-  Teuchos::RCP<Mesh> mesh = meshfactory(0.0, 0.0, 1.2, 1.1, 1, 1, gm, true, true); 
-  // Teuchos::RCP<Mesh> mesh = meshfactory("test/one_pentagon.exo", gm, true, true); 
+  // Teuchos::RCP<Mesh> mesh = meshfactory(0.0, 0.0, 1.2, 1.1, 1, 1, gm, true, true); 
+  Teuchos::RCP<Mesh> mesh = meshfactory("test/one_pentagon.exo", gm, true, true); 
  
   MFD3D_CrouzeixRaviart mfd(mesh);
 
@@ -59,25 +59,27 @@ TEST(CROUZEIX_RAVIART) {
   A1 -= Ak;
   CHECK(A1.NormInf() <= 1e-10);
 
-  // 2nd-order scheme (new algorithm)
-  mfd.H1consistencyHO(cell, 2, T, N, R, G, Ak);
-  mfd.StiffnessMatrixHO(cell, 2, T, R, G, Ak);
+  // high-order scheme (new algorithm)
+  for (int k = 2; k < 4; ++k) {
+    mfd.H1consistencyHO(cell, k, T, N, R, G, Ak);
+    mfd.StiffnessMatrixHO(cell, k, T, R, G, Ak);
 
-  printf("Stiffness matrix for order = 2\n");
-  Ak.PrintMatrix("%8.4f ");
+    printf("Stiffness matrix for order = %d\n", k);
+    Ak.PrintMatrix("%8.4f ");
 
-  // verify SPD propery
-  int nrows = Ak.NumRows();
-  for (int i = 0; i < nrows; i++) CHECK(Ak(i, i) > 0.0);
+    // verify SPD propery
+    int nrows = Ak.NumRows();
+    for (int i = 0; i < nrows; i++) CHECK(Ak(i, i) > 0.0);
 
-  // verify exact integration property
-  DenseMatrix G1(G);
-  G1.Multiply(N, R, true);
-  G1(0, 0) = 1.0;
-  G1.Inverse();
-  G1(0, 0) = 0.0;
-  G1 -= G;
-  CHECK(G1.NormInf() <= 1e-10);
+    // verify exact integration property
+    DenseMatrix G1(G);
+    G1.Multiply(N, R, true);
+    G1(0, 0) = 1.0;
+    G1.Inverse();
+    G1(0, 0) = 0.0;
+    G1 -= G;
+    CHECK(G1.NormInf() <= 1e-10);
+  }
  
   delete comm;
 }
@@ -130,12 +132,14 @@ TEST(HARMONIC_PROJECTORS_SQUARE) {
   uc[1] -= vf[0][1];
   CHECK(uc[0].NormMax() < 1e-12 && uc[1].NormMax() < 1e-12);
 
-  projector.HarmonicPk_Cell(cell, 2, vf, uc);
-  std::cout << uc[1] << std::endl;
+  for (int k = 2; k < 4; ++k) {
+    projector.HarmonicPk_Cell(cell, k, vf, uc);
+    std::cout << uc[1] << std::endl;
 
-  uc[0] -= vf[0][0];
-  uc[1] -= vf[0][1];
-  CHECK(uc[0].NormMax() < 1e-12 && uc[1].NormMax() < 1e-12);
+    uc[0] -= vf[0][0];
+    uc[1] -= vf[0][1];
+    CHECK(uc[0].NormMax() < 1e-12 && uc[1].NormMax() < 1e-12);
+  }
 
   // test re-location of the right-top corner to (2,3)
   std::cout << "Test: High-order projectors for square (bilinear deformation)" << std::endl;
@@ -155,9 +159,12 @@ TEST(HARMONIC_PROJECTORS_SQUARE) {
         fabs(uc[1].Value(p) - 1.9) < 1e-12);
 
   // add additive constant deformation 
-  std::cout << "Test: High-order projectors in 2D (bilinear deformation)" << std::endl;
+  std::cout << "Test: High-order projectors for square (2nd bilinear deformation)" << std::endl;
   for (int n = 0; n < 4; ++n) vf[n][0](0, 0) = 1.0;
   projector.HarmonicPk_Cell(cell, 2, vf, uc);
+  std::cout << uc[0] << std::endl;
+
+  projector.HarmonicPk_Cell(cell, 3, vf, uc);
   std::cout << uc[0] << std::endl;
 
   delete comm;
@@ -204,7 +211,7 @@ TEST(HARMONIC_PROJECTORS_POLYGON) {
   CHECK(uc[0].NormMax() < 1e-12 && uc[1].NormMax() < 1e-12);
 
   // -- new scheme (k=1)
-  for (int k = 1; k < 3; ++k) {
+  for (int k = 1; k < 4; ++k) {
     projector.HarmonicPk_Cell(cell, k, vf, uc);
     std::cout << uc[0] << std::endl;
 
@@ -224,8 +231,29 @@ TEST(HARMONIC_PROJECTORS_POLYGON) {
     }
   }
 
-  for (int k = 2; k < 3; ++k) {
+  for (int k = 2; k < 4; ++k) {
     projector.HarmonicPk_Cell(cell, k, vf, uc);
+    std::cout << uc[0] << std::endl;
+    uc[0] -= vf[0][0];
+    uc[1] -= vf[0][1];
+    CHECK(uc[0].NormMax() < 1e-12 && uc[1].NormMax() < 1e-12);
+  }
+
+  // test cubic deformation
+  std::cout << "\nTest: High-order projectors for pentagon (cubic deformation)" << std::endl;
+  for (int n = 0; n < nfaces; ++n) {
+    for (int i = 0; i < 2; ++i) {
+      vf[n][i].Reshape(2, 3, false);
+      vf[n][i](3, 0) = 2.0;
+      vf[n][i](3, 1) = -6.0;
+      vf[n][i](3, 2) = -6.0;
+      vf[n][i](3, 3) = 2.0;
+    }
+  }
+
+  for (int k = 3; k < 4; ++k) {
+    projector.HarmonicPk_Cell(cell, k, vf, uc);
+    std::cout << vf[0][0] << std::endl;
     std::cout << uc[0] << std::endl;
     uc[0] -= vf[0][0];
     uc[1] -= vf[0][1];
