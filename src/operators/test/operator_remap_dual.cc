@@ -309,7 +309,6 @@ void RemapTestsDual(int dim, int order, std::string disc_name,
         vvf.push_back(vec_vel[faces[n]]);
       }
 
-// auto maps_dbg = std::make_shared<WhetStone::MeshMaps_FEM>(mesh0, mesh1);
       maps->VelocityCell(c, vvf, tmp);
       maps->Cofactors(c, t + dt/2, tmp, C);
       (*cell_vel)[c].Multiply(C, tmp, true);
@@ -351,10 +350,6 @@ void RemapTestsDual(int dim, int order, std::string disc_name,
       maps->JacobianDet(c, t + dt, vvf, (*jac1)[c]);
 
 #ifdef DEBUG
-      // maps->VelocityCell(c, vvf, tmp);
-      // std::shared_ptr<WhetStone::MeshMaps_VEM> maps_aux = std::make_shared<WhetStone::MeshMaps_VEM>(mesh0, mesh1);
-      // maps_aux->JacobianDet(t, tmp, (*jac0)[c]);
-      // maps_aux->JacobianDet(t + dt, tmp, (*jac1)[c]);
       std::shared_ptr<WhetStone::MeshMaps> maps_dbg = std::make_shared<WhetStone::MeshMaps_FEM>(mesh0, mesh1);
       maps_dbg->JacobianDet(c, t, vvf, (*jac0_dbg)[c]);
 #endif
@@ -550,36 +545,40 @@ TEST(REMAP2D_DG1_DUAL_FEM) {
 
 
 const int N = 1;
+const double q = 2.82842712474619;
 
 /*
 TEST(REMAP2D_DG0_DUAL_VEM) {
   RemapTestsDual(2, 0, "dg modal", "VEM", 16 * N, 16 * N, 0.05 / N);
   // RemapTestsDual(2, 0, "dg modal", "VEM", 0, 0, 0.05 / N);
 }
-*/
 
 TEST(REMAP2D_DG1_DUAL_VEM) {
   // RemapTestsDual(2, 1, "dg modal", "VEM", 16 * N, 16 * N, 0.05 / N);
   RemapTestsDual(2, 1, "dg modal", "VEM", 0, 0, 0.05 / N);
 }
+*/
 
-TEST(REMAP3D_DG0_DUAL_VEM) {
-  RemapTestsDual(3, 0, "dg modal", "VEM", 5, 5, 0.2);
+TEST(REMAP2D_DG2_DUAL_VEM) {
+  RemapTestsDual(2, 2, "dg modal", "VEM", 10, 10, 0.05 / N);
+  // RemapTestsDual(2, 2, "dg modal", "VEM", 0, 0, 0.05 / N);
 }
 
+// TEST(REMAP3D_DG0_DUAL_VEM) {
+//   RemapTestsDual(3, 0, "dg modal", "VEM", 5, 5, 0.2);
+// }
 
 // TEST(REMAP3D_DG1_DUAL_VEM) {
 //   RemapTestsDual(3, 1, "dg modal", "VEM", 5, 5, 0.1);
 // }
 
-
 /*
 TEST(REMAP2D_DG1_QUADRATURE_ERROR) {
-  RemapTestsDual(2, 1, "dg modal", "VEM", 16, 16, 0.1);
-  RemapTestsDual(2, 1, "dg modal", "VEM", 16 *  2, 16 *  2, 0.1 / 2);
-  RemapTestsDual(2, 1, "dg modal", "VEM", 16 *  4, 16 *  4, 0.1 / 4);
-  RemapTestsDual(2, 1, "dg modal", "VEM", 16 *  8, 16 *  8, 0.1 / 8);
-  RemapTestsDual(2, 1, "dg modal", "VEM", 16 * 16, 16 * 16, 0.1 / 16);
-  RemapTestsDual(2, 1, "dg modal", "VEM", 16 * 32, 16 * 32, 0.1 / 32);
+  RemapTestsDual(2, 2, "dg modal", "VEM", 16, 16, 0.1);
+  RemapTestsDual(2, 2, "dg modal", "VEM", 16 *  2, 16 *  2, 0.1 / q);
+  RemapTestsDual(2, 2, "dg modal", "VEM", 16 *  4, 16 *  4, 0.1 / std::pow(q, 2));
+  RemapTestsDual(2, 2, "dg modal", "VEM", 16 *  8, 16 *  8, 0.1 / std::pow(q, 3));
+  RemapTestsDual(2, 2, "dg modal", "VEM", 16 * 16, 16 * 16, 0.1 / std::pow(q, 4));
+  RemapTestsDual(2, 2, "dg modal", "VEM", 16 * 32, 16 * 32, 0.1 / std::pow(q, 5));
 }
 */
