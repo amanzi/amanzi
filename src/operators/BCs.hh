@@ -27,7 +27,7 @@ namespace AmanziGeometry { class Point; }
 namespace Operators {
 
 /* *******************************************************************
-* Three types of BCs are supported by this class:
+* Elliptic equation: Three types of BCs are supported by this class:
 *   [Dirichlet]                  u = u0 
 *   [Neumann]     -K(u) grad u . n = g0
 *   [Mixed] -K(u) grad u . n - c u = g1
@@ -60,6 +60,15 @@ namespace Operators {
 
 class BCs {
  public:
+  // KIND defines location of DOFs on a mesh:
+  // -- available mesh entities are node, edge, face, and cell
+  // 
+  // TYPE provides additional information, see OperatorDefs.hh for available options. 
+  // In short, is specifies geometric, algebraic or any other information:
+  // -- scalar is the simplest DOF, it is just a number (example: mean pressure)
+  // -- point is a vector DOF which has mesh dimension (example: fluid velocity)
+  // -- vector is a general vector DOF (example: moments of pressure)
+  // -- normal-component is a geometric DOF (example: normal component of fluid velocity)
   BCs(Teuchos::RCP<const AmanziMesh::Mesh> mesh, AmanziMesh::Entity_kind kind, int type) : 
       mesh_(mesh),
       kind_(kind),
