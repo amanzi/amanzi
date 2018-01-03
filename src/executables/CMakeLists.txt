@@ -70,7 +70,7 @@ include_evaluators_directories(LISTNAME MPC_PK_FAC_INCLUDES)
   
 
 
-add_executable(ats ats_mesh_factory.cc simulation_driver.cc main.cc )
+add_executable(ats plant_1D_mesh.cc ats_mesh_factory.cc simulation_driver.cc main.cc )
 
 set(ATS_LIBS
 		     coordinator

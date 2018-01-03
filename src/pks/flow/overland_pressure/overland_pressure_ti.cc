@@ -58,9 +58,7 @@ void OverlandPressureFlow::Functional( double t_old,
 #endif
 
   // unnecessary here if not debeugging, but doesn't hurt either
-
   S_next_->GetFieldEvaluator(Keys::getKey(domain_,"pres_elev"))->HasFieldChanged(S_next_.ptr(), name_);
-
 
 #if DEBUG_FLAG
   // dump u_old, u_new
@@ -95,10 +93,14 @@ void OverlandPressureFlow::Functional( double t_old,
 #endif
 
   // update boundary conditions
-  bc_head_->Compute(t_new);
-  bc_flux_->Compute(t_new);
-  bc_seepage_head_->Compute(t_new);
-  bc_seepage_pressure_->Compute(t_new);
+  bc_head_->Compute(S_next_->time());
+  bc_pressure_->Compute(S_next_->time());
+  bc_zero_gradient_->Compute(S_next_->time());
+  bc_flux_->Compute(S_next_->time());
+  bc_level_->Compute(S_next_->time());
+  bc_seepage_head_->Compute(S_next_->time());
+  bc_seepage_pressure_->Compute(S_next_->time());
+  bc_critical_depth_->Compute(S_next_->time());
   UpdateBoundaryConditions_(S_next_.ptr());
 
   // diffusion term, treated implicitly

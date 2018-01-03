@@ -1,4 +1,4 @@
-"""Plots 2D data on quadrilaterals using matplotlib.
+"""Loads and/or plots 2D, topologlically structured data on quadrilaterals using matplotlib.
 """
 
 import sys,os
@@ -22,7 +22,8 @@ def transect_data(varnames, keys='all', directory=".", filename="visdump_data.h5
 
     Input:
       varnames       | A list of variable names to pull, e.g.
-                     |  ['saturation_liquid', 'saturation_ice']
+                     |  ['saturation_liquid', 'saturation_ice'], or a single variable
+                     |  name, e.g. 'saturation_liquid'
       keys           | Indices of timesteps to pull.  Either an int (i.e. 0, -1, etc) 
                      |  for the kth timestep, or a list of ints, or 'all'.
       directory      | Directory of the run.  Defaults to '.'
