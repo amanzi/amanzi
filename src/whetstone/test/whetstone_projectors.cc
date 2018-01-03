@@ -236,7 +236,7 @@ TEST(HARMONIC_PROJECTORS_POLYGON) {
     std::cout << uc[0] << std::endl;
     uc[0] -= vf[0][0];
     uc[1] -= vf[0][1];
-    CHECK(uc[0].NormMax() < 1e-12 && uc[1].NormMax() < 1e-12);
+    CHECK(uc[0].NormMax() < 1e-10 && uc[1].NormMax() < 1e-10);
   }
 
   // test cubic deformation
