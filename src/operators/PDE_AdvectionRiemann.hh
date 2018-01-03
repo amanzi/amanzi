@@ -54,7 +54,7 @@ class PDE_AdvectionRiemann : public PDE_Advection {
   virtual void UpdateFlux(const Teuchos::Ptr<const CompositeVector>& h,
                           const Teuchos::Ptr<const CompositeVector>& u,
                           const Teuchos::RCP<BCs>& bc,
-                          Teuchos::Ptr<CompositeVector>& flux);
+                          const Teuchos::Ptr<CompositeVector>& flux);
 
  private:
   void InitAdvection_(Teuchos::ParameterList& plist);

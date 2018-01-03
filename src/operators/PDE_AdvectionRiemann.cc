@@ -137,7 +137,7 @@ void PDE_AdvectionRiemann::UpdateMatrices(
 void PDE_AdvectionRiemann::UpdateFlux(
     const Teuchos::Ptr<const CompositeVector>& h,
     const Teuchos::Ptr<const CompositeVector>& u,
-    const Teuchos::RCP<BCs>& bc, Teuchos::Ptr<CompositeVector>& flux)
+    const Teuchos::RCP<BCs>& bc, const Teuchos::Ptr<CompositeVector>& flux)
 {
   h->ScatterMasterToGhosted("cell");
   
