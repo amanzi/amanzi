@@ -50,23 +50,33 @@ void PDE_Accumulation::AddAccumulationTerm(
 * Modifier for diagonal operators.  Op += du * vol / dt.
 ****************************************************************** */
 void PDE_Accumulation::AddAccumulationTerm(
-    const CompositeVector& du, double dT, const std::string& name)
+    const CompositeVector& du, double dT, const std::string& name, bool volume)
 {
   Teuchos::RCP<Op> op = FindOp_(name);
   Epetra_MultiVector& diag = *op->diag;
 
-  CompositeVector vol(du);
-  CalculateEntityVolume_(vol, name);
-
   const Epetra_MultiVector& duc = *du.ViewComponent(name);
-  Epetra_MultiVector& volc = *vol.ViewComponent(name); 
 
   int n = duc.MyLength();
   int m = duc.NumVectors();
-  for (int k = 0; k < m; k++) {
-    for (int i = 0; i < n; i++) {
-      diag[k][i] += volc[0][i] * duc[k][i] / dT;
-    } 
+
+  if (volume) {
+    CompositeVector vol(du);
+    CalculateEntityVolume_(vol, name);
+    Epetra_MultiVector& volc = *vol.ViewComponent(name); 
+
+    for (int k = 0; k < m; k++) {
+      for (int i = 0; i < n; i++) {
+        diag[k][i] += volc[0][i] * duc[k][i] / dT;
+      } 
+    }
+
+  } else {
+    for (int k = 0; k < m; k++) {
+      for (int i = 0; i < n; i++) {
+        diag[k][i] += duc[k][i] / dT;
+      } 
+    }
   }
 }
 

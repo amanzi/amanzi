@@ -232,7 +232,7 @@ void PDE_AdvectionUpwind::ApplyBCs(const Teuchos::RCP<BCs>& bc, bool primary)
 void PDE_AdvectionUpwind::UpdateFlux(
     const Teuchos::Ptr<const CompositeVector>& h,
     const Teuchos::Ptr<const CompositeVector>& u,
-    const Teuchos::RCP<BCs>& bc, Teuchos::Ptr<CompositeVector>& flux)
+    const Teuchos::RCP<BCs>& bc, const Teuchos::Ptr<CompositeVector>& flux)
 {
   // might need to think more carefully about BCs
   const std::vector<int>& bc_model = bc->bc_model();
