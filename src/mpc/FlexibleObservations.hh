@@ -27,33 +27,10 @@
 #include "VerboseObject.hh"
 #include "ObservableAmanzi.hh"
 
-
 namespace Amanzi {
-
-// class Observable;
 
 class FlexibleObservations {
  public:
-  // struct Observable_tmp : public IOEvent {
-  //   Observable_tmp(std::string variable_,
-  //              std::string region_,
-  //              std::string functional_,
-  //              Teuchos::ParameterList& plist,
-  //              Epetra_MpiComm* comm):
-  //       variable(variable_), region(region_),
-  //       functional(functional_), plist_(plist),
-  //       IOEvent(plist)
-  //   {
-  //     ReadParameters_();
-  //   }
-
-  //   std::string variable;
-  //   std::string region;
-  //   std::string functional;
-  //   const Teuchos::ParameterList& plist_;
-  // };
-
-  // constructor and destructor
   FlexibleObservations( Teuchos::RCP<Teuchos::ParameterList> coordinator_list,
 		       Teuchos::RCP<Teuchos::ParameterList> obs_list,
                        Teuchos::RCP<Teuchos::ParameterList> units_list,

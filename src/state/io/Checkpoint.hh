@@ -17,7 +17,7 @@ NOTE: Should make this class RAII
 #include "Teuchos_VerboseObject.hpp"
 #include "Epetra_Comm.h"
 
-#include "hdf5mpi_mesh.hh"
+#include "HDF5_MPI.hh"
 #include "IOEvent.hh"
 
 namespace Amanzi {

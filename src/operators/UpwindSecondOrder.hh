@@ -22,7 +22,7 @@
 // Amanzi
 #include "CompositeVector.hh"
 #include "Mesh.hh"
-#include "mfd3d_diffusion.hh"
+#include "MFD3D_Diffusion.hh"
 
 // Operators
 #include "Upwind.hh"

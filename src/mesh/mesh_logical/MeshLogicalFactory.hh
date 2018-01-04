@@ -78,18 +78,20 @@ class MeshLogicalFactory {
 
 
   // Add a segment totally generically
+  void AddSegmentGeometric(
+      std::vector<AmanziGeometry::Point> cell_centroids,
+      std::vector<double> bisector_lengths,
+      std::vector<double> areas,
+      MeshLogicalFactory::LogicalTip_t first_tip_type,
+      MeshLogicalFactory::LogicalTip_t last_tip_type,
+      const AmanziGeometry::Point& orientation,
+      const std::string& set_name,
+      std::vector<Entity_ID>* cells,
+      std::vector<Entity_ID>* faces);
+
   void
-  AddSegment(const AmanziGeometry::Point& begin,
-             const AmanziGeometry::Point& end,
-             std::vector<double> lengths,
-             std::vector<double> areas,
-             std::vector<double> vols,
-             MeshLogicalFactory::LogicalTip_t first_tip,
-             MeshLogicalFactory::LogicalTip_t last_tip,
-             const std::string& set_name,
-             std::vector<Entity_ID>* cells,
-             std::vector<Entity_ID>* faces);
-             
+  AddSegmentGeometric(Teuchos::ParameterList& plist);
+  
 
   // Manually add a connection, returning the face id.
   int
@@ -109,6 +111,13 @@ class MeshLogicalFactory {
   Teuchos::RCP<MeshLogical>
   Create(Teuchos::ParameterList& plist);
 
+ protected:
+  MeshLogicalFactory::LogicalTip_t
+  GetTipType_(Teuchos::ParameterList& plist, const std::string& pname);
+
+  AmanziGeometry::Point
+  GetPoint_(Teuchos::ParameterList& plist, const std::string& pname);
+  
   
  protected:
   std::vector<double> cell_volume_;
@@ -120,8 +129,9 @@ class MeshLogicalFactory {
 
   const Epetra_MpiComm* comm_;
   Teuchos::RCP<AmanziGeometry::GeometricModel> gm_;
-  
 
+  std::map<std::string, Entity_ID_List> seg_cells_;
+  std::map<std::string, Entity_ID_List> seg_faces_;
 };
   
 

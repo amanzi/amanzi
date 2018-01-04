@@ -205,7 +205,7 @@ MeshFactory::create(double x0, double y0, double z0,
       if (aerr[0] > 0) amanzi_throw(e);
     }
   }
-  e.add_data("unable to generate mesh");
+  e.add_data("unable to generate 3D mesh");
   Exceptions::amanzi_throw(e);
   return Teuchos::null;
 }
@@ -281,7 +281,7 @@ MeshFactory::create(double x0, double y0,
       if (aerr[0] > 0) amanzi_throw(e);
     }
   }
-  e.add_data("unable to generate mesh");
+  e.add_data("unable to generate 2D mesh");
   Exceptions::amanzi_throw(e);
   return Teuchos::null;
 }
@@ -310,8 +310,7 @@ MeshFactory::create(Teuchos::ParameterList &parameter_list,
   Teuchos::Array<int> ncells = parameter_list.get< Teuchos::Array<int> >("number of cells");
   unsigned int dim = ncells.size();
 
-  for (FrameworkPreference::const_iterator i = my_preference.begin(); 
-       i != my_preference.end(); i++) {
+  for (auto i = my_preference.begin(); i != my_preference.end(); i++) {
     if (framework_generates(*i, my_comm_->NumProc() > 1, dim)) {
       try {
         result = framework_generate(my_comm_, *i, parameter_list, gm, vo_,

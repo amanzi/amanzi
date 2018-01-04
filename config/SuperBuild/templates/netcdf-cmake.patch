@@ -1,0 +1,29 @@
+diff -ruNbB netcdf-c-4.5.0/CMakeLists.txt netcdf-4.5.0-source/CMakeLists.txt
+--- netcdf-c-4.5.0/CMakeLists.txt	2017-10-20 11:20:52.000000000 -0600
++++ netcdf-4.5.0-source/CMakeLists.txt	2017-11-28 21:03:03.000000000 -0700
+@@ -659,6 +659,7 @@
+     # Do that by checking for the targets H5Pget_fapl_mpiposx and
+     # H5Pget_fapl_mpio in ${HDF5_LIB}.
+ 
++    SET(CMAKE_REQUIRED_LIBRARIES "dl;z;m")
+     CHECK_LIBRARY_EXISTS(${HDF5_C_LIBRARY_hdf5} H5Pget_fapl_mpiposix "" HDF5_IS_PARALLEL_MPIPOSIX)
+     CHECK_LIBRARY_EXISTS(${HDF5_C_LIBRARY_hdf5} H5Pget_fapl_mpio "" HDF5_IS_PARALLEL_MPIO)
+     IF(HDF5_IS_PARALLEL_MPIPOSIX OR HDF5_IS_PARALLEL_MPIO)
+diff -ruNbB netcdf-c-4.5.0/include/netcdf.h netcdf-4.5.0-source/include/netcdf.h
+--- netcdf-c-4.5.0/include/netcdf.h	2017-10-20 11:20:52.000000000 -0600
++++ netcdf-4.5.0-source/include/netcdf.h	2017-11-28 20:59:38.000000000 -0700
+@@ -255,11 +255,11 @@
+ As a rule, NC_MAX_VAR_DIMS <= NC_MAX_DIMS.
+ */
+ /**@{*/
+-#define NC_MAX_DIMS	1024
++#define NC_MAX_DIMS 65536
+ #define NC_MAX_ATTRS	8192
+-#define NC_MAX_VARS	8192
++#define NC_MAX_VARS 524288
+ #define NC_MAX_NAME	256
+-#define NC_MAX_VAR_DIMS	1024 /**< max per variable dimensions */
++#define NC_MAX_VAR_DIMS 8
+ /**@}*/
+ 
+ /** This is the max size of an SD dataset name in HDF4 (from HDF4 documentation).*/

@@ -9,7 +9,7 @@ PY_STY = --stylesheet=$(CBpath)/pygments-default.sty
 
 SRC = \
 	AmanziNativeSpecV7.rst \
-	AmanziInputSpec-v2.3.rst
+	AmanziInputSpec-v2.3.1-draft.rst
 
 HTML = $(SRC:%.rst=%.html)
 

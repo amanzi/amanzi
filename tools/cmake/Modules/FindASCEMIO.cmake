@@ -75,7 +75,7 @@ else(ASCEMIO_LIBRARIES AND ASCEMIO_INCLUDE_DIRS)
 
     set(ascemio_inc_suffixes "include")
       if (ASCEMIO_DIR)
-        if (EXISTS "${ASCEMIO_DIR}" )
+        if (EXISTS "${ASCEMIO_DIR}")
 
           find_path(ASCEMIO_INCLUDE_DIR
                     NAMES ${ascemio_inc_names}
@@ -111,7 +111,7 @@ else(ASCEMIO_LIBRARIES AND ASCEMIO_INCLUDE_DIRS)
     if (EXISTS "${ASCEMIO_LIBRARY_DIR}")
 
       find_library(_ASCEMIO_LIBRARY
-                   NAMES parallelio
+                   NAMES ascemio
                    HINTS ${ASCEMIO_LIBRARY_DIR}
                    NO_DEFAULT_PATH)
     else()
@@ -124,7 +124,7 @@ else(ASCEMIO_LIBRARIES AND ASCEMIO_INCLUDE_DIRS)
       if (EXISTS "${ASCEMIO_DIR}" )
 
         find_library(_ASCEMIO_LIBRARY
-                     NAMES parallelio
+                     NAMES ascemio parallelio
                      HINTS ${ASCEMIO_DIR}
                      PATH_SUFFIXES "lib" "Lib"
                      NO_DEFAULT_PATH)
@@ -137,7 +137,7 @@ else(ASCEMIO_LIBRARIES AND ASCEMIO_INCLUDE_DIRS)
     else()
 
       find_library(_ASCEMIO_LIBRARY
-                   NAMES parallelio
+                   NAMES ascemio parallelio
                    PATH_SUFFIXES ${ascemio_lib_suffixes})
 
     endif()

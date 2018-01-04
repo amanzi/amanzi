@@ -27,6 +27,10 @@ enable_testing()
 #     AMANZI_BINARY_DIR
 project(AMANZI)
 
+message(STATUS "\n-------------------------------------------")
+message(STATUS "\n-- CMake: Configuring Amanzi build/install.\n--")
+message(STATUS "----------------------------------------")
+
 # Useful variables pointing to directories in the source tree
 set(AMANZI_SOURCE_SRC_DIR      "${AMANZI_SOURCE_DIR}/src")
 set(AMANZI_SOURCE_TOOLS_DIR    "${AMANZI_SOURCE_DIR}/tools")
@@ -55,27 +59,24 @@ include(AmanziTPL)
 # ETC: this is wrong, should point to TPLs, but not necessarily installed here, meaning that lots of ld warnings show up.
 #link_directories(${CMAKE_INSTALL_PREFIX}/tpls/lib)
 
-# shared libraries tweaks for OSX
-if (APPLE) 
-  set(CMAKE_SKIP_BUILD_RPATH FALSE)
-  set(CMAKE_SKIP_INSTALL_RPATH FALSE)
-  set(CMAKE_BUILD_WITH_INSTALL_RPATH FALSE)
-  set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE) 
-  set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
-  set(CMAKE_INSTALL_NAME_DIR "${CMAKE_INSTALL_RPATH}")
-endif()
+# shared libraries tweaks: enforcing absolute path
+set(CMAKE_SKIP_BUILD_RPATH FALSE)
+set(CMAKE_SKIP_INSTALL_RPATH FALSE)
+set(CMAKE_BUILD_WITH_INSTALL_RPATH FALSE)
+set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE) 
+set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
+set(CMAKE_INSTALL_NAME_DIR "${CMAKE_INSTALL_RPATH}")
 
 # Check the mesh framework choice
-if ( (ENABLE_Unstructured)  AND
-     (NOT ENABLE_STK_Mesh)  AND
-     (NOT ENABLE_MOAB_Mesh) AND
-     (NOT ENABLE_MSTK_Mesh)
-   )
-    message(FATAL_ERROR "Missing a mesh framework\n"
-                        "Please enable at least one of the following mesh frameworks\n"
-                        "-D ENABLE_MOAB_Mesh:BOOL=ON\n"
-                        "-D ENABLE_STK_Mesh:BOOL=ON\n"
-                        "-D ENABLE_MSTK_Mesh:BOOL=ON\n")
+if ((ENABLE_Unstructured)  AND
+    (NOT ENABLE_STK_Mesh)  AND
+    (NOT ENABLE_MOAB_Mesh) AND
+    (NOT ENABLE_MSTK_Mesh))
+  message(FATAL_ERROR "Missing a mesh framework\n"
+                      "Please enable at least one of the following mesh frameworks\n"
+                      "-D ENABLE_MOAB_Mesh:BOOL=ON\n"
+                      "-D ENABLE_STK_Mesh:BOOL=ON\n"
+                      "-D ENABLE_MSTK_Mesh:BOOL=ON\n")
 endif()    
 
 
@@ -142,7 +143,7 @@ endif()
 #
 SET(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Amanzi flow and reactive transport simulator.")
 SET(CPACK_PACKAGE_VENDOR "Amanzi Development Team (LANL, LBNL, PNNL)")
-SET(CPACK_PACKAGE_DESCRIPTION_FILE "${CMAKE_CURRENT_SOURCE_DIR}/README")
+SET(CPACK_PACKAGE_DESCRIPTION_FILE "${CMAKE_CURRENT_SOURCE_DIR}/README.md")
 SET(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_CURRENT_SOURCE_DIR}/COPYRIGHT")
 SET(CPACK_PACKAGE_VERSION_MAJOR ${AMANZI_VERSION_MAJOR})
 SET(CPACK_PACKAGE_VERSION_MINOR ${AMANZI_VERSION_MINOR})

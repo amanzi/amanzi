@@ -10,7 +10,6 @@
 //! The interface for a Process Kernel, an equation or system of equations.
 
 /*!  
-
 A process kernel represents a single or system of partial/ordinary
 differential equation(s) or conservation law(s), and is used as the
 fundamental unit for coupling strategies.
@@ -56,8 +55,7 @@ Example:
        ...
     </ParameterList>
   </ParameterList>
-
- */
+*/
 
 
 /*

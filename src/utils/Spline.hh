@@ -18,9 +18,8 @@ namespace Amanzi {
 namespace Utils {
 
 class Spline {
-
  public:
-  Spline() {}
+  Spline() {};
 
   Spline(double x1, double y1, double dy1,
          double x2, double y2, double dy2) {
@@ -36,22 +35,18 @@ class Spline {
   double Derivative(double x);
 
  private:
-
   double T(double x);
 
   double x1_, x2_, y1_, y2_, dy1_, dy2_;
-
 };
 
 
 inline
-double
-Spline::T(double x) {
+double Spline::T(double x) {
   return (x - x1_) / (x2_ - x1_);
 }
 
-} // namespace Utils
-} // namespace Amanzi
-
+}  // namespace Utils
+}  // namespace Amanzi
 
 #endif

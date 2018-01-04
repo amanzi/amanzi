@@ -1,11 +1,61 @@
---- ./ascem-io-2.2/src/parallelIOwrite.c	2012-08-29 13:57:16.000000000 -0600
-+++ ./ascem-io-2.2-patch/src/parallelIOwrite.c	2016-02-07 22:10:24.630236863 -0700
+diff -ruNbB ascem-io-2.2/CMakeLists.txt ascemio-2.2-source/CMakeLists.txt
+--- ascem-io-2.2/CMakeLists.txt	1969-12-31 17:00:00.000000000 -0700
++++ ascemio-2.2-source/CMakeLists.txt	2017-11-17 15:44:59.094905427 -0700
+@@ -0,0 +1,45 @@
++# Minimum CMake version.
++cmake_minimum_required (VERSION 2.8.12)
++set(CMAKE_BUILD_TYPE Release)
++
++project(ASCEMIO)
++
++# Options for building ASCEMIO
++option(CMAKE_INSTALL_PREFIX "Sets installation prefix [/usr/local].")
++option(BUILD_SHARED_LIBS "Builds shared libraries [ON]." ON)
++
++# Make sure compilers are set. This must be done before enabling languages.
++if (NOT CMAKE_C_COMPILER)
++  message(FATAL_ERROR "C compiler is not set")
++endif()
++enable_language(C)
++
++message(STATUS "C compiler is ${CMAKE_C_COMPILER} (${CMAKE_C_COMPILER_ID})")
++
++# Include the binary directory in the header file search path,
++# since it's where we place generated files.
++include_directories("${PROJECT_SOURCE_DIR}")
++
++# Now that we have gathered all tech information, we create a library
++set(ASCEMIO_SRC "${ASCEMIO_SOURCE_DIR}/src/ascemio_util.c"
++                "${ASCEMIO_SOURCE_DIR}/src/parallelIO.c"
++                "${ASCEMIO_SOURCE_DIR}/src/parallelIOread.c"
++                "${ASCEMIO_SOURCE_DIR}/src/parallelIOwrite.c")
++
++# install library
++set(ASCEMIO_LIB "ascemio")
++
++include_directories(${ASCEMIO_SOURCE_DIR}/src)
++include_directories(${CMAKE_INSTALL_PREFIX}/include)
++add_library(${ASCEMIO_LIB} ${ASCEMIO_SRC})
++target_link_libraries(${ASCEMIO_LIB} "hdf5 -L${CMAKE_INSTALL_PREFIX}/lib")
++install(TARGETS ${ASCEMIO_LIB} DESTINATION ${CMAKE_INSTALL_PREFIX}/lib)
++install(FILES 
++        ${ASCEMIO_SOURCE_DIR}/src/ascemio_util.h
++        ${ASCEMIO_SOURCE_DIR}/src/parallelIO.h
++        ${ASCEMIO_SOURCE_DIR}/src/parallelIOf.h
++        ${ASCEMIO_SOURCE_DIR}/src/piof.h
++        DESTINATION ${CMAKE_INSTALL_PREFIX}/include)
++
++
++
+diff -ruNbB ascem-io-2.2/src/parallelIOwrite.c ascemio-2.2-source/src/parallelIOwrite.c
+--- ascem-io-2.2/src/parallelIOwrite.c	2012-08-29 13:57:16.000000000 -0600
++++ ascemio-2.2-source/src/parallelIOwrite.c	2017-11-17 15:45:09.238453627 -0700
 @@ -841,7 +841,7 @@
  		PRINT_MSG((ASCEMIO_VERBOSE, "Maximum string length: %d ", maxstr_len));
  
  		currfile = myIOgroup->file[fhandle];
 -		buffer = (char *) malloc( nstrings * maxstr_len * sizeof(char));
-+		buffer = (char *) malloc( nstrings * maxstr_len * sizeof(char) + 1);
++                buffer = (char *) malloc( nstrings * maxstr_len * sizeof(char) + 1);
  		pbuffer = buffer;
  
  		for (i=0; i < nstrings; i++)

@@ -14,6 +14,8 @@
 #include "State.hh"
 
 #include "Vec.hh"
+#include "Data_Helpers.hh"
+
 
 TEST(STATE_CREATION) {
   using namespace Amanzi;
@@ -124,5 +126,4 @@ TEST(STATE_HETEROGENEOUS_DATA) {
   CHECK_EQUAL(3.3, s.Get<double>("my_double", "prev"));
   
 }  
-  
-  
+

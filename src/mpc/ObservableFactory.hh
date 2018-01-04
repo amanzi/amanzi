@@ -1,13 +1,15 @@
 /* -*-  mode: c++; indent-tabs-mode: nil -*- */
 /*
-  Nonmember function for creating regions.
+  Multi-Process Coordinator
 
   Copyright 2010-2013 held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
   The terms of use and "as is" disclaimer for this license are 
   provided in the top-level COPYRIGHT file.
 
-  Authors: Daniil Svyatskiy(dasvyat@lanl.gov
+  Author: Daniil Svyatskiy(dasvyat@lanl.gov)
+
+  A factory for creating observations.
 */
 
 #ifndef AMANZI_OBSERVABLE_FACTORY_HH_

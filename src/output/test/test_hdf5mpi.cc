@@ -1,7 +1,7 @@
 #define MSTK_HAVE_MPI 1
 
 #include "UnitTest++.h"
-#include "../hdf5mpi_mesh.hh"
+#include "HDF5_MPI.hh"
 #include "Mesh_MSTK.hh"
 TEST(HDF5_MPI) {
   

@@ -87,8 +87,8 @@
         <solid_phase>
             <minerals>
                 <mineral rate_constant="-13.345">Quartz</mineral>
-                <mineral alpha="0.777" prefactor_species="H+" rate_constant="-12.967">Kaolinite</mineral>
                 <mineral rate_constant="-7.94">Goethite</mineral>
+                <mineral alpha="0.777" prefactor_species="H+" rate_constant="-12.967">Kaolinite</mineral>
                 <mineral rate_constant="2.0">Schoepite</mineral>
                 <mineral rate_constant="-11.5">Gibbsite</mineral>
                 <mineral rate_constant="-8.0">Jurbanite</mineral>

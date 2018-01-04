@@ -13,14 +13,6 @@ add_subdirectory(functions)
 # Geometry
 add_subdirectory(geometry)
 
-# Grid-option agnostic chemistry and interfaces
-add_subdirectory(common/chemistry)
-
-if (ENABLE_ALQUIMIA)
-  # Use Alquimia as a chemistry engine.
-  add_definitions(-DALQUIMIA_ENABLED)
-  add_subdirectory(common/alquimia)
-endif()
 
 if (ENABLE_Unstructured)
   # Mesh
@@ -54,7 +46,6 @@ if (ENABLE_Unstructured)
   add_subdirectory(state)
 endif()
 
-add_subdirectory(common/interface_platform)
 
 if (ENABLE_Unstructured)  
   add_subdirectory(pks)

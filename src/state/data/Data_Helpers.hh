@@ -14,8 +14,9 @@ Helpers that know how to read/write/etc data.
 
 #include "Teuchos_ParameterList.hpp"
 
-#include "CompositeVector.hh"
 #include "errors.hh"
+
+#include "CompositeVector.hh"
 
 #include "FunctionFactory.hh"
 
@@ -166,6 +167,7 @@ bool
 Initialize<CompositeVector>(Teuchos::ParameterList& plist, CompositeVector& t,
                             const Key& fieldname,
                             const std::vector<std::string>& subfieldnames);
+
 
 
 

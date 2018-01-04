@@ -14,6 +14,7 @@ initialized (as independent variables are owned by state, not by any PK).
 ------------------------------------------------------------------------- */
 
 #include <iostream>
+#include <map>
 #include <ostream>
 
 #include "Teuchos_XMLParameterListHelpers.hpp"
@@ -210,6 +211,7 @@ Teuchos::RCP<Evaluator> State::GetEvaluator(const Key& key, const Key& tag) {
     throw(message);
   }
 };
+
 
 Teuchos::RCP<const Evaluator> State::GetEvaluator(const Key& key,
         const Key& tag) const {

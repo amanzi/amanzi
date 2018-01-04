@@ -20,22 +20,24 @@
 #include "Mesh.hh"
 #include "Point.hh"
 
-
 namespace Amanzi {
 namespace Operators {
 
 class Reconstruction {  
  public:
   Reconstruction() {};
-  Reconstruction(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh) : mesh_(mesh), field_(Teuchos::null), component_(0) {};
+  Reconstruction(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh) :
+      mesh_(mesh), field_(Teuchos::null), component_(0) {};
   virtual ~Reconstruction() = default;
 
   // main members
-  virtual void Init(Teuchos::RCP<const Epetra_MultiVector> field, Teuchos::ParameterList& plist) { field_ = field; }
-  virtual void Init(Teuchos::RCP<const Epetra_MultiVector> field, Teuchos::ParameterList& plist, int component) { field_ = field; component_ = component;}
+  virtual void Init(Teuchos::RCP<const Epetra_MultiVector> field,
+                    Teuchos::ParameterList& plist) { field_ = field; }
+  virtual void Init(Teuchos::RCP<const Epetra_MultiVector> field,
+                    Teuchos::ParameterList& plist, int component) { field_ = field; component_ = component;}
   virtual void Compute() = 0;
 
-  // apply internal or extrnal limiter.
+  // apply either internal or external limiter
   virtual void ApplyLimiter(const std::vector<int>& bc_model, const std::vector<double>& bc_values) {};
   virtual void ApplyLimiter(Teuchos::RCP<Epetra_MultiVector> limiter) {};
 

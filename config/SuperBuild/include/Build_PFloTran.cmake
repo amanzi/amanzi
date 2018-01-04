@@ -4,7 +4,6 @@
 # Build TPL:  PFLOTRAN 
 # This builds the chemistry component of PFlotran: pflotranchem.
 #   
-
 # --- Define all the directories and common external project flags
 define_external_project_args(PFLOTRAN
                              TARGET pflotran
@@ -26,7 +25,7 @@ list(APPEND PFLOTRAN_PACKAGE_DEPENDS ${PETSc_BUILD_TARGET})
 set(PFLOTRAN_CMAKE_CACHE_ARGS
       "-DCMAKE_BUILD_TYPE:STRING=${CMAKE_BUILD_TYPE}"
       "-DCMAKE_INSTALL_PREFIX:STRING=<INSTALL_DIR>"
-      "-DBUILD_SHARED_LIBS:BOOL=FALSE"
+      "-DBUILD_SHARED_LIBS:BOOL=${BUILD_SHARED_LIBS}"
       "-DCMAKE_Fortran_FLAGS:STRING=-fPIC -w -Wno-unused-variable -ffree-line-length-0 -O3")
 
 # --- Define the build command
@@ -59,7 +58,6 @@ configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/pflotran-install-step.cmake.in
                @ONLY)
 set(PFLOTRAN_INSTALL_COMMAND ${CMAKE_COMMAND} -P ${PFLOTRAN_cmake_install})
 
-
 # --- Add external project build and tie to the PFLOTRAN build target
 ExternalProject_Add(${PFLOTRAN_BUILD_TARGET}
                     DEPENDS   ${PFLOTRAN_PACKAGE_DEPENDS}         # Package dependency target
@@ -74,7 +72,7 @@ ExternalProject_Add(${PFLOTRAN_BUILD_TARGET}
                     SOURCE_DIR    ${PFLOTRAN_source_dir}          # Source directory
                     CONFIGURE_COMMAND ""
                     CMAKE_ARGS    ${PFLOTRAN_CMAKE_CACHE_ARGS}    # CMAKE_CACHE_ARGS or CMAKE_ARGS => CMake configure
-                                  ${Amanzi_CMAKE_C_COMPILER_ARGS}  # Ensure uniform build
+                                  -DCMAKE_C_FLAGS:STRING=${Amanzi_COMMON_CFLAGS}  # Ensure uniform build
                                   -DCMAKE_C_COMPILER:FILEPATH=${CMAKE_C_COMPILER}
                                   -DCMAKE_Fortran_COMPILER:FILEPATH=${CMAKE_Fortran_COMPILER}
                     # -- Build

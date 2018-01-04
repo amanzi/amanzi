@@ -27,16 +27,6 @@
 #include "OperatorUtils.hh"
 #include "TreeOperator.hh"
 
-/* ******************************************************************
-TreeOperators are the block analogue of Operators -- they provide a linear
-operator acting on a TreeVectorSpace.  They are currently assumed R^n -> R^n,
-and furthermore each block is currently assumed to be from R^m --> R^m for n =
-i*m where i is an integer (every block's space is the same).
-
-Future work will relax this constraint, but currently this can be used for
-things like multi-phased flow, thermal+flow, etc.
-****************************************************************** */ 
-
 namespace Amanzi {
 namespace Operators {
 
@@ -44,7 +34,8 @@ namespace Operators {
 * Constructor from a tree vector.
 ****************************************************************** */
 TreeOperator::TreeOperator(Teuchos::RCP<const TreeVectorSpace> tvs) :
-    tvs_(tvs)
+    tvs_(tvs),
+    block_diagonal_(false)
 {
   // make sure we have the right kind of TreeVectorSpace -- it should be
   // one parent node with all leaf node children.
@@ -58,14 +49,16 @@ TreeOperator::TreeOperator(Teuchos::RCP<const TreeVectorSpace> tvs) :
   // resize the blocks
   int n_blocks = tvs_->size();
   blocks_.resize(n_blocks, Teuchos::Array<Teuchos::RCP<const Operator> >(n_blocks, Teuchos::null));
+  transpose_.resize(n_blocks, Teuchos::Array<bool>(n_blocks, false));
 }
 
 
 /* ******************************************************************
 * Populate block matrix with pointers to operators.
 ****************************************************************** */
-void TreeOperator::SetOperatorBlock(int i, int j, const Teuchos::RCP<const Operator>& op) {
+void TreeOperator::SetOperatorBlock(int i, int j, const Teuchos::RCP<const Operator>& op, bool transpose) {
   blocks_[i][j] = op;
+  transpose_[i][j] = transpose;
 }
 
 
@@ -76,15 +69,17 @@ int TreeOperator::Apply(const TreeVector& X, TreeVector& Y) const
 {
   Y.PutScalar(0.0);
 
-  int ierr(0);
-  int n=0;
+  int ierr(0), n(0);
   for (TreeVector::iterator yN_tv=Y.begin(); yN_tv!=Y.end(); ++yN_tv, ++n) {
     CompositeVector& yN = *(*yN_tv)->Data();
-    int m = 0;
-    for (TreeVector::const_iterator xM_tv=X.begin();
-         xM_tv!=X.end(); ++xM_tv, ++m) {
+    int m(0);
+    for (TreeVector::const_iterator xM_tv=X.begin(); xM_tv!=X.end(); ++xM_tv, ++m) {
       if (blocks_[n][m] != Teuchos::null) {
-        ierr |= blocks_[n][m]->Apply(*(*xM_tv)->Data(), yN, 1.0);
+        if (transpose_[n][m]) {
+          ierr |= blocks_[n][m]->ApplyTranspose(*(*xM_tv)->Data(), yN, 1.0);
+        } else {
+          ierr |= blocks_[n][m]->Apply(*(*xM_tv)->Data(), yN, 1.0);
+        }
       }
     }
   }
@@ -100,12 +95,12 @@ int TreeOperator::ApplyAssembled(const TreeVector& X, TreeVector& Y) const
   Y.PutScalar(0.0);
   Epetra_Vector Xcopy(A_->RowMap());
   Epetra_Vector Ycopy(A_->RowMap());
-  int ierr = CopyTreeVectorToSuperVector(*smap_, X, Xcopy);
-  int returned_code(0);
 
+  int ierr = CopyTreeVectorToSuperVector(*smap_, X, Xcopy);
   ierr |= A_->Apply(Xcopy, Ycopy);
   ierr |= CopySuperVectorToTreeVector(*smap_, Ycopy, Y);
   ASSERT(!ierr);
+
   return ierr;
 }
 
@@ -115,15 +110,25 @@ int TreeOperator::ApplyAssembled(const TreeVector& X, TreeVector& Y) const
 ****************************************************************** */
 int TreeOperator::ApplyInverse(const TreeVector& X, TreeVector& Y) const
 {
-  Epetra_Vector Xcopy(A_->RowMap());
-  Epetra_Vector Ycopy(A_->RowMap());
-  int ierr = CopyTreeVectorToSuperVector(*smap_, X, Xcopy);
-  int returned_code(0);
+  int code(0);
+  if (!block_diagonal_) {
+    Epetra_Vector Xcopy(A_->RowMap());
+    Epetra_Vector Ycopy(A_->RowMap());
 
-  returned_code = preconditioner_->ApplyInverse(Xcopy, Ycopy);
-  ierr |= CopySuperVectorToTreeVector(*smap_, Ycopy, Y);
-  ASSERT(!ierr);
-  return returned_code;
+    int ierr = CopyTreeVectorToSuperVector(*smap_, X, Xcopy);
+    code = preconditioner_->ApplyInverse(Xcopy, Ycopy);
+    ierr |= CopySuperVectorToTreeVector(*smap_, Ycopy, Y);
+
+    ASSERT(!ierr);
+  } else {
+    for (int n = 0; n < tvs_->size(); ++n) {
+      const CompositeVector& Xn = *X.SubVector(n)->Data();
+      CompositeVector& Yn = *Y.SubVector(n)->Data();
+      code |= blocks_[n][n]->ApplyInverse(Xn, Yn);
+    }
+  }
+
+  return code;
 }
 
     
@@ -231,6 +236,15 @@ void TreeOperator::InitPreconditioner(Teuchos::ParameterList& plist)
   AmanziPreconditioners::PreconditionerFactory factory;
   preconditioner_ = factory.Create(plist);
   preconditioner_->Update(A_);
+}
+
+
+/* ******************************************************************
+* Init block-diagonal preconditioner
+****************************************************************** */
+void TreeOperator::InitBlockDiagonalPreconditioner()
+{
+  block_diagonal_ = true;
 }
 
 }  // namespace Operators

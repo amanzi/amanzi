@@ -10,8 +10,8 @@
            Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
-#ifndef   AMANZI_GEOMETRY_POINT_HH_
-#define   AMANZI_GEOMETRY_POINT_HH_
+#ifndef AMANZI_GEOMETRY_POINT_HH_
+#define AMANZI_GEOMETRY_POINT_HH_
 
 #include <iostream>
 #include <vector>
@@ -50,15 +50,6 @@ class Point {
   ~Point() {};
 
   // main members
-
-  // Not necessary - the constructor and set functions do the
-  // equivalent things
-  //
-  //  void init(const int N) {
-  //    d = N;
-  //    xyz[0] = xyz[1] = xyz[2] = 0.0;
-  //  }
-
   void set(const double& val) {
     ASSERT(this);
     ASSERT(d > 0);
@@ -169,13 +160,23 @@ class Point {
  private:
   int d;
   double xyz[3];
-};  // end class Point
+};  // class Point
 
-/* miscellaneous */
+
+// Miscellaneous non-member functions
 inline double L22(const Point& p) { return p*p; }
 inline double norm(const Point& p) { return sqrt(p*p); }
 
-typedef std::vector<Point> Point_List;
+inline bool operator==(const Point& p, const Point& q) {
+  if (p.dim() != q.dim()) return false;
+  for (int i = 0; i < p.dim(); ++i) 
+    if (p[i] != q[i]) return false;
+  return true;
+}
+
+inline bool operator!=(const Point& p, const Point& q) {
+  return !(p == q);
+}
 
 }  // namespace AmanziGeometry
 }  // namespace Amanzi

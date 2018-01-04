@@ -1,15 +1,26 @@
 /* -*-  mode: c++; indent-tabs-mode: nil -*- */
+/*
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
+*/
 
-// Definitions for geometry, regions.
-//
-// Author: Ethan Coon
-//
+/* 
+  Author: Ethan Coon
+
+  Definitions for geometry, regions.
+*/
 
 #ifndef AMANZI_GEOMETRY_DEFS_HH_
 #define AMANZI_GEOMETRY_DEFS_HH_
 
+#include "Point.hh"
+
 namespace Amanzi {
 namespace AmanziGeometry {  
+
+typedef std::vector<Point> Point_List;
 
 typedef int Entity_ID; 
 typedef std::vector<Entity_ID> Entity_ID_List;
@@ -55,9 +66,8 @@ const double TOL = 1.0e-08;
 // with IDs of LabeledSet regions
 const unsigned int REGION_ID_OFFSET = 59049;  
 
-
-} // namespace
-} // namespace
+}  // namespace AmanziGeometry
+}  // namespace Amanzi
 
 
 

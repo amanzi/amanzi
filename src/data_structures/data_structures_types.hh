@@ -1,12 +1,12 @@
 /* -*-  mode: c++; indent-tabs-mode: nil -*- */
 /* -------------------------------------------------------------------------
-   ATS
+  ATS
 
-   License: see $ATS_DIR/COPYRIGHT
-   Author: Ethan Coon
+  License: see $ATS_DIR/COPYRIGHT
+  Author: Ethan Coon
 
-   Just a few handy typedefs.
-   ------------------------------------------------------------------------- */
+  Just a few handy typedefs.
+------------------------------------------------------------------------- */
 
 #ifndef DATA_STRUCTURE_TYPES_HH_
 #define DATA_STRUCTURE_TYPES_HH_
@@ -19,6 +19,6 @@ typedef enum { INIT_MODE_NONE,
                INIT_MODE_COPY,
                INIT_MODE_NOALLOC} InitMode;
 
-} // namespace
+} // namespace Amanzi
 
 #endif

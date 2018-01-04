@@ -36,7 +36,13 @@ static inline void write_mesh_to_file_(const AmanziMesh::Mesh &mesh, std::string
 
   gmvwrite_cell_header(&num_cells);
 
-  unsigned int *xh = new unsigned int[8];
+  int max_nodes = mesh.cell_get_max_nodes();
+  unsigned int *xh = new unsigned int[max_nodes];
+
+  int max_faces = mesh.cell_get_max_faces();
+  int *nverts = new int[max_faces];
+  unsigned int *yh = new unsigned int[72];
+
   for (int i=0; i<num_cells; i++) {
     AmanziMesh::Entity_ID_List cnodes;
     mesh.cell_get_nodes(i, &cnodes);
@@ -45,8 +51,22 @@ static inline void write_mesh_to_file_(const AmanziMesh::Mesh &mesh, std::string
     for (int j=0; j<nnodes; j++) xh[j] = cnodes[j] + 1;
 
     if (dim == 3 && dim_cell == 3) {
-      ASSERT(nnodes == 8);
-      gmvwrite_cell_type((char*) "phex8", 8, xh);
+      if (nnodes == 8) {
+        gmvwrite_cell_type((char*) "phex8", 8, xh);
+      } else {
+        AmanziMesh::Entity_ID_List cfaces, fnodes;
+        std::vector<int> fdirs;
+
+        mesh.cell_get_faces_and_dirs(i, &cfaces, &fdirs);
+        int nfaces = cfaces.size();
+
+        for (int j=0, n=0; j<nfaces; j++) {
+          mesh.face_get_nodes(cfaces[j], &fnodes);
+          nverts[j] = fnodes.size();
+          for (int k=0; k<nverts[j]; k++) yh[n++] = fnodes[k] + 1;
+        }
+        gmvwrite_general_cell_type((char*) "general", nverts, nfaces, yh);
+      }
     } else if (dim == 3 && dim_cell == 2) {
       gmvwrite_cell_type((char*) "general 1", nnodes, xh);
     } else if (dim == 2) {
@@ -58,6 +78,8 @@ static inline void write_mesh_to_file_(const AmanziMesh::Mesh &mesh, std::string
   }
 
   delete [] xh;
+  delete [] nverts;
+  delete [] yh;
 }
 
 

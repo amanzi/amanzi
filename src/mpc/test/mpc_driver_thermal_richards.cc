@@ -58,7 +58,6 @@ using namespace Amanzi::AmanziGeometry;
   // create dummy observation data object
   Amanzi::ObservationData obs_data;    
   
-
   Amanzi::CycleDriver cycle_driver(plist, mesh, &comm, obs_data);
   cycle_driver.Go();
 }

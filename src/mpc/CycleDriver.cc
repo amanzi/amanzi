@@ -118,10 +118,13 @@ void CycleDriver::Init_PK(int time_pr_id) {
 
   Teuchos::RCP<Teuchos::ParameterList> time_periods_list = Teuchos::sublist(coordinator_list_, "time periods", true);
 
-  std::ostringstream ss; ss << time_pr_id;
-  std::string tp_list_name = "TP "+ ss.str();
+  std::ostringstream ss;
+  ss << time_pr_id;
+
+  std::string tp_list_name = "TP " + ss.str();
   Teuchos::RCP<Teuchos::ParameterList> tp_list =Teuchos::sublist( time_periods_list, tp_list_name.data(), true);
   Teuchos::ParameterList pk_tree_list = tp_list->sublist("PK tree");
+
   if (pk_tree_list.numParams() != 1) {
     Errors::Message message("CycleDriver: PK tree list should contain exactly one root node list");
     Exceptions::amanzi_throw(message);
@@ -148,7 +151,8 @@ void CycleDriver::Setup() {
   if (glist_->isSublist("observation data")) {
     Teuchos::RCP<Teuchos::ParameterList> obs_list = Teuchos::sublist(glist_, "observation data");
     Teuchos::RCP<Teuchos::ParameterList> units_list = Teuchos::sublist(glist_, "units");
-    observations_ = Teuchos::rcp(new Amanzi::FlexibleObservations(coordinator_list_, obs_list, units_list, observations_data_, mesh_));
+    observations_ = Teuchos::rcp(new Amanzi::FlexibleObservations(
+        coordinator_list_, obs_list, units_list, observations_data_, mesh_));
 
     if (coordinator_list_->isParameter("component names")) {
       std::vector<std::string> names = coordinator_list_->get<Teuchos::Array<std::string> >("component names").toVector();
@@ -527,8 +531,9 @@ double CycleDriver::get_dt(bool after_failure) {
   // cap the max step size
   if (dt > max_dt_) {
     dt = max_dt_;   
+    Utils::Units units("molar");
     Teuchos::OSTab tab = vo_->getOSTab();
-    *vo_->os() << "Resetting time step to the maximum allowed of " << dt << " s.\n";
+    *vo_->os() << "Resetting time step to the maximum allowed of " << units.OutputTime(dt) << "\n";
   }
 
   return dt;

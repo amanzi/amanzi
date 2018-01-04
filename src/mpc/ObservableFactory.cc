@@ -1,14 +1,16 @@
 /* -*-  mode: c++; indent-tabs-mode: nil -*- */
 /*
-  Nonmember function for creating regions.
+  Multi-Process Coordinator
 
   Copyright 2010-2013 held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
   The terms of use and "as is" disclaimer for this license are 
   provided in the top-level COPYRIGHT file.
 
-  Authors: Rao Garimella
+  Authors: Daniil Svyatskiy(dasvyat@lanl.gov)
            Ethan Coon (ecoon@lanl.gov)
+
+  A factory for creating observations.
 */
 
 #include <iostream>
@@ -71,16 +73,16 @@ Teuchos::RCP<Observable> CreateObservable(Teuchos::ParameterList& coord_plist,
  
   if (obs_solute) {
 
-    if (reg_ptr->type()==AmanziGeometry::LINE_SEGMENT) {
+    if (reg_ptr->type() == AmanziGeometry::LINE_SEGMENT) {
       observe = Teuchos::rcp(new ObservableLineSegmentSolute(var, region, func, observable_plist, units_plist, mesh));
-    }else{
+    } else{
       observe = Teuchos::rcp(new ObservableSolute(var, region, func, observable_plist, units_plist, mesh));
     }
     Teuchos::rcp_dynamic_cast<ObservableSolute>(observe)->RegisterComponentNames(comp_names.toVector(), num_liquid, tcc_index);
     
   } else if (obs_aqueous) {
 
-    if (reg_ptr->type()==AmanziGeometry::LINE_SEGMENT) {
+    if (reg_ptr->type() == AmanziGeometry::LINE_SEGMENT) {
       observe = Teuchos::rcp(new ObservableLineSegmentAqueous(var, region, func, observable_plist, units_plist, mesh));
     } else {
       observe = Teuchos::rcp(new ObservableAqueous(var, region, func, observable_plist, units_plist, mesh));

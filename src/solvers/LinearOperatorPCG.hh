@@ -36,7 +36,7 @@ class LinearOperatorPCG : public LinearOperator<Matrix, Vector, VectorSpace> {
       overflow_tol_(3.0e+50),  // mass of the Universe (J.Hopkins)
       max_itrs_(100),
       criteria_(LIN_SOLVER_RELATIVE_RHS),
-      initialized_(false) {}
+      initialized_(false) {};
 
   void Init(Teuchos::ParameterList& plist);
   void Init() { LinearOperator<Matrix,Vector,VectorSpace>::Init(); }

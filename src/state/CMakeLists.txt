@@ -20,6 +20,8 @@ project(STATE)
 
 # Amanzi include directories
 include_directories(${ATK_SOURCE_DIR})
+include_directories(${OPERATORS_SOURCE_DIR})
+include_directories(${WHETSTONE_SOURCE_DIR})
 include_directories(${DATA_STRUCTURES_SOURCE_DIR})
 include_directories(${DBC_SOURCE_DIR})
 include_directories(${DBG_SOURCE_DIR})
@@ -171,7 +173,7 @@ if (BUILD_TESTS)
     add_amanzi_test(state_as_container state_as_container
       KIND unit
       SOURCE test/Main.cc test/state_container.cc
-      LINK_LIBS atk mesh_factory mesh data_structures mesh_functions state ${state_tpl_list} ${UnitTest_LIBRARIES})
+      LINK_LIBS atk mesh_factory mesh data_structures mesh_functions operators state ${state_tpl_list} ${UnitTest_LIBRARIES})
 
     add_amanzi_test(state_vis state_vis
       KIND int

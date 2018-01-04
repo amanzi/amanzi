@@ -23,20 +23,18 @@
 
 // Amanzi
 #include "GMVMesh.hh"
-#include "LinearOperatorFactory.hh"
+#include "LinearOperatorPCG.hh"
 #include "MeshFactory.hh"
-#include "Mesh_MSTK.hh"
-#include "mfd3d_diffusion.hh"
 #include "Tensor.hh"
 
 // Amanzi::Operators
+#include "OperatorDefs.hh"
+#include "PDE_Accumulation.hh"
+#include "PDE_Electromagnetics.hh"
+
 #include "AnalyticElectromagnetics01.hh"
 #include "AnalyticElectromagnetics02.hh"
 #include "AnalyticElectromagnetics03.hh"
-
-#include "OperatorAccumulation.hh"
-#include "OperatorDefs.hh"
-#include "OperatorElectromagnetics.hh"
 #include "Verification.hh"
 
 /* *****************************************************************
@@ -64,12 +62,8 @@ void CurlCurl(double c_t, double tolerance, bool initial_guess) {
   ParameterList region_list = plist.get<Teuchos::ParameterList>("regions");
   Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(3, region_list, &comm));
 
-  FrameworkPreference pref;
-  pref.clear();
-  pref.push_back(MSTK);
-
   MeshFactory meshfactory(&comm);
-  meshfactory.preference(pref);
+  meshfactory.preference(FrameworkPreference({MSTK}));
 
   bool request_faces(true), request_edges(true);
   // RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 3, 3, 3, gm, request_faces, request_edges);
@@ -94,9 +88,9 @@ void CurlCurl(double c_t, double tolerance, bool initial_guess) {
   int nedges_wghost = mesh->num_entities(AmanziMesh::EDGE, AmanziMesh::USED);
   int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
 
-  std::vector<int> bc_model(nedges_wghost, OPERATOR_BC_NONE);
-  std::vector<double> bc_value(nedges_wghost);
-  std::vector<double> bc_mixed;
+  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(mesh, AmanziMesh::EDGE, SCHEMA_DOFS_SCALAR));
+  std::vector<int>& bc_model = bc->bc_model();
+  std::vector<double>& bc_value = bc->bc_value();
 
   std::vector<int> edirs;
   AmanziMesh::Entity_ID_List cells, edges;
@@ -121,12 +115,11 @@ void CurlCurl(double c_t, double tolerance, bool initial_guess) {
       }
     }
   }
-  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(OPERATOR_BC_TYPE_EDGE, bc_model, bc_value, bc_mixed));
 
   // create electromagnetics operator
   Teuchos::ParameterList olist = plist.get<Teuchos::ParameterList>("PK operator")
                                       .get<Teuchos::ParameterList>("electromagnetics operator");
-  Teuchos::RCP<OperatorElectromagnetics> op_curlcurl = Teuchos::rcp(new OperatorElectromagnetics(olist, mesh));
+  Teuchos::RCP<PDE_Electromagnetics> op_curlcurl = Teuchos::rcp(new PDE_Electromagnetics(olist, mesh));
   op_curlcurl->SetBCs(bc, bc);
   const CompositeVectorSpace& cvs = op_curlcurl->global_operator()->DomainMap();
 
@@ -174,11 +167,10 @@ void CurlCurl(double c_t, double tolerance, bool initial_guess) {
   phi.PutScalar(c_t);
 
   Teuchos::RCP<Operator> global_op = op_curlcurl->global_operator();
-  Teuchos::RCP<OperatorAccumulation> op_acc =
-      Teuchos::rcp(new OperatorAccumulation(AmanziMesh::EDGE, global_op));
+  Teuchos::RCP<PDE_Accumulation> op_acc = Teuchos::rcp(new PDE_Accumulation(AmanziMesh::EDGE, global_op));
 
   double dT = 1.0;
-  op_acc->AddAccumulationTerm(solution, phi, dT, "edge");
+  op_acc->AddAccumulationDelta(solution, phi, phi, dT, "edge");
 
   // BCs, sources, and assemble
   op_curlcurl->ApplyBCs(true, true);
@@ -190,26 +182,26 @@ void CurlCurl(double c_t, double tolerance, bool initial_guess) {
   global_op->InitPreconditioner("Hypre AMG", slist);
 
   // Test SPD properties of the matrix and preconditioner.
-  Verification ver(global_op);
+  VerificationCV ver(global_op);
   ver.CheckMatrixSPD(true, true);
   ver.CheckPreconditionerSPD(true, true);
 
   // Solve the problem.
-  ParameterList lop_list = plist.get<Teuchos::ParameterList>("solvers");
-  AmanziSolvers::LinearOperatorFactory<Operator, CompositeVector, CompositeVectorSpace> factory;
-  Teuchos::RCP<AmanziSolvers::LinearOperator<Operator, CompositeVector, CompositeVectorSpace> >
-     solver = factory.Create("default", lop_list, global_op);
+  ParameterList lop_list = plist.sublist("solvers").sublist("default").sublist("pcg parameters");
+  AmanziSolvers::LinearOperatorPCG<Operator, CompositeVector, CompositeVectorSpace>
+      solver(global_op, global_op);
+  solver.Init(lop_list);
 
   CompositeVector& rhs = *global_op->rhs();
-  int ierr = solver->ApplyInverse(rhs, solution);
+  int ierr = solver.ApplyInverse(rhs, solution);
 
-  int num_itrs = solver->num_itrs();
+  int num_itrs = solver.num_itrs();
   CHECK(num_itrs < 100);
 
   if (MyPID == 0) {
-    std::cout << "electric solver (" << solver->name() 
-              << "): ||r||=" << solver->residual() << " itr=" << solver->num_itrs()
-              << " code=" << solver->returned_code() << std::endl;
+    std::cout << "electric solver (pcg): ||r||=" << solver.residual() 
+              << " itr=" << solver.num_itrs()
+              << " code=" << solver.returned_code() << std::endl;
   }
 
   // compute electric error
@@ -218,10 +210,9 @@ void CurlCurl(double c_t, double tolerance, bool initial_guess) {
   ana.ComputeEdgeError(E, time, enorm, el2_err, einf_err);
 
   if (MyPID == 0) {
-    el2_err /= enorm; 
     el2_err /= enorm;
     printf("L2(e)=%10.7f  Inf(e)=%9.6f  itr=%3d  size=%d\n", el2_err, einf_err,
-            solver->num_itrs(), rhs.GlobalLength());
+            solver.num_itrs(), rhs.GlobalLength());
 
     CHECK(el2_err < tolerance);
   }
@@ -233,7 +224,7 @@ TEST(CURL_CURL_LINEAR) {
 }
 
 TEST(CURL_CURL_NONLINEAR) {
-  CurlCurl<AnalyticElectromagnetics02>(1.0e-3, 2e-2, false);
+  CurlCurl<AnalyticElectromagnetics02>(1.0e-3, 2e-1, false);
 }
 
 TEST(CURL_CURL_TIME_DEPENDENT) {

@@ -9,7 +9,7 @@
 # ############################################################################ #
 
 # ---------------------------------------------------------------------------- #
-# Initialize
+# Initialization
 # ---------------------------------------------------------------------------- #
 
 # Logic parameters
@@ -24,9 +24,9 @@ system_arch=`uname -m`
 print_exit=${FALSE}
 
 # Known compiler lists
-known_c_compilers="mpicc cc gcc icc"
-known_cxx_compilers="mpicxx mpiCC CC g++ icpc"
-known_fortran_compilers="mpif90 ftn gfortran ifort"
+known_c_compilers="gcc icc clang"
+known_cxx_compilers="g++ icpc clang++"
+known_fortran_compilers="gfortran ifort"
 
 # Directory information
 start_directory=$PWD
@@ -54,8 +54,8 @@ curl_binary=`which curl`
 # CMake
 cmake_binary=`which cmake`
 ctest_binary=`which ctest`
-cmake_version=2.8.8
-cmake_url=http://www.cmake.org/files/v2.8
+cmake_version=3.7.2
+cmake_url=https://cmake.org/files/v3.7
 cmake_archive_file=cmake-${cmake_version}.tar.gz
 
 # Build configuration
@@ -78,7 +78,6 @@ mpi_root_dir=
 
 # TPL (Third Party Libraries)
 
-
 # Spack
 Spack=$FALSE
 Spack_binary=`which spack`
@@ -88,6 +87,11 @@ build_Spack=$FALSE
 xsdk=$FALSE #default is to not use
 xsdk_root_dir=
 
+# Tools build parameters
+tools_build_dir=${dflt_build_prefix}/build/tools
+tools_download_dir=${tools_build_dir}/Downloads
+tools_install_prefix=${dflt_install_prefix}/install/tools
+
 # Point to a configuration file
 tpl_config_file=
 
@@ -95,6 +99,9 @@ tpl_config_file=
 tpl_build_dir=${dflt_build_prefix}/build/tpls
 tpl_download_dir=${tpl_build_dir}/Downloads
 tpl_install_prefix=${dflt_install_prefix}/install/tpls
+
+# only build the TPLs
+tpls_only=$FALSE
 
 # Color output display
 no_color=$FALSE
@@ -125,14 +132,14 @@ nersc_amanzi_opts=
 
 
 # ---------------------------------------------------------------------------- #
-#
-# Begin Functions
+# Functions: basic messages and exit functions
+# ---------------------------------------------------------------------------- #
 
-# Basic messages and exiting functions
 function exit_now()
 {
   exit $1
 }
+
 function status_message()
 {
 
@@ -142,8 +149,8 @@ function status_message()
   else
     echo -e "[`date`]\033[$GREEN $1\033[m"
   fi  
-
 }
+
 function error_message()
 {
   local RED='31m'
@@ -170,7 +177,10 @@ function fatal_message()
   exit_now 10
 }
 
-# Utilities
+
+# ---------------------------------------------------------------------------- #
+# Functions: utilities
+# ---------------------------------------------------------------------------- #
 
 function make_fullpath()
 {
@@ -215,10 +225,13 @@ function download_file()
      error_message "Failed to download $file from $url"
      exit_now $status
   fi
-
 }
 
-# Command line functions
+
+# ---------------------------------------------------------------------------- #
+# Functions: command line functions
+# ---------------------------------------------------------------------------- #
+
 function set_feature()
 {
   feature=$1
@@ -242,7 +255,6 @@ function parse_feature()
   if echo ${feature_opt} | grep "^--enable-" > /dev/null 2> /dev/null; then
     echo ${feature_opt} | sed "s/^--enable-//"
   fi
-    
 }
 
 function parse_option_with_equal()
@@ -253,7 +265,6 @@ function parse_option_with_equal()
   if echo $a | grep "^--${opt_name}=" > /dev/null 2> /dev/null; then
     echo $a | sed "s/^--${opt_name}=//"
   fi
-
 }
 
 function print_usage()
@@ -310,6 +321,8 @@ Value in brackets indicates default setting.
   Spack                   build TPLs using the Spack package manager when appropriate ['"${Spack}"']
   xsdk                    build TPLs available in xSDK first, then supplement with additional 
                           individual TPL builds ['"${xsdk}"']
+  tpls_only               only build the TPLs, do not build Amanzi itself
+
 Tool definitions:
 
   --with-c-compiler=FILE     FILE is the C compiler
@@ -327,8 +340,9 @@ Tool definitions:
   --with-git=FILE            FILE is the git binary ['"${git_binary}"']
   --with-curl=FILE           FILE is the CURL binary ['"${curl_binary}"']
 
-  --with-mpi=DIR             use MPI installed in DIR. Will search for MPI 
-                             compiler wrappers under this directory. ['"${mpi_root_dir}"']
+  --with-mpi=DIR             use MPI installed in DIR ['"${mpi_root_dir}"'].
+                             Will search for MPI compiler wrappers under this directory. It this
+                             option is missing, OpenMPI will be build using the provided compiler.
   --with-xsdk=DIR            use libraries already available in xSDK installation in lieu of
                              downloading and installing them individually. ['"${xsdk_root_dir}"']
 
@@ -353,6 +367,39 @@ Directory and file names:
 
   --tpl-download-dir=DIR         direct downloads of Amanzi TPLs to DIR
                                  ['"${tpl_download_dir}"']
+
+  --tools-install-prefix=DIR     install Amanzi tools in tree rooted at DIR
+                                 ['"${tools_install_prefix}"']. The list of tools includes
+                                 currently OpenMPI.
+  
+  --tools-build-dir=DIR          build Amanzi tools in DIR
+                                 ['"${tools_build_dir}"']
+
+  --tools-download-dir=DIR       direct downloads of Amanzi tools to DIR
+                                 ['"${tools_download_dir}"']
+
+
+
+Example with pre-existing MPI installation that builds dynamic libraries
+and executables for external packages (TPLs) and then for Amanzi:
+
+  ./bootstrap.sh --tpl-install-prefix=$HOME/TPLs-clang-0.94 
+                 --with-mpi=/opt/local 
+                 --parallel=8 
+                 --enable-shared
+                 --enable-alquimia --enable-pflotran --enable-crunchtope 
+                 --enable-petsc --disable-stk_mesh 
+
+Example that builds first OpenMPI, then TPLs, and finally Amanzi. It uses 
+OSX C and C++ compilers and Fortran compiler from MacPorts:
+
+  ./bootstrap.sh --tpl-install-prefix=$HOME/TPLs-clang-0.94 
+                 --with-c-compiler=/usr/bin/clang
+                 --with-cxx-compiler=/usr/bin/clang++
+                 --with-fort-compiler=/opt/local/bin/gfortran-mp-6
+                 --parallel=8 
+                 --enable-alquimia --enable-pflotran --enable-crunchtope 
+                 --enable-petsc --disable-stk_mesh 
 '
 }
 
@@ -415,9 +462,13 @@ Directories:
     tpl_install_prefix     ='"${tpl_install_prefix}"'
     tpl_build_dir          ='"${tpl_build_dir}"'
     tpl_download_dir       ='"${tpl_download_dir}"'
+    tools_install_prefix   ='"${tools_install_prefix}"'
+    tools_build_dir        ='"${tools_build_dir}"'
+    tools_download_dir     ='"${tpl_download_dir}"'
     
 '    
 }  
+
 function parse_argv()
 {
   argv=( "$@" )
@@ -536,7 +587,7 @@ function parse_argv()
 
       --with-mpi=*)
                  tmp=`parse_option_with_equal "${opt}" 'with-mpi'`
-                 mpi_root_dir=`make_fullpath $tmp`
+                 mpi_root_dir=$tmp
                  ;;
 
       --with-xsdk=*)
@@ -575,6 +626,21 @@ function parse_argv()
                  tpl_config_file=`make_fullpath $tmp`
                  ;;
 
+      --tools-install-prefix=*)
+                 tmp=`parse_option_with_equal "${opt}" 'tools-install-prefix'`
+                 tools_install_prefix=`make_fullpath $tmp`
+                 ;;
+
+      --tools-build-dir=*)
+                 tmp=`parse_option_with_equal "${opt}" 'tools-build-dir'`
+                 tools_build_dir=`make_fullpath $tmp`
+                 ;;
+
+      --tools-download-dir=*)
+                 tmp=`parse_option_with_equal "${opt}" 'tools-download-dir'`
+                 tools_download_dir=`make_fullpath $tmp`
+                 ;;
+      
       --print)
                  print_exit=${TRUE}
 		 ;;
@@ -587,10 +653,12 @@ function parse_argv()
 
       i=$[$i+1]
   done
-
 }
 
+
+# ---------------------------------------------------------------------------- #
 # CURL functions
+# ---------------------------------------------------------------------------- #
 
 curl_version()
 {
@@ -616,7 +684,10 @@ curl_test_protocol()
   fi
 }  
 
+
+# ---------------------------------------------------------------------------- #
 # CMake functions
+# ---------------------------------------------------------------------------- #
 
 function cmake_version
 {
@@ -640,8 +711,6 @@ function download_cmake
    cd ${pwd_save}
 
    status_message "CMake download complete"
-
-
 }
 
 function unpack_cmake
@@ -707,8 +776,6 @@ function configure_cmake
   cd ${pwd_save}
 
   status_message "Configure CMake complete"
-
-
 }
 
 function build_cmake
@@ -756,10 +823,13 @@ function build_cmake
   ctest_binary=${root_install_dir}/bin/ctest
 
   status_message "CMake build complete"
-
 }
 
+
+# ---------------------------------------------------------------------------- #
 # Git functions
+# ---------------------------------------------------------------------------- #
+
 function ascem_git_clone
 {
   repo=$1
@@ -782,10 +852,12 @@ function git_change_branch()
     exit_now 30
   fi
   cd ${save_dir}
- 
 }
 
-# MPI Check
+
+# ---------------------------------------------------------------------------- #
+# MPI functions
+# ---------------------------------------------------------------------------- #
 function check_mpi_root
 {
   if [ -z "${mpi_root_dir}" ]; then
@@ -809,7 +881,11 @@ function check_mpi_root
   fi
 }
 
-# xSDK Check
+
+# ---------------------------------------------------------------------------- #
+# xSDK functions: check
+# ---------------------------------------------------------------------------- #
+
 function check_xsdk_root
 {
   if [ -z "${xsdk_root_dir}" ]; then
@@ -833,17 +909,20 @@ function check_xsdk_root
   fi
 }
 
-# Spack Check
+
+# ---------------------------------------------------------------------------- #
+# Spack functions: check
+# ---------------------------------------------------------------------------- #
+
 function check_Spack
 {
-
   if [ ! -e "${Spack_binary}" ]; then
     error_message "Spack binary does not exist - Will try to locate..."
 
     if [ ! -e ${tpl_install_prefix}/spack/bin/spack ]; then
       error_message "Could not locate Spack - Downloading and installing as a TPL"
-#      build_Spack=$TRUE
-#      status_message "build_Spack: ${build_Spack}"
+#     build_Spack=$TRUE
+#     status_message "build_Spack: ${build_Spack}"
 
       pwd_save=`pwd`
       if [ ! -e ${tpl_install_prefix} ]; then
@@ -854,7 +933,7 @@ function check_Spack
       
 #      if [ ${xsdk} == ${TRUE} ]; then
 #	  cd ${tpl_install_prefix}/spack
-#	  git checkout barry/xsdk
+#	  git checkout 44653fa4884c754c7925d5e031fdb9b5f2eec232
 #	  git pull
 #     fi
       cd ${pwd_save}
@@ -869,7 +948,11 @@ function check_Spack
   fi
 }
 
+
+# ---------------------------------------------------------------------------- #
 # Compiler functions
+# ---------------------------------------------------------------------------- #
+
 function define_c_compiler
 {
   if [ -z "${build_c_compiler}" ]; then
@@ -905,7 +988,6 @@ function define_c_compiler
 
   status_message "Build with C compiler: ${build_c_compiler}"
   export CC=${build_c_compiler}
-
 }
 
 function define_cxx_compiler
@@ -944,7 +1026,6 @@ function define_cxx_compiler
 
   status_message "Build with C++ compiler: ${build_cxx_compiler}"
   export CXX=${build_cxx_compiler}
-
 }
 
 function define_fort_compiler
@@ -987,13 +1068,11 @@ function define_fort_compiler
 
 function check_compilers
 {
-
   define_c_compiler
   define_cxx_compiler
   define_fort_compiler
 
   status_message "Compiler Check complete"
-
 }
 
 version_compare_element()
@@ -1020,10 +1099,13 @@ version_compare()
   return $?
 }
 
-# Tool Checks
+
+# ---------------------------------------------------------------------------- #
+# Tools functions: checks
+# ---------------------------------------------------------------------------- #
+
 function check_tools
 {
-
   # Check Git
   if [ ! -e "${git_binary}" ]; then
     error_message "Git binary does not exist"
@@ -1041,11 +1123,11 @@ function check_tools
   # Check CMake and CTest
   if [ -z "${cmake_binary}" ]; then 
     status_message "CMake not defined. Will build"
-    build_cmake ${tpl_build_dir} ${tpl_install_prefix} ${tpl_download_dir} 
+    build_cmake ${tools_build_dir} ${tools_install_prefix} ${tools_download_dir} 
   fi
   if [ ! -e "${cmake_binary}" ]; then
     error_message "CMake binary does not exist. Will build."
-    build_cmake ${tpl_build_dir} ${tpl_install_prefix} ${tpl_download_dir} 
+    build_cmake ${tools_build_dir} ${tools_install_prefix} ${tools_download_dir} 
   else
     # CMake binary does exist, not check the version number
     ver_string=`${cmake_binary} --version | sed 's/cmake version[ ]*//'`
@@ -1053,8 +1135,8 @@ function check_tools
     ( version_compare "$ver_string" "$cmake_version" )
     result=$?
     if [ ${result} -eq 2 ]; then
-      status_message "CMake version is less than required version. Will build CMake version 2.8.8"
-      build_cmake ${tpl_build_dir} ${tpl_install_prefix} ${tpl_download_dir} 
+      status_message "CMake version is less than required version. Will build CMake version 3.7.2"
+      build_cmake ${tools_build_dir} ${tools_install_prefix} ${tools_download_dir} 
     fi
   fi
   if [ ! -e "${ctest_binary}" ]; then
@@ -1066,11 +1148,14 @@ function check_tools
   status_message "CMake binary: ${cmake_binary}"
   status_message "CTest binary: ${ctest_binary}"
 
-  status_message "Tool check complete"
-
+  status_message "Tools check complete"
 }
 
+
+# ---------------------------------------------------------------------------- #
 # Directory functions
+# ---------------------------------------------------------------------------- #
+
 function define_build_directories
 {
   # The amanzi build directory
@@ -1088,8 +1173,17 @@ function define_build_directories
     mkdir_now "${tpl_download_dir}"
   fi
 
-  status_message "Build directories ready"
+  # Tools build directory
+  if [ ! -e "${tools_build_dir}" ]; then
+    mkdir_now "${tools_build_dir}"
+  fi
 
+  # Tools download directory
+  if [ ! -e "${tools_download_dir}" ]; then
+    mkdir_now "${tools_download_dir}"
+  fi
+
+  status_message "Build directories ready"
 }
 
 function define_install_directories
@@ -1103,7 +1197,6 @@ function define_install_directories
 
   status_message "Amanzi installation: ${amanzi_install_prefix}"
   status_message "TPL installation: ${tpl_install_prefix}"
-
 }    
 
 function define_unstructured_dependencies
@@ -1132,9 +1225,6 @@ function define_nersc_options
   fi
 }
 
-#
-# End functions
-# ---------------------------------------------------------------------------- #
 
 
 # ---------------------------------------------------------------------------- #
@@ -1160,9 +1250,6 @@ define_install_directories
 # Create the build directories
 define_build_directories
 
-# Check the MPI root value 
-check_mpi_root
-
 # Define the compilers
 check_compilers
 
@@ -1187,7 +1274,67 @@ if [ ! -z "${amanzi_branch}" ]; then
   git_change_branch ${amanzi_branch}
 fi
 
+
+# ---------------------------------------------------------------------------- #
+# Configure tools
+# ---------------------------------------------------------------------------- #
+if [ ! -n "${mpi_root_dir}" ]; then
+  tools_build_src_dir=${amanzi_source_dir}/config/ToolsBuild
+
+  cd ${tools_build_dir}
+  ${cmake_binary} \
+      -DCMAKE_C_FLAGS:STRING="${build_c_flags}" \
+      -DCMAKE_CXX_FLAGS:STRING="${build_cxx_flags}" \
+      -DCMAKE_Fortran_FLAGS:STRING="${build_fort_flags}" \
+      -DCMAKE_EXE_LINKER_FLAGS:STRING="${build_link_flags}" \
+      -DCMAKE_BUILD_TYPE:STRING=${build_type} \
+      -DCMAKE_C_COMPILER:STRING=${build_c_compiler} \
+      -DCMAKE_CXX_COMPILER:STRING=${build_cxx_compiler} \
+      -DCMAKE_Fortran_COMPILER:STRING=${build_fort_compiler} \
+      -DTOOLS_INSTALL_PREFIX:STRING=${tools_install_prefix} \
+      -DTOOLS_DOWNLOAD_DIR:FILEPATH=${tools_download_dir} \
+      -DTOOLS_PARALLEL_JOBS:INT=${parallel_jobs} \
+      ${tools_build_src_dir}
+
+  if [ $? -ne 0 ]; then
+    error_message "Failed to build tools"
+    exit_now 30
+  fi
+  status_message "Tools configure complete"
+  
+  # Tools install
+  cd ${tools_build_dir}
+  make install
+  if [ $? -ne 0 ]; then
+    error_message "Failed to install configure script"
+    exit_now 30
+  fi
+      
+  tools_config_file=${tools_install_prefix}/share/cmake/amanzi-tools-config.cmake
+  mpi_root_dir=${tools_install_prefix}
+  build_c_compiler=${tools_install_prefix}/bin/mpicc
+  build_cxx_compiler=${tools_install_prefix}/bin/mpicxx
+  build_fort_compiler=${tools_install_prefix}/bin/mpif90
+      
+  cd ${pwd_save}
+      
+  status_message "Tools build complete: new MPI root=${mpi_root_dir}"
+  status_message "  new MPI root=${mpi_root_dir}"
+  status_message "  new C compiler=${build_c_compiler}"
+  status_message "For future Amanzi builds use ${tools_config_file}"
+fi
+  
+
+# Check the MPI root value 
+check_mpi_root
+
+# Define the compilers
+check_compilers
+
+
+# ---------------------------------------------------------------------------- #
 # Now build the TPLs if the config file is not defined
+# ---------------------------------------------------------------------------- #
 if [ -z "${tpl_config_file}" ]; then
 
   # Return to this directory once the TPL build is complete
@@ -1195,24 +1342,28 @@ if [ -z "${tpl_config_file}" ]; then
 
   # Check for Spack
   if [ "${Spack}" -eq "${TRUE}" ]; then
-      status_message "Building with Spack"
-      check_Spack
+    status_message "Building with Spack"
+    check_Spack
   fi
 
   # Are we using xSDK?  If so, make sure Spack in enabled
   if [ "${xsdk}" -eq "${TRUE}" ]; then 
-      status_message "Building with xSDK"
+    status_message "Building with xSDK"
 
-      if [ "${Spack}" -eq "${FALSE}" ]; then
-	status_message "Enabling Spack"
-	Spack=$TRUE
-	check_Spack
-      fi
-
+    if [ "${Spack}" -eq "${FALSE}" ]; then
+      status_message "Enabling Spack"
+      Spack=$TRUE
+      check_Spack
+    fi
   fi
+
   # Define the TPL build source directory
   tpl_build_src_dir=${amanzi_source_dir}/config/SuperBuild
   
+  if [ "${tpls_only}" -eq "${TRUE}" ]; then
+    status_message "Only building TPLs, stopping before building Amanzi itself"
+  fi
+
   # Configure the TPL build
   cd ${tpl_build_dir}
   ${cmake_binary} \
@@ -1252,8 +1403,8 @@ if [ -z "${tpl_config_file}" ]; then
       ${tpl_build_src_dir}
   
   if [ $? -ne 0 ]; then
-      error_message "Failed to configure TPL build"
-      exit_now 30
+    error_message "Failed to configure TPL build"
+    exit_now 30
   fi
   status_message "TPL configure complete"
   
@@ -1261,24 +1412,24 @@ if [ -z "${tpl_config_file}" ]; then
   cd ${tpl_build_dir}
   make -j ${parallel_jobs}
   if [ $? -ne 0 ]; then
-      error_message "Failed to build TPLs"
-      exit_now 30
+    error_message "Failed to build TPLs"
+    exit_now 30
   fi
   
   # TPL Install
   cd ${tpl_build_dir}
-      make install
-      if [ $? -ne 0 ]; then
-	  error_message "Failed to install configure script"
-	  exit_now 30
-      fi
+  make install
+  if [ $? -ne 0 ]; then
+    error_message "Failed to install configure script"
+    exit_now 30
+  fi
       
-      tpl_config_file=${tpl_install_prefix}/share/cmake/amanzi-tpl-config.cmake
+  tpl_config_file=${tpl_install_prefix}/share/cmake/amanzi-tpl-config.cmake
       
-      cd ${pwd_save}
+  cd ${pwd_save}
       
-      status_message "TPL build complete"
-      status_message "For future Amanzi builds use ${tpl_config_file}"
+  status_message "TPL build complete"
+  status_message "For future Amanzi builds use ${tpl_config_file}"
       
 else 
 
@@ -1299,44 +1450,44 @@ else
     exit_now 30
   fi
 
-
 fi
 
+if [ "${tpls_only}" -eq "${TRUE}" ]; then
+    exit_now 0
+fi
 
 status_message "Build Amanzi with configure file ${tpl_config_file}"
 
+# Configure the Amanzi build
 # Amanzi Configure
 cd ${amanzi_build_dir}
-
-# -- Amanzi options
-
 ${cmake_binary} \
-              -C${tpl_config_file} \
-      	      -DCMAKE_C_FLAGS:STRING="${build_c_flags}" \
-      	      -DCMAKE_CXX_FLAGS:STRING="${build_cxx_flags}" \
-      	      -DCMAKE_Fortran_FLAGS:STRING="${build_fort_flags}" \
-      	      -DCMAKE_EXE_LINKER_FLAGS:STRING="${build_link_flags}" \
-              -DCMAKE_INSTALL_PREFIX:STRING=${amanzi_install_prefix} \
-              -DCMAKE_BUILD_TYPE:STRING=${build_type} \
-              -DCMAKE_C_COMPILER:STRING=${build_c_compiler} \
-              -DCMAKE_CXX_COMPILER:STRING=${build_cxx_compiler} \
-              -DCMAKE_Fortran_COMPILER:STRING=${build_fort_compiler} \
-              -DENABLE_Structured:BOOL=${structured} \
-              -DENABLE_Unstructured:BOOL=${unstructured} \
-              -DENABLE_STK_Mesh:BOOL=${stk_mesh} \
-              -DENABLE_MOAB_Mesh:BOOL=${moab_mesh} \
-              -DENABLE_MSTK_Mesh:BOOL=${mstk_mesh} \
-              -DENABLE_HYPRE:BOOL=${hypre} \
-              -DENABLE_PETSC:BOOL=${petsc} \
-              -DENABLE_ALQUIMIA:BOOL=${alquimia} \
-              -DENABLE_PFLOTRAN:BOOL=${pflotran} \
-              -DENABLE_CRUNCHTOPE:BOOL=${crunchtope} \
-              -DBUILD_SHARED_LIBS:BOOL=${shared} \
-              -DCCSE_BL_SPACEDIM:INT=${spacedim} \
-	      -DENABLE_Regression_Tests:BOOL=${reg_tests} \
-	      -DENABLE_NATIVE_XML_OUTPUT:BOOL=${native} \
-              ${nersc_amanzi_opts} \
-              ${amanzi_source_dir}
+    -C${tpl_config_file} \
+    -DCMAKE_C_FLAGS:STRING="${build_c_flags}" \
+    -DCMAKE_CXX_FLAGS:STRING="${build_cxx_flags}" \
+    -DCMAKE_Fortran_FLAGS:STRING="${build_fort_flags}" \
+    -DCMAKE_EXE_LINKER_FLAGS:STRING="${build_link_flags}" \
+    -DCMAKE_INSTALL_PREFIX:STRING=${amanzi_install_prefix} \
+    -DCMAKE_BUILD_TYPE:STRING=${build_type} \
+    -DCMAKE_C_COMPILER:STRING=${build_c_compiler} \
+    -DCMAKE_CXX_COMPILER:STRING=${build_cxx_compiler} \
+    -DCMAKE_Fortran_COMPILER:STRING=${build_fort_compiler} \
+    -DENABLE_Structured:BOOL=${structured} \
+    -DENABLE_Unstructured:BOOL=${unstructured} \
+    -DENABLE_STK_Mesh:BOOL=${stk_mesh} \
+    -DENABLE_MOAB_Mesh:BOOL=${moab_mesh} \
+    -DENABLE_MSTK_Mesh:BOOL=${mstk_mesh} \
+    -DENABLE_HYPRE:BOOL=${hypre} \
+    -DENABLE_PETSC:BOOL=${petsc} \
+    -DENABLE_ALQUIMIA:BOOL=${alquimia} \
+    -DENABLE_PFLOTRAN:BOOL=${pflotran} \
+    -DENABLE_CRUNCHTOPE:BOOL=${crunchtope} \
+    -DBUILD_SHARED_LIBS:BOOL=${shared} \
+    -DCCSE_BL_SPACEDIM:INT=${spacedim} \
+    -DENABLE_Regression_Tests:BOOL=${reg_tests} \
+    -DENABLE_NATIVE_XML_OUTPUT:BOOL=${native} \
+    ${nersc_amanzi_opts} \
+    ${amanzi_source_dir}
 
 
 if [ $? -ne 0 ]; then
@@ -1375,3 +1526,4 @@ status_message "Amanzi install complete"
 status_message "Bootstrap complete"
 
 exit_now 0
+

@@ -48,7 +48,7 @@ class Mesh_MOAB : public Mesh {
             const Teuchos::RCP<const VerboseObject>& vo = Teuchos::null,
             const bool request_faces = true,
             const bool request_edges = false,
-	    const Partitioner_type partitioner = PARTITIONER_DEFAULT);
+            const Partitioner_type partitioner = PARTITIONER_DEFAULT);
 
   // Construct a mesh by extracting a subset of entities from another
   // mesh. In some cases like extracting a surface mesh from a volume
@@ -94,7 +94,7 @@ class Mesh_MOAB : public Mesh {
    
   //
   // General mesh information
-  // -------------------------
+  // ------------------------
   //
     
   // Number of entities of any kind (cell, face, node) and in a
@@ -109,7 +109,7 @@ class Mesh_MOAB : public Mesh {
     
   //
   // Mesh Entity Adjacencies 
-  //-------------------------
+  //------------------------
 
   // Downward Adjacencies
   //---------------------
@@ -135,7 +135,7 @@ class Mesh_MOAB : public Mesh {
   {
     Errors::Message mesg("Edges not implemented in this framework. Use MSTK");
     amanzi_throw(mesg);
-  };
+  }
     
   // Get nodes of face 
   // On a distributed mesh, all nodes (OWNED or GHOST) of the face 
@@ -200,7 +200,7 @@ class Mesh_MOAB : public Mesh {
     
   //
   // Mesh entity geometry
-  //--------------
+  //---------------------
   //
     
   // Node coordinates - 3 in 3D and 2 in 2D
@@ -278,7 +278,6 @@ class Mesh_MOAB : public Mesh {
 
   int serial_run;
 
-  int space_dim_;
   int celldim;  // Topological dimension of highest level entities
   int facedim;  // Topological dimension of 2nd highest level entities
 
@@ -298,12 +297,9 @@ class Mesh_MOAB : public Mesh {
   // There are 4 types of lower dimensional entities 
   //
   // 1. OWNED - owned by this processor
-  //
   // 2. NOTOWNED - not owned by this processor
-  //
   // 3. USED - connected to at least one cell owned by this
   // processor (may or may not be owned by this processor)
-  //
   // 4. GHOST - neither the entity nor a cell connected to the
   // entity is owned by the processor
 
@@ -319,12 +315,12 @@ class Mesh_MOAB : public Mesh {
   // tag handles
   moab::Tag lid_tag;  // Local ID
   moab::Tag gid_tag;  // Global ID
-  moab::Tag mattag;  // Material tag
+  moab::Tag cstag;  // Material tag
   moab::Tag sstag;  // Sideset tag
   moab::Tag nstag;  // Nodeset tag
 
   // Local ID to MOAB handle map
-  std::vector<moab::EntityHandle> vtx_id_to_handle;
+  std::vector<moab::EntityHandle> node_id_to_handle;
   std::vector<moab::EntityHandle> face_id_to_handle;
   std::vector<moab::EntityHandle> cell_id_to_handle;
 
@@ -391,13 +387,11 @@ class Mesh_MOAB : public Mesh {
                                          std::vector<int> *face_dirs,
                                          const bool ordered=false) const;
 
-
   // Cells connected to a face
   void face_get_cells_internal_(const Entity_ID faceid, 
                                 const Parallel_type ptype,
                                 Entity_ID_List *cellids) const;
     
-
   // Edges of a cell
   void cell_get_edges_internal_(const Entity_ID cellid,
                                 Entity_ID_List *edgeids) const 

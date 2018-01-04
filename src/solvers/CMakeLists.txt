@@ -59,13 +59,13 @@ set(solvers_link_libs data_structures
 		      geometry
 		      error_handling
 		      whetstone
-		      atk )
+		      atk)
 
 add_amanzi_library(solvers
                    SOURCE ${solvers_source_files} 
                    HEADERS ${solvers_inc_files}
 		   LINK_LIBS data_structures output atk
-                             ${solver_depends} ${solvers_tpl_libs} ${Epetra_LIBRARIES} )
+                             ${solver_depends} ${solvers_tpl_libs} ${Epetra_LIBRARIES})
 
 
 if (BUILD_TESTS)

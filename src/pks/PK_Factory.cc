@@ -80,7 +80,6 @@ PKFactory::CreatePK(std::string pk_name,
         if (ds == std::get<0>(pk_triple)) {
           // flyweight PK, alter the sublist and construct
           // -- get the domain name and base varname
-          //          std::cout << "ds = " << ds << ", triple = " << std::get<0>(pk_triple) << "," << std::get<1>(pk_triple) << "," << std::get<2>(pk_triple) << std::endl;
           Key pk_flyweight = Keys::getKey(ds+"_*", std::get<2>(pk_triple));
           Teuchos::ParameterList pk_list_new = global_list->sublist("PKs").sublist(pk_flyweight);
 
@@ -97,11 +96,8 @@ PKFactory::CreatePK(std::string pk_name,
               bool subpk_is_ds = Keys::splitDomainSet(subpk_name, subpk_triple);
 
               if (subpk_is_ds) {
-                //                std::cout << "subpk is ds, triple = " << std::get<0>(pk_triple) << "," << std::get<1>(pk_triple) << "," << std::get<2>(pk_triple) << std::endl;
                 subpk_name = Keys::getKey(std::get<0>(subpk_triple)+"_"+std::get<1>(pk_triple),
                         std::get<2>(subpk_triple));
-              } else {
-                //                std::cout << "Subpk " << subpk_name << " isn't ds?" << std::endl;
               }
             }
             pk_list_new.set("PKs order", subpks_names);

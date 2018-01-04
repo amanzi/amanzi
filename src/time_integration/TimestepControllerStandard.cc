@@ -63,7 +63,7 @@ TimestepControllerStandard::get_timestep(double dt, int iterations) {
   // check that if we have failed, our step size has decreased.
   if (iterations < 0) {
     if (dt - dt_next < 1.0e-10) {
-      std::string msg = "dT change is too small, terminating...";
+      std::string msg = "dT change is too small (check reduction_factor), terminating...";
       Errors::Message m(msg);
       Exceptions::amanzi_throw(m);
     }

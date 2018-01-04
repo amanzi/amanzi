@@ -13,7 +13,6 @@
 
 TEST(MOAB_HEX_3x3x3_4P)
 {
-
   int i, j, k, err, nc, nf, nv;
   unsigned int faces[6], nodes[8];
   int facedirs[6];
@@ -30,7 +29,7 @@ TEST(MOAB_HEX_3x3x3_4P)
   int NCghost[4] = {9,12,12,15};
 
 			      
-  std::auto_ptr<Epetra_MpiComm> comm_(new Epetra_MpiComm(MPI_COMM_WORLD));			      
+  std::shared_ptr<Epetra_MpiComm> comm_(new Epetra_MpiComm(MPI_COMM_WORLD));			      
 
   int rank, size;
 

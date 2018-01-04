@@ -47,10 +47,10 @@ test_segment_regular(const Teuchos::RCP<Amanzi::AmanziMesh::Mesh>& m,
   CHECK_EQUAL(2, faces[0]);
   CHECK_EQUAL(3, faces[1]);
   CHECK_EQUAL(2, bisectors.size());
-  CHECK_EQUAL(0.125, bisectors[0][0]);
+  CHECK_EQUAL(-0.125, bisectors[0][0]);
   CHECK_EQUAL(0., bisectors[0][1]);
   CHECK_EQUAL(0., bisectors[0][2]);
-  CHECK_EQUAL(-0.125, bisectors[1][0]);
+  CHECK_EQUAL(0.125, bisectors[1][0]);
   CHECK_EQUAL(0., bisectors[1][1]);
   CHECK_EQUAL(0., bisectors[1][2]);
 
@@ -187,6 +187,48 @@ TEST(MESH_LOGICAL_Y_WITH_SETS)
 }
 
 
+// updates to a Y-mesh
+TEST(MESH_LOGICAL_Y_DEFORMED)
+{
+  auto mesh = Amanzi::Testing::demoMeshLogicalY();
+
+  std::vector<double> cv, fa;
+  std::vector<std::vector<double> > cf_lens;
+  std::vector<Amanzi::AmanziGeometry::Point> centroids;
+  mesh->get_logical_geometry(&cv, &cf_lens, &fa, &centroids);
+
+  CHECK_CLOSE(1.e-4, fa[0], 1.e-10);
+  CHECK_CLOSE(2.0 * 0.25*1.e-4, cv[0], 1.e-10);
+  CHECK_CLOSE(0.25, cf_lens[0][0], 1.e-10);
+
+  Amanzi::AmanziGeometry::Point zero(0.,0.,-0.25);
+
+  Amanzi::AmanziMesh::Entity_ID_List faces;
+  std::vector<int> dirs;
+  mesh->cell_get_faces_and_dirs(0, &faces, &dirs);
+  CHECK_EQUAL(2, faces.size());
+  CHECK_EQUAL(2, cf_lens[0].size());
+      
+
+  CHECK_CLOSE(0., Amanzi::AmanziGeometry::norm(zero-centroids[0]), 1.e-6);
+  
+  
+  // grow the first cell
+  cv[0] *= 2.0;
+  fa[0] *= 1.5;
+
+  cf_lens[0][0] *= 2.0;
+  cf_lens[0][1] *= 2.0;
+
+  mesh->set_logical_geometry(&cv, &cf_lens, &fa, NULL);
+
+  CHECK_CLOSE(1.5e-4, mesh->face_area(0), 1.e-10);
+  CHECK_CLOSE(2.0 * 2.0 * 0.25*1.e-4, mesh->cell_volume(0), 1.e-10);
+  
+           
+}
+
+
 // Evaluates a Y-mesh
 TEST(MESH_LOGICAL_Y_XML_WITH_SETS)
 {
@@ -195,8 +237,16 @@ TEST(MESH_LOGICAL_Y_XML_WITH_SETS)
 }
 
 
-// Evaluates a Y-mesh
+// Evaluates a Y-mesh embedded in another mesh
 TEST(MESH_EMBEDDED_Y)
 {
   Amanzi::Testing::demoMeshLogicalYEmbedded();
 }
+
+// subgrid model
+TEST(MESH_SUBGRID_VARIABLE_TAU)
+{
+  Amanzi::Testing::demoMeshLogicalYFromXML("subgrid mesh");
+}
+
+

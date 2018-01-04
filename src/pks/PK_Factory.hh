@@ -87,7 +87,6 @@ class PKFactory {
                            const Teuchos::RCP<State>&,
                            const Teuchos::RCP<TreeVector>&)> map_type;
 
-  
  protected:
   static map_type* GetMap() {
     if (!map_) map_ = new map_type;

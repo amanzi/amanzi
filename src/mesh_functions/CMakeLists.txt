@@ -89,5 +89,4 @@ if (BUILD_TESTS)
                   LINK_LIBS  mesh_functions mesh_factory data_structures 
                              ${UnitTest_LIBRARIES} ${Boost_LIBRARIES} 
                              ${MSTK_LIBRARIES} ${NOX_LIBRARIES})
-
 endif()

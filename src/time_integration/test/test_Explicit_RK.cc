@@ -11,7 +11,7 @@
 SUITE(TimeIntegrationTests) {
 using namespace Amanzi;
 
-  // ODE: y' = y
+// ODE: y' = y
 class fn1 : public Explicit_TI::fnBase<Epetra_Vector> {
  public:
   void Dudt(const double t, const Epetra_Vector& y, Epetra_Vector& y_new) {
@@ -23,31 +23,30 @@ class fn1 : public Explicit_TI::fnBase<Epetra_Vector> {
   TEST(Explicit_RK_Euler) {
     std::cout << "Test: Explicit_RK_Euler" << std::endl;    
     Epetra_Comm* comm = new Epetra_SerialComm();    
-    Epetra_BlockMap map(1,1,0,*comm);
+    Epetra_BlockMap map(1, 1, 0, *comm);
     Epetra_Vector y(map);
     Epetra_Vector y_new(map);
 
     fn1 f;
-    Explicit_TI::RK<Epetra_Vector>::method_t method = Explicit_TI::RK<Epetra_Vector>::forward_euler;
+    auto method = Explicit_TI::forward_euler;
     Explicit_TI::RK<Epetra_Vector> explicit_time_integrator(f, method, y); 
 		
     // initial value
     y.PutScalar(1.0);
 
     // initial time
-    double t=0.0;
+    double t = 0.0;
     // time step
-    double h=.1;
+    double h = 0.1;
     
     // integrate to t=1.0
-    do 
-      {
-	explicit_time_integrator.TimeStep(t,h,y,y_new);
-	t=t+h;
-	y = y_new;
-      }
-    while (t<1.0);
-    CHECK_CLOSE(y[0],exp(t),2.0*h);
+    do {
+      explicit_time_integrator.TimeStep(t, h, y, y_new);
+      t = t + h;
+      y = y_new;
+    } while (t < 1.0);
+
+    CHECK_CLOSE(y[0], exp(t), 2.0*h);
   }
        
 
@@ -55,31 +54,28 @@ class fn1 : public Explicit_TI::fnBase<Epetra_Vector> {
     std::cout << "Test: Explicit_RK_Heun" << std::endl;    
     
     Epetra_Comm* comm = new Epetra_SerialComm();    
-    Epetra_BlockMap map(1,1,0,*comm);
+    Epetra_BlockMap map(1, 1, 0, *comm);
     Epetra_Vector y(map);
     Epetra_Vector y_new(map);
 
     fn1 f;
-    Explicit_TI::RK<Epetra_Vector>::method_t method = Explicit_TI::RK<Epetra_Vector>::heun_euler;
+    auto method = Explicit_TI::heun_euler;
     Explicit_TI::RK<Epetra_Vector> explicit_time_integrator(f, method, y); 
 		
     // initial value
     y.PutScalar(1.0);
 
-    // initial time
-    double t=0.0;
-    // time step
-    double h=.1;
+    // initial time and time step
+    double t(0.0), h(0.1);
     
     // integrate to t=1.0
-    do 
-      {
-	explicit_time_integrator.TimeStep(t,h,y,y_new);
-	t=t+h;
-	y = y_new;
-      }
-    while (t<1.0);
-    CHECK_CLOSE(y[0],exp(t),pow(h,2));
+    do {
+      explicit_time_integrator.TimeStep(t, h, y, y_new);
+      t = t + h;
+      y = y_new;
+    } while (t < 1.0);
+
+    CHECK_CLOSE(y[0], exp(t), pow(h, 2));
   }
        
 
@@ -87,62 +83,61 @@ class fn1 : public Explicit_TI::fnBase<Epetra_Vector> {
     std::cout << "Test: Explicit_RK_Midpoint" << std::endl;    
     
     Epetra_Comm* comm = new Epetra_SerialComm();    
-    Epetra_BlockMap map(1,1,0,*comm);
+    Epetra_BlockMap map(1, 1, 0, *comm);
     Epetra_Vector y(map);
     Epetra_Vector y_new(map);
 
     fn1 f;
-    Explicit_TI::RK<Epetra_Vector>::method_t method = Explicit_TI::RK<Epetra_Vector>::midpoint;
+    auto method = Explicit_TI::midpoint;
     Explicit_TI::RK<Epetra_Vector> explicit_time_integrator(f, method, y); 
 		
     // initial value
     y.PutScalar(1.0);
 
     // initial time
-    double t=0.0;
+    double t = 0.0;
     // time step
-    double h=.1;
+    double h = 0.1;
     
     // integrate to t=1.0
-    do 
-      {
-	explicit_time_integrator.TimeStep(t,h,y,y_new);
-	t=t+h;
-	y = y_new;
-      }
-    while (t<1.0);
-    CHECK_CLOSE(y[0],exp(t),pow(h,2));
+    do {
+      explicit_time_integrator.TimeStep(t, h, y, y_new);
+      t = t + h;
+      y = y_new;
+    } while (t < 1.0);
+
+    CHECK_CLOSE(y[0], exp(t), pow(h, 2));
   }
+
 
   TEST(Explicit_RK_Ralston) {
     std::cout << "Test: Explicit_RK_Rapson" << std::endl;    
     
     Epetra_Comm* comm = new Epetra_SerialComm();    
-    Epetra_BlockMap map(1,1,0,*comm);
+    Epetra_BlockMap map(1, 1, 0, *comm);
     Epetra_Vector y(map);
     Epetra_Vector y_new(map);
 
     fn1 f;
-    Explicit_TI::RK<Epetra_Vector>::method_t method = Explicit_TI::RK<Epetra_Vector>::ralston;
+    auto method = Explicit_TI::ralston;
     Explicit_TI::RK<Epetra_Vector> explicit_time_integrator(f, method, y); 
 		
     // initial value
     y.PutScalar(1.0);
 
     // initial time
-    double t=0.0;
+    double t = 0.0;
     // time step
-    double h=.1;
+    double h = 0.1;
     
     // integrate to t=1.0
-    do 
-      {
-	explicit_time_integrator.TimeStep(t,h,y,y_new);
-	t=t+h;
-	y = y_new;
-      }
-    while (t<1.0);
-    CHECK_CLOSE(y[0],exp(t),pow(h,2));
+    do {
+      explicit_time_integrator.TimeStep(t, h, y, y_new);
+      t = t + h;
+      y = y_new;
+    } while (t < 1.0);
+
+    CHECK_CLOSE(y[0], exp(t), pow(h, 2));
   }
 
 
@@ -150,44 +145,44 @@ class fn1 : public Explicit_TI::fnBase<Epetra_Vector> {
     std::cout << "Test: Explicit_RK_Kutta3D" << std::endl;    
     
     Epetra_Comm* comm = new Epetra_SerialComm();    
-    Epetra_BlockMap map(1,1,0,*comm);
+    Epetra_BlockMap map(1, 1, 0, *comm);
     Epetra_Vector y(map);
     Epetra_Vector y_new(map);
 
     fn1 f;
-    Explicit_TI::RK<Epetra_Vector>::method_t method = Explicit_TI::RK<Epetra_Vector>::kutta_3rd_order;
+    auto method = Explicit_TI::kutta_3rd_order;
     Explicit_TI::RK<Epetra_Vector> explicit_time_integrator(f, method, y); 
 		
     // initial value
     y.PutScalar(1.0);
 
     // initial time
-    double t=0.0;
+    double t = 0.0;
     // time step
-    double h=.1;
+    double h = 0.1;
     
     // integrate to t=1.0
-    do 
-      {
-	explicit_time_integrator.TimeStep(t,h,y,y_new);
-	t=t+h;
-	y = y_new;
-      }
-    while (t<1.0);
-    CHECK_CLOSE(y[0],exp(t),pow(h,3));
+    do {
+      explicit_time_integrator.TimeStep(t, h, y, y_new);
+      t = t + h;
+      y = y_new;
+    } while (t < 1.0);
+
+    CHECK_CLOSE(y[0], exp(t), pow(h, 3));
   }
+
 
   TEST(Explicit_RK_UserDefined) {
     std::cout << "Test: Explicit_RK_UserDefined" << std::endl;    
     
     Epetra_Comm* comm = new Epetra_SerialComm();    
-    Epetra_BlockMap map(1,1,0,*comm);
+    Epetra_BlockMap map(1, 1, 0, *comm);
     Epetra_Vector y(map);
     Epetra_Vector y_new(map);
 
     fn1 f;
     int order = 2;
-    Epetra_SerialDenseMatrix a(order,order);
+    Epetra_SerialDenseMatrix a(order, order);
     std::vector<double> b(order);
     std::vector<double> c(order);
     
@@ -205,51 +200,48 @@ class fn1 : public Explicit_TI::fnBase<Epetra_Vector> {
     y.PutScalar(1.0);
 
     // initial time
-    double t=0.0;
+    double t = 0.0;
     // time step
-    double h=.1;
+    double h = 0.1;
     
     // integrate to t=1.0
-    do 
-      {
-	explicit_time_integrator.TimeStep(t,h,y,y_new);
-	t = t + h;
-	y = y_new;
-      }
-    while (t<1.0);
+    do {
+      explicit_time_integrator.TimeStep(t, h, y, y_new);
+      t = t + h;
+      y = y_new;
+    } while (t < 1.0);
 
-
-    CHECK_CLOSE(y[0],exp(t),pow(h,2));
+    CHECK_CLOSE(y[0], exp(t), pow(h, 2));
   }
+
 
   TEST(Explicit_RK_RK4) {
     std::cout << "Test: Explicit_RK_RK4" << std::endl;    
     
     Epetra_Comm* comm = new Epetra_SerialComm();    
-    Epetra_BlockMap map(1,1,0,*comm);
+    Epetra_BlockMap map(1, 1, 0, *comm);
     Epetra_Vector y(map);
     Epetra_Vector y_new(map);
 
     fn1 f;
-    Explicit_TI::RK<Epetra_Vector>::method_t method = Explicit_TI::RK<Epetra_Vector>::runge_kutta_4th_order;
+    auto method = Explicit_TI::runge_kutta_4th_order;
     Explicit_TI::RK<Epetra_Vector> explicit_time_integrator(f, method, y); 
 		
     // initial value
     y.PutScalar(1.0);
 
     // initial time
-    double t=0.0;
+    double t = 0.0;
     // time step
-    double h=.1;
+    double h = 0.1;
     
     // integrate to t=1.0
-    do 
-      {
-	explicit_time_integrator.TimeStep(t, h, y, y_new);
-	t = t + h;
-	y = y_new;
-      }
-    while (t<1.0);
-    CHECK_CLOSE(y[0],exp(t),pow(h,4));
+    do {
+      explicit_time_integrator.TimeStep(t, h, y, y_new);
+      t = t + h;
+      y = y_new;
+    } while (t < 1.0);
+
+    CHECK_CLOSE(y[0], exp(t), pow(h, 4));
   }
 }

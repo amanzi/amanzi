@@ -13,7 +13,7 @@
 */
 
 #include "Mesh.hh"
-#include "hdf5mpi_mesh.hh"
+#include "HDF5_MPI.hh"
 
 #include "CompositeVector.hh"
 #include "TreeVector.hh"
