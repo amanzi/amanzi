@@ -58,6 +58,103 @@ void MeshMaps::VelocityFace(int f, VectorPolynomial& v) const
 
 
 /* ******************************************************************
+* Calculation of Jacobian
+****************************************************************** */
+void MeshMaps::Jacobian(const VectorPolynomial& vc, MatrixPolynomial& J) const
+{
+  // allocate memory
+  J.resize(d_);
+  for (int i = 0; i < d_; ++i) {
+    J[i].resize(d_);
+  }
+
+  // copy velocity gradients to Jacobian
+  VectorPolynomial tmp(d_, 0);
+  for (int i = 0; i < d_; ++i) {
+    tmp.Gradient(vc[i]);
+    for (int j = 0; j < d_; ++j) {
+      J[i][j] = tmp[j];
+    }
+  }
+}
+
+
+/* ******************************************************************
+* Calculation of matrix of cofactors
+****************************************************************** */
+void MeshMaps::Cofactors(
+    double t, const MatrixPolynomial& J, MatrixPolynomial& C) const
+{
+  // allocate memory for matrix of cofactors
+  C.resize(d_);
+  for (int i = 0; i < d_; ++i) {
+    C[i].resize(d_);
+  }
+
+  // calculate cofactors
+  if (d_ == 2) {
+    C[1][1] = J[0][0];
+    C[1][0] = J[0][1];
+    C[1][0] *= -1.0;
+
+    C[0][0] = J[1][1];
+    C[0][1] = J[1][0];
+    C[0][1] *= -1.0;
+  }
+  else if (d_ == 3) {
+    C[0][0] = J[1][1] * J[2][2] - J[2][1] * J[1][2];
+    C[1][0] = J[2][1] * J[0][2] - J[0][1] * J[2][2];
+    C[2][0] = J[0][1] * J[1][2] - J[1][1] * J[0][2];
+
+    C[0][1] = J[2][0] * J[1][2] - J[1][0] * J[2][2];
+    C[1][1] = J[0][0] * J[2][2] - J[2][0] * J[0][2];
+    C[2][1] = J[1][0] * J[0][2] - J[0][0] * J[1][2];
+
+    C[0][2] = J[1][0] * J[2][1] - J[2][0] * J[1][1];
+    C[1][2] = J[2][0] * J[0][1] - J[0][0] * J[2][1];
+    C[2][2] = J[0][0] * J[1][1] - J[1][0] * J[0][1];
+  }
+
+  // add time dependence
+  for (int i = 0; i < d_; ++i) {
+    for (int j = 0; j < d_; ++j) {
+      C[i][j] *= t;
+    }
+    C[i][i](0, 0) += 1.0;
+  }
+}
+
+
+/* ******************************************************************
+* Calculate detminant at time t
+****************************************************************** */
+void MeshMaps::Determinant(
+   double t, const MatrixPolynomial& J, Polynomial& det) const
+{
+  auto Jt = J;
+
+  for (int i = 0; i < d_; ++i) {
+    for (int j = 0; j < d_; ++j) {
+      Jt[i][j] *= t;
+    }
+    Jt[i][i](0, 0) += 1.0;
+  }
+
+  if (d_ == 2) {
+    det = Jt[0][0]* Jt[1][1] - Jt[0][1] * Jt[1][0];
+  }
+  else if (d_ == 3) {
+    det = Jt[0][0] * Jt[1][1] * Jt[2][2] 
+        + Jt[2][0] * Jt[0][1] * Jt[1][2] 
+        + Jt[1][0] * Jt[2][1] * Jt[0][2] 
+        - Jt[2][0] * Jt[1][1] * Jt[0][2] 
+        - Jt[1][0] * Jt[0][1] * Jt[2][2] 
+        - Jt[0][0] * Jt[2][1] * Jt[1][2]; 
+  }
+}
+
+
+/* ******************************************************************
 * Polynomial approximation v of map x2 = F(x1).
 * We assume that vectors of vertices have a proper length.
 ****************************************************************** */

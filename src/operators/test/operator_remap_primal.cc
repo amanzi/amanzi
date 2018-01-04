@@ -218,7 +218,7 @@ void RemapTests2DPrimal(int order, std::string disc_name,
 
     // calculate cell velocities at time t+dt/2
     Entity_ID_List faces;
-    WhetStone::MatrixPolynomial C;
+    WhetStone::MatrixPolynomial J, C;
     WhetStone::VectorPolynomial tmp;
 
     for (int c = 0; c < ncells_owned; ++c) {
@@ -230,7 +230,8 @@ void RemapTests2DPrimal(int order, std::string disc_name,
       }
 
       maps->VelocityCell(c, vf, tmp);
-      maps->Cofactors(c, t + dt/2, tmp, C);
+      maps->Jacobian(tmp, J);
+      maps->Cofactors(t + dt/2, J, C);
       (*cell_vel)[c].Multiply(C, tmp, true);
     }
 

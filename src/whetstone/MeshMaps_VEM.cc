@@ -113,7 +113,7 @@ void MeshMaps_VEM::NansonFormula(
   AmanziGeometry::Point p(d_);
   WhetStone::Tensor J(d_, 2);
 
-  JacobianFaceValue(f, v, p, J);
+  JacobianFaceValue_(f, v, p, J);
   J *= t;
   J += 1.0 - t;
 
@@ -125,95 +125,6 @@ void MeshMaps_VEM::NansonFormula(
     cn[i].Reshape(d_, 0);
     cn[i](0, 0) = p[i];
   }
-}
-
-
-/* ******************************************************************
-* Calculation of matrix of cofactors
-****************************************************************** */
-void MeshMaps_VEM::Cofactors(
-    int c, double t, const VectorPolynomial& vc, MatrixPolynomial& C) const
-{
-  if (vc[0].order() == 1 || d_ == 3) {
-    Cofactors_P1_(c, t, vc, C);
-  } else {
-    Cofactors_Pk_(c, t, vc, C);
-  }
-}
-
-
-/* ******************************************************************
-* Calculation of matrix of cofactors: linear velocity
-****************************************************************** */
-void MeshMaps_VEM::Cofactors_P1_(
-    int c, double t, const VectorPolynomial& vc, MatrixPolynomial& C) const
-{
-  ASSERT(vc[0].order() == 1);
-
-  // gradient of linear velocity is constant tensor
-  Tensor T(d_, 2);
-  for (int i = 0; i < d_; ++i) {
-    for (int j = 0; j < d_; ++j) {
-      T(i, j) = vc[i](1, j);
-    }
-  }
-  T = T.Cofactors();
-
-  // convert constants to polynomials
-  C.resize(d_);
-  for (int i = 0; i < d_; ++i) {
-    C[i].resize(d_);
-    for (int j = 0; j < d_; ++j) {
-      C[i][j].Reshape(d_, 0);
-      C[i][j](0, 0) = t * T(i, j);
-    }
-    C[i][i](0, 0) += 1.0;
-  }
-}
-
-
-/* ******************************************************************
-* Calculation of matrix of cofactors: nonlinear velocity
-****************************************************************** */
-void MeshMaps_VEM::Cofactors_Pk_(
-    int c, double t, const VectorPolynomial& vc, MatrixPolynomial& C) const
-{
-  ASSERT(d_ == 2);
-
-  // allocate memory for matrix of cofactors
-  C.resize(d_);
-  for (int i = 0; i < d_; ++i) {
-    C[i].resize(d_);
-  }
-
-  // copy velocity gradients to C
-  VectorPolynomial tmp(d_, 0);
-  tmp.Gradient(vc[0]);
-  C[1][1] = tmp[0];
-  C[1][0] = tmp[1];
-  C[1][0] *= -1.0;
-
-  tmp.Gradient(vc[1]);
-  C[0][0] = tmp[1];
-  C[0][1] = tmp[0];
-  C[0][1] *= -1.0;
-
-  // add time dependence
-  for (int i = 0; i < d_; ++i) {
-    for (int j = 0; j < d_; ++j) {
-      C[i][j] *= t;
-    }
-    C[i][i](0, 0) += 1.0;
-  }
-}
-
-
-/* ******************************************************************
-* Calculation of Jacobian.
-****************************************************************** */
-void MeshMaps_VEM::JacobianCellValue(
-    int c, double t, const AmanziGeometry::Point& xref, Tensor& J) const
-{
 }
 
 
@@ -238,7 +149,7 @@ void MeshMaps_VEM::JacobianDet(
     int f = faces[n];
 
     // calculate j J^{-t} N dA
-    JacobianFaceValue(f, vf[n], x, J);
+    JacobianFaceValue_(f, vf[n], x, J);
 
     J *= t;
     J += 1.0 - t;
@@ -280,8 +191,9 @@ void MeshMaps_VEM::JacobianDet(
 
 /* ******************************************************************
 * Calculate Jacobian at point x of face f 
+* NOTE: limited to linear velocity FIXME
 ****************************************************************** */
-void MeshMaps_VEM::JacobianFaceValue(
+void MeshMaps_VEM::JacobianFaceValue_(
     int f, const VectorPolynomial& v,
     const AmanziGeometry::Point& x, Tensor& J) const
 {

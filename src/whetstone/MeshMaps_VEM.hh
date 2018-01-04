@@ -45,31 +45,20 @@ class MeshMaps_VEM : public MeshMaps {
   ~MeshMaps_VEM() {};
 
   // Maps
-  // -- pseudo-velocity in cell c
+  // -- pseudo-velocity
+  virtual void VelocityFace(int f, VectorPolynomial& vf) const override;
   virtual void VelocityCell(int c, const std::vector<VectorPolynomial>& vf,
                             VectorPolynomial& vc) const override;
-  // -- pseudo-velocity on face f
-  virtual void VelocityFace(int f, VectorPolynomial& vf) const override;
+
   // -- Nanson formula
-  virtual void NansonFormula(int f, double t, const VectorPolynomial& v,
+  virtual void NansonFormula(int f, double t, const VectorPolynomial& vf,
                              VectorPolynomial& cn) const override;
 
   // Jacobian
-  // -- tensors
-  virtual void Cofactors(int c, double t, const VectorPolynomial& vc,
-                         MatrixPolynomial& C) const override;
   // -- determinant
   virtual void JacobianDet(int c, double t, const std::vector<VectorPolynomial>& vf,
                            Polynomial& vc) const override;
   void JacobianDet(double t, const VectorPolynomial& vc, Polynomial& jac) const;
-
-  // -- value at point x
-  virtual void JacobianCellValue(int c,
-                                 double t, const AmanziGeometry::Point& x,
-                                 Tensor& J) const override;
-  virtual void JacobianFaceValue(int f, const VectorPolynomial& v,
-                                 const AmanziGeometry::Point& x,
-                                 Tensor& J) const override;
 
   // access
   void set_order(int order) { order_ = order; }
@@ -78,11 +67,9 @@ class MeshMaps_VEM : public MeshMaps {
   // pseudo-velocity on edge e
   void VelocityEdge_(int e, VectorPolynomial& ve) const;
 
-  // support of development 
-  void Cofactors_P1_(int c, double t, const VectorPolynomial& vc, MatrixPolynomial& C) const;
-  void Cofactors_Pk_(int c, double t, const VectorPolynomial& vc, MatrixPolynomial& C) const;
-
   // old deprecated methods
+  void JacobianFaceValue_(int f, const VectorPolynomial& v, const AmanziGeometry::Point& x, Tensor& J) const;
+
   void LeastSquareProjector_Cell_(int order, int c, const std::vector<VectorPolynomial>& vf,
                                   VectorPolynomial& vc) const;
 

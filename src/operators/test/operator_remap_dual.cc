@@ -39,7 +39,6 @@
 #include "PDE_Reaction.hh"
 #include "RemapUtils.hh"
 
-// #define DEBUG
 
 /* *****************************************************************
 * Remap of polynomilas in two dimensions. Explicit time scheme.
@@ -166,11 +165,6 @@ void RemapTestsDual(int dim, int order, std::string disc_name,
     }
   }
 
-#ifdef DEBUG
-  Teuchos::RCP<CompositeVector> p1_dbg = Teuchos::rcp(new CompositeVector(cvs1));
-  *p1_dbg = *p1;
-#endif
-
   // initial mass
   double mass0(0.0);
   for (int c = 0; c < ncells_owned; c++) {
@@ -220,18 +214,6 @@ void RemapTestsDual(int dim, int order, std::string disc_name,
  
   op_adv->SetupPolyVector(cell_vel);
 
-#ifdef DEBUG
-  Teuchos::RCP<PDE_Abstract> op_adv_dbg0 = Teuchos::rcp(new PDE_Abstract(plist, mesh0));
-  op_adv_dbg0->SetupPolyVector(cell_vel);
-
-  Teuchos::RCP<PDE_Abstract> op_adv_dbg1 = Teuchos::rcp(new PDE_Abstract(plist, mesh0));
-  Teuchos::RCP<std::vector<WhetStone::VectorPolynomial> > cell_vel_dbg = 
-      Teuchos::rcp(new std::vector<WhetStone::VectorPolynomial>(ncells_owned));
-  op_adv_dbg1->SetupPolyVector(cell_vel_dbg);
-
-  double ame_err(0.0);
-#endif
-
   // approximate accumulation term using the reaction operator
   // -- left-hand-side
   plist.sublist("schema")
@@ -256,15 +238,6 @@ void RemapTestsDual(int dim, int order, std::string disc_name,
      Teuchos::rcp(new std::vector<WhetStone::Polynomial>(ncells_owned));
 
   op_reac1->Setup(jac1);
-
-#ifdef DEBUG
-  Teuchos::RCP<std::vector<WhetStone::Polynomial> > jac0_dbg = 
-     Teuchos::rcp(new std::vector<WhetStone::Polynomial>(ncells_owned));
-  Teuchos::RCP<PDE_Reaction> op_reac0_dbg = Teuchos::rcp(new PDE_Reaction(plist, mesh0));
-  op_reac0_dbg->Setup(jac0_dbg);
-
-  double mme_err(0.0);
-#endif
 
   // explicit time integration
   int nstep(0), nstep_dbg(0);
@@ -298,7 +271,7 @@ void RemapTestsDual(int dim, int order, std::string disc_name,
     // calculate cell velocity at time t+dt/2 and change its sign
     Entity_ID_List faces;
     std::vector<int> dirs;
-    WhetStone::MatrixPolynomial C, C1;
+    WhetStone::MatrixPolynomial J, C;
     WhetStone::VectorPolynomial tmp;
 
     for (int c = 0; c < ncells_owned; ++c) {
@@ -310,31 +283,13 @@ void RemapTestsDual(int dim, int order, std::string disc_name,
       }
 
       maps->VelocityCell(c, vvf, tmp);
-      maps->Cofactors(c, t + dt/2, tmp, C);
+      maps->Jacobian(tmp, J);
+      maps->Cofactors(t + dt/2, J, C);
       (*cell_vel)[c].Multiply(C, tmp, true);
-
-      // selecting new mean value
-      /*
-      std::vector<const WhetStone::Polynomial*> nvf;
-      if (maps_name == "VEM") {
-        for (int n = 0; n < faces.size(); ++n) {
-          nvf.push_back(&(*vel)[faces[n]]);
-        }
-        dg.CoVelocityCell(c, nvf, (*cell_vel)[c]);
-      }
-      */
 
       for (int i = 0; i < dim; ++i) {
         (*cell_vel)[c][i] *= -1.0;
       }
-
-#ifdef DEBUG
-      maps->VelocityCell(c, vvf, tmp);
-      auto maps_dbg = std::make_shared<WhetStone::MeshMaps_FEM>(mesh0, mesh1);
-      maps_dbg->Cofactors(c, t + dt/2, tmp, C);
-      (*cell_vel_dbg)[c].Multiply(C, tmp, true);
-      dg.CoVelocityCell(c, nvf, (*cell_vel_dbg)[c]);
-#endif
     }
 
     // calculate determinant of Jacobian at time t+dt
@@ -346,13 +301,17 @@ void RemapTestsDual(int dim, int order, std::string disc_name,
         vvf.push_back(vec_vel[faces[n]]);
       }
 
+/*
+      maps->VelocityCell(c, vvf, tmp);
+      maps->Jacobian(tmp, J);
+std::cout << tmp[0] << std::endl;
+std::cout << J[0][0] << std::endl;
+      maps->Determinant(t, J, (*jac0)[c]);
+std::cout << c << std::endl;
+std::cout << (*jac0)[c] << std::endl;
+*/
       maps->JacobianDet(c, t, vvf, (*jac0)[c]);
       maps->JacobianDet(c, t + dt, vvf, (*jac1)[c]);
-
-#ifdef DEBUG
-      std::shared_ptr<WhetStone::MeshMaps> maps_dbg = std::make_shared<WhetStone::MeshMaps_FEM>(mesh0, mesh1);
-      maps_dbg->JacobianDet(c, t, vvf, (*jac0_dbg)[c]);
-#endif
     }
 
     // statistics: GCL
@@ -373,35 +332,6 @@ void RemapTestsDual(int dim, int order, std::string disc_name,
     op_adv->UpdateMatrices();
     op_reac0->UpdateMatrices(p1.ptr());
     op_reac1->UpdateMatrices(p1.ptr());
-
-#ifdef DEBUG
-double dtref(1.0 / 10);
-int it = (t + 1e-10) / dtref;
-if(fabs(it * dtref - t) < 1e-12) {
-    double dot0, dot1;
-    CompositeVector dbg(*global_reac0->rhs());
-    global_reac0->Apply(*p1_dbg, dbg);
-    p1_dbg->Dot(dbg, &dot0);
-
-    op_reac0_dbg->UpdateMatrices(p1_dbg.ptr());
-    op_reac0_dbg->global_operator()->Apply(*p1_dbg, dbg);
-    p1_dbg->Dot(dbg, &dot1);
-
-    mme_err += fabs(dot0 - dot1) / dot0;
-
-    dbg.PutScalar(0.0);
-    op_adv_dbg0->UpdateMatrices();
-    op_adv_dbg0->global_operator()->Apply(*p1_dbg, dbg);
-    p1_dbg->Dot(dbg, &dot0);
-
-    op_adv_dbg1->UpdateMatrices();
-    op_adv_dbg1->global_operator()->Apply(*p1_dbg, dbg);
-    p1_dbg->Dot(dbg, &dot1);
-
-    ame_err += fabs(dot0 + dot1);
-    nstep_dbg++;
-}
-#endif
 
     // predictor step
     // -- calculate rhs
@@ -515,11 +445,6 @@ if(fabs(it * dtref - t) < 1e-12) {
         pl2_err, pinf_err, mass1 - mass0, gcl_err, 1.0 - area);
   }
 
-#ifdef DEBUG
-  if (MyPID == 0)
-    printf("L2 jacobian quadrature=%12.8g, advection quadrature=%12.8g\n", mme_err / nstep_dbg, ame_err / nstep_dbg);
-#endif
-
   // visualization
   if (MyPID == 0) {
     GMV::open_data_file(*mesh1, (std::string)"operators.gmv");
@@ -545,9 +470,8 @@ TEST(REMAP2D_DG1_DUAL_FEM) {
 
 
 const int N = 1;
-const double q = 2.82842712474619;
+const double q = 2.0;  // 2.82842712474619;
 
-/*
 TEST(REMAP2D_DG0_DUAL_VEM) {
   RemapTestsDual(2, 0, "dg modal", "VEM", 16 * N, 16 * N, 0.05 / N);
   // RemapTestsDual(2, 0, "dg modal", "VEM", 0, 0, 0.05 / N);
@@ -557,16 +481,17 @@ TEST(REMAP2D_DG1_DUAL_VEM) {
   // RemapTestsDual(2, 1, "dg modal", "VEM", 16 * N, 16 * N, 0.05 / N);
   RemapTestsDual(2, 1, "dg modal", "VEM", 0, 0, 0.05 / N);
 }
-*/
 
+/*
 TEST(REMAP2D_DG2_DUAL_VEM) {
   RemapTestsDual(2, 2, "dg modal", "VEM", 10, 10, 0.05 / N);
   // RemapTestsDual(2, 2, "dg modal", "VEM", 0, 0, 0.05 / N);
 }
+*/
 
-// TEST(REMAP3D_DG0_DUAL_VEM) {
-//   RemapTestsDual(3, 0, "dg modal", "VEM", 5, 5, 0.2);
-// }
+TEST(REMAP3D_DG0_DUAL_VEM) {
+  RemapTestsDual(3, 0, "dg modal", "VEM", 5, 5, 0.2);
+}
 
 // TEST(REMAP3D_DG1_DUAL_VEM) {
 //   RemapTestsDual(3, 1, "dg modal", "VEM", 5, 5, 0.1);
@@ -576,9 +501,9 @@ TEST(REMAP2D_DG2_DUAL_VEM) {
 TEST(REMAP2D_DG1_QUADRATURE_ERROR) {
   RemapTestsDual(2, 2, "dg modal", "VEM", 16, 16, 0.1);
   RemapTestsDual(2, 2, "dg modal", "VEM", 16 *  2, 16 *  2, 0.1 / q);
-  RemapTestsDual(2, 2, "dg modal", "VEM", 16 *  4, 16 *  4, 0.1 / std::pow(q, 2));
-  RemapTestsDual(2, 2, "dg modal", "VEM", 16 *  8, 16 *  8, 0.1 / std::pow(q, 3));
-  RemapTestsDual(2, 2, "dg modal", "VEM", 16 * 16, 16 * 16, 0.1 / std::pow(q, 4));
-  RemapTestsDual(2, 2, "dg modal", "VEM", 16 * 32, 16 * 32, 0.1 / std::pow(q, 5));
+  RemapTestsDual(2, 2, "dg modal", "VEM", 16 *  4, 16 *  4, 0.1 / std::pow(q, 2.0));
+  RemapTestsDual(2, 2, "dg modal", "VEM", 16 *  8, 16 *  8, 0.1 / std::pow(q, 3.0));
+  RemapTestsDual(2, 2, "dg modal", "VEM", 16 * 16, 16 * 16, 0.1 / std::pow(q, 4.0));
+  RemapTestsDual(2, 2, "dg modal", "VEM", 16 * 32, 16 * 32, 0.1 / std::pow(q, 5.0));
 }
 */

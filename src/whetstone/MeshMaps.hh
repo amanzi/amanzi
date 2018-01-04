@@ -51,29 +51,27 @@ class MeshMaps {
   ~MeshMaps() {};
 
   // Maps
-  // -- pseudo-velocity in cell c
+  // -- pseudo-velocity
+  virtual void VelocityFace(int f, VectorPolynomial& v) const;
   virtual void VelocityCell(int c, const std::vector<VectorPolynomial>& vf,
                             VectorPolynomial& vc) const = 0;
-  // -- pseudo-velocity on face f
-  virtual void VelocityFace(int f, VectorPolynomial& v) const;
+
   // -- Nanson formula
-  virtual void NansonFormula(int f, double t, const VectorPolynomial& v,
+  virtual void NansonFormula(int f, double t, const VectorPolynomial& vf,
                              VectorPolynomial& cn) const = 0;
 
-  // Jacobian
-  // -- tensors
-  virtual void Cofactors(int c, double t, const VectorPolynomial& vc,
-                         MatrixPolynomial& C) const = 0;
+  // -- Jacobian
+  void Jacobian(const VectorPolynomial& vc, MatrixPolynomial& J) const;
+
+  // -- matrix of cofactors
+  void Cofactors(double t, const MatrixPolynomial& J, MatrixPolynomial& C) const;
+
   // -- determinant
+  void Determinant(double t, const MatrixPolynomial& J, Polynomial& det) const;
+
+  // Jacobian determinant
   virtual void JacobianDet(int c, double t, const std::vector<VectorPolynomial>& vf,
                            Polynomial& vc) const = 0;
-  // -- value at point x
-  virtual void JacobianCellValue(int c, 
-                                 double t, const AmanziGeometry::Point& x,
-                                 Tensor& J) const = 0;
-  virtual void JacobianFaceValue(int f, const VectorPolynomial& v,
-                                 const AmanziGeometry::Point& x,
-                                 Tensor& J) const = 0;
 
   // Miscalleneous
   // -- polynomial approximation of map x2 = F(x1)
