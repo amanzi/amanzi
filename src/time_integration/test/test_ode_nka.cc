@@ -117,6 +117,7 @@ SUITE(ODEIntegrationTests) {
       u->Print(std::cout);
 
       TS->CommitSolution(h, u);
+      *u0 = *u;
 
       h = hnext;
       i++;
@@ -194,12 +195,14 @@ SUITE(ODEIntegrationTests) {
 
       bool redo(false);
       do {
+        std::cout << "Step " << i << " from " << tlast << " to " << tlast+h << std::endl;
         redo = TS->TimeStep(h, u0, u, hnext);
       } while (redo);
 
       u->Print(std::cout);
 
       TS->CommitSolution(h, u);
+      *u0 = *u;
 
       h = hnext;
       i++;

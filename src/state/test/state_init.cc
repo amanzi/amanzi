@@ -57,7 +57,6 @@ TEST(FIELD_INITIALIZATION) {
       ->SetComponent("cell", AmanziMesh::CELL, 1);
   S.Require<CompositeVector,CompositeVectorSpace>("field").SetMesh(mesh)->SetGhosted(false)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
-  S.Setup();
   S.Require<CompositeVector,CompositeVectorSpace>("permeability").SetMesh(mesh)->SetGhosted(false)
       ->SetComponent("cell", AmanziMesh::CELL, 3);
 
@@ -74,17 +73,19 @@ TEST(FIELD_INITIALIZATION) {
   for (int c = 0; c < ncells; ++c) {
     CHECK_EQUAL(0.25, phi[0][c]);
   }
-  // -- scalar field from a file
-  const Epetra_MultiVector& fld = *S.Get<CompositeVector>("field").ViewComponent("cell");
-  for (int c = 1; c < ncells; ++c) {
-    CHECK_EQUAL(1.0e-11, fld[0][c]);
-  }
-  // -- permeability from a file
-  const Epetra_MultiVector& K = *S.Get<CompositeVector>("permeability").ViewComponent("cell");
-  for (int c = 1; c < ncells; ++c) {
-    CHECK_EQUAL(1.0e-11, K[0][c]);
-    CHECK_EQUAL(1.0e-12, K[1][c]);
-    CHECK_EQUAL(1.0e-13, K[2][c]);
-  }
+
+  // from exo currently not supported in new state
+  // // -- scalar field from a file
+  // const Epetra_MultiVector& fld = *S.Get<CompositeVector>("field").ViewComponent("cell");
+  // for (int c = 1; c < ncells; ++c) {
+  //   CHECK_EQUAL(1.0e-11, fld[0][c]);
+  // }
+  // // -- permeability from a file
+  // const Epetra_MultiVector& K = *S.Get<CompositeVector>("permeability").ViewComponent("cell");
+  // for (int c = 1; c < ncells; ++c) {
+  //   CHECK_EQUAL(1.0e-11, K[0][c]);
+  //   CHECK_EQUAL(1.0e-12, K[1][c]);
+  //   CHECK_EQUAL(1.0e-13, K[2][c]);
+  // }
 }
 
