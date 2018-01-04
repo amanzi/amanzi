@@ -7,18 +7,23 @@
   Authors: Ethan Coon (ecoon@lanl.gov)
 */
 
-//! A mixin class with default implementations of methods for an explicotly integrated PK.
+//! A mixin class with default implementations of methods for a predictor-corrector scheme.
 
 /*!
 
-``PK_MixinExplicit`` is a mixin class providing functionality for ixplicitly
-integrated PKs.  Manages the creation of intermediate data and AdvanceStep().
+``PK_MixinPredictorCorrector`` is a mixin class providing functionality for
+predictor-corrector integrated PKs.  Manages the creation of intermediate data
+and AdvanceStep().
 
 * `"initial time step`" ``[double]``
 
   The initial time step size, in seconds.
 
 * `"time integrator`" ``[time-integrator-spec]``  See ``TimeIntegratorExplicit_``.
+* `"predictor`" ``[time-integrator-spec]``  See ``TimeIntegratorExplicit_``.
+
+The predictor scheme must be an explicit time integration spec, and the
+corrector an implciit time integration spec.
 
 */
 

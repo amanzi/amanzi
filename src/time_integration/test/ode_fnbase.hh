@@ -74,6 +74,7 @@ public:
   }
   void ChangedSolution() {}
 
+  void UpdateContinuationParameter(double lambda) {}  
 
   bool exact_jacobian_;
   double atol_, rtol_;
