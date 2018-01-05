@@ -86,25 +86,34 @@ class Data {
   Data(std::unique_ptr<Data_Intf> t) :
       p_(std::move(t)) {}
 
-  // Copy constructor
-  Data(const Data& other)
-      : p_(other.p_->Clone()) {}
+  // Copy constructor deleted, as we don't necessarily know how to copy construct
+  Data(const Data& other) = delete;
 
   // move constructor
   Data(Data&& other) noexcept 
       : p_( std::move(other.p_) ) {}
 
-  // swap
-  void swap(Data& other) noexcept {
+  // steal an r-value
+  void swap(Data&& other) noexcept {
     p_.swap(other.p_);
   }
 
-  // operator= 
-  Data& operator=(Data other) {
-    if (&other != this) swap(other);
+  // operator= with lvalue reference sets the values equal
+  Data& operator=(const Data& other) {
+    if (&other != this) {
+      if (!p_) {
+        Errors::Message msg;
+        msg << " data not created through RecordSet::SetType() or State::CreatData()";
+        throw(msg);
+      }
+      *p_ = *other.p_;
+    }
     return *this;
   }
 
+  // operator= with rvalue steals the data via swap
+  Data& operator=(Data&& other) = default;
+  
   // accessor -- const ref
   template<typename T>
   const T& Get() const {
@@ -231,13 +240,13 @@ Data data(const Teuchos::RCP<T>& p) {
   return Data(std::unique_ptr<Data_Intf>(new Data_Impl<T>(p)));
 }
 
-//
-// Non-member constructor of Data with value type.
-// --------------------------------------------------------
-template<typename T, typename...Arg>
-Data data(Arg&&...arg) {
-  return Data(std::unique_ptr<Data_Intf>(new Data_Impl<T>(std::forward<Arg...>(arg...))));
-}
+// //
+// // Non-member constructor of Data with value type.
+// // --------------------------------------------------------
+// template<typename T, typename...Arg>
+// Data data(Arg&&...arg) {
+//   return Data(std::unique_ptr<Data_Intf>(new Data_Impl<T>(std::forward<Arg...>(arg...))));
+// }
 
 
 

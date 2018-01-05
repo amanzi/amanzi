@@ -84,7 +84,7 @@ class RecordSet {
   // Data creation
   void CreateData() {
     for (auto& e : records_) {
-      e.second->data_ = factory_.Create();
+      e.second->data_ = std::forward<Data>(factory_.Create());
     }
   }
 

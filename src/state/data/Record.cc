@@ -27,6 +27,35 @@ Record::Record(Key fieldname, Key owner) :
 {}
 
 
+// Copy constructor does not copy data!
+Record::Record(const Record& other) :
+    fieldname_(other.fieldname_),
+    owner_(other.owner_),
+    vis_key_(other.vis_key_),
+    units_(other.units_),
+    io_checkpoint_(other.io_checkpoint_),
+    io_vis_(other.io_vis_),
+    initialized_(other.initialized_),
+    subfieldnames_(other.subfieldnames_)
+{}
+
+// Record&
+// Record::operator=(const Record& other)
+// {
+//   if (&other != this) {
+//     fieldname_ = other.fieldname_;
+//     owner_ = other.owner_;
+//     vis_key_ = other.vis_key_;
+//     units_ = other.units_;
+//     io_checkpoint_ = other.io_checkpoint_;
+//     io_vis_ = other.io_vis_;
+//     initialized_ = other.initialized_;
+//     subfieldnames_ = other.subfieldnames_;
+//     data_ = other.data_;
+//   }
+// }
+
+
 // pass-throughs for other functionality
 void Record::WriteVis(const Visualization& vis) const {
   if (io_vis()) {

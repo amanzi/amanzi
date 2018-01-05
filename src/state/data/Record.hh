@@ -29,7 +29,7 @@ class Record {
   Record() {}
   Record(Key fieldname, Key owner="");
   
-  Record(const Record& other) = default;
+  Record(const Record& other);
   Record(Record&& other) = default;
   Record(const Record& other, Key fieldname) :
       Record(other) {

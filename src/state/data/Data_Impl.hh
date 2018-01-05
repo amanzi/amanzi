@@ -38,7 +38,7 @@ class Data_Intf {
  public:
   virtual ~Data_Intf() {}
 
-  virtual std::unique_ptr<Data_Intf> Clone() const = 0;
+  //  virtual std::unique_ptr<Data_Intf> Clone() const = 0;
   
   template<typename T>
   const T& Get() const;
@@ -84,8 +84,8 @@ class Data_Impl : public Data_Intf {
   Data_Impl(Teuchos::RCP<T> t) :
       t_(std::move(t)) {}
   
-  Data_Impl(const Data_Impl<T>& other) :
-      t_(Teuchos::rcp(new T(*other.t_))) {}
+  // Data_Impl(const Data_Impl<T>& other) :
+  //     t_(Teuchos::rcp(new T(*other.t_))) {}
 
   Data_Impl(Data_Impl<T>&& other) noexcept :
       t_(std::move(other.t_)) {}
@@ -94,9 +94,9 @@ class Data_Impl : public Data_Intf {
   Data_Impl(Ts&&...ts) :
       t_(Teuchos::rcp(new T(std::forward<Ts...>(ts...)))) {}
   
-  std::unique_ptr<Data_Intf> Clone() const override {
-    return std::unique_ptr<Data_Impl<T> >(new Data_Impl<T>(*this));
-  }
+  // std::unique_ptr<Data_Intf> Clone() const override {
+  //   return std::unique_ptr<Data_Impl<T> >(new Data_Impl<T>(*this));
+  // }
 
   Data_Impl<T>& operator=(Data_Impl<T> other) = delete;// {
 
