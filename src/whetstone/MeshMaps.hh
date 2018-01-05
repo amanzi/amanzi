@@ -69,10 +69,6 @@ class MeshMaps {
   // -- determinant
   void Determinant(double t, const MatrixPolynomial& J, Polynomial& det) const;
 
-  // Jacobian determinant
-  virtual void JacobianDet(int c, double t, const std::vector<VectorPolynomial>& vf,
-                           Polynomial& vc) const = 0;
-
   // Miscalleneous
   // -- polynomial approximation of map x2 = F(x1)
   int LeastSquareFit(int order,

@@ -81,7 +81,7 @@ void RemapTests2DPrimal(int order, std::string disc_name,
 
   // deform the second mesh
   AmanziGeometry::Point xv(2), xref(2);
-  Entity_ID_List nodeids;
+  Entity_ID_List nodeids, faces;
   AmanziGeometry::Point_List new_positions, final_positions;
 
   for (int v = 0; v < nnodes_wghost; ++v) {
@@ -100,6 +100,17 @@ void RemapTests2DPrimal(int order, std::string disc_name,
     new_positions.push_back(xv);
   }
   mesh1->deform(nodeids, new_positions, false, &final_positions);
+
+  // little factory of mesh maps
+  std::shared_ptr<WhetStone::MeshMaps> maps;
+  if (maps_name == "FEM") {
+    maps = std::make_shared<WhetStone::MeshMaps_FEM>(mesh0, mesh1);
+  } else if (maps_name == "VEM") {
+    std::shared_ptr<WhetStone::MeshMaps_VEM> maps_vem;
+    maps_vem = std::make_shared<WhetStone::MeshMaps_VEM>(mesh0, mesh1);
+    maps_vem->set_order(order + 1);  // higher-order velocity reconstruction
+    maps = maps_vem;
+  }
 
   // create and initialize cell-based field 
   CompositeVectorSpace cvs1;
@@ -136,11 +147,34 @@ void RemapTests2DPrimal(int order, std::string disc_name,
   double mass_tmp(mass0);
   mesh0->get_comm()->SumAll(&mass_tmp, &mass0, 1);
 
-  // allocate memory
+  // allocate memory for global variables
+  // -- solution
   CompositeVectorSpace cvs2;
   cvs2.SetMesh(mesh1)->SetGhosted(true)->AddComponent("cell", AmanziMesh::CELL, nk);
   CompositeVector p2(cvs2);
   Epetra_MultiVector& p2c = *p2.ViewComponent("cell");
+
+  // -- face velocities
+  std::vector<WhetStone::VectorPolynomial> vec_vel(nfaces_wghost);
+  for (int f = 0; f < nfaces_wghost; ++f) {
+    maps->VelocityFace(f, vec_vel[f]);
+  }
+
+  // -- cell-baced velocities and Jacobian matrices
+  std::vector<WhetStone::VectorPolynomial> uc(ncells_owned);
+  std::vector<WhetStone::MatrixPolynomial> J(ncells_owned);
+
+  for (int c = 0; c < ncells_owned; ++c) {
+    mesh0->cell_get_faces(c, &faces);
+
+    std::vector<WhetStone::VectorPolynomial> vvf;
+    for (int n = 0; n < faces.size(); ++n) {
+      vvf.push_back(vec_vel[faces[n]]);
+    }
+
+    maps->VelocityCell(c, vvf, uc[c]);
+    maps->Jacobian(uc[c], J[c]);
+  }
 
   // create flux operator
   Teuchos::ParameterList plist;
@@ -159,7 +193,6 @@ void RemapTests2DPrimal(int order, std::string disc_name,
   Teuchos::RCP<PDE_AdvectionRiemann> op = Teuchos::rcp(new PDE_AdvectionRiemann(plist, mesh0));
   auto global_op = op->global_operator();
 
-  std::vector<WhetStone::VectorPolynomial> vec_vel(nfaces_wghost);
   Teuchos::RCP<std::vector<WhetStone::Polynomial> > vel = 
       Teuchos::rcp(new std::vector<WhetStone::Polynomial>(nfaces_wghost));
 
@@ -193,20 +226,8 @@ void RemapTests2DPrimal(int order, std::string disc_name,
   op_reac->Setup(jac);
 
   double t(0.0), tend(1.0);
-  std::shared_ptr<WhetStone::MeshMaps> maps;
-  if (maps_name == "FEM") {
-    maps = std::make_shared<WhetStone::MeshMaps_FEM>(mesh0, mesh1);
-  } else if (maps_name == "VEM") {
-    maps = std::make_shared<WhetStone::MeshMaps_VEM>(mesh0, mesh1);
-  }
-
   while(t < tend - dt/2) {
-    // calculate face velocities
-    for (int f = 0; f < nfaces_wghost; ++f) {
-      maps->VelocityFace(f, vec_vel[f]);
-    }
-
-    // calculate normal component of face velocities and change its sign
+    // calculate normal component of face velocity at time t+dt/2 
     for (int f = 0; f < nfaces_wghost; ++f) {
       // cn = j J^{-t} N dA
       WhetStone::VectorPolynomial cn;
@@ -216,35 +237,14 @@ void RemapTests2DPrimal(int order, std::string disc_name,
       (*vel)[f] *= -1.0;
     }
 
-    // calculate cell velocities at time t+dt/2
-    Entity_ID_List faces;
-    WhetStone::MatrixPolynomial J, C;
-    WhetStone::VectorPolynomial tmp;
+    // calculate various geometric quantities in reference framework
+    WhetStone::MatrixPolynomial C;
 
     for (int c = 0; c < ncells_owned; ++c) {
-      mesh0->cell_get_faces(c, &faces);
-      std::vector<WhetStone::VectorPolynomial> vf;
+      maps->Cofactors(t + dt/2, J[c], C);
+      (*cell_vel)[c].Multiply(C, uc[c], true);
 
-      for (int n = 0; n < faces.size(); ++n) {
-        vf.push_back(vec_vel[faces[n]]);
-      }
-
-      maps->VelocityCell(c, vf, tmp);
-      maps->Jacobian(tmp, J);
-      maps->Cofactors(t + dt/2, J, C);
-      (*cell_vel)[c].Multiply(C, tmp, true);
-    }
-
-    // calculate determinant of Jacobian at time t+dt
-    for (int c = 0; c < ncells_owned; ++c) {
-      mesh0->cell_get_faces(c, &faces);
-      std::vector<WhetStone::VectorPolynomial> vf;
-
-      for (int n = 0; n < faces.size(); ++n) {
-        vf.push_back(vec_vel[faces[n]]);
-      }
-
-      maps->JacobianDet(c, t + dt, vf, (*jac)[c]);
+      maps->Determinant(t + dt, J[c], (*jac)[c]);
     }
 
     // populate operators

@@ -448,6 +448,13 @@ void DG_Modal::TaylorBasis(int c, const Iterator& it, double* a, double* b)
 ****************************************************************** */
 Polynomial DG_Modal::CalculatePolynomial(int c, const std::vector<double>& coefs) const
 {
+  if (order_ == 0) {
+    Polynomial poly(d_, 0);
+    poly(0, 0) = coefs[0];
+    poly.set_origin(mesh_->cell_centroid(c));
+    return poly;
+  }
+
   ASSERT(scales_a_.size() != 0);
   ASSERT(scales_a_[c].size() == coefs.size());
 

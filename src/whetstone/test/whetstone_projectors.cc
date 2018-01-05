@@ -173,14 +173,14 @@ TEST(HARMONIC_PROJECTORS_SQUARE) {
   projector.HarmonicPk_Cell(cell, 3, vf, uc);
   std::cout << uc[0] << std::endl;
 
-  // test harmonic functions
+  // test harmonic functions (is it always true for square?)
   std::cout << "\nTest: High-order projectors for square (harmonic function)" << std::endl;
   for (int n = 0; n < 4; ++n) {
     for (int i = 0; i < 2; ++i) {
       vf[n][i].Reshape(2, 2, false);
       vf[n][i](2, 0) = 4.0;
       vf[n][i](2, 1) = 5.0;
-      vf[n][i](2, 2) = -6.0;
+      vf[n][i](2, 2) = 6.0;
     }
   }
   projector.HarmonicPk_Cell(cell, 2, vf, uc);
@@ -282,7 +282,7 @@ TEST(HARMONIC_PROJECTORS_POLYGON) {
     CHECK(uc[0].NormMax() < 1e-12 && uc[1].NormMax() < 1e-12);
   }
 
-  // test harmonic functions
+  // test trace compatibility between function and its projecton (k < 3 only!)
   std::cout << "\nTest: High-order projectors for pentagon (harmonic function)" << std::endl;
   for (int n = 0; n < nfaces; ++n) {
     for (int i = 0; i < 2; ++i) {
@@ -295,18 +295,29 @@ TEST(HARMONIC_PROJECTORS_POLYGON) {
   projector.HarmonicPk_Cell(cell, 2, vf, uc);
   std::cout << uc[0] << std::endl;
 
-  double val(0.0);
+  int dir;
+  double val1(0.0), valx(0.0);
   NumericalIntegration numi(mesh);
 
   for (int n = 0; n < nfaces; ++n) {
-    const AmanziGeometry::Point& normal = mesh->face_normal(n);
-    Polynomial tmp = (vf[n] - uc) * normal;
-    val += numi.IntegratePolynomialFace(n, tmp);
-  }
-  std::cout << "val=" << val << std::endl;
+    const AmanziGeometry::Point& normal = mesh->face_normal(n, false, cell, &dir);
+    double factor = normal[0] / mesh->face_area(n) * dir;
 
-  // CHECK(fabs(uc[0](2, 0) + uc[0](2, 2)) < 1e-12 &&
-  //       fabs(uc[1](2, 0) + uc[1](2, 2)) < 1e-12);
+    std::vector<const Polynomial*> polys;
+
+    Polynomial tmp = vf[n][0] - uc[0];
+    polys.push_back(&tmp);
+    val1 += factor * numi.IntegratePolynomialsFace(n, polys);
+
+    Polynomial q(2, 1);
+    q(1, 0) = 1.0;
+    q(1, 1) = 2.0;
+    polys.push_back(&q);
+    valx += factor * numi.IntegratePolynomialsFace(n, polys);
+  }
+  std::cout << "values: " << val1 << " " << valx << std::endl;
+  CHECK_CLOSE(val1, 0.0, 1e-12);
+  CHECK_CLOSE(valx, 0.0, 1e-12);
 
   delete comm;
 }

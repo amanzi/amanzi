@@ -129,67 +129,6 @@ void MeshMaps_VEM::NansonFormula(
 
 
 /* ******************************************************************
-* Calculate determinant of a Jacobian. A prototype for the future 
-* projection scheme. Currently, we return a number.
-****************************************************************** */
-void MeshMaps_VEM::JacobianDet(
-    int c, double t, const std::vector<VectorPolynomial>& vf, Polynomial& jac) const
-{
-  AmanziGeometry::Point x(d_), cn(d_);
-  WhetStone::Tensor J(d_, 2); 
-
-  Entity_ID_List faces;
-  std::vector<int> dirs;
-
-  mesh0_->cell_get_faces_and_dirs(c, &faces, &dirs);
-  int nfaces = faces.size();
-
-  double sum(0.0);
-  for (int n = 0; n < nfaces; ++n) {
-    int f = faces[n];
-
-    // calculate j J^{-t} N dA
-    JacobianFaceValue_(f, vf[n], x, J);
-
-    J *= t;
-    J += 1.0 - t;
-
-    Tensor C = J.Cofactors();
-    cn = C * mesh0_->face_normal(f); 
-
-    const AmanziGeometry::Point& xf0 = mesh0_->face_centroid(f);
-    const AmanziGeometry::Point& xf1 = mesh1_->face_centroid(f);
-    sum += (xf0 + t * (xf1 - xf0)) * cn * dirs[n];
-  }
-  sum /= d_ * mesh0_->cell_volume(c);
-
-  jac.Reshape(d_, 0);
-  jac(0, 0) = sum;
-}
-
-
-/* ******************************************************************
-* Calculate determinant of a Jacobian. Different version
-****************************************************************** */
-void MeshMaps_VEM::JacobianDet(
-    double t, const VectorPolynomial& vc, Polynomial& jac) const
-{
-  Tensor T(d_, 2);
-  for (int i = 0; i < d_; ++i) {
-    for (int j = 0; j < d_; ++j) {
-      T(i, j) = vc[i](1, j);
-    }
-  }
-
-  T *= t;
-  T += 1.0;
-
-  jac.Reshape(d_, 0);
-  jac(0, 0) = T.Det();
-}
-
-
-/* ******************************************************************
 * Calculate Jacobian at point x of face f 
 * NOTE: limited to linear velocity FIXME
 ****************************************************************** */
@@ -197,7 +136,6 @@ void MeshMaps_VEM::JacobianFaceValue_(
     int f, const VectorPolynomial& v,
     const AmanziGeometry::Point& x, Tensor& J) const
 {
-  // FIXME x is not used
   for (int i = 0; i < d_; ++i) {
     for (int j = 0; j < d_; ++j) {
       J(i, j) = v[i](1, j);

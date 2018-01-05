@@ -48,11 +48,6 @@ class MeshMaps_FEM : public MeshMaps {
   virtual void NansonFormula(int f, double t, const VectorPolynomial& vf,
                              VectorPolynomial& cn) const override;
 
-  // Jacobian
-  // -- determinant
-  virtual void JacobianDet(int c, double t, const std::vector<VectorPolynomial>& vf,
-                           Polynomial& vc) const override;
-
  private:
   AmanziGeometry::Point Map_(int c, const AmanziGeometry::Point& xref) const;
 
