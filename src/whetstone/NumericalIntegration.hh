@@ -61,7 +61,9 @@ class NumericalIntegration {
   // integrate group of monomials 
   void IntegrateMonomialsCell(int c, Monomial& monomials);
 
-  // useful functions: integrate single polynomials
+  // useful functions: integrate single polynomial
+  double IntegratePolynomialCell(int c, const Polynomial& poly);
+
   double IntegratePolynomialFace(int f, const Polynomial& poly) const {
       const std::vector<const Polynomial*> polys(1, &poly);
       return IntegratePolynomialsFace(f, polys);

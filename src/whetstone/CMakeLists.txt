@@ -134,6 +134,7 @@ if ( BUILD_TESTS )
                     SOURCE test/Main.cc test/whetstone_polynomials.cc
                                         test/whetstone_dg.cc
                                         test/whetstone_projectors.cc
+                                        test/whetstone_numi.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
     # Test: matrices for Derham complex

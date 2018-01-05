@@ -19,8 +19,36 @@ namespace Amanzi {
 namespace WhetStone {
 
 /* ******************************************************************
+* Integrate polynomial over cell c.
+****************************************************************** */
+double NumericalIntegration::IntegratePolynomialCell(int c, const Polynomial& poly)
+{
+  // calculate integrals of monomials centered at cell centroid
+  int order = poly.order();
+  Polynomial integrals(d_, order);
+
+  for (int k = 0; k <= order; ++k) {
+    IntegrateMonomialsCell(c, integrals.monomials(k));
+  }
+
+  // dot product of coefficients of two polynomials.
+  Polynomial tmp = poly;
+  tmp.ChangeOrigin(mesh_->cell_centroid(c));
+
+  double value(0.0);
+  for (int k = 0; k <= order; ++k) {
+    std::vector<double>& val1 = integrals.monomials(k).coefs();
+    std::vector<double>& val2 = tmp.monomials(k).coefs();
+    for (int i = 0; i < val1.size(); ++i) value += val1[i] * val2[i];
+  }
+
+  return value;
+}
+
+
+/* ******************************************************************
 * Integrate over face f the product of polynomials that may have
-* different origin. 
+* different origins. 
 ****************************************************************** */
 double NumericalIntegration::IntegratePolynomialsFace(
     int f, const std::vector<const Polynomial*>& polys) const
