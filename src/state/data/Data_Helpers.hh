@@ -17,6 +17,7 @@ Helpers that know how to read/write/etc data.
 #include "errors.hh"
 
 #include "CompositeVector.hh"
+#include "Op.hh"
 
 #include "FunctionFactory.hh"
 
@@ -168,6 +169,57 @@ Initialize<CompositeVector>(Teuchos::ParameterList& plist, CompositeVector& t,
                             const Key& fieldname,
                             const std::vector<std::string>& subfieldnames);
 
+
+
+
+//
+// Specializations for Op
+// ======================================================================
+
+template<>
+inline
+void
+WriteVis<Operators::Op>(const Visualization& vis, const Key& fieldname,
+             const std::vector<std::string>& subfieldnames,
+             const Operators::Op& vec) {}
+
+template<>
+inline
+void
+WriteCheckpoint<Operators::Op>(const Checkpoint& chkp, const Key& fieldname,
+                    const Operators::Op& vec) {}
+
+template<>
+inline
+void
+ReadCheckpoint<Operators::Op>(const Checkpoint& chkp, const Key& fieldname,
+                   Operators::Op& vec){}
+
+template<>
+inline
+bool
+Initialize<Operators::Op>(Teuchos::ParameterList& plist, Operators::Op& t,
+               const Key& fieldname,
+               const std::vector<std::string>& subfieldnames) { return true; }
+
+
+
+
+template<class Op_t>
+class Op_Factory {
+ public:
+  Op_Factory() {}
+
+  void set_mesh(const Teuchos::RCP<AmanziMesh::Mesh>& mesh) { mesh_ = mesh; }
+  void set_name(const std::string& name) { name_ = name; }
+  Teuchos::RCP<Op_t> Create() const {
+    return Teuchos::rcp(new Op_t(name_, mesh_));
+  }
+
+ private:
+  Teuchos::RCP<AmanziMesh::Mesh> mesh_;
+  std::string name_;
+};
 
 
 

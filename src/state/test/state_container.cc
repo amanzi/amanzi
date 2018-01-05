@@ -15,7 +15,7 @@
 
 #include "Vec.hh"
 #include "Data_Helpers.hh"
-
+#include "Op_Cell_Cell.hh"
 
 TEST(STATE_CREATION) {
   using namespace Amanzi;
@@ -127,3 +127,30 @@ TEST(STATE_HETEROGENEOUS_DATA) {
   
 }  
 
+
+
+
+TEST(STATE_VIRTUAL_DATA) {
+  using namespace Amanzi;
+
+  // create a mesh
+  auto comm = new Epetra_MpiComm(MPI_COMM_WORLD);
+  AmanziMesh::MeshFactory fac(comm);
+  auto mesh = fac(0.0, 0.0, 0.0, 4.0, 4.0, 4.0, 2, 2, 2);
+
+  // create a state
+  State s;
+  s.RegisterDomainMesh(mesh);
+
+  // require some data
+  auto& f = s.Require<Operators::Op, Helpers::Op_Factory<Operators::Op_Cell_Cell>>("my_op", "", "my_op_owner");
+  f.set_mesh(mesh);
+  f.set_name("cell");
+
+  s.Setup();
+
+  // existence
+  CHECK(s.HasData("my_op"));
+  CHECK_EQUAL(Operators::OPERATOR_SCHEMA_DOFS_CELL | Operators::OPERATOR_SCHEMA_BASE_CELL,
+              s.Get<Operators::Op>("my_op").schema_old_);
+}
