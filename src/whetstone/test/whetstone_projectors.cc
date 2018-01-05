@@ -25,6 +25,7 @@
 #include "Point.hh"
 
 #include "MFD3D_CrouzeixRaviart.hh"
+#include "NumericalIntegration.hh"
 #include "Tensor.hh"
 #include "ProjectorH1.hh"
 
@@ -172,6 +173,22 @@ TEST(HARMONIC_PROJECTORS_SQUARE) {
   projector.HarmonicPk_Cell(cell, 3, vf, uc);
   std::cout << uc[0] << std::endl;
 
+  // test harmonic functions
+  std::cout << "\nTest: High-order projectors for square (harmonic function)" << std::endl;
+  for (int n = 0; n < 4; ++n) {
+    for (int i = 0; i < 2; ++i) {
+      vf[n][i].Reshape(2, 2, false);
+      vf[n][i](2, 0) = 4.0;
+      vf[n][i](2, 1) = 5.0;
+      vf[n][i](2, 2) = -6.0;
+    }
+  }
+  projector.HarmonicPk_Cell(cell, 2, vf, uc);
+  std::cout << uc[0] << std::endl;
+
+  CHECK(fabs(uc[0](2, 0) + uc[0](2, 2)) < 1e-12 &&
+        fabs(uc[1](2, 0) + uc[1](2, 2)) < 1e-12);
+
   delete comm;
 }
 
@@ -264,6 +281,32 @@ TEST(HARMONIC_PROJECTORS_POLYGON) {
     uc[1] -= vf[0][1];
     CHECK(uc[0].NormMax() < 1e-12 && uc[1].NormMax() < 1e-12);
   }
+
+  // test harmonic functions
+  std::cout << "\nTest: High-order projectors for pentagon (harmonic function)" << std::endl;
+  for (int n = 0; n < nfaces; ++n) {
+    for (int i = 0; i < 2; ++i) {
+      vf[n][i].Reshape(2, 2, false);
+      vf[n][i](2, 0) = 4.0;
+      vf[n][i](2, 1) = 5.0;
+      vf[n][i](2, 2) = 6.0;
+    }
+  }
+  projector.HarmonicPk_Cell(cell, 2, vf, uc);
+  std::cout << uc[0] << std::endl;
+
+  double val(0.0);
+  NumericalIntegration numi(mesh);
+
+  for (int n = 0; n < nfaces; ++n) {
+    const AmanziGeometry::Point& normal = mesh->face_normal(n);
+    Polynomial tmp = (vf[n] - uc) * normal;
+    val += numi.IntegratePolynomialFace(n, tmp);
+  }
+  std::cout << "val=" << val << std::endl;
+
+  // CHECK(fabs(uc[0](2, 0) + uc[0](2, 2)) < 1e-12 &&
+  //       fabs(uc[1](2, 0) + uc[1](2, 2)) < 1e-12);
 
   delete comm;
 }

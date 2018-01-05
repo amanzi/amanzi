@@ -51,6 +51,11 @@ class VectorPolynomial {
     return tmp += vp2;
   }
 
+  friend VectorPolynomial operator-(const VectorPolynomial& vp1, const VectorPolynomial& vp2) {
+    VectorPolynomial tmp(vp1);
+    return tmp -= vp2;
+  }
+
   friend VectorPolynomial operator*(double val, const VectorPolynomial& vp) {
     VectorPolynomial tmp(vp);
     return tmp *= val;

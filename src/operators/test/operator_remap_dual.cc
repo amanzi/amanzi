@@ -289,6 +289,8 @@ void RemapTestsDual(int dim, int order, std::string disc_name,
 
       // product -C^t u at time t+dt/2
       maps->VelocityCell(c, vvf, tmp);
+if (c==111) std::cout << tmp[0] << std::endl;
+if (c==111) std::cout << tmp[1] << std::endl;
       maps->Jacobian(tmp, J);
       maps->Cofactors(t + dt/2, J, C);
       (*cell_vel)[c].Multiply(C, tmp, true);
@@ -487,6 +489,7 @@ TEST(REMAP3D_DG0_DUAL_VEM) {
 //   RemapTestsDual(3, 1, "dg modal", "VEM", 5, 5, 0.1);
 // }
 
+/*
 TEST(REMAP2D_DG1_QUADRATURE_ERROR) {
   RemapTestsDual(2, 1, "dg modal", "VEM", 16, 16, 0.05);
   RemapTestsDual(2, 1, "dg modal", "VEM", 16 *  2, 16 *  2, 0.05 / q);
@@ -495,3 +498,4 @@ TEST(REMAP2D_DG1_QUADRATURE_ERROR) {
   RemapTestsDual(2, 1, "dg modal", "VEM", 16 * 16, 16 * 16, 0.05 / std::pow(q, 4.0));
   RemapTestsDual(2, 1, "dg modal", "VEM", 16 * 32, 16 * 32, 0.05 / std::pow(q, 5.0));
 }
+*/
