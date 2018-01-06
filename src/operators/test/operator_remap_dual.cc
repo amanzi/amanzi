@@ -45,7 +45,7 @@
 * Remap of polynomilas in two dimensions. Explicit time scheme.
 * Dual formulation places gradient and jumps on a test function.
 ***************************************************************** */
-void RemapTestsDual(int dim, int order, std::string disc_name,
+void RemapTestsDual(int dim, int order_p, int order_u,
                     std::string maps_name,
                     int nx, int ny, double dt) {
   using namespace Amanzi;
@@ -57,11 +57,11 @@ void RemapTestsDual(int dim, int order, std::string disc_name,
   int MyPID = comm.MyPID();
   if (MyPID == 0) std::cout << "\nTest: " << dim << "D remap, dual formulation:"
                             << " mesh=" << ((nx == 0) ? "polygonal" : "square")
-                            << ", order=" << order 
+                            << ", orders: " << order_p << " " << order_u 
                             << ", maps=" << maps_name << std::endl;
 
   // polynomial space
-  WhetStone::Polynomial pp(dim, order);
+  WhetStone::Polynomial pp(dim, order_p);
   int nk = pp.size();
 
   // create initial mesh
@@ -133,7 +133,7 @@ void RemapTestsDual(int dim, int order, std::string disc_name,
   } else if (maps_name == "VEM") {
     std::shared_ptr<WhetStone::MeshMaps_VEM> maps_vem;
     maps_vem = std::make_shared<WhetStone::MeshMaps_VEM>(mesh0, mesh1);
-    maps_vem->set_order(order + 1);  // higher-order velocity reconstruction
+    maps_vem->set_order(order_u);  // higher-order velocity reconstruction
     maps = maps_vem;
   }
 
@@ -147,7 +147,7 @@ void RemapTestsDual(int dim, int order, std::string disc_name,
   Epetra_MultiVector& p1c = *p1->ViewComponent("cell", true);
 
   // we need dg to compute scaling of basis functions
-  WhetStone::DG_Modal dg(order, mesh0);
+  WhetStone::DG_Modal dg(order_p, mesh0);
 
   for (int c = 0; c < ncells_wghost; c++) {
     const AmanziGeometry::Point& xc = mesh0->cell_centroid(c);
@@ -210,8 +210,8 @@ void RemapTestsDual(int dim, int order, std::string disc_name,
 
   // create flux operator
   Teuchos::ParameterList plist;
-  plist.set<std::string>("method", disc_name)
-       .set<int>("method order", order)
+  plist.set<std::string>("method", "dg modal")
+       .set<int>("method order", order_p)
        .set<bool>("jump operator on test function", true);
 
   plist.sublist("schema domain")
@@ -439,7 +439,7 @@ void RemapTestsDual(int dim, int order, std::string disc_name,
 
   // error tests
   pl2_err = std::pow(pl2_err, 0.5);
-  CHECK(pl2_err < 0.12 / (order + 1));
+  CHECK(pl2_err < 0.12 / (order_p + 1));
 
   gcl_err = std::pow(gcl_err, 0.5);
 
@@ -453,7 +453,7 @@ void RemapTestsDual(int dim, int order, std::string disc_name,
     GMV::open_data_file(*mesh1, (std::string)"operators.gmv");
     GMV::start_data();
     GMV::write_cell_data(p2c, 0, "remaped");
-    if (order > 0) {
+    if (order_p > 0) {
       GMV::write_cell_data(p2c, 1, "gradx");
       GMV::write_cell_data(p2c, 2, "grady");
     }
@@ -476,37 +476,37 @@ const int N = 1;
 const double q = 2.0;  // 2.82842712474619;
 
 TEST(REMAP2D_DG0_DUAL_VEM) {
-  // RemapTestsDual(2, 0, "dg modal", "VEM", 16 * N, 16 * N, 0.05 / N);
-  RemapTestsDual(2, 0, "dg modal", "VEM", 0, 0, 0.05 / N);
+  // RemapTestsDual(2, 0, 1, "VEM", 16 * N, 16 * N, 0.05 / N);
+  RemapTestsDual(2, 0, 1, "VEM", 0, 0, 0.05 / N);
 }
 
 TEST(REMAP2D_DG1_DUAL_VEM) {
-  // RemapTestsDual(2, 1, "dg modal", "VEM", 16 * N, 16 * N, 0.05 / N);
-  RemapTestsDual(2, 1, "dg modal", "VEM", 0, 0, 0.05 / N);
+  // RemapTestsDual(2, 1, 2, "VEM", 16 * N, 16 * N, 0.05 / N);
+  RemapTestsDual(2, 1, 2, "VEM", 0, 0, 0.05 / N);
 }
 
 /*
 TEST(REMAP2D_DG2_DUAL_VEM) {
-  RemapTestsDual(2, 2, "dg modal", "VEM", 10, 10, 0.05 / N);
-  // RemapTestsDual(2, 2, "dg modal", "VEM", 0, 0, 0.05 / N);
+  RemapTestsDual(2, 2, 3, "VEM", 10, 10, 0.05 / N);
+  // RemapTestsDual(2, 2, 3, "VEM", 0, 0, 0.05 / N);
 }
 */
 
-TEST(REMAP3D_DG0_DUAL_VEM) {
-  RemapTestsDual(3, 0, "dg modal", "VEM", 5, 5, 0.2);
-}
+// TEST(REMAP3D_DG0_DUAL_VEM) {
+//   RemapTestsDual(3, 0, 1, "VEM", 5, 5, 0.2);
+// }
 
 // TEST(REMAP3D_DG1_DUAL_VEM) {
-//   RemapTestsDual(3, 1, "dg modal", "VEM", 5, 5, 0.1);
+//   RemapTestsDual(3, 1, 2, "VEM", 5, 5, 0.1);
 // }
 
 /*
 TEST(REMAP2D_DG1_QUADRATURE_ERROR) {
-  RemapTestsDual(2, 1, "dg modal", "VEM", 16, 16, 0.05);
-  RemapTestsDual(2, 1, "dg modal", "VEM", 16 *  2, 16 *  2, 0.05 / q);
-  RemapTestsDual(2, 1, "dg modal", "VEM", 16 *  4, 16 *  4, 0.05 / std::pow(q, 2.0));
-  RemapTestsDual(2, 1, "dg modal", "VEM", 16 *  8, 16 *  8, 0.05 / std::pow(q, 3.0));
-  RemapTestsDual(2, 1, "dg modal", "VEM", 16 * 16, 16 * 16, 0.05 / std::pow(q, 4.0));
-  RemapTestsDual(2, 1, "dg modal", "VEM", 16 * 32, 16 * 32, 0.05 / std::pow(q, 5.0));
+  RemapTestsDual(2, 0, 1, "VEM", 16, 16, 0.05);
+  RemapTestsDual(2, 0, 1, "VEM", 16 *  2, 16 *  2, 0.05 / q);
+  RemapTestsDual(2, 0, 1, "VEM", 16 *  4, 16 *  4, 0.05 / std::pow(q, 2.0));
+  RemapTestsDual(2, 0, 1, "VEM", 16 *  8, 16 *  8, 0.05 / std::pow(q, 3.0));
+  RemapTestsDual(2, 0, 1, "VEM", 16 * 16, 16 * 16, 0.05 / std::pow(q, 4.0));
+  RemapTestsDual(2, 0, 1, "VEM", 16 * 32, 16 * 32, 0.05 / std::pow(q, 5.0));
 }
 */
