@@ -38,7 +38,9 @@
 #include "PDE_Abstract.hh"
 #include "PDE_AdvectionRiemann.hh"
 #include "PDE_Reaction.hh"
-#include "RemapUtils.hh"
+
+#include "AnalyticDG00.hh"
+#include "AnalyticDG04.hh"
 
 
 /* *****************************************************************
@@ -149,25 +151,23 @@ void RemapTestsDual(int dim, int order_p, int order_u,
   // we need dg to compute scaling of basis functions
   WhetStone::DG_Modal dg(order_p, mesh0);
 
+  AnalyticDG04 ana(mesh0, order_p);
+
   for (int c = 0; c < ncells_wghost; c++) {
     const AmanziGeometry::Point& xc = mesh0->cell_centroid(c);
-    p1c[0][c] = std::sin(3 * xc[0]) * std::sin(6 * xc[1]);
-    if (nk > 1) {
-      double a, b;
-      WhetStone::Iterator it(dim);
+    WhetStone::Polynomial coefs;
+    ana.TaylorCoefficients(xc, 0.0, coefs);
 
-      it.begin(1);
+    WhetStone::DenseVector data;
+    coefs.GetPolynomialCoefficients(data);
+
+    double a, b;
+    for (auto it = coefs.begin(); it.end() <= coefs.end(); ++it) {
+      int n = it.PolynomialPosition();
+
       dg.TaylorBasis(c, it, &a, &b);
-      p1c[1][c] = 3 * std::cos(3 * xc[0]) * std::sin(6 * xc[1]) / a;
-
-      ++it;
-      dg.TaylorBasis(c, it, &a, &b);
-      p1c[2][c] = 6 * std::sin(3 * xc[0]) * std::cos(6 * xc[1]) / a;
-
-      if (dim == 3) {
-        ++it;
-        dg.TaylorBasis(c, it, &a, &b);
-      }
+      p1c[n][c] = data(n) / a;
+      p1c[0][c] += data(n) * b;
     }
   }
 
@@ -391,7 +391,7 @@ void RemapTestsDual(int dim, int order_p, int order_u,
     if (nk == 1) {
       // const AmanziGeometry::Point& xg = maps->cell_geometric_center(1, c);
       const AmanziGeometry::Point& xg = mesh1->cell_centroid(c);
-      double tmp = p2c[0][c] - std::sin(3 * xg[0]) * std::sin(6 * xg[1]);
+      double tmp = p2c[0][c] - ana.function_exact(xg, 0.0);
 
       pinf_err = std::max(pinf_err, fabs(tmp));
       pl2_err += tmp * tmp * area_c;
@@ -407,7 +407,7 @@ void RemapTestsDual(int dim, int order_p, int order_u,
         mesh1->node_get_coordinates(nodes[i], &v1);
 
         double tmp = poly.Value(v0);
-        tmp -= std::sin(3 * v1[0]) * std::sin(6 * v1[1]);
+        tmp -= ana.function_exact(v1, 0.0);
         pinf_err = std::max(pinf_err, fabs(tmp));
         pl2_err += tmp * tmp * area_c / nnodes;
       }
@@ -421,7 +421,7 @@ void RemapTestsDual(int dim, int order_p, int order_u,
     mass1 += numi.IntegratePolynomialCell(c, poly);
   }
 
-  // parallel colelctive operations
+  // parallel collective operations
   double err_tmp(pl2_err);
   mesh1->get_comm()->SumAll(&err_tmp, &pl2_err, 1);
 
@@ -485,16 +485,14 @@ TEST(REMAP2D_DG1_DUAL_VEM) {
   RemapTestsDual(2, 1, 2, "VEM", 0, 0, 0.05 / N);
 }
 
-/*
 TEST(REMAP2D_DG2_DUAL_VEM) {
   RemapTestsDual(2, 2, 3, "VEM", 10, 10, 0.05 / N);
-  // RemapTestsDual(2, 2, 3, "VEM", 0, 0, 0.05 / N);
+  // RemapTestsDual(2, 2, 3, "VEM", 0, 0, 0.01 / N);
 }
-*/
 
-// TEST(REMAP3D_DG0_DUAL_VEM) {
-//   RemapTestsDual(3, 0, 1, "VEM", 5, 5, 0.2);
-// }
+TEST(REMAP3D_DG0_DUAL_VEM) {
+  RemapTestsDual(3, 0, 1, "VEM", 5, 5, 0.2);
+}
 
 // TEST(REMAP3D_DG1_DUAL_VEM) {
 //   RemapTestsDual(3, 1, 2, "VEM", 5, 5, 0.1);

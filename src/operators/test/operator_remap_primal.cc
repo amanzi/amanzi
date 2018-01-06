@@ -34,7 +34,6 @@
 
 // Amanzi::Operators
 #include "OperatorDefs.hh"
-#include "RemapUtils.hh"
 #include "PDE_Abstract.hh"
 #include "PDE_AdvectionRiemann.hh"
 #include "PDE_Reaction.hh"
