@@ -36,7 +36,6 @@ ExternalProject_Add(${ZLIB_BUILD_TARGET}
                     SOURCE_DIR       ${ZLIB_source_dir}
                     CMAKE_CACHE_ARGS ${AMANZI_CMAKE_CACHE_ARGS}   # Global definitions from root CMakeList
                                      ${ZLIB_CMAKE_CACHE_ARGS}
-                                     -DBUILD_SHARED_LIBS:BOOL=${BUILD_SHARED_LIBS}
                                      -DCMAKE_C_FLAGS:STRING=${Amanzi_COMMON_CFLAGS}  # Ensure uniform build
                                      -DCMAKE_C_COMPILER:FILEPATH=${CMAKE_C_COMPILER}
                     # -- Build
