@@ -51,6 +51,15 @@ if ((NOT MPI_WRAPPERS_IN_USE) AND (MPI_C_LIBRARIES))
   list(APPEND seacas_netcdf_libraries ${MPI_C_LIBRARIES})
 endif()
 
+if (BUILD_SHARED_LIBS)
+   set(seacas_install_rpath  "-DCMAKE_INSTALL_RPATH:PATH=${CMAKE_INSTALL_PREFIX}/SEACAS/lib"
+                             "-DCMAKE_INSTALL_NAME_DIR:PATH=${CMAKE_INSTALL_PREFIX}/SEACAS/lib")
+else()
+   set(seacas_install_rpath "-DCMAKE_INSTALL_NAME_DIR:PATH=${CMAKE_INSTALL_PREFIX}/SEACAS/lib"
+                            "-DCMAKE_SKIP_INSTALL_RPATH:BOOL=ON"
+                            "-DCMAKE_SKIP_RPATH:BOOL=ON")
+endif()
+
 #
 # --- Define the SEACAS patch step - mainly for nem_slice to be able
 # --- to handle columns
@@ -99,8 +108,7 @@ set(SEACAS_CMAKE_CACHE_ARGS
                     -DTPL_ENABLE_Pthread:BOOL=FALSE
                     -DSEACASExodus_ENABLE_THREADSAFE:BOOL=OFF
                     -DSEACASIoss_ENABLE_THREADSAFE:BOOL=OFF
-                    -DCMAKE_INSTALL_RPATH:PATH=${CMAKE_INSTALL_PREFIX}/SEACAS/lib
-                    -DCMAKE_INSTALL_NAME_DIR:PATH=${CMAKE_INSTALL_PREFIX}/SEACAS/lib)
+                    ${seacas_install_rpath})
 
 # --- Add external project build and tie to the SEACAS build target
 ExternalProject_Add(${SEACAS_BUILD_TARGET}
