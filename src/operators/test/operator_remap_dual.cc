@@ -174,7 +174,12 @@ void RemapTestsDual(int dim, int order_p, int order_u,
   // initial mass
   double mass0(0.0);
   for (int c = 0; c < ncells_owned; c++) {
-    mass0 += p1c[0][c] * mesh0->cell_volume(c);
+    std::vector<double> data;
+    for (int i = 0; i < nk; ++i) {
+      data.push_back(p1c[i][c]);
+    }
+    WhetStone::Polynomial poly(dg.CalculatePolynomial(c, data));
+    mass0 += numi.IntegratePolynomialCell(c, poly);
   }
   double mass_tmp(mass0);
   mesh0->get_comm()->SumAll(&mass_tmp, &mass0, 1);
@@ -473,7 +478,7 @@ TEST(REMAP2D_DG1_DUAL_FEM) {
 
 
 const int N = 1;
-const double q = 2.0;  // 2.82842712474619;
+const double q = 3.0;  // 2.82842712474619;
 
 TEST(REMAP2D_DG0_DUAL_VEM) {
   // RemapTestsDual(2, 0, 1, "VEM", 16 * N, 16 * N, 0.05 / N);
@@ -486,25 +491,23 @@ TEST(REMAP2D_DG1_DUAL_VEM) {
 }
 
 TEST(REMAP2D_DG2_DUAL_VEM) {
-  RemapTestsDual(2, 2, 3, "VEM", 10, 10, 0.05 / N);
-  // RemapTestsDual(2, 2, 3, "VEM", 0, 0, 0.01 / N);
+  // RemapTestsDual(2, 2, 3, "VEM", 10, 10, 0.05 / N);
+  RemapTestsDual(2, 2, 3, "VEM", 0, 0, 0.05 / N);
 }
 
-TEST(REMAP3D_DG0_DUAL_VEM) {
-  RemapTestsDual(3, 0, 1, "VEM", 5, 5, 0.2);
-}
+// TEST(REMAP3D_DG0_DUAL_VEM) {
+//   RemapTestsDual(3, 0, 1, "VEM", 5, 5, 0.2);
+// }
 
 // TEST(REMAP3D_DG1_DUAL_VEM) {
 //   RemapTestsDual(3, 1, 2, "VEM", 5, 5, 0.1);
 // }
 
-/*
 TEST(REMAP2D_DG1_QUADRATURE_ERROR) {
-  RemapTestsDual(2, 0, 1, "VEM", 16, 16, 0.05);
-  RemapTestsDual(2, 0, 1, "VEM", 16 *  2, 16 *  2, 0.05 / q);
-  RemapTestsDual(2, 0, 1, "VEM", 16 *  4, 16 *  4, 0.05 / std::pow(q, 2.0));
-  RemapTestsDual(2, 0, 1, "VEM", 16 *  8, 16 *  8, 0.05 / std::pow(q, 3.0));
-  RemapTestsDual(2, 0, 1, "VEM", 16 * 16, 16 * 16, 0.05 / std::pow(q, 4.0));
-  RemapTestsDual(2, 0, 1, "VEM", 16 * 32, 16 * 32, 0.05 / std::pow(q, 5.0));
+  RemapTestsDual(2, 2, 3, "VEM", 16, 16, 0.05);
+  RemapTestsDual(2, 2, 3, "VEM", 16 *  2, 16 *  2, 0.05 / q);
+  RemapTestsDual(2, 2, 3, "VEM", 16 *  4, 16 *  4, 0.05 / std::pow(q, 2.0));
+  RemapTestsDual(2, 2, 3, "VEM", 16 *  8, 16 *  8, 0.05 / std::pow(q, 3.0));
+  RemapTestsDual(2, 2, 3, "VEM", 16 * 16, 16 * 16, 0.05 / std::pow(q, 4.0));
+  RemapTestsDual(2, 2, 3, "VEM", 16 * 32, 16 * 32, 0.05 / std::pow(q, 5.0));
 }
-*/

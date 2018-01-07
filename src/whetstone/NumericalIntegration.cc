@@ -135,6 +135,7 @@ double NumericalIntegration::IntegratePolynomialsEdge(
     k += polys[i]->order();
   }
   int m = k / 2;
+  ASSERT(m < 5);
 
   AmanziGeometry::Point xm(d_);
 

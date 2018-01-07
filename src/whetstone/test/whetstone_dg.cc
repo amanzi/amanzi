@@ -132,7 +132,7 @@ TEST(DG3D_MASS_MATRIX) {
     }
 
     // partially orthonormalized Taylor basis
-    dg.set_basis(WhetStone::TAYLOR_BASIS_NORMALIZED);
+    dg.set_basis(WhetStone::TAYLOR_BASIS_NORMALIZED_ORTHO);
     dg.MassMatrix(0, T, M0);
 
     printf("Mass matrix for order=%d\n", k);
@@ -220,7 +220,7 @@ TEST(DG2D_ADVECTION_MATRIX_FACE) {
   meshfactory.preference(FrameworkPreference({MSTK}));
   Teuchos::RCP<Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 2, 2); 
  
-  for (int k = 0; k < 2; k++) {
+  for (int k = 0; k < 3; k++) {
     DG_Modal dg(k, mesh);
     DenseMatrix A0, A1;
 

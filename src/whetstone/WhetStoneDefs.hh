@@ -50,8 +50,9 @@ const int DIFFUSION_SUPPORT_OPERATOR = 7;
 const int DIFFUSION_TPFA = 5; 
 
 // various DG schemes
-const int TAYLOR_BASIS_NORMALIZED = 1;  // recommended
-const int TAYLOR_BASIS_SIMPLE = 2; 
+const int TAYLOR_BASIS_NORMALIZED = 1;
+const int TAYLOR_BASIS_NORMALIZED_ORTHO = 2;  // recommended
+const int TAYLOR_BASIS_SIMPLE = 3; 
 
 }  // namespace WhetStone
 }  // namespace Amanzi

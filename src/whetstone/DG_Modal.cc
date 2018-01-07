@@ -120,7 +120,7 @@ int DG_Modal::MassMatrixPoly(int c, const Polynomial& K, DenseMatrix& M)
 
 
 /* ******************************************************************
-* Advection matrix for Taylor basis and cell-based velocity uc.
+* Advection matrix for Taylor basis and cell-based velocity u.
 ****************************************************************** */
 int DG_Modal::AdvectionMatrixPoly(int c, const VectorPolynomial& u, DenseMatrix& A, bool grad_on_test)
 {
@@ -503,7 +503,7 @@ void DG_Modal::UpdateIntegrals_(int c, int order)
 
 
 /* ******************************************************************
-* Partial orthonormalization of Taylor basis functions.
+* Normalize and optionally orthogonalize Taylor basis functions.
 ****************************************************************** */
 void DG_Modal::UpdateScales_(int c, int order)
 {
@@ -543,7 +543,11 @@ void DG_Modal::UpdateScales_(int c, int order)
           b = 0.0;
         } else {
           const auto& aux1 = integrals.monomials(m).coefs();
-          b = aux1[k] / volume;
+          if (basis_ == TAYLOR_BASIS_NORMALIZED_ORTHO) {
+            b = aux1[k] / volume;
+          } else {
+            b = 0.0;  // no orthogonalization to constants
+          }
 
           const auto& aux2 = integrals.monomials(2 * m).coefs();
           norm = aux2[integrals.MonomialPosition(index)];
