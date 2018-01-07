@@ -495,14 +495,15 @@ TEST(REMAP2D_DG2_DUAL_VEM) {
   RemapTestsDual(2, 2, 3, "VEM", 0, 0, 0.05 / N);
 }
 
-// TEST(REMAP3D_DG0_DUAL_VEM) {
-//   RemapTestsDual(3, 0, 1, "VEM", 5, 5, 0.2);
-// }
+TEST(REMAP3D_DG0_DUAL_VEM) {
+  RemapTestsDual(3, 0, 1, "VEM", 5, 5, 0.2);
+}
 
 // TEST(REMAP3D_DG1_DUAL_VEM) {
 //   RemapTestsDual(3, 1, 2, "VEM", 5, 5, 0.1);
 // }
 
+/*
 TEST(REMAP2D_DG1_QUADRATURE_ERROR) {
   RemapTestsDual(2, 2, 3, "VEM", 16, 16, 0.05);
   RemapTestsDual(2, 2, 3, "VEM", 16 *  2, 16 *  2, 0.05 / q);
@@ -511,3 +512,4 @@ TEST(REMAP2D_DG1_QUADRATURE_ERROR) {
   RemapTestsDual(2, 2, 3, "VEM", 16 * 16, 16 * 16, 0.05 / std::pow(q, 4.0));
   RemapTestsDual(2, 2, 3, "VEM", 16 * 32, 16 * 32, 0.05 / std::pow(q, 5.0));
 }
+*/

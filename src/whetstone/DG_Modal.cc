@@ -380,35 +380,43 @@ void DG_Modal::ChangeBasis_(int c1, int c2, DenseMatrix& A)
   UpdateIntegrals_(c1, 2 * order_);
   UpdateIntegrals_(c2, 2 * order_);
 
-  int m, nrows = A.NumRows();
-  double ak, bk;
-  std::vector<double> a(nrows), b(nrows);
+  int nrows = A.NumRows();
+  int m(nrows / 2);
+  std::vector<double> a1(m), a2(m), b1(m), b2(m);
 
-  m = nrows / 2;
   Iterator it(d_);
   for (it.begin(); it.end() <= order_; ++it) {
     int k = it.PolynomialPosition();
 
+    double ak, bk;
     TaylorBasis(c1, it, &ak, &bk);
-    a[k] = ak;
-    b[k] = -ak * bk;
+    a1[k] = ak;
+    b1[k] = -ak * bk;
 
     TaylorBasis(c2, it, &ak, &bk);
-    a[m + k] = ak;
-    b[m + k] = -ak * bk;
+    a2[k] = ak;
+    b2[k] = -ak * bk;
   }
 
   // calculate A * R
-  for (int k = 1; k < nrows; ++k) {
-    for (int i = 0; i < nrows; ++i) {
-      A(i, k) = A(i, k) * a[k] + A(i, 0) * b[k];
+  for (int k = 1; k < m; ++k) {
+    for (int i = 0; i < m; ++i) {
+      A(i, k) = A(i, k) * a1[k] + A(i, 0) * b1[k];
+      A(i, k + m) = A(i, k + m) * a2[k] + A(i, m) * b2[k];
+
+      A(i + m, k) = A(i + m, k) * a1[k] + A(i + m, 0) * b1[k];
+      A(i + m, k + m) = A(i + m, k + m) * a2[k] + A(i + m, m) * b2[k];
     }
   }
 
   // calculate R^T * A * R
-  for (int k = 1; k < nrows; ++k) {
-    for (int i = 0; i < nrows; ++i) {
-      A(k, i) = A(k, i) * a[k] + A(0, i) * b[k];
+  for (int k = 1; k < m; ++k) {
+    for (int i = 0; i < m; ++i) {
+      A(k, i) = A(k, i) * a1[k] + A(0, i) * b1[k];
+      A(k + m, i) = A(k + m, i) * a2[k] + A(m, i) * b2[k];
+
+      A(k, i + m) = A(k, i + m) * a1[k] + A(0, i + m) * b1[k];
+      A(k + m, i + m) = A(k + m, i + m) * a2[k] + A(m, i + m) * b2[k];
     }
   }
 }
@@ -467,7 +475,7 @@ Polynomial DG_Modal::CalculatePolynomial(int c, const std::vector<double>& coefs
     int k = it.MonomialPosition();
 
     poly(m, k) *= *jt; 
-    poly(0, 0) -= *jt * scales_b_[c](m, k);
+    poly(0, 0) -= poly(m, k) * scales_b_[c](m, k);
     ++jt;
   }
 
