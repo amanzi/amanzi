@@ -326,7 +326,7 @@ void RemapTestsDual(int dim, int order_p, int order_u,
         int f = faces[n];
         gcl -= (*vel)[f].Value(mesh0->face_centroid(f)) * dirs[n] * dt;
       }
-      gcl_err += (gcl * gcl) * vol; 
+      gcl_err = std::max(gcl_err, fabs(gcl) / mesh0->cell_volume(c)); 
     }
 
     // populate operators
@@ -439,17 +439,12 @@ void RemapTestsDual(int dim, int order_p, int order_u,
   mass_tmp = mass1;
   mesh1->get_comm()->SumAll(&mass_tmp, &mass1, 1);
 
-  err_tmp = gcl_err / nstep;
-  mesh1->get_comm()->SumAll(&err_tmp, &gcl_err, 1);
-
   // error tests
   pl2_err = std::pow(pl2_err, 0.5);
   CHECK(pl2_err < 0.12 / (order_p + 1));
 
-  gcl_err = std::pow(gcl_err, 0.5);
-
   if (MyPID == 0) {
-    printf("nx=%3d  L2(p0)=%12.8g  Inf(p0)=%12.8g  dMass=%10.4g  GCL=%10.6g  dArea=%10.6g\n", 
+    printf("nx=%3d  L2=%12.8g  Inf=%12.8g  dMass=%10.4g  GCL_Inf=%10.6g  dArea=%10.6g\n", 
         nx, pl2_err, pinf_err, mass1 - mass0, gcl_err, 1.0 - area);
   }
 
