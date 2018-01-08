@@ -101,6 +101,8 @@
 #	         - update curl to 7.56.1
 #  0.94.12       - update xerces-c to 3.2.0 (CMake build)
 
+#  0.95.0        - update Trilinos 12.12.1
+
 include(CMakeParseArguments)
 
 MACRO(LIST_LENGTH var)
@@ -151,8 +153,8 @@ endmacro(amanzi_tpl_version_write)
 # TPLs and XSDK versions 
 #
 set(AMANZI_TPLS_VERSION_MAJOR 0)
-set(AMANZI_TPLS_VERSION_MINOR 94)
-set(AMANZI_TPLS_VERSION_PATCH 12)
+set(AMANZI_TPLS_VERSION_MINOR 95)
+set(AMANZI_TPLS_VERSION_PATCH 0)
 set(AMANZI_TPLS_VERSION ${AMANZI_TPLS_VERSION_MAJOR}.${AMANZI_TPLS_VERSION_MINOR}.${AMANZI_TPLS_VERSION_PATCH})
 # Not sure how to create a meaningful hash key for the collection
 
@@ -410,13 +412,13 @@ set(PETSc_MD5_SUM        41a10be8bbf9d13f137873a2d52c6715)
 # TPL: Trilinos
 #
 set(Trilinos_VERSION_MAJOR 12)
-set(Trilinos_VERSION_MINOR 10)
+set(Trilinos_VERSION_MINOR 12)
 set(Trilinos_VERSION_PATCH 1)
 set(Trilinos_VERSION ${Trilinos_VERSION_MAJOR}-${Trilinos_VERSION_MINOR}-${Trilinos_VERSION_PATCH})
 set(Trilinos_URL_STRING     "https://github.com/trilinos/Trilinos/archive")
 set(Trilinos_ARCHIVE_FILE   trilinos-release-${Trilinos_VERSION}.tar.gz)
 set(Trilinos_SAVEAS_FILE    ${Trilinos_ARCHIVE_FILE})
-set(Trilinos_MD5_SUM        667333dbd7c0f031d47d7c5511fd0810)
+set(Trilinos_MD5_SUM        ecd4606fa332212433c98bf950a69cc7)
 
 #
 # TPL: SEACAS
