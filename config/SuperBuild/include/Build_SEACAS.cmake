@@ -38,10 +38,10 @@ build_whitespace_string(seacas_lflags ${seacas_lflags_list})
 
 # Build the NetCDF libraries string
 include(BuildLibraryName)
-build_library_name(netcdf seacas_netcdf_library STATIC APPEND_PATH ${TPL_INSTALL_PREFIX}/lib)
-build_library_name(hdf5_hl seacas_hdf5_hl_library STATIC APPEND_PATH ${TPL_INSTALL_PREFIX}/lib)
-build_library_name(hdf5 seacas_hdf5_library STATIC APPEND_PATH ${TPL_INSTALL_PREFIX}/lib)
-build_library_name(z seacas_z_library STATIC APPEND_PATH ${TPL_INSTALL_PREFIX}/lib)
+build_library_name(netcdf seacas_netcdf_library STATIC APPEND_PATH ${NetCDF_DIR}/lib)
+build_library_name(hdf5_hl seacas_hdf5_hl_library STATIC APPEND_PATH ${HDF5_DIR}/lib)
+build_library_name(hdf5 seacas_hdf5_library STATIC APPEND_PATH ${HDF5_DIR}/lib)
+build_library_name(z seacas_z_library STATIC APPEND_PATH ${ZLIB_DIR}/lib)
 set(seacas_netcdf_libraries
        ${seacas_netcdf_library}
        ${seacas_hdf5_hl_library}
@@ -89,8 +89,8 @@ set(SEACAS_CMAKE_CACHE_ARGS
                     -DSEACASProj_HIDE_DEPRECATED_CODE:STRING="NO"
                     -DTPL_ENABLE_Netcdf:BOOL=TRUE
                     -DTPL_Netcdf_LIBRARIES:STRING=${seacas_netcdf_libraries}
-                    -DNetcdf_INCLUDE_DIRS:STRING=${TPL_INSTALL_PREFIX}/include
-                    -DTPL_Netcdf_PARALLEL:BOOL=TRUE
+                    -DNetcdf_INCLUDE_DIRS:STRING=${NetCDF_INCLUDE_DIRS}
+		                -DTPL_Netcdf_PARALLEL:BOOL=TRUE
                     -DTPL_ENABLE_Matio:BOOL=FALSE
                     -DTPL_ENABLE_X11:BOOL=FALSE
                     -DTPL_ENABLE_CGNS:BOOL=FALSE

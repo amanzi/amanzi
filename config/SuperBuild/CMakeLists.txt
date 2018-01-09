@@ -495,17 +495,25 @@ if (BUILD_SPACK)
   include(${SuperBuild_BUILD_FILES_DIR}/Build_Spack.cmake)
 endif()
 
+
 if (ENABLE_XSDK)    
   include(${SuperBuild_BUILD_FILES_DIR}/Build_xSDK.cmake)
   include(BuildLibraryName)
+  include(FindSpackInstallLocation)
 endif()
 
 # ZLIB
 if (NOT ENABLE_XSDK)
-  include(${SuperBuild_BUILD_FILES_DIR}/Build_zlib.cmake) 
-else()
+  include(${SuperBuild_BUILD_FILES_DIR}/Build_zlib.cmake)
   build_library_name(z ZLIB_LIBRARIES APPEND_PATH ${TPL_INSTALL_PREFIX}/lib)
   set(ZLIB_INCLUDE_DIRS ${TPL_INSTALL_PREFIX}/include)
+  set(ZLIB_DIR ${TPL_INSTALL_PREFIX})
+else()
+  find_spack_install_location(zlib ZLIB_INSTALL_PREFIX)
+  message(STATUS "ZLIB_INSTALL_PREFIX = ${ZLIB_INSTALL_PREFIX}")
+  build_library_name(z ZLIB_LIBRARIES APPEND_PATH ${ZLIB_INSTALL_PREFIX}/lib)
+  set(ZLIB_INCLUDE_DIRS ${ZLIB_INSTALL_PREFIX}/include)
+  set(ZLIB_DIR ${ZLIB_INSTALL_PREFIX})
 endif()
 
 # CURL
@@ -535,33 +543,48 @@ if (ENABLE_Structured)
 endif()
 
 # Boost
-if (NOT ENABLE_XSDK)
-  include(${SuperBuild_BUILD_FILES_DIR}/Build_Boost.cmake) 
-  append_set(Amanzi_TPL_CMAKE_ARGS
-             -DBOOST_ROOT:FILEPATH=${TPL_INSTALL_PREFIX}
-             -DBoost_NO_SYSTEM_PATHS:BOOL=TRUE)
+if ( NOT ENABLE_XSDK )
+    include(${SuperBuild_BUILD_FILES_DIR}/Build_Boost.cmake) 
+    set(BOOST_ROOT ${TPL_INSTALL_PREFIX})
+    set(BOOST_INCLUDEDIR ${TPL_INSTALL_PREFIX}/include/boost)
+    append_set(Amanzi_TPL_CMAKE_ARGS
+        -DBOOST_ROOT:FILEPATH=${TPL_INSTALL_PREFIX}
+	      -DBOOST_INCLUDEDIR=${TPL_INSTALL_PREFIX}/include/boost
+        -DBoost_USE_STATIC_LIBS:BOOL=TRUE
+        -DBoost_NO_SYSTEM_PATHS:BOOL=TRUE)
 else()
-  amanzi_tpl_version_write(FILENAME ${TPL_VERSIONS_INCLUDE_FILE}
-                           PREFIX Boost
-                           VERSION 1 63 0)
-  append_set(Amanzi_TPL_CMAKE_ARGS
-             -DBOOST_ROOT:FILEPATH=${TPL_INSTALL_PREFIX}
-             -DBOOST_INCLUDEDIR=${TPL_INSTALL_PREFIX}/include/boost
-             -DBoost_NO_SYSTEM_PATHS:BOOL=TRUE)
+    find_spack_install_location(boost BOOST_INSTALL_PREFIX)
+    message(STATUS "BOOST_INSTALL_PREFIX = ${BOOST_INSTALL_PREFIX}")
+    set(BOOST_ROOT ${BOOST_INSTALL_PREFIX})
+    set(BOOST_INCLUDEDIR ${BOOST_INSTALL_PREFIX}/include/boost)
+    append_set(Amanzi_TPL_CMAKE_ARGS
+        -DBOOST_ROOT:FILEPATH=${BOOST_INSTALL_PREFIX}
+	      -DBOOST_INCLUDEDIR=${BOOST_INSTALL_PREFIX}/include/boost
+        -DBoost_USE_STATIC_LIBS:BOOL=TRUE
+        -DBoost_NO_SYSTEM_PATHS:BOOL=TRUE)
 endif()
 
 # HDF5  
-if (NOT ENABLE_XSDK)
-  include(${SuperBuild_BUILD_FILES_DIR}/Build_HDF5.cmake) 
-  # BROKENinclude(${SuperBuild_BUILD_FILES_DIR}/Build_HDF5Cmake.cmake) 
+if ( NOT ENABLE_XSDK )
+    include(${SuperBuild_BUILD_FILES_DIR}/Build_HDF5.cmake) 
+    #BROKENinclude(${SuperBuild_BUILD_FILES_DIR}/Build_HDF5Cmake.cmake) 
+    build_library_name(hdf5 HDF5_C_LIBRARY APPEND_PATH ${TPL_INSTALL_PREFIX}/lib)
+    build_library_name(hdf5_hl HDF5_HL_LIBRARY APPEND_PATH ${TPL_INSTALL_PREFIX}/lib)
+    set(HDF5_LIBRARIES ${HDF5_HL_LIBRARY} ${HDF5_C_LIBRARY} ${ZLIB_LIBRARIES} m)
+    set(HDF5_INCLUDE_DIRS ${TPL_INSTALL_PREFIX}/include ${ZLIB_INCLUDE_DIRS})
+    set(HDF5_DIR ${TPL_INSTALL_PREFIX})
 else()
-  amanzi_tpl_version_write(FILENAME ${TPL_VERSIONS_INCLUDE_FILE}
-                           PREFIX HDF5
-                           VERSION 1 10 0)
-  build_library_name(hdf5 HDF5_C_LIBRARY APPEND_PATH ${TPL_INSTALL_PREFIX}/lib)
-  build_library_name(hdf5_hl HDF5_HL_LIBRARY APPEND_PATH ${TPL_INSTALL_PREFIX}/lib)
-  set(HDF5_LIBRARIES ${HDF5_HL_LIBRARY} ${HDF5_C_LIBRARY} ${ZLIB_LIBRARIES} m)
-  set(HDF5_INCLUDE_DIRS ${TPL_INSTALL_PREFIX}/include ${ZLIB_INCLUDE_DIRS})
+    amanzi_tpl_version_write(FILENAME ${TPL_VERSIONS_INCLUDE_FILE}
+	                           PREFIX HDF5
+	                           VERSION 1 10 0)
+
+    find_spack_install_location(hdf5 HDF5_INSTALL_PREFIX)
+    message(STATUS "HDF5_INSTALL_PREFIX = ${HDF5_INSTALL_PREFIX}")
+    build_library_name(hdf5 HDF5_C_LIBRARY APPEND_PATH ${HDF5_INSTALL_PREFIX}/lib)
+    build_library_name(hdf5_hl HDF5_HL_LIBRARY APPEND_PATH ${HDF5_INSTALL_PREFIX}/lib)
+    set(HDF5_LIBRARIES ${HDF5_HL_LIBRARY} ${HDF5_C_LIBRARY} ${ZLIB_LIBRARIES} m)
+    set(HDF5_INCLUDE_DIRS ${HDF5_INSTALL_PREFIX}/include ${ZLIB_INCLUDE_DIRS})
+    set(HDF5_DIR ${HDF5_INSTALL_PREFIX})
 endif()
 
 append_set(Amanzi_TPL_CMAKE_ARGS
@@ -573,37 +596,68 @@ append_set(Amanzi_TPL_CMAKE_ARGS
            -DASCEMIO_DIR:FILEPATH=${TPL_INSTALL_PREFIX})
 
 # XERCES
-if (ENABLE_SPACK)
-  include(${SuperBuild_BUILD_FILES_DIR}/Build_XERCES_Spack.cmake) 
+if ( ENABLE_SPACK)
+    #include(${SuperBuild_BUILD_FILES_DIR}/Build_XERCES_Spack.cmake) 
+    execute_process( COMMAND ${SPACK_BINARY} install xerces-c )
+    find_spack_install_location (xerces-c XERCES_INSTALL_PREFIX)
+    build_library_name(xerces-c XERCES_LIBRARY APPEND_PATH ${XERCES_INSTALL_PREFIX}/lib)
+    set(XERCES_LIBRARIES ${XERCES_LIBRARY})
+    set(XERCES_INCLUDE_DIRS ${XERCES_INSTALL_PREFIX}/include)    
+    set(XERCES_DIR ${XERCES_INSTALL_PREFIX})
+    message(STATUS "XERCES_DIR = ${XERCES_DIR}")
+    append_set(Amanzi_TPL_CMAKE_ARGS
+	       -DXERCES_DIR:FILEPATH=${XERCES_INSTALL_PREFIX})
+#        -DXERCES_INCLUDE_DIR:FILEPATH=${XERCES_INSTALL_PREFIX}/include
+#        -DXERCES_LIBRARY:FILEPATH=${XERCES_INSTALL_PREFIX}/lib)
 else()
-  include(${SuperBuild_BUILD_FILES_DIR}/Build_XERCES.cmake) 
+    include(${SuperBuild_BUILD_FILES_DIR}/Build_XERCES.cmake) 
+    set(XERCES_DIR ${TPL_INSTALL_PREFIX})
+    message(STATUS "XERCES_DIR = ${XERCES_DIR}")
+    append_set(Amanzi_TPL_CMAKE_ARGS
+	       -DXERCES_DIR:FILEPATH=${TPL_INSTALL_PREFIX})
 endif()
-append_set(Amanzi_TPL_CMAKE_ARGS
-           -DXERCES_DIR:FILEPATH=${TPL_INSTALL_PREFIX})
 
 # NetCDF
-if (NOT ENABLE_XSDK)
-  include(${SuperBuild_BUILD_FILES_DIR}/Build_NetCDF.cmake) 
+if ( NOT ENABLE_XSDK )
+    include(${SuperBuild_BUILD_FILES_DIR}/Build_NetCDF.cmake) 
+    build_library_name(netcdf NetCDF_C_LIBRARY APPEND_PATH ${TPL_INSTALL_PREFIX}/lib)
+    build_library_name(netcdf_c++ NetCDF_CXX_LIBRARY APPEND_PATH ${TPL_INSTALL_PREFIX}/lib)
+    set(NetCDF_INCLUDE_DIRS ${TPL_INSTALL_PREFIX}/include)
+    set(NetCDF_DIR ${TPL_INSTALL_PREFIX})
+    append_set(Amanzi_TPL_CMAKE_ARGS
+	             -DNetCDF_DIR:FILEPATH=${TPL_INSTALL_PREFIX})
 else()
-  build_library_name(netcdf NetCDF_C_LIBRARY APPEND_PATH ${TPL_INSTALL_PREFIX}/lib)
-  build_library_name(netcdf_c++ NetCDF_CXX_LIBRARY APPEND_PATH ${TPL_INSTALL_PREFIX}/lib)
-  set(NetCDF_INCLUDE_DIRS ${TPL_INSTALL_PREFIX}/include)
-  set(NetCDF_C_LIBRARIES ${NetCDF_C_LIBRARY})
-  if (ENABLE_NetCDF4)
+    find_spack_install_location(netcdf NETCDF_INSTALL_PREFIX)
+    message(STATUS "NETCDF_INSTALL_PREFIX = ${NETCDF_INSTALL_PREFIX}")
+    build_library_name(netcdf NetCDF_C_LIBRARY APPEND_PATH ${NETCDF_INSTALL_PREFIX}/lib)
+    build_library_name(netcdf_c++ NetCDF_CXX_LIBRARY APPEND_PATH ${NETCDF_INSTALL_PREFIX}/lib)
+    set(NetCDF_INCLUDE_DIRS ${NETCDF_INSTALL_PREFIX}/include)
+    set(NetCDF_DIR ${NETCDF_INSTALL_PREFIX})
+    append_set(Amanzi_TPL_CMAKE_ARGS
+	             -DNetCDF_DIR:FILEPATH=${NETCDF_INSTALL_PREFIX})
+endif()
+
+set(NetCDF_C_LIBRARIES ${NetCDF_C_LIBRARY})
+if ( ENABLE_NetCDF4 )
     list(APPEND NetCDF_C_LIBRARIES ${HDF5_LIBRARIES})
     list(APPEND NetCDF_INCLUDE_DIRS ${HDF5_INCLUDE_DIRS})
     list(REMOVE_DUPLICATES NetCDF_INCLUDE_DIRS)
-  endif()
 endif()
-append_set(Amanzi_TPL_CMAKE_ARGS
-           -DNetCDF_DIR:FILEPATH=${TPL_INSTALL_PREFIX})
+
 
 # NetCDF Fortran
-if (NOT ENABLE_XSDK)
-  include(${SuperBuild_BUILD_FILES_DIR}/Build_NetCDF_Fortran.cmake)
+# As of 10/13/2017, NetCDF Fortran is not part of the xSDK suite
+if ( NOT ENABLE_XSDK )
+    include(${SuperBuild_BUILD_FILES_DIR}/Build_NetCDF_Fortran.cmake)
+    append_set(Amanzi_TPL_CMAKE_ARGS
+		           -DNetCDF_FORTRAN_DIR:FILEPATH=${TPL_INSTALL_PREFIX})
+else ()
+     execute_process( COMMAND ${SPACK_BINARY} install netcdf-fortran )    
+     find_spack_install_location(netcdf-fortran NETCDFF_INSTALL_PREFIX)
+     message(STATUS "NETCDFF_INSTALL_PREFIX = ${NETCDFF_INSTALL_PREFIX}")
+     append_set(Amanzi_TPL_CMAKE_ARGS
+		            -DNetCDF_FORTRAN_DIR:FILEPATH=${NETCDFF_INSTALL_PREFIX})
 endif()
-append_set(Amanzi_TPL_CMAKE_ARGS
-           -DNetCDF_FORTRAN_DIR:FILEPATH=${TPL_INSTALL_PREFIX})
 
 # MOAB
 if (ENABLE_MOAB_Mesh)
@@ -619,35 +673,56 @@ append_set(Amanzi_TPL_CMAKE_ARGS
            -DSuperLU_DIR:FILEPATH=${TPL_INSTALL_PREFIX})
 
 # HYPRE
-if (NOT ENABLE_XSDK)
-  option(ENABLE_HYPRE "Build the HYPRE solver package" TRUE)
-  if (ENABLE_HYPRE)
-    include(${SuperBuild_BUILD_FILES_DIR}/Build_HYPRE.cmake)
-  endif()
+if ( NOT ENABLE_XSDK )
+    option(ENABLE_HYPRE "Build the HYPRE solver package" TRUE)
+    if ( ENABLE_HYPRE )
+	    include(${SuperBuild_BUILD_FILES_DIR}/Build_HYPRE.cmake)
+    endif()
+    set(HYPRE_DIR ${TPL_INSTALL_PREFIX})
+    set(HYPRE_INCLUDE_DIRS "${TPL_INSTALL_PREFIX}/include")
+    build_library_name(HYPRE HYPRE_LIBRARY APPEND_PATH ${TPL_INSTALL_PREFIX}/lib)
+    set(HYPRE_LIBRARIES "${HYPRE_LIBRARY}")
 else()
-  set(HYPRE_INCLUDE_DIRS "${TPL_INSTALL_PREFIX}/include")
-  build_library_name(HYPRE HYPRE_LIBRARY APPEND_PATH ${TPL_INSTALL_PREFIX}/lib)
-  set(HYPRE_LIBRARIES "${HYPRE_LIBRARY}")
+    find_spack_install_location(hypre HYPRE_INSTALL_PREFIX)
+    message(STATUS "HYPRE_INSTALL_PREFIX = ${HYPRE_INSTALL_PREFIX}")
+    set(HYPRE_DIR ${HYPRE_INSTALL_PREFIX})
+    set(HYPRE_INCLUDE_DIRS "${HYPRE_INSTALL_PREFIX}/include")
+    build_library_name(HYPRE HYPRE_LIBRARY APPEND_PATH ${HYPRE_INSTALL_PREFIX}/lib)
+    set(HYPRE_LIBRARIES "${HYPRE_LIBRARY}")
 endif()
+set(HYPRE_LIBRARIES    "${HYPRE_LIBRARY}")
+
 
 # METIS -- needs to go before PETSc because PETSc needs it.
-if (NOT ENABLE_XSDK)
-  include(${SuperBuild_BUILD_FILES_DIR}/Build_METIS.cmake) 
+if ( NOT ENABLE_XSDK )
+    include(${SuperBuild_BUILD_FILES_DIR}/Build_METIS.cmake) 
+    build_library_name(metis METIS_LIBRARIES SHARED APPEND_PATH ${TPL_INSTALL_PREFIX}/lib)
+    set(METIS_INCLUDE_DIR ${TPL_INSTALL_PREFIX}/include)
+    set(METIS_DIR ${TPL_INSTALL_PREFIX})
+
 else()
-  build_library_name(metis METIS_LIBRARIES SHARED APPEND_PATH ${TPL_INSTALL_PREFIX}/lib)
-  set(METIS_INCLUDE_DIR ${TPL_INSTALL_PREFIX}/include)
-  set(METIS_DIR ${TPL_INSTALL_PREFIX})
+    find_spack_install_location(metis METIS_INSTALL_PREFIX)
+    message(STATUS "METIS_INSTALL_PREFIX = ${METIS_INSTALL_PREFIX}")
+    build_library_name(metis METIS_LIBRARIES SHARED APPEND_PATH ${METIS_INSTALL_PREFIX}/lib)
+    set(METIS_INCLUDE_DIR ${METIS_INSTALL_PREFIX}/include)
+    set(METIS_DIR ${METIS_INSTALL_PREFIX})
 endif()
 append_set(Amanzi_TPL_CMAKE_ARGS 
            -DMETIS_DIR:FILEPATH=${METIS_DIR})
 
 # ParMetis -- needs to go before PETSc because PETSc needs it.
-if (NOT ENABLE_XSDK)
-  include(${SuperBuild_BUILD_FILES_DIR}/Build_ParMetis.cmake)
+if ( NOT ENABLE_XSDK )
+    include(${SuperBuild_BUILD_FILES_DIR}/Build_ParMetis.cmake)
+    build_library_name(z ParMetis_LIBRARIES APPEND_PATH ${TPL_INSTALL_PREFIX}/lib)
+    set(ParMetis_INCLUDE_DIRS ${TPL_INSTALL_PREFIX}/include)
+    set(ParMetis_DIR ${TPL_INSTALL_PREFIX})
+
 else()
-  build_library_name(z ParMetis_LIBRARIES APPEND_PATH ${TPL_INSTALL_PREFIX}/lib)
-  set(ParMetis_INCLUDE_DIRS ${TPL_INSTALL_PREFIX}/include)
-  set(ParMetis_DIR ${TPL_INSTALL_PREFIX})
+    find_spack_install_location(parmetis PARMETIS_INSTALL_PREFIX)
+    message(STATUS "PARMETIS_INSTALL_PREFIX = ${PARMETIS_INSTALL_PREFIX}")
+    build_library_name(z ParMetis_LIBRARIES APPEND_PATH ${PARMETIS_INSTALL_PREFIX}/lib)
+    set(ParMetis_INCLUDE_DIRS ${PARMETIS_INSTALL_PREFIX}/include)
+    set(ParMetis_DIR ${PARMETIS_INSTALL_PREFIX})
 endif()
 
 if (ENABLE_PETSC OR ENABLE_Structured)
@@ -656,25 +731,33 @@ if (ENABLE_PETSC OR ENABLE_Structured)
 endif()
 
 # PETSc
-if (NOT ENABLE_XSDK)
-  option(ENABLE_PETSC "Build the PETSc package" FALSE)
-  if (ENABLE_PETSC OR ENABLE_Structured)
+option(ENABLE_PETSC "Build the PETSc package" FALSE)
+if (ENABLE_PETSC OR ENABLE_Structured)
     set(ENABLE_PETSC TRUE)
-    include(${SuperBuild_BUILD_FILES_DIR}/Build_PETSc.cmake)
-  endif()
-else()
-  set(PETSC_DIR ${TPL_INSTALL_PREFIX})
+    if ( NOT ENABLE_XSDK )
+	    include(${SuperBuild_BUILD_FILES_DIR}/Build_PETSc.cmake)
+	    set(PETSC_DIR ${TPL_INSTALL_PREFIX})
+    else()
+	    find_spack_install_location(petsc PETSC_INSTALL_PREFIX)
+	    message(STATUS "PETSC_INSTALL_PREFIX = ${PETSC_INSTALL_PREFIX}")
+	    set(PETSC_DIR ${PETSC_INSTALL_PREFIX})
+    endif()
 endif()
 
 # SEACAS
 include(${SuperBuild_BUILD_FILES_DIR}/Build_SEACAS.cmake)
 
 # Trilinos  
-if (NOT ENABLE_XSDK)
+if ( NOT ENABLE_XSDK )
   include(${SuperBuild_BUILD_FILES_DIR}/Build_Trilinos.cmake)
 else()
-  set(Trilinos_INSTALL_PREFIX  ${TPL_INSTALL_PREFIX})
-  set(Zoltan_INSTALL_PREFIX  "${TPL_INSTALL_PREFIX}")
+
+    find_spack_install_location(trilinos Trilinos_INSTALL_PREFIX)
+    message(STATUS "Trilinos_INSTALL_PREFIX = ${Trilinos_INSTALL_PREFIX}")
+
+    find_spack_install_location(trilinos Zoltan_INSTALL_PREFIX)
+    message(STATUS "Zoltan_INSTALL_PREFIX = ${Zoltan_INSTALL_PREFIX}")
+
 endif()
 append_set(Amanzi_TPL_CMAKE_ARGS
            -DENABLE_STK_Mesh:BOOL=${ENABLE_STK_Mesh}
@@ -715,6 +798,9 @@ if (NOT ENABLE_XSDK)
       include(${SuperBuild_BUILD_FILES_DIR}/Build_PETSc.cmake)
     endif()
     include(${SuperBuild_BUILD_FILES_DIR}/Build_PFloTran.cmake)
+    build_library_name(pflotranchem PFLOTRAN_LIBRARIES APPEND_PATH ${TPL_INSTALL_PREFIX}/lib)
+	  set(PFLOTRAN_INCLUDE_DIRS ${TPL_INSTALL_PREFIX}/include)
+	  set(PFLOTRAN_DIR ${TPL_INSTALL_PREFIX})
   endif()
 
   if (ENABLE_CRUNCHTOPE)
@@ -723,25 +809,46 @@ if (NOT ENABLE_XSDK)
       include(${SuperBuild_BUILD_FILES_DIR}/Build_PETSc.cmake)
     endif()
     include(${SuperBuild_BUILD_FILES_DIR}/Build_CrunchTope.cmake)
+    build_library_name(crunchchem CRUNCHTOPE_LIBRARIES APPEND_PATH ${TPL_INSTALL_PREFIX}/lib)
+    set(CRUNCHTOPE_INCLUDE_DIRS ${TPL_INSTALL_PREFIX}/include)
+    set(CRUNCHTOPE_DIR ${TPL_INSTALL_PREFIX})
   endif()
   if (ENABLE_ALQUIMIA)
     include(${SuperBuild_BUILD_FILES_DIR}/Build_Alquimia.cmake)
+    build_library_name(alquimia_c ALQUIMIA_C_LIB APPEND_PATH ${TPL_INSTALL_PREFIX}/lib)
+	  build_library_name(alquimia_cutils ALQUIMIA_CUTILS_LIB APPEND_PATH ${TPL_INSTALL_PREFIX}/lib)
+	  build_library_name(alquimia_fortran ALQUIMIA_F_LIB APPEND_PATH ${TPL_INSTALL_PREFIX}/lib)
+    set(ALQUIMIA_INSTALL_PREFIX ${TPL_INSTALL_PREFIX})
   endif()
+
 else()
   # pflotran
-  build_library_name(pflotranchem PFLOTRAN_LIBRARIES APPEND_PATH ${TPL_INSTALL_PREFIX}/lib)
-  set(PFLOTRAN_INCLUDE_DIRS ${TPL_INSTALL_PREFIX}/include)
-  set(PFLOTRAN_DIR ${TPL_INSTALL_PREFIX})
+  find_spack_install_location(pflotran PFLOTRAN_INSTALL_PREFIX)
+  message(STATUS "PFLOTRAN_INSTALL_PREFIX = ${PFLOTRAN_INSTALL_PREFIX}")
+  build_library_name(pflotranchem PFLOTRAN_LIBRARIES APPEND_PATH ${PFLOTRAN_INSTALL_PREFIX}/lib)
+  set(PFLOTRAN_INCLUDE_DIRS ${PFLOTRAN_INSTALL_PREFIX}/include)
+  set(PFLOTRAN_DIR ${PFLOTRAN_INSTALL_PREFIX})
     
   # crunchtope
-  build_library_name(crunchchem CRUNCHTOPE_LIBRARIES APPEND_PATH ${TPL_INSTALL_PREFIX}/lib)
-  set(CRUNCHTOPE_INCLUDE_DIRS ${TPL_INSTALL_PREFIX}/include)
-  set(CRUNCHTOPE_DIR ${TPL_INSTALL_PREFIX})
-    
+  if (ENABLE_CRUNCHTOPE)
+    if (NOT ENABLE_PETSC)
+      set(ENABLE_PETSC TRUE)
+      include(${SuperBuild_BUILD_FILES_DIR}/Build_PETSc.cmake)
+    endif()
+    include(${SuperBuild_BUILD_FILES_DIR}/Build_CrunchTope.cmake)
+    build_library_name(crunchchem CRUNCHTOPE_LIBRARIES APPEND_PATH ${TPL_INSTALL_PREFIX}/lib)
+    set(CRUNCHTOPE_INCLUDE_DIRS ${TPL_INSTALL_PREFIX}/include)
+    set(CRUNCHTOPE_DIR ${TPL_INSTALL_PREFIX})
+  endif()
+
   # alquimia
-  build_library_name(alquimia_c ALQUIMIA_C_LIB APPEND_PATH ${TPL_INSTALL_PREFIX}/lib)
-  build_library_name(alquimia_cutils ALQUIMIA_CUTILS_LIB APPEND_PATH ${TPL_INSTALL_PREFIX}/lib)
-  build_library_name(alquimia_fortran ALQUIMIA_F_LIB APPEND_PATH ${TPL_INSTALL_PREFIX}/lib)
+  find_spack_install_location(alquimia ALQUIMIA_INSTALL_PREFIX)
+  message(STATUS "ALQUIMIA_INSTALL_PREFIX = ${ALQUIMIA_INSTALL_PREFIX}")
+  build_library_name(alquimia_c ALQUIMIA_C_LIB APPEND_PATH ${ALQUIMIA_INSTALL_PREFIX}/lib)
+  build_library_name(alquimia_cutils ALQUIMIA_CUTILS_LIB APPEND_PATH ${ALQUIMIA_INSTALL_PREFIX}/lib)
+  build_library_name(alquimia_fortran ALQUIMIA_F_LIB APPEND_PATH ${ALQUIMIA_INSTALL_PREFIX}/lib)
+  set(ALQUIMIA_INSTALL_PREFIX ${ALQUIMIA_INSTALL_PREFIX})
+
 endif()
 
 
