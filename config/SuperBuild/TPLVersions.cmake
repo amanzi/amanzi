@@ -379,13 +379,13 @@ set(SuperLU_MD5_SUM        3a1a9bff20cb06b7d97c46d337504447)
 # TPL: SuperLU Distrib (Built by PETSc!)
 #
 set(SuperLUDist_VERSION_MAJOR  5)
-set(SuperLUDist_VERSION_MINOR  1)
-set(SuperLUDist_VERSION_PATCH  3)
+set(SuperLUDist_VERSION_MINOR  2)
+set(SuperLUDist_VERSION_PATCH  2)
 set(SuperLUDist_VERSION  ${SuperLUDist_VERSION_MAJOR}.${SuperLUDist_VERSION_MINOR}.${SuperLUDist_VERSION_PATCH})
 set(SuperLUDist_URL_STRING     "https://github.com/xiaoyeli/superlu_dist/archive")
-set(SuperLUDist_ARCHIVE_FILE   xsdk-${XSDK_VERSION}.tar.gz)
+set(SuperLUDist_ARCHIVE_FILE   v${SuperLUDist_VERSION}.tar.gz)
 set(SuperLUDist_SAVEAS_FILE    superlu_dist_${SuperLUDist_VERSION}.tar.gz)
-set(SuperLUDist_MD5_SUM        9ccd1915dd06f167ed8dca7b14bbcedb)
+set(SuperLUDist_MD5_SUM        5f0087f64a6506375537117790c98e6b)
 
 #
 # TPL: Sowing (Built by PETSc!)
