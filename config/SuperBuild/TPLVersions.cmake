@@ -103,6 +103,8 @@
 
 #  0.95.0        - update Trilinos 12.12.1
 #                - update Hypre 2.12.1  
+#                - note alquimia 1.0.5 == xsdk-0.3.0
+#                - pflotran release/xsdk-0.3.0 
 
 include(CMakeParseArguments)
 
@@ -438,13 +440,13 @@ set(SEACAS_MD5_SUM        3235d1b885ee8e1a04408382f50bd0f0)
 # TPL: PFlotran
 #
 set(PFLOTRAN_VERSION_MAJOR 0)
-set(PFLOTRAN_VERSION_MINOR 2)
+set(PFLOTRAN_VERSION_MINOR 3)
 set(PFLOTRAN_VERSION_PATCH 0)
 set(PFLOTRAN_VERSION ${PFLOTRAN_VERSION_MAJOR}.${PFLOTRAN_VERSION_MINOR}.${PFLOTRAN_VERSION_PATCH})
-set(PFLOTRAN_URL_STRING     "https://bitbucket.org/pflotran/pflotran/get")
-set(PFLOTRAN_ARCHIVE_FILE   xsdk-${XSDK_VERSION}-rc2.tar.gz)
+set(PFLOTRAN_URL_STRING     "https://bitbucket.org/pflotran/pflotran/get/release")
+set(PFLOTRAN_ARCHIVE_FILE   xsdk-${XSDK_VERSION_NEW}.tar.gz)
 set(PFLOTRAN_SAVEAS_FILE    pflotran-${PFLOTRAN_VERSION}.tar.gz)
-set(PFLOTRAN_MD5_SUM        80a214c394bbd4230c2ddc0ba177c8ea)
+set(PFLOTRAN_MD5_SUM        e8cf6f259fca1ebc403b950058be686e)
 
 #
 # TPL: Alquimia
