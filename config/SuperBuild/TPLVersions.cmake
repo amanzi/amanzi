@@ -102,6 +102,7 @@
 #  0.94.12       - update xerces-c to 3.2.0 (CMake build)
 
 #  0.95.0        - update Trilinos 12.12.1
+#                - update Hypre 2.12.1  
 
 include(CMakeParseArguments)
 
@@ -159,6 +160,7 @@ set(AMANZI_TPLS_VERSION ${AMANZI_TPLS_VERSION_MAJOR}.${AMANZI_TPLS_VERSION_MINOR
 # Not sure how to create a meaningful hash key for the collection
 
 set(XSDK_VERSION "0.2.0")
+set(XSDK_VERSION_NEW "0.3.0")
 
 #
 # Default location on GitHub
@@ -339,13 +341,13 @@ set(MOAB_MD5_SUM        1840ca02366f4d3237d44af63e239e3b)
 # TPL: HYPRE
 #
 set(HYPRE_VERSION_MAJOR  2)
-set(HYPRE_VERSION_MINOR  11)
-set(HYPRE_VERSION_PATCH  2)
+set(HYPRE_VERSION_MINOR  12)
+set(HYPRE_VERSION_PATCH  1)
 set(HYPRE_VERSION  ${HYPRE_VERSION_MAJOR}.${HYPRE_VERSION_MINOR}.${HYPRE_VERSION_PATCH})
 set(HYPRE_URL_STRING     "https://github.com/LLNL/hypre/archive/")
-set(HYPRE_ARCHIVE_FILE   xsdk-${XSDK_VERSION}.tar.gz)
+set(HYPRE_ARCHIVE_FILE   xsdk-${XSDK_VERSION_NEW}-rc1.tar.gz)
 set(HYPRE_SAVEAS_FILE    hypre-${HYPRE_VERSION}.tar.gz)
-set(HYPRE_MD5_SUM        fc9474058560602e9be2ce618db7fd14) 
+set(HYPRE_MD5_SUM        302b8aae460978952f6cb427aa8cb0c5)
 
 #
 # TPL: ParMetis
