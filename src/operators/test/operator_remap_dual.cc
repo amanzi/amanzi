@@ -381,8 +381,12 @@ void RemapTestsDual(int dim, int order_p, int order_u,
   }
 
   // calculate error in the new basis
-  double mass1(0.0);
   double pl2_err(0.0), pinf_err(0.0), area(0.0);
+  double mass1(0.0), ql2_err(0.0);
+
+  Entity_ID_List nodes;
+  std::vector<int> dirs;
+  AmanziGeometry::Point v0(dim), v1(dim), tau(dim);
 
   for (int c = 0; c < ncells_owned; ++c) {
     double area_c(mesh1->cell_volume(c));
@@ -402,9 +406,6 @@ void RemapTestsDual(int dim, int order_p, int order_u,
       pl2_err += tmp * tmp * area_c;
     }
     else {
-      Entity_ID_List nodes;
-      AmanziGeometry::Point v0(dim), v1(dim);
-
       mesh0->cell_get_nodes(c, &nodes);
       int nnodes = nodes.size();  
       for (int i = 0; i < nnodes; ++i) {
@@ -423,29 +424,81 @@ void RemapTestsDual(int dim, int order_p, int order_u,
     WhetStone::Polynomial tmp((*jac1)[c]);
     tmp.ChangeOrigin(mesh0->cell_centroid(c));
     poly *= tmp;
-    mass1 += numi.IntegratePolynomialCell(c, poly);
+
+    double mass1_c = numi.IntegratePolynomialCell(c, poly);
+    mass1 += mass1_c;
+
+    // optional projection on the space of linear functions
+    if (order_p == 1 && dim == 2) {
+      poly = dg.CalculatePolynomial(c, data);
+
+      mesh0->cell_get_faces_and_dirs(c, &faces, &dirs);
+      int nfaces = faces.size();  
+
+      WhetStone::VectorPolynomial vc(dim, 0);
+      std::vector<WhetStone::VectorPolynomial> vvf;
+
+      for (int i = 0; i < nfaces; ++i) {
+        int f = faces[i];
+        const AmanziGeometry::Point& xf = mesh1->face_centroid(f);
+        mesh0->face_get_nodes(f, &nodes);
+
+        mesh0->node_get_coordinates(nodes[0], &v0);
+        mesh0->node_get_coordinates(nodes[1], &v1);
+        double f0 = poly.Value(v0);
+        double f1 = poly.Value(v1);
+
+        mesh1->node_get_coordinates(nodes[0], &v0);
+        mesh1->node_get_coordinates(nodes[1], &v1);
+
+        WhetStone::VectorPolynomial vf(dim - 1, 1);
+        vf[0].Reshape(dim - 1, 1);
+        vf[0](0, 0) = (f0 + f1) / 2; 
+        vf[0](1, 0) = f1 - f0; 
+
+        std::vector<AmanziGeometry::Point> tau;
+        tau.push_back(v1 - v0);
+        vf[0].InverseChangeCoordinates(xf, tau);
+        vvf.push_back(vf);
+      }
+
+      WhetStone::ProjectorH1 projector(mesh1);
+      projector.HarmonicP1_Cell(c, vvf, vc);
+      vc[0].ChangeOrigin(mesh1->cell_centroid(c));
+      vc[0](0, 0) = mass1_c / mesh1->cell_volume(c);
+
+      // error in the projected solution vc[0]
+      mesh0->cell_get_nodes(c, &nodes);
+      int nnodes = nodes.size();  
+      for (int i = 0; i < nnodes; ++i) {
+        mesh1->node_get_coordinates(nodes[i], &v1);
+
+        double tmp = vc[0].Value(v1);
+        tmp -= ana.function_exact(v1, 0.0);
+        ql2_err += tmp * tmp * area_c / nnodes;
+      }
+    }
   }
 
   // parallel collective operations
-  double err_tmp(pl2_err);
-  mesh1->get_comm()->SumAll(&err_tmp, &pl2_err, 1);
+  double err_in[4] = {pl2_err, area, mass1, ql2_err};
+  double err_out[4];
+  mesh1->get_comm()->SumAll(err_in, err_out, 4);
 
-  err_tmp = area;
-  mesh1->get_comm()->SumAll(&err_tmp, &area, 1);
-
-  err_tmp = pinf_err;
+  double err_tmp = pinf_err;
   mesh1->get_comm()->MaxAll(&err_tmp, &pinf_err, 1);
 
-  mass_tmp = mass1;
-  mesh1->get_comm()->SumAll(&mass_tmp, &mass1, 1);
+  err_tmp = gcl_err;
+  mesh1->get_comm()->MaxAll(&err_tmp, &gcl_err, 1);
 
   // error tests
-  pl2_err = std::pow(pl2_err, 0.5);
+  pl2_err = std::pow(err_out[0], 0.5);
+  ql2_err = std::pow(err_out[3], 0.5);
   CHECK(pl2_err < 0.12 / (order_p + 1));
 
   if (MyPID == 0) {
-    printf("nx=%3d  L2=%12.8g  Inf=%12.8g  dMass=%10.4g  GCL_Inf=%10.6g  dArea=%10.6g\n", 
-        nx, pl2_err, pinf_err, mass1 - mass0, gcl_err, 1.0 - area);
+    printf("nx=%3d  L2=%12.8g %12.8g  Inf=%12.8g  dMass=%10.4g  GCL_Inf=%10.6g  dArea=%10.6g\n", 
+        nx, pl2_err, ql2_err, pinf_err, err_out[2] - mass0, gcl_err, 1.0 - err_out[1]);
   }
 
   // visualization

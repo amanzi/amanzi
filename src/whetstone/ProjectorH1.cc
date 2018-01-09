@@ -35,8 +35,9 @@ void ProjectorH1::HarmonicP1_Cell(
   double vol = mesh_->cell_volume(c);
 
   // create zero vector polynomial
-  uc.resize(d_);
-  for (int i = 0; i < d_; ++i) { 
+  int dim = vf[0].size();
+  uc.resize(dim);
+  for (int i = 0; i < dim; ++i) { 
     uc[i].Reshape(d_, 1, true);
   }
 
@@ -45,7 +46,7 @@ void ProjectorH1::HarmonicP1_Cell(
     const AmanziGeometry::Point& xf = mesh_->face_centroid(f);
     const AmanziGeometry::Point& normal = mesh_->face_normal(f);
 
-    for (int i = 0; i < d_; ++i) {
+    for (int i = 0; i < dim; ++i) {
       double tmp = vf[n][i].Value(xf) * dirs[n] / vol;
 
       for (int j = 0; j < d_; ++j) {
@@ -56,7 +57,7 @@ void ProjectorH1::HarmonicP1_Cell(
 
   // calculate projector's low-order term
   AmanziGeometry::Point grad(d_), zero(d_);
-  for (int i = 0; i < d_; ++i) {
+  for (int i = 0; i < dim; ++i) {
     for (int j = 0; j < d_; ++j) {
       grad[j] = uc[i](1, j);
     }
@@ -76,7 +77,7 @@ void ProjectorH1::HarmonicP1_Cell(
   }
 
   // clean-up: fix the origin
-  for (int i = 0; i < d_; ++i) {
+  for (int i = 0; i < dim; ++i) {
     uc[i].set_origin(xc);
     uc[i].ChangeOrigin(zero);
   }
@@ -85,7 +86,7 @@ void ProjectorH1::HarmonicP1_Cell(
 
 /* ******************************************************************
 * Energy projector on space of linear polynomials in face f.
-* Uniquness require to specy its value at cell centroid.
+* Uniqueness requires to specify projector's value at face centroid.
 ****************************************************************** */
 void ProjectorH1::HarmonicP1_Face(
     int f, const AmanziGeometry::Point& p0,
