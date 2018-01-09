@@ -95,6 +95,16 @@
 #                - update Alquimia to xsdk-0.2.0 (native 1.0.4)
 #                - update Hypre to xsdk-0.2.0 (native 2.11.2)
 #  0.94.10       - update Alquimia to 1.0.5 (critical bug fixes)
+#  0.94.11       - update MSTK to 3.0.3 (critical bug fixes)
+#                - update NetCDF to 4.5.0
+#	         - update NetCDF-Fortran to 4.4.4
+#	         - update curl to 7.56.1
+#  0.94.12       - update xerces-c to 3.2.0 (CMake build)
+
+#  0.95.0        - update Trilinos 12.12.1
+#                - update Hypre 2.12.1  
+#                - note alquimia 1.0.5 == xsdk-0.3.0
+#                - pflotran release/xsdk-0.3.0 
 
 include(CMakeParseArguments)
 
@@ -146,12 +156,13 @@ endmacro(amanzi_tpl_version_write)
 # TPLs and XSDK versions 
 #
 set(AMANZI_TPLS_VERSION_MAJOR 0)
-set(AMANZI_TPLS_VERSION_MINOR 94)
-set(AMANZI_TPLS_VERSION_PATCH 10)
+set(AMANZI_TPLS_VERSION_MINOR 95)
+set(AMANZI_TPLS_VERSION_PATCH 0)
 set(AMANZI_TPLS_VERSION ${AMANZI_TPLS_VERSION_MAJOR}.${AMANZI_TPLS_VERSION_MINOR}.${AMANZI_TPLS_VERSION_PATCH})
 # Not sure how to create a meaningful hash key for the collection
 
 set(XSDK_VERSION "0.2.0")
+set(XSDK_VERSION_NEW "0.3.0")
 
 #
 # Default location on GitHub
@@ -162,37 +173,36 @@ set (AMANZI_TPLS_DOWNLOAD_URL "https://raw.githubusercontent.com/amanzi/amanzi-t
 # TPL: Xerces
 #
 set(XERCES_VERSION_MAJOR 3)
-set(XERCES_VERSION_MINOR 1)
-set(XERCES_VERSION_PATCH 2)
+set(XERCES_VERSION_MINOR 2)
+set(XERCES_VERSION_PATCH 0)
 set(XERCES_VERSION ${XERCES_VERSION_MAJOR}.${XERCES_VERSION_MINOR}.${XERCES_VERSION_PATCH})
 set(XERCES_URL_STRING     ${AMANZI_TPLS_DOWNLOAD_URL})
 set(XERCES_ARCHIVE_FILE   xerces-c-${XERCES_VERSION}.tar.bz2)
 set(XERCES_SAVEAS_FILE    ${XERCES_ARCHIVE_FILE})
-set(XERCES_MD5_SUM        d987b8bb576aea456e92454781fe3615 ) 
+set(XERCES_MD5_SUM        7b1394c32abbdd87841d94a8404c2ac6) 
 
 #
 # TPL: OpenMPI
 #
-set(OpenMPI_VERSION_MAJOR 1)
-set(OpenMPI_VERSION_MINOR 4)
-set(OpenMPI_VERSION_PATCH 4)
+set(OpenMPI_VERSION_MAJOR 2)
+set(OpenMPI_VERSION_MINOR 1)
+set(OpenMPI_VERSION_PATCH 2)
 set(OpenMPI_VERSION ${OpenMPI_VERSION_MAJOR}.${OpenMPI_VERSION_MINOR}.${OpenMPI_VERSION_PATCH})
-set(OpenMPI_URL_STRING     ${ASCEM_TPLS_DOWNLOAD_URL})
+set(OpenMPI_URL_STRING     "https://www.open-mpi.org/software/ompi/v2.1/downloads/")
 set(OpenMPI_ARCHIVE_FILE   openmpi-${OpenMPI_VERSION}.tar.bz2)
 set(OpenMPI_SAVEAS_FILE    ${OpenMPI_ARCHIVE_FILE})
-set(OpenMPI_MD5_SUM        e58a1ea7b8af62453aaa0ddaee5f26a0) 
-
+set(OpenMPI_MD5_SUM        ff2e55cc529802e7b0738cf87acd3ee4)
 #
 # TPL: CURL
 #
 set(CURL_VERSION_MAJOR 7)
-set(CURL_VERSION_MINOR 37)
-set(CURL_VERSION_PATCH 0)
+set(CURL_VERSION_MINOR 56)
+set(CURL_VERSION_PATCH 1)
 set(CURL_VERSION ${CURL_VERSION_MAJOR}.${CURL_VERSION_MINOR}.${CURL_VERSION_PATCH})
-set(CURL_URL_STRING     ${AMANZI_TPLS_DOWNLOAD_URL})
-set(CURL_ARCHIVE_FILE   curl-${CURL_VERSION}.tar.bz2)
-set(CURL_SAVEAS_FILE    ${CURL_ARCHIVE_FILE})
-set(CURL_MD5_SUM        7dda0cc2e4136f78d5801ac347be696b)
+set(CURL_URL_STRING     "https://github.com/curl/curl/archive")
+set(CURL_ARCHIVE_FILE   curl-${CURL_VERSION_MAJOR}_${CURL_VERSION_MINOR}_${CURL_VERSION_PATCH}.tar.gz)
+set(CURL_SAVEAS_FILE    curl-${CURL_VERSION}.tar.gz)
+set(CURL_MD5_SUM        48c0db0d7b1407e19c51e8ef4f798d78)
 
 #
 # TPL: zlib
@@ -273,24 +283,26 @@ set(HDF5_MD5_SUM        dd2148b740713ca0295442ec683d7b1c)
 # TPL: NetCDF
 #
 set(NetCDF_VERSION_MAJOR 4)
-set(NetCDF_VERSION_MINOR 4)
-set(NetCDF_VERSION_PATCH 1.1)
+set(NetCDF_VERSION_MINOR 5)
+set(NetCDF_VERSION_PATCH 0)
 set(NetCDF_VERSION ${NetCDF_VERSION_MAJOR}.${NetCDF_VERSION_MINOR}.${NetCDF_VERSION_PATCH})
-set(NetCDF_URL_STRING     ${AMANZI_TPLS_DOWNLOAD_URL})
-set(NetCDF_ARCHIVE_FILE   netcdf-${NetCDF_VERSION}.tar.gz)
-set(NetCDF_SAVEAS_FILE    ${NetCDF_ARCHIVE_FILE})
-set(NetCDF_MD5_SUM        503a2d6b6035d116ed53b1d80c811bda)
+set(NetCDF_URL_STRING     "https://github.com/Unidata/netcdf-c/archive/")
+set(NetCDF_ARCHIVE_FILE   v${NetCDF_VERSION}.tar.gz)
+set(NetCDF_SAVEAS_FILE    netcdf-${NetCDF_VERSION}.tar.gz)
+set(NetCDF_MD5_SUM        a523ad253bd832efa632847940c2317e)
 
 #
 # TPL: NetCDF Fortran
 #
 set(NetCDF_Fortran_VERSION_MAJOR 4)
-set(NetCDF_Fortran_VERSION_MINOR 2)
-set(NetCDF_Fortran_VERSION ${NetCDF_Fortran_VERSION_MAJOR}.${NetCDF_Fortran_VERSION_MINOR})
+set(NetCDF_Fortran_VERSION_MINOR 4)
+set(NetCDF_Fortran_VERSION_PATCH 4)
+set(NetCDF_Fortran_VERSION ${NetCDF_Fortran_VERSION_MAJOR}.${NetCDF_Fortran_VERSION_MINOR}.${NetCDF_Fortran_VERSION_PATCH})
 set(NetCDF_Fortran_URL_STRING     ${AMANZI_TPLS_DOWNLOAD_URL})
-set(NetCDF_Fortran_ARCHIVE_FILE   netcdf-fortran-${NetCDF_Fortran_VERSION}.tar.gz)
-set(NetCDF_Fortran_SAVEAS_FILE    ${NetCDF_Fortran_ARCHIVE_FILE})
-set(NetCDF_Fortran_MD5_SUM        cc3bf530223e8f4aff93793b9f197bf3) 
+set(NetCDF_Fortran_URL_STRING     "https://github.com/Unidata/netcdf-fortran/archive/")
+set(NetCDF_Fortran_ARCHIVE_FILE   v${NetCDF_Fortran_VERSION}.tar.gz)
+set(NetCDF_Fortran_SAVEAS_FILE    netcdf-fortran-${NetCDF_Fortran_VERSION}.tar.gz)
+set(NetCDF_Fortran_MD5_SUM        418c7e998e63e6d76b2da14019fa9c8f) 
 
 #
 # ASCEM-IO
@@ -308,12 +320,12 @@ set(ASCEMIO_MD5_SUM       869820bacd4c289c8f320be58c1449a7)
 #
 set(MSTK_VERSION_MAJOR 3)
 set(MSTK_VERSION_MINOR 0)
-set(MSTK_VERSION_PATCH 1)
+set(MSTK_VERSION_PATCH 3)
 set(MSTK_VERSION ${MSTK_VERSION_MAJOR}.${MSTK_VERSION_MINOR}.${MSTK_VERSION_PATCH})
 set(MSTK_URL_STRING     ${AMANZI_TPLS_DOWNLOAD_URL})
 set(MSTK_ARCHIVE_FILE   mstk-${MSTK_VERSION}.tar.gz)
 set(MSTK_SAVEAS_FILE    ${MSTK_ARCHIVE_FILE})
-set(MSTK_MD5_SUM        d0761665844b1f956ef7cb3d80d68d88)
+set(MSTK_MD5_SUM        a9561f1175da2c2863c517b08abe5f16)
 
 #
 # TPL: MOAB
@@ -331,13 +343,13 @@ set(MOAB_MD5_SUM        1840ca02366f4d3237d44af63e239e3b)
 # TPL: HYPRE
 #
 set(HYPRE_VERSION_MAJOR  2)
-set(HYPRE_VERSION_MINOR  11)
-set(HYPRE_VERSION_PATCH  2)
+set(HYPRE_VERSION_MINOR  12)
+set(HYPRE_VERSION_PATCH  1)
 set(HYPRE_VERSION  ${HYPRE_VERSION_MAJOR}.${HYPRE_VERSION_MINOR}.${HYPRE_VERSION_PATCH})
 set(HYPRE_URL_STRING     "https://github.com/LLNL/hypre/archive/")
-set(HYPRE_ARCHIVE_FILE   xsdk-${XSDK_VERSION}.tar.gz)
+set(HYPRE_ARCHIVE_FILE   xsdk-${XSDK_VERSION_NEW}-rc1.tar.gz)
 set(HYPRE_SAVEAS_FILE    hypre-${HYPRE_VERSION}.tar.gz)
-set(HYPRE_MD5_SUM        fc9474058560602e9be2ce618db7fd14) 
+set(HYPRE_MD5_SUM        302b8aae460978952f6cb427aa8cb0c5)
 
 #
 # TPL: ParMetis
@@ -367,13 +379,13 @@ set(SuperLU_MD5_SUM        3a1a9bff20cb06b7d97c46d337504447)
 # TPL: SuperLU Distrib (Built by PETSc!)
 #
 set(SuperLUDist_VERSION_MAJOR  5)
-set(SuperLUDist_VERSION_MINOR  1)
-set(SuperLUDist_VERSION_PATCH  3)
+set(SuperLUDist_VERSION_MINOR  2)
+set(SuperLUDist_VERSION_PATCH  2)
 set(SuperLUDist_VERSION  ${SuperLUDist_VERSION_MAJOR}.${SuperLUDist_VERSION_MINOR}.${SuperLUDist_VERSION_PATCH})
 set(SuperLUDist_URL_STRING     "https://github.com/xiaoyeli/superlu_dist/archive")
-set(SuperLUDist_ARCHIVE_FILE   xsdk-${XSDK_VERSION}.tar.gz)
+set(SuperLUDist_ARCHIVE_FILE   v${SuperLUDist_VERSION}.tar.gz)
 set(SuperLUDist_SAVEAS_FILE    superlu_dist_${SuperLUDist_VERSION}.tar.gz)
-set(SuperLUDist_MD5_SUM        9ccd1915dd06f167ed8dca7b14bbcedb)
+set(SuperLUDist_MD5_SUM        5f0087f64a6506375537117790c98e6b)
 
 #
 # TPL: Sowing (Built by PETSc!)
@@ -404,13 +416,13 @@ set(PETSc_MD5_SUM        41a10be8bbf9d13f137873a2d52c6715)
 # TPL: Trilinos
 #
 set(Trilinos_VERSION_MAJOR 12)
-set(Trilinos_VERSION_MINOR 10)
+set(Trilinos_VERSION_MINOR 12)
 set(Trilinos_VERSION_PATCH 1)
 set(Trilinos_VERSION ${Trilinos_VERSION_MAJOR}-${Trilinos_VERSION_MINOR}-${Trilinos_VERSION_PATCH})
 set(Trilinos_URL_STRING     "https://github.com/trilinos/Trilinos/archive")
 set(Trilinos_ARCHIVE_FILE   trilinos-release-${Trilinos_VERSION}.tar.gz)
 set(Trilinos_SAVEAS_FILE    ${Trilinos_ARCHIVE_FILE})
-set(Trilinos_MD5_SUM        667333dbd7c0f031d47d7c5511fd0810)
+set(Trilinos_MD5_SUM        ecd4606fa332212433c98bf950a69cc7)
 
 #
 # TPL: SEACAS
@@ -428,13 +440,13 @@ set(SEACAS_MD5_SUM        3235d1b885ee8e1a04408382f50bd0f0)
 # TPL: PFlotran
 #
 set(PFLOTRAN_VERSION_MAJOR 0)
-set(PFLOTRAN_VERSION_MINOR 2)
+set(PFLOTRAN_VERSION_MINOR 3)
 set(PFLOTRAN_VERSION_PATCH 0)
 set(PFLOTRAN_VERSION ${PFLOTRAN_VERSION_MAJOR}.${PFLOTRAN_VERSION_MINOR}.${PFLOTRAN_VERSION_PATCH})
-set(PFLOTRAN_URL_STRING     "https://bitbucket.org/pflotran/pflotran/get")
-set(PFLOTRAN_ARCHIVE_FILE   xsdk-${XSDK_VERSION}-rc2.tar.gz)
+set(PFLOTRAN_URL_STRING     "https://bitbucket.org/pflotran/pflotran/get/release")
+set(PFLOTRAN_ARCHIVE_FILE   xsdk-${XSDK_VERSION_NEW}.tar.gz)
 set(PFLOTRAN_SAVEAS_FILE    pflotran-${PFLOTRAN_VERSION}.tar.gz)
-set(PFLOTRAN_MD5_SUM        80a214c394bbd4230c2ddc0ba177c8ea)
+set(PFLOTRAN_MD5_SUM        e8cf6f259fca1ebc403b950058be686e)
 
 #
 # TPL: Alquimia
@@ -444,7 +456,6 @@ set(ALQUIMIA_VERSION_MINOR 0)
 set(ALQUIMIA_VERSION_PATCH 5)
 set(ALQUIMIA_VERSION ${ALQUIMIA_VERSION_MAJOR}.${ALQUIMIA_VERSION_MINOR}.${ALQUIMIA_VERSION_PATCH})
 set(ALQUIMIA_URL_STRING     https://github.com/LBL-EESA/alquimia-dev/archive)
-#set(ALQUIMIA_ARCHIVE_FILE   xsdk-${XSDK_VERSION}.tar.gz)
 set(ALQUIMIA_ARCHIVE_FILE   v${ALQUIMIA_VERSION}.tar.gz)
 set(ALQUIMIA_SAVEAS_FILE    alquimia-dev-${ALQUIMIA_VERSION}.tar.gz)
 set(ALQUIMIA_MD5_SUM        58d8cbb2f68381477068836fba35d41c)

@@ -1146,14 +1146,16 @@ bool MeshAudit::check_face_to_nodes_ghost_data() const
       case 0: // completely bad -- different face
         bad_faces.push_back(j);
 
-        std::cerr << "P " << comm_.MyPID() << ": ghost face " << j << ", has different nodes than its master " << std::endl;
+        std::cerr << "P " << comm_.MyPID() << ": ghost face " << j << " (GID "
+                  << face_map_use.GID(j) << ")," <<
+            " has different nodes than its master " << std::endl;
         std::cerr << "ghost face nodes (GIDs): ";
         for (int k = 0; k < fnode.size(); ++k)
-          std::cerr << node_map.GID(fnode[k]);
+          std::cerr << fnode[k] << " ";
         std::cerr << std::endl;
         std::cerr << "master face nodes (GIDs): ";
         for (int k = 0; k < fnode_ref.size(); ++k)
-          std::cerr << fnode_ref[k];
+          std::cerr << fnode_ref[k] << " ";
         std::cerr << std::endl;
         break;
       case -1: // very bad -- same face but wrong orientation
@@ -1162,7 +1164,7 @@ bool MeshAudit::check_face_to_nodes_ghost_data() const
         std::cerr << "P " << comm_.MyPID() << ": ghost face " << j << ", has different orientation than its master " << std::endl;
         std::cerr << "ghost face nodes (GIDs): ";
         for (int k = 0; k < fnode.size(); ++k)
-          std::cerr << node_map.GID(fnode[k]);
+          std::cerr << fnode[k];
         std::cerr << std::endl;
         std::cerr << "master face nodes (GIDs): ";
         for (int k = 0; k < fnode_ref.size(); ++k)

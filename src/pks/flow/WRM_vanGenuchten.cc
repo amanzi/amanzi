@@ -37,7 +37,7 @@ WRM_vanGenuchten::WRM_vanGenuchten(Teuchos::ParameterList& plist)
   double pc0 = plist.get<double>("regularization interval", FLOW_WRM_REGULARIZATION_INTERVAL);
   std::string krel_function = plist.get<std::string>("relative permeability model", "Mualem");
 
-  set_region("dummy");
+  set_region(plist.get<std::string>("region", "unknown"));
   Init_(m, l, alpha, sr, krel_function, pc0);
 }
 

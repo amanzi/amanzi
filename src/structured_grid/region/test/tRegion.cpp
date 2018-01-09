@@ -3,6 +3,9 @@
 #include <Region.H>
 #include <MultiFab.H>
 
+// closing DSO objects
+#include "VerboseObject_objs.hh"
+
 #ifdef _OPENMP
 #include "omp.h"
 #endif

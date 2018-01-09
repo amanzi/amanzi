@@ -246,7 +246,7 @@
       <ParameterList name="verbose object">
 	<Parameter name="verbosity level" type="string" value="high"/>
       </ParameterList>
-      <Parameter name="enable internal tests" type="string" value="no"/>
+      <Parameter name="enable internal tests" type="bool" value="false"/>
       <ParameterList name="molecular diffusion">
 	<Parameter name="aqueous names" type="Array(string)" value="{}"/>
 	<Parameter name="aqueous values" type="Array(double)" value="{}"/>

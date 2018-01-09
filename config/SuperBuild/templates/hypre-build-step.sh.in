@@ -4,16 +4,16 @@
 # Replaces each @VAR@ with value of ${VAR}
 
 # Ensure a uniform build with the correct compiler
-export CC=@CMAKE_C_COMPILER_USE@
+export CC=@CMAKE_C_COMPILER@
 export CFLAGS='@hypre_cflags@'
-export CXX=@CMAKE_CXX_COMPILER_USE@
+export CXX=@CMAKE_CXX_COMPILER@
 export CXXFLAGS='@hypre_cxxflags@'
-export F77=@CMAKE_Fortran_COMPILER_USE@
+export F77=@CMAKE_Fortran_COMPILER@
 export FFLAGS='@Amanzi_COMMON_FCFLAGS@'
 
 # HYPRE in-source build under src 
 cd @HYPRE_source_dir@/src
-make all 
+make all -j @hypre_parallel_jobs@
 echo "make all returned $?"
 
 exit $?

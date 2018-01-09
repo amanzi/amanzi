@@ -524,6 +524,38 @@ std::string Units::OutputMass(double val) const
 
 
 /* ******************************************************************
+* Fancy output of length given in meters
+****************************************************************** */
+std::string Units::OutputLength(double val) const
+{
+  double out, dmin, dtry, tmp;
+  std::string unit("m");
+
+  out = val;
+  if (val == 0) return std::string("0 m");
+
+  if (val > 0.0) {
+    dmin = fabs(log10(val));
+ 
+    std::map<std::string, bu::quantity<bu::si::length> >::const_iterator it;
+    for (it = length_.begin(); it != length_.end(); ++it) {
+      tmp = val / it->second.value();
+      dtry = fabs(log10(tmp));
+      if (dtry < dmin) {
+        dmin = dtry;
+        out = tmp;
+        unit = it->first;
+      }
+    }
+  }
+
+  std::stringstream ss;
+  ss << out << " " << unit;
+  return ss.str();
+}
+
+
+/* ******************************************************************
 * Fancy output of concentration
 ****************************************************************** */
 std::string Units::OutputConcentration(double val)

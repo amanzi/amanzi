@@ -41,8 +41,8 @@ include_directories(${ASCEMIO_INCLUDE_DIR})
 #
 # Dummy registrations
 #
-register_evaluator_with_factory( HEADERFILE Dummy_PK_reg.hh
-  LISTNAME   PKS_DUMMY_REGISTRATIONS )
+register_evaluator_with_factory(HEADERFILE Dummy_PK_reg.hh
+  LISTNAME   PKS_DUMMY_REGISTRATIONS)
 
 generate_evaluators_registration_header( 
   HEADERFILE pks_dummy_registration.hh   
@@ -60,7 +60,7 @@ set(dummy_src_files Dummy_PK.cc)
 #list(REVERSE flow_tpl_libs)
 add_amanzi_library(dummy 
                    SOURCE ${dummy_src_files}
-                   LINK_LIBS)
+		   LINK_LIBS pks ${Epetra_LIBRARIES})
 #
 # Install Targets
 #

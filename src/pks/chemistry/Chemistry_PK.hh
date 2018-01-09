@@ -55,6 +55,8 @@ class Chemistry_PK : public PK_Physical {
   void InitializeSorptionSites(Teuchos::RCP<Teuchos::ParameterList> plist,
                                Teuchos::RCP<Teuchos::ParameterList> state_list);
 
+  virtual void CopyFieldstoNewState(const Teuchos::RCP<State>& S_next);
+
   // -- access
 #ifdef ALQUIMIA_ENABLED
   Teuchos::RCP<AmanziChemistry::ChemistryEngine> chem_engine() { return chem_engine_; }
@@ -65,7 +67,7 @@ class Chemistry_PK : public PK_Physical {
   Key get_domain_name() { return domain_name_; }
 
  protected:
-  void InitializeField_(std::string fieldname, double default_val);
+  void InitializeField_(const Teuchos::Ptr<State>& S, std::string fieldname, double default_val);
 
  protected:
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
@@ -93,7 +95,7 @@ class Chemistry_PK : public PK_Physical {
   Key tcc_key_;
   Key poro_key_;
   Key saturation_key_;
-  Key fluid_den_key_;
+  Key fluid_den_key_, molar_fluid_den_key_;
   Key min_vol_frac_key_;
   Key min_ssa_key_;
   Key sorp_sites_key_;
@@ -104,6 +106,8 @@ class Chemistry_PK : public PK_Physical {
   Key ion_exchange_sites_key_, ion_exchange_ref_cation_conc_key_;
   Key secondary_activity_coeff_key_;
   Key alquimia_aux_data_key_;
+  Key mineral_rate_constant_key_;
+  Key first_order_decay_constant_key_;
 
 #ifdef ALQUIMIA_ENABLED
   Teuchos::RCP<AmanziChemistry::ChemistryEngine> chem_engine_;
@@ -113,9 +117,6 @@ class Chemistry_PK : public PK_Physical {
   int num_iterations_, num_successful_steps_;
   double initial_conditions_time_;
   Key domain_name_;
-
-  // verbosity object thatis not shared with common chemistry
-  Teuchos::RCP<VerboseObject> vo_;
 };
 
 }  // namespace AmanziChemistry

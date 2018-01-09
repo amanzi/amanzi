@@ -1,7 +1,3 @@
-#include <iostream>
-#include <IdxRegionData.H>
-#include <RegionManager.H>
-
 /*
   A test driver for IdxRegionData
 
@@ -17,8 +13,14 @@
   not evaluated in this case.
  */
 
-class VecEvaluator
-  : public IdxRegionData::IdxRDEval
+#include <iostream>
+#include <IdxRegionData.H>
+#include <RegionManager.H>
+
+// closing DSO objects
+#include "VerboseObject_objs.hh"
+
+class VecEvaluator : public IdxRegionData::IdxRDEval
 {
 public:
   VecEvaluator(const std::vector<std::string>& colors);

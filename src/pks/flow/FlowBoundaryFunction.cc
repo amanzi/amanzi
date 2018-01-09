@@ -9,6 +9,7 @@
   Authors: Neil Carlson (version 1) 
            Konstantin Lipnikov (version 2) (lipnikov@lanl.gov)
 */
+
 #include "FlowBoundaryFunction.hh"
 
 namespace Amanzi {
@@ -17,7 +18,8 @@ namespace Flow {
 /* ******************************************************************
 * Constructor
 ****************************************************************** */
-FlowBoundaryFunction::FlowBoundaryFunction(const Teuchos::ParameterList& plist) {
+FlowBoundaryFunction::FlowBoundaryFunction(const Teuchos::ParameterList& plist)
+{
   rainfall_ = false;
   if (plist.isParameter("rainfall")) 
     rainfall_ = plist.get<bool>("rainfall");
@@ -52,9 +54,9 @@ FlowBoundaryFunction::FlowBoundaryFunction(const Teuchos::ParameterList& plist) 
 }
 
 
-/* ******************************************************************
-* Process additional parameters
-****************************************************************** */
+/* ****************************************************************
+* Process additional parameters for BC submodels.
+**************************************************************** */
 void FlowBoundaryFunction::ComputeSubmodel(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
 {
   int dim = mesh->space_dimension();
@@ -90,18 +92,21 @@ void FlowBoundaryFunction::ComputeSubmodel(const Teuchos::RCP<const AmanziMesh::
 
     for (auto it = begin(); it != end(); ++it) {
       int f = it->first;
-      const AmanziGeometry::Point& normal = mesh->face_normal(f);
       it->second[0] += (*shift_water_table_)[f];
     }
   }
 }
 
 
-/* ******************************************************************
-* Preprocesing: calculate warter table coefficients.
-****************************************************************** */
-void FlowBoundaryFunction::CalculateShiftWaterTable_(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
-                                                     const std::string& region)
+/* ****************************************************************
+* Calculate distance to the top of a given surface where the water 
+* table is set up. We do not distribute computed data. It seems not 
+* necessary.
+*
+* WARNING: The implemented algorithm works only in 3D.
+**************************************************************** */
+void FlowBoundaryFunction::CalculateShiftWaterTable_(
+    const Teuchos::RCP<const AmanziMesh::Mesh>& mesh, const std::string& region)
 {
   double tol = 1e-6;
   Errors::Message msg;
@@ -266,9 +271,9 @@ void FlowBoundaryFunction::CalculateShiftWaterTable_(const Teuchos::RCP<const Am
 }
 
 
-/* ******************************************************************
-* Extension of operations with sets.
-****************************************************************** */
+/* ****************************************************************
+* New implementation of the STL function.
+**************************************************************** */
 void FlowBoundaryFunction::set_intersection_(const std::vector<AmanziMesh::Entity_ID>& v1,
                                              const std::vector<AmanziMesh::Entity_ID>& v2, 
                                              std::vector<AmanziMesh::Entity_ID>* vv)

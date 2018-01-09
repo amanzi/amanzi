@@ -24,7 +24,8 @@ foreach(d ${PMAMR_REL_INCLUDE_DIRS})
   add_subdirectory(${d})
 endforeach(d)
 
-add_library(structured_amanzi $<TARGET_OBJECTS:samr>
+add_amanzi_library(structured_amanzi
+                   SOURCE $<TARGET_OBJECTS:samr>
                               $<TARGET_OBJECTS:sprob>
                               $<TARGET_OBJECTS:sdriver>
                               $<TARGET_OBJECTS:sutils>
@@ -35,4 +36,8 @@ add_library(structured_amanzi $<TARGET_OBJECTS:samr>
                               $<TARGET_OBJECTS:sflow>
                               $<TARGET_OBJECTS:schem>)
 
-SET_TARGET_PROPERTIES(structured_amanzi PROPERTIES LINKER_LANGUAGE C)
+
+set_target_properties(structured_amanzi PROPERTIES LINKER_LANGUAGE C)
+if (APPLE AND BUILD_SHARED_LIBS)
+  set_target_properties(structured_amanzi PROPERTIES LINK_FLAGS "-Wl,-undefined,dynamic_lookup")
+endif()			  

@@ -1,4 +1,6 @@
 /*
+  Time Integration
+
   Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
   The terms of use and "as is" disclaimer for this license are 
@@ -6,7 +8,6 @@
 
   Author: Ethan Coon
 */
-
 
 // Timestep controller which loads a timestep history from file.
 
@@ -24,11 +25,10 @@ TimestepControllerFromFile::TimestepControllerFromFile(Teuchos::ParameterList& p
 
   HDF5Reader reader(filename);
   reader.ReadData(header, dt_history_);
-  
 }
     
 
-  // single method for timestep control
+// single method for timestep control
 double
 TimestepControllerFromFile::get_timestep(double dt, int iterations) {
   if (current_ == 0) {

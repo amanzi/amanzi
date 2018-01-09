@@ -410,7 +410,7 @@ demoMeshLogicalY() {
 
 // Single coarse root to 1 meter, then branches to 4 fine roots
 Teuchos::RCP<Amanzi::AmanziMesh::MeshLogical>
-demoMeshLogicalYFromXML() {
+demoMeshLogicalYFromXML(const std::string& meshname) {
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::AmanziGeometry;
 
@@ -425,7 +425,7 @@ demoMeshLogicalYFromXML() {
   std::string xmlFileName = "test/demo_mesh_Y.xml";
   Teuchos::ParameterXMLFileReader xmlreader(xmlFileName);
   Teuchos::ParameterList plist = xmlreader.getParameters();
-  return fac.Create(plist.sublist("logical mesh Y"));
+  return fac.Create(plist.sublist(meshname));
 }
   
 // helper class to get indices from a regular mesh

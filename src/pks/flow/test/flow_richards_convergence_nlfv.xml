@@ -122,7 +122,7 @@
 
             <Parameter name="solver type" type="string" value="nka"/>
             <ParameterList name="nka parameters">
-              <Parameter name="nonlinear tolerance" type="double" value="1e-4"/>
+              <Parameter name="nonlinear tolerance" type="double" value="1e-6"/>
               <Parameter name="diverged tolerance" type="double" value="10000.0"/>
               <Parameter name="max du growth factor" type="double" value="100.0"/>
               <Parameter name="max divergent iterations" type="int" value="3"/>

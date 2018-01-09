@@ -119,7 +119,9 @@ if (Ifpack_ENABLE_HYPRE)
   list(APPEND energy_tpl_libs ${Ifpack_LIBRARIES})
 endif()
 add_amanzi_library(energy SOURCE ${energy_src_files}
-                   LINK_LIBS functions mesh_functions ${energy_tpl_libs} time_integration data_structures)
+                   LINK_LIBS operators eos pks functions mesh_functions
+                             time_integration data_structures
+                             ${energy_tpl_libs})
 
 #
 # Install Targets

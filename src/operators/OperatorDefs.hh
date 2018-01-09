@@ -23,8 +23,15 @@ typedef enum { OPERATOR_DIFFUSION_MFD,
                OPERATOR_DIFFUSION_NLFV_GRAVITY,
                OPERATOR_ADVECTION,
                OPERATOR_ACCUMULATION,
+               OPERATOR_ELASTICITY,
                OPERATOR_ELECTROMAGNETICS,
                OPERATOR_ELECTROMAGNETICS_MHD} OperatorType;
+
+typedef enum { BERNARDI_RAUGEL,
+               MINI,
+               RAVIART_THOMAS,
+               P0,
+               DG } SpaceNickName;
 
 // Constants in the next block must powers of 2.
 const int OPERATOR_SCHEMA_DOFS_FACE = 1;
@@ -37,18 +44,22 @@ const int OPERATOR_SCHEMA_BASE_CELL = 32;
 const int OPERATOR_SCHEMA_BASE_NODE = 64;
 const int OPERATOR_SCHEMA_BASE_EDGE = 128;
 
+// schemas
+const int SCHEMA_DOFS_SCALAR = 1;
+const int SCHEMA_DOFS_VECTOR = 2;
+const int SCHEMA_DOFS_POINT = 3;
+const int SCHEMA_DOFS_NORMAL_COMPONENT = 4;
+
 const int OPERATOR_SCHEMA_RULE_EXACT = 1;
 const int OPERATOR_SCHEMA_RULE_SUBSET = 2;
 
+// boundary conditions
 const int OPERATOR_BC_NONE = 0;
 const int OPERATOR_BC_DIRICHLET = 1;
 const int OPERATOR_BC_NEUMANN = 2;
 const int OPERATOR_BC_MIXED = 4;
 
-const int OPERATOR_BC_TYPE_NODE = 8;
-const int OPERATOR_BC_TYPE_FACE = 16;
-const int OPERATOR_BC_TYPE_EDGE = 32;
-
+// memory allocation
 const int OPERATOR_HEX_FACES = 6;  // Hexahedron is the common element
 const int OPERATOR_HEX_NODES = 8;
 const int OPERATOR_HEX_EDGES = 12;
@@ -90,7 +101,7 @@ const int OPERATOR_GRAVITY_HH = 1;
 const int OPERATOR_GRAVITY_FV = 2;
 
 // special properties of operators
-const int OPERATOR_PROPERTY_DATA_READ_ONLY = 1;  // must power of 2
+const int OPERATOR_PROPERTY_DATA_READ_ONLY = 1;  // must be power of 2
 const int OPERATOR_PROPERTY_MAP_CONSTANT = 2;
 
 // reconstruction options

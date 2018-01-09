@@ -115,6 +115,12 @@ class InputConverter {
   void ParseConstants_();
   void FilterNodes(xercesc::DOMNode* parent, const std::string& filter);
 
+  // auto-generated input files
+  // -- native chemistry
+  std::string CreateBGDFile_(std::string& filename, int rank, int status);
+  // -- Pflotran input file
+  std::string CreateINFile_(std::string& filename, int rank);
+
  protected:
   // Useful tools wrapping low-level DOM commands
 
@@ -243,9 +249,6 @@ class InputConverter {
       const std::string& section, const std::string& type, const std::string& missing, const std::string& name);
   void ThrowErrorMisschild_(
     const std::string& section, const std::string& missing, const std::string& name = std::string());
-
-  // -- Pflotran input file writer
-  std::string CreateINFile_(std::string& filename, int rank);
 
  protected:
   // various constants defined by the users

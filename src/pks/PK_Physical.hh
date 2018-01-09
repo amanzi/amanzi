@@ -1,12 +1,15 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+/*
+  Process Kernels
 
-/* -------------------------------------------------------------------------
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
 
+  Author: Ethan Coon
 
-Author: Ethan Coon
-
-Default base with a few methods implemented in standard ways.
-------------------------------------------------------------------------- */
+  Default base with a few methods implemented in standard ways.
+*/
 
 #ifndef AMANZI_PK_PHYSICAL_HH_
 #define AMANZI_PK_PHYSICAL_HH_
@@ -22,12 +25,12 @@ namespace Amanzi {
 
 class PK_Physical : virtual public PK {
  public:
-  PK_Physical() {}
+  PK_Physical() {};
 
   PK_Physical(Teuchos::ParameterList& pk_tree,
               const Teuchos::RCP<Teuchos::ParameterList>& glist,
               const Teuchos::RCP<State>& S,
-              const Teuchos::RCP<TreeVector>& soln):
+              const Teuchos::RCP<TreeVector>& soln) :
       PK(pk_tree, glist, S, soln) {
 
     // name the PK
@@ -48,9 +51,8 @@ class PK_Physical : virtual public PK {
     }
   };
 
-
   // Virtual destructor
-  virtual ~PK_Physical() {}
+  virtual ~PK_Physical() {};
 
   // Default implementations of PK methods.
   // -- transfer operators -- pointer copies only
@@ -65,6 +67,10 @@ class PK_Physical : virtual public PK {
   virtual void set_states(const Teuchos::RCP<const State>& S,
                           const Teuchos::RCP<State>& S_inter,
                           const Teuchos::RCP<State>& S_next);
+
+  // initialization tools
+  void InitializeField(const Teuchos::Ptr<State>& S, const std::string& passwd,
+                       std::string fieldname, double default_val);
 
   // Accessor for debugger, for use by coupling MPCs
   Teuchos::RCP<Debugger> debugger() { return db_; }

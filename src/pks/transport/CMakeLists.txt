@@ -30,9 +30,10 @@ include_directories(${CHEMPK_SOURCE_DIR})
 include_directories(${DATA_STRUCTURES_SOURCE_DIR})
 include_directories(${FUNCS_SOURCE_DIR})
 include_directories(${GEOMETRY_SOURCE_DIR})
-include_directories(${MESH_SOURCE_DIR})
 include_directories(${MESH_FACTORY_SOURCE_DIR})
+include_directories(${MESH_SOURCE_DIR})
 include_directories(${MFUNCS_SOURCE_DIR})
+include_directories(${MSTK_SOURCE_DIR})
 include_directories(${OUTPUT_SOURCE_DIR})
 include_directories(${OPERATORS_SOURCE_DIR})
 include_directories(${PKS_SOURCE_DIR})
@@ -141,7 +142,7 @@ if (ENABLE_ALQUIMIA)
 endif()
 add_amanzi_library(transport 
                    SOURCE ${transport_src_files} HEADERS ${transport_inc_files}
-                   LINK_LIBS geometry mesh error_handling state data_structures 
+                   LINK_LIBS geometry operators mesh error_handling state data_structures 
                              ${geochem_lib} chemistry_pk time_integration ${Epetra_LIBRARIES})
 
 
@@ -223,7 +224,7 @@ if ( BUILD_TESTS )
                        SOURCE test/Main.cc test/transport_parallel_mstk.cc
                        LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
-        add_amanzi_test(transport_parallel_read_mstk transport_parallel_read_mstk
+       add_amanzi_test(transport_parallel_read_mstk transport_parallel_read_mstk
                        KIND int
                        NPROCS 4 
                        SOURCE test/Main.cc test/transport_parallel_read_mstk.cc
@@ -237,6 +238,12 @@ if ( BUILD_TESTS )
                        SOURCE test/Main.cc test/transport_parallel_read_stk.cc
                        LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
     endif()    
+
+     # fractures
+    add_amanzi_test(transport_fractures transport_fractures
+                    KIND unit
+                    SOURCE test/Main.cc test/transport_fractures.cc
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
 endif()
 

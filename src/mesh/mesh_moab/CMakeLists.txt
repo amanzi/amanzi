@@ -45,7 +45,6 @@ add_amanzi_library(moab_mesh
                    LINK_LIBS geometry mesh ${MOAB_LIBRARIES} ${Epetra_LIBRARIES} ${Teuchos_LIBRARIES}) 
 
 if (BUILD_TESTS)
-    
     # Add UnitTest include
     include_directories(${UnitTest_INCLUDE_DIRS})
 
@@ -55,24 +54,21 @@ if (BUILD_TESTS)
           copy_directory ${MOAB_SOURCE_DIR}/test ${MOAB_BINARY_DIR}/test) 
     endif()
 
-
-    # Test: moab_Mesh
-    add_amanzi_test(moab_mesh test_moab_mesh 
+    # Test: serial
+    add_amanzi_test(moab_mesh_serial moab_mesh_serial
       KIND unit
-      SOURCE
-                   test/Main.cc
-		   test/test_hex_1x1x1.cc
-                   test/test_hex_2x2x1.cc
-                   test/test_hex_3x3x3.cc
+      SOURCE  test/Main.cc
+	      test/test_hex_1x1x1.cc
+              test/test_hex_2x2x1.cc
+              test/test_hex_3x3x3.cc
       LINK_LIBS moab_mesh mesh_audit ${UnitTest_LIBRARIES})
-#
-    # Test: moab_mesh_parallel
-    add_amanzi_test(moab_mesh_parallel test_parallel_moab_mesh 
+ 
+    # Test: parallel
+    add_amanzi_test(moab_mesh_parallel moab_mesh_parallel
       KIND unit
       NPROCS 4 
-      SOURCE
-        test/Main.cc
-        test/test_hex_3x3x3_4P.cc
+      SOURCE  test/Main.cc
+              test/test_hex_3x3x3_4P.cc
       LINK_LIBS moab_mesh mesh_audit ${UnitTest_LIBRARIES})
 
 endif()

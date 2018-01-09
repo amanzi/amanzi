@@ -12,12 +12,24 @@
 #ifndef AMANZI_OP_HH_
 #define AMANZI_OP_HH_
 
+#include "Epetra_MultiVector.h"
 #include "Teuchos_RCP.hpp"
 
 #include "DenseMatrix.hh"
 #include "BCs.hh"
 #include "Mesh.hh"
 #include "OperatorDefs.hh"
+#include "Schema.hh"
+
+/*
+  Op classes are small structs that play two roles:
+
+  1. They provide a class name to the schema, enabling visitor patterns.
+  2. They are a container for local matrices.
+  
+  This Op class is a container for storing local matrices that spans 
+  the whole mesh. The dofs vary and defined by operator's schema.
+*/
 
 namespace Amanzi {
 
@@ -33,10 +45,20 @@ class Operator;
 
 class Op {
  public:
-  Op(int schema_, std::string& schema_string_,
+  Op(int schema, std::string& schema_string_,
      const Teuchos::RCP<const AmanziMesh::Mesh> mesh) :
-      schema(schema_),
+      schema_old_(schema),
+      schema_row_(schema),
+      schema_col_(schema),
       schema_string(schema_string_),
+      mesh_(mesh)
+  {};
+
+  Op(const Schema& schema_row, const Schema& schema_col,
+     const Teuchos::RCP<const AmanziMesh::Mesh> mesh) :
+      schema_row_(schema_row),
+      schema_col_(schema_col),
+      schema_string("UNDEFINED"),
       mesh_(mesh)
   {};
 
@@ -44,19 +66,15 @@ class Op {
 
   // Clean the operator without destroying memory
   void Init() {
-    if (vals.size() > 0) {
-      for (int i = 0; i != vals.size(); ++i) {
-        vals[i] = 0.0;
-        vals_shadow[i] = 0.0;
-      }
+    if (diag != Teuchos::null) {
+      diag->PutScalar(0.0);
+      diag_shadow->PutScalar(0.0);
     }
 
     WhetStone::DenseMatrix null_mat;
-    if (matrices.size() > 0) {
-      for (int i = 0; i != matrices.size(); ++i) {
-        matrices[i] = 0.0;
-        matrices_shadow[i] = null_mat;
-      }
+    for (int i = 0; i < matrices.size(); ++i) {
+      matrices[i] = 0.0;
+      matrices_shadow[i] = null_mat;
     }
   }
     
@@ -67,7 +85,7 @@ class Op {
         matrices[i] = matrices_shadow[i];
       }
     }
-    vals = vals_shadow;
+    *diag = *diag_shadow;
     return 0;
   }
 
@@ -78,21 +96,24 @@ class Op {
         matrices[i] = matrices_shadow[i];
       }
     }
-    vals = vals_shadow;
+    *diag = *diag_shadow;
   }
 
   // Matching rules for schemas.
   virtual bool Matches(int match_schema, int matching_rule) {
     if (matching_rule == OPERATOR_SCHEMA_RULE_EXACT) {
-      if ((match_schema & schema) == schema) return true;
+      if ((match_schema & schema_old_) == schema_old_) return true;
     } else if (matching_rule == OPERATOR_SCHEMA_RULE_SUBSET) {
-      if (match_schema & schema) return true;
+      if (match_schema & schema_old_) return true;
     }
     return false;
   }
 
   // linear operator functionality.
   virtual void ApplyMatrixFreeOp(const Operator* assembler,
+          const CompositeVector& X, CompositeVector& Y) const = 0;
+
+  virtual void ApplyTransposeMatrixFreeOp(const Operator* assembler,
           const CompositeVector& X, CompositeVector& Y) const = 0;
 
   virtual void SymbolicAssembleMatrixOp(const Operator* assembler,
@@ -114,12 +135,19 @@ class Op {
     }
   }
 
+  // access
+  const Schema& schema_row() const { return schema_row_; }
+
  public:
-  int schema;
+  int schema_old_;
+  Schema schema_row_, schema_col_;
   std::string schema_string;
 
-  std::vector<double> vals;
-  std::vector<double> vals_shadow;  
+  // diagonal matrix
+  Teuchos::RCP<Epetra_MultiVector> diag;
+  Teuchos::RCP<Epetra_MultiVector> diag_shadow;  
+
+  // collection of local matrices
   std::vector<WhetStone::DenseMatrix> matrices;
   std::vector<WhetStone::DenseMatrix> matrices_shadow;
 

@@ -40,7 +40,6 @@ class PK_DomainFunctionVolume : public FunctionBase,
                           const Teuchos::ParameterList& plist,
                           AmanziMesh::Entity_kind kind) :
       UniqueMeshFunction(mesh),
-      //FunctionBase<ValueType>(plist),
       kind_(kind) {};
 
   ~PK_DomainFunctionVolume() {};
@@ -129,8 +128,9 @@ void PK_DomainFunctionVolume<FunctionBase>::Compute(double t0, double t1)
       for (int i = 0; i != dim; ++i) args[i + 1] = xc[i];
 
       // uspec->first is a RCP<Spec>, Spec's second is an RCP to the function.
-      //value_[*c] = (*(*uspec)->first->second)(args)[0] / domain_volume_;
-      for (int i=0; i<nfun; ++i) val_vec[i] = (*(*uspec)->first->second)(args)[i] / domain_volume_;
+      for (int i = 0; i < nfun; ++i) {
+        val_vec[i] = (*(*uspec)->first->second)(args)[i] / domain_volume_;
+      }
       value_[*c] = val_vec;
     }
 
@@ -145,12 +145,10 @@ void PK_DomainFunctionVolume<FunctionBase>::Compute(double t0, double t1)
 
         for (int i = 0; i != dim; ++i) args[i + 1] = xc[i];
 
-        //value_[*c] -= (*(*uspec)->first->second)(args)[0] / domain_volume_;
-        for (int i=0; i<nfun; ++i) {
+        for (int i = 0; i < nfun; ++i) {
           value_[*c][i] -= (*(*uspec)->first->second)(args)[i] / domain_volume_;
           value_[*c][i] *= dt;
         }
-        //value_[*c] *= dt;
       }
     }
   }

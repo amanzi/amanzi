@@ -6,9 +6,9 @@
 # --------------------------------------------------------------------------- #
 
 # Compiler Definitions
-set(CMAKE_C_COMPILER   @CMAKE_C_COMPILER_USE@ CACHE FILEPATH "SuperBuild C Compiler" )
-set(CMAKE_CXX_COMPILER @CMAKE_CXX_COMPILER_USE@ CACHE FILEPATH "SuperBuild C++ Compiler" )
-set(CMAKE_Fortran_COMPILER @CMAKE_Fortran_COMPILER_USE@ CACHE FILEPATH "SuperBuild Fortran Compiler")
+set(CMAKE_C_COMPILER   @CMAKE_C_COMPILER@ CACHE FILEPATH "SuperBuild C Compiler" )
+set(CMAKE_CXX_COMPILER @CMAKE_CXX_COMPILER@ CACHE FILEPATH "SuperBuild C++ Compiler" )
+set(CMAKE_Fortran_COMPILER @CMAKE_Fortran_COMPILER@ CACHE FILEPATH "SuperBuild Fortran Compiler")
 
 # Compiler Flags
 set(CMAKE_C_FLAGS "@CMAKE_C_FLAGS@" CACHE STRING "SuperBuild C compiler flags")

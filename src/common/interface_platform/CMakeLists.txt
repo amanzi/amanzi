@@ -25,7 +25,7 @@ include_directories(${GEOMETRY_SOURCE_DIR})
 
 # External (TPL) include directories
 include_directories(${Teuchos_INCLUDE_DIRS})
-if ( CCSE_FOUND )
+if (CCSE_FOUND)
   include_directories(${CCSE_INCLUDE_DIRS})
 endif()  
 
@@ -42,23 +42,32 @@ set(interface_inc_files
   InputConverterU_Defs.hh
   InputParserIS_Defs.hh)
 
-set(interface_src_files    InputConverter.cc InputConverterU.cc
-                           InputConverterU_State.cc InputConverterU_MPC.cc InputConverterU_PK.cc
-                           InputConverterU_Flow.cc InputConverterU_Transport.cc
-                           InputConverterU_Energy.cc InputConverterU_Chemistry.cc
-                           InputConverterU_Solvers.cc InputConverterU_Mesh.cc InputConverterU_Output.cc)
+set(interface_src_files  InputConverter.cc InputConverterU.cc
+                         InputConverterU_State.cc InputConverterU_MPC.cc InputConverterU_PK.cc
+                         InputConverterU_Flow.cc InputConverterU_Transport.cc
+                         InputConverterU_Energy.cc InputConverterU_Chemistry.cc
+                         InputConverterU_Solvers.cc InputConverterU_Mesh.cc
+                         InputConverterU_Output.cc)
+
+add_amanzi_library(interface 
+                   SOURCE ${interface_src_files}
+                   HEADERS ${interface_inc_files}
+                   LINK_LIBS error_handling geometry atk
+		             ${Teuchos_LIBRARIES} ${Boost_LIBRARIES}
+                             ${XERCES_LIBRARIES} ${XERCES_ICU_LIBRARIES})
 
 if (ENABLE_Structured)
   add_definitions("-DENABLE_Structured")
   include_directories(../../structured_grid/mpc_pk) 
-  list(APPEND interface_src_files InputConverterS.cc)
   link_directories(${CCSE_LIBRARY_DIR})
-endif()
 
-add_amanzi_library(interface 
-                      SOURCE ${interface_src_files}
-                      HEADERS ${interface_inc_files}
-                      LINK_LIBS error_handling geometry ${Teuchos_LIBRARIES})
+  add_amanzi_library(interface_s
+                     SOURCE InputConverterS.cc
+                     HEADERS ${interface_inc_files}
+		     LINK_LIBS error_handling geometry interface
+		     ${Teuchos_LIBRARIES} ${Boost_LIBRARIES} ${CCSE_LIBRARIES}
+                               ${XERCES_LIBRARIES} ${XERCES_ICU_LIBRARIES})
+endif()
 
 if (BUILD_TESTS) 
     # Add UnitTest include directoy
@@ -71,24 +80,27 @@ if (BUILD_TESTS)
           copy_directory ${PLATFORM_INTERFACE_SOURCE_DIR}/test ${PLATFORM_INTERFACE_BINARY_DIR}/test) 
     endif()
 
-    set(amanzi_libs interface atk)
-
     # Test: transient Darcy flow 
     add_amanzi_test(converter_u_base converter_u_base
                     KIND int
-                    SOURCE test/Main.cc test/converter_u_base.cc
-                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${Boost_LIBRARIES}
-                                             ${XERCES_LIBRARIES} ${XERCES_ICU_LIBRARIES})
+                    SOURCE test/Main.cc test/converter_u_base.cc 
+                    LINK_LIBS interface atk 
+                              ${UnitTest_LIBRARIES} ${Boost_LIBRARIES}
+                              ${XERCES_LIBRARIES} ${XERCES_ICU_LIBRARIES})
  
     # Test: translate Amanzi-S input
     if (ENABLE_Structured)
+      if (BUILD_SHARED_LIBS)
+        set(closing_dso test/converter_s_dso.f90)
+      endif()
+
       add_amanzi_test(converter_s converter_s
                       KIND int
-                      SOURCE test/Main.cc test/converter_s.cc
-                      LINK_LIBS ${amanzi_libs} ${CCSE_LIBRARIES} ${UnitTest_LIBRARIES} ${Boost_LIBRARIES}
-                                               ${XERCES_LIBRARIES} ${XERCES_ICU_LIBRARIES})
+                      SOURCE test/Main.cc test/converter_s.cc ${closing_dso}
+                      LINK_LIBS interface interface_s atk 
+                                ${UnitTest_LIBRARIES} ${Boost_LIBRARIES}
+                                ${CCSE_LIBRARIES} ${XERCES_LIBRARIES} ${XERCES_ICU_LIBRARIES})
     endif()
- 
 endif()
 
 

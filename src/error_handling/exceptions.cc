@@ -13,4 +13,4 @@ Exception_action exception_behavior()
   return behavior;
 }
 
-} // expections error
+} // namespace Exceptions

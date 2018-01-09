@@ -49,17 +49,30 @@ add_library(strans OBJECT ${FPP_out_files}
                           ${F77_source_files})
 
 if (BUILD_TESTS)
-
+  include_directories(${ATK_SOURCE_DIR})
   include_directories(${CCSE_INCLUDE_DIRS})
   link_directories(${CCSE_LIBRARY_DIR})
 
-  set(structured_grid_libs structured_amanzi ${CCSE_LIBRARIES} ${PETSC_LIBRARIES})
+  set(structured_grid_libs structured_amanzi interface interface_s atk)
+
+  if (ENABLE_ALQUIMIA)
+    list(APPEND structured_grid_libs geochemistry)
+  endif()
+
   if(CMAKE_Fortran_COMPILER_ID STREQUAL GNU) 
     if (${CMAKE_SYSTEM_NAME} STREQUAL Linux)
       list(APPEND structured_grid_libs gfortran)
     endif()
   endif()
-  set(tpl_libs)
+
+  set(tpl_libs ${CCSE_LIBRARIES} ${PETSC_LIBRARIES}
+               ${XERCES_LIBRARIES} ${XERCES_ICU_LIBRARIES}
+               ${Boost_LIBRARIES})
+
+  if (BUILD_SHARED_LIBS)
+    set(closing_dso ../../../shared_dso.f90)
+  endif()
+
   set(TRANSTEST "${STRANS_SOURCE_DIR}/test")
   include_directories(${TRANSTEST})
   set(CXX_header_files_1 ${TRANSTEST}/tTensorDiffusion_PK_F.H)
@@ -73,7 +86,8 @@ if (BUILD_TESTS)
   if(${AMANZI_SPACEDIM} EQUAL 2)
     add_amanzi_test(tTensorDiffusion_PK tTensorDiffusion_PK
                     KIND unit
-                    SOURCE ${FPP_out_files_1} ${CXX_source_files_1} ${F90_source_files_1} ${F77_source_files_1}
+                    SOURCE ${FPP_out_files_1} ${CXX_source_files_1} ${F90_source_files_1} 
+                           ${F77_source_files_1} ${closing_dso}
                     LINK_LIBS ${structured_grid_libs} ${tpl_libs})
   endif()
 

@@ -25,18 +25,17 @@ include_directories(${Epetra_INCLUDE_DIRS})
 include_directories(${MSTK_INCLUDE_DIRS})
 # Amanzi include directories
 include_directories(${ATK_SOURCE_DIR})
+include_directories(${DATA_STRUCTURES_SOURCE_DIR})
 include_directories(${DBC_SOURCE_DIR})
+include_directories(${GEOMETRY_SOURCE_DIR})
 include_directories(${MESH_SOURCE_DIR})
 include_directories(${MESH_LOGICAL_SOURCE_DIR})
 include_directories(${MSTK_SOURCE_DIR})
 include_directories(${MESH_FACTORY_SOURCE_DIR})
-include_directories(${GEOMETRY_SOURCE_DIR})
-include_directories(${WHETSTONE_SOURCE_DIR})
-include_directories(${DATA_STRUCTURES_SOURCE_DIR})
-include_directories(${SOLVERS_SOURCE_DIR})
-include_directories(${SOLVERS_SOURCE_DIR})
 include_directories(${OPERATORS_SOURCE_DIR})
 include_directories(${OUTPUT_SOURCE_DIR})
+include_directories(${SOLVERS_SOURCE_DIR})
+include_directories(${WHETSTONE_SOURCE_DIR})
 
 # Need this define. Errors from MSTK include files 
 # about MPI_COMM_WORLD. --lpritch
@@ -47,14 +46,14 @@ add_definitions("-DMSTK_HAVE_MPI")
 #
 add_amanzi_library(operators_audit 
                    SOURCE OperatorAudit.cc 
-                   LINK_LIBS ${flow_tpl_libs})
+		   LINK_LIBS whetstone ${Epetra_LIBRARIES})
 
 #
 # Library: operators
 #
 set(operators_inc_files
     BCs.hh
-    FieldMaps.hh
+    RemapUtils.hh
     OperatorDefs.hh
     OperatorUtils.hh
     Op.hh
@@ -63,7 +62,9 @@ set(operators_inc_files
     Op_Cell_FaceCell.hh
     Op_Cell_Node.hh
     Op_Cell_Edge.hh
+    Op_Cell_Schema.hh
     Op_Face_Cell.hh
+    Op_Face_Schema.hh
     Op_Node_Node.hh
     Operator.hh
     Operator_Cell.hh
@@ -74,19 +75,28 @@ set(operators_inc_files
     Operator_Node.hh
     Operator_Edge.hh
     BoundaryFlux.hh
-    OperatorDiffusion.hh
-    OperatorDiffusionWithGravity.hh
-    OperatorDiffusionFactory.hh
-    OperatorDiffusionMFD.hh
-    OperatorDiffusionMFDwithGravity.hh
-    OperatorDiffusionFV.hh
-    OperatorDiffusionFVwithGravity.hh
-    OperatorDiffusionNLFV.hh
-    OperatorDiffusionNLFVwithGravity.hh
-    OperatorElectromagnetics.hh
-    OperatorElectromagneticsMHD.hh
-    OperatorAccumulation.hh
-    OperatorAdvection.hh
+    PDE_Abstract.hh
+    PDE_Accumulation.hh
+    PDE_Advection.hh
+    PDE_AdvectionUpwind.hh
+    PDE_AdvectionRiemann.hh
+    PDE_Diffusion.hh
+    PDE_DiffusionWithGravity.hh
+    PDE_DiffusionFactory.hh
+    PDE_DiffusionMFD.hh
+    PDE_DiffusionMFDwithGravity.hh
+    PDE_DiffusionFV.hh
+    PDE_DiffusionFVwithGravity.hh
+    PDE_DiffusionNLFV.hh
+    PDE_DiffusionNLFVwithGravity.hh
+    PDE_Elasticity.hh
+    PDE_Electromagnetics.hh
+    PDE_ElectromagneticsMHD.hh
+    PDE_ElectromagneticsMHD_TM.hh
+    PDE_HelperBCsList.hh
+    PDE_HelperDiscretization.hh
+    PDE_Reaction.hh
+    Schema.hh
     TreeOperator.hh
     Reconstruction.hh
     ReconstructionCell.hh
@@ -101,28 +111,31 @@ set(operators_inc_files
 
 add_amanzi_library(operators 
                    SOURCE OperatorUtils.cc
-                          FieldMaps.cc
                           Operator.cc
-                          Operator_Cell.cc Operator_FaceCell.cc
+                          Operator_Node.cc
+                          Operator_Edge.cc
+                          Operator_Cell.cc
+                          Operator_FaceCell.cc
                           Operator_FaceCellScc.cc
                           Operator_FaceCellSff.cc
                           Operator_ConsistentFace.cc
-                          Operator_Node.cc
-                          Operator_Edge.cc
-                          OperatorDiffusionMFD.cc
-                          OperatorDiffusionMFDwithGravity.cc
-                          OperatorDiffusionFV.cc
-                          OperatorDiffusionFVwithGravity.cc
-                          OperatorDiffusionNLFV.cc
-                          OperatorDiffusionNLFVwithGravity.cc
-                          OperatorDiffusionFactory.cc                   
-                          OperatorElectromagnetics.cc
-                          OperatorElectromagneticsMHD.cc
-                          OperatorAccumulation.cc
-                          OperatorAdvection.cc  
+                          Operator_Schema.cc
+                          PDE_Accumulation.cc
+                          PDE_Abstract.cc
+                          PDE_AdvectionUpwind.cc PDE_AdvectionRiemann.cc
+                          PDE_DiffusionMFD.cc PDE_DiffusionMFDwithGravity.cc
+                          PDE_DiffusionFV.cc PDE_DiffusionFVwithGravity.cc
+                          PDE_DiffusionNLFV.cc PDE_DiffusionNLFVwithGravity.cc
+                          PDE_DiffusionFactory.cc                   
+                          PDE_HelperDiscretization.cc
+                          PDE_Elasticity.cc
+                          PDE_Electromagnetics.cc PDE_ElectromagneticsMHD.cc PDE_ElectromagneticsMHD_TM.cc
+                          PDE_Reaction.cc
+                          Schema.cc
                           TreeOperator.cc
                           ReconstructionCell.cc
                           ReconstructionCell_Limiters.cc
+                          RemapUtils.cc
                    HEADERS ${operators_inc_files}
                    LINK_LIBS geometry mesh error_handling whetstone solvers data_structures ${Epetra_LIBRARIES})
 
@@ -156,7 +169,7 @@ if (BUILD_TESTS)
         add_amanzi_test(operators_parabolic_surface operators_parabolic_surface
                         KIND unit
                         SOURCE test/Main.cc test/operator_parabolic_surface.cc
-                        LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+			LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
         add_amanzi_test(operators_marshak operators_marshak
                         KIND unit
                         SOURCE test/Main.cc test/operator_marshak.cc
@@ -188,6 +201,7 @@ if (BUILD_TESTS)
                                         test/operator_diffusion_divk.cc
                                         test/operator_diffusion_nonsymmetric.cc
                                         test/operator_diffusion_nlfv.cc
+                                        test/operator_diffusion_curved.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
     add_amanzi_test(operators_diffusion_3pe operators_diffusion NPROCS 3 KIND unit)
@@ -197,7 +211,8 @@ if (BUILD_TESTS)
                     SOURCE test/Main.cc test/operator_diffusion_consistent_face.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
-    add_amanzi_test(operators_diffusion_consistent_face_3pe operators_diffusion_consistent_face NPROCS 3 KIND unit)
+    add_amanzi_test(operators_diffusion_consistent_face_3pe operators_diffusion_consistent_face 
+                    NPROCS 3 KIND unit)
 
     add_amanzi_test(operators_commute operators_commute
                     KIND unit
@@ -211,15 +226,17 @@ if (BUILD_TESTS)
     #                 LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
     
     # Test: matrices for surface
-    add_amanzi_test(operators_advdiff_surface operators_advdiff_surface
+    add_amanzi_test(operators_surface operators_surface
                     KIND unit
                     SOURCE test/Main.cc test/operator_advdiff_surface.cc
+                                        test/operator_fractures.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
     # Test: operators on 
     add_amanzi_test(operators_electromagnetics operators_electromagnetics
                     KIND unit
-                    SOURCE test/Main.cc test/operator_electromagnetics.cc 
+                    SOURCE test/Main.cc test/AnalyticElectromagneticsBase.cc
+                                        test/operator_electromagnetics.cc 
                                         test/operator_electromagnetics_mhd.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
@@ -257,6 +274,17 @@ if (BUILD_TESTS)
                     SOURCE test/Main.cc test/operator_gravity.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
+    # Test: elasticity-type methods
+    add_amanzi_test(operators_elasticity operators_elasticity
+                    KIND unit
+                    SOURCE test/Main.cc test/operator_elasticity.cc
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+
+    add_amanzi_test(operators_stokes operators_stokes
+                    KIND unit
+                    SOURCE test/Main.cc test/operator_stokes.cc
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+
     # reconstruction tests
     add_amanzi_test(operators_reconstruction operators_reconstruction
                     KIND unit
@@ -269,6 +297,13 @@ if (BUILD_TESTS)
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
     add_amanzi_test(operators_reconstruction_2pe operators_reconstruction NPROCS 2 KIND unit)
+
+    # remap tests
+    add_amanzi_test(operators_remap operators_remap
+                    KIND unit
+                    SOURCE test/Main.cc test/operator_remap_primal.cc
+                           test/operator_remap_dual.cc
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
 endif()
 

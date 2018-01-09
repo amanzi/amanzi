@@ -27,8 +27,9 @@ Chemistry_PK::Chemistry_PK() :
     number_ion_exchange_sites_(0),
     number_sorption_sites_(0),
     using_sorption_(false),
-    using_sorption_isotherms_(false),
-    number_aqueous_kinetics_(0) {};
+    using_sorption_isotherms_(false),    
+    number_aqueous_kinetics_(0)
+    {};
 
 
 /* ******************************************************************
@@ -36,22 +37,25 @@ Chemistry_PK::Chemistry_PK() :
 ******************************************************************* */
 void Chemistry_PK::Setup(const Teuchos::Ptr<State>& S)
 {
+
   mesh_ = S->GetMesh(domain_name_);
 
   // Require data from flow
   if (!S->HasField(poro_key_)) {
-    S->RequireField(poro_key_, passwd_)->SetMesh(mesh_)->SetGhosted(false)
-      ->SetComponent("cell", AmanziMesh::CELL, 1);
+    S->RequireField(poro_key_, passwd_)->SetMesh(mesh_)->SetGhosted(false)->SetComponent("cell", AmanziMesh::CELL, 1);
+    S->RequireFieldEvaluator(poro_key_);
   }
 
   if (!S->HasField(saturation_key_)) {
     S->RequireField(saturation_key_, passwd_)->SetMesh(mesh_)->SetGhosted(false)
-      //->SetComponent("cell", AmanziMesh::CELL, 1);
       ->AddComponent("cell", AmanziMesh::CELL, 1);
   }
   
   if (!S->HasField(fluid_den_key_)) {
-    S->RequireScalar(fluid_den_key_, passwd_);
+    // S->RequireScalar(fluid_den_key_, passwd_);
+    S->RequireField(fluid_den_key_, passwd_)->SetMesh(mesh_)->SetGhosted(false)
+       ->AddComponent("cell", AmanziMesh::CELL, 1);
+    S->RequireFieldEvaluator(fluid_den_key_);
   }
 
   // require transport fields
@@ -89,7 +93,7 @@ void Chemistry_PK::Setup(const Teuchos::Ptr<State>& S)
       ->SetMesh(mesh_)->SetGhosted(false)
       ->SetComponent("cell", AmanziMesh::CELL, number_minerals_);
 
-    S->RequireField("mineral_rate_constant", passwd_, mrc_names_cv)
+    S->RequireField(mineral_rate_constant_key_, passwd_, mrc_names_cv)
       ->SetMesh(mesh_)->SetGhosted(false)
       ->SetComponent("cell", AmanziMesh::CELL, number_minerals_);
   }
@@ -104,7 +108,7 @@ void Chemistry_PK::Setup(const Teuchos::Ptr<State>& S)
     }
 
     // -- register field
-    S->RequireField("first_order_decay_constant", passwd_, aqueous_kinetics_names_cv)
+    S->RequireField(first_order_decay_constant_key_, passwd_, aqueous_kinetics_names_cv)
       ->SetMesh(mesh_)->SetGhosted(false)
       ->SetComponent("cell", AmanziMesh::CELL, number_aqueous_kinetics_);
   }
@@ -184,12 +188,18 @@ void Chemistry_PK::Setup(const Teuchos::Ptr<State>& S)
 ******************************************************************* */
 void Chemistry_PK::Initialize(const Teuchos::Ptr<State>& S)
 {
+  
   // Aqueous species 
   if (number_aqueous_components_ > 0) {
+
     if (!S->GetField(tcc_key_, passwd_)->initialized()) {
-      InitializeField_(tcc_key_, 0.0);
+      //InitializeField_(S,  tcc_key_, 0.0);
+      InitializeField(S, passwd_, tcc_key_, 0.0);
     }
-    InitializeField_(primary_activity_coeff_key_, 1.0);
+ 
+    //InitializeField_(S,  primary_activity_coeff_key_, 1.0);
+    InitializeField(S, passwd_, primary_activity_coeff_key_, 1.0);    
+
 
     // special initialization of free ion concentration
     if (S_->HasField(free_ion_species_key_)) {
@@ -202,49 +212,69 @@ void Chemistry_PK::Initialize(const Teuchos::Ptr<State>& S)
 
         if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
           Teuchos::OSTab tab = vo_->getOSTab();
-          *vo_->os() << "initilized \"free_ion_species\" to 10% of \"total_component_concentration\"\n";  
+          *vo_->os() << "initilized \" "<<free_ion_species_key_<<"\" to 10% of \" "<<
+            tcc_key_<<"\"\n";  
         }
       }
     }
-    // InitializeField_(free_ion_species_key_, 0.0);
 
     // Sorption sites: all will have a site density, but we can default to zero
     if (using_sorption_) {
-      InitializeField_(total_sorbed_key_, 0.0);
+      //InitializeField_(S,  total_sorbed_key_, 0.0);
+      InitializeField(S, passwd_, total_sorbed_key_, 0.0);
     }
 
     // Sorption isotherms: Kd required, Langmuir and Freundlich optional
     if (using_sorption_isotherms_) {
-      InitializeField_(isotherm_kd_key_, -1.0);
-      InitializeField_(isotherm_freundlich_n_key_, 1.0);
-      InitializeField_(isotherm_langmuir_b_key_, 1.0);
+      // InitializeField_(S,  isotherm_kd_key_, -1.0);
+      // InitializeField_(S,  isotherm_freundlich_n_key_, 1.0);
+      // InitializeField_(S,  isotherm_langmuir_b_key_, 1.0);
+
+      InitializeField(S, passwd_, isotherm_kd_key_, -1.0);
+      InitializeField(S, passwd_, isotherm_freundlich_n_key_, 1.0);
+      InitializeField(S, passwd_, isotherm_langmuir_b_key_, 1.0);
+
     }
   }
 
   // Minerals: vol frac and surface areas
   if (number_minerals_ > 0) {
-    InitializeField_(min_vol_frac_key_, 0.0);
-    InitializeField_(min_ssa_key_, 1.0);
+
+    // InitializeField_(S,  min_vol_frac_key_, 0.0);
+    // InitializeField_(S,  min_ssa_key_, 1.0);
+
+    InitializeField(S, passwd_, min_vol_frac_key_, 0.0);
+    InitializeField(S, passwd_, min_ssa_key_, 1.0);
+
   }
 
   // Aqueous kinetics
   if (number_aqueous_kinetics_ > 0) {
-    InitializeField_("first_order_decay_constant", 0.0);
+
+    // InitializeField_(S,  first_order_decay_constant_key_, 0.0);
+    InitializeField(S, passwd_, first_order_decay_constant_key_, 0.0);
+
   }
   
   // Ion exchange sites: default to 1
   if (number_ion_exchange_sites_ > 0) {
-    InitializeField_(ion_exchange_sites_key_, 1.0);
-    InitializeField_(ion_exchange_ref_cation_conc_key_, 1.0);
+    // InitializeField_(S,  ion_exchange_sites_key_, 1.0);
+    // InitializeField_(S,  ion_exchange_ref_cation_conc_key_, 1.0);
+    InitializeField(S, passwd_, ion_exchange_sites_key_, 1.0);
+    InitializeField(S, passwd_, ion_exchange_ref_cation_conc_key_, 1.0);    
   }
 
   if (number_sorption_sites_ > 0) {
-    InitializeField_(sorp_sites_key_, 1.0);
-    InitializeField_(surf_cfsc_key_, 1.0);
+    // InitializeField_(S,  sorp_sites_key_, 1.0);
+    // InitializeField_(S,  surf_cfsc_key_, 1.0);
+    InitializeField(S, passwd_, sorp_sites_key_, 1.0);
+    InitializeField(S, passwd_, surf_cfsc_key_, 1.0);
   }
 
   // auxiliary fields
-  InitializeField_(alquimia_aux_data_key_, 0.0);
+  // InitializeField_(S,  alquimia_aux_data_key_, 0.0);
+  InitializeField(S, passwd_, alquimia_aux_data_key_, 0.0);
+
 
   // miscaleneous controls
   initial_conditions_time_ = cp_list_->get<double>("initial conditions time", S->time());
@@ -254,24 +284,21 @@ void Chemistry_PK::Initialize(const Teuchos::Ptr<State>& S)
 /* ******************************************************************
 * Process names of materials 
 ******************************************************************* */
-void Chemistry_PK::InitializeField_(std::string fieldname, double default_val)
+
+void Chemistry_PK::InitializeField_(const Teuchos::Ptr<State>& S, std::string fieldname, double default_val)
 {
   Teuchos::OSTab tab = vo_->getOSTab();
 
-  if (S_->HasField(fieldname)) {
-    if (!S_->GetField(fieldname)->initialized()) {
-      S_->GetFieldData(fieldname, passwd_)->PutScalar(default_val);
-      S_->GetField(fieldname, passwd_)->set_initialized();
+  if (S->HasField(fieldname)) {
+    if (!S->GetField(fieldname)->initialized()) {
+      S->GetFieldData(fieldname, passwd_)->PutScalar(default_val);
+      S->GetField(fieldname, passwd_)->set_initialized();
       if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM)
          *vo_->os() << "initilized \"" << fieldname << "\" to value " << default_val << std::endl;  
     }
   }
 }
 
-
-/* ******************************************************************
-* Process names of materials 
-******************************************************************* */
 void Chemistry_PK::InitializeMinerals(Teuchos::RCP<Teuchos::ParameterList> plist)
 {
   mineral_names_.clear();
@@ -351,6 +378,73 @@ void Chemistry_PK::ErrorAnalysis(int ierr, std::string& internal_msg)
     Errors::Message msg(internal_msg);
     Exceptions::amanzi_throw(msg); 
   }  
+}
+
+void Chemistry_PK::CopyFieldstoNewState(const Teuchos::RCP<State>& S_next){
+
+  if (S_->HasField(min_vol_frac_key_)&& S_next->HasField(min_vol_frac_key_)){
+    *S_next->GetFieldData(min_vol_frac_key_, passwd_)->ViewComponent("cell", false) =
+        *S_->GetFieldData(min_vol_frac_key_, passwd_)->ViewComponent("cell", false);
+  }
+
+  if (S_->HasField(min_ssa_key_)&& S_next->HasField(min_ssa_key_)){
+    *S_next->GetFieldData(min_ssa_key_, passwd_)->ViewComponent("cell", false) =
+        *S_->GetFieldData(min_ssa_key_, passwd_)->ViewComponent("cell", false);
+  }
+
+  if (S_->HasField(sorp_sites_key_)&& S_next->HasField(sorp_sites_key_)){
+    *S_next->GetFieldData(sorp_sites_key_, passwd_)->ViewComponent("cell", false) =
+        *S_->GetFieldData(sorp_sites_key_, passwd_)->ViewComponent("cell", false);
+  }
+
+  if (S_->HasField(surf_cfsc_key_)&& S_next->HasField(surf_cfsc_key_)){
+    *S_next->GetFieldData(surf_cfsc_key_, passwd_)->ViewComponent("cell", false) =
+      *S_->GetFieldData(surf_cfsc_key_, passwd_)->ViewComponent("cell", false);
+  }
+
+  if (S_->HasField(total_sorbed_key_)&& S_next->HasField(total_sorbed_key_)){
+    *S_next->GetFieldData(total_sorbed_key_, passwd_)->ViewComponent("cell", false) =
+      *S_->GetFieldData(total_sorbed_key_, passwd_)->ViewComponent("cell", false);
+  }
+
+  if (S_->HasField(isotherm_kd_key_)&& S_next->HasField(isotherm_kd_key_)){
+    *S_next->GetFieldData(isotherm_kd_key_, passwd_)->ViewComponent("cell", false) =
+      *S_->GetFieldData(isotherm_kd_key_, passwd_)->ViewComponent("cell", false);
+  }
+
+  if (S_->HasField(isotherm_freundlich_n_key_)&& S_next->HasField(isotherm_freundlich_n_key_)){
+    *S_next->GetFieldData(isotherm_freundlich_n_key_, passwd_)->ViewComponent("cell", false) =
+      *S_->GetFieldData(isotherm_freundlich_n_key_, passwd_)->ViewComponent("cell", false);
+  }
+    
+  if (S_->HasField(isotherm_langmuir_b_key_)&& S_next->HasField(isotherm_langmuir_b_key_)){
+    *S_next->GetFieldData(isotherm_langmuir_b_key_, passwd_)->ViewComponent("cell", false) =
+      *S_->GetFieldData(isotherm_langmuir_b_key_, passwd_)->ViewComponent("cell", false);
+  }
+
+  if (S_->HasField(free_ion_species_key_)&& S_next->HasField(free_ion_species_key_)){
+    *S_next->GetFieldData(free_ion_species_key_, passwd_)->ViewComponent("cell", false) =
+      *S_->GetFieldData(free_ion_species_key_, passwd_)->ViewComponent("cell", false);
+  }
+
+  if (S_->HasField(primary_activity_coeff_key_)&& S_next->HasField(primary_activity_coeff_key_)){
+    *S_next->GetFieldData(primary_activity_coeff_key_, passwd_)->ViewComponent("cell", false) =
+      *S_->GetFieldData(primary_activity_coeff_key_, passwd_)->ViewComponent("cell", false);
+  }
+    
+  if (S_->HasField(ion_exchange_sites_key_)&& S_next->HasField(ion_exchange_sites_key_)){
+    *S_next->GetFieldData(ion_exchange_sites_key_, passwd_)->ViewComponent("cell", false) =
+      *S_->GetFieldData(ion_exchange_sites_key_, passwd_)->ViewComponent("cell", false);
+  }
+
+  if (S_->HasField(ion_exchange_ref_cation_conc_key_)&& S_next->HasField(ion_exchange_ref_cation_conc_key_)){
+    *S_next->GetFieldData(ion_exchange_ref_cation_conc_key_, passwd_)->ViewComponent("cell", false) =
+      *S_->GetFieldData(ion_exchange_ref_cation_conc_key_, passwd_)->ViewComponent("cell", false);
+  }
+
+
+ 
+
 }
 
 }  // namespace AmanziChemistry

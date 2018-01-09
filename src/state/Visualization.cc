@@ -13,6 +13,7 @@
 */
 
 // TPLs
+#include <iostream>
 #include "Teuchos_VerboseObjectParameterListHelpers.hpp"
 
 #include "dbc.hh"
@@ -65,6 +66,7 @@ void Visualization::ReadParameters_() {
   write_partition_ = plist_.get<bool>("write partitions", false);
 
   dynamic_mesh_ = plist_.get<bool>("dynamic mesh", false);
+  write_mesh_exo_ = plist_.get<bool>("write mesh to Exodus II", false);
 }
 
 
@@ -153,11 +155,22 @@ void Visualization::CreateFiles() {
     Errors::Message msg("Visualization: Unknown file format: \""+file_format+"\"");
     Exceptions::amanzi_throw(msg);
   }
+
+  if (write_mesh_exo_ && !dynamic_mesh_) {
+    std::stringstream mesh_fname;
+    mesh_fname << plist_.get<std::string>("file name base") << "_mesh.exo";
+    mesh_->write_to_exodus_file(mesh_fname.str());
+  }
 }
 
 
 void Visualization::CreateTimestep(const double& time, const int& cycle) {
   visualization_output_->InitializeCycle(time,cycle);
+  if (write_mesh_exo_ && dynamic_mesh_) {
+    std::stringstream mesh_fname;
+    mesh_fname << plist_.get<std::string>("file name base") << "_mesh_" << cycle << ".exo";
+    mesh_->write_to_exodus_file(mesh_fname.str());
+  }
 }
 
 

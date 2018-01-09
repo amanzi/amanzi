@@ -87,6 +87,9 @@
     <Parameter name="Component Solutes" type="Array(string)" value="{Al+++, H+, HPO4--, SiO2(aq), UO2++}"/>
     <Parameter name="minerals" type="Array(string)" value="{Kaolinite, Quartz, (UO2)3(PO4)2.4H2O}"/>
     <Parameter name="sorption sites" type="Array(string)" value="{>FeOH, >AlOH, >SiOH}"/>
+    <ParameterList name="verbose object" type="ParameterList">
+      <Parameter name="verbosity level" type="string" value="low" />
+    </ParameterList>
 
     <ParameterList name="thermodynamic database">
       <Parameter name="format" type="string" value="simple"/>
@@ -155,22 +158,11 @@
   </ParameterList>
 
   <ParameterList name="state">
-    <ParameterList name="initial conditions">
-
-      <ParameterList name="fluid_density">
-        <Parameter name="value" type="double" value="1000."/>
-      </ParameterList>
-
-      <ParameterList name="fluid_viscosity">
-        <Parameter name="value" type="double" value="1.00000000000000002e-03"/>
-      </ParameterList>
-
-      <ParameterList name="gravity">
-        <Parameter name="value" type="Array(double)" value="{0.0, 0.0, -9.80664999999999942e+00}"/>
-      </ParameterList>
+    <ParameterList name="field evaluators" type="ParameterList">
 
       <ParameterList name="porosity">
-        <ParameterList name="function">
+        <Parameter name="field evaluator type" type="string" value="independent variable" />
+        <ParameterList name="function" type="ParameterList">
           <ParameterList name="domain">
             <Parameter name="region" type="string" value="All"/>
             <Parameter name="component" type="string" value="cell"/>
@@ -183,6 +175,33 @@
         </ParameterList>
       </ParameterList>
 
+      <ParameterList name="fluid_density">
+        <Parameter name="field evaluator type" type="string" value="independent variable" />
+        <ParameterList name="function">
+          <ParameterList name="domain">
+            <Parameter name="region" type="string" value="All"/>
+            <Parameter name="component" type="string" value="cell"/>
+            <ParameterList name="function">
+              <ParameterList name="function-constant">
+                <Parameter name="value" type="double" value="1000.0"/>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+      
+    </ParameterList>
+    
+    <ParameterList name="initial conditions">
+
+      <ParameterList name="fluid_viscosity">
+        <Parameter name="value" type="double" value="1.00000000000000002e-03"/>
+      </ParameterList>
+
+      <ParameterList name="gravity">
+        <Parameter name="value" type="Array(double)" value="{0.0, 0.0, -9.80664999999999942e+00}"/>
+      </ParameterList>
+     
       <ParameterList name="permeability">
         <ParameterList name="function">
           <ParameterList name="domain">

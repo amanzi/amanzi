@@ -119,7 +119,7 @@ TEST(FLOW_2D_RICHARDS_SEEPAGE_TPFA) {
   ti_specs.max_itrs = 10;
 
   AdvanceToSteadyState(S, *RPK, ti_specs, soln);
-  RPK->set_dt(1.);
+  RPK->set_dt(1.0);
   printf("time step = %12.4f\n", RPK->get_dt());
   printf("seepage face total = %12.4f\n", RPK->seepage_mass());
   RPK->VV_ReportSeepageOutflow(S.ptr());

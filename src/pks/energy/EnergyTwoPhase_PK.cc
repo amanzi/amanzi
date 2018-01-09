@@ -14,9 +14,9 @@
 
 // Amanzi
 #include "EOSEvaluator.hh"
-#include "OperatorDiffusionFactory.hh"
+#include "PDE_DiffusionFactory.hh"
 
-// Energy
+// Amanzi::Energy
 #include "EnergyTwoPhase_PK.hh"
 #include "EnthalpyEvaluator.hh"
 #include "IEMEvaluator.hh"
@@ -127,7 +127,7 @@ void EnergyTwoPhase_PK::Initialize(const Teuchos::Ptr<State>& S)
   Teuchos::ParameterList oplist_matrix = tmp_list.sublist("matrix");
   Teuchos::ParameterList oplist_pc = tmp_list.sublist("preconditioner");
 
-  Operators::OperatorDiffusionFactory opfactory;
+  Operators::PDE_DiffusionFactory opfactory;
   op_matrix_diff_ = opfactory.Create(oplist_matrix, mesh_, op_bc_);
   op_matrix_diff_->SetBCs(op_bc_, op_bc_);
   op_matrix_ = op_matrix_diff_->global_operator();
@@ -135,7 +135,7 @@ void EnergyTwoPhase_PK::Initialize(const Teuchos::Ptr<State>& S)
   op_matrix_diff_->SetScalarCoefficient(S->GetFieldData(conductivity_key_), Teuchos::null);
 
   Teuchos::ParameterList oplist_adv = ep_list_->sublist("operators").sublist("advection operator");
-  op_matrix_advection_ = Teuchos::rcp(new Operators::OperatorAdvection(oplist_adv, mesh_));
+  op_matrix_advection_ = Teuchos::rcp(new Operators::PDE_AdvectionUpwind(oplist_adv, mesh_));
 
   const CompositeVector& flux = *S->GetFieldData("darcy_flux");
   op_matrix_advection_->Setup(flux);
@@ -148,8 +148,8 @@ void EnergyTwoPhase_PK::Initialize(const Teuchos::Ptr<State>& S)
   op_preconditioner_->Init();
   op_preconditioner_diff_->SetScalarCoefficient(S->GetFieldData(conductivity_key_), Teuchos::null);
 
-  op_acc_ = Teuchos::rcp(new Operators::OperatorAccumulation(AmanziMesh::CELL, op_preconditioner_));
-  op_preconditioner_advection_ = Teuchos::rcp(new Operators::OperatorAdvection(oplist_adv, op_preconditioner_));
+  op_acc_ = Teuchos::rcp(new Operators::PDE_Accumulation(AmanziMesh::CELL, op_preconditioner_));
+  op_preconditioner_advection_ = Teuchos::rcp(new Operators::PDE_AdvectionUpwind(oplist_adv, op_preconditioner_));
 
   op_preconditioner_->SymbolicAssembleMatrix();
 

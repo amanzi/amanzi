@@ -78,68 +78,78 @@ add_library(smaterials OBJECT ${FPP_out_files}
                               ${CXX_headers_files})
 
 if (BUILD_TESTS) 
-
   include_directories(${CCSE_INCLUDE_DIRS})
   link_directories(${CCSE_LIBRARY_DIR})
   add_definitions("-DENABLE_Structured")
 
-  set(structured_grid_libs structured_amanzi ${CCSE_LIBRARIES} ${PETSC_LIBRARIES} ${CCSE_LIBRARIES})
+  set(structured_grid_libs structured_amanzi interface interface_s atk error_handling)
+
+  if (ENABLE_ALQUIMIA)
+    list(APPEND structured_grid_libs geochemistry)
+  endif()
+
   if(CMAKE_Fortran_COMPILER_ID STREQUAL GNU)
     if (${CMAKE_SYSTEM_NAME} STREQUAL Linux)
       list(APPEND structured_grid_libs gfortran)
     endif()
   endif()
 
-  set(tpl_libs)
+  set(tpl_libs ${CCSE_LIBRARIES} ${PETSC_LIBRARIES} ${CCSE_LIBRARIES}
+               ${XERCES_LIBRARIES} ${XERCES_ICU_LIBRARIES}
+               ${Boost_LIBRARIES})
 
   include_directories(${SMATERIALS_SOURCE_DIR}/test) 
 
+  if (BUILD_SHARED_LIBS)
+    set(closing_dso ../shared_dso.f90)
+  endif()
+
   add_amanzi_test(RockManager tRM "tRM.in"
                   KIND unit
-                  SOURCE test/tRM.cpp
+                  SOURCE test/tRM.cpp ${closing_dso}
                   LINK_LIBS ${structured_grid_libs} ${tpl_libs})
 
   add_amanzi_test(RockManager_fort tRM_fort "tRM.in"
                   KIND unit
-                  SOURCE test/tRM_fort.cpp test/tRM_fort_${AMANZI_SPACEDIM}D.F
+                  SOURCE test/tRM_fort.cpp test/tRM_fort_${AMANZI_SPACEDIM}D.F ${closing_dso}
                   LINK_LIBS ${structured_grid_libs} ${tpl_libs})
 
   if(${AMANZI_SPACEDIM} EQUAL 2)
     add_amanzi_test(MaterialIDFiller tMIDf
                     KIND unit
-                    SOURCE test/tMIDf.cpp
+                    SOURCE test/tMIDf.cpp ${closing_dso}
                     LINK_LIBS ${structured_grid_libs} ${tpl_libs})
 
     add_amanzi_test(MIDfill_RM tMIDf_RM "tMIDf_RM.in"
                     KIND unit
-                    SOURCE test/tMIDf_RM.cpp
+                    SOURCE test/tMIDf_RM.cpp ${closing_dso}
                     LINK_LIBS ${structured_grid_libs} ${tpl_libs})
 
     add_amanzi_test(RockManager_gs tRM_GS "tRM_GS.in" "nLevs=1"
                     KIND unit
-                    SOURCE test/tRM_GS.cpp
+                    SOURCE test/tRM_GS.cpp ${closing_dso}
                     LINK_LIBS ${structured_grid_libs} ${tpl_libs})
 
     add_amanzi_test(RockManager_gs2 RockManager_gs_parallel "./tRM_GS.in"
                     KIND unit
                     NPROCS 2
-                    SOURCE test/tRM_GS.cpp
+                    SOURCE test/tRM_GS.cpp ${closing_dso}
                     LINK_LIBS ${structured_grid_libs} ${tpl_libs})
 
     add_amanzi_test(MaterialPropertyFiller tMatFiller
                     KIND unit
-                    SOURCE test/tMatFiller.cpp
+                    SOURCE test/tMatFiller.cpp ${closing_dso}
                     LINK_LIBS ${structured_grid_libs} ${tpl_libs})
 
     add_amanzi_test(MaterialPropertyFillerC tMatFillerC
                     KIND unit
-                    SOURCE test/tMatFillerC.cpp
+                    SOURCE test/tMatFillerC.cpp ${closing_dso}
                     LINK_LIBS ${structured_grid_libs} ${tpl_libs})
 
     add_amanzi_test(MaterialPropertyFiller4 tMatFiller_parallel "case_size=large"
                     KIND unit
                     NPROCS 4
-                    SOURCE test/tMatFiller.cpp
+                    SOURCE test/tMatFiller.cpp ${closing_dso}
                     LINK_LIBS ${structured_grid_libs} ${tpl_libs})
   endif()
 
