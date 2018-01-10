@@ -104,7 +104,8 @@
 #  0.95.0        - update Trilinos 12.12.1
 #                - update Hypre 2.12.1  
 #                - note alquimia 1.0.5 == xsdk-0.3.0
-#                - pflotran release/xsdk-0.3.0 
+#                - pflotran release/xsdk-0.3.0
+#                - update PETSc 3.8.2
 
 include(CMakeParseArguments)
 
@@ -392,25 +393,25 @@ set(SuperLUDist_MD5_SUM        5f0087f64a6506375537117790c98e6b)
 #
 set(Sowing_VERSION_MAJOR  1)
 set(Sowing_VERSION_MINOR  1)
-set(Sowing_VERSION_PATCH  23-p1)
+set(Sowing_VERSION_PATCH  25-p1)
 set(Sowing_VERSION  ${Sowing_VERSION_MAJOR}.${Sowing_VERSION_MINOR}.${Sowing_VERSION_PATCH})
-set(Sowing_URL_STRING     "http://ftp.mcs.anl.gov/pub/petsc/externalpackages/")
-set(Sowing_ARCHIVE_FILE   sowing-${Sowing_VERSION}.tar.gz)
-set(Sowing_SAVEAS_FILE    ${Sowing_ARCHIVE_FILE})
-set(Sowing_MD5_SUM        65aaf3ae2a4c0f30d532fec291702e16)
+set(Sowing_URL_STRING     "https://bitbucket.org/petsc/pkg-sowing/get")
+set(Sowing_ARCHIVE_FILE   v${Sowing_VERSION}.tar.gz)
+set(Sowing_SAVEAS_FILE    sowing-${Sowing_VERSION}.tar.gz)
+set(Sowing_MD5_SUM        30ae83576038f00def33619a31f6a14c)
 
 #
 # TPL: PETSc
 #
 set(PETSc_VERSION_MAJOR  3)
-set(PETSc_VERSION_MINOR  7)
-set(PETSc_VERSION_PATCH  5)
+set(PETSc_VERSION_MINOR  8)
+set(PETSc_VERSION_PATCH  2)
 set(PETSc_VERSION  ${PETSc_VERSION_MAJOR}.${PETSc_VERSION_MINOR}.${PETSc_VERSION_PATCH})
 set(PETSc_ARCHIVE_VERSION ${PETSc_VERSION_MAJOR}.${PETSc_VERSION_MINOR}.${PETSc_VERSION_PATCH})
 set(PETSc_URL_STRING     "https://bitbucket.org/petsc/petsc/get")
-set(PETSc_ARCHIVE_FILE   xsdk-${XSDK_VERSION}.tar.gz)
+set(PETSc_ARCHIVE_FILE   v${PETSc_VERSION}.tar.gz)
 set(PETSc_SAVEAS_FILE    petsc-${PETSc_ARCHIVE_VERSION}.tar.gz)
-set(PETSc_MD5_SUM        41a10be8bbf9d13f137873a2d52c6715)
+set(PETSc_MD5_SUM        ce207f60800e19cfb55a2d7a879ca42c)
 
 #
 # TPL: Trilinos

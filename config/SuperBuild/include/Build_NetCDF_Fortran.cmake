@@ -63,3 +63,6 @@ ExternalProject_Add(${NetCDF_Fortran_BUILD_TARGET}
                     # -- Output control
                     ${NetCDF_Fortran_logging_args})
 
+
+# --- Useful variables for packages that depend on NetCDF (Trilinos)
+set(NetCDF_FORTRAN_DIR ${TPL_INSTALL_PREFIX})

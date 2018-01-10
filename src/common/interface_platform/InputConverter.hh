@@ -23,9 +23,9 @@
 #include "boost/filesystem/path.hpp"
 #include "boost/format.hpp"
 
-// TPLs
-#include "${XERCES_INCLUDE_DIR}/xercesc/dom/DOM.hpp"
-#include "${XERCES_INCLUDE_DIR}/xercesc/parsers/XercesDOMParser.hpp"
+// Xerces
+#include "xercesc/dom/DOM.hpp"
+#include "xercesc/parsers/XercesDOMParser.hpp"
 
 // Amanzi's
 #include "Units.hh"
