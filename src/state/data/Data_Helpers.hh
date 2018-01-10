@@ -203,23 +203,36 @@ Initialize<Operators::Op>(Teuchos::ParameterList& plist, Operators::Op& t,
                const std::vector<std::string>& subfieldnames) { return true; }
 
 
+//
+// Specializations for Operator
+// ======================================================================
 
+template<>
+inline
+void
+WriteVis<Operators::Operator>(const Visualization& vis, const Key& fieldname,
+        const std::vector<std::string>& subfieldnames,
+        const Operators::Operator& global_operator) {}
 
-template<class Op_t>
-class Op_Factory {
- public:
-  Op_Factory() {}
+template<>
+inline
+void
+WriteCheckpoint<Operators::Operator>(const Checkpoint& chkp, const Key& fieldname,
+        const Operators::Operator& global_operator) {}
 
-  void set_mesh(const Teuchos::RCP<AmanziMesh::Mesh>& mesh) { mesh_ = mesh; }
-  void set_name(const std::string& name) { name_ = name; }
-  Teuchos::RCP<Op_t> Create() const {
-    return Teuchos::rcp(new Op_t(name_, mesh_));
-  }
+template<>
+inline
+void
+ReadCheckpoint<Operators::Operator>(const Checkpoint& chkp, const Key& fieldname,
+        Operators::Operator& global_operator) {}
 
- private:
-  Teuchos::RCP<AmanziMesh::Mesh> mesh_;
-  std::string name_;
-};
+template<>
+inline
+bool
+Initialize<Operators::Operator>(Teuchos::ParameterList& plist, Operators::Operator& t,
+        const Key& fieldname,
+        const std::vector<std::string>& subfieldnames) { return true; }
+
 
 
 

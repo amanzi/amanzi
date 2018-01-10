@@ -17,39 +17,34 @@ namespace Amanzi {
 // ---------------------------------------------------------------------------
 // Constructors
 // ---------------------------------------------------------------------------
-EvaluatorPrimary::EvaluatorPrimary(Teuchos::ParameterList& plist) :
+EvaluatorPrimary_::EvaluatorPrimary_(Teuchos::ParameterList& plist) :
     my_key_(Keys::cleanPListName(plist.name())),
     my_tag_(plist.get<std::string>("tag", "")),
     vo_(Keys::cleanPListName(plist.name()), plist) {}
 
-// ---------------------------------------------------------------------------
-// Virtual copy constructor.
-// ---------------------------------------------------------------------------
-Teuchos::RCP<Evaluator> EvaluatorPrimary::Clone() const {
-  return Teuchos::rcp(new EvaluatorPrimary(*this));
-}
 
 // ---------------------------------------------------------------------------
-// Virtual assignment operator.
+// Assignment operator.
 // ---------------------------------------------------------------------------
-Evaluator& EvaluatorPrimary::operator=(const Evaluator& other) {
+EvaluatorPrimary_& EvaluatorPrimary_::operator=(const EvaluatorPrimary_& other)
+{
   if (this != &other) {
-    const EvaluatorPrimary* other_p =
-        dynamic_cast<const EvaluatorPrimary*>(&other);
-    ASSERT(other_p != NULL);
-    *this = *other_p;
+    ASSERT(my_key_ == other.my_key_);
+    requests_ = other.requests_;
+    deriv_requests_ = other.deriv_requests_;
   }
   return *this;
 }
 
 // ---------------------------------------------------------------------------
-// Assignment operator.
+// Virtual assignment operator.
 // ---------------------------------------------------------------------------
-EvaluatorPrimary& EvaluatorPrimary::operator=(const EvaluatorPrimary& other) {
+Evaluator& EvaluatorPrimary_::operator=(const Evaluator& other) {
   if (this != &other) {
-    ASSERT(my_key_ == other.my_key_);
-    requests_ = other.requests_;
-    deriv_requests_ = other.deriv_requests_;
+    const EvaluatorPrimary_* other_p =
+        dynamic_cast<const EvaluatorPrimary_*>(&other);
+    ASSERT(other_p != NULL);
+    *this = *other_p;
   }
   return *this;
 }
@@ -60,8 +55,8 @@ EvaluatorPrimary& EvaluatorPrimary::operator=(const EvaluatorPrimary& other) {
 // Updates the data, if needed.  Returns true if the value of the data has
 // changed since the last request for an update.
 // ---------------------------------------------------------------------------
-bool EvaluatorPrimary::Update(State& S,
-        const Key& request) {
+bool EvaluatorPrimary_::Update(State& S, const Key& request)
+{
   Teuchos::OSTab tab = vo_.getOSTab();
   if (vo_.os_OK(Teuchos::VERB_EXTREME)) {
     *vo_.os() << "Primary Variable " << my_key_ << " requested by " << request << std::endl;
@@ -90,24 +85,37 @@ bool EvaluatorPrimary::Update(State& S,
 // derivative with respect to wrt_key has changed since the last request for
 // an update.
 // ---------------------------------------------------------------------------
-bool EvaluatorPrimary::UpdateDerivative(State& S,
-        const Key& request, const Key& wrt_key) {
+bool EvaluatorPrimary_::UpdateDerivative(State& S, const Key& request,
+        const Key& wrt_key, const Key& wrt_tag)
+{
+  // enforce the contract: all calls to this must either have wrt_key,wrt_tag
+  // as the key provided (for primary evaluators) or as a dependency (for
+  // secondary evaluators)
+  ASSERT(ProvidesKey(wrt_key, wrt_tag));
+
   Teuchos::OSTab tab = vo_.getOSTab();
   if (vo_.os_OK(Teuchos::VERB_EXTREME)) {
-    *vo_.os() << "Primary Variable d" << my_key_ << "d" << wrt_key
-          << " requested by " << request << std::endl;
+    *vo_.os() << "Primary Variable " << my_key_ << ":" << my_tag_ << " derivative with respect to "
+              << wrt_key << ":" << wrt_tag << " requested by " << request;
   }
 
-  std::pair<Key,Key> deriv_request(request, wrt_key);
-  if (deriv_requests_.find(deriv_request) == deriv_requests_.end()) {
+  if (deriv_requests_.size() == 0) {
     if (vo_.os_OK(Teuchos::VERB_EXTREME)) {
-      *vo_.os() << "  Has changed..." << std::endl;
+      *vo_.os() << "  ... updating." << std::endl;
     }
-    deriv_requests_.insert(deriv_request);
+    // derivative with respect to me, lazy calculate, answer is 1
+    UpdateDerivative_(S);
+  }
+  
+  if (deriv_requests_.find(std::make_tuple(wrt_key, wrt_tag, request)) == deriv_requests_.end()) {
+    if (vo_.os_OK(Teuchos::VERB_EXTREME)) {
+      *vo_.os() << "  ... not updating but new to this request." << std::endl;
+    }
+    deriv_requests_.insert(std::make_tuple(wrt_key, wrt_tag, request));
     return true;
   } else {
     if (vo_.os_OK(Teuchos::VERB_EXTREME)) {
-      *vo_.os() << "  Has not changed..." << std::endl;
+      *vo_.os() << "  ... has not changed." << std::endl;
     }
     return false;
   }
@@ -120,7 +128,7 @@ bool EvaluatorPrimary::UpdateDerivative(State& S,
 // Effectively this simply tosses the request history, so that the next
 // requests will say this has changed.
 // ---------------------------------------------------------------------------
-void EvaluatorPrimary::SetChanged() {
+void EvaluatorPrimary_::SetChanged() {
   Teuchos::OSTab tab = vo_.getOSTab();
   if (vo_.os_OK(Teuchos::VERB_EXTREME)) {
     *vo_.os() << "Primary field \"" << vo_.color("gree") << my_key_ 
@@ -129,28 +137,33 @@ void EvaluatorPrimary::SetChanged() {
 
   // clear cache
   requests_.clear();
-  deriv_requests_.clear();
+
+  // note the derivative is always 1, no need to re-calculate.
 }
 
 
 // Nothing is a dependency of a primary variable.
-bool EvaluatorPrimary::IsDependency(const State& S,
-        const Key& key) const {
+bool EvaluatorPrimary_::IsDependency(const State& S, const Key& key, const Key& tag) const {
   return false;
 }
 
 
-bool EvaluatorPrimary::ProvidesKey(const Key& key) const {
-  return (key == my_key_);
+bool EvaluatorPrimary_::ProvidesKey(const Key& key, const Key& tag) const {
+  return key == my_key_ && tag == my_tag_;
 }
 
 std::string
-EvaluatorPrimary::WriteToString() const {
+EvaluatorPrimary_::WriteToString() const {
   std::stringstream result;
   result << my_key_ << std::endl
          << "  Type: primary" << std::endl
          << std::endl;
   return result.str();
 }
+
+
+
+
+
 
 } // namespace

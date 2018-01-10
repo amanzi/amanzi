@@ -19,7 +19,7 @@
 #include "Mesh.hh"
 #include "MeshFactory.hh"
 #include "evaluator/EvaluatorPrimary.hh"
-#include "evaluator/EvaluatorSecondary.hh"
+#include "evaluator/EvaluatorAlgebraic.hh"
 #include "State.hh"
 
 using namespace Amanzi;
@@ -54,15 +54,15 @@ using namespace Amanzi::AmanziMesh;
 /* ******************************************************************
 * Equation A = 2*B + C*E*H
 ****************************************************************** */
-class AEvaluator : public EvaluatorSecondary<double,NullFactory> {
+class AEvaluator : public EvaluatorAlgebraic<double> {
  public:
   AEvaluator(Teuchos::ParameterList& plist)
-    : EvaluatorSecondary<double,NullFactory>(plist) {
+    : EvaluatorAlgebraic<double>(plist) {
     my_key_ = "fa";
-    dependencies_.insert("fb");
-    dependencies_.insert("fc");
-    dependencies_.insert("fe");
-    dependencies_.insert("fh");
+    dependencies_.emplace_back(std::make_pair(Key("fb"), Key()));
+    dependencies_.emplace_back(std::make_pair(Key("fc"), Key()));
+    dependencies_.emplace_back(std::make_pair(Key("fe"), Key()));
+    dependencies_.emplace_back(std::make_pair(Key("fh"), Key()));
   }
 
   virtual Teuchos::RCP<Evaluator> Clone() const override {
@@ -79,7 +79,7 @@ class AEvaluator : public EvaluatorSecondary<double,NullFactory> {
   }
 
   virtual void EvaluatePartialDerivative_(const State& S,
-          const Key& wrt_key, double& result) override {
+          const Key& wrt_key, const Key& wrt_tag, double& result) override {
     auto& fc = S.Get<double>("fc");
     auto& fe = S.Get<double>("fe");
     auto& fh = S.Get<double>("fh");
@@ -100,13 +100,13 @@ class AEvaluator : public EvaluatorSecondary<double,NullFactory> {
 /* ******************************************************************
 * Equation C = 2*D + G
 ****************************************************************** */
-class CEvaluator : public EvaluatorSecondary<double,NullFactory> {
+class CEvaluator : public EvaluatorAlgebraic<double> {
  public:
   CEvaluator(Teuchos::ParameterList& plist) : 
-    EvaluatorSecondary<double,NullFactory>(plist) {
+    EvaluatorAlgebraic<double>(plist) {
     my_key_ = "fc";
-    dependencies_.insert("fd");
-    dependencies_.insert("fg");
+    dependencies_.emplace_back(std::make_pair(Key("fd"), Key()));
+    dependencies_.emplace_back(std::make_pair(Key("fg"), Key()));
   }
 
   virtual Teuchos::RCP<Evaluator> Clone() const override {
@@ -120,7 +120,7 @@ class CEvaluator : public EvaluatorSecondary<double,NullFactory> {
   }
 
   virtual void EvaluatePartialDerivative_(const State& S,
-          const Key& wrt_key, double& result) override {
+          const Key& wrt_key, const Key& wrt_tag, double& result) override {
 
     if (wrt_key == "fd") {
       result = 2.;
@@ -134,12 +134,12 @@ class CEvaluator : public EvaluatorSecondary<double,NullFactory> {
 /* ******************************************************************
 * Equation D = 2*G
 ****************************************************************** */
-class DEvaluator : public EvaluatorSecondary<double,NullFactory> {
+class DEvaluator : public EvaluatorAlgebraic<double> {
  public:
   DEvaluator(Teuchos::ParameterList& plist)
-    : EvaluatorSecondary<double,NullFactory>(plist) {
+    : EvaluatorAlgebraic<double>(plist) {
     my_key_ = "fd";
-    dependencies_.insert("fg");
+    dependencies_.emplace_back(std::make_pair(Key("fg"), Key()));
   }
 
   virtual Teuchos::RCP<Evaluator> Clone() const override {
@@ -152,7 +152,7 @@ class DEvaluator : public EvaluatorSecondary<double,NullFactory> {
   }
 
   virtual void EvaluatePartialDerivative_(const State& S,
-          const Key& wrt_key, double& result) override {
+          const Key& wrt_key, const Key& wrt_tag, double& result) override {
     if (wrt_key == "fg") {
       result = 2.;
     }
@@ -163,13 +163,13 @@ class DEvaluator : public EvaluatorSecondary<double,NullFactory> {
 /* ******************************************************************
 * Equation E = D*F
 ****************************************************************** */
-class EEvaluator : public EvaluatorSecondary<double,NullFactory> {
+class EEvaluator : public EvaluatorAlgebraic<double> {
  public:
   EEvaluator(Teuchos::ParameterList& plist)
-    : EvaluatorSecondary<double,NullFactory>(plist) {
+    : EvaluatorAlgebraic<double>(plist) {
     my_key_ = "fe";
-    dependencies_.insert("fd");
-    dependencies_.insert("ff");
+    dependencies_.emplace_back(std::make_pair(Key("fd"), Key()));
+    dependencies_.emplace_back(std::make_pair(Key("ff"), Key()));
   }
 
   virtual Teuchos::RCP<Evaluator> Clone() const override {
@@ -183,7 +183,7 @@ class EEvaluator : public EvaluatorSecondary<double,NullFactory> {
   }
 
   virtual void EvaluatePartialDerivative_(const State& S,
-          const Key& wrt_key, double& result) override {
+          const Key& wrt_key, const Key& wrt_tag, double& result) override {
     auto& fd = S.Get<double>("fd");
     auto& ff = S.Get<double>("ff");
 
@@ -199,12 +199,12 @@ class EEvaluator : public EvaluatorSecondary<double,NullFactory> {
 /* ******************************************************************
 * Equation F = 2*G
 ****************************************************************** */
-class FEvaluator : public EvaluatorSecondary<double,NullFactory> {
+class FEvaluator : public EvaluatorAlgebraic<double> {
  public:
   FEvaluator(Teuchos::ParameterList& plist)
-    : EvaluatorSecondary<double,NullFactory>(plist) {
+    : EvaluatorAlgebraic<double>(plist) {
     my_key_ = "ff";
-    dependencies_.insert("fg");
+    dependencies_.emplace_back(std::make_pair(Key("fg"), Key()));
   }
 
   virtual Teuchos::RCP<Evaluator> Clone() const override {
@@ -217,7 +217,7 @@ class FEvaluator : public EvaluatorSecondary<double,NullFactory> {
   }
 
   virtual void EvaluatePartialDerivative_(const State& S,
-          const Key& wrt_key, double& result) override {
+          const Key& wrt_key, const Key& wrt_tag, double& result) override {
 
     if (wrt_key == "fg") {
       result = 2.;
@@ -229,12 +229,12 @@ class FEvaluator : public EvaluatorSecondary<double,NullFactory> {
 /* ******************************************************************
 * Equation H = 2*F
 ****************************************************************** */
-class HEvaluator : public EvaluatorSecondary<double,NullFactory> {
+class HEvaluator : public EvaluatorAlgebraic<double> {
  public:
   HEvaluator(Teuchos::ParameterList& plist)
-    : EvaluatorSecondary<double,NullFactory>(plist) {
+    : EvaluatorAlgebraic<double>(plist) {
     my_key_ = "fh";
-    dependencies_.insert("ff");
+    dependencies_.emplace_back(std::make_pair(Key("ff"), Key()));
   }
 
   virtual Teuchos::RCP<Evaluator> Clone() const override {
@@ -247,7 +247,7 @@ class HEvaluator : public EvaluatorSecondary<double,NullFactory> {
   }
 
   virtual void EvaluatePartialDerivative_(const State& S,
-          const Key& wrt_key, double& result) override {
+          const Key& wrt_key, const Key& wrt_tag, double& result) override {
     if (wrt_key == "ff") {
       result = 2.;
     }
@@ -303,13 +303,13 @@ class make_state {
     ep_list.setName("fb");
     // -- field B and its evaluator
     S.Require<double>("fb", "", "fb");
-    fb_eval = Teuchos::rcp(new EvaluatorPrimary(ep_list));
+    fb_eval = Teuchos::rcp(new EvaluatorPrimary<double>(ep_list));
     S.SetEvaluator("fb", fb_eval);
 
     // -- field G and its evaluator
     ep_list.setName("fg");
     S.Require<double>("fg", "", "fg");
-    fg_eval = Teuchos::rcp(new EvaluatorPrimary(ep_list));
+    fg_eval = Teuchos::rcp(new EvaluatorPrimary<double>(ep_list));
     S.SetEvaluator("fg", fg_eval);
 
     // Setup fields initialize
@@ -329,7 +329,7 @@ class make_state {
   Teuchos::RCP<EEvaluator> fe_eval;
   Teuchos::RCP<FEvaluator> ff_eval;
   Teuchos::RCP<HEvaluator> fh_eval;
-  Teuchos::RCP<EvaluatorPrimary> fb_eval, fg_eval;
+  Teuchos::RCP<EvaluatorPrimary<double>> fb_eval, fg_eval;
 };
 
 
@@ -350,34 +350,34 @@ SUITE(DAG) {
     
     // calculate dA/dB
     std::cout << "Calculate derivative of field A wrt field B:" << std::endl;
-    changed = fa_eval->UpdateDerivative(S, "fa", "fb");
-    CHECK_CLOSE(2.0, S.Get<double>("dfa_dfb"), 1e-12);
+    changed = fa_eval->UpdateDerivative(S, "fa", "fb", "");
+    CHECK_CLOSE(2.0, S.GetDerivative<double>("fa", "", "fb", ""), 1e-12);
     CHECK(changed);
 
     // calculate dA/dG
     std::cout << "Calculate derivative of field A wrt field G:" << std::endl;
-    changed = fa_eval->UpdateDerivative(S, "fa", "fg");
-    CHECK_CLOSE(8640.0, S.Get<double>("dfa_dfg"), 1e-12);
+    changed = fa_eval->UpdateDerivative(S, "fa", "fg", "");
+    CHECK_CLOSE(8640.0, S.GetDerivative<double>("fa", "", "fg", ""), 1e-12);
     CHECK(changed);
 
     // calculate dE/dG:
     std::cout << "Calculate derivative of field E wrt field G:" << std::endl;
-    changed = fe_eval->UpdateDerivative(S, "fe", "fg");
-    CHECK_CLOSE(24.0, S.Get<double>("dfe_dfg"), 1e-12);
+    changed = fe_eval->UpdateDerivative(S, "fe", "fg", "");
+    CHECK_CLOSE(24.0, S.GetDerivative<double>("fe", "", "fg", ""), 1e-12);
     CHECK(changed);
 
     // Now we repeat some calculations. Since no primary fields changed,
     // the result should be the same
     // calculate dA/dG
     std::cout << "Calculate derivative of field A wrt field G:" << std::endl;
-    changed = fa_eval->UpdateDerivative(S, "fa", "fg");
-    CHECK_CLOSE(8640.0, S.Get<double>("dfa_dfg"), 1e-12);
+    changed = fa_eval->UpdateDerivative(S, "fa", "fg", "");
+    CHECK_CLOSE(8640.0, S.GetDerivative<double>("fa", "", "fg", ""), 1e-12);
     CHECK(!changed);
 
     std::cout << "Calculate derivative of field A wrt field G:" << std::endl;
     fb_eval->SetChanged();
-    changed = fa_eval->UpdateDerivative(S, "fa", "fg");
-    CHECK_CLOSE(8640.0, S.Get<double>("dfa_dfg"), 1e-12);
+    changed = fa_eval->UpdateDerivative(S, "fa", "fg", "");
+    CHECK_CLOSE(8640.0, S.GetDerivative<double>("fa", "", "fg", ""), 1e-12);
     CHECK(changed);
   }
 }

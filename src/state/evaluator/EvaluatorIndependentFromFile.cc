@@ -23,7 +23,7 @@ namespace Amanzi {
 // ---------------------------------------------------------------------------
 EvaluatorIndependentFromFile::EvaluatorIndependentFromFile(
     Teuchos::ParameterList& plist) :
-    EvaluatorIndependent(plist),
+    EvaluatorIndependent<CompositeVector,CompositeVectorSpace>(plist),
     filename_(plist.get<std::string>("filename")),
     meshname_(plist.get<std::string>("domain name", "domain")),
     varname_(plist.get<std::string>("variable name")),

@@ -45,6 +45,11 @@ bool RecordSet::HasRecord(const Key& tag) const {
   return records_.count(tag) > 0;
 }
 
+bool RecordSet::HasDerivativeRecord(const Key& tag, const Key& wrt_key, const Key& wrt_tag) const {
+  Key deriv = std::string{"d_d"}+wrt_key+":"+wrt_tag;
+  return derivatives_.count(deriv) > 0;
+}      
+
 
 Record& RecordSet::GetRecord(const Key& tag) {
   try {
@@ -88,6 +93,19 @@ void RecordSet::RequireRecord(const Key& tag, const Key& owner) {
     }
   }
 }
+
+void RecordSet::RequireDerivativeRecord(const Key& tag, const Key& wrt_key, const Key& wrt_tag, const Key& owner) {
+  Key deriv = std::string{"d"}+tag+"_d"+wrt_key+":"+wrt_tag;
+  if (!HasDerivativeRecord(tag, wrt_key, wrt_tag)) {
+    derivatives_.emplace(deriv, std::make_unique<Record>(fieldname(),owner));
+    derivatives_[deriv]->data_ = std::forward<Data>(factory_.Create());
+    derivatives_[deriv]->set_initialized();
+    derivatives_[deriv]->set_io_vis(false);
+    derivatives_[deriv]->set_io_checkpoint(false);
+  }
+}
+
+
 
 
 } // namespace Amanzi

@@ -32,9 +32,11 @@ typedef std::set<Key> KeySet;
 typedef std::vector<Key> KeyVector;
 
 typedef std::pair<Key,Key> KeyPair;
-typedef std::set<std::pair<Key, Key> > KeyPairSet;
+typedef std::set<KeyPair> KeyPairSet;
+typedef std::vector<KeyPair> KeyPairVector;
 
 typedef std::tuple<Key,Key,Key> KeyTriple;
+typedef std::set<KeyTriple> KeyTripleSet;
 
 namespace Keys {
 
@@ -109,6 +111,14 @@ getDerivKey(Key var, Key wrt) {
 Key
 readKey(Teuchos::ParameterList& list, const Key& domain, const Key& basename,
         const Key& default_name="");
+
+
+// Requests are of the form Key:Tag
+inline Key
+getRequest(const Key& key, const Key& tag)
+{
+  return key+":"+tag;
+}
 
 
 // Convenience function to see if a map (or map-like) object has a key.

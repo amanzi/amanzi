@@ -18,7 +18,8 @@ TODO: This needs a test and documentation! --etc
 
 namespace Amanzi {
 
-class EvaluatorIndependentFromFile : public EvaluatorIndependent {
+class EvaluatorIndependentFromFile :
+      public EvaluatorIndependent<CompositeVector,CompositeVectorSpace> {
 
  public:
 

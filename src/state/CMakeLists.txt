@@ -70,12 +70,11 @@ set(state_inc_files
   evaluator/EvaluatorIndependentFunction_reg.hh
   evaluator/EvaluatorPrimary.hh
   evaluator/EvaluatorPrimary_reg.hh
-  evaluator/EvaluatorSecondaries.hh
   evaluator/EvaluatorSecondary.hh
   evaluator/EvaluatorSecondary_Impl.hh
-  evaluator/EvaluatorSecondaryCompositeVector_Impl.hh
-  evaluator/EvaluatorSecondaryDouble_Impl.hh
+  evaluator/EvaluatorAlgebraic.hh
   evaluator/EvaluatorSecondaryFromFunction.hh
+  evaluator/Evaluator_OperatorApply.hh
 #  evaluator/cell_volume_evaluator.hh
 #  evaluator/cell_volume_evaluator_reg.hh
 #  evaluator/deforming_cell_volume_evaluator.hh
@@ -105,10 +104,9 @@ add_amanzi_library(state
 		      evaluator/EvaluatorIndependentFromFile.cc
 		      evaluator/EvaluatorIndependentFunction.cc
 		      evaluator/EvaluatorPrimary.cc
-		      evaluator/EvaluatorSecondaries.cc
-		      evaluator/EvaluatorSecondaryCompositeVector_Impl.cc
-		      evaluator/EvaluatorSecondaryDouble_Impl.cc
-		      evaluator/EvaluatorSecondaryFromFunction.cc
+                      evaluator/EvaluatorAlgebraic.cc
+                      evaluator/EvaluatorSecondaryFromFunction.cc
+                      evaluator/Evaluator_OperatorApply.cc
 #		      evaluator/cell_volume_evaluator.cc
 #		      evaluator/deforming_cell_volume_evaluator.cc
 #		      evaluator/rank_evaluator.cc
@@ -131,7 +129,7 @@ add_install_include_file(${state_inc_files})
 register_evaluator_with_factory(HEADERFILE evaluator/EvaluatorPrimary_reg.hh LISTNAME REGISTER_AMANZI_STATE_EVALUATORS)
 register_evaluator_with_factory(HEADERFILE evaluator/EvaluatorIndependentFunction_reg.hh LISTNAME REGISTER_AMANZI_STATE_EVALUATORS)
 register_evaluator_with_factory(HEADERFILE evaluator/EvaluatorIndependentFromFile_reg.hh LISTNAME REGISTER_AMANZI_STATE_EVALUATORS)
-register_evaluator_with_factory(HEADERFILE evaluator/EvaluatorSecondaryFromFunction_reg.hh LISTNAME REGISTER_AMANZI_STATE_EVALUATORS)
+#register_evaluator_with_factory(HEADERFILE evaluator/EvaluatorSecondaryFromFunction_reg.hh LISTNAME REGISTER_AMANZI_STATE_EVALUATORS)
 # register_evaluator_with_factory(HEADERFILE evaluator/cell_volume_evaluator_reg.hh   LISTNAME REGISTER_AMANZI_STATE_EVALUATORS)
 # register_evaluator_with_factory(HEADERFILE evaluator/rank_evaluator_reg.hh          LISTNAME REGISTER_AMANZI_STATE_EVALUATORS)
 # register_evaluator_with_factory(HEADERFILE evaluator/deforming_cell_volume_evaluator_reg.hh LISTNAME REGISTER_AMANZI_STATE_EVALUATORS)
@@ -212,6 +210,12 @@ if (BUILD_TESTS)
       KIND int
       SOURCE test/Main.cc test/state_dag.cc
       LINK_LIBS state mesh_factory mesh data_structures mesh_functions functions ${UnitTest_LIBRARIES})
+
+    add_amanzi_test(state_evaluators_op state_evaluators_op
+      KIND int
+      SOURCE test/Main.cc test/state_evaluators_op.cc
+      LINK_LIBS state mesh_factory mesh data_structures mesh_functions functions operators ${UnitTest_LIBRARIES})
+
 
 endif()
 

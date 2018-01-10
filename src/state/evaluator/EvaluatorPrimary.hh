@@ -19,7 +19,12 @@ An evaluator with no dependencies solved for by a PK.
 
 namespace Amanzi {
 
-class EvaluatorPrimary : public Evaluator {
+//
+// Dummy class, does everything but know the type, which is required to
+// UpdateDerivative.  This is never used, instead the below templated one
+// is.
+//
+class EvaluatorPrimary_ : public Evaluator {
 
  public:
 
@@ -27,16 +32,11 @@ class EvaluatorPrimary : public Evaluator {
   // Constructors
   // ---------------------------------------------------------------------------
   explicit
-  EvaluatorPrimary(Teuchos::ParameterList& plist);
-  EvaluatorPrimary(const EvaluatorPrimary& other) = default;
+  EvaluatorPrimary_(Teuchos::ParameterList& plist);
+  EvaluatorPrimary_(const EvaluatorPrimary_& other) = default;
 
-  // virtual destructor
-  virtual ~EvaluatorPrimary() {}
-
-  virtual Teuchos::RCP<Evaluator> Clone() const override;
-
-  EvaluatorPrimary& operator=(const EvaluatorPrimary& other);
   virtual Evaluator& operator=(const Evaluator& other) override;
+  EvaluatorPrimary_& operator=(const EvaluatorPrimary_& other);
 
   // ---------------------------------------------------------------------------
   // Lazy evaluation of the evaluator.
@@ -44,7 +44,7 @@ class EvaluatorPrimary : public Evaluator {
   // Updates the data, if needed.  Returns true if the value of the data has
   // changed since the last request for an update.
   // ---------------------------------------------------------------------------
-  virtual bool Update(State& S, const Key& request) override;
+  virtual bool Update(State& S, const Key& request) override final;
 
   // ---------------------------------------------------------------------------
   // Lazy evaluation of derivatives of evaluator.
@@ -54,10 +54,14 @@ class EvaluatorPrimary : public Evaluator {
   // an update.
   // ---------------------------------------------------------------------------
   virtual bool UpdateDerivative(State& S,
-          const Key& request, const Key& wrt_key) override;
+          const Key& request, const Key& wrt_key, const Key& wrt_tag) override final;
 
-  virtual bool IsDependency(const State& S, const Key& key) const override;
-  virtual bool ProvidesKey(const Key& key) const override;
+  virtual bool IsDependency(const State& S, const Key& key, const Key& tag) const override final;
+  virtual bool ProvidesKey(const Key& key, const Key& tag) const override final;
+  virtual bool IsDifferentiableWRT(const State& S, const Key& wrt_key, const Key& wrt_tag) const override final {
+    return ProvidesKey(wrt_key, wrt_tag);
+  }
+  
 
   // ---------------------------------------------------------------------------
   // How a PK informs this leaf of the tree that it has changed.
@@ -65,24 +69,80 @@ class EvaluatorPrimary : public Evaluator {
   // Effectively this simply tosses the request history, so that the next
   // requests will say this has changed.
   // ---------------------------------------------------------------------------
-  virtual void SetChanged();
+  void SetChanged();
 
-  virtual void EnsureCompatibility(State& S) override {}
-  virtual std::string WriteToString() const override; 
+  virtual std::string WriteToString() const override;
 
+ protected:
+  virtual void UpdateDerivative_(State& S) = 0;
+  
  protected:
   Key my_key_;
   Key my_tag_;
   KeySet requests_;
-  KeyPairSet deriv_requests_;
+  KeyTripleSet deriv_requests_;
+
+  bool deriv_once_;
 
   VerboseObject vo_;
+};
+
+//
+// Class to set types that can do requirements for compatibility and derivatives.
+//
+template<typename Data_t, typename DataFactory_t=NullFactory>
+class EvaluatorPrimary : public EvaluatorPrimary_ {
+ public:
+  using EvaluatorPrimary_::EvaluatorPrimary_;
+
+  virtual Teuchos::RCP<Evaluator> Clone() const override final {
+    return Teuchos::rcp(new EvaluatorPrimary<Data_t, DataFactory_t>(*this));
+  }
   
+  virtual void EnsureCompatibility(State& S) override final {
+    S.Require<Data_t, DataFactory_t>(my_key_, my_tag_, my_key_);
+  }
+
+ protected:
+  virtual void UpdateDerivative_(State& S) override final {
+    Errors::Message message("EvaluatorPrimary::UpdateDerivative_ not implemented for arbitrary types");
+    throw(message);
+  }
+
  private:
-  static Utils::RegisteredFactory<Evaluator,EvaluatorPrimary> fac_;
+  static Utils::RegisteredFactory<Evaluator,EvaluatorPrimary<Data_t, DataFactory_t>> fac_;
 
 };
 
+
+template<>
+inline
+void
+EvaluatorPrimary<double>::UpdateDerivative_(State& s)
+{
+  if (!s.HasDerivativeData(my_key_, my_tag_, my_key_, my_tag_)) {
+    s.RequireDerivative(my_key_, my_tag_, my_key_, my_tag_, my_key_);
+  }
+  s.GetDerivativeW<double>(my_key_, my_tag_, my_key_, my_tag_, my_key_) = 1.0;
+}
+
+
+template<>
+inline
+void
+EvaluatorPrimary<CompositeVector,CompositeVectorSpace>::UpdateDerivative_(State& s)
+{
+  if (!s.HasDerivativeData(my_key_, my_tag_, my_key_, my_tag_)) {
+    s.RequireDerivative(my_key_, my_tag_, my_key_, my_tag_, my_key_);
+  }
+  s.GetDerivativeW<CompositeVector>(my_key_, my_tag_, my_key_, my_tag_, my_key_).PutScalar(1.0);
+}
+
+
+
 } // namespace
 
+
+
 #endif
+

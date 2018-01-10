@@ -45,7 +45,7 @@ so if it was found useful.
 namespace Amanzi {
 
 EvaluatorSecondaryFromFunction::EvaluatorSecondaryFromFunction(Teuchos::ParameterList& plist)
-    : EvaluatorSecondary(plist)
+    : EvaluatorSecondary<CompositeVector,CompositeVectorSpace>(plist)
 {
   FunctionFactory fac;
   func_ = Teuchos::rcp(fac.Create(plist.sublist("function")));
@@ -68,8 +68,8 @@ EvaluatorSecondaryFromFunction::Evaluate_(const State& S,
         CompositeVector& result) {
   int ndeps = dependencies_.size();
   std::vector<Teuchos::Ptr<const CompositeVector> > deps;
-  for (auto depname : dependencies_) {
-    deps.emplace_back(S.GetPtr<CompositeVector>(depname, my_tag_).ptr());
+  for (auto& dep : dependencies_) {
+    deps.emplace_back(S.GetPtr<CompositeVector>(dep.first, dep.second).ptr());
   }
 
   for (auto comp : result) {

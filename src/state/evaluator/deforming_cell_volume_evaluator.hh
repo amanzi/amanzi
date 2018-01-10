@@ -13,11 +13,11 @@ A field evaluator for an changing cell volume.
 #define AMANZI_DEFORMING_CELL_VOLUME_FIELD_EVALUATOR_
 
 #include "Evaluator_Factory.hh"
-#include "EvaluatorSecondary.hh"
+#include "EvaluatorAlgebraic.hh"
 
 namespace Amanzi {
 
-class DeformingCellVolumeEvaluator : public EvaluatorSecondary {
+class DeformingCellVolumeEvaluator : public EvaluatorAlgebraic {
  public:
   // constructor format for all derived classes
   explicit
@@ -31,7 +31,7 @@ class DeformingCellVolumeEvaluator : public EvaluatorSecondary {
   virtual void EnsureCompatibility(const Teuchos::Ptr<State>& S);
 
  protected:
-  // Required methods from EvaluatorSecondary
+  // Required methods from EvaluatorAlgebraic
   virtual void EvaluateField_(const Teuchos::Ptr<State>& S,
           const Teuchos::Ptr<CompositeVector>& result);
   virtual void EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>& S,

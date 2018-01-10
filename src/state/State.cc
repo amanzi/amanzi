@@ -143,7 +143,7 @@ State::RequireEvaluator(const Key& key, const Key& tag) {
   // See if the key is provided by another existing evaluator.
   for (auto& f_it : evaluators_) {
     if (Keys::hasKey(f_it.second, tag) &&
-        f_it.second.at(tag)->ProvidesKey(key)) {
+        f_it.second.at(tag)->ProvidesKey(key, tag)) {
       auto& evaluator = f_it.second.at(tag);
       SetEvaluator(key, evaluator);
       return evaluator;
@@ -275,12 +275,11 @@ void State::Setup() {
   // provide what is required of that evaluator.
   for (auto& e : evaluators_) {
     for (auto& r : e.second) {
-      if (!r.second->ProvidesKey(e.first)) {
-        std::stringstream messagestream;
-        messagestream << "Evaluator \"" << e.first << "\" with tag \""
-                      << r.first << "\" does not provide its own key.";
-        Errors::Message message(messagestream.str());
-        Exceptions::amanzi_throw(message);
+      if (!r.second->ProvidesKey(e.first, r.first)) {
+        Errors::Message message;
+        message << "Evaluator \"" << e.first << "\" with tag \""
+                << r.first << "\" does not provide its own key.";
+        throw(message);
       }
       r.second->EnsureCompatibility(*this);
     }
@@ -399,7 +398,7 @@ void State::AliasEvaluators() {
         Teuchos::RCP<Evaluator> found_eval;
         for (auto& f_eval_it : evaluators_) {
           if (Keys::hasKey(f_eval_it.second, tagname) &&
-              f_eval_it.second.at(tagname)->ProvidesKey(fname)) {
+              f_eval_it.second.at(tagname)->ProvidesKey(fname, tagname)) {
             found_eval = f_eval_it.second.at(tagname);
             break;
           }

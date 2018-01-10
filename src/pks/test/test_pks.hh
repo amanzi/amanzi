@@ -2,7 +2,7 @@
 #include "Teuchos_RCP.hpp"
 
 #include "State.hh"
-#include "EvaluatorSecondary.hh"
+#include "EvaluatorAlgebraic.hh"
 #include "TreeVector.hh"
 
 #include "PK.hh"
@@ -23,12 +23,12 @@ Test PKs:
 
 using namespace Amanzi;
 
-class DudtEvaluatorA : public EvaluatorSecondary<CompositeVector,CompositeVectorSpace>
+class DudtEvaluatorA : public EvaluatorAlgebraic<CompositeVector,CompositeVectorSpace>
 {
  public:
   DudtEvaluatorA(Teuchos::ParameterList& plist) :
-      EvaluatorSecondary(plist) {
-    dependencies_.insert("primaryA");
+      EvaluatorAlgebraic(plist) {
+    dependencies_.emplace_back(std::make_pair(Key("primaryA"),my_tag_));
   }
 
   DudtEvaluatorA(const DudtEvaluatorA& other) = default;
@@ -43,18 +43,18 @@ class DudtEvaluatorA : public EvaluatorSecondary<CompositeVector,CompositeVector
   }
 
   void EvaluatePartialDerivative_(const State& S,
-          const Key& wrt_key, CompositeVector& result) {
-    ASSERT(wrt_key == *dependencies_.begin());
+          const Key& wrt_key, const Key& wrt_tag, CompositeVector& result) {
+    ASSERT(std::make_pair(wrt_key, wrt_tag) == *dependencies_.begin());
     result.PutScalar(0.);
   }
 };
 
-class DudtEvaluatorB : public EvaluatorSecondary<CompositeVector,CompositeVectorSpace>
+class DudtEvaluatorB : public EvaluatorAlgebraic<CompositeVector,CompositeVectorSpace>
 {
  public:
   DudtEvaluatorB(Teuchos::ParameterList& plist) :
-      EvaluatorSecondary(plist) {
-    dependencies_.insert("primaryB");
+      EvaluatorAlgebraic(plist) {
+    dependencies_.emplace_back(std::make_pair(Key("primaryB"),my_tag_));
   }
 
   DudtEvaluatorB(const DudtEvaluatorB& other) = default;
@@ -65,23 +65,23 @@ class DudtEvaluatorB : public EvaluatorSecondary<CompositeVector,CompositeVector
  protected:
   void Evaluate_(const State& S,
                  CompositeVector& result) {
-    result = S.Get<CompositeVector>(*dependencies_.begin(), my_tag_);
+    result = S.Get<CompositeVector>(dependencies_.begin()->first, dependencies_.begin()->second);
   }
 
   void EvaluatePartialDerivative_(const State& S,
-          const Key& wrt_key, CompositeVector& result) {
-    ASSERT(wrt_key == *dependencies_.begin());
+          const Key& wrt_key, const Key& wrt_tag, CompositeVector& result) {
+    ASSERT(std::make_pair(wrt_key, wrt_tag) == *dependencies_.begin());
     result.PutScalar(1.);
   }
 };
 
-class DudtEvaluatorC : public EvaluatorSecondary<CompositeVector,CompositeVectorSpace>
+class DudtEvaluatorC : public EvaluatorAlgebraic<CompositeVector,CompositeVectorSpace>
 {
  public:
   DudtEvaluatorC(Teuchos::ParameterList& plist) :
-      EvaluatorSecondary(plist) {
-    dependencies_.insert("primaryC");
-    dependencies_.insert("scaling");
+      EvaluatorAlgebraic(plist) {
+    dependencies_.emplace_back(std::make_pair(Key("primaryC"),my_tag_));
+    dependencies_.emplace_back(std::make_pair(Key("scaling"),my_tag_));
   }
 
   DudtEvaluatorC(const DudtEvaluatorC& other) = default;
@@ -98,7 +98,7 @@ class DudtEvaluatorC : public EvaluatorSecondary<CompositeVector,CompositeVector
   }
 
   void EvaluatePartialDerivative_(const State& S,
-          const Key& wrt_key, CompositeVector& result) {
+          const Key& wrt_key, const Key& wrt_tag, CompositeVector& result) {
     if (wrt_key == "primaryC") {
       result = S.Get<CompositeVector>("scaling", my_tag_);
     } else if (wrt_key == "scaling") {
@@ -216,8 +216,7 @@ class PK_ODE_Implicit : public Base_t {
       
 
   int ApplyPreconditioner(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<TreeVector> Pu) {
-    Key deriv_key = Keys::getDerivKey(this->dudt_key_, this->key_);
-    *Pu->Data() = S_->template Get<CompositeVector>(deriv_key, tag_new_);
+    *Pu->Data() = S_->template GetDerivative<CompositeVector>(this->dudt_key_, tag_new_, this->key_, tag_new_);
     Pu->Data()->Shift(1.0/h_);
     Pu->ReciprocalMultiply(1.0, *Pu, *u, 0.);
     return 0;
@@ -233,7 +232,7 @@ class PK_ODE_Implicit : public Base_t {
 
   void UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> up, double h) {
     h_ = h;
-    this->S_->GetEvaluator(dudt_key_,tag_new_)->UpdateDerivative(*this->S_, this->name(), this->key_);
+    this->S_->GetEvaluator(dudt_key_,tag_new_)->UpdateDerivative(*this->S_, this->name(), this->key_, tag_new_);
   }
 
   void ChangedSolution() {

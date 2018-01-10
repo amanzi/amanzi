@@ -207,6 +207,14 @@ class State {
   void Require(const Key& fieldname) {
     Require<T>(fieldname, "", "");
   }
+
+  void RequireDerivative(const Key& fieldname, const Key& tag, const Key& wrt_key, const Key& wrt_tag, const Key& owner) {
+    data_.at(fieldname)->RequireDerivativeRecord(tag, wrt_key, wrt_tag, owner);
+  }
+
+  // void RequireDerivative(const Key& fieldname, const Key& tag, const Key& wrt_key, const Key& wrt_tag, const Key& owner) {
+  //   data_.at(fieldname)->RequireDerivativeRecord(tag, wrt_key, wrt_tag, owner);
+  // }
   
   // Ensure a record exists.
   bool HasData(const Key& key, const Key& tag="") const {
@@ -216,6 +224,13 @@ class State {
     return false;
   }
 
+  bool HasDerivativeData(const Key& key, const Key& tag, const Key& wrt_key, const Key& wrt_tag) const {
+    if (Keys::hasKey(data_, key)) {
+      return data_.at(key)->HasDerivativeRecord(tag, wrt_key, wrt_tag);
+    }
+    return false;
+  }
+  
   // Record accessor.
   Record& GetRecordW(const Key& fieldname, const Key& owner) {
     auto& r = data_.at(fieldname)->GetRecord("");
@@ -284,6 +299,23 @@ class State {
               const Teuchos::RCP<T>& data) {
     return data_.at(fieldname)->SetPtr(tag, owner, data); }
 
+  template<typename T>
+  const T& GetDerivative(const Key& fieldname, const Key& wrt_key, const Key& wrt_tag) const {
+    return data_.at(fieldname)->GetDerivative<T>(wrt_key, wrt_tag); }
+
+  template<typename T>
+  const T& GetDerivative(const Key& fieldname, const Key& tag, const Key& wrt_key, const Key& wrt_tag) const {
+    return data_.at(fieldname)->GetDerivative<T>(tag, wrt_key, wrt_tag); }
+
+  template<typename T>
+  T& GetDerivativeW(const Key& fieldname, const Key& wrt_key, const Key& wrt_tag, const Key& owner) {
+    return data_.at(fieldname)->GetDerivativeW<T>(owner); }
+
+  template<typename T>
+  T& GetDerivativeW(const Key& fieldname, const Key& tag, const Key& wrt_key, const Key& wrt_tag, const Key& owner) {
+    return data_.at(fieldname)->GetDerivativeW<T>(tag, wrt_key, wrt_tag, owner); }
+
+  
   // A few special parameters with special methods
   double time(const Key& tag="") const {
     return Get<double>("time", tag);

@@ -14,7 +14,7 @@
 #include "Mesh.hh"
 #include "MeshFactory.hh"
 #include "evaluator/EvaluatorPrimary.hh"
-#include "evaluator/EvaluatorSecondary.hh"
+#include "evaluator/EvaluatorAlgebraic.hh"
 #include "State.hh"
 
 using namespace Amanzi;
@@ -23,12 +23,13 @@ using namespace Amanzi::AmanziMesh;
 /* ******************************************************************
 * Equation A = 2*B
 ****************************************************************** */
-class AEvaluator : public EvaluatorSecondary<CompositeVector,CompositeVectorSpace> {
+class AEvaluator : public EvaluatorAlgebraic<CompositeVector,CompositeVectorSpace> {
  public:
   AEvaluator(Teuchos::ParameterList& plist) : 
-      EvaluatorSecondary<CompositeVector,CompositeVectorSpace>(plist) {
-    my_key_ = std::string("fa");
-    dependencies_.insert(std::string("fb"));
+      EvaluatorAlgebraic<CompositeVector,CompositeVectorSpace>(plist) {
+    my_key_ = "fa";
+    my_tag_ = "";
+    dependencies_.emplace_back(std::make_pair(Key("fb"), Key("")));
   }
 
   virtual Teuchos::RCP<Evaluator> Clone() const override {
@@ -46,7 +47,7 @@ class AEvaluator : public EvaluatorSecondary<CompositeVector,CompositeVectorSpac
   }
 
   virtual void EvaluatePartialDerivative_(const State& S,
-          const Key& wrt_key, CompositeVector& result) override {
+          const Key& wrt_key, const Key& wrt_tag, CompositeVector& result) override {
     Epetra_MultiVector& result_c = *result.ViewComponent("cell");
 
     int ncells = result.size("cell", false);
@@ -75,7 +76,7 @@ SUITE(EVALUATORS_CV) {
     S.Require<CompositeVector,CompositeVectorSpace>("fa", "", "fa").SetMesh(mesh)
         ->SetGhosted(true)
         ->SetComponent("cell", AmanziMesh::CELL, 1);
-    auto fa_eval = Teuchos::rcp(new EvaluatorPrimary(es_list));
+    auto fa_eval = Teuchos::rcp(new EvaluatorPrimary<CompositeVector,CompositeVectorSpace>(es_list));
     S.SetEvaluator("fa", fa_eval);
 
     // Setup fields and marked as initialized
@@ -85,33 +86,35 @@ SUITE(EVALUATORS_CV) {
     S.Initialize();
 
     // provides
-    CHECK(S.GetEvaluator("fa")->ProvidesKey("fa")); // self
-    CHECK(!S.GetEvaluator("fa")->ProvidesKey("other")); // self
+    CHECK(S.GetEvaluator("fa")->ProvidesKey("fa", "")); // self
+    CHECK(!S.GetEvaluator("fa")->ProvidesKey("other", "")); // self
+    CHECK(!S.GetEvaluator("fa")->ProvidesKey("fa", "old")); // self
     
     // dependencies -- none
-    CHECK(!S.GetEvaluator("fa")->IsDependency(S, "fa")); // not self
-    CHECK(!S.GetEvaluator("fa")->IsDependency(S, "other")); // not other
+    CHECK(!S.GetEvaluator("fa")->IsDependency(S, "fa", "")); // not self
+    CHECK(!S.GetEvaluator("fa")->IsDependency(S, "other", "")); // not other
+    CHECK(!S.GetEvaluator("fa")->IsDependency(S, "fa", "other")); // not other
     
     // check first call is always "changed"
     CHECK(S.GetEvaluator("fa")->Update(S, "my_request"));
-    CHECK(S.GetEvaluator("fa")->UpdateDerivative(S, "my_request", "fa"));
+    CHECK(S.GetEvaluator("fa")->UpdateDerivative(S, "my_request", "fa", ""));
 
     // second call should not be changed
     CHECK(!S.GetEvaluator("fa")->Update(S, "my_request"));
-    CHECK(!S.GetEvaluator("fa")->UpdateDerivative(S, "my_request", "fa"));
+    CHECK(!S.GetEvaluator("fa")->UpdateDerivative(S, "my_request", "fa", ""));
 
     // but first call with new request should be
     CHECK(S.GetEvaluator("fa")->Update(S, "my_request_2"));
-    CHECK(S.GetEvaluator("fa")->UpdateDerivative(S, "my_request_2", "fa"));
+    CHECK(S.GetEvaluator("fa")->UpdateDerivative(S, "my_request_2", "fa", ""));
 
     // mark as changed
-    auto eval = S.GetEvaluator("fa");
-    auto eval_p = Teuchos::rcp_dynamic_cast<EvaluatorPrimary>(eval);
+    auto eval = S.GetEvaluator("fa", "");
+    auto eval_p = Teuchos::rcp_dynamic_cast<EvaluatorPrimary<CompositeVector,CompositeVectorSpace>>(eval);
     CHECK(eval_p.get());
     eval_p->SetChanged();
 
     CHECK(S.GetEvaluator("fa")->Update(S, "my_request"));
-    CHECK(S.GetEvaluator("fa")->UpdateDerivative(S, "my_request", "fa"));
+    CHECK(!S.GetEvaluator("fa")->UpdateDerivative(S, "my_request", "fa", ""));
   }
 
 

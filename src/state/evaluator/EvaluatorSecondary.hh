@@ -8,13 +8,10 @@
   Author: Ethan Coon
 */
 
-//! EvaluatorSecondary is an evaluator that depends upon other evaluators.
+//! EvaluatorSecondary is a generic function of other evaluators, potentially at other tags.
 
 /*!
 
-Secondary variable evaluators, such as equations of state, water retention evaluators,
-internal energy evaluators, etc should inherit this class, implementing the
-missing Update_() and UpdateFieldDerivative_() methods.
 
 */
 
@@ -50,7 +47,7 @@ class EvaluatorSecondary : public Evaluator {
   // Answers the question, has this Field changed since it was last requested
   // for Field Key reqest.  Updates the field if needed.
   // ---------------------------------------------------------------------------
-  virtual bool Update(State& S, const Key& request) override;
+  virtual bool Update(State& S, const Key& request) override final;
 
   // ---------------------------------------------------------------------------
   // Answers the question, Has This Field's derivative with respect to Key
@@ -58,10 +55,13 @@ class EvaluatorSecondary : public Evaluator {
   // Updates the derivative if needed.
   // ---------------------------------------------------------------------------
   virtual bool UpdateDerivative(State& S,
-          const Key& request, const Key& wrt_key) override;
+          const Key& request, const Key& wrt_key, const Key& wrt_tag) override final;
 
-  virtual bool IsDependency(const State& S, const Key& key) const override;
-  virtual bool ProvidesKey(const Key& key) const override;
+  virtual bool IsDependency(const State& S, const Key& key, const Key& wrt_tag) const override final;
+  virtual bool ProvidesKey(const Key& key, const Key& wrt_tag) const override final;
+  virtual bool IsDifferentiableWRT(const State& S, const Key& wrt_key, const Key& wrt_tag) const override final {
+    return IsDependency(S, wrt_key, wrt_tag);
+  }
 
   virtual void EnsureCompatibility(State& S) override;
 
@@ -72,24 +72,23 @@ class EvaluatorSecondary : public Evaluator {
   virtual void Evaluate_(const State& S,
                          Data_t& result) = 0;
   virtual void EvaluatePartialDerivative_(const State& S,
-          const Key& wrt_key, Data_t& result) = 0;
+          const Key& wrt_key, const Key& wrt_tag, Data_t& result) = 0;
 
   // calls Evaluate with the correct data
   virtual void Update_(State& S);
 
   // For general data types, we do not know how to differentiate.
   // Specializations can provide this.
-  virtual void UpdateDerivative_(State& S, const Key& wrt_key);
-
-  virtual void CheckDerivative_(State& S, const Key& wrt_key);
+  virtual void UpdateDerivative_(State& S, const Key& wrt_key, const Key& wrt_tag);
+  virtual void CheckDerivative_(State& S, const Key& wrt_key, const Key& wrt_tag);
   
  protected:
   Key my_key_;
   Key my_tag_;
 
   KeySet requests_;
-  KeyPairSet deriv_requests_;
-  KeySet dependencies_;
+  KeyTripleSet deriv_requests_;
+  KeyPairVector dependencies_;
   bool check_derivative_;
 
   VerboseObject vo_;
@@ -97,10 +96,8 @@ class EvaluatorSecondary : public Evaluator {
   
 }; // class EvaluatorSecondary
 
-#include "EvaluatorSecondary_Impl.hh"
-#include "EvaluatorSecondaryDouble_Impl.hh"
-#include "EvaluatorSecondaryCompositeVector_Impl.hh"
 
+#include "EvaluatorSecondary_Impl.hh"
 
 } // namespace Amanzi
 

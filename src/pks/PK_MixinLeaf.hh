@@ -115,7 +115,7 @@ void
 PK_MixinLeaf<Base_t,Data_t,DataFactory_t>::ChangedSolutionPK(const Key& tag)
 {
   auto eval = S_->GetEvaluator(key_, tag);
-  auto eval_primary = Teuchos::rcp_dynamic_cast<EvaluatorPrimary>(eval);
+  auto eval_primary = Teuchos::rcp_dynamic_cast<EvaluatorPrimary<Data_t,DataFactory_t>>(eval);
   ASSERT(eval_primary.get());
   eval_primary->SetChanged();
 };

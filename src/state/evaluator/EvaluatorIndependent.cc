@@ -11,7 +11,6 @@
   A field evaluator with no dependencies specified by a function.
 */
 
-#include "CompositeVectorFunctionFactory.hh"
 #include "EvaluatorIndependent.hh"
 
 namespace Amanzi {
@@ -19,7 +18,7 @@ namespace Amanzi {
 // ---------------------------------------------------------------------------
 // Constructor
 // ---------------------------------------------------------------------------
-EvaluatorIndependent::EvaluatorIndependent(Teuchos::ParameterList& plist) :
+EvaluatorIndependent_::EvaluatorIndependent_(Teuchos::ParameterList& plist) :
     time_(0.),
     computed_once_(false),
     my_key_(Keys::cleanPListName(plist.name())),
@@ -30,11 +29,38 @@ EvaluatorIndependent::EvaluatorIndependent(Teuchos::ParameterList& plist) :
 
 
 // ---------------------------------------------------------------------------
+// Assignment operator.
+// ---------------------------------------------------------------------------
+EvaluatorIndependent_& EvaluatorIndependent_::operator=(const EvaluatorIndependent_& other)
+{
+  if (this != &other) {
+    ASSERT(my_key_ == other.my_key_);
+    time_ = other.time_;
+    computed_once_ = other.computed_once_;
+    temporally_variable_ = other.temporally_variable_;
+    requests_ = other.requests_;
+  }
+  return *this;
+}
+
+// ---------------------------------------------------------------------------
+// Virtual assignment operator.
+// ---------------------------------------------------------------------------
+Evaluator& EvaluatorIndependent_::operator=(const Evaluator& other) {
+  if (this != &other) {
+    const EvaluatorIndependent_* other_p =
+        dynamic_cast<const EvaluatorIndependent_*>(&other);
+    ASSERT(other_p != NULL);
+    *this = *other_p;
+  }
+  return *this;
+}
+
+
+// ---------------------------------------------------------------------------
 // Ensures that the function can provide for the vector's requirements.
 // ---------------------------------------------------------------------------
-void EvaluatorIndependent::EnsureCompatibility(State& S) {
-  // Require the field and claim ownership.
-  S.Require<CompositeVector,CompositeVectorSpace>(my_key_, my_tag_, my_key_);
+void EvaluatorIndependent_::EnsureCompatibility(State& S) {
   S.GetRecordW(my_key_, my_tag_, my_key_).set_initialized();
   
   // check plist for vis or checkpointing control
@@ -51,7 +77,7 @@ void EvaluatorIndependent::EnsureCompatibility(State& S) {
 // Answers the question, has this Field changed since it was last requested
 // for Field Key reqest.  Updates the field if needed.
 // ---------------------------------------------------------------------------
-bool EvaluatorIndependent::Update(State& S, const Key& request) {
+bool EvaluatorIndependent_::Update(State& S, const Key& request) {
   Teuchos::OSTab tab = vo_.getOSTab();
 
   if (!computed_once_) {
@@ -62,20 +88,25 @@ bool EvaluatorIndependent::Update(State& S, const Key& request) {
 
     // field DOES have to be computed at least once, even if it never changes.
     Update_(S);
+    requests_.insert(request);
     computed_once_ = true;
+    if (temporally_variable_) time_ = S.time(my_tag_);
     return true;
   }
 
-  if (temporally_variable_ && (S.time(my_tag_) != time_)) { // field is not current, update and clear requests
+  if (temporally_variable_ && (S.time(my_tag_) != time_)) {
+    // field is not current, update and clear requests
     if (vo_.os_OK(Teuchos::VERB_EXTREME)) {
       *vo_.os() << "Independent field \"" << my_key_ << "\" requested by " << request 
                  << " is updating." << std::endl;
     }
     Update_(S);
+    if (temporally_variable_) time_ = S.time(my_tag_);
     requests_.clear();
     requests_.insert(request);
     return true;
-  } else { // field is current, see if we have provided this request previously
+  } else {
+    // field is current, see if we have provided this request previously
     if (requests_.find(request) == requests_.end()) {
       if (vo_.os_OK(Teuchos::VERB_EXTREME)) {
         *vo_.os() << "Independent field \"" << vo_.color("green") << my_key_ 
@@ -99,8 +130,8 @@ bool EvaluatorIndependent::Update(State& S, const Key& request) {
 // wrt_key changed since it was last requested for Field Key reqest.
 // Updates the derivative if needed.
 // ---------------------------------------------------------------------------
-bool EvaluatorIndependent::UpdateDerivative(State& S,
-        const Key& request, const Key& wrt_key) {
+bool EvaluatorIndependent_::UpdateDerivative(State& S,
+        const Key& request, const Key& wrt_key, const Key& wrt_tag) {
 
   if (vo_.os_OK(Teuchos::VERB_EXTREME)) {
     Teuchos::OSTab tab = vo_.getOSTab();
@@ -111,12 +142,16 @@ bool EvaluatorIndependent::UpdateDerivative(State& S,
 }
 
 
-bool EvaluatorIndependent::IsDependency(const State& S, const Key& key) const {
+bool EvaluatorIndependent_::IsDependency(const State& S, const Key& key, const Key& tag) const {
   return false;
 }
 
-bool EvaluatorIndependent::ProvidesKey(const Key& key) const {
-  return key == my_key_;
+bool EvaluatorIndependent_::ProvidesKey(const Key& key, const Key& tag) const {
+  return key == my_key_ && tag == my_tag_;
+}
+
+bool EvaluatorIndependent_::IsDifferentiableWRT(const State& S, const Key& wrt_key, const Key& wrt_tag) const {
+  return false;
 }
 
 
@@ -125,7 +160,7 @@ bool EvaluatorIndependent::ProvidesKey(const Key& key) const {
 // String representation of this evaluator
 // ---------------------------------------------------------------------------
 std::string
-EvaluatorIndependent::WriteToString() const {
+EvaluatorIndependent_::WriteToString() const {
   std::stringstream result;
   result << my_key_ << std::endl
          << "  Type: independent" << std::endl

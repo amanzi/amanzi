@@ -20,7 +20,7 @@ namespace Amanzi {
 // ---------------------------------------------------------------------------
 DeformingCellVolumeEvaluator::DeformingCellVolumeEvaluator(
         Teuchos::ParameterList& plist) :
-    EvaluatorSecondary(plist) {
+    EvaluatorAlgebraic(plist) {
 
   my_key_ = plist.get<std::string>("evaluator name", "cell_volume");
 
@@ -37,7 +37,7 @@ DeformingCellVolumeEvaluator::DeformingCellVolumeEvaluator(
 
   // stick in the deformation key as my leaf node.
   Key deformation_key = plist.get<std::string>("deformation key");
-  dependencies_.insert(deformation_key);
+  dependencies_.emplace_back(deformation_key);
 }
 
 
@@ -46,7 +46,7 @@ DeformingCellVolumeEvaluator::DeformingCellVolumeEvaluator(
 // ---------------------------------------------------------------------------
 DeformingCellVolumeEvaluator::DeformingCellVolumeEvaluator(
         const DeformingCellVolumeEvaluator& other) :
-    EvaluatorSecondary(other),
+    EvaluatorAlgebraic(other),
     my_mesh_(other.my_mesh_) {}
 
 

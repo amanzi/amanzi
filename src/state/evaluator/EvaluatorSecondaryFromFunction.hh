@@ -11,7 +11,7 @@
 //! A secondary variable evaluator which evaluates functions on its dependenecies.
 
 /*!
-Uses functions to evaluate arbitrary algebraic functions of its dependencies.
+Uses functions to evaluate arbitrary secondary functions of its dependencies.
 
 For example, one might write a dependency:
 
@@ -71,7 +71,7 @@ class EvaluatorSecondaryFromFunction :
   virtual void Evaluate_(const State& S, CompositeVector& result);
 
   // This should get some careful thought of the right strategy.  Punting for now --etc
-  virtual void EvaluatePartialDerivative_(const State& S, const Key& wrt_key, CompositeVector& result) {
+  virtual void EvaluatePartialDerivative_(const State& S, const Key& wrt_key, const Key& wrt_tag, CompositeVector& result) {
     result.PutScalar(0.);
   }
 

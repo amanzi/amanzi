@@ -10,13 +10,17 @@
 #ifndef AMANZI_INDEPENDENT_EVALUATOR_
 #define AMANZI_INDEPENDENT_EVALUATOR_
 
-#include "CompositeVectorFunction.hh"
 #include "Evaluator.hh"
 #include "Evaluator_Factory.hh"
 
 namespace Amanzi {
 
-class EvaluatorIndependent : public Evaluator {
+//
+// Dummy class, does everything but know the type, which is required to
+// EnsureCompatibility.  This is never used, instead the below templated one
+// is.
+//
+class EvaluatorIndependent_ : public Evaluator {
 
  public:
 
@@ -24,16 +28,20 @@ class EvaluatorIndependent : public Evaluator {
   // Constructors, assignement operators, etc
   // ---------------------------------------------------------------------------
   explicit
-  EvaluatorIndependent(Teuchos::ParameterList& plist);
-  EvaluatorIndependent(const EvaluatorIndependent& other) = default;
+  EvaluatorIndependent_(Teuchos::ParameterList& plist);
+  EvaluatorIndependent_(const EvaluatorIndependent_& other) = default;
 
+
+  EvaluatorIndependent_& operator=(const EvaluatorIndependent_& other);
+  virtual Evaluator& operator=(const Evaluator& other) override;
+  
   // ---------------------------------------------------------------------------
   // Lazy evaluation of the evaluator.
   //
   // Updates the data, if needed.  Returns true if the value of the data has
   // changed since the last request for an update.
   // ---------------------------------------------------------------------------
-  virtual bool Update(State& S, const Key& request) override;
+  virtual bool Update(State& S, const Key& request) override final;
 
   // ---------------------------------------------------------------------------
   // Lazy evaluation of derivatives of evaluator.
@@ -43,10 +51,11 @@ class EvaluatorIndependent : public Evaluator {
   // an update.
   // ---------------------------------------------------------------------------
   virtual bool UpdateDerivative(State& S,
-          const Key& request, const Key& wrt_key) override;
+          const Key& request, const Key& wrt_key, const Key& wrt_tag) override final;
 
-  virtual bool IsDependency(const State& S, const Key& key) const override;
-  virtual bool ProvidesKey(const Key& key) const override;
+  virtual bool IsDependency(const State& S, const Key& key, const Key& tag) const override final;
+  virtual bool ProvidesKey(const Key& key, const Key& tag) const override final;
+  virtual bool IsDifferentiableWRT(const State& S, const Key& wrt_key, const Key& wrt_tag) const override final;
 
   virtual void EnsureCompatibility(State& S) override;
 
@@ -69,10 +78,21 @@ class EvaluatorIndependent : public Evaluator {
   KeySet requests_;
   Teuchos::ParameterList plist_;
   VerboseObject vo_;
-
- private:
-  static Utils::RegisteredFactory<Evaluator,EvaluatorIndependent> fac_;
 };
+
+
+
+template<class Data_t, class DataFactory_t=NullFactory>
+class EvaluatorIndependent : public EvaluatorIndependent_ {
+ public:
+  using EvaluatorIndependent_::EvaluatorIndependent_;
+
+  virtual void EnsureCompatibility(State& S) override {
+    // Require the field and claim ownership.
+    S.Require<Data_t, DataFactory_t>(my_key_, my_tag_, my_key_);
+  }
+};
+
 
 } // namespace
 

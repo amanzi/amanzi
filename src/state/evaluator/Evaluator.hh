@@ -51,7 +51,7 @@ class Evaluator {
   // an update.
   // ---------------------------------------------------------------------------
   virtual bool UpdateDerivative(State& S,
-          const Key& requester, const Key& wrt_key) = 0;
+          const Key& requester, const Key& wrt_key, const Key& wrt_tag) = 0;
 
   // ---------------------------------------------------------------------------
   // Does this depend upon key?
@@ -59,14 +59,23 @@ class Evaluator {
   // Searches the dependency graph to see if this evaluator depends upon the
   // evaluator named key.
   // ---------------------------------------------------------------------------
-  virtual bool IsDependency(const State& S, const Key& key) const = 0;
+  virtual bool IsDependency(const State& S, const Key& key, const Key& tag) const = 0;
+
+  // ---------------------------------------------------------------------------
+  // Is this evaluator differentiable with respect to the primary variable in
+  // wrt_key:wrt_tag?
+  //
+  // Searches the dependency graph to see if this evaluator depends upon the
+  // evaluator named key.
+  // ---------------------------------------------------------------------------
+  virtual bool IsDifferentiableWRT(const State& S, const Key& wrt_key, const Key& wrt_tag) const = 0;
 
   // ---------------------------------------------------------------------------
   // Does this provide key?
   //
   // Returns true if key is a field owned by this evaluator, false otherwise.
   // ---------------------------------------------------------------------------
-  virtual bool ProvidesKey(const Key& key) const = 0;
+  virtual bool ProvidesKey(const Key& key, const Key& tag) const = 0;
 
   // ---------------------------------------------------------------------------
   // Checks that all data requirements on dependencies of this evaluator are

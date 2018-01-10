@@ -19,7 +19,8 @@ TODO: This needs a test! --etc
 
 namespace Amanzi {
 
-class EvaluatorIndependentFunction : public EvaluatorIndependent {
+class EvaluatorIndependentFunction :
+      public EvaluatorIndependent<CompositeVector,CompositeVectorSpace> {
 
  public:
 
