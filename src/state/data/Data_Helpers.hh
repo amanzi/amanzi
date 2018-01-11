@@ -18,6 +18,7 @@ Helpers that know how to read/write/etc data.
 
 #include "CompositeVector.hh"
 #include "Op.hh"
+#include "TensorVector.hh"
 
 #include "FunctionFactory.hh"
 
@@ -25,12 +26,8 @@ Helpers that know how to read/write/etc data.
 #include "Visualization.hh"
 #include "Checkpoint.hh"
 
-
-
 namespace Amanzi {
 namespace Helpers {
-
-
 
 //
 // Visualization
@@ -231,6 +228,69 @@ inline
 bool
 Initialize<Operators::Operator>(Teuchos::ParameterList& plist, Operators::Operator& t,
         const Key& fieldname,
+        const std::vector<std::string>& subfieldnames) { return true; }
+
+
+
+//
+// Specializations for WhetStone::Tensor
+// ======================================================================
+
+template<>
+inline
+void
+WriteVis<TensorVector>(const Visualization& vis, const Key& fieldname,
+        const std::vector<std::string>& subfieldnames,
+        const TensorVector& tensor) {}
+
+template<>
+inline
+void
+WriteCheckpoint<TensorVector>(const Checkpoint& chkp, const Key& fieldname,
+        const TensorVector& tensor) {}
+
+template<>
+inline
+void
+ReadCheckpoint<TensorVector>(const Checkpoint& chkp, const Key& fieldname,
+        TensorVector& tensor) {}
+
+template<>
+inline
+bool
+Initialize<TensorVector>(Teuchos::ParameterList& plist,
+        TensorVector& tensor, const Key& fieldname,
+        const std::vector<std::string>& subfieldnames) { return true; }
+
+
+//
+// Specializations for Operators::BCs
+// ======================================================================
+
+template<>
+inline
+void
+WriteVis<Operators::BCs>(const Visualization& vis, const Key& fieldname,
+        const std::vector<std::string>& subfieldnames,
+        const Operators::BCs& tensor) {}
+
+template<>
+inline
+void
+WriteCheckpoint<Operators::BCs>(const Checkpoint& chkp, const Key& fieldname,
+        const Operators::BCs& tensor) {}
+
+template<>
+inline
+void
+ReadCheckpoint<Operators::BCs>(const Checkpoint& chkp, const Key& fieldname,
+        Operators::BCs& tensor) {}
+
+template<>
+inline
+bool
+Initialize<Operators::BCs>(Teuchos::ParameterList& plist,
+        Operators::BCs& tensor, const Key& fieldname,
         const std::vector<std::string>& subfieldnames) { return true; }
 
 

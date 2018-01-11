@@ -43,7 +43,6 @@ add_definitions("-DMSTK_HAVE_MPI")
 
 # Library: data_structures
 #
-#file(GLOB data_structures_src_files "*.cc")
 set(data_structures_src_files BlockVector.cc
                               CompositeVectorSpace.cc
                               CompositeVector.cc

@@ -64,6 +64,7 @@ Evaluator_OperatorApply::Evaluate_(const State& S, CompositeVector& result)
   auto global_op = global_op_fac.Create();
 
   // do the apply
+  //  x.Print(std::cout);
   x.ScatterMasterToGhosted();
   result.PutScalarMasterAndGhosted(0.);
 
@@ -74,6 +75,8 @@ Evaluator_OperatorApply::Evaluate_(const State& S, CompositeVector& result)
     std::cout << "dependency = " << op_itr->first << std::endl;
     S.Get<Operators::Op>(op_itr->first, op_itr->second).ApplyMatrixFreeOp(&*global_op, x, result);
   }
+
+  //  result.Print(std::cout);
   result.Update(1.0, b, -1.0);
 }
   

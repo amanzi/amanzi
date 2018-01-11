@@ -30,6 +30,7 @@ include_directories(${MESH_SOURCE_DIR})
 include_directories(${OUTPUT_SOURCE_DIR})
 include_directories(${FUNCS_SOURCE_DIR})
 include_directories(${MFUNCS_SOURCE_DIR})
+include_directories(${SOLVERS_SOURCE_DIR})
 include_directories(${STATE_SOURCE_DIR}/data)
 include_directories(${STATE_SOURCE_DIR}/io)
 
@@ -68,10 +69,13 @@ set(state_inc_files
   evaluator/EvaluatorIndependentFromFile_reg.hh
   evaluator/EvaluatorIndependentFunction.hh
   evaluator/EvaluatorIndependentFunction_reg.hh
+  evaluator/EvaluatorIndependentTensorFunction.hh
+  evaluator/EvaluatorIndependentTensorFunction_reg.hh
   evaluator/EvaluatorPrimary.hh
   evaluator/EvaluatorPrimary_reg.hh
   evaluator/EvaluatorSecondary.hh
   evaluator/EvaluatorSecondary_Impl.hh
+  evaluator/EvaluatorSecondaries.hh
   evaluator/EvaluatorAlgebraic.hh
   evaluator/EvaluatorSecondaryFromFunction.hh
   evaluator/Evaluator_OperatorApply.hh
@@ -103,8 +107,10 @@ add_amanzi_library(state
 		      evaluator/EvaluatorIndependent.cc
 		      evaluator/EvaluatorIndependentFromFile.cc
 		      evaluator/EvaluatorIndependentFunction.cc
+		      evaluator/EvaluatorIndependentTensorFunction.cc
 		      evaluator/EvaluatorPrimary.cc
                       evaluator/EvaluatorAlgebraic.cc
+                      evaluator/EvaluatorSecondaries.cc
                       evaluator/EvaluatorSecondaryFromFunction.cc
                       evaluator/Evaluator_OperatorApply.cc
 #		      evaluator/cell_volume_evaluator.cc
@@ -117,7 +123,7 @@ add_amanzi_library(state
 #		      io/UnstructuredObservations.cc
 		      State.cc
                    HEADERS ${state_inc_files}
-                   LINK_LIBS atk functions output mesh ${state_tpl_libs})
+                   LINK_LIBS atk functions output mesh whetstone ${state_tpl_libs})
 set_property(GLOBAL PROPERTY STATE_SOURCE_DIR ${MPC_SOURCE_DIR})
 set_property(GLOBAL PROPERTY STATE_BINARY_DIR ${MPC_BINARY_DIR})
 
@@ -128,6 +134,7 @@ add_install_include_file(${state_inc_files})
 
 register_evaluator_with_factory(HEADERFILE evaluator/EvaluatorPrimary_reg.hh LISTNAME REGISTER_AMANZI_STATE_EVALUATORS)
 register_evaluator_with_factory(HEADERFILE evaluator/EvaluatorIndependentFunction_reg.hh LISTNAME REGISTER_AMANZI_STATE_EVALUATORS)
+register_evaluator_with_factory(HEADERFILE evaluator/EvaluatorIndependentTensorFunction_reg.hh LISTNAME REGISTER_AMANZI_STATE_EVALUATORS)
 register_evaluator_with_factory(HEADERFILE evaluator/EvaluatorIndependentFromFile_reg.hh LISTNAME REGISTER_AMANZI_STATE_EVALUATORS)
 #register_evaluator_with_factory(HEADERFILE evaluator/EvaluatorSecondaryFromFunction_reg.hh LISTNAME REGISTER_AMANZI_STATE_EVALUATORS)
 # register_evaluator_with_factory(HEADERFILE evaluator/cell_volume_evaluator_reg.hh   LISTNAME REGISTER_AMANZI_STATE_EVALUATORS)
