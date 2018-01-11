@@ -455,12 +455,12 @@ int MFD3D::cell_get_face_adj_cell(int cell, int face)
 
 
 /* ******************************************************************
-* Returns position of the number v in the list of nodes.  
+* Returns position of id in the list of ids.
 ****************************************************************** */
-int MFD3D::FindPosition_(int v, Entity_ID_List nodes)
+int MFD3D::FindPosition(int id, Entity_ID_List list)
 {
-  for (int i = 0; i < nodes.size(); i++) {
-    if (nodes[i] == v) return i;
+  for (int i = 0; i < list.size(); i++) {
+    if (list[i] == id) return i;
   }
   return -1;
 }

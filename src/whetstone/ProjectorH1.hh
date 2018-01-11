@@ -35,17 +35,22 @@ class ProjectorH1 {
       d_(mesh_->space_dimension()) {};
   ~ProjectorH1() {};
 
-  // -- elliptic projector
-  void HarmonicP1_Cell(
+  // -- energy-based projector for non-conforming virtual space
+  void HarmonicCell_CR1(
       int c, const std::vector<VectorPolynomial>& vf, VectorPolynomial& uc) const;
 
-  void HarmonicPk_Cell(
+  void HarmonicCell_CRk(
       int c, int order,
       const std::vector<VectorPolynomial>& vf, VectorPolynomial& uc) const;
 
-  void HarmonicP1_Face(
+  void HarmonicFace_CR1(
       int f, const AmanziGeometry::Point& p0,
       const std::vector<VectorPolynomial>& ve, VectorPolynomial& uf) const;
+
+  // -- energy-based projector for conforming virtual space
+  void HarmonicCell_Pk(
+      int c, int order,
+      const std::vector<VectorPolynomial>& vf, VectorPolynomial& uc) const;
 
  protected:
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;

@@ -92,7 +92,7 @@ int MFD3D_Lagrange::H1consistencyHO(
     polys[0] = &cmono;
 
     int col = it.PolynomialPosition();
-    int row(0);
+    int row(nnodes);
 
     for (int i = 0; i < nfaces; i++) {
       int f = faces[i];
@@ -106,27 +106,39 @@ int MFD3D_Lagrange::H1consistencyHO(
       }
       normal *= dirs[i];
 
-      Polynomial tmp = grad * normal;
-      tmp.ChangeCoordinates(xf, tau);
+      Entity_ID_List face_nodes;
+      mesh_->face_get_nodes(f, &face_nodes);
+      int nfnodes = face_nodes.size();
 
-      for (auto jt = tmp.begin(); jt.end() <= tmp.end(); ++jt) {
-        int m = jt.MonomialOrder();
-        int k = jt.MonomialPosition();
-        int n = jt.PolynomialPosition();
-        R(row + n, col) = tmp(m, k);
+      if (order == 1) {
+        for (int j = 0; j < nfnodes; j++) {
+          int v = face_nodes[j];
+          int pos = FindPosition(v, nodes);
+          R(pos, col) += normal[col] * dirs[i] / 2;
+        }
+      } else {
+        Polynomial tmp = grad * normal;
+        tmp.ChangeCoordinates(xf, tau);
+
+        for (auto jt = tmp.begin(); jt.end() <= tmp.end(); ++jt) {
+          int m = jt.MonomialOrder();
+          int k = jt.MonomialPosition();
+          int n = jt.PolynomialPosition();
+          R(row + n, col) = tmp(m, k);
+        }
+
+        for (auto jt = pf.begin(); jt.end() <= pf.end(); ++jt) {
+          const int* jndex = jt.multi_index();
+          Polynomial fmono(d_ - 1, jndex);
+          fmono.InverseChangeCoordinates(xf, tau);  
+
+          polys[1] = &fmono;
+
+          int n = jt.PolynomialPosition();
+          N(row + n, col) = numi.IntegratePolynomialsFace(f, polys) / area;
+        }
+        row += ndf;
       }
-
-      for (auto jt = pf.begin(); jt.end() <= pf.end(); ++jt) {
-        const int* jndex = jt.multi_index();
-        Polynomial fmono(d_ - 1, jndex);
-        fmono.InverseChangeCoordinates(xf, tau);  
-
-        polys[1] = &fmono;
-
-        int n = jt.PolynomialPosition();
-        N(row + n, col) = numi.IntegratePolynomialsFace(f, polys) / area;
-      }
-      row += ndf;
     }
 
     // N and R: degrees of freedom in cells
