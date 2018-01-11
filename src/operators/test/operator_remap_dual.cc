@@ -41,6 +41,7 @@
 
 #include "AnalyticDG00.hh"
 #include "AnalyticDG04.hh"
+#include "AnalyticDG05.hh"
 
 
 /* *****************************************************************
@@ -382,7 +383,7 @@ void RemapTestsDual(int dim, int order_p, int order_u,
 
   // calculate error in the new basis
   double pl2_err(0.0), pinf_err(0.0), area(0.0);
-  double mass1(0.0), ql2_err(0.0);
+  double mass1(0.0), ql2_err(0.0), qinf_err(0.0);
 
   Entity_ID_List nodes;
   std::vector<int> dirs;
@@ -475,6 +476,7 @@ void RemapTestsDual(int dim, int order_p, int order_u,
 
         double tmp = vc[0].Value(v1);
         tmp -= ana.function_exact(v1, 0.0);
+        qinf_err = std::max(qinf_err, fabs(tmp));
         ql2_err += tmp * tmp * area_c / nnodes;
       }
     }
@@ -488,6 +490,9 @@ void RemapTestsDual(int dim, int order_p, int order_u,
   double err_tmp = pinf_err;
   mesh1->get_comm()->MaxAll(&err_tmp, &pinf_err, 1);
 
+  err_tmp = qinf_err;
+  mesh1->get_comm()->MaxAll(&err_tmp, &qinf_err, 1);
+
   err_tmp = gcl_err;
   mesh1->get_comm()->MaxAll(&err_tmp, &gcl_err, 1);
 
@@ -497,8 +502,8 @@ void RemapTestsDual(int dim, int order_p, int order_u,
   CHECK(pl2_err < 0.12 / (order_p + 1));
 
   if (MyPID == 0) {
-    printf("nx=%3d  L2=%12.8g %12.8g  Inf=%12.8g  dMass=%10.4g  GCL_Inf=%10.6g  dArea=%10.6g\n", 
-        nx, pl2_err, ql2_err, pinf_err, err_out[2] - mass0, gcl_err, 1.0 - err_out[1]);
+    printf("nx=%3d  L2=%12.8g %12.8g  Inf=%12.8g %12.8f dMass=%10.4g  GCL_Inf=%10.6g  dArea=%10.6g\n", 
+        nx, pl2_err, ql2_err, pinf_err, qinf_err, err_out[2] - mass0, gcl_err, 1.0 - err_out[1]);
   }
 
   // visualization
@@ -526,7 +531,7 @@ TEST(REMAP2D_DG1_DUAL_FEM) {
 
 
 const int N = 1;
-const double q = 3.0;  // 2.82842712474619;
+const double q = 2.0;  // 2.82842712474619;
 
 TEST(REMAP2D_DG0_DUAL_VEM) {
   // RemapTestsDual(2, 0, 1, "VEM", 16 * N, 16 * N, 0.05 / N);
@@ -553,11 +558,11 @@ TEST(REMAP3D_DG0_DUAL_VEM) {
 
 /*
 TEST(REMAP2D_DG1_QUADRATURE_ERROR) {
-  RemapTestsDual(2, 2, 3, "VEM", 16, 16, 0.05);
-  RemapTestsDual(2, 2, 3, "VEM", 16 *  2, 16 *  2, 0.05 / q);
-  RemapTestsDual(2, 2, 3, "VEM", 16 *  4, 16 *  4, 0.05 / std::pow(q, 2.0));
-  RemapTestsDual(2, 2, 3, "VEM", 16 *  8, 16 *  8, 0.05 / std::pow(q, 3.0));
-  RemapTestsDual(2, 2, 3, "VEM", 16 * 16, 16 * 16, 0.05 / std::pow(q, 4.0));
-  RemapTestsDual(2, 2, 3, "VEM", 16 * 32, 16 * 32, 0.05 / std::pow(q, 5.0));
+  RemapTestsDual(2, 1, 2, "VEM", 16, 16, 0.05);
+  RemapTestsDual(2, 1, 2, "VEM", 16 *  2, 16 *  2, 0.05 / q);
+  RemapTestsDual(2, 1, 2, "VEM", 16 *  4, 16 *  4, 0.05 / std::pow(q, 2.0));
+  RemapTestsDual(2, 1, 2, "VEM", 16 *  8, 16 *  8, 0.05 / std::pow(q, 3.0));
+  RemapTestsDual(2, 1, 2, "VEM", 16 * 16, 16 * 16, 0.05 / std::pow(q, 4.0));
+  RemapTestsDual(2, 1, 2, "VEM", 16 * 32, 16 * 32, 0.05 / std::pow(q, 5.0));
 }
 */

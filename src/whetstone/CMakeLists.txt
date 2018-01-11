@@ -46,6 +46,7 @@ add_amanzi_library(whetstone
                           MFD3D_Elasticity.cc 
                           MFD3D_Electromagnetics.cc MFD3D_Electromagnetics_Surface.cc
                           MFD3D_Generalized_Diffusion.cc
+                          MFD3D_Lagrange.cc
                           DG_Modal.cc nlfv.cc 
                           Tensor.cc DenseMatrix.cc
                           Polynomial.cc VectorPolynomial.cc
@@ -65,6 +66,7 @@ add_amanzi_library(whetstone
                            MFD3D_Elasticity.hh
                            MFD3D_Electromagnetics.hh
                            MFD3D_Generalized_Diffusion.hh
+                           MFD3D_Lagrange.hh
                            MFD3DFactory.hh
                            nlfv.hh
                            Polynomial.hh VectorPolynomial.hh Tensor.hh

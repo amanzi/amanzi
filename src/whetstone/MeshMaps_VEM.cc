@@ -28,7 +28,7 @@ namespace WhetStone {
 void MeshMaps_VEM::VelocityCell(
     int c, const std::vector<VectorPolynomial>& vf, VectorPolynomial& vc) const
 {
-  // LeastSquareProjector_Cell_(1, c, vf, vc);
+  // LeastSquareProjector_Cell_(order_, c, vf, vc);
   if (order_ < 2) {
     projector.HarmonicP1_Cell(c, vf, vc);
   } else {
