@@ -22,7 +22,7 @@ namespace Operators {
 
 class Op_SurfaceFace_SurfaceCell : public Op_Face_Cell {
  public:
-  Op_SurfaceFace_SurfaceCell(std::string& name,
+  Op_SurfaceFace_SurfaceCell(const std::string& name,
                const Teuchos::RCP<const AmanziMesh::Mesh> surf_mesh_) :
       Op_Face_Cell(name, surf_mesh_),
       surf_mesh(surf_mesh_)

@@ -76,6 +76,7 @@ class BCs {
   ~BCs() {};
 
   // access
+  Teuchos::RCP<const AmanziMesh::Mesh> mesh() const { return mesh_; }
   AmanziMesh::Entity_kind kind() const { return kind_; }
   int type() const { return type_; }
 

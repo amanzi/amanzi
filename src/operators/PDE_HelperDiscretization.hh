@@ -60,8 +60,11 @@ class PDE_HelperDiscretization : public PDE_HelperBCsList {
   // -- global operator (collection of ops with Apply, etc)
   Teuchos::RCP<const Operator> global_operator() const { return global_op_; }
   Teuchos::RCP<Operator> global_operator() { return global_op_; }
+  void set_global_operator(const Teuchos::RCP<Operator>& global_op) { global_op_ = global_op; }
+
   // -- local operator (container of elemental matrices)
   Teuchos::RCP<Op> local_operator() { return local_op_; }
+  void set_local_operator(const Teuchos::RCP<Op>& op) { local_op_ = op; }
 
  protected:
   void ApplyBCs_Cell_Scalar_(const Teuchos::Ptr<BCs>& bc, Teuchos::RCP<Op> op,
