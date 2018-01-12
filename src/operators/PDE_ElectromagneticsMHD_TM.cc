@@ -120,7 +120,7 @@ void PDE_ElectromagneticsMHD_TM::ApplyBCs(bool primary, bool eliminate)
 {
   if (local_op_schema_ == (OPERATOR_SCHEMA_BASE_CELL
                          | OPERATOR_SCHEMA_DOFS_NODE)) {
-    Teuchos::RCP<BCs> bc_f, bc_v;
+    Teuchos::RCP<const BCs> bc_f, bc_v;
     for (auto bc = bcs_trial_.begin(); bc != bcs_trial_.end(); ++bc) {
       if ((*bc)->kind() == AmanziMesh::FACE) {
         bc_f = *bc;
@@ -136,8 +136,8 @@ void PDE_ElectromagneticsMHD_TM::ApplyBCs(bool primary, bool eliminate)
 /* ******************************************************************
 * Apply BCs on cell operators
 ****************************************************************** */
-void PDE_ElectromagneticsMHD_TM::ApplyBCs_Node_(const Teuchos::Ptr<BCs>& bc_f,
-                                                const Teuchos::Ptr<BCs>& bc_v,
+void PDE_ElectromagneticsMHD_TM::ApplyBCs_Node_(const Teuchos::Ptr<const BCs>& bc_f,
+                                                const Teuchos::Ptr<const BCs>& bc_v,
                                                 bool primary, bool eliminate)
 {
   AmanziMesh::Entity_ID_List nodes, faces, cells;

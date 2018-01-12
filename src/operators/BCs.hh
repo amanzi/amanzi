@@ -125,6 +125,15 @@ class BCs {
     return bc_value_vector_;
   }
 
+  const std::vector<int>& bc_model() const { return bc_model_; }
+  const std::vector<double>& bc_value() const { return bc_value_; }
+  const std::vector<double>& bc_mixed() const { return bc_mixed_; }
+  const std::vector<AmanziGeometry::Point>& bc_value_point() const { return bc_value_point_; }
+  const std::vector<std::vector<double>>& bc_value_vector() const { return bc_value_vector_; }
+    
+  
+  
+  
  private:
   AmanziMesh::Entity_kind kind_;
   int type_;

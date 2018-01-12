@@ -67,13 +67,13 @@ class PDE_HelperDiscretization : public PDE_HelperBCsList {
   void set_local_operator(const Teuchos::RCP<Op>& op) { local_op_ = op; }
 
  protected:
-  void ApplyBCs_Cell_Scalar_(const Teuchos::Ptr<BCs>& bc, Teuchos::RCP<Op> op,
+  void ApplyBCs_Cell_Scalar_(const BCs& bc, Teuchos::RCP<Op> op,
                              bool primary, bool eliminate);
   
-  void ApplyBCs_Cell_Point_(const Teuchos::Ptr<BCs>& bc, Teuchos::RCP<Op> op,
+  void ApplyBCs_Cell_Point_(const BCs& bc, Teuchos::RCP<Op> op,
                             bool primary, bool eliminate);
 
-  void ApplyBCs_Cell_Vector_(const Teuchos::Ptr<BCs>& bc, Teuchos::RCP<Op> op,
+  void ApplyBCs_Cell_Vector_(const BCs& bc, Teuchos::RCP<Op> op,
                              bool primary, bool eliminate);
 
  private:

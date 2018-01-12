@@ -78,8 +78,8 @@ class PDE_Electromagnetics : public PDE_HelperDiscretization {
 
  protected:
   void Init_(Teuchos::ParameterList& plist);
-  void ApplyBCs_Edge_(const Teuchos::Ptr<BCs>& bc_f,
-                      const Teuchos::Ptr<BCs>& bc_e, bool primary, bool eliminate);
+  void ApplyBCs_Edge_(const Teuchos::Ptr<const BCs>& bc_f,
+                      const Teuchos::Ptr<const BCs>& bc_e, bool primary, bool eliminate);
 
  protected:
   Teuchos::RCP<std::vector<WhetStone::Tensor> > K_;
