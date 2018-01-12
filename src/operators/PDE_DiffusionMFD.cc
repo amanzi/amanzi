@@ -50,7 +50,7 @@ namespace Operators {
 * Initialization of the operator, scalar coefficient.
 ****************************************************************** */
 void PDE_DiffusionMFD::SetTensorCoefficient(
-    const Teuchos::RCP<std::vector<WhetStone::Tensor> >& K)
+    const Teuchos::RCP<const std::vector<WhetStone::Tensor> >& K)
 {
   K_ = K;
 

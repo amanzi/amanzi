@@ -83,7 +83,7 @@ class PDE_Diffusion : public PDE_HelperDiscretization {
   
   // main virtual members
   // -- setup 
-  virtual void SetTensorCoefficient(const Teuchos::RCP<std::vector<WhetStone::Tensor> >& K) = 0;
+  virtual void SetTensorCoefficient(const Teuchos::RCP<const std::vector<WhetStone::Tensor> >& K) = 0;
   virtual void SetScalarCoefficient(const Teuchos::RCP<const CompositeVector>& k,
                                     const Teuchos::RCP<const CompositeVector>& dkdp) = 0;
 
@@ -103,7 +103,7 @@ class PDE_Diffusion : public PDE_HelperDiscretization {
   virtual void ScaleMassMatrices(double s) = 0;
 
   // default implementation  
-  virtual void Setup(const Teuchos::RCP<std::vector<WhetStone::Tensor> >& K,
+  virtual void Setup(const Teuchos::RCP<const std::vector<WhetStone::Tensor> >& K,
                      const Teuchos::RCP<const CompositeVector>& k,
                      const Teuchos::RCP<const CompositeVector>& dkdp) {
     SetTensorCoefficient(K);
@@ -157,7 +157,7 @@ class PDE_Diffusion : public PDE_HelperDiscretization {
   int little_k() { return little_k_; }
   
  protected:
-  Teuchos::RCP<std::vector<WhetStone::Tensor> > K_;
+  Teuchos::RCP<const std::vector<WhetStone::Tensor> > K_;
   bool K_symmetric_;
 
   // nonlinear coefficient and its representation
