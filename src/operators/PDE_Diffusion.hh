@@ -112,19 +112,19 @@ class PDE_Diffusion : public PDE_HelperDiscretization {
 
   // boundary conditions (BC) require information on test and
   // trial spaces. For a single PDE, these BCs could be the same.
-  virtual void SetBCs(const Teuchos::RCP<BCs>& bc_trial,
-                      const Teuchos::RCP<BCs>& bc_test) {
+  virtual void SetBCs(const Teuchos::RCP<const BCs>& bc_trial,
+                      const Teuchos::RCP<const BCs>& bc_test) {
     SetTrialBCs(bc_trial);  
     SetTestBCs(bc_test);  
   }
-  virtual void SetTrialBCs(const Teuchos::RCP<BCs>& bc) {
+  virtual void SetTrialBCs(const Teuchos::RCP<const BCs>& bc) {
     if (bcs_trial_.size() == 0) {
       bcs_trial_.resize(1);
     }
     bcs_trial_[0] = bc;
     global_op_->SetTrialBCs(bc);
   }
-  virtual void SetTestBCs(const Teuchos::RCP<BCs>& bc) {
+  virtual void SetTestBCs(const Teuchos::RCP<const BCs>& bc) {
     if (bcs_test_.size() == 0) {
       bcs_test_.resize(1);
     }
