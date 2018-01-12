@@ -27,13 +27,13 @@ class Operator_Factory {
   Operator_Factory() {}
 
   void set_mesh(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) { mesh_ = mesh; }
-  void set_cvs(CompositeVectorSpace cvs) {
+  void set_cvs(const CompositeVectorSpace& cvs) {
     cvs_row_ = cvs;
-    cvs_col_ = std::forward<CompositeVectorSpace>(cvs);
+    cvs_col_ = cvs;
   }
-  void set_cvs(CompositeVectorSpace cvs_row, CompositeVectorSpace cvs_col) {
-    cvs_row_ = std::forward<CompositeVectorSpace>(cvs_row);
-    cvs_col_ = std::forward<CompositeVectorSpace>(cvs_col);
+  void set_cvs(const CompositeVectorSpace& cvs_row, const CompositeVectorSpace& cvs_col) {
+    cvs_row_ = cvs_row;
+    cvs_col_ = cvs_col;
   }
   void set_schema(const Schema& schema) {
     schema_row_ = schema;
