@@ -133,7 +133,7 @@ void PDE_DiffusionFV::InitDiffusion_(Teuchos::ParameterList& plist)
 /* ******************************************************************
 * Setup methods: scalar coefficients
 ****************************************************************** */
-void PDE_DiffusionFV::SetTensorCoefficient(const Teuchos::RCP<std::vector<WhetStone::Tensor> >& K)
+void PDE_DiffusionFV::SetTensorCoefficient(const Teuchos::RCP<const std::vector<WhetStone::Tensor> >& K)
 {
   transmissibility_initialized_ = false;
   K_ = K;
