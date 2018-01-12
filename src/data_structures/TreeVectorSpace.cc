@@ -1,4 +1,4 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+/* -*-  mode: c++; indent-tabs-mode: nil -*- */
 /* -------------------------------------------------------------------------
    ATS
 
@@ -22,11 +22,9 @@ TreeVectorSpace::TreeVectorSpace(const TreeVectorSpace& other) :
     data_ = Teuchos::rcp(new CompositeVectorSpace(*other.data_));
   }
 
-  for (std::vector< Teuchos::RCP<const TreeVectorSpace> >::const_iterator
-           other_subvec=other.subvecs_.begin();
-       other_subvec != other.subvecs_.end(); ++other_subvec) {
-    Teuchos::RCP<const TreeVectorSpace> new_subvec
-      = Teuchos::rcp(new TreeVectorSpace(**other_subvec));
+  for (auto other_subvec : other) {
+    Teuchos::RCP<TreeVectorSpace> new_subvec
+      = Teuchos::rcp(new TreeVectorSpace(*other_subvec));
     subvecs_.push_back(new_subvec);
   }
 };
@@ -94,9 +92,8 @@ TreeVectorSpace::SubVector(int index) const{
   return Teuchos::null;
 };
 
-
 void
-TreeVectorSpace::PushBack(const Teuchos::RCP<const TreeVectorSpace>& subvec) {
+TreeVectorSpace::PushBack(const Teuchos::RCP<TreeVectorSpace>& subvec) {
   subvecs_.push_back(subvec);
 };
 
