@@ -64,7 +64,6 @@ class XIndependent : public EvaluatorIndependent<CompositeVector,CompositeVector
   }
 };
 
-
 class DiagIndependent : public EvaluatorIndependent<CompositeVector,CompositeVectorSpace> {
  public:
   using EvaluatorIndependent<CompositeVector,CompositeVectorSpace>::EvaluatorIndependent;
@@ -77,7 +76,6 @@ class DiagIndependent : public EvaluatorIndependent<CompositeVector,CompositeVec
     s.GetW<CompositeVector>(my_key_, my_tag_, my_key_).PutScalar(1.);
   }
 };
-
 
 class KIndependent : public EvaluatorIndependent<TensorVector,TensorVector_Factory> {
  public:
@@ -95,7 +93,6 @@ class KIndependent : public EvaluatorIndependent<TensorVector,TensorVector_Facto
     }
   }
 };
-
 
 class BCsIndependent : public EvaluatorIndependent<Operators::BCs,Operators::BCs_Factory> {
  public:
@@ -130,8 +127,6 @@ class BCsIndependent : public EvaluatorIndependent<Operators::BCs,Operators::BCs
     }    
   }
 };
-
-
 
 class Evaluator_PDE_Diagonal : public EvaluatorSecondary<Operators::Op,Operators::Op_Factory<Operators::Op_Cell_Cell>> {
  public:

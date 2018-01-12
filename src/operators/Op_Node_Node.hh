@@ -21,7 +21,7 @@ namespace Operators {
 
 class Op_Node_Node : public Op {
  public:
-  Op_Node_Node(std::string& name,
+  Op_Node_Node(const std::string& name,
                const Teuchos::RCP<const AmanziMesh::Mesh> mesh, int nvec) :
       Op(OPERATOR_SCHEMA_BASE_NODE |
          OPERATOR_SCHEMA_DOFS_NODE, name, mesh) {
