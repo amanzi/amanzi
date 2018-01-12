@@ -184,8 +184,9 @@ void ProjectorH1::HarmonicCell_CRk(
   }
   
   // create zero vector polynomial
-  uc.resize(d_);
-  for (int i = 0; i < d_; ++i) { 
+  int dim = vf[0].size();
+  uc.resize(dim);
+  for (int i = 0; i < dim; ++i) { 
     uc[i].Reshape(d_, order, true);
   }
 
@@ -195,7 +196,7 @@ void ProjectorH1::HarmonicCell_CRk(
   std::vector<AmanziGeometry::Point> tau(d_ - 1);
   NumericalIntegration numi(mesh_);
 
-  for (int i = 0; i < d_; ++i) {
+  for (int i = 0; i < dim; ++i) {
     int row(0);
     for (int n = 0; n < nfaces; ++n) {
       int f = faces[n];

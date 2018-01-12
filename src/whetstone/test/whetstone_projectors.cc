@@ -105,8 +105,8 @@ TEST(HIGH_ORDER_LAGRANGE) {
   MeshFactory meshfactory(comm);
   meshfactory.preference(FrameworkPreference({MSTK}));
   Teuchos::RCP<const Amanzi::AmanziGeometry::GeometricModel> gm;
-  // Teuchos::RCP<Mesh> mesh = meshfactory(0.0, 0.0, 1.2, 1.1, 1, 1, gm, true, true); 
-  Teuchos::RCP<Mesh> mesh = meshfactory("test/one_pentagon.exo", gm, true, true); 
+  Teuchos::RCP<Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 1, 1, gm, true, true); 
+  // Teuchos::RCP<Mesh> mesh = meshfactory("test/one_pentagon.exo", gm, true, true); 
  
   MFD3D_Diffusion mfd_lo(mesh);
   MFD3D_Lagrange mfd_ho(mesh);
@@ -130,7 +130,7 @@ TEST(HIGH_ORDER_LAGRANGE) {
   CHECK(A1.NormInf() <= 1e-10);
 
   // high-order scheme (new algorithm)
-  for (int k = 2; k < 2; ++k) {
+  for (int k = 2; k < 4; ++k) {
     mfd_ho.H1consistencyHO(cell, k, T, N, R, G, Ak);
     mfd_ho.StiffnessMatrixHO(cell, k, T, R, G, Ak);
 
@@ -424,7 +424,7 @@ TEST(HARMONIC_PROJECTORS_SQUARE_PK) {
     }
   }
   
-  for (int k = 1; k < 3; ++k) {
+  for (int k = 1; k < 4; ++k) {
     projector.HarmonicCell_Pk(cell, k, vf, uc);  
     for (int i = 0; i < 2; ++i) {
       uc[i] -= vf[0][i];
@@ -490,7 +490,7 @@ TEST(HARMONIC_PROJECTORS_POLYGON_PK) {
     }
   }
   
-  for (int k = 1; k < 3; ++k) {
+  for (int k = 1; k < 4; ++k) {
     projector.HarmonicCell_Pk(cell, k, vf, uc);
     std::cout << uc[0] << std::endl;
 

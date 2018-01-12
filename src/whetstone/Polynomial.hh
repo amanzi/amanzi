@@ -180,7 +180,7 @@ class Polynomial {
   //    The vector size should match that of polynomial.
   void SetPolynomialCoefficients(const DenseVector& coefs);
   // -- copy polynomial coefficients to a vector. 
-  //    The vector is resized  to accomodate data.
+  //    The vector is resized to accomodate data.
   void GetPolynomialCoefficients(DenseVector& coefs) const;
 
   // change the coordinate system

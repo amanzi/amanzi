@@ -36,7 +36,7 @@ int MFD3D_Lagrange::H1consistencyHO(
     DenseMatrix& N, DenseMatrix& R, DenseMatrix& G, DenseMatrix& Ac)
 {
   ASSERT(d_ == 2);  // FIXME
-  ASSERT(order < 3);
+  ASSERT(order < 4);
 
   Entity_ID_List nodes, faces;
   std::vector<int> dirs;
@@ -122,28 +122,68 @@ int MFD3D_Lagrange::H1consistencyHO(
         for (int j = 0; j < nfnodes; j++) {
           int v = face_nodes[j];
           int pos = FindPosition(v, nodes);
-          R(pos, col) += normal[col - 1] * dirs[i] / 2;
+          R(pos, col) += normal[col - 1] / 2;
         }
-      } else if (order == 2) {
+      } else if (col > 0) {
+        int v, pos0, pos1;
+        AmanziGeometry::Point x0(d_), x1(d_), xm(d_), sm(d_);
+
         Polynomial tmp = grad * normal;
 
-        // Simpson rule with 3 points
-        int v = face_nodes[0];
-        int pos0 = FindPosition(v, nodes);
-        mesh_->node_get_coordinates(v, &xv);
-        double q0 = tmp.Value(xv);
+        v = face_nodes[0];
+        pos0 = FindPosition(v, nodes);
+        mesh_->node_get_coordinates(v, &x0);
 
         v = face_nodes[1];
-        int pos1 = FindPosition(v, nodes);
-        mesh_->node_get_coordinates(v, &xv);
-        double q1 = tmp.Value(xv);
+        pos1 = FindPosition(v, nodes);
+        mesh_->node_get_coordinates(v, &x1);
 
-        double qmid = tmp.Value(mesh_->face_centroid(f));
+        if (order == 2) {
+          // Simpson rule with 3 points
+          double q0 = tmp.Value(x0);
+          double q1 = tmp.Value(x1);
+          double qmid = tmp.Value(mesh_->face_centroid(f));
 
-        R(pos0, col) += (q0 - qmid) / 6;
-        R(pos1, col) += (q1 - qmid) / 6;
-        R(row,  col) = qmid;
+          R(pos0, col) += (q0 - qmid) / 6;
+          R(pos1, col) += (q1 - qmid) / 6;
+          R(row,  col) = qmid;
+        } else if (order == 3) {
+          // Gauss-Legendre quadrature rule with 3 points
+          int m(2); 
+          Polynomial poly0(1, 2), poly1(1, 2), poly2(1, 2), poly3(1, 3);
 
+          poly0(0, 0) = -0.25;
+          poly0(1, 0) = -1.0;
+          poly0(2, 0) = 3.0;
+
+          poly1(0, 0) = -0.25;
+          poly1(1, 0) = 1.0;
+          poly1(2, 0) = 3.0;
+
+          poly2(0, 0) = 1.5;
+          poly2(1, 0) = 0.0;
+          poly2(2, 0) = -6.0;
+
+          poly3(0, 0) = 0.0;
+          poly3(1, 0) = 30.0;
+          poly3(2, 0) = 0.0;
+          poly3(3, 0) =-120.0;
+
+          for (int n = 0; n < 3; ++n) { 
+            xm = x0 * q1d_points[m][n] + x1 * (1.0 - q1d_points[m][n]);
+            sm[0] = 0.5 - q1d_points[m][n];
+
+            double factor = q1d_weights[m][n] * tmp.Value(xm);
+            R(pos0, col) += poly0.Value(sm) * factor;
+            R(pos1, col) += poly1.Value(sm) * factor;
+
+            R(row, col) = poly2.Value(sm) * factor;
+            R(row + 1, col) = poly3.Value(sm) * factor;
+          }
+        }
+      }
+
+      if (order > 1) {
         for (auto jt = pf.begin(); jt.end() <= pf.end(); ++jt) {
           const int* jndex = jt.multi_index();
           Polynomial fmono(d_ - 1, jndex);

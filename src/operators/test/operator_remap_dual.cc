@@ -464,8 +464,7 @@ void RemapTestsDual(int dim, int order_p, int order_u,
       }
 
       WhetStone::ProjectorH1 projector(mesh1);
-      // projector.HarmonicCell_Pk(c, 1, vvf, vc);
-      projector.HarmonicCell_CR1(c, vvf, vc);
+      projector.HarmonicCell_Pk(c, 1, vvf, vc);
       vc[0].ChangeOrigin(mesh1->cell_centroid(c));
       vc[0](0, 0) = mass1_c / mesh1->cell_volume(c);
 
