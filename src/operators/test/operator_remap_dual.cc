@@ -464,7 +464,8 @@ void RemapTestsDual(int dim, int order_p, int order_u,
       }
 
       WhetStone::ProjectorH1 projector(mesh1);
-      projector.HarmonicP1_Cell(c, vvf, vc);
+      // projector.HarmonicCell_Pk(c, 1, vvf, vc);
+      projector.HarmonicCell_CR1(c, vvf, vc);
       vc[0].ChangeOrigin(mesh1->cell_centroid(c));
       vc[0](0, 0) = mass1_c / mesh1->cell_volume(c);
 
@@ -558,11 +559,11 @@ TEST(REMAP3D_DG0_DUAL_VEM) {
 
 /*
 TEST(REMAP2D_DG1_QUADRATURE_ERROR) {
-  RemapTestsDual(2, 1, 2, "VEM", 16, 16, 0.05);
-  RemapTestsDual(2, 1, 2, "VEM", 16 *  2, 16 *  2, 0.05 / q);
-  RemapTestsDual(2, 1, 2, "VEM", 16 *  4, 16 *  4, 0.05 / std::pow(q, 2.0));
-  RemapTestsDual(2, 1, 2, "VEM", 16 *  8, 16 *  8, 0.05 / std::pow(q, 3.0));
-  RemapTestsDual(2, 1, 2, "VEM", 16 * 16, 16 * 16, 0.05 / std::pow(q, 4.0));
-  RemapTestsDual(2, 1, 2, "VEM", 16 * 32, 16 * 32, 0.05 / std::pow(q, 5.0));
+  RemapTestsDual(2, 1, 1, "VEM", 16, 16, 0.05);
+  RemapTestsDual(2, 1, 1, "VEM", 16 *  2, 16 *  2, 0.05 / q);
+  RemapTestsDual(2, 1, 1, "VEM", 16 *  4, 16 *  4, 0.05 / std::pow(q, 2.0));
+  RemapTestsDual(2, 1, 1, "VEM", 16 *  8, 16 *  8, 0.05 / std::pow(q, 3.0));
+  RemapTestsDual(2, 1, 1, "VEM", 16 * 16, 16 * 16, 0.05 / std::pow(q, 4.0));
+  RemapTestsDual(2, 2, 2, "VEM", 16 * 32, 16 * 32, 0.05 / std::pow(q, 5.0));
 }
 */

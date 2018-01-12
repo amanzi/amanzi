@@ -36,6 +36,7 @@ int MFD3D_Lagrange::H1consistencyHO(
     DenseMatrix& N, DenseMatrix& R, DenseMatrix& G, DenseMatrix& Ac)
 {
   ASSERT(d_ == 2);  // FIXME
+  ASSERT(order < 3);
 
   Entity_ID_List nodes, faces;
   std::vector<int> dirs;
@@ -94,6 +95,13 @@ int MFD3D_Lagrange::H1consistencyHO(
     int col = it.PolynomialPosition();
     int row(nnodes);
 
+    AmanziGeometry::Point xv(d_);
+    for (int i = 0; i < nnodes; i++) {
+      int v = nodes[i];
+      mesh_->node_get_coordinates(v, &xv);
+      N(i, col) = cmono.Value(xv);
+    }
+
     for (int i = 0; i < nfaces; i++) {
       int f = faces[i];
       const AmanziGeometry::Point& xf = mesh_->face_centroid(f); 
@@ -110,22 +118,31 @@ int MFD3D_Lagrange::H1consistencyHO(
       mesh_->face_get_nodes(f, &face_nodes);
       int nfnodes = face_nodes.size();
 
-      if (order == 1) {
+      if (order == 1 && col > 0) {
         for (int j = 0; j < nfnodes; j++) {
           int v = face_nodes[j];
           int pos = FindPosition(v, nodes);
-          R(pos, col) += normal[col] * dirs[i] / 2;
+          R(pos, col) += normal[col - 1] * dirs[i] / 2;
         }
-      } else {
+      } else if (order == 2) {
         Polynomial tmp = grad * normal;
-        tmp.ChangeCoordinates(xf, tau);
 
-        for (auto jt = tmp.begin(); jt.end() <= tmp.end(); ++jt) {
-          int m = jt.MonomialOrder();
-          int k = jt.MonomialPosition();
-          int n = jt.PolynomialPosition();
-          R(row + n, col) = tmp(m, k);
-        }
+        // Simpson rule with 3 points
+        int v = face_nodes[0];
+        int pos0 = FindPosition(v, nodes);
+        mesh_->node_get_coordinates(v, &xv);
+        double q0 = tmp.Value(xv);
+
+        v = face_nodes[1];
+        int pos1 = FindPosition(v, nodes);
+        mesh_->node_get_coordinates(v, &xv);
+        double q1 = tmp.Value(xv);
+
+        double qmid = tmp.Value(mesh_->face_centroid(f));
+
+        R(pos0, col) += (q0 - qmid) / 6;
+        R(pos1, col) += (q1 - qmid) / 6;
+        R(row,  col) = qmid;
 
         for (auto jt = pf.begin(); jt.end() <= pf.end(); ++jt) {
           const int* jndex = jt.multi_index();

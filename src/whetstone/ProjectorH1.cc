@@ -306,6 +306,7 @@ void ProjectorH1::HarmonicCell_Pk(
   MFD3D_Lagrange mfd(mesh_);
 
   T(0, 0) = 1.0;
+  // mfd.ModifyStabilityScalingFactor(1.02);
   mfd.StiffnessMatrixHO(c, order, T, R, Gpoly, A);  
 
   // number of degrees of freedom
@@ -329,8 +330,9 @@ void ProjectorH1::HarmonicCell_Pk(
   }
   
   // create zero vector polynomial
-  uc.resize(d_);
-  for (int i = 0; i < d_; ++i) { 
+  int dim = vf[0].size();
+  uc.resize(dim);
+  for (int i = 0; i < dim; ++i) { 
     uc[i].Reshape(d_, order, true);
   }
 
@@ -342,7 +344,7 @@ void ProjectorH1::HarmonicCell_Pk(
   AmanziGeometry::Point xv(d_);
   std::vector<AmanziGeometry::Point> tau(d_ - 1);
 
-  for (int i = 0; i < d_; ++i) {
+  for (int i = 0; i < dim; ++i) {
     int row(nnodes);
 
     for (int n = 0; n < nfaces; ++n) {
