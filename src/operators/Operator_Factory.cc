@@ -11,7 +11,7 @@
 
 /*!
 
- */
+*/
 
 
 #include "UniqueHelpers.hh"
@@ -60,6 +60,5 @@ Operator_Factory::Create() {
   }
 }
 
-
-} // namespace Operators
-} // namespace Amanzi
+}  // namespace Operators
+}  // namespace Amanzi

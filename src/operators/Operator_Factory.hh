@@ -11,7 +11,7 @@
 
 /*!
 
- */
+*/
 
 #ifndef AMANZI_OPERATOR_FACTORY_HH_
 #define AMANZI_OPERATOR_FACTORY_HH_
@@ -24,7 +24,7 @@ namespace Operators {
 
 class Operator_Factory {
  public:
-  Operator_Factory() {}
+  Operator_Factory() {};
 
   void set_mesh(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) { mesh_ = mesh; }
   void set_cvs(const CompositeVectorSpace& cvs) {
@@ -55,12 +55,10 @@ class Operator_Factory {
   Schema schema_row_, schema_col_;
 
   Teuchos::RCP<Teuchos::ParameterList> plist_;
-
 };
 
-
-} // namespace Operators
-} // namespace Amanzi
+}  // namespace Operators
+}  // namespace Amanzi
 
 
 #endif

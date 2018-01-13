@@ -19,7 +19,7 @@ namespace Operators {
 
 class BCs_Factory {
  public:
-  BCs_Factory() {}
+  BCs_Factory() {};
 
   void set_mesh(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) { mesh_ = mesh; }
   void set_kind(AmanziMesh::Entity_kind kind) { kind_ = kind; }
