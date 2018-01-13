@@ -28,8 +28,9 @@ namespace WhetStone {
 void MeshMaps_VEM::VelocityCell(
     int c, const std::vector<VectorPolynomial>& vf, VectorPolynomial& vc) const
 {
-  // LeastSquareProjector_Cell_(order_, c, vf, vc);
   auto moments = std::make_shared<DenseVector>();
+
+  // LeastSquareProjector_Cell_(order_, c, vf, vc);
   if (order_ == 1 && d_ == 3) {
     projector.HarmonicCell_CR1(c, vf, vc);
   } else if (order_ < 2) {
@@ -37,7 +38,7 @@ void MeshMaps_VEM::VelocityCell(
     // projector.HarmonicCell_CR1(c, vf, vc);
   } else {
     projector.HarmonicCell_Pk(c, order_, vf, moments, vc);
-    // projector.HarmonicCell_CRk(c, order_, vf, vc);
+    // projector.HarmonicCell_CRk(c, order_, vf, moments, vc);
   }
 }
 

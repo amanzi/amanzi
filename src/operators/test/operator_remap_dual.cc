@@ -455,8 +455,6 @@ void RemapTestsDual(int dim, int order_p, int order_u,
           vf[0](0, 0) = (f0 + f1) / 2; 
           vf[0](1, 0) = f1 - f0; 
         } else if (order_p == 2) {
-          vf[0](0, 0) = (f0 + f1) / 2; 
-          vf[0](1, 0) = f1 - f0; 
           double f2 = poly.Value((v0 + v1) / 2);
           vf[0](0, 0) = f2;
           vf[0](1, 0) = f1 - f0;
@@ -482,9 +480,11 @@ void RemapTestsDual(int dim, int order_p, int order_u,
 
       WhetStone::ProjectorH1 projector(mesh1);
       projector.EllipticCell_Pk(c, order_p, vvf, moments, vc);
-
       vc[0].ChangeOrigin(mesh1->cell_centroid(c));
-      vc[0](0, 0) = mass1_c / mesh1->cell_volume(c);
+
+      if (order_p == 1) {
+        vc[0](0, 0) = mass1_c / mesh1->cell_volume(c);
+      }
 
       // error in the projected solution vc[0]
       mesh0->cell_get_nodes(c, &nodes);

@@ -45,16 +45,26 @@ class ProjectorH1 {
   void HarmonicCell_CR1(
       int c, const std::vector<VectorPolynomial>& vf, VectorPolynomial& uc) const;
 
-  void HarmonicCell_CRk(
-      int c, int order,
-      const std::vector<VectorPolynomial>& vf, VectorPolynomial& uc) const;
-
   void HarmonicFace_CR1(
       int f, const AmanziGeometry::Point& p0,
       const std::vector<VectorPolynomial>& ve, VectorPolynomial& uf) const;
 
+  // -- elliptic projector requires cell-moments on input
+  void EllipticCell_CRk(
+      int c, int order, const std::vector<VectorPolynomial>& vf,
+      const std::shared_ptr<DenseVector>& moments, VectorPolynomial& uc) const {
+    GenericCell_CRk_(c, order, vf, ELLIPTIC, moments, uc);
+  }
+
+  // -- harmonic projector calculates and returns cell-moments
+  void HarmonicCell_CRk(
+      int c, int order, const std::vector<VectorPolynomial>& vf,
+      const std::shared_ptr<DenseVector>& moments, VectorPolynomial& uc) const {
+    GenericCell_CRk_(c, order, vf, HARMONIC, moments, uc);
+  }
+
   // energy-based projectors for conforming virtual space
-  // -- elliptic projector requires cell-moments of function
+  // -- elliptic projector requires cell-moments on input
   void EllipticCell_Pk(
       int c, int order, const std::vector<VectorPolynomial>& vf,
       const std::shared_ptr<DenseVector>& moments, VectorPolynomial& uc) const {
@@ -69,6 +79,11 @@ class ProjectorH1 {
   }
 
  private:
+  void GenericCell_CRk_(
+      int c, int order, const std::vector<VectorPolynomial>& vf,
+      ProjectorType type, const std::shared_ptr<DenseVector>& moments,
+      VectorPolynomial& uc) const;
+
   void GenericCell_Pk_(
       int c, int order, const std::vector<VectorPolynomial>& vf,
       ProjectorType type, const std::shared_ptr<DenseVector>& moments,
