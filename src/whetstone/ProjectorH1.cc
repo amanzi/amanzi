@@ -16,6 +16,7 @@
 #include "MFD3D_Lagrange.hh"
 #include "NumericalIntegration.hh"
 #include "ProjectorH1.hh"
+#include "VectorPolynomial.hh"
 
 namespace Amanzi {
 namespace WhetStone {

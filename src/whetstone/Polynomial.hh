@@ -112,10 +112,6 @@ class Iterator {
   const int* multi_index() const { return multi_index_; }
 
  private:
-  void set_dimension(int d) { d_ = d; }
-  friend class Polynomial;
-
- private:
   int k_;  // current monomials order
   int m_;  // current position in the list of monomials
   int multi_index_[3];
@@ -231,7 +227,7 @@ class Polynomial {
   int PolynomialPosition(const int* multi_index) const;
 
   // iterator starts with constant term for correct positioning
-  Iterator& begin() const { return it_.begin(); }
+  Iterator begin() const { Iterator it(d_); return it.begin(); }
   int end() const { return order_; }
 
   // Change of coordinates:
@@ -260,9 +256,6 @@ class Polynomial {
   // special non-member functions
   // -- Laplacian
   Polynomial Laplacian();
-
- protected:
-  mutable Iterator it_; 
 
  private:
   int d_, order_, size_;

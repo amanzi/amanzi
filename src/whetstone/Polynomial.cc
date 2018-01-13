@@ -21,7 +21,7 @@ namespace WhetStone {
 * Constructor of zero polynomial.
 ****************************************************************** */
 Polynomial::Polynomial(int d, int order) : 
-    d_(d), order_(order), it_(d), origin_(d)
+    d_(d), order_(order), origin_(d)
 {
   size_ = 0;
   coefs_.resize(order_ + 1);
@@ -36,7 +36,7 @@ Polynomial::Polynomial(int d, int order) :
 * Constructor of polynomials with a single term.
 ****************************************************************** */
 Polynomial::Polynomial(int d, const int* multi_index) : 
-    d_(d), it_(d), origin_(d)
+    d_(d), origin_(d)
 {
   order_ = 0;
   for (int i = 0; i < d_; ++i) order_ += multi_index[i];
@@ -62,7 +62,6 @@ void Polynomial::Reshape(int d, int order, bool reset)
   if (d_ != d) {
     d_ = d;
     order_ = order;
-    it_.set_dimension(d);
     origin_ = AmanziGeometry::Point(d);
 
     coefs_.clear();

@@ -28,24 +28,26 @@ namespace WhetStone {
 ****************************************************************** */
 int DG_Modal::MassMatrix(int c, const Tensor& K, DenseMatrix& M)
 {
+  double K00 = K(0, 0);
+
   // extend list of integrals of monomials
   UpdateIntegrals_(c, 2 * order_);
   const Polynomial& integrals = integrals_[c];
    
   // copy integrals to mass matrix
   int multi_index[3];
-  Polynomial p(d_, order_), q(d_, order_);
+  Polynomial p(d_, order_);
 
   int nrows = p.size();
   M.Reshape(nrows, nrows);
 
   for (auto it = p.begin(); it.end() <= p.end(); ++it) {
     const int* idx_p = it.multi_index();
-    int k = p.PolynomialPosition(idx_p);
+    int k = it.PolynomialPosition();
 
-    for (auto jt = q.begin(); jt.end() <= q.end(); ++jt) {
+    for (auto jt = it; jt.end() <= p.end(); ++jt) {
       const int* idx_q = jt.multi_index();
-      int l = q.PolynomialPosition(idx_q);
+      int l = jt.PolynomialPosition();
       
       int n(0);
       for (int i = 0; i < d_; ++i) {
@@ -54,7 +56,7 @@ int DG_Modal::MassMatrix(int c, const Tensor& K, DenseMatrix& M)
       }
 
       const auto& coefs = integrals.monomials(n).coefs();
-      M(k, l) = K(0, 0) * coefs[p.MonomialPosition(multi_index)];
+      M(l, k) = M(k, l) = K00 * coefs[p.MonomialPosition(multi_index)];
     }
   }
 
@@ -81,7 +83,7 @@ int DG_Modal::MassMatrixPoly(int c, const Polynomial& K, DenseMatrix& M)
   // sum up integrals to the mass matrix
   int multi_index[3];
   double ak, bk, al, bl;
-  Polynomial p(d_, order_), q(d_, order_);
+  Polynomial p(d_, order_);
 
   int nrows = p.size();
   M.Reshape(nrows, nrows);
@@ -97,9 +99,9 @@ int DG_Modal::MassMatrixPoly(int c, const Polynomial& K, DenseMatrix& M)
       double factor = Kcopy.monomials(mt.end()).coefs()[m];
       if (factor == 0.0) continue;
 
-      for (auto jt = q.begin(); jt.end() <= q.end(); ++jt) {
+      for (auto jt = it; jt.end() <= p.end(); ++jt) {
         const int* idx_q = jt.multi_index();
-        int l = q.PolynomialPosition(idx_q);
+        int l = jt.PolynomialPosition();
 
         int n(0);
         for (int i = 0; i < d_; ++i) {
@@ -110,6 +112,13 @@ int DG_Modal::MassMatrixPoly(int c, const Polynomial& K, DenseMatrix& M)
         const auto& coefs = integrals.monomials(n).coefs();
         M(k, l) += factor * coefs[p.MonomialPosition(multi_index)];
       }
+    }
+  }
+
+  // symmetri part of mass matrix
+  for (int k = 0; k < nrows; ++k) {
+    for (int l = k + 1; l < nrows; ++l) {
+      M(l, k) = M(k, l); 
     }
   }
 

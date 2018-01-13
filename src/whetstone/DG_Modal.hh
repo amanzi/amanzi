@@ -23,7 +23,6 @@
 #include "BilinearForm.hh"
 #include "DenseMatrix.hh"
 #include "NumericalIntegration.hh"
-#include "Polynomial.hh"
 #include "Tensor.hh"
 #include "VectorPolynomial.hh"
 #include "WhetStoneDefs.hh"
@@ -31,6 +30,8 @@
 
 namespace Amanzi {
 namespace WhetStone {
+
+class Polynomial;
 
 class DG_Modal : public BilinearForm {
  public:

@@ -22,11 +22,12 @@
 
 #include "DenseMatrix.hh"
 #include "Tensor.hh"
-#include "VectorPolynomial.hh"
 #include "WhetStone_typedefs.hh"
 
 namespace Amanzi {
 namespace WhetStone {
+
+class VectorPolynomial;
 
 class ProjectorH1 { 
  public:
