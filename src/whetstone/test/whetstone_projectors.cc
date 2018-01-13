@@ -387,6 +387,34 @@ TEST(HARMONIC_PROJECTORS_POLYGON_CR) {
   CHECK_CLOSE(val1, 0.0, 1e-12);
   CHECK_CLOSE(valx, 0.0, 1e-12);
 
+  // preservation of moments (reusing previous boundary functions)
+  std::cout << "\nTest: HO nonconforming projectors for pentagon (verify moments)" << std::endl;
+  for (int k = 2; k < 4; ++k) {
+    Polynomial vc(2, k - 2);
+    int nk = vc.size();
+
+    moments->Reshape(nk);
+    for (int i = 0; i < nk; ++i) {
+      (*moments)(i) = 1.0 + i;
+    }
+
+    projector.EllipticCell_CRk(cell, k, vf, moments, uc);
+
+    for (auto it = vc.begin(); it.end() <= vc.end(); ++it) {
+      Polynomial mono(2, it.multi_index());
+      mono.set_origin(mesh->cell_centroid(cell));
+   
+      Polynomial poly(uc[0]);
+      poly.ChangeOrigin(mesh->cell_centroid(cell));
+      poly *= mono;
+
+      double val = numi.IntegratePolynomialCell(cell, poly) / mesh->cell_volume(cell);
+      int n = it.PolynomialPosition();
+      if (n == 0) CHECK_CLOSE(1.0, val, 1e-12);
+      if (n >= 1) CHECK(fabs(val - (1.0 + n)) > 0.05);
+    }
+  }
+
   delete comm;
 }
 
@@ -594,6 +622,13 @@ TEST(HARMONIC_PROJECTORS_POLYGON_PK) {
     if (k == 1) CHECK(uc2[0].NormMax() < 1e-12);
     if (k == 2) CHECK(uc2[0].NormMax() > 1e-3 && uc2[0].NormMax() < 2e-3);
   }
+
+  // preservation of moments (reusing previous boundary functions)
+  std::cout << "\nTest: HO Lagrange projectors for pentagon (verify moments)" << std::endl;
+  (*moments)(0) = 1.0;
+  projector.EllipticCell_Pk(cell, 2, vf, moments, uc);
+  double tmp = numi.IntegratePolynomialCell(cell, uc[0]) / mesh->cell_volume(cell);
+  CHECK_CLOSE(1.0, tmp, 1e-12);
 
   delete comm;
 }
