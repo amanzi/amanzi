@@ -87,6 +87,7 @@ Entity_kind entity_kind(const std::string& instring)
   }
 }
 
+// string from entity kind
 inline
 std::string entity_kind_string(Entity_kind kind)
 {
@@ -100,7 +101,6 @@ std::string entity_kind_string(Entity_kind kind)
   }      
 }
   
-
 
 // Parallel status of entity 
     

@@ -154,7 +154,29 @@ class PDE_Diffusion : public PDE_HelperDiscretization {
   Teuchos::RCP<Op> jacobian_matrices() { return jac_op_; }
   int schema_jacobian() { return jac_op_schema_; }
 
-  int little_k() { return little_k_; }
+  int little_k() const { return little_k_; }
+  CompositeVectorSpace little_k_space() const {
+    CompositeVectorSpace out;
+    out.SetMesh(mesh_);
+    out.SetGhosted();
+    if (little_k_ == OPERATOR_LITTLE_K_NONE) {
+      return out;
+    }
+    if (little_k_ != OPERATOR_LITTLE_K_UPWIND) {
+      out.AddComponent("cell", AmanziMesh::CELL, 1);
+    }
+    if (little_k_ != OPERATOR_LITTLE_K_STANDARD) {
+      out.AddComponent("face", AmanziMesh::FACE, 1);
+    }
+    if (little_k_ == OPERATOR_LITTLE_K_DIVK_TWIN || 
+        little_k_ == OPERATOR_LITTLE_K_DIVK_TWIN_GRAD) {
+      out.AddComponent("twin", AmanziMesh::FACE, 1);
+    }
+    if (little_k_ == OPERATOR_LITTLE_K_DIVK_TWIN_GRAD) {
+      out.AddComponent("grad", AmanziMesh::CELL, mesh_->space_dimension());
+    }
+    return out;          
+  }
   
  protected:
   Teuchos::RCP<const std::vector<WhetStone::Tensor> > K_;
