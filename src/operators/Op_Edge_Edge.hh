@@ -21,7 +21,7 @@ namespace Operators {
 
 class Op_Edge_Edge : public Op {
  public:
-  Op_Edge_Edge(std::string& name,
+  Op_Edge_Edge(const std::string& name,
                const Teuchos::RCP<const AmanziMesh::Mesh> mesh) :
       Op(OPERATOR_SCHEMA_BASE_EDGE |
          OPERATOR_SCHEMA_DOFS_EDGE, name, mesh) {

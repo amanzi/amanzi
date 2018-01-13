@@ -1,3 +1,4 @@
+/* -*-  mode: c++; indent-tabs-mode: nil -*- */
 /* -------------------------------------------------------------------------
   ATS
 
@@ -15,7 +16,8 @@ namespace Amanzi {
 // Controls initialization in copy constructor.
 typedef enum { INIT_MODE_NONE,
                INIT_MODE_ZERO,
-               INIT_MODE_COPY } InitMode;
+               INIT_MODE_COPY,
+               INIT_MODE_NOALLOC} InitMode;
 
 } // namespace Amanzi
 

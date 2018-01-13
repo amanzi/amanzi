@@ -45,7 +45,7 @@ class Operator;
 
 class Op {
  public:
-  Op(int schema, std::string& schema_string_,
+  Op(int schema, const std::string& schema_string_,
      const Teuchos::RCP<const AmanziMesh::Mesh> mesh) :
       schema_old_(schema),
       schema_row_(schema),

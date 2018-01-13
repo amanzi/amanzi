@@ -240,6 +240,7 @@ class Operator {
   Teuchos::RCP<const Epetra_CrsMatrix> A() const { return A_; }
   Teuchos::RCP<CompositeVector> rhs() { return rhs_; }
   Teuchos::RCP<const CompositeVector> rhs() const { return rhs_; }
+  void set_rhs(const Teuchos::RCP<CompositeVector>& rhs) { rhs_ = rhs; }
 
   int apply_calls() { return apply_calls_; }
 
