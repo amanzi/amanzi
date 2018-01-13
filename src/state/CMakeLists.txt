@@ -224,5 +224,11 @@ if (BUILD_TESTS)
       LINK_LIBS state mesh_factory mesh data_structures mesh_functions functions operators ${UnitTest_LIBRARIES})
 
 
+    add_amanzi_test(state_evaluators_op_improved state_evaluators_op_improved
+      KIND int
+      SOURCE test/Main.cc test/state_evaluators_op_improved.cc
+      LINK_LIBS state mesh_factory mesh data_structures mesh_functions functions operators ${UnitTest_LIBRARIES})
+
+
 endif()
 

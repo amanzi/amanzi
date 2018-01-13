@@ -34,6 +34,7 @@ class Evaluator_OperatorApply :
     return Teuchos::rcp(new Evaluator_OperatorApply(*this));
   }
 
+  void EnsureCompatibility(State& S) override;
 
  protected:
   
@@ -47,7 +48,10 @@ class Evaluator_OperatorApply :
   Key rhs_key_;
   Key operator_key_;
   Key x_key_;
-
+  std::vector<Key> local_op_keys_;
+  
+  bool is_square_;
+  
  private:
   static Utils::RegisteredFactory<Evaluator,Evaluator_OperatorApply> fac_;
   

@@ -16,6 +16,7 @@
 */
 
 #include "Evaluator_OperatorApply.hh"
+#include "Op_Factory.hh"
 #include "Operator.hh"
 #include "Operator_Factory.hh"
 
@@ -23,6 +24,7 @@ namespace Amanzi {
 
 Evaluator_OperatorApply::Evaluator_OperatorApply(Teuchos::ParameterList& plist) :
     EvaluatorSecondary<CompositeVector,CompositeVectorSpace>(plist) {
+  // can this be cleaned up? --etc
   // assumes domain-residual_XXX, get the XXX
   Key var_name = Keys::getVarName(my_key_);
   Key operator_name;
@@ -32,21 +34,95 @@ Evaluator_OperatorApply::Evaluator_OperatorApply(Teuchos::ParameterList& plist) 
   rhs_key_ = Keys::readKey(plist, domain_name, "rhs", Key("rhs_")+operator_name);
   x_key_ = Keys::readKey(plist, domain_name, "x", Key("x_")+operator_name);
 
-  std::vector<std::string> local_op_keys;
   if (plist.isParameter("local operator keys")) {
-    local_op_keys = plist.get<Teuchos::Array<std::string>>("local operator keys").toVector();
+    local_op_keys_ = plist.get<Teuchos::Array<std::string>>("local operator keys").toVector();
   } else {
     auto local_op_suffixes = plist.get<Teuchos::Array<std::string>>("local operator suffixes");
     for (const auto& suffix : local_op_suffixes) {
-      local_op_keys.emplace_back(Keys::getKey(domain_name, suffix));
+      local_op_keys_.emplace_back(Keys::getKey(domain_name, suffix));
     }
   }
 
+  // push dependencies
   dependencies_.emplace_back(std::make_pair(rhs_key_, my_tag_));
   dependencies_.emplace_back(std::make_pair(x_key_, my_tag_));
-  for (const auto& dep : local_op_keys) {
+  for (const auto& dep : local_op_keys_) {
     dependencies_.emplace_back(std::make_pair(dep, my_tag_));
   }
+
+  // is domain_map same as range_map?
+  is_square_ = plist.get<bool>("square", true);
+}
+
+void
+Evaluator_OperatorApply::EnsureCompatibility(State& S)
+{
+  // call base class's to get my requirements set
+  EvaluatorSecondary<CompositeVector,CompositeVectorSpace>::EnsureCompatibility(S);
+
+  // set requirements on my dependencies
+  //
+  // NOTE: this process is a bit wierd.  We know the Mesh of the residual,
+  // from the PK, but we don't necessarily know the CVS of the primary
+  // variable, since it depends upon the discretization of the Diffusion
+  // operator.  This leads us to the following odd setup:
+  //
+  // 1. PK sets my mesh
+  // 2. Push my mesh into the RHS
+  // 3. EnsureCompatibility() on the operator -- this sucks in the Mesh from
+  //    the RHS, reads the discretization from the PList it gets, and finishes
+  //    setting the CVS of the Operator and RHS.
+  // 4. Now we know the schema of the RHS, use it to set the RHS of the
+  //    primary variable and the residual.
+  auto& dep_fac = S.Require<CompositeVector,CompositeVectorSpace>(my_key_, my_tag_);
+  if (dep_fac.Mesh() != Teuchos::null) {
+    // -- set the rhs's mesh
+    {
+      auto& rhs_fac = S.Require<CompositeVector,CompositeVectorSpace>(rhs_key_, my_tag_);
+      rhs_fac.Update(dep_fac);
+    }
+    
+    // -- call ensure compatibility of all dependencies, propagating info, and in
+    //    the case of local ops and rhs, setting their schema
+    for (auto& dep : dependencies_) {
+      S.RequireEvaluator(dep.first, dep.second)->EnsureCompatibility(S);
+    }
+
+    // -- re-get the rhs face, which now includes schema info
+    // copy intentional
+    auto rhs_fac = S.Require<CompositeVector,CompositeVectorSpace>(rhs_key_, my_tag_);
+    rhs_fac.SetOwned(false);
+    
+    if (is_square_) {
+      // -- x schema is the same map as mine
+      auto& x_fac = S.Require<CompositeVector,CompositeVectorSpace>(x_key_, my_tag_);
+      x_fac.Update(rhs_fac);
+    }
+
+    // update my schema
+    S.Require<CompositeVector,CompositeVectorSpace>(my_key_, my_tag_, my_key_)
+        .Update(rhs_fac);
+    
+    // -- Now we can check the domain and range
+    // -- range space of operator is a subset of mine
+    // THIS SHOULD BE UNNECESSARY, as we got the schema from diffusion.  Idiot check!
+    for (const auto& op : local_op_keys_) {
+      auto& op_fac = S.Require<Operators::Op, Operators::Op_Factory>(op, my_tag_);
+      if (!Operators::cvsFromSchema(op_fac.schema_col(), op_fac.mesh()).SubsetOf(rhs_fac)) {
+        Errors::Message message;
+        message << "Evaluator_OperatorApply for " << my_key_ << ": Op " << op << " column schema is not a subset of my schema.";
+        throw(message);
+      }
+
+      if (is_square_) {
+        if (!Operators::cvsFromSchema(op_fac.schema_row(), op_fac.mesh()).SubsetOf(rhs_fac)) {
+          Errors::Message message;
+          message << "Evaluator_OperatorApply for " << my_key_ << ": Op " << op << " row schema is not a subset of my schema.";
+          throw(message);
+        }
+      }
+    }
+  }  
 }
 
   
@@ -64,7 +140,6 @@ Evaluator_OperatorApply::Evaluate_(const State& S, CompositeVector& result)
   auto global_op = global_op_fac.Create();
 
   // do the apply
-  //  x.Print(std::cout);
   x.ScatterMasterToGhosted();
   result.PutScalarMasterAndGhosted(0.);
 
@@ -75,9 +150,17 @@ Evaluator_OperatorApply::Evaluate_(const State& S, CompositeVector& result)
     std::cout << "dependency = " << op_itr->first << std::endl;
     S.Get<Operators::Op>(op_itr->first, op_itr->second).ApplyMatrixFreeOp(&*global_op, x, result);
   }
-
+  // std::cout << "x =" << std::endl;
+  // x.Print(std::cout);
+  // std::cout << "A*x =" << std::endl;
+  // result.Print(std::cout);
+  // std::cout << "b =" << std::endl;
+  // b.Print(std::cout);
+  
   //  result.Print(std::cout);
   result.Update(1.0, b, -1.0);
+  // std::cout << "b-A*x =" << std::endl;
+  // result.Print(std::cout);
 }
   
 // No derivative

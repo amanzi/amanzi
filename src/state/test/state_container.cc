@@ -144,9 +144,10 @@ TEST(STATE_VIRTUAL_DATA) {
   s.RegisterDomainMesh(mesh);
 
   // require some data
-  auto& f = s.Require<Operators::Op, Operators::Op_Factory<Operators::Op_Cell_Cell>>("my_op", "", "my_op_owner");
+  auto& f = s.Require<Operators::Op, Operators::Op_Factory>("my_op", "", "my_op_owner");
   f.set_mesh(mesh);
   f.set_name("cell");
+  f.set_schema(Operators::Schema{Operators::OPERATOR_SCHEMA_BASE_CELL | Operators::OPERATOR_SCHEMA_DOFS_CELL});
 
   s.Setup();
 
