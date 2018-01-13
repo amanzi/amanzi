@@ -105,8 +105,8 @@ TEST(HIGH_ORDER_LAGRANGE) {
   MeshFactory meshfactory(comm);
   meshfactory.preference(FrameworkPreference({MSTK}));
   Teuchos::RCP<const Amanzi::AmanziGeometry::GeometricModel> gm;
-  Teuchos::RCP<Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 1, 1, gm, true, true); 
-  // Teuchos::RCP<Mesh> mesh = meshfactory("test/one_pentagon.exo", gm, true, true); 
+  // Teuchos::RCP<Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 1, 1, gm, true, true); 
+  Teuchos::RCP<Mesh> mesh = meshfactory("test/one_pentagon.exo", gm, true, true); 
  
   MFD3D_Diffusion mfd_lo(mesh);
   MFD3D_Lagrange mfd_ho(mesh);
@@ -414,6 +414,7 @@ TEST(HARMONIC_PROJECTORS_SQUARE_PK) {
   }
 
   ProjectorH1 projector(mesh);
+  auto moments = std::make_shared<WhetStone::DenseVector>();
 
   // test linear deformation
   for (int n = 0; n < 4; ++n) {
@@ -425,7 +426,7 @@ TEST(HARMONIC_PROJECTORS_SQUARE_PK) {
   }
   
   for (int k = 1; k < 4; ++k) {
-    projector.HarmonicCell_Pk(cell, k, vf, uc);  
+    projector.HarmonicCell_Pk(cell, k, vf, moments, uc);  
     for (int i = 0; i < 2; ++i) {
       uc[i] -= vf[0][i];
       CHECK(uc[i].NormMax() < 1e-12);
@@ -443,7 +444,7 @@ TEST(HARMONIC_PROJECTORS_SQUARE_PK) {
   vf[2][1](1, 0) = 1.9 / 1.2; 
 
   for (int k = 1; k < 3; ++k) { 
-    projector.HarmonicCell_Pk(cell, k, vf, uc);  
+    projector.HarmonicCell_Pk(cell, k, vf, moments, uc);  
     projector.HarmonicCell_CRk(cell, k, vf, uc2);
     for (int i = 0; i < 2; ++i) {
       uc2[i] -= uc[i];
@@ -478,6 +479,7 @@ TEST(HARMONIC_PROJECTORS_POLYGON_PK) {
   std::vector<VectorPolynomial> vf(nfaces);
 
   ProjectorH1 projector(mesh);
+  auto moments = std::make_shared<WhetStone::DenseVector>();
 
   // test globally linear deformation
   for (int n = 0; n < nfaces; ++n) {
@@ -491,7 +493,7 @@ TEST(HARMONIC_PROJECTORS_POLYGON_PK) {
   }
   
   for (int k = 1; k < 4; ++k) {
-    projector.HarmonicCell_Pk(cell, k, vf, uc);
+    projector.HarmonicCell_Pk(cell, k, vf, moments, uc);
     std::cout << uc[0] << std::endl;
 
     uc[0] -= vf[0][0];
@@ -510,8 +512,8 @@ TEST(HARMONIC_PROJECTORS_POLYGON_PK) {
     }
   }
 
-  for (int k = 2; k < 3; ++k) {
-    projector.HarmonicCell_Pk(cell, k, vf, uc);
+  for (int k = 2; k < 4; ++k) {
+    projector.HarmonicCell_Pk(cell, k, vf, moments, uc);
     std::cout << uc[0] << std::endl;
     uc[0] -= vf[0][0];
     uc[1] -= vf[0][1];
@@ -528,7 +530,7 @@ TEST(HARMONIC_PROJECTORS_POLYGON_PK) {
       vf[n][i](2, 2) = 6.0;
     }
   }
-  projector.HarmonicCell_Pk(cell, 2, vf, uc);
+  projector.HarmonicCell_Pk(cell, 2, vf, moments, uc);
   std::cout << uc[0] << std::endl;
 
   int dir;
@@ -582,7 +584,7 @@ TEST(HARMONIC_PROJECTORS_POLYGON_PK) {
   }
   
   for (int k = 1; k < 3; ++k) {
-    projector.HarmonicCell_Pk(cell, k, vf, uc);
+    projector.HarmonicCell_Pk(cell, k, vf, moments, uc);
     projector.HarmonicCell_CRk(cell, k, vf, uc2);
     uc2 -= uc;
     if (k == 1) CHECK(uc2[0].NormMax() < 1e-12);

@@ -150,15 +150,17 @@ int MFD3D_Lagrange::H1consistencyHO(
         } else if (order == 3) {
           // Gauss-Legendre quadrature rule with 3 points
           int m(2); 
-          Polynomial poly0(1, 2), poly1(1, 2), poly2(1, 2), poly3(1, 3);
+          Polynomial poly0(1, 3), poly1(1, 3), poly2(1, 2), poly3(1, 3);
 
           poly0(0, 0) = -0.25;
-          poly0(1, 0) = -1.0;
+          poly0(1, 0) = 1.5;
           poly0(2, 0) = 3.0;
+          poly0(3, 0) = -10.0;
 
           poly1(0, 0) = -0.25;
-          poly1(1, 0) = 1.0;
+          poly1(1, 0) = -1.5;
           poly1(2, 0) = 3.0;
+          poly1(3, 0) = 10.0;
 
           poly2(0, 0) = 1.5;
           poly2(1, 0) = 0.0;
@@ -177,8 +179,8 @@ int MFD3D_Lagrange::H1consistencyHO(
             R(pos0, col) += poly0.Value(sm) * factor;
             R(pos1, col) += poly1.Value(sm) * factor;
 
-            R(row, col) = poly2.Value(sm) * factor;
-            R(row + 1, col) = poly3.Value(sm) * factor;
+            R(row, col) += poly2.Value(sm) * factor;
+            R(row + 1, col) += poly3.Value(sm) * factor;
           }
         }
       }

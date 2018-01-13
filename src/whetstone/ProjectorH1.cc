@@ -283,9 +283,10 @@ void ProjectorH1::HarmonicCell_CRk(
 * Energy projector on space of polynomials of order k in cell c.
 * Uniqueness require to specify its value at cell centroid.
 ****************************************************************** */
-void ProjectorH1::HarmonicCell_Pk(
-    int c, int order,
-    const std::vector<VectorPolynomial>& vf, VectorPolynomial& uc) const
+void ProjectorH1::GenericCell_Pk_(
+    int c, int order, const std::vector<VectorPolynomial>& vf, 
+    ProjectorType type, const std::shared_ptr<DenseVector>& moments,
+    VectorPolynomial& uc) const
 {
   ASSERT(d_ == 2);
 
@@ -389,7 +390,7 @@ void ProjectorH1::HarmonicCell_Pk(
     }
 
     // harmonic extension inside cell
-    if (ndof_c > 0) {
+    if (ndof_c > 0 && type == HARMONIC) {
       DenseVector v1(ndof_f), v2(ndof_c), v3(ndof_c);
 
       for (int n = 0; n < ndof_f; ++n) {
@@ -399,8 +400,16 @@ void ProjectorH1::HarmonicCell_Pk(
       Acf.Multiply(v1, v2, false);
       Acc.Multiply(v2, v3, false);
 
+      moments->Reshape(ndof_c);
       for (int n = 0; n < ndof_c; ++n) {
         vdof(row + n) = -v3(n);
+        (*moments)(n) = -v3(n);
+      }
+    }
+    else if (ndof_c > 0 && type == ELLIPTIC) {
+      ASSERT(ndof_c == moments->NumRows());
+      for (int n = 0; n < ndof_c; ++n) {
+        vdof(row + n) = (*moments)(n);
       }
     }
 

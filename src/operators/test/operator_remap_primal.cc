@@ -317,7 +317,7 @@ void RemapTests2DPrimal(int order, std::string disc_name,
 
   // error tests
   pl2_err = std::pow(pl2_err, 0.5);
-  CHECK(pl2_err < 0.08 / (order + 1));
+  if (MyPID == 0) CHECK(pl2_err < 0.08 / (order + 1));
 
   if (MyPID == 0) {
     printf("L2(p0)=%12.8g  Inf(p0)=%12.8g  dMass=%12.8g  Err(area)=%12.8g\n", 

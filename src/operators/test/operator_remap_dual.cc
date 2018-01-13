@@ -429,8 +429,8 @@ void RemapTestsDual(int dim, int order_p, int order_u,
     double mass1_c = numi.IntegratePolynomialCell(c, poly);
     mass1 += mass1_c;
 
-    // optional projection on the space of linear functions
-    if (order_p == 1 && dim == 2) {
+    // optional projection on the space of polynomials 
+    if (order_p > 0 && dim == 2) {
       poly = dg.CalculatePolynomial(c, data);
 
       mesh0->cell_get_faces_and_dirs(c, &faces, &dirs);
@@ -449,13 +449,24 @@ void RemapTestsDual(int dim, int order_p, int order_u,
         double f0 = poly.Value(v0);
         double f1 = poly.Value(v1);
 
+        WhetStone::VectorPolynomial vf(dim - 1, 1);
+        vf[0].Reshape(dim - 1, order_p);
+        if (order_p == 1) {
+          vf[0](0, 0) = (f0 + f1) / 2; 
+          vf[0](1, 0) = f1 - f0; 
+        } else if (order_p == 2) {
+          vf[0](0, 0) = (f0 + f1) / 2; 
+          vf[0](1, 0) = f1 - f0; 
+          double f2 = poly.Value((v0 + v1) / 2);
+          vf[0](0, 0) = f2;
+          vf[0](1, 0) = f1 - f0;
+          vf[0](2, 0) = -4 * f2 + 2 * f0 + 2 * f1;
+        } else {
+          ASSERT(0);
+        }
+
         mesh1->node_get_coordinates(nodes[0], &v0);
         mesh1->node_get_coordinates(nodes[1], &v1);
-
-        WhetStone::VectorPolynomial vf(dim - 1, 1);
-        vf[0].Reshape(dim - 1, 1);
-        vf[0](0, 0) = (f0 + f1) / 2; 
-        vf[0](1, 0) = f1 - f0; 
 
         std::vector<AmanziGeometry::Point> tau;
         tau.push_back(v1 - v0);
@@ -463,8 +474,15 @@ void RemapTestsDual(int dim, int order_p, int order_u,
         vvf.push_back(vf);
       }
 
+      auto moments = std::make_shared<WhetStone::DenseVector>();
+      if (order_p == 2) {
+        moments->Reshape(1);
+        (*moments)(0) = mass1_c / mesh1->cell_volume(c);
+      }
+
       WhetStone::ProjectorH1 projector(mesh1);
-      projector.HarmonicCell_Pk(c, 1, vvf, vc);
+      projector.EllipticCell_Pk(c, order_p, vvf, moments, vc);
+
       vc[0].ChangeOrigin(mesh1->cell_centroid(c));
       vc[0](0, 0) = mass1_c / mesh1->cell_volume(c);
 
@@ -533,6 +551,11 @@ TEST(REMAP2D_DG1_DUAL_FEM) {
 const int N = 1;
 const double q = 2.0;  // 2.82842712474619;
 
+// TEST(REMAP2D_DG1_DUAL_VEM_TMP) {
+//   RemapTestsDual(2, 1, 1, "VEM", 0, 0, 0.05 / N);
+//   RemapTestsDual(2, 1, 2, "VEM", 0, 0, 0.05 / N);
+// }
+
 TEST(REMAP2D_DG0_DUAL_VEM) {
   // RemapTestsDual(2, 0, 1, "VEM", 16 * N, 16 * N, 0.05 / N);
   RemapTestsDual(2, 0, 1, "VEM", 0, 0, 0.05 / N);
@@ -558,11 +581,11 @@ TEST(REMAP3D_DG0_DUAL_VEM) {
 
 /*
 TEST(REMAP2D_DG1_QUADRATURE_ERROR) {
-  RemapTestsDual(2, 1, 1, "VEM", 16, 16, 0.05);
-  RemapTestsDual(2, 1, 1, "VEM", 16 *  2, 16 *  2, 0.05 / q);
-  RemapTestsDual(2, 1, 1, "VEM", 16 *  4, 16 *  4, 0.05 / std::pow(q, 2.0));
-  RemapTestsDual(2, 1, 1, "VEM", 16 *  8, 16 *  8, 0.05 / std::pow(q, 3.0));
-  RemapTestsDual(2, 1, 1, "VEM", 16 * 16, 16 * 16, 0.05 / std::pow(q, 4.0));
-  RemapTestsDual(2, 2, 2, "VEM", 16 * 32, 16 * 32, 0.05 / std::pow(q, 5.0));
+  RemapTestsDual(2, 2, 2, "VEM", 16, 16, 0.05);
+  RemapTestsDual(2, 2, 2, "VEM", 16 *  2, 16 *  2, 0.05 / q);
+  RemapTestsDual(2, 2, 2, "VEM", 16 *  4, 16 *  4, 0.05 / std::pow(q, 2.0));
+  RemapTestsDual(2, 2, 2, "VEM", 16 *  8, 16 *  8, 0.05 / std::pow(q, 3.0));
+  RemapTestsDual(2, 2, 2, "VEM", 16 * 16, 16 * 16, 0.05 / std::pow(q, 4.0));
+  // RemapTestsDual(2, 1, 1, "VEM", 16 * 32, 16 * 32, 0.05 / std::pow(q, 5.0));
 }
 */
