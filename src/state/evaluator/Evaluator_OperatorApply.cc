@@ -143,24 +143,13 @@ Evaluator_OperatorApply::Evaluate_(const State& S, CompositeVector& result)
   x.ScatterMasterToGhosted();
   result.PutScalarMasterAndGhosted(0.);
 
-  std::cout << "dep lengts = " << dependencies_.size();
   auto op_itr = dependencies_.begin();
-  std::cout << "  0th =  " << op_itr->first << std::endl;
   for (std::advance(op_itr, 2); op_itr != dependencies_.end(); ++op_itr) {
-    std::cout << "dependency = " << op_itr->first << std::endl;
     S.Get<Operators::Op>(op_itr->first, op_itr->second).ApplyMatrixFreeOp(&*global_op, x, result);
   }
-  // std::cout << "x =" << std::endl;
-  // x.Print(std::cout);
-  // std::cout << "A*x =" << std::endl;
-  // result.Print(std::cout);
-  // std::cout << "b =" << std::endl;
-  // b.Print(std::cout);
-  
-  //  result.Print(std::cout);
+
+  // b - Ax
   result.Update(1.0, b, -1.0);
-  // std::cout << "b-A*x =" << std::endl;
-  // result.Print(std::cout);
 }
   
 // No derivative
