@@ -38,7 +38,7 @@ struct SchemaItem {
  public:
   AmanziMesh::Entity_kind kind;  // geometric location of DOF
   int type;  // scalar, vector component, derivative, etc.
-  int num;  // number of times it is repeated.
+  Entity_IDint num;  // number of times it is repeated.
 };
 
 

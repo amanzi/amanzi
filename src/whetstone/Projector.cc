@@ -15,7 +15,7 @@
 #include "MFD3D_CrouzeixRaviart.hh"
 #include "MFD3D_Lagrange.hh"
 #include "NumericalIntegration.hh"
-#include "ProjectorH1.hh"
+#include "Projector.hh"
 #include "VectorPolynomial.hh"
 
 namespace Amanzi {
@@ -24,7 +24,7 @@ namespace WhetStone {
 /* ******************************************************************
 * Energy projector on the space of linear polynomials in cell c.
 ****************************************************************** */
-void ProjectorH1::HarmonicCell_CR1(
+void Projector::HarmonicCell_CR1(
     int c, const std::vector<VectorPolynomial>& vf, VectorPolynomial& uc) const
 {
   Entity_ID_List faces;
@@ -90,7 +90,7 @@ void ProjectorH1::HarmonicCell_CR1(
 * Energy projector on space of linear polynomials in face f.
 * Uniqueness requires to specify projector's value at face centroid.
 ****************************************************************** */
-void ProjectorH1::HarmonicFace_CR1(
+void Projector::HarmonicFace_CR1(
     int f, const AmanziGeometry::Point& p0,
     const std::vector<VectorPolynomial>& ve, VectorPolynomial& uf) const
 {
@@ -144,10 +144,10 @@ void ProjectorH1::HarmonicFace_CR1(
 * Energy projector on space of polynomials of order k in cell c.
 * Uniqueness require to specify its value at cell centroid.
 ****************************************************************** */
-void ProjectorH1::GenericCell_CRk_(
+void Projector::GenericCell_CRk_(
     int c, int order, const std::vector<VectorPolynomial>& vf,
-    ProjectorType type, const std::shared_ptr<DenseVector>& moments,
-    VectorPolynomial& uc) const
+    const ProjectorType& type, bool is_harmonic, 
+    const std::shared_ptr<DenseVector>& moments, VectorPolynomial& uc) const
 {
   ASSERT(d_ == 2);
 
@@ -179,7 +179,7 @@ void ProjectorH1::GenericCell_CRk_(
   int ndof_c(ndof - ndof_f);
 
   DenseMatrix Acf, Acc;
-  if (ndof_c > 0 && type == HARMONIC) {
+  if (ndof_c > 0 && is_harmonic) {
     Acf = A.SubMatrix(ndof_f, ndof, 0, ndof_f);
     Acc = A.SubMatrix(ndof_f, ndof, ndof_f, ndof);
     Acc.Inverse();
@@ -226,7 +226,7 @@ void ProjectorH1::GenericCell_CRk_(
     }
 
     // harmonic extension inside cell
-    if (ndof_c > 0 && type == HARMONIC) {
+    if (ndof_c > 0 && is_harmonic) {
       DenseVector v1(ndof_f), v2(ndof_c), v3(ndof_c);
 
       for (int n = 0; n < ndof_f; ++n) {
@@ -242,7 +242,7 @@ void ProjectorH1::GenericCell_CRk_(
         (*moments)(n) = -v3(n);
       }
     }
-    else if (ndof_c > 0 && type == ELLIPTIC) {
+    else if (ndof_c > 0 && !is_harmonic) {
       ASSERT(ndof_c == moments->NumRows());
       for (int n = 0; n < ndof_c; ++n) {
         vdof(row + n) = (*moments)(n);
@@ -293,10 +293,10 @@ void ProjectorH1::GenericCell_CRk_(
 * Energy projector on space of polynomials of order k in cell c.
 * Uniqueness require to specify its value at cell centroid.
 ****************************************************************** */
-void ProjectorH1::GenericCell_Pk_(
+void Projector::GenericCell_Pk_(
     int c, int order, const std::vector<VectorPolynomial>& vf, 
-    ProjectorType type, const std::shared_ptr<DenseVector>& moments,
-    VectorPolynomial& uc) const
+    const ProjectorType& type, bool is_harmonic,
+    const std::shared_ptr<DenseVector>& moments, VectorPolynomial& uc) const
 {
   ASSERT(d_ == 2);
 
@@ -334,8 +334,9 @@ void ProjectorH1::GenericCell_Pk_(
   int ndof_f(nnodes + nfaces * ndf);
   int ndof_c(ndof - ndof_f);
 
+  // auxiliary data for optional calculation of internal moments
   DenseMatrix Acf, Acc;
-  if (ndof_c > 0 && type == HARMONIC) {
+  if (ndof_c > 0 && is_harmonic) {
     Acf = A.SubMatrix(ndof_f, ndof, 0, ndof_f);
     Acc = A.SubMatrix(ndof_f, ndof, ndof_f, ndof);
     Acc.Inverse();
@@ -348,7 +349,6 @@ void ProjectorH1::GenericCell_Pk_(
     uc[i].Reshape(d_, order, true);
   }
 
-  // calculate DOFs for boundary polynomial
   DenseVector vdof(ndof);
   std::vector<const Polynomial*> polys(2);
   NumericalIntegration numi(mesh_);
@@ -359,6 +359,7 @@ void ProjectorH1::GenericCell_Pk_(
   for (int i = 0; i < dim; ++i) {
     int row(nnodes);
 
+    // calculate DOFs on boundary
     for (int n = 0; n < nfaces; ++n) {
       int f = faces[n];
 
@@ -399,8 +400,9 @@ void ProjectorH1::GenericCell_Pk_(
       }
     }
 
-    // harmonic extension inside cell
-    if (ndof_c > 0 && type == HARMONIC) {
+    // calculate DOFs inside cell using
+    // -- either harmonic extension inside cell
+    if (ndof_c > 0 && is_harmonic) {
       DenseVector v1(ndof_f), v2(ndof_c), v3(ndof_c);
 
       for (int n = 0; n < ndof_f; ++n) {
@@ -416,7 +418,8 @@ void ProjectorH1::GenericCell_Pk_(
         (*moments)(n) = -v3(n);
       }
     }
-    else if (ndof_c > 0 && type == ELLIPTIC) {
+    // -- or copy moments from input data
+    else if (ndof_c > 0 && !is_harmonic) {
       ASSERT(ndof_c == moments->NumRows());
       for (int n = 0; n < ndof_c; ++n) {
         vdof(row + n) = (*moments)(n);
@@ -430,8 +433,8 @@ void ProjectorH1::GenericCell_Pk_(
 
     uc[i].SetPolynomialCoefficients(v5);
 
-    // calculate the constant value
-    if (order == 1) {
+    // calculate the constant value for elliptic projector
+    if (type == H1 && order == 1) {
       AmanziGeometry::Point grad(d_), zero(d_);
       for (int j = 0; j < d_; ++j) {
         grad[j] = uc[i](1, j);
@@ -449,7 +452,7 @@ void ProjectorH1::GenericCell_Pk_(
       }
 
       uc[i](0, 0) = a1 / a2;
-    } else if (order >= 2) {
+    } else if (type == H1 && order >= 2) {
       mfd.integrals().GetPolynomialCoefficients(v4);
       v4.Reshape(nd);
       uc[i](0, 0) = vdof(row) - (v4 * v5) / volume;
@@ -459,6 +462,15 @@ void ProjectorH1::GenericCell_Pk_(
     AmanziGeometry::Point zero(d_);
     uc[i].set_origin(xc);
     uc[i].ChangeOrigin(zero);
+
+    // calculate L2 projector
+    if (type == L2) {
+      mfd.StiffnessMatrixHO(c, order, T, R, Gpoly, A);  
+      for (int n = 0; n < ndof_c; ++n) {
+        v4(n) = (*moments)(n);
+      }
+    }
+
   }
 }
 

@@ -24,7 +24,7 @@
 #include "DenseMatrix.hh"
 #include "MeshMaps.hh"
 #include "Polynomial.hh"
-#include "ProjectorH1.hh"
+#include "Projector.hh"
 #include "Tensor.hh"
 #include "WhetStone_typedefs.hh"
 
@@ -69,7 +69,7 @@ class MeshMaps_VEM : public MeshMaps {
 
  private:
   int order_;
-  ProjectorH1 projector;
+  Projector projector;
 };
 
 }  // namespace WhetStone

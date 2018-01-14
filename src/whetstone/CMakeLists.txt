@@ -53,7 +53,7 @@ add_amanzi_library(whetstone
                           NumericalIntegration.cc
                           MeshMaps.cc
                           MeshMaps_FEM.cc MeshMaps_VEM.cc
-                          ProjectorH1.cc
+                          Projector.cc
                    HEADERS DenseMatrix.hh DenseVector.hh
                            DG_Modal.hh
                            lapack.hh
@@ -73,7 +73,7 @@ add_amanzi_library(whetstone
                            NumericalIntegration.hh
                            MeshMaps.hh
                            MeshMaps_FEM.hh MeshMaps_VEM.hh
-                           ProjectorH1.hh
+                           Projector.hh
                            WhetStoneDefs.hh
                            WhetStone_typedefs.hh
                    LINK_LIBS geometry mesh error_handling ${Epetra_LIBRARIES})

@@ -29,7 +29,8 @@
 #include "MFD3D_Lagrange.hh"
 #include "NumericalIntegration.hh"
 #include "Tensor.hh"
-#include "ProjectorH1.hh"
+#include "Polynomial.hh"
+#include "Projector.hh"
 
 
 /* **************************************************************** */
@@ -181,7 +182,7 @@ TEST(HARMONIC_PROJECTORS_SQUARE_CR) {
     }
   }
 
-  ProjectorH1 projector(mesh);
+  Projector projector(mesh);
   auto moments = std::make_shared<WhetStone::DenseVector>();
 
   projector.HarmonicCell_CRk(cell, 2, vf, moments, uc);
@@ -290,7 +291,7 @@ TEST(HARMONIC_PROJECTORS_POLYGON_CR) {
   }
   
   // -- old scheme
-  ProjectorH1 projector(mesh);
+  Projector projector(mesh);
   auto moments = std::make_shared<WhetStone::DenseVector>();
 
   projector.HarmonicCell_CR1(cell, vf, uc);
@@ -445,7 +446,7 @@ TEST(HARMONIC_PROJECTORS_SQUARE_PK) {
     }
   }
 
-  ProjectorH1 projector(mesh);
+  Projector projector(mesh);
   auto moments = std::make_shared<WhetStone::DenseVector>();
 
   // test linear deformation
@@ -482,6 +483,17 @@ TEST(HARMONIC_PROJECTORS_SQUARE_PK) {
       uc2[i] -= uc[i];
       CHECK(uc2[i].NormMax() < 1e-12);
     }
+
+/*
+    // Compare H1 and L2 projectors
+    projector.L2Cell_Pk(cell, k, vf, moments, uc2);
+std::cout << k << std::endl;
+std::cout << uc[0] << std::endl;
+std::cout << uc2[0] << std::endl;
+    uc2[0] -= uc[0];
+    CHECK(uc2[0].NormMax() < 1e-12);
+exit(0);
+*/
   }
 
   auto p = AmanziGeometry::Point(1.2, 1.1);
@@ -510,7 +522,7 @@ TEST(HARMONIC_PROJECTORS_POLYGON_PK) {
   VectorPolynomial uc, uc2;
   std::vector<VectorPolynomial> vf(nfaces);
 
-  ProjectorH1 projector(mesh);
+  Projector projector(mesh);
   auto moments = std::make_shared<WhetStone::DenseVector>();
 
   // test globally linear deformation

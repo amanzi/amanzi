@@ -389,6 +389,13 @@ void RemapTestsDual(int dim, int order_p, int order_u,
   std::vector<int> dirs;
   AmanziGeometry::Point v0(dim), v1(dim), tau(dim);
 
+  CompositeVectorSpace cvs3;
+  cvs3.SetMesh(mesh1)->SetGhosted(true)->AddComponent("cell", AmanziMesh::CELL, 1);
+
+  CompositeVector p2err(cvs3);
+  Epetra_MultiVector& p2c_err = *p2err.ViewComponent("cell");
+  p2err.PutScalar(0.0);
+
   for (int c = 0; c < ncells_owned; ++c) {
     double area_c(mesh1->cell_volume(c));
 
@@ -405,6 +412,8 @@ void RemapTestsDual(int dim, int order_p, int order_u,
 
       pinf_err = std::max(pinf_err, fabs(tmp));
       pl2_err += tmp * tmp * area_c;
+
+      p2c_err[0][c] = fabs(tmp);
     }
     else {
       mesh0->cell_get_nodes(c, &nodes);
@@ -417,6 +426,8 @@ void RemapTestsDual(int dim, int order_p, int order_u,
         tmp -= ana.function_exact(v1, 0.0);
         pinf_err = std::max(pinf_err, fabs(tmp));
         pl2_err += tmp * tmp * area_c / nnodes;
+
+        p2c_err[0][c] = std::max(p2c_err[0][c], fabs(tmp));
       }
     }
 
@@ -478,7 +489,7 @@ void RemapTestsDual(int dim, int order_p, int order_u,
         (*moments)(0) = mass1_c / mesh1->cell_volume(c);
       }
 
-      WhetStone::ProjectorH1 projector(mesh1);
+      WhetStone::Projector projector(mesh1);
       projector.EllipticCell_Pk(c, order_p, vvf, moments, vc);
       vc[0].ChangeOrigin(mesh1->cell_centroid(c));
 
@@ -533,6 +544,8 @@ void RemapTestsDual(int dim, int order_p, int order_u,
       GMV::write_cell_data(p2c, 1, "gradx");
       GMV::write_cell_data(p2c, 2, "grady");
     }
+
+    GMV::write_cell_data(p2c_err, 0, "error");
     GMV::close_data_file();
   }
 }

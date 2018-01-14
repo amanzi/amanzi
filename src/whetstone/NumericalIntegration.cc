@@ -272,6 +272,7 @@ void NumericalIntegration::IntegrateMonomialsEdge_(
   // minimal quadrature rule
   int k = monomials.order();
   int m = k / 2;
+  ASSERT(m < 5);
 
   for (auto it = monomials.begin(); it.end() <= k; ++it) {
     const int* idx = it.multi_index();

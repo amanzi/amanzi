@@ -29,20 +29,21 @@ namespace WhetStone {
 
 class VectorPolynomial;
 
-class ProjectorH1 { 
+class Projector { 
  public:
   enum ProjectorType {
-    ELLIPTIC,
-    HARMONIC
+    L2,
+    H1
   };
 
  public:
-  ProjectorH1(Teuchos::RCP<const AmanziMesh::Mesh> mesh) :
+  Projector(Teuchos::RCP<const AmanziMesh::Mesh> mesh) :
       mesh_(mesh),
       d_(mesh_->space_dimension()) {};
-  ~ProjectorH1() {};
+  ~Projector() {};
 
-  // energy-based projector for non-conforming virtual space
+  // projectors for non-conforming (Crouzier-Raviart) virtual space
+  // -- simple implementation of low-order elliptic projectors
   void HarmonicCell_CR1(
       int c, const std::vector<VectorPolynomial>& vf, VectorPolynomial& uc) const;
 
@@ -50,45 +51,52 @@ class ProjectorH1 {
       int f, const AmanziGeometry::Point& p0,
       const std::vector<VectorPolynomial>& ve, VectorPolynomial& uf) const;
 
-  // -- elliptic projector requires cell-moments on input
+  // -- elliptic projector takes cell-moments on input
   void EllipticCell_CRk(
       int c, int order, const std::vector<VectorPolynomial>& vf,
       const std::shared_ptr<DenseVector>& moments, VectorPolynomial& uc) const {
-    GenericCell_CRk_(c, order, vf, ELLIPTIC, moments, uc);
+    GenericCell_CRk_(c, order, vf, H1, false, moments, uc);
   }
 
   // -- harmonic projector calculates and returns cell-moments
   void HarmonicCell_CRk(
       int c, int order, const std::vector<VectorPolynomial>& vf,
       const std::shared_ptr<DenseVector>& moments, VectorPolynomial& uc) const {
-    GenericCell_CRk_(c, order, vf, HARMONIC, moments, uc);
+    GenericCell_CRk_(c, order, vf, H1, true, moments, uc);
   }
 
-  // energy-based projectors for conforming virtual space
-  // -- elliptic projector requires cell-moments on input
+  // projectors for conforming (Lagrange) virtual space
+  // -- L2 projector that calculates and returns cell moments
+  void L2Cell_Pk(
+      int c, int order, const std::vector<VectorPolynomial>& vf,
+      const std::shared_ptr<DenseVector>& moments, VectorPolynomial& uc) const {
+    GenericCell_Pk_(c, order, vf, L2, true, moments, uc);
+  }
+
+  // -- elliptic projector takes cell-moments on input
   void EllipticCell_Pk(
       int c, int order, const std::vector<VectorPolynomial>& vf,
       const std::shared_ptr<DenseVector>& moments, VectorPolynomial& uc) const {
-    GenericCell_Pk_(c, order, vf, ELLIPTIC, moments, uc);
+    GenericCell_Pk_(c, order, vf, H1, false, moments, uc);
   }
 
   // -- harmonic projector calculates and returns cell-moments
   void HarmonicCell_Pk(
       int c, int order, const std::vector<VectorPolynomial>& vf,
       const std::shared_ptr<DenseVector>& moments, VectorPolynomial& uc) const {
-    GenericCell_Pk_(c, order, vf, HARMONIC, moments, uc);
+    GenericCell_Pk_(c, order, vf, H1, true, moments, uc);
   }
 
  private:
   void GenericCell_CRk_(
       int c, int order, const std::vector<VectorPolynomial>& vf,
-      ProjectorType type, const std::shared_ptr<DenseVector>& moments,
-      VectorPolynomial& uc) const;
+      const ProjectorType& type, bool is_harmonic,
+      const std::shared_ptr<DenseVector>& moments, VectorPolynomial& uc) const;
 
   void GenericCell_Pk_(
       int c, int order, const std::vector<VectorPolynomial>& vf,
-      ProjectorType type, const std::shared_ptr<DenseVector>& moments,
-      VectorPolynomial& uc) const;
+      const ProjectorType& type, bool is_harmonic,
+      const std::shared_ptr<DenseVector>& moments, VectorPolynomial& uc) const;
 
  protected:
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
