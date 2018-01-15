@@ -561,12 +561,12 @@ TEST(REMAP2D_DG1_DUAL_FEM) {
 */
 
 
-const int N = 1;
+const int N = 3;
 const double q = 2.0;  // 2.82842712474619;
 
 // TEST(REMAP2D_DG1_DUAL_VEM_TMP) {
-//   RemapTestsDual(2, 1, 1, "VEM", 0, 0, 0.05 / N);
-//   RemapTestsDual(2, 1, 2, "VEM", 0, 0, 0.05 / N);
+//   RemapTestsDual(2, 2, 2, "VEM", 0, 0, 0.05 / N);
+//   RemapTestsDual(2, 2, 3, "VEM", 0, 0, 0.05 / N);
 // }
 
 TEST(REMAP2D_DG0_DUAL_VEM) {

@@ -69,11 +69,12 @@ add_amanzi_library(whetstone
                            MFD3D_Lagrange.hh
                            MFD3DFactory.hh
                            nlfv.hh
-                           Polynomial.hh VectorPolynomial.hh Tensor.hh
                            NumericalIntegration.hh
                            MeshMaps.hh
                            MeshMaps_FEM.hh MeshMaps_VEM.hh
+                           Polynomial.hh VectorPolynomial.hh PolynomialOnMesh.hh
                            Projector.hh
+                           Tensor.hh
                            WhetStoneDefs.hh
                            WhetStone_typedefs.hh
                    LINK_LIBS geometry mesh error_handling ${Epetra_LIBRARIES})

@@ -27,19 +27,24 @@ namespace WhetStone {
 #ifdef AMANZI_CODE
 typedef AmanziGeometry::Entity_ID Entity_ID;
 typedef std::vector<Entity_ID> Entity_ID_List;
-typedef AmanziMesh::Parallel_type ParallelTypeCast;
+typedef AmanziMesh::Parallel_type Parallel_type;
+typedef AmanziMesh::Entity_kind Entity_kind;
 
 const int OWNED = AmanziMesh::USED;   // Owned by this processor
 const int GHOST = AmanziMesh::GHOST;  // Owned by another processor
 const int USED  = AmanziMesh::USED;   // OWNED + GHOST
 
-typedef AmanziMesh::Entity_kind Entity_kind;
+const int NODE = AmanziMesh::NODE;
+const int EDGE = AmanziMesh::EDGE;
+const int FACE = AmanziMesh::FACE;
+const int CELL = AmanziMesh::CELL;
+const int BOUNDARY_FACE = AmanziMesh::BOUNDARY_FACE;
 
 #else
 typedef long long int Entity_ID;
 typedef std::vector<Entity_ID> Entity_ID_List;
 
-enum ParallelTypeCast
+enum Parallel_type
 {
   PTYPE_UNKNOWN = 0, // Initializer
   OWNED = 1,         // Owned by this processor

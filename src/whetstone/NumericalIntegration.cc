@@ -158,6 +158,33 @@ double NumericalIntegration::IntegratePolynomialsEdge(
 * Integrate over cell c a group of non-normalized monomials of the
 * same order centered at the centroid of c.
 ****************************************************************** */
+void NumericalIntegration::UpdateMonomialIntegralsCell(
+    int c, int order, PolynomialOnMesh& integrals)
+{
+  Polynomial& poly = integrals.poly();
+  int k0 = poly.order();
+
+  if (integrals.kind() != (Entity_kind)WhetStone::CELL && integrals.id() != c) {
+    integrals.set_kind((Entity_kind)WhetStone::CELL);
+    integrals.set_id(c);
+    k0 = -1;
+  }
+
+  // add additional integrals of monomials
+  if (k0 < order) {
+    poly.Reshape(d_, order);
+
+    for (int k = k0 + 1; k <= order; ++k) {
+      IntegrateMonomialsCell(c, poly.monomials(k));
+    }
+  }
+}
+
+
+/* ******************************************************************
+* Integrate over cell c a group of non-normalized monomials of the
+* same order centered at the centroid of c.
+****************************************************************** */
 void NumericalIntegration::IntegrateMonomialsCell(int c, Monomial& monomials)
 {
   int k = monomials.order();
@@ -192,7 +219,6 @@ void NumericalIntegration::IntegrateMonomialsCell(int c, Monomial& monomials)
     }
   }
 }
-
 
 /* ******************************************************************
 * Integrate over face f a group of non-normalized monomials of the

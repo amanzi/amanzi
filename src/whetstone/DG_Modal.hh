@@ -51,10 +51,11 @@ class DG_Modal : public BilinearForm {
 
   ~DG_Modal() {};
 
-  // required member functions
+  // basic member functions
   // -- mass matrices
   virtual int MassMatrix(int c, const Tensor& K, DenseMatrix& M);
   virtual int MassMatrixPoly(int c, const Polynomial& K, DenseMatrix& M);
+  int MassMatrix(int c, const Tensor& K, PolynomialOnMesh& integrals, DenseMatrix& M);
 
   // -- stiffness matrices (coming soon)
   virtual int StiffnessMatrix(int c, const Tensor& T, DenseMatrix& A) { return 0; }

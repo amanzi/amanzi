@@ -67,6 +67,49 @@ int DG_Modal::MassMatrix(int c, const Tensor& K, DenseMatrix& M)
 
 
 /* ******************************************************************
+* Mass matrix for Taylor basis functions. 
+****************************************************************** */
+int DG_Modal::MassMatrix(
+    int c, const Tensor& K, PolynomialOnMesh& integrals, DenseMatrix& M)
+{
+  double K00 = K(0, 0);
+
+  // extend list of integrals of monomials
+  numi_.UpdateMonomialIntegralsCell(c, 2 * order_, integrals);
+   
+  // copy integrals to mass matrix
+  int multi_index[3];
+  Polynomial p(d_, order_);
+
+  int nrows = p.size();
+  M.Reshape(nrows, nrows);
+
+  for (auto it = p.begin(); it.end() <= p.end(); ++it) {
+    const int* idx_p = it.multi_index();
+    int k = it.PolynomialPosition();
+
+    for (auto jt = it; jt.end() <= p.end(); ++jt) {
+      const int* idx_q = jt.multi_index();
+      int l = jt.PolynomialPosition();
+      
+      int n(0);
+      for (int i = 0; i < d_; ++i) {
+        multi_index[i] = idx_p[i] + idx_q[i];
+        n += multi_index[i];
+      }
+
+      const auto& coefs = integrals.poly().monomials(n).coefs();
+      M(l, k) = M(k, l) = K00 * coefs[p.MonomialPosition(multi_index)];
+    }
+  }
+
+  ChangeBasis_(c, M);
+
+  return 0;
+}
+
+
+/* ******************************************************************
 * Mass matrix for Taylor basis and polynomial coefficient K.
 ****************************************************************** */
 int DG_Modal::MassMatrixPoly(int c, const Polynomial& K, DenseMatrix& M)
@@ -214,7 +257,7 @@ int DG_Modal::FluxMatrixPoly(int f, const Polynomial& un, DenseMatrix& A,
                              bool jump_on_test)
 {
   AmanziMesh::Entity_ID_List cells, nodes;
-  mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+  mesh_->face_get_cells(f, (Parallel_type)WhetStone::USED, &cells);
   int ncells = cells.size();
 
   Polynomial poly0(d_, order_), poly1(d_, order_);
@@ -498,7 +541,8 @@ Polynomial DG_Modal::CalculatePolynomial(int c, const std::vector<double>& coefs
 void DG_Modal::UpdateIntegrals_(int c, int order)
 {
   if (integrals_.size() == 0) {
-    int ncells_wghost = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::USED);
+    int ncells_wghost = mesh_->num_entities((Entity_kind)WhetStone::CELL,
+                                            (Parallel_type)WhetStone::USED);
     integrals_.resize(ncells_wghost);
 
     for (int n = 0; n < ncells_wghost; ++n) {
@@ -525,7 +569,8 @@ void DG_Modal::UpdateIntegrals_(int c, int order)
 void DG_Modal::UpdateScales_(int c, int order)
 {
   if (scales_a_.size() == 0) {
-    int ncells_wghost = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::USED);
+    int ncells_wghost = mesh_->num_entities((Entity_kind)WhetStone::CELL,
+                                            (Parallel_type)WhetStone::USED);
     scales_a_.resize(ncells_wghost);
     scales_b_.resize(ncells_wghost);
 

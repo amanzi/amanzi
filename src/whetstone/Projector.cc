@@ -12,6 +12,7 @@
   Algorithms underpinning elliptic projectors.
 */
 
+#include "DG_Modal.hh"
 #include "MFD3D_CrouzeixRaviart.hh"
 #include "MFD3D_Lagrange.hh"
 #include "NumericalIntegration.hh"
@@ -426,7 +427,7 @@ void Projector::GenericCell_Pk_(
       }
     }
 
-    // calculate polynomial coefficients
+    // calculate polynomial coefficients (in vector v5)
     DenseVector v4(nd), v5(nd);
     R.Multiply(vdof, v4, true);
     Gpoly.Multiply(v4, v5, false);
@@ -434,7 +435,7 @@ void Projector::GenericCell_Pk_(
     uc[i].SetPolynomialCoefficients(v5);
 
     // calculate the constant value for elliptic projector
-    if (type == H1 && order == 1) {
+    if (order == 1) {
       AmanziGeometry::Point grad(d_), zero(d_);
       for (int j = 0; j < d_; ++j) {
         grad[j] = uc[i](1, j);
@@ -452,25 +453,44 @@ void Projector::GenericCell_Pk_(
       }
 
       uc[i](0, 0) = a1 / a2;
-    } else if (type == H1 && order >= 2) {
-      mfd.integrals().GetPolynomialCoefficients(v4);
+    } else if (order >= 2) {
+      mfd.integrals().poly().GetPolynomialCoefficients(v4);
       v4.Reshape(nd);
       uc[i](0, 0) = vdof(row) - (v4 * v5) / volume;
+    }
+
+    // calculate L2 projector
+    if (type == L2 && ndof_c > 0) {
+      v5(0) = uc[i](0, 0);
+
+      DG_Modal dg(order, mesh_);
+      dg.set_basis(TAYLOR_BASIS_SIMPLE);
+
+      DenseMatrix M, M2;
+      DenseVector v6(nd - ndof_c);
+      dg.MassMatrix(c, T, mfd.integrals(), M);
+
+      M2 = M.SubMatrix(ndof_c, nd, 0, nd);
+      M2.Multiply(v5, v6, false);
+
+      for (int n = 0; n < ndof_c; ++n) {
+        v4(n) = (*moments)(n) * mesh_->cell_volume(c);
+      }
+
+      for (int n = 0; n < nd - ndof_c; ++n) {
+        v4(ndof_c + n) = v6(n);
+      }
+
+      M.Inverse();
+      M.Multiply(v4, v5, false);
+
+      uc[i].SetPolynomialCoefficients(v5);
     }
 
     // set origin to zero
     AmanziGeometry::Point zero(d_);
     uc[i].set_origin(xc);
     uc[i].ChangeOrigin(zero);
-
-    // calculate L2 projector
-    if (type == L2) {
-      mfd.StiffnessMatrixHO(c, order, T, R, Gpoly, A);  
-      for (int n = 0; n < ndof_c; ++n) {
-        v4(n) = (*moments)(n);
-      }
-    }
-
   }
 }
 

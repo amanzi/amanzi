@@ -24,6 +24,7 @@
 #include "DenseMatrix.hh"
 #include "MFD3D.hh"
 #include "Polynomial.hh"
+#include "PolynomialOnMesh.hh"
 #include "Tensor.hh"
 
 namespace Amanzi {
@@ -77,11 +78,12 @@ class MFD3D_Lagrange : public virtual MFD3D {
 
   // access 
   // -- integrals of monomials in high-order schemes could be reused
-  const Polynomial& integrals() const { return integrals_; }
+  const PolynomialOnMesh& integrals() const { return integrals_; }
+  PolynomialOnMesh& integrals() { return integrals_; }
 
  private:
   int order_;
-  Polynomial integrals_;
+  PolynomialOnMesh integrals_;
 };
 
 }  // namespace WhetStone

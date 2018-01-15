@@ -68,11 +68,7 @@ int MFD3D_Lagrange::H1consistencyHO(
 
   // pre-calculate integrals of monomials 
   NumericalIntegration numi(mesh_);
-  integrals_.Reshape(d_, 2 * order - 2, true);
-
-  for (int k = 0; k <= 2 * order - 2; ++k) {
-    numi.IntegrateMonomialsCell(c, integrals_.monomials(k));
-  }
+  numi.UpdateMonomialIntegralsCell(c, 2 * order - 2, integrals_);
 
   // populate matrices N and R
   std::vector<AmanziGeometry::Point> tau(d_ - 1);
@@ -224,7 +220,7 @@ int MFD3D_Lagrange::H1consistencyHO(
           nm += multi_index[i];
         }
 
-        const auto& coefs = integrals_.monomials(nm).coefs();
+        const auto& coefs = integrals_.poly().monomials(nm).coefs();
         N(row + n, col) = coefs[poly.MonomialPosition(multi_index)] / volume; 
       }
     }
@@ -252,7 +248,7 @@ int MFD3D_Lagrange::H1consistencyHO(
       for (int i = 0; i < d_; ++i) {
         if (index[i] > 0 && jndex[i] > 0) {
           multi_index[i] -= 2;
-          const auto& coefs = integrals_.monomials(n - 2).coefs();
+          const auto& coefs = integrals_.poly().monomials(n - 2).coefs();
           tmp = coefs[poly.MonomialPosition(multi_index)]; 
           sum += tmp * index[i] * jndex[i];
           multi_index[i] += 2;

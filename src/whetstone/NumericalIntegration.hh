@@ -21,7 +21,7 @@
 #include "Point.hh"
 
 #include "Polynomial.hh"
-#include "WhetStone_typedefs.hh"
+#include "PolynomialOnMesh.hh"
 
 namespace Amanzi {
 namespace WhetStone {
@@ -40,28 +40,6 @@ const double q1d_points[5][5] = {
     0.112701665379258, 0.5, 0.887298334620742, 0.0, 0.0,
     0.0694318442029737, 0.330009478207572, 0.669990521792428, 0.930568155797026, 0.0,
     0.0469100770306680, 0.230765344947158, 0.0, 0.769234655052841, 0.953089922969332
-};
-
-
-// Polynomial binded to a mesh object allows us to verify identity of
-// a polynomial used by multiple classes.
-struct PolynomialOnMesh {
- public:
-  PolynomialOnMesh(AmanziMesh::Entity_kind kind, Entity_ID id) :
-      kind_(kind), id_(id) {};
-
-  const Entity_kind& kind() const { return kind_; }
-  const Entity_ID& id() const { return id_; }
-
- private:
-  PolynomialOnMesh();
-
- public:
-  Polynomial poly;
-
- private:
-  const Entity_kind kind_;  // topological binding of polynomial
-  const Entity_ID id_;  // numerical id of topological entity
 };
 
 
@@ -84,7 +62,7 @@ class NumericalIntegration {
 
   // integrate group of monomials 
   void IntegrateMonomialsCell(int c, Monomial& monomials);
-  void UpdateMonomialIntegralsCell(int c, Polynomial& integrals);
+  void UpdateMonomialIntegralsCell(int c, int order, PolynomialOnMesh& integrals);
 
   // useful functions: integrate single polynomial
   double IntegratePolynomialCell(int c, const Polynomial& poly);

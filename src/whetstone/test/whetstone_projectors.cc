@@ -484,16 +484,10 @@ TEST(HARMONIC_PROJECTORS_SQUARE_PK) {
       CHECK(uc2[i].NormMax() < 1e-12);
     }
 
-/*
     // Compare H1 and L2 projectors
     projector.L2Cell_Pk(cell, k, vf, moments, uc2);
-std::cout << k << std::endl;
-std::cout << uc[0] << std::endl;
-std::cout << uc2[0] << std::endl;
     uc2[0] -= uc[0];
     CHECK(uc2[0].NormMax() < 1e-12);
-exit(0);
-*/
   }
 
   auto p = AmanziGeometry::Point(1.2, 1.1);
@@ -627,16 +621,22 @@ TEST(HARMONIC_PROJECTORS_POLYGON_PK) {
     }
   }
   
-  for (int k = 1; k < 3; ++k) {
+  for (int k = 1; k < 4; ++k) {
     projector.HarmonicCell_Pk(cell, k, vf, moments, uc);
     projector.HarmonicCell_CRk(cell, k, vf, moments, uc2);
     uc2 -= uc;
     if (k == 1) CHECK(uc2[0].NormMax() < 1e-12);
     if (k == 2) CHECK(uc2[0].NormMax() > 1e-3 && uc2[0].NormMax() < 2e-3);
+
+    projector.L2Cell_Pk(cell, k, vf, moments, uc2);
+    uc2 -= uc;
+    if (k < 3) CHECK(uc2[0].NormMax() < 1e-12);
+    if (k > 1) std::cout << "k=" << k << " moments:" << *moments;
   }
 
   // preservation of moments (reusing previous boundary functions)
   std::cout << "\nTest: HO Lagrange projectors for pentagon (verify moments)" << std::endl;
+  moments->Reshape(1);
   (*moments)(0) = 1.0;
   projector.EllipticCell_Pk(cell, 2, vf, moments, uc);
   double tmp = numi.IntegratePolynomialCell(cell, uc[0]) / mesh->cell_volume(cell);
