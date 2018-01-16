@@ -137,6 +137,11 @@ class Monomial {
   Iterator& begin() const { return it_.begin(order_); }
   int end() const { return order_; }
 
+  // reset all coefficients to a scalar
+  void PutScalar(double val) {
+    for (auto it = coefs_.begin(); it != coefs_.end(); ++it) *it = val;
+  }
+
   // access
   int order() const { return order_; }
   int size() const { return coefs_.size(); }

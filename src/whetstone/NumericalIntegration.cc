@@ -164,7 +164,7 @@ void NumericalIntegration::UpdateMonomialIntegralsCell(
   Polynomial& poly = integrals.poly();
   int k0 = poly.order();
 
-  if (integrals.kind() != (Entity_kind)WhetStone::CELL && integrals.id() != c) {
+  if (integrals.kind() != (Entity_kind)WhetStone::CELL || integrals.id() != c) {
     integrals.set_kind((Entity_kind)WhetStone::CELL);
     integrals.set_id(c);
     k0 = -1;
@@ -188,6 +188,7 @@ void NumericalIntegration::UpdateMonomialIntegralsCell(
 void NumericalIntegration::IntegrateMonomialsCell(int c, Monomial& monomials)
 {
   int k = monomials.order();
+  monomials.PutScalar(0.0);
 
   Entity_ID_List faces, nodes;
   std::vector<int> dirs;
