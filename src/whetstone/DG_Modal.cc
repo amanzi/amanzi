@@ -230,12 +230,12 @@ int DG_Modal::AdvectionMatrixPoly(int c, const VectorPolynomial& u, DenseMatrix&
     }
   }
 
-  ChangeBasis_(c, A);
-
   // gradient operator is applied to solution
   if (!grad_on_test) {
     A.Transpose();
   }
+
+  ChangeBasis_(c, A);
 
   return 0;
 }
@@ -333,12 +333,12 @@ int DG_Modal::FluxMatrixPoly(int f, const Polynomial& un, DenseMatrix& A,
     }
   }
 
-  ChangeBasis_(cells[0], cells[1], A);
-
   // gradient operator is applied to solution
   if (!jump_on_test) {
     A.Transpose();
   }
+
+  ChangeBasis_(cells[0], cells[1], A);
 
   return 0;
 }

@@ -37,8 +37,8 @@ void MeshMaps_VEM::VelocityCell(
     projector.HarmonicCell_Pk(c, 1, vf, moments, vc);
     // projector.HarmonicCell_CR1(c, vf, vc);
   } else {
-    projector.L2Cell_Pk(c, order_, vf, moments, vc);
-    // projector.HarmonicCell_Pk(c, order_, vf, moments, vc);
+    // projector.L2Cell_Pk(c, order_, vf, moments, vc);
+    projector.HarmonicCell_Pk(c, order_, vf, moments, vc);
     // projector.HarmonicCell_CRk(c, order_, vf, moments, vc);
   }
 }

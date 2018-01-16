@@ -77,7 +77,8 @@ void RemapTestsDual(int dim, int order_p, int order_u,
     if (nx != 0) 
       mesh0 = meshfactory(0.0, 0.0, 1.0, 1.0, nx, ny);
     else 
-      mesh0 = meshfactory("test/median15x16.exo", Teuchos::null);
+      // mesh0 = meshfactory("test/median15x16.exo", Teuchos::null);
+      mesh0 = meshfactory("test/random20.exo", Teuchos::null);
   } else {
     mesh0 = meshfactory(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, nx, ny, ny, Teuchos::null, true, true);
   }
@@ -95,7 +96,8 @@ void RemapTestsDual(int dim, int order_p, int order_u,
     if (nx != 0) 
       mesh1 = meshfactory(0.0, 0.0, 1.0, 1.0, nx, ny);
     else 
-      mesh1 = meshfactory("test/median15x16.exo", Teuchos::null);
+      // mesh1 = meshfactory("test/median15x16.exo", Teuchos::null);
+      mesh1 = meshfactory("test/random20.exo", Teuchos::null);
   } else {
     mesh1 = meshfactory(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, nx, ny, ny, Teuchos::null, true, true);
   }
@@ -561,14 +563,15 @@ TEST(REMAP2D_DG1_DUAL_FEM) {
 */
 
 
-const int N = 3;
+const int N = 1;
 const double q = 2.0;  // 2.82842712474619;
 
-// TEST(REMAP2D_DG1_DUAL_VEM_TMP) {
-//   RemapTestsDual(2, 2, 2, "VEM", 0, 0, 0.05 / N);
-//   RemapTestsDual(2, 2, 3, "VEM", 0, 0, 0.05 / N);
-// }
+TEST(REMAP2D_DG1_DUAL_VEM_TMP) {
+  RemapTestsDual(2, 2, 2, "VEM", 0, 0, 0.05 / N);
+  RemapTestsDual(2, 2, 3, "VEM", 0, 0, 0.05 / N);
+}
 
+/*
 TEST(REMAP2D_DG0_DUAL_VEM) {
   // RemapTestsDual(2, 0, 1, "VEM", 16 * N, 16 * N, 0.05 / N);
   RemapTestsDual(2, 0, 1, "VEM", 0, 0, 0.05 / N);
@@ -591,6 +594,7 @@ TEST(REMAP3D_DG0_DUAL_VEM) {
 // TEST(REMAP3D_DG1_DUAL_VEM) {
 //   RemapTestsDual(3, 1, 2, "VEM", 5, 5, 0.1);
 // }
+*/
 
 /*
 TEST(REMAP2D_DG1_QUADRATURE_ERROR) {
