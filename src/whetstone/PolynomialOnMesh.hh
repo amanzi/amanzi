@@ -29,7 +29,7 @@ namespace WhetStone {
 
 struct PolynomialOnMesh {
  public:
-  PolynomialOnMesh() : id_(-1) {};
+  PolynomialOnMesh() : id_(-1), kind_((Entity_kind)WhetStone::CELL) {};
 
   Polynomial& poly() { return poly_; }
   const Entity_kind& kind() const { return kind_; }
