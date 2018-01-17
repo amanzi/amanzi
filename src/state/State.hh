@@ -1,9 +1,9 @@
 /* -------------------------------------------------------------------------
   State
 
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
   See $ATS_DIR/COPYRIGHT
 
@@ -27,16 +27,15 @@
 #define STATE_OLD_INTERFACE_DEPRECATED 0
 #endif
 
-
 #include <string>
 #include <tuple>
 
-#include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
+#include "Teuchos_RCP.hpp"
 
-#include "UniqueHelpers.hh"
 #include "Mesh.hh"
 #include "MeshPartition.hh"
+#include "UniqueHelpers.hh"
 
 #if (!STATE_OLD_INTERFACE_DEPRECATED)
 #include "CompositeVector.hh"
@@ -44,8 +43,6 @@
 #endif
 
 #include "RecordSet.hh"
-
-
 
 namespace Amanzi {
 
@@ -55,42 +52,37 @@ enum StateConstructMode {
   STATE_CONSTRUCT_MODE_COPY_POINTERS,
   STATE_CONSTRUCT_MODE_COPY_DATA
 };
-enum StatePosition {
-  TIME_PERIOD_START,
-  TIME_PERIOD_INSIDE,
-  TIME_PERIOD_END
-};
-
+enum StatePosition { TIME_PERIOD_START, TIME_PERIOD_INSIDE, TIME_PERIOD_END };
 
 class State {
 
- private:
+private:
+  using MeshMap =
+      std::unordered_map<Key, std::pair<Teuchos::RCP<AmanziMesh::Mesh>, bool>>;
+  using RecordSetMap = std::unordered_map<Key, std::unique_ptr<RecordSet>>;
+  using EvaluatorMap =
+      std::unordered_map<Key, std::unordered_map<Key, Teuchos::RCP<Evaluator>>>;
+  using MeshPartitionMap =
+      std::unordered_map<Key, Teuchos::RCP<Functions::MeshPartition>>;
 
-  using MeshMap = std::unordered_map<Key, std::pair<Teuchos::RCP<AmanziMesh::Mesh>,bool> >;
-  using RecordSetMap = std::unordered_map<Key, std::unique_ptr<RecordSet> >;
-  using EvaluatorMap = std::unordered_map<Key, std::unordered_map<Key,Teuchos::RCP<Evaluator> > >;
-  using MeshPartitionMap = std::unordered_map<Key, Teuchos::RCP<Functions::MeshPartition> >;
-
-  
- public:
-
+public:
   // Default constructor.
   State();
 
   // Usual constructor.
-  explicit State(const Teuchos::RCP<Teuchos::ParameterList>& state_plist);
-  explicit State(const Teuchos::ParameterList& state_plist) :
-      State(Teuchos::parameterList(state_plist)) {}
+  explicit State(const Teuchos::RCP<Teuchos::ParameterList> &state_plist);
+  explicit State(const Teuchos::ParameterList &state_plist)
+      : State(Teuchos::parameterList(state_plist)) {}
 
   // // Copy constructor, by default copies memory not pointers.
-  // State(const State& other, StateConstructMode mode=STATE_CONSTRUCT_MODE_COPY_DATA);
-  
-  // no copy/move constructors, operator=
-  State(const State& other) = delete;
-  State& operator=(const State&) = delete;
-  State(const State&& other) = delete;
-  State& operator=(const State&&) = delete;
+  // State(const State& other, StateConstructMode
+  // mode=STATE_CONSTRUCT_MODE_COPY_DATA);
 
+  // no copy/move constructors, operator=
+  State(const State &other) = delete;
+  State &operator=(const State &) = delete;
+  State(const State &&other) = delete;
+  State &operator=(const State &&) = delete;
 
   // Create data structures, finalizing the structure of the state.
   void Setup();
@@ -103,7 +95,7 @@ class State {
   bool CheckAllFieldsInitialized();
 
   // Using another state for initialization
-  void Initialize(const State& S);
+  void Initialize(const State &S);
   // bool CheckAllFieldsInitialized(Teuchos::RCP<State> S);
   // bool CheckNotEvaluatedFieldsInitialized(Teuchos::RCP<State> S);
 
@@ -117,26 +109,26 @@ class State {
   // state.
   //
   // Register a mesh under the default key, "domain".
-  void RegisterDomainMesh(const Teuchos::RCP<AmanziMesh::Mesh>& mesh,
-                          bool deformable=false);
+  void RegisterDomainMesh(const Teuchos::RCP<AmanziMesh::Mesh> &mesh,
+                          bool deformable = false);
 
   // Register a mesh under a generic key.
   void RegisterMesh(Key key, Teuchos::RCP<AmanziMesh::Mesh> mesh,
-                    bool deformable=false);
+                    bool deformable = false);
 
   // Alias a mesh to an existing mesh
-  void AliasMesh(const Key& target, Key alias);
+  void AliasMesh(const Key &target, Key alias);
 
   // Remove a mesh.
-  void RemoveMesh(const Key& key);
+  void RemoveMesh(const Key &key);
 
   // Ensure a mesh exists.
-  bool HasMesh(const Key& key) const;
-  bool IsDeformableMesh(const Key& key) const;
+  bool HasMesh(const Key &key) const;
+  bool IsDeformableMesh(const Key &key) const;
 
   // Mesh accessor.
-  Teuchos::RCP<const AmanziMesh::Mesh> GetMesh(const Key& key="domain") const;
-  Teuchos::RCP<AmanziMesh::Mesh> GetDeformableMesh(const Key& key="domain");
+  Teuchos::RCP<const AmanziMesh::Mesh> GetMesh(const Key &key = "domain") const;
+  Teuchos::RCP<AmanziMesh::Mesh> GetDeformableMesh(const Key &key = "domain");
 
   // Iterate over meshes.
   using mesh_iterator = MeshMap::const_iterator;
@@ -148,21 +140,21 @@ class State {
   // MeshPartitions are a non-overlapping set of cell regions whose union
   // covers the mesh.
   //
-  Teuchos::RCP<const Functions::MeshPartition> GetMeshPartition(const Key& key) const {
+  Teuchos::RCP<const Functions::MeshPartition>
+  GetMeshPartition(const Key &key) const {
     return mesh_partitions_.at(key);
   }
 
   // Some models are repeated over and over again, especially subgrid models.
   // A flyweight pattern for input parameter lists for such models is enabled.
   // What exactly is done here is open for discussion!
-  void RegisterDomainSet(const Key& key) {
-    domain_sets_.insert(key);
-  }
-  
+  void RegisterDomainSet(const Key &key) { domain_sets_.insert(key); }
+
   // -----------------------------------------------------------------------------
   // State handles data management.
   // -----------------------------------------------------------------------------
-  // Data is managed by a Record, which both controls access and provides metadata.
+  // Data is managed by a Record, which both controls access and provides
+  // metadata.
   //
   // State manages the creation and consistency of data.  Data is "required"
   // of the state.  The require methods act as factories and consistency
@@ -172,7 +164,7 @@ class State {
   // object -- that object, which is typically either a PK or a
   // Evaluator, may write the solution, and therefore receives non-const
   // pointers to data.  Data may be used by anyone, but non-owning objects
-  // receive const-only pointers to data.  
+  // receive const-only pointers to data.
 
   // Require data from State.
   //
@@ -180,69 +172,72 @@ class State {
   //  T is the data type required
   //  F is a factory, which must provide a method Create() that makes a T
   //    (optional)
-  template<typename T, typename F>
-  F& Require(const Key& fieldname, const Key& tag, const Key& owner="") {
+  template <typename T, typename F>
+  F &Require(const Key &fieldname, const Key &tag, const Key &owner = "") {
     if (!Keys::hasKey(data_, fieldname)) {
       data_.emplace(fieldname, std::make_unique<RecordSet>(fieldname));
     }
-    data_.at(fieldname)->RequireRecord(tag,owner);
-    return data_.at(fieldname)->SetType<T,F>();
+    data_.at(fieldname)->RequireRecord(tag, owner);
+    return data_.at(fieldname)->SetType<T, F>();
   }
 
-  template<typename T>
-  void Require(const Key& fieldname, const Key& tag, const Key& owner="") {
+  template <typename T>
+  void Require(const Key &fieldname, const Key &tag, const Key &owner = "") {
     if (!Keys::hasKey(data_, fieldname)) {
       data_.emplace(fieldname, std::make_unique<RecordSet>(fieldname));
     }
-    data_.at(fieldname)->RequireRecord(tag,owner);
+    data_.at(fieldname)->RequireRecord(tag, owner);
     data_.at(fieldname)->SetType<T>();
   }
 
-  template<typename T, typename F>
-  F& Require(const Key& fieldname) {
-    return Require<T,F>(fieldname, "", "");
+  template <typename T, typename F> F &Require(const Key &fieldname) {
+    return Require<T, F>(fieldname, "", "");
   }
 
-  template<typename T>
-  void Require(const Key& fieldname) {
+  template <typename T> void Require(const Key &fieldname) {
     Require<T>(fieldname, "", "");
   }
 
-  void RequireDerivative(const Key& fieldname, const Key& tag, const Key& wrt_key, const Key& wrt_tag, const Key& owner) {
+  void RequireDerivative(const Key &fieldname, const Key &tag,
+                         const Key &wrt_key, const Key &wrt_tag,
+                         const Key &owner) {
     data_.at(fieldname)->RequireDerivativeRecord(tag, wrt_key, wrt_tag, owner);
   }
 
-  // void RequireDerivative(const Key& fieldname, const Key& tag, const Key& wrt_key, const Key& wrt_tag, const Key& owner) {
-  //   data_.at(fieldname)->RequireDerivativeRecord(tag, wrt_key, wrt_tag, owner);
+  // void RequireDerivative(const Key& fieldname, const Key& tag, const Key&
+  // wrt_key, const Key& wrt_tag, const Key& owner) {
+  //   data_.at(fieldname)->RequireDerivativeRecord(tag, wrt_key, wrt_tag,
+  //   owner);
   // }
-  
+
   // Ensure a record exists.
-  bool HasData(const Key& key, const Key& tag="") const {
+  bool HasData(const Key &key, const Key &tag = "") const {
     if (Keys::hasKey(data_, key)) {
       return data_.at(key)->HasRecord(tag);
     }
     return false;
   }
 
-  bool HasDerivativeData(const Key& key, const Key& tag, const Key& wrt_key, const Key& wrt_tag) const {
+  bool HasDerivativeData(const Key &key, const Key &tag, const Key &wrt_key,
+                         const Key &wrt_tag) const {
     if (Keys::hasKey(data_, key)) {
       return data_.at(key)->HasDerivativeRecord(tag, wrt_key, wrt_tag);
     }
     return false;
   }
-  
+
   // Record accessor.
-  Record& GetRecordW(const Key& fieldname, const Key& owner) {
-    auto& r = data_.at(fieldname)->GetRecord("");
+  Record &GetRecordW(const Key &fieldname, const Key &owner) {
+    auto &r = data_.at(fieldname)->GetRecord("");
     r.AssertOwnerOrDie(owner);
     return r;
   }
-  Record& GetRecordW(const Key& fieldname, const Key& tag, const Key& owner) {
-    auto& r = data_.at(fieldname)->GetRecord(tag);
+  Record &GetRecordW(const Key &fieldname, const Key &tag, const Key &owner) {
+    auto &r = data_.at(fieldname)->GetRecord(tag);
     r.AssertOwnerOrDie(owner);
     return r;
   }
-  const Record& GetRecord(const Key& fieldname, const Key& tag="") const {
+  const Record &GetRecord(const Key &fieldname, const Key &tag = "") const {
     return data_.at(fieldname)->GetRecord(tag);
   }
 
@@ -253,103 +248,140 @@ class State {
   RecordSetMap::size_type data_count() { return data_.size(); }
 
   // Access to data
-  template<typename T>
-  const T& Get(const Key& fieldname) const {
-    return data_.at(fieldname)->Get<T>(); }
-
-  template<typename T>
-  const T& Get(const Key& fieldname, const Key& tag) const {
-    return data_.at(fieldname)->Get<T>(tag); }
-
-  template<typename T>
-  T& GetW(const Key& fieldname, const Key& owner) {
-    return data_.at(fieldname)->GetW<T>(owner); }
-
-  template<typename T>
-  T& GetW(const Key& fieldname, const Key& tag, const Key& owner) {
-    return data_.at(fieldname)->GetW<T>(tag, owner); }
-
-  template<typename T>
-  Teuchos::RCP<const T> GetPtr(const Key& fieldname, const Key& tag="") const {
-    return data_.at(fieldname)->GetPtr<T>(tag); }
-
-  template<typename T>
-  Teuchos::RCP<T> GetPtrW(const Key& fieldname, const Key& owner) {
-    return data_.at(fieldname)->GetPtrW<T>("", owner); }
-
-  template<typename T>
-  Teuchos::RCP<T> GetPtrW(const Key& fieldname, const Key& tag, const Key& owner) {
-    return data_.at(fieldname)->GetPtrW<T>(tag, owner); }
-
-  template<typename T>
-  void Set(const Key& fieldname, const Key& owner, const T& data) {
-    return data_.at(fieldname)->Set("", owner, data); }
-
-  template<typename T>
-  void Set(const Key& fieldname, const Key& tag, const Key& owner, const T& data) {
-    return data_.at(fieldname)->Set(tag, owner, data); }
-  
-  template<typename T>
-  void SetPtr(const Key& fieldname, const Key& owner,
-              const Teuchos::RCP<T>& data) {
-    return data_.at(fieldname)->SetPtr("", owner, data); }
-
-  template<typename T>
-  void SetPtr(const Key& fieldname, const Key& tag, const Key& owner,
-              const Teuchos::RCP<T>& data) {
-    return data_.at(fieldname)->SetPtr(tag, owner, data); }
-
-  template<typename T>
-  const T& GetDerivative(const Key& fieldname, const Key& wrt_key, const Key& wrt_tag) const {
-    return data_.at(fieldname)->GetDerivative<T>(wrt_key, wrt_tag); }
-
-  template<typename T>
-  const T& GetDerivative(const Key& fieldname, const Key& tag, const Key& wrt_key, const Key& wrt_tag) const {
-    return data_.at(fieldname)->GetDerivative<T>(tag, wrt_key, wrt_tag); }
-
-  template<typename T>
-  T& GetDerivativeW(const Key& fieldname, const Key& wrt_key, const Key& wrt_tag, const Key& owner) {
-    return data_.at(fieldname)->GetDerivativeW<T>(owner); }
-
-  template<typename T>
-  T& GetDerivativeW(const Key& fieldname, const Key& tag, const Key& wrt_key, const Key& wrt_tag, const Key& owner) {
-    return data_.at(fieldname)->GetDerivativeW<T>(tag, wrt_key, wrt_tag, owner); }
-
-  
-  // A few special parameters with special methods
-  double time(const Key& tag="") const {
-    return Get<double>("time", tag);
+  template <typename T> const T &Get(const Key &fieldname) const {
+    return data_.at(fieldname)->Get<T>();
   }
-  void set_time(const Key& tag, double value) {
+
+  template <typename T>
+  const T &Get(const Key &fieldname, const Key &tag) const {
+    return data_.at(fieldname)->Get<T>(tag);
+  }
+
+  template <typename T> T &GetW(const Key &fieldname, const Key &owner) {
+    return data_.at(fieldname)->GetW<T>(owner);
+  }
+
+  template <typename T>
+  T &GetW(const Key &fieldname, const Key &tag, const Key &owner) {
+    return data_.at(fieldname)->GetW<T>(tag, owner);
+  }
+
+  template <typename T>
+  Teuchos::RCP<const T> GetPtr(const Key &fieldname,
+                               const Key &tag = "") const {
+    return data_.at(fieldname)->GetPtr<T>(tag);
+  }
+
+  template <typename T>
+  Teuchos::RCP<T> GetPtrW(const Key &fieldname, const Key &owner) {
+    return data_.at(fieldname)->GetPtrW<T>("", owner);
+  }
+
+  template <typename T>
+  Teuchos::RCP<T> GetPtrW(const Key &fieldname, const Key &tag,
+                          const Key &owner) {
+    return data_.at(fieldname)->GetPtrW<T>(tag, owner);
+  }
+
+  template <typename T>
+  void Set(const Key &fieldname, const Key &owner, const T &data) {
+    return data_.at(fieldname)->Set("", owner, data);
+  }
+
+  template <typename T>
+  void Set(const Key &fieldname, const Key &tag, const Key &owner,
+           const T &data) {
+    return data_.at(fieldname)->Set(tag, owner, data);
+  }
+
+  template <typename T>
+  void SetPtr(const Key &fieldname, const Key &owner,
+              const Teuchos::RCP<T> &data) {
+    return data_.at(fieldname)->SetPtr("", owner, data);
+  }
+
+  template <typename T>
+  void SetPtr(const Key &fieldname, const Key &tag, const Key &owner,
+              const Teuchos::RCP<T> &data) {
+    return data_.at(fieldname)->SetPtr(tag, owner, data);
+  }
+
+  template <typename T>
+  const T &GetDerivative(const Key &fieldname, const Key &wrt_key,
+                         const Key &wrt_tag) const {
+    return data_.at(fieldname)->GetDerivative<T>(wrt_key, wrt_tag);
+  }
+
+  template <typename T>
+  const T &GetDerivative(const Key &fieldname, const Key &tag,
+                         const Key &wrt_key, const Key &wrt_tag) const {
+    return data_.at(fieldname)->GetDerivative<T>(tag, wrt_key, wrt_tag);
+  }
+
+  template <typename T>
+  T &GetDerivativeW(const Key &fieldname, const Key &wrt_key,
+                    const Key &wrt_tag, const Key &owner) {
+    return data_.at(fieldname)->GetDerivativeW<T>(owner);
+  }
+
+  template <typename T>
+  T &GetDerivativeW(const Key &fieldname, const Key &tag, const Key &wrt_key,
+                    const Key &wrt_tag, const Key &owner) {
+    return data_.at(fieldname)->GetDerivativeW<T>(tag, wrt_key, wrt_tag, owner);
+  }
+
+  template <typename T>
+  Teuchos::RCP<const T> GetDerivativePtr(const Key &fieldname,
+                                         const Key &wrt_key,
+                                         const Key &wrt_tag) const {
+    return data_.at(fieldname)->GetDerivative<T>(wrt_key, wrt_tag);
+  }
+
+  template <typename T>
+  Teuchos::RCP<const T> GetDerivativePtr(const Key &fieldname, const Key &tag,
+                                         const Key &wrt_key,
+                                         const Key &wrt_tag) const {
+    return data_.at(fieldname)->GetDerivative<T>(tag, wrt_key, wrt_tag);
+  }
+
+  template <typename T>
+  Teuchos::RCP<T> GetDerivativePtrW(const Key &fieldname, const Key &wrt_key,
+                                    const Key &wrt_tag, const Key &owner) {
+    return data_.at(fieldname)->GetDerivativeW<T>(owner);
+  }
+
+  template <typename T>
+  Teuchos::RCP<T> GetDerivativePtrW(const Key &fieldname, const Key &tag,
+                                    const Key &wrt_key, const Key &wrt_tag,
+                                    const Key &owner) {
+    return data_.at(fieldname)->GetDerivativeW<T>(tag, wrt_key, wrt_tag, owner);
+  }
+
+  // A few special parameters with special methods
+  double time(const Key &tag = "") const { return Get<double>("time", tag); }
+  void set_time(const Key &tag, double value) {
     Set("time", tag, "time", value);
   }
-  void set_time(double value) {
-    Set("time", "", "time", value);
-  }
-  void advance_time(const Key& tag, double dt) {
-    Set("time", tag, "time", Get<double>("time", tag)+dt);
+  void set_time(double value) { Set("time", "", "time", value); }
+  void advance_time(const Key &tag, double dt) {
+    Set("time", tag, "time", Get<double>("time", tag) + dt);
   }
   void advance_time(double dt) {
-    Set("time", "", "time", Get<double>("time")+dt);
+    Set("time", "", "time", Get<double>("time") + dt);
   }
 
-  int cycle(const Key& tag="") const {
-    return Get<int>("cycle", tag);
-  }
-  void set_cycle(const Key& tag, int value) {
+  int cycle(const Key &tag = "") const { return Get<int>("cycle", tag); }
+  void set_cycle(const Key &tag, int value) {
     Set("cycle", tag, "cycle", value);
   }
-  void set_cycle(int value) {
-    Set("cycle", "", "cycle", value);
+  void set_cycle(int value) { Set("cycle", "", "cycle", value); }
+  void advance_cycle(const Key &tag, int dc = 1) {
+    Set("cycle", tag, "cycle", Get<int>("cycle", tag) + dc);
   }
-  void advance_cycle(const Key& tag, int dc=1) {
-    Set("cycle", tag, "cycle", Get<int>("cycle", tag)+dc);
-  }
-  void advance_cycle(int dc=1) {
-    Set("cycle", "", "cycle", Get<int>("cycle")+dc);
+  void advance_cycle(int dc = 1) {
+    Set("cycle", "", "cycle", Get<int>("cycle") + dc);
   }
 
-  
   // -----------------------------------------------------------------------------
   // State handles data evaluation.
   // -----------------------------------------------------------------------------
@@ -358,24 +390,29 @@ class State {
   // like the Phalanx approach.  A directed acyclic graph of dependencies are
   // managed in State, where each node is a Evaluator.
   //
-  // Access to the FEList -- this allows PKs to add to this list for custom evaluators.
-  Teuchos::ParameterList& FEList() { return state_plist_->sublist("evaluators"); }
+  // Access to the FEList -- this allows PKs to add to this list for custom
+  // evaluators.
+  Teuchos::ParameterList &FEList() {
+    return state_plist_->sublist("evaluators");
+  }
 
   // Require Evaluators.
-  Teuchos::RCP<Evaluator> RequireEvaluator(const Key&, const Key& tag="");
+  Teuchos::RCP<Evaluator> RequireEvaluator(const Key &, const Key &tag = "");
 
   // Ensure a Evaluator exists.
-  bool HasEvaluator(const Key&, const Key& tag="");
+  bool HasEvaluator(const Key &, const Key &tag = "");
 
   // Evaluator accessor.
-  Teuchos::RCP<Evaluator> GetEvaluator(const Key&, const Key& tag="");
-  Teuchos::RCP<const Evaluator> GetEvaluator(const Key&, const Key& tag="") const;
+  Teuchos::RCP<Evaluator> GetEvaluator(const Key &, const Key &tag = "");
+  Teuchos::RCP<const Evaluator> GetEvaluator(const Key &,
+                                             const Key &tag = "") const;
 
   // Evaluator mutator.
-  void SetEvaluator(const Key& key, const Teuchos::RCP<Evaluator>& evaluator) {
-    SetEvaluator(key, "", evaluator); }
-  void SetEvaluator(const Key& key, const Key& tag,
-                    const Teuchos::RCP<Evaluator>& evaluator);
+  void SetEvaluator(const Key &key, const Teuchos::RCP<Evaluator> &evaluator) {
+    SetEvaluator(key, "", evaluator);
+  }
+  void SetEvaluator(const Key &key, const Key &tag,
+                    const Teuchos::RCP<Evaluator> &evaluator);
 
   // Iterate over evaluators.
   typedef EvaluatorMap::const_iterator evaluator_iterator;
@@ -397,17 +434,17 @@ class State {
   //
   // Get a parameter list.
   Teuchos::ParameterList GetModelParameters(std::string modelname);
- 
- private:
 
+private:
   // Iterate over Records.
   typedef RecordSetMap::iterator data_iterator_;
   data_iterator_ data_begin_() { return data_.begin(); }
   data_iterator_ data_end_() { return data_.end(); }
-  
+
   // read checkpoint is friend to have access to non-const iterator
-  friend void ReadCheckpoint(const Epetra_MpiComm&, State&, const std::string&);
-  
+  friend void ReadCheckpoint(const Epetra_MpiComm &, State &,
+                             const std::string &);
+
   // Containers
   MeshMap meshes_;
   RecordSetMap data_;
@@ -419,28 +456,22 @@ class State {
   Teuchos::RCP<Teuchos::ParameterList> state_plist_;
 };
 
-
 // -----------------------------------------------------------------------------
 // Non-member functions for I/O of a State.
 // -----------------------------------------------------------------------------
 
 // Visualization of State.
-void WriteVis(Visualization& vis,
-              const State& S);
-
+void WriteVis(Visualization &vis, const State &S);
 
 // Checkpointing State.
-void WriteCheckpoint(Checkpoint& chkp,
-                     const Epetra_MpiComm& comm,
-                     const State& S,
-                     bool final=false);
+void WriteCheckpoint(Checkpoint &chkp, const Epetra_MpiComm &comm,
+                     const State &S, bool final = false);
 
-void ReadCheckpoint(const Epetra_MpiComm& comm,
-                      State& S,
-                      const std::string& filename);
+void ReadCheckpoint(const Epetra_MpiComm &comm, State &S,
+                    const std::string &filename);
 
-void DeformCheckpointMesh(State& S);
+void DeformCheckpointMesh(State &S);
 
-}  // namespace Amanzi
+} // namespace Amanzi
 
 #endif

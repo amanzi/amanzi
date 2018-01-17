@@ -22,26 +22,23 @@ namespace Amanzi {
 //
 class EvaluatorIndependent_ : public Evaluator {
 
- public:
-
+public:
   // ---------------------------------------------------------------------------
   // Constructors, assignement operators, etc
   // ---------------------------------------------------------------------------
-  explicit
-  EvaluatorIndependent_(Teuchos::ParameterList& plist);
-  EvaluatorIndependent_(const EvaluatorIndependent_& other) = default;
+  explicit EvaluatorIndependent_(Teuchos::ParameterList &plist);
+  EvaluatorIndependent_(const EvaluatorIndependent_ &other) = default;
 
+  EvaluatorIndependent_ &operator=(const EvaluatorIndependent_ &other);
+  virtual Evaluator &operator=(const Evaluator &other) override;
 
-  EvaluatorIndependent_& operator=(const EvaluatorIndependent_& other);
-  virtual Evaluator& operator=(const Evaluator& other) override;
-  
   // ---------------------------------------------------------------------------
   // Lazy evaluation of the evaluator.
   //
   // Updates the data, if needed.  Returns true if the value of the data has
   // changed since the last request for an update.
   // ---------------------------------------------------------------------------
-  virtual bool Update(State& S, const Key& request) override final;
+  virtual bool Update(State &S, const Key &request) override final;
 
   // ---------------------------------------------------------------------------
   // Lazy evaluation of derivatives of evaluator.
@@ -50,24 +47,27 @@ class EvaluatorIndependent_ : public Evaluator {
   // derivative with respect to wrt_key has changed since the last request for
   // an update.
   // ---------------------------------------------------------------------------
-  virtual bool UpdateDerivative(State& S,
-          const Key& request, const Key& wrt_key, const Key& wrt_tag) override final;
+  virtual bool UpdateDerivative(State &S, const Key &request,
+                                const Key &wrt_key,
+                                const Key &wrt_tag) override final;
 
-  virtual bool IsDependency(const State& S, const Key& key, const Key& tag) const override final;
-  virtual bool ProvidesKey(const Key& key, const Key& tag) const override final;
-  virtual bool IsDifferentiableWRT(const State& S, const Key& wrt_key, const Key& wrt_tag) const override final;
+  virtual bool IsDependency(const State &S, const Key &key,
+                            const Key &tag) const override final;
+  virtual bool ProvidesKey(const Key &key, const Key &tag) const override final;
+  virtual bool IsDifferentiableWRT(const State &S, const Key &wrt_key,
+                                   const Key &wrt_tag) const override final;
 
-  virtual void EnsureCompatibility(State& S) override;
+  virtual void EnsureCompatibility(State &S) override;
 
   virtual std::string WriteToString() const override;
 
- protected:
+protected:
   // ---------------------------------------------------------------------------
   // Does the actual work to update the value in the state.
   // ---------------------------------------------------------------------------
-  virtual void Update_(State& S) = 0;
+  virtual void Update_(State &S) = 0;
 
- protected:
+protected:
   Key my_key_;
   Key my_tag_;
 
@@ -80,21 +80,17 @@ class EvaluatorIndependent_ : public Evaluator {
   VerboseObject vo_;
 };
 
-
-
-template<class Data_t, class DataFactory_t=NullFactory>
+template <class Data_t, class DataFactory_t = NullFactory>
 class EvaluatorIndependent : public EvaluatorIndependent_ {
- public:
+public:
   using EvaluatorIndependent_::EvaluatorIndependent_;
 
-  virtual void EnsureCompatibility(State& S) override {
+  virtual void EnsureCompatibility(State &S) override {
     // Require the field and claim ownership.
     S.Require<Data_t, DataFactory_t>(my_key_, my_tag_, my_key_);
   }
 };
 
-
-} // namespace
-
+} // namespace Amanzi
 
 #endif

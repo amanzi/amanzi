@@ -117,7 +117,7 @@ void PDE_DiffusionNLFV::SetScalarCoefficient(
       ASSERT(k_->HasComponent("face"));
     }
   }
-  if (dkdp_ != Teuchos::null) ASSERT(dkdp_->HasComponent("cell")); 
+  if (dkdp_ != Teuchos::null) ASSERT(dkdp_->HasComponent("face")); 
 }
 
 
@@ -288,6 +288,7 @@ void PDE_DiffusionNLFV::UpdateMatrices(
     const Teuchos::Ptr<const CompositeVector>& flux,
     const Teuchos::Ptr<const CompositeVector>& u)
 {
+  ASSERT(u.get());
   if (!stencil_initialized_) InitStencils_();
 
   u->ScatterMasterToGhosted("cell");

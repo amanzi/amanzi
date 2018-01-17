@@ -1,7 +1,7 @@
-#include <vector>
+#include "UniqueHelpers.hh"
 #include "UnitTest++.h"
 #include <boost/any.hpp>
-#include "UniqueHelpers.hh"
+#include <vector>
 
 TEST(ANY) {
   std::vector<boost::any> stuff;
@@ -11,5 +11,4 @@ TEST(ANY) {
 
   boost::any thing2 = std::make_unique<bool>(true);
   stuff.push_back(thing2);
-
 }

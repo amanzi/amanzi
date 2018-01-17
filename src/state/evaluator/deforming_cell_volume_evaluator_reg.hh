@@ -13,7 +13,7 @@ A field evaluator for an changing cell volume.
 
 namespace Amanzi {
 
-Utils::RegisteredFactory<Evaluator,DeformingCellVolumeEvaluator>
-DeformingCellVolumeEvaluator::fac_("deforming cell volume");
+Utils::RegisteredFactory<Evaluator, DeformingCellVolumeEvaluator>
+    DeformingCellVolumeEvaluator::fac_("deforming cell volume");
 
-} // namespace
+} // namespace Amanzi

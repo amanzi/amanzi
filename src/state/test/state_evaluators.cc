@@ -6,27 +6,27 @@
 
 #include "Epetra_MpiComm.h"
 #include "Epetra_Vector.h"
-#include "Teuchos_ParameterXMLFileReader.hpp"
 #include "Teuchos_ParameterList.hpp"
+#include "Teuchos_ParameterXMLFileReader.hpp"
 #include "Teuchos_RCP.hpp"
 #include "UnitTest++.h"
 
 #include "Mesh.hh"
 #include "MeshFactory.hh"
-#include "evaluator/EvaluatorPrimary.hh"
+#include "State.hh"
 #include "evaluator/EvaluatorAlgebraic.hh"
 #include "evaluator/EvaluatorIndependent.hh"
-#include "State.hh"
+#include "evaluator/EvaluatorPrimary.hh"
 
 using namespace Amanzi;
 using namespace Amanzi::AmanziMesh;
 
 /* ******************************************************************
-* Equation A = 2*B
-****************************************************************** */
+ * Equation A = 2*B
+ ****************************************************************** */
 class AEvaluator : public EvaluatorAlgebraic<double> {
- public:
-  AEvaluator(Teuchos::ParameterList& plist)
+public:
+  AEvaluator(Teuchos::ParameterList &plist)
       : EvaluatorAlgebraic<double>(plist) {
     my_key_ = std::string("fa");
     my_tag_ = "";
@@ -34,16 +34,17 @@ class AEvaluator : public EvaluatorAlgebraic<double> {
   }
 
   virtual Teuchos::RCP<Evaluator> Clone() const override {
-    return Teuchos::rcp(new AEvaluator(*this)); };
+    return Teuchos::rcp(new AEvaluator(*this));
+  };
 
-  virtual void Evaluate_(const State& S,
-          double& result) override {
-    auto& fb = S.Get<double>("fb");
+  virtual void Evaluate_(const State &S, double &result) override {
+    auto &fb = S.Get<double>("fb");
     result = 2 * fb;
   }
 
-  virtual void EvaluatePartialDerivative_(const State& S,
-          const Key& wrt_key, const Key& wrt_tag, double& result) override {
+  virtual void EvaluatePartialDerivative_(const State &S, const Key &wrt_key,
+                                          const Key &wrt_tag,
+                                          double &result) override {
     if (wrt_key == "fb" && wrt_tag == "") {
       result = 2.0;
     } else {
@@ -52,33 +53,33 @@ class AEvaluator : public EvaluatorAlgebraic<double> {
   }
 };
 
-
 class AIndependent : public EvaluatorIndependent<double> {
- public:
+public:
   using EvaluatorIndependent<double>::EvaluatorIndependent;
 
   virtual Teuchos::RCP<Evaluator> Clone() const override {
-    return Teuchos::rcp(new AIndependent(*this)); };
+    return Teuchos::rcp(new AIndependent(*this));
+  };
 
- protected:
-  virtual void Update_(State& s) override {
+protected:
+  virtual void Update_(State &s) override {
     s.GetW<double>(my_key_, my_tag_, my_key_) = 3.;
   }
 };
 
 class BIndependent : public EvaluatorIndependent<double> {
- public:
+public:
   using EvaluatorIndependent<double>::EvaluatorIndependent;
 
   virtual Teuchos::RCP<Evaluator> Clone() const override {
-    return Teuchos::rcp(new BIndependent(*this)); };
-  
- protected:
-  virtual void Update_(State& s) override {
+    return Teuchos::rcp(new BIndependent(*this));
+  };
+
+protected:
+  virtual void Update_(State &s) override {
     s.GetW<double>(my_key_, my_tag_, my_key_) = s.time(my_tag_);
   }
 };
-
 
 SUITE(EVALUATORS) {
   TEST(PRIMARY) {
@@ -86,7 +87,8 @@ SUITE(EVALUATORS) {
     State S;
 
     Teuchos::ParameterList es_list;
-    es_list.sublist("verbose object").set<std::string>("verbosity level", "extreme");
+    es_list.sublist("verbose object")
+        .set<std::string>("verbosity level", "extreme");
     es_list.setName("fa");
 
     S.Require<double>("fa", "", "fa");
@@ -102,15 +104,15 @@ SUITE(EVALUATORS) {
     S.Initialize();
 
     // provides
-    CHECK(S.GetEvaluator("fa")->ProvidesKey("fa", "")); // self
+    CHECK(S.GetEvaluator("fa")->ProvidesKey("fa", ""));     // self
     CHECK(!S.GetEvaluator("fa")->ProvidesKey("fa", "old")); // other tag
     CHECK(!S.GetEvaluator("fa")->ProvidesKey("other", "")); // other key
-    
+
     // dependencies -- none
-    CHECK(!S.GetEvaluator("fa")->IsDependency(S, "fa", "")); // not self
+    CHECK(!S.GetEvaluator("fa")->IsDependency(S, "fa", ""));    // not self
     CHECK(!S.GetEvaluator("fa")->IsDependency(S, "fa", "old")); // not self
     CHECK(!S.GetEvaluator("fa")->IsDependency(S, "other", "")); // not other
-    
+
     // check first call is always "changed"
     CHECK(S.GetEvaluator("fa")->Update(S, "my_request"));
     CHECK(S.GetEvaluator("fa")->UpdateDerivative(S, "my_request", "fa", ""));
@@ -130,7 +132,7 @@ SUITE(EVALUATORS) {
     // check the value and derivative are still the same
     CHECK_CLOSE(1.0, S.Get<double>("fa", ""), 1.e-10);
     CHECK_CLOSE(1.0, S.GetDerivative<double>("fa", "", "fa", ""), 1.e-10);
-    
+
     // mark as changed
     auto eval = S.GetEvaluator("fa");
     auto eval_p = Teuchos::rcp_dynamic_cast<EvaluatorPrimary<double>>(eval);
@@ -144,14 +146,14 @@ SUITE(EVALUATORS) {
     CHECK(!S.GetEvaluator("fa")->UpdateDerivative(S, "my_request", "fa", ""));
   }
 
-
   TEST(SECONDARY) {
     std::cout << "Secondary Variable Test" << std::endl;
     State S;
 
     // make the primary.  Note: USER CODE SHOULD NOT DO IT THIS WAY!
     Teuchos::ParameterList es_list;
-    es_list.sublist("verbose object").set<std::string>("verbosity level", "extreme");
+    es_list.sublist("verbose object")
+        .set<std::string>("verbosity level", "extreme");
     es_list.setName("fb");
     S.Require<double>("fb", "", "fb");
     auto fb_eval = Teuchos::rcp(new EvaluatorPrimary<double>(es_list));
@@ -159,12 +161,13 @@ SUITE(EVALUATORS) {
 
     // make the secondary.  Note: USER CODE SHOULD NOT DO IT THIS WAY!
     Teuchos::ParameterList ea_list;
-    ea_list.sublist("verbose object").set<std::string>("verbosity level", "extreme");
+    ea_list.sublist("verbose object")
+        .set<std::string>("verbosity level", "extreme");
     ea_list.setName("fa");
     S.Require<double>("fa", "", "fa");
     auto fa_eval = Teuchos::rcp(new AEvaluator(ea_list));
     S.SetEvaluator("fa", fa_eval);
-    
+
     // setup and initialize.  Note: USER CODE SHOULD NOT DO IT THIS WAY!
     S.Setup();
     S.GetW<double>("fb", "", "fb") = 3.0;
@@ -172,16 +175,16 @@ SUITE(EVALUATORS) {
     S.Initialize();
 
     // provides
-    CHECK(S.GetEvaluator("fa")->ProvidesKey("fa", "")); // self
+    CHECK(S.GetEvaluator("fa")->ProvidesKey("fa", ""));     // self
     CHECK(!S.GetEvaluator("fa")->ProvidesKey("fa", "old")); // other tag
-    CHECK(!S.GetEvaluator("fa")->ProvidesKey("fb", "")); // other key
-    
+    CHECK(!S.GetEvaluator("fa")->ProvidesKey("fb", ""));    // other key
+
     // dependencies -- fb
-    CHECK(!S.GetEvaluator("fa")->IsDependency(S, "fa", "")); // not self
+    CHECK(!S.GetEvaluator("fa")->IsDependency(S, "fa", ""));    // not self
     CHECK(!S.GetEvaluator("fa")->IsDependency(S, "fa", "old")); // not self
     CHECK(!S.GetEvaluator("fa")->IsDependency(S, "other", "")); // not other
-    CHECK(S.GetEvaluator("fa")->IsDependency(S, "fb", "")); // but fb is!
-    
+    CHECK(S.GetEvaluator("fa")->IsDependency(S, "fb", ""));     // but fb is!
+
     // check first call is always "changed"
     CHECK(S.GetEvaluator("fa")->Update(S, "my_request"));
     CHECK(S.GetEvaluator("fa")->UpdateDerivative(S, "my_request", "fb", ""));
@@ -201,7 +204,7 @@ SUITE(EVALUATORS) {
     // check the value and derivative are still the same
     CHECK_CLOSE(6.0, S.Get<double>("fa", ""), 1.e-10);
     CHECK_CLOSE(2.0, S.GetDerivative<double>("fa", "", "fb", ""), 1.e-10);
-    
+
     // change the primary and mark as changed
     S.GetW<double>("fb", "", "fb") = 14.0;
     auto eval = S.GetEvaluator("fb");
@@ -223,7 +226,8 @@ SUITE(EVALUATORS) {
     State S;
 
     Teuchos::ParameterList es_list;
-    es_list.sublist("verbose object").set<std::string>("verbosity level", "extreme");
+    es_list.sublist("verbose object")
+        .set<std::string>("verbosity level", "extreme");
     es_list.setName("fa");
     es_list.set("constant in time", true);
 
@@ -238,15 +242,15 @@ SUITE(EVALUATORS) {
     S.Initialize();
 
     // provides
-    CHECK(S.GetEvaluator("fa")->ProvidesKey("fa", "")); // self
+    CHECK(S.GetEvaluator("fa")->ProvidesKey("fa", ""));     // self
     CHECK(!S.GetEvaluator("fa")->ProvidesKey("fa", "old")); // other tag
     CHECK(!S.GetEvaluator("fa")->ProvidesKey("other", "")); // other key
-    
+
     // dependencies -- none
-    CHECK(!S.GetEvaluator("fa")->IsDependency(S, "fa", "")); // not self
+    CHECK(!S.GetEvaluator("fa")->IsDependency(S, "fa", ""));    // not self
     CHECK(!S.GetEvaluator("fa")->IsDependency(S, "fa", "old")); // not self
     CHECK(!S.GetEvaluator("fa")->IsDependency(S, "other", "")); // not other
-    
+
     // check first call is always "changed"
     CHECK(S.GetEvaluator("fa")->Update(S, "my_request"));
 
@@ -267,16 +271,15 @@ SUITE(EVALUATORS) {
 
     // check the value and derivative are still the same
     CHECK_CLOSE(3.0, S.Get<double>("fa", ""), 1.e-10);
-    
   }
-
 
   TEST(INDEPENDENT_TEMPORALLY_CHANGING) {
     std::cout << "Independent Variable Test (Temporally varying)" << std::endl;
     State S;
 
     Teuchos::ParameterList es_list;
-    es_list.sublist("verbose object").set<std::string>("verbosity level", "extreme");
+    es_list.sublist("verbose object")
+        .set<std::string>("verbosity level", "extreme");
     es_list.setName("fa");
     es_list.set("constant in time", false);
 
@@ -287,22 +290,22 @@ SUITE(EVALUATORS) {
     S.SetEvaluator("fa", fa_eval);
 
     S.Require<double>("time", "", "time");
-    
+
     // setup and initialize.  Note: USER CODE SHOULD NOT DO IT THIS WAY!
     S.Setup();
     S.set_time(1.1);
     S.Initialize();
 
     // provides
-    CHECK(S.GetEvaluator("fa")->ProvidesKey("fa", "")); // self
+    CHECK(S.GetEvaluator("fa")->ProvidesKey("fa", ""));     // self
     CHECK(!S.GetEvaluator("fa")->ProvidesKey("fa", "old")); // other tag
     CHECK(!S.GetEvaluator("fa")->ProvidesKey("other", "")); // other key
-    
+
     // dependencies -- none
-    CHECK(!S.GetEvaluator("fa")->IsDependency(S, "fa", "")); // not self
+    CHECK(!S.GetEvaluator("fa")->IsDependency(S, "fa", ""));    // not self
     CHECK(!S.GetEvaluator("fa")->IsDependency(S, "fa", "old")); // not self
     CHECK(!S.GetEvaluator("fa")->IsDependency(S, "other", "")); // not other
-    
+
     // check first call is always "changed"
     CHECK(S.GetEvaluator("fa")->Update(S, "my_request"));
 
@@ -331,8 +334,5 @@ SUITE(EVALUATORS) {
     CHECK(S.GetEvaluator("fa")->Update(S, "my_request"));
     CHECK_CLOSE(3.1, S.Get<double>("fa", ""), 1.e-10);
     CHECK(!S.GetEvaluator("fa")->Update(S, "my_request"));
-    
   }
-  
 }
-

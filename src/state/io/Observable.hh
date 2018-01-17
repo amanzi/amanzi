@@ -1,4 +1,4 @@
- /* -*-  mode: c++; indent-tabs-mode: nil -*- */
+/* -*-  mode: c++; indent-tabs-mode: nil -*- */
 /* -------------------------------------------------------------------------
 Amanzi
 
@@ -13,13 +13,13 @@ Observable data object
 #ifndef AMANZI_OBSERVABLE_HH_
 #define AMANZI_OBSERVABLE_HH_
 
+#include "Epetra_MpiComm.h"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_RCP.hpp"
-#include "Epetra_MpiComm.h"
 
-#include "ObservationData.hh"
-#include "MeshDefs.hh"
 #include "IOEvent.hh"
+#include "MeshDefs.hh"
+#include "ObservationData.hh"
 
 namespace Amanzi {
 
@@ -31,26 +31,25 @@ double ObservableMax(double a, double b);
 
 class Observable : public IOEvent {
 
- public:
-
-  Observable(Teuchos::ParameterList& plist, Epetra_MpiComm *comm);
+public:
+  Observable(Teuchos::ParameterList &plist, Epetra_MpiComm *comm);
 
   std::string name() { return name_; }
   std::string variable() { return variable_; }
 
   // DO NOT OVERRIDE -- instead, use the virtual, protected version.
-  void Update(const State& S,
-              Amanzi::ObservationData::DataTriple& data_triplet);
+  void Update(const State &S,
+              Amanzi::ObservationData::DataTriple &data_triplet);
 
   void Flush();
 
- protected:
-  virtual void Update_(const State& S,
-                       Amanzi::ObservationData::DataTriple& data_triplet);
+protected:
+  virtual void Update_(const State &S,
+                       Amanzi::ObservationData::DataTriple &data_triplet);
 
   virtual void WriteHeader_();
 
- protected:
+protected:
   bool write_;
   int interval_;
   int count_;
@@ -69,7 +68,6 @@ class Observable : public IOEvent {
   double (*function_)(double a, double b, double vol);
 };
 
-
-} // namespace
+} // namespace Amanzi
 
 #endif

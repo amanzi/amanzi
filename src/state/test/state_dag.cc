@@ -1,9 +1,9 @@
 /*
   State
 
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
   Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
@@ -11,16 +11,16 @@
 
 #include "Epetra_MpiComm.h"
 #include "Epetra_Vector.h"
-#include "Teuchos_ParameterXMLFileReader.hpp"
 #include "Teuchos_ParameterList.hpp"
+#include "Teuchos_ParameterXMLFileReader.hpp"
 #include "Teuchos_RCP.hpp"
 #include "UnitTest++.h"
 
 #include "Mesh.hh"
 #include "MeshFactory.hh"
-#include "evaluator/EvaluatorPrimary.hh"
-#include "evaluator/EvaluatorAlgebraic.hh"
 #include "State.hh"
+#include "evaluator/EvaluatorAlgebraic.hh"
+#include "evaluator/EvaluatorPrimary.hh"
 
 using namespace Amanzi;
 using namespace Amanzi::AmanziMesh;
@@ -41,8 +41,8 @@ using namespace Amanzi::AmanziMesh;
     H = 2*F         = 12
     D = 2*G         = 6
     F = 2*G         = 6
-  
-  Derivatives are 
+
+  Derivatives are
     dA/dB = 2
     dA/dG = 8640
 
@@ -52,12 +52,12 @@ using namespace Amanzi::AmanziMesh;
 */
 
 /* ******************************************************************
-* Equation A = 2*B + C*E*H
-****************************************************************** */
+ * Equation A = 2*B + C*E*H
+ ****************************************************************** */
 class AEvaluator : public EvaluatorAlgebraic<double> {
- public:
-  AEvaluator(Teuchos::ParameterList& plist)
-    : EvaluatorAlgebraic<double>(plist) {
+public:
+  AEvaluator(Teuchos::ParameterList &plist)
+      : EvaluatorAlgebraic<double>(plist) {
     my_key_ = "fa";
     dependencies_.emplace_back(std::make_pair(Key("fb"), Key()));
     dependencies_.emplace_back(std::make_pair(Key("fc"), Key()));
@@ -66,24 +66,25 @@ class AEvaluator : public EvaluatorAlgebraic<double> {
   }
 
   virtual Teuchos::RCP<Evaluator> Clone() const override {
-    return Teuchos::rcp(new AEvaluator(*this)); }
+    return Teuchos::rcp(new AEvaluator(*this));
+  }
 
-  virtual void Evaluate_(const State& S,
-          double& result) override {
+  virtual void Evaluate_(const State &S, double &result) override {
 
-    auto& fb = S.Get<double>("fb");
-    auto& fc = S.Get<double>("fc");
-    auto& fe = S.Get<double>("fe");
-    auto& fh = S.Get<double>("fh");
+    auto &fb = S.Get<double>("fb");
+    auto &fc = S.Get<double>("fc");
+    auto &fe = S.Get<double>("fe");
+    auto &fh = S.Get<double>("fh");
     result = 2 * fb + fc * fe * fh;
   }
 
-  virtual void EvaluatePartialDerivative_(const State& S,
-          const Key& wrt_key, const Key& wrt_tag, double& result) override {
-    auto& fc = S.Get<double>("fc");
-    auto& fe = S.Get<double>("fe");
-    auto& fh = S.Get<double>("fh");
-    
+  virtual void EvaluatePartialDerivative_(const State &S, const Key &wrt_key,
+                                          const Key &wrt_tag,
+                                          double &result) override {
+    auto &fc = S.Get<double>("fc");
+    auto &fe = S.Get<double>("fe");
+    auto &fh = S.Get<double>("fh");
+
     if (wrt_key == "fb") {
       result = 2.0;
     } else if (wrt_key == "fc") {
@@ -96,31 +97,31 @@ class AEvaluator : public EvaluatorAlgebraic<double> {
   }
 };
 
-
 /* ******************************************************************
-* Equation C = 2*D + G
-****************************************************************** */
+ * Equation C = 2*D + G
+ ****************************************************************** */
 class CEvaluator : public EvaluatorAlgebraic<double> {
- public:
-  CEvaluator(Teuchos::ParameterList& plist) : 
-    EvaluatorAlgebraic<double>(plist) {
+public:
+  CEvaluator(Teuchos::ParameterList &plist)
+      : EvaluatorAlgebraic<double>(plist) {
     my_key_ = "fc";
     dependencies_.emplace_back(std::make_pair(Key("fd"), Key()));
     dependencies_.emplace_back(std::make_pair(Key("fg"), Key()));
   }
 
   virtual Teuchos::RCP<Evaluator> Clone() const override {
-    return Teuchos::rcp(new CEvaluator(*this)); }
+    return Teuchos::rcp(new CEvaluator(*this));
+  }
 
-  virtual void Evaluate_(const State& S,
-          double& result) override {
-    auto& fd = S.Get<double>("fd");
-    auto& fg = S.Get<double>("fg");
+  virtual void Evaluate_(const State &S, double &result) override {
+    auto &fd = S.Get<double>("fd");
+    auto &fg = S.Get<double>("fg");
     result = 2 * fd + fg;
   }
 
-  virtual void EvaluatePartialDerivative_(const State& S,
-          const Key& wrt_key, const Key& wrt_tag, double& result) override {
+  virtual void EvaluatePartialDerivative_(const State &S, const Key &wrt_key,
+                                          const Key &wrt_tag,
+                                          double &result) override {
 
     if (wrt_key == "fd") {
       result = 2.;
@@ -130,62 +131,62 @@ class CEvaluator : public EvaluatorAlgebraic<double> {
   }
 };
 
-
 /* ******************************************************************
-* Equation D = 2*G
-****************************************************************** */
+ * Equation D = 2*G
+ ****************************************************************** */
 class DEvaluator : public EvaluatorAlgebraic<double> {
- public:
-  DEvaluator(Teuchos::ParameterList& plist)
-    : EvaluatorAlgebraic<double>(plist) {
+public:
+  DEvaluator(Teuchos::ParameterList &plist)
+      : EvaluatorAlgebraic<double>(plist) {
     my_key_ = "fd";
     dependencies_.emplace_back(std::make_pair(Key("fg"), Key()));
   }
 
   virtual Teuchos::RCP<Evaluator> Clone() const override {
-    return Teuchos::rcp(new DEvaluator(*this)); }
-
-  virtual void Evaluate_(const State& S,
-          double& result) override {
-    auto& fg = S.Get<double>("fg");
-    result = 2*fg;
+    return Teuchos::rcp(new DEvaluator(*this));
   }
 
-  virtual void EvaluatePartialDerivative_(const State& S,
-          const Key& wrt_key, const Key& wrt_tag, double& result) override {
+  virtual void Evaluate_(const State &S, double &result) override {
+    auto &fg = S.Get<double>("fg");
+    result = 2 * fg;
+  }
+
+  virtual void EvaluatePartialDerivative_(const State &S, const Key &wrt_key,
+                                          const Key &wrt_tag,
+                                          double &result) override {
     if (wrt_key == "fg") {
       result = 2.;
     }
   }
 };
 
-
 /* ******************************************************************
-* Equation E = D*F
-****************************************************************** */
+ * Equation E = D*F
+ ****************************************************************** */
 class EEvaluator : public EvaluatorAlgebraic<double> {
- public:
-  EEvaluator(Teuchos::ParameterList& plist)
-    : EvaluatorAlgebraic<double>(plist) {
+public:
+  EEvaluator(Teuchos::ParameterList &plist)
+      : EvaluatorAlgebraic<double>(plist) {
     my_key_ = "fe";
     dependencies_.emplace_back(std::make_pair(Key("fd"), Key()));
     dependencies_.emplace_back(std::make_pair(Key("ff"), Key()));
   }
 
   virtual Teuchos::RCP<Evaluator> Clone() const override {
-    return Teuchos::rcp(new EEvaluator(*this)); }
+    return Teuchos::rcp(new EEvaluator(*this));
+  }
 
-  virtual void Evaluate_(const State& S,
-          double& result) override {
-    auto& fd = S.Get<double>("fd");
-    auto& ff = S.Get<double>("ff");
+  virtual void Evaluate_(const State &S, double &result) override {
+    auto &fd = S.Get<double>("fd");
+    auto &ff = S.Get<double>("ff");
     result = fd * ff;
   }
 
-  virtual void EvaluatePartialDerivative_(const State& S,
-          const Key& wrt_key, const Key& wrt_tag, double& result) override {
-    auto& fd = S.Get<double>("fd");
-    auto& ff = S.Get<double>("ff");
+  virtual void EvaluatePartialDerivative_(const State &S, const Key &wrt_key,
+                                          const Key &wrt_tag,
+                                          double &result) override {
+    auto &fd = S.Get<double>("fd");
+    auto &ff = S.Get<double>("ff");
 
     if (wrt_key == "fd") {
       result = ff;
@@ -195,29 +196,29 @@ class EEvaluator : public EvaluatorAlgebraic<double> {
   }
 };
 
-
 /* ******************************************************************
-* Equation F = 2*G
-****************************************************************** */
+ * Equation F = 2*G
+ ****************************************************************** */
 class FEvaluator : public EvaluatorAlgebraic<double> {
- public:
-  FEvaluator(Teuchos::ParameterList& plist)
-    : EvaluatorAlgebraic<double>(plist) {
+public:
+  FEvaluator(Teuchos::ParameterList &plist)
+      : EvaluatorAlgebraic<double>(plist) {
     my_key_ = "ff";
     dependencies_.emplace_back(std::make_pair(Key("fg"), Key()));
   }
 
   virtual Teuchos::RCP<Evaluator> Clone() const override {
-    return Teuchos::rcp(new FEvaluator(*this)); }
-
-  virtual void Evaluate_(const State& S,
-          double& result) override {
-    auto& fg = S.Get<double>("fg");
-    result = 2*fg;
+    return Teuchos::rcp(new FEvaluator(*this));
   }
 
-  virtual void EvaluatePartialDerivative_(const State& S,
-          const Key& wrt_key, const Key& wrt_tag, double& result) override {
+  virtual void Evaluate_(const State &S, double &result) override {
+    auto &fg = S.Get<double>("fg");
+    result = 2 * fg;
+  }
+
+  virtual void EvaluatePartialDerivative_(const State &S, const Key &wrt_key,
+                                          const Key &wrt_tag,
+                                          double &result) override {
 
     if (wrt_key == "fg") {
       result = 2.;
@@ -225,42 +226,43 @@ class FEvaluator : public EvaluatorAlgebraic<double> {
   }
 };
 
-
 /* ******************************************************************
-* Equation H = 2*F
-****************************************************************** */
+ * Equation H = 2*F
+ ****************************************************************** */
 class HEvaluator : public EvaluatorAlgebraic<double> {
- public:
-  HEvaluator(Teuchos::ParameterList& plist)
-    : EvaluatorAlgebraic<double>(plist) {
+public:
+  HEvaluator(Teuchos::ParameterList &plist)
+      : EvaluatorAlgebraic<double>(plist) {
     my_key_ = "fh";
     dependencies_.emplace_back(std::make_pair(Key("ff"), Key()));
   }
 
   virtual Teuchos::RCP<Evaluator> Clone() const override {
-    return Teuchos::rcp(new HEvaluator(*this)); }
-
-  virtual void Evaluate_(const State& S,
-          double& result) override {
-    auto& ff = S.Get<double>("ff");
-    result = 2.*ff;
+    return Teuchos::rcp(new HEvaluator(*this));
   }
 
-  virtual void EvaluatePartialDerivative_(const State& S,
-          const Key& wrt_key, const Key& wrt_tag, double& result) override {
+  virtual void Evaluate_(const State &S, double &result) override {
+    auto &ff = S.Get<double>("ff");
+    result = 2. * ff;
+  }
+
+  virtual void EvaluatePartialDerivative_(const State &S, const Key &wrt_key,
+                                          const Key &wrt_tag,
+                                          double &result) override {
     if (wrt_key == "ff") {
       result = 2.;
     }
   }
 };
 
-
 class make_state {
- public:
+public:
   make_state() {
     Teuchos::ParameterList es_list, ep_list;
-    es_list.sublist("verbose object").set<std::string>("verbosity level", "extreme");
-    ep_list.sublist("verbose object").set<std::string>("verbosity level", "extreme");
+    es_list.sublist("verbose object")
+        .set<std::string>("verbosity level", "extreme");
+    ep_list.sublist("verbose object")
+        .set<std::string>("verbosity level", "extreme");
 
     // Secondary fields
     // --  A and its evaluator
@@ -314,14 +316,14 @@ class make_state {
 
     // Setup fields initialize
     S.Setup();
-    S.GetW<double>("fb","fb") = 2.0;
+    S.GetW<double>("fb", "fb") = 2.0;
     S.GetRecordW("fb", "fb").set_initialized();
-    S.GetW<double>("fg","fg") = 3.0;
+    S.GetW<double>("fg", "fg") = 3.0;
     S.GetRecordW("fg", "fg").set_initialized();
     S.Initialize();
   }
 
- public:
+public:
   State S;
   Teuchos::RCP<AEvaluator> fa_eval;
   Teuchos::RCP<CEvaluator> fc_eval;
@@ -332,13 +334,12 @@ class make_state {
   Teuchos::RCP<EvaluatorPrimary<double>> fb_eval, fg_eval;
 };
 
-
 SUITE(DAG) {
   TEST_FIXTURE(make_state, DAG_TWO_FIELDS) {
     // check initialized properly
     CHECK_CLOSE(2.0, S.Get<double>("fb"), 1e-12);
     CHECK_CLOSE(3.0, S.Get<double>("fg"), 1e-12);
-    
+
     // calculate field A
     std::cout << "Calculate field A:" << std::endl;
     bool changed = fa_eval->Update(S, "main");
@@ -347,7 +348,7 @@ SUITE(DAG) {
 
     // check intermediate steps got updated too
     CHECK_CLOSE(6.0, S.Get<double>("fd"), 1e-12);
-    
+
     // calculate dA/dB
     std::cout << "Calculate derivative of field A wrt field B:" << std::endl;
     changed = fa_eval->UpdateDerivative(S, "fa", "fb", "");
@@ -381,4 +382,3 @@ SUITE(DAG) {
     CHECK(changed);
   }
 }
-

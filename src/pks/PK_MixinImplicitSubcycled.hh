@@ -1,13 +1,14 @@
 /* -*-  mode: c++; indent-tabs-mode: nil -*- */
 /*
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
   Authors: Ethan Coon (ecoon@lanl.gov)
 */
 
-//! A mixin class with default implementations of methods for a subcycled BDF integrated PK.
+//! A mixin class with default implementations of methods for a subcycled BDF
+//! integrated PK.
 
 /*!
 
@@ -27,50 +28,46 @@ Note this inherits everything in ``PK_MixinImplicit_``
 #include "Teuchos_ParameterList.hpp"
 
 #include "Key.hh"
-#include "PK_MixinImplicit.hh"
 #include "PK.hh"
+#include "PK_MixinImplicit.hh"
 #include "TimeStepManager.hh"
 
 namespace Amanzi {
 
-template<class Base_t>
-class PK_MixinImplicitSubcycled
-    : public PK_MixinImplicit<Base_t> {
- public:
-  PK_MixinImplicitSubcycled(const Teuchos::RCP<Teuchos::ParameterList>& pk_tree,
-                            const Teuchos::RCP<Teuchos::ParameterList>& global_plist,
-                            const Teuchos::RCP<State>& S);
-  
+template <class Base_t>
+class PK_MixinImplicitSubcycled : public PK_MixinImplicit<Base_t> {
+public:
+  PK_MixinImplicitSubcycled(
+      const Teuchos::RCP<Teuchos::ParameterList> &pk_tree,
+      const Teuchos::RCP<Teuchos::ParameterList> &global_plist,
+      const Teuchos::RCP<State> &S);
+
   void Setup();
-  bool AdvanceStep(const Key& tag_old, const Key& tag_new);
-  void CommitStep(const Key& tag_old, const Key& tag_new);
+  bool AdvanceStep(const Key &tag_old, const Key &tag_new);
+  void CommitStep(const Key &tag_old, const Key &tag_new);
   double get_dt() { return dt_max_; }
 
- protected:
+protected:
   using PK_MixinImplicit<Base_t>::tag_old_;
   using PK_MixinImplicit<Base_t>::tag_new_;
   using Base_t::S_;
-  using Base_t::vo_;
   using Base_t::plist_;
+  using Base_t::vo_;
 
   double dt_max_;
 };
 
-template<class Base_t>
+template <class Base_t>
 PK_MixinImplicitSubcycled<Base_t>::PK_MixinImplicitSubcycled(
-        const Teuchos::RCP<Teuchos::ParameterList>& pk_tree,
-        const Teuchos::RCP<Teuchos::ParameterList>& global_plist,
-        const Teuchos::RCP<State>& S)
-    : PK_MixinImplicit<Base_t>(pk_tree, global_plist, S)
-{
+    const Teuchos::RCP<Teuchos::ParameterList> &pk_tree,
+    const Teuchos::RCP<Teuchos::ParameterList> &global_plist,
+    const Teuchos::RCP<State> &S)
+    : PK_MixinImplicit<Base_t>(pk_tree, global_plist, S) {
   // initial timestep
   dt_max_ = plist_->template get<double>("maximum time step", 1.e10);
 };
 
-template<class Base_t>
-void
-PK_MixinImplicitSubcycled<Base_t>::Setup()
-{
+template <class Base_t> void PK_MixinImplicitSubcycled<Base_t>::Setup() {
   PK_MixinImplicit<Base_t>::Setup();
 
   // reserve space for inner step
@@ -85,10 +82,9 @@ PK_MixinImplicitSubcycled<Base_t>::Setup()
   this->SolutionToState(tag_new_, "");
 }
 
-template<class Base_t>
-bool 
-PK_MixinImplicitSubcycled<Base_t>::AdvanceStep(const Key& tag_old, const Key& tag_new)
-{
+template <class Base_t>
+bool PK_MixinImplicitSubcycled<Base_t>::AdvanceStep(const Key &tag_old,
+                                                    const Key &tag_new) {
   // times associated with inner and outer steps
   double t_final = S_->time(tag_new);
   double t_inner = S_->time(tag_old);
@@ -98,10 +94,13 @@ PK_MixinImplicitSubcycled<Base_t>::AdvanceStep(const Key& tag_old, const Key& ta
   // logging
   Teuchos::OSTab out = vo_->getOSTab();
   if (vo_->os_OK(Teuchos::VERB_HIGH))
-    *vo_->os() << "----------------------------------------------------------------" << std::endl
-               << "Advancing: t0 = " << t_inner
-               << " t1 = " << t_final << " h = " << dt << std::endl
-               << "----------------------------------------------------------------" << std::endl;
+    *vo_->os()
+        << "----------------------------------------------------------------"
+        << std::endl
+        << "Advancing: t0 = " << t_inner << " t1 = " << t_final << " h = " << dt
+        << std::endl
+        << "----------------------------------------------------------------"
+        << std::endl;
 
   // set up the inner state -- times, cycle, and values
   S_->set_time(tag_old_, t_inner);
@@ -111,7 +110,7 @@ PK_MixinImplicitSubcycled<Base_t>::AdvanceStep(const Key& tag_old, const Key& ta
   this->StateToState(tag_old, tag_old_);
   this->StateToState(tag_old, tag_new_);
   //  this->ChangedSolutionPK(); Not needed? --etc
-  
+
   TimeStepManager tsm;
   tsm.RegisterTimeEvent(t_final);
 
@@ -124,7 +123,7 @@ PK_MixinImplicitSubcycled<Base_t>::AdvanceStep(const Key& tag_old, const Key& ta
 
     // -- advance the inner state
     S_->set_time(tag_new_, t_inner + dt_ok);
-    S_->set_cycle(tag_new_, S_->cycle(tag_old_)+1);
+    S_->set_cycle(tag_new_, S_->cycle(tag_old_) + 1);
 
     // -- take the inner step
     fail = PK_MixinImplicit<Base_t>::AdvanceStep(tag_old_, tag_new_);
@@ -147,12 +146,10 @@ PK_MixinImplicitSubcycled<Base_t>::AdvanceStep(const Key& tag_old, const Key& ta
   return false;
 }
 
-
 // -- Commit any secondary (dependent) variables.
-template<class Base_t>
-void
-PK_MixinImplicitSubcycled<Base_t>::CommitStep(const Key& tag_old, const Key& tag_new)
-{
+template <class Base_t>
+void PK_MixinImplicitSubcycled<Base_t>::CommitStep(const Key &tag_old,
+                                                   const Key &tag_new) {
   // only update the timestepper if this is an internal call
   if (tag_new == tag_new_) {
     PK_MixinImplicit<Base_t>::CommitStep(tag_old, tag_new);
@@ -161,7 +158,6 @@ PK_MixinImplicitSubcycled<Base_t>::CommitStep(const Key& tag_old, const Key& tag
     Base_t::CommitStep(tag_old, tag_new);
   }
 }
-
 
 } // namespace Amanzi
 

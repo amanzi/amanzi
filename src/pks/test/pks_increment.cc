@@ -1,7 +1,7 @@
 /* -*-  mode: c++; indent-tabs-mode: nil -*- */
 /*
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 */
 
@@ -9,15 +9,15 @@
 
 At this point PKs manage memory and interface time integrators with the DAG.
 These tests that functionality with a series of ODEs.
-   
+
 */
 
 #include "Epetra_MpiComm.h"
 #include "Epetra_Vector.h"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_ParameterXMLFileReader.hpp"
-#include "Teuchos_XMLParameterListHelpers.hpp"
 #include "Teuchos_RCP.hpp"
+#include "Teuchos_XMLParameterListHelpers.hpp"
 #include "UnitTest++.h"
 
 #include "Mesh.hh"
@@ -26,29 +26,26 @@ These tests that functionality with a series of ODEs.
 #include "TreeVector.hh"
 
 #include "PK.hh"
+#include "PK_Adaptors.hh"
 #include "PK_Default.hh"
-#include "PK_MixinLeaf.hh"
 #include "PK_MixinExplicit.hh"
 #include "PK_MixinExplicitSubcycled.hh"
 #include "PK_MixinImplicit.hh"
 #include "PK_MixinImplicitSubcycled.hh"
-#include "PK_Adaptors.hh"
+#include "PK_MixinLeaf.hh"
 
 #include "PK_MixinMPC.hh"
 #include "PK_MixinMPCAdvanceStepWeak.hh"
 #include "PK_MixinMPCGetDtMin.hh"
 #include "PK_MixinMPCImplicit.hh"
 
-#include "test_pks.hh"
-#include "test_increment_pk.hh"
 #include "pks_test_harness.hh"
+#include "test_increment_pk.hh"
+#include "test_pks.hh"
 
 using namespace Amanzi;
 
-
-
-std::unique_ptr<Run>
-create(const std::string& eqn_name) {
+std::unique_ptr<Run> create(const std::string &eqn_name) {
   std::string pk_name = eqn_name;
   std::cout << "Test: " << pk_name << std::endl;
 
@@ -56,14 +53,14 @@ create(const std::string& eqn_name) {
   auto pk_tree = Teuchos::rcp(new Teuchos::ParameterList(pk_name));
 
   auto S = Teuchos::rcp(new State(global_list->sublist("state")));
-  
+
   // intentionally leaks memory
-  Epetra_MpiComm* comm = new Epetra_MpiComm(MPI_COMM_WORLD);
+  Epetra_MpiComm *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
 
   // create mesh
-  Teuchos::ParameterList& regions_list = global_list->sublist("regions");
-  Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm =
-      Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(2, regions_list, comm));
+  Teuchos::ParameterList &regions_list = global_list->sublist("regions");
+  Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm = Teuchos::rcp(
+      new Amanzi::AmanziGeometry::GeometricModel(2, regions_list, comm));
 
   Amanzi::AmanziMesh::FrameworkPreference pref;
   pref.clear();
@@ -72,20 +69,21 @@ create(const std::string& eqn_name) {
   Amanzi::AmanziMesh::MeshFactory meshfactory(comm);
   meshfactory.preference(pref);
   // make a 1x1 'mesh' for ODEs
-  Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 1, 1, gm);
+  Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh =
+      meshfactory(0.0, 0.0, 1.0, 1.0, 1, 1, gm);
   S->RegisterDomainMesh(mesh);
 
-  Teuchos::RCP<PK> pk =
-      Teuchos::rcp(new PK_Adaptor<PK_Veg<PK_MixinLeaf<PK_Default,PFTList,PFTListSpace> > >(pk_tree, global_list, S));
-  return std::make_unique<Run>(S,pk);
+  Teuchos::RCP<PK> pk = Teuchos::rcp(
+      new PK_Adaptor<PK_Veg<PK_MixinLeaf<PK_Default, PFTList, PFTListSpace>>>(
+          pk_tree, global_list, S));
+  return std::make_unique<Run>(S, pk);
 }
-
-
 
 SUITE(PKS_INCREMENT) {
 
   //
-  // Creates an increment PK, i.e. a PK that does its own advance and cannot fail
+  // Creates an increment PK, i.e. a PK that does its own advance and cannot
+  // fail
   // ============================================================================
   TEST(PK_VEG) {
     auto run = create("Veg");
@@ -101,18 +99,20 @@ SUITE(PKS_INCREMENT) {
   // (it might have internal state, ugh).
   // =============================================================================
   TEST(PK_VEG_WATER) {
-    using PK_Veg_t = PK_Adaptor<PK_Veg<PK_MixinLeaf<PK_Default,PFTList,PFTListSpace>>>;
-    using PK_Water_t = PK_Implicit_Adaptor<PK_ODE_Implicit<PK_MixinImplicitSubcycled<PK_MixinLeafCompositeVector<PK_Default>>, DudtEvaluatorC>>;
-    using MPC_t = PK_Adaptor<PK_MixinMPCAdvanceStepWeak<PK_MixinMPCGetDtMin<PK_MixinMPC<PK_Default,PK>>>>;
+    using PK_Veg_t =
+        PK_Adaptor<PK_Veg<PK_MixinLeaf<PK_Default, PFTList, PFTListSpace>>>;
+    using PK_Water_t = PK_Implicit_Adaptor<PK_ODE_Implicit<
+        PK_MixinImplicitSubcycled<PK_MixinLeafCompositeVector<PK_Default>>,
+        DudtEvaluatorC>>;
+    using MPC_t = PK_Adaptor<PK_MixinMPCAdvanceStepWeak<
+        PK_MixinMPCGetDtMin<PK_MixinMPC<PK_Default, PK>>>>;
 
-    auto run = createRunMPC<MPC_t, PK_Veg_t, PK_Water_t>("BC weak mixed explicit", "Veg", "C, backward euler subcycled, forced");
+    auto run = createRunMPC<MPC_t, PK_Veg_t, PK_Water_t>(
+        "BC weak mixed explicit", "Veg", "C, backward euler subcycled, forced");
     auto nsteps = run_test(run->S, run->pk);
 
     CHECK_CLOSE(0.1, run->S->Get<PFTList>("PFT_A")[0].Bleaf, 1.e-8);
     CHECK_EQUAL(10, nsteps.first);
     CHECK_EQUAL(0, nsteps.second);
-    
   }
-
 }
-

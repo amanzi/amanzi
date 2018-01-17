@@ -161,6 +161,8 @@ Teuchos::RCP<PDE_Diffusion> PDE_DiffusionFactory::Create(
   
   if (name == "fv: default") {
     op = Teuchos::rcp(new PDE_DiffusionFV(oplist, mesh));
+  } else if (name == "nlfv: default") {
+    op = Teuchos::rcp(new PDE_DiffusionNLFV(oplist, mesh)); 
   } else {
     op = Teuchos::rcp(new PDE_DiffusionMFD(oplist, mesh));
   }
@@ -180,6 +182,8 @@ Teuchos::RCP<PDE_Diffusion> PDE_DiffusionFactory::Create(
   
   if (name == "fv: default") {
     op = Teuchos::rcp(new PDE_DiffusionFV(oplist, global_op));
+  } else if (name == "nlfv: default") {
+    op = Teuchos::rcp(new PDE_DiffusionNLFV(oplist, global_op)); 
   } else {
     op = Teuchos::rcp(new PDE_DiffusionMFD(oplist, global_op));
   }
@@ -203,6 +207,9 @@ Teuchos::RCP<PDE_DiffusionWithGravity> PDE_DiffusionFactory::CreateWithGravity(
   
   if (name == "fv: default") {
     op = Teuchos::rcp(new PDE_DiffusionFVwithGravity(oplist, mesh));
+  } else if (name == "nlfv: default") {
+    //    op = Teuchos::rcp(new PDE_DiffusionNLFVwithGravity(oplist, mesh));
+    throw "Please implement me!";
   } else {
     op = Teuchos::rcp(new PDE_DiffusionMFDwithGravity(oplist, mesh));
   }
@@ -226,6 +233,9 @@ Teuchos::RCP<PDE_DiffusionWithGravity> PDE_DiffusionFactory::CreateWithGravity(
   
   if (name == "fv: default") {
     op = Teuchos::rcp(new PDE_DiffusionFVwithGravity(oplist, global_op));
+  } else if (name == "nlfv: default") {
+    throw "Please implement me!";
+    //    op = Teuchos::rcp(new PDE_DiffusionNLFVwithGravity(oplist, global_op)); 
   } else {
     op = Teuchos::rcp(new PDE_DiffusionMFDwithGravity(oplist, global_op));
   }
@@ -248,6 +258,9 @@ Teuchos::RCP<PDE_DiffusionWithGravity> PDE_DiffusionFactory::CreateWithGravity(
   
   if (name == "fv: default") {
     op = Teuchos::rcp(new PDE_DiffusionFVwithGravity(oplist, mesh));
+  } else if (name == "nlfv: default") {
+    throw "Please implement me!";
+    //    op = Teuchos::rcp(new PDE_DiffusionNLFVwithGravity(oplist, mesh)); 
   } else {
     op = Teuchos::rcp(new PDE_DiffusionMFDwithGravity(oplist, mesh));
   }
@@ -269,6 +282,9 @@ Teuchos::RCP<PDE_DiffusionWithGravity> PDE_DiffusionFactory::CreateWithGravity(
   
   if (name == "fv: default") {
     op = Teuchos::rcp(new PDE_DiffusionFVwithGravity(oplist, global_op));
+  } else if (name == "nlfv: default") {
+    throw "Please implement me!";
+    //    op = Teuchos::rcp(new PDE_DiffusionNLFVwithGravity(oplist, global_op)); 
   } else {
     op = Teuchos::rcp(new PDE_DiffusionMFDwithGravity(oplist, global_op));
   }

@@ -1,14 +1,15 @@
 /* -*-  mode: c++; indent-tabs-mode: nil -*- */
 /*
   Copyright 2010-201x held jointly, see COPYRIGHT.
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
   Author: Ethan Coon
 */
 
-//! A secondary variable evaluator which evaluates functions on its dependenecies.
+//! A secondary variable evaluator which evaluates functions on its
+//! dependenecies.
 
 /*!
 Uses functions to evaluate arbitrary secondary functions of its dependencies.
@@ -22,9 +23,9 @@ as:
 Example:
 ..xml:
     <ParameterList name="VARNAME">
-      <Parameter name="field evaluator type" type="string" value="secondary variable from function"/>
-      <Parameter name="evaluator dependencies" type="Array{string}" value="{DEP1, DEP2}"/>
-      <ParameterList name="function">
+      <Parameter name="field evaluator type" type="string" value="secondary
+variable from function"/> <Parameter name="evaluator dependencies"
+type="Array{string}" value="{DEP1, DEP2}"/> <ParameterList name="function">
         <ParameterList name="function-linear">
           <Parameter name="x0" type="Array(double)" value="{0.0,0.0}" />
           <Parameter name="y0" type="double" value="3." />
@@ -47,39 +48,42 @@ so if it was found useful.
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_RCP.hpp"
 
-#include "State.hh"
+#include "CompositeVector.hh"
+#include "CompositeVectorSpace.hh"
 #include "EvaluatorSecondary.hh"
 #include "Evaluator_Factory.hh"
-#include "CompositeVectorSpace.hh"
-#include "CompositeVector.hh"
+#include "State.hh"
 
 namespace Amanzi {
 
 class Function;
 
-class EvaluatorSecondaryFromFunction :
-      public EvaluatorSecondary<CompositeVector,CompositeVectorSpace> {
+class EvaluatorSecondaryFromFunction
+    : public EvaluatorSecondary<CompositeVector, CompositeVectorSpace> {
 
- public:
-  explicit
-  EvaluatorSecondaryFromFunction(Teuchos::ParameterList& plist);
-  EvaluatorSecondaryFromFunction(const EvaluatorSecondaryFromFunction& other);
+public:
+  explicit EvaluatorSecondaryFromFunction(Teuchos::ParameterList &plist);
+  EvaluatorSecondaryFromFunction(const EvaluatorSecondaryFromFunction &other);
   virtual Teuchos::RCP<Evaluator> Clone() const;
 
- protected:
+protected:
   // These do the actual work
-  virtual void Evaluate_(const State& S, CompositeVector& result);
+  virtual void Evaluate_(const State &S, CompositeVector &result);
 
-  // This should get some careful thought of the right strategy.  Punting for now --etc
-  virtual void EvaluatePartialDerivative_(const State& S, const Key& wrt_key, const Key& wrt_tag, CompositeVector& result) {
+  // This should get some careful thought of the right strategy.  Punting for
+  // now --etc
+  virtual void EvaluatePartialDerivative_(const State &S, const Key &wrt_key,
+                                          const Key &wrt_tag,
+                                          CompositeVector &result) {
     result.PutScalar(0.);
   }
 
- protected:
+protected:
   Teuchos::RCP<const Function> func_;
 
- private:
-  static Utils::RegisteredFactory<Evaluator,EvaluatorSecondaryFromFunction> fac_;
+private:
+  static Utils::RegisteredFactory<Evaluator, EvaluatorSecondaryFromFunction>
+      fac_;
 
 }; // class
 

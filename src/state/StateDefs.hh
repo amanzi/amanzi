@@ -11,9 +11,9 @@
 #ifndef AMANZI_STATE_DEFS_HH_
 #define AMANZI_STATE_DEFS_HH_
 
+#include <set>
 #include <string>
 #include <vector>
-#include <set>
 
 #include "Key.hh"
 
@@ -23,7 +23,6 @@ namespace Amanzi {
 typedef std::string Units;
 typedef bool NullFactory; // placeholder object for no factory required
 
-
-} // namespace
+} // namespace Amanzi
 
 #endif

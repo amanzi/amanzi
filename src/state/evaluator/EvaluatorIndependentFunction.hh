@@ -19,39 +19,37 @@ TODO: This needs a test! --etc
 
 namespace Amanzi {
 
-class EvaluatorIndependentFunction :
-      public EvaluatorIndependent<CompositeVector,CompositeVectorSpace> {
+class EvaluatorIndependentFunction
+    : public EvaluatorIndependent<CompositeVector, CompositeVectorSpace> {
 
- public:
-
+public:
   // ---------------------------------------------------------------------------
   // Constructors
   // ---------------------------------------------------------------------------
-  explicit
-  EvaluatorIndependentFunction(Teuchos::ParameterList& plist);
-  EvaluatorIndependentFunction(const EvaluatorIndependentFunction& other) = default;
+  explicit EvaluatorIndependentFunction(Teuchos::ParameterList &plist);
+  EvaluatorIndependentFunction(const EvaluatorIndependentFunction &other) =
+      default;
 
   virtual Teuchos::RCP<Evaluator> Clone() const override;
 
-  virtual Evaluator& operator=(const Evaluator& other) override;
+  virtual Evaluator &operator=(const Evaluator &other) override;
 
-  EvaluatorIndependentFunction&
-  operator=(const EvaluatorIndependentFunction& other);
+  EvaluatorIndependentFunction &
+  operator=(const EvaluatorIndependentFunction &other);
 
- protected:
+protected:
   // ---------------------------------------------------------------------------
   // Update the value in the state.
   // ---------------------------------------------------------------------------
-  virtual void Update_(State& S) override;
+  virtual void Update_(State &S) override;
 
- protected:
+protected:
   Teuchos::RCP<Functions::CompositeVectorFunction> func_;
 
- private:
-  static Utils::RegisteredFactory<Evaluator,EvaluatorIndependentFunction> fac_;
+private:
+  static Utils::RegisteredFactory<Evaluator, EvaluatorIndependentFunction> fac_;
 };
 
-} // namespace
-
+} // namespace Amanzi
 
 #endif

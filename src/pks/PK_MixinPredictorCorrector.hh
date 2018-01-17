@@ -1,13 +1,14 @@
 /* -*-  mode: c++; indent-tabs-mode: nil -*- */
 /*
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
   Authors: Ethan Coon (ecoon@lanl.gov)
 */
 
-//! A mixin class with default implementations of methods for a predictor-corrector scheme.
+//! A mixin class with default implementations of methods for a
+//! predictor-corrector scheme.
 
 /*!
 
@@ -19,7 +20,8 @@ and AdvanceStep().
 
   The initial time step size, in seconds.
 
-* `"time integrator`" ``[time-integrator-spec]``  See ``TimeIntegratorExplicit_``.
+* `"time integrator`" ``[time-integrator-spec]``  See
+``TimeIntegratorExplicit_``.
 * `"predictor`" ``[time-integrator-spec]``  See ``TimeIntegratorExplicit_``.
 
 The predictor scheme must be an explicit time integration spec, and the
@@ -37,23 +39,22 @@ corrector an implciit time integration spec.
 
 namespace Amanzi {
 
-template<class Base_t>
-class PK_MixinPredictorCorrector : public PK_MixinImplicit<PK_MixinExplicit<Base_t>> {
- public:
+template <class Base_t>
+class PK_MixinPredictorCorrector
+    : public PK_MixinImplicit<PK_MixinExplicit<Base_t>> {
+public:
   using PK_MixinImplicit<PK_MixinExplicit<Base_t>>::PK_MixinImplicit;
-  
-  bool ModifyPredictor(double h, Teuchos::RCP<const TreeVector> u0, Teuchos::RCP<TreeVector> u);
 
- protected:
+  bool ModifyPredictor(double h, Teuchos::RCP<const TreeVector> u0,
+                       Teuchos::RCP<TreeVector> u);
+
+protected:
   using Base_t::plist_;
 };
 
-
-template<class Base_t>
-bool
-PK_MixinPredictorCorrector<Base_t>::ModifyPredictor(double h, Teuchos::RCP<const TreeVector> u0,
-        Teuchos::RCP<TreeVector> u)
-{
+template <class Base_t>
+bool PK_MixinPredictorCorrector<Base_t>::ModifyPredictor(
+    double h, Teuchos::RCP<const TreeVector> u0, Teuchos::RCP<TreeVector> u) {
   Teuchos::RCP<Teuchos::ParameterList> ti_plist;
   if (!PK_MixinExplicit<Base_t>::time_stepper_.get()) {
     ti_plist = Teuchos::sublist(plist_, "time integrator");
@@ -61,8 +62,8 @@ PK_MixinPredictorCorrector<Base_t>::ModifyPredictor(double h, Teuchos::RCP<const
     plist_->set("time integrator", plist_->sublist("predictor"));
   }
 
-  bool fail = PK_MixinExplicit<Base_t>::AdvanceStep(PK_MixinExplicit<Base_t>::tag_old_,
-          PK_MixinExplicit<Base_t>::tag_new_);
+  bool fail = PK_MixinExplicit<Base_t>::AdvanceStep(
+      PK_MixinExplicit<Base_t>::tag_old_, PK_MixinExplicit<Base_t>::tag_new_);
 
   if (ti_plist.get()) {
     plist_->set("predictor", plist_->sublist("time integrator"));

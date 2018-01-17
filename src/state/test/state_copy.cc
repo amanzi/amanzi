@@ -1,9 +1,9 @@
 /*
   State
 
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
   Authors: Markus Berndt
@@ -43,10 +43,12 @@ struct test_field {
     names[0] = "cell";
     names[1] = "face";
 
-    std::vector<int> num_dofs(2,1);
+    std::vector<int> num_dofs(2, 1);
 
-    Teuchos::RCP<CompositeVectorSpace> data_sp = Teuchos::rcp(new CompositeVectorSpace());
-    data_sp.SetMesh(mesh).SetGhosted(false).SetComponents(names,locations,num_dofs);
+    Teuchos::RCP<CompositeVectorSpace> data_sp =
+        Teuchos::rcp(new CompositeVectorSpace());
+    data_sp.SetMesh(mesh).SetGhosted(false).SetComponents(names, locations,
+                                                          num_dofs);
     Teuchos::RCP<CompositeVector> data =
         Teuchos::rcp(new CompositeVector(*data_sp));
     field = Teuchos::rcp(new Field_CompositeVector("fieldname", "owner", data));
@@ -54,18 +56,19 @@ struct test_field {
   ~test_field() { delete comm; }
 };
 
-double get_value(Teuchos::RCP<Field>& field) {
-  Teuchos::RCP<Field_CompositeVector> field_ptr = Teuchos::rcp_static_cast<Field_CompositeVector>(field);
+double get_value(Teuchos::RCP<Field> &field) {
+  Teuchos::RCP<Field_CompositeVector> field_ptr =
+      Teuchos::rcp_static_cast<Field_CompositeVector>(field);
   Teuchos::RCP<const CompositeVector> data = field_ptr->GetFieldData();
   return (*(*data->ViewComponent("cell", true))(0))[0];
 };
 
-double get_value(Teuchos::RCP<Field_CompositeVector>& field) {
+double get_value(Teuchos::RCP<Field_CompositeVector> &field) {
   Teuchos::RCP<const CompositeVector> data = field->GetFieldData();
   return (*(*data->ViewComponent("cell", true))(0))[0];
 };
 
-double get_value(const State& state) {
+double get_value(const State &state) {
   Teuchos::RCP<const CompositeVector> data = state.GetFieldData("fieldname");
   return (*(*data->ViewComponent("cell", true))(0))[0];
 };
@@ -91,9 +94,10 @@ struct test_state {
     names[0] = "cell";
     names[1] = "face";
 
-    std::vector<int> num_dofs(2,1);
+    std::vector<int> num_dofs(2, 1);
 
-    Teuchos::RCP<CompositeVectorSpace> vec_factory = state->RequireField("fieldname", "owner");
+    Teuchos::RCP<CompositeVectorSpace> vec_factory =
+        state->RequireField("fieldname", "owner");
     vec_factory.SetMesh(state->GetMesh());
     vec_factory.SetComponents(names, locations, num_dofs);
     state->Setup();
@@ -103,12 +107,12 @@ struct test_state {
   ~test_state() { delete comm; }
 };
 
-
 SUITE(COPY) {
   // test the field copy constructor
   TEST_FIXTURE(test_field, FieldCopy) {
     field->GetFieldData()->PutScalar(2.0);
-    Teuchos::RCP<Field_CompositeVector> newfield = Teuchos::rcp(new Field_CompositeVector(*field));
+    Teuchos::RCP<Field_CompositeVector> newfield =
+        Teuchos::rcp(new Field_CompositeVector(*field));
     newfield->GetFieldData()->PutScalar(3.0);
     CHECK_CLOSE(3.0, get_value(newfield), 0.00001);
     CHECK_CLOSE(2.0, get_value(field), 0.00001);
@@ -148,7 +152,7 @@ SUITE(COPY) {
     // test operator=
     *newstate = *state;
     CHECK_CLOSE(get_value(*newstate), get_value(*state), 0.00001);
-    CHECK_CLOSE(2.0,  get_value(*newstate), 0.00001);
+    CHECK_CLOSE(2.0, get_value(*newstate), 0.00001);
 
     // test copies are deep
     newstate->GetFieldData("fieldname", "owner")->PutScalar(3.0);
@@ -156,4 +160,3 @@ SUITE(COPY) {
     CHECK_CLOSE(2.0, get_value(*state), 0.00001);
   }
 }
-

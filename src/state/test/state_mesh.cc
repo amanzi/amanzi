@@ -1,9 +1,8 @@
- /*
-  State
+/*
+ State
 
-  Tests for state as a container of meshes
+ Tests for state as a container of meshes
 */
-
 
 // TPLs
 #include "UnitTest++.h"
@@ -11,7 +10,6 @@
 // State
 #include "MeshFactory.hh"
 #include "State.hh"
-
 
 TEST(STATE_CREATION) {
   using namespace Amanzi;

@@ -1,8 +1,8 @@
 /* -*-  mode: c++; indent-tabs-mode: nil -*- */
 /*
   Copyright 2010-201x held jointly, see COPYRIGHT.
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
   Author: Ethan Coon
@@ -40,38 +40,36 @@ namespace Amanzi {
 
 // By default, this class adds nothing on top of EvaluatorSecondary.
 // Specializations can do useful things though.
-template<typename Data_t, typename DataFactory_t=NullFactory>
-class EvaluatorAlgebraic : public EvaluatorSecondary<Data_t,DataFactory_t> {
- public:
-  using EvaluatorSecondary<Data_t,DataFactory_t>::EvaluatorSecondary;
-  
-  virtual void EnsureCompatibility(State& S) override {
-    EvaluatorSecondary<Data_t,DataFactory_t>::EnsureCompatibility(S);
+template <typename Data_t, typename DataFactory_t = NullFactory>
+class EvaluatorAlgebraic : public EvaluatorSecondary<Data_t, DataFactory_t> {
+public:
+  using EvaluatorSecondary<Data_t, DataFactory_t>::EvaluatorSecondary;
+
+  virtual void EnsureCompatibility(State &S) override {
+    EvaluatorSecondary<Data_t, DataFactory_t>::EnsureCompatibility(S);
   }
 
- protected:
-  virtual void UpdateDerivative_(State& S, const Key& wrt_key, const Key& wrt_tag) override {
-    EvaluatorSecondary<Data_t,DataFactory_t>::UpdateDerivative_(S, wrt_key, wrt_tag);
+protected:
+  virtual void UpdateDerivative_(State &S, const Key &wrt_key,
+                                 const Key &wrt_tag) override {
+    EvaluatorSecondary<Data_t, DataFactory_t>::UpdateDerivative_(S, wrt_key,
+                                                                 wrt_tag);
   }
-  
 };
 
+template <> void EvaluatorAlgebraic<double>::EnsureCompatibility(State &S);
 
-template<>
-void
-EvaluatorAlgebraic<double>::EnsureCompatibility(State& S);
+template <>
+void EvaluatorAlgebraic<double>::UpdateDerivative_(State &S, const Key &wrt_key,
+                                                   const Key &wrt_tag);
 
-template<>
-void EvaluatorAlgebraic<double>::UpdateDerivative_(State& S, const Key& wrt_key, const Key& wrt_tag);
+template <>
+void EvaluatorAlgebraic<CompositeVector,
+                        CompositeVectorSpace>::EnsureCompatibility(State &S);
 
-template<>
-void
-EvaluatorAlgebraic<CompositeVector, CompositeVectorSpace>::EnsureCompatibility(State& S);
-
-template<>
-void EvaluatorAlgebraic<CompositeVector,CompositeVectorSpace>::UpdateDerivative_(State& S, const Key& wrt_key, const Key& wrt_tag);
-
-
+template <>
+void EvaluatorAlgebraic<CompositeVector, CompositeVectorSpace>::
+    UpdateDerivative_(State &S, const Key &wrt_key, const Key &wrt_tag);
 
 } // namespace Amanzi
 

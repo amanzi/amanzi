@@ -10,31 +10,29 @@ graph.
 
 ------------------------------------------------------------------------- */
 
-
 // -----------------------------------------------------------------------------
 // Constructor
 // -----------------------------------------------------------------------------
-template<typename Data_t, typename DataFactory_t>
-EvaluatorSecondary<Data_t, DataFactory_t>::EvaluatorSecondary(Teuchos::ParameterList& plist) :
-    my_key_(plist.name()),
-    my_tag_(plist.get<std::string>("tag","")),
-    vo_(plist.name(), plist),
-    plist_(plist),
-    check_derivative_(plist.get<bool>("check derivatives", false))
-{
+template <typename Data_t, typename DataFactory_t>
+EvaluatorSecondary<Data_t, DataFactory_t>::EvaluatorSecondary(
+    Teuchos::ParameterList &plist)
+    : my_key_(plist.name()), my_tag_(plist.get<std::string>("tag", "")),
+      vo_(plist.name(), plist), plist_(plist),
+      check_derivative_(plist.get<bool>("check derivatives", false)) {
   if (plist_.isParameter("dependencies")) {
     Teuchos::Array<std::string> deps =
-        plist_.get<Teuchos::Array<std::string> >("dependencies");
+        plist_.get<Teuchos::Array<std::string>>("dependencies");
     if (plist_.isParameter("dependency tags")) {
       Teuchos::Array<std::string> tags =
-          plist_.get<Teuchos::Array<std::string> >("dependency tags");
+          plist_.get<Teuchos::Array<std::string>>("dependency tags");
       if (deps.size() != tags.size()) {
         Errors::Message message;
-        message << "EvaluatorSecondary: " << my_key_ << " has dependency and tag lists of different sizes!";
+        message << "EvaluatorSecondary: " << my_key_
+                << " has dependency and tag lists of different sizes!";
         throw(message);
       }
 
-      int i=0;
+      int i = 0;
       for (auto dep : deps) {
         dependencies_.emplace_back(std::make_pair(dep, tags[i]));
         ++i;
@@ -45,22 +43,22 @@ EvaluatorSecondary<Data_t, DataFactory_t>::EvaluatorSecondary(Teuchos::Parameter
       }
     } else {
       Errors::Message message;
-      message << "EvalutorSecondary for " << my_key_ << " was not provided its dependencies' tags.";
+      message << "EvalutorSecondary for " << my_key_
+              << " was not provided its dependencies' tags.";
       throw(message);
     }
   }
 }
 
-
 // -----------------------------------------------------------------------------
 // Assignment operators
 // -----------------------------------------------------------------------------
-template<typename Data_t, typename DataFactory_t>
-Evaluator&
-EvaluatorSecondary<Data_t, DataFactory_t>::operator=(const Evaluator& other) {
+template <typename Data_t, typename DataFactory_t>
+Evaluator &EvaluatorSecondary<Data_t, DataFactory_t>::
+operator=(const Evaluator &other) {
   if (this != &other) {
-    const EvaluatorSecondary* other_p =
-        dynamic_cast<const EvaluatorSecondary*>(&other);
+    const EvaluatorSecondary *other_p =
+        dynamic_cast<const EvaluatorSecondary *>(&other);
     ASSERT(other_p != NULL);
     ASSERT(my_key_ == other_p->my_key_);
 
@@ -77,25 +75,28 @@ EvaluatorSecondary<Data_t, DataFactory_t>::operator=(const Evaluator& other) {
 // Answers the question, has this data changed since it was last requested
 // by a given requestor.  Updates the data if needed.
 // -----------------------------------------------------------------------------
-template<typename Data_t, typename DataFactory_t>
-bool EvaluatorSecondary<Data_t, DataFactory_t>::Update(State& S, const Key& request) {
+template <typename Data_t, typename DataFactory_t>
+bool EvaluatorSecondary<Data_t, DataFactory_t>::Update(State &S,
+                                                       const Key &request) {
   Teuchos::OSTab tab = vo_.getOSTab();
 
   if (vo_.os_OK(Teuchos::VERB_EXTREME)) {
     *vo_.os() << "Secondary evaluator \"" << my_key_ << "\" requested by "
-               << request << std::endl;
+              << request << std::endl;
   }
 
-  // Check if we need to update ourselves, and potentially update our dependencies.
+  // Check if we need to update ourselves, and potentially update our
+  // dependencies.
   bool update = false;
-  for (auto& dep : dependencies_) {
-    update |= S.GetEvaluator(dep.first, dep.second)->Update(S, Keys::getRequest(my_key_, my_tag_));
+  for (auto &dep : dependencies_) {
+    update |= S.GetEvaluator(dep.first, dep.second)
+                  ->Update(S, Keys::getRequest(my_key_, my_tag_));
   }
 
   if (update) {
     if (vo_.os_OK(Teuchos::VERB_EXTREME)) {
-      *vo_.os() << "Updating \"" << vo_.color("green") << my_key_ 
-                 << vo_.reset() << "\" value... " << std::endl;
+      *vo_.os() << "Updating \"" << vo_.color("green") << my_key_ << vo_.reset()
+                << "\" value... " << std::endl;
     }
 
     // If so, update ourselves, empty our list of filled requests, and return.
@@ -108,7 +109,8 @@ bool EvaluatorSecondary<Data_t, DataFactory_t>::Update(State& S, const Key& requ
     if (requests_.find(request) == requests_.end()) {
       requests_.insert(request);
       if (vo_.os_OK(Teuchos::VERB_EXTREME)) {
-        *vo_.os() << "\"" << my_key_ << "\" has changed, but no need to update... " << std::endl;
+        *vo_.os() << "\"" << my_key_
+                  << "\" has changed, but no need to update... " << std::endl;
       }
       return true;
     } else {
@@ -120,34 +122,39 @@ bool EvaluatorSecondary<Data_t, DataFactory_t>::Update(State& S, const Key& requ
   }
 }
 
-
 // ---------------------------------------------------------------------------
 // Answers the question, has this data's derivative with respect to Key
 // wrt_key changed since it was last requested by a requestor.
 // Updates the derivative if needed.
 // ---------------------------------------------------------------------------
-template<typename Data_t, typename DataFactory_t>
-bool EvaluatorSecondary<Data_t, DataFactory_t>::UpdateDerivative(State& S,
-        const Key& requestor, const Key& wrt_key, const Key& wrt_tag) {
+template <typename Data_t, typename DataFactory_t>
+bool EvaluatorSecondary<Data_t, DataFactory_t>::UpdateDerivative(
+    State &S, const Key &requestor, const Key &wrt_key, const Key &wrt_tag) {
   ASSERT(IsDependency(S, wrt_key, wrt_tag));
 
   Teuchos::OSTab tab = vo_.getOSTab();
   if (vo_.os_OK(Teuchos::VERB_EXTREME)) {
-    *vo_.os() << "Secondary Variable " << my_key_ << ":" << my_tag_ << " derivative with respect to "
-              << wrt_key << ":" << wrt_tag << " requested by " << requestor;
+    *vo_.os() << "Secondary Variable " << my_key_ << ":" << my_tag_
+              << " derivative with respect to " << wrt_key << ":" << wrt_tag
+              << " requested by " << requestor;
   }
 
-  // Check if we need to update ourselves, and potentially update our dependencies.
+  // Check if we need to update ourselves, and potentially update our
+  // dependencies.
   bool update = false;
 
-  // -- must update if our our dependencies have changed, as these affect the partial derivatives
-  Key my_request = Key{"d"}+Keys::getRequest(my_key_, my_tag_)+"_d"+Keys::getRequest(wrt_key, wrt_tag);
+  // -- must update if our our dependencies have changed, as these affect the
+  // partial derivatives
+  Key my_request = Key{"d"} + Keys::getRequest(my_key_, my_tag_) + "_d" +
+                   Keys::getRequest(wrt_key, wrt_tag);
   update |= Update(S, my_request);
 
   // -- must update if any of our dependencies' derivatives have changed
-  for (auto& dep : dependencies_) {
-    if (S.GetEvaluator(dep.first, dep.second)->IsDependency(S, wrt_key, wrt_tag)) {
-      update |= S.GetEvaluator(dep.first, dep.second)->UpdateDerivative(S, my_request, wrt_key, wrt_tag);
+  for (auto &dep : dependencies_) {
+    if (S.GetEvaluator(dep.first, dep.second)
+            ->IsDependency(S, wrt_key, wrt_tag)) {
+      update |= S.GetEvaluator(dep.first, dep.second)
+                    ->UpdateDerivative(S, my_request, wrt_key, wrt_tag);
     }
   }
 
@@ -180,59 +187,60 @@ bool EvaluatorSecondary<Data_t, DataFactory_t>::UpdateDerivative(State& S,
   }
 }
 
-
 // ---------------------------------------------------------------------------
 // Updates the field value in state S.
 // ---------------------------------------------------------------------------
-template<typename Data_t, typename DataFactory_t>
-void EvaluatorSecondary<Data_t, DataFactory_t>::Update_(State& S) {
+template <typename Data_t, typename DataFactory_t>
+void EvaluatorSecondary<Data_t, DataFactory_t>::Update_(State &S) {
   // pull my variables out of state
-  Data_t& myfield = S.GetW<Data_t>(my_key_, my_tag_, my_key_);
+  Data_t &myfield = S.GetW<Data_t>(my_key_, my_tag_, my_key_);
 
   // call the evaluate method
   Evaluate_(S, myfield);
 }
 
-
 // ---------------------------------------------------------------------------
 // Updates the derivative
 // ---------------------------------------------------------------------------
-template<typename Data_t, typename DataFactory_t>
-void EvaluatorSecondary<Data_t, DataFactory_t>::UpdateDerivative_(State& S, const Key& wrt_key, const Key& wrt_tag) {
+template <typename Data_t, typename DataFactory_t>
+void EvaluatorSecondary<Data_t, DataFactory_t>::UpdateDerivative_(
+    State &S, const Key &wrt_key, const Key &wrt_tag) {
   Key value = Keys::getRequest(my_key_, my_tag_);
   Key wrt = Keys::getRequest(wrt_key, wrt_tag);
   Errors::Message message;
   message << "Derivative requested for d" << value << "_d" << wrt
-          << ", but derivatives are not implemented for this type.  Likely a missed template specialization?";
+          << ", but derivatives are not implemented for this type.  Likely a "
+             "missed template specialization?";
   throw(message);
 }
 
 // ---------------------------------------------------------------------------
 // Does numerical FD to check the derivative
 // ---------------------------------------------------------------------------
-template<typename Data_t, typename DataFactory_t>
-void EvaluatorSecondary<Data_t, DataFactory_t>::CheckDerivative_(State& S, const Key& wrt_key, const Key& wrt_tag) {
+template <typename Data_t, typename DataFactory_t>
+void EvaluatorSecondary<Data_t, DataFactory_t>::CheckDerivative_(
+    State &S, const Key &wrt_key, const Key &wrt_tag) {
   Key value = Keys::getRequest(my_key_, my_tag_);
   Key wrt = Keys::getRequest(wrt_key, wrt_tag);
   Errors::Message message;
   message << "Derivative check requested for d" << value << "_d" << wrt
-          << ", but FD is not implemented for this type.  Likely a missed template specialization or a lazy programmer?";
+          << ", but FD is not implemented for this type.  Likely a missed "
+             "template specialization or a lazy programmer?";
   throw(message);
 }
-
 
 // ---------------------------------------------------------------------------
 // Does this evaluator depend upon the variable key@tag?
 // ---------------------------------------------------------------------------
-template<typename Data_t, typename DataFactory_t>
-bool
-EvaluatorSecondary<Data_t, DataFactory_t>::IsDependency(const State& S,
-        const Key& key, const Key& tag) const {
-  if (std::find(dependencies_.begin(), dependencies_.end(), std::make_pair(key,tag)) != dependencies_.end() ) {
+template <typename Data_t, typename DataFactory_t>
+bool EvaluatorSecondary<Data_t, DataFactory_t>::IsDependency(
+    const State &S, const Key &key, const Key &tag) const {
+  if (std::find(dependencies_.begin(), dependencies_.end(),
+                std::make_pair(key, tag)) != dependencies_.end()) {
     return true;
   } else {
-    for (auto& dep : dependencies_) {
-      if (S.GetEvaluator(dep.first, dep.second)->IsDependency(S,key,tag)) {
+    for (auto &dep : dependencies_) {
+      if (S.GetEvaluator(dep.first, dep.second)->IsDependency(S, key, tag)) {
         return true;
       }
     }
@@ -240,53 +248,44 @@ EvaluatorSecondary<Data_t, DataFactory_t>::IsDependency(const State& S,
   return false;
 }
 
-
 // ---------------------------------------------------------------------------
 // Does this evaluator provide the requested key@tag?
 // ---------------------------------------------------------------------------
-template<typename Data_t, typename DataFactory_t>
-bool
-EvaluatorSecondary<Data_t, DataFactory_t>::ProvidesKey(const Key& key, const Key& tag) const {
+template <typename Data_t, typename DataFactory_t>
+bool EvaluatorSecondary<Data_t, DataFactory_t>::ProvidesKey(
+    const Key &key, const Key &tag) const {
   return key == my_key_ && tag == my_tag_;
 }
-
 
 // ---------------------------------------------------------------------------
 // Tracks through the dag ensuring ensuring requirements are met.
 // ---------------------------------------------------------------------------
-template<typename Data_t, typename DataFactory_t>
-void
-EvaluatorSecondary<Data_t, DataFactory_t>::EnsureCompatibility(State& S) {
+template <typename Data_t, typename DataFactory_t>
+void EvaluatorSecondary<Data_t, DataFactory_t>::EnsureCompatibility(State &S) {
   // Ensure my field exists.  Requirements should be already set.
   ASSERT(my_key_ != std::string(""));
-  auto my_fac = S.Require<Data_t,DataFactory_t>(my_key_, my_tag_, my_key_);
-  for (auto& dep : dependencies_) S.RequireEvaluator(dep.first, dep.second);
-  
+  auto my_fac = S.Require<Data_t, DataFactory_t>(my_key_, my_tag_, my_key_);
+  for (auto &dep : dependencies_)
+    S.RequireEvaluator(dep.first, dep.second);
+
   // check plist for vis or checkpointing control
-  bool io_my_key = plist_.get<bool>(std::string("visualize ")+my_key_, true);
+  bool io_my_key = plist_.get<bool>(std::string("visualize ") + my_key_, true);
   S.GetRecordW(my_key_, my_tag_, my_key_).set_io_vis(io_my_key);
-  bool checkpoint_my_key = plist_.get<bool>(std::string("checkpoint ")+my_key_, false);
+  bool checkpoint_my_key =
+      plist_.get<bool>(std::string("checkpoint ") + my_key_, false);
   S.GetRecordW(my_key_, my_tag_, my_key_).set_io_checkpoint(checkpoint_my_key);
 }
-
-
 
 // ---------------------------------------------------------------------------
 // Debugging
 // ---------------------------------------------------------------------------
-template<typename Data_t, typename DataFactory_t>
-std::string
-EvaluatorSecondary<Data_t, DataFactory_t>::WriteToString() const {
+template <typename Data_t, typename DataFactory_t>
+std::string EvaluatorSecondary<Data_t, DataFactory_t>::WriteToString() const {
   std::stringstream result;
-  result << my_key_ << std::endl
-         << "  Type: secondary" << std::endl;
-  for (auto& dep : dependencies_) {
+  result << my_key_ << std::endl << "  Type: secondary" << std::endl;
+  for (auto &dep : dependencies_) {
     result << "  Dep: " << dep.first << "," << dep.second << std::endl;
   }
   result << std::endl;
   return result.str();
 }
-
-
-
-

@@ -22,123 +22,89 @@ class, but then the non-member constructors would need to be friends, etc.
 
 #include "Teuchos_RCP.hpp"
 
-#include "dbc.hh"
 #include "StateDefs.hh"
+#include "dbc.hh"
 
 namespace Amanzi {
 
-
 // thing factory base class
 class DataFactory_Intf {
- public:
+public:
   virtual ~DataFactory_Intf() {}
-  
-  virtual
-  std::unique_ptr<DataFactory_Intf> Clone() const = 0;
 
-  template<typename T, typename F>
-  bool ValidType() const;
+  virtual std::unique_ptr<DataFactory_Intf> Clone() const = 0;
 
-  virtual
-  void Create(Data& t) const = 0;
-  virtual
-  Data Create() const = 0;
+  template <typename T, typename F> bool ValidType() const;
 
-  template<typename T, typename F>
-  const F& Get() const;
+  virtual void Create(Data &t) const = 0;
+  virtual Data Create() const = 0;
 
-  template<typename T, typename F>
-  F& GetW();
+  template <typename T, typename F> const F &Get() const;
 
+  template <typename T, typename F> F &GetW();
 };
 
 // thing factory implementation
 template <typename T, typename F>
 class DataFactory_Impl : public DataFactory_Intf {
- public:
-  DataFactory_Impl() :
-      f_(std::move(std::unique_ptr<F>(new F()))) {}
+public:
+  DataFactory_Impl() : f_(std::move(std::unique_ptr<F>(new F()))) {}
 
-  DataFactory_Impl(const DataFactory_Impl& other) :
-      f_(std::move(std::unique_ptr<F>(new F(*other.f_)))) {}
+  DataFactory_Impl(const DataFactory_Impl &other)
+      : f_(std::move(std::unique_ptr<F>(new F(*other.f_)))) {}
 
   std::unique_ptr<DataFactory_Intf> Clone() const override {
-    return std::unique_ptr<DataFactory_Impl<T,F> >(new DataFactory_Impl<T,F>(*this));
+    return std::unique_ptr<DataFactory_Impl<T, F>>(
+        new DataFactory_Impl<T, F>(*this));
   }
 
-  void
-  Create(Data& t) const override {
-    t.SetPtr<T>(f_->Create());
-  }    
+  void Create(Data &t) const override { t.SetPtr<T>(f_->Create()); }
 
-  Data
-  Create() const override {
-    return data<T>(f_->Create());
-  }    
+  Data Create() const override { return data<T>(f_->Create()); }
 
-  const F&
-  Get() const {
-    return *f_;
-  }    
+  const F &Get() const { return *f_; }
 
-  F&
-  GetW() {
-    return *f_;
-  }    
+  F &GetW() { return *f_; }
 
- private:
-  std::unique_ptr<F> f_;  
-
+private:
+  std::unique_ptr<F> f_;
 };
 
 // partial specialization for NullFactory
-template<typename T>
-class DataFactory_Impl<T,NullFactory> : public DataFactory_Intf {
- public:
-  
-  DataFactory_Impl() :
-      f_(std::move(std::unique_ptr<NullFactory>(new NullFactory()))) {}
+template <typename T>
+class DataFactory_Impl<T, NullFactory> : public DataFactory_Intf {
+public:
+  DataFactory_Impl()
+      : f_(std::move(std::unique_ptr<NullFactory>(new NullFactory()))) {}
 
-  DataFactory_Impl(const DataFactory_Impl& other) :
-      f_(std::move(std::unique_ptr<NullFactory>(new NullFactory(*other.f_)))) {}
+  DataFactory_Impl(const DataFactory_Impl &other)
+      : f_(std::move(
+            std::unique_ptr<NullFactory>(new NullFactory(*other.f_)))) {}
 
   std::unique_ptr<DataFactory_Intf> Clone() const override {
-    return std::unique_ptr<DataFactory_Impl<T,NullFactory> >(new DataFactory_Impl<T,NullFactory>(*this));
+    return std::unique_ptr<DataFactory_Impl<T, NullFactory>>(
+        new DataFactory_Impl<T, NullFactory>(*this));
   }
 
+  // thing factory Create specialization on NullFactory factory (i.e. null
+  // factory)
+  void Create(Data &t) const override { t.SetPtr<T>(Teuchos::rcp(new T())); }
 
-  // thing factory Create specialization on NullFactory factory (i.e. null factory)
-  void
-  Create(Data& t) const override {
-    t.SetPtr<T>(Teuchos::rcp(new T()));
-  }  
+  // thing factory Create specialization on NullFactory factory (i.e. null
+  // factory)
+  Data Create() const override { return data<T>(Teuchos::rcp(new T())); }
 
-  // thing factory Create specialization on NullFactory factory (i.e. null factory)
-  Data
-  Create() const override {
-    return data<T>(Teuchos::rcp(new T()));
-  }  
+  const NullFactory &Get() const { return *f_; }
 
-  
-  const NullFactory&
-  Get() const {
-    return *f_;
-  }
+  NullFactory &GetW() { return *f_; }
 
-  NullFactory&
-  GetW() {
-    return *f_;
-  }
-
- private:
+private:
   std::unique_ptr<NullFactory> f_;
 };
 
-
 // thing factory base class implementation
-template<typename T, typename F>
-bool DataFactory_Intf::ValidType() const {
-  auto p = dynamic_cast<DataFactory_Impl<T,F> *>(this);
+template <typename T, typename F> bool DataFactory_Intf::ValidType() const {
+  auto p = dynamic_cast<DataFactory_Impl<T, F> *>(this);
   if (!p) {
     return false;
   } else {
@@ -146,30 +112,28 @@ bool DataFactory_Intf::ValidType() const {
   }
 }
 
-
-template<typename T, typename F>
-const F& DataFactory_Intf::Get() const {
-  auto p = dynamic_cast<DataFactory_Impl<T,F> *>(this);
+template <typename T, typename F> const F &DataFactory_Intf::Get() const {
+  auto p = dynamic_cast<DataFactory_Impl<T, F> *>(this);
   if (!p) {
     Errors::Message msg;
-    msg << "factory requested via incorrect type: \"" << typeid(T).name() <<  "\"";
+    msg << "factory requested via incorrect type: \"" << typeid(T).name()
+        << "\"";
     throw(msg);
   }
   return p->Get();
 }
 
-template<typename T, typename F>
-F& DataFactory_Intf::GetW() {
-  auto p = dynamic_cast<DataFactory_Impl<T,F> *>(this);
+template <typename T, typename F> F &DataFactory_Intf::GetW() {
+  auto p = dynamic_cast<DataFactory_Impl<T, F> *>(this);
   if (!p) {
     Errors::Message msg;
-    msg << "factory requested via incorrect type: \"" << typeid(T).name() <<  "\"";
+    msg << "factory requested via incorrect type: \"" << typeid(T).name()
+        << "\"";
     throw(msg);
   }
   return p->GetW();
 }
 
 } // namespace Amanzi
-
 
 #endif

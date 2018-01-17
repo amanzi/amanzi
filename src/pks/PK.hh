@@ -1,7 +1,7 @@
 /* -*-  mode: c++; indent-tabs-mode: nil -*- */
 /*
-  Amanzi is released under the three-clause BSD License. 
-  The terms of use and "as is" disclaimer for this license are 
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
 
   Author: Ethan Coon (ecoon@lanl.gov)
@@ -9,7 +9,7 @@
 
 //! The interface for a Process Kernel, an equation or system of equations.
 
-/*!  
+/*!
 A process kernel represents a single or system of partial/ordinary
 differential equation(s) or conservation law(s), and is used as the
 fundamental unit for coupling strategies.
@@ -30,11 +30,13 @@ All PKs have the following parameters in their spec:
 
 * `"PK type`" ``[string]``
 
-  The PK type is a special key-word which corresponds to a given class in the PK factory.  See available PK types listed below.
+  The PK type is a special key-word which corresponds to a given class in the PK
+factory.  See available PK types listed below.
 
 * `"PK name`" ``[string]`` **LIST-NAME**
 
-  This is automatically written as the `"name`" attribute of the containing PK sublist, and need not be included by the user.
+  This is automatically written as the `"name`" attribute of the containing PK
+sublist, and need not be included by the user.
 
 Example:
 
@@ -56,7 +58,6 @@ Example:
     </ParameterList>
   </ParameterList>
 */
-
 
 /*
 Developer's documentation:
@@ -84,13 +85,13 @@ The PK interface is then split into the following (nearly) orthogonal concepts:
 
 1. Leaf PK vs MPC.  MPCs couple their children.  Leafs have no children.  MPCs
    may span multiple meshes or domains, while leaf PKs live on a single domain.
-   This governs much of setup and initialization, checks for validity, and allows
-   common functionality to be implemented in a single place.
+   This governs much of setup and initialization, checks for validity, and
+allows common functionality to be implemented in a single place.
 
    These are the most important classification, and this classification sets
    defaults for many methods.  As a result, it is cleanest if these are the
    base Mixin, i.e, the second-from-last that derives from PK_Default.
-   
+
    See PK_MixinLeaf and PK_MixinMPC.
 
 2. Implicit vs Explicit time integration.  This governs the AdvanceStep()
@@ -157,17 +158,19 @@ dag, etc.  Its class heirarchy might look like:
                       PK_Implicit_Adaptor
                       /                \
                PK_Richards             PK_Implicit
-                  |                        /      \     
+                  |                        /      \
                PK_MixinImplicit           PK      BDFFnBase
                   |
                PK_MixinLeaf
                   |
                PK_Default
-      
+
 
 and would be typedef'd:
 
-typedef PK_Implicit_Adaptor<PK_Richards<PK_MixinImplicit<PK_MixinLeaf<PK_Default> > > > PK_Richards_t;
+typedef
+PK_Implicit_Adaptor<PK_Richards<PK_MixinImplicit<PK_MixinLeaf<PK_Default> > > >
+PK_Richards_t;
 
 
 This concepts-based design is very extensible.  For instance, a physics
@@ -215,16 +218,15 @@ and those that are not and assume that all Mixins implement this method.
 
 */
 
-
 #ifndef AMANZI_PK_HH_
 #define AMANZI_PK_HH_
 
-#include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
+#include "Teuchos_RCP.hpp"
 
-#include "Key.hh"
 #include "BDFFnBase.hh"
 #include "Explicit_TI_FnBase.hh"
+#include "Key.hh"
 
 namespace Amanzi {
 
@@ -232,41 +234,40 @@ class Debugger;
 class TreeVector;
 
 class PK {
- public:
-
+public:
   // Virtual destructor
   virtual ~PK() = default;
 
   // construct all sub-PKs.  This is not a part of the constructor as it must
   // be virtual.
   virtual void ConstructChildren() = 0;
-  
+
   // Setup: forms the DAG, pushes meta-data into State
   virtual void Setup() = 0;
-  
+
   // Initialize: initial conditions for owned variables.
   virtual void Initialize() = 0;
 
   // Advance PK from time tag old to time tag new
-  virtual bool AdvanceStep(const Key& tag_old, const Key& tag_new) = 0;
+  virtual bool AdvanceStep(const Key &tag_old, const Key &tag_new) = 0;
 
   // Returns validity of the step taken from tag_old to tag_new
-  virtual bool ValidStep(const Key& tag_old, const Key& tag_new) = 0;
+  virtual bool ValidStep(const Key &tag_old, const Key &tag_new) = 0;
 
   // Do work that can only be done if we know the step was successful.
-  virtual void CommitStep(const Key& tag_old, const Key& tag_new) = 0;
+  virtual void CommitStep(const Key &tag_old, const Key &tag_new) = 0;
 
   // Revert a step from tag_new back to tag_old
-  virtual void FailStep(const Key& tag_old, const Key& tag_new) = 0;
+  virtual void FailStep(const Key &tag_old, const Key &tag_new) = 0;
 
   // Choose a time step compatible with physics.
   virtual double get_dt() = 0;
-  
+
   // Calculate any diagnostics at tag, currently used for visualization.
-  virtual void CalculateDiagnostics(const Key& tag) = 0;
+  virtual void CalculateDiagnostics(const Key &tag) = 0;
 
   // Mark, as changed, any primary variable evaluator owned by this PK
-  virtual void ChangedSolutionPK(const Key& tag) = 0;
+  virtual void ChangedSolutionPK(const Key &tag) = 0;
 
   // Return PK's name
   virtual std::string name() = 0;
@@ -277,54 +278,47 @@ class PK {
   // Builds a TreeVector from the impled PK tree and data in State, at tag.
   // Each component is optionally suffixed (usually as "_t") to get other
   // vectors (usually the time derivative for explicit PKs.
-  virtual void StateToSolution(TreeVector& soln, const Key& tag, const Key& suffix) = 0;
+  virtual void StateToSolution(TreeVector &soln, const Key &tag,
+                               const Key &suffix) = 0;
 
   // Issue Require() calls to State for a TreeVector to be formed at this tag.
   // This is how time integrators get work space they they need in the dag.
-  virtual void SolutionToState(const Key& tag, const Key& suffix) = 0;
+  virtual void SolutionToState(const Key &tag, const Key &suffix) = 0;
 
   // Copy anything needed from one tag to another.  Typically this is the
   // primary variable, but may also be conserved quantities used in DAEs, etc.
-  virtual void StateToState(const Key& tag_from, const Key& tag_to) = 0;
-  
+  virtual void StateToState(const Key &tag_from, const Key &tag_to) = 0;
 };
 
 //
 // Combines the PK interface with the BDF implicit function interface.
 //
-template<typename Vector=TreeVector>
-class PK_Implicit : public PK,
-               public BDFFnBase<Vector> {
- public:
+template <typename Vector = TreeVector>
+class PK_Implicit : public PK, public BDFFnBase<Vector> {
+public:
   virtual ~PK_Implicit() = default;
 };
 
 //
 // Combines the PK interface with the Explicit function interface
 //
-template<typename Vector=TreeVector>
-class PK_Explicit : public PK,
-                    public Explicit_TI::fnBase<Vector> {
- public:
+template <typename Vector = TreeVector>
+class PK_Explicit : public PK, public Explicit_TI::fnBase<Vector> {
+public:
   virtual ~PK_Explicit() = default;
 };
-
 
 //
 // Combines PK, explicit, and implicit interfaces
 //
-template<typename Vector=TreeVector>
+template <typename Vector = TreeVector>
 class PK_ImplicitExplicit : public PK,
                             public BDFFnBase<Vector>,
                             public Explicit_TI::fnBase<Vector> {
- public:
+public:
   virtual ~PK_ImplicitExplicit() = default;
 };
 
-
-
-
-
-}  // namespace Amanzi
+} // namespace Amanzi
 
 #endif

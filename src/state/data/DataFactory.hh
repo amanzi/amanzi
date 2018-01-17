@@ -14,7 +14,6 @@ This shares the same design pattern as Data to do type erasure.
 #ifndef AMANZI_STOREABLE_FACTORY_HH_
 #define AMANZI_STOREABLE_FACTORY_HH_
 
-
 #include <memory>
 
 #include "Teuchos_RCP.hpp"
@@ -28,70 +27,51 @@ namespace Amanzi {
 
 // thing factory wrapper
 class DataFactory {
- public:
+public:
   DataFactory() : p_(std::unique_ptr<DataFactory_Intf>()) {}
 
-  
-  DataFactory(DataFactory_Intf* t) :
-      p_(t) {}
+  DataFactory(DataFactory_Intf *t) : p_(t) {}
 
-  DataFactory(const DataFactory& other)
-      : p_(other.p_->Clone()) {}
+  DataFactory(const DataFactory &other) : p_(other.p_->Clone()) {}
 
-  DataFactory(DataFactory&& other) noexcept 
-      : p_( std::move(other.p_) ) {}
+  DataFactory(DataFactory &&other) noexcept : p_(std::move(other.p_)) {}
 
-  void swap(DataFactory& other) noexcept {
-    p_.swap(other.p_);
-  }
+  void swap(DataFactory &other) noexcept { p_.swap(other.p_); }
 
-  DataFactory& operator=(DataFactory other) {
-    if (&other != this) swap(other);
+  DataFactory &operator=(DataFactory other) {
+    if (&other != this)
+      swap(other);
     return *this;
   }
 
-  bool HasType() const {
-    return p_.get();
-  }
-  
-  template<typename T,typename F>
-  bool ValidType() const {
-    return p_->ValidType<T,F>();
-  }
-  
-  template<typename T,typename F>
-  const F& Get() const { return p_->Get<T,F>(); }
+  bool HasType() const { return p_.get(); }
 
-  template<typename T,typename F>
-  F& GetW() { return p_->GetW<T,F>(); }
-
-  void
-  Create(Data& t) {
-    return p_->Create(t);
+  template <typename T, typename F> bool ValidType() const {
+    return p_->ValidType<T, F>();
   }
 
-  Data
-  Create() {
-    return p_->Create();
+  template <typename T, typename F> const F &Get() const {
+    return p_->Get<T, F>();
   }
 
- private:
+  template <typename T, typename F> F &GetW() { return p_->GetW<T, F>(); }
+
+  void Create(Data &t) { return p_->Create(t); }
+
+  Data Create() { return p_->Create(); }
+
+private:
   std::unique_ptr<DataFactory_Intf> p_;
 };
 
-
-template<typename T, typename F>
-DataFactory dataFactory() {
-  return DataFactory(new DataFactory_Impl<T,F>());
+template <typename T, typename F> DataFactory dataFactory() {
+  return DataFactory(new DataFactory_Impl<T, F>());
 }
 
-template<typename T, typename F>
-DataFactory dataFactory(F f) {
-  return DataFactory(new DataFactory_Impl<T,F>(std::move(f)));
+template <typename T, typename F> DataFactory dataFactory(F f) {
+  return DataFactory(new DataFactory_Impl<T, F>(std::move(f)));
 }
-
 
 } // namespace Amanzi
-
 
 #endif

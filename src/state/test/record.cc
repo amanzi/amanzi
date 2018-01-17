@@ -1,7 +1,7 @@
-#include "UnitTest++.h"
-#include "errors.hh"
 #include "UniqueHelpers.hh"
+#include "UnitTest++.h"
 #include "data/RecordSet.hh"
+#include "errors.hh"
 
 #include "Vec.hh"
 
@@ -15,14 +15,13 @@ std::unique_ptr<RecordSet> getRecordDouble() {
   return f;
 }
 
-
 std::unique_ptr<RecordSet> getRecordVec() {
   auto f = std::make_unique<RecordSet>("my_field");
   f->RequireRecord("", "my_owner");
-  auto& fac = f->SetType<Vec,VecFactory>();
+  auto &fac = f->SetType<Vec, VecFactory>();
   fac.set_size(2);
   f->CreateData();
-  return f;      
+  return f;
 }
 
 TEST(FIELD_MAKE_EMPTY) {
@@ -30,10 +29,7 @@ TEST(FIELD_MAKE_EMPTY) {
   CHECK(!f.HasType());
 }
 
-TEST(FIELD_MAKE_NULLFACTORY) {
-  auto f = getRecordDouble();
-}
-
+TEST(FIELD_MAKE_NULLFACTORY) { auto f = getRecordDouble(); }
 
 TEST(FIELD_SET_NULLFACTORY) {
   auto f = getRecordDouble();
@@ -41,9 +37,7 @@ TEST(FIELD_SET_NULLFACTORY) {
   CHECK_EQUAL(1.1, f->Get<double>());
 }
 
-TEST(FIELD_MAKE_FACTORY) {
-  auto f = getRecordVec();
-}
+TEST(FIELD_MAKE_FACTORY) { auto f = getRecordVec(); }
 
 TEST(FIELD_SET_FACTORY) {
   auto f = getRecordVec();
@@ -53,7 +47,7 @@ TEST(FIELD_SET_FACTORY) {
 
 TEST(FIELD_SET_TWICE_OK) {
   auto f1 = getRecordVec();
-  f1->SetType<Vec,VecFactory>();
+  f1->SetType<Vec, VecFactory>();
   // f1->SetType<double,VecFactory>(); // NOTE: This should not compile!
   // f1->SetType<Vec,double>(); // NOTE: This should not compile!
   CHECK_THROW(f1->SetType<Vec>(), Errors::Message);
@@ -63,7 +57,7 @@ TEST(FIELD_SET_TWICE_OK) {
   // f2->SetType<double,VecFactory>();  // NOTE: This should not compile!
   // f2->SetType<Vec,double>();  // NOTE: This should not compile!
   CHECK_THROW(f2->SetType<Vec>(), Errors::Message);
-}  
+}
 
 TEST(FIELD_THROWS_ON_BAD_OWNER) {
   auto f = getRecordDouble();

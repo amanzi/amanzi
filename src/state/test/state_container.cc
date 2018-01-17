@@ -1,22 +1,20 @@
- /*
-  State
+/*
+ State
 
-  Tests for state as a container of data
+ Tests for state as a container of data
 */
-
 
 // TPLs
 #include "UnitTest++.h"
 
-
-#include "errors.hh"
 #include "MeshFactory.hh"
 #include "State.hh"
+#include "errors.hh"
 
-#include "Vec.hh"
 #include "Data_Helpers.hh"
-#include "Op_Factory.hh"
 #include "Op_Cell_Cell.hh"
+#include "Op_Factory.hh"
+#include "Vec.hh"
 
 TEST(STATE_CREATION) {
   using namespace Amanzi;
@@ -25,7 +23,6 @@ TEST(STATE_CREATION) {
   s.Require<double>("my_double", "", "my_double");
   s.Setup();
 }
-
 
 TEST(STATE_ASSIGNMENT) {
   using namespace Amanzi;
@@ -39,7 +36,7 @@ TEST(STATE_ASSIGNMENT) {
 
 TEST(STATE_FACTORIES_PERSIST) {
   using namespace Amanzi;
-  
+
   // create a mesh
   auto comm = new Epetra_MpiComm(MPI_COMM_WORLD);
   AmanziMesh::MeshFactory fac(comm);
@@ -48,19 +45,17 @@ TEST(STATE_FACTORIES_PERSIST) {
   // create a state
   State s;
   s.RegisterDomainMesh(mesh);
-  
+
   // require data with factory
   s.Require<CompositeVector, CompositeVectorSpace>("my_vec", "", "my_vec_owner")
       .SetMesh(s.GetMesh())
       ->SetGhosted();
 
-
-  s.Require<CompositeVector, CompositeVectorSpace>("my_vec")
-      .SetComponent("cell", AmanziMesh::CELL, 1);
+  s.Require<CompositeVector, CompositeVectorSpace>("my_vec").SetComponent(
+      "cell", AmanziMesh::CELL, 1);
 
   s.Setup();
 }
-  
 
 TEST(STATE_HETEROGENEOUS_DATA) {
   using namespace Amanzi;
@@ -112,7 +107,7 @@ TEST(STATE_HETEROGENEOUS_DATA) {
   // setting data
   s.Set("my_double", "", "my_double_owner", 1.1);
   CHECK_EQUAL(1.1, s.Get<double>("my_double"));
-  
+
   // copies
   CHECK(s.HasData("my_double", "prev"));
   CHECK(!s.HasData("my_vec", "prev"));
@@ -125,11 +120,7 @@ TEST(STATE_HETEROGENEOUS_DATA) {
   s.GetW<double>("my_double", "prev", "my_double_prev_owner") = 3.3;
   CHECK_EQUAL(1.1, s.Get<double>("my_double"));
   CHECK_EQUAL(3.3, s.Get<double>("my_double", "prev"));
-  
-}  
-
-
-
+}
 
 TEST(STATE_VIRTUAL_DATA) {
   using namespace Amanzi;
@@ -144,15 +135,18 @@ TEST(STATE_VIRTUAL_DATA) {
   s.RegisterDomainMesh(mesh);
 
   // require some data
-  auto& f = s.Require<Operators::Op, Operators::Op_Factory>("my_op", "", "my_op_owner");
+  auto &f = s.Require<Operators::Op, Operators::Op_Factory>("my_op", "",
+                                                            "my_op_owner");
   f.set_mesh(mesh);
   f.set_name("cell");
-  f.set_schema(Operators::Schema{Operators::OPERATOR_SCHEMA_BASE_CELL | Operators::OPERATOR_SCHEMA_DOFS_CELL});
+  f.set_schema(Operators::Schema{Operators::OPERATOR_SCHEMA_BASE_CELL |
+                                 Operators::OPERATOR_SCHEMA_DOFS_CELL});
 
   s.Setup();
 
   // existence
   CHECK(s.HasData("my_op"));
-  CHECK_EQUAL(Operators::OPERATOR_SCHEMA_DOFS_CELL | Operators::OPERATOR_SCHEMA_BASE_CELL,
+  CHECK_EQUAL(Operators::OPERATOR_SCHEMA_DOFS_CELL |
+                  Operators::OPERATOR_SCHEMA_BASE_CELL,
               s.Get<Operators::Op>("my_op").schema_old_);
 }
