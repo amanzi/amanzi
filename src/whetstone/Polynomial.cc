@@ -33,9 +33,10 @@ Polynomial::Polynomial(int d, int order) :
 
 
 /* ******************************************************************
-* Constructor of polynomials with a single term.
+* Constructor of a polynomial with a single term:
+*    p(x) = factor * (x)^multi_index
 ****************************************************************** */
-Polynomial::Polynomial(int d, const int* multi_index) : 
+Polynomial::Polynomial(int d, const int* multi_index, double factor) : 
     d_(d), origin_(d)
 {
   order_ = 0;
@@ -49,7 +50,7 @@ Polynomial::Polynomial(int d, const int* multi_index) :
   }
 
   int l = MonomialPosition(multi_index);
-  coefs_[order_](l) = 1.0;
+  coefs_[order_](l) = factor;
 }
 
 

@@ -169,7 +169,7 @@ class Polynomial {
  public:
   Polynomial() : d_(0), order_(-1), size_(0) {};
   Polynomial(int d, int order);
-  Polynomial(int d, const int* multi_index);
+  Polynomial(int d, const int* multi_index, double factor);
 
   // reshape polynomial with erase (optionally) memory
   void Reshape(int d, int order, bool reset = false);

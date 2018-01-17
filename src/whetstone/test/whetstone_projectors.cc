@@ -411,7 +411,7 @@ TEST(HARMONIC_PROJECTORS_POLYGON_CR) {
     projector.EllipticCell_CRk(cell, k, vf, moments, uc);
 
     for (auto it = vc.begin(); it.end() <= vc.end(); ++it) {
-      Polynomial mono(2, it.multi_index());
+      Polynomial mono(2, it.multi_index(), 1.0);
       mono.set_origin(mesh->cell_centroid(cell));
    
       Polynomial poly(uc[0]);

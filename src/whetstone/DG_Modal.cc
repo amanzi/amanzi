@@ -117,6 +117,7 @@ int DG_Modal::MassMatrixPoly(int c, const Polynomial& K, DenseMatrix& M)
   // rebase the polynomial
   Polynomial Kcopy(K);
   Kcopy.ChangeOrigin(mesh_->cell_centroid(c));
+  ChangePolynomialToNaturalBasis_(c, Kcopy);
 
   // extend list of integrals of monomials
   int uk(Kcopy.order());
@@ -181,6 +182,7 @@ int DG_Modal::AdvectionMatrixPoly(int c, const VectorPolynomial& u, DenseMatrix&
   VectorPolynomial ucopy(u);
   for (int i = 0; i < d_; ++i) {
     ucopy[i].ChangeOrigin(xc);
+    ChangePolynomialToNaturalBasis_(c, ucopy[i]);
   }
 
   // extend list of integrals of monomials
@@ -202,7 +204,7 @@ int DG_Modal::AdvectionMatrixPoly(int c, const VectorPolynomial& u, DenseMatrix&
     int k = p.PolynomialPosition(idx_p);
 
     // product of polynomials need to align origins
-    Polynomial pp(d_, idx_p);
+    Polynomial pp(d_, idx_p, 1.0);
     pp.set_origin(xc);
 
     pgrad.Gradient(pp);
@@ -297,7 +299,7 @@ int DG_Modal::FluxMatrixPoly(int f, const Polynomial& un, DenseMatrix& A,
     const int* idx0 = it.multi_index();
     int k = poly0.PolynomialPosition(idx0);
 
-    Polynomial p0(d_, idx0), p1(d_, idx0);
+    Polynomial p0(d_, idx0, 1.0), p1(d_, idx0, 1.0);
     p0.set_origin(mesh_->cell_centroid(cells[id]));
     p1.set_origin(mesh_->cell_centroid(cells[1 - id]));
 
@@ -305,7 +307,7 @@ int DG_Modal::FluxMatrixPoly(int f, const Polynomial& un, DenseMatrix& A,
       const int* idx1 = jt.multi_index();
       int l = poly1.PolynomialPosition(idx1);
 
-      Polynomial q(d_, idx1);
+      Polynomial q(d_, idx1, 1.0);
       q.set_origin(mesh_->cell_centroid(cells[id]));
 
       polys[0] = &un;
@@ -366,7 +368,7 @@ void DG_Modal::CoVelocityCell(
     double area = mesh_->face_area(f);
 
     for (auto it = mono.begin(); it.end() <= 1; ++it) {
-      Polynomial p(d_, it.multi_index());
+      Polynomial p(d_, it.multi_index(), 1.0);
       p.set_origin(xc);
 
       Polynomial q(*vf[n]);
@@ -492,7 +494,7 @@ void DG_Modal::TaylorBasis(int c, const Iterator& it, double* a, double* b)
   if (n == 0) {
     *a = 1.0;
     *b = 0.0;
-  } else if (basis_ == TAYLOR_BASIS_SIMPLE) {
+  } else if (basis_ == TAYLOR_BASIS_NATURAL) {
     *a = 1.0;
     *b = 0.0;
   } else {
@@ -622,6 +624,21 @@ void DG_Modal::UpdateScales_(int c, int order)
         scales_b_[n].monomials(m).coefs()[k] = b;
       }
     }
+  }
+}
+
+
+/* ******************************************************************
+* Re-scale polynomial coefficients.
+****************************************************************** */
+void DG_Modal::ChangePolynomialToNaturalBasis_(int c, Polynomial& p)
+{
+  double volume = mesh_->cell_volume(c);
+
+  for (int k = 0; k <= p.order(); ++k) {
+    double scale = numi_.MonomialNaturalScale(k, volume);
+    auto& mono = p.monomials(k).coefs();
+    for (auto it = mono.begin(); it != mono.end(); ++it) *it /= scale;
   }
 }
 

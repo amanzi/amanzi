@@ -135,7 +135,7 @@ double NumericalIntegration::IntegratePolynomialsEdge(
     k += polys[i]->order();
   }
   int m = k / 2;
-  ASSERT(m < 5);
+  ASSERT(m < 6);
 
   AmanziGeometry::Point xm(d_);
 
@@ -155,8 +155,8 @@ double NumericalIntegration::IntegratePolynomialsEdge(
 
 
 /* ******************************************************************
-* Integrate over cell c a group of non-normalized monomials of the
-* same order centered at the centroid of c.
+* Integrate over cell c a group of uniformly normalized monomials of
+* the same order centered at the centroid of c.
 ****************************************************************** */
 void NumericalIntegration::UpdateMonomialIntegralsCell(
     int c, int order, PolynomialOnMesh& integrals)
@@ -182,8 +182,10 @@ void NumericalIntegration::UpdateMonomialIntegralsCell(
 
 
 /* ******************************************************************
-* Integrate over cell c a group of non-normalized monomials of the
-* same order centered at the centroid of c.
+* Integrate over cell c a group of uniformly normalized monomials of
+* the same order centered at the centroid of c: 
+*    m(x) = (x - x0)^k / h^k,
+* where h is a measure of cell size.
 ****************************************************************** */
 void NumericalIntegration::IntegrateMonomialsCell(int c, Monomial& monomials)
 {
@@ -197,12 +199,13 @@ void NumericalIntegration::IntegrateMonomialsCell(int c, Monomial& monomials)
   int nfaces = faces.size();
 
   const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
+  double factor = MonomialNaturalScale(k, mesh_->cell_volume(c));
 
   for (int n = 0; n < nfaces; ++n) {
     int f = faces[n];
     const AmanziGeometry::Point& xf = mesh_->face_centroid(f);
     const AmanziGeometry::Point& normal = mesh_->face_normal(f);
-    double tmp = dirs[n] * ((xf - xc) * normal) / (k + d_);
+    double tmp = factor * dirs[n] * ((xf - xc) * normal) / (k + d_);
     
     if (d_ == 3) {
       tmp /= mesh_->face_area(f);
@@ -222,8 +225,8 @@ void NumericalIntegration::IntegrateMonomialsCell(int c, Monomial& monomials)
 }
 
 /* ******************************************************************
-* Integrate over face f a group of non-normalized monomials of the
-* same order centered at the centroid of cell c.
+* Integrate over face f a group of uniformly normalized monomials of
+* the same order centered at the centroid of cell c.
 ****************************************************************** */
 void NumericalIntegration::IntegrateMonomialsFace_(
     int c, int f, double factor, Monomial& monomials)
@@ -244,7 +247,7 @@ void NumericalIntegration::IntegrateMonomialsFace_(
 
     // using monomial centered at xc, create polynomial centred at xf
     const int* idx = it.multi_index();
-    Polynomial poly(d_, idx);
+    Polynomial poly(d_, idx, 1.0);
     poly.set_origin(xc);
     poly.ChangeOrigin(xf);
 
@@ -299,7 +302,7 @@ void NumericalIntegration::IntegrateMonomialsEdge_(
   // minimal quadrature rule
   int k = monomials.order();
   int m = k / 2;
-  ASSERT(m < 5);
+  ASSERT(m < 6);
 
   for (auto it = monomials.begin(); it.end() <= k; ++it) {
     const int* idx = it.multi_index();

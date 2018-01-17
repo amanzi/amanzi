@@ -216,7 +216,7 @@ void Projector::GenericCell_CRk_(
 
       for (auto it = pf.begin(); it.end() <= pf.end(); ++it) {
         const int* index = it.multi_index();
-        Polynomial fmono(d_ - 1, index);
+        Polynomial fmono(d_ - 1, index, 1.0);
         fmono.InverseChangeCoordinates(xf, tau);  
 
         polys[1] = &fmono;
@@ -390,7 +390,7 @@ void Projector::GenericCell_Pk_(
 
         for (auto it = pf.begin(); it.end() <= pf.end(); ++it) {
           const int* index = it.multi_index();
-          Polynomial fmono(d_ - 1, index);
+          Polynomial fmono(d_ - 1, index, 1.0);
           fmono.InverseChangeCoordinates(xf, tau);  
 
           polys[1] = &fmono;
@@ -464,7 +464,7 @@ void Projector::GenericCell_Pk_(
       v5(0) = uc[i](0, 0);
 
       DG_Modal dg(order, mesh_);
-      dg.set_basis(TAYLOR_BASIS_SIMPLE);
+      dg.set_basis(TAYLOR_BASIS_NATURAL);
 
       DenseMatrix M, M2;
       DenseVector v6(nd - ndof_c);

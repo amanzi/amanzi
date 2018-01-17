@@ -155,7 +155,8 @@ int MFD3D_CrouzeixRaviart::H1consistencyHO(
 
   for (auto it = poly.begin(); it.end() <= poly.end(); ++it) { 
     const int* index = it.multi_index();
-    Polynomial cmono(d_, index);
+    double factor = numi.MonomialNaturalScale(it.MonomialOrder(), volume);
+    Polynomial cmono(d_, index, factor);
     cmono.set_origin(xc);  
 
     // N and R: degrees of freedom on faces 
@@ -191,7 +192,7 @@ int MFD3D_CrouzeixRaviart::H1consistencyHO(
 
       for (auto jt = pf.begin(); jt.end() <= pf.end(); ++jt) {
         const int* jndex = jt.multi_index();
-        Polynomial fmono(d_ - 1, jndex);
+        Polynomial fmono(d_ - 1, jndex, 1.0);
         fmono.InverseChangeCoordinates(xf, tau);  
 
         polys[1] = &fmono;

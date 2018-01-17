@@ -84,6 +84,11 @@ class NumericalIntegration {
   // miscalleneous: order is not used yet
   void set_order(int order) { order_ = order; }
 
+  // natural scale of monomials: placeholder for other natural scales
+  double MonomialNaturalScale(int k, double volume) { 
+    return std::pow(volume, -(double)k / d_);
+  }
+
  private:
   void IntegrateMonomialsFace_(int c, int f, double factor, Monomial& monomials);
   void IntegrateMonomialsEdge_(
