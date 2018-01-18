@@ -44,9 +44,7 @@ class UpwindArithmeticAverage : public Upwind<Model> {
   void Init(Teuchos::ParameterList& plist);
 
   void Compute(const CompositeVector& flux, const CompositeVector& solution,
-               const std::vector<int>& bc_model, const std::vector<double>& bc_value,
-               CompositeVector& field,
-               double (Model::*Value)(int, double) const);
+               const std::vector<int>& bc_model, CompositeVector& field);
 
  private:
   using Upwind<Model>::mesh_;
@@ -78,9 +76,7 @@ void UpwindArithmeticAverage<Model>::Init(Teuchos::ParameterList& plist)
 template<class Model>
 void UpwindArithmeticAverage<Model>::Compute(
     const CompositeVector& flux, const CompositeVector& solution,
-    const std::vector<int>& bc_model, const std::vector<double>& bc_value,
-    CompositeVector& field,
-    double (Model::*Value)(int, double) const)
+    const std::vector<int>& bc_model, CompositeVector& field)
 {
   ASSERT(field.HasComponent("cell"));
   ASSERT(field.HasComponent(face_comp_));
