@@ -117,7 +117,7 @@ int DG_Modal::MassMatrixPoly(int c, const Polynomial& K, DenseMatrix& M)
   // rebase the polynomial
   Polynomial Kcopy(K);
   Kcopy.ChangeOrigin(mesh_->cell_centroid(c));
-  ChangePolynomialToNaturalBasis_(c, Kcopy);
+  numi_.ChangeBasisRegularToNatural(c, Kcopy);
 
   // extend list of integrals of monomials
   int uk(Kcopy.order());
@@ -182,13 +182,16 @@ int DG_Modal::AdvectionMatrixPoly(int c, const VectorPolynomial& u, DenseMatrix&
   VectorPolynomial ucopy(u);
   for (int i = 0; i < d_; ++i) {
     ucopy[i].ChangeOrigin(xc);
-    ChangePolynomialToNaturalBasis_(c, ucopy[i]);
+    numi_.ChangeBasisRegularToNatural(c, ucopy[i]);
   }
 
   // extend list of integrals of monomials
   int uk(ucopy[0].order());
   UpdateIntegrals_(c, order_ + std::max(0, order_ - 1) + uk);
   const Polynomial& integrals = integrals_[c];
+
+  // gradient of a naturally scaled polynomial needs correction
+  double scale = numi_.MonomialNaturalScale(1, mesh_->cell_volume(c));
    
   // sum-up integrals to the advection matrix
   int multi_index[3];
@@ -204,7 +207,7 @@ int DG_Modal::AdvectionMatrixPoly(int c, const VectorPolynomial& u, DenseMatrix&
     int k = p.PolynomialPosition(idx_p);
 
     // product of polynomials need to align origins
-    Polynomial pp(d_, idx_p, 1.0);
+    Polynomial pp(d_, idx_p, scale);
     pp.set_origin(xc);
 
     pgrad.Gradient(pp);
@@ -286,11 +289,17 @@ int DG_Modal::FluxMatrixPoly(int f, const Polynomial& un, DenseMatrix& A,
   int row(size - col);
 
   // Calculate integrals needed for scaling
-  UpdateIntegrals_(cells[id], 2 * order_);
-  const Polynomial& integrals_dw = integrals_[cells[id]];
+  int c1 = cells[id];
+  int c2 = cells[1 - id];
 
-  UpdateIntegrals_(cells[1 - id], 2 * order_);
-  const Polynomial& integrals_up = integrals_[cells[1 - id]];
+  double volume1 = mesh_->cell_volume(c1);
+  double volume2 = mesh_->cell_volume(c2);
+
+  UpdateIntegrals_(c1, 2 * order_);
+  const Polynomial& integrals_dw = integrals_[c1];
+
+  UpdateIntegrals_(c2, 2 * order_);
+  const Polynomial& integrals_up = integrals_[c2];
 
   // integrate traces of polynomials on face f
   std::vector<const Polynomial*> polys(3);
@@ -298,17 +307,24 @@ int DG_Modal::FluxMatrixPoly(int f, const Polynomial& un, DenseMatrix& A,
   for (auto it = poly0.begin(); it.end() <= poly0.end(); ++it) {
     const int* idx0 = it.multi_index();
     int k = poly0.PolynomialPosition(idx0);
+    int s = it.MonomialOrder();
 
-    Polynomial p0(d_, idx0, 1.0), p1(d_, idx0, 1.0);
-    p0.set_origin(mesh_->cell_centroid(cells[id]));
-    p1.set_origin(mesh_->cell_centroid(cells[1 - id]));
+    double factor = numi_.MonomialNaturalScale(s, volume1);
+    Polynomial p0(d_, idx0, factor);
+    p0.set_origin(mesh_->cell_centroid(c1));
+
+    factor = numi_.MonomialNaturalScale(s, volume2);
+    Polynomial p1(d_, idx0, factor);
+    p1.set_origin(mesh_->cell_centroid(c2));
 
     for (auto jt = poly1.begin(); jt.end() <= poly1.end(); ++jt) {
       const int* idx1 = jt.multi_index();
       int l = poly1.PolynomialPosition(idx1);
+      int t = jt.MonomialOrder();
 
-      Polynomial q(d_, idx1, 1.0);
-      q.set_origin(mesh_->cell_centroid(cells[id]));
+      factor = numi_.MonomialNaturalScale(t, volume1);
+      Polynomial q(d_, idx1, factor);
+      q.set_origin(mesh_->cell_centroid(c1));
 
       polys[0] = &un;
       polys[1] = &p0;
@@ -624,21 +640,6 @@ void DG_Modal::UpdateScales_(int c, int order)
         scales_b_[n].monomials(m).coefs()[k] = b;
       }
     }
-  }
-}
-
-
-/* ******************************************************************
-* Re-scale polynomial coefficients.
-****************************************************************** */
-void DG_Modal::ChangePolynomialToNaturalBasis_(int c, Polynomial& p)
-{
-  double volume = mesh_->cell_volume(c);
-
-  for (int k = 0; k <= p.order(); ++k) {
-    double scale = numi_.MonomialNaturalScale(k, volume);
-    auto& mono = p.monomials(k).coefs();
-    for (auto it = mono.begin(); it != mono.end(); ++it) *it /= scale;
   }
 }
 

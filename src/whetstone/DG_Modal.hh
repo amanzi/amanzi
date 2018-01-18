@@ -93,8 +93,6 @@ class DG_Modal : public BilinearForm {
   void ChangeBasis_(int c, DenseMatrix& A);
   void ChangeBasis_(int c1, int c2, DenseMatrix& A);
 
-  void ChangePolynomialToNaturalBasis_(int c, Polynomial& p);
-
  private:
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
   NumericalIntegration numi_;

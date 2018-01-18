@@ -384,7 +384,6 @@ TEST(DG2D_ADVECTION_MATRIX_CELL) {
       printf("  centroid = %10.6f %10.6f\n", xc[0], xc[1]);
 
       CHECK_CLOSE(integral, 1891.0 / 48.0, 1e-12);
-exit(0);
     }
 
     // TEST3: quadratic u
@@ -465,10 +464,12 @@ TEST(DG3D_ADVECTION_MATRIX_CELL) {
     DenseVector v1(nk), v2(nk), v3(nk);
     if (k > 0) {
       const AmanziGeometry::Point& xc = mesh->cell_centroid(0);
+      double scale = std::pow(mesh->cell_volume(0), 1.0 / 3);
+
       v1.PutScalar(0.0);
       v1(0) = 2 + xc[0] + 3 * xc[1];
-      v1(1) = 1.0;
-      v1(2) = 3.0;
+      v1(1) = 1.0 * scale;
+      v1(2) = 3.0 * scale;
       v2 = v1;
  
       A0.Multiply(v1, v3, false);

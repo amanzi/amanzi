@@ -119,7 +119,7 @@ int MFD3D_Lagrange::H1consistencyHO(
         for (int j = 0; j < nfnodes; j++) {
           int v = face_nodes[j];
           int pos = FindPosition(v, nodes);
-          R(pos, col) += normal[col - 1] / 2;
+          R(pos, col) += factor * normal[col - 1] / 2;
         }
       } else if (col > 0) {
         int v, pos0, pos1;
@@ -221,8 +221,11 @@ int MFD3D_Lagrange::H1consistencyHO(
           nm += multi_index[i];
         }
 
+        // FIXME: use naturally scaled monomials for internal DOF
+        double s = numi.MonomialNaturalScale(jt.MonomialOrder(), volume);
+
         const auto& coefs = integrals_.poly().monomials(nm).coefs();
-        N(row + n, col) = coefs[poly.MonomialPosition(multi_index)] / volume; 
+        N(row + n, col) = coefs[poly.MonomialPosition(multi_index)] / (volume * s); 
       }
     }
   }
@@ -230,6 +233,9 @@ int MFD3D_Lagrange::H1consistencyHO(
   // set the Gramm-Schidt matrix for gradients of polynomials
   G.PutScalar(0.0);
 
+  // -- gradient of a naturally scaled polynomial needs correction
+  double scale = numi.MonomialNaturalScale(1, volume);
+   
   for (auto it = poly.begin(); it.end() <= poly.end(); ++it) {
     const int* index = it.multi_index();
     int k = it.PolynomialPosition();
@@ -256,7 +262,7 @@ int MFD3D_Lagrange::H1consistencyHO(
         }
       }
 
-      G(l, k) = G(k, l) = K(0, 0) * sum; 
+      G(l, k) = G(k, l) = K(0, 0) * sum * scale * scale; 
     }
   }
 

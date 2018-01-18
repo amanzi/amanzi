@@ -84,10 +84,13 @@ class NumericalIntegration {
   // miscalleneous: order is not used yet
   void set_order(int order) { order_ = order; }
 
-  // natural scale of monomials: placeholder for other natural scales
-  double MonomialNaturalScale(int k, double volume) { 
-    return std::pow(volume, -(double)k / d_);
-  }
+  // natural scaling of monomials (e.g. x^k / h^k)
+  // -- scaling factor is constant for monomial of the same order
+  double MonomialNaturalScale(int k, double volume);
+  // -- polynomial is converted from regular to natural basis
+  void ChangeBasisRegularToNatural(int c, Polynomial& p);
+  // -- polynomial is converted from natural to regular basis
+  void ChangeBasisNaturalToRegular(int c, Polynomial& p);
 
  private:
   void IntegrateMonomialsFace_(int c, int f, double factor, Monomial& monomials);

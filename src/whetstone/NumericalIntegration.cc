@@ -37,9 +37,11 @@ double NumericalIntegration::IntegratePolynomialCell(int c, const Polynomial& po
 
   double value(0.0);
   for (int k = 0; k <= order; ++k) {
-    std::vector<double>& val1 = integrals.monomials(k).coefs();
     std::vector<double>& val2 = tmp.monomials(k).coefs();
-    for (int i = 0; i < val1.size(); ++i) value += val1[i] * val2[i];
+    std::vector<double>& val1 = integrals.monomials(k).coefs();
+
+    double scale = MonomialNaturalScale(k, mesh_->cell_volume(c));
+    for (int i = 0; i < val1.size(); ++i) value += val1[i] * val2[i] / scale;
   }
 
   return value;
@@ -318,6 +320,38 @@ void NumericalIntegration::IntegrateMonomialsEdge_(
 
       coefs[l] += a1 * q1d_weights[m][n];      
     }
+  }
+}
+
+
+/* ******************************************************************
+* Re-scale polynomial coefficients.
+****************************************************************** */
+double NumericalIntegration::MonomialNaturalScale(int k, double volume) {
+  // return 1.0;
+  return std::pow(volume, -(double)k / d_);
+}
+
+void NumericalIntegration::ChangeBasisRegularToNatural(int c, Polynomial& p)
+{
+  double volume = mesh_->cell_volume(c);
+
+  for (int k = 0; k <= p.order(); ++k) {
+    double scale = MonomialNaturalScale(k, volume);
+    auto& mono = p.monomials(k).coefs();
+    for (auto it = mono.begin(); it != mono.end(); ++it) *it /= scale;
+  }
+}
+
+
+void NumericalIntegration::ChangeBasisNaturalToRegular(int c, Polynomial& p)
+{
+  double volume = mesh_->cell_volume(c);
+
+  for (int k = 0; k <= p.order(); ++k) {
+    double scale = MonomialNaturalScale(k, volume);
+    auto& mono = p.monomials(k).coefs();
+    for (auto it = mono.begin(); it != mono.end(); ++it) *it *= scale;
   }
 }
 

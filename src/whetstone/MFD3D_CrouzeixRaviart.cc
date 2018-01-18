@@ -227,8 +227,11 @@ int MFD3D_CrouzeixRaviart::H1consistencyHO(
           nm += multi_index[i];
         }
 
+        // FIXME: use naturally scaled monomials for internal DOF
+        double s = numi.MonomialNaturalScale(jt.MonomialOrder(), volume);
+
         const auto& coefs = integrals_.monomials(nm).coefs();
-        N(row + n, col) = coefs[poly.MonomialPosition(multi_index)] / volume; 
+        N(row + n, col) = coefs[poly.MonomialPosition(multi_index)] / (volume * s); 
       }
     }
   }
@@ -236,6 +239,9 @@ int MFD3D_CrouzeixRaviart::H1consistencyHO(
   // set the Gramm-Schidt matrix for gradients of polynomials
   G.PutScalar(0.0);
 
+  // -- gradient of a naturally scaled polynomial needs correction
+  double scale = numi.MonomialNaturalScale(1, volume);
+   
   for (auto it = poly.begin(); it.end() <= poly.end(); ++it) {
     const int* index = it.multi_index();
     int k = it.PolynomialPosition();
@@ -262,7 +268,7 @@ int MFD3D_CrouzeixRaviart::H1consistencyHO(
         }
       }
 
-      G(l, k) = G(k, l) = K(0, 0) * sum; 
+      G(l, k) = G(k, l) = K(0, 0) * sum * scale * scale; 
     }
   }
 

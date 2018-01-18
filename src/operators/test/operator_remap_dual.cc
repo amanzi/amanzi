@@ -77,8 +77,8 @@ void RemapTestsDual(int dim, int order_p, int order_u,
     if (nx != 0) 
       mesh0 = meshfactory(0.0, 0.0, 1.0, 1.0, nx, ny);
     else 
-      // mesh0 = meshfactory("test/median15x16.exo", Teuchos::null);
-      mesh0 = meshfactory("test/random10.exo", Teuchos::null);
+      mesh0 = meshfactory("test/median15x16.exo", Teuchos::null);
+      // mesh0 = meshfactory("test/random40.exo", Teuchos::null);
   } else {
     mesh0 = meshfactory(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, nx, ny, ny, Teuchos::null, true, true);
   }
@@ -96,8 +96,8 @@ void RemapTestsDual(int dim, int order_p, int order_u,
     if (nx != 0) 
       mesh1 = meshfactory(0.0, 0.0, 1.0, 1.0, nx, ny);
     else 
-      // mesh1 = meshfactory("test/median15x16.exo", Teuchos::null);
-      mesh1 = meshfactory("test/random10.exo", Teuchos::null);
+      mesh1 = meshfactory("test/median15x16.exo", Teuchos::null);
+      // mesh1 = meshfactory("test/random40.exo", Teuchos::null);
   } else {
     mesh1 = meshfactory(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, nx, ny, ny, Teuchos::null, true, true);
   }
@@ -160,6 +160,7 @@ void RemapTestsDual(int dim, int order_p, int order_u,
     const AmanziGeometry::Point& xc = mesh0->cell_centroid(c);
     WhetStone::Polynomial coefs;
     ana.TaylorCoefficients(xc, 0.0, coefs);
+    numi.ChangeBasisRegularToNatural(c, coefs);
 
     WhetStone::DenseVector data;
     coefs.GetPolynomialCoefficients(data);
@@ -171,7 +172,7 @@ void RemapTestsDual(int dim, int order_p, int order_u,
       dg.TaylorBasis(c, it, &a, &b);
       p1c[n][c] = data(n) / a;
       p1c[0][c] += data(n) * b;
-    }
+    } 
   }
 
   // initial mass
@@ -182,6 +183,7 @@ void RemapTestsDual(int dim, int order_p, int order_u,
       data.push_back(p1c[i][c]);
     }
     WhetStone::Polynomial poly(dg.CalculatePolynomial(c, data));
+    numi.ChangeBasisNaturalToRegular(c, poly);
     mass0 += numi.IntegratePolynomialCell(c, poly);
   }
   double mass_tmp(mass0);
@@ -406,6 +408,7 @@ void RemapTestsDual(int dim, int order_p, int order_u,
       data.push_back(p2c[i][c]);
     }
     WhetStone::Polynomial poly(dg.CalculatePolynomial(c, data));
+    numi.ChangeBasisNaturalToRegular(c, poly);
 
     if (nk == 1) {
       // const AmanziGeometry::Point& xg = maps->cell_geometric_center(1, c);
@@ -445,6 +448,7 @@ void RemapTestsDual(int dim, int order_p, int order_u,
     // optional projection on the space of polynomials 
     if (order_p > 0 && dim == 2) {
       poly = dg.CalculatePolynomial(c, data);
+      numi.ChangeBasisNaturalToRegular(c, poly);
 
       mesh0->cell_get_faces_and_dirs(c, &faces, &dirs);
       int nfaces = faces.size();  
@@ -567,8 +571,8 @@ const int N = 1;
 const double q = 2.0;  // 2.82842712474619;
 
 TEST(REMAP2D_DG1_DUAL_VEM_TMP) {
-  // RemapTestsDual(2, 2, 2, "VEM", 0, 0, 0.05 / N);
-  RemapTestsDual(2, 2, 3, "VEM", 0, 0, 0.1 / N);
+  // RemapTestsDual(2, 2, 2, "VEM", 0, 0, 0.1 / N);
+  RemapTestsDual(2, 2, 3, "VEM", 0, 0, 0.05 / N);
 }
 
 /*

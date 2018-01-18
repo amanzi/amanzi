@@ -17,7 +17,9 @@
     jumps to the next order (resp., x^3). 
 
   2.Monomial: a simple container of homogeneous polynomials of the
-    same order.
+    same order. In Amanzi regular monomial is a defined with 
+    coefficient one. For example, regular monomials of order two 
+    in 2D are x^2, xy and y^2.
 
   3.Polynomial: implements ring algebra for polynomials and a few
     useful transformations. See also class VectorPolynomial.

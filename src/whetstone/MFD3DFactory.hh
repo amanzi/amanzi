@@ -74,7 +74,7 @@ Teuchos::RCP<BilinearForm> MFD3DFactory::Create(
   else if (method == "dg modal simple") {
     Teuchos::RCP<DG_Modal> mfd = Teuchos::rcp(new DG_Modal(mesh));
     mfd->set_order(method_order);
-    mfd->set_basis(TAYLOR_BASIS_SIMPLE);
+    mfd->set_basis(TAYLOR_BASIS_NATURAL);
     return mfd;
   }
 

@@ -256,6 +256,7 @@ void Projector::GenericCell_CRk_(
     Gpoly.Multiply(v4, v5, false);
 
     uc[i].SetPolynomialCoefficients(v5);
+    numi.ChangeBasisNaturalToRegular(c, uc[i]);
 
     // calculate the constant value
     if (order == 1) {
@@ -282,7 +283,7 @@ void Projector::GenericCell_CRk_(
       uc[i](0, 0) = vdof(row) - (v4 * v5) / volume;
     }
 
-    // set origin to zero
+    // change origin from centroid to zero
     AmanziGeometry::Point zero(d_);
     uc[i].set_origin(xc);
     uc[i].ChangeOrigin(zero);
@@ -433,6 +434,7 @@ void Projector::GenericCell_Pk_(
     Gpoly.Multiply(v4, v5, false);
 
     uc[i].SetPolynomialCoefficients(v5);
+    numi.ChangeBasisNaturalToRegular(c, uc[i]);
 
     // calculate the constant value for elliptic projector
     if (order == 1) {
@@ -485,6 +487,7 @@ void Projector::GenericCell_Pk_(
       M.Multiply(v4, v5, false);
 
       uc[i].SetPolynomialCoefficients(v5);
+      numi.ChangeBasisNaturalToRegular(c, uc[i]);
     }
 
     // set origin to zero
