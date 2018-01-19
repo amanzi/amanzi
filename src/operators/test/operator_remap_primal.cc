@@ -38,6 +38,7 @@
 #include "PDE_AdvectionRiemann.hh"
 #include "PDE_Reaction.hh"
 
+#include "AnalyticDG04.hh"
 
 /* *****************************************************************
 * Remap of polynomilas in two dimensions. Explicit time scheme.
@@ -111,6 +112,9 @@ void RemapTests2DPrimal(int order, std::string disc_name,
     maps = maps_vem;
   }
 
+  // numerical integration
+  WhetStone::NumericalIntegration numi(mesh0);
+
   // create and initialize cell-based field 
   CompositeVectorSpace cvs1;
   cvs1.SetMesh(mesh0)->SetGhosted(true)->AddComponent("cell", AmanziMesh::CELL, nk);
@@ -120,21 +124,24 @@ void RemapTests2DPrimal(int order, std::string disc_name,
   // we need dg to compute scaling of basis functions
   WhetStone::DG_Modal dg(order, mesh0);
 
+  AnalyticDG04 ana(mesh0, order);
+
   for (int c = 0; c < ncells_wghost; c++) {
     const AmanziGeometry::Point& xc = mesh0->cell_centroid(c);
-    // p1c[0][c] = xc[0] + 2 * xc[1];
-    p1c[0][c] = std::sin(3 * xc[0]) * std::sin(6 * xc[1]);
-    if (nk > 1) {
-      double a, b;
-      WhetStone::Iterator it(2);
+    WhetStone::Polynomial coefs;
+    ana.TaylorCoefficients(xc, 0.0, coefs);
+    numi.ChangeBasisRegularToNatural(c, coefs);
 
-      it.begin(1);
-      dg.TaylorBasis(c, it, &a, &b);
-      p1c[1][c] = 3 * std::cos(3 * xc[0]) * std::sin(6 * xc[1]) / a;
+    WhetStone::DenseVector data;
+    coefs.GetPolynomialCoefficients(data);
 
-      ++it;
+    double a, b;
+    for (auto it = coefs.begin(); it.end() <= coefs.end(); ++it) {
+      int n = it.PolynomialPosition();
+
       dg.TaylorBasis(c, it, &a, &b);
-      p1c[2][c] = 6 * std::sin(3 * xc[0]) * std::cos(6 * xc[1]) / a;
+      p1c[n][c] = data(n) / a;
+      p1c[0][c] += data(n) * b;
     }
   }
 

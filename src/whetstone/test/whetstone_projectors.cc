@@ -645,12 +645,13 @@ TEST(HARMONIC_PROJECTORS_POLYGON_PK) {
 
   // preservation of moments (reusing previous boundary functions)
   std::cout << "\nTest: HO Lagrange projectors for pentagon (verify moments)" << std::endl;
-  moments->Reshape(1);
-  (*moments)(0) = 1.0;
-  projector.EllipticCell_Pk(cell, 2, vf, moments, uc);
-  std::cout << uc[0] << std::endl;
-  double tmp = numi.IntegratePolynomialCell(cell, uc[0]) / mesh->cell_volume(cell);
-  CHECK_CLOSE(1.0, tmp, 1e-12);
+  for (int k = 2; k < 4; ++k) {
+    moments->Reshape(k * (k - 1) / 2);
+    moments->PutScalar(1.0);
+    projector.EllipticCell_Pk(cell, k, vf, moments, uc);
+    double tmp = numi.IntegratePolynomialCell(cell, uc[0]) / mesh->cell_volume(cell);
+    CHECK_CLOSE(1.0, tmp, 1e-12);
+  }
 
   delete comm;
 }
