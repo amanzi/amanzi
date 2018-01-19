@@ -192,7 +192,7 @@ void CompositeVector::InitMap_(const CompositeVectorSpace& space) {
       } else if (space.Location(*name) == AmanziMesh::EDGE) {
         ghostmaps.push_back(Teuchos::rcpFromRef(Mesh()->edge_map(true)));
       } else if (space.Location(*name) == AmanziMesh::BOUNDARY_FACE) {
-        ghostmaps.push_back(mastermaps[Index_(*name)]);
+        ghostmaps.push_back(Teuchos::rcpFromRef(Mesh()->exterior_face_map(true)));
       }
     }
 

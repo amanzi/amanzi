@@ -46,9 +46,7 @@ class UpwindGravity : public Upwind<Model> {
   void Init(Teuchos::ParameterList& plist);
 
   void Compute(const CompositeVector& flux, const CompositeVector& solution,
-               const std::vector<int>& bc_model, const std::vector<double>& bc_value,
-               CompositeVector& field,
-               double (Model::*Value)(int, double) const);
+               const std::vector<int>& bc_model, CompositeVector& field);
 
  private:
   using Upwind<Model>::mesh_;
@@ -84,15 +82,16 @@ void UpwindGravity<Model>::Init(Teuchos::ParameterList& plist)
 template<class Model>
 void UpwindGravity<Model>::Compute(
     const CompositeVector& flux, const CompositeVector& solution,
-    const std::vector<int>& bc_model, const std::vector<double>& bc_value,
-    CompositeVector& field,
-    double (Model::*Value)(int, double) const)
+    const std::vector<int>& bc_model, CompositeVector& field)
 {
   ASSERT(field.HasComponent("cell"));
   ASSERT(field.HasComponent(face_comp_));
 
   field.ScatterMasterToGhosted("cell");
-  Epetra_MultiVector& fld_cell = *field.ViewComponent("cell", true);
+  const Epetra_MultiVector& fld_cell = *field.ViewComponent("cell", true);
+  const Epetra_MultiVector& fld_boundary = *field.ViewComponent("dirichlet_faces", true);
+  const Epetra_Map& ext_face_map = mesh_->exterior_face_map(true);
+  const Epetra_Map& face_map = mesh_->face_map(true);
   Epetra_MultiVector& upw_face = *field.ViewComponent(face_comp_, true);
   // const Epetra_MultiVector& sol_face = *solution.ViewComponent("face", true);
 
@@ -131,7 +130,7 @@ void UpwindGravity<Model>::Compute(
     } else {
       upw_face[0][f] = kc1;
       if (bc_model[f] == OPERATOR_BC_DIRICHLET && flag) {
-        upw_face[0][f] = ((*model_).*Value)(c1, bc_value[f]);
+        upw_face[0][f] = fld_boundary[0][ext_face_map.LID(face_map.GID(f))];
       }
     // if (bc_model[f] == OPERATOR_BC_NEUMANN) {
     //   upw_face[0][f] = ((*model_).*Value)(c, sol_face[0][f]);
