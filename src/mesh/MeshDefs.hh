@@ -87,6 +87,19 @@ Entity_kind entity_kind(const std::string& instring)
   }
 }
 
+// string from entity kind
+inline
+std::string entity_kind_string(Entity_kind kind)
+{
+  switch(kind) {
+    case(CELL): return "cell";
+    case(FACE): return "face";
+    case(BOUNDARY_FACE): return "boundary_face";
+    case(EDGE): return "edge";
+    case(NODE): return "node";
+    default: return "unknown";
+  }
+}
 
 // Parallel status of entity 
     

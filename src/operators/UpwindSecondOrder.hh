@@ -45,9 +45,7 @@ class UpwindSecondOrder : public Upwind<Model> {
   // -- upwind of a given cell-centered field on mesh faces
   // -- not all input parameters are use by some algorithms
   void Compute(const CompositeVector& flux, const CompositeVector& solution,
-               const std::vector<int>& bc_model, const std::vector<double>& bc_value,
-               CompositeVector& field,
-               double (Model::*Value)(int, double) const);
+               const std::vector<int>& bc_model, CompositeVector& field);
 
   // -- returns combined map for the original and upwinded fields.
   // -- Currently, composite vector cannot be extended on a fly. 
@@ -55,6 +53,7 @@ class UpwindSecondOrder : public Upwind<Model> {
     Teuchos::RCP<CompositeVectorSpace> cvs = Teuchos::rcp(new CompositeVectorSpace());
     cvs->SetMesh(mesh_)->SetGhosted(true)
        ->AddComponent("cell", AmanziMesh::CELL, 1)
+       ->AddComponent("dirichlet_faces", AmanziMesh::BOUNDARY_FACE, 1)
        ->AddComponent("face", AmanziMesh::FACE, 1)
        ->AddComponent("grad", AmanziMesh::CELL, mesh_->space_dimension());
     return cvs;
@@ -89,9 +88,7 @@ void UpwindSecondOrder<Model>::Init(Teuchos::ParameterList& plist)
 template<class Model>
 void UpwindSecondOrder<Model>::Compute(
     const CompositeVector& flux, const CompositeVector& solution,
-    const std::vector<int>& bc_model, const std::vector<double>& bc_value,
-    CompositeVector& field,
-    double (Model::*Value)(int, double) const)
+    const std::vector<int>& bc_model, CompositeVector& field)
 {
   ASSERT(field.HasComponent("cell"));
   ASSERT(field.HasComponent("grad"));
@@ -103,8 +100,11 @@ void UpwindSecondOrder<Model>::Compute(
   const Epetra_MultiVector& flx_face = *flux.ViewComponent("face", true);
   const Epetra_MultiVector& sol_face = *solution.ViewComponent("face", true);
 
-  Epetra_MultiVector& fld_cell = *field.ViewComponent("cell", true);
-  Epetra_MultiVector& fld_grad = *field.ViewComponent("grad", true);
+  const Epetra_MultiVector& fld_cell = *field.ViewComponent("cell", true);
+  const Epetra_MultiVector& fld_grad = *field.ViewComponent("grad", true);
+  const Epetra_MultiVector& fld_boundary = *field.ViewComponent("dirichlet_faces", true);
+  const Epetra_Map& ext_face_map = mesh_->exterior_face_map(true);
+  const Epetra_Map& face_map = mesh_->face_map(true);
   Epetra_MultiVector& upw_face = *field.ViewComponent(face_comp_, true);
   upw_face.PutScalar(0.0);
 
@@ -145,7 +145,7 @@ void UpwindSecondOrder<Model>::Compute(
         upw_face[0][f] += (kc + grad * (xf - xc)) * tmp;
       // Boundary faces. We upwind only on inflow dirichlet faces.
       } else if (bc_model[f] == OPERATOR_BC_DIRICHLET && flag) {
-        upw_face[0][f] = ((*model_).*Value)(c, bc_value[f]);
+        upw_face[0][f] = fld_boundary[0][ext_face_map.LID(face_map.GID(f))];
       } else if (bc_model[f] == OPERATOR_BC_NEUMANN && flag) {
         // upw[0][f] = ((*model_).*Value)(c, sol_face[0][f]);
         upw_face[0][f] = kc;

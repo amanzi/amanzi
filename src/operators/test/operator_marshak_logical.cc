@@ -151,9 +151,8 @@ void RunTestMarshakLogical(std::string op_list_name) {
     }
 
     // upwind heat conduction coefficient
-    knc->UpdateValues(solution);
-    ModelUpwindFn func = &HeatConduction::Conduction;
-    upwind.Compute(*flux, solution, bc_model, bc_value, *knc->values(), func);
+    knc->UpdateValues(solution, bc_model, bc_value);
+    upwind.Compute(*flux, solution, bc_model, *knc->values());
 
     // add diffusion operator
     Teuchos::ParameterList olist = plist.sublist("PK operator").sublist(op_list_name);

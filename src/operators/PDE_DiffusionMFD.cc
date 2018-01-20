@@ -50,7 +50,7 @@ namespace Operators {
 * Initialization of the operator, scalar coefficient.
 ****************************************************************** */
 void PDE_DiffusionMFD::SetTensorCoefficient(
-    const Teuchos::RCP<std::vector<WhetStone::Tensor> >& K)
+    const Teuchos::RCP<const std::vector<WhetStone::Tensor> >& K)
 {
   K_ = K;
 
@@ -534,23 +534,22 @@ void PDE_DiffusionMFD::ApplyBCs(bool primary, bool eliminate)
                            | OPERATOR_SCHEMA_DOFS_CELL)) {
       ASSERT(bcs_trial_.size() == 1);
       ASSERT(bcs_test_.size() == 1);
-      ApplyBCs_Mixed_(*bcs_trial_[0], *bcs_test_[0], primary, eliminate);
+      ApplyBCs_Mixed_(bcs_trial_[0].ptr(), bcs_test_[0].ptr(), primary, eliminate);
     
     } else if (local_op_schema_ == (OPERATOR_SCHEMA_BASE_FACE
                                   | OPERATOR_SCHEMA_DOFS_CELL)) {
       ASSERT(bcs_trial_.size() == 1);
       ASSERT(bcs_test_.size() == 1);
-      ApplyBCs_Cell_(*bcs_trial_[0], *bcs_test_[0], primary, eliminate);
+      ApplyBCs_Cell_(bcs_trial_[0].ptr(), bcs_test_[0].ptr(), primary, eliminate);
     
     } else if (local_op_schema_ == (OPERATOR_SCHEMA_BASE_CELL
                                   | OPERATOR_SCHEMA_DOFS_NODE)) {
-      Teuchos::RCP<BCs> bc_f, bc_n;
-      for (std::vector<Teuchos::RCP<BCs> >::iterator bc = bcs_trial_.begin();
-          bc != bcs_trial_.end(); ++bc) {
-        if ((*bc)->kind() == AmanziMesh::FACE) {
-          bc_f = *bc;
-        } else if ((*bc)->kind() == AmanziMesh::NODE) {
-          bc_n = *bc;
+      Teuchos::Ptr<const BCs> bc_f, bc_n;
+      for (const auto& bc : bcs_trial_) {
+        if (bc->kind() == AmanziMesh::FACE) {
+          bc_f = bc.ptr();
+        } else if (bc->kind() == AmanziMesh::NODE) {
+          bc_n = bc.ptr();
         }
       }
       ApplyBCs_Nodal_(bc_f.ptr(), bc_n.ptr(), primary, eliminate);
@@ -559,7 +558,7 @@ void PDE_DiffusionMFD::ApplyBCs(bool primary, bool eliminate)
                                   | OPERATOR_SCHEMA_DOFS_EDGE)) {
       ASSERT(bcs_trial_.size() == 1);
       ASSERT(bcs_test_.size() == 1);
-      ApplyBCs_Edge_(*bcs_trial_[0], *bcs_test_[0], primary, eliminate);
+      ApplyBCs_Edge_(bcs_trial_[0].ptr(), bcs_test_[0].ptr(), primary, eliminate);
     }
   }
 
@@ -582,17 +581,19 @@ void PDE_DiffusionMFD::ApplyBCs(bool primary, bool eliminate)
 /* ******************************************************************
 * Apply BCs on face values.
 ****************************************************************** */
-void PDE_DiffusionMFD::ApplyBCs_Mixed_(BCs& bc_trial, BCs& bc_test,
-                                       bool primary, bool eliminate)
+void PDE_DiffusionMFD::ApplyBCs_Mixed_(
+    const Teuchos::Ptr<const BCs>& bc_trial,
+    const Teuchos::Ptr<const BCs>& bc_test,
+    bool primary, bool eliminate)
 {
   // apply diffusion type BCs to FACE-CELL system
   AmanziMesh::Entity_ID_List faces;
 
-  const std::vector<int>& bc_model_trial = bc_trial.bc_model();
-  const std::vector<int>& bc_model_test = bc_test.bc_model();
+  const std::vector<int>& bc_model_trial = bc_trial->bc_model();
+  const std::vector<int>& bc_model_test = bc_test->bc_model();
 
-  const std::vector<double>& bc_value = bc_trial.bc_value();
-  const std::vector<double>& bc_mixed = bc_trial.bc_mixed();
+  const std::vector<double>& bc_value = bc_trial->bc_value();
+  const std::vector<double>& bc_mixed = bc_trial->bc_mixed();
 
   ASSERT(bc_model_trial.size() == nfaces_wghost);
   ASSERT(bc_value.size() == nfaces_wghost);
@@ -716,15 +717,17 @@ void PDE_DiffusionMFD::ApplyBCs_Mixed_(BCs& bc_trial, BCs& bc_test,
 /* ******************************************************************
 * Apply BCs on cell operators
 ****************************************************************** */
-void PDE_DiffusionMFD::ApplyBCs_Cell_(BCs& bc_trial, BCs& bc_test,
-                                      bool primary, bool eliminate)
+void PDE_DiffusionMFD::ApplyBCs_Cell_(
+   const Teuchos::Ptr<const BCs>& bc_trial,
+   const Teuchos::Ptr<const BCs>& bc_test,
+   bool primary, bool eliminate)
 {
   // apply diffusion type BCs to CELL system
   AmanziMesh::Entity_ID_List cells;
 
-  const std::vector<int>& bc_model = bc_trial.bc_model();
-  const std::vector<double>& bc_value = bc_trial.bc_value();
-  const std::vector<double>& bc_mixed = bc_trial.bc_mixed();
+  const std::vector<int>& bc_model = bc_trial->bc_model();
+  const std::vector<double>& bc_value = bc_trial->bc_value();
+  const std::vector<double>& bc_mixed = bc_trial->bc_mixed();
 
   ASSERT(bc_model.size() == nfaces_wghost);
   ASSERT(bc_value.size() == nfaces_wghost);
@@ -763,9 +766,10 @@ void PDE_DiffusionMFD::ApplyBCs_Cell_(BCs& bc_trial, BCs& bc_test,
 /* ******************************************************************
 * Apply BCs on nodal operators
 ****************************************************************** */
-void PDE_DiffusionMFD::ApplyBCs_Nodal_(const Teuchos::Ptr<BCs>& bc_f,
-                                       const Teuchos::Ptr<BCs>& bc_v,
-                                       bool primary, bool eliminate)
+void PDE_DiffusionMFD::ApplyBCs_Nodal_(
+    const Teuchos::Ptr<const BCs>& bc_f,
+    const Teuchos::Ptr<const BCs>& bc_v,
+    bool primary, bool eliminate)
 {
   AmanziMesh::Entity_ID_List faces, nodes, cells;
 
@@ -879,13 +883,15 @@ void PDE_DiffusionMFD::ApplyBCs_Nodal_(const Teuchos::Ptr<BCs>& bc_f,
 /* ******************************************************************
 * Apply BCs on edge operators
 ****************************************************************** */
-void PDE_DiffusionMFD::ApplyBCs_Edge_(BCs& bc_trial, BCs& bc_test,
-                                      bool primary, bool eliminate)
+void PDE_DiffusionMFD::ApplyBCs_Edge_(
+    const Teuchos::Ptr<const BCs>& bc_trial,
+    const Teuchos::Ptr<const BCs>& bc_test,
+    bool primary, bool eliminate)
 {
   AmanziMesh::Entity_ID_List edges;
 
-  const std::vector<int>& bc_model = bc_trial.bc_model();
-  const std::vector<double>& bc_value = bc_trial.bc_value();
+  const std::vector<int>& bc_model = bc_trial->bc_model();
+  const std::vector<double>& bc_value = bc_trial->bc_value();
 
   global_op_->rhs()->PutScalarGhosted(0.0);
   Epetra_MultiVector& rhs_edge = *global_op_->rhs()->ViewComponent("edge", true);

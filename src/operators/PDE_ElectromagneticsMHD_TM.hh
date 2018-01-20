@@ -46,8 +46,8 @@ class PDE_ElectromagneticsMHD_TM : public PDE_ElectromagneticsMHD {
   virtual double CalculateOhmicHeating(const CompositeVector& E);
 
  private:
-  void ApplyBCs_Node_(const Teuchos::Ptr<BCs>& bc_f,
-                      const Teuchos::Ptr<BCs>& bc_v, bool primary, bool eliminate);
+  void ApplyBCs_Node_(const Teuchos::Ptr<const BCs>& bc_f,
+                      const Teuchos::Ptr<const BCs>& bc_v, bool primary, bool eliminate);
 };
 
 }  // namespace Operators
