@@ -145,13 +145,11 @@ class PDE_Diffusion : public PDE_HelperDiscretization {
 
   // access
   int schema_prec_dofs() { return global_op_schema_; }
-
-  Teuchos::RCP<const Op> local_matrices() const { return local_op_; }
-  Teuchos::RCP<Op> local_matrices() { return local_op_; }
   int schema_dofs() { return local_op_schema_; }
 
   Teuchos::RCP<const Op> jacobian_matrices() const { return jac_op_; }
   Teuchos::RCP<Op> jacobian_matrices() { return jac_op_; }
+  void set_jacobian_matrices(const Teuchos::RCP<Op>& op) { jac_op_ = op; }
   int schema_jacobian() { return jac_op_schema_; }
 
   int little_k() const { return little_k_; }
