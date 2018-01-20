@@ -581,9 +581,10 @@ void PDE_DiffusionMFD::ApplyBCs(bool primary, bool eliminate)
 /* ******************************************************************
 * Apply BCs on face values.
 ****************************************************************** */
-void PDE_DiffusionMFD::ApplyBCs_Mixed_(const Teuchos::Ptr<const BCs>& bc_trial,
-        const Teuchos::Ptr<const BCs>& bc_test,
-        bool primary, bool eliminate)
+void PDE_DiffusionMFD::ApplyBCs_Mixed_(
+    const Teuchos::Ptr<const BCs>& bc_trial,
+    const Teuchos::Ptr<const BCs>& bc_test,
+    bool primary, bool eliminate)
 {
   // apply diffusion type BCs to FACE-CELL system
   AmanziMesh::Entity_ID_List faces;
@@ -716,9 +717,10 @@ void PDE_DiffusionMFD::ApplyBCs_Mixed_(const Teuchos::Ptr<const BCs>& bc_trial,
 /* ******************************************************************
 * Apply BCs on cell operators
 ****************************************************************** */
-void PDE_DiffusionMFD::ApplyBCs_Cell_(const Teuchos::Ptr<const BCs>& bc_trial,
-        const Teuchos::Ptr<const BCs>& bc_test,
-        bool primary, bool eliminate)
+void PDE_DiffusionMFD::ApplyBCs_Cell_(
+   const Teuchos::Ptr<const BCs>& bc_trial,
+   const Teuchos::Ptr<const BCs>& bc_test,
+   bool primary, bool eliminate)
 {
   // apply diffusion type BCs to CELL system
   AmanziMesh::Entity_ID_List cells;
@@ -764,9 +766,10 @@ void PDE_DiffusionMFD::ApplyBCs_Cell_(const Teuchos::Ptr<const BCs>& bc_trial,
 /* ******************************************************************
 * Apply BCs on nodal operators
 ****************************************************************** */
-void PDE_DiffusionMFD::ApplyBCs_Nodal_(const Teuchos::Ptr<const BCs>& bc_f,
-        const Teuchos::Ptr<const BCs>& bc_v,
-        bool primary, bool eliminate)
+void PDE_DiffusionMFD::ApplyBCs_Nodal_(
+    const Teuchos::Ptr<const BCs>& bc_f,
+    const Teuchos::Ptr<const BCs>& bc_v,
+    bool primary, bool eliminate)
 {
   AmanziMesh::Entity_ID_List faces, nodes, cells;
 
@@ -880,9 +883,10 @@ void PDE_DiffusionMFD::ApplyBCs_Nodal_(const Teuchos::Ptr<const BCs>& bc_f,
 /* ******************************************************************
 * Apply BCs on edge operators
 ****************************************************************** */
-void PDE_DiffusionMFD::ApplyBCs_Edge_(const Teuchos::Ptr<const BCs>& bc_trial,
-        const Teuchos::Ptr<const BCs>& bc_test,
-        bool primary, bool eliminate)
+void PDE_DiffusionMFD::ApplyBCs_Edge_(
+    const Teuchos::Ptr<const BCs>& bc_trial,
+    const Teuchos::Ptr<const BCs>& bc_test,
+    bool primary, bool eliminate)
 {
   AmanziMesh::Entity_ID_List edges;
 

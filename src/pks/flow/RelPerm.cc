@@ -51,7 +51,7 @@ void RelPerm::Compute(Teuchos::RCP<const CompositeVector> p,
   Epetra_MultiVector& krel_df = *krel->ViewComponent("dirichlet_faces", true);
   const Epetra_Map& ext_face_map = mesh_->exterior_face_map(true);
   const Epetra_Map& face_map = mesh_->face_map(true);
-  for (int f=0; f!=face_map.NumMyElements(); ++f) {
+  for (int f = 0; f != face_map.NumMyElements(); ++f) {
     if (bc_model[f] == Operators::OPERATOR_BC_DIRICHLET) {
       AmanziMesh::Entity_ID_List cells;
       mesh_->face_get_cells(f, AmanziMesh::USED, &cells);

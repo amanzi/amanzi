@@ -42,7 +42,9 @@ Operator_Factory::Create() {
       return std::make_unique<Operator_Cell>(cvs, *plist_, OPERATOR_SCHEMA_DOFS_CELL);
 
     } else {
-      ASSERT(0);
+      Errors::Message msg;
+      msg << "Operator_Factory: unsupported operator type.";
+      Exceptions::amanzi_throw(msg);
     }
 
   } else if (cvs_row_.size() != 0) {
@@ -55,11 +57,12 @@ Operator_Factory::Create() {
         return std::make_unique<Operator_Cell>(cvs_row, *plist_, OPERATOR_SCHEMA_DOFS_CELL);
       }
     } else {
-      ASSERT(0);
+      Errors::Message msg;
+      msg << "Operator_Factory: unsupported CompositeVector's component.";
+      Exceptions::amanzi_throw(msg);
     }
   }
 }
 
-
-} // namespace Operators
-} // namespace Amanzi
+}  // namespace Operators
+}  // namespace Amanzi
