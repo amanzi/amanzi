@@ -269,6 +269,7 @@ namespace Operators {
       WhetStone::DenseMatrix Acell(nfaces, nfaces);
       
       if ((*xmof_ir_)[c].get_base_mesh().get_cell(0).has_minimesh()){  // mixed cell
+        
         const XMOF2D::MiniMesh& mini_mesh = (*xmof_ir_)[c].get_base_mesh().get_cell(0).get_minimesh();        
         int num_cells = mini_mesh.ncells();
         int num_faces = mini_mesh.nfaces();
@@ -292,22 +293,22 @@ namespace Operators {
           const XMOF2D::Cell cell = mini_mesh.get_cell(i);
           int faces_c = cell.nfaces();
           WhetStone::DenseMatrix Sc(faces_c, faces_c);
-          WhetStone::DenseMatrix Wc = Wff_cells_mm_[c][i];
+          WhetStone::DenseMatrix& Wc = Wff_cells_mm_[c][i];
           std::vector<double> area(faces_c), tmp(faces_c);
-          for (int j=0;j<faces_c;j++) area(j) = cell.get_face(j).size();
+          for (int j=0;j<faces_c;j++) area[j] = cell.get_face(j).size();
 
           double alp = 0.;
           for (int i1=0; i1<faces_c; i1++){
-            tmp(i1) = 0.;
+            tmp[i1] = 0.;
             for (int j1=0; j1<faces_c; j1++){
-              tmp(i1) += Wc(i1,j1)*area(j1);
-              alp += Wc(i1,j1)*area(i1)*area(j1);
+              tmp[i1] += Wc(i1,j1)*area[j1];
+              alp += Wc(i1,j1)*area[i1]*area[j1];
             }
           }
 
           for (int i1=0; i1<faces_c; i1++){
             for (int j1=0; j1<faces_c; j1++){
-              Sc(i1, j1) = (Wc(i1,j1) - tmp(i1)*tmp(j1)/alp)*area(i1)*area(j1);
+              Sc(i1, j1) = (Wc(i1,j1) - tmp[i1]*tmp[j1]/alp)*area[i1]*area[j1];
 
               if (cell.get_face(i1).is_boundary() && cell.get_face(j1).is_boundary()){
                 int i2 = bnd_faces[cell.get_face_index(i1)] - 1;
@@ -317,7 +318,6 @@ namespace Operators {
                 int i2 = -bnd_faces[cell.get_face_index(i1)] - 1;
                 int j2 = -bnd_faces[cell.get_face_index(j1)] - 1;
                 Sii(i2,j2) += Sc(i1, j1);
-              }
               }else if ((cell.get_face(i1).is_boundary()) && (!cell.get_face(j1).is_boundary())){
                 int i2 = bnd_faces[cell.get_face_index(i1)] - 1;
                 int j2 = -bnd_faces[cell.get_face_index(j1)] - 1;
@@ -325,12 +325,28 @@ namespace Operators {
               }              
             }
           }
-
-
-        
+        }
       }else{
-
+        std::vector<double> area(nfaces), tmp(nfaces);
+        for (int j=0; j<nfaces; j++) area[j] = mesh_->face_area(faces[j]);
+        WhetStone::DenseMatrix& Wc = Wff_cells_mm_[c][1];        
+        double alp = 0.;
+        for (int i1=0; i1<nfaces; i1++){
+          tmp[i1] = 0.;
+          for (int j1=0; j1<nfaces; j1++){
+            tmp[i1] += Wc(i1,j1)*area[j1];
+            alp += Wc(i1,j1)*area[i1]*area[j1];
+          }
+        }
+        for (int i1=0; i1<nfaces; i1++){
+          for (int j1=0; j1<nfaces; j1++){
+            Acell(i1, j1) = (Wc(i1,j1) - tmp[i1]*tmp[j1]/alp)*area[i1]*area[j1];
+          }
+        }
       }
+        
+      local_op_->matrices[c] = Acell;
+
     }
   }
   
