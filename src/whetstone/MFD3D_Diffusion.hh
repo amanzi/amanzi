@@ -46,7 +46,10 @@ class MFD3D_Diffusion : public virtual MFD3D,
   // -- default Derahm complex for the mass matrix is not used by Amanzi
   // -- inverse mass matrix is adjusted to reflect scaling of fluxes by area
   virtual int MassMatrixInverse(int c, const Tensor& K, DenseMatrix& W); 
-
+  virtual int MassMatrixInverse(const AmanziGeometry::Point& cm, double volume,
+                                std::vector< AmanziGeometry::Point >& fm, 
+                                std::vector< AmanziGeometry::Point >& fnor, 
+                                std::vector< double >& face_area, const Tensor& K, DenseMatrix& W);
   // -- stiffness matrix
   virtual int H1consistency(int c, const Tensor& K, DenseMatrix& N, DenseMatrix& Ac);
   virtual int StiffnessMatrix(int c, const Tensor& K, DenseMatrix& A);

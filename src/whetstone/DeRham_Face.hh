@@ -34,10 +34,29 @@ class DeRham_Face : virtual public InnerProductL2 {
   ~DeRham_Face() {};
 
   virtual int L2consistency(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Mc, bool symmetry);
+  virtual int L2consistency(const AmanziGeometry::Point& cm, double volume,
+                            std::vector< AmanziGeometry::Point >& fm, 
+                            std::vector< AmanziGeometry::Point >& fnor, 
+                            std::vector< double >& face_area,                                 
+                            const Tensor& K, DenseMatrix& N, DenseMatrix& Mc, bool symmetry);
   virtual int MassMatrix(int c, const Tensor& T, DenseMatrix& M); 
+  virtual int MassMatrix(const AmanziGeometry::Point& cm, double volume,
+                         std::vector< AmanziGeometry::Point >& fm, 
+                         std::vector< AmanziGeometry::Point >& fnor, 
+                         std::vector< double >& face_area, const Tensor& T, DenseMatrix& M);
 
   virtual int L2consistencyInverse(int c, const Tensor& T, DenseMatrix& R, DenseMatrix& Wc, bool symmetry);
+  virtual int L2consistencyInverse(const AmanziGeometry::Point& cm, double volume,
+                                   std::vector< AmanziGeometry::Point >& fm, 
+                                   std::vector< AmanziGeometry::Point >& fnor, 
+                                   std::vector< double >& face_area,
+                                   const Tensor& T, DenseMatrix& R, DenseMatrix& Wc, bool symmetry);
   virtual int MassMatrixInverse(int c, const Tensor& T, DenseMatrix& W); 
+  virtual int MassMatrixInverse(const AmanziGeometry::Point& cm, double volume,
+                                std::vector< AmanziGeometry::Point >& fm, 
+                                std::vector< AmanziGeometry::Point >& fnor, 
+                                std::vector< double >& face_area,
+                                const Tensor& T, DenseMatrix& W); 
 };
 
 }  // namespace WhetStone

@@ -536,6 +536,32 @@ int MFD3D_Diffusion::MassMatrixInverse(int c, const Tensor& K, DenseMatrix& W)
   return ok;
 }
 
+/* ******************************************************************
+* Inverse mass matrix in flux space via optimization, experimental.
+****************************************************************** */
+int MFD3D_Diffusion::MassMatrixInverse(const AmanziGeometry::Point& cm, double volume,
+                                       std::vector< AmanziGeometry::Point >& fm, 
+                                       std::vector< AmanziGeometry::Point >& fnor, 
+                                       std::vector< double >& face_area, const Tensor& K, DenseMatrix& W)
+{
+  DenseMatrix R;
+
+  int ok = L2consistencyInverse(cm, volume, fm, fnor, face_area, K, R, W, true);
+  if (ok) return ok;
+
+ 
+  StabilityScalar_(R, W);
+
+
+  // Rescaling to area-weighted fluxes
+  int num_faces = face_area.size();
+  for (int i = 0; i < num_faces; i++) {
+    for (int j = 0; j < num_faces; j++) W(i, j) *= face_area[i] * face_area[j];
+  }
+
+  return ok;
+}  
+
 
 /* ******************************************************************
 * Mass matrix for a hexahedral element, a brick for now.

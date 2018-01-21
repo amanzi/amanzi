@@ -19,10 +19,14 @@ include(LibraryManager)
 # through these variables.
 project(OPERATORS)
 
+set(XMOF_INCLUDE_DIRS "/nh/u/dasvyat/XMOF/xmof2d/include")
+set(XMOF_LIB_DIR "/home/scratch/dasvyat/Amanzi/amanzi-tpls/TPLs-gcc-0.94.12/install/lib")
+
 # External (TPL) include directories
 include_directories(${Teuchos_INCLUDE_DIRS})
 include_directories(${Epetra_INCLUDE_DIRS})
 include_directories(${MSTK_INCLUDE_DIRS})
+include_directories(${XMOF_INCLUDE_DIRS})
 # Amanzi include directories
 include_directories(${ATK_SOURCE_DIR})
 include_directories(${DATA_STRUCTURES_SOURCE_DIR})
@@ -36,6 +40,8 @@ include_directories(${OPERATORS_SOURCE_DIR})
 include_directories(${OUTPUT_SOURCE_DIR})
 include_directories(${SOLVERS_SOURCE_DIR})
 include_directories(${WHETSTONE_SOURCE_DIR})
+
+
 
 # Need this define. Errors from MSTK include files 
 # about MPI_COMM_WORLD. --lpritch
@@ -84,6 +90,8 @@ set(operators_inc_files
     PDE_DiffusionWithGravity.hh
     PDE_DiffusionFactory.hh
     PDE_DiffusionMFD.hh
+    PDE_DiffusionMFD_XMOF.hh
+    PDE_DiffusionMFD_Tracer.hh
     PDE_DiffusionMFDwithGravity.hh
     PDE_DiffusionFV.hh
     PDE_DiffusionFVwithGravity.hh
@@ -124,6 +132,7 @@ add_amanzi_library(operators
                           PDE_Abstract.cc
                           PDE_AdvectionUpwind.cc PDE_AdvectionRiemann.cc
                           PDE_DiffusionMFD.cc PDE_DiffusionMFDwithGravity.cc
+                          PDE_DiffusionMFD_XMOF.cc PDE_DiffusionMFD_Tracer.cc
                           PDE_DiffusionFV.cc PDE_DiffusionFVwithGravity.cc
                           PDE_DiffusionNLFV.cc PDE_DiffusionNLFVwithGravity.cc
                           PDE_DiffusionFactory.cc                   
@@ -137,7 +146,7 @@ add_amanzi_library(operators
                           ReconstructionCell_Limiters.cc
                           RemapUtils.cc
                    HEADERS ${operators_inc_files}
-                   LINK_LIBS geometry mesh error_handling whetstone solvers data_structures ${Epetra_LIBRARIES})
+                   LINK_LIBS geometry mesh error_handling whetstone solvers data_structures ${XMOF_LIB_DIR}/libxmof2D-0.9.a ${Epetra_LIBRARIES})
 
 
 if (BUILD_TESTS)
@@ -195,13 +204,15 @@ if (BUILD_TESTS)
 
     add_amanzi_test(operators_diffusion operators_diffusion
                     KIND unit
-                    SOURCE test/Main.cc test/operator_diffusion.cc
-                                        test/operator_diffusion_nodal.cc
-                                        test/operator_diffusion_edges.cc
-                                        test/operator_diffusion_divk.cc
-                                        test/operator_diffusion_nonsymmetric.cc
-                                        test/operator_diffusion_nlfv.cc
-                                        test/operator_diffusion_curved.cc
+                    SOURCE test/Main.cc # test/operator_diffusion.cc
+                                        # test/operator_diffusion_nodal.cc
+                                        # test/operator_diffusion_edges.cc
+                                        # test/operator_diffusion_divk.cc
+                                        # test/operator_diffusion_nonsymmetric.cc
+                                        # test/operator_diffusion_nlfv.cc
+                                        # test/operator_diffusion_curved.cc
+                                        # test/operator_diffusion_xmof.cc
+                                        test/operator_diffusion_tracer.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
     add_amanzi_test(operators_diffusion_3pe operators_diffusion NPROCS 3 KIND unit)
