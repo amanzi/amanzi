@@ -59,9 +59,5 @@ class Operator_Factory {
 
 }  // namespace Operators
 }  // namespace Amanzi
-<<<<<<< HEAD
-
-=======
->>>>>>> master
 
 #endif

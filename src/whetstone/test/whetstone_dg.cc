@@ -179,7 +179,7 @@ TEST(DG2D_MASS_MATRIX_POLYNOMIAL) {
     dg.MassMatrixPoly(0, u, A);
     int nk = A.NumRows();
 
-    printf("Mass matrix for polynomial coefficient: nk=2, pk=%d\n", k);
+    printf("Mass matrix for polynomial coefficient: order=2, uk=%d\n", k);
     for (int i = 0; i < nk; i++) {
       for (int j = 0; j < nk; j++ ) printf("%8.4f ", A(i, j)); 
       printf("\n");

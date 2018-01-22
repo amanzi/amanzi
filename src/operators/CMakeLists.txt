@@ -35,6 +35,7 @@ include_directories(${MESH_FACTORY_SOURCE_DIR})
 include_directories(${OPERATORS_SOURCE_DIR})
 include_directories(${OUTPUT_SOURCE_DIR})
 include_directories(${SOLVERS_SOURCE_DIR})
+include_directories(${TIME_INTEGRATION_SOURCE_DIR})
 include_directories(${WHETSTONE_SOURCE_DIR})
 
 # Need this define. Errors from MSTK include files 

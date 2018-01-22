@@ -24,6 +24,7 @@
 
 // Amanzi
 #include "DG_Modal.hh"
+#include "Explicit_TI_RK.hh"
 #include "GMVMesh.hh"
 #include "LinearOperatorPCG.hh"
 #include "Mesh.hh"
@@ -43,6 +44,148 @@
 #include "AnalyticDG00.hh"
 #include "AnalyticDG04.hh"
 #include "AnalyticDG05.hh"
+
+namespace Amanzi {
+
+class RemapDG : public Explicit_TI::fnBase<CompositeVector> {
+ public:
+  RemapDG(const Teuchos::RCP<const AmanziMesh::Mesh> mesh,
+          const std::shared_ptr<WhetStone::MeshMaps> maps) : mesh_(mesh), maps_(maps) {
+    // mesh data
+    ncells_owned_ = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+    nfaces_wghost_ = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
+    dim_ = mesh_->space_dimension();
+
+    // face velocities
+    velf_vec_.resize(nfaces_wghost_);
+    for (int f = 0; f < nfaces_wghost_; ++f) {
+      maps_->VelocityFace(f, velf_vec_[f]);
+    }
+
+    // cell-baced velocities and Jacobian matrices
+    WhetStone::Entity_ID_List faces;
+    uc_.resize(ncells_owned_);
+    J_.resize(ncells_owned_);
+
+    for (int c = 0; c < ncells_owned_; ++c) {
+      mesh_->cell_get_faces(c, &faces);
+
+      std::vector<WhetStone::VectorPolynomial> vvf;
+      for (int n = 0; n < faces.size(); ++n) {
+        vvf.push_back(velf_vec_[faces[n]]);
+      }
+
+      maps->VelocityCell(c, vvf, uc_[c]);
+      maps->Jacobian(uc_[c], J_[c]);
+    }
+
+    velf_ = Teuchos::rcp(new std::vector<WhetStone::Polynomial>(nfaces_wghost_));
+    velc_ = Teuchos::rcp(new std::vector<WhetStone::VectorPolynomial>(ncells_owned_));
+    jac_ = Teuchos::rcp(new std::vector<WhetStone::Polynomial>(ncells_owned_));
+  };
+  ~RemapDG() {};
+
+  void Setup(const Teuchos::Ptr<Operators::PDE_Abstract> op_adv,
+             const Teuchos::Ptr<Operators::PDE_AdvectionRiemann> op_flux,
+             const Teuchos::Ptr<Operators::PDE_Reaction> op_reac) {
+    op_adv_ = op_adv;
+    op_flux_ = op_flux;
+    op_reac_ = op_reac;
+  }
+
+  virtual void Functional(double t, const CompositeVector& u, CompositeVector& f) override {
+    UpdateGeometricQuantities_(t);
+
+    // -- populate operators
+    op_adv_->SetupPolyVector(velc_);
+    op_adv_->UpdateMatrices();
+    op_flux_->UpdateMatrices(velf_.ptr());
+
+    op_reac_->Setup(jac_);
+    op_reac_->UpdateMatrices(Teuchos::null);
+
+    // -- solve the problem with mass matrix
+    auto global_reac = op_reac_->global_operator();
+    global_reac->SymbolicAssembleMatrix();
+    global_reac->AssembleMatrix();
+
+    Teuchos::ParameterList plist;
+    plist.set<std::string>("preconditioner type", "diagonal");
+    global_reac->InitPreconditioner(plist);
+
+    AmanziSolvers::LinearOperatorPCG<Operators::Operator, CompositeVector, CompositeVectorSpace>
+        pcg(global_reac, global_reac);
+
+    std::vector<std::string> criteria;
+    criteria.push_back("absolute residual");
+    criteria.push_back("relative rhs");
+    criteria.push_back("make one iteration");
+    plist.set<double>("error tolerance", 1e-12)
+         .set<Teuchos::Array<std::string> >("convergence criteria", criteria)
+         .sublist("verbose object")
+         .set<std::string>("verbosity level", "none");
+    pcg.Init(plist);
+
+    CompositeVector& x = *global_reac->rhs();  // reusing internal memory
+    pcg.ApplyInverse(u, x);
+
+    printf("time=%8.5f  pcg2=(%d, %9.4g)\n", t, pcg.num_itrs(), pcg.residual());
+
+    // -- calculate right-hand_side
+    op_flux_->global_operator()->Apply(x, f);
+  }
+
+  // access 
+  const std::vector<WhetStone::VectorPolynomial> velf_vec() const { return velf_vec_; }
+  const std::vector<WhetStone::VectorPolynomial> uc() const { return uc_; }
+  const std::vector<WhetStone::MatrixPolynomial> J() const { return J_; }
+
+ private:
+  void UpdateGeometricQuantities_(double t) {
+    for (int f = 0; f < nfaces_wghost_; ++f) {
+      // cn = j J^{-t} N dA
+      WhetStone::VectorPolynomial cn;
+
+      maps_->NansonFormula(f, t, velf_vec_[f], cn);
+      (*velf_)[f] = velf_vec_[f] * cn;
+    }
+
+    WhetStone::MatrixPolynomial C;
+    for (int c = 0; c < ncells_owned_; ++c) {
+      // pseudo cell velocity -C^t u 
+      maps_->Cofactors(t, J_[c], C);
+      (*velc_)[c].Multiply(C, uc_[c], true);
+
+      for (int i = 0; i < dim_; ++i) {
+        (*velc_)[c][i] *= -1.0;
+      }
+
+      // determinant of Jacobian
+      maps_->Determinant(t, J_[c], (*jac_)[c]);
+    }
+  }
+
+ private:
+  Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
+  int ncells_owned_, nfaces_wghost_;
+  int dim_;
+
+  std::shared_ptr<WhetStone::MeshMaps> maps_;
+  std::vector<WhetStone::VectorPolynomial> uc_;
+  std::vector<WhetStone::MatrixPolynomial> J_;
+  Teuchos::RCP<std::vector<WhetStone::Polynomial> > jac_;
+
+  Teuchos::Ptr<Operators::PDE_Abstract> op_adv_;
+  Teuchos::Ptr<Operators::PDE_AdvectionRiemann> op_flux_;
+  Teuchos::Ptr<Operators::PDE_Reaction> op_reac_;
+
+  Teuchos::RCP<std::vector<WhetStone::VectorPolynomial> > velc_;
+  Teuchos::RCP<std::vector<WhetStone::Polynomial> > velf_;
+
+  std::vector<WhetStone::VectorPolynomial> velf_vec_;
+};
+
+} // namespace amanzi
 
 
 /* *****************************************************************
@@ -144,6 +287,9 @@ void RemapTestsDualRK2(int dim, int order_p, int order_u,
   // numerical integration
   WhetStone::NumericalIntegration numi(mesh0);
 
+  // basic remap algorithm
+  RemapDG remap(mesh0, maps);
+
   // create and initialize cell-based field 
   CompositeVectorSpace cvs1;
   cvs1.SetMesh(mesh0)->SetGhosted(true)->AddComponent("cell", AmanziMesh::CELL, nk);
@@ -189,33 +335,10 @@ void RemapTestsDualRK2(int dim, int order_p, int order_u,
   mesh0->get_comm()->SumAll(&mass_tmp, &mass0, 1);
 
   // allocate memory for global variables
-  // -- solution
   CompositeVectorSpace cvs2;
   cvs2.SetMesh(mesh1)->SetGhosted(true)->AddComponent("cell", AmanziMesh::CELL, nk);
   CompositeVector p2(cvs2);
   Epetra_MultiVector& p2c = *p2.ViewComponent("cell");
-
-  // -- face velocities
-  std::vector<WhetStone::VectorPolynomial> velf_vec(nfaces_wghost);
-  for (int f = 0; f < nfaces_wghost; ++f) {
-    maps->VelocityFace(f, velf_vec[f]);
-  }
-
-  // -- cell-baced velocities and Jacobian matrices
-  std::vector<WhetStone::VectorPolynomial> uc(ncells_owned);
-  std::vector<WhetStone::MatrixPolynomial> J(ncells_owned);
-
-  for (int c = 0; c < ncells_owned; ++c) {
-    mesh0->cell_get_faces(c, &faces);
-
-    std::vector<WhetStone::VectorPolynomial> vvf;
-    for (int n = 0; n < faces.size(); ++n) {
-      vvf.push_back(velf_vec[faces[n]]);
-    }
-
-    maps->VelocityCell(c, vvf, uc[c]);
-    maps->Jacobian(uc[c], J[c]);
-  }
 
   // create flux operator
   Teuchos::ParameterList plist;
@@ -284,6 +407,7 @@ void RemapTestsDualRK2(int dim, int order_p, int order_u,
   double t(0.0), tend(1.0);
   while(t < tend - dt/2) {
     // calculate normal component of face velocity at time t+dt/2 
+    auto& velf_vec = remap.velf_vec(); 
     for (int f = 0; f < nfaces_wghost; ++f) {
       // cn = j J^{-t} N dA
       WhetStone::VectorPolynomial cn;
@@ -297,6 +421,8 @@ void RemapTestsDualRK2(int dim, int order_p, int order_u,
 
     // calculate various geometric quantities in reference framework
     WhetStone::MatrixPolynomial C;
+    auto& J = remap.J(); 
+    auto& uc = remap.uc(); 
 
     for (int c = 0; c < ncells_owned; ++c) {
       // product -C^t u at time t+dt/2
@@ -333,6 +459,14 @@ void RemapTestsDualRK2(int dim, int order_p, int order_u,
       gcl_err = std::max(gcl_err, fabs(gcl) / mesh0->cell_volume(c)); 
     }
 
+    remap.Setup(op_adv.ptr(), op_flux.ptr(), op_reac0.ptr());
+    Explicit_TI::RK<CompositeVector> rk(remap, Explicit_TI::heun_euler, p2);
+/*
+CompositeVector p1tmp(*p1);
+CompositeVector p2tmp(*p1);
+rk.TimeStep(t, dt, p1tmp, p2tmp);
+*/
+
     // Runge-Kutta scheme order two: Step 1
     // -- populate operators
     op_adv->SetupPolyVector(velc0);
@@ -364,6 +498,7 @@ void RemapTestsDualRK2(int dim, int order_p, int order_u,
     std::vector<std::string> criteria;
     criteria.push_back("absolute residual");
     criteria.push_back("relative rhs");
+    criteria.push_back("make one iteration");
     plist.set<double>("error tolerance", 1e-12)
          .set<Teuchos::Array<std::string> >("convergence criteria", criteria)
          .sublist("verbose object")
@@ -889,6 +1024,7 @@ void RemapTestsDualRK3(int dim, int order_p, int order_u,
     std::vector<std::string> criteria;
     criteria.push_back("absolute residual");
     criteria.push_back("relative rhs");
+    criteria.push_back("make one iteration");
     plist.set<double>("error tolerance", 1e-12)
          .set<Teuchos::Array<std::string> >("convergence criteria", criteria)
          .sublist("verbose object")
@@ -1128,6 +1264,7 @@ TEST(REMAP2D_DG1_DUAL_FEM) {
 */
 
 
+/*
 TEST(REMAP2D_DG0_DUAL_VEM) {
   // RemapTestsDual(2, 0, 1, "VEM", "", 16, 16, 0.05);
   RemapTestsDualRK2(2, 0, 1, "VEM", "test/median15x16.exo", 0, 0, 0.05 );
@@ -1150,33 +1287,32 @@ TEST(REMAP3D_DG0_DUAL_VEM) {
 // TEST(REMAP3D_DG1_DUAL_VEM) {
 //   RemapTestsDualRK2(3, 1, 2, "VEM", "", 5, 5, 0.1);
 // }
-
-/*
-TEST(REMAP2D_DG_QUADRATURE_ERROR) {
-  RemapTestsDualRK3(2, 2, 2, "VEM", "", 16, 16, 0.05);
-  RemapTestsDualRK3(2, 2, 2, "VEM", "", 16 *  2, 16 *  2, 0.05 / 2);
-  RemapTestsDualRK3(2, 2, 2, "VEM", "", 16 *  4, 16 *  4, 0.05 / 4);
-  RemapTestsDualRK3(2, 2, 2, "VEM", "", 16 *  8, 16 *  8, 0.05 / 8);
-  RemapTestsDualRK3(2, 2, 2, "VEM", "", 16 * 16, 16 * 16, 0.05 / 16);
-  RemapTestsDualRK3(2, 2, 2, "VEM", "", 16 * 32, 16 * 32, 0.05 / 23);
-}
 */
 
 /*
 TEST(REMAP2D_DG_QUADRATURE_ERROR) {
-  RemapTestsDualRK3(2, 2, 3, "VEM", "test/median15x16.exo", 0, 0, 0.05);
-  RemapTestsDualRK3(2, 2, 3, "VEM", "test/median32x33.exo", 0, 0, 0.05 / 2);
-  RemapTestsDualRK3(2, 2, 3, "VEM", "test/median63x64.exo", 0, 0, 0.05 / 4);
-  RemapTestsDualRK3(2, 2, 3, "VEM", "test/median127x128.exo", 0, 0, 0.05 / 8);
-  RemapTestsDualRK3(2, 2, 3, "VEM", "test/median255x256.exo", 0, 0, 0.05 / 16);
+  RemapTestsDualRK3(2, 2, 1, "VEM", "", 16, 16, 0.05);
+  RemapTestsDualRK3(2, 2, 1, "VEM", "", 16 *  2, 16 *  2, 0.05 / 2);
+  RemapTestsDualRK3(2, 2, 1, "VEM", "", 16 *  4, 16 *  4, 0.05 / 4);
+  RemapTestsDualRK3(2, 2, 1, "VEM", "", 16 *  8, 16 *  8, 0.05 / 8);
+  RemapTestsDualRK3(2, 2, 1, "VEM", "", 16 * 16, 16 * 16, 0.05 / 16);
+  RemapTestsDualRK3(2, 2, 1, "VEM", "", 16 * 32, 16 * 32, 0.05 / 23);
 }
 */
 
+TEST(REMAP2D_DG_QUADRATURE_ERROR) {
+  RemapTestsDualRK2(2, 1, 2, "VEM", "test/median15x16.exo", 0, 0, 0.05);
+  RemapTestsDualRK2(2, 1, 2, "VEM", "test/median32x33.exo", 0, 0, 0.05 / 2);
+  RemapTestsDualRK2(2, 1, 2, "VEM", "test/median63x64.exo", 0, 0, 0.05 / 4);
+  RemapTestsDualRK2(2, 1, 2, "VEM", "test/median127x128.exo", 0, 0, 0.05 / 8);
+  RemapTestsDualRK2(2, 1, 2, "VEM", "test/median255x256.exo", 0, 0, 0.05 / 16);
+}
+
 /*
 TEST(REMAP2D_DG_QUADRATURE_ERROR) {
-  RemapTestsDualRK3(2, 2, 2, "VEM", "test/random10.exo", 0, 0, 0.05);
-  RemapTestsDualRK3(2, 2, 2, "VEM", "test/random20.exo", 0, 0, 0.05 / 2);
-  RemapTestsDualRK3(2, 2, 2, "VEM", "test/random40.exo", 0, 0, 0.05 / 4);
+  RemapTestsDualRK3(2, 2, 4, "VEM", "test/random10.exo", 0, 0, 0.05);
+  RemapTestsDualRK3(2, 2, 4, "VEM", "test/random20.exo", 0, 0, 0.05 / 2);
+  RemapTestsDualRK3(2, 2, 4, "VEM", "test/random40.exo", 0, 0, 0.05 / 4);
 }
 */
 

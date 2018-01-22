@@ -412,7 +412,7 @@ void DG_Modal::ChangeBasis_(int c, DenseMatrix& A)
 {
   // optional update of integrals database
   UpdateIntegrals_(c, 2 * order_);
-
+ 
   int nrows = A.NumRows();
   double ak, bk;
   std::vector<double> a(nrows), b(nrows);
