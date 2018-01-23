@@ -27,6 +27,7 @@ enum method_t{forward_euler,
               heun_euler, 
               midpoint, 
               ralston, 
+              tvd_3rd_order,
               kutta_3rd_order, 
               runge_kutta_4th_order,
               user_defined};
@@ -38,6 +39,7 @@ class RK {
   // Heun-Euler method (2nd order)  --> heun_euler 
   // Midpoint method   (2nd order)  --> midpoint 
   // Ralston method    (2nd order)  --> ralston 
+  // TVD RK method     (3rd order)  --> tvd_3rd_order
   // Kutta method      (3rd order)  --> kutta_3rd_order
   // Runge Kutta       (4th order)  --> runge_kutta_4th_order
   // User defined      (whatever)   --> user_defined, use special constructor to create
@@ -140,6 +142,8 @@ RK<Vector>::RK(fnBase<Vector>& fn,
     method = midpoint;
   } else if (methodstring == "ralston") {
     method = ralston;
+  } else if (methodstring == "tvd 3rd order") {
+    method = tvd_3rd_order;
   } else if (methodstring == "kutta 3rd order") {
     method = kutta_3rd_order;
   } else if (methodstring == "runge kutta 4th order") {
@@ -197,6 +201,9 @@ void RK<Vector>::InitMethod_(const method_t method)
   case ralston:
     order_ = 2;
     break;
+  case tvd_3rd_order:
+    order_ = 3;
+    break;
   case kutta_3rd_order:
     order_ = 3;
     break;
@@ -247,6 +254,21 @@ void RK<Vector>::InitMethod_(const method_t method)
     
     c_[0] = 0.0;
     c_[1] = 2.0/3.0;
+    break;
+
+  case tvd_3rd_order:
+    a_(1,0) = 1.0;
+    a_(2,0) = 0.25;
+    
+    a_(2,1) = 0.25;
+
+    b_[0] = 1.0/6.0;
+    b_[1] = 1.0/6.0;
+    b_[2] = 2.0/3.0;
+
+    c_[0] = 0.0;
+    c_[1] = 1.0;
+    c_[2] = 0.5;
     break;
 
   case kutta_3rd_order:
