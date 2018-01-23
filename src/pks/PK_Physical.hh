@@ -69,7 +69,7 @@ class PK_Physical : virtual public PK {
                           const Teuchos::RCP<State>& S_next);
 
   // initialization tools
-  void InitializeField(const Teuchos::RCP<State>& S, const std::string& passwd,
+  void InitializeField(const Teuchos::Ptr<State>& S, const std::string& passwd,
                        std::string fieldname, double default_val);
 
   // Accessor for debugger, for use by coupling MPCs

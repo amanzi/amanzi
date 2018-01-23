@@ -52,9 +52,7 @@ class UpwindFluxAndGravity : public Upwind<Model> {
   // -- returns combined map for the original and upwinded fields.
   // -- Currently, composite vector cannot be extended on a fly. 
   void Compute(const CompositeVector& flux, const CompositeVector& solution,
-               const std::vector<int>& bc_model, const std::vector<double>& bc_value,
-               CompositeVector& field,
-               double (Model::*Value)(int, double) const);
+               const std::vector<int>& bc_model, CompositeVector& field);
 
   // -- returns combined map for the original and upwinded fields.
   // -- Currently, composite vector cannot be extended on a fly. 
@@ -62,6 +60,7 @@ class UpwindFluxAndGravity : public Upwind<Model> {
     Teuchos::RCP<CompositeVectorSpace> cvs = Teuchos::rcp(new CompositeVectorSpace());
     cvs->SetMesh(mesh_)->SetGhosted(true)
        ->AddComponent("cell", AmanziMesh::CELL, 1)
+       ->AddComponent("dirichlet_faces", AmanziMesh::BOUNDARY_FACE, 1)
        ->AddComponent("face", AmanziMesh::FACE, 1)
        ->AddComponent("grav", AmanziMesh::FACE, 1);
     return cvs;
@@ -99,15 +98,13 @@ void UpwindFluxAndGravity<Model>::Init(Teuchos::ParameterList& plist)
 template<class Model>
 void UpwindFluxAndGravity<Model>::Compute(
     const CompositeVector& flux, const CompositeVector& solution,
-    const std::vector<int>& bc_model, const std::vector<double>& bc_value,
-    CompositeVector& field,
-    double (Model::*Value)(int, double) const)
+    const std::vector<int>& bc_model, CompositeVector& field)
 {
   upwind_flux_.set_face_comp("face");
-  upwind_flux_.Compute(flux, solution, bc_model, bc_value, field, Value);
+  upwind_flux_.Compute(flux, solution, bc_model, field);
 
   upwind_gravity_.set_face_comp("grav");
-  upwind_gravity_.Compute(flux, solution, bc_model, bc_value, field, Value);
+  upwind_gravity_.Compute(flux, solution, bc_model, field);
 }
 
 }  // namespace Operators

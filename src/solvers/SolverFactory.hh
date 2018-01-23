@@ -68,6 +68,7 @@ SolverFactory<Vector,VectorSpace>::Create(
     Errors::Message msg(estream.str());
     Exceptions::amanzi_throw(msg);
   }
+  return Teuchos::null;
 }
 
 

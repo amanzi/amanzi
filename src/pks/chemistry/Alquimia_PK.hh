@@ -55,6 +55,8 @@ class Alquimia_PK: public Chemistry_PK {
 
   virtual std::string name() { return "chemistry alquimia"; }
 
+  void CopyFieldstoNewState(const Teuchos::RCP<State>& S_next);
+
   // Ben: the following routine provides the interface for
   // output of auxillary cellwise data from chemistry
   Teuchos::RCP<Epetra_MultiVector> extra_chemistry_output_data();

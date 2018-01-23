@@ -130,6 +130,7 @@ void HeatConduction::Init(
   cvs_->SetComponent("cell", AmanziMesh::CELL, 1);
   cvs_->SetOwned(false);
   cvs_->AddComponent("face", AmanziMesh::FACE, 1);
+  cvs_->AddComponent("dirichlet_faces", AmanziMesh::BOUNDARY_FACE, 1);
 
   // solutions at T=T0 and T=T0+dT
   solution_ = Teuchos::rcp(new CompositeVector(*cvs_)); 
@@ -304,8 +305,8 @@ double HeatConduction::ErrorNorm(const Teuchos::RCP<const CompositeVector>& u,
 void HeatConduction::UpdateValues(const CompositeVector& u)
 { 
   const Epetra_MultiVector& uc = *u.ViewComponent("cell", true); 
-  const Epetra_MultiVector& kc = *k->ViewComponent("cell", true); 
-  const Epetra_MultiVector& dkdT_c = *dkdT->ViewComponent("cell", true); 
+  Epetra_MultiVector& kc = *k->ViewComponent("cell", true); 
+  Epetra_MultiVector& dkdT_c = *dkdT->ViewComponent("cell", true); 
 
   int ncells_wghost = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::USED);
   for (int c = 0; c < ncells_wghost; c++) {
@@ -316,8 +317,25 @@ void HeatConduction::UpdateValues(const CompositeVector& u)
 
   std::vector<int>& bc_model = bc_->bc_model();
   std::vector<double>& bc_value = bc_->bc_value();
-  upwind_->Compute(*flux_, u, bc_model, bc_value, *k, &HeatConduction::Conduction);
-  upwind_->Compute(*flux_, u, bc_model, bc_value, *dkdT, &HeatConduction::ConductionDerivative);
+  
+  // add boundary face component
+  Epetra_MultiVector& k_df = *k->ViewComponent("dirichlet_faces", true);
+  Epetra_MultiVector& dkdT_df = *dkdT->ViewComponent("dirichlet_faces", true);
+  const Epetra_Map& ext_face_map = mesh_->exterior_face_map(true);
+  const Epetra_Map& face_map = mesh_->face_map(true);
+  for (int f=0; f!=face_map.NumMyElements(); ++f) {
+    if (bc_model[f] == Operators::OPERATOR_BC_DIRICHLET) {
+      AmanziMesh::Entity_ID_List cells;
+      mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+      ASSERT(cells.size() == 1);
+      int bf = ext_face_map.LID(face_map.GID(f));
+      k_df[0][bf] = Conduction(cells[0], bc_value[f]);
+      dkdT_df[0][bf] = ConductionDerivative(cells[0], bc_value[f]);
+    }
+  }
+  
+  upwind_->Compute(*flux_, u, bc_model, *k);
+  upwind_->Compute(*flux_, u, bc_model, *dkdT);
 }
 
 }  // namespace Amanzi

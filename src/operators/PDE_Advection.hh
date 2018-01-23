@@ -46,7 +46,7 @@ class PDE_Advection : public PDE_HelperDiscretization {
   virtual void UpdateFlux(const Teuchos::Ptr<const CompositeVector>& h,
                           const Teuchos::Ptr<const CompositeVector>& p,
                           const Teuchos::RCP<BCs>& bc, 
-                          Teuchos::Ptr<CompositeVector>& u) = 0;
+                          const Teuchos::Ptr<CompositeVector>& u) = 0;
   
  protected:
   Schema global_schema_row_, global_schema_col_;

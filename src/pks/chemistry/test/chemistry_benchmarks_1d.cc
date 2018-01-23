@@ -105,6 +105,7 @@ SUITE(ChemistryBenchmarkTests) {
 
     // Run Amanzi.
     snprintf(command, 1024, "%s --xml_file=%s/amanzi-u-1d-calcite.xml", amanzi_exe_.c_str(), test_dir);
+    std::cout<<command<<"\n";
     status = std::system(command);
     CHECK_EQUAL(0, status);
 

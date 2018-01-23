@@ -133,7 +133,7 @@ void PDE_DiffusionFV::InitDiffusion_(Teuchos::ParameterList& plist)
 /* ******************************************************************
 * Setup methods: scalar coefficients
 ****************************************************************** */
-void PDE_DiffusionFV::SetTensorCoefficient(const Teuchos::RCP<std::vector<WhetStone::Tensor> >& K)
+void PDE_DiffusionFV::SetTensorCoefficient(const Teuchos::RCP<const std::vector<WhetStone::Tensor> >& K)
 {
   transmissibility_initialized_ = false;
   K_ = K;
@@ -179,7 +179,6 @@ void PDE_DiffusionFV::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& 
 
   if (!exclude_primary_terms_) {
     const Epetra_MultiVector& trans_face = *transmissibility_->ViewComponent("face", true);
-    const std::vector<int>& bc_model = bcs_trial_[0]->bc_model();
     WhetStone::DenseMatrix null_matrix;
 
     // preparing upwind data
@@ -199,7 +198,6 @@ void PDE_DiffusionFV::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& 
       WhetStone::DenseMatrix Aface(ncells, ncells);
       Aface = 0.0;
 
-      // if (bc_model[f] != OPERATOR_BC_NEUMANN) {
       double tij = trans_face[0][f] * (k_face.get() ? (*k_face)[0][f] : 1.0);
       for (int i = 0; i != ncells; ++i) {
         Aface(i, i) = tij;
@@ -208,8 +206,6 @@ void PDE_DiffusionFV::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& 
           Aface(j, i) = -tij;
         }
       }
-      // }
-
       local_op_->matrices[f] = Aface;
     }
   }
