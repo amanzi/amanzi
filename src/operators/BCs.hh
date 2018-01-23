@@ -130,9 +130,6 @@ class BCs {
   const std::vector<double>& bc_mixed() const { return bc_mixed_; }
   const std::vector<AmanziGeometry::Point>& bc_value_point() const { return bc_value_point_; }
   const std::vector<std::vector<double>>& bc_value_vector() const { return bc_value_vector_; }
-    
-  
-  
   
  private:
   AmanziMesh::Entity_kind kind_;
@@ -150,7 +147,6 @@ class BCs {
 
 }  // namespace Operators
 }  // namespace Amanzi
-
 
 #endif
 

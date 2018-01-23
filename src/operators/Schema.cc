@@ -273,17 +273,6 @@ std::string Schema::CreateUniqueName() const
   return boost::to_upper_copy(name);
 }
 
-CompositeVectorSpace cvsFromSchema(const Schema& schema,
-        const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) {
-  CompositeVectorSpace cvs;
-  cvs.SetMesh(mesh);
-  for (const auto& item : schema) {
-    cvs.AddComponent(AmanziMesh::entity_kind_string(item.kind), item.kind, item.num);
-  }
-  return cvs;
-}
-
-
 }  // namespace Operators
 }  // namespace Amanzi
 

@@ -138,15 +138,13 @@ void UpwindFlux<Model>::Compute(
       upw_face[0][f] = kc1;
       if (bc_model[f] == OPERATOR_BC_DIRICHLET && flag) {
         upw_face[0][f] = fld_boundary[0][ext_face_map.LID(face_map.GID(f))];
-        //        std::cout << "Setting f(" << f << ") = " << upw_face[0][f] << std::endl;
       }
-    // if (bc_model[f] == OPERATOR_BC_NEUMANN) {
-    //   upw_face[0][f] = ((*model_).*Value)(c, sol_face[0][f]);
-    // }
+      // if (bc_model[f] == OPERATOR_BC_NEUMANN) {
+      //   upw_face[0][f] = ((*model_).*Value)(c, sol_face[0][f]);
+      // }
     }
   }
 }
-
 
 
 template<class Model>
