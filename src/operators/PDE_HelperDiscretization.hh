@@ -65,8 +65,8 @@ class PDE_HelperDiscretization : public PDE_HelperBCsList {
   // -- local operator (container of elemental matrices)
   Teuchos::RCP<Op> local_matrices() { return local_op_; }
   Teuchos::RCP<const Op> local_matrices() const { return local_op_; }
-  void set_local_matrices(const Teuchos::RCP<Op>& op) { local_op_ = op; }
-
+  void set_local_matrices(const Teuchos::RCP<Op>& op);
+  
  protected:
   void ApplyBCs_Cell_Scalar_(const BCs& bc, Teuchos::RCP<Op> op,
                              bool primary, bool eliminate);

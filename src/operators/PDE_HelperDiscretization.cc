@@ -68,6 +68,25 @@ void PDE_HelperDiscretization::PopulateDimensions_()
 }
 
 
+void PDE_HelperDiscretization::set_local_matrices(const Teuchos::RCP<Op>& op)
+{
+  if (global_operator().get()) {
+    if (local_matrices().get()) {
+      auto index = std::find(global_operator()->OpBegin(), global_operator()->OpEnd(), local_op_)
+                   - global_operator()->OpBegin();
+      if (index != global_operator()->OpSize()) {
+        global_operator()->OpPushBack(op);
+      } else {
+        global_operator()->OpReplace(op, index);
+      }
+    } else {
+      global_operator()->OpPushBack(op);
+    }
+  }
+  local_op_ = op;
+}
+
+
 /* ******************************************************************
 * Apply boundary conditions to the local matrices. We always zero-out
 * matrix rows for essential test BCs. As to trial BCs, there are
