@@ -151,8 +151,9 @@ bool EvaluatorSecondary<Data_t, DataFactory_t>::UpdateDerivative(
 
   // -- must update if any of our dependencies' derivatives have changed
   for (auto &dep : dependencies_) {
-    if (S.GetEvaluator(dep.first, dep.second)
-            .IsDependency(S, wrt_key, wrt_tag)) {
+    auto& eval = S.GetEvaluator(dep.first, dep.second);
+    if (eval.IsDifferentiableWRT(S, wrt_key, wrt_tag)
+        && !eval.ProvidesKey(wrt_key, wrt_tag)) {
       update |= S.GetEvaluator(dep.first, dep.second)
                     .UpdateDerivative(S, my_request, wrt_key, wrt_tag);
     }

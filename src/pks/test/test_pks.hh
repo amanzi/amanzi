@@ -149,7 +149,7 @@ public:
 
     // evaluate the derivative
     this->S_->GetEvaluator(dudt_key_, tag_inter_)
-        ->Update(*this->S_, this->name());
+        .Update(*this->S_, this->name());
     *f.Data() = this->S_->template Get<CompositeVector>(dudt_key_, tag_inter_);
 
     std::cout << std::setprecision(16) << "  At time t = " << t
@@ -190,6 +190,9 @@ public:
         .SetMesh(this->mesh_)
         ->SetComponent("cell", AmanziMesh::CELL, 1);
 
+    this->S_->template RequireDerivative<CompositeVector, CompositeVectorSpace>(
+        dudt_key_, tag_new_, this->key_, tag_new_);
+
     Teuchos::ParameterList plist(dudt_key_);
     plist.set("tag", tag_new_);
     auto dudt_eval = Teuchos::rcp(new Eval_t(plist));
@@ -209,7 +212,7 @@ public:
     ASSERT(std::abs(t_new - S_->time(tag_new_)) < 1.e-12);
 
     this->S_->GetEvaluator(dudt_key_, tag_new_)
-        ->Update(*this->S_, this->name());
+        .Update(*this->S_, this->name());
     *f->Data() = this->S_->template Get<CompositeVector>(dudt_key_, tag_new_);
 
     std::cout << "  At time t = " << t_new << ": u = "
@@ -242,7 +245,7 @@ public:
                             double h) {
     h_ = h;
     this->S_->GetEvaluator(dudt_key_, tag_new_)
-        ->UpdateDerivative(*this->S_, this->name(), this->key_, tag_new_);
+        .UpdateDerivative(*this->S_, this->name(), this->key_, tag_new_);
   }
 
   void ChangedSolution() { this->ChangedSolutionPK(tag_new_); }

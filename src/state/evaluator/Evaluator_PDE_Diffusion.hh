@@ -176,12 +176,9 @@ protected:
     Operators::Operator_Factory global_op_fac;
     global_op_fac.set_mesh(A_rhs->Mesh());
     global_op_fac.set_cvs(A_rhs->Map(), A_rhs->Map());
+    auto global_op = global_op_fac.Create();
 
-    auto global_op_unique = global_op_fac.Create();
-    // need to figure out a way to move unique_ptr into rcp
-    // In the mean time, i don't think this will break the world.
-    auto global_op = Teuchos::rcpFromRef(*global_op_unique);
-
+    // set up the global operator
     global_op->set_rhs(A_rhs);
 
     Operators::PDE_DiffusionFactory diff_fac;
@@ -203,6 +200,8 @@ protected:
     pde->SetScalarCoefficient(kr, Teuchos::null);
 
     // compute local ops
+    global_op->Init();
+
     Teuchos::Ptr<const CompositeVector> u;
     if (!u_key_.empty())
       u = S.GetPtr<CompositeVector>(u_key_, tag_).ptr();
@@ -219,10 +218,9 @@ protected:
     Operators::Operator_Factory global_op_fac;
     global_op_fac.set_mesh(A_rhs.Mesh());
     global_op_fac.set_cvs(A_rhs.Map(), A_rhs.Map());
+    auto global_op = global_op_fac.Create();
 
-    auto global_op_unique = global_op_fac.Create();
-    auto global_op = Teuchos::rcpFromRef(*global_op_unique);
-
+    // set up the global operator
     Operators::PDE_DiffusionFactory diff_fac;
     Teuchos::ParameterList tmp(plist_);
     tmp.set("exclude primary terms", true); // turn off the primary terms, just the Jacobian
@@ -250,6 +248,7 @@ protected:
     pde->SetScalarCoefficient(kr, dkr);
 
     // compute local ops
+    global_op->Init();
     Teuchos::Ptr<const CompositeVector> u = S.GetPtr<CompositeVector>(u_key_, tag_).ptr();
     pde->UpdateMatricesNewtonCorrection(Teuchos::null, u);
     pde->ApplyBCs(true, true);

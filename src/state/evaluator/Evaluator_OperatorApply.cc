@@ -125,17 +125,19 @@ void Evaluator_OperatorApply::EnsureCompatibility(State &S) {
   //
   bool has_derivs = S.HasDerivativeSet(my_key_, my_tag_);
   // require data for derivatives
-  for (const auto& deriv : S.GetDerivativeSet(my_key_, my_tag_)) {
-    auto wrt = Keys::splitKeyTag(deriv.first);
-    ASSERT(wrt.second == my_tag_);
-    ASSERT(wrt.first == x0_key_);     // NEED TO IMPLEMENT OFF-DIAGONALS EVENTUALLY --etc
-    // quasi-linear operators covered by Update() call --etc
-    // jacobian terms are covered by ParameterList jacobian option --etc
+  if (has_derivs) {
+    for (const auto& deriv : S.GetDerivativeSet(my_key_, my_tag_)) {
+      auto wrt = Keys::splitKeyTag(deriv.first);
+      ASSERT(wrt.second == my_tag_);
+      ASSERT(wrt.first == x0_key_);     // NEED TO IMPLEMENT OFF-DIAGONALS EVENTUALLY --etc
+      // quasi-linear operators covered by Update() call --etc
+      // jacobian terms are covered by ParameterList jacobian option --etc
 
-    // rhs terms
-    for (const auto& rhs_key : rhs_keys_) {
-      if (S.GetEvaluator(rhs_key, my_tag_).IsDifferentiableWRT(S, wrt.first, wrt.second)) {
-        S.RequireDerivative<CompositeVector,CompositeVectorSpace>(rhs_key, my_tag_, wrt.first, wrt.second);
+      // rhs terms
+      for (const auto& rhs_key : rhs_keys_) {
+        if (S.GetEvaluator(rhs_key, my_tag_).IsDifferentiableWRT(S, wrt.first, wrt.second)) {
+          S.RequireDerivative<CompositeVector,CompositeVectorSpace>(rhs_key, my_tag_, wrt.first, wrt.second);
+        }
       }
     }
   }    
