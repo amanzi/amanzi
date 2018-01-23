@@ -47,7 +47,7 @@ class Operator_Factory {
     plist_ = plist;
   }
   
-  std::unique_ptr<Operator> Create();
+  Teuchos::RCP<Operator> Create();
 
  private:
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
