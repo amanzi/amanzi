@@ -494,7 +494,7 @@ SUITE(EVALUATOR_ON_OP) {
   TEST(OP_APPLY_DIFFUSION_MFD) { test("mfd: two-point flux approximation"); }
   TEST(OP_APPLY_DIFFUSION_NLFV) { test("nlfv: default"); }
 
-  // Apply a non-diagonal operator, including boundary conditions
+  // Invert a non-diagonal operator, determining the solution to a linear problem
   TEST(OP_APPLY_DIFFUSION_FV_INVERSE) { test_inverse("fv: default"); }
   TEST(OP_APPLY_DIFFUSION_MFD_INVERSE) { test_inverse("mfd: two-point flux approximation"); }
   TEST(OP_APPLY_DIFFUSION_NLFV_INVERSE) { test_inverse("nlfv: default"); }
