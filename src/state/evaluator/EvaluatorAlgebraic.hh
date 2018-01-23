@@ -55,6 +55,10 @@ protected:
     EvaluatorSecondary<Data_t, DataFactory_t>::UpdateDerivative_(S, wrt_key,
                                                                  wrt_tag);
   }
+
+  virtual void EvaluatePartialDerivative_(const State &S,
+          const Key &wrt_key, const Key &wrt_tag, Data_t &result) = 0;
+  
 };
 
 template <> void EvaluatorAlgebraic<double>::EnsureCompatibility(State &S);

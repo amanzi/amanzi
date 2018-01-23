@@ -198,30 +198,10 @@ public:
     Require<T>(fieldname, "", "");
   }
 
-  void RequireDerivative(const Key &fieldname, const Key &tag,
-                         const Key &wrt_key, const Key &wrt_tag,
-                         const Key &owner) {
-    data_.at(fieldname)->RequireDerivativeRecord(tag, wrt_key, wrt_tag, owner);
-  }
-
-  // void RequireDerivative(const Key& fieldname, const Key& tag, const Key&
-  // wrt_key, const Key& wrt_tag, const Key& owner) {
-  //   data_.at(fieldname)->RequireDerivativeRecord(tag, wrt_key, wrt_tag,
-  //   owner);
-  // }
-
   // Ensure a record exists.
   bool HasData(const Key &key, const Key &tag = "") const {
     if (Keys::hasKey(data_, key)) {
       return data_.at(key)->HasRecord(tag);
-    }
-    return false;
-  }
-
-  bool HasDerivativeData(const Key &key, const Key &tag, const Key &wrt_key,
-                         const Key &wrt_tag) const {
-    if (Keys::hasKey(data_, key)) {
-      return data_.at(key)->HasDerivativeRecord(tag, wrt_key, wrt_tag);
     }
     return false;
   }
@@ -251,32 +231,26 @@ public:
   template <typename T> const T &Get(const Key &fieldname) const {
     return data_.at(fieldname)->Get<T>();
   }
-
   template <typename T>
   const T &Get(const Key &fieldname, const Key &tag) const {
     return data_.at(fieldname)->Get<T>(tag);
   }
-
   template <typename T> T &GetW(const Key &fieldname, const Key &owner) {
     return data_.at(fieldname)->GetW<T>(owner);
   }
-
   template <typename T>
   T &GetW(const Key &fieldname, const Key &tag, const Key &owner) {
     return data_.at(fieldname)->GetW<T>(tag, owner);
   }
-
   template <typename T>
   Teuchos::RCP<const T> GetPtr(const Key &fieldname,
                                const Key &tag = "") const {
     return data_.at(fieldname)->GetPtr<T>(tag);
   }
-
   template <typename T>
   Teuchos::RCP<T> GetPtrW(const Key &fieldname, const Key &owner) {
     return data_.at(fieldname)->GetPtrW<T>("", owner);
   }
-
   template <typename T>
   Teuchos::RCP<T> GetPtrW(const Key &fieldname, const Key &tag,
                           const Key &owner) {
@@ -287,76 +261,96 @@ public:
   void Set(const Key &fieldname, const Key &owner, const T &data) {
     return data_.at(fieldname)->Set("", owner, data);
   }
-
   template <typename T>
   void Set(const Key &fieldname, const Key &tag, const Key &owner,
            const T &data) {
     return data_.at(fieldname)->Set(tag, owner, data);
   }
-
   template <typename T>
   void SetPtr(const Key &fieldname, const Key &owner,
               const Teuchos::RCP<T> &data) {
     return data_.at(fieldname)->SetPtr("", owner, data);
   }
-
   template <typename T>
   void SetPtr(const Key &fieldname, const Key &tag, const Key &owner,
               const Teuchos::RCP<T> &data) {
     return data_.at(fieldname)->SetPtr(tag, owner, data);
   }
 
+  
+  template <typename T, typename F>
+  F &RequireDerivative(const Key &key, const Key &tag, const Key& wrt_key, const Key& wrt_tag, const Key &owner = "") {
+    auto keytag = Keys::getKeyTag(key, tag);
+    if (!Keys::hasKey(derivs_, keytag)) {
+      derivs_.emplace(keytag, std::make_unique<RecordSet>(keytag));
+    }
+    derivs_.at(keytag)->RequireRecord(Keys::getKeyTag(wrt_key, wrt_tag), owner);
+    return derivs_.at(keytag)->SetType<T, F>();
+  }
+
   template <typename T>
-  const T &GetDerivative(const Key &fieldname, const Key &wrt_key,
+  void RequireDerivative(const Key &key, const Key &tag, const Key& wrt_key, const Key& wrt_tag, const Key &owner = "") {
+    auto keytag = Keys::getKeyTag(key, tag);
+    if (!Keys::hasKey(derivs_, keytag)) {
+      derivs_.emplace(keytag, std::make_unique<RecordSet>(keytag));
+    }
+    derivs_.at(keytag)->RequireRecord(Keys::getKeyTag(wrt_key, wrt_tag), owner);
+    derivs_.at(keytag)->SetType<T>();
+  }
+
+  template <typename T, typename F> F &RequireDerivative(const Key &key, const Key& wrt_key, const Key& wrt_tag) {
+    return RequireDerivative<T, F>(key, "", wrt_key, wrt_tag, "");
+  }
+
+  template <typename T> void RequireDerivative(const Key &key, const Key& wrt_key, const Key& wrt_tag) {
+    RequireDerivative<T>(key, "", wrt_key, wrt_tag, "");
+  }
+
+  bool HasDerivative(const Key &key, const Key &tag, const Key &wrt_key,
                          const Key &wrt_tag) const {
-    return data_.at(fieldname)->GetDerivative<T>(wrt_key, wrt_tag);
+    auto keytag = Keys::getKeyTag(key,tag);
+    if (Keys::hasKey(derivs_, keytag)) {
+      return derivs_.at(keytag)->HasRecord(Keys::getKeyTag(wrt_key, wrt_tag));
+    }
+    return false;
+  }
+
+  // ignoring record access for now, this could be added to, e.g. vis
+  // derivatives.
+  
+  template <typename T>
+  const T &GetDerivative(const Key &key, const Key& tag, const Key &wrt_key,
+                         const Key &wrt_tag) const {
+    return derivs_.at(Keys::getKeyTag(key,tag))->Get<T>(Keys::getKeyTag(wrt_key, wrt_tag));
   }
 
   template <typename T>
-  const T &GetDerivative(const Key &fieldname, const Key &tag,
-                         const Key &wrt_key, const Key &wrt_tag) const {
-    return data_.at(fieldname)->GetDerivative<T>(tag, wrt_key, wrt_tag);
-  }
-
-  template <typename T>
-  T &GetDerivativeW(const Key &fieldname, const Key &wrt_key,
+  T &GetDerivativeW(const Key &key, const Key& tag, const Key &wrt_key,
                     const Key &wrt_tag, const Key &owner) {
-    return data_.at(fieldname)->GetDerivativeW<T>(owner);
+    return derivs_.at(Keys::getKeyTag(key,tag))->GetW<T>(Keys::getKeyTag(wrt_key, wrt_tag), owner);
   }
 
   template <typename T>
-  T &GetDerivativeW(const Key &fieldname, const Key &tag, const Key &wrt_key,
-                    const Key &wrt_tag, const Key &owner) {
-    return data_.at(fieldname)->GetDerivativeW<T>(tag, wrt_key, wrt_tag, owner);
+  Teuchos::RCP<const T> GetDerivativePtr(const Key &key, const Key &tag,
+                                         const Key &wrt_key, const Key &wrt_tag) const {
+    return derivs_.at(Keys::getKeyTag(key,tag))->GetPtr<T>(Keys::getKeyTag(wrt_key, wrt_tag));
   }
 
   template <typename T>
-  Teuchos::RCP<const T> GetDerivativePtr(const Key &fieldname,
-                                         const Key &wrt_key,
-                                         const Key &wrt_tag) const {
-    return data_.at(fieldname)->GetDerivative<T>(wrt_key, wrt_tag);
-  }
-
-  template <typename T>
-  Teuchos::RCP<const T> GetDerivativePtr(const Key &fieldname, const Key &tag,
-                                         const Key &wrt_key,
-                                         const Key &wrt_tag) const {
-    return data_.at(fieldname)->GetDerivative<T>(tag, wrt_key, wrt_tag);
-  }
-
-  template <typename T>
-  Teuchos::RCP<T> GetDerivativePtrW(const Key &fieldname, const Key &wrt_key,
-                                    const Key &wrt_tag, const Key &owner) {
-    return data_.at(fieldname)->GetDerivativeW<T>(owner);
-  }
-
-  template <typename T>
-  Teuchos::RCP<T> GetDerivativePtrW(const Key &fieldname, const Key &tag,
+  Teuchos::RCP<T> GetDerivativePtrW(const Key &key, const Key &tag,
                                     const Key &wrt_key, const Key &wrt_tag,
                                     const Key &owner) {
-    return data_.at(fieldname)->GetDerivativeW<T>(tag, wrt_key, wrt_tag, owner);
+    return derivs_.at(Keys::getKeyTag(key,tag))->GetPtrW<T>(Keys::getKeyTag(wrt_key, wrt_tag), owner);
   }
 
+
+  bool HasDerivativeSet(const Key& key, const Key& tag) const {
+    return Keys::hasKey(derivs_, Keys::getKeyTag(key, tag));
+  }
+  RecordSet& GetDerivativeSet(const Key& key, const Key& tag) {
+    return *derivs_.at(Keys::getKeyTag(key,tag));
+  }
+  
   // A few special parameters with special methods
   double time(const Key &tag = "") const { return Get<double>("time", tag); }
   void set_time(const Key &tag, double value) {
@@ -397,15 +391,16 @@ public:
   }
 
   // Require Evaluators.
-  Teuchos::RCP<Evaluator> RequireEvaluator(const Key &, const Key &tag = "");
+  Evaluator& RequireEvaluator(const Key &, const Key &tag = "");
 
   // Ensure a Evaluator exists.
   bool HasEvaluator(const Key &, const Key &tag = "");
 
   // Evaluator accessor.
-  Teuchos::RCP<Evaluator> GetEvaluator(const Key &, const Key &tag = "");
-  Teuchos::RCP<const Evaluator> GetEvaluator(const Key &,
-                                             const Key &tag = "") const;
+  Evaluator& GetEvaluator(const Key &, const Key &tag = "");
+  const Evaluator& GetEvaluator(const Key &,
+          const Key &tag = "") const;
+  Teuchos::RCP<Evaluator> GetEvaluatorPtr(const Key&, const Key& tag = "");
 
   // Evaluator mutator.
   void SetEvaluator(const Key &key, const Teuchos::RCP<Evaluator> &evaluator) {
@@ -448,6 +443,7 @@ private:
   // Containers
   MeshMap meshes_;
   RecordSetMap data_;
+  RecordSetMap derivs_;
   EvaluatorMap evaluators_;
   MeshPartitionMap mesh_partitions_;
   std::set<Key> domain_sets_;

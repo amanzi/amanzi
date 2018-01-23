@@ -65,14 +65,10 @@ public:
   Record &GetRecord(const Key &tag);
 
   void RequireRecord(const Key &tag, const Key &owner);
-  void RequireDerivativeRecord(const Key &tag, const Key &wrt_key,
-                               const Key &wrt_tag, const Key &owner);
 
   //  void SwitchCopies(const Key& tag1, const Key& tag2); // needs owner
   //  information?
   bool HasRecord(const Key &tag) const;
-  bool HasDerivativeRecord(const Key &tag, const Key &wrt_key,
-                           const Key &wrt_tag) const;
   bool DeleteRecord(const Key &tag);
 
   // Iterate over tags
@@ -126,60 +122,6 @@ public:
   }
   template <typename T> void Set(const Key &owner, const T &t) {
     Set<T>("", owner, t);
-  }
-
-  template <typename T>
-  const T &GetDerivative(const Key &wrt_key, const Key &wrt_tag) const {
-    Key deriv = std::string{"d_d"} + wrt_key + ":" + wrt_tag;
-    return derivatives_.at(deriv)->Get<T>();
-  }
-
-  template <typename T>
-  const T &GetDerivative(const Key &tag, const Key &wrt_key,
-                         const Key &wrt_tag) const {
-    Key deriv = std::string{"d"} + tag + "_d" + wrt_key + ":" + wrt_tag;
-    return derivatives_.at(deriv)->Get<T>();
-  }
-
-  template <typename T>
-  T &GetDerivativeW(const Key &wrt_key, const Key &wrt_tag, const Key &owner) {
-    Key deriv = std::string{"d_d"} + wrt_key + ":" + wrt_tag;
-    return derivatives_.at(deriv)->GetW<T>(owner);
-  }
-
-  template <typename T>
-  T &GetDerivativeW(const Key &tag, const Key &wrt_key, const Key &wrt_tag,
-                    const Key &owner) {
-    Key deriv = std::string{"d"} + tag + "_d" + wrt_key + ":" + wrt_tag;
-    return derivatives_.at(deriv)->GetW<T>(owner);
-  }
-
-  template <typename T>
-  Teuchos::RCP<const T> GetDerivativePtr(const Key &wrt_key,
-                                         const Key &wrt_tag) const {
-    Key deriv = std::string{"d_d"} + wrt_key + ":" + wrt_tag;
-    return derivatives_.at(deriv)->GetPtr<T>();
-  }
-
-  template <typename T>
-  Teuchos::RCP<const T> GetDerivativePtr(const Key &tag, const Key &wrt_key,
-                                         const Key &wrt_tag) const {
-    Key deriv = std::string{"d"} + tag + "_d" + wrt_key + ":" + wrt_tag;
-    return derivatives_.at(deriv)->GetPtr<T>();
-  }
-
-  template <typename T>
-  Teuchos::RCP<T> GetDerivativePtrW(const Key &wrt_key, const Key &wrt_tag,
-                                    const Key &owner) {
-    Key deriv = std::string{"d_d"} + wrt_key + ":" + wrt_tag;
-    return derivatives_.at(deriv)->GetPtrW<T>(owner);
-  }
-
-  template <typename T>
-  Teuchos::RCP<T> GetDerivativePtrW(const Key &tag, const Key &wrt_key,
-                                    const Key &wrt_tag, const Key &owner) {
-    Key deriv = std::string{"d"} + tag + "_d" + wrt_key + ":" + wrt_tag;
-    return derivatives_.at(deriv)->GetPtrW<T>(owner);
   }
 
   template <typename T, typename F> F &GetFactory() {

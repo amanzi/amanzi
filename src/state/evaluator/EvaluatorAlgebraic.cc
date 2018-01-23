@@ -30,6 +30,13 @@ template <> void EvaluatorAlgebraic<double>::EnsureCompatibility(State &S) {
 
   // claim ownership, declare type
   S.Require<double>(my_key_, my_tag_, my_key_);
+  bool has_derivs = S.HasDerivativeSet(my_key_, my_tag_);
+  if (has_derivs) {
+    for (const auto& deriv : S.GetDerivativeSet(my_key_, my_tag_)) {
+      auto wrt = Keys::splitKeyTag(deriv.first);
+      S.RequireDerivative<double>(my_key_, my_tag_, wrt.first, wrt.second, my_key_);
+    }
+  }
 
   // check plist for vis or checkpointing control
   bool io_my_key = plist_.get<bool>(std::string("visualize ") + my_key_, true);
@@ -43,9 +50,19 @@ template <> void EvaluatorAlgebraic<double>::EnsureCompatibility(State &S) {
     S.Require<double>(dep.first, dep.second);
   }
 
-  // Recurse into the tree to propagate info to leaves.
+  // require evaluators for dependencies and push down derivative info
   for (auto &dep : dependencies_) {
-    S.RequireEvaluator(dep.first, dep.second)->EnsureCompatibility(S);
+    auto& eval = S.RequireEvaluator(dep.first, dep.second);
+
+    if (has_derivs) {
+      for (const auto& deriv : S.GetDerivativeSet(my_key_, my_tag_)) {
+        auto wrt = Keys::splitKeyTag(deriv.first);
+        if (eval.IsDifferentiableWRT(S, wrt.first, wrt.second)) {
+          S.RequireDerivative<double>(dep.first, dep.second, wrt.first, wrt.second);
+        }
+      }
+    }
+    S.GetEvaluator(dep.first, dep.second).EnsureCompatibility(S);
   }
 }
 
@@ -55,11 +72,6 @@ template <> void EvaluatorAlgebraic<double>::EnsureCompatibility(State &S) {
 template <>
 void EvaluatorAlgebraic<double>::UpdateDerivative_(State &S, const Key &wrt_key,
                                                    const Key &wrt_tag) {
-  if (!S.HasDerivativeData(my_key_, my_tag_, wrt_key, wrt_tag)) {
-    // Create the data structure
-    S.RequireDerivative(my_key_, my_tag_, wrt_key, wrt_tag, my_key_);
-  }
-
   double &dmy =
       S.GetDerivativeW<double>(my_key_, my_tag_, wrt_key, wrt_tag, my_key_);
   dmy = 0.;
@@ -74,7 +86,7 @@ void EvaluatorAlgebraic<double>::UpdateDerivative_(State &S, const Key &wrt_key,
       dmy += tmp;
 
     } else if (S.GetEvaluator(dep.first, dep.second)
-                   ->IsDependency(S, wrt_key, wrt_tag)) {
+                   .IsDependency(S, wrt_key, wrt_tag)) {
       // partial F / partial dep * ddep/dx
       // note this has already been Updated in the public version of this
       // function
@@ -101,8 +113,15 @@ void EvaluatorAlgebraic<CompositeVector,
 
   // claim ownership
   CompositeVectorSpace &my_fac =
-      S.Require<CompositeVector, CompositeVectorSpace>(my_key_, my_tag_,
-                                                       my_key_);
+      S.Require<CompositeVector, CompositeVectorSpace>(my_key_, my_tag_, my_key_);
+  bool derivs = S.HasDerivativeSet(my_key_, my_tag_);
+  if (derivs) {
+    for (const auto& deriv : S.GetDerivativeSet(my_key_, my_tag_)) {
+      auto wrt = Keys::splitKeyTag(deriv.first);
+      S.RequireDerivative<CompositeVector,CompositeVectorSpace>(my_key_, my_tag_,
+              wrt.first, wrt.second, my_key_);
+    }
+  }
 
   // check plist for vis or checkpointing control
   bool io_my_key = plist_.get<bool>(std::string("visualize ") + my_key_, true);
@@ -111,40 +130,80 @@ void EvaluatorAlgebraic<CompositeVector,
       plist_.get<bool>(std::string("checkpoint ") + my_key_, false);
   S.GetRecordW(my_key_, my_tag_, my_key_).set_io_checkpoint(checkpoint_my_key);
 
-  // If my requirements have not yet been set, we'll have to hope they
-  // get set by someone later.  For now just defer.
+  // require evaluators for dependencies
+  for (auto &dep : dependencies_) S.RequireEvaluator(dep.first, dep.second);
+
+  // set requirements on myself, my derivatives, my dependencies, and their derivatives
+  bool has_derivs = S.HasDerivativeSet(my_key_, my_tag_);
   std::string consistency_policy =
       plist_.get<std::string>("consistency policy", "give to child");
   if (consistency_policy == "none") {
-    // no consistency required
-    return;
-  } else if (consistency_policy == "give to child") {
+    // I must have requirements since I won't get them here.
+    // Set requirements on my derivatives.
+    if (has_derivs) {
+      for (const auto& deriv : S.GetDerivativeSet(my_key_, my_tag_)) {
+        auto wrt = Keys::splitKeyTag(deriv.first);
+        S.RequireDerivative<CompositeVector,CompositeVectorSpace>(my_key_, my_tag_,
+                wrt.first, wrt.second, my_key_).Update(my_fac);
+      }
+    }
+
+  } else if (consistency_policy == "give to child" &&
+             my_fac.Mesh().get()) {
+    // set requirements on my derivatives
+    if (has_derivs) {
+      for (const auto& deriv : S.GetDerivativeSet(my_key_, my_tag_)) {
+        auto wrt = Keys::splitKeyTag(deriv.first);
+        S.RequireDerivative<CompositeVector,CompositeVectorSpace>(my_key_, my_tag_,
+                wrt.first, wrt.second, my_key_).Update(my_fac);
+      }
+    }
+
     // give my requirements to my children
     CompositeVectorSpace my_fac_copy(my_fac);
     my_fac_copy.SetOwned(false);
 
-    // Loop over my dependencies, ensuring they meet the requirements.
     for (const auto &dep : dependencies_) {
-      auto &fac = S.Require<CompositeVector, CompositeVectorSpace>(dep.first,
-                                                                   dep.second);
+      auto &fac = S.Require<CompositeVector, CompositeVectorSpace>(dep.first, dep.second);
       fac.Update(my_fac_copy);
+
+      // Set requirements on derivatives too
+      if (has_derivs) {
+        for (const auto& deriv : S.GetDerivativeSet(my_key_, my_tag_)) {
+          auto wrt = Keys::splitKeyTag(deriv.first);
+          if (S.GetEvaluator(dep.first, dep.second).IsDifferentiableWRT(S, wrt.first, wrt.second)) {
+            auto &fac_d = S.RequireDerivative<CompositeVector,CompositeVectorSpace>(dep.first, dep.second, wrt.first, wrt.second);
+            fac_d.Update(my_fac_copy);
+          }
+        }
+      }
+
+      // call ensure compatibility, now that dep requirements are set
+      S.GetEvaluator(dep.first, dep.second).EnsureCompatibility(S);
     }
 
-    // Recurse into the tree to propagate info to leaves.
-    for (const auto &dep : dependencies_) {
-      S.RequireEvaluator(dep.first, dep.second)->EnsureCompatibility(S);
-    }
   } else if (consistency_policy.substr(0, 15) == "take from child") {
-    // first call children to set their info
+    // require derivatives of my children
+    if (has_derivs) {
+      for (const auto& deriv : S.GetDerivativeSet(my_key_, my_tag_)) {
+        auto wrt = Keys::splitKeyTag(deriv.first);
+        for (const auto& dep : dependencies_) {
+          S.RequireDerivative<CompositeVector,CompositeVectorSpace>(dep.first, dep.second,
+                  wrt.first, wrt.second);
+        }
+      }
+    }
+    
+
+    // then call children to set their info, which will also set up deriv info
     for (const auto &dep : dependencies_) {
-      S.RequireEvaluator(dep.first, dep.second)->EnsureCompatibility(S);
+      S.GetEvaluator(dep.first, dep.second).EnsureCompatibility(S);
     }
 
-    // take my requirements as the intersection of my children
+    // take my requirements as the intersection or union of my children
     CompositeVectorSpace my_space;
     for (const auto &dep : dependencies_) {
-      auto fac = S.Require<CompositeVector, CompositeVectorSpace>(dep.first,
-                                                                  dep.second);
+      const auto& fac = S.Require<CompositeVector, CompositeVectorSpace>(dep.first, dep.second);
       if (my_space.size() == 0) {
         my_space = fac;
       } else {
@@ -159,6 +218,16 @@ void EvaluatorAlgebraic<CompositeVector,
       }
     }
     my_fac.Update(my_space);
+
+    // now push that into my derivative as well
+    if (has_derivs) {
+      for (const auto& deriv : S.GetDerivativeSet(my_key_, my_tag_)) {
+        auto wrt = Keys::splitKeyTag(deriv.first);
+        S.RequireDerivative<CompositeVector,CompositeVectorSpace>(my_key_, my_tag_,
+                wrt.first, wrt.second, my_key_).Update(my_fac);
+      }
+    }
+
   }
 }
 
@@ -168,11 +237,6 @@ void EvaluatorAlgebraic<CompositeVector,
 template <>
 void EvaluatorAlgebraic<CompositeVector, CompositeVectorSpace>::
     UpdateDerivative_(State &S, const Key &wrt_key, const Key &wrt_tag) {
-  if (!S.HasDerivativeData(my_key_, my_tag_, wrt_key, wrt_tag)) {
-    // Create the data structure
-    S.RequireDerivative(my_key_, my_tag_, wrt_key, wrt_tag, my_key_);
-  }
-
   CompositeVector &dmy = S.GetDerivativeW<CompositeVector>(
       my_key_, my_tag_, wrt_key, wrt_tag, my_key_);
   dmy.PutScalarMasterAndGhosted(0.);
@@ -186,8 +250,7 @@ void EvaluatorAlgebraic<CompositeVector, CompositeVectorSpace>::
       EvaluatePartialDerivative_(S, wrt_key, wrt_tag, tmp);
       dmy.Update(1., tmp, 1.);
 
-    } else if (S.GetEvaluator(dep.first, dep.second)
-                   ->IsDependency(S, wrt_key, wrt_tag)) {
+    } else if (S.GetEvaluator(dep.first, dep.second).IsDependency(S, wrt_key, wrt_tag)) {
       // partial F / partial dep * ddep/dx
       // note this has already been Updated in the public version of this
       // function

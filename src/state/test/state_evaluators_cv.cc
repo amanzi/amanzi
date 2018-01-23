@@ -80,6 +80,7 @@ SUITE(EVALUATORS_CV) {
         .SetMesh(mesh)
         ->SetGhosted(true)
         ->SetComponent("cell", AmanziMesh::CELL, 1);
+    S.RequireDerivative<CompositeVector,CompositeVectorSpace>("fa", "", "fa", "");
     auto fa_eval = Teuchos::rcp(
         new EvaluatorPrimary<CompositeVector, CompositeVectorSpace>(es_list));
     S.SetEvaluator("fa", fa_eval);
@@ -91,35 +92,35 @@ SUITE(EVALUATORS_CV) {
     S.Initialize();
 
     // provides
-    CHECK(S.GetEvaluator("fa")->ProvidesKey("fa", ""));     // self
-    CHECK(!S.GetEvaluator("fa")->ProvidesKey("other", "")); // self
-    CHECK(!S.GetEvaluator("fa")->ProvidesKey("fa", "old")); // self
+    CHECK(S.GetEvaluator("fa").ProvidesKey("fa", ""));     // self
+    CHECK(!S.GetEvaluator("fa").ProvidesKey("other", "")); // self
+    CHECK(!S.GetEvaluator("fa").ProvidesKey("fa", "old")); // self
 
     // dependencies -- none
-    CHECK(!S.GetEvaluator("fa")->IsDependency(S, "fa", ""));      // not self
-    CHECK(!S.GetEvaluator("fa")->IsDependency(S, "other", ""));   // not other
-    CHECK(!S.GetEvaluator("fa")->IsDependency(S, "fa", "other")); // not other
+    CHECK(!S.GetEvaluator("fa").IsDependency(S, "fa", ""));      // not self
+    CHECK(!S.GetEvaluator("fa").IsDependency(S, "other", ""));   // not other
+    CHECK(!S.GetEvaluator("fa").IsDependency(S, "fa", "other")); // not other
 
     // check first call is always "changed"
-    CHECK(S.GetEvaluator("fa")->Update(S, "my_request"));
-    CHECK(S.GetEvaluator("fa")->UpdateDerivative(S, "my_request", "fa", ""));
+    CHECK(S.GetEvaluator("fa").Update(S, "my_request"));
+    CHECK(S.GetEvaluator("fa").UpdateDerivative(S, "my_request", "fa", ""));
 
     // second call should not be changed
-    CHECK(!S.GetEvaluator("fa")->Update(S, "my_request"));
-    CHECK(!S.GetEvaluator("fa")->UpdateDerivative(S, "my_request", "fa", ""));
+    CHECK(!S.GetEvaluator("fa").Update(S, "my_request"));
+    CHECK(!S.GetEvaluator("fa").UpdateDerivative(S, "my_request", "fa", ""));
 
     // but first call with new request should be
-    CHECK(S.GetEvaluator("fa")->Update(S, "my_request_2"));
-    CHECK(S.GetEvaluator("fa")->UpdateDerivative(S, "my_request_2", "fa", ""));
+    CHECK(S.GetEvaluator("fa").Update(S, "my_request_2"));
+    CHECK(S.GetEvaluator("fa").UpdateDerivative(S, "my_request_2", "fa", ""));
 
     // mark as changed
-    auto eval = S.GetEvaluator("fa", "");
+    auto eval = S.GetEvaluatorPtr("fa", "");
     auto eval_p = Teuchos::rcp_dynamic_cast<
         EvaluatorPrimary<CompositeVector, CompositeVectorSpace>>(eval);
     CHECK(eval_p.get());
     eval_p->SetChanged();
 
-    CHECK(S.GetEvaluator("fa")->Update(S, "my_request"));
-    CHECK(!S.GetEvaluator("fa")->UpdateDerivative(S, "my_request", "fa", ""));
+    CHECK(S.GetEvaluator("fa").Update(S, "my_request"));
+    CHECK(!S.GetEvaluator("fa").UpdateDerivative(S, "my_request", "fa", ""));
   }
 }

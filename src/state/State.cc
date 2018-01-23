@@ -116,7 +116,7 @@ bool State::IsDeformableMesh(const Key &key) const {
 // -----------------------------------------------------------------------------
 // State handles data evaluation.
 // -----------------------------------------------------------------------------
-Teuchos::RCP<Evaluator> State::RequireEvaluator(const Key &key,
+Evaluator& State::RequireEvaluator(const Key &key,
                                                 const Key &tag) {
 
   // does it already exist?
@@ -130,7 +130,7 @@ Teuchos::RCP<Evaluator> State::RequireEvaluator(const Key &key,
         f_it.second.at(tag)->ProvidesKey(key, tag)) {
       auto &evaluator = f_it.second.at(tag);
       SetEvaluator(key, evaluator);
-      return evaluator;
+      return *evaluator;
     }
   }
 
@@ -165,7 +165,7 @@ Teuchos::RCP<Evaluator> State::RequireEvaluator(const Key &key,
     sublist.set("tag", tag);
     auto evaluator = evaluator_factory.createEvaluator(sublist);
     SetEvaluator(key, tag, evaluator);
-    return evaluator;
+    return *evaluator;
   }
 
   // cannot find the evaluator, error
@@ -173,7 +173,6 @@ Teuchos::RCP<Evaluator> State::RequireEvaluator(const Key &key,
   messagestream << "Model for field " << key << " cannot be created in State.";
   Errors::Message message(messagestream.str());
   throw(message);
-  return Teuchos::null;
 }
 
 bool State::HasEvaluator(const Key &key, const Key &tag) {
@@ -184,9 +183,14 @@ bool State::HasEvaluator(const Key &key, const Key &tag) {
   }
 }
 
-Teuchos::RCP<Evaluator> State::GetEvaluator(const Key &key, const Key &tag) {
+Evaluator& State::GetEvaluator(const Key &key, const Key &tag) {
+  return *GetEvaluatorPtr(key,tag);
+}
+
+const Evaluator& State::GetEvaluator(const Key &key,
+        const Key &tag) const {
   try {
-    return evaluators_.at(key).at(tag);
+    return *evaluators_.at(key).at(tag);
   } catch (std::out_of_range) {
     std::stringstream messagestream;
     messagestream << "Evaluator for field \"" << key << "\" at tag \"" << tag
@@ -196,8 +200,7 @@ Teuchos::RCP<Evaluator> State::GetEvaluator(const Key &key, const Key &tag) {
   }
 };
 
-Teuchos::RCP<const Evaluator> State::GetEvaluator(const Key &key,
-                                                  const Key &tag) const {
+Teuchos::RCP<Evaluator> State::GetEvaluatorPtr(const Key &key, const Key &tag) {
   try {
     return evaluators_.at(key).at(tag);
   } catch (std::out_of_range) {
@@ -272,6 +275,9 @@ void State::Setup() {
   // -- Create the data for all fields.
   for (auto &f : data_) {
     f.second->CreateData();
+  }
+  for (auto& deriv : derivs_) {
+    deriv.second->CreateData();
   }
 
   Set("time", "", "time", 0.0);

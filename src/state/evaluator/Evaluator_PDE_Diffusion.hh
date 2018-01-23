@@ -82,6 +82,15 @@ public:
       K_map.SetMesh(rhs_fac.Mesh());
       K_map.AddComponent("cell", AmanziMesh::CELL, 1);
       K_fac.set_map(K_map);
+
+      // check and require jacobian
+      if (!jac_op_key_.empty()) {
+        auto &jac_op_fac = S.Require<Operators::Op, Operators::Op_Factory>(
+            jac_op_key_, tag_, jac_op_key_);
+        jac_op_fac.set_mesh(rhs_fac.Mesh());
+        Operators::Schema schema(diff->schema_jacobian());
+        jac_op_fac.set_schema(schema);
+      }
     }
   }
 
@@ -89,7 +98,7 @@ public:
                                 const Key &wrt_key,
                                 const Key &wrt_tag) override {
     ASSERT(IsDependency(S, wrt_key, wrt_tag));
-
+    ASSERT(!jac_op_key_.empty());
     bool wrt_is_u = wrt_key == u_key_ && wrt_tag == tag_;
 
     Teuchos::OSTab tab = vo_.getOSTab();
@@ -105,26 +114,26 @@ public:
     // -- must update if our our dependencies have changed, as these affect the
     // partial derivatives
     Key my_request = Key{"d"} +
-                     Keys::getRequest(my_keys_[0].first, my_keys_[0].second) +
-                     "_d" + Keys::getRequest(wrt_key, wrt_tag);
+                     Keys::getKeyTag(my_keys_[0].first, my_keys_[0].second) +
+                     "_d" + Keys::getKeyTag(wrt_key, wrt_tag);
     update |= Update(S, my_request);
 
     // -- must update if any of our dependencies' derivatives have changed
     // NOTE: some assumptions about what is and is not differentiable
     // -- abs perm not a function of p
     ASSERT(!S.GetEvaluator(tensor_coef_key_, tag_)
-                ->IsDifferentiableWRT(S, wrt_key, wrt_tag));
+                .IsDifferentiableWRT(S, wrt_key, wrt_tag));
     if (!jac_op_key_.empty() &&
         S.GetEvaluator(scalar_coef_key_, tag_)
-            ->IsDifferentiableWRT(S, wrt_key, wrt_tag)) {
+            .IsDifferentiableWRT(S, wrt_key, wrt_tag)) {
       update |= S.GetEvaluator(scalar_coef_key_, tag_)
-                    ->UpdateDerivative(S, my_request, wrt_key, wrt_tag);
+                    .UpdateDerivative(S, my_request, wrt_key, wrt_tag);
     }
     if (!u_key_.empty() && !wrt_is_u &&
         S.GetEvaluator(u_key_, tag_)
-            ->IsDifferentiableWRT(S, wrt_key, wrt_tag)) {
+            .IsDifferentiableWRT(S, wrt_key, wrt_tag)) {
       update |= S.GetEvaluator(u_key_, tag_)
-                    ->UpdateDerivative(S, my_request, wrt_tag, wrt_tag);
+                    .UpdateDerivative(S, my_request, wrt_tag, wrt_tag);
     }
 
     // Do the update
@@ -177,7 +186,7 @@ protected:
 
     Operators::PDE_DiffusionFactory diff_fac;
     auto pde = diff_fac.Create(plist_, global_op);
-    pde->set_local_operator(A_lop);
+    pde->set_local_matrices(A_lop);
 
     Teuchos::RCP<const Operators::BCs> bcs =
         S.GetPtr<Operators::BCs>(bcs_key_, tag_);
@@ -203,69 +212,52 @@ protected:
 
   virtual void UpdateDerivative_(State &S, const Key &wrt_key,
                                  const Key &wrt_tag) override {
-    // // require data
-    // if (!S.HasDerivativeData(local_op_key_, tag_, wrt_key, wrt_tag)) {
-    //     // Create the data structure
-    //   S.RequireDerivative(local_op_key_, tag_, wrt_key, wrt_tag,
-    //   local_op_key_);
-    // }
+    // need the spaces
+    const CompositeVector& A_rhs = S.Get<CompositeVector>(rhs_key_, tag_);
 
-    // // get pointers to the results of this update
-    // auto A_lop = S.GetDerivativePtrW<Operators::Op>(local_op_key_, tag_,
-    // wrt_key, wrt_tag, local_op_key_); const auto& A_rhs =
-    // S.Get<CompositeVector>(rhs_key_, tag_);
+    // create the global operator
+    Operators::Operator_Factory global_op_fac;
+    global_op_fac.set_mesh(A_rhs.Mesh());
+    global_op_fac.set_cvs(A_rhs.Map(), A_rhs.Map());
 
-    // // create the global operator
-    // Operators::Operator_Factory global_op_fac;
-    // global_op_fac.set_mesh(A_rhs.Mesh());
-    // global_op_fac.set_cvs(A_rhs.Map(), A_rhs.Map());
+    auto global_op_unique = global_op_fac.Create();
+    auto global_op = Teuchos::rcpFromRef(*global_op_unique);
 
-    // auto global_op_unique = global_op_fac.Create();
-    // auto global_op = Teuchos::rcpFromRef(*global_op_unique);
+    Operators::PDE_DiffusionFactory diff_fac;
+    Teuchos::ParameterList tmp(plist_);
+    tmp.set("exclude primary terms", true); // turn off the primary terms, just the Jacobian
+    auto pde = diff_fac.Create(plist_, global_op);
+    if (!jac_op_key_.empty()) {
+      pde->set_jacobian_matrices(S.GetPtrW<Operators::Op>(jac_op_key_, tag_, jac_op_key_));
+    }
 
-    // Operators::PDE_DiffusionFactory diff_fac;
-    // auto pde = diff_fac.Create(plist_, global_op);
-    // pde->set_local_operator(A_lop);
-    // if (jac_op_key_.empty()) {
-    //   auto AJac_lop = S.GetPtrW<Operators::Op>(local_op_key_, tag_, wrt_key,
-    //   wrt_tag, local_op_key_); pde->set_jacobian_operator(Ajac_lop);
-    // }
+    // set the bcs
+    Teuchos::RCP<const Operators::BCs> bcs =
+        S.GetPtr<Operators::BCs>(bcs_key_, tag_);
+    pde->SetBCs(bcs, bcs);
 
-    // // set the bcs
-    // Teuchos::RCP<const Operators::BCs> bcs =
-    //     S.GetPtr<Operators::BCs>(bcs_key_, tag_);
-    // pde->SetBCs(bcs, bcs);
+    // set the tensor coef
+    const auto &K = S.Get<TensorVector>(tensor_coef_key_, tag_);
+    Teuchos::RCP<const std::vector<WhetStone::Tensor>> Kdata =
+        Teuchos::rcpFromRef(K.data);
+    pde->SetTensorCoefficient(Kdata);
 
-    // // set the tensor coef
-    // const auto &K = S.Get<TensorVector>(tensor_coef_key_, tag_);
-    // Teuchos::RCP<const std::vector<WhetStone::Tensor>> Kdata =
-    //     Teuchos::rcpFromRef(K.data);
-    // pde->SetTensorCoefficient(Kdata);
+    // set the scalar coef and derivatives
+    Teuchos::RCP<const CompositeVector> kr =
+        S.GetPtr<CompositeVector>(scalar_coef_key_, tag_);
+    Teuchos::RCP<const CompositeVector> dkr =
+        S.GetDerivativePtr<CompositeVector>(scalar_coef_key_, tag_, wrt_key, wrt_tag);
+    pde->SetScalarCoefficient(kr, dkr);
 
-    // // set the scalar coef and derivatives
-    // Teuchos::RCP<const CompositeVector> kr =
-    //     S.GetPtr<CompositeVector>(scalar_coef_key_, tag_);
-    // Teuchos::RCP<const CompositeVector> dkr = Teuchos::null;
-    // if (!jac_op_key_.empty()
-    //     && S.GetEvaluator(scalar_coef_key_, tag_)->IsDifferentiableWRT(S,
-    //     wrt_key, wrt_tag)) {
-    //   dkr = S.GetDerivativePtr<CompositeVector>(scalar_coef_key_, tag_,
-    //   wrt_key, wrt_tag);
-    // }
-    // pde->SetScalarCoefficient(kr, dkr);
-
-    // // compute local ops
-    // Teuchos::Ptr<const CompositeVector> u;
-    // if (!u_key_.empty())
-    //   u = S.GetPtr<CompositeVector>(u_key_, tag_).ptr();
-    // pde->UpdateMatrices(Teuchos::null, u);
-    // pde->ApplyBCs(true, true);
-    ASSERT(0);
+    // compute local ops
+    Teuchos::Ptr<const CompositeVector> u = S.GetPtr<CompositeVector>(u_key_, tag_).ptr();
+    pde->UpdateMatricesNewtonCorrection(Teuchos::null, u);
+    pde->ApplyBCs(true, true);
   }
 
   virtual bool IsDifferentiableWRT(const State &S, const Key &wrt_key,
                                    const Key &wrt_tag) const override {
-    return IsDependency(S, wrt_key, wrt_tag);
+    return IsDependency(S, wrt_key, wrt_tag) && !jac_op_key_.empty();
   }
 
 protected:

@@ -12,6 +12,33 @@
 
 /*!
 
+This is expected to be the residual equation for a Leaf PK, therefore it lives on a domain.
+
+It is expected to be of the form:
+
+r = rhs_1 + ... rhs_k + rhs_A00 + rhs_A01 + ... rhs_Anm - (A00 x0 + A01 x0 + ... A0n x0 + A11 x1 + ... Anm xn)
+
+Where:
+
+  x0                   | is the primary variable associated with this residual
+  x1 ... xn            | are off-diagonal primary variables.
+  A0i, rhs_A0i         | are diagonal, local operators and their RHS boundary
+                       | conditions/sources.
+  Aji, rhs_Aji         | are not-necessarily diagonal, local operators and their
+                       | RHSs applied to the xj.
+  rhs_1 ... rhs_k      | are arbitrary source terms which CANNOT NOT BE AFFECTED BY
+                       | boundary conditions (i.e, for conservation equations
+                       | discretized using control volume methods, BCs affect only
+                       | faces while sources are on cells.
+
+Note that we can infer some constraints here:
+
+- The domain and range of the A0i must be subsets of the r space.
+  Realistically, r's space is the union of the domain and range spaces of the
+  A0i and the space of the rhs_k.
+
+- 
+  
 
 */
 
@@ -24,45 +51,60 @@ namespace Amanzi {
 
 Evaluator_OperatorApply::Evaluator_OperatorApply(Teuchos::ParameterList &plist)
     : EvaluatorSecondary<CompositeVector, CompositeVectorSpace>(plist) {
-  // can this be cleaned up? --etc
-  // assumes domain-residual_XXX, get the XXX
-  Key var_name = Keys::getVarName(my_key_);
-  Key operator_name;
-  if (var_name.size() >= 10)
-    operator_name = var_name.substr(9, var_name.size());
-  Key domain_name = Keys::getDomain(my_key_);
+  ASSERT(!my_key_.empty());
+  Key domain = Keys::getDomain(my_key_);
 
-  rhs_key_ =
-      Keys::readKey(plist, domain_name, "rhs", Key("rhs_") + operator_name);
-  x_key_ = Keys::readKey(plist, domain_name, "x", Key("x_") + operator_name);
+  // x, x0
+  x0_key_ = Keys::readKey(plist_, domain, "diagonal primary x");
+  Teuchos::Array<Key> empty;
+  x_keys_ = Keys::readKeys(plist_, domain, "off-diagonal primary x", &empty);
 
-  if (plist.isParameter("local operator keys")) {
-    local_op_keys_ =
-        plist.get<Teuchos::Array<std::string>>("local operator keys")
-            .toVector();
-  } else {
-    auto local_op_suffixes =
-        plist.get<Teuchos::Array<std::string>>("local operator suffixes");
-    for (const auto &suffix : local_op_suffixes) {
-      local_op_keys_.emplace_back(Keys::getKey(domain_name, suffix));
-    }
+  // op0, op0 rhs's
+  op0_keys_ = Keys::readKeys(plist_, domain, "diagonal local operators", &empty);
+  Teuchos::Array<Key> defaults(op0_keys_.size());
+  int i = 0;
+  for (const auto& op_key : op0_keys_) {
+    defaults[i] = op_key+"_rhs";
+    ++i;
   }
+  op0_rhs_keys_ = Keys::readKeys(plist_, domain, "diagonal local operator rhss", &defaults);
+
+  // opi, opi rhs's
+  int j = 0;
+  for (const auto& x_key : x_keys_) {
+    // strip the domain from x_key
+    Key x_key_suffix = Keys::getVarName(x_key);
+    op_keys_.emplace_back(Keys::readKeys(plist_, domain, x_key_suffix+" local operators", &empty));
+
+    Teuchos::Array<Key> defaults(op_keys_[j].size());
+    int i = 0;
+    for (const auto& op_key : op_keys_[j]) {
+      defaults[i] = op_key+"_rhs";
+      ++i;
+    }
+    op_rhs_keys_.emplace_back(Keys::readKeys(plist_, domain, x_key_suffix+" local operator rhss", &defaults));
+  }
+
+  // other rhss
+  rhs_keys_ = Keys::readKeys(plist_, domain, "additional rhss", &empty);
 
   // push dependencies
-  dependencies_.emplace_back(std::make_pair(rhs_key_, my_tag_));
-  dependencies_.emplace_back(std::make_pair(x_key_, my_tag_));
-  for (const auto &dep : local_op_keys_) {
-    dependencies_.emplace_back(std::make_pair(dep, my_tag_));
-  }
-
-  // is domain_map same as range_map?
-  is_square_ = plist.get<bool>("square", true);
+  dependencies_.emplace_back(std::make_pair(x0_key_, my_tag_));
+  for (const auto& x_key : x_keys_) dependencies_.emplace_back(std::make_pair(x_key, my_tag_));
+  for (const auto& rhs : rhs_keys_) dependencies_.emplace_back(std::make_pair(rhs, my_tag_));
+  for (const auto& op_key : op0_keys_) dependencies_.emplace_back(std::make_pair(op_key, my_tag_));
+  for (const auto& op_rhs_key : op0_rhs_keys_) dependencies_.emplace_back(std::make_pair(op_rhs_key, my_tag_));
+  for (const auto& op_list : op_keys_)
+    for (const auto& op_key : op_list)
+      dependencies_.emplace_back(std::make_pair(op_key, my_tag_));
+  for (const auto& rhs_list : op_rhs_keys_)
+    for (const auto& rhs_key : rhs_list)
+      dependencies_.emplace_back(std::make_pair(rhs_key, my_tag_));
 }
 
 void Evaluator_OperatorApply::EnsureCompatibility(State &S) {
   // call base class's to get my requirements set
-  EvaluatorSecondary<CompositeVector,
-                     CompositeVectorSpace>::EnsureCompatibility(S);
+  EvaluatorSecondary<CompositeVector,CompositeVectorSpace>::EnsureCompatibility(S);
 
   // set requirements on my dependencies
   //
@@ -72,69 +114,98 @@ void Evaluator_OperatorApply::EnsureCompatibility(State &S) {
   // operator.  This leads us to the following odd setup:
   //
   // 1. PK sets my mesh
-  // 2. Push my mesh into the RHS
-  // 3. EnsureCompatibility() on the operator -- this sucks in the Mesh from
+  // 2. Push my mesh into all local operators' RHSs
+  // 3. EnsureCompatibility() on the operator/rhs -- this sucks in the Mesh from
   //    the RHS, reads the discretization from the PList it gets, and finishes
   //    setting the CVS of the Operator and RHS.
-  // 4. Now we know the schema of the RHS, use it to set the RHS of the
+  // 4. Now we know the space of the RHSs, use it to set the space of the
   //    primary variable and the residual.
-  auto &dep_fac =
-      S.Require<CompositeVector, CompositeVectorSpace>(my_key_, my_tag_);
-  if (dep_fac.Mesh() != Teuchos::null) {
-    // -- set the rhs's mesh
-    {
-      auto &rhs_fac =
-          S.Require<CompositeVector, CompositeVectorSpace>(rhs_key_, my_tag_);
-      rhs_fac.Update(dep_fac);
+  //
+  // Futhermore, derivatives must be considered.
+  //
+  bool has_derivs = S.HasDerivativeSet(my_key_, my_tag_);
+  // require data for derivatives
+  for (const auto& deriv : S.GetDerivativeSet(my_key_, my_tag_)) {
+    auto wrt = Keys::splitKeyTag(deriv.first);
+    ASSERT(wrt.second == my_tag_);
+    ASSERT(wrt.first == x0_key_);     // NEED TO IMPLEMENT OFF-DIAGONALS EVENTUALLY --etc
+    // quasi-linear operators covered by Update() call --etc
+    // jacobian terms are covered by ParameterList jacobian option --etc
+
+    // rhs terms
+    for (const auto& rhs_key : rhs_keys_) {
+      if (S.GetEvaluator(rhs_key, my_tag_).IsDifferentiableWRT(S, wrt.first, wrt.second)) {
+        S.RequireDerivative<CompositeVector,CompositeVectorSpace>(rhs_key, my_tag_, wrt.first, wrt.second);
+      }
+    }
+  }    
+  
+  auto &my_fac = S.Require<CompositeVector,CompositeVectorSpace>(my_key_, my_tag_);
+  if (my_fac.Mesh() != Teuchos::null && my_fac.size() == 0) {
+    CompositeVectorSpace my_fac_mesh_only(my_fac);
+
+    // -- set the rhss' mesh
+    for (const auto& rhs_key : op0_rhs_keys_) {
+      auto &rhs_fac = S.Require<CompositeVector,CompositeVectorSpace>(rhs_key, my_tag_);
+      rhs_fac.Update(my_fac_mesh_only);
     }
 
-    // -- call ensure compatibility of all dependencies, propagating info, and
-    // in
-    //    the case of local ops and rhs, setting their schema
-    for (auto &dep : dependencies_) {
-      S.RequireEvaluator(dep.first, dep.second)->EnsureCompatibility(S);
+    for (const auto& rhs_list : op_rhs_keys_) {
+      for (const auto& rhs_key : rhs_list) {
+        auto &rhs_fac = S.Require<CompositeVector,CompositeVectorSpace>(rhs_key, my_tag_);
+        rhs_fac.Update(my_fac_mesh_only);
+      }
     }
 
-    // -- re-get the rhs face, which now includes schema info
-    // copy intentional
-    auto rhs_fac =
-        S.Require<CompositeVector, CompositeVectorSpace>(rhs_key_, my_tag_);
-    rhs_fac.SetOwned(false);
+    // -- call ensure compatibility of all op dependencies, setting their mesh
+    //    and getting their schema
+    for (const auto& rhs_key : op0_rhs_keys_)
+      S.RequireEvaluator(rhs_key, my_tag_).EnsureCompatibility(S);
+    for (const auto& rhs_list : op_rhs_keys_)
+      for (const auto& rhs_key : rhs_list)
+        S.RequireEvaluator(rhs_key, my_tag_).EnsureCompatibility(S);
 
-    if (is_square_) {
-      // -- x schema is the same map as mine
-      auto &x_fac =
-          S.Require<CompositeVector, CompositeVectorSpace>(x_key_, my_tag_);
-      x_fac.Update(rhs_fac);
-    }
+    // -- determine the space of the residual as the union of spaces of the
+    //    op's rhs
+    for (const auto& rhs_key : op0_rhs_keys_)
+      my_fac.Update(S.Require<CompositeVector,CompositeVectorSpace>(rhs_key, my_tag_));
+    for (const auto& rhs_list : op_rhs_keys_)
+      for (const auto& rhs_key : rhs_list)
+        my_fac.Update(S.Require<CompositeVector,CompositeVectorSpace>(rhs_key, my_tag_));
 
-    // update my schema
-    S.Require<CompositeVector, CompositeVectorSpace>(my_key_, my_tag_, my_key_)
-        .Update(rhs_fac);
+    // -- x must be the same as r
+    S.Require<CompositeVector,CompositeVectorSpace>(x0_key_, my_tag_).Update(my_fac);
+    S.RequireEvaluator(x0_key_, my_tag_).EnsureCompatibility(S);
 
-    // -- Now we can check the domain and range
-    // -- range space of operator is a subset of mine
-    // THIS SHOULD BE UNNECESSARY, as we got the schema from diffusion.  Idiot
-    // check!
-    for (const auto &op : local_op_keys_) {
-      auto &op_fac =
-          S.Require<Operators::Op, Operators::Op_Factory>(op, my_tag_);
-      if (!Operators::cvsFromSchema(op_fac.schema_col(), op_fac.mesh())
-               .SubsetOf(rhs_fac)) {
+    // NOTE: should we ensure that other x's are a superset of the
+    // domain-space of the other ops? Otherwise there is nothing to say about
+    // the other x's.  --etc
+
+    // -- other RHSs must be a subset of r's space
+    for (const auto& rhs_key : rhs_keys_) {
+      S.Require<CompositeVector,CompositeVectorSpace>(rhs_key, my_tag_).Update(my_fac_mesh_only);
+      S.RequireEvaluator(rhs_key, my_tag_).EnsureCompatibility(S);
+      if (!S.Require<CompositeVector,CompositeVectorSpace>(rhs_key, my_tag_).SubsetOf(my_fac)) {
         Errors::Message message;
-        message << "Evaluator_OperatorApply for " << my_key_ << ": Op " << op
-                << " column schema is not a subset of my schema.";
+        message << "Evaluator_OperatorApply for " << my_key_ << ": RHS " << rhs_key
+                << " space is not a subset of my space.";
         throw(message);
       }
+    }
 
-      if (is_square_) {
-        if (!Operators::cvsFromSchema(op_fac.schema_row(), op_fac.mesh())
-                 .SubsetOf(rhs_fac)) {
-          Errors::Message message;
-          message << "Evaluator_OperatorApply for " << my_key_ << ": Op " << op
-                  << " row schema is not a subset of my schema.";
-          throw(message);
-        }
+    if (has_derivs) {
+      for (const auto& deriv : S.GetDerivativeSet(my_key_, my_tag_)) {
+        auto wrt = Keys::splitKeyTag(deriv.first);
+        ASSERT(wrt.second == my_tag_);
+        ASSERT(wrt.first == x0_key_);     // NEED TO IMPLEMENT OFF-DIAGONALS EVENTUALLY --etc
+        auto& deriv_fac = S.RequireDerivative<Operators::Operator,Operators::Operator_Factory>(my_key_,
+                my_tag_, wrt.first, wrt.second, my_key_);
+        deriv_fac.set_mesh(my_fac.Mesh());
+
+        // FIX ME TO BE NON_SQUARE FOR OFF DIAGONALS? --etc
+        deriv_fac.set_cvs(my_fac);
+        auto plist = Teuchos::rcp(new Teuchos::ParameterList());
+        deriv_fac.set_plist(Teuchos::rcp(new Teuchos::ParameterList(plist_)));
       }
     }
   }
@@ -143,37 +214,113 @@ void Evaluator_OperatorApply::EnsureCompatibility(State &S) {
 // These do the actual work
 void Evaluator_OperatorApply::Evaluate_(const State &S,
                                         CompositeVector &result) {
-  const auto &x = S.Get<CompositeVector>(x_key_, my_tag_);
-  const auto &b = S.Get<CompositeVector>(rhs_key_, my_tag_);
-
-  // create the global operator
-  Operators::Operator_Factory global_op_fac;
-  global_op_fac.set_mesh(b.Mesh());
-  global_op_fac.set_cvs(x.Map(), b.Map());
-  auto global_op = global_op_fac.Create();
-
-  // do the apply
+  const auto &x = S.Get<CompositeVector>(x0_key_, my_tag_);
   x.ScatterMasterToGhosted();
   result.PutScalarMasterAndGhosted(0.);
+  
+  int i = 0;
+  for (const auto& op_key : op0_keys_) {
+    // create the global operator
+    Operators::Operator_Factory global_op_fac;
+    global_op_fac.set_mesh(result.Mesh());
+    global_op_fac.set_cvs(x.Map(), result.Map());
+    auto global_op = global_op_fac.Create();
 
-  auto op_itr = dependencies_.begin();
-  for (std::advance(op_itr, 2); op_itr != dependencies_.end(); ++op_itr) {
-    S.Get<Operators::Op>(op_itr->first, op_itr->second)
-        .ApplyMatrixFreeOp(&*global_op, x, result);
+    // do the apply
+    S.Get<Operators::Op>(op_key, my_tag_).ApplyMatrixFreeOp(&*global_op, x, result);
+
+    // Ax - b
+    result.Update(-1.0, S.Get<CompositeVector>(op0_rhs_keys_[i], my_tag_), 1.0);
+    ++i;
   }
 
-  // b - Ax
-  result.Update(1.0, b, -1.0);
+  int j = 0;
+  for (const auto& op_list : op_keys_) {
+    const auto& xj = S.Get<CompositeVector>(x_keys_[j], my_tag_);
+    xj.ScatterMasterToGhosted();
+
+    int i = 0;
+    for (const auto& op_key : op_list) {
+      // create the global operator
+      Operators::Operator_Factory global_op_fac;
+      global_op_fac.set_mesh(xj.Mesh());
+      global_op_fac.set_cvs(xj.Map(), result.Map());
+      auto global_op = global_op_fac.Create();
+
+      // do the apply
+      S.Get<Operators::Op>(op_key, my_tag_).ApplyMatrixFreeOp(&*global_op, xj, result);
+
+      // Ax - b
+      result.Update(-1.0, S.Get<CompositeVector>(op_rhs_keys_[j][i], my_tag_), 1.0);
+      ++i;
+    }
+    ++j;
+  }
+
+  // negate: all are now b-Ax
+  result.Scale(-1.0);
+
+  // add all the additional RHSs
+  for (const auto& rhs_key : rhs_keys_)
+    result.Update(1.0, S.Get<CompositeVector>(rhs_key, my_tag_), 1.0);
 }
 
-// No derivative
-void Evaluator_OperatorApply::EvaluatePartialDerivative_(
-    const State &S, const Key &wrt_key, const Key &wrt_tag,
-    CompositeVector &result) {
-  Errors::Message message;
-  message << "Evaluator_OperatorApply for " << my_key_
-          << " does not implement a derivative.";
-  throw(message);
+
+// creates the operator for applying inverses
+//
+// Things to note:
+//  - Update_() has been called, so we have the local operators.
+//  - UpdateDerivative(dep, wrt) has been called on all dependencies that depend upon wrt.
+//
+void
+Evaluator_OperatorApply::UpdateDerivative_(State &S, const Key &wrt_key, const Key &wrt_tag) {
+  ASSERT(wrt_tag == my_tag_);
+  auto global_op = S.GetDerivativePtrW<Operators::Operator>(my_key_, my_tag_, wrt_key, wrt_tag, my_key_);
+
+  if (global_op->OpSize() == 0) {
+    // push in local ops the first time
+    if (wrt_key == x0_key_) {
+      // diagonal entry
+      // collect all operators and jacobian info
+      for (const auto& op_key : op0_keys_) {
+        // FIX ME AND MAKE THIS CONST CORRECT --etc
+        global_op->OpPushBack(S.GetPtrW<Operators::Op>(op_key, my_tag_, op_key));
+        if (S.GetEvaluator(op_key, my_tag_).IsDifferentiableWRT(S, wrt_key, wrt_tag)) {
+          global_op->OpPushBack(S.GetDerivativePtrW<Operators::Op>(op_key, my_tag_, wrt_key, wrt_tag, op_key));
+        }
+      }
+
+      for (const auto& rhs_key : rhs_keys_) {
+        if (S.GetEvaluator(rhs_key, my_tag_).IsDifferentiableWRT(S, wrt_key, wrt_tag)) {
+          // FIX ME AND MAKE THIS LESS HACKY AND CONST CORRECT --etc
+          // FIX ME -- SIGN ISSUES HERE WITH ACCUMULATION TERMS / RHSs --etc
+          CompositeVector drhs = S.GetDerivativeW<CompositeVector>(rhs_key, my_tag_, wrt_key, wrt_tag, rhs_key);
+          for (const auto& comp : drhs) {
+            if (AmanziMesh::entity_kind(comp) == AmanziMesh::CELL) {
+              auto op_cell = Teuchos::rcp(new Operators::Op_Cell_Cell(rhs_key, drhs.Mesh()));
+              // clobber the diag
+              op_cell->diag = drhs.ViewComponent(comp, false);
+              global_op->OpPushBack(op_cell);
+            } else {
+              ASSERT(0);
+            }
+          }
+        }
+      }
+    } else {
+      // off diagonal
+      throw("OperatorApply not implemented yet for offdiagonals!");
+    }
+
+    // symbolic assemble the first time
+    global_op->SymbolicAssembleMatrix();
+  }
+
+  // assemble
+  global_op->AssembleMatrix();
+  global_op->InitPreconditioner(plist_.sublist("linear operator"));
+  global_op->A()->Print(std::cout);
 }
+
 
 } // namespace Amanzi

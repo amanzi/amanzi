@@ -268,6 +268,8 @@ public:
     // --  A and its evaluator
     es_list.setName("fa");
     S.Require<double>("fa", "", "fa");
+    S.RequireDerivative<double>("fa", "", "fb", "");
+    S.RequireDerivative<double>("fa", "", "fg", "");
     fa_eval = Teuchos::rcp(new AEvaluator(es_list));
     S.SetEvaluator("fa", fa_eval);
 
@@ -286,6 +288,7 @@ public:
     // --  E and its evaluator
     es_list.setName("fe");
     S.Require<double>("fe", "", "fe");
+    S.RequireDerivative<double>("fe", "", "fg", "");
     fe_eval = Teuchos::rcp(new EEvaluator(es_list));
     S.SetEvaluator("fe", fe_eval);
 

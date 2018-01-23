@@ -90,7 +90,7 @@ bool EvaluatorSecondary<Data_t, DataFactory_t>::Update(State &S,
   bool update = false;
   for (auto &dep : dependencies_) {
     update |= S.GetEvaluator(dep.first, dep.second)
-                  ->Update(S, Keys::getRequest(my_key_, my_tag_));
+                  .Update(S, Keys::getKeyTag(my_key_, my_tag_));
   }
 
   if (update) {
@@ -145,16 +145,16 @@ bool EvaluatorSecondary<Data_t, DataFactory_t>::UpdateDerivative(
 
   // -- must update if our our dependencies have changed, as these affect the
   // partial derivatives
-  Key my_request = Key{"d"} + Keys::getRequest(my_key_, my_tag_) + "_d" +
-                   Keys::getRequest(wrt_key, wrt_tag);
+  Key my_request = Key{"d"} + Keys::getKeyTag(my_key_, my_tag_) + "_d" +
+                   Keys::getKeyTag(wrt_key, wrt_tag);
   update |= Update(S, my_request);
 
   // -- must update if any of our dependencies' derivatives have changed
   for (auto &dep : dependencies_) {
     if (S.GetEvaluator(dep.first, dep.second)
-            ->IsDependency(S, wrt_key, wrt_tag)) {
+            .IsDependency(S, wrt_key, wrt_tag)) {
       update |= S.GetEvaluator(dep.first, dep.second)
-                    ->UpdateDerivative(S, my_request, wrt_key, wrt_tag);
+                    .UpdateDerivative(S, my_request, wrt_key, wrt_tag);
     }
   }
 
@@ -205,8 +205,8 @@ void EvaluatorSecondary<Data_t, DataFactory_t>::Update_(State &S) {
 template <typename Data_t, typename DataFactory_t>
 void EvaluatorSecondary<Data_t, DataFactory_t>::UpdateDerivative_(
     State &S, const Key &wrt_key, const Key &wrt_tag) {
-  Key value = Keys::getRequest(my_key_, my_tag_);
-  Key wrt = Keys::getRequest(wrt_key, wrt_tag);
+  Key value = Keys::getKeyTag(my_key_, my_tag_);
+  Key wrt = Keys::getKeyTag(wrt_key, wrt_tag);
   Errors::Message message;
   message << "Derivative requested for d" << value << "_d" << wrt
           << ", but derivatives are not implemented for this type.  Likely a "
@@ -220,8 +220,8 @@ void EvaluatorSecondary<Data_t, DataFactory_t>::UpdateDerivative_(
 template <typename Data_t, typename DataFactory_t>
 void EvaluatorSecondary<Data_t, DataFactory_t>::CheckDerivative_(
     State &S, const Key &wrt_key, const Key &wrt_tag) {
-  Key value = Keys::getRequest(my_key_, my_tag_);
-  Key wrt = Keys::getRequest(wrt_key, wrt_tag);
+  Key value = Keys::getKeyTag(my_key_, my_tag_);
+  Key wrt = Keys::getKeyTag(wrt_key, wrt_tag);
   Errors::Message message;
   message << "Derivative check requested for d" << value << "_d" << wrt
           << ", but FD is not implemented for this type.  Likely a missed "
@@ -240,7 +240,7 @@ bool EvaluatorSecondary<Data_t, DataFactory_t>::IsDependency(
     return true;
   } else {
     for (auto &dep : dependencies_) {
-      if (S.GetEvaluator(dep.first, dep.second)->IsDependency(S, key, tag)) {
+      if (S.GetEvaluator(dep.first, dep.second).IsDependency(S, key, tag)) {
         return true;
       }
     }
@@ -258,7 +258,7 @@ bool EvaluatorSecondary<Data_t, DataFactory_t>::ProvidesKey(
 }
 
 // ---------------------------------------------------------------------------
-// Tracks through the dag ensuring ensuring requirements are met.
+// Tracks through the dag ensuring requirements are met.
 // ---------------------------------------------------------------------------
 template <typename Data_t, typename DataFactory_t>
 void EvaluatorSecondary<Data_t, DataFactory_t>::EnsureCompatibility(State &S) {

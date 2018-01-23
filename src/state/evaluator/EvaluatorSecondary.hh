@@ -74,9 +74,6 @@ public:
 protected:
   // These do the actual work
   virtual void Evaluate_(const State &S, Data_t &result) = 0;
-  virtual void EvaluatePartialDerivative_(const State &S, const Key &wrt_key,
-                                          const Key &wrt_tag,
-                                          Data_t &result) = 0;
 
   // calls Evaluate with the correct data
   virtual void Update_(State &S);

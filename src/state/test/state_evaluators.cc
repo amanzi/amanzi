@@ -92,6 +92,7 @@ SUITE(EVALUATORS) {
     es_list.setName("fa");
 
     S.Require<double>("fa", "", "fa");
+    S.RequireDerivative<double>("fa", "", "fa", "");
 
     // Create the evaluator.  Note: USER CODE SHOULD NOT DO IT THIS WAY!
     auto fa_eval = Teuchos::rcp(new EvaluatorPrimary<double>(es_list));
@@ -104,46 +105,46 @@ SUITE(EVALUATORS) {
     S.Initialize();
 
     // provides
-    CHECK(S.GetEvaluator("fa")->ProvidesKey("fa", ""));     // self
-    CHECK(!S.GetEvaluator("fa")->ProvidesKey("fa", "old")); // other tag
-    CHECK(!S.GetEvaluator("fa")->ProvidesKey("other", "")); // other key
+    CHECK(S.GetEvaluator("fa").ProvidesKey("fa", ""));     // self
+    CHECK(!S.GetEvaluator("fa").ProvidesKey("fa", "old")); // other tag
+    CHECK(!S.GetEvaluator("fa").ProvidesKey("other", "")); // other key
 
     // dependencies -- none
-    CHECK(!S.GetEvaluator("fa")->IsDependency(S, "fa", ""));    // not self
-    CHECK(!S.GetEvaluator("fa")->IsDependency(S, "fa", "old")); // not self
-    CHECK(!S.GetEvaluator("fa")->IsDependency(S, "other", "")); // not other
+    CHECK(!S.GetEvaluator("fa").IsDependency(S, "fa", ""));    // not self
+    CHECK(!S.GetEvaluator("fa").IsDependency(S, "fa", "old")); // not self
+    CHECK(!S.GetEvaluator("fa").IsDependency(S, "other", "")); // not other
 
     // check first call is always "changed"
-    CHECK(S.GetEvaluator("fa")->Update(S, "my_request"));
-    CHECK(S.GetEvaluator("fa")->UpdateDerivative(S, "my_request", "fa", ""));
+    CHECK(S.GetEvaluator("fa").Update(S, "my_request"));
+    CHECK(S.GetEvaluator("fa").UpdateDerivative(S, "my_request", "fa", ""));
 
     // check the value and derivative
     CHECK_CLOSE(1.0, S.Get<double>("fa", ""), 1.e-10);
     CHECK_CLOSE(1.0, S.GetDerivative<double>("fa", "", "fa", ""), 1.e-10);
 
     // second call should not be changed
-    CHECK(!S.GetEvaluator("fa")->Update(S, "my_request"));
-    CHECK(!S.GetEvaluator("fa")->UpdateDerivative(S, "my_request", "fa", ""));
+    CHECK(!S.GetEvaluator("fa").Update(S, "my_request"));
+    CHECK(!S.GetEvaluator("fa").UpdateDerivative(S, "my_request", "fa", ""));
 
     // but first call with new request should be
-    CHECK(S.GetEvaluator("fa")->Update(S, "my_request_2"));
-    CHECK(S.GetEvaluator("fa")->UpdateDerivative(S, "my_request_2", "fa", ""));
+    CHECK(S.GetEvaluator("fa").Update(S, "my_request_2"));
+    CHECK(S.GetEvaluator("fa").UpdateDerivative(S, "my_request_2", "fa", ""));
 
     // check the value and derivative are still the same
     CHECK_CLOSE(1.0, S.Get<double>("fa", ""), 1.e-10);
     CHECK_CLOSE(1.0, S.GetDerivative<double>("fa", "", "fa", ""), 1.e-10);
 
     // mark as changed
-    auto eval = S.GetEvaluator("fa");
+    auto eval = S.GetEvaluatorPtr("fa");
     auto eval_p = Teuchos::rcp_dynamic_cast<EvaluatorPrimary<double>>(eval);
     CHECK(eval_p.get());
     eval_p->SetChanged();
 
     // now the value is different, and so it has changed
-    CHECK(S.GetEvaluator("fa")->Update(S, "my_request"));
+    CHECK(S.GetEvaluator("fa").Update(S, "my_request"));
 
     // but the derivative is not different and has not changed
-    CHECK(!S.GetEvaluator("fa")->UpdateDerivative(S, "my_request", "fa", ""));
+    CHECK(!S.GetEvaluator("fa").UpdateDerivative(S, "my_request", "fa", ""));
   }
 
   TEST(SECONDARY) {
@@ -165,6 +166,7 @@ SUITE(EVALUATORS) {
         .set<std::string>("verbosity level", "extreme");
     ea_list.setName("fa");
     S.Require<double>("fa", "", "fa");
+    S.RequireDerivative<double>("fa", "", "fb", "");
     auto fa_eval = Teuchos::rcp(new AEvaluator(ea_list));
     S.SetEvaluator("fa", fa_eval);
 
@@ -175,31 +177,31 @@ SUITE(EVALUATORS) {
     S.Initialize();
 
     // provides
-    CHECK(S.GetEvaluator("fa")->ProvidesKey("fa", ""));     // self
-    CHECK(!S.GetEvaluator("fa")->ProvidesKey("fa", "old")); // other tag
-    CHECK(!S.GetEvaluator("fa")->ProvidesKey("fb", ""));    // other key
+    CHECK(S.GetEvaluator("fa").ProvidesKey("fa", ""));     // self
+    CHECK(!S.GetEvaluator("fa").ProvidesKey("fa", "old")); // other tag
+    CHECK(!S.GetEvaluator("fa").ProvidesKey("fb", ""));    // other key
 
     // dependencies -- fb
-    CHECK(!S.GetEvaluator("fa")->IsDependency(S, "fa", ""));    // not self
-    CHECK(!S.GetEvaluator("fa")->IsDependency(S, "fa", "old")); // not self
-    CHECK(!S.GetEvaluator("fa")->IsDependency(S, "other", "")); // not other
-    CHECK(S.GetEvaluator("fa")->IsDependency(S, "fb", ""));     // but fb is!
+    CHECK(!S.GetEvaluator("fa").IsDependency(S, "fa", ""));    // not self
+    CHECK(!S.GetEvaluator("fa").IsDependency(S, "fa", "old")); // not self
+    CHECK(!S.GetEvaluator("fa").IsDependency(S, "other", "")); // not other
+    CHECK(S.GetEvaluator("fa").IsDependency(S, "fb", ""));     // but fb is!
 
     // check first call is always "changed"
-    CHECK(S.GetEvaluator("fa")->Update(S, "my_request"));
-    CHECK(S.GetEvaluator("fa")->UpdateDerivative(S, "my_request", "fb", ""));
+    CHECK(S.GetEvaluator("fa").Update(S, "my_request"));
+    CHECK(S.GetEvaluator("fa").UpdateDerivative(S, "my_request", "fb", ""));
 
     // check the value and derivative
     CHECK_CLOSE(6.0, S.Get<double>("fa", ""), 1.e-10);
     CHECK_CLOSE(2.0, S.GetDerivative<double>("fa", "", "fb", ""), 1.e-10);
 
     // second call should not be changed
-    CHECK(!S.GetEvaluator("fa")->Update(S, "my_request"));
-    CHECK(!S.GetEvaluator("fa")->UpdateDerivative(S, "my_request", "fb", ""));
+    CHECK(!S.GetEvaluator("fa").Update(S, "my_request"));
+    CHECK(!S.GetEvaluator("fa").UpdateDerivative(S, "my_request", "fb", ""));
 
     // but first call with new request should be
-    CHECK(S.GetEvaluator("fa")->Update(S, "my_request_2"));
-    CHECK(S.GetEvaluator("fa")->UpdateDerivative(S, "my_request_2", "fb", ""));
+    CHECK(S.GetEvaluator("fa").Update(S, "my_request_2"));
+    CHECK(S.GetEvaluator("fa").UpdateDerivative(S, "my_request_2", "fb", ""));
 
     // check the value and derivative are still the same
     CHECK_CLOSE(6.0, S.Get<double>("fa", ""), 1.e-10);
@@ -207,14 +209,14 @@ SUITE(EVALUATORS) {
 
     // change the primary and mark as changed
     S.GetW<double>("fb", "", "fb") = 14.0;
-    auto eval = S.GetEvaluator("fb");
+    auto eval = S.GetEvaluatorPtr("fb");
     auto eval_p = Teuchos::rcp_dynamic_cast<EvaluatorPrimary<double>>(eval);
     CHECK(eval_p.get());
     eval_p->SetChanged();
 
     // now the value is different, and so it has changed
-    CHECK(S.GetEvaluator("fa")->Update(S, "my_request"));
-    CHECK(S.GetEvaluator("fa")->UpdateDerivative(S, "my_request", "fb", ""));
+    CHECK(S.GetEvaluator("fa").Update(S, "my_request"));
+    CHECK(S.GetEvaluator("fa").UpdateDerivative(S, "my_request", "fb", ""));
 
     // check the values
     CHECK_CLOSE(28.0, S.Get<double>("fa", ""), 1.e-10);
@@ -242,32 +244,32 @@ SUITE(EVALUATORS) {
     S.Initialize();
 
     // provides
-    CHECK(S.GetEvaluator("fa")->ProvidesKey("fa", ""));     // self
-    CHECK(!S.GetEvaluator("fa")->ProvidesKey("fa", "old")); // other tag
-    CHECK(!S.GetEvaluator("fa")->ProvidesKey("other", "")); // other key
+    CHECK(S.GetEvaluator("fa").ProvidesKey("fa", ""));     // self
+    CHECK(!S.GetEvaluator("fa").ProvidesKey("fa", "old")); // other tag
+    CHECK(!S.GetEvaluator("fa").ProvidesKey("other", "")); // other key
 
     // dependencies -- none
-    CHECK(!S.GetEvaluator("fa")->IsDependency(S, "fa", ""));    // not self
-    CHECK(!S.GetEvaluator("fa")->IsDependency(S, "fa", "old")); // not self
-    CHECK(!S.GetEvaluator("fa")->IsDependency(S, "other", "")); // not other
+    CHECK(!S.GetEvaluator("fa").IsDependency(S, "fa", ""));    // not self
+    CHECK(!S.GetEvaluator("fa").IsDependency(S, "fa", "old")); // not self
+    CHECK(!S.GetEvaluator("fa").IsDependency(S, "other", "")); // not other
 
     // check first call is always "changed"
-    CHECK(S.GetEvaluator("fa")->Update(S, "my_request"));
+    CHECK(S.GetEvaluator("fa").Update(S, "my_request"));
 
     // no derivatives
-    CHECK(!S.GetEvaluator("fa")->UpdateDerivative(S, "my_request", "fa", ""));
+    CHECK(!S.GetEvaluator("fa").UpdateDerivative(S, "my_request", "fa", ""));
 
     // check the value and derivative
     CHECK_CLOSE(3.0, S.Get<double>("fa", ""), 1.e-10);
     CHECK_THROW(S.GetDerivative<double>("fa", "", "fa", ""), std::out_of_range);
 
     // second call should not be changed
-    CHECK(!S.GetEvaluator("fa")->Update(S, "my_request"));
-    CHECK(!S.GetEvaluator("fa")->UpdateDerivative(S, "my_request", "fa", ""));
+    CHECK(!S.GetEvaluator("fa").Update(S, "my_request"));
+    CHECK(!S.GetEvaluator("fa").UpdateDerivative(S, "my_request", "fa", ""));
 
     // but first call with new request should be
-    CHECK(S.GetEvaluator("fa")->Update(S, "my_request_2"));
-    CHECK(!S.GetEvaluator("fa")->UpdateDerivative(S, "my_request_2", "fa", ""));
+    CHECK(S.GetEvaluator("fa").Update(S, "my_request_2"));
+    CHECK(!S.GetEvaluator("fa").UpdateDerivative(S, "my_request_2", "fa", ""));
 
     // check the value and derivative are still the same
     CHECK_CLOSE(3.0, S.Get<double>("fa", ""), 1.e-10);
@@ -297,32 +299,32 @@ SUITE(EVALUATORS) {
     S.Initialize();
 
     // provides
-    CHECK(S.GetEvaluator("fa")->ProvidesKey("fa", ""));     // self
-    CHECK(!S.GetEvaluator("fa")->ProvidesKey("fa", "old")); // other tag
-    CHECK(!S.GetEvaluator("fa")->ProvidesKey("other", "")); // other key
+    CHECK(S.GetEvaluator("fa").ProvidesKey("fa", ""));     // self
+    CHECK(!S.GetEvaluator("fa").ProvidesKey("fa", "old")); // other tag
+    CHECK(!S.GetEvaluator("fa").ProvidesKey("other", "")); // other key
 
     // dependencies -- none
-    CHECK(!S.GetEvaluator("fa")->IsDependency(S, "fa", ""));    // not self
-    CHECK(!S.GetEvaluator("fa")->IsDependency(S, "fa", "old")); // not self
-    CHECK(!S.GetEvaluator("fa")->IsDependency(S, "other", "")); // not other
+    CHECK(!S.GetEvaluator("fa").IsDependency(S, "fa", ""));    // not self
+    CHECK(!S.GetEvaluator("fa").IsDependency(S, "fa", "old")); // not self
+    CHECK(!S.GetEvaluator("fa").IsDependency(S, "other", "")); // not other
 
     // check first call is always "changed"
-    CHECK(S.GetEvaluator("fa")->Update(S, "my_request"));
+    CHECK(S.GetEvaluator("fa").Update(S, "my_request"));
 
     // no derivatives
-    CHECK(!S.GetEvaluator("fa")->UpdateDerivative(S, "my_request", "fa", ""));
+    CHECK(!S.GetEvaluator("fa").UpdateDerivative(S, "my_request", "fa", ""));
 
     // check the value and derivative
     CHECK_CLOSE(1.1, S.Get<double>("fa", ""), 1.e-10);
     CHECK_THROW(S.GetDerivative<double>("fa", "", "fa", ""), std::out_of_range);
 
     // second call should not be changed
-    CHECK(!S.GetEvaluator("fa")->Update(S, "my_request"));
-    CHECK(!S.GetEvaluator("fa")->UpdateDerivative(S, "my_request", "fa", ""));
+    CHECK(!S.GetEvaluator("fa").Update(S, "my_request"));
+    CHECK(!S.GetEvaluator("fa").UpdateDerivative(S, "my_request", "fa", ""));
 
     // but first call with new request should be
-    CHECK(S.GetEvaluator("fa")->Update(S, "my_request_2"));
-    CHECK(!S.GetEvaluator("fa")->UpdateDerivative(S, "my_request_2", "fa", ""));
+    CHECK(S.GetEvaluator("fa").Update(S, "my_request_2"));
+    CHECK(!S.GetEvaluator("fa").UpdateDerivative(S, "my_request_2", "fa", ""));
 
     // check the value and derivative are still the same
     CHECK_CLOSE(1.1, S.Get<double>("fa", ""), 1.e-10);
@@ -331,8 +333,8 @@ SUITE(EVALUATORS) {
     S.advance_time(2.0);
 
     // call after new time
-    CHECK(S.GetEvaluator("fa")->Update(S, "my_request"));
+    CHECK(S.GetEvaluator("fa").Update(S, "my_request"));
     CHECK_CLOSE(3.1, S.Get<double>("fa", ""), 1.e-10);
-    CHECK(!S.GetEvaluator("fa")->Update(S, "my_request"));
+    CHECK(!S.GetEvaluator("fa").Update(S, "my_request"));
   }
 }

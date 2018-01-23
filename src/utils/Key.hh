@@ -49,7 +49,7 @@ cleanPListName(std::string name)
   return name;
 }
 
-// Keys are often a combination of a domain and a variable name.
+// A fully resolved key is of the form  "DOMAIN-VARNAME:VARTAG"
 
 // Generate a DOMAIN-VARNAME key.
 inline Key
@@ -102,23 +102,34 @@ matchesDomainSet(const Key& domain_set, const Key& name) {
   return splitDomainSet(name, result) ? std::get<0>(result) == domain_set : false;
 }
     
-// Derivatives are of the form dKey_dKey.
+
+// Tag'd variables are of the form VARNAME:TAG
 inline Key
-getDerivKey(Key var, Key wrt) {
-  return std::string("d")+var+"_d"+wrt;
+getKeyTag(const Key& var, const Key& tag) {
+  return tag.empty() ? var : var+":"+tag;
 }
+
+// Split a DOMAIN-VARNAME key.
+inline KeyPair
+splitKeyTag(const Key& name)
+{
+  std::size_t pos = name.find(':');
+  if (pos == std::string::npos) 
+    return std::make_pair(name, Key(""));
+  else
+    return std::make_pair(name.substr(0,pos), name.substr(pos+1,name.size()));
+}
+
+
 // Convenience function for requesting the name of a Key from an input spec.
 Key
 readKey(Teuchos::ParameterList& list, const Key& domain, const Key& basename,
         const Key& default_name="");
 
-
-// Requests are of the form Key:Tag
-inline Key
-getRequest(const Key& key, const Key& tag)
-{
-  return key+":"+tag;
-}
+// Convenience function for requesting a list of names of Keys from an input spec.
+Teuchos::Array<Key>
+readKeys(Teuchos::ParameterList& list, const Key& domain, const Key& basename,
+         Teuchos::Array<Key> const * const default_names=nullptr);
 
 
 // Convenience function to see if a map (or map-like) object has a key.

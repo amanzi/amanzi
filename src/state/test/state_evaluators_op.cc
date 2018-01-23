@@ -164,11 +164,6 @@ protected:
                     .ViewComponent("cell", false);
   }
 
-  virtual void EvaluatePartialDerivative_(const State &s, const Key &wrt_key,
-                                          const Key &wrt_tag,
-                                          Operators::Op &op) override {
-    ASSERT(0);
-  }
 };
 
 class Evaluator_PDE_DiffusionFV : public EvaluatorSecondaries {
@@ -187,11 +182,9 @@ public:
     tensor_coef_key_ = plist.get<std::string>("tensor coefficient key");
     scalar_coef_key_ = plist.get<std::string>("scalar coefficient key");
     bcs_key_ = plist.get<std::string>("boundary conditions key");
-    source_key_ = plist.get<std::string>("source key");
     dependencies_.emplace_back(std::make_pair(tensor_coef_key_, tag_));
     dependencies_.emplace_back(std::make_pair(scalar_coef_key_, tag_));
     dependencies_.emplace_back(std::make_pair(bcs_key_, tag_));
-    dependencies_.emplace_back(std::make_pair(source_key_, tag_));
   }
 
   virtual Teuchos::RCP<Evaluator> Clone() const override {
@@ -211,14 +204,11 @@ public:
     S.Require<Operators::BCs, Operators::BCs_Factory>(bcs_key_, tag_);
     S.Require<CompositeVector, CompositeVectorSpace>(scalar_coef_key_, tag_);
     S.Require<TensorVector, TensorVector_Factory>(tensor_coef_key_, tag_);
-    S.Require<CompositeVector, CompositeVectorSpace>(source_key_, tag_,
-                                                     source_key_);
     // could do lots of stuff here -- eg. check meshes, check spaces, etc
   }
 
   virtual void Update_(State &S) override {
     auto A_rhs = S.GetPtrW<CompositeVector>(rhs_key_, tag_, rhs_key_);
-    *A_rhs = S.Get<CompositeVector>(source_key_, tag_);
     auto A_lop = S.GetPtrW<Operators::Op>(local_op_key_, tag_, local_op_key_);
 
     // create the global operator
@@ -235,7 +225,7 @@ public:
 
     Teuchos::ParameterList plist;
     Operators::PDE_DiffusionFV pde(plist, global_op);
-    pde.set_local_operator(A_lop);
+    pde.set_local_matrices(A_lop);
 
     Teuchos::RCP<const Operators::BCs> bcs =
         S.GetPtr<Operators::BCs>(bcs_key_, tag_);
@@ -264,7 +254,7 @@ public:
 protected:
   Key tag_;
   Key rhs_key_, local_op_key_;
-  Key tensor_coef_key_, scalar_coef_key_, source_key_;
+  Key tensor_coef_key_, scalar_coef_key_;
   Key bcs_key_;
 };
 
@@ -280,20 +270,19 @@ SUITE(EVALUATOR_ON_OP) {
     State S;
     S.RegisterDomainMesh(mesh);
 
-    Teuchos::ParameterList es_list;
-    es_list.sublist("verbose object")
-        .set<std::string>("verbosity level", "extreme");
-    es_list.setName("my_op");
-
     // require some op data
-    auto &f =
-        S.Require<Operators::Op, Operators::Op_Factory>("my_op", "", "my_op");
+    auto &f = S.Require<Operators::Op, Operators::Op_Factory>("my_op", "", "my_op");
     f.set_mesh(mesh);
     f.set_name("cell");
     f.set_schema(Operators::Schema{Operators::OPERATOR_SCHEMA_BASE_CELL |
                                    Operators::OPERATOR_SCHEMA_DOFS_CELL});
 
     // make a primary evaluator for it
+    Teuchos::ParameterList es_list;
+    es_list.sublist("verbose object")
+        .set<std::string>("verbosity level", "extreme");
+    es_list.setName("my_op");
+
     auto op_eval = Teuchos::rcp(
         new EvaluatorPrimary<Operators::Op, Operators::Op_Factory>(es_list));
     S.SetEvaluator("my_op", op_eval);
@@ -314,11 +303,6 @@ SUITE(EVALUATOR_ON_OP) {
 
     State S;
     S.RegisterDomainMesh(mesh);
-
-    Teuchos::ParameterList es_list;
-    es_list.sublist("verbose object")
-        .set<std::string>("verbosity level", "extreme");
-    es_list.setName("my_op");
 
     // require vector and primary evaluator for x
     S.Require<CompositeVector, CompositeVectorSpace>("x", "")
@@ -358,7 +342,7 @@ SUITE(EVALUATOR_ON_OP) {
     S.SetEvaluator("Diag", D_eval);
 
     // require the local operator and evaluator
-    auto &fac = S.Require<Operators::Op, Operators::Op_Factory>("Alocal", "");
+    auto &fac = S.Require<Operators::Op, Operators::Op_Factory>("A_local", "");
     fac.set_mesh(mesh);
     fac.set_schema(Operators::Schema{Operators::OPERATOR_SCHEMA_BASE_CELL |
                                      Operators::OPERATOR_SCHEMA_DOFS_CELL});
@@ -366,11 +350,11 @@ SUITE(EVALUATOR_ON_OP) {
     Teuchos::ParameterList Ae_list;
     Ae_list.sublist("verbose object")
         .set<std::string>("verbosity level", "extreme");
-    Ae_list.setName("Alocal");
+    Ae_list.setName("A_local");
     Ae_list.set("dependencies", Teuchos::Array<std::string>(1, "Diag"));
     Ae_list.set("dependency tags are my tag", true);
     auto A_eval = Teuchos::rcp(new Evaluator_PDE_Diagonal(Ae_list));
-    S.SetEvaluator("Alocal", A_eval);
+    S.SetEvaluator("A_local", A_eval);
 
     // require vector and secondary evaluator for r = Ax - b
     S.Require<CompositeVector, CompositeVectorSpace>("residual", "")
@@ -380,10 +364,9 @@ SUITE(EVALUATOR_ON_OP) {
     Teuchos::ParameterList re_list;
     re_list.sublist("verbose object")
         .set<std::string>("verbosity level", "extreme");
-    re_list.set("rhs key", "b");
-    re_list.set("x key", "x");
-    re_list.set("local operator keys",
-                Teuchos::Array<std::string>(1, "Alocal"));
+    re_list.set("diagonal local operators keys", Teuchos::Array<std::string>(1,"A_local"));
+    re_list.set("diagonal local operator rhss keys", Teuchos::Array<std::string>(1,"b"));
+    re_list.set("diagonal primary x key", "x");
     re_list.setName("residual");
     auto r_eval = Teuchos::rcp(new Evaluator_OperatorApply(re_list));
     S.SetEvaluator("residual", r_eval);
@@ -396,7 +379,7 @@ SUITE(EVALUATOR_ON_OP) {
     S.Initialize();
 
     // Update residual
-    CHECK(S.GetEvaluator("residual")->Update(S, "pk"));
+    CHECK(S.GetEvaluator("residual").Update(S, "pk"));
 
     // b - Ax
     CHECK_CLOSE(-33.0,
@@ -413,11 +396,6 @@ SUITE(EVALUATOR_ON_OP) {
 
     State S;
     S.RegisterDomainMesh(mesh);
-
-    Teuchos::ParameterList es_list;
-    es_list.sublist("verbose object")
-        .set<std::string>("verbosity level", "extreme");
-    es_list.setName("my_op");
 
     // require vector and primary evaluator for x
     S.Require<CompositeVector, CompositeVectorSpace>("x", "")
@@ -500,7 +478,6 @@ SUITE(EVALUATOR_ON_OP) {
     Ae_list.set("tensor coefficient key", "K");
     Ae_list.set("scalar coefficient key", "k_relative");
     Ae_list.set("boundary conditions key", "bcs");
-    Ae_list.set("source key", "b");
 
     auto A_eval = Teuchos::rcp(new Evaluator_PDE_DiffusionFV(Ae_list));
     S.SetEvaluator("A_local", A_eval);
@@ -514,10 +491,11 @@ SUITE(EVALUATOR_ON_OP) {
     Teuchos::ParameterList re_list;
     re_list.sublist("verbose object")
         .set<std::string>("verbosity level", "extreme");
-    re_list.set("rhs key", "A_rhs");
-    re_list.set("x key", "x");
-    re_list.set("local operator keys",
-                Teuchos::Array<std::string>(1, "A_local"));
+    //    re_list.set("additional rhss keys", Teuchos::Array<std::string>(1,"b"));
+    re_list.set("diagonal local operators keys", Teuchos::Array<std::string>(1,"A_local"));
+    re_list.set("diagonal local operator rhss keys", Teuchos::Array<std::string>(1,"A_rhs"));
+    re_list.set("additional rhss keys", Teuchos::Array<std::string>(1,"b"));
+    re_list.set("diagonal primary x key", "x");
     re_list.setName("residual");
     auto r_eval = Teuchos::rcp(new Evaluator_OperatorApply(re_list));
     S.SetEvaluator("residual", r_eval);
@@ -528,7 +506,7 @@ SUITE(EVALUATOR_ON_OP) {
     S.Initialize();
 
     // Update residual
-    CHECK(S.GetEvaluator("residual")->Update(S, "pk"));
+    CHECK(S.GetEvaluator("residual").Update(S, "pk"));
 
     // b - Ax
     double error(0.);

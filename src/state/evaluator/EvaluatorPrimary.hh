@@ -101,7 +101,14 @@ public:
   }
 
   virtual void EnsureCompatibility(State &S) override final {
-    S.Require<Data_t, DataFactory_t>(my_key_, my_tag_, my_key_);
+    auto& my_fac = S.Require<Data_t, DataFactory_t>(my_key_, my_tag_, my_key_);
+    if (S.HasDerivativeSet(my_key_, my_tag_)) {
+      for (const auto& deriv : S.GetDerivativeSet(my_key_, my_tag_)) {
+        auto wrt = Keys::splitKeyTag(deriv.first);
+        S.RequireDerivative<Data_t,DataFactory_t>(my_key_, my_tag_,
+                wrt.first, wrt.second, my_key_);
+      }
+    }
   }
 
 protected:
@@ -118,9 +125,6 @@ private:
 };
 
 template <> inline void EvaluatorPrimary<double>::UpdateDerivative_(State &s) {
-  if (!s.HasDerivativeData(my_key_, my_tag_, my_key_, my_tag_)) {
-    s.RequireDerivative(my_key_, my_tag_, my_key_, my_tag_, my_key_);
-  }
   s.GetDerivativeW<double>(my_key_, my_tag_, my_key_, my_tag_, my_key_) = 1.0;
 }
 
@@ -128,11 +132,21 @@ template <>
 inline void
 EvaluatorPrimary<CompositeVector, CompositeVectorSpace>::UpdateDerivative_(
     State &s) {
-  if (!s.HasDerivativeData(my_key_, my_tag_, my_key_, my_tag_)) {
-    s.RequireDerivative(my_key_, my_tag_, my_key_, my_tag_, my_key_);
-  }
   s.GetDerivativeW<CompositeVector>(my_key_, my_tag_, my_key_, my_tag_, my_key_)
       .PutScalar(1.0);
+}
+
+template<>
+inline void
+EvaluatorPrimary<CompositeVector,CompositeVectorSpace>::EnsureCompatibility(State &S) {
+  auto& my_fac = S.Require<CompositeVector,CompositeVectorSpace>(my_key_, my_tag_, my_key_);
+  if (S.HasDerivativeSet(my_key_, my_tag_)) {
+    for (const auto& deriv : S.GetDerivativeSet(my_key_, my_tag_)) {
+      auto wrt = Keys::splitKeyTag(deriv.first);
+      S.RequireDerivative<CompositeVector,CompositeVectorSpace>(my_key_, my_tag_,
+              wrt.first, wrt.second, my_key_).Update(my_fac);
+    }
+  }
 }
 
 } // namespace Amanzi

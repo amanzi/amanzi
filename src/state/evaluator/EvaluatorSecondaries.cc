@@ -115,7 +115,7 @@ bool EvaluatorSecondaries::Update(State &S, const Key &request) {
   bool update = false;
   for (auto &dep : dependencies_) {
     update |= S.GetEvaluator(dep.first, dep.second)
-                  ->Update(S, Keys::getRequest(my_keys_[0].first,
+                  .Update(S, Keys::getKeyTag(my_keys_[0].first,
                                                my_keys_[0].second));
   }
 
@@ -179,16 +179,16 @@ bool EvaluatorSecondaries::UpdateDerivative(State &S, const Key &requestor,
   // -- must update if our our dependencies have changed, as these affect the
   // partial derivatives
   Key my_request = Key{"d"} +
-                   Keys::getRequest(my_keys_[0].first, my_keys_[0].second) +
-                   "_d" + Keys::getRequest(wrt_key, wrt_tag);
+                   Keys::getKeyTag(my_keys_[0].first, my_keys_[0].second) +
+                   "_d" + Keys::getKeyTag(wrt_key, wrt_tag);
   update |= Update(S, my_request);
 
   // -- must update if any of our dependencies' derivatives have changed
   for (auto &dep : dependencies_) {
     if (S.GetEvaluator(dep.first, dep.second)
-            ->IsDependency(S, wrt_key, wrt_tag)) {
+            .IsDependency(S, wrt_key, wrt_tag)) {
       update |= S.GetEvaluator(dep.first, dep.second)
-                    ->UpdateDerivative(S, my_request, wrt_key, wrt_tag);
+                    .UpdateDerivative(S, my_request, wrt_key, wrt_tag);
     }
   }
 
@@ -228,7 +228,7 @@ inline bool EvaluatorSecondaries::IsDependency(const State &S, const Key &key,
     return true;
   } else {
     for (auto &dep : dependencies_) {
-      if (S.GetEvaluator(dep.first, dep.second)->IsDependency(S, key, tag)) {
+      if (S.GetEvaluator(dep.first, dep.second).IsDependency(S, key, tag)) {
         return true;
       }
     }
