@@ -87,6 +87,11 @@ class Projector {
     GenericCell_Pk_(c, order, vf, H1, true, moments, uc);
   }
 
+  // -- L2 projector from serendipidy virtual element
+  void L2Cell_SerendipityPk(
+      int c, int order, const std::vector<VectorPolynomial>& vf,
+      const std::shared_ptr<DenseVector>& moments, VectorPolynomial& uc) const;
+
  private:
   void GenericCell_CRk_(
       int c, int order, const std::vector<VectorPolynomial>& vf,
@@ -97,6 +102,10 @@ class Projector {
       int c, int order, const std::vector<VectorPolynomial>& vf,
       const ProjectorType& type, bool is_harmonic,
       const std::shared_ptr<DenseVector>& moments, VectorPolynomial& uc) const;
+
+  void CalculateDOFsOnBoundary_Pk_(
+      int c, int order, const std::vector<VectorPolynomial>& vf,
+      DenseVector& vdof, int i) const;
 
  protected:
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;

@@ -453,18 +453,6 @@ int MFD3D::cell_get_face_adj_cell(int cell, int face)
   return -1;
 }
 
-
-/* ******************************************************************
-* Returns position of id in the list of ids.
-****************************************************************** */
-int MFD3D::FindPosition(int id, Entity_ID_List list)
-{
-  for (int i = 0; i < list.size(); i++) {
-    if (list[i] == id) return i;
-  }
-  return -1;
-}
-
 }  // namespace WhetStone
 }  // namespace Amanzi
 

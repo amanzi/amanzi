@@ -56,9 +56,6 @@ class MFD3D : public virtual BilinearForm {
   // extension of the mesh API (must be removed lipnikov@lanl.gov)
   int cell_get_face_adj_cell(int cell, int face);
 
-  // miscallenous
-  int FindPosition(int id, Entity_ID_List list);
-
   // experimental methods (for stability region analysis; unit test)
   void ModifyStabilityScalingFactor(double factor);
 
@@ -78,6 +75,15 @@ class MFD3D : public virtual BilinearForm {
   double simplex_functional_;
   int simplex_num_itrs_;
 };
+
+
+// non-member functions
+inline int FindPosition(int id, Entity_ID_List list) {
+  for (int i = 0; i < list.size(); i++) {
+    if (list[i] == id) return i;
+  }
+  return -1;
+}
 
 }  // namespace WhetStone
 }  // namespace Amanzi
