@@ -35,8 +35,8 @@
       <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
       <Parameter name="iterative method" type="string" value="pcg"/>
       <ParameterList name="pcg parameters">
-        <Parameter name="maximum number of iterations" type="int" value="100"/>
-        <Parameter name="error tolerance" type="double" value="1e-16"/>
+        <Parameter name="maximum number of iterations" type="int" value="50000"/>
+        <Parameter name="error tolerance" type="double" value="1e-14"/>
       </ParameterList>
     </ParameterList>
 
@@ -95,19 +95,19 @@
 
     <ParameterList name="diffusion operator high-order">
       <Parameter name="method" type="string" value="Lagrange"/>
-      <Parameter name="method order" type="int" value="2"/>
+      <Parameter name="method order" type="int" value="3"/>
       <Parameter name="matrix type" type="string" value="stiffness"/>
       <ParameterList name="schema domain">
         <Parameter name="base" type="string" value="cell"/>
         <Parameter name="location" type="Array(string)" value="{node, face, cell}"/>
-        <Parameter name="type" type="Array(string)" value="{scalar, moment, moment}"/>
-        <Parameter name="number" type="Array(int)" value="{1, 1, 1}"/>
+        <Parameter name="type" type="Array(string)" value="{scalar, vector, moment}"/>
+        <Parameter name="number" type="Array(int)" value="{1, 2, 3}"/>
       </ParameterList>
       <ParameterList name="schema range">
         <Parameter name="base" type="string" value="cell"/>
         <Parameter name="location" type="Array(string)" value="{node, face, cell}"/>
-        <Parameter name="type" type="Array(string)" value="{scalar, moment, moment}"/>
-        <Parameter name="number" type="Array(int)" value="{1, 1, 1}"/>
+        <Parameter name="type" type="Array(string)" value="{scalar, vector, moment}"/>
+        <Parameter name="number" type="Array(int)" value="{1, 2, 3}"/>
       </ParameterList>
     </ParameterList>
 

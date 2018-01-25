@@ -16,7 +16,7 @@
 
   List of problems.  Note that all are 2D:
 
-  Analytic00: linear solution with constant, scalar coefficient
+  Analytic00: polynomial solution with constant, scalar coefficient
   Analytic01: non-polynomial solution with full, non-constant tensor
   Analytic02: linear solution with constant, tensor coefficient
   Analytic03: non-polynomial solution with discontinuous (scalar)
@@ -27,7 +27,6 @@
               coefficient, coefficient can be zero
   Analytic05: linear solution with non-symmetric, non-constant
               tensor coefficient
-
 */
 
 #ifndef AMANZI_OPERATOR_ANALYTIC_BASE_HH_

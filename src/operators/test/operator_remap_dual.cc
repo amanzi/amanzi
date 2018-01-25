@@ -612,7 +612,6 @@ TEST(REMAP_DUAL_FEM) {
 */
 
 
-/*
 TEST(REMAP_DUAL_VEM) {
   RemapTestsDualRK(0,1, Amanzi::Explicit_TI::heun_euler, "VEM", "test/median15x16.exo", 0,0,0, 0.05);
   RemapTestsDualRK(1,2, Amanzi::Explicit_TI::heun_euler, "VEM", "test/median15x16.exo", 0,0,0, 0.05);
@@ -620,7 +619,6 @@ TEST(REMAP_DUAL_VEM) {
   RemapTestsDualRK(0,1, Amanzi::Explicit_TI::heun_euler, "VEM", "", 5,5,5, 0.2);
   // RemapTestsDualRK(1,2, Amanzi::Explicit_TI::heun_euler, "VEM", "", 5,5,5, 0.1);
 }
-*/
 
 /*
 TEST(REMAP2D_DG_QUADRATURE_ERROR) {
@@ -632,6 +630,7 @@ TEST(REMAP2D_DG_QUADRATURE_ERROR) {
 }
 */
 
+/*
 TEST(REMAP2D_DG_QUADRATURE_ERROR) {
   RemapTestsDualRK(2,3, Amanzi::Explicit_TI::tvd_3rd_order, "VEM", "test/median15x16.exo", 0,0,0, 0.05);
   RemapTestsDualRK(2,3, Amanzi::Explicit_TI::tvd_3rd_order, "VEM", "test/median32x33.exo", 0,0,0, 0.05 / 2);
@@ -639,6 +638,7 @@ TEST(REMAP2D_DG_QUADRATURE_ERROR) {
   RemapTestsDualRK(2,3, Amanzi::Explicit_TI::heun_euler, "VEM", "test/median127x128.exo", 0,0,0, 0.05 / 8);
   RemapTestsDualRK(2,3, Amanzi::Explicit_TI::heun_euler, "VEM", "test/median255x256.exo", 0,0,0, 0.05 / 16);
 }
+*/
 
 /*
 TEST(REMAP2D_DG_QUADRATURE_ERROR) {

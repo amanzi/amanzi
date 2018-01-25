@@ -59,15 +59,21 @@ TEST(OPERATOR_DIFFUSION_HIGH_ORDER) {
   MeshFactory meshfactory(&comm);
   meshfactory.preference(FrameworkPreference({MSTK, STKMESH}));
   // RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 4, 4, gm);
-  RCP<const Mesh> mesh = meshfactory("test/median15x16.exo", gm);
+  RCP<const Mesh> mesh = meshfactory("test/median7x8.exo", gm);
 
   int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
   int nnodes_wghost = mesh->num_entities(AmanziMesh::NODE, AmanziMesh::USED);
 
   // create boundary data (no mixed bc)
-  Analytic00 ana(mesh, 1.0, 1.0);
+  ParameterList op_list = plist.get<Teuchos::ParameterList>("PK operator")
+                               .sublist("diffusion operator high-order");
+  int order = op_list.get<int>("method order");
+
+  Analytic00 ana(mesh, 1.0, 2.0, order);
 
   Point xv(2);
+  AmanziMesh::Entity_ID_List nodes;
+
   Teuchos::RCP<BCs> bc_v = Teuchos::rcp(new BCs(mesh, AmanziMesh::NODE, DOF_Type::SCALAR));
   std::vector<int>& bc_model_v = bc_v->bc_model();
   std::vector<double>& bc_value_v = bc_v->bc_value();
@@ -81,22 +87,32 @@ TEST(OPERATOR_DIFFUSION_HIGH_ORDER) {
     }
   }
 
-  Teuchos::RCP<BCs> bc_f = Teuchos::rcp(new BCs(mesh, AmanziMesh::FACE, DOF_Type::SCALAR));
+  Teuchos::RCP<BCs> bc_f = Teuchos::rcp(new BCs(mesh, AmanziMesh::FACE, DOF_Type::VECTOR));
   std::vector<int>& bc_model_f = bc_f->bc_model();
-  std::vector<double>& bc_value_f = bc_f->bc_value();
+  std::vector<std::vector<double> >& bc_value_f = bc_f->bc_value_vector(order - 1);
 
   for (int f = 0; f < nfaces_wghost; f++) {
     const Point& xf = mesh->face_centroid(f);
+
     if (fabs(xf[0]) < 1e-6 || fabs(xf[0] - 1.0) < 1e-6 ||
         fabs(xf[1]) < 1e-6 || fabs(xf[1] - 1.0) < 1e-6) {
+      double vm = ana.pressure_exact(xf, 0.0);
+
+      mesh->face_get_nodes(f, &nodes);
+
+      mesh->node_get_coordinates(nodes[0], &xv);
+      double v0 = ana.pressure_exact(xv, 0.0);
+
+      mesh->node_get_coordinates(nodes[1], &xv);
+      double v1 = ana.pressure_exact(xv, 0.0);
+
       bc_model_f[f] = OPERATOR_BC_DIRICHLET;
-      bc_value_f[f] = ana.pressure_exact(xf, 0.0);
+      bc_value_f[f][0] = (v0 + 4 * vm + v1) / 6;
+      if (order > 2) bc_value_f[f][1] = (v1 - v0) / 12;
     }
   }
 
   // create diffusion operator 
-  ParameterList op_list = plist.get<Teuchos::ParameterList>("PK operator")
-                               .sublist("diffusion operator high-order");
   Teuchos::RCP<PDE_Abstract> op = Teuchos::rcp(new PDE_Abstract(op_list, mesh));
   op->AddBCs(bc_v, bc_v);
   op->AddBCs(bc_f, bc_f);
@@ -110,8 +126,9 @@ TEST(OPERATOR_DIFFUSION_HIGH_ORDER) {
   global_op->SymbolicAssembleMatrix();
   global_op->AssembleMatrix();
 
-  // create preconditoner using the base operator class
+  // create preconditioner using the base operator class
   ParameterList slist = plist.get<Teuchos::ParameterList>("preconditioners");
+  slist.sublist("Hypre AMG").set<std::string>("preconditioner type", "diagonal");
   global_op->InitPreconditioner("Hypre AMG", slist);
 
   // solve the problem
@@ -143,9 +160,9 @@ TEST(OPERATOR_DIFFUSION_HIGH_ORDER) {
   if (MyPID == 0) {
     pl2_err /= pnorm;
     ph1_err /= hnorm;
-    printf("L2(p)=%9.6f  H1(p)=%9.6f  itr=%3d\n", pl2_err, ph1_err, solver.num_itrs());
+    printf("L2(p)=%12.9f  H1(p)=%12.9f  itr=%3d\n", pl2_err, ph1_err, solver.num_itrs());
 
-    CHECK(pl2_err < 1e-5 && ph1_err < 2e-5);
+    CHECK(pl2_err < 1e-10 && ph1_err < 1e-2);
   }
 }
 

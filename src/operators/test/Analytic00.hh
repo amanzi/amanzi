@@ -8,24 +8,42 @@
 
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 
-  Linear solution and constant coefficient:
-
-    u = g_x * x + g_y * y,
-
-  with the user-provided gradient g = {g_x, g_y}
+  Polynomial solution and constant coefficient is defined by
+  the user-provided gradient and polynomial order.
 */
 
 #ifndef AMANZI_OPERATOR_ANALYTIC_00_HH_
 #define AMANZI_OPERATOR_ANALYTIC_00_HH_
 
+#include "Polynomial.hh"
+#include "VectorPolynomial.hh"
+
 #include "AnalyticBase.hh"
 
 class Analytic00 : public AnalyticBase {
  public:
-  Analytic00(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh, double gx, double gy) :
+  Analytic00(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh, double gx, double gy, int order) :
       AnalyticBase(mesh),
-      gx_(gx),
-      gy_(gy) {};
+      poly_(2, order) {
+    poly_(1, 0) = gx;
+    poly_(1, 1) = gy;
+
+    if (order > 1) {
+      poly_(2, 0) = 3.0;
+      poly_(2, 1) = 4.0;
+      poly_(2, 2) =-3.0;
+    }
+
+    if (order > 2) {
+      poly_(3, 0) = 1.0;
+      poly_(3, 1) = 6.0;
+      poly_(3, 2) =-3.0;
+      poly_(3, 3) =-2.0;
+    }
+
+    grad_.Gradient(poly_);
+    rhs_ = poly_.Laplacian();
+  }
   ~Analytic00() {};
 
   Amanzi::WhetStone::Tensor Tensor(const Amanzi::AmanziGeometry::Point& p, double t) {
@@ -35,31 +53,27 @@ class Analytic00 : public AnalyticBase {
   }
 
   double pressure_exact(const Amanzi::AmanziGeometry::Point& p, double t) { 
-    double x = p[0];
-    double y = p[1];
-    return gx_ * x + gy_ * y;
+    return poly_.Value(p);
   }
 
   Amanzi::AmanziGeometry::Point velocity_exact(const Amanzi::AmanziGeometry::Point& p, double t) { 
     Amanzi::AmanziGeometry::Point v(2);
-    v[0] = -gx_;
-    v[1] = -gy_;
+    v[0] = -grad_[0].Value(p);
+    v[1] = -grad_[1].Value(p);
     return v;
   }
  
   Amanzi::AmanziGeometry::Point gradient_exact(const Amanzi::AmanziGeometry::Point& p, double t) { 
-    Amanzi::AmanziGeometry::Point v(2);
-    v[0] = gx_;
-    v[1] = gy_;
-    return v;
+    return -velocity_exact(p, t);
   }
 
   double source_exact(const Amanzi::AmanziGeometry::Point& p, double t) { 
-    return 0.0;
+    return -rhs_.Value(p);
   }
 
  private:
-  double gx_, gy_;
+  Amanzi::WhetStone::Polynomial poly_, rhs_;
+  Amanzi::WhetStone::VectorPolynomial grad_;
 };
 
 #endif
