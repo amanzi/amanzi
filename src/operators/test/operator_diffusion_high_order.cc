@@ -25,6 +25,7 @@
 #include "MeshFactory.hh"
 #include "GMVMesh.hh"
 #include "LinearOperatorPCG.hh"
+#include "NumericalIntegration.hh"
 #include "Tensor.hh"
 
 // Operators
@@ -42,6 +43,7 @@ TEST(OPERATOR_DIFFUSION_HIGH_ORDER) {
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::AmanziGeometry;
   using namespace Amanzi::Operators;
+  using namespace Amanzi::WhetStone;
 
   Epetra_MpiComm comm(MPI_COMM_WORLD);
   int MyPID = comm.MyPID();
@@ -71,7 +73,7 @@ TEST(OPERATOR_DIFFUSION_HIGH_ORDER) {
 
   Analytic00 ana(mesh, 1.0, 2.0, order);
 
-  Point xv(2);
+  Point xv(2), x0(2), x1(2);
   AmanziMesh::Entity_ID_List nodes;
 
   Teuchos::RCP<BCs> bc_v = Teuchos::rcp(new BCs(mesh, AmanziMesh::NODE, DOF_Type::SCALAR));
@@ -100,15 +102,18 @@ TEST(OPERATOR_DIFFUSION_HIGH_ORDER) {
 
       mesh->face_get_nodes(f, &nodes);
 
-      mesh->node_get_coordinates(nodes[0], &xv);
-      double v0 = ana.pressure_exact(xv, 0.0);
-
-      mesh->node_get_coordinates(nodes[1], &xv);
-      double v1 = ana.pressure_exact(xv, 0.0);
+      mesh->node_get_coordinates(nodes[0], &x0);
+      mesh->node_get_coordinates(nodes[1], &x1);
 
       bc_model_f[f] = OPERATOR_BC_DIRICHLET;
-      bc_value_f[f][0] = (v0 + 4 * vm + v1) / 6;
-      if (order > 2) bc_value_f[f][1] = (v1 - v0) / 12;
+      double s0(0.0), s1(0.0);
+      for (int n = 0; n < 3; ++n) {
+        xv = x0 * q1d_points[2][n] + x1 * (1.0 - q1d_points[2][n]);
+        s0 += q1d_weights[2][n] * ana.pressure_exact(xv, 0.0);
+        s1 += q1d_weights[2][n] * ana.pressure_exact(xv, 0.0) * (0.5 - q1d_points[2][n]);
+      }
+      bc_value_f[f][0] = s0;
+      if (order > 2) bc_value_f[f][1] = s1;
     }
   }
 
