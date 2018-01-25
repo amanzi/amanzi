@@ -77,6 +77,14 @@ class MFD3D_Diffusion : public virtual MFD3D,
 
   int StiffnessMatrixOptimized(int c, const Tensor& K, DenseMatrix& A);
   int StiffnessMatrixMMatrix(int c, const Tensor& K, DenseMatrix& A);
+  int StiffnessMatrixTracer(int c, const Tensor& K, const AmanziGeometry::Point& nG,
+                            std::vector< std::vector<AmanziGeometry::Point> >& surface_pnt,
+                            std::vector< std::vector<int> >& v_ids,
+                            std::vector< std::vector<double> >& inter_coef, DenseMatrix& A);
+
+  void SurfaceElementArea(AmanziGeometry::Point& cntr,
+                          std::vector< std::vector<AmanziGeometry::Point> >& surface_pnt,
+                          double* area);
 
   // -- tensor is product k K
   int L2consistencyInverseDivKScaled(int c, const Tensor& K,

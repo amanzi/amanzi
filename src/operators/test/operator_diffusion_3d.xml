@@ -1,0 +1,206 @@
+<ParameterList name="Main">
+  <Parameter name="Native Unstructured Input" type="bool" value="true"/>
+
+  <!--  REGIONS  -->
+  <ParameterList name="regions">
+    <ParameterList name="Left side">
+      <ParameterList name="region: plane">
+        <Parameter name="point" type="Array(double)" value="{0.0,0.0,0.0}"/>
+        <Parameter name="normal" type="Array(double)" value="{-1.0,0.0,0.0}"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="Right side">
+      <ParameterList name="region: plane">
+        <Parameter name="point" type="Array(double)" value="{1.0,1.0,0.0}"/>
+        <Parameter name="normal" type="Array(double)" value="{1.0,0.0,0.0}"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="Bottom side">
+      <ParameterList name="region: plane">
+        <Parameter name="point" type="Array(double)" value="{0.5,0.5,0.0}"/>
+        <Parameter name="normal" type="Array(double)" value="{0.0,0.0,-1.0}"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="Top side">
+      <ParameterList name="region: plane">
+        <Parameter name="point" type="Array(double)" value="{0.5,0.5,1.0}"/>
+        <Parameter name="normal" type="Array(double)" value="{0.0,0.0,1.0}"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="Front side">
+      <ParameterList name="region: plane">
+        <Parameter name="point" type="Array(double)" value="{0.5,0.0,0.5}"/>
+        <Parameter name="normal" type="Array(double)" value="{0.0,-1.0,0.0}"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="Back side">
+      <ParameterList name="region: plane">
+        <Parameter name="point" type="Array(double)" value="{0.5,1.0,0.5}"/>
+        <Parameter name="normal" type="Array(double)" value="{0.0,1.0,0.0}"/>
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
+
+  <!-- SOLVERS -->
+  <ParameterList name="solvers">
+    <ParameterList name="AztecOO CG">
+      <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
+      <Parameter name="iterative method" type="string" value="pcg"/>
+      <ParameterList name="pcg parameters">
+        <Parameter name="maximum number of iterations" type="int" value="1000"/>
+        <Parameter name="error tolerance" type="double" value="1e-16"/>
+      </ParameterList>
+    </ParameterList>
+
+    <ParameterList name="GMRES">
+      <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
+      <Parameter name="iterative method" type="string" value="gmres"/>
+      <ParameterList name="gmres parameters">
+        <Parameter name="maximum number of iterations" type="int" value="20"/>
+        <Parameter name="error tolerance" type="double" value="1e-12"/>
+        <ParameterList name="verbose object">
+          <Parameter name="verbosity level" type="string" value="low"/>
+        </ParameterList>
+      </ParameterList>
+    </ParameterList>
+
+    <ParameterList name="Belos GMRES">
+      <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
+      <Parameter name="iterative method" type="string" value="belos gmres"/>
+      <ParameterList name="belos gmres parameters">
+        <Parameter name="maximum number of iterations" type="int" value="20"/>
+        <Parameter name="error tolerance" type="double" value="1e-12"/>
+        <ParameterList name="verbose object">
+          <Parameter name="verbosity level" type="string" value="low"/>
+        </ParameterList>
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
+
+  <!-- PRECONDITIONERS -->
+  <ParameterList name="preconditioners">
+    <ParameterList name="Hypre AMG">
+      <!-- <Parameter name="discretization method" type="string" value="generic mfd"/> -->
+      <Parameter name="preconditioner type" type="string" value="boomer amg"/>
+      <ParameterList name="boomer amg parameters">
+        <Parameter name="cycle applications" type="int" value="10"/>
+        <Parameter name="smoother sweeps" type="int" value="2"/>
+        <Parameter name="strong threshold" type="double" value="0.5"/>
+        <Parameter name="tolerance" type="double" value="1e-5"/>
+        <Parameter name="relaxation type" type="int" value="3"/>
+        <Parameter name="verbosity" type="int" value="3"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="Y ILU">  <!-- parent list -->
+      <ParameterList name="block ilu parameters">
+        <Parameter name="fact: relax value" type="double" value="1.0"/>
+        <Parameter name="fact: absolute threshold" type="double" value="0.0"/>
+        <Parameter name="fact: relative threshold" type="double" value="1.0"/>
+        <Parameter name="fact: level-of-fill" type="int" value="0"/>
+        <Parameter name="overlap" type="int" value="0"/>
+        <Parameter name="schwarz: combine mode" type="string" value="Add"/>
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
+
+  <!--  OPERATORS  -->
+  <ParameterList name="PK operator">
+    <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
+
+    <!-- NODAL MFD schemes -->
+    <ParameterList name="diffusion operator nodal">
+      <Parameter name="discretization primary" type="string" value="mfd: default"/>
+      <Parameter name="discretization secondary" type="string" value="mfd: optimized for sparsity"/>
+      <Parameter name="schema" type="Array(string)" value="{node}"/>
+      <Parameter name="preconditioner schema" type="Array(string)" value="{node}"/>
+    </ParameterList>
+
+    <!-- EDGE MFD schemes -->
+    <ParameterList name="diffusion operator edge">
+      <Parameter name="discretization primary" type="string" value="mfd: default"/>
+      <Parameter name="discretization secondary" type="string" value="mfd: optimized for sparsity"/>
+      <Parameter name="schema" type="Array(string)" value="{edge}"/>
+      <Parameter name="preconditioner schema" type="Array(string)" value="{edge}"/>
+    </ParameterList>
+
+    <!-- MIXED MFD schemes -->
+    <ParameterList name="diffusion operator mixed">
+      <Parameter name="discretization primary" type="string" value="mfd: optimized for sparsity"/>
+      <Parameter name="discretization secondary" type="string" value="mfd: optimized for sparsity"/>
+      <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
+      <Parameter name="preconditioner schema" type="Array(string)" value="{face}"/>
+    </ParameterList>
+
+    <ParameterList name="diffusion operator divk">
+      <Parameter name="discretization primary" type="string" value="mfd: optimized for sparsity"/>
+      <Parameter name="discretization secondary" type="string" value="mfd: optimized for sparsity"/>
+      <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
+      <Parameter name="preconditioner schema" type="Array(string)" value="{face}"/>
+      <Parameter name="nonlinear coefficient" type="string" value="divk: cell-face"/>
+      <!--Parameter name="file name" type="string" value="test/struct.exo"/-->
+    </ParameterList>
+
+    <ParameterList name="diffusion operator nonsymmetric">
+      <Parameter name="discretization primary" type="string" value="mfd: default"/>
+      <Parameter name="discretization secondary" type="string" value="mfd: default"/>
+      <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
+      <Parameter name="preconditioner schema" type="Array(string)" value="{face, cell}"/>
+      <Parameter name="diffusion tensor" type="string" value="nonsymmetric"/>
+    </ParameterList>
+
+    <ParameterList name="diffusion operator gravity mfd">
+      <Parameter name="discretization primary" type="string" value="mfd: optimized for sparsity"/>
+      <Parameter name="discretization secondary" type="string" value="mfd: optimized for sparsity"/>
+      <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
+      <Parameter name="preconditioner schema" type="Array(string)" value="{face}"/>
+      <Parameter name="gravity" type="bool" value="true"/>
+    </ParameterList>
+
+    <!-- FV schemes -->
+    <ParameterList name="diffusion operator gravity fv">
+      <Parameter name="discretization primary" type="string" value="fv: default"/>
+      <Parameter name="discretization secondary" type="string" value="fv: default"/>
+      <Parameter name="schema" type="Array(string)" value="{cell}"/>
+      <Parameter name="preconditioner schema" type="Array(string)" value="{cell}"/>
+      <Parameter name="gravity" type="bool" value="true"/>
+    </ParameterList>
+
+    <ParameterList name="diffusion operator nlfv">
+      <Parameter name="discretization primary" type="string" value="nlfv: default"/>
+      <Parameter name="discretization secondary" type="string" value="nlfv: default"/>
+      <Parameter name="schema" type="Array(string)" value="{cell}"/>
+      <Parameter name="preconditioner schema" type="Array(string)" value="{cell}"/>
+    </ParameterList>
+
+    <ParameterList name="upwind">
+      <Parameter name="upwind method" type="string" value="upwind: amanzi"/>
+      <ParameterList name="upwind parameters">
+        <Parameter name="tolerance" type="double" value="1e-12"/>
+      </ParameterList>
+    </ParameterList>
+
+    <ParameterList name="diffusion operator second-order">
+      <Parameter name="discretization primary" type="string" value="mfd: optimized for sparsity"/>
+      <Parameter name="discretization secondary" type="string" value="mfd: optimized for sparsity"/>
+      <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
+      <Parameter name="preconditioner schema" type="Array(string)" value="{face}"/>
+      <Parameter name="nonlinear coefficient" type="string" value="divk: cell-grad-face-twin"/>
+    </ParameterList>
+
+    <ParameterList name="upwind second-order">
+      <Parameter name="upwind method" type="string" value="upwind: second-order"/>
+      <ParameterList name="upwind parameters">
+        <Parameter name="tolerance" type="double" value="1e-12"/>
+      </ParameterList>
+    </ParameterList>
+
+    <ParameterList name="diffusion operator cell">
+      <Parameter name="discretization primary" type="string" value="mfd: two-point flux approximation"/>
+      <Parameter name="discretization secondary" type="string" value="mfd: two-point flux approximation"/>
+      <Parameter name="schema" type="Array(string)" value="{cell}"/>
+      <Parameter name="preconditioner schema" type="Array(string)" value="{cell}"/>
+    </ParameterList>
+  </ParameterList>
+
+</ParameterList>
+

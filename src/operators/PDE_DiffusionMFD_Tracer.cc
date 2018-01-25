@@ -49,28 +49,101 @@ namespace Operators {
 
     PDE_DiffusionMFD::InitDiffusion_(plist);
 
+    cell_surfaces_.resize(ncells_owned);
+
   }
 
   void PDE_DiffusionMFD_Tracer::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& flux,
-                                               const Teuchos::Ptr<const CompositeVector>& u){
+                                               const Teuchos::Ptr<const CompositeVector>& u,
+                                               const Teuchos::Ptr<const CompositeVector>& surf_presence,
+                                               const Teuchos::Ptr<const CompositeVector>& surface_param){
 
-    AmanziGeometry::Point sur_cntr(0.5, 0.5, 0.5);
-    AmanziGeometry::Point sur_norm(1.0, 0.6, 1.0);
+    // update matrix blocks
+    WhetStone::MFD3D_Diffusion mfd(mesh_);
+    mfd.ModifyStabilityScalingFactor(factor_);
 
-    CellSurfaceInterception_(0, sur_cntr, sur_norm);
+    AmanziMesh::Entity_ID_List nodes;
+
+    const Epetra_MultiVector& surf_presence_vec = *surf_presence->ViewComponent("cell", true);
+    const Epetra_MultiVector& surface_param_vec = *surface_param->ViewComponent("cell", true);
+
+    int num_surfaces = surf_presence_vec.NumVectors();
+    
+    WhetStone::Tensor Kc(mesh_->space_dimension(), 1);
+    Kc(0, 0) = 1.0;
+
+    for (int c = 0; c < ncells_owned; c++) {
+    //for (int c = 0; c < 1; c++) {      
+      if (K_.get()) Kc = (*K_)[c];
+      
+      mesh_->cell_get_nodes(c, &nodes);
+      int nnodes = nodes.size();
+
+      WhetStone::DenseMatrix Acell(nnodes, nnodes);
+
+      Acell = 0.;
+
+      for (int s_id=0; s_id<num_surfaces;s_id++){
+        if (surf_presence_vec[s_id][c] > 0){
+        
+          //AmanziGeometry::Point sur_cntr(3);//(0.5, 0.5, 0.5);
+          AmanziGeometry::Point sur_norm(3);//(1.0, 0.6, 1.0);
+          double surf_d = surface_param_vec[s_id*4+3][c];
+
+          sur_norm[0] = surface_param_vec[s_id*4][c];
+          sur_norm[1] = surface_param_vec[s_id*4+1][c];
+          sur_norm[2] = surface_param_vec[s_id*4+2][c];
+
+
+          //sur_norm[0]=1.; sur_norm[1]=0.6; sur_norm[2]=1.;  surf_d=-1.3;
+          
+          CellSurfaceInterception_(c, s_id, sur_norm, surf_d);
+          //cell_surfaces_[c][0]->print();          
+
+          mfd.StiffnessMatrixTracer(c, Kc, sur_norm,
+                                    cell_surfaces_[c][0]->surface_pnt(),
+                                    cell_surfaces_[c][0]->v_ids(),
+                                    cell_surfaces_[c][0]->inter_coef(),
+                                    Acell);
+          break;          
+        }else{
+          //for (int i=0;i<nnodes;i++) Acell(i,i)=1.;
+        }
+      }
+
+      // std::cout<<"cell "<<c<<" nodes ";
+      // for (int i=0;i<nnodes;i++)std::cout<<nodes[i]<<" "; std::cout<<"\n";
+      // std::cout<<Acell<<"\n";      
+      local_op_->matrices[c] = Acell;     
+    }
     
   }
 
-  void PDE_DiffusionMFD_Tracer::CellSurfaceInterception_(int c, 
-                                                         const AmanziGeometry::Point& sur_cntr, 
-                                                         const AmanziGeometry::Point& sur_norm){
+  void PDE_DiffusionMFD_Tracer::ApplyBCs(bool primary, bool eliminate){
+
+     Teuchos::RCP<BCs> bc_f, bc_n;
+      for (std::vector<Teuchos::RCP<BCs> >::iterator bc = bcs_trial_.begin();
+          bc != bcs_trial_.end(); ++bc) {
+        if ((*bc)->kind() == AmanziMesh::FACE) {
+          bc_f = *bc;
+        } else if ((*bc)->kind() == AmanziMesh::NODE) {
+          bc_n = *bc;
+        }
+      }
+      ApplyBCs_Nodal_(bc_f.ptr(), bc_n.ptr(), primary, eliminate);
+      
+  }
+
+  void PDE_DiffusionMFD_Tracer::CellSurfaceInterception_(int c, int surf_id,
+                                                         const AmanziGeometry::Point& sur_norm, double surf_d){
 
     AmanziMesh::Entity_ID_List cells, faces, vertices;
     std::vector<int> edges_dirs;
     int dir;
     mesh_->cell_get_faces(c, &faces);
     int nfaces = faces.size();
-    
+
+    Teuchos::RCP<Local_Surface> local_surf = Teuchos::rcp(new Local_Surface(surf_id, sur_norm, surf_d));
     //surface_pnt_[c].resize(nfaces);
 
     for (int i=0; i<nfaces; i++){
@@ -94,7 +167,7 @@ namespace Operators {
       double b1,b2;
       b1 = sur_norm[coord2]; b2=face_normal[coord2];     
       double d1,d2;
-      d1 = -sur_norm*sur_cntr;
+      d1 = surf_d;
       d2 = -face_normal*face_centr;
 
       double det = a1*b2 - a2*b1;
@@ -108,7 +181,12 @@ namespace Operators {
       int num_inter = 0;
       AmanziGeometry::Point p_tmp(line_point + line_vec);
       
+      std::vector<AmanziGeometry::Point> pnts(2);
+      std::vector<int> vrt_ids(4);
+      std::vector<double> wgt(2);
+      
       AmanziGeometry::Point pa(3), pb(3);
+                 
       for (int j=0; j<nedges; j++){
         int v_id[2];
         v_id[0] = vertices[j];
@@ -121,19 +199,33 @@ namespace Operators {
         if (intersection){   // if possible to find shortest distance
           if ((t1 > 1e-10)&&(t1<1 - 1e-10)){
             if (norm(pa - pb)<eps){
-              std::cout << std::setw(5)<< pa.x()<<" "<<std::setw(5)<<pa.y()<<" "<<std::setw(5)<<pa.z()<<"\n";
+              //std::cout << std::setw(5)<< pa.x()<<" "<<std::setw(5)<<pa.y()<<" "<<std::setw(5)<<pa.z()<<"\n";
+              pnts[num_inter] = pa;
+              vrt_ids[2*num_inter] = v_id[0];
+              vrt_ids[2*num_inter + 1] = v_id[1];
+              wgt[num_inter] = t1;
               num_inter++;
             }
           }
         }
         if (num_inter > 2) {
           Errors::Message msg;
-          msg << "Surface intercent a face in more then 2 points\n";
+          msg << "Surface intersectes a face in more then 2 points\n";
           Exceptions::amanzi_throw(msg);
         }
       }
-      std::cout<<"\n";
-    }    
+      if (num_inter == 1) {
+        Errors::Message msg;
+        msg << "Surface  intersectes only in one point\n Cell "<<c<<"\n";
+        Exceptions::amanzi_throw(msg);
+      }else if ( num_inter == 2){
+        local_surf->Add_Face(pnts, vrt_ids, wgt);
+      }
+      //std::cout<<"\n";
+    }
+
+    cell_surfaces_[c].push_back(local_surf);
+      
   }
 
   /*

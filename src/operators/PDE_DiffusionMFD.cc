@@ -843,6 +843,8 @@ void PDE_DiffusionMFD::ApplyBCs_Nodal_(const Teuchos::Ptr<BCs>& bc_f,
         }
       }
 
+      
+
       for (int n = 0; n != nnodes; ++n) {
         int v = nodes[n];
         double value = bc_value[v];
@@ -867,8 +869,10 @@ void PDE_DiffusionMFD::ApplyBCs_Nodal_(const Teuchos::Ptr<BCs>& bc_f,
             if (v < nnodes_owned) rhs_node[0][v] = value;
             Acell(n, n) = 1.0 / cells.size();
           }
+          
         }
       }
+      std::cout<<"cell "<<c<<"\n"<<Acell<<"\n";
     }
   } 
 

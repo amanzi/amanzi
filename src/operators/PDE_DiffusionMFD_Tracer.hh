@@ -34,20 +34,40 @@ class Local_Surface {
   public:
   Local_Surface(int surface_id) : surface_id_(surface_id) {};
   Local_Surface(int surface_id,
-                AmanziGeometry::Point sur_cntr) :
-    surface_id_(surface_id), sur_cntr_(sur_cntr)  {};
-  Local_Surface(int surface_id,
-                AmanziGeometry::Point sur_cntr,
                 AmanziGeometry::Point sur_norm) :
-    surface_id_(surface_id), sur_cntr_(sur_cntr), sur_norm_(sur_norm) {};
+    surface_id_(surface_id),  sur_norm_(sur_norm)  {};
+  Local_Surface(int surface_id,
+                AmanziGeometry::Point sur_norm,
+                double d) :
+    surface_id_(surface_id), sur_norm_(sur_norm), sur_d_(d) {};
+
+  std::vector< std::vector<AmanziGeometry::Point> >& surface_pnt(){return surface_pnt_;}
+  std::vector< std::vector<int> >& v_ids(){return v_ids_;}
+  std::vector< std::vector<double> >& inter_coef() {return inter_coef_;}
+  
+  void Add_Face( std::vector<AmanziGeometry::Point>& vert_pnt, std::vector<int>& v_ids, std::vector<double>& wgts){
+    surface_pnt_.push_back(vert_pnt);
+    v_ids_.push_back(v_ids);
+    inter_coef_.push_back(wgts);
+  }
+
+  void print(){
+    int nfaces = surface_pnt_.size();
+    for (int i=0;i<nfaces;i++){
+      std::cout<<"points: "<<surface_pnt_[i][0]<<" -- "<<surface_pnt_[i][1]<<"\n";
+      std::cout<<"ids: "<<v_ids_[i][0]<<" "<<v_ids_[i][1]<<" -- "<<v_ids_[i][2]<<" "<<v_ids_[i][3]<<"\n";
+      std::cout<<"weights: "<<inter_coef_[i][0]<<" -- "<<inter_coef_[i][1]<<"\n";
+      std::cout<<"\n";
+    }
+  }
  
   protected:
     int surface_id_;
-    AmanziGeometry::Point sur_cntr_;
     AmanziGeometry::Point sur_norm_;
+    double sur_d_;
     std::vector< std::vector<AmanziGeometry::Point> > surface_pnt_;
-    std::vector< std::vector<int> > edges_intersected_;
-    std::vector< std::vector<double> > edges_coef;
+    std::vector< std::vector<int> > v_ids_;
+    std::vector< std::vector<double> > inter_coef_;
 };
 
   
@@ -81,11 +101,15 @@ class PDE_DiffusionMFD_Tracer : public virtual PDE_DiffusionMFD {
   }
 
   virtual void UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& flux,
-                              const Teuchos::Ptr<const CompositeVector>& u) override;
+                              const Teuchos::Ptr<const CompositeVector>& u,
+                              const Teuchos::Ptr<const CompositeVector>& surf_presence,
+                              const Teuchos::Ptr<const CompositeVector>& surface_parm);
+  
+  virtual void ApplyBCs(bool primary, bool eliminate);
 
  protected:
   void InitDiffusion_(Teuchos::ParameterList& plist);
-  void CellSurfaceInterception_(int c, const AmanziGeometry::Point& cntr, const AmanziGeometry::Point& norm);
+  void CellSurfaceInterception_(int c, int surf_id, const AmanziGeometry::Point& norm, double surf_d);
   bool LineLineIntersect_(const AmanziGeometry::Point& p1,
                           const AmanziGeometry::Point& p2,
                           const AmanziGeometry::Point& p3,
@@ -95,7 +119,7 @@ class PDE_DiffusionMFD_Tracer : public virtual PDE_DiffusionMFD {
                           AmanziGeometry::Point& int_p2,
                           double *mu_1, double *mu_2);
   
-  std::vector< std::vector<Local_Surface> > cell_surfaces_;
+  std::vector< std::vector< Teuchos::RCP<Local_Surface> > > cell_surfaces_;
 
 };
 

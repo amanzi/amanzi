@@ -195,6 +195,180 @@ int MFD3D_Diffusion::MassMatrixInverseSO(int c, const Tensor& K, DenseMatrix& W)
   return WHETSTONE_ELEMENTAL_MATRIX_OK;
 }
 
+
+int MFD3D_Diffusion::StiffnessMatrixTracer(int c, const Tensor& K, const AmanziGeometry::Point& nG,
+                                           std::vector< std::vector<AmanziGeometry::Point> >& surface_pnt,
+                                           std::vector< std::vector<int> >& v_ids,
+                                           std::vector< std::vector<double> >& inter_coef,
+                                           DenseMatrix& A){
+
+  DenseMatrix N, R, A_tmp, q1, N4;
+  Entity_ID_List vertices;
+  double area;
+
+  mesh_->cell_get_nodes(c, &vertices);
+  int nvertices = vertices.size();
+  
+  N.Reshape(nvertices, 2);
+  R.Reshape(nvertices, 2);
+  N4.Reshape(nvertices, 4);
+  A_tmp.Reshape(nvertices, 2);
+  q1.Reshape(nvertices, 1);
+
+  Tensor Kinv;
+  Kinv.Init(2,2);
+
+  AmanziGeometry::Point m2(3), m3(3), tmp_p(3);
+ 
+  for (int i=0; i<3; i++){
+    if (std::abs(nG[i]) > 1e-10){
+      m2[i] = (-nG[(i+1)%3]-nG[(i+2)%3])/nG[i];
+      m2[(i+1)%3] = 1.;
+      m2[(i+2)%3] = 1.;
+      break;
+    }
+  }
+  
+  m2 *= 1./norm(m2);
+  m3 = m2^nG;
+
+  tmp_p = K*m2;
+  Kinv(0,0) = tmp_p*m2;
+  Kinv(0,1) = tmp_p*m3;
+  tmp_p = K*m3;
+  Kinv(1,1) = tmp_p*m3;
+  Kinv(1,0) = Kinv(0,1);
+
+  Kinv.Inverse();
+  
+  //std::cout<<nG<<"\n"<<m2<<"\n"<<m3<<"\n"<<nG*m2<<" "<<nG*m3<<"\n";
+
+  AmanziGeometry::Point vs;  
+  for (int i=0; i<nvertices; i++){
+    mesh_->node_get_coordinates(vertices[i], &vs);
+    N(i,0) = m2*vs; N(i,1) = m3*vs;
+    q1(i,0) = nG*vs;
+  }
+
+  int nfaces = surface_pnt.size();
+  std::vector<AmanziGeometry::Point> nrm(nfaces);
+  AmanziGeometry::Point e, cntr(3);
+  for (int i=0; i<surface_pnt.size(); i++){
+    e = surface_pnt[i][1] - surface_pnt[i][0];
+    cntr += 0.5*(surface_pnt[i][1] + surface_pnt[i][0]);
+    nrm[i] = e^nG;
+    nrm[i] *= 1./norm(nrm[i]); 
+  }
+  cntr *= 1./nfaces;
+  //std::cout << "cntr "<<cntr<<"\n";
+
+  SurfaceElementArea(cntr, surface_pnt, &area);
+  
+  for (int i=0; i<surface_pnt.size(); i++){
+    e = 0.5*(surface_pnt[i][1] + surface_pnt[i][0]);
+    if ((e - cntr)*nrm[i] < 0) nrm[i] *= -1.;
+    //std::cout<<"nrm "<<nrm[i]<<"\n";
+  }
+
+
+  AmanziGeometry::Point Kn, vrt(3), pa(3);
+
+  R=0.;
+  
+  for (int i=0; i<nfaces; i++){
+    double e_sum = 0.;
+    double nKm2, nKm3, e_len;
+
+    Kn = K*nrm[i];
+    nKm2 = Kn*m2;
+    nKm3 = Kn*m3;
+    e_len = norm(surface_pnt[i][1] - surface_pnt[i][0]);
+    
+    for (int j=0; j<4; j++){
+      int k=0;
+      while (k < nvertices){
+        if (v_ids[i][j]!=vertices[k]){
+          k++;
+        }else{
+          break;
+        }
+      }
+      double wgt;
+      if (j%2==0) wgt = 0.5*(1 - inter_coef[i][j/2])*e_len;
+      else wgt = 0.5*inter_coef[i][j/2]*e_len;
+
+      e_sum += wgt;
+
+      // Internal verification 
+      // mesh_->node_get_coordinates(v_ids[i][j], &vrt);                    
+      // pa += wgt*vrt;
+      // if ((j==1)||(j==3)){
+      //   std::cout << "pa "<<pa<<"  surface_pnt "<<surface_pnt[i][j/2]<<"\n";
+      //   pa[0] = 0.;pa[1] = 0.;pa[2] = 0.;
+      // }
+
+      R(k,0) += wgt*nKm2;
+      R(k,1) += wgt*nKm3;
+
+    }
+  }
+
+  // std::cout<<"area "<<area<<"\n";
+  // std::cout<<"N\n"<<N<<"\n";
+  // std::cout<<"R\n"<<R<<"\n";
+  // std::cout<<"q1\n"<<q1<<"\n";
+
+  for (int i=0; i<nvertices; i++){
+    for (int j=0; j<2; j++){
+      A_tmp(i,j) = 0.;
+      for (int k=0; k<2; k++) A_tmp(i,j) += R(i,k)*Kinv(k,j);
+    }
+  }
+
+  for (int i=0; i<nvertices; i++){
+      for (int j=0; j<nvertices; j++){
+        A(i,j) = 0.;
+        for (int k=0; k<2; k++) A(i,j) += A_tmp(i,k)*R(j,k);
+      }
+  }
+
+  //std::cout<<std::setprecision(10)<<A<<"\n";
+  //A = R*Kinv*;
+
+  for (int i=0; i<nvertices; i++){
+    N4(i,0) = 1.;
+    N4(i,1) = q1(i,0);
+    N4(i,2) = N(i,0);
+    N4(i,3) = N(i,1);
+  }
+  //std::cout<<"N4\n"<<N4<<"\n";
+  
+  StabilityScalar_(N4, A);
+  
+  //std::cout<<std::setprecision(10)<<A<<"\n";
+
+  //exit(0);
+  return WHETSTONE_ELEMENTAL_MATRIX_OK;
+  
+}
+
+
+void MFD3D_Diffusion::SurfaceElementArea(AmanziGeometry::Point& cntr,
+                                         std::vector< std::vector<AmanziGeometry::Point> >& surface_pnt,
+                                         double* area){
+
+  int nedges = surface_pnt.size();
+  int dim = cntr.dim();
+
+  *area = 0.;
+  for (int i=0;i<nedges;i++){
+    AmanziGeometry::Point v1 = surface_pnt[i][0] - cntr;
+    AmanziGeometry::Point v2 = surface_pnt[i][1] - cntr;
+    (*area) += 0.5*norm(v1^v2);
+  } 
+
+}
+  
 }  // namespace WhetStone
 }  // namespace Amanzi
 

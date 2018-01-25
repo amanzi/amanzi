@@ -290,18 +290,6 @@ double PlaneLineIntersection(const std::vector<Point>& plane,
   double t2 = det_aux(row2, smatr2);
 
     //    std::cout<< "PlaneLineIntersection: either plane or line is degenerate\n";
-  // std::cout.precision(16);
-  // std::cout<<"line "<<line[0]<<" : "<<line[1]<<"\n";
-  // std::cout<<t1<<" "<<t2<<"\n\n";
-  // for(int i=0; i<4; i++) std::cout<<row1[i]<<" "; std::cout<<"\n";
-  // for(int i=0; i<3; i++){
-  //   for (int j=0;j<4;j++) std::cout<<smatr1[i + j*3]<<" ";std::cout<<"\n";
-  // }
-  // std::cout<<"\n";
-  // for(int i=0; i<4; i++) std::cout<<row2[i]<<" "; std::cout<<"\n";
-  // for(int i=0; i<3; i++){
-  //   for (int j=0;j<4;j++) std::cout<<smatr2[i + j*3]<<" ";std::cout<<"\n";
-  // }
 
   if (fabs(t2) < 1e-10){
     return nan("");
