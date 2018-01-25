@@ -656,4 +656,66 @@ TEST(HARMONIC_PROJECTORS_POLYGON_PK) {
   delete comm;
 }
 
+/* **************************************************************** */
+TEST(SERENDIPITY_PROJECTORS_POLYGON_PK) {
+  using namespace Amanzi;
+  using namespace Amanzi::AmanziMesh;
+  using namespace Amanzi::WhetStone;
+
+  std::cout << "\nTest: HO Serendipity Lagrange projectors for pentagon (linear deformation)" << std::endl;
+  Epetra_MpiComm *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
+
+  MeshFactory meshfactory(comm);
+  meshfactory.preference(FrameworkPreference({MSTK}));
+  Teuchos::RCP<const Amanzi::AmanziGeometry::GeometricModel> gm;
+  Teuchos::RCP<Mesh> mesh = meshfactory("test/one_pentagon.exo", gm, true, true);
+ 
+  int cell(0), nfaces(5);
+  VectorPolynomial uc, uc2;
+  std::vector<VectorPolynomial> vf(nfaces);
+
+  Projector projector(mesh);
+  auto moments = std::make_shared<WhetStone::DenseVector>();
+
+  // test globally linear deformation
+  for (int n = 0; n < nfaces; ++n) {
+    vf[n].resize(2);
+    for (int i = 0; i < 2; ++i) {
+      vf[n][i].Reshape(2, 1, true);
+      vf[n][i](0, 0) = 1.0;
+      vf[n][i](1, 0) = 2.0;
+      vf[n][i](1, 1) = 3.0;
+    }
+  }
+  
+  for (int k = 1; k < 4; ++k) {
+    projector.L2Cell_SerendipityPk(cell, k, vf, moments, uc);
+    std::cout << uc[0] << std::endl;
+
+    uc[0] -= vf[0][0];
+    uc[1] -= vf[0][1];
+    CHECK(uc[0].NormMax() < 1e-12 && uc[1].NormMax() < 1e-12);
+  }
+
+  // test globally quadratic deformation
+  std::cout << "\nTest: HO Serendipity Lagrange projectors for pentagon (quadratic deformation)" << std::endl;
+  for (int n = 0; n < nfaces; ++n) {
+    for (int i = 0; i < 2; ++i) {
+      vf[n][i].Reshape(2, 2, false);
+      vf[n][i](2, 0) = 4.0;
+      vf[n][i](2, 1) = 5.0;
+      vf[n][i](2, 2) = 6.0;
+    }
+  }
+
+  for (int k = 2; k < 4; ++k) {
+    projector.L2Cell_SerendipityPk(cell, k, vf, moments, uc);
+    std::cout << uc[0] << std::endl;
+    uc[0] -= vf[0][0];
+    uc[1] -= vf[0][1];
+    CHECK(uc[0].NormMax() < 1e-10 && uc[1].NormMax() < 1e-10);
+  }
+
+  delete comm;
+}
 

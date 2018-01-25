@@ -147,7 +147,7 @@ void Projector::HarmonicFace_CR1(
 ****************************************************************** */
 void Projector::GenericCell_CRk_(
     int c, int order, const std::vector<VectorPolynomial>& vf,
-    const ProjectorType& type, bool is_harmonic, 
+    const Projector::Type type, bool is_harmonic, 
     const std::shared_ptr<DenseVector>& moments, VectorPolynomial& uc) const
 {
   ASSERT(d_ == 2);
@@ -297,7 +297,7 @@ void Projector::GenericCell_CRk_(
 ****************************************************************** */
 void Projector::GenericCell_Pk_(
     int c, int order, const std::vector<VectorPolynomial>& vf, 
-    const ProjectorType& type, bool is_harmonic,
+    const Projector::Type type, bool is_harmonic,
     const std::shared_ptr<DenseVector>& moments, VectorPolynomial& uc) const
 {
   ASSERT(d_ == 2);
@@ -462,7 +462,7 @@ void Projector::GenericCell_Pk_(
     }
 
     // calculate L2 projector
-    if (type == L2 && ndof_c > 0) {
+    if (type == Type::L2 && ndof_c > 0) {
       v5(0) = uc[i](0, 0);
 
       DG_Modal dg(order, mesh_);
@@ -535,7 +535,7 @@ void Projector::L2Cell_SerendipityPk(
 
   // calculate degrees of freedom
   const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
-  DenseVector vdof(ndof), v1(nd), v2(nd);
+  DenseVector vdof(ndof_f), v1(nd), v2(nd);
 
   int dim = vf[0].size();
   uc.resize(dim);

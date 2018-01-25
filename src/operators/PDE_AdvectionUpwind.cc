@@ -29,7 +29,7 @@ void PDE_AdvectionUpwind::InitAdvection_(Teuchos::ParameterList& plist)
   if (global_op_ == Teuchos::null) {
     // constructor was given a mesh
     global_schema_row_.SetBase(AmanziMesh::FACE);
-    global_schema_row_.AddItem(AmanziMesh::CELL, SCHEMA_DOFS_SCALAR, 1);
+    global_schema_row_.AddItem(AmanziMesh::CELL, DOF_Type::SCALAR, 1);
     global_schema_col_ = global_schema_row_;
 
     Teuchos::RCP<CompositeVectorSpace> cvs = Teuchos::rcp(new CompositeVectorSpace());

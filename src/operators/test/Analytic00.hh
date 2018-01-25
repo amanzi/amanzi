@@ -8,12 +8,11 @@
 
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 
-  Linear solution plus constant coefficient.
+  Linear solution and constant coefficient:
 
-  u = g_x * x + g_y * y
+    u = g_x * x + g_y * y,
 
-  for user-provided gradient g = {g_x, g_y}
-  
+  with the user-provided gradient g = {g_x, g_y}
 */
 
 #ifndef AMANZI_OPERATOR_ANALYTIC_00_HH_

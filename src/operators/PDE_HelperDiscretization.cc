@@ -77,14 +77,15 @@ void PDE_HelperDiscretization::PopulateDimensions_()
 void PDE_HelperDiscretization::ApplyBCs(bool primary, bool eliminate)
 {
   for (auto bc : bcs_trial_) {
-    if (bc->type() == SCHEMA_DOFS_SCALAR ||
-        bc->type() == SCHEMA_DOFS_NORMAL_COMPONENT) {
+    if (bc->type() == DOF_Type::SCALAR ||
+        bc->type() == DOF_Type::NORMAL_COMPONENT ||
+        bc->type() == DOF_Type::MOMENT) {
       ApplyBCs_Cell_Scalar_(*bc, local_op_, primary, eliminate);
     } 
-    else if (bc->type() == SCHEMA_DOFS_POINT) {
+    else if (bc->type() == DOF_Type::POINT) {
       ApplyBCs_Cell_Point_(*bc, local_op_, primary, eliminate);
     }
-    else if (bc->type() == SCHEMA_DOFS_VECTOR) {
+    else if (bc->type() == DOF_Type::VECTOR) {
       ApplyBCs_Cell_Vector_(*bc, local_op_, primary, eliminate);
     }
     else {
@@ -96,7 +97,7 @@ void PDE_HelperDiscretization::ApplyBCs(bool primary, bool eliminate)
 
 
 /* ******************************************************************
-* Apply BCs of scalar type. The code is based on face (f) DOFs.
+* Apply BCs of scalar type.
 ****************************************************************** */
 void PDE_HelperDiscretization::ApplyBCs_Cell_Scalar_(
     const BCs& bc, Teuchos::RCP<Op> op,
@@ -105,7 +106,7 @@ void PDE_HelperDiscretization::ApplyBCs_Cell_Scalar_(
   const std::vector<int>& bc_model = bc.bc_model();
   const std::vector<double>& bc_value = bc.bc_value();
 
-  AmanziMesh::Entity_ID_List entities;
+  AmanziMesh::Entity_ID_List entities, cells;
   std::vector<int> dirs, offset;
 
   CompositeVector& rhs = *global_op_->rhs();
@@ -115,7 +116,7 @@ void PDE_HelperDiscretization::ApplyBCs_Cell_Scalar_(
   const Schema& schema_col = global_op_->schema_col();
 
   AmanziMesh::Entity_kind kind = bc.kind();
-  ASSERT(kind == AmanziMesh::FACE || kind == AmanziMesh::EDGE);
+  ASSERT(kind != AmanziMesh::EDGE);
   Teuchos::RCP<Epetra_MultiVector> rhs_kind;
   if (primary) rhs_kind = rhs.ViewComponent(schema_row.KindToString(kind), true);
 
@@ -128,14 +129,16 @@ void PDE_HelperDiscretization::ApplyBCs_Cell_Scalar_(
       mesh_->cell_get_faces_and_dirs(c, &entities, &dirs);
     } else if (kind == AmanziMesh::EDGE) {
       mesh_->cell_get_edges(c, &entities);
+    } else if (kind == AmanziMesh::NODE) {
+      mesh_->cell_get_nodes(c, &entities);
     }
     int nents = entities.size();
 
     // check for a boundary face
     bool found(false);
     for (int n = 0; n != nents; ++n) {
-      int f = entities[n];
-      if (bc_model[f] == OPERATOR_BC_DIRICHLET) found = true;
+      int x = entities[n];
+      if (bc_model[x] == OPERATOR_BC_DIRICHLET) found = true;
     }
     if (!found) continue;
 
@@ -147,8 +150,8 @@ void PDE_HelperDiscretization::ApplyBCs_Cell_Scalar_(
     for (auto it = op->schema_row_.begin(); it != op->schema_row_.end(); ++it, ++item) {
       if (it->kind == kind) {
         for (int n = 0; n != nents; ++n) {
-          int f = entities[n];
-          if (bc_model[f] == OPERATOR_BC_DIRICHLET) {
+          int x = entities[n];
+          if (bc_model[x] == OPERATOR_BC_DIRICHLET) {
             if (flag) {  // make a copy of elemental matrix
               op->matrices_shadow[c] = Acell;
               flag = false;
@@ -167,10 +170,10 @@ void PDE_HelperDiscretization::ApplyBCs_Cell_Scalar_(
     for (auto it = op->schema_col_.begin(); it != op->schema_col_.end(); ++it, ++item) {
       if (it->kind == kind) {
         for (int n = 0; n != nents; ++n) {
-          int f = entities[n];
-          double value = bc_value[f];
+          int x = entities[n];
+          double value = bc_value[x];
 
-          if (bc_model[f] == OPERATOR_BC_DIRICHLET) {
+          if (bc_model[x] == OPERATOR_BC_DIRICHLET) {
             if (flag) {  // make a copy of elemental matrix
               op->matrices_shadow[c] = Acell;
               flag = false;
@@ -188,8 +191,14 @@ void PDE_HelperDiscretization::ApplyBCs_Cell_Scalar_(
 
             if (primary) {
               rhs_loc(noff) = 0.0;
-              (*rhs_kind)[0][f] = value;
-              Acell(noff, noff) = 1.0;
+              (*rhs_kind)[0][x] = value;
+
+              if (kind == AmanziMesh::FACE) {
+                mesh_->face_get_cells(x, AmanziMesh::USED, &cells);
+              } else if (kind == AmanziMesh::NODE) {
+                mesh_->node_get_cells(x, AmanziMesh::USED, &cells);
+              }
+              Acell(noff, noff) = 1.0 / cells.size();
             }
 
             global_op_->AssembleVectorCellOp(c, schema_row, rhs_loc, rhs);

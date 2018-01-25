@@ -93,6 +93,24 @@
       <Parameter name="preconditioner schema" type="Array(string)" value="{node}"/>
     </ParameterList>
 
+    <ParameterList name="diffusion operator high-order">
+      <Parameter name="method" type="string" value="Lagrange"/>
+      <Parameter name="method order" type="int" value="2"/>
+      <Parameter name="matrix type" type="string" value="stiffness"/>
+      <ParameterList name="schema domain">
+        <Parameter name="base" type="string" value="cell"/>
+        <Parameter name="location" type="Array(string)" value="{node, face, cell}"/>
+        <Parameter name="type" type="Array(string)" value="{scalar, moment, moment}"/>
+        <Parameter name="number" type="Array(int)" value="{1, 1, 1}"/>
+      </ParameterList>
+      <ParameterList name="schema range">
+        <Parameter name="base" type="string" value="cell"/>
+        <Parameter name="location" type="Array(string)" value="{node, face, cell}"/>
+        <Parameter name="type" type="Array(string)" value="{scalar, moment, moment}"/>
+        <Parameter name="number" type="Array(int)" value="{1, 1, 1}"/>
+      </ParameterList>
+    </ParameterList>
+
     <!-- EDGE MFD schemes -->
     <ParameterList name="diffusion operator edge">
       <Parameter name="discretization primary" type="string" value="mfd: default"/>

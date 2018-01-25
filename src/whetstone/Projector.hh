@@ -31,9 +31,10 @@ class VectorPolynomial;
 
 class Projector { 
  public:
-  enum ProjectorType {
+  enum class Type {
     L2,
-    H1
+    H1,
+    SERENDIPITY_L2
   };
 
  public:
@@ -55,14 +56,14 @@ class Projector {
   void EllipticCell_CRk(
       int c, int order, const std::vector<VectorPolynomial>& vf,
       const std::shared_ptr<DenseVector>& moments, VectorPolynomial& uc) const {
-    GenericCell_CRk_(c, order, vf, H1, false, moments, uc);
+    GenericCell_CRk_(c, order, vf, Type::H1, false, moments, uc);
   }
 
   // -- harmonic projector calculates and returns cell-moments
   void HarmonicCell_CRk(
       int c, int order, const std::vector<VectorPolynomial>& vf,
       const std::shared_ptr<DenseVector>& moments, VectorPolynomial& uc) const {
-    GenericCell_CRk_(c, order, vf, H1, true, moments, uc);
+    GenericCell_CRk_(c, order, vf, Type::H1, true, moments, uc);
   }
 
   // projectors for conforming (Lagrange) virtual space
@@ -70,21 +71,21 @@ class Projector {
   void L2Cell_Pk(
       int c, int order, const std::vector<VectorPolynomial>& vf,
       const std::shared_ptr<DenseVector>& moments, VectorPolynomial& uc) const {
-    GenericCell_Pk_(c, order, vf, L2, true, moments, uc);
+    GenericCell_Pk_(c, order, vf, Type::L2, true, moments, uc);
   }
 
   // -- elliptic projector takes cell-moments on input
   void EllipticCell_Pk(
       int c, int order, const std::vector<VectorPolynomial>& vf,
       const std::shared_ptr<DenseVector>& moments, VectorPolynomial& uc) const {
-    GenericCell_Pk_(c, order, vf, H1, false, moments, uc);
+    GenericCell_Pk_(c, order, vf, Type::H1, false, moments, uc);
   }
 
   // -- harmonic projector calculates and returns cell-moments
   void HarmonicCell_Pk(
       int c, int order, const std::vector<VectorPolynomial>& vf,
       const std::shared_ptr<DenseVector>& moments, VectorPolynomial& uc) const {
-    GenericCell_Pk_(c, order, vf, H1, true, moments, uc);
+    GenericCell_Pk_(c, order, vf, Type::H1, true, moments, uc);
   }
 
   // -- L2 projector from serendipidy virtual element
@@ -95,12 +96,12 @@ class Projector {
  private:
   void GenericCell_CRk_(
       int c, int order, const std::vector<VectorPolynomial>& vf,
-      const ProjectorType& type, bool is_harmonic,
+      const Type type, bool is_harmonic,
       const std::shared_ptr<DenseVector>& moments, VectorPolynomial& uc) const;
 
   void GenericCell_Pk_(
       int c, int order, const std::vector<VectorPolynomial>& vf,
-      const ProjectorType& type, bool is_harmonic,
+      const Type type, bool is_harmonic,
       const std::shared_ptr<DenseVector>& moments, VectorPolynomial& uc) const;
 
   void CalculateDOFsOnBoundary_Pk_(

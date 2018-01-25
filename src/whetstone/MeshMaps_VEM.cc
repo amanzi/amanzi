@@ -32,14 +32,15 @@ void MeshMaps_VEM::VelocityCell(
 
   // LeastSquareProjector_Cell_(order_, c, vf, vc);
   if (order_ == 1 && d_ == 3) {
-    projector.HarmonicCell_CR1(c, vf, vc);
+    projector_.HarmonicCell_CR1(c, vf, vc);
   } else if (order_ < 2) {
     // projector.HarmonicCell_Pk(c, 1, vf, moments, vc);
-    projector.HarmonicCell_CR1(c, vf, vc);
+    projector_.HarmonicCell_CR1(c, vf, vc);
   } else {
-    projector.L2Cell_Pk(c, order_, vf, moments, vc);
-    // projector.HarmonicCell_Pk(c, order_, vf, moments, vc);
-    // projector.HarmonicCell_CRk(c, order_, vf, moments, vc);
+    projector_.L2Cell_SerendipityPk(c, order_, vf, moments, vc);
+    // projector_.L2Cell_Pk(c, order_, vf, moments, vc);
+    // projector_.HarmonicCell_Pk(c, order_, vf, moments, vc);
+    // projector_.HarmonicCell_CRk(c, order_, vf, moments, vc);
   }
 }
 
@@ -68,7 +69,7 @@ void MeshMaps_VEM::VelocityFace(int f, VectorPolynomial& vf) const
     }
 
     AmanziGeometry::Point p0(mesh1_->face_centroid(f) - mesh0_->face_centroid(f));
-    projector.HarmonicFace_CR1(f, p0, ve, vf);
+    projector_.HarmonicFace_CR1(f, p0, ve, vf);
   }
 }
 

@@ -50,11 +50,11 @@ class MFD3D_Lagrange : public virtual MFD3D {
   // -- stiffness matrix
   virtual int H1consistency(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Ac) {
     DenseMatrix R, G;
-    return H1consistencyHO(c, 1, T, N, R, G, Ac);
+    return H1consistencyHO(c, order_, T, N, R, G, Ac);
   }
   virtual int StiffnessMatrix(int c, const Tensor& T, DenseMatrix& A) {
     DenseMatrix R, G;
-    return StiffnessMatrixHO(c, 1, T, R, G, A);
+    return StiffnessMatrixHO(c, order_, T, R, G, A);
   }
 
   // -- other matrices

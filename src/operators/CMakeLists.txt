@@ -308,6 +308,11 @@ if (BUILD_TESTS)
                            test/operator_remap_dual.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
+    # high-order diffusion test
+    add_amanzi_test(operators_diffusion_high_order operators_diffusion_high_order
+                    KIND unit
+                    SOURCE test/Main.cc test/operator_diffusion_high_order.cc
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 endif()
 
 

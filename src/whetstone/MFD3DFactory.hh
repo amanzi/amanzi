@@ -26,6 +26,7 @@
 #include "MFD3D_CrouzeixRaviart.hh"
 #include "MFD3D_Diffusion.hh"
 #include "MFD3D_Generalized_Diffusion.hh"
+#include "MFD3D_Lagrange.hh"
 
 namespace Amanzi {
 namespace WhetStone {
@@ -63,6 +64,11 @@ Teuchos::RCP<BilinearForm> MFD3DFactory::Create(
   } 
   else if (method == "CrouzeixRaviart") {
     Teuchos::RCP<MFD3D_CrouzeixRaviart> mfd = Teuchos::rcp(new MFD3D_CrouzeixRaviart(mesh));
+    mfd->set_order(method_order);
+    return mfd;
+  } 
+  else if (method == "Lagrange") {
+    Teuchos::RCP<MFD3D_Lagrange> mfd = Teuchos::rcp(new MFD3D_Lagrange(mesh));
     mfd->set_order(method_order);
     return mfd;
   } 
