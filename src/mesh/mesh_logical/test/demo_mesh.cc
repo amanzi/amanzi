@@ -71,23 +71,6 @@ demoMeshLogicalSegmentRegularManual()
 };
 
 
-// Single segment of plant, factory generated
-Teuchos::RCP<Amanzi::AmanziMesh::MeshLogical>
-demoMeshLogicalSegmentRegular() {
-  using namespace Amanzi::AmanziMesh;
-  using namespace Amanzi::AmanziGeometry;
-
-  Epetra_MpiComm comm_(MPI_COMM_WORLD);
-
-  Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(3));
-  MeshLogicalFactory fac(&comm_, gm);
-
-  Entity_ID_List cells, faces;
-  fac.AddSegment(4, 1.0, false, 1.0, MeshLogicalFactory::TIP_BOUNDARY, MeshLogicalFactory::TIP_BOUNDARY, "myregion", &cells, &faces,NULL);
-  Teuchos::RCP<MeshLogical> mesh = fac.Create();
-  return mesh;
-}
-
   
 // Single segment of plant with irregular mesh spacing
 Teuchos::RCP<Amanzi::AmanziMesh::MeshLogical>
@@ -315,96 +298,6 @@ demoMeshLogicalYManual() {
 
   m->set_geometric_model(gm);
   return m;
-}
-
-
-// Single coarse root to 1 meter, then branches to 4 fine roots
-Teuchos::RCP<Amanzi::AmanziMesh::MeshLogical>
-demoMeshLogicalY() {
-  using namespace Amanzi::AmanziMesh;
-  using namespace Amanzi::AmanziGeometry;
-
-  Epetra_MpiComm comm_(MPI_COMM_WORLD);
-  const int nproc(comm_.NumProc());
-  const int me(comm_.MyPID());
-
-  Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(3));
-
-  MeshLogicalFactory fac(&comm_, gm);
-
-
-  double half_cell_coarse = 0.25;
-  double half_cell_fine = 0.25*std::sqrt(2);
-  double cross_section_coarse = 1.e-4;
-  double cross_section_fine = cross_section_coarse / 4.;
-  
-  // Structure: set up endpoints
-  // ---------------------------------
-  // coarse root
-  Point stem_root_intersection(0., 0., 0.);
-  Point down(0.,0.,-half_cell_coarse);
-  Point branch = stem_root_intersection + 5*down;
-
-  Point root_normal1(1., 0., -1.);
-  root_normal1 *= half_cell_fine / norm(root_normal1);
-  Point root_normal2(-1., 0., -1.);
-  root_normal2 *= half_cell_fine / norm(root_normal2);
-  Point root_normal3(0., 1., -1.);
-  root_normal3 *= half_cell_fine / norm(root_normal3);
-  Point root_normal4(0., -1., -1.);
-  root_normal4 *= half_cell_fine / norm(root_normal4);
-
-  Point root_tip1 = branch + root_normal1*5;
-  Point root_tip2 = branch + root_normal2*5;
-  Point root_tip3 = branch + root_normal3*5;
-  Point root_tip4 = branch + root_normal4*5;
-
-  // add the coarse root
-  Entity_ID_List coarse_c, coarse_f;
-  fac.AddSegment(3, stem_root_intersection, branch, cross_section_coarse,
-		 MeshLogicalFactory::TIP_BOUNDARY, MeshLogicalFactory::TIP_JUNCTION, "coarse_root", &coarse_c, &coarse_f,NULL);
-
-  // add the fine roots, along with the connection to the coarse root
-  Entity_ID_List fine_c1, fine_f1;
-  double c1_length;
-  fac.AddSegment(2, branch, root_tip1, cross_section_fine,
-		 MeshLogicalFactory::TIP_BRANCH, MeshLogicalFactory::TIP_BOUNDARY, "fine_root1", &fine_c1, &fine_f1, &c1_length);
-
-  // add the connections between the fine and coarse
-  Entity_ID_List new_conn(2); new_conn[0] = coarse_c.back(); new_conn[1] = fine_c1[0];
-  std::vector<double> face_to_cell_lengths(2, c1_length/2.0);
-  fac.AddConnection(new_conn, root_tip1-branch, face_to_cell_lengths, cross_section_fine);
-
-  Entity_ID_List fine_c2, fine_f2;
-  double c2_length;
-  fac.AddSegment(2, branch, root_tip2, cross_section_fine,
-		 MeshLogicalFactory::TIP_BRANCH, MeshLogicalFactory::TIP_BOUNDARY, "fine_root2", &fine_c2, &fine_f2, &c2_length);
-  new_conn[1] = fine_c2[0];
-  fac.AddConnection(new_conn, root_tip2-branch, face_to_cell_lengths, cross_section_fine);
-
-  Entity_ID_List fine_c3, fine_f3;
-  double c3_length;
-  fac.AddSegment(2, branch, root_tip3, cross_section_fine,
-		 MeshLogicalFactory::TIP_BRANCH, MeshLogicalFactory::TIP_BOUNDARY, "fine_root3", &fine_c3, &fine_f3, &c3_length);
-  new_conn[1] = fine_c3[0];
-  fac.AddConnection(new_conn, root_tip3-branch, face_to_cell_lengths, cross_section_fine);
-
-  Entity_ID_List fine_c4, fine_f4;
-  double c4_length;
-  fac.AddSegment(2, branch, root_tip4, cross_section_fine,
-		 MeshLogicalFactory::TIP_BRANCH, MeshLogicalFactory::TIP_BOUNDARY, "fine_root4", &fine_c4, &fine_f4, &c4_length);
-  new_conn[1] = fine_c4[0];
-  fac.AddConnection(new_conn, root_tip4-branch, face_to_cell_lengths, cross_section_fine);
-
-  // make the fine root set
-  fine_c1.insert(fine_c1.end(), fine_c2.begin(), fine_c2.end());
-  fine_c1.insert(fine_c1.end(), fine_c3.begin(), fine_c3.end());
-  fine_c1.insert(fine_c1.end(), fine_c4.begin(), fine_c4.end());
-  fac.AddSet("fine_root", "cell", fine_c1);
-
-  Teuchos::RCP<MeshLogical> mesh = fac.Create();
-  return mesh;
-
 }
 
 
