@@ -279,7 +279,7 @@ MeshLogicalFactory::AddSegment(
     std::string const& name,
     std::vector<Entity_ID> *const cells,
     std::vector<Entity_ID> *const faces) {
-  ASSERT(tracking_centroids_);
+  ASSERT(calculated_volume_);
     
   // orientation
   auto orientation = end - begin;
