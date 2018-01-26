@@ -56,6 +56,9 @@ void PDE_ElectromagneticsMHD::UpdateMatrices(
 void PDE_ElectromagneticsMHD::ModifyMatrices(
    CompositeVector& E, CompositeVector& B, double dt)
 {
+  B.ScatterMasterToGhosted("face");
+  global_op_->rhs()->PutScalarGhosted(0.0);
+
   const Epetra_MultiVector& Bf = *B.ViewComponent("face", true);
   Epetra_MultiVector& rhs_e = *global_op_->rhs()->ViewComponent("edge", true);
 
@@ -96,6 +99,8 @@ void PDE_ElectromagneticsMHD::ModifyMatrices(
       rhs_e[0][e] += v3(n);
     }
   }
+
+  global_op_->rhs()->GatherGhostedToMaster("edge", Add);
 }
 
 
@@ -105,7 +110,7 @@ void PDE_ElectromagneticsMHD::ModifyMatrices(
 void PDE_ElectromagneticsMHD::ModifyFields(
    CompositeVector& E, CompositeVector& B, double dt)
 {
-  B.ScatterMasterToGhosted("face");
+  E.ScatterMasterToGhosted("edge");
 
   Epetra_MultiVector& Ee = *E.ViewComponent("edge", true);
   Epetra_MultiVector& Bf = *B.ViewComponent("face", false);
@@ -150,6 +155,7 @@ void PDE_ElectromagneticsMHD::ModifyFields(
 double PDE_ElectromagneticsMHD::CalculateOhmicHeating(const CompositeVector& E)
 {
   const Epetra_MultiVector& Ee = *E.ViewComponent("edge", true);
+  E.ScatterMasterToGhosted("edge");
 
   AmanziMesh::Entity_ID_List edges;
   WhetStone::MFD3D_Electromagnetics mfd(mesh_);
@@ -173,6 +179,10 @@ double PDE_ElectromagneticsMHD::CalculateOhmicHeating(const CompositeVector& E)
     energy += v1 * v2;
   }
 
+  // parallel collective operation
+  double tmp(energy);
+  mesh_->get_comm()->SumAll(&tmp, &energy, 1);
+
   return energy;
 }
 
@@ -183,6 +193,7 @@ double PDE_ElectromagneticsMHD::CalculateOhmicHeating(const CompositeVector& E)
 double PDE_ElectromagneticsMHD::CalculateMagneticEnergy(const CompositeVector& B)
 {
   const Epetra_MultiVector& Bf = *B.ViewComponent("face", true);
+  B.ScatterMasterToGhosted("face");
 
   std::vector<int> dirs;
   AmanziMesh::Entity_ID_List faces;
@@ -204,6 +215,10 @@ double PDE_ElectromagneticsMHD::CalculateMagneticEnergy(const CompositeVector& B
     Mcell.Multiply(v1, v2, false);
     energy += v1 * v2;
   }
+
+  // parallel collective operation
+  double tmp(energy);
+  mesh_->get_comm()->SumAll(&tmp, &energy, 1);
 
   return energy / 2;
 }

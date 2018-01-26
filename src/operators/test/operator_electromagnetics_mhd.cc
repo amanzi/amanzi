@@ -271,8 +271,8 @@ void ResistiveMHD2D(double dt, double tend,
   if (MyPID == 0) {
     if (enorm != 0.0) el2_err /= enorm; 
     if (bnorm != 0.0) bl2_err /= bnorm; 
-    printf("L2(e)=%10.7f  Inf(e)=%9.6f  L2(b)=%10.7f  Inf(b)=%9.6f\n",
-        el2_err, einf_err, bl2_err, binf_err);
+    printf("nx=%d L2(e)=%10.7f  Inf(e)=%9.6f  L2(b)=%10.7f  Inf(b)=%9.6f\n",
+        nx, el2_err, einf_err, bl2_err, binf_err);
     // CHECK(el2_err < tolerance);
   }
 }
@@ -457,7 +457,10 @@ void ResistiveMHD3D(double dt, double tend, bool convergence,
     told = tnew;
     tnew += dt;
 
-    // reconstruction
+    // reconstruction 
+    B.ScatterMasterToGhosted("face");
+    E.ScatterMasterToGhosted("edge");
+
     // -- magnetic field
     Teuchos::RCP<CompositeVectorSpace> cvs = Teuchos::rcp(new CompositeVectorSpace());
     cvs->SetMesh(mesh)->SetGhosted(true)->AddComponent("cell", AmanziMesh::CELL, 3);
@@ -524,6 +527,9 @@ void ResistiveMHD3D(double dt, double tend, bool convergence,
       }
     }
 
+    double err_in[2] = {errB, divB};
+    double err_out[2];
+    mesh->get_comm()->SumAll(err_in, err_out, 2);
 
     if (cycle == 1) divB0 = divB;
     CHECK_CLOSE(divB0, divB, 1e-8);
@@ -533,8 +539,8 @@ void ResistiveMHD3D(double dt, double tend, bool convergence,
                 << " itr=" << solver.num_itrs() << "  energy= " << energy 
                 << "  heat= " << heat
                 << "  avgB=" << avgB / ncells_owned 
-                << "  divB=" << std::pow(divB, 0.5) 
-                << "  errB=" << std::pow(errB, 0.5) << std::endl;
+                << "  divB=" << std::pow(err_out[1], 0.5) 
+                << "  errB=" << std::pow(err_out[0], 0.5) << std::endl;
     }
 
     // visualization
@@ -568,6 +574,10 @@ void ResistiveMHD3D(double dt, double tend, bool convergence,
   }
 }
 
+
+// TEST(RESISTIVE_MHD2D_TMP) {
+//   ResistiveMHD3D<AnalyticElectromagnetics04>(0.1, 0.5, false, 30,30,50, -4.0,-4.0,-10.0, 4.0,4.0,10.0, "structured");
+// }
 
 TEST(RESISTIVE_MHD2D_RELAX) {
   ResistiveMHD2D<AnalyticElectromagnetics04>(0.7, 5.9, 8,18, -4.0,-10.0, 4.0,10.0, "structured");
