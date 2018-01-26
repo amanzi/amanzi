@@ -268,6 +268,49 @@ MeshLogicalFactory::Create(Teuchos::ParameterList& plist) {
 }
 
 
+void
+MeshLogicalFactory::AddSegment(
+    int n_cells,
+    const AmanziGeometry::Point& begin,
+    const AmanziGeometry::Point& end,
+    double face_area,
+    MeshLogicalFactory::LogicalTip_t first_tip_type,
+    MeshLogicalFactory::LogicalTip_t last_tip_type,
+    std::string const& name,
+    std::vector<Entity_ID> *const cells,
+    std::vector<Entity_ID> *const faces) {
+  ASSERT(tracking_centroids_);
+    
+  // orientation
+  auto orientation = end - begin;
+  double seg_length = AmanziGeometry::norm(orientation);
+  orientation /= seg_length;
+
+  // lengths
+  double cell_length = seg_length / n_cells;
+  std::vector<double> lengths(n_cells, cell_length);
+
+  // how many areas?
+  int n_faces = n_cells - 1;
+  if (first_tip_type == LogicalTip_t::BOUNDARY) n_faces++;
+  if (last_tip_type == LogicalTip_t::BOUNDARY) n_faces++;
+  std::vector<double> face_areas(n_faces, face_area);
+
+  // centroids
+  std::vector<AmanziGeometry::Point> centroids(n_cells);
+  auto my_centroid = begin + orientation * cell_length/2.;
+  centroids[0] = my_centroid;
+  for (int c=0; c!=n_cells-1; ++c) {
+    my_centroid += orientation * cell_length;
+    centroids[c+1] = my_centroid;
+  }
+
+  AddSegment(&centroids, nullptr, lengths, face_areas, orientation,
+             first_tip_type, last_tip_type, name, cells, faces);
+}
+
+
+
 // Add a segment
 //
 // Centroids and cell volumes are optional arguments.

@@ -237,6 +237,22 @@ class MeshLogicalFactory {
   Teuchos::RCP<MeshLogical>
   Create(Teuchos::ParameterList& plist);
 
+  //
+  // Convenience function to add a segment, mostly for testing
+  //
+  void
+  AddSegment(
+      int n_cells,
+      const AmanziGeometry::Point& begin,
+      const AmanziGeometry::Point& end,
+      double face_area,
+      MeshLogicalFactory::LogicalTip_t first_tip_type,
+      MeshLogicalFactory::LogicalTip_t last_tip_type,
+      std::string const& name,
+      std::vector<Entity_ID> *const cells,
+      std::vector<Entity_ID> *const faces);
+  
+
   // Add a segment
   //
   // Centroids and cell volumes are optional arguments.
