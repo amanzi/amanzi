@@ -94,7 +94,9 @@ class RemapDG : public Explicit_TI::fnBase<CompositeVector> {
           .set<std::string>("verbosity level", "none");
 
     tprint_ = 0.0;
+    tl2_ = 0.0;
     npcg_ = 0;
+    l2norm_ = -1.0;
   };
   ~RemapDG() {};
 
@@ -132,13 +134,24 @@ class RemapDG : public Explicit_TI::fnBase<CompositeVector> {
 
     npcg_++;
     if (fabs(tprint_ - t) < 1e-6 && mesh_->get_comm()->MyPID() == 0) {
-      printf("t=%8.5f  pcg=(%d, %9.4g)  nsolvers=%d\n",
-          t, pcg.num_itrs(), pcg.residual(), npcg_);
+      printf("t=%8.5f  L2=%9.5g  pcg=(%d, %9.4g)  nsolvers=%d\n",
+          t, l2norm_, pcg.num_itrs(), pcg.residual(), npcg_);
       tprint_ += 0.1;
     }
 
     // -- calculate right-hand_side
     op_flux_->global_operator()->Apply(x, f);
+  }
+
+  double L2Norm(double t, const CompositeVector& p1) {
+    if (fabs(tl2_ - t) < 1e-6 && mesh_->get_comm()->MyPID() == 0) {
+      CompositeVector p2(p1);
+
+      ChangeVariables(t, p1, p2, false);
+      p1.Dot(p2, &l2norm_);
+      tl2_ += 0.1;
+    }
+    return l2norm_;
   }
 
   // access 
@@ -213,8 +226,9 @@ class RemapDG : public Explicit_TI::fnBase<CompositeVector> {
   std::vector<WhetStone::VectorPolynomial> velf_vec_;
 
   Teuchos::ParameterList plist_;
-  double tprint_;
+  double tprint_, tl2_;
   int npcg_;
+  double l2norm_;
 };
 
 } // namespace amanzi
@@ -421,6 +435,7 @@ void RemapTestsDualRK(int order_p, int order_u,
   double gcl, gcl_err(0.0);
   double t(0.0), tend(1.0);
   while(t < tend - dt/2) {
+    remap.L2Norm(t, p1aux);
     rk.TimeStep(t, dt, p1aux, *p1);
 
     *p1aux.ViewComponent("cell") = *p1->ViewComponent("cell");
@@ -497,66 +512,20 @@ void RemapTestsDualRK(int order_p, int order_u,
       poly = dg.CalculatePolynomial(c, data);
       numi.ChangeBasisNaturalToRegular(c, poly);
 
-      mesh0->cell_get_faces_and_dirs(c, &faces, &dirs);
-      int nfaces = faces.size();  
-
-      WhetStone::VectorPolynomial vc(dim, 0);
-      std::vector<WhetStone::VectorPolynomial> vvf;
-
-      for (int i = 0; i < nfaces; ++i) {
-        int f = faces[i];
-        const AmanziGeometry::Point& xf = mesh1->face_centroid(f);
-        mesh0->face_get_nodes(f, &nodes);
-
-        mesh0->node_get_coordinates(nodes[0], &v0);
-        mesh0->node_get_coordinates(nodes[1], &v1);
-        double f0 = poly.Value(v0);
-        double f1 = poly.Value(v1);
-
-        WhetStone::VectorPolynomial vf(dim - 1, 1);
-        vf[0].Reshape(dim - 1, order_p);
-        if (order_p == 1) {
-          vf[0](0, 0) = (f0 + f1) / 2; 
-          vf[0](1, 0) = f1 - f0; 
-        } else if (order_p == 2) {
-          double f2 = poly.Value((v0 + v1) / 2);
-          vf[0](0, 0) = f2;
-          vf[0](1, 0) = f1 - f0;
-          vf[0](2, 0) = -4 * f2 + 2 * f0 + 2 * f1;
-        } else {
-          ASSERT(0);
-        }
-
-        mesh1->node_get_coordinates(nodes[0], &v0);
-        mesh1->node_get_coordinates(nodes[1], &v1);
-
-        std::vector<AmanziGeometry::Point> tau;
-        tau.push_back(v1 - v0);
-        vf[0].InverseChangeCoordinates(xf, tau);
-        vvf.push_back(vf);
-      }
-
-      auto moments = std::make_shared<WhetStone::DenseVector>();
-      if (order_p == 2) {
-        moments->Reshape(1);
-        (*moments)(0) = mass1_c / mesh1->cell_volume(c);
-      }
-
-      WhetStone::Projector projector(mesh1);
-      projector.EllipticCell_Pk(c, order_p, vvf, moments, vc);
-      vc[0].ChangeOrigin(mesh1->cell_centroid(c));
+      maps->ProjectPolynomial(c, poly);
+      poly.ChangeOrigin(mesh1->cell_centroid(c));
 
       if (order_p == 1) {
-        vc[0](0, 0) = mass1_c / mesh1->cell_volume(c);
+        poly(0, 0) = mass1_c / mesh1->cell_volume(c);
       }
 
-      // error in the projected solution vc[0]
+      // error in the projected solution
       mesh0->cell_get_nodes(c, &nodes);
       int nnodes = nodes.size();  
       for (int i = 0; i < nnodes; ++i) {
         mesh1->node_get_coordinates(nodes[i], &v1);
 
-        double tmp = vc[0].Value(v1);
+        double tmp = poly.Value(v1);
         tmp -= ana.function_exact(v1, 0.0);
         qinf_err = std::max(qinf_err, fabs(tmp));
         ql2_err += tmp * tmp * area_c / nnodes;
@@ -611,7 +580,6 @@ TEST(REMAP_DUAL_FEM) {
 }
 */
 
-
 TEST(REMAP_DUAL_VEM) {
   RemapTestsDualRK(0,1, Amanzi::Explicit_TI::heun_euler, "VEM", "test/median15x16.exo", 0,0,0, 0.05);
   RemapTestsDualRK(1,2, Amanzi::Explicit_TI::heun_euler, "VEM", "test/median15x16.exo", 0,0,0, 0.05);
@@ -622,11 +590,11 @@ TEST(REMAP_DUAL_VEM) {
 
 /*
 TEST(REMAP2D_DG_QUADRATURE_ERROR) {
-  RemapTestsDualRK(2,2, Amanzi::Explicit_TI::tvd_3rd_order, "VEM", "",  16, 16,0, 0.05);
-  RemapTestsDualRK(2,2, Amanzi::Explicit_TI::tvd_3rd_order, "VEM", "",  32, 32,0, 0.05 / 2);
-  RemapTestsDualRK(2,2, Amanzi::Explicit_TI::tvd_3rd_order, "VEM", "",  64, 64,0, 0.05 / 4);
-  RemapTestsDualRK(2,2, Amanzi::Explicit_TI::tvd_3rd_order, "VEM", "", 128,128,0, 0.05 / 8);
-  RemapTestsDualRK(2,2, Amanzi::Explicit_TI::tvd_3rd_order, "VEM", "", 256,256,0, 0.05 / 16);
+  RemapTestsDualRK(2,1, Amanzi::Explicit_TI::tvd_3rd_order, "VEM", "",  16, 16,0, 0.05);
+  RemapTestsDualRK(2,1, Amanzi::Explicit_TI::tvd_3rd_order, "VEM", "",  32, 32,0, 0.05 / 2);
+  RemapTestsDualRK(2,1, Amanzi::Explicit_TI::tvd_3rd_order, "VEM", "",  64, 64,0, 0.05 / 4);
+  RemapTestsDualRK(2,1, Amanzi::Explicit_TI::tvd_3rd_order, "VEM", "", 128,128,0, 0.05 / 8);
+  RemapTestsDualRK(2,1, Amanzi::Explicit_TI::tvd_3rd_order, "VEM", "", 256,256,0, 0.05 / 16);
 }
 */
 
@@ -642,9 +610,9 @@ TEST(REMAP2D_DG_QUADRATURE_ERROR) {
 
 /*
 TEST(REMAP2D_DG_QUADRATURE_ERROR) {
-  RemapTestsDualRK(2,3, Amanzi::Explicit_TI::tvd_3rd_order, "VEM", "test/random10.exo", 0,0,0, 0.01);
-  RemapTestsDualRK(2,3, Amanzi::Explicit_TI::tvd_3rd_order, "VEM", "test/random20.exo", 0,0,0, 0.01 / 2);
-  RemapTestsDualRK(2,3, Amanzi::Explicit_TI::tvd_3rd_order, "VEM", "test/random40.exo", 0,0,0, 0.01 / 4);
+  RemapTestsDualRK(2,3, Amanzi::Explicit_TI::tvd_3rd_order, "VEM", "test/random10.exo", 0,0,0, 0.05);
+  RemapTestsDualRK(2,3, Amanzi::Explicit_TI::tvd_3rd_order, "VEM", "test/random20.exo", 0,0,0, 0.05 / 2);
+  RemapTestsDualRK(2,3, Amanzi::Explicit_TI::tvd_3rd_order, "VEM", "test/random40.exo", 0,0,0, 0.05 / 4);
 }
 */
 

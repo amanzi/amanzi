@@ -17,7 +17,9 @@
 
 #include "DenseMatrix.hh"
 #include "MeshMaps.hh"
+#include "NumericalIntegration.hh"
 #include "Polynomial.hh"
+#include "Projector.hh"
 
 namespace Amanzi {
 namespace WhetStone {
@@ -224,6 +226,72 @@ int MeshMaps::LeastSquareFit(int order,
   }
 
   return 0;
+}
+
+
+/* ******************************************************************
+* Project polynomial on mesh0 to polynomial space on mesh1.
+****************************************************************** */
+void MeshMaps::ProjectPolynomial(int c, Polynomial& poly) const
+{
+  int order = poly.order();
+
+  WhetStone::Entity_ID_List faces, nodes;
+  std::vector<int> dirs;
+
+  mesh0_->cell_get_faces_and_dirs(c, &faces, &dirs);
+  int nfaces = faces.size();  
+
+  AmanziGeometry::Point v0(d_), v1(d_);
+  std::vector<VectorPolynomial> vvf;
+
+  for (int i = 0; i < nfaces; ++i) {
+    int f = faces[i];
+    const AmanziGeometry::Point& xf = mesh1_->face_centroid(f);
+    mesh0_->face_get_nodes(f, &nodes);
+
+    mesh0_->node_get_coordinates(nodes[0], &v0);
+    mesh0_->node_get_coordinates(nodes[1], &v1);
+    double f0 = poly.Value(v0);
+    double f1 = poly.Value(v1);
+
+    WhetStone::VectorPolynomial vf(d_ - 1, 1);
+    vf[0].Reshape(d_ - 1, order);
+    if (order == 1) {
+      vf[0](0, 0) = (f0 + f1) / 2; 
+      vf[0](1, 0) = f1 - f0; 
+    } else if (order == 2) {
+      double f2 = poly.Value((v0 + v1) / 2);
+      vf[0](0, 0) = f2;
+      vf[0](1, 0) = f1 - f0;
+      vf[0](2, 0) = -4 * f2 + 2 * f0 + 2 * f1;
+    } else {
+      ASSERT(0);
+    }
+
+    mesh1_->node_get_coordinates(nodes[0], &v0);
+    mesh1_->node_get_coordinates(nodes[1], &v1);
+
+    std::vector<AmanziGeometry::Point> tau;
+    tau.push_back(v1 - v0);
+    vf[0].InverseChangeCoordinates(xf, tau);
+    vvf.push_back(vf);
+  }
+
+  auto moments = std::make_shared<WhetStone::DenseVector>();
+  if (order == 2) {
+    NumericalIntegration numi(mesh1_);
+    double mass = numi.IntegratePolynomialCell(c, poly);
+
+    moments->Reshape(1);
+    (*moments)(0) = mass / mesh1_->cell_volume(c);
+  }
+
+  VectorPolynomial vc(d_, 0);
+  Projector projector(mesh1_);
+  // projector.EllipticCell_Pk(c, order, vvf, moments, vc);
+  projector.L2Cell_SerendipityPk(c, order, vvf, moments, vc);
+  poly = vc[0];
 }
 
 

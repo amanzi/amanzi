@@ -70,6 +70,9 @@ class MeshMaps {
   void Determinant(double t, const MatrixPolynomial& J, Polynomial& det) const;
 
   // Miscalleneous
+  // -- projection ffrom reference coordinates (mesh0) to mesh1
+  void ProjectPolynomial(int c, Polynomial& poly) const;
+
   // -- polynomial approximation of map x2 = F(x1)
   int LeastSquareFit(int order,
                      const std::vector<AmanziGeometry::Point>& x1, 

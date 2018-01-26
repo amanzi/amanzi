@@ -710,10 +710,43 @@ TEST(SERENDIPITY_PROJECTORS_POLYGON_PK) {
 
   for (int k = 2; k < 4; ++k) {
     projector.L2Cell_SerendipityPk(cell, k, vf, moments, uc);
-    std::cout << uc[0] << std::endl;
+    // std::cout << uc[0] << std::endl;
     uc[0] -= vf[0][0];
     uc[1] -= vf[0][1];
     CHECK(uc[0].NormMax() < 1e-10 && uc[1].NormMax() < 1e-10);
+  }
+
+  // test piecewise linear deformation
+  // work in progress...
+  std::cout << "\nTest: HO Sependipity Lagrange projectors for pentagon (piece-wice linear)" << std::endl;
+  std::vector<AmanziGeometry::Point> vv;
+  vv.push_back(AmanziGeometry::Point( 0.0, 0.0));
+  vv.push_back(AmanziGeometry::Point( 0.05,-0.1));
+  vv.push_back(AmanziGeometry::Point( 0.1, 0.0));
+  vv.push_back(AmanziGeometry::Point( 0.0, 0.1));
+  vv.push_back(AmanziGeometry::Point(-0.1, 0.0));
+
+  AmanziGeometry::Point x1(2), x2(2), tau(2);
+  for (int n = 0; n < 5; ++n) {
+    int m = (n + 1) % 5;
+    mesh->node_get_coordinates(n, &x1);
+    mesh->node_get_coordinates(m, &x2);
+    tau = x2 - x1;
+    tau /= AmanziGeometry::L22(tau);
+
+    for (int i = 0; i < 2; ++i) {
+      vf[n][i].Reshape(2, 1);
+      vf[n][i](0, 0) = vv[n][i] * (x2 * tau) - vv[m][i] * (x1 * tau);
+
+      vf[n][i](1, 0) = (vv[m][i] - vv[n][i]) * tau[0];
+      vf[n][i](1, 1) = (vv[m][i] - vv[n][i]) * tau[1];
+    }
+  }
+  
+  for (int k = 1; k < 4; ++k) {
+    projector.L2Cell_SerendipityPk(cell, k, vf, moments, uc);
+    uc[0].ChangeOrigin(mesh->cell_centroid(cell));
+    std::cout << uc[0] << std::endl;
   }
 
   delete comm;
