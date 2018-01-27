@@ -31,7 +31,7 @@ namespace WhetStone {
 * Consistency condition for stiffness matrix. 
 * Only the upper triangular part of Ac is calculated.
 ****************************************************************** */
-int MFD3D_CrouzeixRaviart::H1consistency(
+int MFD3D_CrouzeixRaviart::H1consistencyLO_(
     int c, const Tensor& K, DenseMatrix& N, DenseMatrix& Ac)
 {
   Entity_ID_List edges, faces, face_edges;
@@ -94,7 +94,7 @@ int MFD3D_CrouzeixRaviart::H1consistency(
 /* ******************************************************************
 * Stiffness matrix: the standard algorithm. 
 ****************************************************************** */
-int MFD3D_CrouzeixRaviart::StiffnessMatrix(int c, const Tensor& K, DenseMatrix& A)
+int MFD3D_CrouzeixRaviart::StiffnessMatrixLO_(int c, const Tensor& K, DenseMatrix& A)
 {
   DenseMatrix N;
 

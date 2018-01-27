@@ -36,6 +36,7 @@
 
 #include "MFD3D_Diffusion.hh"
 #include "Mesh.hh"
+#include "NumericalIntegration.hh"
 
 class AnalyticBase {
  public:
@@ -162,7 +163,7 @@ class AnalyticBase {
           // std::cout << v << " at " << xv << " error: " << tmp << " " << p[0][v] << std::endl;
         }
         l2_err += std::pow(tmp - p[0][v], 2.0) * volume / nnodes;
-        inf_err = std::max(inf_err, tmp - p[0][v]);
+        inf_err = std::max(inf_err, fabs(tmp - p[0][v]));
         pnorm += std::pow(tmp, 2.0) * volume / nnodes;
       }
 
@@ -222,9 +223,66 @@ class AnalyticBase {
         const Amanzi::AmanziGeometry::Point& xe = mesh_->edge_centroid(e);
         double tmp = pressure_exact(xe, t);
         l2_err += std::pow(tmp - p[0][e], 2.0) * volume / nedges;
-        inf_err = std::max(inf_err, tmp - p[0][e]);
+        inf_err = std::max(inf_err, fabs(tmp - p[0][e]));
         pnorm += std::pow(tmp, 2.0) * volume / nedges;
         // std::cout << e << " at " << xe << " error: " << tmp << " " << p[0][e] << std::endl;
+      }
+    }
+#ifdef HAVE_MPI
+    double tmp = pnorm;
+    mesh_->get_comm()->SumAll(&tmp, &pnorm, 1);
+    tmp = l2_err;
+    mesh_->get_comm()->SumAll(&tmp, &l2_err, 1);
+    tmp = inf_err;
+    mesh_->get_comm()->MaxAll(&tmp, &inf_err, 1);
+#endif
+    pnorm = sqrt(pnorm);
+    l2_err = sqrt(l2_err);
+  }
+
+  void ComputeEdgeMomentsError(
+      Epetra_MultiVector& p, double t, int ngauss, 
+      double& pnorm, double& l2_err, double& inf_err) {
+    pnorm = 0.0;
+    l2_err = 0.0;
+    inf_err = 0.0;
+
+    int d = mesh_->space_dimension();
+
+    Amanzi::AmanziMesh::Entity_ID n0, n1;
+    Amanzi::AmanziGeometry::Point x0(d), x1(d), xv(d);
+
+    Amanzi::AmanziMesh::Entity_ID_List edges;
+    Amanzi::WhetStone::MFD3D_Diffusion mfd(mesh_);
+    int ncells = mesh_->num_entities(Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::OWNED);
+
+    for (int c = 0; c < ncells; c++) {
+      double volume = mesh_->cell_volume(c);
+
+      mesh_->cell_get_edges(c, &edges);
+      int nedges = edges.size();
+
+      for (int k = 0; k < nedges; k++) {
+        int e = edges[k];
+
+        mesh_->edge_get_nodes(e, &n0, &n1);
+        mesh_->node_get_coordinates(n0, &x0);
+        mesh_->node_get_coordinates(n1, &x1);
+
+        double s0(0.0), s1(0.0);
+        for (int n = 0; n <= ngauss; ++n) {
+          double gp = Amanzi::WhetStone::q1d_points[ngauss - 1][n];
+          double gw = Amanzi::WhetStone::q1d_weights[ngauss - 1][n];
+
+          xv = x0 * gp + x1 * (1.0 - gp);
+          s0 += gw * pressure_exact(xv, t);
+          s1 += gw * pressure_exact(xv, t) * (0.5 - gp);
+        } 
+
+        l2_err += std::pow(s0 - p[0][e], 2.0) * volume / nedges;
+        inf_err = std::max(inf_err, fabs(s0 - p[0][e]));
+        pnorm += std::pow(s0, 2.0) * volume / nedges;
+        // std::cout << e << " at " << (x0 + x1) / 2 << " error: " << s0 << " " << p[0][e] << std::endl;
       }
     }
 #ifdef HAVE_MPI

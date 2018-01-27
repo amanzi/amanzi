@@ -47,8 +47,22 @@ class MFD3D_CrouzeixRaviart : public virtual MFD3D {
   virtual int MassMatrixInverse(int c, const Tensor& T, DenseMatrix& M) { return -1; } 
 
   // -- stiffness matrix
-  virtual int H1consistency(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Ac);
-  virtual int StiffnessMatrix(int c, const Tensor& T, DenseMatrix& A);
+  virtual int H1consistency(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Ac) {;
+    if (order_ == 1) {
+      return H1consistencyLO_(c, T, N, Ac);
+    } else {
+      DenseMatrix R, G;
+      return H1consistencyHO(c, order_, T, N, R, G, Ac);
+    }
+  }
+  virtual int StiffnessMatrix(int c, const Tensor& T, DenseMatrix& A) {
+    if (order_ == 1) {
+      return StiffnessMatrixLO_(c, T, A);
+    } else {
+      DenseMatrix R, G;
+      return StiffnessMatrixHO(c, order_, T, R, G, A);
+    }
+  }
 
   // -- other matrices
   virtual int DivergenceMatrix(int c, DenseMatrix& A) { return -1; }
@@ -72,6 +86,11 @@ class MFD3D_CrouzeixRaviart : public virtual MFD3D {
   // access 
   // -- integrals of monomials in high-order schemes could be reused
   const Polynomial& integrals() const { return integrals_; }
+
+ private:
+  // efficient implementation of low-order methods
+  int H1consistencyLO_(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Ac);
+  int StiffnessMatrixLO_(int c, const Tensor& T, DenseMatrix& A);
 
  private:
   int order_;

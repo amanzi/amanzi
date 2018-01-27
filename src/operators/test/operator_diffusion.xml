@@ -35,7 +35,7 @@
       <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
       <Parameter name="iterative method" type="string" value="pcg"/>
       <ParameterList name="pcg parameters">
-        <Parameter name="maximum number of iterations" type="int" value="50000"/>
+        <Parameter name="maximum number of iterations" type="int" value="60000"/>
         <Parameter name="error tolerance" type="double" value="1e-14"/>
       </ParameterList>
     </ParameterList>
@@ -85,7 +85,7 @@
   <ParameterList name="PK operator">
     <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
 
-    <!-- NODAL MFD schemes -->
+    <!-- NODAL (conformal) MFD schemes -->
     <ParameterList name="diffusion operator nodal">
       <Parameter name="discretization primary" type="string" value="mfd: default"/>
       <Parameter name="discretization secondary" type="string" value="mfd: optimized for sparsity"/>
@@ -93,7 +93,7 @@
       <Parameter name="preconditioner schema" type="Array(string)" value="{node}"/>
     </ParameterList>
 
-    <ParameterList name="diffusion operator high-order">
+    <ParameterList name="diffusion operator Lagrange">
       <Parameter name="method" type="string" value="Lagrange"/>
       <Parameter name="method order" type="int" value="3"/>
       <Parameter name="matrix type" type="string" value="stiffness"/>
@@ -111,12 +111,30 @@
       </ParameterList>
     </ParameterList>
 
-    <!-- EDGE MFD schemes -->
+    <!-- EDGE (nonconformal) MFD schemes -->
     <ParameterList name="diffusion operator edge">
       <Parameter name="discretization primary" type="string" value="mfd: default"/>
       <Parameter name="discretization secondary" type="string" value="mfd: optimized for sparsity"/>
       <Parameter name="schema" type="Array(string)" value="{edge}"/>
       <Parameter name="preconditioner schema" type="Array(string)" value="{edge}"/>
+    </ParameterList>
+
+    <ParameterList name="diffusion operator Crouzeix-Raviart">
+      <Parameter name="method" type="string" value="CrouzeixRaviart"/>
+      <Parameter name="method order" type="int" value="3"/>
+      <Parameter name="matrix type" type="string" value="stiffness"/>
+      <ParameterList name="schema domain">
+        <Parameter name="base" type="string" value="cell"/>
+        <Parameter name="location" type="Array(string)" value="{face, cell}"/>
+        <Parameter name="type" type="Array(string)" value="{vector, moment}"/>
+        <Parameter name="number" type="Array(int)" value="{3, 3}"/>
+      </ParameterList>
+      <ParameterList name="schema range">
+        <Parameter name="base" type="string" value="cell"/>
+        <Parameter name="location" type="Array(string)" value="{face, cell}"/>
+        <Parameter name="type" type="Array(string)" value="{vector, moment}"/>
+        <Parameter name="number" type="Array(int)" value="{3, 3}"/>
+      </ParameterList>
     </ParameterList>
 
     <!-- MIXED MFD schemes -->
