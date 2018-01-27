@@ -39,15 +39,16 @@ class PK_DomainFunctionSubgrid : public FunctionBase {
 
   // required member functions
   virtual void Compute(double t0, double t1);  
-  virtual std::string name() const { return "domain coupling"; }
-  virtual void set_state(const Teuchos::RCP<State>& S) { S_ = S; }
+  virtual std::string name() const { return "hyporheic exchange"; }
 
+  virtual void set_state(const Teuchos::RCP<State>& S) {S_ = S;}
+  
  protected:
   using FunctionBase::value_;
   using FunctionBase::keyword_;
 
+  Teuchos::RCP<const State> S_; 
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
-  Teuchos::RCP<const State> S_;
   
  private:
   AmanziMesh::Entity_ID entity_lid_;
@@ -68,7 +69,7 @@ void PK_DomainFunctionSubgrid<FunctionBase>::Init(
   keyword_ = keyword;
 
   try {
-    Teuchos::ParameterList blist = plist.sublist("boundary concentration");
+    Teuchos::ParameterList blist = plist.sublist(keyword);
     field_out_key_ = blist.get<std::string>("field_out_key");
     if (blist.isParameter("copy_field_out_key"))
       copy_field_out_key_ = blist.get<std::string>("copy_field_out_key");

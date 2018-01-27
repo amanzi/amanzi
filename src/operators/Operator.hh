@@ -260,6 +260,7 @@ class Operator {
   // block mutate
   void OpPushBack(const Teuchos::RCP<Op>& block, int properties = 0);
   void OpExtend(op_iterator begin, op_iterator end);
+  void OpReplace(const Teuchos::RCP<Op>& op, int index) { ops_[index] = op; }
 
  public:
   // visit methods for Apply
