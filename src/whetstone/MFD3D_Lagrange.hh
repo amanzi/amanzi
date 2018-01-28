@@ -81,7 +81,7 @@ class MFD3D_Lagrange : public virtual MFD3D {
   const PolynomialOnMesh& integrals() const { return integrals_; }
   PolynomialOnMesh& integrals() { return integrals_; }
 
- private:
+ protected:
   int order_;
   PolynomialOnMesh integrals_;
 };

@@ -47,6 +47,7 @@ add_amanzi_library(whetstone
                           MFD3D_Electromagnetics.cc MFD3D_Electromagnetics_Surface.cc
                           MFD3D_Generalized_Diffusion.cc
                           MFD3D_Lagrange.cc
+                          MFD3D_LagrangeSerendipity.cc
                           DG_Modal.cc nlfv.cc 
                           Tensor.cc DenseMatrix.cc
                           Polynomial.cc VectorPolynomial.cc
@@ -67,6 +68,7 @@ add_amanzi_library(whetstone
                            MFD3D_Electromagnetics.hh
                            MFD3D_Generalized_Diffusion.hh
                            MFD3D_Lagrange.hh
+                           MFD3D_LagrangeSerendipity.hh
                            MFD3DFactory.hh
                            nlfv.hh
                            NumericalIntegration.hh
