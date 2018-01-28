@@ -79,7 +79,7 @@ void RunTestDiffusionCurved() {
   // populate boundary data: The discretization method uses 3 DOFs (moment) 
   // on each mesh face which require to specify 3 boundary data of type double
   // for each mesh face.
-  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(mesh, AmanziMesh::FACE, SCHEMA_DOFS_VECTOR));
+  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(mesh, AmanziMesh::FACE, DOF_Type::VECTOR));
   std::vector<int>& bc_model = bc->bc_model();
   std::vector<std::vector<double> >& bc_value = bc->bc_value_vector(3);
 
