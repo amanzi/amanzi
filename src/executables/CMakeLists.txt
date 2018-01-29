@@ -84,12 +84,12 @@ set(ATS_LIBS
                       pk_energy_base
 		      pk_flow_permafrost
                       pk_flow_richards
-                      pk_flow_snow_distribution
-                      pk_flow_overland
+#                      pk_flow_snow_distribution
+#                      pk_flow_overland
                       pk_flow_overland_pressure
                       pk_flow_icy_overland
-                      pk_transport
-                      pk_coupled_transport
+#                      pk_transport
+#                      pk_coupled_transport
 	              # pk_prescribed_deformation
 #                      pk_prescribed_volumetric_deformation
                       pk_volumetric_deformation

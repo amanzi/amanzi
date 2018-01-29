@@ -244,7 +244,7 @@ void OverlandPressureFlow::UpdatePreconditioner(double t, Teuchos::RCP<const Tre
     Teuchos::RCP<CompositeVector> flux = Teuchos::null;
     if (preconditioner_->RangeMap().HasComponent("face")) {
       flux = S_next_->GetFieldData(Keys::getKey(domain_,"mass_flux"), name_);
-      preconditioner_diff_->UpdateFlux(*pres_elev, *flux);
+      preconditioner_diff_->UpdateFlux(pres_elev.ptr(), flux.ptr());
     } else {
       S_next_->GetFieldEvaluator(Keys::getKey(domain_,"pres_elev"))->HasFieldChanged(S_next_.ptr(), name_);
       pres_elev = S_next_->GetFieldData(Keys::getKey(domain_,"pres_elev"));
@@ -263,26 +263,18 @@ void OverlandPressureFlow::UpdatePreconditioner(double t, Teuchos::RCP<const Tre
   // -- update dh_bar / dp
   S_next_->GetFieldEvaluator(Keys::getKey(domain_,"ponded_depth_bar"))
       ->HasFieldDerivativeChanged(S_next_.ptr(), name_, key_);
-  const Epetra_MultiVector& dh_dp =
-    *S_next_->GetFieldData(Keys::getDerivKey(Keys::getKey(domain_,"ponded_depth_bar"),key_))
-    ->ViewComponent("cell",false);
+  auto dh_dp = S_next_->GetFieldData(Keys::getDerivKey(Keys::getKey(domain_,"ponded_depth_bar"),key_));
 
   // -- update the accumulation derivatives
   S_next_->GetFieldEvaluator(Keys::getKey(domain_,"water_content_bar"))
       ->HasFieldDerivativeChanged(S_next_.ptr(), name_, key_);
-  const Epetra_MultiVector& dwc_dp =
-    *S_next_->GetFieldData(Keys::getDerivKey(Keys::getKey(domain_,"water_content_bar"),key_))
-      ->ViewComponent("cell",false);
-  db_->WriteVector("    dwc_dp", S_next_->GetFieldData(Keys::getDerivKey(Keys::getKey(domain_,"water_content_bar"),key_)).ptr());
-  db_->WriteVector("    dh_dp", S_next_->GetFieldData(Keys::getDerivKey(Keys::getKey(domain_,"ponded_depth_bar"),key_)).ptr());
+  auto dwc_dp = S_next_->GetFieldData(Keys::getDerivKey(Keys::getKey(domain_,"water_content_bar"),key_));
+  db_->WriteVector("    dwc_dp", dwc_dp.ptr());
+  db_->WriteVector("    dh_dp", dh_dp.ptr());
 
-  // -- pull out other needed data
-  std::vector<double>& Acc_cells = preconditioner_acc_->local_matrices()->vals;
-  unsigned int ncells = Acc_cells.size();
-
-  for (unsigned int c=0; c!=ncells; ++c) {
-    Acc_cells[c] += dwc_dp[0][c] / dh_dp[0][c] / h;
-  }
+  CompositeVector dwc_dh(dwc_dp->Map());
+  dwc_dh.ReciprocalMultiply(1./h, *dh_dp, *dwc_dp, 0.);
+  preconditioner_acc_->AddAccumulationTerm(dwc_dh, "cell");
   
   // // -- update the source term derivatives
   // if (S_next_->GetFieldEvaluator(mass_source_key_)->IsDependency(S_next_.ptr(), key_)) {

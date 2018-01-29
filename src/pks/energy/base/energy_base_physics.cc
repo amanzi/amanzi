@@ -61,7 +61,7 @@ void EnergyBase::AddAdvection_(const Teuchos::Ptr<State>& S,
   db_->WriteVector(" adv flux", flux.ptr(), true);
   matrix_adv_->global_operator()->Init();
   matrix_adv_->Setup(*flux);
-  matrix_adv_->UpdateMatrices(*flux);
+  matrix_adv_->UpdateMatrices(flux.ptr());
 
   // apply to enthalpy
   S->GetFieldEvaluator(enthalpy_key_)->HasFieldChanged(S.ptr(), name_);
@@ -91,7 +91,7 @@ void EnergyBase::ApplyDiffusion_(const Teuchos::Ptr<State>& S,
 
   // update the flux if needed
   Teuchos::RCP<CompositeVector> flux = S->GetFieldData(energy_flux_key_, name_);
-  matrix_diff_->UpdateFlux(*temp, *flux);
+  matrix_diff_->UpdateFlux(temp.ptr(), flux.ptr());
 
   // finish assembly of the stiffness matrix
   matrix_diff_->ApplyBCs(true, true);
@@ -135,15 +135,12 @@ void EnergyBase::AddSources_(const Teuchos::Ptr<State>& S,
 void EnergyBase::AddSourcesToPrecon_(const Teuchos::Ptr<State>& S, double h) {
   // external sources of energy (temperature dependent source)
   if (is_source_term_ && S->GetFieldEvaluator(source_key_)->IsDependency(S, key_)) {
-    std::vector<double>& Acc_cells = preconditioner_acc_->local_matrices()->vals;
 
+    // evaluate the derivative
     S->GetFieldEvaluator(source_key_)->HasFieldDerivativeChanged(S, name_, key_);
-    const Epetra_MultiVector& dsource_dT =
-        *S->GetFieldData(Keys::getDerivKey(source_key_, key_))->ViewComponent("cell",false);
-    unsigned int ncells = dsource_dT.MyLength();
-    for (unsigned int c=0; c!=ncells; ++c) {
-      Acc_cells[c] -= dsource_dT[0][c];
-    }
+    const CompositeVector& dsource_dT =
+        *S->GetFieldData(Keys::getDerivKey(source_key_, key_));
+    preconditioner_acc_->AddAccumulationTerm(dsource_dT, -1.0, "cell", false);
   }
 }
 
@@ -165,8 +162,8 @@ void EnergyBase::ApplyDirichletBCsToEnthalpy_(const Teuchos::Ptr<State>& S) {
   for (int bf=0; bf!=nbfaces; ++bf) {
     AmanziMesh::Entity_ID f = face_map.LID(vandalay_map.GID(bf));
 
-    if (bc_markers_adv_[f] == Operators::OPERATOR_BC_DIRICHLET) {
-      bc_values_adv_[f] = enth_bf[0][bf];
+    if (bc_adv_->bc_model()[f] == Operators::OPERATOR_BC_DIRICHLET) {
+      bc_adv_->bc_value()[f] = enth_bf[0][bf];
     }
   }
 }

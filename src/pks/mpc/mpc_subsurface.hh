@@ -22,10 +22,9 @@ namespace Amanzi {
 class MPCDelegateEWCSubsurface;
 
 namespace Operators {
-class OperatorDiffusion;
-class OperatorDiffusionWithGravity;
-class OperatorAdvection;
-class OperatorAccumulation;
+class PDE_Diffusion;
+class PDE_DiffusionWithGravity;
+class PDE_Accumulation;
 class Operator;
 class UpwindTotalFlux;
 class UpwindArithmeticMean;
@@ -103,26 +102,26 @@ class MPCSubsurface : public StrongMPC<PK_PhysicalBDF_Default> {
   // dWC / dT off-diagonal block
   Teuchos::RCP<Operators::Operator> dWC_dT_block_;
   // -- d ( div q ) / dT  terms
-  Teuchos::RCP<Operators::OperatorDiffusionWithGravity> ddivq_dT_;
+  Teuchos::RCP<Operators::PDE_DiffusionWithGravity> ddivq_dT_;
   Teuchos::RCP<Operators::Upwinding> upwinding_dkrdT_;
   // -- d ( dWC/dt ) / dT terms
-  Teuchos::RCP<Operators::OperatorAccumulation> dWC_dT_;
+  Teuchos::RCP<Operators::PDE_Accumulation> dWC_dT_;
 
   // dE / dp off-diagonal block
   Teuchos::RCP<Operators::Operator> dE_dp_block_;
   // -- d ( div K grad T ) / dp terms
-  Teuchos::RCP<Operators::OperatorDiffusion> ddivKgT_dp_;
+  Teuchos::RCP<Operators::PDE_Diffusion> ddivKgT_dp_;
   Teuchos::RCP<Operators::Upwinding> upwinding_dKappa_dp_;
   // -- d ( div hq ) / dp terms
-  Teuchos::RCP<Operators::OperatorDiffusionWithGravity> ddivhq_dp_;
+  Teuchos::RCP<Operators::PDE_DiffusionWithGravity> ddivhq_dp_;
   Teuchos::RCP<Operators::UpwindTotalFlux> upwinding_hkr_;
   Teuchos::RCP<Operators::UpwindTotalFlux> upwinding_dhkr_dp_;
   // -- d ( dE/dt ) / dp terms
-  Teuchos::RCP<Operators::OperatorAccumulation> dE_dp_;
+  Teuchos::RCP<Operators::PDE_Accumulation> dE_dp_;
 
   // dE / dT on-diagonal block additional terms that use q info
   // -- d ( div hq ) / dT terms
-  Teuchos::RCP<Operators::OperatorDiffusionWithGravity> ddivhq_dT_;
+  Teuchos::RCP<Operators::PDE_DiffusionWithGravity> ddivhq_dT_;
   Teuchos::RCP<Operators::UpwindTotalFlux> upwinding_dhkr_dT_;
 
   

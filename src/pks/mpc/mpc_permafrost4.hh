@@ -61,7 +61,7 @@ class MPCPermafrost4 : public MPCSubsurface {
   Teuchos::RCP<const AmanziMesh::Mesh> surf_mesh_;
 
   // off-diagonal terms
-  Teuchos::RCP<Operators::OperatorAccumulation> dE_dp_surf_;
+  Teuchos::RCP<Operators::PDE_Accumulation> dE_dp_surf_;
 
   
   // EWC delegate for the surface

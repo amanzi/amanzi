@@ -28,7 +28,7 @@ include_directories(${ATS_SOURCE_DIR}/src/pks/flow/overland_pressure)
 include_directories(${ATS_SOURCE_DIR}/src/pks/energy/constitutive_relations/internal_energy)
 include_directories(${ATS_SOURCE_DIR}/src/pks/energy/base)
 include_directories(${ATS_SOURCE_DIR}/src/pks/energy/two_phase)
-include_directories(${ATS_SOURCE_DIR}/src/pks/transport/transport_amanzi)
+#include_directories(${ATS_SOURCE_DIR}/src/pks/transport/transport_amanzi)
 include_directories(${ATS_SOURCE_DIR}/src/operators/advection)
 include_directories(${ATS_SOURCE_DIR}/src/operators/divgrad/upwind_scheme)
 
@@ -39,8 +39,8 @@ add_library(mpc
   weak_mpc_semi_coupled_deform.cc
   mpc_coupled_cells.cc
   pk_mpcsubcycled_ats.cc
-  mpc_flowreactivetransport_pk.cc
-  mpc_reactivetransport_pk.cc
+#  mpc_flowreactivetransport_pk.cc
+#  mpc_reactivetransport_pk.cc
   mpc_surface_subsurface_helpers.cc
   weak_mpc_semi_coupled_helper.cc
   mpc_weak_subgrid.cc
@@ -87,15 +87,15 @@ register_evaluator_with_factory(
   LISTNAME   MPC_PK_FAC
   )
 
-register_evaluator_with_factory(
-  HEADERFILE mpc_flowreactivetransport_pk_reg.hh
-  LISTNAME   MPC_PK_FAC
-  )
+# register_evaluator_with_factory(
+#   HEADERFILE mpc_flowreactivetransport_pk_reg.hh
+#   LISTNAME   MPC_PK_FAC
+#   )
 
-register_evaluator_with_factory(
-  HEADERFILE mpc_reactivetransport_pk_reg.hh
-  LISTNAME   MPC_PK_FAC
-  )
+# register_evaluator_with_factory(
+#   HEADERFILE mpc_reactivetransport_pk_reg.hh
+#   LISTNAME   MPC_PK_FAC
+#   )
 
     
 register_evaluator_with_factory(
@@ -133,10 +133,10 @@ register_evaluator_with_factory(
 #   LISTNAME   MPC_PK_FAC
 #   )
 
-register_evaluator_with_factory(
-   HEADERFILE coupled_transport/mpc_coupled_transport_reg.hh
-   LISTNAME   MPC_PK_FAC
-  )
+# register_evaluator_with_factory(
+#    HEADERFILE coupled_transport/mpc_coupled_transport_reg.hh
+#    LISTNAME   MPC_PK_FAC
+#   )
 
 
 register_evaluator_with_factory(
@@ -178,7 +178,7 @@ include_evaluators_directories(LISTNAME ENERGY_THREE_PHASE_REG_INCLUDES)
 include_evaluators_directories(LISTNAME MPC_PK_FAC_INCLUDES)
 
 
-add_subdirectory(coupled_transport)
+#add_subdirectory(coupled_transport)
 
 #if ( BUILD_TESTS )
 if (0)
@@ -197,8 +197,8 @@ if (0)
     pk_energy_three_phase 
     pk_energy_base
     pk_flow_permafrost pk_flow_richards
-    pk_transport
-    pk_coupled_transport
+#    pk_transport
+#    pk_coupled_transport
     pk_bases
     energy_relations_thermal_conductivity energy_relations_internal_energy
     energy_relations_enthalpy energy_relations_source_terms

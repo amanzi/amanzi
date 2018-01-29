@@ -28,10 +28,10 @@
 #include "flow_overland_pressure_registration.hh"
 #include "flow_permafrost_registration.hh"
 #include "flow_richards_registration.hh"
-#include "transport_amanzi_registration.hh"
+//#include "transport_amanzi_registration.hh"
 //#include "pks_transport_registration.hh"
-#include "multiscale_transport_registration.hh"
-#include "mdm_transport_registration.hh"
+//#include "multiscale_transport_registration.hh"
+//#include "mdm_transport_registration.hh"
 
 #include "surface_balance_SEB_registration.hh"
 #include "BGC_registration.hh"

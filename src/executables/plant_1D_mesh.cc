@@ -49,13 +49,12 @@ plantMesh(const Teuchos::RCP<Epetra_MpiComm>& comm,
   double leaf_area = PI * std::pow(stem_cap_radius,2) * n_cap;
   
   std::vector<AmanziMesh::Entity_ID> leaf_cells, leaf_faces;
-  double leaf_length;
+  double leaf_length = AmanziGeometry::norm(bottom-top);
   fac.AddSegment(1, top, bottom, leaf_area,
-                 AmanziMesh::MeshLogicalFactory::TIP_BOUNDARY,
-                 AmanziMesh::MeshLogicalFactory::TIP_DEFERRED,
+                 AmanziMesh::MeshLogicalFactory::LogicalTip_t::BOUNDARY,
+                 AmanziMesh::MeshLogicalFactory::LogicalTip_t::JUNCTION,
                  "leaf",
-                 &leaf_cells, &leaf_faces, &leaf_length);
-  ASSERT(std::abs(leaf_length - 0.1) < 1.e-8);
+                 &leaf_cells, &leaf_faces);
 
   // add the leaf top bc
   AmanziMesh::Entity_ID_List leaf_tip;
@@ -69,11 +68,12 @@ plantMesh(const Teuchos::RCP<Epetra_MpiComm>& comm,
   double stem_area = PI * std::pow(stem_cap_radius, 2) * n_cap;
 
   std::vector<AmanziMesh::Entity_ID> stem_cells, stem_faces;
-  double stem_length;
+  double stem_length = AmanziGeometry::norm(bottom-top);
   fac.AddSegment(n_stem, top, bottom, stem_area,
-                 AmanziMesh::MeshLogicalFactory::TIP_DEFERRED,
-                 AmanziMesh::MeshLogicalFactory::TIP_DEFERRED,
-                 "stem", &stem_cells, &stem_faces, &stem_length);
+                 AmanziMesh::MeshLogicalFactory::LogicalTip_t::JUNCTION,
+                 AmanziMesh::MeshLogicalFactory::LogicalTip_t::JUNCTION,
+                 "stem", &stem_cells, &stem_faces);
+  
   ASSERT(std::abs(stem_length - dz_stem) < 1.e-8);
 
   // add the transporting root
@@ -83,11 +83,11 @@ plantMesh(const Teuchos::RCP<Epetra_MpiComm>& comm,
   double troot_area = PI * std::pow(root_cap_radius, 2) * n_cap;
 
   std::vector<AmanziMesh::Entity_ID> troot_cells, troot_faces;
-  double troot_length;
+  double troot_length = AmanziGeometry::norm(bottom-top);
   fac.AddSegment(n_root, top, bottom, troot_area,
-                 AmanziMesh::MeshLogicalFactory::TIP_DEFERRED,
-                 AmanziMesh::MeshLogicalFactory::TIP_DEFERRED,
-                 "troot", &troot_cells, &troot_faces, &troot_length);
+                 AmanziMesh::MeshLogicalFactory::LogicalTip_t::JUNCTION,
+                 AmanziMesh::MeshLogicalFactory::LogicalTip_t::JUNCTION,
+                 "troot", &troot_cells, &troot_faces);
 
   // add the absorbing roots, each their own segment
   // NOTE: to do more than one, this needs variable areas
@@ -110,13 +110,13 @@ plantMesh(const Teuchos::RCP<Epetra_MpiComm>& comm,
     double aroot_area = troot_length * PI
         * std::pow(root_radius + 0.5*aroot_radius, 2);
     std::vector<AmanziMesh::Entity_ID> aroot_faces;
-    double aroot_length;
+    double aroot_length = AmanziGeometry::norm(bottom-top);
     std::stringstream setname;
     setname << "aroot_" << i;
     fac.AddSegment(n_aroot, top, bottom, aroot_area,
-                   AmanziMesh::MeshLogicalFactory::TIP_DEFERRED,
-                   AmanziMesh::MeshLogicalFactory::TIP_DEFERRED,
-                   setname.str(), &aroot_cells[i], &aroot_faces, &aroot_length);
+                   AmanziMesh::MeshLogicalFactory::LogicalTip_t::JUNCTION,
+                   AmanziMesh::MeshLogicalFactory::LogicalTip_t::JUNCTION,
+                   setname.str(), &aroot_cells[i], &aroot_faces);
     aroots.insert(aroots.end(), aroot_cells[i].begin(), aroot_cells[i].end());
   }
   fac.AddSet("aroot", "cell", aroots);
@@ -131,11 +131,11 @@ plantMesh(const Teuchos::RCP<Epetra_MpiComm>& comm,
     bottom.set(0.);
     bottom[2] = -soil_depth;
     double soil_area = 1.0; // 1m square to match soil columns for control runs
-    double soil_length;
+    double soil_length = AmanziGeometry::norm(bottom-top);
     fac.AddSegment(n_soil, top, bottom, soil_area,
-                   AmanziMesh::MeshLogicalFactory::TIP_BOUNDARY,
-                   AmanziMesh::MeshLogicalFactory::TIP_BOUNDARY,
-                   "soil", &soil_cells, &soil_faces, &soil_length);
+                   AmanziMesh::MeshLogicalFactory::LogicalTip_t::BOUNDARY,
+                   AmanziMesh::MeshLogicalFactory::LogicalTip_t::BOUNDARY,
+                   "soil", &soil_cells, &soil_faces);
 
     // add the soil bcs
     AmanziMesh::Entity_ID_List soil_bc;
@@ -158,7 +158,7 @@ plantMesh(const Teuchos::RCP<Epetra_MpiComm>& comm,
   stem_to_leaf_lengths[1] = stem_length / 2.0;
   normal[2] = -1.;
 
-  int iconn = fac.AddConnection(stem_to_leaf, normal,
+  int iconn = fac.AddFace(fac.ReserveFace(),stem_to_leaf, normal,
           stem_to_leaf_lengths, stem_area);
 
   // -- connect stem to troot
@@ -172,7 +172,7 @@ plantMesh(const Teuchos::RCP<Epetra_MpiComm>& comm,
   stem_to_troot_lengths[1] = troot_length / 2.0;
   normal[2] = -1.;
 
-  iconn = fac.AddConnection(stem_to_troot, normal,
+  iconn = fac.AddFace(fac.ReserveFace(),stem_to_troot, normal,
           stem_to_troot_lengths, (stem_area+troot_area) / 2.);
 
   // -- connect troot to aroot, aroot to soil
@@ -190,7 +190,7 @@ plantMesh(const Teuchos::RCP<Epetra_MpiComm>& comm,
     double troot_to_aroot_area = dz_root *
         PI * std::pow(root_radius, 2);        
 
-    iconn = fac.AddConnection(troot_to_aroot, normal,
+    iconn = fac.AddFace(fac.ReserveFace(),troot_to_aroot, normal,
             troot_to_aroot_lengths, troot_to_aroot_area);
 
     if (include_soil) {
@@ -209,7 +209,7 @@ plantMesh(const Teuchos::RCP<Epetra_MpiComm>& comm,
       double aroot_to_soil_area = dz_root *
           PI * std::pow(root_radius+aroot_radius, 2);        
 
-      iconn = fac.AddConnection(aroot_to_soil, normal,
+      iconn = fac.AddFace(fac.ReserveFace(),aroot_to_soil, normal,
               aroot_to_soil_lengths, aroot_to_soil_area);
     }
   }

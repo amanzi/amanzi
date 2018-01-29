@@ -74,14 +74,14 @@ register_evaluator_with_factory(
   HEADERFILE three_phase/three_phase_reg.hh
   LISTNAME   ENERGY_THREE_PHASE_REG
   )
-register_evaluator_with_factory(
-  HEADERFILE three_phase/interfrost_energy_reg.hh
-  LISTNAME   ENERGY_THREE_PHASE_REG
-  )
-register_evaluator_with_factory(
-  HEADERFILE three_phase/interfrost_energy_evaluator_reg.hh
-  LISTNAME   ENERGY_THREE_PHASE_REG
-  )
+# register_evaluator_with_factory(
+#   HEADERFILE three_phase/interfrost_energy_reg.hh
+#   LISTNAME   ENERGY_THREE_PHASE_REG
+#   )
+# register_evaluator_with_factory(
+#   HEADERFILE three_phase/interfrost_energy_evaluator_reg.hh
+#   LISTNAME   ENERGY_THREE_PHASE_REG
+#   )
 generate_evaluators_registration_header(
   HEADERFILE energy_three_phase_registration.hh
   LISTNAME   ENERGY_THREE_PHASE_REG
