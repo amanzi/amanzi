@@ -111,6 +111,24 @@
       </ParameterList>
     </ParameterList>
 
+    <ParameterList name="diffusion operator Lagrange serendipity">
+      <Parameter name="method" type="string" value="Lagrange serendipity"/>
+      <Parameter name="method order" type="int" value="3"/>
+      <Parameter name="matrix type" type="string" value="stiffness"/>
+      <ParameterList name="schema domain">
+        <Parameter name="base" type="string" value="cell"/>
+        <Parameter name="location" type="Array(string)" value="{node, face}"/>
+        <Parameter name="type" type="Array(string)" value="{scalar, vector}"/>
+        <Parameter name="number" type="Array(int)" value="{1, 2}"/>
+      </ParameterList>
+      <ParameterList name="schema range">
+        <Parameter name="base" type="string" value="cell"/>
+        <Parameter name="location" type="Array(string)" value="{node, face}"/>
+        <Parameter name="type" type="Array(string)" value="{scalar, vector}"/>
+        <Parameter name="number" type="Array(int)" value="{1, 2}"/>
+      </ParameterList>
+    </ParameterList>
+
     <!-- EDGE (nonconformal) MFD schemes -->
     <ParameterList name="diffusion operator edge">
       <Parameter name="discretization primary" type="string" value="mfd: default"/>

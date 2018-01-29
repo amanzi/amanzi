@@ -35,13 +35,14 @@ class MFD3D_LagrangeSerendipity : public MFD3D_Lagrange {
  public:
   MFD3D_LagrangeSerendipity(Teuchos::RCP<const AmanziMesh::Mesh> mesh)
     : MFD3D(mesh),
+      InnerProduct(mesh),
       MFD3D_Lagrange(mesh) {};
   ~MFD3D_LagrangeSerendipity() {};
 
   // required methods
   // -- stiffness matrix
-  virtual int H1consistency(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Ac);
-  virtual int StiffnessMatrix(int c, const Tensor& T, DenseMatrix& A);
+  virtual int H1consistency(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Ac) override;
+  virtual int StiffnessMatrix(int c, const Tensor& T, DenseMatrix& A) override;
 };
 
 }  // namespace WhetStone

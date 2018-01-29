@@ -48,14 +48,8 @@ class MFD3D_Lagrange : public virtual MFD3D {
   virtual int MassMatrixInverse(int c, const Tensor& T, DenseMatrix& M) { return -1; } 
 
   // -- stiffness matrix
-  virtual int H1consistency(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Ac) {
-    DenseMatrix R, G;
-    return H1consistencyHO(c, order_, T, N, R, G, Ac);
-  }
-  virtual int StiffnessMatrix(int c, const Tensor& T, DenseMatrix& A) {
-    DenseMatrix R, G;
-    return StiffnessMatrixHO(c, order_, T, R, G, A);
-  }
+  virtual int H1consistency(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Ac) override;
+  virtual int StiffnessMatrix(int c, const Tensor& T, DenseMatrix& A) override;
 
   // -- other matrices
   virtual int DivergenceMatrix(int c, DenseMatrix& A) { return -1; }
@@ -67,12 +61,6 @@ class MFD3D_Lagrange : public virtual MFD3D {
   virtual int AdvectionMatrix(int c, const AmanziGeometry::Point v, DenseMatrix& A, bool grad_on_test) { return -1; }
   virtual int AdvectionMatrixPoly(int c, const VectorPolynomial& v, DenseMatrix& A, bool grad_on_test) { return -1; }
 
-  // high-order methods
-  int H1consistencyHO(int c, int order, const Tensor& T,
-                      DenseMatrix& N, DenseMatrix& R, DenseMatrix& G, DenseMatrix& Ac);
-  int StiffnessMatrixHO(int c, int order, const Tensor& T,
-                        DenseMatrix& R, DenseMatrix& G, DenseMatrix& A);
-
   // miscalleneous
   void set_order(int order) { order_ = order; }
 
@@ -81,9 +69,14 @@ class MFD3D_Lagrange : public virtual MFD3D {
   const PolynomialOnMesh& integrals() const { return integrals_; }
   PolynomialOnMesh& integrals() { return integrals_; }
 
+  // -- matrices that could be resused in other code
+  const DenseMatrix& G() const { return G_; }
+  const DenseMatrix& R() const { return R_; }
+
  protected:
   int order_;
   PolynomialOnMesh integrals_;
+  DenseMatrix R_, G_;
 };
 
 }  // namespace WhetStone

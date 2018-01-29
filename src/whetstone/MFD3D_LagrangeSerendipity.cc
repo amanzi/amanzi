@@ -35,14 +35,13 @@ namespace WhetStone {
 int MFD3D_LagrangeSerendipity::H1consistency(
     int c, const Tensor& K, DenseMatrix& N, DenseMatrix& Ac)
 {
-  Entity_ID_List nodes, faces;
-  std::vector<int> dirs;
+  Entity_ID_List nodes;
 
   mesh_->cell_get_nodes(c, &nodes);
   int nnodes = nodes.size();
 
-  mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
-  int nfaces = faces.size();
+  int nfaces = mesh_->cell_get_num_faces(c);
+  ASSERT(nfaces > 3);  // FIXME
 
   // calculate degrees of freedom 
   Polynomial poly(d_, order_), pf, pc;
@@ -59,22 +58,15 @@ int MFD3D_LagrangeSerendipity::H1consistency(
   int ndof_S = nnodes + nfaces * ndf + ndc;
 
   // calculate full matrices
-  DenseMatrix Nf, Rf, Gf, Af;
-  MFD3D_Lagrange::H1consistencyHO(c, order_, K, Nf, Rf, Gf, Af);
-
-  // calculate submatrix
-  DenseMatrix R, M;
-  N = Nf.SubMatrix(0, ndof_S, 0, nd);
-  R.Reshape(ndof_S, nd);
-  Ac.Reshape(ndof_S, ndof_S);
+  DenseMatrix Nf, Af;
+  MFD3D_Lagrange::H1consistency(c, K, Nf, Af);
 
   // pre-calculate integrals of monomials 
   NumericalIntegration numi(mesh_);
   numi.UpdateMonomialIntegralsCell(c, 2 * order_, integrals_);
 
   // set the Gramm-Schidt matrix for polynomials
-  M.Reshape(nd, nd);
-  M.PutScalar(0.0);
+  DenseMatrix M(nd, nd);
 
   for (auto it = poly.begin(); it.end() <= poly.end(); ++it) {
     const int* index = it.multi_index();
@@ -97,12 +89,56 @@ int MFD3D_LagrangeSerendipity::H1consistency(
     }
   }
 
-  // calculate R inv(G) R^T
-  DenseMatrix RG(ndof_S, nd), Rtmp(nd, ndof_S);
+  // setup matrix representing Laplacian of polynomials
+  double volume = mesh_->cell_volume(c); 
+  double scale = numi.MonomialNaturalScale(1, volume);
 
-  RG.Multiply(R, Gf, false);
-  Rtmp.Transpose(R);
-  Ac.Multiply(RG, Rtmp, false);
+  DenseMatrix L(nd, nd);
+  L.PutScalar(0.0);
+
+  for (auto it = poly.begin(); it.end() <= poly.end(); ++it) {
+    const int* index = it.multi_index();
+    int k = it.PolynomialPosition();
+
+    double factor = numi.MonomialNaturalScale(it.MonomialOrder(), volume);
+    Polynomial mono(d_, index, factor);
+    Polynomial lap = mono.Laplacian();
+    
+    for (auto jt = lap.begin(); jt.end() <= lap.end(); ++jt) {
+      int l = jt.PolynomialPosition();
+      int m = jt.MonomialOrder();
+      int n = jt.MonomialPosition();
+      L(l, k) = lap(m, n) / std::pow(scale, std::min(2, m));
+    }  
+  }
+
+  // calculate matrices N and R
+  // -- extract sub-matrices 
+  DenseMatrix Rf(R_);
+  N = Nf.SubMatrix(0, ndof_S, 0, nd);
+  R_ = Rf.SubMatrix(0, ndof_S, 0, nd);
+
+  // -- add correcton Ns (Ns^T Ns)^{-1} M L to matrix R_
+  DenseMatrix NN(nd, nd), NM(nd, nd);
+
+  NN.Multiply(N, N, true);
+  NN.Inverse();
+
+  NM.Multiply(NN, M, false);
+  NN.Multiply(NM, L, false);
+
+  Nf.Reshape(ndof_S, nd);
+  Nf.Multiply(N, NN, false);
+
+  R_ -= Nf;
+
+  // calculate Ac = R inv(G) R^T
+  Ac.Reshape(ndof_S, ndof_S);
+  DenseMatrix Rtmp(nd, ndof_S);
+
+  Nf.Multiply(R_, G_, false);
+  Rtmp.Transpose(R_);
+  Ac.Multiply(Nf, Rtmp, false);
 
   return WHETSTONE_ELEMENTAL_MATRIX_OK;
 }

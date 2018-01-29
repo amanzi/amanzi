@@ -316,12 +316,16 @@ void Projector::GenericCell_Pk_(
 
   // calculate stiffness matrix
   Tensor T(d_, 1);
-  DenseMatrix N, R, Gpoly, A;
+  DenseMatrix N, A;
   MFD3D_Lagrange mfd(mesh_);
 
   T(0, 0) = 1.0;
   // mfd.ModifyStabilityScalingFactor(1.02);
-  mfd.StiffnessMatrixHO(c, order, T, R, Gpoly, A);  
+  mfd.set_order(order);
+  mfd.StiffnessMatrix(c, T, A);  
+
+  const DenseMatrix& R = mfd.R();
+  const DenseMatrix& Gpoly = mfd.G();
 
   // number of degrees of freedom
   Polynomial pf;
@@ -505,15 +509,18 @@ void Projector::L2Cell_SerendipityPk(
     int c, int order, const std::vector<VectorPolynomial>& vf,
     const std::shared_ptr<DenseVector>& moments, VectorPolynomial& uc) const
 {
+  NumericalIntegration numi(mesh_);
+
   // calculate stiffness matrix
   Tensor T(d_, 1);
-  DenseMatrix N, R, Gpoly, A;
+  DenseMatrix N, A;
   MFD3D_Lagrange mfd(mesh_);
 
   T(0, 0) = 1.0;
-  mfd.H1consistencyHO(c, order, T, N, R, Gpoly, A);  
+  mfd.set_order(order);
+  mfd.H1consistency(c, T, N, A);  
 
-  NumericalIntegration numi(mesh_);
+  const DenseMatrix& Gpoly = mfd.G();
 
   // number of degrees of freedom
   Polynomial pc;

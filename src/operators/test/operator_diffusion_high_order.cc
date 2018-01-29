@@ -164,7 +164,7 @@ TEST(OPERATOR_DIFFUSION_HIGH_ORDER_CROUZIEX_RAVIART) {
 /* *****************************************************************
 * Exactness test for high-order Lagrange elements.
 * **************************************************************** */
-TEST(OPERATOR_DIFFUSION_HIGH_ORDER_LAGRANGE) {
+void RunHighOrderLagrange(std::string vem_name, bool polygonal_mesh) {
   using namespace Teuchos;
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
@@ -174,7 +174,7 @@ TEST(OPERATOR_DIFFUSION_HIGH_ORDER_LAGRANGE) {
 
   Epetra_MpiComm comm(MPI_COMM_WORLD);
   int MyPID = comm.MyPID();
-  if (MyPID == 0) std::cout << "\nTest: 2D elliptic solver, high-order Lagrange" << std::endl;
+  if (MyPID == 0) std::cout << "\nTest: 2D elliptic solver, high-order " << vem_name << std::endl;
 
   // read parameter list
   std::string xmlFileName = "test/operator_diffusion.xml";
@@ -187,15 +187,19 @@ TEST(OPERATOR_DIFFUSION_HIGH_ORDER_LAGRANGE) {
 
   MeshFactory meshfactory(&comm);
   meshfactory.preference(FrameworkPreference({MSTK, STKMESH}));
-  RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 4, 4, gm, true, true);
-  // RCP<const Mesh> mesh = meshfactory("test/median7x8_filtered.exo", gm, true, true);
+  RCP<const Mesh> mesh;
+  if (polygonal_mesh) {
+    mesh = meshfactory("test/median7x8_filtered.exo", gm, true, true);
+  } else {
+    mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 4, 4, gm, true, true);
+  }
 
   int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
   int nnodes_wghost = mesh->num_entities(AmanziMesh::NODE, AmanziMesh::USED);
 
   // create boundary data (no mixed bc)
   ParameterList op_list = plist.get<Teuchos::ParameterList>("PK operator")
-                               .sublist("diffusion operator Lagrange");
+                               .sublist("diffusion operator " + vem_name);
   int order = op_list.get<int>("method order");
 
   Analytic00 ana(mesh, 1.0, 2.0, order);
@@ -286,7 +290,6 @@ TEST(OPERATOR_DIFFUSION_HIGH_ORDER_LAGRANGE) {
   solution.ScatterMasterToGhosted();
   Epetra_MultiVector& pn = *solution.ViewComponent("node", false);
   Epetra_MultiVector& pf = *solution.ViewComponent("face", false);
-  Epetra_MultiVector& pc = *solution.ViewComponent("cell", false);
 
   double pnorm, l2n_err, infn_err, hnorm, h1n_err;
   ana.ComputeNodeError(pn, 0.0, pnorm, l2n_err, infn_err, hnorm, h1n_err);
@@ -295,16 +298,25 @@ TEST(OPERATOR_DIFFUSION_HIGH_ORDER_LAGRANGE) {
   ana.ComputeEdgeMomentsError(pf, 0.0, 3, tmp, l2f_err, inff_err);
 
   double l2c_err, infc_err;
-  ana.ComputeCellError(pc, 0.0, tmp, l2c_err, infc_err);
+  bool flag(false);
+  if (solution.HasComponent("cell")) {
+    flag = true;
+    Epetra_MultiVector& pc = *solution.ViewComponent("cell", false);
+    ana.ComputeCellError(pc, 0.0, tmp, l2c_err, infc_err);
+  }
 
   if (MyPID == 0) {
     printf("Node: L2(p)=%12.9f  H1(p)=%12.9f  itr=%3d\n", l2n_err, h1n_err, solver.num_itrs());
     printf("Edge: L2(p)=%12.9f  Inf(p)=%12.9f \n", l2f_err, inff_err);
-    printf("Cell: L2(p)=%12.9f  Inf(p)=%12.9f \n", l2c_err, infc_err);
+    if (flag) printf("Cell: L2(p)=%12.9f  Inf(p)=%12.9f \n", l2c_err, infc_err);
 
-    CHECK(l2n_err < 1e-10 && h1n_err < 1e-1);
+    CHECK(l2n_err < 1e-10 && h1n_err < 2e-1);
     CHECK(l2f_err < 1e-10 && inff_err < 1e-10);
   }
 }
 
+TEST(OPERATOR_DIFFUSION_HIGH_ORDER_LAGRANGE) {
+  RunHighOrderLagrange("Lagrange", false);
+  RunHighOrderLagrange("Lagrange serendipity", true);
+}
 

@@ -31,12 +31,11 @@ namespace WhetStone {
 * High-order consistency condition for the stiffness matrix. 
 * Only the upper triangular part of Ac is calculated. 
 ****************************************************************** */
-int MFD3D_Lagrange::H1consistencyHO(
-    int c, int order, const Tensor& K,
-    DenseMatrix& N, DenseMatrix& R, DenseMatrix& G, DenseMatrix& Ac)
+int MFD3D_Lagrange::H1consistency(
+    int c, const Tensor& K, DenseMatrix& N, DenseMatrix& Ac)
 {
   ASSERT(d_ == 2);  // FIXME
-  ASSERT(order < 4);
+  ASSERT(order_ < 4);
 
   Entity_ID_List nodes, faces;
   std::vector<int> dirs;
@@ -51,10 +50,10 @@ int MFD3D_Lagrange::H1consistencyHO(
   double volume = mesh_->cell_volume(c); 
 
   // calculate degrees of freedom 
-  Polynomial poly(d_, order), pf, pc;
-  if (order > 1) {
-    pf.Reshape(d_ - 1, order - 2);
-    pc.Reshape(d_, order - 2);
+  Polynomial poly(d_, order_), pf, pc;
+  if (order_ > 1) {
+    pf.Reshape(d_ - 1, order_ - 2);
+    pc.Reshape(d_, order_ - 2);
   }
   int nd = poly.size();
   int ndf = pf.size();
@@ -62,17 +61,18 @@ int MFD3D_Lagrange::H1consistencyHO(
 
   int ndof = nnodes + nfaces * ndf + ndc;
   N.Reshape(ndof, nd);
-  R.Reshape(ndof, nd);
   Ac.Reshape(ndof, ndof);
-  G.Reshape(nd, nd);
+
+  R_.Reshape(ndof, nd);
+  G_.Reshape(nd, nd);
 
   // pre-calculate integrals of monomials 
   NumericalIntegration numi(mesh_);
-  numi.UpdateMonomialIntegralsCell(c, 2 * order - 2, integrals_);
+  numi.UpdateMonomialIntegralsCell(c, 2 * order_ - 2, integrals_);
 
   // populate matrices N and R
   std::vector<AmanziGeometry::Point> tau(d_ - 1);
-  R.PutScalar(0.0);
+  R_.PutScalar(0.0);
   N.PutScalar(0.0);
 
   std::vector<const Polynomial*> polys(2);
@@ -115,11 +115,11 @@ int MFD3D_Lagrange::H1consistencyHO(
       mesh_->face_get_nodes(f, &face_nodes);
       int nfnodes = face_nodes.size();
 
-      if (order == 1 && col > 0) {
+      if (order_ == 1 && col > 0) {
         for (int j = 0; j < nfnodes; j++) {
           int v = face_nodes[j];
           int pos = FindPosition(v, nodes);
-          R(pos, col) += factor * normal[col - 1] / 2;
+          R_(pos, col) += factor * normal[col - 1] / 2;
         }
       } else if (col > 0) {
         int v, pos0, pos1;
@@ -135,16 +135,16 @@ int MFD3D_Lagrange::H1consistencyHO(
         pos1 = FindPosition(v, nodes);
         mesh_->node_get_coordinates(v, &x1);
 
-        if (order == 2) {
+        if (order_ == 2) {
           // Simpson rule with 3 points
           double q0 = tmp.Value(x0);
           double q1 = tmp.Value(x1);
           double qmid = tmp.Value(mesh_->face_centroid(f));
 
-          R(pos0, col) += (q0 - qmid) / 6;
-          R(pos1, col) += (q1 - qmid) / 6;
-          R(row,  col) = qmid;
-        } else if (order == 3) {
+          R_(pos0, col) += (q0 - qmid) / 6;
+          R_(pos1, col) += (q1 - qmid) / 6;
+          R_(row,  col) = qmid;
+        } else if (order_ == 3) {
           // Gauss-Legendre quadrature rule with 3 points
           int m(2); 
           Polynomial poly0(1, 3), poly1(1, 3), poly2(1, 2), poly3(1, 3);
@@ -173,16 +173,16 @@ int MFD3D_Lagrange::H1consistencyHO(
             sm[0] = 0.5 - q1d_points[m][n];
 
             double factor = q1d_weights[m][n] * tmp.Value(xm);
-            R(pos0, col) += poly0.Value(sm) * factor;
-            R(pos1, col) += poly1.Value(sm) * factor;
+            R_(pos0, col) += poly0.Value(sm) * factor;
+            R_(pos1, col) += poly1.Value(sm) * factor;
 
-            R(row, col) += poly2.Value(sm) * factor;
-            R(row + 1, col) += poly3.Value(sm) * factor;
+            R_(row, col) += poly2.Value(sm) * factor;
+            R_(row + 1, col) += poly3.Value(sm) * factor;
           }
         }
       }
 
-      if (order > 1) {
+      if (order_ > 1) {
         for (auto jt = pf.begin(); jt.end() <= pf.end(); ++jt) {
           const int* jndex = jt.multi_index();
           Polynomial fmono(d_ - 1, jndex, 1.0);
@@ -205,11 +205,11 @@ int MFD3D_Lagrange::H1consistencyHO(
         int k = jt.MonomialPosition();
         int n = jt.PolynomialPosition();
 
-        R(row + n, col) = -tmp(m, k) * volume;
+        R_(row + n, col) = -tmp(m, k) * volume;
       }
     }
 
-    if (order > 1) {
+    if (order_ > 1) {
       for (auto jt = pc.begin(); jt.end() <= pc.end(); ++jt) {
         int n = jt.PolynomialPosition();
         const int* jndex = jt.multi_index();
@@ -231,7 +231,7 @@ int MFD3D_Lagrange::H1consistencyHO(
   }
 
   // set the Gramm-Schidt matrix for gradients of polynomials
-  G.PutScalar(0.0);
+  G_.PutScalar(0.0);
 
   // -- gradient of a naturally scaled polynomial needs correction
   double scale = numi.MonomialNaturalScale(1, volume);
@@ -262,7 +262,7 @@ int MFD3D_Lagrange::H1consistencyHO(
         }
       }
 
-      G(l, k) = G(k, l) = K(0, 0) * sum * scale * scale; 
+      G_(l, k) = G_(k, l) = K(0, 0) * sum * scale * scale; 
     }
   }
 
@@ -270,12 +270,12 @@ int MFD3D_Lagrange::H1consistencyHO(
   DenseMatrix RG(ndof, nd), Rtmp(nd, ndof);
 
   // to invert generate matrix, we add and subtruct positive number
-  G(0, 0) = 1.0;
-  G.Inverse();
-  G(0, 0) = 0.0;
-  RG.Multiply(R, G, false);
+  G_(0, 0) = 1.0;
+  G_.Inverse();
+  G_(0, 0) = 0.0;
+  RG.Multiply(R_, G_, false);
 
-  Rtmp.Transpose(R);
+  Rtmp.Transpose(R_);
   Ac.Multiply(RG, Rtmp, false);
 
   return WHETSTONE_ELEMENTAL_MATRIX_OK;
@@ -285,13 +285,12 @@ int MFD3D_Lagrange::H1consistencyHO(
 /* ******************************************************************
 * Stiffness matrix for a high-order scheme.
 ****************************************************************** */
-int MFD3D_Lagrange::StiffnessMatrixHO(
-    int c, int order, const Tensor& K,
-    DenseMatrix& R, DenseMatrix& G, DenseMatrix& A)
+int MFD3D_Lagrange::StiffnessMatrix(
+    int c, const Tensor& K, DenseMatrix& A)
 {
   DenseMatrix N;
 
-  int ok = H1consistencyHO(c, order, K, N, R, G, A);
+  int ok = H1consistency(c, K, N, A);
   if (ok) return ok;
 
   StabilityScalar_(N, A);
