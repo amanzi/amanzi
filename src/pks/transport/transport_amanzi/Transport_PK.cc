@@ -981,14 +981,13 @@ void Transport_PK_ATS :: Advance_Dispersion_Diffusion(double t_old, double t_new
     Teuchos::ParameterList& op_list = 
         tp_list_->sublist("operators").sublist("diffusion operator").sublist("matrix");
 
-    // default boundary conditions (none inside domain and Neumann on its boundary)
-    std::vector<int> bc_model(nfaces_wghost, Operators::OPERATOR_BC_NONE);
-    std::vector<double> bc_value(nfaces_wghost, 0.0);
-    std::vector<double> bc_mixed;
-    PopulateBoundaryData(bc_model, bc_value, -1);
-
     Teuchos::RCP<Operators::BCs> bc_dummy = 
-        Teuchos::rcp(new Operators::BCs(Operators::OPERATOR_BC_TYPE_FACE, bc_model, bc_value, bc_mixed));
+        Teuchos::rcp(new Operators::BCs(mesh_, AmanziMesh::FACE, Operators::SCHEMA_DOFS_SCALAR));
+    
+    // default boundary conditions (none inside domain and Neumann on its boundary)
+    auto& bc_model = bc_dummy->bc_model();
+    auto& bc_value = bc_dummy->bc_value();
+    PopulateBoundaryData(bc_model, bc_value, -1);
 
     Operators::PDE_DiffusionFactory opfactory;
     Teuchos::RCP<Operators::PDE_Diffusion> op1 = opfactory.Create(op_list, mesh_, bc_dummy);
@@ -1048,7 +1047,7 @@ void Transport_PK_ATS :: Advance_Dispersion_Diffusion(double t_old, double t_new
         for (int c = 0; c < ncells_owned; c++) {
           fac[0][c] = (*phi_)[0][c] * (*ws_)[0][c] * (*mol_dens_)[0][c];
         }
-        op2->AddAccumulationTerm(sol, factor, dt_MPC, "cell");
+        op2->AddAccumulationDelta(sol, factor, factor, dt_MPC, "cell");
  
         op1->ApplyBCs(true, true);
         op->SymbolicAssembleMatrix();
@@ -1123,7 +1122,7 @@ void Transport_PK_ATS :: Advance_Dispersion_Diffusion(double t_old, double t_new
         fac0[0][c] = (*phi_)[0][c] * (1.0 - (*ws_prev_)[0][c]) * (*mol_dens_prev_)[0][c];
         if ((*ws_)[0][c] == 1.0) fac1[0][c] = 1.0 * (*mol_dens_)[0][c];  // hack so far
       }
-      op2->AddAccumulationTerm(sol, factor0, factor, dt_MPC, "cell");
+      op2->AddAccumulationDelta(sol, factor0, factor, dt_MPC, "cell");
  
       op->SymbolicAssembleMatrix();
       op->AssembleMatrix();

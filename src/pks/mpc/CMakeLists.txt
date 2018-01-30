@@ -28,7 +28,7 @@ include_directories(${ATS_SOURCE_DIR}/src/pks/flow/overland_pressure)
 include_directories(${ATS_SOURCE_DIR}/src/pks/energy/constitutive_relations/internal_energy)
 include_directories(${ATS_SOURCE_DIR}/src/pks/energy/base)
 include_directories(${ATS_SOURCE_DIR}/src/pks/energy/two_phase)
-#include_directories(${ATS_SOURCE_DIR}/src/pks/transport/transport_amanzi)
+include_directories(${ATS_SOURCE_DIR}/src/pks/transport/transport_amanzi)
 include_directories(${ATS_SOURCE_DIR}/src/operators/advection)
 include_directories(${ATS_SOURCE_DIR}/src/operators/divgrad/upwind_scheme)
 
@@ -178,36 +178,5 @@ include_evaluators_directories(LISTNAME ENERGY_THREE_PHASE_REG_INCLUDES)
 include_evaluators_directories(LISTNAME MPC_PK_FAC_INCLUDES)
 
 
-#add_subdirectory(coupled_transport)
+add_subdirectory(coupled_transport)
 
-#if ( BUILD_TESTS )
-if (0)
-  # Add UnitTest includes
-  set(amanzi_libs atk geometry mesh mesh_audit simple_mesh state whetstone mesh_functions)
-
-  include_directories(${Amanzi_TPL_UnitTest_INCLUDE_DIRS})
-
-  include_directories(${ATS_SOURCE_DIR}/src/pks/energy/advection_diffusion)
-
-  # Test: miscaleneous transport routines
-  add_executable(test_mpc_subsurface test/Main.cc test/test_mpc_subsurface.cc)
-#  add_executable(test_mpc_subsurface test/Main.cc )
-  target_link_libraries(test_mpc_subsurface 
-    mpc pk_energy_two_phase 
-    pk_energy_three_phase 
-    pk_energy_base
-    pk_flow_permafrost pk_flow_richards
-#    pk_transport
-#    pk_coupled_transport
-    pk_bases
-    energy_relations_thermal_conductivity energy_relations_internal_energy
-    energy_relations_enthalpy energy_relations_source_terms
-    flow_relations
-    generic_evaluators relations_eos relations_ewc bc_factory divgrad
-    amanzi_solvers amanzi_time_integration amanzi_operators amanzi_pks
-    amanzi_state amanzi_whetstone amanzi_mesh amanzi_geometry 
-    amanzi_mesh_functions amanzi_mesh_factory
-    amanzi_output amanzi_data_structures amanzi_atk
-    ${Amanzi_TPL_UnitTest_LIBRARIES})
-
-endif()
