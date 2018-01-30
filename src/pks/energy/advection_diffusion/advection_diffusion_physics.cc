@@ -55,7 +55,7 @@ void AdvectionDiffusion::AddAdvection_(const Teuchos::RCP<State> S,
   Teuchos::RCP<const CompositeVector> mass_flux = S->GetFieldData("mass_flux");
   matrix_adv_->global_operator()->Init();
   matrix_adv_->Setup(*mass_flux);
-  matrix_adv_->UpdateMatrices(*mass_flux);
+  matrix_adv_->UpdateMatrices(mass_flux.ptr());
   matrix_adv_->ApplyBCs(bc_, false);
 
   // apply

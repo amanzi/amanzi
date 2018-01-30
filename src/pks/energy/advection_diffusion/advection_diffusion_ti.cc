@@ -101,18 +101,15 @@ void AdvectionDiffusion::UpdatePreconditioner(double t, Teuchos::RCP<const TreeV
   Teuchos::RCP<const CompositeVector> cell_volume =
     S_next_->GetFieldData("cell_volume");
 
-  std::vector<double>& Acc_cells = preconditioner_acc_->local_matrices()->vals;
-  int ncells = cell_volume->size("cell",false);
-  for (int c=0; c!=ncells; ++c) {
-    double factor = (*cell_volume)("cell",c);
-    Acc_cells[c] += factor/h;
-  }
-
+  CompositeVector du(cell_volume->Map());
+  du.PutScalar(1.);
+  preconditioner_acc_->AddAccumulationTerm(du, h, "cell");
+  
   // update with advection terms
   if (implicit_advection_) {
     Teuchos::RCP<const CompositeVector> mass_flux = S_next_->GetFieldData("mass_flux");
     preconditioner_adv_->Setup(*mass_flux);
-    preconditioner_adv_->UpdateMatrices(*mass_flux);
+    preconditioner_adv_->UpdateMatrices(mass_flux.ptr());
     preconditioner_adv_->ApplyBCs(bc_, false);
   }
   

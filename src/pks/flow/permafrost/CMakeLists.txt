@@ -10,7 +10,7 @@ include_directories(${ATS_SOURCE_DIR}/src/operators/divgrad)
 include_directories(${ATS_SOURCE_DIR}/src/operators/divgrad/upwind_scheme)
 include_directories(${ATS_SOURCE_DIR}/src/pks/flow/richards)
 
-add_library(pk_flow_permafrost permafrost_pk.cc interfrost.cc )
+add_library(pk_flow_permafrost permafrost_pk.cc ) #interfrost.cc )
 
 install(TARGETS pk_flow_permafrost DESTINATION lib)
 

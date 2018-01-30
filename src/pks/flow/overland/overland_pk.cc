@@ -29,7 +29,7 @@ Author: Ethan Coon (ecoon@lanl.gov)
 #include "overland_conductivity_model.hh"
 
 #include "UpwindFluxFactory.hh"
-#include "OperatorDiffusionFactory.hh"
+#include "PDE_DiffusionFactory.hh"
 
 #include "overland.hh"
 
@@ -132,7 +132,7 @@ void OverlandFlow::SetupOverlandFlow_(const Teuchos::Ptr<State>& S) {
   if (!mfd_plist.isParameter("scaled constraint equation"))
     mfd_plist.set("scaled constraint equation", true);
   
-  Operators::OperatorDiffusionFactory opfactory;
+  Operators::PDE_DiffusionFactory opfactory;
   matrix_diff_ = opfactory.Create(mfd_plist, mesh_, bc_);
   matrix_diff_->SetTensorCoefficient(Teuchos::null);
   matrix_ = matrix_diff_->global_operator();
@@ -190,7 +190,7 @@ void OverlandFlow::SetupOverlandFlow_(const Teuchos::Ptr<State>& S) {
   //    accumulation
   Teuchos::ParameterList& acc_pc_plist = plist_->sublist("accumulation preconditioner");
   acc_pc_plist.set("entity kind", "cell");
-  preconditioner_acc_ = Teuchos::rcp(new Operators::OperatorAccumulation(acc_pc_plist, preconditioner_));
+  preconditioner_acc_ = Teuchos::rcp(new Operators::PDE_Accumulation(acc_pc_plist, preconditioner_));
   
   //    symbolic assemble
   preconditioner_->SymbolicAssembleMatrix();

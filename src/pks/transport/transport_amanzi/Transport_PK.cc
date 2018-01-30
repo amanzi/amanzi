@@ -28,9 +28,9 @@
 #include "LinearOperatorFactory.hh"
 #include "Mesh.hh"
 #include "OperatorDefs.hh"
-#include "OperatorDiffusionFactory.hh"
-#include "OperatorDiffusion.hh"
-#include "OperatorAccumulation.hh"
+#include "PDE_DiffusionFactory.hh"
+#include "PDE_Diffusion.hh"
+#include "PDE_Accumulation.hh"
 #include "PK_DomainFunctionFactory.hh"
 #include "PK_Utils.hh"
 
@@ -990,12 +990,12 @@ void Transport_PK_ATS :: Advance_Dispersion_Diffusion(double t_old, double t_new
     Teuchos::RCP<Operators::BCs> bc_dummy = 
         Teuchos::rcp(new Operators::BCs(Operators::OPERATOR_BC_TYPE_FACE, bc_model, bc_value, bc_mixed));
 
-    Operators::OperatorDiffusionFactory opfactory;
-    Teuchos::RCP<Operators::OperatorDiffusion> op1 = opfactory.Create(op_list, mesh_, bc_dummy);
+    Operators::PDE_DiffusionFactory opfactory;
+    Teuchos::RCP<Operators::PDE_Diffusion> op1 = opfactory.Create(op_list, mesh_, bc_dummy);
     op1->SetBCs(bc_dummy, bc_dummy);
     Teuchos::RCP<Operators::Operator> op = op1->global_operator();
-    Teuchos::RCP<Operators::OperatorAccumulation> op2 =
-        Teuchos::rcp(new Operators::OperatorAccumulation(AmanziMesh::CELL, op));
+    Teuchos::RCP<Operators::PDE_Accumulation> op2 =
+        Teuchos::rcp(new Operators::PDE_Accumulation(AmanziMesh::CELL, op));
 
     const CompositeVectorSpace& cvs = op1->global_operator()->DomainMap();
     CompositeVector sol(cvs), factor(cvs), factor0(cvs), source(cvs), zero(cvs);

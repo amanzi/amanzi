@@ -126,13 +126,16 @@ class VisItWindow:
                     v.SetOperatorOptions(tr)
                     plot.operators.append(Operator("exaggerate_vertical", "Transform", tr))
 
-    def createMesh(self, color='w', opacity=0.15):
+    def createMesh(self, color='w', opacity=0.15, silo=False):
         _colors = dict(w=(255,255,255,255),
                        k=(0,0,0,255),
                        gray=(175,175,175),
                        )
 
-        v.AddPlot('Mesh', "Mesh")
+        if silo:
+            v.AddPlot('Mesh', "mesh")
+        else:
+            v.AddPlot('Mesh', "Mesh")
         ma = v.MeshAttributes()
         ma.legendFlag = 0
         ma.meshColor = _colors[color]
@@ -140,10 +143,14 @@ class VisItWindow:
         if (opacity < 1.):
             ma.opaqueMode = ma.On
             ma.opacity = opacity
+
         v.SetPlotOptions(ma)
 
         pname = v.GetPlotList().GetPlots(v.GetNumPlots()-1).plotName
-        plot = Plot(pname, 'Mesh', ma)
+        if silo:
+            plot = Plot(pname, 'mesh', ma)
+        else:
+            plot = Plot(pname, 'Mesh', ma)
         self.nonplots.append(plot)
         return plot
 
@@ -157,10 +164,10 @@ class VisItWindow:
         if "temperature" in display_name:
             display_name = display_name.replace("[K]", "[C]")
             print "defining alias: %s = %s"%(display_name, varname)
-            v.DefineScalarExpression(display_name, "%s - 273.15"%varname)
+            v.DefineScalarExpression(display_name, "<%s> - 273.15"%varname)
         elif display_name != varname:
             print "defining alias: %s = %s"%(display_name, varname)
-            v.DefineScalarExpression(display_name, varname)
+            v.DefineScalarExpression(display_name, '<'+varname+'>')
 
         v.AddPlot('Pseudocolor', display_name)
         pa = v.PseudocolorAttributes()
@@ -201,6 +208,7 @@ class VisItWindow:
         if not legend:
             pa.legendFlag = 0
 
+        v.SetActivePlots(len(self.plots)+1)
         v.SetPlotOptions(pa)
         pname = v.GetPlotList().GetPlots(v.GetNumPlots()-1).plotName
         if legend:
@@ -302,19 +310,25 @@ class Vis:
         #     v.OpenMDServer(self.hostname,args)
         #     v.OpenComputeEngine(self.hostname,args)
 
-    def loadSources(self, surface=False, prefix="visdump_data", 
-                    surface_prefix="visdump_surface_data"):
+    def loadSources(self, prefix="visdump_data", 
+                    surface_prefix="visdump_surface_data", filetype="xdmf"):
         """Loads source files for subsurface and potentially surface."""
 
         if prefix is None:
             self.subsurface_src = None
         else:
-            self.subsurface_src = ":".join((self.hostname, os.path.join(self.directory, "%s.VisIt.xmf"%prefix)))
+            if filetype == "xdmf":
+                self.subsurface_src = ":".join((self.hostname, os.path.join(self.directory, "%s.VisIt.xmf"%prefix)))
+            elif filetype == "silo":
+                self.subsurface_src = ":".join((self.hostname, os.path.join(self.directory, "%s.silo"%prefix)))
 
         if surface_prefix is None:
             self.surface_src = None
         else:
-            self.surface_src = ":".join((self.hostname, os.path.join(self.directory, "%s.VisIt.xmf"%surface_prefix)))
+            if filetype == "xdmf":
+                self.surface_src = ":".join((self.hostname, os.path.join(self.directory, "%s.VisIt.xmf"%surface_prefix)))
+            elif filetype == "silo":
+                self.surface_src = ":".join((self.hostname, os.path.join(self.directory, "%s.silo"%surface_prefix)))
 
         # open the subsurface database
         if self.subsurface_src is not None:
@@ -333,7 +347,12 @@ class Vis:
             v.DefineVectorExpression("ponded_depth_displace", "{0,0,ponded_depth.cell.0}")
             v.DefineVectorExpression("snow_displace", "{0,0,snow_depth.cell.0+ponded_depth.cell.0}")
 
-
+    def loadSourcesList(self, srclist):
+        """A generic set of sources."""
+        self.src = [":".join((self.hostname, os.path.join(self.directory, s))) for s in srclist]
+        for s in self.src:
+            v.OpenDatabase(s)
+            
     def unloadSources(self):
         v.DeleteAllPlots()
         if self.subsurface_src is not None:
@@ -364,7 +383,10 @@ class Vis:
 
     def activateSubsurface(self):
         v.ActivateDatabase(self.subsurface_src)
-        
+
+    def activateSource(self, src):
+        v.ActivateDatabase(src)
+
 
 class ATSVis(Vis):
     def __init__(self, *args, **kwargs):
@@ -506,7 +528,12 @@ class ATSVis(Vis):
 
     def plotPondedDepth(self, **kwargs):
         """Adds a plot of surface ponded depth"""
-        return self.createSurfacePseudocolor("ponded_depth.cell.0", **kwargs)
+        if 'domain_name' in kwargs.keys():
+            varname = kwargs['domain_name']+"-ponded_depth.cell.0"
+            kwargs.pop("domain_name")
+        else:
+            varname = "surface-ponded_depth.cell.0"
+        return self.createSurfacePseudocolor(varname, **kwargs)
 
     def plotSnowDepth(self, **kwargs):
         """Adds a plot of snow depth"""

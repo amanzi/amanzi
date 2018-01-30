@@ -44,7 +44,7 @@ void Richards::ApplyDiffusion_(const Teuchos::Ptr<State>& S,
       S->GetFieldData(key_, name_);
   Teuchos::RCP<CompositeVector> flux =
       S->GetFieldData(flux_key_, name_);
-  matrix_diff_->UpdateFlux(*pres, *flux);
+  matrix_diff_->UpdateFlux(pres.ptr(), flux.ptr());
 
   // apply boundary conditions
   matrix_diff_->ApplyBCs(true, true);
@@ -115,16 +115,11 @@ void Richards::AddSourcesToPrecon_(const Teuchos::Ptr<State>& S, double h) {
   // external sources of energy (temperature dependent source)
   if (is_source_term_ && !explicit_source_ && source_term_is_differentiable_ &&
       S->GetFieldEvaluator(source_key_)->IsDependency(S, key_)) {
-    std::vector<double>& Acc_cells = preconditioner_acc_->local_matrices()->vals;
 
     S->GetFieldEvaluator(source_key_)->HasFieldDerivativeChanged(S, name_, key_);
     Key dsource_dp_key = Keys::getDerivKey(source_key_, key_);
-    const Epetra_MultiVector& dsource_dp =
-        *S->GetFieldData(dsource_dp_key)->ViewComponent("cell",false);
-    unsigned int ncells = dsource_dp.MyLength();
-    for (unsigned int c=0; c!=ncells; ++c) {
-      Acc_cells[c] -= dsource_dp[0][c];
-    }
+
+    preconditioner_acc_->AddAccumulationTerm(*S->GetFieldData(dsource_dp_key), -1.0, "cell", true);
   }
 }
 

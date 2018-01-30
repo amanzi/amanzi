@@ -43,7 +43,7 @@ void OverlandPressureFlow::ApplyDiffusion_(const Teuchos::Ptr<State>& S,
     Teuchos::RCP<CompositeVector> flux =
       S->GetFieldData(Keys::getKey(domain_,"mass_flux"), name_);
 
-    matrix_diff_->UpdateFlux(*pres_elev, *flux);
+    matrix_diff_->UpdateFlux(pres_elev.ptr(), flux.ptr());
   }
 
   // assemble the stiffness matrix

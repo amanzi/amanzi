@@ -17,10 +17,10 @@ This provides the base of an advection-diffusion equation for energy.
 
 #include "PK_Factory.hh"
 
-#include "OperatorDiffusion.hh"
-#include "OperatorDiffusionMFD.hh"
-#include "OperatorAccumulation.hh"
-#include "OperatorAdvection.hh"
+#include "PDE_Diffusion.hh"
+#include "PDE_DiffusionMFD.hh"
+#include "PDE_Accumulation.hh"
+#include "PDE_AdvectionUpwind.hh"
 
 //#include "PK_PhysicalBDF_ATS.hh"
 #include "pk_physical_bdf_default.hh"
@@ -131,8 +131,6 @@ public:
   Teuchos::RCP<Functions::BoundaryFunction> bc_diff_flux_;
   Teuchos::RCP<Functions::BoundaryFunction> bc_flux_;
 
-  std::vector<int> bc_markers_adv_;
-  std::vector<double> bc_values_adv_;
   Teuchos::RCP<Operators::BCs> bc_adv_;
 
   // operators
@@ -141,12 +139,12 @@ public:
 
   // mathematical operators
   Teuchos::RCP<Operators::Operator> matrix_; // pc in PKPhysicalBDFBase
-  Teuchos::RCP<Operators::OperatorDiffusion> matrix_diff_;
-  Teuchos::RCP<Operators::OperatorAdvection> matrix_adv_;
+  Teuchos::RCP<Operators::PDE_Diffusion> matrix_diff_;
+  Teuchos::RCP<Operators::PDE_AdvectionUpwind> matrix_adv_;
 
-  Teuchos::RCP<Operators::OperatorDiffusion> preconditioner_diff_;
-  Teuchos::RCP<Operators::OperatorAccumulation> preconditioner_acc_;
-  Teuchos::RCP<Operators::OperatorAdvection> preconditioner_adv_;
+  Teuchos::RCP<Operators::PDE_Diffusion> preconditioner_diff_;
+  Teuchos::RCP<Operators::PDE_Accumulation> preconditioner_acc_;
+  Teuchos::RCP<Operators::PDE_AdvectionUpwind> preconditioner_adv_;
   Teuchos::RCP<Operators::Operator> lin_solver_;
 
   // flags and control

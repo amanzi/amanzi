@@ -18,7 +18,7 @@ Author: Ethan Coon (ecoon@lanl.gov)
 #include "CompositeVectorFunctionFactory.hh"
 #include "independent_variable_field_evaluator.hh"
 
-#include "OperatorDiffusionFV.hh"
+#include "PDE_DiffusionFV.hh"
 #include "upwind_potential_difference.hh"
 #include "upwind_total_flux.hh"
 
@@ -110,13 +110,13 @@ void SnowDistribution::SetupSnowDistribution_(const Teuchos::Ptr<State>& S) {
 
   // operator for the diffusion terms: must use ScaledConstraint version
   Teuchos::ParameterList mfd_plist = plist_->sublist("diffusion");
-  matrix_diff_ = Teuchos::rcp(new Operators::OperatorDiffusionFV(mfd_plist, mesh_));
+  matrix_diff_ = Teuchos::rcp(new Operators::PDE_DiffusionFV(mfd_plist, mesh_));
   matrix_ = matrix_diff_->global_operator();
   matrix_diff_->SetBCs(bc_, bc_);
   matrix_diff_->SetTensorCoefficient(Teuchos::null);
 
   Teuchos::ParameterList mfd_pc_plist = plist_->sublist("diffusion preconditioner");
-  preconditioner_diff_ = Teuchos::rcp(new Operators::OperatorDiffusionFV(mfd_pc_plist, mesh_));
+  preconditioner_diff_ = Teuchos::rcp(new Operators::PDE_DiffusionFV(mfd_pc_plist, mesh_));
   preconditioner_diff_->SetBCs(bc_, bc_);
   preconditioner_diff_->SetTensorCoefficient(Teuchos::null);
   preconditioner_ = preconditioner_diff_->global_operator();
@@ -125,7 +125,7 @@ void SnowDistribution::SetupSnowDistribution_(const Teuchos::Ptr<State>& S) {
   // accumulation operator for the preconditioenr
   Teuchos::ParameterList& acc_pc_plist = plist_->sublist("accumulation preconditioner");
   acc_pc_plist.set("entity kind", "cell");
-  preconditioner_acc_ = Teuchos::rcp(new Operators::OperatorAccumulation(acc_pc_plist, preconditioner_));
+  preconditioner_acc_ = Teuchos::rcp(new Operators::PDE_Accumulation(acc_pc_plist, preconditioner_));
 
 };
 
