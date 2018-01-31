@@ -60,7 +60,7 @@ class PDE_AdvectionRiemann : public PDE_Advection {
   void InitAdvection_(Teuchos::ParameterList& plist);
 
  private:
-  std::string flux_, riemann_;
+  std::string method_, matrix_, flux_, riemann_;
   int method_order_;
   bool jump_on_test_;
 };

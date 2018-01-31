@@ -48,6 +48,7 @@ class PDE_Electromagnetics : public PDE_HelperDiscretization {
   // main virtual members
   // -- setup 
   virtual void SetTensorCoefficient(const Teuchos::RCP<std::vector<WhetStone::Tensor> >& K);
+
   // -- creation of a linearized operator
   using PDE_HelperDiscretization::UpdateMatrices;
   virtual void UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& u,

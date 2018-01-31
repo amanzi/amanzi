@@ -46,6 +46,7 @@ class MFD3DFactory {
 /* ******************************************************************
 * Implementation of factory
 ****************************************************************** */
+inline
 Teuchos::RCP<BilinearForm> MFD3DFactory::Create(
     const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
     const std::string& method, int method_order)

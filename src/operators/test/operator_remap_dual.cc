@@ -102,9 +102,11 @@ class RemapDG : public Explicit_TI::fnBase<CompositeVector> {
 
   void Setup(const Teuchos::Ptr<Operators::PDE_Abstract> op_adv,
              const Teuchos::Ptr<Operators::PDE_AdvectionRiemann> op_flux,
+             const Teuchos::Ptr<Operators::PDE_AdvectionRiemann> op_jump,
              const Teuchos::Ptr<Operators::PDE_Reaction> op_reac) {
     op_adv_ = op_adv;
     op_flux_ = op_flux;
+    op_jump_ = op_jump;
     op_reac_ = op_reac;
   }
 
@@ -115,6 +117,7 @@ class RemapDG : public Explicit_TI::fnBase<CompositeVector> {
     op_adv_->SetupPolyVector(velc_);
     op_adv_->UpdateMatrices();
     op_flux_->UpdateMatrices(velf_.ptr());
+    op_jump_->UpdateMatrices(Teuchos::null);
 
     op_reac_->Setup(jac_);
     op_reac_->UpdateMatrices(Teuchos::null);
@@ -217,7 +220,7 @@ class RemapDG : public Explicit_TI::fnBase<CompositeVector> {
   Teuchos::RCP<std::vector<WhetStone::Polynomial> > jac_;
 
   Teuchos::Ptr<Operators::PDE_Abstract> op_adv_;
-  Teuchos::Ptr<Operators::PDE_AdvectionRiemann> op_flux_;
+  Teuchos::Ptr<Operators::PDE_AdvectionRiemann> op_flux_, op_jump_;
   Teuchos::Ptr<Operators::PDE_Reaction> op_reac_;
 
   Teuchos::RCP<std::vector<WhetStone::VectorPolynomial> > velc_;
@@ -392,6 +395,7 @@ void RemapTestsDualRK(int order_p, int order_u,
   // create flux operator
   Teuchos::ParameterList plist;
   plist.set<std::string>("method", "dg modal")
+       .set<std::string>("matrix type", "flux")
        .set<int>("method order", order_p)
        .set<bool>("jump operator on test function", true);
 
@@ -405,6 +409,10 @@ void RemapTestsDualRK(int order_p, int order_u,
 
   Teuchos::RCP<PDE_AdvectionRiemann> op_flux = Teuchos::rcp(new PDE_AdvectionRiemann(plist, mesh0));
   auto global_op = op_flux->global_operator();
+
+  // Attach jump operator to the flux operator
+  plist.set<std::string>("matrix type", "jump");
+  Teuchos::RCP<PDE_AdvectionRiemann> op_jump = Teuchos::rcp(new PDE_AdvectionRiemann(plist, global_op));
 
   // Attach volumetric advection operator to the flux operator.
   // We modify the existing parameter list.
@@ -426,7 +434,7 @@ void RemapTestsDualRK(int order_p, int order_u,
 
   // explicit time integration
   CompositeVector p1aux(*p1);
-  remap.Setup(op_adv.ptr(), op_flux.ptr(), op_reac.ptr());
+  remap.Setup(op_adv.ptr(), op_flux.ptr(), op_jump.ptr(), op_reac.ptr());
   Explicit_TI::RK<CompositeVector> rk(remap, rk_method, p1aux);
 
   remap.ChangeVariables(0.0, *p1, p1aux, true);

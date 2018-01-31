@@ -173,6 +173,63 @@ int DG_Modal::MassMatrixPoly(int c, const Polynomial& K, DenseMatrix& M)
 
 
 /* ******************************************************************
+* Stiffness matrix for Taylor basis functions. 
+****************************************************************** */
+int DG_Modal::StiffnessMatrix(int c, const Tensor& K, DenseMatrix& A)
+{
+  double K00 = K(0, 0);
+
+  double volume = mesh_->cell_volume(c);
+  double scale = numi_.MonomialNaturalScale(1, volume);
+
+  // extend list of integrals of monomials
+  UpdateIntegrals_(c, 2 * order_ - 2);
+  const Polynomial& integrals = integrals_[c];
+   
+  // copy integrals to mass matrix
+  int multi_index[3];
+  Polynomial p(d_, order_);
+
+  int nrows = p.size();
+  A.Reshape(nrows, nrows);
+
+  for (auto it = p.begin(); it.end() <= p.end(); ++it) {
+    const int* index = it.multi_index();
+    int k = it.PolynomialPosition();
+
+    for (auto jt = it; jt.end() <= p.end(); ++jt) {
+      const int* jndex = jt.multi_index();
+      int l = jt.PolynomialPosition();
+      
+      int n(0);
+      int multi_index[3];
+      for (int i = 0; i < d_; ++i) {
+        multi_index[i] = index[i] + jndex[i];
+        n += multi_index[i];
+      }
+
+      double sum(0.0), tmp;
+      for (int i = 0; i < d_; ++i) {
+        if (index[i] > 0 && jndex[i] > 0) {
+          multi_index[i] -= 2;
+          const auto& coefs = integrals.monomials(n - 2).coefs();
+          tmp = coefs[p.MonomialPosition(multi_index)]; 
+          sum += tmp * index[i] * jndex[i];
+          multi_index[i] += 2;
+        }
+      }
+
+      A(l, k) = A(k, l) = K00 * sum * scale * scale; 
+    }
+  }
+
+  ChangeBasis_(c, A);
+
+  return 0;
+}
+
+
+/* ******************************************************************
 * Advection matrix for Taylor basis and cell-based velocity u.
 ****************************************************************** */
 int DG_Modal::AdvectionMatrixPoly(int c, const VectorPolynomial& u, DenseMatrix& A, bool grad_on_test)
@@ -296,10 +353,7 @@ int DG_Modal::FluxMatrixPoly(int f, const Polynomial& un, DenseMatrix& A,
   double volume2 = mesh_->cell_volume(c2);
 
   UpdateIntegrals_(c1, 2 * order_);
-  const Polynomial& integrals_dw = integrals_[c1];
-
   UpdateIntegrals_(c2, 2 * order_);
-  const Polynomial& integrals_up = integrals_[c2];
 
   // integrate traces of polynomials on face f
   std::vector<const Polynomial*> polys(3);
@@ -357,6 +411,98 @@ int DG_Modal::FluxMatrixPoly(int f, const Polynomial& un, DenseMatrix& A,
   }
 
   ChangeBasis_(cells[0], cells[1], A);
+
+  return 0;
+}
+
+
+/* *****************************************************************
+* Jump matrix for Taylor basis and jump coefficient K corresponding 
+* to the following integral:
+*
+*   \Int_f { K [\psi] [\rho] } dS
+****************************************************************** */
+int DG_Modal::JumpMatrix(int f, double K, DenseMatrix& A)
+{
+  AmanziMesh::Entity_ID_List cells;
+  mesh_->face_get_cells(f, (Parallel_type)WhetStone::USED, &cells);
+  int ncells = cells.size();
+
+  Polynomial poly0(d_, order_), poly1(d_, order_);
+  int size = poly0.size();
+
+  int nrows = ncells * size;
+  A.Reshape(nrows, nrows);
+  A.PutScalar(0.0);
+
+  // Calculate integrals needed for scaling
+  int c1 = cells[0];
+  int c2 = (ncells > 1) ? cells[1] : -1;
+
+  double volume1 = mesh_->cell_volume(c1);
+  double volume2 = mesh_->cell_volume(c2);
+
+  UpdateIntegrals_(c1, 2 * order_);
+  if (c2 >= 0) {
+     UpdateIntegrals_(c2, 2 * order_);
+  }
+
+  // integrate traces of polynomials on face f
+  double coef00, coef01, coef11;
+  Polynomial p0, p1, q0, q1;
+  std::vector<const Polynomial*> polys(2);
+
+  for (auto it = poly0.begin(); it.end() <= poly0.end(); ++it) {
+    const int* idx0 = it.multi_index();
+    int k = poly0.PolynomialPosition(idx0);
+    int s = it.MonomialOrder();
+
+    double factor = numi_.MonomialNaturalScale(s, volume1);
+    Polynomial p0(d_, idx0, factor);
+    p0.set_origin(mesh_->cell_centroid(c1));
+
+    for (auto jt = poly1.begin(); jt.end() <= poly1.end(); ++jt) {
+      const int* idx1 = jt.multi_index();
+      int l = poly1.PolynomialPosition(idx1);
+      int t = jt.MonomialOrder();
+
+      factor = numi_.MonomialNaturalScale(t, volume1);
+      Polynomial q0(d_, idx1, factor);
+      q0.set_origin(mesh_->cell_centroid(c1));
+
+      polys[0] = &p0;
+      polys[1] = &q0;
+      coef00 = numi_.IntegratePolynomialsFace(f, polys);
+
+      A(k, l) = K * coef00;
+
+      if (c2 >= 0) {
+        factor = numi_.MonomialNaturalScale(s, volume2);
+        Polynomial p1(d_, idx0, factor);
+        p1.set_origin(mesh_->cell_centroid(c2));
+
+        factor = numi_.MonomialNaturalScale(t, volume2);
+        Polynomial q1(d_, idx1, factor);
+        q1.set_origin(mesh_->cell_centroid(c2));
+
+        polys[1] = &q1;
+        coef01 = numi_.IntegratePolynomialsFace(f, polys);
+
+        polys[0] = &p1;
+        coef11 = numi_.IntegratePolynomialsFace(f, polys);
+
+        A(size + k, size + l) = K * coef11;
+        A(size + k, l) = -K * coef01;
+        A(l, size + k) = -K * coef01;
+      }
+    }
+  }
+
+  if (ncells == 1) {
+    ChangeBasis_(c1, A);
+  } else {
+    ChangeBasis_(c1, c2, A);
+  }
 
   return 0;
 }

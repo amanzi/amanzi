@@ -91,6 +91,7 @@ set(operators_inc_files
     PDE_DiffusionFVwithGravity.hh
     PDE_DiffusionNLFV.hh
     PDE_DiffusionNLFVwithGravity.hh
+    PDE_DiffusionDG.hh
     PDE_Elasticity.hh
     PDE_Electromagnetics.hh
     PDE_ElectromagneticsMHD.hh
@@ -129,6 +130,7 @@ add_amanzi_library(operators
                           PDE_DiffusionMFD.cc PDE_DiffusionMFDwithGravity.cc
                           PDE_DiffusionFV.cc PDE_DiffusionFVwithGravity.cc
                           PDE_DiffusionNLFV.cc PDE_DiffusionNLFVwithGravity.cc
+                          PDE_DiffusionDG.cc
                           PDE_DiffusionFactory.cc                   
                           PDE_HelperDiscretization.cc
                           PDE_Elasticity.cc
@@ -216,6 +218,11 @@ if (BUILD_TESTS)
 
     add_amanzi_test(operators_diffusion_consistent_face_3pe operators_diffusion_consistent_face 
                     NPROCS 3 KIND unit)
+
+    add_amanzi_test(operators_diffusion_dg operators_diffusion_dg
+                    KIND unit
+                    SOURCE test/Main.cc test/operator_diffusion_dg.cc
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
     add_amanzi_test(operators_commute operators_commute
                     KIND unit

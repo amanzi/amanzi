@@ -81,13 +81,15 @@ void PDE_AdvectionRiemann::InitAdvection_(Teuchos::ParameterList& plist)
 
   // parameters
   // -- discretization method
-  std::string name = plist.get<std::string>("method");
+  method_ = plist.get<std::string>("method");
   method_order_ = plist.get<int>("method order", 0);
-  if (name == "dg modal") {
+  matrix_ = plist.get<std::string>("matrix type");
+
+  if (method_ == "dg modal") {
     space_col_ = DG;
   } else {
     Errors::Message msg;
-    msg << "Advection operator method \"" << name << "\" is invalid.";
+    msg << "Advection operator method \"" << method_ << "\" is invalid.";
     Exceptions::amanzi_throw(msg);
   }
 
@@ -96,7 +98,6 @@ void PDE_AdvectionRiemann::InitAdvection_(Teuchos::ParameterList& plist)
   } else {
     space_row_ = P0;  // FIXME
   }
-
 
   // -- fluxes
   flux_ = plist.get<std::string>("flux formula", "remap");
@@ -115,18 +116,23 @@ void PDE_AdvectionRiemann::UpdateMatrices(
   std::vector<WhetStone::DenseMatrix>& matrix = local_op_->matrices;
   std::vector<WhetStone::DenseMatrix>& matrix_shadow = local_op_->matrices_shadow;
 
-  int d(mesh_->space_dimension());
-  WhetStone::DG_Modal dg(mesh_);
+  WhetStone::DenseMatrix Aface;
 
-  for (int f = 0; f < nfaces_owned; ++f) {
-    WhetStone::DenseMatrix Aface;
-
-    if (space_col_ == DG && space_row_ == DG) {
-      dg.set_order(method_order_);
+  if (method_ == "dg modal" && matrix_ == "flux") {
+    WhetStone::DG_Modal dg(mesh_);
+    dg.set_order(method_order_);
+    for (int f = 0; f < nfaces_owned; ++f) {
       dg.FluxMatrixPoly(f, (*u)[f], Aface, jump_on_test_);
+      matrix[f] = Aface;
     }
-
-    matrix[f] = Aface;
+  }
+  else if (method_ == "dg modal" && matrix_ == "jump") {
+    WhetStone::DG_Modal dg(mesh_);
+    dg.set_order(method_order_);
+    for (int f = 0; f < nfaces_owned; ++f) {
+      dg.JumpMatrix(f, 0.0001, Aface);
+      matrix[f] = Aface;
+    }
   }
 }
 
