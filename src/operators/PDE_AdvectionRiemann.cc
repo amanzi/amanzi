@@ -73,7 +73,11 @@ void PDE_AdvectionRiemann::InitAdvection_(Teuchos::ParameterList& plist)
     local_schema_row_.Init(range, mesh_);
     local_schema_col_.Init(domain, mesh_);
 
-    local_op_ = Teuchos::rcp(new Op_Cell_Schema(global_schema_row_, global_schema_col_, mesh_));
+    if (local_schema_col_.base() == AmanziMesh::CELL) {
+      local_op_ = Teuchos::rcp(new Op_Cell_Schema(global_schema_row_, global_schema_col_, mesh_));
+    } else if (local_schema_col_.base() == AmanziMesh::FACE) {
+      local_op_ = Teuchos::rcp(new Op_Face_Schema(global_schema_row_, global_schema_col_, mesh_));
+    }
   }
 
   // register the advection Op
@@ -130,7 +134,7 @@ void PDE_AdvectionRiemann::UpdateMatrices(
     WhetStone::DG_Modal dg(mesh_);
     dg.set_order(method_order_);
     for (int f = 0; f < nfaces_owned; ++f) {
-      dg.JumpMatrix(f, 0.0001, Aface);
+      dg.JumpMatrix(f, 0.0, Aface);
       matrix[f] = Aface;
     }
   }

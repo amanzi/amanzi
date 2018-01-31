@@ -255,7 +255,7 @@ void RemapTestsDualRK(int order_p, int order_u,
   Epetra_MpiComm comm(MPI_COMM_WORLD);
   int MyPID = comm.MyPID();
   if (MyPID == 0) std::cout << "\nTest: " << dim << "D remap, dual formulation:"
-                            << " mesh=" << ((nx == 0) ? "polygonal" : "square")
+                            << " mesh=" << ((nx == 0) ? file_name : "square")
                             << ", orders: " << order_p << " " << order_u 
                             << ", maps=" << maps_name << std::endl;
 

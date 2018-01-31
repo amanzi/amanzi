@@ -58,7 +58,7 @@ class Op {
      const Teuchos::RCP<const AmanziMesh::Mesh> mesh) :
       schema_row_(schema_row),
       schema_col_(schema_col),
-      schema_string("UNDEFINED"),
+      schema_string(schema_row.CreateUniqueName() + "+" + schema_col.CreateUniqueName()),
       mesh_(mesh)
   {};
 

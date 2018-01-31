@@ -434,6 +434,7 @@ int DG_Modal::JumpMatrix(int f, double K, DenseMatrix& A)
   int nrows = ncells * size;
   A.Reshape(nrows, nrows);
   A.PutScalar(0.0);
+  if (ncells == 1) return 0;
 
   // Calculate integrals needed for scaling
   int c1 = cells[0];
