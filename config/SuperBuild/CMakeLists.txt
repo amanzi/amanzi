@@ -491,9 +491,9 @@ include(DefineExternalProjectArgs)
 set(Amanzi_TPL_CMAKE_ARGS)
 
 # --- Begin the build definitions
-if (BUILD_SPACK)
-  include(${SuperBuild_BUILD_FILES_DIR}/Build_Spack.cmake)
-endif()
+#if (BUILD_SPACK)
+#  include(${SuperBuild_BUILD_FILES_DIR}/Build_Spack.cmake)
+#endif()
 
 
 if (ENABLE_XSDK)    
@@ -576,25 +576,13 @@ endif()
 append_set(Amanzi_TPL_CMAKE_ARGS
            -DHDF5_ROOT:FILEPATH=${HDF5_DIR})
 
-
 # ASCEM-IO  
 include(${SuperBuild_BUILD_FILES_DIR}/Build_ASCEMIO.cmake) 
 append_set(Amanzi_TPL_CMAKE_ARGS
            -DASCEMIO_DIR:FILEPATH=${TPL_INSTALL_PREFIX})
 
 # XERCES
-if ( ENABLE_SPACK)
-    #include(${SuperBuild_BUILD_FILES_DIR}/Build_XERCES_Spack.cmake) 
-    execute_process( COMMAND ${SPACK_BINARY} install xerces-c )
-    find_spack_install_location (xerces-c XERCES_INSTALL_PREFIX)
-    build_library_name(xerces-c XERCES_LIBRARY APPEND_PATH ${XERCES_INSTALL_PREFIX}/lib)
-    set(XERCES_LIBRARIES ${XERCES_LIBRARY})
-    set(XERCES_INCLUDE_DIRS ${XERCES_INSTALL_PREFIX}/include)    
-    set(XERCES_DIR ${XERCES_INSTALL_PREFIX})
-    message(STATUS "XERCES_DIR = ${XERCES_DIR}")
-else()
-    include(${SuperBuild_BUILD_FILES_DIR}/Build_XERCES.cmake) 
-endif()
+include(${SuperBuild_BUILD_FILES_DIR}/Build_XERCES.cmake) 
 append_set(Amanzi_TPL_CMAKE_ARGS
           -DXERCES_DIR:FILEPATH=${XERCES_DIR})
 
@@ -620,17 +608,9 @@ append_set(Amanzi_TPL_CMAKE_ARGS
 
 # NetCDF Fortran
 # As of 10/13/2017, NetCDF Fortran is not part of the xSDK suite
-if ( NOT ENABLE_XSDK )
-    include(${SuperBuild_BUILD_FILES_DIR}/Build_NetCDF_Fortran.cmake)
-    append_set(Amanzi_TPL_CMAKE_ARGS
-              -DNetCDF_FORTRAN_DIR:FILEPATH=${NetCDF_FORTRAN_DIR})
-else ()
-     execute_process( COMMAND ${SPACK_BINARY} install netcdf-fortran )    
-     find_spack_install_location(netcdf-fortran NETCDFF_INSTALL_PREFIX)
-     message(STATUS "NETCDFF_INSTALL_PREFIX = ${NETCDFF_INSTALL_PREFIX}")
-     append_set(Amanzi_TPL_CMAKE_ARGS
-		            -DNetCDF_FORTRAN_DIR:FILEPATH=${NETCDFF_INSTALL_PREFIX})
-endif()
+include(${SuperBuild_BUILD_FILES_DIR}/Build_NetCDF_Fortran.cmake)
+append_set(Amanzi_TPL_CMAKE_ARGS
+          -DNetCDF_FORTRAN_DIR:FILEPATH=${NetCDF_FORTRAN_DIR})
 
 # MOAB
 if (ENABLE_MOAB_Mesh)
@@ -786,7 +766,7 @@ else()
   if (ENABLE_CRUNCHTOPE)
     if (NOT ENABLE_PETSC)
       set(ENABLE_PETSC TRUE)
-      include(${SuperBuild_BUILD_FILES_DIR}/Build_PETSc.cmake)
+      #include(${SuperBuild_BUILD_FILES_DIR}/Build_PETSc.cmake)
     endif()
     include(${SuperBuild_BUILD_FILES_DIR}/Build_CrunchTope.cmake)
     build_library_name(crunchchem CRUNCHTOPE_LIBRARIES APPEND_PATH ${TPL_INSTALL_PREFIX}/lib)

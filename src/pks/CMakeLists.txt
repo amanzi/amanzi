@@ -31,6 +31,7 @@ include_directories(${OUTPUT_SOURCE_DIR})
 
 # External (TPL) include directories
 include_directories(${Epetra_INCLUDE_DIRS})
+include_directories(${HDF5_INCLUDE_DIRS})
 include_directories(${ASCEMIO_INCLUDE_DIR})
 
 #
