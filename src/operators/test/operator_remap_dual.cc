@@ -147,7 +147,7 @@ class RemapDG : public Explicit_TI::fnBase<CompositeVector> {
   }
 
   double L2Norm(double t, const CompositeVector& p1) {
-    if (fabs(tl2_ - t) < 1e-6 && mesh_->get_comm()->MyPID() == 0) {
+    if (fabs(tl2_ - t) < 1e-6) {
       CompositeVector p2(p1);
 
       ChangeVariables(t, p1, p2, false);
