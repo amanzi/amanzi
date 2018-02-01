@@ -236,6 +236,8 @@ int DG_Modal::AdvectionMatrixPoly(int c, const VectorPolynomial& u, DenseMatrix&
 {
   // rebase the polynomial
   const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
+  double volume = mesh_->cell_volume(c);
+
   VectorPolynomial ucopy(u);
   for (int i = 0; i < d_; ++i) {
     ucopy[i].ChangeOrigin(xc);
@@ -248,8 +250,8 @@ int DG_Modal::AdvectionMatrixPoly(int c, const VectorPolynomial& u, DenseMatrix&
   const Polynomial& integrals = integrals_[c];
 
   // gradient of a naturally scaled polynomial needs correction
-  double scale = numi_.MonomialNaturalScale(1, mesh_->cell_volume(c));
-   
+  double scale = numi_.MonomialNaturalScale(1, volume);
+
   // sum-up integrals to the advection matrix
   int multi_index[3];
   Polynomial p(d_, order_), q(d_, order_);
@@ -261,7 +263,7 @@ int DG_Modal::AdvectionMatrixPoly(int c, const VectorPolynomial& u, DenseMatrix&
 
   for (auto it = p.begin(); it.end() <= p.end(); ++it) {
     const int* idx_p = it.multi_index();
-    int k = p.PolynomialPosition(idx_p);
+    int k = it.PolynomialPosition();
 
     // product of polynomials need to align origins
     Polynomial pp(d_, idx_p, scale);
@@ -492,9 +494,9 @@ int DG_Modal::JumpMatrix(int f, double K, DenseMatrix& A)
         polys[0] = &p1;
         coef11 = numi_.IntegratePolynomialsFace(f, polys);
 
+        A(k, size + l) = -K * coef01;
         A(size + k, size + l) = K * coef11;
-        A(size + k, l) = -K * coef01;
-        A(l, size + k) = -K * coef01;
+        A(size + l, k) = -K * coef01;
       }
     }
   }
