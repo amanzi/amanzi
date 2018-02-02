@@ -17,6 +17,7 @@
 // Operators
 #include "Op.hh"
 #include "Op_Cell_Schema.hh"
+#include "Op_Face_Schema.hh"
 #include "OperatorDefs.hh"
 #include "Operator_Schema.hh"
 #include "PDE_DiffusionDG.hh"
@@ -43,9 +44,10 @@ void PDE_DiffusionDG::Init_(Teuchos::ParameterList& plist)
     global_schema_row_ = my_schema;
 
     // build the CVS from the global schema
+    int nk = my_schema.begin()->num;
     Teuchos::RCP<CompositeVectorSpace> cvs = Teuchos::rcp(new CompositeVectorSpace());
     cvs->SetMesh(mesh_)->SetGhosted(true);
-    cvs->AddComponent("cell", AmanziMesh::CELL, 1);
+    cvs->AddComponent("cell", AmanziMesh::CELL, nk);
 
     global_op_ = Teuchos::rcp(new Operator_Schema(cvs, plist, my_schema));
 
@@ -66,8 +68,8 @@ void PDE_DiffusionDG::Init_(Teuchos::ParameterList& plist)
   schema_copy.set<std::string>("base", "face");
   my_schema.Init(schema_copy, mesh_);
 
-  jump_uu_op_ = Teuchos::rcp(new Op_Cell_Schema(my_schema, my_schema, mesh_));
-  // global_op_->OpPushBack(jump_uu_op_);
+  jump_uu_op_ = Teuchos::rcp(new Op_Face_Schema(my_schema, my_schema, mesh_));
+  global_op_->OpPushBack(jump_uu_op_);
 
   // parameters
   // -- discretization details
@@ -80,9 +82,12 @@ void PDE_DiffusionDG::Init_(Teuchos::ParameterList& plist)
 /* ******************************************************************
 * Setup methods: scalar coefficients
 ****************************************************************** */
-void PDE_DiffusionDG::SetTensorCoefficient(const Teuchos::RCP<std::vector<WhetStone::Tensor> >& K) 
+void PDE_DiffusionDG::SetProblemCoefficients(
+   const std::shared_ptr<std::vector<WhetStone::Tensor> >& Kc,
+   const std::shared_ptr<std::vector<double> >& Kf) 
 {
-  K_ = K;
+  Kc_ = Kc;
+  Kf_ = Kf;
 }
 
 
@@ -93,9 +98,7 @@ void PDE_DiffusionDG::SetTensorCoefficient(const Teuchos::RCP<std::vector<WhetSt
 void PDE_DiffusionDG::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& flux,
                                      const Teuchos::Ptr<const CompositeVector>& u)
 {
-  WhetStone::MFD3DFactory factory;
-  auto mfd = factory.Create(mesh_, method_, method_order_);
-
+  WhetStone::DG_Modal dg(method_order_, mesh_);
   WhetStone::DenseMatrix Acell, Aface;
 
   double Kf(1.0);
@@ -103,15 +106,53 @@ void PDE_DiffusionDG::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& 
   Kc(0, 0) = 1.0;
 
   for (int c = 0; c != ncells_owned; ++c) {
-    if (K_.get()) Kc = (*K_)[c];
-    mfd->StiffnessMatrix(c, Kc, Acell);
+    if (Kc_.get()) Kc = (*Kc_)[c];
+    dg.StiffnessMatrix(c, Kc, Acell);
     local_op_->matrices[c] = Acell;
   }
 
   for (int f = 0; f != nfaces_owned; ++f) {
-    // mfd->JumpMatrix(f, Kf, Aface);
+    if (Kf_.get()) Kf = (*Kf_)[f];
+    dg.JumpMatrix(f, Kf, Aface);
     jump_uu_op_->matrices[f] = Aface;
   }
+}
+
+
+/* ******************************************************************
+* Apply boundary conditions to the local matrices.
+****************************************************************** */
+void PDE_DiffusionDG::ApplyBCs(bool primary, bool eliminate)
+{
+  const std::vector<int>& bc_model = bcs_trial_[0]->bc_model();
+  const std::vector<std::vector<double> >& bc_value = bcs_trial_[0]->bc_value_vector();
+  int d = bc_value[0].size();
+
+  AmanziMesh::Entity_ID_List cells;
+
+  Epetra_MultiVector& rhs_c = *global_op_->rhs()->ViewComponent("cell", true);
+  const Schema& schema = global_op_->schema_row();
+
+  for (int f = 0; f != nfaces_owned; ++f) {
+    if (bc_model[f] == OPERATOR_BC_DIRICHLET) {
+      mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+      int c = cells[0];
+
+      WhetStone::DenseMatrix& Acell = jump_uu_op_->matrices[f];
+      int nrows = Acell.NumRows();
+      int ncols = Acell.NumCols();
+
+      const std::vector<double>& value = bc_value[f];
+      WhetStone::DenseVector v(nrows), av(ncols);
+
+      v.PutScalar(0.0);
+      Acell.Multiply(v, av, false);
+
+      for (int i = 0; i < ncols; ++i) {
+        rhs_c[i][c] += av(i);
+      }
+    }
+  } 
 }
 
 

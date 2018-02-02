@@ -26,6 +26,7 @@
 #include "CompositeVector.hh"
 #include "LinearOperatorPCG.hh"
 #include "MeshFactory.hh"
+#include "NumericalIntegration.hh"
 #include "Tensor.hh"
 
 // Operators
@@ -64,35 +65,79 @@ TEST(OPERATOR_DIFFUSION_DG) {
   RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 10, 10, gm);
   // RCP<const Mesh> mesh = meshfactory("test/median32x33.exo", gm);
 
-  // modify diffusion coefficient
-  Teuchos::RCP<std::vector<WhetStone::Tensor> > K = Teuchos::rcp(new std::vector<WhetStone::Tensor>());
   int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
-  int nnodes_wghost = mesh->num_entities(AmanziMesh::NODE, AmanziMesh::USED);
+  int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
+  int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
+
+  // modify diffusion coefficient
+  auto Kc = std::make_shared<std::vector<WhetStone::Tensor> >();
+  auto Kf = std::make_shared<std::vector<double> >(nfaces, 1.0);
 
   Analytic00 ana(mesh, 1.0, 1.0, 1);
 
   for (int c = 0; c < ncells; c++) {
     const Point& xc = mesh->cell_centroid(c);
-    const WhetStone::Tensor& Kc = ana.Tensor(xc, 0.0);
-    K->push_back(Kc);
+    const WhetStone::Tensor& Ktmp = ana.Tensor(xc, 0.0);
+    Kc->push_back(Ktmp);
   }
 
   // create boundary data
+  ParameterList op_list = plist.get<Teuchos::ParameterList>("PK operator")
+                               .sublist("diffusion operator dg");
+  int order = op_list.get<int>("method order");
+
+  AmanziGeometry::Point x0(2), x1(2), xv(2);
+  AmanziMesh::Entity_ID_List nodes;
+
+  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(mesh, AmanziMesh::FACE, DOF_Type::VECTOR));
+  std::vector<int>& bc_model = bc->bc_model();
+  std::vector<std::vector<double> >& bc_value = bc->bc_value_vector(order + 1);
+
+  for (int f = 0; f < nfaces_wghost; ++f) {
+    const Point& xf = mesh->face_centroid(f);
+
+    if (fabs(xf[0]) < 1e-6 || fabs(xf[0] - 1.0) < 1e-6 ||
+        fabs(xf[1]) < 1e-6 || fabs(xf[1] - 1.0) < 1e-6) {
+      mesh->face_get_nodes(f, &nodes);
+
+      mesh->node_get_coordinates(nodes[0], &x0);
+      mesh->node_get_coordinates(nodes[1], &x1);
+
+      bc_model[f] = OPERATOR_BC_DIRICHLET;
+      double s0(0.0), s1(0.0), s2(0.0);
+
+      int m(order + 1);
+      for (int n = 0; n <= m; ++n) {
+        double gp = WhetStone::q1d_points[m - 1][n];
+        double gw = WhetStone::q1d_weights[m - 1][n];
+        xv = x0 * gp + x1 * (1.0 - gp);
+        s0 += gw * ana.pressure_exact(xv, 0.0);
+        s1 += gw * ana.pressure_exact(xv, 0.0) * (0.5 - gp);
+        s2 += gw * ana.pressure_exact(xv, 0.0) * (0.5 - gp) * (0.5 - gp);
+      }
+      bc_value[f][0] = s0;
+      if (order > 2) bc_value[f][1] = s1;
+      if (order > 3) bc_value[f][2] = s1;
+    }
+  }
 
   // create diffusion operator 
-  ParameterList op_list = plist.get<Teuchos::ParameterList>("PK operator").sublist("diffusion operator dg");
+  // -- primary term
   Teuchos::RCP<PDE_DiffusionDG> op = Teuchos::rcp(new PDE_DiffusionDG(op_list, mesh));
-  // op->SetBCs(bc, bc);
+  auto global_op = op->global_operator();
+
+  // -- boundary conditions
+  op->SetBCs(bc, bc);
   const CompositeVectorSpace& cvs = op->global_operator()->DomainMap();
 
   // create source and add it to the operator
 
   // populate the diffusion operator
-  op->SetTensorCoefficient(K);
+  op->SetProblemCoefficients(Kc, Kf);
   op->UpdateMatrices(Teuchos::null, Teuchos::null);
 
   // update the source term
-  Teuchos::RCP<Operator> global_op = op->global_operator();
+  global_op->rhs()->PutScalar(0.0);
   // global_op->UpdateRHS(source, true);
 
   // apply BCs (primary=true, eliminate=true) and assemble
@@ -145,10 +190,10 @@ TEST(OPERATOR_DIFFUSION_DG) {
               << " code=" << solver.returned_code() << std::endl;
 
     // visualization
-    const Epetra_MultiVector& p = *solution.ViewComponent("node");
+    const Epetra_MultiVector& p = *solution.ViewComponent("cell");
     GMV::open_data_file(*mesh, (std::string)"operators.gmv");
     GMV::start_data();
-    GMV::write_node_data(p, 0, "solution");
+    GMV::write_cell_data(p, 0, "solution");
     GMV::close_data_file();
   }
 

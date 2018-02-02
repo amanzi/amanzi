@@ -85,8 +85,6 @@ TEST(OPERATOR_DIFFUSION_HIGH_ORDER_CROUZIEX_RAVIART) {
 
     if (fabs(xf[0]) < 1e-6 || fabs(xf[0] - 1.0) < 1e-6 ||
         fabs(xf[1]) < 1e-6 || fabs(xf[1] - 1.0) < 1e-6) {
-      double vm = ana.pressure_exact(xf, 0.0);
-
       mesh->face_get_nodes(f, &nodes);
 
       mesh->node_get_coordinates(nodes[0], &x0);
@@ -229,8 +227,6 @@ void RunHighOrderLagrange(std::string vem_name, bool polygonal_mesh) {
 
     if (fabs(xf[0]) < 1e-6 || fabs(xf[0] - 1.0) < 1e-6 ||
         fabs(xf[1]) < 1e-6 || fabs(xf[1] - 1.0) < 1e-6) {
-      double vm = ana.pressure_exact(xf, 0.0);
-
       mesh->face_get_nodes(f, &nodes);
 
       mesh->node_get_coordinates(nodes[0], &x0);

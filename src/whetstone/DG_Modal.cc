@@ -436,17 +436,17 @@ int DG_Modal::JumpMatrix(int f, double K, DenseMatrix& A)
   int nrows = ncells * size;
   A.Reshape(nrows, nrows);
   A.PutScalar(0.0);
-  if (ncells == 1) return 0;
 
   // Calculate integrals needed for scaling
   int c1 = cells[0];
   int c2 = (ncells > 1) ? cells[1] : -1;
 
   double volume1 = mesh_->cell_volume(c1);
-  double volume2 = mesh_->cell_volume(c2);
+  double volume2(0.0);
 
   UpdateIntegrals_(c1, 2 * order_);
   if (c2 >= 0) {
+     volume2 = mesh_->cell_volume(c2);
      UpdateIntegrals_(c2, 2 * order_);
   }
 
