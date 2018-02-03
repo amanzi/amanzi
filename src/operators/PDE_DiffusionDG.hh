@@ -80,7 +80,7 @@ class PDE_DiffusionDG : public PDE_HelperDiscretization {
   Schema local_schema_col_, local_schema_row_;
 
   // other operators
-  Teuchos::RCP<Op> jump_up_op_, jump_pu_op_, jump_uu_op_;
+  Teuchos::RCP<Op> jump_up_op_, jump_pu_op_, penalty_op_;
 };
 
 }  // namespace Operators

@@ -74,6 +74,7 @@ add_amanzi_library(whetstone
                            NumericalIntegration.hh
                            MeshMaps.hh
                            MeshMaps_FEM.hh MeshMaps_VEM.hh
+                           CoordinateSystems.hh
                            Polynomial.hh VectorPolynomial.hh PolynomialOnMesh.hh
                            Projector.hh
                            Tensor.hh

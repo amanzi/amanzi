@@ -60,6 +60,7 @@ void Schema::Init(Teuchos::ParameterList& plist,
   }
 
   // Populate schema and save it.
+  items_.clear();
   for (int i = 0; i < name.size(); i++) {
     AddItem(StringToKind(name[i]), StringToType(type[i]), ndofs[i]);
   }

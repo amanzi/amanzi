@@ -419,12 +419,11 @@ int DG_Modal::FluxMatrixPoly(int f, const Polynomial& un, DenseMatrix& A,
 
 
 /* *****************************************************************
-* Jump matrix for Taylor basis and jump coefficient K corresponding 
-* to the following integral:
+* Jump matrix for Taylor basis:
 *
-*   \Int_f { K [\psi] [\rho] } dS
+*   \Int_f ( {K \grad \rho} [\psi] ) dS
 ****************************************************************** */
-int DG_Modal::JumpMatrix(int f, double K, DenseMatrix& A)
+int DG_Modal::JumpMatrix(int f, const Tensor& K1, const Tensor& K2, DenseMatrix& A)
 {
   AmanziMesh::Entity_ID_List cells;
   mesh_->face_get_cells(f, (Parallel_type)WhetStone::USED, &cells);
@@ -435,7 +434,113 @@ int DG_Modal::JumpMatrix(int f, double K, DenseMatrix& A)
 
   int nrows = ncells * size;
   A.Reshape(nrows, nrows);
-  A.PutScalar(0.0);
+
+  // Calculate integrals needed for scaling
+  int c1 = cells[0];
+  int c2 = (ncells > 1) ? cells[1] : -1;
+
+  double volume1 = mesh_->cell_volume(c1);
+  double volume2(0.0);
+
+  UpdateIntegrals_(c1, 2 * order_ - 1);
+  if (c2 >= 0) {
+    volume2 = mesh_->cell_volume(c2);
+    UpdateIntegrals_(c2, 2 * order_ - 1);
+  }
+
+  // Calculate co-normals
+  const AmanziGeometry::Point& normal = mesh_->face_normal(f);
+  AmanziGeometry::Point conormal1(K1 * normal), conormal2(d_);
+  if (c2 >= 0) {
+    conormal2 = K2 * normal;
+  }
+
+  // integrate traces of polynomials on face f
+  double coef00, coef01, coef10, coef11;
+  Polynomial p0, p1, q0, q1;
+  VectorPolynomial pgrad;
+  std::vector<const Polynomial*> polys(2);
+
+  for (auto it = poly0.begin(); it.end() <= poly0.end(); ++it) {
+    const int* idx0 = it.multi_index();
+    int k = poly0.PolynomialPosition(idx0);
+    int s = it.MonomialOrder();
+
+    double factor = numi_.MonomialNaturalScale(s, volume1);
+    Polynomial p0(d_, idx0, factor);
+    p0.set_origin(mesh_->cell_centroid(c1));
+
+    pgrad.Gradient(p0);
+    p0 = pgrad * conormal1;
+
+    for (auto jt = poly1.begin(); jt.end() <= poly1.end(); ++jt) {
+      const int* idx1 = jt.multi_index();
+      int l = poly1.PolynomialPosition(idx1);
+      int t = jt.MonomialOrder();
+
+      factor = numi_.MonomialNaturalScale(t, volume1);
+      Polynomial q0(d_, idx1, factor);
+      q0.set_origin(mesh_->cell_centroid(c1));
+
+      polys[0] = &p0;
+      polys[1] = &q0;
+      coef00 = numi_.IntegratePolynomialsFace(f, polys);
+
+      A(k, l) = -coef00 / 2;
+
+      if (c2 >= 0) {
+        factor = numi_.MonomialNaturalScale(s, volume2);
+        Polynomial p1(d_, idx0, factor);
+        p1.set_origin(mesh_->cell_centroid(c2));
+
+        pgrad.Gradient(p1);
+        p1 = pgrad * conormal2;
+
+        factor = numi_.MonomialNaturalScale(t, volume2);
+        Polynomial q1(d_, idx1, factor);
+        q1.set_origin(mesh_->cell_centroid(c2));
+
+        polys[1] = &q1;
+        coef01 = numi_.IntegratePolynomialsFace(f, polys);
+
+        polys[0] = &p1;
+        coef11 = numi_.IntegratePolynomialsFace(f, polys);
+
+        polys[1] = &q0;
+        coef10 = numi_.IntegratePolynomialsFace(f, polys);
+
+        A(k, size + l) = coef01 / 2;
+        A(size + k, size + l) = coef11 / 2;
+        A(size + l, k) = -coef10 / 2;
+      }
+    }
+  }
+
+  if (ncells == 1) {
+    ChangeBasis_(c1, A);
+  } else {
+    ChangeBasis_(c1, c2, A);
+  }
+}
+
+
+/* *****************************************************************
+* Penalty matrix for Taylor basis and penalty coefficient K
+* corresponding to the following integral:
+*
+*   \Int_f { K [\psi] [\rho] } dS
+****************************************************************** */
+int DG_Modal::PenaltyMatrix(int f, double K, DenseMatrix& A)
+{
+  AmanziMesh::Entity_ID_List cells;
+  mesh_->face_get_cells(f, (Parallel_type)WhetStone::USED, &cells);
+  int ncells = cells.size();
+
+  Polynomial poly0(d_, order_), poly1(d_, order_);
+  int size = poly0.size();
+
+  int nrows = ncells * size;
+  A.Reshape(nrows, nrows);
 
   // Calculate integrals needed for scaling
   int c1 = cells[0];
@@ -446,8 +551,8 @@ int DG_Modal::JumpMatrix(int f, double K, DenseMatrix& A)
 
   UpdateIntegrals_(c1, 2 * order_);
   if (c2 >= 0) {
-     volume2 = mesh_->cell_volume(c2);
-     UpdateIntegrals_(c2, 2 * order_);
+    volume2 = mesh_->cell_volume(c2);
+    UpdateIntegrals_(c2, 2 * order_);
   }
 
   // integrate traces of polynomials on face f

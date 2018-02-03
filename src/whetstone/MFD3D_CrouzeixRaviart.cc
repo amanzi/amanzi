@@ -16,10 +16,13 @@
 #include <cmath>
 #include <vector>
 
+// Amanzi
 #include "Mesh.hh"
 #include "Point.hh"
 #include "errors.hh"
 
+// WhetStone
+#include "CoordinateSystems.hh"
 #include "MFD3D_CrouzeixRaviart.hh"
 #include "NumericalIntegration.hh"
 #include "Tensor.hh"
@@ -175,9 +178,7 @@ int MFD3D_CrouzeixRaviart::H1consistencyHO(
 
       // local coordinate system with origin at face centroid
       AmanziGeometry::Point normal = mesh_->face_normal(f);
-      if (d_ == 2) {
-        tau[0] = AmanziGeometry::Point(-normal[1], normal[0]);
-      }
+      FaceCoordinateSystem(normal, tau);
       normal *= dirs[i];
 
       Polynomial tmp = grad * normal;

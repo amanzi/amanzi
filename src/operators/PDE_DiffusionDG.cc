@@ -12,7 +12,9 @@
 #include <vector>
 
 // Amanzi
+#include "CoordinateSystems.hh"
 #include "MFD3DFactory.hh"
+#include "Polynomial.hh"
 
 // Operators
 #include "Op.hh"
@@ -63,13 +65,21 @@ void PDE_DiffusionDG::Init_(Teuchos::ParameterList& plist)
   local_op_ = Teuchos::rcp(new Op_Cell_Schema(my_schema, my_schema, mesh_));
   global_op_->OpPushBack(local_op_);
 
-  // -- jump
+  // -- continuity terms
+  Schema tmp_schema;
   Teuchos::ParameterList schema_copy = schema_list;
   schema_copy.set<std::string>("base", "face");
-  my_schema.Init(schema_copy, mesh_);
+  tmp_schema.Init(schema_copy, mesh_);
 
-  jump_uu_op_ = Teuchos::rcp(new Op_Face_Schema(my_schema, my_schema, mesh_));
-  global_op_->OpPushBack(jump_uu_op_);
+  jump_up_op_ = Teuchos::rcp(new Op_Face_Schema(tmp_schema, tmp_schema, mesh_));
+  global_op_->OpPushBack(jump_up_op_);
+
+  jump_pu_op_ = Teuchos::rcp(new Op_Face_Schema(tmp_schema, tmp_schema, mesh_));
+  global_op_->OpPushBack(jump_pu_op_);
+
+  // -- stability jump term
+  penalty_op_ = Teuchos::rcp(new Op_Face_Schema(tmp_schema, tmp_schema, mesh_));
+  global_op_->OpPushBack(penalty_op_);
 
   // parameters
   // -- discretization details
@@ -101,20 +111,38 @@ void PDE_DiffusionDG::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& 
   WhetStone::DG_Modal dg(method_order_, mesh_);
   WhetStone::DenseMatrix Acell, Aface;
 
+  int d = mesh_->space_dimension();
   double Kf(1.0);
-  WhetStone::Tensor Kc(mesh_->space_dimension(), 1);
-  Kc(0, 0) = 1.0;
+  AmanziMesh::Entity_ID_List cells;
+  
+  WhetStone::Tensor Kc1(d, 1), Kc2(d, 1);
+  Kc1(0, 0) = 1.0;
+  Kc2(0, 0) = 1.0;
 
   for (int c = 0; c != ncells_owned; ++c) {
-    if (Kc_.get()) Kc = (*Kc_)[c];
-    dg.StiffnessMatrix(c, Kc, Acell);
+    if (Kc_.get()) Kc1 = (*Kc_)[c];
+    dg.StiffnessMatrix(c, Kc1, Acell);
     local_op_->matrices[c] = Acell;
   }
 
   for (int f = 0; f != nfaces_owned; ++f) {
     if (Kf_.get()) Kf = (*Kf_)[f];
-    dg.JumpMatrix(f, Kf, Aface);
-    jump_uu_op_->matrices[f] = Aface;
+    dg.PenaltyMatrix(f, Kf, Aface);
+    penalty_op_->matrices[f] = Aface;
+  }
+
+  for (int f = 0; f != nfaces_owned; ++f) {
+    mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+    if (Kc_.get()) {
+      Kc1 = (*Kc_)[cells[0]]; 
+      if (cells.size() > 1) Kc2 = (*Kc_)[cells[1]]; 
+    }
+    dg.JumpMatrix(f, Kc1, Kc2, Aface);
+    Aface *= -1.0;
+    jump_up_op_->matrices[f] = Aface;
+
+    Aface.Transpose();
+    jump_pu_op_->matrices[f] = Aface;
   }
 }
 
@@ -126,30 +154,54 @@ void PDE_DiffusionDG::ApplyBCs(bool primary, bool eliminate)
 {
   const std::vector<int>& bc_model = bcs_trial_[0]->bc_model();
   const std::vector<std::vector<double> >& bc_value = bcs_trial_[0]->bc_value_vector();
-  int d = bc_value[0].size();
+  int nk = bc_value[0].size();
+
+  Epetra_MultiVector& rhs_c = *global_op_->rhs()->ViewComponent("cell", true);
 
   AmanziMesh::Entity_ID_List cells;
 
-  Epetra_MultiVector& rhs_c = *global_op_->rhs()->ViewComponent("cell", true);
-  const Schema& schema = global_op_->schema_row();
+  int d = mesh_->space_dimension();
+  std::vector<AmanziGeometry::Point> tau(d - 1);
 
   for (int f = 0; f != nfaces_owned; ++f) {
     if (bc_model[f] == OPERATOR_BC_DIRICHLET) {
+      const AmanziGeometry::Point& xf = mesh_->face_centroid(f);
+      const AmanziGeometry::Point& normal = mesh_->face_normal(f);
+
+      // set polynomial with Dirichlet data
+      WhetStone::Polynomial pf(d - 1, method_order_); 
+      WhetStone::DenseVector coef(nk);
+      const std::vector<double>& value = bc_value[f];
+
+      for (int i = 0; i < nk; ++i) {
+        coef(i) = bc_value[f][i];
+      }
+      pf.SetPolynomialCoefficients(coef);
+      pf.set_origin(xf);
+
+      // convert boundary polynomial to space polynomial
       mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
       int c = cells[0];
+      const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
 
-      WhetStone::DenseMatrix& Acell = jump_uu_op_->matrices[f];
-      int nrows = Acell.NumRows();
-      int ncols = Acell.NumCols();
+      WhetStone::FaceCoordinateSystem(normal, tau);
+      pf.InverseChangeCoordinates(xf, tau);
+      pf.ChangeOrigin(xc);
 
-      const std::vector<double>& value = bc_value[f];
-      WhetStone::DenseVector v(nrows), av(ncols);
+      // extract coefficients and update right-hand side 
+      WhetStone::DenseMatrix& Pcell = penalty_op_->matrices[f];
+      WhetStone::DenseMatrix& Jcell = jump_up_op_->matrices[f];
+      int nrows = Pcell.NumRows();
+      int ncols = Pcell.NumCols();
 
-      v.PutScalar(0.0);
-      Acell.Multiply(v, av, false);
+      WhetStone::DenseVector v(nrows), pv(ncols), jv(ncols);
+
+      pf.GetPolynomialCoefficients(v);
+      Pcell.Multiply(v, pv, false);
+      Jcell.Multiply(v, jv, false);
 
       for (int i = 0; i < ncols; ++i) {
-        rhs_c[i][c] += av(i);
+        rhs_c[i][c] += pv(i) - jv(i);
       }
     }
   } 

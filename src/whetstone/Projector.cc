@@ -12,6 +12,7 @@
   Algorithms underpinning elliptic projectors.
 */
 
+#include "CoordinateSystems.hh"
 #include "DG_Modal.hh"
 #include "MFD3D_CrouzeixRaviart.hh"
 #include "MFD3D_Lagrange.hh"
@@ -208,9 +209,7 @@ void Projector::GenericCell_CRk_(
 
       // local coordinate system with origin at face centroid
       const AmanziGeometry::Point& normal = mesh_->face_normal(f);
-      if (d_ == 2) {
-        tau[0] = AmanziGeometry::Point(-normal[1], normal[0]);
-      }
+      FaceCoordinateSystem(normal, tau);
 
       polys[0] = &(vf[n][i]);
 
@@ -387,9 +386,7 @@ void Projector::GenericCell_Pk_(
 
         // local coordinate system with origin at face centroid
         const AmanziGeometry::Point& normal = mesh_->face_normal(f);
-        if (d_ == 2) {
-          tau[0] = AmanziGeometry::Point(-normal[1], normal[0]);
-        }
+        FaceCoordinateSystem(normal, tau);
 
         polys[0] = &(vf[n][i]);
 
@@ -615,9 +612,7 @@ void Projector::CalculateDOFsOnBoundary_Pk_(
 
       // local coordinate system with origin at face centroid
       const AmanziGeometry::Point& normal = mesh_->face_normal(f);
-      if (d_ == 2) {
-        tau[0] = AmanziGeometry::Point(-normal[1], normal[0]);
-      }
+      FaceCoordinateSystem(normal, tau);
 
       polys[0] = &(vf[n][i]);
 

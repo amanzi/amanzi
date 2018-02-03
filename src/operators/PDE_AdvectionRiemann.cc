@@ -137,7 +137,7 @@ void PDE_AdvectionRiemann::UpdateMatrices(
     for (int f = 0; f < nfaces_owned; ++f) {
       mesh_->face_get_cells(f, (WhetStone::Parallel_type)WhetStone::USED, &cells);
       double Kf = (cells.size() == 1) ? 0.0 : -0.0;
-      dg.JumpMatrix(f, Kf, Aface);
+      dg.PenaltyMatrix(f, Kf, Aface);
       matrix[f] = Aface;
     }
   }
