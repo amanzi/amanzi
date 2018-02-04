@@ -22,6 +22,13 @@ class AnalyticDG04 : public AnalyticDGBase {
     : AnalyticDGBase(mesh, order) {};
   ~AnalyticDG04() {};
 
+  // diffusion tensor
+  virtual Amanzi::WhetStone::Tensor Tensor(const Amanzi::AmanziGeometry::Point& p, double t) override {
+    Amanzi::WhetStone::Tensor K(2, 1);
+    K(0, 0) = 1.0;
+    return K;
+  }
+
   // analytic solution in conventional Taylor basis
   virtual void TaylorCoefficients(const Amanzi::AmanziGeometry::Point& p, double t,
                                   Amanzi::WhetStone::Polynomial& coefs) override {
