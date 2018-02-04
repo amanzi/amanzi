@@ -25,6 +25,8 @@ class Analytic00 : public AnalyticBase {
   Analytic00(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh, double gx, double gy, int order) :
       AnalyticBase(mesh),
       poly_(2, order) {
+    poly_(0, 0) = 1.0;
+
     poly_(1, 0) = gx;
     poly_(1, 1) = gy;
 

@@ -14,6 +14,7 @@
 // Amanzi
 #include "CoordinateSystems.hh"
 #include "MFD3DFactory.hh"
+#include "NumericalIntegration.hh"
 #include "Polynomial.hh"
 
 // Operators
@@ -109,6 +110,7 @@ void PDE_DiffusionDG::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& 
                                      const Teuchos::Ptr<const CompositeVector>& u)
 {
   WhetStone::DG_Modal dg(method_order_, mesh_);
+  dg.set_basis(WhetStone::TAYLOR_BASIS_NATURAL);
   WhetStone::DenseMatrix Acell, Aface;
 
   int d = mesh_->space_dimension();
@@ -160,33 +162,32 @@ void PDE_DiffusionDG::ApplyBCs(bool primary, bool eliminate)
 
   AmanziMesh::Entity_ID_List cells;
 
-  int d = mesh_->space_dimension();
+  int dir, d = mesh_->space_dimension();
   std::vector<AmanziGeometry::Point> tau(d - 1);
+
+  WhetStone::NumericalIntegration numi(mesh_);
 
   for (int f = 0; f != nfaces_owned; ++f) {
     if (bc_model[f] == OPERATOR_BC_DIRICHLET) {
+      mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+      int c = cells[0];
+
       const AmanziGeometry::Point& xf = mesh_->face_centroid(f);
-      const AmanziGeometry::Point& normal = mesh_->face_normal(f);
+      const AmanziGeometry::Point& normal = mesh_->face_normal(f, false, c, &dir);
 
       // set polynomial with Dirichlet data
-      WhetStone::Polynomial pf(d - 1, method_order_); 
       WhetStone::DenseVector coef(nk);
-      const std::vector<double>& value = bc_value[f];
-
       for (int i = 0; i < nk; ++i) {
         coef(i) = bc_value[f][i];
       }
+
+      WhetStone::Polynomial pf(d, method_order_); 
       pf.SetPolynomialCoefficients(coef);
       pf.set_origin(xf);
 
       // convert boundary polynomial to space polynomial
-      mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
-      int c = cells[0];
-      const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
-
-      WhetStone::FaceCoordinateSystem(normal, tau);
-      pf.InverseChangeCoordinates(xf, tau);
-      pf.ChangeOrigin(xc);
+      pf.ChangeOrigin(mesh_->cell_centroid(c));
+      numi.ChangeBasisRegularToNatural(c, pf);
 
       // extract coefficients and update right-hand side 
       WhetStone::DenseMatrix& Pcell = penalty_op_->matrices[f];
@@ -201,7 +202,7 @@ void PDE_DiffusionDG::ApplyBCs(bool primary, bool eliminate)
       Jcell.Multiply(v, jv, false);
 
       for (int i = 0; i < ncols; ++i) {
-        rhs_c[i][c] += pv(i) - jv(i);
+        rhs_c[i][c] += pv(i) + jv(i);
       }
     }
   } 

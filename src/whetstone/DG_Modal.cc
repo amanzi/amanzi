@@ -449,8 +449,12 @@ int DG_Modal::JumpMatrix(int f, const Tensor& K1, const Tensor& K2, DenseMatrix&
   }
 
   // Calculate co-normals
-  const AmanziGeometry::Point& normal = mesh_->face_normal(f);
-  AmanziGeometry::Point conormal1(K1 * normal), conormal2(d_);
+  int dir;
+  AmanziGeometry::Point conormal1(d_), conormal2(d_);
+  AmanziGeometry::Point normal = mesh_->face_normal(f, false, c1, &dir);
+
+  normal /= norm(normal);
+  conormal1 = K1 * normal;
   if (c2 >= 0) {
     conormal2 = K2 * normal;
   }
@@ -486,7 +490,7 @@ int DG_Modal::JumpMatrix(int f, const Tensor& K1, const Tensor& K2, DenseMatrix&
       polys[1] = &q0;
       coef00 = numi_.IntegratePolynomialsFace(f, polys);
 
-      A(k, l) = -coef00 / 2;
+      A(k, l) = coef00 / ncells;
 
       if (c2 >= 0) {
         factor = numi_.MonomialNaturalScale(s, volume2);
@@ -509,9 +513,9 @@ int DG_Modal::JumpMatrix(int f, const Tensor& K1, const Tensor& K2, DenseMatrix&
         polys[1] = &q0;
         coef10 = numi_.IntegratePolynomialsFace(f, polys);
 
-        A(k, size + l) = coef01 / 2;
-        A(size + k, size + l) = coef11 / 2;
-        A(size + l, k) = -coef10 / 2;
+        A(k, size + l) = -coef01 / ncells;
+        A(size + k, size + l) = -coef11 / ncells;
+        A(size + k, l) = coef10 / ncells;
       }
     }
   }
@@ -525,12 +529,12 @@ int DG_Modal::JumpMatrix(int f, const Tensor& K1, const Tensor& K2, DenseMatrix&
 
 
 /* *****************************************************************
-* Penalty matrix for Taylor basis and penalty coefficient K
+* Penalty matrix for Taylor basis and penalty coefficient Kf
 * corresponding to the following integral:
 *
-*   \Int_f { K [\psi] [\rho] } dS
+*   \Int_f { K_f [\psi] [\rho] } dS
 ****************************************************************** */
-int DG_Modal::PenaltyMatrix(int f, double K, DenseMatrix& A)
+int DG_Modal::PenaltyMatrix(int f, double Kf, DenseMatrix& A)
 {
   AmanziMesh::Entity_ID_List cells;
   mesh_->face_get_cells(f, (Parallel_type)WhetStone::USED, &cells);
@@ -582,7 +586,7 @@ int DG_Modal::PenaltyMatrix(int f, double K, DenseMatrix& A)
       polys[1] = &q0;
       coef00 = numi_.IntegratePolynomialsFace(f, polys);
 
-      A(k, l) = K * coef00;
+      A(k, l) = Kf * coef00;
 
       if (c2 >= 0) {
         factor = numi_.MonomialNaturalScale(s, volume2);
@@ -599,9 +603,9 @@ int DG_Modal::PenaltyMatrix(int f, double K, DenseMatrix& A)
         polys[0] = &p1;
         coef11 = numi_.IntegratePolynomialsFace(f, polys);
 
-        A(k, size + l) = -K * coef01;
-        A(size + k, size + l) = K * coef11;
-        A(size + l, k) = -K * coef01;
+        A(k, size + l) = -Kf * coef01;
+        A(size + k, size + l) = Kf * coef11;
+        A(size + l, k) = -Kf * coef01;
       }
     }
   }

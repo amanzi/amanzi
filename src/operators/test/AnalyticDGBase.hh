@@ -23,6 +23,7 @@
 #include "Mesh.hh"
 #include "Point.hh"
 #include "Polynomial.hh"
+#include "Tensor.hh"
 
 class AnalyticDGBase {
  public:
@@ -32,6 +33,9 @@ class AnalyticDGBase {
       d_(mesh_->space_dimension()) {};
   ~AnalyticDGBase() {};
 
+  // diffusion tensor
+  virtual Amanzi::WhetStone::Tensor Tensor(const Amanzi::AmanziGeometry::Point& p, double t) = 0;
+
   // analytic solution in conventional Taylor basis
   virtual void TaylorCoefficients(const Amanzi::AmanziGeometry::Point& p, double t,
                                   Amanzi::WhetStone::Polynomial& coefs) = 0;
@@ -40,6 +44,35 @@ class AnalyticDGBase {
     Amanzi::WhetStone::Polynomial coefs;
     TaylorCoefficients(p, t, coefs);
     return coefs(0, 0);
+  }
+
+  // calculate error
+  void ComputeCellError(Epetra_MultiVector& p, double t, double& pnorm, double& l2_err, double& inf_err) {
+    pnorm = 0.0;
+    l2_err = 0.0;
+    inf_err = 0.0;
+
+    int ncells = mesh_->num_entities(Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::OWNED);
+    for (int c = 0; c < ncells; c++) {
+      const Amanzi::AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
+      double tmp = function_exact(xc, t);
+      double volume = mesh_->cell_volume(c);
+
+      // std::cout << c << " " << tmp << " " << p[0][c] << std::endl;
+      l2_err += std::pow(tmp - p[0][c], 2.0) * volume;
+      inf_err = std::max(inf_err, fabs(tmp - p[0][c]));
+      pnorm += std::pow(tmp, 2.0) * volume;
+    }
+#ifdef HAVE_MPI
+    double tmp = pnorm;
+    mesh_->get_comm()->SumAll(&tmp, &pnorm, 1);
+    tmp = l2_err;
+    mesh_->get_comm()->SumAll(&tmp, &l2_err, 1);
+    tmp = inf_err;
+    mesh_->get_comm()->MaxAll(&tmp, &inf_err, 1);
+#endif
+    pnorm = sqrt(pnorm);
+    l2_err = sqrt(l2_err);
   }
 
  protected:

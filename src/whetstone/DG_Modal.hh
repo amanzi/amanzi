@@ -68,7 +68,7 @@ class DG_Modal : public BilinearForm {
 
   // -- jump and penalty matrices
   int JumpMatrix(int f, const Tensor& K1, const Tensor& K2, DenseMatrix& A);
-  int PenaltyMatrix(int f, double K, DenseMatrix& A);
+  int PenaltyMatrix(int f, double Kf, DenseMatrix& A);
 
   // interfaces that are not used
   virtual int L2consistency(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Mc, bool symmetry) { return 0; }
@@ -88,7 +88,10 @@ class DG_Modal : public BilinearForm {
   void CoVelocityCell(int c, const std::vector<const Polynomial*> vf, VectorPolynomial& vc);
 
   // miscalleneous
+  // -- order of polynomials in each cell
   void set_order(int order) { order_ = order; }
+  // -- modifications of Taylor basis. Available options are natural, 
+  //    normalized by volume, normalized aind orthogonalized to constant
   void set_basis(int basis) { basis_ = basis; }
 
  private:

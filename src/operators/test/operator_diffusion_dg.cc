@@ -26,11 +26,10 @@
 #include "CompositeVector.hh"
 #include "LinearOperatorPCG.hh"
 #include "MeshFactory.hh"
-#include "NumericalIntegration.hh"
 #include "Tensor.hh"
 
 // Operators
-#include "Analytic00.hh"
+#include "AnalyticDG01.hh"
 
 #include "OperatorDefs.hh"
 #include "PDE_DiffusionDG.hh"
@@ -62,8 +61,8 @@ TEST(OPERATOR_DIFFUSION_DG) {
 
   MeshFactory meshfactory(&comm);
   meshfactory.preference(FrameworkPreference({MSTK,STKMESH}));
-  RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 20, 20, gm);
-  // RCP<const Mesh> mesh = meshfactory("test/median32x33.exo", gm);
+  // RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 10, 10, gm);
+  RCP<const Mesh> mesh = meshfactory("test/median15x16.exo", gm);
 
   int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
@@ -72,9 +71,9 @@ TEST(OPERATOR_DIFFUSION_DG) {
 
   // modify diffusion coefficient
   auto Kc = std::make_shared<std::vector<WhetStone::Tensor> >();
-  auto Kf = std::make_shared<std::vector<double> >(nfaces, 1.0);
+  auto Kf = std::make_shared<std::vector<double> >();
 
-  Analytic00 ana(mesh, 1.0, 1.0, 1);
+  AnalyticDG01 ana(mesh, 1);
 
   for (int c = 0; c < ncells_wghost; c++) {
     const Point& xc = mesh->cell_centroid(c);
@@ -82,43 +81,38 @@ TEST(OPERATOR_DIFFUSION_DG) {
     Kc->push_back(Ktmp);
   }
 
+  for (int f = 0; f < nfaces_wghost; f++) {
+    double area = mesh->face_area(f);
+    Kf->push_back(4.0 / area);
+  }
+
+  // create boundary data
   // create boundary data
   ParameterList op_list = plist.get<Teuchos::ParameterList>("PK operator")
                                .sublist("diffusion operator dg");
   int order = op_list.get<int>("method order");
-
-  AmanziGeometry::Point x0(2), x1(2), xv(2);
-  AmanziMesh::Entity_ID_List nodes;
+  int nk = (order + 1) * (order + 2) / 2;
 
   Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(mesh, AmanziMesh::FACE, DOF_Type::VECTOR));
   std::vector<int>& bc_model = bc->bc_model();
-  std::vector<std::vector<double> >& bc_value = bc->bc_value_vector(order + 1);
+  std::vector<std::vector<double> >& bc_value = bc->bc_value_vector(nk);
 
   for (int f = 0; f < nfaces_wghost; ++f) {
     const Point& xf = mesh->face_centroid(f);
 
     if (fabs(xf[0]) < 1e-6 || fabs(xf[0] - 1.0) < 1e-6 ||
         fabs(xf[1]) < 1e-6 || fabs(xf[1] - 1.0) < 1e-6) {
-      mesh->face_get_nodes(f, &nodes);
-
-      mesh->node_get_coordinates(nodes[0], &x0);
-      mesh->node_get_coordinates(nodes[1], &x1);
-
       bc_model[f] = OPERATOR_BC_DIRICHLET;
-      double s0(0.0), s1(0.0), s2(0.0);
 
-      int m(order + 1);
-      for (int n = 0; n <= m; ++n) {
-        double gp = WhetStone::q1d_points[m - 1][n];
-        double gw = WhetStone::q1d_weights[m - 1][n];
-        xv = x0 * gp + x1 * (1.0 - gp);
-        s0 += gw * ana.pressure_exact(xv, 0.0);
-        s1 += gw * ana.pressure_exact(xv, 0.0) * (0.5 - gp);
-        s2 += gw * ana.pressure_exact(xv, 0.0) * (0.5 - gp) * (0.5 - gp);
+      WhetStone::Polynomial coefs;
+      ana.TaylorCoefficients(xf, 0.0, coefs);
+
+      WhetStone::DenseVector data;
+      coefs.GetPolynomialCoefficients(data);
+
+      for (int i = 0; i < data.NumRows(); ++i) {
+        bc_value[f][i] = data(i);
       }
-      bc_value[f][0] = s0;
-      if (order > 2) bc_value[f][1] = s1;
-      if (order > 3) bc_value[f][2] = s1;
     }
   }
 
