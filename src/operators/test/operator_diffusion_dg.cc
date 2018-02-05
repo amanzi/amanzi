@@ -30,6 +30,7 @@
 
 // Operators
 #include "AnalyticDG01.hh"
+#include "AnalyticDG02.hh"
 
 #include "OperatorDefs.hh"
 #include "PDE_DiffusionDG.hh"
@@ -62,7 +63,7 @@ TEST(OPERATOR_DIFFUSION_DG) {
   MeshFactory meshfactory(&comm);
   meshfactory.preference(FrameworkPreference({MSTK,STKMESH}));
   // RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 10, 10, gm);
-  RCP<const Mesh> mesh = meshfactory("test/median15x16.exo", gm);
+  RCP<const Mesh> mesh = meshfactory("test/median7x8_filtered.exo", gm);
 
   int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
@@ -73,7 +74,7 @@ TEST(OPERATOR_DIFFUSION_DG) {
   auto Kc = std::make_shared<std::vector<WhetStone::Tensor> >();
   auto Kf = std::make_shared<std::vector<double> >();
 
-  AnalyticDG01 ana(mesh, 1);
+  AnalyticDG02 ana(mesh, 2);
 
   for (int c = 0; c < ncells_wghost; c++) {
     const Point& xc = mesh->cell_centroid(c);
@@ -83,7 +84,7 @@ TEST(OPERATOR_DIFFUSION_DG) {
 
   for (int f = 0; f < nfaces_wghost; f++) {
     double area = mesh->face_area(f);
-    Kf->push_back(4.0 / area);
+    Kf->push_back(20.0 / area);
   }
 
   // create boundary data
@@ -194,7 +195,7 @@ TEST(OPERATOR_DIFFUSION_DG) {
     GMV::close_data_file();
   }
 
-  CHECK(solver.num_itrs() < 500);
+  CHECK(solver.num_itrs() < 2000);
 
   // compute pressure error
   solution.ScatterMasterToGhosted();

@@ -482,7 +482,7 @@ void RemapTestsDualRK(int order_p, int order_u,
     if (nk == 1) {
       // const AmanziGeometry::Point& xg = maps->cell_geometric_center(1, c);
       const AmanziGeometry::Point& xg = mesh1->cell_centroid(c);
-      double tmp = p2c[0][c] - ana.function_exact(xg, 0.0);
+      double tmp = p2c[0][c] - ana.SolutionExact(xg, 0.0);
 
       pinf_err = std::max(pinf_err, fabs(tmp));
       pl2_err += tmp * tmp * area_c;
@@ -497,7 +497,7 @@ void RemapTestsDualRK(int order_p, int order_u,
         mesh1->node_get_coordinates(nodes[i], &v1);
 
         double tmp = poly.Value(v0);
-        tmp -= ana.function_exact(v1, 0.0);
+        tmp -= ana.SolutionExact(v1, 0.0);
         pinf_err = std::max(pinf_err, fabs(tmp));
         pl2_err += tmp * tmp * area_c / nnodes;
 
@@ -534,7 +534,7 @@ void RemapTestsDualRK(int order_p, int order_u,
         mesh1->node_get_coordinates(nodes[i], &v1);
 
         double tmp = poly.Value(v1);
-        tmp -= ana.function_exact(v1, 0.0);
+        tmp -= ana.SolutionExact(v1, 0.0);
         qinf_err = std::max(qinf_err, fabs(tmp));
         ql2_err += tmp * tmp * area_c / nnodes;
       }

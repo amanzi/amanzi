@@ -40,7 +40,12 @@ class AnalyticDGBase {
   virtual void TaylorCoefficients(const Amanzi::AmanziGeometry::Point& p, double t,
                                   Amanzi::WhetStone::Polynomial& coefs) = 0;
 
-  double function_exact(const Amanzi::AmanziGeometry::Point& p, double t) {
+  // approximate source term
+  virtual void SourceTaylor(const Amanzi::AmanziGeometry::Point& p, double t,
+                            Amanzi::WhetStone::Polynomial& src) = 0;
+
+  // exact solution value
+  double SolutionExact(const Amanzi::AmanziGeometry::Point& p, double t) {
     Amanzi::WhetStone::Polynomial coefs;
     TaylorCoefficients(p, t, coefs);
     return coefs(0, 0);
@@ -55,7 +60,7 @@ class AnalyticDGBase {
     int ncells = mesh_->num_entities(Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::OWNED);
     for (int c = 0; c < ncells; c++) {
       const Amanzi::AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
-      double tmp = function_exact(xc, t);
+      double tmp = SolutionExact(xc, t);
       double volume = mesh_->cell_volume(c);
 
       // std::cout << c << " " << tmp << " " << p[0][c] << std::endl;

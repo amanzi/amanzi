@@ -236,13 +236,13 @@
     <!-- DG (nonconformal) schemes -->
     <ParameterList name="diffusion operator dg">
       <Parameter name="method" type="string" value="dg modal"/>
-      <Parameter name="method order" type="int" value="1"/>
+      <Parameter name="method order" type="int" value="2"/>
       <Parameter name="matrix type" type="string" value="stiffness"/>
       <ParameterList name="schema">
         <Parameter name="base" type="string" value="cell"/>
         <Parameter name="location" type="Array(string)" value="{cell}"/>
         <Parameter name="type" type="Array(string)" value="{scalar}"/>
-        <Parameter name="number" type="Array(int)" value="{3}"/>
+        <Parameter name="number" type="Array(int)" value="{6}"/>
       </ParameterList>
     </ParameterList>
   </ParameterList>

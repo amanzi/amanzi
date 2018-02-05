@@ -47,6 +47,12 @@ class AnalyticDG04 : public AnalyticDGBase {
       coefs(2, k) = -18.0 * std::sin(3 * p[0]) * std::sin(6 * p[1]);
     }
   }
+
+  // source term
+  virtual void SourceTaylor(const Amanzi::AmanziGeometry::Point& p, double t,
+                            Amanzi::WhetStone::Polynomial& src) override {
+    src.Reshape(d_, 0, true);
+  }
 };
 
 #endif

@@ -8,7 +8,7 @@
 
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 
-  Constant function: f = 1.
+  Constant function: f=1, constant tensor T=1.
 */
 
 #ifndef AMANZI_OPERATOR_ANALYTIC_DG_00_BASE_HH_
@@ -34,6 +34,12 @@ class AnalyticDG00 : public AnalyticDGBase {
                                   Amanzi::WhetStone::Polynomial& coefs) override {
     coefs.Reshape(d_, order_, true); 
     coefs(0, 0) = 1.0;
+  }
+
+  // source term
+  virtual void SourceTaylor(const Amanzi::AmanziGeometry::Point& p, double t,
+                            Amanzi::WhetStone::Polynomial& src) override {
+    src.Reshape(d_, 0, true);
   }
 };
 
