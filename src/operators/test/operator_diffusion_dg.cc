@@ -26,6 +26,7 @@
 #include "CompositeVector.hh"
 #include "LinearOperatorPCG.hh"
 #include "MeshFactory.hh"
+#include "NumericalIntegration.hh"
 #include "Tensor.hh"
 
 // Operators
@@ -88,7 +89,6 @@ TEST(OPERATOR_DIFFUSION_DG) {
   }
 
   // create boundary data
-  // create boundary data
   ParameterList op_list = plist.get<Teuchos::ParameterList>("PK operator")
                                .sublist("diffusion operator dg");
   int order = op_list.get<int>("method order");
@@ -127,14 +127,39 @@ TEST(OPERATOR_DIFFUSION_DG) {
   const CompositeVectorSpace& cvs = op->global_operator()->DomainMap();
 
   // create source and add it to the operator
+  CompositeVector src(cvs);
+  Epetra_MultiVector& src_c = *src.ViewComponent("cell");
+
+  WhetStone::Polynomial coefs, pc(2, order);
+  WhetStone::NumericalIntegration numi(mesh);
+
+  for (int c = 0; c < ncells; ++c) {
+    const Point& xc = mesh->cell_centroid(c);
+    double volume = mesh->cell_volume(c);
+
+    ana.SourceTaylor(xc, 0.0, coefs);
+    coefs.set_origin(xc);
+
+    for (auto it = pc.begin(); it.end() <= pc.end(); ++it) {
+      int n = it.PolynomialPosition();
+      int k = it.MonomialOrder();
+
+      double factor = numi.MonomialNaturalScale(k, volume);
+      WhetStone::Polynomial cmono(2, it.multi_index(), factor);
+      cmono.set_origin(xc);      
+
+      WhetStone::Polynomial tmp = coefs * cmono;      
+
+      src_c[n][c] = numi.IntegratePolynomialCell(c, tmp);
+    }
+  }
 
   // populate the diffusion operator
   op->SetProblemCoefficients(Kc, Kf);
   op->UpdateMatrices(Teuchos::null, Teuchos::null);
 
   // update the source term
-  global_op->rhs()->PutScalar(0.0);
-  // global_op->UpdateRHS(source, true);
+  *global_op->rhs() = src;
 
   // apply BCs (primary=true, eliminate=true) and assemble
   op->ApplyBCs(true, true);
@@ -174,7 +199,7 @@ TEST(OPERATOR_DIFFUSION_DG) {
       solver(global_op, global_op);
   solver.Init(lop_list);
 
-  CompositeVector rhs = *global_op->rhs();
+  CompositeVector& rhs = *global_op->rhs();
   CompositeVector solution(rhs);
   solution.PutScalar(0.0);
 

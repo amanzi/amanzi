@@ -8,7 +8,7 @@
 
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 
-  Constant function: f = 1 + x^2 - y^2.
+  Quadratic solution: f = 1 + x^2 + y^2.
 */
 
 #ifndef AMANZI_OPERATOR_ANALYTIC_DG_02_BASE_HH_
@@ -33,19 +33,20 @@ class AnalyticDG02 : public AnalyticDGBase {
   virtual void TaylorCoefficients(const Amanzi::AmanziGeometry::Point& p, double t,
                                   Amanzi::WhetStone::Polynomial& coefs) override {
     coefs.Reshape(d_, order_, true); 
-    coefs(0, 0) = 1.0 + p[0] * p[0] - p[1] * p[1];
+    coefs(0, 0) = 1.0 + p[0] * p[0] + p[1] * p[1];
 
     coefs(1, 0) = 2.0 * p[0];
-    coefs(1, 1) =-2.0 * p[1];
+    coefs(1, 1) = 2.0 * p[1];
 
     coefs(2, 0) = 1.0;
-    coefs(2, 2) =-1.0;
+    coefs(2, 2) = 1.0;
   }
 
   // source term
   virtual void SourceTaylor(const Amanzi::AmanziGeometry::Point& p, double t,
                             Amanzi::WhetStone::Polynomial& src) override {
     src.Reshape(d_, 0, true);
+    src(0, 0) = -4.0;
   }
 };
 
