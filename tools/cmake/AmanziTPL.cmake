@@ -45,6 +45,8 @@ endif()
 include(CheckMPISourceCompiles)
 include(TrilinosMacros)
 include(PrintVariable)
+include(AddImportedLibrary)
+
 
 ##############################################################################
 # ------------------------ Required Libraries -------------------------------#
@@ -61,6 +63,19 @@ if ( NOT MPI_WRAPPERS_IN_USE )
 		  " parameters as MPI compiler wrappers and re-run cmake.")
 endif()
 
+##############################################################################
+# ZLIB
+##############################################################################
+
+find_package(ZLIB REQUIRED)
+
+message(STATUS "Zlib Package information")
+message(STATUS "\tZLIB_INCLUDE_DIR  = ${ZLIB_INCLUDE_DIR}")
+message(STATUS "\tZLIB_INCLUDE_DIRS = ${ZLIB_INCLUDE_DIRS}")
+message(STATUS "\tZLIB_LIBRARY_DIR  = ${ZLIB_LIBRARY_DIR}")
+message(STATUS "\tZLIB_LIBRARY      = ${ZLIB_LIBRARY}")
+message(STATUS "\tZLIB_LIBRARIES    = ${ZLIB_LIBRARIES}")
+message(STATUS "")
 
 ##############################################################################
 # Boost
@@ -109,13 +124,7 @@ endif()
 # HDF5 - http://www.hdfgroup.org/HDF5/
 ##############################################################################
 
-# We need to use the project-local HDF5 finder. Temporarily Change
-# policy CMP0017 if were using cmake 2.8.3 or later
-if (${ADJUST_POLICY})
-  cmake_policy(SET CMP0017 OLD)
-endif()
-
-find_package(HDF5 1.8.0 REQUIRED)
+find_package(HDF5 1.8.0 REQUIRED COMPONENTS C HL)
 if (NOT HDF5_IS_PARALLEL) 
     message(WARNING "The HDF5 installation found in ${HDF5_DIR} is not "
                     "a parallel build. At this time, this installation "
@@ -130,6 +139,8 @@ set_package_properties(HDF5 PROPERTIES
                        PURPOSE "Required library for several components in Amanzi"
                       )
 
+set(HDF5_LIBRARIES ${HDF5_HL_LIBRARIES} ${HDF5_C_LIBRARIES} ${ZLIB_LIBRARIES} m dl)
+
 message(STATUS "HDF5 Package information")
 message(STATUS "\tHDF5_INCLUDE_DIR  = ${HDF5_INCLUDE_DIR}")
 message(STATUS "\tHDF5_INCLUDE_DIRS = ${HDF5_INCLUDE_DIRS}")
@@ -137,12 +148,6 @@ message(STATUS "\tHDF5_LIBRARY_DIR  = ${HDF5_LIBRARY_DIR}")
 message(STATUS "\tHDF5_LIBRARY      = ${HDF5_LIBRARY}")
 message(STATUS "\tHDF5_LIBRARIES    = ${HDF5_LIBRARIES}")
 message(STATUS "")
-
-# Restore policy of preferring offical CMake modules over local ones.
-if (${ADJUST_POLICY})
-  cmake_policy(SET CMP0017 NEW)
-endif()
-
 
 ##############################################################################
 # Trilinos http://trilinos.sandia.gov
