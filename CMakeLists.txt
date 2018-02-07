@@ -8,11 +8,6 @@
 # Require cmake 3.1.3 or higher for c++11 support
 cmake_minimum_required(VERSION 3.1.3)
 
-# cmake_policy(SET CMP0017 NEW)
-# cmake_policy(SET CMP0022 NEW)
-# cmake_policy(SET CMP0037 OLD)
-# cmake_policy(SET CMP0048 OLD)
-
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 #set(CMAKE_CXX_EXTENSIONS OFF)

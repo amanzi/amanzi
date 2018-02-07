@@ -39,8 +39,13 @@ build_whitespace_string(seacas_lflags ${seacas_lflags_list})
 # Build the NetCDF libraries string
 include(BuildLibraryName)
 build_library_name(netcdf seacas_netcdf_library STATIC APPEND_PATH ${TPL_INSTALL_PREFIX}/lib)
-build_library_name(hdf5_hl seacas_hdf5_hl_library STATIC APPEND_PATH ${TPL_INSTALL_PREFIX}/lib)
-build_library_name(hdf5 seacas_hdf5_library STATIC APPEND_PATH ${TPL_INSTALL_PREFIX}/lib)
+if ( ${CMAKE_BUILD_TYPE} STREQUAL "Debug" )
+  build_library_name(hdf5_hl_debug seacas_hdf5_hl_library STATIC APPEND_PATH ${TPL_INSTALL_PREFIX}/lib)
+  build_library_name(hdf5_debug seacas_hdf5_library STATIC APPEND_PATH ${TPL_INSTALL_PREFIX}/lib)
+else()
+  build_library_name(hdf5_hl seacas_hdf5_hl_library STATIC APPEND_PATH ${TPL_INSTALL_PREFIX}/lib)
+  build_library_name(hdf5 seacas_hdf5_library STATIC APPEND_PATH ${TPL_INSTALL_PREFIX}/lib)
+endif()
 build_library_name(z seacas_z_library STATIC APPEND_PATH ${TPL_INSTALL_PREFIX}/lib)
 set(seacas_netcdf_libraries
        ${seacas_netcdf_library}

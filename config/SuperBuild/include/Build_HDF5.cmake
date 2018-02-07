@@ -73,8 +73,20 @@ ExternalProject_Add(${HDF5_BUILD_TARGET}
 
 # --- Useful variables for packages that depend on HDF5 (NetCDF)
 include(BuildLibraryName)
-build_library_name(hdf5 HDF5_C_LIBRARY APPEND_PATH ${TPL_INSTALL_PREFIX}/lib)
-build_library_name(hdf5_hl HDF5_HL_LIBRARY APPEND_PATH ${TPL_INSTALL_PREFIX}/lib)
-set(HDF5_LIBRARIES ${HDF5_HL_LIBRARY} ${HDF5_C_LIBRARY} ${ZLIB_LIBRARIES} m)
+
+message(STATUS ">>> JDM: HDF5 build type CMAKE_BUILD_TYPE = ${CMAKE_BUILD_TYPE}")
+if ( ${CMAKE_BUILD_TYPE} STREQUAL "Debug" )
+  build_library_name(hdf5_debug HDF5_C_LIBRARY APPEND_PATH ${TPL_INSTALL_PREFIX}/lib)
+  build_library_name(hdf5_hl_debug HDF5_HL_LIBRARY APPEND_PATH ${TPL_INSTALL_PREFIX}/lib)
+else()
+  build_library_name(hdf5 HDF5_C_LIBRARY APPEND_PATH ${TPL_INSTALL_PREFIX}/lib)
+  build_library_name(hdf5_hl HDF5_HL_LIBRARY APPEND_PATH ${TPL_INSTALL_PREFIX}/lib)
+endif()
+  
+set(HDF5_LIBRARIES ${HDF5_HL_LIBRARY} ${HDF5_C_LIBRARY} ${ZLIB_LIBRARIES} m dl)
 set(HDF5_INCLUDE_DIRS ${TPL_INSTALL_PREFIX}/include ${ZLIB_INCLUDE_DIRS})
 list(REMOVE_DUPLICATES HDF5_INCLUDE_DIRS)
+
+message(STATUS ">>> JDM: HDF5 libraries - HDF5_HL_LIBRARY = ${HDF5_HL_LIBRARY}")
+message(STATUS ">>> JDM:                - HDF5_C_LIBRARY  = ${HDF5_C_LIBRARY}")
+message(STATUS ">>> JDM:                - ZLIB_LIBRARIES  = ${ZLIB_LIBRARIES}")
