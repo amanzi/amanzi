@@ -235,11 +235,11 @@ void Coordinator::initialize() {
     if (S_->HasMesh(domain_name)) {
       // visualize standard domain
       auto mesh_p = S_->GetMesh(domain_name);
-      if (vis_list->get<bool>("visualize on 3D mesh", false) && S_->HasMesh(domain_name+"_3d"))
-        mesh_p = S_->GetMesh(domain_name+"_3d");
-      
       auto sublist_p = Teuchos::sublist(vis_list, domain_name);
 
+      if (sublist_p->get<bool>("visualize on 3D mesh", false) && S_->HasMesh(domain_name+"_3d"))
+        mesh_p = S_->GetMesh(domain_name+"_3d");
+      
       // vis successful timesteps
       auto vis = Teuchos::rcp(new Amanzi::Visualization(*sublist_p));
       vis->set_name(domain_name);
@@ -494,6 +494,7 @@ double Coordinator::get_dt(bool after_fail) {
 bool Coordinator::advance(double t_old, double t_new) {
   double dt = t_new - t_old;
 
+  S_next_->set_last_time(S_next_->time());
   S_next_->advance_time(dt);
   bool fail = pk_->AdvanceStep(t_old, t_new, false);
   fail |= !pk_->ValidStep();
