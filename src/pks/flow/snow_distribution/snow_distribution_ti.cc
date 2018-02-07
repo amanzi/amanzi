@@ -103,6 +103,8 @@ int SnowDistribution::ApplyPreconditioner(Teuchos::RCP<const TreeVector> u, Teuc
 
   // apply the preconditioner
   int ierr = preconditioner_->ApplyInverse(*u->Data(), *Pu->Data());
+  double dt = S_next_->time() - S_next_->last_time();
+  Pu->Data()->Scale(1./dt);
 
 #if DEBUG_FLAG
   db_->WriteVector("PC*h_res", Pu->Data().ptr(), true);
@@ -132,37 +134,42 @@ void SnowDistribution::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVec
   Teuchos::RCP<const CompositeVector> cond =
     S_next_->GetFieldData(Keys::getKey(domain_,"upwind_snow_conductivity"));
 
-  Teuchos::RCP<CompositeVector> cond_times_factor = Teuchos::rcp(new CompositeVector(*cond));
-  *cond_times_factor = *cond;
-  cond_times_factor->Scale(864000);
+  // Jacobian
+  Key deriv_key = Keys::getDerivKey(Keys::getKey(domain_,"snow_conductivity"),key_);
+  S_next_->GetFieldEvaluator(Keys::getKey(domain_,"snow_conductivity"))
+      ->HasFieldDerivativeChanged(S_next_.ptr(), name_, key_);
+  // playing it fast and loose.... --etc
+  auto dcond = S_next_->GetFieldData(deriv_key, Keys::getKey(domain_,"snow_conductivity"));
 
-  // ADD BACK in when upwinding of snow conductivity is added.
-  // S_next_->GetFieldEvaluator("conductivity")
-  //     ->HasFieldDerivativeChanged(S_next_.ptr(), name_, key_);
-  // Teuchos::RCP<const CompositeVector> dcond_dp =
-  //     S_next_->GetFieldData("dconductivity_dprecipitation_snow");
+  // NOTE: this scaling of dt is wrong, but keeps consistent with the diffusion derivatives
+  double dt = S_next_->time() - S_next_->last_time();
+  ASSERT(dt > 0.);
+  dcond->Scale(1./dt);
   
   // calculating the operator is done in 3 steps:
   // 1. Create all local matrices.
   preconditioner_->Init();
-  preconditioner_diff_->SetScalarCoefficient(cond_times_factor, Teuchos::null);
-  //  preconditioner_diff_->SetScalarCoefficient(cond_times_factor, dcond_times_factor);
+  preconditioner_diff_->SetScalarCoefficient(cond, dcond);
   preconditioner_diff_->UpdateMatrices(Teuchos::null, Teuchos::null);
-  // preconditioner_diff_->UpdateMatrices(*up->Data(), *flux);
-  // preconditioner_diff_->UpdateMatricesNewtonCorrection(flux.ptr(), Teuchos::null);
+
+  S_next_->GetFieldEvaluator(Keys::getKey(domain_,"snow_skin_potential"))
+      ->HasFieldChanged(S_next_.ptr(), name_);
+  auto potential = S_next_->GetFieldData(Keys::getKey(domain_, "snow_skin_potential"));
+  preconditioner_diff_->UpdateMatricesNewtonCorrection(Teuchos::null, potential.ptr());
   
   // 2.b Update local matrices diagonal with the accumulation terms.
   // -- update the accumulation derivatives
 
   const Epetra_MultiVector& cell_volume = *S_next_->GetFieldData(Keys::getKey(domain_,"cell_volume"))
-
       ->ViewComponent("cell",false);
   std::vector<double>& Acc_cells = preconditioner_acc_->local_matrices()->vals;
 
   int ncells = cell_volume.MyLength();
+  double dt_factor = dt_factor_ > 0 ? dt_factor_ : dt;
   for (int c=0; c!=ncells; ++c) {
     // accumulation term
-    Acc_cells[c] += 10*cell_volume[0][c];
+    // NOTE: this scaling of dt is wrong, but keeps consistent with the diffusion derivatives
+    Acc_cells[c] += cell_volume[0][c]/dt_factor;
   }
 
   preconditioner_diff_->ApplyBCs(true, true);

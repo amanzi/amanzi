@@ -51,10 +51,13 @@ void SnowDistribution::AddAccumulation_(const Teuchos::Ptr<CompositeVector>& g) 
 
   std::vector<double> time(1,S_next_->time());
   double precip = (*precip_func_)(time);
+
+  double dt = S_next_->time() - S_inter_->time();
+  double dt_factor = dt_factor_ > 0 ? dt_factor_ : dt;
   
-  g->ViewComponent("cell",false)->Multiply(10.,
+  g->ViewComponent("cell",false)->Multiply(dt/dt_factor,
           *cv1->ViewComponent("cell",false), *h1->ViewComponent("cell",false), 1.);
-  g->ViewComponent("cell",false)->Update(-precip*10., *cv1->ViewComponent("cell",false), 1.);
+  g->ViewComponent("cell",false)->Update(-dt*precip/dt_factor, *cv1->ViewComponent("cell",false), 1.);
 
 };
 

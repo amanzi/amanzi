@@ -38,7 +38,7 @@ SnowSkinPotentialEvaluator::SnowSkinPotentialEvaluator(Teuchos::ParameterList& p
   elev_key_ = Keys::readKey(plist_, surf_domain, "elevation", "elevation");
   dependencies_.insert(elev_key_);
 
-  factor_ = plist_.get<double>("dt factor");
+  factor_ = plist_.get<double>("dt factor", -1.0);
 }
 
 
@@ -68,7 +68,12 @@ void SnowSkinPotentialEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
 
   
   result->Update(1.0, *elev, 1.0, *pd, 0.0);
-  result->Update(1.0, *sd, factor_, *precip, 1.0);
+  if (factor_ > 0.) {
+    result->Update(1.0, *sd, factor_, *precip, 1.0);
+  } else {
+    double dt = S->time() - S->last_time();
+    result->Update(1.0, *sd, dt, *precip, 1.0);
+  }
 }
 
 

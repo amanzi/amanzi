@@ -98,8 +98,8 @@ protected:
   // control switches
   Operators::UpwindMethod upwind_method_;
 
-  // coupling term
-  bool full_jacobian_;
+  bool precon_used_;
+  double dt_factor_;
 
   // function for precip
   Teuchos::RCP<Function> precip_func_;
@@ -110,8 +110,10 @@ protected:
   // mathematical operators
   Teuchos::RCP<Operators::Operator> matrix_; // pc in PKPhysicalBDFBase
   Teuchos::RCP<Operators::OperatorDiffusion> matrix_diff_;
+  Teuchos::RCP<Operators::OperatorDiffusion> face_matrix_diff_;
   Teuchos::RCP<Operators::OperatorDiffusion> preconditioner_diff_;
   Teuchos::RCP<Operators::OperatorAccumulation> preconditioner_acc_;
+  Teuchos::RCP<Operators::Operator> lin_solver_; // pc in PKPhysicalBDFBase
 
   // factory registration
   static RegisteredPKFactory<SnowDistribution> reg_;
