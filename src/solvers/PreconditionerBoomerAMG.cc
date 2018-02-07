@@ -97,7 +97,6 @@ void PreconditionerBoomerAMG::Init(const std::string& name, const Teuchos::Param
       funcs_.push_back(Teuchos::rcp(new FunctionParameter((Hypre_Chooser)1, &HYPRE_BoomerAMGSetDofFunc, blocking)));
     }
 
-
     // additional options
     if (num_funcs > 1) {
       // HYPRE_BOOMERAMGSetNodal(solver, int nodal ) tells AMG to coarsen such

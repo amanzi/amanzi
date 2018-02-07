@@ -85,7 +85,7 @@ TEST(OPERATOR_DIFFUSION_DG) {
 
   for (int f = 0; f < nfaces_wghost; f++) {
     double area = mesh->face_area(f);
-    Kf->push_back(20.0 / area);
+    Kf->push_back(40.0 / area);
   }
 
   // create boundary data

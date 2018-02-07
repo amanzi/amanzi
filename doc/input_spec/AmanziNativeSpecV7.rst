@@ -4883,7 +4883,23 @@ Internal parameters for Boomer AMG include
 
 * `"cycle applications`" [int] defines the number of V-cycles. Default is 5.
 
-* `"max multigrid levels`" [int] defined the maximum number of multigrid levels.
+* `"max multigrid levels`" [int] defines the maximum number of multigrid levels.
+
+* `"strong threshold`" [double] sets AMG strength threshold. The default is 0.25. 
+  For 2D Laplace operators, 0.25 is a good value, for 3D Laplace operators, 0.5 or 
+  0.6 is a better value. For elasticity problems, a large strength threshold,
+  such as 0.9, is often better.
+
+* `"coarsen type`" [int] defines which parallel coarsening algorithm is used. 
+  The following options for coarsen type:
+
+  * 0 - (default) CLJP-coarsening, a parallel coarsening algorithm using independent sets.
+  * 3 - classical Ruge-Stueben coarsening on each processor, followed by a third pass, which adds coarse points on the boundaries.
+  * 8 - PMIS-coarsening, a parallel coarsening algorithm using independent sets, generating lower complexities than CLJP, might also lead to slower convergence.
+  * 21 - CGC coarsening by M. Griebel, B. Metsch and A. Schweitzer.
+  * 22 - CGC-E coarsening by M. Griebel, B. Metsch and A.Schweitzer.
+
+* `"max coarse size`" [int] sets maximum size of coarsest grid. The default is 9.
 
 * `"number of function`" [int] the value > 1 tells Boomer AMG to use the "systems 
   of PDEs" code.  Note that, to use this approach, unknowns must be ordered with 

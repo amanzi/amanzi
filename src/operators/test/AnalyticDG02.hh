@@ -24,8 +24,10 @@ class AnalyticDG02 : public AnalyticDGBase {
 
   // diffusion tensor
   virtual Amanzi::WhetStone::Tensor Tensor(const Amanzi::AmanziGeometry::Point& p, double t) override {
-    Amanzi::WhetStone::Tensor K(2, 1);
+    Amanzi::WhetStone::Tensor K(2, 2);
     K(0, 0) = 1.0;
+    K(1, 1) = 2.0;
+    K(1, 0) = K(0, 1) = 0.5;
     return K;
   }
 
@@ -46,7 +48,7 @@ class AnalyticDG02 : public AnalyticDGBase {
   virtual void SourceTaylor(const Amanzi::AmanziGeometry::Point& p, double t,
                             Amanzi::WhetStone::Polynomial& src) override {
     src.Reshape(d_, 0, true);
-    src(0, 0) = -4.0;
+    src(0, 0) = -6.0;
   }
 };
 

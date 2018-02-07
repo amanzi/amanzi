@@ -177,7 +177,12 @@ int DG_Modal::MassMatrixPoly(int c, const Polynomial& K, DenseMatrix& M)
 ****************************************************************** */
 int DG_Modal::StiffnessMatrix(int c, const Tensor& K, DenseMatrix& A)
 {
-  double K00 = K(0, 0);
+  Tensor Ktmp(d_, 2);
+  if (K.rank() == 2) {
+    Ktmp = K;
+  } else {
+    Ktmp.MakeDiagonal(K(0, 0));
+  }
 
   double volume = mesh_->cell_volume(c);
   double scale = numi_.MonomialNaturalScale(1, volume);
@@ -210,16 +215,22 @@ int DG_Modal::StiffnessMatrix(int c, const Tensor& K, DenseMatrix& A)
 
       double sum(0.0), tmp;
       for (int i = 0; i < d_; ++i) {
-        if (index[i] > 0 && jndex[i] > 0) {
-          multi_index[i] -= 2;
-          const auto& coefs = integrals.monomials(n - 2).coefs();
-          tmp = coefs[p.MonomialPosition(multi_index)]; 
-          sum += tmp * index[i] * jndex[i];
-          multi_index[i] += 2;
+        for (int j = 0; j < d_; ++j) {
+          if (index[i] > 0 && jndex[j] > 0) {
+            multi_index[i]--;
+            multi_index[j]--;
+
+            const auto& coefs = integrals.monomials(n - 2).coefs();
+            tmp = coefs[p.MonomialPosition(multi_index)]; 
+            sum += Ktmp(i, j) * tmp * index[i] * jndex[j];
+
+            multi_index[i]++;
+            multi_index[j]++;
+          }
         }
       }
 
-      A(l, k) = A(k, l) = K00 * sum * scale * scale; 
+      A(l, k) = A(k, l) = sum * scale * scale; 
     }
   }
 
