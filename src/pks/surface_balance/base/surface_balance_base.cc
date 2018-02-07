@@ -166,6 +166,8 @@ SurfaceBalanceBase::UpdatePreconditioner(double t,
   PK_Physical_Default::Solution_to_State(*up, S_next_);
 
   if (conserved_quantity_) {
+    preconditioner_->Init();
+    
     S_next_->GetFieldEvaluator(conserved_key_)
         ->HasFieldDerivativeChanged(S_next_.ptr(), name_, key_);
     std::string dkey = std::string("d")+conserved_key_+std::string("_d")+key_;
@@ -178,7 +180,10 @@ SurfaceBalanceBase::UpdatePreconditioner(double t,
       std::string dkey = std::string("d")+source_key_+std::string("_d")+key_;
       db_->WriteVector("d(Q)/d(prim)", S_next_->GetFieldData(dkey).ptr());
       preconditioner_acc_->AddAccumulationTerm(*S_next_->GetFieldData(dkey), -1.0/theta_, "cell");
-    }      
+    }
+
+    preconditioner_->AssembleMatrix();
+    preconditioner_->InitPreconditioner(plist_->sublist("preconditioner"));
   }
 }
 
