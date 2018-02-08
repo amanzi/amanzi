@@ -168,7 +168,8 @@ void PDE_DiffusionDG::ApplyBCs(bool primary, bool eliminate)
   WhetStone::NumericalIntegration numi(mesh_);
 
   for (int f = 0; f != nfaces_owned; ++f) {
-    if (bc_model[f] == OPERATOR_BC_DIRICHLET) {
+    if (bc_model[f] == OPERATOR_BC_DIRICHLET ||
+        bc_model[f] == OPERATOR_BC_NEUMANN) {
       mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
       int c = cells[0];
 
@@ -191,18 +192,31 @@ void PDE_DiffusionDG::ApplyBCs(bool primary, bool eliminate)
 
       // extract coefficients and update right-hand side 
       WhetStone::DenseMatrix& Pcell = penalty_op_->matrices[f];
-      WhetStone::DenseMatrix& Jcell = jump_up_op_->matrices[f];
       int nrows = Pcell.NumRows();
       int ncols = Pcell.NumCols();
 
       WhetStone::DenseVector v(nrows), pv(ncols), jv(ncols);
-
       pf.GetPolynomialCoefficients(v);
-      Pcell.Multiply(v, pv, false);
-      Jcell.Multiply(v, jv, false);
 
-      for (int i = 0; i < ncols; ++i) {
-        rhs_c[i][c] += pv(i) + jv(i);
+      if (bc_model[f] == OPERATOR_BC_DIRICHLET) {
+        WhetStone::DenseMatrix& Jcell = jump_up_op_->matrices[f];
+        Pcell.Multiply(v, pv, false);
+        Jcell.Multiply(v, jv, false);
+
+        for (int i = 0; i < ncols; ++i) {
+          rhs_c[i][c] += pv(i) + jv(i);
+        }
+      } else if (bc_model[f] == OPERATOR_BC_NEUMANN) {
+        WhetStone::DenseMatrix& Jcell = jump_pu_op_->matrices[f];
+        Jcell.Multiply(v, jv, false);
+
+        for (int i = 0; i < ncols; ++i) {
+          rhs_c[i][c] -= jv(i);
+        }
+
+        Pcell.PutScalar(0.0);
+        Jcell.PutScalar(0.0);
+        jump_up_op_->matrices[f].PutScalar(0.0);
       }
     }
   } 

@@ -33,6 +33,7 @@
 #include "AnalyticDG01.hh"
 #include "AnalyticDG02.hh"
 
+#include "OperatorAudit.hh"
 #include "OperatorDefs.hh"
 #include "PDE_DiffusionDG.hh"
 
@@ -65,6 +66,7 @@ TEST(OPERATOR_DIFFUSION_DG) {
   meshfactory.preference(FrameworkPreference({MSTK,STKMESH}));
   // RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 10, 10, gm);
   RCP<const Mesh> mesh = meshfactory("test/median7x8_filtered.exo", gm);
+  // RCP<const Mesh> mesh = meshfactory("test/triangular8_clockwise.exo", gm);
 
   int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
@@ -88,7 +90,8 @@ TEST(OPERATOR_DIFFUSION_DG) {
     Kf->push_back(40.0 / area);
   }
 
-  // create boundary data
+  // create boundary data. We use full Taylor expansion of boundary data in
+  // the vicinity of domain boundary.
   ParameterList op_list = plist.get<Teuchos::ParameterList>("PK operator")
                                .sublist("diffusion operator dg");
   int order = op_list.get<int>("method order");
@@ -98,17 +101,26 @@ TEST(OPERATOR_DIFFUSION_DG) {
   std::vector<int>& bc_model = bc->bc_model();
   std::vector<std::vector<double> >& bc_value = bc->bc_value_vector(nk);
 
+  WhetStone::Polynomial coefs;
+  WhetStone::DenseVector data;
+
   for (int f = 0; f < nfaces_wghost; ++f) {
     const Point& xf = mesh->face_centroid(f);
 
     if (fabs(xf[0]) < 1e-6 || fabs(xf[0] - 1.0) < 1e-6 ||
-        fabs(xf[1]) < 1e-6 || fabs(xf[1] - 1.0) < 1e-6) {
+        fabs(xf[1]) < 1e-6) {
       bc_model[f] = OPERATOR_BC_DIRICHLET;
 
-      WhetStone::Polynomial coefs;
       ana.TaylorCoefficients(xf, 0.0, coefs);
+      coefs.GetPolynomialCoefficients(data);
 
-      WhetStone::DenseVector data;
+      for (int i = 0; i < data.NumRows(); ++i) {
+        bc_value[f][i] = data(i);
+      }
+    } else if (fabs(xf[1] - 1.0) < 1e-6) {
+      bc_model[f] = OPERATOR_BC_NEUMANN;
+
+      ana.TaylorCoefficients(xf, 0.0, coefs);
       coefs.GetPolynomialCoefficients(data);
 
       for (int i = 0; i < data.NumRows(); ++i) {
@@ -130,7 +142,7 @@ TEST(OPERATOR_DIFFUSION_DG) {
   CompositeVector src(cvs);
   Epetra_MultiVector& src_c = *src.ViewComponent("cell");
 
-  WhetStone::Polynomial coefs, pc(2, order);
+  WhetStone::Polynomial pc(2, order);
   WhetStone::NumericalIntegration numi(mesh);
 
   for (int c = 0; c < ncells; ++c) {
@@ -166,31 +178,13 @@ TEST(OPERATOR_DIFFUSION_DG) {
   global_op->SymbolicAssembleMatrix();
   global_op->AssembleMatrix();
 
+  // Test SPD properties of the matrix.
+  Operators::CheckMatrixSymmetry(global_op->A());
+  Operators::CheckMatrixCoercivity(global_op->A());
+
   // create preconditoner using the base operator class
   ParameterList slist = plist.get<Teuchos::ParameterList>("preconditioners");
   global_op->InitPreconditioner("Hypre AMG", slist);
-
-  // Test SPD properties of the preconditioner.
-  CompositeVector a(cvs), ha(cvs), b(cvs), hb(cvs);
-  a.Random();
-  b.Random();
-  global_op->ApplyInverse(a, ha);
-  global_op->ApplyInverse(b, hb);
-
-  double ahb, bha, aha, bhb;
-  a.Dot(hb, &ahb);
-  b.Dot(ha, &bha);
-  a.Dot(ha, &aha);
-  b.Dot(hb, &bhb);
-
-  if (MyPID == 0) {
-    std::cout << "Preconditioner:\n"
-              << "  Symmetry test: " << ahb << " = " << bha << std::endl;
-    std::cout << "  Positivity test: " << aha << " " << bhb << std::endl;
-  }
-  CHECK_CLOSE(ahb, bha, 1e-12 * fabs(ahb));
-  CHECK(aha > 0.0);
-  CHECK(bhb > 0.0);
 
   // solve the problem
   ParameterList lop_list = plist.sublist("solvers")

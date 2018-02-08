@@ -222,7 +222,7 @@ if (BUILD_TESTS)
     add_amanzi_test(operators_diffusion_dg operators_diffusion_dg
                     KIND unit
                     SOURCE test/Main.cc test/operator_diffusion_dg.cc
-                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+                    LINK_LIBS operators_audit ${amanzi_libs} ${UnitTest_LIBRARIES})
 
     add_amanzi_test(operators_commute operators_commute
                     KIND unit
