@@ -241,6 +241,9 @@ void polygon_get_area_centroid_normal(const std::vector<Point> coords,
         
     (*area) = norm(*normal);
     (*centroid) = center;   
+
+    if (dim == 2 && (*normal)[0] <= 0.0)
+      negvol = true;
   }
   else {
     // Compute the area of each triangle formed by
