@@ -51,5 +51,7 @@ ExternalProject_Add(${ZLIB_BUILD_TARGET}
 # --- Useful variables that depend on ZlIB (HDF5, NetCDF)
 include(BuildLibraryName)
 build_library_name(z ZLIB_LIBRARIES APPEND_PATH ${TPL_INSTALL_PREFIX}/lib)
+set(ZLIB_DIR ${TPL_INSTALL_PREFIX})
 set(ZLIB_INCLUDE_DIRS ${TPL_INSTALL_PREFIX}/include)
+ 
 

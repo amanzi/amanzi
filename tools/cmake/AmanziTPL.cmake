@@ -67,9 +67,11 @@ endif()
 # ZLIB
 ##############################################################################
 
+set (ZLIB_ROOT ${ZLIB_DIR})
 find_package(ZLIB REQUIRED)
 
 message(STATUS "Zlib Package information")
+message(STATUS "\tZLIB_DIR          = ${ZLIB_DIR}")
 message(STATUS "\tZLIB_INCLUDE_DIR  = ${ZLIB_INCLUDE_DIR}")
 message(STATUS "\tZLIB_INCLUDE_DIRS = ${ZLIB_INCLUDE_DIRS}")
 message(STATUS "\tZLIB_LIBRARY_DIR  = ${ZLIB_LIBRARY_DIR}")

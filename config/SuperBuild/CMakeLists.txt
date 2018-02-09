@@ -506,6 +506,7 @@ if (NOT ENABLE_XSDK)
 else()
   build_library_name(z ZLIB_LIBRARIES APPEND_PATH ${TPL_INSTALL_PREFIX}/lib)
   set(ZLIB_INCLUDE_DIRS ${TPL_INSTALL_PREFIX}/include)
+  set(ZLIB_DIR ${ZLIB_INSTALL_PREFIX})
 endif()
 
 # CURL
