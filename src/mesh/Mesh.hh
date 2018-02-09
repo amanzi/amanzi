@@ -12,6 +12,11 @@
 // derived class based on a particular mesh framework (like MSTK,
 // STKmesh etc.)
 //
+// Assumptions:
+// 
+// Cells in a 2D mesh must be oriented counter clockwise. This is not
+// applied to meshes on manifolds.   
+//
 // Design documentation:
 //
 // This class is designed to be both flexible and performant (and somewhat
