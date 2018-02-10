@@ -14,13 +14,16 @@
 #include <iostream>
 #include <vector>
 
+// TPLs
 #include "Teuchos_RCP.hpp"
 #include "UnitTest++.h"
 
+// Amanzi
 #include "Mesh.hh"
 #include "MeshFactory.hh"
 #include "Point.hh"
 
+// WhetStone
 #include "MFD3D_CrouzeixRaviart.hh"
 #include "MFD3D_Diffusion.hh"
 #include "MFD3D_Lagrange.hh"
@@ -273,7 +276,7 @@ TEST(HARMONIC_PROJECTORS_POLYGON_CR) {
       (*moments)(i) = 1.0 + i;
     }
 
-    projector.EllipticCell_CRk(cell, k, vf, moments, uc);
+    projector.H1Cell_CRk(cell, k, vf, moments, uc);
 
     for (auto it = vc.begin(); it.end() <= vc.end(); ++it) {
       Polynomial mono(2, it.multi_index(), 1.0);
@@ -359,7 +362,7 @@ TEST(HARMONIC_PROJECTORS_SQUARE_PK) {
     }
 
     // Compare H1 and L2 projectors
-    projector.L2Cell_Pk(cell, k, vf, moments, uc2);
+    projector.L2HarmonicCell_Pk(cell, k, vf, moments, uc2);
     uc2[0] -= uc[0];
     CHECK(uc2[0].NormMax() < 1e-12);
   }
@@ -502,7 +505,7 @@ TEST(HARMONIC_PROJECTORS_POLYGON_PK) {
     if (k == 1) CHECK(uc2[0].NormMax() < 1e-12);
     if (k == 2) CHECK(uc2[0].NormMax() > 1e-3 && uc2[0].NormMax() < 2e-3);
 
-    projector.L2Cell_Pk(cell, k, vf, moments, uc2);
+    projector.L2HarmonicCell_Pk(cell, k, vf, moments, uc2);
     uc2 -= uc;
     if (k < 3) CHECK(uc2[0].NormMax() < 1e-12);
     if (k > 1) std::cout << "k=" << k << " moments:" << *moments;
@@ -513,8 +516,13 @@ TEST(HARMONIC_PROJECTORS_POLYGON_PK) {
   for (int k = 2; k < 4; ++k) {
     moments->Reshape(k * (k - 1) / 2);
     moments->PutScalar(1.0);
-    projector.EllipticCell_Pk(cell, k, vf, moments, uc);
+
+    projector.H1Cell_Pk(cell, k, vf, moments, uc);
     double tmp = numi.IntegratePolynomialCell(cell, uc[0]) / mesh->cell_volume(cell);
+    CHECK_CLOSE(1.0, tmp, 1e-12);
+
+    projector.L2Cell_Pk(cell, k, vf, moments, uc);
+    tmp = numi.IntegratePolynomialCell(cell, uc[0]) / mesh->cell_volume(cell);
     CHECK_CLOSE(1.0, tmp, 1e-12);
   }
 
@@ -581,8 +589,7 @@ TEST(SERENDIPITY_PROJECTORS_POLYGON_PK) {
     CHECK(uc[0].NormMax() < 1e-10 && uc[1].NormMax() < 1e-10);
   }
 
-  // test piecewise linear deformation
-  // work in progress...
+  // test piecewise linear deformation (part I)
   std::cout << "\nTest: HO Sependipity Lagrange projectors for pentagon (piece-wice linear)" << std::endl;
   std::vector<AmanziGeometry::Point> vv;
   vv.push_back(AmanziGeometry::Point( 0.0, 0.0));

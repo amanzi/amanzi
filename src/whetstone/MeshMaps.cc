@@ -289,7 +289,7 @@ void MeshMaps::ProjectPolynomial(int c, Polynomial& poly) const
 
   VectorPolynomial vc(d_, 0);
   Projector projector(mesh1_);
-  // projector.EllipticCell_Pk(c, order, vvf, moments, vc);
+  // projector.H1Cell_Pk(c, order, vvf, moments, vc);
   projector.L2Cell_SerendipityPk(c, order, vvf, moments, vc);
   poly = vc[0];
 }

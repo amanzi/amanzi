@@ -53,7 +53,7 @@ class Projector {
       const std::vector<VectorPolynomial>& ve, VectorPolynomial& uf) const;
 
   // -- elliptic projector takes cell-moments on input
-  void EllipticCell_CRk(
+  void H1Cell_CRk(
       int c, int order, const std::vector<VectorPolynomial>& vf,
       const std::shared_ptr<DenseVector>& moments, VectorPolynomial& uc) const {
     GenericCell_CRk_(c, order, vf, Type::H1, false, moments, uc);
@@ -67,15 +67,22 @@ class Projector {
   }
 
   // projectors for conforming (Lagrange) virtual space
-  // -- L2 projector that calculates and returns cell moments
+  // -- L2 projector takes cell moments on input
   void L2Cell_Pk(
+      int c, int order, const std::vector<VectorPolynomial>& vf,
+      const std::shared_ptr<DenseVector>& moments, VectorPolynomial& uc) const {
+    GenericCell_Pk_(c, order, vf, Type::L2, false, moments, uc);
+  }
+
+  // -- L2 projector that calculates and returns cell moments
+  void L2HarmonicCell_Pk(
       int c, int order, const std::vector<VectorPolynomial>& vf,
       const std::shared_ptr<DenseVector>& moments, VectorPolynomial& uc) const {
     GenericCell_Pk_(c, order, vf, Type::L2, true, moments, uc);
   }
 
   // -- elliptic projector takes cell-moments on input
-  void EllipticCell_Pk(
+  void H1Cell_Pk(
       int c, int order, const std::vector<VectorPolynomial>& vf,
       const std::shared_ptr<DenseVector>& moments, VectorPolynomial& uc) const {
     GenericCell_Pk_(c, order, vf, Type::H1, false, moments, uc);
