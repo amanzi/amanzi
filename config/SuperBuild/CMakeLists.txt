@@ -3,15 +3,27 @@
 #
 # Amanzi SuperBuild
 #       Amanzi TPL Build Targets
-cmake_minimum_required(VERSION 3.2)
 
-# cmake_policy(SET CMP0017 NEW)
-# cmake_policy(SET CMP0022 NEW)
-# cmake_policy(SET CMP0037 OLD)
-# cmake_policy(SET CMP0048 OLD)
+#
+# Set minimum required version of CMake
+# NB: Must go before project() call.
+#
+cmake_minimum_required(VERSION 3.6.1)
 
+#
+# Language standard
+# NB: Seems like a good idea to have this before project() call.
+#
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+# ############################################################################ #
+# Define project name (SuperBuild_SOURCE_DIR and SuperBuild_BINARY_DIR)
+# ############################################################################ #
+message(STATUS "\n------------------------------------------------")
+message(STATUS "\n-- CMake: Configuring Amanzi TPLs build/install.\n--")
+message(STATUS "---------------------------------------------")
+project(SuperBuild C CXX Fortran)
 
 # ############################################################################ #
 # Shared Libraries Definitions
@@ -24,7 +36,7 @@ set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 
 set(AMANZI_CMAKE_CACHE_ARGS  "-DCMAKE_INSTALL_RPATH:PATH=${CMAKE_INSTALL_RPATH}")
 list(APPEND AMANZI_CMAKE_CACHE_ARGS  "-DCMAKE_INSTALL_NAME_DIR:PATH=${CMAKE_INSTALL_RPATH}")
- 
+
 if (BUILD_SHARED_LIBS)
   set(_shared_flags "-fPIC")
   set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${_shared_flags}")
@@ -39,7 +51,6 @@ if (BUILD_SHARED_LIBS)
   set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} ${_shared_flags}")
   set(CMAKE_Fortran_FLAGS_DEBUG "${CMAKE_Fortran_FLAGS_DEBUG} ${_shared_flags}")
 endif()
-
 
 # ############################################################################ #
 # Static Libraries Definitions
@@ -68,11 +79,6 @@ endif()
 #if (NOT SPACK_BINARY)
 #  message(WARNING "Spack binary not defined. Disabling spack builds.")
 #endif()
-
-# ############################################################################ #
-# Define project name (SuperBuild_SOURCE_DIR and SuperBuild_BINARY_DIR)
-# ############################################################################ #
-project(SuperBuild C CXX Fortran)
 
 # ############################################################################ #
 # Define Amanzi directories 
@@ -109,13 +115,12 @@ include(CheckMPISourceCompiles)
 check_mpi_source_compiles(MPI_WRAPPERS_IN_USE)
 if (NOT MPI_WRAPPERS_IN_USE)
   # MPI_WRAPPERS_IN_USE is FALSE if any of the compilers fail to compile an MPI app
-  #message(FATAL_ERROR "Missing a compiler type for MPI applications -- exiting.
-  message(WARING "Missing a compiler type for MPI applications.
-  See previous error messages to determine missing compiler.")
+  message(FATAL_ERROR "Missing a compiler type for MPI applications -- exiting.")
 endif()
 
-
+# Include the TPL version information
 include(${SuperBuild_SOURCE_DIR}/TPLVersions.cmake)
+
 # prepare the version numbers file
 set(TPL_VERSIONS_INCLUDE_FILE ${CMAKE_BINARY_DIR}/tpl_versions.h)
 file(WRITE ${TPL_VERSIONS_INCLUDE_FILE} "")
@@ -128,8 +133,6 @@ amanzi_tpl_version_write(FILENAME ${TPL_VERSIONS_INCLUDE_FILE}
 # ############################################################################ #
 # Build options
 # ############################################################################ #
-
-message(STATUS "Setting build type")
 set(SuperBuild_BUILD_TYPE_DFLT "Release")
 if (NOT CMAKE_BUILD_TYPE) 
   set(CMAKE_BUILD_TYPE ${SuperBuild_BUILD_TYPE_DFLT})
@@ -214,6 +217,7 @@ option(ENABLE_XSDK "Use xSDK Libraries" FALSE)
 option(ENABLE_SPACK "Build with the Spack package manager where appropriate" FALSE)
 option(BUILD_SPACK "Clone spack from git and treat as a TPL that needs to be built" FALSE)
 
+
 # ############################################################################ #
 # MPI Configuration 
 # ############################################################################ #
@@ -261,6 +265,7 @@ endif()
 #     MPIEXEC_POSTFLAGS
 find_package(MPI)
 
+
 # The FindMPI package uses FindPackageHandleStandardArgs
 # to MPI_<lang>_FOUND. For consistency, I set MPI_FORTRAN_FOUND
 # to MPI_Fortran_FOUND
@@ -279,13 +284,12 @@ if (NOT MPI_Fortran_FOUND)
   message(WARNING "Failed to locate MPI Fortran include and library files")
 endif()
 
-# Add MPI to the build if any MPI_*_FOUND == FALSE
+# Fail configuration if any MPI_*_FOUND == FALSE
 if (MPI_C_FOUND AND MPI_CXX_FOUND AND MPI_Fortran_FOUND)
-  message(STATUS "Found MPI")
-  set(BUILD_MPI FALSE)
+  message(STATUS "Found MPI: MPIEXEC=${MPIEXEC}")
   set(mpi_var_list COMPILER COMPILE_FLAGS INCLUDE_PATH LINK_FLAGS LIBRARIES)
-  foreach ( lang C CXX Fortran )
-    foreach ( var ${mpi_var_list} )
+  foreach(lang C CXX Fortran)
+    foreach(var ${mpi_var_list})
       set(var MPI_${lang}_${var})
       if ("${var}")
 	message(STATUS "      ${var}: ${${var}}")
@@ -293,18 +297,12 @@ if (MPI_C_FOUND AND MPI_CXX_FOUND AND MPI_Fortran_FOUND)
     endforeach()
   endforeach()  
 else()
-  message(STATUS "Will build MPI with the other TPLs")
-  set(BUILD_MPI TRUE)
-  set(MPI_C_COMPILER        ${TPL_INSTALL_PREFIX}/bin/mpicc)
-  set(MPI_CXX_COMPILER      ${TPL_INSTALL_PREFIX}/bin/mpicxx)
-  set(MPI_Fortran_COMPILER  ${TPL_INSTALL_PREFIX}/bin/mpif90)
-  set(MPIEXEC               ${TPL_INSTALL_PREFIX}/bin/mpirun)
-  set(MPI_EXEC              ${TPL_INSTALL_PREFIX}/bin/mpirun)
+  message(FATAL_ERROR "MPI was not found.")
 endif()
 
-# --- Add the include paths, link flags and libraries if using a 
-#     user requested MPI but not the wrappers from this MPI installation.
-if (NOT MPI_WRAPPERS_IN_USE AND NOT BUILD_MPI)
+# Add the include paths, link flags and libraries if using a 
+# user requested MPI but not the wrappers from this MPI installation.
+if (NOT MPI_WRAPPERS_IN_USE)
   foreach (lang C CXX Fortran)
     # Build MPI compile flags
     set(add_mpi_flags_list)
@@ -341,21 +339,6 @@ if (NOT MPI_WRAPPERS_IN_USE AND NOT BUILD_MPI)
     endif()  
   endforeach()
 endif()
-
-
-# --- Define which compilers to use in MPI dependent projects
-#     If building MPI as an external project use MPI_* compiler
-#     otherwise use the CMAKE_* compilers which are either
-#     MPI compiler wrappers OR have the neccessary flags to build.
-if (BUILD_MPI)
-  set(CMAKE_C_COMPILER_USE       ${MPI_C_COMPILER})
-  set(CMAKE_CXX_COMPILER_USE     ${MPI_CXX_COMPILER})
-  set(CMAKE_Fortran_COMPILER_USE ${MPI_Fortran_COMPILER})
-else()  
-  set(CMAKE_C_COMPILER_USE       ${CMAKE_C_COMPILER})
-  set(CMAKE_CXX_COMPILER_USE     ${CMAKE_CXX_COMPILER})
-  set(CMAKE_Fortran_COMPILER_USE ${CMAKE_Fortran_COMPILER})
-endif()  
 
 # --- Amanzi uses MPI_EXEC* not MPIEXEC* variables. This allows the user to 
 #     override the find package results.
@@ -460,14 +443,6 @@ set(Amanzi_CMAKE_LINKER_ARGS
 
 message("AMANZI: SHARED LINKER FLAGS = ${Amanzi_CMAKE_LINKER_ARGS}")
 
-# GNU configure static/shared
-if(BUILD_SHARED_LIBS)
-  set(Amanzi_SHARED_SWITCH "--enable-shared")
-else()
-  set(Amanzi_SHARED_SWITCH "--disable-shared")
-endif()
-
-
 # Common compiler flags to ensure a uniform build in projects that do not use CMake
 include(BuildWhitespaceString)
 string(TOUPPER "${CMAKE_BUILD_TYPE}" build_type_uc)
@@ -478,15 +453,17 @@ message(STATUS "Common compile flags for build type ${CMAKE_BUILD_TYPE}")
 build_whitespace_string(Amanzi_COMMON_CFLAGS ${CMAKE_C_FLAGS} ${build_c_flags}) 
 build_whitespace_string(Amanzi_COMMON_CXXFLAGS ${CMAKE_CXX_FLAGS} ${build_cxx_flags}) 
 build_whitespace_string(Amanzi_COMMON_FCFLAGS ${CMAKE_Fortran_FLAGS} ${build_fortran_flags}) 
-message(STATUS "\tC flags\t\t${Amanzi_COMMON_CFLAGS}")
-message(STATUS "\tC++ flags\t${Amanzi_COMMON_CXXFLAGS}")
-message(STATUS "\tFortran flags\t${Amanzi_COMMON_FCFLAGS}")
 
 # Common link flags for projects that do not use CMake
 set(Amanzi_COMMON_LDFLAGS)
 if (CMAKE_EXE_LINK_FLAGS)
   build_whitespace_string(Amanzi_COMMON_LDFLAGS ${CMAKE_EXE_LINK_FLAGS})
 endif()
+
+message(STATUS "\tcommon C flags\t\t${Amanzi_COMMON_CFLAGS}")
+message(STATUS "\tcommon C++ flags\t${Amanzi_COMMON_CXXFLAGS}")
+message(STATUS "\tcommon Fortran flags\t${Amanzi_COMMON_FCFLAGS}")
+message(STATUS "\tcommon Linker flags\t${Amanzi_COMMON_LDFLAGS}")
 
 
 # ############################################################################ #
@@ -503,9 +480,6 @@ add_custom_target(.NOTPARALLEL)
 # Create configure, build, install and test targets for each TPL
 set_property(DIRECTORY PROPERTY
              EP_STEP_TARGETS download patch configure build install test)
-
-# Include the TPL version information
-include(${SuperBuild_SOURCE_DIR}/TPLVersions.cmake)
 
 # Include the CMake module ExternalProject
 include(ExternalProject)
@@ -526,18 +500,13 @@ if (ENABLE_XSDK)
   include(BuildLibraryName)
 endif()
 
-# MPI
-if (BUILD_MPI AND NOT ENABLE_XSDK)
-  include(${SuperBuild_BUILD_FILES_DIR}/Build_OpenMPI.cmake)
-  set(MPI_PROJECT OpenMPI)
-endif()
-
 # ZLIB
 if (NOT ENABLE_XSDK)
   include(${SuperBuild_BUILD_FILES_DIR}/Build_zlib.cmake) 
 else()
   build_library_name(z ZLIB_LIBRARIES APPEND_PATH ${TPL_INSTALL_PREFIX}/lib)
   set(ZLIB_INCLUDE_DIRS ${TPL_INSTALL_PREFIX}/include)
+  set(ZLIB_DIR ${ZLIB_INSTALL_PREFIX})
 endif()
 
 # CURL
@@ -911,11 +880,11 @@ if (BUILD_Amanzi)
     UPDATE_COMMAND ""
     CMAKE_ARGS	${Amanzi_CMAKE_ARGS}
                 ${Amanzi_CMAKE_C_COMPILER_ARGS}
-                -DCMAKE_C_COMPILER:FILEPATH=${CMAKE_C_COMPILER_USE}
+                -DCMAKE_C_COMPILER:FILEPATH=${CMAKE_C_COMPILER}
 			    ${Amanzi_CMAKE_CXX_COMPILER_ARGS}
-                -DCMAKE_CXX_COMPILER:FILEPATH=${CMAKE_CXX_COMPILER_USE}
+                -DCMAKE_CXX_COMPILER:FILEPATH=${CMAKE_CXX_COMPILER}
 			    ${Amanzi_CMAKE_Fortran_COMPILER_ARGS}
-                -DCMAKE_Fortran_COMPILER:FILEPATH=${CMAKE_Fortran_COMPILER_USE}
+                -DCMAKE_Fortran_COMPILER:FILEPATH=${CMAKE_Fortran_COMPILER}
     INSTALL_DIR ${Amanzi_INSTALL_PREFIX} )
 endif()        
                
