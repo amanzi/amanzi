@@ -17,11 +17,14 @@
 
 #include "Teuchos_RCP.hpp"
 
+// Amanzi
 #include "Mesh.hh"
 #include "Point.hh"
 
+// WhetStone
 #include "BilinearForm.hh"
 #include "DenseMatrix.hh"
+#include "DenseVector.hh"
 #include "NumericalIntegration.hh"
 #include "Tensor.hh"
 #include "VectorPolynomial.hh"
@@ -39,14 +42,14 @@ class DG_Modal : public BilinearForm {
     : numi_(mesh),
       mesh_(mesh),
       order_(-1),
-      basis_(TAYLOR_BASIS_NORMALIZED_ORTHO),
+      basis_(TAYLOR_BASIS_NATURAL),
       d_(mesh_->space_dimension()) {};
 
   DG_Modal(int order, Teuchos::RCP<const AmanziMesh::Mesh> mesh)
     : numi_(mesh),
       order_(order), 
       mesh_(mesh),
-      basis_(TAYLOR_BASIS_NORMALIZED_ORTHO),
+      basis_(TAYLOR_BASIS_NATURAL),
       d_(mesh_->space_dimension()) {};
 
   ~DG_Modal() {};
@@ -82,7 +85,7 @@ class DG_Modal : public BilinearForm {
   void TaylorBasis(int c, const Iterator& it, double* a, double* b);
   
   // create polynomial given array of its coefficients
-  Polynomial CalculatePolynomial(int c, const std::vector<double>& coefs) const;
+  Polynomial CalculatePolynomial(int c, const DenseVector& coefs) const;
 
   // placeholder of elliptic projector
   void CoVelocityCell(int c, const std::vector<const Polynomial*> vf, VectorPolynomial& vc);

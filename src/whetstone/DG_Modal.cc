@@ -159,7 +159,7 @@ int DG_Modal::MassMatrixPoly(int c, const Polynomial& K, DenseMatrix& M)
     }
   }
 
-  // symmetri part of mass matrix
+  // symmetric part of mass matrix
   for (int k = 0; k < nrows; ++k) {
     for (int l = k + 1; l < nrows; ++l) {
       M(l, k) = M(k, l); 
@@ -793,29 +793,28 @@ void DG_Modal::TaylorBasis(int c, const Iterator& it, double* a, double* b)
 /* ******************************************************************
 * Calculate polynomial using basis and coefficients.
 ****************************************************************** */
-Polynomial DG_Modal::CalculatePolynomial(int c, const std::vector<double>& coefs) const
+Polynomial DG_Modal::CalculatePolynomial(int c, const DenseVector& coefs) const
 {
-  if (order_ == 0) {
-    Polynomial poly(d_, 0);
-    poly(0, 0) = coefs[0];
+  if (order_ == 0 || basis_ == TAYLOR_BASIS_NATURAL) {
+    Polynomial poly(d_, order_);
+    poly.SetPolynomialCoefficients(coefs);
     poly.set_origin(mesh_->cell_centroid(c));
     return poly;
   }
 
   ASSERT(scales_a_.size() != 0);
-  ASSERT(scales_a_[c].size() == coefs.size());
+  ASSERT(scales_a_[c].size() == coefs.NumRows());
 
   Polynomial poly(scales_a_[c]);
   poly.set_origin(mesh_->cell_centroid(c));
 
-  auto jt = coefs.begin();
+  int n(0);
   for (auto it = poly.begin(); it.end() <= poly.end(); ++it) {
     int m = it.MonomialOrder();
     int k = it.MonomialPosition();
 
-    poly(m, k) *= *jt; 
+    poly(m, k) *= coefs(n++); 
     poly(0, 0) -= poly(m, k) * scales_b_[c](m, k);
-    ++jt;
   }
 
   return poly;

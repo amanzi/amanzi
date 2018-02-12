@@ -37,10 +37,10 @@ void MeshMaps_VEM::VelocityCell(
     // projector.HarmonicCell_Pk(c, 1, vf, moments, vc);
     projector_.HarmonicCell_CR1(c, vf, vc);
   } else {
-    projector_.L2Cell_SerendipityPk(c, order_, vf, moments, vc);
+    // projector_.L2Cell_SerendipityPk(c, order_, vf, moments, vc);
     // projector_.L2HarmonicCell_Pk(c, order_, vf, moments, vc);
     // projector_.HarmonicCell_Pk(c, order_, vf, moments, vc);
-    // projector_.HarmonicCell_CRk(c, order_, vf, moments, vc);
+    projector_.HarmonicCell_CRk(c, order_, vf, moments, vc);
   }
 }
 

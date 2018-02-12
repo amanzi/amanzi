@@ -375,9 +375,9 @@ void RemapTestsDualRK(int order_p, int order_u,
   // initial mass
   double mass0(0.0);
   for (int c = 0; c < ncells_owned; c++) {
-    std::vector<double> data;
+    WhetStone::DenseVector data(nk);
     for (int i = 0; i < nk; ++i) {
-      data.push_back(p1c[i][c]);
+      data(i) = p1c[i][c];
     }
     WhetStone::Polynomial poly(dg.CalculatePolynomial(c, data));
     numi.ChangeBasisNaturalToRegular(c, poly);
@@ -472,9 +472,9 @@ void RemapTestsDualRK(int order_p, int order_u,
   for (int c = 0; c < ncells_owned; ++c) {
     double area_c(mesh1->cell_volume(c));
 
-    std::vector<double> data;
+    WhetStone::DenseVector data(nk);
     for (int i = 0; i < nk; ++i) {
-      data.push_back(p2c[i][c]);
+      data(i) = p2c[i][c];
     }
     WhetStone::Polynomial poly(dg.CalculatePolynomial(c, data));
     numi.ChangeBasisNaturalToRegular(c, poly);

@@ -49,6 +49,7 @@ TEST(DG2D_MASS_MATRIX) {
 
   for (int k = 0; k < 3; k++) {
     DG_Modal dg(k, mesh);
+    dg.set_basis(TAYLOR_BASIS_NORMALIZED_ORTHO);
 
     dg.MassMatrix(0, T, M);
     int nk = M.NumRows();
@@ -171,6 +172,7 @@ TEST(DG2D_MASS_MATRIX_POLYNOMIAL) {
 
   for (int k = 0; k < 3; k++) {
     DG_Modal dg(2, mesh);
+    dg.set_basis(TAYLOR_BASIS_NORMALIZED_ORTHO);
 
     Polynomial u(2, k);
     u.monomials(0).coefs()[0] = 1.0;
@@ -222,12 +224,13 @@ TEST(DG2D_ADVECTION_MATRIX_FACE) {
  
   for (int k = 0; k < 3; k++) {
     DG_Modal dg(k, mesh);
-    DenseMatrix A0, A1;
+    dg.set_basis(TAYLOR_BASIS_NORMALIZED_ORTHO);
 
     Polynomial un(2, 0);
     un.monomials(0).coefs()[0] = 1.0;
 
     // TEST1: constant u
+    DenseMatrix A0, A1;
     dg.FluxMatrixPoly(1, un, A0, false);
 
     printf("Advection matrix (face-based) for order=%d  u.n=1\n", k);
@@ -278,13 +281,14 @@ TEST(DG3D_ADVECTION_MATRIX_FACE) {
  
   for (int k = 0; k < 2; k++) {
     DG_Modal dg(k, mesh);
-    DenseMatrix A0, A1;
+    dg.set_basis(WhetStone::TAYLOR_BASIS_NORMALIZED_ORTHO);
 
     int d(3), f(4);
     Polynomial un(d, 0);
     un(0, 0) = 1.0;
 
     // TEST1: constant u
+    DenseMatrix A0, A1;
     dg.FluxMatrixPoly(f, un, A0, false);
 
     printf("Advection matrix (face-based) for order=%d  u.n=1\n", k);
