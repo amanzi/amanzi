@@ -344,6 +344,8 @@ set_package_properties(SEACAS
                  URL "https://github.com/gsjaardema/seacas"
                  PURPOSE "Required by mesh library")
 
+set(SEACAS_LIBRARIES ${SEACAS_LIBRARIES} ${NetCDF_C_LIBRARIES} ${HDF5_LIBRARIES})
+
 message(STATUS "SEACAS Package information")
 message(STATUS "\tSEACAS_INCLUDE_DIR  = ${SEACAS_INCLUDE_DIR}")
 message(STATUS "\tSEACAS_INCLUDE_DIRS = ${SEACAS_INCLUDE_DIRS}")
