@@ -434,7 +434,7 @@ int DG_Modal::FluxMatrixPoly(int f, const Polynomial& un, DenseMatrix& A,
 *
 *   \Int_f ( {K \grad \rho} [\psi] ) dS
 ****************************************************************** */
-int DG_Modal::JumpMatrix(int f, const Tensor& K1, const Tensor& K2, DenseMatrix& A)
+int DG_Modal::FaceMatrixJump(int f, const Tensor& K1, const Tensor& K2, DenseMatrix& A)
 {
   AmanziMesh::Entity_ID_List cells;
   mesh_->face_get_cells(f, (Parallel_type)WhetStone::USED, &cells);
@@ -545,7 +545,7 @@ int DG_Modal::JumpMatrix(int f, const Tensor& K1, const Tensor& K2, DenseMatrix&
 *
 *   \Int_f { K_f [\psi] [\rho] } dS
 ****************************************************************** */
-int DG_Modal::PenaltyMatrix(int f, double Kf, DenseMatrix& A)
+int DG_Modal::FaceMatrixPenalty(int f, double Kf, DenseMatrix& A)
 {
   AmanziMesh::Entity_ID_List cells;
   mesh_->face_get_cells(f, (Parallel_type)WhetStone::USED, &cells);
@@ -626,6 +626,74 @@ int DG_Modal::PenaltyMatrix(int f, double Kf, DenseMatrix& A)
   } else {
     ChangeBasis_(c1, c2, A);
   }
+
+  return 0;
+}
+
+
+/* *****************************************************************
+* Average matrix for Taylor basis and penalty coefficient Kf 
+* corresponding to the following integral:
+*
+*   \Int_f { K_f {\psi \rho} } dS.
+****************************************************************** */
+int DG_Modal::FaceMatrixAverage(int f, const Polynomial& Kf, DenseMatrix& A)
+{
+  AmanziMesh::Entity_ID_List cells;
+  mesh_->face_get_cells(f, (Parallel_type)WhetStone::USED, &cells);
+  int ncells = cells.size();
+
+  Polynomial poly0(d_, order_);
+  int size = poly0.size();
+
+  int nrows = ncells * size;
+  A.Reshape(nrows, nrows);
+  A.PutScalar(0.0);
+
+  if (ncells == 1) return 0;
+
+  // integrate traces of polynomials on face f
+  Polynomial p0, q0;
+  std::vector<const Polynomial*> polys(3);
+
+  polys[2] = &Kf;
+
+  for (int n = 0; n < ncells; ++n) {
+    int pos = size * n;
+    int c = cells[n];
+    double volume = mesh_->cell_volume(c);
+    const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
+
+    UpdateIntegrals_(c, 2 * order_);
+
+    for (auto it = poly0.begin(); it.end() <= poly0.end(); ++it) {
+      const int* idx0 = it.multi_index();
+      int k = poly0.PolynomialPosition(idx0);
+      int s = it.MonomialOrder();
+
+      double factor = numi_.MonomialNaturalScale(s, volume);
+      Polynomial p0(d_, idx0, factor);
+      p0.set_origin(xc);
+
+      for (auto jt = it; jt.end() <= poly0.end(); ++jt) {
+        const int* idx1 = jt.multi_index();
+        int l = poly0.PolynomialPosition(idx1);
+        int t = jt.MonomialOrder();
+
+        factor = numi_.MonomialNaturalScale(t, volume);
+        Polynomial q0(d_, idx1, factor);
+        q0.set_origin(xc);
+
+        polys[0] = &p0;
+        polys[1] = &q0;
+        double tmp = numi_.IntegratePolynomialsFace(f, polys);
+
+        A(pos + l, pos + k) = A(pos + k, pos + l) = tmp / 2;
+      }
+    }
+  }
+
+  ChangeBasis_(cells[0], cells[1], A);
 
   return 0;
 }

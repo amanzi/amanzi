@@ -129,7 +129,7 @@ void PDE_DiffusionDG::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& 
 
   for (int f = 0; f != nfaces_owned; ++f) {
     if (Kf_.get()) Kf = (*Kf_)[f];
-    dg.PenaltyMatrix(f, Kf, Aface);
+    dg.FaceMatrixPenalty(f, Kf, Aface);
     penalty_op_->matrices[f] = Aface;
   }
 
@@ -139,7 +139,7 @@ void PDE_DiffusionDG::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& 
       Kc1 = (*Kc_)[cells[0]]; 
       if (cells.size() > 1) Kc2 = (*Kc_)[cells[1]]; 
     }
-    dg.JumpMatrix(f, Kc1, Kc2, Aface);
+    dg.FaceMatrixJump(f, Kc1, Kc2, Aface);
     Aface *= -1.0;
     jump_up_op_->matrices[f] = Aface;
 

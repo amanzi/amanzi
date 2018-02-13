@@ -130,14 +130,14 @@ void PDE_AdvectionRiemann::UpdateMatrices(
       matrix[f] = Aface;
     }
   }
-  else if (method_ == "dg modal" && matrix_ == "jump") {
+  else if (method_ == "dg modal" && matrix_ == "velocity jump") {
     AmanziMesh::Entity_ID_List cells;
     WhetStone::DG_Modal dg(mesh_);
     dg.set_order(method_order_);
     for (int f = 0; f < nfaces_owned; ++f) {
       mesh_->face_get_cells(f, (WhetStone::Parallel_type)WhetStone::USED, &cells);
-      double Kf = (cells.size() == 1) ? 0.0 : -0.0;
-      dg.PenaltyMatrix(f, Kf, Aface);
+      dg.FaceMatrixAverage(f, (*u)[f], Aface);
+std::cout << Aface << std::endl;
       matrix[f] = Aface;
     }
   }

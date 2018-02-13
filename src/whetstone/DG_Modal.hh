@@ -69,9 +69,10 @@ class DG_Modal : public BilinearForm {
   virtual int AdvectionMatrixPoly(int c, const VectorPolynomial& uc, DenseMatrix& A, bool grad_on_test);
   int FluxMatrixPoly(int f, const Polynomial& uf, DenseMatrix& A, bool jump_on_test);
 
-  // -- jump and penalty matrices
-  int JumpMatrix(int f, const Tensor& K1, const Tensor& K2, DenseMatrix& A);
-  int PenaltyMatrix(int f, double Kf, DenseMatrix& A);
+  // -- interface matrices: jump, penalty and average
+  int FaceMatrixJump(int f, const Tensor& K1, const Tensor& K2, DenseMatrix& A);
+  int FaceMatrixPenalty(int f, double Kf, DenseMatrix& A);
+  int FaceMatrixAverage(int f, const Polynomial& Kf, DenseMatrix& A);
 
   // interfaces that are not used
   virtual int L2consistency(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Mc, bool symmetry) { return 0; }
