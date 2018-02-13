@@ -104,8 +104,9 @@ add_amanzi_library(udriv
 # Binary: verify_mesh
 add_amanzi_executable(verify_mesh
                       SOURCE VerifyMesh.cc
-                      LINK_LIBS mesh_factory mesh mesh_audit ${Boost_LIBRARIES} ${Epetra_LIBRARIES})
-		    		    
+                      LINK_LIBS mesh_factory mesh mesh_audit 
+                                ${Boost_LIBRARIES} ${Epetra_LIBRARIES} ${HDF5_LIBRARIES})
+
 #
 # Binary: verify_hex
 # verify_hex uses deprecated boost::filesystem
@@ -115,7 +116,7 @@ add_amanzi_executable(verify_hex
                       SOURCE VerifyHex.cc
                       LINK_LIBS mesh_factory
                                 mesh mesh_audit
-                                output ${Boost_LIBRARIES} )
+                                output ${Boost_LIBRARIES} ${HDF5_LIBRARIES})
 set_target_properties(verify_hex PROPERTIES
                       COMPILE_DEFINES "${Boost_FILESYSTEM_DEFINES}")
 
@@ -130,7 +131,8 @@ if ( ENABLE_STK_Mesh )
                                   ${amanzi_mesh_libs}
                                   output
                                   ${Epetra_LIBRARIES}
-                                  ${Teuchos_LIBRARIES})
+                                  ${Teuchos_LIBRARIES}
+                                  ${HDF5_LIBRARIES})
 endif()                                
 
 #
@@ -138,7 +140,7 @@ endif()
 #
 add_amanzi_executable(concat
                       SOURCE concat.cc)
-                                
+
 #
 #
 #
