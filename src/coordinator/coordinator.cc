@@ -494,7 +494,6 @@ double Coordinator::get_dt(bool after_fail) {
 bool Coordinator::advance(double t_old, double t_new) {
   double dt = t_new - t_old;
 
-  S_next_->set_last_time(S_next_->time());
   S_next_->advance_time(dt);
   bool fail = pk_->AdvanceStep(t_old, t_new, false);
   fail |= !pk_->ValidStep();

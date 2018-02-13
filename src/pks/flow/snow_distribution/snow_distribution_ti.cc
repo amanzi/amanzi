@@ -228,10 +228,15 @@ bool SnowDistribution::ModifyPredictor(double h, Teuchos::RCP<const TreeVector> 
         Teuchos::RCP<TreeVector> u) {
   std::vector<double> time(1, S_next_->time());
   double Qe = (*precip_func_)(time);
-  u->PutScalar(Qe);
+  time[0] = S_inter_->time();
+  double Qe_p = (*precip_func_)(time);
+  if (Qe_p <= 0.) {
+    u->PutScalar(Qe);
+  } else {
+    u->Scale(Qe/Qe_p);
+  }
   return true;
 }
-
 
 }  // namespace Flow
 }  // namespace Amanzi
