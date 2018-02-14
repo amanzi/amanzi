@@ -66,13 +66,14 @@ void SnowSkinPotentialEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
   Teuchos::RCP<const CompositeVector> precip = S->GetFieldData(precip_key_);
   Teuchos::RCP<const CompositeVector> elev = S->GetFieldData(elev_key_);
 
-  
+
+  // note factor of 10 accounts for change from precip in m SWE to actual m.
   result->Update(1.0, *elev, 1.0, *pd, 0.0);
   if (factor_ > 0.) {
-    result->Update(1.0, *sd, factor_, *precip, 1.0);
+    result->Update(1.0, *sd, 10*factor_, *precip, 1.0);
   } else {
     double dt = S->time() - S->last_time();
-    result->Update(1.0, *sd, dt, *precip, 1.0);
+    result->Update(1.0, *sd, 10*dt, *precip, 1.0);
   }
 }
 

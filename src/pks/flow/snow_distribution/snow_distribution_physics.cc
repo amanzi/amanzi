@@ -60,11 +60,11 @@ SnowDistribution::AddAccumulation_(const Teuchos::Ptr<CompositeVector>& g) {
   Teuchos::RCP<const CompositeVector> cv1 =
       S_next_->GetFieldData(Keys::getKey(domain_,"cell_volume"));
 
+  // note 10 is for conversion from precip m SWE to actual m
   double dt = S_next_->time() - S_inter_->time();
-  double dt_factor = dt_factor_ > 0 ? dt_factor_ : dt;
-  g->ViewComponent("cell",false)->Multiply(dt_factor/dt,
+  g->ViewComponent("cell",false)->Multiply(10*dt_factor_/dt,
           *cv1->ViewComponent("cell",false), h1_positive, 1.);
-  g->ViewComponent("cell",false)->Multiply(-dt_factor/dt,
+  g->ViewComponent("cell",false)->Multiply(-10*dt_factor_/dt,
           *cv1->ViewComponent("cell",false), h0_positive, 1.);
 }
 

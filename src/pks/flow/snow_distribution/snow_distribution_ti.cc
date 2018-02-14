@@ -105,7 +105,7 @@ int SnowDistribution::ApplyPreconditioner(Teuchos::RCP<const TreeVector> u, Teuc
   int ierr = preconditioner_->ApplyInverse(*u->Data(), *Pu->Data());
   //  double dt = S_next_->time() - S_next_->last_time();
   //  Pu->Data()->Scale(1./dt);
-  Pu->Data()->Scale(1./dt_factor_);
+  Pu->Data()->Scale(1./(10*dt_factor_));
 
 #if DEBUG_FLAG
   db_->WriteVector("PC*h_res", Pu->Data().ptr(), true);
@@ -146,7 +146,7 @@ void SnowDistribution::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVec
   double dt = S_next_->time() - S_next_->last_time();
   //  ASSERT(dt > 0.);
   //  dcond->Scale(1./dt);
-  dcond->Scale(1./dt_factor_);
+  dcond->Scale(1./(10*dt_factor_));
   
   // calculating the operator is done in 3 steps:
   // 1. Create all local matrices.

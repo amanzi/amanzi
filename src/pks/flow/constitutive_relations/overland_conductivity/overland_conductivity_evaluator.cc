@@ -122,7 +122,7 @@ void OverlandConductivityEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
       } else if (dt_) {
         double dt = S->time() - S->last_time();
         for (int i=0; i!=ncomp; ++i) {
-          result_v[0][i] = model_->Conductivity(factor_*depth_v[0][i], slope_v[0][i], coef_v[0][i]*factor_/dt);
+          result_v[0][i] = model_->Conductivity(10*factor_*depth_v[0][i], slope_v[0][i], coef_v[0][i]);
         }
       } else {
         for (int i=0; i!=ncomp; ++i) {
@@ -166,7 +166,7 @@ void OverlandConductivityEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
       } else if (dt_) {
         double dt = S->time() - S->last_time();
         for (int i=0; i!=ncomp; ++i) {
-          result_v[0][i] = model_->Conductivity(factor_*depth_v[0][i], slope_v[0][i],coef_v[0][i]*factor_/dt, pd_depth_v[0][i],frac_cond_v[0][i],drag_v[0][i]);
+          result_v[0][i] = model_->Conductivity(10*factor_*depth_v[0][i], slope_v[0][i],coef_v[0][i], pd_depth_v[0][i],frac_cond_v[0][i],drag_v[0][i]);
         }
       } else {
         for (int i=0; i!=ncomp; ++i) {
@@ -215,7 +215,7 @@ void OverlandConductivityEvaluator::EvaluateFieldPartialDerivative_(
       } else if (dt_) {
         double dt = S->time() - S->last_time();
         for (int i=0; i!=ncomp; ++i) {
-          result_v[0][i] = model_->DConductivityDDepth(factor_*depth_v[0][i], slope_v[0][i], coef_v[0][i]*factor_/dt) * factor_;
+          result_v[0][i] = model_->DConductivityDDepth(10*factor_*depth_v[0][i], slope_v[0][i], coef_v[0][i]) * 10*factor_;
         }
       } else {
         for (int i=0; i!=ncomp; ++i) {
@@ -249,7 +249,7 @@ void OverlandConductivityEvaluator::EvaluateFieldPartialDerivative_(
       } else if (dt_) {
         double dt = S->time() - S->last_time();
         for (int i=0; i!=ncomp; ++i) {
-          result_v[0][i] = model_->Conductivity(factor_*depth_v[0][i], slope_v[0][i], coef_v[0][i]*factor_/dt) * factor_;
+          result_v[0][i] = model_->Conductivity(10*factor_*depth_v[0][i], slope_v[0][i], coef_v[0][i]) * 10*factor_;
         }
       } else {
         for (int i=0; i!=ncomp; ++i) {
