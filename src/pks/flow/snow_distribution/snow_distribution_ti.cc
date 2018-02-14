@@ -103,8 +103,9 @@ int SnowDistribution::ApplyPreconditioner(Teuchos::RCP<const TreeVector> u, Teuc
 
   // apply the preconditioner
   int ierr = preconditioner_->ApplyInverse(*u->Data(), *Pu->Data());
-  double dt = S_next_->time() - S_next_->last_time();
-  Pu->Data()->Scale(1./dt);
+  //  double dt = S_next_->time() - S_next_->last_time();
+  //  Pu->Data()->Scale(1./dt);
+  Pu->Data()->Scale(1./dt_factor_);
 
 #if DEBUG_FLAG
   db_->WriteVector("PC*h_res", Pu->Data().ptr(), true);
@@ -143,8 +144,9 @@ void SnowDistribution::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVec
 
   // NOTE: this scaling of dt is wrong, but keeps consistent with the diffusion derivatives
   double dt = S_next_->time() - S_next_->last_time();
-  ASSERT(dt > 0.);
-  dcond->Scale(1./dt);
+  //  ASSERT(dt > 0.);
+  //  dcond->Scale(1./dt);
+  dcond->Scale(1./dt_factor_);
   
   // calculating the operator is done in 3 steps:
   // 1. Create all local matrices.
@@ -165,11 +167,11 @@ void SnowDistribution::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVec
   std::vector<double>& Acc_cells = preconditioner_acc_->local_matrices()->vals;
 
   int ncells = cell_volume.MyLength();
-  double dt_factor = dt_factor_ > 0 ? dt_factor_ : dt;
+  //  double dt_factor = dt_factor_ > 0 ? dt_factor_ : dt;
   for (int c=0; c!=ncells; ++c) {
     // accumulation term
     // NOTE: this scaling of dt is wrong, but keeps consistent with the diffusion derivatives
-    Acc_cells[c] += cell_volume[0][c]/dt_factor;
+    Acc_cells[c] += cell_volume[0][c]/dt;
   }
 
   preconditioner_diff_->ApplyBCs(true, true);
@@ -226,17 +228,83 @@ double SnowDistribution::ErrorNorm(Teuchos::RCP<const TreeVector> u,
 
 bool SnowDistribution::ModifyPredictor(double h, Teuchos::RCP<const TreeVector> u0,
         Teuchos::RCP<TreeVector> u) {
-  std::vector<double> time(1, S_next_->time());
-  double Qe = (*precip_func_)(time);
-  time[0] = S_inter_->time();
-  double Qe_p = (*precip_func_)(time);
-  if (Qe_p <= 0.) {
-    u->PutScalar(Qe);
-  } else {
-    u->Scale(Qe/Qe_p);
-  }
-  return true;
+  return false;
 }
+
+
+
+
+// Advance PK from time t_old to time t_new. True value of the last 
+// parameter indicates drastic change of boundary and/or source terms
+// that may need PK's attention.
+//
+//  ALL SORTS OF FRAGILITY and UGLINESS HERE!
+//  DO NOT USE THIS OUT IN THE WILD!
+//
+//  1. this MUST go first
+//  2. it must be PERFECT NON_OVERLAPPING with everything else.  I'm not
+//     sure exactly what that means.  Something like, nothing that this PK
+//     writes can be read by anything else, except for the precip snow at
+//     the end?  But it should be ok?
+//  3. Exatrapolating in the timestepper should break things, so don't.
+//  4. set: pk's distribution time, potential's dt factor
+bool
+SnowDistribution::AdvanceStep(double t_old, double t_new, bool reinit) {
+  if (t_new <= my_next_time_) {
+    if (vo_->os_OK(Teuchos::VERB_HIGH))
+      *vo_->os() << "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++" << std::endl
+                 << "BIG STEP still good!" << std::endl
+                 << "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++" << std::endl;
+    return false;
+  }
+
+  Teuchos::OSTab out = vo_->getOSTab();
+  if (vo_->os_OK(Teuchos::VERB_HIGH))
+    *vo_->os() << "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++" << std::endl
+               << "BIG STEP Advancing: t0 = " << t_old
+               << " t1 = " << t_old + dt_factor_ << " h = " << dt_factor_ << std::endl
+               << "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++" << std::endl;
+  
+  std::vector<double> time(1, t_old);
+  double Ps_old = (*precip_func_)(time);
+  time[0] = t_old + dt_factor_;
+  double Ps_new = (*precip_func_)(time);
+  double Ps_mean = (Ps_new + Ps_old)/2.;
+  S_inter_->GetFieldData(key_,name_)->PutScalar(Ps_mean);
+  S_next_->GetFieldData(key_,name_)->PutScalar(Ps_mean);
+
+  double my_dt = -1;
+  double my_t_old = t_old;
+  double my_t_new = t_old;
+  while (my_t_old < t_old + dt_factor_) {
+    my_dt = PK_PhysicalBDF_Default::get_dt();
+    my_t_new = std::min(my_t_old + my_dt, t_old + dt_factor_);
+    
+    S_next_->set_time(my_t_new);
+    S_next_->set_last_time(my_t_old);
+    bool failed = PK_PhysicalBDF_Default::AdvanceStep(my_t_old, my_t_new, false);
+
+    if (failed) {
+      *S_next_ = *S_inter_;
+      continue;
+    }
+
+    PK_PhysicalBDF_Default::CommitStep(my_t_old, my_t_new, S_next_);
+    *S_inter_ = *S_next_;
+    my_t_old = my_t_new;
+  }
+  
+  my_next_time_ = t_old + dt_factor_;
+
+  // clean up
+  S_next_->set_time(t_new);
+  S_next_->set_last_time(t_old);
+  S_inter_->set_time(t_old);
+
+  return false;
+}
+
+
 
 }  // namespace Flow
 }  // namespace Amanzi

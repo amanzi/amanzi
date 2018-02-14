@@ -34,7 +34,9 @@ SnowDistribution::SnowDistribution(Teuchos::ParameterList& FElist,
                                    const Teuchos::RCP<State>& S,
                                    const Teuchos::RCP<TreeVector>& solution) :
     PK(FElist, plist, S, solution),
-    PK_PhysicalBDF_Default(FElist, plist, S, solution) {
+    PK_PhysicalBDF_Default(FElist, plist, S, solution),
+    my_next_time_(-9.e80)
+{
   // set a default absolute tolerance
   if (!plist_->isParameter("absolute error tolerance"))
     plist_->set("absolute error tolerance", .01); // h * nl

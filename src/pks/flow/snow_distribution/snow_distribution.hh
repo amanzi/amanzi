@@ -45,14 +45,6 @@ public:
   //virtual void initialize(const Teuchos::Ptr<State>& S);
   virtual void Initialize(const Teuchos::Ptr<State>& S);
 
-  // -- Commit any secondary (dependent) variables.
-  // virtual void commit_state(double dt, const Teuchos::RCP<State>& S) {
-  //   PKPhysicalBDFBase::commit_state(dt,S);
-  // }
-  virtual void CommitStep(double t_old, double t_new, const Teuchos::RCP<State>& S){
-    PK_PhysicalBDF_Default::CommitStep(t_old, t_new, S);
-  }
-
 
   // -- Update diagnostics for vis.
   //virtual void calculate_diagnostics(const Teuchos::RCP<State>& S) {}
@@ -76,7 +68,33 @@ public:
   virtual bool ModifyPredictor(double h, Teuchos::RCP<const TreeVector> u0,
           Teuchos::RCP<TreeVector> u);
   
-protected:
+  // Choose a time step compatible with physics.
+  virtual double get_dt() { return dt_factor_; }
+
+  // Advance PK from time t_old to time t_new. True value of the last 
+  // parameter indicates drastic change of boundary and/or source terms
+  // that may need PK's attention.
+  //
+  //  ALL SORTS OF FRAGILITY and UGLINESS HERE!
+  //  DO NOT USE THIS OUT IN THE WILD!
+  //
+  //  1. this MUST go first
+  //  2. it must be PERFECT NON_OVERLAPPING with everything else.  I'm not
+  //     sure exactly what that means.  Something like, nothing that this PK
+  //     writes can be read by anything else, except for the precip snow at
+  //     the end?  But it should be ok?
+  //  3. Exatrapolating in the timestepper should break things, so don't.
+  //  4. set: pk's distribution time, potential's dt factor
+  virtual bool AdvanceStep(double t_old, double t_new, bool reinit);
+
+  // -- Commit any secondary (dependent) variables.
+  void CommitStep(double t_old, double t_new, const Teuchos::RCP<State>& S) {
+    // here to keep the coordinator from calling CommitSolution() since our
+    // Advance() does it already
+  }
+  
+
+ protected:
   // setup methods
   virtual void SetupSnowDistribution_(const Teuchos::Ptr<State>& S);
   virtual void SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S);
@@ -92,7 +110,7 @@ protected:
   // -- diffusion term
   void ApplyDiffusion_(const Teuchos::Ptr<State>& S,const Teuchos::Ptr<CompositeVector>& g);
   // -- accumulation term
-  void AddAccumulation_(const Teuchos::Ptr<CompositeVector>& g);
+  virtual void AddAccumulation_(const Teuchos::Ptr<CompositeVector>& g);
 
  protected:
   // control switches
@@ -100,6 +118,7 @@ protected:
 
   bool precon_used_;
   double dt_factor_;
+  double my_next_time_;
 
   // function for precip
   Teuchos::RCP<Function> precip_func_;
