@@ -186,6 +186,7 @@ void RemapTests2DPrimal(int order, std::string disc_name,
   Teuchos::ParameterList plist;
   plist.set<std::string>("method", disc_name)
        .set<std::string>("matrix type", "flux")
+       .set<std::string>("flux formula", "upwind")
        .set<int>("method order", order)
        .set<bool>("jump operator on test function", false);
 

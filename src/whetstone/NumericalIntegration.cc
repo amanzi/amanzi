@@ -325,6 +325,36 @@ void NumericalIntegration::IntegrateMonomialsEdge_(
 
 
 /* ******************************************************************
+* Pseudo-maximum value of a polynomial.
+****************************************************************** */
+double NumericalIntegration::PolynomialMaxValue(int f, const Polynomial& poly)
+{
+  int k = poly.order();
+  int m = k / 2;
+  double pmax;
+  AmanziGeometry::Point x1(d_), x2(d_), xm(d_);
+
+  if (d_ == 2) {
+    Entity_ID_List nodes;
+    mesh_->face_get_nodes(f, &nodes);
+
+    mesh_->node_get_coordinates(nodes[0], &x1);
+    mesh_->node_get_coordinates(nodes[1], &x2);
+
+    pmax = std::max(fabs(poly.Value(x1)), fabs(poly.Value(x2)));
+    for (int n = 0; n <= m; ++n) { 
+      xm = x1 * q1d_points[m][n] + x2 * (1.0 - q1d_points[m][n]);
+      pmax = std::max(pmax, fabs(poly.Value(xm)));
+    }
+  } else {
+    ASSERT(false);
+  }
+
+  return pmax;
+}
+
+
+/* ******************************************************************
 * Re-scale polynomial coefficients.
 ****************************************************************** */
 double NumericalIntegration::MonomialNaturalScale(int k, double volume) {

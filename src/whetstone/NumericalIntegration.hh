@@ -81,6 +81,9 @@ class NumericalIntegration {
     return IntegratePolynomialsEdge(x1, x2, polys);
   }
 
+  // various bounds
+  double PolynomialMaxValue(int f, const Polynomial& poly);
+
   // miscalleneous: order is not used yet
   void set_order(int order) { order_ = order; }
 

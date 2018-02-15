@@ -104,8 +104,7 @@ void PDE_AdvectionRiemann::InitAdvection_(Teuchos::ParameterList& plist)
   }
 
   // -- fluxes
-  flux_ = plist.get<std::string>("flux formula", "remap");
-  riemann_ = plist.get<std::string>("riemann problem", "average");
+  flux_ = plist.get<std::string>("flux formula", "Rusavov");
   jump_on_test_ = plist.get<bool>("jump operator on test function", true);
 }
 
@@ -122,22 +121,22 @@ void PDE_AdvectionRiemann::UpdateMatrices(
 
   WhetStone::DenseMatrix Aface;
 
-  if (method_ == "dg modal" && matrix_ == "flux") {
+  if (method_ == "dg modal" && matrix_ == "flux" && flux_ == "upwind") {
     WhetStone::DG_Modal dg(mesh_);
     dg.set_order(method_order_);
     for (int f = 0; f < nfaces_owned; ++f) {
-      dg.FluxMatrixPoly(f, (*u)[f], Aface, jump_on_test_);
+      dg.FluxMatrixUpwind(f, (*u)[f], Aface, jump_on_test_);
       matrix[f] = Aface;
     }
-  }
-  else if (method_ == "dg modal" && matrix_ == "velocity jump") {
-    AmanziMesh::Entity_ID_List cells;
+  } else if (method_ == "dg modal" && matrix_ == "flux" && flux_ == "Rusanov") {
     WhetStone::DG_Modal dg(mesh_);
     dg.set_order(method_order_);
+    AmanziMesh::Entity_ID_List cells;
     for (int f = 0; f < nfaces_owned; ++f) {
-      mesh_->face_get_cells(f, (WhetStone::Parallel_type)WhetStone::USED, &cells);
-      dg.FaceMatrixAverage(f, (*u)[f], Aface);
-std::cout << Aface << std::endl;
+      mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+      int c1 = cells[0];
+      int c2 = (cells.size() == 2) ? cells[1] : c1;
+      dg.FluxMatrixRusanov(f, (*Kc_)[c1], (*Kc_)[c2], (*Kf_)[f], Aface);
       matrix[f] = Aface;
     }
   }

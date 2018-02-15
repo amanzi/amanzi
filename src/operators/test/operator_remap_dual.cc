@@ -42,8 +42,8 @@
 #include "PDE_Reaction.hh"
 
 #include "AnalyticDG00.hh"
+#include "AnalyticDG01.hh"
 #include "AnalyticDG04.hh"
-#include "AnalyticDG05.hh"
 
 namespace Amanzi {
 
@@ -66,10 +66,10 @@ class RemapDG : public Explicit_TI::fnBase<CompositeVector> {
 
     // cell-baced velocities and Jacobian matrices
     WhetStone::Entity_ID_List faces;
-    uc_.resize(ncells_owned_);
-    J_.resize(ncells_owned_);
+    uc_.resize(ncells_wghost_);
+    J_.resize(ncells_wghost_);
 
-    for (int c = 0; c < ncells_owned_; ++c) {
+    for (int c = 0; c < ncells_wghost_; ++c) {
       mesh_->cell_get_faces(c, &faces);
 
       std::vector<WhetStone::VectorPolynomial> vvf;
@@ -82,7 +82,6 @@ class RemapDG : public Explicit_TI::fnBase<CompositeVector> {
     }
 
     velf_ = Teuchos::rcp(new std::vector<WhetStone::Polynomial>(nfaces_wghost_));
-    velf_jump_ = Teuchos::rcp(new std::vector<WhetStone::Polynomial>(nfaces_owned_));
     velc_ = Teuchos::rcp(new std::vector<WhetStone::VectorPolynomial>(ncells_wghost_));
     jac_ = Teuchos::rcp(new std::vector<WhetStone::Polynomial>(ncells_wghost_));
 
@@ -105,11 +104,9 @@ class RemapDG : public Explicit_TI::fnBase<CompositeVector> {
 
   void Setup(const Teuchos::Ptr<Operators::PDE_Abstract> op_adv,
              const Teuchos::Ptr<Operators::PDE_AdvectionRiemann> op_flux,
-             const Teuchos::Ptr<Operators::PDE_AdvectionRiemann> op_jump,
              const Teuchos::Ptr<Operators::PDE_Reaction> op_reac) {
     op_adv_ = op_adv;
     op_flux_ = op_flux;
-    op_jump_ = op_jump;
     op_reac_ = op_reac;
   }
 
@@ -119,8 +116,9 @@ class RemapDG : public Explicit_TI::fnBase<CompositeVector> {
     // -- populate operators
     op_adv_->SetupPolyVector(velc_);
     op_adv_->UpdateMatrices();
+
+    op_flux_->Setup(velc_, velf_);
     op_flux_->UpdateMatrices(velf_.ptr());
-    op_jump_->UpdateMatrices(velf_jump_.ptr());
 
     op_reac_->Setup(jac_);
     op_reac_->UpdateMatrices(Teuchos::null);
@@ -210,22 +208,6 @@ class RemapDG : public Explicit_TI::fnBase<CompositeVector> {
       // determinant of Jacobian
       maps_->Determinant(t, J_[c], (*jac_)[c]);
     }
-
-    // penalty matrix
-    AmanziMesh::Entity_ID_List cells;
-    for (int f = 0; f < nfaces_owned_; ++f) {
-      AmanziGeometry::Point normal = mesh_->face_normal(f);
-      normal *= -0.5;
-
-      mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
-      int ncells = cells.size();
-
-      if (ncells == 2) {
-        int c1 = cells[0];  
-        int c2 = cells[1];  
-        (*velf_jump_)[f] = ((*velc_)[c1] - (*velc_)[c2]) * normal; 
-      }
-    }
   }
 
  private:
@@ -239,11 +221,11 @@ class RemapDG : public Explicit_TI::fnBase<CompositeVector> {
   Teuchos::RCP<std::vector<WhetStone::Polynomial> > jac_;
 
   Teuchos::Ptr<Operators::PDE_Abstract> op_adv_;
-  Teuchos::Ptr<Operators::PDE_AdvectionRiemann> op_flux_, op_jump_;
+  Teuchos::Ptr<Operators::PDE_AdvectionRiemann> op_flux_;
   Teuchos::Ptr<Operators::PDE_Reaction> op_reac_;
 
   Teuchos::RCP<std::vector<WhetStone::VectorPolynomial> > velc_;
-  Teuchos::RCP<std::vector<WhetStone::Polynomial> > velf_, velf_jump_;
+  Teuchos::RCP<std::vector<WhetStone::Polynomial> > velf_;
 
   std::vector<WhetStone::VectorPolynomial> velf_vec_;
 
@@ -284,7 +266,7 @@ void RemapTestsDualRK(int order_p, int order_u,
 
   // create initial mesh
   MeshFactory meshfactory(&comm);
-  meshfactory.set_partitioner(AmanziMesh::Partitioner_type::METIS);
+  meshfactory.set_partitioner(AmanziMesh::Partitioner_type::ZOLTAN_RCB);
   meshfactory.preference(FrameworkPreference({MSTK}));
 
   Teuchos::RCP<const Mesh> mesh0;
@@ -338,6 +320,8 @@ void RemapTestsDualRK(int order_p, int order_u,
       }
       xv += uv * ds;
     }
+    xv[0] = (1 - yv[1]) * yv[0] + yv[1] * std::pow(yv[0], 0.5);
+    xv[1] = yv[1];
 
     nodeids.push_back(v);
     new_positions.push_back(xv);
@@ -370,7 +354,7 @@ void RemapTestsDualRK(int order_p, int order_u,
   // we need dg to compute scaling of basis functions
   WhetStone::DG_Modal dg(order_p, mesh0);
 
-  AnalyticDG04 ana(mesh0, order_p);
+  AnalyticDG01 ana(mesh0, order_p);
 
   for (int c = 0; c < ncells_wghost; c++) {
     const AmanziGeometry::Point& xc = mesh0->cell_centroid(c);
@@ -415,6 +399,7 @@ void RemapTestsDualRK(int order_p, int order_u,
   Teuchos::ParameterList plist;
   plist.set<std::string>("method", "dg modal")
        .set<std::string>("matrix type", "flux")
+       .set<std::string>("flux formula", "Rusanov")
        .set<int>("method order", order_p)
        .set<bool>("jump operator on test function", true);
 
@@ -428,10 +413,6 @@ void RemapTestsDualRK(int order_p, int order_u,
 
   Teuchos::RCP<PDE_AdvectionRiemann> op_flux = Teuchos::rcp(new PDE_AdvectionRiemann(plist, mesh0));
   auto global_op = op_flux->global_operator();
-
-  // Attach jump operator to the flux operator
-  plist.set<std::string>("matrix type", "velocity jump");
-  Teuchos::RCP<PDE_AdvectionRiemann> op_jump = Teuchos::rcp(new PDE_AdvectionRiemann(plist, global_op));
 
   // Attach volumetric advection operator to the flux operator.
   // We modify the existing parameter list.
@@ -453,7 +434,7 @@ void RemapTestsDualRK(int order_p, int order_u,
 
   // explicit time integration
   CompositeVector p1aux(*p1);
-  remap.Setup(op_adv.ptr(), op_flux.ptr(), op_jump.ptr(), op_reac.ptr());
+  remap.Setup(op_adv.ptr(), op_flux.ptr(), op_reac.ptr());
   Explicit_TI::RK<CompositeVector> rk(remap, rk_method, p1aux);
 
   remap.ChangeVariables(0.0, *p1, p1aux, true);
@@ -535,7 +516,7 @@ void RemapTestsDualRK(int order_p, int order_u,
     mass1 += mass1_c;
 
     // optional projection on the space of polynomials 
-    if (order_p > 0 && dim == 2) {
+    if (order_p > 0 && order_p < 3 && dim == 2) {
       poly = dg.CalculatePolynomial(c, data);
       numi.ChangeBasisNaturalToRegular(c, poly);
 
@@ -618,20 +599,25 @@ TEST(REMAP_DUAL_VEM) {
 */
 
 TEST(REMAP2D_DG_QUADRATURE_ERROR) {
-  RemapTestsDualRK(2,1, Amanzi::Explicit_TI::tvd_3rd_order, "VEM", "",  16, 16,0, 0.05);
-  RemapTestsDualRK(2,1, Amanzi::Explicit_TI::tvd_3rd_order, "VEM", "",  32, 32,0, 0.05 / 2);
-  RemapTestsDualRK(2,1, Amanzi::Explicit_TI::tvd_3rd_order, "VEM", "",  64, 64,0, 0.05 / 4);
-  RemapTestsDualRK(2,1, Amanzi::Explicit_TI::tvd_3rd_order, "VEM", "", 128,128,0, 0.05 / 8);
-  RemapTestsDualRK(2,1, Amanzi::Explicit_TI::tvd_3rd_order, "VEM", "", 256,256,0, 0.05 / 16);
+/*
+  RemapTestsDualRK(2,2, Amanzi::Explicit_TI::heun_euler, "VEM", "", 2,1,0, 0.1);
+  RemapTestsDualRK(2,2, Amanzi::Explicit_TI::heun_euler, "VEM", "", 2,1,0, 0.05 / 2);
+  RemapTestsDualRK(2,2, Amanzi::Explicit_TI::heun_euler, "VEM", "", 2,1,0, 0.05 / 4);
+*/
+  RemapTestsDualRK(1,2, Amanzi::Explicit_TI::tvd_3rd_order, "VEM", "",  16, 16,0, 0.05);
+  RemapTestsDualRK(1,2, Amanzi::Explicit_TI::tvd_3rd_order, "VEM", "",  32, 32,0, 0.05 / 2);
+  RemapTestsDualRK(1,2, Amanzi::Explicit_TI::tvd_3rd_order, "VEM", "",  64, 64,0, 0.05 / 4);
+  RemapTestsDualRK(1,2, Amanzi::Explicit_TI::tvd_3rd_order, "VEM", "", 128,128,0, 0.05 / 8);
+  RemapTestsDualRK(1,2, Amanzi::Explicit_TI::tvd_3rd_order, "VEM", "", 256,256,0, 0.05 / 16);
 }
 
 /*
 TEST(REMAP2D_DG_QUADRATURE_ERROR) {
-  RemapTestsDualRK(2,3, Amanzi::Explicit_TI::tvd_3rd_order, "VEM", "test/median15x16.exo", 0,0,0, 0.05);
-  RemapTestsDualRK(2,3, Amanzi::Explicit_TI::tvd_3rd_order, "VEM", "test/median32x33.exo", 0,0,0, 0.05 / 2);
-  RemapTestsDualRK(2,3, Amanzi::Explicit_TI::tvd_3rd_order, "VEM", "test/median63x64.exo", 0,0,0, 0.05 / 4);
-  RemapTestsDualRK(2,3, Amanzi::Explicit_TI::tvd_3rd_order, "VEM", "test/median127x128.exo", 0,0,0, 0.05 / 8);
-  RemapTestsDualRK(2,3, Amanzi::Explicit_TI::tvd_3rd_order, "VEM", "test/median255x256.exo", 0,0,0, 0.05 / 16);
+  RemapTestsDualRK(2,1, Amanzi::Explicit_TI::tvd_3rd_order, "VEM", "test/median15x16.exo", 0,0,0, 0.05);
+  RemapTestsDualRK(2,1, Amanzi::Explicit_TI::tvd_3rd_order, "VEM", "test/median32x33.exo", 0,0,0, 0.05 / 2);
+  RemapTestsDualRK(2,1, Amanzi::Explicit_TI::tvd_3rd_order, "VEM", "test/median63x64.exo", 0,0,0, 0.05 / 4);
+  RemapTestsDualRK(2,1, Amanzi::Explicit_TI::tvd_3rd_order, "VEM", "test/median127x128.exo", 0,0,0, 0.05 / 8);
+  RemapTestsDualRK(2,1, Amanzi::Explicit_TI::tvd_3rd_order, "VEM", "test/median255x256.exo", 0,0,0, 0.05 / 16);
 }
 */
 

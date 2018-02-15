@@ -3329,8 +3329,7 @@ This section to be written.
 
    <ParameterList name="operators">  <!-- parent list -->
      <ParameterList name="convection operator">
-       <Parameter name="flux formula" type="string" value="NavierStokes"/>
-       <Parameter name="riemann problem" type="string" value="continuous"/>
+       <Parameter name="flux formula" type="string" value="Rusanov"/>
      </ParameterList>
    </ParameterList>
 
@@ -3665,11 +3664,8 @@ The structure of the schema is described in the previous section.
   * `"method`" [string] defines a discretization method. The available options 
     are `"DG order 0`", `"DG order 1`".
 
-  * `"riemann problem`" [string] defines a method for calculating Riemann flux. 
-    are `"upwind`", `"downwind`", `"average`".
-
   * `"flux formula`" [string] defines type of the flux. The available options 
-    are `"NavierStokes`", `nd "remap`".
+    are `"Rusanov`" (default), `"upwind`", and `"NavierStokes`".
 
   * `"reconstruction order`" [int] defines accuracy of this discrete operator.
 
@@ -3682,8 +3678,7 @@ The structure of the schema is described in the previous section.
   <ParameterList name="OPERATOR_NAME">
     <Parameter name="method" type="string" value="DG order 0"/>
     <Parameter name="reconstruction order" type="int" value="0"/>
-    <Parameter name="riemann problem" type="string" value="average"/>
-    <Parameter name="flux formula" type="string" value="NavierStokes"/>
+    <Parameter name="flux formula" type="string" value="Rusanov"/>
     <ParameterList name="schema domain">
       <Parameter name="location" type="Array(string)" value="{node, face}"/>
       <Parameter name="type" type="Array(string)" value="{scalar, normal component}"/>
