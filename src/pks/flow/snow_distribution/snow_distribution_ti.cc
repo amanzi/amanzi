@@ -296,6 +296,11 @@ SnowDistribution::AdvanceStep(double t_old, double t_new, bool reinit) {
   
   my_next_time_ = t_old + dt_factor_;
 
+  // commit the precip to the OLD time as well -- this ensures that
+  // even if a coupled PK fails at any point in the coming
+  // distribution time, we keep the new value.
+  *S_inter_->GetFieldData(key_,name_) = *S_next_->GetFieldData(key_);
+
   // clean up
   S_next_->set_time(t_new);
   S_next_->set_last_time(t_old);
