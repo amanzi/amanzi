@@ -320,8 +320,8 @@ void RemapTestsDualRK(int order_p, int order_u,
       }
       xv += uv * ds;
     }
-    xv[0] = (1 - yv[1]) * yv[0] + yv[1] * std::pow(yv[0], 0.5);
-    xv[1] = yv[1];
+    // xv[0] = (1 - yv[1]) * yv[0] + yv[1] * std::pow(yv[0], 0.5);
+    // xv[1] = yv[1];
 
     nodeids.push_back(v);
     new_positions.push_back(xv);
@@ -354,7 +354,7 @@ void RemapTestsDualRK(int order_p, int order_u,
   // we need dg to compute scaling of basis functions
   WhetStone::DG_Modal dg(order_p, mesh0);
 
-  AnalyticDG01 ana(mesh0, order_p);
+  AnalyticDG04 ana(mesh0, order_p);
 
   for (int c = 0; c < ncells_wghost; c++) {
     const AmanziGeometry::Point& xc = mesh0->cell_centroid(c);
@@ -455,8 +455,9 @@ void RemapTestsDualRK(int order_p, int order_u,
   remap.ChangeVariables(1.0, *p1, p2, false);
 
   // calculate error in the new basis
+  double l20_err(0.0), inf0_err(0.0);
   double pl2_err(0.0), pinf_err(0.0), area(0.0);
-  double mass1(0.0), ql2_err(0.0), qinf_err(0.0);
+  double ql2_err(0.0), qinf_err(0.0), mass1(0.0);
 
   Entity_ID_List nodes;
   std::vector<int> dirs;
@@ -479,17 +480,15 @@ void RemapTestsDualRK(int order_p, int order_u,
     WhetStone::Polynomial poly(dg.CalculatePolynomial(c, data));
     numi.ChangeBasisNaturalToRegular(c, poly);
 
-    if (nk == 1) {
-      // const AmanziGeometry::Point& xg = maps->cell_geometric_center(1, c);
-      const AmanziGeometry::Point& xg = mesh1->cell_centroid(c);
-      double tmp = p2c[0][c] - ana.SolutionExact(xg, 0.0);
+    // const AmanziGeometry::Point& xg = maps->cell_geometric_center(1, c);
+    const AmanziGeometry::Point& xg = mesh1->cell_centroid(c);
+    double err = p2c[0][c] - ana.SolutionExact(xg, 0.0);
 
-      pinf_err = std::max(pinf_err, fabs(tmp));
-      pl2_err += tmp * tmp * area_c;
+    inf0_err = std::max(inf0_err, fabs(err));
+    l20_err += err * err * area_c;
+    p2c_err[0][c] = fabs(err);
 
-      p2c_err[0][c] = fabs(tmp);
-    }
-    else {
+    if (nk > 1) {
       mesh0->cell_get_nodes(c, &nodes);
       int nnodes = nodes.size();  
       for (int i = 0; i < nnodes; ++i) {
@@ -542,9 +541,9 @@ void RemapTestsDualRK(int order_p, int order_u,
   }
 
   // parallel collective operations
-  double err_in[4] = {pl2_err, area, mass1, ql2_err};
-  double err_out[4];
-  mesh1->get_comm()->SumAll(err_in, err_out, 4);
+  double err_in[5] = {pl2_err, area, mass1, ql2_err, l20_err};
+  double err_out[5];
+  mesh1->get_comm()->SumAll(err_in, err_out, 5);
 
   double err_tmp = pinf_err;
   mesh1->get_comm()->MaxAll(&err_tmp, &pinf_err, 1);
@@ -552,17 +551,22 @@ void RemapTestsDualRK(int order_p, int order_u,
   err_tmp = qinf_err;
   mesh1->get_comm()->MaxAll(&err_tmp, &qinf_err, 1);
 
+  err_tmp = inf0_err;
+  mesh1->get_comm()->MaxAll(&err_tmp, &inf0_err, 1);
+
   err_tmp = gcl_err;
   mesh1->get_comm()->MaxAll(&err_tmp, &gcl_err, 1);
 
   // error tests
   pl2_err = std::pow(err_out[0], 0.5);
   ql2_err = std::pow(err_out[3], 0.5);
+  l20_err = std::pow(err_out[4], 0.5);
   CHECK(pl2_err < 0.12 / (order_p + 1));
 
   if (MyPID == 0) {
-    printf("nx=%3d  L2=%12.8g %12.8g  Inf=%12.8g %12.8g dMass=%10.4g  dArea=%10.6g\n", 
-        nx, pl2_err, ql2_err, pinf_err, qinf_err, err_out[2] - mass0, 1.0 - err_out[1]);
+    printf("nx=%3d  L2=%12.8g %12.8g %12.8g  Inf=%12.8g %12.8g %12.8g dMass=%10.4g  dArea=%10.6g\n", 
+        nx, l20_err, pl2_err, ql2_err, 
+            inf0_err, pinf_err, qinf_err, err_out[2] - mass0, 1.0 - err_out[1]);
   }
 
   // visualization
@@ -598,28 +602,23 @@ TEST(REMAP_DUAL_VEM) {
 }
 */
 
-TEST(REMAP2D_DG_QUADRATURE_ERROR) {
 /*
-  RemapTestsDualRK(2,2, Amanzi::Explicit_TI::heun_euler, "VEM", "", 2,1,0, 0.1);
-  RemapTestsDualRK(2,2, Amanzi::Explicit_TI::heun_euler, "VEM", "", 2,1,0, 0.05 / 2);
-  RemapTestsDualRK(2,2, Amanzi::Explicit_TI::heun_euler, "VEM", "", 2,1,0, 0.05 / 4);
-*/
-  RemapTestsDualRK(1,2, Amanzi::Explicit_TI::tvd_3rd_order, "VEM", "",  16, 16,0, 0.05);
-  RemapTestsDualRK(1,2, Amanzi::Explicit_TI::tvd_3rd_order, "VEM", "",  32, 32,0, 0.05 / 2);
-  RemapTestsDualRK(1,2, Amanzi::Explicit_TI::tvd_3rd_order, "VEM", "",  64, 64,0, 0.05 / 4);
-  RemapTestsDualRK(1,2, Amanzi::Explicit_TI::tvd_3rd_order, "VEM", "", 128,128,0, 0.05 / 8);
-  RemapTestsDualRK(1,2, Amanzi::Explicit_TI::tvd_3rd_order, "VEM", "", 256,256,0, 0.05 / 16);
+TEST(REMAP2D_DG_QUADRATURE_ERROR) {
+  RemapTestsDualRK(2,1, Amanzi::Explicit_TI::tvd_3rd_order, "VEM", "",  16, 16,0, 0.05);
+  RemapTestsDualRK(2,1, Amanzi::Explicit_TI::tvd_3rd_order, "VEM", "",  32, 32,0, 0.05 / 2);
+  RemapTestsDualRK(2,1, Amanzi::Explicit_TI::tvd_3rd_order, "VEM", "",  64, 64,0, 0.05 / 4);
+  RemapTestsDualRK(2,1, Amanzi::Explicit_TI::tvd_3rd_order, "VEM", "", 128,128,0, 0.05 / 8);
+  RemapTestsDualRK(2,1, Amanzi::Explicit_TI::tvd_3rd_order, "VEM", "", 256,256,0, 0.05 / 16);
 }
+*/
 
-/*
 TEST(REMAP2D_DG_QUADRATURE_ERROR) {
-  RemapTestsDualRK(2,1, Amanzi::Explicit_TI::tvd_3rd_order, "VEM", "test/median15x16.exo", 0,0,0, 0.05);
-  RemapTestsDualRK(2,1, Amanzi::Explicit_TI::tvd_3rd_order, "VEM", "test/median32x33.exo", 0,0,0, 0.05 / 2);
-  RemapTestsDualRK(2,1, Amanzi::Explicit_TI::tvd_3rd_order, "VEM", "test/median63x64.exo", 0,0,0, 0.05 / 4);
-  RemapTestsDualRK(2,1, Amanzi::Explicit_TI::tvd_3rd_order, "VEM", "test/median127x128.exo", 0,0,0, 0.05 / 8);
-  RemapTestsDualRK(2,1, Amanzi::Explicit_TI::tvd_3rd_order, "VEM", "test/median255x256.exo", 0,0,0, 0.05 / 16);
+  RemapTestsDualRK(1,2, Amanzi::Explicit_TI::tvd_3rd_order, "VEM", "test/median15x16.exo", 0,0,0, 0.05);
+  RemapTestsDualRK(1,2, Amanzi::Explicit_TI::tvd_3rd_order, "VEM", "test/median32x33.exo", 0,0,0, 0.05 / 2);
+  RemapTestsDualRK(1,2, Amanzi::Explicit_TI::tvd_3rd_order, "VEM", "test/median63x64.exo", 0,0,0, 0.05 / 4);
+  RemapTestsDualRK(1,2, Amanzi::Explicit_TI::tvd_3rd_order, "VEM", "test/median127x128.exo", 0,0,0, 0.05 / 8);
+  RemapTestsDualRK(1,2, Amanzi::Explicit_TI::tvd_3rd_order, "VEM", "test/median255x256.exo", 0,0,0, 0.05 / 16);
 }
-*/
 
 /*
 TEST(REMAP2D_DG_QUADRATURE_ERROR) {

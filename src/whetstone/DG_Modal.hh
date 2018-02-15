@@ -91,9 +91,6 @@ class DG_Modal : public BilinearForm {
   // create polynomial given array of its coefficients
   Polynomial CalculatePolynomial(int c, const DenseVector& coefs) const;
 
-  // placeholder of elliptic projector
-  void CoVelocityCell(int c, const std::vector<const Polynomial*> vf, VectorPolynomial& vc);
-
   // miscalleneous
   // -- order of polynomials in each cell
   void set_order(int order) { order_ = order; }

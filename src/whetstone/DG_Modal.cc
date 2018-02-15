@@ -529,10 +529,10 @@ int DG_Modal::FluxMatrixRusanov(
       polys[2] = &q0;
       coef10 = numi_.IntegratePolynomialsFace(f, polys);
 
-      A(k, l) = coef00 / scale;
-      A(size + k, l) = -coef01 / scale;
-      A(k, size + l) = coef10 / scale;
-      A(size + k, size + l) = -coef11 / scale;
+      A(l, k) = coef00 / scale;
+      A(size + l, k) = -coef01 / scale;
+      A(l, size + k) = coef10 / scale;
+      A(size + l, size + k) = -coef11 / scale;
     }
   }
 
@@ -741,49 +741,6 @@ int DG_Modal::FaceMatrixPenalty(int f, double Kf, DenseMatrix& A)
   }
 
   return 0;
-}
-
-
-/* ******************************************************************
-* Selects mean value of the polynomial defined on cell boundary.
-* NOTE: This is a part of the elliptic projector, see MeshMaps.cc
-****************************************************************** */
-void DG_Modal::CoVelocityCell(
-   int c, const std::vector<const Polynomial*> vf, VectorPolynomial& vc)
-{
-  Entity_ID_List faces;
-  std::vector<int> dirs;
-  mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
-  int nfaces = faces.size();
-
-  const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
-
-  AmanziGeometry::Point u0(d_);
-  WhetStone::Monomial mono(d_, 1);
-
-  for (int n = 0; n < nfaces; ++n) {
-    int f = faces[n];
-    double area = mesh_->face_area(f);
-
-    for (auto it = mono.begin(); it.end() <= 1; ++it) {
-      Polynomial p(d_, it.multi_index(), 1.0);
-      p.set_origin(xc);
-
-      Polynomial q(*vf[n]);
-      q *= 1.0 / area;
-      q.ChangeOrigin(xc);
-      p *= q;
-
-      int k = it.MonomialPosition();
-      u0[k] += dirs[n] * numi_.IntegratePolynomialFace(f, p);
-    }
-  }
-
-  u0 /= mesh_->cell_volume(c);
-  for (int i = 0; i < d_; ++i) {
-    vc[i].ChangeOrigin(xc);
-    vc[i](0, 0) = u0[i];
-  }
 }
 
 
