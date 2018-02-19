@@ -26,26 +26,29 @@ namespace SurfaceBalance {
 namespace SEBPhysics {
 
 
-// Struct of thermodynamic properties
-struct ThermoProperties {
+// Struct of skin data
+struct GroundProperties {
   double temp;                          // temperature [K]
   double pressure;                      // [Pa]
   double porosity;                      // [-]
   double density_w;                     // density [kg/m^3]
-  double relative_humidity;             // [-]
-  double saturated_vaporpressure;       // [kPa]
-  double actual_vaporpressure;          // [kPa]
-  double dewpoint_temp;                 // [K]
+  double dz;                            // [m]
+  double albedo;                        // [-]
+  double emissivity;                    // [-]
+  double saturation_gas;                // [-]
+  double roughness;                     // [m] surface roughness of a bare domain
 
-  ThermoProperties() :
+  GroundProperties() :
       temp(MY_LOCAL_NAN),
-      pressure(101325.),
-      porosity(1.),
-      density_w(1000.),
-      relative_humidity(MY_LOCAL_NAN),
-      saturated_vaporpressure(MY_LOCAL_NAN),
-      actual_vaporpressure(MY_LOCAL_NAN),
-      dewpoint_temp(MY_LOCAL_NAN) {}
+      pressure(MY_LOCAL_NAN),
+      porosity(MY_LOCAL_NAN),
+      density_w(MY_LOCAL_NAN),
+      dz(MY_LOCAL_NAN),
+      albedo(MY_LOCAL_NAN),
+      emissivity(MY_LOCAL_NAN),
+      saturation_gas(MY_LOCAL_NAN),
+      roughness(MY_LOCAL_NAN)
+  {}
 
   void UpdateVaporPressure();
 };
@@ -53,111 +56,96 @@ struct ThermoProperties {
 
 // Struct of snow state
 struct SnowProperties {
-  double ht;                    // snow depth [m] (NOT SWE!)
+  double height;                // snow depth [m] (NOT SWE!)
   double density;               // snow density [ kg / m^3 ]
   double age;                   // snow age [days]
-  double SWE;                   // SNOW WATER EQUIVALANCE [m]  
+  double SWE;                   // SNOW WATER EQUIVALANCE [m]
+  double temp;                  // snow temperature [K]
+  double albedo;                // [-]
+  double emissivity;            // [-]
+  double roughness;             // [m] surface roughness of a snow-covered domain
 
   SnowProperties() :
-      ht(MY_LOCAL_NAN),
+      height(MY_LOCAL_NAN),
       density(MY_LOCAL_NAN),
       age(MY_LOCAL_NAN),
-      SWE(MY_LOCAL_NAN) {}
-};
-
-
-// Struct of surface properties for whatever is exposed to air.
-struct SurfaceProperties {
-  double albedo;
-  double Zo;
-  double emissivity;
-  double saturation_liquid; // Actually a supsurface property
-
-  SurfaceProperties() :
+      SWE(MY_LOCAL_NAN),
+      temp(MY_LOCAL_NAN),
       albedo(MY_LOCAL_NAN),
-      Zo(MY_LOCAL_NAN),
       emissivity(MY_LOCAL_NAN),
-      saturation_liquid(MY_LOCAL_NAN) {}
+      roughness(MY_LOCAL_NAN)
+  {}
 };
 
 
 // struct of input MetData.
 struct MetData {
   double Us;                    // wind speed, [m/s]
+  double Z_Us;
   double QswIn;                 // incoming short-wave radiation, [W/m^2]
-  double QlwIn;                // incoming longwave radiaton, [W/m^2]
+  double QlwIn;                 // incoming longwave radiaton, [W/m^2]
   double Ps;                    // precip snow, [m (SWE)/s]
   double Pr;                    // precip rain, [m/s]
-  ThermoProperties vp_air;
+  double air_temp;              // air temperature [K]
+  double relative_humidity;     // relative humidity [-]
 
   MetData() :
       Us(MY_LOCAL_NAN),
+      Z_Us(MY_LOCAL_NAN),
       QswIn(MY_LOCAL_NAN),
       QlwIn(MY_LOCAL_NAN),
       Ps(MY_LOCAL_NAN),
       Pr(MY_LOCAL_NAN),
-      vp_air() {}
+      air_temp(MY_LOCAL_NAN),
+      relative_humidity(MY_LOCAL_NAN) {}
 };
 
 
 // Catch-all of leftover parameters.
 struct ModelParams {
-  // densities of water in various forms
-  double density_air;
-  double density_freshsnow, density_frost;
-
-  // thermodynamic constants of water
-  double Hf, Ls, Le, Cp;
-
-  // constants for energy equations
-  double VKc;
-  double Zr;
-  double stephB;
-
-  // other constants
-  double Apa;
-  double evap_transition_width;
-  double gravity;
 
   ModelParams() :
       density_air(1.275),       // [kg/m^3]
       density_freshsnow(100.),  // [kg/m^3]
       density_frost(200.),      // [kg/m^3]
+      density_water(1000.),     // [kg/m^3]
       Hf(333500.0),             // Heat of fusion for melting snow -- [J/kg]
       Ls(2834000.0),            // Latent heat of sublimation ------- [J/kg]
       Le(2497848.),             // Latent heat of vaporization ------ [J/kg]
       Cp(1004.0),               // Specific heat of air ------------- [J/K kg]
       VKc(0.41),                // Von Karman Constant -------------- [-]
-      Zr(2.0),                  // Reference height of wind speed --- [m]
       stephB(0.00000005670373), // Stephan-Boltzmann constant ------- [W/m^2 K^4]
       Apa(101.325),             // atmospheric pressure ------------- [kPa]
       evap_transition_width(100.), // transition on evaporation from surface to evaporation from subsurface [m]
-      gravity(9.807) {}         // gravity [kg m / s^2]
+      gravity(9.807),
+      Clapp_Horn_b(1.),          // Clapp and Hornberger "b" [-]
+      R_ideal_gas(461.52)       // ideal gas law R? [Pa m^3 kg^-1 K^-1]
+  {}         // gravity [kg m / s^2]
+
+  double density_air;
+  double density_freshsnow;
+  double density_frost;
+  double density_water;
+  double Hf, Ls, Le, Cp;
+  double R_ideal_gas;
+
+  // constants for energy equations
+  double VKc;
+  double stephB;
+  double Clapp_Horn_b;
+  
+  // other constants
+  double Apa;
+  double evap_transition_width;
+  double gravity;
+
 };
 
-
-// Global ModelInput struct -- all input to SEB
-struct ModelInput {
-  double dt;                    // time step size [s]
-
-  ThermoProperties vp_ground;      // vapor pressure properties of soil/ponded water
-  ThermoProperties vp_snow;      // vapor pressure properties of snow
-  SurfaceProperties surf;
-  SnowProperties snow_old;
-  MetData met;
-
-  ModelInput() :
-      dt(MY_LOCAL_NAN),
-      vp_ground(),
-      vp_snow(),
-      surf(),
-      snow_old(),
-      met() {}
-};
 
 
 // Struct collecting energy balance terms.
-struct EnergyBalance {  // all are [J/ (m^2 s)]
+struct EnergyBalance {
+  // all are [J/ (m^2 s)]
   double fQswIn;        // incoming short-wave radiation
   double fQlwIn;        // incoming long-wave radiation
   double fQlwOut;       // outgoing long-wave radiation
@@ -165,8 +153,12 @@ struct EnergyBalance {  // all are [J/ (m^2 s)]
   double fQe;           // latent heat
   double fQc;           // heat conducted to ground surface
   double fQm;           // energy available for melting snow
+
+  // terms in latent and sensible heat
   double Dhe;           // special constant for use in e and h, precalculated for efficiency
   double Evap_Resistance;  // Rair + Rsoil See Sakaguchi & Zeng 2009
+  double Sqig;          // some form of stability function
+  double Evap_potential_difference; // vapor_pressure_air - vapor_pressure_skin
 
   EnergyBalance() :
       fQswIn(MY_LOCAL_NAN),
@@ -178,9 +170,6 @@ struct EnergyBalance {  // all are [J/ (m^2 s)]
       fQm(MY_LOCAL_NAN),
       Dhe(MY_LOCAL_NAN),
       Evap_Resistance(MY_LOCAL_NAN) {}
-
-  void BalanceViaMelt();
-  void BalanceViaConduction();
 };
 
 
@@ -200,27 +189,6 @@ struct MassBalance {    // all are in [m/s] of WATER, i.e. snow are in SWE
       MWg(MY_LOCAL_NAN) {}
 };
 
-
-// Global struct of all model output.
-struct ModelOutput {
-  double dt;                    // time step size physically possible [s]
-  EnergyBalance eb;
-  MassBalance mb;
-  SnowProperties snow_new;
-};
-
-
-// Global struct of all data.
-struct SEB {
-  // model input -- these should never change
-  ModelInput in;
-
-  // model output -- required by ATS
-  ModelOutput out;
-
-  // parameters -- physical constants, these should never change
-  ModelParams params;
-};
 
 
 // Used to calculate surface properties, prior to calling SEB.
@@ -250,7 +218,7 @@ struct Partition {
   double perIce;
   double perTundra;
 
-  double Interpolate(double snow, double water, double ice, double tundra) {
+  double Interpolate(double snow, double water, double ice, double tundra) const {
     return snow*perSnow + water*perWater + ice*perIce + tundra*perTundra;
   }
 };

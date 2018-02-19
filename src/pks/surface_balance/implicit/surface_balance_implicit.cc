@@ -79,12 +79,16 @@ SurfaceBalanceImplicit::SurfaceBalanceImplicit(Teuchos::ParameterList& pk_tree,
   min_wind_speed_ = plist_->get<double>("minimum wind speed [m/s]?", 1.0);
   wind_speed_ref_ht_ = plist_->get<double>("wind speed reference height [m]", 2.0);
 
+  // roughness parameters
+  roughness_bare_ground_ = plist_->get<double>("roughness length of bare ground [m]");
+  roughness_snow_covered_ground_ = plist_->get<double>("roughness length of snow-covered ground [m]");
+  
   // implicit/explicit snow precip
   implicit_snow_ = plist_->get<bool>("implicit snow precipitation", false);
 
   // Reading in Longwave Radation
-  longwave_input_ = plist_->get<bool>("Longwave Input", false);
-
+  longwave_input_ = FElist.isParameter(Keys::getKey(domain_,"incoming_longwave_radiation"));
+  
   // transition snow depth
   snow_ground_trans_ = plist_->get<double>("snow-ground transitional depth", 0.02);
   min_snow_trans_ = plist_->get<double>("minimum snow transitional depth", 1.e-8);
@@ -92,6 +96,9 @@ SurfaceBalanceImplicit::SurfaceBalanceImplicit(Teuchos::ParameterList& pk_tree,
     Errors::Message message("Invalid parameters: snow-ground transitional depth or minimum snow transitional depth.");
     Exceptions::amanzi_throw(message);
   }
+
+  // shortwave radiation key changes if shaded
+  sw_incoming_key_ = Keys::readKey(*plist_,domain_,"incoming shortwave radiation", "incoming_shortwave_radiation");
 
   // modify predictor by calling advance -- this is cheap and sets up BCs
   // correctly for subsurface's call to ModifyPredictorConsistentFaces()
@@ -185,8 +192,8 @@ SurfaceBalanceImplicit::Setup(const Teuchos::Ptr<State>& S) {
   S->GetField(Keys::getKey(domain_,"qE_lw_out"),name_)->set_io_checkpoint(false);
   
   // requirements: independent variables (data from MET)
-  S->RequireFieldEvaluator(Keys::getKey(domain_,"incoming_shortwave_radiation"));
-  S->RequireField(Keys::getKey(domain_,"incoming_shortwave_radiation"))->SetMesh(mesh_)
+  S->RequireFieldEvaluator(Keys::getKey(domain_,sw_incoming_key_));
+  S->RequireField(Keys::getKey(domain_,sw_incoming_key_))->SetMesh(mesh_)
       ->AddComponent("cell", AmanziMesh::CELL, 1);
 
   if (longwave_input_) {
@@ -240,16 +247,16 @@ SurfaceBalanceImplicit::Setup(const Teuchos::Ptr<State>& S) {
   S->RequireField(Keys::getKey(domain_,"ponded_depth"))->SetMesh(mesh_)
       ->AddComponent("cell", AmanziMesh::CELL, 1);
 
- //   S->RequireFieldEvaluator("saturation_liquid");
-  S->RequireField(Keys::getKey(domain_ss_,"saturation_liquid"))->SetMesh(subsurf_mesh_)
+  S->RequireFieldEvaluator(Keys::getKey(domain_ss_, "saturation_gas"));
+  S->RequireField(Keys::getKey(domain_ss_,"saturation_gas"))->SetMesh(subsurf_mesh_)
        ->AddComponent("cell", AmanziMesh::CELL, 1);
 
   S->RequireFieldEvaluator(Keys::getKey(domain_,"unfrozen_fraction"));
   S->RequireField(Keys::getKey(domain_,"unfrozen_fraction"))->SetMesh(mesh_)
       ->AddComponent("cell", AmanziMesh::CELL, 1);
 
-  S->RequireFieldEvaluator(Keys::getKey(domain_,"porosity"));
-  S->RequireField(Keys::getKey(domain_,"porosity"))->SetMesh(mesh_)
+  S->RequireFieldEvaluator(Keys::getKey(domain_ss_,"porosity"));
+  S->RequireField(Keys::getKey(domain_ss_,"porosity"))->SetMesh(mesh_)
       ->AddComponent("cell", AmanziMesh::CELL, 1);
 
 }
@@ -259,12 +266,12 @@ void
 SurfaceBalanceImplicit::Initialize(const Teuchos::Ptr<State>& S) {
   PK_PhysicalBDF_Default::Initialize(S);
 
-  SEBPhysics::SEB seb;
-
   // initialize snow density, age
   ASSERT(plist_->isSublist("initial condition"));
   Teuchos::ParameterList& ic_list = plist_->sublist("initial condition");
 
+  SEBPhysics::ModelParams seb_params;
+  
   if (!S->GetField(Keys::getKey(domain_,"snow_density"))->initialized()) {
     if (ic_list.isParameter("restart file")) {
       // initialize density, age from restart file
@@ -274,7 +281,7 @@ SurfaceBalanceImplicit::Initialize(const Teuchos::Ptr<State>& S) {
       S->GetField(Keys::getKey(domain_,"snow_age"), name_)->set_initialized();
     } else {
       // initialize density to fresh powder, age to 0
-      S->GetFieldData(Keys::getKey(domain_,"snow_density"),name_)->PutScalar(seb.params.density_freshsnow);
+      S->GetFieldData(Keys::getKey(domain_,"snow_density"),name_)->PutScalar(seb_params.density_freshsnow);
       S->GetField(Keys::getKey(domain_,"snow_density"), name_)->set_initialized();
       S->GetFieldData(Keys::getKey(domain_,"snow_age"),name_)->PutScalar(0.);
       S->GetField(Keys::getKey(domain_,"snow_age"), name_)->set_initialized();
@@ -288,7 +295,7 @@ SurfaceBalanceImplicit::Initialize(const Teuchos::Ptr<State>& S) {
   const Epetra_MultiVector& snow_ht = *S->GetFieldData(key_)->ViewComponent("cell",false);
   const Epetra_MultiVector& snow_dens = *S->GetFieldData(Keys::getKey(domain_,"snow_density"))->ViewComponent("cell",false);
   for (int c=0; c!=swe.MyLength(); ++c) {
-    swe[0][c] = snow_ht[0][c] * snow_dens[0][c] / seb.in.vp_ground.density_w;
+    swe[0][c] = snow_ht[0][c] * snow_dens[0][c] / seb_params.density_water;
   }
   S->GetField(Keys::getKey(domain_,"stored_SWE"), name_)->set_initialized();
 
@@ -399,17 +406,17 @@ SurfaceBalanceImplicit::Functional(double t_old, double t_new, Teuchos::RCP<Tree
   const Epetra_MultiVector& ponded_depth =
     *S_next_->GetFieldData(Keys::getKey(domain_,"ponded_depth"))->ViewComponent("cell", false);
 
- //  S_next_->GetFieldEvaluator("saturation_liquid")->HasFieldChanged(S_next_.ptr(), name_);
-   const Epetra_MultiVector& saturation_liquid =
-     *S_next_->GetFieldData(Keys::getKey(domain_ss_,"saturation_liquid"))->ViewComponent("cell", false);
+  S_next_->GetFieldEvaluator(Keys::getKey(domain_ss_,"saturation_gas"))->HasFieldChanged(S_next_.ptr(), name_);
+  const Epetra_MultiVector& saturation_gas =
+     *S_next_->GetFieldData(Keys::getKey(domain_ss_,"saturation_gas"))->ViewComponent("cell", false);
 
    S_next_->GetFieldEvaluator(Keys::getKey(domain_,"unfrozen_fraction"))->HasFieldChanged(S_next_.ptr(), name_);
   const Epetra_MultiVector& unfrozen_fraction =
     *S_next_->GetFieldData(Keys::getKey(domain_,"unfrozen_fraction"))->ViewComponent("cell", false);
 
-  S_next_->GetFieldEvaluator(Keys::getKey(domain_,"porosity"))->HasFieldChanged(S_next_.ptr(), name_);
-  const Epetra_MultiVector& surf_porosity =
-    *S_next_->GetFieldData(Keys::getKey(domain_,"porosity"))->ViewComponent("cell", false);
+  S_next_->GetFieldEvaluator(Keys::getKey(domain_ss_,"porosity"))->HasFieldChanged(S_next_.ptr(), name_);
+  const Epetra_MultiVector& porosity =
+    *S_next_->GetFieldData(Keys::getKey(domain_ss_,"porosity"))->ViewComponent("cell", false);
 
 
   // pull Met data
@@ -417,15 +424,15 @@ SurfaceBalanceImplicit::Functional(double t_old, double t_new, Teuchos::RCP<Tree
   const Epetra_MultiVector& air_temp =
     *S_next_->GetFieldData(Keys::getKey(domain_,"air_temperature"))->ViewComponent("cell", false);
 
-  S_next_->GetFieldEvaluator(Keys::getKey(domain_,"incoming_shortwave_radiation"))->HasFieldChanged(S_next_.ptr(), name_);
+  S_next_->GetFieldEvaluator(Keys::getKey(domain_,sw_incoming_key_))->HasFieldChanged(S_next_.ptr(), name_);
   const Epetra_MultiVector& incoming_shortwave =
-    *S_next_->GetFieldData(Keys::getKey(domain_,"incoming_shortwave_radiation"))->ViewComponent("cell", false);
+    *S_next_->GetFieldData(Keys::getKey(domain_,sw_incoming_key_))->ViewComponent("cell", false);
 
  Teuchos::RCP<const Epetra_MultiVector> incoming_longwave = Teuchos::null;
   if (longwave_input_) {
     S_next_->GetFieldEvaluator(Keys::getKey(domain_,"incoming_longwave_radiation"))->HasFieldChanged(S_next_.ptr(), name_);
-       incoming_longwave =
-         S_next_->GetFieldData(Keys::getKey(domain_,"incoming_longwave_radiation"))->ViewComponent("cell", false);
+    incoming_longwave =
+        S_next_->GetFieldData(Keys::getKey(domain_,"incoming_longwave_radiation"))->ViewComponent("cell", false);
   }
 
   S_next_->GetFieldEvaluator(Keys::getKey(domain_,"relative_humidity"))->HasFieldChanged(S_next_.ptr(), name_);
@@ -470,13 +477,18 @@ SurfaceBalanceImplicit::Functional(double t_old, double t_new, Teuchos::RCP<Tree
   Epetra_MultiVector& surf_water_flux_temp =
     *S_next_->GetFieldData(Keys::getKey(domain_,"mass_source_temperature"), name_)->ViewComponent("cell", false);
 
+  // loop over each cell
   unsigned int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
-  for (unsigned int c=0; c!=ncells; ++c) { // START CELL LOOP  ##########################
+  for (unsigned int c=0; c!=ncells; ++c) {
     dcvo = Teuchos::null;
     if (vo_->os_OK(Teuchos::VERB_EXTREME)) dcvo = db_->GetVerboseObject(c, rank);
     Teuchos::OSTab dctab = dcvo == Teuchos::null ? vo_->getOSTab() : dcvo->getOSTab();
 
-    SEBPhysics::SEB seb;
+    SEBPhysics::ModelParams seb_params;
+    SEBPhysics::GroundProperties seb_surf;
+    SEBPhysics::SnowProperties seb_snow;
+    SEBPhysics::MetData seb_met;
+    SEBPhysics::SurfaceParams seb_surf_pars;
 
     double snow_depth = snow_depth_old[0][c];
     double snow_dens = snow_dens_old[0][c];
@@ -485,111 +497,107 @@ SurfaceBalanceImplicit::Functional(double t_old, double t_new, Teuchos::RCP<Tree
     if (!implicit_snow_) {
       double Ps = std::max(precip_snow[0][c], 0.);
       swe += dt * Ps;
-      snow_depth += dt * Ps * seb.in.vp_ground.density_w / seb.params.density_freshsnow;
+      snow_depth += dt * Ps * seb_params.density_water / seb_params.density_freshsnow;
       snow_age = swe > 0. ? (snow_age * stored_SWE_old[0][c]) / swe : 0.; // age of new snow is 0 here, as increment happens internally
-      snow_dens = snow_depth > 0. ? swe * seb.in.vp_ground.density_w / snow_depth : seb.params.density_freshsnow;
+      snow_dens = snow_depth > 0. ? swe * seb_params.density_water / snow_depth : seb_params.density_freshsnow;
     }
 
     if (snow_depth >= snow_ground_trans_ ||
         snow_depth < min_snow_trans_) {
       // Evaluate the model as usual
       // Initialize the SEB object
-      seb.in.dt = dt;
 
       // -- ground properties
-      seb.in.vp_ground.temp = surf_temp[0][c];
-      seb.in.vp_ground.pressure = surf_pres[0][c];
+      seb_surf.temp = surf_temp[0][c];
+      seb_surf.pressure = surf_pres[0][c];
+      seb_surf.roughness = roughness_bare_ground_;
+
       AmanziMesh::Entity_ID subsurf_f = mesh_->entity_get_parent(AmanziMesh::CELL, c);
       AmanziMesh::Entity_ID_List cells;
       subsurf_mesh_->face_get_cells(subsurf_f, AmanziMesh::OWNED, &cells);
       ASSERT(cells.size() == 1);
-      seb.in.surf.saturation_liquid = saturation_liquid[0][cells[0]];
-
-      // -- snow properties
-      seb.in.snow_old.ht = snow_depth < min_snow_trans_ ? 0. : snow_depth;
-      seb.in.snow_old.density = snow_dens;
-      seb.in.snow_old.age = snow_age;
-      seb.in.snow_old.SWE = swe;
-      seb.out.snow_new = seb.in.snow_old;
-      seb.in.vp_snow.temp = 273.15;
-
-      // -- met data
-      seb.params.Zr = wind_speed_ref_ht_;
-      seb.in.met.Us = std::max(wind_speed[0][c], min_wind_speed_);
-      seb.in.met.QswIn = incoming_shortwave[0][c];
-      seb.in.met.Ps = implicit_snow_ ? std::max(precip_snow[0][c],0.) : 0.; // protect against wayward snow distribution models
-      seb.in.met.Pr = precip_rain[0][c];
-      seb.in.met.vp_air.temp = air_temp[0][c];
-      seb.in.met.vp_air.relative_humidity = relative_humidity[0][c];
-     
-     if (longwave_input_) {
-          seb.in.met.QlwIn = (*incoming_longwave)[0][c];
-      }else{     
-          seb.in.met.vp_air.UpdateVaporPressure();
-          double e_air = std::pow(10*seb.in.met.vp_air.actual_vaporpressure, seb.in.met.vp_air.temp / 2016.);
-          e_air = 1.08 * (1 - std::exp(-e_air));
-          seb.in.met.QlwIn = e_air * seb.params.stephB * std::pow(seb.in.met.vp_air.temp,4); // Add if statement here ~ AA
-      }
-
-      // -- smoothed/interpolated surface properties
-      SEBPhysics::SurfaceParams surf_pars;
-
+      seb_surf.saturation_gas = saturation_gas[0][cells[0]];
+      seb_surf.density_w = seb_params.density_water; // NOTE: could update this to use true density! --etc
+      seb_surf.dz = mesh_->cell_volume(cells[0]) / mesh_->face_area(subsurf_f) / 2.0;
+      ASSERT(seb_surf.dz > 0.);
+      
       SEBPhysics::Partition al_part = SEBPhysics::Partitioner()
-          .CalcPartition(seb.in.snow_old.ht, ponded_depth[0][c], unfrozen_fraction[0][c]);
-      seb.in.surf.albedo = al_part.Interpolate(
-          SEBPhysics::CalcAlbedoSnow(seb.in.snow_old.density),
-          surf_pars.a_water, surf_pars.a_ice, surf_pars.a_tundra);
+          .CalcPartition(0., ponded_depth[0][c], unfrozen_fraction[0][c]);
+      seb_surf.albedo = al_part.Interpolate(1., seb_surf_pars.a_water, seb_surf_pars.a_ice, seb_surf_pars.a_tundra);
 
       SEBPhysics::Partition other_part = SEBPhysics::Partitioner(0.02, 0.02)
-          .CalcPartition(seb.in.snow_old.ht, ponded_depth[0][c], unfrozen_fraction[0][c]);
-      seb.in.surf.emissivity = other_part.Interpolate(surf_pars.e_snow,
-              surf_pars.e_water, surf_pars.e_ice, surf_pars.e_tundra);
-      seb.in.vp_ground.porosity = other_part.Interpolate(1., 1., 1., surf_porosity[0][c]);
+          .CalcPartition(0., ponded_depth[0][c], unfrozen_fraction[0][c]);
+      seb_surf.emissivity = other_part.Interpolate(1., seb_surf_pars.e_water, seb_surf_pars.e_ice, seb_surf_pars.e_tundra);
+      seb_surf.porosity = other_part.Interpolate(1., 1., 1., porosity[0][cells[0]]);
+      
+      // -- snow properties
+      seb_snow.height = snow_depth < min_snow_trans_ ? 0. : snow_depth;
+      seb_snow.density = snow_dens;
+      seb_snow.age = snow_age;
+      seb_snow.SWE = swe;
+      seb_snow.temp = 273.15;
+      seb_snow.albedo = SEBPhysics::CalcAlbedoSnow(snow_dens);
+      seb_snow.emissivity = seb_surf_pars.e_snow;
+      seb_snow.roughness = roughness_snow_covered_ground_;
 
-      // -- roughness factor
-      seb.in.surf.Zo = SEBPhysics::CalcRoughnessFactor(seb.in.met.vp_air.temp);
+      // -- met data
+      seb_met.Z_Us = wind_speed_ref_ht_;
+      seb_met.Us = std::max(wind_speed[0][c], min_wind_speed_);
+      seb_met.QswIn = incoming_shortwave[0][c];
+      seb_met.Ps = implicit_snow_ ? std::max(precip_snow[0][c],0.) : 0.; // protect against wayward snow distribution models
+      seb_met.Pr = precip_rain[0][c];
+      seb_met.air_temp = air_temp[0][c];
+      seb_met.relative_humidity = relative_humidity[0][c];
+     
+      if (longwave_input_) {
+        seb_met.QlwIn = (*incoming_longwave)[0][c];
+      } else {     
+        seb_met.QlwIn = SEBPhysics::CalcIncomingLongwave(seb_met.air_temp, seb_met.relative_humidity, seb_params.stephB);
+      }
 
       // Run the model
-      SEBPhysics::CalculateSurfaceBalance(seb, false, dcvo);
+      auto result = SEBPhysics::CalculateSurfaceBalance(dt, seb_surf, seb_snow, seb_met, seb_params, false, dcvo);
+      SEBPhysics::SnowProperties& seb_snow_new = std::get<0>(result);
+      SEBPhysics::EnergyBalance& seb_eb = std::get<1>(result);
+      SEBPhysics::MassBalance& seb_mb = std::get<2>(result);
 
       // Evaluate the residual
-      res[0][c] =  snow_depth_new[0][c] - seb.out.snow_new.ht;
+      res[0][c] = snow_depth_new[0][c] - seb_snow_new.height;
 
       // Pull the output
       // -- fluxes
-      surf_energy_flux[0][c] = 1.e-6 * seb.out.eb.fQc; // convert to MJ for ATS
-      surf_water_flux[0][c] = seb.out.mb.MWg;
-      surf_water_flux_temp[0][c] = seb.out.mb.MWg_temp;
+      surf_energy_flux[0][c] = 1.e-6 * seb_eb.fQc; // convert to MJ for ATS
+      surf_water_flux[0][c] = seb_mb.MWg;
+      surf_water_flux_temp[0][c] = seb_mb.MWg_temp;
 
       // -- vapor flux to cells
       //     surface vapor flux is treated as a volumetric source for the subsurface.
       // surface mass sources are in m^3 water / (m^2 s)
       // subsurface mass sources are in mol water / (m^3 s)
-      vapor_flux[0][cells[0]] = seb.out.mb.MWg_subsurf
-          * mesh_->cell_volume(c) * seb.in.vp_ground.density_w / 0.0180153
-          / subsurf_mesh_->cell_volume(cells[0]);
+      vapor_flux[0][cells[0]] = seb_mb.MWg_subsurf * mesh_->cell_volume(c) * seb_surf.density_w / 0.0180153
+                                / subsurf_mesh_->cell_volume(cells[0]);
 
       // -- snow properties
-      snow_age_new[0][c] = seb.out.snow_new.age;
-      snow_dens_new[0][c] = seb.out.snow_new.density;
-      snow_temp_new[0][c] = seb.in.vp_snow.temp;
-      stored_SWE_new[0][c] = seb.out.snow_new.SWE;
-
+      snow_age_new[0][c] = seb_snow_new.age;
+      snow_dens_new[0][c] = seb_snow_new.density;
+      snow_temp_new[0][c] = seb_snow_new.temp;
+      stored_SWE_new[0][c] = seb_snow_new.SWE;
+      
       // -- diagnostics
-      albedo[0][c] = seb.in.surf.albedo;
-      evaporative_flux[0][c] = seb.out.mb.Me;
-      qE_latent_heat[0][c] = seb.out.eb.fQe;
-      qE_sensible_heat[0][c] = seb.out.eb.fQh;
-      qE_lw_out[0][c] = seb.out.eb.fQlwOut;
+      albedo[0][c] = seb_snow.height > snow_ground_trans_ ? seb_snow.albedo : seb_surf.albedo;
+      evaporative_flux[0][c] = -seb_mb.Me;
+      qE_latent_heat[0][c] = seb_eb.fQe;
+      qE_sensible_heat[0][c] = seb_eb.fQh;
+      qE_lw_out[0][c] = seb_eb.fQlwOut;
 
       if (eval_derivatives_) {
         // evaluate FD derivative of energy flux wrt surface temperature
-        SEBPhysics::SEB seb2(seb);
-        seb.params.Zr = wind_speed_ref_ht_;
-        seb2.in.vp_ground.temp += T_eps;
+        SEBPhysics::GroundProperties seb_surf2(seb_surf);
+        seb_surf2.temp += T_eps;
         // for now ignore the effect on unfrozen fraction, and therefore on albedo and emissivity
-        SEBPhysics::CalculateSurfaceBalance(seb2);
-        (*dsurf_energy_flux_dT)[0][c] = 1.e-6 * (seb2.out.eb.fQc - seb.out.eb.fQc) / T_eps; // MJ
+        auto result2 = SEBPhysics::CalculateSurfaceBalance(dt, seb_surf2, seb_snow, seb_met, seb_params, false, dcvo);
+        SEBPhysics::EnergyBalance& seb_eb2 = std::get<1>(result2);
+        (*dsurf_energy_flux_dT)[0][c] = 1.e-6 * (seb_eb2.fQc - seb_eb.fQc) / T_eps; // convert to MJ
       }
 
     } else {
@@ -599,159 +607,148 @@ SurfaceBalanceImplicit::Functional(double t_old, double t_new, Teuchos::RCP<Tree
       double theta = snow_depth / snow_ground_trans_;
 
       // Evaluate the model as usual
-      // Initialize the SEB object
-      seb.in.dt = dt;
-
       // -- ground properties
-      seb.in.vp_ground.temp = surf_temp[0][c];
-      seb.in.vp_ground.pressure = surf_pres[0][c];
+      seb_surf.temp = surf_temp[0][c];
+      seb_surf.pressure = surf_pres[0][c];
+      seb_surf.roughness = roughness_bare_ground_;
+
       AmanziMesh::Entity_ID subsurf_f = mesh_->entity_get_parent(AmanziMesh::CELL, c);
       AmanziMesh::Entity_ID_List cells;
       subsurf_mesh_->face_get_cells(subsurf_f, AmanziMesh::OWNED, &cells);
       ASSERT(cells.size() == 1);
-      seb.in.surf.saturation_liquid = saturation_liquid[0][cells[0]];
-
-      // -- snow properties
-      seb.in.snow_old.ht = snow_ground_trans_;
-      seb.in.snow_old.density = snow_dens;
-      seb.in.snow_old.age = snow_age;
-      seb.in.snow_old.SWE = swe / theta;
-      seb.out.snow_new = seb.in.snow_old;
-      seb.in.vp_snow.temp = 273.15;
-
-      // -- met data
-      seb.params.Zr = wind_speed_ref_ht_;
-      seb.in.met.Us = std::max(wind_speed[0][c], min_wind_speed_);
-      seb.in.met.QswIn = incoming_shortwave[0][c];
-      seb.in.met.Ps = implicit_snow_ ? std::max(precip_snow[0][c],0.) : 0.;
-      seb.in.met.Pr = precip_rain[0][c];
-      seb.in.met.vp_air.temp = air_temp[0][c];
-      seb.in.met.vp_air.relative_humidity = relative_humidity[0][c];
-
-      if (longwave_input_) {
-	seb.in.met.QlwIn = (*incoming_longwave)[0][c];
-      } else {
-	seb.in.met.vp_air.UpdateVaporPressure();
-	double e_air = std::pow(10*seb.in.met.vp_air.actual_vaporpressure, seb.in.met.vp_air.temp / 2016.);
-	e_air = 1.08 * (1 - std::exp(-e_air));
-	seb.in.met.QlwIn = e_air * seb.params.stephB * std::pow(seb.in.met.vp_air.temp,4); // Add if statement here ~ AA
-      }
-
-      // -- smoothed/interpolated surface properties
-      SEBPhysics::SurfaceParams surf_pars;
-
+      seb_surf.saturation_gas = saturation_gas[0][cells[0]];
+      seb_surf.density_w = seb_params.density_water; // NOTE: could update this to use true density! --etc
+      seb_surf.dz = mesh_->cell_volume(cells[0]) / mesh_->face_area(subsurf_f) / 2.0;
+      ASSERT(seb_surf.dz > 0.);
+      
       SEBPhysics::Partition al_part = SEBPhysics::Partitioner()
-          .CalcPartition(seb.in.snow_old.ht, ponded_depth[0][c], unfrozen_fraction[0][c]);
-      seb.in.surf.albedo = al_part.Interpolate(
-          SEBPhysics::CalcAlbedoSnow(seb.in.snow_old.density),
-          surf_pars.a_water, surf_pars.a_ice, surf_pars.a_tundra);
+          .CalcPartition(0., ponded_depth[0][c], unfrozen_fraction[0][c]);
+      seb_surf.albedo = al_part.Interpolate(1., seb_surf_pars.a_water, seb_surf_pars.a_ice, seb_surf_pars.a_tundra);
 
       SEBPhysics::Partition other_part = SEBPhysics::Partitioner(0.02, 0.02)
-          .CalcPartition(seb.in.snow_old.ht, ponded_depth[0][c], unfrozen_fraction[0][c]);
-      seb.in.surf.emissivity = other_part.Interpolate(surf_pars.e_snow,
-              surf_pars.e_water, surf_pars.e_ice, surf_pars.e_tundra);
-      seb.in.vp_ground.porosity = other_part.Interpolate(1., 1., 1., surf_porosity[0][c]);
-
-      // -- roughness factor
-      seb.in.surf.Zo = SEBPhysics::CalcRoughnessFactor(seb.in.met.vp_air.temp);
-
-      // Initialize a second model, with bare ground
-      SEBPhysics::SEB seb_bare(seb);
-      seb_bare.params.Zr = wind_speed_ref_ht_;
-
+          .CalcPartition(0., ponded_depth[0][c], unfrozen_fraction[0][c]);
+      seb_surf.emissivity = other_part.Interpolate(1., seb_surf_pars.e_water, seb_surf_pars.e_ice, seb_surf_pars.e_tundra);
+      seb_surf.porosity = other_part.Interpolate(1., 1., 1., porosity[0][cells[0]]);
+      
       // -- snow properties
-      seb_bare.in.snow_old.ht = 0.;
-      seb_bare.out.snow_new.ht = 0.;
+      seb_snow.height = snow_ground_trans_;
+      seb_snow.density = snow_dens;
+      seb_snow.age = snow_age;
+      seb_snow.SWE = swe / theta;
+      seb_snow.temp = 273.15;
+      seb_snow.albedo = SEBPhysics::CalcAlbedoSnow(snow_dens);
+      seb_snow.emissivity = seb_surf_pars.e_snow;
+      seb_snow.roughness = roughness_snow_covered_ground_;
 
-      // -- smoothed interpolated surface properties
-      al_part = SEBPhysics::Partitioner()
-          .CalcPartition(seb_bare.in.snow_old.ht, ponded_depth[0][c], unfrozen_fraction[0][c]);
-      seb_bare.in.surf.albedo = al_part.Interpolate(
-          SEBPhysics::CalcAlbedoSnow(seb_bare.in.snow_old.density),
-          surf_pars.a_water, surf_pars.a_ice, surf_pars.a_tundra);
+      SEBPhysics::SnowProperties seb_snow_bare;
+      seb_snow_bare.height = 0.;
+      seb_snow_bare.density = seb_params.density_freshsnow;
+      seb_snow_bare.age = 0.;
+      seb_snow_bare.SWE = 0.;
+      seb_snow_bare.temp = 273.15;
+      seb_snow_bare.albedo = 1.;
+      seb_snow_bare.emissivity = 1.;
+      seb_snow_bare.roughness = 0.;
+      
+      // -- met data
+      seb_met.Z_Us = wind_speed_ref_ht_;
+      seb_met.Us = std::max(wind_speed[0][c], min_wind_speed_);
+      seb_met.QswIn = incoming_shortwave[0][c];
+      seb_met.Ps = implicit_snow_ ? std::max(precip_snow[0][c],0.) : 0.; // protect against wayward snow distribution models
+      seb_met.Pr = precip_rain[0][c];
+      seb_met.air_temp = air_temp[0][c];
+      seb_met.relative_humidity = relative_humidity[0][c];
+     
+     if (longwave_input_) {
+       seb_met.QlwIn = (*incoming_longwave)[0][c];
+      } else {     
+       seb_met.QlwIn = SEBPhysics::CalcIncomingLongwave(seb_met.air_temp, seb_met.relative_humidity, seb_params.stephB);
+     }
 
-      other_part = SEBPhysics::Partitioner(0.02, 0.02)
-          .CalcPartition(seb_bare.in.snow_old.ht, ponded_depth[0][c], unfrozen_fraction[0][c]);
-      seb_bare.in.surf.emissivity = other_part.Interpolate(surf_pars.e_snow,
-              surf_pars.e_water, surf_pars.e_ice, surf_pars.e_tundra);
-      seb_bare.in.vp_ground.porosity = other_part.Interpolate(1., 1., 1., surf_porosity[0][c]);
+     // Run the model
+     auto result = SEBPhysics::CalculateSurfaceBalance(dt, seb_surf, seb_snow, seb_met, seb_params, false, dcvo);
+     auto result_bare = SEBPhysics::CalculateSurfaceBalance(dt, seb_surf, seb_snow_bare, seb_met, seb_params, false, dcvo);
 
-      // Run the model for both snowy case and bare case
-      SEBPhysics::CalculateSurfaceBalance(seb, false, dcvo);
-      SEBPhysics::CalculateSurfaceBalance(seb_bare, false, dcvo);
+     SEBPhysics::SnowProperties& seb_snow_new = std::get<0>(result);
+     SEBPhysics::EnergyBalance& seb_eb = std::get<1>(result);
+     SEBPhysics::MassBalance& seb_mb = std::get<2>(result);
 
-      // Evaluate the residual
-      double snow_depth_new_tmp = theta * seb.out.snow_new.ht + (1-theta) * seb_bare.out.snow_new.ht;
-      res[0][c] = snow_depth_new[0][c] - snow_depth_new_tmp;
+     SEBPhysics::SnowProperties& bare_snow_new = std::get<0>(result_bare);
+     SEBPhysics::EnergyBalance& bare_eb = std::get<1>(result_bare);
+     SEBPhysics::MassBalance& bare_mb = std::get<2>(result_bare);
 
-      // Pull the output
-      // -- fluxes
-      surf_energy_flux[0][c] = 1.e-6 * (theta * seb.out.eb.fQc + (1-theta) * seb_bare.out.eb.fQc); // MJ
-      surf_water_flux[0][c] = theta * seb.out.mb.MWg + (1-theta) * seb_bare.out.mb.MWg;
-      if (surf_water_flux[0][c] > 0.) {
-        if (seb.out.mb.MWg > 0.) {
-          if (seb_bare.out.mb.MWg > 0.) {
-            // both are positive, sources from both, average temp
-            surf_water_flux_temp[0][c] = (theta * seb.out.mb.MWg * seb.out.mb.MWg_temp
-                                          + (1-theta) * seb_bare.out.mb.MWg * seb_bare.out.mb.MWg_temp) / surf_water_flux[0][c];
-          } else {
-            // snow portion is positive, bare is negative, so take only from snow
-            surf_water_flux_temp[0][c] = seb.out.mb.MWg_temp;
-          }
-        } else {
-          // snow portion is negative, take only from snow.  Note if both are negative, both temps are just the air temp, which is fine.
-          surf_water_flux_temp[0][c] = seb_bare.out.mb.MWg_temp;
-        }
-      } else {
-        surf_water_flux_temp[0][c] = seb.out.mb.MWg_temp;
-      }
-      // -- vapor flux to cells
-      //     surface vapor flux is treated as a volumetric source for the subsurface.
-      // surface mass sources are in m^3 water / (m^2 s)
-      // subsurface mass sources are in mol water / (m^3 s)
-      double mean_flux = theta * seb.out.mb.MWg_subsurf + (1-theta) * seb_bare.out.mb.MWg_subsurf;
-      vapor_flux[0][cells[0]] = mean_flux
-          * mesh_->cell_volume(c) * seb.in.vp_ground.density_w / 0.0180153
-          / subsurf_mesh_->cell_volume(cells[0]);
+     // Evaluate the residual
+     double snow_depth_new_tmp = theta * seb_snow_new.height + (1-theta) * bare_snow_new.height;
+     res[0][c] = snow_depth_new[0][c] - snow_depth_new_tmp;
 
-      // -- snow properties: SWE averaged
-      double total_swe = theta * seb.out.snow_new.ht * seb.out.snow_new.density / seb.in.vp_ground.density_w
-          + (1-theta) * seb_bare.out.snow_new.ht * seb_bare.out.snow_new.density / seb_bare.in.vp_ground.density_w;
-      if (snow_depth_new_tmp > 0.) {
-        snow_age_new[0][c] = (theta * seb.out.snow_new.ht * seb.out.snow_new.age
-                              + (1-theta) * seb_bare.out.snow_new.ht * seb_bare.out.snow_new.age) / snow_depth_new_tmp;
-        snow_dens_new[0][c] = total_swe * seb.in.vp_ground.density_w / snow_depth_new_tmp;
-        stored_SWE_new[0][c] = total_swe;
-      } else {
-        snow_age_new[0][c] = 0.;
-        snow_dens_new[0][0] = seb.out.snow_new.density;
-        stored_SWE_new[0][c] = total_swe;
-      }
-      snow_temp_new[0][c] = seb.in.vp_snow.temp;
+     // Pull the output
+     // -- fluxes
+     surf_energy_flux[0][c] = 1.e-6 * (theta * seb_eb.fQc + (1-theta) * bare_eb.fQc); // MJ
+     surf_water_flux[0][c] = theta * seb_mb.MWg + (1-theta) * bare_mb.MWg;
+     if (surf_water_flux[0][c] > 0.) {
+       if (seb_mb.MWg > 0.) {
+         if (bare_mb.MWg > 0.) {
+           // both are positive, sources from both, average temp
+           surf_water_flux_temp[0][c] = (theta * seb_mb.MWg * seb_mb.MWg_temp
+                   + (1-theta) * bare_mb.MWg * bare_mb.MWg_temp) / surf_water_flux[0][c];
+         } else {
+           // snow portion is positive, bare is negative, so take only from snow
+           surf_water_flux_temp[0][c] = seb_mb.MWg_temp;
+         }
+       } else {
+         // snow portion is negative, take only from snow.  Note if both are
+         // negative, both temps are just the air temp, which is fine.
+         surf_water_flux_temp[0][c] = bare_mb.MWg_temp;
+       }
+     } else {
+       surf_water_flux_temp[0][c] = seb_mb.MWg_temp;
+     }
+     // -- vapor flux to cells
+     //     surface vapor flux is treated as a volumetric source for the subsurface.
+     // surface mass sources are in m^3 water / (m^2 s)
+     // subsurface mass sources are in mol water / (m^3 s)
+     double mean_flux = theta * seb_mb.MWg_subsurf + (1-theta) * bare_mb.MWg_subsurf;
+     vapor_flux[0][cells[0]] = mean_flux
+                               * mesh_->cell_volume(c) * seb_surf.density_w / 0.0180153
+                               / subsurf_mesh_->cell_volume(cells[0]);
 
-      // -- diagnostics
-      albedo[0][c] = theta * seb.in.surf.albedo + (1-theta) * seb_bare.in.surf.albedo;
-      evaporative_flux[0][c] = theta * seb.out.mb.Me + (1-theta) * seb.out.mb.Me;
-      qE_latent_heat[0][c] = theta * seb.out.eb.fQe + (1-theta) * seb.out.eb.fQe;
-      qE_sensible_heat[0][c] = theta * seb.out.eb.fQh + (1-theta) * seb.out.eb.fQh;
-      qE_lw_out[0][c] = theta * seb.out.eb.fQlwOut + (1-theta) * seb.out.eb.fQlwOut;
+     // -- snow properties: SWE averaged
+     double total_swe = theta * seb_snow_new.height * seb_snow_new.density / seb_surf.density_w
+                        + (1-theta) * bare_snow_new.height * bare_snow_new.density / seb_surf.density_w;
+     if (snow_depth_new_tmp > 0.) {
+       snow_age_new[0][c] = (theta * seb_snow_new.height * seb_snow_new.age
+                             + (1-theta) * bare_snow_new.height * bare_snow_new.age) / snow_depth_new_tmp;
+       snow_dens_new[0][c] = total_swe * seb_surf.density_w / snow_depth_new_tmp;
+       stored_SWE_new[0][c] = total_swe;
+     } else {
+       snow_age_new[0][c] = 0.;
+       snow_dens_new[0][0] = seb_snow_new.density;
+       stored_SWE_new[0][c] = total_swe;
+     }
+     snow_temp_new[0][c] = seb_snow.temp;
 
-      // Evaluate derivatives, if requested
-      if (eval_derivatives_) {
-        // evaluate FD derivative of energy flux wrt surface temperature
-        SEBPhysics::SEB seb2(seb);
-        seb2.params.Zr = wind_speed_ref_ht_;
-        SEBPhysics::SEB seb2_bare(seb_bare);
-        seb2_bare.params.Zr = wind_speed_ref_ht_;
-        seb2.in.vp_ground.temp += T_eps;
-        seb2_bare.in.vp_ground.temp += T_eps;
-        // for now ignore the effect on unfrozen fraction, and therefore on albedo and emissivity
-        SEBPhysics::CalculateSurfaceBalance(seb2);
-        SEBPhysics::CalculateSurfaceBalance(seb2_bare);
-        double eflux2 = 1.e-6 * (theta * seb2.out.eb.fQc + (1-theta) * seb2_bare.out.eb.fQc);
-        
-        (*dsurf_energy_flux_dT)[0][c] = (eflux2 - surf_energy_flux[0][c]) / T_eps; // MJ
-      }
+     // -- diagnostics
+     albedo[0][c] = theta * seb_snow.albedo + (1-theta) * seb_surf.albedo;
+     evaporative_flux[0][c] = -(theta * seb_mb.Me + (1-theta) * bare_mb.Me);
+     qE_latent_heat[0][c] = theta * seb_eb.fQe + (1-theta) * bare_eb.fQe;
+     qE_sensible_heat[0][c] = theta * seb_eb.fQh + (1-theta) * bare_eb.fQh;
+     qE_lw_out[0][c] = theta * seb_eb.fQlwOut + (1-theta) * bare_eb.fQlwOut;
+
+     // Evaluate derivatives, if requested
+     if (eval_derivatives_) {
+       // evaluate FD derivative of energy flux wrt surface temperature
+       SEBPhysics::GroundProperties seb_surf2(seb_surf);
+       seb_surf2.temp += T_eps;
+       // for now ignore the effect on unfrozen fraction, and therefore on albedo and emissivity
+       auto result2 = SEBPhysics::CalculateSurfaceBalance(dt, seb_surf2, seb_snow, seb_met, seb_params, false, dcvo);
+       SEBPhysics::EnergyBalance& seb_eb2 = std::get<1>(result2);
+
+       auto result_bare2 = SEBPhysics::CalculateSurfaceBalance(dt, seb_surf2, seb_snow_bare, seb_met, seb_params, false, dcvo);
+       SEBPhysics::EnergyBalance& bare_eb2 = std::get<1>(result_bare2);
+
+       double eflux2 = 1.e-6 * (theta * seb_eb2.fQc + (1-theta) * bare_eb2.fQc); // MJ
+       (*dsurf_energy_flux_dT)[0][c] = (eflux2 - surf_energy_flux[0][c]) / T_eps;
+     }
     }
   }  // END CELL LOOP ###############################
 
@@ -767,7 +764,7 @@ SurfaceBalanceImplicit::Functional(double t_old, double t_new, Teuchos::RCP<Tree
     vecs.push_back(S_next_->GetFieldData(Keys::getKey(domain_,"relative_humidity")).ptr());
     
     vnames.push_back("Qsw_in"); 
-    vecs.push_back(S_next_->GetFieldData(Keys::getKey(domain_,"incoming_shortwave_radiation")).ptr());
+    vecs.push_back(S_next_->GetFieldData(Keys::getKey(domain_,sw_incoming_key_)).ptr());
     
     vnames.push_back("precip_rain"); 
     vecs.push_back(S_next_->GetFieldData(Keys::getKey(domain_,"precipitation_rain")).ptr());

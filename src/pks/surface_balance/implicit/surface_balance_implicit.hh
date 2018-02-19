@@ -76,11 +76,13 @@ public:
   bool implicit_snow_;
   bool modify_predictor_advance_;
   bool longwave_input_;
-
+  Key sw_incoming_key_;
+  
   double min_wind_speed_;
   double wind_speed_ref_ht_;
   double snow_ground_trans_;
   double min_snow_trans_;
+  double roughness_bare_ground_, roughness_snow_covered_ground_;
 
   Teuchos::RCP<const AmanziMesh::Mesh> subsurf_mesh_;
 
