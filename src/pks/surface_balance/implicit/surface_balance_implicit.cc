@@ -200,6 +200,10 @@ SurfaceBalanceImplicit::Setup(const Teuchos::Ptr<State>& S) {
     S->RequireFieldEvaluator(Keys::getKey(domain_,"incoming_longwave_radiation"));
     S->RequireField(Keys::getKey(domain_,"incoming_longwave_radiation"))->SetMesh(mesh_)
         ->AddComponent("cell", AmanziMesh::CELL, 1);
+  } else {
+    // it is a diagnostic
+    S->RequireField(Keys::getKey(domain_,"incoming_longwave_radiation"))->SetMesh(mesh_)
+        ->SetComponent("cell", AmanziMesh::CELL, 1);
   }
 
   S->RequireFieldEvaluator(Keys::getKey(domain_,"air_temperature"));
@@ -330,6 +334,9 @@ SurfaceBalanceImplicit::Initialize(const Teuchos::Ptr<State>& S) {
   S->GetField(Keys::getKey(domain_,"qE_latent_heat"),name_)->set_initialized();
   S->GetField(Keys::getKey(domain_,"qE_sensible_heat"),name_)->set_initialized();
   S->GetField(Keys::getKey(domain_,"qE_lw_out"),name_)->set_initialized();
+  if (!longwave_input_) {
+    S->GetField(Keys::getKey(domain_,"incoming_longwave_radiation"),name_)->set_initialized();
+  }
 
 }
 
@@ -433,10 +440,14 @@ SurfaceBalanceImplicit::Functional(double t_old, double t_new, Teuchos::RCP<Tree
     *S_next_->GetFieldData(sw_incoming_key_)->ViewComponent("cell", false);
 
  Teuchos::RCP<const Epetra_MultiVector> incoming_longwave = Teuchos::null;
+ Teuchos::RCP<Epetra_MultiVector> incoming_longwave_diag = Teuchos::null;
   if (longwave_input_) {
     S_next_->GetFieldEvaluator(Keys::getKey(domain_,"incoming_longwave_radiation"))->HasFieldChanged(S_next_.ptr(), name_);
     incoming_longwave =
         S_next_->GetFieldData(Keys::getKey(domain_,"incoming_longwave_radiation"))->ViewComponent("cell", false);
+  } else {
+    incoming_longwave_diag =
+        S_next_->GetFieldData(Keys::getKey(domain_,"incoming_longwave_radiation"), name_)->ViewComponent("cell", false);
   }
 
   S_next_->GetFieldEvaluator(Keys::getKey(domain_,"relative_humidity"))->HasFieldChanged(S_next_.ptr(), name_);
@@ -557,6 +568,7 @@ SurfaceBalanceImplicit::Functional(double t_old, double t_new, Teuchos::RCP<Tree
         seb_met.QlwIn = (*incoming_longwave)[0][c];
       } else {     
         seb_met.QlwIn = SEBPhysics::CalcIncomingLongwave(seb_met.air_temp, seb_met.relative_humidity, seb_params.stephB);
+        (*incoming_longwave_diag)[0][c] = seb_met.QlwIn;
       }
 
       // Run the model
@@ -667,6 +679,7 @@ SurfaceBalanceImplicit::Functional(double t_old, double t_new, Teuchos::RCP<Tree
        seb_met.QlwIn = (*incoming_longwave)[0][c];
       } else {     
        seb_met.QlwIn = SEBPhysics::CalcIncomingLongwave(seb_met.air_temp, seb_met.relative_humidity, seb_params.stephB);
+       (*incoming_longwave_diag)[0][c] = seb_met.QlwIn;
      }
 
      // Run the model
@@ -769,6 +782,9 @@ SurfaceBalanceImplicit::Functional(double t_old, double t_new, Teuchos::RCP<Tree
     
     vnames.push_back("Qsw_in"); 
     vecs.push_back(S_next_->GetFieldData(sw_incoming_key_).ptr());
+
+    vnames.push_back("Qlw_in");
+    vecs.push_back(S_next_->GetFieldData(Keys::getKey(domain_, "incoming_longwave_radiation")).ptr());
     
     vnames.push_back("precip_rain"); 
     vecs.push_back(S_next_->GetFieldData(Keys::getKey(domain_,"precipitation_rain")).ptr());
@@ -801,8 +817,20 @@ SurfaceBalanceImplicit::Functional(double t_old, double t_new, Teuchos::RCP<Tree
     vnames.clear();
     vecs.clear();
 
-    vnames.push_back("energy_source"); 
+    vnames.push_back("conducted energy"); 
     vecs.push_back(S_next_->GetFieldData(Keys::getKey(domain_,"conducted_energy_source")).ptr());
+    vnames.push_back("latent heat"); 
+    vecs.push_back(S_next_->GetFieldData(Keys::getKey(domain_,"qE_latent_heat")).ptr());
+    vnames.push_back("sensible heat"); 
+    vecs.push_back(S_next_->GetFieldData(Keys::getKey(domain_,"qE_sensible_heat")).ptr());
+    vnames.push_back("outgoing longwave radiation"); 
+    vecs.push_back(S_next_->GetFieldData(Keys::getKey(domain_,"outgoing_longwave_radiation")).ptr());
+
+    db_->WriteVectors(vnames, vecs, true);
+    db_->WriteDivider();
+
+    vnames.clear();
+    vecs.clear();
     
     vnames.push_back("water_source"); 
     vecs.push_back(S_next_->GetFieldData(Keys::getKey(domain_,"mass_source")).ptr());
@@ -831,7 +859,7 @@ SurfaceBalanceImplicit::Functional(double t_old, double t_new, Teuchos::RCP<Tree
   pvfe_w_v_source_->SetFieldAsChanged(S_next_.ptr());
   pvfe_wtemp_->SetFieldAsChanged(S_next_.ptr());
   
-}
+  }
 
 
 // applies preconditioner to u and returns the result in Pu
