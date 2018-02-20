@@ -76,11 +76,14 @@ int Operator_Node::ApplyMatrixFreeOp(const Op_Cell_Node& op,
 
       WhetStone::DenseVector v(nnodes), av(nnodes);
       for (int n = 0; n != nnodes; ++n) {
+        //std::cout<<nodes[n]<<"\n";
         v(n) = Xn[0][nodes[n]];
+        av(n) = 0.;
       }
 
       const WhetStone::DenseMatrix& Acell = op.matrices[c];
       Acell.Multiply(v, av, false);
+      //std::cout<<"cell "<<c<<":"<<av<<"\n";
 
       for (int n = 0; n != nnodes; ++n) {
         Yn[0][nodes[n]] += av(n);

@@ -872,7 +872,6 @@ void PDE_DiffusionMFD::ApplyBCs_Nodal_(const Teuchos::Ptr<BCs>& bc_f,
           
         }
       }
-      std::cout<<"cell "<<c<<"\n"<<Acell<<"\n";
     }
   } 
 

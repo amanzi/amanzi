@@ -80,7 +80,8 @@ class AnalyticBase {
       double tmp = pressure_exact(xc, t);
       double volume = mesh_->cell_volume(c);
 
-      // std::cout << c << " " << tmp << " " << p[0][c] << std::endl;
+      //std::cout << c << " " << tmp << " " << p[0][c] << std::endl;
+
       l2_err += std::pow(tmp - p[0][c], 2.0) * volume;
       inf_err = std::max(inf_err, fabs(tmp - p[0][c]));
       pnorm += std::pow(tmp, 2.0) * volume;
@@ -113,6 +114,34 @@ class AnalyticBase {
       l2_err += std::pow((tmp - u[0][f]) / area, 2.0);
       inf_err = std::max(inf_err, fabs(tmp - u[0][f]) / area);
       unorm += std::pow(tmp / area, 2.0);
+      // std::cout << f << " " << u[0][f] << " " << tmp << std::endl;
+    }
+#ifdef HAVE_MPI
+    double tmp = unorm;
+    mesh_->get_comm()->SumAll(&tmp, &unorm, 1);
+    tmp = l2_err;
+    mesh_->get_comm()->SumAll(&tmp, &l2_err, 1);
+    tmp = inf_err;
+    mesh_->get_comm()->MaxAll(&tmp, &inf_err, 1);
+#endif
+    unorm = sqrt(unorm);
+    l2_err = sqrt(l2_err);
+  }
+
+    void ComputeLambdaError(Epetra_MultiVector& u, double t, double& unorm, double& l2_err, double& inf_err) {
+    unorm = 0.0;
+    l2_err = 0.0;
+    inf_err = 0.0;
+
+    int nfaces = mesh_->num_entities(Amanzi::AmanziMesh::FACE, Amanzi::AmanziMesh::OWNED);
+    for (int f = 0; f < nfaces; f++) {
+      double area = mesh_->face_area(f);
+      const Amanzi::AmanziGeometry::Point& xf = mesh_->face_centroid(f);
+      double lmd_ext = pressure_exact(xf, t);
+
+      l2_err += std::pow((lmd_ext - u[0][f]) / area, 2.0);
+      inf_err = std::max(inf_err, fabs(lmd_ext - u[0][f]) / area);
+      unorm += std::pow(lmd_ext / area, 2.0);
       // std::cout << f << " " << u[0][f] << " " << tmp << std::endl;
     }
 #ifdef HAVE_MPI

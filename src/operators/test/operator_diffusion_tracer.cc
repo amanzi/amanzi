@@ -78,8 +78,8 @@ TEST(OPERATOR_DIFFUSION_TRACER) {
 
   MeshFactory meshfactory(&comm);
   meshfactory.preference(pref);
-  RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 0.0,  1.0, 1.0, 1.0, 2, 3, 3, gm);
-  // RCP<const Mesh> mesh = meshfactory("test/median32x33.exo", gm);
+  //RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 0.0,  1.0, 1.0, 1.0, 4, 4, 4, gm, true, true);
+  RCP<const Mesh> mesh = meshfactory("test/GMV_F/dbls_10.exo", gm, true, true);
 
   // modify diffusion coefficient
   // -- since rho=mu=1.0, we do not need to scale the diffusion tensor.
@@ -95,10 +95,14 @@ TEST(OPERATOR_DIFFUSION_TRACER) {
   Teuchos::RCP<CompositeVector> surf_presence = Teuchos::rcp(new CompositeVector(cvs1));
   Teuchos::RCP<CompositeVector> surface_param = Teuchos::rcp(new CompositeVector(cvs4));
 
-  double s_param[4] = {1.,  0. , 0., -0.1}; 
+  double s_param[4] = {-1,  -1 , 0, 1};
+  // double s_param[4] = {1.3,  1.2 , -5, 1.3};
+  // double s_param[4] = {1.,  0.5 , 0.1, -1.3};
+  //double s_param[4] = {0.8,  1.2 , -5, 0.3};
+  //double s_param[4] = {0.1,  0 , 1, -0.24}; 
   DefineSurfacePlane(0, s_param, mesh.ptr(), surf_presence.ptr(), surface_param.ptr());
 
-  Analytic00 ana(mesh, 2, 1);
+  Analytic003D ana(mesh, 0., 3., 1.);
 
   for (int c = 0; c < ncells; c++) {
     const Point& xc = mesh->cell_centroid(c);
@@ -162,7 +166,7 @@ TEST(OPERATOR_DIFFUSION_TRACER) {
   global_op->UpdateRHS(source, true);
 
   // apply BCs (primary=true, eliminate=true) and assemble
-  op->ApplyBCs(true, true);
+  op->ApplyBCs(*surf_presence->ViewComponent("cell", true), true, true);
   global_op->SymbolicAssembleMatrix();
   global_op->AssembleMatrix();
 
@@ -213,33 +217,50 @@ TEST(OPERATOR_DIFFUSION_TRACER) {
     sol_ex[0][v] = ana.pressure_exact(xv,0.);
   }
 
-
-  std::cout<<"rhs\n"<<*rhs.ViewComponent("node", true)<<"\n";
+  double r_norm, b_norm;
+  //std::cout<<"rhs\n"<<*rhs.ViewComponent("node", true)<<"\n";
 
   b.PutScalar(0.);
   global_op->Apply(solution_ex, b);
 
-  std::cout<<"b\n"<<*b.ViewComponent("node", true)<<"\n";
+  //std::cout<<"b\n"<<*b.ViewComponent("node", true)<<"\n";
+  rhs.ViewComponent("node", true)->Norm2(&r_norm);
+  b.ViewComponent("node", true)->Norm2(&b_norm);
 
+  std::cout<<std::setprecision(10)<<"r "<<r_norm<<" b "<<b_norm<<"\n";
+
+  //  exit(0);
   
   int ierr = solver.ApplyInverse(rhs, solution);
 
-  for (int c=0; c<9; c++){
-    AmanziMesh::Entity_ID_List nodes;
-    mesh->cell_get_nodes(c, &nodes);
-    int nnodes = nodes.size();
-    for (int k = 0; k < nnodes; k++) {
-      int v = nodes[k];
-      std::cout<<"cell "<<c<<" node "<<v<<" : solution exact "<<sol_ex[0][v]<<" "<<(*solution.ViewComponent("node", true))[0][v]<<"\n";
+  double err = 0;
+  int num_active = 0;
+  Epetra_MultiVector& surf_v = *surf_presence->ViewComponent("cell", true);
+  for (int c=0; c<ncells; c++){
+    if (surf_v[0][c]>0){
+      num_active++;
+      AmanziMesh::Entity_ID_List nodes;
+      mesh->cell_get_nodes(c, &nodes);
+      int nnodes = nodes.size();
+      for (int k = 0; k < nnodes; k++) {
+        int v = nodes[k];
+        // std::cout<<"cell "<<c<<" node "<<v<<" : solution exact "<<sol_ex[0][v]<<" "<<(*solution.ViewComponent("node", true))[0][v]<<"    "<<
+        //   sol_ex[0][v]- (*solution.ViewComponent("node", true))[0][v] <<"\n";
+        err += std::abs(sol_ex[0][v]- (*solution.ViewComponent("node", true))[0][v] );
+      }
     }
   }
 
- 
+  err *= 1./num_active;
+
+  op->OutputGMV_Surface(0, *solution.ViewComponent("node", true), "surface.gmv");   
 
   if (MyPID == 0) {
+    std::cout << "Number of active cells "<<num_active<<"\n";
     std::cout << "pressure solver (pcg): ||r||=" << solver.residual() 
               << " itr=" << solver.num_itrs()
-              << " code=" << solver.returned_code() << std::endl;
+              << " code=" << solver.returned_code() 
+              << " error= "<<err<< std::endl;
 
     // visualization
     const Epetra_MultiVector& p = *solution.ViewComponent("node");
@@ -322,14 +343,14 @@ void DefineSurfacePlane(int surf_id,
       if (intersection) break;
     }
     if (intersection){
-      std::cout<<"Cell cnt: "<<mesh->cell_centroid(c)<<"\n";
+      // std::cout<<"Cell cnt: "<<mesh->cell_centroid(c)<<"\n";
       surf_presence_vec[surf_id][c] = surf_id+1;
       for (int i=0;i<4;i++) surface_param_vec[surf_id+i][c] = surf_parm[i];
     }
   }
 
   std::cout<<surf_presence_vec<<"\n";
-  std::cout<<surface_param_vec<<"\n";
+  //std::cout<<surface_param_vec<<"\n";
 
   //exit(0);
 }

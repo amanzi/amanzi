@@ -204,15 +204,15 @@ if (BUILD_TESTS)
 
     add_amanzi_test(operators_diffusion operators_diffusion
                     KIND unit
-                    SOURCE test/Main.cc # test/operator_diffusion.cc
+                    SOURCE test/Main.cc #test/operator_diffusion.cc
                                         # test/operator_diffusion_nodal.cc
                                         # test/operator_diffusion_edges.cc
                                         # test/operator_diffusion_divk.cc
                                         # test/operator_diffusion_nonsymmetric.cc
                                         # test/operator_diffusion_nlfv.cc
                                         # test/operator_diffusion_curved.cc
-                                        # test/operator_diffusion_xmof.cc
-                                        test/operator_diffusion_tracer.cc
+                                        test/operator_diffusion_xmof.cc
+                                        #test/operator_diffusion_tracer.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
     add_amanzi_test(operators_diffusion_3pe operators_diffusion NPROCS 3 KIND unit)
