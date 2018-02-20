@@ -18,12 +18,6 @@ namespace SEBPhysics {
 // Main SEB functions
 
 //
-// Calculates incoming shortwave and longwave radiation incident on surface
-// ------------------------------------------------------------------------------------------
-std::pair<double,double>
-IncomingRadiation(const MetData& met, double albedo);
-
-//
 // Determine the albedo of snow as a function of density.
 // ------------------------------------------------------------------------------------------
 double CalcAlbedoSnow(double density_snow);
@@ -33,10 +27,17 @@ double CalcAlbedoSnow(double density_snow);
 // ------------------------------------------------------------------------------------------
 double CalcRoughnessFactor(double snow_height, double Z_rough_bare, double Z_rough_snow);
 
+
 //
 // Calculate longwave from air temp and relative humidity
 // ------------------------------------------------------------------------------------------
 double CalcIncomingLongwave(double air_temp, double relative_humidity, double c_stephan_boltzmann);
+
+//
+// Calculates incoming shortwave and longwave radiation incident on surface
+// ------------------------------------------------------------------------------------------
+std::pair<double,double>
+IncomingRadiation(const MetData& met, double albedo);
 
 //
 // Calculates outgoing longwave radiation

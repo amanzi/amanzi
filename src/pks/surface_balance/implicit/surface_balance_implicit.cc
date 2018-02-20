@@ -98,7 +98,7 @@ SurfaceBalanceImplicit::SurfaceBalanceImplicit(Teuchos::ParameterList& pk_tree,
   }
 
   // shortwave radiation key changes if shaded
-  sw_incoming_key_ = Keys::readKey(*plist_,domain_,"incoming shortwave radiation", "incoming_shortwave_radiation");
+  sw_incoming_key_ = Keys::readKey(*plist_, domain_,"incoming shortwave radiation", "incoming_shortwave_radiation");
 
   // modify predictor by calling advance -- this is cheap and sets up BCs
   // correctly for subsurface's call to ModifyPredictorConsistentFaces()
@@ -192,8 +192,8 @@ SurfaceBalanceImplicit::Setup(const Teuchos::Ptr<State>& S) {
   S->GetField(Keys::getKey(domain_,"qE_lw_out"),name_)->set_io_checkpoint(false);
   
   // requirements: independent variables (data from MET)
-  S->RequireFieldEvaluator(Keys::getKey(domain_,sw_incoming_key_));
-  S->RequireField(Keys::getKey(domain_,sw_incoming_key_))->SetMesh(mesh_)
+  S->RequireFieldEvaluator(sw_incoming_key_);
+  S->RequireField(sw_incoming_key_)->SetMesh(mesh_)
       ->AddComponent("cell", AmanziMesh::CELL, 1);
 
   if (longwave_input_) {
@@ -247,7 +247,9 @@ SurfaceBalanceImplicit::Setup(const Teuchos::Ptr<State>& S) {
   S->RequireField(Keys::getKey(domain_,"ponded_depth"))->SetMesh(mesh_)
       ->AddComponent("cell", AmanziMesh::CELL, 1);
 
-  S->RequireFieldEvaluator(Keys::getKey(domain_ss_, "saturation_gas"));
+  // cannot work with current implementation because WRMs are hard coded into
+  //  flow PKs.  Design fail.  Future versions will need this call.
+  //  S->RequireFieldEvaluator(Keys::getKey(domain_ss_, "saturation_gas"));
   S->RequireField(Keys::getKey(domain_ss_,"saturation_gas"))->SetMesh(subsurf_mesh_)
        ->AddComponent("cell", AmanziMesh::CELL, 1);
 
@@ -256,7 +258,7 @@ SurfaceBalanceImplicit::Setup(const Teuchos::Ptr<State>& S) {
       ->AddComponent("cell", AmanziMesh::CELL, 1);
 
   S->RequireFieldEvaluator(Keys::getKey(domain_ss_,"porosity"));
-  S->RequireField(Keys::getKey(domain_ss_,"porosity"))->SetMesh(mesh_)
+  S->RequireField(Keys::getKey(domain_ss_,"porosity"))->SetMesh(subsurf_mesh_)
       ->AddComponent("cell", AmanziMesh::CELL, 1);
 
 }
@@ -406,7 +408,9 @@ SurfaceBalanceImplicit::Functional(double t_old, double t_new, Teuchos::RCP<Tree
   const Epetra_MultiVector& ponded_depth =
     *S_next_->GetFieldData(Keys::getKey(domain_,"ponded_depth"))->ViewComponent("cell", false);
 
-  S_next_->GetFieldEvaluator(Keys::getKey(domain_ss_,"saturation_gas"))->HasFieldChanged(S_next_.ptr(), name_);
+  // cannot work with current implementation because WRMs are hard coded into
+  //  flow PKs.  Design fail.  Future versions will need this call.
+  //  S_next_->GetFieldEvaluator(Keys::getKey(domain_ss_,"saturation_gas"))->HasFieldChanged(S_next_.ptr(), name_);
   const Epetra_MultiVector& saturation_gas =
      *S_next_->GetFieldData(Keys::getKey(domain_ss_,"saturation_gas"))->ViewComponent("cell", false);
 
@@ -424,9 +428,9 @@ SurfaceBalanceImplicit::Functional(double t_old, double t_new, Teuchos::RCP<Tree
   const Epetra_MultiVector& air_temp =
     *S_next_->GetFieldData(Keys::getKey(domain_,"air_temperature"))->ViewComponent("cell", false);
 
-  S_next_->GetFieldEvaluator(Keys::getKey(domain_,sw_incoming_key_))->HasFieldChanged(S_next_.ptr(), name_);
+  S_next_->GetFieldEvaluator(sw_incoming_key_)->HasFieldChanged(S_next_.ptr(), name_);
   const Epetra_MultiVector& incoming_shortwave =
-    *S_next_->GetFieldData(Keys::getKey(domain_,sw_incoming_key_))->ViewComponent("cell", false);
+    *S_next_->GetFieldData(sw_incoming_key_)->ViewComponent("cell", false);
 
  Teuchos::RCP<const Epetra_MultiVector> incoming_longwave = Teuchos::null;
   if (longwave_input_) {
@@ -518,7 +522,7 @@ SurfaceBalanceImplicit::Functional(double t_old, double t_new, Teuchos::RCP<Tree
       ASSERT(cells.size() == 1);
       seb_surf.saturation_gas = saturation_gas[0][cells[0]];
       seb_surf.density_w = seb_params.density_water; // NOTE: could update this to use true density! --etc
-      seb_surf.dz = mesh_->cell_volume(cells[0]) / mesh_->face_area(subsurf_f) / 2.0;
+      seb_surf.dz = subsurf_mesh_->cell_volume(cells[0]) / subsurf_mesh_->face_area(subsurf_f) / 2.0;
       ASSERT(seb_surf.dz > 0.);
       
       SEBPhysics::Partition al_part = SEBPhysics::Partitioner()
@@ -618,7 +622,7 @@ SurfaceBalanceImplicit::Functional(double t_old, double t_new, Teuchos::RCP<Tree
       ASSERT(cells.size() == 1);
       seb_surf.saturation_gas = saturation_gas[0][cells[0]];
       seb_surf.density_w = seb_params.density_water; // NOTE: could update this to use true density! --etc
-      seb_surf.dz = mesh_->cell_volume(cells[0]) / mesh_->face_area(subsurf_f) / 2.0;
+      seb_surf.dz = subsurf_mesh_->cell_volume(cells[0]) / subsurf_mesh_->face_area(subsurf_f) / 2.0;
       ASSERT(seb_surf.dz > 0.);
       
       SEBPhysics::Partition al_part = SEBPhysics::Partitioner()
@@ -764,7 +768,7 @@ SurfaceBalanceImplicit::Functional(double t_old, double t_new, Teuchos::RCP<Tree
     vecs.push_back(S_next_->GetFieldData(Keys::getKey(domain_,"relative_humidity")).ptr());
     
     vnames.push_back("Qsw_in"); 
-    vecs.push_back(S_next_->GetFieldData(Keys::getKey(domain_,sw_incoming_key_)).ptr());
+    vecs.push_back(S_next_->GetFieldData(sw_incoming_key_).ptr());
     
     vnames.push_back("precip_rain"); 
     vecs.push_back(S_next_->GetFieldData(Keys::getKey(domain_,"precipitation_rain")).ptr());

@@ -37,15 +37,6 @@ double CalcRoughnessFactor(double snow_height, double Z_rough_bare, double Z_rou
 }
 
 
-//
-// Calculate longwave from air temp and relative humidity
-// ------------------------------------------------------------------------------------------
-double CalcIncomingLongwave(double air_temp, double relative_humidity, double c_stephan_boltzmann) {
-  double e_air = std::pow(10 * VaporPressureAir(air_temp, relative_humidity), air_temp / 2016.);
-  e_air = 1.08 * (1 - std::exp(-e_air));
-  return e_air * c_stephan_boltzmann * std::pow(air_temp,4);
-}
-
 std::pair<double,double> IncomingRadiation(const MetData& met, double albedo)
 {
   // Calculate incoming short-wave radiation
@@ -56,6 +47,17 @@ std::pair<double,double> IncomingRadiation(const MetData& met, double albedo)
 
   return std::make_pair(fQswIn, fQlwIn);
 }
+
+
+//
+// Calculate longwave from air temp and relative humidity
+// ------------------------------------------------------------------------------------------
+double CalcIncomingLongwave(double air_temp, double relative_humidity, double c_stephan_boltzmann) {
+  double e_air = std::pow(10 * VaporPressureAir(air_temp, relative_humidity), air_temp / 2016.);
+  e_air = 1.08 * (1 - std::exp(-e_air));
+  return e_air * c_stephan_boltzmann * std::pow(air_temp,4);
+}
+
 
 double OutgoingRadiation(double temp, double emissivity, double c_stephan_boltzmann)
 {
@@ -129,7 +131,6 @@ double EvaporativeResistanceGround(const GroundProperties& surf,
                           * std::pow((1-(0.0556/surf.porosity)),(2+3*params.Clapp_Horn_b));
 
     // Sakagucki and Zeng 2009 eqaution (10)
-    ASSERT(0); 
     double L_Rsoil = std::exp(std::pow(surf.saturation_gas, 5));
     L_Rsoil = surf.dz * (L_Rsoil -1) * (1/(std::exp(1.)-1));
     double Rsoil = L_Rsoil/vp_diffusion;
@@ -179,7 +180,6 @@ void UpdateEnergyBalanceWithSnow(const GroundProperties& surf,
         EnergyBalance& eb)
 {
   // incoming radiation -- DONE IN MAIN
-  //  std::tie(eb.fQswIn, eb.fQlwIn) = IncomingRadiation(met, snow.albedo);
 
   // outgoing radiation
   eb.fQlwOut = OutgoingRadiation(snow.temp, snow.emissivity, params.stephB);
@@ -194,7 +194,6 @@ void UpdateEnergyBalanceWithSnow(const GroundProperties& surf,
   double vapor_pressure_skin = SaturatedVaporPressure(snow.temp);
   eb.fQe = LatentHeat(Dhe * Sqig, params.density_air, params.Ls, vapor_pressure_air, vapor_pressure_skin,
                       params.Apa);
-  // WTF MAKE THIS DENSITY_W? --etc
 
   // conducted heat
   eb.fQc = ConductedHeatIfSnow(surf.temp, snow);
@@ -276,13 +275,17 @@ double DetermineSnowTemperature(const GroundProperties& surf,
   }
 
   std::pair<double,double> result;
+  auto my_max_it = max_it;
   if (method == "bisection") {
     result = boost::math::tools::bisect(func, left, right, tol, max_it);
   } else if (method == "toms") {
     result = boost::math::tools::toms748_solve(func, left, right, res_left, res_right, tol, max_it);
   }
-
-  return (result.first + result.second)/2.;
+  if (max_it >= my_max_it) throw("Nonconverged Surface Energy Balance");
+  if (std::abs(func(result.first)) < ENERGY_BALANCE_TOL) return result.first;
+  if (std::abs(func(result.second)) < ENERGY_BALANCE_TOL) return result.second;
+  if (std::abs(func((result.first + result.second)/2.)) < ENERGY_BALANCE_TOL) return (result.first+result.second)/2.;
+  throw("Nonconverged/Error Surface Energy Balance");    
 }
 
 
