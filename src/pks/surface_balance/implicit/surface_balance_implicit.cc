@@ -202,7 +202,7 @@ SurfaceBalanceImplicit::Setup(const Teuchos::Ptr<State>& S) {
         ->AddComponent("cell", AmanziMesh::CELL, 1);
   } else {
     // it is a diagnostic
-    S->RequireField(Keys::getKey(domain_,"incoming_longwave_radiation"))->SetMesh(mesh_)
+    S->RequireField(Keys::getKey(domain_,"incoming_longwave_radiation"), name_)->SetMesh(mesh_)
         ->SetComponent("cell", AmanziMesh::CELL, 1);
   }
 
@@ -824,7 +824,7 @@ SurfaceBalanceImplicit::Functional(double t_old, double t_new, Teuchos::RCP<Tree
     vnames.push_back("sensible heat"); 
     vecs.push_back(S_next_->GetFieldData(Keys::getKey(domain_,"qE_sensible_heat")).ptr());
     vnames.push_back("outgoing longwave radiation"); 
-    vecs.push_back(S_next_->GetFieldData(Keys::getKey(domain_,"outgoing_longwave_radiation")).ptr());
+    vecs.push_back(S_next_->GetFieldData(Keys::getKey(domain_,"qE_lw_out")).ptr());
 
     db_->WriteVectors(vnames, vecs, true);
     db_->WriteDivider();
