@@ -32,7 +32,7 @@ namespace Operators {
 
 class Op_Face_Cell : public Op {
  public:
-  Op_Face_Cell(std::string& name,
+  Op_Face_Cell(const std::string& name,
                const Teuchos::RCP<const AmanziMesh::Mesh> mesh) :
       Op(OPERATOR_SCHEMA_BASE_FACE |
          OPERATOR_SCHEMA_DOFS_CELL, name, mesh) {

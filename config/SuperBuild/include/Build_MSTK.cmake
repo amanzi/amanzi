@@ -60,6 +60,8 @@ set(MSTK_CMAKE_CACHE_ARGS
                     -DENABLE_METIS:BOOL=TRUE
                     -DMETIS_MAJOR_VER:STRING=5
                     -DHDF5_DIR:PATH=${HDF5_DIR}
+                    -DHDF5_INCLUDE_DIRS:PATH=${HDF5_INCLUDE_DIRS}
+		                -DHDF5_LIBRARIES:LIST=${HDF5_LIBRARIES}
                     -DHDF5_NO_SYSTEM_PATHS:BOOL=TRUE
                     -DNetCDF_DIR:PATH=${NetCDF_DIR} 
                     -DExodusII_DIR:PATH=${TPL_INSTALL_PREFIX}/SEACAS

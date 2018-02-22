@@ -1,4 +1,4 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+/* -*-  mode: c++; indent-tabs-mode: nil -*- */
 /* -------------------------------------------------------------------------
    ATS
 
@@ -45,19 +45,22 @@ class TreeVectorSpace {
   }
 
   // Access to SubVectors
-  typedef std::vector<Teuchos::RCP<const TreeVectorSpace> > SubVectorsContainer;
-  typedef Utils::iterator<SubVectorsContainer, const TreeVectorSpace> iterator;
+  typedef std::vector<Teuchos::RCP<TreeVectorSpace> > SubVectorsContainer;
+  typedef Utils::iterator<SubVectorsContainer, TreeVectorSpace> iterator;
   typedef Utils::const_iterator<SubVectorsContainer, const TreeVectorSpace> const_iterator;
 
   const_iterator begin() const { return const_iterator(subvecs_.begin()); }
   const_iterator end() const { return const_iterator(subvecs_.end()); }
-  size_t size() const { return subvecs_.size(); }
 
+  iterator begin() { return iterator(subvecs_.begin()); }
+  iterator end() { return iterator(subvecs_.end()); }
+  size_t size() const { return subvecs_.size(); }
+  
   // Get a pointer to the sub-vector by index
   Teuchos::RCP<const TreeVectorSpace> SubVector(int index) const;
 
   // Add a sub-vector as a child of this node.
-  void PushBack(const Teuchos::RCP<const TreeVectorSpace>& subvec);
+  void PushBack(const Teuchos::RCP<TreeVectorSpace>& subvec);
 
  private:
   // private and unimplemented
@@ -65,7 +68,7 @@ class TreeVectorSpace {
 
  private:
   Teuchos::RCP<const CompositeVectorSpace> data_;
-  std::vector< Teuchos::RCP<const TreeVectorSpace> > subvecs_;
+  std::vector<Teuchos::RCP<TreeVectorSpace> > subvecs_;
   Epetra_MpiComm comm_world_;
 };
 

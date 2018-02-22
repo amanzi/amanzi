@@ -35,14 +35,14 @@ namespace WhetStone {
 class DG_Modal : public BilinearForm {
  public:
   DG_Modal(Teuchos::RCP<const AmanziMesh::Mesh> mesh) 
-    : numi_(0, mesh),
+    : numi_(mesh),
       mesh_(mesh),
       order_(-1),
       basis_(TAYLOR_BASIS_NORMALIZED),
       d_(mesh_->space_dimension()) {};
 
   DG_Modal(int order, Teuchos::RCP<const AmanziMesh::Mesh> mesh)
-    : numi_(order, mesh),
+    : numi_(mesh),
       order_(order), 
       mesh_(mesh),
       basis_(TAYLOR_BASIS_NORMALIZED),

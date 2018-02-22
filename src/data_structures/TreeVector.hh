@@ -1,4 +1,4 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+/* -*-  mode: c++; indent-tabs-mode: nil -*- */
 /* -------------------------------------------------------------------------
 ATS / Amanzi
 
@@ -44,6 +44,7 @@ class TreeVector {
   // Basic constructors of a TreeVector
   TreeVector();
   explicit TreeVector(const TreeVectorSpace& space, InitMode mode=INIT_MODE_NONE);
+  explicit TreeVector(const Teuchos::RCP<TreeVectorSpace>& space, InitMode mode=INIT_MODE_NONE);
 
   // copy constructors
   TreeVector(const TreeVector& other, InitMode mode=INIT_MODE_COPY);
@@ -145,13 +146,13 @@ class TreeVector {
  private:
   // Init's version of PushBack, which does not add to the space.
   void InitPushBack_(const Teuchos::RCP<TreeVector>& subvec);
-  void InitMap_();
+  void InitMap_(InitMode mode);
 
  private:
   Teuchos::RCP<TreeVectorSpace> map_;
 
   Teuchos::RCP<CompositeVector> data_;
-  std::vector< Teuchos::RCP<TreeVector> > subvecs_;
+  std::vector<Teuchos::RCP<TreeVector> > subvecs_;
 };
 
 } // namespace

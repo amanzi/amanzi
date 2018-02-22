@@ -224,12 +224,17 @@ class Polynomial {
   int MonomialPosition(const int* multi_index) const;
   int PolynomialPosition(const int* multi_index) const;
 
-  // iterators
+  // iterator starts with constant term for correct positioning
   Iterator& begin() const { return it_.begin(); }
   int end() const { return order_; }
 
+  // Change of coordinates:
+  // --  x = xf + B * s
   void ChangeCoordinates(const AmanziGeometry::Point& xf,
-                         const std::vector<AmanziGeometry::Point>& tau);
+                         const std::vector<AmanziGeometry::Point>& B);
+  // --  s = B^+ (x - xf)
+  void InverseChangeCoordinates(const AmanziGeometry::Point& xf,
+                                const std::vector<AmanziGeometry::Point>& B);
 
   // access
   int dimension() const { return d_; }
@@ -245,6 +250,10 @@ class Polynomial {
 
   // output 
   friend std::ostream& operator << (std::ostream& os, const Polynomial& p);
+
+  // special non-member functions
+  // -- Laplacian
+  Polynomial Laplacian();
 
  protected:
   mutable Iterator it_; 

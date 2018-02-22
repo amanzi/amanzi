@@ -118,25 +118,31 @@ test_Y(const Teuchos::RCP<Amanzi::AmanziMesh::Mesh>& m,
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::AmanziGeometry;
 
+  CHECK_EQUAL(11, m->num_entities(CELL,USED));
+  CHECK_EQUAL(15, m->num_entities(FACE,USED));
+  
   // surface
   Point zero(0.,0.,0.);
   CHECK_CLOSE(0., norm(zero-m->face_centroid(0)), 1.e-6);
 
   // branch point
-  Point branch(0.,0.,-1.25);
+  Point branch(0.,0.,-2.5);
   CHECK_CLOSE(0., norm(branch - m->cell_centroid(2)), 1.e-6);
+  branch[2] = -3.0;
 
   Entity_ID_List branch_faces;
   std::vector<int> dirs;
   m->cell_get_faces_and_dirs(2, &branch_faces, &dirs);
   CHECK_EQUAL(5, branch_faces.size());
 
-  // fine root 1 tip
-  Point fine1_normal(1.,0.,-1.);
-  fine1_normal /= norm(fine1_normal);
-  Point tip = branch + 1.25*std::sqrt(2) * fine1_normal;
-  CHECK_CLOSE(0., norm(tip-m->face_centroid(4)), 1.e-6);
 
+  CHECK_CLOSE(1.e-4, m->cell_volume(0), 1.e-8);
+  CHECK_CLOSE(1.e-4, m->cell_volume(2), 1.e-8);
+  CHECK_CLOSE(0.75*0.25e-4, m->cell_volume(3), 1.e-8);
+
+  CHECK_CLOSE(1.e-4, m->face_area(2), 1.e-8);
+  CHECK_CLOSE(.25e-4, m->face_area(3), 1.e-8);
+  
   if (test_region) {
     CHECK_EQUAL(3, m->get_set_size("coarse_root", CELL, USED));
     CHECK_EQUAL(8, m->get_set_size("fine_root", CELL, USED));
@@ -159,12 +165,6 @@ TEST(MESH_LOGICAL_SEGMENT_REGULAR_MANUAL)
   test_segment_regular(Amanzi::Testing::demoMeshLogicalSegmentRegularManual(), false);
 }
 
-// Evaluates the mesh constructed through the factory.
-TEST(MESH_LOGICAL_SEGMENT_REGULAR_FACTORY)
-{
-  test_segment_regular(Amanzi::Testing::demoMeshLogicalSegmentRegular(), true);
-  CHECK(*Amanzi::Testing::demoMeshLogicalSegmentRegular() == *Amanzi::Testing::demoMeshLogicalSegmentRegularManual());
-}
 
 // Evaluates an irregularly space mesh
 TEST(MESH_LOGICAL_SEGMENT_IRREGULAR_WITH_SETS)
@@ -173,24 +173,11 @@ TEST(MESH_LOGICAL_SEGMENT_IRREGULAR_WITH_SETS)
 }
 
 
-// Evaluates a Y-mesh
-TEST(MESH_LOGICAL_Y_MANUAL_WITH_SETS)
-{
-  test_Y(Amanzi::Testing::demoMeshLogicalYManual(), true);
-}
-
-// Evaluates a Y-mesh
-TEST(MESH_LOGICAL_Y_WITH_SETS)
-{
-  test_Y(Amanzi::Testing::demoMeshLogicalY(), true);
-  CHECK(*Amanzi::Testing::demoMeshLogicalY() == *Amanzi::Testing::demoMeshLogicalYManual());
-}
-
 
 // updates to a Y-mesh
 TEST(MESH_LOGICAL_Y_DEFORMED)
 {
-  auto mesh = Amanzi::Testing::demoMeshLogicalY();
+  auto mesh = Amanzi::Testing::demoMeshLogicalYManual();
 
   std::vector<double> cv, fa;
   std::vector<std::vector<double> > cf_lens;
@@ -233,7 +220,6 @@ TEST(MESH_LOGICAL_Y_DEFORMED)
 TEST(MESH_LOGICAL_Y_XML_WITH_SETS)
 {
   test_Y(Amanzi::Testing::demoMeshLogicalYFromXML(), true);
-  CHECK(*Amanzi::Testing::demoMeshLogicalYFromXML() == *Amanzi::Testing::demoMeshLogicalYManual());
 }
 
 

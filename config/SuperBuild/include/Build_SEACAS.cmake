@@ -47,8 +47,13 @@ endif()
 # Build the NetCDF libraries string
 include(BuildLibraryName)
 build_library_name(netcdf seacas_netcdf_library ${SEACAS_LIBS_TYPE} APPEND_PATH ${NetCDF_DIR}/lib)
-build_library_name(hdf5_hl seacas_hdf5_hl_library ${SEACAS_LIBS_TYPE} APPEND_PATH ${HDF5_DIR}/lib)
-build_library_name(hdf5 seacas_hdf5_library ${SEACAS_LIBS_TYPE} APPEND_PATH ${HDF5_DIR}/lib)
+if ( ${CMAKE_BUILD_TYPE} STREQUAL "Debug" )
+  build_library_name(hdf5_hl_debug seacas_hdf5_hl_library STATIC APPEND_PATH ${TPL_INSTALL_PREFIX}/lib)
+  build_library_name(hdf5_debug seacas_hdf5_library STATIC APPEND_PATH ${TPL_INSTALL_PREFIX}/lib)
+else()
+  build_library_name(hdf5_hl seacas_hdf5_hl_library ${SEACAS_LIBS_TYPE} APPEND_PATH ${HDF5_DIR}/lib)
+  build_library_name(hdf5 seacas_hdf5_library ${SEACAS_LIBS_TYPE} APPEND_PATH ${HDF5_DIR}/lib)
+endif()
 build_library_name(z seacas_z_library ${SEACAS_LIBS_TYPE} APPEND_PATH ${ZLIB_DIR}/lib)
 
 set(seacas_netcdf_libraries
@@ -58,6 +63,15 @@ set(seacas_netcdf_libraries
        ${seacas_z_library})
 if ((NOT MPI_WRAPPERS_IN_USE) AND (MPI_C_LIBRARIES))
   list(APPEND seacas_netcdf_libraries ${MPI_C_LIBRARIES})
+endif()
+
+if (BUILD_SHARED_LIBS)
+   set(seacas_install_rpath  "-DCMAKE_INSTALL_RPATH:PATH=${CMAKE_INSTALL_PREFIX}/SEACAS/lib"
+                             "-DCMAKE_INSTALL_NAME_DIR:PATH=${CMAKE_INSTALL_PREFIX}/SEACAS/lib")
+else()
+   set(seacas_install_rpath "-DCMAKE_INSTALL_NAME_DIR:PATH=${CMAKE_INSTALL_PREFIX}/SEACAS/lib"
+                            "-DCMAKE_SKIP_INSTALL_RPATH:BOOL=ON"
+                            "-DCMAKE_SKIP_RPATH:BOOL=ON")
 endif()
 
 #
@@ -108,8 +122,7 @@ set(SEACAS_CMAKE_CACHE_ARGS
                     -DTPL_ENABLE_Pthread:BOOL=FALSE
                     -DSEACASExodus_ENABLE_THREADSAFE:BOOL=OFF
                     -DSEACASIoss_ENABLE_THREADSAFE:BOOL=OFF
-                    -DCMAKE_INSTALL_RPATH:PATH=${CMAKE_INSTALL_PREFIX}/SEACAS/lib
-                    -DCMAKE_INSTALL_NAME_DIR:PATH=${CMAKE_INSTALL_PREFIX}/SEACAS/lib)
+                    ${seacas_install_rpath})
 
 # --- Add external project build and tie to the SEACAS build target
 ExternalProject_Add(${SEACAS_BUILD_TARGET}

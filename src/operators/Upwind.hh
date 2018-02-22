@@ -32,9 +32,12 @@ namespace Operators {
 /* ******************************************************************
 * The base class for all upwind methods. 
 * Currently only one use case is implemented. The input field
-* contains two components:
+* contains (up to) three components:
 *
 * "cell" - cell-centered values of the field.
+* "dirichlet_faces" - boundary_face values of the field evaluated on
+*          the boundary (either as a function of the internal cell
+*          or as a function of the Dirichlet data)
 * "grad" - (optional) eatimate of the gradient of the input field.
 *          It is used in the second-order upwind schemes.
 *
@@ -67,17 +70,16 @@ class Upwind {
   // -- upwind of a given cell-centered field on mesh faces
   // -- not all input parameters are use by some algorithms
   virtual void Compute(const CompositeVector& flux, const CompositeVector& solution,
-                       const std::vector<int>& bc_model, const std::vector<double>& bc_value,
-                       CompositeVector& field, 
-                       double (Model::*Value)(int, double) const) = 0;
+                       const std::vector<int>& bc_model, CompositeVector& field) = 0;
 
   // -- returns combined map for the original and upwinded fields.
   // -- Currently, composite vector cannot be extended on a fly. 
   virtual Teuchos::RCP<CompositeVectorSpace> Map() {
     Teuchos::RCP<CompositeVectorSpace> cvs = Teuchos::rcp(new CompositeVectorSpace());
     cvs->SetMesh(mesh_)->SetGhosted(true)
-       ->AddComponent("cell", AmanziMesh::CELL, 1)
-       ->AddComponent("face", AmanziMesh::FACE, 1);
+        ->AddComponent("cell", AmanziMesh::CELL, 1)
+        ->AddComponent("dirichlet_faces", AmanziMesh::BOUNDARY_FACE, 1)
+        ->AddComponent("face", AmanziMesh::FACE, 1);
     return cvs;
   }
 

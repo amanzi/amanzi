@@ -28,6 +28,22 @@ list(APPEND CURL_CMAKE_CACHE_ARGS "-DCMAKE_PREFIX_PATH:PATH=${TPL_INSTALL_PREFIX
 
 # Search for OpenSSL is done inside CURL's cmake file
 
+# --- Patch the original code
+# Curl finds SSL, but doesn't correctly assess its dependence on dl library.
+set(CURL_patch_file curl-ssl-extra-ldl.patch)
+set(CURL_sh_patch ${CURL_prefix_dir}/curl-patch-step.sh)
+configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/curl-patch-step.sh.in
+               ${CURL_sh_patch}
+               @ONLY)
+# configure the CMake patch step
+set(CURL_cmake_patch ${CURL_prefix_dir}/curl-patch-step.cmake)
+configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/curl-patch-step.cmake.in
+               ${CURL_cmake_patch}
+               @ONLY)
+# set the patch command
+set(CURL_PATCH_COMMAND ${CMAKE_COMMAND} -P ${CURL_cmake_patch})
+
+
 # --- Add external project build and tie to the CURL build target
 ExternalProject_Add(${CURL_BUILD_TARGET}
                     DEPENDS   ${CURL_PACKAGE_DEPENDS}      # Package dependency target
@@ -38,6 +54,7 @@ ExternalProject_Add(${CURL_BUILD_TARGET}
                     URL          ${CURL_URL}               # URL may be a web site OR a local file
                     URL_MD5      ${CURL_MD5_SUM}           # md5sum of the archive file
                     DOWNLOAD_NAME ${CURL_SAVEAS_FILE}      # file name to store (if not end of URL)
+                    PATCH_COMMAND ${CURL_PATCH_COMMAND}       # Mods to source
                     # -- Configure
                     SOURCE_DIR   ${CURL_source_dir}    
                     CMAKE_CACHE_ARGS ${AMANZI_CMAKE_CACHE_ARGS}   # Global definitions from root CMakeList

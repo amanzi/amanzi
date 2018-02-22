@@ -19,6 +19,7 @@
 #include "CompositeVector.hh"
 
 // Operators
+#include "OperatorDefs.hh"
 #include "Analytic03.hh"
 
 namespace Amanzi{
@@ -29,10 +30,10 @@ class HeatConduction {
     int dim = mesh_->space_dimension();
     cvs_.SetMesh(mesh_);
     cvs_.SetGhosted(true);
-    cvs_.SetComponent("cell", AmanziMesh::CELL, 1);
-    cvs_.SetOwned(false);
+    cvs_.AddComponent("cell", AmanziMesh::CELL, 1);
     cvs_.AddComponent("face", AmanziMesh::FACE, 1);
     cvs_.AddComponent("grad", AmanziMesh::CELL, dim);
+    cvs_.AddComponent("dirichlet_faces", AmanziMesh::BOUNDARY_FACE, 1);
 
     values_ = Teuchos::RCP<CompositeVector>(new CompositeVector(cvs_, true));
     derivatives_ = Teuchos::RCP<CompositeVector>(new CompositeVector(cvs_, true));
@@ -40,7 +41,9 @@ class HeatConduction {
   ~HeatConduction() {};
 
   // main members
-  void UpdateValues(const CompositeVector& u) { 
+  void UpdateValues(const CompositeVector& u,
+                    const std::vector<int>& bc_model,
+                    const std::vector<double>& bc_value) { 
     Epetra_MultiVector& vcell = *values_->ViewComponent("cell", true); 
     int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::USED);
 
@@ -50,6 +53,20 @@ class HeatConduction {
       vcell[0][c] = Kc(0, 0);
     }
 
+    // add boundary face component
+    Epetra_MultiVector& vbf = *values_->ViewComponent("dirichlet_faces", true);
+    const Epetra_Map& ext_face_map = mesh_->exterior_face_map(true);
+    const Epetra_Map& face_map = mesh_->face_map(true);
+    for (int f=0; f!=face_map.NumMyElements(); ++f) {
+      if (bc_model[f] == Operators::OPERATOR_BC_DIRICHLET) {
+        AmanziMesh::Entity_ID_List cells;
+        mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+        ASSERT(cells.size() == 1);
+        int bf = ext_face_map.LID(face_map.GID(f));
+        vbf[0][bf] = Conduction(cells[0], bc_value[f]);
+      }
+    }
+    
     // add gradient component
     int dim = mesh_->space_dimension();
     Epetra_MultiVector& vgrad = *values_->ViewComponent("grad", true); 
