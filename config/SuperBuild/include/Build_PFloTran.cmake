@@ -88,5 +88,5 @@ ExternalProject_Add(${PFLOTRAN_BUILD_TARGET}
 include(BuildLibraryName)
 build_library_name(pflotranchem PFLOTRAN_LIBRARIES APPEND_PATH ${TPL_INSTALL_PREFIX}/lib)
 set(PFLOTRAN_INCLUDE_DIRS ${TPL_INSTALL_PREFIX}/pflotran/src/pflotran)
-set(PFLOTRAN_DIR ${TPL_INSTALL_PREFIX}/pflotran)
+set(PFLOTRAN_DIR ${TPL_INSTALL_PREFIX})
 

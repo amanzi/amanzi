@@ -197,5 +197,6 @@ ExternalProject_Add(${PETSc_BUILD_TARGET}
                     # -- Output control
                     ${PETSc_logging_args})
 
+
 # --- Useful variables for other packages that depend on PETSc
-set(PETSC_DIR ${petsc_install_dir})
+global_set(PETSC_DIR ${petsc_install_dir})

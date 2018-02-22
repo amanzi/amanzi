@@ -170,3 +170,8 @@ ExternalProject_Add(${Boost_BUILD_TARGET}
                     # -- Output control
                     ${Boost_logging_args})
 
+
+# --- Useful variables for other packages that depend on Boost
+set(BOOST_ROOT ${TPL_INSTALL_PREFIX})
+set(BOOST_INCLUDEDIR ${TPL_INSTALL_PREFIX}/include/boost)
+		  

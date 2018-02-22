@@ -85,6 +85,7 @@ if(ENABLE_STK_Mesh)
     include_directories(${STK_SOURCE_DIR})
 endif()
 include_directories(${HDF5_C_INCLUDE_DIR})
+include_directories(${HDF5_INCLUDE_DIRS})
 include_directories(${ASCEMIO_INCLUDE_DIR})
 
 # Copy input files to build directory if out of source build

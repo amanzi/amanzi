@@ -23,6 +23,8 @@ project(OPERATORS)
 include_directories(${Teuchos_INCLUDE_DIRS})
 include_directories(${Epetra_INCLUDE_DIRS})
 include_directories(${MSTK_INCLUDE_DIRS})
+include_directories(${Trilinos_INCLUDE_DIRS})
+
 # Amanzi include directories
 include_directories(${ATK_SOURCE_DIR})
 include_directories(${DATA_STRUCTURES_SOURCE_DIR})

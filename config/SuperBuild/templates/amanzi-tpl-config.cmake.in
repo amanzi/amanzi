@@ -76,19 +76,19 @@ set(AMANZI_PRECISION DOUBLE CACHE STRING "CCSE precision")
 set(AMANZI_SPACEDIM @CCSE_BL_SPACEDIM@ CACHE STRING "BoxLib Space dimension")
 
 # Boost
-set(BOOST_ROOT @TPL_INSTALL_PREFIX@ CACHE PATH "Boost installation prefix")
+set(BOOST_ROOT @BOOST_ROOT@ CACHE PATH "Boost installation prefix")
 set(Boost_NO_SYSTEM_PATHS TRUE CACHE BOOL "Do not search for Boost libraries in system paths")
 set(Boost_NO_BOOST_CMAKE  TRUE CACHE BOOL "Prevent FindBoost from looking for a Boost CMake config file")  
 
 # HDF5  
-set(HDF5_ROOT @TPL_INSTALL_PREFIX@ CACHE PATH "HDF5 installation prefix")
+set(HDF5_ROOT @HDF5_DIR@ CACHE PATH "HDF5 installation prefix")
 set(HDF5_NO_SYSTEM_PATHS TRUE CACHE BOOL "Do not search for HDF5 libraries in system paths")
 
 # ASCEM-IO  
 set(ASCEMIO_DIR @TPL_INSTALL_PREFIX@ CACHE PATH "ASCEM-IO installation prefix")
 
 # NetCDF
-set(NetCDF_DIR @TPL_INSTALL_PREFIX@ CACHE PATH "NetCDF installation prefix")
+set(NetCDF_DIR @NetCDF_DIR@ CACHE PATH "NetCDF installation prefix")
 
 # MSTK
 set(MSTK_INCLUDE_DIR @MSTK_INCLUDE_DIR@ CACHE PATH "MSTK include installation path")
@@ -119,13 +119,13 @@ set(Trilinos_INSTALL_PREFIX @Trilinos_INSTALL_PREFIX@ CACHE PATH "Trilinos insta
 set(SEACAS_DIR @SEACAS_DIR@ CACHE PATH "SEACAS installation prefix")
 
 # XERCES
-set(XERCES_DIR @TPL_INSTALL_PREFIX@ CACHE PATH "XERCES installation prefix")
+set(XERCES_DIR @XERCES_DIR@ CACHE PATH "XERCES installation prefix")
 
 # ALQUIMIA
-set(ALQUIMIA_DIR @TPL_INSTALL_PREFIX@ CACHE PATH "ALQUIMIA installation prefix")
+set(ALQUIMIA_DIR @ALQUIMIA_INSTALL_PREFIX@ CACHE PATH "ALQUIMIA installation prefix")
 
 # PFLOTRAN
-set(PFLOTRAN_DIR @TPL_INSTALL_PREFIX@ CACHE PATH "PFLOTRAN installation prefix")
+set(PFLOTRAN_DIR @PFLOTRAN_DIR@ CACHE PATH "PFLOTRAN installation prefix")
 
 # CRUNCHTOPE
 set(CRUNCHTOPE_DIR @TPL_INSTALL_PREFIX@ CACHE PATH "CRUNCHTOPE installation prefix")

@@ -87,6 +87,7 @@ ExternalProject_Add(${NetCDF_BUILD_TARGET}
 include(BuildLibraryName)
 build_library_name(netcdf NetCDF_C_LIBRARY APPEND_PATH ${TPL_INSTALL_PREFIX}/lib)
 build_library_name(netcdf_c++ NetCDF_CXX_LIBRARY APPEND_PATH ${TPL_INSTALL_PREFIX}/lib)
+set(NetCDF_DIR ${TPL_INSTALL_PREFIX})
 set(NetCDF_INCLUDE_DIRS ${TPL_INSTALL_PREFIX}/include)
 set(NetCDF_C_LIBRARIES ${NetCDF_C_LIBRARY})
 if (ENABLE_NetCDF4)

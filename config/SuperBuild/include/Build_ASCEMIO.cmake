@@ -15,7 +15,7 @@ amanzi_tpl_version_write(FILENAME ${TPL_VERSIONS_INCLUDE_FILE}
   VERSION ${ASCEMIO_VERSION_MAJOR} ${ASCEMIO_VERSION_MINOR} ${ASCEMIO_VERSION_PATCH})  
 
 # --- Patch the original code
-set(ASCEMIO_patch_file ascemio-2.2-sprintf.patch)
+set(ASCEMIO_patch_file ascemio-2.2-sprintf.patch ascemio-2.2-CMakeLists.txt.patch)
 set(ASCEMIO_sh_patch ${ASCEMIO_prefix_dir}/ascemio-patch-step.sh)
 configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/ascemio-patch-step.sh.in
                ${ASCEMIO_sh_patch}
@@ -31,7 +31,8 @@ set(ASCEMIO_PATCH_COMMAND ${CMAKE_COMMAND} -P ${ASCEMIO_cmake_patch})
 # --- Define the arguments passed to CMake.
 set(ASCEMIO_CMAKE_ARGS 
       "-DCMAKE_INSTALL_PREFIX:FILEPATH=${TPL_INSTALL_PREFIX}"
-      "-DBUILD_SHARED_LIBS:BOOL=${BUILD_SHARED_LIBS}")
+      "-DBUILD_SHARED_LIBS:BOOL=${BUILD_SHARED_LIBS}"
+      "-DHDF5_DIR=${HDF5_DIR}")
 
 # --- Add external project build and tie to the ZLIB build target
 ExternalProject_Add(${ASCEMIO_BUILD_TARGET}
