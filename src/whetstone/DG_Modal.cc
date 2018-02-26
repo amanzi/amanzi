@@ -476,6 +476,7 @@ int DG_Modal::FluxMatrixRusanov(
   Polynomial ufn = (uf1 + uf2) * 0.5;
 
   double tmp = numi_.PolynomialMaxValue(f, ufn);
+  tmp *= 0.5;
   uf1(0, 0) -= tmp;
   uf2(0, 0) += tmp;
 
