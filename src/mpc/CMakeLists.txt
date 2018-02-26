@@ -56,6 +56,7 @@ include_directories(${Boost_INCLUDE_DIRS})
 include_directories(${Teuchos_INCLUDE_DIRS})
 include_directories(${Epetra_INCLUDE_DIRS})
 include_directories(${HDF5_C_INCLUDE_DIR})
+include_directories(${HDF5_INCLUDE_DIRS})
 include_directories(${ASCEMIO_INCLUDE_DIR})
 
 #
@@ -92,7 +93,7 @@ add_amanzi_library(mpc
 
 if (BUILD_TESTS)
     include_directories(${MESH_FACTORY_SOURCE_DIR})
-    
+
     # Add UnitTest includes
     include_directories(${UnitTest_INCLUDE_DIRS})
     # Add MPC include directory. Need to remove this required path. -- lpritch
@@ -107,48 +108,48 @@ if (BUILD_TESTS)
     set(amanzi_libs mpc pks mpc_tree flow transport chemistry_pk energy dummy pks eos 
                     state operators mesh_factory 
                     geometry whetstone mesh_functions functions)
-    
+
     # Test: mpc driver for flow
     add_amanzi_test(mpc_driver_flow mpc_driver_flow
                     KIND      int
                     SOURCE    test/Main.cc test/mpc_driver_flow.cc
-		    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+		    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
     # Test: mpc driver for transport
     add_amanzi_test(mpc_driver_transport mpc_driver_transport
                     KIND      int
                     SOURCE    test/Main.cc test/mpc_driver_transport.cc
-		    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+		    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
     # Test: mpc driver for reactive transport
     add_amanzi_test(mpc_driver_reactive_transport mpc_driver_reactive_transport
                     KIND      int
                     SOURCE    test/Main.cc test/mpc_driver_reactive_transport.cc
-		    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+		    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
     # Test: mpc driver for thermal richards
     add_amanzi_test(mpc_driver_thermal_richards mpc_driver_thermal_richards
                     KIND      int
                     SOURCE    test/Main.cc test/mpc_driver_thermal_richards.cc
-		    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+		    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
     # Test: mpc-new driver richards reactive transport
     add_amanzi_test(mpc_driver_flow_reactive_transport mpc_driver_flow_reactive_transport
                     KIND      int
                     SOURCE    test/Main.cc test/mpc_driver_frt.cc
-		    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+		    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
     # Test: mpc-new driver dummy
     add_amanzi_test(mpc_driver_dummy mpc_driver_dummy
                     KIND      int
                     SOURCE    test/Main.cc test/mpc_driver_dummy_pk.cc
-                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
     # Test: observable_line_segment
     add_amanzi_test(observable_line_segment observable_line_segment
                     KIND      int
                     SOURCE    test/Main.cc test/observable_line_segment.cc
-                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
 #    add_executable(test_vis test/Main.cc test/test_vis.cpp)
 #    target_link_libraries(test_vis state mpc stk_mesh ${UnitTest_LIBRARIES})

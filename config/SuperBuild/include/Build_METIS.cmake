@@ -56,5 +56,6 @@ ExternalProject_Add(${METIS_BUILD_TARGET}
 # --- Build variables needed outside this file
 include(BuildLibraryName)
 build_library_name(metis METIS_LIBRARIES APPEND_PATH ${TPL_INSTALL_PREFIX}/lib)
+set(METIS_DIR ${TPL_INSTALL_PREFIX})
 set(METIS_INCLUDE_DIRS ${TPL_INSTALL_PREFIX}/include)
 

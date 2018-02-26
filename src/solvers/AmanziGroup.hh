@@ -144,6 +144,12 @@ class AmanziGroup : public NOX::Abstract::Group {
     return cloneGroup;
   }
 
+  // remaining defualt interfaces
+  virtual Teuchos::RCP<const NOX::Abstract::Vector> getXPtr() const override { return x_; }
+  virtual Teuchos::RCP<const NOX::Abstract::Vector> getFPtr() const override { return f_; }
+  virtual Teuchos::RCP<const NOX::Abstract::Vector> getGradientPtr() const override { assert(0); dx_; }
+  virtual Teuchos::RCP<const NOX::Abstract::Vector> getNewtonPtr() const override { dx_; }
+
  private:
   Teuchos::RCP<SolverFnBase<VectorClass> > fn_;
   Teuchos::RCP<NoxVector<VectorClass> > x_;

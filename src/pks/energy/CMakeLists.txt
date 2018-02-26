@@ -170,18 +170,18 @@ if (BUILD_TESTS)
     add_amanzi_test(energy_matrix_2D energy_matrix_2D
                     KIND int
                     SOURCE test/Main.cc test/energy_matrix_2D.cc
-                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
     # Test: 2
     add_amanzi_test(energy_newton_picard energy_newton_picard
                     KIND int
                     SOURCE test/Main.cc test/energy_newton_picard.cc
-                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
     # Test: 3
     add_amanzi_test(energy_convergence energy_convergence
                     KIND int
                     SOURCE test/Main.cc test/energy_convergence.cc
-                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 endif()
 

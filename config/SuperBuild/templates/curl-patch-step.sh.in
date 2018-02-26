@@ -1,14 +1,13 @@
 #!/bin/sh
 
 # CMake generates this file 
-# Replaces each @VAR@ with value of ${VAR}
 
 # Source and build locations
-xerces_src_dir=@XERCES_source_dir@
+curl_src_dir=@CURL_source_dir@
 
 OIFS=$IFS
 IFS=";"
-patch_files="@XERCES_patch_file@"
+patch_files="@CURL_patch_file@"
 
 for i in ${patch_files}; do
 
@@ -20,7 +19,7 @@ for i in ${patch_files}; do
   exit 10
  fi
 
- (cd ${xerces_src_dir}; patch -p1 < ${patch_file})
+ (cd ${curl_src_dir}; patch -p1 < ${patch_file})
 
 done
 

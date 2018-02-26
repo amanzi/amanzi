@@ -90,3 +90,6 @@ list(REMOVE_DUPLICATES HDF5_INCLUDE_DIRS)
 message(STATUS ">>> JDM: HDF5 libraries - HDF5_HL_LIBRARY = ${HDF5_HL_LIBRARY}")
 message(STATUS ">>> JDM:                - HDF5_C_LIBRARY  = ${HDF5_C_LIBRARY}")
 message(STATUS ">>> JDM:                - ZLIB_LIBRARIES  = ${ZLIB_LIBRARIES}")
+
+set(HDF5_DIR ${TPL_INSTALL_PREFIX})
+

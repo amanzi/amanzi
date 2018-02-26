@@ -4,10 +4,16 @@
 # Build TPL: Trilinos
 #    
 # --- Define all the directories and common external project flags
-set(trilinos_depend_projects NetCDF Boost SEACAS)
-if(ENABLE_HYPRE)
+if(ENABLE_XSDK)
+    set(trilinos_depend_projects XSDK SEACAS)
+else()
+    set(trilinos_depend_projects NetCDF Boost SEACAS)
+endif() 
+
+if(ENABLE_HYPRE AND NOT ENABLE_XSDK)
   list(APPEND trilinos_depend_projects HYPRE)
 endif()
+
 define_external_project_args(Trilinos
                              TARGET trilinos
                              DEPENDS ${trilinos_depend_projects})
@@ -101,10 +107,10 @@ list(APPEND Trilinos_CMAKE_TPL_ARGS
             "-DTPL_ENABLE_BoostLib:BOOL=ON" 
             "-DTPL_ENABLE_Boost:BOOL=ON" 
             "-DTPL_ENABLE_GLM:BOOL=OFF" 
-            "-DTPL_BoostLib_INCLUDE_DIRS:FILEPATH=${TPL_INSTALL_PREFIX}/include"
-            "-DBoostLib_LIBRARY_DIRS:FILEPATH=${TPL_INSTALL_PREFIX}/lib"
-            "-DTPL_Boost_INCLUDE_DIRS:FILEPATH=${TPL_INSTALL_PREFIX}/include"
-            "-DBoost_LIBRARY_DIRS:FILEPATH=${TPL_INSTALL_PREFIX}/lib")
+            "-DTPL_BoostLib_INCLUDE_DIRS:FILEPATH=${BOOST_ROOT}/include"
+            "-DBoostLib_LIBRARY_DIRS:FILEPATH=${BOOST_ROOT}/lib"
+            "-DTPL_Boost_INCLUDE_DIRS:FILEPATH=${BOOST_ROOT}/include"
+            "-DBoost_LIBRARY_DIRS:FILEPATH=${BOOST_ROOT}/lib")
 
 # NetCDF
 list(APPEND Trilinos_CMAKE_TPL_ARGS
@@ -118,7 +124,7 @@ if( ENABLE_HYPRE )
   list(APPEND Trilinos_CMAKE_TPL_ARGS
               "-DTPL_ENABLE_HYPRE:BOOL=ON"
               "-DTPL_HYPRE_LIBRARIES:STRING=${HYPRE_LIBRARIES}"
-              "-DTPL_HYPRE_INCLUDE_DIRS:FILEPATH=${TPL_INSTALL_PREFIX}/include")
+              "-DTPL_HYPRE_INCLUDE_DIRS:FILEPATH=${HYPRE_DIR}/include")
 endif()
 
 #  - Addtional Trilinos CMake Arguments

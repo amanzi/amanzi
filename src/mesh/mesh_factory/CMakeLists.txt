@@ -109,7 +109,9 @@ if (BUILD_TESTS)
                    LINK_LIBS
 		         mesh_factory
 			 ${UnitTest_LIBRARIES}
-			 ${Boost_LIBRARIES})
+			 ${Boost_LIBRARIES}
+                         ${Epetra_LIBRARIES}
+			 ${HDF5_LIBRARIES})
 
    # Do not call add_amanzi_test again with SOURCE and LINK_LIBS since the
    # previous call carries instructions to build the executable
