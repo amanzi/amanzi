@@ -78,7 +78,7 @@ if (BUILD_TESTS)
   get_property(GEOCHEM_LIBS GLOBAL PROPERTY GEOCHEM_LIBS)
   set(common_libs error_handling ${GEOCHEM_LIBS} interface atk)
 
-  set(tpl_libs ${Teuchos_LIBRARIES})
+  set(tpl_libs ${Teuchos_LIBRARIES} ${HDF5_LIBRARIES})
 
   #add_amanzi_test(tRegion tRegion
   #                KIND unit

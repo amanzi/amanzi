@@ -10,7 +10,7 @@ define_external_project_args(CRUNCHTOPE
 if (NOT ENABLE_XSDK)
     define_external_project_args(CRUNCHTOPE
                                  TARGET crunchtope
-                                 DEPENDS ${PETSc_BUILD_TARGET})
+                                 DEPENDS ${PETSC_BUILD_TARGET})
 else()
     define_external_project_args(CRUNCHTOPE
                                  TARGET crunchtope
