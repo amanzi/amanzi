@@ -239,9 +239,12 @@ int MFD3D_Diffusion::StiffnessMatrixTracer(int c, const Tensor& K, const AmanziG
   Kinv(1,1) = tmp_p*m3;
   Kinv(1,0) = Kinv(0,1);
 
+  // std::cout<<nG<<"\n"<<m2<<"\n"<<m3<<"\n"<<nG*m2<<" "<<nG*m3<<"\n";
+  // std::cout<<"Kinv\n"<<Kinv<<"\n";
+  
   Kinv.Inverse();
   
-  //std::cout<<nG<<"\n"<<m2<<"\n"<<m3<<"\n"<<nG*m2<<" "<<nG*m3<<"\n";
+  
 
   AmanziGeometry::Point vs;  
   for (int i=0; i<nvertices; i++){
@@ -332,7 +335,9 @@ int MFD3D_Diffusion::StiffnessMatrixTracer(int c, const Tensor& K, const AmanziG
       }
   }
 
-  //std::cout<<std::setprecision(10)<<A<<"\n";
+  A *= 1./area;
+  
+  std::cout<<std::setprecision(10)<<A<<"\n";
   //A = R*Kinv*;
 
   for (int i=0; i<nvertices; i++){
@@ -344,9 +349,36 @@ int MFD3D_Diffusion::StiffnessMatrixTracer(int c, const Tensor& K, const AmanziG
   //std::cout<<"N4\n"<<N4<<"\n";
   
   StabilityScalar_(N4, A);
-  
-  //std::cout<<std::setprecision(10)<<A<<"\n";
 
+  /// Internal check
+  // std::cout<<std::setprecision(10)<<A<<"\n";
+ 
+
+  // AmanziGeometry::Point t1(3), t2(3);
+  // std::srand (time(NULL));
+  // for (int i=0;i<3;i++) {
+  //   t1[i] = 1.*sqrt(c+1)*std::rand()/RAND_MAX;
+  //   t2[i] = 1.*sqrt(c+1)*std::rand()/RAND_MAX;
+  // }
+  // std::cout<<t1<<" "<<t2<<"\n";
+  // std::vector<double> r1(nvertices), r2(nvertices);
+  // for (int i=0; i<nvertices; i++){
+  //   double sum =0.;
+  //   for (int j=0; j<nvertices; j++) sum += A(i,j);
+  //   std::cout<<i<<": "<<sum<<"\n";
+  //   mesh_->node_get_coordinates(vertices[i], &vs);
+  //   r1[i] = t1*vs; r2[i] = t2*vs;    
+  // }  
+
+  // double val = 0;
+  // for (int i=0; i<nvertices; i++){
+  //   for (int j=0; j<nvertices; j++) val += A(i,j)*r1[i]*r2[j];
+  // }
+
+  // std::cout<<"area "<<area<<"\n";
+  // std::cout<<"val1 "<<val<<" val2 "<<t1*t2*area<<" diff "<<val - t1*t2*area<<"\n";
+  
+  
   //exit(0);
   return WHETSTONE_ELEMENTAL_MATRIX_OK;
   
