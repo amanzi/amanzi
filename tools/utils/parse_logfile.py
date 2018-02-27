@@ -79,10 +79,13 @@ if __name__ == "__main__":
                     c = cm(args.colors[i])
                 else:
                     c = args.colors[i]
+            data[0][:,1] = data[0][:,1]/366
             plt.semilogy(data[0][:,1], data[0][:,2], '-x', color=c, label=fname)
             if data[1].shape != (0,):
+                data[1][:,1] = data[1][:,1]/366.
                 plt.semilogy(data[1][:,1], data[1][:,2], 'x', color=c)
-            plt.xlabel("time [days]")
+            plt.xlabel("time [years]")
+#            plt.xlabel("time [days]")
             plt.ylabel("dt [days]")
             plt.legend(loc='lower left')
             plt.subplot(122)
@@ -91,6 +94,7 @@ if __name__ == "__main__":
                 plt.semilogy(data[1][:,0], data[1][:,2], 'x', color=c)
             plt.xlabel("cycles [-]")
             plt.ylabel("dt [days]")
+
     plt.show()
 
 
