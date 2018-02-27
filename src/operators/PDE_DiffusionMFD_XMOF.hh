@@ -78,7 +78,7 @@ class PDE_DiffusionMFD_XMOF : public virtual PDE_Abstract {
 
   void SetupMultiMatK(const Teuchos::RCP<std::vector<std::vector<WhetStone::Tensor> > > KMultiMat){KMultiMat_ = KMultiMat;}
 
-  void WriteSpecialGMV(std::string filename, Epetra_MultiVector& solution);
+  void WriteSpecialGMV(std::string filename, const Epetra_MultiVector& vol_frac_vec, const Epetra_MultiVector& solution);
 
  protected:
   void InitDiffusion_(Teuchos::ParameterList& plist);
@@ -96,7 +96,7 @@ class PDE_DiffusionMFD_XMOF : public virtual PDE_Abstract {
   XMOF2D::IRTolerances ir_tolerances_;
 
   Teuchos::RCP<std::vector<std::vector<WhetStone::Tensor> > > KMultiMat_; 
-  Teuchos::RCP<CompositeVector>  vol_frac_, centroids_;
+  //Teuchos::RCP<CompositeVector>  vol_frac_, centroids_;
   Teuchos::RCP<Epetra_Vector> rhs_cells_;
   
   std::vector<std::vector<WhetStone::DenseMatrix> >  Wff_cells_mm_;

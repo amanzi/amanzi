@@ -104,6 +104,10 @@ void Schema::Init(int i)
     item.set(AmanziMesh::CELL, SCHEMA_DOFS_SCALAR, 1);
     items_.push_back(item);
   }
+  if (i & OPERATOR_SCHEMA_DOFS_BNDFACE) {
+    item.set(AmanziMesh::BOUNDARY_FACE, SCHEMA_DOFS_SCALAR, 1);
+    items_.push_back(item);
+  }
 }
 
 
@@ -197,7 +201,9 @@ int Schema::OldSchema() const
     } else if (it->kind == AmanziMesh::FACE) {
       i += OPERATOR_SCHEMA_DOFS_FACE; 
     } else if (it->kind == AmanziMesh::CELL) {
-      i += OPERATOR_SCHEMA_DOFS_CELL; 
+      i += OPERATOR_SCHEMA_DOFS_CELL;     
+    } else if (it->kind == AmanziMesh::BOUNDARY_FACE) {
+      i += OPERATOR_SCHEMA_DOFS_BNDFACE;     
     }
   }
   return i;
@@ -217,6 +223,8 @@ std::string Schema::KindToString(AmanziMesh::Entity_kind kind) const
     return "face";
   } else if (kind == AmanziMesh::CELL) {
     return "cell";
+  } else if (kind == AmanziMesh::BOUNDARY_FACE) {
+    return "boundary face";
   }
   return "null";
 }

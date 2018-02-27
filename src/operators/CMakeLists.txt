@@ -70,6 +70,7 @@ set(operators_inc_files
     Op_Cell_Edge.hh
     Op_Cell_Schema.hh
     Op_Face_Cell.hh
+    Op_Face_CellFace.hh
     Op_Face_Schema.hh
     Op_Node_Node.hh
     Operator.hh
@@ -96,6 +97,7 @@ set(operators_inc_files
     PDE_DiffusionFV.hh
     PDE_DiffusionFVwithGravity.hh
     PDE_DiffusionNLFV.hh
+    PDE_DiffusionNLFVwithBndFaces.hh
     PDE_DiffusionNLFVwithGravity.hh
     PDE_Elasticity.hh
     PDE_Electromagnetics.hh
@@ -123,6 +125,7 @@ add_amanzi_library(operators
                           Operator_Node.cc
                           Operator_Edge.cc
                           Operator_Cell.cc
+                          Operator_CellBndFace.cc
                           Operator_FaceCell.cc
                           Operator_FaceCellScc.cc
                           Operator_FaceCellSff.cc
@@ -135,6 +138,7 @@ add_amanzi_library(operators
                           PDE_DiffusionMFD_XMOF.cc PDE_DiffusionMFD_Tracer.cc
                           PDE_DiffusionFV.cc PDE_DiffusionFVwithGravity.cc
                           PDE_DiffusionNLFV.cc PDE_DiffusionNLFVwithGravity.cc
+                          PDE_DiffusionNLFVwithBndFaces.cc PDE_DiffusionNLFVwithBndFacesGravity.cc
                           PDE_DiffusionFactory.cc                   
                           PDE_HelperDiscretization.cc
                           PDE_Elasticity.cc
@@ -209,9 +213,9 @@ if (BUILD_TESTS)
                                         # test/operator_diffusion_edges.cc
                                         # test/operator_diffusion_divk.cc
                                         # test/operator_diffusion_nonsymmetric.cc
-                                        # test/operator_diffusion_nlfv.cc
+                                        test/operator_diffusion_nlfv.cc
                                         # test/operator_diffusion_curved.cc
-                                        test/operator_diffusion_xmof.cc
+                                        # test/operator_diffusion_xmof.cc
                                         #test/operator_diffusion_tracer.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 

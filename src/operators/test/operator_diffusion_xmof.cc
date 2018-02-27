@@ -167,10 +167,11 @@ void RunTestDiffusionMixedXMOF(double gravity) {
         int mat_id = int(mat_data.cells_materials[i][j]);
         const WhetStone::Tensor& Kc = ana.Tensor(xc, 0.0, mat_id);
         Ks_cell[mat_id] = Kc;
-        vol_frac_vec[mat_id][i] = mat_data.cells_vfracs[i][j];
+        vol_frac_vec[mat_id][i] = mat_data.cells_vfracs[i][j];// + 0.2*sin(1.*j);
         centroids_vec[mat_id*2][i] = mat_data.cells_centroids[i][j].x;
         centroids_vec[mat_id*2+1][i] = mat_data.cells_centroids[i][j].y;
       }
+      //vol_frac_vec[0][i] = 1 - vol_frac_vec[1][i];
       // std::cout<<centroids_vec[mat_id*2][i]<<" "<<centroids_vec[mat_id*2+1][i]<<" ";
     }else{
       int mat_id = int(mat_data.cells_materials[i][0]);
@@ -234,6 +235,7 @@ void RunTestDiffusionMixedXMOF(double gravity) {
 
   Epetra_MultiVector& lmd = *sol_pl->ViewComponent("face", false);
   Epetra_MultiVector& p = *sol_pl->ViewComponent("cell", false);
+  //const Epetra_MultiVector& vol_frac_vec = *vol_frac->ViewComponent("cell", true);
   
   while (time_total < 1e+1){
     op->UpdateMatrices(Teuchos::null, sol_pl.ptr(), dt);
@@ -284,7 +286,7 @@ void RunTestDiffusionMixedXMOF(double gravity) {
       // GMV::start_data();
       // GMV::write_cell_data(p, 0, "solution");
       // GMV::close_data_file();
-      op->WriteSpecialGMV(output_file, *sol_pl->ViewComponent("cell", false));
+      op->WriteSpecialGMV(output_file, vol_frac_vec, *sol_pl->ViewComponent("cell", false));
     }
       
     //op->WriteSpecialGMV((std::string)"special.gmv", *sol_pl->ViewComponent("cell", false));
@@ -510,6 +512,7 @@ void RunTestDiffusionMixedXMOF_Linear() {
   // compute pressure error
   Epetra_MultiVector& lmd = *sol_pl->ViewComponent("face", false);
   Epetra_MultiVector& p = *sol_pl->ViewComponent("cell", false);
+  //const Epetra_MultiVector& vol_frac_vec = *vol_frac->ViewComponent("cell", true);
   double pnorm, pl2_err, pinf_err;
   double lnorm, ll2_err, linf_err;
   ana.ComputeLambdaError(lmd, 0.0, lnorm, ll2_err, linf_err);
@@ -540,7 +543,7 @@ void RunTestDiffusionMixedXMOF_Linear() {
     // GMV::start_data();
     // GMV::write_cell_data(p, 0, "solution");
     // GMV::close_data_file();
-    op->WriteSpecialGMV( (std::string)"linear_xmof.gmv", *sol_pl->ViewComponent("cell", false));
+    op->WriteSpecialGMV( (std::string)"linear_xmof.gmv", vol_frac_vec, *sol_pl->ViewComponent("cell", false));
     
   }
 }
@@ -772,6 +775,9 @@ void write_data_example_poly(const Amanzi::AmanziMesh::Mesh& mesh, const std::st
       vol_frac[c].resize(2);
       vol_frac[c][0] =  area_l/cell_size;
       vol_frac[c][1] =  area_r/cell_size;
+      ///Noise
+      vol_frac[c][0] *= (1 - 0.2*sin(1.*c));  vol_frac[c][1] = 1 - vol_frac[c][0];
+      //
       part_cntr[c].resize(2);
       part_cntr[c][0] = cell_l;
       part_cntr[c][1] = cell_r;
@@ -811,6 +817,9 @@ void write_data_example_poly(const Amanzi::AmanziMesh::Mesh& mesh, const std::st
         vol_frac[c].resize(2);
         vol_frac[c][0] =  area_l/cell_size;
         vol_frac[c][1] =  area_r/cell_size;
+        ///Noise
+        vol_frac[c][0] *= (1 - 0.2*sin(1.*c));  vol_frac[c][1] = 1 - vol_frac[c][0];
+        //
         part_cntr[c].resize(2);
         part_cntr[c][0] = cell_l;
         part_cntr[c][1] = cell_r;

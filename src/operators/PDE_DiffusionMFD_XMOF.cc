@@ -786,7 +786,9 @@ void PDE_DiffusionMFD_XMOF::ApplyBCs_Mixed_(BCs& bc_trial, BCs& bc_test,
 
   }
 
-  void PDE_DiffusionMFD_XMOF::WriteSpecialGMV(std::string filename, Epetra_MultiVector& solution){
+  void PDE_DiffusionMFD_XMOF::WriteSpecialGMV(std::string filename,
+                                              const Epetra_MultiVector& vol_frac_vec,
+                                              const Epetra_MultiVector& solution){
 
     int dim = mesh_->space_dimension();
     int dim_cell = mesh_->manifold_dimension();
@@ -795,6 +797,7 @@ void PDE_DiffusionMFD_XMOF::ApplyBCs_Mixed_(BCs& bc_trial, BCs& bc_test,
     unsigned int num_nodes = mesh_->num_entities(AmanziMesh::NODE, AmanziMesh::OWNED);
     std::vector<double> x,y,z;
     double val;
+    int num_mat = vol_frac_vec.NumVectors();
     
     AmanziGeometry::Point xc(dim);
     for (int i=0; i<num_nodes; i++) {
@@ -847,6 +850,7 @@ void PDE_DiffusionMFD_XMOF::ApplyBCs_Mixed_(BCs& bc_trial, BCs& bc_test,
 
     double *num_mat_type = new double[ncell_all];
     double *solution_data = new double[ncell_all];
+    double *materials_id = new double[ncell_all];
 
 
     gmvwrite_node_data(&nnode_all, xd, yd, zd);
@@ -868,6 +872,7 @@ void PDE_DiffusionMFD_XMOF::ApplyBCs_Mixed_(BCs& bc_trial, BCs& bc_test,
       num_mat_type[c] = 1;
       if ((*xmof_ir_)[c].get_base_mesh().get_cell(0).has_minimesh()){ 
         num_mat_type[c] = 2;
+        materials_id[c] = 0;
         const XMOF2D::MiniMesh& mini_mesh = (*xmof_ir_)[c].get_base_mesh().get_cell(0).get_minimesh();        
         int ncells = mini_mesh.ncells();                                     
         for (int j=0;j<ncells;j++){
@@ -877,7 +882,15 @@ void PDE_DiffusionMFD_XMOF::ApplyBCs_Mixed_(BCs& bc_trial, BCs& bc_test,
           gmvwrite_cell_type((char*) "general 1", mini_cell_nodes.size(), xh);
           int mat_id = mini_mesh.get_cell(j).get_material_index();
           solution_data[k] = solution[mat_id + 1][c];
+          materials_id[k] = mat_id + 1;
           k++;
+        }
+      }else{
+        for (int j=0;j<num_mat;j++){
+          if (vol_frac_vec[j][c] > 0.9)  {
+            materials_id[c] = j+1;
+            break;
+          }
         }
       }
     }
@@ -886,6 +899,8 @@ void PDE_DiffusionMFD_XMOF::ApplyBCs_Mixed_(BCs& bc_trial, BCs& bc_test,
     gmvwrite_variable_header();
     std::string varname="num_mat";
     gmvwrite_variable_name_data(0, (char*) varname.c_str(), num_mat_type);
+    varname = "mat";
+    gmvwrite_variable_name_data(0, (char*) varname.c_str(), materials_id);
     varname="solution";
     gmvwrite_variable_name_data(0, (char*) varname.c_str(), solution_data);
     gmvwrite_variable_endvars();
@@ -897,6 +912,7 @@ void PDE_DiffusionMFD_XMOF::ApplyBCs_Mixed_(BCs& bc_trial, BCs& bc_test,
     delete [] xh;
     delete [] num_mat_type;
     delete [] solution_data;
+    delete [] materials_id;
 
     gmvwrite_closefile();
 
