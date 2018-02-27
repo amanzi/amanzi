@@ -5,13 +5,13 @@
   Authors: Ahmad Jan (jana@ornl.gov)
 */
 
-#include "elevation_evaluator_column.hh"
+#include "thaw_depth_evaluator.hh"
 
 namespace Amanzi {
 namespace Flow {
 
 // registry of method
-Utils::RegisteredFactory<FieldEvaluator,ElevationEvaluatorColumn> ElevationEvaluatorColumn::reg_("column elevation");
+Utils::RegisteredFactory<FieldEvaluator,ThawDepthEvaluator> ThawDepthEvaluator::reg_("thaw depth");
 
 }
 }

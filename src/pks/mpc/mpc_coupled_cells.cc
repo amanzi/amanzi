@@ -38,7 +38,7 @@
 #include "FieldEvaluator.hh"
 #include "Operator.hh"
 #include "TreeOperator.hh"
-#include "OperatorAccumulation.hh"
+#include "PDE_Accumulation.hh"
 
 #include "mpc_coupled_cells.hh"
 
@@ -82,7 +82,7 @@ void MPCCoupledCells::Setup(const Teuchos::Ptr<State>& S) {
   if (!plist_->get<bool>("no dA/dy2 block", false)) {
     Teuchos::ParameterList& acc_pc_plist = plist_->sublist("dA_dy2 accumulation preconditioner");
     acc_pc_plist.set("entity kind", "cell");
-    dA_dy2_ = Teuchos::rcp(new Operators::OperatorAccumulation(acc_pc_plist, mesh_));
+    dA_dy2_ = Teuchos::rcp(new Operators::PDE_Accumulation(acc_pc_plist, mesh_));
     preconditioner_->SetOperatorBlock(0, 1, dA_dy2_->global_operator());
   }
 
@@ -94,7 +94,7 @@ void MPCCoupledCells::Setup(const Teuchos::Ptr<State>& S) {
   if (!plist_->get<bool>("no dB/dy1 block", false)) {
     Teuchos::ParameterList& acc_pc_plist = plist_->sublist("dB_dy1 accumulation preconditioner");
     acc_pc_plist.set("entity kind", "cell");
-    dB_dy1_ = Teuchos::rcp(new Operators::OperatorAccumulation(acc_pc_plist, mesh_));
+    dB_dy1_ = Teuchos::rcp(new Operators::PDE_Accumulation(acc_pc_plist, mesh_));
     preconditioner_->SetOperatorBlock(1, 0, dB_dy1_->global_operator());
   }
 
@@ -131,8 +131,7 @@ void MPCCoupledCells::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVect
     db_->WriteVector("  dwc_dT", dA_dy2_v.ptr());
     
     // -- update the cell-cell block
-    const Epetra_MultiVector& dA_dy2 = *dA_dy2_v->ViewComponent("cell",false);
-    dA_dy2_->AddAccumulationTerm(dA_dy2, h);
+    dA_dy2_->AddAccumulationTerm(*dA_dy2_v, h, "cell", false);
   }
 
   if (dB_dy1_ != Teuchos::null &&
@@ -144,8 +143,7 @@ void MPCCoupledCells::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVect
     db_->WriteVector("  dE_dp", dB_dy1_v.ptr());
     
     // -- update the cell-cell block
-    const Epetra_MultiVector& dB_dy1 = *dB_dy1_v->ViewComponent("cell",false);
-    dB_dy1_->AddAccumulationTerm(dB_dy1, h);
+    dB_dy1_->AddAccumulationTerm(*dB_dy1_v, h, "cell", false);
   }
 
   if (precon_used_) {

@@ -132,9 +132,9 @@ void EOSEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
       Epetra_MultiVector& dens_v = *(molar_dens->ViewComponent(*comp,false));
 
       int count = dens_v.MyLength();
-      for (int id=0; id!=count; ++id) {
-        dens_v[0][id] = eos_->MolarDensity(temp_v[0][id], pres_v[0][id]);
-        ASSERT(dens_v[0][id] > 0.);
+      for (int i=0; i!=count; ++i) {
+        dens_v[0][i] = eos_->MolarDensity(temp_v[0][i], pres_v[0][i]);
+        ASSERT(dens_v[0][i] > 0.);
       }
     }
   }
@@ -156,9 +156,9 @@ void EOSEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
         Epetra_MultiVector& dens_v = *(mass_dens->ViewComponent(*comp,false));
 
         int count = dens_v.MyLength();
-        for (int id=0; id!=count; ++id) {
-          dens_v[0][id] = eos_->MassDensity(temp_v[0][id], pres_v[0][id]);
-          ASSERT(dens_v[0][id] > 0.);
+        for (int i=0; i!=count; ++i) {
+          dens_v[0][i] = eos_->MassDensity(temp_v[0][i], pres_v[0][i]);
+          ASSERT(dens_v[0][i] > 0.);
         }
       }
     }
@@ -193,8 +193,8 @@ void EOSEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>& S,
         Epetra_MultiVector& dens_v = *(molar_dens->ViewComponent(*comp,false));
 
         int count = dens_v.MyLength();
-        for (int id=0; id!=count; ++id) {
-          dens_v[0][id] = eos_->DMolarDensityDp(temp_v[0][id], pres_v[0][id]);
+        for (int i=0; i!=count; ++i) {
+          dens_v[0][i] = eos_->DMolarDensityDp(temp_v[0][i], pres_v[0][i]);
         }
       }
     }
@@ -216,8 +216,8 @@ void EOSEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>& S,
           Epetra_MultiVector& dens_v = *(mass_dens->ViewComponent(*comp,false));
 
           int count = dens_v.MyLength();
-          for (int id=0; id!=count; ++id) {
-            dens_v[0][id] = eos_->DMassDensityDp(temp_v[0][id], pres_v[0][id]);
+          for (int i=0; i!=count; ++i) {
+            dens_v[0][i] = eos_->DMassDensityDp(temp_v[0][i], pres_v[0][i]);
           }
         }
       }
@@ -234,8 +234,8 @@ void EOSEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>& S,
         Epetra_MultiVector& dens_v = *(molar_dens->ViewComponent(*comp,false));
 
         int count = dens_v.MyLength();
-        for (int id=0; id!=count; ++id) {
-          dens_v[0][id] = eos_->DMolarDensityDT(temp_v[0][id], pres_v[0][id]);
+        for (int i=0; i!=count; ++i) {
+          dens_v[0][i] = eos_->DMolarDensityDT(temp_v[0][i], pres_v[0][i]);
         }
       }
     }
@@ -257,8 +257,8 @@ void EOSEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>& S,
           Epetra_MultiVector& dens_v = *(mass_dens->ViewComponent(*comp,false));
 
           int count = dens_v.MyLength();
-          for (int id=0; id!=count; ++id) {
-            dens_v[0][id] = eos_->DMassDensityDT(temp_v[0][id], pres_v[0][id]);
+          for (int i=0; i!=count; ++i) {
+            dens_v[0][i] = eos_->DMassDensityDT(temp_v[0][i], pres_v[0][i]);
           }
         }
       }

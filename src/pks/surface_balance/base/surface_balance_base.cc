@@ -67,7 +67,7 @@ SurfaceBalanceBase::Setup(const Teuchos::Ptr<State>& S) {
   // operator for inverse
   Teuchos::ParameterList& acc_plist = plist_->sublist("accumulation preconditioner");
   acc_plist.set("entity kind", "cell");
-  preconditioner_acc_ = Teuchos::rcp(new Operators::OperatorAccumulation(acc_plist, mesh_));
+  preconditioner_acc_ = Teuchos::rcp(new Operators::PDE_Accumulation(acc_plist, mesh_));
   preconditioner_ = preconditioner_acc_->global_operator();
 
   //    symbolic assemble
@@ -170,14 +170,14 @@ SurfaceBalanceBase::UpdatePreconditioner(double t,
         ->HasFieldDerivativeChanged(S_next_.ptr(), name_, key_);
     std::string dkey = std::string("d")+conserved_key_+std::string("_d")+key_;
     db_->WriteVector("d(cons)/d(prim)", S_next_->GetFieldData(dkey).ptr());
-    preconditioner_acc_->AddAccumulationTerm(*S_next_->GetFieldData(dkey)->ViewComponent("cell",false), h);
+    preconditioner_acc_->AddAccumulationTerm(*S_next_->GetFieldData(dkey), h, "cell", false);
 
     if (S_next_->GetFieldEvaluator(source_key_)->IsDependency(S_next_.ptr(), key_)) {
       S_next_->GetFieldEvaluator(source_key_)
           ->HasFieldDerivativeChanged(S_next_.ptr(), name_, key_);
       std::string dkey = std::string("d")+source_key_+std::string("_d")+key_;
       db_->WriteVector("d(Q)/d(prim)", S_next_->GetFieldData(dkey).ptr());
-      preconditioner_acc_->AddAccumulationTerm(*S_next_->GetFieldData(dkey), -1.0/theta_, "cell");
+      preconditioner_acc_->AddAccumulationTerm(*S_next_->GetFieldData(dkey), -1.0/theta_, "cell", true);
     }      
   }
 }

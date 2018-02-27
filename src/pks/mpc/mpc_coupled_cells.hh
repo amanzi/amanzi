@@ -39,7 +39,7 @@ d_temperature and d_energy / d_pressure.
 
 namespace Amanzi {
 
-namespace Operators { class TreeOperator; class OperatorAccumulation; }
+namespace Operators { class TreeOperator; class PDE_Accumulation; }
 
 class MPCCoupledCells : public StrongMPC<PK_PhysicalBDF_Default> {
  public:
@@ -70,8 +70,8 @@ class MPCCoupledCells : public StrongMPC<PK_PhysicalBDF_Default> {
   Teuchos::RCP<Operators::TreeOperator> linsolve_preconditioner_;
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
 
-  Teuchos::RCP<Operators::OperatorAccumulation> dA_dy2_;
-  Teuchos::RCP<Operators::OperatorAccumulation> dB_dy1_;
+  Teuchos::RCP<Operators::PDE_Accumulation> dA_dy2_;
+  Teuchos::RCP<Operators::PDE_Accumulation> dB_dy1_;
   
   bool precon_used_;
 

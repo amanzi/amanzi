@@ -129,12 +129,6 @@ void Richards::SetupRichardsFlow_(const Teuchos::Ptr<State>& S) {
   bc_seepage_infilt_ = bc_factory.CreateSeepageFacePressureWithInfiltration();
   bc_seepage_infilt_->Compute(0.); // compute at t=0 to set up
 
-  int nfaces = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
-  bc_markers_.resize(nfaces, Operators::OPERATOR_BC_NONE);
-  bc_values_.resize(nfaces, 0.0);
-  std::vector<double> mixed;
-  bc_ = Teuchos::rcp(new Operators::BCs(Operators::OPERATOR_BC_TYPE_FACE, bc_markers_, bc_values_, mixed));
-
   // -- linear tensor coefficients
   unsigned int c_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   K_ = Teuchos::rcp(new std::vector<WhetStone::Tensor>(c_owned));
@@ -200,7 +194,7 @@ void Richards::SetupRichardsFlow_(const Teuchos::Ptr<State>& S) {
   mfd_plist.set("nonlinear coefficient", coef_location);
   mfd_plist.set("gravity", true);
   
-  Operators::OperatorDiffusionFactory opfactory;
+  Operators::PDE_DiffusionFactory opfactory;
   matrix_diff_ = opfactory.CreateWithGravity(mfd_plist, mesh_, bc_);
   matrix_ = matrix_diff_->global_operator();
 
@@ -255,8 +249,8 @@ void Richards::SetupRichardsFlow_(const Teuchos::Ptr<State>& S) {
   
   // -- accumulation terms
   Teuchos::ParameterList& acc_pc_plist = plist_->sublist("accumulation preconditioner");
-  acc_pc_plist.set("entity kind", "cell");
-  preconditioner_acc_ = Teuchos::rcp(new Operators::OperatorAccumulation(acc_pc_plist, preconditioner_));
+  acc_pc_plist.set<std::string>("entity kind", "cell");
+  preconditioner_acc_ = Teuchos::rcp(new Operators::PDE_Accumulation(acc_pc_plist, preconditioner_));
 
   // // -- vapor diffusion terms
   // vapor_diffusion_ = plist_->get<bool>("include vapor diffusion", false);
@@ -560,10 +554,6 @@ void Richards::Initialize(const Teuchos::Ptr<State>& S) {
     matrix_diff_->SetScalarCoefficient(rel_perm, Teuchos::null);
     matrix_diff_->UpdateMatrices(Teuchos::null, pres.ptr());
 
-
-    matrix_diff_->UpdateFlux(*pres, *flux);
-
-
     if (compute_boundary_values_){
       Epetra_MultiVector& pres_bf = *S->GetFieldData(key_, name_)->ViewComponent("boundary_face",false);
       const Epetra_Map& vandalay_map = mesh_->exterior_face_map(false);
@@ -574,6 +564,13 @@ void Richards::Initialize(const Teuchos::Ptr<State>& S) {
         pres_bf[0][bf] =  BoundaryFaceValue(f, *pres);
       }
     }      
+    // derive fluxes
+    matrix_diff_->UpdateFlux(pres.ptr(), flux.ptr());
+
+
+    // Teuchos::RCP<const CompositeVector> pres = S->GetFieldData(key_);
+    // Teuchos::RCP<CompositeVector> flux = S->GetFieldData(flux_key_, name_);
+    // matrix_diff_->UpdateFlux(pres.ptr(), flux.ptr());
 
   }
 
@@ -678,8 +675,8 @@ void Richards::CalculateDiagnostics(const Teuchos::RCP<State>& S) {
 
   // derive fluxes
   Teuchos::RCP<CompositeVector> flux = S->GetFieldData(flux_key_, name_);
+  matrix_diff_->UpdateFlux(pres.ptr(), flux.ptr());
 
-  matrix_diff_->UpdateFlux(*pres, *flux);
 
   UpdateVelocity_(S.ptr());
 };
@@ -718,17 +715,20 @@ bool Richards::UpdatePermeabilityData_(const Teuchos::Ptr<State>& S) {
 
       face_matrix_diff_->UpdateMatrices(Teuchos::null, pres.ptr());
 
-      face_matrix_diff_->UpdateFlux(*pres, *flux_dir);
-
       if (!pres->HasComponent("face"))
         face_matrix_diff_->ApplyBCs(true, true);
 
+      face_matrix_diff_->UpdateFlux(pres.ptr(), flux_dir.ptr());
 
 
       if (clobber_boundary_flux_dir_) {
         Epetra_MultiVector& flux_dir_f = *flux_dir->ViewComponent("face",false);
-        for (int f=0; f!=bc_markers_.size(); ++f) {
-          if (bc_markers_[f] == Operators::OPERATOR_BC_NEUMANN) {
+
+        auto& markers = bc_markers();
+        auto& values = bc_values();
+        
+        for (int f=0; f!=markers.size(); ++f) {
+          if (markers[f] == Operators::OPERATOR_BC_NEUMANN) {
             AmanziMesh::Entity_ID_List cells;
             mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
             ASSERT(cells.size() == 1);
@@ -738,7 +738,7 @@ bool Richards::UpdatePermeabilityData_(const Teuchos::Ptr<State>& S) {
             mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
             int i = std::find(faces.begin(), faces.end(), f) - faces.begin();
             
-            flux_dir_f[0][f] = bc_values_[f]*dirs[i];
+            flux_dir_f[0][f] = values[f]*dirs[i];
           }
         }
       }      
@@ -817,10 +817,13 @@ void Richards::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& S, bool kr) 
   if (vo_->os_OK(Teuchos::VERB_EXTREME))
     *vo_->os() << "  Updating BCs." << std::endl;
 
+  auto& markers = bc_markers();
+  auto& values = bc_values();
+  
   // initialize all to 0
-  for (unsigned int n=0; n!=bc_markers_.size(); ++n) {
-    bc_markers_[n] = Operators::OPERATOR_BC_NONE;
-    bc_values_[n] = 0.0;
+  for (unsigned int n=0; n!=markers.size(); ++n) {
+    markers[n] = Operators::OPERATOR_BC_NONE;
+    values[n] = 0.0;
   }
 
 
@@ -839,8 +842,8 @@ void Richards::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& S, bool kr) 
     ASSERT(cells.size() == 1);
 #endif
     
-    bc_markers_[f] = Operators::OPERATOR_BC_DIRICHLET;
-    bc_values_[f] = bc->second;
+    markers[f] = Operators::OPERATOR_BC_DIRICHLET;
+    values[f] = bc->second;
   }
 
   bc_counts.push_back(bc_head_->size());
@@ -853,8 +856,8 @@ void Richards::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& S, bool kr) 
     ASSERT(cells.size() == 1);
 #endif
     
-    bc_markers_[f] = Operators::OPERATOR_BC_DIRICHLET;
-    bc_values_[f] = bc->second;
+    markers[f] = Operators::OPERATOR_BC_DIRICHLET;
+    values[f] = bc->second;
   }
 
 
@@ -874,9 +877,9 @@ void Richards::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& S, bool kr) 
     mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
     ASSERT(cells.size() == 1);
 #endif
-      bc_markers_[f] = Operators::OPERATOR_BC_NEUMANN;
-      bc_values_[f] = bc->second;
-      if (!kr && rel_perm[0][f] > 0.) bc_values_[f] /= rel_perm[0][f];
+      markers[f] = Operators::OPERATOR_BC_NEUMANN;
+      values[f] = bc->second;
+      if (!kr && rel_perm[0][f] > 0.) values[f] /= rel_perm[0][f];
     }
   } else {
     // Neumann boundary conditions that turn off if temp < freezing
@@ -890,14 +893,14 @@ void Richards::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& S, bool kr) 
     ASSERT(cells.size() == 1);
 #endif
 
-      bc_markers_[f] = Operators::OPERATOR_BC_NEUMANN;
+      markers[f] = Operators::OPERATOR_BC_NEUMANN;
       if (temp[0][f] > 273.15) {
-        bc_values_[f] = bc->second;
+        values[f] = bc->second;
         if (!kr && rel_perm[0][f] > 0.) {
-          bc_values_[f] /= rel_perm[0][f];
+          values[f] /= rel_perm[0][f];
         }
       } else {
-        bc_values_[f] = 0.;
+        values[f] = 0.;
       }
     }
   }
@@ -928,20 +931,20 @@ void Richards::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& S, bool kr) 
     //              << "BFlux = " << boundary_flux << ", BPressure = " << boundary_pressure << " and constraint p <= " << bc->second << " (tol = " << seepage_tol << ")" << std::endl;
     if (boundary_pressure > bc->second) {
       //      std::cout << "  DIRICHLET" << std::endl;
-      bc_markers_[f] = Operators::OPERATOR_BC_DIRICHLET;
-      bc_values_[f] = bc->second;
+      markers[f] = Operators::OPERATOR_BC_DIRICHLET;
+      values[f] = bc->second;
     } else if (boundary_pressure < bc->second - seepage_tol) {
       //      std::cout << "  NEUMANN" << std::endl;
-      bc_markers_[f] = Operators::OPERATOR_BC_NEUMANN;
-      bc_values_[f] = 0.;
+      markers[f] = Operators::OPERATOR_BC_NEUMANN;
+      values[f] = 0.;
     } else if (boundary_flux >= 0.) {
       //      std::cout << "  DIRICHLET" << std::endl;
-      bc_markers_[f] = Operators::OPERATOR_BC_DIRICHLET;
-      bc_values_[f] = bc->second;
+      markers[f] = Operators::OPERATOR_BC_DIRICHLET;
+      values[f] = bc->second;
     } else {
       //      std::cout << "  NEUMANN" << std::endl;
-      bc_markers_[f] = Operators::OPERATOR_BC_NEUMANN;
-      bc_values_[f] = 0.;
+      markers[f] = Operators::OPERATOR_BC_NEUMANN;
+      values[f] = 0.;
     }
   }
 
@@ -968,8 +971,8 @@ void Richards::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& S, bool kr) 
     if (boundary_flux < bc->second - flux_seepage_tol &&
         boundary_pressure > p_atm + seepage_tol) {
       // both constraints are violated, either option should push things in the right direction
-      bc_markers_[f] = Operators::OPERATOR_BC_DIRICHLET;
-      bc_values_[f] = p_atm;
+      markers[f] = Operators::OPERATOR_BC_DIRICHLET;
+      values[f] = p_atm;
 
       //      std::cout << "BC PRESSURE ON SEEPAGE = " << boundary_pressure << " with flux " << flux[0][f]*BoundaryDirection(f) << " resulted in DIRICHLET pressure " << p_atm << std::endl;
 
@@ -977,15 +980,15 @@ void Richards::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& S, bool kr) 
     } else if (boundary_flux >= bc->second - flux_seepage_tol &&
         boundary_pressure > p_atm - seepage_tol) {
       // max pressure condition violated
-      bc_markers_[f] = Operators::OPERATOR_BC_DIRICHLET;
-      bc_values_[f] = p_atm;
+      markers[f] = Operators::OPERATOR_BC_DIRICHLET;
+      values[f] = p_atm;
       //      std::cout << "BC PRESSURE ON SEEPAGE = " << boundary_pressure << " with flux " << flux[0][f]*BoundaryDirection(f) << " resulted in DIRICHLET pressure " << p_atm << std::endl;
 
     } else if (boundary_flux < bc->second - flux_seepage_tol &&
         boundary_pressure <= p_atm + seepage_tol) {
       // max infiltration violated
-      bc_markers_[f] = Operators::OPERATOR_BC_NEUMANN;
-      bc_values_[f] = bc->second;
+      markers[f] = Operators::OPERATOR_BC_NEUMANN;
+      values[f] = bc->second;
 
       //      std::cout << "BC PRESSURE ON SEEPAGE = " << boundary_pressure << " with flux " << flux[0][f]*BoundaryDirection(f) << " resulted in NEUMANN flux " << bc->second << std::endl;
 
@@ -993,8 +996,8 @@ void Richards::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& S, bool kr) 
     } else if (boundary_flux >= bc->second - flux_seepage_tol &&
         boundary_pressure <= p_atm - seepage_tol) {
       // both conditions are valid
-      bc_markers_[f] = Operators::OPERATOR_BC_NEUMANN;
-      bc_values_[f] = bc->second;
+      markers[f] = Operators::OPERATOR_BC_NEUMANN;
+      values[f] = bc->second;
 
       //      std::cout << "BC PRESSURE ON SEEPAGE = " << boundary_pressure << " with flux " << flux[0][f]*BoundaryDirection(f) << " resulted in NEUMANN flux " << bc->second << std::endl;
 
@@ -1032,8 +1035,8 @@ void Richards::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& S, bool kr) 
 #endif
 
       // -- set that value to dirichlet
-      bc_markers_[f] = Operators::OPERATOR_BC_DIRICHLET;
-      bc_values_[f] = head[0][c];
+      markers[f] = Operators::OPERATOR_BC_DIRICHLET;
+      values[f] = head[0][c];
     }
   }
 
@@ -1060,15 +1063,15 @@ void Richards::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& S, bool kr) 
 
 
       // -- set that value to Neumann
-      bc_markers_[f] = Operators::OPERATOR_BC_NEUMANN;
+      markers[f] = Operators::OPERATOR_BC_NEUMANN;
 
       // NOTE: the flux provided by the coupler is in units of mols / s, where
       //       as Neumann BCs are in units of mols / s / A.  The right A must
       //       be chosen, as it is the subsurface mesh's face area, not the
       //       surface mesh's cell area.
-      bc_values_[f] = flux[0][c] / mesh_->face_area(f);
+      values[f] = flux[0][c] / mesh_->face_area(f);
 
-      if (!kr && rel_perm[0][f] > 0.) bc_values_[f] /= rel_perm[0][f];
+      if (!kr && rel_perm[0][f] > 0.) values[f] /= rel_perm[0][f];
     }
   }
 
@@ -1079,14 +1082,14 @@ void Richards::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& S, bool kr) 
 
   int nfaces_owned = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
   for (int f = 0; f < nfaces_owned; f++) {
-    if (bc_markers_[f] == Operators::OPERATOR_BC_NONE) {
+    if (markers[f] == Operators::OPERATOR_BC_NONE) {
       mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
       int ncells = cells.size();
 
       if (ncells == 1) {
         n_default++;
-        bc_markers_[f] = Operators::OPERATOR_BC_NEUMANN;
-        bc_values_[f] = 0.0;
+        markers[f] = Operators::OPERATOR_BC_NEUMANN;
+        values[f] = 0.0;
 
         // BEGIN DEBUG CRUFT        
         /*
@@ -1156,13 +1159,16 @@ bool Richards::ModifyPredictor(double h, Teuchos::RCP<const TreeVector> u0,
 bool Richards::ModifyPredictorFluxBCs_(double h, Teuchos::RCP<TreeVector> u) {
   if (!u->Data()->HasComponent("face")) return false;
 
+  auto& markers = bc_markers();
+  auto& values = bc_values();
+
   Teuchos::OSTab tab = vo_->getOSTab();
   if (vo_->os_OK(Teuchos::VERB_EXTREME))
     *vo_->os() << "  modifications to deal with nonlinearity at flux BCs" << std::endl;
 
   if (flux_predictor_ == Teuchos::null) {
     flux_predictor_ = Teuchos::rcp(new PredictorDelegateBCFlux(S_next_, mesh_, matrix_diff_,
-            wrms_, &bc_markers_, &bc_values_));
+            wrms_, &markers, &values));
   }
 
   UpdatePermeabilityData_(S_next_.ptr());
@@ -1202,12 +1208,16 @@ bool Richards::ModifyPredictorWC_(double h, Teuchos::RCP<TreeVector> u) {
 
 // void Richards::CalculateConsistentFacesForInfiltration_(
 //     const Teuchos::Ptr<CompositeVector>& u) {
+
+//  auto& markers = bc_markers();
+//  auto& values = bc_values();
+
 //   if (vo_->os_OK(Teuchos::VERB_EXTREME))
 //     *vo_->os() << "  modifications to deal with nonlinearity at flux BCs" << std::endl;
 
 //   if (flux_predictor_ == Teuchos::null) {
 //     flux_predictor_ = Teuchos::rcp(new PredictorDelegateBCFlux(S_next_, mesh_, matrix_,
-//             wrms_, &bc_markers_, &bc_values_));
+//             wrms_, &markers, &values));
 //   }
 
 //   // update boundary conditions
@@ -1223,7 +1233,7 @@ bool Richards::ModifyPredictorWC_(double h, Teuchos::RCP<TreeVector> u) {
 //   Teuchos::RCP<const CompositeVector> rho = S_next_->GetFieldData(mass_dens_key_);
 //   Teuchos::RCP<const Epetra_Vector> gvec = S_next_->GetConstantVectorData("gravity");
 //   AddGravityFluxes_(gvec.ptr(), rel_perm.ptr(), rho.ptr(), matrix_.ptr());
-//   matrix_->ApplyBoundaryConditions(bc_markers_, bc_values_);
+//   matrix_->ApplyBoundaryConditions(markers, values);
 
 //   flux_predictor_->ModifyPredictor(u);
 // }

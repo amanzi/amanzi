@@ -13,9 +13,9 @@ with freezing.
 
 #include "MultiplicativeEvaluator.hh"
 #include "TreeOperator.hh"
-#include "OperatorDiffusionFactory.hh"
-#include "OperatorAdvection.hh"
-#include "OperatorAccumulation.hh"
+#include "PDE_DiffusionFactory.hh"
+#include "PDE_Advection.hh"
+#include "PDE_Accumulation.hh"
 #include "Operator.hh"
 #include "upwind_total_flux.hh"
 #include "upwind_arithmetic_mean.hh"
@@ -148,17 +148,17 @@ void MPCSubsurface::Setup(const Teuchos::Ptr<State>& S) {
       divq_plist.set("Newton correction", "approximate Jacobian");
 
       divq_plist.set("exclude primary terms", true);
-      Operators::OperatorDiffusionFactory opfactory;
+      Operators::PDE_DiffusionFactory opfactory;
       ddivq_dT_ = opfactory.CreateWithGravity(divq_plist, mesh_);
       dWC_dT_block_ = ddivq_dT_->global_operator();
     }
 
     // -- derivatives of water content with respect to temperature
     if (dWC_dT_block_ == Teuchos::null) {
-      dWC_dT_ = Teuchos::rcp(new Operators::OperatorAccumulation(AmanziMesh::CELL, mesh_));
+      dWC_dT_ = Teuchos::rcp(new Operators::PDE_Accumulation(AmanziMesh::CELL, mesh_));
       dWC_dT_block_ = dWC_dT_->global_operator();
     } else {
-      dWC_dT_ = Teuchos::rcp(new Operators::OperatorAccumulation(AmanziMesh::CELL, dWC_dT_block_));
+      dWC_dT_ = Teuchos::rcp(new Operators::PDE_Accumulation(AmanziMesh::CELL, dWC_dT_block_));
     }
 
     // Create the block for derivatives of energy conservation with respect to pressure
@@ -187,7 +187,7 @@ void MPCSubsurface::Setup(const Teuchos::Ptr<State>& S) {
       ddivKgT_dp_plist.set("Newton correction", "approximate Jacobian");
 
       ddivKgT_dp_plist.set("exclude primary terms", true);
-      Operators::OperatorDiffusionFactory opfactory;
+      Operators::PDE_DiffusionFactory opfactory;
       if (dE_dp_block_ == Teuchos::null) {
         ddivKgT_dp_ = opfactory.Create(ddivKgT_dp_plist, mesh_);
         dE_dp_block_ = ddivKgT_dp_->global_operator();
@@ -207,7 +207,7 @@ void MPCSubsurface::Setup(const Teuchos::Ptr<State>& S) {
       // else divhq_dp_plist.set("Newton correction", "approximate Jacobian");
       divhq_dp_plist.set("Newton correction", "approximate Jacobian");
 
-      Operators::OperatorDiffusionFactory opfactory;
+      Operators::PDE_DiffusionFactory opfactory;
       if (dE_dp_block_ == Teuchos::null) {
         ddivhq_dp_ = opfactory.CreateWithGravity(divhq_dp_plist, mesh_);
         dE_dp_block_ = ddivhq_dp_->global_operator();
@@ -285,10 +285,10 @@ void MPCSubsurface::Setup(const Teuchos::Ptr<State>& S) {
 
     // -- derivatives of energy with respect to pressure
     if (dE_dp_block_ == Teuchos::null) {
-      dE_dp_ = Teuchos::rcp(new Operators::OperatorAccumulation(AmanziMesh::CELL, mesh_));
+      dE_dp_ = Teuchos::rcp(new Operators::PDE_Accumulation(AmanziMesh::CELL, mesh_));
       dE_dp_block_ = dE_dp_->global_operator();
     } else {
-      dE_dp_ = Teuchos::rcp(new Operators::OperatorAccumulation(AmanziMesh::CELL, dE_dp_block_));
+      dE_dp_ = Teuchos::rcp(new Operators::PDE_Accumulation(AmanziMesh::CELL, dE_dp_block_));
     }
 
     ASSERT(dWC_dT_block_ != Teuchos::null);
@@ -466,7 +466,7 @@ void MPCSubsurface::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector
       ->HasFieldDerivativeChanged(S_next_.ptr(), name_, temp_key_);
     Teuchos::RCP<const CompositeVector> dWC_dT =
       S_next_->GetFieldData(Keys::getDerivKey(wc_key_, temp_key_));
-    dWC_dT_->AddAccumulationTerm(*dWC_dT->ViewComponent("cell", false), h);
+    dWC_dT_->AddAccumulationTerm(*dWC_dT, h, "cell", false);
 
     // std::cout << "1/h * DWC/DT" << std::endl;
     // CompositeVector dbg(*dWC_dT); dbg = *dWC_dT; dbg.Scale(1./h); dbg.Print(std::cout);
@@ -594,8 +594,8 @@ void MPCSubsurface::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector
       ddivhq_dp_->UpdateMatrices(Teuchos::null, Teuchos::null);
       // -- determine the advective fluxes, q_a = h * kr grad p
       CompositeVector adv_flux(*flux, INIT_MODE_ZERO);
-      Teuchos::Ptr<const CompositeVector> adv_flux_ptr(&adv_flux);
-      ddivhq_dp_->UpdateFlux(*up->SubVector(0)->Data(), adv_flux);
+      Teuchos::Ptr<CompositeVector> adv_flux_ptr(&adv_flux);
+      ddivhq_dp_->UpdateFlux(up->SubVector(0)->Data().ptr(), adv_flux_ptr);
       // -- add in components div (d h*kr / dp) grad q_a / (h*kr)
       ddivhq_dp_->UpdateMatricesNewtonCorrection(adv_flux_ptr, up->SubVector(0)->Data().ptr());
       ddivhq_dp_->ApplyBCs(false, true);
@@ -615,7 +615,7 @@ void MPCSubsurface::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector
         ->HasFieldDerivativeChanged(S_next_.ptr(), name_, pres_key_);
     Teuchos::RCP<const CompositeVector> dE_dp =
       S_next_->GetFieldData(Keys::getDerivKey(e_key_, pres_key_));
-    dE_dp_->AddAccumulationTerm(*dE_dp->ViewComponent("cell", false), h);
+    dE_dp_->AddAccumulationTerm(*dE_dp, h, "cell", false);
 
     // std::cout << "1/h * DE/Dp" << std::endl;
     // dbg = *dE_dp; dbg.Scale(1./h); dbg.Print(std::cout);

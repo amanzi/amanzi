@@ -39,14 +39,12 @@ class TranspirationDistributionEvaluator : public SecondaryVariableFieldEvaluato
  protected:
   void InitializeFromPlist_();
 
-  Key p_key_;
+  Key f_wp_key_;
   Key f_root_key_;
   Key trans_total_key_;
   Key cv_key_;
   Key surf_cv_key_;
 
-  double wp_min_;
-  
  private:
   static Utils::RegisteredFactory<FieldEvaluator,TranspirationDistributionEvaluator> reg_;
 

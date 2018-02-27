@@ -47,6 +47,7 @@ NOTE: ``PKPhysicalBDFBase -->`` PKBDFBase_
 #include "pk_bdf_default.hh"
 #include "pk_physical_default.hh"
 
+#include "BCs.hh"
 #include "Operator.hh"
 
 namespace Amanzi {
@@ -112,8 +113,8 @@ class PK_PhysicalBDF_Default : public PK_BDF_Default,
   Teuchos::RCP<Operators::Operator> preconditioner() { return preconditioner_; }
 
   // BC access
-  std::vector<int>& bc_markers() { return bc_markers_; }
-  std::vector<double>& bc_values() { return bc_values_; }
+  std::vector<int>& bc_markers() { return bc_->bc_model(); }
+  std::vector<double>& bc_values() { return bc_->bc_value(); }
   Teuchos::RCP<Operators::BCs> BCs() { return bc_; }
 
  protected:
@@ -121,8 +122,6 @@ class PK_PhysicalBDF_Default : public PK_BDF_Default,
   Teuchos::RCP<Operators::Operator> preconditioner_;
 
   // BCs
-  std::vector<int> bc_markers_;
-  std::vector<double> bc_values_;
   Teuchos::RCP<Operators::BCs> bc_;
 
   // error criteria

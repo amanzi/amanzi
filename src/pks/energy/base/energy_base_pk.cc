@@ -11,8 +11,9 @@ Author: Ethan Coon
 #include "energy_bc_factory.hh"
 #include "advection_factory.hh"
 
-#include "OperatorDiffusionFactory.hh"
-#include "OperatorDiffusion.hh"
+#include "PDE_DiffusionFactory.hh"
+#include "PDE_Diffusion.hh"
+#include "PDE_AdvectionUpwind.hh"
 #include "upwind_cell_centered.hh"
 #include "upwind_arithmetic_mean.hh"
 #include "upwind_total_flux.hh"
@@ -103,16 +104,7 @@ void EnergyBase::SetupEnergy_(const Teuchos::Ptr<State>& S) {
   bc_diff_flux_ = bc_factory.CreateDiffusiveFlux();
   bc_flux_ = bc_factory.CreateTotalFlux();
 
-  int nfaces = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
-  bc_markers_.resize(nfaces, Operators::OPERATOR_BC_NONE);
-  bc_values_.resize(nfaces, 0.0);
-  std::vector<double> mixed;
-  bc_ = Teuchos::rcp(new Operators::BCs(Operators::OPERATOR_BC_TYPE_FACE, bc_markers_, bc_values_, mixed));
-
-  bc_markers_adv_.resize(nfaces, Operators::OPERATOR_BC_NONE);
-  bc_values_adv_.resize(nfaces, 0.0);
-  bc_adv_ = Teuchos::rcp(new Operators::BCs(Operators::OPERATOR_BC_TYPE_FACE,
-          bc_markers_adv_, bc_values_adv_, mixed));
+  bc_adv_ = Teuchos::rcp(new Operators::BCs(mesh_, AmanziMesh::FACE, Operators::SCHEMA_DOFS_SCALAR));
 
   // -- nonlinear coefficient
   std::string method_name = plist_->get<std::string>("upwind conductivity method",
@@ -146,15 +138,14 @@ void EnergyBase::SetupEnergy_(const Teuchos::Ptr<State>& S) {
   // -- create the forward operator for the diffusion term
   Teuchos::ParameterList& mfd_plist = plist_->sublist("diffusion");
   mfd_plist.set("nonlinear coefficient", coef_location);
-  Operators::OperatorDiffusionFactory opfactory;
+  Operators::PDE_DiffusionFactory opfactory;
   matrix_diff_ = opfactory.Create(mfd_plist, mesh_, bc_);
   matrix_diff_->SetTensorCoefficient(Teuchos::null);
   matrix_ = matrix_diff_->global_operator();
 
   // -- create the forward operator for the advection term
-  Operators::AdvectionFactory advection_factory;
   Teuchos::ParameterList advect_plist = plist_->sublist("advection");
-  matrix_adv_ = Teuchos::rcp(new Operators::OperatorAdvection(advect_plist, mesh_));
+  matrix_adv_ = Teuchos::rcp(new Operators::PDE_AdvectionUpwind(advect_plist, mesh_));
   
   // -- create the operators for the preconditioner
   //    diffusion
@@ -206,7 +197,7 @@ void EnergyBase::SetupEnergy_(const Teuchos::Ptr<State>& S) {
   // -- accumulation terms
   Teuchos::ParameterList& acc_pc_plist = plist_->sublist("accumulation preconditioner");
   acc_pc_plist.set("entity kind", "cell");
-  preconditioner_acc_ = Teuchos::rcp(new Operators::OperatorAccumulation(acc_pc_plist, preconditioner_));
+  preconditioner_acc_ = Teuchos::rcp(new Operators::PDE_Accumulation(acc_pc_plist, preconditioner_));
 
   //  -- advection terms
   implicit_advection_ = !plist_->get<bool>("explicit advection", false);
@@ -215,7 +206,7 @@ void EnergyBase::SetupEnergy_(const Teuchos::Ptr<State>& S) {
 
     if (implicit_advection_in_pc_) {
       Teuchos::ParameterList advect_plist = plist_->sublist("advection preconditioner");
-      preconditioner_adv_ = Teuchos::rcp(new Operators::OperatorAdvection(advect_plist, preconditioner_));
+      preconditioner_adv_ = Teuchos::rcp(new Operators::PDE_AdvectionUpwind(advect_plist, preconditioner_));
     }
   }
 
@@ -395,7 +386,7 @@ void EnergyBase::CommitStep(double t_old, double t_new, const Teuchos::RCP<State
 
 
   Teuchos::RCP<CompositeVector> eflux = S->GetFieldData(energy_flux_key_, name_);
-  matrix_diff_->UpdateFlux(*temp, *eflux);
+  matrix_diff_->UpdateFlux(temp.ptr(), eflux.ptr());
   //  }
 
   // calculate the advected energy as a diagnostic
@@ -405,8 +396,9 @@ void EnergyBase::CommitStep(double t_old, double t_new, const Teuchos::RCP<State
   Teuchos::RCP<const CompositeVector> enth = S->GetFieldData(enthalpy_key_);;
   ApplyDirichletBCsToEnthalpy_(S.ptr());
 
-  CompositeVector& adv_energy = *S->GetFieldData(adv_energy_flux_key_, name_);  
-  matrix_adv_->UpdateFlux(*enth, *flux, bc_adv_, adv_energy);  
+  Teuchos::RCP<CompositeVector> adv_energy = S->GetFieldData(adv_energy_flux_key_, name_);  
+  matrix_adv_->UpdateFlux(enth.ptr(), flux.ptr(), bc_adv_, adv_energy.ptr());
+  
 
   if (compute_boundary_values_){
     Epetra_MultiVector& temp_bf = *S->GetFieldData(key_, name_)->ViewComponent("boundary_face",false);
@@ -514,30 +506,36 @@ void EnergyBase::UpdateBoundaryConditions_(
   if (vo_->os_OK(Teuchos::VERB_EXTREME))
     *vo_->os() << "  Updating BCs." << std::endl;
 
-  for (unsigned int n=0; n!=bc_markers_.size(); ++n) {
-    bc_markers_[n] = Operators::OPERATOR_BC_NONE;
-    bc_values_[n] = 0.0;
-    bc_markers_adv_[n] = Operators::OPERATOR_BC_NONE;
-    bc_values_adv_[n] = 0.0;
+  auto& markers = bc_markers();
+  auto& values = bc_values();
+
+  auto& adv_markers = bc_adv_->bc_model();
+  auto& adv_values = bc_adv_->bc_value();
+  
+  for (unsigned int n=0; n!=markers.size(); ++n) {
+    markers[n] = Operators::OPERATOR_BC_NONE;
+    values[n] = 0.0;
+    adv_markers[n] = Operators::OPERATOR_BC_NONE;
+    adv_values[n] = 0.0;
   }
 
   // Dirichlet temperature boundary conditions
   for (Functions::BoundaryFunction::Iterator bc=bc_temperature_->begin();
        bc!=bc_temperature_->end(); ++bc) {
     int f = bc->first;
-    bc_markers_[f] = Operators::OPERATOR_BC_DIRICHLET;
-    bc_values_[f] = bc->second;
-    bc_markers_adv_[f] = Operators::OPERATOR_BC_DIRICHLET;
+    markers[f] = Operators::OPERATOR_BC_DIRICHLET;
+    values[f] = bc->second;
+    adv_markers[f] = Operators::OPERATOR_BC_DIRICHLET;
   }
 
   // Neumann flux boundary conditions
   for (Functions::BoundaryFunction::Iterator bc=bc_flux_->begin();
        bc!=bc_flux_->end(); ++bc) {
     int f = bc->first;
-    bc_markers_[f] = Operators::OPERATOR_BC_NEUMANN;
-    bc_values_[f] = bc->second;
-    bc_markers_adv_[f] = Operators::OPERATOR_BC_NEUMANN;
-    bc_values_adv_[f] = 0.;
+    markers[f] = Operators::OPERATOR_BC_NEUMANN;
+    values[f] = bc->second;
+    adv_markers[f] = Operators::OPERATOR_BC_NEUMANN;
+    adv_values[f] = 0.;
     // push all onto diffusion, assuming that the incoming enthalpy is 0 (likely mass flux is 0)
   }
 
@@ -545,9 +543,9 @@ void EnergyBase::UpdateBoundaryConditions_(
   for (Functions::BoundaryFunction::Iterator bc=bc_diff_flux_->begin();
        bc!=bc_diff_flux_->end(); ++bc) {
     int f = bc->first;
-    bc_markers_[f] = Operators::OPERATOR_BC_NEUMANN;
-    bc_values_[f] = bc->second;
-    bc_markers_adv_[f] = Operators::OPERATOR_BC_DIRICHLET;
+    markers[f] = Operators::OPERATOR_BC_NEUMANN;
+    values[f] = bc->second;
+    adv_markers[f] = Operators::OPERATOR_BC_DIRICHLET;
   }
   
   // Dirichlet temperature boundary conditions from a coupled surface.
@@ -564,9 +562,9 @@ void EnergyBase::UpdateBoundaryConditions_(
         surface->entity_get_parent(AmanziMesh::CELL, c);
 
       // -- set that value to dirichlet
-      bc_markers_[f] = Operators::OPERATOR_BC_DIRICHLET;
-      bc_values_[f] = temp[0][c];
-      bc_markers_adv_[f] = Operators::OPERATOR_BC_DIRICHLET;
+      markers[f] = Operators::OPERATOR_BC_DIRICHLET;
+      values[f] = temp[0][c];
+      adv_markers[f] = Operators::OPERATOR_BC_DIRICHLET;
 
     }
   }
@@ -586,14 +584,14 @@ void EnergyBase::UpdateBoundaryConditions_(
         surface->entity_get_parent(AmanziMesh::CELL, c);
 
       // -- set that value to Neumann
-      bc_markers_[f] = Operators::OPERATOR_BC_NEUMANN;
+      markers[f] = Operators::OPERATOR_BC_NEUMANN;
       // flux provided by the coupler is in units of J / s, whereas Neumann BCs are J/s/A
-      bc_values_[f] = flux[0][c] / mesh_->face_area(f);
+      values[f] = flux[0][c] / mesh_->face_area(f);
 
       // -- mark advective BCs as Dirichlet: this ensures the surface
       //    temperature is picked up and advective fluxes are treated
       //    via advection operator, not diffusion operator.
-      bc_markers_adv_[f] = Operators::OPERATOR_BC_DIRICHLET;
+      adv_markers[f] = Operators::OPERATOR_BC_DIRICHLET;
     }
   }
 
@@ -601,15 +599,15 @@ void EnergyBase::UpdateBoundaryConditions_(
   AmanziMesh::Entity_ID_List cells;
   int nfaces_owned = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
   for (int f = 0; f < nfaces_owned; f++) {
-    if (bc_markers_[f] == Operators::OPERATOR_BC_NONE) {
+    if (markers[f] == Operators::OPERATOR_BC_NONE) {
       mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
       int ncells = cells.size();
 
       if (ncells == 1) {
-        bc_markers_[f] = Operators::OPERATOR_BC_NEUMANN;
-        bc_values_[f] = 0.0;
-        bc_markers_adv_[f] = Operators::OPERATOR_BC_DIRICHLET;
-        bc_values_adv_[f] = 0.0;
+        markers[f] = Operators::OPERATOR_BC_NEUMANN;
+        values[f] = 0.0;
+        adv_markers[f] = Operators::OPERATOR_BC_DIRICHLET;
+        adv_values[f] = 0.0;
       }
     }
   }

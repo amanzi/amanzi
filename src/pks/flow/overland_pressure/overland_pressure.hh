@@ -35,9 +35,9 @@ Other variable names, typically not set as the default is basically always good:
 
 Discretization control:
 
-* `"diffusion`" ``[list]`` An OperatorDiffusion_ spec describing the (forward) diffusion operator
+* `"diffusion`" ``[list]`` An PDE_Diffusion_ spec describing the (forward) diffusion operator
 
-* `"diffusion preconditioner`" ``[list]`` An OperatorDiffusion_ spec describing the diffusive parts of the preconditioner.
+* `"diffusion preconditioner`" ``[list]`` An PDE_Diffusion_ spec describing the diffusive parts of the preconditioner.
 
 Time integration and timestep control:
 
@@ -88,8 +88,8 @@ May inherit options from PKPhysicalBDFBase_.
 #include "upwinding.hh"
 
 #include "Operator.hh"
-#include "OperatorDiffusion.hh"
-#include "OperatorAccumulation.hh"
+#include "PDE_Diffusion.hh"
+#include "PDE_Accumulation.hh"
 
 //#include "pk_factory_ats.hh"
 //#include "pk_physical_bdf_base.hh"
@@ -167,6 +167,8 @@ protected:
 
   // boundary condition members
   virtual void UpdateBoundaryConditions_(const Teuchos::Ptr<State>& S);
+  virtual void ApplyBoundaryConditions_(const Teuchos::Ptr<CompositeVector>& u,
+          const Teuchos::Ptr<const CompositeVector>& elev);
 
   virtual void FixBCsForOperator_(const Teuchos::Ptr<State>& S);
   virtual void FixBCsForPrecon_(const Teuchos::Ptr<State>& S);
@@ -231,10 +233,10 @@ protected:
 
   // mathematical operators
   Teuchos::RCP<Operators::Operator> matrix_; // pc in PKPhysicalBDFBase
-  Teuchos::RCP<Operators::OperatorDiffusion> matrix_diff_;
-  Teuchos::RCP<Operators::OperatorDiffusion> face_matrix_diff_;
-  Teuchos::RCP<Operators::OperatorDiffusion> preconditioner_diff_;
-  Teuchos::RCP<Operators::OperatorAccumulation> preconditioner_acc_;
+  Teuchos::RCP<Operators::PDE_Diffusion> matrix_diff_;
+  Teuchos::RCP<Operators::PDE_Diffusion> face_matrix_diff_;
+  Teuchos::RCP<Operators::PDE_Diffusion> preconditioner_diff_;
+  Teuchos::RCP<Operators::PDE_Accumulation> preconditioner_acc_;
   Teuchos::RCP<Operators::Operator> lin_solver_;
 
   bool precon_used_;
@@ -242,6 +244,7 @@ protected:
   // boundary condition data
   Teuchos::RCP<Functions::BoundaryFunction> bc_zero_gradient_;
   Teuchos::RCP<Functions::BoundaryFunction> bc_head_;
+  Teuchos::RCP<Functions::BoundaryFunction> bc_pressure_;
   Teuchos::RCP<Functions::BoundaryFunction> bc_flux_;
   Teuchos::RCP<Functions::BoundaryFunction> bc_seepage_head_;
   Teuchos::RCP<Functions::BoundaryFunction> bc_seepage_pressure_;

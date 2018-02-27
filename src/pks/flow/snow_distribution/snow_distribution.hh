@@ -14,8 +14,8 @@ Authors: Ethan Coon (ecoon@lanl.gov)
 #include "Function.hh"
 
 #include "Operator.hh"
-#include "OperatorDiffusion.hh"
-#include "OperatorAccumulation.hh"
+#include "PDE_Diffusion.hh"
+#include "PDE_Accumulation.hh"
 
 #include "PK_Factory.hh"
 #include "pk_physical_bdf_default.hh"
@@ -109,9 +109,9 @@ protected:
 
   // mathematical operators
   Teuchos::RCP<Operators::Operator> matrix_; // pc in PKPhysicalBDFBase
-  Teuchos::RCP<Operators::OperatorDiffusion> matrix_diff_;
-  Teuchos::RCP<Operators::OperatorDiffusion> preconditioner_diff_;
-  Teuchos::RCP<Operators::OperatorAccumulation> preconditioner_acc_;
+  Teuchos::RCP<Operators::PDE_Diffusion> matrix_diff_;
+  Teuchos::RCP<Operators::PDE_Diffusion> preconditioner_diff_;
+  Teuchos::RCP<Operators::PDE_Accumulation> preconditioner_acc_;
 
   // factory registration
   static RegisteredPKFactory<SnowDistribution> reg_;
