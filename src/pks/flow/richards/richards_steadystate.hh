@@ -8,7 +8,6 @@
 #include "CompositeVector.hh"
 #include "TreeVector.hh"
 #include "State.hh"
-#include "MatrixMFD.hh"
 #include "upwinding.hh"
 #include "BoundaryFunction.hh"
 

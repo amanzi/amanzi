@@ -191,8 +191,12 @@ void EnergyBase::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> u
     // if (preconditioner_->RangeMap().HasComponent("face")) {
     //if (mfd_pc_plist.get<std::string>("discretization primary") != "fv: default"){
     flux = S_next_->GetFieldData(energy_flux_key_, name_);
-    preconditioner_diff_->UpdateFlux(*up->Data(), *flux);
+    preconditioner_diff_->UpdateFlux(up->Data().ptr(), flux.ptr());
     //}
+    // if (preconditioner_->RangeMap().HasComponent("face")) {
+    //   flux = S_next_->GetFieldData(energy_flux_key_, name_);
+    //   preconditioner_diff_->UpdateFlux(up->Data().ptr(), flux.ptr());
+    // }
     preconditioner_diff_->UpdateMatricesNewtonCorrection(flux.ptr(), up->Data().ptr());
   }
 
@@ -202,32 +206,32 @@ void EnergyBase::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> u
       ->HasFieldDerivativeChanged(S_next_.ptr(), name_, key_);
   const Epetra_MultiVector& de_dT = *S_next_->GetFieldData(Keys::getDerivKey(energy_key_, key_))
       ->ViewComponent("cell",false);
+  unsigned int ncells = de_dT.MyLength();
 
+  CompositeVector acc(S_next_->GetFieldData(energy_key_)->Map());
+  auto& acc_c = *acc.ViewComponent("cell", false);
+  
 #if DEBUG_FLAG
   db_->WriteVector("    de_dT", S_next_->GetFieldData(Keys::getDerivKey(energy_key_, key_)).ptr());
 #endif
-
-  // -- get the matrices/rhs that need updating
-  std::vector<double>& Acc_cells = preconditioner_acc_->local_matrices()->vals;
-
-  // -- update the diagonal
-  unsigned int ncells = de_dT.MyLength();
 
   if (coupled_to_subsurface_via_temp_ || coupled_to_subsurface_via_flux_) {
     // do not add in de/dT if the height is 0
     const Epetra_MultiVector& pres = *S_next_->GetFieldData(Keys::getKey(domain_,"pressure"))
         ->ViewComponent("cell",false);
     const double& patm = *S_next_->GetScalarData("atmospheric_pressure");
+
     for (unsigned int c=0; c!=ncells; ++c) {
-      Acc_cells[c] += pres[0][c] >= patm ? de_dT[0][c] / h : 0.;
+      acc_c[0][c] = pres[0][c] >= patm ? de_dT[0][c] / h : 0.;
     }
   } else {
     for (unsigned int c=0; c!=ncells; ++c) {
       //      ASSERT(de_dT[0][c] > 1.e-10);
       // ?? Not using e_bar anymore apparently, though I didn't think we were ever.  Need a nonzero here to ensure not singlar.
-      Acc_cells[c] += std::max(de_dT[0][c], 1.e-12) / h;
+      acc_c[0][c] = std::max(de_dT[0][c], 1.e-12) / h;
     }
   }
+  preconditioner_acc_->AddAccumulationTerm(acc, "cell");
 
   // -- update preconditioner with source term derivatives if needed
   AddSourcesToPrecon_(S_next_.ptr(), h);
@@ -239,9 +243,9 @@ void EnergyBase::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> u
         ->HasFieldDerivativeChanged(S_next_.ptr(), name_, key_);
     Teuchos::RCP<const CompositeVector> dhdT = S_next_->GetFieldData(Keys::getDerivKey(enthalpy_key_, key_));
     preconditioner_adv_->Setup(*mass_flux);
-    preconditioner_adv_->UpdateMatrices(*mass_flux, *dhdT);
+    preconditioner_adv_->UpdateMatrices(mass_flux.ptr(), dhdT.ptr());
     ApplyDirichletBCsToEnthalpy_(S_next_.ptr());
-    preconditioner_adv_->ApplyBCs(bc_adv_, true);
+    preconditioner_adv_->ApplyBCs(bc_adv_, false);
   }
 
   // Apply boundary conditions.

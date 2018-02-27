@@ -1,6 +1,7 @@
-= Amanzi and ATS Installation Guide =
+ATS Installation Guide
+==================================
 
-First, a word of warning -- please be patient.  Amanzi and therefore ATS depend upon a lot of third party libraries.  This allows us to use existing, mature code to make ATS a much better software tool.  It also means installing the code and its dependencies can be quite painful and time/labor intensive.  Installation time is a very bimodal distribution -- if it "just works" this process will take 25 minutes.  If it doesn't "just work" it can take much longer.
+First, a word of warning -- please be patient.  Amanzi and therefore ATS depend upon a lot of third party libraries.  This allows us to use existing, mature code to make ATS a much better software tool.  It also means installing the code and its dependencies can be quite painful and time/labor intensive.  Installation time is a very bimodal distribution -- if it "just works" this process will take 10=20 minutes.  If it doesn't "just work" it can take much longer.
 
 The basics of the process are these.
 
@@ -11,17 +12,17 @@ The basics of the process are these.
 4. Download and install ATS.
 5. Download test problems, test ATS.
 
-All instructions assume you use bash.  Alter as needed for other shells.
+All instructions assume you use bash.  Change as needed for other shells.
 
 0. Ensure you have cmake and an MPI installation.
-  a. cmake >= 2.8.6
+  a. cmake >= 3.3
     ```
     which cmake  # this will test if you have any cmake installed
     ``` 
     If not, go to: http://www.cmake.org/cmake/resources/software.html
     To install cmake from command line see https://cmake.org/install/
     
-    Binary installations are likely fine?
+    Alternative, most binary installations are new enough, including Homebrew, Ubuntu, etc.
     
   b. MPI
     ```
@@ -50,22 +51,26 @@ All instructions assume you use bash.  Alter as needed for other shells.
     ```
     mkdir /my/path/to/atsl
     export ATS_BASE=/my/path/to/ats
+
     export ATS_SRC_DIR=${ATS_BASE}/repos/ats
-    export AMANZI_SRC_DIR=${ATS_BASE}/repos/amanzi
     export ATS_BUILD_DIR=${ATS_BASE}/ats-build
-    export AMANZI_BUILD_DIR=${ATS_BASE}/amanzi-build    
-    export AMANZI_TPLS_BUILD_DIR=${ATS_BASE}/amanzi-tpls-build    
     export ATS_DIR=${ATS_BASE}/ats-install
+
+    export AMANZI_SRC_DIR=${ATS_BASE}/repos/amanzi
+    export AMANZI_BUILD_DIR=${ATS_BASE}/amanzi-build    
     export AMANZI_DIR=${ATS_BASE}/amanzi-install    
+
+    export AMANZI_TPLS_BUILD_DIR=${ATS_BASE}/amanzi-tpls-build    
     export AMANZI_TPLS_DIR=${ATS_BASE}/amanzi-tpls-install
     export PATH=${ATS_DIR}/bin:${AMANZI_TPLS_DIR}/bin:${PATH}
+    export PYTHONPATH=${ATS_SRC_DIR}/tools/utils:${PYTHONPATH}
     ```    
-    You may want to put that line in your ~/.bashrc or similar files (~/.bash_profile on Mac OS X).
-  b. Clone the Amanzi source for the latest release.  Currently this is ``0.86``
-    ```git clone -b ats-amanzi-0.86 http://github.com/amanzi/amanzi $AMANZI_SRC_DIR```
+    You may want to put these lines in your ~/.bashrc or similar files (~/.bash_profile on Mac OS X), or better yet use Environment modules.
+  b. Clone the Amanzi source for the latest release.  Currently this is ``0.87``
+    ```git clone -b amanzi-0.87 http://github.com/amanzi/amanzi $AMANZI_SRC_DIR```
 
   c. Clone the ATS source for the latest release.
-    ```git clone -b ats-0.86 http://github.com/amanzi/ats $ATS_SRC_DIR```
+    ```git clone -b ats-0.87 http://github.com/amanzi/ats $ATS_SRC_DIR```
 
   d. Set up a directory for configuration scripts and a TPL installation directory.
     ```
@@ -137,8 +142,8 @@ All instructions assume you use bash.  Alter as needed for other shells.
     ```
   b. Run the script.
     ```. $ATS_BASE/ats-config-files/configure-amanzi-debug.sh```
-  c. Enter your T&E for the week.  This isn't as long (~3-5 minutes?)
-  d. Run Amanzi tests.  Some may not pass, but having them run means you should be in good shape.
+  c. Check your email.  This isn't as long (~3-5 minutes?)
+  d. Run Amanzi tests.  Some may not pass, but having them run with most passing means you should be in good shape.
     ```
     cd $AMANZI_BUILD_DIR
     make test
@@ -160,7 +165,7 @@ All instructions assume you use bash.  Alter as needed for other shells.
     cmake \
       -D Amanzi_DIR=${AMANZI_DIR}/lib \
       -D CMAKE_INSTALL_PREFIX=${ATS_DIR} \
-       -D CMAKE_BUILD_TYPE=Debug \
+      -D CMAKE_BUILD_TYPE=Debug \
     ${ATS_SRC_DIR}
 
     make -j8
@@ -174,7 +179,7 @@ All instructions assume you use bash.  Alter as needed for other shells.
   cd $ATS_BASE
   mkdir testing
   cd testing
-  git clone -b ats-demos-0.86 http://github.com/amanzi/ats-demos
+  git clone -b ats-demos-0.87 http://github.com/amanzi/ats-demos
   ```
   b. Run a test problem.
     ```

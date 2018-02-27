@@ -17,9 +17,9 @@ us to the air-water system.
 #include "PK_Factory.hh"
 #include "advection.hh"
 #include "Operator.hh"
-#include "OperatorDiffusion.hh"
-#include "OperatorAdvection.hh"
-#include "OperatorAccumulation.hh"
+#include "PDE_Diffusion.hh"
+#include "PDE_AdvectionUpwind.hh"
+#include "PDE_Accumulation.hh"
 //#include "PK_PhysicalBDF_ATS.hh"
 #include "pk_physical_bdf_default.hh"
 
@@ -91,12 +91,12 @@ private:
 
 
   // mathematical operators
-  Teuchos::RCP<Operators::OperatorDiffusion> matrix_diff_;
-  Teuchos::RCP<Operators::OperatorAdvection> matrix_adv_;
+  Teuchos::RCP<Operators::PDE_Diffusion> matrix_diff_;
+  Teuchos::RCP<Operators::PDE_AdvectionUpwind> matrix_adv_;
 
-  Teuchos::RCP<Operators::OperatorDiffusion> preconditioner_diff_;
-  Teuchos::RCP<Operators::OperatorAccumulation> preconditioner_acc_;
-  Teuchos::RCP<Operators::OperatorAdvection> preconditioner_adv_;
+  Teuchos::RCP<Operators::PDE_Diffusion> preconditioner_diff_;
+  Teuchos::RCP<Operators::PDE_Accumulation> preconditioner_acc_;
+  Teuchos::RCP<Operators::PDE_AdvectionUpwind> preconditioner_adv_;
 
   // time integration
   double atol_;

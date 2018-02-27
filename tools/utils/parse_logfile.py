@@ -10,7 +10,7 @@ import numpy as np
 def print_headers():
     print "cycle, time, dt, iteration count, wallclock avg (s)"
 
-def parse_file(fid, wallclock=False):
+def parse_logfile(fid, wallclock=False):
     """Reads a file, and returns a list of good and bad timesteps.
 
     Each are a list of 3-tuples: (step number, time of step, dt)
@@ -36,6 +36,7 @@ def parse_file(fid, wallclock=False):
 
 
 def float_list_type(mystring):
+    """Convert string-form list of doubles into list of doubles."""
     colors = []
     for f in mystring.strip("(").strip(")").strip("[").strip("]").split(","):
         try:
@@ -44,12 +45,45 @@ def float_list_type(mystring):
             colors.append(f)
     return colors
 
+
+def get_axs():
+    """Gets a figure and list of axes for plotting."""
+    return plt.subplots(1,2)
+
+def decorate_axs(axs):
+    """Adds legends, labels, limits."""
+    axs[0].set_xlabel("time [days]")
+    axs[0].set_ylabel("dt [days]")
+    axs[0].legend(loc='lower left')
+    axs[1].set_xlabel("cycles [-]")
+    axs[1].set_ylabel("dt [days]")
+    return
+
+def plot(data, axs, color, label, symbol='x'):
+    """Plot the data."""
+    axs[0].semilogy(data[0][:,1], data[0][:,2], '-'+symbol, color=color, label=label)
+    if data[1].shape != (0,):
+        axs[0].semilogy(data[1][:,1], data[1][:,2], symbol, color=color)
+    axs[1].semilogy(data[0][:,0], data[0][:,2], '-'+symbol, color=color)
+    if data[1].shape != (0,):
+        axs[1].semilogy(data[1][:,0], data[1][:,2], symbol, color=color)
+
+def write_to_file(data, fnamebase):
+    """Writes the data to a file for future reading"""
+    fname = fnamebase+".npz"
+    np.savez(fname, good_timesteps=data[0], bad_timesteps=data[1])
+
+def read_from_file(fname):
+    """Reads a .npz file"""
+    read = np.load(fname)
+    return [read["good_timesteps"], read["bad_timesteps"]]
+            
 if __name__ == "__main__":
-    import sys
+    import sys,os
     from matplotlib import pyplot as plt
 
     import argparse
-    parser = argparse.ArgumentParser(description="Plot timestep histories from an ATS run logfile.")
+    parser = argparse.ArgumentParser(description="Plot timestep histories from an ATS run logfile.  Store the results in a .npz file for future faster reading.")
     parser.add_argument("LOG_FILES", nargs="+", type=str,
                         help="List of logfiles to parse.")
     parser.add_argument("--colors", "-c", type=float_list_type,
@@ -58,43 +92,62 @@ if __name__ == "__main__":
     parser.add_argument("--colormap", "-m", type=str,
                         default="jet",
                         help="Colormap used to pick a color.")
+    parser.add_argument("--overwrite", "-o", action="store_true",
+                        help="Do not use any existing .npz file -- instead reload from the logfile and overwrite the .npz file.")
     args = parser.parse_args()
 
     import colors
     cm = colors.cm_mapper(0,1,args.colormap)
+    fig, axs = get_axs()
         
     fnames = args.LOG_FILES
-
     for i,fname in enumerate(fnames):
-        with open(fname,'r') as fid:
-            data = parse_file(fid)
-            plt.subplot(121)
-            if args.colors is None:
-                if len(fnames) > 1:
-                    c = cm(float(i)/(len(fnames)-1))
-                else:
-                    c = 'b'
+        if fname.endswith(".npz"):
+            data = read_from_file(fname)
+        elif os.path.isfile(fname+".npz") and not args.overwrite:
+            data = read_from_file(fname+".npz")
+        else:
+            with open(fname,'r') as fid:
+                data = parse_logfile(fid)
+            write_to_file(data, fname)
+                
+        if args.colors is None:
+            if len(fnames) > 1:
+                c = cm(float(i)/(len(fnames)-1))
             else:
-                if type(args.colors[i]) is float:
-                    c = cm(args.colors[i])
-                else:
-                    c = args.colors[i]
-            data[0][:,1] = data[0][:,1]/366
-            plt.semilogy(data[0][:,1], data[0][:,2], '-x', color=c, label=fname)
-            if data[1].shape != (0,):
-                data[1][:,1] = data[1][:,1]/366.
-                plt.semilogy(data[1][:,1], data[1][:,2], 'x', color=c)
-            plt.xlabel("time [years]")
-#            plt.xlabel("time [days]")
-            plt.ylabel("dt [days]")
-            plt.legend(loc='lower left')
-            plt.subplot(122)
-            plt.semilogy(data[0][:,0], data[0][:,2], '-x', color=c)
-            if data[1].shape != (0,):
-                plt.semilogy(data[1][:,0], data[1][:,2], 'x', color=c)
-            plt.xlabel("cycles [-]")
-            plt.ylabel("dt [days]")
+
+#                 if type(args.colors[i]) is float:
+#                     c = cm(args.colors[i])
+#                 else:
+#                     c = args.colors[i]
+#             data[0][:,1] = data[0][:,1]/366
+#             plt.semilogy(data[0][:,1], data[0][:,2], '-x', color=c, label=fname)
+#             if data[1].shape != (0,):
+#                 data[1][:,1] = data[1][:,1]/366.
+#                 plt.semilogy(data[1][:,1], data[1][:,2], 'x', color=c)
+#             plt.xlabel("time [years]")
+# #            plt.xlabel("time [days]")
+#             plt.ylabel("dt [days]")
+#             plt.legend(loc='lower left')
+#             plt.subplot(122)
+#             plt.semilogy(data[0][:,0], data[0][:,2], '-x', color=c)
+#             if data[1].shape != (0,):
+#                 plt.semilogy(data[1][:,0], data[1][:,2], 'x', color=c)
+#             plt.xlabel("cycles [-]")
+#             plt.ylabel("dt [days]")
+
+                c = 'b'
+        else:
+            if type(args.colors[i]) is float:
+                c = cm(args.colors[i])
+            else:
+                c = args.colors[i]
+            
+        plot(data, axs, c, fname)
+
+    decorate_axs(axs)
 
     plt.show()
+    sys.exit(0)
 
 

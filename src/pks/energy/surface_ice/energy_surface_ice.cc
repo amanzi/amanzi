@@ -351,15 +351,17 @@ void EnergySurfaceIce::AddSourcesToPrecon_(const Teuchos::Ptr<State>& S, double 
     // (i.e. SEB PK) has defined a dsource_dT, but 3, the source
     // evaluator does not think it depends upon T (because it is
     // hacked in by the PK).
-    std::vector<double>& Acc_cells = preconditioner_acc_->local_matrices()->vals;
-
+    CompositeVector acc(S->GetFieldData(Keys::getKey(domain_,"conducted_energy_source"))->Map());
+    Epetra_MultiVector& acc_c = *acc.ViewComponent("cell", false);
+    
     const Epetra_MultiVector& dsource_dT =
       *S->GetFieldData(Keys::getDerivKey(Keys::getKey(domain_,"conducted_energy_source"), Keys::getKey(domain_,"temperature")))->ViewComponent("cell",false);
     const Epetra_MultiVector& cell_vol = *S->GetFieldData(cell_vol_key_)->ViewComponent("cell",false);
     unsigned int ncells = dsource_dT.MyLength();
     for (unsigned int c=0; c!=ncells; ++c) {
-      Acc_cells[c] -= dsource_dT[0][c] * cell_vol[0][c];
+      acc_c[0][c] = -dsource_dT[0][c] * cell_vol[0][c];
     }
+    preconditioner_acc_->AddAccumulationTerm(acc, "cell");
 
     if (vo_->os_OK(Teuchos::VERB_EXTREME)) {
       *vo_->os() << "Adding hacked source to PC:" << std::endl;

@@ -138,7 +138,7 @@ def getAnnotationAttributes():
 
 
 def renameScalar(oldname):
-    newname = oldname.split(".")[0].replace("_", " ")
+    newname = oldname.split(".")[0].replace("_", " ").replace("-", " ")
 
     units = None
     try:

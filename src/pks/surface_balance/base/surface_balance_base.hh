@@ -20,7 +20,7 @@ d theta(u)
 #define PK_SURFACE_BALANCE_BASE_HH_
 
 #include "Operator.hh"
-#include "OperatorAccumulation.hh"
+#include "PDE_Accumulation.hh"
 #include "PK_Factory.hh"
 #include "pk_physical_bdf_default.hh"
 
@@ -64,7 +64,7 @@ class SurfaceBalanceBase : public PK_PhysicalBDF_Default {
   double theta_;
 
   bool precon_used_;
-  Teuchos::RCP<Operators::OperatorAccumulation> preconditioner_acc_;
+  Teuchos::RCP<Operators::PDE_Accumulation> preconditioner_acc_;
   Teuchos::RCP<Operators::Operator> lin_solver_;
   
  private:

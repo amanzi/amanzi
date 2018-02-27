@@ -13,8 +13,8 @@ Authors: Ethan Coon (ecoon@lanl.gov)
 #include "upwinding.hh"
 
 #include "Operator.hh"
-#include "OperatorDiffusion.hh"
-#include "OperatorAccumulation.hh"
+#include "PDE_Diffusion.hh"
+#include "PDE_Accumulation.hh"
 
 // #include "pk_factory_ats.hh"
 // #include "pk_physical_bdf_base.hh"
@@ -119,10 +119,10 @@ protected:
 
   // mathematical operators
   Teuchos::RCP<Operators::Operator> matrix_; // pc in PKPhysicalBDFBase
-  Teuchos::RCP<Operators::OperatorDiffusion> matrix_diff_;
-  Teuchos::RCP<Operators::OperatorDiffusion> face_matrix_diff_;
-  Teuchos::RCP<Operators::OperatorDiffusion> preconditioner_diff_;
-  Teuchos::RCP<Operators::OperatorAccumulation> preconditioner_acc_;
+  Teuchos::RCP<Operators::PDE_Diffusion> matrix_diff_;
+  Teuchos::RCP<Operators::PDE_Diffusion> face_matrix_diff_;
+  Teuchos::RCP<Operators::PDE_Diffusion> preconditioner_diff_;
+  Teuchos::RCP<Operators::PDE_Accumulation> preconditioner_acc_;
   Teuchos::RCP<Operators::Operator> lin_solver_;
 
   // boundary condition data

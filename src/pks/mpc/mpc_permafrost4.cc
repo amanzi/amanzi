@@ -120,7 +120,7 @@ MPCPermafrost4::Setup(const Teuchos::Ptr<State>& S) {
       // Teuchos::ParameterList dWC_dT_plist;
       // dWC_dT_plist.set("surface operator", true);
       // dWC_dT_plist.set("entity kind", "cell");
-      // dWC_dT_surf_ = Teuchos::rcp(new Operators::OperatorAccumulation(dWC_dT_plist, dWC_dT_block_));
+      // dWC_dT_surf_ = Teuchos::rcp(new Operators::PDE_Accumulation(dWC_dT_plist, dWC_dT_block_));
 
       // -- derivatives of surface energy with respect to surface pressure
       //    For the Operator, we have to create one with the surface mesh,
@@ -129,8 +129,12 @@ MPCPermafrost4::Setup(const Teuchos::Ptr<State>& S) {
       Teuchos::ParameterList dE_dp_plist;
       dE_dp_plist.set("surface operator", true);
       dE_dp_plist.set("entity kind", "cell");
-      dE_dp_surf_ = Teuchos::rcp(new Operators::OperatorAccumulation(dE_dp_plist, surf_mesh_));
-      dE_dp_block_->OpPushBack(dE_dp_surf_->local_matrices());
+      dE_dp_surf_ = Teuchos::rcp(new Operators::PDE_Accumulation(dE_dp_plist, surf_mesh_));
+
+      for (Operators::Operator::op_iterator op = dE_dp_surf_->global_operator()->OpBegin();
+           op != dE_dp_surf_->global_operator()->OpEnd(); ++op) {
+        dE_dp_block_->OpPushBack(*op);
+      }
     }
 
     // must now re-symbolic assemble the matrix to get the updated surface parts
@@ -322,7 +326,7 @@ MPCPermafrost4::UpdatePreconditioner(double t,
     ->HasFieldDerivativeChanged(S_next_.ptr(), name_, Keys::getKey(domain_surf_,"pressure"));
   Teuchos::RCP<const CompositeVector> dEdp =
     S_next_->GetFieldData(Keys::getDerivKey(Keys::getKey(domain_surf_,"energy"), Keys::getKey(domain_surf_,"pressure")));
-  dE_dp_surf_->AddAccumulationTerm(*dEdp->ViewComponent("cell", false), h);
+  dE_dp_surf_->AddAccumulationTerm(*dEdp, h, "cell", false);
   
   // write for debugging
   std::vector<std::string> vnames;

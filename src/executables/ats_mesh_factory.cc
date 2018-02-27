@@ -20,6 +20,8 @@
 #include "MeshSurfaceCell.hh"
 #include "GeometricModel.hh"
 
+#include "plant_1D_mesh.hh"
+
 #include "ats_mesh_factory.hh"
 
 namespace ATS {
@@ -213,6 +215,13 @@ createMesh(Teuchos::ParameterList& mesh_plist,
       createMesh(subgrid_i_list, comm_self, gm, S);
     }
 
+  } else if (mesh_type == "Sperry 1D column") {
+    auto mesh = ATS::Testing::plantMesh(comm, gm, true);
+    bool deformable = mesh_plist.get<bool>("deformable mesh",false);
+
+    checkVerifyMesh(mesh_plist, mesh);
+    S.RegisterMesh(Amanzi::Keys::cleanPListName(mesh_plist.name()), mesh, deformable);
+    
   } else {
     Errors::Message msg;
     msg << "ATS Mesh Factory: unknown \"mesh type\" parameter \"" << mesh_type

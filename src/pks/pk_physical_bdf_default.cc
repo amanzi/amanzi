@@ -26,6 +26,9 @@ void PK_PhysicalBDF_Default::Setup(const Teuchos::Ptr<State>& S) {
   PK_Physical_Default::Setup(S);
   PK_BDF_Default::Setup(S);
 
+  // boundary conditions
+  bc_ = Teuchos::rcp(new Operators::BCs(mesh_, AmanziMesh::FACE, Operators::SCHEMA_DOFS_SCALAR));
+  
   // convergence criteria
   if (conserved_key_.empty()) {
     if (plist_->isParameter("conserved quantity suffix")) {
@@ -164,12 +167,14 @@ double PK_PhysicalBDF_Default::ErrorNorm(Teuchos::RCP<const TreeVector> u,
 // -----------------------------------------------------------------------------
 void
 PK_PhysicalBDF_Default::ApplyBoundaryConditions_(const Teuchos::Ptr<CompositeVector>& u) {
+  auto& markers = bc_markers();
+  auto& values = bc_values();
   if (u->HasComponent("face")) {
     Epetra_MultiVector& u_f = *u->ViewComponent("face",false);
     unsigned int nfaces = u_f.MyLength();
     for (unsigned int f=0; f!=nfaces; ++f) {
-      if (bc_markers_[f] == Operators::OPERATOR_BC_DIRICHLET) {
-        u_f[0][f] = bc_values_[f];
+      if (markers[f] == Operators::OPERATOR_BC_DIRICHLET) {
+        u_f[0][f] = values[f];
       }
     }
   } else if (u->HasComponent("boundary_face")) {
@@ -180,8 +185,8 @@ PK_PhysicalBDF_Default::ApplyBoundaryConditions_(const Teuchos::Ptr<CompositeVec
     unsigned int nfaces = u_bf.MyLength();
     for (unsigned int bf=0; bf!=nfaces; ++bf) {
       AmanziMesh::Entity_ID f = face_map.LID(vandalay_map.GID(bf));
-      if (bc_markers_[f] == Operators::OPERATOR_BC_DIRICHLET) {
-        u_bf[0][bf] = bc_values_[f];
+      if (markers[f] == Operators::OPERATOR_BC_DIRICHLET) {
+        u_bf[0][bf] = values[f];
       }
     }
   }    
@@ -211,13 +216,12 @@ double PK_PhysicalBDF_Default::BoundaryValue(const Teuchos::RCP<const Amanzi::Co
   // }
 
   // return value;
-
   if (solution->HasComponent("face")){
     const Epetra_MultiVector& u = *solution->ViewComponent("face",false);
     value = u[0][face_id];
   // } else if  (solution->HasComponent("boundary_face") &&
   //             bc_markers_[face_id] == Operators::OPERATOR_BC_DIRICHLET){
-  } else if (bc_markers_[face_id] == Operators::OPERATOR_BC_DIRICHLET) {
+  } else if (bc_markers()[face_id] == Operators::OPERATOR_BC_DIRICHLET) {
     // const Epetra_MultiVector& u = *solution->ViewComponent("boundary_face",false);
     // const Epetra_Map& fb_map = mesh_->exterior_face_map(false);
     // const Epetra_Map& f_map = mesh_->face_map(false);
@@ -226,7 +230,7 @@ double PK_PhysicalBDF_Default::BoundaryValue(const Teuchos::RCP<const Amanzi::Co
     // int face_lbid = fb_map.LID(face_gid);
 
     // value = u[0][face_lbid];
-    value = bc_values_[face_id];
+    value = bc_values()[face_id];
   } else {
     AmanziMesh::Entity_ID_List cells;
     mesh_->face_get_cells(face_id, AmanziMesh::USED, &cells);

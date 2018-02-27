@@ -62,7 +62,7 @@ void Richards::Functional(double t_old,
   bc_head_->Compute(t_new);
   bc_flux_->Compute(t_new);
   UpdateBoundaryConditions_(S_next_.ptr());
-  db_->WriteBoundaryConditions(bc_markers_, bc_values_);
+  db_->WriteBoundaryConditions(bc_markers(), bc_values());
 
   // zero out residual
   Teuchos::RCP<CompositeVector> res = g->Data();
@@ -202,7 +202,7 @@ void Richards::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> up,
 
   if (jacobian_ && iter_ >= jacobian_lag_) {// && preconditioner_->RangeMap().HasComponent("face")) {
     Teuchos::RCP<CompositeVector> flux = S_next_->GetFieldData(flux_key_, name_);
-    preconditioner_diff_->UpdateFlux(*up->Data(), *flux);
+    preconditioner_diff_->UpdateFlux(up->Data().ptr(), flux.ptr());
     preconditioner_diff_->UpdateMatricesNewtonCorrection(flux.ptr(), up->Data().ptr());
   }
   
@@ -225,20 +225,14 @@ void Richards::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> up,
 
   // -- get the accumulation deriv
   Key dwc_dp_key = Keys::getDerivKey(conserved_key_, key_);
-  const Epetra_MultiVector& dwc_dp =
-      *S_next_->GetFieldData(dwc_dp_key)->ViewComponent("cell",false);
+  Teuchos::RCP<const CompositeVector> dwc_dp = S_next_->GetFieldData(dwc_dp_key);
 
 #if DEBUG_FLAG
-  db_->WriteVector("    dwc_dp", S_next_->GetFieldData(dwc_dp_key).ptr());
+  db_->WriteVector("    dwc_dp", dwc_dp.ptr());
 #endif
 
-  // -- update the cell-cell block
-  std::vector<double>& Acc_cells = preconditioner_acc_->local_matrices()->vals;
-  unsigned int ncells = dwc_dp.MyLength();
-  for (unsigned int c=0; c!=ncells; ++c) {
-    //    ASSERT(dwc_dp[0][c] > 1.e-10);
-    Acc_cells[c] += dwc_dp[0][c] / h;
-  }
+  // -- update the cell-cell block  CompositeVector du(S_next_->GetFieldData(dwc_dp_key)->Map());
+  preconditioner_acc_->AddAccumulationTerm(*dwc_dp, h, "cell", false);
 
   // -- update preconditioner with source term derivatives if needed
   AddSourcesToPrecon_(S_next_.ptr(), h);

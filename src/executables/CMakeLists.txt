@@ -67,10 +67,11 @@ include_evaluators_directories(LISTNAME BGC_REG_INCLUDES)
 include_evaluators_directories(LISTNAME TEST_PKS_REG_INCLUDES)
 include_evaluators_directories(LISTNAME MPC_PK_FAC_INCLUDES)
 #include_evaluators_directories(LISTNAME TRANSPORT_PASSIVE_TRACER_REG_INCLUDES)
+include_evaluators_directories(LISTNAME TRANSPORT_AMANZI_REG_INCLUDES)
   
 
 
-add_executable(ats ats_mesh_factory.cc simulation_driver.cc main.cc )
+add_executable(ats plant_1D_mesh.cc ats_mesh_factory.cc simulation_driver.cc main.cc )
 
 set(ATS_LIBS
 		     coordinator
@@ -84,12 +85,12 @@ set(ATS_LIBS
                       pk_energy_base
 		      pk_flow_permafrost
                       pk_flow_richards
-                      pk_flow_snow_distribution
-                      pk_flow_overland
+#                      pk_flow_snow_distribution
+#                      pk_flow_overland
                       pk_flow_overland_pressure
                       pk_flow_icy_overland
                       pk_transport
-                      pk_coupled_transport
+#                      pk_coupled_transport
 	              # pk_prescribed_deformation
 #                      pk_prescribed_volumetric_deformation
                       pk_volumetric_deformation

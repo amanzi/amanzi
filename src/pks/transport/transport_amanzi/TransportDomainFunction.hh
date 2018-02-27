@@ -50,7 +50,7 @@ class TransportDomainFunction {
 
   std::vector<std::string>& tcc_names() { return tcc_names_; }
   std::vector<int>& tcc_index() { return tcc_index_; }
-  virtual void set_state(const Teuchos::RCP<State>& S) {S_ = S;}
+  virtual void set_state(const Teuchos::RCP<State>& S) {}
 
   // iterator methods
   typedef std::map<int, std::vector<double> >::iterator Iterator;
@@ -64,7 +64,6 @@ protected:
   double domain_volume_;
   std::map<int, std::vector<double> > value_;  // tcc values on boundary faces
   std::string keyword_;
-  Teuchos::RCP<const State> S_; 
 
   std::vector<std::string> tcc_names_;  // list of component names
   std::vector<int> tcc_index_;  // index of component in the global list

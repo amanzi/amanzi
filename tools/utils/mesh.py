@@ -72,7 +72,7 @@ def meshCentroidsStructuredOrdering_3D(order=["x","z"], filename="visdump_mesh.h
     
 
 def meshElemVolume(filename="visdump_mesh.h5", directory="."):
-    """Returns the volume of a cell.
+    """Returns the volume of each cell.
 
     Note this is the cell volume in 3D or the face area in 2D surface mesh."""
     
@@ -80,7 +80,7 @@ def meshElemVolume(filename="visdump_mesh.h5", directory="."):
     volumes = np.zeros((len(conn),),'d')
 
     if etype == 'PRISM' or etype == 'HEX':
-        raise NotImplementedError("meshElemVolume not implemented for 3D.  Likely you want to use cell_volumes directly anyway.")
+        raise NotImplementedError("meshElemVolume not implemented for 3D.")
 
     elif etype == 'QUAD' or etype == 'TRIANGLE':
         for i,elem in enumerate(conn):
