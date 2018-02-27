@@ -464,8 +464,8 @@ void Transport_PK::InitializeFields_()
   Teuchos::OSTab tab = vo_->getOSTab();
 
   // set popular default values when flow PK is off
-  InitializeField(S_, passwd_, "saturation_liquid", 1.0);
-  InitializeField(S_, passwd_, "darcy_flux_fracture", 0.0);
+  InitializeField(S_.ptr(), passwd_, "saturation_liquid", 1.0);
+  InitializeField(S_.ptr(), passwd_, "darcy_flux_fracture", 0.0);
 
   InitializeFieldFromField_("prev_saturation_liquid", "saturation_liquid", false);
   InitializeFieldFromField_("total_component_concentration_matrix", "total_component_concentration", false);
@@ -762,13 +762,12 @@ bool Transport_PK::AdvanceStep(double t_old, double t_new, bool reinit)
         tp_list_->sublist("operators").sublist("diffusion operator").sublist("matrix");
 
     // default boundary conditions (none inside domain and Neumann on its boundary)
-    std::vector<int> bc_model(nfaces_wghost, Operators::OPERATOR_BC_NONE);
-    std::vector<double> bc_value(nfaces_wghost, 0.0);
-    std::vector<double> bc_mixed;
-    ComputeBCs_(bc_model, bc_value, -1);
-
     Teuchos::RCP<Operators::BCs> bc_dummy = 
         Teuchos::rcp(new Operators::BCs(mesh_, AmanziMesh::FACE, Operators::SCHEMA_DOFS_SCALAR));
+
+    std::vector<int>& bc_model = bc_dummy->bc_model();
+    std::vector<double>& bc_value = bc_dummy->bc_value();
+    ComputeBCs_(bc_model, bc_value, -1);
 
     Operators::PDE_DiffusionFactory opfactory;
     Teuchos::RCP<Operators::PDE_Diffusion> op1 = opfactory.Create(op_list, mesh_, bc_dummy);

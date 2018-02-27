@@ -22,8 +22,8 @@ namespace Operators {
 
 class Op_Cell_Face : public Op {
  public:
-  Op_Cell_Face(std::string& name,
-                   const Teuchos::RCP<const AmanziMesh::Mesh> mesh) :
+  Op_Cell_Face(const std::string& name,
+               const Teuchos::RCP<const AmanziMesh::Mesh> mesh) :
       Op(OPERATOR_SCHEMA_BASE_CELL |
          OPERATOR_SCHEMA_DOFS_FACE, name, mesh) {
     WhetStone::DenseMatrix null_matrix;

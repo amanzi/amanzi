@@ -1,4 +1,4 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+/* -*-  mode: c++; indent-tabs-mode: nil -*- */
 /* -------------------------------------------------------------------------
    ATS
 
@@ -13,6 +13,7 @@
 #include "errors.hh"
 
 #include "CompositeVectorSpace.hh"
+#include "CompositeVector.hh"
 
 namespace Amanzi {
 
@@ -41,6 +42,11 @@ CompositeVectorSpace::CompositeVectorSpace(const CompositeVectorSpace& other,
     locations_(other.locations_),
     num_dofs_(other.num_dofs_) {}
 
+// CompositeVectorSpace is a factory of CompositeVectors
+Teuchos::RCP<CompositeVector>
+CompositeVectorSpace::Create() const {
+  return Teuchos::rcp(new CompositeVector(*this));
+}
 
 // Check equivalence of spaces.
 bool
@@ -169,8 +175,12 @@ CompositeVectorSpace::SetComponents(const std::vector<std::string>& names,
         const std::vector<int>& num_dofs) {
   // These components will be provided by an owning PK.
   if (owned_) {
-    Errors::Message message("SetComponent() cannot be called by a non-owning PK, and this factory is already owned.");
-    Exceptions::amanzi_throw(message);
+    // check equal
+    if (names != names_ || locations != locations_ || num_dofs != num_dofs_) {
+      Errors::Message message("SetComponent() called on an owned space with a differing spec.");
+      Exceptions::amanzi_throw(message);
+    }
+    return this;
   }
 
   // Make sure everything we've been asked for can be covered by this spec.

@@ -131,13 +131,12 @@ namespace Operators {
 
   void PDE_DiffusionMFD_Tracer::ApplyBCs(const Epetra_MultiVector& marker, bool primary, bool eliminate){
 
-     Teuchos::RCP<BCs> bc_f, bc_n;
-      for (std::vector<Teuchos::RCP<BCs> >::iterator bc = bcs_trial_.begin();
-          bc != bcs_trial_.end(); ++bc) {
-        if ((*bc)->kind() == AmanziMesh::FACE) {
-          bc_f = *bc;
-        } else if ((*bc)->kind() == AmanziMesh::NODE) {
-          bc_n = *bc;
+     Teuchos::Ptr<const BCs> bc_f, bc_n;
+      for (const auto& bc : bcs_trial_){
+        if (bc->kind() == AmanziMesh::FACE) {
+          bc_f = bc.ptr();
+        } else if (bc->kind() == AmanziMesh::NODE) {
+          bc_n = bc.ptr();
         }
       }
       ApplyBCs_Nodal_(marker, bc_f.ptr(), bc_n.ptr(), primary, eliminate);
@@ -149,8 +148,8 @@ namespace Operators {
 * Apply BCs on nodal operators
 ****************************************************************** */
   void PDE_DiffusionMFD_Tracer::ApplyBCs_Nodal_(const Epetra_MultiVector& marker,
-                                                const Teuchos::Ptr<BCs>& bc_f,
-                                                const Teuchos::Ptr<BCs>& bc_v,
+                                                const Teuchos::Ptr<const BCs>& bc_f,
+                                                const Teuchos::Ptr<const BCs>& bc_v,
                                                 bool primary, bool eliminate)
 {
   AmanziMesh::Entity_ID_List faces, nodes, cells;

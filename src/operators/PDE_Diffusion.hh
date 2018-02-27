@@ -1,4 +1,4 @@
-// Diffusion generates local Ops and global Operators for an elliptic operator.
+//! Diffusion generates local Ops and global Operators for an elliptic operator.
 
 /*
   Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
@@ -83,7 +83,7 @@ class PDE_Diffusion : public PDE_HelperDiscretization {
   
   // main virtual members
   // -- setup 
-  virtual void SetTensorCoefficient(const Teuchos::RCP<std::vector<WhetStone::Tensor> >& K) = 0;
+  virtual void SetTensorCoefficient(const Teuchos::RCP<const std::vector<WhetStone::Tensor> >& K) = 0;
   virtual void SetScalarCoefficient(const Teuchos::RCP<const CompositeVector>& k,
                                     const Teuchos::RCP<const CompositeVector>& dkdp) = 0;
 
@@ -103,7 +103,7 @@ class PDE_Diffusion : public PDE_HelperDiscretization {
   virtual void ScaleMassMatrices(double s) = 0;
 
   // default implementation  
-  virtual void Setup(const Teuchos::RCP<std::vector<WhetStone::Tensor> >& K,
+  virtual void Setup(const Teuchos::RCP<const std::vector<WhetStone::Tensor> >& K,
                      const Teuchos::RCP<const CompositeVector>& k,
                      const Teuchos::RCP<const CompositeVector>& dkdp) {
     SetTensorCoefficient(K);
@@ -112,19 +112,19 @@ class PDE_Diffusion : public PDE_HelperDiscretization {
 
   // boundary conditions (BC) require information on test and
   // trial spaces. For a single PDE, these BCs could be the same.
-  virtual void SetBCs(const Teuchos::RCP<BCs>& bc_trial,
-                      const Teuchos::RCP<BCs>& bc_test) {
+  virtual void SetBCs(const Teuchos::RCP<const BCs>& bc_trial,
+                      const Teuchos::RCP<const BCs>& bc_test) {
     SetTrialBCs(bc_trial);  
     SetTestBCs(bc_test);  
   }
-  virtual void SetTrialBCs(const Teuchos::RCP<BCs>& bc) {
+  virtual void SetTrialBCs(const Teuchos::RCP<const BCs>& bc) {
     if (bcs_trial_.size() == 0) {
       bcs_trial_.resize(1);
     }
     bcs_trial_[0] = bc;
     global_op_->SetTrialBCs(bc);
   }
-  virtual void SetTestBCs(const Teuchos::RCP<BCs>& bc) {
+  virtual void SetTestBCs(const Teuchos::RCP<const BCs>& bc) {
     if (bcs_test_.size() == 0) {
       bcs_test_.resize(1);
     }
@@ -145,19 +145,54 @@ class PDE_Diffusion : public PDE_HelperDiscretization {
 
   // access
   int schema_prec_dofs() { return global_op_schema_; }
-
-  Teuchos::RCP<const Op> local_matrices() const { return local_op_; }
-  Teuchos::RCP<Op> local_matrices() { return local_op_; }
   int schema_dofs() { return local_op_schema_; }
 
   Teuchos::RCP<const Op> jacobian_matrices() const { return jac_op_; }
   Teuchos::RCP<Op> jacobian_matrices() { return jac_op_; }
+  void set_jacobian_matrices(const Teuchos::RCP<Op>& op) {
+    if (global_operator().get()) {
+      if (local_matrices().get()) {
+        auto index = std::find(global_operator()->OpBegin(), global_operator()->OpEnd(), jac_op_)
+                     - global_operator()->OpBegin();
+        if (index != global_operator()->OpSize()) {
+          global_operator()->OpPushBack(op);
+        } else {
+          global_operator()->OpReplace(op, index);
+        }
+      } else {
+        global_operator()->OpPushBack(op);
+      }
+    }
+    jac_op_ = op;
+  }
   int schema_jacobian() { return jac_op_schema_; }
 
-  int little_k() { return little_k_; }
+  int little_k() const { return little_k_; }
+  CompositeVectorSpace little_k_space() const {
+    CompositeVectorSpace out;
+    out.SetMesh(mesh_);
+    out.SetGhosted();
+    if (little_k_ == OPERATOR_LITTLE_K_NONE) {
+      return out;
+    }
+    if (little_k_ != OPERATOR_LITTLE_K_UPWIND) {
+      out.AddComponent("cell", AmanziMesh::CELL, 1);
+    }
+    if (little_k_ != OPERATOR_LITTLE_K_STANDARD) {
+      out.AddComponent("face", AmanziMesh::FACE, 1);
+    }
+    if (little_k_ == OPERATOR_LITTLE_K_DIVK_TWIN || 
+        little_k_ == OPERATOR_LITTLE_K_DIVK_TWIN_GRAD) {
+      out.AddComponent("twin", AmanziMesh::FACE, 1);
+    }
+    if (little_k_ == OPERATOR_LITTLE_K_DIVK_TWIN_GRAD) {
+      out.AddComponent("grad", AmanziMesh::CELL, mesh_->space_dimension());
+    }
+    return out;          
+  }
   
  protected:
-  Teuchos::RCP<std::vector<WhetStone::Tensor> > K_;
+  Teuchos::RCP<const std::vector<WhetStone::Tensor> > K_;
   bool K_symmetric_;
 
   // nonlinear coefficient and its representation

@@ -133,8 +133,8 @@ class PDE_DiffusionMFD_Tracer : public virtual PDE_DiffusionMFD {
  protected:
   void InitDiffusion_(Teuchos::ParameterList& plist);
   void ApplyBCs_Nodal_(const Epetra_MultiVector& marker,
-                       const Teuchos::Ptr<BCs>& bc_f,
-                       const Teuchos::Ptr<BCs>& bc_v,
+                       const Teuchos::Ptr<const BCs>& bc_f,
+                       const Teuchos::Ptr<const BCs>& bc_v,
                        bool primary, bool eliminate);
   void CellSurfaceInterception_(int c, int surf_id, const AmanziGeometry::Point& norm, double surf_d);
   bool LineLineIntersect_(const AmanziGeometry::Point& p1,

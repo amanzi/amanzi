@@ -113,6 +113,7 @@ ExternalProject_Add(${HYPRE_BUILD_TARGET}
 
 # --- Useful variables that depend on HYPRE
 include(BuildLibraryName)
-set(HYPRE_INCLUDE_DIRS "${TPL_INSTALL_PREFIX}/include")
 build_library_name(HYPRE HYPRE_LIBRARY APPEND_PATH ${TPL_INSTALL_PREFIX}/lib)
+set(HYPRE_DIR "${TPL_INSTALL_PREFIX}")
+set(HYPRE_INCLUDE_DIRS "${TPL_INSTALL_PREFIX}/include")
 set(HYPRE_LIBRARIES    "${HYPRE_LIBRARY}")

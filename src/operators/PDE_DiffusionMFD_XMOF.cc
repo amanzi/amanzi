@@ -593,28 +593,29 @@ namespace Operators {
   }
 
  
-  void PDE_DiffusionMFD_XMOF::ApplyBCs(bool primary, bool eliminate){
+void PDE_DiffusionMFD_XMOF::ApplyBCs(bool primary, bool eliminate){
 
-    ApplyBCs_Mixed_(*bcs_trial_[0], *bcs_test_[0], primary, eliminate);
+  ApplyBCs_Mixed_(bcs_trial_[0].ptr(), bcs_test_[0].ptr(), primary, eliminate);
 
-  }
+}
   
 /* ******************************************************************
 * Apply BCs on face values.
 ****************************************************************** */
 
-void PDE_DiffusionMFD_XMOF::ApplyBCs_Mixed_(BCs& bc_trial, BCs& bc_test,
+void PDE_DiffusionMFD_XMOF::ApplyBCs_Mixed_(const Teuchos::Ptr<const BCs>& bc_trial,
+                                            const Teuchos::Ptr<const BCs>& bc_test,
                                             bool primary, bool eliminate){
 
 
 // apply diffusion type BCs to FACE-CELL system
   AmanziMesh::Entity_ID_List faces;
 
-  const std::vector<int>& bc_model_trial = bc_trial.bc_model();
-  const std::vector<int>& bc_model_test = bc_test.bc_model();
+  const std::vector<int>& bc_model_trial = bc_trial->bc_model();
+  const std::vector<int>& bc_model_test = bc_test->bc_model();
 
-  const std::vector<double>& bc_value = bc_trial.bc_value();
-  const std::vector<double>& bc_mixed = bc_trial.bc_mixed();
+  const std::vector<double>& bc_value = bc_trial->bc_value();
+  const std::vector<double>& bc_mixed = bc_trial->bc_mixed();
 
   // ASSERT(bc_model_trial.size() == nfaces_wghost);
   // ASSERT(bc_value.size() == nfaces_wghost);

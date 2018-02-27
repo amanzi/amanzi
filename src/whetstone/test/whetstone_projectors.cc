@@ -61,7 +61,6 @@ TEST(CROUZEIX_RAVIART) {
   mfd.H1consistencyHO(cell, 2, T, N, R, Ac, G);
   mfd.StiffnessMatrixHO(cell, 2, T, Ak);
 
-  /*
   printf("Stiffness matrix for order = 2\n");
   Ak.PrintMatrix("%8.4f ");
 
@@ -70,30 +69,12 @@ TEST(CROUZEIX_RAVIART) {
   for (int i = 0; i < nrows; i++) CHECK(Ak(i, i) > 0.0);
 
   // verify exact integration property
-  AmanziMesh::Entity_ID_List faces;
-  std::vector<int> dirs;
-  mesh->cell_get_faces_and_dirs(cell, &faces, &dirs);
+  DenseMatrix G1(G);
+  G1.Multiply(N, R, true);
+  //std::cout << "R="<< R << std::endl;
+  //std::cout << "N=" << N << std::endl;
+  //std::cout << G1 << std::endl;
     
-  double xi, yi, xj, yj;
-  double vxx = 0.0, vxy = 0.0, volume = mesh->cell_volume(cell); 
-  for (int i = 0; i < nrows; i++) {
-    int f1 = faces[i];
-    for (int j = 0; j < nrows; j++) {
-      int f2 = faces[j];
-
-      xi = mesh->face_centroid(f1)[0];
-      yi = mesh->face_centroid(f1)[1];
-      xj = mesh->face_centroid(f2)[0];
-
-      vxx += Ak(i, j) * xi * xj;
-      vxy += Ak(i, j) * yi * xj;
-    }
-  }
-
-  CHECK_CLOSE(T(0,0) * volume, vxx, 1e-10);
-  CHECK_CLOSE(0.0, vxy, 1e-10);
-  */
-
   delete comm;
 }
 

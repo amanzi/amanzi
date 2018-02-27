@@ -85,7 +85,9 @@ class PDE_DiffusionMFD_XMOF : public virtual PDE_Abstract {
   
   void ConstructBaseMesh_();
   void CreateMassMatrices_();
-  void ApplyBCs_Mixed_(BCs& bc_trial, BCs& bc_test, bool primary, bool eliminate);
+  void ApplyBCs_Mixed_(const Teuchos::Ptr<const BCs>& bc_trial,
+                       const Teuchos::Ptr<const BCs>& bc_test,
+                       bool primary, bool eliminate);
 
 
  protected:

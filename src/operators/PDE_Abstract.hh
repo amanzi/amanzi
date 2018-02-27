@@ -10,6 +10,13 @@
 
   An abstract operator uses factory of mimetic schemes and standard
   interface for creating stiffness, mass and divergence matrices.
+
+  Examples of usage this operator are in test/operators_stokes.cc
+  and test/operators_diffusion_curved.cc
+  In the first example, we set up a discrete divergence operator
+  that corersponds to a rectangular matrix. In the second example,
+  we set up an elliptic operator when Hermite-type degrees of 
+  freedom are used on curved faces.
 */
 
 #ifndef AMANZI_OPERATOR_PDE_ABSTRACT_HH_

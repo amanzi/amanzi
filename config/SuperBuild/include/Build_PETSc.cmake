@@ -127,6 +127,25 @@ else()
   set(CONFIG_PETSC_SHARED --with-shared-libraries=0)
 endif()
 
+if (DEFINED ENV{NERSC_HOST})
+  set(petsc_mpi_flags --with-mpi=1)
+  set(petsc_compilers --with-cc=${CMAKE_C_COMPILER} 
+                      --with-cxx=${CMAKE_CXX_COMPILER} 
+                      --with-fc=${CMAKE_Fortran_COMPILER})
+  set(petsc_compiler_flags --CFLAGS=${petsc_cflags}
+                           --CXXFLAGS=${petsc_cxxflags}
+                           --with-clib-autodetect=0 
+                           --with-cxxlib-autodetect=0)
+else()
+  set(petsc_mpi_flags --with-mpi=1 --with-mpi-dir=${MPI_PREFIX})
+  set(petsc_compilers)
+  set(petsc_compiler_flags --CFLAGS=${petsc_cflags} 
+                           --CXXFLAGS=${petsc_cxxflags})
+endif()
+
+set(petsc_mpi_compilers ${petsc_mpi_flags} ${petsc_compilers} ${petsc_compiler_flags})
+message(STATUS ">>> Build_PETSc -- MPI COMPILERS: ${petsc_mpi_compilers}")
+
 # --- Set the name of the patch
 #set(PETSC_patch_file petsc-3.5.2-mat-m0.patch petsc-3.5.2-install.patch)
 # --- Configure the bash patch script
@@ -161,10 +180,7 @@ ExternalProject_Add(${PETSc_BUILD_TARGET}
                               <SOURCE_DIR>/configure
                                           ${CONFIG_PETSC_SHARED}
                                           --prefix=<INSTALL_DIR>
-                                          --with-mpi=1
-                                          --with-mpi-dir=${MPI_PREFIX}
-                                          --CFLAGS=${petsc_cflags}
-                                          --CXXFLAGS=${petsc_cxxflags}
+                                          ${petsc_mpi_compilers}
                                           --without-x
                                           --with-debugging=${petsc_debug_flag}
                                           --without-valgrind
@@ -181,5 +197,6 @@ ExternalProject_Add(${PETSc_BUILD_TARGET}
                     # -- Output control
                     ${PETSc_logging_args})
 
+
 # --- Useful variables for other packages that depend on PETSc
-set(PETSC_DIR ${petsc_install_dir})
+global_set(PETSC_DIR ${petsc_install_dir})

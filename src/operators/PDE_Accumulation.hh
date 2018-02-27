@@ -74,8 +74,9 @@ class PDE_Accumulation : public PDE_HelperBCsList {
   {
     Schema schema;
     std::string name = plist.get<std::string>("entity kind");
+    int n_vecs = plist.get<int>("number of vectors", 1);
 
-    schema.Init(schema.StringToKind(name));
+    schema.Init(schema.StringToKind(name), n_vecs);
     InitAccumulation_(schema, plist.get<bool>("surface operator", false));
   }
 
@@ -85,8 +86,9 @@ class PDE_Accumulation : public PDE_HelperBCsList {
   {
     Schema schema;
     std::string name = plist.get<std::string>("entity kind");
+    int n_vecs = plist.get<int>("number of vectors", 1);
 
-    schema.Init(schema.StringToKind(name));
+    schema.Init(schema.StringToKind(name), n_vecs);
     InitAccumulation_(schema, plist.get<bool>("surface operator", false));
   }
 
@@ -96,9 +98,11 @@ class PDE_Accumulation : public PDE_HelperBCsList {
   {
     Schema schema;
     std::string name = plist.get<std::string>("entity kind");
-    bool surface = plist.get<bool>("surface operator", false);
+    int n_vecs = plist.get<int>("number of vectors", 1);
 
-    schema.Init(schema.StringToKind(name));
+    schema.Init(schema.StringToKind(name), n_vecs);
+
+    bool surface = plist.get<bool>("surface operator", false);
     InitAccumulation_(schema, surface);
   }
   
@@ -112,7 +116,7 @@ class PDE_Accumulation : public PDE_HelperBCsList {
   // update methods
   // -- modifiers for diagonal operators
   void AddAccumulationTerm(const CompositeVector& du, const std::string& name);
-  void AddAccumulationTerm(const CompositeVector& du, double dT, const std::string& name);
+  void AddAccumulationTerm(const CompositeVector& du, double dT, const std::string& name, bool volume=true);
 
   // -- linearized update methods with storage terms
   void AddAccumulationDelta(const CompositeVector& u0,

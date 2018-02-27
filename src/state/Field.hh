@@ -37,7 +37,7 @@ class Field {
 
  public:
   // virtual destructor
-  virtual ~Field() {};
+  virtual ~Field() {/*std::cout<<"delete "<<fieldname_<<"\n";*/};
 
   // copy constructor and assignment
   virtual Teuchos::RCP<Field> Clone() const = 0;
@@ -153,6 +153,7 @@ class Field {
   copy_iterator copy_begin() const { return field_copy_.begin(); }
   copy_iterator copy_end() const { return field_copy_.end(); }
   FieldMap::size_type copy_count() { return field_copy_.size(); }
+  void add_copy(Key tag, Teuchos::RCP<Field> field_copy) {field_copy_[tag] = field_copy;}
 
 
  protected:

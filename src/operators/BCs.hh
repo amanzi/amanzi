@@ -27,7 +27,7 @@ namespace AmanziGeometry { class Point; }
 namespace Operators {
 
 /* *******************************************************************
-* Three types of BCs are supported by this class:
+* Elliptic equation: Three types of BCs are supported by this class:
 *   [Dirichlet]                  u = u0 
 *   [Neumann]     -K(u) grad u . n = g0
 *   [Mixed] -K(u) grad u . n - c u = g1
@@ -60,6 +60,15 @@ namespace Operators {
 
 class BCs {
  public:
+  // KIND defines location of DOFs on a mesh:
+  // -- available mesh entities are node, edge, face, and cell
+  // 
+  // TYPE provides additional information, see OperatorDefs.hh for available options. 
+  // In short, is specifies geometric, algebraic or any other information:
+  // -- scalar is the simplest DOF, it is just a number (example: mean pressure)
+  // -- point is a vector DOF which has mesh dimension (example: fluid velocity)
+  // -- vector is a general vector DOF (example: moments of pressure)
+  // -- normal-component is a geometric DOF (example: normal component of fluid velocity)
   BCs(Teuchos::RCP<const AmanziMesh::Mesh> mesh, AmanziMesh::Entity_kind kind, int type) : 
       mesh_(mesh),
       kind_(kind),
@@ -67,6 +76,7 @@ class BCs {
   ~BCs() {};
 
   // access
+  Teuchos::RCP<const AmanziMesh::Mesh> mesh() const { return mesh_; }
   AmanziMesh::Entity_kind kind() const { return kind_; }
   int type() const { return type_; }
 
@@ -115,6 +125,12 @@ class BCs {
     return bc_value_vector_;
   }
 
+  const std::vector<int>& bc_model() const { return bc_model_; }
+  const std::vector<double>& bc_value() const { return bc_value_; }
+  const std::vector<double>& bc_mixed() const { return bc_mixed_; }
+  const std::vector<AmanziGeometry::Point>& bc_value_point() const { return bc_value_point_; }
+  const std::vector<std::vector<double>>& bc_value_vector() const { return bc_value_vector_; }
+  
  private:
   AmanziMesh::Entity_kind kind_;
   int type_;
@@ -131,7 +147,6 @@ class BCs {
 
 }  // namespace Operators
 }  // namespace Amanzi
-
 
 #endif
 

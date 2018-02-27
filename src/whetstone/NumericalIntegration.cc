@@ -36,6 +36,7 @@ double NumericalIntegration::IntegratePolynomialsFace(
     return IntegratePolynomialsEdge(x1, x2, polys);
   }
 
+  ASSERT(d_ == 3);
   const AmanziGeometry::Point& xf = mesh_->face_centroid(f);
 
   AmanziGeometry::Point fnormal = mesh_->face_normal(f);

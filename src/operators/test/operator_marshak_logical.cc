@@ -65,10 +65,9 @@ void RunTestMarshakLogical(std::string op_list_name) {
 
   AmanziGeometry::Point begin(0.,0.5,0.5), end(1.,0.5,0.5);
   AmanziMesh::Entity_ID_List cells,faces;
-  double length;
   fac.AddSegment(100,begin,end,1.0,
-		 MeshLogicalFactory::TIP_BOUNDARY,MeshLogicalFactory::TIP_BOUNDARY,
-		 "myregion",&cells, &faces, &length);
+		 MeshLogicalFactory::LogicalTip_t::BOUNDARY,MeshLogicalFactory::LogicalTip_t::BOUNDARY,
+		 "myregion",&cells, &faces);
   RCP<const Mesh> mesh = fac.Create();
 
   // Create nonlinear coefficient.
@@ -151,9 +150,8 @@ void RunTestMarshakLogical(std::string op_list_name) {
     }
 
     // upwind heat conduction coefficient
-    knc->UpdateValues(solution);
-    ModelUpwindFn func = &HeatConduction::Conduction;
-    upwind.Compute(*flux, solution, bc_model, bc_value, *knc->values(), func);
+    knc->UpdateValues(solution, bc_model, bc_value);
+    upwind.Compute(*flux, solution, bc_model, *knc->values());
 
     // add diffusion operator
     Teuchos::ParameterList olist = plist.sublist("PK operator").sublist(op_list_name);

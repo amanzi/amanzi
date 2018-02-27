@@ -17,6 +17,7 @@
 
 #include "Mesh.hh"
 #include "MeshDefs.hh"
+#include "CompositeVectorSpace.hh"
 
 namespace Amanzi {
 namespace Operators {
@@ -118,6 +119,16 @@ inline bool operator==(const Schema& s1, const Schema& s2) {
 
 inline bool operator!=(const Schema& s1, const Schema& s2) {
   return !(s1 == s2);
+}
+
+inline CompositeVectorSpace cvsFromSchema(
+    const Schema& schema, const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) {
+  CompositeVectorSpace cvs;
+  cvs.SetMesh(mesh);
+  for (const auto& item : schema) {
+    cvs.AddComponent(AmanziMesh::entity_kind_string(item.kind), item.kind, item.num);
+  }
+  return cvs;
 }
 
 }  // namespace Operators

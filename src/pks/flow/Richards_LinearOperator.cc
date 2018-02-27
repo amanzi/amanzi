@@ -112,15 +112,13 @@ void Richards_PK::EnforceConstraints(double t_new, Teuchos::RCP<CompositeVector>
   // update relative permeability coefficients and upwind it
   darcy_flux_copy->ScatterMasterToGhosted("face");
 
-  relperm_->Compute(u, krel_);
-  RelPermUpwindFn func1 = &RelPerm::Compute;
-  upwind_->Compute(*darcy_flux_copy, *u, bc_model, bc_value, *krel_, func1);
+  relperm_->Compute(u, bc_model, bc_value, krel_);
+  upwind_->Compute(*darcy_flux_copy, *u, bc_model, *krel_);
   Operators::CellToFace_ScaleInverse(mu, krel_);
   krel_->ScaleMasterAndGhosted(molar_rho_);
 
-  relperm_->ComputeDerivative(u, dKdP_);
-  RelPermUpwindFn func2 = &RelPerm::ComputeDerivative;
-  upwind_->Compute(*darcy_flux_copy, *u, bc_model, bc_value, *dKdP_, func2);
+  relperm_->ComputeDerivative(u, bc_model, bc_value, dKdP_);
+  upwind_->Compute(*darcy_flux_copy, *u, bc_model, *dKdP_);
   Operators::CellToFace_ScaleInverse(mu, dKdP_);
   dKdP_->ScaleMasterAndGhosted(molar_rho_);
 

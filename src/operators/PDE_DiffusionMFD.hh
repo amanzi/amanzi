@@ -104,7 +104,7 @@ class PDE_DiffusionMFD : public virtual PDE_Diffusion {
   }
 
   // main virtual members for populating an operator
-  virtual void SetTensorCoefficient(const Teuchos::RCP<std::vector<WhetStone::Tensor> >& K) override;
+  virtual void SetTensorCoefficient(const Teuchos::RCP<const std::vector<WhetStone::Tensor> >& K) override;
   virtual void SetScalarCoefficient(const Teuchos::RCP<const CompositeVector>& k,
                                     const Teuchos::RCP<const CompositeVector>& dkdp) override;
 
@@ -170,10 +170,17 @@ class PDE_DiffusionMFD : public virtual PDE_Diffusion {
                                 const Teuchos::Ptr<const CompositeVector>& u,
                                 double scalar_limiter);
 
-  void ApplyBCs_Mixed_(BCs& bc_trial, BCs& bc_test, bool primary, bool eliminate);
-  void ApplyBCs_Cell_(BCs& bc_trial, BCs& bc_test, bool primary, bool eliminate);
-  void ApplyBCs_Edge_(BCs& bc_trial, BCs& bc_test, bool primary, bool eliminate);
-  void ApplyBCs_Nodal_(const Teuchos::Ptr<BCs>& bc_f, const Teuchos::Ptr<BCs>& bc_n,
+  void ApplyBCs_Mixed_(const Teuchos::Ptr<const BCs>& bc_trial,
+                       const Teuchos::Ptr<const BCs>& bc_test,
+                       bool primary, bool eliminate);
+  void ApplyBCs_Cell_(const Teuchos::Ptr<const BCs>& bc_trial,
+                      const Teuchos::Ptr<const BCs>& bc_test,
+                      bool primary, bool eliminate);
+  void ApplyBCs_Edge_(const Teuchos::Ptr<const BCs>& bc_trial,
+                      const Teuchos::Ptr<const BCs>& bc_test,
+                      bool primary, bool eliminate);
+  void ApplyBCs_Nodal_(const Teuchos::Ptr<const BCs>& bc_f,
+                       const Teuchos::Ptr<const BCs>& bc_n,
                        bool primary, bool eliminate);
 
  protected:
