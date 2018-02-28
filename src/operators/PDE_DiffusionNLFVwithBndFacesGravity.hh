@@ -49,8 +49,39 @@ class PDE_DiffusionNLFVwithBndFacesGravity : public PDE_DiffusionNLFVwithBndFace
   }
 
   PDE_DiffusionNLFVwithBndFacesGravity(Teuchos::ParameterList& plist,
+                                       const Teuchos::RCP<Operator>& global_op) :
+      PDE_DiffusionNLFVwithBndFaces(plist, global_op),
+      PDE_DiffusionWithGravity(global_op),
+      PDE_Diffusion(global_op)
+  {
+    operator_type_ = OPERATOR_DIFFUSION_NLFVFACES_GRAVITY;
+  }  
+
+  PDE_DiffusionNLFVwithBndFacesGravity(Teuchos::ParameterList& plist,
                                const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
                                double rho, const AmanziGeometry::Point& g) :
+      PDE_DiffusionNLFVwithBndFaces(plist, mesh),
+      PDE_DiffusionWithGravity(mesh),
+      PDE_Diffusion(mesh)
+  {
+    operator_type_ = OPERATOR_DIFFUSION_NLFVFACES_GRAVITY;
+    SetGravity(g);
+    SetDensity(rho);
+  }
+
+  PDE_DiffusionNLFVwithBndFacesGravity(Teuchos::ParameterList& plist,
+                               const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) :
+      PDE_DiffusionNLFVwithBndFaces(plist, mesh),
+      PDE_DiffusionWithGravity(mesh),
+      PDE_Diffusion(mesh)
+  {
+    operator_type_ = OPERATOR_DIFFUSION_NLFVFACES_GRAVITY;
+  }
+
+  PDE_DiffusionNLFVwithBndFacesGravity(Teuchos::ParameterList& plist,
+                                       const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
+                                       const Teuchos::RCP<const CompositeVector>& rho,
+                                       const AmanziGeometry::Point& g) :
       PDE_DiffusionNLFVwithBndFaces(plist, mesh),
       PDE_DiffusionWithGravity(mesh),
       PDE_Diffusion(mesh)

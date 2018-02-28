@@ -117,7 +117,7 @@ void PDE_DiffusionNLFV::SetScalarCoefficient(
       ASSERT(k_->HasComponent("face"));
     }
   }
-  if (dkdp_ != Teuchos::null) ASSERT(dkdp_->HasComponent("cell")); 
+  //if (dkdp_ != Teuchos::null) ASSERT(dkdp_->HasComponent("cell")); 
 }
 
 
@@ -166,13 +166,23 @@ void PDE_DiffusionNLFV::InitStencils_()
   WhetStone::NLFV nlfv(mesh_);
   WhetStone::MFD3D_Diffusion mfd3d(mesh_);
 
+  //std::cout<<"ncells_owned "<<ncells_owned<<" K "<<K_->size()<<"\n";
+  
   // distribute diffusion tensor
   WhetStone::DenseVector data(dim_ * dim_);
   for (int c = 0; c < ncells_owned; ++c) {
-    WhetStone::TensorToVector((*K_)[c], data);
+    if (K_ != Teuchos::null){
+      WhetStone::TensorToVector((*K_)[c], data);
+    } else{
+      WhetStone::Tensor Kc(dim_, 1);
+      Kc(0, 0) = 1.0;
+      WhetStone::TensorToVector((*K_)[c], data);
+    }
+    
     for (int i = 0; i < dim_ *dim_; ++i) {
       Ktmp[i][c] = data(i);
     }
+
   }
   cv_tmp->ScatterMasterToGhosted();
 
@@ -221,18 +231,24 @@ void PDE_DiffusionNLFV::InitStencils_()
   std::vector<AmanziGeometry::Point> tau;
 
   for (int c = 0; c < ncells_owned; c++) {
+
     const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
 
     // calculate list of candidate vectors
     mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
     int nfaces = faces.size();
 
+    WhetStone::Tensor Kc(mesh_->space_dimension(), 1);
+    Kc(0, 0) = 1.0;
+
+    if (K_.get()) Kc = (*K_)[c];
+    
     tau.clear();
     for (int n = 0; n < nfaces; n++) {
       int f = faces[n];
       if (bc_model[f] == OPERATOR_BC_NEUMANN) {
         const AmanziGeometry::Point& normal = mesh_->face_normal(f, false, c, &dir);
-        v = (*K_)[c] * normal;
+        v = Kc * normal;
       } else {
         for (int i = 0; i < dim_; ++i) v[i] = hap[i][f] - xc[i];
       }
@@ -245,7 +261,7 @@ void PDE_DiffusionNLFV::InitStencils_()
     for (int n = 0; n < nfaces; n++) {
       int f = faces[n];
       const AmanziGeometry::Point& normal = mesh_->face_normal(f);
-      conormal = ((*K_)[c] * normal) * dirs[n];
+      conormal = (Kc * normal) * dirs[n];
 
       ierr = nlfv.PositiveDecomposition(n, tau, conormal, ws, ids);
       ASSERT(ierr == 0);
