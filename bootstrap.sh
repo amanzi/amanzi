@@ -1440,46 +1440,46 @@ if [ -z "${tpl_config_file}" ]; then
   
   # Echo or execute configure command
   if [ ${dry_run} == "${TRUE}" ] ; then
-      status_message "TPL configure command: \n"
-      echo ${cmd_configure}
-      echo ""
+    status_message "TPL configure command: \n"
+    echo ${cmd_configure}
+    echo ""
   else
-      cd ${tpl_build_dir}
-      ${cmd_configure}
+    cd ${tpl_build_dir}
+    ${cmd_configure}
+
+    if [ $? -ne 0 ]; then
+      error_message "Failed to configure TPL build"
+      exit_now 30
+    fi
   fi
 
   if [ ${dry_run} == "${FALSE}" ]; then
-  if [ $? -ne 0 ]; then
-    error_message "Failed to configure TPL build"
-    exit_now 30
-  fi
-  status_message "TPL configure complete"
+    status_message "TPL configure complete"
   
-  # TPL make 
-  cd ${tpl_build_dir}
-  make -j ${parallel_jobs}
-  if [ $? -ne 0 ]; then
-    error_message "Failed to build TPLs"
-    exit_now 30
-  fi
+    # TPL make 
+    cd ${tpl_build_dir}
+    make -j ${parallel_jobs}
+    if [ $? -ne 0 ]; then
+      error_message "Failed to build TPLs"
+      exit_now 30
+    fi
   
-  # TPL Install
-  cd ${tpl_build_dir}
-  make install
-  if [ $? -ne 0 ]; then
-    error_message "Failed to install configure script"
-    exit_now 30
-  fi
+    # TPL Install
+    cd ${tpl_build_dir}
+    make install
+    if [ $? -ne 0 ]; then
+      error_message "Failed to install configure script"
+      exit_now 30
+    fi
       
+    cd ${pwd_save}
       
-  cd ${pwd_save}
-      
-  status_message "TPL build complete"
-  status_message "For future Amanzi builds use ${tpl_config_file}"
+    status_message "TPL build complete"
+    status_message "For future Amanzi builds use ${tpl_config_file}"
 
   else
  
-  status_message "To execute this TPL build remove the --dry_run option."
+    status_message "To execute this TPL build remove the --dry_run option."
   
   fi
   
