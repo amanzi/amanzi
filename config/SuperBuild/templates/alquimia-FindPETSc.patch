@@ -1,40 +1,9 @@
---- alquimia-dev-1.0.5/cmake/Modules/FindPETSc.cmake	2017-09-20 10:18:31.000000000 -0700
-+++ alquimia-1.0.5-source/cmake/Modules/FindPETSc.cmake	2017-11-06 13:18:04.377656854 -0800
-@@ -161,9 +161,14 @@
-   # We are done with the temporary Makefile, calling PETSC_GET_VARIABLE after this point is invalid!
-   file (REMOVE ${petsc_config_makefile})
- 
-+  message(STATUS ">>> JDM: petsc_cpp_line = ${petsc_cpp_line}")
-+  message(STATUS ">>> JDM: petsc_libs_external = ${petsc_libs_external}")
-+
-+  
-   include (ResolveCompilerPaths)
-   # Extract include paths and libraries from compile command line
-   resolve_includes (petsc_includes_all "${petsc_cpp_line}")
-+  
- 
-   #on windows we need to make sure we're linking against the right
-   #runtime library
-@@ -197,8 +202,11 @@
-     else (WIN32)
-       set (libname ${name})
-     endif (WIN32)
-+    message(STATUS ">>> JDM:   Searching for PETSC LIBRARY suffix = ${suffix}")
-+    message(STATUS ">>> JDM:                               libname = ${libname}")
-     find_library (PETSC_LIBRARY_${suffix} NAMES ${libname} HINTS ${petsc_lib_dir} NO_DEFAULT_PATH)
-     set (PETSC_LIBRARIES_${suffix} "${PETSC_LIBRARY_${suffix}}")
-+    message(STATUS ">>> JDM:  Found PETSC LIBRARY - PETSC_LIBRARIES_${suffix} = ${PETSC_LIBRARIES_${suffix}}")
-     mark_as_advanced (PETSC_LIBRARY_${suffix})
-   endmacro (PETSC_FIND_LIBRARY suffix name)
- 
-@@ -262,11 +270,16 @@
+--- alquimia-dev-1.0.5/cmake/Modules/FindPETSc.cmake	2017-09-20 11:18:31.000000000 -0600
++++ alquimia-1.0.5-source/cmake/Modules/FindPETSc.cmake	2018-02-28 16:43:17.000000000 -0700
+@@ -262,14 +262,14 @@
    return 0;
  }
  ")
-+
-+    message(STATUS ">>> JDM:  Preparing Multipass source runs ...")
-+    message(STATUS ">>> JDM:  includes = ${includes}")
-+    message(STATUS ">>> JDM:  libraries = ${libraries}")
 +
      multipass_source_runs ("${includes}" "${libraries}" "${_PETSC_TEST_SOURCE}" ${runs} "${PETSC_LANGUAGE_BINDINGS}")
 -    if (${${runs}})
@@ -45,24 +14,17 @@
 +    endif ( (${${runs}}) OR (DEFINED ENV{NERSC_HOST}) )
    endmacro (PETSC_TEST_RUNS)
  
- 
-@@ -286,6 +299,11 @@
+-
+   find_path (PETSC_INCLUDE_DIR petscts.h HINTS "${PETSC_DIR}" PATH_SUFFIXES include NO_DEFAULT_PATH)
+   find_path (PETSC_INCLUDE_CONF petscconf.h HINTS "${PETSC_DIR}" PATH_SUFFIXES "${PETSC_ARCH}/include" "bmake/${PETSC_ARCH}" NO_DEFAULT_PATH)
+   mark_as_advanced (PETSC_INCLUDE_DIR PETSC_INCLUDE_CONF)
+@@ -286,6 +286,9 @@
        set (petsc_includes_needed ${petsc_includes_all})
      else (petsc_works_allincludes) # We are going to need to link the external libs explicitly
        resolve_libraries (petsc_libraries_external "${petsc_libs_external}")
-+      message(STATUS " >>> JDM:  unresolved petsc external libs: ${petsc_libs_external}")
-+      message(STATUS " >>> JDM:  resolved petsc external libraries:  ${petsc_libraries_external}")
 +      if (DEFINED ENV{NERSC_HOST} )
 +        set (petsc_libraries_external ${petsc_libs_external})
 +      endif( )
        foreach (pkg SYS VEC MAT DM KSP SNES TS ALL)
          list (APPEND PETSC_LIBRARIES_${pkg}  ${petsc_libraries_external})
        endforeach (pkg)
-@@ -316,6 +334,7 @@
-   set (PETSC_MPIEXEC ${petsc_mpiexec} CACHE FILEPATH "Executable for running PETSc MPI programs" FORCE)
-   set (PETSC_INCLUDES ${petsc_includes_needed} CACHE STRING "PETSc include path" FORCE)
-   set (PETSC_LIBRARIES ${PETSC_LIBRARIES_ALL} CACHE STRING "PETSc libraries" FORCE)
-+  message(STATUS >>> JDM: PETSC_LIBRARIES = ${PETSC_LIBRARIES})
-   set (PETSC_COMPILER ${petsc_cc} CACHE FILEPATH "PETSc compiler" FORCE)
-   # Note that we have forced values for all these choices.  If you
-   # change these, you are telling the system to trust you that they
