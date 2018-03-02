@@ -60,11 +60,11 @@ TEST(OPERATOR_STOKES_EXACTNESS) {
   meshfactory.preference(FrameworkPreference({MSTK, STKMESH}));
   Teuchos::RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 16, 20, Teuchos::null);
 
-  int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
-  int nnodes = mesh->num_entities(AmanziMesh::NODE, AmanziMesh::OWNED);
-  int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
-  int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
-  int nnodes_wghost = mesh->num_entities(AmanziMesh::NODE, AmanziMesh::USED);
+  int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+  int nnodes = mesh->num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::OWNED);
+  int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
+  int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
+  int nnodes_wghost = mesh->num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::ALL);
 
   // populate diffusion coefficient using an analytic solution
   AnalyticElasticity02 ana(mesh);

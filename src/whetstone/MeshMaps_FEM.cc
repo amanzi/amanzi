@@ -81,7 +81,7 @@ void MeshMaps_FEM::NansonFormula(
     int f, double t, const VectorPolynomial& vc, VectorPolynomial& cn) const
 {
   Entity_ID_List cells;
-  mesh0_->face_get_cells(f, AmanziMesh::USED, &cells);
+  mesh0_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
 
   WhetStone::MatrixPolynomial C;
   Cofactors(cells[0], t, vc, C);
@@ -235,7 +235,7 @@ void MeshMaps_FEM::JacobianFaceValue(
     const AmanziGeometry::Point& x, Tensor& J) const
 {
   Entity_ID_List faces, cells;
-  mesh0_->face_get_cells(f, AmanziMesh::USED, &cells);
+  mesh0_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
 
   int c(cells[0]);
   mesh0_->cell_get_faces(c, &faces);

@@ -37,11 +37,11 @@ void WalkaboutCheckpoint::CalculateDarcyVelocity(
   velocity.clear();
   Teuchos::RCP<const AmanziMesh::Mesh> mesh = S->GetMesh();
 
-  int nnodes_owned  = mesh->num_entities(AmanziMesh::NODE, AmanziMesh::OWNED);
-  int nnodes_wghost = mesh->num_entities(AmanziMesh::NODE, AmanziMesh::USED);
-  int nfaces_owned  = mesh->num_entities(AmanziMesh::FACE,  AmanziMesh::OWNED);
-  int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE,  AmanziMesh::USED);
-  int ncells_owned  = mesh->num_entities(AmanziMesh::CELL,  AmanziMesh::OWNED);
+  int nnodes_owned  = mesh->num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::OWNED);
+  int nnodes_wghost = mesh->num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::ALL);
+  int nfaces_owned  = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
+  int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
+  int ncells_owned  = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
 
   // set markers for boundary nodes and faces
   std::vector<int> node_marker(nnodes_wghost);  
@@ -50,7 +50,7 @@ void WalkaboutCheckpoint::CalculateDarcyVelocity(
   AmanziMesh::Entity_ID_List nodes, faces, cells;
 
   for (int f = 0; f < nfaces_owned; f++) {
-    mesh->face_get_cells(f, AmanziMesh::USED, &cells);
+    mesh->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
     int ncells = cells.size();
 
     if (ncells == 1) {
@@ -111,13 +111,13 @@ void WalkaboutCheckpoint::CalculateDarcyVelocity(
 
   for (int v = 0; v < nnodes_owned; v++) {
     if (node_marker[v] > 0) {
-      mesh->node_get_cells(v, AmanziMesh::USED, &cells);
+      mesh->node_get_cells(v, AmanziMesh::Parallel_type::ALL, &cells);
       int ncells = cells.size();
 
       local_velocity.set(0.0);
       for (int n = 0; n < ncells; n++) {
         int c = cells[n];
-        mesh->node_get_cell_faces(v, c, AmanziMesh::USED, &faces);
+        mesh->node_get_cell_faces(v, c, AmanziMesh::Parallel_type::ALL, &faces);
         int nfaces = faces.size();
 
         if (nfaces > d) {  // Move boundary face to the top of the list. 
@@ -181,16 +181,16 @@ void WalkaboutCheckpoint::CalculateData_(
   CalculateDarcyVelocity(S, xyz, velocity);
 
   // set markers for boundary nodes and faces
-  int nnodes_owned = mesh.num_entities(AmanziMesh::NODE, AmanziMesh::OWNED);
-  int nnodes_wghost = mesh.num_entities(AmanziMesh::NODE, AmanziMesh::USED);
-  int nfaces_owned  = mesh.num_entities(AmanziMesh::FACE,  AmanziMesh::OWNED);
-  int ncells_owned  = mesh.num_entities(AmanziMesh::CELL,  AmanziMesh::OWNED);
+  int nnodes_owned = mesh.num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::OWNED);
+  int nnodes_wghost = mesh.num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::ALL);
+  int nfaces_owned = mesh.num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
+  int ncells_owned = mesh.num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
 
   std::vector<int> node_marker(nnodes_wghost);  
   AmanziMesh::Entity_ID_List nodes, cells;
 
   for (int f = 0; f < nfaces_owned; f++) {
-    mesh.face_get_cells(f, AmanziMesh::USED, &cells);
+    mesh.face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
     int ncells = cells.size();
 
     if (ncells == 1) {
@@ -224,7 +224,7 @@ void WalkaboutCheckpoint::CalculateData_(
 
   for (int n = 0; n < regs.size(); ++n) {
     AmanziMesh::Entity_ID_List cells;
-    mesh.get_set_entities(regs[n], AmanziMesh::CELL, AmanziMesh::OWNED, &cells);
+    mesh.get_set_entities(regs[n], AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED, &cells);
 
     for (auto it = cells.begin(); it != cells.end(); ++it) {
       material_ids[*it] = ids[n];
@@ -237,7 +237,7 @@ void WalkaboutCheckpoint::CalculateData_(
 
   for (int v = 0; v < nnodes_owned; v++) {
     if (node_marker[v] > 0) {
-      mesh.node_get_cells(v, AmanziMesh::USED, &cells);
+      mesh.node_get_cells(v, AmanziMesh::Parallel_type::ALL, &cells);
       int ncells = cells.size();
 
       local_phi = 0.0;

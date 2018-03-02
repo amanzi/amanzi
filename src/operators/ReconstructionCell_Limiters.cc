@@ -122,7 +122,7 @@ void ReconstructionCell::LimiterTensorial_(
   std::vector<double> field_local_max(ncells_wghost);
 
   for (int c = 0; c < ncells_owned; c++) {
-    mesh_->cell_get_face_adj_cells(c, AmanziMesh::USED, &cells);
+    mesh_->cell_get_face_adj_cells(c, AmanziMesh::Parallel_type::ALL, &cells);
     field_local_min[c] = field_local_max[c] = (*field_)[component_][c];
 
     for (int i = 0; i < cells.size(); i++) {
@@ -301,7 +301,7 @@ void ReconstructionCell::LimiterBarthJespersen_(
   std::vector<double> field_local_max(ncells_wghost);
 
   for (int c = 0; c < ncells_owned; c++) {
-    mesh_->cell_get_face_adj_cells(c, AmanziMesh::USED, &cells);
+    mesh_->cell_get_face_adj_cells(c, AmanziMesh::Parallel_type::ALL, &cells);
     field_local_min[c] = field_local_max[c] = (*field_)[component_][c];
 
     for (int i = 0; i < cells.size(); i++) {

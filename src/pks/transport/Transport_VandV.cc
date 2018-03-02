@@ -122,14 +122,14 @@ void Transport_PK::VV_PrintSoluteExtrema(const Epetra_MultiVector& tcc_next, dou
       if (mesh_->valid_set_name(runtime_regions_[k], AmanziMesh::FACE)) {
         flag = true;
         AmanziMesh::Entity_ID_List block;
-        mesh_->get_set_entities(runtime_regions_[k], AmanziMesh::FACE, AmanziMesh::OWNED, &block);
+        mesh_->get_set_entities(runtime_regions_[k], AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED, &block);
         int nblock = block.size();
 
         for (int m = 0; m < nblock; m++) {
           int f = block[m];
 
           Amanzi::AmanziMesh::Entity_ID_List cells;
-          mesh_->face_get_cells(f, Amanzi::AmanziMesh::USED, &cells);
+          mesh_->face_get_cells(f, Amanzi::AmanziMesh::Parallel_type::ALL, &cells);
           int dir, c = cells[0];
 
           const AmanziGeometry::Point& normal = mesh_->face_normal(f, false, c, &dir);

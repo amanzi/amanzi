@@ -27,20 +27,18 @@ namespace WhetStone {
 #ifdef AMANZI_CODE
 typedef AmanziGeometry::Entity_ID Entity_ID;
 typedef std::vector<Entity_ID> Entity_ID_List;
-typedef AmanziMesh::Parallel_type ParallelTypeCast;
-
-const int OWNED = AmanziMesh::USED;   // Owned by this processor
-const int GHOST = AmanziMesh::GHOST;  // Owned by another processor
-const int USED  = AmanziMesh::USED;   // OWNED + GHOST
+typedef AmanziMesh::Parallel_type Parallel_type;
 
 #else
 typedef long long int Entity_ID;
 typedef std::vector<Entity_ID> Entity_ID_List;
 typedef int ParallelTypeCast;
 
-const int OWNED = 1;  // Owned by this processor
-const int GHOST = 2;  // Owned by another processor
-const int USED  = 3;  // OWNED + GHOST
+enum class Parallel_type {
+  OWNED = 1;  // Owned by this processor
+  GHOST = 2;  // Owned by another processor
+  ALL = 3;    // OWNED + GHOST
+};
 #endif
 
 class Polynomial;

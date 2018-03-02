@@ -71,7 +71,7 @@ int Mesh_MSTK::deform(const std::vector<double>& target_cell_volumes_in,
     amanzi_throw(mesg);
   }
 
-  int nv = num_entities(NODE,USED);  
+  int nv = num_entities(NODE, Parallel_type::ALL);  
 
   // ---- Begin code by ETC ----
   int fixedmk = MSTK_GetMarker();
@@ -106,7 +106,7 @@ int Mesh_MSTK::deform(const std::vector<double>& target_cell_volumes_in,
 
   // copy the target and min volumes for cells from the input
  
-  int nc = num_entities(CELL,USED);
+  int nc = num_entities(CELL, Parallel_type::ALL);
   target_cell_volumes_ = new double[nc];     // class variable
   min_cell_volumes_    = new double[nc];     // class variable
  

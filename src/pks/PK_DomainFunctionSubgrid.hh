@@ -90,7 +90,7 @@ void PK_DomainFunctionSubgrid<FunctionBase>::Init(
   std::string region = regions[0];
   if (mesh_->valid_set_name(region, region_kind)) {
     AmanziMesh::Entity_ID_List id_list;
-    mesh_->get_set_entities(region, region_kind, AmanziMesh::USED, &id_list);
+    mesh_->get_set_entities(region, region_kind, AmanziMesh::Parallel_type::ALL, &id_list);
 
     if (id_list.size() != 1) {
       Errors::Message m;

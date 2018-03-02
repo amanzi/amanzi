@@ -552,7 +552,7 @@ Mesh_MSTK::Mesh_MSTK(const Mesh *inmesh,
     // access the set in Amanzi so that the set gets created in 'inmesh'
     // if it already does not exist
 
-    int setsize = ((Mesh_MSTK *) inmesh)->get_set_size(setnames[i],setkind,OWNED);
+    int setsize = ((Mesh_MSTK *) inmesh)->get_set_size(setnames[i],setkind,Parallel_type::OWNED);
 
     // Now retrieve the entities in the set from MSTK
 
@@ -608,7 +608,7 @@ Mesh_MSTK::Mesh_MSTK(const Mesh& inmesh,
     // access the set in Amanzi so that the set gets created in 'inmesh'
     // if it already does not exist
 
-    int setsize = ((Mesh_MSTK&) inmesh).get_set_size(setnames[i],setkind,OWNED);
+    int setsize = ((Mesh_MSTK&) inmesh).get_set_size(setnames[i],setkind,Parallel_type::OWNED);
 
     //  Now retrieve the entities in the set from MSTK
 
@@ -1348,10 +1348,10 @@ Mesh_MSTK::~Mesh_MSTK() {
 
 
 //---------------------------------------------------------
-// Number of OWNED, GHOST or USED entities of different types
+// Number of OWNED, GHOST or ALL entities of different types
 //
 // Number of entities of any kind (cell, face, edge, node) and in a
-// particular category (OWNED, GHOST, USED)
+// particular category (OWNED, GHOST, ALL)
 //---------------------------------------------------------
 unsigned int Mesh_MSTK::num_entities(const Entity_kind kind, 
                                      const Parallel_type ptype) const
@@ -1363,13 +1363,13 @@ unsigned int Mesh_MSTK::num_entities(const Entity_kind kind,
   case NODE:
 
     switch (ptype) {
-    case OWNED:
+    case Parallel_type::OWNED:
       return MSet_Num_Entries(OwnedVerts);
       break;
-    case GHOST:
+    case Parallel_type::GHOST:
       return !serial_run ? MSet_Num_Entries(NotOwnedVerts) : 0;
       break;
-    case USED:
+    case Parallel_type::ALL:
       return MESH_Num_Vertices(mesh);
       break;
     default:
@@ -1382,13 +1382,13 @@ unsigned int Mesh_MSTK::num_entities(const Entity_kind kind,
     assert(edges_initialized);
 
     switch (ptype) {
-    case OWNED:
+    case Parallel_type::OWNED:
       return MSet_Num_Entries(OwnedEdges);
       break;
-    case GHOST:
+    case Parallel_type::GHOST:
       return !serial_run ? MSet_Num_Entries(NotOwnedEdges) : 0;
       break;
-    case USED:
+    case Parallel_type::ALL:
       return MESH_Num_Edges(mesh);
       break;
     default:
@@ -1402,13 +1402,13 @@ unsigned int Mesh_MSTK::num_entities(const Entity_kind kind,
     assert(faces_initialized);
 
     switch (ptype) {
-    case OWNED:
+    case Parallel_type::OWNED:
       return MSet_Num_Entries(OwnedFaces);
       break;
-    case GHOST:
+    case Parallel_type::GHOST:
       return !serial_run ? MSet_Num_Entries(NotOwnedFaces) : 0;
       break;
-    case USED:
+    case Parallel_type::ALL:
       return (manifold_dimension() == 2 ? MESH_Num_Edges(mesh) : MESH_Num_Faces(mesh));
       break;
     default:
@@ -1420,13 +1420,13 @@ unsigned int Mesh_MSTK::num_entities(const Entity_kind kind,
   case CELL:
 
     switch (ptype) {
-    case OWNED:
+    case Parallel_type::OWNED:
       return MSet_Num_Entries(OwnedCells);
       break;
-    case GHOST:
+    case Parallel_type::GHOST:
       return !serial_run ? MSet_Num_Entries(GhostCells) : 0;
       break;
-    case USED:
+    case Parallel_type::ALL:
       return ((manifold_dimension() == 2) ? MESH_Num_Faces(mesh) : MESH_Num_Regions(mesh));
       break;
     default:
@@ -2122,7 +2122,7 @@ void Mesh_MSTK::node_get_cells(const Entity_ID nodeid,
   MVertex_ptr mv = (MVertex_ptr) vtx_id_to_handle[nodeid];
   
   /* Reserved for next major release of MSTK
-  if (MV_PType(mv) == PINTERIOR && ptype != GHOST) { 
+  if (MV_PType(mv) == PINTERIOR && ptype != Parallel_type::GHOST) { 
 
     if (manifold_dimension() == 3) {
       int nvr, regionids[200];
@@ -2167,7 +2167,7 @@ void Mesh_MSTK::node_get_cells(const Entity_ID nodeid,
     idx = 0; 
     while ((ment = List_Next_Entry(cell_list,&idx))) {
       if (MEnt_PType(ment) == PGHOST) {
-        if (ptype == GHOST || ptype == USED) {
+        if (ptype == Parallel_type::GHOST || ptype == Parallel_type::ALL) {
           lid = MEnt_ID(ment);
           *it = lid-1;  // assign to next spot by dereferencing iterator
           ++it;
@@ -2175,7 +2175,7 @@ void Mesh_MSTK::node_get_cells(const Entity_ID nodeid,
         }
       }
       else {
-        if (ptype == OWNED || ptype == USED) {
+        if (ptype == Parallel_type::OWNED || ptype == Parallel_type::ALL) {
           lid = MEnt_ID(ment);
           *it = lid-1;  // assign to next spot by dereferencing iterator
           ++it;
@@ -2212,7 +2212,7 @@ void Mesh_MSTK::node_get_faces(const Entity_ID nodeid,
   MVertex_ptr mv = (MVertex_ptr) vtx_id_to_handle[nodeid];
 
   /* Reserved for next major release of MSTK 
-  if (MV_PType(mv) == PINTERIOR && ptype != GHOST) {
+  if (MV_PType(mv) == PINTERIOR && ptype != Parallel_type::GHOST) {
     if (manifold_dimension() == 3) {
       int nvf, vfaceids[200];
 
@@ -2254,7 +2254,7 @@ void Mesh_MSTK::node_get_faces(const Entity_ID nodeid,
     idx = 0; n = 0;
     while ((ment = List_Next_Entry(face_list,&idx))) {
       if (MEnt_PType(ment) == PGHOST) {
-        if (ptype == GHOST || ptype == USED) {
+        if (ptype == Parallel_type::GHOST || ptype == Parallel_type::ALL) {
           lid = MEnt_ID(ment);
           *it = lid-1;  // assign to next spot by dereferencing iterator
           ++it;
@@ -2262,7 +2262,7 @@ void Mesh_MSTK::node_get_faces(const Entity_ID nodeid,
         }
       }
       else {
-        if (ptype == OWNED || ptype == USED) {
+        if (ptype == Parallel_type::OWNED || ptype == Parallel_type::ALL) {
           lid = MEnt_ID(ment);
           *it = lid-1;  // assign to next spot by dereferencing iterator
           ++it;
@@ -2314,7 +2314,7 @@ void Mesh_MSTK::node_get_cell_faces(const Entity_ID nodeid,
       if (!MF_UsesEntity(mf,mv,MVERTEX)) continue;
 
       if (MEnt_PType(mf) == PGHOST) {
-        if (ptype == GHOST || ptype == USED) {
+        if (ptype == Parallel_type::GHOST || ptype == Parallel_type::ALL) {
           lid = MEnt_ID(mf);
           *it = lid-1;  // assign to next spot by dereferencing iterator
           ++it;
@@ -2322,7 +2322,7 @@ void Mesh_MSTK::node_get_cell_faces(const Entity_ID nodeid,
         }
       }
       else {
-        if (ptype == OWNED || ptype == USED) {
+        if (ptype == Parallel_type::OWNED || ptype == Parallel_type::ALL) {
           lid = MEnt_ID(mf);
           *it = lid-1;  // assign to next spot by dereferencing iterator
           ++it;
@@ -2345,7 +2345,7 @@ void Mesh_MSTK::node_get_cell_faces(const Entity_ID nodeid,
       if (!ME_UsesEntity(me,mv,MVERTEX)) continue;
 
       if (MEnt_PType(me) == PGHOST) {
-        if (ptype == GHOST || ptype == USED) {
+        if (ptype == Parallel_type::GHOST || ptype == Parallel_type::ALL) {
           lid = MEnt_ID(me);
           *it = lid-1;  // assign to next spot by dereferencing iterator
           ++it;
@@ -2353,7 +2353,7 @@ void Mesh_MSTK::node_get_cell_faces(const Entity_ID nodeid,
         }
       }
       else {
-        if (ptype == OWNED || ptype == USED) {
+        if (ptype == Parallel_type::OWNED || ptype == Parallel_type::ALL) {
           lid = MEnt_ID(me);
           *it = lid-1;  // assign to next spot by dereferencing iterator
           ++it;
@@ -2387,7 +2387,7 @@ void Mesh_MSTK::face_get_cells_internal_(const Entity_ID faceid,
    
     List_ptr fregs = MF_Regions(mf);
     MRegion_ptr mr;
-    if (ptype == USED) {      
+    if (ptype == Parallel_type::ALL) {      
       int idx = 0;
       while ((mr = List_Next_Entry(fregs,&idx)))
         cellids->push_back(MR_ID(mr)-1);
@@ -2396,11 +2396,11 @@ void Mesh_MSTK::face_get_cells_internal_(const Entity_ID faceid,
       int idx = 0;
       while ((mr = List_Next_Entry(fregs,&idx))) {
         if (MEnt_PType(mr) == PGHOST) {
-          if (ptype == GHOST)
+          if (ptype == Parallel_type::GHOST)
             cellids->push_back(MR_ID(mr)-1);
         }
         else
-          if (ptype == OWNED)
+          if (ptype == Parallel_type::OWNED)
             cellids->push_back(MR_ID(mr)-1);
       }
     }
@@ -2412,7 +2412,7 @@ void Mesh_MSTK::face_get_cells_internal_(const Entity_ID faceid,
 
     List_ptr efaces = ME_Faces(me);
     MFace_ptr mf;
-    if (ptype == USED) {
+    if (ptype == Parallel_type::ALL) {
       int idx = 0;
       while ((mf = List_Next_Entry(efaces,&idx)))
         cellids->push_back(MF_ID(mf)-1);
@@ -2421,11 +2421,11 @@ void Mesh_MSTK::face_get_cells_internal_(const Entity_ID faceid,
       int idx = 0;
       while ((mf = List_Next_Entry(efaces,&idx))) {
         if (MEnt_PType(mf) == PGHOST) {
-          if (ptype == GHOST)
+          if (ptype == Parallel_type::GHOST)
             cellids->push_back(MF_ID(mf)-1);
         }
         else
-          if (ptype == OWNED)
+          if (ptype == Parallel_type::OWNED)
             cellids->push_back(MF_ID(mf)-1);
       }
     }
@@ -2470,13 +2470,13 @@ void Mesh_MSTK::cell_get_face_adj_cells(const Entity_ID cellid,
       while ((mr2 = List_Next_Entry(fregs,&idx2))) {
         if (mr2 != mr) {
           if (MEnt_PType(mr2) == PGHOST) {
-            if (ptype == GHOST || ptype == USED) {
+            if (ptype == Parallel_type::GHOST || ptype == Parallel_type::ALL) {
               lid = MEnt_ID(mr2);
               fadj_cellids->push_back(lid-1);
             }
           }
           else {
-            if (ptype == OWNED || ptype == USED) {
+            if (ptype == Parallel_type::OWNED || ptype == Parallel_type::ALL) {
               lid = MEnt_ID(mr2);
               fadj_cellids->push_back(lid-1);
             }
@@ -2503,13 +2503,13 @@ void Mesh_MSTK::cell_get_face_adj_cells(const Entity_ID cellid,
       while ((mf2 = List_Next_Entry(efaces,&idx2))) {
         if (mf2 != mf) {
           if (MEnt_PType(mf2) == PGHOST) {
-            if (ptype == GHOST || ptype == USED) {
+            if (ptype == Parallel_type::GHOST || ptype == Parallel_type::ALL) {
               lid = MEnt_ID(mf2);
               fadj_cellids->push_back(lid-1);
             }
           }
           else {
-            if (ptype == OWNED || ptype == USED) {
+            if (ptype == Parallel_type::OWNED || ptype == Parallel_type::ALL) {
               lid = MEnt_ID(mf2);
               fadj_cellids->push_back(lid-1);
             }
@@ -2559,13 +2559,13 @@ void Mesh_MSTK::cell_get_node_adj_cells(const Entity_ID cellid,
           MEnt_Mark(mr2,mkid);
           List_Add(cell_list,mr2);
           if (MEnt_PType(mr2) == PGHOST) {
-            if (ptype == GHOST || ptype == USED) {
+            if (ptype == Parallel_type::GHOST || ptype == Parallel_type::ALL) {
               lid = MEnt_ID(mr2);
               nadj_cellids->push_back(lid-1);
             }
           }
           else {
-            if (ptype == OWNED || ptype == USED) {
+            if (ptype == Parallel_type::OWNED || ptype == Parallel_type::ALL) {
               lid = MEnt_ID(mr2);
               nadj_cellids->push_back(lid-1);
             }
@@ -2594,13 +2594,13 @@ void Mesh_MSTK::cell_get_node_adj_cells(const Entity_ID cellid,
           MEnt_Mark(mf2,mkid);
           List_Add(cell_list,mf2);
           if (MEnt_PType(mf2) == PGHOST) {
-            if (ptype == GHOST || ptype == USED) {
+            if (ptype == Parallel_type::GHOST || ptype == Parallel_type::ALL) {
               lid = MEnt_ID(mf2);
               nadj_cellids->push_back(lid-1);
             }
           }
           else {
-            if (ptype == OWNED || ptype == USED) {
+            if (ptype == Parallel_type::OWNED || ptype == Parallel_type::ALL) {
               lid = MEnt_ID(mf2);
               nadj_cellids->push_back(lid-1);
             }
@@ -2796,7 +2796,7 @@ MSet_ptr Mesh_MSTK::build_set(const Teuchos::RCP<const AmanziGeometry::Region>& 
     if (region->type() == AmanziGeometry::BOX ||
         region->type() == AmanziGeometry::COLORFUNCTION) {
 
-      int ncell = num_entities(CELL, USED);              
+      int ncell = num_entities(CELL, Parallel_type::ALL);              
 
       for (int icell = 0; icell < ncell; icell++)
         if (region->inside(cell_centroid(icell)))
@@ -2805,7 +2805,7 @@ MSet_ptr Mesh_MSTK::build_set(const Teuchos::RCP<const AmanziGeometry::Region>& 
     }
     else if (region->type() == AmanziGeometry::ALL)  {
 
-      int ncell = num_entities(CELL, USED);              
+      int ncell = num_entities(CELL, Parallel_type::ALL);              
 
       for (int icell = 0; icell < ncell; icell++)
         MSet_Add(mset,cell_id_to_handle[icell]);
@@ -2817,7 +2817,7 @@ MSet_ptr Mesh_MSTK::build_set(const Teuchos::RCP<const AmanziGeometry::Region>& 
 
       rgnpnt = Teuchos::rcp_static_cast<const AmanziGeometry::RegionPoint>(region)->point();
         
-      int nnode = num_entities(NODE, USED);
+      int nnode = num_entities(NODE, Parallel_type::ALL);
       double mindist2 = 1.e+16;
       int minnode = -1;
         
@@ -2837,15 +2837,15 @@ MSet_ptr Mesh_MSTK::build_set(const Teuchos::RCP<const AmanziGeometry::Region>& 
 
       Entity_ID_List cells, cells1;
 
-      node_get_cells(minnode,USED,&cells);
+      node_get_cells(minnode, Parallel_type::ALL, &cells);
       
       int ncells = cells.size();
       for (int ic = 0; ic < ncells; ic++) {
         Entity_ID icell = cells[ic];
         
         // Check if point is contained in cell            
-        if (point_in_cell(rgnpnt,icell))
-          MSet_Add(mset,cell_id_to_handle[icell]);
+        if (point_in_cell(rgnpnt, icell))
+          MSet_Add(mset, cell_id_to_handle[icell]);
       }
 
     }
@@ -2853,7 +2853,7 @@ MSet_ptr Mesh_MSTK::build_set(const Teuchos::RCP<const AmanziGeometry::Region>& 
 
       if (celldim == 2) {
 
-        int ncells = num_entities(CELL, USED);              
+        int ncells = num_entities(CELL, Parallel_type::ALL);              
         for (int ic = 0; ic < ncells; ic++) {
 
           std::vector<AmanziGeometry::Point> ccoords(space_dim_);
@@ -2945,7 +2945,7 @@ MSet_ptr Mesh_MSTK::build_set(const Teuchos::RCP<const AmanziGeometry::Region>& 
 
     if (region->type() == AmanziGeometry::BOX)  {
 
-      int nface = num_entities(FACE, USED);
+      int nface = num_entities(FACE, Parallel_type::ALL);
         
       for (int iface = 0; iface < nface; iface++) {
         if (region->inside(face_centroid(iface)))
@@ -2954,7 +2954,7 @@ MSet_ptr Mesh_MSTK::build_set(const Teuchos::RCP<const AmanziGeometry::Region>& 
     }
     else if (region->type() == AmanziGeometry::ALL)  {
 
-      int nface = num_entities(FACE, USED);
+      int nface = num_entities(FACE, Parallel_type::ALL);
         
       for (int iface = 0; iface < nface; iface++) {
         MSet_Add(mset,face_id_to_handle[iface]);
@@ -2963,7 +2963,7 @@ MSet_ptr Mesh_MSTK::build_set(const Teuchos::RCP<const AmanziGeometry::Region>& 
     else if (region->type() == AmanziGeometry::PLANE ||
              region->type() == AmanziGeometry::POLYGON) {
 
-      int nface = num_entities(FACE, USED);
+      int nface = num_entities(FACE, Parallel_type::ALL);
               
       for (int iface = 0; iface < nface; iface++) {
         std::vector<AmanziGeometry::Point> fcoords(space_dim_);
@@ -3037,7 +3037,7 @@ MSet_ptr Mesh_MSTK::build_set(const Teuchos::RCP<const AmanziGeometry::Region>& 
         region->type() == AmanziGeometry::POLYGON ||
         region->type() == AmanziGeometry::POINT) {
 
-      int nnode = num_entities(NODE, USED);
+      int nnode = num_entities(NODE, Parallel_type::ALL);
 
       for (int inode = 0; inode < nnode; inode++) {
 
@@ -3055,7 +3055,7 @@ MSet_ptr Mesh_MSTK::build_set(const Teuchos::RCP<const AmanziGeometry::Region>& 
     }
     else if (region->type() == AmanziGeometry::ALL)  {
 
-      int nnode = num_entities(NODE, USED);
+      int nnode = num_entities(NODE, Parallel_type::ALL);
 
       for (int inode = 0; inode < nnode; inode++)
         MSet_Add(mset,vtx_id_to_handle[inode]);
@@ -3455,7 +3455,7 @@ void Mesh_MSTK::get_set_entities_and_vofs(const std::string setname,
     nent_loc = 0; // reset and count to get the real number
 
     switch (ptype) {
-    case OWNED:
+    case Parallel_type::OWNED:
       idx = 0;
       while ((ment = MSet_Next_Entry(mset1,&idx))) {
         if (MEnt_PType(ment) != PGHOST) {
@@ -3465,7 +3465,7 @@ void Mesh_MSTK::get_set_entities_and_vofs(const std::string setname,
         }
       }
       break;
-    case GHOST:
+    case Parallel_type::GHOST:
       idx = 0;
       while ((ment = MSet_Next_Entry(mset1,&idx))) {
         if (MEnt_PType(ment) == PGHOST) {
@@ -3475,7 +3475,7 @@ void Mesh_MSTK::get_set_entities_and_vofs(const std::string setname,
         }
       }
       break;
-    case USED:
+    case Parallel_type::ALL:
       idx = 0;
       while ((ment = MSet_Next_Entry(mset1,&idx))) {
         *it = MEnt_ID(ment)-1;  // assign to next spot by dereferencing iterator

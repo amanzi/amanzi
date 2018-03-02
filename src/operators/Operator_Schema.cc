@@ -290,7 +290,7 @@ void Operator_Schema::SymbolicAssembleMatrixOp(const Op_Face_Schema& op,
     int m(0);
     for (auto it = op.schema_col_.begin(); it != op.schema_col_.end(); ++it) {
       if (it->kind == AmanziMesh::CELL) {
-        mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+        mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
         int ncells = cells.size();
 
         for (int k = 0; k < it->num; ++k) {
@@ -421,7 +421,7 @@ void Operator_Schema::AssembleMatrixOp(const Op_Face_Schema& op,
     int m(0);
     for (auto it = op.schema_col_.begin(); it != op.schema_col_.end(); ++it) {
       if (it->kind == AmanziMesh::CELL) {
-        mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+        mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
         int ncells = cells.size();
 
         for (int k = 0; k < it->num; ++k) {
@@ -532,7 +532,7 @@ void Operator_Schema::AssembleVectorFaceOp(
     if (it->kind == AmanziMesh::CELL) {
       Epetra_MultiVector& Xf = *X.ViewComponent("cell", true);
 
-      mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+      mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
       int ncells = cells.size();
 
       for (int n = 0; n != ncells; ++n) {
@@ -608,7 +608,7 @@ void Operator_Schema::ExtractVectorFaceOp(
     if (it->kind == AmanziMesh::CELL) {
       const Epetra_MultiVector& Xf = *X.ViewComponent("cell", true);
 
-      mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+      mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
       int ncells = cells.size();
 
       for (int n = 0; n != ncells; ++n) {

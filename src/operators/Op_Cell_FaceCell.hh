@@ -28,7 +28,7 @@ class Op_Cell_FaceCell : public Op {
          OPERATOR_SCHEMA_DOFS_FACE |
          OPERATOR_SCHEMA_DOFS_CELL, name, mesh) {
     WhetStone::DenseMatrix null_matrix;
-    matrices.resize(mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED), null_matrix);
+    matrices.resize(mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED), null_matrix);
     matrices_shadow = matrices;
   }
 

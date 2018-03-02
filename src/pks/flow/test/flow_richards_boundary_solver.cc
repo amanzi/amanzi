@@ -92,7 +92,7 @@ TEST(FLOW_BOUNDARY_SOLVER) {
   Epetra_MultiVector& K1 = *S1->GetFieldData("permeability", passwd)->ViewComponent("cell"); 
 
   AmanziMesh::Entity_ID_List block;
-  mesh1->get_set_entities("All", AmanziMesh::CELL, AmanziMesh::OWNED, &block);
+  mesh1->get_set_entities("All", AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED, &block);
   for (int i = 0; i != block.size(); ++i) {
     int c = block[i];
     K1[0][c] = 1e-9;
@@ -102,7 +102,7 @@ TEST(FLOW_BOUNDARY_SOLVER) {
   S1->GetField("permeability", "flow")->set_initialized();
 
   Epetra_MultiVector& K2 = *S2->GetFieldData("permeability", passwd)->ViewComponent("cell");  
-  mesh2->get_set_entities("Material 1", AmanziMesh::CELL, AmanziMesh::OWNED, &block);
+  mesh2->get_set_entities("Material 1", AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED, &block);
   for (int i = 0; i != block.size(); ++i) {
     int c = block[i];
     K2[0][c] = 1e-9;
@@ -145,10 +145,10 @@ TEST(FLOW_BOUNDARY_SOLVER) {
 
   std::cout << "MESH1\n";
 
-  int nfaces = mesh1->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
+  int nfaces = mesh1->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
   for (int f = 0; f < nfaces; f++) {
     AmanziMesh::Entity_ID_List cells;
-    mesh1->face_get_cells(f, AmanziMesh::USED, &cells);
+    mesh1->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
     int dir;
     const Point& norm = mesh1->face_normal(f, false, cells[0], &dir);
     if ((cells.size() == 1) && (norm[2] * dir > 0)) {
@@ -159,10 +159,10 @@ TEST(FLOW_BOUNDARY_SOLVER) {
 
   std::cout << "MESH2\n";
 
-  nfaces = mesh2->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
+  nfaces = mesh2->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
   for (int f = 0; f < nfaces; f++) {
     AmanziMesh::Entity_ID_List cells;
-    mesh2->face_get_cells(f, AmanziMesh::USED, &cells);
+    mesh2->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
     int dir;
     const Point& norm = mesh2->face_normal(f, false, cells[0], &dir);
     if ((cells.size() == 1) && (norm[2]*dir > 0)) {

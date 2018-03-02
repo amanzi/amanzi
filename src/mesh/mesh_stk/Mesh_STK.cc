@@ -142,9 +142,9 @@ Mesh_STK::entity_get_ptype(const Entity_kind kind,
       Exceptions::amanzi_throw( STK::Error ("Unknown Entity Kind") );
   }
   if (owned) {
-    return OWNED;
+    return Parallel_type::OWNED;
   } else if (used) {
-    return GHOST;
+    return Parallel_type::GHOST;
   } else {
     Exceptions::amanzi_throw( STK::Error ("Invalid local identifier") );
   }
@@ -386,11 +386,11 @@ Mesh_STK::node_get_cells(const Entity_ID nodeid,
   for (STK::Entity_Ids::iterator i = cell_ids.begin(); i != cell_ids.end(); i++) {
     Entity_ID local_cell_id(this->cell_map(true).LID((long long int)*i));
     Parallel_type theptype(this->entity_get_ptype(CELL, local_cell_id));
-    if (theptype == OWNED && (ptype == OWNED || ptype == USED)) {
+    if (theptype == Parallel_type::OWNED && (ptype == Parallel_type::OWNED || ptype == Parallel_type::ALL)) {
       *outc = local_cell_id;
       ++outc;
       ++nc2;
-    } else if (theptype == GHOST && (ptype == GHOST || ptype == USED)) {
+    } else if (theptype == Parallel_type::GHOST && (ptype == Parallel_type::GHOST || ptype == Parallel_type::ALL)) {
       *outc = local_cell_id;
       ++outc;
       ++nc2;
@@ -419,11 +419,11 @@ Mesh_STK::node_get_faces(const Entity_ID nodeid,
   for (STK::Entity_Ids::iterator i = face_ids.begin(); i != face_ids.end(); i++) {
     Entity_ID local_face_id(this->face_map(true).LID((long long int)*i));
     Parallel_type theptype(this->entity_get_ptype(FACE, local_face_id));
-    if (theptype == OWNED && (ptype == OWNED || ptype == USED)) {
+    if (theptype == Parallel_type::OWNED && (ptype == Parallel_type::OWNED || ptype == Parallel_type::ALL)) {
       *outf = local_face_id;
       ++outf;
       ++nf2;
-    } else if (theptype == GHOST && (ptype == GHOST || ptype == USED)) {
+    } else if (theptype == Parallel_type::GHOST && (ptype == Parallel_type::GHOST || ptype == Parallel_type::ALL)) {
       *outf = local_face_id;
       ++outf;
       ++nf2;
@@ -481,11 +481,11 @@ Mesh_STK::face_get_cells_internal_(const Entity_ID faceid,
   for (STK::Entity_Ids::iterator i = cell_ids.begin(); i != cell_ids.end(); i++) {
     Entity_ID local_cell_id(this->cell_map(true).LID((long long int)*i));
     Parallel_type theptype(this->entity_get_ptype(FACE, local_cell_id));
-    if (theptype == OWNED && (ptype == OWNED || ptype == USED)) {
+    if (theptype == Parallel_type::OWNED && (ptype == Parallel_type::OWNED || ptype == Parallel_type::ALL)) {
       *outc = local_cell_id;
       ++outc;
       ++nc2;
-    } else if (theptype == GHOST && (ptype == GHOST || ptype == USED)) {
+    } else if (theptype == Parallel_type::GHOST && (ptype == Parallel_type::GHOST || ptype == Parallel_type::ALL)) {
       *outc = local_cell_id;
       ++outc;
       ++nc2;
@@ -865,7 +865,7 @@ Mesh_STK::build_maps_ ()
     Teuchos::RCP<Epetra_Map> map;
 
     // Get the collection of "owned" entities
-    mesh_->get_entities (rank, OWNED, entities);
+    mesh_->get_entities (rank, Parallel_type::OWNED, entities);
     extract_global_ids(entities, entity_ids);
 
     map.reset(new Epetra_Map(-1, entity_ids.size(), &entity_ids[0], ZERO, *comm_));
@@ -873,7 +873,7 @@ Mesh_STK::build_maps_ ()
 
     // Get the collection of "ghost" entities
     STK::Entity_vector ghost_entities;
-    mesh_->get_entities (rank, GHOST, ghost_entities);
+    mesh_->get_entities (rank, Parallel_type::GHOST, ghost_entities);
     std::vector<int> ghost_entity_ids;
     extract_global_ids(ghost_entities, ghost_entity_ids);
     std::copy(ghost_entity_ids.begin(), ghost_entity_ids.end(), 

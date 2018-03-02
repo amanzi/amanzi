@@ -100,7 +100,7 @@ dump_output(const int& me, Amanzi::AmanziMesh::Mesh &mesh, const std::string& fi
   //      i != setids.end(); ++i) {
   //   Amanzi::AmanziMesh::Entity_ID_List gids;
   //   mesh.get_set_entities(*i, Amanzi::AmanziMesh::CELL, 
-  //                          Amanzi::AmanziMesh::OWNED, &gids);
+  //                          Amanzi::AmanziMesh::Parallel_type::OWNED, &gids);
   //   for (Amanzi::AmanziMesh::Entity_ID_List::const_iterator g = gids.begin();
   //        g != gids.end(); ++g) {
   //     int lidx(*g);

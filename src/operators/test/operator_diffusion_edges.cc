@@ -66,8 +66,8 @@ TEST(OPERATOR_DIFFUSION_EDGES) {
 
   // modify diffusion coefficient
   Teuchos::RCP<std::vector<WhetStone::Tensor> > K = Teuchos::rcp(new std::vector<WhetStone::Tensor>());
-  int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
-  int nedges_wghost = mesh->num_entities(AmanziMesh::EDGE, AmanziMesh::USED);
+  int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+  int nedges_wghost = mesh->num_entities(AmanziMesh::EDGE, AmanziMesh::Parallel_type::ALL);
 
   Analytic01 ana(mesh);
 

@@ -190,7 +190,7 @@ void Richards_PK::UpwindInflowBoundary(Teuchos::RCP<const CompositeVector> u)
   for (int f = 0; f < nfaces_owned; f++) {
     if ((bc_model[f] == Operators::OPERATOR_BC_NEUMANN || 
          bc_model[f] == Operators::OPERATOR_BC_MIXED) && bc_value[f] < 0.0) {
-      mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+      mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
       int c = cells[0];
 
       const AmanziGeometry::Point& normal = mesh_->face_normal(f);
@@ -228,7 +228,7 @@ void Richards_PK::UpwindInflowBoundary_New(Teuchos::RCP<const CompositeVector> u
   for (int f = 0; f < nfaces_owned; f++) {
     if ((bc_model[f] == Operators::OPERATOR_BC_NEUMANN || 
          bc_model[f] == Operators::OPERATOR_BC_MIXED) && bc_value[f] < 0.0) {
-      mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+      mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
       int c = cells[0];
 
       double value = DeriveBoundaryFaceValue(f, *u, wrm_->second[(*wrm_->first)[c]]);

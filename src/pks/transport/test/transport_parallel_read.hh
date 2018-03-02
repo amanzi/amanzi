@@ -75,7 +75,7 @@ void runTest(const Amanzi::AmanziMesh::Framework& mypref) {
       flux = S->GetFieldData("darcy_flux", passwd)->ViewComponent("face", false);
 
   AmanziGeometry::Point velocity(1.0, 0.0, 0.0);
-  int nfaces_owned = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
+  int nfaces_owned = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
   for (int f = 0; f < nfaces_owned; f++) {
     const AmanziGeometry::Point& normal = mesh->face_normal(f);
     (*flux)[0][f] = velocity * normal;
@@ -84,7 +84,7 @@ void runTest(const Amanzi::AmanziMesh::Framework& mypref) {
   Teuchos::RCP<Epetra_MultiVector>
       tcc = S->GetFieldData("total_component_concentration", passwd)->ViewComponent("cell");
 
-  int ncells_owned = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  int ncells_owned = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
   for (int c = 0; c < ncells_owned; c++) {
     const AmanziGeometry::Point& xc = mesh->cell_centroid(c);
     (*tcc)[0][c] = f_step(xc, 0.0);

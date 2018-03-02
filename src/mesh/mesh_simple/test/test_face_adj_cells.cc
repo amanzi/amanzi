@@ -54,16 +54,16 @@ TEST(FACE_ADJ_CELLS) {
 
   Amanzi::AmanziMesh::Mesh_simple Mm(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 3, 3, 3, comm_); 
 
-  CHECK_EQUAL(exp_ncell,Mm.num_entities(Amanzi::AmanziMesh::CELL,Amanzi::AmanziMesh::OWNED));
-  CHECK_EQUAL(exp_nface,Mm.num_entities(Amanzi::AmanziMesh::FACE,Amanzi::AmanziMesh::OWNED));
-  CHECK_EQUAL(exp_nnode,Mm.num_entities(Amanzi::AmanziMesh::NODE,Amanzi::AmanziMesh::OWNED));
+  CHECK_EQUAL(exp_ncell,Mm.num_entities(Amanzi::AmanziMesh::CELL,Amanzi::AmanziMesh::Parallel_type::OWNED));
+  CHECK_EQUAL(exp_nface,Mm.num_entities(Amanzi::AmanziMesh::FACE,Amanzi::AmanziMesh::Parallel_type::OWNED));
+  CHECK_EQUAL(exp_nnode,Mm.num_entities(Amanzi::AmanziMesh::NODE,Amanzi::AmanziMesh::Parallel_type::OWNED));
 
 
   for (int i = 0; i < exp_ncell; i++)
     {
       Amanzi::AmanziMesh::Entity_ID_List adjcells;
 
-      Mm.cell_get_face_adj_cells(i, Amanzi::AmanziMesh::OWNED,&adjcells);
+      Mm.cell_get_face_adj_cells(i, Amanzi::AmanziMesh::Parallel_type::OWNED,&adjcells);
 
       unsigned int nadj = adjcells.size();
       CHECK_EQUAL(exp_nadj[i],nadj);

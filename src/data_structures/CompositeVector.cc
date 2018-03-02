@@ -642,7 +642,7 @@ void DeriveFaceValuesFromCellValues(CompositeVector& cv) {
     int f_owned = cv_f.MyLength();
     for (int f=0; f!=f_owned; ++f) {
       AmanziMesh::Entity_ID_List cells;
-      cv.Mesh()->face_get_cells(f, AmanziMesh::USED, &cells);
+      cv.Mesh()->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
       int ncells = cells.size();
 
       double face_value = 0.0;
@@ -666,7 +666,7 @@ void DeriveFaceValuesFromCellValues(CompositeVector& cv) {
       int f_gid = fb_map.GID(fb);
       int f_lid = f_map.LID(f_gid);
       
-      cv.Mesh()->face_get_cells(f_lid, AmanziMesh::USED, &cells);
+      cv.Mesh()->face_get_cells(f_lid, AmanziMesh::Parallel_type::ALL, &cells);
       int ncells = cells.size();
 
       ASSERT((ncells==1));

@@ -89,7 +89,7 @@ std::cout << "Test: 2.5D transport on a cubic mesh for long time" << std::endl;
       flux = S->GetFieldData("darcy_flux", passwd)->ViewComponent("face", false);
 
   AmanziGeometry::Point velocity(1.0, 0.0, 0.0);
-  int nfaces_owned = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
+  int nfaces_owned = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
   for (int f = 0; f < nfaces_owned; f++) {
     const AmanziGeometry::Point& normal = mesh->face_normal(f);
     (*flux)[0][f] = velocity * normal;

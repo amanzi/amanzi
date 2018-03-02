@@ -60,10 +60,10 @@ int ObservableLineSegment::ComputeRegionSize() {
   // all others need cells
   region_size_ = mesh_->get_set_size(region_,
                                      AmanziMesh::CELL, 
-                                     AmanziMesh::OWNED);    
+                                     AmanziMesh::Parallel_type::OWNED);    
   entity_ids_.resize(region_size_);
   mesh_->get_set_entities_and_vofs(region_,
-                                   AmanziMesh::CELL, AmanziMesh::OWNED,
+                                   AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED,
                                    &entity_ids_, &lofs_);
 
   ComputeInterpolationPoints(reg_ptr);

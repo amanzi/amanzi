@@ -154,7 +154,7 @@ void Observable::Update_(const State& S,
 
     AmanziMesh::Entity_kind entity = vec->Location(location_);
     AmanziMesh::Entity_ID_List ids;
-    vec->Mesh()->get_set_entities(region_, entity, AmanziMesh::OWNED, &ids);
+    vec->Mesh()->get_set_entities(region_, entity, AmanziMesh::Parallel_type::OWNED, &ids);
 
     double value(0.);
     if (functional_ == "observation data: minimum") {
@@ -189,7 +189,7 @@ void Observable::Update_(const State& S,
           } else {
             // normalize to outward normal
             AmanziMesh::Entity_ID_List cells;
-            vec->Mesh()->face_get_cells(*id, AmanziMesh::USED, &cells);
+            vec->Mesh()->face_get_cells(*id, AmanziMesh::Parallel_type::ALL, &cells);
             AmanziMesh::Entity_ID_List faces;
             std::vector<int> dirs;
             vec->Mesh()->cell_get_faces_and_dirs(cells[0], &faces, &dirs);

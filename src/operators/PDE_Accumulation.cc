@@ -341,9 +341,9 @@ void PDE_Accumulation::InitAccumulation_(const Schema& schema, bool surf)
   }
 
   // mesh info
-  ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
-  nfaces_owned = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
-  nnodes_owned = mesh_->num_entities(AmanziMesh::NODE, AmanziMesh::OWNED);
+  ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+  nfaces_owned = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
+  nnodes_owned = mesh_->num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::OWNED);
 }
 
 
