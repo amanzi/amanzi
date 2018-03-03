@@ -403,9 +403,9 @@ int Mesh_MSTK::deform(const std::vector<double>& target_cell_volumes_in,
   List_Delete(driven_verts);
 
   if (space_dimension() == 2)
-    MESH_ExportToGMV(mesh,"deformed2.gmv",0,NULL,NULL,NULL);
+    MESH_ExportToGMV(mesh,"deformed2.gmv",0,NULL,NULL,MPI_COMM_NULL);
   else
-    MESH_ExportToGMV(mesh,"deformed3.gmv",0,NULL,NULL,NULL);
+    MESH_ExportToGMV(mesh,"deformed3.gmv",0,NULL,NULL,MPI_COMM_NULL);
 
 
   // recompute all geometric quantities
