@@ -4,10 +4,7 @@
 #  
 
 # -- Define all the directories and common external project flags
-define_external_project_args(XERCES 
-    TARGET xerces
-        BUILD_IN_SOURCE
-        DEPENDS ${MPI_PROJECT} )
+define_external_project_args(XERCES TARGET xerces BUILD_IN_SOURCE)
 
 ExternalProject_Add(${XERCES_BUILD_TARGET} # Xerces
     

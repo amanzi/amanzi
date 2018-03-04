@@ -45,6 +45,8 @@ endif()
 include(CheckMPISourceCompiles)
 include(TrilinosMacros)
 include(PrintVariable)
+include(AddImportedLibrary)
+
 
 ##############################################################################
 # ------------------------ Required Libraries -------------------------------#
@@ -61,6 +63,21 @@ if ( NOT MPI_WRAPPERS_IN_USE )
 		  " parameters as MPI compiler wrappers and re-run cmake.")
 endif()
 
+##############################################################################
+# ZLIB
+##############################################################################
+
+set (ZLIB_ROOT ${ZLIB_DIR})
+find_package(ZLIB REQUIRED)
+
+message(STATUS "Zlib Package information")
+message(STATUS "\tZLIB_DIR          = ${ZLIB_DIR}")
+message(STATUS "\tZLIB_INCLUDE_DIR  = ${ZLIB_INCLUDE_DIR}")
+message(STATUS "\tZLIB_INCLUDE_DIRS = ${ZLIB_INCLUDE_DIRS}")
+message(STATUS "\tZLIB_LIBRARY_DIR  = ${ZLIB_LIBRARY_DIR}")
+message(STATUS "\tZLIB_LIBRARY      = ${ZLIB_LIBRARY}")
+message(STATUS "\tZLIB_LIBRARIES    = ${ZLIB_LIBRARIES}")
+message(STATUS "")
 
 ##############################################################################
 # Boost
@@ -109,13 +126,7 @@ endif()
 # HDF5 - http://www.hdfgroup.org/HDF5/
 ##############################################################################
 
-# We need to use the project-local HDF5 finder. Temporarily Change
-# policy CMP0017 if were using cmake 2.8.3 or later
-if (${ADJUST_POLICY})
-  cmake_policy(SET CMP0017 OLD)
-endif()
-
-find_package(HDF5 1.8.0 REQUIRED)
+find_package(HDF5 1.8.0 REQUIRED COMPONENTS C HL)
 if (NOT HDF5_IS_PARALLEL) 
     message(WARNING "The HDF5 installation found in ${HDF5_DIR} is not "
                     "a parallel build. At this time, this installation "
@@ -130,6 +141,8 @@ set_package_properties(HDF5 PROPERTIES
                        PURPOSE "Required library for several components in Amanzi"
                       )
 
+set(HDF5_LIBRARIES ${HDF5_HL_LIBRARIES} ${HDF5_C_LIBRARIES} ${ZLIB_LIBRARIES} m dl)
+
 message(STATUS "HDF5 Package information")
 message(STATUS "\tHDF5_INCLUDE_DIR  = ${HDF5_INCLUDE_DIR}")
 message(STATUS "\tHDF5_INCLUDE_DIRS = ${HDF5_INCLUDE_DIRS}")
@@ -137,12 +150,6 @@ message(STATUS "\tHDF5_LIBRARY_DIR  = ${HDF5_LIBRARY_DIR}")
 message(STATUS "\tHDF5_LIBRARY      = ${HDF5_LIBRARY}")
 message(STATUS "\tHDF5_LIBRARIES    = ${HDF5_LIBRARIES}")
 message(STATUS "")
-
-# Restore policy of preferring offical CMake modules over local ones.
-if (${ADJUST_POLICY})
-  cmake_policy(SET CMP0017 NEW)
-endif()
-
 
 ##############################################################################
 # Trilinos http://trilinos.sandia.gov
@@ -269,6 +276,7 @@ if (Trilinos_FOUND)
   # Now update the Trilinos_LIBRARIES and INCLUDE_DIRS
   foreach( _inc "${Trilinos_TPL_INCLUDE_DIRS}")
     list(APPEND Trilinos_INCLUDE_DIRS "${_inc}")
+    list(REMOVE_DUPLICATES Trilinos_INCLUDE_DIRS)
   endforeach()
 
   message(STATUS "Trilinos Package information")
@@ -335,6 +343,8 @@ set_package_properties(SEACAS
                  DESCRIPTION "FE analysis tools with ExodusII mesh (SEACAS)"
                  URL "https://github.com/gsjaardema/seacas"
                  PURPOSE "Required by mesh library")
+
+set(SEACAS_LIBRARIES ${SEACAS_LIBRARIES} ${NetCDF_C_LIBRARIES} ${HDF5_LIBRARIES})
 
 message(STATUS "SEACAS Package information")
 message(STATUS "\tSEACAS_INCLUDE_DIR  = ${SEACAS_INCLUDE_DIR}")
