@@ -28,7 +28,8 @@ Chemistry_PK::Chemistry_PK() :
     number_sorption_sites_(0),
     using_sorption_(false),
     using_sorption_isotherms_(false),    
-    number_aqueous_kinetics_(0)
+    number_aqueous_kinetics_(0),
+    min_tcc_(1e-20), max_tcc_(1. - min_tcc_)
     {};
 
 

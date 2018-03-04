@@ -70,6 +70,9 @@ Alquimia_PK::Alquimia_PK(Teuchos::ParameterList& pk_tree,
   cp_list_ = Teuchos::sublist(pk_list, pk_name, true);
 
   domain_name_ = cp_list_->get<std::string>("domain name", "domain");
+  min_tcc_ = cp_list_->get<double>("min concentration", 1e-20);
+  max_tcc_ = cp_list_->get<double>("max concentration", 1 - 1e-20);
+  
 
   tcc_key_ = Keys::getKey(domain_name_, "total_component_concentration"); 
   poro_key_ = cp_list_->get<std::string>("porosity key", Keys::getKey(domain_name_, "porosity"));
@@ -98,7 +101,7 @@ Alquimia_PK::Alquimia_PK(Teuchos::ParameterList& pk_tree,
   mineral_rate_constant_key_ = Keys::getKey(domain_name_,"mineral_rate_constant");
   first_order_decay_constant_key_ = Keys::getKey(domain_name_,"first_order_decay_constant");
 
-
+  
   // collect high-level information about the problem
   Teuchos::RCP<Teuchos::ParameterList> state_list = Teuchos::sublist(glist, "state", true);
 
@@ -551,7 +554,7 @@ void Alquimia_PK::CopyToAlquimia(int cell,
   state.porosity = porosity[0][cell];
 
   for (int i = 0; i < number_aqueous_components_; i++) {
-    state.total_mobile.data[i] = (*aqueous_components)[i][cell];
+    state.total_mobile.data[i] = std::max((*aqueous_components)[i][cell], min_tcc_);
     if (using_sorption_) {
       const Epetra_MultiVector& sorbed = *S_->GetFieldData(total_sorbed_key_)->ViewComponent("cell", true);
       state.total_immobile.data[i] = sorbed[i][cell];
@@ -842,6 +845,7 @@ int Alquimia_PK::AdvanceSingleCell(
 {
   // Copy the state and property information from Amanzi's state within 
   // this cell to Alquimia.
+  
   CopyToAlquimia(cell, aqueous_components, 
                  alq_mat_props_, alq_state_, alq_aux_data_);
 
