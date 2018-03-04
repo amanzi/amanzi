@@ -835,7 +835,9 @@ void OverlandPressureFlow::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& 
     bc_markers_[f] = Operators::OPERATOR_BC_DIRICHLET;
     double val = bc->second;
     if (elevation[0][f] > val) bc_values_[f] = 0;
-    else bc_values_[f] = val;
+    else {
+      bc_values_[f] = val;
+    }
   }
 
   // Standard Neumann data for flux

@@ -168,6 +168,9 @@ void Transport_PK_ATS::Setup(const Teuchos::Ptr<State>& S)
   tcc_matrix_key_ = Keys::readKey(*tp_list_, domain_name_, "tcc matrix", "total_component_concentration_matrix");
   solid_residue_mass_key_ =  Keys::readKey(*tp_list_, domain_name_, "solid residue", "solid_residue_mass");
 
+  water_tolerance_ = tp_list_->get<double>("water tolerance", 1e-6);
+  max_tcc_ = tp_list_->get<double>("maximum concentration", 0.9);
+
   mesh_ = S->GetMesh(domain_name_);
   dim = mesh_->space_dimension();
  
@@ -459,7 +462,7 @@ void Transport_PK_ATS::Initialize(const Teuchos::Ptr<State>& S)
       Teuchos::RCP<TransportBoundaryFunction_Alquimia> 
         bc = Teuchos::rcp(new TransportBoundaryFunction_Alquimia(spec, mesh_, chem_pk_, chem_engine_));
 
-      bc->set_mol_dens_data_(mol_dens_);
+      bc->set_mol_dens_data_(mol_dens_.ptr());
       std::vector<int>& tcc_index = bc->tcc_index();
       std::vector<std::string>& tcc_names = bc->tcc_names();
       
@@ -536,7 +539,7 @@ void Transport_PK_ATS::Initialize(const Teuchos::Ptr<State>& S)
       Teuchos::RCP<TransportSourceFunction_Alquimia> 
           src = Teuchos::rcp(new TransportSourceFunction_Alquimia(spec, mesh_, chem_pk_, chem_engine_));
 
-      //src->set_mol_dens_data_(mol_dens_);
+      src->set_mol_dens_data_(mol_dens_.ptr());
 
       std::vector<int>& tcc_index = src->tcc_index();
       std::vector<std::string>& tcc_names = src->tcc_names();
@@ -725,7 +728,7 @@ double Transport_PK_ATS::StableTimeStep()
   int cmin_dt = 0;
   for (int c = 0; c < ncells_owned; c++) {
     outflux = total_outflux[c];
-    if ((outflux > 0) && ((*ws_prev_)[0][c]>0) && ((*ws_)[0][c]>0) ) {
+    if ((outflux > 0) && ((*ws_prev_)[0][c]>0) && ((*ws_)[0][c]>0) && ((*phi_)[0][c] > 0 )) {
       vol = mesh_->cell_volume(c);
       dt_cell = vol * (*mol_dens_)[0][c] * (*phi_)[0][c] * std::min( (*ws_prev_)[0][c], (*ws_)[0][c] ) / outflux;
     }
@@ -1278,11 +1281,13 @@ void Transport_PK_ATS::AdvanceDonorUpwind(double dt_cycle)
   for (int c = 0; c < ncells_owned; c++) {
     vol_phi_ws_den = mesh_->cell_volume(c) * (*phi_)[0][c] * (*ws_start)[0][c] * (*mol_dens_start)[0][c];
     for (int i = 0; i < num_advect; i++){
-      (*conserve_qty_)[i][c] = tcc_prev[i][c] * vol_phi_ws_den;   
+      (*conserve_qty_)[i][c] = tcc_prev[i][c] * vol_phi_ws_den;
+      if ((vol_phi_ws_den > water_tolerance_) && ((*solid_qty_)[i][c] > 0 )){  // Desolve solid residual into liquid
+        double add_mass = std::min((*solid_qty_)[i][c], max_tcc_* vol_phi_ws_den - (*conserve_qty_)[i][c]);
+        (*solid_qty_)[i][c] -= add_mass;
+        (*conserve_qty_)[i][c] += add_mass;
+      }
       mass_start += (*conserve_qty_)[i][c];
-      // if (tcc_prev[i][c] > 1e-16) {
-      //   std::cout<<std::setprecision(12)<<"massstart "<<MyPID<<" cell "<<c<<": "<<(*phi_)[0][c]<<" "<<(*ws_start)[0][c]<<" "<< (*mol_dens_start)[0][c]<<" "<<tcc_prev[i][c]<<"\n";
-      // }
     }
   }
 
@@ -1401,20 +1406,14 @@ void Transport_PK_ATS::AdvanceDonorUpwind(double dt_cycle)
     ComputeAddSourceTerms(time, dt_, *conserve_qty_, 0, num_advect - 1);
   }
 
-  // if (domain_name_ == "surface"){
-  //   std::cout<<"After ComputeAddSourceTerms\n";
-  //   std::cout<<*conserve_qty_<<"\n";
-  // }
-  // if (domain_name_ == "surface") std::cout<<"ws_end\n"<<*ws_end<<"\n";
 
   
   // recover concentration from new conservative state
   for (int c = 0; c < ncells_owned; c++) {
     vol_phi_ws_den = mesh_->cell_volume(c) * (*phi_)[0][c] * (*ws_end)[0][c] * (*mol_dens_end)[0][c];
     for (int i = 0; i < num_advect; i++) {
-      if (vol_phi_ws_den > 1e-4 && (*conserve_qty_)[i][c] > 0) {
+      if (vol_phi_ws_den > water_tolerance_ && (*conserve_qty_)[i][c] > 0) {
         tcc_next[i][c] = (*conserve_qty_)[i][c] / vol_phi_ws_den;
-        // if (domain_name_ == "surface")  std::cout<<MyPID<<": compute tcc "<<c<<" "<<(*conserve_qty_)[i][c]<<" "<<vol_phi_ws_den<<" "<<tcc_next[i][c]<<"\n";
       }
       else  {
         (*solid_qty_)[i][c] += std::max((*conserve_qty_)[i][c], 0.);
@@ -1427,16 +1426,11 @@ void Transport_PK_ATS::AdvanceDonorUpwind(double dt_cycle)
   for (int c = 0; c < ncells_owned; c++) {
     for (int i = 0; i < num_advect; i++){        
       mass_final += (*conserve_qty_)[i][c];
-      // if (tcc_next[i][c] > 1e-16) {
-      //   std::cout<<std::setprecision(12)<<"massfinal "<<MyPID<<" cell "<<c<<": "<<(*phi_)[0][c]<<" "<<(*ws_end)[0][c]<<" "<< (*mol_dens_end)[0][c]<<" "<<tcc_next[i][c]<<"\n";
-      // }
     }    
   }
 
   tmp1 = mass_final;
   mesh_->get_comm()->SumAll(&tmp1, &mass_final, 1);
-
-  //if (domain_name_ == "surface") std::cout<<"DonorUpwind end\n"<<tcc_next<<"\n";
 
 
   // update mass balance

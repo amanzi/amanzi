@@ -39,7 +39,7 @@ class TransportSourceFunction_Alquimia : public TransportDomainFunction {
   
   void Compute(double t_old, double t_new);
 
-  void set_mol_dens_data_( Teuchos::RCP<const Epetra_MultiVector> data) {mol_dens_data_ = data;}
+  void set_mol_dens_data_( Teuchos::Ptr<const Epetra_MultiVector> data) {mol_dens_data_ = data;}
 
 
   // require by the case class
@@ -51,7 +51,7 @@ class TransportSourceFunction_Alquimia : public TransportDomainFunction {
 
  private:
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
-  Teuchos::RCP<const Epetra_MultiVector> mol_dens_data_;
+  Teuchos::Ptr<const Epetra_MultiVector> mol_dens_data_;
 
 
   // string function of geochemical conditions
