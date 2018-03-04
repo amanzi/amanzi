@@ -1,0 +1,55 @@
+diff -Naur silo-4.10.2-int/configure silo-4.10.2-new/configure
+--- silo-4.10.2-int/configure	2018-03-03 17:29:52.356216447 -0800
++++ silo-4.10.2-new/configure	2018-03-03 16:36:38.653951802 -0800
+@@ -886,6 +886,7 @@
+ GREP
+ SED
+ LIBTOOL
++LIBTOOL_STATIC
+ FCLIBS
+ ac_ct_F77
+ FFLAGS
+diff -Naur silo-4.10.2-int/tools/browser/Makefile.in silo-4.10.2-new/tools/browser/Makefile.in
+--- silo-4.10.2-int/tools/browser/Makefile.in	2014-10-13 16:57:07.000000000 -0700
++++ silo-4.10.2-new/tools/browser/Makefile.in	2018-03-03 16:56:19.207190995 -0800
+@@ -150,6 +150,9 @@
+ depcomp = $(SHELL) $(top_srcdir)/config/depcomp
+ am__depfiles_maybe = depfiles
+ am__mv = mv -f
++
++LIBTOOL_STATIC=@LIBTOOL_STATIC@
++
+ COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
+ 	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
+ LTCOMPILE = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) \
+@@ -166,7 +169,7 @@
+ 	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
+ CXXLD = $(CXX)
+ CXXLINK = $(LIBTOOL) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) \
+-	--mode=link $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) \
++	--mode=link $(CXXLD) $(LIBTOOL_STATIC) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) \
+ 	$(LDFLAGS) -o $@
+ SOURCES = $(browser_SOURCES) $(nodist_EXTRA_browser_SOURCES)
+ DIST_SOURCES = $(browser_SOURCES)
+diff -Naur silo-4.10.2-int/tools/silock/Makefile.in silo-4.10.2-new/tools/silock/Makefile.in
+--- silo-4.10.2-int/tools/silock/Makefile.in	2014-10-13 16:57:07.000000000 -0700
++++ silo-4.10.2-new/tools/silock/Makefile.in	2018-03-03 16:52:17.430728754 -0800
+@@ -119,6 +119,9 @@
+ depcomp = $(SHELL) $(top_srcdir)/config/depcomp
+ am__depfiles_maybe = depfiles
+ am__mv = mv -f
++
++LIBTOOL_STATIC=@LIBTOOL_STATIC@
++
+ COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
+ 	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
+ LTCOMPILE = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) \
+@@ -135,7 +138,7 @@
+ 	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
+ CXXLD = $(CXX)
+ CXXLINK = $(LIBTOOL) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) \
+-	--mode=link $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) \
++	--mode=link $(CXXLD) $(LIBTOOL_STATIC) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) \
+ 	$(LDFLAGS) -o $@
+ SOURCES = $(silock_SOURCES) $(nodist_EXTRA_silock_SOURCES)
+ DIST_SOURCES = $(silock_SOURCES)
