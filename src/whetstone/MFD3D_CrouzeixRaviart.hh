@@ -64,16 +64,6 @@ class MFD3D_CrouzeixRaviart : public virtual MFD3D {
     }
   }
 
-  // -- other matrices
-  virtual int DivergenceMatrix(int c, DenseMatrix& A) { return -1; }
-  virtual int AdvectionMatrix(int c, const std::vector<AmanziGeometry::Point>& u, DenseMatrix& A) { return -1; }
-
-  // -- not relevant or unsupported members
-  virtual int MassMatrixPoly(int c, const Polynomial& K, DenseMatrix& M) { return -1; }
-  virtual int StiffnessMatrixPoly(int c, const Polynomial& K, DenseMatrix& A) { return -1; }
-  virtual int AdvectionMatrix(int c, const AmanziGeometry::Point v, DenseMatrix& A, bool grad_on_test) { return -1; }
-  virtual int AdvectionMatrixPoly(int c, const VectorPolynomial& v, DenseMatrix& A, bool grad_on_test) { return -1; }
-
   // high-order methods
   int H1consistencyHO(int c, int order, const Tensor& T,
                       DenseMatrix& N, DenseMatrix& R, DenseMatrix& G, DenseMatrix& Ac);

@@ -53,18 +53,6 @@ class MFD3D_Lagrange : public virtual MFD3D {
   virtual int H1consistency(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Ac) override;
   virtual int StiffnessMatrix(int c, const Tensor& T, DenseMatrix& A) override;
 
-  // -- other matrices
-  virtual int DivergenceMatrix(int c, DenseMatrix& A) override { return -1; }
-  virtual int AdvectionMatrix(int c, const std::vector<AmanziGeometry::Point>& u, DenseMatrix& A) { return -1; }
-
-  // -- not relevant or unsupported members
-  virtual int MassMatrixPoly(int c, const Polynomial& K, DenseMatrix& M) override { return -1; }
-  virtual int StiffnessMatrixPoly(int c, const Polynomial& K, DenseMatrix& A) override { return -1; }
-  virtual int AdvectionMatrix(
-      int c, const AmanziGeometry::Point v, DenseMatrix& A, bool grad_on_test) override { return -1; }
-  virtual int AdvectionMatrixPoly(
-      int c, const VectorPolynomial& v, DenseMatrix& A, bool grad_on_test) override { return -1; }
-
   // miscalleneous
   void set_order(int order) { order_ = order; }
 
