@@ -332,7 +332,7 @@ int DG_Modal::FluxMatrixUpwind(int f, const Polynomial& un, DenseMatrix& A,
                                bool jump_on_test)
 {
   AmanziMesh::Entity_ID_List cells, nodes;
-  mesh_->face_get_cells(f, (Parallel_type)WhetStone::USED, &cells);
+  mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
   int ncells = cells.size();
 
   Polynomial poly0(d_, order_), poly1(d_, order_);
@@ -442,7 +442,7 @@ int DG_Modal::FluxMatrixRusanov(
     const Polynomial& uf, DenseMatrix& A)
 {
   AmanziMesh::Entity_ID_List cells, nodes;
-  mesh_->face_get_cells(f, (Parallel_type)WhetStone::USED, &cells);
+  mesh_->face_get_cells(f, Parallel_type::ALL, &cells);
   int ncells = cells.size();
 
   Polynomial poly0(d_, order_), poly1(d_, order_);
@@ -551,7 +551,7 @@ int DG_Modal::FluxMatrixRusanov(
 int DG_Modal::FaceMatrixJump(int f, const Tensor& K1, const Tensor& K2, DenseMatrix& A)
 {
   AmanziMesh::Entity_ID_List cells;
-  mesh_->face_get_cells(f, (Parallel_type)WhetStone::USED, &cells);
+  mesh_->face_get_cells(f, Parallel_type::ALL, &cells);
   int ncells = cells.size();
 
   Polynomial poly0(d_, order_), poly1(d_, order_);
@@ -662,7 +662,7 @@ int DG_Modal::FaceMatrixJump(int f, const Tensor& K1, const Tensor& K2, DenseMat
 int DG_Modal::FaceMatrixPenalty(int f, double Kf, DenseMatrix& A)
 {
   AmanziMesh::Entity_ID_List cells;
-  mesh_->face_get_cells(f, (Parallel_type)WhetStone::USED, &cells);
+  mesh_->face_get_cells(f, Parallel_type::ALL, &cells);
   int ncells = cells.size();
 
   Polynomial poly0(d_, order_), poly1(d_, order_);
@@ -898,8 +898,7 @@ Polynomial DG_Modal::CalculatePolynomial(int c, const DenseVector& coefs) const
 void DG_Modal::UpdateIntegrals_(int c, int order)
 {
   if (integrals_.size() == 0) {
-    int ncells_wghost = mesh_->num_entities((Entity_kind)WhetStone::CELL,
-                                            (Parallel_type)WhetStone::USED);
+    int ncells_wghost = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
     integrals_.resize(ncells_wghost);
 
     for (int n = 0; n < ncells_wghost; ++n) {
@@ -926,8 +925,7 @@ void DG_Modal::UpdateIntegrals_(int c, int order)
 void DG_Modal::UpdateScales_(int c, int order)
 {
   if (scales_a_.size() == 0) {
-    int ncells_wghost = mesh_->num_entities((Entity_kind)WhetStone::CELL,
-                                            (Parallel_type)WhetStone::USED);
+    int ncells_wghost = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
     scales_a_.resize(ncells_wghost);
     scales_b_.resize(ncells_wghost);
 

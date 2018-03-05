@@ -21,11 +21,11 @@
 class AnalyticElasticityBase {
  public:
   AnalyticElasticityBase(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh) : mesh_(mesh) {
-    nnodes_owned = mesh_->num_entities(Amanzi::AmanziMesh::NODE, Amanzi::AmanziMesh::OWNED);
-    ncells_owned = mesh_->num_entities(Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::OWNED);
+    nnodes_owned = mesh_->num_entities(Amanzi::AmanziMesh::NODE, Amanzi::AmanziMesh::Parallel_type::OWNED);
+    ncells_owned = mesh_->num_entities(Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::Parallel_type::OWNED);
 
-    nnodes_wghost = mesh_->num_entities(Amanzi::AmanziMesh::NODE, Amanzi::AmanziMesh::USED);
-    ncells_wghost = mesh_->num_entities(Amanzi::AmanziMesh::NODE, Amanzi::AmanziMesh::USED);
+    nnodes_wghost = mesh_->num_entities(Amanzi::AmanziMesh::NODE, Amanzi::AmanziMesh::Parallel_type::ALL);
+    ncells_wghost = mesh_->num_entities(Amanzi::AmanziMesh::NODE, Amanzi::AmanziMesh::Parallel_type::ALL);
   };
   ~AnalyticElasticityBase() {};
 

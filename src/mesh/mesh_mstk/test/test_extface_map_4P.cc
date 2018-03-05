@@ -49,7 +49,7 @@ TEST(MSTK_EXTFACE_MAP_4P)
       CHECK_EQUAL(face_map.GID(f2),gid);
 
       Amanzi::AmanziMesh::Entity_ID_List fcells;
-      mesh->face_get_cells(f2, Amanzi::AmanziMesh::OWNED, &fcells);
+      mesh->face_get_cells(f2, Amanzi::AmanziMesh::Parallel_type::OWNED, &fcells);
       CHECK_EQUAL(1,fcells.size());
     }
 

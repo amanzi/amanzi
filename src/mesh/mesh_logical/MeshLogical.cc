@@ -54,9 +54,9 @@ MeshLogical::MeshLogical(const Epetra_MpiComm *comm,
   cell_face_bisectors_.resize(num_cells);
   int f_id=0;
   for (const auto f : face_cell_ids_) {
-    face_cell_ptype_[f_id].push_back(OWNED);
+    face_cell_ptype_[f_id].push_back(Parallel_type::OWNED);
     face_cell_ptype_[f_id].push_back(f.size() == 2 ?
-            OWNED : PTYPE_UNKNOWN);
+            Parallel_type::OWNED : Parallel_type::PTYPE_UNKNOWN);
 
     cell_face_ids_[f[0]].push_back(f_id);
     cell_face_dirs_[f[0]].push_back(1);
@@ -174,9 +174,9 @@ MeshLogical::MeshLogical(const Epetra_MpiComm *comm,
   int f_id=0;
   for (std::vector<Entity_ID_List>::const_iterator f=face_cell_ids_.begin();
        f!=face_cell_ids_.end(); ++f) {
-    face_cell_ptype_[f_id].push_back(OWNED);
+    face_cell_ptype_[f_id].push_back(Parallel_type::OWNED);
     face_cell_ptype_[f_id].push_back(f->size() == 2 ?
-            OWNED : PTYPE_UNKNOWN);
+            Parallel_type::OWNED : Parallel_type::PTYPE_UNKNOWN);
     face_areas_[f_id] = AmanziGeometry::norm(face_normals_[f_id][0]);
 
     cell_face_ids_[(*f)[0]].push_back(f_id);
@@ -356,11 +356,11 @@ MeshLogical::operator==(const MeshLogical& other) {
 }
 
 
-// Get parallel type of entity - OWNED, GHOST, USED (See MeshDefs.hh)
+// Get parallel type of entity - OWNED, GHOST, ALL (See MeshDefs.hh)
 Parallel_type
 MeshLogical::entity_get_ptype(const Entity_kind kind,
                               const Entity_ID entid) const {
-  return OWNED;
+  return Parallel_type::OWNED;
 }
 
 
@@ -384,7 +384,7 @@ MeshLogical::cell_get_type(const Entity_ID cellid) const {
 // -------------------------
 //
 // Number of entities of any kind (cell, face, node) and in a
-// particular category (OWNED, GHOST, USED)
+// particular category (OWNED, Parallel_type::GHOST, Parallel_type::ALL)
 unsigned int
 MeshLogical::num_entities(const Entity_kind kind,
                           const Parallel_type ptype) const {
@@ -497,7 +497,7 @@ MeshLogical::node_get_cell_faces(const Entity_ID nodeid,
 // (e.g. a hex has 6 face neighbors)
 
 // The order in which the cellids are returned cannot be
-// guaranteed in general except when ptype = USED, in which case
+// guaranteed in general except when ptype = ALL, in which case
 // the cellids will correcpond to cells across the respective
 // faces given by cell_get_faces
 void

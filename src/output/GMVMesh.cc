@@ -10,7 +10,7 @@ static inline void write_mesh_to_file_(const AmanziMesh::Mesh &mesh, std::string
   gmvwrite_openfile_ir_ascii((char*)filename.c_str(), 4, 8);
 
   // Write node info
-  unsigned int num_nodes = mesh.num_entities(AmanziMesh::NODE, AmanziMesh::OWNED);
+  unsigned int num_nodes = mesh.num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::OWNED);
   double *x = new double[num_nodes];
   double *y = new double[num_nodes];
   double *z = new double[num_nodes];
@@ -32,7 +32,7 @@ static inline void write_mesh_to_file_(const AmanziMesh::Mesh &mesh, std::string
   delete [] x;
 
   // Write cell info
-  unsigned int num_cells = mesh.num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  unsigned int num_cells = mesh.num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
 
   gmvwrite_cell_header(&num_cells);
 
@@ -139,8 +139,8 @@ void open_data_file(std::string meshfile,
 
 void open_data_file(const AmanziMesh::Mesh &mesh, std::string filename) 
 {
-  unsigned int num_nodes = mesh.num_entities(AmanziMesh::NODE, AmanziMesh::OWNED);
-  unsigned int num_cells = mesh.num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  unsigned int num_nodes = mesh.num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::OWNED);
+  unsigned int num_cells = mesh.num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
 
   write_mesh_to_file_(mesh, filename);
 }
@@ -148,8 +148,8 @@ void open_data_file(const AmanziMesh::Mesh &mesh, std::string filename)
 
 void open_data_file(const AmanziMesh::Mesh &mesh, std::string filename, unsigned int cycleno, unsigned int digits) 
 {
-  unsigned int num_nodes = mesh.num_entities(AmanziMesh::NODE, AmanziMesh::OWNED);
-  unsigned int num_cells = mesh.num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  unsigned int num_nodes = mesh.num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::OWNED);
+  unsigned int num_cells = mesh.num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
 
   std::string suffixstr(digits+1,'.');
   suffix_no(suffixstr, cycleno);

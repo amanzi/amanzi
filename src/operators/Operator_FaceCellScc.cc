@@ -181,7 +181,7 @@ void Operator_FaceCellScc::AssembleMatrix(const SuperMap& map, MatrixFE& matrix,
         schur_ops_.push_back(schur_op);
         AmanziMesh::Entity_ID_List cells;
         for (int f = 0; f != nfaces_owned; ++f) {
-          mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+          mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
           int ncells = cells.size();
           schur_op->matrices[f] = WhetStone::DenseMatrix(ncells, ncells);
         }
@@ -223,7 +223,7 @@ void Operator_FaceCellScc::AssembleMatrix(const SuperMap& map, MatrixFE& matrix,
         WhetStone::DenseMatrix& Acell = (*it)->matrices[c];
         for (int n = 0; n < nfaces; n++) {
           int f = faces[n];
-          mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+          mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
 
           if (cells.size() == 1) {
             Ttmp[0][f] = Acell(n, nfaces);
@@ -249,7 +249,7 @@ void Operator_FaceCellScc::AssembleMatrix(const SuperMap& map, MatrixFE& matrix,
       for (int f = 0; f < nfaces_owned; f++) {
         WhetStone::DenseMatrix& mat = mats[f];
 
-        mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+        mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
         int ncells = cells.size();
 
         for (int n=0; n!=ncells; ++n) {

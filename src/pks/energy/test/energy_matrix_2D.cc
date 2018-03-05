@@ -103,7 +103,7 @@ std::cout << "Passed EPK.Initilize()" << std::endl;
   EPK->UpdateConductivityData(S.ptr());
 
   // create boundary data
-  int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
+  int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
   Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(mesh, AmanziMesh::FACE, Operators::DOF_Type::SCALAR));
   std::vector<int>& bc_model = bc->bc_model();
   std::vector<double>& bc_value = bc->bc_value();
@@ -160,7 +160,7 @@ std::cout << "Passed EPK.Initilize()" << std::endl;
     const AmanziGeometry::Point& normal = mesh->face_normal(f);
     q_l[0][f] = velocity * normal;
     
-    mesh->face_get_cells(f, AmanziMesh::USED, &cells);
+    mesh->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
     int ncells = cells.size();
     double tmp(0.0);
     for (int i = 0; i < ncells; i++) {

@@ -442,7 +442,7 @@ void MFD3D::PolygonCentroidWeights(
 int MFD3D::cell_get_face_adj_cell(int cell, int face)
 {
   Entity_ID_List cells;
-  mesh_->face_get_cells(face, (Parallel_type)WhetStone::USED, &cells);
+  mesh_->face_get_cells(face, Parallel_type::ALL, &cells);
   int ncells = cells.size();
 
   if (ncells == 2) {

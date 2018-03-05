@@ -146,7 +146,7 @@ void PK_DomainFunctionSubgridReturn<FunctionBase>::Compute(double t0, double t1)
       std::vector<double> val(nfun,0.);
     
       // DO THE INTEGRAL: currently omega_i = 1/cv_sg?
-      int ncells_sg = vec_out.Mesh()->num_entities(AmanziMesh::CELL, AmanziMesh::USED);
+      int ncells_sg = vec_out.Mesh()->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
       double cv_total = 0.;
       for (int c_sg=0; c_sg!=ncells_sg; ++c_sg) {
         double cv_sg = vec_out.Mesh()->cell_volume(c_sg);

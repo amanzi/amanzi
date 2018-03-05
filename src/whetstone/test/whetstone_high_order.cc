@@ -99,7 +99,7 @@ void HighOrderLagrange(std::string file_name) {
   // Teuchos::RCP<Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 1, 1, Teuchos::null, true, true); 
   Teuchos::RCP<Mesh> mesh = meshfactory(file_name, Teuchos::null, true, true); 
  
-  int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::USED);
+  int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
 
   MFD3D_Diffusion mfd_lo(mesh);
   MFD3D_Lagrange mfd_ho(mesh);
@@ -173,7 +173,7 @@ void HighOrderLagrangeSerendipity(std::string file_name) {
   // Teuchos::RCP<Mesh> mesh = meshfactory(0.0, 0.0, 2.0, 2.0, 1, 1, gm, true, true); 
   Teuchos::RCP<Mesh> mesh = meshfactory(file_name, gm, true, true); 
  
-  int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::USED);
+  int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
 
   MFD3D_Diffusion mfd_lo(mesh);
   MFD3D_LagrangeSerendipity mfd_ho(mesh);

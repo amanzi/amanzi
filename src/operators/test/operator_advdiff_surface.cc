@@ -79,8 +79,8 @@ TEST(ADVECTION_DIFFUSION_SURFACE) {
 
   /* modify diffusion coefficient */
   Teuchos::RCP<std::vector<WhetStone::Tensor> > K = Teuchos::rcp(new std::vector<WhetStone::Tensor>());
-  int ncells_owned = surfmesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
-  int nfaces_wghost = surfmesh->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
+  int ncells_owned = surfmesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+  int nfaces_wghost = surfmesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
 
   for (int c = 0; c < ncells_owned; c++) {
     WhetStone::Tensor Kc(2, 1);
@@ -125,7 +125,7 @@ TEST(ADVECTION_DIFFUSION_SURFACE) {
   // get a flux field
   Teuchos::RCP<CompositeVector> u = Teuchos::rcp(new CompositeVector(cvs));
   Epetra_MultiVector& uf = *u->ViewComponent("face");
-  int nfaces = surfmesh->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
+  int nfaces = surfmesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
   Point vel(4.0, 4.0, 0.0);
   for (int f = 0; f < nfaces; f++) {
     uf[0][f] = vel * surfmesh->face_normal(f);

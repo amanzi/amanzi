@@ -117,7 +117,7 @@ TEST(FLOW_3D_RICHARDS) {
   }
 
   /* check the pressure */
-  int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
   for (int c = 0; c < ncells; c++) CHECK(p[0][c] > 0.0 && p[0][c] < 2.0);
 
   delete RPK;

@@ -192,7 +192,7 @@ void PDE_DiffusionFV::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& 
     std::vector<int> dirs;
 
     for (int f = 0; f != nfaces_owned; ++f) {
-      mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+      mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
       int ncells = cells.size();
 
       WhetStone::DenseMatrix Aface(ncells, ncells);
@@ -250,7 +250,7 @@ void PDE_DiffusionFV::ApplyBCs(bool primary, bool eliminate)
 
     for (int f = 0; f < nfaces_owned; f++) {
       if (bc_model[f] != OPERATOR_BC_NONE) {
-        mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+        mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
         int c = cells[0];
 
         if (bc_model[f] == OPERATOR_BC_DIRICHLET && primary) {
@@ -328,7 +328,7 @@ void PDE_DiffusionFV::UpdateFlux(const Teuchos::Ptr<const CompositeVector>& solu
         
       } else {
         if (f < nfaces_owned && !flag[f]) {
-          mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+          mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
           if (cells.size() <= 1) {
             Errors::Message msg("Flow PK: These boundary conditions are not supported by FV.");
             Exceptions::amanzi_throw(msg);
@@ -387,7 +387,7 @@ void PDE_DiffusionFV::AnalyticJacobian_(const CompositeVector& u)
   }
 
   for (int f=0; f!=nfaces_owned; ++f) {
-    mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+    mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
     int mcells = cells.size();
 
     WhetStone::DenseMatrix Aface(mcells, mcells);

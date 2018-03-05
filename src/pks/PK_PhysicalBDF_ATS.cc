@@ -268,7 +268,7 @@ double PK_PhysicalBDF_ATS::ErrorNorm(Teuchos::RCP<const TreeVector> u,
 
       for (unsigned int f=0; f!=nfaces; ++f) {
         AmanziMesh::Entity_ID_List cells;
-        mesh_->face_get_cells(f, AmanziMesh::OWNED, &cells);
+        mesh_->face_get_cells(f, AmanziMesh::Parallel_type::OWNED, &cells);
         double cv_min = cells.size() == 1 ? cv[0][cells[0]]
             : std::min(cv[0][cells[0]],cv[0][cells[1]]);
         double conserved_min = cells.size() == 1 ? conserved[0][cells[0]]
@@ -326,7 +326,7 @@ void PK_PhysicalBDF_ATS::DeriveFaceValuesFromCellValues_(const Teuchos::Ptr<Comp
   int f_owned = cv_f.MyLength();
   for (int f=0; f!=f_owned; ++f) {
     AmanziMesh::Entity_ID_List cells;
-    cv->Mesh()->face_get_cells(f, AmanziMesh::USED, &cells);
+    cv->Mesh()->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
     int ncells = cells.size();
 
     double face_value = 0.0;

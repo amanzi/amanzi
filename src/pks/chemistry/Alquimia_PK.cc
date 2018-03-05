@@ -253,9 +253,9 @@ void Alquimia_PK::Initialize(const Teuchos::Ptr<State>& S)
       }
 
       // Get the cells that belong to this region.
-      unsigned int num_cells = mesh_->get_set_size(region, AmanziMesh::CELL, AmanziMesh::OWNED);
+      unsigned int num_cells = mesh_->get_set_size(region, AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
       AmanziMesh::Entity_ID_List cell_indices;
-      mesh_->get_set_entities(region, AmanziMesh::CELL, AmanziMesh::OWNED, &cell_indices);
+      mesh_->get_set_entities(region, AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED, &cell_indices);
   
       // Loop over the cells.
       for (unsigned int i = 0; i < num_cells; ++i) {
@@ -891,7 +891,7 @@ bool Alquimia_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   }
 
   // Get the number of owned (non-ghost) cells for the mesh.
-  unsigned int num_cells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  unsigned int num_cells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
   
   int max_itrs (0), min_itrs(10000000), avg_itrs(0);
   int imax(-1), imin(-1);

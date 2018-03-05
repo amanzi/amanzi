@@ -115,8 +115,8 @@ TEST(SUPERMAP_COPY_INTS) {
   CHECK(!ierr);
 
   // check values
-  int ncells = maps.mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
-  int nfaces = maps.mesh->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
+  int ncells = maps.mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+  int nfaces = maps.mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
 
   // check sizes
   CHECK_EQUAL(2*ncells + 2*nfaces, vec.MyLength());

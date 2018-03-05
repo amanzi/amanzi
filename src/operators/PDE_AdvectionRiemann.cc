@@ -133,7 +133,7 @@ void PDE_AdvectionRiemann::UpdateMatrices(
     dg.set_order(method_order_);
     AmanziMesh::Entity_ID_List cells;
     for (int f = 0; f < nfaces_owned; ++f) {
-      mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+      mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
       int c1 = cells[0];
       int c2 = (cells.size() == 2) ? cells[1] : c1;
       dg.FluxMatrixRusanov(f, (*Kc_)[c1], (*Kc_)[c2], (*Kf_)[f], Aface);

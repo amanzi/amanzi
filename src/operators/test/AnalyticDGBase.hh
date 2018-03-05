@@ -57,7 +57,7 @@ class AnalyticDGBase {
     l2_err = 0.0;
     inf_err = 0.0;
 
-    int ncells = mesh_->num_entities(Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::OWNED);
+    int ncells = mesh_->num_entities(Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::Parallel_type::OWNED);
     for (int c = 0; c < ncells; c++) {
       const Amanzi::AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
       double tmp = SolutionExact(xc, t);

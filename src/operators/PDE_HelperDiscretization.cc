@@ -53,17 +53,17 @@ PDE_HelperDiscretization::PDE_HelperDiscretization(const Teuchos::RCP<AmanziMesh
 ****************************************************************** */
 void PDE_HelperDiscretization::PopulateDimensions_()
 {
-  ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
-  nfaces_owned = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
-  nnodes_owned = mesh_->num_entities(AmanziMesh::NODE, AmanziMesh::OWNED);
+  ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+  nfaces_owned = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
+  nnodes_owned = mesh_->num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::OWNED);
 
-  ncells_wghost = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::USED);
-  nfaces_wghost = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
-  nnodes_wghost = mesh_->num_entities(AmanziMesh::NODE, AmanziMesh::USED);
+  ncells_wghost = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
+  nfaces_wghost = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
+  nnodes_wghost = mesh_->num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::ALL);
 
   if (mesh_->valid_edges()) {
-    nedges_owned = mesh_->num_entities(AmanziMesh::EDGE, AmanziMesh::OWNED);
-    nedges_wghost = mesh_->num_entities(AmanziMesh::EDGE, AmanziMesh::USED);
+    nedges_owned = mesh_->num_entities(AmanziMesh::EDGE, AmanziMesh::Parallel_type::OWNED);
+    nedges_wghost = mesh_->num_entities(AmanziMesh::EDGE, AmanziMesh::Parallel_type::ALL);
   }
 }
 
@@ -215,9 +215,9 @@ void PDE_HelperDiscretization::ApplyBCs_Cell_Scalar_(
               (*rhs_kind)[0][x] = value;
 
               if (kind == AmanziMesh::FACE) {
-                mesh_->face_get_cells(x, AmanziMesh::USED, &cells);
+                mesh_->face_get_cells(x, AmanziMesh::Parallel_type::ALL, &cells);
               } else if (kind == AmanziMesh::NODE) {
-                mesh_->node_get_cells(x, AmanziMesh::USED, &cells);
+                mesh_->node_get_cells(x, AmanziMesh::Parallel_type::ALL, &cells);
               }
               Acell(noff, noff) = 1.0 / cells.size();
             }
@@ -324,7 +324,7 @@ void PDE_HelperDiscretization::ApplyBCs_Cell_Point_(
               }
 
               if (primary) {
-                mesh_->node_get_cells(v, AmanziMesh::USED, &cells);
+                mesh_->node_get_cells(v, AmanziMesh::Parallel_type::ALL, &cells);
                 rhs_loc(noff) = 0.0;
                 (*rhs_node)[k][v] = value[k];
                 Acell(noff, noff) = 1.0 / cells.size();

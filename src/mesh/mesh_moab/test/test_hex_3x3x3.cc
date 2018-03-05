@@ -28,10 +28,10 @@ TEST(MOAB_HEX_3x3x3)
 
   Amanzi::AmanziMesh::Mesh_MOAB mesh("test/hex_3x3x3_ss.exo",comm_.get());
 
-  nf = mesh.num_entities(Amanzi::AmanziMesh::FACE,Amanzi::AmanziMesh::OWNED);
+  nf = mesh.num_entities(Amanzi::AmanziMesh::FACE,Amanzi::AmanziMesh::Parallel_type::OWNED);
   CHECK_EQUAL(NF,nf);
   
-  nc = mesh.num_entities(Amanzi::AmanziMesh::CELL,Amanzi::AmanziMesh::OWNED);
+  nc = mesh.num_entities(Amanzi::AmanziMesh::CELL,Amanzi::AmanziMesh::Parallel_type::OWNED);
   CHECK_EQUAL(NC,nc);
 
 
@@ -70,11 +70,11 @@ TEST(MOAB_HEX_3x3x3)
   // for (i = 0; i < ns; i++) {
   //   unsigned int setcells[9];
 
-  //   csetsize = mesh.get_set_size(csetids[i],Amanzi::AmanziMesh::CELL,Amanzi::AmanziMesh::OWNED);
+  //   csetsize = mesh.get_set_size(csetids[i],Amanzi::AmanziMesh::CELL,Amanzi::AmanziMesh::Parallel_type::OWNED);
   //   CHECK_EQUAL(expcsetsizes[i],csetsize);
 
 
-  //   mesh.get_set(csetids[i],Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::OWNED, setcells, setcells+csetsize);
+  //   mesh.get_set(csetids[i],Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::Parallel_type::OWNED, setcells, setcells+csetsize);
     
   //   CHECK_ARRAY_EQUAL(expcsetcells[i],setcells,csetsize);
   // }
@@ -127,11 +127,11 @@ TEST(MOAB_HEX_3x3x3)
 
   //   CHECK_EQUAL(true,mesh.valid_set_id(fsetids[i+1],Amanzi::AmanziMesh::FACE));
    
-  //   fsetsize = mesh.get_set_size(fsetids[i+1],Amanzi::AmanziMesh::FACE,Amanzi::AmanziMesh::OWNED);
+  //   fsetsize = mesh.get_set_size(fsetids[i+1],Amanzi::AmanziMesh::FACE,Amanzi::AmanziMesh::Parallel_type::OWNED);
   //   CHECK_EQUAL(expfsetsizes[i],fsetsize);
 
 
-  //   mesh.get_set(fsetids[i+1],Amanzi::AmanziMesh::FACE, Amanzi::AmanziMesh::OWNED, setfaces, setfaces+fsetsize);
+  //   mesh.get_set(fsetids[i+1],Amanzi::AmanziMesh::FACE, Amanzi::AmanziMesh::Parallel_type::OWNED, setfaces, setfaces+fsetsize);
     
   //   CHECK_ARRAY_EQUAL(expfsetfaces[i],setfaces,fsetsize);
   // }

@@ -56,15 +56,15 @@ MeshEmbeddedLogical::MeshEmbeddedLogical(const Epetra_MpiComm* comm,
     log_mesh->cache_face2cell_info_();
 
   // merge and remap
-  int ncells_bg_owned = bg_mesh->num_entities(CELL, OWNED);
-  int ncells_bg_used = bg_mesh->num_entities(CELL, USED);
-  int ncells_log = log_mesh->num_entities(CELL, OWNED);
+  int ncells_bg_owned = bg_mesh->num_entities(CELL, Parallel_type::OWNED);
+  int ncells_bg_used = bg_mesh->num_entities(CELL, Parallel_type::ALL);
+  int ncells_log = log_mesh->num_entities(CELL, Parallel_type::OWNED);
   int ncells_my_owned = ncells_bg_owned + ncells_log;
   int ncells_my_used = ncells_bg_used + ncells_log;
 
-  int nfaces_bg_owned = bg_mesh->num_entities(FACE, OWNED);
-  int nfaces_bg_used = bg_mesh->num_entities(FACE, USED);
-  int nfaces_log = log_mesh->num_entities(FACE, OWNED);
+  int nfaces_bg_owned = bg_mesh->num_entities(FACE, Parallel_type::OWNED);
+  int nfaces_bg_used = bg_mesh->num_entities(FACE, Parallel_type::ALL);
+  int nfaces_log = log_mesh->num_entities(FACE, Parallel_type::OWNED);
   int nfaces_extra = face_cell_ids_.size();
   int nfaces_my_owned = nfaces_bg_owned + nfaces_log + nfaces_extra;
   int nfaces_my_used = nfaces_bg_used + nfaces_log + nfaces_extra;
@@ -127,7 +127,7 @@ MeshEmbeddedLogical::MeshEmbeddedLogical(const Epetra_MpiComm* comm,
 
   // ptypes -- no remap.  all added faces are owned-owned
   face_cell_ptype_ = log_mesh->face_cell_ptype_;
-  std::vector<Parallel_type> extra_ptypes(2, OWNED);
+  std::vector<Parallel_type> extra_ptypes(2, Parallel_type::OWNED);
   for (int f=0; f!=nfaces_extra; ++f) {
     face_cell_ptype_.push_back(extra_ptypes);
   }
@@ -215,14 +215,14 @@ MeshEmbeddedLogical::MeshEmbeddedLogical(const Epetra_MpiComm* comm,
   // set up counts
   num_entities_owned_[CELL] = ncells_log + ncells_bg_owned;
   num_entities_owned_[FACE] = nfaces_log + nfaces_extra + nfaces_bg_owned;
-  num_entities_owned_[BOUNDARY_FACE] = bg_mesh->num_entities(BOUNDARY_FACE,OWNED) +
-    log_mesh->num_entities(BOUNDARY_FACE,OWNED);
+  num_entities_owned_[BOUNDARY_FACE] = bg_mesh->num_entities(BOUNDARY_FACE, Parallel_type::OWNED) +
+    log_mesh->num_entities(BOUNDARY_FACE, Parallel_type::OWNED);
   num_entities_owned_[NODE] = 0;
 
   num_entities_used_[CELL] = ncells_log + ncells_bg_used;
   num_entities_used_[FACE] = nfaces_log + nfaces_extra + nfaces_bg_used;
-  num_entities_used_[BOUNDARY_FACE] = bg_mesh->num_entities(BOUNDARY_FACE,USED) +
-    log_mesh->num_entities(BOUNDARY_FACE,USED);
+  num_entities_used_[BOUNDARY_FACE] = bg_mesh->num_entities(BOUNDARY_FACE, Parallel_type::ALL) +
+    log_mesh->num_entities(BOUNDARY_FACE, Parallel_type::ALL);
   num_entities_used_[NODE] = 0;
   
   // toggle flags
@@ -265,10 +265,10 @@ MeshEmbeddedLogical::init_maps() {
 
   // ghosted maps: use the bg mesh to comm_unicate the new GIDs into their ghost values
   // CELL:
-  int ncells_bg_owned = bg_mesh_->num_entities(CELL,OWNED);
-  int ncells_bg_used = bg_mesh_->num_entities(CELL,USED);
-  int ncells_log = log_mesh_->num_entities(CELL,OWNED);
-  int ncells_my_used = num_entities(CELL,USED);
+  int ncells_bg_owned = bg_mesh_->num_entities(CELL, Parallel_type::OWNED);
+  int ncells_bg_used = bg_mesh_->num_entities(CELL, Parallel_type::ALL);
+  int ncells_log = log_mesh_->num_entities(CELL, Parallel_type::OWNED);
+  int ncells_my_used = num_entities(CELL, Parallel_type::ALL);
   
   // -- create a populate the owned GIDs
   Epetra_IntVector bg_gids_owned_c(bg_mesh_->cell_map(false));
@@ -299,8 +299,8 @@ MeshEmbeddedLogical::init_maps() {
                                                  &cells_my_used[0], 0, *comm_));
 
   // FACE:
-  int nfaces_bg_owned = bg_mesh_->num_entities(FACE,OWNED);
-  int nfaces_bg_used = bg_mesh_->num_entities(FACE,USED);
+  int nfaces_bg_owned = bg_mesh_->num_entities(FACE, Parallel_type::OWNED);
+  int nfaces_bg_used = bg_mesh_->num_entities(FACE, Parallel_type::ALL);
   int nfaces_my_used = face_cell_ids_.size();
   int nfaces_log_extra = nfaces_my_used - nfaces_bg_used;
   
@@ -334,17 +334,17 @@ MeshEmbeddedLogical::init_maps() {
 }
 
   
-// Get parallel type of entity - OWNED, GHOST, USED (See MeshDefs.hh)
+// Get parallel type of entity - OWNED, GHOST, ALL (See MeshDefs.hh)
 Parallel_type
 MeshEmbeddedLogical::entity_get_ptype(const Entity_kind kind,
                                       const Entity_ID entid) const {
-  return entid < num_entities_owned_.at(kind) ? OWNED : USED;
+  return entid < num_entities_owned_.at(kind) ? Parallel_type::OWNED : Parallel_type::ALL;
 }
 
 // Parent entity in the source mesh if mesh was derived from another mesh
 Entity_ID
 MeshEmbeddedLogical::entity_get_parent(const Entity_kind kind, const Entity_ID entid) const {
-  int nents_log = log_mesh_->num_entities(kind, OWNED);
+  int nents_log = log_mesh_->num_entities(kind, Parallel_type::OWNED);
   return entid < nents_log ? entid : entid - nents_log;
 }
 
@@ -353,7 +353,7 @@ MeshEmbeddedLogical::entity_get_parent(const Entity_kind kind, const Entity_ID e
 // See MeshDefs.hh
 Cell_type
 MeshEmbeddedLogical::cell_get_type(const Entity_ID cellid) const {
-  return cellid < log_mesh_->num_entities(CELL, OWNED) ?
+  return cellid < log_mesh_->num_entities(CELL, Parallel_type::OWNED) ?
     log_mesh_->cell_get_type(entity_get_parent(CELL, cellid)) :
     bg_mesh_->cell_get_type(entity_get_parent(CELL, cellid));
 }
@@ -364,11 +364,11 @@ MeshEmbeddedLogical::cell_get_type(const Entity_ID cellid) const {
 // -------------------------
 //
 // Number of entities of any kind (cell, face, node) and in a
-// particular category (OWNED, GHOST, USED)
+// particular category (OWNED, GHOST, ALL)
 unsigned int
 MeshEmbeddedLogical::num_entities(const Entity_kind kind,
                                   const Parallel_type ptype) const {
-  return ptype == OWNED ? num_entities_owned_.at(kind) : num_entities_used_.at(kind);
+  return ptype == Parallel_type::OWNED ? num_entities_owned_.at(kind) : num_entities_used_.at(kind);
 }
 
 // Global ID of any entity
@@ -405,7 +405,7 @@ MeshEmbeddedLogical::cell_get_faces_and_bisectors(
   
 
 // Get nodes of face
-// On a distributed mesh, all nodes (OWNED or GHOST) of the face
+// On a distributed mesh, all nodes ( Parallel_type::OWNED or Parallel_type::GHOST) of the face
 // are returned
 // In 3D, the nodes of the face are returned in ccw order consistent
 // with the face normal
@@ -471,7 +471,7 @@ MeshEmbeddedLogical::node_get_cell_faces(const Entity_ID nodeid,
 // (e.g. a hex has 6 face neighbors)
 
 // The order in which the cellids are returned cannot be
-// guaranteed in general except when ptype = USED, in which case
+// guaranteed in general except when ptype = ALL, in which case
 // the cellids will correcpond to cells across the respective
 // faces given by cell_get_faces
 void

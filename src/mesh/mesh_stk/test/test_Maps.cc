@@ -27,9 +27,9 @@ SUITE (MAPS)
     //         CHECK_EQUAL (complete_face_map.NumMyElements    (), 21);
     //         CHECK_EQUAL (complete_element_map.NumMyElements (), 4);
 
-    //         CHECK_EQUAL (mesh_map.count_entities (Mesh_data::NODE, OWNED), 20);
-    //         CHECK_EQUAL (mesh_map.count_entities (Mesh_data::FACE, OWNED), 21);
-    //         CHECK_EQUAL (mesh_map.count_entities (Mesh_data::CELL, OWNED), 4);
+    //         CHECK_EQUAL (mesh_map.count_entities (Mesh_data::NODE, Parallel_type::OWNED), 20);
+    //         CHECK_EQUAL (mesh_map.count_entities (Mesh_data::FACE, Parallel_type::OWNED), 21);
+    //         CHECK_EQUAL (mesh_map.count_entities (Mesh_data::CELL, Parallel_type::OWNED), 4);
 
     //     }
     // }

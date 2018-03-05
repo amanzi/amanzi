@@ -42,7 +42,7 @@ TEST(MOAB_HEX1)
   Amanzi::AmanziMesh::Mesh_MOAB mesh("test/hex_1x1x1_ss.exo",comm_.get());
 
   // Check number of nodes and their coordinates
-  nv = mesh.num_entities(Amanzi::AmanziMesh::NODE, Amanzi::AmanziMesh::OWNED);
+  nv = mesh.num_entities(Amanzi::AmanziMesh::NODE, Amanzi::AmanziMesh::Parallel_type::OWNED);
   CHECK_EQUAL(NV,nv);
 
   for (i = 0; i < nv; i++) {
@@ -54,7 +54,7 @@ TEST(MOAB_HEX1)
 
 
   // Check number of cells and their face nodes and their face coordinates
-  nc = mesh.num_entities(Amanzi::AmanziMesh::CELL,Amanzi::AmanziMesh::OWNED);
+  nc = mesh.num_entities(Amanzi::AmanziMesh::CELL,Amanzi::AmanziMesh::Parallel_type::OWNED);
   CHECK_EQUAL(NC,nc);
 
   mesh.cell_get_faces(0,&faces,true);
@@ -97,10 +97,10 @@ TEST(MOAB_HEX1)
   // for (i = 0; i < ns; i++) {
   //   unsigned int setfaces[6];
 
-  //   setsize = mesh.get_set_size(setids[i],Amanzi::AmanziMesh::FACE,Amanzi::AmanziMesh::OWNED);
+  //   setsize = mesh.get_set_size(setids[i],Amanzi::AmanziMesh::FACE,Amanzi::AmanziMesh::Parallel_type::OWNED);
   //   CHECK_EQUAL(expsetsizes[i],setsize);
 
-  //   mesh.get_set(setids[i],Amanzi::AmanziMesh::FACE, Amanzi::AmanziMesh::OWNED, setfaces, setfaces+setsize);
+  //   mesh.get_set(setids[i],Amanzi::AmanziMesh::FACE, Amanzi::AmanziMesh::Parallel_type::OWNED, setfaces, setfaces+setsize);
     
   //   CHECK_ARRAY_EQUAL(expsetfaces[i],setfaces,setsize);
   // }

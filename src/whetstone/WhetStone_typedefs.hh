@@ -30,10 +30,6 @@ typedef std::vector<Entity_ID> Entity_ID_List;
 typedef AmanziMesh::Parallel_type Parallel_type;
 typedef AmanziMesh::Entity_kind Entity_kind;
 
-const int OWNED = AmanziMesh::USED;   // Owned by this processor
-const int GHOST = AmanziMesh::GHOST;  // Owned by another processor
-const int USED  = AmanziMesh::USED;   // OWNED + GHOST
-
 const int NODE = AmanziMesh::NODE;
 const int EDGE = AmanziMesh::EDGE;
 const int FACE = AmanziMesh::FACE;
@@ -44,21 +40,18 @@ const int BOUNDARY_FACE = AmanziMesh::BOUNDARY_FACE;
 typedef long long int Entity_ID;
 typedef std::vector<Entity_ID> Entity_ID_List;
 
-enum Parallel_type
-{
-  PTYPE_UNKNOWN = 0, // Initializer
-  OWNED = 1,         // Owned by this processor
-  GHOST = 2,         // Owned by another processor
-  USED  = 3          // OWNED + GHOST
-};
-
-enum Entity_kind
-{
+enum Entity_kind {
   NODE = 0,
   EDGE,
   FACE,
   CELL,
   BOUNDARY_FACE
+};
+
+enum class Parallel_type {
+  OWNED = 1;  // Owned by this processor
+  GHOST = 2;  // Owned by another processor
+  ALL = 3;    // OWNED + GHOST
 };
 #endif
 

@@ -406,9 +406,12 @@ endif()
 
 # Search for BLAS (Basic Linear Algebra Subprograms) http://www.netlib.org/blas
 find_package(BLAS REQUIRED)
+message(STATUS ">>>  BLAS_LIBRARIES = ${BLAS_LIBRARIES}") 
 
 # Search for LAPACK (Linear Algebra PACKage) http://www/netlib.org/lapack
 find_package(LAPACK REQUIRED)
+message(STATUS ">>>  LAPACK_LIBRARIES = ${LAPACK_LIBRARIES}") 
+
 
 # ############################################################################ #
 # Set common build compiler flags, build types and directories

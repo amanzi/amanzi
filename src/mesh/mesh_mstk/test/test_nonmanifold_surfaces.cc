@@ -55,7 +55,7 @@ TEST(MSTK_READ_NONMANIFOLD_SURFACES)
   CHECK_EQUAL(2, mesh->manifold_dimension());
   CHECK_EQUAL(3, mesh->space_dimension());
 
-  int nc = mesh->num_entities(Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::OWNED);
+  int nc = mesh->num_entities(Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::Parallel_type::OWNED);
 
   Teuchos::ParameterList::ConstIterator i;
   for (i = reg_spec.begin(); i != reg_spec.end(); i++) {
@@ -92,7 +92,7 @@ TEST(MSTK_READ_NONMANIFOLD_SURFACES)
         // Verify that we can get the number of entities in the set
         
         int set_size = mesh->get_set_size(reg_name, Amanzi::AmanziMesh::CELL,
-                                          Amanzi::AmanziMesh::OWNED);
+                                          Amanzi::AmanziMesh::Parallel_type::OWNED);
 
         CHECK_EQUAL(nc/2, set_size);
      
@@ -100,7 +100,7 @@ TEST(MSTK_READ_NONMANIFOLD_SURFACES)
         
         Amanzi::AmanziMesh::Entity_ID_List setents;
         mesh->get_set_entities(reg_name, Amanzi::AmanziMesh::CELL,
-                               Amanzi::AmanziMesh::OWNED, &setents);
+                               Amanzi::AmanziMesh::Parallel_type::OWNED, &setents);
 
         if (reg_name == "FRACTURE 1") {  
           // VERIFY THAT EACH 2D CELL HAS A NORMAL THAT POINTS IN [0,0,1] DIR
@@ -148,10 +148,10 @@ TEST(MSTK_READ_NONMANIFOLD_SURFACES)
   // surfaces come together
 
   int nf = mesh->num_entities(Amanzi::AmanziMesh::FACE,
-                              Amanzi::AmanziMesh::OWNED);
+                              Amanzi::AmanziMesh::Parallel_type::OWNED);
   for (int f = 0; f < nf; f++) {
     Amanzi::AmanziMesh::Entity_ID_List fcells;
-    mesh->face_get_cells(f, Amanzi::AmanziMesh::USED, &fcells);
+    mesh->face_get_cells(f, Amanzi::AmanziMesh::Parallel_type::ALL, &fcells);
 
     std::vector<Amanzi::AmanziGeometry::Point> fnormals(fcells.size());
 

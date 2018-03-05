@@ -52,10 +52,10 @@ class RemapDG : public Explicit_TI::fnBase<CompositeVector> {
   RemapDG(const Teuchos::RCP<const AmanziMesh::Mesh> mesh,
           const std::shared_ptr<WhetStone::MeshMaps> maps) : mesh_(mesh), maps_(maps) {
     // mesh data
-    ncells_owned_ = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
-    ncells_wghost_ = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::USED);
-    nfaces_owned_ = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
-    nfaces_wghost_ = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
+    ncells_owned_ = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+    ncells_wghost_ = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
+    nfaces_owned_ = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
+    nfaces_wghost_ = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
     dim_ = mesh_->space_dimension();
 
     // face velocities
@@ -279,12 +279,12 @@ void RemapTestsDualRK(int order_p, int order_u,
     mesh0 = meshfactory(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, nx, ny, nz, Teuchos::null, true, true);
   }
 
-  int ncells_owned = mesh0->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
-  int ncells_wghost = mesh0->num_entities(AmanziMesh::CELL, AmanziMesh::USED);
-  int nfaces_owned = mesh0->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
-  int nfaces_wghost = mesh0->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
-  int nnodes_owned = mesh0->num_entities(AmanziMesh::NODE, AmanziMesh::OWNED);
-  int nnodes_wghost = mesh0->num_entities(AmanziMesh::NODE, AmanziMesh::USED);
+  int ncells_owned = mesh0->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+  int ncells_wghost = mesh0->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
+  int nfaces_owned = mesh0->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
+  int nfaces_wghost = mesh0->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
+  int nnodes_owned = mesh0->num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::OWNED);
+  int nnodes_wghost = mesh0->num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::ALL);
 
   // create second and auxiliary mesh
   Teuchos::RCP<Mesh> mesh1;

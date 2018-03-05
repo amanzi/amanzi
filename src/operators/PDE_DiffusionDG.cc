@@ -134,7 +134,7 @@ void PDE_DiffusionDG::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& 
   }
 
   for (int f = 0; f != nfaces_owned; ++f) {
-    mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+    mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
     if (Kc_.get()) {
       Kc1 = (*Kc_)[cells[0]]; 
       if (cells.size() > 1) Kc2 = (*Kc_)[cells[1]]; 
@@ -170,7 +170,7 @@ void PDE_DiffusionDG::ApplyBCs(bool primary, bool eliminate)
   for (int f = 0; f != nfaces_owned; ++f) {
     if (bc_model[f] == OPERATOR_BC_DIRICHLET ||
         bc_model[f] == OPERATOR_BC_NEUMANN) {
-      mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+      mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
       int c = cells[0];
 
       const AmanziGeometry::Point& xf = mesh_->face_centroid(f);

@@ -63,8 +63,8 @@ TEST(OPERATOR_DIFFUSION_HIGH_ORDER_CROUZIEX_RAVIART) {
   RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 4, 4, gm, true, true);
   // RCP<const Mesh> mesh = meshfactory("test/median7x8_filtered.exo", gm, true, true);
 
-  int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
-  int nnodes_wghost = mesh->num_entities(AmanziMesh::NODE, AmanziMesh::USED);
+  int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
+  int nnodes_wghost = mesh->num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::ALL);
 
   // create boundary data (no mixed bc)
   ParameterList op_list = plist.get<Teuchos::ParameterList>("PK operator")
@@ -192,8 +192,8 @@ void RunHighOrderLagrange(std::string vem_name, bool polygonal_mesh) {
     mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 4, 4, gm, true, true);
   }
 
-  int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
-  int nnodes_wghost = mesh->num_entities(AmanziMesh::NODE, AmanziMesh::USED);
+  int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
+  int nnodes_wghost = mesh->num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::ALL);
 
   // create boundary data (no mixed bc)
   ParameterList op_list = plist.get<Teuchos::ParameterList>("PK operator")

@@ -339,7 +339,7 @@ bool MeshAuditOld::check_entity_counts() const
   bool error = false;
 
   // Check the number of owned nodes.
-  n = mesh->count_entities(AmanziMesh::NODE,AmanziMesh::OWNED);
+  n = mesh->count_entities(AmanziMesh::NODE,AmanziMesh::Parallel_type::OWNED);
   nref = mesh->node_map(false).NumMyElements();
   if (n != nref) {
     os << ": ERROR: count_entities(NODE,OWNED)=" << n << "; should be " << nref << std::endl;
@@ -347,15 +347,15 @@ bool MeshAuditOld::check_entity_counts() const
   }
 
   // Check the number of used nodes.
-  n = mesh->count_entities(AmanziMesh::NODE,AmanziMesh::USED);
+  n = mesh->count_entities(AmanziMesh::NODE,AmanziMesh::Parallel_type::ALL);
   nref = mesh->node_map(true).NumMyElements();
   if (n != nref) {
-    os << "ERROR: count_entities(NODE,USED)=" << n << "; should be " << nref << std::endl;
+    os << "ERROR: count_entities(NODE,ALL)=" << n << "; should be " << nref << std::endl;
     error = true;
   }
 
   // Check the number of owned faces.
-  n = mesh->count_entities(AmanziMesh::FACE,AmanziMesh::OWNED);
+  n = mesh->count_entities(AmanziMesh::FACE,AmanziMesh::Parallel_type::OWNED);
   nref = mesh->face_map(false).NumMyElements();
   if (n != nref) {
     os << "ERROR: count_entities(FACE,OWNED)=" << n << "; should be " << nref << std::endl;
@@ -363,15 +363,15 @@ bool MeshAuditOld::check_entity_counts() const
   }
 
   // Check the number of used faces.
-  n = mesh->count_entities(AmanziMesh::FACE,AmanziMesh::USED);
+  n = mesh->count_entities(AmanziMesh::FACE,AmanziMesh::Parallel_type::ALL);
   nref = mesh->face_map(true).NumMyElements();
   if (n != nref) {
-    os << "ERROR: count_entities(FACE,USED)=" << n << "; should be " << nref << std::endl;
+    os << "ERROR: count_entities(FACE,ALL)=" << n << "; should be " << nref << std::endl;
     error = true;
   }
 
   // Check the number of owned cells.
-  n = mesh->count_entities(AmanziMesh::CELL,AmanziMesh::OWNED);
+  n = mesh->count_entities(AmanziMesh::CELL,AmanziMesh::Parallel_type::OWNED);
   nref = mesh->cell_map(false).NumMyElements();
   if (n != nref) {
     os << "ERROR: count_entities(CELL,OWNED)=" << n << "; should be " << nref << std::endl;
@@ -379,10 +379,10 @@ bool MeshAuditOld::check_entity_counts() const
   }
 
   // Check the number of used cells.
-  n = mesh->count_entities(AmanziMesh::CELL,AmanziMesh::USED);
+  n = mesh->count_entities(AmanziMesh::CELL,AmanziMesh::Parallel_type::ALL);
   nref = mesh->cell_map(true).NumMyElements();
   if (n != nref) {
-    os << "ERROR: count_entities(CELL,USED)=" << n << "; should be " << nref << std::endl;
+    os << "ERROR: count_entities(CELL,ALL)=" << n << "; should be " << nref << std::endl;
     error = true;
   }
 
@@ -1743,9 +1743,9 @@ bool MeshAuditOld::check_sets(AmanziMesh::Entity_kind kind,
     os << "  Checking set ID=" << sids[n] << " ..." << std::endl;
 
     // Basic sanity checks of the owned and used sets.
-    bool bad_set = check_get_set(sids[n], kind, AmanziMesh::OWNED, 
+    bool bad_set = check_get_set(sids[n], kind, AmanziMesh::Parallel_type::OWNED, 
 				 map_own) ||
-                   check_get_set(sids[n], kind, AmanziMesh::USED,  
+                   check_get_set(sids[n], kind, AmanziMesh::Parallel_type::ALL,  
 				 map_use);
     bad_set = global_any(bad_set);
 
@@ -1832,13 +1832,13 @@ bool MeshAuditOld::check_used_set(unsigned int sid,
 
     // In serial, the owned and used sets should be identical.
 
-    int n = mesh->get_set_size(sid, kind, AmanziMesh::OWNED);
+    int n = mesh->get_set_size(sid, kind, AmanziMesh::Parallel_type::OWNED);
     vector<unsigned int> set_own(n);
-    mesh->get_set(sid, kind, AmanziMesh::OWNED, set_own.begin(), 
+    mesh->get_set(sid, kind, AmanziMesh::Parallel_type::OWNED, set_own.begin(), 
 		  set_own.end());
 
     // Set sizes had better be the same.
-    if (mesh->get_set_size(sid, kind, AmanziMesh::USED) != 
+    if (mesh->get_set_size(sid, kind, AmanziMesh::Parallel_type::ALL) != 
 	set_own.size()) {
       os << "  ERROR: owned and used set sizes differ" << std::endl;
       return true;
@@ -1846,7 +1846,7 @@ bool MeshAuditOld::check_used_set(unsigned int sid,
 
     // Verify that the two sets are identical.
     vector<unsigned int> set_use(n);
-    mesh->get_set(sid, kind, AmanziMesh::USED, set_use.begin(), 
+    mesh->get_set(sid, kind, AmanziMesh::Parallel_type::ALL, set_use.begin(), 
 		  set_use.end());
     bool bad_data = false;
     for (int j = 0; j < n; ++j)
@@ -1860,14 +1860,14 @@ bool MeshAuditOld::check_used_set(unsigned int sid,
 
   } else {
 
-    int n = mesh->get_set_size(sid, kind, AmanziMesh::OWNED);
+    int n = mesh->get_set_size(sid, kind, AmanziMesh::Parallel_type::OWNED);
     vector<unsigned int> set_own(n);
-    mesh->get_set(sid, kind, AmanziMesh::OWNED, set_own.begin(), 
+    mesh->get_set(sid, kind, AmanziMesh::Parallel_type::OWNED, set_own.begin(), 
 		  set_own.end());
 
-    n = mesh->get_set_size(sid, kind, AmanziMesh::USED);
+    n = mesh->get_set_size(sid, kind, AmanziMesh::Parallel_type::ALL);
     vector<unsigned int> set_use(n);
-    mesh->get_set(sid, kind, AmanziMesh::USED,  set_use.begin(), set_use.end());
+    mesh->get_set(sid, kind, AmanziMesh::Parallel_type::ALL,  set_use.begin(), set_use.end());
 
     // Tag all LIDs in the used map that should belong to the used set;
     // the owned set LIDs are taken as definitive.
@@ -1959,8 +1959,8 @@ bool MeshAuditOld::check_sets_alt(AmanziMesh::Entity_kind kind) const
     os << "  Checking set ID=" << sids[n] << " ..." << std::endl;
 
     bool bad_set = check_get_set_alt(sids[n], kind, 
-				     AmanziMesh::OWNED) ||
-                   check_get_set_alt(sids[n], kind, AmanziMesh::USED);
+				     AmanziMesh::Parallel_type::OWNED) ||
+                   check_get_set_alt(sids[n], kind, AmanziMesh::Parallel_type::ALL);
 
     // OUGHT TO DO TESTING OF THE GHOST SETS
 

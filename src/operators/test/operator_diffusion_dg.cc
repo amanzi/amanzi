@@ -68,10 +68,10 @@ TEST(OPERATOR_DIFFUSION_DG) {
   RCP<const Mesh> mesh = meshfactory("test/median7x8_filtered.exo", gm);
   // RCP<const Mesh> mesh = meshfactory("test/triangular8_clockwise.exo", gm);
 
-  int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
-  int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
-  int ncells_wghost = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::USED);
-  int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
+  int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+  int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
+  int ncells_wghost = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
+  int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
 
   // modify diffusion coefficient
   auto Kc = std::make_shared<std::vector<WhetStone::Tensor> >();

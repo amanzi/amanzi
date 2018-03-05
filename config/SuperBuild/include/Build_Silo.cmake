@@ -47,6 +47,13 @@ else()
     set(CONFIG_SILO_SHARED --disable-shared --enable-static)
 endif()
 
+# Force executables to built with all static libs.
+if (DEFINED ENV{NERSC_HOST})
+    set(LIBTOOL_STATIC "LIBTOOL_STATIC=-all-static")
+else()
+    set(LIBTOOL_STATIC "")
+endif()
+
 # Silo CMAKE_BUILD_TYPE=(Debug|Release)i
 if (${CMAKE_BUILD_TYPE} STREQUAL "Debug")
    set(CONFIG_SILO_DEBUG --disable-optimization)
@@ -55,7 +62,7 @@ else()
 endif()
 
 # --- Set the name of the patch 
-set(Silo_patch_file silo-4.10.2-remove-mpiposix.patch silo-4.10.2-debug-builds.patch)
+set(Silo_patch_file silo-4.10.2-remove-mpiposix.patch silo-4.10.2-debug-builds.patch silo-4.10.2-static-tools.patch)
 
 set(Silo_sh_patch ${Silo_prefix_dir}/silo-patch-step.sh)
 configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/silo-patch-step.sh.in
@@ -95,7 +102,7 @@ ExternalProject_Add(${Silo_BUILD_TARGET}
                                           CXX=${CMAKE_CXX_COMPILER}
                                           CFLAGS=${silo_cflags}
                                           CXXFLAGS=${silo_cxxflags}
-					  LIBS=-ldl
+					  LIBS=-ldl ${LIBTOOL_STATIC}
                     # -- Build
                     BINARY_DIR        ${Silo_build_dir}           # Build directory 
                     BUILD_COMMAND     $(MAKE) -j 1 SILO_DIR=${Silo_source_dir} # Run the CMake script to build
