@@ -79,7 +79,7 @@ int Operator_Cell::ApplyMatrixFreeOp(const Op_Face_Cell& op,
 
   AmanziMesh::Entity_ID_List cells;
   for (int f=0; f!=nfaces_owned; ++f) {
-    mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+    mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
     int ncells = cells.size();
 
     WhetStone::DenseVector v(ncells), av(ncells);
@@ -138,7 +138,7 @@ void Operator_Cell::SymbolicAssembleMatrixOp(const Op_Face_Cell& op,
   int ierr(0);
   AmanziMesh::Entity_ID_List cells;
   for (int f=0; f!=nfaces_owned; ++f) {
-    mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+    mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
     
     int ncells = cells.size();
     for (int n=0; n!=ncells; ++n) {
@@ -191,7 +191,7 @@ void Operator_Cell::AssembleMatrixOp(const Op_Face_Cell& op,
   int ierr(0);
   AmanziMesh::Entity_ID_List cells;
   for (int f=0; f!=nfaces_owned; ++f) {
-    mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+    mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
     
     int ncells = cells.size();
     for (int n=0; n!=ncells; ++n) {

@@ -148,7 +148,7 @@ int main(int argc, char *argv[]) {
 
     int nnodes, nnodes_in;
     nnodes = mesh->num_entities(Amanzi::AmanziMesh::NODE,
-                                Amanzi::AmanziMesh::OWNED);
+                                Amanzi::AmanziMesh::Parallel_type::OWNED);
 
     Amanzi::AmanziMesh::Entity_ID nodeid;
 

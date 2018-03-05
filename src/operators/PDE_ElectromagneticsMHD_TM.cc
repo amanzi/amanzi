@@ -148,7 +148,7 @@ void PDE_ElectromagneticsMHD_TM::ApplyBCs_Node_(const Teuchos::Ptr<const BCs>& b
 
   // calculate number of cells for each node
   // move to properties of BCs (lipnikov@lanl.gov)
-  int nnodes_wghost = mesh_->num_entities(AmanziMesh::NODE, AmanziMesh::USED);
+  int nnodes_wghost = mesh_->num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::ALL);
   std::vector<int> node_get_cells(nnodes_wghost, 0);
   for (int c = 0; c != ncells_wghost; ++c) {
     mesh_->cell_get_nodes(c, &nodes);

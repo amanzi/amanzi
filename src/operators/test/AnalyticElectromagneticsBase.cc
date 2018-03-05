@@ -25,7 +25,7 @@ void AnalyticElectromagneticsBase::ComputeFaceError(
   l2_err = 0.0;
   inf_err = 0.0;
 
-  int nfaces = mesh_->num_entities(Amanzi::AmanziMesh::FACE, Amanzi::AmanziMesh::OWNED);
+  int nfaces = mesh_->num_entities(Amanzi::AmanziMesh::FACE, Amanzi::AmanziMesh::Parallel_type::OWNED);
   for (int f = 0; f < nfaces; f++) {
     double area = mesh_->face_area(f);
     const Amanzi::AmanziGeometry::Point& normal = mesh_->face_normal(f);
@@ -64,7 +64,7 @@ void AnalyticElectromagneticsBase::ComputeEdgeError(
   int n1, n2; 
   Amanzi::AmanziGeometry::Point p1(3), p2(3), xe(3);
 
-  int nedges = mesh_->num_entities(Amanzi::AmanziMesh::EDGE, Amanzi::AmanziMesh::OWNED);
+  int nedges = mesh_->num_entities(Amanzi::AmanziMesh::EDGE, Amanzi::AmanziMesh::Parallel_type::OWNED);
   for (int e = 0; e < nedges; e++) {
     double len = mesh_->edge_length(e);
     const Amanzi::AmanziGeometry::Point& tau = mesh_->edge_vector(e);
@@ -109,7 +109,7 @@ void AnalyticElectromagneticsBase::ComputeNodeError(
   Amanzi::AmanziGeometry::Point xv(d);
 
   Amanzi::AmanziMesh::Entity_ID_List nodes;
-  int ncells = mesh_->num_entities(Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::OWNED);
+  int ncells = mesh_->num_entities(Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::Parallel_type::OWNED);
 
   for (int c = 0; c < ncells; c++) {
     double volume = mesh_->cell_volume(c);

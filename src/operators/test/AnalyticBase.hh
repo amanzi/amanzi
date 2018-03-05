@@ -74,7 +74,7 @@ class AnalyticBase {
     l2_err = 0.0;
     inf_err = 0.0;
 
-    int ncells = mesh_->num_entities(Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::OWNED);
+    int ncells = mesh_->num_entities(Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::Parallel_type::OWNED);
     for (int c = 0; c < ncells; c++) {
       const Amanzi::AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
       double tmp = pressure_exact(xc, t);
@@ -102,7 +102,7 @@ class AnalyticBase {
     l2_err = 0.0;
     inf_err = 0.0;
 
-    int nfaces = mesh_->num_entities(Amanzi::AmanziMesh::FACE, Amanzi::AmanziMesh::OWNED);
+    int nfaces = mesh_->num_entities(Amanzi::AmanziMesh::FACE, Amanzi::AmanziMesh::Parallel_type::OWNED);
     for (int f = 0; f < nfaces; f++) {
       double area = mesh_->face_area(f);
       const Amanzi::AmanziGeometry::Point& normal = mesh_->face_normal(f);
@@ -142,7 +142,7 @@ class AnalyticBase {
 
     Amanzi::AmanziMesh::Entity_ID_List nodes;
     Amanzi::WhetStone::MFD3D_Diffusion mfd(mesh_);
-    int ncells = mesh_->num_entities(Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::OWNED);
+    int ncells = mesh_->num_entities(Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::Parallel_type::OWNED);
 
     for (int c = 0; c < ncells; c++) {
       double volume = mesh_->cell_volume(c);
@@ -208,7 +208,7 @@ class AnalyticBase {
 
     Amanzi::AmanziMesh::Entity_ID_List edges;
     Amanzi::WhetStone::MFD3D_Diffusion mfd(mesh_);
-    int ncells = mesh_->num_entities(Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::OWNED);
+    int ncells = mesh_->num_entities(Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::Parallel_type::OWNED);
 
     for (int c = 0; c < ncells; c++) {
       double volume = mesh_->cell_volume(c);

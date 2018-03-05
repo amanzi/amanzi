@@ -36,13 +36,13 @@ void ReconstructionCell::Init(Teuchos::RCP<const Epetra_MultiVector> field,
   field_ = field;
   component_ = component;
 
-  ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
-  nfaces_owned = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
-  nnodes_owned = mesh_->num_entities(AmanziMesh::NODE, AmanziMesh::OWNED);
+  ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+  nfaces_owned = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
+  nnodes_owned = mesh_->num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::OWNED);
 
-  ncells_wghost = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::USED);
-  nfaces_wghost = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
-  nnodes_wghost = mesh_->num_entities(AmanziMesh::NODE, AmanziMesh::USED);
+  ncells_wghost = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
+  nfaces_wghost = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
+  nnodes_wghost = mesh_->num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::ALL);
 
   dim = mesh_->space_dimension();
 
@@ -87,8 +87,8 @@ void ReconstructionCell::Compute()
   for (int c = 0; c < ncells_owned; c++) {
     const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
 
-    // mesh_->cell_get_face_adj_cells(c, AmanziMesh::USED, &cells);
-    CellFaceAdjCellsNonManifold_(c, AmanziMesh::USED, cells);
+    // mesh_->cell_get_face_adj_cells(c, AmanziMesh::Parallel_type::ALL, &cells);
+    CellFaceAdjCellsNonManifold_(c, AmanziMesh::Parallel_type::ALL, cells);
     int ncells = cells.size();
 
     matrix.PutScalar(0.0);
@@ -144,7 +144,7 @@ void ReconstructionCell::ComputeGradient(
     int c = *it;
     const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
 
-    mesh_->cell_get_face_adj_cells(c, AmanziMesh::USED, &cells);
+    mesh_->cell_get_face_adj_cells(c, AmanziMesh::Parallel_type::ALL, &cells);
     int ncells = cells.size();
 
     matrix.PutScalar(0.0);

@@ -195,7 +195,7 @@ void PDE_DiffusionMFD::UpdateMatricesMixedWithGrad_(
     } else {
       for (int n = 0; n < nfaces; n++) {
         int f = faces[n];
-        mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+        mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
         kf[n] = (c == cells[0]) ? (*k_face)[0][f] : (*k_twin)[0][f];
       }
     }
@@ -270,7 +270,7 @@ void PDE_DiffusionMFD::UpdateMatricesMixed_(
     } else if (little_k_ == OPERATOR_LITTLE_K_DIVK_TWIN) {
       for (int n = 0; n < nfaces; n++) {
         int f = faces[n];
-        mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+        mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
         kf[n] = (c == cells[0]) ? (*k_face)[0][f] : (*k_twin)[0][f];
       }
 
@@ -491,7 +491,7 @@ void PDE_DiffusionMFD::UpdateMatricesTPFA_()
  
   // populate the global matrix
   for (int f = 0; f < nfaces_owned; f++) {
-    mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+    mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
     int ncells = cells.size();
     WhetStone::DenseMatrix Aface(ncells, ncells);
 
@@ -738,14 +738,14 @@ void PDE_DiffusionMFD::ApplyBCs_Cell_(
     WhetStone::DenseMatrix& Aface = local_op_->matrices[f];
       
     if (bc_model[f] == OPERATOR_BC_DIRICHLET) {
-      mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+      mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
       rhs_cell[0][cells[0]] += bc_value[f] * Aface(0, 0);
     }
     // Neumann condition contributes to the RHS
     else if (bc_model[f] == OPERATOR_BC_NEUMANN) {
       local_op_->matrices_shadow[f] = Aface;
       
-      mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+      mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
       rhs_cell[0][cells[0]] -= bc_value[f] * mesh_->face_area(f);
       Aface *= 0.0;
     }
@@ -753,7 +753,7 @@ void PDE_DiffusionMFD::ApplyBCs_Cell_(
     else if (bc_model[f] == OPERATOR_BC_MIXED) {
       local_op_->matrices_shadow[f] = Aface;
       
-      mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+      mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
       double area = mesh_->face_area(f);
       double factor = area / (1.0 + bc_mixed[f] * area / Aface(0, 0));
       rhs_cell[0][cells[0]] -= bc_value[f] * factor;
@@ -867,7 +867,7 @@ void PDE_DiffusionMFD::ApplyBCs_Nodal_(
           // We take into account multiple contributions to matrix diagonal
           // by dividing by the number of cells attached to a vertex.
           if (primary) {
-            mesh_->node_get_cells(v, AmanziMesh::USED, &cells);
+            mesh_->node_get_cells(v, AmanziMesh::Parallel_type::ALL, &cells);
             if (v < nnodes_owned) rhs_node[0][v] = value;
             Acell(n, n) = 1.0 / cells.size();
           }
@@ -975,7 +975,7 @@ void PDE_DiffusionMFD::AddNewtonCorrectionCell_(
   double v, vmod;
   AmanziMesh::Entity_ID_List cells;
   for (int f = 0; f < nfaces_owned; f++) {
-    mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+    mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
     int ncells = cells.size();
     WhetStone::DenseMatrix Aface(ncells, ncells);
     Aface.PutScalar(0.0);
@@ -1543,7 +1543,7 @@ double PDE_DiffusionMFD::ComputeTransmissibility(int f) const
   WhetStone::MFD3D_Diffusion mfd(mesh_);
 
   AmanziMesh::Entity_ID_List cells;
-  mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+  mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
   int c = cells[0];
 
   if (K_.get()) {

@@ -102,20 +102,18 @@ std::string entity_kind_string(Entity_kind kind)
 }
 
 // Parallel status of entity 
-    
-enum Parallel_type 
-{
-  PTYPE_UNKNOWN = 0, // Initializer
-  OWNED = 1,         // Owned by this processor
-  GHOST = 2,         // Owned by another processor
-  USED  = 3          // OWNED + GHOST
+enum class Parallel_type {
+  PTYPE_UNKNOWN = 0,
+  OWNED = 1,  // Owned by this processor
+  GHOST = 2,  // Owned by another processor
+  ALL = 3     // OWNED + GHOST 
 };
 
 // Check if Parallel_type is valid
 
 inline 
 bool entity_valid_ptype (const Parallel_type ptype) {
-  return (ptype >= OWNED && ptype <= USED);
+  return (ptype >= Parallel_type::OWNED && ptype <= Parallel_type::ALL);
 }
     
 // Standard element types and catchall (POLYGON/POLYHED)

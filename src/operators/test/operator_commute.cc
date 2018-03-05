@@ -70,8 +70,8 @@ TEST(ADVECTION_DIFFUSION_COMMUTE) {
 
   // modify diffusion coefficient.
   Teuchos::RCP<std::vector<WhetStone::Tensor> > K = Teuchos::rcp(new std::vector<WhetStone::Tensor>());
-  int ncells_owned = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
-  int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
+  int ncells_owned = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+  int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
 
   for (int c = 0; c < ncells_owned; c++) {
     WhetStone::Tensor Kc(2, 1);
@@ -102,7 +102,7 @@ TEST(ADVECTION_DIFFUSION_COMMUTE) {
   // create velocity field
   Teuchos::RCP<CompositeVector> u = Teuchos::rcp(new CompositeVector(*cvs));
   Epetra_MultiVector& uf = *u->ViewComponent("face");
-  int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
+  int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
   Point vel(4.0, 4.0);
   for (int f = 0; f < nfaces; f++) {
     uf[0][f] = vel * mesh->face_normal(f);
@@ -197,8 +197,8 @@ TEST(ADVECTION_DIFFUSION_COMMUTE_FV) {
 
   // modify diffusion coefficient
   Teuchos::RCP<std::vector<WhetStone::Tensor> > K = Teuchos::rcp(new std::vector<WhetStone::Tensor>());
-  int ncells_owned = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
-  int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
+  int ncells_owned = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+  int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
 
   for (int c = 0; c < ncells_owned; c++) {
     WhetStone::Tensor Kc(2, 1);
@@ -229,7 +229,7 @@ TEST(ADVECTION_DIFFUSION_COMMUTE_FV) {
   // create velocity field
   Teuchos::RCP<CompositeVector> u = Teuchos::rcp(new CompositeVector(*cvs));
   Epetra_MultiVector& uf = *u->ViewComponent("face");
-  int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
+  int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
   Point vel(4.0, 4.0);
   for (int f = 0; f < nfaces; f++) {
     uf[0][f] = vel * mesh->face_normal(f);

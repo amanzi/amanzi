@@ -132,7 +132,7 @@ void Schema::Finalize(Teuchos::RCP<const AmanziMesh::Mesh> mesh)
   int m(0);
   for (auto it = items_.begin(); it != items_.end(); ++it) {
     offset_.push_back(m);
-    int nent = mesh->num_entities(it->kind, AmanziMesh::OWNED);
+    int nent = mesh->num_entities(it->kind, AmanziMesh::Parallel_type::OWNED);
     m += nent * it->num;
   }
 }

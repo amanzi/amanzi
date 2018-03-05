@@ -88,7 +88,7 @@ TEST(MESH_COLUMNS)
 
     int status;
     int ncells = mesh->num_entities(Amanzi::AmanziMesh::CELL,
-                                    Amanzi::AmanziMesh::OWNED);
+                                    Amanzi::AmanziMesh::Parallel_type::OWNED);
 
     double dz = 0.25;  // difference in height between cell centroids
                        // or between node points
@@ -105,7 +105,7 @@ TEST(MESH_COLUMNS)
       if (fabs(ccen[2] - (1.0-dz/2.0)) < 1.e-10) found_above = true;  // top layer
 
       std::vector<int> adjcells;
-      mesh->cell_get_node_adj_cells(c, Amanzi::AmanziMesh::OWNED, &adjcells);
+      mesh->cell_get_node_adj_cells(c, Amanzi::AmanziMesh::Parallel_type::OWNED, &adjcells);
       int nadjcells = adjcells.size();
       for (int k = 0; k < nadjcells && (!found_above || !found_below); k++) {
         int c2 = adjcells[k];
@@ -134,7 +134,7 @@ TEST(MESH_COLUMNS)
 
     
     int nnodes = mesh->num_entities(Amanzi::AmanziMesh::CELL,
-                                    Amanzi::AmanziMesh::OWNED);
+                                    Amanzi::AmanziMesh::Parallel_type::OWNED);
 
     // Identify node_above and node_below with brute force, n^2 search
     // since there are only 125 nodes
@@ -152,7 +152,7 @@ TEST(MESH_COLUMNS)
       // qualifies as the node above or node below
       
       std::vector<int> nodecells;
-      mesh->node_get_cells(n, Amanzi::AmanziMesh::OWNED, &nodecells);
+      mesh->node_get_cells(n, Amanzi::AmanziMesh::Parallel_type::OWNED, &nodecells);
       int nnodecells = nodecells.size();
       
       for (int k = 0; k < nnodecells && !found_above; k++) {

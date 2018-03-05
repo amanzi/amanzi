@@ -233,7 +233,7 @@ void Amanzi_PK::Initialize(const Teuchos::Ptr<State>& S)
   SetupAuxiliaryOutput();
 
   // solve for initial free-ion concentrations
-  int num_cells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  int num_cells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
   ierr = 0;
   if (fabs(initial_conditions_time_ - S->time()) <= 1e-8 * fabs(S->time())) {
     for (int c = 0; c < num_cells; ++c) {
@@ -690,7 +690,7 @@ bool Amanzi_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   int num_itrs, max_itrs(0), min_itrs(10000000), avg_itrs(0);
   int cmax(-1), cmin(-1), ierr(0);
 
-  int num_cells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  int num_cells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
   for (int c = 0; c < num_cells; ++c) {
     CopyCellStateToBeakerStructures(c, aqueous_components_);
     try {
@@ -783,7 +783,7 @@ Teuchos::RCP<Epetra_MultiVector> Amanzi_PK::extra_chemistry_output_data() {
   if (aux_data_ != Teuchos::null) {
     const Epetra_MultiVector& free_ion = *S_->GetFieldData(free_ion_species_key_)->ViewComponent("cell", true);
     const Epetra_MultiVector& activity = *S_->GetFieldData(primary_activity_coeff_key_)->ViewComponent("cell", true);
-    int num_cells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+    int num_cells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
 
     for (int cell = 0; cell < num_cells; cell++) {
       // populate aux_data_ by copying from the appropriate internal storage

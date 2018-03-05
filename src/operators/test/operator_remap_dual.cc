@@ -77,12 +77,12 @@ void RemapTestsDual(int dim, int order, std::string disc_name,
     mesh0 = meshfactory(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, nx, ny, ny, Teuchos::null, true, true);
   }
 
-  int ncells_owned = mesh0->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
-  int ncells_wghost = mesh0->num_entities(AmanziMesh::CELL, AmanziMesh::USED);
-  int nfaces_owned = mesh0->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
-  int nfaces_wghost = mesh0->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
-  int nnodes_owned = mesh0->num_entities(AmanziMesh::NODE, AmanziMesh::OWNED);
-  int nnodes_wghost = mesh0->num_entities(AmanziMesh::NODE, AmanziMesh::USED);
+  int ncells_owned = mesh0->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+  int ncells_wghost = mesh0->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
+  int nfaces_owned = mesh0->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
+  int nfaces_wghost = mesh0->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
+  int nnodes_owned = mesh0->num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::OWNED);
+  int nnodes_wghost = mesh0->num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::ALL);
 
   // create second and auxiliary mesh
   Teuchos::RCP<Mesh> mesh1;

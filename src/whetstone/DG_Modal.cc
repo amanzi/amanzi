@@ -205,7 +205,7 @@ int DG_Modal::FluxMatrixPoly(int f, const Polynomial& un, DenseMatrix& A,
                              bool jump_on_test)
 {
   AmanziMesh::Entity_ID_List cells, nodes;
-  mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+  mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
   int ncells = cells.size();
 
   Polynomial poly0(d_, order_), poly1(d_, order_);
@@ -474,7 +474,7 @@ Polynomial DG_Modal::CalculatePolynomial(int c, const std::vector<double>& coefs
 void DG_Modal::UpdateIntegrals_(int c, int order)
 {
   if (integrals_.size() == 0) {
-    int ncells_wghost = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::USED);
+    int ncells_wghost = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
     integrals_.resize(ncells_wghost);
 
     for (int n = 0; n < ncells_wghost; ++n) {
@@ -501,7 +501,7 @@ void DG_Modal::UpdateIntegrals_(int c, int order)
 void DG_Modal::UpdateScales_(int c, int order)
 {
   if (scales_a_.size() == 0) {
-    int ncells_wghost = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::USED);
+    int ncells_wghost = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
     scales_a_.resize(ncells_wghost);
     scales_b_.resize(ncells_wghost);
 

@@ -114,7 +114,7 @@ std::cout << "Test: Tensor Richards, a cube model" << std::endl;
   const Epetra_MultiVector& flux = *S->GetFieldData("darcy_flux", passwd)->ViewComponent("face");
 
   double err_p = 0.0, err_u = 0.0;
-  int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
   for (int c = 0; c < ncells; c++) {
     const Point& xc = mesh->cell_centroid(c);
     double p_exact = v0 * xc;
@@ -123,7 +123,7 @@ std::cout << "Test: Tensor Richards, a cube model" << std::endl;
   }
   err_p = sqrt(err_p);
 
-  int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
+  int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
   for (int f = 0; f < nfaces; f++) {
     const Point& xf = mesh->face_centroid(f);
     const Point normal = mesh->face_normal(f);

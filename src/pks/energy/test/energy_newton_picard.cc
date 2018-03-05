@@ -140,8 +140,8 @@ void HeatConduction::Init(
   InitialGuess();
 
   // create BCs
-  int ncells_owned = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
-  int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
+  int ncells_owned = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+  int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
 
   bc_ = Teuchos::rcp(new Operators::BCs(mesh, AmanziMesh::FACE, Operators::SCHEMA_DOFS_SCALAR));
   std::vector<int>& bc_model = bc_->bc_model();
@@ -218,7 +218,7 @@ void HeatConduction::Init(
 ****************************************************************** */
 void HeatConduction::InitialGuess()
 { 
-  int ncells_wghost = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::USED);
+  int ncells_wghost = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
   Epetra_MultiVector& sol_c = *solution_->ViewComponent("cell", true);
   
   for (int c = 0; c < ncells_wghost; ++c) {
@@ -227,7 +227,7 @@ void HeatConduction::InitialGuess()
     sol_c[0][c] = a / 2 - a / M_PI * atan(20 * (xc[0] - 1.0));
   }
 
-  int nfaces_wghost = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
+  int nfaces_wghost = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
   Epetra_MultiVector& sol_f = *solution_->ViewComponent("face", true);
   
   for (int f = 0; f < nfaces_wghost; ++f) {
@@ -308,7 +308,7 @@ void HeatConduction::UpdateValues(const CompositeVector& u)
   Epetra_MultiVector& kc = *k->ViewComponent("cell", true); 
   Epetra_MultiVector& dkdT_c = *dkdT->ViewComponent("cell", true); 
 
-  int ncells_wghost = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::USED);
+  int ncells_wghost = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
   for (int c = 0; c < ncells_wghost; c++) {
     double u = uc[0][c];
     kc[0][c] = Conduction(c, u);
@@ -326,7 +326,7 @@ void HeatConduction::UpdateValues(const CompositeVector& u)
   for (int f=0; f!=face_map.NumMyElements(); ++f) {
     if (bc_model[f] == Operators::OPERATOR_BC_DIRICHLET) {
       AmanziMesh::Entity_ID_List cells;
-      mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+      mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
       ASSERT(cells.size() == 1);
       int bf = ext_face_map.LID(face_map.GID(f));
       k_df[0][bf] = Conduction(cells[0], bc_value[f]);

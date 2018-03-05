@@ -87,7 +87,7 @@ TEST(MOAB_HEX_2x2x1)
   Amanzi::AmanziMesh::Mesh_MOAB mesh("test/hex_2x2x1_ss.exo",comm_.get());
 
 
-  nv = mesh.num_entities(Amanzi::AmanziMesh::NODE,Amanzi::AmanziMesh::OWNED);
+  nv = mesh.num_entities(Amanzi::AmanziMesh::NODE,Amanzi::AmanziMesh::Parallel_type::OWNED);
   CHECK_EQUAL(NV,nv);
 
   for (i = 0; i < nv; i++) {
@@ -98,10 +98,10 @@ TEST(MOAB_HEX_2x2x1)
   }
 
 
-  nf = mesh.num_entities(Amanzi::AmanziMesh::FACE,Amanzi::AmanziMesh::OWNED);
+  nf = mesh.num_entities(Amanzi::AmanziMesh::FACE,Amanzi::AmanziMesh::Parallel_type::OWNED);
   CHECK_EQUAL(NF,nf);
   
-  nc = mesh.num_entities(Amanzi::AmanziMesh::CELL,Amanzi::AmanziMesh::OWNED);
+  nc = mesh.num_entities(Amanzi::AmanziMesh::CELL,Amanzi::AmanziMesh::Parallel_type::OWNED);
   CHECK_EQUAL(NC,nc);
     
   for (i = 0; i < nc; i++) {

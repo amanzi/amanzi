@@ -363,7 +363,7 @@ void PDE_DiffusionMFDwithGravity::Init_(Teuchos::ParameterList& plist)
 AmanziGeometry::Point PDE_DiffusionMFDwithGravity::GravitySpecialDirection_(int f) const
 {
   AmanziMesh::Entity_ID_List cells;
-  mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+  mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
   int ncells = cells.size();
 
   if (ncells == 2) {
@@ -380,7 +380,7 @@ AmanziGeometry::Point PDE_DiffusionMFDwithGravity::GravitySpecialDirection_(int 
 double PDE_DiffusionMFDwithGravity::ComputeGravityFlux(int f) const
 {
   AmanziMesh::Entity_ID_List cells;
-  mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+  mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
   int c = cells[0];
 
   double gflux;
