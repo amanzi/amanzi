@@ -58,7 +58,8 @@ add_amanzi_library(whetstone
                    HEADERS DenseMatrix.hh DenseVector.hh
                            DG_Modal.hh
                            lapack.hh
-                           InnerProduct.hh InnerProductL2.hh InnerProductH1.hh BilinearForm.hh
+                           InnerProduct.hh InnerProductL2.hh InnerProductH1.hh
+                           BilinearForm.hh Projectors.hh
                            DeRham_Node.hh DeRham_Edge.hh DeRham_Face.hh
                            MFD3D.hh
                            MFD3D_BernardiRaugel.hh
