@@ -23,10 +23,13 @@ include_directories(${PETSC_INCLUDE_DIRS})
 include_directories(${CHEM_INCLUDES_DIR})
 include_directories(${CHEMPK_SOURCE_DIR})
 include_directories(${GEOCHEM_STATE_DIR}) 
-include_directories(${GEOCHEM_SOURCE_DIR}) 
+include_directories(${GEOCHEM_SOURCE_DIR})
+include_directories(${CHEM_INCLUDES_DIR})
+include_directories(${ALQUIMIA_INCLUDE_DIRS})
 
 # External (TPL) include directories
 include_directories(${Teuchos_INCLUDE_DIRS})
+include_directories(${HDF5_INCLUDE_DIRS})
 
 set(CXX_source_files Observation.cpp
                      PMBld.cpp
@@ -75,7 +78,7 @@ if (BUILD_TESTS)
   get_property(GEOCHEM_LIBS GLOBAL PROPERTY GEOCHEM_LIBS)
   set(common_libs error_handling ${GEOCHEM_LIBS} interface atk)
 
-  set(tpl_libs ${Teuchos_LIBRARIES})
+  set(tpl_libs ${Teuchos_LIBRARIES} ${HDF5_LIBRARIES})
 
   #add_amanzi_test(tRegion tRegion
   #                KIND unit

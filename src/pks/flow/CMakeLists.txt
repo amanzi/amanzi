@@ -1,5 +1,3 @@
-# -*- mode: cmake -*-
-
 #
 #  Amanzi
 #   Flow process kernel
@@ -175,14 +173,13 @@ if (BUILD_TESTS)
     include_directories(${UnitTest_INCLUDE_DIRS})
     include_directories(${MESH_FACTORY_SOURCE_DIR})
 
-
     # Copy test directory files if any out of source build
     if (NOT (${FLOW_SOURCE_DIR} EQUAL ${FLOW_BINARY_DIR}) )
         # execute_process(COMMAND ${CMAKE_COMMAND} -E 
         #   copy_directory ${FLOW_SOURCE_DIR}/test ${FLOW_BINARY_DIR}/test) 
         file(GLOB DataFiles "${FLOW_SOURCE_DIR}/test/*.xml"
                             "${FLOW_SOURCE_DIR}/test/*.exo"
-                            "${FLOW_SOURCE_DIR}/test/perm.h5")
+                            "${FLOW_SOURCE_DIR}/test/*.h5")
         file(COPY ${DataFiles} DESTINATION ${FLOW_BINARY_DIR}/test/)
     endif()
 
@@ -195,72 +192,72 @@ if (BUILD_TESTS)
     add_amanzi_test(flow_darcy_transient flow_darcy_transient
                     KIND int
                     SOURCE test/Main.cc test/flow_darcy_transient.cc
-                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
     add_amanzi_test(flow_darcy_transient_parallel flow_darcy_transient NPROCS 2 KIND unit)
  
     # Test: transient Darcy flow 
     add_amanzi_test(flow_darcy_dual2D flow_darcy_dual2D
                     KIND int
                     SOURCE test/Main.cc test/flow_darcy_dual2D.cc
-                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
  
     # Test: transient Darcy flow with a source
     add_amanzi_test(flow_darcy_well flow_darcy_well
                     KIND int
                     SOURCE test/Main.cc test/flow_darcy_well.cc
-                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
     # Test: convergence analysis
     add_amanzi_test(flow_richards_convergence flow_richards_convergence
                     KIND int
                     SOURCE test/Main.cc test/flow_richards_convergence.cc
-                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
     # Test: convergence analysis on random meshes
     add_amanzi_test(flow_richards_random flow_richards_random
                     KIND int
                     SOURCE test/Main.cc test/flow_richards_random.cc
-                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
     # Test: 2D Richards
     add_amanzi_test(flow_richards_2D flow_richards_2D
                     KIND unit
                     SOURCE test/Main.cc test/flow_richards_2D.cc
-                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
     add_amanzi_test(flow_richards_seepage flow_richards_seepage
                     KIND unit
                     SOURCE test/Main.cc test/flow_richards_seepage.cc
-                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
     add_amanzi_test(flow_richards_porosity flow_richards_porosity
                     KIND unit
                     SOURCE test/Main.cc test/flow_richards_porosity.cc
-                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
     # Test: 2D Richards TPFA discretization test seepage BC
     add_amanzi_test(flow_richards_seepage_tpfa flow_richards_seepage_tpfa
                     KIND unit
                     SOURCE test/Main.cc test/flow_richards_seepage_tpfa.cc
-                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
     # Test: pseudo-1D Richards
     add_amanzi_test(flow_richards_bc_cribs flow_richards_bc_cribs
                     KIND unit
                     SOURCE test/Main.cc test/flow_richards_bc_cribs.cc
-                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
     # Test: Newton
     add_amanzi_test(flow_richards_newton_tpfa flow_richards_newton_tpfa
                     KIND unit
                     SOURCE test/Main.cc test/flow_richards_newton_tpfa.cc
-                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
  
     # Test: miscaleneous Darcy flow routines
     add_amanzi_test(flow_darcy_misc flow_darcy_misc 
                     KIND int
                     SOURCE test/Main.cc test/flow_darcy_misc.cc
-                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
     add_amanzi_test(flow_darcy_misc_2pe flow_darcy_misc NPROCS 2 KIND unit)
     add_amanzi_test(flow_darcy_misc_4pe flow_darcy_misc NPROCS 4 KIND unit)
@@ -269,19 +266,19 @@ if (BUILD_TESTS)
     add_amanzi_test(flow_vanGenuchten flow_vanGenuchten
                     KIND int
                     SOURCE test/Main.cc test/flow_vanGenuchten.cc
-                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
     # Test: flow-bc-factory
     add_amanzi_test(flow_bc_factory flow_bc_factory
                     KIND unit
                     SOURCE test/Main.cc test/flow_bc_factory.cc
-                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
     # Test: flow-boundary solver test
     add_amanzi_test(flow_richards_boundary_solver flow_richards_boundary_solver
                     KIND unit
                     SOURCE test/Main.cc test/flow_richards_boundary_solver.cc
-                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
  
     # Test: 3D Richards
     set(amanzi_libs geometry mesh mesh_factory flow pks operators state whetstone solvers output data_structures)
@@ -289,17 +286,17 @@ if (BUILD_TESTS)
     add_amanzi_test(flow_richards_tensor flow_richards_tensor
                     KIND unit
                     SOURCE test/Main.cc test/flow_richards_tensor.cc
-                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
     add_amanzi_test(flow_richards_3D flow_richards_3D
                     KIND unit
                     SOURCE test/Main.cc test/flow_richards_3D.cc
-                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
     # Test: Multiscale
     add_amanzi_test(flow_multiscale flow_multiscale
                     KIND unit
                     SOURCE test/Main.cc test/flow_multiscale.cc
-                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 endif()
 

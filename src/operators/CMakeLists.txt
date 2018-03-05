@@ -145,26 +145,26 @@ if (BUILD_TESTS)
     add_amanzi_test(operators_utils operators_utils
                     KIND unit
                     SOURCE test/Main.cc test/operator_utils.cc
-                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
 
     if (ENABLE_INDIVIDUAL_TESTS_OPERATORS OR ENABLE_INDIVIDUAL_TESTS)
         add_amanzi_test(operators_laplace_beltrami operators_laplace_beltrami
                         KIND unit
                         SOURCE test/Main.cc test/operator_laplace_beltrami.cc 
-                        LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+                        LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
         add_amanzi_test(operators_parabolic_surface operators_parabolic_surface
                         KIND unit
                         SOURCE test/Main.cc test/operator_parabolic_surface.cc
-			LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+			LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
         add_amanzi_test(operators_marshak operators_marshak
                         KIND unit
                         SOURCE test/Main.cc test/operator_marshak.cc
-                        LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+                        LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
         add_amanzi_test(operators_marshak_logical operators_marshak_logical
                         KIND unit
                         SOURCE test/Main.cc test/operator_marshak_logical.cc
-                        LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+                        LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
     else()
         add_amanzi_test(operators_bundle_pdes operators_bundle_pdes
                         KIND unit
@@ -172,13 +172,13 @@ if (BUILD_TESTS)
                                             test/operator_parabolic_surface.cc
                                             test/operator_marshak.cc
                                             test/operator_marshak_logical.cc
-                        LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+                        LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
     endif()
 
     add_amanzi_test(operators_nonlinear_surface operators_nonlinear_surface
                     KIND unit
                     SOURCE test/Main.cc test/operator_nonlinear_surface.cc
-                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
     add_amanzi_test(operators_diffusion operators_diffusion
                     KIND unit
@@ -188,21 +188,21 @@ if (BUILD_TESTS)
                                         test/operator_diffusion_divk.cc
                                         test/operator_diffusion_nonsymmetric.cc
                                         test/operator_diffusion_nlfv.cc
-                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
     add_amanzi_test(operators_diffusion_3pe operators_diffusion NPROCS 3 KIND unit)
 
     add_amanzi_test(operators_diffusion_consistent_face operators_diffusion_consistent_face
                     KIND unit
                     SOURCE test/Main.cc test/operator_diffusion_consistent_face.cc
-                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
     add_amanzi_test(operators_diffusion_consistent_face_3pe operators_diffusion_consistent_face NPROCS 3 KIND unit)
 
     add_amanzi_test(operators_commute operators_commute
                     KIND unit
                     SOURCE test/Main.cc test/operator_commute.cc
-                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
     # # Test: tpfa
     # add_amanzi_test(operators_diffusion_tpfa operators_diffusion_tpfa
@@ -214,20 +214,20 @@ if (BUILD_TESTS)
     add_amanzi_test(operators_advdiff_surface operators_advdiff_surface
                     KIND unit
                     SOURCE test/Main.cc test/operator_advdiff_surface.cc
-                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
     # Test: operators on 
     add_amanzi_test(operators_electromagnetics operators_electromagnetics
                     KIND unit
                     SOURCE test/Main.cc test/operator_electromagnetics.cc 
                                         test/operator_electromagnetics_mhd.cc
-                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
     # Test: utils
     add_amanzi_test(operators_upwind operators_upwind
                     KIND unit
                     SOURCE test/Main.cc test/operator_upwind.cc
-                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
     add_amanzi_test(operators_upwind_2pe operators_upwind NPROCS 2 KIND unit)
 
@@ -235,7 +235,7 @@ if (BUILD_TESTS)
     add_amanzi_test(operators_stability operators_stability
                     KIND unit
                     SOURCE test/Main.cc test/operator_stability.cc
-                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
     add_amanzi_test(operators_stability_2pe operators_stability NPROCS 2 KIND unit)
 
@@ -243,11 +243,11 @@ if (BUILD_TESTS)
     add_amanzi_test(operators_diffusion_convergence operators_diffusion_convergence
                     KIND unit
                     SOURCE test/Main.cc test/operator_diffusion_convergence.cc
-                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
     add_amanzi_test(operators_coupled_diffusion operators_coupled_diffusion
                     KIND unit
                     SOURCE test/Main.cc test/operator_coupled_diffusion.cc
-                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
     add_amanzi_test(operators_coupled_diffusion_2pe operators_coupled_diffusion NPROCS 2 KIND unit)
 
     
@@ -255,18 +255,18 @@ if (BUILD_TESTS)
     add_amanzi_test(operators_gravity operators_gravity
                     KIND unit
                     SOURCE test/Main.cc test/operator_gravity.cc
-                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
     # reconstruction tests
     add_amanzi_test(operators_reconstruction operators_reconstruction
                     KIND unit
                     SOURCE test/Main.cc test/operator_reconstruction.cc
-                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
     add_amanzi_test(operators_boundary_flux_solver operators_boundary_flux_solver
                     KIND unit
                     SOURCE test/Main.cc test/operator_boundary_flux_solver.cc
-                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
     add_amanzi_test(operators_reconstruction_2pe operators_reconstruction NPROCS 2 KIND unit)
 

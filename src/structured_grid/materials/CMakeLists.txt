@@ -82,8 +82,11 @@ if (BUILD_TESTS)
   link_directories(${CCSE_LIBRARY_DIR})
   add_definitions("-DENABLE_Structured")
 
-  set(structured_grid_libs structured_amanzi geochemistry
-                           interface interface_s atk error_handling)
+  set(structured_grid_libs structured_amanzi interface interface_s atk error_handling)
+
+  if (ENABLE_ALQUIMIA)
+    list(APPEND structured_grid_libs geochemistry)
+  endif()
 
   if(CMAKE_Fortran_COMPILER_ID STREQUAL GNU)
     if (${CMAKE_SYSTEM_NAME} STREQUAL Linux)
@@ -93,7 +96,7 @@ if (BUILD_TESTS)
 
   set(tpl_libs ${CCSE_LIBRARIES} ${PETSC_LIBRARIES} ${CCSE_LIBRARIES}
                ${XERCES_LIBRARIES} ${XERCES_ICU_LIBRARIES}
-               ${Boost_LIBRARIES})
+               ${Boost_LIBRARIES} ${HDF5_LIBRARIES})
 
   include_directories(${SMATERIALS_SOURCE_DIR}/test) 
 
