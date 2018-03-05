@@ -763,7 +763,7 @@ bool Transport_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 
     // default boundary conditions (none inside domain and Neumann on its boundary)
     Teuchos::RCP<Operators::BCs> bc_dummy = 
-        Teuchos::rcp(new Operators::BCs(mesh_, AmanziMesh::FACE, Operators::SCHEMA_DOFS_SCALAR));
+        Teuchos::rcp(new Operators::BCs(mesh_, AmanziMesh::FACE, Operators::DOF_Type::SCALAR));
 
     std::vector<int>& bc_model = bc_dummy->bc_model();
     std::vector<double>& bc_value = bc_dummy->bc_value();

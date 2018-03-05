@@ -92,7 +92,7 @@ void ReconstructionCell::Compute()
     int ncells = cells.size();
 
     matrix.PutScalar(0.0);
-    rhs.clear();
+    rhs.PutScalar(0.0);
 
     for (int n = 0; n < ncells; n++) {
       const AmanziGeometry::Point& xc2 = mesh_->cell_centroid(cells[n]);
@@ -148,7 +148,7 @@ void ReconstructionCell::ComputeGradient(
     int ncells = cells.size();
 
     matrix.PutScalar(0.0);
-    rhs.clear();
+    rhs.PutScalar(0.0);
 
     for (int n = 0; n < ncells; n++) {
       const AmanziGeometry::Point& xc2 = mesh_->cell_centroid(cells[n]);

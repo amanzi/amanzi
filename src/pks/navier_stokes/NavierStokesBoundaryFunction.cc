@@ -31,7 +31,7 @@ void NavierStokesBoundaryFunction::ComputeSubmodel(const Teuchos::RCP<const Aman
 {
   int dim = mesh->space_dimension();
 
-  if (type_ == Operators::SCHEMA_DOFS_NORMAL_COMPONENT) {
+  if (type_ == Operators::DOF_Type::NORMAL_COMPONENT) {
     for (auto it = begin(); it != end(); ++it) {
       int f = it->first;
       const AmanziGeometry::Point& normal = mesh->face_normal(f);

@@ -112,18 +112,27 @@ int CheckMatrixCoercivity(Teuchos::RCP<Epetra_CrsMatrix> A)
   if (A->Comm().MyPID() == 0)
     printf("Running 10 coercivity tests: size(A)=%d\n", A->NumGlobalRows());
 
+  double tmp, axx, axxmin(1e+99), axxmax(-1e+99);
   for (int n = 0; n < 10; n++) {
     for (int f = 0; f < nrows; f++) {
       x[f] = double(random()) / RAND_MAX;
       y[f] = double(random()) / RAND_MAX;
     }
-    double axx;
     A->Multiply(false, x, y);
     y.Dot(x, &axx);
 
     if (A->Comm().MyPID() == 0 && axx <= 1e-12) {        
       printf("   Coercivity violation: (Ax,x)=%12.7g\n", axx);
     }
+
+    x.Norm2(&tmp);
+    axx /= tmp * tmp;
+    axxmin = std::min(axxmin, axx);
+    axxmax = std::max(axxmax, axx);
+  }
+
+  if (A->Comm().MyPID() == 0) {        
+    printf("   min/max of (Ax,x)/(x,x): %12.7g %12.7g\n", axxmin, axxmax);
   }
   return 0;
 }

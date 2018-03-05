@@ -82,7 +82,7 @@ TEST(OPERATOR_ELASTICITY_EXACTNESS) {
 
   // populate boundary conditions: type (called model) and value
   // -- normal component of velocity on boundary faces (a scalar)
-  Teuchos::RCP<BCs> bcf = Teuchos::rcp(new BCs(mesh, AmanziMesh::FACE, SCHEMA_DOFS_SCALAR));
+  Teuchos::RCP<BCs> bcf = Teuchos::rcp(new BCs(mesh, AmanziMesh::FACE, DOF_Type::SCALAR));
   std::vector<int>& bcf_model = bcf->bc_model();
   std::vector<double>& bcf_value = bcf->bc_value();
 
@@ -100,7 +100,7 @@ TEST(OPERATOR_ELASTICITY_EXACTNESS) {
 
   // -- full velocity at boundary nodes (a vector)
   Point xv(2);
-  Teuchos::RCP<BCs> bcv = Teuchos::rcp(new BCs(mesh, AmanziMesh::NODE, SCHEMA_DOFS_POINT));
+  Teuchos::RCP<BCs> bcv = Teuchos::rcp(new BCs(mesh, AmanziMesh::NODE, DOF_Type::POINT));
   std::vector<int>& bcv_model = bcv->bc_model();
   std::vector<Point>& bcv_value = bcv->bc_value_point();
 

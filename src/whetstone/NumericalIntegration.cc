@@ -19,8 +19,38 @@ namespace Amanzi {
 namespace WhetStone {
 
 /* ******************************************************************
+* Integrate polynomial over cell c.
+****************************************************************** */
+double NumericalIntegration::IntegratePolynomialCell(int c, const Polynomial& poly)
+{
+  // calculate integrals of monomials centered at cell centroid
+  int order = poly.order();
+  Polynomial integrals(d_, order);
+
+  for (int k = 0; k <= order; ++k) {
+    IntegrateMonomialsCell(c, integrals.monomials(k));
+  }
+
+  // dot product of coefficients of two polynomials.
+  Polynomial tmp = poly;
+  tmp.ChangeOrigin(mesh_->cell_centroid(c));
+
+  double value(0.0);
+  for (int k = 0; k <= order; ++k) {
+    std::vector<double>& val2 = tmp.monomials(k).coefs();
+    std::vector<double>& val1 = integrals.monomials(k).coefs();
+
+    double scale = MonomialNaturalScale(k, mesh_->cell_volume(c));
+    for (int i = 0; i < val1.size(); ++i) value += val1[i] * val2[i] / scale;
+  }
+
+  return value;
+}
+
+
+/* ******************************************************************
 * Integrate over face f the product of polynomials that may have
-* different origin. 
+* different origins. 
 ****************************************************************** */
 double NumericalIntegration::IntegratePolynomialsFace(
     int f, const std::vector<const Polynomial*>& polys) const
@@ -36,7 +66,6 @@ double NumericalIntegration::IntegratePolynomialsFace(
     return IntegratePolynomialsEdge(x1, x2, polys);
   }
 
-  ASSERT(d_ == 3);
   const AmanziGeometry::Point& xf = mesh_->face_centroid(f);
 
   AmanziGeometry::Point fnormal = mesh_->face_normal(f);
@@ -108,6 +137,7 @@ double NumericalIntegration::IntegratePolynomialsEdge(
     k += polys[i]->order();
   }
   int m = k / 2;
+  ASSERT(m < 6);
 
   AmanziGeometry::Point xm(d_);
 
@@ -127,12 +157,42 @@ double NumericalIntegration::IntegratePolynomialsEdge(
 
 
 /* ******************************************************************
-* Integrate over cell c a group of non-normalized monomials of the
-* same order centered at the centroid of c.
+* Integrate over cell c a group of uniformly normalized monomials of
+* the same order centered at the centroid of c.
+****************************************************************** */
+void NumericalIntegration::UpdateMonomialIntegralsCell(
+    int c, int order, PolynomialOnMesh& integrals)
+{
+  Polynomial& poly = integrals.poly();
+  int k0 = poly.order();
+
+  if (integrals.kind() != (Entity_kind)WhetStone::CELL || integrals.id() != c) {
+    integrals.set_kind((Entity_kind)WhetStone::CELL);
+    integrals.set_id(c);
+    k0 = -1;
+  }
+
+  // add additional integrals of monomials
+  if (k0 < order) {
+    poly.Reshape(d_, order);
+
+    for (int k = k0 + 1; k <= order; ++k) {
+      IntegrateMonomialsCell(c, poly.monomials(k));
+    }
+  }
+}
+
+
+/* ******************************************************************
+* Integrate over cell c a group of uniformly normalized monomials of
+* the same order centered at the centroid of c: 
+*    m(x) = (x - x0)^k / h^k,
+* where h is a measure of cell size.
 ****************************************************************** */
 void NumericalIntegration::IntegrateMonomialsCell(int c, Monomial& monomials)
 {
   int k = monomials.order();
+  monomials.PutScalar(0.0);
 
   Entity_ID_List faces, nodes;
   std::vector<int> dirs;
@@ -141,12 +201,13 @@ void NumericalIntegration::IntegrateMonomialsCell(int c, Monomial& monomials)
   int nfaces = faces.size();
 
   const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
+  double factor = MonomialNaturalScale(k, mesh_->cell_volume(c));
 
   for (int n = 0; n < nfaces; ++n) {
     int f = faces[n];
     const AmanziGeometry::Point& xf = mesh_->face_centroid(f);
     const AmanziGeometry::Point& normal = mesh_->face_normal(f);
-    double tmp = dirs[n] * ((xf - xc) * normal) / (k + d_);
+    double tmp = factor * dirs[n] * ((xf - xc) * normal) / (k + d_);
     
     if (d_ == 3) {
       tmp /= mesh_->face_area(f);
@@ -165,10 +226,9 @@ void NumericalIntegration::IntegrateMonomialsCell(int c, Monomial& monomials)
   }
 }
 
-
 /* ******************************************************************
-* Integrate over face f a group of non-normalized monomials of the
-* same order centered at the centroid of cell c.
+* Integrate over face f a group of uniformly normalized monomials of
+* the same order centered at the centroid of cell c.
 ****************************************************************** */
 void NumericalIntegration::IntegrateMonomialsFace_(
     int c, int f, double factor, Monomial& monomials)
@@ -189,7 +249,7 @@ void NumericalIntegration::IntegrateMonomialsFace_(
 
     // using monomial centered at xc, create polynomial centred at xf
     const int* idx = it.multi_index();
-    Polynomial poly(d_, idx);
+    Polynomial poly(d_, idx, 1.0);
     poly.set_origin(xc);
     poly.ChangeOrigin(xf);
 
@@ -244,6 +304,7 @@ void NumericalIntegration::IntegrateMonomialsEdge_(
   // minimal quadrature rule
   int k = monomials.order();
   int m = k / 2;
+  ASSERT(m < 6);
 
   for (auto it = monomials.begin(); it.end() <= k; ++it) {
     const int* idx = it.multi_index();
@@ -259,6 +320,72 @@ void NumericalIntegration::IntegrateMonomialsEdge_(
 
       coefs[l] += a1 * q1d_weights[m][n];      
     }
+  }
+}
+
+
+/* ******************************************************************
+* Pseudo-maximum value of a polynomial.
+****************************************************************** */
+double NumericalIntegration::PolynomialMaxValue(int f, const Polynomial& poly)
+{
+  int k = poly.order();
+  int m = k / 2;
+  double pmax;
+  AmanziGeometry::Point x1(d_), x2(d_), xm(d_);
+
+  Entity_ID_List nodes;
+  mesh_->face_get_nodes(f, &nodes);
+
+  if (d_ == 2) {
+    mesh_->node_get_coordinates(nodes[0], &x1);
+    mesh_->node_get_coordinates(nodes[1], &x2);
+
+    pmax = std::max(fabs(poly.Value(x1)), fabs(poly.Value(x2)));
+    for (int n = 0; n <= m; ++n) { 
+      xm = x1 * q1d_points[m][n] + x2 * (1.0 - q1d_points[m][n]);
+      pmax = std::max(pmax, fabs(poly.Value(xm)));
+    }
+  } else {
+    pmax = -1.0e+99;
+    for (int i = 0; i < nodes.size(); ++i) {
+      mesh_->node_get_coordinates(nodes[i], &xm);
+      pmax = std::max(pmax, fabs(poly.Value(xm)));
+    }
+  }
+
+  return pmax;
+}
+
+
+/* ******************************************************************
+* Re-scale polynomial coefficients.
+****************************************************************** */
+double NumericalIntegration::MonomialNaturalScale(int k, double volume) {
+  // return 1.0;
+  return std::pow(volume, -(double)k / d_);
+}
+
+void NumericalIntegration::ChangeBasisRegularToNatural(int c, Polynomial& p)
+{
+  double volume = mesh_->cell_volume(c);
+
+  for (int k = 0; k <= p.order(); ++k) {
+    double scale = MonomialNaturalScale(k, volume);
+    auto& mono = p.monomials(k).coefs();
+    for (auto it = mono.begin(); it != mono.end(); ++it) *it /= scale;
+  }
+}
+
+
+void NumericalIntegration::ChangeBasisNaturalToRegular(int c, Polynomial& p)
+{
+  double volume = mesh_->cell_volume(c);
+
+  for (int k = 0; k <= p.order(); ++k) {
+    double scale = MonomialNaturalScale(k, volume);
+    auto& mono = p.monomials(k).coefs();
+    for (auto it = mono.begin(); it != mono.end(); ++it) *it *= scale;
   }
 }
 

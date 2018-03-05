@@ -32,6 +32,7 @@
 #include "DenseMatrix.hh"
 #include "InnerProductH1.hh"
 #include "InnerProductL2.hh"
+#include "Projectors.hh"
 #include "Tensor.hh"
 #include "WhetStone_typedefs.hh"
 #include "WhetStoneDefs.hh"
@@ -39,7 +40,8 @@
 namespace Amanzi {
 namespace WhetStone {
 
-class MFD3D : public virtual BilinearForm { 
+class MFD3D : public virtual BilinearForm,
+              public Projectors {
  public:
   explicit MFD3D(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh);
   ~MFD3D() {};
@@ -72,11 +74,18 @@ class MFD3D : public virtual BilinearForm {
   void SimplexExchangeVariables_(DenseMatrix& T, int kp, int ip);
 
  protected:
-  int FindPosition_(int v, Entity_ID_List nodes);
-
   double simplex_functional_;
   int simplex_num_itrs_;
 };
+
+
+// non-member functions
+inline int FindPosition(int id, Entity_ID_List list) {
+  for (int i = 0; i < list.size(); i++) {
+    if (list[i] == id) return i;
+  }
+  return -1;
+}
 
 }  // namespace WhetStone
 }  // namespace Amanzi

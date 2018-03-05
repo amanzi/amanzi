@@ -60,6 +60,7 @@ void Schema::Init(Teuchos::ParameterList& plist,
   }
 
   // Populate schema and save it.
+  items_.clear();
   for (int i = 0; i < name.size(); i++) {
     AddItem(StringToKind(name[i]), StringToType(type[i]), ndofs[i]);
   }
@@ -89,19 +90,19 @@ void Schema::Init(int i)
 
   SchemaItem item;
   if (i & OPERATOR_SCHEMA_DOFS_NODE) {
-    item.set(AmanziMesh::NODE, SCHEMA_DOFS_SCALAR, 1);
+    item.set(AmanziMesh::NODE, DOF_Type::SCALAR, 1);
     items_.push_back(item);
   }
   if (i & OPERATOR_SCHEMA_DOFS_EDGE) {
-    item.set(AmanziMesh::EDGE, SCHEMA_DOFS_SCALAR, 1);
+    item.set(AmanziMesh::EDGE, DOF_Type::SCALAR, 1);
     items_.push_back(item);
   }
   if (i & OPERATOR_SCHEMA_DOFS_FACE) {
-    item.set(AmanziMesh::FACE, SCHEMA_DOFS_SCALAR, 1);
+    item.set(AmanziMesh::FACE, DOF_Type::SCALAR, 1);
     items_.push_back(item);
   }
   if (i & OPERATOR_SCHEMA_DOFS_CELL) {
-    item.set(AmanziMesh::CELL, SCHEMA_DOFS_SCALAR, 1);
+    item.set(AmanziMesh::CELL, DOF_Type::SCALAR, 1);
     items_.push_back(item);
   }
 }
@@ -115,7 +116,7 @@ void Schema::Init(AmanziMesh::Entity_kind kind, int nvec)
   base_ = kind;
 
   SchemaItem item;
-  item.set(kind, SCHEMA_DOFS_SCALAR, nvec);
+  item.set(kind, DOF_Type::SCALAR, nvec);
 
   items_.clear();
   items_.push_back(item);
@@ -242,18 +243,20 @@ AmanziMesh::Entity_kind Schema::StringToKind(std::string& name) const
 /* ******************************************************************
 * Returns standard mesh id for geometric location of DOF.
 ****************************************************************** */
-int Schema::StringToType(std::string& name) const 
+DOF_Type Schema::StringToType(std::string& name) const 
 {
   if (name == "scalar") {
-    return SCHEMA_DOFS_SCALAR;
+    return DOF_Type::SCALAR;
   } else if (name == "vector") {
-    return SCHEMA_DOFS_VECTOR;
+    return DOF_Type::VECTOR;
   } else if (name == "point") {
-    return SCHEMA_DOFS_POINT;
+    return DOF_Type::POINT;
   } else if (name == "normal component") {
-    return SCHEMA_DOFS_NORMAL_COMPONENT;
+    return DOF_Type::NORMAL_COMPONENT;
+  } else if (name == "moment") {
+    return DOF_Type::MOMENT;
   }
-  return -1;
+  return DOF_Type::SCALAR;
 }
 
 

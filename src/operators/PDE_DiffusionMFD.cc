@@ -881,7 +881,7 @@ void PDE_DiffusionMFD::ApplyBCs_Nodal_(
 
 
 /* ******************************************************************
-* Apply BCs on edge operators
+* Apply BCs on edge operators.
 ****************************************************************** */
 void PDE_DiffusionMFD::ApplyBCs_Edge_(
     const Teuchos::Ptr<const BCs>& bc_trial,
@@ -935,7 +935,7 @@ void PDE_DiffusionMFD::ApplyBCs_Edge_(
         }
 
         if (primary) {
-          rhs_edge[0][e] = value;
+          rhs_edge[0][e] = value; // FIXME: this may not work in 3D.
           Acell(n, n) = 1.0;
         }
       }

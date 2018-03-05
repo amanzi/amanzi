@@ -49,6 +49,7 @@ TEST(DG2D_MASS_MATRIX) {
 
   for (int k = 0; k < 3; k++) {
     DG_Modal dg(k, mesh);
+    dg.set_basis(TAYLOR_BASIS_NORMALIZED_ORTHO);
 
     dg.MassMatrix(0, T, M);
     int nk = M.NumRows();
@@ -93,7 +94,7 @@ TEST(DG3D_MASS_MATRIX) {
     DG_Modal dg(k, mesh);
 
     // natural Taylor basis
-    dg.set_basis(WhetStone::TAYLOR_BASIS_SIMPLE);
+    dg.set_basis(WhetStone::TAYLOR_BASIS_NATURAL);
     dg.MassMatrix(0, T, M0);
     int nk = M0.NumRows();
 
@@ -120,9 +121,9 @@ TEST(DG3D_MASS_MATRIX) {
       const AmanziGeometry::Point& xc = mesh->cell_centroid(0);
       v1.PutScalar(0.0);
       v1(0) = xc[0] + 2 * xc[1] + 3 * xc[2];
-      v1(1) = 1.0;
-      v1(2) = 2.0;
-      v1(3) = 3.0;
+      v1(1) = 0.5;
+      v1(2) = 1.0;
+      v1(3) = 1.5;
       v2 = v1;
  
       M0.Multiply(v1, v3, false);
@@ -132,7 +133,7 @@ TEST(DG3D_MASS_MATRIX) {
     }
 
     // partially orthonormalized Taylor basis
-    dg.set_basis(WhetStone::TAYLOR_BASIS_NORMALIZED);
+    dg.set_basis(WhetStone::TAYLOR_BASIS_NORMALIZED_ORTHO);
     dg.MassMatrix(0, T, M0);
 
     printf("Mass matrix for order=%d\n", k);
@@ -164,13 +165,14 @@ TEST(DG2D_MASS_MATRIX_POLYNOMIAL) {
   MeshFactory meshfactory(comm);
   meshfactory.preference(FrameworkPreference({MSTK}));
   // Teuchos::RCP<Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 1, 1); 
-  Teuchos::RCP<Mesh> mesh = meshfactory("test/one_cell2.exo");
+  Teuchos::RCP<Mesh> mesh = meshfactory("test/one_pentagon.exo");
  
   double tmp, integral[3];
   DenseMatrix A;
 
   for (int k = 0; k < 3; k++) {
     DG_Modal dg(2, mesh);
+    dg.set_basis(TAYLOR_BASIS_NORMALIZED_ORTHO);
 
     Polynomial u(2, k);
     u.monomials(0).coefs()[0] = 1.0;
@@ -179,7 +181,7 @@ TEST(DG2D_MASS_MATRIX_POLYNOMIAL) {
     dg.MassMatrixPoly(0, u, A);
     int nk = A.NumRows();
 
-    printf("Mass matrix for polynomial coefficient: nk=2, pk=%d\n", k);
+    printf("Mass matrix for polynomial coefficient: order=2, uk=%d\n", k);
     for (int i = 0; i < nk; i++) {
       for (int j = 0; j < nk; j++ ) printf("%8.4f ", A(i, j)); 
       printf("\n");
@@ -220,15 +222,16 @@ TEST(DG2D_ADVECTION_MATRIX_FACE) {
   meshfactory.preference(FrameworkPreference({MSTK}));
   Teuchos::RCP<Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 2, 2); 
  
-  for (int k = 0; k < 2; k++) {
+  for (int k = 0; k < 3; k++) {
     DG_Modal dg(k, mesh);
-    DenseMatrix A0, A1;
+    dg.set_basis(TAYLOR_BASIS_NORMALIZED_ORTHO);
 
     Polynomial un(2, 0);
     un.monomials(0).coefs()[0] = 1.0;
 
     // TEST1: constant u
-    dg.FluxMatrixPoly(1, un, A0, false);
+    DenseMatrix A0, A1;
+    dg.FluxMatrixUpwind(1, un, A0, false);
 
     printf("Advection matrix (face-based) for order=%d  u.n=1\n", k);
     int nk = A0.NumRows();
@@ -239,7 +242,7 @@ TEST(DG2D_ADVECTION_MATRIX_FACE) {
 
     // TEST2: add zero gradient to polynomial un
     un.Reshape(2, 1);
-    dg.FluxMatrixPoly(1, un, A1, false);
+    dg.FluxMatrixUpwind(1, un, A1, false);
 
     A1 -= A0;
     CHECK_CLOSE(0.0, A1.NormInf(), 1e-12);
@@ -247,7 +250,7 @@ TEST(DG2D_ADVECTION_MATRIX_FACE) {
     // TEST3: nonzero linear component polynomial un
     un.monomials(1).coefs()[0] = 1.0;
 
-    dg.FluxMatrixPoly(1, un, A1, false);
+    dg.FluxMatrixUpwind(1, un, A1, false);
 
     printf("Advection matrix (face-based) for order=%d u.n=1+x\n", k);
     for (int i = 0; i < nk; i++) {
@@ -278,14 +281,15 @@ TEST(DG3D_ADVECTION_MATRIX_FACE) {
  
   for (int k = 0; k < 2; k++) {
     DG_Modal dg(k, mesh);
-    DenseMatrix A0, A1;
+    dg.set_basis(WhetStone::TAYLOR_BASIS_NORMALIZED_ORTHO);
 
     int d(3), f(4);
     Polynomial un(d, 0);
     un(0, 0) = 1.0;
 
     // TEST1: constant u
-    dg.FluxMatrixPoly(f, un, A0, false);
+    DenseMatrix A0, A1;
+    dg.FluxMatrixUpwind(f, un, A0, false);
 
     printf("Advection matrix (face-based) for order=%d  u.n=1\n", k);
     int nk = A0.NumRows();
@@ -296,7 +300,7 @@ TEST(DG3D_ADVECTION_MATRIX_FACE) {
 
     // TEST2: add zero gradient to polynomial un
     un.Reshape(d, 1);
-    dg.FluxMatrixPoly(f, un, A1, false);
+    dg.FluxMatrixUpwind(f, un, A1, false);
 
     A1 -= A0;
     CHECK_CLOSE(0.0, A1.NormInf(), 1e-12);
@@ -304,7 +308,7 @@ TEST(DG3D_ADVECTION_MATRIX_FACE) {
     // TEST3: nonzero linear component polynomial un
     un(1, 0) = 1.0;
 
-    dg.FluxMatrixPoly(f, un, A1, false);
+    dg.FluxMatrixUpwind(f, un, A1, false);
 
     printf("Advection matrix (face-based) for order=%d u.n=1+x\n", k);
     for (int i = 0; i < nk; i++) {
@@ -335,7 +339,7 @@ TEST(DG2D_ADVECTION_MATRIX_CELL) {
 
   for (int k = 0; k < 3; k++) {
     DG_Modal dg(k, mesh);
-    dg.set_basis(WhetStone::TAYLOR_BASIS_SIMPLE);
+    dg.set_basis(WhetStone::TAYLOR_BASIS_NATURAL);
 
     DenseMatrix A0;
 
@@ -370,10 +374,12 @@ TEST(DG2D_ADVECTION_MATRIX_CELL) {
     DenseVector v1(nk), v2(nk), v3(nk);
     if (k > 0) {
       const AmanziGeometry::Point& xc = mesh->cell_centroid(0);
+      double scale = std::pow(mesh->cell_volume(0), 0.5);
+
       v1.PutScalar(0.0);
       v1(0) = 2 + xc[0] + 3 * xc[1];
-      v1(1) = 1.0;
-      v1(2) = 3.0;
+      v1(1) = 1.0 * scale;
+      v1(2) = 3.0 * scale;
       v2 = v1;
  
       A0.Multiply(v1, v3, false);
@@ -425,7 +431,7 @@ TEST(DG3D_ADVECTION_MATRIX_CELL) {
   int d(3);
   for (int k = 0; k < 2; k++) {
     DG_Modal dg(k, mesh);
-    dg.set_basis(WhetStone::TAYLOR_BASIS_SIMPLE);
+    dg.set_basis(WhetStone::TAYLOR_BASIS_NATURAL);
 
     DenseMatrix A0;
 
@@ -462,10 +468,12 @@ TEST(DG3D_ADVECTION_MATRIX_CELL) {
     DenseVector v1(nk), v2(nk), v3(nk);
     if (k > 0) {
       const AmanziGeometry::Point& xc = mesh->cell_centroid(0);
+      double scale = std::pow(mesh->cell_volume(0), 1.0 / 3);
+
       v1.PutScalar(0.0);
       v1(0) = 2 + xc[0] + 3 * xc[1];
-      v1(1) = 1.0;
-      v1(2) = 3.0;
+      v1(1) = 1.0 * scale;
+      v1(2) = 3.0 * scale;
       v2 = v1;
  
       A0.Multiply(v1, v3, false);
@@ -494,7 +502,7 @@ TEST(DG_MAP_APPROXIMATION_CELL) {
 
   MeshFactory meshfactory(comm);
   meshfactory.preference(FrameworkPreference({MSTK}));
-  Teuchos::RCP<Mesh> mesh = meshfactory("test/one_cell2.exo");
+  Teuchos::RCP<Mesh> mesh = meshfactory("test/one_pentagon.exo");
 
   // extract polygon from the mesh
   Entity_ID_List nodes;

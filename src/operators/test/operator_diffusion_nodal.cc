@@ -88,7 +88,7 @@ TEST(OPERATOR_DIFFUSION_NODAL) {
 
   // create boundary data
   Point xv(2);
-  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(mesh, AmanziMesh::NODE, SCHEMA_DOFS_SCALAR));
+  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(mesh, AmanziMesh::NODE, DOF_Type::SCALAR));
   std::vector<int>& bc_model = bc->bc_model();
   std::vector<double>& bc_value = bc->bc_value();
 
@@ -267,7 +267,7 @@ TEST(OPERATOR_DIFFUSION_NODAL_EXACTNESS) {
 
   // create boundary data (no mixed bc)
   Point xv(2);
-  Teuchos::RCP<BCs> bc_v = Teuchos::rcp(new BCs(mesh, AmanziMesh::NODE, SCHEMA_DOFS_SCALAR));
+  Teuchos::RCP<BCs> bc_v = Teuchos::rcp(new BCs(mesh, AmanziMesh::NODE, DOF_Type::SCALAR));
   std::vector<int>& bc_model_v = bc_v->bc_model();
   std::vector<double>& bc_value_v = bc_v->bc_value();
 
@@ -279,7 +279,7 @@ TEST(OPERATOR_DIFFUSION_NODAL_EXACTNESS) {
     }
   }
 
-  Teuchos::RCP<BCs> bc_f = Teuchos::rcp(new BCs(mesh, AmanziMesh::FACE, SCHEMA_DOFS_SCALAR));
+  Teuchos::RCP<BCs> bc_f = Teuchos::rcp(new BCs(mesh, AmanziMesh::FACE, DOF_Type::SCALAR));
   std::vector<int>& bc_model_f = bc_f->bc_model();
   std::vector<double>& bc_value_f = bc_f->bc_value();
   std::vector<double>& bc_mixed_f = bc_f->bc_mixed();

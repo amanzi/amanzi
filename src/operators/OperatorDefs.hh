@@ -21,6 +21,7 @@ typedef enum { OPERATOR_DIFFUSION_MFD,
                OPERATOR_DIFFUSION_MFD_GRAVITY,
                OPERATOR_DIFFUSION_FV_GRAVITY,
                OPERATOR_DIFFUSION_NLFV_GRAVITY,
+               OPERATOR_DIFFUSION_DG,
                OPERATOR_ADVECTION,
                OPERATOR_ACCUMULATION,
                OPERATOR_ELASTICITY,
@@ -32,6 +33,12 @@ typedef enum { BERNARDI_RAUGEL,
                RAVIART_THOMAS,
                P0,
                DG } SpaceNickName;
+
+enum class DOF_Type { SCALAR = 1,
+                      VECTOR,
+                      POINT,
+                      NORMAL_COMPONENT,
+                      MOMENT };
 
 // Constants in the next block must powers of 2.
 const int OPERATOR_SCHEMA_DOFS_FACE = 1;
@@ -45,11 +52,6 @@ const int OPERATOR_SCHEMA_BASE_NODE = 64;
 const int OPERATOR_SCHEMA_BASE_EDGE = 128;
 
 // schemas
-const int SCHEMA_DOFS_SCALAR = 1;
-const int SCHEMA_DOFS_VECTOR = 2;
-const int SCHEMA_DOFS_POINT = 3;
-const int SCHEMA_DOFS_NORMAL_COMPONENT = 4;
-
 const int OPERATOR_SCHEMA_RULE_EXACT = 1;
 const int OPERATOR_SCHEMA_RULE_SUBSET = 2;
 

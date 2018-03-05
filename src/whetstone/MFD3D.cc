@@ -453,18 +453,6 @@ int MFD3D::cell_get_face_adj_cell(int cell, int face)
   return -1;
 }
 
-
-/* ******************************************************************
-* Returns position of the number v in the list of nodes.  
-****************************************************************** */
-int MFD3D::FindPosition_(int v, Entity_ID_List nodes)
-{
-  for (int i = 0; i < nodes.size(); i++) {
-    if (nodes[i] == v) return i;
-  }
-  return -1;
-}
-
 }  // namespace WhetStone
 }  // namespace Amanzi
 

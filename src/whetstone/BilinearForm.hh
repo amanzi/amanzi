@@ -18,6 +18,7 @@
 
 #include "Teuchos_RCP.hpp"
 
+#include "errors.hh"
 #include "Mesh.hh"
 #include "Point.hh"
 
@@ -34,7 +35,6 @@ class Polynomial;
 
 class BilinearForm : public virtual InnerProductL2,
                      public virtual InnerProductH1 {
-
  public:
   explicit BilinearForm() {};
   ~BilinearForm() {};
@@ -42,14 +42,37 @@ class BilinearForm : public virtual InnerProductL2,
   // additional members
   // -- low-order schemes require constant vector/tensor coefficients
   //    we also specify function to which gradient operator is applied
-  virtual int AdvectionMatrix(int c, const AmanziGeometry::Point v, DenseMatrix& A, bool grad_on_test) = 0;
-  virtual int DivergenceMatrix(int c, DenseMatrix& A) = 0;
+  virtual int AdvectionMatrix(int c, const AmanziGeometry::Point v, DenseMatrix& A, bool grad_on_test) {;
+    Errors::Message msg("AdvectionMatrix: scalar velocity is not supported.");
+    Exceptions::amanzi_throw(msg);
+    return 1;
+  }
+
+  virtual int DivergenceMatrix(int c, DenseMatrix& A) {
+    Errors::Message msg("DivergenceMatrix is not supported.");
+    Exceptions::amanzi_throw(msg);
+    return 1;
+  }
 
   // -- high-order schemes may require polynomial coefficients
   //    We use ending "Poly" to simplify logic of derived classes (no keyword "using")
-  virtual int MassMatrixPoly(int c, const Polynomial& K, DenseMatrix& M) = 0; 
-  virtual int StiffnessMatrixPoly(int c, const Polynomial& K, DenseMatrix& A) = 0;
-  virtual int AdvectionMatrixPoly(int c, const VectorPolynomial& v, DenseMatrix& A, bool grad_on_test) = 0;
+  virtual int MassMatrixPoly(int c, const Polynomial& K, DenseMatrix& M) {
+    Errors::Message msg("MassMatrix: polynomial coefficient is not supported.");
+    Exceptions::amanzi_throw(msg);
+    return 1;
+  }
+
+  virtual int StiffnessMatrixPoly(int c, const Polynomial& K, DenseMatrix& A) {
+    Errors::Message msg("StiffnessMatrix: polynomial coefficient is not supported.");
+    Exceptions::amanzi_throw(msg);
+    return 1;
+  }
+
+  virtual int AdvectionMatrixPoly(int c, const VectorPolynomial& v, DenseMatrix& A, bool grad_on_test) {
+    Errors::Message msg("AdvectionMatrix: polynomial coefficient is not supported.");
+    Exceptions::amanzi_throw(msg);
+    return 1;
+  }
 };
 
 }  // namespace WhetStone

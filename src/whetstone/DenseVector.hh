@@ -27,24 +27,24 @@ namespace WhetStone {
 
 class DenseVector {
  public:
-  DenseVector() {
-    m_ = 0;
-    data_ = NULL;
-  }
+  DenseVector() : m_(0), mem_(0), data_(NULL) {};
 
   explicit DenseVector(int mrow) {
     m_ = mrow;
-    data_ = new double[m_];
+    mem_ = mrow;
+    data_ = new double[mem_];
   }
 
   DenseVector(int mrow, double* data) {
     m_ = mrow;
-    data_ = new double[m_]; 
+    mem_ = mrow;
+    data_ = new double[mem_]; 
     for (int i = 0; i < m_; i++) data_[i] = data[i];
   }
 
   DenseVector(const DenseVector& B) {
     m_ = B.NumRows();
+    mem_ = m_;
     data_ = NULL;
     if (m_ > 0) {
       data_ = new double[m_];
@@ -56,9 +56,20 @@ class DenseVector {
   ~DenseVector() { if (data_ != NULL) { delete[] data_; } }
 
   // primary members 
-  // -- initialization
-  void clear() { for (int i = 0; i < m_; i++) data_[i] = 0.0; } 
+  // -- smart memory management: preserves data only for vector reduction
+  void Reshape(int mrow) {
+    m_ = mrow;
 
+    if (mem_ < m_) {
+      if (data_ != NULL) {
+        delete [] data_;
+      }
+      mem_ = m_;
+      data_ = new double[mem_];
+    }
+  }
+
+  // -- initialization
   DenseVector& operator=(const DenseVector& B) {
     if (this != &B) {
       if (m_ != B.m_ && B.m_ != 0) {
@@ -146,7 +157,7 @@ class DenseVector {
   }
  
  private:
-  int m_;
+  int m_, mem_;
   double* data_;                       
 };
 
