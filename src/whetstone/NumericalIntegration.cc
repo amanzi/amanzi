@@ -334,10 +334,10 @@ double NumericalIntegration::PolynomialMaxValue(int f, const Polynomial& poly)
   double pmax;
   AmanziGeometry::Point x1(d_), x2(d_), xm(d_);
 
-  if (d_ == 2) {
-    Entity_ID_List nodes;
-    mesh_->face_get_nodes(f, &nodes);
+  Entity_ID_List nodes;
+  mesh_->face_get_nodes(f, &nodes);
 
+  if (d_ == 2) {
     mesh_->node_get_coordinates(nodes[0], &x1);
     mesh_->node_get_coordinates(nodes[1], &x2);
 
@@ -347,7 +347,11 @@ double NumericalIntegration::PolynomialMaxValue(int f, const Polynomial& poly)
       pmax = std::max(pmax, fabs(poly.Value(xm)));
     }
   } else {
-    ASSERT(false);
+    pmax = -1.0e+99;
+    for (int i = 0; i < nodes.size(); ++i) {
+      mesh_->node_get_coordinates(nodes[i], &xm);
+      pmax = std::max(pmax, fabs(poly.Value(xm)));
+    }
   }
 
   return pmax;

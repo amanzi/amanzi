@@ -60,12 +60,10 @@ class DG_Modal : public BilinearForm {
   virtual int MassMatrixPoly(int c, const Polynomial& K, DenseMatrix& M);
   int MassMatrix(int c, const Tensor& K, PolynomialOnMesh& integrals, DenseMatrix& M);
 
-  // -- stiffness matrices (coming soon)
+  // -- stiffness matrices
   virtual int StiffnessMatrix(int c, const Tensor& T, DenseMatrix& A);
-  virtual int StiffnessMatrixPoly(int c, const Polynomial& K, DenseMatrix& A) { return 0; }
 
   // -- advection matrices
-  virtual int AdvectionMatrix(int c, const AmanziGeometry::Point v, DenseMatrix& A, bool grad_on_test) { return 0; }
   virtual int AdvectionMatrixPoly(int c, const VectorPolynomial& uc, DenseMatrix& A, bool grad_on_test);
 
   // -- flux matrices

@@ -32,6 +32,7 @@
 #include "DenseMatrix.hh"
 #include "InnerProductH1.hh"
 #include "InnerProductL2.hh"
+#include "Projectors.hh"
 #include "Tensor.hh"
 #include "WhetStone_typedefs.hh"
 #include "WhetStoneDefs.hh"
@@ -39,7 +40,8 @@
 namespace Amanzi {
 namespace WhetStone {
 
-class MFD3D : public virtual BilinearForm { 
+class MFD3D : public virtual BilinearForm,
+              public Projectors {
  public:
   explicit MFD3D(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh);
   ~MFD3D() {};
