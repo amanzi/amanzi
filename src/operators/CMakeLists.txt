@@ -96,8 +96,8 @@ set(operators_inc_files
     PDE_DiffusionDG.hh
     PDE_Elasticity.hh
     PDE_Electromagnetics.hh
-    PDE_ElectromagneticsMHD.hh
-    PDE_ElectromagneticsMHD_TM.hh
+    PDE_MagneticDiffusion.hh
+    PDE_MagneticDiffusion_TM.hh
     PDE_HelperBCsList.hh
     PDE_HelperDiscretization.hh
     PDE_Reaction.hh
@@ -136,7 +136,8 @@ add_amanzi_library(operators
                           PDE_DiffusionFactory.cc                   
                           PDE_HelperDiscretization.cc
                           PDE_Elasticity.cc
-                          PDE_Electromagnetics.cc PDE_ElectromagneticsMHD.cc PDE_ElectromagneticsMHD_TM.cc
+                          PDE_Electromagnetics.cc
+                          PDE_MagneticDiffusion.cc PDE_MagneticDiffusion_TM.cc
                           PDE_Reaction.cc
                           Schema.cc
                           TreeOperator.cc
@@ -249,7 +250,7 @@ if (BUILD_TESTS)
                     KIND unit
                     SOURCE test/Main.cc test/AnalyticElectromagneticsBase.cc
                                         test/operator_electromagnetics.cc 
-                                        test/operator_electromagnetics_mhd.cc
+                                        test/operator_magnetic_diffusion.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
     # Test: utils
