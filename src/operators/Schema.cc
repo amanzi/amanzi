@@ -224,7 +224,7 @@ std::string Schema::KindToString(AmanziMesh::Entity_kind kind) const
   } else if (kind == AmanziMesh::CELL) {
     return "cell";
   } else if (kind == AmanziMesh::BOUNDARY_FACE) {
-    return "boundary face";
+    return "boundary_face";
   }
   return "null";
 }

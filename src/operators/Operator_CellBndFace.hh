@@ -15,8 +15,8 @@
   the exception of special assembly issues.
 */
 
-#ifndef AMANZI_OPERATOR_WITH_CELL_HH_
-#define AMANZI_OPERATOR_WITH_CELL_HH_
+#ifndef AMANZI_OPERATOR_WITH_CELLBND_HH_
+#define AMANZI_OPERATOR_WITH_CELLBND_HH_
 
 #include "DenseMatrix.hh"
 #include "Operator.hh"
@@ -39,23 +39,23 @@ class Operator_CellBndFace : public Operator {
   virtual void UpdateRHS(const CompositeVector& source, bool volume_included);
   
   // visit methods for Apply
-  // virtual int ApplyMatrixFreeOp(const Op_Cell_Cell& op,
-  //     const CompositeVector& X, CompositeVector& Y) const;
+  virtual int ApplyMatrixFreeOp(const Op_Cell_Cell& op,
+      const CompositeVector& X, CompositeVector& Y) const;
   virtual int ApplyMatrixFreeOp(const Op_Face_CellFace& op,
       const CompositeVector& X, CompositeVector& Y) const;
 
   // visit methods for symbolic assemble
-  // virtual void SymbolicAssembleMatrixOp(const Op_Cell_Cell& op,
-  //         const SuperMap& map, GraphFE& graph,
-  //         int my_block_row, int my_block_col) const;
+  virtual void SymbolicAssembleMatrixOp(const Op_Cell_Cell& op,
+          const SuperMap& map, GraphFE& graph,
+          int my_block_row, int my_block_col) const;
   virtual void SymbolicAssembleMatrixOp(const Op_Face_CellFace& op,
           const SuperMap& map, GraphFE& graph,
           int my_block_row, int my_block_col) const;
   
   // visit methods for assemble
-  // virtual void AssembleMatrixOp(const Op_Cell_Cell& op,
-  //         const SuperMap& map, MatrixFE& mat,
-  //         int my_block_row, int my_block_col) const;
+  virtual void AssembleMatrixOp(const Op_Cell_Cell& op,
+          const SuperMap& map, MatrixFE& mat,
+          int my_block_row, int my_block_col) const;
   virtual void AssembleMatrixOp(const Op_Face_CellFace& op,
           const SuperMap& map, MatrixFE& mat,
           int my_block_row, int my_block_col) const;

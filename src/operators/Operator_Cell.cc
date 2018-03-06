@@ -170,6 +170,8 @@ void Operator_Cell::AssembleMatrixOp(const Op_Cell_Cell& op,
     int row = cell_row_inds[c];
     int col = cell_col_inds[c];
 
+    // std::cout<<"cell "<<c<<": "<<(*op.diag)[0][c]<<"\n";
+
     ierr |= mat.SumIntoMyValues(row, 1, &(*op.diag)[0][c], &col);
   }
   ASSERT(!ierr);
@@ -197,6 +199,10 @@ void Operator_Cell::AssembleMatrixOp(const Op_Face_Cell& op,
     for (int n=0; n!=ncells; ++n) {
       lid_r[n] = cell_row_inds[cells[n]];
       lid_c[n] = cell_col_inds[cells[n]];
+      // if (cells[n]==0) {
+      //   for (auto c : cells)  std::cout<<cells[c]<<" "; std::cout<<"\n";
+      //   std::cout<<op.matrices[f]<<"\n";
+      // }
     }
 
     ierr |= mat.SumIntoMyValues(lid_r, lid_c, op.matrices[f]);

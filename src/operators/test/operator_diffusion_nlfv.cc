@@ -59,7 +59,7 @@ void RunTestDiffusionNLFV_DMP(double gravity, bool testing) {
   // create an MSTK mesh framework
   MeshFactory meshfactory(&comm);
   meshfactory.preference(FrameworkPreference({MSTK}));
-  //Teuchos::RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 3, 3, Teuchos::null);
+  // Teuchos::RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 3, 3, Teuchos::null);
   Teuchos::RCP<const Mesh> mesh = meshfactory("test/random10.exo");
 
   // modify diffusion coefficient
@@ -102,6 +102,7 @@ void RunTestDiffusionNLFV_DMP(double gravity, bool testing) {
   double rho(1.0);
   AmanziGeometry::Point g(0.0, -gravity);
   Teuchos::RCP<PDE_Diffusion> op = Teuchos::rcp(new PDE_DiffusionNLFVwithGravity(op_list, mesh, rho, g));
+  // Teuchos::RCP<PDE_Diffusion> op = Teuchos::rcp(new PDE_DiffusionNLFV(op_list, mesh));
   Teuchos::RCP<Operator> global_op = op->global_operator();
   op->SetBCs(bc, bc);
   const CompositeVectorSpace& cvs = global_op->DomainMap();
@@ -145,7 +146,13 @@ void RunTestDiffusionNLFV_DMP(double gravity, bool testing) {
     solver.Init(lop_list);
 
     CompositeVector& rhs = *global_op->rhs();
+
+    //std::cout<<*rhs.ViewComponent("cell");
+    
     int ierr = solver.ApplyInverse(rhs, *solution);
+    
+    //    std::cout<<*solution->ViewComponent("cell");
+    
 
     // compute pressure error
     Epetra_MultiVector& p = *solution->ViewComponent("cell", false);
@@ -159,7 +166,7 @@ void RunTestDiffusionNLFV_DMP(double gravity, bool testing) {
       ->AddComponent("face", AmanziMesh::FACE, 1);
     Teuchos::RCP<CompositeVector> flux = Teuchos::rcp(new CompositeVector(cvs_tmp));
     Epetra_MultiVector& flx = *flux->ViewComponent("face", true);
-
+   
     op->UpdateFlux(solution.ptr(), flux.ptr());
     double unorm, ul2_err, uinf_err;
 
@@ -180,12 +187,6 @@ void RunTestDiffusionNLFV_DMP(double gravity, bool testing) {
     }
   }
 }
-
-
-TEST(OPERATOR_DIFFUSION_NLFV_DMP_02) {
-  RunTestDiffusionNLFV_DMP<Analytic02>(0.0, true);
-}
-
 
 
 template<class Analytic>
@@ -209,7 +210,7 @@ void RunTestDiffusionNLFVwithBndFaces_DMP(double gravity, bool testing) {
   // create an MSTK mesh framework
   MeshFactory meshfactory(&comm);
   meshfactory.preference(FrameworkPreference({MSTK}));
-  //Teuchos::RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 4, 4, Teuchos::null);
+  // Teuchos::RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 3, 3, Teuchos::null);
   Teuchos::RCP<const Mesh> mesh = meshfactory("test/random10.exo");
 
   // modify diffusion coefficient
@@ -254,6 +255,7 @@ void RunTestDiffusionNLFVwithBndFaces_DMP(double gravity, bool testing) {
   double rho(1.0);
   AmanziGeometry::Point g(0.0, -gravity);
   Teuchos::RCP<PDE_Diffusion> op = Teuchos::rcp(new PDE_DiffusionNLFVwithBndFacesGravity(op_list, mesh, rho, g));
+  // Teuchos::RCP<PDE_Diffusion> op = Teuchos::rcp(new PDE_DiffusionNLFVwithBndFaces(op_list, mesh));
   Teuchos::RCP<Operator> global_op = op->global_operator();
   op->SetBCs(bc, bc);
   const CompositeVectorSpace& cvs = global_op->DomainMap();
@@ -263,7 +265,7 @@ void RunTestDiffusionNLFVwithBndFaces_DMP(double gravity, bool testing) {
   solution->PutScalar(0.0);
 
   // std::cout<<*solution->ViewComponent("cell");
-  // std::cout<<*solution->ViewComponent("boundary face");
+  // std::cout<<*solution->ViewComponent("boundary_face");
   
   // create source 
   CompositeVector source(cvs), t1(cvs), t2(cvs);
@@ -302,14 +304,14 @@ void RunTestDiffusionNLFVwithBndFaces_DMP(double gravity, bool testing) {
     CompositeVector& rhs = *global_op->rhs();
 
     // std::cout<<*rhs.ViewComponent("cell");
-    // std::cout<<*rhs.ViewComponent("boundary face");
+    // std::cout<<*rhs.ViewComponent("boundary_face");
 
     global_op->Apply(*solution, t1);
     
     int ierr = solver.ApplyInverse(rhs, *solution);
 
     // std::cout<<*solution->ViewComponent("cell");
-    // std::cout<<*solution->ViewComponent("boundary face");
+    // std::cout<<*solution->ViewComponent("boundary_face");
   
     // compute pressure error
     Epetra_MultiVector& p = *solution->ViewComponent("cell", false);
@@ -343,7 +345,11 @@ void RunTestDiffusionNLFVwithBndFaces_DMP(double gravity, bool testing) {
       CHECK(solver.num_itrs() < 15);
     }
   }
-  //std::cout<<*solution->ViewComponent("boundary face");
+  //std::cout<<*solution->ViewComponent("boundary_face");
+}
+
+TEST(OPERATOR_DIFFUSION_NLFV_DMP_02) {
+  RunTestDiffusionNLFV_DMP<Analytic02>(0.0, true);
 }
 
 TEST(OPERATOR_DIFFUSION_NLFVwithBndFaces_DMP_02) {

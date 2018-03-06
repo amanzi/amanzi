@@ -428,6 +428,8 @@ void PDE_DiffusionNLFV::UpdateMatrices(
     }
 
     local_op_->matrices[f] = Aface;
+    // double kf = (k_face.get() ? (*k_face)[0][f] : 1.0);
+    // std::cout<<"face"<<f<<" kf "<<kf<<"\n"<<local_op_->matrices[f]<<"\n";
   }
 }
 
@@ -652,12 +654,17 @@ void PDE_DiffusionNLFV::ApplyBCs(bool primary, bool eliminate)
         double kf(1.0);
         if (k_face.get()) kf = (*k_face)[0][f];
 
-        rhs_cell[0][c] -= (Aface(0, 0) / kf) * bc_value[f] * mesh_->face_area(f);
+        double ub = (Aface(0, 0) / kf) * bc_value[f] * mesh_->face_area(f);
+        rhs_cell[0][c] -= ub;
         Aface = 0.0;
       }
     }
+    // double kf = (k_face.get() ? (*k_face)[0][f] : 1.0);
+    // std::cout<<"face"<<f<<" "<<bc_model[f]<<" kf "<<kf<<"\n"<<local_op_->matrices[f]<<"\n";
   }
-
+  // std::cout<<"ApplyBCs RHS\n"<<"\n";
+  // std::cout<<*global_op_->rhs()->ViewComponent("cell");
+  //  exit(0);
   return;
 }
 
@@ -695,6 +702,7 @@ void PDE_DiffusionNLFV::UpdateFlux(const Teuchos::Ptr<const CompositeVector>& u,
       flux_data[0][f] = wgt_sideflux[0][f]*dir;     
     } else if (bc_model[f] == OPERATOR_BC_NEUMANN) {
       flux_data[0][f] = bc_value[f] * mesh_->face_area(f);
+      // std::cout<<"neumann "<<flux_data[0][f]<<"\n";
     } else if (bc_model[f] == OPERATOR_BC_NONE) {
       mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
       OrderCellsByGlobalId_(cells, c1, c2);

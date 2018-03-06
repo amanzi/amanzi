@@ -12,7 +12,7 @@
 */
 
 #include "DenseMatrix.hh"
-//#include "Op_Cell_Cell.hh"
+#include "Op_Cell_Cell.hh"
 #include "Op_Face_CellFace.hh"
 
 #include "SuperMap.hh"
@@ -40,6 +40,20 @@ void Operator_CellBndFace::UpdateRHS(const CompositeVector& source,
   }
 }
 
+int Operator_CellBndFace::ApplyMatrixFreeOp(const Op_Cell_Cell& op,
+                                     const CompositeVector& X, CompositeVector& Y) const
+{
+  const Epetra_MultiVector& Xc = *X.ViewComponent("cell");
+  Epetra_MultiVector& Yc = *Y.ViewComponent("cell");
+
+  for (int k = 0; k != Xc.NumVectors(); ++k) {
+    for (int c = 0; c != ncells_owned; ++c) {
+      Yc[k][c] += Xc[k][c] * (*op.diag)[k][c];
+    }
+  }
+  return 0;
+}
+
 
 /* ******************************************************************
 * Apply the local matrices directly as schema is a subset of
@@ -52,11 +66,11 @@ int Operator_CellBndFace::ApplyMatrixFreeOp(const Op_Face_CellFace& op,
   
   X.ScatterMasterToGhosted();
   const Epetra_MultiVector& Xc = *X.ViewComponent("cell", true);
-  const Epetra_MultiVector& Xbnd = *X.ViewComponent("boundary face", true);
+  const Epetra_MultiVector& Xbnd = *X.ViewComponent("boundary_face", true);
 
   Y.PutScalarGhosted(0.);
   Epetra_MultiVector& Yc = *Y.ViewComponent("cell", true);
-  Epetra_MultiVector& Ybnd = *Y.ViewComponent("boundary face", true); 
+  Epetra_MultiVector& Ybnd = *Y.ViewComponent("boundary_face", true); 
 
   AmanziMesh::Entity_ID_List cells;
   for (int f=0; f!=nfaces_owned; ++f) {
@@ -91,12 +105,27 @@ int Operator_CellBndFace::ApplyMatrixFreeOp(const Op_Face_CellFace& op,
   }
 
   Y.GatherGhostedToMaster("cell",Add);
-  Y.GatherGhostedToMaster("boundary face",Add);
+  Y.GatherGhostedToMaster("boundary_face",Add);
   
   return 0;
 }
 
+void Operator_CellBndFace::SymbolicAssembleMatrixOp(const Op_Cell_Cell& op,
+                                             const SuperMap& map, GraphFE& graph,
+                                             int my_block_row, int my_block_col) const
+{
+  const std::vector<int>& cell_row_inds = map.GhostIndices("cell", my_block_row);
+  const std::vector<int>& cell_col_inds = map.GhostIndices("cell", my_block_col);
 
+  int ierr(0);
+  for (int c=0; c!=ncells_owned; ++c) {
+    int row = cell_row_inds[c];
+    int col = cell_col_inds[c];
+
+    ierr |= graph.InsertMyIndices(row, 1, &col);
+  }
+  ASSERT(!ierr);
+}
 
 /* ******************************************************************
 * Insert each cells neighboring cells.
@@ -110,8 +139,8 @@ void Operator_CellBndFace::SymbolicAssembleMatrixOp(const Op_Face_CellFace& op,
   int lid_c[2];
   const std::vector<int>& cell_row_inds = map.GhostIndices("cell", my_block_row);
   const std::vector<int>& cell_col_inds = map.GhostIndices("cell", my_block_col);
-  const std::vector<int>& bndface_row_inds = map.GhostIndices("boundary face", my_block_row);
-  const std::vector<int>& bndface_col_inds = map.GhostIndices("boundary face", my_block_col);
+  const std::vector<int>& bndface_row_inds = map.GhostIndices("boundary_face", my_block_row);
+  const std::vector<int>& bndface_col_inds = map.GhostIndices("boundary_face", my_block_col);
 
   int ierr(0);
   AmanziMesh::Entity_ID_List cells;
@@ -138,6 +167,27 @@ void Operator_CellBndFace::SymbolicAssembleMatrixOp(const Op_Face_CellFace& op,
   ASSERT(!ierr);
 }
 
+void Operator_CellBndFace::AssembleMatrixOp(const Op_Cell_Cell& op,
+                                     const SuperMap& map, MatrixFE& mat,
+                                     int my_block_row, int my_block_col) const
+{
+  ASSERT(op.diag->NumVectors() == 1);
+
+  const std::vector<int>& cell_row_inds = map.GhostIndices("cell", my_block_row);
+  const std::vector<int>& cell_col_inds = map.GhostIndices("cell", my_block_col);
+
+  int ierr(0);
+  for (int c=0; c!=ncells_owned; ++c) {
+    int row = cell_row_inds[c];
+    int col = cell_col_inds[c];
+
+    // std::cout<<"cell "<<c<<": "<<(*op.diag)[0][c]<<"\n";
+
+    ierr |= mat.SumIntoMyValues(row, 1, &(*op.diag)[0][c], &col);
+  }
+  ASSERT(!ierr);
+}
+
 
 
 void Operator_CellBndFace::AssembleMatrixOp(const Op_Face_CellFace& op,
@@ -151,8 +201,8 @@ void Operator_CellBndFace::AssembleMatrixOp(const Op_Face_CellFace& op,
   int lid_c[2];
   const std::vector<int>& cell_row_inds = map.GhostIndices("cell", my_block_row);
   const std::vector<int>& cell_col_inds = map.GhostIndices("cell", my_block_col);
-  const std::vector<int>& bndface_row_inds = map.GhostIndices("boundary face", my_block_row);
-  const std::vector<int>& bndface_col_inds = map.GhostIndices("boundary face", my_block_col);
+  const std::vector<int>& bndface_row_inds = map.GhostIndices("boundary_face", my_block_row);
+  const std::vector<int>& bndface_col_inds = map.GhostIndices("boundary_face", my_block_col);
 
   int ierr(0);
   AmanziMesh::Entity_ID_List cells;
@@ -164,6 +214,10 @@ void Operator_CellBndFace::AssembleMatrixOp(const Op_Face_CellFace& op,
       for (int n=0; n!=ncells; ++n) {
         lid_r[n] = cell_row_inds[cells[n]];
         lid_c[n] = cell_col_inds[cells[n]];
+        // if (cells[n]==0) {
+        //   std::cout<<cells[0]<<" "<<cells[1]<<"\n";
+        //   std::cout<<op.matrices[f]<<"\n";
+        // }
       }
     }else if (ncells==1){
       lid_r[0] = cell_row_inds[cells[0]];
@@ -172,7 +226,8 @@ void Operator_CellBndFace::AssembleMatrixOp(const Op_Face_CellFace& op,
       lid_r[1] = bndface_row_inds[bf];
       lid_c[1] = bndface_col_inds[bf];
       // std::cout  << "bnd "<<lid_r[0]<<" "<<lid_r[1]<<"\n";
-      //std::cout<<op.matrices[f]<<"\n";
+      // if (cells[0]==0)
+      //   std::cout<<"bnd\n"<<op.matrices[f]<<"\n";
     }
 
     ierr |= mat.SumIntoMyValues(lid_r, lid_c, op.matrices[f]);

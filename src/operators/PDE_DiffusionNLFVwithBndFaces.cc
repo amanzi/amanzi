@@ -44,7 +44,7 @@ void PDE_DiffusionNLFVwithBndFaces::InitDiffusion_(Teuchos::ParameterList& plist
     Teuchos::RCP<CompositeVectorSpace> cvs = Teuchos::rcp(new CompositeVectorSpace());
     cvs->SetMesh(mesh_)->SetGhosted(true);
     cvs->AddComponent("cell", AmanziMesh::CELL, 1);
-    cvs->AddComponent("boundary face", AmanziMesh::BOUNDARY_FACE, 1);
+    cvs->AddComponent("boundary_face", AmanziMesh::BOUNDARY_FACE, 1);
 
     global_op_ = Teuchos::rcp(new Operator_CellBndFace(cvs, plist, global_op_schema_));
 
@@ -419,6 +419,9 @@ void PDE_DiffusionNLFVwithBndFaces::UpdateMatrices(
     }
 
     local_op_->matrices[f] = Aface;
+
+    // double kf = (k_face.get() ? (*k_face)[0][f] : 1.0);
+    // std::cout<<"face"<<f<<" kf "<<kf<<"\n"<<local_op_->matrices[f]<<"\n";
   }
 }
 
@@ -490,6 +493,7 @@ void PDE_DiffusionNLFVwithBndFaces::OneSidedFluxCorrections_(
 {
   // un-rolling composite vectors
   const Epetra_MultiVector& uc = *u.ViewComponent("cell", true);
+  const Epetra_MultiVector& ubnd = *u.ViewComponent("boundary_face", true);
   Epetra_MultiVector& flux = *flux_cv.ViewComponent("face", true);
 
   Epetra_MultiVector& hap_gamma = *stencil_data_->ViewComponent("gamma", true);
@@ -537,6 +541,18 @@ void PDE_DiffusionNLFVwithBndFaces::OneSidedFluxCorrections_(
 
           tmp = weight[i + k2][f] * gamma;
           sideflux += tmp * (uc[0][c] - uc[0][c3]);
+        // } else {          
+        //   const AmanziGeometry::Point& normal = mesh_->face_normal(f1, false, c, &dir);
+        //    int bf = mesh_->exterior_face_map(false).LID(mesh_->face_map(false).GID(f1));
+        //    if (bc_model[f1] == OPERATOR_BC_DIRICHLET) {
+        //      tmp = weight[i + k2][f];
+        //      sideflux = tmp *(uc[0][c] - - MapBoundaryValue_(f1, bc_value[f1]));
+        //    } else if (bc_model[f1] == OPERATOR_BC_NEUMANN) {
+        //      tmp = weight[i + k2][f];
+        //      neumann_flux += tmp * bc_value[f1] * mesh_->face_area(f1);
+        //      //sideflux = tmp *(uc[0][c] - ubnd[0][bf]);
+        //    }
+        // }
         } else if (bc_model[f1] == OPERATOR_BC_DIRICHLET) {
           tmp = weight[i + k2][f];
           const AmanziGeometry::Point& normal = mesh_->face_normal(f1, false, c, &dir);
@@ -544,7 +560,7 @@ void PDE_DiffusionNLFVwithBndFaces::OneSidedFluxCorrections_(
         } else if (bc_model[f1] == OPERATOR_BC_NEUMANN) {
           tmp = weight[i + k2][f];
           neumann_flux += tmp * bc_value[f1] * mesh_->face_area(f1);
-        }
+        } 
       }
 
       flux[k1][f] = kf * sideflux + neumann_flux; 
@@ -564,6 +580,7 @@ void PDE_DiffusionNLFVwithBndFaces::OneSidedWeightFluxes_(
 {
   // un-rolling composite vectors
   const Epetra_MultiVector& uc = *u.ViewComponent("cell", true);
+  const Epetra_MultiVector& ubnd = *u.ViewComponent("boundary_face", true);
   Epetra_MultiVector& flux = *flux_cv.ViewComponent("face", true);
 
   const std::vector<double>& bc_value = bcs_trial_[0]->bc_value();
@@ -596,6 +613,15 @@ void PDE_DiffusionNLFVwithBndFaces::OneSidedWeightFluxes_(
 
         if (c3 >= 0) {
           sideflux +=  flux_data[i + k2][f] * (uc[0][c] - uc[0][c3]);
+        // } else {
+        //   if (bc_model[f1] == OPERATOR_BC_DIRICHLET) {
+        //     sideflux += flux_data[i + k2][f] * (uc[0][c] - MapBoundaryValue_(f1, bc_value[f1])); 
+        //   } else if (bc_model[f1] == OPERATOR_BC_NEUMANN) {
+        //     neumann_flux += flux_data[i + k2][f] * bc_value[f1] * mesh_->face_area(f1);
+        //     // int bf = mesh_->exterior_face_map(false).LID(mesh_->face_map(false).GID(f1));
+        //     // sideflux += flux_data[i + k2][f] * (uc[0][c] - ubnd[0][bf]);
+        //   }
+        // }
         } else if (bc_model[f1] == OPERATOR_BC_DIRICHLET) {
           sideflux += flux_data[i + k2][f] * (uc[0][c] - MapBoundaryValue_(f1, bc_value[f1])); 
         } else if (bc_model[f1] == OPERATOR_BC_NEUMANN) {
@@ -621,7 +647,7 @@ void PDE_DiffusionNLFVwithBndFaces::ApplyBCs(bool primary, bool eliminate)
   const std::vector<double>& bc_value = bcs_trial_[0]->bc_value();
 
   Epetra_MultiVector& rhs_cell = *global_op_->rhs()->ViewComponent("cell", true);
-  Epetra_MultiVector& rhs_bnd = *global_op_->rhs()->ViewComponent("boundary face", true);  
+  Epetra_MultiVector& rhs_bnd = *global_op_->rhs()->ViewComponent("boundary_face", true);  
 
   // un-rolling little-k data
   Teuchos::RCP<const Epetra_MultiVector> k_face = Teuchos::null;
@@ -647,11 +673,18 @@ void PDE_DiffusionNLFVwithBndFaces::ApplyBCs(bool primary, bool eliminate)
         double kf(1.0);
         if (k_face.get()) kf = (*k_face)[0][f];
 
-        rhs_bnd[0][bf] -=  (Aface(1, 1) / kf) * bc_value[f] * mesh_->face_area(f);
+        double ub = (Aface(1, 1) / kf) * bc_value[f] * mesh_->face_area(f);
+        rhs_bnd[0][bf] -=  ub;
       
       }
     }
+    double kf = (k_face.get() ? (*k_face)[0][f] : 1.0);
+    // std::cout<<"face "<<f<<" "<<bc_model[f]<<" kf "<<kf<<"\n";
+    // std::cout<<local_op_->matrices[f]<<"\n";
   }
+
+  // std::cout<<rhs_cell <<"\n";
+  // std::cout<<rhs_bnd <<"\n";
 
   return;
 }

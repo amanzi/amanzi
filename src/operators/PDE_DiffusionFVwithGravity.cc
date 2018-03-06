@@ -82,10 +82,14 @@ void PDE_DiffusionFVwithGravity::UpdateMatrices(
       for (int n = 0; n != nfaces; ++n) {
         int f = faces[n];
         if (bc_model[f] == OPERATOR_BC_NEUMANN) continue;
-        rhs_cell[0][c] -= dirs[n] * gravity_face[0][f] * (k_face.get() ? (*k_face)[0][f] : 1.0);
+        double kf = (k_face.get() ? (*k_face)[0][f] : 1.0);
+        rhs_cell[0][c] -= dirs[n] * gravity_face[0][f] * kf;
+        //std::cout<<"cell "<<c<<" face "<<f<<" kf "<<kf<<"  __  "<<dirs[n] * gravity_face[0][f] * kf<<"\n";
       }
     }
+    std::cout<<"UpdateMatrices RHS\n"<<rhs_cell<<"\n";
   }
+
 }
 
 
@@ -98,12 +102,24 @@ void PDE_DiffusionFVwithGravity::ApplyBCs(bool primary, bool eliminate)
 
   Epetra_MultiVector* gravity_face = &*gravity_term_->ViewComponent("face", true);
   const std::vector<int>& bc_model = bcs_trial_[0]->bc_model();
-
+  
+  Teuchos::RCP<const Epetra_MultiVector> k_face = Teuchos::null;
+  if (k_ != Teuchos::null) {
+    if (k_->HasComponent("face")) k_face = k_->ViewComponent("face", true);
+  }
+  
   for (int f = 0; f < nfaces_owned; f++) {
     if (bc_model[f] == OPERATOR_BC_NEUMANN) {
       (*gravity_face)[0][f] = 0.0;
     }
+    // double kf = (k_face.get() ? (*k_face)[0][f] : 1.0);
+    // std::cout<<"face"<<f<<" kf "<<kf<<"\n"<<local_op_->matrices[f]<<"\n";
   }
+
+  std::cout<<"ApplyBCs RHS\n"<<"\n";
+  std::cout<<*global_op_->rhs()->ViewComponent("cell");
+  //exit(0);
+  return;
 }
 
 
@@ -244,7 +260,7 @@ void PDE_DiffusionFVwithGravity::ComputeTransmissibility_(
       double area = mesh_->face_area(f);
 
       a = xf - mesh_->cell_centroid(c);
-      double h_tmp = norm(a);
+      double h_tmp = norm(a);   // distance from x_c to x_f
       double s = area / h_tmp;
       double perm = ((Kc * a) * normal) * s;
       double dxn = a * normal;

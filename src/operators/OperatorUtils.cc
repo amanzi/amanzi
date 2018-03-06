@@ -51,11 +51,11 @@ int CopyCompositeVectorToSuperVector(const SuperMap& smap, const CompositeVector
     for (int v = 0; v != data.MyLength(); ++v) sv[node_inds[v]] = data[0][v];
   }
 
-  if (cv.HasComponent("boundary face") && smap.HasComponent("boundary face")) {
-    const std::vector<int>& bndface_inds = smap.Indices("boundary face", dofnum);
+  if (cv.HasComponent("boundary_face") && smap.HasComponent("boundary_face")) {
+    const std::vector<int>& bndface_inds = smap.Indices("boundary_face", dofnum);
     //for (int i=0; i<bndface_inds.size(); i++) std::cout<<bndface_inds[i]<<" "; std::cout<<"\n";
     
-    const Epetra_MultiVector& data = *cv.ViewComponent("boundary face");
+    const Epetra_MultiVector& data = *cv.ViewComponent("boundary_face");
     for (int f = 0; f != data.MyLength(); ++f) sv[bndface_inds[f]] = data[0][f];
   }
   
@@ -93,10 +93,10 @@ int CopySuperVectorToCompositeVector(const SuperMap& smap, const Epetra_Vector& 
     for (int v = 0; v != data.MyLength(); ++v) data[0][v] = sv[node_inds[v]];
   }
 
-  if (cv.HasComponent("boundary face") && smap.HasComponent("boundary face")) {
-    const std::vector<int>& bndface_inds = smap.Indices("boundary face", dofnum);
+  if (cv.HasComponent("boundary_face") && smap.HasComponent("boundary_face")) {
+    const std::vector<int>& bndface_inds = smap.Indices("boundary_face", dofnum);
     // for (int i=0; i<bndface_inds.size(); i++) std::cout<<bndface_inds[i]<<" "; std::cout<<"\n";
-    Epetra_MultiVector& data = *cv.ViewComponent("boundary face");
+    Epetra_MultiVector& data = *cv.ViewComponent("boundary_face");
     for (int f = 0; f != data.MyLength(); ++f) data[0][f] = sv[bndface_inds[f]];
   } 
   return 0;
@@ -115,9 +115,9 @@ int AddSuperVectorToCompositeVector(const SuperMap& smap, const Epetra_Vector& s
     for (int f = 0; f != data.MyLength(); ++f) data[0][f] += sv[face_inds[f]];
   } 
 
-  if (cv.HasComponent("boundary face") && smap.HasComponent("boundary face")) {
-    const std::vector<int>& bndface_inds = smap.Indices("boundary face", dofnum);   
-    const Epetra_MultiVector& data = *cv.ViewComponent("boundary face");
+  if (cv.HasComponent("boundary_face") && smap.HasComponent("boundary_face")) {
+    const std::vector<int>& bndface_inds = smap.Indices("boundary_face", dofnum);   
+    const Epetra_MultiVector& data = *cv.ViewComponent("boundary_face");
     for (int f = 0; f != data.MyLength(); ++f) data[0][f] += sv[bndface_inds[f]];
   } 
   
@@ -288,8 +288,8 @@ Teuchos::RCP<SuperMap> CreateSuperMap(const CompositeVectorSpace& cvs, int schem
   }
 
   if (schema & OPERATOR_SCHEMA_DOFS_BNDFACE) {
-    ASSERT(cvs.HasComponent("boundary face"));
-    compnames.push_back("boundary face");
+    ASSERT(cvs.HasComponent("boundary_face"));
+    compnames.push_back("boundary_face");
     dofnums.push_back(n_dofs);
 
     std::pair<Teuchos::RCP<const Epetra_Map>, Teuchos::RCP<const Epetra_Map> > meshmaps =
