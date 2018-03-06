@@ -34,8 +34,7 @@ class MFD3D_Lagrange : public virtual MFD3D {
  public:
   MFD3D_Lagrange(Teuchos::RCP<const AmanziMesh::Mesh> mesh)
     : MFD3D(mesh),
-      InnerProduct(mesh),
-      order_(1) {};
+      InnerProduct(mesh) {};
   ~MFD3D_Lagrange() {};
 
   // required methods
@@ -80,10 +79,6 @@ class MFD3D_Lagrange : public virtual MFD3D {
     ProjectorCell_(c, vf, Type::H1, true, moments, uc);
   }
 
-  // -- L2 projector that calculates and returns cell moments
-  // miscalleneous
-  void set_order(int order) { order_ = order; }
-
   // access 
   // -- integrals of monomials in high-order schemes could be reused
   const PolynomialOnMesh& integrals() const { return integrals_; }
@@ -100,7 +95,6 @@ class MFD3D_Lagrange : public virtual MFD3D {
       const std::shared_ptr<DenseVector>& moments, VectorPolynomial& uc);
 
  protected:
-  int order_;
   PolynomialOnMesh integrals_;
   DenseMatrix R_, G_;
 };

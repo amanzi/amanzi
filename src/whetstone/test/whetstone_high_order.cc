@@ -44,16 +44,18 @@ TEST(HIGH_ORDER_CROUZEIX_RAVIART) {
   MFD3D_CrouzeixRaviart mfd(mesh);
 
   int cell(0);
-  DenseMatrix N, R, G, A1, Ak;
+  DenseMatrix N, A1, Ak;
 
   Tensor T(2, 1);
   T(0, 0) = 1.0;
 
   // 1st-order scheme
+  mfd.set_order(1);
   mfd.StiffnessMatrix(cell, T, A1);
 
   // 1st-order scheme (new algorithm)
-  mfd.StiffnessMatrixHO(cell, 1, T, R, G, Ak);
+  mfd.set_use_always_ho(true);
+  mfd.StiffnessMatrix(cell, T, Ak);
 
   printf("Stiffness matrix for order = 1\n");
   A1.PrintMatrix("%8.4f ");
@@ -63,8 +65,9 @@ TEST(HIGH_ORDER_CROUZEIX_RAVIART) {
 
   // high-order scheme (new algorithm)
   for (int k = 2; k < 4; ++k) {
-    mfd.H1consistencyHO(cell, k, T, N, R, G, Ak);
-    mfd.StiffnessMatrixHO(cell, k, T, R, G, Ak);
+    mfd.set_order(k);
+    mfd.H1consistency(cell, T, N, Ak);
+    mfd.StiffnessMatrix(cell, T, Ak);
 
     printf("Stiffness matrix for order = %d\n", k);
     Ak.PrintMatrix("%8.4f ");
@@ -74,6 +77,8 @@ TEST(HIGH_ORDER_CROUZEIX_RAVIART) {
     for (int i = 0; i < nrows; i++) CHECK(Ak(i, i) > 0.0);
 
     // verify exact integration property
+    const DenseMatrix& G = mfd.G();
+    const DenseMatrix& R = mfd.R();
     DenseMatrix G1(G);
     G1.Multiply(N, R, true);
     G1(0, 0) = 1.0;

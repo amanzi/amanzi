@@ -38,7 +38,7 @@ class BilinearForm : public virtual InnerProductL2,
                      public virtual InnerProductH1,
                      public Projectors {
  public:
-  explicit BilinearForm() {};
+  explicit BilinearForm() : order_(1) {};
   ~BilinearForm() {};
 
   // additional members
@@ -75,6 +75,12 @@ class BilinearForm : public virtual InnerProductL2,
     Exceptions::amanzi_throw(msg);
     return 1;
   }
+
+  // miscalleneous
+  void set_order(int order) { order_ = order; }
+
+ protected:
+  int order_;
 };
 
 }  // namespace WhetStone

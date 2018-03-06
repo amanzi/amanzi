@@ -34,7 +34,7 @@ class MFD3D_CrouzeixRaviart : public virtual MFD3D {
   MFD3D_CrouzeixRaviart(Teuchos::RCP<const AmanziMesh::Mesh> mesh)
     : MFD3D(mesh),
       InnerProduct(mesh),
-      order_(1) {};
+      use_always_ho_(false) {};
   ~MFD3D_CrouzeixRaviart() {};
 
   // required methods
@@ -48,19 +48,17 @@ class MFD3D_CrouzeixRaviart : public virtual MFD3D {
 
   // -- stiffness matrix
   virtual int H1consistency(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Ac) {;
-    if (order_ == 1) {
+    if (order_ == 1 && !use_always_ho_) {
       return H1consistencyLO_(c, T, N, Ac);
     } else {
-      DenseMatrix R, G;
-      return H1consistencyHO(c, order_, T, N, R, G, Ac);
+      return H1consistencyHO_(c, T, N, Ac);
     }
   }
   virtual int StiffnessMatrix(int c, const Tensor& T, DenseMatrix& A) {
-    if (order_ == 1) {
+    if (order_ == 1 && !use_always_ho_) {
       return StiffnessMatrixLO_(c, T, A);
     } else {
-      DenseMatrix R, G;
-      return StiffnessMatrixHO(c, order_, T, R, G, A);
+      return StiffnessMatrixHO_(c, T, A);
     }
   }
 
@@ -75,7 +73,7 @@ class MFD3D_CrouzeixRaviart : public virtual MFD3D {
   void H1CellHarmonic(
       int c, const std::vector<VectorPolynomial>& vf,
       const std::shared_ptr<DenseVector>& moments, VectorPolynomial& uc) {
-    if (order_ == 1) {
+    if (order_ == 1 && !use_always_ho_) {
       ProjectorCell_LO_(c, vf, uc);
     } else {
       ProjectorCell_HO_(c, vf, Type::H1, true, moments, uc);
@@ -86,25 +84,24 @@ class MFD3D_CrouzeixRaviart : public virtual MFD3D {
       int f, const AmanziGeometry::Point& p0,
       const std::vector<VectorPolynomial>& ve, VectorPolynomial& uf) const;
 
-  // high-order methods
-  int H1consistencyHO(int c, int order, const Tensor& T,
-                      DenseMatrix& N, DenseMatrix& R, DenseMatrix& G, DenseMatrix& Ac);
-  int StiffnessMatrixHO(int c, int order, const Tensor& T,
-                        DenseMatrix& R, DenseMatrix& G, DenseMatrix& A);
-
-  // miscalleneous
-  void set_order(int order) { order_ = order; }
-
-  // access 
+  // access / setup
   // -- integrals of monomials in high-order schemes could be reused
   const Polynomial& integrals() const { return integrals_; }
+  const DenseMatrix& G() const { return G_; }
+  const DenseMatrix& R() const { return R_; }
+  // -- modify internal parameters
+  void set_use_always_ho(bool flag) { use_always_ho_ = flag; }
 
  private:
   // efficient implementation of low-order methods
   int H1consistencyLO_(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Ac);
   int StiffnessMatrixLO_(int c, const Tensor& T, DenseMatrix& A);
 
-  // simple implementation of low-order elliptic projectors
+  // high-order methods
+  int H1consistencyHO_(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Ac);
+  int StiffnessMatrixHO_(int c, const Tensor& T, DenseMatrix& A);
+
+  // efficient implementation of low-order elliptic projectors
   void ProjectorCell_LO_(
       int c, const std::vector<VectorPolynomial>& vf, VectorPolynomial& uc);
 
@@ -114,8 +111,9 @@ class MFD3D_CrouzeixRaviart : public virtual MFD3D {
       const std::shared_ptr<DenseVector>& moments, VectorPolynomial& uc);
 
  private:
-  int order_;
+  bool use_always_ho_;
   Polynomial integrals_;
+  DenseMatrix R_, G_;
 };
 
 }  // namespace WhetStone

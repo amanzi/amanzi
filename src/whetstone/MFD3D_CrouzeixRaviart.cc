@@ -113,9 +113,8 @@ int MFD3D_CrouzeixRaviart::StiffnessMatrixLO_(int c, const Tensor& K, DenseMatri
 * High-order consistency condition for stiffness matrix. 
 * Only the upper triangular part of Ac is calculated. 
 ****************************************************************** */
-int MFD3D_CrouzeixRaviart::H1consistencyHO(
-    int c, int order, const Tensor& K,
-    DenseMatrix& N, DenseMatrix& R, DenseMatrix& G, DenseMatrix& Ac)
+int MFD3D_CrouzeixRaviart::H1consistencyHO_(
+    int c, const Tensor& K, DenseMatrix& N, DenseMatrix& Ac)
 {
   Entity_ID_List faces;
   std::vector<int> dirs;
@@ -127,9 +126,9 @@ int MFD3D_CrouzeixRaviart::H1consistencyHO(
   double volume = mesh_->cell_volume(c); 
 
   // calculate degrees of freedom 
-  Polynomial poly(d_, order), pf(d_ - 1, order - 1), pc;
-  if (order > 1) {
-    pc.Reshape(d_, order - 2);
+  Polynomial poly(d_, order_), pf(d_ - 1, order_ - 1), pc;
+  if (order_ > 1) {
+    pc.Reshape(d_, order_ - 2);
   }
   int nd = poly.size();
   int ndf = pf.size();
@@ -137,21 +136,21 @@ int MFD3D_CrouzeixRaviart::H1consistencyHO(
 
   int ndof = nfaces * ndf + ndc;
   N.Reshape(ndof, nd);
-  R.Reshape(ndof, nd);
+  R_.Reshape(ndof, nd);
   Ac.Reshape(ndof, ndof);
-  G.Reshape(nd, nd);
+  G_.Reshape(nd, nd);
 
   // pre-calculate integrals of monomials 
   NumericalIntegration numi(mesh_);
-  integrals_.Reshape(d_, 2 * order - 2, true);
+  integrals_.Reshape(d_, 2 * order_ - 2, true);
 
-  for (int k = 0; k <= 2 * order - 2; ++k) {
+  for (int k = 0; k <= 2 * order_ - 2; ++k) {
     numi.IntegrateMonomialsCell(c, integrals_.monomials(k));
   }
 
   // populate matrices N and R
   std::vector<AmanziGeometry::Point> tau(d_ - 1);
-  R.PutScalar(0.0);
+  R_.PutScalar(0.0);
   N.PutScalar(0.0);
 
   std::vector<const Polynomial*> polys(2);
@@ -188,7 +187,7 @@ int MFD3D_CrouzeixRaviart::H1consistencyHO(
         int m = jt.MonomialOrder();
         int k = jt.MonomialPosition();
         int n = jt.PolynomialPosition();
-        R(row + n, col) = tmp(m, k);
+        R_(row + n, col) = tmp(m, k);
       }
 
       for (auto jt = pf.begin(); jt.end() <= pf.end(); ++jt) {
@@ -212,11 +211,11 @@ int MFD3D_CrouzeixRaviart::H1consistencyHO(
         int k = jt.MonomialPosition();
         int n = jt.PolynomialPosition();
 
-        R(row + n, col) = -tmp(m, k) * volume;
+        R_(row + n, col) = -tmp(m, k) * volume;
       }
     }
 
-    if (order > 1) {
+    if (order_ > 1) {
       for (auto jt = pc.begin(); jt.end() <= pc.end(); ++jt) {
         int n = jt.PolynomialPosition();
         const int* jndex = jt.multi_index();
@@ -238,7 +237,7 @@ int MFD3D_CrouzeixRaviart::H1consistencyHO(
   }
 
   // set the Gramm-Schidt matrix for gradients of polynomials
-  G.PutScalar(0.0);
+  G_.PutScalar(0.0);
 
   // -- gradient of a naturally scaled polynomial needs correction
   double scale = numi.MonomialNaturalScale(1, volume);
@@ -269,7 +268,7 @@ int MFD3D_CrouzeixRaviart::H1consistencyHO(
         }
       }
 
-      G(l, k) = G(k, l) = K(0, 0) * sum * scale * scale; 
+      G_(l, k) = G_(k, l) = K(0, 0) * sum * scale * scale; 
     }
   }
 
@@ -277,12 +276,12 @@ int MFD3D_CrouzeixRaviart::H1consistencyHO(
   DenseMatrix RG(ndof, nd), Rtmp(nd, ndof);
 
   // to invert generate matrix, we add and subtruct positive number
-  G(0, 0) = 1.0;
-  G.Inverse();
-  G(0, 0) = 0.0;
-  RG.Multiply(R, G, false);
+  G_(0, 0) = 1.0;
+  G_.Inverse();
+  G_(0, 0) = 0.0;
+  RG.Multiply(R_, G_, false);
 
-  Rtmp.Transpose(R);
+  Rtmp.Transpose(R_);
   Ac.Multiply(RG, Rtmp, false);
 
   return WHETSTONE_ELEMENTAL_MATRIX_OK;
@@ -292,13 +291,12 @@ int MFD3D_CrouzeixRaviart::H1consistencyHO(
 /* ******************************************************************
 * Stiffness matrix for a high-order scheme.
 ****************************************************************** */
-int MFD3D_CrouzeixRaviart::StiffnessMatrixHO(
-    int c, int order, const Tensor& K,
-    DenseMatrix& R, DenseMatrix& G, DenseMatrix& A)
+int MFD3D_CrouzeixRaviart::StiffnessMatrixHO_(
+    int c, const Tensor& K, DenseMatrix& A)
 {
   DenseMatrix N;
 
-  int ok = H1consistencyHO(c, order, K, N, R, G, A);
+  int ok = H1consistencyHO_(c, K, N, A);
   if (ok) return ok;
 
   StabilityScalar_(N, A);
@@ -447,14 +445,14 @@ void MFD3D_CrouzeixRaviart::ProjectorCell_HO_(
 
   // calculate stiffness matrix
   Tensor T(d_, 1);
-  DenseMatrix N, R, Gpoly, A;
+  DenseMatrix N, A;
 
   T(0, 0) = 1.0;
-  StiffnessMatrixHO(c, order_, T, R, Gpoly, A);  
+  StiffnessMatrixHO_(c, T, A);  
 
   // number of degrees of freedom
   Polynomial pf(d_ - 1, order_ - 1);
-  int nd = Gpoly.NumRows();
+  int nd = G_.NumRows();
   int ndf = pf.size();
   int ndof = A.NumRows();
 
@@ -532,8 +530,8 @@ void MFD3D_CrouzeixRaviart::ProjectorCell_HO_(
 
     // calculate polynomial coefficients
     DenseVector v4(nd), v5(nd);
-    R.Multiply(vdof, v4, true);
-    Gpoly.Multiply(v4, v5, false);
+    R_.Multiply(vdof, v4, true);
+    G_.Multiply(v4, v5, false);
 
     uc[i].SetPolynomialCoefficients(v5);
     numi.ChangeBasisNaturalToRegular(c, uc[i]);
