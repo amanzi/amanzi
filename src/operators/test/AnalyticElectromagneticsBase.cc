@@ -8,7 +8,7 @@
 
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 
-  Base class for testing MHD problems.
+  Base class for verifying numerical schemes for Maxwell's equations.
 */
 
 #include "Epetra_MultiVector.h"

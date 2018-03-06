@@ -8,11 +8,11 @@
 
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 
-  Base class for testing MHD problems.
+  Base class for testing electromagnetics problems.
 */
 
-#ifndef AMANZI_OPERATOR_ANALYTIC_MHD_BASE_HH_
-#define AMANZI_OPERATOR_ANALYTIC_MHD_BASE_HH_
+#ifndef AMANZI_OPERATOR_ANALYTIC_MAXWELL_BASE_HH_
+#define AMANZI_OPERATOR_ANALYTIC_MAXWELL_BASE_HH_
 
 #include "Mesh.hh"
 #include "Tensor.hh"
@@ -22,7 +22,7 @@ class AnalyticElectromagneticsBase {
   AnalyticElectromagneticsBase(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh) : mesh_(mesh) {};
   ~AnalyticElectromagneticsBase() {};
 
-  // analytic solution for MHD problem
+  // analytic solution for Maxwell's equations
   // -- resitivity tensor T
   virtual Amanzi::WhetStone::Tensor Tensor(const Amanzi::AmanziGeometry::Point& p, double t) = 0;
   // -- analytic solution E

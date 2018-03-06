@@ -7,10 +7,13 @@
   provided in the top-level COPYRIGHT file.
 
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
+
+  Magnetic diffusion exesices Amanzi's capability to discretize 
+  curl operators.
 */
 
-#ifndef AMANZI_OPERATOR_ELECTROMAGNETICS_MHD_HH_
-#define AMANZI_OPERATOR_ELECTROMAGNETICS_MHD_HH_
+#ifndef AMANZI_OPERATOR_MAGNETIC_DIFFUSION_HH_
+#define AMANZI_OPERATOR_MAGNETIC_DIFFUSION_HH_
 
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
@@ -30,18 +33,18 @@
 namespace Amanzi {
 namespace Operators {
 
-class PDE_ElectromagneticsMHD : public PDE_Electromagnetics {
+class PDE_MagneticDiffusion : public PDE_Electromagnetics {
  public:
-  PDE_ElectromagneticsMHD(const Teuchos::RCP<Operator>& global_op)
+  PDE_MagneticDiffusion(const Teuchos::RCP<Operator>& global_op)
     : PDE_Electromagnetics(global_op)
   {};
 
-  PDE_ElectromagneticsMHD(Teuchos::ParameterList& plist,
+  PDE_MagneticDiffusion(Teuchos::ParameterList& plist,
                           const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
     : PDE_Electromagnetics(plist, mesh)
   {
-    operator_type_ = OPERATOR_ELECTROMAGNETICS_MHD;
-    InitElectromagneticsMHD_();
+    operator_type_ = OPERATOR_MAGNETIC_DIFFUSION;
+    InitMagneticDiffusion_();
   }
 
   // main virtual members
@@ -65,7 +68,7 @@ class PDE_ElectromagneticsMHD : public PDE_Electromagnetics {
   double CalculateDivergence(int c, const CompositeVector& B);
 
  private:
-  void InitElectromagneticsMHD_();
+  void InitMagneticDiffusion_();
 
  protected:
   std::vector<WhetStone::DenseMatrix> mass_op_;

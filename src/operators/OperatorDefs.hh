@@ -26,7 +26,7 @@ typedef enum { OPERATOR_DIFFUSION_MFD,
                OPERATOR_ACCUMULATION,
                OPERATOR_ELASTICITY,
                OPERATOR_ELECTROMAGNETICS,
-               OPERATOR_ELECTROMAGNETICS_MHD} OperatorType;
+               OPERATOR_MAGNETIC_DIFFUSION} OperatorType;
 
 typedef enum { BERNARDI_RAUGEL,
                MINI,

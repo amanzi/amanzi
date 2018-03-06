@@ -16,7 +16,7 @@
 
 #include "DeRham_Node.hh"
 
-#include "PDE_ElectromagneticsMHD_TM.hh"
+#include "PDE_MagneticDiffusion_TM.hh"
 #include "Op.hh"
 
 namespace Amanzi {
@@ -25,7 +25,7 @@ namespace Operators {
 /* ******************************************************************
 * System modification before solving the problem.
 * **************************************************************** */
-void PDE_ElectromagneticsMHD_TM::ModifyMatrices(
+void PDE_MagneticDiffusion_TM::ModifyMatrices(
    CompositeVector& E, CompositeVector& B, double dt)
 {
   const Epetra_MultiVector& Bf = *B.ViewComponent("face", true);
@@ -68,7 +68,7 @@ void PDE_ElectromagneticsMHD_TM::ModifyMatrices(
 /* ******************************************************************
 * Solution postprocessing
 * **************************************************************** */
-void PDE_ElectromagneticsMHD_TM::ModifyFields(
+void PDE_MagneticDiffusion_TM::ModifyFields(
    CompositeVector& E, CompositeVector& B, double dt)
 {
   B.ScatterMasterToGhosted("face");
@@ -116,7 +116,7 @@ void PDE_ElectromagneticsMHD_TM::ModifyFields(
 * options: (a) eliminate or not, (b) if eliminate, then put 1 on
 * the diagonal or not.
 ****************************************************************** */
-void PDE_ElectromagneticsMHD_TM::ApplyBCs(bool primary, bool eliminate)
+void PDE_MagneticDiffusion_TM::ApplyBCs(bool primary, bool eliminate)
 {
   if (local_op_schema_ == (OPERATOR_SCHEMA_BASE_CELL
                          | OPERATOR_SCHEMA_DOFS_NODE)) {
@@ -136,7 +136,7 @@ void PDE_ElectromagneticsMHD_TM::ApplyBCs(bool primary, bool eliminate)
 /* ******************************************************************
 * Apply BCs on cell operators
 ****************************************************************** */
-void PDE_ElectromagneticsMHD_TM::ApplyBCs_Node_(const Teuchos::Ptr<const BCs>& bc_f,
+void PDE_MagneticDiffusion_TM::ApplyBCs_Node_(const Teuchos::Ptr<const BCs>& bc_f,
                                                 const Teuchos::Ptr<const BCs>& bc_v,
                                                 bool primary, bool eliminate)
 {
@@ -217,7 +217,7 @@ void PDE_ElectromagneticsMHD_TM::ApplyBCs_Node_(const Teuchos::Ptr<const BCs>& b
 /* ******************************************************************
 * Calculates Ohmic heating
 ****************************************************************** */
-double PDE_ElectromagneticsMHD_TM::CalculateOhmicHeating(const CompositeVector& E)
+double PDE_MagneticDiffusion_TM::CalculateOhmicHeating(const CompositeVector& E)
 {
   const Epetra_MultiVector& Ev = *E.ViewComponent("node", true);
 
