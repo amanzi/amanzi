@@ -21,6 +21,7 @@
 #include "Point.hh"
 #include "errors.hh"
 
+#include "CoordinateSystems.hh"
 #include "MFD3D_LagrangeSerendipity.hh"
 #include "NumericalIntegration.hh"
 #include "Tensor.hh"
@@ -159,8 +160,134 @@ int MFD3D_LagrangeSerendipity::StiffnessMatrix(
   return WHETSTONE_ELEMENTAL_MATRIX_OK;
 }
 
+
+/* ******************************************************************
+* L2 projector 
+****************************************************************** */
+void MFD3D_LagrangeSerendipity::L2Cell(
+    int c, const std::vector<VectorPolynomial>& vf,
+    const std::shared_ptr<DenseVector>& moments, VectorPolynomial& uc)
+{
+  NumericalIntegration numi(mesh_);
+
+  // calculate stiffness matrix
+  Tensor T(d_, 1);
+  DenseMatrix N, A;
+
+  T(0, 0) = 1.0;
+  MFD3D_Lagrange::H1consistency(c, T, N, A);  
+
+  // number of degrees of freedom
+  Polynomial pc;
+  if (order_ > 1) {
+    pc.Reshape(d_, order_ - 2);
+  }
+
+  int nd = G_.NumRows();
+  int ndof = A.NumRows();
+  int ndof_c(pc.size());
+  int ndof_f(ndof - ndof_c);
+
+  // extract submatrix
+  DenseMatrix Ns, NN(nd, nd);
+  Ns = N.SubMatrix(0, ndof_f, 0, nd);
+
+  NN.Multiply(Ns, Ns, true);
+  NN.Inverse();
+
+  // calculate degrees of freedom
+  const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
+  DenseVector vdof(ndof_f), v1(nd), v2(nd);
+
+  int dim = vf[0].size();
+  uc.resize(dim);
+
+  for (int i = 0; i < dim; ++i) {
+    CalculateDOFsOnBoundary_(c, vf, vdof, i);
+
+    Ns.Multiply(vdof, v1, true);
+    NN.Multiply(v1, v2, false);
+
+    uc[i].Reshape(d_, order_, true);
+    uc[i].SetPolynomialCoefficients(v2);
+    numi.ChangeBasisNaturalToRegular(c, uc[i]);
+
+    // set origin to zero
+    AmanziGeometry::Point zero(d_);
+    uc[i].set_origin(xc);
+    uc[i].ChangeOrigin(zero);
+  }
+}
+
+
+/* ******************************************************************
+* Calculate degrees of freedom in 2D.
+****************************************************************** */
+void MFD3D_LagrangeSerendipity::CalculateDOFsOnBoundary_(
+    int c, const std::vector<VectorPolynomial>& vf,
+    DenseVector& vdof, int i)
+{
+  Entity_ID_List nodes, faces;
+  std::vector<int> dirs;
+
+  mesh_->cell_get_nodes(c, &nodes);
+  int nnodes = nodes.size();
+
+  mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+  int nfaces = faces.size();
+
+  std::vector<const Polynomial*> polys(2);
+  NumericalIntegration numi(mesh_);
+
+  AmanziGeometry::Point xv(d_);
+  std::vector<AmanziGeometry::Point> tau(d_ - 1);
+
+  // number of moments of faces
+  Polynomial pf;
+  if (order_ > 1) {
+    pf.Reshape(d_ - 1, order_ - 2);
+  }
+
+  int row(nnodes);
+  for (int n = 0; n < nfaces; ++n) {
+    int f = faces[n];
+
+    Entity_ID_List face_nodes;
+    mesh_->face_get_nodes(f, &face_nodes);
+    int nfnodes = face_nodes.size();
+
+    for (int j = 0; j < nfnodes; j++) {
+      int v = face_nodes[j];
+      mesh_->node_get_coordinates(v, &xv);
+
+      int pos = WhetStone::FindPosition(v, nodes);
+      vdof(pos) = vf[n][i].Value(xv);
+    }
+
+    if (order_ > 1) { 
+      const AmanziGeometry::Point& xf = mesh_->face_centroid(f); 
+      double area = mesh_->face_area(f);
+
+      // local coordinate system with origin at face centroid
+      const AmanziGeometry::Point& normal = mesh_->face_normal(f);
+      FaceCoordinateSystem(normal, tau);
+
+      polys[0] = &(vf[n][i]);
+
+      for (auto it = pf.begin(); it.end() <= pf.end(); ++it) {
+        const int* index = it.multi_index();
+        Polynomial fmono(d_ - 1, index, 1.0);
+        fmono.InverseChangeCoordinates(xf, tau);  
+
+        polys[1] = &fmono;
+
+        vdof(row) = numi.IntegratePolynomialsFace(f, polys) / area;
+        row++;
+      }
+    }
+  }
+}
+
 }  // namespace WhetStone
 }  // namespace Amanzi
-
-
 

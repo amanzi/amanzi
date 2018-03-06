@@ -17,9 +17,9 @@
 
 #include "DenseMatrix.hh"
 #include "MeshMaps.hh"
+#include "MFD3D_LagrangeSerendipity.hh"
 #include "NumericalIntegration.hh"
 #include "Polynomial.hh"
-#include "Projector.hh"
 
 namespace Amanzi {
 namespace WhetStone {
@@ -288,9 +288,9 @@ void MeshMaps::ProjectPolynomial(int c, Polynomial& poly) const
   }
 
   VectorPolynomial vc(d_, 0);
-  Projector projector(mesh1_);
-  // projector.H1Cell_Pk(c, order, vvf, moments, vc);
-  projector.L2Cell_SerendipityPk(c, order, vvf, moments, vc);
+  MFD3D_LagrangeSerendipity mfd(mesh1_);
+  mfd.set_order(order);
+  mfd.L2Cell(c, vvf, moments, vc);
   poly = vc[0];
 }
 

@@ -24,7 +24,6 @@
 #include "DenseMatrix.hh"
 #include "MeshMaps.hh"
 #include "Polynomial.hh"
-#include "Projector.hh"
 #include "Tensor.hh"
 #include "WhetStone_typedefs.hh"
 
@@ -35,12 +34,10 @@ class MeshMaps_VEM : public MeshMaps {
  public:
   MeshMaps_VEM(Teuchos::RCP<const AmanziMesh::Mesh> mesh) :
       MeshMaps(mesh),
-      projector_(mesh),
       order_(2) {};
   MeshMaps_VEM(Teuchos::RCP<const AmanziMesh::Mesh> mesh0,
                Teuchos::RCP<const AmanziMesh::Mesh> mesh1) :
       MeshMaps(mesh0, mesh1),
-      projector_(mesh0),
       order_(2) {};
   ~MeshMaps_VEM() {};
 
@@ -69,7 +66,6 @@ class MeshMaps_VEM : public MeshMaps {
 
  private:
   int order_;
-  Projector projector_;
 };
 
 }  // namespace WhetStone

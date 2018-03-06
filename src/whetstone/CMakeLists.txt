@@ -54,7 +54,6 @@ add_amanzi_library(whetstone
                           NumericalIntegration.cc
                           MeshMaps.cc
                           MeshMaps_FEM.cc MeshMaps_VEM.cc
-                          Projector.cc
                    HEADERS DenseMatrix.hh DenseVector.hh
                            DG_Modal.hh
                            lapack.hh
@@ -77,7 +76,6 @@ add_amanzi_library(whetstone
                            MeshMaps_FEM.hh MeshMaps_VEM.hh
                            CoordinateSystems.hh
                            Polynomial.hh VectorPolynomial.hh PolynomialOnMesh.hh
-                           Projector.hh
                            Tensor.hh
                            WhetStoneDefs.hh
                            WhetStone_typedefs.hh

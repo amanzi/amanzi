@@ -64,6 +64,28 @@ class MFD3D_CrouzeixRaviart : public virtual MFD3D {
     }
   }
 
+  // -- projectors
+  virtual void H1Cell(
+      int c, const std::vector<VectorPolynomial>& vf,
+      const std::shared_ptr<DenseVector>& moments, VectorPolynomial& uc) override {
+    ProjectorCell_HO_(c, vf, Type::H1, false, moments, uc);
+  }
+
+  // harmonic projector calculates and returns cell-moments
+  void H1CellHarmonic(
+      int c, const std::vector<VectorPolynomial>& vf,
+      const std::shared_ptr<DenseVector>& moments, VectorPolynomial& uc) {
+    if (order_ == 1) {
+      ProjectorCell_LO_(c, vf, uc);
+    } else {
+      ProjectorCell_HO_(c, vf, Type::H1, true, moments, uc);
+    }
+  }
+
+  void H1FaceHarmonic(
+      int f, const AmanziGeometry::Point& p0,
+      const std::vector<VectorPolynomial>& ve, VectorPolynomial& uf) const;
+
   // high-order methods
   int H1consistencyHO(int c, int order, const Tensor& T,
                       DenseMatrix& N, DenseMatrix& R, DenseMatrix& G, DenseMatrix& Ac);
@@ -81,6 +103,15 @@ class MFD3D_CrouzeixRaviart : public virtual MFD3D {
   // efficient implementation of low-order methods
   int H1consistencyLO_(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Ac);
   int StiffnessMatrixLO_(int c, const Tensor& T, DenseMatrix& A);
+
+  // simple implementation of low-order elliptic projectors
+  void ProjectorCell_LO_(
+      int c, const std::vector<VectorPolynomial>& vf, VectorPolynomial& uc);
+
+  void ProjectorCell_HO_(
+      int c, const std::vector<VectorPolynomial>& vf,
+      const Projectors::Type type, bool is_harmonic,
+      const std::shared_ptr<DenseVector>& moments, VectorPolynomial& uc);
 
  private:
   int order_;

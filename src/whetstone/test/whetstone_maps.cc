@@ -25,9 +25,11 @@
 #include "DenseMatrix.hh"
 #include "DG_Modal.hh"
 #include "MeshMaps_VEM.hh"
+#include "MFD3D_CrouzeixRaviart.hh"
+#include "MFD3D_Lagrange.hh"
+#include "MFD3D_LagrangeSerendipity.hh"
 #include "NumericalIntegration.hh"
 #include "Polynomial.hh"
-#include "Projector.hh"
 
 
 /* ****************************************************************
@@ -71,12 +73,11 @@ TEST(DG_MAP_DETERMINANT_CELL) {
     maps->VelocityFace(f, vf[f]);
   }
 
-    // cell-baced velocities and Jacobian matrices
+  // cell-baced velocities and Jacobian matrices
   // test piecewise linear deformation (part II)
   Polynomial det;
   VectorPolynomial uc;
   MatrixPolynomial J;
-  Projector projector(mesh0);
 
   auto moments = std::make_shared<WhetStone::DenseVector>();
   auto numi = std::make_shared<NumericalIntegration>(mesh0);
@@ -86,16 +87,24 @@ TEST(DG_MAP_DETERMINANT_CELL) {
     double fac(0.5), volume = mesh1->cell_volume(cell);
     for (int k = 1; k < 6; ++k) {
       if (name == "HarmonicCRk") {
-        projector.HarmonicCell_CRk(cell, k, vf, moments, uc);
+        MFD3D_CrouzeixRaviart mfd(mesh0);
+        mfd.set_order(k);
+        mfd.H1CellHarmonic(cell, vf, moments, uc);
       } else if (name == "L2HarmonicPk") {
         if (k > 2) continue;
-        projector.L2HarmonicCell_Pk(cell, k, vf, moments, uc);
+        MFD3D_Lagrange mfd(mesh0);
+        mfd.set_order(k);
+        mfd.L2CellHarmonic(cell, vf, moments, uc);
       } else if (name == "SerendipityPk") {
         if (k > 3) continue;
-        projector.L2Cell_SerendipityPk(cell, k, vf, moments, uc);
+        MFD3D_LagrangeSerendipity mfd(mesh0);
+        mfd.set_order(k);
+        mfd.L2Cell(cell, vf, moments, uc);
       } else if (name == "HarmonicPk") {
         if (k > 3) continue;
-        projector.HarmonicCell_Pk(cell, k, vf, moments, uc);
+        MFD3D_Lagrange mfd(mesh0);
+        mfd.set_order(k);
+        mfd.H1CellHarmonic(cell, vf, moments, uc);
       }
       maps->Jacobian(uc, J);
       maps->Determinant(1.0, J, det);

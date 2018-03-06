@@ -53,6 +53,34 @@ class MFD3D_Lagrange : public virtual MFD3D {
   virtual int H1consistency(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Ac) override;
   virtual int StiffnessMatrix(int c, const Tensor& T, DenseMatrix& A) override;
 
+  // -- projectors
+  virtual void L2Cell(
+      int c, const std::vector<VectorPolynomial>& vf,
+      const std::shared_ptr<DenseVector>& moments, VectorPolynomial& uc) override {
+    ProjectorCell_(c, vf, Type::L2, false, moments, uc);
+  }
+
+  virtual void H1Cell(
+      int c, const std::vector<VectorPolynomial>& vf,
+      const std::shared_ptr<DenseVector>& moments, VectorPolynomial& uc) override {
+    ProjectorCell_(c, vf, Type::H1, false, moments, uc);
+  }
+
+  // L2 projector that calculates and returns cell moments
+  void L2CellHarmonic(
+      int c, const std::vector<VectorPolynomial>& vf,
+      const std::shared_ptr<DenseVector>& moments, VectorPolynomial& uc) {
+    ProjectorCell_(c, vf, Type::L2, true, moments, uc);
+  }
+
+  // harmonic projector calculates and returns cell-moments
+  void H1CellHarmonic(
+      int c, const std::vector<VectorPolynomial>& vf,
+      const std::shared_ptr<DenseVector>& moments, VectorPolynomial& uc) {
+    ProjectorCell_(c, vf, Type::H1, true, moments, uc);
+  }
+
+  // -- L2 projector that calculates and returns cell moments
   // miscalleneous
   void set_order(int order) { order_ = order; }
 
@@ -64,6 +92,12 @@ class MFD3D_Lagrange : public virtual MFD3D {
   // -- matrices that could be resused in other code
   const DenseMatrix& G() const { return G_; }
   const DenseMatrix& R() const { return R_; }
+
+ private:
+  void ProjectorCell_(
+      int c, const std::vector<VectorPolynomial>& vf,
+      const Projectors::Type type, bool is_harmonic,
+      const std::shared_ptr<DenseVector>& moments, VectorPolynomial& uc);
 
  protected:
   int order_;

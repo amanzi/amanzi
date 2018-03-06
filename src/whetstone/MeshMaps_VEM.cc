@@ -17,6 +17,7 @@
 
 #include "DenseMatrix.hh"
 #include "MeshMaps_VEM.hh"
+#include "MFD3D_CrouzeixRaviart.hh"
 #include "Polynomial.hh"
 
 namespace Amanzi {
@@ -31,16 +32,19 @@ void MeshMaps_VEM::VelocityCell(
   auto moments = std::make_shared<DenseVector>();
 
   // LeastSquareProjector_Cell_(order_, c, vf, vc);
+
+  // MFD3D_Lagrange mfd(mesh_);
+  MFD3D_CrouzeixRaviart mfd(mesh0_);
+  mfd.set_order(order_);
+
   if (order_ == 1 && d_ == 3) {
-    projector_.HarmonicCell_CR1(c, vf, vc);
+    mfd.H1CellHarmonic(c, vf, moments, vc);
   } else if (order_ < 2) {
-    // projector.HarmonicCell_Pk(c, 1, vf, moments, vc);
-    projector_.HarmonicCell_CR1(c, vf, vc);
+    mfd.H1CellHarmonic(c, vf, moments, vc);
   } else {
-    // projector_.L2Cell_SerendipityPk(c, order_, vf, moments, vc);
-    // projector_.L2HarmonicCell_Pk(c, order_, vf, moments, vc);
-    // projector_.HarmonicCell_Pk(c, order_, vf, moments, vc);
-    projector_.HarmonicCell_CRk(c, order_, vf, moments, vc);
+    // mfd.L2Cell(c, order_, vf, moments, vc);
+    // mfd.L2CellHarmonic(c, order_, vf, moments, vc);
+    mfd.H1CellHarmonic(c, vf, moments, vc);
   }
 }
 
@@ -68,8 +72,11 @@ void MeshMaps_VEM::VelocityFace(int f, VectorPolynomial& vf) const
       ve.push_back(v);
     }
 
+    MFD3D_CrouzeixRaviart mfd(mesh0_);
+    mfd.set_order(order_);
+
     AmanziGeometry::Point p0(mesh1_->face_centroid(f) - mesh0_->face_centroid(f));
-    projector_.HarmonicFace_CR1(f, p0, ve, vf);
+    mfd.H1FaceHarmonic(f, p0, ve, vf);
   }
 }
 
