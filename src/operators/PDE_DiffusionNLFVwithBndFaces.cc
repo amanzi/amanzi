@@ -541,25 +541,18 @@ void PDE_DiffusionNLFVwithBndFaces::OneSidedFluxCorrections_(
 
           tmp = weight[i + k2][f] * gamma;
           sideflux += tmp * (uc[0][c] - uc[0][c3]);
-        // } else {          
-        //   const AmanziGeometry::Point& normal = mesh_->face_normal(f1, false, c, &dir);
-        //    int bf = mesh_->exterior_face_map(false).LID(mesh_->face_map(false).GID(f1));
-        //    if (bc_model[f1] == OPERATOR_BC_DIRICHLET) {
-        //      tmp = weight[i + k2][f];
-        //      sideflux = tmp *(uc[0][c] - - MapBoundaryValue_(f1, bc_value[f1]));
-        //    } else if (bc_model[f1] == OPERATOR_BC_NEUMANN) {
-        //      tmp = weight[i + k2][f];
-        //      neumann_flux += tmp * bc_value[f1] * mesh_->face_area(f1);
-        //      //sideflux = tmp *(uc[0][c] - ubnd[0][bf]);
-        //    }
-        // }
         } else if (bc_model[f1] == OPERATOR_BC_DIRICHLET) {
           tmp = weight[i + k2][f];
+          int bf = mesh_->exterior_face_map(false).LID(mesh_->face_map(false).GID(f1));
           const AmanziGeometry::Point& normal = mesh_->face_normal(f1, false, c, &dir);
-          sideflux += tmp * (uc[0][c] - MapBoundaryValue_(f1, bc_value[f1])) * dir;
+          //sideflux += tmp * (uc[0][c] - MapBoundaryValue_(f1, bc_value[f1])) * dir;
+          sideflux += tmp * (uc[0][c] - ubnd[0][bf] ) * dir;
         } else if (bc_model[f1] == OPERATOR_BC_NEUMANN) {
           tmp = weight[i + k2][f];
-          neumann_flux += tmp * bc_value[f1] * mesh_->face_area(f1);
+          int bf = mesh_->exterior_face_map(false).LID(mesh_->face_map(false).GID(f1));
+          //neumann_flux += tmp * bc_value[f1] * mesh_->face_area(f1);
+          //std::cout<<"face cor"<<f1<<" "<<uc[0][c]<<" "<<ubnd[0][bf]<<" "<<(uc[0][c] - ubnd[0][bf])<<" "<<bc_value[f1] * mesh_->face_area(f1)<<"\n";
+          neumann_flux += tmp * (uc[0][c] - ubnd[0][bf]);
         } 
       }
 
@@ -623,9 +616,15 @@ void PDE_DiffusionNLFVwithBndFaces::OneSidedWeightFluxes_(
         //   }
         // }
         } else if (bc_model[f1] == OPERATOR_BC_DIRICHLET) {
-          sideflux += flux_data[i + k2][f] * (uc[0][c] - MapBoundaryValue_(f1, bc_value[f1])); 
+          int bf = mesh_->exterior_face_map(false).LID(mesh_->face_map(false).GID(f1));
+          // sideflux += flux_data[i + k2][f] * (uc[0][c] - MapBoundaryValue_(f1, bc_value[f1]));
+          sideflux += flux_data[i + k2][f] * (uc[0][c] - ubnd[0][bf]);
         } else if (bc_model[f1] == OPERATOR_BC_NEUMANN) {
-          neumann_flux += flux_data[i + k2][f] * bc_value[f1] * mesh_->face_area(f1);
+          //neumann_flux += flux_data[i + k2][f] * bc_value[f1] * mesh_->face_area(f1);
+          int bf = mesh_->exterior_face_map(false).LID(mesh_->face_map(false).GID(f1));
+          //std::cout << flux_data[i + k2][f] <<" "<<bc_value[f1] * mesh_->face_area(f1)<<" "<<(uc[0][c] - ubnd[0][bf])<<"\n";
+          //std::cout<<"face wgt"<<f1<<" "<<uc[0][c]<<" "<<ubnd[0][bf]<<" "<<(uc[0][c] - ubnd[0][bf])<<" "<<bc_value[f1] * mesh_->face_area(f1)<<"\n";
+          sideflux += flux_data[i + k2][f] * (uc[0][c] - ubnd[0][bf]);
         }
       }
       flux[k1][f] = sideflux + neumann_flux;     
@@ -678,7 +677,7 @@ void PDE_DiffusionNLFVwithBndFaces::ApplyBCs(bool primary, bool eliminate)
       
       }
     }
-    double kf = (k_face.get() ? (*k_face)[0][f] : 1.0);
+    // double kf = (k_face.get() ? (*k_face)[0][f] : 1.0);
     // std::cout<<"face "<<f<<" "<<bc_model[f]<<" kf "<<kf<<"\n";
     // std::cout<<local_op_->matrices[f]<<"\n";
   }
@@ -717,12 +716,15 @@ void PDE_DiffusionNLFVwithBndFaces::UpdateFlux(const Teuchos::Ptr<const Composit
   int f_bad=0;
 
   for (int f = 0; f < nfaces_owned; ++f) {
-    if (bc_model[f] == OPERATOR_BC_DIRICHLET) {
+    if ((bc_model[f] == OPERATOR_BC_DIRICHLET)|| (bc_model[f] == OPERATOR_BC_NEUMANN)) {
       mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
       const AmanziGeometry::Point& normal = mesh_->face_normal(f, false, cells[0], &dir);
       flux_data[0][f] = wgt_sideflux[0][f]*dir;     
-    } else if (bc_model[f] == OPERATOR_BC_NEUMANN) {
-      flux_data[0][f] = bc_value[f] * mesh_->face_area(f);
+    // } else if (bc_model[f] == OPERATOR_BC_NEUMANN) {
+    //   //flux_data[0][f] = bc_value[f] * mesh_->face_area(f);
+    //   mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+    //   const AmanziGeometry::Point& normal = mesh_->face_normal(f, false, cells[0], &dir);
+    //   flux_data[0][f] = wgt_sideflux[0][f]*dir;     
     } else if (bc_model[f] == OPERATOR_BC_NONE) {
       mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
       OrderCellsByGlobalId_(cells, c1, c2);

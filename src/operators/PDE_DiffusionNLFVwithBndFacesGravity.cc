@@ -32,12 +32,23 @@ void PDE_DiffusionNLFVwithBndFacesGravity::UpdateMatrices(
   // affine map of u. It is equivalent to calculating hydraulic head.
   Teuchos::RCP<CompositeVector> hh = Teuchos::rcp(new CompositeVector(*u));
   Epetra_MultiVector& hh_c = *hh->ViewComponent("cell");
+  Epetra_MultiVector& hh_bnd = *hh->ViewComponent("boundary_face");
   const Epetra_MultiVector& u_c = *u->ViewComponent("cell");
+  const Epetra_MultiVector& u_bnd = *u->ViewComponent("boundary_face");
 
   for (int c = 0; c < ncells_owned; ++c) {
     double rho_g = GetDensity(c) * fabs(g_[dim_ - 1]);
     double zc = (mesh_->cell_centroid(c))[dim_ - 1];
     hh_c[0][c] = u_c[0][c] + rho_g * zc;
+    AmanziMesh::Entity_ID_List faces;
+    mesh_->cell_get_faces(c, &faces);
+    for (auto f : faces){
+      int bf = mesh_->exterior_face_map(false).LID(mesh_->face_map(false).GID(f));
+      if (bf >= 0){
+        double zf = (mesh_->face_centroid(f))[dim_ - 1];
+        hh_bnd[0][bf] = u_bnd[0][bf] + rho_g*zf;
+      }
+    }
   }
 
   PDE_DiffusionNLFVwithBndFaces::UpdateMatrices(flux, hh.ptr());
@@ -140,15 +151,15 @@ void PDE_DiffusionNLFVwithBndFacesGravity::UpdateFlux(const Teuchos::Ptr<const C
 /* ******************************************************************
 * BCs are typically given in base system and must be re-mapped.
 * **************************************************************** */
-double PDE_DiffusionNLFVwithBndFacesGravity::MapBoundaryValue_(int f, double u)
-{
-  AmanziMesh::Entity_ID_List cells;  
-  mesh_->face_get_cells(f, AmanziMesh::USED, &cells);  
-  double rho_g = GetDensity(cells[0]) * fabs(g_[dim_ - 1]);
+// double PDE_DiffusionNLFVwithBndFacesGravity::MapBoundaryValue_(int f, double u)
+// {
+//   AmanziMesh::Entity_ID_List cells;  
+//   mesh_->face_get_cells(f, AmanziMesh::USED, &cells);  
+//   double rho_g = GetDensity(cells[0]) * fabs(g_[dim_ - 1]);
 
-  double zf = (mesh_->face_centroid(f))[dim_ - 1];
-  return u + rho_g * zf; 
-}
+//   double zf = (mesh_->face_centroid(f))[dim_ - 1];
+//   return u + rho_g * zf; 
+// }
 
 }  // namespace Operators
 }  // namespace Amanzi

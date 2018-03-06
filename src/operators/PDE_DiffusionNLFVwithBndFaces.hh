@@ -100,7 +100,7 @@ class PDE_DiffusionNLFVwithBndFaces : public virtual PDE_Diffusion {
   virtual void InitDiffusion_(Teuchos::ParameterList& plist);
   // -- solution can be modified on boundary faces. This reflects specifics
   //    of nonlinear FV schemes, see implementation in the derived classes.
-  virtual double MapBoundaryValue_(int f, double u) { return u; }
+  // virtual double MapBoundaryValue_(int f, double u) { return u; }
 
  protected:
   void InitStencils_();

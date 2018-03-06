@@ -138,7 +138,7 @@ class PDE_DiffusionNLFVwithBndFacesGravity : public PDE_DiffusionNLFVwithBndFace
   // virtual members from the base NLFV class
   // -- solution can be modified on boundary faces. This reflects specifics
   //    of nonlinear FV schemes.
-  virtual double MapBoundaryValue_(int f, double u) override;
+  // virtual double MapBoundaryValue_(int f, double u) override;
 };
 
 }  // namespace Operators

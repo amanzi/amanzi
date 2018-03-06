@@ -124,7 +124,7 @@ void RunTestDiffusionNLFV_DMP(double gravity, bool testing) {
 
   // populate the diffusion operator
   op->Setup(K, Teuchos::null, Teuchos::null);
-  for (int loop = 0; loop < 9; ++loop) {
+  for (int loop = 0; loop < 12; ++loop) {
     global_op->Init();
     op->UpdateMatrices(Teuchos::null, solution.ptr());
 
@@ -280,7 +280,7 @@ void RunTestDiffusionNLFVwithBndFaces_DMP(double gravity, bool testing) {
 
   // populate the diffusion operator
   op->Setup(K, Teuchos::null, Teuchos::null);
-  for (int loop = 0; loop < 9; ++loop) {
+  for (int loop = 0; loop < 12; ++loop) {
     global_op->Init();
     op->UpdateMatrices(Teuchos::null, solution.ptr());
     // get and assmeble the global operator
@@ -339,7 +339,7 @@ void RunTestDiffusionNLFVwithBndFaces_DMP(double gravity, bool testing) {
           solver.num_itrs(), solver.residual(), solver.returned_code());
 
       if (testing) {
-        double factor = std::pow(1.6, loop);
+        double factor = 0.5*std::pow(1.6, loop);
         CHECK(pl2_err < 0.2 / factor && ul2_err < 0.4 / factor);
       }
       CHECK(solver.num_itrs() < 15);
