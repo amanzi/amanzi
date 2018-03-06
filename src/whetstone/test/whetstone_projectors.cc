@@ -174,20 +174,24 @@ TEST(HARMONIC_PROJECTORS_POLYGON_CR) {
     }
   }
   
-  // -- old scheme
-  Projector projector(mesh);
+  MFD3D_CrouzeixRaviart mfd(mesh);
   auto moments = std::make_shared<WhetStone::DenseVector>();
 
-  projector.HarmonicCell_CR1(cell, vf, uc);
+  /*
+  // -- old scheme
+  mfd.set_order(1);
+  mfd.H1CellHarmonic(cell, vf, moments, uc);
   std::cout << uc[0] << std::endl;
 
   uc[0] -= vf[0][0];
   uc[1] -= vf[0][1];
   CHECK(uc[0].NormMax() < 1e-12 && uc[1].NormMax() < 1e-12);
+  */
 
   // -- new scheme (k=1)
   for (int k = 1; k < 4; ++k) {
-    projector.HarmonicCell_CRk(cell, k, vf, moments, uc);
+    mfd.set_order(k);
+    mfd.H1CellHarmonic(cell, vf, moments, uc);
     std::cout << uc[0] << std::endl;
 
     uc[0] -= vf[0][0];
@@ -207,7 +211,8 @@ TEST(HARMONIC_PROJECTORS_POLYGON_CR) {
   }
 
   for (int k = 2; k < 4; ++k) {
-    projector.HarmonicCell_CRk(cell, k, vf, moments, uc);
+    mfd.set_order(k);
+    mfd.H1CellHarmonic(cell, vf, moments, uc);
     std::cout << uc[0] << std::endl;
     uc[0] -= vf[0][0];
     uc[1] -= vf[0][1];
@@ -227,7 +232,8 @@ TEST(HARMONIC_PROJECTORS_POLYGON_CR) {
   }
 
   for (int k = 3; k < 4; ++k) {
-    projector.HarmonicCell_CRk(cell, k, vf, moments, uc);
+    mfd.set_order(k);
+    mfd.H1CellHarmonic(cell, vf, moments, uc);
     std::cout << vf[0][0] << std::endl;
     std::cout << uc[0] << std::endl;
     uc[0] -= vf[0][0];
@@ -245,7 +251,8 @@ TEST(HARMONIC_PROJECTORS_POLYGON_CR) {
       vf[n][i](2, 2) = 6.0;
     }
   }
-  projector.HarmonicCell_CRk(cell, 2, vf, moments, uc);
+  mfd.set_order(2);
+  mfd.H1CellHarmonic(cell, vf, moments, uc);
   std::cout << uc[0] << std::endl;
 
   int dir;
@@ -283,7 +290,8 @@ TEST(HARMONIC_PROJECTORS_POLYGON_CR) {
       (*moments)(i) = 1.0 + i;
     }
 
-    projector.H1Cell_CRk(cell, k, vf, moments, uc);
+    mfd.set_order(k);
+    mfd.H1Cell(cell, vf, moments, uc);
 
     for (auto it = vc.begin(); it.end() <= vc.end(); ++it) {
       Polynomial mono(2, it.multi_index(), 1.0);
@@ -330,8 +338,8 @@ TEST(HARMONIC_PROJECTORS_SQUARE_PK) {
     }
   }
 
-  Projector projector(mesh);
   MFD3D_Lagrange mfd(mesh);
+  MFD3D_CrouzeixRaviart mfd_cr(mesh);
   auto moments = std::make_shared<WhetStone::DenseVector>();
 
   // test linear deformation
@@ -365,7 +373,9 @@ TEST(HARMONIC_PROJECTORS_SQUARE_PK) {
   for (int k = 1; k < 3; ++k) { 
     mfd.set_order(k);
     mfd.H1CellHarmonic(cell, vf, moments, uc);  
-    projector.HarmonicCell_CRk(cell, k, vf, moments, uc2);
+
+    mfd_cr.set_order(k);
+    mfd_cr.H1CellHarmonic(cell, vf, moments, uc2);
     for (int i = 0; i < 2; ++i) {
       uc2[i] -= uc[i];
       CHECK(uc2[i].NormMax() < 1e-12);
@@ -405,7 +415,7 @@ TEST(HARMONIC_PROJECTORS_POLYGON_PK) {
   std::vector<VectorPolynomial> vf(nfaces);
 
   MFD3D_Lagrange mfd(mesh);
-  Projector projector(mesh);
+  MFD3D_CrouzeixRaviart mfd_cr(mesh);
   auto moments = std::make_shared<WhetStone::DenseVector>();
 
   // test globally linear deformation
@@ -516,7 +526,9 @@ TEST(HARMONIC_PROJECTORS_POLYGON_PK) {
   for (int k = 1; k < 4; ++k) {
     mfd.set_order(k);
     mfd.H1CellHarmonic(cell, vf, moments, uc);
-    projector.HarmonicCell_CRk(cell, k, vf, moments, uc2);
+
+    mfd_cr.set_order(k);
+    mfd_cr.H1CellHarmonic(cell, vf, moments, uc2);
     uc2 -= uc;
     if (k == 1) CHECK(uc2[0].NormMax() < 1e-12);
     if (k == 2) CHECK(uc2[0].NormMax() > 1e-3 && uc2[0].NormMax() < 2e-3);
