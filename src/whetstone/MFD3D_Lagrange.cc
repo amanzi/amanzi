@@ -202,6 +202,8 @@ int MFD3D_Lagrange::H1consistency(
     // N and R: degrees of freedom in cells
     if (cmono.order() > 1) {
       Polynomial tmp = cmono.Laplacian();
+      numi.ChangeBasisRegularToNatural(c, tmp);
+
       for (auto jt = tmp.begin(); jt.end() <= tmp.end(); ++jt) {
         int m = jt.MonomialOrder();
         int k = jt.MonomialPosition();
@@ -223,11 +225,8 @@ int MFD3D_Lagrange::H1consistency(
           nm += multi_index[i];
         }
 
-        // FIXME: use naturally scaled monomials for internal DOF
-        double s = numi.MonomialNaturalScale(jt.MonomialOrder(), volume);
-
         const auto& coefs = integrals_.poly().monomials(nm).coefs();
-        N(row + n, col) = coefs[poly.MonomialPosition(multi_index)] / (volume * s); 
+        N(row + n, col) = coefs[poly.MonomialPosition(multi_index)] / volume; 
       }
     }
   }

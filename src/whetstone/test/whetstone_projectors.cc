@@ -177,7 +177,6 @@ TEST(HARMONIC_PROJECTORS_POLYGON_CR) {
   MFD3D_CrouzeixRaviart mfd(mesh);
   auto moments = std::make_shared<WhetStone::DenseVector>();
 
-  /*
   // -- old scheme
   mfd.set_order(1);
   mfd.H1CellHarmonic(cell, vf, moments, uc);
@@ -186,9 +185,9 @@ TEST(HARMONIC_PROJECTORS_POLYGON_CR) {
   uc[0] -= vf[0][0];
   uc[1] -= vf[0][1];
   CHECK(uc[0].NormMax() < 1e-12 && uc[1].NormMax() < 1e-12);
-  */
 
   // -- new scheme (k=1)
+  mfd.set_use_always_ho(true);
   for (int k = 1; k < 4; ++k) {
     mfd.set_order(k);
     mfd.H1CellHarmonic(cell, vf, moments, uc);
@@ -307,6 +306,51 @@ TEST(HARMONIC_PROJECTORS_POLYGON_CR) {
       if (n >= 1) CHECK(fabs(val - (1.0 + n)) > 0.05);
     }
   }
+
+  delete comm;
+}
+
+
+/* **************************************************************** */
+TEST(PROJECTORS_SQUARE_CR) {
+  using namespace Amanzi;
+  using namespace Amanzi::AmanziMesh;
+  using namespace Amanzi::WhetStone;
+
+  std::cout << "\nTest: HO nonconforming projectors for square (cubic deformation)" << std::endl;
+  Epetra_MpiComm *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
+
+  MeshFactory meshfactory(comm);
+  meshfactory.preference(FrameworkPreference({MSTK}));
+  Teuchos::RCP<const Amanzi::AmanziGeometry::GeometricModel> gm;
+  Teuchos::RCP<Mesh> mesh = meshfactory(0.0, 0.0, 2.0, 2.0, 1, 1, gm, true, true); 
+ 
+  int cell(0);
+  VectorPolynomial uc;
+  std::vector<VectorPolynomial> vf(4);
+
+  // test zero cell deformation
+  for (int n = 0; n < 4; ++n) {
+    vf[n].resize(2);
+    for (int i = 0; i < 2; ++i) {
+      vf[n][i].Reshape(2, 4, true);
+      vf[n][i].set_origin(mesh->cell_centroid(cell));
+      vf[n][i](4, 1) = 1.0;
+      vf[n][i].ChangeOrigin(AmanziGeometry::Point(0.0, 0.0));
+    }
+  }
+
+  MFD3D_CrouzeixRaviart mfd(mesh);
+  auto moments = std::make_shared<WhetStone::DenseVector>(6);
+  moments->PutScalar(0.0);
+  (*moments)(4) = 1.0 / 60;
+
+  mfd.set_order(4);
+  mfd.H1Cell(cell, vf, moments, uc);
+  std::cout << uc[0] << std::endl;
+
+  uc[0] -= vf[0][0];
+  CHECK(uc[0].NormMax() < 1e-12);
 
   delete comm;
 }

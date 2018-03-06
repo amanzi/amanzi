@@ -142,8 +142,8 @@ int MFD3D_CrouzeixRaviart::H1consistencyHO_(
 
   // pre-calculate integrals of monomials 
   NumericalIntegration numi(mesh_);
-  integrals_.Reshape(d_, 2 * order_ - 2, true);
 
+  integrals_.Reshape(d_, 2 * order_ - 2, true);
   for (int k = 0; k <= 2 * order_ - 2; ++k) {
     numi.IntegrateMonomialsCell(c, integrals_.monomials(k));
   }
@@ -206,6 +206,8 @@ int MFD3D_CrouzeixRaviart::H1consistencyHO_(
     // N and R: degrees of freedom in cells
     if (cmono.order() > 1) {
       Polynomial tmp = cmono.Laplacian();
+      numi.ChangeBasisRegularToNatural(c, tmp);
+
       for (auto jt = tmp.begin(); jt.end() <= tmp.end(); ++jt) {
         int m = jt.MonomialOrder();
         int k = jt.MonomialPosition();
@@ -227,11 +229,8 @@ int MFD3D_CrouzeixRaviart::H1consistencyHO_(
           nm += multi_index[i];
         }
 
-        // FIXME: use naturally scaled monomials for internal DOF
-        double s = numi.MonomialNaturalScale(jt.MonomialOrder(), volume);
-
         const auto& coefs = integrals_.monomials(nm).coefs();
-        N(row + n, col) = coefs[poly.MonomialPosition(multi_index)] / (volume * s); 
+        N(row + n, col) = coefs[poly.MonomialPosition(multi_index)] / volume; 
       }
     }
   }
@@ -241,7 +240,7 @@ int MFD3D_CrouzeixRaviart::H1consistencyHO_(
 
   // -- gradient of a naturally scaled polynomial needs correction
   double scale = numi.MonomialNaturalScale(1, volume);
-   
+
   for (auto it = poly.begin(); it.end() <= poly.end(); ++it) {
     const int* index = it.multi_index();
     int k = it.PolynomialPosition();
