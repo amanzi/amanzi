@@ -755,7 +755,7 @@ void Alquimia_PK::CopyFromAlquimia(const int cell,
 
   for (int i = 0; i < number_aqueous_components_; ++i) {
 
-    if (mat_props.saturation > 1e-10){
+    if (mat_props.saturation > sat_tol_){
       (*aqueous_components)[i][cell] = state.total_mobile.data[i] ;
     }else{
       (*aqueous_components)[i][cell] = 0.;
@@ -846,7 +846,7 @@ int Alquimia_PK::AdvanceSingleCell(
   // this cell to Alquimia.
 
   const Epetra_MultiVector ws = *S_->GetFieldData(saturation_key_)->ViewComponent("cell");
-  if (ws[0][cell]<1e-10) return 1;
+  if (ws[0][cell] < sat_tol_) return 1;
   
   CopyToAlquimia(cell, aqueous_components, 
                  alq_mat_props_, alq_state_, alq_aux_data_);
