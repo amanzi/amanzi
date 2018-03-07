@@ -18,6 +18,7 @@
 #include "DenseMatrix.hh"
 #include "MeshMaps_VEM.hh"
 #include "MFD3D_CrouzeixRaviart.hh"
+#include "MFD3D_Lagrange.hh"
 #include "Polynomial.hh"
 
 namespace Amanzi {
@@ -33,7 +34,7 @@ void MeshMaps_VEM::VelocityCell(
 
   // LeastSquareProjector_Cell_(order_, c, vf, vc);
 
-  // MFD3D_Lagrange mfd(mesh_);
+  // MFD3D_Lagrange mfd(mesh0_);
   MFD3D_CrouzeixRaviart mfd(mesh0_);
   mfd.set_order(order_);
 
@@ -43,8 +44,8 @@ void MeshMaps_VEM::VelocityCell(
     mfd.H1CellHarmonic(c, vf, moments, vc);
   } else {
     // mfd.L2Cell(c, order_, vf, moments, vc);
-    // mfd.L2CellHarmonic(c, order_, vf, moments, vc);
-    mfd.H1CellHarmonic(c, vf, moments, vc);
+    mfd.L2CellHarmonic(c, vf, moments, vc);
+    // mfd.H1CellHarmonic(c, vf, moments, vc);
   }
 }
 

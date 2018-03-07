@@ -24,6 +24,7 @@
 #include "DenseMatrix.hh"
 #include "MFD3D.hh"
 #include "Polynomial.hh"
+#include "PolynomialOnMesh.hh"
 #include "Tensor.hh"
 
 namespace Amanzi {
@@ -63,6 +64,12 @@ class MFD3D_CrouzeixRaviart : public virtual MFD3D {
   }
 
   // -- projectors
+  virtual void L2Cell(
+      int c, const std::vector<VectorPolynomial>& vf,
+      const std::shared_ptr<DenseVector>& moments, VectorPolynomial& uc) override {
+    ProjectorCell_HO_(c, vf, Type::L2, false, moments, uc);
+  }
+
   virtual void H1Cell(
       int c, const std::vector<VectorPolynomial>& vf,
       const std::shared_ptr<DenseVector>& moments, VectorPolynomial& uc) override {
@@ -70,6 +77,12 @@ class MFD3D_CrouzeixRaviart : public virtual MFD3D {
   }
 
   // harmonic projector calculates and returns cell-moments
+  void L2CellHarmonic(
+      int c, const std::vector<VectorPolynomial>& vf,
+      const std::shared_ptr<DenseVector>& moments, VectorPolynomial& uc) {
+    ProjectorCell_HO_(c, vf, Type::L2, true, moments, uc);
+  }
+
   void H1CellHarmonic(
       int c, const std::vector<VectorPolynomial>& vf,
       const std::shared_ptr<DenseVector>& moments, VectorPolynomial& uc) {
@@ -95,7 +108,7 @@ class MFD3D_CrouzeixRaviart : public virtual MFD3D {
   
   // access / setup
   // -- integrals of monomials in high-order schemes could be reused
-  const Polynomial& integrals() const { return integrals_; }
+  const PolynomialOnMesh& integrals() const { return integrals_; }
   const DenseMatrix& G() const { return G_; }
   const DenseMatrix& R() const { return R_; }
   // -- modify internal parameters
@@ -121,7 +134,7 @@ class MFD3D_CrouzeixRaviart : public virtual MFD3D {
 
  private:
   bool use_always_ho_;
-  Polynomial integrals_;
+  PolynomialOnMesh integrals_;
   DenseMatrix R_, G_;
 };
 

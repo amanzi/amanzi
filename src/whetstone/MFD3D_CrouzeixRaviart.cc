@@ -23,6 +23,7 @@
 
 // WhetStone
 #include "CoordinateSystems.hh"
+#include "DG_Modal.hh"
 #include "MFD3D_CrouzeixRaviart.hh"
 #include "NumericalIntegration.hh"
 #include "Tensor.hh"
@@ -142,11 +143,7 @@ int MFD3D_CrouzeixRaviart::H1consistencyHO_(
 
   // pre-calculate integrals of monomials 
   NumericalIntegration numi(mesh_);
-
-  integrals_.Reshape(d_, 2 * order_ - 2, true);
-  for (int k = 0; k <= 2 * order_ - 2; ++k) {
-    numi.IntegrateMonomialsCell(c, integrals_.monomials(k));
-  }
+  numi.UpdateMonomialIntegralsCell(c, 2 * order_ - 2, integrals_);
 
   // populate matrices N and R
   std::vector<AmanziGeometry::Point> tau(d_ - 1);
@@ -229,7 +226,7 @@ int MFD3D_CrouzeixRaviart::H1consistencyHO_(
           nm += multi_index[i];
         }
 
-        const auto& coefs = integrals_.monomials(nm).coefs();
+        const auto& coefs = integrals_.poly().monomials(nm).coefs();
         N(row + n, col) = coefs[poly.MonomialPosition(multi_index)] / volume; 
       }
     }
@@ -260,7 +257,7 @@ int MFD3D_CrouzeixRaviart::H1consistencyHO_(
       for (int i = 0; i < d_; ++i) {
         if (index[i] > 0 && jndex[i] > 0) {
           multi_index[i] -= 2;
-          const auto& coefs = integrals_.monomials(n - 2).coefs();
+          const auto& coefs = integrals_.poly().monomials(n - 2).coefs();
           tmp = coefs[poly.MonomialPosition(multi_index)]; 
           sum += tmp * index[i] * jndex[i];
           multi_index[i] += 2;
@@ -555,9 +552,38 @@ void MFD3D_CrouzeixRaviart::ProjectorCell_HO_(
 
       uc[i](0, 0) = a1 / a2;
     } else if (order_ >= 2) {
-      integrals_.GetPolynomialCoefficients(v4);
+      integrals_.poly().GetPolynomialCoefficients(v4);
       v4.Reshape(nd);
       uc[i](0, 0) = vdof(row) - (v4 * v5) / volume;
+    }
+
+    // calculate L2 projector
+    if (type == Type::L2 && ndof_c > 0) {
+      v5(0) = uc[i](0, 0);
+
+      DG_Modal dg(order_, mesh_);
+      dg.set_basis(TAYLOR_BASIS_NATURAL);
+
+      DenseMatrix M, M2;
+      DenseVector v6(nd - ndof_c);
+      dg.MassMatrix(c, T, integrals_, M);
+
+      M2 = M.SubMatrix(ndof_c, nd, 0, nd);
+      M2.Multiply(v5, v6, false);
+
+      for (int n = 0; n < ndof_c; ++n) {
+        v4(n) = (*moments)(n) * mesh_->cell_volume(c);
+      }
+
+      for (int n = 0; n < nd - ndof_c; ++n) {
+        v4(ndof_c + n) = v6(n);
+      }
+
+      M.Inverse();
+      M.Multiply(v4, v5, false);
+
+      uc[i].SetPolynomialCoefficients(v5);
+      numi.ChangeBasisNaturalToRegular(c, uc[i]);
     }
 
     // change origin from centroid to zero
