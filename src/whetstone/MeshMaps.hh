@@ -60,7 +60,9 @@ class MeshMaps {
   virtual void NansonFormula(int f, double t, const VectorPolynomial& vf,
                              VectorPolynomial& cn) const = 0;
 
-  // -- Jacobian
+  // -- Jacobian 
+  virtual void JacobianCell(int c, const std::vector<VectorPolynomial>& vf,
+                            MatrixPolynomial& J) const { ASSERT(0); }
   void Jacobian(const VectorPolynomial& vc, MatrixPolynomial& J) const;
 
   // -- matrix of cofactors

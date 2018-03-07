@@ -145,6 +145,20 @@ void MeshMaps_VEM::NansonFormula(
 
 
 /* ******************************************************************
+* Calculate mesh velocity in cell c: new algorithm
+****************************************************************** */
+void MeshMaps_VEM::JacobianCell(
+    int c, const std::vector<VectorPolynomial>& vf, MatrixPolynomial& J) const
+{
+  auto moments = std::make_shared<DenseVector>();
+  MFD3D_CrouzeixRaviart mfd(mesh0_);
+
+  mfd.set_order(order_);
+  mfd.L2GradientCellHarmonic(c, vf, moments, J);
+}
+
+
+/* ******************************************************************
 * Calculate Jacobian at point x of face f 
 * NOTE: limited to linear velocity FIXME
 ****************************************************************** */

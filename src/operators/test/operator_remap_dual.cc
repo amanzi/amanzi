@@ -79,6 +79,7 @@ class RemapDG : public Explicit_TI::fnBase<CompositeVector> {
 
       maps->VelocityCell(c, vvf, uc_[c]);
       maps->Jacobian(uc_[c], J_[c]);
+      // maps->JacobianCell(c, vvf, J_[c]);
     }
 
     velf_ = Teuchos::rcp(new std::vector<WhetStone::Polynomial>(nfaces_wghost_));

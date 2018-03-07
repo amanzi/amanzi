@@ -472,7 +472,7 @@ void MFD3D_CrouzeixRaviart::ProjectorCell_HO_(
 
   for (int i = 0; i < dim; ++i) {
     int row(0);
-    // degrees of freedom of faces
+    // degrees of freedom on faces
     for (int n = 0; n < nfaces; ++n) {
       int f = faces[n];
       CalculateFaceDOFs_(f, vf[n][i], pf, vdof, row);
@@ -672,19 +672,21 @@ void MFD3D_CrouzeixRaviart::ProjectorGradientCell_(
 
           polys[1] = &(vf[n][i]);
           double tmp = numi.IntegratePolynomialsFace(f, polys) / area;
-          v4(row) += tmp * normal[j] * dirs[j];
+          v4(row) += tmp * normal[j] * dirs[n];
         }
 
         // -- cell contribution
-        VectorPolynomial grad(d_, d_);
-        grad.Gradient(cmono);
-        numi.ChangeBasisRegularToNatural(c, grad[j]);
+        if (order_ > 1) {
+          VectorPolynomial grad(d_, d_);
+          grad.Gradient(cmono);
+          numi.ChangeBasisRegularToNatural(c, grad[j]);
 
-        for (auto jt = grad[j].begin(); jt.end() <= grad[j].end(); ++jt) {
-          int m = jt.MonomialOrder();
-          int k = jt.MonomialPosition();
-          int s = jt.PolynomialPosition();
-          v4(row) -= grad[j](m, k) * (*moments)(s) * volume;
+          for (auto jt = grad[j].begin(); jt.end() <= grad[j].end(); ++jt) {
+            int m = jt.MonomialOrder();
+            int k = jt.MonomialPosition();
+            int s = jt.PolynomialPosition();
+            v4(row) -= grad[j](m, k) * (*moments)(s) * volume;
+          }
         }
       }
 
@@ -709,7 +711,7 @@ void MFD3D_CrouzeixRaviart::ProjectorGradientCell_(
 }
 
 /* ******************************************************************
-* L2 projector of gradient on the space of polynomials of order k-1.
+* Degrees of freedom on face f.
 ****************************************************************** */
 void MFD3D_CrouzeixRaviart::CalculateFaceDOFs_(
     int f, const Polynomial& vf, const Polynomial& pf,

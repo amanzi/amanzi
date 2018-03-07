@@ -51,6 +51,10 @@ class MeshMaps_VEM : public MeshMaps {
   virtual void NansonFormula(int f, double t, const VectorPolynomial& vf,
                              VectorPolynomial& cn) const override;
 
+  // -- Jacobian
+  virtual void JacobianCell(int c, const std::vector<VectorPolynomial>& vf,
+                            MatrixPolynomial& J) const override;
+
   // access
   void set_order(int order) { order_ = order; }
 
