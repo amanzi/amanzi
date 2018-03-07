@@ -102,9 +102,7 @@ class MFD3D_CrouzeixRaviart : public virtual MFD3D {
   // -- L2 projector of gradient
   void L2GradientCellHarmonic(
       int c, const std::vector<VectorPolynomial>& vf,
-      const std::shared_ptr<DenseVector>& moments, VectorPolynomial& uc) {
-    ProjectorCell_HO_(c, vf, Type::H1, true, moments, uc);
-  }
+      const std::shared_ptr<DenseVector>& moments, MatrixPolynomial& uc);
   
   // access / setup
   // -- integrals of monomials in high-order schemes could be reused
@@ -131,6 +129,10 @@ class MFD3D_CrouzeixRaviart : public virtual MFD3D {
       int c, const std::vector<VectorPolynomial>& vf,
       const Projectors::Type type, bool is_harmonic,
       const std::shared_ptr<DenseVector>& moments, VectorPolynomial& uc);
+
+  // supporting routines
+  void CalculateFaceDOFs_(int f, const Polynomial& vf, const Polynomial& pf,
+                          DenseVector& vdof, int& row);
 
  private:
   bool use_always_ho_;

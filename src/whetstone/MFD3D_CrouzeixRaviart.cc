@@ -420,8 +420,7 @@ void MFD3D_CrouzeixRaviart::H1FaceHarmonic(
 
 
 /* ******************************************************************
-* Energy projector on space of polynomials of order k in cell c.
-* Uniqueness require to specify its value at cell centroid.
+* Generic projector on space of polynomials of order k in cell c.
 ****************************************************************** */
 void MFD3D_CrouzeixRaviart::ProjectorCell_HO_(
     int c, const std::vector<VectorPolynomial>& vf,
@@ -431,9 +430,7 @@ void MFD3D_CrouzeixRaviart::ProjectorCell_HO_(
   ASSERT(d_ == 2);
 
   Entity_ID_List faces;
-  std::vector<int> dirs;
-
-  mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+  mesh_->cell_get_faces(c, &faces);
   int nfaces = faces.size();
 
   const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
@@ -471,36 +468,17 @@ void MFD3D_CrouzeixRaviart::ProjectorCell_HO_(
 
   // calculate DOFs for boundary polynomial
   DenseVector vdof(ndof);
-  std::vector<const Polynomial*> polys(2);
-  std::vector<AmanziGeometry::Point> tau(d_ - 1);
   NumericalIntegration numi(mesh_);
 
   for (int i = 0; i < dim; ++i) {
     int row(0);
+    // degrees of freedom of faces
     for (int n = 0; n < nfaces; ++n) {
       int f = faces[n];
-      const AmanziGeometry::Point& xf = mesh_->face_centroid(f); 
-      double area = mesh_->face_area(f);
-
-      // local coordinate system with origin at face centroid
-      const AmanziGeometry::Point& normal = mesh_->face_normal(f);
-      FaceCoordinateSystem(normal, tau);
-
-      polys[0] = &(vf[n][i]);
-
-      for (auto it = pf.begin(); it.end() <= pf.end(); ++it) {
-        const int* index = it.multi_index();
-        Polynomial fmono(d_ - 1, index, 1.0);
-        fmono.InverseChangeCoordinates(xf, tau);  
-
-        polys[1] = &fmono;
-
-        vdof(row) = numi.IntegratePolynomialsFace(f, polys) / area;
-        row++;
-      }
+      CalculateFaceDOFs_(f, vf[n][i], pf, vdof, row);
     }
 
-    // harmonic extension inside cell
+    // degrees of freedom in cell
     if (ndof_c > 0 && is_harmonic) {
       DenseVector v1(ndof_f), v2(ndof_c), v3(ndof_c);
 
@@ -532,7 +510,7 @@ void MFD3D_CrouzeixRaviart::ProjectorCell_HO_(
     uc[i].SetPolynomialCoefficients(v5);
     numi.ChangeBasisNaturalToRegular(c, uc[i]);
 
-    // calculate the constant value
+    // uniqueness requires to specify constant in polynomial
     if (order_ == 1) {
       AmanziGeometry::Point grad(d_), zero(d_);
       for (int j = 0; j < d_; ++j) {
@@ -590,6 +568,144 @@ void MFD3D_CrouzeixRaviart::ProjectorCell_HO_(
     AmanziGeometry::Point zero(d_);
     uc[i].set_origin(xc);
     uc[i].ChangeOrigin(zero);
+  }
+}
+
+
+/* ******************************************************************
+* L2 projector of gradient on the space of polynomials of order k-1.
+****************************************************************** */
+void MFD3D_CrouzeixRaviart::L2GradientCellHarmonic(
+    int c, const std::vector<VectorPolynomial>& vf,
+    const std::shared_ptr<DenseVector>& moments, MatrixPolynomial& uc)
+{
+  ASSERT(d_ == 2);
+  bool is_harmonic(true);
+
+  Entity_ID_List faces;
+  mesh_->cell_get_faces(c, &faces);
+  int nfaces = faces.size();
+
+  const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
+  double volume = mesh_->cell_volume(c);
+
+  // calculate stiffness matrix
+  Tensor T(d_, 1);
+  DenseMatrix N, A;
+
+  T(0, 0) = 1.0;
+  StiffnessMatrixHO_(c, T, A);  
+
+  // number of degrees of freedom
+  Polynomial pf(d_ - 1, order_ - 1);
+  int nd = G_.NumRows();
+  int ndf = pf.size();
+  int ndof = A.NumRows();
+
+  int ndof_f(nfaces * ndf);
+  int ndof_c(ndof - ndof_f);
+
+  DenseMatrix Acf, Acc;
+  if (ndof_c > 0 && is_harmonic) {
+    Acf = A.SubMatrix(ndof_f, ndof, 0, ndof_f);
+    Acc = A.SubMatrix(ndof_f, ndof, ndof_f, ndof);
+    Acc.Inverse();
+  }
+  
+  // create zero vector polynomial
+  int dim = vf[0].size();
+  uc.resize(dim);
+  for (int i = 0; i < dim; ++i) { 
+    uc[i].resize(d_);
+    for (int j = 0; j < d_; ++j) { 
+      uc[i][j].Reshape(d_, order_ - 1, true);
+    }
+  }
+
+  // calculate DOFs for boundary polynomial
+  DenseVector vdof(ndof);
+  NumericalIntegration numi(mesh_);
+
+  for (int i = 0; i < dim; ++i) {
+    for (int j = 0; j < d_; ++j) {
+      int row(0);
+      // degrees of freedom of faces
+      for (int n = 0; n < nfaces; ++n) {
+        int f = faces[n];
+        CalculateFaceDOFs_(f, vf[n][i], pf, vdof, row);
+      }
+
+      // degrees of freedom in cell
+      if (ndof_c > 0 && is_harmonic) {
+        DenseVector v1(ndof_f), v2(ndof_c), v3(ndof_c);
+
+        for (int n = 0; n < ndof_f; ++n) {
+          v1(n) = vdof(n);
+        }
+
+        Acf.Multiply(v1, v2, false);
+        Acc.Multiply(v2, v3, false);
+
+        moments->Reshape(ndof_c);
+        for (int n = 0; n < ndof_c; ++n) {
+          vdof(row + n) = -v3(n);
+          (*moments)(n) = -v3(n);
+        }
+      }
+      else if (ndof_c > 0 && !is_harmonic) {
+        ASSERT(dim == 1);
+        ASSERT(ndof_c == moments->NumRows());
+        for (int n = 0; n < ndof_c; ++n) {
+          vdof(row + n) = (*moments)(n);
+        }
+      }
+
+      // calculate polynomial coefficients
+      DenseVector v4(nd), v5(nd);
+      R_.Multiply(vdof, v4, true);
+      G_.Multiply(v4, v5, false);
+
+      uc[i][j].SetPolynomialCoefficients(v5);
+      numi.ChangeBasisNaturalToRegular(c, uc[i][j]);
+
+      // change origin from centroid to zero
+      AmanziGeometry::Point zero(d_);
+      uc[i][j].set_origin(xc);
+      uc[i][j].ChangeOrigin(zero);
+    }
+  }
+}
+
+/* ******************************************************************
+* L2 projector of gradient on the space of polynomials of order k-1.
+****************************************************************** */
+void MFD3D_CrouzeixRaviart::CalculateFaceDOFs_(
+    int f, const Polynomial& vf, const Polynomial& pf,
+    DenseVector& vdof, int& row)
+{
+  std::vector<const Polynomial*> polys(2);
+  std::vector<AmanziGeometry::Point> tau(d_ - 1);
+
+  NumericalIntegration numi(mesh_);
+
+  const AmanziGeometry::Point& xf = mesh_->face_centroid(f); 
+  double area = mesh_->face_area(f);
+
+  // local coordinate system with origin at face centroid
+  const AmanziGeometry::Point& normal = mesh_->face_normal(f);
+  FaceCoordinateSystem(normal, tau);
+
+  polys[0] = &vf;
+
+  for (auto it = pf.begin(); it.end() <= pf.end(); ++it) {
+    const int* index = it.multi_index();
+    Polynomial fmono(d_ - 1, index, 1.0);
+    fmono.InverseChangeCoordinates(xf, tau);  
+
+    polys[1] = &fmono;
+
+    vdof(row) = numi.IntegratePolynomialsFace(f, polys) / area;
+    row++;
   }
 }
 
