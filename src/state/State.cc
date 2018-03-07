@@ -474,6 +474,7 @@ void State::WriteStatistics(Teuchos::RCP<VerboseObject>& vo) const {
 
     for (FieldMap::const_iterator f_it = fields_.begin(); f_it != fields_.end(); ++f_it) {
       std::string name(f_it->first);
+      if (f_it->second->initialized()) name= "+ " + name;          
       name.resize(35, '.');
 
       double vmin, vmax, vavg;

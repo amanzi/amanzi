@@ -754,13 +754,12 @@ void Alquimia_PK::CopyFromAlquimia(const int cell,
 
 
   for (int i = 0; i < number_aqueous_components_; ++i) {
-    (*aqueous_components)[i][cell] = state.total_mobile.data[i] ;
-    // if (convert2mole_fraction_){
-    //   if (S_->HasField(molar_fluid_den_key_)){
-    //     const Epetra_MultiVector& mol_dens = *S_->GetFieldData(molar_fluid_den_key_)->ViewComponent("cell", true);
-    //     (*aqueous_components)[i][cell] /= (mol_dens[0][cell] / 1000.);
-    //   }
-    // }
+
+    if (mat_props.saturation > 1e-10){
+      (*aqueous_components)[i][cell] = state.total_mobile.data[i] ;
+    }else{
+      (*aqueous_components)[i][cell] = 0.;
+    }
 
     if (using_sorption_) {
       const Epetra_MultiVector& sorbed = *S_->GetFieldData(total_sorbed_key_)->ViewComponent("cell", true);
@@ -845,6 +844,9 @@ int Alquimia_PK::AdvanceSingleCell(
 {
   // Copy the state and property information from Amanzi's state within 
   // this cell to Alquimia.
+
+  const Epetra_MultiVector ws = *S_->GetFieldData(saturation_key_)->ViewComponent("cell");
+  if (ws[0][cell]<1e-10) return 1;
   
   CopyToAlquimia(cell, aqueous_components, 
                  alq_mat_props_, alq_state_, alq_aux_data_);
@@ -855,14 +857,18 @@ int Alquimia_PK::AdvanceSingleCell(
   //   std::cout<<"alq_mat_props: saturation "<<alq_mat_props_.saturation<<"\n";
   //   std::cout<<"alq_state_.water_density "<<alq_state_.water_density<<"\n";
   //   std::cout<<"alq_state_.porosity "<<alq_state_.porosity<<"\n";
+  //   std::cout<<"alq_state_.total_mobile.data[0] "<<alq_state_.total_mobile.data[0]<<"\n";
   //   std::cout<<"alq_aux_data_.aux_doubles.data "<<alq_aux_data_.aux_doubles.data[0]<<" "<<alq_aux_data_.aux_doubles.data[1]<<"\n";
   // }
 
 
   // Do the reaction.
-  int num_iterations;
+  int num_iterations(0);
   bool success = chem_engine_->Advance(dt, alq_mat_props_, alq_state_, 
                                        alq_aux_data_, alq_aux_output_, num_iterations);
+
+  // if (domain_name_=="surface") std::cout<<"done\n";
+  
   if (not success) 
     return -1;
 
