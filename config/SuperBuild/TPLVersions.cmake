@@ -186,6 +186,19 @@ set(OpenMPI_URL_STRING     "https://www.open-mpi.org/software/ompi/v2.1/download
 set(OpenMPI_ARCHIVE_FILE   openmpi-${OpenMPI_VERSION}.tar.bz2)
 set(OpenMPI_SAVEAS_FILE    ${OpenMPI_ARCHIVE_FILE})
 set(OpenMPI_MD5_SUM        ff2e55cc529802e7b0738cf87acd3ee4)
+
+#
+# TPL: MPICH
+#
+set(MPICH_VERSION_MAJOR 3)
+set(MPICH_VERSION_MINOR 2)
+set(MPICH_VERSION_PATCH 1)
+set(MPICH_VERSION ${MPICH_VERSION_MAJOR}.${MPICH_VERSION_MINOR}.${MPICH_VERSION_PATCH})
+set(MPICH_URL_STRING     "https://www.mpich.org/static/downloads/${MPICH_VERSION}/")
+set(MPICH_ARCHIVE_FILE   mpich-${MPICH_VERSION}.tar.gz)
+set(MPICH_SAVEAS_FILE    ${MPICH_ARCHIVE_FILE})
+set(MPICH_MD5_SUM        e175452f4d61646a52c73031683fc375)
+
 #
 # TPL: CURL
 #
