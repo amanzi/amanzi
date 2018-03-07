@@ -575,15 +575,17 @@ void MFD3D_CrouzeixRaviart::ProjectorCell_HO_(
 /* ******************************************************************
 * L2 projector of gradient on the space of polynomials of order k-1.
 ****************************************************************** */
-void MFD3D_CrouzeixRaviart::L2GradientCellHarmonic(
+void MFD3D_CrouzeixRaviart::ProjectorGradientCell_(
     int c, const std::vector<VectorPolynomial>& vf,
+    const Projectors::Type type, bool is_harmonic, 
     const std::shared_ptr<DenseVector>& moments, MatrixPolynomial& uc)
 {
   ASSERT(d_ == 2);
-  bool is_harmonic(true);
 
   Entity_ID_List faces;
-  mesh_->cell_get_faces(c, &faces);
+  std::vector<int> dirs;
+
+  mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
   int nfaces = faces.size();
 
   const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
@@ -597,7 +599,7 @@ void MFD3D_CrouzeixRaviart::L2GradientCellHarmonic(
   StiffnessMatrixHO_(c, T, A);  
 
   // number of degrees of freedom
-  Polynomial pf(d_ - 1, order_ - 1);
+  Polynomial poly(d_, order_ -1), pf(d_ - 1, order_ - 1);
   int nd = G_.NumRows();
   int ndf = pf.size();
   int ndof = A.NumRows();
@@ -622,48 +624,78 @@ void MFD3D_CrouzeixRaviart::L2GradientCellHarmonic(
     }
   }
 
-  // calculate DOFs for boundary polynomial
-  DenseVector vdof(ndof);
+  std::vector<const Polynomial*> polys(2);
   NumericalIntegration numi(mesh_);
 
   for (int i = 0; i < dim; ++i) {
-    for (int j = 0; j < d_; ++j) {
-      int row(0);
-      // degrees of freedom of faces
+    int row;
+    // degrees of freedom in cell
+    if (ndof_c > 0 && is_harmonic) {
+      DenseVector v1(ndof_f), v2(ndof_c), v3(ndof_c);
+
+      row = 0;
       for (int n = 0; n < nfaces; ++n) {
         int f = faces[n];
-        CalculateFaceDOFs_(f, vf[n][i], pf, vdof, row);
+        CalculateFaceDOFs_(f, vf[n][i], pf, v1, row);
       }
 
-      // degrees of freedom in cell
-      if (ndof_c > 0 && is_harmonic) {
-        DenseVector v1(ndof_f), v2(ndof_c), v3(ndof_c);
+      Acf.Multiply(v1, v2, false);
+      Acc.Multiply(v2, v3, false);
 
-        for (int n = 0; n < ndof_f; ++n) {
-          v1(n) = vdof(n);
+      moments->Reshape(ndof_c);
+      for (int n = 0; n < ndof_c; ++n) {
+        (*moments)(n) = -v3(n);
+      }
+    }
+
+    for (int j = 0; j < d_; ++j) {
+      // calculate right-hand side matrix R for the L2 projector
+      int md = poly.size();
+      DenseVector v4(md), v5(md);
+
+      v4.PutScalar(0.0);
+      for (auto it = poly.begin(); it.end() <= poly.end(); ++it) {
+        int row = it.PolynomialPosition();
+        const int* index = it.multi_index();
+
+        double factor = numi.MonomialNaturalScale(it.MonomialOrder(), volume);
+        Polynomial cmono(d_, index, factor);
+        cmono.set_origin(xc);  
+
+        polys[0] = &cmono;
+
+        // -- face contribution
+        for (int n = 0; n < nfaces; ++n) {
+          int f = faces[n];
+          const AmanziGeometry::Point& normal = mesh_->face_normal(f);
+          double area = mesh_->face_area(f);
+
+          polys[1] = &(vf[n][i]);
+          double tmp = numi.IntegratePolynomialsFace(f, polys) / area;
+          v4(row) += tmp * normal[j] * dirs[j];
         }
 
-        Acf.Multiply(v1, v2, false);
-        Acc.Multiply(v2, v3, false);
+        // -- cell contribution
+        VectorPolynomial grad(d_, d_);
+        grad.Gradient(cmono);
+        numi.ChangeBasisRegularToNatural(c, grad[j]);
 
-        moments->Reshape(ndof_c);
-        for (int n = 0; n < ndof_c; ++n) {
-          vdof(row + n) = -v3(n);
-          (*moments)(n) = -v3(n);
+        for (auto jt = grad[j].begin(); jt.end() <= grad[j].end(); ++jt) {
+          int m = jt.MonomialOrder();
+          int k = jt.MonomialPosition();
+          int s = jt.PolynomialPosition();
+          v4(row) -= grad[j](m, k) * (*moments)(s) * volume;
         }
       }
-      else if (ndof_c > 0 && !is_harmonic) {
-        ASSERT(dim == 1);
-        ASSERT(ndof_c == moments->NumRows());
-        for (int n = 0; n < ndof_c; ++n) {
-          vdof(row + n) = (*moments)(n);
-        }
-      }
 
-      // calculate polynomial coefficients
-      DenseVector v4(nd), v5(nd);
-      R_.Multiply(vdof, v4, true);
-      G_.Multiply(v4, v5, false);
+      // calculate coefficients of polynomial
+      DenseMatrix M;
+      DG_Modal dg(order_ - 1, mesh_);
+      dg.set_basis(TAYLOR_BASIS_NATURAL);
+      dg.MassMatrix(c, T, integrals_, M);
+
+      M.Inverse();
+      M.Multiply(v4, v5, false);
 
       uc[i][j].SetPolynomialCoefficients(v5);
       numi.ChangeBasisNaturalToRegular(c, uc[i][j]);

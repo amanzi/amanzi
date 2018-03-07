@@ -150,7 +150,7 @@ TEST(HARMONIC_PROJECTORS_POLYGON_CR) {
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::WhetStone;
 
-  std::cout << "\nTest: HO nonconforming projectors for pentagon (linear deformation)" << std::endl;
+  std::cout << "\nTest: Crouzeix-Raviart harmonic projector for pentagon" << std::endl;
   Epetra_MpiComm *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
 
   MeshFactory meshfactory(comm);
@@ -164,6 +164,7 @@ TEST(HARMONIC_PROJECTORS_POLYGON_CR) {
   std::vector<VectorPolynomial> vf(nfaces);
 
   // test linear deformation
+  std::cout << "    subtest: LINEAR deformation" << std::endl;
   for (int n = 0; n < nfaces; ++n) {
     vf[n].resize(2);
     for (int i = 0; i < 2; ++i) {
@@ -199,7 +200,7 @@ TEST(HARMONIC_PROJECTORS_POLYGON_CR) {
   }
 
   // test quadratic deformation
-  std::cout << "\nTest: HO nonconforming for pentagon (quadratic deformation)" << std::endl;
+  std::cout << "    subtest: QUADRATIC deformation" << std::endl;
   for (int n = 0; n < nfaces; ++n) {
     for (int i = 0; i < 2; ++i) {
       vf[n][i].Reshape(2, 2, false);
@@ -219,7 +220,7 @@ TEST(HARMONIC_PROJECTORS_POLYGON_CR) {
   }
 
   // test cubic deformation
-  std::cout << "\nTest: HO nonconforming projectors for pentagon (cubic deformation)" << std::endl;
+  std::cout << "    subtest: CUBIC deformation" << std::endl;
   for (int n = 0; n < nfaces; ++n) {
     for (int i = 0; i < 2; ++i) {
       vf[n][i].Reshape(2, 3, false);
@@ -241,7 +242,7 @@ TEST(HARMONIC_PROJECTORS_POLYGON_CR) {
   }
 
   // test trace compatibility between function and its projecton (k < 3 only!)
-  std::cout << "\nTest: HO non-conforming projectors for pentagon (harmonic function)" << std::endl;
+  std::cout << "    subtest: trace compatibility" << std::endl;
   for (int n = 0; n < nfaces; ++n) {
     for (int i = 0; i < 2; ++i) {
       vf[n][i].Reshape(2, 2, false);
@@ -279,7 +280,7 @@ TEST(HARMONIC_PROJECTORS_POLYGON_CR) {
   CHECK_CLOSE(valx, 0.0, 1e-12);
 
   // preservation of moments (reusing previous boundary functions)
-  std::cout << "\nTest: HO nonconforming projectors for pentagon (verify moments)" << std::endl;
+  std::cout << "    subtest: verify calculated moments" << std::endl;
   for (int k = 2; k < 4; ++k) {
     Polynomial vc(2, k - 2);
     int nk = vc.size();
@@ -312,12 +313,12 @@ TEST(HARMONIC_PROJECTORS_POLYGON_CR) {
 
 
 /* **************************************************************** */
-TEST(PROJECTORS_SQUARE_CR) {
+TEST(L2_PROJECTORS_SQUARE_CR) {
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::WhetStone;
 
-  std::cout << "\nTest: HO nonconforming projectors for square (cubic deformation)" << std::endl;
+  std::cout << "\nTest: Crouzeix-Raviart L2 projector for square" << std::endl;
   Epetra_MpiComm *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
 
   MeshFactory meshfactory(comm);
@@ -329,7 +330,8 @@ TEST(PROJECTORS_SQUARE_CR) {
   VectorPolynomial uc;
   std::vector<VectorPolynomial> vf(4);
 
-  // test zero cell deformation
+  // test quartic deformation
+  std::cout << "    subtest: QUARTIC deformation" << std::endl;
   for (int n = 0; n < 4; ++n) {
     vf[n].resize(2);
     for (int i = 0; i < 2; ++i) {
@@ -351,6 +353,52 @@ TEST(PROJECTORS_SQUARE_CR) {
 
   uc[0] -= vf[0][0];
   CHECK(uc[0].NormMax() < 1e-12);
+
+  delete comm;
+}
+
+
+/* **************************************************************** */
+TEST(L2GRADIENT_PROJECTORS_SQUARE_CR) {
+  using namespace Amanzi;
+  using namespace Amanzi::AmanziMesh;
+  using namespace Amanzi::WhetStone;
+
+  std::cout << "\nTest: Crouzeix-Raviart L2 projector of gradient for square" << std::endl;
+  Epetra_MpiComm *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
+
+  MeshFactory meshfactory(comm);
+  meshfactory.preference(FrameworkPreference({MSTK}));
+  Teuchos::RCP<const Amanzi::AmanziGeometry::GeometricModel> gm;
+  Teuchos::RCP<Mesh> mesh = meshfactory(0.0, 0.0, 2.0, 2.0, 1, 1, gm, true, true); 
+ 
+  int cell(0);
+  MatrixPolynomial uc;
+  std::vector<VectorPolynomial> vf(4);
+
+  // test quadratic deformation
+  std::cout << "    subtest: CUBIC deformation" << std::endl;
+  for (int n = 0; n < 4; ++n) {
+    vf[n].resize(1);
+    vf[n][0].Reshape(2, 3, true);
+    vf[n][0].set_origin(mesh->cell_centroid(cell));
+    vf[n][0](3, 0) = 1.0;
+    vf[n][0].ChangeOrigin(AmanziGeometry::Point(0.0, 0.0));
+  }
+  VectorPolynomial grad;
+  grad.Gradient(vf[0][0]);
+
+  MFD3D_CrouzeixRaviart mfd(mesh);
+  auto moments = std::make_shared<WhetStone::DenseVector>(1);
+  moments->PutScalar(0.0);
+  (*moments)(1) = 0.1;
+
+  mfd.set_order(3);
+  mfd.L2GradientCell(cell, vf, moments, uc);
+  std::cout << uc[0][0] << std::endl;
+
+  uc[0][0] -= grad[0];
+  CHECK(uc[0][0].NormMax() < 1e-12);
 
   delete comm;
 }

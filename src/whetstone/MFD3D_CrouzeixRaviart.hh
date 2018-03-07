@@ -100,10 +100,18 @@ class MFD3D_CrouzeixRaviart : public virtual MFD3D {
       const std::vector<VectorPolynomial>& ve, VectorPolynomial& uf) const;
 
   // -- L2 projector of gradient
+  void L2GradientCell(
+      int c, const std::vector<VectorPolynomial>& vf,
+      const std::shared_ptr<DenseVector>& moments, MatrixPolynomial& uc) {
+    ProjectorGradientCell_(c, vf, Type::L2, false, moments, uc);
+  }
+
   void L2GradientCellHarmonic(
       int c, const std::vector<VectorPolynomial>& vf,
-      const std::shared_ptr<DenseVector>& moments, MatrixPolynomial& uc);
-  
+      const std::shared_ptr<DenseVector>& moments, MatrixPolynomial& uc) {
+    ProjectorGradientCell_(c, vf, Type::L2, true, moments, uc);
+  }
+
   // access / setup
   // -- integrals of monomials in high-order schemes could be reused
   const PolynomialOnMesh& integrals() const { return integrals_; }
@@ -125,10 +133,16 @@ class MFD3D_CrouzeixRaviart : public virtual MFD3D {
   void ProjectorCell_LO_(
       int c, const std::vector<VectorPolynomial>& vf, VectorPolynomial& uc);
 
+  // generic code for multiple projectors
   void ProjectorCell_HO_(
       int c, const std::vector<VectorPolynomial>& vf,
       const Projectors::Type type, bool is_harmonic,
       const std::shared_ptr<DenseVector>& moments, VectorPolynomial& uc);
+
+  void ProjectorGradientCell_(
+      int c, const std::vector<VectorPolynomial>& vf,
+      const Projectors::Type type, bool is_harmonic, 
+      const std::shared_ptr<DenseVector>& moments, MatrixPolynomial& uc);
 
   // supporting routines
   void CalculateFaceDOFs_(int f, const Polynomial& vf, const Polynomial& pf,
