@@ -194,10 +194,10 @@ include(ExternalProject)
 include(DefineExternalProjectArgs)
 
 # MPI 
-if (${TOOLS_MPI} EQUAL "mpich") 
-  include(${ToolsBuild_BUILD_FILES_DIR}/Build_OpenMPI.cmake)
-else()
+if (${TOOLS_MPI} STREQUAL "mpich") 
   include(${ToolsBuild_BUILD_FILES_DIR}/Build_MPICH.cmake)
+else()
+  include(${ToolsBuild_BUILD_FILES_DIR}/Build_OpenMPI.cmake)
 endif()
 
 # ############################################################################ #
