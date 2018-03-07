@@ -75,6 +75,7 @@ build_link_flags=
 
 # MPI installation
 mpi_root_dir=
+tools_mpi=openmpi
 
 # TPL (Third Party Libraries)
 
@@ -307,6 +308,7 @@ Configuration:
 
   --dry_run               show the configuration commands (but do not execute them) ['"${dry_run}"']
   
+
 Build features:
 Each feature listed here can be enabled/disabled with --[enable|disable]-[feature]
 Value in brackets indicates default setting.
@@ -335,6 +337,7 @@ Value in brackets indicates default setting.
                           individual TPL builds ['"${xsdk}"']
   tpls_only               only build the TPLs, do not build Amanzi itself
 
+
 Tool definitions:
 
   --with-c-compiler=FILE     FILE is the C compiler
@@ -354,13 +357,13 @@ Tool definitions:
 
   --with-mpi=DIR             use MPI installed in DIR ['"${mpi_root_dir}"'].
                              Will search for MPI compiler wrappers under this directory. It this
-                             option is missing, OpenMPI will be build using the provided compiler.
+                             option is missing, OpenMPI will be built using the provided compiler.
+
   --with-xsdk=DIR            use libraries already available in xSDK installation in lieu of
                              downloading and installing them individually. ['"${xsdk_root_dir}"']
 
 
-
-Directory and file names: 
+Directories and file names: 
 
   --prefix=PREFIX                install ALL files in tree rooted at PREFIX
                                  ['"${dflt_install_prefix}"']
@@ -382,7 +385,7 @@ Directory and file names:
 
   --tools-install-prefix=DIR     install Amanzi tools in tree rooted at DIR
                                  ['"${tools_install_prefix}"']. The list of tools includes
-                                 currently OpenMPI.
+                                 currently OpenMPI and MPICH.
   
   --tools-build-dir=DIR          build Amanzi tools in DIR
                                  ['"${tools_build_dir}"']
@@ -390,6 +393,8 @@ Directory and file names:
   --tools-download-dir=DIR       direct downloads of Amanzi tools to DIR
                                  ['"${tools_download_dir}"']
 
+  --tools-mpi=NAME               implementation of the Message Passing Interface (MPI)
+                                 standard. NAME is either openmpi (default) or mpich.
 
 
 Example with pre-existing MPI installation that builds dynamic libraries
@@ -412,6 +417,7 @@ OSX C and C++ compilers and Fortran compiler from MacPorts:
                  --parallel=8 
                  --enable-alquimia --enable-pflotran --enable-crunchtope 
                  --enable-petsc --disable-stk_mesh 
+                 --tools-mpi=openmpi
 '
 }
 
@@ -658,6 +664,10 @@ function parse_argv()
                  tools_download_dir=`make_fullpath $tmp`
                  ;;
       
+      --tools-mpi=*)
+                 tools_mpi=`parse_option_with_equal "${opt}" 'tools-mpi'`
+                 ;;
+
       --print)
                  print_exit=${TRUE}
 		 ;;
@@ -1328,6 +1338,7 @@ if [ ! -n "${mpi_root_dir}" ]; then
       -DCMAKE_C_COMPILER:FILEPATH=${build_c_compiler} \
       -DCMAKE_CXX_COMPILER:FILEPATH=${build_cxx_compiler} \
       -DCMAKE_Fortran_COMPILER:FILEPATH=${build_fort_compiler} \
+      -DTOOLS_MPI:STRING="${tools_mpi}" \
       -DTOOLS_INSTALL_PREFIX:STRING=${tools_install_prefix} \
       -DTOOLS_DOWNLOAD_DIR:FILEPATH=${tools_download_dir} \
       -DTOOLS_PARALLEL_JOBS:INT=${parallel_jobs} \
