@@ -101,6 +101,8 @@ ExternalProject_Add(${HYPRE_BUILD_TARGET}
                                   -DCMAKE_C_COMPILER:FILEPATH=${CMAKE_C_COMPILER}
                                   -DCMAKE_CXX_FLAGS:STRING=${Amanzi_COMMON_CXXFLAGS}
                                   -DCMAKE_CXX_COMPILER:FILEPATH=${CMAKE_CXX_COMPILER}
+                                  -DMPI_CXX_COMPILER:FILEPATH=${MPI_CXX_COMPILER}
+                                  -DMPI_C_COMPILER:FILEPATH=${MPI_C_COMPILER}
                     # -- Build
                     BINARY_DIR       ${HYPRE_build_dir}        # Build directory 
                     BUILD_COMMAND    ${MAKE} 
