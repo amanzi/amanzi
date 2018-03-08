@@ -194,8 +194,11 @@ include(ExternalProject)
 include(DefineExternalProjectArgs)
 
 # MPI 
-include(${ToolsBuild_BUILD_FILES_DIR}/Build_OpenMPI.cmake)
-
+if (${TOOLS_MPI} STREQUAL "mpich") 
+  include(${ToolsBuild_BUILD_FILES_DIR}/Build_MPICH.cmake)
+else()
+  include(${ToolsBuild_BUILD_FILES_DIR}/Build_OpenMPI.cmake)
+endif()
 
 # ############################################################################ #
 #  Final steps
