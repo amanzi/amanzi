@@ -47,6 +47,9 @@ set(CCSE_CMAKE_CACHE_ARGS
                        -DCMAKE_CXX_FLAGS_RELEASE:STRING=${Amanzi_COMMON_CXXFLAGS}
                        -DCMAKE_Fortran_COMPILER:FILEPATH=${CMAKE_Fortran_COMPILER}
                        -DCMAKE_Fortran_FLAGS_${BUILD_TYPE_UPPER}:STRING=${Amanzi_COMMON_FCFLAGS}
+                       -DMPI_CXX_COMPILER:FILEPATH=${MPI_CXX_COMPILER}
+                       -DMPI_C_COMPILER:FILEPATH=${MPI_C_COMPILER}
+                       -DMPI_Fortran_COMPILER:FILEPATH=${MPI_Fortran_COMPILER}
                        -DVERBOSE:BOOL=ON)
 
 
