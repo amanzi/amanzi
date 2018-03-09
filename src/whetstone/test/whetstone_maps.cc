@@ -86,21 +86,21 @@ TEST(DG_MAP_DETERMINANT_CELL) {
   for (auto name : list) {
     double fac(0.5), volume = mesh1->cell_volume(cell);
     for (int k = 1; k < 6; ++k) {
-      if (name == "HarmonicCRk") {
+      if (std::strcmp(name, "HarmonicCRk") == 0) {
         MFD3D_CrouzeixRaviart mfd(mesh0);
         mfd.set_order(k);
         mfd.H1CellHarmonic(cell, vf, moments, uc);
-      } else if (name == "L2HarmonicPk") {
+      } else if (std::strcmp(name, "L2HarmonicPk") == 0) {
         if (k > 2) continue;
         MFD3D_Lagrange mfd(mesh0);
         mfd.set_order(k);
         mfd.L2CellHarmonic(cell, vf, moments, uc);
-      } else if (name == "SerendipityPk") {
+      } else if (std::strcmp(name, "SerendipityPk") == 0) {
         if (k > 3) continue;
         MFD3D_LagrangeSerendipity mfd(mesh0);
         mfd.set_order(k);
         mfd.L2Cell(cell, vf, moments, uc);
-      } else if (name == "HarmonicPk") {
+      } else if (std::strcmp(name, "HarmonicPk") == 0) {
         if (k > 3) continue;
         MFD3D_Lagrange mfd(mesh0);
         mfd.set_order(k);

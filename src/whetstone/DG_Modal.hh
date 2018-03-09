@@ -56,8 +56,8 @@ class DG_Modal : public BilinearForm {
 
   // basic member functions
   // -- mass matrices
-  virtual int MassMatrix(int c, const Tensor& K, DenseMatrix& M);
-  virtual int MassMatrixPoly(int c, const Polynomial& K, DenseMatrix& M);
+  virtual int MassMatrix(int c, const Tensor& K, DenseMatrix& M) override;
+  virtual int MassMatrixPoly(int c, const Polynomial& K, DenseMatrix& M) override;
   int MassMatrix(int c, const Tensor& K, PolynomialOnMesh& integrals, DenseMatrix& M);
 
   // -- inverse mass matrices
@@ -74,10 +74,10 @@ class DG_Modal : public BilinearForm {
   }
 
   // -- stiffness matrices
-  virtual int StiffnessMatrix(int c, const Tensor& K, DenseMatrix& A);
+  virtual int StiffnessMatrix(int c, const Tensor& K, DenseMatrix& A) override;
 
   // -- advection matrices
-  virtual int AdvectionMatrixPoly(int c, const VectorPolynomial& uc, DenseMatrix& A, bool grad_on_test);
+  virtual int AdvectionMatrixPoly(int c, const VectorPolynomial& uc, DenseMatrix& A, bool grad_on_test) override;
 
   // -- flux matrices
   int FluxMatrixUpwind(int f, const Polynomial& uf, DenseMatrix& A, bool jump_on_test);
@@ -89,11 +89,9 @@ class DG_Modal : public BilinearForm {
   int FaceMatrixPenalty(int f, double Kf, DenseMatrix& A);
 
   // interfaces that are not used
-  virtual int L2consistency(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Mc, bool symmetry) { return 0; }
-  virtual int L2consistencyInverse(int c, const Tensor& T, DenseMatrix& R, DenseMatrix& Wc, bool symmetry) { return 0; }
-  virtual int H1consistency(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Mc) { return 0; }
-
-  virtual int DivergenceMatrix(int c, DenseMatrix& A) { return 0; }
+  virtual int L2consistency(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Mc, bool symmetry) override { return 0; }
+  virtual int L2consistencyInverse(int c, const Tensor& T, DenseMatrix& R, DenseMatrix& Wc, bool symmetry) override { return 0; }
+  virtual int H1consistency(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Mc) override { return 0; }
 
   // scaling of Taylor basis function: \psi_k -> a (\psi_k - b \psi_0)
   void TaylorBasis(int c, const Iterator& it, double* a, double* b);

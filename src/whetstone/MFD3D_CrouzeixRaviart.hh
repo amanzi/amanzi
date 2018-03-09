@@ -40,22 +40,22 @@ class MFD3D_CrouzeixRaviart : public virtual MFD3D {
 
   // required methods
   // -- mass matrices
-  virtual int L2consistency(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Mc, bool symmetry) { return -1; }
-  virtual int MassMatrix(int c, const Tensor& T, DenseMatrix& M) { return -1; } 
+  virtual int L2consistency(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Mc, bool symmetry) override { return -1; }
+  virtual int MassMatrix(int c, const Tensor& T, DenseMatrix& M) override { return -1; } 
 
   // -- inverse mass matrices
-  virtual int L2consistencyInverse(int c, const Tensor& T, DenseMatrix& R, DenseMatrix& Wc, bool symmetry) { return -1; }
-  virtual int MassMatrixInverse(int c, const Tensor& T, DenseMatrix& M) { return -1; } 
+  virtual int L2consistencyInverse(int c, const Tensor& T, DenseMatrix& R, DenseMatrix& Wc, bool symmetry) override { return -1; }
+  virtual int MassMatrixInverse(int c, const Tensor& T, DenseMatrix& M) override { return -1; } 
 
   // -- stiffness matrix
-  virtual int H1consistency(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Ac) {;
+  virtual int H1consistency(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Ac) override {
     if (order_ == 1 && !use_always_ho_) {
       return H1consistencyLO_(c, T, N, Ac);
     } else {
       return H1consistencyHO_(c, T, N, Ac);
     }
   }
-  virtual int StiffnessMatrix(int c, const Tensor& T, DenseMatrix& A) {
+  virtual int StiffnessMatrix(int c, const Tensor& T, DenseMatrix& A) override {
     if (order_ == 1 && !use_always_ho_) {
       return StiffnessMatrixLO_(c, T, A);
     } else {

@@ -650,6 +650,8 @@ int DG_Modal::FaceMatrixJump(int f, const Tensor& K1, const Tensor& K2, DenseMat
   } else {
     ChangeBasis_(c1, c2, A);
   }
+
+  return 0;
 }
 
 

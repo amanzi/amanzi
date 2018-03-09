@@ -44,7 +44,7 @@ class BilinearForm : public virtual InnerProductL2,
   // additional members
   // -- low-order schemes require constant vector/tensor coefficients
   //    we also specify function to which gradient operator is applied
-  virtual int AdvectionMatrix(int c, const AmanziGeometry::Point v, DenseMatrix& A, bool grad_on_test) {;
+  virtual int AdvectionMatrix(int c, const AmanziGeometry::Point v, DenseMatrix& A, bool grad_on_test) {
     Errors::Message msg("AdvectionMatrix: scalar velocity is not supported.");
     Exceptions::amanzi_throw(msg);
     return 1;
