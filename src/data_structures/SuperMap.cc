@@ -203,7 +203,7 @@ getMaps(const AmanziMesh::Mesh& mesh, AmanziMesh::Entity_kind location) {
 
     case AmanziMesh::BOUNDARY_FACE:
       return std::make_pair(Teuchos::rcpFromRef(mesh.exterior_face_map(false)),
-                            Teuchos::rcpFromRef(mesh.exterior_face_map(false)));
+                            Teuchos::rcpFromRef(mesh.exterior_face_map(true)));
     default:
       ASSERT(false);
       return std::make_pair(Teuchos::null, Teuchos::null);

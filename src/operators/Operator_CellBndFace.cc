@@ -14,6 +14,9 @@
 #include "DenseMatrix.hh"
 #include "Op_Cell_Cell.hh"
 #include "Op_Face_CellFace.hh"
+#include "Op_SurfaceCell_SurfaceCell.hh"
+#include "Op_SurfaceFace_SurfaceCell.hh"
+
 
 #include "SuperMap.hh"
 #include "GraphFE.hh"
@@ -235,6 +238,171 @@ void Operator_CellBndFace::AssembleMatrixOp(const Op_Face_CellFace& op,
   }
   ASSERT(!ierr);
 }
+
+int Operator_CellBndFace::ApplyMatrixFreeOp(const Op_SurfaceCell_SurfaceCell& op,
+                                            const CompositeVector& X, CompositeVector& Y) const
+{
+  int nsurf_cells = op.surf_mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  ASSERT(op.diag->MyLength() == nsurf_cells);
+  
+  const Epetra_MultiVector& Xf = *X.ViewComponent("boundary_face", false);
+  Epetra_MultiVector& Yf = *Y.ViewComponent("boundary_face", false);
+  for (int sc = 0; sc != nsurf_cells; ++sc) {
+    int f = op.surf_mesh->entity_get_parent(AmanziMesh::CELL, sc);
+    int bf = mesh_->exterior_face_map(false).LID(mesh_->face_map(false).GID(f));
+    Yf[0][bf] += (*op.diag)[0][sc] * Xf[0][bf];
+  } 
+  return 0;  
+}
+
+/* ******************************************************************
+* visit method for apply surface cells into subsurface faces
+****************************************************************** */
+int Operator_CellBndFace::ApplyMatrixFreeOp(const Op_SurfaceFace_SurfaceCell& op,
+                                            const CompositeVector& X, CompositeVector& Y) const
+{
+  int nsurf_faces = op.surf_mesh->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
+  ASSERT(op.matrices.size() == nsurf_faces);
+
+  X.ScatterMasterToGhosted();
+  const Epetra_MultiVector& Xf = *X.ViewComponent("boundary_face", true);
+
+  Y.PutScalarGhosted(0.);
+  Epetra_MultiVector& Yf = *Y.ViewComponent("boundary_face", true);
+  
+  AmanziMesh::Entity_ID_List cells;
+  for (int sf = 0; sf != nsurf_faces; ++sf) {
+    op.surf_mesh->face_get_cells(sf, AmanziMesh::USED, &cells);
+    int ncells = cells.size();
+
+    WhetStone::DenseVector v(ncells), av(ncells);
+    for (int n = 0; n != ncells; ++n) {
+      int f = op.surf_mesh->entity_get_parent(AmanziMesh::CELL, cells[n]);
+      int bf = mesh_->exterior_face_map(true).LID(mesh_->face_map(false).GID(f));
+      v(n) = Xf[0][bf];
+    }
+
+    const WhetStone::DenseMatrix& Aface = op.matrices[sf];
+    Aface.Multiply(v, av, false);
+
+    for (int n = 0; n != ncells; ++n) {
+      int f = op.surf_mesh->entity_get_parent(AmanziMesh::CELL, cells[n]);
+      int bf = mesh_->exterior_face_map(true).LID(mesh_->face_map(false).GID(f));
+      Yf[0][bf] += av(n);
+    }
+  } 
+  Y.GatherGhostedToMaster("boundary_face");
+  return 0;
+}
+
+
+void
+Operator_CellBndFace::SymbolicAssembleMatrixOp(const Op_SurfaceCell_SurfaceCell& op,
+        const SuperMap& map, GraphFE& graph,
+        int my_block_row, int my_block_col) const
+{
+  int nsurf_cells = op.surf_mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+
+  // ELEMENT: cell, DOFS: cell and face
+  const std::vector<int>& face_row_inds = map.GhostIndices("boundary_face", my_block_row);
+  const std::vector<int>& face_col_inds = map.GhostIndices("boundary_face", my_block_col);
+
+  int ierr = 0;
+  for (int sc=0; sc!=nsurf_cells; ++sc) {
+    int f = op.surf_mesh->entity_get_parent(AmanziMesh::CELL,sc);
+    int bf = mesh_->exterior_face_map(true).LID(mesh_->face_map(false).GID(f));
+    int lid_r = face_row_inds[bf];
+    int lid_c = face_col_inds[bf];
+    ierr |= graph.InsertMyIndices(lid_r, 1, &lid_c);
+  }
+  ASSERT(!ierr);
+}
+
+
+void
+Operator_CellBndFace::SymbolicAssembleMatrixOp(const Op_SurfaceFace_SurfaceCell& op,
+        const SuperMap& map, GraphFE& graph,
+        int my_block_row, int my_block_col) const
+{
+  int nsurf_faces = op.surf_mesh->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
+  int lid_r[2];
+  int lid_c[2];
+
+  // ELEMENT: cell, DOFS: cell and face
+  const std::vector<int>& face_row_inds = map.GhostIndices("boundary_face", my_block_row);
+  const std::vector<int>& face_col_inds = map.GhostIndices("boundary_face", my_block_col);
+
+  int ierr = 0;
+  AmanziMesh::Entity_ID_List cells;
+  for (int sf=0; sf!=nsurf_faces; ++sf) {
+    op.surf_mesh->face_get_cells(sf, AmanziMesh::USED, &cells);
+    int ncells = cells.size();
+    for (int n=0; n!=ncells; ++n) {
+      int f = op.surf_mesh->entity_get_parent(AmanziMesh::CELL,cells[n]);
+      int bf = mesh_->exterior_face_map(true).LID(mesh_->face_map(false).GID(f));
+      lid_r[n] = face_row_inds[bf];
+      lid_c[n] = face_col_inds[bf];
+    }
+
+    ierr |= graph.InsertMyIndices(ncells, lid_r, ncells, lid_c);
+  }
+  ASSERT(!ierr);
+}
+
+
+void
+Operator_CellBndFace::AssembleMatrixOp(const Op_SurfaceCell_SurfaceCell& op,
+        const SuperMap& map, MatrixFE& mat,
+        int my_block_row, int my_block_col) const
+{
+  int nsurf_cells = op.surf_mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+
+  // ELEMENT: cell, DOFS: cell and face
+  const std::vector<int>& face_row_inds = map.GhostIndices("boundary_face", my_block_row);
+  const std::vector<int>& face_col_inds = map.GhostIndices("boundary_face", my_block_col);
+
+  int ierr = 0;
+  for (int sc=0; sc!=nsurf_cells; ++sc) {
+    int f = op.surf_mesh->entity_get_parent(AmanziMesh::CELL,sc);
+    int bf = mesh_->exterior_face_map(true).LID(mesh_->face_map(false).GID(f));
+    int lid_r = face_row_inds[bf];
+    int lid_c = face_col_inds[bf];
+    ierr |= mat.SumIntoMyValues(lid_r, 1, &(*op.diag)[0][sc], &lid_c);
+  }
+  ASSERT(!ierr);
+}
+
+
+void
+Operator_CellBndFace::AssembleMatrixOp(const Op_SurfaceFace_SurfaceCell& op,
+        const SuperMap& map, MatrixFE& mat,
+        int my_block_row, int my_block_col) const
+{
+  int nsurf_faces = op.surf_mesh->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
+  int lid_r[2];
+  int lid_c[2];
+
+  // ELEMENT: cell, DOFS: cell and face
+  const std::vector<int>& face_row_inds = map.GhostIndices("boundary_face", my_block_row);
+  const std::vector<int>& face_col_inds = map.GhostIndices("boundary_face", my_block_col);
+
+  int ierr = 0;
+  AmanziMesh::Entity_ID_List cells;
+  for (int sf=0; sf!=nsurf_faces; ++sf) {
+    op.surf_mesh->face_get_cells(sf, AmanziMesh::USED, &cells);
+    int ncells = cells.size();
+    for (int n=0; n!=ncells; ++n) {
+      int f = op.surf_mesh->entity_get_parent(AmanziMesh::CELL,cells[n]);
+      int bf = mesh_->exterior_face_map(true).LID(mesh_->face_map(false).GID(f));
+      lid_r[n] = face_row_inds[bf];
+      lid_c[n] = face_col_inds[bf];
+    }
+
+    ierr |= mat.SumIntoMyValues(lid_r, lid_c, op.matrices[sf]);
+  }
+  ASSERT(!ierr);
+}
+
 
 }  // namespace Operators
 }  // namespace Amanzi
