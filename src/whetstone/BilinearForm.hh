@@ -64,6 +64,12 @@ class BilinearForm : public virtual InnerProductL2,
     return 1;
   }
 
+  virtual int MassMatrixPolyInverse(int c, const Polynomial& K, DenseMatrix& M) {
+    Errors::Message msg("MassMatrixInverse: polynomial coefficient is not supported.");
+    Exceptions::amanzi_throw(msg);
+    return 1;
+  }
+
   virtual int StiffnessMatrixPoly(int c, const Polynomial& K, DenseMatrix& A) {
     Errors::Message msg("StiffnessMatrix: polynomial coefficient is not supported.");
     Exceptions::amanzi_throw(msg);

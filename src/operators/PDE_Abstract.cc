@@ -121,6 +121,11 @@ void PDE_Abstract::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& u,
       mfd->MassMatrixPoly(c, (*Kpoly_)[c], Acell);
       matrix[c] = Acell;
     }
+  } else if (matrix_ == "mass inverse" && coef == "polynomial") {
+    for (int c = 0; c < ncells_owned; ++c) {
+      mfd->MassMatrixPolyInverse(c, (*Kpoly_)[c], Acell);
+      matrix[c] = Acell;
+    }
   } else if (matrix_ == "stiffness" && coef == "constant") {
     for (int c = 0; c < ncells_owned; ++c) {
       if (K_.get()) Kc = (*K_)[c];

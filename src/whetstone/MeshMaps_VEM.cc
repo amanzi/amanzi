@@ -153,7 +153,7 @@ void MeshMaps_VEM::JacobianCell(
   auto moments = std::make_shared<DenseVector>();
   MFD3D_CrouzeixRaviart mfd(mesh0_);
 
-  mfd.set_order(order_);
+  mfd.set_order(order_ + 1);
   mfd.L2GradientCellHarmonic(c, vf, moments, J);
 }
 

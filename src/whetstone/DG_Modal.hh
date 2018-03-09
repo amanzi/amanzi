@@ -60,8 +60,21 @@ class DG_Modal : public BilinearForm {
   virtual int MassMatrixPoly(int c, const Polynomial& K, DenseMatrix& M);
   int MassMatrix(int c, const Tensor& K, PolynomialOnMesh& integrals, DenseMatrix& M);
 
+  // -- inverse mass matrices
+  virtual int MassMatrixInverse(int c, const Tensor& K, DenseMatrix& W) override {
+    int ok = MassMatrix(c, K, W);
+    W.Inverse();
+    return ok;
+  }
+
+  virtual int MassMatrixPolyInverse(int c, const Polynomial& K, DenseMatrix& W) override {
+    int ok = MassMatrixPoly(c, K, W);
+    W.Inverse();
+    return ok;
+  }
+
   // -- stiffness matrices
-  virtual int StiffnessMatrix(int c, const Tensor& T, DenseMatrix& A);
+  virtual int StiffnessMatrix(int c, const Tensor& K, DenseMatrix& A);
 
   // -- advection matrices
   virtual int AdvectionMatrixPoly(int c, const VectorPolynomial& uc, DenseMatrix& A, bool grad_on_test);
@@ -80,7 +93,6 @@ class DG_Modal : public BilinearForm {
   virtual int L2consistencyInverse(int c, const Tensor& T, DenseMatrix& R, DenseMatrix& Wc, bool symmetry) { return 0; }
   virtual int H1consistency(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Mc) { return 0; }
 
-  virtual int MassMatrixInverse(int c, const Tensor& T, DenseMatrix& W) { return 0; }
   virtual int DivergenceMatrix(int c, DenseMatrix& A) { return 0; }
 
   // scaling of Taylor basis function: \psi_k -> a (\psi_k - b \psi_0)

@@ -78,27 +78,17 @@ class RemapDG : public Explicit_TI::fnBase<CompositeVector> {
       }
 
       maps->VelocityCell(c, vvf, uc_[c]);
-      maps->Jacobian(uc_[c], J_[c]);
-      // maps->JacobianCell(c, vvf, J_[c]);
+      // maps->Jacobian(uc_[c], J_[c]);
+      maps->JacobianCell(c, vvf, J_[c]);
     }
 
     velf_ = Teuchos::rcp(new std::vector<WhetStone::Polynomial>(nfaces_wghost_));
     velc_ = Teuchos::rcp(new std::vector<WhetStone::VectorPolynomial>(ncells_wghost_));
     jac_ = Teuchos::rcp(new std::vector<WhetStone::Polynomial>(ncells_wghost_));
 
-    plist_.set<std::string>("preconditioner type", "diagonal");
-    std::vector<std::string> criteria;
-    criteria.push_back("absolute residual");
-    criteria.push_back("relative rhs");
-    criteria.push_back("make one iteration");
-    plist_.set<double>("error tolerance", 1e-12)
-          .set<Teuchos::Array<std::string> >("convergence criteria", criteria)
-          .sublist("verbose object")
-          .set<std::string>("verbosity level", "none");
-
     tprint_ = 0.0;
     tl2_ = 0.0;
-    npcg_ = 0;
+    nfun_ = 0;
     l2norm_ = -1.0;
   };
   ~RemapDG() {};
@@ -125,22 +115,17 @@ class RemapDG : public Explicit_TI::fnBase<CompositeVector> {
     op_reac_->UpdateMatrices(Teuchos::null);
 
     // -- solve the problem with mass matrix
+    auto& matrices = op_reac_->local_matrices()->matrices;
+    for (int n = 0; n < matrices.size(); ++n) {
+      matrices[n].Inverse();
+    }
     auto global_reac = op_reac_->global_operator();
-    global_reac->SymbolicAssembleMatrix();
-    global_reac->AssembleMatrix();
-    global_reac->InitPreconditioner(plist_);
-
-    AmanziSolvers::LinearOperatorPCG<Operators::Operator, CompositeVector, CompositeVectorSpace>
-        pcg(global_reac, global_reac);
-    pcg.Init(plist_);
-
     CompositeVector& x = *global_reac->rhs();  // reusing internal memory
-    pcg.ApplyInverse(u, x);
+    global_reac->Apply(u, x);
 
-    npcg_++;
+    nfun_++;
     if (fabs(tprint_ - t) < 1e-6 && mesh_->get_comm()->MyPID() == 0) {
-      printf("t=%8.5f  L2=%9.5g  pcg=(%d, %9.4g)  nsolvers=%d\n",
-          t, l2norm_, pcg.num_itrs(), pcg.residual(), npcg_);
+      printf("t=%8.5f  L2=%9.5g  nfunctional=%d\n", t, l2norm_, nfun_);
       tprint_ += 0.1;
     }
 
@@ -174,15 +159,11 @@ class RemapDG : public Explicit_TI::fnBase<CompositeVector> {
     if (flag) {
       global_reac->Apply(p1, p2);
     } else {
-      global_reac->SymbolicAssembleMatrix();
-      global_reac->AssembleMatrix();
-      global_reac->InitPreconditioner(plist_);
-
-      AmanziSolvers::LinearOperatorPCG<Operators::Operator, CompositeVector, CompositeVectorSpace>
-          pcg(global_reac, global_reac);
-      pcg.Init(plist_);
-
-      pcg.ApplyInverse(p1, p2);
+      auto& matrices = op_reac_->local_matrices()->matrices;
+      for (int n = 0; n < matrices.size(); ++n) {
+        matrices[n].Inverse();
+      }
+      global_reac->Apply(p1, p2);
     }
   }
 
@@ -230,9 +211,8 @@ class RemapDG : public Explicit_TI::fnBase<CompositeVector> {
 
   std::vector<WhetStone::VectorPolynomial> velf_vec_;
 
-  Teuchos::ParameterList plist_;
   double tprint_, tl2_;
-  int npcg_;
+  int nfun_;
   double l2norm_;
 };
 
@@ -321,8 +301,8 @@ void RemapTestsDualRK(int order_p, int order_u,
       }
       xv += uv * ds;
     }
-    // xv[0] = (1 - yv[1]) * yv[0] + yv[1] * std::pow(yv[0], 0.5);
-    // xv[1] = yv[1];
+    xv[0] = (1 - yv[1]) * yv[0] + yv[1] * std::pow(yv[0], 0.5);
+    xv[1] = yv[1];
 
     nodeids.push_back(v);
     new_positions.push_back(xv);
@@ -400,7 +380,7 @@ void RemapTestsDualRK(int order_p, int order_u,
   Teuchos::ParameterList plist;
   plist.set<std::string>("method", "dg modal")
        .set<std::string>("matrix type", "flux")
-       .set<std::string>("flux formula", "Rusanov")
+       .set<std::string>("flux formula", "upwind")
        .set<int>("method order", order_p)
        .set<bool>("jump operator on test function", true);
 
