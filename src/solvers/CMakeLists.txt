@@ -44,7 +44,8 @@ set(solvers_source_files ResidualDebugger.cc
                          PreconditionerBoomerAMG.cc
                          PreconditionerML.cc
                          PreconditionerEuclid.cc
-                         PreconditionerBlockILU.cc)
+                         PreconditionerBlockILU.cc
+                         SolverFactory.cc)
 
 set(solvers_tpl_libs ${DBC_LIBRARIES}
 		     ${Teuchos_LIBRARIES}

@@ -58,6 +58,7 @@
 
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
+#include "Epetra_SerialDenseMatrix.h"
 
 #include "VerboseObject.hh"
 #include "dbc.hh"
@@ -65,42 +66,39 @@
 namespace Amanzi {
 namespace AmanziSolvers {
 
-#define NKA_TRUE 1
-#define NKA_FALSE 0
 #define NKA_EOL -1
 
 template<class Vector, class VectorSpace>
 class NKA_Base {
  public:
   NKA_Base(int mvec, double vtol, const VectorSpace& map);
-  ~NKA_Base();
 
   void Init(Teuchos::ParameterList& plist) {
     vo_ = Teuchos::rcp(new VerboseObject("NKA_Base", plist));
   }
 
+  
   void Relax();
   void Restart();
   void Correction(const Vector&, Vector&,
                   const Teuchos::Ptr<const Vector>& oldv=Teuchos::null);
 
  private:
-  int subspace_;  // boolean: a nonempty subspace
-  int pending_;   // contains pending vectors -- boolean
+  bool subspace_;  // boolean: a nonempty subspace
+  bool pending_;   // contains pending vectors -- boolean
   int mvec_;      // maximum number of subspace vectors
   double vtol_;   // vector drop tolerance
 
-  Teuchos::RCP<Vector> *v_;  // subspace storage
-  Teuchos::RCP<Vector> *w_;  // function difference vectors
-
-  double **h_;  // matrix of w vector inner products 
-
+  std::vector<Teuchos::RCP<Vector> > v_;  // subspace storage
+  std::vector<Teuchos::RCP<Vector> > w_;  // function difference vectors
+  Epetra_SerialDenseMatrix h_; // matrix of w vector inner products 
+  
   // Linked-list organization of the vector storage.
   int first_v_;  // index of first_v subspace vector
   int last_v_;   // index of last_v subspace vector
   int free_v_;   // index of the initial vector in free storage linked list
-  int *next_v_;  // next_v index link field
-  int *prev_v_;  // previous index link field in doubly-linked subspace v
+  std::vector<int> next_v_;  // next_v index link field
+  std::vector<int> prev_v_;  // previous index link field in doubly-linked subspace v
 
   Teuchos::RCP<VerboseObject> vo_;
 };
@@ -111,42 +109,25 @@ class NKA_Base {
  ***************************************************************** */
 template<class Vector, class VectorSpace>
 NKA_Base<Vector, VectorSpace>::NKA_Base(int mvec, double vtol, const VectorSpace& map)
+    : subspace_(false),
+      pending_(false),
+      mvec_(std::max(mvec, 1)),
+      vtol_(vtol)
 {
-  mvec_ = std::max(mvec, 1);  // we cannot have mvec_ < 1
-  vtol_ = vtol;
-
-  v_ = new Teuchos::RCP<Vector> [mvec_+1];
-  w_ = new Teuchos::RCP<Vector> [mvec_+1];
+  v_.resize(mvec_+1);
+  w_.resize(mvec_+1);
 
   for (int i = 0; i < mvec_ + 1; i++) {
     v_[i] = Teuchos::rcp(new Vector(map));
+    v_[i]->PutScalar(0.);
     w_[i] = Teuchos::rcp(new Vector(map));
+    w_[i]->PutScalar(0.);
   }
 
-  h_ = new double* [mvec_+1];
-  for (int j = 0; j < mvec_ + 1; j++) {
-    h_[j] = new double[mvec_+1];
-  }
-
-  next_v_ = new int [mvec_ + 1];
-  prev_v_ = new int [mvec_ + 1];
-};
-
-
-/* ******************************************************************
- * Destroy memory
- ***************************************************************** */
-template<class Vector, class VectorSpace>
-NKA_Base<Vector, VectorSpace>::~NKA_Base()
-{
-  delete [] v_;
-  delete [] w_;
-  for (int j = 0; j <mvec_ + 1; ++j) {
-    delete [] h_[j];
-  }
-  delete [] h_;
-  delete [] next_v_;
-  delete [] prev_v_;
+  h_.Shape(mvec_+1,mvec_+1);
+  
+  next_v_.resize(mvec_ + 1, NKA_EOL);
+  prev_v_.resize(mvec_ + 1, NKA_EOL);
 };
 
 
@@ -158,7 +139,7 @@ void NKA_Base<Vector, VectorSpace>::Relax()
 {
   if (pending_) {
     // Drop the initial slot where the pending_ vectors are stored.
-    assert(first_v_ >= 0);
+    ASSERT(first_v_ >= 0);
 
     int new_v = first_v_;
     first_v_ = next_v_[first_v_];
@@ -171,7 +152,7 @@ void NKA_Base<Vector, VectorSpace>::Relax()
     // Update the free storage list.
     next_v_[new_v] = free_v_;
     free_v_ = new_v;
-    pending_ = NKA_FALSE;
+    pending_ = false;
   }
 }
 
@@ -185,8 +166,8 @@ void NKA_Base<Vector, VectorSpace>::Restart()
   // No vectors are stored.
   first_v_  = NKA_EOL;
   last_v_   = NKA_EOL;
-  subspace_ = NKA_FALSE;
-  pending_  = NKA_FALSE;
+  subspace_ = false;
+  pending_  = false;
 
   // Initialize the free storage linked list.
   free_v_ = 0;
@@ -204,55 +185,81 @@ template<class Vector, class VectorSpace>
 void NKA_Base<Vector, VectorSpace>::Correction(const Vector& f, Vector &dir,
         const Teuchos::Ptr<const Vector>& old_dir)
 {
-  int i, j, k, nvec, new_v;
-  double s, hkk, hkj, cj;
-  double  *hk, *hj, *c;
-
-  Teuchos::RCP<Vector> vp, wp;
-  Teuchos::RCP<Vector> ff = Teuchos::rcp(new Vector(f));
-
-  // UPDATE THE ACCELERATION SUBSPACE_
+  // UPDATE THE ACCELERATION SUBSPACE
   if (pending_) {
+    ASSERT(first_v_ != NKA_EOL);
+
+    auto wp = w_[first_v_];
+    auto vp = v_[first_v_];
+
     // next_v_ function difference w_1
-    wp = w_[first_v_];
+    wp->Update(-1., f, 1.);
 
-    wp->Update(-1.0, *ff, 1.0);
-
-    wp->Dot(*wp, &s);
-    s = sqrt(s);
-
-    // If the function difference is 0, we can't update the subspace_ with
+    // If the function difference is 0, we can't update the subspace with
     // this data; so we toss it out and continue.  In this case it is likely
     // that the outer iterative solution procedure has gone badly awry
     // (unless the function value is itself 0), and we merely want to do
     // something reasonable here and hope that situation is detected on the
     // outside.
-    if (s < 1.0e-8) {
+    double s = 0.;
+    double sv = 0.;
+    wp->Norm2(&s);
+    vp->Norm2(&sv);
+    double sf = 0.;
+    f.Norm2(&sf);
+
+    if (vo_->getVerbLevel() >= Teuchos::VERB_EXTREME) {
+      Teuchos::OSTab tab = vo_->getOSTab();
+      *vo_->os() << "L2 norms (unscaled): du_prev, du_NKA, du = " << s << "," << sv << "," << sf << std::endl;
+    }
+
+    bool too_close = (s == 0);
+
+    if (!too_close) {
+      // update the NKA space if the previously returned direction had been
+      // modified before being applied
+      if (old_dir != Teuchos::null) *vp = *old_dir;
+
+      // Normalize w_1 and apply same factor to v_1.
+      wp->Scale(1.0 / s);
+      vp->Scale(1.0 / s);
+
+      s = 0.;
+      wp->Norm2(&s);
+      vp->Norm2(&sv);
+    }
+
+    if (vo_->getVerbLevel() >= Teuchos::VERB_EXTREME) {
+      Teuchos::OSTab tab = vo_->getOSTab();
+      *vo_->os() << "Dot products = " << s << "," << sv << std::endl;
+    }
+    if (too_close) {
+      // if our rescaled difference is too small, 
       if (vo_->getVerbLevel() >= Teuchos::VERB_EXTREME) {
         Teuchos::OSTab tab = vo_->getOSTab();
-        *vo_->os() << "Dot product = " << s << ", tossing iterate" << std::endl;
+        *vo_->os() << "Dot product confused = " << s << "," << sv << " tossing iterate" << std::endl;
       }
-
-      // nka_relax sets pending_ to NKA_FALSE
+      // nka_relax sets pending to false
       Relax();
     }
   }
 
   if (pending_) {
-    // Normalize w_1 and apply same factor to v_1.
-    vp = v_[first_v_];
-
-    // update the NKA space if the previously returned direction had been
-    // modified before being applied
-    if (old_dir != Teuchos::null) *vp = *old_dir;
-
-    vp->Scale(1.0 / s);
-    wp->Scale(1.0 / s);
+    ASSERT(first_v_ != NKA_EOL);
+    auto wp = w_[first_v_];
+    double s = 0.;
+    wp->Norm2(&s);
 
     // Update H.
-    for (k = next_v_[first_v_]; k != NKA_EOL; k = next_v_[k]) {
-      // h[first_v_][k] = wp->innerProduct(*w[k]);
-      if (wp->Dot(*w_[k], &h_[first_v_][k]) != 0) throw "Dot problem(2)!";
+    for (int k = next_v_[first_v_]; k != NKA_EOL; k = next_v_[k]) {
+      double hk = 0.;
+      w_[k]->Norm2(&hk);
+      hk = 0.;
+      int ierr = wp->Dot(*w_[k], &hk);
+      ASSERT(!ierr);
+      h_[first_v_][k] = hk;
+      hk = 0.;
+      w_[k]->Dot(*wp, &hk);
     }
 
     // CHOLESKI FACTORIZATION OF H = W^t W
@@ -260,14 +267,15 @@ void NKA_Base<Vector, VectorSpace>::Correction(const Vector& f, Vector &dir,
     // lower triangle holds the factorization
 
     // Trivial initial factorization stage.
-    nvec = 1;
+    int nvec = 1;
     h_[first_v_][first_v_] = 1.0;
 
-    for (k = next_v_[first_v_]; k != NKA_EOL; k = next_v_[k]) {
+    // The accelerated correction
+    for (int k = next_v_[first_v_]; k != NKA_EOL; k = next_v_[k]) {
       // Maintain at most MVEC_ vectors.
       if (++nvec > mvec_) {
         // Drop the last_v_ vector and update the free storage list.
-        assert(last_v_ == k);
+        ASSERT(last_v_ == k);
         next_v_[last_v_] = free_v_;
         free_v_ = k;
         last_v_ = prev_v_[k];
@@ -276,29 +284,28 @@ void NKA_Base<Vector, VectorSpace>::Correction(const Vector& f, Vector &dir,
       }
 
       // Single stage of Choleski factorization.
-      hk = h_[k];   // row k of H
-      hkk = 1.0;
-      for (j = first_v_; j != k; j = next_v_[j]) {
-        hj = h_[j];   // row j of H
-        hkj = hj[k];
-        for (i = first_v_; i != j; i = next_v_[i]) {
-          hkj -= hk[i] * hj[i];
+      double hkk = 1.0;
+      for (int j = first_v_; j != k; j = next_v_[j]) {
+        double hkj = h_[j][k];
+        for (int i = first_v_; i != j; i = next_v_[i]) {
+          hkj -= h_[k][i] * h_[j][i];
         }
-        hkj /= hj[j];
-        hk[j] = hkj;
+        hkj /= h_[j][j];
+        h_[k][j] = hkj;
         hkk -= hkj * hkj;
       }
-      if (hkk > vtol_ * vtol_) {
-        hk[k] = sqrt(hkk);
+
+      if (hkk > std::pow(vtol_,2)) {
+        h_[k][k] = std::sqrt(hkk);
       } else {
         if (vo_->getVerbLevel() >= Teuchos::VERB_EXTREME) {
           Teuchos::OSTab tab = vo_->getOSTab();
           *vo_->os() << "Vectors are linearly dependent, hkk=" << hkk << ", tossing iterate" << std::endl;
         }
 
-        // The current w nearly lies in the span of the previous vectors:
-        // Drop this vector,
-        ASSERT(prev_v_[k] != NKA_EOL);
+        // The current w nearly lies in the span of the previous vectors k vectors.
+        // Drop the kth vector and keep the new one.
+        ASSERT(prev_v_[k] != NKA_EOL); // when k is the only vector, its diagonal is 1.  Internal error!
         next_v_[prev_v_[k]] = next_v_[k];
         if (next_v_[k] == NKA_EOL) {
           last_v_ = prev_v_[k];
@@ -308,62 +315,62 @@ void NKA_Base<Vector, VectorSpace>::Correction(const Vector& f, Vector &dir,
         // update the free storage list,
         next_v_[k] = free_v_;
         free_v_ = k;
+
         // back-up and move on to the next_v_ vector.
         k = prev_v_[k];
         nvec--;
       }
     }
 
-    assert(first_v_ != NKA_EOL);
-    subspace_ = NKA_TRUE; // the acceleration subspace_ isn't empty
+    ASSERT(first_v_ != NKA_EOL);
+    subspace_ = true; // the acceleration subspace_ isn't empty
   }
 
   //  ACCELERATED CORRECTION
+  dir = f;
+  Vector dir_update(dir);
 
   // Locate storage for the new vectors.
-  assert(free_v_ != NKA_EOL);
-  new_v = free_v_;
+  ASSERT(free_v_ != NKA_EOL);
+  int new_v = free_v_;
   free_v_ = next_v_[free_v_];
 
   // Save the original f for the next_v_ call.
-  *w_[new_v] = *ff;
+  *w_[new_v] = f;
 
   if (subspace_) {
-    c = new double[mvec_ + 1];
+    std::vector<double> c(mvec_+1,0.);
 
-    assert(c != NULL);
     // Project f onto the span of the w vectors:
     // forward substitution
-    for (j = first_v_; j != NKA_EOL; j = next_v_[j]) {
-      // cj = (*ff).innerProduct(*w[j]);
-      if (ff->Dot(*w_[j], &cj) != 0) throw "Dot problem(3)!";
+    for (int j = first_v_; j != NKA_EOL; j = next_v_[j]) {
+      double cj = 0.;
+      int ierr = dir.Dot(*w_[j], &cj);
+      ASSERT(!ierr);
 
-      for (i = first_v_; i != j; i = next_v_[i]) {
+      for (int i = first_v_; i != j; i = next_v_[i]) {
         cj -= h_[j][i] * c[i];
       }
       c[j] = cj / h_[j][j];
     }
     // backward substitution
-    for (j = last_v_; j != NKA_EOL; j = prev_v_[j]) {
-      cj = c[j];
-      for (i = last_v_; i != j; i = prev_v_[i]) {
+    for (int j = last_v_; j != NKA_EOL; j = prev_v_[j]) {
+      double cj = c[j];
+      for (int i = last_v_; i != j; i = prev_v_[i]) {
         cj -= h_[i][j] * c[i];
       }
       c[j] = cj / h_[j][j];
     }
 
     // The accelerated correction
-    for (k = first_v_; k != NKA_EOL; k = next_v_[k]) {
-      wp = w_[k];
-      vp = v_[k];
-
-      ff->Update(c[k], *vp, -c[k], *wp, 1.0);
+    for (int k = first_v_; k != NKA_EOL; k = next_v_[k]) {
+      dir_update.Update(1.,*v_[k], -1., *w_[k], 0.);
+      dir.Update(c[k], dir_update, 1.0);
     }
-    delete [] c;
   }
 
   // Save the accelerated correction for the next_v_ call.
-  *v_[new_v] = *ff;
+  *v_[new_v] = dir;
 
 
   // Prepend the new vectors to the list.
@@ -377,10 +384,7 @@ void NKA_Base<Vector, VectorSpace>::Correction(const Vector& f, Vector &dir,
   first_v_ = new_v;
 
   // The original f and accelerated correction are cached for the next_v_ call.
-  pending_ = NKA_TRUE;
-
-
-  dir = *ff;
+  pending_ = true;
 };
 
 }  // namespace AmanziSolvers

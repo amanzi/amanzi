@@ -107,7 +107,12 @@ void Field_CompositeVector::Initialize(Teuchos::ParameterList& plist) {
   // ------ Try to set values from a restart file -----
   if (plist.isParameter("restart file")) {
     std::string filename = plist.get<std::string>("restart file");
-    ReadCheckpoint_(filename);
+    bool read = ReadCheckpoint_(filename);
+    if (!read) {
+      Errors::Message message;
+      message << "Field: \"" << fieldname() << "\" is not available in restart file \"" << filename << "\"";
+      Exceptions::amanzi_throw(message);
+    }      
     set_initialized();
     return;
   }
