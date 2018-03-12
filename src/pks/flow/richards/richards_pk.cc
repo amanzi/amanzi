@@ -24,6 +24,7 @@ Authors: Neil Carlson (version 1)
 
 #include "CompositeVectorFunction.hh"
 #include "CompositeVectorFunctionFactory.hh"
+#include "LinearOperatorFactory.hh"
 
 #include "predictor_delegate_bc_flux.hh"
 #include "wrm_evaluator.hh"

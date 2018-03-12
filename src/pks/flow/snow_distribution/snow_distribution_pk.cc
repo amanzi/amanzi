@@ -14,8 +14,8 @@ Author: Ethan Coon (ecoon@lanl.gov)
 
 #include "FunctionFactory.hh"
 #include "CompositeVectorFunction.hh"
-
 #include "CompositeVectorFunctionFactory.hh"
+#include "LinearOperatorFactory.hh"
 #include "independent_variable_field_evaluator.hh"
 
 #include "PDE_DiffusionFV.hh"

@@ -18,6 +18,7 @@ Author: Ethan Coon (ecoon@lanl.gov)
 
 #include "CompositeVectorFunction.hh"
 #include "CompositeVectorFunctionFactory.hh"
+#include "LinearOperatorFactory.hh"
 #include "independent_variable_field_evaluator.hh"
 
 #include "upwind_potential_difference.hh"

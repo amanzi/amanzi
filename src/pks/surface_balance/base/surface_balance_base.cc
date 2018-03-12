@@ -15,6 +15,7 @@
    ------------------------------------------------------------------------- */
 
 #include "surface_balance_base.hh"
+#include "LinearOperatorFactory.hh"
 
 namespace Amanzi {
 namespace SurfaceBalance {
