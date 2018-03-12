@@ -17,6 +17,7 @@ with freezing.
 #include "OperatorAdvection.hh"
 #include "OperatorAccumulation.hh"
 #include "Operator.hh"
+#include "LinearOperatorFactory.hh"
 #include "upwind_total_flux.hh"
 #include "upwind_arithmetic_mean.hh"
 

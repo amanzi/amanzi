@@ -13,6 +13,7 @@ Author: Ethan Coon
 
 #include "OperatorDiffusionFactory.hh"
 #include "OperatorDiffusion.hh"
+#include "LinearOperatorFactory.hh"
 #include "upwind_cell_centered.hh"
 #include "upwind_arithmetic_mean.hh"
 #include "upwind_total_flux.hh"
