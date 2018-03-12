@@ -168,7 +168,6 @@ int LinearOperatorNKA<Matrix, Vector, VectorSpace>::NKA_(
     num_itrs_++;
 
     if (vo_->getVerbLevel() >= Teuchos::VERB_EXTREME) {
-      Teuchos::OSTab tab = vo_->getOSTab();
       *vo_->os() << num_itrs_ << " ||r||=" << residual_ << std::endl;
     }
 

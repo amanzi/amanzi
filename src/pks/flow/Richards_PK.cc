@@ -34,6 +34,7 @@
 #include "primary_variable_field_evaluator.hh"
 #include "UpwindFactory.hh"
 #include "XMLParameterListWriter.hh"
+#include "LinearOperatorFactory.hh"
 
 // Flow
 #include "DarcyVelocityEvaluator.hh"
