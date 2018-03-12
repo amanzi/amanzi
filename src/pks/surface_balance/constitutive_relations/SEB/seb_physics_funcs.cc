@@ -62,7 +62,7 @@ double CalcIncomingLongwave(double air_temp, double relative_humidity, double c_
 double OutgoingRadiation(double temp, double emissivity, double c_stephan_boltzmann)
 {
   // Calculate outgoing long-wave radiation
-  return -emissivity * c_stephan_boltzmann * std::pow(temp,4);
+  return emissivity * c_stephan_boltzmann * std::pow(temp,4);
 }
 
 double WindFactor(double Us, double Z_Us, double Z_rough, double c_von_Karman)
@@ -199,7 +199,7 @@ void UpdateEnergyBalanceWithSnow(const GroundProperties& surf,
   eb.fQc = ConductedHeatIfSnow(surf.temp, snow);
 
   // balance of energy goes into melting
-  eb.fQm = eb.fQswIn + eb.fQlwIn + eb.fQlwOut + eb.fQh + eb.fQe - eb.fQc;
+  eb.fQm = eb.fQswIn + eb.fQlwIn - eb.fQlwOut + eb.fQh + eb.fQe - eb.fQc;
 }
 
 
@@ -230,7 +230,7 @@ void UpdateEnergyBalanceWithoutSnow(const GroundProperties& surf,
 
   // balance of energy gets conducted to ground
   eb.fQm = 0.;
-  eb.fQc = eb.fQswIn + eb.fQlwIn + eb.fQlwOut + eb.fQh + eb.fQe;
+  eb.fQc = eb.fQswIn + eb.fQlwIn - eb.fQlwOut + eb.fQh + eb.fQe;
 }
 
 // Snow temperature calculation.
@@ -425,19 +425,17 @@ MassBalance UpdateMassBalance(const GroundProperties& surf, const SnowProperties
     mb.MWg_temp = std::max(met.air_temp, 273.15);
     mb.MWg = met.Pr;
     mb.MWg_subsurf = 0.;
-    //    if (mb.Me > 0.) {
+    if (mb.Me > 0.) {
       mb.MWg += mb.Me;
+    } else {
+      double surf_p = surf.pressure;
+      double trans_factor = surf_p > params.Apa*1000. ? 0. :
+      surf_p < params.Apa*1000. - params.evap_transition_width ? 1. :
+                            (params.Apa*1000. - surf_p) / params.evap_transition_width;
 
-      
-    // } else {
-    //   double surf_p = surf.pressure;
-    //   double trans_factor = surf_p > params.Apa*1000. ? 0. :
-    //       surf_p < params.Apa*1000. - params.evap_transition_width ? 1. :
-    //       (params.Apa*1000. - surf_p) / params.evap_transition_width;
-
-    //   mb.MWg += (1-trans_factor) * mb.Me;
-    //   mb.MWg_subsurf += trans_factor * mb.Me;
-    // }
+      mb.MWg += (1-trans_factor) * mb.Me;
+      mb.MWg_subsurf += trans_factor * mb.Me;
+    }
   }
 
   // if (debug) {

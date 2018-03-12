@@ -190,6 +190,9 @@ SurfaceBalanceImplicit::Setup(const Teuchos::Ptr<State>& S) {
   S->RequireField(Keys::getKey(domain_,"qE_lw_out"),name_)->SetMesh(mesh_)
     ->SetComponent("cell", AmanziMesh::CELL, 1);
   S->GetField(Keys::getKey(domain_,"qE_lw_out"),name_)->set_io_checkpoint(false);
+  S->RequireField(Keys::getKey(domain_,"qE_melt_out"),name_)->SetMesh(mesh_)
+    ->SetComponent("cell", AmanziMesh::CELL, 1);
+  S->GetField(Keys::getKey(domain_,"qE_melt_out"),name_)->set_io_checkpoint(false);
   
   // requirements: independent variables (data from MET)
   S->RequireFieldEvaluator(sw_incoming_key_);
@@ -334,6 +337,7 @@ SurfaceBalanceImplicit::Initialize(const Teuchos::Ptr<State>& S) {
   S->GetField(Keys::getKey(domain_,"qE_latent_heat"),name_)->set_initialized();
   S->GetField(Keys::getKey(domain_,"qE_sensible_heat"),name_)->set_initialized();
   S->GetField(Keys::getKey(domain_,"qE_lw_out"),name_)->set_initialized();
+  S->GetField(Keys::getKey(domain_,"qE_melt_out"),name_)->set_initialized();
   if (!longwave_input_) {
     S->GetField(Keys::getKey(domain_,"incoming_longwave_radiation"),name_)->set_initialized();
   }
@@ -359,10 +363,11 @@ SurfaceBalanceImplicit::Functional(double t_old, double t_new, Teuchos::RCP<Tree
                << " t1 = " << t_new << " h = " << dt << std::endl;
     std::vector<std::string> vnames;
     std::vector< Teuchos::Ptr<const CompositeVector> > vecs;
-    vnames.push_back("new snow depth");
+    vnames.push_back("old snow depth");
+    vecs.push_back(u_old->Data().ptr());
+    vnames.push_back("solver snow depth");
     vecs.push_back(u_new->Data().ptr());
     db_->WriteVectors(vnames, vecs, true);
-    db_->WriteDivider();
   }
 
   // pull residual vector
@@ -380,6 +385,8 @@ SurfaceBalanceImplicit::Functional(double t_old, double t_new, Teuchos::RCP<Tree
 
   // pull current snow data
   const Epetra_MultiVector& snow_depth_new = *u_new->Data()->ViewComponent("cell",false);
+  CompositeVector snow_depth_new_computed(*u_new->Data());
+  Epetra_MultiVector& snow_depth_new_computed_c = *snow_depth_new_computed.ViewComponent("cell",false);
 
   Epetra_MultiVector& snow_temp_new = *S_next_->GetFieldData(Keys::getKey(domain_,"snow_temperature"), name_)
       ->ViewComponent("cell",false);
@@ -400,6 +407,8 @@ SurfaceBalanceImplicit::Functional(double t_old, double t_new, Teuchos::RCP<Tree
   Epetra_MultiVector& qE_sensible_heat = *S_next_->GetFieldData(Keys::getKey(domain_,"qE_sensible_heat"),name_)
       ->ViewComponent("cell",false);
   Epetra_MultiVector& qE_lw_out = *S_next_->GetFieldData(Keys::getKey(domain_,"qE_lw_out"),name_)
+      ->ViewComponent("cell",false);
+  Epetra_MultiVector& qE_melt_out = *S_next_->GetFieldData(Keys::getKey(domain_,"qE_melt_out"),name_)
       ->ViewComponent("cell",false);
 
   // pull ATS data
@@ -463,10 +472,11 @@ SurfaceBalanceImplicit::Functional(double t_old, double t_new, Teuchos::RCP<Tree
     *S_next_->GetFieldData(Keys::getKey(domain_,"precipitation_rain"))->ViewComponent("cell", false);
 
   // snow precip need not be updated each iteration
+  bool update = false;
   if (implicit_snow_) {
     S_next_->GetFieldEvaluator(Keys::getKey(domain_,"precipitation_snow"))->HasFieldChanged(S_next_.ptr(), name_);
   } else {
-    S_inter_->GetFieldEvaluator(Keys::getKey(domain_,"precipitation_snow"))->HasFieldChanged(S_inter_.ptr(), name_);
+    update = S_inter_->GetFieldEvaluator(Keys::getKey(domain_,"precipitation_snow"))->HasFieldChanged(S_inter_.ptr(), name_);
   }
   const Epetra_MultiVector& precip_snow = implicit_snow_ ?
     *S_next_->GetFieldData(Keys::getKey(domain_,"precipitation_snow"))->ViewComponent("cell", false) :
@@ -579,10 +589,11 @@ SurfaceBalanceImplicit::Functional(double t_old, double t_new, Teuchos::RCP<Tree
 
       // Evaluate the residual
       res[0][c] = snow_depth_new[0][c] - seb_snow_new.height;
+      snow_depth_new_computed_c[0][c] = seb_snow_new.height;
 
       // Pull the output
       // -- fluxes
-      surf_energy_flux[0][c] = 1.e-6 * seb_eb.fQc; // convert to MJ for ATS
+      surf_energy_flux[0][c] = seb_eb.fQc;
       surf_water_flux[0][c] = seb_mb.MWg;
       surf_water_flux_temp[0][c] = seb_mb.MWg_temp;
 
@@ -605,6 +616,7 @@ SurfaceBalanceImplicit::Functional(double t_old, double t_new, Teuchos::RCP<Tree
       qE_latent_heat[0][c] = seb_eb.fQe;
       qE_sensible_heat[0][c] = seb_eb.fQh;
       qE_lw_out[0][c] = seb_eb.fQlwOut;
+      qE_melt_out[0][c] = seb_eb.fQm;
 
       if (eval_derivatives_) {
         // evaluate FD derivative of energy flux wrt surface temperature
@@ -613,7 +625,7 @@ SurfaceBalanceImplicit::Functional(double t_old, double t_new, Teuchos::RCP<Tree
         // for now ignore the effect on unfrozen fraction, and therefore on albedo and emissivity
         auto result2 = SEBPhysics::CalculateSurfaceBalance(dt, seb_surf2, seb_snow, seb_met, seb_params, false, dcvo);
         SEBPhysics::EnergyBalance& seb_eb2 = std::get<1>(result2);
-        (*dsurf_energy_flux_dT)[0][c] = 1.e-6 * (seb_eb2.fQc - seb_eb.fQc) / T_eps; // convert to MJ
+        (*dsurf_energy_flux_dT)[0][c] = (seb_eb2.fQc - seb_eb.fQc) / T_eps;
       }
 
     } else {
@@ -697,10 +709,11 @@ SurfaceBalanceImplicit::Functional(double t_old, double t_new, Teuchos::RCP<Tree
      // Evaluate the residual
      double snow_depth_new_tmp = theta * seb_snow_new.height + (1-theta) * bare_snow_new.height;
      res[0][c] = snow_depth_new[0][c] - snow_depth_new_tmp;
+     snow_depth_new_computed_c[0][c] = snow_depth_new_tmp;
 
      // Pull the output
      // -- fluxes
-     surf_energy_flux[0][c] = 1.e-6 * (theta * seb_eb.fQc + (1-theta) * bare_eb.fQc); // MJ
+     surf_energy_flux[0][c] = (theta * seb_eb.fQc + (1-theta) * bare_eb.fQc);
      surf_water_flux[0][c] = theta * seb_mb.MWg + (1-theta) * bare_mb.MWg;
      if (surf_water_flux[0][c] > 0.) {
        if (seb_mb.MWg > 0.) {
@@ -742,14 +755,15 @@ SurfaceBalanceImplicit::Functional(double t_old, double t_new, Teuchos::RCP<Tree
        snow_dens_new[0][0] = seb_snow_new.density;
        stored_SWE_new[0][c] = total_swe;
      }
-     snow_temp_new[0][c] = seb_snow.temp;
+     snow_temp_new[0][c] = seb_snow_new.temp;
 
      // -- diagnostics
-     albedo[0][c] = theta * seb_snow.albedo + (1-theta) * seb_surf.albedo;
+     albedo[0][c] = theta * seb_snow_new.albedo + (1-theta) * seb_surf.albedo;
      evaporative_flux[0][c] = -(theta * seb_mb.Me + (1-theta) * bare_mb.Me);
-     qE_latent_heat[0][c] = theta * seb_eb.fQe + (1-theta) * bare_eb.fQe;
-     qE_sensible_heat[0][c] = theta * seb_eb.fQh + (1-theta) * bare_eb.fQh;
+     qE_latent_heat[0][c] = (theta * seb_eb.fQe + (1-theta) * bare_eb.fQe);
+     qE_sensible_heat[0][c] = (theta * seb_eb.fQh + (1-theta) * bare_eb.fQh);
      qE_lw_out[0][c] = theta * seb_eb.fQlwOut + (1-theta) * bare_eb.fQlwOut;
+     qE_melt_out[0][c] = theta * seb_eb.fQm + (1-theta) * bare_eb.fQm;
 
      // Evaluate derivatives, if requested
      if (eval_derivatives_) {
@@ -763,7 +777,7 @@ SurfaceBalanceImplicit::Functional(double t_old, double t_new, Teuchos::RCP<Tree
        auto result_bare2 = SEBPhysics::CalculateSurfaceBalance(dt, seb_surf2, seb_snow_bare, seb_met, seb_params, false, dcvo);
        SEBPhysics::EnergyBalance& bare_eb2 = std::get<1>(result_bare2);
 
-       double eflux2 = 1.e-6 * (theta * seb_eb2.fQc + (1-theta) * bare_eb2.fQc); // MJ
+       double eflux2 = (theta * seb_eb2.fQc + (1-theta) * bare_eb2.fQc); // MJ
        (*dsurf_energy_flux_dT)[0][c] = (eflux2 - surf_energy_flux[0][c]) / T_eps;
      }
     }
@@ -773,58 +787,66 @@ SurfaceBalanceImplicit::Functional(double t_old, double t_new, Teuchos::RCP<Tree
   if (vo_->os_OK(Teuchos::VERB_HIGH)) {
     std::vector<std::string> vnames;
     std::vector< Teuchos::Ptr<const CompositeVector> > vecs;
+    vnames.push_back("computed snow depth");
+    Teuchos::Ptr<CompositeVector> snow_depth_new_computed_p(&snow_depth_new_computed);
+    vecs.push_back(snow_depth_new_computed_p);
+    db_->WriteVectors(vnames, vecs, true);
+    db_->WriteDivider();
 
     vnames.push_back("air_temp"); 
     vecs.push_back(S_next_->GetFieldData(Keys::getKey(domain_,"air_temperature")).ptr());
-    
     vnames.push_back("rel_hum"); 
     vecs.push_back(S_next_->GetFieldData(Keys::getKey(domain_,"relative_humidity")).ptr());
-    
-    vnames.push_back("Qsw_in"); 
-    vecs.push_back(S_next_->GetFieldData(sw_incoming_key_).ptr());
-
-    vnames.push_back("Qlw_in");
-    vecs.push_back(S_next_->GetFieldData(Keys::getKey(domain_, "incoming_longwave_radiation")).ptr());
-    
     vnames.push_back("precip_rain"); 
     vecs.push_back(S_next_->GetFieldData(Keys::getKey(domain_,"precipitation_rain")).ptr());
-    
-    vnames.push_back("precip_snow"); 
-    vecs.push_back(S_next_->GetFieldData(Keys::getKey(domain_,"precipitation_snow")).ptr());
-    
-    vnames.push_back("T_ground"); 
-    vecs.push_back(S_next_->GetFieldData(Keys::getKey(domain_,"temperature")).ptr());
+    vnames.push_back("precip_snow");
+    if (implicit_snow_) {
+      vecs.push_back(S_next_->GetFieldData(Keys::getKey(domain_,"precipitation_snow")).ptr());
+    } else {
+      vecs.push_back(S_inter_->GetFieldData(Keys::getKey(domain_,"precipitation_snow")).ptr());
+    }      
+    db_->WriteVectors(vnames, vecs, true);
+    db_->WriteDivider();
+
+    vnames.clear();
+    vecs.clear();
     
     vnames.push_back("p_ground"); 
     vecs.push_back(S_next_->GetFieldData(Keys::getKey(domain_,"pressure")).ptr());
-    
-
+    vnames.push_back("ponded_depth"); 
+    vecs.push_back(S_next_->GetFieldData(Keys::getKey(domain_,"ponded_depth")).ptr());
+    vnames.push_back("snow_depth"); 
+    vecs.push_back(S_next_->GetFieldData(Keys::getKey(domain_,"snow_depth")).ptr());
     db_->WriteVectors(vnames, vecs, true);
     db_->WriteDivider();
 
     vnames.clear();
     vecs.clear();
 
-    vnames.push_back("snow_ht(old))"); 
-    vecs.push_back(S_next_->GetFieldData(Keys::getKey(domain_,"snow_depth")).ptr());
-    
+    vnames.push_back("T_ground"); 
+    vecs.push_back(S_next_->GetFieldData(Keys::getKey(domain_,"temperature")).ptr());
     vnames.push_back("snow_temp"); 
     vecs.push_back(S_next_->GetFieldData(Keys::getKey(domain_,"snow_temperature")).ptr());
-    
     db_->WriteVectors(vnames, vecs, true);
     db_->WriteDivider();
 
     vnames.clear();
     vecs.clear();
 
-    vnames.push_back("conducted energy"); 
-    vecs.push_back(S_next_->GetFieldData(Keys::getKey(domain_,"conducted_energy_source")).ptr());
-    vnames.push_back("latent heat"); 
+    vnames.push_back("inc shortwave radiation"); 
+    vecs.push_back(S_next_->GetFieldData(sw_incoming_key_).ptr());
+    vnames.push_back("inc longwave radiation");
+    vecs.push_back(S_next_->GetFieldData(Keys::getKey(domain_, "incoming_longwave_radiation")).ptr());
+    vnames.push_back("inc latent heat"); 
     vecs.push_back(S_next_->GetFieldData(Keys::getKey(domain_,"qE_latent_heat")).ptr());
-    vnames.push_back("sensible heat"); 
+    vnames.push_back("inc sensible heat"); 
     vecs.push_back(S_next_->GetFieldData(Keys::getKey(domain_,"qE_sensible_heat")).ptr());
-    vnames.push_back("outgoing longwave radiation"); 
+    vnames.push_back("out longwave radiation"); 
     vecs.push_back(S_next_->GetFieldData(Keys::getKey(domain_,"qE_lw_out")).ptr());
+    vnames.push_back("out conducted energy"); 
+    vecs.push_back(S_next_->GetFieldData(Keys::getKey(domain_,"conducted_energy_source")).ptr());
+    vnames.push_back("out melting energy"); 
+    vecs.push_back(S_next_->GetFieldData(Keys::getKey(domain_,"qE_melt_out")).ptr());
 
     db_->WriteVectors(vnames, vecs, true);
     db_->WriteDivider();
@@ -834,13 +856,10 @@ SurfaceBalanceImplicit::Functional(double t_old, double t_new, Teuchos::RCP<Tree
     
     vnames.push_back("water_source"); 
     vecs.push_back(S_next_->GetFieldData(Keys::getKey(domain_,"mass_source")).ptr());
-    
     vnames.push_back("evap flux"); 
     vecs.push_back(S_next_->GetFieldData(Keys::getKey(domain_,"evaporative_flux")).ptr());
-    
     vnames.push_back("T_water_source"); 
     vecs.push_back(S_next_->GetFieldData(Keys::getKey(domain_,"mass_source_temperature")).ptr());
-    
     db_->WriteVectors(vnames, vecs, true);
     db_->WriteDivider();
 
@@ -853,6 +872,10 @@ SurfaceBalanceImplicit::Functional(double t_old, double t_new, Teuchos::RCP<Tree
     db_->WriteVectors(vnames, vecs, true);
   }
 
+  // scale to MJ for ATS units
+  surf_energy_flux.Scale(1.e-6);
+  if (dsurf_energy_flux_dT.get()) dsurf_energy_flux_dT->Scale(1.e-6);
+  
   // mark our other primary variables as changed
   pvfe_esource_->SetFieldAsChanged(S_next_.ptr());
   pvfe_wsource_->SetFieldAsChanged(S_next_.ptr());
