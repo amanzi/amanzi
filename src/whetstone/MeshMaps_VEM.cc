@@ -17,8 +17,7 @@
 
 #include "DenseMatrix.hh"
 #include "MeshMaps_VEM.hh"
-#include "MFD3D_CrouzeixRaviart.hh"
-#include "MFD3D_Lagrange.hh"
+#include "MFD3DFactory.hh"
 #include "Polynomial.hh"
 
 namespace Amanzi {
@@ -30,22 +29,29 @@ namespace WhetStone {
 void MeshMaps_VEM::VelocityCell(
     int c, const std::vector<VectorPolynomial>& vf, VectorPolynomial& vc) const
 {
-  auto moments = std::make_shared<DenseVector>();
-
   // LeastSquareProjector_Cell_(order_, c, vf, vc);
 
-  // MFD3D_Lagrange mfd(mesh0_);
-  MFD3D_CrouzeixRaviart mfd(mesh0_);
-  mfd.set_order(order_);
+  auto moments = std::make_shared<DenseVector>();
 
-  if (order_ == 1 && d_ == 3) {
-    mfd.H1CellHarmonic(c, vf, moments, vc);
-  } else if (order_ < 2) {
-    mfd.H1CellHarmonic(c, vf, moments, vc);
-  } else {
-    // mfd.L2Cell(c, order_, vf, moments, vc);
-    mfd.L2CellHarmonic(c, vf, moments, vc);
-    // mfd.H1CellHarmonic(c, vf, moments, vc);
+  WhetStone::MFD3DFactory factory;
+  auto mfd = factory.Create(mesh0_, method_, order_);
+
+  if (projector_ == "H1 harmonic") {
+    auto mfd_tmp = dynamic_cast<MFD3D_CrouzeixRaviart*>(&*mfd);
+    mfd_tmp->H1CellHarmonic(c, vf, moments, vc);
+  }
+  else if (projector_ == "L2 harmonic") {
+    auto mfd_tmp = dynamic_cast<MFD3D_CrouzeixRaviart*>(&*mfd);
+    mfd_tmp->L2CellHarmonic(c, vf, moments, vc);
+  } 
+  else if (projector_ == "H1") {
+    mfd->H1Cell(c, vf, moments, vc);
+  }
+  else if (projector_ == "L2") {
+    mfd->L2Cell(c, vf, moments, vc);
+  }
+  else {
+    ASSERT(false);
   }
 }
 
@@ -205,6 +211,17 @@ void MeshMaps_VEM::LeastSquareProjector_Cell_(
   for (int i = 0; i < d_; ++i) {
     vc[i](1, i) -= 1.0;
   }
+}
+
+
+/* ******************************************************************
+* Calculate mesh velocity in cell c: old algorithm
+****************************************************************** */
+void MeshMaps_VEM::ParseInputParameters_(const Teuchos::ParameterList& plist)
+{
+  method_ = plist.get<std::string>("method");
+  order_ = plist.get<int>("method order");
+  projector_ = plist.get<std::string>("projector");
 }
 
 }  // namespace WhetStone

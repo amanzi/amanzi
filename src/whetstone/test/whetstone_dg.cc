@@ -492,12 +492,12 @@ TEST(DG3D_ADVECTION_MATRIX_CELL) {
 /* ****************************************************************
 * Test of polynomial least-square approximation
 **************************************************************** */
-TEST(DG_MAP_APPROXIMATION_CELL) {
+TEST(DG_LEAST_SQUARE_MAP_CELL) {
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::WhetStone;
 
-  std::cout << "\nTest: Polynomial approximation of map in cells." << std::endl;
+  std::cout << "\nTest: Least-square polynomial approximation of map in cells." << std::endl;
   Epetra_MpiComm *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
 
   MeshFactory meshfactory(comm);
@@ -517,7 +517,12 @@ TEST(DG_MAP_APPROXIMATION_CELL) {
   }
 
   // test identity map
-  MeshMaps_VEM maps(mesh, mesh);
+  Teuchos::ParameterList plist;
+  plist.set<std::string>("method", "unknown")
+       .set<int>("method order", 1)
+       .set<std::string>("projector", "H1");
+
+  MeshMaps_VEM maps(mesh, mesh, plist);
   VectorPolynomial u;
 
   maps.LeastSquareFit(1, x1, x1, u);

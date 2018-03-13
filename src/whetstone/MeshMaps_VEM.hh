@@ -32,13 +32,17 @@ namespace WhetStone {
 
 class MeshMaps_VEM : public MeshMaps { 
  public:
-  MeshMaps_VEM(Teuchos::RCP<const AmanziMesh::Mesh> mesh) :
-      MeshMaps(mesh),
-      order_(2) {};
+  MeshMaps_VEM(Teuchos::RCP<const AmanziMesh::Mesh> mesh,
+               const Teuchos::ParameterList& plist) :
+      MeshMaps(mesh) {
+    ParseInputParameters_(plist);
+  }
   MeshMaps_VEM(Teuchos::RCP<const AmanziMesh::Mesh> mesh0,
-               Teuchos::RCP<const AmanziMesh::Mesh> mesh1) :
-      MeshMaps(mesh0, mesh1),
-      order_(2) {};
+               Teuchos::RCP<const AmanziMesh::Mesh> mesh1,
+               const Teuchos::ParameterList& plist) :
+      MeshMaps(mesh0, mesh1) {
+    ParseInputParameters_(plist);
+  }
   ~MeshMaps_VEM() {};
 
   // Maps
@@ -55,9 +59,6 @@ class MeshMaps_VEM : public MeshMaps {
   virtual void JacobianCell(int c, const std::vector<VectorPolynomial>& vf,
                             MatrixPolynomial& J) const override;
 
-  // access
-  void set_order(int order) { order_ = order; }
-
  private:
   // pseudo-velocity on edge e
   void VelocityEdge_(int e, VectorPolynomial& ve) const;
@@ -68,7 +69,11 @@ class MeshMaps_VEM : public MeshMaps {
   void LeastSquareProjector_Cell_(int order, int c, const std::vector<VectorPolynomial>& vf,
                                   VectorPolynomial& vc) const;
 
+  // io
+  void ParseInputParameters_(const Teuchos::ParameterList& plist);
+
  private:
+  std::string method_, projector_;
   int order_;
 };
 

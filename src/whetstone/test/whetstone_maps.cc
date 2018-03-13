@@ -66,8 +66,13 @@ TEST(DG_MAP_DETERMINANT_CELL) {
   }
   mesh1->deform(nodeids, new_positions, false, &final_positions);
 
-  // colelct geometric data
-  auto maps = std::make_shared<MeshMaps_VEM>(mesh0, mesh1);
+  // collect geometric data
+  Teuchos::ParameterList plist;
+  plist.set<std::string>("method", "unknown")
+       .set<int>("method order", 1)
+       .set<std::string>("projector", "H1");
+  auto maps = std::make_shared<MeshMaps_VEM>(mesh0, mesh1, plist);
+
   std::vector<WhetStone::VectorPolynomial> vf(nfaces);
   for (int f = 0; f < nfaces; ++f) {
     maps->VelocityFace(f, vf[f]);

@@ -83,6 +83,7 @@ class BilinearForm : public virtual InnerProductL2,
   }
 
   // miscalleneous
+  int order() const { return order_; }
   void set_order(int order) { order_ = order; }
 
  protected:

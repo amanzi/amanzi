@@ -301,8 +301,14 @@ void RemapTestsDualRK(int order_p, int order_u,
       }
       xv += uv * ds;
     }
-    xv[0] = (1 - yv[1]) * yv[0] + yv[1] * std::pow(yv[0], 0.5);
-    xv[1] = yv[1];
+    /*
+    double h = std::pow(1.0 / mesh0->cell_map(false).NumGlobalElements(), 0.5);
+    for (int i = 0; i < 2; ++i) {
+      xv[i] = yv[i] + h * sin((2 + i) * yv[0]) * sin((3 - i) * yv[1]) / 8;
+      xv[i] = std::max(xv[i], 0.0);
+      xv[i] = std::min(xv[i], 1.0);
+    }
+    */
 
     nodeids.push_back(v);
     new_positions.push_back(xv);
@@ -311,12 +317,16 @@ void RemapTestsDualRK(int order_p, int order_u,
 
   // little factory of mesh maps
   std::shared_ptr<WhetStone::MeshMaps> maps;
+  Teuchos::ParameterList map_list;
+  map_list.set<std::string>("method", "CrouzeixRaviart")
+          .set<int>("method order", order_u)
+          .set<std::string>("projector", "H1 harmonic");
+  
   if (maps_name == "FEM") {
     maps = std::make_shared<WhetStone::MeshMaps_FEM>(mesh0, mesh1);
   } else if (maps_name == "VEM") {
     std::shared_ptr<WhetStone::MeshMaps_VEM> maps_vem;
-    maps_vem = std::make_shared<WhetStone::MeshMaps_VEM>(mesh0, mesh1);
-    maps_vem->set_order(order_u);  // higher-order velocity reconstruction
+    maps_vem = std::make_shared<WhetStone::MeshMaps_VEM>(mesh0, mesh1, map_list);
     maps = maps_vem;
   }
 
@@ -452,6 +462,7 @@ void RemapTestsDualRK(int order_p, int order_u,
   p2err.PutScalar(0.0);
 
   for (int c = 0; c < ncells_owned; ++c) {
+    const AmanziGeometry::Point& xc0 = mesh0->cell_centroid(c);
     double area_c(mesh1->cell_volume(c));
 
     WhetStone::DenseVector data(nk);
@@ -463,7 +474,7 @@ void RemapTestsDualRK(int order_p, int order_u,
 
     // const AmanziGeometry::Point& xg = maps->cell_geometric_center(1, c);
     const AmanziGeometry::Point& xg = mesh1->cell_centroid(c);
-    double err = p2c[0][c] - ana.SolutionExact(xg, 0.0);
+    double err = poly.Value(xc0) - ana.SolutionExact(xg, 0.0);
 
     inf0_err = std::max(inf0_err, fabs(err));
     l20_err += err * err * area_c;
@@ -588,7 +599,7 @@ TEST(REMAP2D_DG_QUADRATURE_ERROR) {
   RemapTestsDualRK(2,1, Amanzi::Explicit_TI::tvd_3rd_order, "VEM", "",  64, 64,0, 0.05 / 4);
   RemapTestsDualRK(2,1, Amanzi::Explicit_TI::tvd_3rd_order, "VEM", "", 128,128,0, 0.05 / 8);
   RemapTestsDualRK(2,1, Amanzi::Explicit_TI::tvd_3rd_order, "VEM", "", 256,256,0, 0.05 / 16);
-}
+} 
 */
 
 /*

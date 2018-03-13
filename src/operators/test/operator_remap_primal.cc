@@ -103,12 +103,16 @@ void RemapTests2DPrimal(int order, std::string disc_name,
 
   // little factory of mesh maps
   std::shared_ptr<WhetStone::MeshMaps> maps;
+  Teuchos::ParameterList map_list;
+  map_list.set<std::string>("method", "CrouzeixRaviart")
+          .set<int>("method order", order + 1)
+          .set<std::string>("projector", "H1 harmonic");
+
   if (maps_name == "FEM") {
     maps = std::make_shared<WhetStone::MeshMaps_FEM>(mesh0, mesh1);
   } else if (maps_name == "VEM") {
     std::shared_ptr<WhetStone::MeshMaps_VEM> maps_vem;
-    maps_vem = std::make_shared<WhetStone::MeshMaps_VEM>(mesh0, mesh1);
-    maps_vem->set_order(order + 1);  // higher-order velocity reconstruction
+    maps_vem = std::make_shared<WhetStone::MeshMaps_VEM>(mesh0, mesh1, map_list);
     maps = maps_vem;
   }
 
