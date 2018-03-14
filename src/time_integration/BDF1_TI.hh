@@ -20,6 +20,7 @@
 #include "VerboseObject.hh"
 #include "Solver.hh"
 #include "SolverFactory.hh"
+#include "SolverDefs.hh"
 
 #include "BDF1_State.hh"
 #include "SolutionHistory.hh"

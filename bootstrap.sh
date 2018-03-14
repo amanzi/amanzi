@@ -649,6 +649,10 @@ function parse_argv()
                  tpl_config_file=`make_fullpath $tmp`
                  ;;
 
+      --tpls_only)
+                 tpls_only=${TRUE}
+                 ;;
+
       --tools-install-prefix=*)
                  tmp=`parse_option_with_equal "${opt}" 'tools-install-prefix'`
                  tools_install_prefix=`make_fullpath $tmp`
