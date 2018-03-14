@@ -12,6 +12,7 @@
 #include <vector>
 
 #include "PK_DomainFunctionFactory.hh"
+#include "LinearOperatorFactory.hh"
 
 // Amanzi::NavierStokes
 #include "NavierStokes_PK.hh"
