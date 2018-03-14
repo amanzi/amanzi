@@ -11,7 +11,6 @@
 
 #include <vector>
 
-#include "LinearOperatorFactory.hh"
 #include "PK_DomainFunctionFactory.hh"
 #include "LinearOperatorFactory.hh"
 
