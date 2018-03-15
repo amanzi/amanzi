@@ -44,7 +44,7 @@ TEST(ELASTICITY_STIFFNESS_2D) {
   MeshFactory meshfactory(comm);
   meshfactory.preference(FrameworkPreference({MSTK}));
   // RCP<Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 1, 1); 
-  RCP<Mesh> mesh = meshfactory("test/one_cell2.exo"); 
+  RCP<Mesh> mesh = meshfactory("test/one_pentagon.exo"); 
  
   MFD3D_Elasticity mfd(mesh);
 

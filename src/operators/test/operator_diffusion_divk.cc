@@ -68,9 +68,9 @@ void RunTestDiffusionDivK2D(std::string diffusion_list, std::string upwind_list)
   // modify diffusion coefficient
   // -- since rho=mu=1.0, we do not need to scale the diffusion tensor
   Teuchos::RCP<std::vector<WhetStone::Tensor> > K = Teuchos::rcp(new std::vector<WhetStone::Tensor>());
-  int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
-  int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
-  int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
+  int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+  int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
+  int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
 
   Analytic03 ana(mesh);
 
@@ -82,7 +82,7 @@ void RunTestDiffusionDivK2D(std::string diffusion_list, std::string upwind_list)
   AmanziGeometry::Point g(0.0, -1.0);
 
   // create boundary data
-  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(mesh, AmanziMesh::FACE, SCHEMA_DOFS_SCALAR));
+  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(mesh, AmanziMesh::FACE, DOF_Type::SCALAR));
   std::vector<int>& bc_model = bc->bc_model();
   std::vector<double>& bc_value = bc->bc_value();
 
@@ -121,9 +121,8 @@ void RunTestDiffusionDivK2D(std::string diffusion_list, std::string upwind_list)
   UpwindClass upwind(mesh, knc);
   upwind.Init(ulist);
 
-  knc->UpdateValues(*flux);  // argument is not used
-  ModelUpwindFn func = &HeatConduction::Conduction;
-  upwind.Compute(*flux, *solution, bc_model, bc_value, *knc->values(), func);
+  knc->UpdateValues(*flux, bc_model, bc_value);  // 1st argument is not used
+  upwind.Compute(*flux, *solution, bc_model, *knc->values());
 
   if (upwind_list == "upwind second-order") knc->UpdateValuesPostUpwind();
 
@@ -226,9 +225,9 @@ TEST(OPERATOR_DIFFUSION_DIVK_AVERAGE_3D) {
   // modify diffusion coefficient
   // -- since rho=mu=1.0, we do not need to scale the nonlinear coefficient.
   Teuchos::RCP<std::vector<WhetStone::Tensor> > K = Teuchos::rcp(new std::vector<WhetStone::Tensor>());
-  int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
-  int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
-  int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
+  int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+  int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
+  int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
 
   Analytic03 ana(mesh);
 
@@ -243,7 +242,7 @@ TEST(OPERATOR_DIFFUSION_DIVK_AVERAGE_3D) {
   AmanziGeometry::Point g(0.0, 0.0, -1.0);
 
   // create boundary data
-  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(mesh, AmanziMesh::FACE, SCHEMA_DOFS_SCALAR));
+  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(mesh, AmanziMesh::FACE, DOF_Type::SCALAR));
   std::vector<int>& bc_model = bc->bc_model();
   std::vector<double>& bc_value = bc->bc_value();
 
@@ -284,9 +283,11 @@ TEST(OPERATOR_DIFFUSION_DIVK_AVERAGE_3D) {
   UpwindFlux<HeatConduction> upwind(mesh, knc);
   upwind.Init(ulist);
 
-  knc->UpdateValues(*flux);  // argument is not used
+  knc->UpdateValues(*flux, bc_model, bc_value);  // 1st argument is not used
+  // upwind.Compute(*flux, *solution, bc_model, *knc->values());
   ModelUpwindFn func = &HeatConduction::Conduction;
-  upwind.Compute(*flux, *solution, bc_model, bc_value, *knc->values(), func);
+  upwind.Compute(*flux, *solution, bc_model, *knc->values());
+  // upwind.Compute2(*flux, *solution, bc_model, bc_value, *knc->values(), func);
 
   // create source 
   CompositeVector source(cvs);

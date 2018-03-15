@@ -31,6 +31,7 @@ include_directories(${OUTPUT_SOURCE_DIR})
 
 # External (TPL) include directories
 include_directories(${Epetra_INCLUDE_DIRS})
+include_directories(${HDF5_INCLUDE_DIRS})
 include_directories(${ASCEMIO_INCLUDE_DIR})
 
 #
@@ -66,6 +67,8 @@ set(pks_inc_files
   PK_DomainFunctionWeight.hh
   PK_DomainFunctionCoupling.hh
   PK_DomainFunctionSubgrid.hh
+  PK_DomainFunctionSubgridReturn.hh
+  PK_DomainFunctionExponentialDecay.hh
   PK_DomainFunctionSimpleWell.hh
   PK_Factory.hh
   PK_Utils.hh)

@@ -81,7 +81,7 @@ void PDE_Electromagnetics::ApplyBCs(bool primary, bool eliminate)
 {
   if (local_op_schema_ == (OPERATOR_SCHEMA_BASE_CELL
                          | OPERATOR_SCHEMA_DOFS_EDGE)) {
-    Teuchos::RCP<BCs> bc_f, bc_e;
+    Teuchos::RCP<const BCs> bc_f, bc_e;
     for (auto bc = bcs_trial_.begin(); bc != bcs_trial_.end(); ++bc) {
       if ((*bc)->kind() == AmanziMesh::FACE) {
         bc_f = *bc;
@@ -97,8 +97,8 @@ void PDE_Electromagnetics::ApplyBCs(bool primary, bool eliminate)
 /* ******************************************************************
 * Apply BCs on cell operators
 ****************************************************************** */
-void PDE_Electromagnetics::ApplyBCs_Edge_(const Teuchos::Ptr<BCs>& bc_f,
-                                          const Teuchos::Ptr<BCs>& bc_e,
+void PDE_Electromagnetics::ApplyBCs_Edge_(const Teuchos::Ptr<const BCs>& bc_f,
+                                          const Teuchos::Ptr<const BCs>& bc_e,
                                           bool primary, bool eliminate)
 {
   AmanziMesh::Entity_ID_List edges, faces, cells;
@@ -113,13 +113,13 @@ void PDE_Electromagnetics::ApplyBCs_Edge_(const Teuchos::Ptr<BCs>& bc_f,
 
   // calculate number of cells for each edge 
   // move to properties of BCs (lipnikov@lanl.gov)
-  std::vector<int> edge_get_cells(nedges_wghost, 0);
+  std::vector<int> edge_ncells(nedges_wghost, 0);
   for (int c = 0; c != ncells_wghost; ++c) {
     mesh_->cell_get_edges(c, &edges);
     int nedges = edges.size();
 
     for (int n = 0; n < nedges; ++n) {
-      edge_get_cells[edges[n]]++;
+      edge_ncells[edges[n]]++;
     }
   }
 
@@ -211,8 +211,8 @@ void PDE_Electromagnetics::ApplyBCs_Edge_(const Teuchos::Ptr<BCs>& bc_f,
           }
 
           if (primary) {
-            rhs_edge[0][e] = value;
-            Acell(n, n) = 1.0 / edge_get_cells[e];
+            if (e < nedges_owned) rhs_edge[0][e] = value;
+            Acell(n, n) = 1.0 / edge_ncells[e];
           }
         }
       }

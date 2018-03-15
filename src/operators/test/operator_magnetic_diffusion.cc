@@ -32,8 +32,8 @@
 #include "Operator.hh"
 #include "OperatorDefs.hh"
 #include "PDE_Accumulation.hh"
-#include "PDE_ElectromagneticsMHD.hh"
-#include "PDE_ElectromagneticsMHD_TM.hh"
+#include "PDE_MagneticDiffusion.hh"
+#include "PDE_MagneticDiffusion_TM.hh"
 
 #include "AnalyticElectromagnetics04.hh"
 #include "AnalyticElectromagnetics05.hh"
@@ -43,7 +43,7 @@
 * Magnetic flux B = (Bx, By, 0), electrif field E = (0, 0, Ez)
 ***************************************************************** */
 template<class Analytic>
-void ResistiveMHD2D(double dt, double tend, 
+void MagneticDiffusion2D(double dt, double tend, 
                     int nx, int ny, 
                     double Xa, double Ya, double Xb, double Yb,
                     const std::string& name) {
@@ -56,7 +56,7 @@ void ResistiveMHD2D(double dt, double tend,
   Epetra_MpiComm comm(MPI_COMM_WORLD);
   int MyPID = comm.MyPID();
 
-  if (MyPID == 0) std::cout << "\nTest: Resistive MHD, TM mode, dt=" 
+  if (MyPID == 0) std::cout << "\nTest: Magnetic diffusion, TM mode, dt=" 
                             << dt << ", name: " << name << std::endl;
 
   // read parameter list
@@ -84,7 +84,7 @@ void ResistiveMHD2D(double dt, double tend,
   WhetStone::Tensor Kc(2, 2);
 
   Teuchos::RCP<std::vector<WhetStone::Tensor> > K = Teuchos::rcp(new std::vector<WhetStone::Tensor>());
-  int ncells_owned = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  int ncells_owned = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
 
   for (int c = 0; c < ncells_owned; c++) {
     const AmanziGeometry::Point& xc = mesh->cell_centroid(c);
@@ -93,22 +93,22 @@ void ResistiveMHD2D(double dt, double tend,
   }
 
   // create miscalleneous data
-  int nnodes_owned = mesh->num_entities(AmanziMesh::NODE, AmanziMesh::OWNED);
-  int nnodes_wghost = mesh->num_entities(AmanziMesh::NODE, AmanziMesh::USED);
+  int nnodes_owned = mesh->num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::OWNED);
+  int nnodes_wghost = mesh->num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::ALL);
 
-  int nfaces_owned = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
-  int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
+  int nfaces_owned = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
+  int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
 
-  Teuchos::RCP<BCs> bc1 = Teuchos::rcp(new BCs(mesh, AmanziMesh::NODE, SCHEMA_DOFS_SCALAR));
+  Teuchos::RCP<BCs> bc1 = Teuchos::rcp(new BCs(mesh, AmanziMesh::NODE, DOF_Type::SCALAR));
 
   // create electromagnetics operator
   Teuchos::ParameterList olist = plist.get<Teuchos::ParameterList>("PK operator")
                                       .get<Teuchos::ParameterList>("electromagnetics operator");
-  Teuchos::RCP<PDE_ElectromagneticsMHD_TM> op_mhd = Teuchos::rcp(new PDE_ElectromagneticsMHD_TM(olist, mesh));
-  op_mhd->SetBCs(bc1, bc1);
+  Teuchos::RCP<PDE_MagneticDiffusion_TM> op_mag = Teuchos::rcp(new PDE_MagneticDiffusion_TM(olist, mesh));
+  op_mag->SetBCs(bc1, bc1);
 
   // create/extract solution maps
-  Teuchos::RCP<Operator> global_op = op_mhd->global_operator();
+  Teuchos::RCP<Operator> global_op = op_mag->global_operator();
   const CompositeVectorSpace& cvs_e = global_op->DomainMap();
 
   Teuchos::RCP<CompositeVectorSpace> cvs_b = Teuchos::rcp(new CompositeVectorSpace());
@@ -149,8 +149,8 @@ void ResistiveMHD2D(double dt, double tend,
   while (told + dt/2 < tend) {
     // set up the diffusion operator
     global_op->Init();
-    op_mhd->SetTensorCoefficient(K);
-    op_mhd->UpdateMatrices();
+    op_mag->SetTensorCoefficient(K);
+    op_mag->UpdateMatrices();
 
     // Add an accumulation term using dt=1 since time step is taken into
     // account in the system modification routine. Kc=constant FIXME
@@ -176,8 +176,8 @@ void ResistiveMHD2D(double dt, double tend,
     }
 
     // apply BCs and assemble
-    op_mhd->ModifyMatrices(E, B, dt);
-    op_mhd->ApplyBCs(true, true);
+    op_mag->ModifyMatrices(E, B, dt);
+    op_mag->ApplyBCs(true, true);
     op_acc->ApplyBCs();
     global_op->SymbolicAssembleMatrix();
     global_op->AssembleMatrix();
@@ -194,9 +194,9 @@ void ResistiveMHD2D(double dt, double tend,
     CompositeVector& rhs = *global_op->rhs();
     int ierr = solver.ApplyInverse(rhs, E);
 
-    double heat = op_mhd->CalculateOhmicHeating(E);
-    double energy = op_mhd->CalculateMagneticEnergy(B);
-    op_mhd->ModifyFields(E, B, dt);
+    double heat = op_mag->CalculateOhmicHeating(E);
+    double energy = op_mag->CalculateMagneticEnergy(B);
+    op_mag->ModifyFields(E, B, dt);
 
     CHECK(heat > 0.0);
     // CHECK(energy < energy0);
@@ -271,8 +271,8 @@ void ResistiveMHD2D(double dt, double tend,
   if (MyPID == 0) {
     if (enorm != 0.0) el2_err /= enorm; 
     if (bnorm != 0.0) bl2_err /= bnorm; 
-    printf("L2(e)=%10.7f  Inf(e)=%9.6f  L2(b)=%10.7f  Inf(b)=%9.6f\n",
-        el2_err, einf_err, bl2_err, binf_err);
+    printf("nx=%d L2(e)=%10.7f  Inf(e)=%9.6f  L2(b)=%10.7f  Inf(b)=%9.6f\n",
+        nx, el2_err, einf_err, bl2_err, binf_err);
     // CHECK(el2_err < tolerance);
   }
 }
@@ -282,7 +282,7 @@ void ResistiveMHD2D(double dt, double tend,
 * Testing operators for Maxwell-type problems: 3D
 * **************************************************************** */
 template<class Analytic>
-void ResistiveMHD3D(double dt, double tend, bool convergence,
+void MagneticDiffusion3D(double dt, double tend, bool convergence,
                     int nx, int ny, int nz,
                     double Xa, double Ya, double Za, double Xb, double Yb, double Zb,
                     const std::string& name) {
@@ -295,7 +295,7 @@ void ResistiveMHD3D(double dt, double tend, bool convergence,
   Epetra_MpiComm comm(MPI_COMM_WORLD);
   int MyPID = comm.MyPID();
 
-  if (MyPID == 0) std::cout << "\nTest: Resistive MHD 3D, dt=" 
+  if (MyPID == 0) std::cout << "\nTest: Magnetic diffusion 3D, dt=" 
                             << dt << ", name: " << name << std::endl;
 
   // read parameter list
@@ -325,7 +325,7 @@ void ResistiveMHD3D(double dt, double tend, bool convergence,
   WhetStone::Tensor Kc(3, 2);
 
   Teuchos::RCP<std::vector<WhetStone::Tensor> > K = Teuchos::rcp(new std::vector<WhetStone::Tensor>());
-  int ncells_owned = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  int ncells_owned = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
 
   for (int c = 0; c < ncells_owned; c++) {
     const AmanziGeometry::Point& xc = mesh->cell_centroid(c);
@@ -334,24 +334,24 @@ void ResistiveMHD3D(double dt, double tend, bool convergence,
   }
 
   // create boundary data
-  int nedges_owned = mesh->num_entities(AmanziMesh::EDGE, AmanziMesh::OWNED);
-  int nedges_wghost = mesh->num_entities(AmanziMesh::EDGE, AmanziMesh::USED);
+  int nedges_owned = mesh->num_entities(AmanziMesh::EDGE, AmanziMesh::Parallel_type::OWNED);
+  int nedges_wghost = mesh->num_entities(AmanziMesh::EDGE, AmanziMesh::Parallel_type::ALL);
 
-  int nfaces_owned = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
-  int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
+  int nfaces_owned = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
+  int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
 
-  Teuchos::RCP<BCs> bc1 = Teuchos::rcp(new BCs(mesh, AmanziMesh::EDGE, SCHEMA_DOFS_SCALAR));
-  Teuchos::RCP<BCs> bc2 = Teuchos::rcp(new BCs(mesh, AmanziMesh::FACE, SCHEMA_DOFS_SCALAR));
+  Teuchos::RCP<BCs> bc1 = Teuchos::rcp(new BCs(mesh, AmanziMesh::EDGE, DOF_Type::SCALAR));
+  Teuchos::RCP<BCs> bc2 = Teuchos::rcp(new BCs(mesh, AmanziMesh::FACE, DOF_Type::SCALAR));
 
   // create electromagnetics operator
   Teuchos::ParameterList olist = plist.get<Teuchos::ParameterList>("PK operator")
                                       .get<Teuchos::ParameterList>("electromagnetics operator");
-  Teuchos::RCP<PDE_ElectromagneticsMHD> op_mhd = Teuchos::rcp(new PDE_ElectromagneticsMHD(olist, mesh));
-  op_mhd->SetBCs(bc1, bc1);
-  if (!convergence) op_mhd->AddBCs(bc2, bc2);
+  Teuchos::RCP<PDE_MagneticDiffusion> op_mag = Teuchos::rcp(new PDE_MagneticDiffusion(olist, mesh));
+  op_mag->SetBCs(bc1, bc1);
+  if (!convergence) op_mag->AddBCs(bc2, bc2);
 
   // create/extract solution maps
-  Teuchos::RCP<Operator> global_op = op_mhd->global_operator();
+  Teuchos::RCP<Operator> global_op = op_mag->global_operator();
   const CompositeVectorSpace& cvs_e = global_op->DomainMap();
 
   Teuchos::RCP<CompositeVectorSpace> cvs_b = Teuchos::rcp(new CompositeVectorSpace());
@@ -390,8 +390,8 @@ void ResistiveMHD3D(double dt, double tend, bool convergence,
   while (told + dt/2 < tend) {
     // set up the diffusion operator
     global_op->Init();
-    op_mhd->SetTensorCoefficient(K);
-    op_mhd->UpdateMatrices();
+    op_mag->SetTensorCoefficient(K);
+    op_mag->UpdateMatrices();
 
     // update BCs
     std::vector<int>& bc_model = bc1->bc_model();
@@ -428,8 +428,8 @@ void ResistiveMHD3D(double dt, double tend, bool convergence,
     }
 
     // BCs, sources, and assemble
-    op_mhd->ModifyMatrices(E, B, dt);
-    op_mhd->ApplyBCs(true, true);
+    op_mag->ModifyMatrices(E, B, dt);
+    op_mag->ApplyBCs(true, true);
     global_op->SymbolicAssembleMatrix();
     global_op->AssembleMatrix();
 
@@ -445,9 +445,9 @@ void ResistiveMHD3D(double dt, double tend, bool convergence,
     CompositeVector& rhs = *global_op->rhs();
     int ierr = solver.ApplyInverse(rhs, E);
 
-    double heat = op_mhd->CalculateOhmicHeating(E);
-    double energy = op_mhd->CalculateMagneticEnergy(B);
-    op_mhd->ModifyFields(E, B, dt);
+    double heat = op_mag->CalculateOhmicHeating(E);
+    double energy = op_mag->CalculateMagneticEnergy(B);
+    op_mag->ModifyFields(E, B, dt);
 
     CHECK(heat > 0.0);
     if (!convergence) CHECK(energy < energy0);
@@ -457,7 +457,10 @@ void ResistiveMHD3D(double dt, double tend, bool convergence,
     told = tnew;
     tnew += dt;
 
-    // reconstruction
+    // reconstruction 
+    B.ScatterMasterToGhosted("face");
+    E.ScatterMasterToGhosted("edge");
+
     // -- magnetic field
     Teuchos::RCP<CompositeVectorSpace> cvs = Teuchos::rcp(new CompositeVectorSpace());
     cvs->SetMesh(mesh)->SetGhosted(true)->AddComponent("cell", AmanziMesh::CELL, 3);
@@ -524,6 +527,9 @@ void ResistiveMHD3D(double dt, double tend, bool convergence,
       }
     }
 
+    double err_in[2] = {errB, divB};
+    double err_out[2];
+    mesh->get_comm()->SumAll(err_in, err_out, 2);
 
     if (cycle == 1) divB0 = divB;
     CHECK_CLOSE(divB0, divB, 1e-8);
@@ -533,8 +539,8 @@ void ResistiveMHD3D(double dt, double tend, bool convergence,
                 << " itr=" << solver.num_itrs() << "  energy= " << energy 
                 << "  heat= " << heat
                 << "  avgB=" << avgB / ncells_owned 
-                << "  divB=" << std::pow(divB, 0.5) 
-                << "  errB=" << std::pow(errB, 0.5) << std::endl;
+                << "  divB=" << std::pow(err_out[1], 0.5) 
+                << "  errB=" << std::pow(err_out[0], 0.5) << std::endl;
     }
 
     // visualization
@@ -569,22 +575,26 @@ void ResistiveMHD3D(double dt, double tend, bool convergence,
 }
 
 
-TEST(RESISTIVE_MHD2D_RELAX) {
-  ResistiveMHD2D<AnalyticElectromagnetics04>(0.7, 5.9, 8,18, -4.0,-10.0, 4.0,10.0, "structured");
+// TEST(MAGNETIC_DIFFUSION2D_TMP) {
+//   MagneticDiffusion3D<AnalyticElectromagnetics04>(0.1, 0.5, false, 30,30,50, -4.0,-4.0,-10.0, 4.0,4.0,10.0, "structured");
+// }
+
+TEST(MAGNETIC_DIFFUSION2D_RELAX) {
+  MagneticDiffusion2D<AnalyticElectromagnetics04>(0.7, 5.9, 8,18, -4.0,-10.0, 4.0,10.0, "structured");
 }
 
-TEST(RESISTIVE_MHD2D_CONVERGENCE) {
-  ResistiveMHD2D<AnalyticElectromagnetics05>(0.01, 0.1, 10,10, 0.0,0.0, 1.0,1.0, "test/random10.exo");
-  // ResistiveMHD2D<AnalyticElectromagnetics05>(0.01 / 2, 0.1, 20,20, 0.0,0.0, 1.0,1.0, "structured");
+TEST(MAGNETIC_DIFFUSION2D_CONVERGENCE) {
+  MagneticDiffusion2D<AnalyticElectromagnetics05>(0.01, 0.1, 10,10, 0.0,0.0, 1.0,1.0, "test/random10.exo");
+  // MagneticDiffusion2D<AnalyticElectromagnetics05>(0.01 / 2, 0.1, 20,20, 0.0,0.0, 1.0,1.0, "structured");
 }
 
-TEST(RESISTIVE_MHD3D_RELAX) {
-  ResistiveMHD3D<AnalyticElectromagnetics04>(0.1, 0.5, false, 10,8,22, -4.0,-4.0,-10.0, 4.0,4.0,10.0, "structured");
+TEST(MAGNETIC_DIFFUSION3D_RELAX) {
+  MagneticDiffusion3D<AnalyticElectromagnetics04>(0.1, 0.5, false, 10,8,22, -4.0,-4.0,-10.0, 4.0,4.0,10.0, "structured");
 }
 
-TEST(RESISTIVE_MHD3D_CONVERGENCE) {
-  // ResistiveMHD3D<AnalyticElectromagnetics05>(0.01, 0.1, true, 8,8,8, 0.0,0.0,0.0, 1.0,1.0,1.0, "structured");
-  ResistiveMHD3D<AnalyticElectromagnetics05>(0.01, 0.1, true, 8,8,8, 0.0,0.0,0.0, 1.0,1.0,1.0, "test/kershaw08.exo");
-  // ResistiveMHD3D<AnalyticElectromagnetics05>(0.01 / 2, 0.1, true, 8,8,8, 0.0,0.0,0.0, 1.0,1.0,1.0, "test/random3D_20.exo");
+TEST(MAGNETIC_DIFFUSION3D_CONVERGENCE) {
+  // MagneticDiffusion3D<AnalyticElectromagnetics05>(0.01, 0.1, true, 8,8,8, 0.0,0.0,0.0, 1.0,1.0,1.0, "structured");
+  MagneticDiffusion3D<AnalyticElectromagnetics05>(0.01, 0.1, true, 8,8,8, 0.0,0.0,0.0, 1.0,1.0,1.0, "test/kershaw08.exo");
+  // MagneticDiffusion3D<AnalyticElectromagnetics05>(0.01 / 2, 0.1, true, 8,8,8, 0.0,0.0,0.0, 1.0,1.0,1.0, "test/random3D_20.exo");
 }
 

@@ -80,18 +80,18 @@ SUITE (HexMesh)
     CHECK_EQUAL (mesh->rank_id (), me);
         
     int lcount, gcount;
-    lcount = mesh->count_entities(mesh->kind_to_rank(Amanzi::AmanziMesh::CELL),Amanzi::AmanziMesh::OWNED);
+    lcount = mesh->count_entities(mesh->kind_to_rank(Amanzi::AmanziMesh::CELL),Amanzi::AmanziMesh::Parallel_type::OWNED);
     comm_.SumAll(&lcount, &gcount, 1);
     CHECK_EQUAL (gcount, isize*jsize*ksize);
 
-    lcount = mesh->count_entities(mesh->kind_to_rank(Amanzi::AmanziMesh::FACE), Amanzi::AmanziMesh::OWNED);
+    lcount = mesh->count_entities(mesh->kind_to_rank(Amanzi::AmanziMesh::FACE), Amanzi::AmanziMesh::Parallel_type::OWNED);
     comm_.SumAll(&lcount, &gcount, 1);
     CHECK_EQUAL (gcount, 
                  (isize  )*(jsize  )*(ksize+1) + 
                  (isize  )*(jsize+1)*(ksize ) + 
                  (isize+1)*(jsize  )*(ksize ));
 
-    lcount = mesh->count_entities(mesh->kind_to_rank(Amanzi::AmanziMesh::NODE), Amanzi::AmanziMesh::OWNED);
+    lcount = mesh->count_entities(mesh->kind_to_rank(Amanzi::AmanziMesh::NODE), Amanzi::AmanziMesh::Parallel_type::OWNED);
     comm_.SumAll(&lcount, &gcount, 1);
     CHECK_EQUAL (gcount, (isize+1)*(jsize+1)*(ksize+1));
 
@@ -101,32 +101,32 @@ SUITE (HexMesh)
     // stk::mesh::Part *side;
 
     // side = mesh->get_set("West", mesh->kind_to_rank(Amanzi::AmanziMesh::FACE));
-    // lcount = mesh->count_entities(*side, Amanzi::AmanziMesh::OWNED);
+    // lcount = mesh->count_entities(*side, Amanzi::AmanziMesh::Parallel_type::OWNED);
     // comm_.SumAll(&lcount, &gcount, 1);
     // CHECK_EQUAL (gcount, isize*jsize);
 
     // side = mesh->get_set("East", mesh->kind_to_rank(Amanzi::AmanziMesh::FACE));
-    // lcount = mesh->count_entities(*side, Amanzi::AmanziMesh::OWNED);
+    // lcount = mesh->count_entities(*side, Amanzi::AmanziMesh::Parallel_type::OWNED);
     // comm_.SumAll(&lcount, &gcount, 1);
     // CHECK_EQUAL (gcount, isize*jsize);
 
     // side = mesh->get_set("South", mesh->kind_to_rank(Amanzi::AmanziMesh::FACE));
-    // lcount = mesh->count_entities(*side, Amanzi::AmanziMesh::OWNED);
+    // lcount = mesh->count_entities(*side, Amanzi::AmanziMesh::Parallel_type::OWNED);
     // comm_.SumAll(&lcount, &gcount, 1);
     // CHECK_EQUAL (gcount, isize*ksize);
 
     // side = mesh->get_set("North", mesh->kind_to_rank(Amanzi::AmanziMesh::FACE));
-    // lcount = mesh->count_entities(*side, Amanzi::AmanziMesh::OWNED);
+    // lcount = mesh->count_entities(*side, Amanzi::AmanziMesh::Parallel_type::OWNED);
     // comm_.SumAll(&lcount, &gcount, 1);
     // CHECK_EQUAL (gcount, isize*ksize);
 
     // side = mesh->get_set("Bottom", mesh->kind_to_rank(Amanzi::AmanziMesh::FACE));
-    // lcount = mesh->count_entities(*side, Amanzi::AmanziMesh::OWNED);
+    // lcount = mesh->count_entities(*side, Amanzi::AmanziMesh::Parallel_type::OWNED);
     // comm_.SumAll(&lcount, &gcount, 1);
     // CHECK_EQUAL (gcount, isize*jsize);
 
     // side = mesh->get_set("East", mesh->kind_to_rank(Amanzi::AmanziMesh::FACE));
-    // lcount = mesh->count_entities(*side, Amanzi::AmanziMesh::OWNED);
+    // lcount = mesh->count_entities(*side, Amanzi::AmanziMesh::Parallel_type::OWNED);
     // comm_.SumAll(&lcount, &gcount, 1);
     // CHECK_EQUAL (gcount, jsize*ksize);
 
@@ -164,7 +164,7 @@ SUITE (HexMesh)
 
     Amanzi::AmanziMesh::STK::Entity_vector e;
 
-    int ncell(mesh->count_entities(mesh->kind_to_rank(Amanzi::AmanziMesh::CELL), Amanzi::AmanziMesh::OWNED));
+    int ncell(mesh->count_entities(mesh->kind_to_rank(Amanzi::AmanziMesh::CELL), Amanzi::AmanziMesh::Parallel_type::OWNED));
 
     if (nproc > 1) {
 
@@ -172,13 +172,13 @@ SUITE (HexMesh)
 
       // all processes should have at least 1 but at most 8 shared nodes
 
-      mesh->get_entities(mesh->kind_to_rank(Amanzi::AmanziMesh::NODE), Amanzi::AmanziMesh::GHOST, e);
+      mesh->get_entities(mesh->kind_to_rank(Amanzi::AmanziMesh::NODE), Amanzi::AmanziMesh::Parallel_type::GHOST, e);
       // CHECK(e.size() <= 8);
       e.clear();
 
       // processes > 1 should have only 1 ghost face
 
-      mesh->get_entities(mesh->kind_to_rank(Amanzi::AmanziMesh::FACE), Amanzi::AmanziMesh::GHOST, e);
+      mesh->get_entities(mesh->kind_to_rank(Amanzi::AmanziMesh::FACE), Amanzi::AmanziMesh::Parallel_type::GHOST, e);
 
       if (me == 0) {
         // CHECK(e.empty());
@@ -187,9 +187,9 @@ SUITE (HexMesh)
       }
       e.clear();
 
-      // the number of USED faces depends on the number of cells owned
+      // the number of ALL faces depends on the number of cells owned
 
-      // mesh->get_entities(mesh->kind_to_rank(Amanzi::AmanziMesh::FACE), Amanzi::AmanziMesh::USED, e);
+      // mesh->get_entities(mesh->kind_to_rank(Amanzi::AmanziMesh::FACE), Amanzi::AmanziMesh::Parallel_type::ALL, e);
 
       int nface_expected(ncell*5+1);
 
@@ -200,10 +200,10 @@ SUITE (HexMesh)
       // processes should have at least 1 but at most 2 shared
       // cells, but it doesn't
             
-      mesh->get_entities(mesh->kind_to_rank(Amanzi::AmanziMesh::CELL), Amanzi::AmanziMesh::GHOST, e);
+      mesh->get_entities(mesh->kind_to_rank(Amanzi::AmanziMesh::CELL), Amanzi::AmanziMesh::Parallel_type::GHOST, e);
       e.clear();
            
-      mesh->get_entities(mesh->kind_to_rank(Amanzi::AmanziMesh::CELL), Amanzi::AmanziMesh::USED, e);
+      mesh->get_entities(mesh->kind_to_rank(Amanzi::AmanziMesh::CELL), Amanzi::AmanziMesh::Parallel_type::ALL, e);
       e.clear();
 
       // CHECK(!e.empty());
@@ -212,7 +212,7 @@ SUITE (HexMesh)
       // for (int p = 0; p < nproc; p++) {
       //     if (me == p) {
       //         Amanzi::AmanziMesh::STK::Entity_vector nodes;
-      //         mesh->get_entities(mesh->kind_to_rank(Amanzi::AmanziMesh::NODE), USED, nodes);
+      //         mesh->get_entities(mesh->kind_to_rank(Amanzi::AmanziMesh::NODE), Parallel_type::ALL, nodes);
       //         for (unsigned int i = 0; i < nodes.size(); i++) {
       //             unsigned int gid(nodes[i]->identifier());
       //             const double *coord = mesh->coordinates(gid);
@@ -228,13 +228,13 @@ SUITE (HexMesh)
 
     } else {
 
-      mesh->get_entities(mesh->kind_to_rank(Amanzi::AmanziMesh::NODE), Amanzi::AmanziMesh::GHOST, e);
+      mesh->get_entities(mesh->kind_to_rank(Amanzi::AmanziMesh::NODE), Amanzi::AmanziMesh::Parallel_type::GHOST, e);
       CHECK(e.empty());
 
-      mesh->get_entities(mesh->kind_to_rank(Amanzi::AmanziMesh::FACE), Amanzi::AmanziMesh::GHOST, e);
+      mesh->get_entities(mesh->kind_to_rank(Amanzi::AmanziMesh::FACE), Amanzi::AmanziMesh::Parallel_type::GHOST, e);
       CHECK(e.empty());
         
-      mesh->get_entities(mesh->kind_to_rank(Amanzi::AmanziMesh::CELL), Amanzi::AmanziMesh::GHOST, e);
+      mesh->get_entities(mesh->kind_to_rank(Amanzi::AmanziMesh::CELL), Amanzi::AmanziMesh::Parallel_type::GHOST, e);
       CHECK(e.empty());
     }            
 

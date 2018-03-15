@@ -12,6 +12,11 @@
 // derived class based on a particular mesh framework (like MSTK,
 // STKmesh etc.)
 //
+// Assumptions:
+// 
+// Cells in a 2D mesh must be oriented counter clockwise. This is not
+// applied to meshes on manifolds.   
+//
 // Design documentation:
 //
 // This class is designed to be both flexible and performant (and somewhat
@@ -168,7 +173,7 @@ class Mesh {
   // ------------------------
 
   // Number of entities of any kind (cell, face, node) and in a
-  // particular category (OWNED, GHOST, USED)
+  // particular category (OWNED, GHOST, ALL)
   virtual
   unsigned int num_entities(const Entity_kind kind,
                             const Parallel_type ptype) const = 0;
@@ -183,7 +188,7 @@ class Mesh {
   // ----------------
   // NOTE: Anything here could be cached if need be. --etc
 
-  // Get parallel type of entity - OWNED, GHOST, USED (See MeshDefs.hh)
+  // Get parallel type of entity - OWNED, GHOST, ALL (See MeshDefs.hh)
   virtual
   Parallel_type entity_get_ptype(const Entity_kind kind,
                                  const Entity_ID entid) const = 0;
@@ -378,7 +383,7 @@ class Mesh {
   // (e.g. a hex has 6 face neighbors)
   //
   // The order in which the cellids are returned cannot be
-  // guaranteed in general except when ptype = USED, in which case
+  // guaranteed in general except when ptype = ALL, in which case
   // the cellids will correcpond to cells across the respective
   // faces given by cell_get_faces
   virtual

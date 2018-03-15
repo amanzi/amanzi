@@ -193,7 +193,7 @@ SUITE(COMPOSITE_VECTOR) {
   TEST_FIXTURE(test_cv, CVScatter) {
     int rank = comm->MyPID();
     int size = comm->NumProc();
-    int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+    int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
 
     { // scope for x_c
       Epetra_MultiVector& x_c = *x->ViewComponent("cell",false);
@@ -216,7 +216,7 @@ SUITE(COMPOSITE_VECTOR) {
     }
 
     { // scope for x_f
-      int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
+      int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
       Epetra_MultiVector& x_f = *x->ViewComponent("face",false);
       for (int f=0; f!=nfaces; ++f) {
         x_f[0][f] = rank+1.0;
@@ -227,14 +227,14 @@ SUITE(COMPOSITE_VECTOR) {
 
   TEST_FIXTURE(test_cv, CVGather) {
     int rank = comm->MyPID();
-    int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::USED);
+    int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
     Epetra_MultiVector& x_c = *x->ViewComponent("cell",true);
     for (int c=0; c!=ncells; ++c) {
       x_c[0][c] = rank + 1;
     }
     x->GatherGhostedToMaster("cell");
 
-    int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
+    int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
     Epetra_MultiVector& x_f = *x->ViewComponent("face",true);
     for (int f=0; f!=nfaces; ++f) {
       x_f[0][f] = rank + 1;
@@ -246,7 +246,7 @@ SUITE(COMPOSITE_VECTOR) {
     // Ensures that Communication happens after a change.
     int rank = comm->MyPID();
     int size = comm->NumProc();
-    int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+    int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
     Epetra_MultiVector& x_c = *x->ViewComponent("cell",false);
     for (int c=0; c!=ncells; ++c) {
       x_c[0][c] = rank+1.0;
@@ -273,7 +273,7 @@ SUITE(COMPOSITE_VECTOR) {
     // Ensures that Communication DOESN"T happen if it isn't needed
     int rank = comm->MyPID();
     int size = comm->NumProc();
-    int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+    int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
 
     Epetra_MultiVector& x_c = *x->ViewComponent("cell",false);
     for (int c=0; c!=ncells; ++c) {

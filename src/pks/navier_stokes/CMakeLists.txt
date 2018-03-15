@@ -101,6 +101,6 @@ if (BUILD_TESTS)
     add_amanzi_test(navier_stokes_2D navier_stokes_2D
                     KIND int
                     SOURCE test/Main.cc test/navier_stokes_2D.cc
-                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 endif()
 

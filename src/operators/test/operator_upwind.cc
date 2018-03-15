@@ -91,9 +91,9 @@ void RunTestUpwind(std::string method) {
   for (int n = 4; n < 17; n *= 2) {
     Teuchos::RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, n, n, n, gm);
 
-    int ncells_wghost = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::USED);
-    int nfaces_owned = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
-    int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
+    int ncells_wghost = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
+    int nfaces_owned = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
+    int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
 
     // create model of nonlinearity
     Teuchos::RCP<Model> model = Teuchos::rcp(new Model(mesh));
@@ -115,16 +115,32 @@ void RunTestUpwind(std::string method) {
     Teuchos::RCP<CompositeVectorSpace> cvs = Teuchos::rcp(new CompositeVectorSpace());
     cvs->SetMesh(mesh)->SetGhosted(true)
        ->AddComponent("cell", AmanziMesh::CELL, 1)
+       ->AddComponent("dirichlet_faces", AmanziMesh::BOUNDARY_FACE, 1)
        ->AddComponent("face", AmanziMesh::FACE, 1);
 
     CompositeVector field(*cvs);
     Epetra_MultiVector& fcells = *field.ViewComponent("cell", true);
     Epetra_MultiVector& ffaces = *field.ViewComponent("face", true);
+    Epetra_MultiVector& fbfs = *field.ViewComponent("dirichlet_faces", true);
 
     for (int c = 0; c < ncells_wghost; c++) {
       const AmanziGeometry::Point& xc = mesh->cell_centroid(c);
       fcells[0][c] = model->Value(c, xc[0]); 
     }
+
+    // add boundary face component
+    const Epetra_Map& ext_face_map = mesh->exterior_face_map(true);
+    const Epetra_Map& face_map = mesh->face_map(true);
+    for (int f=0; f!=face_map.NumMyElements(); ++f) {
+      if (bc_model[f] == OPERATOR_BC_DIRICHLET) {
+        AmanziMesh::Entity_ID_List cells;
+        mesh->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
+        ASSERT(cells.size() == 1);
+        int bf = ext_face_map.LID(face_map.GID(f));
+        fbfs[0][bf] = model->Value(cells[0], bc_value[f]);
+      }
+    }
+    
 
     // create and initialize face-based flux field
     cvs = Teuchos::rcp(new CompositeVectorSpace());
@@ -146,8 +162,7 @@ void RunTestUpwind(std::string method) {
     UpwindClass upwind(mesh, model);
     upwind.Init(ulist);
 
-    ModelUpwindFn func = &Model::Value;
-    upwind.Compute(flux, solution, bc_model, bc_value, field, func);
+    upwind.Compute(flux, solution, bc_model, field);
 
     // calculate errors
     double error(0.0);

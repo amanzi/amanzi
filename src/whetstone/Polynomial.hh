@@ -17,7 +17,9 @@
     jumps to the next order (resp., x^3). 
 
   2.Monomial: a simple container of homogeneous polynomials of the
-    same order.
+    same order. In Amanzi regular monomial is a defined with 
+    coefficient one. For example, regular monomials of order two 
+    in 2D are x^2, xy and y^2.
 
   3.Polynomial: implements ring algebra for polynomials and a few
     useful transformations. See also class VectorPolynomial.
@@ -33,6 +35,8 @@
 #include <vector>
 
 #include "Point.hh"
+
+#include "DenseVector.hh"
 
 namespace Amanzi {
 namespace WhetStone {
@@ -110,10 +114,6 @@ class Iterator {
   const int* multi_index() const { return multi_index_; }
 
  private:
-  void set_dimension(int d) { d_ = d; }
-  friend class Polynomial;
-
- private:
   int k_;  // current monomials order
   int m_;  // current position in the list of monomials
   int multi_index_[3];
@@ -138,6 +138,11 @@ class Monomial {
   // iterators
   Iterator& begin() const { return it_.begin(order_); }
   int end() const { return order_; }
+
+  // reset all coefficients to a scalar
+  void PutScalar(double val) {
+    for (auto it = coefs_.begin(); it != coefs_.end(); ++it) *it = val;
+  }
 
   // access
   int order() const { return order_; }
@@ -166,16 +171,20 @@ class Polynomial {
  public:
   Polynomial() : d_(0), order_(-1), size_(0) {};
   Polynomial(int d, int order);
-  Polynomial(int d, const int* multi_index);
+  Polynomial(int d, const int* multi_index, double factor);
 
   // reshape polynomial with erase (optionally) memory
   void Reshape(int d, int order, bool reset = false);
 
   // initialization options
-  // -- resets all coefficients to zero
-  void Reset();
-  // -- takes coefficients from a vector
-  void set_coefs(const std::vector<double>& coefs);
+  // -- reset all coefficients to a scalar
+  void PutScalar(double val);
+  // -- set polynomial coefficients from a vector.
+  //    The vector size should match that of polynomial.
+  void SetPolynomialCoefficients(const DenseVector& coefs);
+  // -- copy polynomial coefficients to a vector. 
+  //    The vector is resized to accomodate data.
+  void GetPolynomialCoefficients(DenseVector& coefs) const;
 
   // change the coordinate system
   // -- without changing polynomial
@@ -224,12 +233,17 @@ class Polynomial {
   int MonomialPosition(const int* multi_index) const;
   int PolynomialPosition(const int* multi_index) const;
 
-  // iterators
-  Iterator& begin() const { return it_.begin(); }
+  // iterator starts with constant term for correct positioning
+  Iterator begin() const { Iterator it(d_); return it.begin(); }
   int end() const { return order_; }
 
+  // Change of coordinates:
+  // --  x = xf + B * s
   void ChangeCoordinates(const AmanziGeometry::Point& xf,
-                         const std::vector<AmanziGeometry::Point>& tau);
+                         const std::vector<AmanziGeometry::Point>& B);
+  // --  s = B^+ (x - xf)
+  void InverseChangeCoordinates(const AmanziGeometry::Point& xf,
+                                const std::vector<AmanziGeometry::Point>& B);
 
   // access
   int dimension() const { return d_; }
@@ -246,8 +260,9 @@ class Polynomial {
   // output 
   friend std::ostream& operator << (std::ostream& os, const Polynomial& p);
 
- protected:
-  mutable Iterator it_; 
+  // special non-member functions
+  // -- Laplacian
+  Polynomial Laplacian();
 
  private:
   int d_, order_, size_;

@@ -196,12 +196,13 @@ class Operator {
   // boundary conditions (BC) require information on test and
   // trial spaces. For a single PDE, these BCs could be the same.
   // Note that trial corresponds to the column, while test corresponds to the row.
-  virtual void SetBCs(const Teuchos::RCP<BCs>& bc_trial, const Teuchos::RCP<BCs>& bc_test) {
+  virtual void SetBCs(const Teuchos::RCP<const BCs>& bc_trial,
+                      const Teuchos::RCP<BCs>& bc_test) {
     bc_trial_ = bc_trial;
     bc_test_ = bc_test;
   }
-  virtual void SetTrialBCs(const Teuchos::RCP<BCs>& bc) { bc_trial_ = bc; }
-  virtual void SetTestBCs(const Teuchos::RCP<BCs>& bc) { bc_test_ = bc; }
+  virtual void SetTrialBCs(const Teuchos::RCP<const BCs>& bc) { bc_trial_ = bc; }
+  virtual void SetTestBCs(const Teuchos::RCP<const BCs>& bc) { bc_test_ = bc; }
 
   // modifiers
   // -- add a vector to operator's rhs vector  
@@ -240,6 +241,7 @@ class Operator {
   Teuchos::RCP<const Epetra_CrsMatrix> A() const { return A_; }
   Teuchos::RCP<CompositeVector> rhs() { return rhs_; }
   Teuchos::RCP<const CompositeVector> rhs() const { return rhs_; }
+  void set_rhs(const Teuchos::RCP<CompositeVector>& rhs) { rhs_ = rhs; }
 
   int apply_calls() { return apply_calls_; }
 
@@ -258,6 +260,7 @@ class Operator {
   // block mutate
   void OpPushBack(const Teuchos::RCP<Op>& block, int properties = 0);
   void OpExtend(op_iterator begin, op_iterator end);
+  void OpReplace(const Teuchos::RCP<Op>& op, int index) { ops_[index] = op; }
 
  public:
   // visit methods for Apply
@@ -402,7 +405,7 @@ class Operator {
   mutable std::vector<Teuchos::RCP<Op> > ops_;
   mutable std::vector<int> ops_properties_;
   Teuchos::RCP<CompositeVector> rhs_, rhs_checkpoint_;
-  Teuchos::RCP<BCs> bc_trial_, bc_test_;
+  Teuchos::RCP<const BCs> bc_trial_, bc_test_;
 
   int ncells_owned, nfaces_owned, nnodes_owned, nedges_owned;
   int ncells_wghost, nfaces_wghost, nnodes_wghost, nedges_wghost;

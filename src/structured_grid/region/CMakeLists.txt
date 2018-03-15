@@ -68,7 +68,7 @@ if (BUILD_TESTS)
 
   set(tpl_libs ${CCSE_LIBRARIES} ${PETSC_LIBRARIES}
                ${XERCES_LIBRARIES} ${XERCES_ICU_LIBRARIES}
-               ${Boost_LIBRARIES})
+               ${Boost_LIBRARIES} ${HDF5_LIBRARIES})
 
   # Copy input files if an out of source build
   if (NOT (${SREGION_SOURCE_DIR} EQUAL ${SREGION_BINARY_DIR}) )

@@ -96,7 +96,7 @@ if (BUILD_TESTS)
 
   set(tpl_libs ${CCSE_LIBRARIES} ${PETSC_LIBRARIES} ${CCSE_LIBRARIES}
                ${XERCES_LIBRARIES} ${XERCES_ICU_LIBRARIES}
-               ${Boost_LIBRARIES})
+               ${Boost_LIBRARIES} ${HDF5_LIBRARIES})
 
   include_directories(${SMATERIALS_SOURCE_DIR}/test) 
 

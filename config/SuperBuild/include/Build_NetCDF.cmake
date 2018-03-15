@@ -14,7 +14,7 @@ amanzi_tpl_version_write(FILENAME ${TPL_VERSIONS_INCLUDE_FILE}
   VERSION ${NetCDF_VERSION_MAJOR} ${NetCDF_VERSION_MINOR} ${NetCDF_VERSION_PATCH})
 
 # --- Patch the original code
-set(NetCDF_patch_file netcdf-cmake.patch)
+set(NetCDF_patch_file netcdf-cmake.patch netcdf-cmake-rpath.patch)
 set(NetCDF_sh_patch ${NetCDF_prefix_dir}/netcdf-patch-step.sh)
 configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/netcdf-patch-step.sh.in
                ${NetCDF_sh_patch}
@@ -87,6 +87,7 @@ ExternalProject_Add(${NetCDF_BUILD_TARGET}
 include(BuildLibraryName)
 build_library_name(netcdf NetCDF_C_LIBRARY APPEND_PATH ${TPL_INSTALL_PREFIX}/lib)
 build_library_name(netcdf_c++ NetCDF_CXX_LIBRARY APPEND_PATH ${TPL_INSTALL_PREFIX}/lib)
+set(NetCDF_DIR ${TPL_INSTALL_PREFIX})
 set(NetCDF_INCLUDE_DIRS ${TPL_INSTALL_PREFIX}/include)
 set(NetCDF_C_LIBRARIES ${NetCDF_C_LIBRARY})
 if (ENABLE_NetCDF4)

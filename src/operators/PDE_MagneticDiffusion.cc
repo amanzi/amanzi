@@ -19,7 +19,7 @@
 #include "MFD3D_Electromagnetics.hh"
 
 // Amanzi::Operators
-#include "PDE_ElectromagneticsMHD.hh"
+#include "PDE_MagneticDiffusion.hh"
 #include "Op.hh"
 
 namespace Amanzi {
@@ -29,7 +29,7 @@ namespace Operators {
 * Populate contains of elemental matrices.
 * NOTE: The input parameters are not yet used.
 ****************************************************************** */
-void PDE_ElectromagneticsMHD::UpdateMatrices(
+void PDE_MagneticDiffusion::UpdateMatrices(
     const Teuchos::Ptr<const CompositeVector>& u,
     const Teuchos::Ptr<const CompositeVector>& p)
 {
@@ -53,9 +53,12 @@ void PDE_ElectromagneticsMHD::UpdateMatrices(
 * System modification before solving the problem:
 * A := invK I + dt/2 A   and  f += Curl M B 
 * **************************************************************** */
-void PDE_ElectromagneticsMHD::ModifyMatrices(
+void PDE_MagneticDiffusion::ModifyMatrices(
    CompositeVector& E, CompositeVector& B, double dt)
 {
+  B.ScatterMasterToGhosted("face");
+  global_op_->rhs()->PutScalarGhosted(0.0);
+
   const Epetra_MultiVector& Bf = *B.ViewComponent("face", true);
   Epetra_MultiVector& rhs_e = *global_op_->rhs()->ViewComponent("edge", true);
 
@@ -96,16 +99,18 @@ void PDE_ElectromagneticsMHD::ModifyMatrices(
       rhs_e[0][e] += v3(n);
     }
   }
+
+  global_op_->rhs()->GatherGhostedToMaster("edge", Add);
 }
 
 
 /* ******************************************************************
 * Solution postprocessing
 * **************************************************************** */
-void PDE_ElectromagneticsMHD::ModifyFields(
+void PDE_MagneticDiffusion::ModifyFields(
    CompositeVector& E, CompositeVector& B, double dt)
 {
-  B.ScatterMasterToGhosted("face");
+  E.ScatterMasterToGhosted("edge");
 
   Epetra_MultiVector& Ee = *E.ViewComponent("edge", true);
   Epetra_MultiVector& Bf = *B.ViewComponent("face", false);
@@ -147,9 +152,10 @@ void PDE_ElectromagneticsMHD::ModifyFields(
 /* ******************************************************************
 * Calculates Ohmic heating
 ****************************************************************** */
-double PDE_ElectromagneticsMHD::CalculateOhmicHeating(const CompositeVector& E)
+double PDE_MagneticDiffusion::CalculateOhmicHeating(const CompositeVector& E)
 {
   const Epetra_MultiVector& Ee = *E.ViewComponent("edge", true);
+  E.ScatterMasterToGhosted("edge");
 
   AmanziMesh::Entity_ID_List edges;
   WhetStone::MFD3D_Electromagnetics mfd(mesh_);
@@ -173,6 +179,10 @@ double PDE_ElectromagneticsMHD::CalculateOhmicHeating(const CompositeVector& E)
     energy += v1 * v2;
   }
 
+  // parallel collective operation
+  double tmp(energy);
+  mesh_->get_comm()->SumAll(&tmp, &energy, 1);
+
   return energy;
 }
 
@@ -180,9 +190,10 @@ double PDE_ElectromagneticsMHD::CalculateOhmicHeating(const CompositeVector& E)
 /* ******************************************************************
 * Calculates integral of 1/2 |B|^2
 ****************************************************************** */
-double PDE_ElectromagneticsMHD::CalculateMagneticEnergy(const CompositeVector& B)
+double PDE_MagneticDiffusion::CalculateMagneticEnergy(const CompositeVector& B)
 {
   const Epetra_MultiVector& Bf = *B.ViewComponent("face", true);
+  B.ScatterMasterToGhosted("face");
 
   std::vector<int> dirs;
   AmanziMesh::Entity_ID_List faces;
@@ -205,6 +216,10 @@ double PDE_ElectromagneticsMHD::CalculateMagneticEnergy(const CompositeVector& B
     energy += v1 * v2;
   }
 
+  // parallel collective operation
+  double tmp(energy);
+  mesh_->get_comm()->SumAll(&tmp, &energy, 1);
+
   return energy / 2;
 }
 
@@ -212,7 +227,7 @@ double PDE_ElectromagneticsMHD::CalculateMagneticEnergy(const CompositeVector& B
 /* ******************************************************************
 * Useful tools
 * **************************************************************** */
-double PDE_ElectromagneticsMHD::CalculateDivergence(
+double PDE_MagneticDiffusion::CalculateDivergence(
     int c, const CompositeVector& B)
 {
   const Epetra_MultiVector& Bf = *B.ViewComponent("face", false);
@@ -237,7 +252,7 @@ double PDE_ElectromagneticsMHD::CalculateDivergence(
 /* ******************************************************************
 * Put here stuff that has to be done in constructor.
 ****************************************************************** */
-void PDE_ElectromagneticsMHD::InitElectromagneticsMHD_()
+void PDE_MagneticDiffusion::InitMagneticDiffusion_()
 {
   mass_op_.resize(ncells_owned);
   curl_op_.resize(ncells_owned);

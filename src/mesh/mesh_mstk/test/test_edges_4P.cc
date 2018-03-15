@@ -42,9 +42,9 @@ TEST(MSTK_EDGES_2D)
   // Check that we get the expected number of edges
 
   int ne_owned = mesh->num_entities(Amanzi::AmanziMesh::EDGE,
-				    Amanzi::AmanziMesh::OWNED);
+				    Amanzi::AmanziMesh::Parallel_type::OWNED);
   int ne_all = mesh->num_entities(Amanzi::AmanziMesh::EDGE,
-				  Amanzi::AmanziMesh::USED);
+				  Amanzi::AmanziMesh::Parallel_type::ALL);
 
   // This assumes a symmetric partitioning - not always the case with
   // ZOLTAN graph partitioning
@@ -55,7 +55,7 @@ TEST(MSTK_EDGES_2D)
   // global IDs for a cell must match
 
   int nc_owned = mesh->num_entities(Amanzi::AmanziMesh::CELL,
-				    Amanzi::AmanziMesh::OWNED);
+				    Amanzi::AmanziMesh::Parallel_type::OWNED);
 
   for (int c = 0; c < nc_owned; ++c) {
     Amanzi::AmanziMesh::Entity_ID_List cedges, cfaces, fedges;
@@ -161,9 +161,9 @@ TEST(MSTK_EDGES_3D)
   // How many owned and used edges are there?
 
   int ne_owned = mesh->num_entities(Amanzi::AmanziMesh::EDGE,
-				    Amanzi::AmanziMesh::OWNED);
+				    Amanzi::AmanziMesh::Parallel_type::OWNED);
   int ne_all = mesh->num_entities(Amanzi::AmanziMesh::EDGE,
-				  Amanzi::AmanziMesh::USED);
+				  Amanzi::AmanziMesh::Parallel_type::ALL);
 
   // Check that we got a non-zero number
 
@@ -176,7 +176,7 @@ TEST(MSTK_EDGES_3D)
   // of these faces and do additional checks
 
   int nc_owned = mesh->num_entities(Amanzi::AmanziMesh::CELL,
-				    Amanzi::AmanziMesh::OWNED);
+				    Amanzi::AmanziMesh::Parallel_type::OWNED);
 
   for (int c = 0; c < nc_owned; ++c) {
     Amanzi::AmanziMesh::Entity_ID_List cedges, cfaces, fedges;

@@ -34,25 +34,25 @@ Mesh::num_columns(bool ghosted) const
 
 inline
 const Entity_ID_List&
-Mesh::cells_of_column(const int columnID_) const
+Mesh::cells_of_column(const int columnID) const
 {
   if (!columns_built_) {
     Errors::Message mesg("cells_of_column called before calling build_columns");
     Exceptions::amanzi_throw(mesg);
   }
-  return column_cells_[columnID_];
+  return column_cells_[columnID];
 }
 
 
 inline
 const Entity_ID_List&
-Mesh::faces_of_column(const int columnID_) const
+Mesh::faces_of_column(const int columnID) const
 {
   if (!columns_built_) {
     Errors::Message mesg("faces_of_columns called before calling build_columns");
     Exceptions::amanzi_throw(mesg);
   }
-  return column_faces_[columnID_];
+  return column_faces_[columnID];
 }
 
 

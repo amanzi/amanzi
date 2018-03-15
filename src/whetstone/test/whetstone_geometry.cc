@@ -39,7 +39,7 @@ TEST(FACE_CENTROIDS) {
   MeshFactory factory(comm);
   factory.preference(pref);
   // Teuchos::RCP<Mesh> mesh = factory(0.0, 0.0, 1.0, 1.0, 1, 1); 
-  Teuchos::RCP<Mesh> mesh = factory("test/one_cell2.exo");
+  Teuchos::RCP<Mesh> mesh = factory("test/one_pentagon.exo");
  
   MFD3D_Diffusion mfd(mesh);
  

@@ -113,7 +113,7 @@ void MeshColumn::compute_special_node_coordinates_() {
   column_faces_ = colfaces;
 
   // mask for face index in the column of faces
-  face_in_column_.resize(extracted_.num_entities(FACE, AmanziMesh::USED), -1);
+  face_in_column_.resize(extracted_.num_entities(FACE, AmanziMesh::Parallel_type::ALL), -1);
   
   // How many nodes each "horizontal" face has in the column
   Entity_ID_List face_nodes;

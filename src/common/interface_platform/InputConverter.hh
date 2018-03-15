@@ -23,7 +23,7 @@
 #include "boost/filesystem/path.hpp"
 #include "boost/format.hpp"
 
-// TPLs
+// Xerces
 #include "xercesc/dom/DOM.hpp"
 #include "xercesc/parsers/XercesDOMParser.hpp"
 

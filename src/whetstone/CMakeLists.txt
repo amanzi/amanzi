@@ -46,16 +46,20 @@ add_amanzi_library(whetstone
                           MFD3D_Elasticity.cc 
                           MFD3D_Electromagnetics.cc MFD3D_Electromagnetics_Surface.cc
                           MFD3D_Generalized_Diffusion.cc
+                          MFD3D_Lagrange.cc
+                          MFD3D_LagrangeSerendipity.cc
                           DG_Modal.cc nlfv.cc 
                           Tensor.cc DenseMatrix.cc
                           Polynomial.cc VectorPolynomial.cc
+                          NumericalIntegration.cc
                           MeshMaps.cc
                           MeshMaps_FEM.cc MeshMaps_VEM.cc
-                          ProjectorH1.cc
+                          Projector.cc
                    HEADERS DenseMatrix.hh DenseVector.hh
                            DG_Modal.hh
                            lapack.hh
-                           InnerProductL2.hh InnerProductH1.hh BilinearForm.hh
+                           InnerProduct.hh InnerProductL2.hh InnerProductH1.hh
+                           BilinearForm.hh Projectors.hh
                            DeRham_Node.hh DeRham_Edge.hh DeRham_Face.hh
                            MFD3D.hh
                            MFD3D_BernardiRaugel.hh
@@ -64,12 +68,17 @@ add_amanzi_library(whetstone
                            MFD3D_Elasticity.hh
                            MFD3D_Electromagnetics.hh
                            MFD3D_Generalized_Diffusion.hh
+                           MFD3D_Lagrange.hh
+                           MFD3D_LagrangeSerendipity.hh
                            MFD3DFactory.hh
                            nlfv.hh
-                           Polynomial.hh VectorPolynomial.hh Tensor.hh
+                           NumericalIntegration.hh
                            MeshMaps.hh
                            MeshMaps_FEM.hh MeshMaps_VEM.hh
-                           ProjectorH1.hh
+                           CoordinateSystems.hh
+                           Polynomial.hh VectorPolynomial.hh PolynomialOnMesh.hh
+                           Projector.hh
+                           Tensor.hh
                            WhetStoneDefs.hh
                            WhetStone_typedefs.hh
                    LINK_LIBS geometry mesh error_handling ${Epetra_LIBRARIES})
@@ -131,7 +140,10 @@ if ( BUILD_TESTS )
                     KIND unit
                     SOURCE test/Main.cc test/whetstone_polynomials.cc
                                         test/whetstone_dg.cc
+                                        test/whetstone_numi.cc
                                         test/whetstone_projectors.cc
+                                        test/whetstone_high_order.cc
+                                        test/whetstone_maps.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 
     # Test: matrices for Derham complex

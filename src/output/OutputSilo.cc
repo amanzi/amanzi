@@ -75,7 +75,7 @@ OutputSilo::InitializeCycle(double time, int cycle) {
   coordnames[2] = (char*)"z-coords";
 
   // -- nodal coordinates
-  int nnodes = mesh_->vis_mesh().num_entities(AmanziMesh::NODE, AmanziMesh::OWNED);
+  int nnodes = mesh_->vis_mesh().num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::OWNED);
   std::vector<double> x(nnodes), y(nnodes), z(nnodes);
 
   AmanziGeometry::Point xyz;
@@ -101,7 +101,7 @@ OutputSilo::InitializeCycle(double time, int cycle) {
   DBAddOption(optlist, DBOPT_DTIME, &time);
 
   // -- write the base mesh UCD object
-  int ncells = mesh_->vis_mesh().num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  int ncells = mesh_->vis_mesh().num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
   int ierr = DBPutUcdmesh(fid_, "mesh", mesh_->vis_mesh().space_dimension(),
                           (char const* const*)coordnames, coords,
                           nnodes, ncells, 0, 0, DB_DOUBLE, optlist);
@@ -110,7 +110,7 @@ OutputSilo::InitializeCycle(double time, int cycle) {
   // -- Construct the silo face-node info.
   // We rely on the mesh having the faces nodes arranged counter-clockwise
   // around the face.  This should be satisfied by AmanziMesh.
-  int nfaces = mesh_->vis_mesh().num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
+  int nfaces = mesh_->vis_mesh().num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
   std::vector<int> face_node_counts(nfaces);
   std::vector<char> ext_faces(nfaces, 0x0);
   std::vector<int> face_node_list;
@@ -122,7 +122,7 @@ OutputSilo::InitializeCycle(double time, int cycle) {
     face_node_list.insert(face_node_list.end(), fnodes.begin(), fnodes.end());
 
     AmanziMesh::Entity_ID_List fcells;
-    mesh_->vis_mesh().face_get_cells(f, AmanziMesh::USED, &fcells);
+    mesh_->vis_mesh().face_get_cells(f, AmanziMesh::Parallel_type::ALL, &fcells);
     if (fcells.size() == 1) {
       ext_faces[f] = 0x1;
     }
@@ -170,12 +170,12 @@ OutputSilo::FinalizeCycle() {
 void
 OutputSilo::WriteVector(const Epetra_Vector& vec,
                         const std::string& name) const {
-  if (vec.MyLength() == mesh_->vis_mesh().num_entities(AmanziMesh::CELL, AmanziMesh::OWNED)) {
+  if (vec.MyLength() == mesh_->vis_mesh().num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED)) {
     int ierr = DBPutUcdvar1(fid_, FixName_(name).c_str(), "mesh",
                             (void*)&vec[0], vec.MyLength(), NULL, 0,
                             DB_DOUBLE, DB_ZONECENT, NULL);
     ASSERT(!ierr);
-  } else if (vec.MyLength() == mesh_->vis_mesh().num_entities(AmanziMesh::NODE, AmanziMesh::OWNED)) {
+  } else if (vec.MyLength() == mesh_->vis_mesh().num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::OWNED)) {
     int ierr = DBPutUcdvar1(fid_, FixName_(name).c_str(), "mesh",
                             (void*)&vec[0], vec.MyLength(), NULL, 0,
                             DB_DOUBLE, DB_NODECENT, NULL);

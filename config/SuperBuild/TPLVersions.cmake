@@ -101,6 +101,12 @@
 #	         - update curl to 7.56.1
 #  0.94.12       - update xerces-c to 3.2.0 (CMake build)
 
+#  0.95.0        - update Trilinos 12.12.1
+#                - update Hypre 2.12.1  
+#                - note alquimia 1.0.5 == xsdk-0.3.0
+#                - pflotran release/xsdk-0.3.0
+#                - update PETSc 3.8.2
+
 include(CMakeParseArguments)
 
 MACRO(LIST_LENGTH var)
@@ -151,12 +157,13 @@ endmacro(amanzi_tpl_version_write)
 # TPLs and XSDK versions 
 #
 set(AMANZI_TPLS_VERSION_MAJOR 0)
-set(AMANZI_TPLS_VERSION_MINOR 94)
-set(AMANZI_TPLS_VERSION_PATCH 12)
+set(AMANZI_TPLS_VERSION_MINOR 95)
+set(AMANZI_TPLS_VERSION_PATCH 0)
 set(AMANZI_TPLS_VERSION ${AMANZI_TPLS_VERSION_MAJOR}.${AMANZI_TPLS_VERSION_MINOR}.${AMANZI_TPLS_VERSION_PATCH})
 # Not sure how to create a meaningful hash key for the collection
 
 set(XSDK_VERSION "0.2.0")
+set(XSDK_VERSION_NEW "0.3.0")
 
 #
 # Default location on GitHub
@@ -186,6 +193,19 @@ set(OpenMPI_URL_STRING     "https://www.open-mpi.org/software/ompi/v2.1/download
 set(OpenMPI_ARCHIVE_FILE   openmpi-${OpenMPI_VERSION}.tar.bz2)
 set(OpenMPI_SAVEAS_FILE    ${OpenMPI_ARCHIVE_FILE})
 set(OpenMPI_MD5_SUM        ff2e55cc529802e7b0738cf87acd3ee4)
+
+#
+# TPL: MPICH
+#
+set(MPICH_VERSION_MAJOR 3)
+set(MPICH_VERSION_MINOR 2)
+set(MPICH_VERSION_PATCH 1)
+set(MPICH_VERSION ${MPICH_VERSION_MAJOR}.${MPICH_VERSION_MINOR}.${MPICH_VERSION_PATCH})
+set(MPICH_URL_STRING     "https://www.mpich.org/static/downloads/${MPICH_VERSION}/")
+set(MPICH_ARCHIVE_FILE   mpich-${MPICH_VERSION}.tar.gz)
+set(MPICH_SAVEAS_FILE    ${MPICH_ARCHIVE_FILE})
+set(MPICH_MD5_SUM        e175452f4d61646a52c73031683fc375)
+
 #
 # TPL: CURL
 #
@@ -337,13 +357,13 @@ set(MOAB_MD5_SUM        1840ca02366f4d3237d44af63e239e3b)
 # TPL: HYPRE
 #
 set(HYPRE_VERSION_MAJOR  2)
-set(HYPRE_VERSION_MINOR  11)
-set(HYPRE_VERSION_PATCH  2)
+set(HYPRE_VERSION_MINOR  12)
+set(HYPRE_VERSION_PATCH  1)
 set(HYPRE_VERSION  ${HYPRE_VERSION_MAJOR}.${HYPRE_VERSION_MINOR}.${HYPRE_VERSION_PATCH})
 set(HYPRE_URL_STRING     "https://github.com/LLNL/hypre/archive/")
-set(HYPRE_ARCHIVE_FILE   xsdk-${XSDK_VERSION}.tar.gz)
+set(HYPRE_ARCHIVE_FILE   xsdk-${XSDK_VERSION_NEW}-rc1.tar.gz)
 set(HYPRE_SAVEAS_FILE    hypre-${HYPRE_VERSION}.tar.gz)
-set(HYPRE_MD5_SUM        fc9474058560602e9be2ce618db7fd14) 
+set(HYPRE_MD5_SUM        302b8aae460978952f6cb427aa8cb0c5)
 
 #
 # TPL: ParMetis
@@ -373,50 +393,50 @@ set(SuperLU_MD5_SUM        3a1a9bff20cb06b7d97c46d337504447)
 # TPL: SuperLU Distrib (Built by PETSc!)
 #
 set(SuperLUDist_VERSION_MAJOR  5)
-set(SuperLUDist_VERSION_MINOR  1)
-set(SuperLUDist_VERSION_PATCH  3)
+set(SuperLUDist_VERSION_MINOR  2)
+set(SuperLUDist_VERSION_PATCH  2)
 set(SuperLUDist_VERSION  ${SuperLUDist_VERSION_MAJOR}.${SuperLUDist_VERSION_MINOR}.${SuperLUDist_VERSION_PATCH})
 set(SuperLUDist_URL_STRING     "https://github.com/xiaoyeli/superlu_dist/archive")
-set(SuperLUDist_ARCHIVE_FILE   xsdk-${XSDK_VERSION}.tar.gz)
+set(SuperLUDist_ARCHIVE_FILE   v${SuperLUDist_VERSION}.tar.gz)
 set(SuperLUDist_SAVEAS_FILE    superlu_dist_${SuperLUDist_VERSION}.tar.gz)
-set(SuperLUDist_MD5_SUM        9ccd1915dd06f167ed8dca7b14bbcedb)
+set(SuperLUDist_MD5_SUM        5f0087f64a6506375537117790c98e6b)
 
 #
 # TPL: Sowing (Built by PETSc!)
 #
 set(Sowing_VERSION_MAJOR  1)
 set(Sowing_VERSION_MINOR  1)
-set(Sowing_VERSION_PATCH  23-p1)
+set(Sowing_VERSION_PATCH  25-p1)
 set(Sowing_VERSION  ${Sowing_VERSION_MAJOR}.${Sowing_VERSION_MINOR}.${Sowing_VERSION_PATCH})
-set(Sowing_URL_STRING     "http://ftp.mcs.anl.gov/pub/petsc/externalpackages/")
-set(Sowing_ARCHIVE_FILE   sowing-${Sowing_VERSION}.tar.gz)
-set(Sowing_SAVEAS_FILE    ${Sowing_ARCHIVE_FILE})
-set(Sowing_MD5_SUM        65aaf3ae2a4c0f30d532fec291702e16)
+set(Sowing_URL_STRING     "https://bitbucket.org/petsc/pkg-sowing/get")
+set(Sowing_ARCHIVE_FILE   v${Sowing_VERSION}.tar.gz)
+set(Sowing_SAVEAS_FILE    sowing-${Sowing_VERSION}.tar.gz)
+set(Sowing_MD5_SUM        30ae83576038f00def33619a31f6a14c)
 
 #
 # TPL: PETSc
 #
 set(PETSc_VERSION_MAJOR  3)
-set(PETSc_VERSION_MINOR  7)
-set(PETSc_VERSION_PATCH  5)
+set(PETSc_VERSION_MINOR  8)
+set(PETSc_VERSION_PATCH  2)
 set(PETSc_VERSION  ${PETSc_VERSION_MAJOR}.${PETSc_VERSION_MINOR}.${PETSc_VERSION_PATCH})
 set(PETSc_ARCHIVE_VERSION ${PETSc_VERSION_MAJOR}.${PETSc_VERSION_MINOR}.${PETSc_VERSION_PATCH})
 set(PETSc_URL_STRING     "https://bitbucket.org/petsc/petsc/get")
-set(PETSc_ARCHIVE_FILE   xsdk-${XSDK_VERSION}.tar.gz)
+set(PETSc_ARCHIVE_FILE   v${PETSc_VERSION}.tar.gz)
 set(PETSc_SAVEAS_FILE    petsc-${PETSc_ARCHIVE_VERSION}.tar.gz)
-set(PETSc_MD5_SUM        41a10be8bbf9d13f137873a2d52c6715)
+set(PETSc_MD5_SUM        ce207f60800e19cfb55a2d7a879ca42c)
 
 #
 # TPL: Trilinos
 #
 set(Trilinos_VERSION_MAJOR 12)
-set(Trilinos_VERSION_MINOR 10)
+set(Trilinos_VERSION_MINOR 12)
 set(Trilinos_VERSION_PATCH 1)
 set(Trilinos_VERSION ${Trilinos_VERSION_MAJOR}-${Trilinos_VERSION_MINOR}-${Trilinos_VERSION_PATCH})
 set(Trilinos_URL_STRING     "https://github.com/trilinos/Trilinos/archive")
 set(Trilinos_ARCHIVE_FILE   trilinos-release-${Trilinos_VERSION}.tar.gz)
 set(Trilinos_SAVEAS_FILE    ${Trilinos_ARCHIVE_FILE})
-set(Trilinos_MD5_SUM        667333dbd7c0f031d47d7c5511fd0810)
+set(Trilinos_MD5_SUM        ecd4606fa332212433c98bf950a69cc7)
 
 #
 # TPL: SEACAS
@@ -434,13 +454,13 @@ set(SEACAS_MD5_SUM        3235d1b885ee8e1a04408382f50bd0f0)
 # TPL: PFlotran
 #
 set(PFLOTRAN_VERSION_MAJOR 0)
-set(PFLOTRAN_VERSION_MINOR 2)
+set(PFLOTRAN_VERSION_MINOR 3)
 set(PFLOTRAN_VERSION_PATCH 0)
 set(PFLOTRAN_VERSION ${PFLOTRAN_VERSION_MAJOR}.${PFLOTRAN_VERSION_MINOR}.${PFLOTRAN_VERSION_PATCH})
-set(PFLOTRAN_URL_STRING     "https://bitbucket.org/pflotran/pflotran/get")
-set(PFLOTRAN_ARCHIVE_FILE   xsdk-${XSDK_VERSION}-rc2.tar.gz)
+set(PFLOTRAN_URL_STRING     "https://bitbucket.org/pflotran/pflotran/get/release")
+set(PFLOTRAN_ARCHIVE_FILE   xsdk-${XSDK_VERSION_NEW}.tar.gz)
 set(PFLOTRAN_SAVEAS_FILE    pflotran-${PFLOTRAN_VERSION}.tar.gz)
-set(PFLOTRAN_MD5_SUM        80a214c394bbd4230c2ddc0ba177c8ea)
+set(PFLOTRAN_MD5_SUM        e8cf6f259fca1ebc403b950058be686e)
 
 #
 # TPL: Alquimia

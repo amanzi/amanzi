@@ -34,8 +34,14 @@ class RelPerm {
           const Teuchos::RCP<WRMPartition>& wrm);
 
   // main members
-  void Compute(Teuchos::RCP<const CompositeVector> p, Teuchos::RCP<CompositeVector> krel);
-  void ComputeDerivative(Teuchos::RCP<const CompositeVector> p, Teuchos::RCP<CompositeVector> dKdP);
+  void Compute(Teuchos::RCP<const CompositeVector> p,
+               const std::vector<int>& bc_model,
+               const std::vector<double>& bc_value,
+               Teuchos::RCP<CompositeVector> krel);
+  void ComputeDerivative(Teuchos::RCP<const CompositeVector> p,
+                         const std::vector<int>& bc_model,
+                         const std::vector<double>& bc_value,
+                         Teuchos::RCP<CompositeVector> dKdP);
 
   // WRM relations
   double Compute(int c, double p) const;

@@ -68,11 +68,11 @@ class MeshColumn : public Mesh {
     return extracted_;
   }
 
-  // Get parallel type of entity - OWNED, GHOST, USED (See MeshDefs.hh)
+  // Get parallel type of entity - OWNED, GHOST, ALL (See MeshDefs.hh)
   virtual
   Parallel_type entity_get_ptype(const Entity_kind kind,
           const Entity_ID entid) const override {
-    return OWNED;
+    return Parallel_type::OWNED;
   }
 
   // Parent entity in the source mesh if mesh was derived from another mesh
@@ -104,14 +104,14 @@ class MeshColumn : public Mesh {
   //
 
   // Number of entities of any kind (cell, face, node) and in a
-  // particular category (OWNED, GHOST, USED)
+  // particular category (OWNED, GHOST, ALL)
   virtual
   unsigned int num_entities(const Entity_kind kind,
                             const Parallel_type ptype) const override {
     int count;
     switch (kind) {
       case FACE:
-        count = (ptype == GHOST) ? 0 : column_faces_.size();
+        count = (ptype == Parallel_type::GHOST) ? 0 : column_faces_.size();
         break;
 
       case BOUNDARY_FACE:
@@ -215,7 +215,7 @@ class MeshColumn : public Mesh {
   // (e.g. a hex has 6 face neighbors)
 
   // The order in which the cellids are returned cannot be
-  // guaranteed in general except when ptype = USED, in which case
+  // guaranteed in general except when ptype = ALL, in which case
   // the cellids will correcpond to cells across the respective
   // faces given by cell_get_faces
   virtual

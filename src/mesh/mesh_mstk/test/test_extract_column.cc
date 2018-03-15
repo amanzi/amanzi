@@ -68,7 +68,7 @@ TEST(Extract_Column_MSTK)
   // Number of cells in column mesh
 
   int ncells_col = column_mesh.num_entities(Amanzi::AmanziMesh::CELL,
-                                            Amanzi::AmanziMesh::OWNED);
+                                            Amanzi::AmanziMesh::Parallel_type::OWNED);
   CHECK_EQUAL(3,ncells_col);
 
 

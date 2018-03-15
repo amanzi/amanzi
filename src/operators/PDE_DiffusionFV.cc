@@ -133,7 +133,7 @@ void PDE_DiffusionFV::InitDiffusion_(Teuchos::ParameterList& plist)
 /* ******************************************************************
 * Setup methods: scalar coefficients
 ****************************************************************** */
-void PDE_DiffusionFV::SetTensorCoefficient(const Teuchos::RCP<std::vector<WhetStone::Tensor> >& K)
+void PDE_DiffusionFV::SetTensorCoefficient(const Teuchos::RCP<const std::vector<WhetStone::Tensor> >& K)
 {
   transmissibility_initialized_ = false;
   K_ = K;
@@ -179,7 +179,6 @@ void PDE_DiffusionFV::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& 
 
   if (!exclude_primary_terms_) {
     const Epetra_MultiVector& trans_face = *transmissibility_->ViewComponent("face", true);
-    const std::vector<int>& bc_model = bcs_trial_[0]->bc_model();
     WhetStone::DenseMatrix null_matrix;
 
     // preparing upwind data
@@ -193,13 +192,12 @@ void PDE_DiffusionFV::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& 
     std::vector<int> dirs;
 
     for (int f = 0; f != nfaces_owned; ++f) {
-      mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+      mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
       int ncells = cells.size();
 
       WhetStone::DenseMatrix Aface(ncells, ncells);
       Aface = 0.0;
 
-      // if (bc_model[f] != OPERATOR_BC_NEUMANN) {
       double tij = trans_face[0][f] * (k_face.get() ? (*k_face)[0][f] : 1.0);
       for (int i = 0; i != ncells; ++i) {
         Aface(i, i) = tij;
@@ -208,8 +206,6 @@ void PDE_DiffusionFV::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& 
           Aface(j, i) = -tij;
         }
       }
-      // }
-
       local_op_->matrices[f] = Aface;
     }
   }
@@ -254,7 +250,7 @@ void PDE_DiffusionFV::ApplyBCs(bool primary, bool eliminate)
 
     for (int f = 0; f < nfaces_owned; f++) {
       if (bc_model[f] != OPERATOR_BC_NONE) {
-        mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+        mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
         int c = cells[0];
 
         if (bc_model[f] == OPERATOR_BC_DIRICHLET && primary) {
@@ -332,7 +328,7 @@ void PDE_DiffusionFV::UpdateFlux(const Teuchos::Ptr<const CompositeVector>& solu
         
       } else {
         if (f < nfaces_owned && !flag[f]) {
-          mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+          mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
           if (cells.size() <= 1) {
             Errors::Message msg("Flow PK: These boundary conditions are not supported by FV.");
             Exceptions::amanzi_throw(msg);
@@ -391,7 +387,7 @@ void PDE_DiffusionFV::AnalyticJacobian_(const CompositeVector& u)
   }
 
   for (int f=0; f!=nfaces_owned; ++f) {
-    mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+    mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
     int mcells = cells.size();
 
     WhetStone::DenseMatrix Aface(mcells, mcells);

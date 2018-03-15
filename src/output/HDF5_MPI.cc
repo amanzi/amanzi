@@ -498,7 +498,7 @@ void HDF5_MPI::writeDualMesh(const double time, const int iteration)
 
   for (int f=0; f!=nfaces_local; ++f) {
     AmanziMesh::Entity_ID_List cells;
-    mesh_maps_->vis_mesh().face_get_cells(f, AmanziMesh::USED, &cells);
+    mesh_maps_->vis_mesh().face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
     if (cells.size() > 1) {
       local_conn += cells.size();
       local_entities++;
@@ -526,7 +526,7 @@ void HDF5_MPI::writeDualMesh(const double time, const int iteration)
   int internal_f = 0;
   for (int f=0; f!=nfaces_local; ++f) {
     AmanziMesh::Entity_ID_List cells;
-    mesh_maps_->vis_mesh().face_get_cells(f, AmanziMesh::USED, &cells);
+    mesh_maps_->vis_mesh().face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
     if (cells.size() > 1) {
       // store cell type id
       //      conn[lcv++] = 2;

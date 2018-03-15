@@ -21,7 +21,7 @@ namespace WhetStone {
 * Constructor of zero polynomial.
 ****************************************************************** */
 Polynomial::Polynomial(int d, int order) : 
-    d_(d), order_(order), it_(d), origin_(d)
+    d_(d), order_(order), origin_(d)
 {
   size_ = 0;
   coefs_.resize(order_ + 1);
@@ -33,10 +33,11 @@ Polynomial::Polynomial(int d, int order) :
 
 
 /* ******************************************************************
-* Constructor of polynomials with a single term.
+* Constructor of a polynomial with a single term:
+*    p(x) = factor * (x)^multi_index
 ****************************************************************** */
-Polynomial::Polynomial(int d, const int* multi_index) : 
-    d_(d), it_(d), origin_(d)
+Polynomial::Polynomial(int d, const int* multi_index, double factor) : 
+    d_(d), origin_(d)
 {
   order_ = 0;
   for (int i = 0; i < d_; ++i) order_ += multi_index[i];
@@ -49,7 +50,7 @@ Polynomial::Polynomial(int d, const int* multi_index) :
   }
 
   int l = MonomialPosition(multi_index);
-  coefs_[order_](l) = 1.0;
+  coefs_[order_](l) = factor;
 }
 
 
@@ -62,7 +63,6 @@ void Polynomial::Reshape(int d, int order, bool reset)
   if (d_ != d) {
     d_ = d;
     order_ = order;
-    it_.set_dimension(d);
     origin_ = AmanziGeometry::Point(d);
 
     coefs_.clear();
@@ -83,7 +83,7 @@ void Polynomial::Reshape(int d, int order, bool reset)
     size_ += coefs_[i].size();
   }
 
-  if (reset) Reset();
+  if (reset) PutScalar(0.0);
 }
 
 
@@ -241,30 +241,48 @@ void Polynomial::ChangeOrigin(const AmanziGeometry::Point& origin)
 
 
 /* ******************************************************************
-* Resets all coefficients to zero
+* Reset all coefficients to the same number
 ****************************************************************** */
-void Polynomial::Reset()
+void Polynomial::PutScalar(double val)
 {
   for (int i = 0; i <= order_; ++i) {
     std::vector<double>& tmp = coefs_[i].coefs();
-    for (auto it = tmp.begin(); it != tmp.end(); ++it) *it = 0.0;
+    for (auto it = tmp.begin(); it != tmp.end(); ++it) *it = val;
   }
 }
 
 
 /* ******************************************************************
-* Takes coefficients from a vector
+* Set polynomial coefficients to entries of the given vector.
 ****************************************************************** */
-void Polynomial::set_coefs(const std::vector<double>& coefs)
+void Polynomial::SetPolynomialCoefficients(const DenseVector& coefs)
 {
-  ASSERT(size_ == coefs.size());
+  ASSERT(size_ == coefs.NumRows());
 
-  auto jt = coefs.begin();
+  const double* data = coefs.Values();
   for (int i = 0; i <= order_; ++i) {
     std::vector<double>& tmp = coefs_[i].coefs();
     for (auto it = tmp.begin(); it != tmp.end(); ++it) {
-      *it = *jt; 
-      ++jt;
+      *it = *data; 
+      data++;
+    }
+  }
+}
+
+
+/* ******************************************************************
+* Copy polynomial coefficients to a vector. Vector is resized.
+****************************************************************** */
+void Polynomial::GetPolynomialCoefficients(DenseVector& coefs) const
+{
+  coefs.Reshape(size_);
+
+  double* data = coefs.Values();
+  for (int i = 0; i <= order_; ++i) {
+    const std::vector<double>& tmp = coefs_[i].coefs();
+    for (auto it = tmp.begin(); it != tmp.end(); ++it) {
+      *data = *it; 
+      data++;
     }
   }
 }
@@ -302,10 +320,10 @@ double Polynomial::NormMax() const
 {
   double tmp(0.0);
 
-  for (int n = 0; n < order_; ++n) {
+  for (int n = 0; n <= order_; ++n) {
     const std::vector<double>& coefs = coefs_[n].coefs();
     for (int i = 0; i < coefs.size(); ++i) {
-      tmp = std::max(tmp, coefs[i]);
+      tmp = std::max(tmp, fabs(coefs[i]));
     }
   }
 
@@ -344,15 +362,16 @@ int Polynomial::PolynomialPosition(const int* multi_index) const
 
 
 /* ******************************************************************
-* Change coordinates (x -> s) in the form x = x0 + B * s 
+* Change of coordinates: x = x0 + B * s 
+* Note: resulting polynomial is centered at new origin.
 ****************************************************************** */
-void Polynomial::ChangeCoordinates(const AmanziGeometry::Point& x0,
-                                   const std::vector<AmanziGeometry::Point>& tau)
+void Polynomial::ChangeCoordinates(
+    const AmanziGeometry::Point& x0, const std::vector<AmanziGeometry::Point>& B)
 {
-  int dnew = tau.size();
+  int dnew = B.size();
   ASSERT(dnew > 0);
 
-  // new polynomial will be centered at x0
+  // center polynomial at x0
   ChangeOrigin(x0);
 
   // populate new polynomial using different algorithms
@@ -364,13 +383,74 @@ void Polynomial::ChangeCoordinates(const AmanziGeometry::Point& x0,
     if (dnew == 1) {
       double coef(coefs_[m](k));
       for (int i = 0; i < d_; ++i) {
-        coef *= std::pow(tau[0][i], multi_index[i]);  
+        coef *= std::pow(B[0][i], multi_index[i]);  
       }
       tmp(m, 0) += coef;
     }
   }  
   
   *this = tmp;
+}
+
+
+/* ******************************************************************
+* Inverse change of coordinates: s = B^+ (x - x0) 
+* Note: resulting polynomial is centered at x0.
+****************************************************************** */
+void Polynomial::InverseChangeCoordinates(
+    const AmanziGeometry::Point& x0, const std::vector<AmanziGeometry::Point>& B)
+{
+  int dnew = x0.dim();
+
+  // new polynomial will be centered at x0
+  Polynomial tmp(dnew, order_);
+  tmp.set_origin(x0);
+
+  // populate new polynomial using different algorithms
+  if (d_ == 1) {
+    int i = (fabs(B[0][0]) > fabs(B[0][1])) ? 0 : 1;
+    double scale = 1.0 / B[0][i];
+
+    for (auto it = begin(); it.end() <= end(); ++it) {
+      int m = it.MonomialOrder();
+      tmp(m, i * m) = coefs_[m](0) * std::pow(scale, m);
+    }
+  }  
+  
+  *this = tmp;
+}
+
+
+/* ******************************************************************
+* Special operations: Laplacian
+****************************************************************** */
+Polynomial Polynomial::Laplacian()
+{
+  int order = std::max(0, order_ - 2);
+
+  Polynomial tmp(d_, order);
+
+  int index[3];
+  for (auto it = begin(); it.end() <= end(); ++it) {
+    int k = it.MonomialOrder();
+    if (k > 1) {
+      const int* idx = it.multi_index();
+      int m = it.MonomialPosition();
+      double val = coefs_[k](m);
+
+      for (int i = 0; i < d_; ++i) {
+        for (int j = 0; j < d_; ++j) index[j] = idx[j];
+
+        if (index[i] > 1) {
+          index[i] -= 2;
+          m = MonomialPosition(index);
+          tmp(k - 2, m) += val * idx[i] * (idx[i] - 1);
+        }
+      }
+    }
+  }
+
+  return tmp;
 }
 
 

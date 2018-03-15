@@ -89,12 +89,16 @@ Amanzi_PK::Amanzi_PK(Teuchos::ParameterList& pk_tree,
   free_ion_species_key_ = Keys::getKey(domain_name_,"free_ion_species");
   primary_activity_coeff_key_ = Keys::getKey(domain_name_,"primary_activity_coeff");
 
+
   ion_exchange_sites_key_ = Keys::getKey(domain_name_,"ion_exchange_sites");
   //ion_exchange_sites_key_ = "ion_exchange_sites";
 
   ion_exchange_ref_cation_conc_key_ = Keys::getKey(domain_name_,"ion_exchange_ref_cation_conc");
   secondary_activity_coeff_key_ = Keys::getKey(domain_name_,"secondary_activity_coeff");
   alquimia_aux_data_key_ = Keys::getKey(domain_name_,"alquimia_aux_data");
+  mineral_rate_constant_key_ = Keys::getKey(domain_name_,"mineral_rate_constant");
+  first_order_decay_constant_key_ = Keys::getKey(domain_name_,"first_order_decay_constant");  
+  
 
   // collect high-level information about the problem
   Teuchos::RCP<Teuchos::ParameterList> state_list = Teuchos::sublist(glist, "state", true);
@@ -170,8 +174,7 @@ void Amanzi_PK::Initialize(const Teuchos::Ptr<State>& S)
   // initialization using base class
   Chemistry_PK::Initialize(S);
 
-  Teuchos::RCP<Epetra_MultiVector> tcc = 
-      S->GetFieldData(tcc_key_, passwd_)->ViewComponent("cell", true);
+  Teuchos::RCP<Epetra_MultiVector> tcc = S->GetFieldData(tcc_key_, passwd_)->ViewComponent("cell", true);
 
   XMLParameters();
 
@@ -230,7 +233,7 @@ void Amanzi_PK::Initialize(const Teuchos::Ptr<State>& S)
   SetupAuxiliaryOutput();
 
   // solve for initial free-ion concentrations
-  int num_cells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  int num_cells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
   ierr = 0;
   if (fabs(initial_conditions_time_ - S->time()) <= 1e-8 * fabs(S->time())) {
     for (int c = 0; c < num_cells; ++c) {
@@ -554,7 +557,14 @@ void Amanzi_PK::CopyCellStateToBeakerStructures(
   // copy data from state arrays into the beaker parameters
   const Epetra_MultiVector& porosity = *S_->GetFieldData(poro_key_)->ViewComponent("cell", true);
   const Epetra_MultiVector& water_saturation = *S_->GetFieldData(saturation_key_)->ViewComponent("cell", true);
-  double water_density = *S_->GetScalarData(fluid_den_key_);
+
+  double water_density(998.2);
+  if (S_->GetField(fluid_den_key_)->type() == Amanzi::CONSTANT_SCALAR) {
+    water_density = *S_->GetScalarData(fluid_den_key_);
+  } else if (S_->GetField(fluid_den_key_)->type() == Amanzi::COMPOSITE_VECTOR_FIELD) {
+    const Epetra_MultiVector& fl_den = *S_->GetFieldData(fluid_den_key_)->ViewComponent("cell", true);
+    water_density = fl_den[0][cell_id]; 
+  }      
 
   beaker_parameters_.water_density = water_density;
   beaker_parameters_.porosity = porosity[0][cell_id];
@@ -680,7 +690,7 @@ bool Amanzi_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   int num_itrs, max_itrs(0), min_itrs(10000000), avg_itrs(0);
   int cmax(-1), cmin(-1), ierr(0);
 
-  int num_cells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  int num_cells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
   for (int c = 0; c < num_cells; ++c) {
     CopyCellStateToBeakerStructures(c, aqueous_components_);
     try {
@@ -773,7 +783,7 @@ Teuchos::RCP<Epetra_MultiVector> Amanzi_PK::extra_chemistry_output_data() {
   if (aux_data_ != Teuchos::null) {
     const Epetra_MultiVector& free_ion = *S_->GetFieldData(free_ion_species_key_)->ViewComponent("cell", true);
     const Epetra_MultiVector& activity = *S_->GetFieldData(primary_activity_coeff_key_)->ViewComponent("cell", true);
-    int num_cells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+    int num_cells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
 
     for (int cell = 0; cell < num_cells; cell++) {
       // populate aux_data_ by copying from the appropriate internal storage
@@ -799,6 +809,7 @@ Teuchos::RCP<Epetra_MultiVector> Amanzi_PK::extra_chemistry_output_data() {
 ******************************************************************* */
 void Amanzi_PK::set_chemistry_output_names(std::vector<std::string>* names) {
   names->clear();
+  
   for (std::vector<std::string>::const_iterator name = aux_names_.begin();
        name != aux_names_.end(); name++) {
     names->push_back(*name);

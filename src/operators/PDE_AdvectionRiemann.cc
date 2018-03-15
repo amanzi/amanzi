@@ -73,7 +73,11 @@ void PDE_AdvectionRiemann::InitAdvection_(Teuchos::ParameterList& plist)
     local_schema_row_.Init(range, mesh_);
     local_schema_col_.Init(domain, mesh_);
 
-    local_op_ = Teuchos::rcp(new Op_Cell_Schema(global_schema_row_, global_schema_col_, mesh_));
+    if (local_schema_col_.base() == AmanziMesh::CELL) {
+      local_op_ = Teuchos::rcp(new Op_Cell_Schema(global_schema_row_, global_schema_col_, mesh_));
+    } else if (local_schema_col_.base() == AmanziMesh::FACE) {
+      local_op_ = Teuchos::rcp(new Op_Face_Schema(global_schema_row_, global_schema_col_, mesh_));
+    }
   }
 
   // register the advection Op
@@ -81,13 +85,15 @@ void PDE_AdvectionRiemann::InitAdvection_(Teuchos::ParameterList& plist)
 
   // parameters
   // -- discretization method
-  std::string name = plist.get<std::string>("method");
+  method_ = plist.get<std::string>("method");
   method_order_ = plist.get<int>("method order", 0);
-  if (name == "dg modal") {
+  matrix_ = plist.get<std::string>("matrix type");
+
+  if (method_ == "dg modal") {
     space_col_ = DG;
   } else {
     Errors::Message msg;
-    msg << "Advection operator method \"" << name << "\" is invalid.";
+    msg << "Advection operator method \"" << method_ << "\" is invalid.";
     Exceptions::amanzi_throw(msg);
   }
 
@@ -97,10 +103,8 @@ void PDE_AdvectionRiemann::InitAdvection_(Teuchos::ParameterList& plist)
     space_row_ = P0;  // FIXME
   }
 
-
   // -- fluxes
-  flux_ = plist.get<std::string>("flux formula", "remap");
-  riemann_ = plist.get<std::string>("riemann problem", "average");
+  flux_ = plist.get<std::string>("flux formula", "Rusavov");
   jump_on_test_ = plist.get<bool>("jump operator on test function", true);
 }
 
@@ -115,18 +119,26 @@ void PDE_AdvectionRiemann::UpdateMatrices(
   std::vector<WhetStone::DenseMatrix>& matrix = local_op_->matrices;
   std::vector<WhetStone::DenseMatrix>& matrix_shadow = local_op_->matrices_shadow;
 
-  int d(mesh_->space_dimension());
-  WhetStone::DG_Modal dg(mesh_);
+  WhetStone::DenseMatrix Aface;
 
-  for (int f = 0; f < nfaces_owned; ++f) {
-    WhetStone::DenseMatrix Aface;
-
-    if (space_col_ == DG && space_row_ == DG) {
-      dg.set_order(method_order_);
-      dg.FluxMatrixPoly(f, (*u)[f], Aface, jump_on_test_);
+  if (method_ == "dg modal" && matrix_ == "flux" && flux_ == "upwind") {
+    WhetStone::DG_Modal dg(mesh_);
+    dg.set_order(method_order_);
+    for (int f = 0; f < nfaces_owned; ++f) {
+      dg.FluxMatrixUpwind(f, (*u)[f], Aface, jump_on_test_);
+      matrix[f] = Aface;
     }
-
-    matrix[f] = Aface;
+  } else if (method_ == "dg modal" && matrix_ == "flux" && flux_ == "Rusanov") {
+    WhetStone::DG_Modal dg(mesh_);
+    dg.set_order(method_order_);
+    AmanziMesh::Entity_ID_List cells;
+    for (int f = 0; f < nfaces_owned; ++f) {
+      mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
+      int c1 = cells[0];
+      int c2 = (cells.size() == 2) ? cells[1] : c1;
+      dg.FluxMatrixRusanov(f, (*Kc_)[c1], (*Kc_)[c2], (*Kf_)[f], Aface);
+      matrix[f] = Aface;
+    }
   }
 }
 
@@ -137,7 +149,7 @@ void PDE_AdvectionRiemann::UpdateMatrices(
 void PDE_AdvectionRiemann::UpdateFlux(
     const Teuchos::Ptr<const CompositeVector>& h,
     const Teuchos::Ptr<const CompositeVector>& u,
-    const Teuchos::RCP<BCs>& bc, Teuchos::Ptr<CompositeVector>& flux)
+    const Teuchos::RCP<BCs>& bc, const Teuchos::Ptr<CompositeVector>& flux)
 {
   h->ScatterMasterToGhosted("cell");
   

@@ -445,19 +445,19 @@ void Mesh_STK_Impl::get_set_ids (stk::mesh::EntityRank rank, std::vector<unsigne
 
 stk::mesh::Selector Mesh_STK_Impl::selector_ (Parallel_type category) const
 {
-  ASSERT (category >= OWNED && category <= USED);
+  ASSERT (category >= Parallel_type::OWNED && category <= Parallel_type::ALL);
 
   stk::mesh::Selector owned(meta_data_->locally_owned_part());
   stk::mesh::Selector s;
   switch (category) {
-    case (OWNED):
+    case (Parallel_type::OWNED):
       s = owned;
       break;
-    case (GHOST):
+    case (Parallel_type::GHOST):
       s = !owned;
       // s &= meta_data_->globally_shared_part();
       break;
-    case (USED):
+    case (Parallel_type::ALL):
       s = meta_data_->universal_part();
       break;
   }
@@ -549,22 +549,22 @@ Mesh_STK_Impl::summary(std::ostream& os) const
     if (p == me) {
       os << boost::str(boost::format("Process %d: Nodes: %5d owned, %5d ghost, %5d used") %
                        me % 
-                       count_entities(NODE, OWNED) %
-                       count_entities(NODE, GHOST) %
-                       count_entities(NODE, USED))
+                       count_entities(NODE, Parallel_type::OWNED) %
+                       count_entities(NODE, Parallel_type::GHOST) %
+                       count_entities(NODE, Parallel_type::ALL))
          << std::endl;
 
       os << boost::str(boost::format("Process %d: Faces: %5d owned, %5d ghost, %5d used") %
                        me % 
-                       count_entities(FACE, OWNED) %
-                       count_entities(FACE, GHOST) %
-                       count_entities(FACE, USED))
+                       count_entities(FACE, Parallel_type::OWNED) %
+                       count_entities(FACE, Parallel_type::GHOST) %
+                       count_entities(FACE, Parallel_type::ALL))
          << std::endl;
       os << boost::str(boost::format("Process %d: Cells: %5d owned, %5d ghost, %5d used") %
                        me % 
-                       count_entities(Amanzi::AmanziMesh::CELL, OWNED) %
-                       count_entities(Amanzi::AmanziMesh::CELL, GHOST) %
-                       count_entities(Amanzi::AmanziMesh::CELL, USED))
+                       count_entities(Amanzi::AmanziMesh::CELL, Parallel_type::OWNED) %
+                       count_entities(Amanzi::AmanziMesh::CELL, Parallel_type::GHOST) %
+                       count_entities(Amanzi::AmanziMesh::CELL, Parallel_type::ALL))
          << std::endl;
     }
     communicator_->Barrier();

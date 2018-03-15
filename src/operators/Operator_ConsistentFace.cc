@@ -45,7 +45,8 @@ int Operator_ConsistentFace::ApplyMatrixFreeOp(const Op_Cell_FaceCell& op,
       mesh_->cell_get_faces(c, &faces);
       int nfaces = faces.size();
 
-      WhetStone::DenseVector v(nfaces), av(nfaces); av.clear();
+      WhetStone::DenseVector v(nfaces), av(nfaces);
+      av.PutScalar(0.0);
       for (int n=0; n!=nfaces; ++n) {
         v(n) = Xf[0][faces[n]];
       }

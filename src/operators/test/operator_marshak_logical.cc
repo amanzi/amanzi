@@ -65,10 +65,9 @@ void RunTestMarshakLogical(std::string op_list_name) {
 
   AmanziGeometry::Point begin(0.,0.5,0.5), end(1.,0.5,0.5);
   AmanziMesh::Entity_ID_List cells,faces;
-  double length;
   fac.AddSegment(100,begin,end,1.0,
-		 MeshLogicalFactory::TIP_BOUNDARY,MeshLogicalFactory::TIP_BOUNDARY,
-		 "myregion",&cells, &faces, &length);
+		 MeshLogicalFactory::LogicalTip_t::BOUNDARY,MeshLogicalFactory::LogicalTip_t::BOUNDARY,
+		 "myregion",&cells, &faces);
   RCP<const Mesh> mesh = fac.Create();
 
   // Create nonlinear coefficient.
@@ -77,8 +76,8 @@ void RunTestMarshakLogical(std::string op_list_name) {
   // modify diffusion coefficient
   // -- since rho=mu=1.0, we do not need to scale the diffusion coefficient.
   Teuchos::RCP<std::vector<WhetStone::Tensor> > K = Teuchos::rcp(new std::vector<WhetStone::Tensor>());
-  int ncells_owned = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
-  int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
+  int ncells_owned = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+  int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
 
   for (int c = 0; c < ncells_owned; c++) {
     WhetStone::Tensor Kc(2, 1);
@@ -88,7 +87,7 @@ void RunTestMarshakLogical(std::string op_list_name) {
   double rho(1.0), mu(1.0);
 
   // create boundary data (no mixed bc)
-  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(mesh, AmanziMesh::FACE, SCHEMA_DOFS_SCALAR));
+  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(mesh, AmanziMesh::FACE, DOF_Type::SCALAR));
   std::vector<int>& bc_model = bc->bc_model();
   std::vector<double>& bc_value = bc->bc_value();
 
@@ -151,9 +150,8 @@ void RunTestMarshakLogical(std::string op_list_name) {
     }
 
     // upwind heat conduction coefficient
-    knc->UpdateValues(solution);
-    ModelUpwindFn func = &HeatConduction::Conduction;
-    upwind.Compute(*flux, solution, bc_model, bc_value, *knc->values(), func);
+    knc->UpdateValues(solution, bc_model, bc_value);
+    upwind.Compute(*flux, solution, bc_model, *knc->values());
 
     // add diffusion operator
     Teuchos::ParameterList olist = plist.sublist("PK operator").sublist(op_list_name);

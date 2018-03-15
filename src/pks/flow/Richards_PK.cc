@@ -33,6 +33,7 @@
 #include "primary_variable_field_evaluator.hh"
 #include "UpwindFactory.hh"
 #include "XMLParameterListWriter.hh"
+#include "LinearOperatorFactory.hh"
 
 // Amanzi::Flow
 #include "DarcyVelocityEvaluator.hh"
@@ -966,7 +967,7 @@ double Richards_PK::DeriveBoundaryFaceValue(
     const Epetra_MultiVector& mu_cell = *S_->GetFieldData("viscosity_liquid")->ViewComponent("cell");
     const Epetra_MultiVector& u_cell = *u.ViewComponent("cell");
     AmanziMesh::Entity_ID_List cells;
-    mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+    mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
     int c = cells[0];
 
     double pc_shift(atm_pressure_);   

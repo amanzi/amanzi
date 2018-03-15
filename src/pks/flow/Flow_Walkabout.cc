@@ -34,8 +34,8 @@ void Flow_PK::CalculateDarcyVelocity(std::vector<AmanziGeometry::Point>& xyz,
   xyz.clear();
   velocity.clear();
 
-  int nnodes_owned = mesh_->num_entities(AmanziMesh::NODE, AmanziMesh::OWNED);
-  int nnodes_wghost = mesh_->num_entities(AmanziMesh::NODE, AmanziMesh::USED);
+  int nnodes_owned = mesh_->num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::OWNED);
+  int nnodes_wghost = mesh_->num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::ALL);
 
   // set markers for boundary nodes and faces
   std::vector<int> node_marker(nnodes_wghost);  
@@ -44,7 +44,7 @@ void Flow_PK::CalculateDarcyVelocity(std::vector<AmanziGeometry::Point>& xyz,
   AmanziMesh::Entity_ID_List nodes, faces, cells;
 
   for (int f = 0; f < nfaces_owned; f++) {
-    mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+    mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
     int ncells = cells.size();
 
     if (ncells == 1) {
@@ -104,13 +104,13 @@ void Flow_PK::CalculateDarcyVelocity(std::vector<AmanziGeometry::Point>& xyz,
 
   for (int v = 0; v < nnodes_owned; v++) {
     if (node_marker[v] > 0) {
-      mesh_->node_get_cells(v, AmanziMesh::USED, &cells);
+      mesh_->node_get_cells(v, AmanziMesh::Parallel_type::ALL, &cells);
       int ncells = cells.size();
 
       local_velocity.set(0.0);
       for (int n = 0; n < ncells; n++) {
         int c = cells[n];
-        mesh_->node_get_cell_faces(v, c, AmanziMesh::USED, &faces);
+        mesh_->node_get_cell_faces(v, c, AmanziMesh::Parallel_type::ALL, &faces);
         int nfaces = faces.size();
 
         if (nfaces > d) {  // Move boundary face to the top of the list. 
@@ -171,14 +171,14 @@ void Flow_PK::CalculatePoreVelocity(
   CalculateDarcyVelocity(xyz, velocity);
 
   // set markers for boundary nodes and faces
-  int nnodes_owned = mesh_->num_entities(AmanziMesh::NODE, AmanziMesh::OWNED);
-  int nnodes_wghost = mesh_->num_entities(AmanziMesh::NODE, AmanziMesh::USED);
+  int nnodes_owned = mesh_->num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::OWNED);
+  int nnodes_wghost = mesh_->num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::ALL);
 
   std::vector<int> node_marker(nnodes_wghost);  
   AmanziMesh::Entity_ID_List nodes, cells;
 
   for (int f = 0; f < nfaces_owned; f++) {
-    mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+    mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
     int ncells = cells.size();
 
     if (ncells == 1) {
@@ -207,7 +207,7 @@ void Flow_PK::CalculatePoreVelocity(
 
   for (int v = 0; v < nnodes_owned; v++) {
     if (node_marker[v] > 0) {
-      mesh_->node_get_cells(v, AmanziMesh::USED, &cells);
+      mesh_->node_get_cells(v, AmanziMesh::Parallel_type::ALL, &cells);
       int ncells = cells.size();
 
       local_phi = 0.0;

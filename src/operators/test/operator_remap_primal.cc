@@ -34,11 +34,11 @@
 
 // Amanzi::Operators
 #include "OperatorDefs.hh"
-#include "RemapUtils.hh"
 #include "PDE_Abstract.hh"
 #include "PDE_AdvectionRiemann.hh"
 #include "PDE_Reaction.hh"
 
+#include "AnalyticDG04.hh"
 
 /* *****************************************************************
 * Remap of polynomilas in two dimensions. Explicit time scheme.
@@ -68,12 +68,12 @@ void RemapTests2DPrimal(int order, std::string disc_name,
   Teuchos::RCP<const Mesh> mesh0 = meshfactory(0.0, 0.0, 1.0, 1.0, nx, ny);
   // Teuchos::RCP<const Mesh> mesh0 = meshfactory("test/median15x16.exo", Teuchos::null);
 
-  int ncells_owned = mesh0->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
-  int ncells_wghost = mesh0->num_entities(AmanziMesh::CELL, AmanziMesh::USED);
-  int nfaces_owned = mesh0->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
-  int nfaces_wghost = mesh0->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
-  int nnodes_owned = mesh0->num_entities(AmanziMesh::NODE, AmanziMesh::OWNED);
-  int nnodes_wghost = mesh0->num_entities(AmanziMesh::NODE, AmanziMesh::USED);
+  int ncells_owned = mesh0->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+  int ncells_wghost = mesh0->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
+  int nfaces_owned = mesh0->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
+  int nfaces_wghost = mesh0->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
+  int nnodes_owned = mesh0->num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::OWNED);
+  int nnodes_wghost = mesh0->num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::ALL);
 
   // create second and auxiliary mesh
   Teuchos::RCP<Mesh> mesh1 = meshfactory(0.0, 0.0, 1.0, 1.0, nx, ny);
@@ -81,7 +81,7 @@ void RemapTests2DPrimal(int order, std::string disc_name,
 
   // deform the second mesh
   AmanziGeometry::Point xv(2), xref(2);
-  Entity_ID_List nodeids;
+  Entity_ID_List nodeids, faces;
   AmanziGeometry::Point_List new_positions, final_positions;
 
   for (int v = 0; v < nnodes_wghost; ++v) {
@@ -101,6 +101,20 @@ void RemapTests2DPrimal(int order, std::string disc_name,
   }
   mesh1->deform(nodeids, new_positions, false, &final_positions);
 
+  // little factory of mesh maps
+  std::shared_ptr<WhetStone::MeshMaps> maps;
+  if (maps_name == "FEM") {
+    maps = std::make_shared<WhetStone::MeshMaps_FEM>(mesh0, mesh1);
+  } else if (maps_name == "VEM") {
+    std::shared_ptr<WhetStone::MeshMaps_VEM> maps_vem;
+    maps_vem = std::make_shared<WhetStone::MeshMaps_VEM>(mesh0, mesh1);
+    maps_vem->set_order(order + 1);  // higher-order velocity reconstruction
+    maps = maps_vem;
+  }
+
+  // numerical integration
+  WhetStone::NumericalIntegration numi(mesh0);
+
   // create and initialize cell-based field 
   CompositeVectorSpace cvs1;
   cvs1.SetMesh(mesh0)->SetGhosted(true)->AddComponent("cell", AmanziMesh::CELL, nk);
@@ -110,21 +124,24 @@ void RemapTests2DPrimal(int order, std::string disc_name,
   // we need dg to compute scaling of basis functions
   WhetStone::DG_Modal dg(order, mesh0);
 
+  AnalyticDG04 ana(mesh0, order);
+
   for (int c = 0; c < ncells_wghost; c++) {
     const AmanziGeometry::Point& xc = mesh0->cell_centroid(c);
-    // p1c[0][c] = xc[0] + 2 * xc[1];
-    p1c[0][c] = std::sin(3 * xc[0]) * std::sin(6 * xc[1]);
-    if (nk > 1) {
-      double a, b;
-      WhetStone::Iterator it(2);
+    WhetStone::Polynomial coefs;
+    ana.TaylorCoefficients(xc, 0.0, coefs);
+    numi.ChangeBasisRegularToNatural(c, coefs);
 
-      it.begin(1);
-      dg.TaylorBasis(c, it, &a, &b);
-      p1c[1][c] = 3 * std::cos(3 * xc[0]) * std::sin(6 * xc[1]) / a;
+    WhetStone::DenseVector data;
+    coefs.GetPolynomialCoefficients(data);
 
-      ++it;
+    double a, b;
+    for (auto it = coefs.begin(); it.end() <= coefs.end(); ++it) {
+      int n = it.PolynomialPosition();
+
       dg.TaylorBasis(c, it, &a, &b);
-      p1c[2][c] = 6 * std::sin(3 * xc[0]) * std::cos(6 * xc[1]) / a;
+      p1c[n][c] = data(n) / a;
+      p1c[0][c] += data(n) * b;
     }
   }
 
@@ -136,15 +153,40 @@ void RemapTests2DPrimal(int order, std::string disc_name,
   double mass_tmp(mass0);
   mesh0->get_comm()->SumAll(&mass_tmp, &mass0, 1);
 
-  // allocate memory
+  // allocate memory for global variables
+  // -- solution
   CompositeVectorSpace cvs2;
   cvs2.SetMesh(mesh1)->SetGhosted(true)->AddComponent("cell", AmanziMesh::CELL, nk);
   CompositeVector p2(cvs2);
   Epetra_MultiVector& p2c = *p2.ViewComponent("cell");
 
+  // -- face velocities
+  std::vector<WhetStone::VectorPolynomial> vec_vel(nfaces_wghost);
+  for (int f = 0; f < nfaces_wghost; ++f) {
+    maps->VelocityFace(f, vec_vel[f]);
+  }
+
+  // -- cell-baced velocities and Jacobian matrices
+  std::vector<WhetStone::VectorPolynomial> uc(ncells_owned);
+  std::vector<WhetStone::MatrixPolynomial> J(ncells_owned);
+
+  for (int c = 0; c < ncells_owned; ++c) {
+    mesh0->cell_get_faces(c, &faces);
+
+    std::vector<WhetStone::VectorPolynomial> vvf;
+    for (int n = 0; n < faces.size(); ++n) {
+      vvf.push_back(vec_vel[faces[n]]);
+    }
+
+    maps->VelocityCell(c, vvf, uc[c]);
+    maps->Jacobian(uc[c], J[c]);
+  }
+
   // create flux operator
   Teuchos::ParameterList plist;
   plist.set<std::string>("method", disc_name)
+       .set<std::string>("matrix type", "flux")
+       .set<std::string>("flux formula", "upwind")
        .set<int>("method order", order)
        .set<bool>("jump operator on test function", false);
 
@@ -159,7 +201,6 @@ void RemapTests2DPrimal(int order, std::string disc_name,
   Teuchos::RCP<PDE_AdvectionRiemann> op = Teuchos::rcp(new PDE_AdvectionRiemann(plist, mesh0));
   auto global_op = op->global_operator();
 
-  std::vector<WhetStone::VectorPolynomial> vec_vel(nfaces_wghost);
   Teuchos::RCP<std::vector<WhetStone::Polynomial> > vel = 
       Teuchos::rcp(new std::vector<WhetStone::Polynomial>(nfaces_wghost));
 
@@ -193,20 +234,8 @@ void RemapTests2DPrimal(int order, std::string disc_name,
   op_reac->Setup(jac);
 
   double t(0.0), tend(1.0);
-  std::shared_ptr<WhetStone::MeshMaps> maps;
-  if (maps_name == "FEM") {
-    maps = std::make_shared<WhetStone::MeshMaps_FEM>(mesh0, mesh1);
-  } else if (maps_name == "VEM") {
-    maps = std::make_shared<WhetStone::MeshMaps_VEM>(mesh0, mesh1);
-  }
-
   while(t < tend - dt/2) {
-    // calculate face velocities
-    for (int f = 0; f < nfaces_wghost; ++f) {
-      maps->VelocityFace(f, vec_vel[f]);
-    }
-
-    // calculate normal component of face velocities and change its sign
+    // calculate normal component of face velocity at time t+dt/2 
     for (int f = 0; f < nfaces_wghost; ++f) {
       // cn = j J^{-t} N dA
       WhetStone::VectorPolynomial cn;
@@ -216,34 +245,14 @@ void RemapTests2DPrimal(int order, std::string disc_name,
       (*vel)[f] *= -1.0;
     }
 
-    // calculate cell velocities at time t+dt/2
-    Entity_ID_List faces;
+    // calculate various geometric quantities in reference framework
     WhetStone::MatrixPolynomial C;
-    WhetStone::VectorPolynomial tmp;
 
     for (int c = 0; c < ncells_owned; ++c) {
-      mesh0->cell_get_faces(c, &faces);
-      std::vector<WhetStone::VectorPolynomial> vf;
+      maps->Cofactors(t + dt/2, J[c], C);
+      (*cell_vel)[c].Multiply(C, uc[c], true);
 
-      for (int n = 0; n < faces.size(); ++n) {
-        vf.push_back(vec_vel[faces[n]]);
-      }
-
-      maps->VelocityCell(c, vf, tmp);
-      maps->Cofactors(c, t + dt/2, tmp, C);
-      (*cell_vel)[c].Multiply(C, tmp, true);
-    }
-
-    // calculate determinant of Jacobian at time t+dt
-    for (int c = 0; c < ncells_owned; ++c) {
-      mesh0->cell_get_faces(c, &faces);
-      std::vector<WhetStone::VectorPolynomial> vf;
-
-      for (int n = 0; n < faces.size(); ++n) {
-        vf.push_back(vec_vel[faces[n]]);
-      }
-
-      maps->JacobianDet(c, t + dt, vf, (*jac)[c]);
+      maps->Determinant(t + dt, J[c], (*jac)[c]);
     }
 
     // populate operators
@@ -317,7 +326,7 @@ void RemapTests2DPrimal(int order, std::string disc_name,
 
   // error tests
   pl2_err = std::pow(pl2_err, 0.5);
-  CHECK(pl2_err < 0.08 / (order + 1));
+  if (MyPID == 0) CHECK(pl2_err < 0.08 / (order + 1));
 
   if (MyPID == 0) {
     printf("L2(p0)=%12.8g  Inf(p0)=%12.8g  dMass=%12.8g  Err(area)=%12.8g\n", 

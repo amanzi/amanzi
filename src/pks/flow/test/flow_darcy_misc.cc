@@ -145,7 +145,7 @@ class DarcyProblem {
     Epetra_MultiVector& pressure = *S->GetFieldData("pressure", passwd)->ViewComponent("cell", false);
 
     double error_L2 = 0.0;
-    int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+    int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
     for (int c = 0; c < ncells; c++) {
       const AmanziGeometry::Point& xc = mesh->cell_centroid(c);
       double pressure_exact = p0 + pressure_gradient * xc;
@@ -159,7 +159,7 @@ class DarcyProblem {
     Epetra_MultiVector& lambda = *S->GetFieldData("pressure", passwd)->ViewComponent("face", false);
 
     double error_L2 = 0.0;
-    int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
+    int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
     for (int f = 0; f < nfaces; f++) {
       const AmanziGeometry::Point& xf = mesh->face_centroid(f);
       double pressure_exact = p0 + pressure_gradient * xf;
@@ -173,7 +173,7 @@ class DarcyProblem {
     Epetra_MultiVector& flux = *S->GetFieldData("darcy_flux", passwd)->ViewComponent("face", false);
 
     double error_L2 = 0.0;
-    int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
+    int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
     for (int f = 0; f < nfaces; f++) {
       const AmanziGeometry::Point& normal = mesh->face_normal(f);
       error_L2 += std::pow(flux[0][f] - velocity_exact * normal, 2.0);
@@ -188,8 +188,8 @@ class DarcyProblem {
     Epetra_MultiVector& flux = *cv->ViewComponent("face", true);
 
     double error_L2 = 0.0;
-    int ncells_owned = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
-    int nfaces_owned = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
+    int ncells_owned = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+    int nfaces_owned = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
 
     for (int c = 0; c < ncells_owned; c++) {
       AmanziMesh::Entity_ID_List faces;

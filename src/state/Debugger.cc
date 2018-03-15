@@ -63,7 +63,7 @@ Debugger::Debugger(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
       if (lf >= 0) {
         // debug the neighboring cells
         AmanziMesh::Entity_ID_List cells;
-        mesh->face_get_cells(lf, AmanziMesh::OWNED, &cells);
+        mesh->face_get_cells(lf, AmanziMesh::Parallel_type::OWNED, &cells);
         
         for (AmanziMesh::Entity_ID_List::const_iterator lc=cells.begin();
              lc!=cells.end(); ++lc) {

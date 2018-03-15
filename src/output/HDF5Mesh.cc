@@ -22,8 +22,8 @@ void HDF5::createMeshFile(AmanziMesh::Mesh &mesh_maps, std::string filename) {
   group = H5Gcreate(file, "/Mesh", H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
 
   // get num_nodes, num_cells
-  int num_nodes = mesh_maps.num_entities(AmanziMesh::NODE, AmanziMesh::OWNED);
-  int num_elems = mesh_maps.num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  int num_nodes = mesh_maps.num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::OWNED);
+  int num_elems = mesh_maps.num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
 
   // get coords
   double *nodes = new double[num_nodes*3];

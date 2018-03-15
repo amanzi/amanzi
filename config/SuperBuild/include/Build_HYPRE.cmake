@@ -101,6 +101,8 @@ ExternalProject_Add(${HYPRE_BUILD_TARGET}
                                   -DCMAKE_C_COMPILER:FILEPATH=${CMAKE_C_COMPILER}
                                   -DCMAKE_CXX_FLAGS:STRING=${Amanzi_COMMON_CXXFLAGS}
                                   -DCMAKE_CXX_COMPILER:FILEPATH=${CMAKE_CXX_COMPILER}
+                                  -DMPI_CXX_COMPILER:FILEPATH=${MPI_CXX_COMPILER}
+                                  -DMPI_C_COMPILER:FILEPATH=${MPI_C_COMPILER}
                     # -- Build
                     BINARY_DIR       ${HYPRE_build_dir}        # Build directory 
                     BUILD_COMMAND    ${MAKE} 
@@ -113,6 +115,7 @@ ExternalProject_Add(${HYPRE_BUILD_TARGET}
 
 # --- Useful variables that depend on HYPRE
 include(BuildLibraryName)
-set(HYPRE_INCLUDE_DIRS "${TPL_INSTALL_PREFIX}/include")
 build_library_name(HYPRE HYPRE_LIBRARY APPEND_PATH ${TPL_INSTALL_PREFIX}/lib)
+set(HYPRE_DIR "${TPL_INSTALL_PREFIX}")
+set(HYPRE_INCLUDE_DIRS "${TPL_INSTALL_PREFIX}/include")
 set(HYPRE_LIBRARIES    "${HYPRE_LIBRARY}")

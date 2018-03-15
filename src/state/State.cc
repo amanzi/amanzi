@@ -404,12 +404,14 @@ Teuchos::RCP<FieldEvaluator> State::GetFieldEvaluator(Key key) {
 
 
 Teuchos::RCP<FieldEvaluator> State::GetFieldEvaluator_(Key key) {
+
   FieldEvaluatorMap::iterator lb = field_evaluators_.lower_bound(key);
   if (lb != field_evaluators_.end() && !(field_evaluators_.key_comp()(key, lb->first))) {
     return lb->second;
   } else {
     return Teuchos::null;
   }
+  
 };
 
 

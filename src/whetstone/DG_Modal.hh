@@ -17,12 +17,15 @@
 
 #include "Teuchos_RCP.hpp"
 
+// Amanzi
 #include "Mesh.hh"
 #include "Point.hh"
 
+// WhetStone
 #include "BilinearForm.hh"
 #include "DenseMatrix.hh"
-#include "Polynomial.hh"
+#include "DenseVector.hh"
+#include "NumericalIntegration.hh"
 #include "Tensor.hh"
 #include "VectorPolynomial.hh"
 #include "WhetStoneDefs.hh"
@@ -31,49 +34,46 @@
 namespace Amanzi {
 namespace WhetStone {
 
-// Gauss quadrature on interval (0,1)
-const double q1d_weights[4][4] = {
-    1.0, 0.0, 0.0, 0.0,
-    0.5, 0.5, 0.0, 0.0,
-    0.277777777777778, 0.444444444444444, 0.277777777777778, 0.0,
-    0.173927422568727, 0.326072577431273, 0.326072577431273, 0.173927422568727
-};
-const double q1d_points[4][4] = {
-    0.5, 0.0, 0.0, 0.0,
-    0.211324865405187, 0.788675134594813, 0.0, 0.0,
-    0.112701665379258, 0.5, 0.887298334620742, 0.0,
-    0.0694318442029737, 0.330009478207572, 0.669990521792428, 0.930568155797026
-};
+class Polynomial;
 
-class DG_Modal : public BilinearForm { 
+class DG_Modal : public BilinearForm {
  public:
   DG_Modal(Teuchos::RCP<const AmanziMesh::Mesh> mesh) 
-    : order_(-1),
-      basis_(TAYLOR_BASIS_NORMALIZED),
+    : numi_(mesh),
       mesh_(mesh),
+      order_(-1),
+      basis_(TAYLOR_BASIS_NORMALIZED_ORTHO),
       d_(mesh_->space_dimension()) {};
 
   DG_Modal(int order, Teuchos::RCP<const AmanziMesh::Mesh> mesh)
-    : order_(order), 
-      basis_(TAYLOR_BASIS_NORMALIZED),
+    : numi_(mesh),
+      order_(order), 
       mesh_(mesh),
+      basis_(TAYLOR_BASIS_NORMALIZED_ORTHO),
       d_(mesh_->space_dimension()) {};
 
   ~DG_Modal() {};
 
-  // required member functions
+  // basic member functions
   // -- mass matrices
   virtual int MassMatrix(int c, const Tensor& K, DenseMatrix& M);
   virtual int MassMatrixPoly(int c, const Polynomial& K, DenseMatrix& M);
+  int MassMatrix(int c, const Tensor& K, PolynomialOnMesh& integrals, DenseMatrix& M);
 
-  // -- stiffness matrices (coming soon)
-  virtual int StiffnessMatrix(int c, const Tensor& T, DenseMatrix& A) { return 0; }
-  virtual int StiffnessMatrixPoly(int c, const Polynomial& K, DenseMatrix& A) { return 0; }
+  // -- stiffness matrices
+  virtual int StiffnessMatrix(int c, const Tensor& T, DenseMatrix& A);
 
   // -- advection matrices
-  virtual int AdvectionMatrix(int c, const AmanziGeometry::Point v, DenseMatrix& A, bool grad_on_test) { return 0; }
   virtual int AdvectionMatrixPoly(int c, const VectorPolynomial& uc, DenseMatrix& A, bool grad_on_test);
-  int FluxMatrixPoly(int f, const Polynomial& uf, DenseMatrix& A, bool jump_on_test);
+
+  // -- flux matrices
+  int FluxMatrixUpwind(int f, const Polynomial& uf, DenseMatrix& A, bool jump_on_test);
+  int FluxMatrixRusanov(int f, const VectorPolynomial& uc1, const VectorPolynomial& uc2,
+                        const Polynomial& uf, DenseMatrix& A);
+
+  // -- interface matrices: jumps and penalty
+  int FaceMatrixJump(int f, const Tensor& K1, const Tensor& K2, DenseMatrix& A);
+  int FaceMatrixPenalty(int f, double Kf, DenseMatrix& A);
 
   // interfaces that are not used
   virtual int L2consistency(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Mc, bool symmetry) { return 0; }
@@ -87,43 +87,14 @@ class DG_Modal : public BilinearForm {
   void TaylorBasis(int c, const Iterator& it, double* a, double* b);
   
   // create polynomial given array of its coefficients
-  Polynomial CalculatePolynomial(int c, const std::vector<double>& coefs) const;
-
-  // integration tools
-  double IntegratePolynomialFace(int f, const Polynomial& poly) const {
-    const std::vector<const Polynomial*> polys(1, &poly);
-    return IntegratePolynomialsFace_(f, polys);
-  }
-
-  double IntegratePolynomialEdge(
-      const AmanziGeometry::Point& x1, const AmanziGeometry::Point& x2,
-      const Polynomial& poly) const {
-    const std::vector<const Polynomial*> polys(1, &poly);
-    return IntegratePolynomialsEdge_(x1, x2, polys);
-  }
-
-  // placeholder of elliptic projector
-  void CoVelocityCell(int c, const std::vector<const Polynomial*> vf, VectorPolynomial& vc);
+  Polynomial CalculatePolynomial(int c, const DenseVector& coefs) const;
 
   // miscalleneous
+  // -- order of polynomials in each cell
   void set_order(int order) { order_ = order; }
+  // -- modifications of Taylor basis. Available options are natural, 
+  //    normalized by volume, normalized aind orthogonalized to constant
   void set_basis(int basis) { basis_ = basis; }
-
- private:
-  // specialized routines optimized for non-normalized Taylor basis
-  void IntegrateMonomialsCell_(int c, Monomial& monomials);
-  void IntegrateMonomialsFace_(int c, int f, double factor, Monomial& monomials);
-  void IntegrateMonomialsEdge_(
-      const AmanziGeometry::Point& x1, const AmanziGeometry::Point& x2,
-      double factor, Monomial& monomials);
-
-  // integraton of a product of polynomials with potentialy different origins
-  double IntegratePolynomialsFace_(
-      int f, const std::vector<const Polynomial*>& polys) const;
-
-  double IntegratePolynomialsEdge_(
-      const AmanziGeometry::Point& x1, const AmanziGeometry::Point& x2,
-      const std::vector<const Polynomial*>& polys) const;
 
  private:
   void UpdateIntegrals_(int c, int order);
@@ -133,6 +104,7 @@ class DG_Modal : public BilinearForm {
 
  private:
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
+  NumericalIntegration numi_;
   int order_, d_;
   int basis_;
 

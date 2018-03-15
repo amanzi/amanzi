@@ -104,7 +104,7 @@ void PK_DomainFunctionVolume<FunctionBase>::Compute(double t0, double t1)
   int dim = (*mesh_).space_dimension();
   std::vector<double> args(1 + dim);
 
-  int nowned = mesh_->num_entities(kind_, AmanziMesh::OWNED);
+  int nowned = mesh_->num_entities(kind_, AmanziMesh::Parallel_type::OWNED);
 
   for (auto uspec = unique_specs_.at(kind_)->begin(); uspec != unique_specs_.at(kind_)->end(); ++uspec) {
     Teuchos::RCP<MeshIDs> ids = (*uspec)->second;

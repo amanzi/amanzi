@@ -41,9 +41,8 @@ class UpwindDivK : public Upwind<Model> {
   void Init(Teuchos::ParameterList& plist);
 
   void Compute(const CompositeVector& flux, const CompositeVector& solution,
-               const std::vector<int>& bc_model, const std::vector<double>& bc_value,
-               CompositeVector& field,
-               double (Model::*Value)(int, double) const);
+               const std::vector<int>& bc_model,
+               CompositeVector& field);
 
  private:
   using Upwind<Model>::mesh_;
@@ -74,9 +73,7 @@ void UpwindDivK<Model>::Init(Teuchos::ParameterList& plist)
 template<class Model>
 void UpwindDivK<Model>::Compute(
     const CompositeVector& flux, const CompositeVector& solution,
-    const std::vector<int>& bc_model, const std::vector<double>& bc_value,
-    CompositeVector& field,
-    double (Model::*Value)(int, double) const)
+    const std::vector<int>& bc_model, CompositeVector& field)
 {
   ASSERT(field.HasComponent("cell"));
   ASSERT(field.HasComponent(face_comp_));
@@ -87,7 +84,10 @@ void UpwindDivK<Model>::Compute(
   const Epetra_MultiVector& flx_face = *flux.ViewComponent("face", true);
   const Epetra_MultiVector& sol_face = *solution.ViewComponent("face", true);
 
-  Epetra_MultiVector& fld_cell = *field.ViewComponent("cell", true);
+  const Epetra_MultiVector& fld_cell = *field.ViewComponent("cell", true);
+  const Epetra_MultiVector& fld_boundary = *field.ViewComponent("dirichlet_faces", true);
+  const Epetra_Map& ext_face_map = mesh_->exterior_face_map(true);
+  const Epetra_Map& face_map = mesh_->face_map(true);
   Epetra_MultiVector& upw_face = *field.ViewComponent(face_comp_, true);
   upw_face.PutScalar(0.0);
 
@@ -100,7 +100,7 @@ void UpwindDivK<Model>::Compute(
   AmanziMesh::Entity_ID_List faces;
   WhetStone::MFD3D_Diffusion mfd(mesh_);
 
-  int ncells_wghost = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::USED);
+  int ncells_wghost = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
   for (int c = 0; c < ncells_wghost; c++) {
     mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
     int nfaces = faces.size();
@@ -122,7 +122,7 @@ void UpwindDivK<Model>::Compute(
         upw_face[0][f] += kc * tmp; 
       // Boundary faces. We upwind only on inflow dirichlet faces.
       } else if (bc_model[f] == OPERATOR_BC_DIRICHLET && flag) {
-        upw_face[0][f] = ((*model_).*Value)(c, bc_value[f]);
+        upw_face[0][f] = fld_boundary[0][ext_face_map.LID(face_map.GID(f))];
       } else if (bc_model[f] == OPERATOR_BC_NEUMANN && flag) {
         // upw_face[0][f] = ((*model_).*Value)(c, sol_face[0][f]);
         upw_face[0][f] = kc;

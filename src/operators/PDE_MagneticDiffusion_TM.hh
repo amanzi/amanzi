@@ -8,30 +8,30 @@
 
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 
-  TM mode of MHD: B field is on faces, E field is at nodes.
+  TM mode of magnetic diffusion: B field is on faces, E field is at nodes.
 */
 
-#ifndef AMANZI_OPERATOR_ELECTROMAGNETICS_MHD_TM_HH_
-#define AMANZI_OPERATOR_ELECTROMAGNETICS_MHD_TM_HH_
+#ifndef AMANZI_OPERATOR_MAGNETIC_DIFFUSION_TM_HH_
+#define AMANZI_OPERATOR_MAGNETIC_DIFFUSION_TM_HH_
 
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
 
 // Amanzi::Operators
-#include "PDE_ElectromagneticsMHD.hh"
+#include "PDE_MagneticDiffusion.hh"
 
 namespace Amanzi {
 namespace Operators {
 
-class PDE_ElectromagneticsMHD_TM : public PDE_ElectromagneticsMHD {
+class PDE_MagneticDiffusion_TM : public PDE_MagneticDiffusion {
  public:
-  PDE_ElectromagneticsMHD_TM(const Teuchos::RCP<Operator>& global_op)
-    : PDE_ElectromagneticsMHD(global_op)
+  PDE_MagneticDiffusion_TM(const Teuchos::RCP<Operator>& global_op)
+    : PDE_MagneticDiffusion(global_op)
   {};
 
-  PDE_ElectromagneticsMHD_TM(Teuchos::ParameterList& plist,
+  PDE_MagneticDiffusion_TM(Teuchos::ParameterList& plist,
                              const Teuchos::RCP<const AmanziMesh::Mesh>& mesh)
-    : PDE_ElectromagneticsMHD(plist, mesh)
+    : PDE_MagneticDiffusion(plist, mesh)
   {};
 
   // main virtual members
@@ -46,8 +46,8 @@ class PDE_ElectromagneticsMHD_TM : public PDE_ElectromagneticsMHD {
   virtual double CalculateOhmicHeating(const CompositeVector& E);
 
  private:
-  void ApplyBCs_Node_(const Teuchos::Ptr<BCs>& bc_f,
-                      const Teuchos::Ptr<BCs>& bc_v, bool primary, bool eliminate);
+  void ApplyBCs_Node_(const Teuchos::Ptr<const BCs>& bc_f,
+                      const Teuchos::Ptr<const BCs>& bc_v, bool primary, bool eliminate);
 };
 
 }  // namespace Operators

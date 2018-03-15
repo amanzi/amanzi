@@ -56,14 +56,14 @@ class HeatConduction {
     const Epetra_MultiVector& uc = *u.ViewComponent("cell", true); 
     const Epetra_MultiVector& values_c = *values_->ViewComponent("cell", true); 
 
-    int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::USED);
+    int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
     for (int c = 0; c < ncells; c++) {
       values_c[0][c] = 0.3 + uc[0][c];
     }
 
     const Epetra_MultiVector& uf = *u.ViewComponent("face", true); 
     const Epetra_MultiVector& values_f = *values_->ViewComponent("face", true); 
-    int nfaces = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
+    int nfaces = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
     for (int f = 0; f < nfaces; f++) {
       values_f[0][f] = 0.3 + uf[0][f];
     }
@@ -123,8 +123,8 @@ void RunTest(std::string op_list_name) {
 
   // modify diffusion coefficient
   Teuchos::RCP<std::vector<WhetStone::Tensor> > K = Teuchos::rcp(new std::vector<WhetStone::Tensor>());
-  int ncells_owned = surfmesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
-  int nfaces_wghost = surfmesh->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
+  int ncells_owned = surfmesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+  int nfaces_wghost = surfmesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
 
   for (int c = 0; c < ncells_owned; c++) {
     WhetStone::Tensor Kc(2, 1);
@@ -133,7 +133,7 @@ void RunTest(std::string op_list_name) {
   }
 
   // create boundary data (no mixed bc)
-  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(surfmesh, AmanziMesh::FACE, SCHEMA_DOFS_SCALAR));
+  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(surfmesh, AmanziMesh::FACE, DOF_Type::SCALAR));
   std::vector<int>& bc_model = bc->bc_model();
   std::vector<double>& bc_value = bc->bc_value();
 

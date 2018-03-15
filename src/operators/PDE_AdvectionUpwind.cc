@@ -29,7 +29,7 @@ void PDE_AdvectionUpwind::InitAdvection_(Teuchos::ParameterList& plist)
   if (global_op_ == Teuchos::null) {
     // constructor was given a mesh
     global_schema_row_.SetBase(AmanziMesh::FACE);
-    global_schema_row_.AddItem(AmanziMesh::CELL, SCHEMA_DOFS_SCALAR, 1);
+    global_schema_row_.AddItem(AmanziMesh::CELL, DOF_Type::SCALAR, 1);
     global_schema_col_ = global_schema_row_;
 
     Teuchos::RCP<CompositeVectorSpace> cvs = Teuchos::rcp(new CompositeVectorSpace());
@@ -97,7 +97,7 @@ void PDE_AdvectionUpwind::UpdateMatrices(const Teuchos::Ptr<const CompositeVecto
     int c1 = (*upwind_cell_)[f];
     int c2 = (*downwind_cell_)[f];
 
-    mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+    mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
     int ncells = cells.size();
     WhetStone::DenseMatrix Aface(ncells, ncells);
     Aface.PutScalar(0.0);
@@ -143,7 +143,7 @@ void PDE_AdvectionUpwind::UpdateMatrices(
     int c1 = (*upwind_cell_)[f];
     int c2 = (*downwind_cell_)[f];
 
-    mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+    mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
     int ncells = cells.size();
     WhetStone::DenseMatrix Aface(ncells, ncells);
     Aface.PutScalar(0.0);
@@ -232,7 +232,7 @@ void PDE_AdvectionUpwind::ApplyBCs(const Teuchos::RCP<BCs>& bc, bool primary)
 void PDE_AdvectionUpwind::UpdateFlux(
     const Teuchos::Ptr<const CompositeVector>& h,
     const Teuchos::Ptr<const CompositeVector>& u,
-    const Teuchos::RCP<BCs>& bc, Teuchos::Ptr<CompositeVector>& flux)
+    const Teuchos::RCP<BCs>& bc, const Teuchos::Ptr<CompositeVector>& flux)
 {
   // might need to think more carefully about BCs
   const std::vector<int>& bc_model = bc->bc_model();

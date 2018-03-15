@@ -442,25 +442,13 @@ void MFD3D::PolygonCentroidWeights(
 int MFD3D::cell_get_face_adj_cell(int cell, int face)
 {
   Entity_ID_List cells;
-  mesh_->face_get_cells(face, (ParallelTypeCast)WhetStone::USED, &cells);
+  mesh_->face_get_cells(face, Parallel_type::ALL, &cells);
   int ncells = cells.size();
 
   if (ncells == 2) {
     int c2 = cells[0];
     if (cell == c2) c2 = cells[1];
     return c2;
-  }
-  return -1;
-}
-
-
-/* ******************************************************************
-* Returns position of the number v in the list of nodes.  
-****************************************************************** */
-int MFD3D::FindPosition_(int v, Entity_ID_List nodes)
-{
-  for (int i = 0; i < nodes.size(); i++) {
-    if (nodes[i] == v) return i;
   }
   return -1;
 }

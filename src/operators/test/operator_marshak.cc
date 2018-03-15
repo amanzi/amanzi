@@ -68,8 +68,8 @@ void RunTestMarshak(std::string op_list_name, double TemperatureFloor) {
 
   // modify diffusion coefficient
   Teuchos::RCP<std::vector<WhetStone::Tensor> > K = Teuchos::rcp(new std::vector<WhetStone::Tensor>());
-  int ncells_owned = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
-  int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
+  int ncells_owned = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+  int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
 
   for (int c = 0; c < ncells_owned; c++) {
     WhetStone::Tensor Kc(2, 1);
@@ -78,7 +78,7 @@ void RunTestMarshak(std::string op_list_name, double TemperatureFloor) {
   }
 
   // create boundary data (no mixed bc)
-  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(mesh, AmanziMesh::FACE, SCHEMA_DOFS_SCALAR));
+  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(mesh, AmanziMesh::FACE, DOF_Type::SCALAR));
   std::vector<int>& bc_model = bc->bc_model();
   std::vector<double>& bc_value = bc->bc_value();
 
@@ -145,9 +145,8 @@ void RunTestMarshak(std::string op_list_name, double TemperatureFloor) {
     }
 
     // upwind heat conduction coefficient
-    knc->UpdateValues(*solution);
-    ModelUpwindFn func = &HeatConduction::Conduction;
-    upwind.Compute(*flux, *solution, bc_model, bc_value, *knc->values(), func);
+    knc->UpdateValues(*solution, bc_model, bc_value);
+    upwind.Compute(*flux, *solution, bc_model, *knc->values());
 
     // add diffusion operator
     Teuchos::ParameterList olist = plist.sublist("PK operator").sublist(op_list_name);

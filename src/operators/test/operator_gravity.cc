@@ -64,8 +64,8 @@ void RunTestGravity(std::string op_list_name) {
   Teuchos::RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 3, 3, Teuchos::null);
 
   // create diffusion coefficient
-  int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
-  int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
+  int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+  int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
 
   const WhetStone::Tensor Kc(2, 1);
   Teuchos::RCP<std::vector<WhetStone::Tensor> > K = Teuchos::rcp(new std::vector<WhetStone::Tensor>());
@@ -78,7 +78,7 @@ void RunTestGravity(std::string op_list_name) {
   AmanziGeometry::Point g(0.0, -1.0);
 
   // create homogeneous boundary data
-  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(mesh, AmanziMesh::FACE, SCHEMA_DOFS_SCALAR));
+  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(mesh, AmanziMesh::FACE, DOF_Type::SCALAR));
   std::vector<int>& bc_model = bc->bc_model();
   std::vector<double>& bc_value = bc->bc_value();
 
@@ -112,9 +112,9 @@ void RunTestGravity(std::string op_list_name) {
   UpwindFlux<HeatConduction> upwind(mesh, knc);
   upwind.Init(ulist);
 
-  knc->UpdateValues(*flux);  // argument is not used
+  knc->UpdateValues(*flux, bc_model, bc_value);  // argument is not used
   ModelUpwindFn func = &HeatConduction::Conduction;
-  upwind.Compute(*flux, u, bc_model, bc_value, *knc->values(), func);
+  upwind.Compute(*flux, u, bc_model, *knc->values());
 
   // create first diffusion operator using constant density
   Operators::PDE_DiffusionFactory opfactory;

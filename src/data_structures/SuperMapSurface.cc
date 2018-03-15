@@ -33,8 +33,8 @@ SuperMapSurface::CreateIndices_(const std::string& surf_compname, int dofnum, bo
       int offset = offsets_.at(compname);
       int num_dof = num_dofs_.at(compname);
 
-      int surf_nentities_owned = surf_mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
-      int surf_nentities = surf_mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::USED);
+      int surf_nentities_owned = surf_mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+      int surf_nentities = surf_mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
 
       std::vector<int> indices(surf_nentities, -1);
       for (int i=0; i!=surf_nentities_owned; ++i) {
@@ -58,7 +58,7 @@ SuperMapSurface::CreateIndices_(const std::string& surf_compname, int dofnum, bo
       int offset = offsets_.at(compname);
       int num_dof = num_dofs_.at(compname);
 
-      int surf_nentities = surf_mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+      int surf_nentities = surf_mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
 
       std::vector<int> indices(surf_nentities, -1);
       for (int i=0; i!=surf_nentities; ++i) {

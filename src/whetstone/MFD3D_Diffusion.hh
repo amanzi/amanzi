@@ -54,13 +54,6 @@ class MFD3D_Diffusion : public virtual MFD3D,
   // -- divergence matrix
   virtual int DivergenceMatrix(int c, DenseMatrix& A);
 
-  // -- other interfaces not used yet by this class
-  virtual int MassMatrixPoly(int c, const Polynomial& K, DenseMatrix& M) { return 0; }
-  virtual int AdvectionMatrix(int c, const AmanziGeometry::Point v, DenseMatrix& A, bool grad_on_test) { return 0; }
-
-  virtual int StiffnessMatrixPoly(int c, const Polynomial& K, DenseMatrix& A) { return 0; }
-  virtual int AdvectionMatrixPoly(int c, const VectorPolynomial& v, DenseMatrix& A, bool grad_on_test) { return 0; }
-
   // other mimetic methods
   // -- bad consistency conditions (flux is scaled by area)
   int L2consistencyScaledArea(int c, const Tensor& K, DenseMatrix& N, DenseMatrix& Mc, bool symmetry);

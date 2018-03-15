@@ -50,7 +50,7 @@ class MeshSurfaceCell : public Mesh {
 
     // set my face
     Entity_ID_List my_face;
-    inmesh.get_set_entities(surface_set_name, FACE, OWNED, &my_face);
+    inmesh.get_set_entities(surface_set_name, FACE, Parallel_type::OWNED, &my_face);
     ASSERT(my_face.size() == 1);
     parent_face_ = my_face[0];
 
@@ -94,7 +94,7 @@ class MeshSurfaceCell : public Mesh {
         // label pulled from parent
         Entity_ID_List faces_in_set;
         std::vector<double> vofs;
-        inmesh.get_set_entities_and_vofs((*r)->name(), FACE, OWNED, &faces_in_set, &vofs);
+        inmesh.get_set_entities_and_vofs((*r)->name(), FACE, Parallel_type::OWNED, &faces_in_set, &vofs);
         sets_[(*r)->id()] = std::find(faces_in_set.begin(), faces_in_set.end(),
                 parent_face_) != faces_in_set.end();
 
@@ -121,11 +121,11 @@ class MeshSurfaceCell : public Mesh {
 
   ~MeshSurfaceCell() {};
 
-  // Get parallel type of entity - OWNED, GHOST, USED (See MeshDefs.hh)
+  // Get parallel type of entity - OWNED, GHOST, ALL (See MeshDefs.hh)
   virtual
   Parallel_type entity_get_ptype(const Entity_kind kind,
           const Entity_ID entid) const {
-    return OWNED;
+    return Parallel_type::OWNED;
   }
 
   // Parent entity in the source mesh if mesh was derived from another mesh
@@ -149,7 +149,7 @@ class MeshSurfaceCell : public Mesh {
   //
 
   // Number of entities of any kind (cell, face, node) and in a
-  // particular category (OWNED, GHOST, USED)
+  // particular category (OWNED, GHOST, ALL)
   virtual
   unsigned int num_entities(const Entity_kind kind,
                             const Parallel_type ptype) const {
@@ -263,7 +263,7 @@ class MeshSurfaceCell : public Mesh {
   // (e.g. a hex has 6 face neighbors)
 
   // The order in which the cellids are returned cannot be
-  // guaranteed in general except when ptype = USED, in which case
+  // guaranteed in general except when ptype = ALL, in which case
   // the cellids will correcpond to cells across the respective
   // faces given by cell_get_faces
   virtual
