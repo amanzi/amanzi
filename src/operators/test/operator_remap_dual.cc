@@ -167,6 +167,104 @@ class RemapDG : public Explicit_TI::fnBase<CompositeVector> {
     }
   }
 
+  // estimate trace error
+  void CalculateTraceError(double* errl2, double* errinf) {
+    *errl2 = 0.0;
+    *errinf = 0.0;
+
+    WhetStone::Entity_ID_List faces;
+    std::vector<const WhetStone::Polynomial*> polys(2);
+    WhetStone::NumericalIntegration numi(mesh_);
+
+    for (int c = 0; c < ncells_owned_; ++c) {
+      mesh_->cell_get_faces(c, &faces);
+      int nfaces = faces.size();
+
+      for (int n = 0; n < nfaces; ++n) {
+        int f = faces[n];
+
+        WhetStone::Polynomial tmp(uc_[c][1]);
+        tmp -= velf_vec_[f][1];
+
+        polys[0] = &tmp;
+        polys[1] = &tmp;
+        double err = numi.IntegratePolynomialsFace(f, polys);
+        err /= mesh_->face_area(f);
+
+        *errinf = std::max(*errinf, std::pow(err, 0.5));
+        *errl2 += err * mesh_->cell_volume(c) / nfaces;
+      }
+    }
+
+    double errtmp = *errinf;
+    mesh_->get_comm()->MaxAll(&errtmp, errinf, 1);
+
+    errtmp = *errl2;
+    mesh_->get_comm()->SumAll(&errtmp, errl2, 1);
+    *errl2 = std::pow(*errl2, 0.5);
+  }
+
+  // estimate node error
+  void CalculateNodeError(double* errl2, double* errinf) {
+    *errl2 = 0.0;
+    *errinf = 0.0;
+
+    WhetStone::Entity_ID_List faces, nodes;
+    AmanziGeometry::Point xv(dim_);
+
+    for (int c = 0; c < ncells_owned_; ++c) {
+      mesh_->cell_get_faces(c, &faces);
+      int nfaces = faces.size();
+
+      for (int n = 0; n < nfaces; ++n) {
+        int f = faces[n];
+        mesh_->face_get_nodes(f, &nodes);
+        mesh_->node_get_coordinates(nodes[0], &xv);
+
+        WhetStone::Polynomial tmp(uc_[c][1]);
+        tmp -= velf_vec_[f][1];
+
+        double err = tmp.Value(xv);
+        *errinf = std::max(*errinf, fabs(err));
+        *errl2 += err * err * mesh_->cell_volume(c) / nfaces;
+      }
+    }
+
+    double errtmp = *errinf;
+    mesh_->get_comm()->MaxAll(&errtmp, errinf, 1);
+
+    errtmp = *errl2;
+    mesh_->get_comm()->SumAll(&errtmp, errl2, 1);
+    *errl2 = std::pow(*errl2, 0.5);
+  }
+
+  // estimate determinant error
+  void CalculateDeterminantError(Teuchos::RCP<const AmanziMesh::Mesh> mesh1,
+                                 double* errl2, double* errinf) {
+    *errl2 = 0.0;
+    *errinf = 0.0;
+
+    WhetStone::NumericalIntegration numi(mesh_);
+
+    UpdateGeometricQuantities_(1.0);
+
+    for (int c = 0; c < ncells_owned_; ++c) {
+      double tmp = numi.IntegratePolynomialCell(c, (*jac_)[c]);
+      double err = std::fabs(tmp - mesh1->cell_volume(c));
+      err /= mesh_->cell_volume(c); 
+
+      *errinf = std::max(*errinf, err);
+      *errl2 += err * err * mesh_->cell_volume(c);
+    }
+
+    double errtmp = *errinf;
+    mesh_->get_comm()->MaxAll(&errtmp, errinf, 1);
+
+    errtmp = *errl2;
+    mesh_->get_comm()->SumAll(&errtmp, errl2, 1);
+    *errl2 = std::pow(*errl2, 0.5);
+  }
+
  private:
   void UpdateGeometricQuantities_(double t) {
     for (int f = 0; f < nfaces_wghost_; ++f) {
@@ -301,14 +399,12 @@ void RemapTestsDualRK(int order_p, int order_u,
       }
       xv += uv * ds;
     }
-    /*
     double h = std::pow(1.0 / mesh0->cell_map(false).NumGlobalElements(), 0.5);
     for (int i = 0; i < 2; ++i) {
       xv[i] = yv[i] + h * sin((2 + i) * yv[0]) * sin((3 - i) * yv[1]) / 8;
       xv[i] = std::max(xv[i], 0.0);
       xv[i] = std::min(xv[i], 1.0);
     }
-    */
 
     nodeids.push_back(v);
     new_positions.push_back(xv);
@@ -335,6 +431,14 @@ void RemapTestsDualRK(int order_p, int order_u,
 
   // basic remap algorithm
   RemapDG remap(mesh0, maps);
+
+  double err2, err8;
+  remap.CalculateNodeError(&err2, &err8);
+  if (MyPID == 0) std::cout << "Nodes: " << err2 << " " << err8 << std::endl;
+  remap.CalculateTraceError(&err2, &err8);
+  if (MyPID == 0) std::cout << "Trace: " << err2 << " " << err8 << std::endl;
+  remap.CalculateDeterminantError(mesh1, &err2, &err8);
+  if (MyPID == 0) std::cout << "Det:   " << err2 << " " << err8 << std::endl;
 
   // create and initialize cell-based field 
   CompositeVectorSpace cvs1;
