@@ -44,6 +44,10 @@ class MFD3D_Electromagnetics : public virtual MFD3D,
   ~MFD3D_Electromagnetics() {};
 
   // required methods
+  // -- mass matrices
+  using DeRham_Edge::MassMatrix;
+  using DeRham_Edge::MassMatrixInverse;
+
   // -- stiffness matrix
   virtual int H1consistency(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Ac);
   virtual int StiffnessMatrix(int c, const Tensor& T, DenseMatrix& A);

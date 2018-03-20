@@ -57,7 +57,7 @@ class DG_Modal : public BilinearForm {
   // basic member functions
   // -- mass matrices
   virtual int MassMatrix(int c, const Tensor& K, DenseMatrix& M) override;
-  virtual int MassMatrixPoly(int c, const Polynomial& K, DenseMatrix& M) override;
+  virtual int MassMatrix(int c, const Polynomial& K, DenseMatrix& M) override;
   int MassMatrix(int c, const Tensor& K, PolynomialOnMesh& integrals, DenseMatrix& M);
 
   // -- inverse mass matrices
@@ -67,8 +67,8 @@ class DG_Modal : public BilinearForm {
     return ok;
   }
 
-  virtual int MassMatrixPolyInverse(int c, const Polynomial& K, DenseMatrix& W) override {
-    int ok = MassMatrixPoly(c, K, W);
+  virtual int MassMatrixInverse(int c, const Polynomial& K, DenseMatrix& W) override {
+    int ok = MassMatrix(c, K, W);
     W.Inverse();
     return ok;
   }
@@ -77,7 +77,7 @@ class DG_Modal : public BilinearForm {
   virtual int StiffnessMatrix(int c, const Tensor& K, DenseMatrix& A) override;
 
   // -- advection matrices
-  virtual int AdvectionMatrixPoly(int c, const VectorPolynomial& uc, DenseMatrix& A, bool grad_on_test) override;
+  virtual int AdvectionMatrix(int c, const VectorPolynomial& uc, DenseMatrix& A, bool grad_on_test) override;
 
   // -- flux matrices
   int FluxMatrixUpwind(int f, const Polynomial& uf, DenseMatrix& A, bool jump_on_test);

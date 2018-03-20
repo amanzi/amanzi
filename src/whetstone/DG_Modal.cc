@@ -112,7 +112,7 @@ int DG_Modal::MassMatrix(
 /* ******************************************************************
 * Mass matrix for Taylor basis and polynomial coefficient K.
 ****************************************************************** */
-int DG_Modal::MassMatrixPoly(int c, const Polynomial& K, DenseMatrix& M)
+int DG_Modal::MassMatrix(int c, const Polynomial& K, DenseMatrix& M)
 {
   // rebase the polynomial
   Polynomial Kcopy(K);
@@ -243,7 +243,7 @@ int DG_Modal::StiffnessMatrix(int c, const Tensor& K, DenseMatrix& A)
 /* ******************************************************************
 * Advection matrix for Taylor basis and cell-based velocity u.
 ****************************************************************** */
-int DG_Modal::AdvectionMatrixPoly(int c, const VectorPolynomial& u, DenseMatrix& A, bool grad_on_test)
+int DG_Modal::AdvectionMatrix(int c, const VectorPolynomial& u, DenseMatrix& A, bool grad_on_test)
 {
   // rebase the polynomial
   const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);

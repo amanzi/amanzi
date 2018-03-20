@@ -44,6 +44,9 @@ class MFD3D_Diffusion : public virtual MFD3D,
 
   // main methods 
   // -- default Derahm complex for the mass matrix is not used by Amanzi
+  //    but we have to tell compiler a proper  member function
+  using DeRham_Face::MassMatrix;
+
   // -- inverse mass matrix is adjusted to reflect scaling of fluxes by area
   virtual int MassMatrixInverse(int c, const Tensor& K, DenseMatrix& W); 
 

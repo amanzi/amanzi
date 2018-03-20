@@ -130,12 +130,12 @@ void MeshMaps_VEM::VelocityEdge_(int e, VectorPolynomial& ve) const
 * NOTE: Limited to P1 elements. FIXME
 ****************************************************************** */
 void MeshMaps_VEM::NansonFormula(
-    int f, double t, const VectorPolynomial& v, VectorPolynomial& cn) const
+    int f, double t, const VectorPolynomial& vf, VectorPolynomial& cn) const
 {
   AmanziGeometry::Point p(d_);
   WhetStone::Tensor J(d_, 2);
 
-  JacobianFaceValue_(f, v, p, J);
+  JacobianFaceValue_(f, vf, p, J);
   J *= t;
   J += 1.0 - t;
 

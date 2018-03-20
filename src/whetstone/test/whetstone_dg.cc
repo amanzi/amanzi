@@ -111,7 +111,7 @@ TEST(DG3D_MASS_MATRIX) {
     Polynomial u(3, 0);
     u(0, 0) = 2.0;
 
-    dg.MassMatrixPoly(0, u, M1);
+    dg.MassMatrix(0, u, M1);
     M1 -= M0;
     CHECK_CLOSE(M1.NormInf(), 0.0, 1e-12);
 
@@ -178,7 +178,7 @@ TEST(DG2D_MASS_MATRIX_POLYNOMIAL) {
     u.monomials(0).coefs()[0] = 1.0;
     u.monomials(k).coefs()[0] = 1.0;
 
-    dg.MassMatrixPoly(0, u, A);
+    dg.MassMatrix(0, u, A);
     int nk = A.NumRows();
 
     printf("Mass matrix for polynomial coefficient: order=2, uk=%d\n", k);
@@ -349,7 +349,7 @@ TEST(DG2D_ADVECTION_MATRIX_CELL) {
     // TEST1: constant u
     u[0].monomials(0).coefs()[0] = 1.0;
     u[1].monomials(0).coefs()[0] = 1.0;
-    dg.AdvectionMatrixPoly(0, u, A0, false);
+    dg.AdvectionMatrix(0, u, A0, false);
 
     printf("Advection matrix (cell-based) for order=%d u=(1,1)\n", k);
     int nk = A0.NumRows();
@@ -361,7 +361,7 @@ TEST(DG2D_ADVECTION_MATRIX_CELL) {
     // TEST2: linear u
     u[0].monomials(1).coefs()[0] = 1.0;
     u[0].monomials(1).coefs()[1] = 1.0;
-    dg.AdvectionMatrixPoly(0, u, A0, false);
+    dg.AdvectionMatrix(0, u, A0, false);
 
     printf("Advection matrix (cell-based) for order=%d u=(1+x+y,1), f(x,y)=2+x+3y\n", k);
     nk = A0.NumRows();
@@ -392,7 +392,7 @@ TEST(DG2D_ADVECTION_MATRIX_CELL) {
 
     // TEST3: quadratic u
     u[1].monomials(2).coefs()[0] = 1.0;
-    dg.AdvectionMatrixPoly(0, u, A0, false);
+    dg.AdvectionMatrix(0, u, A0, false);
 
     printf("Advection matrix (cell-based) for order=%d u=(1+x+y,1+x^2)\n", k);
     nk = A0.NumRows();
@@ -442,7 +442,7 @@ TEST(DG3D_ADVECTION_MATRIX_CELL) {
     u[0](0, 0) = 1.0;
     u[1](0, 0) = 1.0;
     u[2](0, 0) = 1.0;
-    dg.AdvectionMatrixPoly(0, u, A0, false);
+    dg.AdvectionMatrix(0, u, A0, false);
 
     printf("Advection matrix (cell-based) for order=%d u=(1,1,1)\n", k);
     int nk = A0.NumRows();
@@ -455,7 +455,7 @@ TEST(DG3D_ADVECTION_MATRIX_CELL) {
     u[0](1, 0) = 1.0;
     u[0](1, 1) = 1.0;
     u[0](1, 2) = 1.0;
-    dg.AdvectionMatrixPoly(0, u, A0, false);
+    dg.AdvectionMatrix(0, u, A0, false);
 
     printf("Advection matrix (cell-based) for order=%d u=(1+x+y+z,1,1), f(x,y)=2+x+3y\n", k);
     nk = A0.NumRows();

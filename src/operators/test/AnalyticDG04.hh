@@ -8,7 +8,7 @@
 
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 
-  Nonlinear function: f = sin(3x) sin(6y).
+  Nonlinear function: f = 1 + sin(3x) sin(6y).
 */
 
 #ifndef AMANZI_OPERATOR_ANALYTIC_DG_04_BASE_HH_
@@ -33,7 +33,7 @@ class AnalyticDG04 : public AnalyticDGBase {
   virtual void TaylorCoefficients(const Amanzi::AmanziGeometry::Point& p, double t,
                                   Amanzi::WhetStone::Polynomial& coefs) override {
     coefs.Reshape(d_, order_, true); 
-    coefs(0, 0) = std::sin(3 * p[0]) * std::sin(6 * p[1]);
+    coefs(0, 0) = 1.0 + std::sin(3 * p[0]) * std::sin(6 * p[1]);
 
     if (order_ > 0) {
       coefs(1, 0) = 3 * std::cos(3 * p[0]) * std::sin(6 * p[1]);

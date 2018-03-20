@@ -118,12 +118,12 @@ void PDE_Abstract::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& u,
     }
   } else if (matrix_ == "mass" && coef == "polynomial") {
     for (int c = 0; c < ncells_owned; ++c) {
-      mfd->MassMatrixPoly(c, (*Kpoly_)[c], Acell);
+      mfd->MassMatrix(c, (*Kpoly_)[c], Acell);
       matrix[c] = Acell;
     }
   } else if (matrix_ == "mass inverse" && coef == "polynomial") {
     for (int c = 0; c < ncells_owned; ++c) {
-      mfd->MassMatrixPolyInverse(c, (*Kpoly_)[c], Acell);
+      mfd->MassMatrixInverse(c, (*Kpoly_)[c], Acell);
       matrix[c] = Acell;
     }
   } else if (matrix_ == "stiffness" && coef == "constant") {
@@ -149,7 +149,7 @@ void PDE_Abstract::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& u,
     }
   } else if (matrix_ == "advection" && coef == "vector polynomial") {
     for (int c = 0; c < ncells_owned; ++c) {
-      mfd->AdvectionMatrixPoly(c, (*Kvec_)[c], Acell, grad_on_test_);
+      mfd->AdvectionMatrix(c, (*Kvec_)[c], Acell, grad_on_test_);
       matrix[c] = Acell;
     }
   } else {

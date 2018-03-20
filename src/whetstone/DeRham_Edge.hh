@@ -34,7 +34,7 @@ class DeRham_Edge : virtual public InnerProductL2 {
   ~DeRham_Edge() {};
 
   virtual int L2consistency(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Mc, bool symmetry);
-  virtual int MassMatrix(int c, const Tensor& T, DenseMatrix& M); 
+  virtual int MassMatrix(int c, const Tensor& T, DenseMatrix& M) override; 
 
   virtual int L2consistencyInverse(int c, const Tensor& T, DenseMatrix& R, DenseMatrix& Wc, bool symmetry);
   virtual int MassMatrixInverse(int c, const Tensor& T, DenseMatrix& W); 

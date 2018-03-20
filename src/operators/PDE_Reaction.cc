@@ -95,7 +95,7 @@ void PDE_Reaction::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& u,
 
   for (int c = 0; c < ncells_owned; ++c) {
     if (poly_.get()) {
-      dg.MassMatrixPoly(c, (*poly_)[c], Mcell);
+      dg.MassMatrix(c, (*poly_)[c], Mcell);
     } else {
       Kc(0, 0) = K_.get() ? (*K_)[0][c] : 1.0;
       dg.MassMatrix(c, Kc, Mcell);
