@@ -72,6 +72,7 @@ add_amanzi_library(whetstone
                            MFD3DFactory.hh
                            nlfv.hh
                            NumericalIntegration.hh
+                           Quadrature1D.hh Quadrature2D.hh
                            MeshMaps.hh
                            MeshMaps_FEM.hh MeshMaps_VEM.hh MeshMaps_VEM.hh
                            CoordinateSystems.hh
