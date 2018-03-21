@@ -45,6 +45,7 @@ class MFD3D_Electromagnetics : public virtual MFD3D,
 
   // required methods
   // -- mass matrices
+  using InnerProductL2::MassMatrix;
   using DeRham_Edge::MassMatrix;
   using DeRham_Edge::MassMatrixInverse;
 

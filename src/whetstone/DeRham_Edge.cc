@@ -200,7 +200,6 @@ int DeRham_Edge::L2consistency3D_(int c, const Tensor& T,
 ****************************************************************** */
 int DeRham_Edge::MassMatrix(int c, const Tensor& T, DenseMatrix& M)
 {
-std::cout << "HERE:DERHAM " << std::endl;
   DenseMatrix N;
 
   int ok = L2consistency(c, T, N, M, true);
