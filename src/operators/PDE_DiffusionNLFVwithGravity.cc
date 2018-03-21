@@ -40,6 +40,10 @@ void PDE_DiffusionNLFVwithGravity::UpdateMatrices(
     hh_c[0][c] = u_c[0][c] + rho_g * zc;
   }
 
+  if (!is_scalar_) {
+    rho_cv_->ScatterMasterToGhosted("cell");
+  }
+ 
   PDE_DiffusionNLFV::UpdateMatrices(flux, hh.ptr());
 
   // add gravity fluxes to the right-hand side.
@@ -66,11 +70,12 @@ void PDE_DiffusionNLFVwithGravity::UpdateMatrices(
         double zc = (mesh_->cell_centroid(c))[dim_ - 1];
         v(n) = zc * rho_g;
       }
-
+     
       Aface.Multiply(v, av, false);     
       for (int n = 0; n < ncells; n++) {
         rhs_cell[0][cells[n]] -= av(n);
       }
+      
     } else if ((bc_model[f] == OPERATOR_BC_DIRICHLET)) {
       int c = cells[0];
       double rho_g = GetDensity(c) * fabs(g_[dim_ - 1]);
@@ -81,8 +86,6 @@ void PDE_DiffusionNLFVwithGravity::UpdateMatrices(
   }
 
   global_op_->rhs()->GatherGhostedToMaster();
-
-  // std::cout<<"UpdateMatrices RHS\n"<<rhs_cell<<"\n";
 
 }
 

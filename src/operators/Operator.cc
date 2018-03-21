@@ -206,6 +206,7 @@ void Operator::AssembleMatrix()
   // std::stringstream filename_s2;
   // filename_s2 << "assembled_matrix" << 0 << ".txt";
   // EpetraExt::RowMatrixToMatlabFile(filename_s2.str().c_str(), *Amat_ ->Matrix());
+  //exit(0);
 }
 
 
@@ -249,7 +250,9 @@ int Operator::ComputeNegativeResidual(const CompositeVector& u, CompositeVector&
   } else {
     ierr = Apply(u, r, 1.0);
   }    
+  
   r.Update(-1.0, *rhs_, 1.0);
+
   return ierr;
 }
 

@@ -165,8 +165,6 @@ void PDE_DiffusionNLFV::InitStencils_()
   // instantiate variables to access supporting tools
   WhetStone::NLFV nlfv(mesh_);
   WhetStone::MFD3D_Diffusion mfd3d(mesh_);
-
-  //std::cout<<"ncells_owned "<<ncells_owned<<" K "<<K_->size()<<"\n";
   
   // distribute diffusion tensor
   WhetStone::DenseVector data(dim_ * dim_);
@@ -176,7 +174,7 @@ void PDE_DiffusionNLFV::InitStencils_()
     } else{
       WhetStone::Tensor Kc(dim_, 1);
       Kc(0, 0) = 1.0;
-      WhetStone::TensorToVector((*K_)[c], data);
+      WhetStone::TensorToVector(Kc, data);
     }
     
     for (int i = 0; i < dim_ *dim_; ++i) {
@@ -252,6 +250,7 @@ void PDE_DiffusionNLFV::InitStencils_()
       } else {
         for (int i = 0; i < dim_; ++i) v[i] = hap[i][f] - xc[i];
       }
+      
       tau.push_back(v);
     }
 
@@ -263,6 +262,7 @@ void PDE_DiffusionNLFV::InitStencils_()
       const AmanziGeometry::Point& normal = mesh_->face_normal(f);
       conormal = (Kc * normal) * dirs[n];
 
+      
       ierr = nlfv.PositiveDecomposition(n, tau, conormal, ws, ids);
       ASSERT(ierr == 0);
 
@@ -428,6 +428,7 @@ void PDE_DiffusionNLFV::UpdateMatrices(
     }
 
     local_op_->matrices[f] = Aface;
+    
     // double kf = (k_face.get() ? (*k_face)[0][f] : 1.0);
     // std::cout<<"face"<<f<<" kf "<<kf<<"\n"<<local_op_->matrices[f]<<"\n";
   }
@@ -657,14 +658,18 @@ void PDE_DiffusionNLFV::ApplyBCs(bool primary, bool eliminate)
         double ub = (Aface(0, 0) / kf) * bc_value[f] * mesh_->face_area(f);
         rhs_cell[0][c] -= ub;
         Aface = 0.0;
+
+        // std::cout<<"face "<<f<<" "<<bc_value[f]<<" cell "<<c<<" kf "<<kf<<"\n"<<local_op_->matrices[f]<<"\n";
+        
       }
     }
-    // double kf = (k_face.get() ? (*k_face)[0][f] : 1.0);
-    // std::cout<<"face"<<f<<" "<<bc_model[f]<<" kf "<<kf<<"\n"<<local_op_->matrices[f]<<"\n";
+
   }
+  
   // std::cout<<"ApplyBCs RHS\n"<<"\n";
   // std::cout<<*global_op_->rhs()->ViewComponent("cell");
-  //  exit(0);
+
+  
   return;
 }
 
@@ -702,7 +707,6 @@ void PDE_DiffusionNLFV::UpdateFlux(const Teuchos::Ptr<const CompositeVector>& u,
       flux_data[0][f] = wgt_sideflux[0][f]*dir;     
     } else if (bc_model[f] == OPERATOR_BC_NEUMANN) {
       flux_data[0][f] = bc_value[f] * mesh_->face_area(f);
-      // std::cout<<"neumann "<<flux_data[0][f]<<"\n";
     } else if (bc_model[f] == OPERATOR_BC_NONE) {
       mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
       OrderCellsByGlobalId_(cells, c1, c2);

@@ -84,10 +84,8 @@ void PDE_DiffusionFVwithGravity::UpdateMatrices(
         if (bc_model[f] == OPERATOR_BC_NEUMANN) continue;
         double kf = (k_face.get() ? (*k_face)[0][f] : 1.0);
         rhs_cell[0][c] -= dirs[n] * gravity_face[0][f] * kf;
-        //std::cout<<"cell "<<c<<" face "<<f<<" kf "<<kf<<"  __  "<<dirs[n] * gravity_face[0][f] * kf<<"\n";
       }
     }
-    std::cout<<"UpdateMatrices RHS\n"<<rhs_cell<<"\n";
   }
 
 }
@@ -116,9 +114,6 @@ void PDE_DiffusionFVwithGravity::ApplyBCs(bool primary, bool eliminate)
     // std::cout<<"face"<<f<<" kf "<<kf<<"\n"<<local_op_->matrices[f]<<"\n";
   }
 
-  std::cout<<"ApplyBCs RHS\n"<<"\n";
-  std::cout<<*global_op_->rhs()->ViewComponent("cell");
-  //exit(0);
   return;
 }
 

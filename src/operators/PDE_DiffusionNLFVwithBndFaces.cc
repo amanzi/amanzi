@@ -172,7 +172,14 @@ void PDE_DiffusionNLFVwithBndFaces::InitStencils_()
   // distribute diffusion tensor
   WhetStone::DenseVector data(dim_ * dim_);
   for (int c = 0; c < ncells_owned; ++c) {
-    WhetStone::TensorToVector((*K_)[c], data);
+    if (K_ != Teuchos::null){
+      WhetStone::TensorToVector((*K_)[c], data);
+    } else{
+      WhetStone::Tensor Kc(dim_, 1);
+      Kc(0, 0) = 1.0;
+      WhetStone::TensorToVector(Kc, data);
+    }
+
     for (int i = 0; i < dim_ *dim_; ++i) {
       Ktmp[i][c] = data(i);
     }
@@ -205,7 +212,22 @@ void PDE_DiffusionNLFVwithBndFaces::InitStencils_()
    
       nlfv.HarmonicAveragingPoint(f, c1, c2, Kn1, Kn2, p, hap_weight);
     } else {
-      p = mesh_->face_centroid(f);
+      if (bc_model[f] == OPERATOR_BC_NEUMANN) {
+        // create to conormals
+        const AmanziGeometry::Point& normal = mesh_->face_normal(f);
+        for (int i = 0; i < dim_ *dim_; ++i) data(i) = Ktmp[i][cells[0]];
+        VectorToTensor(data, T);
+        // std::cout<<"Tensor\n"<<T<<"\n";
+        Kn1 = T * normal;
+        // std::cout<<"Kn1 "<<Kn1<<"\n";
+        const AmanziGeometry::Point& xf = mesh_->face_centroid(f);
+        const AmanziGeometry::Point& xc = mesh_->cell_centroid(cells[0]);       
+        double d = ((xf - xc)*normal)/(Kn1 * normal);  // intersection of a line and plain
+        p = xc + d*Kn1;
+        //std::cout<<"point "<<p<<"\n";
+      }else{
+        p = mesh_->face_centroid(f);
+      }
       hap_weight = 0.0;
     }
 
@@ -230,15 +252,26 @@ void PDE_DiffusionNLFVwithBndFaces::InitStencils_()
     mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
     int nfaces = faces.size();
 
+    WhetStone::Tensor Kc(mesh_->space_dimension(), 1);
+    Kc(0, 0) = 1.0;
+
+    if (K_.get()) Kc = (*K_)[c];
+
     tau.clear();
     for (int n = 0; n < nfaces; n++) {
       int f = faces[n];
       if (bc_model[f] == OPERATOR_BC_NEUMANN) {
         const AmanziGeometry::Point& normal = mesh_->face_normal(f, false, c, &dir);
-        v = (*K_)[c] * normal;
-      } else {
-        for (int i = 0; i < dim_; ++i) v[i] = hap[i][f] - xc[i];
+        AmanziGeometry::Point tv;
+        for (int i = 0; i < dim_; ++i) tv[i] = hap[i][f] - xc[i];
+      //std::cout << Kc * normal << " ******* "<<tv<<"\n";
+      //   v = Kc * normal;
+      // } else {
+      //   for (int i = 0; i < dim_; ++i) v[i] = hap[i][f] - xc[i];
       }
+      for (int i = 0; i < dim_; ++i) v[i] = hap[i][f] - xc[i];
+      
+      
       tau.push_back(v);
     }
 
@@ -248,7 +281,7 @@ void PDE_DiffusionNLFVwithBndFaces::InitStencils_()
     for (int n = 0; n < nfaces; n++) {
       int f = faces[n];
       const AmanziGeometry::Point& normal = mesh_->face_normal(f);
-      conormal = ((*K_)[c] * normal) * dirs[n];
+      conormal = (Kc * normal) * dirs[n];
 
       ierr = nlfv.PositiveDecomposition(n, tau, conormal, ws, ids);
       ASSERT(ierr == 0);
@@ -400,7 +433,6 @@ void PDE_DiffusionNLFVwithBndFaces::UpdateMatrices(
     mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
     int ncells = cells.size();
 
-    // WhetStone::DenseMatrix Aface(ncells, ncells);
     WhetStone::DenseMatrix Aface(2, 2);
 
     if (ncells == 2) {
@@ -646,7 +678,8 @@ void PDE_DiffusionNLFVwithBndFaces::ApplyBCs(bool primary, bool eliminate)
   const std::vector<double>& bc_value = bcs_trial_[0]->bc_value();
 
   Epetra_MultiVector& rhs_cell = *global_op_->rhs()->ViewComponent("cell", true);
-  Epetra_MultiVector& rhs_bnd = *global_op_->rhs()->ViewComponent("boundary_face", true);  
+  Epetra_MultiVector& rhs_bnd = *global_op_->rhs()->ViewComponent("boundary_face", true);
+  Epetra_MultiVector& hap = *stencil_data_->ViewComponent("hap", true);
 
   // un-rolling little-k data
   Teuchos::RCP<const Epetra_MultiVector> k_face = Teuchos::null;
@@ -662,28 +695,44 @@ void PDE_DiffusionNLFVwithBndFaces::ApplyBCs(bool primary, bool eliminate)
       
       if (bc_model[f] == OPERATOR_BC_DIRICHLET) {
         WhetStone::DenseMatrix& Aface = local_op_->matrices[f];
+        local_op_->matrices_shadow[f] = Aface;
+        
         Aface(1,0) = 0.;
-        Aface(1,1) = 1.;
-        rhs_bnd[0][bf] = bc_value[f];
+        // Aface(1,1) = 1e-10;
+        rhs_bnd[0][bf] = Aface(1,1)*bc_value[f];       
       } else if (bc_model[f] == OPERATOR_BC_NEUMANN) {
         WhetStone::DenseMatrix& Aface = local_op_->matrices[f];
         local_op_->matrices_shadow[f] = Aface;
 
         double kf(1.0);
         if (k_face.get()) kf = (*k_face)[0][f];
+        WhetStone::Tensor Kc(dim_, 1);
+        Kc(0, 0) = 1.0;
+        if (K_.get()) Kc = (*K_)[c];
 
-        double ub = (Aface(1, 1) / kf) * bc_value[f] * mesh_->face_area(f);
+        int dir;
+        const AmanziGeometry::Point& normal = mesh_->face_normal(f, false, c, &dir);
+        const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
+        AmanziGeometry::Point v(dim_);
+        
+        for (int i = 0; i < dim_; ++i) v[i] = hap[i][f] - xc[i];
+        double factor = norm(v)/norm(Kc*normal);
+
+        double ub = factor*(Aface(1, 1) / kf) * bc_value[f] * mesh_->face_area(f);
+        // double ub = bc_value[f] * mesh_->face_area(f);
         rhs_bnd[0][bf] -=  ub;
+        // std::cout<<"face "<<f<<" bf "<<bf<<" bcval "<<bc_value[f]<<" ub "<<ub<<" ctr "<<mesh_->face_centroid(f)<<"\n";
+        // std::cout<<local_op_->matrices[f]<<"\n";
       
       }
     }
-    // double kf = (k_face.get() ? (*k_face)[0][f] : 1.0);
-    // std::cout<<"face "<<f<<" "<<bc_model[f]<<" kf "<<kf<<"\n";
-    // std::cout<<local_op_->matrices[f]<<"\n";
+
   }
 
   // std::cout<<rhs_cell <<"\n";
   // std::cout<<rhs_bnd <<"\n";
+
+  //  exit(0);
 
   return;
 }
@@ -716,15 +765,17 @@ void PDE_DiffusionNLFVwithBndFaces::UpdateFlux(const Teuchos::Ptr<const Composit
   int f_bad=0;
 
   for (int f = 0; f < nfaces_owned; ++f) {
-    if ((bc_model[f] == OPERATOR_BC_DIRICHLET)|| (bc_model[f] == OPERATOR_BC_NEUMANN)) {
+    // if ((bc_model[f] == OPERATOR_BC_DIRICHLET)|| (bc_model[f] == OPERATOR_BC_NEUMANN)) {
+    if ((bc_model[f] == OPERATOR_BC_DIRICHLET)) {
       mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
       const AmanziGeometry::Point& normal = mesh_->face_normal(f, false, cells[0], &dir);
       flux_data[0][f] = wgt_sideflux[0][f]*dir;     
-    // } else if (bc_model[f] == OPERATOR_BC_NEUMANN) {
-    //   //flux_data[0][f] = bc_value[f] * mesh_->face_area(f);
+    } else if (bc_model[f] == OPERATOR_BC_NEUMANN) {
+      flux_data[0][f] = bc_value[f] * mesh_->face_area(f);
     //   mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
     //   const AmanziGeometry::Point& normal = mesh_->face_normal(f, false, cells[0], &dir);
-    //   flux_data[0][f] = wgt_sideflux[0][f]*dir;     
+    //   flux_data[0][f] = wgt_sideflux[0][f]*dir;
+      // std::cout<<"neumann/dir "<<f<<" "<<flux_data[0][f]<<"\n";
     } else if (bc_model[f] == OPERATOR_BC_NONE) {
       mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
       OrderCellsByGlobalId_(cells, c1, c2);

@@ -51,6 +51,10 @@ void PDE_DiffusionNLFVwithBndFacesGravity::UpdateMatrices(
     }
   }
 
+  if (!is_scalar_) {
+    rho_cv_->ScatterMasterToGhosted("cell");
+  }
+
   PDE_DiffusionNLFVwithBndFaces::UpdateMatrices(flux, hh.ptr());
 
   // add gravity fluxes to the right-hand side.

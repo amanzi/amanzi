@@ -184,8 +184,6 @@ void Operator_CellBndFace::AssembleMatrixOp(const Op_Cell_Cell& op,
     int row = cell_row_inds[c];
     int col = cell_col_inds[c];
 
-    // std::cout<<"cell "<<c<<": "<<(*op.diag)[0][c]<<"\n";
-
     ierr |= mat.SumIntoMyValues(row, 1, &(*op.diag)[0][c], &col);
   }
   ASSERT(!ierr);
@@ -217,20 +215,22 @@ void Operator_CellBndFace::AssembleMatrixOp(const Op_Face_CellFace& op,
       for (int n=0; n!=ncells; ++n) {
         lid_r[n] = cell_row_inds[cells[n]];
         lid_c[n] = cell_col_inds[cells[n]];
-        // if (cells[n]==0) {
-        //   std::cout<<cells[0]<<" "<<cells[1]<<"\n";
-        //   std::cout<<op.matrices[f]<<"\n";
-        // }
       }
+
+      // std::cout<<cells[0]<<" "<<cells[1]<<"\n";
+      // std::cout<<"mat face "<<f<<"\n"<<op.matrices[f]<<"\n";
+
     }else if (ncells==1){
       lid_r[0] = cell_row_inds[cells[0]];
       lid_c[0] = cell_col_inds[cells[0]];
       int bf = mesh_->exterior_face_map(false).LID(mesh_->face_map(false).GID(f));
       lid_r[1] = bndface_row_inds[bf];
-      lid_c[1] = bndface_col_inds[bf];
-      // std::cout  << "bnd "<<lid_r[0]<<" "<<lid_r[1]<<"\n";
-      // if (cells[0]==0)
-      //   std::cout<<"bnd\n"<<op.matrices[f]<<"\n";
+      lid_c[1] = bndface_col_inds[bf];     
+
+      // if (cells[0]==5){
+      //   std::cout  << "bnd face "<<f<<" : "<<lid_r[0]<<" "<<lid_r[1]<<"\n";
+      //   std::cout<<"bnd\n"<<op.matrices[f]<<"\n";       
+      // }
     }
 
     ierr |= mat.SumIntoMyValues(lid_r, lid_c, op.matrices[f]);
