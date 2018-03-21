@@ -135,6 +135,7 @@ set(AMANZI_LIBS
 		      amanzi_chemistry_pk
 		      amanzi_mpc_tree
 		      amanzi_transport
+                      amanzi_dbg 
 )
 
 # set(GEOCHEM_LIBS 

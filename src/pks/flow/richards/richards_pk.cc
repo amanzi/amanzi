@@ -356,8 +356,9 @@ void Richards::SetupRichardsFlow_(const Teuchos::Ptr<State>& S) {
   // -- primary variables
 
   CompositeVectorSpace matrix_cvs = matrix_->RangeMap();
-
-  if (compute_boundary_values_) matrix_cvs.AddComponent("boundary_face", AmanziMesh::BOUNDARY_FACE, 1); 
+  
+  if (compute_boundary_values_) 
+    matrix_cvs.AddComponent("boundary_face", AmanziMesh::BOUNDARY_FACE, 1); 
   
   S->RequireField(key_, name_)->Update(matrix_cvs)->SetGhosted();
 
@@ -366,7 +367,6 @@ void Richards::SetupRichardsFlow_(const Teuchos::Ptr<State>& S) {
                                 ->SetComponent("face", AmanziMesh::FACE, 1);
   S->RequireField(velocity_key_, name_)->SetMesh(mesh_)->SetGhosted()
                                 ->SetComponent("cell", AmanziMesh::CELL, 3);
-
   
 }
 
@@ -440,6 +440,7 @@ void Richards::Initialize(const Teuchos::Ptr<State>& S) {
 
   // Initialize BDF stuff and physical domain stuff.
   PK_PhysicalBDF_Default::Initialize(S);
+
 
   // debugggin cruft
 #if DEBUG_RES_FLAG
@@ -1403,7 +1404,7 @@ Richards::ModifyCorrection(double h, Teuchos::RCP<const TreeVector> res,
   // if the primary variable has boundary face, this is for upwinding rel
   // perms and is never actually used.  Make sure it does not go to undefined
   // pressures.
-  if (du->Data()->HasComponent("boundary_face")) {
+  if ((du->Data()->HasComponent("boundary_face")) && compute_boundary_values_) {
     du->Data()->ViewComponent("boundary_face")->PutScalar(0.);
   }
 
