@@ -30,7 +30,7 @@
 namespace Amanzi {
 namespace WhetStone {
 
-class MFD3D_CrouzeixRaviart : public virtual MFD3D { 
+class MFD3D_CrouzeixRaviart : public MFD3D { 
  public:
   MFD3D_CrouzeixRaviart(Teuchos::RCP<const AmanziMesh::Mesh> mesh)
     : MFD3D(mesh),

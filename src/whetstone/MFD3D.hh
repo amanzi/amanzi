@@ -18,6 +18,10 @@
   The material properties are imbedded into the the matrix Mc. 
 
   Notation used below: M (mass), W (inverse of M), A (stiffness).
+
+  NOTE: This class should be never instantiated directly. It is used to
+  add additional functionality to the base class (BilinearForm) related to
+  MFD and VEM methods, such as various projectors.
 */
 
 #ifndef AMANZI_MFD3D_HH_
@@ -32,6 +36,7 @@
 #include "DenseMatrix.hh"
 #include "InnerProductH1.hh"
 #include "InnerProductL2.hh"
+#include "Projectors.hh"
 #include "Tensor.hh"
 #include "WhetStone_typedefs.hh"
 #include "WhetStoneDefs.hh"
@@ -39,7 +44,8 @@
 namespace Amanzi {
 namespace WhetStone {
 
-class MFD3D : public virtual BilinearForm {
+class MFD3D : public virtual BilinearForm,
+              public Projectors {
  public:
   explicit MFD3D(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh);
   ~MFD3D() {};

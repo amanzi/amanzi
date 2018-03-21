@@ -35,8 +35,8 @@
 namespace Amanzi {
 namespace WhetStone {
 
-class MFD3D_Electromagnetics : public virtual MFD3D,
-                               public virtual DeRham_Edge {
+class MFD3D_Electromagnetics : public MFD3D,
+                               public DeRham_Edge {
  public:
   MFD3D_Electromagnetics(Teuchos::RCP<const AmanziMesh::Mesh> mesh)
     : MFD3D(mesh),
@@ -45,7 +45,7 @@ class MFD3D_Electromagnetics : public virtual MFD3D,
 
   // required methods
   // -- mass matrices
-  using InnerProductL2::MassMatrix;
+  // using InnerProductL2::MassMatrix;
   using DeRham_Edge::MassMatrix;
   using DeRham_Edge::MassMatrixInverse;
 

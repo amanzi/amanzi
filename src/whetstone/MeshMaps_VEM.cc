@@ -34,7 +34,7 @@ void MeshMaps_VEM::VelocityCell(
   auto moments = std::make_shared<DenseVector>();
 
   WhetStone::MFD3DFactory factory;
-  auto mfd = factory.Create(mesh0_, method_, order_);
+  auto mfd = factory.CreateMFD3D(mesh0_, method_, order_);
 
   if (projector_ == "H1 harmonic") {
     auto mfd_tmp = dynamic_cast<MFD3D_CrouzeixRaviart*>(&*mfd);

@@ -34,8 +34,7 @@ namespace WhetStone {
 class MFD3D_LagrangeSerendipity : public MFD3D_Lagrange { 
  public:
   MFD3D_LagrangeSerendipity(Teuchos::RCP<const AmanziMesh::Mesh> mesh)
-    : MFD3D(mesh),
-      InnerProduct(mesh),
+    : InnerProduct(mesh),
       MFD3D_Lagrange(mesh) {};
   ~MFD3D_LagrangeSerendipity() {};
 

@@ -25,7 +25,6 @@
 #include "DenseMatrix.hh"
 #include "InnerProductL2.hh"
 #include "InnerProductH1.hh"
-#include "Projectors.hh"
 #include "Tensor.hh"
 #include "VectorPolynomial.hh"
 
@@ -35,8 +34,7 @@ namespace WhetStone {
 class Polynomial;
 
 class BilinearForm : public virtual InnerProductL2,
-                     public virtual InnerProductH1,
-                     public Projectors {
+                     public virtual InnerProductH1 {
  public:
   explicit BilinearForm() : order_(1) {};
   ~BilinearForm() {};
@@ -63,6 +61,7 @@ class BilinearForm : public virtual InnerProductL2,
 
   // extend interface for the existing members
   // -- high-order schemes may require polynomial coefficients
+  using InnerProductL2::MassMatrix;
   virtual int MassMatrix(int c, const Polynomial& K, DenseMatrix& M) {
     Errors::Message msg("MassMatrix: polynomial coefficient is not supported.");
     Exceptions::amanzi_throw(msg);
@@ -75,6 +74,7 @@ class BilinearForm : public virtual InnerProductL2,
     return 1;
   }
 
+  using InnerProductH1::StiffnessMatrix;
   virtual int StiffnessMatrix(int c, const Polynomial& K, DenseMatrix& A) {
     Errors::Message msg("StiffnessMatrix: polynomial coefficient is not supported.");
     Exceptions::amanzi_throw(msg);

@@ -9,7 +9,7 @@
 
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 
-  Veritual framework for L2 and H1 projectors. 
+  Virtual framework for L2 and H1 projectors. 
 */
 
 #ifndef AMANZI_WHETSTONE_PROJECTORS_HH_
