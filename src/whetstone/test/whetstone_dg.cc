@@ -207,7 +207,6 @@ TEST(DG2D_MASS_MATRIX_POLYNOMIAL) {
     dg.MassMatrix(0, vu, M2);
     M2 -= M1;
     CHECK_CLOSE(M2.NormInf(), 0.0, 1e-12);
-exit(0);
   }
 
   CHECK_CLOSE(20.2332916667, integral[0], 1e-10);
@@ -375,7 +374,7 @@ TEST(DG2D_ADVECTION_MATRIX_CELL) {
       vu[2 * i + 1] = u[1];
     }
 
-    dg.AdvectionMatrix(0, u, A1, false);
+    dg.AdvectionMatrix(0, vu, A1, false);
     A1 -= A0;
     CHECK_CLOSE(A1.NormInf(), 0.0, 1e-12);
 
@@ -390,6 +389,16 @@ TEST(DG2D_ADVECTION_MATRIX_CELL) {
       for (int j = 0; j < nk; j++ ) printf("%10.6f ", A0(i, j)); 
       printf("\n");
     }
+
+    // TEST2: linear u, method 2
+    for (int i = 0; i < 4; ++i) {
+      vu[2 * i] = u[0];
+      vu[2 * i + 1] = u[1];
+    }
+
+    dg.AdvectionMatrix(0, vu, A1, false);
+    A1 -= A0;
+    CHECK_CLOSE(A1.NormInf(), 0.0, 1e-12);
 
     // accuracy test for functions 1+x and 1+x
     DenseVector v1(nk), v2(nk), v3(nk);
@@ -427,6 +436,16 @@ TEST(DG2D_ADVECTION_MATRIX_CELL) {
       double integral(v2 * v3);
       printf("  inner product = %10.6f\n", integral);
     }
+
+    // TEST3: quadratic u, method 2
+    for (int i = 0; i < 4; ++i) {
+      vu[2 * i] = u[0];
+      vu[2 * i + 1] = u[1];
+    }
+
+    dg.AdvectionMatrix(0, vu, A1, false);
+    A1 -= A0;
+    CHECK_CLOSE(A1.NormInf(), 0.0, 1e-12);
   }
 
   delete comm;

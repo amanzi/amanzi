@@ -209,7 +209,7 @@ int DG_Modal::MassMatrixPiecewisePoly_(
     for (auto jt = it; jt.end() <= p.end(); ++jt) {
       const int* idx1 = jt.multi_index();
       int l = jt.PolynomialPosition();
-      int t = it.MonomialOrder();
+      int t = jt.MonomialOrder();
 
       double factor = numi_.MonomialNaturalScale(t, volume);
       Polynomial p1(d_, idx1, factor);
@@ -402,8 +402,11 @@ int DG_Modal::AdvectionMatrixPiecewisePoly_(
   const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
   double volume = mesh_->cell_volume(c);
 
-  // gradient of a naturally scaled polynomial needs correction
-  double scale = numi_.MonomialNaturalScale(1, volume);
+  // rebase the velocity polynomial
+  VectorPolynomial ucopy(u);
+  for (int i = 0; i < u.size(); ++i) {
+    ucopy[i].ChangeOrigin(xc);
+  }
 
   // allocate memory for matrix
   Polynomial p(d_, order_), q(d_, order_);
@@ -432,7 +435,7 @@ int DG_Modal::AdvectionMatrixPiecewisePoly_(
     for (auto jt = q.begin(); jt.end() <= q.end(); ++jt) {
       const int* idx1 = jt.multi_index();
       int l = jt.PolynomialPosition();
-      int t = it.MonomialOrder();
+      int t = jt.MonomialOrder();
 
       double factor = numi_.MonomialNaturalScale(t, volume);
       Polynomial p1(d_, idx1, factor);
@@ -450,7 +453,7 @@ int DG_Modal::AdvectionMatrixPiecewisePoly_(
         Polynomial tmp(d_, 0);
         tmp.set_origin(xc);
         for (int i = 0; i < d_; ++i) {
-          tmp += pgrad[i] * u[n * d_ + i];
+          tmp += pgrad[i] * ucopy[n * d_ + i];
         }
         polys[1] = &tmp;
 
