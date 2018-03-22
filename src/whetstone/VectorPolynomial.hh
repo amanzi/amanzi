@@ -28,6 +28,7 @@ class VectorPolynomial {
  public:
   VectorPolynomial() : d_(0) {};
   VectorPolynomial(int d, int size);
+  VectorPolynomial(const Polynomial& p);
   ~VectorPolynomial() {};
 
   // minimal set of vector operations

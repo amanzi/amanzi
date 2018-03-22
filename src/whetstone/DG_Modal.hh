@@ -57,7 +57,13 @@ class DG_Modal : public BilinearForm {
   // basic member functions
   // -- mass matrices
   virtual int MassMatrix(int c, const Tensor& K, DenseMatrix& M) override;
-  virtual int MassMatrix(int c, const Polynomial& K, DenseMatrix& M) override;
+  virtual int MassMatrix(int c, const VectorPolynomial& K, DenseMatrix& M) override {
+    if (K.size() == 1) {
+      MassMatrixPoly_(c, K[0], M);
+    } else {
+      MassMatrixPiecewisePoly_(c, K, M);
+    }
+  }
   int MassMatrix(int c, const Tensor& K, PolynomialOnMesh& integrals, DenseMatrix& M);
 
   // -- inverse mass matrices
@@ -67,7 +73,7 @@ class DG_Modal : public BilinearForm {
     return ok;
   }
 
-  virtual int MassMatrixInverse(int c, const Polynomial& K, DenseMatrix& W) override {
+  virtual int MassMatrixInverse(int c, const VectorPolynomial& K, DenseMatrix& W) override {
     int ok = MassMatrix(c, K, W);
     W.Inverse();
     return ok;
@@ -77,7 +83,13 @@ class DG_Modal : public BilinearForm {
   virtual int StiffnessMatrix(int c, const Tensor& K, DenseMatrix& A) override;
 
   // -- advection matrices
-  virtual int AdvectionMatrix(int c, const VectorPolynomial& uc, DenseMatrix& A, bool grad_on_test) override;
+  virtual int AdvectionMatrix(int c, const VectorPolynomial& uc, DenseMatrix& A, bool grad_on_test) override {
+    if (uc.size() == d_) {
+      AdvectionMatrixPoly_(c, uc, A, grad_on_test);
+    } else {
+      AdvectionMatrixPiecewisePoly_(c, uc, A, grad_on_test);
+    }
+  }
 
   // -- flux matrices
   int FluxMatrixUpwind(int f, const Polynomial& uf, DenseMatrix& A, bool jump_on_test);
@@ -107,6 +119,12 @@ class DG_Modal : public BilinearForm {
   void set_basis(int basis) { basis_ = basis; }
 
  private:
+  int MassMatrixPoly_(int c, const Polynomial& K, DenseMatrix& M);
+  int MassMatrixPiecewisePoly_(int c, const VectorPolynomial& K, DenseMatrix& M);
+
+  int AdvectionMatrixPoly_(int c, const VectorPolynomial& uc, DenseMatrix& A, bool grad_on_test);
+  int AdvectionMatrixPiecewisePoly_(int c, const VectorPolynomial& uc, DenseMatrix& A, bool grad_on_test);
+
   void UpdateIntegrals_(int c, int order);
   void UpdateScales_(int c, int order);
   void ChangeBasis_(int c, DenseMatrix& A);

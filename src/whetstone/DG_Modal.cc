@@ -112,7 +112,7 @@ int DG_Modal::MassMatrix(
 /* ******************************************************************
 * Mass matrix for Taylor basis and polynomial coefficient K.
 ****************************************************************** */
-int DG_Modal::MassMatrix(int c, const Polynomial& K, DenseMatrix& M)
+int DG_Modal::MassMatrixPoly_(int c, const Polynomial& K, DenseMatrix& M)
 {
   // rebase the polynomial
   Polynomial Kcopy(K);
@@ -126,7 +126,6 @@ int DG_Modal::MassMatrix(int c, const Polynomial& K, DenseMatrix& M)
    
   // sum up integrals to the mass matrix
   int multi_index[3];
-  double ak, bk, al, bl;
   Polynomial p(d_, order_);
 
   int nrows = p.size();
@@ -155,6 +154,79 @@ int DG_Modal::MassMatrix(int c, const Polynomial& K, DenseMatrix& M)
 
         const auto& coefs = integrals.monomials(n).coefs();
         M(k, l) += factor * coefs[p.MonomialPosition(multi_index)];
+      }
+    }
+  }
+
+  // symmetric part of mass matrix
+  for (int k = 0; k < nrows; ++k) {
+    for (int l = k + 1; l < nrows; ++l) {
+      M(l, k) = M(k, l); 
+    }
+  }
+
+  ChangeBasis_(c, M);
+
+  return 0;
+}
+
+
+/* ******************************************************************
+* Mass matrix for Taylor basis and piecewise polynomial coefficient K.
+****************************************************************** */
+int DG_Modal::MassMatrixPiecewisePoly_(
+    int c, const VectorPolynomial& K, DenseMatrix& M)
+{
+  AmanziMesh::Entity_ID_List faces, nodes;
+  mesh_->cell_get_faces(c, &faces);
+  int nfaces = faces.size();
+
+  const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
+  double volume = mesh_->cell_volume(c);
+
+  // allocate memory for matrix
+  Polynomial p(d_, order_);
+  int nrows = p.size();
+  M.Reshape(nrows, nrows);
+  M.PutScalar(0.0);
+
+  std::vector<const Polynomial*> polys(3);
+  std::vector<AmanziGeometry::Point> xy(3); 
+
+  xy[0] = xc;
+
+  for (auto it = p.begin(); it.end() <= p.end(); ++it) {
+    int k = it.PolynomialPosition();
+    int s = it.MonomialOrder();
+    const int* idx0 = it.multi_index();
+
+    double factor = numi_.MonomialNaturalScale(s, volume);
+    Polynomial p0(d_, idx0, factor);
+    p0.set_origin(xc);
+
+    polys[0] = &p0;
+
+    for (auto jt = it; jt.end() <= p.end(); ++jt) {
+      const int* idx1 = jt.multi_index();
+      int l = jt.PolynomialPosition();
+      int t = it.MonomialOrder();
+
+      double factor = numi_.MonomialNaturalScale(t, volume);
+      Polynomial p1(d_, idx1, factor);
+      p1.set_origin(xc);
+
+      polys[1] = &p1;
+
+      // sum up local contributions
+      for (auto n = 0; n < nfaces; ++n) {
+        int f = faces[n];
+        mesh_->face_get_nodes(f, &nodes);
+        mesh_->node_get_coordinates(nodes[0], &(xy[1]));
+        mesh_->node_get_coordinates(nodes[1], &(xy[2]));
+
+        polys[2] = &(K[n]);
+
+        M(k, l) += numi_.IntegratePolynomialsTriangle(xy, polys);
       }
     }
   }
@@ -243,7 +315,8 @@ int DG_Modal::StiffnessMatrix(int c, const Tensor& K, DenseMatrix& A)
 /* ******************************************************************
 * Advection matrix for Taylor basis and cell-based velocity u.
 ****************************************************************** */
-int DG_Modal::AdvectionMatrix(int c, const VectorPolynomial& u, DenseMatrix& A, bool grad_on_test)
+int DG_Modal::AdvectionMatrixPoly_(
+    int c, const VectorPolynomial& u, DenseMatrix& A, bool grad_on_test)
 {
   // rebase the polynomial
   const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
@@ -301,6 +374,87 @@ int DG_Modal::AdvectionMatrix(int c, const VectorPolynomial& u, DenseMatrix& A, 
 
         const auto& coefs = integrals.monomials(n).coefs();
         A(k, l) += factor * coefs[p.MonomialPosition(multi_index)];
+      }
+    }
+  }
+
+  // gradient operator is applied to solution
+  if (!grad_on_test) {
+    A.Transpose();
+  }
+
+  ChangeBasis_(c, A);
+
+  return 0;
+}
+
+
+/* ******************************************************************
+* Advection matrix for Taylor basis and piecewise polynomial velocity.
+****************************************************************** */
+int DG_Modal::AdvectionMatrixPiecewisePoly_(
+    int c, const VectorPolynomial& u, DenseMatrix& A, bool grad_on_test)
+{
+  AmanziMesh::Entity_ID_List faces, nodes;
+  mesh_->cell_get_faces(c, &faces);
+  int nfaces = faces.size();
+
+  const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
+  double volume = mesh_->cell_volume(c);
+
+  // gradient of a naturally scaled polynomial needs correction
+  double scale = numi_.MonomialNaturalScale(1, volume);
+
+  // allocate memory for matrix
+  Polynomial p(d_, order_), q(d_, order_);
+  VectorPolynomial pgrad;
+
+  int nrows = p.size();
+  A.Reshape(nrows, nrows);
+  A.PutScalar(0.0);
+
+  std::vector<const Polynomial*> polys(2);
+  std::vector<AmanziGeometry::Point> xy(3); 
+
+  xy[0] = xc;
+
+  for (auto it = p.begin(); it.end() <= p.end(); ++it) {
+    int k = it.PolynomialPosition();
+    int s = it.MonomialOrder();
+    const int* idx0 = it.multi_index();
+
+    double factor = numi_.MonomialNaturalScale(s, volume);
+    Polynomial p0(d_, idx0, factor);
+    p0.set_origin(xc);
+
+    pgrad.Gradient(p0);
+
+    for (auto jt = q.begin(); jt.end() <= q.end(); ++jt) {
+      const int* idx1 = jt.multi_index();
+      int l = jt.PolynomialPosition();
+      int t = it.MonomialOrder();
+
+      double factor = numi_.MonomialNaturalScale(t, volume);
+      Polynomial p1(d_, idx1, factor);
+      p1.set_origin(xc);
+
+      polys[0] = &p1;
+
+      // sum-up integrals to the advection matrix
+      for (int n = 0; n < nfaces; ++n) {
+        int f = faces[n];
+        mesh_->face_get_nodes(f, &nodes);
+        mesh_->node_get_coordinates(nodes[0], &(xy[1]));
+        mesh_->node_get_coordinates(nodes[1], &(xy[2]));
+
+        Polynomial tmp(d_, 0);
+        tmp.set_origin(xc);
+        for (int i = 0; i < d_; ++i) {
+          tmp += pgrad[i] * u[n * d_ + i];
+        }
+        polys[1] = &tmp;
+
+        A(k, l) += numi_.IntegratePolynomialsTriangle(xy, polys);
       }
     }
   }

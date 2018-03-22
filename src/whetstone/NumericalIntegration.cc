@@ -157,6 +157,46 @@ double NumericalIntegration::IntegratePolynomialsEdge(
 
 
 /* ******************************************************************
+* Integrate a product of polynomials that may have * different 
+* origins over a triangle.
+****************************************************************** */
+double NumericalIntegration::IntegratePolynomialsTriangle(
+    const std::vector<AmanziGeometry::Point>& xy,
+    const std::vector<const Polynomial*>& polys) const
+{
+  // minimal quadrature rule
+  int m(0);
+  for (int i = 0; i < polys.size(); ++i) {
+    m += polys[i]->order();
+  }
+  ASSERT(m < 10);
+
+  int n1 = q2d_order[m][1];
+  int n2 = q2d_order[m][1] + q2d_order[m][0];
+
+  AmanziGeometry::Point ym(d_);
+  AmanziGeometry::Point y1 = xy[1] - xy[0];
+  AmanziGeometry::Point y2 = xy[2] - xy[0];
+
+  double integral(0.0);
+  for (int n = n1; n < n2; ++n) { 
+    ym = xy[0] + y1 * q2d_points[n][1] + y2 * q2d_points[n][2];
+
+    double a(q2d_weights[n]);
+    for (int i = 0; i < polys.size(); ++i) {
+      a *= polys[i]->Value(ym);
+    }
+    integral += a;      
+  }
+
+  ym = y1^y2;
+  double area = ym[0] / 2;
+
+  return integral * area;
+}
+
+
+/* ******************************************************************
 * Integrate over cell c a group of uniformly normalized monomials of
 * the same order centered at the centroid of c.
 ****************************************************************** */

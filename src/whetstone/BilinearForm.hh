@@ -62,20 +62,20 @@ class BilinearForm : public virtual InnerProductL2,
   // extend interface for the existing members
   // -- high-order schemes may require polynomial coefficients
   using InnerProductL2::MassMatrix;
-  virtual int MassMatrix(int c, const Polynomial& K, DenseMatrix& M) {
+  virtual int MassMatrix(int c, const VectorPolynomial& K, DenseMatrix& M) {
     Errors::Message msg("MassMatrix: polynomial coefficient is not supported.");
     Exceptions::amanzi_throw(msg);
     return 1;
   }
 
-  virtual int MassMatrixInverse(int c, const Polynomial& K, DenseMatrix& M) {
+  virtual int MassMatrixInverse(int c, const VectorPolynomial& K, DenseMatrix& M) {
     Errors::Message msg("MassMatrixInverse: polynomial coefficient is not supported.");
     Exceptions::amanzi_throw(msg);
     return 1;
   }
 
   using InnerProductH1::StiffnessMatrix;
-  virtual int StiffnessMatrix(int c, const Polynomial& K, DenseMatrix& A) {
+  virtual int StiffnessMatrix(int c, const VectorPolynomial& K, DenseMatrix& A) {
     Errors::Message msg("StiffnessMatrix: polynomial coefficient is not supported.");
     Exceptions::amanzi_throw(msg);
     return 1;

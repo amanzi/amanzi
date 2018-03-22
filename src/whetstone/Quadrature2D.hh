@@ -20,15 +20,15 @@ namespace WhetStone {
 
 // number of points, start position
 const int q2d_order[11][2] = {
-  0,  0,   // skip order 0
+  1,  0,   // skip order 0
   1,  0,
   3,  1,   // order 2 
-  0,  1,
-  0,  1,
+  7,  4,
+  7,  4,
   7,  4,   // order 5
   12, 11,  // order 6
-  0,  23,  
-  0,  23,  
+  19, 23,  
+  19, 23,  
   19, 23,  // order 9
   0,  42  
 };

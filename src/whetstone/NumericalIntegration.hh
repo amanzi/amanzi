@@ -46,6 +46,10 @@ class NumericalIntegration {
       const AmanziGeometry::Point& x1, const AmanziGeometry::Point& x2,
       const std::vector<const Polynomial*>& polys) const;
 
+  double IntegratePolynomialsTriangle(
+      const std::vector<AmanziGeometry::Point>& xy,
+      const std::vector<const Polynomial*>& polys) const;
+
   // integrate group of monomials 
   void IntegrateMonomialsCell(int c, Monomial& monomials);
   void UpdateMonomialIntegralsCell(int c, int order, PolynomialOnMesh& integrals);

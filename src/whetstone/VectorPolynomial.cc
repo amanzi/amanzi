@@ -32,6 +32,17 @@ VectorPolynomial::VectorPolynomial(int d, int size) : d_(d)
 
 
 /* ******************************************************************
+* Converter-type constructor
+****************************************************************** */
+VectorPolynomial::VectorPolynomial(const Polynomial& p)
+{
+  d_ = p.dimension();
+  polys_.resize(1);
+  polys_[0] = p;
+}
+
+
+/* ******************************************************************
 * Reset all coefficients to thesame number
 ****************************************************************** */
 void VectorPolynomial::PutScalar(double val)

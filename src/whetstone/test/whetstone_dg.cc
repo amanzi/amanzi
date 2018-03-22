@@ -168,7 +168,7 @@ TEST(DG2D_MASS_MATRIX_POLYNOMIAL) {
   Teuchos::RCP<Mesh> mesh = meshfactory("test/one_pentagon.exo");
  
   double tmp, integral[3];
-  DenseMatrix A;
+  DenseMatrix M1, M2;
 
   for (int k = 0; k < 3; k++) {
     DG_Modal dg(2, mesh);
@@ -178,12 +178,12 @@ TEST(DG2D_MASS_MATRIX_POLYNOMIAL) {
     u.monomials(0).coefs()[0] = 1.0;
     u.monomials(k).coefs()[0] = 1.0;
 
-    dg.MassMatrix(0, u, A);
-    int nk = A.NumRows();
+    dg.MassMatrix(0, u, M1);
+    int nk = M1.NumRows();
 
     printf("Mass matrix for polynomial coefficient: order=2, uk=%d\n", k);
     for (int i = 0; i < nk; i++) {
-      for (int j = 0; j < nk; j++ ) printf("%8.4f ", A(i, j)); 
+      for (int j = 0; j < nk; j++ ) printf("%8.4f ", M1(i, j)); 
       printf("\n");
     }
 
@@ -196,10 +196,20 @@ TEST(DG2D_MASS_MATRIX_POLYNOMIAL) {
     v(1) = 1.0 / 1.6501110800;
     v(2) = 2.0 / 2.6871118178;
     
-    A.Multiply(v, av, false);
+    M1.Multiply(v, av, false);
     v.Dot(av, &tmp);
     integral[k] = tmp;
+
+    // method 2 for calculating mass matrix
+    VectorPolynomial vu(2, 5); 
+    vu[0] = vu[1] = vu[2] = vu[3] = vu[4] = u;
+
+    dg.MassMatrix(0, vu, M2);
+    M2 -= M1;
+    CHECK_CLOSE(M2.NormInf(), 0.0, 1e-12);
+exit(0);
   }
+
   CHECK_CLOSE(20.2332916667, integral[0], 1e-10);
   CHECK(integral[0] < integral[1]);
 
@@ -341,12 +351,12 @@ TEST(DG2D_ADVECTION_MATRIX_CELL) {
     DG_Modal dg(k, mesh);
     dg.set_basis(WhetStone::TAYLOR_BASIS_NATURAL);
 
-    DenseMatrix A0;
+    DenseMatrix A0, A1;
 
     VectorPolynomial u(2, 2);
     for (int i = 0; i < 2; ++i) u[i].Reshape(2, 2);
 
-    // TEST1: constant u
+    // TEST1: constant u, method 1
     u[0].monomials(0).coefs()[0] = 1.0;
     u[1].monomials(0).coefs()[0] = 1.0;
     dg.AdvectionMatrix(0, u, A0, false);
@@ -357,6 +367,17 @@ TEST(DG2D_ADVECTION_MATRIX_CELL) {
       for (int j = 0; j < nk; j++ ) printf("%10.6f ", A0(i, j)); 
       printf("\n");
     }
+
+    // TEST1: constant u, method 2
+    VectorPolynomial vu(2, 8); 
+    for (int i = 0; i < 4; ++i) {
+      vu[2 * i] = u[0];
+      vu[2 * i + 1] = u[1];
+    }
+
+    dg.AdvectionMatrix(0, u, A1, false);
+    A1 -= A0;
+    CHECK_CLOSE(A1.NormInf(), 0.0, 1e-12);
 
     // TEST2: linear u
     u[0].monomials(1).coefs()[0] = 1.0;
