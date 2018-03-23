@@ -316,12 +316,12 @@ void Transport_PK_ATS::Initialize(const Teuchos::Ptr<State>& S)
   // Check input parameters. Due to limited amount of checks, we can do it earlier.
   Policy(S.ptr());
 
-  ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
-  ncells_wghost = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::USED);
+  ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+  ncells_wghost = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
 
-  nfaces_owned = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
-  nfaces_wghost = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
-  nnodes_wghost = mesh_->num_entities(AmanziMesh::NODE, AmanziMesh::USED);
+  nfaces_owned = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
+  nfaces_wghost = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
+  nnodes_wghost = mesh_->num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::ALL);
 
   // extract control parameters
   InitializeAll_();
@@ -982,7 +982,7 @@ void Transport_PK_ATS :: Advance_Dispersion_Diffusion(double t_old, double t_new
         tp_list_->sublist("operators").sublist("diffusion operator").sublist("matrix");
 
     Teuchos::RCP<Operators::BCs> bc_dummy = 
-        Teuchos::rcp(new Operators::BCs(mesh_, AmanziMesh::FACE, Operators::SCHEMA_DOFS_SCALAR));
+        Teuchos::rcp(new Operators::BCs(mesh_, AmanziMesh::FACE, Operators::DOF_Type::SCALAR));
     
     // default boundary conditions (none inside domain and Neumann on its boundary)
     auto& bc_model = bc_dummy->bc_model();
@@ -1684,7 +1684,7 @@ bool Transport_PK_ATS::PopulateBoundaryData(
 
   AmanziMesh::Entity_ID_List cells;
   for (int f = 0; f < nfaces_wghost; f++) {
-    mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+    mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
     if (cells.size() == 1) bc_model[f] = Operators::OPERATOR_BC_NEUMANN;
   }
 
@@ -1748,11 +1748,11 @@ void Transport_PK_ATS::ComputeVolumeDarcyFlux(Teuchos::RCP<const Epetra_MultiVec
                                               Teuchos::RCP<const Epetra_MultiVector> molar_density,
                                               Teuchos::RCP<Epetra_MultiVector>& vol_darcy_flux){
 
-  int nfaces_wghost = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
+  int nfaces_wghost = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
   AmanziMesh::Entity_ID_List cells;
 
   for (int f = 0; f < nfaces_wghost ; f++){
-    mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+    mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
     double n_liq=0.;
     for (int c=0; c<cells.size();c++) n_liq += (*molar_density)[0][c];
     n_liq /= cells.size();

@@ -201,7 +201,7 @@ void PK_Physical_Default::DeriveFaceValuesFromCellValues_(const Teuchos::Ptr<Com
   int f_owned = cv_f.MyLength();
   for (int f=0; f!=f_owned; ++f) {
     AmanziMesh::Entity_ID_List cells;
-    cv->Mesh()->face_get_cells(f, AmanziMesh::USED, &cells);
+    cv->Mesh()->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
     int ncells = cells.size();
 
     double face_value = 0.0;

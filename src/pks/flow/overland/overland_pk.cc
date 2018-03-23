@@ -98,7 +98,7 @@ void OverlandFlow::SetupOverlandFlow_(const Teuchos::Ptr<State>& S) {
   bc_seepage_head_ = bc_factory.CreateWithFunction("seepage face head", "boundary head");
   bc_critical_depth_ = bc_factory.CreateCriticalDepth();
 
-  int nfaces = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
+  int nfaces = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
   bc_markers_.resize(nfaces, Operators::OPERATOR_BC_NONE);
   bc_values_.resize(nfaces, 0.0);
   std::vector<double> mixed;
@@ -288,7 +288,7 @@ void OverlandFlow::Initialize(const Teuchos::Ptr<State>& S) {
   PK_PhysicalBDF_Default::Initialize(S);
 
   // Initialize BC data structures
-  unsigned int nfaces = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
+  unsigned int nfaces = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
   bc_markers_.resize(nfaces, Operators::OPERATOR_BC_NONE);
   bc_values_.resize(nfaces, 0.0);
   std::vector<double> mixed;
@@ -403,9 +403,9 @@ bool OverlandFlow::UpdatePermeabilityData_(const Teuchos::Ptr<State>& S) {
       Epetra_MultiVector& uw_cond_f = *uw_cond->ViewComponent("face",false);
 
       AmanziMesh::Entity_ID_List cells;
-      int nfaces_owned = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
+      int nfaces_owned = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
       for (int f=0; f!=nfaces_owned; ++f) {
-        mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+        mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
         if (cells.size() == 1) {
           int c = cells[0];
           uw_cond_f[0][f] = cond_c[0][c];
@@ -512,7 +512,7 @@ void OverlandFlow::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& S) {
            bc != bc_seepage_head_->end(); ++bc) {
         int f = bc->first;
 
-        mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+        mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
         int c = cells[0];
 
         double hz_f = bc->second + elevation[0][f];
@@ -531,7 +531,7 @@ void OverlandFlow::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& S) {
       for (Functions::BoundaryFunction::Iterator bc = bc_seepage_head_->begin(); 
            bc != bc_seepage_head_->end(); ++bc) {
         int f = bc->first;
-        mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+        mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
         int c = cells[0];
 
         double hz_f = bc->second + elevation[0][f];
@@ -560,7 +560,7 @@ void OverlandFlow::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& S) {
     for (Functions::BoundaryFunction::Iterator bc = bc_critical_depth_->begin();
          bc != bc_critical_depth_->end(); ++bc) {
       int f = bc->first;
-      mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+      mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
       int c = cells[0];
       
       bc_markers_[f] = Operators::OPERATOR_BC_NEUMANN;
@@ -569,10 +569,10 @@ void OverlandFlow::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& S) {
   }
   
   // mark all remaining boundary conditions as zero flux conditions
-  int nfaces_owned = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
+  int nfaces_owned = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
   for (int f = 0; f < nfaces_owned; f++) {
     if (bc_markers_[f] == Operators::OPERATOR_BC_NONE) {
-      mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+      mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
       int ncells = cells.size();
 
       if (ncells == 1) {
@@ -599,15 +599,15 @@ void OverlandFlow::FixBCsForOperator_(const Teuchos::Ptr<State>& S) {
   std::vector<WhetStone::DenseMatrix>& Aff =
       matrix_diff_->local_matrices()->matrices;
 
-  int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
-  int nfaces_owned = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
+  int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+  int nfaces_owned = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
   for (Functions::BoundaryFunction::Iterator bc=bc_zero_gradient_->begin();
        bc!=bc_zero_gradient_->end(); ++bc) {
 
     int f = bc->first;
 
     AmanziMesh::Entity_ID_List cells;
-    mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+    mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
     ASSERT(cells.size() == 1);
     AmanziMesh::Entity_ID c = cells[0];
 

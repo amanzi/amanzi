@@ -101,7 +101,7 @@ void SnowDistribution::SetupSnowDistribution_(const Teuchos::Ptr<State>& S) {
   S->RequireField(Keys::getKey(domain_, "snow_flux"), name_)->SetMesh(mesh_)->SetGhosted()
       ->SetComponent("face", AmanziMesh::FACE, 1);
 
-  int nfaces = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
+  int nfaces = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
   bc_markers_.resize(nfaces, Operators::OPERATOR_BC_NONE);
   bc_values_.resize(nfaces, 0.0);
   UpdateBoundaryConditions_(S); // never change
@@ -214,7 +214,7 @@ bool SnowDistribution::UpdatePermeabilityData_(const Teuchos::Ptr<State>& S) {
       int nfaces = uw_cond_f.MyLength();
       AmanziMesh::Entity_ID_List cells;
       for (int f=0; f!=nfaces; ++f) {
-        mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+        mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
         if (cells.size() == 1) {
           int c = cells[0];
           uw_cond_f[0][f] = cond_c[0][c];
@@ -236,11 +236,11 @@ void SnowDistribution::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& S) {
     *vo_->os() << "  Updating BCs." << std::endl;
 
   // mark all remaining boundary conditions as zero flux conditions
-  int nfaces_owned = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
+  int nfaces_owned = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
   AmanziMesh::Entity_ID_List cells;
   for (int f = 0; f < nfaces_owned; f++) {
     if (bc_markers_[f] == Operators::OPERATOR_BC_NONE) {
-      mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+      mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
       int ncells = cells.size();
 
       if (ncells == 1) {

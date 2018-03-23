@@ -183,7 +183,7 @@ void RelPermEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
     for (unsigned int bf=0; bf!=nbfaces; ++bf) {
       // given a boundary face, we need the internal cell to choose the right WRM
       AmanziMesh::Entity_ID f = face_map.LID(vandelay_map.GID(bf));
-      mesh->face_get_cells(f, AmanziMesh::USED, &cells);
+      mesh->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
       ASSERT(cells.size() == 1);
 
       int index = (*wrms_->first)[cells[0]];
@@ -202,7 +202,7 @@ void RelPermEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
     const Epetra_Map& vandelay_map = mesh->exterior_face_map(false);
     const Epetra_Map& face_map = mesh->face_map(false);
     
-    unsigned int nsurf_cells = surf_mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+    unsigned int nsurf_cells = surf_mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
     for (unsigned int sc=0; sc!=nsurf_cells; ++sc) {
       // need to map from surface quantity on cells to subsurface boundary_face quantity
       AmanziMesh::Entity_ID f = surf_mesh->entity_get_parent(AmanziMesh::CELL, sc);
@@ -286,7 +286,7 @@ void RelPermEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>
       for (unsigned int bf=0; bf!=nbfaces; ++bf) {
         // given a boundary face, we need the internal cell to choose the right WRM
         AmanziMesh::Entity_ID f = face_map.LID(vandelay_map.GID(bf));
-        mesh->face_get_cells(f, AmanziMesh::USED, &cells);
+        mesh->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
         ASSERT(cells.size() == 1);
 
         int index = (*wrms_->first)[cells[0]];
@@ -306,7 +306,7 @@ void RelPermEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>
       const Epetra_Map& vandelay_map = mesh->exterior_face_map(false);
       const Epetra_Map& face_map = mesh->face_map(false);
     
-      unsigned int nsurf_cells = surf_mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+      unsigned int nsurf_cells = surf_mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
       for (unsigned int sc=0; sc!=nsurf_cells; ++sc) {
         // need to map from surface quantity on cells to subsurface boundary_face quantity
         AmanziMesh::Entity_ID f = surf_mesh->entity_get_parent(AmanziMesh::CELL, sc);

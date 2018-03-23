@@ -9,6 +9,20 @@
 namespace Amanzi {
 namespace Flow {
 
+
+void
+DepthModel(const AmanziMesh::Mesh& mesh, Epetra_MultiVector& depth) {
+  depth.PutScalar(-1);
+  ASSERT(depth.MyLength() == mesh.num_entities(AmanziMesh::CELL,
+          AmanziMesh::Parallel_type::OWNED));      
+  for (int c=0; c!=depth.MyLength(); ++c) {
+    if (depth[0][c] <= 0.) {
+      DepthModel_Cell(c, mesh, depth);
+    }            
+  }
+}
+
+
 void
 DepthModel_Cell(int c, const AmanziMesh::Mesh& mesh,
                 Epetra_MultiVector& depth) {

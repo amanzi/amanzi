@@ -80,7 +80,7 @@ class BGCSimple : public PK_Physical_Default {
                 AmanziMesh::Entity_ID col_face, int ncells=0) {
       if (ncells > 0) cells_.reserve(ncells);
       AmanziMesh::Entity_ID_List facecells;
-      mesh.face_get_cells(col_face, AmanziMesh::USED, &facecells);
+      mesh.face_get_cells(col_face, AmanziMesh::Parallel_type::ALL, &facecells);
       ASSERT(facecells.size() == 1);
 
       AmanziMesh::Entity_ID c = facecells[0];

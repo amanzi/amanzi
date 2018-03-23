@@ -48,7 +48,7 @@ void ElevationEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
     for (int bf=0; bf!=nbfaces; ++bf) {
       // given a boundary face, we need the internal cell to choose the right WRM
       AmanziMesh::Entity_ID f = face_map.LID(vandelay_map.GID(bf));
-      slope->Mesh()->face_get_cells(f, AmanziMesh::USED, &cells);
+      slope->Mesh()->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
       ASSERT(cells.size() == 1);
 
       slope_bf[0][bf] = slope_c[0][cells[0]];

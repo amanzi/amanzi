@@ -92,7 +92,7 @@ void BGCSimple::Setup(const Teuchos::Ptr<State>& S) {
     pft_names.push_back(pft_name);
   }
 
-  int ncols = mesh_surf_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  int ncols = mesh_surf_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
   pfts_old_.resize(ncols);
   pfts_.resize(ncols);
   for (unsigned int col=0; col!=ncols; ++col) {
@@ -274,7 +274,7 @@ void BGCSimple::Initialize(const Teuchos::Ptr<State>& S) {
       Epetra_MultiVector& bio = *S->GetFieldData("surface-leaf_biomass", name_)
           ->ViewComponent("cell", false);
       
-      int ncols = mesh_surf_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+      int ncols = mesh_surf_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
       for (int col=0; col!=ncols; ++col) {
         for (int i=0; i!=npft; ++i) {
           pfts_old_[col][i]->Bleaf = bio[i][col];
@@ -301,7 +301,7 @@ void BGCSimple::Initialize(const Teuchos::Ptr<State>& S) {
   const Epetra_Vector& temp = *(*S->GetFieldData("temperature")
 				->ViewComponent("cell",false))(0);
 
-  int ncols = mesh_surf_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  int ncols = mesh_surf_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
   for (int col=0; col!=ncols; ++col) {
     FieldToColumn_(col, temp, col_temp.ptr());
     ColDepthDz_(col, col_depth.ptr(), col_dz.ptr());
@@ -327,7 +327,7 @@ void BGCSimple::CommitStep(double told, double tnew, const Teuchos::RCP<State>& 
   // the step as succesful.
   double dt = tnew - told;
 
-  int ncols = mesh_surf_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  int ncols = mesh_surf_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
   int npft = pfts_old_[0].size();
   for (int col=0; col!=ncols; ++col) {
     for (int i=0; i!=npft; ++i) {
@@ -351,7 +351,7 @@ bool BGCSimple::AdvanceStep(double t_old, double t_new, bool reinit) {
   // Copy the PFT from old to new, in case we failed the previous attempt at
   // this timestep.  This is hackery to get around the fact that PFTs are not
   // (but should be) in state.
-  AmanziMesh::Entity_ID ncols = mesh_surf_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  AmanziMesh::Entity_ID ncols = mesh_surf_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
   for (AmanziMesh::Entity_ID col=0; col!=ncols; ++col) {
     int npft = pfts_old_[col].size();
     for (int i=0; i!=npft; ++i) {

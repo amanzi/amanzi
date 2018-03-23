@@ -130,7 +130,7 @@ void Richards::SetupRichardsFlow_(const Teuchos::Ptr<State>& S) {
   bc_seepage_infilt_->Compute(0.); // compute at t=0 to set up
 
   // -- linear tensor coefficients
-  unsigned int c_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  unsigned int c_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
   K_ = Teuchos::rcp(new std::vector<WhetStone::Tensor>(c_owned));
   for (unsigned int c=0; c!=c_owned; ++c) {
     (*K_)[c].Init(mesh_->space_dimension(),1);
@@ -698,7 +698,7 @@ bool Richards::UpdatePermeabilityData_(const Teuchos::Ptr<State>& S) {
         for (int f=0; f!=markers.size(); ++f) {
           if (markers[f] == Operators::OPERATOR_BC_NEUMANN) {
             AmanziMesh::Entity_ID_List cells;
-            mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+            mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
             ASSERT(cells.size() == 1);
             int c = cells[0];
             AmanziMesh::Entity_ID_List faces;
@@ -806,7 +806,7 @@ void Richards::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& S, bool kr) 
     int f = bc->first;
 #ifdef ENABLE_DBC
     AmanziMesh::Entity_ID_List cells;
-    mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+    mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
     ASSERT(cells.size() == 1);
 #endif
     
@@ -820,7 +820,7 @@ void Richards::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& S, bool kr) 
     int f = bc->first;
 #ifdef ENABLE_DBC
     AmanziMesh::Entity_ID_List cells;
-    mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+    mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
     ASSERT(cells.size() == 1);
 #endif
     
@@ -842,7 +842,7 @@ void Richards::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& S, bool kr) 
 
 #ifdef ENABLE_DBC
     AmanziMesh::Entity_ID_List cells;
-    mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+    mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
     ASSERT(cells.size() == 1);
 #endif
       markers[f] = Operators::OPERATOR_BC_NEUMANN;
@@ -857,7 +857,7 @@ void Richards::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& S, bool kr) 
       int f = bc->first;
 #ifdef ENABLE_DBC
     AmanziMesh::Entity_ID_List cells;
-    mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+    mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
     ASSERT(cells.size() == 1);
 #endif
 
@@ -889,7 +889,7 @@ void Richards::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& S, bool kr) 
     int f = bc->first;
 #ifdef ENABLE_DBC
     AmanziMesh::Entity_ID_List cells;
-    mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+    mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
     ASSERT(cells.size() == 1);
 #endif
 
@@ -924,7 +924,7 @@ void Richards::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& S, bool kr) 
     int f = bc->first;
 #ifdef ENABLE_DBC
     AmanziMesh::Entity_ID_List cells;
-    mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+    mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
     ASSERT(cells.size() == 1);
 #endif
 
@@ -998,7 +998,7 @@ void Richards::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& S, bool kr) 
 
 #ifdef ENABLE_DBC
       AmanziMesh::Entity_ID_List cells;
-      mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+      mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
       ASSERT(cells.size() == 1);
 #endif
 
@@ -1025,7 +1025,7 @@ void Richards::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& S, bool kr) 
 
 #ifdef ENABLE_DBC
       AmanziMesh::Entity_ID_List cells;
-      mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+      mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
       ASSERT(cells.size() == 1);
 #endif
 
@@ -1048,10 +1048,10 @@ void Richards::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& S, bool kr) 
 
   int n_default = 0;
 
-  int nfaces_owned = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
+  int nfaces_owned = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
   for (int f = 0; f < nfaces_owned; f++) {
     if (markers[f] == Operators::OPERATOR_BC_NONE) {
-      mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+      mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
       int ncells = cells.size();
 
       if (ncells == 1) {
@@ -1223,7 +1223,7 @@ void Richards::CalculateConsistentFaces(const Teuchos::Ptr<CompositeVector>& u) 
   int f_owned = u_f.MyLength();
   for (int f=0; f!=f_owned; ++f) {
     AmanziMesh::Entity_ID_List cells;
-    mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+    mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
     int ncells = cells.size();
 
     double face_value = 0.0;

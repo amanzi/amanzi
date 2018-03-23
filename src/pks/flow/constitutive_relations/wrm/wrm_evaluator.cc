@@ -108,7 +108,7 @@ void WRMEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
     for (int bf=0; bf!=nbfaces; ++bf) {
       // given a boundary face, we need the internal cell to choose the right WRM
       AmanziMesh::Entity_ID f = face_map.LID(vandelay_map.GID(bf));
-      mesh->face_get_cells(f, AmanziMesh::USED, &cells);
+      mesh->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
       ASSERT(cells.size() == 1);
 
       int index = (*wrms_->first)[cells[0]];
@@ -175,7 +175,7 @@ void WRMEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>& S,
     for (int bf=0; bf!=nbfaces; ++bf) {
       // given a boundary face, we need the internal cell to choose the right WRM
       AmanziMesh::Entity_ID f = face_map.LID(vandelay_map.GID(bf));
-      mesh->face_get_cells(f, AmanziMesh::USED, &cells);
+      mesh->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
       ASSERT(cells.size() == 1);
 
       int index = (*wrms_->first)[cells[0]];

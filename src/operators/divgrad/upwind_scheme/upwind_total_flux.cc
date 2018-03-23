@@ -188,7 +188,7 @@ UpwindTotalFlux::UpdateDerivatives(const Teuchos::Ptr<State>& S,
 
   // Grab mesh and allocate space
   Teuchos::RCP<const AmanziMesh::Mesh> mesh = dconductivity.Mesh();
-  unsigned int nfaces_owned = mesh->num_entities(AmanziMesh::FACE,AmanziMesh::OWNED);
+  unsigned int nfaces_owned = mesh->num_entities(AmanziMesh::FACE,AmanziMesh::Parallel_type::OWNED);
   Jpp_faces->resize(nfaces_owned);
 
   // workspace
@@ -238,7 +238,7 @@ UpwindTotalFlux::UpdateDerivatives(const Teuchos::Ptr<State>& S,
     ASSERT(!((uw == -1) && (dw == -1)));
 
     AmanziMesh::Entity_ID_List cells;
-    mesh->face_get_cells(f, AmanziMesh::USED, &cells);
+    mesh->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
     int mcells = cells.size();
 
     // uw coef

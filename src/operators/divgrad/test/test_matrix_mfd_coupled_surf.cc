@@ -54,14 +54,14 @@ struct mfd {
     mesh = factory.create(plist->sublist("Mesh").sublist("Generate Mesh"), &gm);
     std::vector<std::string> surface_sets(1,"3D surface domain");
     surf_mesh = factory.create(&*mesh, surface_sets, AmanziMesh::FACE, true, false);
-    std::cout << "On proc: " << surf_mesh->get_comm()->MyPID() << " there are " << surf_mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED) << " owned cells." << std::endl;
+    std::cout << "On proc: " << surf_mesh->get_comm()->MyPID() << " there are " << surf_mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED) << " owned cells." << std::endl;
 
     // Boundary conditions
-    int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
+    int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
     bc_markers.resize(nfaces, Operators::MATRIX_BC_NULL);
     bc_values.resize(nfaces, 0.);
 
-    int nfaces_surf = surf_mesh->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
+    int nfaces_surf = surf_mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
     surf_bc_markers.resize(nfaces_surf, Operators::MATRIX_BC_NULL);
     surf_bc_values.resize(nfaces_surf, 0.);
   }

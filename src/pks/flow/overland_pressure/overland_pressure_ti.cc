@@ -439,7 +439,7 @@ double OverlandPressureFlow::ErrorNorm(Teuchos::RCP<const TreeVector> u,
       
       for (unsigned int f=0; f!=nfaces; ++f) {
         AmanziMesh::Entity_ID_List cells;
-        mesh_->face_get_cells(f, AmanziMesh::OWNED, &cells);
+        mesh_->face_get_cells(f, AmanziMesh::Parallel_type::OWNED, &cells);
         double cv_min = cells.size() == 1 ? cv[0][cells[0]]
             : std::min(cv[0][cells[0]],cv[0][cells[1]]);
         double conserved_min = cells.size() == 1 ? conserved[0][cells[0]]

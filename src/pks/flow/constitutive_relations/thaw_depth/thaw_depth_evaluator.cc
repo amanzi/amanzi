@@ -84,7 +84,7 @@ void ThawDepthEvaluator::EnsureCompatibility(const Teuchos::Ptr<State>& S){
   
   Key domain = Keys::getDomain(my_key_);
   
-  int ncells = S->GetMesh("surface_star")->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  int ncells = S->GetMesh("surface_star")->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
   
   if (domain == "surface_star") {
     for (int c =0; c < ncells; c++){

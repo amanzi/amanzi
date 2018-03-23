@@ -41,7 +41,7 @@ PredictorDelegateBCFlux::CreateFunctor_(int f,
         const Teuchos::Ptr<const CompositeVector>& pres) {
   // inner cell
   AmanziMesh::Entity_ID_List cells;
-  mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+  mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
   ASSERT(cells.size() == 1);
   int c = cells[0];
 
@@ -156,7 +156,7 @@ int PredictorDelegateBCFlux::CalculateLambdaToms_(int f,
   std::cout << "  Converged to " << lambda << " in " << actual_it << " steps." << std::endl;
 
   AmanziMesh::Entity_ID_List cells;
-  mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+  mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
   ASSERT(cells.size() == 1);
   int c = cells[0];
 

@@ -156,7 +156,7 @@ void MatrixMFD_Coupled_Surf::AssembleSchur_() const {
 
   // Now, add in the contributions from App
   // Loop over surface cells (subsurface faces)
-  int ncells_surf = surface_mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  int ncells_surf = surface_mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
   for (AmanziMesh::Entity_ID sc=0; sc!=ncells_surf; ++sc) {
     // Access the row from the surfaces
     AmanziMesh::Entity_ID sc_global = surf_cmap_wghost.GID(sc);
@@ -264,7 +264,7 @@ void MatrixMFD_Coupled_Surf::AssembleAff_() const {
 
   // Now, add in the contributions from App
   // Loop over surface cells (subsurface faces)
-  int ncells_surf = surface_mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  int ncells_surf = surface_mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
   for (AmanziMesh::Entity_ID sc=0; sc!=ncells_surf; ++sc) {
     // Access the row from the surfaces
     AmanziMesh::Entity_ID sc_global = surf_cmap_wghost.GID(sc);

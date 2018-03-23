@@ -43,10 +43,10 @@ void Matrix_TPFA_Surf::FillMatrixGraphs_(const Teuchos::Ptr<Epetra_CrsGraph> cf_
   int equiv_face_LID[2];
   int equiv_face_GID[2];
 
-  unsigned int nfaces_surf = surface_mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
+  unsigned int nfaces_surf = surface_mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
 
   for (unsigned int fs=0; fs!=nfaces_surf; ++fs) {
-    surface_mesh_->face_get_cells(fs, AmanziMesh::USED, &surf_cells);
+    surface_mesh_->face_get_cells(fs, AmanziMesh::Parallel_type::ALL, &surf_cells);
     int ncells_surf = surf_cells.size(); ASSERT(ncells_surf <= 2);
 
     // get the equivalent faces on the subsurface mesh
@@ -71,7 +71,7 @@ void Matrix_TPFA_Surf::AssembleSchur_() const{
   int ierr(0);
   // std::vector<MatrixBC> new_markers(bc_markers);
 
-  int ncells_surf = surface_mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  int ncells_surf = surface_mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
   // for (AmanziMesh::Entity_ID sc=0; sc!=ncells_surf; ++sc) {
   //   AmanziMesh::Entity_ID f = surface_mesh_->entity_get_parent(AmanziMesh::CELL,sc);
   //   new_markers[f] = MATRIX_BC_NULL;
@@ -105,8 +105,8 @@ void Matrix_TPFA_Surf::AssembleSchur_() const{
 
     
   // Loop over surface cells (subsurface faces)
-  int nfaces_sub = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
-  //int ncells_surf = surface_mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  int nfaces_sub = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
+  //int ncells_surf = surface_mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
   for (AmanziMesh::Entity_ID sc=0; sc!=ncells_surf; ++sc) {
     // Access the row in Spp
     AmanziMesh::Entity_ID sc_global = surf_cmap_wghost.GID(sc);
@@ -155,7 +155,7 @@ void Matrix_TPFA_Surf::AssembleRHS_() const{
 
   Matrix_TPFA::AssembleRHS_();
 
-  int ncells_surf = surface_mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  int ncells_surf = surface_mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
   // Deal with RHS
   const Epetra_MultiVector& rhs_surf_cells =
       *surface_A_->rhs()->ViewComponent("cell",false);
@@ -182,7 +182,7 @@ void Matrix_TPFA_Surf::ApplyBoundaryConditions(
   // Ensure that none of the surface faces have a BC in them.
   std::vector<MatrixBC> new_markers(bc_markers);
 
-  int ncells_surf = surface_mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  int ncells_surf = surface_mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
   for (AmanziMesh::Entity_ID sc=0; sc!=ncells_surf; ++sc) {
     AmanziMesh::Entity_ID f = surface_mesh_->entity_get_parent(AmanziMesh::CELL,sc);
     new_markers[f] = MATRIX_BC_NULL;
@@ -223,7 +223,7 @@ void Matrix_TPFA_Surf::ComputeSchurComplement(const std::vector<MatrixBC>& bc_ma
   std::vector<MatrixBC> new_markers(bc_markers);
 
   int ierr(0);
-  int ncells_surf = surface_mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  int ncells_surf = surface_mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
   for (AmanziMesh::Entity_ID sc=0; sc!=ncells_surf; ++sc) {
     AmanziMesh::Entity_ID f = surface_mesh_->entity_get_parent(AmanziMesh::CELL,sc);
     new_markers[f] = MATRIX_BC_NULL;

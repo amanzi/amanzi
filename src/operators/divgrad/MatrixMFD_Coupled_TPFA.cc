@@ -124,7 +124,7 @@ void MatrixMFD_Coupled_TPFA::AssembleSchur_() const {
   const Epetra_BlockMap& fmap = mesh_->face_map(false);
   const Epetra_BlockMap& fmap_wghost = mesh_->face_map(true);
 
-  int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
   ASSERT(Ccc_->MyLength() == ncells);
   ASSERT(Dcc_->MyLength() == ncells);
 
@@ -214,9 +214,9 @@ void MatrixMFD_Coupled_TPFA::SymbolicAssembleGlobalMatrices() {
   int cells_GID[2];
 
   int ierr = 0;
-  int nfaces = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
+  int nfaces = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
   for (int f = 0; f < nfaces; f++) {
-    mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+    mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
     int ncells = cells.size();
 
     for (int n = 0; n < ncells; n++) cells_GID[n] = cmap_wghost.GID(cells[n]);

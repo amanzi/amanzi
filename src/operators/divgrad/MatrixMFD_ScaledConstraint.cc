@@ -53,7 +53,7 @@ void MatrixMFD_ScaledConstraint::CreateMFDstiffnessMatrices(
     WhetStone::MFD3D_Diffusion mfd(mesh_);
     AmanziMesh::Entity_ID_List faces;
 
-    int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+    int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
 
     if (Aff_cells_.size() != ncells) {
       Aff_cells_.resize(static_cast<size_t>(ncells));
@@ -135,8 +135,8 @@ void MatrixMFD_ScaledConstraint::ApplyBoundaryConditions(
   // tag global matrices as invalid
   MarkLocalMatricesAsChanged_();
 
-  int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
-  int nfaces = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
+  int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+  int nfaces = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
   AmanziMesh::Entity_ID_List faces;
   AmanziMesh::Entity_ID_List cells;
 
@@ -197,7 +197,7 @@ void MatrixMFD_ScaledConstraint::DeriveFlux(const CompositeVector& solution,
 
   flux->PutScalar(0.);
 
-  int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
   int nfaces_owned = flux->size("face",false);
 
   solution.ScatterMasterToGhosted("face");

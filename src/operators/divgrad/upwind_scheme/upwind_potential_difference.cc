@@ -77,7 +77,7 @@ void UpwindPotentialDifference::CalculateCoefficientsOnFaces(
 
   int nfaces = face_coef->size("face",false);
   for (unsigned int f=0; f!=nfaces; ++f) {
-    mesh->face_get_cells(f, AmanziMesh::USED, &cells);
+    mesh->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
 
     if (cells.size() == 1) {
       if (potential_f != Teuchos::null) {
@@ -152,7 +152,7 @@ UpwindPotentialDifference::UpdateDerivatives(const Teuchos::Ptr<State>& S,
 
   // Grab mesh and allocate space
   Teuchos::RCP<const AmanziMesh::Mesh> mesh = dconductivity.Mesh();
-  unsigned int nfaces_owned = mesh->num_entities(AmanziMesh::FACE,AmanziMesh::OWNED);
+  unsigned int nfaces_owned = mesh->num_entities(AmanziMesh::FACE,AmanziMesh::Parallel_type::OWNED);
   Jpp_faces->resize(nfaces_owned);
 
   // workspace
@@ -161,7 +161,7 @@ UpwindPotentialDifference::UpdateDerivatives(const Teuchos::Ptr<State>& S,
   
   for (unsigned int f=0; f!=nfaces_owned; ++f) {
     AmanziMesh::Entity_ID_List cells;
-    mesh->face_get_cells(f, AmanziMesh::USED, &cells);
+    mesh->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
     int mcells = cells.size();
 
     // create the local matrix

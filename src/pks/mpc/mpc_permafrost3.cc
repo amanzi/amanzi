@@ -484,7 +484,7 @@ MPCPermafrost3::UpdatePreconditioner(double t,
   //       kr_f[0][f] *= enth_u[0][f] / std::abs(flux[0][f]);
   //     } else {
   //       AmanziMesh::Entity_ID_List cells;
-  //       domain_mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+  //       domain_mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
   //       if (cells.size() == 1) {
   //         kr_f[0][f] *= enth_c[0][cells[0]];
   //       } else {

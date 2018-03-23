@@ -83,7 +83,7 @@ void MatrixVolumetricDeformation::ApplyRHS(const CompositeVector& x_cell,
   // Must also apply the boundary condition, dz_bottom = 0
   // -- Fix the bottom nodes, they may not move
   Epetra_MultiVector& rhs_n = *x_node->ViewComponent("node",false);
-  unsigned int nnodes_owned = mesh_->num_entities(AmanziMesh::NODE, AmanziMesh::OWNED);
+  unsigned int nnodes_owned = mesh_->num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::OWNED);
   for (AmanziMesh::Entity_ID_List::const_iterator n=fixed_nodes->begin();
        n!=fixed_nodes->end(); ++n) {
     if (*n < nnodes_owned)
@@ -120,8 +120,8 @@ void MatrixVolumetricDeformation::PreAssemble_() {
   domain_ = Teuchos::rcp(new CompositeVectorSpace());
   domain_->SetMesh(mesh_)->SetComponent("node",AmanziMesh::NODE,1);
 
-  unsigned int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
-  unsigned int nnodes = mesh_->num_entities(AmanziMesh::NODE, AmanziMesh::OWNED);
+  unsigned int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+  unsigned int nnodes = mesh_->num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::OWNED);
 
 
   // == Create dVdz ==
@@ -201,7 +201,7 @@ void MatrixVolumetricDeformation::PreAssemble_() {
   max_nnode_neighbors_ = 0;
   for (unsigned int no=0; no!=nnodes; ++no) {
     AmanziMesh::Entity_ID_List cells;
-    mesh_->node_get_cells(no, AmanziMesh::USED,&cells);
+    mesh_->node_get_cells(no, AmanziMesh::Parallel_type::ALL,&cells);
     // THIS IS VERY SPECIFIC TO GEOMETRY!
 #if MESH_TYPE
     int nnode_neighbors = (cells.size()/2 + 1) * 3;
@@ -239,7 +239,7 @@ void MatrixVolumetricDeformation::PreAssemble_() {
     // determine the set of node neighbors
     std::set<int> neighbors;
     AmanziMesh::Entity_ID_List faces;
-    mesh_->node_get_faces(n, AmanziMesh::USED, &faces);
+    mesh_->node_get_faces(n, AmanziMesh::Parallel_type::ALL, &faces);
     for (AmanziMesh::Entity_ID_List::const_iterator f=faces.begin();
          f!=faces.end(); ++f) {
       AmanziMesh::Entity_ID_List neighbor_nodes;
@@ -309,7 +309,7 @@ void MatrixVolumetricDeformation::Assemble(
   // dnode_z that results in that dV.  Therefore, A * dnode_z = dV
   const Epetra_Map& node_map = mesh_->node_map(false);
   const Epetra_Map& node_map_wghost = mesh_->node_map(true);
-  unsigned int nnodes = mesh_->num_entities(AmanziMesh::NODE, AmanziMesh::OWNED);
+  unsigned int nnodes = mesh_->num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::OWNED);
 
   // reset to non-fixed operator.
   if (operator_ == Teuchos::null) {

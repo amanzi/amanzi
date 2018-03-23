@@ -85,7 +85,7 @@ MPCDelegateWater::ModifyCorrection_WaterSpurtDamp(double h, Teuchos::RCP<const T
 
   Teuchos::RCP<const AmanziMesh::Mesh> surf_mesh =
       u->SubVector(i_surf_)->Data()->Mesh();
-  int ncells_surf = surf_mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  int ncells_surf = surf_mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
 
   const Epetra_MultiVector& domain_p_f = *u->SubVector(i_domain_)->Data()
       ->ViewComponent("face",false);
@@ -127,7 +127,7 @@ MPCDelegateWater::ModifyCorrection_WaterSpurtCap(double h, Teuchos::RCP<const Tr
 
   Teuchos::RCP<const AmanziMesh::Mesh> surf_mesh =
       u->SubVector(i_surf_)->Data()->Mesh();
-  int ncells_surf = surf_mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  int ncells_surf = surf_mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
 
   const Epetra_MultiVector& domain_p_f = *u->SubVector(i_domain_)->Data()
       ->ViewComponent("face",false);
@@ -174,7 +174,7 @@ MPCDelegateWater::ModifyCorrection_SaturatedSpurtDamp(double h, Teuchos::RCP<con
 
   Teuchos::RCP<const AmanziMesh::Mesh> domain_mesh =
       u->SubVector(i_domain_)->Data()->Mesh();
-  int ncells_domain = domain_mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  int ncells_domain = domain_mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
 
   const Epetra_MultiVector& domain_p_c = *u->SubVector(i_domain_)->Data()
       ->ViewComponent("cell",false);
@@ -214,7 +214,7 @@ MPCDelegateWater::ModifyCorrection_SaturatedSpurtCap(double h, Teuchos::RCP<cons
 
   Teuchos::RCP<const AmanziMesh::Mesh> domain_mesh =
       u->SubVector(i_domain_)->Data()->Mesh();
-  int ncells_domain = domain_mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  int ncells_domain = domain_mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
 
   const Epetra_MultiVector& domain_p_c = *u->SubVector(i_domain_)->Data()
       ->ViewComponent("cell",false);
@@ -305,7 +305,7 @@ MPCDelegateWater::ModifyPredictor_WaterSpurtDamp(double h,
 
     Teuchos::RCP<const AmanziMesh::Mesh> surf_mesh =
         u->SubVector(i_surf_)->Data()->Mesh();
-    int ncells_surf = surf_mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+    int ncells_surf = surf_mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
 
     Epetra_MultiVector& surf_pnew_c = *u->SubVector(i_surf_)->Data()
         ->ViewComponent("cell",false);

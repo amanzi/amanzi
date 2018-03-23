@@ -470,7 +470,7 @@ SurfaceBalanceImplicit::Functional(double t_old, double t_new, Teuchos::RCP<Tree
   Epetra_MultiVector& surf_water_flux_temp =
     *S_next_->GetFieldData(Keys::getKey(domain_,"mass_source_temperature"), name_)->ViewComponent("cell", false);
 
-  unsigned int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  unsigned int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
   for (unsigned int c=0; c!=ncells; ++c) { // START CELL LOOP  ##########################
     dcvo = Teuchos::null;
     if (vo_->os_OK(Teuchos::VERB_EXTREME)) dcvo = db_->GetVerboseObject(c, rank);
@@ -501,7 +501,7 @@ SurfaceBalanceImplicit::Functional(double t_old, double t_new, Teuchos::RCP<Tree
       seb.in.vp_ground.pressure = surf_pres[0][c];
       AmanziMesh::Entity_ID subsurf_f = mesh_->entity_get_parent(AmanziMesh::CELL, c);
       AmanziMesh::Entity_ID_List cells;
-      subsurf_mesh_->face_get_cells(subsurf_f, AmanziMesh::OWNED, &cells);
+      subsurf_mesh_->face_get_cells(subsurf_f, AmanziMesh::Parallel_type::OWNED, &cells);
       ASSERT(cells.size() == 1);
       seb.in.surf.saturation_liquid = saturation_liquid[0][cells[0]];
 
@@ -607,7 +607,7 @@ SurfaceBalanceImplicit::Functional(double t_old, double t_new, Teuchos::RCP<Tree
       seb.in.vp_ground.pressure = surf_pres[0][c];
       AmanziMesh::Entity_ID subsurf_f = mesh_->entity_get_parent(AmanziMesh::CELL, c);
       AmanziMesh::Entity_ID_List cells;
-      subsurf_mesh_->face_get_cells(subsurf_f, AmanziMesh::OWNED, &cells);
+      subsurf_mesh_->face_get_cells(subsurf_f, AmanziMesh::Parallel_type::OWNED, &cells);
       ASSERT(cells.size() == 1);
       seb.in.surf.saturation_liquid = saturation_liquid[0][cells[0]];
 

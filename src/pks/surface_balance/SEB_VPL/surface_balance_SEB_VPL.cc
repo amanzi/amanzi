@@ -365,7 +365,7 @@ void SurfaceBalanceSEBVPL::Initialize(const Teuchos::Ptr<State>& S) {
 //   data.st_energy.stored_fQe = 9999999;
 
   // loop over all cells and call CalculateSEB_
-  int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
   for (int c=0; c!=ncells; ++c) {
     // ATS Calcualted Data
     double density_air = 1.275;       // Density of Air ------------------- [kg/m^3]
@@ -373,7 +373,7 @@ void SurfaceBalanceSEBVPL::Initialize(const Teuchos::Ptr<State>& S) {
     
     AmanziMesh::Entity_ID subsurf_f = mesh_->entity_get_parent(AmanziMesh::CELL, c);
     AmanziMesh::Entity_ID_List cells;
-    subsurf_mesh_->face_get_cells(subsurf_f, AmanziMesh::OWNED, &cells);
+    subsurf_mesh_->face_get_cells(subsurf_f, AmanziMesh::Parallel_type::OWNED, &cells);
     ASSERT(cells.size() == 1);
     data.st_energy.saturation_liquid = saturation_liquid[0][cells[0]];
 
@@ -424,7 +424,7 @@ void SurfaceBalanceSEBVPL::Initialize(const Teuchos::Ptr<State>& S) {
 
     AmanziMesh::Entity_ID subsurf_f = mesh_->entity_get_parent(AmanziMesh::CELL, c);
     AmanziMesh::Entity_ID_List cells;
-    subsurf_mesh_->face_get_cells(subsurf_f, AmanziMesh::OWNED, &cells);
+    subsurf_mesh_->face_get_cells(subsurf_f, AmanziMesh::Parallel_type::OWNED, &cells);
     ASSERT(cells.size() == 1);
       data_bare.st_energy.saturation_liquid = saturation_liquid[0][cells[0]];  
 
@@ -490,7 +490,7 @@ void SurfaceBalanceSEBVPL::Initialize(const Teuchos::Ptr<State>& S) {
     // surface vapor flux is treated as a volumetric source for the subsurface.
   //  AmanziMesh::Entity_ID subsurf_f = mesh_->entity_get_parent(AmanziMesh::CELL, c);
   //  AmanziMesh::Entity_ID_List cells;
-  //  subsurf_mesh_->face_get_cells(subsurf_f, AmanziMesh::OWNED, &cells);
+  //  subsurf_mesh_->face_get_cells(subsurf_f, AmanziMesh::Parallel_type::OWNED, &cells);
   //  ASSERT(cells.size() == 1);
     // surface mass sources are in m^3 water / (m^2 s)
     // subsurface mass sources are in mol water / (m^3 s)

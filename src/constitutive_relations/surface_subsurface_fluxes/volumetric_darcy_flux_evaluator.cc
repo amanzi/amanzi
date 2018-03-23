@@ -48,11 +48,11 @@ void Volumetric_FluxEvaluator::EnsureCompatibility(const Teuchos::Ptr<State>& S)
 
     Teuchos::RCP<const AmanziMesh::Mesh> mesh_ = S->GetMesh(mesh_key_);
 
-    int nfaces_owned = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
+    int nfaces_owned = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
     AmanziMesh::Entity_ID_List cells;
   
     for (int f = 0; f < nfaces_owned; f++){
-      mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+      mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
       double n_liq=0.;
       for (int c=0; c<cells.size();c++) n_liq += molar_density[0][c];
       n_liq /= cells.size();

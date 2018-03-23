@@ -317,7 +317,7 @@ bool SurfaceBalanceSEB::AdvanceStep(double t_old, double t_new, bool reinit) {
     }
 
   // loop over all cells and call CalculateSEB_
-  int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
   for (int c=0; c!=ncells; ++c) {
     // ATS Calcualted Data
     double density_air = 1.275;       // Density of Air ------------------- [kg/m^3]

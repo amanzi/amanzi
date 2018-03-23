@@ -75,10 +75,10 @@ void MatrixMFD_Surf::FillMatrixGraphs_(const Teuchos::Ptr<Epetra_CrsGraph> cf_gr
   int equiv_face_LID[2];
   int equiv_face_GID[2];
 
-  unsigned int nfaces_surf = surface_mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
+  unsigned int nfaces_surf = surface_mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
 
   for (unsigned int fs=0; fs!=nfaces_surf; ++fs) {
-    surface_mesh_->face_get_cells(fs, AmanziMesh::USED, &surf_cells);
+    surface_mesh_->face_get_cells(fs, AmanziMesh::Parallel_type::ALL, &surf_cells);
     int ncells_surf = surf_cells.size(); ASSERT(ncells_surf <= 2);
 
     // get the equivalent faces on the subsurface mesh
@@ -123,8 +123,8 @@ void MatrixMFD_Surf::AssembleAff_() const {
   indices_global = new int[9];
 
   // Loop over surface cells (subsurface faces)
-  int nfaces_sub = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
-  int ncells_surf = surface_mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  int nfaces_sub = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
+  int ncells_surf = surface_mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
   for (AmanziMesh::Entity_ID sc=0; sc!=ncells_surf; ++sc) {
     // Access the row in Spp
     AmanziMesh::Entity_ID sc_global = surf_cmap_wghost.GID(sc);
@@ -168,7 +168,7 @@ void MatrixMFD_Surf::AssembleRHS_() const {
   const Epetra_MultiVector& rhs_faces =
       *rhs_->ViewComponent("face",false);
 
-  int ncells_surf = surface_mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  int ncells_surf = surface_mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
   for (AmanziMesh::Entity_ID sc=0; sc!=ncells_surf; ++sc) {
     AmanziMesh::Entity_ID f = surface_mesh_->entity_get_parent(AmanziMesh::CELL,sc);
     rhs_faces[0][f] += rhs_surf_cells[0][sc];
@@ -183,7 +183,7 @@ void MatrixMFD_Surf::ApplyBoundaryConditions(
   // Ensure that none of the surface faces have a BC in them.
   std::vector<MatrixBC> new_markers(bc_markers);
 
-  int ncells_surf = surface_mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  int ncells_surf = surface_mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
   for (AmanziMesh::Entity_ID sc=0; sc!=ncells_surf; ++sc) {
     AmanziMesh::Entity_ID f = surface_mesh_->entity_get_parent(AmanziMesh::CELL,sc);
     new_markers[f] = MATRIX_BC_NULL;
@@ -216,7 +216,7 @@ void MatrixMFD_Surf::AssembleSchur_() const {
   indices_global = new int[9];
 
   // Loop over surface cells (subsurface faces)
-  int ncells_surf = surface_mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  int ncells_surf = surface_mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
   for (AmanziMesh::Entity_ID sc=0; sc!=ncells_surf; ++sc) {
     // Access the row in Spp
     AmanziMesh::Entity_ID sc_global = surf_cmap_wghost.GID(sc);

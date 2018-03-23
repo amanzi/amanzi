@@ -247,7 +247,7 @@ void MatrixMFD_Coupled::AssembleAff_() const {
   const Epetra_BlockMap& fmap = mesh_->face_map(false);
   const Epetra_BlockMap& fmap_wghost = mesh_->face_map(true);
 
-  int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
 
   // Get the assorted sub-blocks
   std::vector<Teuchos::SerialDenseMatrix<int, double> >& Aff = blockA_->Aff_cells();
@@ -324,7 +324,7 @@ void MatrixMFD_Coupled::AssembleSchur_() const {
   const Epetra_BlockMap& fmap = mesh_->face_map(false);
   const Epetra_BlockMap& fmap_wghost = mesh_->face_map(true);
 
-  int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
   ASSERT(Ccc_->MyLength() == ncells);
   ASSERT(Dcc_->MyLength() == ncells);
 

@@ -51,7 +51,7 @@ struct mfd {
     mesh = factory.create(plist->sublist("Mesh").sublist("Generate Mesh"), &*gm);
 
     // Boundary conditions
-    int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
+    int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
     bc_markers.resize(nfaces, Operators::MATRIX_BC_NULL);
     bc_values.resize(nfaces, 0.);
   }
@@ -126,7 +126,7 @@ struct mfd {
   void setDirichletLinear() {
     for (int f=0; f!=bc_markers.size(); ++f) {
       AmanziMesh::Entity_ID_List cells;
-      mesh->face_get_cells(f, AmanziMesh::USED, &cells);
+      mesh->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
       if (cells.size() == 1) {
 	bc_markers[f] = Operators::MATRIX_BC_DIRICHLET;
 	bc_values[f] = value(mesh->face_centroid(f));
@@ -136,7 +136,7 @@ struct mfd {
 
   void setDirichletOne() {
     AmanziMesh::Entity_ID_List bottom;
-    mesh->get_set_entities("bottom side", AmanziMesh::FACE, AmanziMesh::USED, &bottom);
+    mesh->get_set_entities("bottom side", AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL, &bottom);
     for (int f=0; f!=bottom.size(); ++f) {
       bc_markers[bottom[f]] = Operators::MATRIX_BC_DIRICHLET;
     }

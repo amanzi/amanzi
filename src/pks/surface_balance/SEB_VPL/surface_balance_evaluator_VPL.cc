@@ -141,7 +141,7 @@ SurfaceBalanceEvaluatorVPL::EvaluateField_(const Teuchos::Ptr<State>& S,
 
    AmanziMesh::Entity_ID subsurf_f = mesh_->entity_get_parent(AmanziMesh::CELL, c);
    AmanziMesh::Entity_ID_List cells;
-   subsurf_mesh_->face_get_cells(subsurf_f, AmanziMesh::OWNED, &cells);
+   subsurf_mesh_->face_get_cells(subsurf_f, AmanziMesh::Parallel_type::OWNED, &cells);
    ASSERT(cells.size() == 1);
     data.st_energy.saturation_liquid = saturation_liquid[0][cells[0]];
    
@@ -209,7 +209,7 @@ SurfaceBalanceEvaluatorVPL::EvaluateField_(const Teuchos::Ptr<State>& S,
      
     AmanziMesh::Entity_ID subsurf_f = mesh_->entity_get_parent(AmanziMesh::CELL, c);
     AmanziMesh::Entity_ID_List cells;
-    subsurf_mesh_->face_get_cells(subsurf_f, AmanziMesh::OWNED, &cells);
+    subsurf_mesh_->face_get_cells(subsurf_f, AmanziMesh::Parallel_type::OWNED, &cells);
     ASSERT(cells.size() == 1); 
       data_bare.st_energy.saturation_liquid = saturation_liquid[0][cells[0]];
     
@@ -372,7 +372,7 @@ void SurfaceBalanceEvaluatorVPL::EvaluateFieldPartialDerivative_(
     data.st_energy.water_depth = ponded_depth[0][c];
   AmanziMesh::Entity_ID subsurf_f = mesh_->entity_get_parent(AmanziMesh::CELL, c);
   AmanziMesh::Entity_ID_List cells;
-  subsurf_mesh_->face_get_cells(subsurf_f, AmanziMesh::OWNED, &cells);
+  subsurf_mesh_->face_get_cells(subsurf_f, AmanziMesh::Parallel_type::OWNED, &cells);
   ASSERT(cells.size() == 1);
     data.st_energy.saturation_liquid = saturation_liquid[0][cells[0]];
     data.st_energy.surface_pressure = surface_pressure[0][c];
@@ -426,7 +426,7 @@ void SurfaceBalanceEvaluatorVPL::EvaluateFieldPartialDerivative_(
       data_bare.st_energy.water_depth = ponded_depth[0][c];
     AmanziMesh::Entity_ID subsurf_f = mesh_->entity_get_parent(AmanziMesh::CELL, c);
     AmanziMesh::Entity_ID_List cells;
-    subsurf_mesh_->face_get_cells(subsurf_f, AmanziMesh::OWNED, &cells);
+    subsurf_mesh_->face_get_cells(subsurf_f, AmanziMesh::Parallel_type::OWNED, &cells);
     ASSERT(cells.size() == 1);
       data_bare.st_energy.saturation_liquid = saturation_liquid[0][cells[0]]; 
       data_bare.st_energy.surface_pressure = surface_pressure[0][c];

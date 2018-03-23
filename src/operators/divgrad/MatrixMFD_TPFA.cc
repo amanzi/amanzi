@@ -47,7 +47,7 @@ void MatrixMFD_TPFA::CreateMFDstiffnessMatrices(
   WhetStone::MFD3D_Diffusion mfd(mesh_);
   AmanziMesh::Entity_ID_List faces;
 
-  int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
   
   if (Aff_cells_.size() != ncells) {
     Aff_cells_.resize(static_cast<size_t>(ncells));
@@ -137,9 +137,9 @@ void MatrixMFD_TPFA::SymbolicAssembleGlobalMatrices() {
   AmanziMesh::Entity_ID_List cells;
   int cells_GID[2];
 
-  int nfaces = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
+  int nfaces = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
   for (int f = 0; f < nfaces; f++) {
-    mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+    mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
     int ncells = cells.size();
 
     for (int n = 0; n < ncells; n++) cells_GID[n] = cmap_wghost.GID(cells[n]);
@@ -167,7 +167,7 @@ void MatrixMFD_TPFA::SymbolicAssembleGlobalMatrices() {
  ****************************************************************** */
 void MatrixMFD_TPFA::AssembleDff_() const {
   // Dff
-  int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
   AmanziMesh::Entity_ID_List faces;
 
   int c=0;
@@ -207,7 +207,7 @@ void MatrixMFD_TPFA::AssembleRHS_() const {
   if (!assembled_dff_) AssembleDff_();
   const Epetra_MultiVector& Dff_f = *Dff_->ViewComponent("face",true);
 
-  int nfaces_owned = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
+  int nfaces_owned = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
   Teuchos::RCP<Epetra_MultiVector> rhs_faces = rhs_->ViewComponent("face",false);
   Teuchos::RCP<Epetra_MultiVector> rhs_cells = rhs_->ViewComponent("cell",false);
 
@@ -261,14 +261,14 @@ void MatrixMFD_TPFA::AssembleApp_() const {
   std::vector<int> ndofs(1,1);
 
   AmanziMesh::Entity_ID_List faces;
-  int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
 
   // convert right-hand side to a cell-based vector
   const Epetra_Map& fmap_wghost = mesh_->face_map(true);
   const Epetra_Map& cmap = mesh_->cell_map(false);
   const Epetra_Map& cmap_wghost = mesh_->cell_map(true);
   Epetra_Vector Tc(cmap);
-  int nfaces_owned = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
+  int nfaces_owned = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
 
   // create a with-ghost copy of Acc
   CompositeVectorSpace space_c;
@@ -319,7 +319,7 @@ void MatrixMFD_TPFA::AssembleApp_() const {
 
   App_->PutScalar(0.0);
   for (AmanziMesh::Entity_ID f=0; f!=nfaces_owned; ++f) {
-    mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+    mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
     int mcells = cells.size();
 
     // populate face-based matrix.
@@ -540,8 +540,8 @@ void MatrixMFD_TPFA::AnalyticJacobian(const Upwinding& upwinding,
 
   // maps and counts
   AmanziMesh::Entity_ID_List faces;
-  int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
-  int nfaces_owned = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
+  int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+  int nfaces_owned = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
   const Epetra_Map& cmap_wghost = mesh_->cell_map(true);
 
   // local work arrays
@@ -556,7 +556,7 @@ void MatrixMFD_TPFA::AnalyticJacobian(const Upwinding& upwinding,
 
   // Assemble into App
   for (unsigned int f=0; f!=nfaces_owned; ++f) {
-    mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+    mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
 
     int mcells = cells.size();
     for (int n=0; n!=mcells; ++n) {

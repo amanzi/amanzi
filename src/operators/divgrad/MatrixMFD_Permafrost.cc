@@ -60,7 +60,7 @@ void MatrixMFD_Permafrost::ComputeSchurComplement() {
   ASSERT(!ierr);
   scaling.PutScalar(1.);
 
-  int ncells_surf = surface_mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  int ncells_surf = surface_mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
   for (AmanziMesh::Entity_ID sc=0; sc!=ncells_surf; ++sc) {
     AmanziMesh::Entity_ID frow = surface_mesh_->entity_get_parent(AmanziMesh::CELL,sc);
     if ((*blockA_sc_->Krel_)[frow] == 0 && std::abs(App_diag[sc]) > 1.e-11) {

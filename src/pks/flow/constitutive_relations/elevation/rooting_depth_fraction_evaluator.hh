@@ -43,17 +43,20 @@ class RootingDepthFractionEvaluator : public SecondaryVariableFieldEvaluator {
   virtual void EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>& S,
           Key wrt_key, const Teuchos::Ptr<CompositeVector>& result);
 
-  Teuchos::RCP<RootingDepthFractionModel> get_model() { return model_; }
+  std::vector<Teuchos::RCP<RootingDepthFractionModel>> get_models() { return models_; }
 
+  // need a custom EnsureCompatibility as some vectors cross meshes.
+  virtual void EnsureCompatibility(const Teuchos::Ptr<State>& S);
+  
  protected:
   void InitializeFromPlist_();
 
   Key z_key_;
   Key cv_key_;
-  Key surface_cv_key_;
-  Key scaling_factor_;
+  Key surf_cv_key_;
+  int npfts_;
 
-  Teuchos::RCP<RootingDepthFractionModel> model_;
+  std::vector<Teuchos::RCP<RootingDepthFractionModel>> models_;
 
  private:
   static Utils::RegisteredFactory<FieldEvaluator,RootingDepthFractionEvaluator> reg_;

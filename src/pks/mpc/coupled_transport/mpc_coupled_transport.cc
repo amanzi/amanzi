@@ -142,11 +142,11 @@ void CoupledTransport_PK::ComputeVolumeDarcyFlux(const Teuchos::Ptr<State>& S){
 
 
   // subsurface
-  nfaces_owned = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
+  nfaces_owned = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
   AmanziMesh::Entity_ID_List cells;
   
   for (int f = 0; f < nfaces_owned; f++){
-    mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+    mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
     double n_liq=0.;
     for (int c=0; c<cells.size();c++) n_liq += (*molar_density)[0][c];
     n_liq /= cells.size();
@@ -156,9 +156,9 @@ void CoupledTransport_PK::ComputeVolumeDarcyFlux(const Teuchos::Ptr<State>& S){
   S->GetField(vol_darcy_key_, passwd_)->set_initialized();  
 
   // surface
-  nfaces_owned = surf_mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
+  nfaces_owned = surf_mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
   for (int f = 0; f < nfaces_owned; f++){
-    mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+    mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
     double n_liq=0.;
     for (int c=0; c<cells.size();c++) n_liq += (*surf_molar_density)[0][c];
     n_liq /= cells.size();

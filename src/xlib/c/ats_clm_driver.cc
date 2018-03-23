@@ -346,7 +346,7 @@ int32_t ATSCLMDriver::Initialize(const MPI_Comm& mpi_comm,
   // Currently assumes this can be done locally.
 
   // -- identity map for surface
-  ncells_surf_ = surface_mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  ncells_surf_ = surface_mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
   ASSERT(ncells_surf_ == num_cols);
   surf_clm_map_ = Teuchos::rcp(new Epetra_Map(-1, ncells_surf_, 0, *comm));
 
@@ -354,7 +354,7 @@ int32_t ATSCLMDriver::Initialize(const MPI_Comm& mpi_comm,
   surf_importer_ = Teuchos::rcp(new Epetra_Import(ats_col_map, *surf_clm_map_));
 
   // -- subsurface map -- top down
-  ncells_sub_ = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  ncells_sub_ = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
   ASSERT(ncells_sub_ == ncells_surf_ * 15); // MAGIC NUMBER OF CELLS PER COL IN CLM
   sub_clm_map_ = Teuchos::rcp(new Epetra_Map(-1, ncells_sub_, 0, *comm));
 
@@ -377,7 +377,7 @@ int32_t ATSCLMDriver::Initialize(const MPI_Comm& mpi_comm,
 
     // get the cell within the face
     AmanziMesh::Entity_ID_List cells;
-    mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+    mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
     ASSERT(cells.size() == 1);
     AmanziMesh::Entity_ID c = cells[0];
 

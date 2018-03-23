@@ -41,14 +41,14 @@ TopCellsSurfaceEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
 
 
   int ncells_surf = surf_vector->Mesh()->num_entities(AmanziMesh::CELL,
-          AmanziMesh::OWNED);
+          AmanziMesh::Parallel_type::OWNED);
   for (unsigned int c=0; c!=ncells_surf; ++c) {
     // get the face on the subsurface mesh
     AmanziMesh::Entity_ID f = surf_vector->Mesh()->entity_get_parent(AmanziMesh::CELL, c);
 
     // get the cell interior to the face
     AmanziMesh::Entity_ID_List cells;
-    result->Mesh()->face_get_cells(f, AmanziMesh::USED, &cells);
+    result->Mesh()->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
     ASSERT(cells.size() == 1);
 
     result_cells[0][cells[0]] = surf_vector_cells[0][c];

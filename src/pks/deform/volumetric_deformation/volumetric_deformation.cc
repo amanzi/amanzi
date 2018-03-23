@@ -242,7 +242,7 @@ void VolumetricDeformation::Initialize(const Teuchos::Ptr<State>& S) {
   int dim = mesh_->space_dimension();
   AmanziGeometry::Point coords(dim);
   int nnodes = mesh_->num_entities(Amanzi::AmanziMesh::NODE,
-                                   Amanzi::AmanziMesh::OWNED);
+                                   Amanzi::AmanziMesh::Parallel_type::OWNED);
   
   Epetra_MultiVector& vc = *S->GetFieldData(Keys::getKey(domain_,"vertex_coordinate"),name_)
     ->ViewComponent("node",false);
@@ -260,7 +260,7 @@ void VolumetricDeformation::Initialize(const Teuchos::Ptr<State>& S) {
     int dim = surf_mesh_->space_dimension();
     AmanziGeometry::Point coords(dim);
     int nnodes = surf_mesh_->num_entities(Amanzi::AmanziMesh::NODE,
-            Amanzi::AmanziMesh::OWNED);
+            Amanzi::AmanziMesh::Parallel_type::OWNED);
     
     Epetra_MultiVector& vc = *S->GetFieldData(Keys::getKey(domain_surf_,"vertex_coordinate"),name_)
         ->ViewComponent("node",false);
@@ -279,7 +279,7 @@ void VolumetricDeformation::Initialize(const Teuchos::Ptr<State>& S) {
     int dim = surf3d_mesh_->space_dimension();
     AmanziGeometry::Point coords(dim);
     int nnodes = surf3d_mesh_->num_entities(Amanzi::AmanziMesh::NODE,
-            Amanzi::AmanziMesh::OWNED);
+            Amanzi::AmanziMesh::Parallel_type::OWNED);
     
     Epetra_MultiVector& vc = *S->GetFieldData(Keys::getKey("surface_3d","vertex_coordinate"),name_)
         ->ViewComponent("node",false);
@@ -354,7 +354,7 @@ bool VolumetricDeformation::AdvanceStep(double t_old, double t_new, bool reinit)
 
       AmanziMesh::Entity_ID_List cells;
       mesh_->get_set_entities(deform_region_, AmanziMesh::CELL,
-              AmanziMesh::OWNED, &cells);
+              AmanziMesh::Parallel_type::OWNED, &cells);
       
       for (AmanziMesh::Entity_ID_List::const_iterator c=cells.begin(); c!=cells.end(); ++c) {
         double frac = 0.;
@@ -408,7 +408,7 @@ bool VolumetricDeformation::AdvanceStep(double t_old, double t_new, bool reinit)
       int dim = mesh_->space_dimension();
 
       AmanziMesh::Entity_ID_List cells;
-      mesh_->get_set_entities(deform_region_, AmanziMesh::CELL, AmanziMesh::OWNED, &cells);
+      mesh_->get_set_entities(deform_region_, AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED, &cells);
 
       double time_factor = dT > time_scale_ ? 1 : dT / time_scale_;
       for (AmanziMesh::Entity_ID_List::const_iterator c=cells.begin(); c!=cells.end(); ++c) {
@@ -448,7 +448,7 @@ bool VolumetricDeformation::AdvanceStep(double t_old, double t_new, bool reinit)
     fixed_node_list = Teuchos::rcp(new AmanziMesh::Entity_ID_List());
     AmanziMesh::Entity_ID_List nodes;
     mesh_->get_set_entities("bottom face", AmanziMesh::NODE,
-                            AmanziMesh::OWNED, &nodes);
+                            AmanziMesh::Parallel_type::OWNED, &nodes);
     for (AmanziMesh::Entity_ID_List::const_iterator n=nodes.begin();
          n!=nodes.end(); ++n) {                  
       fixed_node_list->push_back(*n);
@@ -481,8 +481,8 @@ bool VolumetricDeformation::AdvanceStep(double t_old, double t_new, bool reinit)
 	*dcell_vol_vec->ViewComponent("cell",true);
 
       // data needed in vectors
-      int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::USED);
-      int nnodes = mesh_->num_entities(AmanziMesh::NODE, AmanziMesh::USED);
+      int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
+      int nnodes = mesh_->num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::ALL);
       std::vector<double> target_cell_vols(ncells);
       std::vector<double> min_cell_vols(ncells);
       int dim = mesh_->space_dimension();
@@ -681,9 +681,9 @@ bool VolumetricDeformation::AdvanceStep(double t_old, double t_new, bool reinit)
   if (surf_mesh_ != Teuchos::null && domain_surf_.find("column") == std::string::npos) {
     // WORKAROUND for non-communication in deform() by Mesh
     //    int nsurfnodes = surf_mesh_->num_entities(Amanzi::AmanziMesh::NODE,
-    //            Amanzi::AmanziMesh::OWNED);
+    //            Amanzi::AmanziMesh::Parallel_type::OWNED);
     int nsurfnodes = surf_mesh_->num_entities(AmanziMesh::NODE,
-            AmanziMesh::USED);
+            AmanziMesh::Parallel_type::ALL);
 
     Entity_ID_List surface_nodeids, surface3d_nodeids;
     AmanziGeometry::Point_List surface_newpos, surface3d_newpos;

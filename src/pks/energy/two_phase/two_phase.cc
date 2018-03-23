@@ -109,9 +109,9 @@ void TwoPhase::Initialize(const Teuchos::Ptr<State>& S) {
 //   bool include_work = plist_->sublist("enthalpy evaluator").get<bool>("include work term", true);
   
 //   AmanziMesh::Entity_ID_List cells;
-//   int nfaces = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
+//   int nfaces = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
 //   for (int f=0; f!=nfaces; ++f) {
-//     mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+//     mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
 //     if (bc_markers_adv_[f] == Operators::OPERATOR_BC_DIRICHLET) {
 //       // If the advective markers are Dirichlet, and the diffusion markers are
 //       // Neumann, that means we were given by the diffusive fluxes and the

@@ -449,7 +449,7 @@ void OverlandPressureFlow::Initialize(const Teuchos::Ptr<State>& S) {
       }
       const Epetra_MultiVector& subsurf_pres = *S->GetFieldData(key_ss)
         ->ViewComponent("face",false);
-      unsigned int ncells_surface = mesh_->num_entities(AmanziMesh::CELL,AmanziMesh::OWNED);
+      unsigned int ncells_surface = mesh_->num_entities(AmanziMesh::CELL,AmanziMesh::Parallel_type::OWNED);
       for (unsigned int c=0; c!=ncells_surface; ++c) {
         // -- get the surface cell's equivalent subsurface face and neighboring cell
         AmanziMesh::Entity_ID f =
@@ -469,7 +469,7 @@ void OverlandPressureFlow::Initialize(const Teuchos::Ptr<State>& S) {
       assert(domain_ == "surface_star");
       Epetra_MultiVector& pres_star = *pres_cv->ViewComponent("cell",false);
     
-      unsigned int ncells_surface = mesh_->num_entities(AmanziMesh::CELL,AmanziMesh::OWNED);
+      unsigned int ncells_surface = mesh_->num_entities(AmanziMesh::CELL,AmanziMesh::Parallel_type::OWNED);
       for (unsigned int c=0; c!=ncells_surface; ++c) {
         int id = mesh_->cell_map(false).GID(c);
         
@@ -612,7 +612,7 @@ S->GetFieldData(Keys::getKey(domain_,"upwind_overland_conductivity"));
   Teuchos::SerialDenseMatrix<int, double> matrix(d, d);
   double rhs[d];
 
-  int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
   AmanziMesh::Entity_ID_List faces;
   for (int c=0; c!=ncells_owned; ++c) {
     mesh_->cell_get_faces(c, &faces);
@@ -781,7 +781,7 @@ void OverlandPressureFlow::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& 
       for (Functions::BoundaryFunction::Iterator bc = bc_pressure_->begin(); 
            bc != bc_pressure_->end(); ++bc) {
         int f = bc->first;
-        mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+        mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
         int c = cells[0];
 
         double p0 = bc->second > p_atm ? bc->second : p_atm;
@@ -796,7 +796,7 @@ void OverlandPressureFlow::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& 
       for (Functions::BoundaryFunction::Iterator bc = bc_pressure_->begin(); 
            bc != bc_pressure_->end(); ++bc) {
         int f = bc->first;
-        mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+        mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
         int c = cells[0];
 
         double p0 = bc->second > p_atm ? bc->second : p_atm;
@@ -842,7 +842,7 @@ void OverlandPressureFlow::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& 
     for (Functions::BoundaryFunction::Iterator bc = bc_seepage_head_->begin(); 
          bc != bc_seepage_head_->end(); ++bc) {
       int f = bc->first;
-      mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+      mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
       int c = cells[0];
 
       double hz_f = bc->second + elevation[0][f];
@@ -876,7 +876,7 @@ void OverlandPressureFlow::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& 
       for (Functions::BoundaryFunction::Iterator bc = bc_seepage_pressure_->begin(); 
            bc != bc_seepage_pressure_->end(); ++bc) {
         int f = bc->first;
-        mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+        mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
         int c = cells[0];
 
         double p0 = bc->second > p_atm ? bc->second : p_atm;
@@ -897,7 +897,7 @@ void OverlandPressureFlow::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& 
       for (Functions::BoundaryFunction::Iterator bc = bc_seepage_pressure_->begin(); 
            bc != bc_seepage_pressure_->end(); ++bc) {
         int f = bc->first;
-        mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+        mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
         int c = cells[0];
 
         double p0 = bc->second > p_atm ? bc->second : p_atm;
@@ -927,7 +927,7 @@ void OverlandPressureFlow::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& 
     for (Functions::BoundaryFunction::Iterator bc = bc_critical_depth_->begin();
          bc != bc_critical_depth_->end(); ++bc) {
       int f = bc->first;
-      mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+      mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
       int c = cells[0];
       
       markers[f] = Operators::OPERATOR_BC_NEUMANN;
@@ -936,9 +936,9 @@ void OverlandPressureFlow::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& 
   }
 
   // check that there are no internal faces and mark all remaining boundary conditions as zero flux conditions
-  int nfaces_owned = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
+  int nfaces_owned = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
   for (int f = 0; f < nfaces_owned; f++) {
-    mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+    mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
     int ncells = cells.size();
 
     if ((markers[f] != Operators::OPERATOR_BC_NONE) && (ncells == 2)) {
@@ -1013,15 +1013,15 @@ void OverlandPressureFlow::FixBCsForOperator_(const Teuchos::Ptr<State>& S) {
   std::vector<WhetStone::DenseMatrix>& Aff =
       matrix_diff_->local_matrices()->matrices;
 
-  int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
-  int nfaces_owned = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
+  int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+  int nfaces_owned = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
   for (Functions::BoundaryFunction::Iterator bc=bc_zero_gradient_->begin();
        bc!=bc_zero_gradient_->end(); ++bc) {
 
     int f = bc->first;
 
     AmanziMesh::Entity_ID_List cells;
-    mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+    mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
     ASSERT(cells.size() == 1);
     AmanziMesh::Entity_ID c = cells[0];
 
@@ -1091,13 +1091,13 @@ void OverlandPressureFlow::FixBCsForPrecon_(const Teuchos::Ptr<State>& S) {
 //       matrix_diff_->local_matrices()->matrices;
 //   Epetra_MultiVector& rhs_f = *matrix_->rhs()->ViewComponent("face",false);
 
-//   int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+//   int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
 //   for (Functions::BoundaryFunction::Iterator bc=bc_zero_gradient_->begin();
 //        bc!=bc_zero_gradient_->end(); ++bc) {
 //     int f = bc->first;
 
 //     AmanziMesh::Entity_ID_List cells;
-//     mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+//     mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
 //     ASSERT(cells.size() == 1);
 //     AmanziMesh::Entity_ID c = cells[0];
 

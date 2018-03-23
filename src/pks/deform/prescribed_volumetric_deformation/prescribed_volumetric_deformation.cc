@@ -111,7 +111,7 @@ void PrescribedVolumetricDeformation::initialize(const Teuchos::Ptr<State>& S) {
   int dim = mesh_->space_dimension();
   // number of vertices
   int nV = mesh_->num_entities(Amanzi::AmanziMesh::NODE,
-          Amanzi::AmanziMesh::OWNED);
+          Amanzi::AmanziMesh::Parallel_type::OWNED);
   coords.init(dim);
 
   Epetra_MultiVector& vc = *S->GetFieldData("vertex coordinate",name_)
@@ -154,7 +154,7 @@ bool PrescribedVolumetricDeformation::advance(double dt) {
   Amanzi::AmanziGeometry::Point coords, new_coords;
 
   int nc = write_access_mesh_->num_entities(Amanzi::AmanziMesh::CELL,
-                                            Amanzi::AmanziMesh::OWNED);
+                                            Amanzi::AmanziMesh::Parallel_type::OWNED);
   
   std::vector<double> target_cell_volumes(nc,0.0);
   std::vector<double> min_cell_volumes(nc);
@@ -189,9 +189,9 @@ bool PrescribedVolumetricDeformation::advance(double dt) {
 
   unsigned int mesh_block_size = write_access_mesh_->get_set_size(deform_region_,
                                                                   Amanzi::AmanziMesh::CELL,
-                                                                  Amanzi::AmanziMesh::OWNED);
+                                                                  Amanzi::AmanziMesh::Parallel_type::OWNED);
   Amanzi::AmanziMesh::Entity_ID_List cell_ids(mesh_block_size);
-  write_access_mesh_->get_set_entities(deform_region_, Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::OWNED,
+  write_access_mesh_->get_set_entities(deform_region_, Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::Parallel_type::OWNED,
                                        &cell_ids);
   for( Amanzi::AmanziMesh::Entity_ID_List::iterator c = cell_ids.begin(); c != cell_ids.end();  c++) {
     target_cell_volumes[*c] = fac * cv[0][*c];
@@ -209,7 +209,7 @@ bool PrescribedVolumetricDeformation::advance(double dt) {
   // extract the correct new coordinates for the surface from the domain
   // mesh and update the surface mesh accordingly
   int nV = write_access_surface_mesh_->num_entities(Amanzi::AmanziMesh::NODE,
-          Amanzi::AmanziMesh::OWNED);
+          Amanzi::AmanziMesh::Parallel_type::OWNED);
   AmanziGeometry::Point coord_domain(3);
   AmanziGeometry::Point coord_surface(2);
 
@@ -243,7 +243,7 @@ bool PrescribedVolumetricDeformation::advance(double dt) {
       ->ViewComponent("node",false);
   int dim = write_access_mesh_->space_dimension();
   nV = write_access_mesh_->num_entities(Amanzi::AmanziMesh::NODE,
-          Amanzi::AmanziMesh::OWNED);
+          Amanzi::AmanziMesh::Parallel_type::OWNED);
   // loop over vertices and update vc
   for (int iV=0; iV<nV; iV++) {
     // get the coords of the node

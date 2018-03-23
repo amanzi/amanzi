@@ -57,7 +57,7 @@ void NonlinearSourceFromSubsurfaceEvaluator::IdentifyFaceAndDirection_(
       Teuchos::rcp_static_cast<const AmanziMesh::Mesh_MSTK>(S->GetMesh("surface"));
 
   // allocate space for face IDs and directions
-  int ncells = surface->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  int ncells = surface->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
   face_and_dirs_ = Teuchos::rcp(new std::vector<FaceDir>(ncells));
 
   for (int c=0; c!=ncells; ++c) {
@@ -69,7 +69,7 @@ void NonlinearSourceFromSubsurfaceEvaluator::IdentifyFaceAndDirection_(
     // Get the direction corresponding to that face wrt its only cell.
     // -- get the cell
     AmanziMesh::Entity_ID_List cells;
-    subsurface->face_get_cells(domain_face, AmanziMesh::OWNED, &cells);
+    subsurface->face_get_cells(domain_face, AmanziMesh::Parallel_type::OWNED, &cells);
     ASSERT(cells.size() == 1);
 
     // -- Get directions
@@ -110,7 +110,7 @@ NonlinearSourceFromSubsurfaceEvaluator::EvaluateField_(const Teuchos::Ptr<State>
 
     // subsurface cell
     AmanziMesh::Entity_ID_List cells;
-    subsurface->face_get_cells(ss_f, AmanziMesh::OWNED, &cells);
+    subsurface->face_get_cells(ss_f, AmanziMesh::Parallel_type::OWNED, &cells);
     ASSERT(cells.size() == 1);
     int ss_c = cells[0];
 

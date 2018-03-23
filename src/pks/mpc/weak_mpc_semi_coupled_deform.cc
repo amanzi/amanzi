@@ -36,7 +36,7 @@ WeakMPCSemiCoupledDeform::WeakMPCSemiCoupledDeform(Teuchos::ParameterList& pk_tr
   
   // add for the various columns based on GIDs of the surface system
   Teuchos::RCP<const AmanziMesh::Mesh> surf_mesh = S->GetMesh("surface");
-  int ncols = surf_mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  int ncols = surf_mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
   for (int i=0; i!=ncols; ++i) {
     int gid = surf_mesh->cell_map(false).GID(i);
     std::stringstream domain_name_stream;

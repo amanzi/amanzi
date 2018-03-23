@@ -60,8 +60,8 @@ void MatrixMFD_Surf_ScaledConstraint::AssembleAff_() const {
   gsubsurfvalues = new double[9];  
 
   // Loop over surface cells (subsurface faces)
-  int nfaces_sub = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
-  int ncells_surf = surface_mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  int nfaces_sub = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
+  int ncells_surf = surface_mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
   for (AmanziMesh::Entity_ID sc=0; sc!=ncells_surf; ++sc) {
     // Access the row in Spp
     AmanziMesh::Entity_ID sc_global = surf_cmap_wghost.GID(sc);
@@ -135,7 +135,7 @@ void MatrixMFD_Surf_ScaledConstraint::AssembleRHS_() const {
   const Epetra_MultiVector& rhs_faces =
       *rhs_->ViewComponent("face",false);
 
-  int ncells_surf = surface_mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  int ncells_surf = surface_mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
   for (AmanziMesh::Entity_ID sc=0; sc!=ncells_surf; ++sc) {
     AmanziMesh::Entity_ID f = surface_mesh_->entity_get_parent(AmanziMesh::CELL,sc);
     if (std::abs(rhs_surf_cells[0][sc]) > 0.) {
@@ -152,7 +152,7 @@ void MatrixMFD_Surf_ScaledConstraint::ApplyBoundaryConditions(
   // Ensure that none of the surface faces have a BC in them.
   std::vector<MatrixBC> new_markers(bc_markers);
 
-  int ncells_surf = surface_mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  int ncells_surf = surface_mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
   for (AmanziMesh::Entity_ID sc=0; sc!=ncells_surf; ++sc) {
     AmanziMesh::Entity_ID f = surface_mesh_->entity_get_parent(AmanziMesh::CELL,sc);
     new_markers[f] = MATRIX_BC_NULL;
@@ -165,8 +165,8 @@ void MatrixMFD_Surf_ScaledConstraint::ApplyBoundaryConditions(
 
 void MatrixMFD_Surf_ScaledConstraint::AssembleSchur_() const {
   int ierr(0);
-  int ncells_surf = surface_mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
-  int nfaces_sub = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
+  int ncells_surf = surface_mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+  int nfaces_sub = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
 
   // Call base Schur
   MatrixMFD_ScaledConstraint::AssembleSchur_();
