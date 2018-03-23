@@ -1,87 +1,12 @@
 #!/usr/bin/env python
-
-"""Loads and plots timestep data for a given run.
-
-Usage: parse_logfile.py out.log
-
-NOTE: This is deprecated -- please use plot_timestep_history.py instead.
-"""
+"""Loads and plots timestep history for a given run."""
 
 import numpy as np
 
 def print_headers():
     print "cycle, time, dt, iteration count, wallclock avg (s)"
 
-def split_header(line):
-    """Cleans a line and splits off the VerboseObject header and remainder of the line"""
-    line_comp = line.split("|")
-    if len(line_comp) < 2:
-        return "", line.strip()
-    else:
-        header = line_comp[0].strip()
-        remainder = "|".join(line_comp[1:]).strip()
-        return header, remainder
-
-    
-    
-def parse_logfile2(fid):
-    """Detailed reader"""
-    steps = []
-    inside_cycle = False
-    
-    for line in fid:
-        header, line = split_header(line)
-        if line.startswith("Cycle ="):
-            inside_cycle = True
-            sline = line.split()
-            cyc = int(sline[2][:-1])
-            time = float(sline[6][:-1])
-            dt = float(sline[10])
-            steps.append(dict(cycle=cyc, time=time, dt=dt, failed=False, nonlinear_solves=list()))
-
-            nonlinear_itr = -1
-            backtracking_total_count = 0
-            backtracking_num_itrs = 0
-            max_backtrack_count = 0
-            error_hist = []
-
-        elif inside_cycle:
-            if line.startswith("Solve succeeded"):
-                solver = dict(nonlinear_iterations=nonlinear_itr,
-                              backtracking_total_count=backtracking_total_count,
-                              backtracking_iterations=backtracking_num_itrs,
-                              backtracking_max_backtracks=max_backtrack_count,
-                              error_history=error_hist,
-                              failed=False)
-                steps[-1]['nonlinear_solves'].append(solver)
-
-            elif line.startswith("Solve failed") or "Solution iterate is not admissible, FAIL" in line:
-                solver = dict(nonlinear_iterations=nonlinear_itr,
-                              backtracking_total_count=backtracking_total_count,
-                              backtracking_iterations=backtracking_num_itrs,
-                              backtracking_max_backtracks=max_backtrack_count,
-                              error_history=error_hist,
-                              failed=True)
-                steps[-1]['nonlinear_solves'].append(solver)
-                steps[-1]['failed'] = True
-
-            elif "error(res)" in line and "L2" not in line:
-                sline = line.split(":")
-                nonlinear_itr = int(sline[0])
-                error_hist.append(float(sline[-1].split()[-1]))
-
-                if "backtrack" in sline[1]:
-                    backtracking_total_count += 1
-                    max_backtrack_count = max(max_backtrack_count, int(sline[1].split()[1]))
-                    error_hist[-1] = float(sline[-1].split()[-1])
-                if sline[1].strip() == "backtrack 1":
-                    backtracking_num_itrs += 1
-    return steps
-                    
-            
-    
-    
-def parse_logfile(fid):
+def parse_logfile(fid, wallclock=False):
     """Reads a file, and returns a list of good and bad timesteps.
 
     Each are a list of 3-tuples: (step number, time of step, dt)
@@ -104,17 +29,6 @@ def parse_logfile(fid):
             data.append([cyc,time,dt])
 
     return np.array(data), np.array(faildata)
-
-
-def float_list_type(mystring):
-    """Convert string-form list of doubles into list of doubles."""
-    colors = []
-    for f in mystring.strip("(").strip(")").strip("[").strip("]").split(","):
-        try:
-            colors.append(float(f))
-        except:
-            colors.append(f)
-    return colors
 
 
 def get_axs():
@@ -154,10 +68,11 @@ if __name__ == "__main__":
     from matplotlib import pyplot as plt
 
     import argparse
-    parser = argparse.ArgumentParser(description="Plot timestep histories from an ATS run logfile.  Store the results in a .npz file for future faster reading.")
+    import colors
+    parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("LOG_FILES", nargs="+", type=str,
                         help="List of logfiles to parse.")
-    parser.add_argument("--colors", "-c", type=float_list_type,
+    parser.add_argument("--colors", "-c", type=cm.float_list_type,
                         default=None,
                         help="List of color indices to use, of the form: --colors=[0,0.1,1], where the doubles are in the range (0,1) and are mapped to a color using the colormap.")
     parser.add_argument("--colormap", "-m", type=str,
@@ -167,7 +82,6 @@ if __name__ == "__main__":
                         help="Do not use any existing .npz file -- instead reload from the logfile and overwrite the .npz file.")
     args = parser.parse_args()
 
-    import colors
     cm = colors.cm_mapper(0,1,args.colormap)
     fig, axs = get_axs()
         
