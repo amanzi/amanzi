@@ -20,8 +20,6 @@
 #include "MeshSurfaceCell.hh"
 #include "GeometricModel.hh"
 
-#include "plant_1D_mesh.hh"
-
 #include "ats_mesh_factory.hh"
 
 namespace ATS {
@@ -186,7 +184,7 @@ createMesh(Teuchos::ParameterList& mesh_plist,
     
     // for each id in the regions of the parent mesh on entity, create a subgrid mesh
     Amanzi::AmanziMesh::Entity_ID_List entities;
-    parent_mesh->get_set_entities(regionname, kind, Amanzi::AmanziMesh::OWNED, &entities);
+    parent_mesh->get_set_entities(regionname, kind, Amanzi::AmanziMesh::Parallel_type::OWNED, &entities);
     const Epetra_Map& map = parent_mesh->map(kind,false);
     
     for (auto lid : entities) {
@@ -216,11 +214,11 @@ createMesh(Teuchos::ParameterList& mesh_plist,
     }
 
   } else if (mesh_type == "Sperry 1D column") {
-    auto mesh = ATS::Testing::plantMesh(comm, gm, true);
-    bool deformable = mesh_plist.get<bool>("deformable mesh",false);
+    // auto mesh = Testing::plantMesh(comm, gm, true);
+    // bool deformable = mesh_plist.get<bool>("deformable mesh",false);
 
-    checkVerifyMesh(mesh_plist, mesh);
-    S.RegisterMesh(Amanzi::Keys::cleanPListName(mesh_plist.name()), mesh, deformable);
+    // checkVerifyMesh(mesh_plist, mesh);
+    // S.RegisterMesh(Amanzi::Keys::cleanPListName(mesh_plist.name()), mesh, deformable);
     
   } else {
     Errors::Message msg;
@@ -317,7 +315,7 @@ createMeshes(Teuchos::ParameterList& global_list,
   if (global_list.isSublist("visualization columns")) {
     auto surface_mesh = S.GetMesh("surface");
     Teuchos::ParameterList& vis_ss_plist = global_list.sublist("visualization columns"); 
-    int nc = surface_mesh->num_entities(Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::OWNED);
+    int nc = surface_mesh->num_entities(Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::Parallel_type::OWNED);
    
     for (int c=0; c!=nc; ++c){
       int id = surface_mesh->cell_map(false).GID(c);
@@ -333,7 +331,7 @@ createMeshes(Teuchos::ParameterList& global_list,
   if (global_list.isSublist("visualization surface cells")) {
     auto surface_mesh = S.GetMesh("surface");
     Teuchos::ParameterList& vis_sf_plist = global_list.sublist("visualization surface cells");
-    int nc = surface_mesh->num_entities(Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::OWNED);
+    int nc = surface_mesh->num_entities(Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::Parallel_type::OWNED);
     for (int c=0; c!=nc; ++c){
       int id = surface_mesh->cell_map(false).GID(c);
       std::stringstream name_ss, name_sf;
