@@ -19,6 +19,36 @@ namespace Amanzi {
 namespace WhetStone {
 
 /* ******************************************************************
+* Integrate over triangulated face a product of polynomials.
+****************************************************************** */
+double NumericalIntegration::IntegratePolynomialsTrianglatedCell(
+    int c, const std::vector<const Polynomial*>& polys, int order) const
+{
+  double integral(0.0);
+
+  if (d_ == 2) {
+    AmanziMesh::Entity_ID_List faces, nodes;
+    mesh_->cell_get_faces(c, &faces);
+    int nfaces = faces.size();
+
+    std::vector<AmanziGeometry::Point> xy(3); 
+    xy[0] = mesh_->cell_centroid(c);
+
+    for (int n = 0; n < nfaces; ++n) {
+      int f = faces[n];
+      mesh_->face_get_nodes(f, &nodes);
+      mesh_->node_get_coordinates(nodes[0], &(xy[1]));
+      mesh_->node_get_coordinates(nodes[1], &(xy[2]));
+
+      integral += IntegratePolynomialsTriangle(xy, polys, order);
+    }
+  }
+
+  return integral;
+}
+
+
+/* ******************************************************************
 * Integrate polynomial over cell c.
 ****************************************************************** */
 double NumericalIntegration::IntegratePolynomialCell(int c, const Polynomial& poly)
@@ -157,17 +187,20 @@ double NumericalIntegration::IntegratePolynomialsEdge(
 
 
 /* ******************************************************************
-* Integrate a product of polynomials that may have * different 
-* origins over a triangle.
+* Integrate a product of polynomials that may have different origins
+* over a triangle.
 ****************************************************************** */
 double NumericalIntegration::IntegratePolynomialsTriangle(
     const std::vector<AmanziGeometry::Point>& xy,
-    const std::vector<const Polynomial*>& polys) const
+    const std::vector<const Polynomial*>& polys, int order) const
 {
-  // minimal quadrature rule
-  int m(0);
-  for (int i = 0; i < polys.size(); ++i) {
-    m += polys[i]->order();
+  // calculate minimal quadrature rule 
+  int m(order);
+  if (m < 0) { 
+    m = 0;
+    for (int i = 0; i < polys.size(); ++i) {
+      m += polys[i]->order();
+    }
   }
   ASSERT(m < 10);
 

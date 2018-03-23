@@ -378,7 +378,7 @@ TEST(DG2D_ADVECTION_MATRIX_CELL) {
     A1 -= A0;
     CHECK_CLOSE(A1.NormInf(), 0.0, 1e-12);
 
-    // TEST2: linear u
+    // TEST2: linear u, method 1
     u[0].monomials(1).coefs()[0] = 1.0;
     u[0].monomials(1).coefs()[1] = 1.0;
     dg.AdvectionMatrix(0, u, A0, false);
@@ -420,7 +420,7 @@ TEST(DG2D_ADVECTION_MATRIX_CELL) {
       CHECK_CLOSE(integral, 1891.0 / 48.0, 1e-12);
     }
 
-    // TEST3: quadratic u
+    // TEST3: quadratic u, method 1
     u[1].monomials(2).coefs()[0] = 1.0;
     dg.AdvectionMatrix(0, u, A0, false);
 

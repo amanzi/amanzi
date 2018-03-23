@@ -17,6 +17,7 @@
 
 #include "DenseMatrix.hh"
 #include "MeshMaps_PEM.hh"
+#include "MeshUtils.hh"
 #include "Polynomial.hh"
 #include "WhetStoneDefs.hh"
 
@@ -35,10 +36,10 @@ void MeshMaps_PEM::VelocityCell(
   AmanziGeometry::Point p(d_), q(d_);
   Tensor T0(d_, d_), T1(d_, d_);
 
-  AmanziGeometry::Point x0 = cell_geometric_center(0, c);
-  AmanziGeometry::Point x1 = cell_geometric_center(1, c);
-  // const AmanziGeometry::Point x0 = mesh0_->cell_centroid(c);
-  // const AmanziGeometry::Point x1 = mesh1_->cell_centroid(c);
+  // AmanziGeometry::Point x0 = cell_geometric_center(*mesh0_, c);
+  // AmanziGeometry::Point x1 = cell_geometric_center(*mesh1_, c);
+  AmanziGeometry::Point x0 = mesh0_->cell_centroid(c);
+  AmanziGeometry::Point x1 = mesh1_->cell_centroid(c);
 
   mesh0_->cell_get_faces(c, &faces);
   int nfaces = faces.size();
@@ -84,7 +85,6 @@ void MeshMaps_PEM::VelocityCell(
 void MeshMaps_PEM::NansonFormula(
     int f, double t, const VectorPolynomial& vf, VectorPolynomial& cn) const
 {
-  AmanziGeometry::Point p(d_);
   WhetStone::Tensor J(d_, 2);
 
   for (int i = 0; i < d_; ++i) {
@@ -95,7 +95,7 @@ void MeshMaps_PEM::NansonFormula(
   J += 1.0;
 
   Tensor C = J.Cofactors();
-  p = C * mesh0_->face_normal(f);
+  AmanziGeometry::Point p = C * mesh0_->face_normal(f);
 
   cn.resize(d_);
   for (int i = 0; i < d_; ++i) {

@@ -16,6 +16,7 @@
 
 #include "DenseMatrix.hh"
 #include "DG_Modal.hh"
+#include "MeshUtils.hh"
 #include "Polynomial.hh"
 #include "VectorPolynomial.hh"
 #include "WhetStoneDefs.hh"
@@ -191,9 +192,10 @@ int DG_Modal::MassMatrixPiecewisePoly_(
   M.PutScalar(0.0);
 
   std::vector<const Polynomial*> polys(3);
-  std::vector<AmanziGeometry::Point> xy(3); 
 
-  xy[0] = xc;
+  std::vector<AmanziGeometry::Point> xy(3); 
+  // xy[0] = cell_geometric_center(*mesh_, c);
+  xy[0] = mesh_->cell_centroid(c);
 
   for (auto it = p.begin(); it.end() <= p.end(); ++it) {
     int k = it.PolynomialPosition();
@@ -402,7 +404,7 @@ int DG_Modal::AdvectionMatrixPiecewisePoly_(
   const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
   double volume = mesh_->cell_volume(c);
 
-  // rebase the velocity polynomial
+  // rebase the velocity polynomial (due to dot-product)
   VectorPolynomial ucopy(u);
   for (int i = 0; i < u.size(); ++i) {
     ucopy[i].ChangeOrigin(xc);
@@ -417,9 +419,10 @@ int DG_Modal::AdvectionMatrixPiecewisePoly_(
   A.PutScalar(0.0);
 
   std::vector<const Polynomial*> polys(2);
-  std::vector<AmanziGeometry::Point> xy(3); 
 
-  xy[0] = xc;
+  std::vector<AmanziGeometry::Point> xy(3); 
+  // xy[0] = cell_geometric_center(*mesh_, c);
+  xy[0] = mesh_->cell_centroid(c);
 
   for (auto it = p.begin(); it.end() <= p.end(); ++it) {
     int k = it.PolynomialPosition();

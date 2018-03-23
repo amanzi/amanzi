@@ -380,9 +380,6 @@ void RemapTestsDualRK(int order_p, int order_u,
 
   int ncells_owned = mesh0->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
   int ncells_wghost = mesh0->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
-  int nfaces_owned = mesh0->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
-  int nfaces_wghost = mesh0->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
-  int nnodes_owned = mesh0->num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::OWNED);
   int nnodes_wghost = mesh0->num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::ALL);
 
   // create second and auxiliary mesh
@@ -398,7 +395,7 @@ void RemapTestsDualRK(int order_p, int order_u,
 
   // deform the second mesh
   AmanziGeometry::Point xv(dim), yv(dim), xref(dim), uv(dim);
-  Entity_ID_List nodeids, faces;
+  Entity_ID_List nodeids;
   AmanziGeometry::Point_List new_positions, final_positions;
 
   for (int v = 0; v < nnodes_wghost; ++v) {
@@ -419,10 +416,10 @@ void RemapTestsDualRK(int order_p, int order_u,
       }
       xv += uv * ds;
     }
-    /*
     xv[0] = yv[0] * yv[1] + (1.0 - yv[1]) * std::pow(yv[0], 0.8);
     xv[1] = yv[1] * yv[0] + (1.0 - yv[0]) * std::pow(yv[1], 0.8);
 
+    /*
     for (int i = 0; i < 2; ++i) {
       xv[i] = yv[i];
       if (xv[i] > 0.01 && xv[i] < 0.99) 
@@ -633,7 +630,25 @@ void RemapTestsDualRK(int order_p, int order_u,
     double mass1_c;
     auto& jac = remap.jac();
     if (maps_name == "PEM") {
+      AmanziMesh::Entity_ID_List faces, nodes;
+      mesh0->cell_get_faces(c, &faces);
+      int nfaces = faces.size();
+
+      std::vector<AmanziGeometry::Point> xy(3);
+      xy[0] = mesh0->cell_centroid(c);
+
       mass1_c = 0.0;
+      for (int n = 0; n < nfaces; ++n) {
+        int f = faces[n];
+        mesh0->face_get_nodes(f, &nodes);
+        mesh0->node_get_coordinates(nodes[0], &(xy[1]));
+        mesh0->node_get_coordinates(nodes[1], &(xy[2]));
+
+        std::vector<const WhetStone::Polynomial*> polys(2);
+        polys[0] = &(*jac)[c][n];
+        polys[1] = &poly;
+        mass1_c += numi.IntegratePolynomialsTriangle(xy, polys);
+      }
     } else {
       WhetStone::Polynomial tmp((*jac)[c][0]);
       tmp.ChangeOrigin(mesh0->cell_centroid(c));
@@ -720,7 +735,6 @@ void RemapTestsDualRK(int order_p, int order_u,
   }
 }
 
-
 /*
 TEST(REMAP_DUAL_FEM) {
   RemapTestsDualRK(0,1, Amanzi::Explicit_TI::heun_euler, "dg modal", "FEM", "", 10,10,0, 0.1);
@@ -744,27 +758,28 @@ TEST(REMAP2D_DG_QUADRATURE_ERROR) {
   RemapTestsDualRK(1,1, Amanzi::Explicit_TI::tvd_3rd_order, "VEM", "", 128,128,0, 0.05 / 8);
   RemapTestsDualRK(1,1, Amanzi::Explicit_TI::tvd_3rd_order, "VEM", "", 256,256,0, 0.05 / 16);
 } 
-*/
 
-/*
 TEST(REMAP2D_DG_QUADRATURE_ERROR) {
-  RemapTestsDualRK(2,1, Amanzi::Explicit_TI::tvd_3rd_order, "PEM", "test/median15x16.exo", 16,0,0, 0.05);
-  RemapTestsDualRK(2,1, Amanzi::Explicit_TI::tvd_3rd_order, "PEM", "test/median32x33.exo", 32,0,0, 0.05 / 2);
-  RemapTestsDualRK(2,1, Amanzi::Explicit_TI::tvd_3rd_order, "PEM", "test/median63x64.exo", 64,0,0, 0.05 / 4);
-  RemapTestsDualRK(2,1, Amanzi::Explicit_TI::tvd_3rd_order, "PEM", "test/median127x128.exo", 128,0,0, 0.05 / 8);
-  RemapTestsDualRK(2,1, Amanzi::Explicit_TI::tvd_3rd_order, "PEM", "test/median255x256.exo", 256,0,0, 0.05 / 16);
+  RemapTestsDualRK(1,1, Amanzi::Explicit_TI::tvd_3rd_order, "PEM", "test/median15x16.exo", 16,0,0, 0.05);
+  RemapTestsDualRK(1,1, Amanzi::Explicit_TI::tvd_3rd_order, "PEM", "test/median32x33.exo", 32,0,0, 0.05 / 2);
+  RemapTestsDualRK(1,1, Amanzi::Explicit_TI::tvd_3rd_order, "PEM", "test/median63x64.exo", 64,0,0, 0.05 / 4);
+  RemapTestsDualRK(1,1, Amanzi::Explicit_TI::tvd_3rd_order, "PEM", "test/median127x128.exo", 128,0,0, 0.05 / 8);
+  RemapTestsDualRK(1,1, Amanzi::Explicit_TI::tvd_3rd_order, "PEM", "test/median255x256.exo", 256,0,0, 0.05 / 16);
 }
-*/
 
-/*
 TEST(REMAP2D_DG_QUADRATURE_ERROR) {
-  RemapTestsDualRK(2,1, Amanzi::Explicit_TI::tvd_3rd_order, "PEM", "test/random10.exo", 0,0,0, 0.05);
-  RemapTestsDualRK(2,1, Amanzi::Explicit_TI::tvd_3rd_order, "PEM", "test/random20.exo", 0,0,0, 0.05 / 2);
-  RemapTestsDualRK(2,1, Amanzi::Explicit_TI::tvd_3rd_order, "PEM", "test/random40.exo", 0,0,0, 0.05 / 4);
+  RemapTestsDualRK(1,1, Amanzi::Explicit_TI::tvd_3rd_order, "PEM", "test/mesh_poly20x20.exo", 20,0,0, 0.05);
+  RemapTestsDualRK(1,1, Amanzi::Explicit_TI::tvd_3rd_order, "PEM", "test/mesh_poly40x40.exo", 40,0,0, 0.05 / 2);
+  RemapTestsDualRK(1,1, Amanzi::Explicit_TI::tvd_3rd_order, "PEM", "test/mesh_poly80x80.exo", 80,0,0, 0.05 / 4);
+  RemapTestsDualRK(1,1, Amanzi::Explicit_TI::tvd_3rd_order, "PEM", "test/mesh_poly160x160.exo", 160,0,0, 0.05 / 8);
 }
-*/
 
-/*
+TEST(REMAP2D_DG_QUADRATURE_ERROR) {
+  RemapTestsDualRK(2,1, Amanzi::Explicit_TI::tvd_3rd_order, "PEM", "test/random10.exo", 10,0,0, 0.05);
+  RemapTestsDualRK(2,1, Amanzi::Explicit_TI::tvd_3rd_order, "PEM", "test/random20.exo", 20,0,0, 0.05 / 2);
+  RemapTestsDualRK(2,1, Amanzi::Explicit_TI::tvd_3rd_order, "PEM", "test/random40.exo", 40,0,0, 0.05 / 4);
+}
+
 TEST(REMAP2D_DG_QUADRATURE_ERROR) {
   RemapTestsDualRK(2,1, Amanzi::Explicit_TI::tvd_3rd_order, "PEM", "test/triangular8.exo", 0,0,0, 0.025);
   RemapTestsDualRK(2,1, Amanzi::Explicit_TI::tvd_3rd_order, "PEM", "test/triangular16.exo", 0,0,0, 0.025 / 2);

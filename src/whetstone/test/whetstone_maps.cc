@@ -80,7 +80,7 @@ TEST(DG_MAP_DETERMINANT_CELL) {
 
   // cell-baced velocities and Jacobian matrices
   // test piecewise linear deformation (part II)
-  Polynomial det;
+  VectorPolynomial det;
   VectorPolynomial uc;
   MatrixPolynomial J;
 
@@ -114,7 +114,7 @@ TEST(DG_MAP_DETERMINANT_CELL) {
       maps->Jacobian(uc, J);
       maps->Determinant(1.0, J, det);
 
-      double tmp = numi->IntegratePolynomialCell(cell, det);
+      double tmp = numi->IntegratePolynomialCell(cell, det[0]);
       double err = tmp - volume;
       fac /= (k + 1);
       CHECK(fabs(err) < fac);

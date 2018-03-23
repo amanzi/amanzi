@@ -39,6 +39,10 @@ class NumericalIntegration {
 
   // main methods
   // integrate product of polynomials with potentialy different origins
+  // -- automatically calculate quadrature order if order < 0 
+  double IntegratePolynomialsTrianglatedCell(
+      int c, const std::vector<const Polynomial*>& polys, int order = -1) const;
+
   double IntegratePolynomialsFace(
       int f, const std::vector<const Polynomial*>& polys) const;
 
@@ -46,9 +50,16 @@ class NumericalIntegration {
       const AmanziGeometry::Point& x1, const AmanziGeometry::Point& x2,
       const std::vector<const Polynomial*>& polys) const;
 
+  // -- automatically calculate quadrature order if order < 0
   double IntegratePolynomialsTriangle(
       const std::vector<AmanziGeometry::Point>& xy,
-      const std::vector<const Polynomial*>& polys) const;
+      const std::vector<const Polynomial*>& polys, int order = -1) const;
+
+  double IntegratePolynomialsTriangle(
+      const std::vector<AmanziGeometry::Point>& xy, const Polynomial& poly) const {
+    const std::vector<const Polynomial*> polys(1, &poly);
+    return IntegratePolynomialsTriangle(xy, polys);
+  }
 
   // integrate group of monomials 
   void IntegrateMonomialsCell(int c, Monomial& monomials);
@@ -58,8 +69,8 @@ class NumericalIntegration {
   double IntegratePolynomialCell(int c, const Polynomial& poly);
 
   double IntegratePolynomialFace(int f, const Polynomial& poly) const {
-      const std::vector<const Polynomial*> polys(1, &poly);
-      return IntegratePolynomialsFace(f, polys);
+    const std::vector<const Polynomial*> polys(1, &poly);
+    return IntegratePolynomialsFace(f, polys);
   }
 
   double IntegratePolynomialEdge(
@@ -71,9 +82,6 @@ class NumericalIntegration {
 
   // various bounds
   double PolynomialMaxValue(int f, const Polynomial& poly);
-
-  // miscalleneous: order is not used yet
-  void set_order(int order) { order_ = order; }
 
   // natural scaling of monomials (e.g. x^k / h^k)
   // -- scaling factor is constant for monomial of the same order
@@ -91,7 +99,7 @@ class NumericalIntegration {
 
  private:
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
-  int order_, d_;
+  int d_;
 };
 
 }  // namespace WhetStone

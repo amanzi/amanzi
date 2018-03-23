@@ -29,6 +29,7 @@
 #include "MeshFactory.hh"
 #include "MeshMaps_FEM.hh"
 #include "MeshMaps_VEM.hh"
+#include "MeshUtils.hh"
 #include "Tensor.hh"
 #include "WhetStone_typedefs.hh"
 
@@ -304,7 +305,7 @@ void RemapTests2DPrimal(int order, std::string disc_name,
   double mass1(0.0);
   double pl2_err(0.0), pinf_err(0.0), area(0.0);
   for (int c = 0; c < ncells_owned; ++c) {
-    const AmanziGeometry::Point& xg = maps->cell_geometric_center(1, c);
+    AmanziGeometry::Point xg = WhetStone::cell_geometric_center(*mesh1, c);
     double area_c = mesh1->cell_volume(c);
 
     double tmp = p2c[0][c] - std::sin(3 * xg[0]) * std::sin(6 * xg[1]);

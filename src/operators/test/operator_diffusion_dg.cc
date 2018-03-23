@@ -51,7 +51,7 @@ TEST(OPERATOR_DIFFUSION_DG) {
   Epetra_MpiComm comm(MPI_COMM_WORLD);
   int MyPID = comm.MyPID();
 
-  if (MyPID == 0) std::cout << "\nTest: 2D elliptic solver, discontinuous Galerkin" << std::endl;
+  if (MyPID == 0) std::cout << "\nTest: 2D elliptic problem, discontinuous Galerkin" << std::endl;
 
   // read parameter list
   std::string xmlFileName = "test/operator_diffusion.xml";
