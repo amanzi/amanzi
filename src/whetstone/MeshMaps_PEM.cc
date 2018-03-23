@@ -24,7 +24,7 @@ namespace Amanzi {
 namespace WhetStone {
 
 /* ******************************************************************
-* Calculate mesh velocity in cell c. 
+* Calculate piecewise polynomial mesh velocity in cell c. 
 ****************************************************************** */
 void MeshMaps_PEM::VelocityCell(
     int c, const std::vector<VectorPolynomial>& vf, VectorPolynomial& vc) const
@@ -35,8 +35,10 @@ void MeshMaps_PEM::VelocityCell(
   AmanziGeometry::Point p(d_), q(d_);
   Tensor T0(d_, d_), T1(d_, d_);
 
-  const AmanziGeometry::Point& x0 = cell_geometric_center(0, c);
-  const AmanziGeometry::Point& x1 = cell_geometric_center(1, c);
+  AmanziGeometry::Point x0 = cell_geometric_center(0, c);
+  AmanziGeometry::Point x1 = cell_geometric_center(1, c);
+  // const AmanziGeometry::Point x0 = mesh0_->cell_centroid(c);
+  // const AmanziGeometry::Point x1 = mesh1_->cell_centroid(c);
 
   mesh0_->cell_get_faces(c, &faces);
   int nfaces = faces.size();
@@ -90,7 +92,7 @@ void MeshMaps_PEM::NansonFormula(
       J(i, j) = t * vf[i](1, j);
     }
   }
-  J += 1.0 - t;
+  J += 1.0;
 
   Tensor C = J.Cofactors();
   p = C * mesh0_->face_normal(f);

@@ -172,7 +172,7 @@ double NumericalIntegration::IntegratePolynomialsTriangle(
   ASSERT(m < 10);
 
   int n1 = q2d_order[m][1];
-  int n2 = q2d_order[m][1] + q2d_order[m][0];
+  int n2 = n1 + q2d_order[m][0];
 
   AmanziGeometry::Point ym(d_);
   AmanziGeometry::Point y1 = xy[1] - xy[0];
@@ -190,7 +190,7 @@ double NumericalIntegration::IntegratePolynomialsTriangle(
   }
 
   ym = y1^y2;
-  double area = ym[0] / 2;
+  double area = std::fabs(ym[0] / 2);
 
   return integral * area;
 }

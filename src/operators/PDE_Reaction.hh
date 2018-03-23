@@ -19,7 +19,7 @@
 #include "Epetra_MultiVector.h"
 
 // Amanzi
-#include "Polynomial.hh"
+#include "VectorPolynomial.hh"
 
 // Amanzi::Operators
 #include "PDE_HelperDiscretization.hh"
@@ -43,8 +43,8 @@ class PDE_Reaction : public PDE_HelperDiscretization {
 
   // required members 
   // -- setup
-  virtual void Setup(Teuchos::RCP<Epetra_MultiVector>& K) { K_ = K; }
-  virtual void Setup(Teuchos::RCP<std::vector<WhetStone::Polynomial> >& poly) { poly_ = poly; }
+  void Setup(Teuchos::RCP<Epetra_MultiVector>& K) { K_ = K; }
+  void Setup(Teuchos::RCP<std::vector<WhetStone::VectorPolynomial> >& poly) { poly_ = poly; }
   // -- generate a linearized operator 
   using PDE_HelperDiscretization::UpdateMatrices;
   virtual void UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& u,
@@ -61,7 +61,7 @@ class PDE_Reaction : public PDE_HelperDiscretization {
 
  protected:
   Teuchos::RCP<const Epetra_MultiVector> K_;
-  Teuchos::RCP<const std::vector<WhetStone::Polynomial> > poly_;
+  Teuchos::RCP<const std::vector<WhetStone::VectorPolynomial> > poly_;
 
   int method_order_;
 

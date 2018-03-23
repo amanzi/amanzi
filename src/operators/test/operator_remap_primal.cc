@@ -232,8 +232,8 @@ void RemapTests2DPrimal(int order, std::string disc_name,
   Teuchos::RCP<PDE_Reaction> op_reac = Teuchos::rcp(new PDE_Reaction(plist, mesh0));
   auto global_reac = op_reac->global_operator();
 
-  Teuchos::RCP<std::vector<WhetStone::Polynomial> > jac = 
-     Teuchos::rcp(new std::vector<WhetStone::Polynomial>(ncells_owned));
+  Teuchos::RCP<std::vector<WhetStone::VectorPolynomial> > jac = 
+     Teuchos::rcp(new std::vector<WhetStone::VectorPolynomial>(ncells_owned));
 
   op_reac->Setup(jac);
 

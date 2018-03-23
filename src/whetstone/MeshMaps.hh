@@ -69,7 +69,7 @@ class MeshMaps {
   void Cofactors(double t, const MatrixPolynomial& J, MatrixPolynomial& C) const;
 
   // -- determinant
-  void Determinant(double t, const MatrixPolynomial& J, Polynomial& det) const;
+  void Determinant(double t, const MatrixPolynomial& J, VectorPolynomial& det) const;
 
   // Miscalleneous
   // -- projection ffrom reference coordinates (mesh0) to mesh1

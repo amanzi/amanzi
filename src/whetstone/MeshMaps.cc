@@ -60,19 +60,21 @@ void MeshMaps::VelocityFace(int f, VectorPolynomial& v) const
 
 
 /* ******************************************************************
-* Calculation of Jacobian
+* Calculation of Jacobian.
+* Multiple velocities are packed in a rectagular matrix.
 ****************************************************************** */
 void MeshMaps::Jacobian(const VectorPolynomial& vc, MatrixPolynomial& J) const
 {
   // allocate memory
-  J.resize(d_);
-  for (int i = 0; i < d_; ++i) {
+  int nvc = vc.size();
+  J.resize(nvc);
+  for (int i = 0; i < nvc; ++i) {
     J[i].resize(d_);
   }
 
   // copy velocity gradients to Jacobian
   VectorPolynomial tmp(d_, 0);
-  for (int i = 0; i < d_; ++i) {
+  for (int i = 0; i < nvc; ++i) {
     tmp.Gradient(vc[i]);
     for (int j = 0; j < d_; ++j) {
       J[i][j] = tmp[j];
@@ -82,76 +84,96 @@ void MeshMaps::Jacobian(const VectorPolynomial& vc, MatrixPolynomial& J) const
 
 
 /* ******************************************************************
-* Calculation of matrix of cofactors
+* Calculation of matrix of cofactors.
+* Multiple cofactors are packed in a rectagular matrix.
 ****************************************************************** */
 void MeshMaps::Cofactors(
     double t, const MatrixPolynomial& J, MatrixPolynomial& C) const
 {
   // allocate memory for matrix of cofactors
-  C.resize(d_);
-  for (int i = 0; i < d_; ++i) {
+  int nJ = J.size();
+  C.resize(nJ);
+  for (int i = 0; i < nJ; ++i) {
     C[i].resize(d_);
   }
 
   // calculate cofactors
-  if (d_ == 2) {
-    C[1][1] = J[0][0];
-    C[1][0] = J[0][1];
-    C[1][0] *= -1.0;
+  int kJ = nJ / d_;
+  for (int n = 0; n < kJ; ++n) {
+    int m0 = n * d_;
+    int m1 = m0 + 1;
+    if (d_ == 2) {
+      C[m1][1] = J[m0][0];
+      C[m1][0] = J[m0][1];
+      C[m1][0] *= -1.0;
 
-    C[0][0] = J[1][1];
-    C[0][1] = J[1][0];
-    C[0][1] *= -1.0;
-  }
-  else if (d_ == 3) {
-    C[0][0] = J[1][1] * J[2][2] - J[2][1] * J[1][2];
-    C[1][0] = J[2][1] * J[0][2] - J[0][1] * J[2][2];
-    C[2][0] = J[0][1] * J[1][2] - J[1][1] * J[0][2];
+      C[m0][0] = J[m1][1];
+      C[m0][1] = J[m1][0];
+      C[m0][1] *= -1.0;
+    }
+    else if (d_ == 3) {
+      int m2 = m0 + 2;
+      C[m0][0] = J[m1][1] * J[m2][2] - J[m2][1] * J[m1][2];
+      C[m1][0] = J[m2][1] * J[m0][2] - J[m0][1] * J[m2][2];
+      C[m2][0] = J[m0][1] * J[m1][2] - J[m1][1] * J[m0][2];
 
-    C[0][1] = J[2][0] * J[1][2] - J[1][0] * J[2][2];
-    C[1][1] = J[0][0] * J[2][2] - J[2][0] * J[0][2];
-    C[2][1] = J[1][0] * J[0][2] - J[0][0] * J[1][2];
+      C[m0][1] = J[m2][0] * J[m1][2] - J[m1][0] * J[m2][2];
+      C[m1][1] = J[m0][0] * J[m2][2] - J[m2][0] * J[m0][2];
+      C[m2][1] = J[m1][0] * J[m0][2] - J[m0][0] * J[m1][2];
 
-    C[0][2] = J[1][0] * J[2][1] - J[2][0] * J[1][1];
-    C[1][2] = J[2][0] * J[0][1] - J[0][0] * J[2][1];
-    C[2][2] = J[0][0] * J[1][1] - J[1][0] * J[0][1];
+      C[m0][2] = J[m1][0] * J[m2][1] - J[m2][0] * J[m1][1];
+      C[m1][2] = J[m2][0] * J[m0][1] - J[m0][0] * J[m2][1];
+      C[m2][2] = J[m0][0] * J[m1][1] - J[m1][0] * J[m0][1];
+    }
   }
 
   // add time dependence
-  for (int i = 0; i < d_; ++i) {
+  for (int i = 0; i < nJ; ++i) {
     for (int j = 0; j < d_; ++j) {
       C[i][j] *= t;
     }
-    C[i][i](0, 0) += 1.0;
+    C[i][i % d_](0, 0) += 1.0;
   }
 }
 
 
 /* ******************************************************************
-* Calculate detminant at time t
+* Calculate detminant at time t.
+* Multiple determinatds are packed in a vector.
 ****************************************************************** */
 void MeshMaps::Determinant(
-   double t, const MatrixPolynomial& J, Polynomial& det) const
+   double t, const MatrixPolynomial& J, VectorPolynomial& det) const
 {
-  auto Jt = J;
+  int ndet = J.size() / d_;
+  det.resize(ndet);
 
+  MatrixPolynomial Jt;
+  Jt.resize(d_);
   for (int i = 0; i < d_; ++i) {
-    for (int j = 0; j < d_; ++j) {
-      Jt[i][j] *= t;
-    }
-    Jt[i][i](0, 0) += 1.0;
+    Jt[i].resize(d_);
   }
 
-  if (d_ == 2) {
-    det = Jt[0][0]* Jt[1][1] - Jt[0][1] * Jt[1][0];
-  }
-  else if (d_ == 3) {
-    det = Jt[0][0] * Jt[1][1] * Jt[2][2] 
-        + Jt[2][0] * Jt[0][1] * Jt[1][2] 
-        + Jt[1][0] * Jt[2][1] * Jt[0][2] 
-        - Jt[2][0] * Jt[1][1] * Jt[0][2] 
-        - Jt[1][0] * Jt[0][1] * Jt[2][2] 
-        - Jt[0][0] * Jt[2][1] * Jt[1][2]; 
+  for (int n = 0; n < ndet; ++n) {
+    int m = n * d_;
+    for (int i = 0; i < d_; ++i) {
+      for (int j = 0; j < d_; ++j) {
+        Jt[i][j] = J[m + i][j] * t;
+      }
+      Jt[i][i](0, 0) += 1.0;
+    }
+
+    if (d_ == 2) {
+      det[n] = Jt[0][0] * Jt[1][1] - Jt[0][1] * Jt[1][0];
+if(det[n](0,0) < 0.0) { std::cout << det[n] << "\n"; exit(0); }
+    }
+    else if (d_ == 3) {
+      det[n] = Jt[0][0] * Jt[1][1] * Jt[2][2] 
+             + Jt[2][0] * Jt[0][1] * Jt[1][2] 
+             + Jt[1][0] * Jt[2][1] * Jt[0][2] 
+             - Jt[2][0] * Jt[1][1] * Jt[0][2] 
+             - Jt[1][0] * Jt[0][1] * Jt[2][2] 
+             - Jt[0][0] * Jt[2][1] * Jt[1][2]; 
+    }
   }
 }
 
