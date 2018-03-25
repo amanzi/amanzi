@@ -62,6 +62,7 @@ Operator_Factory::Create() {
       Exceptions::amanzi_throw(msg);
     }
   }
+  return Teuchos::null;
 }
 
 }  // namespace Operators
