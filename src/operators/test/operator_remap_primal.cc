@@ -27,8 +27,7 @@
 #include "LinearOperatorPCG.hh"
 #include "Mesh.hh"
 #include "MeshFactory.hh"
-#include "MeshMaps_FEM.hh"
-#include "MeshMaps_VEM.hh"
+#include "MeshMapsFactory.hh"
 #include "MeshUtils.hh"
 #include "Tensor.hh"
 #include "WhetStone_typedefs.hh"
@@ -103,19 +102,14 @@ void RemapTests2DPrimal(int order, std::string disc_name,
   mesh1->deform(nodeids, new_positions, false, &final_positions);
 
   // little factory of mesh maps
-  std::shared_ptr<WhetStone::MeshMaps> maps;
   Teuchos::ParameterList map_list;
   map_list.set<std::string>("method", "CrouzeixRaviart")
           .set<int>("method order", order + 1)
-          .set<std::string>("projector", "H1 harmonic");
+          .set<std::string>("projector", "H1 harmonic")
+          .set<std::string>("map name", maps_name);
 
-  if (maps_name == "FEM") {
-    maps = std::make_shared<WhetStone::MeshMaps_FEM>(mesh0, mesh1);
-  } else if (maps_name == "VEM") {
-    std::shared_ptr<WhetStone::MeshMaps_VEM> maps_vem;
-    maps_vem = std::make_shared<WhetStone::MeshMaps_VEM>(mesh0, mesh1, map_list);
-    maps = maps_vem;
-  }
+  WhetStone::MeshMapsFactory maps_factory;
+  auto maps = maps_factory.Create(map_list, mesh0, mesh1);
 
   // numerical integration
   WhetStone::NumericalIntegration numi(mesh0);
