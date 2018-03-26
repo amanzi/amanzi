@@ -33,8 +33,8 @@
 #include "VectorPolynomial.hh"
 
 // Operators
+#include "AnalyticDG00.hh"
 #include "AnalyticDG01.hh"
-#include "AnalyticDG02.hh"
 
 #include "OperatorAudit.hh"
 #include "OperatorDefs.hh"
@@ -69,7 +69,8 @@ TEST(OPERATOR_ADVECTION_DG) {
 
   MeshFactory meshfactory(&comm);
   meshfactory.preference(FrameworkPreference({MSTK,STKMESH}));
-  RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 20, 20, gm);
+  // RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 10, 10, gm);
+  RCP<const Mesh> mesh = meshfactory("test/median7x8.exo", gm, true, true);
 
   int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
   int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
@@ -94,7 +95,7 @@ TEST(OPERATOR_ADVECTION_DG) {
   auto op_reac = Teuchos::rcp(new PDE_Reaction(op_list, global_op));
 
   // populate problem data
-  AnalyticDG01 ana(mesh, 1);
+  AnalyticDG00 ana(mesh, 1);
 
   // -- reaction coefficient
   auto cvs = Teuchos::rcp(new CompositeVectorSpace());
@@ -229,8 +230,7 @@ TEST(OPERATOR_ADVECTION_DG) {
 
   if (MyPID == 0) {
     printf("L2(p)=%9.6f  Inf(p)=%9.6f  itr=%3d\n", pl2_err, pinf_err, solver.num_itrs());
-
-    CHECK(pl2_err < 3e-2);
+    CHECK(pl2_err < 1e-10);
   }
 }
 

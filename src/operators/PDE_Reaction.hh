@@ -19,6 +19,7 @@
 #include "Epetra_MultiVector.h"
 
 // Amanzi
+#include "BilinearForm.hh"
 #include "VectorPolynomial.hh"
 
 // Amanzi::Operators
@@ -64,7 +65,7 @@ class PDE_Reaction : public PDE_HelperDiscretization {
   Teuchos::RCP<const Epetra_MultiVector> K_;
   Teuchos::RCP<const std::vector<WhetStone::VectorPolynomial> > poly_;
 
-  int method_order_;
+  Teuchos::RCP<WhetStone::BilinearForm> mfd_;
 
  private:
   Schema global_schema_col_, global_schema_row_;

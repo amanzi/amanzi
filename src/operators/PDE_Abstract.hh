@@ -26,6 +26,7 @@
 #include <vector>
 
 // Amanzi
+#include "BilinearForm.hh"
 #include "Polynomial.hh"
 #include "Tensor.hh"
 #include "VectorPolynomial.hh"
@@ -77,9 +78,10 @@ class PDE_Abstract : public PDE_HelperDiscretization {
   void Init_(Teuchos::ParameterList& plist);
 
  private:
-  std::string method_, matrix_;
-  int method_order_;
+  std::string matrix_;
   bool grad_on_test_;
+
+  Teuchos::RCP<WhetStone::BilinearForm> mfd_;
 };
 
 }  // namespace Operators

@@ -11,8 +11,7 @@
 
 #include <vector>
 
-#include "DG_Modal.hh"
-#include "MFD3D_BernardiRaugel.hh"
+#include "MFD3DFactory.hh"
 
 #include "OperatorDefs.hh"
 #include "Operator_Schema.hh"
@@ -83,17 +82,20 @@ void PDE_AdvectionRiemann::InitAdvection_(Teuchos::ParameterList& plist)
   // register the advection Op
   global_op_->OpPushBack(local_op_);
 
-  // parameters
+  // parse discretization parameters
   // -- discretization method
-  method_ = plist.get<std::string>("method");
-  method_order_ = plist.get<int>("method order", 0);
+  WhetStone::MFD3DFactory factory;
+  auto mfd = factory.Create(mesh_, plist);
+
+  // -- matrices to build
   matrix_ = plist.get<std::string>("matrix type");
 
-  if (method_ == "dg modal") {
+  if (factory.method() == "dg modal") {
     space_col_ = DG;
+    dg_ = Teuchos::rcp_dynamic_cast<WhetStone::DG_Modal>(mfd);
   } else {
     Errors::Message msg;
-    msg << "Advection operator method \"" << method_ << "\" is invalid.";
+    msg << "Advection operator: method \"" << method_ << "\" is invalid.";
     Exceptions::amanzi_throw(msg);
   }
 
@@ -121,22 +123,18 @@ void PDE_AdvectionRiemann::UpdateMatrices(
 
   WhetStone::DenseMatrix Aface;
 
-  if (method_ == "dg modal" && matrix_ == "flux" && flux_ == "upwind") {
-    WhetStone::DG_Modal dg(mesh_);
-    dg.set_order(method_order_);
+  if (matrix_ == "flux" && flux_ == "upwind") {
     for (int f = 0; f < nfaces_owned; ++f) {
-      dg.FluxMatrixUpwind(f, (*u)[f], Aface, jump_on_test_);
+      dg_->FluxMatrixUpwind(f, (*u)[f], Aface, jump_on_test_);
       matrix[f] = Aface;
     }
-  } else if (method_ == "dg modal" && matrix_ == "flux" && flux_ == "Rusanov") {
-    WhetStone::DG_Modal dg(mesh_);
-    dg.set_order(method_order_);
+  } else if (matrix_ == "flux" && flux_ == "Rusanov") {
     AmanziMesh::Entity_ID_List cells;
     for (int f = 0; f < nfaces_owned; ++f) {
       mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
       int c1 = cells[0];
       int c2 = (cells.size() == 2) ? cells[1] : c1;
-      dg.FluxMatrixRusanov(f, (*Kc_)[c1], (*Kc_)[c2], (*Kf_)[f], Aface);
+      dg_->FluxMatrixRusanov(f, (*Kc_)[c1], (*Kc_)[c2], (*Kf_)[f], Aface);
       matrix[f] = Aface;
     }
   }

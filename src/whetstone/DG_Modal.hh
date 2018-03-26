@@ -42,14 +42,14 @@ class DG_Modal : public BilinearForm {
     : numi_(mesh),
       mesh_(mesh),
       order_(-1),
-      basis_(TAYLOR_BASIS_NORMALIZED_ORTHO),
+      basis_(-1),
       d_(mesh_->space_dimension()) {};
 
   DG_Modal(int order, Teuchos::RCP<const AmanziMesh::Mesh> mesh)
     : numi_(mesh),
       order_(order), 
       mesh_(mesh),
-      basis_(TAYLOR_BASIS_NORMALIZED_ORTHO),
+      basis_(-1),
       d_(mesh_->space_dimension()) {};
 
   ~DG_Modal() {};

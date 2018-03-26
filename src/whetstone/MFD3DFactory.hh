@@ -15,6 +15,7 @@
 #ifndef AMANZI_MFD3D_FACTORY_HH_
 #define AMANZI_MFD3D_FACTORY_HH_
 
+#include "Teuchos_ParameterList.hpp"
 #include "Teuchos_RCP.hpp"
 
 #include "Mesh.hh"
@@ -39,10 +40,16 @@ class MFD3DFactory {
 
   // select numerical scheme using its name and order 
   Teuchos::RCP<BilinearForm> Create(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
-                                    const std::string& method, int method_order);
+                                    const Teuchos::ParameterList& plist);
 
   Teuchos::RCP<MFD3D> CreateMFD3D(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
                                   const std::string& method, int method_order);
+
+  // access
+  const std::string& method() const { return method_; } 
+
+ private:
+  std::string method_;
 };
 
 
@@ -52,15 +59,28 @@ class MFD3DFactory {
 inline
 Teuchos::RCP<BilinearForm> MFD3DFactory::Create(
     const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
-    const std::string& method, int method_order)
+    const Teuchos::ParameterList& plist)
 {
-  auto mfd = CreateMFD3D(mesh, method, method_order);
+  method_ = plist.get<std::string>("method");
+  int method_order = plist.get<int>("method order");
+
+  auto mfd = CreateMFD3D(mesh, method_, method_order);
 
   if (mfd != Teuchos::null) {
     return mfd;
-  } else if (method == "dg modal") {
+  } else if (method_ == "dg modal") {
     Teuchos::RCP<DG_Modal> mfd = Teuchos::rcp(new DG_Modal(mesh));
     mfd->set_order(method_order);
+
+    std::string name = plist.get<std::string>("dg basis");
+    if (name == "natural") {
+      mfd->set_basis(TAYLOR_BASIS_NATURAL);
+    } else if (name == "partially orthonormalized") {
+      mfd->set_basis(TAYLOR_BASIS_NORMALIZED_ORTHO);
+    } else {
+      ASSERT(false);
+    }
+
     return mfd;
   }
 

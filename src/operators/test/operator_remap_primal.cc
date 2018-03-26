@@ -122,6 +122,7 @@ void RemapTests2DPrimal(int order, std::string disc_name,
 
   // we need dg to compute scaling of basis functions
   WhetStone::DG_Modal dg(order, mesh0);
+  dg.set_basis(WhetStone::TAYLOR_BASIS_NORMALIZED_ORTHO);
 
   AnalyticDG04 ana(mesh0, order);
 
@@ -184,6 +185,7 @@ void RemapTests2DPrimal(int order, std::string disc_name,
   // create flux operator
   Teuchos::ParameterList plist;
   plist.set<std::string>("method", disc_name)
+       .set<std::string>("dg basis", "partially orthonormalized")
        .set<std::string>("matrix type", "flux")
        .set<std::string>("flux formula", "upwind")
        .set<int>("method order", order)

@@ -414,10 +414,10 @@ void RemapTestsDualRK(int order_p, int order_u,
       }
       xv += uv * ds;
     }
+    /*
     xv[0] = yv[0] * yv[1] + (1.0 - yv[1]) * std::pow(yv[0], 0.8);
     xv[1] = yv[1] * yv[0] + (1.0 - yv[0]) * std::pow(yv[1], 0.8);
 
-    /*
     for (int i = 0; i < 2; ++i) {
       xv[i] = yv[i];
       if (xv[i] > 0.01 && xv[i] < 0.99) 
@@ -462,6 +462,7 @@ void RemapTestsDualRK(int order_p, int order_u,
 
   // we need dg to compute scaling of basis functions
   WhetStone::DG_Modal dg(order_p, mesh0);
+  dg.set_basis(WhetStone::TAYLOR_BASIS_NORMALIZED_ORTHO);
 
   AnalyticDG04 ana(mesh0, order_p);
 
@@ -507,6 +508,7 @@ void RemapTestsDualRK(int order_p, int order_u,
   // create flux operator
   Teuchos::ParameterList plist;
   plist.set<std::string>("method", "dg modal")
+       .set<std::string>("dg basis", "partially orthonormalized")
        .set<std::string>("matrix type", "flux")
        .set<std::string>("flux formula", "upwind")
        .set<int>("method order", order_p)

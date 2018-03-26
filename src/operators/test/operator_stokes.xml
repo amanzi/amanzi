@@ -81,6 +81,7 @@
 
     <ParameterList name="divergence operator">
       <Parameter name="method" type="string" value="BernardiRaugel"/>
+      <Parameter name="method order" type="int" value="1"/>  <!-- not used /-->
       <Parameter name="matrix type" type="string" value="divergence"/>
       <ParameterList name="schema domain">
         <Parameter name="base" type="string" value="cell"/>
