@@ -93,9 +93,10 @@ TEST(OPERATOR_ADVECTION_DG) {
   op_list = plist.get<Teuchos::ParameterList>("PK operator")
                  .sublist("reaction operator");
   auto op_reac = Teuchos::rcp(new PDE_Reaction(op_list, global_op));
+  double Kreac = op_list.get<double>("coef");
 
   // populate problem data
-  AnalyticDG00 ana(mesh, 1);
+  AnalyticDG01 ana(mesh, 1);
 
   // -- reaction coefficient
   auto cvs = Teuchos::rcp(new CompositeVectorSpace());
@@ -107,7 +108,7 @@ TEST(OPERATOR_ADVECTION_DG) {
 
   for (int c = 0; c < ncells_wghost; c++) {
     const Point& xc = mesh->cell_centroid(c);
-    (*Kc)[0][c] = 100.0;
+    (*Kc)[0][c] = Kreac;
   }
 
   // -- velocity coefficient
@@ -134,7 +135,7 @@ TEST(OPERATOR_ADVECTION_DG) {
   }
 
   // -- source term
-  WhetStone::Polynomial divv(d, 1);
+  WhetStone::Polynomial divv(d, 2);
   divv(0, 0) = 2.0;
   divv(1, 0) = -2.0;
   divv(1, 1) = -2.0;
@@ -145,7 +146,7 @@ TEST(OPERATOR_ADVECTION_DG) {
 
   ana.TaylorCoefficients(tmp, 0.0, sol);
   grad.Gradient(sol); 
-  src = (*Kc)[0][0] * sol + v * grad + divv * sol;
+  src = Kreac * sol + v * grad + divv * sol;
 
   int order = op_list.get<int>("method order");
 
@@ -205,9 +206,10 @@ TEST(OPERATOR_ADVECTION_DG) {
   int ierr = solver.ApplyInverse(rhs, solution);
 
   if (MyPID == 0) {
-    std::cout << "pressure solver (gmres): ||r||=" << solver.residual() 
+    std::cout << "dG solver (gmres): ||r||=" << solver.residual() 
               << " itr=" << solver.num_itrs()
-              << " code=" << solver.returned_code() << std::endl;
+              << " code=" << solver.returned_code() 
+              << " order=" << order << std::endl;
 
     // visualization
     const Epetra_MultiVector& p = *solution.ViewComponent("cell");
