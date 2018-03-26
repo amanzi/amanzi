@@ -33,8 +33,8 @@
 #include "VectorPolynomial.hh"
 
 // Operators
-#include "AnalyticDG00.hh"
 #include "AnalyticDG01.hh"
+#include "AnalyticDG02.hh"
 
 #include "OperatorAudit.hh"
 #include "OperatorDefs.hh"
@@ -96,7 +96,7 @@ TEST(OPERATOR_ADVECTION_DG) {
   double Kreac = op_list.get<double>("coef");
 
   // populate problem data
-  AnalyticDG01 ana(mesh, 1);
+  AnalyticDG02 ana(mesh, 2);
 
   // -- reaction coefficient
   auto cvs = Teuchos::rcp(new CompositeVectorSpace());
@@ -231,6 +231,7 @@ TEST(OPERATOR_ADVECTION_DG) {
   ana.ComputeCellError(p, 0.0, pnorm, pl2_err, pinf_err);
 
   if (MyPID == 0) {
+    std::cout << "\nEXACT solution: " << sol << std::endl;
     printf("L2(p)=%9.6f  Inf(p)=%9.6f  itr=%3d\n", pl2_err, pinf_err, solver.num_itrs());
     CHECK(pl2_err < 1e-10);
   }
