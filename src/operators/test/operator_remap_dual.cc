@@ -332,7 +332,7 @@ class RemapDG : public Explicit_TI::fnBase<CompositeVector> {
   double l2norm_;
 };
 
-} // namespace amanzi
+} // namespace Amanzi
 
 
 /* *****************************************************************

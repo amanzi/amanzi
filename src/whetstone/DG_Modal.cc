@@ -1009,7 +1009,6 @@ void DG_Modal::TaylorBasis(int c, const Iterator& it, double* a, double* b)
   }
 
   // We do not modify the first function
-if(basis_ == -1) { std::cout << basis_ << std::endl; exit(0); } 
   if (n == 0) {
     *a = 1.0;
     *b = 0.0;
