@@ -31,7 +31,8 @@ namespace Operators {
 class PDE_Reaction : public PDE_HelperDiscretization {
  public:
   PDE_Reaction(Teuchos::ParameterList& plist, Teuchos::RCP<Operator> global_op) :
-      K_(Teuchos::null) {
+      K_(Teuchos::null),
+      PDE_HelperDiscretization(global_op) {
     InitReaction_(plist);
   }
 

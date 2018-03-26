@@ -1,0 +1,114 @@
+<ParameterList name="Main">
+  <Parameter name="Native Unstructured Input" type="bool" value="true"/>
+
+  <!--  REGIONS  -->
+  <ParameterList name="regions">
+    <ParameterList name="Left side">
+      <ParameterList name="region: plane">
+        <Parameter name="point" type="Array(double)" value="{0.0,0.0}"/>
+        <Parameter name="normal" type="Array(double)" value="{-1.0,0.0}"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="Right side">
+      <ParameterList name="region: plane">
+        <Parameter name="point" type="Array(double)" value="{0.0,1.0}"/>
+        <Parameter name="normal" type="Array(double)" value="{1.0,0.0}"/>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="Top surface">
+      <ParameterList name="region: plane">
+        <Parameter name="point" type="Array(double)" value="{0.0,1.0}"/>
+        <Parameter name="normal" type="Array(double)" value="{0.0,1.0}"/>
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
+
+  <!--  OPERATORS  -->
+  <ParameterList name="PK operator">
+    <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
+
+    <ParameterList name="flux operator">
+      <Parameter name="method" type="string" value="dg modal"/>
+      <Parameter name="method order" type="int" value="1"/>
+      <Parameter name="matrix type" type="string" value="flux"/>
+      <Parameter name="flux formula" type="string" value="upwind"/>
+      <Parameter name="jump operator on test function" type="bool" value="true"/>
+
+      <ParameterList name="schema domain">
+        <Parameter name="base" type="string" value="face"/>
+        <Parameter name="location" type="Array(string)" value="{cell}"/>
+        <Parameter name="type" type="Array(string)" value="{scalar}"/>
+        <Parameter name="number" type="Array(int)" value="{3}"/>
+      </ParameterList>
+      <ParameterList name="schema range">
+        <Parameter name="base" type="string" value="face"/>
+        <Parameter name="location" type="Array(string)" value="{cell}"/>
+        <Parameter name="type" type="Array(string)" value="{scalar}"/>
+        <Parameter name="number" type="Array(int)" value="{3}"/>
+      </ParameterList>
+    </ParameterList>
+
+    <ParameterList name="advection operator">
+      <Parameter name="method" type="string" value="dg modal"/>
+      <Parameter name="method order" type="int" value="1"/>
+      <Parameter name="matrix type" type="string" value="advection"/>
+      <Parameter name="flux formula" type="string" value="upwind"/>
+      <Parameter name="gradient operator on test function" type="bool" value="true"/>
+
+      <ParameterList name="schema domain">
+        <Parameter name="base" type="string" value="cell"/>
+        <Parameter name="location" type="Array(string)" value="{cell}"/>
+        <Parameter name="type" type="Array(string)" value="{scalar}"/>
+        <Parameter name="number" type="Array(int)" value="{3}"/>
+      </ParameterList>
+      <ParameterList name="schema range">
+        <Parameter name="base" type="string" value="cell"/>
+        <Parameter name="location" type="Array(string)" value="{cell}"/>
+        <Parameter name="type" type="Array(string)" value="{scalar}"/>
+        <Parameter name="number" type="Array(int)" value="{3}"/>
+      </ParameterList>
+    </ParameterList>
+
+    <ParameterList name="reaction operator">
+      <Parameter name="method" type="string" value="dg modal"/>
+      <Parameter name="method order" type="int" value="1"/>
+
+      <ParameterList name="schema">
+        <Parameter name="base" type="string" value="cell"/>
+        <Parameter name="location" type="Array(string)" value="{cell}"/>
+        <Parameter name="type" type="Array(string)" value="{scalar}"/>
+        <Parameter name="number" type="Array(int)" value="{3}"/>
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
+
+  <!-- SOLVERS -->
+  <ParameterList name="solvers">
+    <ParameterList name="GMRES">
+      <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
+      <Parameter name="iterative method" type="string" value="gmres"/>
+      <ParameterList name="gmres parameters">
+        <Parameter name="error tolerance" type="double" value="1e-16"/>
+        <Parameter name="maximum number of iterations" type="int" value="200"/>
+        <ParameterList name="verbose object">
+          <Parameter name="verbosity level" type="string" value="high"/>
+        </ParameterList>
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
+
+  <!-- PRECONDITIONERS -->
+  <ParameterList name="preconditioners">
+    <ParameterList name="Hypre AMG">
+      <Parameter name="preconditioner type" type="string" value="boomer amg"/>
+      <ParameterList name="boomer amg parameters">
+        <Parameter name="cycle applications" type="int" value="2"/>
+        <Parameter name="smoother sweeps" type="int" value="3"/>
+        <Parameter name="strong threshold" type="double" value="0.5"/>
+        <Parameter name="tolerance" type="double" value="0.0"/>
+        <Parameter name="verbosity" type="int" value="0"/>
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
+</ParameterList>
+
