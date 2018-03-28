@@ -121,9 +121,11 @@ void Richards::AddSourcesToPrecon_(const Teuchos::Ptr<State>& S, double h) {
     Key dsource_dp_key = Keys::getDerivKey(source_key_, key_);
     const Epetra_MultiVector& dsource_dp =
         *S->GetFieldData(dsource_dp_key)->ViewComponent("cell",false);
+    const Epetra_MultiVector& cv =
+      *S->GetFieldData(Keys::getKey(domain_,"cell_volume"))->ViewComponent("cell",false);
     unsigned int ncells = dsource_dp.MyLength();
     for (unsigned int c=0; c!=ncells; ++c) {
-      Acc_cells[c] -= dsource_dp[0][c];
+      Acc_cells[c] -= dsource_dp[0][c] * cv[0][c];
     }
   }
 }

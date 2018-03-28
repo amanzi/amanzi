@@ -16,7 +16,7 @@ namespace SurfaceBalance {
 namespace SEBPhysics {
 
 #define SWE_EPS 1.e-12
-#define ENERGY_BALANCE_TOL 1.e-10
+#define ENERGY_BALANCE_TOL 1.e-8
 
 
 double CalcAlbedoSnow(double density_snow) {
@@ -187,7 +187,7 @@ void UpdateEnergyBalanceWithSnow(const GroundProperties& surf,
   // sensible heat
   double Dhe = WindFactor(met.Us, met.Z_Us, CalcRoughnessFactor(snow.height, surf.roughness, snow.roughness), params.VKc);
   double Sqig = StabilityFunction(met.air_temp, snow.temp, met.Us, met.Z_Us, params.gravity);
-  eb.fQh = SensibleHeat(Dhe * Sqig, params.density_air, params.Cp, met.air_temp, snow.temp);
+  eb.fQh = SensibleHeat(Dhe * Sqig, params.density_air, params.Cp_air, met.air_temp, snow.temp);
 
   // latent heat
   double vapor_pressure_air = VaporPressureAir(met.air_temp, met.relative_humidity);
@@ -199,7 +199,9 @@ void UpdateEnergyBalanceWithSnow(const GroundProperties& surf,
   eb.fQc = ConductedHeatIfSnow(surf.temp, snow);
 
   // balance of energy goes into melting
-  eb.fQm = eb.fQswIn + eb.fQlwIn - eb.fQlwOut + eb.fQh + eb.fQe - eb.fQc;
+  eb.fQm = eb.fQswIn + eb.fQlwIn - eb.fQlwOut + eb.fQh - eb.fQc;
+  // only add latent heat if evaporating (condensation's energy gets lost to atmosphere, not surface)
+  if (eb.fQe < 0) eb.fQm += eb.fQe;
 }
 
 
@@ -217,7 +219,7 @@ void UpdateEnergyBalanceWithoutSnow(const GroundProperties& surf,
   // sensible heat
   double Dhe = WindFactor(met.Us, met.Z_Us, surf.roughness, params.VKc);
   double Sqig = StabilityFunction(met.air_temp, surf.temp, met.Us, met.Z_Us, params.gravity);
-  eb.fQh = SensibleHeat(Dhe*Sqig, params.density_air, params.Cp, met.air_temp, surf.temp);
+  eb.fQh = SensibleHeat(Dhe*Sqig, params.density_air, params.Cp_air, met.air_temp, surf.temp);
 
   // latent heat
   double vapor_pressure_air = VaporPressureAir(met.air_temp, met.relative_humidity);
@@ -225,12 +227,17 @@ void UpdateEnergyBalanceWithoutSnow(const GroundProperties& surf,
 
   double Rsoil = EvaporativeResistanceGround(surf, met, params, vapor_pressure_air, vapor_pressure_skin);
   double coef = 1.0 / (Rsoil + 1.0/(Dhe*Sqig));
-  eb.fQe = LatentHeat(coef, params.density_air, params.Le,
-                      vapor_pressure_air, vapor_pressure_skin, params.Apa);
-
-  // balance of energy gets conducted to ground
+  if (surf.temp < 273.15) {
+    eb.fQe = LatentHeat(coef, params.density_air, params.Ls,
+                        vapor_pressure_air, vapor_pressure_skin, params.Apa);
+  } else {
+    eb.fQe = LatentHeat(coef, params.density_air, params.Le,
+                        vapor_pressure_air, vapor_pressure_skin, params.Apa);
+  }
+  
+  // melt, conducted is 0
   eb.fQm = 0.;
-  eb.fQc = eb.fQswIn + eb.fQlwIn - eb.fQlwOut + eb.fQh + eb.fQe;
+  eb.fQc = eb.fQswIn + eb.fQlwIn - eb.fQlwOut + eb.fQh;
 }
 
 // Snow temperature calculation.
@@ -243,7 +250,7 @@ double DetermineSnowTemperature(const GroundProperties& surf,
 {
   SnowTemperatureFunctor_ func(&surf, &snow, &met, &params, &eb);
   Tol_ tol(ENERGY_BALANCE_TOL);
-  boost::uintmax_t max_it(50);
+  boost::uintmax_t max_it(100);
   double left, right;
   double res_left, res_right;
 
@@ -281,11 +288,16 @@ double DetermineSnowTemperature(const GroundProperties& surf,
   } else if (method == "toms") {
     result = boost::math::tools::toms748_solve(func, left, right, res_left, res_right, tol, max_it);
   }
+
   if (max_it >= my_max_it) throw("Nonconverged Surface Energy Balance");
-  if (std::abs(func(result.first)) < ENERGY_BALANCE_TOL) return result.first;
-  if (std::abs(func(result.second)) < ENERGY_BALANCE_TOL) return result.second;
-  if (std::abs(func((result.first + result.second)/2.)) < ENERGY_BALANCE_TOL) return (result.first+result.second)/2.;
-  throw("Nonconverged/Error Surface Energy Balance");    
+  // boost algorithms calculate the root such that the root is contained within the interval
+  // [result.first, result.second], and that width of that interval is less than TOL.
+  // We choose to set the solution as the center of that interval.
+  // Call the function again to set the fluxes.
+  double solution = (result.first + result.second)/2.;
+  func(solution);
+  return solution;
+
 }
 
 
@@ -303,7 +315,6 @@ MassBalance UpdateMassBalance(const GroundProperties& surf, const SnowProperties
   // Snow balance
   if (snow_old.height > 0.) {
     mb.Me = eb.fQe / (surf.density_w * params.Ls);
-
 
     double swe_old = snow_old.height * snow_old.density / surf.density_w;
     double swe_new = swe_old + (met.Ps - mb.Mm + mb.Me)*mb.dt;
@@ -404,13 +415,15 @@ MassBalance UpdateMassBalance(const GroundProperties& surf, const SnowProperties
     // set the water properties
     // -- water source to ground is (corrected) melt and rainfall
     // NOTE: these rates can only be correct if over mb.dt
-    mb.MWg = mb.Mm + met.Pr;
-    mb.MWg_subsurf = 0.;
-    mb.MWg_temp = (mb.MWg > 0. && mb.Mm > 0.) ? (mb.Mm * 273.15 + met.Pr * met.air_temp) / mb.MWg : std::max(met.air_temp, 273.15);
+    
 
   } else {
     // set the evaporative flux of mass
-    mb.Me = eb.fQe / (surf.density_w * params.Le);
+    if (surf.temp < 273.15) {
+      mb.Me = eb.fQe / (surf.density_w * params.Ls);
+    } else {
+      mb.Me = eb.fQe / (surf.density_w * params.Le);
+    }      
 
     // set the snow properties
     snow_new.height = met.Ps * mb.dt
@@ -418,24 +431,6 @@ MassBalance UpdateMassBalance(const GroundProperties& surf, const SnowProperties
     snow_new.age = mb.dt / 86400.;
     snow_new.density = params.density_freshsnow;
     snow_new.SWE = snow_new.height * snow_new.density / surf.density_w;
-
-    // set the water properties
-    // -- water source to ground is rainfall + condensation
-    // -- evaporation is taken from ground if ponded water (NOPE! , from cell source if not (with transition))
-    mb.MWg_temp = std::max(met.air_temp, 273.15);
-    mb.MWg = met.Pr;
-    mb.MWg_subsurf = 0.;
-    if (mb.Me > 0.) {
-      mb.MWg += mb.Me;
-    } else {
-      double surf_p = surf.pressure;
-      double trans_factor = surf_p > params.Apa*1000. ? 0. :
-      surf_p < params.Apa*1000. - params.evap_transition_width ? 1. :
-                            (params.Apa*1000. - surf_p) / params.evap_transition_width;
-
-      mb.MWg += (1-trans_factor) * mb.Me;
-      mb.MWg_subsurf += trans_factor * mb.Me;
-    }
   }
 
   // if (debug) {
@@ -460,7 +455,7 @@ MassBalance UpdateMassBalance(const GroundProperties& surf, const SnowProperties
 
 
 // master driver
-std::tuple<SnowProperties, EnergyBalance, MassBalance>
+std::tuple<SnowProperties, EnergyBalance, MassBalance, FluxBalance>
 CalculateSurfaceBalance(double dt,
                         const GroundProperties& surf,
                         const SnowProperties& snow_old,
@@ -481,11 +476,12 @@ CalculateSurfaceBalance(double dt,
       // limit snow temp to 0, then melt with the remaining energy
       snow_new.temp = 273.15;
       UpdateEnergyBalanceWithSnow(surf, snow_new, met, params, eb);
+      eb.error = 0.;
       
     } else {
       // snow not melting
       UpdateEnergyBalanceWithSnow(surf, snow_new, met, params, eb);
-      if (std::abs(eb.fQm) > ENERGY_BALANCE_TOL) throw("Broken SEB --ETC");
+      eb.error = eb.fQm;
       eb.fQm = 0.;
     }
 
@@ -497,6 +493,44 @@ CalculateSurfaceBalance(double dt,
   // Mass balance
   MassBalance mb = UpdateMassBalance(surf, snow_old, met, params, eb, snow_new, dt);
 
+  // update fluxes delivered to ground, except evaporation
+  FluxBalance flux;
+  // mass to surface is melt and precip, with melt normalized to dt
+  flux.M_surf = met.Pr + mb.Mm * mb.dt / dt;
+
+  // energy to surface is conducted energy, enthalpy of rain and melt
+  flux.E_surf = eb.fQc + surf.density_w * met.Pr * met.air_temp * params.Cv_water;
+  //           + surf.density_w * met.Mm * 0. * params.Cv_water; // enthalpy of water at 0c is 0
+
+  // mass, energy to subsurface is 0
+  flux.M_sub = 0.;
+  flux.E_sub = 0.;
+
+  // now add in evaporation  
+  if (snow_new.height == 0.) {
+    // check to see if evaporation takes all the water
+    double evap_to_surface = 1.;
+    if (mb.Me > 0 && surf.ponded_depth < params.evap_transition_width) {
+      evap_to_surface = surf.ponded_depth / params.evap_transition_width;
+    }
+    flux.M_surf += evap_to_surface * mb.Me;
+    flux.M_sub += (1-evap_to_surface) * mb.Me;
+
+    if (eb.fQe > 0.) {
+      // if condensation, just add energy due to introduction of new water.
+      // Latent heat released goes into the atmosphere.
+      flux.E_surf += evap_to_surface * mb.Me * surf.density_w * met.air_temp * params.Cv_water;
+      flux.E_sub += (1-evap_to_surface) * mb.Me * surf.density_w * met.air_temp * params.Cv_water;
+    } else {
+      // if evaporation, take away the energy of that water, but also cool due
+      // to latent heat removal.  Note this is equivalent to simply taking
+      // away the energy of the VAPOR removed.
+      flux.E_surf += evap_to_surface * (mb.Me * surf.density_w * surf.temp * params.Cv_water + eb.fQe);
+      flux.E_sub += (1-evap_to_surface) * (mb.Me * surf.density_w * surf.temp * params.Cv_water + eb.fQe);
+    }
+    
+  }
+  
   if (vo.get()) {
     *vo->os() << "---------------------------------------------------------" << std::endl
               << "Surface Energy Balance:" << std::endl
@@ -514,6 +548,8 @@ CalculateSurfaceBalance(double dt,
               << "    fQh      = " << eb.fQh << std::endl
               << "    fQe      = " << eb.fQe << std::endl
               << "    fQc      = " << eb.fQc << std::endl
+              << "    fQm      = " << eb.fQm << std::endl
+              << "    eb error = " << eb.error << std::endl
               << "  Mass Balance:\n"
               << "    Mm   = " << mb.Mm << std::endl
               << "    Me   = " << mb.Me << std::endl
@@ -527,11 +563,13 @@ CalculateSurfaceBalance(double dt,
 	      << "      old dens = " << snow_old.density << std::endl
               << "      new dens = " << snow_new.density << std::endl
               << "      SWE      = " << snow_new.SWE << std::endl
-              << "    Water Balance:\n"
-              << "      surf src = " << mb.MWg << std::endl
-              << "      sub src  = " << mb.MWg_subsurf << std::endl;
+              << "  Fluxes to other layeres:\n"
+              << "      surf mass src = " << flux.M_surf << std::endl
+              << "      sub mass src = " << flux.M_sub << std::endl
+              << "      surf energy src = " << flux.E_surf << std::endl
+              << "      sub energysrc = " << flux.E_sub << std::endl;
   }
-  return std::make_tuple(snow_new, eb, mb);
+  return std::make_tuple(snow_new, eb, mb, flux);
 }
 
 

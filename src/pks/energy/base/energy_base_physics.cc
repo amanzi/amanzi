@@ -103,7 +103,6 @@ void EnergyBase::ApplyDiffusion_(const Teuchos::Ptr<State>& S,
 
 // ---------------------------------------------------------------------
 // Add in energy source, which are accumulated by a single evaluator.
-// Note that that evaluator applies the factor of cell volume.
 // ---------------------------------------------------------------------
 void EnergyBase::AddSources_(const Teuchos::Ptr<State>& S,
         const Teuchos::Ptr<CompositeVector>& g) {
@@ -117,11 +116,13 @@ void EnergyBase::AddSources_(const Teuchos::Ptr<State>& S,
     S->GetFieldEvaluator(source_key_)->HasFieldChanged(S, name_);
     const Epetra_MultiVector& source1 =
         *S->GetFieldData(source_key_)->ViewComponent("cell",false);
+    const Epetra_MultiVector& cv =
+      *S->GetFieldData(Keys::getKey(domain_,"cell_volume"))->ViewComponent("cell",false);
 
     // Add into residual
     unsigned int ncells = g_c.MyLength();
     for (unsigned int c=0; c!=ncells; ++c) {
-      g_c[0][c] -= source1[0][c];
+      g_c[0][c] -= source1[0][c] * cv[0][c];
     }
 
     if (vo_->os_OK(Teuchos::VERB_EXTREME))
@@ -140,9 +141,11 @@ void EnergyBase::AddSourcesToPrecon_(const Teuchos::Ptr<State>& S, double h) {
     S->GetFieldEvaluator(source_key_)->HasFieldDerivativeChanged(S, name_, key_);
     const Epetra_MultiVector& dsource_dT =
         *S->GetFieldData(Keys::getDerivKey(source_key_, key_))->ViewComponent("cell",false);
+    const Epetra_MultiVector& cv =
+      *S->GetFieldData(Keys::getKey(domain_,"cell_volume"))->ViewComponent("cell",false);
     unsigned int ncells = dsource_dT.MyLength();
     for (unsigned int c=0; c!=ncells; ++c) {
-      Acc_cells[c] -= dsource_dT[0][c];
+      Acc_cells[c] -= dsource_dT[0][c] * cv[0][c];
     }
   }
 }

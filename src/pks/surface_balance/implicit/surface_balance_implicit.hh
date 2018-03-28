@@ -69,8 +69,8 @@ public:
   // multiple primary variables
   Teuchos::RCP<PrimaryVariableFieldEvaluator> pvfe_esource_;
   Teuchos::RCP<PrimaryVariableFieldEvaluator> pvfe_wsource_;
-  Teuchos::RCP<PrimaryVariableFieldEvaluator> pvfe_w_v_source_;
-  Teuchos::RCP<PrimaryVariableFieldEvaluator> pvfe_wtemp_;
+  Teuchos::RCP<PrimaryVariableFieldEvaluator> pvfe_w_sub_source_;
+  Teuchos::RCP<PrimaryVariableFieldEvaluator> pvfe_e_sub_source_;
 
   bool eval_derivatives_;
   bool implicit_snow_;

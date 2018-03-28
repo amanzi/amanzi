@@ -48,29 +48,25 @@ SurfaceBalanceImplicit::SurfaceBalanceImplicit(Teuchos::ParameterList& pk_tree,
     plist_->get<std::string>("subsurface domain name");
   }
 
-  Teuchos::ParameterList& esource_sublist =
-      FElist.sublist(Keys::getKey(domain_,"conducted_energy_source"));
-  esource_sublist.set("evaluator name", Keys::getKey(domain_,"conducted_energy_source"));
-  esource_sublist.set("field evaluator type", "primary variable");
-
-  // -- surface mass source
+  // -- surface mass,energy sources
   Teuchos::ParameterList& wsource_sublist =
     FElist.sublist(Keys::getKey(domain_,"mass_source"));
   wsource_sublist.set("evaluator name", Keys::getKey(domain_,"mass_source"));
   wsource_sublist.set("field evaluator type", "primary variable");
+  Teuchos::ParameterList& esource_sublist =
+    FElist.sublist(Keys::getKey(domain_,"total_energy_source"));
+  esource_sublist.set("evaluator name", Keys::getKey(domain_,"total_energy_source"));
+  esource_sublist.set("field evaluator type", "primary variable");
 
   // -- subsurface mass source for VaporFlux at cell center
   Teuchos::ParameterList& w_v_source_sublist =
-
     FElist.sublist(Keys::getKey(domain_ss_,"mass_source"));
   w_v_source_sublist.set("evaluator name", Keys::getKey(domain_ss_,"mass_source"));
   w_v_source_sublist.set("field evaluator type", "primary variable");
-
-  // -- surface energy temperature
-  Teuchos::ParameterList& wtemp_sublist =
-    FElist.sublist(Keys::getKey(domain_,"mass_source_temperature"));
-  wtemp_sublist.set("evaluator name", Keys::getKey(domain_,"mass_source_temperature"));
-  wtemp_sublist.set("field evaluator type", "primary variable");
+  Teuchos::ParameterList& e_sub_source_sublist =
+    FElist.sublist(Keys::getKey(domain_ss_,"total_energy_source"));
+  e_sub_source_sublist.set("evaluator name", Keys::getKey(domain_ss_,"total_energy_source"));
+  e_sub_source_sublist.set("field evaluator type", "primary variable");
 
   // Derivatives for PC
   eval_derivatives_ = plist_->get<bool>("evaluate source derivatives", true);
@@ -115,61 +111,53 @@ SurfaceBalanceImplicit::Setup(const Teuchos::Ptr<State>& S) {
   // requirements: primary variable
   S->RequireField(key_, name_)->SetMesh(mesh_)->
       SetComponent("cell", AmanziMesh::CELL, 1);
-  
 
   // requirements: other primary variables
   Teuchos::RCP<FieldEvaluator> fm;
-  S->RequireField(Keys::getKey(domain_,"conducted_energy_source"), name_)->SetMesh(mesh_)
-      ->SetComponent("cell", AmanziMesh::CELL, 1);
-  S->RequireFieldEvaluator(Keys::getKey(domain_,"conducted_energy_source"));
-  fm = S->GetFieldEvaluator(Keys::getKey(domain_,"conducted_energy_source"));
-
-  pvfe_esource_ = Teuchos::rcp_dynamic_cast<PrimaryVariableFieldEvaluator>(fm);
-  if (pvfe_esource_ == Teuchos::null) {
-    Errors::Message message("SurfaceBalanceSEB: error, failure to initialize primary variable");
-    Exceptions::amanzi_throw(message);
-  }
-
-
   S->RequireField(Keys::getKey(domain_,"mass_source"), name_)->SetMesh(mesh_)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
   S->RequireFieldEvaluator(Keys::getKey(domain_,"mass_source"));
   fm = S->GetFieldEvaluator(Keys::getKey(domain_,"mass_source"));
-
   pvfe_wsource_ = Teuchos::rcp_dynamic_cast<PrimaryVariableFieldEvaluator>(fm);
   if (pvfe_wsource_ == Teuchos::null) {
     Errors::Message message("SurfaceBalanceSEB: error, failure to initialize primary variable");
     Exceptions::amanzi_throw(message);
   }
 
+  S->RequireField(Keys::getKey(domain_,"total_energy_source"), name_)->SetMesh(mesh_)
+      ->SetComponent("cell", AmanziMesh::CELL, 1);
+  S->RequireFieldEvaluator(Keys::getKey(domain_,"total_energy_source"));
+  fm = S->GetFieldEvaluator(Keys::getKey(domain_,"total_energy_source"));
+  pvfe_esource_ = Teuchos::rcp_dynamic_cast<PrimaryVariableFieldEvaluator>(fm);
+  if (pvfe_esource_ == Teuchos::null) {
+    Errors::Message message("SurfaceBalanceSEB: error, failure to initialize primary variable");
+    Exceptions::amanzi_throw(message);
+  }
 
   S->RequireField(Keys::getKey(domain_ss_,"mass_source"), name_)->SetMesh(subsurf_mesh_)
     ->SetComponent("cell", AmanziMesh::CELL, 1);
   S->RequireFieldEvaluator(Keys::getKey(domain_ss_,"mass_source"));
   fm = S->GetFieldEvaluator(Keys::getKey(domain_ss_,"mass_source"));
-
-  pvfe_w_v_source_ = Teuchos::rcp_dynamic_cast<PrimaryVariableFieldEvaluator>(fm);
-  if (pvfe_w_v_source_ == Teuchos::null) {
+  pvfe_w_sub_source_ = Teuchos::rcp_dynamic_cast<PrimaryVariableFieldEvaluator>(fm);
+  if (pvfe_w_sub_source_ == Teuchos::null) {
     Errors::Message message("SurfaceBalanceSEB: error, failure to initialize primary variable");
     Exceptions::amanzi_throw(message);
   }
-
-
-  S->RequireField(Keys::getKey(domain_,"mass_source_temperature"), name_)->SetMesh(mesh_)
-      ->SetComponent("cell", AmanziMesh::CELL, 1);
-  S->RequireFieldEvaluator(Keys::getKey(domain_,"mass_source_temperature"));
-  fm = S->GetFieldEvaluator(Keys::getKey(domain_,"mass_source_temperature"));
-
-  pvfe_wtemp_ = Teuchos::rcp_dynamic_cast<PrimaryVariableFieldEvaluator>(fm);
-  if (pvfe_wtemp_ == Teuchos::null) {
+  
+  S->RequireField(Keys::getKey(domain_ss_,"total_energy_source"), name_)->SetMesh(subsurf_mesh_)
+    ->SetComponent("cell", AmanziMesh::CELL, 1);
+  S->RequireFieldEvaluator(Keys::getKey(domain_ss_,"total_energy_source"));
+  fm = S->GetFieldEvaluator(Keys::getKey(domain_ss_,"total_energy_source"));
+  pvfe_e_sub_source_ = Teuchos::rcp_dynamic_cast<PrimaryVariableFieldEvaluator>(fm);
+  if (pvfe_e_sub_source_ == Teuchos::null) {
     Errors::Message message("SurfaceBalanceSEB: error, failure to initialize primary variable");
     Exceptions::amanzi_throw(message);
   }
 
   // requirements: source derivatives
   if (eval_derivatives_) {
-
-    Key key_cond_temp = Keys::getDerivKey(Keys::getKey(domain_,"conducted_energy_source"), Keys::getKey(domain_,"temperature"));
+    Key key_cond_temp = Keys::getDerivKey(Keys::getKey(domain_,"total_energy_source"),
+            Keys::getKey(domain_,"temperature"));
     S->RequireField(key_cond_temp, name_)->SetMesh(mesh_)
        ->SetComponent("cell", AmanziMesh::CELL, 1);
   }
@@ -313,23 +301,21 @@ SurfaceBalanceImplicit::Initialize(const Teuchos::Ptr<State>& S) {
   S->GetField(Keys::getKey(domain_,"snow_temperature"), name_)->set_initialized();
 
   // initialize sources, temps
-  S->GetFieldData(Keys::getKey(domain_,"conducted_energy_source"),name_)->PutScalar(0.);
-  S->GetField(Keys::getKey(domain_,"conducted_energy_source"),name_)->set_initialized();
-
-  if (eval_derivatives_) {
-    Key key_cond_temp = Keys::getDerivKey(Keys::getKey(domain_,"conducted_energy_source"), Keys::getKey(domain_,"temperature"));
-    S->GetFieldData(key_cond_temp,name_)->PutScalar(0.);
-    S->GetField(key_cond_temp,name_)->set_initialized();
-  }
-
   S->GetFieldData(Keys::getKey(domain_,"mass_source"),name_)->PutScalar(0.);
   S->GetField(Keys::getKey(domain_,"mass_source"),name_)->set_initialized();
+  S->GetFieldData(Keys::getKey(domain_,"total_energy_source"),name_)->PutScalar(0.);
+  S->GetField(Keys::getKey(domain_,"total_energy_source"),name_)->set_initialized();
 
   S->GetFieldData(Keys::getKey(domain_ss_,"mass_source"),name_)->PutScalar(0.);
   S->GetField(Keys::getKey(domain_ss_,"mass_source"),name_)->set_initialized();
+  S->GetFieldData(Keys::getKey(domain_ss_,"total_energy_source"),name_)->PutScalar(0.);
+  S->GetField(Keys::getKey(domain_ss_,"total_energy_source"),name_)->set_initialized();
 
-  S->GetFieldData(Keys::getKey(domain_,"mass_source_temperature"),name_)->PutScalar(273.15);
-  S->GetField(Keys::getKey(domain_,"mass_source_temperature"),name_)->set_initialized();
+  if (eval_derivatives_) {
+    Key key_cond_temp = Keys::getDerivKey(Keys::getKey(domain_,"total_energy_source"), Keys::getKey(domain_,"temperature"));
+    S->GetFieldData(key_cond_temp,name_)->PutScalar(0.);
+    S->GetField(key_cond_temp,name_)->set_initialized();
+  }
 
   // initialize diagnostics
   S->GetField(Keys::getKey(domain_,"albedo"),name_)->set_initialized();
@@ -341,7 +327,6 @@ SurfaceBalanceImplicit::Initialize(const Teuchos::Ptr<State>& S) {
   if (!longwave_input_) {
     S->GetField(Keys::getKey(domain_,"incoming_longwave_radiation"),name_)->set_initialized();
   }
-
 }
 
 
@@ -483,24 +468,20 @@ SurfaceBalanceImplicit::Functional(double t_old, double t_new, Teuchos::RCP<Tree
     *S_inter_->GetFieldData(Keys::getKey(domain_,"precipitation_snow"))->ViewComponent("cell", false);
 
   // pull additional primary variable data
+  Epetra_MultiVector& surf_water_flux =
+    *S_next_->GetFieldData(Keys::getKey(domain_,"mass_source"), name_)->ViewComponent("cell", false);
   Epetra_MultiVector& surf_energy_flux =
-    *S_next_->GetFieldData(Keys::getKey(domain_,"conducted_energy_source"), name_)->ViewComponent("cell", false);
+    *S_next_->GetFieldData(Keys::getKey(domain_,"total_energy_source"), name_)->ViewComponent("cell", false);
   Teuchos::RCP<Epetra_MultiVector> dsurf_energy_flux_dT;
   if (eval_derivatives_) {
-    Key key_cond_temp = Keys::getDerivKey(Keys::getKey(domain_,"conducted_energy_source"), Keys::getKey(domain_,"temperature"));
+    Key key_cond_temp = Keys::getDerivKey(Keys::getKey(domain_,"total_energy_source"), Keys::getKey(domain_,"temperature"));
     dsurf_energy_flux_dT = S_next_->GetFieldData(key_cond_temp, name_)
       ->ViewComponent("cell", false);
   }
-
-  Epetra_MultiVector& surf_water_flux =
-    *S_next_->GetFieldData(Keys::getKey(domain_,"mass_source"), name_)->ViewComponent("cell", false);
-
-  Epetra_MultiVector& vapor_flux =
+  Epetra_MultiVector& ss_water_flux =
     *S_next_->GetFieldData(Keys::getKey(domain_ss_,"mass_source"), name_)->ViewComponent("cell", false);
-  vapor_flux.PutScalar(0.);
-
-  Epetra_MultiVector& surf_water_flux_temp =
-    *S_next_->GetFieldData(Keys::getKey(domain_,"mass_source_temperature"), name_)->ViewComponent("cell", false);
+  Epetra_MultiVector& ss_energy_flux =
+    *S_next_->GetFieldData(Keys::getKey(domain_ss_,"total_energy_source"), name_)->ViewComponent("cell", false);
 
   // loop over each cell
   unsigned int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
@@ -554,6 +535,7 @@ SurfaceBalanceImplicit::Functional(double t_old, double t_new, Teuchos::RCP<Tree
           .CalcPartition(0., ponded_depth[0][c], unfrozen_fraction[0][c]);
       seb_surf.emissivity = other_part.Interpolate(1., seb_surf_pars.e_water, seb_surf_pars.e_ice, seb_surf_pars.e_tundra);
       seb_surf.porosity = other_part.Interpolate(1., 1., 1., porosity[0][cells[0]]);
+      seb_surf.ponded_depth = ponded_depth[0][c];
       
       // -- snow properties
       seb_snow.height = snow_depth < min_snow_trans_ ? 0. : snow_depth;
@@ -586,6 +568,7 @@ SurfaceBalanceImplicit::Functional(double t_old, double t_new, Teuchos::RCP<Tree
       SEBPhysics::SnowProperties& seb_snow_new = std::get<0>(result);
       SEBPhysics::EnergyBalance& seb_eb = std::get<1>(result);
       SEBPhysics::MassBalance& seb_mb = std::get<2>(result);
+      SEBPhysics::FluxBalance& seb_flux = std::get<3>(result);
 
       // Evaluate the residual
       res[0][c] = snow_depth_new[0][c] - seb_snow_new.height;
@@ -593,16 +576,23 @@ SurfaceBalanceImplicit::Functional(double t_old, double t_new, Teuchos::RCP<Tree
 
       // Pull the output
       // -- fluxes
-      surf_energy_flux[0][c] = seb_eb.fQc;
-      surf_water_flux[0][c] = seb_mb.MWg;
-      surf_water_flux_temp[0][c] = seb_mb.MWg_temp;
+      //    -- surface mass = Pr + Melt - evap if ponded and no snow
+      
+      //    -- surface energy = diffusion + change due to evap
+      surf_energy_flux[0][c] = seb_flux.E_surf;
+      surf_water_flux[0][c] = seb_flux.M_surf;
 
       // -- vapor flux to cells
       //     surface vapor flux is treated as a volumetric source for the subsurface.
       // surface mass sources are in m^3 water / (m^2 s)
       // subsurface mass sources are in mol water / (m^3 s)
-      vapor_flux[0][cells[0]] = seb_mb.MWg_subsurf * mesh_->cell_volume(c) * seb_surf.density_w / 0.0180153
+      ss_water_flux[0][cells[0]] = seb_flux.M_sub * mesh_->cell_volume(c)
+                                * seb_surf.density_w / 0.0180153
                                 / subsurf_mesh_->cell_volume(cells[0]);
+      // surface energy sources are in W / m^2 
+      // subsurface mass sources are in W / m^3
+      ss_energy_flux[0][cells[0]] = seb_flux.E_sub * mesh_->cell_volume(c)
+                                 / subsurf_mesh_->cell_volume(cells[0]);
 
       // -- snow properties
       snow_age_new[0][c] = seb_snow_new.age;
@@ -624,8 +614,8 @@ SurfaceBalanceImplicit::Functional(double t_old, double t_new, Teuchos::RCP<Tree
         seb_surf2.temp += T_eps;
         // for now ignore the effect on unfrozen fraction, and therefore on albedo and emissivity
         auto result2 = SEBPhysics::CalculateSurfaceBalance(dt, seb_surf2, seb_snow, seb_met, seb_params, false, dcvo);
-        SEBPhysics::EnergyBalance& seb_eb2 = std::get<1>(result2);
-        (*dsurf_energy_flux_dT)[0][c] = (seb_eb2.fQc - seb_eb.fQc) / T_eps;
+        SEBPhysics::FluxBalance& seb_flux2 = std::get<3>(result2);
+        (*dsurf_energy_flux_dT)[0][c] = (seb_flux2.E_surf - seb_flux2.E_surf) / T_eps;
       }
 
     } else {
@@ -657,6 +647,7 @@ SurfaceBalanceImplicit::Functional(double t_old, double t_new, Teuchos::RCP<Tree
           .CalcPartition(0., ponded_depth[0][c], unfrozen_fraction[0][c]);
       seb_surf.emissivity = other_part.Interpolate(1., seb_surf_pars.e_water, seb_surf_pars.e_ice, seb_surf_pars.e_tundra);
       seb_surf.porosity = other_part.Interpolate(1., 1., 1., porosity[0][cells[0]]);
+      seb_surf.ponded_depth = ponded_depth[0][c];
       
       // -- snow properties
       seb_snow.height = snow_ground_trans_;
@@ -701,10 +692,12 @@ SurfaceBalanceImplicit::Functional(double t_old, double t_new, Teuchos::RCP<Tree
      SEBPhysics::SnowProperties& seb_snow_new = std::get<0>(result);
      SEBPhysics::EnergyBalance& seb_eb = std::get<1>(result);
      SEBPhysics::MassBalance& seb_mb = std::get<2>(result);
+     SEBPhysics::FluxBalance& seb_flux = std::get<3>(result);
 
      SEBPhysics::SnowProperties& bare_snow_new = std::get<0>(result_bare);
      SEBPhysics::EnergyBalance& bare_eb = std::get<1>(result_bare);
      SEBPhysics::MassBalance& bare_mb = std::get<2>(result_bare);
+     SEBPhysics::FluxBalance& bare_flux = std::get<3>(result_bare);
 
      // Evaluate the residual
      double snow_depth_new_tmp = theta * seb_snow_new.height + (1-theta) * bare_snow_new.height;
@@ -713,33 +706,20 @@ SurfaceBalanceImplicit::Functional(double t_old, double t_new, Teuchos::RCP<Tree
 
      // Pull the output
      // -- fluxes
-     surf_energy_flux[0][c] = (theta * seb_eb.fQc + (1-theta) * bare_eb.fQc);
-     surf_water_flux[0][c] = theta * seb_mb.MWg + (1-theta) * bare_mb.MWg;
-     if (surf_water_flux[0][c] > 0.) {
-       if (seb_mb.MWg > 0.) {
-         if (bare_mb.MWg > 0.) {
-           // both are positive, sources from both, average temp
-           surf_water_flux_temp[0][c] = (theta * seb_mb.MWg * seb_mb.MWg_temp
-                   + (1-theta) * bare_mb.MWg * bare_mb.MWg_temp) / surf_water_flux[0][c];
-         } else {
-           // snow portion is positive, bare is negative, so take only from snow
-           surf_water_flux_temp[0][c] = seb_mb.MWg_temp;
-         }
-       } else {
-         // snow portion is negative, take only from snow.  Note if both are
-         // negative, both temps are just the air temp, which is fine.
-         surf_water_flux_temp[0][c] = bare_mb.MWg_temp;
-       }
-     } else {
-       surf_water_flux_temp[0][c] = seb_mb.MWg_temp;
-     }
+     surf_energy_flux[0][c] = theta * seb_flux.E_surf + (1-theta) * bare_flux.E_surf;
+     surf_water_flux[0][c] = theta * seb_flux.M_surf + (1-theta) * bare_flux.M_surf;
      // -- vapor flux to cells
      //     surface vapor flux is treated as a volumetric source for the subsurface.
      // surface mass sources are in m^3 water / (m^2 s)
      // subsurface mass sources are in mol water / (m^3 s)
-     double mean_flux = theta * seb_mb.MWg_subsurf + (1-theta) * bare_mb.MWg_subsurf;
-     vapor_flux[0][cells[0]] = mean_flux
-                               * mesh_->cell_volume(c) * seb_surf.density_w / 0.0180153
+     double mean_flux = theta * seb_flux.M_sub + (1-theta) * bare_flux.M_sub;
+     ss_water_flux[0][cells[0]] = mean_flux * mesh_->cell_volume(c)
+                               * seb_surf.density_w / 0.0180153
+                               / subsurf_mesh_->cell_volume(cells[0]);
+     // surface energy sources are in W / m^2
+     // subsurface energy sources are in W / m^3
+     double mean_flux_E = theta * seb_flux.E_sub + (1-theta) * bare_flux.E_sub;
+     ss_energy_flux[0][cells[0]] = mean_flux_E * mesh_->cell_volume(c)
                                / subsurf_mesh_->cell_volume(cells[0]);
 
      // -- snow properties: SWE averaged
@@ -844,7 +824,7 @@ SurfaceBalanceImplicit::Functional(double t_old, double t_new, Teuchos::RCP<Tree
     vnames.push_back("out longwave radiation"); 
     vecs.push_back(S_next_->GetFieldData(Keys::getKey(domain_,"qE_lw_out")).ptr());
     vnames.push_back("out conducted energy"); 
-    vecs.push_back(S_next_->GetFieldData(Keys::getKey(domain_,"conducted_energy_source")).ptr());
+    vecs.push_back(S_next_->GetFieldData(Keys::getKey(domain_,"total_energy_source")).ptr());
     vnames.push_back("out melting energy"); 
     vecs.push_back(S_next_->GetFieldData(Keys::getKey(domain_,"qE_melt_out")).ptr());
 
@@ -858,8 +838,6 @@ SurfaceBalanceImplicit::Functional(double t_old, double t_new, Teuchos::RCP<Tree
     vecs.push_back(S_next_->GetFieldData(Keys::getKey(domain_,"mass_source")).ptr());
     vnames.push_back("evap flux"); 
     vecs.push_back(S_next_->GetFieldData(Keys::getKey(domain_,"evaporative_flux")).ptr());
-    vnames.push_back("T_water_source"); 
-    vecs.push_back(S_next_->GetFieldData(Keys::getKey(domain_,"mass_source_temperature")).ptr());
     db_->WriteVectors(vnames, vecs, true);
     db_->WriteDivider();
 
@@ -875,14 +853,15 @@ SurfaceBalanceImplicit::Functional(double t_old, double t_new, Teuchos::RCP<Tree
   // scale to MJ for ATS units
   surf_energy_flux.Scale(1.e-6);
   if (dsurf_energy_flux_dT.get()) dsurf_energy_flux_dT->Scale(1.e-6);
+  ss_energy_flux.Scale(1.e-6);
   
   // mark our other primary variables as changed
   pvfe_esource_->SetFieldAsChanged(S_next_.ptr());
   pvfe_wsource_->SetFieldAsChanged(S_next_.ptr());
-  pvfe_w_v_source_->SetFieldAsChanged(S_next_.ptr());
-  pvfe_wtemp_->SetFieldAsChanged(S_next_.ptr());
+  pvfe_w_sub_source_->SetFieldAsChanged(S_next_.ptr());
+  pvfe_e_sub_source_->SetFieldAsChanged(S_next_.ptr());
   
-  }
+}
 
 
 // applies preconditioner to u and returns the result in Pu

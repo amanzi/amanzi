@@ -195,7 +195,6 @@ MPCPermafrost4::Functional(double t_old, double t_new, Teuchos::RCP<TreeVector> 
 
   // The residual of the surface flow equation provides the mass flux from
   // subsurface to surface.
-
   Epetra_MultiVector& source = *S_next_->GetFieldData(Keys::getKey(domain_surf_,"surface_subsurface_flux"),
           name_)->ViewComponent("cell",false);
   source = *g->SubVector(2)->Data()->ViewComponent("cell",false);

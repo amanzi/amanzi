@@ -37,6 +37,7 @@ struct GroundProperties {
   double emissivity;                    // [-]
   double saturation_gas;                // [-]
   double roughness;                     // [m] surface roughness of a bare domain
+  double ponded_depth;                  // [m] thickness of ponded water
 
   GroundProperties() :
       temp(MY_LOCAL_NAN),
@@ -112,11 +113,12 @@ struct ModelParams {
       Hf(333500.0),             // Heat of fusion for melting snow -- [J/kg]
       Ls(2834000.0),            // Latent heat of sublimation ------- [J/kg]
       Le(2497848.),             // Latent heat of vaporization ------ [J/kg]
-      Cp(1004.0),               // Specific heat of air ------------- [J/K kg]
+      Cp_air(1004.0),           // Specific heat of air @ const pres- [J/K kg]
+      Cv_water(4218.636),       // Specific heat of water ----------- [J/K kg]
       VKc(0.41),                // Von Karman Constant -------------- [-]
       stephB(0.00000005670373), // Stephan-Boltzmann constant ------- [W/m^2 K^4]
       Apa(101.325),             // atmospheric pressure ------------- [kPa]
-      evap_transition_width(100.), // transition on evaporation from surface to evaporation from subsurface [m]
+      evap_transition_width(0.02), // transition on evaporation from surface to evaporation from subsurface [m]
       gravity(9.807),
       Clapp_Horn_b(1.),          // Clapp and Hornberger "b" [-]
       R_ideal_gas(461.52)       // ideal gas law R? [Pa m^3 kg^-1 K^-1]
@@ -126,7 +128,7 @@ struct ModelParams {
   double density_freshsnow;
   double density_frost;
   double density_water;
-  double Hf, Ls, Le, Cp;
+  double Hf, Ls, Le, Cp_air, Cv_water;
   double R_ideal_gas;
 
   // constants for energy equations
@@ -153,6 +155,7 @@ struct EnergyBalance {
   double fQe;           // latent heat
   double fQc;           // heat conducted to ground surface
   double fQm;           // energy available for melting snow
+  double error;         // imbalance!
 
   // terms in latent and sensible heat
   double Dhe;           // special constant for use in e and h, precalculated for efficiency
@@ -178,17 +181,21 @@ struct MassBalance {    // all are in [m/s] of WATER, i.e. snow are in SWE
   double Me;    // condensation of water/frost (if positive),
                 // sublimation/evaporation of snow/water (if negative)
   double Mm;    // melt rate (positive indicates increasing water, decreasing snow)
-  double MWg;   // water source to ground
-  double MWg_subsurf; // water source to subsurface cell
-  double MWg_temp; // temperature of sources
   double dt;    // max dt that may be taken to conserve snow swe
 
   MassBalance() :
       Me(MY_LOCAL_NAN),
-      Mm(MY_LOCAL_NAN),
-      MWg(MY_LOCAL_NAN) {}
+      Mm(MY_LOCAL_NAN) {}
 };
 
+
+// Struct collecting final output fluxes
+struct FluxBalance {
+  double M_surf; // [m/s], mass to surface system
+  double M_sub; // [m/s], mass to subsurface system
+  double E_surf; // [W/m^2], energy to surface system
+  double E_sub; // [W/m^2], energy to subsurface system
+};
 
 
 // Used to calculate surface properties, prior to calling SEB.

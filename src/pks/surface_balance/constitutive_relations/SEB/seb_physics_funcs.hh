@@ -86,7 +86,6 @@ double EvaporativeResistanceGround(const GroundProperties& surf,
         const ModelParams& params, 
         double vapor_pressure_air, double vapor_pressure_ground);
 
-    
 // 
 // Basic sensible heat.
 // ------------------------------------------------------------------------------------------
@@ -159,7 +158,7 @@ MassBalance UpdateMassBalance(const GroundProperties& surf, const SnowProperties
 // 
 // Main driver -- calculate the energy and mass balances.
 // ------------------------------------------------------------------------------------------
-std::tuple<SnowProperties, EnergyBalance, MassBalance>
+std::tuple<SnowProperties, EnergyBalance, MassBalance, FluxBalance>
 CalculateSurfaceBalance(double dt,
                         const GroundProperties& surf,
                         const SnowProperties& snow_old,
