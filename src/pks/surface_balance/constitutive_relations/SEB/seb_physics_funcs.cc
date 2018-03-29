@@ -281,6 +281,8 @@ double DetermineSnowTemperature(const GroundProperties& surf,
     }
   }
 
+  //  std::cout << "Determining snow temp in interval (" << left << "," << right << ")" << std::endl;
+  
   std::pair<double,double> result;
   auto my_max_it = max_it;
   if (method == "bisection") {
@@ -295,9 +297,9 @@ double DetermineSnowTemperature(const GroundProperties& surf,
   // We choose to set the solution as the center of that interval.
   // Call the function again to set the fluxes.
   double solution = (result.first + result.second)/2.;
-  func(solution);
-  return solution;
+  //  std::cout << "  Got T=" << solution << " with SW = " << eb.fQswIn << ", LW = " << eb.fQlwIn << ", LWout = " << eb.fQlwOut << ", Sens = " << eb.fQh << ", Lat = " << eb.fQe << ", Cond = " << eb.fQc << ", melt = " << eb.fQm << std::endl;
 
+  return solution;
 }
 
 
@@ -499,7 +501,7 @@ CalculateSurfaceBalance(double dt,
   flux.M_surf = met.Pr + mb.Mm * mb.dt / dt;
 
   // energy to surface is conducted energy, enthalpy of rain and melt
-  flux.E_surf = eb.fQc + surf.density_w * met.Pr * met.air_temp * params.Cv_water;
+  flux.E_surf = eb.fQc + surf.density_w * met.Pr * (met.air_temp-273.15) * params.Cv_water;
   //           + surf.density_w * met.Mm * 0. * params.Cv_water; // enthalpy of water at 0c is 0
 
   // mass, energy to subsurface is 0
@@ -519,13 +521,13 @@ CalculateSurfaceBalance(double dt,
     if (eb.fQe > 0.) {
       // if condensation, just add energy due to introduction of new water.
       // Latent heat released goes into the atmosphere.
-      flux.E_surf += evap_to_surface * mb.Me * surf.density_w * met.air_temp * params.Cv_water;
+      flux.E_surf += evap_to_surface * mb.Me * surf.density_w * (met.air_temp-273.15) * params.Cv_water;
       flux.E_sub += (1-evap_to_surface) * mb.Me * surf.density_w * met.air_temp * params.Cv_water;
     } else {
       // if evaporation, take away the energy of that water, but also cool due
       // to latent heat removal.  Note this is equivalent to simply taking
       // away the energy of the VAPOR removed.
-      flux.E_surf += evap_to_surface * (mb.Me * surf.density_w * surf.temp * params.Cv_water + eb.fQe);
+      flux.E_surf += evap_to_surface * (mb.Me * surf.density_w * (surf.temp-273.15) * params.Cv_water + eb.fQe);
       flux.E_sub += (1-evap_to_surface) * (mb.Me * surf.density_w * surf.temp * params.Cv_water + eb.fQe);
     }
     
