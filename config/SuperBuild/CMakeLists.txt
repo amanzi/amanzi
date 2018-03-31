@@ -517,7 +517,7 @@ else()
 endif()
 
 # CURL
-include(${SuperBuild_BUILD_FILES_DIR}/Build_CURL.cmake)
+# include(${SuperBuild_BUILD_FILES_DIR}/Build_CURL.cmake)
 
 # UnitTest
 append_set(Amanzi_TPL_CMAKE_ARGS -DENABLE_TEST:BOOL=${ENABLE_TESTS})
