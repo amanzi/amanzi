@@ -182,6 +182,7 @@ ExternalProject_Add(${PETSc_BUILD_TARGET}
                                           --prefix=<INSTALL_DIR>
                                           ${petsc_mpi_compilers}
                                           --without-x
+					  --with-ssl=0
                                           --with-debugging=${petsc_debug_flag}
                                           --without-valgrind
                                           ${petsc_lapack_option}
