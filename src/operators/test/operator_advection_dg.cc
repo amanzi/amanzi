@@ -24,6 +24,7 @@
 #include "UnitTest++.h"
 
 // Amanzi
+#include "Explicit_TI_RK.hh"
 #include "GMVMesh.hh"
 #include "CompositeVector.hh"
 #include "LinearOperatorGMRES.hh"
@@ -43,10 +44,170 @@
 #include "PDE_Reaction.hh"
 
 
+namespace Amanzi {
+
+class AdvectionFn : public Explicit_TI::fnBase<CompositeVector> {
+ public:
+  AdvectionFn(Teuchos::ParameterList& plist,
+              const Teuchos::RCP<const AmanziMesh::Mesh> mesh)
+      : plist_(plist), mesh_(mesh) {
+
+    // create global operator 
+    // -- flux term
+    Teuchos::ParameterList op_list = plist.get<Teuchos::ParameterList>("PK operator")
+                                          .sublist("flux operator");
+    op_flux = Teuchos::rcp(new Operators::PDE_AdvectionRiemann(op_list, mesh));
+    global_op_ = op_flux->global_operator();
+
+    // -- volumetric advection term
+    op_list = plist.get<Teuchos::ParameterList>("PK operator")
+                   .sublist("advection operator");
+    op_adv = Teuchos::rcp(new Operators::PDE_Abstract(op_list, global_op_));
+
+    // -- reaction term
+    op_list = plist.get<Teuchos::ParameterList>("PK operator")
+                   .sublist("reaction operator");
+    op_reac = Teuchos::rcp(new Operators::PDE_Reaction(op_list, mesh_));
+  }
+
+  void Functional(double t, const CompositeVector& u, CompositeVector& f) override {
+    int d = mesh_->space_dimension();
+    int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+    int ncells_wghost = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
+    int nfaces_wghost = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
+
+    // update reaction coefficient
+    auto cvs = Teuchos::rcp(new CompositeVectorSpace());
+    cvs->SetMesh(mesh_)->SetGhosted(true);
+    cvs->AddComponent("cell", AmanziMesh::CELL, 1);
+
+    auto K = Teuchos::rcp(new CompositeVector(*cvs));
+    auto Kc = K->ViewComponent("cell", true);
+
+    for (int c = 0; c < ncells_wghost; c++) {
+      (*Kc)[0][c] = 1.0;
+    }
+
+    // update velocity coefficient
+    auto velc = Teuchos::rcp(new std::vector<WhetStone::VectorPolynomial>(ncells_wghost));
+    auto velf = Teuchos::rcp(new std::vector<WhetStone::Polynomial>(nfaces_wghost));
+
+    WhetStone::VectorPolynomial v(d, 2);
+    v[0].Reshape(d, 2, true);
+    v[0](1, 0) = 1.0;
+    v[0](2, 0) = -1.0;
+
+    v[1].Reshape(d, 2, true);
+    v[1](1, 1) = 1.0;
+    v[1](2, 2) = -1.0;
+  
+    for (int c = 0; c < ncells_wghost; ++c) {
+      (*velc)[c] = v;
+      (*velc)[c] *= -1.0;
+    }
+
+    for (int f = 0; f < nfaces_wghost; ++f) {
+      (*velf)[f] = v * mesh_->face_normal(f);
+    }
+
+    // calculate source term
+    WhetStone::Polynomial divv(d, 2);
+    divv(0, 0) = 2.0;
+    divv(1, 0) = -2.0;
+    divv(1, 1) = -2.0;
+
+    AmanziGeometry::Point tmp(d);
+    WhetStone::Polynomial sol, src;
+    WhetStone::VectorPolynomial grad(d, 0);
+
+    AnalyticDG02 ana(mesh_, 2);
+    ana.TaylorCoefficients(tmp, 0.0, sol);
+    grad.Gradient(sol); 
+    src = sol + v * grad + divv * sol;
+
+    int order = plist_.get<Teuchos::ParameterList>("PK operator")
+                      .sublist("flux operator")
+                      .get<int>("method order");
+
+    WhetStone::Polynomial pc(2, order);
+    WhetStone::NumericalIntegration numi(mesh_);
+
+    CompositeVector& rhs = *global_op_->rhs();
+    Epetra_MultiVector& rhs_c = *rhs.ViewComponent("cell");
+    for (int c = 0; c < ncells; ++c) {
+      const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
+      double volume = mesh_->cell_volume(c);
+
+      WhetStone::Polynomial src_copy(src);
+      src_copy.ChangeOrigin(xc);
+
+      for (auto it = pc.begin(); it.end() <= pc.end(); ++it) {
+        int n = it.PolynomialPosition();
+        int k = it.MonomialOrder();
+
+        double factor = numi.MonomialNaturalScale(k, volume);
+        WhetStone::Polynomial cmono(2, it.multi_index(), factor);
+        cmono.set_origin(xc);      
+
+        WhetStone::Polynomial tmp = src_copy * cmono;      
+
+        rhs_c[n][c] = numi.IntegratePolynomialCell(c, tmp);
+      }
+    }
+
+    // populate the global operator
+    op_flux->Setup(velc, velf);
+    op_flux->UpdateMatrices(velf.ptr());
+
+    op_adv->SetupPolyVector(velc);
+    op_adv->UpdateMatrices();
+
+    op_reac->Setup(Kc);
+    op_reac->UpdateMatrices(Teuchos::null);
+
+    // create preconditoner
+    Teuchos::ParameterList slist = plist_.get<Teuchos::ParameterList>("preconditioners");
+
+    auto global_reac = op_reac->global_operator();
+    global_reac->SymbolicAssembleMatrix();
+    global_reac->AssembleMatrix();
+    global_reac->InitPreconditioner("Hypre AMG", slist);
+
+    // invert vector
+    Teuchos::ParameterList lop_list = plist_.sublist("solvers")
+                                            .sublist("GMRES").sublist("gmres parameters");
+    AmanziSolvers::LinearOperatorGMRES<Operators::Operator, CompositeVector, CompositeVectorSpace>
+        solver(global_reac, global_reac);
+    solver.Init(lop_list);
+
+    CompositeVector u1(u);
+    solver.ApplyInverse(u, u1);
+
+    // calculate functional
+    global_op_->Apply(u1, f);
+    f.Update(1.0, rhs, 1.0);
+  }
+
+ public:
+  Teuchos::RCP<Operators::PDE_AdvectionRiemann> op_flux;
+  Teuchos::RCP<Operators::PDE_Abstract> op_adv;
+  Teuchos::RCP<Operators::PDE_Reaction> op_reac;
+
+ private:
+  Teuchos::RCP<Operators::Operator> global_op_;
+
+  const Teuchos::ParameterList plist_;
+  Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
+};
+
+}  // namespace Amanzi
+
+
 /* *****************************************************************
-* This tests exactness/accuracy of the advection scheme.
+* This tests exactness of the steady-state advection scheme.
 * **************************************************************** */
-TEST(OPERATOR_ADVECTION_DG) {
+void AdvectionSteady(std::string filename)
+{
   using namespace Teuchos;
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
@@ -56,7 +217,7 @@ TEST(OPERATOR_ADVECTION_DG) {
   Epetra_MpiComm comm(MPI_COMM_WORLD);
   int MyPID = comm.MyPID();
 
-  if (MyPID == 0) std::cout << "\nTest: 2D advection problem, discontinuous Galerkin" << std::endl;
+  if (MyPID == 0) std::cout << "\nTest: 2D steady advection problem, discontinuous Galerkin" << std::endl;
 
   // read parameter list
   std::string xmlFileName = "test/operator_advection_dg.xml";
@@ -70,7 +231,7 @@ TEST(OPERATOR_ADVECTION_DG) {
   MeshFactory meshfactory(&comm);
   meshfactory.preference(FrameworkPreference({MSTK,STKMESH}));
   // RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 10, 10, gm);
-  RCP<const Mesh> mesh = meshfactory("test/median7x8.exo", gm, true, true);
+  RCP<const Mesh> mesh = meshfactory(filename, gm, true, true);
 
   int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
   int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
@@ -235,5 +396,98 @@ TEST(OPERATOR_ADVECTION_DG) {
     printf("L2(p)=%9.6f  Inf(p)=%9.6f  itr=%3d\n", pl2_err, pinf_err, solver.num_itrs());
     CHECK(pl2_err < 1e-10);
   }
+}
+
+
+TEST(OPERATOR_ADVECTION_STEADY_DG) {
+  AdvectionSteady("test/median7x8.exo");
+}
+
+
+/* *****************************************************************
+* This tests exactness of the steady-state advection scheme.
+* **************************************************************** */
+void AdvectionTransient(std::string filename,
+                        const Amanzi::Explicit_TI::method_t& rk_method)
+{
+  using namespace Teuchos;
+  using namespace Amanzi;
+  using namespace Amanzi::AmanziMesh;
+  using namespace Amanzi::AmanziGeometry;
+  using namespace Amanzi::Operators;
+
+  Epetra_MpiComm comm(MPI_COMM_WORLD);
+  int MyPID = comm.MyPID();
+
+  if (MyPID == 0) std::cout << "\nTest: 2D transient advection problem, discontinuous Galerkin" << std::endl;
+
+  // read parameter list
+  std::string xmlFileName = "test/operator_advection_dg.xml";
+  ParameterXMLFileReader xmlreader(xmlFileName);
+  ParameterList plist = xmlreader.getParameters();
+
+  // create a mesh framework
+  ParameterList region_list = plist.get<Teuchos::ParameterList>("regions");
+  Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(2, region_list, &comm));
+
+  MeshFactory meshfactory(&comm);
+  meshfactory.preference(FrameworkPreference({MSTK,STKMESH}));
+  RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 10, 10, gm);
+  // RCP<const Mesh> mesh = meshfactory(filename, gm, true, true);
+
+  int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+  int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
+  int ncells_wghost = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
+  int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
+
+  // create main advection class
+  AdvectionFn fn(plist, mesh);
+
+  // create initial guess
+  CompositeVector& rhs = *fn.op_flux->global_operator()->rhs();
+  CompositeVector sol(rhs), sol_next(rhs);
+  sol.PutScalar(0.0);
+
+  int nstep(0);
+  double t(0.0), tend(1.0), dt(0.1);
+  Explicit_TI::RK<CompositeVector> rk(fn, rk_method, sol);
+
+  while(t < tend - dt/2) {
+    rk.TimeStep(t, dt, sol, sol_next);
+
+    sol = sol_next;
+
+    t += dt;
+    nstep++;
+  }
+
+  // visualization
+  if (MyPID == 0) {
+    const Epetra_MultiVector& p = *sol.ViewComponent("cell");
+    GMV::open_data_file(*mesh, (std::string)"operators.gmv");
+    GMV::start_data();
+    GMV::write_cell_data(p, 0, "solution");
+    GMV::write_cell_data(p, 1, "gradx");
+    GMV::write_cell_data(p, 1, "grady");
+    GMV::close_data_file();
+  }
+
+  // compute solution error
+  sol.ScatterMasterToGhosted();
+  Epetra_MultiVector& p = *sol.ViewComponent("cell", false);
+
+  double pnorm, pl2_err, pinf_err;
+  AnalyticDG02 ana(mesh, 2);
+  ana.ComputeCellError(p, 0.0, pnorm, pl2_err, pinf_err);
+
+  if (MyPID == 0) {
+    printf("L2(p)=%9.6f  Inf(p)=%9.6f\n", pl2_err, pinf_err);
+    // CHECK(pl2_err < 1e-10);
+  }
+}
+
+
+TEST(OPERATOR_ADVECTION_TRANSIENT_DG) {
+  AdvectionTransient("test/median7x8.exo", Amanzi::Explicit_TI::forward_euler);
 }
 

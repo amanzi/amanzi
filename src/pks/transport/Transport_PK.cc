@@ -1362,8 +1362,8 @@ void Transport_PK::AdvanceSecondOrderUpwindRKn(double dt_cycle)
   if (temporal_disc_order == 2) {
     ti_method = Explicit_TI::heun_euler;
   } else if (temporal_disc_order == 3) {
-    ti_method = Explicit_TI::kutta_3rd_order;
-  } else if (temporal_disc_order == 3) {
+    ti_method = Explicit_TI::tvd_3rd_order;
+  } else if (temporal_disc_order == 4) {
     ti_method = Explicit_TI::runge_kutta_4th_order;
   }
 
