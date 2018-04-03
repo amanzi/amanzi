@@ -83,6 +83,26 @@
         <Parameter name="number" type="Array(int)" value="{6}"/>
       </ParameterList>
     </ParameterList>
+
+    <ParameterList name="inverse mass operator">
+      <Parameter name="method" type="string" value="dg modal"/>
+      <Parameter name="dg basis" type="string" value="natural"/>
+      <Parameter name="method order" type="int" value="2"/>
+      <Parameter name="matrix type" type="string" value="mass inverse"/>
+
+      <ParameterList name="schema domain">
+        <Parameter name="base" type="string" value="cell"/>
+        <Parameter name="location" type="Array(string)" value="{cell}"/>
+        <Parameter name="type" type="Array(string)" value="{scalar}"/>
+        <Parameter name="number" type="Array(int)" value="{6}"/>
+      </ParameterList>
+      <ParameterList name="schema range">
+        <Parameter name="base" type="string" value="cell"/>
+        <Parameter name="location" type="Array(string)" value="{cell}"/>
+        <Parameter name="type" type="Array(string)" value="{scalar}"/>
+        <Parameter name="number" type="Array(int)" value="{6}"/>
+      </ParameterList>
+    </ParameterList>
   </ParameterList>
 
   <!-- SOLVERS -->

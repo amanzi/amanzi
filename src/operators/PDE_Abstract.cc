@@ -120,6 +120,12 @@ void PDE_Abstract::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& u,
       mfd_->MassMatrix(c, (*Kpoly_)[c], Acell);
       matrix[c] = Acell;
     }
+  } else if (matrix_ == "mass inverse" && coef == "constant") {
+    for (int c = 0; c < ncells_owned; ++c) {
+      if (K_.get()) Kc = (*K_)[c];
+      mfd_->MassMatrixInverse(c, Kc, Acell);
+      matrix[c] = Acell;
+    }
   } else if (matrix_ == "mass inverse" && coef == "polynomial") {
     for (int c = 0; c < ncells_owned; ++c) {
       mfd_->MassMatrixInverse(c, (*Kpoly_)[c], Acell);
@@ -153,7 +159,7 @@ void PDE_Abstract::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& u,
     }
   } else {
     Errors::Message msg;
-    msg << "Unsupported combination matrix_=" << matrix_ 
+    msg << "Unsupported combination matrix=" << matrix_ 
         << " and coef=" << coef << "\n";
     Exceptions::amanzi_throw(msg);
   }

@@ -194,8 +194,8 @@ int DG_Modal::MassMatrixPiecewisePoly_(
   std::vector<const Polynomial*> polys(3);
 
   std::vector<AmanziGeometry::Point> xy(3); 
-  // xy[0] = cell_geometric_center(*mesh_, c);
-  xy[0] = mesh_->cell_centroid(c);
+  xy[0] = cell_geometric_center(*mesh_, c);
+  // xy[0] = mesh_->cell_centroid(c);
 
   for (auto it = p.begin(); it.end() <= p.end(); ++it) {
     int k = it.PolynomialPosition();
@@ -421,8 +421,8 @@ int DG_Modal::AdvectionMatrixPiecewisePoly_(
   std::vector<const Polynomial*> polys(2);
 
   std::vector<AmanziGeometry::Point> xy(3); 
-  // xy[0] = cell_geometric_center(*mesh_, c);
-  xy[0] = mesh_->cell_centroid(c);
+  xy[0] = cell_geometric_center(*mesh_, c);
+  // xy[0] = mesh_->cell_centroid(c);
 
   for (auto it = p.begin(); it.end() <= p.end(); ++it) {
     int k = it.PolynomialPosition();

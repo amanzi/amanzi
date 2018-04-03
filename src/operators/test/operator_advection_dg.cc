@@ -34,7 +34,7 @@
 #include "VectorPolynomial.hh"
 
 // Operators
-#include "AnalyticDG01.hh"
+#include "AnalyticDG00.hh"
 #include "AnalyticDG02.hh"
 
 #include "OperatorAudit.hh"
@@ -66,8 +66,8 @@ class AdvectionFn : public Explicit_TI::fnBase<CompositeVector> {
 
     // -- reaction term
     op_list = plist.get<Teuchos::ParameterList>("PK operator")
-                   .sublist("reaction operator");
-    op_reac = Teuchos::rcp(new Operators::PDE_Reaction(op_list, mesh_));
+                   .sublist("inverse mass operator");
+    op_mass = Teuchos::rcp(new Operators::PDE_Abstract(op_list, mesh_));
   }
 
   void Functional(double t, const CompositeVector& u, CompositeVector& f) override {
@@ -75,18 +75,6 @@ class AdvectionFn : public Explicit_TI::fnBase<CompositeVector> {
     int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
     int ncells_wghost = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
     int nfaces_wghost = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
-
-    // update reaction coefficient
-    auto cvs = Teuchos::rcp(new CompositeVectorSpace());
-    cvs->SetMesh(mesh_)->SetGhosted(true);
-    cvs->AddComponent("cell", AmanziMesh::CELL, 1);
-
-    auto K = Teuchos::rcp(new CompositeVector(*cvs));
-    auto Kc = K->ViewComponent("cell", true);
-
-    for (int c = 0; c < ncells_wghost; c++) {
-      (*Kc)[0][c] = 1.0;
-    }
 
     // update velocity coefficient
     auto velc = Teuchos::rcp(new std::vector<WhetStone::VectorPolynomial>(ncells_wghost));
@@ -110,6 +98,17 @@ class AdvectionFn : public Explicit_TI::fnBase<CompositeVector> {
       (*velf)[f] = v * mesh_->face_normal(f);
     }
 
+    // update accumulation coefficient
+    auto K = Teuchos::rcp(new std::vector<WhetStone::Polynomial>(ncells_wghost));
+    WhetStone::Polynomial Kc(d, 2);
+    Kc(0, 0) = 1.0;
+    Kc(1, 0) =-1.0;
+    Kc(1, 1) =-1.0;
+    Kc(2, 1) = 1.0;
+    for (int c = 0; c < ncells_wghost; c++) {
+      (*K)[c] = Kc;
+    }
+
     // calculate source term
     WhetStone::Polynomial divv(d, 2);
     divv(0, 0) = 2.0;
@@ -120,10 +119,10 @@ class AdvectionFn : public Explicit_TI::fnBase<CompositeVector> {
     WhetStone::Polynomial sol, src;
     WhetStone::VectorPolynomial grad(d, 0);
 
-    AnalyticDG02 ana(mesh_, 2);
+    AnalyticDG00 ana(mesh_, 2);
     ana.TaylorCoefficients(tmp, 0.0, sol);
     grad.Gradient(sol); 
-    src = sol + v * grad + divv * sol;
+    src = -1.0 * (v * grad + divv * sol);
 
     int order = plist_.get<Teuchos::ParameterList>("PK operator")
                       .sublist("flux operator")
@@ -162,36 +161,22 @@ class AdvectionFn : public Explicit_TI::fnBase<CompositeVector> {
     op_adv->SetupPolyVector(velc);
     op_adv->UpdateMatrices();
 
-    op_reac->Setup(Kc);
-    op_reac->UpdateMatrices(Teuchos::null);
-
-    // create preconditoner
-    Teuchos::ParameterList slist = plist_.get<Teuchos::ParameterList>("preconditioners");
-
-    auto global_reac = op_reac->global_operator();
-    global_reac->SymbolicAssembleMatrix();
-    global_reac->AssembleMatrix();
-    global_reac->InitPreconditioner("Hypre AMG", slist);
-
-    // invert vector
-    Teuchos::ParameterList lop_list = plist_.sublist("solvers")
-                                            .sublist("GMRES").sublist("gmres parameters");
-    AmanziSolvers::LinearOperatorGMRES<Operators::Operator, CompositeVector, CompositeVectorSpace>
-        solver(global_reac, global_reac);
-    solver.Init(lop_list);
-
-    CompositeVector u1(u);
-    solver.ApplyInverse(u, u1);
+    op_mass->SetupPoly(K);
+    op_mass->UpdateMatrices(Teuchos::null);
 
     // calculate functional
-    global_op_->Apply(u1, f);
-    f.Update(1.0, rhs, 1.0);
+    CompositeVector u1(u);
+    global_op_->Apply(u, u1);
+    u1.Update(1.0, rhs, 1.0);
+
+    // invert vector
+    op_mass->global_operator()->Apply(u1, f);
   }
 
  public:
   Teuchos::RCP<Operators::PDE_AdvectionRiemann> op_flux;
   Teuchos::RCP<Operators::PDE_Abstract> op_adv;
-  Teuchos::RCP<Operators::PDE_Reaction> op_reac;
+  Teuchos::RCP<Operators::PDE_Abstract> op_mass;
 
  private:
   Teuchos::RCP<Operators::Operator> global_op_;
@@ -432,7 +417,7 @@ void AdvectionTransient(std::string filename,
 
   MeshFactory meshfactory(&comm);
   meshfactory.preference(FrameworkPreference({MSTK,STKMESH}));
-  RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 10, 10, gm);
+  RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 2, 2, gm);
   // RCP<const Mesh> mesh = meshfactory(filename, gm, true, true);
 
   int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
@@ -449,7 +434,7 @@ void AdvectionTransient(std::string filename,
   sol.PutScalar(0.0);
 
   int nstep(0);
-  double t(0.0), tend(1.0), dt(0.1);
+  double t(0.0), tend(20.0), dt(0.01);
   Explicit_TI::RK<CompositeVector> rk(fn, rk_method, sol);
 
   while(t < tend - dt/2) {
@@ -459,6 +444,7 @@ void AdvectionTransient(std::string filename,
 
     t += dt;
     nstep++;
+    printf("t=%9.6f\n", t);
   }
 
   // visualization
@@ -477,7 +463,7 @@ void AdvectionTransient(std::string filename,
   Epetra_MultiVector& p = *sol.ViewComponent("cell", false);
 
   double pnorm, pl2_err, pinf_err;
-  AnalyticDG02 ana(mesh, 2);
+  AnalyticDG00 ana(mesh, 2);
   ana.ComputeCellError(p, 0.0, pnorm, pl2_err, pinf_err);
 
   if (MyPID == 0) {
@@ -487,7 +473,7 @@ void AdvectionTransient(std::string filename,
 }
 
 
-TEST(OPERATOR_ADVECTION_TRANSIENT_DG) {
-  AdvectionTransient("test/median7x8.exo", Amanzi::Explicit_TI::forward_euler);
-}
+// TEST(OPERATOR_ADVECTION_TRANSIENT_DG) {
+//   AdvectionTransient("test/median7x8.exo", Amanzi::Explicit_TI::forward_euler);
+// }
 

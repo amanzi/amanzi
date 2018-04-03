@@ -126,13 +126,17 @@ class RemapDG : public Explicit_TI::fnBase<CompositeVector> {
     nfun_++;
     Epetra_MultiVector& xc = *x.ViewComponent("cell");
     int nk = xc.NumVectors();
-    double xmax[nk];
+    double xmax[nk], xmin[nk];
     xc.MaxValue(xmax);
+    xc.MinValue(xmin);
 
     if (fabs(tprint_ - t) < 1e-6 && mesh_->get_comm()->MyPID() == 0) {
       printf("t=%8.5f  L2=%9.5g  nfnc=%3d  umax: ", t, l2norm_, nfun_);
       for (int i = 0; i < nk; ++i) printf("%9.5g ", xmax[i]);
       printf("\n");
+      // printf("                                    umin: ", t, l2norm_, nfun_);
+      // for (int i = 0; i < nk; ++i) printf("%9.5g ", xmin[i]);
+      // printf("\n");
       tprint_ += 0.1;
     } 
 
@@ -274,10 +278,10 @@ class RemapDG : public Explicit_TI::fnBase<CompositeVector> {
 
  private:
   void UpdateGeometricQuantities_(double t) {
+    WhetStone::VectorPolynomial cn;
+
     for (int f = 0; f < nfaces_wghost_; ++f) {
       // cn = j J^{-t} N dA
-      WhetStone::VectorPolynomial cn;
-
       maps_->NansonFormula(f, t, velf_vec_[f], cn);
       (*velf_)[f] = velf_vec_[f] * cn;
     }
@@ -729,6 +733,7 @@ void RemapTestsDualRK(int order_p, int order_u,
     GMV::close_data_file();
   }
 }
+
 
 /*
 TEST(REMAP_DUAL_FEM) {

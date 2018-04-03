@@ -68,6 +68,7 @@ class BilinearForm : public virtual InnerProductL2,
     return 1;
   }
 
+  using InnerProductL2::MassMatrixInverse;
   virtual int MassMatrixInverse(int c, const VectorPolynomial& K, DenseMatrix& M) {
     Errors::Message msg("MassMatrixInverse: polynomial coefficient is not supported.");
     Exceptions::amanzi_throw(msg);
