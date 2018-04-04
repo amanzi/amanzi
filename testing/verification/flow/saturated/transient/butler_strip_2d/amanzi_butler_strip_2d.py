@@ -50,10 +50,11 @@ if __name__ == "__main__":
     import run_amanzi_standard
 
     input_file =os.path.join("amanzi_butler_strip_2d.xml")
+    run_dir = "amanzi-output"
 
     CWD = os.getcwd()
     try: 
-        run_amanzi_standard.run_amanzi(input_file, 16, [input_file])
+        run_amanzi_standard.run_amanzi(input_file, 16, [input_file], run_dir)
         obs_xml = loadInputXML(input_file)
         obs_data = load_amanzi_obs()
 

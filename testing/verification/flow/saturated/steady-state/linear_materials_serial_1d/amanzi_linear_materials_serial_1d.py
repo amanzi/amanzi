@@ -126,8 +126,9 @@ if __name__ == "__main__":
     import run_amanzi_standard
 
     input_file = "amanzi_linear_materials_serial_1d-u.xml"
+    run_dir = "amanzi-output"
     try: 
-        run_amanzi_standard.run_amanzi(input_file, 1, [input_file])
+        run_amanzi_standard.run_amanzi(input_file, 1, [input_file], run_dir)
         obs_xml=loadInputXML(input_file)
         obs_data=loadDataFile(obs_xml)
 
