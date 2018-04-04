@@ -117,11 +117,12 @@ if __name__ == "__main__":
     import run_amanzi_standard
 
     input_file =os.path.join("amanzi_theis_isotropic_1d-u.xml")
+    run_dir = "amanzi-output"
 
     cwd = os.getcwd()
     try: 
         max_np = 10
-        run_amanzi_standard.run_amanzi(input_file, max_np, [input_file])
+        run_amanzi_standard.run_amanzi(input_file, max_np, [input_file], run_dir)
         obs_xml=loadInputXML(input_file)
         obs_data=loadDataFile(obs_xml)
 
