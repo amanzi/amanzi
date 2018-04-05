@@ -55,7 +55,7 @@ void Chemistry_PK::Setup(const Teuchos::Ptr<State>& S)
     // S->RequireScalar(fluid_den_key_, passwd_);
     S->RequireField(fluid_den_key_, passwd_)->SetMesh(mesh_)->SetGhosted(false)
        ->AddComponent("cell", AmanziMesh::CELL, 1);
-    S->RequireFieldEvaluator(fluid_den_key_);
+    // S->RequireFieldEvaluator(fluid_den_key_);
   }
 
   // require transport fields
