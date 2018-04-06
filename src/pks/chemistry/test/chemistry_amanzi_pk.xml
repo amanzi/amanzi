@@ -84,6 +84,7 @@
   <ParameterList name="PKs">
   <ParameterList name="chemistry">
     <Parameter name="number of component concentrations" type="int" value="5"/>
+    <Parameter name="fluid density key" type="string" value="mass_density_liquid" />
     <Parameter name="Component Solutes" type="Array(string)" value="{Al+++, H+, HPO4--, SiO2(aq), UO2++}"/>
     <Parameter name="minerals" type="Array(string)" value="{Kaolinite, Quartz, (UO2)3(PO4)2.4H2O}"/>
     <Parameter name="sorption sites" type="Array(string)" value="{>FeOH, >AlOH, >SiOH}"/>
@@ -175,7 +176,7 @@
         </ParameterList>
       </ParameterList>
 
-      <ParameterList name="fluid_density">
+      <ParameterList name="mass_density_liquid">
         <Parameter name="field evaluator type" type="string" value="independent variable" />
         <ParameterList name="function">
           <ParameterList name="domain">
