@@ -194,8 +194,8 @@ int DG_Modal::MassMatrixPiecewisePoly_(
   std::vector<const Polynomial*> polys(3);
 
   std::vector<AmanziGeometry::Point> xy(3); 
-  xy[0] = cell_geometric_center(*mesh_, c);
-  // xy[0] = mesh_->cell_centroid(c);
+  // xy[0] = cell_geometric_center(*mesh_, c);
+  xy[0] = mesh_->cell_centroid(c);
 
   for (auto it = p.begin(); it.end() <= p.end(); ++it) {
     int k = it.PolynomialPosition();
@@ -421,8 +421,8 @@ int DG_Modal::AdvectionMatrixPiecewisePoly_(
   std::vector<const Polynomial*> polys(2);
 
   std::vector<AmanziGeometry::Point> xy(3); 
-  xy[0] = cell_geometric_center(*mesh_, c);
-  // xy[0] = mesh_->cell_centroid(c);
+  // xy[0] = cell_geometric_center(*mesh_, c);
+  xy[0] = mesh_->cell_centroid(c);
 
   for (auto it = p.begin(); it.end() <= p.end(); ++it) {
     int k = it.PolynomialPosition();
@@ -477,8 +477,7 @@ int DG_Modal::AdvectionMatrixPiecewisePoly_(
 
 
 /* ******************************************************************
-* Upwind flux matrix for Taylor basis and normal velocity u.n. 
-* Velocity is given in the face-based Taylor basis.
+* Upwind/Downwind matrix for Taylor basis and normal velocity u.n. 
 * If jump_on_test=true, we calculate
 * 
 *   \Int { (u.n) \rho^* [\psi] } dS
@@ -488,8 +487,8 @@ int DG_Modal::AdvectionMatrixPiecewisePoly_(
 *
 *   \Int { (u.n) \psi^* [\rho] } dS
 ****************************************************************** */
-int DG_Modal::FluxMatrixUpwind(int f, const Polynomial& un, DenseMatrix& A,
-                               bool jump_on_test)
+int DG_Modal::FluxMatrix(int f, const Polynomial& un, DenseMatrix& A,
+                         bool upwind, bool jump_on_test)
 {
   AmanziMesh::Entity_ID_List cells, nodes;
   mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
@@ -508,6 +507,8 @@ int DG_Modal::FluxMatrixUpwind(int f, const Polynomial& un, DenseMatrix& A,
   const AmanziGeometry::Point& xf = mesh_->face_centroid(f);
 
   double vel = un.Value(xf) * dir;
+  if (upwind) vel = -vel;
+
   if (vel > 0.0) {
     if (ncells == 1) return 0;
     id = 1;

@@ -92,7 +92,7 @@ class DG_Modal : public BilinearForm {
   }
 
   // -- flux matrices
-  int FluxMatrixUpwind(int f, const Polynomial& uf, DenseMatrix& A, bool jump_on_test);
+  int FluxMatrix(int f, const Polynomial& uf, DenseMatrix& A, bool upwind, bool jump_on_test);
   int FluxMatrixRusanov(int f, const VectorPolynomial& uc1, const VectorPolynomial& uc2,
                         const Polynomial& uf, DenseMatrix& A);
 

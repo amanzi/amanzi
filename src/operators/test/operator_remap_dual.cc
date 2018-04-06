@@ -600,7 +600,7 @@ void RemapTestsDualRK(int order_p, int order_u,
     WhetStone::Polynomial poly(dg.CalculatePolynomial(c, data));
     numi.ChangeBasisNaturalToRegular(c, poly);
 
-    // const AmanziGeometry::Point& xg = maps->cell_geometric_center(1, c);
+    // const AmanziGeometry::Point& xg = cell_geometric_center(*mesh1, c);
     const AmanziGeometry::Point& xg = mesh1->cell_centroid(c);
     double err = poly.Value(xc0) - ana.SolutionExact(xg, 0.0);
 
@@ -634,6 +634,7 @@ void RemapTestsDualRK(int order_p, int order_u,
       int nfaces = faces.size();
 
       std::vector<AmanziGeometry::Point> xy(3);
+      // xy[0] = cell_geometric_center(*mesh0, c);
       xy[0] = mesh0->cell_centroid(c);
 
       mass1_c = 0.0;
@@ -733,7 +734,6 @@ void RemapTestsDualRK(int order_p, int order_u,
     GMV::close_data_file();
   }
 }
-
 
 /*
 TEST(REMAP_DUAL_FEM) {

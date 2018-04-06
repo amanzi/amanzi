@@ -36,10 +36,10 @@ void MeshMaps_PEM::VelocityCell(
   AmanziGeometry::Point p(d_), q(d_);
   Tensor T0(d_, d_), T1(d_, d_);
 
-  AmanziGeometry::Point x0 = cell_geometric_center(*mesh0_, c);
-  AmanziGeometry::Point x1 = cell_geometric_center(*mesh1_, c);
-  // AmanziGeometry::Point x0 = mesh0_->cell_centroid(c);
-  // AmanziGeometry::Point x1 = mesh1_->cell_centroid(c);
+  // AmanziGeometry::Point x0 = cell_geometric_center(*mesh0_, c);
+  // AmanziGeometry::Point x1 = cell_geometric_center(*mesh1_, c);
+  AmanziGeometry::Point x0 = mesh0_->cell_centroid(c);
+  AmanziGeometry::Point x1 = mesh1_->cell_centroid(c);
 
   mesh0_->cell_get_faces(c, &faces);
   int nfaces = faces.size();

@@ -125,7 +125,12 @@ void PDE_AdvectionRiemann::UpdateMatrices(
 
   if (matrix_ == "flux" && flux_ == "upwind") {
     for (int f = 0; f < nfaces_owned; ++f) {
-      dg_->FluxMatrixUpwind(f, (*u)[f], Aface, jump_on_test_);
+      dg_->FluxMatrix(f, (*u)[f], Aface, true, jump_on_test_);
+      matrix[f] = Aface;
+    }
+  } else if (matrix_ == "flux" && flux_ == "downwind") {
+    for (int f = 0; f < nfaces_owned; ++f) {
+      dg_->FluxMatrix(f, (*u)[f], Aface, false, jump_on_test_);
       matrix[f] = Aface;
     }
   } else if (matrix_ == "flux" && flux_ == "Rusanov") {

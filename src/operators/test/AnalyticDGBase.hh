@@ -63,7 +63,11 @@ class AnalyticDGBase {
       double tmp = SolutionExact(xc, t);
       double volume = mesh_->cell_volume(c);
 
-      // std::cout << c << " " << tmp << " " << p[0][c] << std::endl;
+      /*
+      std::cout << c << " exact=" << tmp << " dg=";
+      for (int i = 0; i < p.NumVectors(); ++i) std::cout << " " << p[i][c];
+      std::cout << std::endl;
+      */
       l2_err += std::pow(tmp - p[0][c], 2.0) * volume;
       inf_err = std::max(inf_err, fabs(tmp - p[0][c]));
       pnorm += std::pow(tmp, 2.0) * volume;

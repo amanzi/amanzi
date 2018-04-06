@@ -8,7 +8,7 @@
 
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 
-  DG methods for linear advection equation c p + u . \nabla p = f.
+  DG methods for linear advection equations.
 */
 
 #include <cstdlib>
@@ -34,8 +34,8 @@
 #include "VectorPolynomial.hh"
 
 // Operators
-#include "AnalyticDG00.hh"
 #include "AnalyticDG02.hh"
+#include "AnalyticDG04.hh"
 
 #include "OperatorAudit.hh"
 #include "OperatorDefs.hh"
@@ -53,7 +53,7 @@ class AdvectionFn : public Explicit_TI::fnBase<CompositeVector> {
       : plist_(plist), mesh_(mesh) {
 
     // create global operator 
-    // -- flux term
+    // -- upwind flux term
     Teuchos::ParameterList op_list = plist.get<Teuchos::ParameterList>("PK operator")
                                           .sublist("flux operator");
     op_flux = Teuchos::rcp(new Operators::PDE_AdvectionRiemann(op_list, mesh));
@@ -100,11 +100,8 @@ class AdvectionFn : public Explicit_TI::fnBase<CompositeVector> {
 
     // update accumulation coefficient
     auto K = Teuchos::rcp(new std::vector<WhetStone::Polynomial>(ncells_wghost));
-    WhetStone::Polynomial Kc(d, 2);
+    WhetStone::Polynomial Kc(d, 0);
     Kc(0, 0) = 1.0;
-    Kc(1, 0) =-1.0;
-    Kc(1, 1) =-1.0;
-    Kc(2, 1) = 1.0;
     for (int c = 0; c < ncells_wghost; c++) {
       (*K)[c] = Kc;
     }
@@ -115,30 +112,30 @@ class AdvectionFn : public Explicit_TI::fnBase<CompositeVector> {
     divv(1, 0) = -2.0;
     divv(1, 1) = -2.0;
 
-    AmanziGeometry::Point tmp(d);
-    WhetStone::Polynomial sol, src;
-    WhetStone::VectorPolynomial grad(d, 0);
-
-    AnalyticDG00 ana(mesh_, 2);
-    ana.TaylorCoefficients(tmp, 0.0, sol);
-    grad.Gradient(sol); 
-    src = -1.0 * (v * grad + divv * sol);
-
+    AnalyticDG04 ana(mesh_, 2);
     int order = plist_.get<Teuchos::ParameterList>("PK operator")
                       .sublist("flux operator")
                       .get<int>("method order");
 
-    WhetStone::Polynomial pc(2, order);
+    WhetStone::Polynomial sol, src, pc(2, order);
+    WhetStone::VectorPolynomial grad(d, 0);
     WhetStone::NumericalIntegration numi(mesh_);
 
     CompositeVector& rhs = *global_op_->rhs();
     Epetra_MultiVector& rhs_c = *rhs.ViewComponent("cell");
+
     for (int c = 0; c < ncells; ++c) {
       const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
       double volume = mesh_->cell_volume(c);
 
-      WhetStone::Polynomial src_copy(src);
-      src_copy.ChangeOrigin(xc);
+      ana.TaylorCoefficients(xc, 0.0, sol);
+      sol.set_origin(xc);
+
+      v[0].ChangeOrigin(xc);
+      v[1].ChangeOrigin(xc);
+
+      grad.Gradient(sol); 
+      src = sol + (v * grad) * t;
 
       for (auto it = pc.begin(); it.end() <= pc.end(); ++it) {
         int n = it.PolynomialPosition();
@@ -148,7 +145,7 @@ class AdvectionFn : public Explicit_TI::fnBase<CompositeVector> {
         WhetStone::Polynomial cmono(2, it.multi_index(), factor);
         cmono.set_origin(xc);      
 
-        WhetStone::Polynomial tmp = src_copy * cmono;      
+        WhetStone::Polynomial tmp = src * cmono;      
 
         rhs_c[n][c] = numi.IntegratePolynomialCell(c, tmp);
       }
@@ -189,7 +186,109 @@ class AdvectionFn : public Explicit_TI::fnBase<CompositeVector> {
 
 
 /* *****************************************************************
-* This tests exactness of the steady-state advection scheme.
+* This tests exactness of the transient advection scheme for
+* dp/dt + v . \nabla p = f.
+* **************************************************************** */
+void AdvectionTransient(std::string filename, int nx, int ny, double dt,
+                        const Amanzi::Explicit_TI::method_t& rk_method)
+{
+  using namespace Teuchos;
+  using namespace Amanzi;
+  using namespace Amanzi::AmanziMesh;
+  using namespace Amanzi::AmanziGeometry;
+  using namespace Amanzi::Operators;
+
+  Epetra_MpiComm comm(MPI_COMM_WORLD);
+  int MyPID = comm.MyPID();
+
+  if (MyPID == 0) std::cout << "\nTest: 2D dG transient advection problem, " << filename << std::endl;
+
+  // read parameter list
+  std::string xmlFileName = "test/operator_advection_dg_transient.xml";
+  ParameterXMLFileReader xmlreader(xmlFileName);
+  ParameterList plist = xmlreader.getParameters();
+
+  // create a mesh framework
+  ParameterList region_list = plist.get<Teuchos::ParameterList>("regions");
+  Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(2, region_list, &comm));
+
+  MeshFactory meshfactory(&comm);
+  meshfactory.preference(FrameworkPreference({MSTK,STKMESH}));
+  RCP<const Mesh> mesh;
+  if (nx == 0 || ny == 0)
+    mesh = meshfactory(filename, gm, true, true);
+  else
+    mesh = meshfactory(0.0, 0.0, 1.0, 1.0, nx, ny, gm);
+
+  int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+  int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
+  int ncells_wghost = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
+  int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
+
+  // create main advection class
+  AdvectionFn fn(plist, mesh);
+
+  // create initial guess
+  CompositeVector& rhs = *fn.op_flux->global_operator()->rhs();
+  CompositeVector sol(rhs), sol_next(rhs);
+  sol.PutScalar(0.0);
+
+  int nstep(0);
+  double t(0.0), tend(1.0);
+  Explicit_TI::RK<CompositeVector> rk(fn, rk_method, sol);
+
+  while(t < tend - dt/2) {
+    rk.TimeStep(t, dt, sol, sol_next);
+
+    sol = sol_next;
+
+    t += dt;
+    nstep++;
+
+    if (MyPID == 0)
+      printf("t=%9.6f\n", t);
+  }
+
+  // visualization
+  if (MyPID == 0) {
+    const Epetra_MultiVector& p = *sol.ViewComponent("cell");
+    GMV::open_data_file(*mesh, (std::string)"operators.gmv");
+    GMV::start_data();
+    GMV::write_cell_data(p, 0, "solution");
+    GMV::write_cell_data(p, 1, "gradx");
+    GMV::write_cell_data(p, 1, "grady");
+    GMV::close_data_file();
+  }
+
+  // compute solution error
+  sol.ScatterMasterToGhosted();
+  Epetra_MultiVector& p = *sol.ViewComponent("cell", false);
+
+  double pnorm, pl2_err, pinf_err;
+  AnalyticDG04 ana(mesh, 2);
+  ana.ComputeCellError(p, 0.0, pnorm, pl2_err, pinf_err);
+
+  if (MyPID == 0) {
+    printf("nx=%3d  L2(p)=%9.6f  Inf(p)=%9.6f\n", nx, pl2_err, pinf_err);
+    // CHECK(pl2_err < 1e-10);
+  }
+}
+
+
+TEST(OPERATOR_ADVECTION_TRANSIENT_DG) {
+  /*
+  AdvectionTransient("square",  4,  4, 0.1, Amanzi::Explicit_TI::tvd_3rd_order);
+  AdvectionTransient("square",  8,  8, 0.1 / 2, Amanzi::Explicit_TI::tvd_3rd_order);
+  AdvectionTransient("square", 16, 16, 0.1 / 4, Amanzi::Explicit_TI::tvd_3rd_order);
+  AdvectionTransient("square", 32, 32, 0.1 / 8, Amanzi::Explicit_TI::tvd_3rd_order);
+  */
+  AdvectionTransient("test/median7x8.exo", 0, 0, 0.1, Amanzi::Explicit_TI::tvd_3rd_order);
+}
+
+
+/* *****************************************************************
+* This tests exactness of the advection scheme for steady-state
+* equation c p + u . \nabla p = f.
 * **************************************************************** */
 void AdvectionSteady(std::string filename)
 {
@@ -358,6 +457,7 @@ void AdvectionSteady(std::string filename)
               << " order=" << order << std::endl;
 
     // visualization
+    /*
     const Epetra_MultiVector& p = *solution.ViewComponent("cell");
     GMV::open_data_file(*mesh, (std::string)"operators.gmv");
     GMV::start_data();
@@ -365,6 +465,7 @@ void AdvectionSteady(std::string filename)
     GMV::write_cell_data(p, 1, "gradx");
     GMV::write_cell_data(p, 1, "grady");
     GMV::close_data_file();
+    */
   }
 
   CHECK(solver.num_itrs() < 2000);
@@ -388,92 +489,4 @@ TEST(OPERATOR_ADVECTION_STEADY_DG) {
   AdvectionSteady("test/median7x8.exo");
 }
 
-
-/* *****************************************************************
-* This tests exactness of the steady-state advection scheme.
-* **************************************************************** */
-void AdvectionTransient(std::string filename,
-                        const Amanzi::Explicit_TI::method_t& rk_method)
-{
-  using namespace Teuchos;
-  using namespace Amanzi;
-  using namespace Amanzi::AmanziMesh;
-  using namespace Amanzi::AmanziGeometry;
-  using namespace Amanzi::Operators;
-
-  Epetra_MpiComm comm(MPI_COMM_WORLD);
-  int MyPID = comm.MyPID();
-
-  if (MyPID == 0) std::cout << "\nTest: 2D transient advection problem, discontinuous Galerkin" << std::endl;
-
-  // read parameter list
-  std::string xmlFileName = "test/operator_advection_dg.xml";
-  ParameterXMLFileReader xmlreader(xmlFileName);
-  ParameterList plist = xmlreader.getParameters();
-
-  // create a mesh framework
-  ParameterList region_list = plist.get<Teuchos::ParameterList>("regions");
-  Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(2, region_list, &comm));
-
-  MeshFactory meshfactory(&comm);
-  meshfactory.preference(FrameworkPreference({MSTK,STKMESH}));
-  RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 2, 2, gm);
-  // RCP<const Mesh> mesh = meshfactory(filename, gm, true, true);
-
-  int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
-  int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
-  int ncells_wghost = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
-  int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
-
-  // create main advection class
-  AdvectionFn fn(plist, mesh);
-
-  // create initial guess
-  CompositeVector& rhs = *fn.op_flux->global_operator()->rhs();
-  CompositeVector sol(rhs), sol_next(rhs);
-  sol.PutScalar(0.0);
-
-  int nstep(0);
-  double t(0.0), tend(20.0), dt(0.01);
-  Explicit_TI::RK<CompositeVector> rk(fn, rk_method, sol);
-
-  while(t < tend - dt/2) {
-    rk.TimeStep(t, dt, sol, sol_next);
-
-    sol = sol_next;
-
-    t += dt;
-    nstep++;
-    printf("t=%9.6f\n", t);
-  }
-
-  // visualization
-  if (MyPID == 0) {
-    const Epetra_MultiVector& p = *sol.ViewComponent("cell");
-    GMV::open_data_file(*mesh, (std::string)"operators.gmv");
-    GMV::start_data();
-    GMV::write_cell_data(p, 0, "solution");
-    GMV::write_cell_data(p, 1, "gradx");
-    GMV::write_cell_data(p, 1, "grady");
-    GMV::close_data_file();
-  }
-
-  // compute solution error
-  sol.ScatterMasterToGhosted();
-  Epetra_MultiVector& p = *sol.ViewComponent("cell", false);
-
-  double pnorm, pl2_err, pinf_err;
-  AnalyticDG00 ana(mesh, 2);
-  ana.ComputeCellError(p, 0.0, pnorm, pl2_err, pinf_err);
-
-  if (MyPID == 0) {
-    printf("L2(p)=%9.6f  Inf(p)=%9.6f\n", pl2_err, pinf_err);
-    // CHECK(pl2_err < 1e-10);
-  }
-}
-
-
-// TEST(OPERATOR_ADVECTION_TRANSIENT_DG) {
-//   AdvectionTransient("test/median7x8.exo", Amanzi::Explicit_TI::forward_euler);
-// }
 
