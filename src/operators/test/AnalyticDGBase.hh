@@ -8,8 +8,8 @@
 
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 
-  Base class for testing DG schemes.
-  List of problems:
+  Base class for testing DG schemes for diffusion and advection.
+  List of solutions:
 
   AnalyticDG0n: polynomial solution of order n, where n=0,1,2, and 3
   AnalyticDG04: sin(3x) six(6y)

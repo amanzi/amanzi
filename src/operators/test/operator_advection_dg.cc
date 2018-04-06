@@ -106,13 +106,7 @@ class AdvectionFn : public Explicit_TI::fnBase<CompositeVector> {
       (*K)[c] = Kc;
     }
 
-    // calculate source term
-    WhetStone::Polynomial divv(d, 2);
-    divv(0, 0) = 2.0;
-    divv(1, 0) = -2.0;
-    divv(1, 1) = -2.0;
-
-    AnalyticDG04 ana(mesh_, 2);
+    AnalyticDG04 ana(mesh_, 3);
     int order = plist_.get<Teuchos::ParameterList>("PK operator")
                       .sublist("flux operator")
                       .get<int>("method order");

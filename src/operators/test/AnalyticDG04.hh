@@ -46,6 +46,13 @@ class AnalyticDG04 : public AnalyticDGBase {
       coefs(2, 1) =  18.0 * std::cos(3 * p[0]) * std::cos(6 * p[1]);
       coefs(2, k) = -18.0 * std::sin(3 * p[0]) * std::sin(6 * p[1]);
     }
+
+    if (order_ > 2) {
+      coefs(3, 0) =  -4.5 * std::cos(3 * p[0]) * std::sin(6 * p[1]);
+      coefs(3, 1) = -27.0 * std::sin(3 * p[0]) * std::cos(6 * p[1]);
+      coefs(3, 2) = -54.0 * std::cos(3 * p[0]) * std::sin(6 * p[1]);
+      coefs(3, 3) = -36.0 * std::sin(3 * p[0]) * std::cos(6 * p[1]);
+    }
   }
 
   // source term
