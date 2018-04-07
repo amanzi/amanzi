@@ -49,11 +49,14 @@ void RelPerm::Compute(Teuchos::RCP<const CompositeVector> p,
 
   // add boundary face component
   Epetra_MultiVector& krel_df = *krel->ViewComponent("dirichlet_faces", true);
+  krel_df.PutScalar(0.0);
+
   const Epetra_Map& ext_face_map = mesh_->exterior_face_map(true);
   const Epetra_Map& face_map = mesh_->face_map(true);
+
+  AmanziMesh::Entity_ID_List cells;
   for (int f = 0; f != face_map.NumMyElements(); ++f) {
     if (bc_model[f] == Operators::OPERATOR_BC_DIRICHLET) {
-      AmanziMesh::Entity_ID_List cells;
       mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
       ASSERT(cells.size() == 1);
       int bf = ext_face_map.LID(face_map.GID(f));
