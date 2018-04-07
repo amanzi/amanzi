@@ -50,7 +50,7 @@ class AdvectionFn : public Explicit_TI::fnBase<CompositeVector> {
  public:
   AdvectionFn(Teuchos::ParameterList& plist,
               const Teuchos::RCP<const AmanziMesh::Mesh> mesh)
-      : plist_(plist), mesh_(mesh) {
+      : plist_(plist), mesh_(mesh), ana_(mesh, 3) {
 
     // create global operator 
     // -- upwind flux term
@@ -76,13 +76,13 @@ class AdvectionFn : public Explicit_TI::fnBase<CompositeVector> {
     int ncells_wghost = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
     int nfaces_wghost = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
 
+    // calculate approximate velocity
+    WhetStone::VectorPolynomial v;
+    ana_.VelocityTaylor(AmanziGeometry::Point(0.0, 0.0), 0.0, v); 
+
     // update velocity coefficient
     auto velc = Teuchos::rcp(new std::vector<WhetStone::VectorPolynomial>(ncells_wghost));
     auto velf = Teuchos::rcp(new std::vector<WhetStone::Polynomial>(nfaces_wghost));
-
-    AnalyticDG04 ana(mesh_, 3);
-    WhetStone::VectorPolynomial v;
-    ana.VelocityTaylor(AmanziGeometry::Point(0.0, 0.0), 0.0, v); 
 
     for (int c = 0; c < ncells_wghost; ++c) {
       (*velc)[c] = v;
@@ -92,6 +92,8 @@ class AdvectionFn : public Explicit_TI::fnBase<CompositeVector> {
     for (int f = 0; f < nfaces_wghost; ++f) {
       (*velf)[f] = v * mesh_->face_normal(f);
     }
+
+    // CalculateApproximateVelocity();
 
     // update accumulation coefficient
     auto K = Teuchos::rcp(new std::vector<WhetStone::Polynomial>(ncells_wghost));
@@ -116,7 +118,7 @@ class AdvectionFn : public Explicit_TI::fnBase<CompositeVector> {
       const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
       double volume = mesh_->cell_volume(c);
 
-      ana.SolutionTaylor(xc, 0.0, sol);
+      ana_.SolutionTaylor(xc, 0.0, sol);
 
       v[0].ChangeOrigin(xc);
       v[1].ChangeOrigin(xc);
@@ -158,6 +160,31 @@ class AdvectionFn : public Explicit_TI::fnBase<CompositeVector> {
     f.Dot(u1, &l2norm);
   }
 
+  // modify cell and face velocities 
+  void CalculateApproximateVelocity() {
+    Epetra_MpiComm comm(MPI_COMM_WORLD);
+    AmanziMesh::MeshFactory factory(&comm);
+    factory.set_partitioner(AmanziMesh::Partitioner_type::ZOLTAN_RCB);
+    factory.preference(AmanziMesh::FrameworkPreference({AmanziMesh::MSTK}));
+    Teuchos::RCP<AmanziMesh::Mesh> mesh_new = factory("test/median7x8.exo", mesh_->geometric_model(), true, true);
+
+    int dim = mesh_->space_dimension();
+    AmanziGeometry::Point xv(dim), yv(dim);
+    AmanziMesh::Entity_ID_List nodeids;
+    AmanziGeometry::Point_List new_positions, final_positions;
+
+    int nnodes_wghost = mesh_->num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::ALL);
+    for (int v = 0; v < nnodes_wghost; ++v) {
+      mesh_->node_get_coordinates(v, &xv);
+      yv = ana_.VelocityExact(xv, 0.0); 
+      xv += yv;
+
+      nodeids.push_back(v);
+      new_positions.push_back(xv);
+    }
+    mesh_new->deform(nodeids, new_positions, false, &final_positions);
+  }
+
  public:
   double l2norm;
 
@@ -166,6 +193,7 @@ class AdvectionFn : public Explicit_TI::fnBase<CompositeVector> {
   Teuchos::RCP<Operators::PDE_Abstract> op_mass;
 
  private:
+  AnalyticDG04 ana_;
   Teuchos::RCP<Operators::Operator> global_op_;
 
   const Teuchos::ParameterList plist_;

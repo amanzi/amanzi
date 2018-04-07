@@ -81,55 +81,7 @@ class AnalyticDGBase {
     return tmp;
   }
 
-  // approximate terms
-  // -- cell velocity
-  void VelocityCell(int c, double t, Amanzi::WhetStone::VectorPolynomial& v, std::string method) {
-    const Amanzi::AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
-    if (method == "analytic") {
-      VelocityTaylor(xc, t, v);
-    } else if (method == "piecewise-linear") {
-      Amanzi::WhetStone::Tensor T0, T1, A1;
-      Amanzi::AmanziGeometry::Point xp, vc, vp, a0;
-      Amanzi::AmanziMesh::Entity_ID_List faces, nodes;
-
-      vc = VelocityExact(xp, t);
-
-      mesh_->cell_get_faces(c, &faces);
-      int nfaces = faces.size();
-      v.resize(nfaces * d_);
-
-      // calculate piecelinear velocity approximation v(x) = a0 + A1 * x
-      for (int n = 0; n < nfaces; ++n) {
-        int f = faces[n];
-        int m = n * d_;
-
-        mesh_->face_get_nodes(f, &nodes);
-        for (int i = 0; i < 2; ++i) {
-          mesh_->node_get_coordinates(nodes[i], &xp);
-          vp = VelocityExact(xp, t);
-
-          T0.SetColumn(i, xp - xc);
-          T1.SetColumn(i, vp - vc);
-        }
-
-        T0.Inverse();
-        A1 = T1 * T0;
-        a0 = xc - A1 * xc;
-
-        for (int i = 0; i < d_; ++i) {
-          v[m].Reshape(d_, 1);
-
-          v[m](0, 0) = a0[i];
-          for (int j = 0; j < d_; ++j) {
-            v[m](1, j) = A1(i, j);
-          }
-          m++;
-        }
-      }
-    }
-  }
-
-  // error calcuatations
+  // error calculations
   void ComputeCellError(Epetra_MultiVector& p, double t, double& pnorm, double& l2_err, double& inf_err) {
     pnorm = 0.0;
     l2_err = 0.0;
