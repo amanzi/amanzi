@@ -129,7 +129,7 @@ void RemapTests2DPrimal(int order, std::string disc_name,
   for (int c = 0; c < ncells_wghost; c++) {
     const AmanziGeometry::Point& xc = mesh0->cell_centroid(c);
     WhetStone::Polynomial coefs;
-    ana.TaylorCoefficients(xc, 0.0, coefs);
+    ana.SolutionTaylor(xc, 0.0, coefs);
     numi.ChangeBasisRegularToNatural(c, coefs);
 
     WhetStone::DenseVector data;
@@ -187,7 +187,7 @@ void RemapTests2DPrimal(int order, std::string disc_name,
   plist.set<std::string>("method", disc_name)
        .set<std::string>("dg basis", "partially orthonormalized")
        .set<std::string>("matrix type", "flux")
-       .set<std::string>("flux formula", "upwind")
+       .set<std::string>("flux formula", "downwind")
        .set<int>("method order", order)
        .set<bool>("jump operator on test function", false);
 

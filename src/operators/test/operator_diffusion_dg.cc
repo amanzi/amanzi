@@ -111,7 +111,7 @@ TEST(OPERATOR_DIFFUSION_DG) {
         fabs(xf[1]) < 1e-6) {
       bc_model[f] = OPERATOR_BC_DIRICHLET;
 
-      ana.TaylorCoefficients(xf, 0.0, coefs);
+      ana.SolutionTaylor(xf, 0.0, coefs);
       coefs.GetPolynomialCoefficients(data);
 
       for (int i = 0; i < data.NumRows(); ++i) {
@@ -120,7 +120,7 @@ TEST(OPERATOR_DIFFUSION_DG) {
     } else if (fabs(xf[1] - 1.0) < 1e-6) {
       bc_model[f] = OPERATOR_BC_NEUMANN;
 
-      ana.TaylorCoefficients(xf, 0.0, coefs);
+      ana.SolutionTaylor(xf, 0.0, coefs);
       coefs.GetPolynomialCoefficients(data);
 
       for (int i = 0; i < data.NumRows(); ++i) {

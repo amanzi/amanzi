@@ -240,7 +240,7 @@ TEST(DG2D_ADVECTION_MATRIX_FACE) {
 
     // TEST1: constant u
     DenseMatrix A0, A1;
-    dg.FluxMatrixUpwind(1, un, A0, false);
+    dg.FluxMatrix(1, un, A0, true, false);
 
     printf("Advection matrix (face-based) for order=%d  u.n=1\n", k);
     int nk = A0.NumRows();
@@ -251,7 +251,7 @@ TEST(DG2D_ADVECTION_MATRIX_FACE) {
 
     // TEST2: add zero gradient to polynomial un
     un.Reshape(2, 1);
-    dg.FluxMatrixUpwind(1, un, A1, false);
+    dg.FluxMatrix(1, un, A1, true, false);
 
     A1 -= A0;
     CHECK_CLOSE(0.0, A1.NormInf(), 1e-12);
@@ -259,7 +259,7 @@ TEST(DG2D_ADVECTION_MATRIX_FACE) {
     // TEST3: nonzero linear component polynomial un
     un.monomials(1).coefs()[0] = 1.0;
 
-    dg.FluxMatrixUpwind(1, un, A1, false);
+    dg.FluxMatrix(1, un, A1, true, false);
 
     printf("Advection matrix (face-based) for order=%d u.n=1+x\n", k);
     for (int i = 0; i < nk; i++) {
@@ -298,7 +298,7 @@ TEST(DG3D_ADVECTION_MATRIX_FACE) {
 
     // TEST1: constant u
     DenseMatrix A0, A1;
-    dg.FluxMatrixUpwind(f, un, A0, false);
+    dg.FluxMatrix(f, un, A0, true, false);
 
     printf("Advection matrix (face-based) for order=%d  u.n=1\n", k);
     int nk = A0.NumRows();
@@ -309,7 +309,7 @@ TEST(DG3D_ADVECTION_MATRIX_FACE) {
 
     // TEST2: add zero gradient to polynomial un
     un.Reshape(d, 1);
-    dg.FluxMatrixUpwind(f, un, A1, false);
+    dg.FluxMatrix(f, un, A1, true, false);
 
     A1 -= A0;
     CHECK_CLOSE(0.0, A1.NormInf(), 1e-12);
@@ -317,7 +317,7 @@ TEST(DG3D_ADVECTION_MATRIX_FACE) {
     // TEST3: nonzero linear component polynomial un
     un(1, 0) = 1.0;
 
-    dg.FluxMatrixUpwind(f, un, A1, false);
+    dg.FluxMatrix(f, un, A1, true, false);
 
     printf("Advection matrix (face-based) for order=%d u.n=1+x\n", k);
     for (int i = 0; i < nk; i++) {

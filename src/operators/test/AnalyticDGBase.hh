@@ -8,11 +8,14 @@
 
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 
-  Base class for testing DG schemes for diffusion and advection.
-  List of solutions:
+  Base class for testing DG schemes for diffusion and advection
+  problems of the form:
 
-  AnalyticDG0n: polynomial solution of order n, where n=0,1,2, and 3
-  AnalyticDG04: sin(3x) six(6y)
+    u = a du/dt + v . grad(u) - div(K grad(u)) + r u = f.
+
+  List of solutions:
+    AnalyticDG0n: polynomial solution of order n, where n=0,1,2.
+    AnalyticDG04: sin(3x) six(6y)
 */
 
 #ifndef AMANZI_OPERATOR_ANALYTIC_DG_BASE_HH_
@@ -23,6 +26,7 @@
 #include "Mesh.hh"
 #include "Point.hh"
 #include "Polynomial.hh"
+#include "VectorPolynomial.hh"
 #include "Tensor.hh"
 
 class AnalyticDGBase {
@@ -33,25 +37,99 @@ class AnalyticDGBase {
       d_(mesh_->space_dimension()) {};
   ~AnalyticDGBase() {};
 
-  // diffusion tensor
+  // analytic data in conventional Taylor basis
+  // -- diffusion tensor
   virtual Amanzi::WhetStone::Tensor Tensor(const Amanzi::AmanziGeometry::Point& p, double t) = 0;
 
-  // analytic solution in conventional Taylor basis
-  virtual void TaylorCoefficients(const Amanzi::AmanziGeometry::Point& p, double t,
-                                  Amanzi::WhetStone::Polynomial& coefs) = 0;
+  // -- solution
+  virtual void SolutionTaylor(const Amanzi::AmanziGeometry::Point& p, double t,
+                              Amanzi::WhetStone::Polynomial& coefs) = 0;
 
-  // approximate source term
+  // -- velocity
+  virtual void VelocityTaylor(const Amanzi::AmanziGeometry::Point& p, double t,
+                              Amanzi::WhetStone::VectorPolynomial& v) = 0;
+
+  // -- accumulation
+  virtual void AccumulationTaylor(const Amanzi::AmanziGeometry::Point& p, double t,
+                                  Amanzi::WhetStone::Polynomial& a) = 0;
+
+  // -- reaction
+  virtual void ReactionTaylor(const Amanzi::AmanziGeometry::Point& p, double t,
+                              Amanzi::WhetStone::Polynomial& r) = 0;
+
+  // -- source term
   virtual void SourceTaylor(const Amanzi::AmanziGeometry::Point& p, double t,
                             Amanzi::WhetStone::Polynomial& src) = 0;
 
-  // exact solution value
+  // exact pointwise values
+  // -- solution
   double SolutionExact(const Amanzi::AmanziGeometry::Point& p, double t) {
     Amanzi::WhetStone::Polynomial coefs;
-    TaylorCoefficients(p, t, coefs);
+    SolutionTaylor(p, t, coefs);
     return coefs(0, 0);
   }
 
-  // calculate error
+  // -- velocity
+  virtual Amanzi::AmanziGeometry::Point VelocityExact(const Amanzi::AmanziGeometry::Point& p, double t) {
+    Amanzi::WhetStone::VectorPolynomial v;
+    VelocityTaylor(p, t, v);
+
+    Amanzi::AmanziGeometry::Point tmp(d_);
+    for (int i = 0; i < d_; ++i) {
+      tmp[i] = v[i](0, 0);
+    }
+    return tmp;
+  }
+
+  // approximate terms
+  // -- cell velocity
+  void VelocityCell(int c, double t, Amanzi::WhetStone::VectorPolynomial& v, std::string method) {
+    const Amanzi::AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
+    if (method == "analytic") {
+      VelocityTaylor(xc, t, v);
+    } else if (method == "piecewise-linear") {
+      Amanzi::WhetStone::Tensor T0, T1, A1;
+      Amanzi::AmanziGeometry::Point xp, vc, vp, a0;
+      Amanzi::AmanziMesh::Entity_ID_List faces, nodes;
+
+      vc = VelocityExact(xp, t);
+
+      mesh_->cell_get_faces(c, &faces);
+      int nfaces = faces.size();
+      v.resize(nfaces * d_);
+
+      // calculate piecelinear velocity approximation v(x) = a0 + A1 * x
+      for (int n = 0; n < nfaces; ++n) {
+        int f = faces[n];
+        int m = n * d_;
+
+        mesh_->face_get_nodes(f, &nodes);
+        for (int i = 0; i < 2; ++i) {
+          mesh_->node_get_coordinates(nodes[i], &xp);
+          vp = VelocityExact(xp, t);
+
+          T0.SetColumn(i, xp - xc);
+          T1.SetColumn(i, vp - vc);
+        }
+
+        T0.Inverse();
+        A1 = T1 * T0;
+        a0 = xc - A1 * xc;
+
+        for (int i = 0; i < d_; ++i) {
+          v[m].Reshape(d_, 1);
+
+          v[m](0, 0) = a0[i];
+          for (int j = 0; j < d_; ++j) {
+            v[m](1, j) = A1(i, j);
+          }
+          m++;
+        }
+      }
+    }
+  }
+
+  // error calcuatations
   void ComputeCellError(Epetra_MultiVector& p, double t, double& pnorm, double& l2_err, double& inf_err) {
     pnorm = 0.0;
     l2_err = 0.0;

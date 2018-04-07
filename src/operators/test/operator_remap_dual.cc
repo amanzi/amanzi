@@ -473,7 +473,7 @@ void RemapTestsDualRK(int order_p, int order_u,
   for (int c = 0; c < ncells_wghost; c++) {
     const AmanziGeometry::Point& xc = mesh0->cell_centroid(c);
     WhetStone::Polynomial coefs;
-    ana.TaylorCoefficients(xc, 0.0, coefs);
+    ana.SolutionTaylor(xc, 0.0, coefs);
     numi.ChangeBasisRegularToNatural(c, coefs);
 
     WhetStone::DenseVector data;
@@ -514,7 +514,7 @@ void RemapTestsDualRK(int order_p, int order_u,
   plist.set<std::string>("method", "dg modal")
        .set<std::string>("dg basis", "partially orthonormalized")
        .set<std::string>("matrix type", "flux")
-       .set<std::string>("flux formula", "upwind")
+       .set<std::string>("flux formula", "downwind")
        .set<int>("method order", order_p)
        .set<bool>("jump operator on test function", true);
 

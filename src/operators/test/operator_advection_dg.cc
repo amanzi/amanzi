@@ -80,15 +80,10 @@ class AdvectionFn : public Explicit_TI::fnBase<CompositeVector> {
     auto velc = Teuchos::rcp(new std::vector<WhetStone::VectorPolynomial>(ncells_wghost));
     auto velf = Teuchos::rcp(new std::vector<WhetStone::Polynomial>(nfaces_wghost));
 
-    WhetStone::VectorPolynomial v(d, 2);
-    v[0].Reshape(d, 2, true);
-    v[0](1, 0) = 1.0;
-    v[0](2, 0) = -1.0;
+    AnalyticDG04 ana(mesh_, 3);
+    WhetStone::VectorPolynomial v;
+    ana.VelocityTaylor(AmanziGeometry::Point(0.0, 0.0), 0.0, v); 
 
-    v[1].Reshape(d, 2, true);
-    v[1](1, 1) = 1.0;
-    v[1](2, 2) = -1.0;
-  
     for (int c = 0; c < ncells_wghost; ++c) {
       (*velc)[c] = v;
       (*velc)[c] *= -1.0;
@@ -106,7 +101,6 @@ class AdvectionFn : public Explicit_TI::fnBase<CompositeVector> {
       (*K)[c] = Kc;
     }
 
-    AnalyticDG04 ana(mesh_, 3);
     int order = plist_.get<Teuchos::ParameterList>("PK operator")
                       .sublist("flux operator")
                       .get<int>("method order");
@@ -122,8 +116,7 @@ class AdvectionFn : public Explicit_TI::fnBase<CompositeVector> {
       const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
       double volume = mesh_->cell_volume(c);
 
-      ana.TaylorCoefficients(xc, 0.0, sol);
-      sol.set_origin(xc);
+      ana.SolutionTaylor(xc, 0.0, sol);
 
       v[0].ChangeOrigin(xc);
       v[1].ChangeOrigin(xc);
@@ -162,9 +155,12 @@ class AdvectionFn : public Explicit_TI::fnBase<CompositeVector> {
 
     // invert vector
     op_mass->global_operator()->Apply(u1, f);
+    f.Dot(u1, &l2norm);
   }
 
  public:
+  double l2norm;
+
   Teuchos::RCP<Operators::PDE_AdvectionRiemann> op_flux;
   Teuchos::RCP<Operators::PDE_Abstract> op_adv;
   Teuchos::RCP<Operators::PDE_Abstract> op_mass;
@@ -228,7 +224,7 @@ void AdvectionTransient(std::string filename, int nx, int ny, double dt,
   sol.PutScalar(0.0);
 
   int nstep(0);
-  double t(0.0), tend(1.0);
+  double t(0.0), tend(1.0), tprint(0.0);
   Explicit_TI::RK<CompositeVector> rk(fn, rk_method, sol);
 
   while(t < tend - dt/2) {
@@ -236,11 +232,13 @@ void AdvectionTransient(std::string filename, int nx, int ny, double dt,
 
     sol = sol_next;
 
+    if (MyPID == 0 && std::fabs(t - tprint) < dt/4) {
+      tprint += 0.1; 
+      printf("t=%9.6f  |p|=%9.6g\n", t, fn.l2norm);
+    }
+
     t += dt;
     nstep++;
-
-    if (MyPID == 0)
-      printf("t=%9.6f\n", t);
   }
 
   // visualization
@@ -263,20 +261,19 @@ void AdvectionTransient(std::string filename, int nx, int ny, double dt,
   ana.ComputeCellError(p, 0.0, pnorm, pl2_err, pinf_err);
 
   if (MyPID == 0) {
-    printf("nx=%3d  L2(p)=%9.6f  Inf(p)=%9.6f\n", nx, pl2_err, pinf_err);
-    // CHECK(pl2_err < 1e-10);
+    printf("nx=%3d  L2(p)=%9.6g  Inf(p)=%9.6g\n", nx, pl2_err, pinf_err);
+    CHECK(pl2_err < 0.1 / nx);
   }
 }
 
 
 TEST(OPERATOR_ADVECTION_TRANSIENT_DG) {
-  /*
-  AdvectionTransient("square",  4,  4, 0.1, Amanzi::Explicit_TI::tvd_3rd_order);
-  AdvectionTransient("square",  8,  8, 0.1 / 2, Amanzi::Explicit_TI::tvd_3rd_order);
-  AdvectionTransient("square", 16, 16, 0.1 / 4, Amanzi::Explicit_TI::tvd_3rd_order);
-  AdvectionTransient("square", 32, 32, 0.1 / 8, Amanzi::Explicit_TI::tvd_3rd_order);
-  */
-  AdvectionTransient("test/median7x8.exo", 0, 0, 0.1, Amanzi::Explicit_TI::tvd_3rd_order);
+  AdvectionTransient("test/median7x8.exo", 8, 0, 0.05, Amanzi::Explicit_TI::tvd_3rd_order);
+  AdvectionTransient("test/median15x16.exo", 16, 0, 0.05 / 2, Amanzi::Explicit_TI::tvd_3rd_order);
+  AdvectionTransient("test/median32x33.exo", 32, 0, 0.05 / 4, Amanzi::Explicit_TI::tvd_3rd_order);
+  AdvectionTransient("test/median63x64.exo", 64, 0, 0.05 / 8, Amanzi::Explicit_TI::tvd_3rd_order);
+  AdvectionTransient("test/median127x128.exo", 128, 0, 0.05 / 16, Amanzi::Explicit_TI::tvd_3rd_order);
+  // AdvectionTransient("square",  4,  4, 0.1, Amanzi::Explicit_TI::tvd_3rd_order);
 }
 
 
@@ -334,7 +331,6 @@ void AdvectionSteady(std::string filename)
   auto op_reac = Teuchos::rcp(new PDE_Reaction(op_list, global_op));
   double Kreac = op_list.get<double>("coef");
 
-  // populate problem data
   AnalyticDG02 ana(mesh, 2);
 
   // -- reaction coefficient
@@ -355,14 +351,8 @@ void AdvectionSteady(std::string filename)
   auto velc = Teuchos::rcp(new std::vector<WhetStone::VectorPolynomial>(ncells_wghost));
   auto velf = Teuchos::rcp(new std::vector<WhetStone::Polynomial>(nfaces_wghost));
 
-  WhetStone::VectorPolynomial v(d, 2);
-  v[0].Reshape(d, 2, true);
-  v[0](1, 0) = 1.0;
-  v[0](2, 0) = -1.0;
-
-  v[1].Reshape(d, 2, true);
-  v[1](1, 1) = 1.0;
-  v[1](2, 2) = -1.0;
+  WhetStone::VectorPolynomial v;
+  ana.VelocityTaylor(AmanziGeometry::Point(0.0, 0.0), 0.0, v); 
   
   for (int c = 0; c < ncells_wghost; ++c) {
     (*velc)[c] = v;
@@ -379,13 +369,8 @@ void AdvectionSteady(std::string filename)
   divv(1, 0) = -2.0;
   divv(1, 1) = -2.0;
 
-  Point tmp(d);
   WhetStone::Polynomial sol, src;
   WhetStone::VectorPolynomial grad(d, 0);
-
-  ana.TaylorCoefficients(tmp, 0.0, sol);
-  grad.Gradient(sol); 
-  src = Kreac * sol + v * grad + divv * sol;
 
   int order = op_list.get<int>("method order");
 
@@ -397,8 +382,13 @@ void AdvectionSteady(std::string filename)
     const Point& xc = mesh->cell_centroid(c);
     double volume = mesh->cell_volume(c);
 
-    WhetStone::Polynomial src_copy(src);
-    src_copy.ChangeOrigin(xc);
+    v[0].ChangeOrigin(xc);
+    v[1].ChangeOrigin(xc);
+    divv.ChangeOrigin(xc);
+
+    ana.SolutionTaylor(xc, 0.0, sol);
+    grad.Gradient(sol); 
+    src = Kreac * sol + v * grad + divv * sol;
 
     for (auto it = pc.begin(); it.end() <= pc.end(); ++it) {
       int n = it.PolynomialPosition();
@@ -408,7 +398,7 @@ void AdvectionSteady(std::string filename)
       WhetStone::Polynomial cmono(2, it.multi_index(), factor);
       cmono.set_origin(xc);      
 
-      WhetStone::Polynomial tmp = src_copy * cmono;      
+      WhetStone::Polynomial tmp = src * cmono;      
 
       rhs_c[n][c] = numi.IntegratePolynomialCell(c, tmp);
     }
