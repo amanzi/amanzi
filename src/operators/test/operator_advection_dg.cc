@@ -29,6 +29,7 @@
 #include "CompositeVector.hh"
 #include "LinearOperatorGMRES.hh"
 #include "MeshFactory.hh"
+#include "MeshMapsFactory.hh"
 #include "NumericalIntegration.hh"
 #include "Tensor.hh"
 #include "VectorPolynomial.hh"
@@ -49,8 +50,9 @@ namespace Amanzi {
 class AdvectionFn : public Explicit_TI::fnBase<CompositeVector> {
  public:
   AdvectionFn(Teuchos::ParameterList& plist,
+              const std::string& filename,
               const Teuchos::RCP<const AmanziMesh::Mesh> mesh)
-      : plist_(plist), mesh_(mesh), ana_(mesh, 3) {
+      : plist_(plist), filename_(filename), mesh_(mesh), ana_(mesh, 3) {
 
     // create global operator 
     // -- upwind flux term
@@ -93,7 +95,7 @@ class AdvectionFn : public Explicit_TI::fnBase<CompositeVector> {
       (*velf)[f] = v * mesh_->face_normal(f);
     }
 
-    // CalculateApproximateVelocity();
+    CalculateApproximateVelocity(velc);
 
     // update accumulation coefficient
     auto K = Teuchos::rcp(new std::vector<WhetStone::Polynomial>(ncells_wghost));
@@ -160,20 +162,24 @@ class AdvectionFn : public Explicit_TI::fnBase<CompositeVector> {
     f.Dot(u1, &l2norm);
   }
 
-  // modify cell and face velocities 
-  void CalculateApproximateVelocity() {
+  // modify cell and face velocities using mesh maps
+  void CalculateApproximateVelocity(
+      const Teuchos::RCP<std::vector<WhetStone::VectorPolynomial> >& velc) {
+    // create new mesh
     Epetra_MpiComm comm(MPI_COMM_WORLD);
     AmanziMesh::MeshFactory factory(&comm);
     factory.set_partitioner(AmanziMesh::Partitioner_type::ZOLTAN_RCB);
     factory.preference(AmanziMesh::FrameworkPreference({AmanziMesh::MSTK}));
-    Teuchos::RCP<AmanziMesh::Mesh> mesh_new = factory("test/median7x8.exo", mesh_->geometric_model(), true, true);
+    Teuchos::RCP<AmanziMesh::Mesh> mesh_new = factory(filename_, mesh_->geometric_model(), true, true);
 
     int dim = mesh_->space_dimension();
     AmanziGeometry::Point xv(dim), yv(dim);
-    AmanziMesh::Entity_ID_List nodeids;
+    AmanziMesh::Entity_ID_List faces, nodeids;
     AmanziGeometry::Point_List new_positions, final_positions;
 
+    int ncells_wghost = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
     int nnodes_wghost = mesh_->num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::ALL);
+
     for (int v = 0; v < nnodes_wghost; ++v) {
       mesh_->node_get_coordinates(v, &xv);
       yv = ana_.VelocityExact(xv, 0.0); 
@@ -183,6 +189,29 @@ class AdvectionFn : public Explicit_TI::fnBase<CompositeVector> {
       new_positions.push_back(xv);
     }
     mesh_new->deform(nodeids, new_positions, false, &final_positions);
+
+    // create a mesh map
+    Teuchos::ParameterList map_list;
+    map_list.set<std::string>("method", "CrouzeixRaviart")
+            .set<int>("method order", 2)
+            .set<std::string>("projector", "H1 harmonic")
+            .set<std::string>("map name", "VEM");
+  
+    WhetStone::MeshMapsFactory maps_factory;
+    auto maps = maps_factory.Create(map_list, mesh_, mesh_new);
+
+    // calculate approximate velocities
+    for (int c = 0; c < ncells_wghost; ++c) {
+      mesh_->cell_get_faces(c, &faces);
+      int nfaces = faces.size();
+
+      WhetStone::VectorPolynomial v;
+      ana_.VelocityTaylor(AmanziGeometry::Point(0.0, 0.0), 0.0, v); 
+      std::vector<WhetStone::VectorPolynomial> vvf(nfaces, v);
+
+      maps->VelocityCell(c, vvf, (*velc)[c]);
+      (*velc)[c] *= -1.0;
+    }
   }
 
  public:
@@ -197,6 +226,7 @@ class AdvectionFn : public Explicit_TI::fnBase<CompositeVector> {
   Teuchos::RCP<Operators::Operator> global_op_;
 
   const Teuchos::ParameterList plist_;
+  std::string filename_;
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
 };
 
@@ -244,7 +274,7 @@ void AdvectionTransient(std::string filename, int nx, int ny, double dt,
   int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
 
   // create main advection class
-  AdvectionFn fn(plist, mesh);
+  AdvectionFn fn(plist, filename, mesh);
 
   // create initial guess
   CompositeVector& rhs = *fn.op_flux->global_operator()->rhs();
