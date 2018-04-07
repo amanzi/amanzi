@@ -1,5 +1,13 @@
 Steady-State Flow in an Unconfined Aquifer: Head, and Flux Boundary Conditions
-------------------------------------------------------------------------------
+==============================================================================
+
+Capabilities Tested
+-------------------
+
+
+
+Background
+----------
 
 Flow in an unconfined aquifer is inherently multi-dimensional, which generally
 precludes simple closed-form analytic solutions. In many practical applications however,
