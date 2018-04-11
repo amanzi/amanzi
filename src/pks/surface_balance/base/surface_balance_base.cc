@@ -30,8 +30,10 @@ SurfaceBalanceBase::SurfaceBalanceBase(Teuchos::ParameterList& pk_tree,
 {
   // name the layer
   layer_ = plist_->get<std::string>("layer name", name_);
-  source_key_  = Keys::getKey(layer_, "source_sink");
-  source_key_ = plist_->get<std::string>("source key", source_key_);
+  is_source_ = plist_->get<bool>("source term", true);
+  if (is_source_) {
+    source_key_ = Keys::readKey(*plist_, layer_, "source", "source_sink");
+  }
 
   theta_ = plist_->get<double>("time discretization theta", 1.0);
   ASSERT(theta_ <= 1.);
@@ -54,10 +56,12 @@ SurfaceBalanceBase::Setup(const Teuchos::Ptr<State>& S) {
       SetComponent("cell", AmanziMesh::CELL, 1);
 
   // requirements: source terms from above
-  S->RequireField(source_key_)->SetMesh(mesh_)
-      ->AddComponent("cell", AmanziMesh::CELL, 1);
-  S->RequireFieldEvaluator(source_key_);
-
+  if (is_source_) {
+    S->RequireField(source_key_)->SetMesh(mesh_)
+        ->AddComponent("cell", AmanziMesh::CELL, 1);
+    S->RequireFieldEvaluator(source_key_);
+  }
+  
   conserved_quantity_ = conserved_key_ != key_;
   if (conserved_quantity_) {
     S->RequireField(conserved_key_)->SetMesh(mesh_)
@@ -140,21 +144,23 @@ SurfaceBalanceBase::Functional(double t_old, double t_new, Teuchos::RCP<TreeVect
   db_->WriteDivider();
   db_->WriteVector("res(acc)", g->Data().ptr());
 
-  if (theta_ < 1.0) {
-    S_inter_->GetFieldEvaluator(source_key_)->HasFieldChanged(S_inter_.ptr(), name_);
-    g->Data()->Multiply(-(1.0 - theta_), *S_inter_->GetFieldData(source_key_), *cv, 1.);
-    if (vo_->os_OK(Teuchos::VERB_HIGH)) {
-      db_->WriteVector("source0", S_inter_->GetFieldData(source_key_).ptr(), false);
+  if (is_source_) {
+    if (theta_ < 1.0) {
+      S_inter_->GetFieldEvaluator(source_key_)->HasFieldChanged(S_inter_.ptr(), name_);
+      g->Data()->Multiply(-(1.0 - theta_), *S_inter_->GetFieldData(source_key_), *cv, 1.);
+      if (vo_->os_OK(Teuchos::VERB_HIGH)) {
+        db_->WriteVector("source0", S_inter_->GetFieldData(source_key_).ptr(), false);
+      }
     }
-  }
-  if (theta_ > 0.0) {
-    S_next_->GetFieldEvaluator(source_key_)->HasFieldChanged(S_next_.ptr(), name_);
-    g->Data()->Multiply(-theta_, *S_next_->GetFieldData(source_key_), *cv, 1.);
-    if (vo_->os_OK(Teuchos::VERB_HIGH)) {
-      db_->WriteVector("source1", S_next_->GetFieldData(source_key_).ptr(), false);
+    if (theta_ > 0.0) {
+      S_next_->GetFieldEvaluator(source_key_)->HasFieldChanged(S_next_.ptr(), name_);
+      g->Data()->Multiply(-theta_, *S_next_->GetFieldData(source_key_), *cv, 1.);
+      if (vo_->os_OK(Teuchos::VERB_HIGH)) {
+        db_->WriteVector("source1", S_next_->GetFieldData(source_key_).ptr(), false);
+      }
     }
+    db_->WriteVector("res(source)", g->Data().ptr());
   }
-  db_->WriteVector("res(source)", g->Data().ptr());
 }
 
   
@@ -175,12 +181,14 @@ SurfaceBalanceBase::UpdatePreconditioner(double t,
     db_->WriteVector("d(cons)/d(prim)", S_next_->GetFieldData(dkey).ptr());
     preconditioner_acc_->AddAccumulationTerm(*S_next_->GetFieldData(dkey)->ViewComponent("cell",false), h);
 
-    if (S_next_->GetFieldEvaluator(source_key_)->IsDependency(S_next_.ptr(), key_)) {
-      S_next_->GetFieldEvaluator(source_key_)
-          ->HasFieldDerivativeChanged(S_next_.ptr(), name_, key_);
-      std::string dkey = std::string("d")+source_key_+std::string("_d")+key_;
-      db_->WriteVector("d(Q)/d(prim)", S_next_->GetFieldData(dkey).ptr());
-      preconditioner_acc_->AddAccumulationTerm(*S_next_->GetFieldData(dkey), -1.0/theta_, "cell");
+    if (is_source_) {
+      if (S_next_->GetFieldEvaluator(source_key_)->IsDependency(S_next_.ptr(), key_)) {
+        S_next_->GetFieldEvaluator(source_key_)
+            ->HasFieldDerivativeChanged(S_next_.ptr(), name_, key_);
+        std::string dkey = std::string("d")+source_key_+std::string("_d")+key_;
+        db_->WriteVector("d(Q)/d(prim)", S_next_->GetFieldData(dkey).ptr());
+        preconditioner_acc_->AddAccumulationTerm(*S_next_->GetFieldData(dkey), -1.0/theta_, "cell");
+      }
     }
 
     preconditioner_->AssembleMatrix();

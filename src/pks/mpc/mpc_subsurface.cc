@@ -105,6 +105,8 @@ void MPCSubsurface::Setup(const Teuchos::Ptr<State>& S) {
     precon_type_ = PRECON_NONE;
   } else if (precon_string == "block diagonal") {
     precon_type_ = PRECON_BLOCK_DIAGONAL;
+  } else if (precon_string == "no flow coupling") {
+    precon_type_ = PRECON_NO_FLOW_COUPLING;
   } else if (precon_string == "picard") {
     precon_type_ = PRECON_PICARD;
   } else if (precon_string == "ewc") {
@@ -128,7 +130,8 @@ void MPCSubsurface::Setup(const Teuchos::Ptr<State>& S) {
 
     // Create the block for derivatives of mass conservation with respect to temperature
     // -- derivatives of kr with respect to temperature
-    if (!plist_->get<bool>("supress Jacobian terms: d div q / dT", false)) {
+    if (precon_type_ != PRECON_NO_FLOW_COUPLING && 
+        !plist_->get<bool>("supress Jacobian terms: d div q / dT", false)) {
       // need to upwind dkr/dT
       if (!is_fv_) {
         Key dkrdT_key = Keys::getDerivKey(uw_kr_key_, temp_key_);
@@ -160,7 +163,8 @@ void MPCSubsurface::Setup(const Teuchos::Ptr<State>& S) {
 
     // Create the block for derivatives of energy conservation with respect to pressure
     // -- derivatives of thermal conductivity with respect to pressure
-    if (!plist_->get<bool>("supress Jacobian terms: d div K grad T / dp", false)) {
+    if (precon_type_ != PRECON_NO_FLOW_COUPLING && 
+        !plist_->get<bool>("supress Jacobian terms: d div K grad T / dp", false)) {
       // need to upwind dKappa/dp
       if (!is_fv_) {
         Key uw_dKappa_dp_key = Keys::getDerivKey(uw_tc_key_, pres_key_);
@@ -194,7 +198,8 @@ void MPCSubsurface::Setup(const Teuchos::Ptr<State>& S) {
 
 
     // -- derivatives of advection term
-    if (!plist_->get<bool>("supress Jacobian terms: div hq / dp,T", false)) {
+    if (precon_type_ != PRECON_NO_FLOW_COUPLING && 
+        !plist_->get<bool>("supress Jacobian terms: div hq / dp,T", false)) {
       // derivative with respect to pressure
       Teuchos::ParameterList divhq_dp_plist(pks_list_->sublist(pk_order[0]).sublist("diffusion preconditioner"));
 
@@ -326,7 +331,6 @@ void MPCSubsurface::Initialize(const Teuchos::Ptr<State>& S) {
 
   // initialize offdiagonal operators
   richards_pk_ = Teuchos::rcp_dynamic_cast<Flow::Richards>(sub_pks_[0]);
-  ASSERT(richards_pk_ != Teuchos::null);
 
   if (ddivq_dT_ != Teuchos::null) {
     if (!is_fv_) {
@@ -340,6 +344,7 @@ void MPCSubsurface::Initialize(const Teuchos::Ptr<State>& S) {
     g[0] = (*gvec)[0]; g[1] = (*gvec)[1]; g[2] = (*gvec)[2];
     ddivq_dT_->SetGravity(g);    
     ddivq_dT_->SetBCs(sub_pks_[0]->BCs(), sub_pks_[1]->BCs());
+    ASSERT(richards_pk_ != Teuchos::null);
     ddivq_dT_->SetTensorCoefficient(richards_pk_->K_);
   }
 
@@ -370,10 +375,12 @@ void MPCSubsurface::Initialize(const Teuchos::Ptr<State>& S) {
     g[0] = (*gvec)[0]; g[1] = (*gvec)[1]; g[2] = (*gvec)[2];
     ddivhq_dp_->SetGravity(g);    
     ddivhq_dp_->SetBCs(sub_pks_[1]->BCs(), sub_pks_[0]->BCs());
+    ASSERT(richards_pk_ != Teuchos::null);
     ddivhq_dp_->SetTensorCoefficient(richards_pk_->K_);
 
     ddivhq_dT_->SetGravity(g);    
     ddivhq_dT_->SetBCs(sub_pks_[1]->BCs(), sub_pks_[1]->BCs());
+    ASSERT(richards_pk_ != Teuchos::null);
     ddivhq_dT_->SetTensorCoefficient(richards_pk_->K_);
   }  
 
@@ -521,6 +528,7 @@ void MPCSubsurface::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector
                    mesh_->exterior_face_importer(), Insert);
       upwinding_hkr_->Update(S_next_.ptr(), db_.ptr());
 
+      ASSERT(richards_pk_ != Teuchos::null);
       if (richards_pk_->clobber_surf_kr_) {
         // -- stick zeros in the boundary faces
         Epetra_MultiVector enth_kr_bf(*enth_kr->ViewComponent("boundary_face",false));
@@ -560,6 +568,7 @@ void MPCSubsurface::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector
         upwinding_dhkr_dT_->Update(S_next_.ptr(), db_.ptr());
 
         // -- clobber
+        ASSERT(richards_pk_ != Teuchos::null);
         if (richards_pk_->clobber_surf_kr_) {
           // -- stick zeros in the boundary faces
           Epetra_MultiVector enth_kr_bf(*enth_kr->ViewComponent("boundary_face",false));

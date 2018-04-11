@@ -51,7 +51,7 @@ void LiquidIceModel::InitializeModel(const Teuchos::Ptr<State>& S,
   // Grab the models.
   // get the WRM models and their regions
 
-  Teuchos::RCP<FieldEvaluator> me = S->GetFieldEvaluator(Keys::getKey(domain, "saturation_gas"));
+  Teuchos::RCP<FieldEvaluator> me = S->GetFieldEvaluator(Keys::getKey(domain, "saturation_ice"));
   
   Teuchos::RCP<Flow::WRMPermafrostEvaluator> wrm_me =
       Teuchos::rcp_dynamic_cast<Flow::WRMPermafrostEvaluator>(me);

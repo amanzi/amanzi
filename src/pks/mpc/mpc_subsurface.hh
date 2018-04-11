@@ -85,7 +85,8 @@ class MPCSubsurface : public StrongMPC<PK_PhysicalBDF_Default> {
     PRECON_NONE = 0,
     PRECON_BLOCK_DIAGONAL = 1,
     PRECON_PICARD = 2,
-    PRECON_EWC = 3
+    PRECON_EWC = 3,
+    PRECON_NO_FLOW_COUPLING = 4,    
   };
 
   Teuchos::RCP<Operators::TreeOperator> preconditioner_;

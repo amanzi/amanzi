@@ -297,8 +297,7 @@ void Richards::SetupRichardsFlow_(const Teuchos::Ptr<State>& S) {
   is_source_term_ = plist_->get<bool>("source term", false);
   if (is_source_term_) {
     if (source_key_.empty()) {
-      source_key_ = plist_->get<std::string>("mass source key",
-              Keys::getKey(domain_, "mass_source"));
+      source_key_ = Keys::readKey(*plist_, domain_, "mass source", "mass_source");
     }
 
     source_term_is_differentiable_ =
@@ -800,7 +799,7 @@ void Richards::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& S, bool kr) 
   // Dirichlet boundary conditions
   Functions::BoundaryFunction::Iterator bc;
   bc_counts.push_back(bc_pressure_->size());
-  bc_names.push_back(Keys::getKey(domain_,"pressure"));
+  bc_names.push_back(key_);
   for (bc=bc_pressure_->begin(); bc!=bc_pressure_->end(); ++bc) {
     int f = bc->first;
 #ifdef ENABLE_DBC
@@ -832,7 +831,7 @@ void Richards::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& S, bool kr) 
     *S->GetFieldData(uw_coef_key_)->ViewComponent("face",false);
 
   bc_counts.push_back(bc_flux_->size());
-  bc_names.push_back(Keys::getKey(domain_,"flux"));
+  bc_names.push_back(flux_key_);
 
   if (!infiltrate_only_if_unfrozen_) {
     // Standard Neuman boundary conditions
@@ -894,8 +893,7 @@ void Richards::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& S, bool kr) 
 
     double boundary_pressure = BoundaryValue(u, f);
     double boundary_flux = flux[0][f]*BoundaryDirection(f);
-    //    std::cout << "Seepage Face:" << std::endl
-    //              << "BFlux = " << boundary_flux << ", BPressure = " << boundary_pressure << " and constraint p <= " << bc->second << " (tol = " << seepage_tol << ")" << std::endl;
+    //    std::cout << "Seepage Face:" << "BFlux = " << boundary_flux << ", BPressure = " << boundary_pressure << " and constraint p <= " << bc->second << " (tol = " << seepage_tol << ")" << std::endl;
     if (boundary_pressure > bc->second) {
       //      std::cout << "  DIRICHLET" << std::endl;
       bc_markers_[f] = Operators::OPERATOR_BC_DIRICHLET;
