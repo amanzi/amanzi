@@ -253,6 +253,12 @@ void Chemistry_PK::Initialize(const Teuchos::Ptr<State>& S)
   // auxiliary fields
   InitializeField_(S,  alquimia_aux_data_key_, 0.0);
 
+  if (S->HasFieldEvaluator(saturation_key_)){
+    Key sat_owner =  S->GetField(saturation_key_) -> owner();
+    S->GetFieldEvaluator(saturation_key_)->HasFieldChanged(S, sat_owner);
+    S->GetField(saturation_key_, sat_owner)->set_initialized();
+  }
+
   // miscaleneous controls
   initial_conditions_time_ = cp_list_->get<double>("initial conditions time", S->time());
 }

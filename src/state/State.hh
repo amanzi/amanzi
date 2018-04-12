@@ -282,6 +282,9 @@ class State {
   Teuchos::RCP<const CompositeVector> GetFieldCopyData(Key fieldname, Key tag) const;
   Teuchos::RCP<CompositeVector> GetFieldCopyData(Key fieldname, Key tag, Key pk_name);
 
+  // Utility for setting vis flags using blacklist and whitelist
+  void InitializeIOFlags();
+  
   // Time accessor and mutators.
   double time() const { return time_; }
   void set_time(double new_time);  // note this also evaluates state-owned functions
@@ -319,8 +322,7 @@ class State {
   Teuchos::RCP<Field> CheckConsistent_or_die_(Key fieldname,
           FieldType type, Key owner);
 
-  // Utility for setting vis flags using blacklist and whitelist
-  void InitializeIOFlags_();
+
 
   // Containers
   MeshMap meshes_;
