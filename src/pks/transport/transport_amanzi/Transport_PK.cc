@@ -680,10 +680,13 @@ void Transport_PK_ATS::InitializeFieldFromField_(const std::string& field0,
 * ***************************************************************** */
 double Transport_PK_ATS::StableTimeStep()
 {
-  S_next_->GetFieldData(flux_key_)->ScatterMasterToGhosted("face");
 
+  S_next_->GetFieldData(flux_key_)->ScatterMasterToGhosted("face");
+  //*vo_->os()<<"Stable step: "<<domain_name_<<" - After ScatterMasterToGhosted"<<"\n";
+  
   flux_ = S_next_->GetFieldData(flux_key_)->ViewComponent("face", true);
-  *flux_copy_ = *flux_; // copy flux vector from S_next_ to S_; 
+  *flux_copy_ = *flux_; // copy flux vector from S_next_ to S_;
+
 
   // double flux_next_norm=0., flux_norm=0.;
   // flux_->NormInf(&flux_next_norm);

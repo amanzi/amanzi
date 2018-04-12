@@ -1,5 +1,6 @@
 #include "PK_Factory.hh"
 #include "PK_MPCAdditive.hh"
+#include "mpc_reactivetransport_pk.hh"
 #include "weak_mpc.hh"
 #include "mpc_coupled_transport.hh"
 #include "Transport_PK_ATS.hh"
@@ -7,7 +8,7 @@
 
 namespace Amanzi {
 
-class Coupled_ReactiveTransport_PK_ATS : public PK_MPCAdditive<PK> {
+class Coupled_ReactiveTransport_PK_ATS : public ReactiveTransport_PK_ATS{
 public:
   Coupled_ReactiveTransport_PK_ATS(Teuchos::ParameterList& pk_tree,
                const Teuchos::RCP<Teuchos::ParameterList>& global_list,
@@ -37,12 +38,14 @@ public:
   std::string name() { return "coupled reactive transport";}
 
 private:
+
+  virtual void cast_sub_pks_();
   
   bool chem_step_succeeded;
   bool storage_created;
   bool transport_subcycling_;
   double dTtran_, dTchem_;
-  int transport_pk_index_, chemistry_pk_index_;
+  //  int transport_pk_index_, chemistry_pk_index_;
   Teuchos::RCP<CoupledTransport_PK> tranport_pk_;
   Teuchos::RCP<WeakMPC> chemistry_pk_;
   Teuchos::RCP<Transport::Transport_PK_ATS> tranport_pk_overland_;
@@ -52,7 +55,7 @@ private:
 
   Teuchos::RCP<Epetra_MultiVector> ttc_sub_stor_, ttc_over_stor_;
 
-  Teuchos::RCP<Teuchos::ParameterList> crt_pk_list_;
+  //Teuchos::RCP<Teuchos::ParameterList> crt_pk_list_;
 
   // factory registration
   static RegisteredPKFactory<Coupled_ReactiveTransport_PK_ATS> reg_;

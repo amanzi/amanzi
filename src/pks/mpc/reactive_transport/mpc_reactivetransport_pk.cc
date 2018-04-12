@@ -35,32 +35,48 @@ ReactiveTransport_PK_ATS::ReactiveTransport_PK_ATS(Teuchos::ParameterList& pk_tr
 
 // Create miscaleneous lists.
   Teuchos::RCP<Teuchos::ParameterList> pk_list = Teuchos::sublist(global_list, "PKs", true);
-  //std::cout<<*pk_list;
   rt_pk_list_ = Teuchos::sublist(pk_list, pk_name, true);
-  
+
   transport_pk_index_ = rt_pk_list_->get<int>("transport index", 0);
   chemistry_pk_index_ = rt_pk_list_->get<int>("chemistry index", 1 - transport_pk_index_);
+  
+  transport_subcycling_ = rt_pk_list_->get<bool>("transport subcycling", false);
+
+  /*******************************************************************************************/
+  
+
+  vo_ = Teuchos::rcp(new Amanzi::VerboseObject(pk_name, *rt_pk_list_));
+
+  // std::cout<<tranport_pk_->domain_name()<<"\n";
+  // std::cout<<chemistry_pk_->domain_name()<<"\n";
+
+  // ASSERT(tranport_pk_->domain_name() == chemistry_pk_->domain_name());
+  // master_ = 1;  // Transport;
+  // slave_ = 0;  // Chemistry;
+}
+
+void ReactiveTransport_PK_ATS::Setup(const Teuchos::Ptr<State>& S){
+
+  Amanzi::PK_MPCAdditive<PK>::Setup(S);
+  cast_sub_pks_();
+  
+}
+
+void ReactiveTransport_PK_ATS::cast_sub_pks_(){
 
   tranport_pk_ = Teuchos::rcp_dynamic_cast<Transport::Transport_PK_ATS>(sub_pks_[transport_pk_index_]);
   ASSERT(tranport_pk_ != Teuchos::null);
 
   chemistry_pk_ = Teuchos::rcp_dynamic_cast<AmanziChemistry::Chemistry_PK>(sub_pks_[chemistry_pk_index_]);
   ASSERT(chemistry_pk_ != Teuchos::null);
-
+  
   // communicate chemistry engine to transport.
 #ifdef ALQUIMIA_ENABLED
   tranport_pk_->SetupAlquimia(Teuchos::rcp_static_cast<AmanziChemistry::Alquimia_PK>(chemistry_pk_),
                               chemistry_pk_->chem_engine());
 #endif
 
-  // std::cout<<tranport_pk_->get_domain_name()<<"\n";
-  // std::cout<<chemistry_pk_->get_domain_name()<<"\n";
-
-  // ASSERT(tranport_pk_->get_domain_name() == chemistry_pk_->get_domain_name());
-  // master_ = 1;  // Transport;
-  // slave_ = 0;  // Chemistry;
-}
-
+}    
 
 // -----------------------------------------------------------------------------
 // 
@@ -68,12 +84,18 @@ ReactiveTransport_PK_ATS::ReactiveTransport_PK_ATS(Teuchos::ParameterList& pk_tr
 void ReactiveTransport_PK_ATS::Initialize(const Teuchos::Ptr<State>& S) {
   Amanzi::PK_MPCAdditive<PK>::Initialize(S);
 
-  // if (S->HasField("total_component_concentration")) {
-  //   total_component_concentration_stor = 
-  //      Teuchos::rcp(new Epetra_MultiVector(*S->GetFieldData("total_component_concentration")
-  //                                            ->ViewComponent("cell", true)));
-  //   storage_created = true;
-  // }
+  // Key domain_name = chemistry_pk_->domain_name();
+  // Key tcc_key = Keys::getKey(domain_name, "total_component_concentration");
+  // Key mol_den_key = Keys::getKey(domain_name,  "molar_density_liquid");
+  
+  // Teuchos::RCP<Epetra_MultiVector> tcc_copy =
+  //     S_->GetFieldData(tcc_key,"state")->ViewComponent("cell", true);
+
+  // Teuchos::RCP<const Epetra_MultiVector> mol_dens =
+  //   S_->GetFieldData(mol_den_key)->ViewComponent("cell", true);
+
+  // ConvertConcentrationToATS(chemistry_pk_, *mol_dens, *tcc_copy, *tcc_copy);
+  
 }
 
 
@@ -128,7 +150,7 @@ bool ReactiveTransport_PK_ATS::AdvanceStep(double t_old, double t_new, bool rein
   bool fail = false;
   chem_step_succeeded = false;
 
-  Key domain_name = tranport_pk_->get_domain_name();
+  Key domain_name = tranport_pk_->domain_name();
   Key tcc_key = Keys::getKey(domain_name, "total_component_concentration");
   Key mol_den_key = Keys::getKey(domain_name,  "molar_density_liquid");
 
@@ -149,25 +171,12 @@ bool ReactiveTransport_PK_ATS::AdvanceStep(double t_old, double t_new, bool rein
 
     Teuchos::RCP<const Epetra_MultiVector> mol_dens =
       S_->GetFieldData(mol_den_key)->ViewComponent("cell", true);
-
-    Teuchos::RCP<const AmanziMesh::Mesh> mesh = S_->GetMesh(domain_name);
-    int ncells_owned = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
-
-    // convert from mole fraction[-] to mol/L
-    for (int c=0; c<ncells_owned; c++)
-      for (int k=0; k<num_aq_componets; k++)
-        (*tcc_copy)[k][c] *= (*mol_dens)[0][c] / 1000.;
-
     
-    chemistry_pk_->set_aqueous_components(tcc_copy);
-    pk_fail = chemistry_pk_->AdvanceStep(t_old, t_new, reinit);
-    chem_step_succeeded = true;  
- 
-    *tcc_copy = *chemistry_pk_->aqueous_components();
-    // convert from mol/L fraction to mole fraction[-]
-    for (int c=0; c<ncells_owned; c++)
-      for (int k=0; k<num_aq_componets; k++)
-        (*tcc_copy)[k][c] /= (*mol_dens)[0][c] / 1000.;
+    pk_fail = AdvanceChemistry(chemistry_pk_, *mol_dens, tcc_copy, t_old, t_new, reinit);
+    
+    if (!pk_fail) chem_step_succeeded = true;  
+    
+    //for (int c=0; c<tcc_copy->MyLength(); c++) std::cout<<(*tcc_copy)[13][c]<<"\n";
     
   }
   catch (const Errors::Message& chem_error) {
@@ -186,6 +195,72 @@ void ReactiveTransport_PK_ATS::CommitStep(double t_old, double t_new, const Teuc
   tranport_pk_->CommitStep(t_old, t_new, S);
   chemistry_pk_->CommitStep(t_old, t_new, S);
 }
+  
+bool ReactiveTransport_PK_ATS::AdvanceChemistry(Teuchos::RCP<AmanziChemistry::Chemistry_PK> chem_pk,
+                                                const Epetra_MultiVector& mol_dens,
+                                                Teuchos::RCP<Epetra_MultiVector> tcc_copy,
+                                                double t_old, double t_new, bool reinit){
+
+    bool pk_fail = false;
+
+
+    // convert from mole fraction[-] to mol/L
+    // for (int c=0; c<ncells_owned; c++)
+    //   for (int k=0; k<num_aq_componets; k++)
+    //     (*tcc_copy)[k][c] *= (*mol_dens)[0][c] / 1000.;
+
+    ConvertConcentrationToAmanzi(chem_pk, mol_dens, *tcc_copy, *tcc_copy);
+
+    
+    chem_pk->set_aqueous_components(tcc_copy);
+    pk_fail = chem_pk->AdvanceStep(t_old, t_new, reinit);
+    *tcc_copy = *chem_pk->aqueous_components();
+    
+    // convert from mol/L fraction to mole fraction[-]
+    // for (int c=0; c<ncells_owned; c++)
+    //   for (int k=0; k<num_aq_componets; k++)
+    //     (*tcc_copy)[k][c] /= (*mol_dens)[0][c] / 1000.;
+    ConvertConcentrationToATS(chem_pk, mol_dens, *tcc_copy, *tcc_copy);
+
+    return pk_fail;
+
+}
+  
+
+void  ReactiveTransport_PK_ATS::ConvertConcentrationToAmanzi(Teuchos::RCP<AmanziChemistry::Chemistry_PK> chem_pk,
+                                                             const Epetra_MultiVector& mol_den,
+                                                             const Epetra_MultiVector& tcc_ats,
+                                                             Epetra_MultiVector& tcc_amanzi){
+
+  Teuchos::RCP<const AmanziMesh::Mesh> mesh = S_->GetMesh(chem_pk->domain_name());
+    
+  int ncells_owned = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  int num_aq_components = chem_pk->num_aqueous_components();
+  
+  for (int k=0; k<num_aq_components; k++)
+    for (int c=0; c<ncells_owned; c++){
+      tcc_amanzi[k][c] = tcc_ats[k][c] * (mol_den[0][c]/ 1000.);
+    }
+  
+}
+
+void  ReactiveTransport_PK_ATS::ConvertConcentrationToATS(Teuchos::RCP<AmanziChemistry::Chemistry_PK> chem_pk,
+                                                          const Epetra_MultiVector& mol_den,
+                                                          const Epetra_MultiVector& tcc_amanzi,
+                                                          Epetra_MultiVector& tcc_ats){
+
+  Teuchos::RCP<const AmanziMesh::Mesh> mesh = S_->GetMesh(chem_pk->domain_name());
+    
+  int ncells_owned = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  int num_aq_components = chem_pk->num_aqueous_components();
+  
+  for (int k=0; k<num_aq_components; k++)
+    for (int c=0; c<ncells_owned; c++){
+      tcc_ats[k][c] = tcc_amanzi[k][c] / ( mol_den[0][c]/ 1000.);
+    }
+
+}
 
 }  // namespace Amanzi
 
+ 
