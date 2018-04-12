@@ -11,6 +11,7 @@ Author: Ethan Coon
 #include "energy_bc_factory.hh"
 #include "advection_factory.hh"
 
+#include "LinearOperatorFactory.hh"
 #include "OperatorDiffusionFactory.hh"
 #include "OperatorDiffusion.hh"
 #include "upwind_cell_centered.hh"
@@ -226,7 +227,7 @@ void EnergyBase::SetupEnergy_(const Teuchos::Ptr<State>& S) {
     //    Potentially create a linear solver
     if (plist_->isSublist("linear solver")) {
       Teuchos::ParameterList linsolve_sublist = plist_->sublist("linear solver");
-      AmanziSolvers::LinearOperatorFactory<Operators::Operator,CompositeVector,CompositeVectorSpace> fac;
+      Amanzi::AmanziSolvers::LinearOperatorFactory<Operators::Operator,CompositeVector,CompositeVectorSpace> fac;
       lin_solver_ = fac.Create(linsolve_sublist, preconditioner_);
     } else {
       lin_solver_ = preconditioner_;

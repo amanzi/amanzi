@@ -1,6 +1,6 @@
 #include "EpetraExt_RowMatrixOut.h"
 #include "Epetra_FECrsGraph.h"
-
+#include "LinearOperatorFactory.hh"
 #include "MatrixMFD_Coupled_Surf.hh"
 #include "MatrixMFD_Surf.hh"
 

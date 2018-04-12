@@ -40,7 +40,7 @@ Author: Ethan Coon (ecoon@lanl.gov)
 
 #include "UpwindFluxFactory.hh"
 #include "OperatorDiffusionFactory.hh"
-
+#include "LinearOperatorFactory.hh"
 #include "overland_pressure.hh"
 
 namespace Amanzi {
@@ -444,7 +444,7 @@ void OverlandPressureFlow::Initialize(const Teuchos::Ptr<State>& S) {
   PK_PhysicalBDF_Default::Initialize(S);
 
 
-  if (!S->GetField(key_)->initialized()) {
+  //if (!S->GetField(key_)->initialized()) {
     // -- set the cell initial condition if it is taken from the subsurface
     Teuchos::ParameterList ic_plist = plist_->sublist("initial condition");
     if (ic_plist.get<bool>("initialize surface head from subsurface",false)) {
@@ -467,9 +467,7 @@ void OverlandPressureFlow::Initialize(const Teuchos::Ptr<State>& S) {
         // -- get the surface cell's equivalent subsurface face and neighboring cell
         AmanziMesh::Entity_ID f =
           mesh_->entity_get_parent(AmanziMesh::CELL, c);
-
         pres[0][c] = subsurf_pres[0][f];
-
       }
 
       // mark as initialized
@@ -504,7 +502,7 @@ void OverlandPressureFlow::Initialize(const Teuchos::Ptr<State>& S) {
 
     }
 
-  }
+    //}
 
   // Initialize BC data structures
 

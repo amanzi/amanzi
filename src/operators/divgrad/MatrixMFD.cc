@@ -11,6 +11,7 @@
 
 #include "errors.hh"
 #include "MatrixMFD.hh"
+#include "LinearOperatorFactory.hh"
 
 namespace Amanzi {
 namespace Operators {

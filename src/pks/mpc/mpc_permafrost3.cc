@@ -8,7 +8,7 @@
 #include "surface_ice_model.hh"
 #include "energy_base.hh"
 #include "advection.hh"
-
+#include "LinearOperatorFactory.hh"
 #include "mpc_permafrost3.hh"
 
 namespace Amanzi {

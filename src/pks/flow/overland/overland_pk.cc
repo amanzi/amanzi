@@ -30,7 +30,7 @@ Author: Ethan Coon (ecoon@lanl.gov)
 
 #include "UpwindFluxFactory.hh"
 #include "OperatorDiffusionFactory.hh"
-
+#include "LinearOperatorFactory.hh"
 #include "overland.hh"
 
 namespace Amanzi {

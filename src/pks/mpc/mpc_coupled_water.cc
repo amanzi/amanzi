@@ -1,6 +1,6 @@
 #include "Teuchos_XMLParameterListHelpers.hpp"
 #include "EpetraExt_RowMatrixOut.h"
-
+#include "LinearOperatorFactory.hh"
 #include "mpc_surface_subsurface_helpers.hh"
 #include "mpc_coupled_water.hh"
 
