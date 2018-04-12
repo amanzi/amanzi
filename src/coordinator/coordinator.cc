@@ -232,9 +232,15 @@ void Coordinator::initialize() {
   //Restore consistency with evaluators
   S_->InitializeEvaluators();
 
-    // Final checks.
+  // Final checks.
   S_->CheckNotEvaluatedFieldsInitialized();
   S_->CheckAllFieldsInitialized();
+
+  // Write dependency graph.
+  S_->WriteDependencyGraph();
+
+  // Reset io_vis flags using blacklist and whitelist
+  S_->InitializeIOFlags(); 
   
   S_->WriteStatistics(vo_);
 
