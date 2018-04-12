@@ -104,7 +104,18 @@ void CoupledTransport_PK::Initialize(const Teuchos::Ptr<State>& S){
 
 }
 
+int CoupledTransport_PK::num_aqueous_component(){
 
+  int num_aq_comp = Teuchos::rcp_dynamic_cast<Transport::Transport_PK_ATS>(sub_pks_[subsurf_id_]) -> num_aqueous_component();
+
+  if (num_aq_comp != Teuchos::rcp_dynamic_cast<Transport::Transport_PK_ATS>(sub_pks_[surf_id_]) -> num_aqueous_component()){
+    Errors::Message message("CoupledTransport_PK:: numbers aqueous component does not match.");
+    Exceptions::amanzi_throw(message);
+  }
+
+  return num_aq_comp;
+
+}
 
 // -----------------------------------------------------------------------------
 // Advance each sub-PK individually, returning a failure as soon as possible.

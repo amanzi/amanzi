@@ -68,7 +68,8 @@ Coupled_ReactiveTransport_PK_ATS::Coupled_ReactiveTransport_PK_ATS(
   // std::cout<<chemistry_pk_subsurface_->name()<<"\n";
   // std::cout<<chemistry_pk_overland_->name()<<"\n";
 
-
+  vo_ = Teuchos::rcp(new Amanzi::VerboseObject("Coupled_ReactiveTransport_PK", *crt_pk_list_));
+  
  }
 
 // -----------------------------------------------------------------------------
@@ -123,25 +124,22 @@ void Coupled_ReactiveTransport_PK_ATS::Setup(const Teuchos::Ptr<State>& S){
 
 }
 
-// void Coupled_ReactiveTransport_PK_ATS::Initialize(const Teuchos::Ptr<State>& S){
+void Coupled_ReactiveTransport_PK_ATS::Initialize(const Teuchos::Ptr<State>& S){
 
-//   // Key subsurface_domain_key = tranport_pk_subsurface_->get_domain_name();
-//   // Key overland_domain_key = tranport_pk_overland_->get_domain_name();
-//   // Key tcc_sub_key = Keys::getKey(subsurface_domain_key, "total_component_concentration");
-//   // Key tcc_over_key = Keys::getKey(overland_domain_key, "total_component_concentration");
 
-//   // ttc_sub_stor_ = Teuchos::rcp(new Epetra_MultiVector(*S->GetFieldCopyData(tcc_sub_key,"subcycling")
-//   //                                            ->ViewComponent("cell", true)));
-
-//   // ttc_over_stor_ = Teuchos::rcp(new Epetra_MultiVector(*S->GetFieldCopyData(tcc_over_key,"subcycling")
-//   //                                            ->ViewComponent("cell", true)));
-
-// }
+  Amanzi::PK_MPCAdditive<PK>::Initialize(S);
+  
+// S_->WriteStatistics(vo_);
+// exit(0);
+  
+}
 
 
 bool Coupled_ReactiveTransport_PK_ATS::AdvanceStep(double t_old, double t_new, bool reinit) {
 
 
+  
+  
   bool fail = false;
   chem_step_succeeded = false;
   Key subsurface_domain_key = tranport_pk_subsurface_->get_domain_name();
@@ -154,10 +152,11 @@ bool Coupled_ReactiveTransport_PK_ATS::AdvanceStep(double t_old, double t_new, b
 
   if (!storage_created){
     ttc_sub_stor_ = Teuchos::rcp(new Epetra_MultiVector(*S_->GetFieldCopyData(tcc_sub_key,"subcycling")
-                                                      ->ViewComponent("cell", true)));
+                                                        ->ViewComponent("cell", true)));
 
     ttc_over_stor_ = Teuchos::rcp(new Epetra_MultiVector(*S_->GetFieldCopyData(tcc_over_key,"subcycling")
-                                                       ->ViewComponent("cell", true)));
+                                                         ->ViewComponent("cell", true)));
+
     storage_created = true;
   }
 
@@ -165,19 +164,33 @@ bool Coupled_ReactiveTransport_PK_ATS::AdvanceStep(double t_old, double t_new, b
 
   bool pk_fail = false;
   pk_fail = tranport_pk_->AdvanceStep(t_old, t_new, reinit);
-
+   
   if (pk_fail){
     Errors::Message message("MPC: Coupled Transport PK returned an unexpected error.");
     Exceptions::amanzi_throw(message);
   }
 
 
+  
+
+ 
   try {
+
+    int num_aq_componets = tranport_pk_ -> num_aqueous_component();
+    
     Teuchos::RCP<Epetra_MultiVector> tcc_sub = 
       S_->GetFieldCopyData(tcc_sub_key,"subcycling","state")->ViewComponent("cell", true);
 
+    //std::cout<<*S_->GetField(tcc_sub_key)->GetCopy("subcycling")->GetFieldData()->ViewComponent("cell")<<"\n";
+    
     Teuchos::RCP<Epetra_MultiVector> tcc_over =
       S_->GetFieldCopyData(tcc_over_key,"subcycling", "state")->ViewComponent("cell", true);
+
+    
+    // Teuchos::RCP<Epetra_MultiVector> tcc_sub = 
+    //   S_->GetFieldCopyData(tcc_sub_key,"default","state")->ViewComponent("cell", true);
+    // Teuchos::RCP<Epetra_MultiVector> tcc_over =
+    //   S_->GetFieldCopyData(tcc_over_key,"default", "state")->ViewComponent("cell", true);
 
     Teuchos::RCP<const Epetra_MultiVector> mol_dens_sub =
       S_->GetFieldData(sub_mol_den_key)->ViewComponent("cell", true);
@@ -189,49 +202,49 @@ bool Coupled_ReactiveTransport_PK_ATS::AdvanceStep(double t_old, double t_new, b
     Teuchos::RCP<const AmanziMesh::Mesh> mesh_over = S_->GetMesh(overland_domain_key);
     int ncells_owned_sub  = mesh_sub->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
     int ncells_owned_over = mesh_over->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
-
+   
   // //   // convert from mole fraction[-] to mol/L
     // for (int c=0; c<ncells_owned_sub; c++) (*tcc_sub)[0][c]  *= (*mol_dens_sub)[0][c] / 1000.;
     // for (int c=0; c<ncells_owned_over; c++) (*tcc_over)[0][c] *= (*mol_dens_over)[0][c] / 1000.;
-    for (int c=0; c<ncells_owned_sub; c++) 
-      (*ttc_sub_stor_)[0][c] = (*tcc_sub)[0][c] * (*mol_dens_sub)[0][c] / 1000.;
-    for (int c=0; c<ncells_owned_over; c++) 
-      (*ttc_over_stor_)[0][c] = (*tcc_over)[0][c] * (*mol_dens_over)[0][c] / 1000.;
-
-
-
+    for (int c=0; c<ncells_owned_sub; c++){
+      for (int k=0; k<num_aq_componets; k++){
+        (*ttc_sub_stor_)[k][c] = (*tcc_sub)[k][c] * (*mol_dens_sub)[0][c] / 1000.;
+      }
+    }
     
-    //std::cout<<tcc_sub<<" "<<tcc_over<<"\n";
-    // chemistry_pk_subsurface_->set_aqueous_components(tcc_sub);
-    // chemistry_pk_overland_->set_aqueous_components(tcc_over);
+    for (int c=0; c<ncells_owned_over; c++){
+      for (int k=0; k<num_aq_componets; k++){
+        (*ttc_over_stor_)[k][c] = (*tcc_over)[k][c] * (*mol_dens_over)[0][c] / 1000.;
+      }
+    }
 
-    chemistry_pk_subsurface_-> set_aqueous_components(ttc_sub_stor_);
-    chemistry_pk_overland_->set_aqueous_components(ttc_over_stor_);
-
-    //std::cout<<tcc_sub<<" "<<tcc_over<<"\n";
+    //std::cout<<*ttc_sub_stor_<<"\n";
+   
+    chemistry_pk_subsurface_ -> set_aqueous_components(ttc_sub_stor_);
+    chemistry_pk_overland_ -> set_aqueous_components(ttc_over_stor_);
 
     pk_fail = chemistry_pk_->AdvanceStep(t_old, t_new, reinit);
     chem_step_succeeded = true;
-
-    // *tcc_sub = *chemistry_pk_subsurface_->aqueous_components();
-    // *tcc_over = *chemistry_pk_overland_->aqueous_components();
-   
+  
     *ttc_sub_stor_ = *chemistry_pk_subsurface_->aqueous_components();
     *ttc_over_stor_ = *chemistry_pk_overland_->aqueous_components();
-    //std::cout<<tcc_sub<<" "<<tcc_over<<"\n";
+
+    //std::cout<<*ttc_sub_stor_<<"\n";
 
   //   // convert from mol/L fraction to mole fraction[-]
-    for (int c=0; c<ncells_owned_sub; c++) 
-      (*tcc_sub)[0][c]  = (*ttc_sub_stor_)[0][c] / ((*mol_dens_sub)[0][c] / 1000.);
-    for (int c=0; c<ncells_owned_over; c++) 
-      (*tcc_over)[0][c] = (*ttc_over_stor_)[0][c] / ((*mol_dens_over)[0][c] / 1000.);
+    for (int c=0; c<ncells_owned_sub; c++) {
+      for (int k=0; k<num_aq_componets; k++){
+        (*tcc_sub)[k][c]  = (*ttc_sub_stor_)[k][c] / ((*mol_dens_sub)[0][c] / 1000.);
+      }
+    }
+      
+    for (int c=0; c<ncells_owned_over; c++){
+      for (int k=0; k<num_aq_componets; k++){
+        (*tcc_over)[k][c] = (*ttc_over_stor_)[k][c] / ((*mol_dens_over)[0][c] / 1000.);
+      }
+    }
 
-    // for (int c=0; c<ncells_owned_sub; c++) 
-    //   (*tcc_sub)[0][c]  /=  ((*mol_dens_sub)[0][c] / 1000.);
-    // for (int c=0; c<ncells_owned_over; c++) 
-    //   (*tcc_over)[0][c] /=  ((*mol_dens_over)[0][c] / 1000.);
-
-  //   //std::cout << *tcc_over<<"\n";
+    //std::cout << *tcc_sub<<"\n";
 
   }
   catch (const Errors::Message& chem_error) {

@@ -30,7 +30,7 @@ public:
   // // -- advance each sub pk dt.
   virtual bool AdvanceStep(double t_old, double t_new, bool reinit = false);
 
-  //virtual void Initialize(const Teuchos::Ptr<State>& S);
+  virtual void Initialize(const Teuchos::Ptr<State>& S);
 
   virtual void CommitStep(double t_old, double t_new, const Teuchos::RCP<State>& S);
 

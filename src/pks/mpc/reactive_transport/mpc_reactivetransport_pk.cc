@@ -142,6 +142,8 @@ bool ReactiveTransport_PK_ATS::AdvanceStep(double t_old, double t_new, bool rein
 
   // Second, we do a chemistry step.
   try {
+    int num_aq_componets = tranport_pk_ -> num_aqueous_component();
+    
     Teuchos::RCP<Epetra_MultiVector> tcc_copy =
       S_->GetFieldCopyData(tcc_key,"subcycling","state")->ViewComponent("cell", true);
 
@@ -152,7 +154,9 @@ bool ReactiveTransport_PK_ATS::AdvanceStep(double t_old, double t_new, bool rein
     int ncells_owned = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
 
     // convert from mole fraction[-] to mol/L
-    for (int c=0; c<ncells_owned; c++) (*tcc_copy)[0][c] *= (*mol_dens)[0][c] / 1000.;
+    for (int c=0; c<ncells_owned; c++)
+      for (int k=0; k<num_aq_componets; k++)
+        (*tcc_copy)[k][c] *= (*mol_dens)[0][c] / 1000.;
 
     
     chemistry_pk_->set_aqueous_components(tcc_copy);
@@ -161,7 +165,9 @@ bool ReactiveTransport_PK_ATS::AdvanceStep(double t_old, double t_new, bool rein
  
     *tcc_copy = *chemistry_pk_->aqueous_components();
     // convert from mol/L fraction to mole fraction[-]
-    for (int c=0; c<ncells_owned; c++) (*tcc_copy)[0][c] /= (*mol_dens)[0][c] / 1000.;
+    for (int c=0; c<ncells_owned; c++)
+      for (int k=0; k<num_aq_componets; k++)
+        (*tcc_copy)[k][c] /= (*mol_dens)[0][c] / 1000.;
     
   }
   catch (const Errors::Message& chem_error) {

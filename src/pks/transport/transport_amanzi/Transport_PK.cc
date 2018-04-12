@@ -928,7 +928,7 @@ bool Transport_PK_ATS::AdvanceStep(double t_old, double t_new, bool reinit)
     } else if (spatial_disc_order == 2 && temporal_disc_order == 2) {
       AdvanceSecondOrderUpwindRK2(dt_cycle);
     }
-
+       
     // add multiscale model
     if (multiscale_porosity_) {
       double t_int1 = t_old + dt_sum - dt_cycle;
@@ -1089,8 +1089,8 @@ void Transport_PK_ATS :: Advance_Dispersion_Diffusion(double t_old, double t_new
       if (ierr < 0) {
         Errors::Message msg;
         msg = solver->DecodeErrorCode(ierr);
-        Exceptions::amanzi_throw(msg);
-      }
+        Exceptions::amanzi_throw(msg); 
+     }
 
       residual += solver->residual();
       num_itrs += solver->num_itrs();
@@ -1244,10 +1244,11 @@ void Transport_PK_ATS::AddMultiscalePorosity_(
 void Transport_PK_ATS::CommitStep(double t_old, double t_new, const Teuchos::RCP<State>& S)
 {
   Teuchos::RCP<CompositeVector> tcc;
+  
   tcc = S->GetFieldData(tcc_key_, passwd_);
   *tcc = *tcc_tmp;
   InitializeFieldFromField_(prev_saturation_key_, saturation_key_, S.ptr(), false, true);
-
+  
   // Copy to S_ as well
   tcc = S_->GetFieldData(tcc_key_, passwd_);
   *tcc = *tcc_tmp;
@@ -1267,9 +1268,11 @@ void Transport_PK_ATS::AdvanceDonorUpwind(double dt_cycle)
   tcc->ScatterMasterToGhosted("cell");
   Epetra_MultiVector& tcc_prev = *tcc->ViewComponent("cell", true);
   Epetra_MultiVector& tcc_next = *tcc_tmp->ViewComponent("cell", true);
-
-  //if (domain_name_=="surface") std::cout<<"DonorUpwind start\n"<<tcc_prev<<"\n";
-
+  // if (domain_name_=="surface"){
+  //   std::cout<<"DonorUpwind start\n"<<tcc_prev<<"\n";
+  //   std::cout<<"ws\n"<<*ws_start<<"\n";
+  //   std::cout<<"den\n"<<*mol_dens_start<<"\n";
+  // }
 
   // prepare conservative state in master and slave cells
   double vol_phi_ws_den, tcc_flux;
@@ -1291,6 +1294,7 @@ void Transport_PK_ATS::AdvanceDonorUpwind(double dt_cycle)
     }
   }
 
+  //if (domain_name_=="domain") std::cout<<"DonorUpwind start\n"<<*conserve_qty_<<"\n";
   
   tmp1 = mass_start;
   mesh_->get_comm()->SumAll(&tmp1, &mass_start, 1);
@@ -1366,9 +1370,11 @@ void Transport_PK_ATS::AdvanceDonorUpwind(double dt_cycle)
           int k = tcc_index[i];
           if (k < num_advect) {
             tcc_flux = dt_ * u * values[i];
-            // if (u > 1e-14) {
+            // if (fabs(u) > 1e-14) {
             //   const AmanziGeometry::Point& xf = mesh_->face_centroid(f);
-            //   *vo_->os() <<domain_name_<<" "<<"from BC cell "<<c2<<" flux "<< u<<" dt "<<dt_<<" value "<<values[i]<<" + "<<tcc_flux<<" cnt "<<xf<<"\n";
+            //   // if (xf[2]>19.5){
+            //   //   std::cout <<domain_name_<<" comp "<<k<<" from BC cell "<<c2<<" flux "<< u<<" dt "<<dt_<<" value "<<values[i]<<" + "<<tcc_flux<<" cnt "<<xf<<"\n";
+            //   // }
             // }
             (*conserve_qty_)[k][c2] += tcc_flux;
             mass_solutes_bc_[k] += tcc_flux;
@@ -1406,6 +1412,10 @@ void Transport_PK_ATS::AdvanceDonorUpwind(double dt_cycle)
     ComputeAddSourceTerms(time, dt_, *conserve_qty_, 0, num_advect - 1);
   }
 
+  // if (domain_name_ == "domain"){
+  //   std::cout<<"After ComputeAddSourceTerms\n";
+  //   std::cout<<(*conserve_qty_)<<"\n";
+  // }
 
   
   // recover concentration from new conservative state
@@ -1421,6 +1431,11 @@ void Transport_PK_ATS::AdvanceDonorUpwind(double dt_cycle)
       }
     }
   }
+  
+  // if (domain_name_ == "domain"){
+  //   std::cout<<"tcc_next\n";
+  //   std::cout<<tcc_next<<"\n";
+  // }
 
   double mass_final = 0;
   for (int c = 0; c < ncells_owned; c++) {
