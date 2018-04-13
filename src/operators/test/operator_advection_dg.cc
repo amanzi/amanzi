@@ -27,6 +27,7 @@
 #include "Explicit_TI_RK.hh"
 #include "GMVMesh.hh"
 #include "CompositeVector.hh"
+#include "DG_Modal.hh"
 #include "LinearOperatorGMRES.hh"
 #include "MeshFactory.hh"
 #include "MeshMapsFactory.hh"
@@ -37,6 +38,7 @@
 // Operators
 #include "AnalyticDG02.hh"
 #include "AnalyticDG04.hh"
+#include "AnalyticDG06.hh"
 
 #include "OperatorAudit.hh"
 #include "OperatorDefs.hh"
@@ -78,24 +80,23 @@ class AdvectionFn : public Explicit_TI::fnBase<CompositeVector> {
     int ncells_wghost = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
     int nfaces_wghost = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
 
-    // calculate approximate velocity
-    WhetStone::VectorPolynomial v;
-    ana_.VelocityTaylor(AmanziGeometry::Point(0.0, 0.0), 0.0, v); 
-
     // update velocity coefficient
+    WhetStone::VectorPolynomial v;
     auto velc = Teuchos::rcp(new std::vector<WhetStone::VectorPolynomial>(ncells_wghost));
     auto velf = Teuchos::rcp(new std::vector<WhetStone::Polynomial>(nfaces_wghost));
 
     for (int c = 0; c < ncells_wghost; ++c) {
+      ana_.VelocityTaylor(mesh_->cell_centroid(c), 0.0, v); 
       (*velc)[c] = v;
       (*velc)[c] *= -1.0;
     }
 
     for (int f = 0; f < nfaces_wghost; ++f) {
+      ana_.VelocityTaylor(mesh_->face_centroid(f), 0.0, v); 
       (*velf)[f] = v * mesh_->face_normal(f);
     }
 
-    CalculateApproximateVelocity(velc);
+    // CalculateApproximateVelocity(velc, velf);
 
     // update accumulation coefficient
     auto K = Teuchos::rcp(new std::vector<WhetStone::Polynomial>(ncells_wghost));
@@ -115,6 +116,7 @@ class AdvectionFn : public Explicit_TI::fnBase<CompositeVector> {
 
     CompositeVector& rhs = *global_op_->rhs();
     Epetra_MultiVector& rhs_c = *rhs.ViewComponent("cell");
+    rhs_c.PutScalar(0.0);
 
     for (int c = 0; c < ncells; ++c) {
       const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
@@ -164,7 +166,8 @@ class AdvectionFn : public Explicit_TI::fnBase<CompositeVector> {
 
   // modify cell and face velocities using mesh maps
   void CalculateApproximateVelocity(
-      const Teuchos::RCP<std::vector<WhetStone::VectorPolynomial> >& velc) {
+      const Teuchos::RCP<std::vector<WhetStone::VectorPolynomial> >& velc,
+      const Teuchos::RCP<std::vector<WhetStone::Polynomial> >& velf) {
     // create new mesh
     Epetra_MpiComm comm(MPI_COMM_WORLD);
     AmanziMesh::MeshFactory factory(&comm);
@@ -206,8 +209,13 @@ class AdvectionFn : public Explicit_TI::fnBase<CompositeVector> {
       int nfaces = faces.size();
 
       WhetStone::VectorPolynomial v;
-      ana_.VelocityTaylor(AmanziGeometry::Point(0.0, 0.0), 0.0, v); 
-      std::vector<WhetStone::VectorPolynomial> vvf(nfaces, v);
+      std::vector<WhetStone::VectorPolynomial> vvf;
+      for (int n = 0; n < nfaces; ++n) {
+        int f = faces[n];
+        maps->VelocityFace(f, v);
+        vvf.push_back(v);
+        (*velf)[f] = v * mesh_->face_normal(f);
+      }
 
       maps->VelocityCell(c, vvf, (*velc)[c]);
       (*velc)[c] *= -1.0;
@@ -281,6 +289,15 @@ void AdvectionTransient(std::string filename, int nx, int ny, double dt,
   CompositeVector sol(rhs), sol_next(rhs);
   sol.PutScalar(0.0);
 
+  AnalyticDG04 ana(mesh, 2);
+  /*
+  WhetStone::DG_Modal dg(3, mesh);
+  dg.set_basis(WhetStone::TAYLOR_BASIS_NATURAL);
+
+  Epetra_MultiVector& sol_c = *sol.ViewComponent("cell");
+  ana.InitialGuess(dg, sol_c);
+  */
+
   int nstep(0);
   double t(0.0), tend(1.0), tprint(0.0);
   Explicit_TI::RK<CompositeVector> rk(fn, rk_method, sol);
@@ -315,7 +332,6 @@ void AdvectionTransient(std::string filename, int nx, int ny, double dt,
   Epetra_MultiVector& p = *sol.ViewComponent("cell", false);
 
   double pnorm, pl2_err, pinf_err;
-  AnalyticDG04 ana(mesh, 2);
   ana.ComputeCellError(p, 0.0, pnorm, pl2_err, pinf_err);
 
   if (MyPID == 0) {
@@ -326,12 +342,14 @@ void AdvectionTransient(std::string filename, int nx, int ny, double dt,
 
 
 TEST(OPERATOR_ADVECTION_TRANSIENT_DG) {
-  AdvectionTransient("test/median7x8.exo", 8, 0, 0.05, Amanzi::Explicit_TI::tvd_3rd_order);
-  AdvectionTransient("test/median15x16.exo", 16, 0, 0.05 / 2, Amanzi::Explicit_TI::tvd_3rd_order);
+  /*
+  AdvectionTransient("test/median7x8.exo", 9, 9, 0.05, Amanzi::Explicit_TI::tvd_3rd_order);
+  AdvectionTransient("test/median15x16.exo", 16, 16, 0.05 / 2, Amanzi::Explicit_TI::tvd_3rd_order);
   AdvectionTransient("test/median32x33.exo", 32, 0, 0.05 / 4, Amanzi::Explicit_TI::tvd_3rd_order);
   AdvectionTransient("test/median63x64.exo", 64, 0, 0.05 / 8, Amanzi::Explicit_TI::tvd_3rd_order);
   AdvectionTransient("test/median127x128.exo", 128, 0, 0.05 / 16, Amanzi::Explicit_TI::tvd_3rd_order);
-  // AdvectionTransient("square",  4,  4, 0.1, Amanzi::Explicit_TI::tvd_3rd_order);
+  */ 
+  AdvectionTransient("square",  4,  4, 0.1, Amanzi::Explicit_TI::tvd_3rd_order);
 }
 
 

@@ -81,6 +81,31 @@ class AnalyticDGBase {
     return tmp;
   }
 
+  // initial guess
+  void InitialGuess(Amanzi::WhetStone::DG_Modal& dg, Epetra_MultiVector& p) {
+    Amanzi::WhetStone::Polynomial coefs;
+    Amanzi::WhetStone::NumericalIntegration numi(mesh_);
+
+    int ncells = mesh_->num_entities(Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::Parallel_type::ALL);
+    for (int c = 0; c < ncells; ++c) {
+      const Amanzi::AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
+      SolutionTaylor(xc, 0.0, coefs);
+      numi.ChangeBasisRegularToNatural(c, coefs);
+
+      Amanzi::WhetStone::DenseVector data;
+      coefs.GetPolynomialCoefficients(data);
+
+      double a, b;
+      for (auto it = coefs.begin(); it.end() <= coefs.end(); ++it) {
+        int n = it.PolynomialPosition();
+
+        dg.TaylorBasis(c, it, &a, &b);
+        p[n][c] = data(n) / a;
+        p[0][c] += data(n) * b;
+      } 
+    }
+  }
+
   // error calculations
   void ComputeCellError(Epetra_MultiVector& p, double t, double& pnorm, double& l2_err, double& inf_err) {
     pnorm = 0.0;

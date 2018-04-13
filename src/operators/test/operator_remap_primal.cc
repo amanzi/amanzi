@@ -125,25 +125,7 @@ void RemapTests2DPrimal(int order, std::string disc_name,
   dg.set_basis(WhetStone::TAYLOR_BASIS_NORMALIZED_ORTHO);
 
   AnalyticDG04 ana(mesh0, order);
-
-  for (int c = 0; c < ncells_wghost; c++) {
-    const AmanziGeometry::Point& xc = mesh0->cell_centroid(c);
-    WhetStone::Polynomial coefs;
-    ana.SolutionTaylor(xc, 0.0, coefs);
-    numi.ChangeBasisRegularToNatural(c, coefs);
-
-    WhetStone::DenseVector data;
-    coefs.GetPolynomialCoefficients(data);
-
-    double a, b;
-    for (auto it = coefs.begin(); it.end() <= coefs.end(); ++it) {
-      int n = it.PolynomialPosition();
-
-      dg.TaylorBasis(c, it, &a, &b);
-      p1c[n][c] = data(n) / a;
-      p1c[0][c] += data(n) * b;
-    }
-  }
+  ana.InitialGuess(dg, p1c);
 
   // initial mass
   double mass0(0.0);
