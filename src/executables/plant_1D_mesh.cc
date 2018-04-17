@@ -83,7 +83,7 @@ plantMeshes(const Teuchos::RCP<AmanziMesh::Mesh>& subsurface_mesh,
     // set the geometric parameters
     std::vector<HydraulicMeshParams> hps;
     for (auto pft : pfts[sc]) {
-      HydraulicMeshParams hp(pft.pft_type);
+      HydraulicMeshParams hp(pft.pft_type+"_"+std::to_string(sc));
       hp.height = pft.height;
       hp.leaf_height = std::min(0.1, 0.9*pft.height);
       hp.stem_length = hp.height - hp.leaf_height;
@@ -190,9 +190,11 @@ plantMeshes(const Teuchos::RCP<AmanziMesh::Mesh>& subsurface_mesh,
   ASSERT(!audit.Verify());
   
   // now create the embedded mesh
-  return Teuchos::rcp(new AmanziMesh::MeshEmbeddedLogical(subsurface_mesh->get_comm(),
+  auto embedded = Teuchos::rcp(new AmanziMesh::MeshEmbeddedLogical(subsurface_mesh->get_comm(),
           subsurface_mesh, logical_mesh, soil_rheiz_conn_cells, soil_rheiz_conn_lengths,
-          soil_rheiz_conn_area_normals));  
+          soil_rheiz_conn_area_normals));
+  embedded->set_geometric_model(gm);
+  return embedded;
 }
           
           
@@ -345,7 +347,7 @@ plantMesh(AmanziMesh::MeshLogicalFactory& fac,
     fac.AddSegment(&l_centroids, &cell_volumes, cell_lengths, face_areas, orientation,
                    AmanziMesh::MeshLogicalFactory::LogicalTip_t::BRANCH,
                    AmanziMesh::MeshLogicalFactory::LogicalTip_t::JUNCTION,
-                   p.name+"_aroot",
+                   p.name+"_aroot_"+std::to_string(slev),
                    &aroot_cells, &aroot_faces);
     //    belowground_soil_volume[slev] += cell_volumes[0];
 
@@ -390,7 +392,7 @@ plantMesh(AmanziMesh::MeshLogicalFactory& fac,
       fac.AddSegment(&l_centroids, &cell_volumes, cell_lengths, face_areas, orientation,
                      AmanziMesh::MeshLogicalFactory::LogicalTip_t::BRANCH,
                      AmanziMesh::MeshLogicalFactory::LogicalTip_t::JUNCTION,
-                     p.name+"_rheizosphere_shell",
+                     p.name+"_rheizosphere_shell_"+std::to_string(slev),
                      &rheiz_cells, &rheiz_faces);
       for (int i=0; i!=n_rheiz_shell; ++i) belowground_soil_volume[slev] += cell_volumes[i];
 
