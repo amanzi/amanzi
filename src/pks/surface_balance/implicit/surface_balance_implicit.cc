@@ -75,9 +75,9 @@ SurfaceBalanceImplicit::SurfaceBalanceImplicit(Teuchos::ParameterList& pk_tree,
   min_wind_speed_ = plist_->get<double>("minimum wind speed [m/s]?", 1.0);
   wind_speed_ref_ht_ = plist_->get<double>("wind speed reference height [m]", 2.0);
 
-  // roughness parameters
-  roughness_bare_ground_ = plist_->get<double>("roughness length of bare ground [m]");
-  roughness_snow_covered_ground_ = plist_->get<double>("roughness length of snow-covered ground [m]");
+  // roughness parameters, default to 4 cm for soil, 4 mm for snow
+  roughness_bare_ground_ = plist_->get<double>("roughness length of bare ground [m]", 0.04);
+  roughness_snow_covered_ground_ = plist_->get<double>("roughness length of snow-covered ground [m]", 0.004);
   
   // implicit/explicit snow precip
   implicit_snow_ = plist_->get<bool>("implicit snow precipitation", false);
