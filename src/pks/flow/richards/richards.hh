@@ -83,11 +83,12 @@ Time integration and timestep control:
 
 Error control:
 
-* `"absolute error tolerance`" [double] **DERIVED** Defaults to a porosity of 0.5 * a saturation of 0.1 * n_l.  A small, but significant, amount of water.
+* `"absolute error tolerance`" ``[double]`` **2750.** Defaults to a porosity of 0.5 * a saturation of 0.1 * n_l.
+  A small, but significant, amount of water.
 
-* `"relative error tolerance`" [double] **1** Take the error relative to the amount of water present in that cell.
+* `"relative error tolerance`" ``[double]`` **1** Take the error relative to the amount of water present in that cell.
 
-* `"flux tolerance`" [double] **1**
+* `"flux tolerance`" ``[double]`` **1**
 
   Multiplies the error in flux (on a face) relative to the min of water in the
   neighboring cells.  Typically only changed if infiltration is very small and
@@ -97,7 +98,7 @@ Error control:
 
 Boundary conditions:
 
-* `"boundary conditions`" ``[subsurface-flow-bc-spec]`` **defaults to Neuman, 0 normal flux**  See `Flow-specific Boundary Conditions`_
+* `"boundary conditions`" ``[subsurface-flow-bc-spec]`` Defaults to Neuman, 0 normal flux.  See `Flow-specific Boundary Conditions`_
 
 Physics control:
 

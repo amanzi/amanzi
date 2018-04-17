@@ -17,11 +17,11 @@ implement an equation and are not couplers, and support the implicit
 integration interface.  This largely just supplies a default error norm based
 on error in conservation relative to the extent of the conserved quantity.
 
-* `"absolute error tolerance`" [double] **1.0**
+* `"absolute error tolerance`" ``[double]`` **1.0**
 
   Absolute tolerance, :math:`a_tol` in the equation below.
 
-* `"relative error tolerance`" [double] **1.0**
+* `"relative error tolerance`" ``[double]`` **1.0**
 
   Relative tolerance, :math:`r_tol` in the equation below.
 

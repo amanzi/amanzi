@@ -35,9 +35,9 @@ Other variable names, typically not set as the default is basically always good:
 
 Discretization control:
 
-* `"diffusion`" ``[list]`` An PDE_Diffusion_ spec describing the (forward) diffusion operator
+* `"diffusion`" ``[pde-diffusion-spec]`` An PDE_Diffusion_ spec describing the (forward) diffusion operator
 
-* `"diffusion preconditioner`" ``[list]`` An PDE_Diffusion_ spec describing the diffusive parts of the preconditioner.
+* `"diffusion preconditioner`" ``[pde-diffusion-spec]`` An PDE_Diffusion_ spec describing the diffusive parts of the preconditioner.
 
 Time integration and timestep control:
 
@@ -61,11 +61,11 @@ Time integration and timestep control:
 
 Error control:
 
-* `"absolute error tolerance`" [double] **DERIVED** Defaults to 1 cm of water.  A small, but significant, amount of water.
+* `"absolute error tolerance`" ``[double]`` **550.** Defaults to 1 cm of water.  A small, but significant, amount of water.
 
-* `"relative error tolerance`" [double] **1** Take the error relative to the amount of water present in that cell.
+* `"relative error tolerance`" ``[double]`` **1** Take the error relative to the amount of water present in that cell.
 
-* `"flux tolerance`" [double] **1** Multiplies the error in flux (on a face)
+* `"flux tolerance`" ``[double]`` **1** Multiplies the error in flux (on a face)
   relative to the min of water in the neighboring cells.  Typically only
   changed if infiltration is very small and the boundary condition is not
   converging, at which point it can be decreased by an order of magnitude at a
@@ -73,7 +73,7 @@ Error control:
 
 Boundary conditions:
 
-* `"boundary conditions`" ``[surface-flow-bc-spec]`` **defaults to Neuman, 0 normal flux**
+* `"boundary conditions`" ``[surface-flow-bc-spec]`` Defaults to Neuman, 0 normal flux.
 
 
 May inherit options from PKPhysicalBDFBase_.

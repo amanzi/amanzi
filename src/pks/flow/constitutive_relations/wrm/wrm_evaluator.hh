@@ -1,9 +1,29 @@
 /* -*-  mode: c++; indent-tabs-mode: nil -*- */
+/*! WRMEvaluator is an algebraic evaluator for liquid and gas saturations.
+
 
 /*
-  The WRM Evaluator simply calls the WRM with the correct arguments.
+  ATS is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
 
   Authors: Ethan Coon (ecoon@lanl.gov)
+*/
+
+/*!
+
+Evaluates a set of WRMs on a partition of the mesh.
+
+* `"saturation key`" ``[string]`` **determined from evaluator name** The name
+         of the liquid saturation -- typically this is determined from
+         the evaluator name and need not be set.
+* `"other saturation key`" ``[string]`` **determined from evaluator name**
+         The name of the liquid saturation -- typically this is determined
+         from the evaluator name and need not be set.
+* `"capillary pressure key`" ``[string]`` **DOMAIN-capillary_pressure_gas_liq**
+         The name of the capillary pressure.
+* `"WRM parameters`" ``[wrm-partition-list]`` 
+
 */
 
 #ifndef AMANZI_FLOW_RELATIONS_WRM_EVALUATOR_
