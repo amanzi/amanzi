@@ -494,6 +494,18 @@ void CompositeVector::ApplyVandelay_() const {
 }
 
 
+// return non-empty importer
+const Teuchos::RCP<Epetra_Import>& CompositeVector::importer(std::string name) {
+  if (importers_[Index_(name)] == Teuchos::null) {
+    Teuchos::RCP<const Epetra_Map> target_map = ghostvec_->ComponentMap(name);
+    Teuchos::RCP<const Epetra_Map> source_map = mastervec_->ComponentMap(name);
+    importers_[Index_(name)] =
+      Teuchos::rcp(new Epetra_Import(*target_map, *source_map));
+  }
+  return importers_[Index_(name)];
+}
+
+
 // Mathematical operations
 // -- result <- other \dot this
 int CompositeVector::Dot(const CompositeVector& other, double* result) const {
