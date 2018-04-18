@@ -23,6 +23,7 @@
 
 #include "Teuchos_RCP.hpp"
 
+#include "DG_Modal.hh"
 #include "Mesh.hh"
 #include "Point.hh"
 #include "Polynomial.hh"

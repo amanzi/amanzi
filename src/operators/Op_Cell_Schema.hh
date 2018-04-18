@@ -33,6 +33,7 @@ class Op_Cell_Schema : public Op {
     matrices.resize(mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED), null_matrix);
     matrices_shadow = matrices;
   }
+  ~Op_Cell_Schema() {};
 
   virtual void ApplyMatrixFreeOp(const Operator* assembler,
           const CompositeVector& X, CompositeVector& Y) const {

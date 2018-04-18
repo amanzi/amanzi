@@ -50,6 +50,7 @@ class PDE_Abstract : public PDE_HelperDiscretization {
     global_op_ = Teuchos::null;
     Init_(plist);
   }
+  ~PDE_Abstract() {};
 
   // main members 
   // -- required by the interface
