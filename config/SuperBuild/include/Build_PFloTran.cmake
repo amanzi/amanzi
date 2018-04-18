@@ -58,6 +58,14 @@ configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/pflotran-install-step.cmake.in
                @ONLY)
 set(PFLOTRAN_INSTALL_COMMAND ${CMAKE_COMMAND} -P ${PFLOTRAN_cmake_install})
 
+# --- Set the patch command
+set(PFLOTRAN_sh_patch ${PFLOTRAN_prefix_dir}/pflotran-patch-step.sh)
+configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/pflotran-patch-step.sh.in
+               ${PFLOTRAN_sh_patch}
+               @ONLY)
+set(PFLOTRAN_PATCH_COMMAND sh ${PFLOTRAN_sh_patch})
+
+
 # --- Add external project build and tie to the PFLOTRAN build target
 ExternalProject_Add(${PFLOTRAN_BUILD_TARGET}
                     DEPENDS   ${PFLOTRAN_PACKAGE_DEPENDS}         # Package dependency target
@@ -68,6 +76,8 @@ ExternalProject_Add(${PFLOTRAN_BUILD_TARGET}
                     URL           ${PFLOTRAN_URL}                 # URL may be a web site OR a local file
                     URL_MD5       ${PFLOTRAN_MD5_SUM}             # md5sum of the archive file
                     DOWNLOAD_NAME ${PFLOTRAN_SAVEAS_FILE}         # file name to store (if not end of URL)
+                    # -- Patch 
+                    PATCH_COMMAND ${PFLOTRAN_PATCH_COMMAND}
                     # -- Configure
                     SOURCE_DIR    ${PFLOTRAN_source_dir}          # Source directory
                     CONFIGURE_COMMAND ""
