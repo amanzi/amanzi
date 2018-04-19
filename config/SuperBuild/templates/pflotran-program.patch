@@ -1,0 +1,21 @@
+diff -ruNbB pflotran-0.3.0-orig/src/pflotran/pflotran_rxn.F90 pflotran-0.3.0-patched/src/pflotran/pflotran_rxn.F90
+--- pflotran-0.3.0-orig/src/pflotran/pflotran_rxn.F90	2017-10-13 11:51:06.000000000 -0600
++++ pflotran-0.3.0-patched/src/pflotran/pflotran_rxn.F90	2018-04-18 22:16:31.815651677 -0600
+@@ -304,7 +304,7 @@
+   call InputGetCommandLineString(string, option%global_prefix, option_found, option)
+ 
+   PETSC_COMM_WORLD = MPI_COMM_WORLD
+-  call PetscInitialize(PETSC_NULL_CHARACTER, ierr);CHKERRQ(ierr)
++  call PetscInitialize(PETSC_NULL_CHARACTER, ierr)
+ 
+   input => InputCreate(IN_UNIT, option%input_filename, option)
+ 
+@@ -379,7 +379,7 @@
+   nullify(material_auxvars)
+   call InputDestroy(input)
+   call OptionDestroy(option)
+-  call PetscFinalize(ierr);CHKERRQ(ierr)
++  call PetscFinalize(ierr)
+   call MPI_Finalize(ierr)
+ 
+ end program pflotran_rxn
