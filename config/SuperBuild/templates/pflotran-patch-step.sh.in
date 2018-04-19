@@ -1,10 +1,28 @@
 #!/bin/sh
 
-# Elliminates return statements from the main program
+# CMake generates this file 
 
-file_name=@PFLOTRAN_source_dir@/src/pflotran/pflotran_rxn.F90
+# Source and build locations
+pflotran_src_dir=@PFLOTRAN_source_dir@
 
-echo "Patching file ${file_name}"
-perl -i -p -e "s/;CHKERRQ\(ierr\)//g" ${file_name}
+OIFS=$IFS
+IFS=";"
+patch_files="@PFLOTRAN_patch_file@"
+
+for i in ${patch_files}; do
+
+ patch_file=@SuperBuild_SOURCE_DIR@/templates/${i}
+ echo "Applying patch: ${patch_file}"
+
+ if [ ! -e "${patch_file}" ] ; then
+  echo "Patch file ${patch_file} does not exist"
+  exit 10
+ fi
+
+ (cd ${pflotran_src_dir}; patch -p1 < ${patch_file})
+
+done
+
+IFS=$OIFS
 
 exit $?
