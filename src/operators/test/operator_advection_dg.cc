@@ -53,8 +53,9 @@ class AdvectionFn : public Explicit_TI::fnBase<CompositeVector> {
  public:
   AdvectionFn(Teuchos::ParameterList& plist,
               const std::string& filename,
-              const Teuchos::RCP<const AmanziMesh::Mesh> mesh)
-      : plist_(plist), filename_(filename), mesh_(mesh), ana_(mesh, 3) {
+              const Teuchos::RCP<const AmanziMesh::Mesh> mesh,
+              int order)
+      : plist_(plist), filename_(filename), mesh_(mesh), ana_(mesh, order + 1) {
 
     // create global operator 
     // -- upwind flux term
@@ -254,6 +255,8 @@ void AdvectionTransient(std::string filename, int nx, int ny, double dt,
   using namespace Amanzi::AmanziGeometry;
   using namespace Amanzi::Operators;
 
+  int order = 1;
+
   Epetra_MpiComm comm(MPI_COMM_WORLD);
   int MyPID = comm.MyPID();
 
@@ -282,16 +285,16 @@ void AdvectionTransient(std::string filename, int nx, int ny, double dt,
   int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
 
   // create main advection class
-  AdvectionFn fn(plist, filename, mesh);
+  AdvectionFn fn(plist, filename, mesh, order);
 
   // create initial guess
   CompositeVector& rhs = *fn.op_flux->global_operator()->rhs();
   CompositeVector sol(rhs), sol_next(rhs);
   sol.PutScalar(0.0);
 
-  AnalyticDG04 ana(mesh, 2);
+  AnalyticDG04 ana(mesh, order);
   /*
-  WhetStone::DG_Modal dg(3, mesh);
+  WhetStone::DG_Modal dg(order, mesh);
   dg.set_basis(WhetStone::TAYLOR_BASIS_NATURAL);
 
   Epetra_MultiVector& sol_c = *sol.ViewComponent("cell");
