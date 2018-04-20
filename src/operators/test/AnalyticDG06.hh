@@ -41,6 +41,8 @@ class AnalyticDG06 : public AnalyticDGBase {
   virtual void SolutionTaylor(const Amanzi::AmanziGeometry::Point& p, double t,
                               Amanzi::WhetStone::Polynomial& sol) override {
     sol.Reshape(d_, order_, true); 
+    sol.set_origin(p);
+
     double x0 = 0.5 + 0.25 * std::cos(t);
     double y0 = 0.5 + std::sin(t);
 
@@ -50,6 +52,8 @@ class AnalyticDG06 : public AnalyticDGBase {
     double dist, dist2, dist3, dist5;
     dist2 = dx * dx + dy * dy;
     dist = std::pow(dist2, 0.5);
+    if (dist > 0.2) return;
+
     sol(0, 0) = dist - 0.2;
 
     if (order_ > 0) {
@@ -71,8 +75,6 @@ class AnalyticDG06 : public AnalyticDGBase {
       sol(3, 2) = dx * (dy * dy - dx * dx / 2) / dist5;
       sol(3, 3) = -0.5 * dy * dx * dx / dist5;
     }
-
-    sol.set_origin(p);
   }
 
   // -- accumulation
@@ -87,12 +89,12 @@ class AnalyticDG06 : public AnalyticDGBase {
     v.resize(d_);
     for (int i = 0; i < d_; ++i) {
       v[i].Reshape(d_, 1, true); 
-      v[i].set_origin(p);
+      v[i].ChangeOrigin(p);
     }
-    v[0](0, 0) = 0.5;
+    v[0](0, 0) = 0.5 - p[1];
     v[0](1, 1) =-1.0;
 
-    v[1](0, 0) =-0.5;
+    v[1](0, 0) = p[0] - 0.5;
     v[1](1, 0) = 1.0;
   }
 
