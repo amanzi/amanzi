@@ -8,12 +8,12 @@
 
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 
-  Solution: u = sin(3x) sin(6y)
+  Solution: u = t sin(3x) sin(6y)
   Diffusion: K = 1
   Accumulation: a = 0
   Reaction: r = 0
   Velocity: v = [x - x^2, y - y^2]
-  Source: f = 0
+  Source: f = u / t + v . \grad u  
 */
 
 #ifndef AMANZI_OPERATOR_ANALYTIC_DG_04_BASE_HH_
@@ -68,6 +68,7 @@ class AnalyticDG04 : public AnalyticDGBase {
       sol(4, 4) =  54.0 * std::sin(3 * p[0]) * std::sin(6 * p[1]);
     }
     sol.set_origin(p);
+    sol *= t;
   }
 
   // -- accumulation
@@ -99,7 +100,18 @@ class AnalyticDG04 : public AnalyticDGBase {
   // -- source term
   virtual void SourceTaylor(const Amanzi::AmanziGeometry::Point& p, double t,
                             Amanzi::WhetStone::Polynomial& src) override {
-    src.Reshape(d_, 0, true);
+    Amanzi::WhetStone::Polynomial sol;
+    Amanzi::WhetStone::VectorPolynomial v;
+    Amanzi::WhetStone::VectorPolynomial grad(d_, 0);
+
+    SolutionTaylor(p, 1.0, sol);
+    VelocityTaylor(p, t, v); 
+
+    v[0].ChangeOrigin(p);
+    v[1].ChangeOrigin(p);
+
+    grad.Gradient(sol); 
+    src = sol + (v * grad) * t;
   }
 };
 

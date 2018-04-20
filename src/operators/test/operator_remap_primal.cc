@@ -125,7 +125,7 @@ void RemapTests2DPrimal(int order, std::string disc_name,
   dg.set_basis(WhetStone::TAYLOR_BASIS_NORMALIZED_ORTHO);
 
   AnalyticDG04 ana(mesh0, order);
-  ana.InitialGuess(dg, p1c);
+  ana.InitialGuess(dg, p1c, 1.0);
 
   // initial mass
   double mass0(0.0);

@@ -83,14 +83,14 @@ class AnalyticDGBase {
   }
 
   // initial guess
-  void InitialGuess(Amanzi::WhetStone::DG_Modal& dg, Epetra_MultiVector& p) {
+  void InitialGuess(Amanzi::WhetStone::DG_Modal& dg, Epetra_MultiVector& p, double t) {
     Amanzi::WhetStone::Polynomial coefs;
     Amanzi::WhetStone::NumericalIntegration numi(mesh_);
 
     int ncells = mesh_->num_entities(Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::Parallel_type::ALL);
     for (int c = 0; c < ncells; ++c) {
       const Amanzi::AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
-      SolutionTaylor(xc, 0.0, coefs);
+      SolutionTaylor(xc, t, coefs);
       numi.ChangeBasisRegularToNatural(c, coefs);
 
       Amanzi::WhetStone::DenseVector data;

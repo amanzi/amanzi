@@ -44,7 +44,7 @@ class AnalyticDG06 : public AnalyticDGBase {
     sol.set_origin(p);
 
     double x0 = 0.5 + 0.25 * std::cos(t);
-    double y0 = 0.5 + std::sin(t);
+    double y0 = 0.5 + 0.25 * std::sin(t);
 
     double dx = p[0] - x0;
     double dy = p[1] - y0;
@@ -102,12 +102,14 @@ class AnalyticDG06 : public AnalyticDGBase {
   virtual void ReactionTaylor(const Amanzi::AmanziGeometry::Point& p, double t,
                               Amanzi::WhetStone::Polynomial& r) override {
     r.Reshape(d_, 0, true); 
+    r.set_origin(p);
   }
 
   // -- source term
   virtual void SourceTaylor(const Amanzi::AmanziGeometry::Point& p, double t,
                             Amanzi::WhetStone::Polynomial& src) override {
     src.Reshape(d_, 0, true);
+    src.set_origin(p);
   }
 };
 

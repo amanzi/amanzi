@@ -469,7 +469,7 @@ void RemapTestsDualRK(int order_p, int order_u,
   dg.set_basis(WhetStone::TAYLOR_BASIS_NORMALIZED_ORTHO);
 
   AnalyticDG04 ana(mesh0, order_p);
-  ana.InitialGuess(dg, p1c);
+  ana.InitialGuess(dg, p1c, 1.0);
 
   // initial mass
   double mass0(0.0);
@@ -584,7 +584,7 @@ void RemapTestsDualRK(int order_p, int order_u,
 
     // const AmanziGeometry::Point& xg = cell_geometric_center(*mesh1, c);
     const AmanziGeometry::Point& xg = mesh1->cell_centroid(c);
-    double err = poly.Value(xc0) - ana.SolutionExact(xg, 0.0);
+    double err = poly.Value(xc0) - ana.SolutionExact(xg, 1.0);
 
     inf0_err = std::max(inf0_err, fabs(err));
     l20_err += err * err * area_c;
@@ -598,7 +598,7 @@ void RemapTestsDualRK(int order_p, int order_u,
         mesh1->node_get_coordinates(nodes[i], &v1);
 
         double tmp = poly.Value(v0);
-        tmp -= ana.SolutionExact(v1, 0.0);
+        tmp -= ana.SolutionExact(v1, 1.0);
         pinf_err = std::max(pinf_err, fabs(tmp));
         pl2_err += tmp * tmp * area_c / nnodes;
 
@@ -659,7 +659,7 @@ void RemapTestsDualRK(int order_p, int order_u,
         mesh1->node_get_coordinates(nodes[i], &v1);
 
         double tmp = poly.Value(v1);
-        tmp -= ana.SolutionExact(v1, 0.0);
+        tmp -= ana.SolutionExact(v1, 1.0);
         qinf_err = std::max(qinf_err, fabs(tmp));
         ql2_err += tmp * tmp * area_c / nnodes;
       }
