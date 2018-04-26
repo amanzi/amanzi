@@ -5601,6 +5601,7 @@ for its evaluation.  The observations are evaluated during the simulation and re
       * material id [-]
       * aqueous mass flow rate [kg/s] (when funtional="integral")
       * aqueous volumetric flow rate [m^3/s] (when functional="integral")
+      * fractures aqueous volumetric flow rate [m^3/s] (when functional="integral")
       * SOLUTE volumetric flow rate [mol/s] (when functional="integral")
 
     Observations *drawdown* and *permeability-weighted* are calculated with respect to the value 
