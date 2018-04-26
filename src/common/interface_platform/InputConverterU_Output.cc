@@ -356,6 +356,8 @@ Teuchos::ParameterList InputConverterU::TranslateOutput_()
             std::stringstream name;
             name << solute_name << " volumetric flow rate";
             obPL.set<std::string>("variable", name.str());
+          } else if (strcmp(obs_type, "fractures_aqueous_volumetric_flow_rate") == 0) {
+            obPL.set<std::string>("variable", "fractures aqueous volumetric flow rate");
           }
 
           DOMNodeList* kids = jnode->getChildNodes();

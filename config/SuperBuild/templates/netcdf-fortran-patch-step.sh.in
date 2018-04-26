@@ -1,18 +1,28 @@
 #!/bin/sh
 
 # CMake generates this file 
-# Replaces each @VAR@ with value of ${VAR}
 
 # Source and build locations
 netcdf_fortran_src_dir=@NetCDF_Fortran_source_dir@
 
-patch_file=@SuperBuild_SOURCE_DIR@/templates/@NetCDF_Fortran_patch_file@
+OIFS=$IFS
+IFS=";"
+patch_files="@NetCDF_Fortran_patch_file@"
 
-if [ ! -e "${patch_file}" ] ; then
+for i in ${patch_files}; do
+
+ patch_file=@SuperBuild_SOURCE_DIR@/templates/${i}
+ echo "Applying patch: ${patch_file}"
+
+ if [ ! -e "${patch_file}" ] ; then
   echo "Patch file ${patch_file} does not exist"
   exit 10
-fi
+ fi
 
-cd ${netcdf_fortran_src_dir}
-patch -p1 < ${patch_file}
+ (cd ${netcdf_fortran_src_dir}; patch -p1 < ${patch_file})
+
+done
+
+IFS=$OIFS
+
 exit $?
