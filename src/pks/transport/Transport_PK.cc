@@ -524,7 +524,7 @@ double Transport_PK::StableTimeStep()
     }
   }
 
-  // Account for extraction of solute is production wells.
+  // Account for extraction of solute in production wells.
   // We assume one well per cell (FIXME).
   double t_old = S_->intermediate_time();
   for (int m = 0; m < srcs_.size(); m++) {

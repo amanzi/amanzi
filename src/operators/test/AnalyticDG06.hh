@@ -10,11 +10,11 @@
 
   Solution: u = sqrt((x - x0)^2 + (y - y0)^2) - 0.2
             x0 = 0.5 + 0.25 cos(t)
-            y0 = 0.5 + sin(t)
+            y0 = 0.5 + 0.25 sin(t)
   Diffusion: K = 1
   Accumulation: a = 0
   Reaction: r = 0
-  Velocity: v = [0.5 - y, x - 0.5]
+  Velocity: v = cos(\pi t) [sin(\pi x) cos(\pi y), -cos(\pi x) sin(\pi y)]
   Source: f = 0
 */
 
@@ -52,7 +52,6 @@ class AnalyticDG06 : public AnalyticDGBase {
     double dist, dist2, dist3, dist5;
     dist2 = dx * dx + dy * dy;
     dist = std::pow(dist2, 0.5);
-    if (dist > 0.2) return;
 
     sol(0, 0) = dist - 0.2;
 
@@ -64,7 +63,7 @@ class AnalyticDG06 : public AnalyticDGBase {
     if (order_ > 1) {
       dist3 = dist2 * dist;
       sol(2, 0) =  0.5 * dy * dy / dist3;
-      sol(2, 1) =        dx * dy / dist3;
+      sol(2, 1) =       -dx * dy / dist3;
       sol(2, 2) =  0.5 * dx * dx / dist3;
     }
 
@@ -75,6 +74,8 @@ class AnalyticDG06 : public AnalyticDGBase {
       sol(3, 2) = dx * (dy * dy - dx * dx / 2) / dist5;
       sol(3, 3) = -0.5 * dy * dx * dx / dist5;
     }
+
+    if (order_ > 3) ASSERT(true);
   }
 
   // -- accumulation
@@ -88,14 +89,41 @@ class AnalyticDG06 : public AnalyticDGBase {
                               Amanzi::WhetStone::VectorPolynomial& v) override {
     v.resize(d_);
     for (int i = 0; i < d_; ++i) {
-      v[i].Reshape(d_, 1, true); 
-      v[i].ChangeOrigin(p);
+      v[i].Reshape(d_, order_, true); 
+      v[i].set_origin(p);
     }
-    v[0](0, 0) = 0.5 - p[1];
-    v[0](1, 1) =-1.0;
 
-    v[1](0, 0) = p[0] - 0.5;
-    v[1](1, 0) = 1.0;
+    double snx, sny, csx, csy;
+    snx = std::sin(M_PI * p[0]);
+    sny = std::sin(M_PI * p[1]);
+
+    csx = std::cos(M_PI * p[0]);
+    csy = std::cos(M_PI * p[1]);
+
+    v[0](0, 0) = snx * csy;
+    v[1](0, 0) =-csx * sny;
+
+    if (order_ > 0) {
+      v[0](1, 0) = M_PI * csx * csy;
+      v[0](1, 1) =-M_PI * snx * sny;
+
+      v[1](1, 0) = M_PI * snx * sny;
+      v[1](1, 1) =-M_PI * csx * csy;
+    }
+
+    if (order_ > 1) {
+      v[0](2, 0) =-M_PI * M_PI * snx * csy / 2;
+      v[0](2, 1) =-M_PI * M_PI * csx * sny;
+      v[0](2, 2) =-M_PI * M_PI * snx * csy / 2;
+
+      v[1](2, 0) = M_PI * M_PI * csx * sny / 2;
+      v[1](2, 1) = M_PI * M_PI * snx * csy;
+      v[1](2, 2) = M_PI * M_PI * csx * sny / 2;
+    }
+
+    if (order_ > 2) ASSERT(true);
+
+    v *= std::cos(M_PI * t);
   }
 
   // -- reaction

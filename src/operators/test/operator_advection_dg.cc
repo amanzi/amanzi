@@ -53,10 +53,10 @@ template <class AnalyticDG>
 class AdvectionFn : public Explicit_TI::fnBase<CompositeVector> {
  public:
   AdvectionFn(Teuchos::ParameterList& plist,
-              const std::string& filename,
+              int nx, const std::string& filename,
               const Teuchos::RCP<const AmanziMesh::Mesh> mesh,
               int order)
-      : plist_(plist), filename_(filename), mesh_(mesh), ana_(mesh, order + 1) {
+      : plist_(plist), nx_(nx), filename_(filename), mesh_(mesh), ana_(mesh, order) {
 
     // create global operator 
     // -- upwind flux term
@@ -168,7 +168,12 @@ class AdvectionFn : public Explicit_TI::fnBase<CompositeVector> {
     AmanziMesh::MeshFactory factory(&comm);
     factory.set_partitioner(AmanziMesh::Partitioner_type::ZOLTAN_RCB);
     factory.preference(AmanziMesh::FrameworkPreference({AmanziMesh::MSTK}));
-    Teuchos::RCP<AmanziMesh::Mesh> mesh_new = factory(filename_, mesh_->geometric_model(), true, true);
+   
+    Teuchos::RCP<AmanziMesh::Mesh> mesh_new;
+    if (filename_ == "square")
+      mesh_new = factory(0.0, 0.0, 1.0, 1.0, nx_, nx_, mesh_->geometric_model());
+    else 
+      mesh_new = factory(filename_, mesh_->geometric_model(), true, true);
 
     int dim = mesh_->space_dimension();
     AmanziGeometry::Point xv(dim), yv(dim);
@@ -229,6 +234,7 @@ class AdvectionFn : public Explicit_TI::fnBase<CompositeVector> {
   Teuchos::RCP<Operators::Operator> global_op_;
 
   const Teuchos::ParameterList plist_;
+  int nx_;
   std::string filename_;
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
 };
@@ -238,7 +244,7 @@ class AdvectionFn : public Explicit_TI::fnBase<CompositeVector> {
 
 /* *****************************************************************
 * This tests exactness of the transient advection scheme for
-* dp/dt + v . \nabla p = f.
+* dp/dt - div(v p) = f.
 * **************************************************************** */
 template <class AnalyticDG>
 void AdvectionTransient(std::string filename, int nx, int ny, double dt,
@@ -250,17 +256,19 @@ void AdvectionTransient(std::string filename, int nx, int ny, double dt,
   using namespace Amanzi::AmanziGeometry;
   using namespace Amanzi::Operators;
 
-  int order = 2;
-
   Epetra_MpiComm comm(MPI_COMM_WORLD);
   int MyPID = comm.MyPID();
-
-  if (MyPID == 0) std::cout << "\nTest: 2D dG transient advection problem, " << filename << std::endl;
 
   // read parameter list
   std::string xmlFileName = "test/operator_advection_dg_transient.xml";
   ParameterXMLFileReader xmlreader(xmlFileName);
   ParameterList plist = xmlreader.getParameters();
+
+  int order = plist.sublist("PK operator")
+                   .sublist("flux operator").get<int>("method order");
+
+  if (MyPID == 0) std::cout << "\nTest: 2D dG transient advection problem, " << filename 
+                            << ", order=" << order << std::endl;
 
   // create a mesh framework
   ParameterList region_list = plist.get<Teuchos::ParameterList>("regions");
@@ -280,7 +288,7 @@ void AdvectionTransient(std::string filename, int nx, int ny, double dt,
   int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
 
   // create main advection class
-  AdvectionFn<AnalyticDG> fn(plist, filename, mesh, order);
+  AdvectionFn<AnalyticDG> fn(plist, nx, filename, mesh, order);
 
   // create initial guess
   CompositeVector& rhs = *fn.op_flux->global_operator()->rhs();
@@ -326,7 +334,7 @@ void AdvectionTransient(std::string filename, int nx, int ny, double dt,
   Epetra_MultiVector& p = *sol.ViewComponent("cell", false);
 
   double pnorm, pl2_err, pinf_err;
-  ana.ComputeCellError(p, tend, pnorm, pl2_err, pinf_err);
+  ana.ComputeCellError(p, 0.0, pnorm, pl2_err, pinf_err);
 
   if (MyPID == 0) {
     printf("nx=%3d  L2(p)=%9.6g  Inf(p)=%9.6g\n", nx, pl2_err, pinf_err);
@@ -336,7 +344,10 @@ void AdvectionTransient(std::string filename, int nx, int ny, double dt,
 
 
 TEST(OPERATOR_ADVECTION_TRANSIENT_DG) {
-  AdvectionTransient<AnalyticDG06>("square",  20,  20, 0.02, Amanzi::Explicit_TI::tvd_3rd_order);
+  AdvectionTransient<AnalyticDG06>("square",  20,  20, 0.01, Amanzi::Explicit_TI::tvd_3rd_order);
+  AdvectionTransient<AnalyticDG06>("square",  40,  40, 0.01 / 2, Amanzi::Explicit_TI::tvd_3rd_order);
+  AdvectionTransient<AnalyticDG06>("square",  80,  80, 0.01 / 4, Amanzi::Explicit_TI::tvd_3rd_order);
+  AdvectionTransient<AnalyticDG06>("square", 160, 160, 0.01 / 8, Amanzi::Explicit_TI::tvd_3rd_order);
   /*
   AdvectionTransient<AnalyticDG04>("test/median7x8.exo", 9, 0, 0.05, Amanzi::Explicit_TI::tvd_3rd_order);
   AdvectionTransient("test/median15x16.exo", 16, 16, 0.05 / 2, Amanzi::Explicit_TI::tvd_3rd_order);
