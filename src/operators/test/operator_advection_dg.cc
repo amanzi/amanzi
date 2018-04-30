@@ -355,7 +355,7 @@ TEST(OPERATOR_ADVECTION_TRANSIENT_DG) {
   AdvectionTransient("test/median63x64.exo", 64, 0, 0.05 / 8, Amanzi::Explicit_TI::tvd_3rd_order);
   AdvectionTransient("test/median127x128.exo", 128, 0, 0.05 / 16, Amanzi::Explicit_TI::tvd_3rd_order);
   */ 
-  // AdvectionTransient("square",  4,  4, 0.1, Amanzi::Explicit_TI::tvd_3rd_order);
+  AdvectionTransient<AnalyticDG06>("square",  4,  4, 0.1, Amanzi::Explicit_TI::tvd_3rd_order);
 }
 
 
