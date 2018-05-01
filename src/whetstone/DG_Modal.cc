@@ -634,6 +634,7 @@ int DG_Modal::FluxMatrixRusanov(
   Polynomial uf1 = uc1 * normal;
   Polynomial uf2 = uc2 * normal;
 
+  uf2.ChangeOrigin(uf1.origin());
   Polynomial ufn = (uf1 + uf2) * 0.5;
 
   double tmp = numi_.PolynomialMaxValue(f, ufn);
