@@ -27,8 +27,22 @@ namespace Operators {
 ****************************************************************** */
 void PDE_Abstract::Init_(Teuchos::ParameterList& plist)
 {
-  Teuchos::ParameterList& range = plist.sublist("schema range");
-  Teuchos::ParameterList& domain = plist.sublist("schema domain");
+  Teuchos::ParameterList range, domain;
+  if (plist.isSublist("schema range") && plist.isSublist("schema domain")) {
+    range = plist.sublist("schema range");
+    domain = plist.sublist("schema domain");
+  }
+  else if (plist.isSublist("schema")) {
+    range = plist.sublist("schema");
+    domain = range;
+  }
+  else {
+    Errors::Message msg;
+    msg << "Schema mismatch for abstract operator.\n" 
+        << "  Use \"schema\" for a square operator.\n"
+        << "  Use \"schema range\" and \"schema domain\" for a general operator.\n";
+    Exceptions::amanzi_throw(msg);
+  }
 
   if (global_op_ == Teuchos::null) {
     // constructor was given a mesh

@@ -68,6 +68,7 @@ void MeshMaps_PEM::VelocityCell(
     J += -1.0;
     for (int i = 0; i < d_; ++i) {
       vc[m].Reshape(d_, 1);
+      vc[m].set_origin(AmanziGeometry::Point(d_));
 
       vc[m](0, 0) = q[i];
       for (int j = 0; j < d_; ++j) {

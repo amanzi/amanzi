@@ -100,6 +100,15 @@ class VectorPolynomial {
     return tmp;
   }
 
+  // output 
+  friend std::ostream& operator << (std::ostream& os, const VectorPolynomial& poly) {
+    os << "Vector Polynomial:" << std::endl;
+    for (int i = 0; i < poly.size(); ++i) {
+      os << "i=" << i << " " << poly[i];
+    }
+    return os;
+  }
+
  private:
   int d_;
   std::vector<Polynomial> polys_;

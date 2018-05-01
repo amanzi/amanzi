@@ -328,6 +328,7 @@ if (BUILD_TESTS)
     add_amanzi_test(operators_advection_dg operators_advection_dg
                     KIND unit
                     SOURCE test/Main.cc test/operator_advection_dg.cc
+                                        test/operator_advection_dg_transient
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 endif()
 
