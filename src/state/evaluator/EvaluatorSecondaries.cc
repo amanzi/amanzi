@@ -216,16 +216,16 @@ bool EvaluatorSecondaries::UpdateDerivative(
 // ---------------------------------------------------------------------------
 // Updates the field value in state S.
 // ---------------------------------------------------------------------------
-// void EvaluatorSecondaries::Update_(State& S) {
-//   // pull my variables out of state
-//   std::vector<Teuchos::Ptr<const CompositeVector> > myfields;
-//   for (auto& key : my_keys_) {
-//     myfields.push_back(S.GetPtr<CompositeVector>(key.first, key.second).ptr());
-//   }
+void EvaluatorSecondaries::Update_(State& S) {
+  // pull my variables out of state
+  std::vector<Teuchos::Ptr<CompositeVector> > myfields;
+  for (auto& key : my_keys_) {
+    myfields.push_back(S.GetPtrW<CompositeVector>(key.first, key.second, key.first).ptr());
+  }
 
-//   // call the evaluate method
-//   Evaluate_(S, myfields);
-// }
+  // call the evaluate method
+  Evaluate_(S, myfields);
+}
 
 
 // ---------------------------------------------------------------------------
@@ -234,78 +234,82 @@ bool EvaluatorSecondaries::UpdateDerivative(
 // (using p to indicate partial derivative...)
 // d(my_field)/d(wrt_field) = p(my_field)/p(wrt_field) + sum_(dep) d(dep)/d(wrt_field)
 // ---------------------------------------------------------------------------
-// void SecondaryVariablesFieldEvaluator::UpdateFieldDerivative_(State& S,
-//                                                               const Key wrt_key,
-//                                                               const Key& wrt_tag) {
-  // std::vector<Teuchos::Ptr<CompositeVector> > dmys;
-  // for (std::vector<Key>::const_iterator my_key=my_keys_.begin(); my_key!=my_keys_.end(); ++my_key) {
-  //   Key dmy_key = std::string("d")+*my_key+std::string("_d")+wrt_key;
-  //   Teuchos::RCP<CompositeVector> dmy;
-  //   if (S->HasField(dmy_key)) {
-  //     // Get the field...
-  //     Teuchos::RCP<CompositeVector> dmy = S->GetFieldData(dmy_key, *my_key);
-  //     dmy->PutScalar(0.0);
-  //     dmys.push_back(dmy.ptr());
-  //   } else {
-  //     // or create the field.  Note we have to do extra work that is normally
-  //     // done by State in initialize.
-  //     Teuchos::RCP<CompositeVectorSpace> my_fac = S->RequireField(*my_key);
-  //     Teuchos::RCP<CompositeVectorSpace> new_fac =
-  //       S->RequireField(dmy_key, *my_key);
-  //     new_fac->Update(*my_fac);
-  //     dmy = Teuchos::rcp(new CompositeVector(*new_fac));
-  //     S->SetData(dmy_key, *my_key, dmy);
-  //     S->GetField(dmy_key,*my_key)->set_initialized();
-  //     S->GetField(dmy_key,*my_key)->set_io_vis(plist_.get<bool>("visualize derivative", false));
-  //     S->GetField(dmy_key,*my_key)->set_io_checkpoint(plist_.get<bool>("checkpoint derivative", false));
-
-  //     dmy->PutScalar(0.0);
-  //     dmys.push_back(dmy.ptr());
-  //   }
-  // }
-
-  // // dF/dx = sum_(deps) partial F/ partial dep * ddep/dx + partial F/partial x
-  // for (KeySet::const_iterator dep=dependencies_.begin();
-  //      dep!=dependencies_.end(); ++dep) {
-
-  //   // -- allocate a tmp set of vectors for dF_i/ddep
-  //   std::vector<Teuchos::Ptr<CompositeVector> > tmp(dmys.size());
-  //   for (int i=0; i!=dmys.size(); ++i) {
-  //     tmp[i] = Teuchos::ptr(new CompositeVector(*dmys[i]));
-  //   }
-
-  //   if (wrt_key == *dep) {
-  //     EvaluateFieldPartialDerivative_(S, wrt_key, tmp);
-  //     for (int i=0; i!=dmys.size(); ++i) {
-  //       // partial F_i / partial x
-  //       dmys[i]->Update(1.0, *tmp[i], 1.0);
-  //     }
-  //   } else if (S->GetFieldEvaluator(*dep)->IsDependency(S, wrt_key)) {
-  //     EvaluateFieldPartialDerivative_(S, *dep, tmp);
-  //     for (int i=0; i!=dmys.size(); ++i) {
-  //       // partial F_i / partial dep * ddep/dx
-  //       // -- ddep/dx
-  //       Key ddep_key = std::string("d")+*dep+std::string("_d")+wrt_key;
-  //       Teuchos::RCP<const CompositeVector> ddep = S->GetFieldData(ddep_key);
-
-  //       dmys[i]->Multiply(1.0, *ddep, *tmp[i], 1.0);
-  //     }
-  //   }
-
-  //   // clean up tmp as it goes out of scope
-  //   for (int i=0; i!=dmys.size(); ++i) {
-  //     delete tmp[i].get();
-  //   }
-  // }
-//   if (check_derivative_) {
-//     CheckDerivative_(S, wrt_key, wrt_tag);
-//   }
+void EvaluatorSecondaries::UpdateDerivative_(State& S,
+                                             const Key& wrt_key,
+                                             const Key& wrt_tag) {
   
-// }
- 
+  std::vector<Teuchos::Ptr<CompositeVector> > dmys;
+  for (auto& my_key : my_keys_) {
+
+    // derivative of my_key.first(my_key.second) with respect to wrt_key(wrt_tag)
+    
+    Key dmy_key = std::string("d")+my_key.first+std::string("_d")+wrt_key;
+
+    if (S.HasData(dmy_key, my_key.second )) {
+      // Get the field...
+      Teuchos::RCP<CompositeVector> dmy = S.GetPtrW<CompositeVector>(dmy_key, my_key.second, my_key.first);
+      dmy->PutScalar(0.0);
+      dmys.push_back(dmy.ptr());
+    } else {
+      // or create the field.  Note we have to do extra work that is normally
+      // done by State in initialize.
+      CompositeVectorSpace& my_fac = S.Require<CompositeVector,CompositeVectorSpace>(my_key.first, my_key.second);
+      CompositeVectorSpace& new_fac = S.Require<CompositeVector,CompositeVectorSpace>(dmy_key, my_key.second, my_key.first);
+      new_fac.Update(my_fac);
+      Teuchos::RCP<CompositeVector> dmy = Teuchos::rcp(new CompositeVector(new_fac));
+      S.SetPtr<CompositeVector>(dmy_key, my_key.second, my_key.first, dmy);
+      S.GetRecordW(dmy_key, my_key.first).set_initialized();
+      S.GetRecordW(dmy_key, my_key.first).set_io_vis(plist_.get<bool>("visualize derivative", false));
+      S.GetRecordW(dmy_key, my_key.first).set_io_checkpoint(plist_.get<bool>("checkpoint derivative", false));
+
+      dmy->PutScalar(0.0);
+      dmys.push_back(dmy.ptr());
+    }
+  }
+
+  // dF/dx = sum_(deps) partial F/ partial dep * ddep/dx + partial F/partial x
+  for (auto& dep : dependencies_) {
+
+    // -- allocate a tmp set of vectors for dF_i/ddep
+    std::vector<Teuchos::Ptr<CompositeVector> > tmp(dmys.size());
+    for (int i=0; i!=dmys.size(); ++i) {
+      tmp[i] = Teuchos::ptr(new CompositeVector(*dmys[i]));
+    }
+
+    if ((wrt_key == dep.first)&&(wrt_tag==dep.second)) {
+      
+      EvaluatePartialDerivative_(S, wrt_key, wrt_tag, tmp);
+      for (int i=0; i!=dmys.size(); ++i) {
+        // partial F_i / partial x
+        dmys[i]->Update(1.0, *tmp[i], 1.0);
+      }
+      
+    } else if (S.GetEvaluator(dep.first, dep.second)->IsDependency(S, wrt_key, wrt_tag)) {
+      //tmp = partial F_i / partial dep
+      EvaluatePartialDerivative_(S, dep.first, dep.second, tmp);
+      
+      for (int i=0; i!=dmys.size(); ++i) {
+        // -- ddep/dx
+        Key ddep_key = std::string("d")+dep.first+std::string("_d")+wrt_key;
+        const CompositeVector& ddep = S.Get<CompositeVector>(ddep_key, dep.second);
+        // partial F_i / partial dep * ddep/dx
+        dmys[i]->Multiply(1.0, ddep, *tmp[i], 1.0);
+      }
+    }
+
+    // clean up tmp as it goes out of scope
+    for (int i=0; i!=dmys.size(); ++i) {
+      delete tmp[i].get();
+    }
+  }
+  // // if (check_derivative_) {
+  // //   CheckDerivative_(S, wrt_key, wrt_tag);
+  // // }
+  
+}
 
   
-inline
+
 bool EvaluatorSecondaries::IsDependency(const State& S,
         const Key& key, const Key& tag) const {
   if (std::find(dependencies_.begin(), dependencies_.end(), std::make_pair(key,tag)) != dependencies_.end() ) {
@@ -321,7 +325,6 @@ bool EvaluatorSecondaries::IsDependency(const State& S,
 }
 
 
-inline
 bool EvaluatorSecondaries::ProvidesKey(const Key& key, const Key& tag) const {
   return std::find(my_keys_.begin(), my_keys_.end(), std::make_pair(key,tag)) != my_keys_.end();
 }

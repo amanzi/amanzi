@@ -30,7 +30,8 @@ unit.  NOT to be confused wiht EvaluatorAlgebraic (note plural!)
 #include "Evaluator.hh"
 
 namespace Amanzi {
-
+  
+//template<typename Data_t, typename DataFactory_t=NullFactory>
 class EvaluatorSecondaries : public Evaluator {
 
  public:
@@ -46,7 +47,7 @@ class EvaluatorSecondaries : public Evaluator {
   // Answers the question, has this Field changed since it was last requested
   // for Field Key reqest.  Updates the field if needed.
   // ---------------------------------------------------------------------------
-  virtual bool Update(State& S, const Key& request) override;
+  virtual bool Update(State& S, const Key& request) override final;
 
   // ---------------------------------------------------------------------------
   // Answers the question, Has This Field's derivative with respect to Key
@@ -54,7 +55,7 @@ class EvaluatorSecondaries : public Evaluator {
   // Updates the derivative if needed.
   // ---------------------------------------------------------------------------
   virtual bool UpdateDerivative(State& S,
-          const Key& request, const Key& wrt_key, const Key& wrt_tag) override;
+          const Key& request, const Key& wrt_key, const Key& wrt_tag) override final;
 
   virtual bool IsDependency(const State& S, const Key& key, const Key& tag) const override final;
   virtual bool ProvidesKey(const Key& key, const Key& tag) const override final;
@@ -68,14 +69,14 @@ class EvaluatorSecondaries : public Evaluator {
 
  protected:
   // These do the actual work
-  // virtual void Evaluate_(const State& S,
-  //                        const std::vector<Teuchos::Ptr<const CompositeVector> > & results) = 0;
-  // virtual void EvaluatePartialDerivative_(const State& S,
-  //         const Key& wrt_key, const Key& wrt_tag,
-  //         const std::vector<Teuchos::Ptr<const CompositeVector> > & results) = 0;
+  virtual void Evaluate_(const State& S,
+                         const std::vector<Teuchos::Ptr<CompositeVector> > & results) = 0;
+  virtual void EvaluatePartialDerivative_(const State& S,
+          const Key& wrt_key, const Key& wrt_tag,
+          const std::vector<Teuchos::Ptr<CompositeVector> > & results) = 0;
   
-  virtual void Update_(State& S) = 0;
-  virtual void UpdateDerivative_(State& S, const Key& wrt_key, const Key& wrt_tag) = 0;
+  virtual void Update_(State& S);
+  virtual void UpdateDerivative_(State& S, const Key& wrt_key, const Key& wrt_tag);
   //virtual void CheckDerivative_(State& S, const Key& wrt_key, const Key& wrt_tag);
   
  protected:

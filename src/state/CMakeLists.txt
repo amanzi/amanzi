@@ -163,65 +163,65 @@ if (BUILD_TESTS)
     add_amanzi_test(data_factory data_factory
       KIND unit
       SOURCE test/Main.cc test/data_factory.cc
-      LINK_LIBS error_handling atk mesh data_structures mesh_functions state ${state_tpl_list} ${UnitTest_LIBRARIES})
+      LINK_LIBS error_handling atk mesh operators data_structures mesh_functions state ${state_tpl_list} ${UnitTest_LIBRARIES})
 
     add_amanzi_test(record record
       KIND unit
       SOURCE test/Main.cc test/record.cc
-      LINK_LIBS atk mesh data_structures mesh_functions state ${state_tpl_list} ${UnitTest_LIBRARIES})
+      LINK_LIBS atk mesh operators data_structures mesh_functions state ${state_tpl_list} ${UnitTest_LIBRARIES})
 
     add_amanzi_test(state_mesh state_mesh
       KIND unit
       SOURCE test/Main.cc test/state_mesh.cc
-      LINK_LIBS atk mesh_factory mesh data_structures mesh_functions state ${state_tpl_list} ${UnitTest_LIBRARIES})
+      LINK_LIBS atk mesh_factory mesh operators data_structures mesh_functions state ${state_tpl_list} ${UnitTest_LIBRARIES})
 
     add_amanzi_test(state_as_container state_as_container
       KIND unit
       SOURCE test/Main.cc test/state_container.cc
-      LINK_LIBS atk mesh_factory mesh data_structures mesh_functions operators state ${state_tpl_list} ${UnitTest_LIBRARIES})
+      LINK_LIBS atk mesh_factory mesh operators data_structures mesh_functions operators state ${state_tpl_list} ${UnitTest_LIBRARIES})
 
     add_amanzi_test(state_vis state_vis
       KIND int
       SOURCE test/Main.cc test/state_vis.cc
-      LINK_LIBS state mesh_factory mesh data_structures mesh_functions
+      LINK_LIBS state mesh_factory mesh operators data_structures mesh_functions
                 functions ${state_tpl_list} ${UnitTest_LIBRARIES})
 
     add_amanzi_test(state_restart state_restart
       KIND int
       SOURCE test/Main.cc test/state_restart.cc
-      LINK_LIBS state mesh_factory mesh data_structures mesh_functions
+      LINK_LIBS state mesh_factory mesh operators data_structures mesh_functions
                 functions ${state_tpl_list} ${UnitTest_LIBRARIES})
               
     add_amanzi_test(state_init state_init
       KIND int
       SOURCE test/Main.cc test/state_init.cc
-      LINK_LIBS state mesh_factory mesh data_structures mesh_functions functions ${state_tpl_list} ${UnitTest_LIBRARIES})
+      LINK_LIBS state mesh_factory mesh operators data_structures mesh_functions functions ${state_tpl_list} ${UnitTest_LIBRARIES})
 
     add_amanzi_test(state_extensibility state_extensibility
       KIND int
       SOURCE test/Main.cc test/state_extensibility.cc
-      LINK_LIBS state mesh_factory mesh data_structures mesh_functions functions ${state_tpl_list} ${UnitTest_LIBRARIES})
+      LINK_LIBS state mesh_factory mesh operators data_structures mesh_functions functions ${state_tpl_list} ${UnitTest_LIBRARIES})
     
 
     add_amanzi_test(state_evaluators state_evaluators
       KIND int
       SOURCE test/Main.cc test/state_evaluators.cc
-      LINK_LIBS state mesh_factory mesh data_structures mesh_functions functions ${UnitTest_LIBRARIES})
+      LINK_LIBS state mesh_factory mesh operators data_structures mesh_functions functions ${UnitTest_LIBRARIES})
 
     add_amanzi_test(state_evaluators_cv state_evaluators_cv
       KIND int
       SOURCE test/Main.cc test/state_evaluators_cv.cc 
-      LINK_LIBS state mesh_factory mesh data_structures mesh_functions functions ${UnitTest_LIBRARIES})
+      LINK_LIBS state mesh_factory mesh operators data_structures mesh_functions functions ${UnitTest_LIBRARIES})
 
     add_amanzi_test(state_dag state_dag
       KIND int
       SOURCE test/Main.cc test/state_dag.cc
-      LINK_LIBS state mesh_factory mesh data_structures mesh_functions functions ${UnitTest_LIBRARIES})
+      LINK_LIBS state mesh_factory operators mesh data_structures mesh_functions functions ${UnitTest_LIBRARIES})
 
     add_amanzi_test(state_evaluators_op state_evaluators_op
       KIND int
       SOURCE test/Main.cc test/state_evaluators_op.cc
-      LINK_LIBS state mesh_factory mesh data_structures mesh_functions functions operators ${UnitTest_LIBRARIES})
+      LINK_LIBS state mesh_factory mesh operators data_structures mesh_functions functions operators ${UnitTest_LIBRARIES})
 
 
 endif()

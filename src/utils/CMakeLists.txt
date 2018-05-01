@@ -42,6 +42,7 @@ add_amanzi_library(atk
                    HEADERS HDF5Reader.hh
                            Utils.hh
                            Units.hh
+                           UniqueHelpers.hh
                            Timer.hh
                            TimerManager.hh
                            TimeStepManager.hh
