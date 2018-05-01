@@ -63,19 +63,16 @@ class AdvectionFn : public Explicit_TI::fnBase<CompositeVector> {
 
     // create global operator 
     // -- upwind flux term
-    Teuchos::ParameterList op_list = plist.get<Teuchos::ParameterList>("PK operator")
-                                          .sublist("flux operator");
+    Teuchos::ParameterList op_list = plist.sublist("PK operator").sublist("flux operator");
     op_flux = Teuchos::rcp(new Operators::PDE_AdvectionRiemann(op_list, mesh));
     global_op_ = op_flux->global_operator();
 
     // -- volumetric advection term
-    op_list = plist.get<Teuchos::ParameterList>("PK operator")
-                   .sublist("advection operator");
+    op_list = plist.sublist("PK operator").sublist("advection operator");
     op_adv = Teuchos::rcp(new Operators::PDE_Abstract(op_list, global_op_));
 
     // -- reaction term
-    op_list = plist.get<Teuchos::ParameterList>("PK operator")
-                   .sublist("inverse mass operator");
+    op_list = plist.sublist("PK operator").sublist("inverse mass operator");
     op_mass = Teuchos::rcp(new Operators::PDE_Abstract(op_list, mesh_));
   }
 
@@ -111,9 +108,8 @@ class AdvectionFn : public Explicit_TI::fnBase<CompositeVector> {
       (*K)[c] = Kc;
     }
 
-    int order = plist_.get<Teuchos::ParameterList>("PK operator")
-                      .sublist("flux operator")
-                      .get<int>("method order");
+    int order = plist_.sublist("PK operator").sublist("flux operator")
+                      .template get<int>("method order");
 
     WhetStone::Polynomial sol, src, pc(2, order);
     WhetStone::NumericalIntegration numi(mesh_);

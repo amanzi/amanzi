@@ -33,11 +33,11 @@ class DeRham_Edge : public virtual InnerProductL2 {
     : InnerProduct(mesh) {};
   ~DeRham_Edge() {};
 
-  virtual int L2consistency(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Mc, bool symmetry);
+  virtual int L2consistency(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Mc, bool symmetry) override;
   virtual int MassMatrix(int c, const Tensor& T, DenseMatrix& M) override; 
 
-  virtual int L2consistencyInverse(int c, const Tensor& T, DenseMatrix& R, DenseMatrix& Wc, bool symmetry);
-  virtual int MassMatrixInverse(int c, const Tensor& T, DenseMatrix& W); 
+  virtual int L2consistencyInverse(int c, const Tensor& T, DenseMatrix& R, DenseMatrix& Wc, bool symmetry) override;
+  virtual int MassMatrixInverse(int c, const Tensor& T, DenseMatrix& W) override; 
 
  protected:
   int L2consistency2D_(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Mc);

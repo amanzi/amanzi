@@ -68,7 +68,7 @@ void AdvectionSteady(std::string filename)
   ParameterList plist = xmlreader.getParameters();
 
   // create a mesh framework
-  ParameterList region_list = plist.get<Teuchos::ParameterList>("regions");
+  ParameterList region_list = plist.sublist("regions");
   Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(2, region_list, &comm));
 
   MeshFactory meshfactory(&comm);
@@ -83,19 +83,16 @@ void AdvectionSteady(std::string filename)
 
   // create global operator 
   // -- flux term
-  ParameterList op_list = plist.get<Teuchos::ParameterList>("PK operator")
-                               .sublist("flux operator");
+  ParameterList op_list = plist.sublist("PK operator").sublist("flux operator");
   auto op_flux = Teuchos::rcp(new PDE_AdvectionRiemann(op_list, mesh));
   auto global_op = op_flux->global_operator();
 
   // -- volumetric advection term
-  op_list = plist.get<Teuchos::ParameterList>("PK operator")
-                 .sublist("advection operator");
+  op_list = plist.sublist("PK operator").sublist("advection operator");
   auto op_adv = Teuchos::rcp(new PDE_Abstract(op_list, global_op));
 
   // -- reaction term
-  op_list = plist.get<Teuchos::ParameterList>("PK operator")
-                 .sublist("reaction operator");
+  op_list = plist.sublist("PK operator").sublist("reaction operator");
   auto op_reac = Teuchos::rcp(new PDE_Reaction(op_list, global_op));
   double Kreac = op_list.get<double>("coef");
 
@@ -183,7 +180,7 @@ void AdvectionSteady(std::string filename)
   op_reac->UpdateMatrices(Teuchos::null);
 
   // create preconditoner
-  ParameterList slist = plist.get<Teuchos::ParameterList>("preconditioners");
+  ParameterList slist = plist.sublist("preconditioners");
 
   global_op->SymbolicAssembleMatrix();
   global_op->AssembleMatrix();

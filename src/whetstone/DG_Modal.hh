@@ -58,11 +58,13 @@ class DG_Modal : public BilinearForm {
   // -- mass matrices
   virtual int MassMatrix(int c, const Tensor& K, DenseMatrix& M) override;
   virtual int MassMatrix(int c, const VectorPolynomial& K, DenseMatrix& M) override {
+    int ok;
     if (K.size() == 1) {
-      MassMatrixPoly_(c, K[0], M);
+      ok = MassMatrixPoly_(c, K[0], M);
     } else {
-      MassMatrixPiecewisePoly_(c, K, M);
+      ok = MassMatrixPiecewisePoly_(c, K, M);
     }
+    return ok;
   }
   int MassMatrix(int c, const Tensor& K, PolynomialOnMesh& integrals, DenseMatrix& M);
 
@@ -84,11 +86,13 @@ class DG_Modal : public BilinearForm {
 
   // -- advection matrices
   virtual int AdvectionMatrix(int c, const VectorPolynomial& uc, DenseMatrix& A, bool grad_on_test) override {
+    int ok;
     if (uc.size() == d_) {
-      AdvectionMatrixPoly_(c, uc, A, grad_on_test);
+      ok = AdvectionMatrixPoly_(c, uc, A, grad_on_test);
     } else {
-      AdvectionMatrixPiecewisePoly_(c, uc, A, grad_on_test);
+      ok = AdvectionMatrixPiecewisePoly_(c, uc, A, grad_on_test);
     }
+   return ok;
   }
 
   // -- flux matrices
