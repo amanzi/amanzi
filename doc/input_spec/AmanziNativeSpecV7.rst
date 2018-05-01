@@ -2218,7 +2218,7 @@ scheme, and selects assembling schemas for matrices and preconditioners.
   </ParameterList>
 
 This example creates a p-lambda system, i.e. the concentation is
-discretized in mesh cells and on mesh faces. The later unknowns are auxiliary unknwons.
+discretized in mesh cells and on mesh faces. The later unknowns are auxiliary unknowns.
 
 
 Multiscale continuum models
@@ -3190,15 +3190,10 @@ scheme, and selects assembling schemas for matrices and preconditioners.
 
   * `"matrix`" [list] defines parameters for generating and assembling diffusion matrix. See section
     describing operators. 
-    When `"Richards problem`" is selected, Flow PK sets up proper value for parameter `"upwind method`" of 
-    this sublist.
 
   * `"preconditioner`" [list] defines parameters for generating and assembling diffusion 
     matrix that is used to create preconditioner. 
-    This sublist is ignored inside sublist `"Darcy problem`".
     Since update of preconditioner can be lagged, we need two objects called `"matrix`" and `"preconditioner`".
-    When `"Richards problem`" is selected, Flow PK sets up proper value for parameter `"upwind method`" of 
-    this sublist.
 
 .. code-block:: xml
 
@@ -3557,6 +3552,38 @@ Operators use a few tools that are generic in nature and can be used independent
 The list includes reconstruction and limiting algorithms. 
 
 
+Schema
+......
+
+The operators use notion of schema to describe operator's abstract structure.
+Old operators use a simple schema which is simply the list of geometric objects where
+scalar degrees of freedom are defined.
+New operators use a list to define location, type, and number of degrees of freedom.
+A rectangular operator needs two schemas do describe its domain (called `"schema domain`") 
+and its range (called `"schema range`").
+
+.. code-block:: xml
+
+  <ParameterList name="OPERATOR_NAME">  <!-- parent list-->
+    <ParameterList name="schema domain">
+      <Parameter name="location" type="Array(string)" value="{node, face}"/>
+      <Parameter name="type" type="Array(string)" value="{scalar, normal component}"/>
+      <Parameter name="number" type="Array(int)" value="{2, 1}"/>
+    </ParameterList>
+    <ParameterList name="schema domain">
+      <Parameter name="location" type="Array(string)" value="{node, face}"/>
+      <Parameter name="type" type="Array(string)" value="{scalar, normal component}"/>
+      <Parameter name="number" type="Array(int)" value="{2, 1}"/>
+    </ParameterList>
+  </ParameterList>
+
+This example describes square operator with two degrees of freedom per mesh node and one
+degree of freedom per mesh face. 
+The face-based degree of freedom is the normal component of a vector field. 
+Such set of degrees of freedom is used in the Bernardi-Raugel element for discretizing 
+Stokes equations.
+
+
 Diffusion operator
 ..................
 
@@ -3665,9 +3692,7 @@ The structure of the schema is described in the previous section.
     are `"DG order 0`", `"DG order 1`".
 
   * `"flux formula`" [string] defines type of the flux. The available options 
-    are `"Rusanov`" (default), `"upwind`", and `"NavierStokes`".
-
-  * `"reconstruction order`" [int] defines accuracy of this discrete operator.
+    are `"Rusanov`" (default), `"upwind`", `"downwind`", and `"NavierStokes`".
 
   * `"schema domain`" [list] defines a discretization schema for the operator domain.
 
@@ -3677,8 +3702,12 @@ The structure of the schema is described in the previous section.
 
   <ParameterList name="OPERATOR_NAME">
     <Parameter name="method" type="string" value="DG order 0"/>
+    <Parameter name="method order" type="int" value="2"/>
     <Parameter name="reconstruction order" type="int" value="0"/>
     <Parameter name="flux formula" type="string" value="Rusanov"/>
+    <Parameter name="matrix type" type="string" value="flux"/>
+    <Parameter name="jump operator on test function" type="bool" value="true"/>
+
     <ParameterList name="schema domain">
       <Parameter name="location" type="Array(string)" value="{node, face}"/>
       <Parameter name="type" type="Array(string)" value="{scalar, normal component}"/>
@@ -3748,6 +3777,42 @@ and Navier-Stokes).
       </ParameterList>
     </ParameterList>
 
+
+Abstract operator
+.................
+An abstract operator is designed for testing new discretization methods. 
+It uses the factory of discretization methods and a few control parameters
+required by this factory and/or particular method in it.
+
+* `"method`" [string] defines a discretization method. The available
+  options are `"diffusion`", `"diffusion generalized`", `"BernardiRaugel`",
+  `"CrouzeixRaviart`", `"Lagrange`", `"Lagrange serendipity`", and `"dg modal`".
+
+* `"method order`" [int] defines disretization order. It is used by 
+  high-order discretization methods such as the discontinuous Galerkin.
+
+* `"matrix type`" [string] defines type of local matrix. Available options are
+  `"mass`", `"mass inverse`", `"stiffness`", `"divergence`", and `"advection`".
+
+.. code-block:: xml
+
+    <ParameterList name="ABSTRACT OPERATOR">
+      <Parameter name="method" type="string" value="dg modal"/>
+      <Parameter name="method order" type="int" value="2"/>
+      <Parameter name="dg basis" type="string" value="natural"/>
+      <Parameter name="matrix type" type="string" value="flux"/>
+
+      <ParameterList name="schema domain">
+        ...
+      </ParameterList>
+      <ParameterList name="schema range">
+        ...
+      </ParameterList>
+    </ParameterList>
+
+
+
+Diffusion is the most frequently used operator.
 
 Reconstruction and limiters
 ...........................

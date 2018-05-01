@@ -147,6 +147,64 @@ void PDE_AdvectionRiemann::UpdateMatrices(
 
 
 /* *******************************************************************
+* Apply boundary condition to the local matrices
+******************************************************************* */
+void PDE_AdvectionRiemann::ApplyBCs(const Teuchos::RCP<BCs>& bc, bool primary)
+{
+  const std::vector<int>& bc_model = bcs_trial_[0]->bc_model();
+  const std::vector<std::vector<double> >& bc_value = bcs_trial_[0]->bc_value_vector();
+  int nk = bc_value[0].size();
+
+  Epetra_MultiVector& rhs_c = *global_op_->rhs()->ViewComponent("cell", true);
+
+  AmanziMesh::Entity_ID_List cells;
+
+  int dir, d = mesh_->space_dimension();
+  std::vector<AmanziGeometry::Point> tau(d - 1);
+
+  WhetStone::NumericalIntegration numi(mesh_);
+
+  for (int f = 0; f != nfaces_owned; ++f) {
+    if (bc_model[f] == OPERATOR_BC_DIRICHLET) {
+      mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
+      int c = cells[0];
+
+      const AmanziGeometry::Point& xf = mesh_->face_centroid(f);
+      const AmanziGeometry::Point& normal = mesh_->face_normal(f, false, c, &dir);
+
+      // set polynomial with Dirichlet data
+      WhetStone::DenseVector coef(nk);
+      for (int i = 0; i < nk; ++i) {
+        coef(i) = bc_value[f][i];
+      }
+
+      WhetStone::Polynomial pf(d, dg_->order()); 
+      pf.SetPolynomialCoefficients(coef);
+      pf.set_origin(xf);
+
+      // convert boundary polynomial to space polynomial
+      pf.ChangeOrigin(mesh_->cell_centroid(c));
+      numi.ChangeBasisRegularToNatural(c, pf);
+
+      // extract coefficients and update right-hand side 
+      WhetStone::DenseMatrix& Aface = local_op_->matrices[f];
+      int nrows = Aface.NumRows();
+      int ncols = Aface.NumCols();
+
+      WhetStone::DenseVector v(nrows), av(ncols);
+      pf.GetPolynomialCoefficients(v);
+
+      Aface.Multiply(v, av, false);
+
+      for (int i = 0; i < ncols; ++i) {
+        rhs_c[i][c] += av(i);
+      }
+    }
+  } 
+}
+
+
+/* *******************************************************************
 * Identify the advected flux of u
 ******************************************************************* */
 void PDE_AdvectionRiemann::UpdateFlux(

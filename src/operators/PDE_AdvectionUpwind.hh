@@ -65,7 +65,7 @@ class PDE_AdvectionUpwind : public PDE_Advection {
                           const Teuchos::Ptr<CompositeVector>& flux);
   
   // boundary conditions
-  void ApplyBCs(const Teuchos::RCP<BCs>& bc, bool primary);
+  virtual void ApplyBCs(const Teuchos::RCP<BCs>& bc, bool primary);
 
  private:
   void InitAdvection_(Teuchos::ParameterList& plist);

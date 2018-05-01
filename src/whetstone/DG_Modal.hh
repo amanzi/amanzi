@@ -114,6 +114,7 @@ class DG_Modal : public BilinearForm {
   // miscalleneous
   // -- order of polynomials in each cell
   void set_order(int order) { order_ = order; }
+  int order() { return order_; }
   // -- modifications of Taylor basis. Available options are natural, 
   //    normalized by volume, normalized aind orthogonalized to constant
   void set_basis(int basis) { basis_ = basis; }
