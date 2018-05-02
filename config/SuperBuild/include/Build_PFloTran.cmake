@@ -69,14 +69,6 @@ configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/pflotran-install-step.cmake.in
                @ONLY)
 set(PFLOTRAN_INSTALL_COMMAND ${CMAKE_COMMAND} -P ${PFLOTRAN_cmake_install})
 
-# --- Set the patch command
-set(PFLOTRAN_sh_patch ${PFLOTRAN_prefix_dir}/pflotran-patch-step.sh)
-configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/pflotran-patch-step.sh.in
-               ${PFLOTRAN_sh_patch}
-               @ONLY)
-set(PFLOTRAN_PATCH_COMMAND sh ${PFLOTRAN_sh_patch})
-
-
 # --- Add external project build and tie to the PFLOTRAN build target
 ExternalProject_Add(${PFLOTRAN_BUILD_TARGET}
                     DEPENDS   ${PFLOTRAN_PACKAGE_DEPENDS}         # Package dependency target
