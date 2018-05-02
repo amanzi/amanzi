@@ -76,6 +76,7 @@ build_link_flags=
 # MPI installation
 mpi_root_dir=
 tools_mpi=openmpi
+tools_mpi_exec_args=
 
 # TPL (Third Party Libraries)
 
@@ -1353,6 +1354,12 @@ if [ ! -n "${mpi_root_dir}" ]; then
     exit_now 30
   fi
   status_message "Tools configure complete"
+ 
+  # Tools parameters
+  # OpenMPI 3.x requires more slots to run Amanzi tests
+  if [ "${tools_mpi}" = "openmpi" ]; then
+    tools_mpi_exec_args="--oversubscribe"
+  fi 
   
   # Tools install
   cd ${tools_build_dir}
@@ -1551,6 +1558,7 @@ cmd_configure="${cmake_binary} \
     -DCCSE_BL_SPACEDIM:INT=${spacedim} \
     -DENABLE_Regression_Tests:BOOL=${reg_tests} \
     -DENABLE_NATIVE_XML_OUTPUT:BOOL=${native} \
+    -DMPI_EXEC_GLOBAL_ARGS:STRING=${tools_mpi_exec_args} \
     ${nersc_amanzi_opts} \
     ${amanzi_source_dir}"
 
