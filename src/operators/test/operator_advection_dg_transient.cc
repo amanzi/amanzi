@@ -73,6 +73,7 @@ class AdvectionFn : public Explicit_TI::fnBase<CompositeVector> {
     // -- reaction term
     op_list = plist.sublist("PK operator").sublist("inverse mass operator");
     op_mass = Teuchos::rcp(new Operators::PDE_Abstract(op_list, mesh_));
+    setup_ = true;
   }
 
   void Functional(double t, const CompositeVector& u, CompositeVector& f) override {
@@ -121,6 +122,7 @@ class AdvectionFn : public Explicit_TI::fnBase<CompositeVector> {
     Epetra_MultiVector& rhs_c = *rhs.ViewComponent("cell");
     rhs_c.PutScalar(0.0);
 
+    /*
     for (int c = 0; c < ncells; ++c) {
       const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
       double volume = mesh_->cell_volume(c);
@@ -140,6 +142,7 @@ class AdvectionFn : public Explicit_TI::fnBase<CompositeVector> {
         rhs_c[n][c] = numi.IntegratePolynomialCell(c, tmp);
       }
     }
+    */
 
     // -- boundary data
     auto bc = Teuchos::rcp(new Operators::BCs(mesh_, AmanziMesh::FACE, Operators::DOF_Type::VECTOR));
@@ -177,8 +180,11 @@ class AdvectionFn : public Explicit_TI::fnBase<CompositeVector> {
     op_adv->SetupPolyVector(velc);
     op_adv->UpdateMatrices();
 
-    op_mass->SetupPoly(K);
-    op_mass->UpdateMatrices(Teuchos::null);
+    if (setup_) {
+      op_mass->SetupPoly(K);
+      op_mass->UpdateMatrices(Teuchos::null);
+      setup_ = false;
+    }
 
     // calculate functional
     CompositeVector u1(u);
@@ -230,9 +236,9 @@ class AdvectionFn : public Explicit_TI::fnBase<CompositeVector> {
     // create a mesh map at time t
     Teuchos::ParameterList map_list;
     map_list.set<std::string>("method", "CrouzeixRaviart")
-            .set<int>("method order", 2)
+            .set<int>("method order", 1)
             .set<std::string>("projector", "H1 harmonic")
-            .set<std::string>("map name", "VEM");
+            .set<std::string>("map name", "PEM");
   
     WhetStone::MeshMapsFactory maps_factory;
     auto maps = maps_factory.Create(map_list, mesh_, mesh_new);
@@ -274,6 +280,8 @@ class AdvectionFn : public Explicit_TI::fnBase<CompositeVector> {
   double dt_;
   std::string filename_;
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
+
+  bool setup_;
 };
 
 }  // namespace Amanzi
@@ -387,8 +395,8 @@ void AdvectionTransient(std::string filename, int nx, int ny, double dt,
 
 
 TEST(OPERATOR_ADVECTION_TRANSIENT_DG) {
+  AdvectionTransient<AnalyticDG06b>("square",  10,  10, 0.01, Amanzi::Explicit_TI::tvd_3rd_order);
   AdvectionTransient<AnalyticDG06b>("square",  4,  4, 0.1, Amanzi::Explicit_TI::tvd_3rd_order);
-
   /*
   AdvectionTransient<AnalyticDG06>("square",  20,  20, 0.005, Amanzi::Explicit_TI::tvd_3rd_order);
   AdvectionTransient<AnalyticDG06>("square",  40,  40, 0.005 / 2, Amanzi::Explicit_TI::tvd_3rd_order);
