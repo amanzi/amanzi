@@ -188,8 +188,7 @@ class AdvectionFn : public Explicit_TI::fnBase<CompositeVector> {
 
     // calculate functional
     CompositeVector u1(u);
-    global_op_->Apply(u, u1);
-    u1.Update(1.0, rhs, -1.0);
+    global_op_->ComputeResidual(u, u1);
 
     // invert vector
     op_mass->global_operator()->Apply(u1, f);
@@ -366,14 +365,16 @@ void AdvectionTransient(std::string filename, int nx, int ny, double dt,
       GMV::open_data_file(*mesh, (std::string)"operators.gmv");
       GMV::start_data();
       GMV::write_cell_data(p, 0, "solution");
-      GMV::write_cell_data(p, 1, "gradx");
-      GMV::write_cell_data(p, 2, "grady");
+      if (order > 0) {
+        GMV::write_cell_data(p, 1, "gradx");
+        GMV::write_cell_data(p, 2, "grady");
+      }
       if (order > 1) {
         GMV::write_cell_data(p, 3, "hesxx");
         GMV::write_cell_data(p, 4, "hesxy");
         GMV::write_cell_data(p, 5, "hesyy");
-        GMV::close_data_file();
       }
+      GMV::close_data_file();
     }
 
     t += dt;
@@ -384,12 +385,13 @@ void AdvectionTransient(std::string filename, int nx, int ny, double dt,
   sol.ScatterMasterToGhosted();
   Epetra_MultiVector& p = *sol.ViewComponent("cell", false);
 
-  double pnorm, pl2_err, pinf_err;
-  ana.ComputeCellError(p, tend, pnorm, pl2_err, pinf_err);
+  double pnorm, pl2_err, pinf_err, pl2_mean, pinf_mean;
+  ana.ComputeCellError(p, tend, pnorm, pl2_err, pinf_err, pl2_mean, pinf_mean);
 
   if (MyPID == 0) {
-    printf("nx=%3d  L2(p)=%9.6g  Inf(p)=%9.6g\n", nx, pl2_err, pinf_err);
-    CHECK(pl2_err < 0.1 / nx);
+    printf("nx=%3d (mean) L2(p)=%9.6g  Inf(p)=%9.6g\n", nx, pl2_mean, pinf_mean);
+    printf("      (total) L2(p)=%9.6g  Inf(p)=%9.6g\n", pl2_err, pinf_err);
+    CHECK(pl2_mean < 0.1 / nx);
   }
 }
 

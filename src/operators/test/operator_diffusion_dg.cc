@@ -220,11 +220,12 @@ TEST(OPERATOR_DIFFUSION_DG) {
   solution.ScatterMasterToGhosted();
   Epetra_MultiVector& p = *solution.ViewComponent("cell", false);
 
-  double pnorm, pl2_err, pinf_err;
-  ana.ComputeCellError(p, 0.0, pnorm, pl2_err, pinf_err);
+  double pnorm, pl2_err, pinf_err, pl2_mean, pinf_mean;
+  ana.ComputeCellError(p, 0.0, pnorm, pl2_err, pinf_err, pl2_mean, pinf_mean);
 
   if (MyPID == 0) {
-    printf("L2(p)=%9.6f  Inf(p)=%9.6f  itr=%3d\n", pl2_err, pinf_err, solver.num_itrs());
+    printf("Mean:  L2(p)=%9.6f  Inf(p)=%9.6f  itr=%3d\n", pl2_mean, pinf_mean, solver.num_itrs());
+    printf("Total: L2(p)=%9.6f  Inf(p)=%9.6f\n", pl2_err, pinf_err, solver.num_itrs());
 
     CHECK(pl2_err < 3e-2);
   }

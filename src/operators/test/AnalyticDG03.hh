@@ -8,24 +8,24 @@
 
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 
-  Solution: u = 1 + x^2 + y^2
+  Solution: u = 1 + x^3 + y^3 + xy^2
   Diffusion: K = [1 0.5; 0.5 2]
   Accumulation: a = 0
   Reaction: r = 0
   Velocity: v = [0.1 + x - x^2, y - y^2]
-  Source: f = -6
+  Source: f = 0
 */
 
-#ifndef AMANZI_OPERATOR_ANALYTIC_DG_02_BASE_HH_
-#define AMANZI_OPERATOR_ANALYTIC_DG_02_BASE_HH_
+#ifndef AMANZI_OPERATOR_ANALYTIC_DG_03_BASE_HH_
+#define AMANZI_OPERATOR_ANALYTIC_DG_03_BASE_HH_
 
 #include "AnalyticDGBase.hh"
 
-class AnalyticDG02 : public AnalyticDGBase {
+class AnalyticDG03 : public AnalyticDGBase {
  public:
-  AnalyticDG02(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh, int order)
+  AnalyticDG03(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh, int order)
     : AnalyticDGBase(mesh, order) {};
-  ~AnalyticDG02() {};
+  ~AnalyticDG03() {};
 
   // diffusion tensor
   virtual Amanzi::WhetStone::Tensor Tensor(const Amanzi::AmanziGeometry::Point& p, double t) override {
@@ -40,14 +40,21 @@ class AnalyticDG02 : public AnalyticDGBase {
   // -- solution
   virtual void SolutionTaylor(const Amanzi::AmanziGeometry::Point& p, double t,
                               Amanzi::WhetStone::Polynomial& sol) override {
+    double x(p[0]), y(p[1]);
     sol.Reshape(d_, order_, true); 
-    sol(0, 0) = 1.0 + p[0] * p[0] + p[1] * p[1];
+    sol(0, 0) = 1.0 + x * x * x + y * y * y + x * y * y;
 
-    sol(1, 0) = 2.0 * p[0];
-    sol(1, 1) = 2.0 * p[1];
+    sol(1, 0) = 3 * x * x + y * y;
+    sol(1, 1) = 3 * y * y + 2 * x * y;
 
-    sol(2, 0) = 1.0;
-    sol(2, 2) = 1.0;
+    sol(2, 0) = 3 * x;
+    sol(2, 1) = 2 * y;
+    sol(2, 2) = 3 * y + x;
+
+    sol(3, 0) = 1.0;
+    sol(3, 2) = 1.0;
+    sol(3, 3) = 1.0;
+
     sol.set_origin(p);
   }
 
@@ -79,7 +86,7 @@ class AnalyticDG02 : public AnalyticDGBase {
   virtual void SourceTaylor(const Amanzi::AmanziGeometry::Point& p, double t,
                             Amanzi::WhetStone::Polynomial& src) override {
     src.Reshape(d_, 0, true);
-    src(0, 0) = -6.0;
+    src(0, 0) = 0.0;
     src.set_origin(p);
   }
 };

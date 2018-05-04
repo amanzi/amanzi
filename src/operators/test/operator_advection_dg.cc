@@ -37,6 +37,7 @@
 
 // Operators
 #include "AnalyticDG02.hh"
+#include "AnalyticDG03.hh"
 
 #include "OperatorAudit.hh"
 #include "OperatorDefs.hh"
@@ -96,7 +97,7 @@ void AdvectionSteady(std::string filename, int nx)
   auto op_reac = Teuchos::rcp(new PDE_Reaction(op_list, global_op));
   double Kreac = op_list.get<double>("coef");
 
-  AnalyticDG02 ana(mesh, 2);
+  AnalyticDG03 ana(mesh, 3);
 
   // set up problem coefficients
   // -- reaction function
@@ -250,13 +251,14 @@ void AdvectionSteady(std::string filename, int nx)
   solution.ScatterMasterToGhosted();
   Epetra_MultiVector& p = *solution.ViewComponent("cell", false);
 
-  double pnorm, pl2_err, pinf_err;
-  ana.ComputeCellError(p, 0.0, pnorm, pl2_err, pinf_err);
+  double pnorm, pl2_err, pinf_err, pl2_mean, pinf_mean;
+  ana.ComputeCellError(p, 0.0, pnorm, pl2_err, pinf_err, pl2_mean, pinf_mean);
 
   if (MyPID == 0) {
     sol.ChangeOrigin(AmanziGeometry::Point(2));
     std::cout << "\nEXACT solution: " << sol << std::endl;
-    printf("L2(p)=%9.6f  Inf(p)=%9.6f  itr=%3d\n", pl2_err, pinf_err, solver.num_itrs());
+    printf("Mean:  L2(p)=%12.9f  Inf(p)=%12.9f  itr=%3d\n", pl2_mean, pinf_mean, solver.num_itrs());
+    printf("Total: L2(p)=%12.9f  Inf(p)=%12.9f\n", pl2_err, pinf_err);
     CHECK(pl2_err < 1e-10);
   }
 }
