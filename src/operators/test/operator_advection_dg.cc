@@ -47,9 +47,9 @@
 
 /* *****************************************************************
 * This tests exactness of the advection scheme for steady-state
-* equation c p + u . \nabla p = f.
+* equation c p + div(v p) = f.
 * **************************************************************** */
-void AdvectionSteady(std::string filename)
+void AdvectionSteady(std::string filename, int nx)
 {
   using namespace Teuchos;
   using namespace Amanzi;
@@ -73,7 +73,7 @@ void AdvectionSteady(std::string filename)
 
   MeshFactory meshfactory(&comm);
   meshfactory.preference(FrameworkPreference({MSTK,STKMESH}));
-  // RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 10, 10, gm);
+  // RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, nx, nx, gm);
   RCP<const Mesh> mesh = meshfactory(filename, gm, true, true);
 
   int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
@@ -98,7 +98,8 @@ void AdvectionSteady(std::string filename)
 
   AnalyticDG02 ana(mesh, 2);
 
-  // -- reaction coefficient
+  // set up problem coefficients
+  // -- reaction function
   auto cvs = Teuchos::rcp(new CompositeVectorSpace());
   cvs->SetMesh(mesh)->SetGhosted(true);
   cvs->AddComponent("cell", AmanziMesh::CELL, 1);
@@ -111,13 +112,13 @@ void AdvectionSteady(std::string filename)
     (*Kc)[0][c] = Kreac;
   }
 
-  // -- velocity coefficient
+  // -- velocity function
   int d = mesh->space_dimension();
   auto velc = Teuchos::rcp(new std::vector<WhetStone::VectorPolynomial>(ncells_wghost));
   auto velf = Teuchos::rcp(new std::vector<WhetStone::Polynomial>(nfaces_wghost));
 
   WhetStone::VectorPolynomial v;
-  ana.VelocityTaylor(AmanziGeometry::Point(0.0, 0.0), 0.0, v); 
+  ana.VelocityTaylor(AmanziGeometry::Point(2), 0.0, v); 
   
   for (int c = 0; c < ncells_wghost; ++c) {
     (*velc)[c] = v;
@@ -128,16 +129,15 @@ void AdvectionSteady(std::string filename)
     (*velf)[f] = v * mesh->face_normal(f);
   }
 
-  // -- source term
-  WhetStone::Polynomial divv(d, 2);
-  divv(0, 0) = 2.0;
-  divv(1, 0) = -2.0;
-  divv(1, 1) = -2.0;
+  // -- source term is calculated using method of manufactured solutions
+  //    f = K * p + div (v p)
+  WhetStone::Polynomial divv = Divergence(v);
 
   WhetStone::Polynomial sol, src;
   WhetStone::VectorPolynomial grad(d, 0);
 
   int order = op_list.get<int>("method order");
+  int nk = (order + 1) * (order + 2) / 2;
 
   WhetStone::Polynomial pc(2, order);
   WhetStone::NumericalIntegration numi(mesh);
@@ -169,9 +169,38 @@ void AdvectionSteady(std::string filename)
     }
   }
 
+  // -- boundary data
+  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(mesh, AmanziMesh::FACE, DOF_Type::VECTOR));
+  std::vector<int>& bc_model = bc->bc_model();
+  std::vector<std::vector<double> >& bc_value = bc->bc_value_vector(nk);
+
+  WhetStone::Polynomial coefs;
+  WhetStone::DenseVector data;
+
+  for (int f = 0; f < nfaces_wghost; f++) {
+    const Point& xf = mesh->face_centroid(f);
+    const Point& normal = mesh->face_normal(f);
+    if (fabs(xf[0]) < 1e-6 || fabs(xf[0] - 1.0) < 1e-6 ||
+        fabs(xf[1]) < 1e-6 || fabs(xf[1] - 1.0) < 1e-6) {
+      Point vp(v[0].Value(xf), v[1].Value(xf));
+
+      if (vp * normal < -1e-12) {
+        bc_model[f] = OPERATOR_BC_DIRICHLET;
+
+        ana.SolutionTaylor(xf, 0.0, coefs);
+        coefs.GetPolynomialCoefficients(data);
+
+        for (int i = 0; i < nk; ++i) {
+          bc_value[f][i] = data(i);
+        }
+      }
+    }
+  }
+
   // populate the global operator
   op_flux->Setup(velc, velf);
   op_flux->UpdateMatrices(velf.ptr());
+  op_flux->ApplyBCs(bc, true);
 
   op_adv->SetupPolyVector(velc);
   op_adv->UpdateMatrices();
@@ -206,7 +235,6 @@ void AdvectionSteady(std::string filename)
               << " order=" << order << std::endl;
 
     // visualization
-    /*
     const Epetra_MultiVector& p = *solution.ViewComponent("cell");
     GMV::open_data_file(*mesh, (std::string)"operators.gmv");
     GMV::start_data();
@@ -214,7 +242,6 @@ void AdvectionSteady(std::string filename)
     GMV::write_cell_data(p, 1, "gradx");
     GMV::write_cell_data(p, 1, "grady");
     GMV::close_data_file();
-    */
   }
 
   CHECK(solver.num_itrs() < 2000);
@@ -227,6 +254,7 @@ void AdvectionSteady(std::string filename)
   ana.ComputeCellError(p, 0.0, pnorm, pl2_err, pinf_err);
 
   if (MyPID == 0) {
+    sol.ChangeOrigin(AmanziGeometry::Point(2));
     std::cout << "\nEXACT solution: " << sol << std::endl;
     printf("L2(p)=%9.6f  Inf(p)=%9.6f  itr=%3d\n", pl2_err, pinf_err, solver.num_itrs());
     CHECK(pl2_err < 1e-10);
@@ -235,7 +263,7 @@ void AdvectionSteady(std::string filename)
 
 
 TEST(OPERATOR_ADVECTION_STEADY_DG) {
-  AdvectionSteady("test/median7x8.exo");
+  AdvectionSteady("test/median7x8.exo", 8);
 }
 
 

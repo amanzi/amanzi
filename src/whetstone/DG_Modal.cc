@@ -501,33 +501,41 @@ int DG_Modal::FluxMatrix(int f, const Polynomial& un, DenseMatrix& A,
   A.Reshape(nrows, nrows);
   A.PutScalar(0.0);
 
-  // identify index of downwind cell (id)
+  // identify index of upwind/downwind cell (id) 
   int dir, id(0); 
   mesh_->face_normal(f, false, cells[0], &dir);
   const AmanziGeometry::Point& xf = mesh_->face_centroid(f);
 
-  double vel = un.Value(xf) * dir;
-  if (upwind) vel = -vel;
+  if (ncells > 1) {
+    double vel = un.Value(xf) * dir;
+    if (upwind) vel = -vel;
 
-  if (vel > 0.0) {
-    if (ncells == 1) return 0;
-    id = 1;
-  } else {
-    if (ncells == 1) return 0;  // Assume that u.n=0 FIXME
-    dir = -dir;
+    if (vel > 0.0) {
+      id = 1;
+    } else {
+      dir = -dir;
+    }
   }
+
   int col(id * size);
   int row(size - col);
 
   // Calculate integrals needed for scaling
-  int c1 = cells[id];
-  int c2 = cells[1 - id];
+  int c1, c2;
+  double volume1, volume2;
 
-  double volume1 = mesh_->cell_volume(c1);
-  double volume2 = mesh_->cell_volume(c2);
-
+  c1 = cells[id];
+  volume1 = mesh_->cell_volume(c1);
   UpdateIntegrals_(c1, 2 * order_);
-  UpdateIntegrals_(c2, 2 * order_);
+
+  if (ncells == 1) {
+    c2 = c1;
+    volume2 = volume1;
+  } else {
+    c2 = cells[1 - id];
+    volume2 = mesh_->cell_volume(c2);
+    UpdateIntegrals_(c2, 2 * order_);
+  }
 
   // integrate traces of polynomials on face f
   std::vector<const Polynomial*> polys(3);
@@ -584,7 +592,11 @@ int DG_Modal::FluxMatrix(int f, const Polynomial& un, DenseMatrix& A,
     A.Transpose();
   }
 
-  ChangeBasis_(cells[0], cells[1], A);
+  if (ncells == 1) {
+    ChangeBasis_(cells[0], A);
+  } else { 
+    ChangeBasis_(cells[0], cells[1], A);
+  }
 
   return 0;
 }
@@ -1003,8 +1015,9 @@ void DG_Modal::ChangeBasis_(int c1, int c2, DenseMatrix& A)
 ****************************************************************** */
 void DG_Modal::TaylorBasis(int c, const Iterator& it, double* a, double* b)
 {
-  const int* multi_index = it.multi_index();
+  ASSERT(basis_ > 0);
 
+  const int* multi_index = it.multi_index();
   int n(0);
   for (int i = 0; i < d_; ++i) {
     n += multi_index[i];

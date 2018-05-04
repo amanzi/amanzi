@@ -9,25 +9,25 @@
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 
   Solution: u = sqrt((x - x0)^2 + (y - y0)^2) - 0.2
-            x0 = 0.5 + 0.25 dx(t), dx(0) = 1
-            y0 = 0.5 + 0.25 dy(t), dy(0) = 0
+            x0 = 0.5 + 0.25 cos(t)
+            y0 = 0.5 + 0.25 sin(t)
   Diffusion: K = 1
   Accumulation: a = 0
   Reaction: r = 0
-  Velocity: v = cos(\pi t) [sin(\pi x) cos(\pi y), -cos(\pi x) sin(\pi y)]
+  Velocity: v = [0.5 - y, x - 0.5]
   Source: f = 0
 */
 
-#ifndef AMANZI_OPERATOR_ANALYTIC_DG_06_BASE_HH_
-#define AMANZI_OPERATOR_ANALYTIC_DG_06_BASE_HH_
+#ifndef AMANZI_OPERATOR_ANALYTIC_DG_06b_BASE_HH_
+#define AMANZI_OPERATOR_ANALYTIC_DG_06b_BASE_HH_
 
 #include "AnalyticDGBase.hh"
 
-class AnalyticDG06 : public AnalyticDGBase {
+class AnalyticDG06b : public AnalyticDGBase {
  public:
-  AnalyticDG06(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh, int order)
+  AnalyticDG06b(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh, int order)
     : AnalyticDGBase(mesh, order) {};
-  ~AnalyticDG06() {};
+  ~AnalyticDG06b() {};
 
   // analytic data in conventional Taylor basis
   // -- diffusion tensor
@@ -43,8 +43,8 @@ class AnalyticDG06 : public AnalyticDGBase {
     sol.Reshape(d_, order_, true); 
     sol.set_origin(p);
 
-    double x0 = 0.75;
-    double y0 = 0.5;
+    double x0 = 0.5 + 0.25 * std::cos(t);
+    double y0 = 0.5 + 0.25 * std::sin(t);
 
     double dx = p[0] - x0;
     double dy = p[1] - y0;
@@ -90,41 +90,13 @@ class AnalyticDG06 : public AnalyticDGBase {
                               Amanzi::WhetStone::VectorPolynomial& v) override {
     v.resize(d_);
     for (int i = 0; i < d_; ++i) {
-      v[i].Reshape(d_, order_, true); 
-      v[i].set_origin(p);
+      v[i].Reshape(d_, 1, true); 
     }
+    v[0](0, 0) = 0.5 - p[1];
+    v[1](0, 0) = p[0] - 0.5;
 
-    double snx, sny, csx, csy;
-    snx = std::sin(M_PI * p[0]);
-    sny = std::sin(M_PI * p[1]);
-
-    csx = std::cos(M_PI * p[0]);
-    csy = std::cos(M_PI * p[1]);
-
-    v[0](0, 0) = snx * csy;
-    v[1](0, 0) =-csx * sny;
-
-    if (order_ > 0) {
-      v[0](1, 0) = M_PI * csx * csy;
-      v[0](1, 1) =-M_PI * snx * sny;
-
-      v[1](1, 0) = M_PI * snx * sny;
-      v[1](1, 1) =-M_PI * csx * csy;
-    }
-
-    if (order_ > 1) {
-      v[0](2, 0) =-M_PI * M_PI * snx * csy / 2;
-      v[0](2, 1) =-M_PI * M_PI * csx * sny;
-      v[0](2, 2) =-M_PI * M_PI * snx * csy / 2;
-
-      v[1](2, 0) = M_PI * M_PI * csx * sny / 2;
-      v[1](2, 1) = M_PI * M_PI * snx * csy;
-      v[1](2, 2) = M_PI * M_PI * csx * sny / 2;
-    }
-
-    if (order_ > 2) ASSERT(true);
-
-    v *= std::cos(M_PI * t);
+    v[0](1, 1) =-1.0;
+    v[1](1, 0) = 1.0;
   }
 
   // -- reaction

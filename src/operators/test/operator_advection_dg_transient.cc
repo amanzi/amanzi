@@ -36,9 +36,8 @@
 #include "VectorPolynomial.hh"
 
 // Operators
-#include "AnalyticDG02.hh"
-#include "AnalyticDG04.hh"
 #include "AnalyticDG06.hh"
+#include "AnalyticDG06b.hh"
 
 #include "OperatorAudit.hh"
 #include "OperatorDefs.hh"
@@ -90,17 +89,19 @@ class AdvectionFn : public Explicit_TI::fnBase<CompositeVector> {
     for (int c = 0; c < ncells_wghost; ++c) {
       ana_.VelocityTaylor(mesh_->cell_centroid(c), t, v); 
       (*velc)[c] = v;
-      (*velc)[c] *= -1.0;
     }
 
     for (int f = 0; f < nfaces_wghost; ++f) {
+      const AmanziGeometry::Point& normal = mesh_->face_normal(f);
       ana_.VelocityTaylor(mesh_->face_centroid(f), t, v); 
-      (*velf)[f] = v * mesh_->face_normal(f);
+      (*velf)[f] = v * (-normal);
     }
 
-    CalculateApproximateVelocity(t, dt_, velc, velf);
+    // modify analytic Taylor expansions
+    // CalculateApproximateVelocity(t, dt_, velc, velf);
 
-    // update accumulation coefficient
+    // update problem coefficients
+    // -- accumulation
     auto K = Teuchos::rcp(new std::vector<WhetStone::Polynomial>(ncells_wghost));
     WhetStone::Polynomial Kc(d, 0);
     Kc(0, 0) = 1.0;
@@ -108,8 +109,10 @@ class AdvectionFn : public Explicit_TI::fnBase<CompositeVector> {
       (*K)[c] = Kc;
     }
 
+    // -- source term
     int order = plist_.sublist("PK operator").sublist("flux operator")
                       .template get<int>("method order");
+    int nk = (order + 1) * (order + 2) / 2;
 
     WhetStone::Polynomial sol, src, pc(2, order);
     WhetStone::NumericalIntegration numi(mesh_);
@@ -138,9 +141,38 @@ class AdvectionFn : public Explicit_TI::fnBase<CompositeVector> {
       }
     }
 
+    // -- boundary data
+    auto bc = Teuchos::rcp(new Operators::BCs(mesh_, AmanziMesh::FACE, Operators::DOF_Type::VECTOR));
+    std::vector<int>& bc_model = bc->bc_model();
+    std::vector<std::vector<double> >& bc_value = bc->bc_value_vector(nk);
+
+    WhetStone::Polynomial coefs;
+    WhetStone::DenseVector data;
+
+    for (int f = 0; f < nfaces_wghost; f++) {
+      const AmanziGeometry::Point& xf = mesh_->face_centroid(f);
+      const AmanziGeometry::Point& normal = mesh_->face_normal(f);
+      if (fabs(xf[0]) < 1e-6 || fabs(xf[0] - 1.0) < 1e-6 ||
+          fabs(xf[1]) < 1e-6 || fabs(xf[1] - 1.0) < 1e-6) {
+        AmanziGeometry::Point vp = ana_.VelocityExact(xf, t); 
+
+        if (vp * normal < -1e-12) {
+          bc_model[f] = Operators::OPERATOR_BC_DIRICHLET;
+
+          ana_.SolutionTaylor(xf, t, coefs);
+          coefs.GetPolynomialCoefficients(data);
+
+          for (int i = 0; i < nk; ++i) {
+            bc_value[f][i] = data(i);
+          }
+        }
+      }
+    }
+
     // populate the global operator
     op_flux->Setup(velc, velf);
     op_flux->UpdateMatrices(velf.ptr());
+    op_flux->ApplyBCs(bc, true);
 
     op_adv->SetupPolyVector(velc);
     op_adv->UpdateMatrices();
@@ -155,7 +187,9 @@ class AdvectionFn : public Explicit_TI::fnBase<CompositeVector> {
 
     // invert vector
     op_mass->global_operator()->Apply(u1, f);
-    f.Dot(u1, &l2norm);
+
+    // statistics: l2 norm of solution
+    u.Dot(u, &l2norm);
   }
 
   // Modify cell and face velocities using a mesh map
@@ -196,9 +230,9 @@ class AdvectionFn : public Explicit_TI::fnBase<CompositeVector> {
     // create a mesh map at time t
     Teuchos::ParameterList map_list;
     map_list.set<std::string>("method", "CrouzeixRaviart")
-            .set<int>("method order", 1)
+            .set<int>("method order", 2)
             .set<std::string>("projector", "H1 harmonic")
-            .set<std::string>("map name", "PEM");
+            .set<std::string>("map name", "VEM");
   
     WhetStone::MeshMapsFactory maps_factory;
     auto maps = maps_factory.Create(map_list, mesh_, mesh_new);
@@ -211,15 +245,16 @@ class AdvectionFn : public Explicit_TI::fnBase<CompositeVector> {
 
       WhetStone::VectorPolynomial v;
       std::vector<WhetStone::VectorPolynomial> vvf;
+
       for (int n = 0; n < nfaces; ++n) {
         int f = faces[n];
         maps->VelocityFace(f, v);
         vvf.push_back(v);
-        (*velf)[f] = (v * mesh_->face_normal(f)) * dtfac;
+        (*velf)[f] = (v * mesh_->face_normal(f)) * (-dtfac);
       }
 
       maps->VelocityCell(c, vvf, (*velc)[c]);
-      (*velc)[c] *= -dtfac;
+      (*velc)[c] *= dtfac;
     }
   }
 
@@ -246,7 +281,7 @@ class AdvectionFn : public Explicit_TI::fnBase<CompositeVector> {
 
 /* *****************************************************************
 * This tests exactness of the transient advection scheme for
-* dp/dt - div(v p) = f.
+* dp/dt + div(v p) = f.
 * **************************************************************** */
 template <class AnalyticDG>
 void AdvectionTransient(std::string filename, int nx, int ny, double dt,
@@ -324,8 +359,13 @@ void AdvectionTransient(std::string filename, int nx, int ny, double dt,
       GMV::start_data();
       GMV::write_cell_data(p, 0, "solution");
       GMV::write_cell_data(p, 1, "gradx");
-      GMV::write_cell_data(p, 1, "grady");
-      GMV::close_data_file();
+      GMV::write_cell_data(p, 2, "grady");
+      if (order > 1) {
+        GMV::write_cell_data(p, 3, "hesxx");
+        GMV::write_cell_data(p, 4, "hesxy");
+        GMV::write_cell_data(p, 5, "hesyy");
+        GMV::close_data_file();
+      }
     }
 
     t += dt;
@@ -337,7 +377,7 @@ void AdvectionTransient(std::string filename, int nx, int ny, double dt,
   Epetra_MultiVector& p = *sol.ViewComponent("cell", false);
 
   double pnorm, pl2_err, pinf_err;
-  ana.ComputeCellError(p, 0.0, pnorm, pl2_err, pinf_err);
+  ana.ComputeCellError(p, tend, pnorm, pl2_err, pinf_err);
 
   if (MyPID == 0) {
     printf("nx=%3d  L2(p)=%9.6g  Inf(p)=%9.6g\n", nx, pl2_err, pinf_err);
@@ -347,18 +387,25 @@ void AdvectionTransient(std::string filename, int nx, int ny, double dt,
 
 
 TEST(OPERATOR_ADVECTION_TRANSIENT_DG) {
-  // AdvectionTransient<AnalyticDG06>("square",  20,  20, 0.01, Amanzi::Explicit_TI::tvd_3rd_order);
-  // AdvectionTransient<AnalyticDG06>("square",  40,  40, 0.01 / 2, Amanzi::Explicit_TI::tvd_3rd_order);
-  // AdvectionTransient<AnalyticDG06>("square",  80,  80, 0.01 / 4, Amanzi::Explicit_TI::tvd_3rd_order);
-  // AdvectionTransient<AnalyticDG06>("square", 160, 160, 0.01 / 8, Amanzi::Explicit_TI::tvd_3rd_order);
+  AdvectionTransient<AnalyticDG06>("square",  4,  4, 0.1, Amanzi::Explicit_TI::tvd_3rd_order);
+
   /*
-  AdvectionTransient<AnalyticDG04>("test/median7x8.exo", 9, 0, 0.05, Amanzi::Explicit_TI::tvd_3rd_order);
+  AdvectionTransient<AnalyticDG06>("square",  20,  20, 0.005, Amanzi::Explicit_TI::tvd_3rd_order);
+  AdvectionTransient<AnalyticDG06>("square",  40,  40, 0.005 / 2, Amanzi::Explicit_TI::tvd_3rd_order);
+  AdvectionTransient<AnalyticDG06>("square",  80,  80, 0.005 / 4, Amanzi::Explicit_TI::tvd_3rd_order);
+  AdvectionTransient<AnalyticDG06>("square", 160, 160, 0.005 / 8, Amanzi::Explicit_TI::tvd_3rd_order);
+
+  AdvectionTransient<AnalyticDG06>("test/triangular8.exo",    8, 0, 0.01, Amanzi::Explicit_TI::tvd_3rd_order);
+  AdvectionTransient<AnalyticDG06>("test/triangular16.exo",  16, 0, 0.01 / 2, Amanzi::Explicit_TI::tvd_3rd_order);
+  AdvectionTransient<AnalyticDG06>("test/triangular32.exo",  32, 0, 0.01 / 4, Amanzi::Explicit_TI::tvd_3rd_order);
+  AdvectionTransient<AnalyticDG06>("test/triangular64.exo",  64, 0, 0.01 / 8, Amanzi::Explicit_TI::tvd_3rd_order);
+  AdvectionTransient<AnalyticDG06>("test/triangular128.exo",128, 0, 0.01 / 16,Amanzi::Explicit_TI::tvd_3rd_order);
+
   AdvectionTransient("test/median15x16.exo", 16, 16, 0.05 / 2, Amanzi::Explicit_TI::tvd_3rd_order);
   AdvectionTransient("test/median32x33.exo", 32, 0, 0.05 / 4, Amanzi::Explicit_TI::tvd_3rd_order);
   AdvectionTransient("test/median63x64.exo", 64, 0, 0.05 / 8, Amanzi::Explicit_TI::tvd_3rd_order);
   AdvectionTransient("test/median127x128.exo", 128, 0, 0.05 / 16, Amanzi::Explicit_TI::tvd_3rd_order);
   */ 
-  AdvectionTransient<AnalyticDG06>("square",  4,  4, 0.1, Amanzi::Explicit_TI::tvd_3rd_order);
 }
 
 

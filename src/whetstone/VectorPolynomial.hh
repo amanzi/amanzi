@@ -114,6 +114,44 @@ class VectorPolynomial {
   std::vector<Polynomial> polys_;
 };
 
+
+// non-member functions
+// --divergence
+inline
+Polynomial Divergence(const VectorPolynomial vp) 
+{
+  int d = vp[0].dimension();
+  ASSERT(d == vp.size());
+
+  int order = vp[0].order();
+  order = std::max(0, order - 1);
+
+  Polynomial div(d, order);
+  div.set_origin(vp[0].origin());
+
+  int index[3];
+  for (int i = 0; i < d; ++i) {
+    for (auto it = vp[i].begin(); it.end() <= vp[i].end(); ++it) {
+      int k = it.MonomialOrder();
+      if (k > 0) {
+        const int* idx = it.multi_index();
+        for (int j = 0; j < d; ++j) index[j] = idx[j];
+
+        if (index[i] > 0) {
+          int m = it.MonomialPosition();
+          double val = vp[i](k, m);
+
+          index[i]--;
+          m = vp[i].MonomialPosition(index);
+          div(k - 1, m) += val * idx[i];
+        }
+      }
+    }
+  }
+
+  return div;
+}
+
 }  // namespace WhetStone
 }  // namespace Amanzi
 

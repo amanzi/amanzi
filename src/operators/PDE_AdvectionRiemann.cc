@@ -151,8 +151,8 @@ void PDE_AdvectionRiemann::UpdateMatrices(
 ******************************************************************* */
 void PDE_AdvectionRiemann::ApplyBCs(const Teuchos::RCP<BCs>& bc, bool primary)
 {
-  const std::vector<int>& bc_model = bcs_trial_[0]->bc_model();
-  const std::vector<std::vector<double> >& bc_value = bcs_trial_[0]->bc_value_vector();
+  const std::vector<int>& bc_model = bc->bc_model();
+  const std::vector<std::vector<double> >& bc_value = bc->bc_value_vector();
   int nk = bc_value[0].size();
 
   Epetra_MultiVector& rhs_c = *global_op_->rhs()->ViewComponent("cell", true);
@@ -197,8 +197,12 @@ void PDE_AdvectionRiemann::ApplyBCs(const Teuchos::RCP<BCs>& bc, bool primary)
       Aface.Multiply(v, av, false);
 
       for (int i = 0; i < ncols; ++i) {
-        rhs_c[i][c] += av(i);
+        rhs_c[i][c] -= av(i);
       }
+
+      // elliminate matrices from system
+      local_op_->matrices_shadow[f] = Aface;
+      Aface.PutScalar(0.0);
     }
   } 
 }

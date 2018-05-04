@@ -33,7 +33,7 @@
       <Parameter name="method order" type="int" value="2"/>
       <Parameter name="matrix type" type="string" value="flux"/>
       <Parameter name="flux formula" type="string" value="downwind"/>
-      <Parameter name="jump operator on test function" type="bool" value="false"/>
+      <Parameter name="jump operator on test function" type="bool" value="true"/>
 
       <ParameterList name="schema domain">
         <Parameter name="base" type="string" value="face"/>
@@ -54,7 +54,7 @@
       <Parameter name="dg basis" type="string" value="natural"/>
       <Parameter name="method order" type="int" value="2"/>
       <Parameter name="matrix type" type="string" value="advection"/>
-      <Parameter name="gradient operator on test function" type="bool" value="false"/>
+      <Parameter name="gradient operator on test function" type="bool" value="true"/>
 
       <ParameterList name="schema domain">
         <Parameter name="base" type="string" value="cell"/>

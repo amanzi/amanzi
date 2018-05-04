@@ -12,7 +12,7 @@
   Diffusion: K = [1 0.5; 0.5 2]
   Accumulation: a = 0
   Reaction: r = 0
-  Velocity: v = [x - x^2, y - y^2]
+  Velocity: v = [0.1 + x - x^2, y - y^2]
   Source: f = 0
 */
 
@@ -66,6 +66,7 @@ class AnalyticDG02 : public AnalyticDGBase {
       v[i](1, i) = 1.0;
       v[i](2, 2*i) = -1.0;
     }
+    v[0](0, 0) = 0.1;
   }
 
   // -- reaction

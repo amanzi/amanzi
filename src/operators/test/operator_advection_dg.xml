@@ -56,13 +56,7 @@
       <Parameter name="matrix type" type="string" value="advection"/>
       <Parameter name="gradient operator on test function" type="bool" value="true"/>
 
-      <ParameterList name="schema domain">
-        <Parameter name="base" type="string" value="cell"/>
-        <Parameter name="location" type="Array(string)" value="{cell}"/>
-        <Parameter name="type" type="Array(string)" value="{scalar}"/>
-        <Parameter name="number" type="Array(int)" value="{6}"/>
-      </ParameterList>
-      <ParameterList name="schema range">
+      <ParameterList name="schema">
         <Parameter name="base" type="string" value="cell"/>
         <Parameter name="location" type="Array(string)" value="{cell}"/>
         <Parameter name="type" type="Array(string)" value="{scalar}"/>
@@ -71,7 +65,7 @@
     </ParameterList>
 
     <ParameterList name="reaction operator">
-      <Parameter name="coef" type="double" value="750"/>
+      <Parameter name="coef" type="double" value="1000"/>
       <Parameter name="method" type="string" value="dg modal"/>
       <Parameter name="dg basis" type="string" value="natural"/>
       <Parameter name="method order" type="int" value="2"/>

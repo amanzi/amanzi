@@ -16,6 +16,7 @@
   List of solutions:
     AnalyticDG0n: polynomial solution of order n, where n=0,1,2.
     AnalyticDG04: sin(3x) six(6y)
+    AnalyticDG06: level-set circle problem with divergence-free velecoity
 */
 
 #ifndef AMANZI_OPERATOR_ANALYTIC_DG_BASE_HH_
