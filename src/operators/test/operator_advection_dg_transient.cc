@@ -89,12 +89,12 @@ class AdvectionFn : public Explicit_TI::fnBase<CompositeVector> {
     for (int c = 0; c < ncells_wghost; ++c) {
       ana_.VelocityTaylor(mesh_->cell_centroid(c), t, v); 
       (*velc)[c] = v;
+      (*velc)[c] *= -1.0;
     }
 
     for (int f = 0; f < nfaces_wghost; ++f) {
-      const AmanziGeometry::Point& normal = mesh_->face_normal(f);
       ana_.VelocityTaylor(mesh_->face_centroid(f), t, v); 
-      (*velf)[f] = v * (-normal);
+      (*velf)[f] = v * mesh_->face_normal(f);
     }
 
     // modify analytic Taylor expansions
@@ -183,7 +183,7 @@ class AdvectionFn : public Explicit_TI::fnBase<CompositeVector> {
     // calculate functional
     CompositeVector u1(u);
     global_op_->Apply(u, u1);
-    u1.Update(1.0, rhs, 1.0);
+    u1.Update(1.0, rhs, -1.0);
 
     // invert vector
     op_mass->global_operator()->Apply(u1, f);
@@ -250,11 +250,11 @@ class AdvectionFn : public Explicit_TI::fnBase<CompositeVector> {
         int f = faces[n];
         maps->VelocityFace(f, v);
         vvf.push_back(v);
-        (*velf)[f] = (v * mesh_->face_normal(f)) * (-dtfac);
+        (*velf)[f] = (v * mesh_->face_normal(f)) * dtfac;
       }
 
       maps->VelocityCell(c, vvf, (*velc)[c]);
-      (*velc)[c] *= dtfac;
+      (*velc)[c] *= -dtfac;
     }
   }
 
@@ -387,7 +387,7 @@ void AdvectionTransient(std::string filename, int nx, int ny, double dt,
 
 
 TEST(OPERATOR_ADVECTION_TRANSIENT_DG) {
-  AdvectionTransient<AnalyticDG06>("square",  4,  4, 0.1, Amanzi::Explicit_TI::tvd_3rd_order);
+  AdvectionTransient<AnalyticDG06b>("square",  4,  4, 0.1, Amanzi::Explicit_TI::tvd_3rd_order);
 
   /*
   AdvectionTransient<AnalyticDG06>("square",  20,  20, 0.005, Amanzi::Explicit_TI::tvd_3rd_order);

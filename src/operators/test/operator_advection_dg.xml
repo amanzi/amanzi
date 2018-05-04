@@ -32,7 +32,7 @@
       <Parameter name="dg basis" type="string" value="natural"/>
       <Parameter name="method order" type="int" value="2"/>
       <Parameter name="matrix type" type="string" value="flux"/>
-      <Parameter name="flux formula" type="string" value="downwind"/>
+      <Parameter name="flux formula" type="string" value="upwind"/>
       <Parameter name="jump operator on test function" type="bool" value="true"/>
 
       <ParameterList name="schema domain">
@@ -65,7 +65,7 @@
     </ParameterList>
 
     <ParameterList name="reaction operator">
-      <Parameter name="coef" type="double" value="1000"/>
+      <Parameter name="coef" type="double" value="100"/>
       <Parameter name="method" type="string" value="dg modal"/>
       <Parameter name="dg basis" type="string" value="natural"/>
       <Parameter name="method order" type="int" value="2"/>

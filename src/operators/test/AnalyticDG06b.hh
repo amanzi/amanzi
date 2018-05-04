@@ -91,6 +91,7 @@ class AnalyticDG06b : public AnalyticDGBase {
     v.resize(d_);
     for (int i = 0; i < d_; ++i) {
       v[i].Reshape(d_, 1, true); 
+      v[i].set_origin(p);
     }
     v[0](0, 0) = 0.5 - p[1];
     v[1](0, 0) = p[0] - 0.5;

@@ -3546,7 +3546,17 @@ Operators
 Operators are discrete forms of linearized PDEs operators.
 They form a layer between physical process kernels and solvers
 and include diffusion, advection, elasticity, and source operators.
-A PK decides which collection of operators must be used to build a preconditioner.
+The residual associated with an operator :math:`L_h` helps to 
+understand the employed sign convention:
+
+.. math::
+  r = f - L_h u.
+
+A PK decides how to bundle operators in a collection of operators.
+For example, an advection-diffusion problem may benefit from using
+an operator that combines two operators representing diffusion and advection process.
+Collection of operators must be used for implicit solvers and for building preconditioners.
+In such a case, the collections acts as a single operator.
 
 Operators use a few tools that are generic in nature and can be used independently by PKs. 
 The list includes reconstruction and limiting algorithms. 
