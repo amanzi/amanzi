@@ -154,7 +154,7 @@ int MFD3D_CrouzeixRaviart::H1consistencyHO_(
 
   for (auto it = poly.begin(); it.end() <= poly.end(); ++it) { 
     const int* index = it.multi_index();
-    double factor = numi.MonomialNaturalScale(it.MonomialOrder(), volume);
+    double factor = numi.MonomialNaturalScales(c, it.MonomialOrder());
     Polynomial cmono(d_, index, factor);
     cmono.set_origin(xc);  
 
@@ -236,7 +236,7 @@ int MFD3D_CrouzeixRaviart::H1consistencyHO_(
   G_.PutScalar(0.0);
 
   // -- gradient of a naturally scaled polynomial needs correction
-  double scale = numi.MonomialNaturalScale(1, volume);
+  double scale = numi.MonomialNaturalScales(c, 1);
 
   for (auto it = poly.begin(); it.end() <= poly.end(); ++it) {
     const int* index = it.multi_index();
@@ -658,7 +658,7 @@ void MFD3D_CrouzeixRaviart::ProjectorGradientCell_(
         int row = it.PolynomialPosition();
         const int* index = it.multi_index();
 
-        double factor = numi.MonomialNaturalScale(it.MonomialOrder(), volume);
+        double factor = numi.MonomialNaturalScales(c, it.MonomialOrder());
         Polynomial cmono(d_, index, factor);
         cmono.set_origin(xc);  
 

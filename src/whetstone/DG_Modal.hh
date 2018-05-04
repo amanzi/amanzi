@@ -9,7 +9,8 @@
 
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 
-  Discontinuous Galerkin modal method.
+  Discontinuous Galerkin modal method. Efficient implementation
+  requires to cache various data for all mesh cells.
 */
 
 #ifndef AMANZI_WHETSTONE_DG_MODAL_HH_
@@ -55,6 +56,9 @@ class DG_Modal : public BilinearForm {
   ~DG_Modal() {};
 
   // basic member functions
+  // -- initialization
+  void Init();
+
   // -- mass matrices
   virtual int MassMatrix(int c, const Tensor& K, DenseMatrix& M) override;
   virtual int MassMatrix(int c, const VectorPolynomial& K, DenseMatrix& M) override {

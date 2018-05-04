@@ -33,7 +33,8 @@ class NumericalIntegration {
  public:
   NumericalIntegration(Teuchos::RCP<const AmanziMesh::Mesh> mesh)
     : mesh_(mesh),
-      d_(mesh_->space_dimension()) {};
+      d_(mesh_->space_dimension()),
+      cached_data_(false) {};
 
   ~NumericalIntegration() {};
 
@@ -84,12 +85,16 @@ class NumericalIntegration {
   double PolynomialMaxValue(int f, const Polynomial& poly);
 
   // natural scaling of monomials (e.g. x^k / h^k)
-  // -- scaling factor is constant for monomial of the same order
-  double MonomialNaturalScale(int k, double volume);
+  // -- scaling factor is constant for monomials of the same order
+  double MonomialNaturalScales(int c, int k);
   // -- polynomial is converted from regular to natural basis
   void ChangeBasisRegularToNatural(int c, Polynomial& p);
   // -- polynomial is converted from natural to regular basis
   void ChangeBasisNaturalToRegular(int c, Polynomial& p);
+
+  // management of cached data
+  // -- calculate natural scales for all monomials on mesh (expensive!)
+  void CalculateCachedMonomialScales(int order);
 
  private:
   void IntegrateMonomialsFace_(int c, int f, double factor, Monomial& monomials);
@@ -97,9 +102,15 @@ class NumericalIntegration {
       const AmanziGeometry::Point& x1, const AmanziGeometry::Point& x2,
       double factor, Monomial& monomials);
 
+  double MonomialNaturalSingleScale_(int k, double volume) const;
+
  private:
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
   int d_;
+
+  // cached variables
+  bool cached_data_;
+  std::vector<std::vector<double> > monomial_scales_;  // mesh-dependend scales of monomials
 };
 
 }  // namespace WhetStone

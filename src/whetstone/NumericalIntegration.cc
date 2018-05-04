@@ -70,7 +70,7 @@ double NumericalIntegration::IntegratePolynomialCell(int c, const Polynomial& po
     std::vector<double>& val2 = tmp.monomials(k).coefs();
     std::vector<double>& val1 = integrals.monomials(k).coefs();
 
-    double scale = MonomialNaturalScale(k, mesh_->cell_volume(c));
+    double scale = MonomialNaturalScales(c, k);
     for (int i = 0; i < val1.size(); ++i) value += val1[i] * val2[i] / scale;
   }
 
@@ -274,7 +274,7 @@ void NumericalIntegration::IntegrateMonomialsCell(int c, Monomial& monomials)
   int nfaces = faces.size();
 
   const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
-  double factor = MonomialNaturalScale(k, mesh_->cell_volume(c));
+  double factor = MonomialNaturalScales(c, k);
 
   for (int n = 0; n < nfaces; ++n) {
     int f = faces[n];
@@ -432,19 +432,52 @@ double NumericalIntegration::PolynomialMaxValue(int f, const Polynomial& poly)
 
 
 /* ******************************************************************
-* Re-scale polynomial coefficients.
+* Cached data: scales of monomials.
 ****************************************************************** */
-double NumericalIntegration::MonomialNaturalScale(int k, double volume) {
-  // return 1.0;
-  return std::pow(volume, -(double)k / d_);
+void NumericalIntegration::CalculateCachedMonomialScales(int order)
+{
+  cached_data_ = true;
+  int ncells_wghost = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
+  monomial_scales_.resize(ncells_wghost);
+
+  for (int c = 0; c < ncells_wghost; ++c) {
+    double volume = mesh_->cell_volume(c);
+
+    monomial_scales_[c].clear();
+    for (int k = 0; k < order + 1; ++k) {
+      double scale = MonomialNaturalSingleScale_(k, volume);
+      monomial_scales_[c].push_back(scale);
+    }
+  }
 }
+
+
+/* ******************************************************************
+* Re-scale polynomial coefficients: lazy implementation.
+* Scaling factor is constant for monomials of the same order.
+****************************************************************** */
+double NumericalIntegration::MonomialNaturalScales(int c, int k) {
+  if (cached_data_) {
+    int k0 = monomial_scales_[c].size();
+    if (k >= k0) {
+      double volume = mesh_->cell_volume(c);
+      for (int l = k0; l < k + 1; ++l) {
+        double scale = MonomialNaturalSingleScale_(l, volume);
+        monomial_scales_[c].push_back(scale);
+      }
+    }
+    return monomial_scales_[c][k];
+  }
+
+  double volume = mesh_->cell_volume(c);
+  return MonomialNaturalSingleScale_(k, volume);
+}
+
 
 void NumericalIntegration::ChangeBasisRegularToNatural(int c, Polynomial& p)
 {
-  double volume = mesh_->cell_volume(c);
-
   for (int k = 0; k <= p.order(); ++k) {
-    double scale = MonomialNaturalScale(k, volume);
+    double scale = MonomialNaturalScales(c, k);
     auto& mono = p.monomials(k).coefs();
     for (auto it = mono.begin(); it != mono.end(); ++it) *it /= scale;
   }
@@ -453,13 +486,17 @@ void NumericalIntegration::ChangeBasisRegularToNatural(int c, Polynomial& p)
 
 void NumericalIntegration::ChangeBasisNaturalToRegular(int c, Polynomial& p)
 {
-  double volume = mesh_->cell_volume(c);
-
   for (int k = 0; k <= p.order(); ++k) {
-    double scale = MonomialNaturalScale(k, volume);
+    double scale = MonomialNaturalScales(c, k);
     auto& mono = p.monomials(k).coefs();
     for (auto it = mono.begin(); it != mono.end(); ++it) *it *= scale;
   }
+}
+
+
+double NumericalIntegration::MonomialNaturalSingleScale_(int k, double volume) const {
+  // return 1.0;
+  return std::pow(volume, -(double)k / d_);
 }
 
 }  // namespace WhetStone

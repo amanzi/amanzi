@@ -81,6 +81,8 @@ Teuchos::RCP<BilinearForm> MFD3DFactory::Create(
       ASSERT(false);
     }
 
+    mfd->Init();
+
     return mfd;
   }
 

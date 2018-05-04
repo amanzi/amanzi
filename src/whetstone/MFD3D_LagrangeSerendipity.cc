@@ -91,8 +91,7 @@ int MFD3D_LagrangeSerendipity::H1consistency(
   }
 
   // setup matrix representing Laplacian of polynomials
-  double volume = mesh_->cell_volume(c); 
-  double scale = numi.MonomialNaturalScale(1, volume);
+  double scale = numi.MonomialNaturalScales(c, 1);
 
   DenseMatrix L(nd, nd);
   L.PutScalar(0.0);
@@ -101,7 +100,7 @@ int MFD3D_LagrangeSerendipity::H1consistency(
     const int* index = it.multi_index();
     int k = it.PolynomialPosition();
 
-    double factor = numi.MonomialNaturalScale(it.MonomialOrder(), volume);
+    double factor = numi.MonomialNaturalScales(c, it.MonomialOrder());
     Polynomial mono(d_, index, factor);
     Polynomial lap = mono.Laplacian();
     
