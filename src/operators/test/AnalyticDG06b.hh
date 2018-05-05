@@ -8,7 +8,7 @@
 
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 
-  Solution: u = sqrt((x - x0)^2 + (y - y0)^2) - 0.2
+  Solution: u = sqrt((x - x0)^2 + (y - y0)^2 + 0.05) - 0.3
             x0 = 0.5 + 0.25 cos(t)
             y0 = 0.5 + 0.25 sin(t)
   Diffusion: K = 1
@@ -24,6 +24,9 @@
 #include "AnalyticDGBase.hh"
 
 class AnalyticDG06b : public AnalyticDGBase {
+ public:
+  const double a = 20.0;
+
  public:
   AnalyticDG06b(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh, int order)
     : AnalyticDGBase(mesh, order) {};
@@ -48,32 +51,33 @@ class AnalyticDG06b : public AnalyticDGBase {
 
     double dx = p[0] - x0;
     double dy = p[1] - y0;
+    double dist2 = dx * dx + dy * dy;
+    double u = std::exp(-a * dist2);
 
-    double dist, dist2, dist3, dist5;
-    dist2 = dx * dx + dy * dy;
-    dist = std::pow(dist2, 0.5);
+    dx *= -2 * a;
+    dy *= -2 * a;
 
-    sol(0, 0) = dist - 0.2;
+    sol(0, 0) = u;
 
     if (order_ > 0) {
-      sol(1, 0) = dx / dist;
-      sol(1, 1) = dy / dist;
+      sol(1, 0) = u * dx;
+      sol(1, 1) = u * dy;
     }
 
+    double dx2, dy2;
     if (order_ > 1) {
-      dist3 = dist2 * dist;
-      sol(2, 0) =  0.5 * dy * dy / dist3;
-      sol(2, 1) =       -dx * dy / dist3;
-      sol(2, 2) =  0.5 * dx * dx / dist3;
+      dx2 = dx * dx;
+      dy2 = dy * dy;
+      sol(2, 0) =  u * (dx2 - 2 * a) / 2;
+      sol(2, 1) =  u * dx * dy;
+      sol(2, 2) =  u * (dy2 - 2 * a) / 2;
     }
 
     if (order_ > 2) {
-      ASSERT(true);
-      dist5 = dist2 * dist3;
-      sol(3, 0) = -0.5 * dx * dy * dy / dist5;
-      sol(3, 1) = dy * (dx * dx - dy * dy / 2) / dist5;
-      sol(3, 2) = dx * (dy * dy - dx * dx / 2) / dist5;
-      sol(3, 3) = -0.5 * dy * dx * dx / dist5;
+      sol(3, 0) = u * (dx2 * dx + 3 * dx2) / 6;
+      sol(3, 1) = u * (dx2 * dy - 2 * a * dy) / 2;
+      sol(3, 2) = u * (dy2 * dx - 2 * a * dx) / 2;
+      sol(3, 3) = u * (dy2 * dy + 3 * dy2) / 6;
     }
 
     if (order_ > 3) ASSERT(true);

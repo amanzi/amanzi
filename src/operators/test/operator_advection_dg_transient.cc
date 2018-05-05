@@ -99,7 +99,7 @@ class AdvectionFn : public Explicit_TI::fnBase<CompositeVector> {
     }
 
     // modify analytic Taylor expansions
-    // CalculateApproximateVelocity(t, dt_, velc, velf);
+    CalculateApproximateVelocity(t, dt_, velc, velf);
 
     // update problem coefficients
     // -- accumulation
@@ -358,7 +358,7 @@ void AdvectionTransient(std::string filename, int nx, int ny, double dt,
 
     if (MyPID == 0 && std::fabs(t - tprint) < dt/4) {
       tprint += 0.1; 
-      printf("t=%9.6f  |p|=%9.6g\n", t, fn.l2norm);
+      printf("t=%9.6f  |p|=%10.8g\n", t, fn.l2norm);
 
       // visualization
       const Epetra_MultiVector& p = *sol.ViewComponent("cell");
@@ -399,10 +399,10 @@ void AdvectionTransient(std::string filename, int nx, int ny, double dt,
 TEST(OPERATOR_ADVECTION_TRANSIENT_DG) {
   AdvectionTransient<AnalyticDG06b>("square",  4,  4, 0.1, Amanzi::Explicit_TI::tvd_3rd_order);
   /*
-  AdvectionTransient<AnalyticDG06>("square",  20,  20, 0.005, Amanzi::Explicit_TI::tvd_3rd_order);
-  AdvectionTransient<AnalyticDG06>("square",  40,  40, 0.005 / 2, Amanzi::Explicit_TI::tvd_3rd_order);
-  AdvectionTransient<AnalyticDG06>("square",  80,  80, 0.005 / 4, Amanzi::Explicit_TI::tvd_3rd_order);
-  AdvectionTransient<AnalyticDG06>("square", 160, 160, 0.005 / 8, Amanzi::Explicit_TI::tvd_3rd_order);
+  AdvectionTransient<AnalyticDG06>("square",  20,  20, 0.01, Amanzi::Explicit_TI::tvd_3rd_order);
+  AdvectionTransient<AnalyticDG06>("square",  40,  40, 0.01 / 2, Amanzi::Explicit_TI::tvd_3rd_order);
+  AdvectionTransient<AnalyticDG06>("square",  80,  80, 0.01 / 4, Amanzi::Explicit_TI::tvd_3rd_order);
+  AdvectionTransient<AnalyticDG06>("square", 160, 160, 0.01 / 8, Amanzi::Explicit_TI::tvd_3rd_order);
 
   AdvectionTransient<AnalyticDG06>("test/triangular8.exo",    8, 0, 0.01, Amanzi::Explicit_TI::tvd_3rd_order);
   AdvectionTransient<AnalyticDG06>("test/triangular16.exo",  16, 0, 0.01 / 2, Amanzi::Explicit_TI::tvd_3rd_order);
