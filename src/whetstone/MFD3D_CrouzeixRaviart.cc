@@ -142,7 +142,7 @@ int MFD3D_CrouzeixRaviart::H1consistencyHO_(
   G_.Reshape(nd, nd);
 
   // pre-calculate integrals of monomials 
-  NumericalIntegration numi(mesh_);
+  NumericalIntegration numi(mesh_, true);
   numi.UpdateMonomialIntegralsCell(c, 2 * order_ - 2, integrals_);
 
   // populate matrices N and R
@@ -468,7 +468,7 @@ void MFD3D_CrouzeixRaviart::ProjectorCell_HO_(
 
   // calculate DOFs for boundary polynomial
   DenseVector vdof(ndof);
-  NumericalIntegration numi(mesh_);
+  NumericalIntegration numi(mesh_, true);
 
   for (int i = 0; i < dim; ++i) {
     int row(0);
@@ -539,8 +539,7 @@ void MFD3D_CrouzeixRaviart::ProjectorCell_HO_(
     if (type == Type::L2 && ndof_c > 0) {
       v5(0) = uc[i](0, 0);
 
-      DG_Modal dg(order_, mesh_);
-      dg.set_basis(TAYLOR_BASIS_NATURAL);
+      DG_Modal dg(order_, mesh_, "natural");
 
       DenseMatrix M, M2;
       DenseVector v6(nd - ndof_c);
@@ -625,7 +624,7 @@ void MFD3D_CrouzeixRaviart::ProjectorGradientCell_(
   }
 
   std::vector<const Polynomial*> polys(2);
-  NumericalIntegration numi(mesh_);
+  NumericalIntegration numi(mesh_, true);
 
   for (int i = 0; i < dim; ++i) {
     int row;
@@ -692,8 +691,7 @@ void MFD3D_CrouzeixRaviart::ProjectorGradientCell_(
 
       // calculate coefficients of polynomial
       DenseMatrix M;
-      DG_Modal dg(order_ - 1, mesh_);
-      dg.set_basis(TAYLOR_BASIS_NATURAL);
+      DG_Modal dg(order_ - 1, mesh_, "natural");
       dg.MassMatrix(c, T, integrals_, M);
 
       M.Inverse();
@@ -720,7 +718,7 @@ void MFD3D_CrouzeixRaviart::CalculateFaceDOFs_(
   std::vector<const Polynomial*> polys(2);
   std::vector<AmanziGeometry::Point> tau(d_ - 1);
 
-  NumericalIntegration numi(mesh_);
+  NumericalIntegration numi(mesh_, true);
 
   const AmanziGeometry::Point& xf = mesh_->face_centroid(f); 
   double area = mesh_->face_area(f);

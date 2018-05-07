@@ -9,20 +9,23 @@
 
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 
-  Numerical and exact integration over polytopal cells.
+  Numerical and exact integration over polytopal cells. An object of
+  this class can be used both for the whole mesh and single cell. 
 */
 
 #ifndef AMANZI_WHETSTONE_NUMERICAL_INTEGRATION_HH_
 #define AMANZI_WHETSTONE_NUMERICAL_INTEGRATION_HH_
+
+#include <memory>
 
 #include "Teuchos_RCP.hpp"
 
 #include "Mesh.hh"
 #include "Point.hh"
 
+#include "Basis_Natural.hh"
 #include "Polynomial.hh"
 #include "PolynomialOnMesh.hh"
-
 #include "Quadrature1D.hh"
 #include "Quadrature2D.hh"
 
@@ -31,11 +34,7 @@ namespace WhetStone {
 
 class NumericalIntegration { 
  public:
-  NumericalIntegration(Teuchos::RCP<const AmanziMesh::Mesh> mesh)
-    : mesh_(mesh),
-      d_(mesh_->space_dimension()),
-      cached_data_(false) {};
-
+  NumericalIntegration(Teuchos::RCP<const AmanziMesh::Mesh> mesh, bool single_cell);
   ~NumericalIntegration() {};
 
   // main methods
@@ -92,10 +91,6 @@ class NumericalIntegration {
   // -- polynomial is converted from natural to regular basis
   void ChangeBasisNaturalToRegular(int c, Polynomial& p);
 
-  // management of cached data
-  // -- calculate natural scales for all monomials on mesh (expensive!)
-  void CalculateCachedMonomialScales(int order);
-
  private:
   void IntegrateMonomialsFace_(int c, int f, double factor, Monomial& monomials);
   void IntegrateMonomialsEdge_(
@@ -109,8 +104,9 @@ class NumericalIntegration {
   int d_;
 
   // cached variables
-  bool cached_data_;
-  std::vector<std::vector<double> > monomial_scales_;  // mesh-dependend scales of monomials
+  bool single_cell_;
+  Basis_Natural single_cell_basis_;
+  std::vector<Basis_Natural> basis_;
 };
 
 }  // namespace WhetStone

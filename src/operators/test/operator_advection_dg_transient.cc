@@ -116,7 +116,7 @@ class AdvectionFn : public Explicit_TI::fnBase<CompositeVector> {
     int nk = (order + 1) * (order + 2) / 2;
 
     WhetStone::Polynomial sol, src, pc(2, order);
-    WhetStone::NumericalIntegration numi(mesh_);
+    WhetStone::NumericalIntegration numi(mesh_, false);
 
     CompositeVector& rhs = *global_op_->rhs();
     Epetra_MultiVector& rhs_c = *rhs.ViewComponent("cell");
@@ -235,9 +235,9 @@ class AdvectionFn : public Explicit_TI::fnBase<CompositeVector> {
     // create a mesh map at time t
     Teuchos::ParameterList map_list;
     map_list.set<std::string>("method", "CrouzeixRaviart")
-            .set<int>("method order", 1)
+            .set<int>("method order", 2)
             .set<std::string>("projector", "H1 harmonic")
-            .set<std::string>("map name", "PEM");
+            .set<std::string>("map name", "VEM");
   
     WhetStone::MeshMapsFactory maps_factory;
     auto maps = maps_factory.Create(map_list, mesh_, mesh_new);
@@ -341,8 +341,7 @@ void AdvectionTransient(std::string filename, int nx, int ny, double dt,
   sol.PutScalar(0.0);
 
   AnalyticDG ana(mesh, order);
-  WhetStone::DG_Modal dg(order, mesh);
-  dg.set_basis(WhetStone::TAYLOR_BASIS_NATURAL);
+  WhetStone::DG_Modal dg(order, mesh, "natural");
 
   Epetra_MultiVector& sol_c = *sol.ViewComponent("cell");
   ana.InitialGuess(dg, sol_c, 0.0);
@@ -410,10 +409,10 @@ TEST(OPERATOR_ADVECTION_TRANSIENT_DG) {
   AdvectionTransient<AnalyticDG06>("test/triangular64.exo",  64, 0, 0.01 / 8, Amanzi::Explicit_TI::tvd_3rd_order);
   AdvectionTransient<AnalyticDG06>("test/triangular128.exo",128, 0, 0.01 / 16,Amanzi::Explicit_TI::tvd_3rd_order);
 
-  AdvectionTransient("test/median15x16.exo", 16, 16, 0.05 / 2, Amanzi::Explicit_TI::tvd_3rd_order);
-  AdvectionTransient("test/median32x33.exo", 32, 0, 0.05 / 4, Amanzi::Explicit_TI::tvd_3rd_order);
-  AdvectionTransient("test/median63x64.exo", 64, 0, 0.05 / 8, Amanzi::Explicit_TI::tvd_3rd_order);
-  AdvectionTransient("test/median127x128.exo", 128, 0, 0.05 / 16, Amanzi::Explicit_TI::tvd_3rd_order);
+  AdvectionTransient<AnalyticDG06>("test/median15x16.exo",   16, 0, 0.05 / 2, Amanzi::Explicit_TI::tvd_3rd_order);
+  AdvectionTransient<AnalyticDG06>("test/median32x33.exo",   32, 0, 0.05 / 4, Amanzi::Explicit_TI::tvd_3rd_order);
+  AdvectionTransient<AnalyticDG06>("test/median63x64.exo",   64, 0, 0.05 / 8, Amanzi::Explicit_TI::tvd_3rd_order);
+  AdvectionTransient<AnalyticDG06>("test/median127x128.exo",128, 0, 0.05 / 16, Amanzi::Explicit_TI::tvd_3rd_order);
   */ 
 }
 

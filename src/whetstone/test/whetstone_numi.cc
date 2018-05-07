@@ -39,7 +39,7 @@ TEST(NUMI_CELL_2D_EULER_FORMULA) {
   Teuchos::RCP<const Amanzi::AmanziGeometry::GeometricModel> gm;
   Teuchos::RCP<Mesh> mesh = meshfactory("test/one_pentagon.exo", gm, true, true); 
  
-  NumericalIntegration numi(mesh);
+  NumericalIntegration numi(mesh, true);
 
   int cell(0);
   double val;
@@ -80,7 +80,7 @@ TEST(NUMI_CELL_2D_QUADRATURE_POLYGON) {
   Teuchos::RCP<const Amanzi::AmanziGeometry::GeometricModel> gm;
   Teuchos::RCP<Mesh> mesh = meshfactory("test/one_pentagon.exo", gm, true, true); 
  
-  NumericalIntegration numi(mesh);
+  NumericalIntegration numi(mesh, true);
 
   int cell(0);
   double val1, val2;
@@ -131,7 +131,7 @@ TEST(NUMI_CELL_2D_QUADRATURE_SQUARE) {
   Teuchos::RCP<const Amanzi::AmanziGeometry::GeometricModel> gm;
   Teuchos::RCP<Mesh> mesh = meshfactory(-1.0, -1.0, 1.0, 1.0, 2, 2); 
  
-  NumericalIntegration numi(mesh);
+  NumericalIntegration numi(mesh, true);
 
   int cell(3);
   double val, exact;

@@ -86,7 +86,7 @@ class AnalyticDGBase {
   // initial guess
   void InitialGuess(Amanzi::WhetStone::DG_Modal& dg, Epetra_MultiVector& p, double t) {
     Amanzi::WhetStone::Polynomial coefs;
-    Amanzi::WhetStone::NumericalIntegration numi(mesh_);
+    Amanzi::WhetStone::NumericalIntegration numi(mesh_, false);
 
     int ncells = mesh_->num_entities(Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::Parallel_type::ALL);
     for (int c = 0; c < ncells; ++c) {
@@ -97,14 +97,12 @@ class AnalyticDGBase {
       Amanzi::WhetStone::DenseVector data;
       coefs.GetPolynomialCoefficients(data);
 
-      double a, b;
-      for (auto it = coefs.begin(); it.end() <= coefs.end(); ++it) {
-        int n = it.PolynomialPosition();
+      const Amanzi::WhetStone::Basis& basis = dg.cell_basis(c);
+      basis.ChangeBasisVector(data);
 
-        dg.TaylorBasis(c, it, &a, &b);
-        p[n][c] = data(n) / a;
-        p[0][c] += data(n) * b;
-      } 
+      for (int n = 0; n < data.NumRows(); ++n) {
+        p[n][c] = data(n);
+      }
     }
   }
 
@@ -116,7 +114,7 @@ class AnalyticDGBase {
     l2_err = l2_mean = 0.0;
     inf_err = inf_mean = 0.0;
 
-    Amanzi::WhetStone::NumericalIntegration numi(mesh_);
+    Amanzi::WhetStone::NumericalIntegration numi(mesh_, false);
 
     int ncells = mesh_->num_entities(Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::Parallel_type::OWNED);
     for (int c = 0; c < ncells; c++) {

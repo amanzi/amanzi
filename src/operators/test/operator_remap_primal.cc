@@ -112,7 +112,7 @@ void RemapTests2DPrimal(int order, std::string disc_name,
   auto maps = maps_factory.Create(map_list, mesh0, mesh1);
 
   // numerical integration
-  WhetStone::NumericalIntegration numi(mesh0);
+  WhetStone::NumericalIntegration numi(mesh0, false);
 
   // create and initialize cell-based field 
   CompositeVectorSpace cvs1;
@@ -121,8 +121,7 @@ void RemapTests2DPrimal(int order, std::string disc_name,
   Epetra_MultiVector& p1c = *p1->ViewComponent("cell", true);
 
   // we need dg to compute scaling of basis functions
-  WhetStone::DG_Modal dg(order, mesh0);
-  dg.set_basis(WhetStone::TAYLOR_BASIS_NORMALIZED_ORTHO);
+  WhetStone::DG_Modal dg(order, mesh0, "orthonormalized");
 
   AnalyticDG04 ana(mesh0, order);
   ana.InitialGuess(dg, p1c, 1.0);
@@ -167,7 +166,7 @@ void RemapTests2DPrimal(int order, std::string disc_name,
   // create flux operator
   Teuchos::ParameterList plist;
   plist.set<std::string>("method", disc_name)
-       .set<std::string>("dg basis", "partially orthonormalized")
+       .set<std::string>("dg basis", "orthonormalized")
        .set<std::string>("matrix type", "flux")
        .set<std::string>("flux formula", "downwind")
        .set<int>("method order", order)

@@ -19,6 +19,22 @@ namespace Amanzi {
 namespace WhetStone {
 
 /* ******************************************************************
+* Constructor.
+****************************************************************** */
+NumericalIntegration::NumericalIntegration(
+    Teuchos::RCP<const AmanziMesh::Mesh> mesh, bool single_cell)
+  : mesh_(mesh),
+    d_(mesh_->space_dimension()),
+    single_cell_(single_cell)
+{
+  if (! single_cell_) {
+    int ncells_wghost = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
+    basis_.resize(ncells_wghost);
+  }
+}
+
+
+/* ******************************************************************
 * Integrate over triangulated face a product of polynomials.
 ****************************************************************** */
 double NumericalIntegration::IntegratePolynomialsTrianglatedCell(
@@ -432,45 +448,17 @@ double NumericalIntegration::PolynomialMaxValue(int f, const Polynomial& poly)
 
 
 /* ******************************************************************
-* Cached data: scales of monomials.
-****************************************************************** */
-void NumericalIntegration::CalculateCachedMonomialScales(int order)
-{
-  cached_data_ = true;
-  int ncells_wghost = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
-  monomial_scales_.resize(ncells_wghost);
-
-  for (int c = 0; c < ncells_wghost; ++c) {
-    double volume = mesh_->cell_volume(c);
-
-    monomial_scales_[c].clear();
-    for (int k = 0; k < order + 1; ++k) {
-      double scale = MonomialNaturalSingleScale_(k, volume);
-      monomial_scales_[c].push_back(scale);
-    }
-  }
-}
-
-
-/* ******************************************************************
 * Re-scale polynomial coefficients: lazy implementation.
 * Scaling factor is constant for monomials of the same order.
 ****************************************************************** */
 double NumericalIntegration::MonomialNaturalScales(int c, int k) {
-  if (cached_data_) {
-    int k0 = monomial_scales_[c].size();
-    if (k >= k0) {
-      double volume = mesh_->cell_volume(c);
-      for (int l = k0; l < k + 1; ++l) {
-        double scale = MonomialNaturalSingleScale_(l, volume);
-        monomial_scales_[c].push_back(scale);
-      }
-    }
-    return monomial_scales_[c][k];
+  if (! single_cell_) {
+    basis_[c].Init(mesh_, c, k);
+    return basis_[c].monomial_scales()[k];
   }
 
-  double volume = mesh_->cell_volume(c);
-  return MonomialNaturalSingleScale_(k, volume);
+  single_cell_basis_.Init(mesh_, c, k);
+  return single_cell_basis_.monomial_scales()[k];
 }
 
 

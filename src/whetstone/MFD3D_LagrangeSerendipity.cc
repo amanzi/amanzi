@@ -63,7 +63,7 @@ int MFD3D_LagrangeSerendipity::H1consistency(
   MFD3D_Lagrange::H1consistency(c, K, Nf, Af);
 
   // pre-calculate integrals of monomials 
-  NumericalIntegration numi(mesh_);
+  NumericalIntegration numi(mesh_, true);
   numi.UpdateMonomialIntegralsCell(c, 2 * order_, integrals_);
 
   // set the Gramm-Schidt matrix for polynomials
@@ -167,7 +167,8 @@ void MFD3D_LagrangeSerendipity::L2Cell(
     int c, const std::vector<VectorPolynomial>& vf,
     const std::shared_ptr<DenseVector>& moments, VectorPolynomial& uc)
 {
-  NumericalIntegration numi(mesh_);
+  // create integration object for a single cell
+  NumericalIntegration numi(mesh_, true);
 
   // calculate stiffness matrix
   Tensor T(d_, 1);
@@ -236,7 +237,7 @@ void MFD3D_LagrangeSerendipity::CalculateDOFsOnBoundary_(
   int nfaces = faces.size();
 
   std::vector<const Polynomial*> polys(2);
-  NumericalIntegration numi(mesh_);
+  NumericalIntegration numi(mesh_, true);
 
   AmanziGeometry::Point xv(d_);
   std::vector<AmanziGeometry::Point> tau(d_ - 1);

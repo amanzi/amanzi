@@ -258,7 +258,7 @@ TEST(HARMONIC_PROJECTORS_POLYGON_CR) {
 
   int dir;
   double val1(0.0), valx(0.0);
-  NumericalIntegration numi(mesh);
+  NumericalIntegration numi(mesh, true);
 
   for (int n = 0; n < nfaces; ++n) {
     const AmanziGeometry::Point& normal = mesh->face_normal(n, false, cell, &dir);
@@ -579,7 +579,7 @@ TEST(HARMONIC_PROJECTORS_POLYGON_PK) {
 
   int dir;
   double val1(0.0), valx(0.0);
-  NumericalIntegration numi(mesh);
+  NumericalIntegration numi(mesh, true);
 
   for (int n = 0; n < nfaces; ++n) {
     const AmanziGeometry::Point& normal = mesh->face_normal(n, false, cell, &dir);

@@ -48,8 +48,7 @@ TEST(DG2D_MASS_MATRIX) {
   T(0, 0) = 1.0;
 
   for (int k = 0; k < 3; k++) {
-    DG_Modal dg(k, mesh);
-    dg.set_basis(TAYLOR_BASIS_NORMALIZED_ORTHO);
+    DG_Modal dg(k, mesh, "orthonormalized");
 
     dg.MassMatrix(0, T, M);
     int nk = M.NumRows();
@@ -91,11 +90,8 @@ TEST(DG3D_MASS_MATRIX) {
   T(0, 0) = 2.0;
 
   for (int k = 0; k < 3; k++) {
-    DG_Modal dg(k, mesh);
-
-    // natural Taylor basis
-    dg.set_basis(WhetStone::TAYLOR_BASIS_NATURAL);
-    dg.MassMatrix(0, T, M0);
+    DG_Modal dg1(k, mesh, "natural");
+    dg1.MassMatrix(0, T, M0);
     int nk = M0.NumRows();
 
     if (k > 0) {
@@ -111,7 +107,7 @@ TEST(DG3D_MASS_MATRIX) {
     Polynomial u(3, 0);
     u(0, 0) = 2.0;
 
-    dg.MassMatrix(0, u, M1);
+    dg1.MassMatrix(0, u, M1);
     M1 -= M0;
     CHECK_CLOSE(M1.NormInf(), 0.0, 1e-12);
 
@@ -133,8 +129,8 @@ TEST(DG3D_MASS_MATRIX) {
     }
 
     // partially orthonormalized Taylor basis
-    dg.set_basis(WhetStone::TAYLOR_BASIS_NORMALIZED_ORTHO);
-    dg.MassMatrix(0, T, M0);
+    DG_Modal dg2(k, mesh, "orthonormalized");
+    dg2.MassMatrix(0, T, M0);
 
     printf("Mass matrix for order=%d\n", k);
     for (int i = 0; i < nk; i++) {
@@ -171,8 +167,7 @@ TEST(DG2D_MASS_MATRIX_POLYNOMIAL) {
   DenseMatrix M1, M2;
 
   for (int k = 0; k < 3; k++) {
-    DG_Modal dg(2, mesh);
-    dg.set_basis(TAYLOR_BASIS_NORMALIZED_ORTHO);
+    DG_Modal dg(2, mesh, "orthonormalized");
 
     Polynomial u(2, k);
     u.monomials(0).coefs()[0] = 1.0;
@@ -232,8 +227,7 @@ TEST(DG2D_ADVECTION_MATRIX_FACE) {
   Teuchos::RCP<Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 2, 2); 
  
   for (int k = 0; k < 3; k++) {
-    DG_Modal dg(k, mesh);
-    dg.set_basis(TAYLOR_BASIS_NORMALIZED_ORTHO);
+    DG_Modal dg(k, mesh, "orthonormalized");
 
     Polynomial un(2, 0);
     un.monomials(0).coefs()[0] = 1.0;
@@ -289,8 +283,7 @@ TEST(DG3D_ADVECTION_MATRIX_FACE) {
                                         Teuchos::null, true, true); 
  
   for (int k = 0; k < 2; k++) {
-    DG_Modal dg(k, mesh);
-    dg.set_basis(WhetStone::TAYLOR_BASIS_NORMALIZED_ORTHO);
+    DG_Modal dg(k, mesh, "orthonormalized");
 
     int d(3), f(4);
     Polynomial un(d, 0);
@@ -347,11 +340,9 @@ TEST(DG2D_ADVECTION_MATRIX_CELL) {
   Teuchos::RCP<Mesh> mesh = meshfactory("test/one_quad.exo"); 
 
   for (int k = 0; k < 3; k++) {
-    DG_Modal dg(k, mesh);
-    dg.set_basis(WhetStone::TAYLOR_BASIS_NATURAL);
+    DG_Modal dg(k, mesh, "natural");
 
     DenseMatrix A0, A1;
-
     VectorPolynomial u(2, 2);
     for (int i = 0; i < 2; ++i) u[i].Reshape(2, 2);
 
@@ -470,11 +461,9 @@ TEST(DG3D_ADVECTION_MATRIX_CELL) {
 
   int d(3);
   for (int k = 0; k < 2; k++) {
-    DG_Modal dg(k, mesh);
-    dg.set_basis(WhetStone::TAYLOR_BASIS_NATURAL);
+    DG_Modal dg(k, mesh, "natural");
 
     DenseMatrix A0;
-
     VectorPolynomial u(d, 3);
     for (int i = 0; i < d; ++i) u[i].Reshape(d, 1, true);
 

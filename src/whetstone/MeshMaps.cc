@@ -301,7 +301,7 @@ void MeshMaps::ProjectPolynomial(int c, Polynomial& poly) const
 
   auto moments = std::make_shared<WhetStone::DenseVector>();
   if (order == 2) {
-    NumericalIntegration numi(mesh1_);
+    NumericalIntegration numi(mesh1_, true);
     double mass = numi.IntegratePolynomialCell(c, poly);
 
     moments->Reshape(1);

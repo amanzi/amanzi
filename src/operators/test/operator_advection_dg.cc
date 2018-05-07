@@ -141,7 +141,7 @@ void AdvectionSteady(std::string filename, int nx)
   int nk = (order + 1) * (order + 2) / 2;
 
   WhetStone::Polynomial pc(2, order);
-  WhetStone::NumericalIntegration numi(mesh);
+  WhetStone::NumericalIntegration numi(mesh, false);
 
   Epetra_MultiVector& rhs_c = *global_op->rhs()->ViewComponent("cell");
   for (int c = 0; c < ncells; ++c) {

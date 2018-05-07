@@ -85,7 +85,7 @@ TEST(DG_MAP_DETERMINANT_CELL) {
   MatrixPolynomial J;
 
   auto moments = std::make_shared<WhetStone::DenseVector>();
-  auto numi = std::make_shared<NumericalIntegration>(mesh0);
+  auto numi = std::make_shared<NumericalIntegration>(mesh0, true);
   std::vector<const char*> list = {"HarmonicCRk", "L2HarmonicPk", "HarmonicPk", "SerendipityPk"};
   
   for (auto name : list) {

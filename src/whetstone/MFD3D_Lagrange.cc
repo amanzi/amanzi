@@ -71,7 +71,7 @@ int MFD3D_Lagrange::H1consistency(
   G_.Reshape(nd, nd);
 
   // pre-calculate integrals of monomials 
-  NumericalIntegration numi(mesh_);
+  NumericalIntegration numi(mesh_, true);
   numi.UpdateMonomialIntegralsCell(c, 2 * order_ - 2, integrals_);
 
   // populate matrices N and R
@@ -358,7 +358,7 @@ void MFD3D_Lagrange::ProjectorCell_(
 
   DenseVector vdof(ndof);
   std::vector<const Polynomial*> polys(2);
-  NumericalIntegration numi(mesh_);
+  NumericalIntegration numi(mesh_, true);
 
   AmanziGeometry::Point xv(d_);
   std::vector<AmanziGeometry::Point> tau(d_ - 1);
@@ -468,8 +468,7 @@ void MFD3D_Lagrange::ProjectorCell_(
     if (type == Type::L2 && ndof_c > 0) {
       v5(0) = uc[i](0, 0);
 
-      DG_Modal dg(order_, mesh_);
-      dg.set_basis(TAYLOR_BASIS_NATURAL);
+      DG_Modal dg(order_, mesh_, "natural");
 
       DenseMatrix M, M2;
       DenseVector v6(nd - ndof_c);

@@ -143,7 +143,7 @@ TEST(OPERATOR_DIFFUSION_DG) {
   Epetra_MultiVector& src_c = *src.ViewComponent("cell");
 
   WhetStone::Polynomial pc(2, order);
-  WhetStone::NumericalIntegration numi(mesh);
+  WhetStone::NumericalIntegration numi(mesh, false);
 
   for (int c = 0; c < ncells; ++c) {
     const Point& xc = mesh->cell_centroid(c);
@@ -225,7 +225,7 @@ TEST(OPERATOR_DIFFUSION_DG) {
 
   if (MyPID == 0) {
     printf("Mean:  L2(p)=%9.6f  Inf(p)=%9.6f  itr=%3d\n", pl2_mean, pinf_mean, solver.num_itrs());
-    printf("Total: L2(p)=%9.6f  Inf(p)=%9.6f\n", pl2_err, pinf_err, solver.num_itrs());
+    printf("Total: L2(p)=%9.6f  Inf(p)=%9.6f\n", pl2_err, pinf_err);
 
     CHECK(pl2_err < 3e-2);
   }

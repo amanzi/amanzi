@@ -162,7 +162,8 @@ void PDE_AdvectionRiemann::ApplyBCs(const Teuchos::RCP<BCs>& bc, bool primary)
   int dir, d = mesh_->space_dimension();
   std::vector<AmanziGeometry::Point> tau(d - 1);
 
-  WhetStone::NumericalIntegration numi(mesh_);
+  // create integration object for all mesh cells
+  WhetStone::NumericalIntegration numi(mesh_, false);
 
   for (int f = 0; f != nfaces_owned; ++f) {
     if (bc_model[f] == OPERATOR_BC_DIRICHLET) {

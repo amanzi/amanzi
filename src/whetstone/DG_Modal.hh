@@ -16,6 +16,8 @@
 #ifndef AMANZI_WHETSTONE_DG_MODAL_HH_
 #define AMANZI_WHETSTONE_DG_MODAL_HH_
 
+#include <memory>
+
 #include "Teuchos_RCP.hpp"
 
 // Amanzi
@@ -23,6 +25,7 @@
 #include "Point.hh"
 
 // WhetStone
+#include "Basis.hh"
 #include "BilinearForm.hh"
 #include "DenseMatrix.hh"
 #include "DenseVector.hh"
@@ -39,26 +42,10 @@ class Polynomial;
 
 class DG_Modal : public BilinearForm {
  public:
-  DG_Modal(Teuchos::RCP<const AmanziMesh::Mesh> mesh) 
-    : numi_(mesh),
-      mesh_(mesh),
-      order_(-1),
-      basis_(-1),
-      d_(mesh_->space_dimension()) {};
-
-  DG_Modal(int order, Teuchos::RCP<const AmanziMesh::Mesh> mesh)
-    : numi_(mesh),
-      order_(order), 
-      mesh_(mesh),
-      basis_(-1),
-      d_(mesh_->space_dimension()) {};
-
+  DG_Modal(int order, Teuchos::RCP<const AmanziMesh::Mesh> mesh, std::string basis_name);
   ~DG_Modal() {};
 
   // basic member functions
-  // -- initialization
-  void Init();
-
   // -- mass matrices
   virtual int MassMatrix(int c, const Tensor& K, DenseMatrix& M) override;
   virtual int MassMatrix(int c, const VectorPolynomial& K, DenseMatrix& M) override {
@@ -113,19 +100,14 @@ class DG_Modal : public BilinearForm {
   virtual int L2consistencyInverse(int c, const Tensor& T, DenseMatrix& R, DenseMatrix& Wc, bool symmetry) override { return 0; }
   virtual int H1consistency(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Mc) override { return 0; }
 
-  // scaling of Taylor basis function: \psi_k -> a (\psi_k - b \psi_0)
-  void TaylorBasis(int c, const Iterator& it, double* a, double* b);
-  
-  // create polynomial given array of its coefficients
-  Polynomial CalculatePolynomial(int c, const DenseVector& coefs) const;
-
   // miscalleneous
   // -- order of polynomials in each cell
   void set_order(int order) { order_ = order; }
   int order() { return order_; }
-  // -- modifications of Taylor basis. Available options are natural, 
-  //    normalized by volume, normalized aind orthogonalized to constant
-  void set_basis(int basis) { basis_ = basis; }
+  const Basis& cell_basis(int c) { return *basis_[c]; }
+
+  // deprecated
+  void UpdateScales_(int c, int order);
 
  private:
   int MassMatrixPoly_(int c, const Polynomial& K, DenseMatrix& M);
@@ -135,19 +117,16 @@ class DG_Modal : public BilinearForm {
   int AdvectionMatrixPiecewisePoly_(int c, const VectorPolynomial& uc, DenseMatrix& A, bool grad_on_test);
 
   void UpdateIntegrals_(int c, int order);
-  void UpdateScales_(int c, int order);
-  void ChangeBasis_(int c, DenseMatrix& A);
-  void ChangeBasis_(int c1, int c2, DenseMatrix& A);
 
  private:
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
   NumericalIntegration numi_;
   int order_, d_;
-  int basis_;
 
   VectorPolynomial integrals_;  // integrals of non-normalized monomials
   VectorPolynomial scales_a_;   // partial orthonormalization of Taylor basis
   VectorPolynomial scales_b_;  
+  std::vector<std::shared_ptr<Basis> > basis_;
 };
 
 }  // namespace WhetStone

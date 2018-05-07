@@ -69,20 +69,8 @@ Teuchos::RCP<BilinearForm> MFD3DFactory::Create(
   if (mfd != Teuchos::null) {
     return mfd;
   } else if (method_ == "dg modal") {
-    Teuchos::RCP<DG_Modal> mfd = Teuchos::rcp(new DG_Modal(mesh));
-    mfd->set_order(method_order);
-
     std::string name = plist.get<std::string>("dg basis");
-    if (name == "natural") {
-      mfd->set_basis(TAYLOR_BASIS_NATURAL);
-    } else if (name == "partially orthonormalized") {
-      mfd->set_basis(TAYLOR_BASIS_NORMALIZED_ORTHO);
-    } else {
-      ASSERT(false);
-    }
-
-    mfd->Init();
-
+    Teuchos::RCP<DG_Modal> mfd = Teuchos::rcp(new DG_Modal(method_order, mesh, name));
     return mfd;
   }
 

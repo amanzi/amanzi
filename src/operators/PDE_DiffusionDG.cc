@@ -109,8 +109,7 @@ void PDE_DiffusionDG::SetProblemCoefficients(
 void PDE_DiffusionDG::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& flux,
                                      const Teuchos::Ptr<const CompositeVector>& u)
 {
-  WhetStone::DG_Modal dg(method_order_, mesh_);
-  dg.set_basis(WhetStone::TAYLOR_BASIS_NATURAL);
+  WhetStone::DG_Modal dg(method_order_, mesh_, "natural");
   WhetStone::DenseMatrix Acell, Aface;
 
   int d = mesh_->space_dimension();
@@ -165,7 +164,8 @@ void PDE_DiffusionDG::ApplyBCs(bool primary, bool eliminate)
   int dir, d = mesh_->space_dimension();
   std::vector<AmanziGeometry::Point> tau(d - 1);
 
-  WhetStone::NumericalIntegration numi(mesh_);
+  // create integration object for all mesh cells
+  WhetStone::NumericalIntegration numi(mesh_, false);
 
   for (int f = 0; f != nfaces_owned; ++f) {
     if (bc_model[f] == OPERATOR_BC_DIRICHLET ||

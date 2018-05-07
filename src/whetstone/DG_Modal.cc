@@ -14,6 +14,7 @@
 
 #include "Point.hh"
 
+#include "BasisFactory.hh"
 #include "DenseMatrix.hh"
 #include "DG_Modal.hh"
 #include "MeshUtils.hh"
@@ -25,12 +26,21 @@ namespace Amanzi {
 namespace WhetStone {
 
 /* ******************************************************************
-* Optional initialization. It is recommended for efficient code.
+* Constructor.
 ****************************************************************** */
-void DG_Modal::Init()
+DG_Modal::DG_Modal(int order, Teuchos::RCP<const AmanziMesh::Mesh> mesh, std::string basis_name)
+  : numi_(mesh, false),
+    order_(order), 
+    mesh_(mesh),
+    d_(mesh_->space_dimension())
 {
-  if (basis_ == TAYLOR_BASIS_NATURAL) {
-    numi_.CalculateCachedMonomialScales(order_);
+  int ncells_wghost = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
+  basis_.resize(ncells_wghost);
+
+  BasisFactory factory;
+  for (int c = 0; c < ncells_wghost; ++c) {
+    basis_[c] = factory.Create(basis_name);
+    basis_[c]->Init(mesh_, c, order_);
   }
 }
 
@@ -72,7 +82,7 @@ int DG_Modal::MassMatrix(int c, const Tensor& K, DenseMatrix& M)
     }
   }
 
-  ChangeBasis_(c, M);
+  basis_[c]->ChangeBasisMatrix(M);
 
   return 0;
 }
@@ -115,7 +125,7 @@ int DG_Modal::MassMatrix(
     }
   }
 
-  ChangeBasis_(c, M);
+  basis_[c]->ChangeBasisMatrix(M);
 
   return 0;
 }
@@ -177,7 +187,7 @@ int DG_Modal::MassMatrixPoly_(int c, const Polynomial& K, DenseMatrix& M)
     }
   }
 
-  ChangeBasis_(c, M);
+  basis_[c]->ChangeBasisMatrix(M);
 
   return 0;
 }
@@ -250,7 +260,7 @@ int DG_Modal::MassMatrixPiecewisePoly_(
     }
   }
 
-  ChangeBasis_(c, M);
+  basis_[c]->ChangeBasisMatrix(M);
 
   return 0;
 }
@@ -317,7 +327,7 @@ int DG_Modal::StiffnessMatrix(int c, const Tensor& K, DenseMatrix& A)
     }
   }
 
-  ChangeBasis_(c, A);
+  basis_[c]->ChangeBasisMatrix(A);
 
   return 0;
 }
@@ -393,7 +403,7 @@ int DG_Modal::AdvectionMatrixPoly_(
     A.Transpose();
   }
 
-  ChangeBasis_(c, A);
+  basis_[c]->ChangeBasisMatrix(A);
 
   return 0;
 }
@@ -477,7 +487,7 @@ int DG_Modal::AdvectionMatrixPiecewisePoly_(
     A.Transpose();
   }
 
-  ChangeBasis_(c, A);
+  basis_[c]->ChangeBasisMatrix(A);
 
   return 0;
 }
@@ -595,9 +605,9 @@ int DG_Modal::FluxMatrix(int f, const Polynomial& un, DenseMatrix& A,
   }
 
   if (ncells == 1) {
-    ChangeBasis_(cells[0], A);
+    basis_[cells[0]]->ChangeBasisMatrix(A);
   } else { 
-    ChangeBasis_(cells[0], cells[1], A);
+    basis_[cells[0]]->ChangeBasisMatrix(basis_[cells[0]], basis_[cells[1]], A);
   }
 
   return 0;
@@ -710,7 +720,7 @@ int DG_Modal::FluxMatrixRusanov(
     }
   }
 
-  ChangeBasis_(cells[0], cells[1], A);
+  basis_[cells[0]]->ChangeBasisMatrix(basis_[cells[0]], basis_[cells[1]], A);
 
   return 0;
 }
@@ -815,9 +825,9 @@ int DG_Modal::FaceMatrixJump(int f, const Tensor& K1, const Tensor& K2, DenseMat
   }
 
   if (ncells == 1) {
-    ChangeBasis_(c1, A);
+    basis_[c1]->ChangeBasisMatrix(A);
   } else {
-    ChangeBasis_(c1, c2, A);
+    basis_[c1]->ChangeBasisMatrix(basis_[c1], basis_[c2], A);
   }
 
   return 0;
@@ -903,160 +913,12 @@ int DG_Modal::FaceMatrixPenalty(int f, double Kf, DenseMatrix& A)
   }
 
   if (ncells == 1) {
-    ChangeBasis_(c1, A);
+    basis_[c1]->ChangeBasisMatrix(A);
   } else {
-    ChangeBasis_(c1, c2, A);
+    basis_[c1]->ChangeBasisMatrix(basis_[c1], basis_[c2], A);
   }
 
   return 0;
-}
-
-
-/* ******************************************************************
-* Change basis from unscaled monomials to Taylor basis for a cell
-****************************************************************** */
-void DG_Modal::ChangeBasis_(int c, DenseMatrix& A)
-{
-  // optional update of integrals database
-  UpdateIntegrals_(c, 2 * order_);
- 
-  int nrows = A.NumRows();
-  double ak, bk;
-  std::vector<double> a(nrows), b(nrows);
-
-  Iterator it(d_);
-  for (it.begin(); it.end() <= order_; ++it) {
-    int k = it.PolynomialPosition();
-    TaylorBasis(c, it, &ak, &bk);
-    a[k] = ak;
-    b[k] = -ak * bk;
-  }
-
-  // calculate A * R
-  for (int k = 1; k < nrows; ++k) {
-    for (int i = 0; i < nrows; ++i) {
-      A(i, k) = A(i, k) * a[k] + A(i, 0) * b[k];
-    }
-  }
-
-  // calculate R^T * A * R
-  for (int k = 1; k < nrows; ++k) {
-    for (int i = 0; i < nrows; ++i) {
-      A(k, i) = A(k, i) * a[k] + A(0, i) * b[k];
-    }
-  }
-}
-
-
-/* ******************************************************************
-* Change basis from unscaled monomials to Taylor basis for a face
-****************************************************************** */
-void DG_Modal::ChangeBasis_(int c1, int c2, DenseMatrix& A)
-{
-  // optional update of integrals database
-  UpdateIntegrals_(c1, 2 * order_);
-  UpdateIntegrals_(c2, 2 * order_);
-
-  int nrows = A.NumRows();
-  int m(nrows / 2);
-  std::vector<double> a1(m), a2(m), b1(m), b2(m);
-
-  Iterator it(d_);
-  for (it.begin(); it.end() <= order_; ++it) {
-    int k = it.PolynomialPosition();
-
-    double ak, bk;
-    TaylorBasis(c1, it, &ak, &bk);
-    a1[k] = ak;
-    b1[k] = -ak * bk;
-
-    TaylorBasis(c2, it, &ak, &bk);
-    a2[k] = ak;
-    b2[k] = -ak * bk;
-  }
-
-  // calculate A * R
-  for (int k = 1; k < m; ++k) {
-    for (int i = 0; i < m; ++i) {
-      A(i, k) = A(i, k) * a1[k] + A(i, 0) * b1[k];
-      A(i, k + m) = A(i, k + m) * a2[k] + A(i, m) * b2[k];
-
-      A(i + m, k) = A(i + m, k) * a1[k] + A(i + m, 0) * b1[k];
-      A(i + m, k + m) = A(i + m, k + m) * a2[k] + A(i + m, m) * b2[k];
-    }
-  }
-
-  // calculate R^T * A * R
-  for (int k = 1; k < m; ++k) {
-    for (int i = 0; i < m; ++i) {
-      A(k, i) = A(k, i) * a1[k] + A(0, i) * b1[k];
-      A(k + m, i) = A(k + m, i) * a2[k] + A(m, i) * b2[k];
-
-      A(k, i + m) = A(k, i + m) * a1[k] + A(0, i + m) * b1[k];
-      A(k + m, i + m) = A(k + m, i + m) * a2[k] + A(m, i + m) * b2[k];
-    }
-  }
-}
-
-
-/* ******************************************************************
-* Transform monomial \psi_k to polynomial a (\psi_k - b \psi_0) where
-* factor b orthogonolizes to constant and factor a normalizes to 1.
-* NOTE: Both polynomilas are centered at cell centroid.
-****************************************************************** */
-void DG_Modal::TaylorBasis(int c, const Iterator& it, double* a, double* b)
-{
-  ASSERT(basis_ > 0);
-
-  const int* multi_index = it.multi_index();
-  int n(0);
-  for (int i = 0; i < d_; ++i) {
-    n += multi_index[i];
-  }
-
-  // We do not modify the first function
-  if (n == 0) {
-    *a = 1.0;
-    *b = 0.0;
-  } else if (basis_ == TAYLOR_BASIS_NATURAL) {
-    *a = 1.0;
-    *b = 0.0;
-  } else {
-    UpdateScales_(c, order_);
-    *a = scales_a_[c].monomials(n).coefs()[it.MonomialPosition()];
-    *b = scales_b_[c].monomials(n).coefs()[it.MonomialPosition()];
-  }
-}
-
-
-/* ******************************************************************
-* Calculate polynomial using basis and coefficients.
-****************************************************************** */
-Polynomial DG_Modal::CalculatePolynomial(int c, const DenseVector& coefs) const
-{
-  if (order_ == 0 || basis_ == TAYLOR_BASIS_NATURAL) {
-    Polynomial poly(d_, order_);
-    poly.SetPolynomialCoefficients(coefs);
-    poly.set_origin(mesh_->cell_centroid(c));
-    return poly;
-  }
-
-  ASSERT(scales_a_.size() != 0);
-  ASSERT(scales_a_[c].size() == coefs.NumRows());
-
-  Polynomial poly(scales_a_[c]);
-  poly.set_origin(mesh_->cell_centroid(c));
-
-  int n(0);
-  for (auto it = poly.begin(); it.end() <= poly.end(); ++it) {
-    int m = it.MonomialOrder();
-    int k = it.MonomialPosition();
-
-    poly(m, k) *= coefs(n++); 
-    poly(0, 0) -= poly(m, k) * scales_b_[c](m, k);
-  }
-
-  return poly;
 }
 
 
@@ -1128,7 +990,7 @@ void DG_Modal::UpdateScales_(int c, int order)
           b = 0.0;
         } else {
           const auto& aux1 = integrals.monomials(m).coefs();
-          if (basis_ == TAYLOR_BASIS_NORMALIZED_ORTHO) {
+          if (basis_[0]->id() == TAYLOR_BASIS_NORMALIZED_ORTHO) {
             b = aux1[k] / volume;
           } else {
             b = 0.0;  // no orthogonalization to constants
