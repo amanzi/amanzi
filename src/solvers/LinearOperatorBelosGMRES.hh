@@ -151,7 +151,6 @@ int LinearOperatorBelosGMRES<Matrix, Vector, VectorSpace>::ApplyInverse(const Ve
     pl->set("Verbosity", Belos::Errors + Belos::Warnings);
   }
 
-    
   if(criteria_ & LIN_SOLVER_RELATIVE_RHS)
   {
     pl->set("Implicit Residual Scaling", "Norm of RHS");

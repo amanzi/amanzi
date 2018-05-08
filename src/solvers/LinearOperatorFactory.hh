@@ -25,6 +25,7 @@
 #include "LinearOperatorPCG.hh"
 #include "LinearOperatorGMRES.hh"
 #include "LinearOperatorBelosGMRES.hh"
+#include "LinearOperatorAmesos.hh"
 #include "LinearOperatorNKA.hh"
 
 namespace Amanzi {
@@ -61,7 +62,6 @@ class LinearOperatorFactory {
       Teuchos::RCP<const Matrix> m) {
     return Create(slist, m, m);
   }
-
 };
 
 
@@ -148,8 +148,24 @@ LinearOperatorFactory<Matrix, Vector, VectorSpace>::Create(
       Errors::Message msg("LinearOperatorFactory: wrong value of parameter `\"iterative method`\"");
       Exceptions::amanzi_throw(msg);
     }
-  } else {
-    Errors::Message msg("LinearOperatorFactory: parameter `\"iterative method`\" is missing");
+  }
+  else if (slist.isParameter("direct method")) {
+    std::string method_name = slist.get<std::string>("direct method");
+
+    if (method_name == "amesos klu") {
+      Teuchos::ParameterList klu_list = slist.sublist("amesos klu parameters");
+      Teuchos::RCP<LinearOperatorPCG<Matrix, Vector, VectorSpace> >
+          lin_op = Teuchos::rcp(new LinearOperatorPCG<Matrix, Vector, VectorSpace>(m, h));
+      lin_op->Init(klu_list);
+      lin_op->set_name(method_name);
+      return lin_op;
+    } else {
+      Errors::Message msg("LinearOperatorFactory: wrong value of parameter `\"direct method`\"");
+      Exceptions::amanzi_throw(msg);
+    }
+  }
+  else {
+    Errors::Message msg("LinearOperatorFactory: parameters \"iterative method\" and \"direct method\" are missing");
     Exceptions::amanzi_throw(msg);
   }
   return Teuchos::null;
