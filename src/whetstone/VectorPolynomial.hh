@@ -62,6 +62,11 @@ class VectorPolynomial {
     return tmp *= val;
   }
 
+  friend VectorPolynomial operator*(const VectorPolynomial& vp, double val) {
+    VectorPolynomial tmp(vp);
+    return tmp *= val;
+  }
+
   // complex constructions
   // -- gradient of a polynomial
   void Gradient(const Polynomial p);

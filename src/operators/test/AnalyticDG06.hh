@@ -80,7 +80,7 @@ class AnalyticDG06 : public AnalyticDGBase {
       sol(3, 3) = u * (dy2 * dy + 3 * dy2) / 6;
     }
 
-    if (order_ > 3) ASSERT(true);
+    if (order_ > 3) ASSERT(false);
   }
 
   // -- accumulation
@@ -117,16 +117,30 @@ class AnalyticDG06 : public AnalyticDGBase {
     }
 
     if (order_ > 1) {
-      v[0](2, 0) =-M_PI * M_PI * snx * csy / 2;
-      v[0](2, 1) =-M_PI * M_PI * csx * sny;
-      v[0](2, 2) =-M_PI * M_PI * snx * csy / 2;
+      double factor = M_PI * M_PI;
+      v[0](2, 0) =-factor * snx * csy / 2;
+      v[0](2, 1) =-factor * csx * sny;
+      v[0](2, 2) =-factor * snx * csy / 2;
 
-      v[1](2, 0) = M_PI * M_PI * csx * sny / 2;
-      v[1](2, 1) = M_PI * M_PI * snx * csy;
-      v[1](2, 2) = M_PI * M_PI * csx * sny / 2;
+      v[1](2, 0) = factor * csx * sny / 2;
+      v[1](2, 1) = factor * snx * csy;
+      v[1](2, 2) = factor * csx * sny / 2;
     }
 
-    if (order_ > 2) ASSERT(true);
+    if (order_ > 2) {
+      double factor = M_PI * M_PI * M_PI;
+      v[0](3, 0) =-factor * csx * csy / 6;
+      v[0](3, 1) = factor * snx * sny / 2;
+      v[0](3, 2) =-factor * csx * csy / 2;
+      v[0](3, 3) = factor * snx * sny / 6;
+
+      v[1](3, 0) =-factor * snx * sny / 6;
+      v[1](3, 1) = factor * csx * csy / 2;
+      v[1](3, 2) =-factor * snx * sny / 2;
+      v[1](3, 3) = factor * csx * csy / 6;
+    }
+
+    if (order_ > 3) ASSERT(false);
 
     v *= std::cos(M_PI * t);
   }

@@ -99,7 +99,8 @@ class AdvectionFn : public Explicit_TI::fnBase<CompositeVector> {
     }
 
     // modify analytic Taylor expansions
-    CalculateApproximateVelocity(t, dt_, velc, velf);
+    bool ho_velf(true);
+    // CalculateApproximateVelocity(t, dt_, velc, velf, ho_velf);
 
     // update problem coefficients
     // -- accumulation
@@ -201,7 +202,8 @@ class AdvectionFn : public Explicit_TI::fnBase<CompositeVector> {
   void CalculateApproximateVelocity(
       double t, double dt,
       const Teuchos::RCP<std::vector<WhetStone::VectorPolynomial> >& velc,
-      const Teuchos::RCP<std::vector<WhetStone::Polynomial> >& velf) {
+      const Teuchos::RCP<std::vector<WhetStone::Polynomial> >& velf,
+      bool ho_velf) {
     // create new mesh for time interval (t, t + dt)
     Epetra_MpiComm comm(MPI_COMM_WORLD);
     AmanziMesh::MeshFactory factory(&comm);
@@ -234,9 +236,9 @@ class AdvectionFn : public Explicit_TI::fnBase<CompositeVector> {
 
     // create a mesh map at time t
     Teuchos::ParameterList map_list;
-    map_list.set<std::string>("method", "CrouzeixRaviart")
+    map_list.set<std::string>("method", "Lagrange serendipity")
             .set<int>("method order", 2)
-            .set<std::string>("projector", "H1 harmonic")
+            .set<std::string>("projector", "L2")
             .set<std::string>("map name", "VEM");
   
     WhetStone::MeshMapsFactory maps_factory;
@@ -251,11 +253,20 @@ class AdvectionFn : public Explicit_TI::fnBase<CompositeVector> {
       WhetStone::VectorPolynomial v;
       std::vector<WhetStone::VectorPolynomial> vvf;
 
-      for (int n = 0; n < nfaces; ++n) {
-        int f = faces[n];
-        maps->VelocityFace(f, v);
-        vvf.push_back(v);
-        (*velf)[f] = (v * mesh_->face_normal(f)) * dtfac;
+      if (ho_velf) { // use high-order face velocity 
+        for (int n = 0; n < nfaces; ++n) {
+          int f = faces[n];
+          ana_.VelocityTaylor(mesh_->face_centroid(f), t, v);
+          vvf.push_back(v * dt);
+          (*velf)[f] = v * mesh_->face_normal(f);
+        }
+      } else {
+        for (int n = 0; n < nfaces; ++n) {
+          int f = faces[n];
+          maps->VelocityFace(f, v);
+          vvf.push_back(v);
+          (*velf)[f] = (v * mesh_->face_normal(f)) * dtfac;
+        }
       }
 
       maps->VelocityCell(c, vvf, (*velc)[c]);
@@ -409,10 +420,11 @@ TEST(OPERATOR_ADVECTION_TRANSIENT_DG) {
   AdvectionTransient<AnalyticDG06>("test/triangular64.exo",  64, 0, 0.01 / 8, Amanzi::Explicit_TI::tvd_3rd_order);
   AdvectionTransient<AnalyticDG06>("test/triangular128.exo",128, 0, 0.01 / 16,Amanzi::Explicit_TI::tvd_3rd_order);
 
-  AdvectionTransient<AnalyticDG06>("test/median15x16.exo",   16, 0, 0.05 / 2, Amanzi::Explicit_TI::tvd_3rd_order);
-  AdvectionTransient<AnalyticDG06>("test/median32x33.exo",   32, 0, 0.05 / 4, Amanzi::Explicit_TI::tvd_3rd_order);
-  AdvectionTransient<AnalyticDG06>("test/median63x64.exo",   64, 0, 0.05 / 8, Amanzi::Explicit_TI::tvd_3rd_order);
-  AdvectionTransient<AnalyticDG06>("test/median127x128.exo",128, 0, 0.05 / 16, Amanzi::Explicit_TI::tvd_3rd_order);
+  double dT0 = 0.01;
+  AdvectionTransient<AnalyticDG06>("test/median15x16.exo",   16, 0, dT0, Amanzi::Explicit_TI::tvd_3rd_order);
+  AdvectionTransient<AnalyticDG06>("test/median32x33.exo",   32, 0, dT0 / 2, Amanzi::Explicit_TI::tvd_3rd_order);
+  AdvectionTransient<AnalyticDG06>("test/median63x64.exo",   64, 0, dT0 / 4, Amanzi::Explicit_TI::tvd_3rd_order);
+  AdvectionTransient<AnalyticDG06>("test/median127x128.exo",128, 0, dT0 / 8, Amanzi::Explicit_TI::tvd_3rd_order);
   */ 
 }
 
