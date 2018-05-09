@@ -44,6 +44,7 @@ class LinearOperator : public Matrix {
     Init(plist);
   }
 
+  // standard interface recommended in MatrixBase.hh
   virtual int Apply(const Vector& v, Vector& mv) const { return m_->Apply(v, mv); }
   virtual int ApplyInverse(const Vector& v, Vector& hv) const = 0;
 
@@ -60,6 +61,7 @@ class LinearOperator : public Matrix {
     return true_residual;
   }
 
+  // control and statistics
   virtual double residual() = 0;
   virtual int num_itrs() = 0;
   virtual void add_criteria(int criteria) = 0;
@@ -68,6 +70,7 @@ class LinearOperator : public Matrix {
   std::string name() { return name_; }
   void set_name(std::string name) { name_ = name; }
 
+  // to recuperate from a crash, we post-process errors here
   Errors::Message DecodeErrorCode(int ierr) {
     Errors::Message msg;
     switch(ierr) {

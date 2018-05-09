@@ -145,7 +145,7 @@ LinearOperatorFactory<Matrix, Vector, VectorSpace>::Create(
       lin_op->set_name(method_name);
       return lin_op;
     } else {
-      Errors::Message msg("LinearOperatorFactory: wrong value of parameter `\"iterative method`\"");
+      Errors::Message msg("LinearOperatorFactory: wrong value of parameter \"iterative method\"");
       Exceptions::amanzi_throw(msg);
     }
   }
@@ -154,18 +154,19 @@ LinearOperatorFactory<Matrix, Vector, VectorSpace>::Create(
 
     if (method_name == "amesos klu") {
       Teuchos::ParameterList klu_list = slist.sublist("amesos klu parameters");
-      Teuchos::RCP<LinearOperatorPCG<Matrix, Vector, VectorSpace> >
-          lin_op = Teuchos::rcp(new LinearOperatorPCG<Matrix, Vector, VectorSpace>(m, h));
+      Teuchos::RCP<LinearOperatorAmesos<Matrix, Vector, VectorSpace> >
+         lin_op = Teuchos::rcp(new LinearOperatorAmesos<Matrix, Vector, VectorSpace>(m, h));
       lin_op->Init(klu_list);
       lin_op->set_name(method_name);
       return lin_op;
+      return Teuchos::null;
     } else {
-      Errors::Message msg("LinearOperatorFactory: wrong value of parameter `\"direct method`\"");
-      Exceptions::amanzi_throw(msg);
+      Errors::Message msg;
+      msg << "\nLinearOperatorFactory: wrong value of parameter \"direct method\"";
+      Exceptions::amanzi_throw(m);
     }
-  }
-  else {
-    Errors::Message msg("LinearOperatorFactory: parameters \"iterative method\" and \"direct method\" are missing");
+  } else {
+    Errors::Message msg("LinearOperatorFactory: parameter \"iterative method\" or \"direct method\" not found");
     Exceptions::amanzi_throw(msg);
   }
   return Teuchos::null;

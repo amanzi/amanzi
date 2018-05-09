@@ -35,25 +35,25 @@ class Matrix {
   }
     
   // 5-point FD stensil
-  virtual int Apply(const Epetra_Vector& v, Epetra_Vector& mv) const { 
+  virtual int Apply(const Epetra_MultiVector& v, Epetra_MultiVector& mv) const { 
     int n = std::pow(v.Map().NumMyElements(), 0.5);
     for (int i = 0; i < n; i++) {
       for (int j = 0; j < n; j++) {
         int k = j * n + i;
-        mv[k] = 4 * v[k];
-        if (i > 0) mv[k] -= v[k - 1];
-        if (j > 0) mv[k] -= v[k - n];
+        mv[0][k] = 4 * v[0][k];
+        if (i > 0) mv[0][k] -= v[0][k - 1];
+        if (j > 0) mv[0][k] -= v[0][k - n];
 
-        if (i < n - 1) mv[k] -= v[k + 1];
-        if (j < n - 1) mv[k] -= v[k + n];
+        if (i < n - 1) mv[0][k] -= v[0][k + 1];
+        if (j < n - 1) mv[0][k] -= v[0][k + n];
       }
     }
     return 0;
   }
 
-  virtual int ApplyInverse(const Epetra_Vector& v, Epetra_Vector& hv) const {
+  virtual int ApplyInverse(const Epetra_MultiVector& v, Epetra_MultiVector& hv) const {
     int n = v.Map().NumMyElements();
-    for (int i = 0; i < n; i++) hv[i] = v[i];
+    for (int i = 0; i < n; i++) hv[0][i] = v[0][i];
     return 0;
   }
 
@@ -272,7 +272,7 @@ TEST(AMESOS_SOLVER) {
   // create the operator
   Teuchos::RCP<Matrix> m = Teuchos::rcp(new Matrix(map));
   m->Init();
-  AmanziSolvers::LinearOperatorAmesos<Matrix, Epetra_Vector, Epetra_Map> superlu(m, m);
+  AmanziSolvers::LinearOperatorAmesos<Matrix, Epetra_MultiVector, Epetra_Map> superlu(m, m);
   superlu.Init(plist);
 
   // initial guess

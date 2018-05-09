@@ -31,19 +31,20 @@
 namespace Amanzi {
 namespace AmanziSolvers {
 
+/* ******************************************************************
+* Auxiliary base class.
+****************************************************************** */
 template<class Matrix, class Vector, class VectorSpace>
-class LinearOperatorAmesos : public LinearOperator<Matrix, Vector, VectorSpace>
-{
+class LinearOperatorAmesosBase : public LinearOperator<Matrix, Vector, VectorSpace> {
  public:
-  LinearOperatorAmesos(const Teuchos::RCP<const Matrix>& m,
-                       const Teuchos::RCP<const Matrix>& h) :
-      LinearOperator<Matrix, Vector, VectorSpace>(m, h),
-      initialized_(false) {};
+  LinearOperatorAmesosBase(const Teuchos::RCP<const Matrix>& m,
+                           const Teuchos::RCP<const Matrix>& h) :
+      LinearOperator<Matrix, Vector, VectorSpace>(m, h) {};
 
   void Init(Teuchos::ParameterList& plist);
   void Init() { LinearOperator<Matrix, Vector, VectorSpace>::Init(); }
 
-  int ApplyInverse(const Vector& v, Vector& hv) const;
+  // virtual int ApplyInverse(const Vector& v, Vector& hv) const;
 
   // access
   void add_criteria(int criteria) {};
@@ -51,20 +52,20 @@ class LinearOperatorAmesos : public LinearOperator<Matrix, Vector, VectorSpace>
   double residual() { return 0.0; }
   int returned_code() { return 0; }
 
- private:
+ protected:
   using LinearOperator<Matrix, Vector, VectorSpace>::m_;
   using LinearOperator<Matrix, Vector, VectorSpace>::name_;
 
   Teuchos::RCP<VerboseObject> vo_;
-  mutable bool initialized_;
+  mutable bool initialized_ = false;
 };
 
 
 /* ******************************************************************
- * Initialization from a parameter list.
- ****************************************************************** */
+* Initialization from a parameter list.
+****************************************************************** */
 template<class Matrix, class Vector, class VectorSpace>
-void LinearOperatorAmesos<Matrix, Vector, VectorSpace>::Init(Teuchos::ParameterList& plist)
+void LinearOperatorAmesosBase<Matrix, Vector, VectorSpace>::Init(Teuchos::ParameterList& plist)
 {
   vo_ = Teuchos::rcp(new VerboseObject("Solvers::Amesos", plist));
   name_ = plist.get<std::string>("solver name", "Amesos_Klu");
@@ -72,35 +73,69 @@ void LinearOperatorAmesos<Matrix, Vector, VectorSpace>::Init(Teuchos::ParameterL
 }
 
 
+/* ******************************************************************
+* Primary interface to dierct solvers in Amesos.
+****************************************************************** */
 template<class Matrix, class Vector, class VectorSpace>
-int LinearOperatorAmesos<Matrix, Vector, VectorSpace>::ApplyInverse(const Vector& v, Vector& hv) const
+class LinearOperatorAmesos : public LinearOperatorAmesosBase<Matrix, Vector, VectorSpace>
 {
-  if (!initialized_) {
-    Errors::Message msg("LinearOperatorAmesos: has not been initialized.");
+ public:
+  LinearOperatorAmesos(const Teuchos::RCP<const Matrix>& m,
+                       const Teuchos::RCP<const Matrix>& h) :
+      LinearOperatorAmesosBase<Matrix, Vector, VectorSpace>(m, h) {};
+
+  // default implementation is empty for the moment
+  virtual int ApplyInverse(const Vector& v, Vector& hv) const { 
+    Errors::Message msg("LinearOperatorAmesos: missing partial specification.");
     Exceptions::amanzi_throw(msg);
+    return LIN_SOLVER_AMESOS_SAYS_FAIL; 
+  }
+};
+
+
+/* ******************************************************************
+* Partial specification: Vector=Epetra_MultiVector, VectorSpace=Epetra_Map
+****************************************************************** */
+template<class Matrix>
+class LinearOperatorAmesos<Matrix, Epetra_MultiVector, Epetra_Map> : public LinearOperatorAmesosBase<Matrix, Epetra_MultiVector, Epetra_Map> {
+ public:
+  LinearOperatorAmesos(const Teuchos::RCP<const Matrix>& m,
+                       const Teuchos::RCP<const Matrix>& h) :
+      LinearOperatorAmesosBase<Matrix, Epetra_MultiVector, Epetra_Map>(m, h) {};
+
+  int ApplyInverse(const Epetra_MultiVector& v, Epetra_MultiVector& hv) const {
+    if (!initialized_) {
+      Errors::Message msg("LinearOperatorAmesos: has not been initialized.");
+      Exceptions::amanzi_throw(msg);
+    }
+
+    Epetra_MultiVector rhs(v);
+    Epetra_LinearProblem problem(&*m_->A(), &hv, &rhs);
+
+    Amesos factory;
+    auto solver = factory.Create(name_, problem);
+    if (solver == NULL) {
+      Errors::Message msg("LinearOperatorAmesos: specified solver is not available");
+      Exceptions::amanzi_throw(msg);
+    }
+
+    int ierr = solver->SymbolicFactorization();
+    if (ierr > 0) return LIN_SOLVER_AMESOS_SYMBOLIC_FAIL;
+
+    ierr = solver->NumericFactorization();
+    if (ierr > 0) return LIN_SOLVER_AMESOS_FACTORIZATION_FAIL;
+
+    solver->Solve();
+
+    delete solver;
+    return LIN_SOLVER_AMESOS_SAYS_SUCCESS;
   }
 
-  Vector rhs(v);
-  Epetra_LinearProblem problem(&*m_->A(), &hv, &rhs);
-
-  Amesos factory;
-  auto solver = factory.Create(name_, problem);
-  if (solver == NULL) {
-    Errors::Message msg("LinearOperatorAmesos: specified solver is not available");
-    Exceptions::amanzi_throw(msg);
-  }
-
-  int ierr = solver->SymbolicFactorization();
-  if (ierr > 0) return LIN_SOLVER_AMESOS_SYMBOLIC_FAIL;
-
-  ierr = solver->NumericFactorization();
-  if (ierr > 0) return LIN_SOLVER_AMESOS_FACTORIZATION_FAIL;
-
-  solver->Solve();
-
-  delete solver;
-  return LIN_SOLVER_AMESOS_SAYS_SUCCESS;
-}
+ protected:
+  using LinearOperatorAmesosBase<Matrix, Epetra_MultiVector, Epetra_Map>::m_;
+  using LinearOperatorAmesosBase<Matrix, Epetra_MultiVector, Epetra_Map>::name_;
+  using LinearOperatorAmesosBase<Matrix, Epetra_MultiVector, Epetra_Map>::initialized_;
+};
 
 }  // namespace AmanziSolvers
 }  // namespace Amanzi

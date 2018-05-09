@@ -35,8 +35,9 @@ const int LIN_SOLVER_BELOS_SAYS_SUCCESS = 1;
 const int LIN_SOLVER_BELOS_SAYS_FAIL = -1;
 
 const int LIN_SOLVER_AMESOS_SAYS_SUCCESS = 1;
-const int LIN_SOLVER_AMESOS_SYMBOLIC_FAIL = -1;
-const int LIN_SOLVER_AMESOS_FACTORIZATION_FAIL = -2;
+const int LIN_SOLVER_AMESOS_SAYS_FAIL = -1;
+const int LIN_SOLVER_AMESOS_SYMBOLIC_FAIL = -2;
+const int LIN_SOLVER_AMESOS_FACTORIZATION_FAIL = -3;
 
 }  // namespace AmanziSolvers
 }  // namespace Amanzi
