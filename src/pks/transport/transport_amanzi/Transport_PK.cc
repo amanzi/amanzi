@@ -1373,11 +1373,11 @@ void Transport_PK_ATS::AdvanceDonorUpwind(double dt_cycle)
           int k = tcc_index[i];
           if (k < num_advect) {
             tcc_flux = dt_ * u * values[i];
-            // if (fabs(u) > 1e-14) {
+            // if ((domain_name_=="surface")&&(k==13)) {
             //   const AmanziGeometry::Point& xf = mesh_->face_centroid(f);
-            //   // if (xf[2]>19.5){
-            //   //   std::cout <<domain_name_<<" comp "<<k<<" from BC cell "<<c2<<" flux "<< u<<" dt "<<dt_<<" value "<<values[i]<<" + "<<tcc_flux<<" cnt "<<xf<<"\n";
-            //   // }
+            //   if ((xf[0]>16)&&(xf[0]<22)){
+            //     std::cout <<domain_name_<<" comp "<<k<<" from BC cell "<<c2<<" flux "<< u<<" dt "<<dt_<<" value "<<values[i]<<" + "<<tcc_flux<<" cnt "<<xf<<" "<<mass<<" "<<(*conserve_qty_)[k][c2]<<"\n";
+            //   }
             // }
             (*conserve_qty_)[k][c2] += tcc_flux;
             mass_solutes_bc_[k] += tcc_flux;

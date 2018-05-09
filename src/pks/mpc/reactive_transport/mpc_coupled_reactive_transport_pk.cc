@@ -143,8 +143,11 @@ void Coupled_ReactiveTransport_PK_ATS::Setup(const Teuchos::Ptr<State>& S){
 
 void Coupled_ReactiveTransport_PK_ATS::Initialize(const Teuchos::Ptr<State>& S){
 
-  Amanzi::ReactiveTransport_PK_ATS::Initialize(S);
+  //Amanzi::ReactiveTransport_PK_ATS::Initialize(S);
 
+  chemistry_pk_overland_->Initialize(S);
+  chemistry_pk_subsurface_->Initialize(S);
+    
   Key subsurface_domain_key = tranport_pk_subsurface_->domain_name();
   Key overland_domain_key = tranport_pk_overland_->domain_name();
   Key tcc_sub_key = Keys::getKey(subsurface_domain_key, "total_component_concentration");
@@ -165,7 +168,16 @@ void Coupled_ReactiveTransport_PK_ATS::Initialize(const Teuchos::Ptr<State>& S){
   
   ConvertConcentrationToATS(chemistry_pk_subsurface_, *mol_den_sub,  *tcc_sub,  *tcc_sub);
   ConvertConcentrationToATS(chemistry_pk_overland_, *mol_den_over,  *tcc_over,  *tcc_over);
-  //S_->WriteStatistics(vo_);
+
+
+  tranport_pk_subsurface_->Initialize(S);
+  tranport_pk_overland_->Initialize(S);
+  
+
+
+  // //S_->WriteStatistics(vo_);
+  // std::cout<<(*tcc_over)<<"\n"; 
+  // exit(0);
     
 }
 

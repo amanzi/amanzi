@@ -82,19 +82,25 @@ void ReactiveTransport_PK_ATS::cast_sub_pks_(){
 // 
 // -----------------------------------------------------------------------------
 void ReactiveTransport_PK_ATS::Initialize(const Teuchos::Ptr<State>& S) {
-  Amanzi::PK_MPCAdditive<PK>::Initialize(S);
 
-  // Key domain_name = chemistry_pk_->domain_name();
-  // Key tcc_key = Keys::getKey(domain_name, "total_component_concentration");
-  // Key mol_den_key = Keys::getKey(domain_name,  "molar_density_liquid");
+  //Amanzi::PK_MPCAdditive<PK>::Initialize(S);
+
+  chemistry_pk_->Initialize(S);
+
+  Key domain_name = chemistry_pk_->domain_name();
+  Key tcc_key = Keys::getKey(domain_name, "total_component_concentration");
+  Key mol_den_key = Keys::getKey(domain_name,  "molar_density_liquid");
   
-  // Teuchos::RCP<Epetra_MultiVector> tcc_copy =
-  //     S_->GetFieldData(tcc_key,"state")->ViewComponent("cell", true);
+  Teuchos::RCP<Epetra_MultiVector> tcc_copy =
+    S_->GetFieldData(tcc_key,"state")->ViewComponent("cell", true);
 
-  // Teuchos::RCP<const Epetra_MultiVector> mol_dens =
-  //   S_->GetFieldData(mol_den_key)->ViewComponent("cell", true);
+  Teuchos::RCP<const Epetra_MultiVector> mol_dens =
+    S_->GetFieldData(mol_den_key)->ViewComponent("cell", true);
 
-  // ConvertConcentrationToATS(chemistry_pk_, *mol_dens, *tcc_copy, *tcc_copy);
+  ConvertConcentrationToATS(chemistry_pk_, *mol_dens, *tcc_copy, *tcc_copy);
+
+  tranport_pk_->Initialize(S);
+  
   
 }
 
