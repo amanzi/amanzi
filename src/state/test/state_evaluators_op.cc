@@ -252,6 +252,22 @@ public:
   }
 
 protected:
+  virtual void Evaluate_(const State& S,
+                         const std::vector<Teuchos::Ptr<CompositeVector> > & results) {}
+
+  
+  virtual void EvaluatePartialDerivative_(const State& S,
+                                          const Key& wrt_key, const Key& wrt_tag,
+                                          const std::vector<Teuchos::Ptr<CompositeVector> > & results) override {
+    ASSERT(0);
+  }
+
+  virtual void UpdateDerivative_(State& S, const Key& wrt_key, const Key& wrt_tag) override {
+    ASSERT(0);
+  }
+
+ protected:
+
   Key tag_;
   Key rhs_key_, local_op_key_;
   Key tensor_coef_key_, scalar_coef_key_;
