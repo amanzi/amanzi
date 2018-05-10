@@ -61,13 +61,15 @@ Evaluator_OperatorApply::Evaluator_OperatorApply(Teuchos::ParameterList &plist)
 
   // op0, op0 rhs's
   op0_keys_ = Keys::readKeys(plist_, domain, "diagonal local operators", &empty);
-  Teuchos::Array<Key> defaults(op0_keys_.size());
-  int i = 0;
-  for (const auto& op_key : op0_keys_) {
-    defaults[i] = op_key+"_rhs";
-    ++i;
+  {
+    Teuchos::Array<Key> defaults(op0_keys_.size());
+    int i = 0;
+    for (const auto& op_key : op0_keys_) {
+      defaults[i] = op_key+"_rhs";
+      ++i;
+    }
+    op0_rhs_keys_ = Keys::readKeys(plist_, domain, "diagonal local operator rhss", &defaults);
   }
-  op0_rhs_keys_ = Keys::readKeys(plist_, domain, "diagonal local operator rhss", &defaults);
 
   // opi, opi rhs's
   int j = 0;
@@ -87,6 +89,15 @@ Evaluator_OperatorApply::Evaluator_OperatorApply(Teuchos::ParameterList &plist)
 
   // other rhss
   rhs_keys_ = Keys::readKeys(plist_, domain, "additional rhss", &empty);
+  if (rhs_keys_.size() > 0) {
+    rhs_scalars_ = plist_.get<Teuchos::Array<double>>("rhs coefficients");
+    if (rhs_keys_.size() != rhs_scalars_.size()) {
+      Errors::Message message;
+      message << "Evaluator_OperatorApply for " << my_key_ << ": RHS terms names (" << (int) rhs_keys_.size()
+              << ") and scalings (" << (int) rhs_scalars_.size() << ") are not the same length";
+      throw(message);
+    }
+  }
 
   // push dependencies
   dependencies_.emplace_back(std::make_pair(x0_key_, my_tag_));
@@ -100,6 +111,15 @@ Evaluator_OperatorApply::Evaluator_OperatorApply(Teuchos::ParameterList &plist)
   for (const auto& rhs_list : op_rhs_keys_)
     for (const auto& rhs_key : rhs_list)
       dependencies_.emplace_back(std::make_pair(rhs_key, my_tag_));
+
+  // primary entity is the entity on which the operator primarily exists.
+  // This is CELL for control volume methods and NODE for Lagrangian FE
+  // methods.
+  //
+  // All of x, residual, and rhs must have this entity.
+  primary_entity_ = plist_.get<std::string>("primary entity", "cell");
+  primary_entity_kind_ = AmanziMesh::entity_kind(primary_entity_);
+  
 }
 
 void Evaluator_OperatorApply::EnsureCompatibility(State &S) {
@@ -124,29 +144,14 @@ void Evaluator_OperatorApply::EnsureCompatibility(State &S) {
   // Futhermore, derivatives must be considered.
   //
   bool has_derivs = S.HasDerivativeSet(my_key_, my_tag_);
-  // require data for derivatives
-  if (has_derivs) {
-    for (const auto& deriv : S.GetDerivativeSet(my_key_, my_tag_)) {
-      auto wrt = Keys::splitKeyTag(deriv.first);
-      ASSERT(wrt.second == my_tag_);
-      ASSERT(wrt.first == x0_key_);     // NEED TO IMPLEMENT OFF-DIAGONALS EVENTUALLY --etc
-      // quasi-linear operators covered by Update() call --etc
-      // jacobian terms are covered by ParameterList jacobian option --etc
-
-      // rhs terms
-      for (const auto& rhs_key : rhs_keys_) {
-        if (S.GetEvaluator(rhs_key, my_tag_).IsDifferentiableWRT(S, wrt.first, wrt.second)) {
-          S.RequireDerivative<CompositeVector,CompositeVectorSpace>(rhs_key, my_tag_, wrt.first, wrt.second);
-        }
-      }
-    }
-  }    
   
   auto &my_fac = S.Require<CompositeVector,CompositeVectorSpace>(my_key_, my_tag_);
   if (my_fac.Mesh() != Teuchos::null && my_fac.size() == 0) {
+    // add the primary
+    my_fac.AddComponent(primary_entity_, primary_entity_kind_, 1);
     CompositeVectorSpace my_fac_mesh_only(my_fac);
 
-    // -- set the rhss' mesh
+    // -- set the rhss' mesh, need for primary entity
     for (const auto& rhs_key : op0_rhs_keys_) {
       auto &rhs_fac = S.Require<CompositeVector,CompositeVectorSpace>(rhs_key, my_tag_);
       rhs_fac.Update(my_fac_mesh_only);
@@ -211,6 +216,28 @@ void Evaluator_OperatorApply::EnsureCompatibility(State &S) {
       }
     }
   }
+
+  // require data for derivatives
+  if (has_derivs) {
+    for (const auto& deriv : S.GetDerivativeSet(my_key_, my_tag_)) {
+      auto wrt = Keys::splitKeyTag(deriv.first);
+      ASSERT(wrt.second == my_tag_);
+      ASSERT(wrt.first == x0_key_);     // NEED TO IMPLEMENT OFF-DIAGONALS EVENTUALLY --etc
+      // quasi-linear operators covered by Update() call --etc
+      // jacobian terms are covered by ParameterList jacobian option --etc
+
+      // rhs terms
+      for (const auto& rhs_key : rhs_keys_) {
+        if (S.GetEvaluator(rhs_key, my_tag_).IsDifferentiableWRT(S, wrt.first, wrt.second)) {
+          // require the derivative, and update its factory to match its value
+          S.RequireDerivative<CompositeVector,CompositeVectorSpace>(rhs_key, my_tag_, wrt.first, wrt.second)
+              .Update(S.Require<CompositeVector,CompositeVectorSpace>(rhs_key, my_tag_));
+          // re-call EnsureCompatibility() to make sure these derivative requirements get processed
+          S.RequireEvaluator(rhs_key, my_tag_).EnsureCompatibility(S);
+        }
+      }
+    }
+  }    
 }
 
 // These do the actual work
@@ -241,7 +268,7 @@ void Evaluator_OperatorApply::Evaluate_(const State &S,
     const auto& xj = S.Get<CompositeVector>(x_keys_[j], my_tag_);
     xj.ScatterMasterToGhosted();
 
-    int i = 0;
+    int k = 0;
     for (const auto& op_key : op_list) {
       // create the global operator
       Operators::Operator_Factory global_op_fac;
@@ -253,8 +280,8 @@ void Evaluator_OperatorApply::Evaluate_(const State &S,
       S.Get<Operators::Op>(op_key, my_tag_).ApplyMatrixFreeOp(&*global_op, xj, result);
 
       // Ax - b
-      result.Update(-1.0, S.Get<CompositeVector>(op_rhs_keys_[j][i], my_tag_), 1.0);
-      ++i;
+      result.Update(-1.0, S.Get<CompositeVector>(op_rhs_keys_[j][k], my_tag_), 1.0);
+      ++k;
     }
     ++j;
   }
@@ -263,8 +290,11 @@ void Evaluator_OperatorApply::Evaluate_(const State &S,
   result.Scale(-1.0);
 
   // add all the additional RHSs
-  for (const auto& rhs_key : rhs_keys_)
-    result.Update(1.0, S.Get<CompositeVector>(rhs_key, my_tag_), 1.0);
+  j = 0;
+  for (const auto& rhs_key : rhs_keys_) {
+    result.Update(rhs_scalars_[j], S.Get<CompositeVector>(rhs_key, my_tag_), 1.0);
+    ++j;
+  }
 }
 
 
@@ -292,22 +322,24 @@ Evaluator_OperatorApply::UpdateDerivative_(State &S, const Key &wrt_key, const K
         }
       }
 
+      int j = 0;
       for (const auto& rhs_key : rhs_keys_) {
         if (S.GetEvaluator(rhs_key, my_tag_).IsDifferentiableWRT(S, wrt_key, wrt_tag)) {
           // FIX ME AND MAKE THIS LESS HACKY AND CONST CORRECT --etc
-          // FIX ME -- SIGN ISSUES HERE WITH ACCUMULATION TERMS / RHSs --etc
           CompositeVector drhs = S.GetDerivativeW<CompositeVector>(rhs_key, my_tag_, wrt_key, wrt_tag, rhs_key);
           for (const auto& comp : drhs) {
             if (AmanziMesh::entity_kind(comp) == AmanziMesh::CELL) {
               auto op_cell = Teuchos::rcp(new Operators::Op_Cell_Cell(rhs_key, drhs.Mesh()));
               // clobber the diag
-              op_cell->diag = drhs.ViewComponent(comp, false);
+              *op_cell->diag = *drhs.ViewComponent(comp, false);
+              op_cell->diag->Scale(rhs_scalars_[j]);
               global_op->OpPushBack(op_cell);
             } else {
               ASSERT(0);
             }
           }
         }
+        ++j;
       }
     } else {
       // off diagonal
@@ -320,8 +352,8 @@ Evaluator_OperatorApply::UpdateDerivative_(State &S, const Key &wrt_key, const K
 
   // assemble
   global_op->AssembleMatrix();
-  global_op->InitPreconditioner(plist_.sublist("linear operator"));
-  global_op->A()->Print(std::cout);
+  global_op->InitPreconditioner(plist_.sublist("preconditioner"));
+  //  global_op->A()->Print(std::cout);
 }
 
 

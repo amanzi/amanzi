@@ -158,7 +158,7 @@ void Debugger::WriteCellInfo(bool include_faces) {
   for (int i = 0; i != dc_.size(); ++i) {
     AmanziMesh::Entity_ID c0 = dc_[i];
     AmanziMesh::Entity_ID c0_gid = dc_gid_[i];
-    Teuchos::OSTab tab = dcvo_[i]->getOSTab();
+    Teuchos::OSTab itab = dcvo_[i]->getOSTab();
 
     AmanziGeometry::Point c0_centroid = mesh_->cell_centroid(c0);
     if (dcvo_[i]->os_OK(verb_level_)) {

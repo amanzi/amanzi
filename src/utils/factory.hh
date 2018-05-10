@@ -98,9 +98,9 @@ public:
     if (iter == GetMap()->end()) {
       std::cout << "Factory: cannot get item of type: " << s << std::endl;
 
-      for (typename map_type::iterator iter=GetMap()->begin();
-           iter!=GetMap()->end(); ++iter) {
-        std::cout << "  option: " << iter->first << std::endl;
+      for (typename map_type::iterator iterv=GetMap()->begin();
+           iterv!=GetMap()->end(); ++iterv) {
+        std::cout << "  option: " << iterv->first << std::endl;
       }
       return 0;
     }

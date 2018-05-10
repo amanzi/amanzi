@@ -155,6 +155,13 @@ bool EvaluatorIndependent_::IsDifferentiableWRT(const State &S,
   return false;
 }
 
+
+// void EvaluatorIndependent_::EnsureCompatibleDerivative(State &S,
+//         const Key& wrt_key, const Key& wrt_tag) {
+//   Errors::Message msg("Independent Variables are not differentiable");
+//   throw(msg);
+// }
+
 // ---------------------------------------------------------------------------
 // String representation of this evaluator
 // ---------------------------------------------------------------------------
@@ -165,5 +172,7 @@ std::string EvaluatorIndependent_::WriteToString() const {
          << std::endl;
   return result.str();
 }
+
+
 
 } // namespace Amanzi

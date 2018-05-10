@@ -212,5 +212,6 @@ void CompositeVectorFunction::Compute(double time,
 #endif
 }
 
+
 } // namespace
 } // namespace

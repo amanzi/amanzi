@@ -112,6 +112,11 @@ if (BUILD_TESTS)
                     KIND unit
                     SOURCE test/Main.cc test/pks_ode.cc
                     LINK_LIBS ${pks_test_link_libs} ${UnitTest_LIBRARIES} ${pks_tpl_libs})
+
+    add_amanzi_test(pks_pde pks_pde
+                    KIND unit
+                    SOURCE test/Main.cc test/pks_pde.cc
+                    LINK_LIBS ${pks_test_link_libs} ${UnitTest_LIBRARIES} ${pks_tpl_libs})
                   
 endif()
 

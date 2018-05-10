@@ -95,7 +95,7 @@ VerboseObject::VerboseObject(const Epetra_Comm& comm, std::string name,
   // -- Set up the VerboseObject header.
   std::string headername(name);
   if (plist.sublist("verbose object").isParameter("name")) {
-    std::string headername = plist.sublist("verbose object").get<std::string>("name");
+    headername = plist.sublist("verbose object").get<std::string>("name");
   }
   set_name(headername);
 

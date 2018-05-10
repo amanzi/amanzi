@@ -10,6 +10,7 @@
 #ifndef AMANZI_INDEPENDENT_EVALUATOR_
 #define AMANZI_INDEPENDENT_EVALUATOR_
 
+#include "errors.hh"
 #include "Evaluator.hh"
 #include "Evaluator_Factory.hh"
 
@@ -58,7 +59,8 @@ public:
                                    const Key &wrt_tag) const override final;
 
   virtual void EnsureCompatibility(State &S) override;
-
+  //  virtual void EnsureCompatibleDerivative(State &S, const Key& wrt_key, const Key& wrt_tag) override;
+  
   virtual std::string WriteToString() const override;
 
 protected:

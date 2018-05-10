@@ -63,7 +63,7 @@ public:
   virtual bool ProvidesKey(const Key &key,
                            const Key &wrt_tag) const override final;
   virtual bool IsDifferentiableWRT(const State &S, const Key &wrt_key,
-                                   const Key &wrt_tag) const override final {
+                                   const Key &wrt_tag) const override {
     return IsDependency(S, wrt_key, wrt_tag);
   }
 

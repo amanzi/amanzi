@@ -111,6 +111,12 @@ public:
     }
   }
 
+  // virtual void EnsureCompatibleDerivative(State &S,
+  //         const Key& wrt_key, const Key& wrt_tag) override final {
+  //   Errors::Message msg("Primary Variables are not differentiable");
+  //   throw(msg);
+  // }
+
 protected:
   virtual void UpdateDerivative_(State &S) override final {
     Errors::Message message("EvaluatorPrimary::UpdateDerivative_ not "

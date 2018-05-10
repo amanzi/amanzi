@@ -191,9 +191,9 @@ MeshLogical::MeshLogical(const Epetra_MpiComm *comm,
       cell_face_ids_[(*f)[1]].push_back(f_id);
       cell_face_dirs_[(*f)[1]].push_back(-1);
 
-      AmanziGeometry::Point unit_normal(face_normals_[f_id][1]);
-      unit_normal /= face_areas_[f_id];
-      cell_face_bisectors_[(*f)[1]].push_back(unit_normal * face_cell_lengths[f_id][1]);
+      AmanziGeometry::Point unit_normal2(face_normals_[f_id][1]);
+      unit_normal2 /= face_areas_[f_id];
+      cell_face_bisectors_[(*f)[1]].push_back(unit_normal2 * face_cell_lengths[f_id][1]);
     }
 
     f_id++;

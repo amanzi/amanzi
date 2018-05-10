@@ -16,9 +16,12 @@ graph.
 template <typename Data_t, typename DataFactory_t>
 EvaluatorSecondary<Data_t, DataFactory_t>::EvaluatorSecondary(
     Teuchos::ParameterList &plist)
-    : my_key_(plist.name()), my_tag_(plist.get<std::string>("tag", "")),
-      vo_(plist.name(), plist), plist_(plist),
-      check_derivative_(plist.get<bool>("check derivatives", false)) {
+    : my_key_(Keys::cleanPListName(plist.name())),
+      my_tag_(plist.get<std::string>("tag", "")),
+      vo_(plist.name(), plist),
+      plist_(plist),
+      check_derivative_(plist.get<bool>("check derivatives", false))
+{
   if (plist_.isParameter("dependencies")) {
     Teuchos::Array<std::string> deps =
         plist_.get<Teuchos::Array<std::string>>("dependencies");

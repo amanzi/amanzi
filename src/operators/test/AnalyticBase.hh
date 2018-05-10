@@ -159,7 +159,6 @@ class AnalyticBase {
         double tmp = pressure_exact(xv, t);
 
         if (std::abs(tmp - p[0][v]) > .01) {
-          Amanzi::AmanziGeometry::Point xv(2);
           mesh_->node_get_coordinates(v, &xv);
           // std::cout << v << " at " << xv << " error: " << tmp << " " << p[0][v] << std::endl;
         }

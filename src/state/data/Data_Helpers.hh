@@ -19,6 +19,9 @@ Helpers that know how to read/write/etc data.
 #include "CompositeVector.hh"
 #include "Op.hh"
 #include "TensorVector.hh"
+#include "Operator.hh"
+#include "BCs.hh"
+#include "BoundaryFunction.hh"
 
 #include "FunctionFactory.hh"
 
@@ -228,22 +231,51 @@ template <>
 inline void
 WriteVis<Operators::BCs>(const Visualization &vis, const Key &fieldname,
                          const std::vector<std::string> &subfieldnames,
-                         const Operators::BCs &tensor) {}
+                         const Operators::BCs &bc) {}
 
 template <>
 inline void WriteCheckpoint<Operators::BCs>(const Checkpoint &chkp,
                                             const Key &fieldname,
-                                            const Operators::BCs &tensor) {}
+                                            const Operators::BCs &bc) {}
 
 template <>
 inline void ReadCheckpoint<Operators::BCs>(const Checkpoint &chkp,
                                            const Key &fieldname,
-                                           Operators::BCs &tensor) {}
+                                           Operators::BCs &bc) {}
 
 template <>
 inline bool
 Initialize<Operators::BCs>(Teuchos::ParameterList &plist,
-                           Operators::BCs &tensor, const Key &fieldname,
+                           Operators::BCs &bc, const Key &fieldname,
+                           const std::vector<std::string> &subfieldnames) {
+  return true;
+}
+
+
+//
+// Specializations for Functions::BoundaryFunction
+// ======================================================================
+
+template <>
+inline void
+WriteVis<Functions::BoundaryFunction>(const Visualization &vis, const Key &fieldname,
+                         const std::vector<std::string> &subfieldnames,
+                         const Functions::BoundaryFunction &bc) {}
+
+template <>
+inline void WriteCheckpoint<Functions::BoundaryFunction>(const Checkpoint &chkp,
+                                            const Key &fieldname,
+                                            const Functions::BoundaryFunction &bc) {}
+
+template <>
+inline void ReadCheckpoint<Functions::BoundaryFunction>(const Checkpoint &chkp,
+                                           const Key &fieldname,
+                                           Functions::BoundaryFunction &bc) {}
+
+template <>
+inline bool
+Initialize<Functions::BoundaryFunction>(Teuchos::ParameterList &plist,
+                           Functions::BoundaryFunction &bc, const Key &fieldname,
                            const std::vector<std::string> &subfieldnames) {
   return true;
 }

@@ -27,39 +27,39 @@ namespace Amanzi {
 
 Evaluator_PDE_Diffusion::Evaluator_PDE_Diffusion(Teuchos::ParameterList &plist)
     : EvaluatorSecondaries(plist) {
-  tag_ = plist.get<std::string>("tag");
+  my_tag_ = plist.get<std::string>("tag");
 
   // my keys
   rhs_key_ = plist.get<std::string>("rhs key");
   local_op_key_ = plist.get<std::string>("local operator key");
-  my_keys_.emplace_back(std::make_pair(local_op_key_, tag_));
-  my_keys_.emplace_back(std::make_pair(rhs_key_, tag_));
+  my_keys_.emplace_back(std::make_pair(local_op_key_, my_tag_));
+  my_keys_.emplace_back(std::make_pair(rhs_key_, my_tag_));
 
   if (plist.get<std::string>("Newton correction", "none") != "none") {
     jac_op_key_ = plist.get<std::string>("local operator Jacobian key");
-    my_keys_.emplace_back(std::make_pair(jac_op_key_, tag_));
+    my_keys_.emplace_back(std::make_pair(jac_op_key_, my_tag_));
   }
 
   // dependencies
   tensor_coef_key_ = plist.get<std::string>("tensor coefficient key");
-  dependencies_.emplace_back(std::make_pair(tensor_coef_key_, tag_));
+  dependencies_.emplace_back(std::make_pair(tensor_coef_key_, my_tag_));
 
   scalar_coef_key_ = plist.get<std::string>("scalar coefficient key");
-  dependencies_.emplace_back(std::make_pair(scalar_coef_key_, tag_));
+  dependencies_.emplace_back(std::make_pair(scalar_coef_key_, my_tag_));
 
   bcs_key_ = plist.get<std::string>("boundary conditions key");
-  dependencies_.emplace_back(std::make_pair(bcs_key_, tag_));
+  dependencies_.emplace_back(std::make_pair(bcs_key_, my_tag_));
 
   if (plist_.get<std::string>("discretization primary") == "nlfv: default" ||
       plist.get<std::string>("Newton correction", "none") != "none") {
     u_key_ = plist.get<std::string>("operator argument key");
-    dependencies_.emplace_back(std::make_pair(u_key_, tag_));
+    dependencies_.emplace_back(std::make_pair(u_key_, my_tag_));
   }
 }
 
 void Evaluator_PDE_Diffusion::EnsureCompatibility(State &S) {
   // require the rhs
-  auto &rhs_fac = S.Require<CompositeVector, CompositeVectorSpace>(rhs_key_, tag_, rhs_key_);
+  auto &rhs_fac = S.Require<CompositeVector, CompositeVectorSpace>(rhs_key_, my_tag_, rhs_key_);
   if (rhs_fac.Mesh().get()) {
     // we have a mesh for the RHS, so we can create a diffusion op to get the
     // schema
@@ -68,7 +68,7 @@ void Evaluator_PDE_Diffusion::EnsureCompatibility(State &S) {
 
     // now we can set up the local op
     auto &lop_fac =
-        S.Require<Operators::Op, Operators::Op_Factory>(local_op_key_, tag_, local_op_key_);
+        S.Require<Operators::Op, Operators::Op_Factory>(local_op_key_, my_tag_, local_op_key_);
     lop_fac.set_mesh(rhs_fac.Mesh());
     Operators::Schema schema(diff->schema_dofs());
     lop_fac.set_schema(schema);
@@ -79,29 +79,32 @@ void Evaluator_PDE_Diffusion::EnsureCompatibility(State &S) {
 
     // require scalar coef on the space required by little_k option of
     // operator
-    S.Require<CompositeVector, CompositeVectorSpace>(scalar_coef_key_, tag_)
+    S.Require<CompositeVector, CompositeVectorSpace>(scalar_coef_key_, my_tag_)
         .Update(diff->little_k_space());
+    S.RequireEvaluator(scalar_coef_key_, my_tag_).EnsureCompatibility(S);
 
     // require bcs
-    auto &bc_fac = S.Require<Operators::BCs, Operators::BCs_Factory>(bcs_key_, tag_);
+    auto &bc_fac = S.Require<Operators::BCs, Operators::BCs_Factory>(bcs_key_, my_tag_);
     bc_fac.set_mesh(rhs_fac.Mesh());
     bc_fac.set_kind(AmanziMesh::FACE);
     bc_fac.set_type(Operators::SCHEMA_DOFS_SCALAR);
+    S.RequireEvaluator(bcs_key_, my_tag_).EnsureCompatibility(S);
 
     // require tensors on cells
-    auto &K_fac = S.Require<TensorVector, TensorVector_Factory>(tensor_coef_key_, tag_);
+    auto &K_fac = S.Require<TensorVector, TensorVector_Factory>(tensor_coef_key_, my_tag_);
     CompositeVectorSpace K_map;
     K_map.SetMesh(rhs_fac.Mesh());
     K_map.AddComponent("cell", AmanziMesh::CELL, 1);
     K_fac.set_map(K_map);
+    S.RequireEvaluator(tensor_coef_key_, my_tag_).EnsureCompatibility(S);
 
     // check and require jacobian
+    // FIX ME, make a RequireDerivative(), move to EnsureCompatibleDerivative() --etc
     if (!jac_op_key_.empty()) {
       auto &jac_op_fac =
-          S.Require<Operators::Op, Operators::Op_Factory>(jac_op_key_, tag_, jac_op_key_);
+          S.Require<Operators::Op, Operators::Op_Factory>(jac_op_key_, my_tag_, jac_op_key_);
       jac_op_fac.set_mesh(rhs_fac.Mesh());
-      Operators::Schema schema(diff->schema_jacobian());
-      jac_op_fac.set_schema(schema);
+      jac_op_fac.set_schema(diff->schema_jacobian());
     }
   }
 }
@@ -110,7 +113,7 @@ bool Evaluator_PDE_Diffusion::UpdateDerivative(State &S, const Key &requestor, c
                                                const Key &wrt_tag) {
   ASSERT(IsDependency(S, wrt_key, wrt_tag));
   ASSERT(!jac_op_key_.empty());
-  bool wrt_is_u = wrt_key == u_key_ && wrt_tag == tag_;
+  bool wrt_is_u = wrt_key == u_key_ && wrt_tag == my_tag_;
 
   Teuchos::OSTab tab = vo_.getOSTab();
   if (vo_.os_OK(Teuchos::VERB_EXTREME)) {
@@ -131,15 +134,15 @@ bool Evaluator_PDE_Diffusion::UpdateDerivative(State &S, const Key &requestor, c
   // -- must update if any of our dependencies' derivatives have changed
   // NOTE: some assumptions about what is and is not differentiable
   // -- abs perm not a function of p
-  ASSERT(!S.GetEvaluator(tensor_coef_key_, tag_).IsDifferentiableWRT(S, wrt_key, wrt_tag));
+  ASSERT(!S.GetEvaluator(tensor_coef_key_, my_tag_).IsDifferentiableWRT(S, wrt_key, wrt_tag));
   if (!jac_op_key_.empty() &&
-      S.GetEvaluator(scalar_coef_key_, tag_).IsDifferentiableWRT(S, wrt_key, wrt_tag)) {
+      S.GetEvaluator(scalar_coef_key_, my_tag_).IsDifferentiableWRT(S, wrt_key, wrt_tag)) {
     update |=
-        S.GetEvaluator(scalar_coef_key_, tag_).UpdateDerivative(S, my_request, wrt_key, wrt_tag);
+        S.GetEvaluator(scalar_coef_key_, my_tag_).UpdateDerivative(S, my_request, wrt_key, wrt_tag);
   }
   if (!u_key_.empty() && !wrt_is_u &&
-      S.GetEvaluator(u_key_, tag_).IsDifferentiableWRT(S, wrt_key, wrt_tag)) {
-    update |= S.GetEvaluator(u_key_, tag_).UpdateDerivative(S, my_request, wrt_tag, wrt_tag);
+      S.GetEvaluator(u_key_, my_tag_).IsDifferentiableWRT(S, wrt_key, wrt_tag)) {
+    update |= S.GetEvaluator(u_key_, my_tag_).UpdateDerivative(S, my_request, wrt_tag, wrt_tag);
   }
 
   // Do the update
@@ -173,8 +176,8 @@ bool Evaluator_PDE_Diffusion::UpdateDerivative(State &S, const Key &requestor, c
 
 void Evaluator_PDE_Diffusion::Update_(State &S) {
   // get pointers to the results of this update
-  auto A_rhs = S.GetPtrW<CompositeVector>(rhs_key_, tag_, rhs_key_);
-  auto A_lop = S.GetPtrW<Operators::Op>(local_op_key_, tag_, local_op_key_);
+  auto A_rhs = S.GetPtrW<CompositeVector>(rhs_key_, my_tag_, rhs_key_);
+  auto A_lop = S.GetPtrW<Operators::Op>(local_op_key_, my_tag_, local_op_key_);
 
   // create the global operator
   Operators::Operator_Factory global_op_fac;
@@ -189,29 +192,29 @@ void Evaluator_PDE_Diffusion::Update_(State &S) {
   auto pde = diff_fac.Create(plist_, global_op);
   pde->set_local_matrices(A_lop);
 
-  Teuchos::RCP<const Operators::BCs> bcs = S.GetPtr<Operators::BCs>(bcs_key_, tag_);
+  Teuchos::RCP<const Operators::BCs> bcs = S.GetPtr<Operators::BCs>(bcs_key_, my_tag_);
   pde->SetBCs(bcs, bcs);
 
-  const auto &K = S.Get<TensorVector>(tensor_coef_key_, tag_);
+  const auto &K = S.Get<TensorVector>(tensor_coef_key_, my_tag_);
   Teuchos::RCP<const std::vector<WhetStone::Tensor>> Kdata = Teuchos::rcpFromRef(K.data);
   pde->SetTensorCoefficient(Kdata);
 
   // at least this is const!
-  Teuchos::RCP<const CompositeVector> kr = S.GetPtr<CompositeVector>(scalar_coef_key_, tag_);
+  Teuchos::RCP<const CompositeVector> kr = S.GetPtr<CompositeVector>(scalar_coef_key_, my_tag_);
   pde->SetScalarCoefficient(kr, Teuchos::null);
 
   // compute local ops
   global_op->Init();
 
   Teuchos::Ptr<const CompositeVector> u;
-  if (!u_key_.empty()) u = S.GetPtr<CompositeVector>(u_key_, tag_).ptr();
+  if (!u_key_.empty()) u = S.GetPtr<CompositeVector>(u_key_, my_tag_).ptr();
   pde->UpdateMatrices(Teuchos::null, u);
   pde->ApplyBCs(true, true);
 }
 
 void Evaluator_PDE_Diffusion::UpdateDerivative_(State &S, const Key &wrt_key, const Key &wrt_tag) {
   // need the spaces
-  const CompositeVector &A_rhs = S.Get<CompositeVector>(rhs_key_, tag_);
+  const CompositeVector &A_rhs = S.Get<CompositeVector>(rhs_key_, my_tag_);
 
   // create the global operator
   Operators::Operator_Factory global_op_fac;
@@ -225,27 +228,27 @@ void Evaluator_PDE_Diffusion::UpdateDerivative_(State &S, const Key &wrt_key, co
   tmp.set("exclude primary terms", true);  // turn off the primary terms, just the Jacobian
   auto pde = diff_fac.Create(plist_, global_op);
   if (!jac_op_key_.empty()) {
-    pde->set_jacobian_matrices(S.GetPtrW<Operators::Op>(jac_op_key_, tag_, jac_op_key_));
+    pde->set_jacobian_matrices(S.GetPtrW<Operators::Op>(jac_op_key_, my_tag_, jac_op_key_));
   }
 
   // set the bcs
-  Teuchos::RCP<const Operators::BCs> bcs = S.GetPtr<Operators::BCs>(bcs_key_, tag_);
+  Teuchos::RCP<const Operators::BCs> bcs = S.GetPtr<Operators::BCs>(bcs_key_, my_tag_);
   pde->SetBCs(bcs, bcs);
 
   // set the tensor coef
-  const auto &K = S.Get<TensorVector>(tensor_coef_key_, tag_);
+  const auto &K = S.Get<TensorVector>(tensor_coef_key_, my_tag_);
   Teuchos::RCP<const std::vector<WhetStone::Tensor>> Kdata = Teuchos::rcpFromRef(K.data);
   pde->SetTensorCoefficient(Kdata);
 
   // set the scalar coef and derivatives
-  Teuchos::RCP<const CompositeVector> kr = S.GetPtr<CompositeVector>(scalar_coef_key_, tag_);
+  Teuchos::RCP<const CompositeVector> kr = S.GetPtr<CompositeVector>(scalar_coef_key_, my_tag_);
   Teuchos::RCP<const CompositeVector> dkr =
-      S.GetDerivativePtr<CompositeVector>(scalar_coef_key_, tag_, wrt_key, wrt_tag);
+      S.GetDerivativePtr<CompositeVector>(scalar_coef_key_, my_tag_, wrt_key, wrt_tag);
   pde->SetScalarCoefficient(kr, dkr);
 
   // compute local ops
   global_op->Init();
-  Teuchos::Ptr<const CompositeVector> u = S.GetPtr<CompositeVector>(u_key_, tag_).ptr();
+  Teuchos::Ptr<const CompositeVector> u = S.GetPtr<CompositeVector>(u_key_, my_tag_).ptr();
   pde->UpdateMatricesNewtonCorrection(Teuchos::null, u);
   pde->ApplyBCs(true, true);
 }

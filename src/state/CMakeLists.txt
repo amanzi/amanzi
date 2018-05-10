@@ -77,9 +77,14 @@ set(state_inc_files
   evaluator/EvaluatorSecondary_Impl.hh
   evaluator/EvaluatorSecondaries.hh
   evaluator/EvaluatorAlgebraic.hh
-  evaluator/EvaluatorSecondaryFromFunction.hh
+  evaluator/EvaluatorAlgebraicFromFunction.hh
   evaluator/Evaluator_OperatorApply.hh
   evaluator/Evaluator_PDE_Diffusion.hh
+  evaluator/Evaluator_PDE_Accumulation.hh
+  evaluator/Evaluator_BCs.hh
+  evaluator/EvaluatorAlgebraicAdditive.hh
+  evaluator/EvaluatorAlgebraicMultiplicative.hh
+  evaluator/EvaluatorCellVolume.hh
 #  evaluator/cell_volume_evaluator.hh
 #  evaluator/cell_volume_evaluator_reg.hh
 #  evaluator/deforming_cell_volume_evaluator.hh
@@ -112,9 +117,12 @@ add_amanzi_library(state
 		      evaluator/EvaluatorPrimary.cc
                       evaluator/EvaluatorAlgebraic.cc
                       evaluator/EvaluatorSecondaries.cc
-                      evaluator/EvaluatorSecondaryFromFunction.cc
+                      evaluator/EvaluatorAlgebraicFromFunction.cc
                       evaluator/Evaluator_OperatorApply.cc
                       evaluator/Evaluator_PDE_Diffusion.cc
+                      evaluator/Evaluator_PDE_Accumulation.cc
+                      evaluator/Evaluator_BCs.cc
+                      evaluator/EvaluatorCellVolume.cc
 #		      evaluator/cell_volume_evaluator.cc
 #		      evaluator/deforming_cell_volume_evaluator.cc
 #		      evaluator/rank_evaluator.cc
@@ -140,8 +148,13 @@ register_evaluator_with_factory(HEADERFILE evaluator/EvaluatorIndependentTensorF
 register_evaluator_with_factory(HEADERFILE evaluator/EvaluatorIndependentFromFile_reg.hh LISTNAME REGISTER_AMANZI_STATE_EVALUATORS)
 register_evaluator_with_factory(HEADERFILE evaluator/Evaluator_OperatorApply_reg.hh LISTNAME REGISTER_AMANZI_STATE_EVALUATORS)
 register_evaluator_with_factory(HEADERFILE evaluator/Evaluator_PDE_Diffusion_reg.hh LISTNAME REGISTER_AMANZI_STATE_EVALUATORS)
-#register_evaluator_with_factory(HEADERFILE evaluator/EvaluatorSecondaryFromFunction_reg.hh LISTNAME REGISTER_AMANZI_STATE_EVALUATORS)
-# register_evaluator_with_factory(HEADERFILE evaluator/cell_volume_evaluator_reg.hh   LISTNAME REGISTER_AMANZI_STATE_EVALUATORS)
+register_evaluator_with_factory(HEADERFILE evaluator/Evaluator_PDE_Accumulation_reg.hh LISTNAME REGISTER_AMANZI_STATE_EVALUATORS)
+register_evaluator_with_factory(HEADERFILE evaluator/Evaluator_BCs_reg.hh LISTNAME REGISTER_AMANZI_STATE_EVALUATORS)
+register_evaluator_with_factory(HEADERFILE evaluator/Evaluator_BoundaryFunction_reg.hh LISTNAME REGISTER_AMANZI_STATE_EVALUATORS)
+register_evaluator_with_factory(HEADERFILE evaluator/EvaluatorAlgebraicAdditive_reg.hh LISTNAME REGISTER_AMANZI_STATE_EVALUATORS)
+register_evaluator_with_factory(HEADERFILE evaluator/EvaluatorAlgebraicMultiplicative_reg.hh LISTNAME REGISTER_AMANZI_STATE_EVALUATORS)
+register_evaluator_with_factory(HEADERFILE evaluator/EvaluatorCellVolume_reg.hh LISTNAME REGISTER_AMANZI_STATE_EVALUATORS)
+#register_evaluator_with_factory(HEADERFILE evaluator/EvaluatorAlgebraicFromFunction_reg.hh LISTNAME REGISTER_AMANZI_STATE_EVALUATORS)
 # register_evaluator_with_factory(HEADERFILE evaluator/rank_evaluator_reg.hh          LISTNAME REGISTER_AMANZI_STATE_EVALUATORS)
 # register_evaluator_with_factory(HEADERFILE evaluator/deforming_cell_volume_evaluator_reg.hh LISTNAME REGISTER_AMANZI_STATE_EVALUATORS)
 

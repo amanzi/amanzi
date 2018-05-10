@@ -40,10 +40,12 @@ add_amanzi_library(mesh_functions
                           CompositeVectorFunctionFactory.cc
                           UniqueMeshFunction.cc
                           BoundaryFunction.cc
+                          BoundaryFunctionFactory.cc
                           MeshPartition.cc
                           MaterialMeshFunction.cc
                           ColumnMeshFunction.cc
                    HEADERS BoundaryFunction.hh
+                           BoundaryFunctionFactory.hh
                            CompositeVectorFunction.hh
                            CompositeVectorFunctionFactory.hh
                            MeshPartition.hh

@@ -22,6 +22,8 @@ class BCs_Factory {
   BCs_Factory() {}
 
   void set_mesh(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) { mesh_ = mesh; }
+  Teuchos::RCP<const AmanziMesh::Mesh> mesh() const { return mesh_; }
+
   void set_kind(AmanziMesh::Entity_kind kind) { kind_ = kind; }
   void set_type(int type) { type_ = type; }
 

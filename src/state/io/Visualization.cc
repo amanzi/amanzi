@@ -89,9 +89,9 @@ void Visualization::WriteRegions() {
           mesh_->get_set_entities(*reg_it, AmanziMesh::CELL, AmanziMesh::OWNED,
                                   &ids);
 
-          for (AmanziMesh::Entity_ID_List::const_iterator it = ids.begin();
-               it != ids.end(); ++it) {
-            reg[*it] = reg_index;
+          for (AmanziMesh::Entity_ID_List::const_iterator rit = ids.begin();
+               rit != ids.end(); ++rit) {
+            reg[*rit] = reg_index;
           }
         }
       }

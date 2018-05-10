@@ -169,9 +169,8 @@ Evaluator& State::RequireEvaluator(const Key &key,
   }
 
   // cannot find the evaluator, error
-  std::stringstream messagestream;
-  messagestream << "Model for field " << key << " cannot be created in State.";
-  Errors::Message message(messagestream.str());
+  Errors::Message message;
+  message << "Model for field " << key << " cannot be created in State.";
   throw(message);
 }
 
@@ -271,6 +270,16 @@ void State::Setup() {
       r.second->EnsureCompatibility(*this);
     }
   }
+
+  // // Now make sure derivatives are properly set up as well
+  // for (const auto& deriv : derivs_) {
+  //   auto keytag = Keys::splitKeyTag(deriv.first);
+  //   for (const auto& wrt : *deriv.second) {
+  //     auto wrtkeytag = Keys::splitKeyTag(wrt.first);
+  //     GetEvaluator(keytag.first,keytag.second)
+  //         .EnsureCompatibleDerivative(*this,wrtkeytag.first,wrtkeytag.second);
+  //   }
+  // }
 
   // -- Create the data for all fields.
   for (auto &f : data_) {

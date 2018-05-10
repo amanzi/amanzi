@@ -17,7 +17,11 @@ namespace Amanzi {
 // ---------------------------------------------------------------------------
 EvaluatorIndependentTensorFunction::EvaluatorIndependentTensorFunction(
     Teuchos::ParameterList &plist)
-    : EvaluatorIndependent<TensorVector, TensorVector_Factory>(plist) {}
+    : EvaluatorIndependent<TensorVector, TensorVector_Factory>(plist),
+    dimension_(-1),
+    rank_(-1),
+    num_funcs_(-1)
+{}
 
 // ---------------------------------------------------------------------------
 // Virtual Copy constructor
@@ -50,21 +54,25 @@ operator=(const EvaluatorIndependentTensorFunction &other) {
 }
 
 void EvaluatorIndependentTensorFunction::EnsureCompatibility(State &S) {
+  // need only do this once, but AFTER we have a mesh
   auto &f =
       S.Require<TensorVector, TensorVector_Factory>(my_key_, my_tag_, my_key_);
-  dimension_ = f.dimension();
-  ASSERT(dimension_ > 0);
-  rank_ = plist_.get<int>("tensor rank");
-  f.set_rank(rank_);
+  if (rank_ == -1 && f.map().Mesh().get()) {
+    dimension_ = f.dimension();
+    ASSERT(dimension_ > 0);
+    rank_ = plist_.get<int>("tensor rank");
+    f.set_rank(rank_);
 
-  // the map needs to be updated with the correct number of values
-  CompositeVectorSpace map_new;
-  auto &map_old = f.map();
-  num_funcs_ = WhetStone::WHETSTONE_TENSOR_SIZE[dimension_ - 1][rank_ - 1];
-  for (auto &name : map_old) {
-    map_new.AddComponent(name, map_old.Location(name), num_funcs_);
+    // the map needs to be updated with the correct number of values
+    CompositeVectorSpace map_new;
+    auto &map_old = f.map();
+    map_new.SetMesh(map_old.Mesh());
+    num_funcs_ = WhetStone::WHETSTONE_TENSOR_SIZE[dimension_ - 1][rank_ - 1];
+    for (auto &name : map_old) {
+      map_new.AddComponent(name, map_old.Location(name), num_funcs_);
+    }
+    f.set_map(map_new);
   }
-  f.set_map(map_new);
 }
 
 // ---------------------------------------------------------------------------

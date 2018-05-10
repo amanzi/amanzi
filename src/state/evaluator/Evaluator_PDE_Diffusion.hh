@@ -29,12 +29,16 @@ namespace Amanzi {
 class Evaluator_PDE_Diffusion : public EvaluatorSecondaries {
  public:
   Evaluator_PDE_Diffusion(Teuchos::ParameterList &plist);
-  
+
+  Evaluator_PDE_Diffusion(const Evaluator_PDE_Diffusion& other) = default;
   virtual Teuchos::RCP<Evaluator> Clone() const override {
     return Teuchos::rcp(new Evaluator_PDE_Diffusion(*this));
   };
 
   virtual void EnsureCompatibility(State &S) override;
+
+  // jac-op handled in EnsureCompatibility()
+  //  virtual void EnsureCompatibleDerivative(State &S, const Key& wrt_key, const Key& wrt_tag) override {}
   
   virtual bool UpdateDerivative(State &S, const Key &requestor, const Key &wrt_key,
           const Key &wrt_tag) override;
@@ -49,7 +53,6 @@ class Evaluator_PDE_Diffusion : public EvaluatorSecondaries {
   virtual void UpdateDerivative_(State &S, const Key &wrt_key, const Key &wrt_tag) override;
 
  protected:
-  Key tag_;
   Key rhs_key_, local_op_key_, jac_op_key_;
   Key tensor_coef_key_, scalar_coef_key_;
   Key bcs_key_;

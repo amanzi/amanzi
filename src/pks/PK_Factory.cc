@@ -155,9 +155,9 @@ Teuchos::RCP<PK> PKFactory::CreatePK(
     message << "PK Factory: PK \"" << pk_name << "\" requested type \""
             << pk_type << "\" which is not a registered PK type.\n";
 
-    for (map_type::iterator iter = GetMap()->begin(); iter != GetMap()->end();
-         ++iter) {
-      message << std::endl << "  option: " << iter->first;
+    for (map_type::iterator viter = GetMap()->begin(); viter != GetMap()->end();
+         ++viter) {
+      message << std::endl << "  option: " << viter->first;
     }
     Errors::Message msg(message.str());
     Exceptions::amanzi_throw(msg);

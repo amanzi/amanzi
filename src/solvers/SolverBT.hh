@@ -287,7 +287,7 @@ SolverBT<Vector,VectorSpace>::BT_(const Teuchos::RCP<Vector>& u)
     residual_ = error;
     r->Norm2(&l2_error);
 
-    int ierr = BT_ErrorControl_(error, previous_error, l2_error);
+    ierr = BT_ErrorControl_(error, previous_error, l2_error);
     if (ierr == SOLVER_CONVERGED) return num_itrs_;
     if (ierr != SOLVER_CONTINUE) return ierr;
   } while(true);

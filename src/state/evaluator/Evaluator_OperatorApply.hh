@@ -71,7 +71,10 @@ class Evaluator_OperatorApply
     return Teuchos::rcp(new Evaluator_OperatorApply(*this));
   }
 
-  void EnsureCompatibility(State &S) override;
+  virtual void EnsureCompatibility(State &S) override;
+
+  // handled in ensure compatibility?
+  //  virtual void EnsureCompatibleDerivative(State &S, const Key& wrt_key, const Key& wrt_tag) override {}
 
  protected:
   // These do the actual work
@@ -89,8 +92,12 @@ class Evaluator_OperatorApply
 
   std::vector<Teuchos::Array<Key>> op_keys_; // A_ji
   std::vector<Teuchos::Array<Key>> op_rhs_keys_; // rhs_A_ji
+  Teuchos::Array<double> rhs_scalars_; // scale the rhs_A_ji (allows +1 for sources, -1 for accumulation terms)
 
   Teuchos::Array<Key> rhs_keys_; // rhs_k
+
+  std::string primary_entity_;
+  AmanziMesh::Entity_kind primary_entity_kind_;
 
 private:
   static Utils::RegisteredFactory<Evaluator, Evaluator_OperatorApply> fac_;

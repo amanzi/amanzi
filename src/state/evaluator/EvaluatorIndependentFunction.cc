@@ -48,6 +48,7 @@ operator=(const EvaluatorIndependentFunction &other) {
   return *this;
 }
 
+
 // ---------------------------------------------------------------------------
 // Update the value in the state.
 // ---------------------------------------------------------------------------

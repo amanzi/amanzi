@@ -48,6 +48,7 @@ public:
   virtual void EnsureCompatibility(State &S) override {
     EvaluatorSecondary<Data_t, DataFactory_t>::EnsureCompatibility(S);
   }
+  //  virtual void EnsureCompatibleDerivative(State &S, const Key& wrt_key, const Key& wrt_tag) override;
 
 protected:
   virtual void UpdateDerivative_(State &S, const Key &wrt_key,
@@ -58,9 +59,27 @@ protected:
 
   virtual void EvaluatePartialDerivative_(const State &S,
           const Key &wrt_key, const Key &wrt_tag, Data_t &result) = 0;
-  
+
 };
 
+// template<typename Data_t, typename DataFactory_t>
+// void
+// EvaluatorAlgebraic<Data_t,DataFactory_t>::EnsureCompatibleDerivative(
+//     State &S, const Key& wrt_key, const Key& wrt_tag) {
+//   // set the type of the derivative
+//   S.RequireDerivative<Data_t, DataFactory_t>(this->my_key_, this->my_tag_, wrt_key, wrt_tag);
+
+//   // pass on dependencies
+//   for (const auto& dep : this->dependencies_) {
+//     if (S.GetEvaluator(dep.first, dep.second).IsDifferentiableWRT(S, wrt_key, wrt_tag)) {
+//       S.RequireDerivative<Data_t, DataFactory_t>(dep.first, dep.second, wrt_key, wrt_tag);
+//       S.GetEvaluator(dep.first, dep.second).EnsureCompatibleDerivative(S, wrt_key, wrt_tag);
+//     }
+//   }
+// }
+
+
+// declare specializations
 template <> void EvaluatorAlgebraic<double>::EnsureCompatibility(State &S);
 
 template <>

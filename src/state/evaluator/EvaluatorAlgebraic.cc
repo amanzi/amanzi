@@ -114,8 +114,8 @@ void EvaluatorAlgebraic<CompositeVector,
   // claim ownership
   CompositeVectorSpace &my_fac =
       S.Require<CompositeVector, CompositeVectorSpace>(my_key_, my_tag_, my_key_);
-  bool derivs = S.HasDerivativeSet(my_key_, my_tag_);
-  if (derivs) {
+  bool has_derivs = S.HasDerivativeSet(my_key_, my_tag_);
+  if (has_derivs) {
     for (const auto& deriv : S.GetDerivativeSet(my_key_, my_tag_)) {
       auto wrt = Keys::splitKeyTag(deriv.first);
       S.RequireDerivative<CompositeVector,CompositeVectorSpace>(my_key_, my_tag_,
@@ -134,7 +134,6 @@ void EvaluatorAlgebraic<CompositeVector,
   for (auto &dep : dependencies_) S.RequireEvaluator(dep.first, dep.second);
 
   // set requirements on myself, my derivatives, my dependencies, and their derivatives
-  bool has_derivs = S.HasDerivativeSet(my_key_, my_tag_);
   std::string consistency_policy =
       plist_.get<std::string>("consistency policy", "give to child");
   if (consistency_policy == "none") {
@@ -193,7 +192,6 @@ void EvaluatorAlgebraic<CompositeVector,
         }
       }
     }
-    
 
     // then call children to set their info, which will also set up deriv info
     for (const auto &dep : dependencies_) {

@@ -29,9 +29,8 @@ PK_Default::PK_Default(const Teuchos::RCP<Teuchos::ParameterList> &pk_tree,
   if (pks_list->isSublist(name_)) {
     plist_ = Teuchos::sublist(pks_list, name_);
   } else {
-    std::stringstream messagestream;
-    messagestream << "There is no sublist for PK " << name_ << "in PKs list\n";
-    Errors::Message message(messagestream.str());
+    Errors::Message message;
+    message << "PK_Default: There is no sublist for PK \"" << name_ << "\" in PKs list\n";
     Exceptions::amanzi_throw(message);
   }
 

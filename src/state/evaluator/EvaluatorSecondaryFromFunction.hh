@@ -59,7 +59,7 @@ namespace Amanzi {
 class Function;
 
 class EvaluatorSecondaryFromFunction
-    : public EvaluatorSecondary<CompositeVector, CompositeVectorSpace> {
+    : public EvaluatorAlgebraic<CompositeVector, CompositeVectorSpace> {
 
 public:
   explicit EvaluatorSecondaryFromFunction(Teuchos::ParameterList &plist);

@@ -464,8 +464,8 @@ void test_inverse(const std::string &discretization) {
 
   {
     // -- mark x as changed
-    auto x_eval = S.GetEvaluatorPtr("x","");
-    auto x_primary_eval = Teuchos::rcp_dynamic_cast<EvaluatorPrimary<CompositeVector,CompositeVectorSpace>>(x_eval);
+    auto lx_eval = S.GetEvaluatorPtr("x","");
+    auto x_primary_eval = Teuchos::rcp_dynamic_cast<EvaluatorPrimary<CompositeVector,CompositeVectorSpace>>(lx_eval);
     CHECK(x_primary_eval.get());
     x_primary_eval->SetChanged();
   }

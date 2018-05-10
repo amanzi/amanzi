@@ -23,6 +23,7 @@ These tests that functionality with a series of ODEs.
 #include "Mesh.hh"
 #include "MeshFactory.hh"
 #include "State.hh"
+#include "CompositeVector.hh"
 #include "TreeVector.hh"
 
 #include "PK.hh"
@@ -36,20 +37,48 @@ These tests that functionality with a series of ODEs.
 #include "PK_MixinPredictorCorrector.hh"
 
 #include "pks_test_harness.hh"
-#include "test_pks.hh"
+#include "test_pk_pde.hh"
 
 using namespace Amanzi;
 
+static const double PI_2 = 1.5707963267948966;
+
 SUITE(PKS_PDE) {
 
+  // // Forward Euler tests with each of 3 PKs
+  // TEST(DIFFUSION_FE_EXPLICIT) {
+  //   using PK_t = PK_Explicit_Adaptor<PK_PDE_Explicit<PK_MixinExplicit<PK_MixinLeafCompositeVector<PK_Default>>>>;
+  //   auto run = createRunPDE<PK_t>("diffusion FE", "test/pks_pde.xml");
+  //   auto nsteps = run_test(run->S, run->pk);
+
+  //   auto& u = *run->S->Get<CompositeVector>("u").ViewComponent("cell", false);
+
+  //   auto m = run->S->GetMesh();
+  //   int ncells = m->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  //   for (int c=0; c!=ncells; ++c) {
+  //     auto p = m->cell_centroid(c);
+  //     double val = 2.0 * std::pow(PI_2,2) * std::cos(PI_2 * p[0]) * std::cos(PI_2*p[1]);
+  //     CHECK_CLOSE(val, u[0][c], 1.e-10);
+  //   }
+  //   CHECK_EQUAL(10, nsteps.first);
+  //   CHECK_EQUAL(0, nsteps.second);
+  // }
+
   // Forward Euler tests with each of 3 PKs
-  TEST(A_FORWARD_EULER) {
-    auto run = createExplicit("A", "forward euler");
+  TEST(DIFFUSION_FE_IMPLICIT) {
+    using PK_t = PK_Implicit_Adaptor<PK_PDE_Implicit<PK_MixinImplicit<PK_MixinLeafCompositeVector<PK_Default>>>>;
+    auto run = createRunPDE<PK_t>("diffusion FE", "test/pks_pde.xml");
     auto nsteps = run_test(run->S, run->pk);
-    CHECK_CLOSE(2.0,
-                (*run->S->Get<CompositeVector>("primaryA")
-                      .ViewComponent("cell", false))[0][0],
-                1.e-10);
+
+    auto& u = *run->S->Get<CompositeVector>("u").ViewComponent("cell", false);
+
+    auto m = run->S->GetMesh();
+    int ncells = m->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+    for (int c=0; c!=ncells; ++c) {
+      auto p = m->cell_centroid(c);
+      double val = 2.0 * std::pow(PI_2,2) * std::cos(PI_2 * p[0]) * std::cos(PI_2*p[1]);
+      CHECK_CLOSE(val, u[0][c], 1.e-10);
+    }
     CHECK_EQUAL(10, nsteps.first);
     CHECK_EQUAL(0, nsteps.second);
   }
