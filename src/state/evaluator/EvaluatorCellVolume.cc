@@ -1,0 +1,40 @@
+/*
+  State
+
+  License: BSD
+  Author: Ethan Coon
+
+*/
+
+#include "EvaluatorCellVolume.hh"
+
+namespace Amanzi {
+
+// ---------------------------------------------------------------------------
+// Does the actual work to update the value in the state.
+// ---------------------------------------------------------------------------
+void
+EvaluatorCellVolume::Update_(State &S) {
+  auto& vec = S.GetW<CompositeVector>(my_key_, my_tag_, my_key_);
+  for (const auto& comp : vec) {
+    if (comp == "cell") {
+      int ncells = vec.Mesh()->num_entities(AmanziMesh::CELL,AmanziMesh::OWNED);
+      auto& vec_c = *vec.ViewComponent("cell", false);
+      for (int c=0; c!=ncells; ++c) {
+        vec_c[0][c] = vec.Mesh()->cell_volume(c);
+      }
+    } else if (comp == "face") {
+      int nfaces = vec.Mesh()->num_entities(AmanziMesh::FACE,AmanziMesh::OWNED);
+      auto& vec_f = *vec.ViewComponent("face", false);
+      for (int f=0; f!=nfaces; ++f) {
+        vec_f[0][f] = vec.Mesh()->face_area(f);
+      }
+    } else {
+      Errors::Message message;
+      message << "EvaluatorCellVolume for \"" << my_key_ << "\" requires component \"" << comp << "\" which is not \"face\" or \"cell\"";
+      throw message;
+    }
+  }
+}
+
+} // namespace Amanzi
