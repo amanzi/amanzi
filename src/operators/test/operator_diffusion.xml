@@ -65,7 +65,10 @@
     </ParameterList>
 
     <ParameterList name="Amesos Klu">
-      <Parameter name="direct method" type="string" value="amesos klu"/>
+      <Parameter name="direct method" type="string" value="amesos"/>
+      <ParameterList name="amesos parameters">
+        <Parameter name="solver name" type="string" value="Klu"/>
+      </ParameterList>
     </ParameterList>
   </ParameterList>
 

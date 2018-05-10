@@ -152,18 +152,14 @@ LinearOperatorFactory<Matrix, Vector, VectorSpace>::Create(
   else if (slist.isParameter("direct method")) {
     std::string method_name = slist.get<std::string>("direct method");
 
-    if (method_name == "amesos klu") {
-      Teuchos::ParameterList klu_list = slist.sublist("amesos klu parameters");
-      Teuchos::RCP<LinearOperatorAmesos<Matrix, Vector, VectorSpace> >
-         lin_op = Teuchos::rcp(new LinearOperatorAmesos<Matrix, Vector, VectorSpace>(m, h));
-      lin_op->Init(klu_list);
-      lin_op->set_name("Amesos_Klu");
-      return lin_op;
-    } else {
-      Errors::Message msg;
-      msg << "\nLinearOperatorFactory: wrong value of parameter \"direct method\"";
-      Exceptions::amanzi_throw(m);
-    }
+    std::string tmp(method_name);
+    tmp.append(" parameters");
+
+    Teuchos::ParameterList amesos_list = slist.sublist("amesos klu parameters");
+    Teuchos::RCP<LinearOperatorAmesos<Matrix, Vector, VectorSpace> >
+       lin_op = Teuchos::rcp(new LinearOperatorAmesos<Matrix, Vector, VectorSpace>(m, h));
+    lin_op->Init(amesos_list);
+    return lin_op;
   } else {
     Errors::Message msg("LinearOperatorFactory: parameter \"iterative method\" or \"direct method\" not found");
     Exceptions::amanzi_throw(msg);

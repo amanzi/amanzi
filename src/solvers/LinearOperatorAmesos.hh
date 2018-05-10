@@ -55,6 +55,7 @@ class LinearOperatorAmesosBase : public LinearOperator<Matrix, Vector, VectorSpa
  protected:
   using LinearOperator<Matrix, Vector, VectorSpace>::name_;
 
+  mutable Teuchos::ParameterList plist_;
   Teuchos::RCP<VerboseObject> vo_;
   mutable bool initialized_ = false;
 };
@@ -76,6 +77,7 @@ class LinearOperatorAmesos : public LinearOperatorAmesosBase<Matrix, Vector, Vec
  protected:
   using LinearOperator<Matrix, Vector, VectorSpace>::m_;
   using LinearOperator<Matrix, Vector, VectorSpace>::name_;
+  using LinearOperatorAmesosBase<Matrix, Vector, VectorSpace>::plist_;
   using LinearOperatorAmesosBase<Matrix, Vector, VectorSpace>::initialized_;
 };
 
@@ -105,8 +107,10 @@ class LinearOperatorAmesos<MatrixJF<Vector, VectorSpace>, Vector, VectorSpace> :
 template<class Matrix, class Vector, class VectorSpace>
 void LinearOperatorAmesosBase<Matrix, Vector, VectorSpace>::Init(Teuchos::ParameterList& plist)
 {
+  plist_ = plist;
+
   vo_ = Teuchos::rcp(new VerboseObject("Solvers::Amesos", plist));
-  name_ = plist.get<std::string>("solver name", "Amesos_Klu");
+  name_ = plist.get<std::string>("solver name", "Klu");
   initialized_ = true;
 }
 
@@ -131,9 +135,12 @@ int LinearOperatorAmesos<Matrix, Vector, VectorSpace>::ApplyInverse(const Vector
   Amesos factory;
   auto solver = factory.Create(name_, problem);
   if (solver == NULL) {
-    Errors::Message msg("LinearOperatorAmesos: specified solver is not available");
+    Errors::Message msg;
+    msg << "LinearOperatorAmesos: solver \"" << name_ << "\" is not available";
     Exceptions::amanzi_throw(msg);
   }
+
+  solver->SetParameters(plist_);
 
   int ierr = solver->SymbolicFactorization();
   if (ierr > 0) return LIN_SOLVER_AMESOS_SYMBOLIC_FAIL;

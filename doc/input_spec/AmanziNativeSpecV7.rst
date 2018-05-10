@@ -4405,6 +4405,8 @@ This list contains sublists for various linear solvers such as PCG, GMRES, and N
 * `"iterative method`" [string] defines a Krylov-based method. The available options
   include `"pcg`" and `"gmres`".
 
+* `"direct method`" [string] defines a direct method. The available option is `"amesos`".
+
 * `"xxx parameters`" [list] provides parameters for the iterative method specified 
   by variable `"iterative method`".
  
@@ -4568,6 +4570,28 @@ Internal parameters for NKA include
       <ParameterList name="verbose object">
         <Parameter name="verbosity level" type="string" value="high"/>
       </ParameterList>
+    </ParameterList>
+  </ParameterList>
+
+
+Direct solvers from Amesos library 
+..................................
+
+Amesos library of Trilinos package provides interfaces to a few direct solvers.
+List `"amesos parameters`" contains parameters that understood by this library.
+These parameters may violate the camel-case convention employed by this spec.
+Additional parameters are:
+
+* `"solver name`" [string] declares name of one of the supported direct solvers. 
+  Available options are `"Klu`", `"Superlu`", etc, see Amesos manual for details.
+  The default value is the serial solver `"Klu`".
+
+.. code-block:: xml
+
+  <ParameterList name="AMESOS KLU">  <!-- parent list -->
+    <Parameter name="direct method" type="string" value="amesos"/>
+    <ParameterList name="amesos parameters">
+      <Parameter name="solver name" type="string" value="Klu"/>
     </ParameterList>
   </ParameterList>
 
