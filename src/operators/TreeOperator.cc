@@ -247,6 +247,34 @@ void TreeOperator::InitBlockDiagonalPreconditioner()
   block_diagonal_ = true;
 }
 
+
+/* ******************************************************************
+* Deep copy for building interfaces to TPLs, mainly to solvers.
+* We assume that domain = range, which is natural for solvers.
+****************************************************************** */
+void TreeOperator::CopyVectorToSuperVector(const TreeVector& tv, Epetra_Vector& sv) const
+{
+  int ierr(0);
+  int my_dof = 0;
+  for (auto it = tv.begin(); it != tv.end(); ++it) {
+    ierr |= CopyCompositeVectorToSuperVector(*smap_, *(*it)->Data(), sv, my_dof);
+    my_dof++;            
+  }
+  ASSERT(!ierr);
+}
+
+
+void TreeOperator::CopySuperVectorToVector(const Epetra_Vector& sv, TreeVector& tv) const
+{
+  int ierr(0);
+  int my_dof = 0;
+  for (auto it = tv.begin(); it != tv.end(); ++it) {
+    ierr |= CopySuperVectorToCompositeVector(*smap_, sv, *(*it)->Data(), my_dof);
+    my_dof++;            
+  }
+  ASSERT(!ierr);
+}
+
 }  // namespace Operators
 }  // namespace Amanzi
 

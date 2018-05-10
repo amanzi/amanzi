@@ -393,6 +393,7 @@ class Operator {
           const WhetStone::DenseVector& v, CompositeVector& X) const;
 
   // deep copy for building interfaces to TPLs, mainly to solvers
+  // -- composite vectors
   void CopyVectorToSuperVector(const CompositeVector& cv, Epetra_Vector& sv) const;
   void CopySuperVectorToVector(const Epetra_Vector& sv, CompositeVector& cv) const;
 

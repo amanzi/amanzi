@@ -100,7 +100,7 @@ class AdvectionFn : public Explicit_TI::fnBase<CompositeVector> {
 
     // modify analytic Taylor expansions
     bool ho_velf(true);
-    // CalculateApproximateVelocity(t, dt_, velc, velf, ho_velf);
+    CalculateApproximateVelocity(t, dt_, velc, velf, ho_velf);
 
     // update problem coefficients
     // -- accumulation
@@ -237,7 +237,7 @@ class AdvectionFn : public Explicit_TI::fnBase<CompositeVector> {
     // create a mesh map at time t
     Teuchos::ParameterList map_list;
     map_list.set<std::string>("method", "Lagrange serendipity")
-            .set<int>("method order", 2)
+            .set<int>("method order", 3)
             .set<std::string>("projector", "L2")
             .set<std::string>("map name", "VEM");
   
