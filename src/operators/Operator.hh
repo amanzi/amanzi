@@ -236,6 +236,7 @@ class Operator {
   void set_schema_string(const std::string& schema_string) { schema_string_ = schema_string; }
 
   Teuchos::RCP<const AmanziMesh::Mesh> Mesh() const { return mesh_; }
+  Teuchos::RCP<SuperMap> smap() const { return smap_; }
 
   Teuchos::RCP<Epetra_CrsMatrix> A() { return A_; }
   Teuchos::RCP<const Epetra_CrsMatrix> A() const { return A_; }

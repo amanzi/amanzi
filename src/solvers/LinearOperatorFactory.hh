@@ -157,9 +157,8 @@ LinearOperatorFactory<Matrix, Vector, VectorSpace>::Create(
       Teuchos::RCP<LinearOperatorAmesos<Matrix, Vector, VectorSpace> >
          lin_op = Teuchos::rcp(new LinearOperatorAmesos<Matrix, Vector, VectorSpace>(m, h));
       lin_op->Init(klu_list);
-      lin_op->set_name(method_name);
+      lin_op->set_name("Amesos_Klu");
       return lin_op;
-      return Teuchos::null;
     } else {
       Errors::Message msg;
       msg << "\nLinearOperatorFactory: wrong value of parameter \"direct method\"";

@@ -24,7 +24,7 @@
 // Amanzi
 #include "GMVMesh.hh"
 #include "CompositeVector.hh"
-#include "LinearOperatorPCG.hh"
+#include "LinearOperatorFactory.hh"
 #include "MeshFactory.hh"
 #include "NumericalIntegration.hh"
 #include "Tensor.hh"
@@ -41,7 +41,7 @@
 /* *****************************************************************
 * This test diffusion solver with full tensor and source term.
 * **************************************************************** */
-TEST(OPERATOR_DIFFUSION_DG) {
+void OperatorDiffusionDG(std::string solver_name) {
   using namespace Teuchos;
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
@@ -51,7 +51,7 @@ TEST(OPERATOR_DIFFUSION_DG) {
   Epetra_MpiComm comm(MPI_COMM_WORLD);
   int MyPID = comm.MyPID();
 
-  if (MyPID == 0) std::cout << "\nTest: 2D elliptic problem, discontinuous Galerkin" << std::endl;
+  if (MyPID == 0) std::cout << "\nTest: 2D elliptic problem, dG method, solver: " << solver_name << std::endl;
 
   // read parameter list
   std::string xmlFileName = "test/operator_diffusion.xml";
@@ -64,7 +64,7 @@ TEST(OPERATOR_DIFFUSION_DG) {
 
   MeshFactory meshfactory(&comm);
   meshfactory.preference(FrameworkPreference({MSTK,STKMESH}));
-  // RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 10, 10, gm);
+  // RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 1, 2, gm);
   RCP<const Mesh> mesh = meshfactory("test/median7x8_filtered.exo", gm);
   // RCP<const Mesh> mesh = meshfactory("test/triangular8_clockwise.exo", gm);
 
@@ -187,22 +187,20 @@ TEST(OPERATOR_DIFFUSION_DG) {
   global_op->InitPreconditioner("Hypre AMG", slist);
 
   // solve the problem
-  ParameterList lop_list = plist.sublist("solvers")
-                                .sublist("AztecOO CG").sublist("pcg parameters");
-  AmanziSolvers::LinearOperatorPCG<Operator, CompositeVector, CompositeVectorSpace>
-      solver(global_op, global_op);
-  solver.Init(lop_list);
+  ParameterList lop_list = plist.sublist("solvers");
+  AmanziSolvers::LinearOperatorFactory<Operator, CompositeVector, CompositeVectorSpace> solverfactory;
+  auto solver = solverfactory.Create(solver_name, lop_list, global_op, global_op);
 
   CompositeVector& rhs = *global_op->rhs();
   CompositeVector solution(rhs);
   solution.PutScalar(0.0);
 
-  int ierr = solver.ApplyInverse(rhs, solution);
+  int ierr = solver->ApplyInverse(rhs, solution);
 
   if (MyPID == 0) {
-    std::cout << "pressure solver (pcg): ||r||=" << solver.residual() 
-              << " itr=" << solver.num_itrs()
-              << " code=" << solver.returned_code() << std::endl;
+    std::cout << "pressure solver (pcg): ||r||=" << solver->residual() 
+              << " itr=" << solver->num_itrs()
+              << " code=" << solver->returned_code() << std::endl;
 
     // visualization
     const Epetra_MultiVector& p = *solution.ViewComponent("cell");
@@ -214,7 +212,7 @@ TEST(OPERATOR_DIFFUSION_DG) {
     GMV::close_data_file();
   }
 
-  CHECK(solver.num_itrs() < 2000);
+  CHECK(solver->num_itrs() < 200);
 
   // compute pressure error
   solution.ScatterMasterToGhosted();
@@ -224,10 +222,14 @@ TEST(OPERATOR_DIFFUSION_DG) {
   ana.ComputeCellError(p, 0.0, pnorm, pl2_err, pinf_err, pl2_mean, pinf_mean);
 
   if (MyPID == 0) {
-    printf("Mean:  L2(p)=%9.6f  Inf(p)=%9.6f  itr=%3d\n", pl2_mean, pinf_mean, solver.num_itrs());
+    printf("Mean:  L2(p)=%9.6f  Inf(p)=%9.6f  itr=%3d\n", pl2_mean, pinf_mean, solver->num_itrs());
     printf("Total: L2(p)=%9.6f  Inf(p)=%9.6f\n", pl2_err, pinf_err);
 
     CHECK(pl2_err < 3e-2);
   }
 }
 
+TEST(OPERATOR_DIFFUSION_DG) {
+  OperatorDiffusionDG("AztecOO CG");
+  OperatorDiffusionDG("Amesos Klu");
+}
