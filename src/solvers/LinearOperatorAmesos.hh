@@ -24,7 +24,6 @@
 
 #include "errors.hh"
 #include "CompositeVector.hh"
-#include "OperatorUtils.hh"
 #include "VerboseObject.hh"
 
 #include "DenseMatrix.hh"
@@ -117,7 +116,7 @@ class LinearOperatorAmesos<Matrix, CompositeVector, CompositeVectorSpace> :
     Epetra_Vector rhs(m_->A()->RowMap());
     Epetra_Vector sol(rhs);
 
-    Operators::CopyCompositeVectorToSuperVector(*m_->smap(), v, rhs, m_->schema_col());
+    m_->CopyVectorToSuperVector(v, rhs);
     Epetra_LinearProblem problem(const_cast<Epetra_CrsMatrix*>(&*m_->A()), &sol, &rhs);
 
     Amesos factory;
@@ -140,7 +139,7 @@ class LinearOperatorAmesos<Matrix, CompositeVector, CompositeVectorSpace> :
       Exceptions::amanzi_throw(msg);
     }
 
-    Operators::CopySuperVectorToCompositeVector(*m_->smap(), sol, hv, m_->schema_col());
+    m_->CopySuperVectorToVector(sol, hv);
 
     delete solver;
     return LIN_SOLVER_AMESOS_SAYS_SUCCESS;

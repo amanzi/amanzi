@@ -392,6 +392,10 @@ class Operator {
   virtual void AssembleVectorFaceOp(int c, const Schema& schema,
           const WhetStone::DenseVector& v, CompositeVector& X) const;
 
+  // deep copy for building interfaces to TPLs, mainly to solvers
+  void CopyVectorToSuperVector(const CompositeVector& cv, Epetra_Vector& sv) const;
+  void CopySuperVectorToVector(const Epetra_Vector& sv, CompositeVector& cv) const;
+
   // diagnostics
   std::string PrintDiagnostics() const;
 

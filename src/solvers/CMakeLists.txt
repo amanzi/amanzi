@@ -23,7 +23,6 @@ include_directories(${DBC_SOURCE_DIR})
 include_directories(${ATK_SOURCE_DIR})
 include_directories(${DBG_SOURCE_DIR})
 include_directories(${WHETSTONE_SOURCE_DIR})
-include_directories(${OPERATORS_SOURCE_DIR})
 # -- below needed only by ResidualDebugger -- maybe this can be fixed?
 include_directories(${DATA_STRUCTURES_SOURCE_DIR})
 include_directories(${MESH_SOURCE_DIR})

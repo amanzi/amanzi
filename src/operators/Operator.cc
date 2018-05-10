@@ -410,6 +410,42 @@ void Operator::UpdateRHS(const CompositeVector& source, bool volume_included) {
 
 
 /* ******************************************************************
+* Deep copy for building interfaces to TPLs, mainly to solvers.
+* We assume that domain = range, which is natural for solvers.
+****************************************************************** */
+void Operator::CopyVectorToSuperVector(const CompositeVector& cv, Epetra_Vector& sv) const
+{
+  for (auto it = schema_col_.begin(); it != schema_col_.end(); ++it) {
+    std::string name(schema_col_.KindToString(it->kind));
+
+    for (int k = 0; k < it->num; ++k) {
+      const std::vector<int>& inds = smap_->Indices(name, k);
+      const Epetra_MultiVector& data = *cv.ViewComponent(name);
+      for (int n = 0; n != data.MyLength(); ++n) sv[inds[n]] = data[k][n];
+    }
+  }
+}
+
+
+/* ******************************************************************
+* Deep copy for building interfaces to TPLs, mainly to solvers.
+* We assume that domain = range, which is natural for solvers.
+****************************************************************** */
+void Operator::CopySuperVectorToVector(const Epetra_Vector& sv, CompositeVector& cv) const
+{
+  for (auto it = schema_col_.begin(); it != schema_col_.end(); ++it) {
+    std::string name(schema_col_.KindToString(it->kind));
+
+    for (int k = 0; k < it->num; ++k) {
+      const std::vector<int>& inds = smap_->Indices(name, k);
+      Epetra_MultiVector& data = *cv.ViewComponent(name);
+      for (int n = 0; n != data.MyLength(); ++n) data[k][n] = sv[inds[n]];
+    }
+  }
+}
+
+
+/* ******************************************************************
 * Rescale the local matrices via dispatch.
 ****************************************************************** */
 void Operator::Rescale(const CompositeVector& scaling)
