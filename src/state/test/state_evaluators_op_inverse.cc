@@ -292,6 +292,7 @@ void test(const std::string &discretization) {
   re_list.set("diagonal local operators keys", Teuchos::Array<std::string>(1,"A_local"));
   re_list.set("diagonal local operator rhss keys", Teuchos::Array<std::string>(1,"A_rhs"));
   re_list.set("additional rhss keys", Teuchos::Array<std::string>(1,"b"));
+  re_list.set("rhs coefficients", Teuchos::Array<double>(1,1.0));
   auto r_eval = Teuchos::rcp(new Evaluator_OperatorApply(re_list));
   S.SetEvaluator("residual", r_eval);
   S.Require<CompositeVector, CompositeVectorSpace>("residual", "")
@@ -402,9 +403,10 @@ void test_inverse(const std::string &discretization) {
   re_list.set("diagonal local operators keys", Teuchos::Array<std::string>(1,"A_local"));
   re_list.set("diagonal local operator rhss keys", Teuchos::Array<std::string>(1,"A_rhs"));
   re_list.set("additional rhss keys", Teuchos::Array<std::string>(1,"b"));
-  re_list.sublist("linear operator")
+  re_list.set("rhs coefficients", Teuchos::Array<double>(1,1.0));
+  re_list.sublist("preconditioner")
       .set<std::string>("preconditioner type", "boomer amg");
-  auto& amg_p = re_list.sublist("linear operator").sublist("boomer amg parameters");
+  auto& amg_p = re_list.sublist("preconditioner").sublist("boomer amg parameters");
   amg_p.set("tolerance", 0.0);
   amg_p.set("verbosity", 3);
   

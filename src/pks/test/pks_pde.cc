@@ -48,7 +48,7 @@ SUITE(PKS_PDE) {
   // // Forward Euler tests with each of 3 PKs
   // TEST(DIFFUSION_FE_EXPLICIT) {
   //   using PK_t = PK_Explicit_Adaptor<PK_PDE_Explicit<PK_MixinExplicit<PK_MixinLeafCompositeVector<PK_Default>>>>;
-  //   auto run = createRunPDE<PK_t>("diffusion FE", "test/pks_pde.xml");
+  //   auto run = createRunPDE<PK_t>("diffusion FE explicit", "test/pks_pde.xml");
   //   auto nsteps = run_test(run->S, run->pk);
 
   //   auto& u = *run->S->Get<CompositeVector>("u").ViewComponent("cell", false);
@@ -67,7 +67,7 @@ SUITE(PKS_PDE) {
   // Forward Euler tests with each of 3 PKs
   TEST(DIFFUSION_FE_IMPLICIT) {
     using PK_t = PK_Implicit_Adaptor<PK_PDE_Implicit<PK_MixinImplicit<PK_MixinLeafCompositeVector<PK_Default>>>>;
-    auto run = createRunPDE<PK_t>("diffusion FE", "test/pks_pde.xml");
+    auto run = createRunPDE<PK_t>("diffusion FE implicit", "test/pks_pde.xml");
     auto nsteps = run_test(run->S, run->pk);
 
     auto& u = *run->S->Get<CompositeVector>("u").ViewComponent("cell", false);

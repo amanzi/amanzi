@@ -221,103 +221,6 @@ bool EvaluatorSecondaries::UpdateDerivative(State &S, const Key &requestor,
   }
 }
 
-// ---------------------------------------------------------------------------
-// Updates the field value in state S.
-// ---------------------------------------------------------------------------
-void EvaluatorSecondaries::Update_(State& S) {
-  // pull my variables out of state
-  std::vector<Teuchos::Ptr<CompositeVector> > myfields;
-  for (auto& key : my_keys_) {
-    myfields.push_back(S.GetPtrW<CompositeVector>(key.first, key.second, key.first).ptr());
-  }
-
-  // call the evaluate method
-  Evaluate_(S, myfields);
-}
-
-
-// ---------------------------------------------------------------------------
-// Updates the total derivative d(my_field)/d(wrt_field) in state S.
-//
-// (using p to indicate partial derivative...)
-// d(my_field)/d(wrt_field) = p(my_field)/p(wrt_field) + sum_(dep) d(dep)/d(wrt_field)
-// ---------------------------------------------------------------------------
-void EvaluatorSecondaries::UpdateDerivative_(State& S,
-                                             const Key& wrt_key,
-                                             const Key& wrt_tag) {
-  
-  std::vector<Teuchos::Ptr<CompositeVector> > dmys;
-  for (auto& my_key : my_keys_) {
-
-    // derivative of my_key.first(my_key.second) with respect to wrt_key(wrt_tag)
-    
-    Key dmy_key = std::string("d")+my_key.first+std::string("_d")+wrt_key;
-
-    if (S.HasData(dmy_key, my_key.second )) {
-      // Get the field...
-      Teuchos::RCP<CompositeVector> dmy = S.GetPtrW<CompositeVector>(dmy_key, my_key.second, my_key.first);
-      dmy->PutScalar(0.0);
-      dmys.push_back(dmy.ptr());
-    } else {
-      // or create the field.  Note we have to do extra work that is normally
-      // done by State in initialize.
-      CompositeVectorSpace& my_fac = S.Require<CompositeVector,CompositeVectorSpace>(my_key.first, my_key.second);
-      CompositeVectorSpace& new_fac = S.Require<CompositeVector,CompositeVectorSpace>(dmy_key, my_key.second, my_key.first);
-      new_fac.Update(my_fac);
-      Teuchos::RCP<CompositeVector> dmy = Teuchos::rcp(new CompositeVector(new_fac));
-      S.SetPtr<CompositeVector>(dmy_key, my_key.second, my_key.first, dmy);
-      S.GetRecordW(dmy_key, my_key.first).set_initialized();
-      S.GetRecordW(dmy_key, my_key.first).set_io_vis(plist_.get<bool>("visualize derivative", false));
-      S.GetRecordW(dmy_key, my_key.first).set_io_checkpoint(plist_.get<bool>("checkpoint derivative", false));
-
-      dmy->PutScalar(0.0);
-      dmys.push_back(dmy.ptr());
-    }
-  }
-
-  // dF/dx = sum_(deps) partial F/ partial dep * ddep/dx + partial F/partial x
-  for (auto& dep : dependencies_) {
-
-    // -- allocate a tmp set of vectors for dF_i/ddep
-    std::vector<Teuchos::Ptr<CompositeVector> > tmp(dmys.size());
-    for (int i=0; i!=dmys.size(); ++i) {
-      tmp[i] = Teuchos::ptr(new CompositeVector(*dmys[i]));
-    }
-
-    if ((wrt_key == dep.first)&&(wrt_tag==dep.second)) {
-      
-      EvaluatePartialDerivative_(S, wrt_key, wrt_tag, tmp);
-      for (int i=0; i!=dmys.size(); ++i) {
-        // partial F_i / partial x
-        dmys[i]->Update(1.0, *tmp[i], 1.0);
-      }
-      
-    } else if (S.GetEvaluator(dep.first, dep.second)->IsDependency(S, wrt_key, wrt_tag)) {
-      //tmp = partial F_i / partial dep
-      EvaluatePartialDerivative_(S, dep.first, dep.second, tmp);
-      
-      for (int i=0; i!=dmys.size(); ++i) {
-        // -- ddep/dx
-        Key ddep_key = std::string("d")+dep.first+std::string("_d")+wrt_key;
-        const CompositeVector& ddep = S.Get<CompositeVector>(ddep_key, dep.second);
-        // partial F_i / partial dep * ddep/dx
-        dmys[i]->Multiply(1.0, ddep, *tmp[i], 1.0);
-      }
-    }
-
-    // clean up tmp as it goes out of scope
-    for (int i=0; i!=dmys.size(); ++i) {
-      delete tmp[i].get();
-    }
-  }
-  // // if (check_derivative_) {
-  // //   CheckDerivative_(S, wrt_key, wrt_tag);
-  // // }
-  
-}
-
-  
-
 inline bool EvaluatorSecondaries::IsDependency(const State &S, const Key &key,
                                                const Key &tag) const {
   if (std::find(dependencies_.begin(), dependencies_.end(),
@@ -333,69 +236,11 @@ inline bool EvaluatorSecondaries::IsDependency(const State &S, const Key &key,
   return false;
 }
 
-
-bool EvaluatorSecondaries::ProvidesKey(const Key& key, const Key& tag) const {
-  return std::find(my_keys_.begin(), my_keys_.end(), std::make_pair(key,tag)) != my_keys_.end();
+inline bool EvaluatorSecondaries::ProvidesKey(const Key &key,
+                                              const Key &tag) const {
+  return std::find(my_keys_.begin(), my_keys_.end(),
+                   std::make_pair(key, tag)) != my_keys_.end();
 }
-
-void EvaluatorSecondaries::EnsureCompatibility(State& S) {
-
-  Teuchos::RCP<CompositeVectorSpace> master_fac;
-
-  for (auto& key : my_keys_) {
-    // Ensure my field exists, and claim ownership.
-    CompositeVectorSpace& my_fac = S.Require<CompositeVector,CompositeVectorSpace>(key.first, key.second, key.first);
-
-    // Check plist for vis or checkpointing control.
-    bool io_my_key = plist_.get<bool>("visualize", true);
-    S.GetRecordW(key.first, key.second).set_io_vis(io_my_key);
-    bool checkpoint_my_key = plist_.get<bool>("checkpoint", false);
-    S.GetRecordW(key.first, key.second).set_io_checkpoint(checkpoint_my_key);
-
-    // Select a "master factory" to ensure commonality of all of my factories.
-    if (my_fac.Mesh() != Teuchos::null) {
-      if (master_fac == Teuchos::null) {
-        // no master yet, take this one
-        master_fac = Teuchos::rcpFromRef(my_fac);
-      } else {
-        // existing master, ensure it includes these requirements
-        master_fac->Update(my_fac);
-      }
-    }
-  }
-
-  if (master_fac == Teuchos::null) {
-    // No requirements have been set, so we'll have to hope they get set by an
-    // evaluator that depends upon this evaluator.
-  } else {
-    // Create an unowned factory to check my dependencies.
-    // Teuchos::RCP<CompositeVectorSpace> dep_fac =
-    //     Teuchos::rcp(new CompositeVectorSpace(*master_fac));
-    // dep_fac->SetOwned(false);
-    
-    CompositeVectorSpace dep_fac(*master_fac);
-    dep_fac.SetOwned(false);
-    
-    // Loop over my keys, ensuring they meet the requirements of the master.
-    for (auto& key : my_keys_ ) {
-      CompositeVectorSpace& my_fac = S.Require<CompositeVector,CompositeVectorSpace>(key.first, key.second);
-      my_fac.Update(dep_fac);
-    }
-
-    // Loop over my dependencies, ensuring they meet my requirements.
-    for (auto& key : dependencies_) {
-      CompositeVectorSpace& fac = S.Require<CompositeVector,CompositeVectorSpace>(key.first, key.second);
-      fac.Update(dep_fac);
-    }
-
-    // Recurse into the tree to propagate info to leaves.
-    for (auto& key : dependencies_) {
-      S.RequireEvaluator(key.first, key.second)->EnsureCompatibility(S);
-    }
-    
-  }
-}
-  
 
 std::string EvaluatorSecondaries::WriteToString() const {
   std::stringstream result;
@@ -409,5 +254,4 @@ std::string EvaluatorSecondaries::WriteToString() const {
   result << std::endl;
   return result.str();
 }
-
 } // namespace Amanzi

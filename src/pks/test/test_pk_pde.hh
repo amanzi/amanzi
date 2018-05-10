@@ -53,6 +53,7 @@ public:
     re_list.set("diagonal local operators keys", Teuchos::Array<std::string>(1,"A_local"));
     re_list.set("diagonal local operator rhss keys", Teuchos::Array<std::string>(1,"A_rhs"));
     re_list.set("additional rhss keys", Teuchos::Array<std::string>(1,"source_cv"));
+    re_list.set("rhs coefficients", Teuchos::Array<double>(1,1.0));
     re_list.set("tag", this->tag_inter_);
     auto dudt_eval = Teuchos::rcp(new Evaluator_OperatorApply(re_list));
     this->S_->SetEvaluator(dudt_key_, this->tag_inter_, dudt_eval);
@@ -121,7 +122,19 @@ public:
     this->S_->template RequireDerivative<Operators::Operator,Operators::Operator_Factory>(
         dudt_key_, tag_new_, this->key_, tag_new_);
 
-    this->S_->template RequireEvaluator(dudt_key_, tag_new_);
+
+    Teuchos::ParameterList re_list(dudt_key_);
+    re_list.sublist("verbose object")
+        .set<std::string>("verbosity level", "high");
+    re_list.set("diagonal primary x key", this->key_);
+    re_list.set("diagonal local operators keys", Teuchos::Array<std::string>(1,"A_local"));
+    re_list.set("diagonal local operator rhss keys", Teuchos::Array<std::string>(1,"A_rhs"));
+    re_list.set("additional rhss keys", Teuchos::Array<std::string>(1,"source_cv"));
+    re_list.set("rhs coefficients", Teuchos::Array<double>(1,1.0));
+    re_list.set("tag", this->tag_new_);
+    auto dudt_eval = Teuchos::rcp(new Evaluator_OperatorApply(re_list));
+    this->S_->SetEvaluator(dudt_key_, this->tag_new_, dudt_eval);
+    //    this->S_->template RequireEvaluator(dudt_key_, tag_new_);
   }
 
   void Initialize() {

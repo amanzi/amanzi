@@ -3,6 +3,6 @@ namespace Amanzi {
 
 template<>
 Utils::RegisteredFactory<Evaluator, EvaluatorAlgebraicAdditive<CompositeVector,CompositeVectorSpace>>
-EvaluatorAlgebraicAdditive<CompositeVector,CompositeVectorSpace>::fac_("additive evaluator");
+EvaluatorAlgebraicAdditive<CompositeVector,CompositeVectorSpace>::fac_("additive");
 
 } // namespace Amanzi

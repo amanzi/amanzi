@@ -5,6 +5,7 @@
 
   A few tests that place an Operator into the DAG and apply them to calculate a
   residual.
+
 */
 
 #include "Epetra_MpiComm.h"
@@ -252,22 +253,6 @@ public:
   }
 
 protected:
-  virtual void Evaluate_(const State& S,
-                         const std::vector<Teuchos::Ptr<CompositeVector> > & results) {}
-
-  
-  virtual void EvaluatePartialDerivative_(const State& S,
-                                          const Key& wrt_key, const Key& wrt_tag,
-                                          const std::vector<Teuchos::Ptr<CompositeVector> > & results) override {
-    ASSERT(0);
-  }
-
-  virtual void UpdateDerivative_(State& S, const Key& wrt_key, const Key& wrt_tag) override {
-    ASSERT(0);
-  }
-
- protected:
-
   Key tag_;
   Key rhs_key_, local_op_key_;
   Key tensor_coef_key_, scalar_coef_key_;
@@ -508,10 +493,11 @@ SUITE(EVALUATOR_ON_OP) {
     re_list.sublist("verbose object")
         .set<std::string>("verbosity level", "extreme");
     //    re_list.set("additional rhss keys", Teuchos::Array<std::string>(1,"b"));
+    re_list.set("diagonal primary x key", "x");
     re_list.set("diagonal local operators keys", Teuchos::Array<std::string>(1,"A_local"));
     re_list.set("diagonal local operator rhss keys", Teuchos::Array<std::string>(1,"A_rhs"));
     re_list.set("additional rhss keys", Teuchos::Array<std::string>(1,"b"));
-    re_list.set("diagonal primary x key", "x");
+    re_list.set("rhs coefficients", Teuchos::Array<double>(1,1.0));
     re_list.setName("residual");
     auto r_eval = Teuchos::rcp(new Evaluator_OperatorApply(re_list));
     S.SetEvaluator("residual", r_eval);
