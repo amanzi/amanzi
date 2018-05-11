@@ -65,8 +65,7 @@ void OperatorDiffusionDG(std::string solver_name) {
   MeshFactory meshfactory(&comm);
   meshfactory.preference(FrameworkPreference({MSTK,STKMESH}));
   // RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 1, 2, gm);
-  // RCP<const Mesh> mesh = meshfactory("test/median7x8_filtered.exo", gm);
-  RCP<const Mesh> mesh = meshfactory("test/median7x8.exo", gm);
+  RCP<const Mesh> mesh = meshfactory("test/median7x8_filtered.exo", gm);
   // RCP<const Mesh> mesh = meshfactory("test/triangular8_clockwise.exo", gm);
 
   int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
