@@ -23,7 +23,7 @@
 
 // Amanzi
 #include "GMVMesh.hh"
-#include "LinearOperatorFactory.hh"
+#include "LinearOperatorGMRES.hh"
 #include "MeshFactory.hh"
 #include "Mesh_MSTK.hh"
 #include "Tensor.hh"
@@ -207,10 +207,10 @@ void RunTest(std::string op_list_name) {
     }
 
     // solve the problem
-    ParameterList lop_list = plist.get<Teuchos::ParameterList>("solvers");
-    AmanziSolvers::LinearOperatorFactory<Operator, CompositeVector, CompositeVectorSpace> factory;
-    Teuchos::RCP<AmanziSolvers::LinearOperator<Operator, CompositeVector, CompositeVectorSpace> >
-       solver = factory.Create("Amanzi GMRES", lop_list, global_op);
+    ParameterList lop_list = plist.sublist("solvers").sublist("Amanzi GMRES").sublist("gmres parameters");
+    auto solver = Teuchos::rcp(new AmanziSolvers::LinearOperatorGMRES<
+        Operator, CompositeVector, CompositeVectorSpace>(global_op, global_op));
+    solver->Init(lop_list);
 
     CompositeVector rhs = *global_op->rhs();
     int ierr = solver->ApplyInverse(rhs, *solution);
@@ -221,8 +221,7 @@ void RunTest(std::string op_list_name) {
     if (MyPID == 0) {
       double a;
       rhs.Norm2(&a);
-      std::cout << "pressure solver (" << solver->name() 
-                << "): ||r||=" << solver->residual() << " itr=" << num_itrs
+      std::cout << "pressure solver (gmres): ||r||=" << solver->residual() << " itr=" << num_itrs
                 << "  ||f||=" << a 
                 << " code=" << solver->returned_code() << std::endl;
     }

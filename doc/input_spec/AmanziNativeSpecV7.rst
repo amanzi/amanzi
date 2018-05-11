@@ -4583,8 +4583,11 @@ These parameters may violate the camel-case convention employed by this spec.
 Additional parameters are:
 
 * `"solver name`" [string] declares name of one of the supported direct solvers. 
-  Available options are `"Klu`", `"Superlu`", etc, see Amesos manual for details.
-  The default value is the serial solver `"Klu`".
+  Available options are `"Klu`", `"Superlu`", `"Basker`", etc, see Amesos and 
+  Amesos2 manuals for details. The default value is serial solver `"Klu`".
+
+* `"amesos version`" [int] specifies version of Amesos. Available options are 1 and 2.
+  The default value is 1.
 
 .. code-block:: xml
 
@@ -4592,6 +4595,7 @@ Additional parameters are:
     <Parameter name="direct method" type="string" value="amesos"/>
     <ParameterList name="amesos parameters">
       <Parameter name="solver name" type="string" value="Klu"/>
+      <Parameter name="amesos version" type="int" value="1"/>
     </ParameterList>
   </ParameterList>
 

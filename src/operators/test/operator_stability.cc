@@ -24,7 +24,7 @@
 // Amanzi
 #include "MeshFactory.hh"
 #include "GMVMesh.hh"
-#include "LinearOperatorFactory.hh"
+#include "LinearOperatorPCG.hh"
 #include "Tensor.hh"
 
 // Operators
@@ -45,6 +45,7 @@ TEST(OPERATOR_MIXED_DIFFUSION) {
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::AmanziGeometry;
   using namespace Amanzi::Operators;
+  using namespace Amanzi::AmanziSolvers;
 
   Epetra_MpiComm comm(MPI_COMM_WORLD);
   int MyPID = comm.MyPID();
@@ -156,11 +157,10 @@ TEST(OPERATOR_MIXED_DIFFUSION) {
     global_op->InitPreconditioner("Hypre AMG", slist);
 
     // solve the problem
-    Teuchos::ParameterList lop_list = plist.get<Teuchos::ParameterList>("solvers");
+    Teuchos::ParameterList lop_list = plist.sublist("solvers").sublist("PCG").sublist("pcg parameters");
     solution->PutScalar(0.0);
-    AmanziSolvers::LinearOperatorFactory<Operator, CompositeVector, CompositeVectorSpace> factory;
-    Teuchos::RCP<AmanziSolvers::LinearOperator<Operator, CompositeVector, CompositeVectorSpace> >
-       solver = factory.Create("AztecOO CG", lop_list, global_op);
+    auto solver = Teuchos::rcp(new LinearOperatorPCG<Operator, CompositeVector, CompositeVectorSpace>(global_op, global_op));
+    solver->Init(lop_list);
 
     CompositeVector& rhs = *global_op->rhs();
     int ierr = solver->ApplyInverse(rhs, *solution);
@@ -207,6 +207,7 @@ TEST(OPERATOR_NODAL_DIFFUSION) {
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::AmanziGeometry;
   using namespace Amanzi::Operators;
+  using namespace Amanzi::AmanziSolvers;
 
   Epetra_MpiComm comm(MPI_COMM_WORLD);
   int MyPID = comm.MyPID();
@@ -311,11 +312,10 @@ TEST(OPERATOR_NODAL_DIFFUSION) {
     global_op->InitPreconditioner("Hypre AMG", slist);
 
     // solve the problem
-    ParameterList lop_list = plist.get<Teuchos::ParameterList>("solvers");
+    Teuchos::ParameterList lop_list = plist.sublist("solvers").sublist("PCG").sublist("pcg parameters");
     solution.PutScalar(0.0);
-    AmanziSolvers::LinearOperatorFactory<Operator, CompositeVector, CompositeVectorSpace> factory;
-    Teuchos::RCP<AmanziSolvers::LinearOperator<Operator, CompositeVector, CompositeVectorSpace> >
-       solver = factory.Create("AztecOO CG", lop_list, global_op);
+    auto solver = Teuchos::rcp(new LinearOperatorPCG<Operator, CompositeVector, CompositeVectorSpace>(global_op, global_op));
+    solver->Init(lop_list);
 
     CompositeVector& rhs = *global_op->rhs();
     solution.PutScalar(0.0);
