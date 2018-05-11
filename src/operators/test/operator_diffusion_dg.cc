@@ -231,5 +231,6 @@ void OperatorDiffusionDG(std::string solver_name) {
 
 TEST(OPERATOR_DIFFUSION_DG) {
   OperatorDiffusionDG("AztecOO CG");
-  OperatorDiffusionDG("Amesos Klu");
+  OperatorDiffusionDG("Amesos1");
+  OperatorDiffusionDG("Amesos2");
 }

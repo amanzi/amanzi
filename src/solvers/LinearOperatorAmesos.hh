@@ -17,6 +17,7 @@
 #include <cmath>
 
 #include "Amesos.h"
+#include "Amesos2.hpp"
 #include "Amesos_BaseSolver.h"
 #include "Epetra_CrsMatrix.h"
 #include "Teuchos_RCP.hpp"
@@ -58,6 +59,7 @@ class LinearOperatorAmesosBase : public LinearOperator<Matrix, Vector, VectorSpa
   mutable Teuchos::ParameterList plist_;
   Teuchos::RCP<VerboseObject> vo_;
   mutable bool initialized_ = false;
+  mutable int version_;
 };
 
 
@@ -74,11 +76,16 @@ class LinearOperatorAmesos : public LinearOperatorAmesosBase<Matrix, Vector, Vec
 
   int ApplyInverse(const Vector& v, Vector& hv) const;
 
+ private:
+  int ApplyInverseVer1_(const Vector& v, Vector& hv) const;
+  int ApplyInverseVer2_(const Vector& v, Vector& hv) const;
+
  protected:
   using LinearOperator<Matrix, Vector, VectorSpace>::m_;
   using LinearOperator<Matrix, Vector, VectorSpace>::name_;
   using LinearOperatorAmesosBase<Matrix, Vector, VectorSpace>::plist_;
   using LinearOperatorAmesosBase<Matrix, Vector, VectorSpace>::initialized_;
+  using LinearOperatorAmesosBase<Matrix, Vector, VectorSpace>::version_;
 };
 
 
@@ -111,7 +118,13 @@ void LinearOperatorAmesosBase<Matrix, Vector, VectorSpace>::Init(Teuchos::Parame
 
   vo_ = Teuchos::rcp(new VerboseObject("Solvers::Amesos", plist));
   name_ = plist.get<std::string>("solver name", "Klu");
+  version_ = plist.get<int>("amesos version", 1);
   initialized_ = true;
+
+  if (version_ != 1 && version_ != 2) {
+    Errors::Message msg("LinearOperatorAmesos: unsupported version of Amesos.");
+    Exceptions::amanzi_throw(msg);
+  }
 }
 
 
@@ -126,10 +139,27 @@ int LinearOperatorAmesos<Matrix, Vector, VectorSpace>::ApplyInverse(const Vector
     Exceptions::amanzi_throw(msg);
   }
 
+  if (version_ == 1) {
+    return ApplyInverseVer1_(v, hv);
+  } else if (version_ == 2) {
+    return ApplyInverseVer2_(v, hv);
+  }
+
+  return LIN_SOLVER_AMESOS_SAYS_SUCCESS;
+}
+
+
+/* ******************************************************************
+* Generic implementation for Amesos1
+****************************************************************** */
+template<class Matrix, class Vector, class VectorSpace>
+int LinearOperatorAmesos<Matrix, Vector, VectorSpace>::ApplyInverseVer1_(const Vector& v, Vector& hv) const
+{
   Epetra_Vector rhs(m_->A()->RowMap());
   Epetra_Vector sol(rhs);
 
   m_->CopyVectorToSuperVector(v, rhs);
+
   Epetra_LinearProblem problem(const_cast<Epetra_CrsMatrix*>(&*m_->A()), &sol, &rhs);
 
   Amesos factory;
@@ -150,6 +180,7 @@ int LinearOperatorAmesos<Matrix, Vector, VectorSpace>::ApplyInverse(const Vector
 
   try {
     solver->Solve();
+    delete solver;
   } catch(...) {
     Errors::Message msg("LinearOperatorAmesos: solver failed");
     Exceptions::amanzi_throw(msg);
@@ -157,10 +188,35 @@ int LinearOperatorAmesos<Matrix, Vector, VectorSpace>::ApplyInverse(const Vector
 
   m_->CopySuperVectorToVector(sol, hv);
 
-  delete solver;
   return LIN_SOLVER_AMESOS_SAYS_SUCCESS;
 }
 
+
+/* ******************************************************************
+* Generic implementation for Amesos2
+****************************************************************** */
+template<class Matrix, class Vector, class VectorSpace>
+int LinearOperatorAmesos<Matrix, Vector, VectorSpace>::ApplyInverseVer2_(const Vector& v, Vector& hv) const
+{
+  Epetra_Vector rhs(m_->A()->RowMap());
+  Epetra_Vector sol(rhs);
+
+  m_->CopyVectorToSuperVector(v, rhs);
+
+  auto solver = Amesos2::create<Epetra_CrsMatrix, Epetra_MultiVector>(
+      name_, m_->A(), Teuchos::rcpFromRef(sol), Teuchos::rcpFromRef(rhs));
+
+  try{
+   solver->solve();
+  } catch (...) {
+    Errors::Message msg("LinearOperatorAmesos: solver failed");
+    Exceptions::amanzi_throw(msg);
+  }
+
+  m_->CopySuperVectorToVector(sol, hv);
+
+  return LIN_SOLVER_AMESOS_SAYS_SUCCESS;
+}
 
 }  // namespace AmanziSolvers
 }  // namespace Amanzi

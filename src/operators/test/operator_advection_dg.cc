@@ -50,7 +50,7 @@
 * This tests exactness of the advection scheme for steady-state
 * equation c p + div(v p) = f.
 * **************************************************************** */
-void AdvectionSteady(std::string filename, int nx)
+void AdvectionSteady(int dim, std::string filename, int nx)
 {
   using namespace Teuchos;
   using namespace Amanzi;
@@ -61,7 +61,7 @@ void AdvectionSteady(std::string filename, int nx)
   Epetra_MpiComm comm(MPI_COMM_WORLD);
   int MyPID = comm.MyPID();
 
-  if (MyPID == 0) std::cout << "\nTest: 2D steady advection problem, discontinuous Galerkin" << std::endl;
+  if (MyPID == 0) std::cout << "\nTest: " << dim << "D steady advection problem, dG method" << std::endl;
 
   // read parameter list
   std::string xmlFileName = "test/operator_advection_dg.xml";
@@ -69,13 +69,17 @@ void AdvectionSteady(std::string filename, int nx)
   ParameterList plist = xmlreader.getParameters();
 
   // create a mesh framework
-  ParameterList region_list = plist.sublist("regions");
-  Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(2, region_list, &comm));
-
+  Teuchos::RCP<GeometricModel> gm;
   MeshFactory meshfactory(&comm);
   meshfactory.preference(FrameworkPreference({MSTK,STKMESH}));
-  // RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, nx, nx, gm);
-  RCP<const Mesh> mesh = meshfactory(filename, gm, true, true);
+
+  RCP<const Mesh> mesh;
+  if (dim == 2) {
+    // mesh = meshfactory(0.0, 0.0, 1.0, 1.0, nx, nx, gm);
+    mesh = meshfactory(filename, gm, true, true);
+  } else {
+    mesh = meshfactory(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, nx, nx, nx, gm);
+  }
 
   int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
   int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
@@ -114,12 +118,11 @@ void AdvectionSteady(std::string filename, int nx)
   }
 
   // -- velocity function
-  int d = mesh->space_dimension();
   auto velc = Teuchos::rcp(new std::vector<WhetStone::VectorPolynomial>(ncells_wghost));
   auto velf = Teuchos::rcp(new std::vector<WhetStone::Polynomial>(nfaces_wghost));
 
   WhetStone::VectorPolynomial v;
-  ana.VelocityTaylor(AmanziGeometry::Point(2), 0.0, v); 
+  ana.VelocityTaylor(AmanziGeometry::Point(dim), 0.0, v); 
   
   for (int c = 0; c < ncells_wghost; ++c) {
     (*velc)[c] = v;
@@ -135,12 +138,13 @@ void AdvectionSteady(std::string filename, int nx)
   WhetStone::Polynomial divv = Divergence(v);
 
   WhetStone::Polynomial sol, src;
-  WhetStone::VectorPolynomial grad(d, 0);
+  WhetStone::VectorPolynomial grad(dim, 0);
 
   int order = op_list.get<int>("method order");
-  int nk = (order + 1) * (order + 2) / 2;
+  int nk = (dim == 2) ? (order + 1) * (order + 2) / 2 :
+                        (order + 1) * (order + 2) * (order + 3) / 6;
 
-  WhetStone::Polynomial pc(2, order);
+  WhetStone::Polynomial pc(dim, order);
   WhetStone::NumericalIntegration numi(mesh, false);
 
   Epetra_MultiVector& rhs_c = *global_op->rhs()->ViewComponent("cell");
@@ -148,8 +152,7 @@ void AdvectionSteady(std::string filename, int nx)
     const Point& xc = mesh->cell_centroid(c);
     double volume = mesh->cell_volume(c);
 
-    v[0].ChangeOrigin(xc);
-    v[1].ChangeOrigin(xc);
+    v.ChangeOrigin(xc);
     divv.ChangeOrigin(xc);
 
     ana.SolutionTaylor(xc, 0.0, sol);
@@ -161,7 +164,7 @@ void AdvectionSteady(std::string filename, int nx)
       int k = it.MonomialOrder();
 
       double factor = numi.MonomialNaturalScales(c, k);
-      WhetStone::Polynomial cmono(2, it.multi_index(), factor);
+      WhetStone::Polynomial cmono(dim, it.multi_index(), factor);
       cmono.set_origin(xc);      
 
       WhetStone::Polynomial tmp = src * cmono;      
@@ -182,7 +185,8 @@ void AdvectionSteady(std::string filename, int nx)
     const Point& xf = mesh->face_centroid(f);
     const Point& normal = mesh->face_normal(f);
     if (fabs(xf[0]) < 1e-6 || fabs(xf[0] - 1.0) < 1e-6 ||
-        fabs(xf[1]) < 1e-6 || fabs(xf[1] - 1.0) < 1e-6) {
+        fabs(xf[1]) < 1e-6 || fabs(xf[1] - 1.0) < 1e-6 ||
+        fabs(xf[dim - 1]) < 1e-6 || fabs(xf[dim - 1] - 1.0) < 1e-6) {
       Point vp(v[0].Value(xf), v[1].Value(xf));
 
       if (vp * normal < -1e-12) {
@@ -265,7 +269,8 @@ void AdvectionSteady(std::string filename, int nx)
 
 
 TEST(OPERATOR_ADVECTION_STEADY_DG) {
-  AdvectionSteady("test/median7x8.exo", 8);
+  AdvectionSteady(2, "test/median7x8.exo", 8);
+  // AdvectionSteady(3, "test/median7x8.exo", 8);
 }
 
 

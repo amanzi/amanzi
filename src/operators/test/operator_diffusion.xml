@@ -64,10 +64,19 @@
       </ParameterList>
     </ParameterList>
 
-    <ParameterList name="Amesos Klu">
+    <ParameterList name="Amesos1">
       <Parameter name="direct method" type="string" value="amesos"/>
       <ParameterList name="amesos parameters">
         <Parameter name="solver name" type="string" value="Klu"/>
+        <Parameter name="amesos version" type="int" value="1"/>
+      </ParameterList>
+    </ParameterList>
+
+    <ParameterList name="Amesos2">
+      <Parameter name="direct method" type="string" value="amesos"/>
+      <ParameterList name="amesos parameters">
+        <Parameter name="solver name" type="string" value="Klu2"/>
+        <Parameter name="amesos version" type="int" value="2"/>
       </ParameterList>
     </ParameterList>
   </ParameterList>

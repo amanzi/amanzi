@@ -67,6 +67,10 @@ class VectorPolynomial {
     return tmp *= val;
   }
 
+  // change the coordinate system
+  void ChangeOrigin(const AmanziGeometry::Point& origin);
+
+  // typical operations with polynomials
   // complex constructions
   // -- gradient of a polynomial
   void Gradient(const Polynomial p);

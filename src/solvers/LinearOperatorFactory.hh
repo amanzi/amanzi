@@ -155,7 +155,7 @@ LinearOperatorFactory<Matrix, Vector, VectorSpace>::Create(
     std::string tmp(method_name);
     tmp.append(" parameters");
 
-    Teuchos::ParameterList amesos_list = slist.sublist("amesos klu parameters");
+    Teuchos::ParameterList amesos_list = slist.sublist(tmp);
     Teuchos::RCP<LinearOperatorAmesos<Matrix, Vector, VectorSpace> >
        lin_op = Teuchos::rcp(new LinearOperatorAmesos<Matrix, Vector, VectorSpace>(m, h));
     lin_op->Init(amesos_list);

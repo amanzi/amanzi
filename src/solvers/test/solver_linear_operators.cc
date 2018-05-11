@@ -267,7 +267,8 @@ TEST(AMESOS_SOLVER) {
   Teuchos::ParameterList plist;
   Teuchos::ParameterList& vo = plist.sublist("VerboseObject");
   vo.set("Verbosity Level", "high");
-  plist.set<std::string>("solver name", "Amesos_Klu");
+  plist.set<std::string>("solver name", "Amesos_Klu")
+       .set<int>("amesos version", 1);
   
   Epetra_MpiComm* comm = new Epetra_MpiComm(MPI_COMM_SELF);
   Teuchos::RCP<Epetra_Map> map = Teuchos::rcp(new Epetra_Map(10, 0, *comm));
@@ -275,21 +276,37 @@ TEST(AMESOS_SOLVER) {
   // create the operator
   Teuchos::RCP<Matrix> m = Teuchos::rcp(new Matrix(map));
   m->Init();
-  AmanziSolvers::LinearOperatorAmesos<Matrix, Epetra_Vector, Epetra_Map> superlu(m, m);
-  superlu.Init(plist);
 
   // initial guess
-  Epetra_Vector u(*map);
+  Epetra_Vector v(*map), u(*map);
   u[5] = 1.0;
 
-  // solve 1D problem
-  Epetra_Vector v(*map);
-  int ierr = superlu.ApplyInverse(u, v);
-  CHECK(ierr > 0);
+  // Amesos1
+  {
+    AmanziSolvers::LinearOperatorAmesos<Matrix, Epetra_Vector, Epetra_Map> klu(m, m);
+    klu.Init(plist);
 
-  double residual = 11 * v[5] - 5 * v[4] - 6 * v[6];
-  CHECK_CLOSE(residual, 1.0, 1e-12); 
+    int ierr = klu.ApplyInverse(u, v);
+    CHECK(ierr > 0);
 
+    double residual = 11 * v[5] - 5 * v[4] - 6 * v[6];
+    CHECK_CLOSE(residual, 1.0, 1e-12); 
+  }
+
+  // Amesos2
+  {
+    AmanziSolvers::LinearOperatorAmesos<Matrix, Epetra_Vector, Epetra_Map> klu(m, m);
+    plist.set<std::string>("solver name", "Klu2")
+         .set<int>("amesos version", 2);
+    klu.Init(plist);
+
+    int ierr = klu.ApplyInverse(u, v);
+    CHECK(ierr > 0);
+
+    double residual = 11 * v[5] - 5 * v[4] - 6 * v[6];
+    CHECK_CLOSE(residual, 1.0, 1e-12); 
+  }
+  
   delete comm;
 };
 

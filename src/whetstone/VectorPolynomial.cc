@@ -187,6 +187,17 @@ VectorPolynomial& VectorPolynomial::operator-=(const VectorPolynomial& vp)
 
 
 /* ******************************************************************
+* Reset all coefficients to thesame number
+****************************************************************** */
+void VectorPolynomial::ChangeOrigin(const AmanziGeometry::Point& origin)
+{
+  for (int i = 0; i < size(); ++i) {
+    polys_[i].ChangeOrigin(origin);
+  }
+}
+
+
+/* ******************************************************************
 * Ring algebra
 ****************************************************************** */
 double VectorPolynomial::NormMax() const

@@ -50,8 +50,8 @@ set(solvers_source_files ResidualDebugger.cc
                          SolverFactory.cc)
 
 set(solvers_tpl_libs ${DBC_LIBRARIES}
-		     ${Teuchos_LIBRARIES}
-		     ${Epetra_LIBRARIES} ${Belos_LIBRARIES} ${NOX_LIBRARIES})
+		     ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES}
+                     ${Belos_LIBRARIES} ${NOX_LIBRARIES} ${Amesos2_LIBRARIES})
 list(REVERSE solvers_tpl_libs)
 list(REMOVE_DUPLICATES solvers_tpl_libs)
 list(REVERSE solvers_tpl_libs)

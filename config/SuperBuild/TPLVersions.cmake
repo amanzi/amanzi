@@ -107,6 +107,7 @@
 #                - pflotran release/xsdk-0.3.0
 #                - update PETSc 3.8.2
 #  0.95.1        - update OpenMPI to 3.0.1
+#  0.95.2        - added Amesos2 to list of built Trilinos packages
 
 include(CMakeParseArguments)
 
