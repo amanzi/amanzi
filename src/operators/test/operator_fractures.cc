@@ -59,7 +59,7 @@ void RunTest(int icase, bool gravity) {
   Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(3, region_list, &comm));
 
   MeshFactory meshfactory(&comm);
-  meshfactory.preference(FrameworkPreference({MSTK}));
+  meshfactory.preference(FrameworkPreference({Framework::MSTK}));
   RCP<Mesh> surfmesh;
 
   if (icase == 0) {

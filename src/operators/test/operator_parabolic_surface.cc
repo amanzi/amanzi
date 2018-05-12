@@ -63,7 +63,7 @@ void RunTest(std::string op_list_name) {
   Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(3, region_list, &comm));
 
   MeshFactory meshfactory(&comm);
-  meshfactory.preference(FrameworkPreference({MSTK}));
+  meshfactory.preference(FrameworkPreference({Framework::MSTK}));
   RCP<const Mesh> mesh = meshfactory("test/sphere.exo", gm);
   RCP<const Mesh_MSTK> mesh_mstk = rcp_static_cast<const Mesh_MSTK>(mesh);
 
@@ -179,7 +179,7 @@ void RunTest(std::string op_list_name) {
   ierr = solver.ApplyInverse(rhs, solution);
 
   int num_itrs = solver.num_itrs();
-  CHECK(num_itrs > 5 && num_itrs < 10);
+  CHECK(num_itrs < 10);
 
   if (MyPID == 0) {
     std::cout << "pressure solver (pcg): ||r||=" << solver.residual() 

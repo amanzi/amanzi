@@ -55,12 +55,8 @@ TEST(LAPLACE_BELTRAMI_FLAT_SFF) {
   ParameterList region_list = plist.get<Teuchos::ParameterList>("Regions Flat");
   Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(3, region_list, &comm));
 
-  FrameworkPreference pref;
-  pref.clear();
-  pref.push_back(MSTK);
-
   MeshFactory meshfactory(&comm);
-  meshfactory.preference(pref);
+  meshfactory.preference(FrameworkPreference({Framework::MSTK}));
   RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 10, 10, 5, gm);
   RCP<const Mesh_MSTK> mesh_mstk = rcp_static_cast<const Mesh_MSTK>(mesh);
 
@@ -173,12 +169,8 @@ TEST(LAPLACE_BELTRAMI_FLAT_SCC) {
   ParameterList region_list = plist.get<Teuchos::ParameterList>("Regions Flat");
   Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(3, region_list, &comm));
 
-  FrameworkPreference pref;
-  pref.clear();
-  pref.push_back(MSTK);
-
   MeshFactory meshfactory(&comm);
-  meshfactory.preference(pref);
+  meshfactory.preference(FrameworkPreference({Framework::MSTK}));
   RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 10, 10, 5, gm);
   RCP<const Mesh_MSTK> mesh_mstk = rcp_static_cast<const Mesh_MSTK>(mesh);
 
@@ -291,12 +283,8 @@ TEST(LAPLACE_BELTRAMI_FLAT) {
   ParameterList region_list = plist.get<Teuchos::ParameterList>("Regions Flat");
   Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(3, region_list, &comm));
 
-  FrameworkPreference pref;
-  pref.clear();
-  pref.push_back(MSTK);
-
   MeshFactory meshfactory(&comm);
-  meshfactory.preference(pref);
+  meshfactory.preference(FrameworkPreference({Framework::MSTK}));
   RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 10, 10, 5, gm);
   RCP<const Mesh_MSTK> mesh_mstk = rcp_static_cast<const Mesh_MSTK>(mesh);
 

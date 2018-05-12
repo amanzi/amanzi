@@ -65,7 +65,7 @@ class AEvaluator : public SecondaryVariableFieldEvaluator {
     dependencies_.insert(std::string("fh"));
   }
 
-  virtual Teuchos::RCP<FieldEvaluator> Clone() const {};
+  virtual Teuchos::RCP<FieldEvaluator> Clone() const { return Teuchos::null; }
 
   virtual void EvaluateField_(const Teuchos::Ptr<State>& S,
           const Teuchos::Ptr<CompositeVector>& result) {
@@ -122,7 +122,7 @@ class CEvaluator : public SecondaryVariableFieldEvaluator {
     dependencies_.insert(std::string("fg"));
   }
 
-  virtual Teuchos::RCP<FieldEvaluator> Clone() const {};
+  virtual Teuchos::RCP<FieldEvaluator> Clone() const { return Teuchos::null; }
 
   virtual void EvaluateField_(const Teuchos::Ptr<State>& S,
           const Teuchos::Ptr<CompositeVector>& result) {
@@ -165,7 +165,7 @@ class DEvaluator : public SecondaryVariableFieldEvaluator {
     dependencies_.insert(std::string("fg"));
   }
 
-  virtual Teuchos::RCP<FieldEvaluator> Clone() const {};
+  virtual Teuchos::RCP<FieldEvaluator> Clone() const { return Teuchos::null; }
 
   virtual void EvaluateField_(const Teuchos::Ptr<State>& S,
           const Teuchos::Ptr<CompositeVector>& result) {
@@ -204,7 +204,7 @@ class EEvaluator : public SecondaryVariableFieldEvaluator {
     dependencies_.insert(std::string("ff"));
   }
 
-  virtual Teuchos::RCP<FieldEvaluator> Clone() const {};
+  virtual Teuchos::RCP<FieldEvaluator> Clone() const { return Teuchos::null; }
 
   virtual void EvaluateField_(const Teuchos::Ptr<State>& S,
           const Teuchos::Ptr<CompositeVector>& result) {
@@ -249,7 +249,7 @@ class FEvaluator : public SecondaryVariableFieldEvaluator {
     dependencies_.insert(std::string("fg"));
   }
 
-  virtual Teuchos::RCP<FieldEvaluator> Clone() const {};
+  virtual Teuchos::RCP<FieldEvaluator> Clone() const { return Teuchos::null; }
 
   virtual void EvaluateField_(const Teuchos::Ptr<State>& S,
           const Teuchos::Ptr<CompositeVector>& result) {
@@ -287,7 +287,7 @@ class HEvaluator : public SecondaryVariableFieldEvaluator {
     dependencies_.insert(std::string("ff"));
   }
 
-  virtual Teuchos::RCP<FieldEvaluator> Clone() const {};
+  virtual Teuchos::RCP<FieldEvaluator> Clone() const { return Teuchos::null; }
 
   virtual void EvaluateField_(const Teuchos::Ptr<State>& S,
           const Teuchos::Ptr<CompositeVector>& result) {
