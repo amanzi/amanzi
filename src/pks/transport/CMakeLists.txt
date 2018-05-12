@@ -184,6 +184,7 @@ if ( BUILD_TESTS )
 
     add_amanzi_test(transport_convergence transport_convergence
                     KIND unit
+		    NPROCS 2
                     SOURCE test/Main.cc test/transport_convergence.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 

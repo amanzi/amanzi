@@ -49,8 +49,9 @@ TEST(CONVERGENCE_ANALYSIS_DONOR) {
   using namespace Amanzi::Transport;
   using namespace Amanzi::AmanziGeometry;
 
-  std::cout << "TEST: convergence analysis, donor scheme, orthogonal meshes" << std::endl;
-  Epetra_MpiComm* comm = new Epetra_MpiComm(MPI_COMM_WORLD);
+  Epetra_MpiComm comm = Epetra_MpiComm(MPI_COMM_WORLD);
+  int MyPID = comm.MyPID();
+  if (MyPID == 0) std::cout << "TEST: convergence analysis, donor scheme, orthogonal meshes" << std::endl;
 
   /* read parameter list */
   std::string xmlFileName = "test/transport_convergence.xml";
@@ -65,14 +66,10 @@ TEST(CONVERGENCE_ANALYSIS_DONOR) {
     /* create a SIMPLE mesh framework */
     ParameterList region_list = plist->get<Teuchos::ParameterList>("regions");
     Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm =
-        Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, region_list, comm));
+        Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, region_list, &comm));
 
-    FrameworkPreference pref;
-    pref.clear();
-    pref.push_back(Simple);
-    
-    MeshFactory meshfactory((Epetra_MpiComm *)comm);
-    meshfactory.preference(pref);
+    MeshFactory meshfactory(&comm);
+    meshfactory.preference(FrameworkPreference({Framework::MSTK, Framework::Simple}));
     RCP<const Mesh> mesh = meshfactory(0.0,0.0,0.0, 5.0,1.0,1.0, nx,2,2, gm);
 
     /* create a simple state and populate it */
@@ -97,20 +94,20 @@ TEST(CONVERGENCE_ANALYSIS_DONOR) {
     /* modify the default state for the problem at hand */
     std::string passwd("state"); 
     Teuchos::RCP<Epetra_MultiVector> 
-        flux = S->GetFieldData("darcy_flux", passwd)->ViewComponent("face", false);
+        flux = S->GetFieldData("darcy_flux", passwd)->ViewComponent("face", true);
 
     AmanziGeometry::Point velocity(1.0, 0.0, 0.0);
-    int nfaces_owned = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
-    for (int f = 0; f < nfaces_owned; f++) {
+    int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
+    for (int f = 0; f < nfaces; f++) {
       const AmanziGeometry::Point& normal = mesh->face_normal(f);
       (*flux)[0][f] = velocity * normal;
     }
 
     Teuchos::RCP<Epetra_MultiVector> 
-        tcc = S->GetFieldData("total_component_concentration", passwd)->ViewComponent("cell", false);
+        tcc = S->GetFieldData("total_component_concentration", passwd)->ViewComponent("cell", true);
 
-    int ncells_owned = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
-    for (int c = 0; c < ncells_owned; c++) {
+    int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
+    for (int c = 0; c < ncells; c++) {
       const AmanziGeometry::Point& xc = mesh->cell_centroid(c);
       (*tcc)[0][c] = f_cubic(xc, 0.0);
     }
@@ -138,22 +135,21 @@ TEST(CONVERGENCE_ANALYSIS_DONOR) {
     /* calculate L1 and L2 errors */
     double L1, L2;
     TPK.CalculateLpErrors(f_cubic, t_new, (*tcc)(0), &L1, &L2);
-    printf("nx=%3d  L1 error=%7.5f  L2 error=%7.5f  dT=%7.4f\n", nx, L1, L2, T1 / iter);
+    if (MyPID == 0)
+      printf("nx=%3d  L1 error=%7.5f  L2 error=%7.5f  dT=%7.4f\n", nx, L1, L2, T1 / iter);
 
     h.push_back(5.0 / nx);
     L1error.push_back(L1);
     L2error.push_back(L2);
-
   }
 
   double L1rate = Amanzi::Utils::bestLSfit(h, L1error);
   double L2rate = Amanzi::Utils::bestLSfit(h, L2error);
-  printf("convergence rates: %8.2f %20.2f\n", L1rate, L2rate);
+  if (MyPID == 0)
+    printf("convergence rates: %8.2f %20.2f\n", L1rate, L2rate);
 
   CHECK_CLOSE(L1rate, 1.0, 0.1);
   CHECK_CLOSE(L2rate, 1.0, 0.1);
-
-  delete comm;
 }
 
 
@@ -165,8 +161,10 @@ TEST(CONVERGENCE_ANALYSIS_DONOR_SUBCYCLING) {
   using namespace Amanzi::Transport;
   using namespace Amanzi::AmanziGeometry;
 
-  std::cout << "\nTEST: convergence analysis, donor scheme, orthogonal meshes with subcycling" << std::endl;
-  Epetra_MpiComm* comm = new Epetra_MpiComm(MPI_COMM_WORLD);
+  Epetra_MpiComm comm = Epetra_MpiComm(MPI_COMM_WORLD);
+  int MyPID = comm.MyPID();
+  if (MyPID == 0)
+    std::cout << "\nTEST: convergence analysis, donor scheme, orthogonal meshes with subcycling" << std::endl;
 
   /* read parameter list */
   std::string xmlFileName = "test/transport_convergence.xml";
@@ -178,16 +176,12 @@ TEST(CONVERGENCE_ANALYSIS_DONOR_SUBCYCLING) {
 
   for (int nx = 20; nx < 321; nx *= 2) {
     /* create a SIMPLE mesh framework */
-    ParameterList region_list = plist->get<Teuchos::ParameterList>("regions");
+    ParameterList region_list = plist->sublist("regions");
     Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm =
-        Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, region_list, comm));
+        Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, region_list, &comm));
 
-    FrameworkPreference pref;
-    pref.clear();
-    pref.push_back(Simple);
-    
-    MeshFactory meshfactory((Epetra_MpiComm *)comm);
-    meshfactory.preference(pref);
+    MeshFactory meshfactory(&comm);
+    meshfactory.preference(FrameworkPreference({Framework::MSTK, Framework::Simple}));
     RCP<const Mesh> mesh = meshfactory(0.0,0.0,0.0, 5.0,1.0,1.0, nx,2,2, gm);
 
     /* create a simple state and populate it */
@@ -212,20 +206,20 @@ TEST(CONVERGENCE_ANALYSIS_DONOR_SUBCYCLING) {
     /* modify the default state for the problem at hand */
     std::string passwd("state"); 
     Teuchos::RCP<Epetra_MultiVector> 
-        flux = S->GetFieldData("darcy_flux", passwd)->ViewComponent("face", false);
+        flux = S->GetFieldData("darcy_flux", passwd)->ViewComponent("face", true);
 
     AmanziGeometry::Point velocity(1.0, 0.0, 0.0);
-    int nfaces_owned = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
-    for (int f = 0; f < nfaces_owned; f++) {
+    int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
+    for (int f = 0; f < nfaces; f++) {
       const AmanziGeometry::Point& normal = mesh->face_normal(f);
       (*flux)[0][f] = velocity * normal;
     }
 
     Teuchos::RCP<Epetra_MultiVector> 
-        tcc = S->GetFieldData("total_component_concentration", passwd)->ViewComponent("cell", false);
+        tcc = S->GetFieldData("total_component_concentration", passwd)->ViewComponent("cell", true);
 
-    int ncells_owned = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
-    for (int c = 0; c < ncells_owned; c++) {
+    int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
+    for (int c = 0; c < ncells; c++) {
       const AmanziGeometry::Point& xc = mesh->cell_centroid(c);
       (*tcc)[0][c] = f_cubic(xc, 0.0);
     }
@@ -256,23 +250,22 @@ TEST(CONVERGENCE_ANALYSIS_DONOR_SUBCYCLING) {
     double L1, L2;
     ncycles /= iter;
     TPK.CalculateLpErrors(f_cubic, t_new, (*tcc)(0), &L1, &L2);
-    printf("nx=%3d  L1 error=%7.5f  L2 error=%7.5f  dT=%7.4f  (average # subcycles %d)\n", 
-           nx, L1, L2, T1 / iter, ncycles);
+    if (MyPID == 0)
+      printf("nx=%3d  L1 error=%7.5f  L2 error=%7.5f  dT=%7.4f  (average # subcycles %d)\n", 
+             nx, L1, L2, T1 / iter, ncycles);
 
     h.push_back(5.0 / nx);
     L1error.push_back(L1);
     L2error.push_back(L2);
-
   }
 
   double L1rate = Amanzi::Utils::bestLSfit(h, L1error);
   double L2rate = Amanzi::Utils::bestLSfit(h, L2error);
-  printf("convergence rates: %8.2f %20.2f\n", L1rate, L2rate);
+  if (MyPID == 0)
+    printf("convergence rates: %8.2f %20.2f\n", L1rate, L2rate);
 
   CHECK_CLOSE(L1rate, 1.0, 0.1);
   CHECK_CLOSE(L2rate, 1.0, 0.1);
-
-  delete comm;
 }
 
 
@@ -284,8 +277,10 @@ TEST(CONVERGENCE_ANALYSIS_2ND) {
   using namespace Amanzi::Transport;
   using namespace Amanzi::AmanziGeometry;
 
-  std::cout << "\nTest: Convergence analysis, 2nd order scheme" << std::endl;
-  Epetra_MpiComm *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
+  Epetra_MpiComm comm = Epetra_MpiComm(MPI_COMM_WORLD);
+  int MyPID = comm.MyPID();
+  if (MyPID == 0) 
+    std::cout << "\nTest: Convergence analysis, 2nd order scheme" << std::endl;
 
   /* read parameter list */
   std::string xmlFileName = "test/transport_convergence.xml";
@@ -294,7 +289,7 @@ TEST(CONVERGENCE_ANALYSIS_2ND) {
   /* create a SIMPLE mesh framework */
   ParameterList region_list = plist->get<Teuchos::ParameterList>("regions");
   Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm =
-      Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, region_list, comm));
+      Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, region_list, &comm));
  
   /* convergence estimate */
   double dt0;
@@ -302,12 +297,8 @@ TEST(CONVERGENCE_ANALYSIS_2ND) {
   std::vector<double> L1error, L2error;
 
   for (int nx = 20; nx < 161; nx *= 2) {
-    FrameworkPreference pref;
-    pref.clear();
-    pref.push_back(Simple);
-    
-    MeshFactory meshfactory((Epetra_MpiComm *)comm);
-    meshfactory.preference(pref);
+    MeshFactory meshfactory(&comm);
+    meshfactory.preference(FrameworkPreference({Framework::MSTK, Framework::Simple}));
     RCP<const Mesh> mesh = meshfactory(0.0,0.0,0.0, 5.0,1.0,1.0, nx, 2, 1, gm); 
 
     /* create a simple state and populate it */
@@ -330,20 +321,20 @@ TEST(CONVERGENCE_ANALYSIS_2ND) {
     /* modify the default state for the problem at hand */
     std::string passwd("state"); 
     Teuchos::RCP<Epetra_MultiVector> 
-        flux = S->GetFieldData("darcy_flux", passwd)->ViewComponent("face", false);
+        flux = S->GetFieldData("darcy_flux", passwd)->ViewComponent("face", true);
 
     AmanziGeometry::Point velocity(1.0, 0.0, 0.0);
-    int nfaces_owned = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
-    for (int f = 0; f < nfaces_owned; f++) {
+    int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
+    for (int f = 0; f < nfaces; f++) {
       const AmanziGeometry::Point& normal = mesh->face_normal(f);
       (*flux)[0][f] = velocity * normal;
     }
 
     Teuchos::RCP<Epetra_MultiVector> 
-        tcc = S->GetFieldData("total_component_concentration", passwd)->ViewComponent("cell", false);
+        tcc = S->GetFieldData("total_component_concentration", passwd)->ViewComponent("cell", true);
 
-    int ncells_owned = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
-    for (int c = 0; c < ncells_owned; c++) {
+    int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
+    for (int c = 0; c < ncells; c++) {
       const AmanziGeometry::Point& xc = mesh->cell_centroid(c);
       (*tcc)[0][c] = f_cubic(xc, 0.0);
     }
@@ -379,7 +370,8 @@ TEST(CONVERGENCE_ANALYSIS_2ND) {
 
     double L1, L2;  // L1 and L2 errors
     TPK.CalculateLpErrors(f_cubic, t_new, (*tcc)(0), &L1, &L2);
-    printf("nx=%3d  L1 error=%10.8f  L2 error=%10.8f  dT=%7.4f\n", nx, L1, L2, T1 / iter);
+    if (MyPID == 0)
+      printf("nx=%3d  L1 error=%10.8f  L2 error=%10.8f  dT=%7.4f\n", nx, L1, L2, T1 / iter);
 
     h.push_back(5.0 / nx);
     L1error.push_back(L1);
@@ -388,12 +380,11 @@ TEST(CONVERGENCE_ANALYSIS_2ND) {
 
   double L1rate = Amanzi::Utils::bestLSfit(h, L1error);
   double L2rate = Amanzi::Utils::bestLSfit(h, L2error);
-  printf("convergence rates: %8.2f %20.2f\n", L1rate, L2rate);
+  if (MyPID == 0)
+    printf("convergence rates: %8.2f %20.2f\n", L1rate, L2rate);
 
   CHECK_CLOSE(2.0, L1rate, 0.4);
   CHECK_CLOSE(2.0, L2rate, 0.5);
-
-  delete comm;
 }
 
 
@@ -405,8 +396,10 @@ TEST(CONVERGENCE_ANALYSIS_DONOR_POLY) {
   using namespace Amanzi::Transport;
   using namespace Amanzi::AmanziGeometry;
 
-  std::cout << "\nTEST: convergence analysis, donor scheme, polygonal meshes" << std::endl;
-  Epetra_MpiComm* comm = new Epetra_MpiComm(MPI_COMM_WORLD);
+  Epetra_MpiComm comm = Epetra_MpiComm(MPI_COMM_WORLD);
+  int MyPID = comm.MyPID();
+  if (MyPID == 0)
+    std::cout << "\nTEST: convergence analysis, donor scheme, polygonal meshes" << std::endl;
 
   /* read parameter list */
   std::string xmlFileName = "test/transport_convergence_poly.xml";
@@ -420,15 +413,10 @@ TEST(CONVERGENCE_ANALYSIS_DONOR_POLY) {
     /* create a mesh framework */
     ParameterList region_list = plist->get<Teuchos::ParameterList>("regions");
     Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm =
-        Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(2, region_list, comm));
+        Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(2, region_list, &comm));
 
-    FrameworkPreference pref;
-    pref.clear();
-    pref.push_back(MSTK);
-    pref.push_back(STKMESH);
-    
-    MeshFactory meshfactory(comm);
-    meshfactory.preference(pref);
+    MeshFactory meshfactory(&comm);
+    meshfactory.preference(FrameworkPreference({Framework::MSTK, Framework::STKMESH}));
     RCP<const Mesh> mesh;
     if (loop == 0) {
       mesh = meshfactory("test/median15x16.exo", gm);
@@ -460,20 +448,20 @@ TEST(CONVERGENCE_ANALYSIS_DONOR_POLY) {
     /* modify the default state for the problem at hand */
     std::string passwd("state"); 
     Teuchos::RCP<Epetra_MultiVector> 
-        flux = S->GetFieldData("darcy_flux", passwd)->ViewComponent("face", false);
+        flux = S->GetFieldData("darcy_flux", passwd)->ViewComponent("face", true);
 
     AmanziGeometry::Point velocity(1.0, 0.0);
-    int nfaces_owned = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
-    for (int f = 0; f < nfaces_owned; f++) {
+    int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
+    for (int f = 0; f < nfaces; f++) {
       const AmanziGeometry::Point& normal = mesh->face_normal(f);
       (*flux)[0][f] = velocity * normal;
     }
 
     Teuchos::RCP<Epetra_MultiVector> 
-        tcc = S->GetFieldData("total_component_concentration", passwd)->ViewComponent("cell", false);
+        tcc = S->GetFieldData("total_component_concentration", passwd)->ViewComponent("cell", true);
 
-    int ncells_owned = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
-    for (int c = 0; c < ncells_owned; c++) {
+    int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
+    for (int c = 0; c < ncells; c++) {
       const AmanziGeometry::Point& xc = mesh->cell_centroid(c);
       (*tcc)[0][c] = f_cubic_unit(xc, 0.0);
     }
@@ -502,22 +490,21 @@ TEST(CONVERGENCE_ANALYSIS_DONOR_POLY) {
     double L1, L2;
     TPK.CalculateLpErrors(f_cubic_unit, t_new, (*tcc)(0), &L1, &L2);
     int nx = 16 * (loop + 1);
-    printf("nx=%3d  L1 error=%7.5f  L2 error=%7.5f  dT=%7.4f\n", nx, L1, L2, T1 / iter);
+    if (MyPID == 0)
+      printf("nx=%3d  L1 error=%7.5f  L2 error=%7.5f  dT=%7.4f\n", nx, L1, L2, T1 / iter);
 
     h.push_back(1.0 / nx);
     L1error.push_back(L1);
     L2error.push_back(L2);
-
   }
 
   double L1rate = Amanzi::Utils::bestLSfit(h, L1error);
   double L2rate = Amanzi::Utils::bestLSfit(h, L2error);
-  printf("convergence rates: %5.2f %17.2f\n", L1rate, L2rate);
+  if (MyPID == 0)
+    printf("convergence rates: %5.2f %17.2f\n", L1rate, L2rate);
 
   CHECK_CLOSE(L1rate, 1.0, 0.1);
   CHECK_CLOSE(L2rate, 1.0, 0.1);
-
-  delete comm;
 }
 
 
@@ -529,8 +516,10 @@ TEST(CONVERGENCE_ANALYSIS_2ND_POLY) {
   using namespace Amanzi::Transport;
   using namespace Amanzi::AmanziGeometry;
 
-  std::cout << "\nTEST: convergence analysis, 2nd order scheme, polygonal meshes" << std::endl;
-  Epetra_MpiComm* comm = new Epetra_MpiComm(MPI_COMM_WORLD);
+  Epetra_MpiComm comm = Epetra_MpiComm(MPI_COMM_WORLD);
+  int MyPID = comm.MyPID();
+  if (MyPID == 0)
+    std::cout << "\nTEST: convergence analysis, 2nd order scheme, polygonal meshes" << std::endl;
 
   /* read parameter list */
   std::string xmlFileName = "test/transport_convergence_poly.xml";
@@ -542,17 +531,12 @@ TEST(CONVERGENCE_ANALYSIS_2ND_POLY) {
 
   for (int loop = 0; loop < 3; loop++) {
     /* create a mesh framework */
-    ParameterList region_list = plist->get<Teuchos::ParameterList>("regions");
+    ParameterList region_list = plist->sublist("regions");
     Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm =
-        Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(2, region_list, comm));
+        Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(2, region_list, &comm));
 
-    FrameworkPreference pref;
-    pref.clear();
-    pref.push_back(MSTK);
-    pref.push_back(STKMESH);
-    
-    MeshFactory meshfactory(comm);
-    meshfactory.preference(pref);
+    MeshFactory meshfactory(&comm);
+    meshfactory.preference(FrameworkPreference({Framework::MSTK, Framework::STKMESH}));
     RCP<const Mesh> mesh;
     if (loop == 0) {
       mesh = meshfactory("test/median15x16.exo", gm);
@@ -584,20 +568,20 @@ TEST(CONVERGENCE_ANALYSIS_2ND_POLY) {
     /* modify the default state for the problem at hand */
     std::string passwd("state"); 
     Teuchos::RCP<Epetra_MultiVector> 
-        flux = S->GetFieldData("darcy_flux", passwd)->ViewComponent("face", false);
+        flux = S->GetFieldData("darcy_flux", passwd)->ViewComponent("face", true);
 
     AmanziGeometry::Point velocity(1.0, 0.0);
-    int nfaces_owned = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
-    for (int f = 0; f < nfaces_owned; f++) {
+    int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
+    for (int f = 0; f < nfaces; f++) {
       const AmanziGeometry::Point& normal = mesh->face_normal(f);
       (*flux)[0][f] = velocity * normal;
     }
 
     Teuchos::RCP<Epetra_MultiVector> 
-        tcc = S->GetFieldData("total_component_concentration", passwd)->ViewComponent("cell", false);
+        tcc = S->GetFieldData("total_component_concentration", passwd)->ViewComponent("cell", true);
 
-    int ncells_owned = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
-    for (int c = 0; c < ncells_owned; c++) {
+    int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
+    for (int c = 0; c < ncells; c++) {
       const AmanziGeometry::Point& xc = mesh->cell_centroid(c);
       (*tcc)[0][c] = f_cubic_unit(xc, 0.0);
     }
@@ -626,21 +610,20 @@ TEST(CONVERGENCE_ANALYSIS_2ND_POLY) {
     double L1, L2;
     TPK.CalculateLpErrors(f_cubic_unit, t_new, (*tcc)(0), &L1, &L2);
     int nx = 16 * (loop + 1);
-    printf("nx=%3d  L1 error=%7.5f  L2 error=%7.5f  dT=%7.4f\n", nx, L1, L2, T1 / iter);
+    if (MyPID == 0)
+      printf("nx=%3d  L1 error=%7.5f  L2 error=%7.5f  dT=%7.4f\n", nx, L1, L2, T1 / iter);
 
     h.push_back(1.0 / nx);
     L1error.push_back(L1);
     L2error.push_back(L2);
-
   }
 
   double L1rate = Amanzi::Utils::bestLSfit(h, L1error);
   double L2rate = Amanzi::Utils::bestLSfit(h, L2error);
-  printf("convergence rates: %5.2f %17.2f\n", L1rate, L2rate);
+  if (MyPID == 0)
+    printf("convergence rates: %5.2f %17.2f\n", L1rate, L2rate);
 
   CHECK_CLOSE(2.0, L1rate, 0.4);
   CHECK_CLOSE(2.0, L2rate, 0.5);
-
-  delete comm;
 }
 
