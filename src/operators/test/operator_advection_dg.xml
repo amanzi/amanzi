@@ -1,8 +1,8 @@
 <ParameterList name="Main">
   <Parameter name="Native Unstructured Input" type="bool" value="true"/>
 
-  <!--  OPERATORS  -->
-  <ParameterList name="PK operator">
+  <!--  OPERATORS  2D -->
+  <ParameterList name="PK operator 2D">
     <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
 
     <ParameterList name="flux operator">
@@ -58,6 +58,63 @@
     </ParameterList>
   </ParameterList>
 
+  <!--  OPERATORS  3D -->
+  <ParameterList name="PK operator 3D">
+    <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
+
+    <ParameterList name="flux operator">
+      <Parameter name="method" type="string" value="dg modal"/>
+      <Parameter name="dg basis" type="string" value="natural"/>
+      <Parameter name="method order" type="int" value="2"/>
+      <Parameter name="matrix type" type="string" value="flux"/>
+      <Parameter name="flux formula" type="string" value="upwind"/>
+      <Parameter name="jump operator on test function" type="bool" value="true"/>
+
+      <ParameterList name="schema domain">
+        <Parameter name="base" type="string" value="face"/>
+        <Parameter name="location" type="Array(string)" value="{cell}"/>
+        <Parameter name="type" type="Array(string)" value="{scalar}"/>
+        <Parameter name="number" type="Array(int)" value="{10}"/>
+      </ParameterList>
+      <ParameterList name="schema range">
+        <Parameter name="base" type="string" value="face"/>
+        <Parameter name="location" type="Array(string)" value="{cell}"/>
+        <Parameter name="type" type="Array(string)" value="{scalar}"/>
+        <Parameter name="number" type="Array(int)" value="{10}"/>
+      </ParameterList>
+    </ParameterList>
+
+    <ParameterList name="advection operator">
+      <Parameter name="method" type="string" value="dg modal"/>
+      <Parameter name="dg basis" type="string" value="natural"/>
+      <Parameter name="method order" type="int" value="2"/>
+      <Parameter name="matrix type" type="string" value="advection"/>
+      <Parameter name="gradient operator on test function" type="bool" value="true"/>
+
+      <ParameterList name="schema">
+        <Parameter name="base" type="string" value="cell"/>
+        <Parameter name="location" type="Array(string)" value="{cell}"/>
+        <Parameter name="type" type="Array(string)" value="{scalar}"/>
+        <Parameter name="number" type="Array(int)" value="{10}"/>
+      </ParameterList>
+    </ParameterList>
+
+    <ParameterList name="reaction operator">
+      <Parameter name="coef" type="double" value="200"/>
+      <Parameter name="method" type="string" value="dg modal"/>
+      <Parameter name="dg basis" type="string" value="natural"/>
+      <Parameter name="method order" type="int" value="2"/>
+      <Parameter name="matrix type" type="string" value="mass"/>
+
+      <ParameterList name="schema">
+        <Parameter name="base" type="string" value="cell"/>
+        <Parameter name="location" type="Array(string)" value="{cell}"/>
+        <Parameter name="type" type="Array(string)" value="{scalar}"/>
+        <Parameter name="number" type="Array(int)" value="{10}"/>
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
+
   <!-- SOLVERS -->
   <ParameterList name="solvers">
     <ParameterList name="GMRES">
@@ -86,5 +143,6 @@
       </ParameterList>
     </ParameterList>
   </ParameterList>
+
 </ParameterList>
 

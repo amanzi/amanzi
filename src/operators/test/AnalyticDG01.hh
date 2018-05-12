@@ -8,11 +8,11 @@
 
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 
-  Solution: u = 1 + x + 2 y
+  Solution: u = 1 + x + 2 y + 3 z
   Diffusion: K = 1
   Accumulation: a = 0
   Reaction: r = 0
-  Velocity: v = 0
+  Velocity: v = [1, 0, 0]
   Source: f = 0
 */
 
@@ -30,7 +30,7 @@ class AnalyticDG01 : public AnalyticDGBase {
   // analytic data in conventional Taylor basis
   // -- diffusion tensor
   virtual Amanzi::WhetStone::Tensor Tensor(const Amanzi::AmanziGeometry::Point& p, double t) override {
-    Amanzi::WhetStone::Tensor K(2, 1);
+    Amanzi::WhetStone::Tensor K(d_, 1);
     K(0, 0) = 1.0;
     return K;
   }
@@ -39,11 +39,16 @@ class AnalyticDG01 : public AnalyticDGBase {
   virtual void SolutionTaylor(const Amanzi::AmanziGeometry::Point& p, double t,
                               Amanzi::WhetStone::Polynomial& sol) override {
     sol.Reshape(d_, order_, true); 
-    sol(0, 0) = 1.0 + p[0] + 2 * p[1];
+    sol.set_origin(p);
 
+    sol(0, 0) = 1.0 + p[0] + 2 * p[1];
     sol(1, 0) = 1.0;
     sol(1, 1) = 2.0;
-    sol.set_origin(p);
+
+    if (d_ == 3) {
+      sol(0, 0) += 3 * p[2];
+      sol(1, 2) += 3.0;
+    }
   }
 
   // -- accumulation
@@ -59,6 +64,7 @@ class AnalyticDG01 : public AnalyticDGBase {
     for (int i = 0; i < d_; ++i) {
       v[i].Reshape(d_, 0, true); 
     }
+    v[0](0, 0) = 1.0;
   }
 
   // -- reaction

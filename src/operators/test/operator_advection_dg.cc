@@ -36,7 +36,7 @@
 #include "VectorPolynomial.hh"
 
 // Operators
-#include "AnalyticDG02.hh"
+#include "AnalyticDG01.hh"
 #include "AnalyticDG03.hh"
 
 #include "OperatorAudit.hh"
@@ -50,6 +50,7 @@
 * This tests exactness of the advection scheme for steady-state
 * equation c p + div(v p) = f.
 * **************************************************************** */
+template<class AnalyticDG>
 void AdvectionSteady(int dim, std::string filename, int nx)
 {
   using namespace Teuchos;
@@ -64,7 +65,8 @@ void AdvectionSteady(int dim, std::string filename, int nx)
   if (MyPID == 0) std::cout << "\nTest: " << dim << "D steady advection problem, dG method" << std::endl;
 
   // read parameter list
-  std::string xmlFileName = "test/operator_advection_dg.xml";
+  std::string xmlFileName;
+  xmlFileName = "test/operator_advection_dg.xml";
   ParameterXMLFileReader xmlreader(xmlFileName);
   ParameterList plist = xmlreader.getParameters();
 
@@ -74,11 +76,15 @@ void AdvectionSteady(int dim, std::string filename, int nx)
   meshfactory.preference(FrameworkPreference({MSTK,STKMESH}));
 
   RCP<const Mesh> mesh;
+  std::string pk_name;
   if (dim == 2) {
     // mesh = meshfactory(0.0, 0.0, 1.0, 1.0, nx, nx, gm);
     mesh = meshfactory(filename, gm, true, true);
+    pk_name = "PK operator 2D";
   } else {
-    mesh = meshfactory(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, nx, nx, nx, gm);
+    bool request_faces(true), request_edges(true);
+    mesh = meshfactory(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, nx, nx, nx, gm, request_faces, request_edges);
+    pk_name = "PK operator 3D";
   }
 
   int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
@@ -88,20 +94,25 @@ void AdvectionSteady(int dim, std::string filename, int nx)
 
   // create global operator 
   // -- flux term
-  ParameterList op_list = plist.sublist("PK operator").sublist("flux operator");
+  ParameterList op_list = plist.sublist(pk_name).sublist("flux operator");
   auto op_flux = Teuchos::rcp(new PDE_AdvectionRiemann(op_list, mesh));
   auto global_op = op_flux->global_operator();
 
   // -- volumetric advection term
-  op_list = plist.sublist("PK operator").sublist("advection operator");
+  op_list = plist.sublist(pk_name).sublist("advection operator");
   auto op_adv = Teuchos::rcp(new PDE_Abstract(op_list, global_op));
 
   // -- reaction term
-  op_list = plist.sublist("PK operator").sublist("reaction operator");
+  op_list = plist.sublist(pk_name).sublist("reaction operator");
   auto op_reac = Teuchos::rcp(new PDE_Reaction(op_list, global_op));
   double Kreac = op_list.get<double>("coef");
 
-  AnalyticDG03 ana(mesh, 3);
+  // analytic solution
+  int order = op_list.get<int>("method order");
+  int nk = (dim == 2) ? (order + 1) * (order + 2) / 2 :
+                        (order + 1) * (order + 2) * (order + 3) / 6;
+
+  AnalyticDG ana(mesh, order);
 
   // set up problem coefficients
   // -- reaction function
@@ -139,10 +150,6 @@ void AdvectionSteady(int dim, std::string filename, int nx)
 
   WhetStone::Polynomial sol, src;
   WhetStone::VectorPolynomial grad(dim, 0);
-
-  int order = op_list.get<int>("method order");
-  int nk = (dim == 2) ? (order + 1) * (order + 2) / 2 :
-                        (order + 1) * (order + 2) * (order + 3) / 6;
 
   WhetStone::Polynomial pc(dim, order);
   WhetStone::NumericalIntegration numi(mesh, false);
@@ -245,7 +252,7 @@ void AdvectionSteady(int dim, std::string filename, int nx)
     GMV::start_data();
     GMV::write_cell_data(p, 0, "solution");
     GMV::write_cell_data(p, 1, "gradx");
-    GMV::write_cell_data(p, 1, "grady");
+    GMV::write_cell_data(p, 2, "grady");
     GMV::close_data_file();
   }
 
@@ -269,8 +276,8 @@ void AdvectionSteady(int dim, std::string filename, int nx)
 
 
 TEST(OPERATOR_ADVECTION_STEADY_DG) {
-  AdvectionSteady(2, "test/median7x8.exo", 8);
-  // AdvectionSteady(3, "cubic", 8);
+  AdvectionSteady<AnalyticDG03>(2, "test/median7x8.exo", 8);
+  AdvectionSteady<AnalyticDG01>(3, "cubic", 2);
 }
 
 
