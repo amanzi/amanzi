@@ -270,7 +270,7 @@ void AdvectionSteady(int dim, std::string filename, int nx)
 
 TEST(OPERATOR_ADVECTION_STEADY_DG) {
   AdvectionSteady(2, "test/median7x8.exo", 8);
-  AdvectionSteady(3, "cubic", 8);
+  // AdvectionSteady(3, "cubic", 8);
 }
 
 

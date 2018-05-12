@@ -23,10 +23,10 @@
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
 
+#include "CompositeMatrix.hh"
 #include "errors.hh"
 #include "VerboseObject.hh"
 
-#include "DenseMatrix.hh"
 #include "LinearOperator.hh"
 #include "LinearOperatorDefs.hh"
 #include "MatrixJF.hh"
@@ -90,7 +90,7 @@ class LinearOperatorAmesos : public LinearOperatorAmesosBase<Matrix, Vector, Vec
 
 
 /* ******************************************************************
-* Full specification for MatrixJF<Vector, VectorSpace>
+* Partial specification for MatrixJF<Vector, VectorSpace>
 ****************************************************************** */
 template<class Vector, class VectorSpace>
 class LinearOperatorAmesos<MatrixJF<Vector, VectorSpace>, Vector, VectorSpace> :
@@ -99,6 +99,25 @@ class LinearOperatorAmesos<MatrixJF<Vector, VectorSpace>, Vector, VectorSpace> :
   LinearOperatorAmesos(const Teuchos::RCP<const MatrixJF<Vector, VectorSpace> >& m,
                        const Teuchos::RCP<const MatrixJF<Vector, VectorSpace> >& h) :
       LinearOperatorAmesosBase<MatrixJF<Vector, VectorSpace>, Vector, VectorSpace>(m, h) {};
+
+  virtual int ApplyInverse(const Vector& v, Vector& hv) const override {
+    Errors::Message msg("LinearOperatorAmesos: missing partial specification.");
+    Exceptions::amanzi_throw(msg);
+    return LIN_SOLVER_AMESOS_SAYS_FAIL; 
+  }
+};
+
+
+/* ******************************************************************
+* Partial specification for CompositeMatrix
+****************************************************************** */
+template<class Vector, class VectorSpace>
+class LinearOperatorAmesos<CompositeMatrix, Vector, VectorSpace> :
+    public LinearOperatorAmesosBase<CompositeMatrix, Vector, VectorSpace> {
+ public:
+  LinearOperatorAmesos(const Teuchos::RCP<const CompositeMatrix>& m,
+                       const Teuchos::RCP<const CompositeMatrix>& h) :
+      LinearOperatorAmesosBase<CompositeMatrix, Vector, VectorSpace>(m, h) {};
 
   virtual int ApplyInverse(const Vector& v, Vector& hv) const override {
     Errors::Message msg("LinearOperatorAmesos: missing partial specification.");
