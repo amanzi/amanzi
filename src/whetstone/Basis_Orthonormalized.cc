@@ -14,6 +14,7 @@
 
 #include "Basis_Orthonormalized.hh"
 #include "NumericalIntegration.hh"
+#include "PolynomialIterator.hh"
 
 namespace Amanzi {
 namespace WhetStone {
@@ -78,7 +79,7 @@ void Basis_Orthonormalized::ChangeBasisMatrix(DenseMatrix& A) const
   int nrows = A.NumRows();
   std::vector<double> a(nrows), b(nrows);
 
-  Iterator it(d);
+  PolynomialIterator it(d);
   for (it.begin(); it.end() <= order; ++it) {
     int n = it.PolynomialPosition();
     int m = it.MonomialOrder();
@@ -143,7 +144,7 @@ void Basis_Orthonormalized::ChangeBasisMatrix(
   auto bll = std::dynamic_pointer_cast<Basis_Orthonormalized>(bl);
   auto brr = std::dynamic_pointer_cast<Basis_Orthonormalized>(br);
 
-  Iterator it(d);
+  PolynomialIterator it(d);
   for (it.begin(); it.end() <= order; ++it) {
     int n = it.PolynomialPosition();
     int m = it.MonomialOrder();

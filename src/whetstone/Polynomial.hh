@@ -10,18 +10,14 @@
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 
   Operations with polynomials of type p(x - x0) where x0 is a
-  constant vector. This file includes three major classes: 
+  constant vector. This file includes two major classes: 
 
-  1.Iterator: starts with a given monomial order (e.g. x^2) runs
-    through all monomials of the same order (resp., xy, y^2), and
-    jumps to the next order (resp., x^3). 
-
-  2.Monomial: a simple container of homogeneous polynomials of the
+  1.Monomial: a simple container of homogeneous polynomials of the
     same order. In Amanzi regular monomial is a defined with 
     coefficient one. For example, regular monomials of order two 
     in 2D are x^2, xy and y^2.
 
-  3.Polynomial: implements ring algebra for polynomials and a few
+  2.Polynomial: implements ring algebra for polynomials and a few
     useful transformations. See also class VectorPolynomial.
 */
 
@@ -37,90 +33,10 @@
 #include "Point.hh"
 
 #include "DenseVector.hh"
+#include "PolynomialIterator.hh"
 
 namespace Amanzi {
 namespace WhetStone {
-
-class Iterator {
- public:
-  Iterator() : d_(0) {};
-  Iterator(int d) : d_(d) {};
-  ~Iterator() {};
-
-  // set iterator to the monomials group of order k0
-  Iterator& begin(int k0 = 0) {
-    k_ = k0;
-    m_ = 0;
-    multi_index_[0] = k0;
-    multi_index_[1] = 0;
-    multi_index_[2] = 0;
-    count_ = 0;
-
-    return *this;
-  }
-
-  // Move iterator either to the next monomial in the group or
-  // to the begining of the next group of monomials.
-  // Only prefix version of this operator is used in the code.
-  Iterator& operator++() {
-    if (d_ == 1) {
-      k_++;
-      m_ = 0;
-      multi_index_[0] = k_;
-    } else if (d_ == 2) {
-      if (multi_index_[0] == 0) {
-        k_++;  // next group of monomials
-        m_ = 0;
-        multi_index_[0] = k_;
-        multi_index_[1] = 0;
-        multi_index_[2] = 0;
-      } else {
-        m_++;
-        multi_index_[0]--;
-        multi_index_[1] = k_ - multi_index_[0];
-      }
-    } else if (d_ == 3) {
-      if (multi_index_[0] == 0 && multi_index_[1] == 0) {
-        k_++;  // next group of monomials
-        m_ = 0;
-        multi_index_[0] = k_;
-        multi_index_[1] = 0;
-        multi_index_[2] = 0;
-      } else if (multi_index_[1] == 0) {
-        m_++;
-        multi_index_[0]--;
-        multi_index_[1] = k_ - multi_index_[0];
-        multi_index_[2] = 0;
-      } else {
-        m_++;
-        multi_index_[1]--;
-        multi_index_[2] = k_ - multi_index_[0] - multi_index_[1];
-      }
-    }
-    count_++;
-
-    return *this;
-  }
-
-  // One way to terminate a for-loop is to capture the moment when
-  // the iterator moved to the next group of monomials. Returning
-  // the current monomial order is not ideal solution, but robust.
-  int end() { return k_; }
-
-  // access
-  int MonomialOrder() const { return k_; }
-  int MonomialPosition() const { return m_; }
-  int PolynomialPosition() const { return count_; }
-  const int* multi_index() const { return multi_index_; }
-
- private:
-  int k_;  // current monomials order
-  int m_;  // current position in the list of monomials
-  int multi_index_[3];
-  int d_;
-  int count_;  // iterator count
-};
-
 
 class Monomial {
  public:
@@ -136,7 +52,7 @@ class Monomial {
   ~Monomial() {};
 
   // iterators
-  Iterator& begin() const { return it_.begin(order_); }
+  PolynomialIterator& begin() const { return it_.begin(order_); }
   int end() const { return order_; }
 
   // reset all coefficients to a scalar
@@ -159,7 +75,7 @@ class Monomial {
   friend class Polynomial;
 
  protected:
-  mutable Iterator it_; 
+  mutable PolynomialIterator it_; 
 
  private:
   int d_, order_;
@@ -234,7 +150,7 @@ class Polynomial {
   int PolynomialPosition(const int* multi_index) const;
 
   // iterator starts with constant term for correct positioning
-  Iterator begin() const { Iterator it(d_); return it.begin(); }
+  PolynomialIterator begin() const { PolynomialIterator it(d_); return it.begin(); }
   int end() const { return order_; }
 
   // Change of coordinates:
