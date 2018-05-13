@@ -239,8 +239,8 @@ int MeshMaps::LeastSquareFit(int order,
     A.Multiply(b, u, false);
 
     for (auto it = poly.begin(); it.end() <= poly.end(); ++it) {
-      int n = it.MonomialOrder();
-      int m = it.MonomialPosition();
+      int n = it.MonomialSetOrder();
+      int m = it.MonomialSetPosition();
       int i = it.PolynomialPosition();
       v[k].monomials(n).coefs()[m] = u(i);
     }

@@ -39,7 +39,7 @@ TEST(DG_TAYLOR_POLYNOMIALS) {
     int pos = p.PolynomialPosition(index);
     CHECK(pos == i++);
 
-    int m = p.MonomialPosition(index);
+    int m = p.MonomialSetPosition(index);
     p.monomials(index[0] + index[1]).coefs()[m] = pos;
   }
   std::cout << p << std::endl; 
@@ -74,7 +74,7 @@ TEST(DG_TAYLOR_POLYNOMIALS) {
     int pos = q.PolynomialPosition(index);
     CHECK(pos == i++);
 
-    int m = q.MonomialPosition(index);
+    int m = q.MonomialSetPosition(index);
     q.monomials(index[0] + index[1] + index[2]).coefs()[m] = pos;
   }
   std::cout << "Original polynomial\n" << q << std::endl; 
@@ -127,8 +127,8 @@ TEST(DG_TAYLOR_POLYNOMIALS) {
     const int* index = it.multi_index();
     int pos = p2d.PolynomialPosition(index);
 
-    int m = it.MonomialOrder();
-    int k = it.MonomialPosition();
+    int m = it.MonomialSetOrder();
+    int k = it.MonomialSetPosition();
     p2d(m, k) = pos;
   }
   AmanziGeometry::Point x0(0.0, 0.0), v1(1.0, 1.0);

@@ -10,15 +10,8 @@
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 
   Operations with polynomials of type p(x - x0) where x0 is a
-  constant vector. This file includes two major classes: 
-
-  1.Monomial: a simple container of homogeneous polynomials of the
-    same order. In Amanzi regular monomial is a defined with 
-    coefficient one. For example, regular monomials of order two 
-    in 2D are x^2, xy and y^2.
-
-  2.Polynomial: implements ring algebra for polynomials and a few
-    useful transformations. See also class VectorPolynomial.
+  constant vector. This class implements ring algebra for polynomials 
+  and a few useful transformations. See also class VectorPolynomial.
 */
 
 #ifndef AMANZI_WHETSTONE_POLYNOMIAL_HH_
@@ -33,55 +26,11 @@
 #include "Point.hh"
 
 #include "DenseVector.hh"
+#include "MonomialSet.hh"
 #include "PolynomialIterator.hh"
 
 namespace Amanzi {
 namespace WhetStone {
-
-class Monomial {
- public:
-  Monomial() : d_(0), order_(-1) {};
-  Monomial(int d, int order) : d_(d), order_(order), it_(d) {
-    int nk = (order_ == 0) ? 1 : d_;
-    for (int i = 1; i < order_; ++i) {
-      nk *= d_ + i;
-      nk /= i + 1;
-    }
-    coefs_.resize(nk, 0.0);
-  }
-  ~Monomial() {};
-
-  // iterators
-  PolynomialIterator& begin() const { return it_.begin(order_); }
-  int end() const { return order_; }
-
-  // reset all coefficients to a scalar
-  void PutScalar(double val) {
-    for (auto it = coefs_.begin(); it != coefs_.end(); ++it) *it = val;
-  }
-
-  // access
-  int order() const { return order_; }
-  int size() const { return coefs_.size(); }
-
-  std::vector<double>& coefs() { return coefs_; } 
-  const std::vector<double>& coefs() const { return coefs_; } 
-
- private:
-  // direct memory access operations
-  double& operator()(int i) { return coefs_[i]; }
-  const double& operator()(int i) const { return coefs_[i]; }
-
-  friend class Polynomial;
-
- protected:
-  mutable PolynomialIterator it_; 
-
- private:
-  int d_, order_;
-  std::vector<double> coefs_;
-};
- 
 
 class Polynomial {
  public:
@@ -146,7 +95,7 @@ class Polynomial {
 
   // multi index defines both monomial order and current monomial
   // whenever possible, use faster Iterator's functions 
-  int MonomialPosition(const int* multi_index) const;
+  int MonomialSetPosition(const int* multi_index) const;
   int PolynomialPosition(const int* multi_index) const;
 
   // iterator starts with constant term for correct positioning
@@ -170,8 +119,8 @@ class Polynomial {
   double& operator()(int i, int j) { return coefs_[i](j); }
   const double& operator()(int i, int j) const { return coefs_[i](j); }
 
-  Monomial& monomials(int i) { return coefs_[i]; }
-  const Monomial& monomials(int i) const { return coefs_[i]; }
+  MonomialSet& monomials(int i) { return coefs_[i]; }
+  const MonomialSet& monomials(int i) const { return coefs_[i]; }
 
   // output 
   friend std::ostream& operator << (std::ostream& os, const Polynomial& p);
@@ -183,7 +132,7 @@ class Polynomial {
  private:
   int d_, order_, size_;
   AmanziGeometry::Point origin_;
-  std::vector<Monomial> coefs_;
+  std::vector<MonomialSet> coefs_;
 };
 
 }  // namespace WhetStone

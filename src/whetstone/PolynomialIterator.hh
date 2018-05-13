@@ -18,14 +18,6 @@
 #define AMANZI_WHETSTONE_POLYNOMIAL_ITERATOR_HH_
 
 #include <cstdlib>
-#include <cstdio>
-#include <iostream>
-#include <iomanip>
-#include <vector>
-
-#include "Point.hh"
-
-#include "DenseVector.hh"
 
 namespace Amanzi {
 namespace WhetStone {
@@ -97,8 +89,8 @@ class PolynomialIterator {
   int end() { return k_; }
 
   // access
-  int MonomialOrder() const { return k_; }
-  int MonomialPosition() const { return m_; }
+  int MonomialSetOrder() const { return k_; }
+  int MonomialSetPosition() const { return m_; }
   int PolynomialPosition() const { return count_; }
   const int* multi_index() const { return multi_index_; }
 

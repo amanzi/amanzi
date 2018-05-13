@@ -39,7 +39,7 @@ void Basis_Normalized::Init(
 
   monomial_scales_(0, 0) = 1.0;
   for (auto it = monomial_scales_.begin(); it.end() <= monomial_scales_.end(); ++it) {
-    int k = it.MonomialPosition();
+    int k = it.MonomialSetPosition();
     const int* multi_index = it.multi_index();
     int index[d]; 
 
@@ -51,7 +51,7 @@ void Basis_Normalized::Init(
 
     if (m > 0) {
       const auto& aux2 = integrals.monomials(2 * m).coefs();
-      double norm = aux2[integrals.MonomialPosition(index)];
+      double norm = aux2[integrals.MonomialSetPosition(index)];
       monomial_scales_(m, k) = std::pow(volume / norm, 0.5);
     }
   }
@@ -73,8 +73,8 @@ void Basis_Normalized::ChangeBasisMatrix(DenseMatrix& A) const
 
   PolynomialIterator it(d);
   for (it.begin(); it.end() <= order; ++it) {
-    int m = it.MonomialOrder();
-    int k = it.MonomialPosition();
+    int m = it.MonomialSetOrder();
+    int k = it.MonomialSetPosition();
 
     a[k] = monomial_scales_(m, k);
   }
@@ -97,8 +97,8 @@ void Basis_Normalized::ChangeBasisVector(DenseVector& v) const
 
   for (auto it = monomial_scales_.begin(); it.end() <= monomial_scales_.end(); ++it) {
     int n = it.PolynomialPosition();
-    int m = it.MonomialOrder();
-    int k = it.MonomialPosition();
+    int m = it.MonomialSetOrder();
+    int k = it.MonomialSetPosition();
 
     v(n) /= monomial_scales_(m, k);
   }
@@ -124,8 +124,8 @@ void Basis_Normalized::ChangeBasisMatrix(
   PolynomialIterator it(d);
   for (it.begin(); it.end() <= order; ++it) {
     int n = it.PolynomialPosition();
-    int m = it.MonomialOrder();
-    int k = it.MonomialPosition();
+    int m = it.MonomialSetOrder();
+    int k = it.MonomialSetPosition();
 
     double ak = (bll->monomial_scales())(m, k);
     a1[n] = ak;
@@ -160,8 +160,8 @@ Polynomial Basis_Normalized::CalculatePolynomial(
 
   int n(0);
   for (auto it = poly.begin(); it.end() <= poly.end(); ++it) {
-    int m = it.MonomialOrder();
-    int k = it.MonomialPosition();
+    int m = it.MonomialSetOrder();
+    int k = it.MonomialSetPosition();
 
     poly(m, k) *= coefs(n++); 
   }

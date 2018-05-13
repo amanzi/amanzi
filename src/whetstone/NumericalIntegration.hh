@@ -62,7 +62,7 @@ class NumericalIntegration {
   }
 
   // integrate group of monomials 
-  void IntegrateMonomialsCell(int c, Monomial& monomials);
+  void IntegrateMonomialsCell(int c, MonomialSet& monomials);
   void UpdateMonomialIntegralsCell(int c, int order, PolynomialOnMesh& integrals);
 
   // useful functions: integrate single polynomial
@@ -92,10 +92,10 @@ class NumericalIntegration {
   void ChangeBasisNaturalToRegular(int c, Polynomial& p);
 
  private:
-  void IntegrateMonomialsFace_(int c, int f, double factor, Monomial& monomials);
+  void IntegrateMonomialsFace_(int c, int f, double factor, MonomialSet& monomials);
   void IntegrateMonomialsEdge_(
       const AmanziGeometry::Point& x1, const AmanziGeometry::Point& x2,
-      double factor, Monomial& monomials);
+      double factor, MonomialSet& monomials);
 
   double MonomialNaturalSingleScale_(int k, double volume) const;
 

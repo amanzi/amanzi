@@ -83,7 +83,7 @@ int MFD3D_Lagrange::H1consistency(
 
   for (auto it = poly.begin(); it.end() <= poly.end(); ++it) { 
     const int* index = it.multi_index();
-    double factor = numi.MonomialNaturalScales(c, it.MonomialOrder());
+    double factor = numi.MonomialNaturalScales(c, it.MonomialSetOrder());
     Polynomial cmono(d_, index, factor);
     cmono.set_origin(xc);  
 
@@ -205,8 +205,8 @@ int MFD3D_Lagrange::H1consistency(
       numi.ChangeBasisRegularToNatural(c, tmp);
 
       for (auto jt = tmp.begin(); jt.end() <= tmp.end(); ++jt) {
-        int m = jt.MonomialOrder();
-        int k = jt.MonomialPosition();
+        int m = jt.MonomialSetOrder();
+        int k = jt.MonomialSetPosition();
         int n = jt.PolynomialPosition();
 
         R_(row + n, col) = -tmp(m, k) * volume;
@@ -226,7 +226,7 @@ int MFD3D_Lagrange::H1consistency(
         }
 
         const auto& coefs = integrals_.poly().monomials(nm).coefs();
-        N(row + n, col) = coefs[poly.MonomialPosition(multi_index)] / volume; 
+        N(row + n, col) = coefs[poly.MonomialSetPosition(multi_index)] / volume; 
       }
     }
   }
@@ -257,7 +257,7 @@ int MFD3D_Lagrange::H1consistency(
         if (index[i] > 0 && jndex[i] > 0) {
           multi_index[i] -= 2;
           const auto& coefs = integrals_.poly().monomials(n - 2).coefs();
-          tmp = coefs[poly.MonomialPosition(multi_index)]; 
+          tmp = coefs[poly.MonomialSetPosition(multi_index)]; 
           sum += tmp * index[i] * jndex[i];
           multi_index[i] += 2;
         }

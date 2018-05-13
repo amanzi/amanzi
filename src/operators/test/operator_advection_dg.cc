@@ -168,7 +168,7 @@ void AdvectionSteady(int dim, std::string filename, int nx)
 
     for (auto it = pc.begin(); it.end() <= pc.end(); ++it) {
       int n = it.PolynomialPosition();
-      int k = it.MonomialOrder();
+      int k = it.MonomialSetOrder();
 
       double factor = numi.MonomialNaturalScales(c, k);
       WhetStone::Polynomial cmono(dim, it.multi_index(), factor);

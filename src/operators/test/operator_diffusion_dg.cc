@@ -154,7 +154,7 @@ void OperatorDiffusionDG(std::string solver_name) {
 
     for (auto it = pc.begin(); it.end() <= pc.end(); ++it) {
       int n = it.PolynomialPosition();
-      int k = it.MonomialOrder();
+      int k = it.MonomialSetOrder();
 
       double factor = numi.MonomialNaturalScales(c, k);
       WhetStone::Polynomial cmono(2, it.multi_index(), factor);

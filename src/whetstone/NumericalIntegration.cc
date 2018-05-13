@@ -150,8 +150,8 @@ double NumericalIntegration::IntegratePolynomialsFace(
 
     Polynomial q(product);
     for (auto it = q.begin(); it.end() <= q.end(); ++it) {
-      int m = it.MonomialOrder();
-      int k = it.MonomialPosition();
+      int m = it.MonomialSetOrder();
+      int k = it.MonomialSetPosition();
       q(m, k) *= tmp / (m + 2);
     }
 
@@ -278,7 +278,7 @@ void NumericalIntegration::UpdateMonomialIntegralsCell(
 *    m(x) = (x - x0)^k / h^k,
 * where h is a measure of cell size.
 ****************************************************************** */
-void NumericalIntegration::IntegrateMonomialsCell(int c, Monomial& monomials)
+void NumericalIntegration::IntegrateMonomialsCell(int c, MonomialSet& monomials)
 {
   int k = monomials.order();
   monomials.PutScalar(0.0);
@@ -320,7 +320,7 @@ void NumericalIntegration::IntegrateMonomialsCell(int c, Monomial& monomials)
 * the same order centered at the centroid of cell c.
 ****************************************************************** */
 void NumericalIntegration::IntegrateMonomialsFace_(
-    int c, int f, double factor, Monomial& monomials)
+    int c, int f, double factor, MonomialSet& monomials)
 {
   const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
   const AmanziGeometry::Point& xf = mesh_->face_centroid(f);
@@ -334,7 +334,7 @@ void NumericalIntegration::IntegrateMonomialsFace_(
 
   int k = monomials.order();
   for (auto it = monomials.begin(); it.end() <= k; ++it) {
-    int l = it.MonomialPosition();
+    int l = it.MonomialSetPosition();
 
     // using monomial centered at xc, create polynomial centred at xf
     const int* idx = it.multi_index();
@@ -361,8 +361,8 @@ void NumericalIntegration::IntegrateMonomialsFace_(
 
       Polynomial q(poly);
       for (auto jt = poly.begin(); jt.end() <= poly.end(); ++jt) {
-        int m = jt.MonomialOrder();
-        int k = jt.MonomialPosition();
+        int m = jt.MonomialSetOrder();
+        int k = jt.MonomialSetPosition();
         q(m, k) *= tmp / (m + d_ - 1);
       }
 
@@ -385,7 +385,7 @@ void NumericalIntegration::IntegrateMonomialsFace_(
 ****************************************************************** */
 void NumericalIntegration::IntegrateMonomialsEdge_(
     const AmanziGeometry::Point& x1, const AmanziGeometry::Point& x2,
-    double factor, Monomial& monomials)
+    double factor, MonomialSet& monomials)
 {
   AmanziGeometry::Point xm(d_);
   auto& coefs = monomials.coefs();
@@ -397,7 +397,7 @@ void NumericalIntegration::IntegrateMonomialsEdge_(
 
   for (auto it = monomials.begin(); it.end() <= k; ++it) {
     const int* idx = it.multi_index();
-    int l = it.MonomialPosition();
+    int l = it.MonomialSetPosition();
 
     for (int n = 0; n <= m; ++n) { 
       xm = x1 * q1d_points[m][n] + x2 * (1.0 - q1d_points[m][n]);

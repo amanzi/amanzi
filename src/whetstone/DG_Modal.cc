@@ -78,7 +78,7 @@ int DG_Modal::MassMatrix(int c, const Tensor& K, DenseMatrix& M)
       }
 
       const auto& coefs = integrals.monomials(n).coefs();
-      M(l, k) = M(k, l) = K00 * coefs[p.MonomialPosition(multi_index)];
+      M(l, k) = M(k, l) = K00 * coefs[p.MonomialSetPosition(multi_index)];
     }
   }
 
@@ -121,7 +121,7 @@ int DG_Modal::MassMatrix(
       }
 
       const auto& coefs = integrals.poly().monomials(n).coefs();
-      M(l, k) = M(k, l) = K00 * coefs[p.MonomialPosition(multi_index)];
+      M(l, k) = M(k, l) = K00 * coefs[p.MonomialSetPosition(multi_index)];
     }
   }
 
@@ -160,7 +160,7 @@ int DG_Modal::MassMatrixPoly_(int c, const Polynomial& K, DenseMatrix& M)
 
     for (auto mt = Kcopy.begin(); mt.end() <= Kcopy.end(); ++mt) {
       const int* idx_K = mt.multi_index();
-      int m = mt.MonomialPosition();
+      int m = mt.MonomialSetPosition();
       double factor = Kcopy.monomials(mt.end()).coefs()[m];
       if (factor == 0.0) continue;
 
@@ -175,7 +175,7 @@ int DG_Modal::MassMatrixPoly_(int c, const Polynomial& K, DenseMatrix& M)
         }
 
         const auto& coefs = integrals.monomials(n).coefs();
-        M(k, l) += factor * coefs[p.MonomialPosition(multi_index)];
+        M(k, l) += factor * coefs[p.MonomialSetPosition(multi_index)];
       }
     }
   }
@@ -219,7 +219,7 @@ int DG_Modal::MassMatrixPiecewisePoly_(
 
   for (auto it = p.begin(); it.end() <= p.end(); ++it) {
     int k = it.PolynomialPosition();
-    int s = it.MonomialOrder();
+    int s = it.MonomialSetOrder();
     const int* idx0 = it.multi_index();
 
     double factor = numi_.MonomialNaturalScales(c, s);
@@ -231,7 +231,7 @@ int DG_Modal::MassMatrixPiecewisePoly_(
     for (auto jt = it; jt.end() <= p.end(); ++jt) {
       const int* idx1 = jt.multi_index();
       int l = jt.PolynomialPosition();
-      int t = jt.MonomialOrder();
+      int t = jt.MonomialSetOrder();
 
       double factor = numi_.MonomialNaturalScales(c, t);
       Polynomial p1(d_, idx1, factor);
@@ -314,7 +314,7 @@ int DG_Modal::StiffnessMatrix(int c, const Tensor& K, DenseMatrix& A)
             multi_index[j]--;
 
             const auto& coefs = integrals.monomials(n - 2).coefs();
-            tmp = coefs[p.MonomialPosition(multi_index)]; 
+            tmp = coefs[p.MonomialSetPosition(multi_index)]; 
             sum += Ktmp(i, j) * tmp * index[i] * jndex[j];
 
             multi_index[i]++;
@@ -378,7 +378,7 @@ int DG_Modal::AdvectionMatrixPoly_(
 
     for (auto mt = tmp.begin(); mt.end() <= tmp.end(); ++mt) {
       const int* idx_K = mt.multi_index();
-      int m = mt.MonomialPosition();
+      int m = mt.MonomialSetPosition();
       double factor = tmp.monomials(mt.end()).coefs()[m];
       if (factor == 0.0) continue;
 
@@ -393,7 +393,7 @@ int DG_Modal::AdvectionMatrixPoly_(
         }
 
         const auto& coefs = integrals.monomials(n).coefs();
-        A(k, l) += factor * coefs[p.MonomialPosition(multi_index)];
+        A(k, l) += factor * coefs[p.MonomialSetPosition(multi_index)];
       }
     }
   }
@@ -443,7 +443,7 @@ int DG_Modal::AdvectionMatrixPiecewisePoly_(
 
   for (auto it = p.begin(); it.end() <= p.end(); ++it) {
     int k = it.PolynomialPosition();
-    int s = it.MonomialOrder();
+    int s = it.MonomialSetOrder();
     const int* idx0 = it.multi_index();
 
     double factor = numi_.MonomialNaturalScales(c, s);
@@ -455,7 +455,7 @@ int DG_Modal::AdvectionMatrixPiecewisePoly_(
     for (auto jt = q.begin(); jt.end() <= q.end(); ++jt) {
       const int* idx1 = jt.multi_index();
       int l = jt.PolynomialPosition();
-      int t = jt.MonomialOrder();
+      int t = jt.MonomialSetOrder();
 
       double factor = numi_.MonomialNaturalScales(c, t);
       Polynomial p1(d_, idx1, factor);
@@ -555,7 +555,7 @@ int DG_Modal::FluxMatrix(int f, const Polynomial& un, DenseMatrix& A,
   for (auto it = poly0.begin(); it.end() <= poly0.end(); ++it) {
     const int* idx0 = it.multi_index();
     int k = poly0.PolynomialPosition(idx0);
-    int s = it.MonomialOrder();
+    int s = it.MonomialSetOrder();
 
     double factor = numi_.MonomialNaturalScales(c1, s);
     Polynomial p0(d_, idx0, factor);
@@ -568,7 +568,7 @@ int DG_Modal::FluxMatrix(int f, const Polynomial& un, DenseMatrix& A,
     for (auto jt = poly1.begin(); jt.end() <= poly1.end(); ++jt) {
       const int* idx1 = jt.multi_index();
       int l = poly1.PolynomialPosition(idx1);
-      int t = jt.MonomialOrder();
+      int t = jt.MonomialSetOrder();
 
       factor = numi_.MonomialNaturalScales(c1, t);
       Polynomial q(d_, idx1, factor);
@@ -668,7 +668,7 @@ int DG_Modal::FluxMatrixRusanov(
   for (auto it = poly0.begin(); it.end() <= poly0.end(); ++it) {
     const int* idx0 = it.multi_index();
     int k = poly0.PolynomialPosition(idx0);
-    int s = it.MonomialOrder();
+    int s = it.MonomialSetOrder();
 
     double factor = numi_.MonomialNaturalScales(c1, s);
     Polynomial p0(d_, idx0, factor);
@@ -681,7 +681,7 @@ int DG_Modal::FluxMatrixRusanov(
     for (auto jt = poly1.begin(); jt.end() <= poly1.end(); ++jt) {
       const int* idx1 = jt.multi_index();
       int l = poly1.PolynomialPosition(idx1);
-      int t = jt.MonomialOrder();
+      int t = jt.MonomialSetOrder();
 
       factor = numi_.MonomialNaturalScales(c1, t);
       Polynomial q0(d_, idx1, factor);
@@ -772,7 +772,7 @@ int DG_Modal::FaceMatrixJump(int f, const Tensor& K1, const Tensor& K2, DenseMat
   for (auto it = poly0.begin(); it.end() <= poly0.end(); ++it) {
     const int* idx0 = it.multi_index();
     int k = poly0.PolynomialPosition(idx0);
-    int s = it.MonomialOrder();
+    int s = it.MonomialSetOrder();
 
     double factor = numi_.MonomialNaturalScales(c1, s);
     Polynomial p0(d_, idx0, factor);
@@ -784,7 +784,7 @@ int DG_Modal::FaceMatrixJump(int f, const Tensor& K1, const Tensor& K2, DenseMat
     for (auto jt = poly1.begin(); jt.end() <= poly1.end(); ++jt) {
       const int* idx1 = jt.multi_index();
       int l = poly1.PolynomialPosition(idx1);
-      int t = jt.MonomialOrder();
+      int t = jt.MonomialSetOrder();
 
       factor = numi_.MonomialNaturalScales(c1, t);
       Polynomial q0(d_, idx1, factor);
@@ -869,7 +869,7 @@ int DG_Modal::FaceMatrixPenalty(int f, double Kf, DenseMatrix& A)
   for (auto it = poly0.begin(); it.end() <= poly0.end(); ++it) {
     const int* idx0 = it.multi_index();
     int k = poly0.PolynomialPosition(idx0);
-    int s = it.MonomialOrder();
+    int s = it.MonomialSetOrder();
 
     double factor = numi_.MonomialNaturalScales(c1, s);
     Polynomial p0(d_, idx0, factor);
@@ -878,7 +878,7 @@ int DG_Modal::FaceMatrixPenalty(int f, double Kf, DenseMatrix& A)
     for (auto jt = poly1.begin(); jt.end() <= poly1.end(); ++jt) {
       const int* idx1 = jt.multi_index();
       int l = poly1.PolynomialPosition(idx1);
-      int t = jt.MonomialOrder();
+      int t = jt.MonomialSetOrder();
 
       factor = numi_.MonomialNaturalScales(c1, t);
       Polynomial q0(d_, idx1, factor);
@@ -975,7 +975,7 @@ void DG_Modal::UpdateScales_(int c, int order)
       double volume = integrals(0, 0); 
 
       for (auto it = poly.begin(); it.end() <= poly.end(); ++it) {
-        int k = it.MonomialPosition();
+        int k = it.MonomialSetPosition();
         const int* multi_index = it.multi_index();
         int index[d_]; 
 
@@ -997,7 +997,7 @@ void DG_Modal::UpdateScales_(int c, int order)
           }
 
           const auto& aux2 = integrals.monomials(2 * m).coefs();
-          norm = aux2[integrals.MonomialPosition(index)];
+          norm = aux2[integrals.MonomialSetPosition(index)];
           norm -= b * b * volume;
 
           a = std::pow(volume / norm, 0.5);

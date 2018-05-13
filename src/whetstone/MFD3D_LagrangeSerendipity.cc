@@ -86,7 +86,7 @@ int MFD3D_LagrangeSerendipity::H1consistency(
 
       double sum(0.0), tmp;
       const auto& coefs = integrals_.poly().monomials(n).coefs();
-      M(l, k) = M(k, l) = coefs[poly.MonomialPosition(multi_index)]; 
+      M(l, k) = M(k, l) = coefs[poly.MonomialSetPosition(multi_index)]; 
     }
   }
 
@@ -100,14 +100,14 @@ int MFD3D_LagrangeSerendipity::H1consistency(
     const int* index = it.multi_index();
     int k = it.PolynomialPosition();
 
-    double factor = numi.MonomialNaturalScales(c, it.MonomialOrder());
+    double factor = numi.MonomialNaturalScales(c, it.MonomialSetOrder());
     Polynomial mono(d_, index, factor);
     Polynomial lap = mono.Laplacian();
     
     for (auto jt = lap.begin(); jt.end() <= lap.end(); ++jt) {
       int l = jt.PolynomialPosition();
-      int m = jt.MonomialOrder();
-      int n = jt.MonomialPosition();
+      int m = jt.MonomialSetOrder();
+      int n = jt.MonomialSetPosition();
       L(l, k) = lap(m, n) / std::pow(scale, std::min(2, m));
     }  
   }

@@ -154,7 +154,7 @@ int MFD3D_CrouzeixRaviart::H1consistencyHO_(
 
   for (auto it = poly.begin(); it.end() <= poly.end(); ++it) { 
     const int* index = it.multi_index();
-    double factor = numi.MonomialNaturalScales(c, it.MonomialOrder());
+    double factor = numi.MonomialNaturalScales(c, it.MonomialSetOrder());
     Polynomial cmono(d_, index, factor);
     cmono.set_origin(xc);  
 
@@ -181,8 +181,8 @@ int MFD3D_CrouzeixRaviart::H1consistencyHO_(
       tmp.ChangeCoordinates(xf, tau);
 
       for (auto jt = tmp.begin(); jt.end() <= tmp.end(); ++jt) {
-        int m = jt.MonomialOrder();
-        int k = jt.MonomialPosition();
+        int m = jt.MonomialSetOrder();
+        int k = jt.MonomialSetPosition();
         int n = jt.PolynomialPosition();
         R_(row + n, col) = tmp(m, k);
       }
@@ -206,8 +206,8 @@ int MFD3D_CrouzeixRaviart::H1consistencyHO_(
       numi.ChangeBasisRegularToNatural(c, tmp);
 
       for (auto jt = tmp.begin(); jt.end() <= tmp.end(); ++jt) {
-        int m = jt.MonomialOrder();
-        int k = jt.MonomialPosition();
+        int m = jt.MonomialSetOrder();
+        int k = jt.MonomialSetPosition();
         int n = jt.PolynomialPosition();
 
         R_(row + n, col) = -tmp(m, k) * volume;
@@ -227,7 +227,7 @@ int MFD3D_CrouzeixRaviart::H1consistencyHO_(
         }
 
         const auto& coefs = integrals_.poly().monomials(nm).coefs();
-        N(row + n, col) = coefs[poly.MonomialPosition(multi_index)] / volume; 
+        N(row + n, col) = coefs[poly.MonomialSetPosition(multi_index)] / volume; 
       }
     }
   }
@@ -258,7 +258,7 @@ int MFD3D_CrouzeixRaviart::H1consistencyHO_(
         if (index[i] > 0 && jndex[i] > 0) {
           multi_index[i] -= 2;
           const auto& coefs = integrals_.poly().monomials(n - 2).coefs();
-          tmp = coefs[poly.MonomialPosition(multi_index)]; 
+          tmp = coefs[poly.MonomialSetPosition(multi_index)]; 
           sum += tmp * index[i] * jndex[i];
           multi_index[i] += 2;
         }
@@ -657,7 +657,7 @@ void MFD3D_CrouzeixRaviart::ProjectorGradientCell_(
         int row = it.PolynomialPosition();
         const int* index = it.multi_index();
 
-        double factor = numi.MonomialNaturalScales(c, it.MonomialOrder());
+        double factor = numi.MonomialNaturalScales(c, it.MonomialSetOrder());
         Polynomial cmono(d_, index, factor);
         cmono.set_origin(xc);  
 
@@ -681,8 +681,8 @@ void MFD3D_CrouzeixRaviart::ProjectorGradientCell_(
           numi.ChangeBasisRegularToNatural(c, grad[j]);
 
           for (auto jt = grad[j].begin(); jt.end() <= grad[j].end(); ++jt) {
-            int m = jt.MonomialOrder();
-            int k = jt.MonomialPosition();
+            int m = jt.MonomialSetOrder();
+            int k = jt.MonomialSetPosition();
             int s = jt.PolynomialPosition();
             v4(row) -= grad[j](m, k) * (*moments)(s) * volume;
           }

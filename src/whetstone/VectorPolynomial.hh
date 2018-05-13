@@ -142,17 +142,17 @@ Polynomial Divergence(const VectorPolynomial vp)
   int index[3];
   for (int i = 0; i < d; ++i) {
     for (auto it = vp[i].begin(); it.end() <= vp[i].end(); ++it) {
-      int k = it.MonomialOrder();
+      int k = it.MonomialSetOrder();
       if (k > 0) {
         const int* idx = it.multi_index();
         for (int j = 0; j < d; ++j) index[j] = idx[j];
 
         if (index[i] > 0) {
-          int m = it.MonomialPosition();
+          int m = it.MonomialSetPosition();
           double val = vp[i](k, m);
 
           index[i]--;
-          m = vp[i].MonomialPosition(index);
+          m = vp[i].MonomialSetPosition(index);
           div(k - 1, m) += val * idx[i];
         }
       }
