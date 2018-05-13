@@ -36,7 +36,7 @@
 #include "VectorPolynomial.hh"
 
 // Operators
-#include "AnalyticDG01.hh"
+#include "AnalyticDG02.hh"
 #include "AnalyticDG03.hh"
 
 #include "OperatorAudit.hh"
@@ -270,14 +270,14 @@ void AdvectionSteady(int dim, std::string filename, int nx)
     std::cout << "\nEXACT solution: " << sol << std::endl;
     printf("Mean:  L2(p)=%12.9f  Inf(p)=%12.9f  itr=%3d\n", pl2_mean, pinf_mean, solver.num_itrs());
     printf("Total: L2(p)=%12.9f  Inf(p)=%12.9f\n", pl2_err, pinf_err);
-    CHECK(pl2_err < 1e-10);
+    CHECK(pl2_err < 1e-10 && pinf_err < 1e-10);
   }
 }
 
 
 TEST(OPERATOR_ADVECTION_STEADY_DG) {
   AdvectionSteady<AnalyticDG03>(2, "test/median7x8.exo", 8);
-  AdvectionSteady<AnalyticDG01>(3, "cubic", 2);
+  AdvectionSteady<AnalyticDG02>(3, "cubic", 3);
 }
 
 

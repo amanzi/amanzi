@@ -68,6 +68,7 @@ class VectorPolynomial {
   }
 
   // change the coordinate system
+  void set_origin(const AmanziGeometry::Point& origin);
   void ChangeOrigin(const AmanziGeometry::Point& origin);
 
   // typical operations with polynomials

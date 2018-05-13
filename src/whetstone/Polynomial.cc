@@ -225,6 +225,7 @@ void Polynomial::ChangeOrigin(const AmanziGeometry::Point& origin)
       int k = it.MonomialOrder();
       int m = it.MonomialPosition();
       double coef = monomials(k).coefs()[m];
+      if (coef == 0.0) continue;
 
       const int* index = it.multi_index();
       Polynomial tmp(powers[0][index[0]]);

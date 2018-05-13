@@ -366,7 +366,7 @@ void NumericalIntegration::IntegrateMonomialsFace_(
         q(m, k) *= tmp / (m + d_ - 1);
       }
 
-      // integrate elong edge
+      // integrate along edge
       int n0, n1; 
       mesh_->edge_get_nodes(e, &n0, &n1);
       mesh_->node_get_coordinates(n0, &x1);

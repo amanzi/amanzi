@@ -187,7 +187,18 @@ VectorPolynomial& VectorPolynomial::operator-=(const VectorPolynomial& vp)
 
 
 /* ******************************************************************
-* Reset all coefficients to thesame number
+* Set same origin for all polynomials without modyfying them 
+****************************************************************** */
+void VectorPolynomial::set_origin(const AmanziGeometry::Point& origin)
+{
+  for (int i = 0; i < size(); ++i) {
+    polys_[i].set_origin(origin);
+  }
+}
+
+
+/* ******************************************************************
+* Change all polynomials to new same origin
 ****************************************************************** */
 void VectorPolynomial::ChangeOrigin(const AmanziGeometry::Point& origin)
 {

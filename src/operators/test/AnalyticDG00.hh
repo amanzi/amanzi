@@ -39,6 +39,7 @@ class AnalyticDG00 : public AnalyticDGBase {
   virtual void SolutionTaylor(const Amanzi::AmanziGeometry::Point& p, double t,
                               Amanzi::WhetStone::Polynomial& sol) override {
     sol.Reshape(d_, order_, true); 
+    sol.set_origin(p);
     sol(0, 0) = 1.0;
   }
 
@@ -46,6 +47,7 @@ class AnalyticDG00 : public AnalyticDGBase {
   virtual void AccumulationTaylor(const Amanzi::AmanziGeometry::Point& p, double t,
                                   Amanzi::WhetStone::Polynomial& a) override {
     a.Reshape(d_, 0, true); 
+    a.set_origin(p);
   }
 
   // -- velocity
@@ -55,18 +57,21 @@ class AnalyticDG00 : public AnalyticDGBase {
     for (int i = 0; i < d_; ++i) {
       v[i].Reshape(d_, 0, true); 
     }
+    v.set_origin(p);
   }
 
   // -- reaction
   virtual void ReactionTaylor(const Amanzi::AmanziGeometry::Point& p, double t,
                               Amanzi::WhetStone::Polynomial& r) override {
     r.Reshape(d_, 0, true); 
+    r.set_origin(p);
   }
 
   // -- source term
   virtual void SourceTaylor(const Amanzi::AmanziGeometry::Point& p, double t,
                             Amanzi::WhetStone::Polynomial& src) override {
     src.Reshape(d_, 0, true);
+    src.set_origin(p);
   }
 };
 
