@@ -1,7 +1,7 @@
 Transient Drawdown due to Pumping Wells in a Bounded Domain
 ===========================================================
 
-Introduction
+Background
 ------------
 
 As we see from the comparison of results from Amanzi and Butler's solutions, it is inevitable that the numerical solutions from the Amanzi model will not match the results from these analytical solutions at later time, because these analytical solutions were derived for the unbounded domains while in numerical simulations the domain is always bounded.  In this example, we will verify the Amanzi model using the solution for the bounded domain with uniform hydraulic properties.
