@@ -26,6 +26,7 @@
 #include "Point.hh"
 
 #include "DenseVector.hh"
+#include "Monomial.hh"
 #include "PolynomialIterator.hh"
 
 namespace Amanzi {
@@ -36,6 +37,7 @@ class Polynomial {
   Polynomial() : d_(0), order_(-1), size_(0) {};
   Polynomial(int d, int order);
   Polynomial(int d, const int* multi_index, double factor);
+  Polynomial(const Monomial& mono);
 
   // reshape polynomial with erase (optionally) memory
   void Reshape(int d, int order, bool reset = false);
@@ -55,6 +57,8 @@ class Polynomial {
   void set_origin(const AmanziGeometry::Point& origin) { origin_ = origin; }
   // -- polynomial is recalculated
   void ChangeOrigin(const AmanziGeometry::Point& origin);
+  // -- polynomial is created from 
+  // Polynomial CreateChangeOrigin(const Monomial& mono, const AmanziGeometry::Point& origin);
 
   // typical operations with polynomials
   // -- polynomial values
@@ -134,8 +138,6 @@ class Polynomial {
   std::vector<DenseVector> coefs_;
 };
 
-
-// non-member functions
 // calculate dimension of monomial space of given order 
 inline
 int MonomialSpaceDimension(int d, int order)

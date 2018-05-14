@@ -59,6 +59,29 @@ Polynomial::Polynomial(int d, const int* multi_index, double factor) :
 
 
 /* ******************************************************************
+* Constructor of a polynomial from a monomial.
+****************************************************************** */
+Polynomial::Polynomial(const Monomial& mono)
+{
+  d_ = mono.dimension();
+  order_ = mono.order();
+  origin_ = mono.origin();
+
+  size_ = 0;
+  coefs_.resize(order_ + 1);
+  for (int i = 0; i <= order_; ++i) {
+    int msize = MonomialSpaceDimension(d_, i);
+    coefs_[i].Reshape(msize);
+    coefs_[i].PutScalar(0.0);
+    size_ += msize;
+  }
+
+  int l = MonomialSetPosition(mono.multi_index());
+  coefs_[order_](l) = mono.coef();
+}
+
+
+/* ******************************************************************
 * Re-shape polynomial
 * NOTE: case d > d_ can be treated more intelligently.
 ****************************************************************** */
@@ -229,10 +252,44 @@ void Polynomial::ChangeOrigin(const AmanziGeometry::Point& origin)
       if (coef == 0.0) continue;
 
       const int* index = it.multi_index();
-      Polynomial tmp(powers[0][index[0]]);
-      for (int i = 1; i < d_; ++i) tmp *= powers[i][index[i]];
+      // old algorithm
+      // Polynomial tmp(powers[0][index[0]]);
+      // for (int i = 1; i < d_; ++i) tmp *= powers[i][index[i]];
+      // tmp *= coef; 
+      // rebased += tmp;
 
-      tmp *= coef; 
+      // new algorithm tensor product of x^k x y^l x z^m
+      int idx[3];
+      int idx1[3] = {0, 0, 0};
+      int idx2[3] = {0, 0, 0};
+
+      Polynomial tmp(d_, k);
+      for (int i0 = 0; i0 <= index[0]; ++i0) {
+        idx[0] = i0;
+        double coef0 = powers[0][index[0]](i0, 0); 
+
+        for (int i1 = 0; i1 <= index[1]; ++i1) {
+          idx[1] = i1;
+          idx1[1] = i1;
+          int pos1 = MonomialSetPosition(idx1);
+          double coef1 = powers[1][index[1]](i1, pos1); 
+
+          if (d_ == 2) {
+            int pos = MonomialSetPosition(idx);
+            tmp(i0 + i1, pos) = coef * coef0 * coef1;
+          } else {
+            for (int i2 = 0; i2 <= index[2]; ++i2) {
+              idx[2] = i2;
+              idx2[2] = i2;
+              int pos2 = MonomialSetPosition(idx2);
+              double coef2 = powers[2][index[2]](i2, pos2); 
+
+              int pos = MonomialSetPosition(idx);
+              tmp(i0 + i1 + i2, pos) = coef * coef0 * coef1 * coef2;
+            }
+          }
+        }
+      }
       rebased += tmp;
     }
     
