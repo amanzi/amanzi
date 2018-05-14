@@ -80,7 +80,7 @@ add_amanzi_library(whetstone
                            MeshMaps.hh MeshMapsFactory.hh
                            MeshMaps_FEM.hh MeshMaps_VEM.hh MeshMaps_VEM.hh MeshUtils.hh
                            CoordinateSystems.hh
-                           MonomialSet.hh Polynomial.hh PolynomialIerator.hh
+                           Monomial.hh Polynomial.hh PolynomialIerator.hh
                            VectorPolynomial.hh PolynomialOnMesh.hh
                            Tensor.hh
                            WhetStoneDefs.hh

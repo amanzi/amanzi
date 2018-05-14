@@ -40,7 +40,7 @@ TEST(DG_TAYLOR_POLYNOMIALS) {
     CHECK(pos == i++);
 
     int m = p.MonomialSetPosition(index);
-    p.monomials(index[0] + index[1]).coefs()[m] = pos;
+    p(index[0] + index[1], m) = pos;
   }
   std::cout << p << std::endl; 
   CHECK(p.size() == 10);
@@ -75,7 +75,7 @@ TEST(DG_TAYLOR_POLYNOMIALS) {
     CHECK(pos == i++);
 
     int m = q.MonomialSetPosition(index);
-    q.monomials(index[0] + index[1] + index[2]).coefs()[m] = pos;
+    q(index[0] + index[1] + index[2], m) = pos;
   }
   std::cout << "Original polynomial\n" << q << std::endl; 
   CHECK(q.size() == 20);

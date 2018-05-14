@@ -85,8 +85,7 @@ int MFD3D_LagrangeSerendipity::H1consistency(
       }
 
       double sum(0.0), tmp;
-      const auto& coefs = integrals_.poly().monomials(n).coefs();
-      M(l, k) = M(k, l) = coefs[poly.MonomialSetPosition(multi_index)]; 
+      M(l, k) = M(k, l) = integrals_.poly()(n, poly.MonomialSetPosition(multi_index)); 
     }
   }
 

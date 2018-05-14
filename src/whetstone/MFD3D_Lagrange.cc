@@ -225,8 +225,8 @@ int MFD3D_Lagrange::H1consistency(
           nm += multi_index[i];
         }
 
-        const auto& coefs = integrals_.poly().monomials(nm).coefs();
-        N(row + n, col) = coefs[poly.MonomialSetPosition(multi_index)] / volume; 
+        int m = poly.MonomialSetPosition(multi_index);
+        N(row + n, col) = integrals_.poly()(nm, m) / volume; 
       }
     }
   }
@@ -256,8 +256,8 @@ int MFD3D_Lagrange::H1consistency(
       for (int i = 0; i < d_; ++i) {
         if (index[i] > 0 && jndex[i] > 0) {
           multi_index[i] -= 2;
-          const auto& coefs = integrals_.poly().monomials(n - 2).coefs();
-          tmp = coefs[poly.MonomialSetPosition(multi_index)]; 
+          int m = poly.MonomialSetPosition(multi_index);
+          tmp = integrals_.poly()(n - 2, m);
           sum += tmp * index[i] * jndex[i];
           multi_index[i] += 2;
         }

@@ -33,7 +33,7 @@ void Basis_Orthonormalized::Init(
   NumericalIntegration numi(mesh, true);
 
   for (int k = 0; k <= 2 * order; ++k) {
-    numi.IntegrateMonomialsCell(c, integrals.monomials(k));
+    numi.IntegrateMonomialsCell(c, k, integrals);
   }
   
   double volume = integrals(0, 0); 
@@ -53,11 +53,9 @@ void Basis_Orthonormalized::Init(
     }
 
     if (m > 0) {
-      const auto& aux1 = integrals.monomials(m).coefs();
-      double b = aux1[k] / volume;
-      const auto& aux2 = integrals.monomials(2 * m).coefs();
+      double b = integrals(m, k) / volume;
+      double norm = integrals(2 * m, integrals.MonomialSetPosition(index));
 
-      double norm = aux2[integrals.MonomialSetPosition(index)];
       norm -= b * b * volume;
       monomial_scales_(m, k) = std::pow(volume / norm, 0.5);
       monomial_ortho_(m, k) = b;

@@ -52,9 +52,8 @@ Polynomial Basis_Natural::CalculatePolynomial(
   poly.set_origin(mesh->cell_centroid(c));
 
   for (int k = 0; k < order + 1; ++k) {
-    auto& mono = poly.monomials(k).coefs();
-    double scale = monomial_scales_[k];
-    for (auto it = mono.begin(); it != mono.end(); ++it) *it *= scale;
+    auto& mono = poly.MonomialSet(k);
+    mono *= monomial_scales_[k];
   }
 
   return poly;

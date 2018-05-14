@@ -32,7 +32,7 @@ void Basis_Normalized::Init(
   NumericalIntegration numi(mesh, true);
 
   for (int k = 0; k <= 2 * order; ++k) {
-    numi.IntegrateMonomialsCell(c, integrals.monomials(k));
+    numi.IntegrateMonomialsCell(c, k, integrals);
   }
   
   double volume = integrals(0, 0); 
@@ -50,8 +50,7 @@ void Basis_Normalized::Init(
     }
 
     if (m > 0) {
-      const auto& aux2 = integrals.monomials(2 * m).coefs();
-      double norm = aux2[integrals.MonomialSetPosition(index)];
+      double norm = integrals(2 * m, integrals.MonomialSetPosition(index));
       monomial_scales_(m, k) = std::pow(volume / norm, 0.5);
     }
   }

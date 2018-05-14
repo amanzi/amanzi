@@ -170,8 +170,8 @@ TEST(DG2D_MASS_MATRIX_POLYNOMIAL) {
     DG_Modal dg(2, mesh, "orthonormalized");
 
     Polynomial u(2, k);
-    u.monomials(0).coefs()[0] = 1.0;
-    u.monomials(k).coefs()[0] = 1.0;
+    u(0, 0) = 1.0;
+    u(k, 0) = 1.0;
 
     dg.MassMatrix(0, u, M1);
     int nk = M1.NumRows();
@@ -230,7 +230,7 @@ TEST(DG2D_ADVECTION_MATRIX_FACE) {
     DG_Modal dg(k, mesh, "orthonormalized");
 
     Polynomial un(2, 0);
-    un.monomials(0).coefs()[0] = 1.0;
+    un(0, 0) = 1.0;
 
     // TEST1: constant u
     DenseMatrix A0, A1;
@@ -251,7 +251,7 @@ TEST(DG2D_ADVECTION_MATRIX_FACE) {
     CHECK_CLOSE(0.0, A1.NormInf(), 1e-12);
 
     // TEST3: nonzero linear component polynomial un
-    un.monomials(1).coefs()[0] = 1.0;
+    un(1, 0) = 1.0;
 
     dg.FluxMatrix(1, un, A1, true, false);
 
@@ -347,8 +347,8 @@ TEST(DG2D_ADVECTION_MATRIX_CELL) {
     for (int i = 0; i < 2; ++i) u[i].Reshape(2, 2);
 
     // TEST1: constant u, method 1
-    u[0].monomials(0).coefs()[0] = 1.0;
-    u[1].monomials(0).coefs()[0] = 1.0;
+    u[0](0, 0) = 1.0;
+    u[1](0, 0) = 1.0;
     dg.AdvectionMatrix(0, u, A0, false);
 
     printf("Advection matrix (cell-based) for order=%d u=(1,1)\n", k);
@@ -370,8 +370,8 @@ TEST(DG2D_ADVECTION_MATRIX_CELL) {
     CHECK_CLOSE(A1.NormInf(), 0.0, 1e-12);
 
     // TEST2: linear u, method 1
-    u[0].monomials(1).coefs()[0] = 1.0;
-    u[0].monomials(1).coefs()[1] = 1.0;
+    u[0](1, 0) = 1.0;
+    u[0](1, 1) = 1.0;
     dg.AdvectionMatrix(0, u, A0, false);
 
     printf("Advection matrix (cell-based) for order=%d u=(1+x+y,1), f(x,y)=2+x+3y\n", k);
@@ -412,7 +412,7 @@ TEST(DG2D_ADVECTION_MATRIX_CELL) {
     }
 
     // TEST3: quadratic u, method 1
-    u[1].monomials(2).coefs()[0] = 1.0;
+    u[1](2, 0) = 1.0;
     dg.AdvectionMatrix(0, u, A0, false);
 
     printf("Advection matrix (cell-based) for order=%d u=(1+x+y,1+x^2)\n", k);
@@ -556,9 +556,9 @@ TEST(DG_LEAST_SQUARE_MAP_CELL) {
 
   maps.LeastSquareFit(1, x1, x1, u);
   for (int i = 0; i < 2; ++i) {
-    CHECK_CLOSE(u[i].monomials(0).coefs()[0], 0.0, 1e-12);
-    CHECK_CLOSE(u[i].monomials(1).coefs()[i], 1.0, 1e-12);
-    CHECK_CLOSE(u[i].monomials(1).coefs()[1 - i], 0.0, 1e-12);
+    CHECK_CLOSE(u[i](0, 0), 0.0, 1e-12);
+    CHECK_CLOSE(u[i](1, i), 1.0, 1e-12);
+    CHECK_CLOSE(u[i](1, 1 - i), 0.0, 1e-12);
   }
 
   // test linear map
@@ -570,9 +570,9 @@ TEST(DG_LEAST_SQUARE_MAP_CELL) {
 
   maps.LeastSquareFit(1, x1, x2, u);
   for (int i = 0; i < 2; ++i) {
-    CHECK_CLOSE(u[i].monomials(0).coefs()[0], shift[i], 1e-12);
-    CHECK_CLOSE(u[i].monomials(1).coefs()[i], 1.0, 1e-12);
-    CHECK_CLOSE(u[i].monomials(1).coefs()[1 - i], 0.0, 1e-12);
+    CHECK_CLOSE(u[i](0, 0), shift[i], 1e-12);
+    CHECK_CLOSE(u[i](1, i), 1.0, 1e-12);
+    CHECK_CLOSE(u[i](1, 1 - i), 0.0, 1e-12);
   }
 
   // test rotation map
@@ -584,11 +584,11 @@ TEST(DG_LEAST_SQUARE_MAP_CELL) {
 
   maps.LeastSquareFit(1, x1, x2, u);
   for (int i = 0; i < 2; ++i) {
-    CHECK_CLOSE(u[i].monomials(0).coefs()[0], 0.0, 1e-12);
-    CHECK_CLOSE(u[i].monomials(1).coefs()[i], c, 1e-12);
+    CHECK_CLOSE(u[i](0, 0), 0.0, 1e-12);
+    CHECK_CLOSE(u[i](1, i), c, 1e-12);
   }
-  CHECK_CLOSE(u[0].monomials(1).coefs()[1], -s, 1e-12);
-  CHECK_CLOSE(u[1].monomials(1).coefs()[0],  s, 1e-12);
+  CHECK_CLOSE(u[0](1, 1), -s, 1e-12);
+  CHECK_CLOSE(u[1](1, 0),  s, 1e-12);
 
   // test non-linear deformation map
   x1.clear();
@@ -603,7 +603,7 @@ TEST(DG_LEAST_SQUARE_MAP_CELL) {
   maps.LeastSquareFit(1, x1, x2, u);
   std::cout << u[0] << " " << u[1] << std::endl;
 
-  CHECK_CLOSE(0.025, u[0].monomials(0).coefs()[0], 1e-12);
+  CHECK_CLOSE(0.025, u[0](0, 0), 1e-12);
 
   delete comm;
 }

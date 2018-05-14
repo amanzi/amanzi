@@ -74,7 +74,7 @@ double NumericalIntegration::IntegratePolynomialCell(int c, const Polynomial& po
   Polynomial integrals(d_, order);
 
   for (int k = 0; k <= order; ++k) {
-    IntegrateMonomialsCell(c, integrals.monomials(k));
+    IntegrateMonomialsCell(c, k, integrals);
   }
 
   // dot product of coefficients of two polynomials.
@@ -83,11 +83,9 @@ double NumericalIntegration::IntegratePolynomialCell(int c, const Polynomial& po
 
   double value(0.0);
   for (int k = 0; k <= order; ++k) {
-    std::vector<double>& val2 = tmp.monomials(k).coefs();
-    std::vector<double>& val1 = integrals.monomials(k).coefs();
-
     double scale = MonomialNaturalScales(c, k);
-    for (int i = 0; i < val1.size(); ++i) value += val1[i] * val2[i] / scale;
+    int mk = integrals.MonomialSet(k).NumRows();
+    for (int i = 0; i < mk; ++i) value += integrals(k, i) * tmp(k, i) / scale;
   }
 
   return value;
@@ -266,7 +264,7 @@ void NumericalIntegration::UpdateMonomialIntegralsCell(
     poly.Reshape(d_, order);
 
     for (int k = k0 + 1; k <= order; ++k) {
-      IntegrateMonomialsCell(c, poly.monomials(k));
+      IntegrateMonomialsCell(c, k, poly);
     }
   }
 }
@@ -278,10 +276,11 @@ void NumericalIntegration::UpdateMonomialIntegralsCell(
 *    m(x) = (x - x0)^k / h^k,
 * where h is a measure of cell size.
 ****************************************************************** */
-void NumericalIntegration::IntegrateMonomialsCell(int c, MonomialSet& monomials)
+void NumericalIntegration::IntegrateMonomialsCell(int c, int k, Polynomial& integrals)
 {
-  int k = monomials.order();
-  monomials.PutScalar(0.0);
+  for (int i = 0; i < integrals.MonomialSet(k).NumRows(); ++i) {
+    integrals(k, i) = 0.0;
+  }
 
   Entity_ID_List faces, nodes;
   std::vector<int> dirs;
@@ -300,7 +299,7 @@ void NumericalIntegration::IntegrateMonomialsCell(int c, MonomialSet& monomials)
     
     if (d_ == 3) {
       tmp /= mesh_->face_area(f);
-      IntegrateMonomialsFace_(c, f, tmp, monomials);
+      IntegrateMonomialsFace_(c, f, tmp, k, integrals);
     } else if (d_ == 2) {
       mesh_->face_get_nodes(f, &nodes);
 
@@ -310,17 +309,17 @@ void NumericalIntegration::IntegrateMonomialsCell(int c, MonomialSet& monomials)
 
       x1 -= xc;  // simple change of origin
       x2 -= xc;
-      IntegrateMonomialsEdge_(x1, x2, tmp, monomials);
+      IntegrateMonomialsEdge_(x1, x2, tmp, k, integrals);
     }
   }
 }
 
 /* ******************************************************************
 * Integrate over face f a group of uniformly normalized monomials of
-* the same order centered at the centroid of cell c.
+* the same order k centered at the centroid of cell c.
 ****************************************************************** */
 void NumericalIntegration::IntegrateMonomialsFace_(
-    int c, int f, double factor, MonomialSet& monomials)
+    int c, int f, double factor, int k, Polynomial& integrals)
 {
   const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
   const AmanziGeometry::Point& xf = mesh_->face_centroid(f);
@@ -332,8 +331,8 @@ void NumericalIntegration::IntegrateMonomialsFace_(
   AmanziGeometry::Point fnormal(d_), x1(d_), x2(d_);
   std::vector<const Polynomial*> polys(1);
 
-  int k = monomials.order();
-  for (auto it = monomials.begin(); it.end() <= k; ++it) {
+  PolynomialIterator it(d_);
+  for (it.begin(k); it.end() <= k; ++it) {
     int l = it.MonomialSetPosition();
 
     // using monomial centered at xc, create polynomial centred at xf
@@ -373,7 +372,7 @@ void NumericalIntegration::IntegrateMonomialsFace_(
       mesh_->node_get_coordinates(n1, &x2);
 
       polys[0] = &q;
-      monomials.coefs()[l] += IntegratePolynomialsEdge(x1, x2, polys);
+      integrals(k, l) += IntegratePolynomialsEdge(x1, x2, polys);
     }
   }
 }
@@ -381,21 +380,20 @@ void NumericalIntegration::IntegrateMonomialsFace_(
 
 /* ******************************************************************
 * Integrate over edge (x1,x2) a group of non-normalized monomials of
-* the same order centered at zero. 
+* the same order k centered at zero. 
 ****************************************************************** */
 void NumericalIntegration::IntegrateMonomialsEdge_(
     const AmanziGeometry::Point& x1, const AmanziGeometry::Point& x2,
-    double factor, MonomialSet& monomials)
+    double factor, int k, Polynomial& integrals)
 {
   AmanziGeometry::Point xm(d_);
-  auto& coefs = monomials.coefs();
 
   // minimal quadrature rule
-  int k = monomials.order();
   int m = k / 2;
   ASSERT(m < 8);
 
-  for (auto it = monomials.begin(); it.end() <= k; ++it) {
+  PolynomialIterator it(d_);
+  for (it.begin(k); it.end() <= k; ++it) {
     const int* idx = it.multi_index();
     int l = it.MonomialSetPosition();
 
@@ -407,7 +405,7 @@ void NumericalIntegration::IntegrateMonomialsEdge_(
         a1 *= std::pow(xm[i], idx[i]);
       }
 
-      coefs[l] += a1 * q1d_weights[m][n];      
+      integrals(k, l) += a1 * q1d_weights[m][n];      
     }
   }
 }
@@ -465,9 +463,8 @@ double NumericalIntegration::MonomialNaturalScales(int c, int k) {
 void NumericalIntegration::ChangeBasisRegularToNatural(int c, Polynomial& p)
 {
   for (int k = 0; k <= p.order(); ++k) {
-    double scale = MonomialNaturalScales(c, k);
-    auto& mono = p.monomials(k).coefs();
-    for (auto it = mono.begin(); it != mono.end(); ++it) *it /= scale;
+    auto& mono = p.MonomialSet(k);
+    mono /= MonomialNaturalScales(c, k);
   }
 }
 
@@ -475,9 +472,8 @@ void NumericalIntegration::ChangeBasisRegularToNatural(int c, Polynomial& p)
 void NumericalIntegration::ChangeBasisNaturalToRegular(int c, Polynomial& p)
 {
   for (int k = 0; k <= p.order(); ++k) {
-    double scale = MonomialNaturalScales(c, k);
-    auto& mono = p.monomials(k).coefs();
-    for (auto it = mono.begin(); it != mono.end(); ++it) *it *= scale;
+    auto& mono = p.MonomialSet(k);
+    mono *= MonomialNaturalScales(c, k);
   }
 }
 

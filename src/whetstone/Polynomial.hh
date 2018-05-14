@@ -26,7 +26,6 @@
 #include "Point.hh"
 
 #include "DenseVector.hh"
-#include "MonomialSet.hh"
 #include "PolynomialIterator.hh"
 
 namespace Amanzi {
@@ -116,11 +115,11 @@ class Polynomial {
   int size() const { return size_; }
   const AmanziGeometry::Point& origin() const { return origin_; }
 
+  DenseVector& MonomialSet(int k) { return coefs_[k]; }
+  const DenseVector& MonomialSet(int k) const { return coefs_[k]; }
+
   double& operator()(int i, int j) { return coefs_[i](j); }
   const double& operator()(int i, int j) const { return coefs_[i](j); }
-
-  MonomialSet& monomials(int i) { return coefs_[i]; }
-  const MonomialSet& monomials(int i) const { return coefs_[i]; }
 
   // output 
   friend std::ostream& operator << (std::ostream& os, const Polynomial& p);
@@ -132,8 +131,34 @@ class Polynomial {
  private:
   int d_, order_, size_;
   AmanziGeometry::Point origin_;
-  std::vector<MonomialSet> coefs_;
+  std::vector<DenseVector> coefs_;
 };
+
+
+// non-member functions
+// calculate dimension of monomial space of given order 
+inline
+int MonomialSpaceDimension(int d, int order)
+{
+  int nk = (order == 0) ? 1 : d;
+  for (int i = 1; i < order; ++i) {
+    nk *= d + i;
+    nk /= i + 1;
+  }
+  return nk;
+}
+
+// calculate dimension of polynomial space of given order 
+inline
+int PolynomialSpaceDimension(int d, int order)
+{
+  int nk = order + 1;
+  for (int i = 1; i < d; ++i) {
+    nk *= order + i + 1;
+    nk /= i + 1;
+  }
+  return nk;
+}
 
 }  // namespace WhetStone
 }  // namespace Amanzi

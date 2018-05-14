@@ -226,8 +226,8 @@ int MFD3D_CrouzeixRaviart::H1consistencyHO_(
           nm += multi_index[i];
         }
 
-        const auto& coefs = integrals_.poly().monomials(nm).coefs();
-        N(row + n, col) = coefs[poly.MonomialSetPosition(multi_index)] / volume; 
+        int np = poly.MonomialSetPosition(multi_index); 
+        N(row + n, col) = integrals_.poly()(nm, np) / volume; 
       }
     }
   }
@@ -257,8 +257,8 @@ int MFD3D_CrouzeixRaviart::H1consistencyHO_(
       for (int i = 0; i < d_; ++i) {
         if (index[i] > 0 && jndex[i] > 0) {
           multi_index[i] -= 2;
-          const auto& coefs = integrals_.poly().monomials(n - 2).coefs();
-          tmp = coefs[poly.MonomialSetPosition(multi_index)]; 
+          int m = poly.MonomialSetPosition(multi_index); 
+          tmp = integrals_.poly()(n - 2, m);
           sum += tmp * index[i] * jndex[i];
           multi_index[i] += 2;
         }
@@ -331,7 +331,7 @@ void MFD3D_CrouzeixRaviart::ProjectorCell_LO_(
       double tmp = vf[n][i].Value(xf) * dirs[n] / vol;
 
       for (int j = 0; j < d_; ++j) {
-        uc[i].monomials(1).coefs()[j] += tmp * normal[j];
+        uc[i](1, j) += tmp * normal[j];
       }
     }
   }

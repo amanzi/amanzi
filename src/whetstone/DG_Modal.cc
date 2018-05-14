@@ -77,8 +77,7 @@ int DG_Modal::MassMatrix(int c, const Tensor& K, DenseMatrix& M)
         n += multi_index[i];
       }
 
-      const auto& coefs = integrals.monomials(n).coefs();
-      M(l, k) = M(k, l) = K00 * coefs[p.MonomialSetPosition(multi_index)];
+      M(l, k) = M(k, l) = K00 * integrals(n, p.MonomialSetPosition(multi_index));
     }
   }
 
@@ -120,8 +119,8 @@ int DG_Modal::MassMatrix(
         n += multi_index[i];
       }
 
-      const auto& coefs = integrals.poly().monomials(n).coefs();
-      M(l, k) = M(k, l) = K00 * coefs[p.MonomialSetPosition(multi_index)];
+      M(k, l) = K00 * integrals.poly()(n, p.MonomialSetPosition(multi_index));
+      M(l, k) = M(k, l);
     }
   }
 
@@ -161,7 +160,7 @@ int DG_Modal::MassMatrixPoly_(int c, const Polynomial& K, DenseMatrix& M)
     for (auto mt = Kcopy.begin(); mt.end() <= Kcopy.end(); ++mt) {
       const int* idx_K = mt.multi_index();
       int m = mt.MonomialSetPosition();
-      double factor = Kcopy.monomials(mt.end()).coefs()[m];
+      double factor = Kcopy(mt.end(), m);
       if (factor == 0.0) continue;
 
       for (auto jt = it; jt.end() <= p.end(); ++jt) {
@@ -174,8 +173,7 @@ int DG_Modal::MassMatrixPoly_(int c, const Polynomial& K, DenseMatrix& M)
           n += multi_index[i];
         }
 
-        const auto& coefs = integrals.monomials(n).coefs();
-        M(k, l) += factor * coefs[p.MonomialSetPosition(multi_index)];
+        M(k, l) += factor * integrals(n, p.MonomialSetPosition(multi_index));
       }
     }
   }
@@ -313,8 +311,7 @@ int DG_Modal::StiffnessMatrix(int c, const Tensor& K, DenseMatrix& A)
             multi_index[i]--;
             multi_index[j]--;
 
-            const auto& coefs = integrals.monomials(n - 2).coefs();
-            tmp = coefs[p.MonomialSetPosition(multi_index)]; 
+            tmp = integrals(n - 2, p.MonomialSetPosition(multi_index)); 
             sum += Ktmp(i, j) * tmp * index[i] * jndex[j];
 
             multi_index[i]++;
@@ -379,7 +376,7 @@ int DG_Modal::AdvectionMatrixPoly_(
     for (auto mt = tmp.begin(); mt.end() <= tmp.end(); ++mt) {
       const int* idx_K = mt.multi_index();
       int m = mt.MonomialSetPosition();
-      double factor = tmp.monomials(mt.end()).coefs()[m];
+      double factor = tmp(mt.end(), m);
       if (factor == 0.0) continue;
 
       for (auto jt = q.begin(); jt.end() <= q.end(); ++jt) {
@@ -392,8 +389,7 @@ int DG_Modal::AdvectionMatrixPoly_(
           n += multi_index[i];
         }
 
-        const auto& coefs = integrals.monomials(n).coefs();
-        A(k, l) += factor * coefs[p.MonomialSetPosition(multi_index)];
+        A(k, l) += factor * integrals(n, p.MonomialSetPosition(multi_index));
       }
     }
   }
@@ -943,7 +939,7 @@ void DG_Modal::UpdateIntegrals_(int c, int order)
     integrals_[c].Reshape(d_, order);
 
     for (int k = k0 + 1; k <= order; ++k) {
-      numi_.IntegrateMonomialsCell(c, integrals_[c].monomials(k));
+      numi_.IntegrateMonomialsCell(c, k, integrals_[c]);
     }
   }
 }
@@ -989,22 +985,20 @@ void DG_Modal::UpdateScales_(int c, int order)
           a = 1.0;
           b = 0.0;
         } else {
-          const auto& aux1 = integrals.monomials(m).coefs();
           if (basis_[0]->id() == TAYLOR_BASIS_NORMALIZED_ORTHO) {
-            b = aux1[k] / volume;
+            b = integrals(m, k) / volume;
           } else {
             b = 0.0;  // no orthogonalization to constants
           }
 
-          const auto& aux2 = integrals.monomials(2 * m).coefs();
-          norm = aux2[integrals.MonomialSetPosition(index)];
+          norm = integrals(2 * m, integrals.MonomialSetPosition(index));
           norm -= b * b * volume;
 
           a = std::pow(volume / norm, 0.5);
         }
 
-        scales_a_[n].monomials(m).coefs()[k] = a;
-        scales_b_[n].monomials(m).coefs()[k] = b;
+        scales_a_[n](m, k) = a;
+        scales_b_[n](m, k) = b;
       }
     }
   }
