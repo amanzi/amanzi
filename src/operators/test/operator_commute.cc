@@ -23,7 +23,6 @@
 
 // Amanzi
 #include "MeshFactory.hh"
-#include "LinearOperatorFactory.hh"
 #include "Tensor.hh"
 
 // Amanzi::Operators

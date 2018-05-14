@@ -19,7 +19,6 @@
 
 #include "CommonDefs.hh"
 #include "RemapUtils.hh"
-#include "LinearOperatorFactory.hh"
 
 #include "Richards_PK.hh"
 

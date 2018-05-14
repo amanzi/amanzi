@@ -12,7 +12,6 @@
 
 #include "MatrixJF.hh"
 #include "LinearOperator.hh"
-#include "LinearOperatorFactory.hh"
 #include "ResidualDebugger.hh"
 #include "SolverFnBase.hh"
 #include "Solver.hh"
