@@ -26,11 +26,13 @@
 #include "Point.hh"
 
 #include "DenseVector.hh"
-#include "Monomial.hh"
 #include "PolynomialIterator.hh"
 
 namespace Amanzi {
 namespace WhetStone {
+
+// formard declaration
+class Monomial;
 
 class Polynomial {
  public:
@@ -57,8 +59,8 @@ class Polynomial {
   void set_origin(const AmanziGeometry::Point& origin) { origin_ = origin; }
   // -- polynomial is recalculated
   void ChangeOrigin(const AmanziGeometry::Point& origin);
-  // -- polynomial is created from 
-  // Polynomial CreateChangeOrigin(const Monomial& mono, const AmanziGeometry::Point& origin);
+  // -- polynomial is created from monomial by changing its origin
+  Polynomial ChangeOrigin(const Monomial& mono, const AmanziGeometry::Point& origin);
 
   // typical operations with polynomials
   // -- polynomial values

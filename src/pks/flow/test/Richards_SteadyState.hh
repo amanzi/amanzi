@@ -14,7 +14,6 @@
 
 #include "Teuchos_RCP.hpp"
 
-#include "LinearOperatorFactory.hh"
 #include "Richards_PK.hh"
 
 namespace Amanzi {

@@ -28,11 +28,11 @@ namespace WhetStone {
 class Monomial {
  public:
   Monomial() : d_(0), order_(-1), coef_(0.0) {};
-  Monomial(int d, int* multi_index, double coef) : d_(d), coef_(coef) {
-    int order(0);
+  Monomial(int d, const int* multi_index, double coef) : d_(d), coef_(coef) {
+    order_ = 0;
     for (int i = 0; i < d_; ++i) {
       multi_index_[i] = multi_index[i];
-      order += multi_index_[i];
+      order_ += multi_index_[i];
     }
   }
   ~Monomial() {};

@@ -12,6 +12,7 @@
   Operations with polynomials.
 */
 
+#include "Monomial.hh"
 #include "Polynomial.hh"
 
 namespace Amanzi {
@@ -217,27 +218,22 @@ void Polynomial::ChangeOrigin(const AmanziGeometry::Point& origin)
     }
   } else if (order_ > 1) {
     // create powers (x_i - o_i)^k
-    std::vector<std::vector<Polynomial> > powers(d_);
+    // FIXME: cost could be reduced using split Cnk * a^k
+    std::vector<std::vector<DenseVector> > powers(d_);
 
     for (int i = 0; i < d_; ++i) {
       powers[i].resize(order_ + 1);
 
       for (int k = 0; k <= order_; ++k) {
-        int index[3] = {0, 0, 0};
-        index[i] = k;
-
-        Polynomial& p = powers[i][k];
-        p.Reshape(d_, k, true);
+        DenseVector& dv = powers[i][k];
+        dv.Reshape(k + 1);
 
         int cnk(1);
         double val(1.0), a(shift[i]);
         for (int n = 0; n <= k; ++n) {
-          int l = p.MonomialSetPosition(index);
-          index[i]--;
-
-          p(k - n, l) = val * cnk;
-          cnk *= (k - n);
-          cnk /= (n + 1);
+          dv(k - n) = val * cnk;
+          cnk *= k - n;
+          cnk /= n + 1;
           val *= a;
         }
       }
@@ -252,27 +248,16 @@ void Polynomial::ChangeOrigin(const AmanziGeometry::Point& origin)
       if (coef == 0.0) continue;
 
       const int* index = it.multi_index();
-      // old algorithm
-      // Polynomial tmp(powers[0][index[0]]);
-      // for (int i = 1; i < d_; ++i) tmp *= powers[i][index[i]];
-      // tmp *= coef; 
-      // rebased += tmp;
-
-      // new algorithm tensor product of x^k x y^l x z^m
+      // product of (x-a)^k (y-b)^l (z-c)^m
       int idx[3];
-      int idx1[3] = {0, 0, 0};
-      int idx2[3] = {0, 0, 0};
-
       Polynomial tmp(d_, k);
       for (int i0 = 0; i0 <= index[0]; ++i0) {
         idx[0] = i0;
-        double coef0 = powers[0][index[0]](i0, 0); 
+        double coef0 = powers[0][index[0]](i0); 
 
         for (int i1 = 0; i1 <= index[1]; ++i1) {
           idx[1] = i1;
-          idx1[1] = i1;
-          int pos1 = MonomialSetPosition(idx1);
-          double coef1 = powers[1][index[1]](i1, pos1); 
+          double coef1 = powers[1][index[1]](i1); 
 
           if (d_ == 2) {
             int pos = MonomialSetPosition(idx);
@@ -280,9 +265,7 @@ void Polynomial::ChangeOrigin(const AmanziGeometry::Point& origin)
           } else {
             for (int i2 = 0; i2 <= index[2]; ++i2) {
               idx[2] = i2;
-              idx2[2] = i2;
-              int pos2 = MonomialSetPosition(idx2);
-              double coef2 = powers[2][index[2]](i2, pos2); 
+              double coef2 = powers[2][index[2]](i2); 
 
               int pos = MonomialSetPosition(idx);
               tmp(i0 + i1 + i2, pos) = coef * coef0 * coef1 * coef2;
@@ -296,6 +279,72 @@ void Polynomial::ChangeOrigin(const AmanziGeometry::Point& origin)
     *this = rebased;
   }
   origin_ = origin;   
+}
+
+
+/* ******************************************************************
+* Rebase monomial to different origin. 
+****************************************************************** */
+Polynomial Polynomial::ChangeOrigin(
+    const Monomial& mono, const AmanziGeometry::Point& origin)
+{
+  int d = mono.dimension();
+  int order = mono.order();
+  double coef = mono.coef();
+
+  Polynomial poly(d, order);
+
+  if (order == 0) {
+    poly(0, 0) = coef;
+  }
+  else if (order > 0) {
+    AmanziGeometry::Point shift(origin - mono.origin());
+    const int* index = mono.multi_index();
+
+    // create powers (x_i - o_i)^k
+    std::vector<DenseVector> powers(d);
+
+    for (int i = 0; i < d; ++i) {
+      powers[i].Reshape(index[i] + 1);
+
+      int cnk(1);
+      double val(1.0), a(shift[i]);
+      for (int n = 0; n <= index[i]; ++n) {
+        powers[i](index[i] - n) = val * cnk;
+        cnk *= index[i] - n;
+        cnk /= n + 1;
+        val *= a;
+      }
+    }
+
+    // product of (x-a)^k (y-b)^l (z-c)^m
+    int idx[3];
+    for (int i0 = 0; i0 <= index[0]; ++i0) {
+      idx[0] = i0;
+      double coef0 = powers[0](i0); 
+
+      for (int i1 = 0; i1 <= index[1]; ++i1) {
+        idx[1] = i1;
+        double coef1 = powers[1](i1); 
+
+        if (d == 2) {
+          int pos = MonomialSetPosition(idx);
+          poly(i0 + i1, pos) = coef * coef0 * coef1;
+        } else {
+          for (int i2 = 0; i2 <= index[2]; ++i2) {
+            idx[2] = i2;
+            double coef2 = powers[2](i2); 
+
+            int pos = MonomialSetPosition(idx);
+            poly(i0 + i1 + i2, pos) = coef * coef0 * coef1 * coef2;
+          }
+        }
+      }
+    }
+  }
+
+  poly.set_origin(origin);
+  return poly;
 }
 
 

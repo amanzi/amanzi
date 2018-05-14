@@ -13,6 +13,7 @@
 */
 
 #include "NumericalIntegration.hh"
+#include "Monomial.hh"
 #include "WhetStone_typedefs.hh"
 
 namespace Amanzi {
@@ -337,9 +338,13 @@ void NumericalIntegration::IntegrateMonomialsFace_(
 
     // using monomial centered at xc, create polynomial centred at xf
     const int* idx = it.multi_index();
-    Polynomial poly(d_, idx, 1.0);
-    poly.set_origin(xc);
-    poly.ChangeOrigin(xf);
+    // Polynomial poly(d_, idx, 1.0);
+    // poly.set_origin(xc);
+    // poly.ChangeOrigin(xf);
+
+    Monomial mono(d_, idx, 1.0);
+    mono.set_origin(xc);
+    Polynomial poly = integrals.ChangeOrigin(mono, xf);
 
     Entity_ID_List edges;
     std::vector<int> dirs;
