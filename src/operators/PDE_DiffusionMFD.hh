@@ -30,7 +30,7 @@
 /*!
 Additional options available only for the MFD family of discretizations include:
   
-* `"nonlinear coefficient`" [string] specifies a method for treating nonlinear
+* `"nonlinear coefficient`" ``[string]`` specifies a method for treating nonlinear
   diffusion coefficient, if any. Available options are `"none`", `"upwind:
   face`", `"divk: cell-face`" (default), `"divk: face`", `"standard: cell`",
   `"divk: cell-face-twin`" and `"divk: cell-grad-face-twin`".  Symmetry
@@ -40,21 +40,21 @@ Additional options available only for the MFD family of discretizations include:
   indicates required components of the composite vector that must be provided
   by a physical PK.
 
-* `"discretization secondary`" [string] specifies the most robust
+* `"discretization secondary`" ``[string]`` specifies the most robust
   discretization method that is used when the primary selection fails to
-  satisfy all a priori conditions.  This is typically `"mfd: default`".
-  **Used only when an MFD `"primary discretization`" is used**
+  satisfy all a priori conditions.  This is typically `"mfd: default`", and is
+  used only when an MFD `"discretization primary`" is used.
 
-* `"schema`" [Array(string)] defines the operator stencil. It is a collection of 
+* `"schema`" ``[Array(string)]`` defines the operator stencil. It is a collection of 
   geometric objects.  Typically this is set by the implementation and is not provided.
 
-* `"preconditioner schema`" [Array(string)] **{face,cell}** Defines the
+* `"preconditioner schema`" ``[Array(string)]`` **{face,cell}** Defines the
   preconditioner stencil.  It is needed only when the default assembling
   procedure is not desirable. If skipped, the `"schema`" is used instead.
   In addition to the default, **{face}** may be used, which forms the Schur
   complement.
    
-* `"consistent faces`" [list] may contain a `"preconditioner`" and
+* `"consistent faces`" ``[list]`` may contain a `"preconditioner`" and
   `"linear operator`" list (see sections Preconditioners_ and LinearSolvers_
   respectively).  If these lists are provided, and the `"discretization
   primary`" is of type `"mfd: *`", then the diffusion method
@@ -63,7 +63,7 @@ Additional options available only for the MFD family of discretizations include:
   equation in MFD by assembling and inverting the face-only system.  This is
   not currently used by any Amanzi PKs.
 
-* `"diffusion tensor`" [string] allows us to solve problems with symmetric and 
+* `"diffusion tensor`" ``[string]`` allows us to solve problems with symmetric and 
   non-symmetric (but positive definite) tensors. Available options are *symmetric* 
   (default) and *nonsymmetric*.
 */

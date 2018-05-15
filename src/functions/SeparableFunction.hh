@@ -18,7 +18,11 @@ A separable function is defined as the product of other functions such as
   f(x_0, x_1,...,x_{{n-1}}) = f_1(x_0)\, f_2(x_1,...,x_{{n-1}})
 
 where :math:`f_1` is defined by the `"function1`" sublist, and 
-:math:`f_2` by the `"function2`" sublist:
+:math:`f_2` by the `"function2`" sublist.
+
+* `"function1`" ``[function-spec]`` f_1 in f(x) = f_1(x0) * f_2(x1...)
+* `"function2`" ``[function-spec]`` f_2 in f(x) = f_1(x0) * f_2(x1...)
+
 
 .. code-block:: xml
 

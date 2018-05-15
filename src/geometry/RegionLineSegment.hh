@@ -18,7 +18,7 @@ segment.  The line segment is allowed to intersect with one or more cells. Zero 
 line segments are allowed. The line segment is defined by its ends
 points.
 
-* `"end coordinate"` ``[Array(double)]`` Location of one end of a line
+* `"end coordinate`" ``[Array(double)]`` Location of one end of a line
   segment.
 
 * `"opposite end coordinate`" ``[Array(double)]`` Location of the opposite

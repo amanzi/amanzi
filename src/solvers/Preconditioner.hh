@@ -1,15 +1,23 @@
+/* -*-  mode: c++; indent-tabs-mode: nil -*- */
 /*
-  Solvers
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
+  ATS is released under the three-clause BSD License. 
   The terms of use and "as is" disclaimer for this license are 
   provided in the top-level COPYRIGHT file.
 
   Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
-
-  Base class for preconditioners.
 */
+
+//!  Base class for preconditioners.
+
+/*!
+
+``[preconditioner-typed-spec]``
+
+* `"preconditioner type`" ``[string]`` Iterative method to be used.
+* `"_preconditioner_type_ parameters`" ``[_preconditioner_type_-spec]``
+  Parameters associated with the requested preconditioner.
+  
+ */
 
 #ifndef AMANZI_PRECONDITIONER_HH_
 #define AMANZI_PRECONDITIONER_HH_

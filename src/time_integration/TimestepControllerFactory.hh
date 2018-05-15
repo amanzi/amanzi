@@ -21,11 +21,11 @@ control, to adapter based upon simple nonlinear iteration counts.
 
 Available types include:
 
-* TimestepControllerFixed_  (type `"fixed`"), a constant timestep
-* TimestepControllerStandard_ (type `'standard`"), an adaptive timestep based upon nonlinear iterations
-* TimestepControllerSmarter_ (type `'smarter`"), an adaptive timestep based upon nonlinear iterations with more control
-* TimestepControllerAdaptive_ (type `"adaptive`"), an adaptive timestep based upon error control.
-* TimestepControllerFromFile_ (type `"from file`"), uses a timestep history loaded from an HDF5 file.  (Usually only used for regression testing.)
+- TimestepControllerFixed_  (type `"fixed`"), a constant timestep
+- TimestepControllerStandard_ (type `'standard`"), an adaptive timestep based upon nonlinear iterations
+- TimestepControllerSmarter_ (type `'smarter`"), an adaptive timestep based upon nonlinear iterations with more control
+- TimestepControllerAdaptive_ (type `"adaptive`"), an adaptive timestep based upon error control.
+- TimestepControllerFromFile_ (type `"from file`"), uses a timestep history loaded from an HDF5 file.  (Usually only used for regression testing.)
 
 */
 

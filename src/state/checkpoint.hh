@@ -18,6 +18,9 @@ Each list contains all parameters as in a IOEvent_ spec, and also:
 
 * `"file name digits`" ``[int]`` **5**
 
+INCLUDES:
+* ``[io-event-spec]`` An IOEvent_ spec
+
   Write mesh data for every visualization dump, this facilitates visualizing deforming meshes.
 
 Example:

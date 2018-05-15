@@ -14,11 +14,13 @@
 
 Each list contains all parameters as in a IOEvent_ spec, and also:
 
-* `"file name base`" ``[string]`` **"visdump_data"**, **"visdump_surface_data"**
-  
-* `"dynamic mesh`" ``[bool]`` **false**
+* `"file name base`" ``[string]`` **visdump_DOMAIN_data**
 
-  Write mesh data for every visualization dump, this facilitates visualizing deforming meshes.
+* `"dynamic mesh`" ``[bool]`` **false** Write mesh data for every
+  visualization dump; this facilitates visualizing deforming meshes.
+
+INCLUDES:
+* ``[io-event-spec]`` An IOEvent_ spec
 
 
 Example:

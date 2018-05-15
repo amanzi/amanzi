@@ -1,16 +1,25 @@
+/* -*-  mode: c++; indent-tabs-mode: nil -*- */
 /*
-  Solvers
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
-  Amanzi is released under the three-clause BSD License. 
+  ATS is released under the three-clause BSD License. 
   The terms of use and "as is" disclaimer for this license are 
   provided in the top-level COPYRIGHT file.
 
-  Authors: Ethan Coon (ecoon@lanl.gov)
+  Author: Ethan Coon (ecoon@lanl.gov)
            Konstantin Lipnikov (lipnikov@lanl.gov)
-
-  Base class for linear solvers.
 */
+
+//!  Base class for linear solvers.
+
+/*!
+
+``[linear-solver-typed-spec]``
+
+* `"iterative method type`" ``[string]`` Iterative method to be used.
+* `"_iterative_method_type_ parameters`" ``[_iterative_method_type_-spec]``
+  Parameters associated with the requested iterative method.
+  
+ */
+
 
 #ifndef AMANZI_LINEAR_OPERATOR_HH_
 #define AMANZI_LINEAR_OPERATOR_HH_
