@@ -43,10 +43,10 @@ Teuchos::RCP<PorosityModelPartition> CreatePorosityModelPartition(
       } else if (model == "compressible") {
         pom_list.push_back(Teuchos::rcp(new PorosityModel_Compressible(sublist)));
       } else {
-        ASSERT(0);
+        AMANZI_ASSERT(0);
       }
     } else {
-      ASSERT(0);
+      AMANZI_ASSERT(0);
     }
   }
 

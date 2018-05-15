@@ -30,7 +30,7 @@ namespace WhetStone {
 void MeshMaps_PEM::VelocityCell(
     int c, const std::vector<VectorPolynomial>& vf, VectorPolynomial& vc) const
 {
-  ASSERT(d_ == 2);
+  AMANZI_ASSERT(d_ == 2);
 
   Entity_ID_List faces, nodes;
   AmanziGeometry::Point p(d_), q(d_);

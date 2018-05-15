@@ -62,7 +62,7 @@ void Basis_Normalized::Init(
 ****************************************************************** */
 void Basis_Normalized::ChangeBasisMatrix(DenseMatrix& A) const
 {
-  ASSERT(A.NumRows() == monomial_scales_.size());
+  AMANZI_ASSERT(A.NumRows() == monomial_scales_.size());
 
   int order = monomial_scales_.order();
   int d = monomial_scales_.dimension();
@@ -92,7 +92,7 @@ void Basis_Normalized::ChangeBasisMatrix(DenseMatrix& A) const
 ****************************************************************** */
 void Basis_Normalized::ChangeBasisVector(DenseVector& v) const
 {
-  ASSERT(v.NumRows() == monomial_scales_.size());
+  AMANZI_ASSERT(v.NumRows() == monomial_scales_.size());
 
   for (auto it = monomial_scales_.begin(); it.end() <= monomial_scales_.end(); ++it) {
     int n = it.PolynomialPosition();

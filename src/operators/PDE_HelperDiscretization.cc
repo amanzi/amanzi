@@ -137,7 +137,7 @@ void PDE_HelperDiscretization::ApplyBCs_Cell_Scalar_(
   const Schema& schema_col = global_op_->schema_col();
 
   AmanziMesh::Entity_kind kind = bc.kind();
-  ASSERT(kind != AmanziMesh::EDGE);
+  AMANZI_ASSERT(kind != AmanziMesh::EDGE);
   Teuchos::RCP<Epetra_MultiVector> rhs_kind;
   if (primary) rhs_kind = rhs.ViewComponent(schema_row.KindToString(kind), true);
 
@@ -363,7 +363,7 @@ void PDE_HelperDiscretization::ApplyBCs_Cell_Vector_(
   const Schema& schema_col = global_op_->schema_col();
 
   AmanziMesh::Entity_kind kind = bc.kind();
-  ASSERT(kind == AmanziMesh::FACE || kind == AmanziMesh::EDGE);
+  AMANZI_ASSERT(kind == AmanziMesh::FACE || kind == AmanziMesh::EDGE);
   Teuchos::RCP<Epetra_MultiVector> rhs_kind;
   if (primary) rhs_kind = rhs.ViewComponent(schema_row.KindToString(kind), true);
 

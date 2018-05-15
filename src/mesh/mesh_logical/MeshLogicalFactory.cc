@@ -30,7 +30,7 @@ by the equation:
 
 V_c = sum_{each face in c} length of cell-to-face connector * face area.
 
-* `"cell volumes provided`" ``[bool]`` **false** If false, calculate via the
+* `"calculate cell volumes from lengths and areas`" ``[bool]`` **true** If true, calculate via the
     above formula.  Otherwise each segment must provide the `"cell volume`" or
     `"cell volumes`" parameter described below.
 
@@ -204,7 +204,7 @@ Teuchos::RCP<MeshLogical>
 MeshLogicalFactory::Create() const {
   Teuchos::RCP<AmanziMesh::MeshLogical> mesh;
   if (cell_centroids_.size() > 0) {
-    ASSERT(cell_centroids_.size() == cell_volumes_.size());
+    AMANZI_ASSERT(cell_centroids_.size() == cell_volumes_.size());
     mesh = Teuchos::rcp(new MeshLogical(comm_,
 					cell_volumes_,
 					face_cell_list_,
@@ -230,7 +230,12 @@ Teuchos::RCP<MeshLogical>
 MeshLogicalFactory::Create(Teuchos::ParameterList& plist) {
   // set global options
   tracking_centroids_ = plist.get<bool>("infer cell centroids", false);
-  calculated_volume_ = !plist.get<bool>("cell volumes provided", false);
+  if (plist.isParameter("calculate cell volumes from lengths and areas"))
+    calculated_volume_ = plist.get<bool>("calculate cell volumes from lengths and areas");
+  if (plist.isParameter("cell volumes provided")) {
+    Errors::Message msg("MeshLogicalFactory: deprecated parameter \"cell volumes provided\", please use \"calculate cell volumes from lengths and areas\".");
+    Exceptions::amanzi_throw(msg);
+  }
 
   // Create each segment
   // - map to store metadata about previously inserted segments
@@ -279,7 +284,7 @@ MeshLogicalFactory::AddSegment(
     std::string const& name,
     std::vector<Entity_ID> *const cells,
     std::vector<Entity_ID> *const faces) {
-  ASSERT(calculated_volume_);
+  AMANZI_ASSERT(calculated_volume_);
     
   // orientation
   auto orientation = end - begin;
@@ -341,8 +346,8 @@ MeshLogicalFactory::AddSegment(
   int n_faces = face_areas.size();
 
   // check for consistency in sizes
-  if (cell_centroids) ASSERT(cell_centroids->size() == n_cells);
-  if (cell_volumes) ASSERT(cell_volumes->size() == n_cells);
+  if (cell_centroids) AMANZI_ASSERT(cell_centroids->size() == n_cells);
+  if (cell_volumes) AMANZI_ASSERT(cell_volumes->size() == n_cells);
 
   // check for the number of faces relative to number of cells
   int n_faces_expected = n_cells - 1; // interior faces
@@ -354,10 +359,10 @@ MeshLogicalFactory::AddSegment(
     // need the area, we add the face
     n_faces_expected++;
   }
-  ASSERT(n_faces_expected == n_faces);
+  AMANZI_ASSERT(n_faces_expected == n_faces);
 
   // check for expected existence of cell volumes
-  ASSERT((cell_volumes == nullptr) == calculated_volume_);
+  AMANZI_ASSERT((cell_volumes == nullptr) == calculated_volume_);
   
   // set the new cell lids
   int cell_first = cell_volumes_.size();
@@ -731,8 +736,8 @@ MeshLogicalFactory::AddFace(int f,
   face_cell_lengths_[f] = lengths;
 
   if (calculated_volume_) {
-    ASSERT(cells[0] < cell_volumes_.size());
-    ASSERT(cells[1] < cell_volumes_.size());
+    AMANZI_ASSERT(cells[0] < cell_volumes_.size());
+    AMANZI_ASSERT(cells[1] < cell_volumes_.size());
     cell_volumes_[cells[0]] += area * lengths[0];
     cell_volumes_[cells[1]] += area * lengths[1];
   }

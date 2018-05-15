@@ -114,10 +114,10 @@ void PDE_DiffusionNLFV::SetScalarCoefficient(
 
   if (k_ != Teuchos::null) {
     if (little_k_ == OPERATOR_LITTLE_K_UPWIND) {
-      ASSERT(k_->HasComponent("face"));
+      AMANZI_ASSERT(k_->HasComponent("face"));
     }
   }
-  if (dkdp_ != Teuchos::null) ASSERT(dkdp_->HasComponent("cell")); 
+  if (dkdp_ != Teuchos::null) AMANZI_ASSERT(dkdp_->HasComponent("cell")); 
 }
 
 
@@ -248,7 +248,7 @@ void PDE_DiffusionNLFV::InitStencils_()
       conormal = ((*K_)[c] * normal) * dirs[n];
 
       ierr = nlfv.PositiveDecomposition(n, tau, conormal, ws, ids);
-      ASSERT(ierr == 0);
+      AMANZI_ASSERT(ierr == 0);
 
       mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
       OrderCellsByGlobalId_(cells, c1, c2);

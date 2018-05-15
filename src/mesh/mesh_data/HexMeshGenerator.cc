@@ -64,11 +64,11 @@ HexMeshGenerator::HexMeshGenerator(const Epetra_Comm *comm,
     cell_gidx_(), blocks_(),
     cell_idxmap_(), vertex_gidx_(), vertex_idxmap_()
 {
-  ASSERT(ni_ > 0);
-  ASSERT(nj_ > 0);
-  ASSERT(nk_ > 0);
+  AMANZI_ASSERT(ni_ > 0);
+  AMANZI_ASSERT(nj_ > 0);
+  AMANZI_ASSERT(nk_ > 0);
   const int p_size(comm_->NumProc());
-  ASSERT(ncell_ >= p_size);      // require at least 1 cell per process
+  AMANZI_ASSERT(ncell_ >= p_size);      // require at least 1 cell per process
   const int p_rank(comm_->MyPID());
   unsigned int proccell(ncell_/p_size);
   int cell0_ = p_rank * proccell;
@@ -81,7 +81,7 @@ HexMeshGenerator::HexMeshGenerator(const Epetra_Comm *comm,
 
   cell_gidx_.resize(cell1_ - cell0_ + 1);
   std::for_each(cell_gidx_.begin(), cell_gidx_.end(), bl::_1 = bl::var(cell0_)++);
-  ASSERT(cell_gidx_.back() == cell1_);
+  AMANZI_ASSERT(cell_gidx_.back() == cell1_);
   
   int lid(0);
   for (std::vector<unsigned int>::iterator c = cell_gidx_.begin();
@@ -119,9 +119,9 @@ HexMeshGenerator::global_vertex(const unsigned int& i,
                                 const unsigned int& j, 
                                 const unsigned int& k) const
 {
-  ASSERT(i < ni_ + 1);
-  ASSERT(j < nj_ + 1);
-  ASSERT(k < nk_ + 1);
+  AMANZI_ASSERT(i < ni_ + 1);
+  AMANZI_ASSERT(j < nj_ + 1);
+  AMANZI_ASSERT(k < nk_ + 1);
   unsigned int result;
   result = (i + j*(ni_+1) + k*(ni_+1)*(nj_+1)); // 0-based
   return result;
@@ -142,7 +142,7 @@ void
 HexMeshGenerator::global_rvertex(const unsigned int& index, 
                                  unsigned int& i, unsigned int& j, unsigned int& k) const
 {
-  ASSERT (index < nvert_); // index is 0-based
+  AMANZI_ASSERT (index < nvert_); // index is 0-based
   
   unsigned int tmp(index);
   k = tmp / ((ni_+1)*(nj_+1));
@@ -172,9 +172,9 @@ HexMeshGenerator::global_cell(const unsigned int& i,
                               const unsigned int& j, 
                               const unsigned int& k) const
 {
-  ASSERT(i < ni_);
-  ASSERT(j < nj_);
-  ASSERT(k < nk_);
+  AMANZI_ASSERT(i < ni_);
+  AMANZI_ASSERT(j < nj_);
+  AMANZI_ASSERT(k < nk_);
   unsigned int result;
   result = (i + j*(ni_) + k*(ni_)*(nj_)); // 0-based
   return result;
@@ -196,7 +196,7 @@ void
 HexMeshGenerator::global_rcell(const unsigned int& index,
                     unsigned int& i, unsigned int& j, unsigned int& k) const
 {
-  ASSERT (index < ncell_); // index is 1-based
+  AMANZI_ASSERT (index < ncell_); // index is 1-based
   unsigned int tmp(index);
   k = tmp / ((ni_)*(nj_));
   tmp -= k*(ni_)*(nj_);
@@ -221,7 +221,7 @@ HexMeshGenerator::generate_the_elements_(void)
   static const unsigned int nvcell(8);
   int num_elements(cell_gidx_.size());
 
-  ASSERT(num_elements > 0);
+  AMANZI_ASSERT(num_elements > 0);
 
   std::vector<int> connectivity_map(num_elements*nvcell);
 
@@ -352,7 +352,7 @@ HexMeshGenerator::generate_the_sidesets(void)
 Coordinates<double>*
 HexMeshGenerator::generate_the_coordinates()
 {
-  ASSERT(vertex_gidx_.size() > 0);
+  AMANZI_ASSERT(vertex_gidx_.size() > 0);
   Coordinates<double>* result(new Coordinates<double>(vertex_gidx_.size(), 3));
   
   for (std::vector<unsigned int>::const_iterator v = vertex_gidx_.begin();

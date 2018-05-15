@@ -1,7 +1,5 @@
 /* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
 /*
-  A region consisting of all entities on a mesh.
-
   Copyright 2010-2013 held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
   The terms of use and "as is" disclaimer for this license are 
@@ -9,6 +7,8 @@
 
   Authors: Ethan Coon (ecoon@lanl.gov)
 */
+//!  A region consisting of all entities on a mesh.
+
 
 #ifndef AMANZI_REGION_ALL_HH_
 #define AMANZI_REGION_ALL_HH_

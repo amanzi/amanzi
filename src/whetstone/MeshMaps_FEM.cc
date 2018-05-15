@@ -33,7 +33,7 @@ void MeshMaps_FEM::VelocityCell(
 
   mesh1_->cell_get_nodes(c, &nodes);
   int nnodes = nodes.size();
-  ASSERT(nnodes == 4);
+  AMANZI_ASSERT(nnodes == 4);
 
   AmanziGeometry::Point p1(d_), p2(d_), p3(d_), p4(d_);
   mesh1_->node_get_coordinates(nodes[0], &p1);
@@ -118,7 +118,7 @@ Tensor MeshMaps_FEM::JacobianValueInternal_(
 
   mesh->cell_get_nodes(c, &nodes);
   int nnodes = nodes.size();
-  ASSERT(nnodes == 4);
+  AMANZI_ASSERT(nnodes == 4);
 
   AmanziGeometry::Point p1(d_), p2(d_), p3(d_), p4(d_), j0(d_), j1(d_);
   mesh->node_get_coordinates(nodes[0], &p1);

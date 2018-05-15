@@ -1,5 +1,5 @@
 /*
-  Time Integration
+  Time Integration 
 
   Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
@@ -8,6 +8,22 @@
 
   Author: Ethan Coon (ecoon@lanl.gov)
 */
+
+//! Solves globally implicit systems using Backwards Euler
+/*!
+
+``[implicit-time-integrator-typed-spec]``
+
+* `"extrapolate initial guess`" ``[bool]`` **true** Extrapolate successive solutions to guess the next.
+
+* `"solver type`" ``[string]`` One of the available solver types.
+* `"_solver_type_ parameters`" ``[_solver_type_-spec]`` One of the available solver types.
+
+* `"timestep controller type`" ``[string]`` One of the available solver types.
+* `"_timestep_controller_type_ parameters`" ``[_timestep_controller_type_-spec]`` One of the available solver types.
+
+ */
+
 
 #ifndef AMANZI_BDF1_TIME_INTEGRATOR_HH_
 #define AMANZI_BDF1_TIME_INTEGRATOR_HH_

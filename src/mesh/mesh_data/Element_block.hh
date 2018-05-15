@@ -79,7 +79,7 @@ class Element_block
 template <typename IT>
 void Element_block::connectivity (int element, IT storage) const
 {
-  ASSERT (ok_element (element));
+  AMANZI_ASSERT (ok_element (element));
 
   const std::vector<int>::const_iterator start = 
       connectivity_map_.begin () + element * num_nodes_per_element_;

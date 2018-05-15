@@ -77,7 +77,7 @@ void RelPermEvaluator::EvaluateField_(
     const Teuchos::Ptr<State>& S,
     const Teuchos::Ptr<CompositeVector>& result)
 {
-  ASSERT(false);
+  AMANZI_ASSERT(false);
   // relperm_->Compute(S->GetFieldData(pressure_key_), result);
 }
 
@@ -90,7 +90,7 @@ void RelPermEvaluator::EvaluateFieldPartialDerivative_(
     Key wrt_key,
     const Teuchos::Ptr<CompositeVector>& result)
 {
-  ASSERT(wrt_key == pressure_key_);
+  AMANZI_ASSERT(wrt_key == pressure_key_);
   // relperm_->ComputeDerivative(S->GetFieldData(pressure_key_), result);
 }
 

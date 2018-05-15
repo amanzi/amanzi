@@ -35,7 +35,7 @@ namespace Operators {
 int Operator_FaceCell::ApplyMatrixFreeOp(const Op_Cell_FaceCell& op,
                                          const CompositeVector& X, CompositeVector& Y) const
 {
-  ASSERT(op.matrices.size() == ncells_owned);
+  AMANZI_ASSERT(op.matrices.size() == ncells_owned);
 
   Y.PutScalarGhosted(0.);
   X.ScatterMasterToGhosted();
@@ -78,7 +78,7 @@ int Operator_FaceCell::ApplyMatrixFreeOp(const Op_Cell_FaceCell& op,
 int Operator_FaceCell::ApplyMatrixFreeOp(const Op_Cell_Face& op,
                                          const CompositeVector& X, CompositeVector& Y) const
 {
-  ASSERT(op.matrices.size() == ncells_owned);
+  AMANZI_ASSERT(op.matrices.size() == ncells_owned);
 
   Y.PutScalarGhosted(0.);
   X.ScatterMasterToGhosted();
@@ -118,7 +118,7 @@ int Operator_FaceCell::ApplyMatrixFreeOp(const Op_SurfaceCell_SurfaceCell& op,
                                          const CompositeVector& X, CompositeVector& Y) const
 {
   int nsurf_cells = op.surf_mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
-  ASSERT(op.diag->MyLength() == nsurf_cells);
+  AMANZI_ASSERT(op.diag->MyLength() == nsurf_cells);
 
   const Epetra_MultiVector& Xf = *X.ViewComponent("face", false);
   Epetra_MultiVector& Yf = *Y.ViewComponent("face", false);
@@ -137,7 +137,7 @@ int Operator_FaceCell::ApplyMatrixFreeOp(const Op_SurfaceFace_SurfaceCell& op,
                                          const CompositeVector& X, CompositeVector& Y) const
 {
   int nsurf_faces = op.surf_mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
-  ASSERT(op.matrices.size() == nsurf_faces);
+  AMANZI_ASSERT(op.matrices.size() == nsurf_faces);
 
   X.ScatterMasterToGhosted();
   const Epetra_MultiVector& Xf = *X.ViewComponent("face", true);
@@ -197,7 +197,7 @@ void Operator_FaceCell::SymbolicAssembleMatrixOp(const Op_Cell_FaceCell& op,
     lid_c[nfaces] = cell_col_inds[c];
     ierr |= graph.InsertMyIndices(nfaces+1, lid_r, nfaces+1, lid_c);
   }
-  ASSERT(!ierr);
+  AMANZI_ASSERT(!ierr);
 }
 
 
@@ -227,7 +227,7 @@ void Operator_FaceCell::SymbolicAssembleMatrixOp(const Op_Cell_Face& op,
     }
     ierr |= graph.InsertMyIndices(nfaces, lid_r, nfaces, lid_c);
   }
-  ASSERT(!ierr);
+  AMANZI_ASSERT(!ierr);
 }
 
 
@@ -248,7 +248,7 @@ Operator_FaceCell::SymbolicAssembleMatrixOp(const Op_SurfaceCell_SurfaceCell& op
     int lid_c = face_col_inds[op.surf_mesh->entity_get_parent(AmanziMesh::CELL,sc)];
     ierr |= graph.InsertMyIndices(lid_r, 1, &lid_c);
   }
-  ASSERT(!ierr);
+  AMANZI_ASSERT(!ierr);
 }
 
 
@@ -278,7 +278,7 @@ Operator_FaceCell::SymbolicAssembleMatrixOp(const Op_SurfaceFace_SurfaceCell& op
 
     ierr |= graph.InsertMyIndices(ncells, lid_r, ncells, lid_c);
   }
-  ASSERT(!ierr);
+  AMANZI_ASSERT(!ierr);
 }
 
 
@@ -289,7 +289,7 @@ void Operator_FaceCell::AssembleMatrixOp(const Op_Cell_FaceCell& op,
                                          const SuperMap& map, MatrixFE& mat,
                                          int my_block_row, int my_block_col) const
 {
-  ASSERT(op.matrices.size() == ncells_owned);
+  AMANZI_ASSERT(op.matrices.size() == ncells_owned);
 
   int lid_r[OPERATOR_MAX_FACES + 1];
   int lid_c[OPERATOR_MAX_FACES + 1];
@@ -315,7 +315,7 @@ void Operator_FaceCell::AssembleMatrixOp(const Op_Cell_FaceCell& op,
 
     ierr |= mat.SumIntoMyValues(lid_r, lid_c, op.matrices[c]);
   }
-  ASSERT(!ierr);
+  AMANZI_ASSERT(!ierr);
 }
 
 
@@ -326,7 +326,7 @@ void Operator_FaceCell::AssembleMatrixOp(const Op_Cell_Face& op,
                                          const SuperMap& map, MatrixFE& mat,
                                          int my_block_row, int my_block_col) const
 {
-  ASSERT(op.matrices.size() == ncells_owned);
+  AMANZI_ASSERT(op.matrices.size() == ncells_owned);
 
   int lid_r[OPERATOR_MAX_FACES];
   int lid_c[OPERATOR_MAX_FACES];
@@ -348,7 +348,7 @@ void Operator_FaceCell::AssembleMatrixOp(const Op_Cell_Face& op,
     
     ierr |= mat.SumIntoMyValues(lid_r, lid_c, op.matrices[c]);
   }
-  ASSERT(!ierr);
+  AMANZI_ASSERT(!ierr);
 }
 
 
@@ -369,7 +369,7 @@ Operator_FaceCell::AssembleMatrixOp(const Op_SurfaceCell_SurfaceCell& op,
     int lid_c = face_col_inds[op.surf_mesh->entity_get_parent(AmanziMesh::CELL,sc)];
     ierr |= mat.SumIntoMyValues(lid_r, 1, &(*op.diag)[0][sc], &lid_c);
   }
-  ASSERT(!ierr);
+  AMANZI_ASSERT(!ierr);
 }
 
 
@@ -399,7 +399,7 @@ Operator_FaceCell::AssembleMatrixOp(const Op_SurfaceFace_SurfaceCell& op,
 
     ierr |= mat.SumIntoMyValues(lid_r, lid_c, op.matrices[sf]);
   }
-  ASSERT(!ierr);
+  AMANZI_ASSERT(!ierr);
 }
 
 }  // namespace Operators

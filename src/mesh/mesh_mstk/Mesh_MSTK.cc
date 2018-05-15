@@ -1626,7 +1626,7 @@ void Mesh_MSTK::cell_get_faces_and_dirs_unordered(const Entity_ID cellid,
 {
   MEntity_ptr cell;
 
-  ASSERT(faceids != NULL);
+  AMANZI_ASSERT(faceids != NULL);
 
   cell = cell_id_to_handle[cellid];
 
@@ -1727,7 +1727,7 @@ void Mesh_MSTK::cell_get_faces_and_dirs_internal_(const Entity_ID cellid,
                                                   std::vector<int> *face_dirs,
                                                   const bool ordered) const 
 {
-  ASSERT(faces_initialized);
+  AMANZI_ASSERT(faces_initialized);
 
   if (ordered)
     cell_get_faces_and_dirs_ordered(cellid, faceids, face_dirs);
@@ -1743,7 +1743,7 @@ void Mesh_MSTK::cell_get_edges_internal_(const Entity_ID cellid,
 
   MEntity_ptr cell;
 
-  ASSERT(edgeids != NULL);
+  AMANZI_ASSERT(edgeids != NULL);
 
   cell = cell_id_to_handle[cellid];
 
@@ -1820,7 +1820,7 @@ void Mesh_MSTK::cell_2D_get_edges_and_dirs_internal_(const Entity_ID cellid,
                                                      Entity_ID_List *edgeids,
                                                      std::vector<int> *edgedirs) const 
 {
-  ASSERT(manifold_dimension() == 2); 
+  AMANZI_ASSERT(manifold_dimension() == 2); 
 
   if (!edgedirs) 
     cell_get_edges(cellid, edgeids);
@@ -1830,7 +1830,7 @@ void Mesh_MSTK::cell_2D_get_edges_and_dirs_internal_(const Entity_ID cellid,
     
     MEntity_ptr cell;
     
-    ASSERT(edgeids != NULL);
+    AMANZI_ASSERT(edgeids != NULL);
     
     cell = cell_id_to_handle[cellid];
     
@@ -1892,7 +1892,7 @@ void Mesh_MSTK::cell_get_nodes(const Entity_ID cellid,
   MEntity_ptr cell;
   int nn, lid;
 
-  ASSERT(nodeids != NULL);
+  AMANZI_ASSERT(nodeids != NULL);
 
   cell = cell_id_to_handle[cellid];
       
@@ -1948,10 +1948,10 @@ void Mesh_MSTK::face_get_edges_and_dirs_internal_(const Entity_ID faceid,
                                                   std::vector<int> *edge_dirs,
                                                   bool ordered) const
 {
-  ASSERT(edgeids != NULL);
+  AMANZI_ASSERT(edgeids != NULL);
 
-  ASSERT(faces_initialized);
-  ASSERT(edges_initialized);
+  AMANZI_ASSERT(faces_initialized);
+  AMANZI_ASSERT(edges_initialized);
 
   MEntity_ptr face;
 
@@ -2033,9 +2033,9 @@ void Mesh_MSTK::face_get_nodes(const Entity_ID faceid,
   MEntity_ptr genface;
   int nn, lid;
 
-  ASSERT(faces_initialized);
+  AMANZI_ASSERT(faces_initialized);
 
-  ASSERT(nodeids != NULL);
+  AMANZI_ASSERT(nodeids != NULL);
 
   genface = face_id_to_handle[faceid];
   
@@ -2089,7 +2089,7 @@ void Mesh_MSTK::face_get_nodes(const Entity_ID faceid,
 void Mesh_MSTK::edge_get_nodes(const Entity_ID edgeid,
                                Entity_ID *nodeid0, Entity_ID *nodeid1) const
 {
-  ASSERT(edges_initialized);
+  AMANZI_ASSERT(edges_initialized);
 
   MEdge_ptr edge = (MEdge_ptr) edge_id_to_handle[edgeid];
 
@@ -2117,7 +2117,7 @@ void Mesh_MSTK::node_get_cells(const Entity_ID nodeid,
   List_ptr cell_list;
   MEntity_ptr ment;
 
-  ASSERT (cellids != NULL);
+  AMANZI_ASSERT (cellids != NULL);
 
   MVertex_ptr mv = (MVertex_ptr) vtx_id_to_handle[nodeid];
   
@@ -2127,7 +2127,7 @@ void Mesh_MSTK::node_get_cells(const Entity_ID nodeid,
     if (manifold_dimension() == 3) {
       int nvr, regionids[200];
       MV_RegionIDs(mv,&nvr,regionids);
-      ASSERT(nvr < 200);
+      AMANZI_ASSERT(nvr < 200);
       cellids->resize(nvr);
       Entity_ID_List::iterator it = cellids->begin();
       for (int i = 0; i < nvr; ++i) {
@@ -2138,7 +2138,7 @@ void Mesh_MSTK::node_get_cells(const Entity_ID nodeid,
     else {      
       int nvf, faceids[200];      
       MV_FaceIDs(mv,&nvf,faceids);
-      ASSERT(nvf < 200);
+      AMANZI_ASSERT(nvf < 200);
       cellids->resize(nvf);
       Entity_ID_List::iterator it = cellids->begin();
       for (int i = 0; i < nvf; ++i) {
@@ -2206,8 +2206,8 @@ void Mesh_MSTK::node_get_faces(const Entity_ID nodeid,
   List_ptr face_list;
   MEntity_ptr ment;
 
-  ASSERT(faces_initialized);
-  ASSERT(faceids != NULL);
+  AMANZI_ASSERT(faces_initialized);
+  AMANZI_ASSERT(faceids != NULL);
 
   MVertex_ptr mv = (MVertex_ptr) vtx_id_to_handle[nodeid];
 
@@ -2217,7 +2217,7 @@ void Mesh_MSTK::node_get_faces(const Entity_ID nodeid,
       int nvf, vfaceids[200];
 
       MV_FaceIDs(mv,&nvf,vfaceids);
-      ASSERT(nvf < 200);
+      AMANZI_ASSERT(nvf < 200);
 
       faceids->resize(nvf);
       Entity_ID_List::iterator it = faceids->begin();
@@ -2230,7 +2230,7 @@ void Mesh_MSTK::node_get_faces(const Entity_ID nodeid,
       int nve, vedgeids[200];
 
       MV_EdgeIDs(mv,&nve,vedgeids);
-      ASSERT(nve < 200);
+      AMANZI_ASSERT(nve < 200);
 
       faceids->resize(nve);
       Entity_ID_List::iterator it = faceids->begin();
@@ -2297,8 +2297,8 @@ void Mesh_MSTK::node_get_cell_faces(const Entity_ID nodeid,
   MFace_ptr mf;
   MEdge_ptr me;
 
-  ASSERT(faces_initialized);
-  ASSERT(faceids != NULL);
+  AMANZI_ASSERT(faces_initialized);
+  AMANZI_ASSERT(faceids != NULL);
 
   MVertex_ptr mv = (MVertex_ptr) vtx_id_to_handle[nodeid];
 
@@ -2376,8 +2376,8 @@ void Mesh_MSTK::face_get_cells_internal_(const Entity_ID faceid,
 {
   int lid, n;
 
-  ASSERT(faces_initialized);
-  ASSERT(cellids != NULL);
+  AMANZI_ASSERT(faces_initialized);
+  AMANZI_ASSERT(cellids != NULL);
   cellids->clear();
   Entity_ID_List::iterator it = cellids->begin();
   n = 0;
@@ -2450,7 +2450,7 @@ void Mesh_MSTK::cell_get_face_adj_cells(const Entity_ID cellid,
 {
   int lid;
 
-  ASSERT(faces_initialized);
+  AMANZI_ASSERT(faces_initialized);
 
   assert(fadj_cellids != NULL);
 
@@ -2630,7 +2630,7 @@ void Mesh_MSTK::node_get_coordinates(const Entity_ID nodeid,
   double coords[3];
   int spdim = space_dimension();
   
-  ASSERT(ncoords != NULL);
+  AMANZI_ASSERT(ncoords != NULL);
 
   vtx = vtx_id_to_handle[nodeid];
 
@@ -2654,7 +2654,7 @@ void Mesh_MSTK::cell_get_coordinates(const Entity_ID cellid,
   int nn, result;
   int spdim = space_dimension(), celldim = manifold_dimension();
 
-  ASSERT(ccoords != NULL);
+  AMANZI_ASSERT(ccoords != NULL);
 
   cell = cell_id_to_handle[cellid];
       
@@ -2704,8 +2704,8 @@ void Mesh_MSTK::face_get_coordinates(const Entity_ID faceid,
   double coords[3];
   int spdim = space_dimension(), celldim = manifold_dimension();
 
-  ASSERT(faces_initialized);
-  ASSERT(fcoords != NULL);
+  AMANZI_ASSERT(faces_initialized);
+  AMANZI_ASSERT(fcoords != NULL);
 
   genface = face_id_to_handle[faceid];
 

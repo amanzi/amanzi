@@ -1205,7 +1205,7 @@ int HDF5_MPI::getCellTypeID_(AmanziMesh::Cell_type type)
   //TODO(barker): how to return polyhedra?
   // cell type id's defined in Xdmf/include/XdmfTopology.h
 
-  ASSERT (cell_valid_type(type));
+  AMANZI_ASSERT (cell_valid_type(type));
 
   switch (type)
   {

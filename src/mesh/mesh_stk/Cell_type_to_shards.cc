@@ -16,7 +16,7 @@ namespace STK {
 
 const shards::CellTopology
 get_topology_data(const Cell_type& type) {
-  ASSERT (cell_valid_type (type));
+  AMANZI_ASSERT (cell_valid_type (type));
 
   switch (type) {
     case (HEX):

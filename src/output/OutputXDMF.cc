@@ -64,7 +64,7 @@ OutputXDMF::WriteVector(const Epetra_Vector& vec,
 void
 OutputXDMF::WriteMultiVector(const Epetra_MultiVector& vec,
 			     const std::vector<std::string>& names) const {
-  ASSERT(names.size() == vec.NumVectors());
+  AMANZI_ASSERT(names.size() == vec.NumVectors());
   for (int i=0; i!=vec.NumVectors(); ++i) {
     if (mesh_->is_logical()) {
       io_->writeNodeDataReal(*vec(i), names[i]);
@@ -103,7 +103,7 @@ OutputXDMF::ReadVector(Epetra_Vector& vec, const std::string& name) const {
 void
 OutputXDMF::ReadMultiVector(Epetra_MultiVector& vec,
 			    const std::vector<std::string>& names) const {
-  ASSERT(names.size() == vec.NumVectors());
+  AMANZI_ASSERT(names.size() == vec.NumVectors());
   for (int i=0; i!=vec.NumVectors(); ++i) {
     io_->readData(*vec(i), names[i]);
   }

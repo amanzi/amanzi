@@ -77,7 +77,7 @@ class SuperMap {
   // // block accessors -- copy into a location -- have some rope!
   // void BlockIndices(const std::string& compname, int element_lid, int& nindices, int* indices) const {
   //   int ndofs = NumDofs(compname);
-  //   ASSERT(nindices >= ndofs);
+  //   AMANZI_ASSERT(nindices >= ndofs);
   //   nindices = ndofs;
   //   int nelements = NumOwnedElements(compname);
 

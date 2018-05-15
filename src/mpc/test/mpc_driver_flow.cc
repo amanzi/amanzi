@@ -46,7 +46,7 @@ using namespace Amanzi::AmanziGeometry;
   MeshFactory meshfactory(&comm);
   meshfactory.preference(pref);
   Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh = meshfactory(0.0, 0.0, 216.0, 120.0, 54, 30, gm);
-  ASSERT(!mesh.is_null());
+  AMANZI_ASSERT(!mesh.is_null());
 
   // create dummy observation data object
   double avg1, avg2;

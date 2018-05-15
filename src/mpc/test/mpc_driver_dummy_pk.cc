@@ -95,7 +95,7 @@ using namespace std;
     throw std::exception();
   }
 
-  ASSERT(!mesh.is_null());
+  AMANZI_ASSERT(!mesh.is_null());
 
 
   // create dummy observation data object

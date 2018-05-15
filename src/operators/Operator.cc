@@ -163,7 +163,7 @@ void Operator::SymbolicAssembleMatrix()
 
   // Completing and optimizing the graphs
   int ierr = graph->FillComplete(smap_->Map(), smap_->Map());
-  ASSERT(!ierr);
+  AMANZI_ASSERT(!ierr);
 
   // create global matrix
   Amat_ = Teuchos::rcp(new MatrixFE(graph));
@@ -462,7 +462,7 @@ void Operator::Rescale(const CompositeVector& scaling)
 ****************************************************************** */
 void Operator::Rescale(const CompositeVector& scaling, int iops)
 {
-  ASSERT(iops < ops_.size());
+  AMANZI_ASSERT(iops < ops_.size());
   scaling.ScatterMasterToGhosted();
   ops_[iops]->Rescale(scaling);
 }
@@ -483,7 +483,7 @@ void Operator::CreateCheckPoint()
 void Operator::RestoreCheckPoint()
 {
   // The routine should be called after checkpoint is created.
-  ASSERT(rhs_checkpoint_ != Teuchos::null);
+  AMANZI_ASSERT(rhs_checkpoint_ != Teuchos::null);
 
   // restore accumulation and source terms
   *rhs_ = *rhs_checkpoint_;
@@ -501,7 +501,7 @@ void Operator::RestoreCheckPoint()
 int Operator::CopyShadowToMaster(int iops) 
 {
   int nops = ops_.size();
-  ASSERT(iops < nops);
+  AMANZI_ASSERT(iops < nops);
   ops_[iops]->CopyShadowToMaster();
 
   return 0;

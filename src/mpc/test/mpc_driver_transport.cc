@@ -48,7 +48,7 @@ using namespace Amanzi::AmanziGeometry;
   MeshFactory meshfactory(&comm);
   meshfactory.preference(pref);
   Teuchos::RCP<Mesh> mesh = meshfactory("test/mpc_driver_transport_mesh_10x10.exo", gm);
-  ASSERT(!mesh.is_null());
+  AMANZI_ASSERT(!mesh.is_null());
 
   // create dummy observation data object
   Amanzi::ObservationData obs_data;

@@ -164,7 +164,7 @@ void PDE_DiffusionFVwithGravity::ComputeJacobianLocal_(
       dKrel_dp[0] = 0.5 * dkdp_cell[0];
       dKrel_dp[1] = 0.5 * dkdp_cell[1];
     } else {
-      ASSERT(0);
+      AMANZI_ASSERT(0);
     }
 
     Jpp(0, 0) = trans_face[0][f] * dpres * dKrel_dp[0];

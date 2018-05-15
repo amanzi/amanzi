@@ -182,7 +182,7 @@ double NumericalIntegration::IntegratePolynomialsEdge(
     k += polys[i]->order();
   }
   int m = k / 2;
-  ASSERT(m < 8);
+  AMANZI_ASSERT(m < 8);
 
   AmanziGeometry::Point xm(d_);
 
@@ -217,7 +217,7 @@ double NumericalIntegration::IntegratePolynomialsTriangle(
       m += polys[i]->order();
     }
   }
-  ASSERT(m < 10);
+  AMANZI_ASSERT(m < 10);
 
   int n1 = q2d_order[m][1];
   int n2 = n1 + q2d_order[m][0];
@@ -395,7 +395,7 @@ void NumericalIntegration::IntegrateMonomialsEdge_(
 
   // minimal quadrature rule
   int m = k / 2;
-  ASSERT(m < 8);
+  AMANZI_ASSERT(m < 8);
 
   PolynomialIterator it(d_);
   for (it.begin(k); it.end() <= k; ++it) {

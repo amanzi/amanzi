@@ -69,7 +69,7 @@ int Operator_Cell::ApplyMatrixFreeOp(const Op_Cell_Cell& op,
 int Operator_Cell::ApplyMatrixFreeOp(const Op_Face_Cell& op,
                                      const CompositeVector& X, CompositeVector& Y) const
 {
-  ASSERT(op.matrices.size() == nfaces_owned);
+  AMANZI_ASSERT(op.matrices.size() == nfaces_owned);
   
   X.ScatterMasterToGhosted();
   const Epetra_MultiVector& Xc = *X.ViewComponent("cell", true);
@@ -118,7 +118,7 @@ void Operator_Cell::SymbolicAssembleMatrixOp(const Op_Cell_Cell& op,
 
     ierr |= graph.InsertMyIndices(row, 1, &col);
   }
-  ASSERT(!ierr);
+  AMANZI_ASSERT(!ierr);
 }
 
 
@@ -148,7 +148,7 @@ void Operator_Cell::SymbolicAssembleMatrixOp(const Op_Face_Cell& op,
 
     ierr |= graph.InsertMyIndices(ncells, lid_r, ncells, lid_c);
   }
-  ASSERT(!ierr);
+  AMANZI_ASSERT(!ierr);
 }
 
 
@@ -160,7 +160,7 @@ void Operator_Cell::AssembleMatrixOp(const Op_Cell_Cell& op,
                                      const SuperMap& map, MatrixFE& mat,
                                      int my_block_row, int my_block_col) const
 {
-  ASSERT(op.diag->NumVectors() == 1);
+  AMANZI_ASSERT(op.diag->NumVectors() == 1);
 
   const std::vector<int>& cell_row_inds = map.GhostIndices("cell", my_block_row);
   const std::vector<int>& cell_col_inds = map.GhostIndices("cell", my_block_col);
@@ -172,7 +172,7 @@ void Operator_Cell::AssembleMatrixOp(const Op_Cell_Cell& op,
 
     ierr |= mat.SumIntoMyValues(row, 1, &(*op.diag)[0][c], &col);
   }
-  ASSERT(!ierr);
+  AMANZI_ASSERT(!ierr);
 }
 
 
@@ -180,7 +180,7 @@ void Operator_Cell::AssembleMatrixOp(const Op_Face_Cell& op,
                                      const SuperMap& map, MatrixFE& mat,
                                      int my_block_row, int my_block_col) const
 {
-  ASSERT(op.matrices.size() == nfaces_owned);
+  AMANZI_ASSERT(op.matrices.size() == nfaces_owned);
   
   // ELEMENT: face, DOF: cell
   int lid_r[2];
@@ -200,9 +200,9 @@ void Operator_Cell::AssembleMatrixOp(const Op_Face_Cell& op,
     }
 
     ierr |= mat.SumIntoMyValues(lid_r, lid_c, op.matrices[f]);
-    ASSERT(!ierr);
+    AMANZI_ASSERT(!ierr);
   }
-  ASSERT(!ierr);
+  AMANZI_ASSERT(!ierr);
 }
 
 }  // namespace Operators

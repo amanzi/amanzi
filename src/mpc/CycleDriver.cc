@@ -446,7 +446,7 @@ void CycleDriver::ReadParameterList_() {
     Teuchos::ParameterList& tpc_list = coordinator_list_->sublist("time period control");
     Teuchos::Array<double> reset_times = tpc_list.get<Teuchos::Array<double> >("start times");
     Teuchos::Array<double> reset_times_dt = tpc_list.get<Teuchos::Array<double> >("initial time step");   
-    ASSERT(reset_times.size() == reset_times_dt.size());
+    AMANZI_ASSERT(reset_times.size() == reset_times_dt.size());
 
     Teuchos::Array<double>::const_iterator it_tim;
     Teuchos::Array<double>::const_iterator it_dt;
@@ -458,7 +458,7 @@ void CycleDriver::ReadParameterList_() {
 
     if (tpc_list.isParameter("maximum time step")) {
       Teuchos::Array<double> reset_max_dt = tpc_list.get<Teuchos::Array<double> >("maximum time step");
-      ASSERT(reset_times.size() == reset_max_dt.size());
+      AMANZI_ASSERT(reset_times.size() == reset_max_dt.size());
 
       Teuchos::Array<double>::const_iterator it_tim;
       Teuchos::Array<double>::const_iterator it_max;

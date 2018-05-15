@@ -113,12 +113,12 @@ void EnergyTwoPhase_PK::Initialize(const Teuchos::Ptr<State>& S)
   Teuchos::RCP<FieldEvaluator> eos_fe = S->GetFieldEvaluator("molar_density_liquid");
   eos_fe->HasFieldChanged(S.ptr(), "molar_density_liquid");
   Teuchos::RCP<Relations::EOSEvaluator> eos_eval = Teuchos::rcp_dynamic_cast<Relations::EOSEvaluator>(eos_fe);
-  ASSERT(eos_eval != Teuchos::null);
+  AMANZI_ASSERT(eos_eval != Teuchos::null);
   eos_liquid_ = eos_eval->get_EOS();
 
   Teuchos::RCP<FieldEvaluator> iem_fe = S->GetFieldEvaluator("internal_energy_liquid");
   Teuchos::RCP<IEMEvaluator> iem_eval = Teuchos::rcp_dynamic_cast<IEMEvaluator>(iem_fe);
-  ASSERT(iem_eval != Teuchos::null);
+  AMANZI_ASSERT(iem_eval != Teuchos::null);
   iem_liquid_ = iem_eval->get_IEM();
   */
 
@@ -154,7 +154,7 @@ void EnergyTwoPhase_PK::Initialize(const Teuchos::Ptr<State>& S)
   op_preconditioner_->SymbolicAssembleMatrix();
 
   // preconditioner and optional linear solver
-  ASSERT(ti_list_->isParameter("preconditioner"));
+  AMANZI_ASSERT(ti_list_->isParameter("preconditioner"));
   preconditioner_name_ = ti_list_->get<std::string>("preconditioner");
 
   // initialize time integrator

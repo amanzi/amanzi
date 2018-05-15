@@ -98,7 +98,7 @@ class VectorPolynomial {
 
   // dot product v1 * v2
   friend Polynomial operator*(const VectorPolynomial& v1, const VectorPolynomial& v2) {
-    ASSERT(v1.size() == v2.size());
+    AMANZI_ASSERT(v1.size() == v2.size());
 
     int d(v1[0].dimension());
     Polynomial tmp(d, 0);
@@ -131,7 +131,7 @@ inline
 Polynomial Divergence(const VectorPolynomial vp) 
 {
   int d = vp[0].dimension();
-  ASSERT(d == vp.size());
+  AMANZI_ASSERT(d == vp.size());
 
   int order = vp[0].order();
   order = std::max(0, order - 1);

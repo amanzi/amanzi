@@ -102,14 +102,14 @@ class HeatConduction : public AmanziSolvers::SolverFnBase<CompositeVector> {
 ****************************************************************** */
 double HeatConduction::Conduction(int c, double T) const
 {
-  ASSERT(T > 0.0);
+  AMANZI_ASSERT(T > 0.0);
   return T * T * T;
 }
 
 
 double HeatConduction::ConductionDerivative(int c, double T) const
 {
-  ASSERT(T > 0.0);
+  AMANZI_ASSERT(T > 0.0);
   return 3 * T * T;
 }
 
@@ -327,7 +327,7 @@ void HeatConduction::UpdateValues(const CompositeVector& u)
     if (bc_model[f] == Operators::OPERATOR_BC_DIRICHLET) {
       AmanziMesh::Entity_ID_List cells;
       mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
-      ASSERT(cells.size() == 1);
+      AMANZI_ASSERT(cells.size() == 1);
       int bf = ext_face_map.LID(face_map.GID(f));
       k_df[0][bf] = Conduction(cells[0], bc_value[f]);
       dkdT_df[0][bf] = ConductionDerivative(cells[0], bc_value[f]);

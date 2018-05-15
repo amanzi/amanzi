@@ -41,8 +41,8 @@ int CellToFace_Scale(Teuchos::RCP<CompositeVector>& f1,
 int CellToFace_ScaleInverse(Teuchos::RCP<const CompositeVector> f1,
                             Teuchos::RCP<CompositeVector>& f2)
 {
-  ASSERT(f1->HasComponent("cell"));
-  ASSERT(f2->HasComponent("cell") && f2->HasComponent("face"));
+  AMANZI_ASSERT(f1->HasComponent("cell"));
+  AMANZI_ASSERT(f2->HasComponent("cell") && f2->HasComponent("face"));
 
   f1->ScatterMasterToGhosted("cell");
 

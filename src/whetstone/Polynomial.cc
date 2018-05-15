@@ -125,8 +125,8 @@ void Polynomial::Reshape(int d, int order, bool reset)
 ****************************************************************** */
 Polynomial& Polynomial::operator+=(const Polynomial& poly)
 {
-  ASSERT(d_ == poly.dimension());  // FIXME
-  ASSERT(origin_ == poly.origin());
+  AMANZI_ASSERT(d_ == poly.dimension());  // FIXME
+  AMANZI_ASSERT(origin_ == poly.origin());
 
   int order_max = std::max(order_, poly.order());
   Reshape(d_, order_max);
@@ -141,8 +141,8 @@ Polynomial& Polynomial::operator+=(const Polynomial& poly)
 
 Polynomial& Polynomial::operator-=(const Polynomial& poly)
 {
-  ASSERT(d_ == poly.dimension());  // FIXME
-  ASSERT(origin_ == poly.origin());
+  AMANZI_ASSERT(d_ == poly.dimension());  // FIXME
+  AMANZI_ASSERT(origin_ == poly.origin());
 
   int order_max = std::max(order_, poly.order());
   Reshape(d_, order_max);
@@ -157,8 +157,8 @@ Polynomial& Polynomial::operator-=(const Polynomial& poly)
 
 Polynomial& Polynomial::operator*=(const Polynomial& poly)
 {
-  ASSERT(d_ == poly.dimension());  // FIXME
-  ASSERT(origin_ == poly.origin());
+  AMANZI_ASSERT(d_ == poly.dimension());  // FIXME
+  AMANZI_ASSERT(origin_ == poly.origin());
 
   Polynomial arg1(*this);
   const Polynomial* arg2 = &poly;
@@ -364,7 +364,7 @@ void Polynomial::PutScalar(double val)
 ****************************************************************** */
 void Polynomial::SetPolynomialCoefficients(const DenseVector& coefs)
 {
-  ASSERT(size_ == coefs.NumRows());
+  AMANZI_ASSERT(size_ == coefs.NumRows());
 
   const double* data = coefs.Values();
   for (int k = 0; k <= order_; ++k) {
@@ -479,7 +479,7 @@ void Polynomial::ChangeCoordinates(
     const AmanziGeometry::Point& x0, const std::vector<AmanziGeometry::Point>& B)
 {
   int dnew = B.size();
-  ASSERT(dnew > 0);
+  AMANZI_ASSERT(dnew > 0);
 
   // center polynomial at x0
   ChangeOrigin(x0);

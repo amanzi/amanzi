@@ -56,7 +56,7 @@ void Element_block::take_data_from (int num_elements,
       attribute_map.clear();
     }
 
-    ASSERT (valid ());
+    AMANZI_ASSERT (valid ());
 }
 
 

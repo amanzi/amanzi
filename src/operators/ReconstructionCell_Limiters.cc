@@ -346,8 +346,6 @@ void ReconstructionCell::LimiterBarthJespersen_(
   if (limiter_correction_) {
     LimiterExtensionTransportBarthJespersen_(field_local_min, field_local_max, limiter);
   }    
-
-  gradient_->ScatterMasterToGhosted("cell");
 }
 
 

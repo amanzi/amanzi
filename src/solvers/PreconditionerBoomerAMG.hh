@@ -38,7 +38,7 @@ Internal parameters for Boomer AMG include
   uses the `"unknown`" approach in which each equation is coarsened and
   interpolated independently.  **Getting this correct is very helpful!**
   
-  * `"nodal strength of connection norm`" ``[int]`` tells AMG to coarsen such
+* `"nodal strength of connection norm`" ``[int]`` tells AMG to coarsen such
     that each variable has the same coarse grid - sometimes this is more
     "physical" for a particular problem. The value chosen here for nodal
     determines how strength of connection is determined between the

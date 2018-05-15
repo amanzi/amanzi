@@ -12,7 +12,7 @@ bool Entity_map::valid_dimension_(unsigned int dimension) {
 
 stk::mesh::EntityRank
 Entity_map::kind_to_rank(Entity_kind kind) const {
-    ASSERT(entity_valid_kind(kind));
+    AMANZI_ASSERT(entity_valid_kind(kind));
     return kind_to_rank_.find (kind)->second;
 }
 

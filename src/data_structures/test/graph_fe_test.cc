@@ -156,7 +156,7 @@ TEST(FE_GRAPH_FACE_FACE) {
     for (int n=0; n!=faces.size(); ++n) {
       ierr |= graph_local.InsertMyIndices(faces[n], faces.size(), &faces[0]);
       CHECK(!ierr);
-      ASSERT(global_faces[n] >= 0);
+      AMANZI_ASSERT(global_faces[n] >= 0);
       ierr |= graph_global.InsertGlobalIndices(global_faces[n], global_faces.size(), &global_faces[0]);
       CHECK(!ierr);
     }

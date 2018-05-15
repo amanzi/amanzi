@@ -378,6 +378,8 @@ class MeshLogical : public Mesh {
 
 };
 
+bool viewMeshLogical(const Mesh& m, std::ostream& os=std::cout);
+
 
 } // close namespace AmanziMesh
 } // close namespace Amanzi

@@ -38,7 +38,7 @@ void Operator_Schema::UpdateRHS(const CompositeVector& source, bool volume_inclu
   if (volume_included) {
     Operator::UpdateRHS(source);
   } else {
-    ASSERT(false);
+    AMANZI_ASSERT(false);
   }
 }
 
@@ -49,7 +49,7 @@ void Operator_Schema::UpdateRHS(const CompositeVector& source, bool volume_inclu
 int Operator_Schema::ApplyMatrixFreeOp(const Op_Cell_Schema& op,
                                        const CompositeVector& X, CompositeVector& Y) const
 {
-  ASSERT(op.matrices.size() == ncells_owned);
+  AMANZI_ASSERT(op.matrices.size() == ncells_owned);
 
   X.ScatterMasterToGhosted();
   Y.PutScalarGhosted(0.0);
@@ -73,7 +73,7 @@ int Operator_Schema::ApplyMatrixFreeOp(const Op_Cell_Schema& op,
 int Operator_Schema::ApplyMatrixFreeOp(const Op_Face_Schema& op,
                                        const CompositeVector& X, CompositeVector& Y) const
 {
-  ASSERT(op.matrices.size() == nfaces_owned);
+  AMANZI_ASSERT(op.matrices.size() == nfaces_owned);
 
   X.ScatterMasterToGhosted();
   Y.PutScalarGhosted(0.0);
@@ -118,7 +118,7 @@ int Operator_Schema::ApplyMatrixFreeOp(const Op_Node_Node& op,
 int Operator_Schema::ApplyTransposeMatrixFreeOp(const Op_Cell_Schema& op,
                                                 const CompositeVector& X, CompositeVector& Y) const
 {
-  ASSERT(op.matrices.size() == ncells_owned);
+  AMANZI_ASSERT(op.matrices.size() == ncells_owned);
 
   X.ScatterMasterToGhosted();
   Y.PutScalarGhosted(0.0);
@@ -199,7 +199,7 @@ void Operator_Schema::SymbolicAssembleMatrix()
 
   // Completing and optimizing the graphs
   int ierr = graph->FillComplete(smap_->Map(), smap_->Map());
-  ASSERT(!ierr);
+  AMANZI_ASSERT(!ierr);
 
   // create global matrix
   Amat_ = Teuchos::rcp(new MatrixFE(graph));
@@ -272,7 +272,7 @@ void Operator_Schema::SymbolicAssembleMatrixOp(const Op_Cell_Schema& op,
 
     ierr |= graph.InsertMyIndices(m, lid_r, m, lid_c);
   }
-  ASSERT(!ierr);
+  AMANZI_ASSERT(!ierr);
 }
 
 
@@ -304,13 +304,13 @@ void Operator_Schema::SymbolicAssembleMatrixOp(const Op_Face_Schema& op,
           }
         }
       } else {
-        ASSERT(false);
+        AMANZI_ASSERT(false);
       }
     }
 
     ierr |= graph.InsertMyIndices(m, lid_r, m, lid_c);
   }
-  ASSERT(!ierr);
+  AMANZI_ASSERT(!ierr);
 }
 
 
@@ -332,7 +332,7 @@ void Operator_Schema::SymbolicAssembleMatrixOp(const Op_Node_Node& op,
 
     ierr |= graph.InsertMyIndices(row, 1, &col);
   }
-  ASSERT(!ierr);
+  AMANZI_ASSERT(!ierr);
 }
 
 
@@ -344,7 +344,7 @@ void Operator_Schema::AssembleMatrixOp(const Op_Cell_Schema& op,
                                        const SuperMap& map, MatrixFE& mat,
                                        int my_block_row, int my_block_col) const
 {
-  ASSERT(op.matrices.size() == ncells_owned);
+  AMANZI_ASSERT(op.matrices.size() == ncells_owned);
 
   int lid_r[OPERATOR_MAX_EDGES];
   int lid_c[OPERATOR_MAX_EDGES];
@@ -403,7 +403,7 @@ void Operator_Schema::AssembleMatrixOp(const Op_Cell_Schema& op,
 
     ierr |= mat.SumIntoMyValues(lid_r, lid_c, op.matrices[c]);
   }
-  ASSERT(!ierr);
+  AMANZI_ASSERT(!ierr);
 }
 
 
@@ -411,7 +411,7 @@ void Operator_Schema::AssembleMatrixOp(const Op_Face_Schema& op,
                                        const SuperMap& map, MatrixFE& mat,
                                        int my_block_row, int my_block_col) const
 {
-  ASSERT(op.matrices.size() == nfaces_owned);
+  AMANZI_ASSERT(op.matrices.size() == nfaces_owned);
 
   int lid_r[OPERATOR_MAX_EDGES];
   int lid_c[OPERATOR_MAX_EDGES];
@@ -437,13 +437,13 @@ void Operator_Schema::AssembleMatrixOp(const Op_Face_Schema& op,
           }
         }
       } else {
-        ASSERT(false);
+        AMANZI_ASSERT(false);
       }
     }
 
     ierr |= mat.SumIntoMyValues(lid_r, lid_c, op.matrices[f]);
   }
-  ASSERT(!ierr);
+  AMANZI_ASSERT(!ierr);
 }
 
 
@@ -469,7 +469,7 @@ void Operator_Schema::AssembleMatrixOp(const Op_Node_Node& op,
       col++;
     }
   }
-  ASSERT(!ierr);
+  AMANZI_ASSERT(!ierr);
 }
 
 

@@ -39,11 +39,11 @@ TreeOperator::TreeOperator(Teuchos::RCP<const TreeVectorSpace> tvs) :
 {
   // make sure we have the right kind of TreeVectorSpace -- it should be
   // one parent node with all leaf node children.
-  ASSERT(tvs_->Data() == Teuchos::null);
+  AMANZI_ASSERT(tvs_->Data() == Teuchos::null);
   for (TreeVectorSpace::const_iterator
            it = tvs_->begin();
        it != tvs_->end(); ++it) {
-    ASSERT((*it)->Data() != Teuchos::null);
+    AMANZI_ASSERT((*it)->Data() != Teuchos::null);
   }
 
   // resize the blocks
@@ -99,7 +99,7 @@ int TreeOperator::ApplyAssembled(const TreeVector& X, TreeVector& Y) const
   int ierr = CopyTreeVectorToSuperVector(*smap_, X, Xcopy);
   ierr |= A_->Apply(Xcopy, Ycopy);
   ierr |= CopySuperVectorToTreeVector(*smap_, Ycopy, Y);
-  ASSERT(!ierr);
+  AMANZI_ASSERT(!ierr);
 
   return ierr;
 }
@@ -119,7 +119,7 @@ int TreeOperator::ApplyInverse(const TreeVector& X, TreeVector& Y) const
     code = preconditioner_->ApplyInverse(Xcopy, Ycopy);
     ierr |= CopySuperVectorToTreeVector(*smap_, Ycopy, Y);
 
-    ASSERT(!ierr);
+    AMANZI_ASSERT(!ierr);
   } else {
     for (int n = 0; n < tvs_->size(); ++n) {
       const CompositeVector& Xn = *X.SubVector(n)->Data();
@@ -157,15 +157,15 @@ void TreeOperator::SymbolicAssembleMatrix()
       }
 
       if (lcv_row == lcv_col) {
-        ASSERT(blocks_[lcv_row][lcv_col] != Teuchos::null);
+        AMANZI_ASSERT(blocks_[lcv_row][lcv_col] != Teuchos::null);
         if (schema == 0) {
           schema = blocks_[lcv_row][lcv_col]->schema();
         } else {
-          ASSERT(schema == blocks_[lcv_row][lcv_col]->schema());
+          AMANZI_ASSERT(schema == blocks_[lcv_row][lcv_col]->schema());
         }
       }
     }
-    ASSERT(is_block);
+    AMANZI_ASSERT(is_block);
   }
 
   // create the supermap and graph
@@ -186,7 +186,7 @@ void TreeOperator::SymbolicAssembleMatrix()
 
   // assemble the graph
   int ierr = graph->FillComplete(smap_->Map(), smap_->Map());
-  ASSERT(!ierr);
+  AMANZI_ASSERT(!ierr);
 
   // create the matrix
   Amat_ = Teuchos::rcp(new MatrixFE(graph));
@@ -212,7 +212,7 @@ void TreeOperator::AssembleMatrix() {
   }
 
   int ierr = Amat_->FillComplete();
-  ASSERT(!ierr);
+  AMANZI_ASSERT(!ierr);
 }
 
 
@@ -260,7 +260,7 @@ void TreeOperator::CopyVectorToSuperVector(const TreeVector& tv, Epetra_Vector& 
     ierr |= CopyCompositeVectorToSuperVector(*smap_, *(*it)->Data(), sv, my_dof);
     my_dof++;            
   }
-  ASSERT(!ierr);
+  AMANZI_ASSERT(!ierr);
 }
 
 
@@ -272,7 +272,7 @@ void TreeOperator::CopySuperVectorToVector(const Epetra_Vector& sv, TreeVector& 
     ierr |= CopySuperVectorToCompositeVector(*smap_, sv, *(*it)->Data(), my_dof);
     my_dof++;            
   }
-  ASSERT(!ierr);
+  AMANZI_ASSERT(!ierr);
 }
 
 }  // namespace Operators

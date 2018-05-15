@@ -55,12 +55,12 @@ void SecondaryVariableFieldEvaluator::operator=(const FieldEvaluator& other) {
 #if ENABLE_DBC
   const SecondaryVariableFieldEvaluator* other_p =
     dynamic_cast<const SecondaryVariableFieldEvaluator*>(&other);
-  ASSERT(other_p != NULL);
+  AMANZI_ASSERT(other_p != NULL);
 #else
   const SecondaryVariableFieldEvaluator* other_p =
     static_cast<const SecondaryVariableFieldEvaluator*>(&other);
 #endif
-  ASSERT(my_key_ == other_p->my_key_);
+  AMANZI_ASSERT(my_key_ == other_p->my_key_);
 
   requests_ = other_p->requests_;
   deriv_requests_ = other_p->deriv_requests_;
@@ -132,8 +132,8 @@ bool SecondaryVariableFieldEvaluator::HasFieldDerivativeChanged(const Teuchos::P
         Key request, Key wrt_key) {
   Teuchos::OSTab tab = vo_->getOSTab();
 
-  ASSERT(!wrt_key.empty());
-  ASSERT(!request.empty());
+  AMANZI_ASSERT(!wrt_key.empty());
+  AMANZI_ASSERT(!request.empty());
   
   if (vo_->os_OK(Teuchos::VERB_EXTREME)) {
     *vo_->os() << "Secondary Variable d" << my_key_ << "_d" << wrt_key
@@ -300,7 +300,7 @@ bool SecondaryVariableFieldEvaluator::ProvidesKey(Key key) const {
 
 void SecondaryVariableFieldEvaluator::EnsureCompatibility(const Teuchos::Ptr<State>& S) {
   // Ensure my field exists.  Requirements should be already set.
-  ASSERT(my_key_ != std::string(""));
+  AMANZI_ASSERT(my_key_ != std::string(""));
   Teuchos::RCP<CompositeVectorSpace> my_fac = S->RequireField(my_key_, my_key_);
 
   // check plist for vis or checkpointing control

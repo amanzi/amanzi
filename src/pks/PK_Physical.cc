@@ -29,7 +29,7 @@ void PK_Physical::State_to_Solution(const Teuchos::RCP<State>& S,
 // -----------------------------------------------------------------------------
 void PK_Physical::Solution_to_State(TreeVector& solution,
                                     const Teuchos::RCP<State>& S) {
-  ASSERT(solution.Data() == S->GetFieldData(key_));
+  AMANZI_ASSERT(solution.Data() == S->GetFieldData(key_));
   //  S->SetData(key_, name_, solution->Data());
   //  solution_evaluator_->SetFieldAsChanged();
 }
@@ -37,7 +37,7 @@ void PK_Physical::Solution_to_State(TreeVector& solution,
 
 void PK_Physical::Solution_to_State(const TreeVector& solution,
                                     const Teuchos::RCP<State>& S) {
-  ASSERT(solution.Data() == S->GetFieldData(key_));
+  AMANZI_ASSERT(solution.Data() == S->GetFieldData(key_));
   //  S->SetData(key_, name_, solution->Data());
   //  solution_evaluator_->SetFieldAsChanged();
 }
@@ -60,7 +60,7 @@ void PK_Physical::set_states(const Teuchos::RCP<const State>& S,
   Teuchos::RCP<FieldEvaluator> fm = S_next->GetFieldEvaluator(key_);
 #if ENABLE_DBC
   solution_evaluator_ = Teuchos::rcp_dynamic_cast<PrimaryVariableFieldEvaluator>(fm);
-  ASSERT(solution_evaluator_ != Teuchos::null);
+  AMANZI_ASSERT(solution_evaluator_ != Teuchos::null);
 #else
   solution_evaluator_ = Teuchos::rcp_static_cast<PrimaryVariableFieldEvaluator>(fm);
 #endif

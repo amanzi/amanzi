@@ -80,7 +80,7 @@ class AnalyticDG06b : public AnalyticDGBase {
       sol(3, 3) = u * (dy2 * dy + 3 * dy2) / 6;
     }
 
-    if (order_ > 3) ASSERT(false);
+    if (order_ > 3) AMANZI_ASSERT(false);
   }
 
   // -- accumulation

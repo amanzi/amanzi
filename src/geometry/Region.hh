@@ -26,17 +26,40 @@ entire simulation domain. Currently, the unstructured framework does
 not support the *All* region, but it is expected to do so in the
 near future.
 
- * `"regions`" ``[list]`` can accept a number of uniquely named lists for regions
-
-   * ``[region-spec]`` Geometric model primitive, as described below.
-
 Amanzi supports parameterized forms for a number of analytic shapes, as well
 as more complex definitions based on triangulated surface files.
 
 
-**Notes:**
+ONE OF:
+* `"region: box`" ``[region-box-spec]``
+OR:
+* `"region: plane`" ``[region-plane-spec]``
+OR:
+* `"region: labeled set`" ``[region-labeled-set-spec]``
+OR:
+* `"region: color function`" ``[region-color-function-spec]``
+OR:
+* `"region: point`" ``[region-point-spec]``
+OR:
+* `"region: logical`" ``[region-logical-spec]``
+OR:
+* `"region: polygon`" ``[region-polygon-spec]``
+OR:
+* `"region: enumerated`" ``[region-enumerated-spec]``
+OR:
+* `"region: all`" ``[list]``
+OR:
+* `"region: boundary`" ``[region-boundary-spec]``
+OR:
+* `"region: box volume fractions`" ``[region-box-volume-fractions-spec]``
+OR:
+* `"region: line segment`" ``[region-line-segment-spec]``
+END
 
-* Surface files contain labeled triangulated face sets.  The user is
+
+Notes:
+
+- Surface files contain labeled triangulated face sets.  The user is
   responsible for ensuring that the intersections with other surfaces
   in the problem, including the boundaries, are *exact* (*i.e.* that
   surface intersections are *watertight* where applicable), and that
@@ -47,7 +70,7 @@ as more complex definitions based on triangulated surface files.
   Examples of surface files are given in the *Exodus II* file 
   format here.
 
-* Region names must NOT be repeated.
+- Region names must NOT be repeated.
 
 Example:
 

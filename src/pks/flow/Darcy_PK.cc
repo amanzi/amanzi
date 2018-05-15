@@ -273,7 +273,7 @@ void Darcy_PK::Initialize(const Teuchos::Ptr<State>& S)
   pdot_cells = Teuchos::rcp(new Epetra_Vector(cmap));
   
   std::string ti_method_name = ti_list_->get<std::string>("time integration method", "none");
-  ASSERT(ti_method_name == "BDF1");
+  AMANZI_ASSERT(ti_method_name == "BDF1");
   Teuchos::ParameterList& bdf1_list = ti_list_->sublist("BDF1");
 
   error_control_ = FLOW_TI_ERROR_CONTROL_PRESSURE;  // usually 1e-4;
@@ -334,13 +334,13 @@ void Darcy_PK::Initialize(const Teuchos::Ptr<State>& S)
   op_->CreateCheckPoint();
 
   // -- generic linear solver.
-  ASSERT(ti_list_->isParameter("linear solver"));
+  AMANZI_ASSERT(ti_list_->isParameter("linear solver"));
   solver_name_ = ti_list_->get<std::string>("linear solver");
 
   // -- preconditioner. There is no need to enhance it for Darcy
-  ASSERT(ti_list_->isParameter("preconditioner"));
+  AMANZI_ASSERT(ti_list_->isParameter("preconditioner"));
   preconditioner_name_ = ti_list_->get<std::string>("preconditioner");
-  ASSERT(preconditioner_list_->isSublist(preconditioner_name_));
+  AMANZI_ASSERT(preconditioner_list_->isSublist(preconditioner_name_));
   
   // Optional step: calculate hydrostatic solution consistent with BCs.
   // We have to do it only once per time period.

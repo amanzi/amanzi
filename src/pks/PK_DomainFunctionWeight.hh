@@ -65,7 +65,7 @@ void PK_DomainFunctionWeight<FunctionBase>::Init(
     const Teuchos::ParameterList& plist, const std::string& keyword,
     Teuchos::RCP<const Epetra_Vector> weight)
 {
-  ASSERT(weight != Teuchos::null);
+  AMANZI_ASSERT(weight != Teuchos::null);
 
   keyword_ = keyword;
 

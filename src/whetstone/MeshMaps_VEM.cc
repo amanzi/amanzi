@@ -51,7 +51,7 @@ void MeshMaps_VEM::VelocityCell(
     mfd->L2Cell(c, vf, moments, vc);
   }
   else {
-    ASSERT(false);
+    AMANZI_ASSERT(false);
   }
 }
 

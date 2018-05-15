@@ -20,6 +20,17 @@ A multi-variable monomial function is given by the following expression:
 with the constant factor :math:`c`, the reference point :math:`x_0`, and
 integer exponents :math:`p_j`. 
 Note that the first parameter in :math:`x` can be time.
+
+* `"c`" ``[double]`` c in f = c \prod_{j=0}^{n} (x_j - x_{0,j})^{p_j}
+* `"x0`" ``[Array(double)]`` x0 in f = c \prod_{j=0}^{n} (x_j - x_{0,j})^{p_j}
+* `"exponents`" ``[Array(int)]`` p in f = c \prod_{j=0}^{n} (x_j - x_{0,j})^{p_j}
+
+Conditions:
+
+.. code-block:: python
+
+  len(x0) == len(exponents)
+
 Here is an example of monomial of degree 6 in three variables:
 
 .. code-block:: xml

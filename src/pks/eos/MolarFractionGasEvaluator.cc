@@ -21,7 +21,7 @@ MolarFractionGasEvaluator::MolarFractionGasEvaluator(Teuchos::ParameterList& pli
     SecondaryVariableFieldEvaluator(plist)
 {
   // set up the actual model
-  ASSERT(plist_.isSublist("vapor pressure model parameters"));
+  AMANZI_ASSERT(plist_.isSublist("vapor pressure model parameters"));
   VaporPressureBaseFactory vpm_fac;
   sat_vapor_model_ = vpm_fac.CreateVaporPressure(plist_.sublist("vapor pressure model parameters"));
 
@@ -70,7 +70,7 @@ void MolarFractionGasEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
 
     int count = result->size(*comp);
     for (int id = 0; id != count; ++id) {
-      ASSERT(temp_v[0][id] > 200.0);
+      AMANZI_ASSERT(temp_v[0][id] > 200.0);
       result_v[0][id] = sat_vapor_model_->SaturatedVaporPressure(temp_v[0][id]) / p_atm;
     }
   }
@@ -81,7 +81,7 @@ void MolarFractionGasEvaluator::EvaluateFieldPartialDerivative_(
     const Teuchos::Ptr<State>& S, Key wrt_key,
     const Teuchos::Ptr<CompositeVector>& result)
 {
-  ASSERT(wrt_key == temp_key_);
+  AMANZI_ASSERT(wrt_key == temp_key_);
 
   // Pull dependencies out of state.
   Teuchos::RCP<const CompositeVector> temp = S->GetFieldData(temp_key_);

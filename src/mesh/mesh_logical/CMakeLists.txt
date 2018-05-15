@@ -33,6 +33,7 @@ include_directories(${Boost_INCLUDE_DIRS})
 #
 set(mesh_logical_src MeshLogical.cc
 		     MeshLogicalFactory.cc
+                     MeshLogicalAudit.cc
 		     MeshEmbeddedLogical.cc
                      )
 

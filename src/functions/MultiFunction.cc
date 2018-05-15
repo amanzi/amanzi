@@ -58,7 +58,7 @@ MultiFunction::MultiFunction(Teuchos::ParameterList& plist) {
 
       if (ndofs < 1) {
         // ERROR -- invalid number of dofs
-        ASSERT(0);
+        AMANZI_ASSERT(0);
       }
 
       for (int lcv = 1; lcv != (ndofs+1); ++lcv) {
@@ -68,7 +68,7 @@ MultiFunction::MultiFunction(Teuchos::ParameterList& plist) {
       }
     } else {
       // ERROR -- invalid number of dofs
-      ASSERT(0);
+      AMANZI_ASSERT(0);
     }
   } else {
     // assume it is a single dof function

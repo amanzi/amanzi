@@ -185,8 +185,8 @@ void ReconstructionCell::ComputeGradient(
 void ReconstructionCell::ApplyLimiter(
     const std::vector<int>& bc_model, const std::vector<double>& bc_value)
 {
-  ASSERT(upwind_cells_.size() > 0);
-  ASSERT(downwind_cells_.size() > 0);
+  AMANZI_ASSERT(upwind_cells_.size() > 0);
+  AMANZI_ASSERT(downwind_cells_.size() > 0);
 
   limiter_ = Teuchos::rcp(new Epetra_Vector(mesh_->cell_map(true)));
   if (limiter_id_ == OPERATOR_LIMITER_BARTH_JESPERSEN) {
@@ -209,7 +209,7 @@ void ReconstructionCell::ApplyLimiter(AmanziGeometry::Entity_ID_List& ids,
   if (limiter_id_ == OPERATOR_LIMITER_KUZMIN) {
     LimiterKuzminSet_(ids, gradient);   
   } else {
-    ASSERT(0);
+    AMANZI_ASSERT(0);
   }
 }
 
@@ -224,6 +224,8 @@ void ReconstructionCell::ApplyLimiter(Teuchos::RCP<Epetra_MultiVector> limiter)
   for (int c = 0; c < ncells_owned; c++) {
     for (int i = 0; i < dim; i++) (*grad)[i][c] *= (*limiter)[0][c];
   }
+
+  gradient_->ScatterMasterToGhosted("cell");
 }
 
 

@@ -215,8 +215,8 @@ void SolutionHistory<Vector>::InterpolateSolution(double t, Vector& x)
 template<class Vector>
 void SolutionHistory<Vector>::InterpolateSolution(double t, Vector& x, unsigned int order)
 {
-  ASSERT(order < nvec_);
-  ASSERT(order >= 0);
+  AMANZI_ASSERT(order < nvec_);
+  AMANZI_ASSERT(order >= 0);
 
   x = *d_[order];
   for (int k = order - 1; k >= 0; k--) {

@@ -512,7 +512,7 @@ int MFD3D_Diffusion::L2consistencyInverseDivKScaled(
         R(i, k) = (k1 * v1[k] + k2 * v2[k] + km * vm) * tmp;
       }
     } else {
-      ASSERT(false);
+      AMANZI_ASSERT(false);
     }
   }
 

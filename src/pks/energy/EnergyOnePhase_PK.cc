@@ -136,7 +136,7 @@ void EnergyOnePhase_PK::Initialize(const Teuchos::Ptr<State>& S)
   op_preconditioner_->SymbolicAssembleMatrix();
 
   // preconditioner and optional linear solver
-  ASSERT(ti_list_->isParameter("preconditioner"));
+  AMANZI_ASSERT(ti_list_->isParameter("preconditioner"));
   preconditioner_name_ = ti_list_->get<std::string>("preconditioner");
 
   // initialize time integrator

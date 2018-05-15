@@ -233,7 +233,7 @@ void
 Debugger::WriteVectors(const std::vector<std::string>& names,
                        const std::vector<Teuchos::Ptr<const CompositeVector> >& vecs,
                        bool include_faces) {
-  ASSERT(names.size() == vecs.size());
+  AMANZI_ASSERT(names.size() == vecs.size());
 
   std::stringstream formatstream;
   formatstream << "%_" << width_ << "." << precision_ << "g";

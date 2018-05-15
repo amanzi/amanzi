@@ -15,6 +15,11 @@ defined such that `f(x) = y_0` for `x < x0`, `f(x) = y_1` for `x > x_1`, and
 monotonically increasing for :math:`x \in [x_0, x_1]` through cubic
 interpolation.
 
+* `"x0`" ``[double]`` First fitting point
+* `"y0`" ``[double]`` First fitting value
+* `"x1`" ``[double]`` Second fitting point
+* `"y1`" ``[double]`` Second fitting value
+
 Example:
 
 .. code-block:: xml

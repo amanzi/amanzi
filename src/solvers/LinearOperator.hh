@@ -8,9 +8,20 @@
 
   Authors: Ethan Coon (ecoon@lanl.gov)
            Konstantin Lipnikov (lipnikov@lanl.gov)
-
-  Base class for linear solvers.
 */
+
+//!  Base class for linear solvers.
+
+/*!
+
+``[linear-solver-typed-spec]``
+
+* `"iterative method type`" ``[string]`` Iterative method to be used.
+* `"_iterative_method_type_ parameters`" ``[_iterative_method_type_-spec]``
+  Parameters associated with the requested iterative method.
+  
+ */
+
 
 #ifndef AMANZI_LINEAR_OPERATOR_HH_
 #define AMANZI_LINEAR_OPERATOR_HH_

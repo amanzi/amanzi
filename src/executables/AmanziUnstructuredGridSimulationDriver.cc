@@ -286,7 +286,7 @@ AmanziUnstructuredGridSimulationDriver::Run(const MPI_Comm& mpi_comm,
   }
   Amanzi::timer_manager.stop("Mesh creation");
 
-  ASSERT(!mesh.is_null());
+  AMANZI_ASSERT(!mesh.is_null());
 
 
   if (expert_params_specified) {

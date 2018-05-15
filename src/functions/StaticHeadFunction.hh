@@ -16,6 +16,13 @@
 
 Note that dimension 0 is usually time.
 
+* `"p0`" ``[double]`` Pressure at z0
+* `"density`" ``[double]`` Density of water
+* `"gravity`" ``[double]`` Gravity
+* `"space dimension`" ``[int]`` Dimensionality, usually 3
+* `"water table elevation`" ``[function-spec]`` Water table elevation function.
+
+
 Example:
 .. code-block:: xml
 

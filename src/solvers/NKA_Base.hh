@@ -139,7 +139,7 @@ void NKA_Base<Vector, VectorSpace>::Relax()
 {
   if (pending_) {
     // Drop the initial slot where the pending_ vectors are stored.
-    ASSERT(first_v_ >= 0);
+    AMANZI_ASSERT(first_v_ >= 0);
 
     int new_v = first_v_;
     first_v_ = next_v_[first_v_];
@@ -187,7 +187,7 @@ void NKA_Base<Vector, VectorSpace>::Correction(const Vector& f, Vector &dir,
 {
   // UPDATE THE ACCELERATION SUBSPACE
   if (pending_) {
-    ASSERT(first_v_ != NKA_EOL);
+    AMANZI_ASSERT(first_v_ != NKA_EOL);
 
     auto wp = w_[first_v_];
     auto vp = v_[first_v_];
@@ -245,7 +245,7 @@ void NKA_Base<Vector, VectorSpace>::Correction(const Vector& f, Vector &dir,
   }
 
   if (pending_) {
-    ASSERT(first_v_ != NKA_EOL);
+    AMANZI_ASSERT(first_v_ != NKA_EOL);
     auto wp = w_[first_v_];
     double s = 0.;
     wp->Norm2(&s);
@@ -256,7 +256,7 @@ void NKA_Base<Vector, VectorSpace>::Correction(const Vector& f, Vector &dir,
       w_[k]->Norm2(&hk);
       hk = 0.;
       int ierr = wp->Dot(*w_[k], &hk);
-      ASSERT(!ierr);
+      AMANZI_ASSERT(!ierr);
       h_[first_v_][k] = hk;
       hk = 0.;
       w_[k]->Dot(*wp, &hk);
@@ -275,7 +275,7 @@ void NKA_Base<Vector, VectorSpace>::Correction(const Vector& f, Vector &dir,
       // Maintain at most MVEC_ vectors.
       if (++nvec > mvec_) {
         // Drop the last_v_ vector and update the free storage list.
-        ASSERT(last_v_ == k);
+        AMANZI_ASSERT(last_v_ == k);
         next_v_[last_v_] = free_v_;
         free_v_ = k;
         last_v_ = prev_v_[k];
@@ -305,7 +305,7 @@ void NKA_Base<Vector, VectorSpace>::Correction(const Vector& f, Vector &dir,
 
         // The current w nearly lies in the span of the previous vectors k vectors.
         // Drop the kth vector and keep the new one.
-        ASSERT(prev_v_[k] != NKA_EOL); // when k is the only vector, its diagonal is 1.  Internal error!
+        AMANZI_ASSERT(prev_v_[k] != NKA_EOL); // when k is the only vector, its diagonal is 1.  Internal error!
         next_v_[prev_v_[k]] = next_v_[k];
         if (next_v_[k] == NKA_EOL) {
           last_v_ = prev_v_[k];
@@ -322,7 +322,7 @@ void NKA_Base<Vector, VectorSpace>::Correction(const Vector& f, Vector &dir,
       }
     }
 
-    ASSERT(first_v_ != NKA_EOL);
+    AMANZI_ASSERT(first_v_ != NKA_EOL);
     subspace_ = true; // the acceleration subspace_ isn't empty
   }
 
@@ -331,7 +331,7 @@ void NKA_Base<Vector, VectorSpace>::Correction(const Vector& f, Vector &dir,
   Vector dir_update(dir);
 
   // Locate storage for the new vectors.
-  ASSERT(free_v_ != NKA_EOL);
+  AMANZI_ASSERT(free_v_ != NKA_EOL);
   int new_v = free_v_;
   free_v_ = next_v_[free_v_];
 
@@ -346,7 +346,7 @@ void NKA_Base<Vector, VectorSpace>::Correction(const Vector& f, Vector &dir,
     for (int j = first_v_; j != NKA_EOL; j = next_v_[j]) {
       double cj = 0.;
       int ierr = dir.Dot(*w_[j], &cj);
-      ASSERT(!ierr);
+      AMANZI_ASSERT(!ierr);
 
       for (int i = first_v_; i != j; i = next_v_[i]) {
         cj -= h_[j][i] * c[i];

@@ -427,7 +427,7 @@ void MFD3D_CrouzeixRaviart::ProjectorCell_HO_(
     const Projectors::Type type, bool is_harmonic, 
     const std::shared_ptr<DenseVector>& moments, VectorPolynomial& uc)
 {
-  ASSERT(d_ == 2);
+  AMANZI_ASSERT(d_ == 2);
 
   Entity_ID_List faces;
   mesh_->cell_get_faces(c, &faces);
@@ -496,7 +496,7 @@ void MFD3D_CrouzeixRaviart::ProjectorCell_HO_(
       }
     }
     else if (ndof_c > 0 && !is_harmonic) {
-      ASSERT(ndof_c == moments->NumRows());
+      AMANZI_ASSERT(ndof_c == moments->NumRows());
       for (int n = 0; n < ndof_c; ++n) {
         vdof(row + n) = (*moments)(n);
       }
@@ -579,7 +579,7 @@ void MFD3D_CrouzeixRaviart::ProjectorGradientCell_(
     const Projectors::Type type, bool is_harmonic, 
     const std::shared_ptr<DenseVector>& moments, MatrixPolynomial& uc)
 {
-  ASSERT(d_ == 2);
+  AMANZI_ASSERT(d_ == 2);
 
   Entity_ID_List faces;
   std::vector<int> dirs;

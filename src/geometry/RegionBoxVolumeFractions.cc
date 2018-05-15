@@ -212,7 +212,7 @@ double RegionBoxVolumeFractions::intersect(
       volume *= jacobian_ / 6;
     }
   } else {
-    ASSERT(0);
+    AMANZI_ASSERT(0);
   }
 
   return volume;

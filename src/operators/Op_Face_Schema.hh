@@ -57,7 +57,7 @@ class Op_Face_Schema : public Op {
   }
 
   // incomplete members
-  virtual void Rescale(const CompositeVector& scaling) { ASSERT(0); } 
+  virtual void Rescale(const CompositeVector& scaling) { AMANZI_ASSERT(0); } 
 };
 
 }  // namespace Operators

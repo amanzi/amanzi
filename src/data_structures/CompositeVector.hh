@@ -391,7 +391,7 @@ public:
 
   int Index_(std::string name) const {
     std::map<std::string, int>::const_iterator item = indexmap_.find(name);
-    ASSERT(item != indexmap_.end());
+    AMANZI_ASSERT(item != indexmap_.end());
     return item->second;
   }
 

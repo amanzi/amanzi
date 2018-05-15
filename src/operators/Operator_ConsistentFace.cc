@@ -31,7 +31,7 @@ namespace Operators {
 int Operator_ConsistentFace::ApplyMatrixFreeOp(const Op_Cell_FaceCell& op,
                                      const CompositeVector& X, CompositeVector& Y) const
 {
-  ASSERT(op.matrices.size() == ncells_owned);
+  AMANZI_ASSERT(op.matrices.size() == ncells_owned);
 
   Y.PutScalarGhosted(0.);
   X.ScatterMasterToGhosted();
@@ -59,7 +59,7 @@ int Operator_ConsistentFace::ApplyMatrixFreeOp(const Op_Cell_FaceCell& op,
 
       for (int n=0; n!=nfaces; ++n) {
         Yf[0][faces[n]] += av(n);
-        ASSERT(std::abs(av(n)) < 1.e20);
+        AMANZI_ASSERT(std::abs(av(n)) < 1.e20);
       }
     } 
   }
@@ -95,7 +95,7 @@ void Operator_ConsistentFace::SymbolicAssembleMatrixOp(const Op_Cell_FaceCell& o
     }
     ierr |= graph.InsertMyIndices(nfaces, lid_r, nfaces, lid_c);
   }
-  ASSERT(!ierr);
+  AMANZI_ASSERT(!ierr);
 }
 
 
@@ -107,7 +107,7 @@ void Operator_ConsistentFace::AssembleMatrixOp(const Op_Cell_FaceCell& op,
                                      const SuperMap& map, MatrixFE& mat,
                                      int my_block_row, int my_block_col) const
 {
-  ASSERT(op.matrices.size() == ncells_owned);
+  AMANZI_ASSERT(op.matrices.size() == ncells_owned);
 
   int lid_r[OPERATOR_MAX_FACES];
   int lid_c[OPERATOR_MAX_FACES];
@@ -133,7 +133,7 @@ void Operator_ConsistentFace::AssembleMatrixOp(const Op_Cell_FaceCell& op,
       ierr |= mat.SumIntoMyValues(lid_r[n], nfaces, vals, lid_c);
     }
   }
-  ASSERT(!ierr);
+  AMANZI_ASSERT(!ierr);
 }
 
 }  // namespace Operators
