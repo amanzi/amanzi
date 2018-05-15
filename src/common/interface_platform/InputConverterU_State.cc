@@ -66,11 +66,13 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
   rho_ = GetTextContentD_(node, "kg/m^3");
   out_ic.sublist("fluid_density").set<double>("value", rho_);
 
-  out_ic.sublist("mass_density_liquid").sublist("function").sublist("All")
+  out_ev.sublist("mass_density_liquid").sublist("function").sublist("All")
       .set<std::string>("region", "All")
       .set<std::string>("component", "cell")
       .sublist("function").sublist("function-constant")
       .set<double>("value", rho_);
+  out_ev.sublist("mass_density_liquid")
+        .set<std::string>("field evaluator type", "independent variable");
 
   // --- region specific initial conditions from material properties
   std::map<std::string, int> reg2mat;

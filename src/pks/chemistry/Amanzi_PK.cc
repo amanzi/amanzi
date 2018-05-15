@@ -76,7 +76,7 @@ Amanzi_PK::Amanzi_PK(Teuchos::ParameterList& pk_tree,
   tcc_key_ = Keys::getKey(domain_name_, "total_component_concentration"); 
   poro_key_ = cp_list_->get<std::string>("porosity key", Keys::getKey(domain_name_, "porosity"));
   saturation_key_ = cp_list_->get<std::string>("saturation key", Keys::getKey(domain_name_, "saturation_liquid"));
-  fluid_den_key_ = cp_list_->get<std::string>("fluid density key", Keys::getKey(domain_name_, "fluid_density"));
+  fluid_den_key_ = cp_list_->get<std::string>("fluid density key", Keys::getKey(domain_name_, "mass_density_liquid"));
 
   min_vol_frac_key_ = Keys::getKey(domain_name_,"mineral_volume_fractions");
   min_ssa_key_ = Keys::getKey(domain_name_,"mineral_specific_surface_area");
@@ -120,7 +120,7 @@ Amanzi_PK::Amanzi_PK(Teuchos::ParameterList& pk_tree,
   number_total_sorbed_ = number_aqueous_components_;
 
   // verbosity object
-  vo_ = Teuchos::rcp(new VerboseObject("Chem::Amanzi" + domain_name_, *cp_list_)); 
+  vo_ = Teuchos::rcp(new VerboseObject("Amanzi_PK:" + domain_name_, *cp_list_)); 
   chem_out = &*vo_;
 }
 
@@ -557,16 +557,9 @@ void Amanzi_PK::CopyCellStateToBeakerStructures(
   // copy data from state arrays into the beaker parameters
   const Epetra_MultiVector& porosity = *S_->GetFieldData(poro_key_)->ViewComponent("cell", true);
   const Epetra_MultiVector& water_saturation = *S_->GetFieldData(saturation_key_)->ViewComponent("cell", true);
+  const Epetra_MultiVector& fluid_density = *S_->GetFieldData(fluid_den_key_)->ViewComponent("cell", true);
 
-  double water_density(998.2);
-  if (S_->GetField(fluid_den_key_)->type() == Amanzi::CONSTANT_SCALAR) {
-    water_density = *S_->GetScalarData(fluid_den_key_);
-  } else if (S_->GetField(fluid_den_key_)->type() == Amanzi::COMPOSITE_VECTOR_FIELD) {
-    const Epetra_MultiVector& fl_den = *S_->GetFieldData(fluid_den_key_)->ViewComponent("cell", true);
-    water_density = fl_den[0][cell_id]; 
-  }      
-
-  beaker_parameters_.water_density = water_density;
+  beaker_parameters_.water_density = fluid_density[0][cell_id];
   beaker_parameters_.porosity = porosity[0][cell_id];
   beaker_parameters_.saturation = water_saturation[0][cell_id];
   beaker_parameters_.volume = mesh_->cell_volume(cell_id);

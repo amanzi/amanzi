@@ -106,6 +106,7 @@
 #                - note alquimia 1.0.5 == xsdk-0.3.0
 #                - pflotran release/xsdk-0.3.0
 #                - update PETSc 3.8.2
+#  0.95.1        - update OpenMPI to 3.0.1
 
 include(CMakeParseArguments)
 
@@ -185,14 +186,14 @@ set(XERCES_MD5_SUM        7b1394c32abbdd87841d94a8404c2ac6)
 #
 # TPL: OpenMPI
 #
-set(OpenMPI_VERSION_MAJOR 2)
-set(OpenMPI_VERSION_MINOR 1)
-set(OpenMPI_VERSION_PATCH 2)
+set(OpenMPI_VERSION_MAJOR 3)
+set(OpenMPI_VERSION_MINOR 0)
+set(OpenMPI_VERSION_PATCH 1)
 set(OpenMPI_VERSION ${OpenMPI_VERSION_MAJOR}.${OpenMPI_VERSION_MINOR}.${OpenMPI_VERSION_PATCH})
-set(OpenMPI_URL_STRING     "https://www.open-mpi.org/software/ompi/v2.1/downloads/")
+set(OpenMPI_URL_STRING     "https://www.open-mpi.org/software/ompi/v3.0/downloads/")
 set(OpenMPI_ARCHIVE_FILE   openmpi-${OpenMPI_VERSION}.tar.bz2)
 set(OpenMPI_SAVEAS_FILE    ${OpenMPI_ARCHIVE_FILE})
-set(OpenMPI_MD5_SUM        ff2e55cc529802e7b0738cf87acd3ee4)
+set(OpenMPI_MD5_SUM        565f5060e080b0871a64b295c3d4426a)
 
 #
 # TPL: MPICH

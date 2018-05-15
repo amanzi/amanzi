@@ -706,8 +706,10 @@ bool Transport_PK::AdvanceStep(double t_old, double t_new, bool reinit)
         AdvanceDonorUpwind(dt_cycle);
       } else if (spatial_disc_order == 2 && genericRK_) {
         AdvanceSecondOrderUpwindRKn(dt_cycle);
+      /* DEPRECATED 
       } else if (spatial_disc_order == 2 && temporal_disc_order == 1) {
         AdvanceSecondOrderUpwindRK1(dt_cycle);
+      */
       } else if (spatial_disc_order == 2 && temporal_disc_order == 2) {
         AdvanceSecondOrderUpwindRK2(dt_cycle);
       }
@@ -1235,9 +1237,11 @@ void Transport_PK::AdvanceDonorUpwindNonManifold(double dt_cycle)
 
 
 /* ******************************************************************* 
+*                         DEPRECATED
 * Advance each component independently due to different field 
 * reconstruction. This routine uses first-order time integrator. 
 ******************************************************************* */
+/*
 void Transport_PK::AdvanceSecondOrderUpwindRK1(double dt_cycle)
 {
   dt_ = dt_cycle;  // overwrite the maximum stable transport step
@@ -1278,6 +1282,7 @@ void Transport_PK::AdvanceSecondOrderUpwindRK1(double dt_cycle)
     VV_CheckGEDproperty(*tcc_tmp->ViewComponent("cell"));
   }
 }
+*/
 
 
 /* ******************************************************************* 

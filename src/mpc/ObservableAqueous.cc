@@ -58,7 +58,9 @@ int ObservableAqueous::ComputeRegionSize()
     obs_planar_ = true;
   }
 
-  if (variable_ == "aqueous mass flow rate" || variable_ == "aqueous volumetric flow rate") {  // flux needs faces
+  if (variable_ == "aqueous mass flow rate" ||
+      variable_ == "aqueous volumetric flow rate" ||
+      variable_ == "fractures aqueous volumetric flow rate") {  // flux needs faces
     region_size_ = mesh_->get_set_size(region_,
                                        Amanzi::AmanziMesh::FACE,
                                        Amanzi::AmanziMesh::Parallel_type::OWNED);
@@ -86,7 +88,7 @@ int ObservableAqueous::ComputeRegionSize()
                                      &entity_ids_, &vofs_);
   }
          
-  // find global meshblocksize
+  // find global mesh block size
   int dummy = region_size_; 
   int global_mesh_block_size(0);
   mesh_->get_comm()->SumAll(&dummy, &global_mesh_block_size, 1);
@@ -219,7 +221,7 @@ void ObservableAqueous::ComputeObservation(
         mesh_->face_get_cells(f, Amanzi::AmanziMesh::Parallel_type::ALL, &cells);
 
         int sign, c = cells[0];
-        const AmanziGeometry::Point& face_normal = mesh_->face_normal(f, false, c, &sign);
+        const auto& normal = mesh_->face_normal(f, false, c, &sign);
         double area = mesh_->face_area(f);
 
         *value  += sign * darcy_flux[0][f] * density;
@@ -238,6 +240,31 @@ void ObservableAqueous::ComputeObservation(
     } else {
       msg << "Observations of \"aqueous mass flow rate\" and \"aqueous volumetric flow rate\""
           << " are only possible for Polygon, Plane and Boundary side sets";
+      Exceptions::amanzi_throw(msg);
+    }
+    unit = "kg/s";
+
+  // fractures
+  } else if (variable_ == "fractures aqueous volumetric flow rate") {
+    const Epetra_MultiVector& darcy_flux = *S.GetFieldData("darcy_flux")->ViewComponent("face");
+    const Epetra_MultiVector& aperture = *S.GetFieldData("fracture_aperture")->ViewComponent("cell");
+
+    if (obs_boundary_) {
+      Amanzi::AmanziMesh::Entity_ID_List cells;
+
+      for (int i = 0; i != region_size_; ++i) {
+        int f = entity_ids_[i];
+        mesh_->face_get_cells(f, Amanzi::AmanziMesh::Parallel_type::ALL, &cells);
+
+        int sign, c = cells[0];
+        const auto& normal = mesh_->face_normal(f, false, c, &sign);
+        double area = mesh_->face_area(f);
+
+        *value  += sign * darcy_flux[0][f] * aperture[0][c];
+        *volume += area * aperture[0][c];
+      }
+    } else {
+      msg << "Observation \"" << variable_ << "\" is only possible for boundary side sets";
       Exceptions::amanzi_throw(msg);
     }
     unit = "kg/s";

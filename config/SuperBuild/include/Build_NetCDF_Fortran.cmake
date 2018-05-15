@@ -19,7 +19,7 @@ amanzi_tpl_version_write(FILENAME ${TPL_VERSIONS_INCLUDE_FILE}
   VERSION ${NetCDF_Fortran_VERSION_MAJOR} ${NetCDF_Fortran_VERSION_MINOR} ${NetCDF_Fortran_VERSION_PATCH})
   
 # --- Patch original code
-set(NetCDF_Fortran_patch_file netcdf-fortran-osx.patch)
+set(NetCDF_Fortran_patch_file netcdf-fortran-osx.patch netcdf-fortran-intel.patch)
 set(NetCDF_Fortran_sh_patch ${NetCDF_Fortran_prefix_dir}/netcdf-fortran-patch-step.sh)
 configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/netcdf-fortran-patch-step.sh.in
                ${NetCDF_Fortran_sh_patch}

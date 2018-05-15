@@ -77,9 +77,10 @@ Teuchos::ParameterList InputConverterU::TranslateTransport_()
   }
 
   int poly_order(0);
-  node = GetUniqueElementByTagsString_("unstructured_controls, unstr_transport_controls, algorithm", flag);
+  std::string tags_default("unstructured_controls, unstr_transport_controls");
+  node = GetUniqueElementByTagsString_(tags_default + ", algorithm", flag);
   if (flag) {
-    std::string order = GetTextContentS_(node, "explicit first-order, explicit second-order");
+    std::string order = GetTextContentS_(node, "explicit first-order, explicit second-order, explicit, implicit");
     if (order == "explicit first-order") {
       out_list.set<int>("spatial discretization order", 1);
       out_list.set<int>("temporal discretization order", 1);
@@ -87,14 +88,23 @@ Teuchos::ParameterList InputConverterU::TranslateTransport_()
       out_list.set<int>("spatial discretization order", 2);
       out_list.set<int>("temporal discretization order", 2);
       poly_order = 1;
-    } else if (order == "explicit third-order") {
-      out_list.set<int>("spatial discretization order", 2);
-      out_list.set<int>("temporal discretization order", 3);
-      out_list.set<bool>("generic RK implementation", true);
-      poly_order = 1;
-    } else if (order == "explicit fourth-order") {
-      out_list.set<int>("spatial discretization order", 2);
-      out_list.set<int>("temporal discretization order", 4);
+    } else if (order == "explicit") {
+      int nspace(-1), ntime(-1);
+      node = GetUniqueElementByTagsString_(tags_default + ", spatial_order", flag);
+      if (flag) nspace = std::strtol(mm.transcode(node->getTextContent()), NULL, 10);
+
+      node = GetUniqueElementByTagsString_(tags_default + ", temporal_order", flag);
+      if (flag) ntime = std::strtol(mm.transcode(node->getTextContent()), NULL, 10);
+
+      if (nspace < 0 || nspace > 2 || ntime < 0 || ntime > 4) {
+        Errors::Message msg;
+        msg << "Transport algorithm=explicit requires spatial_order=1 or 2 "
+            << "and temporal_order=1,2,3, or 4.\n";
+        Exceptions::amanzi_throw(msg);
+      }
+
+      out_list.set<int>("spatial discretization order", nspace);
+      out_list.set<int>("temporal discretization order", ntime);
       out_list.set<bool>("generic RK implementation", true);
       poly_order = 1;
     }
