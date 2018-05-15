@@ -224,6 +224,8 @@ void ReconstructionCell::ApplyLimiter(Teuchos::RCP<Epetra_MultiVector> limiter)
   for (int c = 0; c < ncells_owned; c++) {
     for (int i = 0; i < dim; i++) (*grad)[i][c] *= (*limiter)[0][c];
   }
+
+  gradient_->ScatterMasterToGhosted("cell");
 }
 
 
