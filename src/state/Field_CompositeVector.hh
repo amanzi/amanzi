@@ -23,7 +23,7 @@ available here are provided for use in InitialConditions_ specs.
 * `"cells from file`" ``[string]`` **optional** If provided, read IC value for
   cells from a checkpoint file of this name.
 
-//* `"exodus file initialization`" ``[exodus-file-reader-spec]`` **optional** If provided, initialize data from an Exodus file.
+* `"exodus file initialization`" ``[exodus-file-reader-spec]`` **optional** If provided, initialize data from an Exodus file.
 
 
 * `"constant`" ``[double]`` **optional** If provided, set the IC to this value everywhere.
@@ -67,6 +67,12 @@ ONE OF:
 OR:
 * `"surface sidesets`" ``[Array(string)]`` List of the names for the case of multiple sidesets needed.
 END
+
+ExodusII file reader control:
+
+``[exodus-file-reader-spec]``
+* `"file`" ``[string]`` Filename
+* `"attributes`" ``[Array(string)]`` List of Exodus attributes to read, unclear when/if/how this works?
 
 */
 
