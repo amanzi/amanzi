@@ -65,7 +65,7 @@ MeshEmbeddedLogical::MeshEmbeddedLogical(const Epetra_MpiComm* comm,
   int nfaces_bg_owned = bg_mesh->num_entities(FACE, Parallel_type::OWNED);
   int nfaces_bg_used = bg_mesh->num_entities(FACE, Parallel_type::ALL);
   int nfaces_log = log_mesh->num_entities(FACE, Parallel_type::OWNED);
-  int nfaces_extra = face_cell_ids_.size();
+  int nfaces_extra = face_cell_ids.size();
   int nfaces_my_owned = nfaces_bg_owned + nfaces_log + nfaces_extra;
   int nfaces_my_used = nfaces_bg_used + nfaces_log + nfaces_extra;
 
@@ -86,7 +86,7 @@ MeshEmbeddedLogical::MeshEmbeddedLogical(const Epetra_MpiComm* comm,
                         face_cell_ids.end());
   for (int f=nfaces_log; f!=face_cell_ids_.size(); ++f) {
     // all new faces are logical,bg.  must remap the bg cell
-    face_cell_ids_[f][2] += ncells_log;
+    face_cell_ids_[f][1] += ncells_log;
   }
   // -- finally the bg-bg faces, insert and remap
   face_cell_ids_.insert(face_cell_ids_.end(), bg_mesh->face_cell_ids_.begin(),
@@ -150,6 +150,7 @@ MeshEmbeddedLogical::MeshEmbeddedLogical(const Epetra_MpiComm* comm,
   cell_face_ids_ = log_mesh->cell_face_ids_;
   cell_face_ids_.insert(cell_face_ids_.end(), bg_mesh->cell_face_ids_.begin(),
                         bg_mesh->cell_face_ids_.end());
+  ASSERT(cell_face_ids_.size() == ncells_my_used);
   for (int c=ncells_log; c!=cell_face_ids_.size(); ++c) {
     int n_faces = cell_face_ids_[c].size();
     for (int i=0; i!=n_faces; ++i) {
@@ -263,74 +264,79 @@ MeshEmbeddedLogical::init_maps() {
   exterior_face_importer_ =
     Teuchos::rcp(new Epetra_Import(*maps_owned_[BOUNDARY_FACE], *face_map));  
 
-  // ghosted maps: use the bg mesh to comm_unicate the new GIDs into their ghost values
+  // ghosted maps: use the bg mesh to communicate the new GIDs into their ghost values
   // CELL:
-  int ncells_bg_owned = bg_mesh_->num_entities(CELL, Parallel_type::OWNED);
-  int ncells_bg_used = bg_mesh_->num_entities(CELL, Parallel_type::ALL);
-  int ncells_log = log_mesh_->num_entities(CELL, Parallel_type::OWNED);
-  int ncells_my_used = num_entities(CELL, Parallel_type::ALL);
+  if (bg_mesh_->get_comm()->NumProc() == 1) {
+    maps_used_[CELL] = maps_owned_[CELL];
+    maps_used_[FACE] = maps_owned_[FACE];
+  } else {
+    int ncells_bg_owned = bg_mesh_->num_entities(CELL, Parallel_type::OWNED);
+    int ncells_bg_used = bg_mesh_->num_entities(CELL, Parallel_type::ALL);
+    int ncells_log = log_mesh_->num_entities(CELL, Parallel_type::OWNED);
+    int ncells_my_used = num_entities(CELL, Parallel_type::ALL);
   
-  // -- create a populate the owned GIDs
-  Epetra_IntVector bg_gids_owned_c(bg_mesh_->cell_map(false));
+    // -- create a populate the owned GIDs
+    Epetra_IntVector bg_gids_owned_c(bg_mesh_->cell_map(false));
 
-  Epetra_Map& my_cell_map = *maps_owned_[CELL];
-  for (int c=0; c!=ncells_bg_owned; ++c) {
-    bg_gids_owned_c[c] = my_cell_map.GID(c+ncells_log);
-  }
+    Epetra_Map& my_cell_map = *maps_owned_[CELL];
+    for (int c=0; c!=ncells_bg_owned; ++c) {
+      bg_gids_owned_c[c] = my_cell_map.GID(c+ncells_log);
+    }
+    
+    // -- create the map from owned to used
+    Epetra_Import cell_import(bg_mesh_->cell_map(true), bg_mesh_->cell_map(false));
 
-  // -- create the map from owned to used
-  Epetra_Import cell_import(bg_mesh_->cell_map(true), bg_mesh_->cell_map(false));
+    // -- create the used GIDs vector, comm_unicate
+    Epetra_IntVector bg_gids_used_c(bg_mesh_->cell_map(true));
+    bg_gids_used_c.Import(bg_gids_owned_c, cell_import, Insert);
 
-  // -- create the used GIDs vector, comm_unicate
-  Epetra_IntVector bg_gids_used_c(bg_mesh_->cell_map(true));
-  bg_gids_used_c.Import(bg_gids_owned_c, cell_import, Insert);
+    // -- create a GID list of the used components
+    Entity_ID_List cells_my_used(ncells_my_used);
+    for (int c=0; c!=ncells_log; ++c) {
+      cells_my_used[c] = my_cell_map.GID(c);
+    }
+    for (int c=0; c!=ncells_bg_used; ++c) {
+      cells_my_used[c+ncells_log] = bg_gids_used_c[c];
+    }
 
-  // -- create a GID list of the used components
-  Entity_ID_List cells_my_used(ncells_my_used);
-  for (int c=0; c!=ncells_log; ++c) {
-    cells_my_used[c] = my_cell_map.GID(c);
-  }
-  for (int c=0; c!=ncells_bg_used; ++c) {
-    cells_my_used[c+ncells_log] = bg_gids_used_c[c];
-  }
+    // -- create the map
+    maps_used_[CELL] = Teuchos::rcp(new Epetra_Map(-1, ncells_my_used,
+            &cells_my_used[0], 0, *comm_));
 
-  // -- create the map
-  maps_used_[CELL] = Teuchos::rcp(new Epetra_Map(-1, ncells_my_used,
-                                                 &cells_my_used[0], 0, *comm_));
-
-  // FACE:
-  int nfaces_bg_owned = bg_mesh_->num_entities(FACE, Parallel_type::OWNED);
-  int nfaces_bg_used = bg_mesh_->num_entities(FACE, Parallel_type::ALL);
-  int nfaces_my_used = face_cell_ids_.size();
-  int nfaces_log_extra = nfaces_my_used - nfaces_bg_used;
+    // FACE:
+    int nfaces_bg_owned = bg_mesh_->num_entities(FACE, Parallel_type::OWNED);
+    int nfaces_bg_used = bg_mesh_->num_entities(FACE, Parallel_type::ALL);
+    int nfaces_my_used = face_cell_ids_.size();
+    int nfaces_log_extra = nfaces_my_used - nfaces_bg_used;
   
-  // -- create a populate the owned GIDs
-  Epetra_IntVector bg_gids_owned_f(bg_mesh_->face_map(false));
+    // -- create a populate the owned GIDs
+    Epetra_IntVector bg_gids_owned_f(bg_mesh_->face_map(false));
 
-  Epetra_Map& my_face_map = *maps_owned_[FACE];
-  for (int f=0; f!=nfaces_bg_owned; ++f) {
-    bg_gids_owned_f[f] = my_face_map.GID(f+nfaces_log_extra);
+    Epetra_Map& my_face_map = *maps_owned_[FACE];
+    for (int f=0; f!=nfaces_bg_owned; ++f) {
+      bg_gids_owned_f[f] = my_face_map.GID(f+nfaces_log_extra);
+    }
+    
+    // -- create the map from owned to used
+    Epetra_Import face_import(bg_mesh_->face_map(true), bg_mesh_->face_map(false));
+
+    // -- create the used GIDs vector, comm_unicate
+    Epetra_IntVector bg_gids_used_f(bg_mesh_->face_map(true));
+    bg_gids_used_f.Import(bg_gids_owned_f, face_import, Insert);
+
+    // -- create a GID list of the used components
+    Entity_ID_List faces_my_used(nfaces_my_used);
+    for (int f=0; f!=nfaces_log_extra; ++f) {
+      faces_my_used[f] = my_face_map.GID(f);
+    }
+    for (int f=0; f!=nfaces_bg_used; ++f) {
+      faces_my_used[f+nfaces_log_extra] = bg_gids_used_f[f];
+    }
+    
+    // -- create the map
+    maps_used_[FACE] = Teuchos::rcp(new Epetra_Map(-1, nfaces_my_used,
+            &faces_my_used[0], 0, *comm_));
   }
-
-  // -- create the map from owned to used
-  Epetra_Import face_import(bg_mesh_->face_map(true), bg_mesh_->face_map(false));
-
-  // -- create the used GIDs vector, comm_unicate
-  Epetra_IntVector bg_gids_used_f(bg_mesh_->face_map(true));
-  bg_gids_used_f.Import(bg_gids_owned_f, face_import, Insert);
-
-  // -- create a GID list of the used components
-  Entity_ID_List faces_my_used(nfaces_my_used);
-  for (int f=0; f!=nfaces_log_extra; ++f) {
-    faces_my_used[f] = my_face_map.GID(f);
-  }
-  for (int f=0; f!=nfaces_bg_used; ++f) {
-    faces_my_used[f+nfaces_log_extra] = bg_gids_used_f[f];
-  }
-
-  // -- create the map
-  maps_used_[FACE] = Teuchos::rcp(new Epetra_Map(-1, nfaces_my_used,
-                                                 &faces_my_used[0], 0, *comm_));
 }
 
   

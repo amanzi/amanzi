@@ -30,11 +30,13 @@ by the equation:
 
 V_c = sum_{each face in c} length of cell-to-face connector * face area.
 
+``[mesh-logical-spec]``
+
 * `"cell volumes provided`" ``[bool]`` **false** If false, calculate via the
     above formula.  Otherwise each segment must provide the `"cell volume`" or
     `"cell volumes`" parameter described below.
 
-* `"segments`" ``[segment-spec]``  List of segment specs below:
+* `"segments`" ``[mesh-logical-segment-spec-list]``  List of segment specs below:
 
 Each segment consists of a collection of cells, and it is assumed that
 face-to-cell connectors within the segment are half of the cell length.  For
@@ -44,25 +46,27 @@ cell-to-face connectors must be specified:
 Cell volumes are either determined by the above formula if the `"cell volumes
 provided`" option is specified, or through the following option:
 
-* `"cell volume [m^3]`" ``[double]`` uniform volume of all cells
+``[mesh-logical-segment-spec]``
 
+ONE OF:
+* `"cell volume [m^3]`" ``[double]`` uniform volume of all cells
+OR:
 * `"cell volumes [m^3]`" ``[Array(double)]`` list of volumes
+END
 
 Cell lengths may be specified either as a list of cell lengths or as a segment
 length and a number of cells (describing uniform cell length).
 
+ONE OF:
 * `"cell lengths [m]`" ``[Array(double)]`` List of cell lengths.
-
 OR
-
 * `"segment length [m]`" ``[double]`` total length, [m]
 * `"number of cells`" ``[int]`` number of cells
-
 OR
-
 * `"segment begin point`" ``[Array(double)]`` The segment start point.
 * `"segment end point`" ``[Array(double)]`` The segment end point.
 * `"number of cells`" ``[int]`` number of cells
+END
 
 Note the order of checking is as above -- if both begin/end points and segment
 lengths are provided, segment lengths will be used as specified, while the
@@ -70,11 +74,11 @@ begin/end points will only be used for visualization.
 
 Face areas are specified through:
 
+ONE OF:
 * `"face area [m^2]`" ``[double]`` Face area of all faces in the segment.
-
 OR
-
 * `"face areas [m^2]`" ``[Array(double)]`` List of face areas.
+END
 
 Note that the number of faces, and hence the length of the list of face areas,
 depends upon how exactly tips are to be handled.  See below.
@@ -85,8 +89,6 @@ Orientation of the faces is given by:
     the face normals.  This could be exteneded to be an Array of vectors, but
     currently that is not supported.  Note this is only used if gravity is
     involved.
-
-OR
 
 If segment begin/end points are provided, the orientation is given by
 end-begin.
@@ -127,7 +129,7 @@ while still have the correct solution.
 Alternatively, cell centroids can be manually specified (note this is checked
 first):
 
-* `"cell centroids`" ``[Array(double)]`` A list of dimension * n_cells length,
+* `"cell centroids`" ``[Array(double)]`` **optional** A list of dimension * n_cells length,
     where the first d values specify cell 0's centroid, the next d specify cell
     1's centroid, etc.
 
@@ -222,10 +224,11 @@ class MeshLogicalFactory {
 
   
   MeshLogicalFactory(const Epetra_MpiComm* incomm_,
-                      const Teuchos::RCP<AmanziGeometry::GeometricModel>& gm) :
+                     const Teuchos::RCP<AmanziGeometry::GeometricModel>& gm,
+                     bool calculated_volume = true) :
     comm_(incomm_),
     gm_(gm),
-    calculated_volume_(true),
+    calculated_volume_(calculated_volume),
     tracking_centroids_(false)    
   {}
 

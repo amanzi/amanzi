@@ -12,15 +12,19 @@
 #include "MeshLogical.hh"
 #include "MeshLogicalFactory.hh"
 #include "Geometry.hh"
+#include "MeshLogicalAudit.hh"
 
 #include "demo_mesh.hh"
 
 void
-test_segment_regular(const Teuchos::RCP<Amanzi::AmanziMesh::Mesh>& m,
+test_segment_regular(const Teuchos::RCP<const Amanzi::AmanziMesh::Mesh>& m,
                      bool test_region) {
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::AmanziGeometry;
 
+  MeshLogicalAudit audit(m, std::cout);
+  CHECK(!audit.Verify());
+  
   CHECK_EQUAL(4, m->num_entities(CELL, Parallel_type::ALL));
   CHECK_EQUAL(5, m->num_entities(FACE, Parallel_type::ALL));
   CHECK_EQUAL(0.25, m->cell_volume(0));
@@ -87,6 +91,9 @@ test_segment_irregular(const Teuchos::RCP<Amanzi::AmanziMesh::Mesh>& m,
                      bool test_region) {
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::AmanziGeometry;
+  
+  MeshLogicalAudit audit(m, std::cout);
+  CHECK(!audit.Verify());
 
   Teuchos::RCP<const GeometricModel> gm_c = m->geometric_model();
   Teuchos::RCP<GeometricModel> gm = Teuchos::rcp_const_cast<GeometricModel>(gm_c);
@@ -118,6 +125,9 @@ test_Y(const Teuchos::RCP<Amanzi::AmanziMesh::Mesh>& m,
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::AmanziGeometry;
 
+  MeshLogicalAudit audit(m, std::cout);
+  CHECK(!audit.Verify());
+  
   CHECK_EQUAL(11, m->num_entities(CELL, Parallel_type::ALL));
   CHECK_EQUAL(15, m->num_entities(FACE, Parallel_type::ALL));
   
@@ -177,7 +187,12 @@ TEST(MESH_LOGICAL_SEGMENT_IRREGULAR_WITH_SETS)
 // updates to a Y-mesh
 TEST(MESH_LOGICAL_Y_DEFORMED)
 {
+  using namespace Amanzi::AmanziMesh;
   auto mesh = Amanzi::Testing::demoMeshLogicalYManual();
+
+  MeshLogicalAudit audit(mesh, std::cout);
+  CHECK(!audit.Verify());
+
 
   std::vector<double> cv, fa;
   std::vector<std::vector<double> > cf_lens;
@@ -211,8 +226,6 @@ TEST(MESH_LOGICAL_Y_DEFORMED)
 
   CHECK_CLOSE(1.5e-4, mesh->face_area(0), 1.e-10);
   CHECK_CLOSE(2.0 * 2.0 * 0.25*1.e-4, mesh->cell_volume(0), 1.e-10);
-  
-           
 }
 
 
@@ -226,13 +239,17 @@ TEST(MESH_LOGICAL_Y_XML_WITH_SETS)
 // Evaluates a Y-mesh embedded in another mesh
 TEST(MESH_EMBEDDED_Y)
 {
-  Amanzi::Testing::demoMeshLogicalYEmbedded();
+  auto m = Amanzi::Testing::demoMeshLogicalYEmbedded();
+  Amanzi::AmanziMesh::MeshLogicalAudit audit(m, std::cout);
+  CHECK(!audit.Verify());
 }
 
 // subgrid model
 TEST(MESH_SUBGRID_VARIABLE_TAU)
 {
-  Amanzi::Testing::demoMeshLogicalYFromXML("subgrid mesh");
+  auto m = Amanzi::Testing::demoMeshLogicalYFromXML("subgrid mesh");
+  Amanzi::AmanziMesh::MeshLogicalAudit audit(m, std::cout);
+  CHECK(!audit.Verify());
 }
 
 

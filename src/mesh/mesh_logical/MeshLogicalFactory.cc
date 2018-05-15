@@ -30,7 +30,7 @@ by the equation:
 
 V_c = sum_{each face in c} length of cell-to-face connector * face area.
 
-* `"cell volumes provided`" ``[bool]`` **false** If false, calculate via the
+* `"calculate cell volumes from lengths and areas`" ``[bool]`` **true** If true, calculate via the
     above formula.  Otherwise each segment must provide the `"cell volume`" or
     `"cell volumes`" parameter described below.
 
@@ -230,7 +230,12 @@ Teuchos::RCP<MeshLogical>
 MeshLogicalFactory::Create(Teuchos::ParameterList& plist) {
   // set global options
   tracking_centroids_ = plist.get<bool>("infer cell centroids", false);
-  calculated_volume_ = !plist.get<bool>("cell volumes provided", false);
+  if (plist.isParameter("calculate cell volumes from lengths and areas"))
+    calculated_volume_ = plist.get<bool>("calculate cell volumes from lengths and areas");
+  if (plist.isParameter("cell volumes provided")) {
+    Errors::Message msg("MeshLogicalFactory: deprecated parameter \"cell volumes provided\", please use \"calculate cell volumes from lengths and areas\".");
+    Exceptions::amanzi_throw(msg);
+  }
 
   // Create each segment
   // - map to store metadata about previously inserted segments

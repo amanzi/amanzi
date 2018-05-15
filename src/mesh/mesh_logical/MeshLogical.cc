@@ -111,9 +111,26 @@ MeshLogical::MeshLogical(const Epetra_MpiComm *comm,
 
   logical_ = true;
   
-  ASSERT(face_cell_ids.size() == face_cell_lengths.size());
-  ASSERT(face_cell_ids.size() == face_area_normals.size());
+  if (face_cell_ids.size() != face_cell_lengths.size()) {
+    Errors::Message mesg("MeshLogical created with bad data");
+    Exceptions::amanzi_throw(mesg);
+  }
+  if (face_cell_ids.size() != face_area_normals.size()) {
+    Errors::Message mesg("MeshLogical created with bad data");
+    Exceptions::amanzi_throw(mesg);
+  }
+  if (cell_centroids != nullptr && cell_centroids->size() != cell_volumes.size()) {
+    Errors::Message mesg("MeshLogical created with bad data");
+    Exceptions::amanzi_throw(mesg);
+  }
+  for (int f=0; f!=face_cell_ids.size(); ++f) {
+    if (face_cell_ids[f].size() != face_cell_lengths[f].size()) {
+      Errors::Message mesg("MeshLogical created with bad data");
+      Exceptions::amanzi_throw(mesg);
+    }
+  }
 
+  
   set_comm(comm);
   set_space_dimension(3);
   set_manifold_dimension(1);
@@ -827,6 +844,45 @@ MeshLogical::compute_face_geometric_quantities_() const {
   Exceptions::amanzi_throw(mesg);
   return -1;
 }
+
+
+//
+// Note this works on Mesh, but is less useful for a general mesh
+// --------------------------------------------------------------------------------
+bool viewMeshLogical(const Mesh& m, std::ostream& os) {
+  if (m.get_comm()->NumProc() != 1) {
+    return true;
+  }
+
+  os << "cell_centroids, volumes =" << std::endl;
+  for (int c=0; c!=m.num_entities(CELL, Parallel_type::OWNED); ++c) {
+    os << m.cell_centroid(c) << " " << m.cell_volume(c) << std::endl;
+  }
+  os << "face_connections, areas =" << std::endl;
+  for (int f=0; f!=m.num_entities(FACE, Parallel_type::OWNED); ++f) {
+    AmanziMesh::Entity_ID_List fcells;
+    m.face_get_cells(f, Parallel_type::ALL, &fcells);
+    for (auto c : fcells) os << c << " ";
+    os << m.face_area(f) << std::endl;
+  }
+
+  os << "cell_sets =" << std::endl;
+  auto gm = m.geometric_model();
+  for (auto r = gm->RegionBegin(); r!=gm->RegionEnd(); ++r) {
+    if ((*r)->type() == AmanziGeometry::ENUMERATED) {
+      AmanziMesh::Entity_ID_List set;
+      m.get_set_entities((*r)->id(), AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED, &set);
+      os << (*r)->name() << " ";
+      for (auto e : set) os << e << " ";
+      os << std::endl;
+    }
+  }
+
+  return false;
+  
+}
+  
+
 
 }  // namespace AmanziMesh
 }  // namespace Amanzi
