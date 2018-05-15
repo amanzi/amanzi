@@ -33,10 +33,8 @@ Other variable names, typically not set as the default is basically always good:
 
 Discretization control:
 
-//* `"diffusion`" ``[pde-diffusion-spec]`` An PDE_Diffusion_ spec describing the (forward) diffusion operator
 * `"diffusion`" ``[list]`` An PDE_Diffusion_ spec describing the (forward) diffusion operator
 
-//* `"diffusion preconditioner`" ``[pde-diffusion-spec]`` An PDE_Diffusion_ spec describing the diffusive parts of the preconditioner.
 * `"diffusion preconditioner`" ``[list]`` An PDE_Diffusion_ spec describing the diffusive parts of the preconditioner.
 
 Time integration and timestep control:
@@ -68,7 +66,7 @@ Error control:
 
 Boundary conditions:
 
-//* `"boundary conditions`" ``[surface-flow-bc-spec]`` Defaults to Neuman, 0 normal flux.
+xx* `"boundary conditions`" ``[surface-flow-bc-spec]`` Defaults to Neuman, 0 normal flux.
 
 
 May inherit options from PKPhysicalBDFBase_.

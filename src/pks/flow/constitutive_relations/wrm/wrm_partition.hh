@@ -1,5 +1,5 @@
 /* -*-  mode: c++; indent-tabs-mode: nil -*- */
-/*! A collection of WRMs along with a Mesh Partition.
+//! A collection of WRMs along with a Mesh Partition.
 
 /*
   ATS is released under the three-clause BSD License. 

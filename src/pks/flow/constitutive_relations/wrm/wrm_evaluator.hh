@@ -1,5 +1,5 @@
 /* -*-  mode: c++; indent-tabs-mode: nil -*- */
-/*! WRMEvaluator is an algebraic evaluator for liquid and gas saturations.
+//! WRMEvaluator is an algebraic evaluator for liquid and gas saturations.
 
 
 /*
