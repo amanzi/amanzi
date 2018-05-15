@@ -33,7 +33,7 @@ EOSEvaluator::EOSEvaluator(Teuchos::ParameterList& plist) :
   } else if (mode == "both") {
     mode_ = EOS_MODE_BOTH;
   } else {
-    ASSERT(0);
+    AMANZI_ASSERT(0);
   }
 
   // my keys
@@ -79,7 +79,7 @@ EOSEvaluator::EOSEvaluator(Teuchos::ParameterList& plist) :
   }
 
   // Construct my EOS model
-  ASSERT(plist_.isSublist("EOS parameters"));
+  AMANZI_ASSERT(plist_.isSublist("EOS parameters"));
   EOSFactory eos_fac;
   eos_ = eos_fac.CreateEOS(plist_.sublist("EOS parameters"));
 };
@@ -136,7 +136,7 @@ void EOSEvaluator::EvaluateField_(
       int count = dens_v.MyLength();
       for (int id = 0; id != count; ++id) {
         dens_v[0][id] = eos_->MolarDensity(temp_v[0][id], pres_v[0][id]);
-        ASSERT(dens_v[0][id] > 0.0);
+        AMANZI_ASSERT(dens_v[0][id] > 0.0);
       }
     }
   }
@@ -160,7 +160,7 @@ void EOSEvaluator::EvaluateField_(
         int count = dens_v.MyLength();
         for (int id = 0; id != count; ++id) {
           dens_v[0][id] = eos_->MassDensity(temp_v[0][id], pres_v[0][id]);
-          ASSERT(dens_v[0][id] > 0.);
+          AMANZI_ASSERT(dens_v[0][id] > 0.);
         }
       }
     }
@@ -271,7 +271,7 @@ void EOSEvaluator::EvaluateFieldPartialDerivative_(
     }
 
   } else {
-    ASSERT(0);
+    AMANZI_ASSERT(0);
   }
 }
 

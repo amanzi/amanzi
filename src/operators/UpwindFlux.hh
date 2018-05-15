@@ -83,8 +83,8 @@ void UpwindFlux<Model>::Compute(
     const CompositeVector& flux, const CompositeVector& solution,
     const std::vector<int>& bc_model, CompositeVector& field)
 {
-  ASSERT(field.HasComponent("cell"));
-  ASSERT(field.HasComponent(face_comp_));
+  AMANZI_ASSERT(field.HasComponent("cell"));
+  AMANZI_ASSERT(field.HasComponent(face_comp_));
 
   field.ScatterMasterToGhosted("cell");
   flux.ScatterMasterToGhosted("face");
@@ -154,8 +154,8 @@ void UpwindFlux<Model>::Compute2(
     CompositeVector& field,
     double (Model::*Value)(int, double) const)
 {
-  ASSERT(field.HasComponent("cell"));
-  ASSERT(field.HasComponent(face_comp_));
+  AMANZI_ASSERT(field.HasComponent("cell"));
+  AMANZI_ASSERT(field.HasComponent(face_comp_));
 
   field.ScatterMasterToGhosted("cell");
   flux.ScatterMasterToGhosted("face");

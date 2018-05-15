@@ -30,7 +30,7 @@ TCMEvaluator_OnePhase::TCMEvaluator_OnePhase(Teuchos::ParameterList& plist) :
   temperature_key_ = plist_.get<std::string>("temperature key", "temperature");
   dependencies_.insert(temperature_key_);
 
-  ASSERT(plist_.isSublist("thermal conductivity parameters"));
+  AMANZI_ASSERT(plist_.isSublist("thermal conductivity parameters"));
   Teuchos::ParameterList sublist = plist_.sublist("thermal conductivity parameters");
   tc_ = Teuchos::rcp(new EOS::ThermalConductivity_Water(sublist));
 
@@ -82,7 +82,7 @@ void TCMEvaluator_OnePhase::EvaluateFieldPartialDerivative_(
     const Teuchos::Ptr<State>& S,
     Key wrt_key, const Teuchos::Ptr<CompositeVector>& result)
 {
-  ASSERT(0);
+  AMANZI_ASSERT(0);
 }
 
 }  // namespace Energy

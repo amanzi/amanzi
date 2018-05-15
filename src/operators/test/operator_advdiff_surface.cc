@@ -64,7 +64,7 @@ TEST(ADVECTION_DIFFUSION_SURFACE) {
 
   FrameworkPreference pref;
   pref.clear();
-  pref.push_back(MSTK);
+  pref.push_back(Framework::MSTK);
 
   MeshFactory meshfactory(&comm);
   meshfactory.preference(pref);

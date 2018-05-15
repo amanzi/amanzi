@@ -137,7 +137,7 @@ double NumericalIntegration::IntegratePolynomialsEdge(
     k += polys[i]->order();
   }
   int m = k / 2;
-  ASSERT(m < 6);
+  AMANZI_ASSERT(m < 6);
 
   AmanziGeometry::Point xm(d_);
 
@@ -304,7 +304,7 @@ void NumericalIntegration::IntegrateMonomialsEdge_(
   // minimal quadrature rule
   int k = monomials.order();
   int m = k / 2;
-  ASSERT(m < 6);
+  AMANZI_ASSERT(m < 6);
 
   for (auto it = monomials.begin(); it.end() <= k; ++it) {
     const int* idx = it.multi_index();

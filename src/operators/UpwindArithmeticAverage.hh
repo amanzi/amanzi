@@ -78,8 +78,8 @@ void UpwindArithmeticAverage<Model>::Compute(
     const CompositeVector& flux, const CompositeVector& solution,
     const std::vector<int>& bc_model, CompositeVector& field)
 {
-  ASSERT(field.HasComponent("cell"));
-  ASSERT(field.HasComponent(face_comp_));
+  AMANZI_ASSERT(field.HasComponent("cell"));
+  AMANZI_ASSERT(field.HasComponent(face_comp_));
 
   field.ScatterMasterToGhosted("cell");
 

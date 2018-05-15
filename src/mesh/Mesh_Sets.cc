@@ -34,7 +34,7 @@ void Mesh::get_set_entities_box_vofs_(
     std::vector<Entity_ID>* setents,
     std::vector<double>* volume_fractions) const
 {
-  ASSERT(volume_fractions != NULL);
+  AMANZI_ASSERT(volume_fractions != NULL);
 
   setents->clear();
   volume_fractions->clear();

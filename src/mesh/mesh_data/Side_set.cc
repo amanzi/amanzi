@@ -40,7 +40,7 @@ void Side_set::take_data_from (std::vector<int>& element_list,
     // node_count_list_.swap (node_count_list);
     // node_factors_.swap (node_factors);
 
-    ASSERT (valid ());
+    AMANZI_ASSERT (valid ());
 
 }
 

@@ -121,17 +121,17 @@ TEST(FE_MATRIX_NEAREST_NEIGHBOR_TPFA) {
     vals.Random();
     
     ierr |= matrix.SumIntoMyValues(c, neighbor_cells.size(), &vals[0], &neighbor_cells[0]);
-    ASSERT(!ierr);
+    AMANZI_ASSERT(!ierr);
     CHECK(!ierr);
 
     std::vector<int> neighbor_cell_gids(neighbor_cells.size());
     for (int n=0; n!=neighbor_cells.size(); ++n) {
       neighbor_cell_gids[n] = cell_map_ghosted->GID(neighbor_cells[n]);
-      ASSERT(neighbor_cell_gids[n] >= 0);
+      AMANZI_ASSERT(neighbor_cell_gids[n] >= 0);
     }
-    ASSERT(cell_map_ghosted->GID(c) >= 0);
+    AMANZI_ASSERT(cell_map_ghosted->GID(c) >= 0);
     ierr |= control.SumIntoGlobalValues(cell_map_ghosted->GID(c), neighbor_cells.size(), &vals[0], &neighbor_cell_gids[0]);
-    ASSERT(!ierr);
+    AMANZI_ASSERT(!ierr);
     CHECK(!ierr);
   }
 
@@ -235,7 +235,7 @@ TEST(FE_MATRIX_FACE_FACE) {
     Epetra_IntSerialDenseVector face_gids(faces.size());
     for (int n=0; n!=faces.size(); ++n) {
       face_gids[n] = face_map_ghosted->GID(faces[n]);
-      ASSERT(face_gids[n] > -1);
+      AMANZI_ASSERT(face_gids[n] > -1);
     }
 
     Epetra_SerialDenseMatrix vals(faces.size(), faces.size());

@@ -873,8 +873,8 @@ Polynomial DG_Modal::CalculatePolynomial(int c, const DenseVector& coefs) const
     return poly;
   }
 
-  ASSERT(scales_a_.size() != 0);
-  ASSERT(scales_a_[c].size() == coefs.NumRows());
+  AMANZI_ASSERT(scales_a_.size() != 0);
+  AMANZI_ASSERT(scales_a_[c].size() == coefs.NumRows());
 
   Polynomial poly(scales_a_[c]);
   poly.set_origin(mesh_->cell_centroid(c));

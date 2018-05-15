@@ -565,7 +565,7 @@ void TensorToVector(const Tensor& T, DenseVector& v) {
 }
 
 void VectorToTensor(const DenseVector& v, Tensor& T) {
-  ASSERT(v.NumRows() == T.size() * T.size());
+  AMANZI_ASSERT(v.NumRows() == T.size() * T.size());
 
   const double* data1 = v.Values(); 
   double* data2 = T.data(); 

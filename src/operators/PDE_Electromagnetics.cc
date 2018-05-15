@@ -44,7 +44,7 @@ void PDE_Electromagnetics::SetTensorCoefficient(
   K_ = K;
 
   if (local_op_schema_ == OPERATOR_SCHEMA_BASE_CELL + OPERATOR_SCHEMA_DOFS_EDGE) {
-    if (K_ != Teuchos::null && K_.get()) ASSERT(K_->size() == ncells_owned);
+    if (K_ != Teuchos::null && K_.get()) AMANZI_ASSERT(K_->size() == ncells_owned);
   }
 }
 
@@ -328,7 +328,7 @@ void PDE_Electromagnetics::Init_(Teuchos::ParameterList& plist)
     std::string name = "Electromagnetics: CELL_NODE";
     local_op_ = Teuchos::rcp(new Op_Cell_Node(name, mesh_));
   } else {
-    ASSERT(0);
+    AMANZI_ASSERT(0);
   }
   global_op_->OpPushBack(local_op_);
 

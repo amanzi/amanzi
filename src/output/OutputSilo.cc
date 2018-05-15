@@ -53,7 +53,7 @@ OutputSilo::~OutputSilo() {
 void
 OutputSilo::InitializeCycle(double time, int cycle) {
   // check not open
-  ASSERT(fid_ == NULL);
+  AMANZI_ASSERT(fid_ == NULL);
   if (fid_) {
     CloseFile_();
   }
@@ -105,7 +105,7 @@ OutputSilo::InitializeCycle(double time, int cycle) {
   int ierr = DBPutUcdmesh(fid_, "mesh", mesh_->vis_mesh().space_dimension(),
                           (char const* const*)coordnames, coords,
                           nnodes, ncells, 0, 0, DB_DOUBLE, optlist);
-  ASSERT(!ierr);
+  AMANZI_ASSERT(!ierr);
 
   // -- Construct the silo face-node info.
   // We rely on the mesh having the faces nodes arranged counter-clockwise
@@ -150,7 +150,7 @@ OutputSilo::InitializeCycle(double time, int cycle) {
                           ncells, &cell_face_counts[0],
                           cell_face_list.size(), &cell_face_list[0],
                           0, 0, ncells-1, optlist);
-  ASSERT(!ierr);
+  AMANZI_ASSERT(!ierr);
                           
   // -- clean up (could be done on finalize if needed? --etc)
   DBFreeOptlist(optlist);
@@ -174,12 +174,12 @@ OutputSilo::WriteVector(const Epetra_Vector& vec,
     int ierr = DBPutUcdvar1(fid_, FixName_(name).c_str(), "mesh",
                             (void*)&vec[0], vec.MyLength(), NULL, 0,
                             DB_DOUBLE, DB_ZONECENT, NULL);
-    ASSERT(!ierr);
+    AMANZI_ASSERT(!ierr);
   } else if (vec.MyLength() == mesh_->vis_mesh().num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::OWNED)) {
     int ierr = DBPutUcdvar1(fid_, FixName_(name).c_str(), "mesh",
                             (void*)&vec[0], vec.MyLength(), NULL, 0,
                             DB_DOUBLE, DB_NODECENT, NULL);
-    ASSERT(!ierr);
+    AMANZI_ASSERT(!ierr);
   } else {
     Errors::Message msg("OutputSilo only knows how to write CELL and NODE based quantities.");
     Exceptions::amanzi_throw(msg);
@@ -190,7 +190,7 @@ OutputSilo::WriteVector(const Epetra_Vector& vec,
 void
 OutputSilo::WriteMultiVector(const Epetra_MultiVector& vec,
                              const std::vector<std::string>& names) const {
-  ASSERT(vec.NumVectors() == names.size());
+  AMANZI_ASSERT(vec.NumVectors() == names.size());
   for (int i=0; i!=vec.NumVectors(); ++i) {
     WriteVector(*vec(i), names[i]);
   }
@@ -199,18 +199,18 @@ OutputSilo::WriteMultiVector(const Epetra_MultiVector& vec,
 // can we template this?
 void
 OutputSilo::WriteAttribute(const double& val, const std::string& name) const {
-  ASSERT(0);
+  AMANZI_ASSERT(0);
 }
 
 void
 OutputSilo::WriteAttribute(const int& val, const std::string& name) const {
-  ASSERT(0);
+  AMANZI_ASSERT(0);
 }
 
 
 void
 OutputSilo::WriteAttribute(const std::string& val, const std::string& name) const {
-  ASSERT(0);
+  AMANZI_ASSERT(0);
 }
 
 

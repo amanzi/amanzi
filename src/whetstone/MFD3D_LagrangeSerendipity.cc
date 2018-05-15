@@ -41,7 +41,7 @@ int MFD3D_LagrangeSerendipity::H1consistency(
   int nnodes = nodes.size();
 
   int nfaces = mesh_->cell_get_num_faces(c);
-  ASSERT(nfaces > 3);  // FIXME
+  AMANZI_ASSERT(nfaces > 3);  // FIXME
 
   // calculate degrees of freedom 
   Polynomial poly(d_, order_), pf, pc;

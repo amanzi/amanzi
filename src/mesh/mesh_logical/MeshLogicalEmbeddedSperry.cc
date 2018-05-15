@@ -61,7 +61,7 @@ MeshLogicalEmbeddedSperry::CreateLogical_(const std::string& pftname, int column
 
   // I never remember which is up, 0 or -1?  This checks that it is 0.
   auto ground_surface = bg_mesh_->face_centroid(faces_of_col[0]);
-  ASSERT(ground_surface[2] > bg_mesh_->cell_centroid(cells_of_col[0])[2]);
+  AMANZI_ASSERT(ground_surface[2] > bg_mesh_->cell_centroid(cells_of_col[0])[2]);
 
   // find how many cells in the rooting zone
   double root_bottom_z = ground_surface[2] - max_rooting_depth_;
@@ -113,7 +113,7 @@ MeshLogicalEmbeddedSperry::CreateLogical_(const std::string& pftname, int column
   }
   cells_dzs.back() = bg_mesh_->face_centroid(faces_of_col[n_cells_root_zone-1])[2]
                      - (ground_surface[2] - max_rooting_depth_);
-  ASSERT(cells_dzs.back() > 0.);
+  AMANZI_ASSERT(cells_dzs.back() > 0.);
 
   // centroids are cell centroids, the bottom one is close enough
   std::vector<AmanziGemoetry::Point> centroids;

@@ -28,9 +28,9 @@ SuperMap::SuperMap(const Epetra_MpiComm& comm,
                    const std::vector<Teuchos::RCP<const Epetra_Map> >& ghosted_maps) :
     compnames_(compnames)
 {
-  ASSERT(compnames.size() == dofnums.size());
-  ASSERT(compnames.size() == maps.size());
-  ASSERT(compnames.size() == ghosted_maps.size());
+  AMANZI_ASSERT(compnames.size() == dofnums.size());
+  AMANZI_ASSERT(compnames.size() == maps.size());
+  AMANZI_ASSERT(compnames.size() == ghosted_maps.size());
 
   int offset = 0;
 
@@ -202,7 +202,7 @@ getMaps(const AmanziMesh::Mesh& mesh, AmanziMesh::Entity_kind location) {
       return std::make_pair(Teuchos::rcpFromRef(mesh.exterior_face_map(false)),
                             Teuchos::rcpFromRef(mesh.exterior_face_map(false)));
     default:
-      ASSERT(false);
+      AMANZI_ASSERT(false);
       return std::make_pair(Teuchos::null, Teuchos::null);
   }
 }

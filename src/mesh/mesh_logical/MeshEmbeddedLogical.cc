@@ -150,7 +150,7 @@ MeshEmbeddedLogical::MeshEmbeddedLogical(const Epetra_MpiComm* comm,
   cell_face_ids_ = log_mesh->cell_face_ids_;
   cell_face_ids_.insert(cell_face_ids_.end(), bg_mesh->cell_face_ids_.begin(),
                         bg_mesh->cell_face_ids_.end());
-  ASSERT(cell_face_ids_.size() == ncells_my_used);
+  AMANZI_ASSERT(cell_face_ids_.size() == ncells_my_used);
   for (int c=ncells_log; c!=cell_face_ids_.size(); ++c) {
     int n_faces = cell_face_ids_[c].size();
     for (int i=0; i!=n_faces; ++i) {

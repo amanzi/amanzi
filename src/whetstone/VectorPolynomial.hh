@@ -87,7 +87,7 @@ class VectorPolynomial {
 
   // dot product v1 * v2
   friend Polynomial operator*(const VectorPolynomial& v1, const VectorPolynomial& v2) {
-    ASSERT(v1.size() == v2.size());
+    AMANZI_ASSERT(v1.size() == v2.size());
 
     int d(v1[0].dimension());
     Polynomial tmp(d, 0);

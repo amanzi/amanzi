@@ -21,15 +21,15 @@ TimestepControllerStandard::TimestepControllerStandard(Teuchos::ParameterList& p
     plist_(plist) {
   max_its_ = plist_.get<int>("max iterations");
   min_its_ = plist_.get<int>("min iterations");
-  ASSERT(max_its_ > min_its_);
-  ASSERT(min_its_ >= 0);
+  AMANZI_ASSERT(max_its_ > min_its_);
+  AMANZI_ASSERT(min_its_ >= 0);
 
   reduction_factor_ = plist_.get<double>("time step reduction factor");
-  ASSERT(reduction_factor_ >= 0.0);
-  ASSERT(reduction_factor_ <= 1.0);
+  AMANZI_ASSERT(reduction_factor_ >= 0.0);
+  AMANZI_ASSERT(reduction_factor_ <= 1.0);
 
   increase_factor_ = plist_.get<double>("time step increase factor");
-  ASSERT(increase_factor_ >= 1.0);
+  AMANZI_ASSERT(increase_factor_ >= 1.0);
 
   max_dt_ = plist_.get<double>("max time step");
   min_dt_ = plist_.get<double>("min time step");

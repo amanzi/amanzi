@@ -37,8 +37,8 @@ namespace WhetStone {
 int MFD3D_Lagrange::H1consistency(
     int c, const Tensor& K, DenseMatrix& N, DenseMatrix& Ac)
 {
-  ASSERT(d_ == 2);  // FIXME
-  ASSERT(order_ < 4);
+  AMANZI_ASSERT(d_ == 2);  // FIXME
+  AMANZI_ASSERT(order_ < 4);
 
   Entity_ID_List nodes, faces;
   std::vector<int> dirs;

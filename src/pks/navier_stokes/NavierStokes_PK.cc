@@ -169,7 +169,7 @@ void NavierStokes_PK::Initialize(const Teuchos::Ptr<State>& S)
 
   // Initialize time integrator.
   std::string ti_method_name = ti_list_->get<std::string>("time integration method", "none");
-  ASSERT(ti_method_name == "BDF1");
+  AMANZI_ASSERT(ti_method_name == "BDF1");
   Teuchos::ParameterList& bdf1_list = ti_list_->sublist("BDF1");
 
   if (! bdf1_list.isSublist("verbose object"))

@@ -478,7 +478,7 @@ void Richards_PK::Initialize(const Teuchos::Ptr<State>& S)
   }
 
   // error control options
-  ASSERT(ti_list_->isParameter("error control options"));
+  AMANZI_ASSERT(ti_list_->isParameter("error control options"));
 
   error_control_ = 0;
   std::vector<std::string> options;
@@ -501,7 +501,7 @@ void Richards_PK::Initialize(const Teuchos::Ptr<State>& S)
 
   // initialize time integrator
   std::string ti_method_name = ti_list_->get<std::string>("time integration method", "none");
-  ASSERT(ti_method_name == "BDF1");
+  AMANZI_ASSERT(ti_method_name == "BDF1");
   Teuchos::ParameterList& bdf1_list = ti_list_->sublist("BDF1");
 
   if (! bdf1_list.isSublist("verbose object"))
@@ -549,7 +549,7 @@ void Richards_PK::Initialize(const Teuchos::Ptr<State>& S)
   if (ti_list_->isParameter("preconditioner enhancement")) {
     std::string tmp_solver = ti_list_->get<std::string>("preconditioner enhancement");
     if (tmp_solver != "none") {
-      ASSERT(linear_operator_list_->isSublist(tmp_solver));
+      AMANZI_ASSERT(linear_operator_list_->isSublist(tmp_solver));
 
       AmanziSolvers::LinearOperatorFactory<Operators::Operator, CompositeVector, CompositeVectorSpace> sfactory;
       op_pc_solver_ = sfactory.Create(tmp_solver, *linear_operator_list_, op_preconditioner_);

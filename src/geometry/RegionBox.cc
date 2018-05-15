@@ -52,8 +52,8 @@ RegionBox::RegionBox(const std::string& name,
 void
 RegionBox::corners(Point *lo_corner, Point *hi_corner) const
 {
-  ASSERT(lo_corner != NULL);
-  ASSERT(hi_corner != NULL);
+  AMANZI_ASSERT(lo_corner != NULL);
+  AMANZI_ASSERT(hi_corner != NULL);
 
   lo_corner->set(p0_);
   hi_corner->set(p1_);

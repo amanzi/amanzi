@@ -70,7 +70,7 @@ void PK_PhysicalBDF_ATS::Setup(const Teuchos::Ptr<State>& S) {
   S->RequireFieldEvaluator(key_);
   Teuchos::RCP<FieldEvaluator> fm = S->GetFieldEvaluator(key_);
   solution_evaluator_ = Teuchos::rcp_dynamic_cast<PrimaryVariableFieldEvaluator>(fm);
-  ASSERT(solution_evaluator_ != Teuchos::null);
+  AMANZI_ASSERT(solution_evaluator_ != Teuchos::null);
 
   // initial timestep
   dt_ = plist_->get<double>("initial time step", 1.);
@@ -285,7 +285,7 @@ double PK_PhysicalBDF_ATS::ErrorNorm(Teuchos::RCP<const TreeVector> u,
     } else {
       double norm;
       dvec_v.Norm2(&norm);
-      ASSERT(norm < 1.e-15);
+      AMANZI_ASSERT(norm < 1.e-15);
     }
 
     // Write out Inf norms too.
@@ -299,7 +299,7 @@ double PK_PhysicalBDF_ATS::ErrorNorm(Teuchos::RCP<const TreeVector> u,
       l_err.gid = dvec_v.Map().GID(enorm_loc);
 
       int ierr = MPI_Allreduce(&l_err, &err, 1, MPI_DOUBLE_INT, MPI_MAXLOC, MPI_COMM_WORLD);
-      ASSERT(!ierr);
+      AMANZI_ASSERT(!ierr);
       *vo_->os() << "  ENorm (" << *comp << ") = " << err.value << "[" << err.gid << "] (" << infnorm << ")" << std::endl;
     }
 
@@ -308,7 +308,7 @@ double PK_PhysicalBDF_ATS::ErrorNorm(Teuchos::RCP<const TreeVector> u,
 
   double enorm_val_l = enorm_val;
   int ierr = MPI_Allreduce(&enorm_val_l, &enorm_val, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
-  ASSERT(!ierr);
+  AMANZI_ASSERT(!ierr);
   return enorm_val;
 };
 

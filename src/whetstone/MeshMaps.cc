@@ -266,7 +266,7 @@ void MeshMaps::ProjectPolynomial(int c, Polynomial& poly) const
       vf[0](1, 0) = f1 - f0;
       vf[0](2, 0) = -4 * f2 + 2 * f0 + 2 * f1;
     } else {
-      ASSERT(0);
+      AMANZI_ASSERT(0);
     }
 
     mesh1_->node_get_coordinates(nodes[0], &v0);

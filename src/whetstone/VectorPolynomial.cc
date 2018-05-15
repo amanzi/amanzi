@@ -120,7 +120,7 @@ void VectorPolynomial::Multiply(const std::vector<std::vector<Polynomial> >& A,
                                 const AmanziGeometry::Point& p, bool transpose)
 {
   int d(p.dim());
-  ASSERT(A.size() == d);
+  AMANZI_ASSERT(A.size() == d);
 
   resize(d);
   if (!transpose) {

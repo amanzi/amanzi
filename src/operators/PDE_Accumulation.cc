@@ -155,7 +155,7 @@ void PDE_Accumulation::AddAccumulationDelta(
 void PDE_Accumulation::AddAccumulationDeltaNoVolume(
     const CompositeVector& u0, const CompositeVector& ss, const std::string& name)
 {
-  if (!ss.HasComponent(name)) ASSERT(false);
+  if (!ss.HasComponent(name)) AMANZI_ASSERT(false);
 
   Teuchos::RCP<Op> op = FindOp_(name);
   Epetra_MultiVector& diag = *op->diag;
@@ -194,7 +194,7 @@ void PDE_Accumulation::CalculateEntityVolume_(
 
   } else if (name == "face" && volume.HasComponent("face")) {
     // Missing code.
-    ASSERT(false);
+    AMANZI_ASSERT(false);
 
   } else if (name == "edge" && volume.HasComponent("edge")) {
     Epetra_MultiVector& vol = *volume.ViewComponent(name, true); 
@@ -232,7 +232,7 @@ void PDE_Accumulation::CalculateEntityVolume_(
     volume.GatherGhostedToMaster(name);
 
   } else {
-    ASSERT(false);
+    AMANZI_ASSERT(false);
   }
 }
 

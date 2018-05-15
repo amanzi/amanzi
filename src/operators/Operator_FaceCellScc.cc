@@ -159,7 +159,7 @@ void Operator_FaceCellScc::AssembleMatrix(const SuperMap& map, MatrixFE& matrix,
   for (const_op_iterator it = OpBegin(); it != OpEnd(); ++it) {
     if ((*it)->schema_old_ == (OPERATOR_SCHEMA_BASE_CELL |
                                OPERATOR_SCHEMA_DOFS_CELL | OPERATOR_SCHEMA_DOFS_FACE)) {
-      ASSERT((*it)->matrices.size() == ncells_owned);
+      AMANZI_ASSERT((*it)->matrices.size() == ncells_owned);
 
       // create or get extra ops, and keep them for future use
       Teuchos::RCP<Op_Cell_Cell> diag_op;
@@ -171,7 +171,7 @@ void Operator_FaceCellScc::AssembleMatrix(const SuperMap& map, MatrixFE& matrix,
         schur_ops_[i_schur];
       } else {
         // create and fill
-        ASSERT(i_schur == diag_ops_.size());
+        AMANZI_ASSERT(i_schur == diag_ops_.size());
         std::string name = "Scc alt as CELL_CELL";
         diag_op = Teuchos::rcp(new Op_Cell_Cell(name, mesh_));
         diag_ops_.push_back(diag_op);
@@ -196,7 +196,7 @@ void Operator_FaceCellScc::AssembleMatrix(const SuperMap& map, MatrixFE& matrix,
         int n = Acell.NumCols() - 1;
         diag[0][c] = (*it)->matrices[c](n,n);
         if (diag[0][c] > 1.e30 || diag[0][c] < -1.e30) {
-          ASSERT(0);
+          AMANZI_ASSERT(0);
         }
       }
 
@@ -270,7 +270,7 @@ void Operator_FaceCellScc::AssembleMatrix(const SuperMap& map, MatrixFE& matrix,
 
         mat(0,0) = -a1 * a1 / coef;
         if (mat(0,0) > 1.e30 || mat(0,0) < -1.e30) {
-          ASSERT(0);
+          AMANZI_ASSERT(0);
         }
         if (ncells > 1) {
           mat(0,1) = -a1 * a2 / coef;
@@ -279,7 +279,7 @@ void Operator_FaceCellScc::AssembleMatrix(const SuperMap& map, MatrixFE& matrix,
           if (mat(1,0) > 1.e30 || mat(1,0) < -1.e30
               || mat(0,1) > 1.e30 || mat(0,1) < -1.e30
               || mat(1,1) > 1.e30 || mat(1,1) < -1.e30) {
-            ASSERT(0);
+            AMANZI_ASSERT(0);
           }
         }
       }
@@ -287,7 +287,7 @@ void Operator_FaceCellScc::AssembleMatrix(const SuperMap& map, MatrixFE& matrix,
       // assemble
       diag_op->AssembleMatrixOp(this, map, matrix,
               my_block_row, my_block_col);
-      ASSERT(schur_op->matrices.size() == nfaces_owned);
+      AMANZI_ASSERT(schur_op->matrices.size() == nfaces_owned);
       schur_op->AssembleMatrixOp(this, map, matrix,
               my_block_row, my_block_col);
       i_schur++;
@@ -304,7 +304,7 @@ void Operator_FaceCellScc::AssembleMatrix(const SuperMap& map, MatrixFE& matrix,
 int Operator_FaceCellScc::ApplyMatrixFreeOp(const Op_Cell_FaceCell& op,
                                             const CompositeVector& X, CompositeVector& Y) const
 {
-  ASSERT(op.matrices.size() == ncells_owned);
+  AMANZI_ASSERT(op.matrices.size() == ncells_owned);
 
   Y.PutScalarGhosted(0.);
   X.ScatterMasterToGhosted();
@@ -360,7 +360,7 @@ void Operator_FaceCellScc::SymbolicAssembleMatrix()
 
   // Completing and optimizing the graphs
   int ierr = graph->FillComplete(smap_->Map(), smap_->Map());
-  ASSERT(!ierr);
+  AMANZI_ASSERT(!ierr);
 
   // create global matrix
   Amat_ = Teuchos::rcp(new MatrixFE(graph));

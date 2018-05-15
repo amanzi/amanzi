@@ -16,7 +16,7 @@ void Node_set::take_data_from (std::vector<int>& node_list, std::vector<double>&
 
     name_.swap (name);
 
-    ASSERT (valid ());
+    AMANZI_ASSERT (valid ());
 }
 
 

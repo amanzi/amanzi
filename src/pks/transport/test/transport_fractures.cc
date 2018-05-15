@@ -56,7 +56,7 @@ std::cout << "Test: Advance on a 2D square mesh" << std::endl;
       Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, region_list, comm));
 
   MeshFactory meshfactory(comm);
-  meshfactory.preference(FrameworkPreference({MSTK, STKMESH}));
+  meshfactory.preference(FrameworkPreference({Framework::MSTK, Framework::STKMESH}));
   RCP<const Mesh> mesh3D = meshfactory(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 10, 10, 10, gm);
 
   // extract fractures mesh

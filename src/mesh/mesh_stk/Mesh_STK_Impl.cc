@@ -42,10 +42,10 @@ Mesh_STK_Impl::Mesh_STK_Impl (int space_dimension,
     face_owner_(meta_data_->get_field<Id_field_type>("FaceOwner"))
 {
 
-  ASSERT (dimension_ok_ ());
-  ASSERT (meta_data_.get ());
-  ASSERT (bulk_data_.get ());
-  ASSERT (face_owner_ != NULL);
+  AMANZI_ASSERT (dimension_ok_ ());
+  AMANZI_ASSERT (meta_data_.get ());
+  AMANZI_ASSERT (bulk_data_.get ());
+  AMANZI_ASSERT (face_owner_ != NULL);
 }
 
 // Information Getters
@@ -134,11 +134,11 @@ Mesh_STK_Impl::element_to_faces (stk::mesh::EntityId element, Entity_Ids& ids) c
   const int face_rank = entity_map_->kind_to_rank (FACE);
 
   stk::mesh::Entity *entity = id_to_entity(cell_rank, element);
-  ASSERT (entity->identifier () == element);
+  AMANZI_ASSERT (entity->identifier () == element);
 
   const CellTopologyData* topo = stk::mesh::fem::get_cell_topology (*entity).getCellTopologyData();
 
-  ASSERT(topo != NULL);
+  AMANZI_ASSERT(topo != NULL);
 
   stk::mesh::PairIterRelation faces = entity->relations( face_rank );
   ids.resize(faces.size());
@@ -150,7 +150,7 @@ Mesh_STK_Impl::element_to_faces (stk::mesh::EntityId element, Entity_Ids& ids) c
     ++itf;
   }
 
-  ASSERT (ids.size () == topo->side_count);
+  AMANZI_ASSERT (ids.size () == topo->side_count);
 }
 
 void
@@ -163,7 +163,7 @@ Mesh_STK_Impl::element_to_face_dirs(stk::mesh::EntityId element,
 
   stk::mesh::Entity *entity = id_to_entity(cell_rank, element);
 
-  ASSERT (entity->identifier () == element);
+  AMANZI_ASSERT (entity->identifier () == element);
 
   stk::mesh::PairIterRelation faces = entity->relations( face_rank );
   dirs.resize(faces.size());
@@ -191,11 +191,11 @@ Mesh_STK_Impl::element_to_faces_and_dirs(stk::mesh::EntityId element,
   const int face_rank = entity_map_->kind_to_rank (FACE);
 
   stk::mesh::Entity *entity = id_to_entity(cell_rank, element);
-  ASSERT (entity->identifier () == element);
+  AMANZI_ASSERT (entity->identifier () == element);
 
   const CellTopologyData* topo = stk::mesh::fem::get_cell_topology (*entity).getCellTopologyData();
 
-  ASSERT(topo != NULL);
+  AMANZI_ASSERT(topo != NULL);
 
   stk::mesh::PairIterRelation faces = entity->relations( face_rank );
   ids.resize(faces.size());
@@ -218,7 +218,7 @@ Mesh_STK_Impl::element_to_faces_and_dirs(stk::mesh::EntityId element,
     ++itdir;
   }
 
-  ASSERT (ids.size () == topo->side_count);
+  AMANZI_ASSERT (ids.size () == topo->side_count);
 }
 
 /** 
@@ -272,10 +272,10 @@ Mesh_STK_Impl::face_to_elements(stk::mesh::EntityId face, Entity_Ids& ids) const
   const int face_rank = entity_map_->kind_to_rank (FACE);
 
   stk::mesh::Entity *entity = id_to_entity(face_rank, face);
-  ASSERT (entity->identifier () == face);
+  AMANZI_ASSERT (entity->identifier () == face);
 
   stk::mesh::PairIterRelation cells = entity->relations( cell_rank );
-  ASSERT(!cells.empty());
+  AMANZI_ASSERT(!cells.empty());
 
   ids.resize(cells.size());
   Entity_Ids::iterator itc = ids.begin();
@@ -286,7 +286,7 @@ Mesh_STK_Impl::face_to_elements(stk::mesh::EntityId face, Entity_Ids& ids) const
     ++itc;
   }
 
-  ASSERT(ids.size() <= 2);
+  AMANZI_ASSERT(ids.size() <= 2);
 }
     
 // -------------------------------------------------------------
@@ -374,8 +374,8 @@ Mesh_STK_Impl::id_to_entity (stk::mesh::EntityRank rank,
 {
   stk::mesh::Entity *entity = bulk_data_->get_entity(rank, id);
 
-  ASSERT(entity != NULL);
-  ASSERT(entity->identifier() == id);
+  AMANZI_ASSERT(entity != NULL);
+  AMANZI_ASSERT(entity->identifier() == id);
   return entity;
 }
 
@@ -385,7 +385,7 @@ Mesh_STK_Impl::get_set (unsigned int set_id, stk::mesh::EntityRank rank)
 {
     
   Id_map::const_iterator part_it = set_to_part_.find (std::make_pair (rank, set_id));
-  ASSERT (part_it != set_to_part_.end ());
+  AMANZI_ASSERT (part_it != set_to_part_.end ());
 
   return part_it->second;
   
@@ -395,7 +395,7 @@ stk::mesh::Part* Mesh_STK_Impl::get_set (const char* name, stk::mesh::EntityRank
 {
   stk::mesh::Part *part = meta_data_->get_part (name);
   if (part)
-    ASSERT (part->primary_entity_rank () == rank);
+    AMANZI_ASSERT (part->primary_entity_rank () == rank);
 
   return part;
 }
@@ -405,7 +405,7 @@ stk::mesh::Part* Mesh_STK_Impl::get_set (const std::string name, stk::mesh::Enti
 
   stk::mesh::Part *part = meta_data_->get_part (name);
   if (part)
-    ASSERT (part->primary_entity_rank () == rank);
+    AMANZI_ASSERT (part->primary_entity_rank () == rank);
 
   return part;
 }
@@ -413,7 +413,7 @@ stk::mesh::Part* Mesh_STK_Impl::get_set (const std::string name, stk::mesh::Enti
 void Mesh_STK_Impl::get_sets (stk::mesh::EntityRank rank, stk::mesh::PartVector& sets) const
 {
     
-  ASSERT (sets.size () == 0);
+  AMANZI_ASSERT (sets.size () == 0);
 
   for (Id_map::const_iterator it = set_to_part_.begin ();
        it != set_to_part_.end ();
@@ -422,13 +422,13 @@ void Mesh_STK_Impl::get_sets (stk::mesh::EntityRank rank, stk::mesh::PartVector&
     if (it->first.first == rank) sets.push_back (it->second);
   }
 
-  ASSERT (sets.size () == num_sets (rank));
+  AMANZI_ASSERT (sets.size () == num_sets (rank));
 
 }
 
 void Mesh_STK_Impl::get_set_ids (stk::mesh::EntityRank rank, std::vector<unsigned int> &ids) const
 {
-  ASSERT (ids.size () == 0);
+  AMANZI_ASSERT (ids.size () == 0);
     
   for (Id_map::const_iterator it = set_to_part_.begin ();
        it != set_to_part_.end ();
@@ -445,7 +445,7 @@ void Mesh_STK_Impl::get_set_ids (stk::mesh::EntityRank rank, std::vector<unsigne
 
 stk::mesh::Selector Mesh_STK_Impl::selector_ (Parallel_type category) const
 {
-  ASSERT (category >= Parallel_type::OWNED && category <= Parallel_type::ALL);
+  AMANZI_ASSERT (category >= Parallel_type::OWNED && category <= Parallel_type::ALL);
 
   stk::mesh::Selector owned(meta_data_->locally_owned_part());
   stk::mesh::Selector s;
@@ -481,13 +481,13 @@ bool Mesh_STK_Impl::valid_id (unsigned int id, stk::mesh::EntityRank rank) const
 
 stk::mesh::EntityRank Mesh_STK_Impl::get_element_type (int space_dimension)
 {
-  ASSERT (valid_dimension (space_dimension));
+  AMANZI_ASSERT (valid_dimension (space_dimension));
   return (space_dimension == 3) ? meta_data_->volume_rank() : meta_data_->face_rank();
 }
 
 stk::mesh::EntityRank Mesh_STK_Impl::get_face_type (int space_dimension)
 {
-  ASSERT (valid_dimension (space_dimension));
+  AMANZI_ASSERT (valid_dimension (space_dimension));
   return (space_dimension == 3) ? meta_data_->face_rank() : meta_data_->edge_rank();
 }
 
@@ -509,7 +509,7 @@ void Mesh_STK_Impl::add_set_part_relation_ (unsigned int set_id, stk::mesh::Part
   const stk::mesh::EntityRank rank = part.primary_entity_rank ();
   const Rank_and_id rank_set_id = std::make_pair (rank, set_id);
 
-  ASSERT (set_to_part_.find (rank_set_id) == set_to_part_.end ());
+  AMANZI_ASSERT (set_to_part_.find (rank_set_id) == set_to_part_.end ());
 
   set_to_part_ [rank_set_id]  = &part;
 

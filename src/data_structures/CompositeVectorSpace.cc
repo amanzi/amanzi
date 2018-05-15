@@ -107,7 +107,7 @@ CompositeVectorSpace::SetMesh(
   if (mesh_ == Teuchos::null) {
     mesh_ = mesh;
   } else {
-    ASSERT(mesh_ == mesh);
+    AMANZI_ASSERT(mesh_ == mesh);
   }
   return this;
 };

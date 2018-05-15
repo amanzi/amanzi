@@ -133,20 +133,20 @@ void IndependentVariableFieldEvaluatorFromFile::UpdateField_(const Teuchos::Ptr<
   // determine where we are relative to the currently stored interval
   if (t < t_before_) {
     // should never be possible thanks to the previous check
-    ASSERT(0);
+    AMANZI_ASSERT(0);
   } else if (t == t_before_) {
     // at the start of the interval
-    ASSERT(val_before_ != Teuchos::null);
+    AMANZI_ASSERT(val_before_ != Teuchos::null);
     *cv = *val_before_;
 
   } else if (t < t_after_) {
     if (t_before_ == -1) {
       // to the left of the first point
-      ASSERT(val_after_ != Teuchos::null);
+      AMANZI_ASSERT(val_after_ != Teuchos::null);
       *cv = *val_after_;
     } else if (val_after_ == Teuchos::null) {
       // to the right of the last point
-      ASSERT(val_before_ != Teuchos::null);
+      AMANZI_ASSERT(val_before_ != Teuchos::null);
       *cv = *val_before_;
     } else {
       // in the interval, interpolate
@@ -154,7 +154,7 @@ void IndependentVariableFieldEvaluatorFromFile::UpdateField_(const Teuchos::Ptr<
     }
   } else if (t == t_after_) {
     // at the end of the interval
-    ASSERT(val_after_ != Teuchos::null);
+    AMANZI_ASSERT(val_after_ != Teuchos::null);
     *cv = *val_after_;        
         
   } else {
@@ -201,7 +201,7 @@ void
 IndependentVariableFieldEvaluatorFromFile::LoadFile_(int i) {
   // allocate data
   if (val_after_ == Teuchos::null) {
-    ASSERT(val_before_ != Teuchos::null);
+    AMANZI_ASSERT(val_before_ != Teuchos::null);
     val_after_ = Teuchos::rcp(new CompositeVector(*val_before_));
   }
 
@@ -226,13 +226,13 @@ IndependentVariableFieldEvaluatorFromFile::LoadFile_(int i) {
 void
 IndependentVariableFieldEvaluatorFromFile::Interpolate_(double time,
         const Teuchos::Ptr<CompositeVector>& v) {
-  ASSERT(t_before_ >= 0.);
-  ASSERT(t_after_ >= 0.);
-  ASSERT(t_after_ >= time);
-  ASSERT(time >= t_before_);
-  ASSERT(t_after_ > t_before_);
-  ASSERT(val_before_ != Teuchos::null);
-  ASSERT(val_after_ != Teuchos::null);
+  AMANZI_ASSERT(t_before_ >= 0.);
+  AMANZI_ASSERT(t_after_ >= 0.);
+  AMANZI_ASSERT(t_after_ >= time);
+  AMANZI_ASSERT(time >= t_before_);
+  AMANZI_ASSERT(t_after_ > t_before_);
+  AMANZI_ASSERT(val_before_ != Teuchos::null);
+  AMANZI_ASSERT(val_after_ != Teuchos::null);
 
   double coef = (time - t_before_)/(t_after_ - t_before_);
   *v = *val_before_;

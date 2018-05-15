@@ -174,7 +174,7 @@ void TotalEnergyEvaluator::EvaluateFieldPartialDerivative_(
       result_v[0][c] = (1.0 - phi[0][c]) * u_rock[0][c];
     }
   } else {
-    ASSERT(0);
+    AMANZI_ASSERT(0);
   }
 
   // add volume factor to the derivative

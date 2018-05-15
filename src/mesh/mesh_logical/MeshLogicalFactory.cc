@@ -204,7 +204,7 @@ Teuchos::RCP<MeshLogical>
 MeshLogicalFactory::Create() const {
   Teuchos::RCP<AmanziMesh::MeshLogical> mesh;
   if (cell_centroids_.size() > 0) {
-    ASSERT(cell_centroids_.size() == cell_volumes_.size());
+    AMANZI_ASSERT(cell_centroids_.size() == cell_volumes_.size());
     mesh = Teuchos::rcp(new MeshLogical(comm_,
 					cell_volumes_,
 					face_cell_list_,
@@ -284,7 +284,7 @@ MeshLogicalFactory::AddSegment(
     std::string const& name,
     std::vector<Entity_ID> *const cells,
     std::vector<Entity_ID> *const faces) {
-  ASSERT(calculated_volume_);
+  AMANZI_ASSERT(calculated_volume_);
     
   // orientation
   auto orientation = end - begin;
@@ -346,8 +346,8 @@ MeshLogicalFactory::AddSegment(
   int n_faces = face_areas.size();
 
   // check for consistency in sizes
-  if (cell_centroids) ASSERT(cell_centroids->size() == n_cells);
-  if (cell_volumes) ASSERT(cell_volumes->size() == n_cells);
+  if (cell_centroids) AMANZI_ASSERT(cell_centroids->size() == n_cells);
+  if (cell_volumes) AMANZI_ASSERT(cell_volumes->size() == n_cells);
 
   // check for the number of faces relative to number of cells
   int n_faces_expected = n_cells - 1; // interior faces
@@ -359,10 +359,10 @@ MeshLogicalFactory::AddSegment(
     // need the area, we add the face
     n_faces_expected++;
   }
-  ASSERT(n_faces_expected == n_faces);
+  AMANZI_ASSERT(n_faces_expected == n_faces);
 
   // check for expected existence of cell volumes
-  ASSERT((cell_volumes == nullptr) == calculated_volume_);
+  AMANZI_ASSERT((cell_volumes == nullptr) == calculated_volume_);
   
   // set the new cell lids
   int cell_first = cell_volumes_.size();
@@ -736,8 +736,8 @@ MeshLogicalFactory::AddFace(int f,
   face_cell_lengths_[f] = lengths;
 
   if (calculated_volume_) {
-    ASSERT(cells[0] < cell_volumes_.size());
-    ASSERT(cells[1] < cell_volumes_.size());
+    AMANZI_ASSERT(cells[0] < cell_volumes_.size());
+    AMANZI_ASSERT(cells[1] < cell_volumes_.size());
     cell_volumes_[cells[0]] += area * lengths[0];
     cell_volumes_[cells[1]] += area * lengths[1];
   }

@@ -135,7 +135,7 @@ void RunTestUpwind(std::string method) {
       if (bc_model[f] == OPERATOR_BC_DIRICHLET) {
         AmanziMesh::Entity_ID_List cells;
         mesh->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
-        ASSERT(cells.size() == 1);
+        AMANZI_ASSERT(cells.size() == 1);
         int bf = ext_face_map.LID(face_map.GID(f));
         fbfs[0][bf] = model->Value(cells[0], bc_value[f]);
       }

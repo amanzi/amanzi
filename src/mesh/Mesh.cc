@@ -607,7 +607,7 @@ Mesh::compute_face_geometry_(const Entity_ID faceid, double *area,
 
     Entity_ID_List cellids;
     face_get_cells(faceid, Parallel_type::ALL, &cellids);
-    ASSERT(cellids.size() <= 2);
+    AMANZI_ASSERT(cellids.size() <= 2);
 
     normals->resize(cellids.size(), AmanziGeometry::Point(0.0, 0.0, 0.0));
     for (int i = 0; i < cellids.size(); i++) {
@@ -626,7 +626,7 @@ Mesh::compute_face_geometry_(const Entity_ID faceid, double *area,
         }
       }
 
-      ASSERT(found);
+      AMANZI_ASSERT(found);
 
       (*normals)[i] = (dir == 1) ? normal : -normal;
     }
@@ -646,7 +646,7 @@ Mesh::compute_face_geometry_(const Entity_ID faceid, double *area,
 
       Entity_ID_List cellids;
       face_get_cells(faceid, Parallel_type::ALL, &cellids);
-      ASSERT(cellids.size() <= 2);
+      AMANZI_ASSERT(cellids.size() <= 2);
 
       normals->resize(cellids.size(), AmanziGeometry::Point(0.0, 0.0));
       for (int i = 0; i < cellids.size(); i++) {
@@ -665,7 +665,7 @@ Mesh::compute_face_geometry_(const Entity_ID faceid, double *area,
           }
         }
 
-        ASSERT(found);
+        AMANZI_ASSERT(found);
 
         (*normals)[i] = (dir == 1) ? normal : -normal;
       }
@@ -706,7 +706,7 @@ Mesh::compute_face_geometry_(const Entity_ID faceid, double *area,
           }
         }
 
-        ASSERT(found);
+        AMANZI_ASSERT(found);
 
         AmanziGeometry::Point cvec = fcoords[0]-cell_centroids_[cellids[i]];
         AmanziGeometry::Point trinormal = cvec^evec;
@@ -773,7 +773,7 @@ Mesh::cell_volume(const Entity_ID cellid, const bool recompute) const
 // Area/length of face
 double Mesh::face_area(const Entity_ID faceid, const bool recompute) const
 {
-  ASSERT(faces_requested_);
+  AMANZI_ASSERT(faces_requested_);
 
   if (!face_geometry_precomputed_) {
     compute_face_geometric_quantities_();
@@ -797,7 +797,7 @@ double Mesh::face_area(const Entity_ID faceid, const bool recompute) const
 double
 Mesh::edge_length(const Entity_ID edgeid, const bool recompute) const
 {
-  ASSERT(edges_requested_);
+  AMANZI_ASSERT(edges_requested_);
 
   if (!edge_geometry_precomputed_) {
     compute_edge_geometric_quantities_();
@@ -842,7 +842,7 @@ Mesh::cell_centroid(const Entity_ID cellid,
 AmanziGeometry::Point
 Mesh::face_centroid(const Entity_ID faceid, const bool recompute) const
 {
-  ASSERT(faces_requested_);
+  AMANZI_ASSERT(faces_requested_);
 
   if (!face_geometry_precomputed_) {
     compute_face_geometric_quantities_();
@@ -899,7 +899,7 @@ Mesh::face_normal(const Entity_ID faceid,
                   const Entity_ID cellid,
                   int *orientation) const
 {
-  ASSERT(faces_requested_);
+  AMANZI_ASSERT(faces_requested_);
 
   std::vector<AmanziGeometry::Point> *fnormals = nullptr;
   std::vector<AmanziGeometry::Point> fnormals_new;
@@ -932,7 +932,7 @@ Mesh::face_normal(const Entity_ID faceid,
     for (irefcell = 0; irefcell < nfc; irefcell++)
       if (face_cell_ids_[faceid][irefcell] == cellid)
         break;
-    ASSERT(irefcell < nfc);
+    AMANZI_ASSERT(irefcell < nfc);
   }
 
   // Determine the direction in which the reference cell uses the edge
@@ -951,7 +951,7 @@ Mesh::face_normal(const Entity_ID faceid,
       found = true;
       break;
     }
-  ASSERT(found);
+  AMANZI_ASSERT(found);
 
   if (orientation) *orientation = dir;  // if orientation was requested
 
@@ -981,7 +981,7 @@ Mesh::edge_vector(const Entity_ID edgeid,
                   const Entity_ID pointid,
                   int *orientation) const
 {
-  ASSERT(edges_requested_);
+  AMANZI_ASSERT(edges_requested_);
 
   AmanziGeometry::Point evector(space_dim_);
   AmanziGeometry::Point& evector_ref = evector; // to avoid extra copying
@@ -1243,7 +1243,7 @@ Mesh::update_ghost_node_coordinates()
 int
 Mesh::deform(const Entity_ID_List& nodeids,
              const AmanziGeometry::Point_List& new_positions) {
-  ASSERT(nodeids.size() == new_positions.size());
+  AMANZI_ASSERT(nodeids.size() == new_positions.size());
 
   int nn = nodeids.size();
   for (int j=0; j!=nn; ++j) {
@@ -1277,8 +1277,8 @@ Mesh::deform(const Entity_ID_List& nodeids,
 {
   int status = 1;
 
-  ASSERT(nodeids.size() == new_positions.size());
-  ASSERT(final_positions != NULL);
+  AMANZI_ASSERT(nodeids.size() == new_positions.size());
+  AMANZI_ASSERT(final_positions != NULL);
 
   // Once we start moving nodes around, the precomputed/cached
   // geometric quantities are no longer valid. So any geometric calls
@@ -1576,8 +1576,8 @@ Mesh::build_single_column_(int colnum, Entity_ID top_face) const
       success = 0;
       break;
     }
-    ASSERT(bot_face != top_face);
-    ASSERT(bot_face != -1);
+    AMANZI_ASSERT(bot_face != top_face);
+    AMANZI_ASSERT(bot_face != -1);
 
     // record the cell above and cell below
     face_get_cells(bot_face,Parallel_type::ALL,&fcells2);
@@ -1658,7 +1658,7 @@ Mesh::build_single_column_(int colnum, Entity_ID top_face) const
     // even or odd handedness?
     double even_odd_product = face_normal(bot_face)[space_dim_-1]
         * face_normal(top_face)[space_dim_-1];
-    ASSERT(std::abs(even_odd_product) > 0);
+    AMANZI_ASSERT(std::abs(even_odd_product) > 0);
     int even_odd = even_odd_product >= 0. ? 1 : -1;
 
     for (int k = 0; k < nfvtop; k++) {
@@ -1668,7 +1668,7 @@ Mesh::build_single_column_(int colnum, Entity_ID top_face) const
       Entity_ID botnode = botnodes[bot_i];
       node_nodeabove_[botnode] = topnode;
 
-      // ASSERT used in debugging
+      // AMANZI_ASSERT used in debugging
       // AmanziGeometry::Point bc;
       // AmanziGeometry::Point tc;
       // node_get_coordinates(topnode, &bc);
@@ -1677,7 +1677,7 @@ Mesh::build_single_column_(int colnum, Entity_ID top_face) const
       // for (int m=0; m!=space_dim_-1; ++m) {
       //   horiz_dist += std::abs(bc[m]-tc[m]);
       // }
-      // ASSERT(horz_dist < 1.e-10);
+      // AMANZI_ASSERT(horz_dist < 1.e-10);
     }
 
     top_face = bot_face;

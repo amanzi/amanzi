@@ -141,7 +141,7 @@ void Visualization::WritePartition() {
 // Writing to files
 // -----------------------------------------------------------------------------
 void Visualization::CreateFiles() {
-  ASSERT(mesh_ != Teuchos::null);
+  AMANZI_ASSERT(mesh_ != Teuchos::null);
 
   std::string file_format = plist_.get<std::string>("file format", "XDMF");
 

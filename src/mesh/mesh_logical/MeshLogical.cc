@@ -14,7 +14,7 @@ MeshLogical::MeshLogical(const Epetra_MpiComm *comm,
     : Mesh(verbosity_obj, true, false)
 {
   logical_ = true;
-  ASSERT(face_cell_ids.size() == face_normals.size());
+  AMANZI_ASSERT(face_cell_ids.size() == face_normals.size());
 
   set_comm(comm);
   set_space_dimension(3);
@@ -35,7 +35,7 @@ MeshLogical::MeshLogical(const Epetra_MpiComm *comm,
   }
 
   int num_cells = cells.size();
-  ASSERT(num_cells == (c_max+1));
+  AMANZI_ASSERT(num_cells == (c_max+1));
   cell_volumes_.resize(num_cells, 0.);
 
   // normal1 is negative normal0
@@ -173,7 +173,7 @@ MeshLogical::MeshLogical(const Epetra_MpiComm *comm,
         face_centroids_[f] = (cell_centroids_[face_cell_ids_[f][0]] +
                 cell_centroids_[face_cell_ids_[f][1]]) / 2.0;
       } else {
-        ASSERT(face_cell_ids_[f].size() == 1);
+        AMANZI_ASSERT(face_cell_ids_[f].size() == 1);
         face_centroids_[f] = cell_centroids_[face_cell_ids_[f][0]]
             + (face_cell_lengths[f][0] / AmanziGeometry::norm(face_normals_[f][0]))
             * face_normals_[f][0];
@@ -257,17 +257,17 @@ void MeshLogical::set_logical_geometry(std::vector<double> const* const cell_vol
         std::vector<AmanziGeometry::Point> const* const cell_centroids)
 {
   if (cell_volumes) {
-    ASSERT(cell_volumes_.size() == cell_volumes->size());
+    AMANZI_ASSERT(cell_volumes_.size() == cell_volumes->size());
     cell_volumes_ = *cell_volumes;
   }
 
   if (cell_centroids) {
-    ASSERT(cell_centroids_.size() == cell_centroids->size());
+    AMANZI_ASSERT(cell_centroids_.size() == cell_centroids->size());
     cell_centroids_ = *cell_centroids;
   }
 
   if (face_areas) {
-    ASSERT(face_areas_.size() == face_areas->size());
+    AMANZI_ASSERT(face_areas_.size() == face_areas->size());
     for (int f=0; f!=face_areas_.size(); ++f) {
       face_normals_[f][0] *= ((*face_areas)[f]/face_areas_[f]);
       face_normals_[f][1] *= ((*face_areas)[f]/face_areas_[f]);
@@ -276,7 +276,7 @@ void MeshLogical::set_logical_geometry(std::vector<double> const* const cell_vol
   }
 
   if (cell_face_lengths) {
-    ASSERT(cell_face_bisectors_.size() == cell_face_lengths->size());
+    AMANZI_ASSERT(cell_face_bisectors_.size() == cell_face_lengths->size());
     int ncells = cell_face_bisectors_.size();
     for (int c=0; c!=ncells; ++c) {
       auto& c_bisectors = cell_face_bisectors_[c];

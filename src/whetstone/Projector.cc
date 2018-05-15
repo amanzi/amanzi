@@ -151,7 +151,7 @@ void Projector::GenericCell_CRk_(
     const Projector::Type type, bool is_harmonic, 
     const std::shared_ptr<DenseVector>& moments, VectorPolynomial& uc) const
 {
-  ASSERT(d_ == 2);
+  AMANZI_ASSERT(d_ == 2);
 
   Entity_ID_List faces;
   std::vector<int> dirs;
@@ -243,7 +243,7 @@ void Projector::GenericCell_CRk_(
       }
     }
     else if (ndof_c > 0 && !is_harmonic) {
-      ASSERT(ndof_c == moments->NumRows());
+      AMANZI_ASSERT(ndof_c == moments->NumRows());
       for (int n = 0; n < ndof_c; ++n) {
         vdof(row + n) = (*moments)(n);
       }
@@ -299,7 +299,7 @@ void Projector::GenericCell_Pk_(
     const Projector::Type type, bool is_harmonic,
     const std::shared_ptr<DenseVector>& moments, VectorPolynomial& uc) const
 {
-  ASSERT(d_ == 2);
+  AMANZI_ASSERT(d_ == 2);
 
   Entity_ID_List nodes, faces;
   std::vector<int> dirs;
@@ -423,7 +423,7 @@ void Projector::GenericCell_Pk_(
     }
     // -- or copy moments from input data
     else if (ndof_c > 0 && !is_harmonic) {
-      ASSERT(ndof_c == moments->NumRows());
+      AMANZI_ASSERT(ndof_c == moments->NumRows());
       for (int n = 0; n < ndof_c; ++n) {
         vdof(row + n) = (*moments)(n);
       }

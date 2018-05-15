@@ -983,7 +983,7 @@ std::pair<double,double> RunNonlinearProblem(
   } else if (jacobian == "full") {
     problem->CreateBlockPCs(true, true, upwind);
   } else {
-    ASSERT(0);
+    AMANZI_ASSERT(0);
   }
     
   problem->CreateTreeVectorSpace();

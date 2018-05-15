@@ -121,11 +121,11 @@ TEST(FE_MATRIX_NEAREST_NEIGHBOR_TPFA_Epetra_FECrs) {
     std::vector<int> neighbor_cell_gids(neighbor_cells.size());
     for (int n=0; n!=neighbor_cells.size(); ++n) {
       neighbor_cell_gids[n] = cell_map_ghosted->GID(neighbor_cells[n]);
-      ASSERT(neighbor_cell_gids[n] >= 0);
+      AMANZI_ASSERT(neighbor_cell_gids[n] >= 0);
     }
-    ASSERT(cell_map_ghosted->GID(c) >= 0);
+    AMANZI_ASSERT(cell_map_ghosted->GID(c) >= 0);
     ierr |= control.SumIntoGlobalValues(cell_map_ghosted->GID(c), neighbor_cells.size(), &vals[0], &neighbor_cell_gids[0]);
-    ASSERT(!ierr);
+    AMANZI_ASSERT(!ierr);
   }
 
   ierr |= control.GlobalAssemble();
@@ -223,13 +223,13 @@ TEST(FE_MATRIX_NEAREST_NEIGHBOR_TPFA_Epetra_FECrs_Nonlocal) {
     std::vector<int> neighbor_cell_gids(neighbor_cells.size());
     for (int n=0; n!=neighbor_cells.size(); ++n) {
       neighbor_cell_gids[n] = cell_map_ghosted->GID(neighbor_cells[n]);
-      ASSERT(neighbor_cell_gids[n] >= 0);
+      AMANZI_ASSERT(neighbor_cell_gids[n] >= 0);
     }
 
     std::vector<double> vals(neighbor_cells.size(), 1);
-    ASSERT(cell_map_ghosted->GID(c) >= 0);
+    AMANZI_ASSERT(cell_map_ghosted->GID(c) >= 0);
     ierr |= control.SumIntoGlobalValues(cell_map_ghosted->GID(c), neighbor_cells.size(), &vals[0], &neighbor_cell_gids[0]);
-    ASSERT(!ierr);
+    AMANZI_ASSERT(!ierr);
   }
 
   ierr |= control.GlobalAssemble();
@@ -320,7 +320,7 @@ TEST(FE_MATRIX_NEAREST_NEIGHBOR_TPFA_MatrixFE) {
 
     std::vector<double> vals(neighbor_cells.size(), 1);
     ierr |= matrix.SumIntoMyValues(c, neighbor_cells.size(), &vals[0], &neighbor_cells[0]);
-    ASSERT(!ierr);
+    AMANZI_ASSERT(!ierr);
   }
 
   ierr |= matrix.FillComplete();
@@ -465,7 +465,7 @@ TEST(FE_MATRIX_NEAREST_NEIGHBOR_TPFA_MatrixFE) {
 //       face_gids[n] = face_map_ghosted->GID(faces[n]);
 //     for (int n=0; n!=faces.size(); ++n) {
 //       ierr |= graph->InsertGlobalIndices(face_gids[n], face_gids.size(), &face_gids[0]);
-//       ASSERT(!ierr);
+//       AMANZI_ASSERT(!ierr);
 //     }
 //   }
 
@@ -703,7 +703,7 @@ TEST(FE_MATRIX_FACE_FACE_Epetra_FECrsMatrix_offproc2) {
       face_gids[n] = face_map_ghosted->GID(faces[n]);
 
     ierr |= graph->InsertGlobalIndices(face_gids.size(), &face_gids[0], face_gids.size(), &face_gids[0]);
-    ASSERT(!ierr);
+    AMANZI_ASSERT(!ierr);
   }
 
   ierr |= graph->FillComplete(*face_map, *face_map);
