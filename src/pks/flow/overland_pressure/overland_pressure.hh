@@ -29,35 +29,30 @@ Variable naming:
 
 Other variable names, typically not set as the default is basically always good:
 
-* `"conserved quantity suffix`" ``[string]`` **"water_content"**  If set, changes the conserved quantity key.
-
-* `"conserved quantity key`" ``[string]`` **"DOMAIN-CONSERVED_QUANTITY_SUFFIX"** Typically not set, default is good. ``[mol]``
+* `"conserved quantity key`" ``[string]`` **"DOMAIN-water_content"** The conserved quantity name.
 
 Discretization control:
 
-* `"diffusion`" ``[pde-diffusion-spec]`` An PDE_Diffusion_ spec describing the (forward) diffusion operator
+//* `"diffusion`" ``[pde-diffusion-spec]`` An PDE_Diffusion_ spec describing the (forward) diffusion operator
+* `"diffusion`" ``[list]`` An PDE_Diffusion_ spec describing the (forward) diffusion operator
 
-* `"diffusion preconditioner`" ``[pde-diffusion-spec]`` An PDE_Diffusion_ spec describing the diffusive parts of the preconditioner.
+//* `"diffusion preconditioner`" ``[pde-diffusion-spec]`` An PDE_Diffusion_ spec describing the diffusive parts of the preconditioner.
+* `"diffusion preconditioner`" ``[list]`` An PDE_Diffusion_ spec describing the diffusive parts of the preconditioner.
 
 Time integration and timestep control:
 
 * `"initial time step`" ``[double]`` **1.** Max initial time step size ``[s]``.
 
-* `"time integrator`" ``[time-integrator-spec]`` is a TimeIntegrator_ spec.
+* `"time integrator`" ``[implicit-time-integrator-typed-spec]`` **optional** is a TimeIntegrator_ spec.
   Note that this is only used if this PK is not strongly coupled to other PKs.
 
-* `"linear solver`" ``[linear-solver-spec]`` is a LinearSolver_ spec.  Note
+* `"linear solver`" ``[linear-solver-typed-spec]`` **optional** is a LinearSolver_ spec.  Note
   that this is only used if this PK is not strongly coupled to other PKs.
 
-* `"preconditioner`" ``[preconditioner-spec]`` is a Preconditioner_ spec.
+* `"preconditioner`" ``[preconditioner-typed-spec]`` **optional** is a Preconditioner_ spec.
   Note that this is only used if this PK is not strongly coupled to other PKs.
 
-* `"initial condition`" ``[initial-condition-spec]`` See InitialConditions_.
-  Additionally, the following parameter is supported:
-
-  - `"initialize faces from cell`" ``[bool]`` **false** Indicates that the
-    primary variable field has both CELL and FACE objects, and the FACE values
-    are calculated as the average of the neighboring cells.
+* `"initial condition`" ``[initial-conditions-spec]`` See InitialConditions_.
 
 Error control:
 
@@ -73,7 +68,7 @@ Error control:
 
 Boundary conditions:
 
-* `"boundary conditions`" ``[surface-flow-bc-spec]`` Defaults to Neuman, 0 normal flux.
+//* `"boundary conditions`" ``[surface-flow-bc-spec]`` Defaults to Neuman, 0 normal flux.
 
 
 May inherit options from PKPhysicalBDFBase_.

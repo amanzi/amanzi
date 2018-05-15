@@ -24,11 +24,11 @@ directly added into the subsurface discrete equations.
 * `"PKs order`" ``[Array(string)]`` Supplies the names of the coupled PKs.
   The order must be {subsurface_flow_pk, surface_flow_pk} (subsurface first).
 
-* `"linear solver`" ``[linear-solver-spec]`` A LinearSolver_ spec.  Only used
-  if this PK is not itself coupled by other strong couplers.
+* `"linear solver`" ``[linear-solver-typed-spec]`` **optional** is a LinearSolver_ spec.  Note
+  that this is only used if this PK is not strongly coupled to other PKs.
 
-* `"preconditioner`" ``[preconditioner-spec]`` A Preconditioner_ spec.  Only used
-  if this PK is not itself coupled by other strong couplers.
+* `"preconditioner`" ``[preconditioner-typed-spec]`` **optional** is a Preconditioner_ spec.
+  Note that this is only used if this PK is not strongly coupled to other PKs.
 
 * `"water delegate`" ``[list]`` 
 

@@ -22,7 +22,7 @@ Evaluates a set of WRMs on a partition of the mesh.
          from the evaluator name and need not be set.
 * `"capillary pressure key`" ``[string]`` **DOMAIN-capillary_pressure_gas_liq**
          The name of the capillary pressure.
-* `"WRM parameters`" ``[wrm-partition-list]`` 
+* `"WRM parameters`" ``[wrm-partition-typed-spec-list]`` 
 
 */
 

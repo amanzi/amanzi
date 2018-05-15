@@ -72,7 +72,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("LOG_FILES", nargs="+", type=str,
                         help="List of logfiles to parse.")
-    parser.add_argument("--colors", "-c", type=cm.float_list_type,
+    parser.add_argument("--colors", "-c", type=colors.float_list_type,
                         default=None,
                         help="List of color indices to use, of the form: --colors=[0,0.1,1], where the doubles are in the range (0,1) and are mapped to a color using the colormap.")
     parser.add_argument("--colormap", "-m", type=str,

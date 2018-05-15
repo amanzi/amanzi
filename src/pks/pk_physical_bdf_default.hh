@@ -17,13 +17,19 @@ implement an equation and are not couplers, and support the implicit
 integration interface.  This largely just supplies a default error norm based
 on error in conservation relative to the extent of the conserved quantity.
 
-* `"absolute error tolerance`" ``[double]`` **1.0**
+* `"absolute error tolerance`" ``[double]`` **1.0** Absolute tolerance,
+  :math:`a_tol` in the equation below.  Note that this default is often
+  overridden by PKs with more physical values, and very rarely are these set
+  by the user.
 
-  Absolute tolerance, :math:`a_tol` in the equation below.
+* `"relative error tolerance`" ``[double]`` **1.0** Relative tolerance,
+  :math:`r_tol` in the equation below.  Note that this default is often
+  overridden by PKs with more physical values, and very rarely are these set
+  by the user.
 
-* `"relative error tolerance`" ``[double]`` **1.0**
-
-  Relative tolerance, :math:`r_tol` in the equation below.
+* `"flux error tolerance`" ``[double]`` **1.0** Relative tolerance on the
+  flux.  Note that this default is often overridden by PKs with more physical
+  values, and very rarely are these set by the user.
 
 By default, the error norm used by solvers is given by:
 

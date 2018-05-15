@@ -32,12 +32,12 @@ several additional specs are included.  For instance, in a strongly coupled
 flow and energy problem, these specs are included in the ``StrongMPC`` that
 couples the flow and energy PKs, not to the flow or energy PK itself.
   
-* `"time integrator`" ``[time-integrator-spec]`` is a TimeIntegrator_.
+* `"time integrator`" ``[implicit-time-integrator-typed-spec]`` **optional**
+  A TimeIntegrator_.  Note that this is only provided if this PK is not
+  strongly coupled to other PKs.
 
-  Note that this is only provided in the top-most ``PKBDFBase`` in the tree --
-  this is often a StrongMPC_ or a class deriving from StrongMPC_.
-
-* `"preconditioner`" ``[preconditioner-spec]`` is a Preconditioner_.
+* `"preconditioner`" ``[preconditioner-typed-spec]`` **optional** is a Preconditioner_ spec.
+  Note that this is only used if this PK is not strongly coupled to other PKs.
 
   This spec describes how to form the (approximate) inverse of the preconditioner.
   

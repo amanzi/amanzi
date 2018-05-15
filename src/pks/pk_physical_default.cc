@@ -20,7 +20,7 @@ PK_Physical_Default::PK_Physical_Default(Teuchos::ParameterList& pk_tree,
     PK(pk_tree, glist, S, solution),
     PK_Physical(pk_tree, glist, S, solution)
 {
-  domain_ = plist_->get<std::string>("domain name", "");
+  domain_ = plist_->get<std::string>("domain name");
   key_ = Keys::readKey(*plist_, domain_, "primary variable");
   
   // set up the primary variable solution, and its evaluator

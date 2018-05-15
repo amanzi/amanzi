@@ -129,6 +129,7 @@ class Mesh2D(object):
             self.labeled_sets = []
 
         self.validate()
+        self.edge_counts()
 
 
     def validate(self):
@@ -195,51 +196,106 @@ class Mesh2D(object):
 
     @classmethod
     def read_VTK(cls, filename):
+        try:
+            return cls.read_VTK_Simplices(filename)
+        except AssertionError:
+            return cls.read_VTK_Unstructured(filename)
+        
+    @classmethod
+    def read_VTK_Unstructured(cls, filename):
         with open(filename,'r') as fid:
-            line = fid.readline()
-            while not line.startswith("POINTS"):
-                line = fid.readline()
-            ncoords = int(line.strip().split()[1])
-            coords = np.zeros([ncoords,3],'d')
-            i = 0
-            while i < ncoords:
-                coord_dat = np.array([float(p) for p in fid.readline().strip().split()])
-                assert len(coord_dat) % 3 == 0
-                ncoords_this_line = len(coord_dat) / 3
-                for j in range(ncoords_this_line):
-                    coords[i,:] = coord_dat[3*j:3*(j+1)]
-                    i += 1
+            while True:
+                line = fid.readline().decode('utf-8')
+                if not line:
+                    # EOF
+                    break
 
-            line = fid.readline()
-            while not line.startswith("POLYGONS"):
-                line = fid.readline()
-            ngons = int(line.strip().split()[1])
-            gons = []
-            for i in range(ngons):
-                line = [int(n) for n in fid.readline().strip().split()[1:]]
-                gon = [int(n) for n in line]
+                line = line.strip()
+                if len(line) == 0:
+                    continue
 
-                # check handedness -- need normals to point up!
-                cross = []
-                for i in range(len(gon)):
-                    if i == len(gon)-1:
-                        ip = 0
-                        ipp = 1
-                    elif i == len(gon)-2:
-                        ip = i+1
-                        ipp = 0
-                    else:
-                        ip = i+1
-                        ipp = i+2
-                    d2 = coords[gon[ipp]] - coords[gon[ip]]
-                    d1 = coords[gon[i]] - coords[gon[ip]]
-                    cross.append(np.cross(d2, d1))
-                if (np.array([c[2] for c in cross]).mean() < 0):
-                    gon.reverse()
+                split = line.split()
+                section = split[0]
+
+                if section == 'POINTS':
+                    ncoords = int(split[1])
+                    points = np.fromfile(fid, count=ncoords*3, sep=' ', dtype='d')
+                    points = points.reshape(ncoords, 3)
+
+                elif section == 'POLYGONS':
+                    ncells = int(split[1])
+                    n_to_read = int(split[2])
+
+                    gons = []
                     
-                gons.append(gon)
+                    data = np.fromfile(fid, count=n_to_read, sep=' ', dtype='i')
+                    idx = 0
+                    for i in range(ncells):
+                        n_in_gon = data[idx]
+                        gon = data[idx+1:idx+1+n_in_gon]
 
-        return cls(coords, gons)
+                        # check handedness -- need normals to point up!
+                        cross = []
+                        for i in range(len(gon)):
+                            if i == len(gon)-1:
+                                ip = 0
+                                ipp = 1
+                            elif i == len(gon)-2:
+                                ip = i+1
+                                ipp = 0
+                            else:
+                                ip = i+1
+                                ipp = i+2
+                            d2 = coords[gon[ipp]] - coords[gon[ip]]
+                            d1 = coords[gon[i]] - coords[gon[ip]]
+                            cross.append(np.cross(d2, d1))
+                        if (np.array([c[2] for c in cross]).mean() < 0):
+                            gon.reverse()
+
+                        gons.append(gon)
+
+                        idx += n_in_gon + 1
+                    assert(idx == n_to_read)
+                        
+                else:
+                    raise RuntimeError("VTK file includes not recognized section")
+        return cls(points, gons)
+
+        
+    @classmethod
+    def read_VTK_Simplices(cls, filename):
+        """Stolen from meshio, https://github.com/nschloe/meshio/blob/master/meshio/vtk_io.py"""
+        import vtk_io
+        with open(filename,'r') as fid:
+            data = vtk_io.read_buffer(fid)
+
+        points = data[0]
+        if len(data[1]) != 1:
+            raise RuntimeError("Simplex VTK file is readable by vtk_io but not by meshing_ats.  Includes: %r"%data[1].keys())
+
+        gons = [v for v in data[1].itervalues()][0]
+        gons = gons.tolist()
+
+        # check handedness
+        for gon in gons:
+            cross = []
+            for i in range(len(gon)):
+                if i == len(gon)-1:
+                    ip = 0
+                    ipp = 1
+                elif i == len(gon)-2:
+                    ip = i+1
+                    ipp = 0
+                else:
+                    ip = i+1
+                    ipp = i+2
+                d2 = points[gon[ipp]] - points[gon[ip]]
+                d1 = points[gon[i]] - points[gon[ip]]
+                cross.append(np.cross(d2, d1))
+            if (np.array([c[2] for c in cross]).mean() < 0):
+                gon.reverse()
+
+        return cls(points, gons)
             
     @classmethod
     def from_Transect(cls, x, z):
@@ -258,8 +314,8 @@ class Mesh2D(object):
         for i in range(nsurf_cells):
             conn.append([i, i+1, nsurf_cells + i + 2, nsurf_cells + i + 1])
 
-        coords = np.array([Xc, Yc, Zc])
-        return cls(coords.transpose(), conn)
+        points = np.array([Xc, Yc, Zc])
+        return cls(points.transpose(), conn)
     
 
 class Mesh3D(object):
@@ -530,7 +586,7 @@ class Mesh3D(object):
                 assert len(ncells_per_layer) == len(layer_types)
 
         elif is_list(layer_data):
-            layer_type = [layer_type,]*len(layer_data)
+            layer_types = [layer_types,]*len(layer_data)
 
             if not is_list(ncells_per_layer):
                 ncells_per_layer = [ncells_per_layer,]*len(layer_data)
@@ -563,12 +619,15 @@ class Mesh3D(object):
 
 
         def col_to_id(column, z_cell):
+            """Maps 2D cell ID and index in the vertical to a 3D cell ID"""
             return z_cell + column * ncells_tall
 
         def node_to_id(node, z_node):
+            """Maps 2D node ID and index in the vertical to a 3D node ID"""
             return z_node + node * (ncells_tall+1)
 
         def edge_to_id(edge, z_cell):
+            """Maps 2D edge hash and index in the vertical to a 3D face ID of a vertical face"""
             return (ncells_tall + 1) * mesh2D.num_cells() + z_cell + edge * ncells_tall
 
         # create coordinates
@@ -644,6 +703,8 @@ class Mesh3D(object):
 
         # -- loop over the columns, adding the vertical faces
         added = dict()
+        vertical_side_cells = []
+        vertical_side_indices = []
         for col in range(mesh2D.num_cells()):
             nodes_2 = mesh2D.conn[col]
             for i in range(len(nodes_2)):
@@ -663,20 +724,36 @@ class Mesh3D(object):
                              node_to_id(edge[1], z_face+1),
                              node_to_id(edge[0], z_face+1)]
                         faces.append(f)
-                        cells[col_to_id(col, z_face)].append(i_f)
+                        face_cell = col_to_id(col, z_face)
+                        cells[face_cell].append(i_f)
 
+                        # check if this is an external
+                        if mesh2D._edges[edge] == 1:
+                            vertical_side_cells.append(face_cell)
+                            vertical_side_indices.append(len(cells[face_cell])-1)
+                        
                 else:
                     # faces already added from previous column
                     for z_face in range(ncells_tall):
                         i_f = edge_to_id(i_e, z_face)
                         cells[col_to_id(col, z_face)].append(i_f)
 
+
         # Do some idiot checking
+        # -- check we got the expected number of faces
         assert len(faces) == nfaces_total
+        # -- check every cell is at least a tet
         for c in cells:
             assert len(c) > 4
+        # -- check surface sideset has the right number of entries
         assert len(surface) == mesh2D.num_cells()
+        # -- check bottom sideset has the right number of entries
         assert len(bottom) == mesh2D.num_cells()
+
+        # -- len of vertical sides sideset is number of external edges * number of cells, no pinchouts here
+        num_sides = ncells_tall * sum(1 for e,c in mesh2D.edge_counts().iteritems() if c == 1)
+        assert num_sides == len(vertical_side_cells)
+        assert num_sides == len(vertical_side_indices)
 
         # make the material ids
         material_ids = np.zeros((len(cells),),'i')
@@ -692,6 +769,7 @@ class Mesh3D(object):
         side_sets = []
         side_sets.append(SideSet("bottom", 1, bottom, [1,]*len(bottom)))
         side_sets.append(SideSet("surface", 2, surface, [0,]*len(surface)))
+        side_sets.append(SideSet("external_sides", 3, vertical_side_cells, vertical_side_indices))
 
         # reshape coords
         coords = coords.reshape(nnodes_total, 3)        

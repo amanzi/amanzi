@@ -12,7 +12,7 @@ import matplotlib.cm
 import parse_ats
     
 
-def plot_surface((keys,times,dat), ax, color, varname, style='-', v86=False, negate=False, label=None):
+def plot_surface((keys,times,dat), ax, color, varname, style='-', v86=False, negate=False, label=None, hackfactor=None):
     if v86:
         prefix = ""
     else:
@@ -24,12 +24,15 @@ def plot_surface((keys,times,dat), ax, color, varname, style='-', v86=False, neg
     if sd[0] == 0.:
         sd[0] = np.nan
 
+    if hackfactor is not None:
+        sd = sd * hackfactor
+
     ax.plot(times, sd, style, color=color, label=label)
     ax.set_ylabel(varname)
     ax.set_xlabel("time [yr]")
 
 
-def plot_surface_balance(ktd, ax, color, v86=False, label=None):
+def plot_surface_balance(ktd, ax, color, v86=False, label=None, hackfactor=None):
     """Plot data provided as a (keys,times,dat) tuple on a set of axes."""
     ax = ax.ravel()
     
@@ -42,7 +45,7 @@ def plot_surface_balance(ktd, ax, color, v86=False, label=None):
     plot_surface(ktd, ax[2], color, 'qE_lw_out', v86=v86)
     plot_surface(ktd, ax[3], color, 'qE_latent_heat', v86=v86)
     plot_surface(ktd, ax[4], color, 'qE_sensible_heat', v86=v86)
-    plot_surface(ktd, ax[5], color, 'conducted_energy_source')
+    plot_surface(ktd, ax[5], color, 'total_energy_source', hackfactor=hackfactor)
         
     plot_surface(ktd, ax[6][0], color, 'snow_temperature')
     plot_surface(ktd, ax[6][1], colors.darken(color), 'snow_depth', style='--', v86=v86)
@@ -80,6 +83,10 @@ if __name__ == "__main__":
 
     fnames = args.INPUT_DIRECTORIES
     for i,fname in enumerate(fnames):
+        hackfactor = None
+        if fname == "run-transient4":
+            hackfactor = 2.0
+            
         if args.colors is None:
             if len(fnames) > 1:
                 c = cm(float(i)/(len(fnames)-1))
@@ -92,7 +99,7 @@ if __name__ == "__main__":
                 c = args.colors[i]
 
         ktd = parse_ats.readATS(fname, "visdump_surface_data.h5")
-        plot_surface_balance(ktd, axs, c, label=fname)
+        plot_surface_balance(ktd, axs, c, label=fname, hackfactor=hackfactor)
         ktd[2].close()
 
     plt.tight_layout()
