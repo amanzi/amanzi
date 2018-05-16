@@ -95,8 +95,8 @@ if ( BUILD_TESTS )
 
     # Copy test directory files if an out of source build
     if (NOT (${WHETSTONE_SOURCE_DIR} EQUAL ${WHETSTONE_BINARY_DIR}) )
-        execute_process(COMMAND ${CMAKE_COMMAND} -E 
-          copy_directory ${WHETSTONE_SOURCE_DIR}/test ${WHETSTONE_BINARY_DIR}/test) 
+        file(GLOB DataFiles "${WHETSTONE_SOURCE_DIR}/test/*.exo")
+        file(COPY ${DataFiles} DESTINATION ${WHETSTONE_BINARY_DIR}/test/)
     endif()
 
     set(amanzi_libs geometry mesh mesh_audit mesh_factory whetstone)
