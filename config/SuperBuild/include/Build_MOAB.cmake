@@ -23,6 +23,10 @@ build_whitespace_string(moab_cflags -I${TPL_INSTALL_PREFIX}/include ${Amanzi_COM
 build_whitespace_string(moab_cxxflags -I${TPL_INSTALL_PREFIX}/include ${Amanzi_COMMON_CXXFLAGS})
 
 # Build the LDFLAGS string      
+if (BUILD_SHARED_LIBS)
+  build_whitespace_string(moab_shared_dir "-Wl,-rpath -Wl,${TPL_INSTALL_PREFIX}/lib")
+endif()
+
 build_whitespace_string(moab_ldflags
                         -L<INSTALL_DIR>/lib
                         -L${TPL_INSTALL_PREFIX}/lib
@@ -31,7 +35,8 @@ build_whitespace_string(moab_ldflags
                         -lhdf5_hl
                         -lhdf5
                         -L${TPL_INSTALL_PREFIX}/lib
-                        -lz)
+                        -lz
+                        ${moab_shared_dir})
 
 # --- Add external project and tie to the MOAB build target
 ExternalProject_Add(${MOAB_BUILD_TARGET}
