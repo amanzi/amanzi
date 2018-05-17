@@ -180,6 +180,7 @@ if (BUILD_TESTS)
 			LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
         add_amanzi_test(operators_marshak operators_marshak
                         KIND unit
+                        NPROCS 3
                         SOURCE test/Main.cc test/operator_marshak.cc
                         LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
         add_amanzi_test(operators_marshak_logical operators_marshak_logical
@@ -327,6 +328,7 @@ if (BUILD_TESTS)
     # DG advection test
     add_amanzi_test(operators_advection_dg operators_advection_dg
                     KIND unit
+                    NPROCS 3
                     SOURCE test/Main.cc test/operator_advection_dg.cc
                                         test/operator_advection_dg_transient
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})

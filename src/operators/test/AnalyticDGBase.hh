@@ -11,7 +11,7 @@
   Base class for testing DG schemes for diffusion and advection
   problems of the form:
 
-    u = a du/dt + v . grad(u) - div(K grad(u)) + r u = f.
+    a du/dt + v . grad(u) - div(K grad(u)) + r u = f.
 
   List of solutions:
     AnalyticDG0n: polynomial solution of order n, where n=0,1,2,3.

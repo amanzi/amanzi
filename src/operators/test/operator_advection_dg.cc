@@ -51,7 +51,8 @@
 * equation c p + div(v p) = f.
 * **************************************************************** */
 template<class AnalyticDG>
-void AdvectionSteady(int dim, std::string filename, int nx)
+void AdvectionSteady(int dim, std::string filename, int nx,
+                     bool conservative_form)
 {
   using namespace Teuchos;
   using namespace Amanzi;
@@ -62,7 +63,8 @@ void AdvectionSteady(int dim, std::string filename, int nx)
   Epetra_MpiComm comm(MPI_COMM_WORLD);
   int MyPID = comm.MyPID();
 
-  if (MyPID == 0) std::cout << "\nTest: " << dim << "D steady advection problem, dG method" << std::endl;
+  std::string problem = (conservative_form) ? ", conservative formulation" : "";
+  if (MyPID == 0) std::cout << "\nTest: " << dim << "D steady advection, dG method" << problem << std::endl;
 
   // read parameter list
   std::string xmlFileName;
@@ -144,10 +146,21 @@ void AdvectionSteady(int dim, std::string filename, int nx)
     (*velf)[f] = v * mesh->face_normal(f);
   }
 
-  // -- source term is calculated using method of manufactured solutions
-  //    f = K * p + div (v p)
+  // -- divergence of velocity
+  //    non-conservative formulation leads to Kn = Kreac - div(v)
+  auto Kn = Teuchos::rcp(new std::vector<WhetStone::VectorPolynomial>());
   WhetStone::Polynomial divv = Divergence(v);
 
+  if (!conservative_form) {
+    auto tmp = divv;
+    tmp *= -1.0;
+    tmp(0, 0) += Kreac;
+
+    Kn->resize(ncells_wghost, tmp);
+  }
+
+  // -- source term is calculated using method of manufactured solutions
+  //    f = K p + div (v p) = K p + v . grad p + p div(v)
   WhetStone::Polynomial sol, src;
   WhetStone::VectorPolynomial grad(dim, 0);
 
@@ -164,7 +177,9 @@ void AdvectionSteady(int dim, std::string filename, int nx)
 
     ana.SolutionTaylor(xc, 0.0, sol);
     grad.Gradient(sol); 
-    src = Kreac * sol + v * grad + divv * sol;
+
+    src = Kreac * sol + v * grad;
+    if (conservative_form) src += divv * sol;
 
     for (auto it = pc.begin(); it.end() <= pc.end(); ++it) {
       int n = it.PolynomialPosition();
@@ -217,7 +232,10 @@ void AdvectionSteady(int dim, std::string filename, int nx)
   op_adv->SetupPolyVector(velc);
   op_adv->UpdateMatrices();
 
-  op_reac->Setup(Kc);
+  if (conservative_form)
+    op_reac->Setup(Kc);
+  else 
+    op_reac->Setup(Kn);
   op_reac->UpdateMatrices(Teuchos::null);
 
   // create preconditoner
@@ -276,8 +294,9 @@ void AdvectionSteady(int dim, std::string filename, int nx)
 
 
 TEST(OPERATOR_ADVECTION_STEADY_DG) {
-  AdvectionSteady<AnalyticDG03>(2, "test/median7x8.exo", 8);
-  AdvectionSteady<AnalyticDG02>(3, "cubic", 3);
+  AdvectionSteady<AnalyticDG03>(2, "test/median7x8.exo", 8, true);
+  AdvectionSteady<AnalyticDG03>(2, "test/median7x8.exo", 8, false);
+  AdvectionSteady<AnalyticDG02>(3, "cubic", 3, true);
 }
 
 
