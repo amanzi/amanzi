@@ -24,7 +24,12 @@ build_whitespace_string(moab_cxxflags -I${TPL_INSTALL_PREFIX}/include ${Amanzi_C
 
 # Build the LDFLAGS string      
 if (BUILD_SHARED_LIBS)
+  set(moab_shared "yes")
+  set(moab_static "no")
   build_whitespace_string(moab_shared_dir "-Wl,-rpath -Wl,${TPL_INSTALL_PREFIX}/lib")
+else()
+  set(moab_shared "no")
+  set(moab_static "yes")
 endif()
 
 build_whitespace_string(moab_ldflags
@@ -56,8 +61,8 @@ ExternalProject_Add(${MOAB_BUILD_TARGET}
                                                 --with-mpi=${MPI_PREFIX}
                                                 --with-hdf5=${TPL_INSTALL_PREFIX}
                                                 --with-netcdf=${TPL_INSTALL_PREFIX}
-                                                --enable-shared=${BUILD_SHARED_LIBS}
-                                                --enable-static=${BUILD_STATIC_LIBS}
+                                                --enable-shared=${moab_shared}
+                                                --enable-static=${moab_static}
                                                 CC=${CMAKE_C_COMPILER}
                                                 CFLAGS=${moab_cflags}
                                                 CXX=${CMAKE_CXX_COMPILER}
