@@ -48,15 +48,18 @@ add_amanzi_library(whetstone
                           MFD3D_Generalized_Diffusion.cc
                           MFD3D_Lagrange.cc
                           MFD3D_LagrangeSerendipity.cc
-                          DG_Modal.cc nlfv.cc 
+                          DG_Modal.cc
+                          Basis_Natural.cc Basis_Normalized.cc Basis_Orthonormalized.cc
+                          nlfv.cc 
                           Tensor.cc DenseMatrix.cc
                           Polynomial.cc VectorPolynomial.cc
                           NumericalIntegration.cc
                           MeshMaps.cc
-                          MeshMaps_FEM.cc MeshMaps_VEM.cc
-                          Projector.cc
+                          MeshMaps_FEM.cc MeshMaps_VEM.cc MeshMaps_PEM.cc
                    HEADERS DenseMatrix.hh DenseVector.hh
                            DG_Modal.hh
+                           Basis.hh BasisFactory.hh
+                           Basis_Natural.hh Basis_Normalized.hh Basis_Orthonormalized.hh
                            lapack.hh
                            InnerProduct.hh InnerProductL2.hh InnerProductH1.hh
                            BilinearForm.hh Projectors.hh
@@ -73,11 +76,12 @@ add_amanzi_library(whetstone
                            MFD3DFactory.hh
                            nlfv.hh
                            NumericalIntegration.hh
-                           MeshMaps.hh
-                           MeshMaps_FEM.hh MeshMaps_VEM.hh
+                           Quadrature1D.hh Quadrature2D.hh
+                           MeshMaps.hh MeshMapsFactory.hh
+                           MeshMaps_FEM.hh MeshMaps_VEM.hh MeshMaps_VEM.hh MeshUtils.hh
                            CoordinateSystems.hh
-                           Polynomial.hh VectorPolynomial.hh PolynomialOnMesh.hh
-                           Projector.hh
+                           Monomial.hh Polynomial.hh PolynomialIterator.hh
+                           VectorPolynomial.hh PolynomialOnMesh.hh
                            Tensor.hh
                            WhetStoneDefs.hh
                            WhetStone_typedefs.hh
@@ -91,8 +95,8 @@ if ( BUILD_TESTS )
 
     # Copy test directory files if an out of source build
     if (NOT (${WHETSTONE_SOURCE_DIR} EQUAL ${WHETSTONE_BINARY_DIR}) )
-        execute_process(COMMAND ${CMAKE_COMMAND} -E 
-          copy_directory ${WHETSTONE_SOURCE_DIR}/test ${WHETSTONE_BINARY_DIR}/test) 
+        file(GLOB DataFiles "${WHETSTONE_SOURCE_DIR}/test/*.exo")
+        file(COPY ${DataFiles} DESTINATION ${WHETSTONE_BINARY_DIR}/test/)
     endif()
 
     set(amanzi_libs geometry mesh mesh_audit mesh_factory whetstone)

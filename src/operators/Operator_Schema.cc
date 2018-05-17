@@ -293,16 +293,18 @@ void Operator_Schema::SymbolicAssembleMatrixOp(const Op_Face_Schema& op,
         mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
         int ncells = cells.size();
 
-        for (int k = 0; k < it->num; ++k) {
-          const std::vector<int>& col_inds = map.GhostIndices("cell", k);
-          const std::vector<int>& row_inds = map.GhostIndices("cell", k);
+        for (int n = 0; n != ncells; ++n) {
+          for (int k = 0; k < it->num; ++k) {
+            const std::vector<int>& col_inds = map.GhostIndices("cell", k);
+            const std::vector<int>& row_inds = map.GhostIndices("cell", k);
 
-          for (int n = 0; n != ncells; ++n) {
             lid_c[m] = col_inds[cells[n]];
             lid_r[m] = row_inds[cells[n]];
             m++;
           }
         }
+      } else {
+        AMANZI_ASSERT(false);
       }
     }
 
@@ -424,16 +426,18 @@ void Operator_Schema::AssembleMatrixOp(const Op_Face_Schema& op,
         mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
         int ncells = cells.size();
 
-        for (int k = 0; k < it->num; ++k) {
-          const std::vector<int>& col_inds = map.GhostIndices("cell", k);
-          const std::vector<int>& row_inds = map.GhostIndices("cell", k);
+        for (int n = 0; n != ncells; ++n) {
+          for (int k = 0; k < it->num; ++k) {
+            const std::vector<int>& col_inds = map.GhostIndices("cell", k);
+            const std::vector<int>& row_inds = map.GhostIndices("cell", k);
 
-          for (int n = 0; n != ncells; ++n) {
             lid_c[m] = col_inds[cells[n]];
             lid_r[m] = row_inds[cells[n]];
             m++;
           }
         }
+      } else {
+        AMANZI_ASSERT(false);
       }
     }
 

@@ -25,7 +25,7 @@
 // Amanzi
 #include "MeshFactory.hh"
 #include "GMVMesh.hh"
-#include "LinearOperatorFactory.hh"
+#include "LinearOperatorBelosGMRES.hh"
 #include "Tensor.hh"
 
 // Operators
@@ -135,17 +135,19 @@ TEST(OPERATOR_DIFFUSION_NONSYMMETRIC) {
   global_op->InitPreconditioner("Hypre AMG", slist);
 
   // solve the problem
-  Teuchos::ParameterList lop_list = plist.get<Teuchos::ParameterList>("solvers");
-  AmanziSolvers::LinearOperatorFactory<Operator, CompositeVector, CompositeVectorSpace> factory;
-  Teuchos::RCP<AmanziSolvers::LinearOperator<Operator, CompositeVector, CompositeVectorSpace> >
-     solver = factory.Create("Belos GMRES", lop_list, global_op);
+  Teuchos::ParameterList lop_list = plist.sublist("solvers")
+                                         .sublist("Belos GMRES")
+                                         .sublist("belos gmres parameters");
+  auto solver = Teuchos::rcp(new AmanziSolvers::LinearOperatorBelosGMRES<
+     Operator, CompositeVector, CompositeVectorSpace>(global_op, global_op));
+  solver->Init(lop_list);
 
   CompositeVector& rhs = *global_op->rhs();
   int ierr = solver->ApplyInverse(rhs, *solution);
 
   if (MyPID == 0) {
-    std::cout << "pressure solver (" << solver->name() 
-              << "): ||r||=" << solver->residual() << " itr=" << solver->num_itrs()
+    std::cout << "pressure solver (belos gmres): ||r||=" << solver->residual()
+              << " itr=" << solver->num_itrs()
               << " code=" << solver->returned_code() << std::endl;
   }
 

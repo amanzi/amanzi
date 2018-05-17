@@ -17,9 +17,9 @@
 
 #include "DenseMatrix.hh"
 #include "MeshMaps.hh"
+#include "MFD3D_LagrangeSerendipity.hh"
 #include "NumericalIntegration.hh"
 #include "Polynomial.hh"
-#include "Projector.hh"
 
 namespace Amanzi {
 namespace WhetStone {
@@ -60,19 +60,21 @@ void MeshMaps::VelocityFace(int f, VectorPolynomial& v) const
 
 
 /* ******************************************************************
-* Calculation of Jacobian
+* Calculation of Jacobian.
+* Multiple velocities are packed in a rectagular matrix.
 ****************************************************************** */
 void MeshMaps::Jacobian(const VectorPolynomial& vc, MatrixPolynomial& J) const
 {
   // allocate memory
-  J.resize(d_);
-  for (int i = 0; i < d_; ++i) {
+  int nvc = vc.size();
+  J.resize(nvc);
+  for (int i = 0; i < nvc; ++i) {
     J[i].resize(d_);
   }
 
   // copy velocity gradients to Jacobian
   VectorPolynomial tmp(d_, 0);
-  for (int i = 0; i < d_; ++i) {
+  for (int i = 0; i < nvc; ++i) {
     tmp.Gradient(vc[i]);
     for (int j = 0; j < d_; ++j) {
       J[i][j] = tmp[j];
@@ -82,76 +84,95 @@ void MeshMaps::Jacobian(const VectorPolynomial& vc, MatrixPolynomial& J) const
 
 
 /* ******************************************************************
-* Calculation of matrix of cofactors
+* Calculation of matrix of cofactors.
+* Multiple cofactors are packed in a rectagular matrix.
 ****************************************************************** */
 void MeshMaps::Cofactors(
     double t, const MatrixPolynomial& J, MatrixPolynomial& C) const
 {
   // allocate memory for matrix of cofactors
-  C.resize(d_);
-  for (int i = 0; i < d_; ++i) {
+  int nJ = J.size();
+  C.resize(nJ);
+  for (int i = 0; i < nJ; ++i) {
     C[i].resize(d_);
   }
 
   // calculate cofactors
-  if (d_ == 2) {
-    C[1][1] = J[0][0];
-    C[1][0] = J[0][1];
-    C[1][0] *= -1.0;
+  int kJ = nJ / d_;
+  for (int n = 0; n < kJ; ++n) {
+    int m0 = n * d_;
+    int m1 = m0 + 1;
+    if (d_ == 2) {
+      C[m1][1] = J[m0][0];
+      C[m1][0] = J[m0][1];
+      C[m1][0] *= -1.0;
 
-    C[0][0] = J[1][1];
-    C[0][1] = J[1][0];
-    C[0][1] *= -1.0;
-  }
-  else if (d_ == 3) {
-    C[0][0] = J[1][1] * J[2][2] - J[2][1] * J[1][2];
-    C[1][0] = J[2][1] * J[0][2] - J[0][1] * J[2][2];
-    C[2][0] = J[0][1] * J[1][2] - J[1][1] * J[0][2];
+      C[m0][0] = J[m1][1];
+      C[m0][1] = J[m1][0];
+      C[m0][1] *= -1.0;
+    }
+    else if (d_ == 3) {
+      int m2 = m0 + 2;
+      C[m0][0] = J[m1][1] * J[m2][2] - J[m2][1] * J[m1][2];
+      C[m1][0] = J[m2][1] * J[m0][2] - J[m0][1] * J[m2][2];
+      C[m2][0] = J[m0][1] * J[m1][2] - J[m1][1] * J[m0][2];
 
-    C[0][1] = J[2][0] * J[1][2] - J[1][0] * J[2][2];
-    C[1][1] = J[0][0] * J[2][2] - J[2][0] * J[0][2];
-    C[2][1] = J[1][0] * J[0][2] - J[0][0] * J[1][2];
+      C[m0][1] = J[m2][0] * J[m1][2] - J[m1][0] * J[m2][2];
+      C[m1][1] = J[m0][0] * J[m2][2] - J[m2][0] * J[m0][2];
+      C[m2][1] = J[m1][0] * J[m0][2] - J[m0][0] * J[m1][2];
 
-    C[0][2] = J[1][0] * J[2][1] - J[2][0] * J[1][1];
-    C[1][2] = J[2][0] * J[0][1] - J[0][0] * J[2][1];
-    C[2][2] = J[0][0] * J[1][1] - J[1][0] * J[0][1];
+      C[m0][2] = J[m1][0] * J[m2][1] - J[m2][0] * J[m1][1];
+      C[m1][2] = J[m2][0] * J[m0][1] - J[m0][0] * J[m2][1];
+      C[m2][2] = J[m0][0] * J[m1][1] - J[m1][0] * J[m0][1];
+    }
   }
 
   // add time dependence
-  for (int i = 0; i < d_; ++i) {
+  for (int i = 0; i < nJ; ++i) {
     for (int j = 0; j < d_; ++j) {
       C[i][j] *= t;
     }
-    C[i][i](0, 0) += 1.0;
+    C[i][i % d_](0, 0) += 1.0;
   }
 }
 
 
 /* ******************************************************************
-* Calculate detminant at time t
+* Calculate detminant at time t.
+* Multiple determinatds are packed in a vector.
 ****************************************************************** */
 void MeshMaps::Determinant(
-   double t, const MatrixPolynomial& J, Polynomial& det) const
+   double t, const MatrixPolynomial& J, VectorPolynomial& det) const
 {
-  auto Jt = J;
+  int ndet = J.size() / d_;
+  det.resize(ndet);
 
+  MatrixPolynomial Jt;
+  Jt.resize(d_);
   for (int i = 0; i < d_; ++i) {
-    for (int j = 0; j < d_; ++j) {
-      Jt[i][j] *= t;
-    }
-    Jt[i][i](0, 0) += 1.0;
+    Jt[i].resize(d_);
   }
 
-  if (d_ == 2) {
-    det = Jt[0][0]* Jt[1][1] - Jt[0][1] * Jt[1][0];
-  }
-  else if (d_ == 3) {
-    det = Jt[0][0] * Jt[1][1] * Jt[2][2] 
-        + Jt[2][0] * Jt[0][1] * Jt[1][2] 
-        + Jt[1][0] * Jt[2][1] * Jt[0][2] 
-        - Jt[2][0] * Jt[1][1] * Jt[0][2] 
-        - Jt[1][0] * Jt[0][1] * Jt[2][2] 
-        - Jt[0][0] * Jt[2][1] * Jt[1][2]; 
+  for (int n = 0; n < ndet; ++n) {
+    int m = n * d_;
+    for (int i = 0; i < d_; ++i) {
+      for (int j = 0; j < d_; ++j) {
+        Jt[i][j] = J[m + i][j] * t;
+      }
+      Jt[i][i](0, 0) += 1.0;
+    }
+
+    if (d_ == 2) {
+      det[n] = Jt[0][0] * Jt[1][1] - Jt[0][1] * Jt[1][0];
+    }
+    else if (d_ == 3) {
+      det[n] = Jt[0][0] * Jt[1][1] * Jt[2][2] 
+             + Jt[2][0] * Jt[0][1] * Jt[1][2] 
+             + Jt[1][0] * Jt[2][1] * Jt[0][2] 
+             - Jt[2][0] * Jt[1][1] * Jt[0][2] 
+             - Jt[1][0] * Jt[0][1] * Jt[2][2] 
+             - Jt[0][0] * Jt[2][1] * Jt[1][2]; 
+    }
   }
 }
 
@@ -218,10 +239,10 @@ int MeshMaps::LeastSquareFit(int order,
     A.Multiply(b, u, false);
 
     for (auto it = poly.begin(); it.end() <= poly.end(); ++it) {
-      int n = it.MonomialOrder();
-      int m = it.MonomialPosition();
+      int n = it.MonomialSetOrder();
+      int m = it.MonomialSetPosition();
       int i = it.PolynomialPosition();
-      v[k].monomials(n).coefs()[m] = u(i);
+      v[k](n, m) = u(i);
     }
   }
 
@@ -280,7 +301,7 @@ void MeshMaps::ProjectPolynomial(int c, Polynomial& poly) const
 
   auto moments = std::make_shared<WhetStone::DenseVector>();
   if (order == 2) {
-    NumericalIntegration numi(mesh1_);
+    NumericalIntegration numi(mesh1_, true);
     double mass = numi.IntegratePolynomialCell(c, poly);
 
     moments->Reshape(1);
@@ -288,34 +309,10 @@ void MeshMaps::ProjectPolynomial(int c, Polynomial& poly) const
   }
 
   VectorPolynomial vc(d_, 0);
-  Projector projector(mesh1_);
-  // projector.H1Cell_Pk(c, order, vvf, moments, vc);
-  projector.L2Cell_SerendipityPk(c, order, vvf, moments, vc);
+  MFD3D_LagrangeSerendipity mfd(mesh1_);
+  mfd.set_order(order);
+  mfd.L2Cell(c, vvf, moments, vc);
   poly = vc[0];
-}
-
-
-/* ******************************************************************
-* Error calculation requires geometric center.
-****************************************************************** */
-AmanziGeometry::Point MeshMaps::cell_geometric_center(int id, int c) const
-{
-  Entity_ID_List nodes;
-  AmanziGeometry::Point v(d_), xg(d_);
-
-  mesh0_->cell_get_nodes(c, &nodes);
-  int nnodes = nodes.size();
-  for (int i = 0; i < nnodes; ++i) {
-    if (id == 0) {
-      mesh0_->node_get_coordinates(nodes[i], &v);
-    } else {
-      mesh1_->node_get_coordinates(nodes[i], &v);
-    }
-    xg += v;
-  } 
-  xg /= nnodes;
-  
-  return xg;
 }
 
 }  // namespace WhetStone

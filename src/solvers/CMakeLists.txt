@@ -50,8 +50,8 @@ set(solvers_source_files ResidualDebugger.cc
                          SolverFactory.cc)
 
 set(solvers_tpl_libs ${DBC_LIBRARIES}
-		     ${Teuchos_LIBRARIES}
-		     ${Epetra_LIBRARIES} ${Belos_LIBRARIES} ${NOX_LIBRARIES})
+		     ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES}
+                     ${Belos_LIBRARIES} ${NOX_LIBRARIES} ${Amesos2_LIBRARIES})
 list(REVERSE solvers_tpl_libs)
 list(REMOVE_DUPLICATES solvers_tpl_libs)
 list(REVERSE solvers_tpl_libs)
@@ -79,8 +79,8 @@ if (BUILD_TESTS)
 
     # Copy test directory files if an out of source build
     if (NOT (${SOLVERS_SOURCE_DIR} EQUAL ${SOLVERS_BINARY_DIR}))
-        execute_process(COMMAND ${CMAKE_COMMAND} -E
-          copy_directory ${SOLVERS_SOURCE_DIR}/test ${SOLVERS_BINARY_DIR}/test)
+        # file(GLOB DataFiles "${SOLVER_SOURCE_DIR}/test/*.xml")
+        # file(COPY ${DataFiles} DESTINATION ${SOLVER_BINARY_DIR}/test/)
     endif()
 
     # Add the solvers directory to the include paths

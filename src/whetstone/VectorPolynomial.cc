@@ -32,6 +32,17 @@ VectorPolynomial::VectorPolynomial(int d, int size) : d_(d)
 
 
 /* ******************************************************************
+* Converter-type constructor
+****************************************************************** */
+VectorPolynomial::VectorPolynomial(const Polynomial& p)
+{
+  d_ = p.dimension();
+  polys_.resize(1);
+  polys_[0] = p;
+}
+
+
+/* ******************************************************************
 * Reset all coefficients to thesame number
 ****************************************************************** */
 void VectorPolynomial::PutScalar(double val)
@@ -60,10 +71,10 @@ void VectorPolynomial::Gradient(const Polynomial p)
 
   int index[3];
   for (auto it = p.begin(); it.end() <= p.end(); ++it) {
-    int k = it.MonomialOrder();
+    int k = it.MonomialSetOrder();
     if (k > 0) {
       const int* idx = it.multi_index();
-      int m = it.MonomialPosition();
+      int m = it.MonomialSetPosition();
       double val = p(k, m);
 
       for (int i = 0; i < d; ++i) {
@@ -71,7 +82,7 @@ void VectorPolynomial::Gradient(const Polynomial p)
 
         if (index[i] > 0) {
           index[i]--;
-          m = p.MonomialPosition(index);
+          m = p.MonomialSetPosition(index);
           polys_[i](k - 1, m) = val * idx[i];
         }
       }
@@ -172,6 +183,28 @@ VectorPolynomial& VectorPolynomial::operator-=(const VectorPolynomial& vp)
     polys_[i] -= vp[i];
   }
   return *this;
+}
+
+
+/* ******************************************************************
+* Set same origin for all polynomials without modyfying them 
+****************************************************************** */
+void VectorPolynomial::set_origin(const AmanziGeometry::Point& origin)
+{
+  for (int i = 0; i < size(); ++i) {
+    polys_[i].set_origin(origin);
+  }
+}
+
+
+/* ******************************************************************
+* Change all polynomials to new same origin
+****************************************************************** */
+void VectorPolynomial::ChangeOrigin(const AmanziGeometry::Point& origin)
+{
+  for (int i = 0; i < size(); ++i) {
+    polys_[i].ChangeOrigin(origin);
+  }
 }
 
 

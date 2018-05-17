@@ -71,6 +71,7 @@
     <!-- Curved MFD schemes -->
     <ParameterList name="diffusion operator curved">
       <Parameter name="method" type="string" value="diffusion generalized"/>
+      <Parameter name="method order" type="int" value="-1"/>  <!-- not used /-->
       <Parameter name="matrix type" type="string" value="stiffness"/>
       <ParameterList name="schema domain">
         <Parameter name="base" type="string" value="cell"/>

@@ -18,6 +18,10 @@
   The material properties are imbedded into the the matrix Mc. 
 
   Notation used below: M (mass), W (inverse of M), A (stiffness).
+
+  NOTE: This class should be never instantiated directly. It is used to
+  add additional functionality to the base class (BilinearForm) related to
+  MFD and VEM methods, such as various projectors.
 */
 
 #ifndef AMANZI_MFD3D_HH_

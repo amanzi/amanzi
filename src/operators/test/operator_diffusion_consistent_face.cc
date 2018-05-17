@@ -25,7 +25,6 @@
 // Amanzi
 #include "MeshFactory.hh"
 #include "GMVMesh.hh"
-#include "LinearOperatorFactory.hh"
 #include "Tensor.hh"
 
 // Operators

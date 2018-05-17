@@ -101,8 +101,12 @@ if (BUILD_TESTS)
 
     # Copy test subdirectory for out of source builds
     if (NOT (MPC_SOURCE_DIR STREQUAL MPC_BINARY_DIR))
-        execute_process(COMMAND ${CMAKE_COMMAND} -E 
-          copy_directory ${MPC_SOURCE_DIR}/test ${MPC_BINARY_DIR}/test) 
+      file(GLOB DataFiles "${MPC_SOURCE_DIR}/test/*.xml"
+                          "${MPC_SOURCE_DIR}/test/*.in"
+                          "${MPC_SOURCE_DIR}/test/*.bgd"
+                          "${MPC_SOURCE_DIR}/test/*.dat"
+                          "${MPC_SOURCE_DIR}/test/*.exo")
+      file(COPY ${DataFiles} DESTINATION ${MPC_BINARY_DIR}/test/)
     endif()
 
     set(amanzi_libs mpc pks mpc_tree flow transport chemistry_pk energy dummy pks eos 

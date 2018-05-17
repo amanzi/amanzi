@@ -39,7 +39,7 @@ class LinearOperatorBelosGMRES : public LinearOperator<Matrix, Vector, VectorSpa
 {
  public:
   LinearOperatorBelosGMRES(const Teuchos::RCP<const Matrix>& m,
-                      const Teuchos::RCP<const Matrix>& h) :
+                           const Teuchos::RCP<const Matrix>& h) :
       LinearOperator<Matrix, Vector, VectorSpace>(m, h),
       tol_(1e-6),
       overflow_tol_(3.0e+50),  // mass of the Universe (J.Hopkins)
@@ -78,7 +78,6 @@ class LinearOperatorBelosGMRES : public LinearOperator<Matrix, Vector, VectorSpa
   mutable double residual_;
   mutable bool initialized_;
 };
-
 
 
 /* ******************************************************************
@@ -152,7 +151,6 @@ int LinearOperatorBelosGMRES<Matrix, Vector, VectorSpace>::ApplyInverse(const Ve
     pl->set("Verbosity", Belos::Errors + Belos::Warnings);
   }
 
-    
   if(criteria_ & LIN_SOLVER_RELATIVE_RHS)
   {
     pl->set("Implicit Residual Scaling", "Norm of RHS");

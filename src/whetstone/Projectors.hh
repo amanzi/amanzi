@@ -9,7 +9,7 @@
 
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 
-  Veritual framework for L2 and H1 projectors. 
+  Virtual framework for L2 and H1 projectors. 
 */
 
 #ifndef AMANZI_WHETSTONE_PROJECTORS_HH_
@@ -35,16 +35,16 @@ class Projectors {
   ~Projectors() {};
 
   // elliptic projector
-  void H1Cell(
-      int c, int order, const std::vector<VectorPolynomial>& vf,
+  virtual void H1Cell(
+      int c, const std::vector<VectorPolynomial>& vf,
       const std::shared_ptr<DenseVector>& moments, VectorPolynomial& uc) {
     Errors::Message msg("Elliptic projector is not supported for this scheme.");
     Exceptions::amanzi_throw(msg);
   }
 
   // L2 projector 
-  void L2Cell(
-      int c, int order, const std::vector<VectorPolynomial>& vf,
+  virtual void L2Cell(
+      int c, const std::vector<VectorPolynomial>& vf,
       const std::shared_ptr<DenseVector>& moments, VectorPolynomial& uc) {
     Errors::Message msg("L2 projector is not supported for this scheme.");
     Exceptions::amanzi_throw(msg);

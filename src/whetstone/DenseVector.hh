@@ -116,6 +116,11 @@ class DenseVector {
     return *this;
   }
 
+  DenseVector& operator/=(double val) {
+    for (int i = 0; i < m_; ++i) data_[i] /= val;
+    return *this;
+  }
+
   DenseVector& operator-=(double val) {
     for (int i = 0; i < m_; ++i) data_[i] -= val;
     return *this;
@@ -127,6 +132,19 @@ class DenseVector {
       data_ = new double[1];
     }
     for (int i = 0; i < m_; ++i) data_[i] = val;
+    return *this;
+  }
+
+  // -- vector type behaviour (no checks for compatiility) 
+  DenseVector& operator+=(const DenseVector& A) {
+    const double* dataA = A.Values();  
+    for (int i = 0; i < m_; ++i) data_[i] += dataA[i];
+    return *this;
+  }
+
+  DenseVector& operator-=(const DenseVector& A) {
+    const double* dataA = A.Values();  
+    for (int i = 0; i < m_; ++i) data_[i] -= dataA[i];
     return *this;
   }
 
@@ -148,6 +166,14 @@ class DenseVector {
     *result = 0.0;
     for (int i = 0; i < m_; i++) *result += data_[i] * data_[i];
     *result = std::pow(*result, 0.5);
+  }
+
+  double NormMax() const {
+    double tmp(0.0);
+    for (int i = 0; i < m_; ++i) {
+      tmp = std::max(tmp, fabs(data_[i]));
+    }
+    return tmp;
   }
 
   void SwapRows(int m1, int m2) {

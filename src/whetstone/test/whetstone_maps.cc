@@ -25,9 +25,11 @@
 #include "DenseMatrix.hh"
 #include "DG_Modal.hh"
 #include "MeshMaps_VEM.hh"
+#include "MFD3D_CrouzeixRaviart.hh"
+#include "MFD3D_Lagrange.hh"
+#include "MFD3D_LagrangeSerendipity.hh"
 #include "NumericalIntegration.hh"
 #include "Polynomial.hh"
-#include "Projector.hh"
 
 
 /* ****************************************************************
@@ -64,43 +66,55 @@ TEST(DG_MAP_DETERMINANT_CELL) {
   }
   mesh1->deform(nodeids, new_positions, false, &final_positions);
 
-  // colelct geometric data
-  auto maps = std::make_shared<MeshMaps_VEM>(mesh0, mesh1);
+  // collect geometric data
+  Teuchos::ParameterList plist;
+  plist.set<std::string>("method", "unknown")
+       .set<int>("method order", 1)
+       .set<std::string>("projector", "H1");
+  auto maps = std::make_shared<MeshMaps_VEM>(mesh0, mesh1, plist);
+
   std::vector<WhetStone::VectorPolynomial> vf(nfaces);
   for (int f = 0; f < nfaces; ++f) {
     maps->VelocityFace(f, vf[f]);
   }
 
-    // cell-baced velocities and Jacobian matrices
+  // cell-baced velocities and Jacobian matrices
   // test piecewise linear deformation (part II)
-  Polynomial det;
+  VectorPolynomial det;
   VectorPolynomial uc;
   MatrixPolynomial J;
-  Projector projector(mesh0);
 
   auto moments = std::make_shared<WhetStone::DenseVector>();
-  auto numi = std::make_shared<NumericalIntegration>(mesh0);
+  auto numi = std::make_shared<NumericalIntegration>(mesh0, true);
   std::vector<const char*> list = {"HarmonicCRk", "L2HarmonicPk", "HarmonicPk", "SerendipityPk"};
   
   for (auto name : list) {
     double fac(0.5), volume = mesh1->cell_volume(cell);
     for (int k = 1; k < 6; ++k) {
-      if (name == "HarmonicCRk") {
-        projector.HarmonicCell_CRk(cell, k, vf, moments, uc);
-      } else if (name == "L2HarmonicPk") {
+      if (std::strcmp(name, "HarmonicCRk") == 0) {
+        MFD3D_CrouzeixRaviart mfd(mesh0);
+        mfd.set_order(k);
+        mfd.H1CellHarmonic(cell, vf, moments, uc);
+      } else if (std::strcmp(name, "L2HarmonicPk") == 0) {
         if (k > 2) continue;
-        projector.L2HarmonicCell_Pk(cell, k, vf, moments, uc);
-      } else if (name == "SerendipityPk") {
+        MFD3D_Lagrange mfd(mesh0);
+        mfd.set_order(k);
+        mfd.L2CellHarmonic(cell, vf, moments, uc);
+      } else if (std::strcmp(name, "SerendipityPk") == 0) {
         if (k > 3) continue;
-        projector.L2Cell_SerendipityPk(cell, k, vf, moments, uc);
-      } else if (name == "HarmonicPk") {
+        MFD3D_LagrangeSerendipity mfd(mesh0);
+        mfd.set_order(k);
+        mfd.L2Cell(cell, vf, moments, uc);
+      } else if (std::strcmp(name, "HarmonicPk") == 0) {
         if (k > 3) continue;
-        projector.HarmonicCell_Pk(cell, k, vf, moments, uc);
+        MFD3D_Lagrange mfd(mesh0);
+        mfd.set_order(k);
+        mfd.H1CellHarmonic(cell, vf, moments, uc);
       }
       maps->Jacobian(uc, J);
       maps->Determinant(1.0, J, det);
 
-      double tmp = numi->IntegratePolynomialCell(cell, det);
+      double tmp = numi->IntegratePolynomialCell(cell, det[0]);
       double err = tmp - volume;
       fac /= (k + 1);
       CHECK(fabs(err) < fac);

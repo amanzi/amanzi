@@ -179,7 +179,7 @@ void RunTest(std::string op_list_name) {
   ierr = solver.ApplyInverse(rhs, solution);
 
   int num_itrs = solver.num_itrs();
-  CHECK(num_itrs > 5 && num_itrs < 10);
+  CHECK(num_itrs < 10);
 
   if (MyPID == 0) {
     std::cout << "pressure solver (pcg): ||r||=" << solver.residual() 

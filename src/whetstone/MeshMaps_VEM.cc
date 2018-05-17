@@ -17,6 +17,7 @@
 
 #include "DenseMatrix.hh"
 #include "MeshMaps_VEM.hh"
+#include "MFD3DFactory.hh"
 #include "Polynomial.hh"
 
 namespace Amanzi {
@@ -28,19 +29,29 @@ namespace WhetStone {
 void MeshMaps_VEM::VelocityCell(
     int c, const std::vector<VectorPolynomial>& vf, VectorPolynomial& vc) const
 {
+  // LeastSquareProjector_Cell_(order_, c, vf, vc);
+
   auto moments = std::make_shared<DenseVector>();
 
-  // LeastSquareProjector_Cell_(order_, c, vf, vc);
-  if (order_ == 1 && d_ == 3) {
-    projector_.HarmonicCell_CR1(c, vf, vc);
-  } else if (order_ < 2) {
-    // projector.HarmonicCell_Pk(c, 1, vf, moments, vc);
-    projector_.HarmonicCell_CR1(c, vf, vc);
-  } else {
-    // projector_.L2Cell_SerendipityPk(c, order_, vf, moments, vc);
-    // projector_.L2HarmonicCell_Pk(c, order_, vf, moments, vc);
-    // projector_.HarmonicCell_Pk(c, order_, vf, moments, vc);
-    projector_.HarmonicCell_CRk(c, order_, vf, moments, vc);
+  WhetStone::MFD3DFactory factory;
+  auto mfd = factory.CreateMFD3D(mesh0_, method_, order_);
+
+  if (projector_ == "H1 harmonic") {
+    auto mfd_tmp = dynamic_cast<MFD3D_CrouzeixRaviart*>(&*mfd);
+    mfd_tmp->H1CellHarmonic(c, vf, moments, vc);
+  }
+  else if (projector_ == "L2 harmonic") {
+    auto mfd_tmp = dynamic_cast<MFD3D_CrouzeixRaviart*>(&*mfd);
+    mfd_tmp->L2CellHarmonic(c, vf, moments, vc);
+  } 
+  else if (projector_ == "H1") {
+    mfd->H1Cell(c, vf, moments, vc);
+  }
+  else if (projector_ == "L2") {
+    mfd->L2Cell(c, vf, moments, vc);
+  }
+  else {
+    AMANZI_ASSERT(false);
   }
 }
 
@@ -68,8 +79,11 @@ void MeshMaps_VEM::VelocityFace(int f, VectorPolynomial& vf) const
       ve.push_back(v);
     }
 
+    MFD3D_CrouzeixRaviart mfd(mesh0_);
+    mfd.set_order(order_);
+
     AmanziGeometry::Point p0(mesh1_->face_centroid(f) - mesh0_->face_centroid(f));
-    projector_.HarmonicFace_CR1(f, p0, ve, vf);
+    mfd.H1FaceHarmonic(f, p0, ve, vf);
   }
 }
 
@@ -116,12 +130,12 @@ void MeshMaps_VEM::VelocityEdge_(int e, VectorPolynomial& ve) const
 * NOTE: Limited to P1 elements. FIXME
 ****************************************************************** */
 void MeshMaps_VEM::NansonFormula(
-    int f, double t, const VectorPolynomial& v, VectorPolynomial& cn) const
+    int f, double t, const VectorPolynomial& vf, VectorPolynomial& cn) const
 {
   AmanziGeometry::Point p(d_);
   WhetStone::Tensor J(d_, 2);
 
-  JacobianFaceValue_(f, v, p, J);
+  JacobianFaceValue_(f, vf, p, J);
   J *= t;
   J += 1.0 - t;
 
@@ -133,6 +147,20 @@ void MeshMaps_VEM::NansonFormula(
     cn[i].Reshape(d_, 0);
     cn[i](0, 0) = p[i];
   }
+}
+
+
+/* ******************************************************************
+* Calculate mesh velocity in cell c: new algorithm
+****************************************************************** */
+void MeshMaps_VEM::JacobianCell(
+    int c, const std::vector<VectorPolynomial>& vf, MatrixPolynomial& J) const
+{
+  auto moments = std::make_shared<DenseVector>();
+  MFD3D_CrouzeixRaviart mfd(mesh0_);
+
+  mfd.set_order(order_ + 1);
+  mfd.L2GradientCellHarmonic(c, vf, moments, J);
 }
 
 
@@ -183,6 +211,17 @@ void MeshMaps_VEM::LeastSquareProjector_Cell_(
   for (int i = 0; i < d_; ++i) {
     vc[i](1, i) -= 1.0;
   }
+}
+
+
+/* ******************************************************************
+* Calculate mesh velocity in cell c: old algorithm
+****************************************************************** */
+void MeshMaps_VEM::ParseInputParameters_(const Teuchos::ParameterList& plist)
+{
+  method_ = plist.get<std::string>("method");
+  order_ = plist.get<int>("method order");
+  projector_ = plist.get<std::string>("projector");
 }
 
 }  // namespace WhetStone

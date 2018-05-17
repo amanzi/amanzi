@@ -27,7 +27,7 @@
 #include "MeshFactory.hh"
 #include "Mesh_MSTK.hh"
 #include "Tensor.hh"
-#include "LinearOperatorFactory.hh"
+#include "LinearOperatorGMRES.hh"
 
 // Operators
 #include "Analytic06.hh"
@@ -301,11 +301,10 @@ std::pair<double, double> RunInverseProblem(const std::string& discretization,
   op->global_operator()->InitPreconditioner(pc_list);
 
   Teuchos::ParameterList lin_list;
-  lin_list.set("iterative method", "gmres");
-  lin_list.sublist("gmres parameters").sublist("verbose object").set("verbosity level", "low");
-  AmanziSolvers::LinearOperatorFactory<Operator,CompositeVector,CompositeVectorSpace> fac_linop;
-  Teuchos::RCP<AmanziSolvers::LinearOperator<Operator,CompositeVector,CompositeVectorSpace> > lin_op =
-      fac_linop.Create(lin_list, op->global_operator());
+  lin_list.sublist("verbose object").set("verbosity level", "low");
+  auto lin_op = Teuchos::rcp(new AmanziSolvers::LinearOperatorGMRES<
+      Operator, CompositeVector, CompositeVectorSpace>(op->global_operator(), op->global_operator()));
+  lin_op->Init(lin_list); 
 
   if (write_matrix) {
     std::stringstream fname;

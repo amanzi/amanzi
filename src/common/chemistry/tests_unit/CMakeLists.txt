@@ -46,8 +46,9 @@ file(GLOB chem_inc "${CHEM_INCLUDES_DIR}/*")
 add_install_include_file(${chem_inc})
 
 if (NOT (CMAKE_SOURCE_DIR EQUAL CMAKE_BINARY_DIR))
-  execute_process(COMMAND ${CMAKE_COMMAND} -E
-                  copy_directory ${CHEM_SOURCE_DIR}/tests_unit ${CHEM_BINARY_DIR}/tests_unit)
+  file(GLOB DataFiles "${CHEM_SOURCE_DIR}/tests_unit/*.bgd"
+                      "${CHEM_SOURCE_DIR}/tests_unit/*.dat")
+  file(COPY ${DataFiles} DESTINATION ${CHEM_BINARY_DIR}/tests_unit/)
 endif()
 
 

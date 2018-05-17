@@ -121,6 +121,7 @@ int AddSuperVectorToCompositeVector(const SuperMap& smap, const Epetra_Vector& s
 
 
 /* ******************************************************************
+*                        DEPRECATED
 * Copy super vector to composite vector: complex schema version.
 ****************************************************************** */
 int CopyCompositeVectorToSuperVector(const SuperMap& smap, const CompositeVector& cv,
@@ -141,6 +142,7 @@ int CopyCompositeVectorToSuperVector(const SuperMap& smap, const CompositeVector
 
 
 /* ******************************************************************
+*                        DEPRECATED
 * Copy super vector to composite vector: complex schema version
 ****************************************************************** */
 int CopySuperVectorToCompositeVector(const SuperMap& smap, const Epetra_Vector& sv,

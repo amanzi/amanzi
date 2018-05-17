@@ -8,7 +8,12 @@
 
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 
-  Constant function: f = 1 + x + 2 y.
+  Solution: u = 1 + x + 2 y + 3 z
+  Diffusion: K = 1
+  Accumulation: a = 0
+  Reaction: r = 0
+  Velocity: v = [1, 0, 0]
+  Source: f = 0
 */
 
 #ifndef AMANZI_OPERATOR_ANALYTIC_DG_01_BASE_HH_
@@ -22,27 +27,60 @@ class AnalyticDG01 : public AnalyticDGBase {
     : AnalyticDGBase(mesh, order) {};
   ~AnalyticDG01() {};
 
-  // diffusion tensor
+  // analytic data in conventional Taylor basis
+  // -- diffusion tensor
   virtual Amanzi::WhetStone::Tensor Tensor(const Amanzi::AmanziGeometry::Point& p, double t) override {
-    Amanzi::WhetStone::Tensor K(2, 1);
+    Amanzi::WhetStone::Tensor K(d_, 1);
     K(0, 0) = 1.0;
     return K;
   }
 
-  // analytic solution in conventional Taylor basis
-  virtual void TaylorCoefficients(const Amanzi::AmanziGeometry::Point& p, double t,
-                                  Amanzi::WhetStone::Polynomial& coefs) override {
-    coefs.Reshape(d_, order_, true); 
-    coefs(0, 0) = 1.0 + p[0] + 2 * p[1];
+  // -- solution
+  virtual void SolutionTaylor(const Amanzi::AmanziGeometry::Point& p, double t,
+                              Amanzi::WhetStone::Polynomial& sol) override {
+    sol.Reshape(d_, order_, true); 
+    sol.set_origin(p);
 
-    coefs(1, 0) = 1.0;
-    coefs(1, 1) = 2.0;
+    sol(0, 0) = 1.0 + p[0] + 2 * p[1];
+    sol(1, 0) = 1.0;
+    sol(1, 1) = 2.0;
+
+    if (d_ == 3) {
+      sol(0, 0) += 3 * p[2];
+      sol(1, 2) += 3.0;
+    }
   }
 
-  // source term
+  // -- accumulation
+  virtual void AccumulationTaylor(const Amanzi::AmanziGeometry::Point& p, double t,
+                                  Amanzi::WhetStone::Polynomial& a) override {
+    a.Reshape(d_, 0, true); 
+  }
+
+  // -- velocity
+  virtual void VelocityTaylor(const Amanzi::AmanziGeometry::Point& p, double t,
+                              Amanzi::WhetStone::VectorPolynomial& v) override {
+    v.resize(d_);
+    v.set_origin(p);
+
+    for (int i = 0; i < d_; ++i) {
+      v[i].Reshape(d_, 0, true); 
+    }
+    v[0](0, 0) = 1.0;
+  }
+
+  // -- reaction
+  virtual void ReactionTaylor(const Amanzi::AmanziGeometry::Point& p, double t,
+                              Amanzi::WhetStone::Polynomial& r) override {
+    r.Reshape(d_, 0, true); 
+    r.set_origin(p);
+  }
+
+  // -- source term
   virtual void SourceTaylor(const Amanzi::AmanziGeometry::Point& p, double t,
                             Amanzi::WhetStone::Polynomial& src) override {
     src.Reshape(d_, 0, true);
+    src.set_origin(p);
   }
 };
 

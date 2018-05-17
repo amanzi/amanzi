@@ -34,8 +34,7 @@ namespace WhetStone {
 class MFD3D_LagrangeSerendipity : public MFD3D_Lagrange { 
  public:
   MFD3D_LagrangeSerendipity(Teuchos::RCP<const AmanziMesh::Mesh> mesh)
-    : MFD3D(mesh),
-      InnerProduct(mesh),
+    : InnerProduct(mesh),
       MFD3D_Lagrange(mesh) {};
   ~MFD3D_LagrangeSerendipity() {};
 
@@ -43,6 +42,15 @@ class MFD3D_LagrangeSerendipity : public MFD3D_Lagrange {
   // -- stiffness matrix
   virtual int H1consistency(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Ac) override;
   virtual int StiffnessMatrix(int c, const Tensor& T, DenseMatrix& A) override;
+
+  // -- projectors
+  virtual void L2Cell(
+      int c, const std::vector<VectorPolynomial>& vf,
+      const std::shared_ptr<DenseVector>& moments, VectorPolynomial& uc) override;
+
+ private:
+  void CalculateDOFsOnBoundary_(
+      int c, const std::vector<VectorPolynomial>& vf, DenseVector& vdof, int i);
 };
 
 }  // namespace WhetStone

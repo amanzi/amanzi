@@ -229,6 +229,11 @@ void RunTestMarshak(std::string op_list_name, double TemperatureFloor) {
     pl2_err += err * err;
     pnorm += p[0][c] * p[0][c];
   }
+  double tmp = pl2_err;
+  mesh->get_comm()->SumAll(&tmp, &pl2_err, 1);
+  tmp = pnorm;
+  mesh->get_comm()->SumAll(&tmp, &pnorm, 1);
+
   pl2_err = std::pow(pl2_err / pnorm, 0.5);
   pnorm = std::pow(pnorm, 0.5);
   printf("||dp||=%10.6g  ||p||=%10.6g\n", pl2_err, pnorm);

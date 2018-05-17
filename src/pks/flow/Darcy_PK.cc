@@ -265,7 +265,6 @@ void Darcy_PK::Initialize(const Teuchos::Ptr<State>& S)
   InitializeFields_();
   UpdateLocalFields_(S);
 
-
   // Create solution and auxiliary data for time history.
   solution = S->GetFieldData("pressure", passwd_);
 

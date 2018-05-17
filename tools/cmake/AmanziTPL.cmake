@@ -193,7 +193,7 @@ if (Trilinos_FOUND)
   # ML      - multilevel preconditioner (Unstructured ONLY)
   set(Trilinos_REQUIRED_PACKAGE_LIST Teuchos Epetra) 
   if (ENABLE_Unstructured)
-    list(APPEND Trilinos_REQUIRED_PACKAGE_LIST NOX ML)
+    list(APPEND Trilinos_REQUIRED_PACKAGE_LIST NOX ML Amesos2)
   endif()
 
   foreach(tri_package ${Trilinos_REQUIRED_PACKAGE_LIST})
@@ -207,7 +207,6 @@ if (Trilinos_FOUND)
     foreach( _inc ${${tri_package}_TPL_INCLUDE_DIRS})
       list(APPEND ${tri_package}_INCLUDE_DIRS "${_inc}")
     endforeach()
-
   endforeach()
 
   # Now check optional Trilinos packages

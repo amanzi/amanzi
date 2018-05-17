@@ -180,6 +180,7 @@ if (BUILD_TESTS)
 			LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
         add_amanzi_test(operators_marshak operators_marshak
                         KIND unit
+                        NPROCS 3
                         SOURCE test/Main.cc test/operator_marshak.cc
                         LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
         add_amanzi_test(operators_marshak_logical operators_marshak_logical
@@ -245,7 +246,7 @@ if (BUILD_TESTS)
                                         test/operator_fractures.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
-    # Test: operators on 
+    # Test: electromagnetics 
     add_amanzi_test(operators_electromagnetics operators_electromagnetics
                     KIND unit
                     SOURCE test/Main.cc test/AnalyticElectromagneticsBase.cc
@@ -269,7 +270,7 @@ if (BUILD_TESTS)
 
     add_amanzi_test(operators_stability_2pe operators_stability NPROCS 2 KIND unit)
 
-    # converge rates
+    # convergence rates
     add_amanzi_test(operators_diffusion_convergence operators_diffusion_convergence
                     KIND unit
                     SOURCE test/Main.cc test/operator_diffusion_convergence.cc
@@ -287,7 +288,7 @@ if (BUILD_TESTS)
                     SOURCE test/Main.cc test/operator_gravity.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
-    # Test: elasticity-type methods
+    # Test: elasticity methods
     add_amanzi_test(operators_elasticity operators_elasticity
                     KIND unit
                     SOURCE test/Main.cc test/operator_elasticity.cc
@@ -322,6 +323,14 @@ if (BUILD_TESTS)
     add_amanzi_test(operators_diffusion_high_order operators_diffusion_high_order
                     KIND unit
                     SOURCE test/Main.cc test/operator_diffusion_high_order.cc
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+
+    # DG advection test
+    add_amanzi_test(operators_advection_dg operators_advection_dg
+                    KIND unit
+                    NPROCS 3
+                    SOURCE test/Main.cc test/operator_advection_dg.cc
+                                        test/operator_advection_dg_transient
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 endif()
 

@@ -9,7 +9,6 @@
 
 //! A factory for creating nonlinear solvers.
 
-
 #include "SolverFactory.hh"
 
 #include "SolverAA.hh"
@@ -29,8 +28,6 @@
 
 namespace Amanzi {
 namespace AmanziSolvers {
-
-
 
 /* ******************************************************************
 * Initialization of the Solver

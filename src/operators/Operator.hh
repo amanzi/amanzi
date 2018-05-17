@@ -236,6 +236,7 @@ class Operator {
   void set_schema_string(const std::string& schema_string) { schema_string_ = schema_string; }
 
   Teuchos::RCP<const AmanziMesh::Mesh> Mesh() const { return mesh_; }
+  Teuchos::RCP<SuperMap> smap() const { return smap_; }
 
   Teuchos::RCP<Epetra_CrsMatrix> A() { return A_; }
   Teuchos::RCP<const Epetra_CrsMatrix> A() const { return A_; }
@@ -390,6 +391,11 @@ class Operator {
           WhetStone::DenseVector& v, const CompositeVector& X) const;
   virtual void AssembleVectorFaceOp(int c, const Schema& schema,
           const WhetStone::DenseVector& v, CompositeVector& X) const;
+
+  // deep copy for building interfaces to TPLs, mainly to solvers
+  // -- composite vectors
+  void CopyVectorToSuperVector(const CompositeVector& cv, Epetra_Vector& sv) const;
+  void CopySuperVectorToVector(const Epetra_Vector& sv, CompositeVector& cv) const;
 
   // diagnostics
   std::string PrintDiagnostics() const;

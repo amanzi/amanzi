@@ -23,7 +23,7 @@
 
 // Amanzi
 #include "GMVMesh.hh"
-#include "LinearOperatorFactory.hh"
+#include "LinearOperatorPCG.hh"
 #include "MeshFactory.hh"
 #include "Mesh_MSTK.hh"
 #include "Tensor.hh"
@@ -120,10 +120,10 @@ TEST(LAPLACE_BELTRAMI_FLAT_SFF) {
   ver.CheckPreconditionerSPD();
 
   // solve the problem
-  ParameterList lop_list = plist.get<Teuchos::ParameterList>("solvers");
-  AmanziSolvers::LinearOperatorFactory<Operator, CompositeVector, CompositeVectorSpace> factory;
-  Teuchos::RCP<AmanziSolvers::LinearOperator<Operator, CompositeVector, CompositeVectorSpace> >
-     solver = factory.Create("AztecOO CG", lop_list, global_op);
+  ParameterList lop_list = plist.sublist("solvers").sublist("PCG").sublist("pcg parameters");
+  auto solver = Teuchos::rcp(new AmanziSolvers::LinearOperatorPCG<
+      Operator, CompositeVector, CompositeVectorSpace>(global_op, global_op));
+  solver->Init(lop_list);
 
   CompositeVector rhs = *global_op->rhs();
   CompositeVector solution(rhs);
@@ -135,8 +135,7 @@ TEST(LAPLACE_BELTRAMI_FLAT_SFF) {
   CHECK(num_itrs < 10);
 
   if (MyPID == 0) {
-    std::cout << "pressure solver (" << solver->name() 
-              << "): ||r||=" << solver->residual() << " itr=" << num_itrs
+    std::cout << "pressure solver (pcg): ||r||=" << solver->residual() << " itr=" << num_itrs
               << " code=" << solver->returned_code() << std::endl;
 
     // visualization
@@ -235,10 +234,10 @@ TEST(LAPLACE_BELTRAMI_FLAT_SCC) {
   ver.CheckPreconditionerSPD();
 
   // solve the problem
-  ParameterList lop_list = plist.get<Teuchos::ParameterList>("solvers");
-  AmanziSolvers::LinearOperatorFactory<Operator, CompositeVector, CompositeVectorSpace> factory;
-  Teuchos::RCP<AmanziSolvers::LinearOperator<Operator, CompositeVector, CompositeVectorSpace> >
-     solver = factory.Create("AztecOO CG", lop_list, global_op);
+  ParameterList lop_list = plist.sublist("solvers").sublist("PCG").sublist("pcg parameters");
+  auto solver = Teuchos::rcp(new AmanziSolvers::LinearOperatorPCG<
+      Operator, CompositeVector, CompositeVectorSpace>(global_op, global_op));
+  solver->Init(lop_list);
 
   CompositeVector rhs = *global_op->rhs();
   CompositeVector solution(rhs);
@@ -250,8 +249,7 @@ TEST(LAPLACE_BELTRAMI_FLAT_SCC) {
   CHECK(num_itrs < 10);
 
   if (MyPID == 0) {
-    std::cout << "pressure solver (" << solver->name() 
-              << "): ||r||=" << solver->residual() << " itr=" << num_itrs
+    std::cout << "pressure solver (pcg): ||r||=" << solver->residual() << " itr=" << num_itrs
               << " code=" << solver->returned_code() << std::endl;
 
     // visualization
@@ -350,10 +348,10 @@ TEST(LAPLACE_BELTRAMI_FLAT) {
   ver.CheckPreconditionerSPD();
 
   // solve the problem
-  ParameterList lop_list = plist.get<Teuchos::ParameterList>("solvers");
-  AmanziSolvers::LinearOperatorFactory<Operator, CompositeVector, CompositeVectorSpace> factory;
-  Teuchos::RCP<AmanziSolvers::LinearOperator<Operator, CompositeVector, CompositeVectorSpace> >
-     solver = factory.Create("AztecOO CG", lop_list, global_op);
+  ParameterList lop_list = plist.sublist("solvers").sublist("PCG").sublist("pcg parameters");
+  auto solver = Teuchos::rcp(new AmanziSolvers::LinearOperatorPCG<
+      Operator, CompositeVector, CompositeVectorSpace>(global_op, global_op));
+  solver->Init(lop_list);
 
   CompositeVector rhs = *global_op->rhs();
   CompositeVector solution(rhs);
@@ -365,8 +363,7 @@ TEST(LAPLACE_BELTRAMI_FLAT) {
   CHECK(num_itrs < 10);
 
   if (MyPID == 0) {
-    std::cout << "pressure solver (" << solver->name() 
-              << "): ||r||=" << solver->residual() << " itr=" << num_itrs
+    std::cout << "pressure solver (pcg): ||r||=" << solver->residual() << " itr=" << num_itrs
               << " code=" << solver->returned_code() << std::endl;
 
     // visualization

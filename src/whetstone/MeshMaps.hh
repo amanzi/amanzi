@@ -60,14 +60,16 @@ class MeshMaps {
   virtual void NansonFormula(int f, double t, const VectorPolynomial& vf,
                              VectorPolynomial& cn) const = 0;
 
-  // -- Jacobian
+  // -- Jacobian 
+  virtual void JacobianCell(int c, const std::vector<VectorPolynomial>& vf,
+                            MatrixPolynomial& J) const { AMANZI_ASSERT(0); }
   void Jacobian(const VectorPolynomial& vc, MatrixPolynomial& J) const;
 
   // -- matrix of cofactors
   void Cofactors(double t, const MatrixPolynomial& J, MatrixPolynomial& C) const;
 
   // -- determinant
-  void Determinant(double t, const MatrixPolynomial& J, Polynomial& det) const;
+  void Determinant(double t, const MatrixPolynomial& J, VectorPolynomial& det) const;
 
   // Miscalleneous
   // -- projection ffrom reference coordinates (mesh0) to mesh1
@@ -78,9 +80,6 @@ class MeshMaps {
                      const std::vector<AmanziGeometry::Point>& x1, 
                      const std::vector<AmanziGeometry::Point>& x2,
                      VectorPolynomial& u) const;
-
-  // extension of mesh interface
-  AmanziGeometry::Point cell_geometric_center(int id, int c) const;
 
  protected:
   Teuchos::RCP<const AmanziMesh::Mesh> mesh0_;  // initial mesh 

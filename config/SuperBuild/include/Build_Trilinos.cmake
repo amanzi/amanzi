@@ -36,7 +36,7 @@ amanzi_tpl_version_write(FILENAME ${TPL_VERSIONS_INCLUDE_FILE}
 #endif()
 
 # List of packages enabled in the Trilinos build
-set(Trilinos_PACKAGE_LIST Teuchos Epetra EpetraExt Amesos Belos NOX Ifpack AztecOO)
+set(Trilinos_PACKAGE_LIST Teuchos Epetra EpetraExt Amesos Amesos2 Belos NOX Ifpack AztecOO)
 if ( ENABLE_STK_Mesh )
   list(APPEND Trilinos_PACKAGE_LIST STK)
 endif()
@@ -53,6 +53,9 @@ set(Trilinos_CMAKE_PACKAGE_ARGS "-DTrilinos_ENABLE_ALL_OPTIONAL_PACKAGES:BOOL=OF
 foreach(package ${Trilinos_PACKAGE_LIST})
   list(APPEND Trilinos_CMAKE_PACKAGE_ARGS "-DTrilinos_ENABLE_${package}:STRING=ON")
 endforeach()
+
+# Add support of parallel LU solvers
+list(APPEND Trilinos_CMAKE_PACKAGE_ARGS "-DAmesos2_ENABLE_Basker:BOOL=ON")
 
 # Build PyTrilinos if shared
 # if (BUILD_SHARED_LIBS)
@@ -117,7 +120,6 @@ list(APPEND Trilinos_CMAKE_TPL_ARGS
             "-DTPL_ENABLE_Netcdf:BOOL=ON"
             "-DTPL_Netcdf_INCLUDE_DIRS:FILEPATH=${NetCDF_INCLUDE_DIRS}"
             "-DTPL_Netcdf_LIBRARIES:STRING=${NetCDF_C_LIBRARIES}")
-
 
 # HYPRE
 if( ENABLE_HYPRE )

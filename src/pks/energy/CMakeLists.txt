@@ -157,8 +157,8 @@ if (BUILD_TESTS)
 
     # Copy test directory files if an out of source build
     if (NOT (${ENERGY_SOURCE_DIR} EQUAL ${ENERGY_BINARY_DIR}) )
-        execute_process(COMMAND ${CMAKE_COMMAND} -E 
-          copy_directory ${ENERGY_SOURCE_DIR}/test ${ENERGY_BINARY_DIR}/test) 
+      file(GLOB DataFiles "${ENERGY_SOURCE_DIR}/test/*.xml")
+      file(COPY ${DataFiles} DESTINATION ${ENERGY_BINARY_DIR}/test/)
     endif()
 
     # Add the flow directory to the include paths

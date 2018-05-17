@@ -149,8 +149,7 @@ class PDE_DiffusionMFD : public virtual PDE_Diffusion {
   
   // -- interface to solvers for treating nonlinear BCs.
   virtual double ComputeTransmissibility(int f) const override;
-  virtual double ComputeGravityFlux(int f) const override
-    { return 0.0; }
+  virtual double ComputeGravityFlux(int f) const override { return 0.0; }
  
   // developer checks
   int nfailed_primary() { return nfailed_primary_; }

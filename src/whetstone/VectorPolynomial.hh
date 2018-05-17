@@ -28,6 +28,7 @@ class VectorPolynomial {
  public:
   VectorPolynomial() : d_(0) {};
   VectorPolynomial(int d, int size);
+  VectorPolynomial(const Polynomial& p);
   ~VectorPolynomial() {};
 
   // minimal set of vector operations
@@ -61,6 +62,16 @@ class VectorPolynomial {
     return tmp *= val;
   }
 
+  friend VectorPolynomial operator*(const VectorPolynomial& vp, double val) {
+    VectorPolynomial tmp(vp);
+    return tmp *= val;
+  }
+
+  // change the coordinate system
+  void set_origin(const AmanziGeometry::Point& origin);
+  void ChangeOrigin(const AmanziGeometry::Point& origin);
+
+  // typical operations with polynomials
   // complex constructions
   // -- gradient of a polynomial
   void Gradient(const Polynomial p);
@@ -99,10 +110,57 @@ class VectorPolynomial {
     return tmp;
   }
 
+  // output 
+  friend std::ostream& operator << (std::ostream& os, const VectorPolynomial& poly) {
+    os << "Vector Polynomial:" << std::endl;
+    for (int i = 0; i < poly.size(); ++i) {
+      os << "i=" << i << " " << poly[i];
+    }
+    return os;
+  }
+
  private:
   int d_;
   std::vector<Polynomial> polys_;
 };
+
+
+// non-member functions
+// --divergence
+inline
+Polynomial Divergence(const VectorPolynomial vp) 
+{
+  int d = vp[0].dimension();
+  AMANZI_ASSERT(d == vp.size());
+
+  int order = vp[0].order();
+  order = std::max(0, order - 1);
+
+  Polynomial div(d, order);
+  div.set_origin(vp[0].origin());
+
+  int index[3];
+  for (int i = 0; i < d; ++i) {
+    for (auto it = vp[i].begin(); it.end() <= vp[i].end(); ++it) {
+      int k = it.MonomialSetOrder();
+      if (k > 0) {
+        const int* idx = it.multi_index();
+        for (int j = 0; j < d; ++j) index[j] = idx[j];
+
+        if (index[i] > 0) {
+          int m = it.MonomialSetPosition();
+          double val = vp[i](k, m);
+
+          index[i]--;
+          m = vp[i].MonomialSetPosition(index);
+          div(k - 1, m) += val * idx[i];
+        }
+      }
+    }
+  }
+
+  return div;
+}
 
 }  // namespace WhetStone
 }  // namespace Amanzi

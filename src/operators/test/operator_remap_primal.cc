@@ -27,8 +27,8 @@
 #include "LinearOperatorPCG.hh"
 #include "Mesh.hh"
 #include "MeshFactory.hh"
-#include "MeshMaps_FEM.hh"
-#include "MeshMaps_VEM.hh"
+#include "MeshMapsFactory.hh"
+#include "MeshUtils.hh"
 #include "Tensor.hh"
 #include "WhetStone_typedefs.hh"
 
@@ -102,18 +102,17 @@ void RemapTests2DPrimal(int order, std::string disc_name,
   mesh1->deform(nodeids, new_positions, false, &final_positions);
 
   // little factory of mesh maps
-  std::shared_ptr<WhetStone::MeshMaps> maps;
-  if (maps_name == "FEM") {
-    maps = std::make_shared<WhetStone::MeshMaps_FEM>(mesh0, mesh1);
-  } else if (maps_name == "VEM") {
-    std::shared_ptr<WhetStone::MeshMaps_VEM> maps_vem;
-    maps_vem = std::make_shared<WhetStone::MeshMaps_VEM>(mesh0, mesh1);
-    maps_vem->set_order(order + 1);  // higher-order velocity reconstruction
-    maps = maps_vem;
-  }
+  Teuchos::ParameterList map_list;
+  map_list.set<std::string>("method", "CrouzeixRaviart")
+          .set<int>("method order", order + 1)
+          .set<std::string>("projector", "H1 harmonic")
+          .set<std::string>("map name", maps_name);
+
+  WhetStone::MeshMapsFactory maps_factory;
+  auto maps = maps_factory.Create(map_list, mesh0, mesh1);
 
   // numerical integration
-  WhetStone::NumericalIntegration numi(mesh0);
+  WhetStone::NumericalIntegration numi(mesh0, false);
 
   // create and initialize cell-based field 
   CompositeVectorSpace cvs1;
@@ -122,28 +121,10 @@ void RemapTests2DPrimal(int order, std::string disc_name,
   Epetra_MultiVector& p1c = *p1->ViewComponent("cell", true);
 
   // we need dg to compute scaling of basis functions
-  WhetStone::DG_Modal dg(order, mesh0);
+  WhetStone::DG_Modal dg(order, mesh0, "orthonormalized");
 
   AnalyticDG04 ana(mesh0, order);
-
-  for (int c = 0; c < ncells_wghost; c++) {
-    const AmanziGeometry::Point& xc = mesh0->cell_centroid(c);
-    WhetStone::Polynomial coefs;
-    ana.TaylorCoefficients(xc, 0.0, coefs);
-    numi.ChangeBasisRegularToNatural(c, coefs);
-
-    WhetStone::DenseVector data;
-    coefs.GetPolynomialCoefficients(data);
-
-    double a, b;
-    for (auto it = coefs.begin(); it.end() <= coefs.end(); ++it) {
-      int n = it.PolynomialPosition();
-
-      dg.TaylorBasis(c, it, &a, &b);
-      p1c[n][c] = data(n) / a;
-      p1c[0][c] += data(n) * b;
-    }
-  }
+  ana.InitialGuess(dg, p1c, 1.0);
 
   // initial mass
   double mass0(0.0);
@@ -185,8 +166,9 @@ void RemapTests2DPrimal(int order, std::string disc_name,
   // create flux operator
   Teuchos::ParameterList plist;
   plist.set<std::string>("method", disc_name)
+       .set<std::string>("dg basis", "orthonormalized")
        .set<std::string>("matrix type", "flux")
-       .set<std::string>("flux formula", "upwind")
+       .set<std::string>("flux formula", "downwind")
        .set<int>("method order", order)
        .set<bool>("jump operator on test function", false);
 
@@ -228,8 +210,8 @@ void RemapTests2DPrimal(int order, std::string disc_name,
   Teuchos::RCP<PDE_Reaction> op_reac = Teuchos::rcp(new PDE_Reaction(plist, mesh0));
   auto global_reac = op_reac->global_operator();
 
-  Teuchos::RCP<std::vector<WhetStone::Polynomial> > jac = 
-     Teuchos::rcp(new std::vector<WhetStone::Polynomial>(ncells_owned));
+  Teuchos::RCP<std::vector<WhetStone::VectorPolynomial> > jac = 
+     Teuchos::rcp(new std::vector<WhetStone::VectorPolynomial>(ncells_owned));
 
   op_reac->Setup(jac);
 
@@ -300,7 +282,7 @@ void RemapTests2DPrimal(int order, std::string disc_name,
   double mass1(0.0);
   double pl2_err(0.0), pinf_err(0.0), area(0.0);
   for (int c = 0; c < ncells_owned; ++c) {
-    const AmanziGeometry::Point& xg = maps->cell_geometric_center(1, c);
+    AmanziGeometry::Point xg = WhetStone::cell_geometric_center(*mesh1, c);
     double area_c = mesh1->cell_volume(c);
 
     double tmp = p2c[0][c] - std::sin(3 * xg[0]) * std::sin(6 * xg[1]);

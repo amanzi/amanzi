@@ -24,7 +24,6 @@
 #include "DenseMatrix.hh"
 #include "MeshMaps.hh"
 #include "Polynomial.hh"
-#include "Projector.hh"
 #include "Tensor.hh"
 #include "WhetStone_typedefs.hh"
 
@@ -33,15 +32,17 @@ namespace WhetStone {
 
 class MeshMaps_VEM : public MeshMaps { 
  public:
-  MeshMaps_VEM(Teuchos::RCP<const AmanziMesh::Mesh> mesh) :
-      MeshMaps(mesh),
-      projector_(mesh),
-      order_(2) {};
+  MeshMaps_VEM(Teuchos::RCP<const AmanziMesh::Mesh> mesh,
+               const Teuchos::ParameterList& plist) :
+      MeshMaps(mesh) {
+    ParseInputParameters_(plist);
+  }
   MeshMaps_VEM(Teuchos::RCP<const AmanziMesh::Mesh> mesh0,
-               Teuchos::RCP<const AmanziMesh::Mesh> mesh1) :
-      MeshMaps(mesh0, mesh1),
-      projector_(mesh0),
-      order_(2) {};
+               Teuchos::RCP<const AmanziMesh::Mesh> mesh1,
+               const Teuchos::ParameterList& plist) :
+      MeshMaps(mesh0, mesh1) {
+    ParseInputParameters_(plist);
+  }
   ~MeshMaps_VEM() {};
 
   // Maps
@@ -54,8 +55,9 @@ class MeshMaps_VEM : public MeshMaps {
   virtual void NansonFormula(int f, double t, const VectorPolynomial& vf,
                              VectorPolynomial& cn) const override;
 
-  // access
-  void set_order(int order) { order_ = order; }
+  // -- Jacobian
+  virtual void JacobianCell(int c, const std::vector<VectorPolynomial>& vf,
+                            MatrixPolynomial& J) const override;
 
  private:
   // pseudo-velocity on edge e
@@ -67,9 +69,12 @@ class MeshMaps_VEM : public MeshMaps {
   void LeastSquareProjector_Cell_(int order, int c, const std::vector<VectorPolynomial>& vf,
                                   VectorPolynomial& vc) const;
 
+  // io
+  void ParseInputParameters_(const Teuchos::ParameterList& plist);
+
  private:
+  std::string method_, projector_;
   int order_;
-  Projector projector_;
 };
 
 }  // namespace WhetStone

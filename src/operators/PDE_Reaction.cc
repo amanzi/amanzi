@@ -11,7 +11,7 @@
 
 #include <vector>
 
-#include "DG_Modal.hh"
+#include "MFD3DFactory.hh"
 
 #include "Op_Cell_Schema.hh"
 #include "OperatorDefs.hh"
@@ -62,15 +62,16 @@ void PDE_Reaction::InitReaction_(Teuchos::ParameterList& plist)
   // register the advection Op
   global_op_->OpPushBack(local_op_);
 
-  // parameters
-  std::string name = plist.get<std::string>("method");
-  method_order_ = plist.get<int>("method order", 0);
-  if (name == "dg modal") {
+  // parse discretization  parameters
+  WhetStone::MFD3DFactory factory;
+  mfd_ = factory.Create(mesh_, plist);
+
+  if (factory.method() == "dg modal") {
     space_col_ = DG;
     space_row_ = DG;
   } else {
     Errors::Message msg;
-    msg << "Reaction operator method \"" << name << "\" is invalid.";
+    msg << "Reaction operator: method \"" << factory.method() << "\" is invalid.";
     Exceptions::amanzi_throw(msg);
   }
 }
@@ -89,16 +90,15 @@ void PDE_Reaction::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& u,
   AmanziMesh::Entity_ID_List nodes;
   int d = mesh_->space_dimension();
 
-  WhetStone::DG_Modal dg(method_order_, mesh_);
   WhetStone::DenseMatrix Mcell;
   WhetStone::Tensor Kc(d, 1);
 
   for (int c = 0; c < ncells_owned; ++c) {
     if (poly_.get()) {
-      dg.MassMatrixPoly(c, (*poly_)[c], Mcell);
+      mfd_->MassMatrix(c, (*poly_)[c], Mcell);
     } else {
       Kc(0, 0) = K_.get() ? (*K_)[0][c] : 1.0;
-      dg.MassMatrix(c, Kc, Mcell);
+      mfd_->MassMatrix(c, Kc, Mcell);
     }
 
     matrix[c] = Mcell;

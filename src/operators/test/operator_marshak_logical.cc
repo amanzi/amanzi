@@ -26,7 +26,7 @@
 #include "UnitTest++.h"
 
 // Amanzi
-#include "LinearOperatorFactory.hh"
+#include "LinearOperatorGMRES.hh"
 #include "MeshLogicalFactory.hh"
 #include "MeshLogical.hh"
 #include "Tensor.hh"
@@ -181,10 +181,11 @@ void RunTestMarshakLogical(std::string op_list_name) {
     global_op->InitPreconditioner("Hypre AMG", slist);
 
     // solve the problem
-    ParameterList lop_list = plist.get<Teuchos::ParameterList>("solvers");
-    AmanziSolvers::LinearOperatorFactory<Operator, CompositeVector, CompositeVectorSpace> factory;
-    Teuchos::RCP<AmanziSolvers::LinearOperator<Operator, CompositeVector, CompositeVectorSpace> >
-       solver = factory.Create("Amanzi GMRES", lop_list, global_op);
+    ParameterList lop_list = plist.sublist("solvers")
+                                  .sublist("Amanzi GMRES").sublist("gmres parameters");
+    auto solver = Teuchos::rcp(new AmanziSolvers::LinearOperatorGMRES<
+        Operator, CompositeVector, CompositeVectorSpace>(global_op, global_op));
+    solver->Init(lop_list);
 
     Epetra_MultiVector& sol_new = *solution.ViewComponent("cell");
     Epetra_MultiVector sol_old(sol_new);

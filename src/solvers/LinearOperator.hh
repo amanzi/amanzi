@@ -1,10 +1,12 @@
-/* -*-  mode: c++; indent-tabs-mode: nil -*- */
 /*
-  ATS is released under the three-clause BSD License. 
+  Solvers
+
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
   The terms of use and "as is" disclaimer for this license are 
   provided in the top-level COPYRIGHT file.
 
-  Author: Ethan Coon (ecoon@lanl.gov)
+  Authors: Ethan Coon (ecoon@lanl.gov)
            Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
@@ -53,6 +55,7 @@ class LinearOperator : public Matrix {
     Init(plist);
   }
 
+  // standard interface recommended in MatrixBase.hh
   virtual int Apply(const Vector& v, Vector& mv) const { return m_->Apply(v, mv); }
   virtual int ApplyInverse(const Vector& v, Vector& hv) const = 0;
 
@@ -69,6 +72,7 @@ class LinearOperator : public Matrix {
     return true_residual;
   }
 
+  // control and statistics
   virtual double residual() = 0;
   virtual int num_itrs() = 0;
   virtual void add_criteria(int criteria) = 0;
@@ -77,6 +81,7 @@ class LinearOperator : public Matrix {
   std::string name() { return name_; }
   void set_name(std::string name) { name_ = name; }
 
+  // to recuperate from a crash, we post-process errors here
   Errors::Message DecodeErrorCode(int ierr) {
     Errors::Message msg;
     switch(ierr) {
