@@ -52,6 +52,8 @@ set(MSTK_CMAKE_CACHE_ARGS
                     -DCMAKE_EXE_LINKER_FLAGS:STRING=${mstk_ldflags}
 		    -DPREFER_STATIC_LIBRARIES:BOOL=${PREFER_STATIC_LIBRARIES}
                     -DBUILD_SHARED_LIBS:BOOL=${BUILD_SHARED_LIBS}
+                    -DMPI_CXX_COMPILER:FILEPATH=${MPI_CXX_COMPILER}
+                    -DMPI_C_COMPILER:FILEPATH=${MPI_C_COMPILER}
                     -DMSTK_USE_MARKERS:BOOL=TRUE		    
                     -DENABLE_PARALLEL:BOOL=TRUE
                     -DENABLE_ExodusII:BOOL=TRUE
