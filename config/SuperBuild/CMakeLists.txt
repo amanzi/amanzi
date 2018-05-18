@@ -520,9 +520,6 @@ else()
   set(ZLIB_DIR ${ZLIB_INSTALL_PREFIX})
 endif()
 
-# CURL
-# include(${SuperBuild_BUILD_FILES_DIR}/Build_CURL.cmake)
-
 # UnitTest
 append_set(Amanzi_TPL_CMAKE_ARGS -DENABLE_TEST:BOOL=${ENABLE_TESTS})
 if (ENABLE_TESTS)
@@ -627,26 +624,6 @@ if (ENABLE_MOAB_Mesh)
              -DMOAB_DIR:PATH=${TPL_INSTALL_PREFIX})
 endif()
  
-# SuperLU -- needs to go before HYPRE and PETSc because they needs it
-include(${SuperBuild_BUILD_FILES_DIR}/Build_SuperLU.cmake)
-append_set(Amanzi_TPL_CMAKE_ARGS
-           -DSuperLU_DIR:FILEPATH=${TPL_INSTALL_PREFIX})
-
-# HYPRE
-option(ENABLE_HYPRE "Build the HYPRE solver package" TRUE)
-if ( ENABLE_HYPRE )
-  if ( NOT ENABLE_XSDK )
-    include(${SuperBuild_BUILD_FILES_DIR}/Build_HYPRE.cmake)
-  else()
-    find_spack_install_location(hypre HYPRE_INSTALL_PREFIX)
-    message(STATUS "HYPRE_INSTALL_PREFIX = ${HYPRE_INSTALL_PREFIX}")
-    set(HYPRE_DIR ${HYPRE_INSTALL_PREFIX})
-    set(HYPRE_INCLUDE_DIRS "${HYPRE_INSTALL_PREFIX}/include")
-    build_library_name(HYPRE HYPRE_LIBRARY APPEND_PATH ${HYPRE_INSTALL_PREFIX}/lib)
-    set(HYPRE_LIBRARIES "${HYPRE_LIBRARY}")
-  endif()
-endif()
-
 # METIS -- needs to go before PETSc because PETSc needs it.
 if ( NOT ENABLE_XSDK )
     include(${SuperBuild_BUILD_FILES_DIR}/Build_METIS.cmake) 
@@ -669,6 +646,31 @@ else()
     build_library_name(z ParMetis_LIBRARIES APPEND_PATH ${PARMETIS_INSTALL_PREFIX}/lib)
     set(ParMetis_INCLUDE_DIRS ${PARMETIS_INSTALL_PREFIX}/include)
     set(ParMetis_DIR ${PARMETIS_INSTALL_PREFIX})
+endif()
+
+# SuperLU -- needs to go before HYPRE and PETSc because they needs it
+include(${SuperBuild_BUILD_FILES_DIR}/Build_SuperLU.cmake)
+append_set(Amanzi_TPL_CMAKE_ARGS
+           -DSuperLU_DIR:FILEPATH=${TPL_INSTALL_PREFIX})
+
+# SuperLUDist
+include(${SuperBuild_BUILD_FILES_DIR}/Build_SuperLUDist.cmake)
+append_set(Amanzi_TPL_CMAKE_ARGS
+           -DSuperLUDist_DIR:FILEPATH=${TPL_INSTALL_PREFIX})
+
+# HYPRE
+option(ENABLE_HYPRE "Build the HYPRE solver package" TRUE)
+if ( ENABLE_HYPRE )
+  if ( NOT ENABLE_XSDK )
+    include(${SuperBuild_BUILD_FILES_DIR}/Build_HYPRE.cmake)
+  else()
+    find_spack_install_location(hypre HYPRE_INSTALL_PREFIX)
+    message(STATUS "HYPRE_INSTALL_PREFIX = ${HYPRE_INSTALL_PREFIX}")
+    set(HYPRE_DIR ${HYPRE_INSTALL_PREFIX})
+    set(HYPRE_INCLUDE_DIRS "${HYPRE_INSTALL_PREFIX}/include")
+    build_library_name(HYPRE HYPRE_LIBRARY APPEND_PATH ${HYPRE_INSTALL_PREFIX}/lib)
+    set(HYPRE_LIBRARIES "${HYPRE_LIBRARY}")
+  endif()
 endif()
 
 if (ENABLE_PETSC OR ENABLE_Structured)
