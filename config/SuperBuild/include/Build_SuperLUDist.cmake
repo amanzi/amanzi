@@ -61,6 +61,8 @@ ExternalProject_Add(${SuperLUDist_BUILD_TARGET}
                                   -DMPI_CXX_COMPILER:FILEPATH=${MPI_CXX_COMPILER}
                                   -DMPI_C_COMPILER:FILEPATH=${MPI_C_COMPILER}
                                   -DMPI_Fortran_COMPILER:FILEPATH=${MPI_Fortran_COMPILER}
+                                  -DOpenMP_C_FLAGS:STRING=                        # Workaround to avoid OpenMP
+                                  -DOpenMP_Fortran_FLAGS:STRING=
 
                     # -- Build
                     BINARY_DIR      ${SuperLUDist_build_dir}   # Build directory 
