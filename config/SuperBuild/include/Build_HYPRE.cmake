@@ -46,11 +46,8 @@ endif()
 # set(hypre_fortran_opt -"--disable-fortran)
 
 # Locate SuperLU
-set(hyper_superlu_opt)
-if (ENABLE_PETSC)
-  set(hypre_superlu_opt "-DHYPRE_USING_SUPERLU:BOOL=FALSE"
-                        "-DHYPRE_USING_FEI:BOOL=FALSE")
-endif()
+set(hypre_superlu_opt "-DHYPRE_TPL_SUPERLU:BOOL=TRUE"
+                      "-DHYPRE_USING_FEI:BOOL=FALSE")
 
 # shared/static libraries (shared FEI is broken in HYPRE)
 set(hypre_shared_opt)
@@ -62,7 +59,7 @@ set(hypre_install_opt "-DHYPRE_INSTALL_PREFIX:PATH=${TPL_INSTALL_PREFIX}")
 
 
 # --- Set the name of the patch
-set(HYPRE_patch_file hypre-cmake3_7.patch)
+set(HYPRE_patch_file hypre-cmake3_7.patch hypre-superlu.patch)
 # --- Configure the bash patch script
 set(HYPRE_sh_patch ${HYPRE_prefix_dir}/hypre-patch-step.sh)
 configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/hypre-patch-step.sh.in

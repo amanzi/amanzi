@@ -1,0 +1,14 @@
+diff -ruNbB hypre-2.14.0/src/CMakeLists.txt hypre-2.14.0-source/src/CMakeLists.txt
+--- hypre-2.14.0/src/CMakeLists.txt	2018-05-17 22:34:13.000000000 -0600
++++ hypre-2.14.0-source/src/CMakeLists.txt	2018-05-17 22:30:42.000000000 -0600
+@@ -58,6 +58,10 @@
+   set (HYPRE_NO_GLOBAL_PARTITION OFF CACHE BOOL "" FORCE)
+ endif ()
+ 
++if (HYPRE_TPL_SUPERLU)
++  add_definitions(-DHAVE_SUPERLU)
++  # add_definitions(-DHAVE_DSUPERLU)
++endif ()
+ #   --with-examples         Build example codes.
+ #   --with-fei              Use internal FEI routines.
+ #   --with-superlu          Use internal SuperLU routines.
