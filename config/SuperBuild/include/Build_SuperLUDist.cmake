@@ -54,7 +54,11 @@ ExternalProject_Add(${SuperLUDist_BUILD_TARGET}
                                   ${SuperLUDist_TPLS_ARGS}
                                   -DCMAKE_C_FLAGS:STRING=${Amanzi_COMMON_CFLAGS}  # Ensure uniform build
                                   -DCMAKE_C_COMPILER:FILEPATH=${CMAKE_C_COMPILER}
+                                  -DCMAKE_CXX_COMPILER:FILEPATH=${CMAKE_CXX_COMPILER}
                                   -DCMAKE_Fortran_COMPILER:FILEPATH=${CMAKE_Fortran_COMPILER}
+                                  -DMPI_CXX_COMPILER:FILEPATH=${MPI_CXX_COMPILER}
+                                  -DMPI_C_COMPILER:FILEPATH=${MPI_C_COMPILER}
+                                  -DMPI_Fortran_COMPILER:FILEPATH=${MPI_Fortran_COMPILER}
 
                     # -- Build
                     BINARY_DIR      ${SuperLUDist_build_dir}   # Build directory 
