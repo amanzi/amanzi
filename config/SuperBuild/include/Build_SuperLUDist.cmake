@@ -33,9 +33,10 @@ set(SuperLUDist_CMAKE_ARGS
       "-Denable_blaslib:BOOL=FALSE")
 
 # --- Location of TPLs
+string(REPLACE ";" "|" ParMetis_LIBRARIES_TMP "${ParMetis_LIBRARIES}")
 set(SuperLUDist_TPLS_ARGS 
       "-DTPL_PARMETIS_INCLUDE_DIRS=${TPL_INSTALL_PREFIX}/include"
-      "-DTPL_PARMETIS_LIBRARIES:STRING=${ParMetis_LIBRARIES}")
+      "-DTPL_PARMETIS_LIBRARIES:STRING=${ParMetis_LIBRARIES_TMP}")
 
 # --- Add external project build and tie to the SuperLU build target
 ExternalProject_Add(${SuperLUDist_BUILD_TARGET}
@@ -49,6 +50,7 @@ ExternalProject_Add(${SuperLUDist_BUILD_TARGET}
                     # -- Patch
                     # PATCH_COMMAND ${SuperLUDist_PATCH_COMMAND}  # Mods to source
                     # -- Configure
+                    LIST_SEPARATOR |                           # Use the alternate list separator
                     SOURCE_DIR    ${SuperLUDist_source_dir}    # Source directory
                     CMAKE_ARGS    ${SuperLUDist_CMAKE_ARGS}    # CMAKE_CACHE_ARGS or CMAKE_ARGS => CMake configure
                                   ${SuperLUDist_TPLS_ARGS}
