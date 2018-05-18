@@ -35,7 +35,7 @@ set(SuperLUDist_CMAKE_ARGS
 # --- Location of TPLs
 set(SuperLUDist_TPLS_ARGS 
       "-DTPL_PARMETIS_INCLUDE_DIRS=${TPL_INSTALL_PREFIX}/include"
-      "-DTPL_PARMETIS_LIBRARIES=${ParMetis_LIBRARIES}")
+      "-DTPL_PARMETIS_LIBRARIES:STRING=${ParMetis_LIBRARIES}")
 
 # --- Add external project build and tie to the SuperLU build target
 ExternalProject_Add(${SuperLUDist_BUILD_TARGET}

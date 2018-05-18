@@ -58,5 +58,5 @@ set(ParMetis_DIR ${TPL_INSTALL_PREFIX})
 set(ParMetis_INCLUDE_DIRS ${TPL_INSTALL_PREFIX}/include)
 
 # --- set cache (global) variables
-global_set(ParMetis_LIBRARIES "${ParMetis_LIB}")
+global_set(ParMetis_LIBRARIES "${ParMetis_LIB} ${METIS_LIBRARIES}")
 
