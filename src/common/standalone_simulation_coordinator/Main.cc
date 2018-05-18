@@ -140,9 +140,6 @@ int main(int argc, char *argv[]) {
 #ifdef CRUNCHTOPE_MAJOR
         std::cout << "  CRUNCHTOPE     " << XSTR(CRUNCHTOPE_MAJOR) << "." << XSTR(CRUNCHTOPE_MINOR) << "." << XSTR(CRUNCHTOPE_PATCH) << std::endl;
 #endif
-#ifdef CURL_MAJOR
-        std::cout << "  CURL           " << XSTR(CURL_MAJOR) << "." << XSTR(CURL_MINOR) << "." << XSTR(CURL_PATCH) << std::endl;
-#endif
 #ifdef ExodusII_MAJOR
         std::cout << "  ExodusII       " << XSTR(ExodusII_MAJOR) << "." << XSTR(ExodusII_MINOR) << "." << XSTR(ExodusII_PATCH) << std::endl;
 #endif
