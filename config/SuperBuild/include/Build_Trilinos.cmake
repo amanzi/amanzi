@@ -4,13 +4,13 @@
 # Build TPL: Trilinos
 #    
 # --- Define all the directories and common external project flags
-if(ENABLE_XSDK)
+if (ENABLE_XSDK)
     set(trilinos_depend_projects XSDK SEACAS)
 else()
     set(trilinos_depend_projects NetCDF Boost SEACAS)
 endif() 
 
-if(ENABLE_HYPRE AND NOT ENABLE_XSDK)
+if (ENABLE_HYPRE AND NOT ENABLE_XSDK)
   list(APPEND trilinos_depend_projects HYPRE)
 endif()
 
@@ -37,13 +37,13 @@ amanzi_tpl_version_write(FILENAME ${TPL_VERSIONS_INCLUDE_FILE}
 
 # List of packages enabled in the Trilinos build
 set(Trilinos_PACKAGE_LIST Teuchos Epetra EpetraExt Amesos Amesos2 Belos NOX Ifpack AztecOO)
-if ( ENABLE_STK_Mesh )
+if (ENABLE_STK_Mesh)
   list(APPEND Trilinos_PACKAGE_LIST STK)
 endif()
-if ( ENABLE_MSTK_Mesh )
+if (ENABLE_MSTK_Mesh)
   list(APPEND Trilinos_PACKAGE_LIST Zoltan)
 endif()
-if ( ENABLE_Unstructured )
+if (ENABLE_Unstructured)
   list(APPEND Trilinos_PACKAGE_LIST ML)
 endif()
 
@@ -86,7 +86,7 @@ foreach (var ${MPI_CMAKE_ARGS} )
 endforeach() 
 
 # BLAS
-if ( BLAS_LIBRARIES )
+if (BLAS_LIBRARIES)
   list(APPEND Trilinos_CMAKE_TPL_ARGS
               "-DTPL_ENABLE_BLAS:BOOL=TRUE")
   list(APPEND Trilinos_CMAKE_TPL_ARGS
@@ -97,7 +97,7 @@ else()
 endif()            
  
 # LAPACK
-if ( LAPACK_LIBRARIES )
+if (LAPACK_LIBRARIES)
   list(APPEND Trilinos_CMAKE_TPL_ARGS
               "-DTPL_LAPACK_LIBRARIES:STRING=${LAPACK_LIBRARIES}")
             message(STATUS "Trilinos LAPACK libraries: ${LAPACK_LIBRARIES}")    
@@ -122,10 +122,11 @@ list(APPEND Trilinos_CMAKE_TPL_ARGS
             "-DTPL_Netcdf_LIBRARIES:STRING=${NetCDF_C_LIBRARIES}")
 
 # HYPRE
-if( ENABLE_HYPRE )
+if (ENABLE_HYPRE)
   list(APPEND Trilinos_CMAKE_TPL_ARGS
               "-DTPL_ENABLE_HYPRE:BOOL=ON"
               "-DTPL_HYPRE_LIBRARIES:STRING=${HYPRE_LIBRARIES}"
+              "-DHYPRE_LIBRARY_DIRS:FILEPATH=${HYPRE_DIR}/lib"
               "-DTPL_HYPRE_INCLUDE_DIRS:FILEPATH=${HYPRE_DIR}/include")
 endif()
 
@@ -138,7 +139,7 @@ set(Trilinos_CMAKE_EXTRA_ARGS
     "-DNOX_ENABLE_THYRA_EPETRA_ADAPTERS:BOOL=OFF"    
     )
 
-if ( CMAKE_BUILD_TYPE )
+if (CMAKE_BUILD_TYPE)
   list(APPEND Trilinos_CMAKE_EXTRA_ARGS
               "-DCMAKE_BUILD_TYPE:STRING=${CMAKE_BUILD_TYPE}")
 
@@ -149,7 +150,7 @@ if ( CMAKE_BUILD_TYPE )
   #message(DEBUG ": Trilinos_CMAKE_EXTRA_ARGS = ${Trilinos_CMAKE_EXTRA_ARGS}")
 endif()
 
-if ( BUILD_SHARED_LIBS )
+if (BUILD_SHARED_LIBS)
   list(APPEND Trilinos_CMAKE_EXTRA_ARGS
     "-DBUILD_SHARED_LIBS:BOOL=${BUILD_SHARED_LIBS}")
   #message(DEBUG ": Trilinos_CMAKE_EXTRA_ARGS = ${Trilinos_CMAKE_EXTRA_ARGS}")
@@ -157,7 +158,7 @@ endif()
 
 
 #  - Add CMake configuration file
-if(Trilinos_Build_Config_File)
+if (Trilinos_Build_Config_File)
     list(APPEND Trilinos_Config_File_ARGS
         "-C${Trilinos_Build_Config_File}")
     message(STATUS "Will add ${Trilinos_Build_Config_File} to the Trilinos configure")    
