@@ -59,7 +59,7 @@ set(ns_src_files NavierStokes_PK.cc
                  )
 set(ns_tpl_libs ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES} ${Boost_LIBRARIES} ${SEACAS_LIBRARIES})
 if (Ifpack_ENABLE_HYPRE)
-  list(APPEND ns_tpl_libs ${Ifpack_LIBRARIES})
+  list(APPEND ns_tpl_libs ${Ifpack_LIBRARIES} ${HYPRE_LIBRARIES})
 endif()
 list(REVERSE ns_tpl_libs)
 list(REMOVE_DUPLICATES ns_tpl_libs)
