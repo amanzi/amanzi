@@ -29,6 +29,7 @@ amanzi_tpl_version_write(FILENAME ${TPL_VERSIONS_INCLUDE_FILE}
 # --- Define the arguments passed to CMake.
 set(SuperLUDist_CMAKE_ARGS 
       "-DCMAKE_INSTALL_PREFIX:FILEPATH=${TPL_INSTALL_PREFIX}"
+      "-DCMAKE_INSTALL_LIBDIR:FILEPATH=${TPL_INSTALL_PREFIX}/lib"
       "-DBUILD_SHARED_LIBS:BOOL=${BUILD_SHARED_LIBS}"
       "-Denable_blaslib:BOOL=FALSE")
 
@@ -73,8 +74,7 @@ ExternalProject_Add(${SuperLUDist_BUILD_TARGET}
                     # -- Output control
                     ${SuperLUDist_logging_args})
 
-include(BuildLibraryName)
-build_library_name(superlu_dist SuperLUDist_LIB APPEND_PATH ${TPL_INSTALL_PREFIX}/lib)
-
-# --- set cache (global) variables
-global_set(SuperLUDist_LIBRARY "${SuperLUDist_LIB}")
+# --- add global variables to cache
+find_library(SuperLUDist_LIBRARY superlu_dist
+             HINTS ${TPL_INSTALL_PREFIX}
+             PATH_SUFFIXES lib lib64)

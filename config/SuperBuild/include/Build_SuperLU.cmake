@@ -28,6 +28,7 @@ set(SuperLU_PATCH_COMMAND ${CMAKE_COMMAND} -P ${SuperLU_cmake_patch})
 # --- Define the arguments passed to CMake.
 set(SuperLU_CMAKE_ARGS 
       "-DCMAKE_INSTALL_PREFIX:FILEPATH=${TPL_INSTALL_PREFIX}"
+      "-DCMAKE_INSTALL_LIBDIR:FILEPATH=${TPL_INSTALL_PREFIX}/lib"
       "-DBUILD_SHARED_LIBS:BOOL=${BUILD_SHARED_LIBS}"
       "-Denable_blaslib:BOOL=FALSE")
 
@@ -57,8 +58,7 @@ ExternalProject_Add(${SuperLU_BUILD_TARGET}
                     # -- Output control
                     ${SuperLU_logging_args})
 
-include(BuildLibraryName)
-build_library_name(superlu SuperLU_LIB APPEND_PATH ${TPL_INSTALL_PREFIX}/lib)
-
-# --- set cache (global) variables
-global_set(SuperLU_LIBRARY "${SuperLU_LIB}")
+# --- add global variables to cache
+find_library(SuperLU_LIBRARY superlu
+             HINTS ${TPL_INSTALL_PREFIX}
+             PATH_SUFFIXES lib lib64)
