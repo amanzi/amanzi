@@ -58,7 +58,8 @@ ExternalProject_Add(${SuperLU_BUILD_TARGET}
                     # -- Output control
                     ${SuperLU_logging_args})
 
-# --- add global variables to cache
-find_library(SuperLU_LIBRARY superlu
-             HINTS ${TPL_INSTALL_PREFIX}
-             PATH_SUFFIXES lib lib64)
+include(BuildLibraryName)
+build_library_name(superlu SuperLU_LIB APPEND_PATH ${TPL_INSTALL_PREFIX}/lib)
+
+# --- set cache (global) variables
+global_set(SuperLU_LIBRARY "${SuperLU_LIB}")

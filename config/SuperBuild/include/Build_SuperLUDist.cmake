@@ -74,7 +74,8 @@ ExternalProject_Add(${SuperLUDist_BUILD_TARGET}
                     # -- Output control
                     ${SuperLUDist_logging_args})
 
-# --- add global variables to cache
-find_library(SuperLUDist_LIBRARY superlu_dist
-             HINTS ${TPL_INSTALL_PREFIX}
-             PATH_SUFFIXES lib lib64)
+include(BuildLibraryName)
+build_library_name(superlu_dist SuperLUDist_LIB APPEND_PATH ${TPL_INSTALL_PREFIX}/lib)
+
+# --- set cache (global) variables
+global_set(SuperLUDist_LIBRARY "${SuperLUDist_LIB}")
