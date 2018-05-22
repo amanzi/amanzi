@@ -53,249 +53,19 @@ class AdvectionFn : public Explicit_TI::fnBase<CompositeVector> {
  public:
   AdvectionFn(Teuchos::ParameterList& plist,
               int nx, double dt, 
-              const std::string& filename,
               const Teuchos::RCP<const AmanziMesh::Mesh> mesh,
               int order, 
-              bool conservative_form)
-      : plist_(plist), nx_(nx), dt_(dt), 
-        filename_(filename), mesh_(mesh),
-        ana_(mesh, order),
-        conservative_form_(conservative_form) {
+              bool conservative_form);
 
-    // create global operator 
-    // -- upwind flux term
-    Teuchos::ParameterList op_list = plist.sublist("PK operator").sublist("flux operator");
-    op_flux = Teuchos::rcp(new Operators::PDE_AdvectionRiemann(op_list, mesh));
-    global_op_ = op_flux->global_operator();
+  // functional in dy/dt = F(y)
+  void Functional(double t, const CompositeVector& u, CompositeVector& f) override;
 
-    // -- volumetric advection term
-    op_list = plist.sublist("PK operator").sublist("advection operator");
-    op_adv = Teuchos::rcp(new Operators::PDE_Abstract(op_list, global_op_));
-
-    // -- accumulation term
-    op_list = plist.sublist("PK operator").sublist("inverse mass operator");
-    op_mass = Teuchos::rcp(new Operators::PDE_Abstract(op_list, mesh_));
-
-    // -- reaction term
-    if (!conservative_form_) {
-      op_list = plist.sublist("PK operator").sublist("reaction operator");
-      op_reac = Teuchos::rcp(new Operators::PDE_Abstract(op_list, global_op_));
-    }
-    setup_ = true;
-  }
-
-  void Functional(double t, const CompositeVector& u, CompositeVector& f) override {
-    int d = mesh_->space_dimension();
-    int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
-    int ncells_wghost = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
-    int nfaces_wghost = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
-
-    // update velocity coefficient
-    WhetStone::VectorPolynomial v;
-    auto velc = Teuchos::rcp(new std::vector<WhetStone::VectorPolynomial>(ncells_wghost));
-    auto velf = Teuchos::rcp(new std::vector<WhetStone::Polynomial>(nfaces_wghost));
-    auto divc = Teuchos::rcp(new std::vector<WhetStone::Polynomial>(ncells_wghost));
-
-    for (int c = 0; c < ncells_wghost; ++c) {
-      ana_.VelocityTaylor(mesh_->cell_centroid(c), t, v); 
-      (*velc)[c] = v;
-      (*velc)[c] *= -1.0;
-    }
-
-    for (int f = 0; f < nfaces_wghost; ++f) {
-      ana_.VelocityTaylor(mesh_->face_centroid(f), t, v); 
-      (*velf)[f] = v * mesh_->face_normal(f);
-    }
-
-    if (! conservative_form_) {
-      for (int c = 0; c < ncells_wghost; ++c) {
-        (*divc)[c] = Divergence((*velc)[c]);
-      }
-    }
-
-    // modify analytic Taylor expansions
-    bool ho_velf(true);
-    CalculateApproximateVelocity(t, dt_, velc, velf, divc, ho_velf);
-
-    // update problem coefficients
-    // -- accumulation
-    auto K = Teuchos::rcp(new std::vector<WhetStone::Polynomial>(ncells_wghost));
-    WhetStone::Polynomial Kc(d, 0);
-    Kc(0, 0) = 1.0;
-    for (int c = 0; c < ncells_wghost; c++) {
-      (*K)[c] = Kc;
-    }
-
-    // -- source term
-    int order = plist_.sublist("PK operator").sublist("flux operator")
-                      .template get<int>("method order");
-    int nk = (order + 1) * (order + 2) / 2;
-
-    WhetStone::Polynomial sol, src, pc(2, order);
-    WhetStone::NumericalIntegration numi(mesh_, false);
-
-    CompositeVector& rhs = *global_op_->rhs();
-    Epetra_MultiVector& rhs_c = *rhs.ViewComponent("cell");
-    rhs_c.PutScalar(0.0);
-
-    /*
-    for (int c = 0; c < ncells; ++c) {
-      const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
-      double volume = mesh_->cell_volume(c);
-
-      ana_.SourceTaylor(xc, t, src);
-
-      for (auto it = pc.begin(); it.end() <= pc.end(); ++it) {
-        int n = it.PolynomialPosition();
-        int k = it.MonomialOrder();
-
-        double factor = numi.MonomialNaturalScale(k, volume);
-        WhetStone::Polynomial cmono(2, it.multi_index(), factor);
-        cmono.set_origin(xc);      
-
-        WhetStone::Polynomial tmp = src * cmono;      
-
-        rhs_c[n][c] = numi.IntegratePolynomialCell(c, tmp);
-      }
-    }
-    */
-
-    // -- boundary data
-    auto bc = Teuchos::rcp(new Operators::BCs(mesh_, AmanziMesh::FACE, Operators::DOF_Type::VECTOR));
-    std::vector<int>& bc_model = bc->bc_model();
-    std::vector<std::vector<double> >& bc_value = bc->bc_value_vector(nk);
-
-    WhetStone::Polynomial coefs;
-    WhetStone::DenseVector data;
-
-    for (int f = 0; f < nfaces_wghost; f++) {
-      const AmanziGeometry::Point& xf = mesh_->face_centroid(f);
-      const AmanziGeometry::Point& normal = mesh_->face_normal(f);
-      if (fabs(xf[0]) < 1e-6 || fabs(xf[0] - 1.0) < 1e-6 ||
-          fabs(xf[1]) < 1e-6 || fabs(xf[1] - 1.0) < 1e-6) {
-        AmanziGeometry::Point vp = ana_.VelocityExact(xf, t); 
-
-        if (vp * normal < -1e-12) {
-          bc_model[f] = Operators::OPERATOR_BC_DIRICHLET;
-
-          ana_.SolutionTaylor(xf, t, coefs);
-          coefs.GetPolynomialCoefficients(data);
-
-          for (int i = 0; i < nk; ++i) {
-            bc_value[f][i] = data(i);
-          }
-        }
-      }
-    }
-
-    // populate the global operator
-    op_flux->Setup(velc, velf);
-    op_flux->UpdateMatrices(velf.ptr());
-    op_flux->ApplyBCs(bc, true);
-
-    op_adv->SetupPolyVector(velc);
-    op_adv->UpdateMatrices();
-
-    if (!conservative_form_) {
-      op_reac->SetupPoly(divc);
-      op_reac->UpdateMatrices();
-    }
-
-    if (setup_) {
-      op_mass->SetupPoly(K);
-      op_mass->UpdateMatrices(Teuchos::null);
-      setup_ = false;
-    }
-
-    // calculate functional
-    CompositeVector u1(u);
-    global_op_->ComputeResidual(u, u1);
-
-    // invert vector
-    op_mass->global_operator()->Apply(u1, f);
-
-    // statistics: l2 norm of solution
-    u.Dot(u, &l2norm);
-  }
-
-  // Modify cell and face velocities using a mesh map
+  // modify cell and face velocities using a mesh map
   void CalculateApproximateVelocity(
       double t, double dt,
       const Teuchos::RCP<std::vector<WhetStone::VectorPolynomial> >& velc,
       const Teuchos::RCP<std::vector<WhetStone::Polynomial> >& velf,
-      const Teuchos::RCP<std::vector<WhetStone::Polynomial> >& divc,
-      bool ho_velf) {
-    // create new mesh for time interval (t, t + dt)
-    Epetra_MpiComm comm(MPI_COMM_WORLD);
-    AmanziMesh::MeshFactory factory(&comm);
-    factory.set_partitioner(AmanziMesh::Partitioner_type::ZOLTAN_RCB);
-    factory.preference(AmanziMesh::FrameworkPreference({AmanziMesh::MSTK}));
-   
-    Teuchos::RCP<AmanziMesh::Mesh> mesh_new;
-    if (filename_ == "square")
-      mesh_new = factory(0.0, 0.0, 1.0, 1.0, nx_, nx_, mesh_->geometric_model());
-    else 
-      mesh_new = factory(filename_, mesh_->geometric_model(), true, true);
-
-    int dim = mesh_->space_dimension();
-    AmanziGeometry::Point xv(dim), yv(dim);
-    AmanziMesh::Entity_ID_List faces, nodeids;
-    AmanziGeometry::Point_List new_positions, final_positions;
-
-    int ncells_wghost = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
-    int nnodes_wghost = mesh_->num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::ALL);
-
-    for (int v = 0; v < nnodes_wghost; ++v) {
-      mesh_->node_get_coordinates(v, &xv);
-      yv = ana_.VelocityExact(xv, t); 
-      xv += yv * dt;
-
-      nodeids.push_back(v);
-      new_positions.push_back(xv);
-    }
-    mesh_new->deform(nodeids, new_positions, false, &final_positions);
-
-    // create a mesh map at time t
-    Teuchos::ParameterList map_list;
-    map_list.set<std::string>("method", "Lagrange serendipity")
-            .set<int>("method order", 2)
-            .set<std::string>("projector", "L2")
-            .set<std::string>("map name", "VEM");
-  
-    WhetStone::MeshMapsFactory maps_factory;
-    auto maps = maps_factory.Create(map_list, mesh_, mesh_new);
-
-    // calculate approximate velocities
-    double dtfac = 1.0 / dt;
-    for (int c = 0; c < ncells_wghost; ++c) {
-      mesh_->cell_get_faces(c, &faces);
-      int nfaces = faces.size();
-
-      WhetStone::VectorPolynomial v;
-      std::vector<WhetStone::VectorPolynomial> vvf;
-
-      if (ho_velf) { // use high-order face velocity 
-        for (int n = 0; n < nfaces; ++n) {
-          int f = faces[n];
-          ana_.VelocityTaylor(mesh_->face_centroid(f), t, v);
-          vvf.push_back(v * dt);
-          (*velf)[f] = v * mesh_->face_normal(f);
-        }
-      } else {
-        for (int n = 0; n < nfaces; ++n) {
-          int f = faces[n];
-          maps->VelocityFace(f, v);
-          vvf.push_back(v);
-          (*velf)[f] = (v * mesh_->face_normal(f)) * dtfac;
-        }
-      }
-
-      maps->VelocityCell(c, vvf, (*velc)[c]);
-      (*velc)[c] *= -dtfac;
-
-      if (! conservative_form_) (*divc)[c] = Divergence((*velc)[c]);
-    }
-  }
+      const Teuchos::RCP<std::vector<WhetStone::Polynomial> >& divc);
 
  public:
   double l2norm;
@@ -308,16 +78,281 @@ class AdvectionFn : public Explicit_TI::fnBase<CompositeVector> {
  private:
   AnalyticDG ana_;
   Teuchos::RCP<Operators::Operator> global_op_;
-
   const Teuchos::ParameterList plist_;
+
   int nx_;
   double dt_;
-  std::string filename_;
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
+  Teuchos::RCP<AmanziMesh::Mesh> mesh_new_;
 
   bool conservative_form_;
-  bool setup_;
+  bool setup_, high_order_velf_, level_set_velf_;
 };
+
+
+/* *****************************************************************
+* Constructor
+***************************************************************** */
+template <class AnalyticDG>
+AdvectionFn<AnalyticDG>::AdvectionFn(
+    Teuchos::ParameterList& plist, int nx, double dt, 
+    const Teuchos::RCP<const AmanziMesh::Mesh> mesh,
+    int order, bool conservative_form)
+    : plist_(plist), nx_(nx), dt_(dt), 
+      mesh_(mesh),
+      ana_(mesh, order),
+      conservative_form_(conservative_form)
+{
+  // create global operator 
+  // -- upwind flux term
+  Teuchos::ParameterList op_list = plist.sublist("PK operator").sublist("flux operator");
+  op_flux = Teuchos::rcp(new Operators::PDE_AdvectionRiemann(op_list, mesh));
+  global_op_ = op_flux->global_operator();
+
+  // -- volumetric advection term
+  op_list = plist.sublist("PK operator").sublist("advection operator");
+  op_adv = Teuchos::rcp(new Operators::PDE_Abstract(op_list, global_op_));
+
+  // -- accumulation term
+  op_list = plist.sublist("PK operator").sublist("inverse mass operator");
+  op_mass = Teuchos::rcp(new Operators::PDE_Abstract(op_list, mesh_));
+
+  // -- reaction term
+  if (!conservative_form_) {
+    op_list = plist.sublist("PK operator").sublist("reaction operator");
+    op_reac = Teuchos::rcp(new Operators::PDE_Abstract(op_list, global_op_));
+  }
+
+  // create auxiliary mesh
+  Epetra_MpiComm comm(MPI_COMM_WORLD);
+  AmanziMesh::MeshFactory factory(&comm);
+  factory.set_partitioner(AmanziMesh::Partitioner_type::ZOLTAN_RCB);
+  factory.preference(AmanziMesh::FrameworkPreference({AmanziMesh::MSTK}));
+   
+  std::string name = plist.get<std::string>("file name");
+  if (name == "square")
+    mesh_new_ = factory(0.0, 0.0, 1.0, 1.0, nx_, nx_, mesh_->geometric_model());
+  else 
+    mesh_new_ = factory(name, mesh_->geometric_model(), true, true);
+
+  // cotrol variables
+  name = plist.get<std::string>("face velocity method");
+  high_order_velf_ = (name == "high order");
+  level_set_velf_ = (name == "level set");
+  setup_ = true;
+}
+
+
+/* *****************************************************************
+* Functional F in dy/dt = F(y)
+***************************************************************** */
+template <class AnalyticDG>
+void AdvectionFn<AnalyticDG>::Functional(
+    double t, const CompositeVector& u, CompositeVector& f)
+{
+  int d = mesh_->space_dimension();
+  int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+  int ncells_wghost = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
+  int nfaces_wghost = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
+
+  // update velocity coefficient
+  WhetStone::VectorPolynomial v;
+  auto velc = Teuchos::rcp(new std::vector<WhetStone::VectorPolynomial>(ncells_wghost));
+  auto velf = Teuchos::rcp(new std::vector<WhetStone::Polynomial>(nfaces_wghost));
+  auto divc = Teuchos::rcp(new std::vector<WhetStone::Polynomial>(ncells_wghost));
+
+  for (int c = 0; c < ncells_wghost; ++c) {
+    ana_.VelocityTaylor(mesh_->cell_centroid(c), t, v); 
+    (*velc)[c] = v;
+    (*velc)[c] *= -1.0;
+  }
+
+  for (int f = 0; f < nfaces_wghost; ++f) {
+    ana_.VelocityTaylor(mesh_->face_centroid(f), t, v); 
+    (*velf)[f] = v * mesh_->face_normal(f);
+  }
+
+  if (! conservative_form_) {
+    for (int c = 0; c < ncells_wghost; ++c) {
+      (*divc)[c] = Divergence((*velc)[c]);
+    }
+  }
+
+  // modify analytic Taylor expansions
+  CalculateApproximateVelocity(t, dt_, velc, velf, divc);
+
+  // update problem coefficients
+  // -- accumulation
+  auto K = Teuchos::rcp(new std::vector<WhetStone::Polynomial>(ncells_wghost));
+  WhetStone::Polynomial Kc(d, 0);
+  Kc(0, 0) = 1.0;
+  for (int c = 0; c < ncells_wghost; c++) {
+    (*K)[c] = Kc;
+  }
+
+  // -- source term
+  int order = plist_.sublist("PK operator").sublist("flux operator")
+                    .template get<int>("method order");
+  int nk = (order + 1) * (order + 2) / 2;
+
+  WhetStone::Polynomial sol, src, pc(2, order);
+  WhetStone::NumericalIntegration numi(mesh_, false);
+
+  CompositeVector& rhs = *global_op_->rhs();
+  Epetra_MultiVector& rhs_c = *rhs.ViewComponent("cell");
+  rhs_c.PutScalar(0.0);
+
+  /*
+  for (int c = 0; c < ncells; ++c) {
+    const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
+    double volume = mesh_->cell_volume(c);
+
+    ana_.SourceTaylor(xc, t, src);
+
+    for (auto it = pc.begin(); it.end() <= pc.end(); ++it) {
+      int n = it.PolynomialPosition();
+      int k = it.MonomialOrder();
+
+      double factor = numi.MonomialNaturalScale(k, volume);
+      WhetStone::Polynomial cmono(2, it.multi_index(), factor);
+      cmono.set_origin(xc);      
+
+       WhetStone::Polynomial tmp = src * cmono;      
+
+      rhs_c[n][c] = numi.IntegratePolynomialCell(c, tmp);
+    }
+  }
+  */
+
+  // -- boundary data
+  auto bc = Teuchos::rcp(new Operators::BCs(mesh_, AmanziMesh::FACE, Operators::DOF_Type::VECTOR));
+  std::vector<int>& bc_model = bc->bc_model();
+  std::vector<std::vector<double> >& bc_value = bc->bc_value_vector(nk);
+
+  WhetStone::Polynomial coefs;
+  WhetStone::DenseVector data;
+
+  for (int f = 0; f < nfaces_wghost; f++) {
+    const AmanziGeometry::Point& xf = mesh_->face_centroid(f);
+    const AmanziGeometry::Point& normal = mesh_->face_normal(f);
+    if (fabs(xf[0]) < 1e-6 || fabs(xf[0] - 1.0) < 1e-6 ||
+        fabs(xf[1]) < 1e-6 || fabs(xf[1] - 1.0) < 1e-6) {
+      AmanziGeometry::Point vp = ana_.VelocityExact(xf, t); 
+
+      if (vp * normal < -1e-12) {
+        bc_model[f] = Operators::OPERATOR_BC_DIRICHLET;
+
+        ana_.SolutionTaylor(xf, t, coefs);
+        coefs.GetPolynomialCoefficients(data);
+
+        for (int i = 0; i < nk; ++i) {
+          bc_value[f][i] = data(i);
+        }
+      }
+    }
+  }
+
+  // populate the global operator
+  op_flux->Setup(velc, velf);
+  op_flux->UpdateMatrices(velf.ptr());
+  op_flux->ApplyBCs(bc, true);
+
+  op_adv->SetupPolyVector(velc);
+  op_adv->UpdateMatrices();
+
+  if (!conservative_form_) {
+    op_reac->SetupPoly(divc);
+    op_reac->UpdateMatrices();
+  }
+
+  if (setup_) {
+    op_mass->SetupPoly(K);
+    op_mass->UpdateMatrices(Teuchos::null);
+    setup_ = false;
+  }
+
+  // calculate functional
+  CompositeVector u1(u);
+  global_op_->ComputeResidual(u, u1);
+
+  // invert vector
+  op_mass->global_operator()->Apply(u1, f);
+
+  // statistics: l2 norm of solution
+  u.Dot(u, &l2norm);
+}
+
+
+/* *****************************************************************
+* Change original defenition of velocities
+***************************************************************** */
+template <class AnalyticDG>
+void AdvectionFn<AnalyticDG>::CalculateApproximateVelocity(
+    double t, double dt,
+    const Teuchos::RCP<std::vector<WhetStone::VectorPolynomial> >& velc,
+    const Teuchos::RCP<std::vector<WhetStone::Polynomial> >& velf,
+    const Teuchos::RCP<std::vector<WhetStone::Polynomial> >& divc)
+{
+  // deform auxiliary mesh for time interval (t, t + dt)
+  int dim = mesh_->space_dimension();
+  AmanziGeometry::Point xv(dim), yv(dim), sv(dim);
+  AmanziMesh::Entity_ID_List faces, nodeids;
+  AmanziGeometry::Point_List new_positions, final_positions;
+
+  int ncells_wghost = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
+  int nnodes_wghost = mesh_->num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::ALL);
+
+  for (int v = 0; v < nnodes_wghost; ++v) {
+    mesh_->node_get_coordinates(v, &xv);
+    yv = ana_.VelocityExact(xv, t); 
+    xv += yv * dt;
+
+    nodeids.push_back(v);
+    new_positions.push_back(xv);
+  }
+  mesh_new_->deform(nodeids, new_positions, false, &final_positions);
+
+  // create a mesh map at time t
+  Teuchos::ParameterList map_list;
+  map_list.set<std::string>("method", "Lagrange serendipity")
+          .set<int>("method order", 2)
+          .set<std::string>("projector", "L2")
+          .set<std::string>("map name", "VEM");
+  
+  WhetStone::MeshMapsFactory maps_factory;
+  auto maps = maps_factory.Create(map_list, mesh_, mesh_new_);
+
+  // calculate approximate velocities
+  double dtfac = 1.0 / dt;
+  for (int c = 0; c < ncells_wghost; ++c) {
+    mesh_->cell_get_faces(c, &faces);
+    int nfaces = faces.size();
+
+    WhetStone::VectorPolynomial v;
+    std::vector<WhetStone::VectorPolynomial> vvf;
+
+    if (high_order_velf_) { // use high-order face velocity 
+      for (int n = 0; n < nfaces; ++n) {
+        int f = faces[n];
+        ana_.VelocityTaylor(mesh_->face_centroid(f), t, v);
+        vvf.push_back(v * dt);
+        (*velf)[f] = v * mesh_->face_normal(f);
+      }
+    } else {
+      for (int n = 0; n < nfaces; ++n) {
+        int f = faces[n];
+        maps->VelocityFace(f, v);
+        vvf.push_back(v);
+        (*velf)[f] = (v * mesh_->face_normal(f)) * dtfac;
+      }
+    }
+
+    maps->VelocityCell(c, vvf, (*velc)[c]);
+    (*velc)[c] *= -dtfac;
+
+    if (! conservative_form_) (*divc)[c] = Divergence((*velc)[c]);
+  }
+}
 
 }  // namespace Amanzi
 
@@ -325,7 +360,7 @@ class AdvectionFn : public Explicit_TI::fnBase<CompositeVector> {
 /* *****************************************************************
 * This tests exactness of the transient advection scheme for
 * dp/dt + div(v p) = f.
-* **************************************************************** */
+***************************************************************** */
 template <class AnalyticDG>
 void AdvectionTransient(std::string filename, int nx, int ny, double dt,
                         const Amanzi::Explicit_TI::method_t& rk_method,
@@ -371,7 +406,9 @@ void AdvectionTransient(std::string filename, int nx, int ny, double dt,
   int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
 
   // create main advection class
-  AdvectionFn<AnalyticDG> fn(plist, nx, dt, filename, mesh, order, conservative_form);
+  plist.set<std::string>("file name", filename);
+  plist.set<std::string>("face velocity method", "high order");
+  AdvectionFn<AnalyticDG> fn(plist, nx, dt, mesh, order, conservative_form);
 
   // create initial guess
   CompositeVector& rhs = *fn.op_flux->global_operator()->rhs();

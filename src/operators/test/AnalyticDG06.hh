@@ -9,8 +9,7 @@
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 
   Solution: u = exp(-a [(x - x0)^2 + (y - y0)^2]), a = 20
-            x0 = 0.5 + 0.25 dx(t), dx(0) = 1
-            y0 = 0.5 + 0.25 dy(t), dy(0) = 0
+            default center: x0 = 0.75, y0 = 0.5
   Diffusion: K = 1
   Accumulation: a = 0
   Reaction: r = 0
@@ -29,7 +28,10 @@ class AnalyticDG06 : public AnalyticDGBase {
 
  public:
   AnalyticDG06(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh, int order)
-    : AnalyticDGBase(mesh, order) {};
+    : AnalyticDGBase(mesh, order), x0_(0.75), y0_(0.5) {};
+  AnalyticDG06(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh, int order,
+               double x0, double y0)
+    : AnalyticDGBase(mesh, order), x0_(x0), y0_(y0) {};
   ~AnalyticDG06() {};
 
   // analytic data in conventional Taylor basis
@@ -46,11 +48,8 @@ class AnalyticDG06 : public AnalyticDGBase {
     sol.Reshape(d_, order_, true); 
     sol.set_origin(p);
 
-    double x0 = 0.75;
-    double y0 = 0.5;
-
-    double dx = p[0] - x0;
-    double dy = p[1] - y0;
+    double dx = p[0] - x0_;
+    double dy = p[1] - y0_;
     double dist2 = dx * dx + dy * dy;
     double u = std::exp(-a * dist2);
 
@@ -158,6 +157,9 @@ class AnalyticDG06 : public AnalyticDGBase {
     src.Reshape(d_, 0, true);
     src.set_origin(p);
   }
+
+ private:
+  double x0_, y0_;
 };
 
 #endif
