@@ -48,11 +48,13 @@
 
 /* *****************************************************************
 * This tests exactness of the advection scheme for steady-state
-* equation c p + div(v p) = f.
+* equations c p + div(v p) = f  (conservative formulation)
+* and       c p + v . grad(p) = f.
+* Two ways to impose Dirichlet BCs are used: primal and dual.
 * **************************************************************** */
 template<class AnalyticDG>
 void AdvectionSteady(int dim, std::string filename, int nx,
-                     bool conservative_form)
+                     std::string weak_form, bool conservative_form)
 {
   using namespace Teuchos;
   using namespace Amanzi;
@@ -64,7 +66,8 @@ void AdvectionSteady(int dim, std::string filename, int nx,
   int MyPID = comm.MyPID();
 
   std::string problem = (conservative_form) ? ", conservative formulation" : "";
-  if (MyPID == 0) std::cout << "\nTest: " << dim << "D steady advection, dG method" << problem << std::endl;
+  if (MyPID == 0) std::cout << "\nTest: " << dim << "D steady advection, dG method" << problem
+                            << ", weak formulation=" << weak_form << std::endl;
 
   // read parameter list
   std::string xmlFileName;
@@ -77,12 +80,19 @@ void AdvectionSteady(int dim, std::string filename, int nx,
   MeshFactory meshfactory(&comm);
   meshfactory.preference(FrameworkPreference({MSTK,STKMESH}));
 
-  RCP<const Mesh> mesh;
+  double weak_sign = 1.0;
   std::string pk_name;
+  RCP<const Mesh> mesh;
+
   if (dim == 2) {
     // mesh = meshfactory(0.0, 0.0, 1.0, 1.0, nx, nx, gm);
     mesh = meshfactory(filename, gm, true, true);
     pk_name = "PK operator 2D";
+
+    if (weak_form == "primal") {
+      weak_sign = -1.0;
+      pk_name = "PK operator 2D: primal";
+    }
   } else {
     bool request_faces(true), request_edges(true);
     mesh = meshfactory(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, nx, nx, nx, gm, request_faces, request_edges);
@@ -139,11 +149,11 @@ void AdvectionSteady(int dim, std::string filename, int nx,
   
   for (int c = 0; c < ncells_wghost; ++c) {
     (*velc)[c] = v;
-    (*velc)[c] *= -1.0;
+    (*velc)[c] *= -weak_sign;
   }
 
   for (int f = 0; f < nfaces_wghost; ++f) {
-    (*velf)[f] = v * mesh->face_normal(f);
+    (*velf)[f] = v * (mesh->face_normal(f) * weak_sign);
   }
 
   // -- divergence of velocity
@@ -151,7 +161,7 @@ void AdvectionSteady(int dim, std::string filename, int nx,
   auto Kn = Teuchos::rcp(new std::vector<WhetStone::VectorPolynomial>());
   WhetStone::Polynomial divv = Divergence(v);
 
-  if (!conservative_form) {
+  if (!conservative_form && weak_form == "dual") {
     auto tmp = divv;
     tmp *= -1.0;
     tmp(0, 0) += Kreac;
@@ -213,6 +223,7 @@ void AdvectionSteady(int dim, std::string filename, int nx,
 
       if (vp * normal < -1e-12) {
         bc_model[f] = OPERATOR_BC_DIRICHLET;
+        if (weak_sign < 0.0) bc_model[f] = OPERATOR_BC_DIRICHLET_TYPE2;
 
         ana.SolutionTaylor(xf, 0.0, coefs);
         coefs.GetPolynomialCoefficients(data);
@@ -220,6 +231,8 @@ void AdvectionSteady(int dim, std::string filename, int nx,
         for (int i = 0; i < nk; ++i) {
           bc_value[f][i] = data(i);
         }
+      } else if (weak_sign < 0.0) {
+        bc_model[f] = OPERATOR_BC_REMOVE;
       }
     }
   }
@@ -232,7 +245,7 @@ void AdvectionSteady(int dim, std::string filename, int nx,
   op_adv->SetupPolyVector(velc);
   op_adv->UpdateMatrices();
 
-  if (conservative_form)
+  if (conservative_form || weak_form == "primal")
     op_reac->Setup(Kc);
   else 
     op_reac->Setup(Kn);
@@ -269,8 +282,10 @@ void AdvectionSteady(int dim, std::string filename, int nx,
     GMV::open_data_file(*mesh, (std::string)"operators.gmv");
     GMV::start_data();
     GMV::write_cell_data(p, 0, "solution");
-    GMV::write_cell_data(p, 1, "gradx");
-    GMV::write_cell_data(p, 2, "grady");
+    if (order > 0) {
+      GMV::write_cell_data(p, 1, "gradx");
+      GMV::write_cell_data(p, 2, "grady");
+    }
     GMV::close_data_file();
   }
 
@@ -289,14 +304,15 @@ void AdvectionSteady(int dim, std::string filename, int nx,
     printf("Mean:  L2(p)=%12.9f  Inf(p)=%12.9f  itr=%3d\n", pl2_mean, pinf_mean, solver.num_itrs());
     printf("Total: L2(p)=%12.9f  Inf(p)=%12.9f\n", pl2_err, pinf_err);
     CHECK(pl2_err < 1e-10 && pinf_err < 1e-10);
-  }
+  } 
 }
 
 
 TEST(OPERATOR_ADVECTION_STEADY_DG) {
-  AdvectionSteady<AnalyticDG03>(2, "test/median7x8.exo", 8, true);
-  AdvectionSteady<AnalyticDG03>(2, "test/median7x8.exo", 8, false);
-  AdvectionSteady<AnalyticDG02>(3, "cubic", 3, true);
+  AdvectionSteady<AnalyticDG03>(2, "test/median7x8.exo", 8, "primal", false);
+  AdvectionSteady<AnalyticDG03>(2, "test/median7x8.exo", 8, "dual", true);
+  AdvectionSteady<AnalyticDG03>(2, "test/median7x8.exo", 8, "dual", false);
+  AdvectionSteady<AnalyticDG02>(3, "cubic", 3, "dual", true);
 }
 
 

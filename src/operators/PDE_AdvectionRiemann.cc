@@ -166,14 +166,16 @@ void PDE_AdvectionRiemann::ApplyBCs(const Teuchos::RCP<BCs>& bc, bool primary)
   WhetStone::NumericalIntegration numi(mesh_, false);
 
   for (int f = 0; f != nfaces_owned; ++f) {
-    if (bc_model[f] == OPERATOR_BC_DIRICHLET) {
+    if (bc_model[f] == OPERATOR_BC_DIRICHLET ||
+        bc_model[f] == OPERATOR_BC_DIRICHLET_TYPE2) {
+      // common section
       mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
       int c = cells[0];
 
       const AmanziGeometry::Point& xf = mesh_->face_centroid(f);
       const AmanziGeometry::Point& normal = mesh_->face_normal(f, false, c, &dir);
 
-      // set polynomial with Dirichlet data
+      // --set polynomial with Dirichlet data
       WhetStone::DenseVector coef(nk);
       for (int i = 0; i < nk; ++i) {
         coef(i) = bc_value[f][i];
@@ -183,11 +185,11 @@ void PDE_AdvectionRiemann::ApplyBCs(const Teuchos::RCP<BCs>& bc, bool primary)
       pf.SetPolynomialCoefficients(coef);
       pf.set_origin(xf);
 
-      // convert boundary polynomial to space polynomial
+      // -- convert boundary polynomial to space polynomial
       pf.ChangeOrigin(mesh_->cell_centroid(c));
       numi.ChangeBasisRegularToNatural(c, pf);
 
-      // extract coefficients and update right-hand side 
+      // -- extract coefficients and update right-hand side 
       WhetStone::DenseMatrix& Aface = local_op_->matrices[f];
       int nrows = Aface.NumRows();
       int ncols = Aface.NumCols();
@@ -197,13 +199,22 @@ void PDE_AdvectionRiemann::ApplyBCs(const Teuchos::RCP<BCs>& bc, bool primary)
 
       Aface.Multiply(v, av, false);
 
-      for (int i = 0; i < ncols; ++i) {
-        rhs_c[i][c] -= av(i);
+      // now fork the work flow
+      if (bc_model[f] == OPERATOR_BC_DIRICHLET) {
+        for (int i = 0; i < ncols; ++i) {
+          rhs_c[i][c] -= av(i);
+        }
+        local_op_->matrices_shadow[f] = Aface;
+        Aface.PutScalar(0.0);
+      } else {
+        for (int i = 0; i < ncols; ++i) {
+          rhs_c[i][c] += av(i);
+        }
       }
+    } 
 
-      // elliminate matrices from system
-      local_op_->matrices_shadow[f] = Aface;
-      Aface.PutScalar(0.0);
+    else if (bc_model[f] == OPERATOR_BC_REMOVE) {
+      local_op_->matrices[f].PutScalar(0.0);
     }
   } 
 }

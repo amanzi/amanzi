@@ -55,11 +55,13 @@ const int OPERATOR_SCHEMA_BASE_EDGE = 128;
 const int OPERATOR_SCHEMA_RULE_EXACT = 1;
 const int OPERATOR_SCHEMA_RULE_SUBSET = 2;
 
-// boundary conditions
+// boundary conditions (see BCs.hh dor more detail)
 const int OPERATOR_BC_NONE = 0;
 const int OPERATOR_BC_DIRICHLET = 1;
 const int OPERATOR_BC_NEUMANN = 2;
 const int OPERATOR_BC_MIXED = 4;
+const int OPERATOR_BC_DIRICHLET_TYPE2 = 8;
+const int OPERATOR_BC_REMOVE = 16;
 
 // memory allocation
 const int OPERATOR_HEX_FACES = 6;  // Hexahedron is the common element
