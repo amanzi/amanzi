@@ -11,6 +11,7 @@
   <ParameterList name="visualization data">
     <Parameter name="file name base" type="string" value="plot"/>
     <Parameter name="cycles start period stop 0" type="Array(int)" value="{0, 100, -1}"/>
+    <Parameter name="write partitions" type="bool" value="true"/>
   </ParameterList>
   <ParameterList name="walkabout data">
     <Parameter name="file name base" type="string" value="walkabout"/>
