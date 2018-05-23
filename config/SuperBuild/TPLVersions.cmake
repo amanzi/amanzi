@@ -109,6 +109,8 @@
 #  0.95.1        - update OpenMPI to 3.0.1
 #  0.95.2        - added Amesos2 to list of built Trilinos packages
 #                - update MSTK to 3.0.4
+#  0.95.3        - removed CURL
+#                - update HYPRE to 2.14.0
 
 include(CMakeParseArguments)
 
@@ -161,7 +163,7 @@ endmacro(amanzi_tpl_version_write)
 #
 set(AMANZI_TPLS_VERSION_MAJOR 0)
 set(AMANZI_TPLS_VERSION_MINOR 95)
-set(AMANZI_TPLS_VERSION_PATCH 2)
+set(AMANZI_TPLS_VERSION_PATCH 3)
 set(AMANZI_TPLS_VERSION ${AMANZI_TPLS_VERSION_MAJOR}.${AMANZI_TPLS_VERSION_MINOR}.${AMANZI_TPLS_VERSION_PATCH})
 # Not sure how to create a meaningful hash key for the collection
 
@@ -208,18 +210,6 @@ set(MPICH_URL_STRING     "https://www.mpich.org/static/downloads/${MPICH_VERSION
 set(MPICH_ARCHIVE_FILE   mpich-${MPICH_VERSION}.tar.gz)
 set(MPICH_SAVEAS_FILE    ${MPICH_ARCHIVE_FILE})
 set(MPICH_MD5_SUM        e175452f4d61646a52c73031683fc375)
-
-#
-# TPL: CURL
-#
-set(CURL_VERSION_MAJOR 7)
-set(CURL_VERSION_MINOR 56)
-set(CURL_VERSION_PATCH 1)
-set(CURL_VERSION ${CURL_VERSION_MAJOR}.${CURL_VERSION_MINOR}.${CURL_VERSION_PATCH})
-set(CURL_URL_STRING     "https://github.com/curl/curl/archive")
-set(CURL_ARCHIVE_FILE   curl-${CURL_VERSION_MAJOR}_${CURL_VERSION_MINOR}_${CURL_VERSION_PATCH}.tar.gz)
-set(CURL_SAVEAS_FILE    curl-${CURL_VERSION}.tar.gz)
-set(CURL_MD5_SUM        48c0db0d7b1407e19c51e8ef4f798d78)
 
 #
 # TPL: zlib
@@ -360,13 +350,13 @@ set(MOAB_MD5_SUM        1840ca02366f4d3237d44af63e239e3b)
 # TPL: HYPRE
 #
 set(HYPRE_VERSION_MAJOR  2)
-set(HYPRE_VERSION_MINOR  12)
-set(HYPRE_VERSION_PATCH  1)
+set(HYPRE_VERSION_MINOR  14)
+set(HYPRE_VERSION_PATCH  0)
 set(HYPRE_VERSION  ${HYPRE_VERSION_MAJOR}.${HYPRE_VERSION_MINOR}.${HYPRE_VERSION_PATCH})
 set(HYPRE_URL_STRING     "https://github.com/LLNL/hypre/archive/")
-set(HYPRE_ARCHIVE_FILE   xsdk-${XSDK_VERSION_NEW}-rc1.tar.gz)
+set(HYPRE_ARCHIVE_FILE   v${HYPRE_VERSION}.tar.gz)
 set(HYPRE_SAVEAS_FILE    hypre-${HYPRE_VERSION}.tar.gz)
-set(HYPRE_MD5_SUM        302b8aae460978952f6cb427aa8cb0c5)
+set(HYPRE_MD5_SUM        ecde5cc807ec45bfb647e9f28d2eaea1)
 
 #
 # TPL: ParMetis

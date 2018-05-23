@@ -17,6 +17,11 @@ set(mpich_extra_ldflags "-Wl,-rpath,${TOOLS_INSTALL_PREFIX}/lib")
 message(STATUS "mpich_extra_ldflags = ${mpich_extra_ldflags}")
 find_package(Threads)
 
+if (APPLE)
+  set(mpich_extra_options "--enable-two-level-namespace")
+  message(STATUS "MPICH extra options for Darwin: ${mpich_extra_options}")
+endif()
+
 # --- Add external project build and tie to the OpenMPI build target
 ExternalProject_Add(${MPICH_BUILD_TARGET}
                     DEPENDS   ${MPICH_PACKAGE_DEPENDS}     # Package dependency target
@@ -34,7 +39,8 @@ ExternalProject_Add(${MPICH_BUILD_TARGET}
                                                 --enable-fortran
 						--enable-shared
 						--enable-static
-						--with-wrapper-ldflags=${mpich_extra_ldflags}
+	  					--with-wrapper-ldflags=${mpich_extra_ldflags}
+                                                ${mpich_extra_options}
                                                 CC=${CMAKE_C_COMPILER}
                                                 CXX=${CMAKE_CXX_COMPILER}
                                                 FC=${CMAKE_Fortran_COMPILER}
