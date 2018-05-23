@@ -309,6 +309,7 @@
       <base_filename>plot</base_filename>
       <num_digits>5</num_digits>
       <cycle_macros>Every100Cycles</cycle_macros>
+      <write_partition>true</write_partition>
     </vis>
     <walkabout>
       <base_filename>walkabout</base_filename>
