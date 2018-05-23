@@ -21,6 +21,7 @@
 #include "Epetra_Vector.h"
 
 // Amanzi
+#include "dbc.hh"
 #include "DenseVector.hh"
 #include "MatrixFE.hh"
 #include "PreconditionerFactory.hh"
@@ -380,9 +381,8 @@ void Operator::InitPreconditioner(const std::string& prec_name, const Teuchos::P
 {
   AmanziPreconditioners::PreconditionerFactory factory;
   preconditioner_ = factory.Create(prec_name, plist);
-  preconditioner_->Update(A_);
+  UpdatePreconditioner();
 }
-
 
 /* ******************************************************************
 * Initialization of the preconditioner. Note that boundary conditions
@@ -394,6 +394,47 @@ void Operator::InitPreconditioner(Teuchos::ParameterList& plist)
   preconditioner_ = factory.Create(plist);
   preconditioner_->Update(A_);
 }
+
+
+/* ******************************************************************
+* Two-stage initialization of preconditioner, part 1.
+* Create the PC and set options.  SymbolicAssemble() must have been called.
+****************************************************************** */
+void Operator::InitializePreconditioner(Teuchos::ParameterList& plist)
+{
+  AMANZI_ASSERT(A_.get());
+  AMANZI_ASSERT(smap_.get());
+
+  // provide block ids for block strategies.
+  if (plist.isParameter("preconditioner type") &&
+      plist.get<std::string>("preconditioner type") == "boomer amg" &&
+      plist.isSublist("boomer amg parameters")) {
+
+    // NOTE: Hypre frees this
+    auto block_ids = smap_->BlockIndices();
+
+    plist.sublist("boomer amg parameters").set("number of functions", block_ids.first);
+
+    // Note, this passes a raw pointer through a ParameterList.  I was surprised
+    // this worked too, but ParameterList is a boost::any at heart... --etc
+    plist.sublist("boomer amg parameters").set("block indices", block_ids.second);
+  }
+
+  AmanziPreconditioners::PreconditionerFactory factory;
+  preconditioner_ = factory.Create(plist);
+}
+
+/* ******************************************************************
+* Two-stage initialization of preconditioner, part 2.
+* Set the matrix in the preconditioner.  Assemble() must have been called.
+****************************************************************** */
+void Operator::UpdatePreconditioner()
+{
+  AMANZI_ASSERT(preconditioner_.get());
+  AMANZI_ASSERT(A_.get());
+  preconditioner_->Update(A_);
+}
+
 
 
 /* ******************************************************************

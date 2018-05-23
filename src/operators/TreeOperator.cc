@@ -227,14 +227,64 @@ void TreeOperator::InitPreconditioner(
   preconditioner_->Update(A_);
 }
 
-
 /* ******************************************************************
-* Create preconditioner using a factory.
+* Create preconditioner using name and a factory.
 ****************************************************************** */
-void TreeOperator::InitPreconditioner(Teuchos::ParameterList& plist)
+void TreeOperator::InitPreconditioner(
+    Teuchos::ParameterList& plist)
 {
   AmanziPreconditioners::PreconditionerFactory factory;
   preconditioner_ = factory.Create(plist);
+  preconditioner_->Update(A_);
+}
+
+
+/* ******************************************************************
+* Two-stage initialization of preconditioner, part 1.
+* Create the PC and set options.  SymbolicAssemble() must have been called.
+****************************************************************** */
+void TreeOperator::InitializePreconditioner(Teuchos::ParameterList& plist)
+{
+  AMANZI_ASSERT(A_.get());
+  AMANZI_ASSERT(smap_.get());
+
+  // provide block ids for block strategies.
+  if (plist.isParameter("preconditioner type") &&
+      plist.get<std::string>("preconditioner type") == "boomer amg" &&
+      plist.isSublist("boomer amg parameters")) {
+
+    // NOTE INTENTIONAL NON-FREED RAW POINTER!  This gets freed by Hypre.
+    // Odd design, but it is what is is... --etc
+    int* block_indices = new int[smap_->Map()->NumMyElements()];
+    int block_id = 0;
+    for (const auto& comp : *smap_) {
+      int ndofs = smap_->NumDofs(comp);
+      for (int d = 0; d!=ndofs; ++d) {
+        const auto& inds = smap_->Indices(comp, d);
+        for (int i=0; i!=inds.size(); ++i) block_indices[inds[i]] = block_id;
+        block_id++;
+      }
+    }
+    plist.sublist("boomer amg parameters").set("number of functions", block_id);
+
+    // Note, this passes a pointer through a ParameterList.  I was surprised
+    // this worked too. --etc
+    plist.sublist("boomer amg parameters").set<int*>("block indices", block_indices);
+  }
+
+  AmanziPreconditioners::PreconditionerFactory factory;
+  preconditioner_ = factory.Create(plist);
+}
+
+
+/* ******************************************************************
+* Two-stage initialization of preconditioner, part 2.
+* Set the matrix in the preconditioner.  Assemble() must have been called.
+****************************************************************** */
+void TreeOperator::UpdatePreconditioner()
+{
+  AMANZI_ASSERT(preconditioner_.get());
+  AMANZI_ASSERT(A_.get());
   preconditioner_->Update(A_);
 }
 
