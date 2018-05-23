@@ -53,6 +53,10 @@ ExternalProject_Add(${ParMetis_BUILD_TARGET}
 
 # --- Useful variables that depend on ZlIB (HDF5, NetCDF)
 include(BuildLibraryName)
-build_library_name(z ParMetis_LIBRARIES APPEND_PATH ${TPL_INSTALL_PREFIX}/lib)
+build_library_name(parmetis ParMetis_LIB APPEND_PATH ${TPL_INSTALL_PREFIX}/lib)
 set(ParMetis_DIR ${TPL_INSTALL_PREFIX})
 set(ParMetis_INCLUDE_DIRS ${TPL_INSTALL_PREFIX}/include)
+
+# --- set cache (global) variables
+global_set(ParMetis_LIBRARIES "${ParMetis_LIB};${METIS_LIBRARIES}")
+

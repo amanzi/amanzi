@@ -17,8 +17,6 @@ Users are required to provide the following to build:
     * Mercurial version 1.8 or higher.
     * CMake version 2.8.8 or higher (including CMake 3.0.x).
     * MPI installation with compiler wrappers. (mpicc, mpicxx, etc.)
-    * OpenSSL (required to build CURL) installation. This is available on
-      most UNIX flavored systems and Macs.
     * BLAS/LAPACK built and tuned to the target architecture. See the 
       Trilinos Configuration section for more information.
     * A location to install all the TPLs. The entire software stack
@@ -303,14 +301,6 @@ This bug has only been reported on Macs. Users will experience this bug
 when linking the HDF5 test binaries in the Amanzi test suite. Despite a kludge
 in the shell script to address this when building ASCEM-IO, this problem persists.
 The work-around is to run ranlib on the installed libparallelio.a library.
-
-Fails to locate OpenSSL in the build CURL step
-++++++++++++++++++++++++++++++++++++++++++++++
-CURL needs the location of OpenSSL to enable downloads from secure sites.
-There is a find_package call in the CURL build definition that attempts
-to find the system OpenSSL. If this find fails, define the installation 
-location of OpenSSL with ``-D OPENSSL_ROOT_DIR:FILEPATH=<directory>`` when 
-configuring and rerun cmake.
 
 .. _Trilinos:
 

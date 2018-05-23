@@ -111,6 +111,7 @@ set(PETSC_DIR @PETSC_DIR@ CACHE PATH "PETSc installation prefix")
 
 # HYPRE
 set(ENABLE_HYPRE @ENABLE_HYPRE@ CACHE BOOL "Enable HYPRE (Ifpack) solver interface")
+set(HYPRE_DIR @HYPRE_INSTALL_PREFIX@ CACHE PATH "HYPRE installation prefix")
 
 # Trilinos
 set(Trilinos_INSTALL_PREFIX @Trilinos_INSTALL_PREFIX@ CACHE PATH "Trilinos installation prefix")
