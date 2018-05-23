@@ -28,10 +28,7 @@ class AnalyticDG06 : public AnalyticDGBase {
 
  public:
   AnalyticDG06(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh, int order)
-    : AnalyticDGBase(mesh, order), x0_(0.75), y0_(0.5) {};
-  AnalyticDG06(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh, int order,
-               double x0, double y0)
-    : AnalyticDGBase(mesh, order), x0_(x0), y0_(y0) {};
+    : AnalyticDGBase(mesh, order) {};
   ~AnalyticDG06() {};
 
   // analytic data in conventional Taylor basis
@@ -48,8 +45,8 @@ class AnalyticDG06 : public AnalyticDGBase {
     sol.Reshape(d_, order_, true); 
     sol.set_origin(p);
 
-    double dx = p[0] - x0_;
-    double dy = p[1] - y0_;
+    double dx = p[0] - 0.75;
+    double dy = p[1] - 0.5;
     double dist2 = dx * dx + dy * dy;
     double u = std::exp(-a * dist2);
 
@@ -86,6 +83,7 @@ class AnalyticDG06 : public AnalyticDGBase {
   virtual void AccumulationTaylor(const Amanzi::AmanziGeometry::Point& p, double t,
                                   Amanzi::WhetStone::Polynomial& a) override {
     a.Reshape(d_, 0, true); 
+    a.set_origin(p);
   }
 
   // -- velocity
@@ -157,9 +155,6 @@ class AnalyticDG06 : public AnalyticDGBase {
     src.Reshape(d_, 0, true);
     src.set_origin(p);
   }
-
- private:
-  double x0_, y0_;
 };
 
 #endif

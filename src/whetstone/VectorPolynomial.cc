@@ -54,6 +54,22 @@ void VectorPolynomial::PutScalar(double val)
 
 
 /* ******************************************************************
+* Calculate value at a point 
+****************************************************************** */
+DenseVector VectorPolynomial::Value(const AmanziGeometry::Point& xp) const
+{
+  int n = polys_.size();
+  DenseVector val(n);
+
+  for (int i = 0; i < n; ++i) {
+    val(i) = polys_[i].Value(xp);
+  }
+
+  return val;
+}
+
+
+/* ******************************************************************
 * Create object using gradient of a polynomial
 ****************************************************************** */
 void VectorPolynomial::Gradient(const Polynomial p)

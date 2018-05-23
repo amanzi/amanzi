@@ -38,6 +38,7 @@
 // Operators
 #include "AnalyticDG06.hh"
 #include "AnalyticDG06b.hh"
+#include "AnalyticDG07.hh"
 
 #include "OperatorAudit.hh"
 #include "OperatorDefs.hh"
@@ -61,8 +62,14 @@ class AdvectionFn : public Explicit_TI::fnBase<CompositeVector> {
   void Functional(double t, const CompositeVector& u, CompositeVector& f) override;
 
   // modify cell and face velocities using a mesh map
-  void CalculateApproximateVelocity(
+  void ApproximateVelocity_Projection(
       double t, double dt,
+      const Teuchos::RCP<std::vector<WhetStone::VectorPolynomial> >& velc,
+      const Teuchos::RCP<std::vector<WhetStone::Polynomial> >& velf,
+      const Teuchos::RCP<std::vector<WhetStone::Polynomial> >& divc);
+
+  void ApproximateVelocity_LevelSet(
+      const CompositeVector& u,
       const Teuchos::RCP<std::vector<WhetStone::VectorPolynomial> >& velc,
       const Teuchos::RCP<std::vector<WhetStone::Polynomial> >& velf,
       const Teuchos::RCP<std::vector<WhetStone::Polynomial> >& divc);
@@ -179,7 +186,11 @@ void AdvectionFn<AnalyticDG>::Functional(
   }
 
   // modify analytic Taylor expansions
-  CalculateApproximateVelocity(t, dt_, velc, velf, divc);
+  if (level_set_velf_) {
+    ApproximateVelocity_LevelSet(u, velc, velf, divc);
+  } else {
+    ApproximateVelocity_Projection(t, dt_, velc, velf, divc);
+  }
 
   // update problem coefficients
   // -- accumulation
@@ -284,10 +295,10 @@ void AdvectionFn<AnalyticDG>::Functional(
 
 
 /* *****************************************************************
-* Change original defenition of velocities
+* Change original definitions of velocities: projection algorithm
 ***************************************************************** */
 template <class AnalyticDG>
-void AdvectionFn<AnalyticDG>::CalculateApproximateVelocity(
+void AdvectionFn<AnalyticDG>::ApproximateVelocity_Projection(
     double t, double dt,
     const Teuchos::RCP<std::vector<WhetStone::VectorPolynomial> >& velc,
     const Teuchos::RCP<std::vector<WhetStone::Polynomial> >& velf,
@@ -354,6 +365,64 @@ void AdvectionFn<AnalyticDG>::CalculateApproximateVelocity(
   }
 }
 
+/* *****************************************************************
+* Change original definitions of velocities: level set algorithm
+***************************************************************** */
+template <class AnalyticDG>
+void AdvectionFn<AnalyticDG>::ApproximateVelocity_LevelSet(
+    const CompositeVector& u,
+    const Teuchos::RCP<std::vector<WhetStone::VectorPolynomial> >& velc,
+    const Teuchos::RCP<std::vector<WhetStone::Polynomial> >& velf,
+    const Teuchos::RCP<std::vector<WhetStone::Polynomial> >& divc)
+{
+  int dim = mesh_->space_dimension();
+  const Epetra_MultiVector& u_c = *u.ViewComponent("cell", true);
+
+  int ncells_wghost = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
+  int nfaces_wghost = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
+
+  // cell-based velocity is constant for dG1
+  double norm;
+  AmanziMesh::Entity_ID_List cells;
+  AmanziGeometry::Point zero(dim);
+
+  for (int c = 0; c < ncells_wghost; ++c) {
+    norm = 0.0;
+    for (int i = 0; i < dim; ++i) {
+      norm += u_c[i + 1][c] * u_c[i + 1][c];
+    }
+    norm = std::pow(norm, 0.5);
+
+    (*velc)[c].resize(dim);
+    for (int i = 0; i < dim; ++i) {
+      (*velc)[c][i].Reshape(dim, 0);
+      (*velc)[c][i](0, 0) = u_c[i + 1][c] / norm;
+    }
+    (*velc)[c].set_origin(zero);
+
+    if (! conservative_form_) (*divc)[c] = Divergence((*velc)[c]);
+  }
+
+  for (int f = 0; f < nfaces_wghost; ++f) {
+    const AmanziGeometry::Point& xf = mesh_->face_centroid(f);
+    (*velf)[f].Reshape(dim, 0, true);
+
+    mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
+    int ncells = cells.size();
+    if (ncells == 1) continue;
+
+    WhetStone::VectorPolynomial tmp(dim, dim);
+    tmp.set_origin(zero);
+
+    for (int n = 0; n < ncells; ++n) {
+      tmp -= (*velc)[cells[n]];
+    }
+    
+    tmp.Value(xf).Norm2(&norm);
+    (*velf)[f] = tmp * (mesh_->face_normal(f) / norm);
+  }
+}
+
 }  // namespace Amanzi
 
 
@@ -407,7 +476,8 @@ void AdvectionTransient(std::string filename, int nx, int ny, double dt,
 
   // create main advection class
   plist.set<std::string>("file name", filename);
-  plist.set<std::string>("face velocity method", "high order");
+  // plist.set<std::string>("face velocity method", "high order");
+  plist.set<std::string>("face velocity method", "level set");
   AdvectionFn<AnalyticDG> fn(plist, nx, dt, mesh, order, conservative_form);
 
   // create initial guess
@@ -431,7 +501,7 @@ void AdvectionTransient(std::string filename, int nx, int ny, double dt,
     sol = sol_next;
 
     if (MyPID == 0 && std::fabs(t - tprint) < dt/4) {
-      tprint += 0.1; 
+      tprint += 0.005; 
       printf("t=%9.6f  |p|=%10.8g\n", t, fn.l2norm);
 
       // visualization
@@ -474,6 +544,7 @@ TEST(OPERATOR_ADVECTION_TRANSIENT_DG) {
   AdvectionTransient<AnalyticDG06b>("square",  4,  4, 0.1, Amanzi::Explicit_TI::tvd_3rd_order);
   AdvectionTransient<AnalyticDG06>("square",  4,  4, 0.1, Amanzi::Explicit_TI::tvd_3rd_order, false);
 
+  // AdvectionTransient<AnalyticDG07>("test/triangular64.exo",  50,  0, 0.0001, Amanzi::Explicit_TI::tvd_3rd_order);
   /*
   AdvectionTransient<AnalyticDG06>("square",  20,  20, 0.01, Amanzi::Explicit_TI::tvd_3rd_order);
   AdvectionTransient<AnalyticDG06>("square",  40,  40, 0.01 / 2, Amanzi::Explicit_TI::tvd_3rd_order);

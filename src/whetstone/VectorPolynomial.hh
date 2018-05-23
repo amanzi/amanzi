@@ -19,6 +19,8 @@
 #include <vector>
 
 #include "Point.hh"
+
+#include "DenseVector.hh"
 #include "Polynomial.hh"
 
 namespace Amanzi {
@@ -71,8 +73,10 @@ class VectorPolynomial {
   void set_origin(const AmanziGeometry::Point& origin);
   void ChangeOrigin(const AmanziGeometry::Point& origin);
 
-  // typical operations with polynomials
-  // complex constructions
+  // typical operations with vector polynomials
+  // -- value
+  DenseVector Value(const AmanziGeometry::Point& xp) const;
+
   // -- gradient of a polynomial
   void Gradient(const Polynomial p);
 
@@ -112,7 +116,7 @@ class VectorPolynomial {
 
   // output 
   friend std::ostream& operator << (std::ostream& os, const VectorPolynomial& poly) {
-    os << "Vector Polynomial:" << std::endl;
+    os << "Vector Polynomial (size=" << poly.size() << "):" << std::endl;
     for (int i = 0; i < poly.size(); ++i) {
       os << "i=" << i << " " << poly[i];
     }
