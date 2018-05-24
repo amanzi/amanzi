@@ -95,6 +95,7 @@ class AdvectionFn : public Explicit_TI::fnBase<CompositeVector> {
   double weak_sign_;
   bool conservative_form_;
   bool setup_, high_order_velf_, level_set_velf_;
+  std::string pk_name_;
 };
 
 
@@ -111,23 +112,31 @@ AdvectionFn<AnalyticDG>::AdvectionFn(
       ana_(mesh, order),
       conservative_form_(conservative_form)
 {
+  if (weak_form == "dual") {
+    weak_sign_ = 1.0;
+    pk_name_ = "PK operator";
+  } else {
+    weak_sign_ = -1.0;
+    pk_name_ = "PK operator: primal";
+  }
+
   // create global operator 
   // -- upwind flux term
-  Teuchos::ParameterList op_list = plist.sublist("PK operator").sublist("flux operator");
+  Teuchos::ParameterList op_list = plist.sublist(pk_name_).sublist("flux operator");
   op_flux = Teuchos::rcp(new Operators::PDE_AdvectionRiemann(op_list, mesh));
   global_op_ = op_flux->global_operator();
 
   // -- volumetric advection term
-  op_list = plist.sublist("PK operator").sublist("advection operator");
+  op_list = plist.sublist(pk_name_).sublist("advection operator");
   op_adv = Teuchos::rcp(new Operators::PDE_Abstract(op_list, global_op_));
 
   // -- accumulation term
-  op_list = plist.sublist("PK operator").sublist("inverse mass operator");
+  op_list = plist.sublist(pk_name_).sublist("inverse mass operator");
   op_mass = Teuchos::rcp(new Operators::PDE_Abstract(op_list, mesh_));
 
   // -- reaction term
   if (!conservative_form_) {
-    op_list = plist.sublist("PK operator").sublist("reaction operator");
+    op_list = plist.sublist(pk_name_).sublist("reaction operator");
     op_reac = Teuchos::rcp(new Operators::PDE_Abstract(op_list, global_op_));
   }
 
@@ -148,7 +157,6 @@ AdvectionFn<AnalyticDG>::AdvectionFn(
   high_order_velf_ = (name == "high order");
   level_set_velf_ = (name == "level set");
 
-  weak_sign_ = (weak_form == "primal") ? -1.0 : 1.0;
   setup_ = true;
 }
 
@@ -205,7 +213,7 @@ void AdvectionFn<AnalyticDG>::Functional(
   }
 
   // -- source term
-  int order = plist_.sublist("PK operator").sublist("flux operator")
+  int order = plist_.sublist(pk_name_).sublist("flux operator")
                     .template get<int>("method order");
   int nk = (order + 1) * (order + 2) / 2;
 
@@ -425,7 +433,7 @@ void AdvectionFn<AnalyticDG>::ApproximateVelocity_LevelSet(
     }
     
     tmp.Value(xf).Norm2(&norm);
-    (*velf)[f] = tmp * (mesh_->face_normal(f) * weak_sign_ / norm);
+    (*velf)[f] = tmp * (mesh_->face_normal(f) / norm);
   }
 }
 
@@ -456,7 +464,10 @@ void AdvectionTransient(std::string filename, int nx, int ny, double dt,
   ParameterXMLFileReader xmlreader(xmlFileName);
   ParameterList plist = xmlreader.getParameters();
 
-  int order = plist.sublist("PK operator")
+  std::string pk_name = "PK operator";
+  if (weak_form == "primal") pk_name = "PK operator: primal";
+
+  int order = plist.sublist(pk_name)
                    .sublist("flux operator").get<int>("method order");
 
   std::string problem = (conservative_form) ? ", conservative formulation" : "";
@@ -549,7 +560,7 @@ void AdvectionTransient(std::string filename, int nx, int ny, double dt,
 
 
 TEST(OPERATOR_ADVECTION_TRANSIENT_DG) {
-  // AdvectionTransient<AnalyticDG07>("square", 50, 50, 0.0001, Amanzi::Explicit_TI::tvd_3rd_order);
+  // AdvectionTransient<AnalyticDG07>("square", 50, 50, 0.0001, Amanzi::Explicit_TI::tvd_3rd_order, false, "primal");
 
   AdvectionTransient<AnalyticDG06b>("square",  4,  4, 0.1, Amanzi::Explicit_TI::tvd_3rd_order);
   AdvectionTransient<AnalyticDG06>("square",  4,  4, 0.1, Amanzi::Explicit_TI::tvd_3rd_order, false);
