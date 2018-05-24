@@ -36,13 +36,13 @@ class WalkaboutCheckpoint : public Checkpoint {
   // output of fields
   void WriteWalkabout(Teuchos::RCP<State>& S);
 
-  // supporting routines
-  // -- recontruct vector velocity
-  void CalculateDarcyVelocity(Teuchos::RCP<State>& S,
-                              std::vector<AmanziGeometry::Point>& xyz, 
-                              std::vector<AmanziGeometry::Point>& velocity);
-
  private:
+  // -- recontruct vector velocity at mesh nodes
+  void CalculateDarcyVelocity_(Teuchos::RCP<State>& S,
+                               std::vector<AmanziGeometry::Point>& xyz, 
+                               std::vector<AmanziGeometry::Point>& velocity);
+
+  // -- interpolate various fileds to mesh nodes
   void CalculateData_(Teuchos::RCP<State>& S,
                       std::vector<AmanziGeometry::Point>& xyz, 
                       std::vector<AmanziGeometry::Point>& velocity,

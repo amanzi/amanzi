@@ -86,14 +86,6 @@ class Flow_PK : public PK_PhysicalBDF {
   double WaterVolumeChangePerSecond(const std::vector<int>& bc_model,
                                     const Epetra_MultiVector& darcy_flux) const;
 
-  void CalculateDarcyVelocity(std::vector<AmanziGeometry::Point>& xyz, 
-                              std::vector<AmanziGeometry::Point>& velocity);
-  void CalculatePoreVelocity(std::vector<AmanziGeometry::Point>& xyz, 
-                             std::vector<AmanziGeometry::Point>& velocity,
-                             std::vector<double>& porosity, std::vector<double>& saturation,
-                             std::vector<double>& pressure, std::vector<double>& water_density);
-  void WriteWalkabout(const Teuchos::Ptr<Checkpoint>& wlk);
-
   // -- V&V
   void VV_ValidateBCs() const;
   void VV_ReportWaterBalance(const Teuchos::Ptr<State>& S) const;

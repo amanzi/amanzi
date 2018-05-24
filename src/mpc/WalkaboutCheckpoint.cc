@@ -25,10 +25,10 @@
 namespace Amanzi {
 
 /* ******************************************************************
-* Calculating an extended vector of Darcy velocities. The velocity
-* is evaluated at cell-center and at boundary points.
+* Calculate full vectors of Darcy velocities. The velocity is 
+* evaluated at mesh nodes.
 ****************************************************************** */
-void WalkaboutCheckpoint::CalculateDarcyVelocity(
+void WalkaboutCheckpoint::CalculateDarcyVelocity_(
     Teuchos::RCP<State>& S,
     std::vector<AmanziGeometry::Point>& xyz, 
     std::vector<AmanziGeometry::Point>& velocity)
@@ -39,47 +39,24 @@ void WalkaboutCheckpoint::CalculateDarcyVelocity(
 
   int nnodes_owned  = mesh->num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::OWNED);
   int nnodes_wghost = mesh->num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::ALL);
-  int nfaces_owned  = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
-  int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
-  int ncells_owned  = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
 
-  // set markers for boundary nodes and faces
-  std::vector<int> node_marker(nnodes_wghost);  
-  std::vector<int> face_marker(nfaces_wghost);  
-
-  AmanziMesh::Entity_ID_List nodes, faces, cells;
-
-  for (int f = 0; f < nfaces_owned; f++) {
-    mesh->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
-    int ncells = cells.size();
-
-    if (ncells == 1) {
-      face_marker[f] = 1;
-
-      mesh->face_get_nodes(f, &nodes);
-      int nnodes = nodes.size();
-
-      for (int n = 0; n < nnodes; n++) node_marker[nodes[n]] = 1;
-    }
-  }
-
-  // STEP 1: recover velocity in cell centers
+  // least-square recovery at mesh nodes 
   const Epetra_MultiVector& flux = *S->GetFieldData("darcy_flux")->ViewComponent("face", true);
   
-  int dim = mesh->space_dimension();
-  int d(dim);
-  AmanziGeometry::Point local_velocity(d);
+  int d = mesh->space_dimension();
+  AmanziGeometry::Point node_velocity(d);
 
-  Teuchos::LAPACK<int, double> lapack;
-  Teuchos::SerialDenseMatrix<int, double> matrix(d, d);
-  double rhs[d];
+  AmanziMesh::Entity_ID_List faces;
+  AmanziGeometry::Point xv(d);
+  WhetStone::DenseVector rhs(d), sol(d);
+  WhetStone::DenseMatrix matrix(d, d);
 
-  for (int c = 0; c < ncells_owned; c++) {
-    mesh->cell_get_faces(c, &faces);
+  for (int v = 0; v < nnodes_owned; ++v) {
+    mesh->node_get_faces(v, AmanziMesh::Parallel_type::ALL, &faces);
     int nfaces = faces.size();
 
-    for (int i = 0; i < d; i++) rhs[i] = 0.0;
-    matrix.putScalar(0.0);
+    rhs.PutScalar(0.0);
+    matrix.PutScalar(0.0);
 
     for (int n = 0; n < nfaces; n++) {  // populate least-square matrix
       int f = faces[n];
@@ -87,7 +64,7 @@ void WalkaboutCheckpoint::CalculateDarcyVelocity(
       double area = mesh->face_area(f);
 
       for (int i = 0; i < d; i++) {
-        rhs[i] += normal[i] * flux[0][f];
+        rhs(i) += normal[i] * flux[0][f];
         matrix(i, i) += normal[i] * normal[i];
         for (int j = i+1; j < d; j++) {
           matrix(j, i) = matrix(i, j) += normal[i] * normal[j];
@@ -95,55 +72,14 @@ void WalkaboutCheckpoint::CalculateDarcyVelocity(
       }
     }
 
-    int info;
-    lapack.POSV('U', d, 1, matrix.values(), d, rhs, d, &info);
+    matrix.Inverse();
+    matrix.Multiply(rhs, sol, false);
+    
+    for (int i = 0; i < d; i++) node_velocity[i] = sol(i);
+    velocity.push_back(node_velocity);
 
-    for (int i = 0; i < d; i++) local_velocity[i] = rhs[i];
-    velocity.push_back(local_velocity);
-
-    const AmanziGeometry::Point& xc = mesh->cell_centroid(c);
-    xyz.push_back(xc);
-  }
-
-  // STEP 2: recover velocity at boundary nodes
-  WhetStone::Tensor N(d, 2);
-  AmanziGeometry::Point tmp(d);
-
-  for (int v = 0; v < nnodes_owned; v++) {
-    if (node_marker[v] > 0) {
-      mesh->node_get_cells(v, AmanziMesh::Parallel_type::ALL, &cells);
-      int ncells = cells.size();
-
-      local_velocity.set(0.0);
-      for (int n = 0; n < ncells; n++) {
-        int c = cells[n];
-        mesh->node_get_cell_faces(v, c, AmanziMesh::Parallel_type::ALL, &faces);
-        int nfaces = faces.size();
-
-        if (nfaces > d) {  // Move boundary face to the top of the list. 
-          for (int i = d; i < nfaces; i++) {
-            int f = faces[i];
-            if (face_marker[f] > 0) {
-              faces[0] = f;
-              break;
-            }
-          }
-        }
-
-        for (int i = 0; i < d; i++) {
-          int f = faces[i];
-          N.SetRow(i, mesh->face_normal(f));
-          tmp[i] = flux[0][f];
-        }
-        N.Inverse();
-        local_velocity += N * tmp;
-      }
-      local_velocity /= static_cast<double>(ncells);
-      velocity.push_back(local_velocity);
-
-      mesh->node_get_coordinates(v, &tmp);
-      xyz.push_back(tmp);
-    }
+    mesh->node_get_coordinates(v, &xv);
+    xyz.push_back(xv);
   }
 }
 
@@ -169,6 +105,9 @@ void WalkaboutCheckpoint::CalculateData_(
   const Epetra_MultiVector& ws = *S->GetFieldData("saturation_liquid")->ViewComponent("cell", true);
   const Epetra_MultiVector& p = *S->GetFieldData("pressure")->ViewComponent("cell", true);
 
+  int nnodes_owned  = mesh.num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::OWNED);
+  int ncells_owned  = mesh.num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+
   // process non-flow state variables
   bool flag(false);
   Teuchos::RCP<const Epetra_MultiVector> kd;
@@ -178,44 +117,11 @@ void WalkaboutCheckpoint::CalculateData_(
     kd = S->GetFieldData("isotherm_kd")->ViewComponent("cell", true);
   }
 
-  CalculateDarcyVelocity(S, xyz, velocity);
+  CalculateDarcyVelocity_(S, xyz, velocity);
 
-  // set markers for boundary nodes and faces
-  int nnodes_owned = mesh.num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::OWNED);
-  int nnodes_wghost = mesh.num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::ALL);
-  int nfaces_owned = mesh.num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
-  int ncells_owned = mesh.num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+  // collect material information
+  AmanziMesh::Entity_ID_List cells;
 
-  std::vector<int> node_marker(nnodes_wghost);  
-  AmanziMesh::Entity_ID_List nodes, cells;
-
-  for (int f = 0; f < nfaces_owned; f++) {
-    mesh.face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
-    int ncells = cells.size();
-
-    if (ncells == 1) {
-      mesh.face_get_nodes(f, &nodes);
-      int nnodes = nodes.size();
-
-      for (int n = 0; n < nnodes; n++) node_marker[nodes[n]] = 1;
-    }
-  }
-
-  // STEP 1: populate state data in cell centers
-  // -- physical fields
-  porosity.clear();
-  saturation.clear();
-  pressure.clear();
-  isotherm_kd.clear();
-
-  for (int c = 0; c < ncells_owned; c++) {
-    porosity.push_back(phi[0][c]);
-    saturation.push_back(ws[0][c]);
-    pressure.push_back(p[0][c]);
-    if (flag) isotherm_kd.push_back((*kd)[0][c]);
-  }
-    
-  // -- material information
   material_ids.resize(ncells_owned);
 
   const Teuchos::ParameterList& tmp = plist_.sublist("write regions");
@@ -223,7 +129,6 @@ void WalkaboutCheckpoint::CalculateData_(
   std::vector<int> ids = tmp.get<Teuchos::Array<int> >("material ids").toVector();
 
   for (int n = 0; n < regs.size(); ++n) {
-    AmanziMesh::Entity_ID_List cells;
     mesh.get_set_entities(regs[n], AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED, &cells);
 
     for (auto it = cells.begin(); it != cells.end(); ++it) {
@@ -231,43 +136,46 @@ void WalkaboutCheckpoint::CalculateData_(
     }
   }
 
-  // STEP 2: recover porosity and saturation at boundary nodes
+  // Populate state data at mesh nodes
+  porosity.clear();
+  saturation.clear();
+  pressure.clear();
+  isotherm_kd.clear();
+
   double local_phi, local_ws, local_p, local_kd;
   int local_id(-1);
 
   for (int v = 0; v < nnodes_owned; v++) {
-    if (node_marker[v] > 0) {
-      mesh.node_get_cells(v, AmanziMesh::Parallel_type::ALL, &cells);
-      int ncells = cells.size();
+    mesh.node_get_cells(v, AmanziMesh::Parallel_type::ALL, &cells);
+    int ncells = cells.size();
 
-      local_phi = 0.0;
-      local_ws = 0.0;
-      local_p = 0.0;
-      local_kd = 0.0;
-      for (int n = 0; n < ncells; n++) {
-        int c = cells[n];
-        local_phi += phi[0][c];
-        local_ws += ws[0][c];
-        local_p += p[0][c];
-        if (flag) local_kd += (*kd)[0][c];
-        local_id = std::max(local_id, material_ids[c]);
-      }
-      local_phi /= ncells;
-      porosity.push_back(local_phi);
-
-      local_ws /= ncells;
-      saturation.push_back(local_ws);
-
-      local_p /= ncells;
-      pressure.push_back(local_p);
-
-      if (flag) {
-        local_kd /= ncells;
-        isotherm_kd.push_back(local_kd);
-      }
-
-      material_ids.push_back(local_id);
+    local_phi = 0.0;
+    local_ws = 0.0;
+    local_p = 0.0;
+    local_kd = 0.0;
+    for (int n = 0; n < ncells; n++) {
+      int c = cells[n];
+      local_phi += phi[0][c];
+      local_ws += ws[0][c];
+      local_p += p[0][c];
+      if (flag) local_kd += (*kd)[0][c];
+      local_id = std::max(local_id, material_ids[c]);
     }
+    local_phi /= ncells;
+    porosity.push_back(local_phi);
+
+    local_ws /= ncells;
+    saturation.push_back(local_ws);
+
+    local_p /= ncells;
+    pressure.push_back(local_p);
+
+    if (flag) {
+      local_kd /= ncells;
+      isotherm_kd.push_back(local_kd);
+    }
+
+    material_ids.push_back(local_id);
   }
 
   int n = xyz.size();
