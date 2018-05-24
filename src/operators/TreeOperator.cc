@@ -253,23 +253,14 @@ void TreeOperator::InitializePreconditioner(Teuchos::ParameterList& plist)
       plist.get<std::string>("preconditioner type") == "boomer amg" &&
       plist.isSublist("boomer amg parameters")) {
 
-    // NOTE INTENTIONAL NON-FREED RAW POINTER!  This gets freed by Hypre.
-    // Odd design, but it is what is is... --etc
-    int* block_indices = new int[smap_->Map()->NumMyElements()];
-    int block_id = 0;
-    for (const auto& comp : *smap_) {
-      int ndofs = smap_->NumDofs(comp);
-      for (int d = 0; d!=ndofs; ++d) {
-        const auto& inds = smap_->Indices(comp, d);
-        for (int i=0; i!=inds.size(); ++i) block_indices[inds[i]] = block_id;
-        block_id++;
-      }
-    }
-    plist.sublist("boomer amg parameters").set("number of functions", block_id);
+    // NOTE: Hypre frees this
+    auto block_ids = smap_->BlockIndices();
 
-    // Note, this passes a pointer through a ParameterList.  I was surprised
-    // this worked too. --etc
-    plist.sublist("boomer amg parameters").set<int*>("block indices", block_indices);
+    plist.sublist("boomer amg parameters").set("number of functions", block_ids.first);
+
+    // Note, this passes a raw pointer through a ParameterList.  I was surprised
+    // this worked too, but ParameterList is a boost::any at heart... --etc
+    plist.sublist("boomer amg parameters").set("block indices", block_ids.second);
   }
 
   AmanziPreconditioners::PreconditionerFactory factory;

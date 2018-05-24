@@ -154,10 +154,6 @@ void PreconditionerBoomerAMG::Init(const std::string& name, const Teuchos::Param
         }
       }
     }
-
-  } else {
-    Errors::Message msg("Hypre (BoomerAMG) expects number of functions!");
-    Exceptions::amanzi_throw(msg);
   }
 
 #else
@@ -193,7 +189,6 @@ void PreconditionerBoomerAMG::Update(const Teuchos::RCP<Epetra_RowMatrix>& A)
     // IfpHypre_::Compute() gets called (for every call but the last) and when
     // IfpHypre_ gets destroyed (for the last call).
     int* indices = new int[block_indices_->size()];
-    //    memcpy(indices, &(*block_indices_)[0], sizeof(int)*block_indices_->size());
     for (int i=0; i!=block_indices_->size(); ++i) {
       indices[i] = (*block_indices_)[i];
     }
