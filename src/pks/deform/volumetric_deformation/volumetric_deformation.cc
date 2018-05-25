@@ -137,7 +137,7 @@ void VolumetricDeformation::Setup(const Teuchos::Ptr<State>& S) {
       break;
     }
     default: {
-      ASSERT(0);
+      AMANZI_ASSERT(0);
     }
   }
 
@@ -424,7 +424,7 @@ bool VolumetricDeformation::AdvanceStep(double t_old, double t_new, bool reinit)
 
         dcell_vol_c[0][*c] = -frac*cv[0][*c];
 
-        ASSERT(dcell_vol_c[0][*c] <=0);
+        AMANZI_ASSERT(dcell_vol_c[0][*c] <=0);
 #if DEBUG
 	std::cout << "Cell " << *c << ": V, dV: " << cv[0][*c] << " " << dcell_vol_c[0][*c] << std::endl
 		  << "  poro_0 " << base_poro[0][*c] << " | poro " << poro[0][*c] << " | frac " << frac << " | time factor " << time_factor << std::endl
@@ -436,7 +436,7 @@ bool VolumetricDeformation::AdvanceStep(double t_old, double t_new, bool reinit)
       break;
     }
     default:
-      ASSERT(0);
+      AMANZI_ASSERT(0);
   }
 
 
@@ -501,7 +501,7 @@ bool VolumetricDeformation::AdvanceStep(double t_old, double t_new, bool reinit)
 #endif
           centroid = mesh_->cell_centroid(c);
           min_height = std::min(min_height, centroid[dim - 1]);
-          ASSERT(min_cell_vols[c] <= target_cell_vols[c]);
+          AMANZI_ASSERT(min_cell_vols[c] <= target_cell_vols[c]);
         }
         else {
           target_cell_vols[c] = -1.; //disregard these cells
@@ -570,7 +570,7 @@ bool VolumetricDeformation::AdvanceStep(double t_old, double t_new, bool reinit)
       for (int col=0; col!=ncols; ++col) {
 	auto& col_cells = mesh_->cells_of_column(col);
 	auto& col_faces = mesh_->faces_of_column(col);
-	ASSERT(col_faces.size() == col_cells.size()+1);
+	AMANZI_ASSERT(col_faces.size() == col_cells.size()+1);
 
 	// iterate up the column accumulating face displacements
 	double face_displacement = 0.;
@@ -581,7 +581,7 @@ bool VolumetricDeformation::AdvanceStep(double t_old, double t_new, bool reinit)
 	  double dz = mesh_->face_centroid(f_above)[z_index] - mesh_->face_centroid(f_below)[z_index];
           face_displacement += -dz * dcell_vol_c[0][col_cells[ci]] / cv[0][col_cells[ci]];
 
-	  ASSERT(face_displacement >= 0.);
+	  AMANZI_ASSERT(face_displacement >= 0.);
 #if DEBUG
 	  if (face_displacement > 0.) {
 	    std::cout << "  Shifting cell " << col_cells[ci] << ", with personal displacement of " << -dz * dcell_vol_c[0][col_cells[ci]] / cv[0][col_cells[ci]] << " and frac " << -dcell_vol_c[0][col_cells[ci]] / cv[0][col_cells[ci]] << std::endl;
@@ -615,13 +615,13 @@ bool VolumetricDeformation::AdvanceStep(double t_old, double t_new, bool reinit)
       for (int n=0; n!=nodal_dz.MyLength(); ++n) {
 	node_ids[n] = n;
 	mesh_->node_get_coordinates(n, &new_positions[n]);
-	ASSERT(nodal_dz[0][n] >= 0.);
+	AMANZI_ASSERT(nodal_dz[0][n] >= 0.);
 	new_positions[n][2] -= nodal_dz[0][n];
       }
       AmanziGeometry::Point_List final_positions;
 
       for (auto&& p : new_positions) {
-	ASSERT(AmanziGeometry::norm(p) >= 0.);
+	AMANZI_ASSERT(AmanziGeometry::norm(p) >= 0.);
       }
 
       Teuchos::RCP<const CompositeVector> cv_vec_new = S_next_->GetFieldData(Keys::getKey(domain_,"cell_volume"));
@@ -648,7 +648,7 @@ bool VolumetricDeformation::AdvanceStep(double t_old, double t_new, bool reinit)
 #if DEBUG
       // DEBUG CRUFT BEGIN
       for (auto&& p : final_positions) {
-	ASSERT(AmanziGeometry::norm(p) >= 0.);
+	AMANZI_ASSERT(AmanziGeometry::norm(p) >= 0.);
       }
 
       bool changed = S_next_->GetFieldEvaluator(Keys::getKey(domain_,"cell_volume")) -> HasFieldChanged(S_next_.ptr(), name_);
@@ -666,7 +666,7 @@ bool VolumetricDeformation::AdvanceStep(double t_old, double t_new, bool reinit)
       break;
     }
     default :
-      ASSERT(0);
+      AMANZI_ASSERT(0);
     }
   }
 

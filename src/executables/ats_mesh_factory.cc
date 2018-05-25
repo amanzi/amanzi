@@ -233,7 +233,7 @@ bool checkVerifyMesh(Teuchos::ParameterList& mesh_plist,
                      Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh)
 {
   // mesh verification
-  ASSERT(!mesh.is_null());
+  AMANZI_ASSERT(!mesh.is_null());
   bool verify = mesh_plist.get<bool>("verify mesh", false);
   if (verify) {
 

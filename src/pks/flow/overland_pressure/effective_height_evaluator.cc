@@ -61,7 +61,7 @@ void EffectiveHeightEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
 
 void EffectiveHeightEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>& S,
         Key wrt_key, const Teuchos::Ptr<CompositeVector>& result) {
-  ASSERT(wrt_key == height_key_);
+  AMANZI_ASSERT(wrt_key == height_key_);
 
   // Pull dependencies out of state.
   Teuchos::RCP<const CompositeVector> height = S->GetFieldData(height_key_);

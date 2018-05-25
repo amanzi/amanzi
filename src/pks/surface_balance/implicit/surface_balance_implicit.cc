@@ -262,7 +262,7 @@ SurfaceBalanceImplicit::Initialize(const Teuchos::Ptr<State>& S) {
   SEBPhysics::SEB seb;
 
   // initialize snow density, age
-  ASSERT(plist_->isSublist("initial condition"));
+  AMANZI_ASSERT(plist_->isSublist("initial condition"));
   Teuchos::ParameterList& ic_list = plist_->sublist("initial condition");
 
   if (!S->GetField(Keys::getKey(domain_,"snow_density"))->initialized()) {
@@ -502,7 +502,7 @@ SurfaceBalanceImplicit::Functional(double t_old, double t_new, Teuchos::RCP<Tree
       AmanziMesh::Entity_ID subsurf_f = mesh_->entity_get_parent(AmanziMesh::CELL, c);
       AmanziMesh::Entity_ID_List cells;
       subsurf_mesh_->face_get_cells(subsurf_f, AmanziMesh::Parallel_type::OWNED, &cells);
-      ASSERT(cells.size() == 1);
+      AMANZI_ASSERT(cells.size() == 1);
       seb.in.surf.saturation_liquid = saturation_liquid[0][cells[0]];
 
       // -- snow properties
@@ -608,7 +608,7 @@ SurfaceBalanceImplicit::Functional(double t_old, double t_new, Teuchos::RCP<Tree
       AmanziMesh::Entity_ID subsurf_f = mesh_->entity_get_parent(AmanziMesh::CELL, c);
       AmanziMesh::Entity_ID_List cells;
       subsurf_mesh_->face_get_cells(subsurf_f, AmanziMesh::Parallel_type::OWNED, &cells);
-      ASSERT(cells.size() == 1);
+      AMANZI_ASSERT(cells.size() == 1);
       seb.in.surf.saturation_liquid = saturation_liquid[0][cells[0]];
 
       // -- snow properties

@@ -63,6 +63,8 @@ MPCCoupledWater::Setup(const Teuchos::Ptr<State>& S) {
 
   // -- must re-symbolic assemble subsurf operators, now that they have a surface operator
   precon_->SymbolicAssembleMatrix();
+  precon_->InitializePreconditioner(plist_->sublist("preconditioner"));
+
 
   // Potentially create a linear solver
   if (plist_->isSublist("linear solver")) {
@@ -197,7 +199,7 @@ MPCCoupledWater::UpdatePreconditioner(double t,
   StrongMPC<PK_PhysicalBDF_Default>::UpdatePreconditioner(t, up, h);
   
   precon_->AssembleMatrix();
-  precon_->InitPreconditioner(plist_->sublist("preconditioner"));
+  precon_->UpdatePreconditioner();
   
 }
 

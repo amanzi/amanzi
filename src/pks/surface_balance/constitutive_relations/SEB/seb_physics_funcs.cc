@@ -166,7 +166,7 @@ void UpdateMassBalance(const SEB& seb, MassBalance& mb, EnergyBalance& eb, SnowP
     // of the available snow.  If so, adjust dt
     if (swe_new < 0.) {
       // Must adjust... we are melting or sublimating all of the available snow.
-      ASSERT(seb.in.met.Ps - mb.Mm + mb.Me < 0.);
+      AMANZI_ASSERT(seb.in.met.Ps - mb.Mm + mb.Me < 0.);
       mb.dt = -swe_old / (seb.in.met.Ps - mb.Mm + mb.Me);
       swe_new = 0.;
     }
@@ -198,7 +198,7 @@ void UpdateMassBalance(const SEB& seb, MassBalance& mb, EnergyBalance& eb, SnowP
     double swe_melt = mb.Mm * mb.dt;
 
     // -- sublimate precip first
-    ASSERT(swe_subl >= 0.);
+    AMANZI_ASSERT(swe_subl >= 0.);
     if (swe_subl > 0.) {
       if (swe_subl > swe_precip) {
 	swe_subl -= swe_precip;
@@ -211,13 +211,13 @@ void UpdateMassBalance(const SEB& seb, MassBalance& mb, EnergyBalance& eb, SnowP
 
     // -- next sublimate settled snow
     if (swe_subl > 0.) {
-      ASSERT(swe_subl <= swe_settled + SWE_EPS);
+      AMANZI_ASSERT(swe_subl <= swe_settled + SWE_EPS);
       swe_settled -= swe_subl;
       swe_subl = 0.;
     }
 
     // -- melt settled snow first
-    ASSERT(swe_melt >= -SWE_EPS);
+    AMANZI_ASSERT(swe_melt >= -SWE_EPS);
     if (swe_melt > 0.) {
       if (swe_melt > swe_settled) {
         swe_melt -= swe_settled;
@@ -230,7 +230,7 @@ void UpdateMassBalance(const SEB& seb, MassBalance& mb, EnergyBalance& eb, SnowP
 
     // -- now melt frost, precip by even amounts
     if (swe_melt > SWE_EPS) {
-      ASSERT(swe_frost + swe_precip > 0.);
+      AMANZI_ASSERT(swe_frost + swe_precip > 0.);
       double swe_melt_from_frost = swe_melt * (swe_frost / (swe_frost + swe_precip));
       double swe_melt_from_precip = swe_melt - swe_melt_from_frost;
 
@@ -239,9 +239,9 @@ void UpdateMassBalance(const SEB& seb, MassBalance& mb, EnergyBalance& eb, SnowP
     }
 
     // -- check we didn't screw up
-    ASSERT(swe_settled >= -SWE_EPS);
-    ASSERT(swe_frost >= -SWE_EPS);
-    ASSERT(swe_precip >= -SWE_EPS);
+    AMANZI_ASSERT(swe_settled >= -SWE_EPS);
+    AMANZI_ASSERT(swe_frost >= -SWE_EPS);
+    AMANZI_ASSERT(swe_precip >= -SWE_EPS);
 
     // -- convert these to heights
     double ht_settled = swe_settled * seb.in.vp_ground.density_w / dens_settled;
@@ -250,7 +250,7 @@ void UpdateMassBalance(const SEB& seb, MassBalance& mb, EnergyBalance& eb, SnowP
 
     // set the snow properties
     double swe_total = std::max(swe_settled + swe_frost + swe_precip, 0.);
-    ASSERT(std::abs(swe_total - swe_new) < SWE_EPS);
+    AMANZI_ASSERT(std::abs(swe_total - swe_new) < SWE_EPS);
     snow_new.ht = std::max(ht_settled + ht_frost + ht_precip, 0.);
     snow_new.age = swe_new > 0. ? (swe_settled*age_settled + swe_frost*age_frost + swe_precip*age_precip) / swe_new : 0.;
     snow_new.density = snow_new.ht > 0. ? swe_new * seb.in.vp_ground.density_w / snow_new.ht : seb.params.density_freshsnow;

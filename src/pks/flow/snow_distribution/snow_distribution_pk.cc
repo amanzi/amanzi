@@ -120,13 +120,25 @@ void SnowDistribution::SetupSnowDistribution_(const Teuchos::Ptr<State>& S) {
   preconditioner_diff_->SetBCs(bc_, bc_);
   preconditioner_diff_->SetTensorCoefficient(Teuchos::null);
   preconditioner_ = preconditioner_diff_->global_operator();
-  preconditioner_->SymbolicAssembleMatrix();
   
   // accumulation operator for the preconditioenr
   Teuchos::ParameterList& acc_pc_plist = plist_->sublist("accumulation preconditioner");
   acc_pc_plist.set("entity kind", "cell");
   preconditioner_acc_ = Teuchos::rcp(new Operators::PDE_Accumulation(acc_pc_plist, preconditioner_));
 
+  // symbolic assemble, get PC
+  preconditioner_->SymbolicAssembleMatrix();
+  preconditioner_->InitializePreconditioner(plist_->sublist("preconditioner"));
+
+  //    Potentially create a linear solver
+  if (plist_->isSublist("linear solver")) {
+    Teuchos::ParameterList linsolve_sublist = plist_->sublist("linear solver");
+    AmanziSolvers::LinearOperatorFactory<Operators::Operator,CompositeVector,CompositeVectorSpace> fac;
+    lin_solver_ = fac.Create(linsolve_sublist, preconditioner_);
+  } else {
+    lin_solver_ = preconditioner_;
+  }
+  
 };
 
 

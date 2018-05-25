@@ -15,7 +15,7 @@ RelPermEvaluator::RelPermEvaluator(Teuchos::ParameterList& plist) :
     SecondaryVariableFieldEvaluator(plist),
     min_val_(0.) {
 
-  ASSERT(plist_.isSublist("WRM parameters"));
+  AMANZI_ASSERT(plist_.isSublist("WRM parameters"));
   Teuchos::ParameterList sublist = plist_.sublist("WRM parameters");
   wrms_ = createWRMPartition(sublist);
   InitializeFromPlist_();
@@ -100,7 +100,7 @@ void RelPermEvaluator::EnsureCompatibility(const Teuchos::Ptr<State>& S) {
   } else {
 
     // Ensure my field exists.  Requirements should be already set.
-    ASSERT(my_key_ != std::string(""));
+    AMANZI_ASSERT(my_key_ != std::string(""));
     Teuchos::RCP<CompositeVectorSpace> my_fac = S->RequireField(my_key_, my_key_);
 
     // check plist for vis or checkpointing control
@@ -184,7 +184,7 @@ void RelPermEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
       // given a boundary face, we need the internal cell to choose the right WRM
       AmanziMesh::Entity_ID f = face_map.LID(vandelay_map.GID(bf));
       mesh->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
-      ASSERT(cells.size() == 1);
+      AMANZI_ASSERT(cells.size() == 1);
 
       int index = (*wrms_->first)[cells[0]];
       res_bf[0][bf] = std::max(wrms_->second[index]->k_relative(sat_bf[0][bf]), min_val_);
@@ -267,7 +267,7 @@ void RelPermEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>
     for (unsigned int c=0; c!=ncells; ++c) {
       int index = (*wrms_->first)[c];
       res_c[0][c] = wrms_->second[index]->d_k_relative(sat_c[0][c]);
-      ASSERT(res_c[0][c] >= 0.);
+      AMANZI_ASSERT(res_c[0][c] >= 0.);
     }
 
     // -- Potentially evaluate the model on boundary faces as well.
@@ -287,11 +287,11 @@ void RelPermEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>
         // given a boundary face, we need the internal cell to choose the right WRM
         AmanziMesh::Entity_ID f = face_map.LID(vandelay_map.GID(bf));
         mesh->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
-        ASSERT(cells.size() == 1);
+        AMANZI_ASSERT(cells.size() == 1);
 
         int index = (*wrms_->first)[cells[0]];
         res_bf[0][bf] = wrms_->second[index]->d_k_relative(sat_bf[0][bf]);
-        ASSERT(res_bf[0][bf] >= 0.);
+        AMANZI_ASSERT(res_bf[0][bf] >= 0.);
       }
     }
 
@@ -350,7 +350,7 @@ void RelPermEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>
     
 
   } else if (wrt_key == dens_key_) {
-    ASSERT(is_dens_visc_);
+    AMANZI_ASSERT(is_dens_visc_);
     // note density > 0
     const Epetra_MultiVector& dens_c = *S->GetFieldData(dens_key_)
         ->ViewComponent("cell",false);
@@ -380,7 +380,7 @@ void RelPermEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>
 
     
   } else if (wrt_key == visc_key_) {
-    ASSERT(is_dens_visc_);
+    AMANZI_ASSERT(is_dens_visc_);
     // note density > 0
     const Epetra_MultiVector& visc_c = *S->GetFieldData(visc_key_)
         ->ViewComponent("cell",false);
@@ -410,7 +410,7 @@ void RelPermEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>
     }
 
   } else {
-    ASSERT(0);
+    AMANZI_ASSERT(0);
   }
   
 }

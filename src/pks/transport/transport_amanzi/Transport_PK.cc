@@ -169,6 +169,7 @@ void Transport_PK_ATS::Setup(const Teuchos::Ptr<State>& S)
   molar_density_key_ = Keys::readKey(*tp_list_, domain_name_, "molar density", "molar_density_liquid");
   tcc_matrix_key_ = Keys::readKey(*tp_list_, domain_name_, "tcc matrix", "total_component_concentration_matrix");
 
+
   mesh_ = S->GetMesh(domain_name_);
   dim = mesh_->space_dimension();
 
@@ -409,7 +410,7 @@ void Transport_PK_ATS::Initialize(const Teuchos::Ptr<State>& S)
           Teuchos::Array<std::string> regions(1, domain_name_);
 
           std::size_t last_of = domain_name_.find_last_of("_");
-          ASSERT(last_of != std::string::npos);
+          AMANZI_ASSERT(last_of != std::string::npos);
           int gid = std::stoi(domain_name_.substr(last_of+1, domain_name_.size()));
           spec.set("entity_gid_out", gid);
           Teuchos::RCP<TransportDomainFunction> 
@@ -474,9 +475,9 @@ void Transport_PK_ATS::Initialize(const Teuchos::Ptr<State>& S)
 
   // boundary conditions initialization
   time = t_physics_;
-  for (int i = 0; i < bcs_.size(); i++) {
-    bcs_[i]->Compute(time, time);
-  }
+  // for (int i = 0; i < bcs_.size(); i++) {
+  //   bcs_[i]->Compute(time, time);
+  // }
 
   VV_CheckInfluxBC();
 
@@ -1261,18 +1262,15 @@ void Transport_PK_ATS::AdvanceDonorUpwind(double dt_cycle)
      // if (domain_name_=="surface") 
     for (int i = 0; i < num_advect; i++){
       // if (c<5) std::cout<<c<<" vol "<<mesh_->cell_volume(c)<<" phi "<<(*phi_)[0][c]<<" ws0 "<<(*ws_start)[0][c]<<" ws1 "<< (*ws_end)[0][c]<<" den "<<(*mol_dens_start)[0][c]<<" tcc "<<tcc_prev[i][c]<<"\n";
-
       (*conserve_qty_)[i][c] = tcc_prev[i][c] * vol_phi_ws_den;   
       // if (c<5) std::cout<<c<<" "<<vol_phi_ws_den<<" "<<tcc_prev[i][c]<<" "<<(*conserve_qty_)[i][c]<<"\n";
       mass_start += (*conserve_qty_)[i][c];
     }
   }
 
-  //mass_start /= units_.concentration_factor();
-
-  if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH){
-    if (domain_name_ == "surface") std::cout<<"Overland mass start "<<mass_start<<"\n";
-    else std::cout<<"Subsurface mass start "<<mass_start<<"\n";
+  if (vo_->getVerbLevel() >= Teuchos::VERB_EXTREME){
+    if (domain_name_ == "surface") *vo_->os() << "Overland mass start "<<mass_start<<"\n";
+    else *vo_->os() << "Subsurface mass start "<<mass_start<<"\n";
   }
 
 
@@ -1390,14 +1388,14 @@ void Transport_PK_ATS::AdvanceDonorUpwind(double dt_cycle)
     if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH){
       tmp1 = mass_solutes_bc_[i];
       mesh_->get_comm()->SumAll(&tmp1, &mass_solutes_bc_[i], 1);
-      std::cout<<"*****************\n";
-      if (domain_name_ == "surface") std::cout<<"Overland mass BC "<<mass_solutes_bc_[i]<<"\n";
-      else std::cout<<"Subsurface mass BC "<<mass_solutes_bc_[i]<<"\n";
+      *vo_->os()<<"*****************\n";
+      if (domain_name_ == "surface") *vo_->os()<<"Overland mass BC "<<mass_solutes_bc_[i]<<"\n";
+      else *vo_->os()<<"Subsurface mass BC "<<mass_solutes_bc_[i]<<"\n";
       tmp1 = mass_solutes_source_[i];
       mesh_->get_comm()->SumAll(&tmp1, &mass_solutes_source_[i], 1);
-      if (domain_name_ == "surface") std::cout<<"Overland mass_solutes source "<<mass_solutes_source_[i]*dt_<<"\n";
-      else std::cout<<"Subsurface mass_solutes source "<<mass_solutes_source_[i]*dt_<<"\n";
-      std::cout<<"*****************\n";
+      if (domain_name_ == "surface") *vo_->os()<<"Overland mass_solutes source "<<mass_solutes_source_[i]*dt_<<"\n";
+      else *vo_->os()<<"Subsurface mass_solutes source "<<mass_solutes_source_[i]*dt_<<"\n";
+      *vo_->os()<<"*****************\n";
     }
   }
 
@@ -1406,8 +1404,8 @@ void Transport_PK_ATS::AdvanceDonorUpwind(double dt_cycle)
   }
 
   if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH){
-    if (domain_name_ == "surface") std::cout<<"Overland mass final "<<mass_final<<"\n";
-    else std::cout<<"Subsurface mass final "<<mass_final<<"\n";
+    if (domain_name_ == "surface") *vo_->os() << "Overland mass final "<<mass_final<<"\n";
+    else *vo_->os()<<"Subsurface mass final "<<mass_final<<"\n";
   }
 
   //if (abs(mass_final - (mass_start + mass_solutes_bc_[0] + mass_solutes_source_[0]*dt_) )/mass_final > 1e-4) exit(-1);

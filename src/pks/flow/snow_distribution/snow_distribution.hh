@@ -112,6 +112,7 @@ protected:
   Teuchos::RCP<Operators::PDE_Diffusion> matrix_diff_;
   Teuchos::RCP<Operators::PDE_Diffusion> preconditioner_diff_;
   Teuchos::RCP<Operators::PDE_Accumulation> preconditioner_acc_;
+  Teuchos::RCP<Operators::Operator> lin_solver_; // pc in PKPhysicalBDFBase
 
   // factory registration
   static RegisteredPKFactory<SnowDistribution> reg_;

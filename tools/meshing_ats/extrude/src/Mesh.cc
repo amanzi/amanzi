@@ -15,7 +15,7 @@ Mesh2D::Mesh2D(std::vector<Point>& coords_,
   double area_eps = 1.e-6;
   
   for (auto& set : cell_sets) {
-    ASSERT(set.size() == cell2node.size());
+    AMANZI_ASSERT(set.size() == cell2node.size());
   }
 
   nnodes = coords.size();
@@ -34,7 +34,7 @@ Mesh2D::Mesh2D(std::vector<Point>& coords_,
                 << " " << coords[c[0]] << std::endl
                 << " " << coords[c[1]] << std::endl
                 << " " << coords[c[2]] << std::endl;
-      ASSERT(false);
+      AMANZI_ASSERT(false);
     }
   }
 
@@ -52,7 +52,7 @@ Mesh2D::Mesh2D(std::vector<Point>& coords_,
 
   // set sizes
   nfaces = face2node.size();
-  ASSERT(ncells == cell2face.size());
+  AMANZI_ASSERT(ncells == cell2face.size());
 
   // set boundaries
   std::vector<int> boundary_c, boundary_f;
@@ -161,8 +161,8 @@ Mesh3D::Mesh3D(const Mesh2D * const m_, int n_layers) :
 void
 Mesh3D::extrude(const std::vector<double>& dz,
                 const std::vector<int>& block_ids_) {
-  ASSERT(dz.size() == m->coords.size());
-  ASSERT(block_ids_.size() == m->cell2node.size());
+  AMANZI_ASSERT(dz.size() == m->coords.size());
+  AMANZI_ASSERT(block_ids_.size() == m->cell2node.size());
 
   // shift the coordinates
   for (int n=0; n!=m->coords.size(); ++n) {

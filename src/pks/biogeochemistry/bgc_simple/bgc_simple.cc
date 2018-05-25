@@ -109,7 +109,7 @@ void BGCSimple::Setup(const Teuchos::Ptr<State>& S) {
     if (ncells_per_col_ < 0) {
       ncells_per_col_ = ncol_cells;
     } else {
-      ASSERT(ncol_cells == ncells_per_col_);
+      AMANZI_ASSERT(ncol_cells == ncells_per_col_);
     }
 
     pfts_old_[col].resize(pft_names.size());
@@ -255,7 +255,7 @@ void BGCSimple::Initialize(const Teuchos::Ptr<State>& S) {
   // -- set the subfield names
   Teuchos::RCP<Field_CompositeVector> leaf_biomass_field_cv =
       Teuchos::rcp_dynamic_cast<Field_CompositeVector>(leaf_biomass_field);
-  ASSERT(leaf_biomass_field_cv != Teuchos::null);
+  AMANZI_ASSERT(leaf_biomass_field_cv != Teuchos::null);
 
   int npft = pfts_old_[0].size();
   std::vector<std::vector<std::string> > names;
@@ -561,7 +561,7 @@ void BGCSimple::ColDepthDz_(AmanziMesh::Entity_ID col,
 
     // -- fill the val
     (*dz)[i] = mesh_->face_centroid(f_above)[2] - mesh_->face_centroid(f_below)[2];
-    ASSERT( (*dz)[i] > 0. );
+    AMANZI_ASSERT( (*dz)[i] > 0. );
     f_above = f_below;
   }
 

@@ -131,7 +131,7 @@ double PK_PhysicalBDF_Default::ErrorNorm(Teuchos::RCP<const TreeVector> u,
     } else {
       double norm;
       dvec_v.Norm2(&norm);
-      ASSERT(norm < 1.e-15);
+      AMANZI_ASSERT(norm < 1.e-15);
     }
 
     // Write out Inf norms too.
@@ -146,7 +146,7 @@ double PK_PhysicalBDF_Default::ErrorNorm(Teuchos::RCP<const TreeVector> u,
 
       int ierr;
       ierr = MPI_Allreduce(&l_err, &err, 1, MPI_DOUBLE_INT, MPI_MAXLOC, mesh_->get_comm()->Comm());
-      ASSERT(!ierr);
+      AMANZI_ASSERT(!ierr);
       *vo_->os() << "  ENorm (" << *comp << ") = " << err.value << "[" << err.gid << "] (" << infnorm << ")" << std::endl;
     }
 
@@ -157,7 +157,7 @@ double PK_PhysicalBDF_Default::ErrorNorm(Teuchos::RCP<const TreeVector> u,
 
   int ierr;
   ierr = MPI_Allreduce(&enorm_val_l, &enorm_val, 1, MPI_DOUBLE, MPI_MAX, mesh_->get_comm()->Comm());
-  ASSERT(!ierr);
+  AMANZI_ASSERT(!ierr);
   return enorm_val;
 };
 
@@ -234,7 +234,7 @@ double PK_PhysicalBDF_Default::BoundaryValue(const Teuchos::RCP<const Amanzi::Co
   } else {
     AmanziMesh::Entity_ID_List cells;
     mesh_->face_get_cells(face_id, AmanziMesh::Parallel_type::ALL, &cells);
-    ASSERT(cells.size() == 1);
+    AMANZI_ASSERT(cells.size() == 1);
     const Epetra_MultiVector& u = *solution->ViewComponent("cell",false);
     value = u[0][cells[0]];    
   }
@@ -263,7 +263,7 @@ void PK_PhysicalBDF_Default::set_states(const Teuchos::RCP<const State>& S,
 int PK_PhysicalBDF_Default::BoundaryDirection(int face_id) {
   AmanziMesh::Entity_ID_List cells;
   mesh_->face_get_cells(face_id, AmanziMesh::Parallel_type::ALL, &cells);
-  ASSERT(cells.size() == 1);
+  AMANZI_ASSERT(cells.size() == 1);
   AmanziMesh::Entity_ID_List faces;
   std::vector<int> dirs;
   mesh_->cell_get_faces_and_dirs(cells[0], &faces, &dirs);
@@ -284,7 +284,7 @@ void PK_PhysicalBDF_Default::ChangedSolution(const Teuchos::Ptr<State>& S) {
 
     Teuchos::RCP<PrimaryVariableFieldEvaluator> solution_evaluator =
       Teuchos::rcp_dynamic_cast<PrimaryVariableFieldEvaluator>(fm);
-    ASSERT(solution_evaluator != Teuchos::null);
+    AMANZI_ASSERT(solution_evaluator != Teuchos::null);
     solution_evaluator->SetFieldAsChanged(S);
   }
 };

@@ -33,8 +33,8 @@ void Richards::Functional(double t_old,
 
   double h = t_new - t_old;
 
-  //--  ASSERT(std::abs(S_inter_->time() - t_old) < 1.e-4*h);
-  //-- ASSERT(std::abs(S_next_->time() - t_new) < 1.e-4*h);
+  //--  AMANZI_ASSERT(std::abs(S_inter_->time() - t_old) < 1.e-4*h);
+  //-- AMANZI_ASSERT(std::abs(S_next_->time() - t_new) < 1.e-4*h);
 
   // pointer-copy temperature into state and update any auxilary data
   Solution_to_State(*u_new, S_next_);
@@ -71,7 +71,7 @@ void Richards::Functional(double t_old,
   // diffusion term, treated implicitly
   ApplyDiffusion_(S_next_.ptr(), res.ptr());
 
-  
+
   // if (vapor_diffusion_) AddVaporDiffusionResidual_(S_next_.ptr(), res.ptr());
 
 
@@ -115,6 +115,8 @@ void Richards::Functional(double t_old,
       AddSources_(S_next_.ptr(), res.ptr());
     }
   }
+  
+
 };
 
 // -----------------------------------------------------------------------------
@@ -160,7 +162,7 @@ void Richards::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> up,
     iter_ = 0;
     iter_counter_time_ = t;
   }
-  ASSERT(std::abs(S_next_->time() - t) <= 1.e-4*t);
+  AMANZI_ASSERT(std::abs(S_next_->time() - t) <= 1.e-4*t);
   PK_PhysicalBDF_Default::Solution_to_State(*up, S_next_);
 
   // update the rel perm according to the scheme of choice, also upwind derivatives of rel perm
@@ -240,7 +242,7 @@ void Richards::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> up,
 
   if (precon_used_) {
     preconditioner_->AssembleMatrix();
-    preconditioner_->InitPreconditioner(plist_->sublist("preconditioner"));
+    preconditioner_->UpdatePreconditioner();
   }
 
   // increment the iterator count

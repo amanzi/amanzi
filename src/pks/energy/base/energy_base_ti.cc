@@ -115,6 +115,7 @@ void EnergyBase::Functional(double t_old, double t_new, Teuchos::RCP<TreeVector>
   }
 #endif
 
+
 };
 
 
@@ -151,9 +152,10 @@ void EnergyBase::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> u
 
   // update state with the solution up.
 
-  ASSERT(std::abs(S_next_->time() - t) <= 1.e-4*t);
+  AMANZI_ASSERT(std::abs(S_next_->time() - t) <= 1.e-4*t);
   PK_PhysicalBDF_Default::Solution_to_State(*up, S_next_);
 
+  Teuchos::RCP<const CompositeVector> temp = S_next_ -> GetFieldData(key_);
 
   // update boundary conditions
   bc_temperature_->Compute(S_next_->time());
@@ -181,14 +183,12 @@ void EnergyBase::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> u
   // create local matrices
   preconditioner_->Init();
   preconditioner_diff_->SetScalarCoefficient(conductivity, dKdT);
-  preconditioner_diff_->UpdateMatrices(Teuchos::null, Teuchos::null);
+  preconditioner_diff_->UpdateMatrices(Teuchos::null, temp.ptr());
+  // preconditioner_diff_->UpdateMatrices(Teuchos::null, Teuchos::null);
 
   if (jacobian_) {
-    Teuchos::RCP<CompositeVector> flux = Teuchos::null;
-    if (preconditioner_->RangeMap().HasComponent("face")) {
-      flux = S_next_->GetFieldData(energy_flux_key_, name_);
-      preconditioner_diff_->UpdateFlux(up->Data().ptr(), flux.ptr());
-    }
+    Teuchos::RCP<CompositeVector> flux = S_next_->GetFieldData(energy_flux_key_, name_);
+    preconditioner_diff_->UpdateFlux(up->Data().ptr(), flux.ptr());
     preconditioner_diff_->UpdateMatricesNewtonCorrection(flux.ptr(), up->Data().ptr());
   }
 
@@ -218,7 +218,7 @@ void EnergyBase::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> u
     }
   } else {
     for (unsigned int c=0; c!=ncells; ++c) {
-      //      ASSERT(de_dT[0][c] > 1.e-10);
+      //      AMANZI_ASSERT(de_dT[0][c] > 1.e-10);
       // ?? Not using e_bar anymore apparently, though I didn't think we were ever.  Need a nonzero here to ensure not singlar.
       acc_c[0][c] = std::max(de_dT[0][c], 1.e-12) / h;
     }
@@ -244,7 +244,7 @@ void EnergyBase::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> u
   preconditioner_diff_->ApplyBCs(true, true);
   if (precon_used_) {
     preconditioner_->AssembleMatrix();
-    preconditioner_->InitPreconditioner(plist_->sublist("preconditioner"));
+    preconditioner_->UpdatePreconditioner();
   }
 };
 

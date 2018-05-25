@@ -36,7 +36,7 @@ int MatrixMFD_Surf::Apply(const CompositeVector& X,
 			  CompositeVector& Y) const {
   // Apply the base, subsurface matrix
   int ierr = MatrixMFD::Apply(X,Y);
-  ASSERT(!ierr);
+  AMANZI_ASSERT(!ierr);
 
   // Manually copy data -- TRILINOS FAIL
   const Epetra_MultiVector& Xf = *X.ViewComponent("face", false);
@@ -48,7 +48,7 @@ int MatrixMFD_Surf::Apply(const CompositeVector& X,
   // Apply the surface-only operators, blockwise
   Epetra_MultiVector surf_Y(surface_mesh_->cell_map(false),1);
   ierr |= surface_A_->Apply(surf_X, surf_Y);
-  ASSERT(!ierr);
+  AMANZI_ASSERT(!ierr);
 
   // Add back into Y
   Epetra_MultiVector& Yf = *Y.ViewComponent("face",false);
@@ -79,7 +79,7 @@ void MatrixMFD_Surf::FillMatrixGraphs_(const Teuchos::Ptr<Epetra_CrsGraph> cf_gr
 
   for (unsigned int fs=0; fs!=nfaces_surf; ++fs) {
     surface_mesh_->face_get_cells(fs, AmanziMesh::Parallel_type::ALL, &surf_cells);
-    int ncells_surf = surf_cells.size(); ASSERT(ncells_surf <= 2);
+    int ncells_surf = surf_cells.size(); AMANZI_ASSERT(ncells_surf <= 2);
 
     // get the equivalent faces on the subsurface mesh
     for (int n=0; n!=ncells_surf; ++n) {
@@ -90,7 +90,7 @@ void MatrixMFD_Surf::FillMatrixGraphs_(const Teuchos::Ptr<Epetra_CrsGraph> cf_gr
     // insert the connection
     ierr = ff_graph->InsertGlobalIndices(ncells_surf, equiv_face_GID,
             ncells_surf, equiv_face_GID);
-    ASSERT(!ierr);
+    AMANZI_ASSERT(!ierr);
   }
 }
 
@@ -129,11 +129,11 @@ void MatrixMFD_Surf::AssembleAff_() const {
     // Access the row in Spp
     AmanziMesh::Entity_ID sc_global = surf_cmap_wghost.GID(sc);
     ierr = Spp.ExtractGlobalRowCopy(sc_global, 9, entries, values, gsurfindices);
-    ASSERT(!ierr);
+    AMANZI_ASSERT(!ierr);
 
     // Convert Spp global cell numbers to Aff local face numbers
     AmanziMesh::Entity_ID frow = surface_mesh_->entity_get_parent(AmanziMesh::CELL,sc);
-    ASSERT(frow < nfaces_sub);
+    AMANZI_ASSERT(frow < nfaces_sub);
     int frow_global = fmap_wghost.GID(frow);
 
     for (int m=0; m!=entries; ++m) {
@@ -143,11 +143,11 @@ void MatrixMFD_Surf::AssembleAff_() const {
     }
 
     ierr = Aff_->SumIntoGlobalValues(frow_global, entries, values, indices_global);
-    ASSERT(!ierr);
+    AMANZI_ASSERT(!ierr);
   }
 
   ierr = Aff_->GlobalAssemble();
-  ASSERT(!ierr);
+  AMANZI_ASSERT(!ierr);
 
   delete[] gsurfindices;
   delete[] surfindices;
@@ -221,7 +221,7 @@ void MatrixMFD_Surf::AssembleSchur_() const {
     // Access the row in Spp
     AmanziMesh::Entity_ID sc_global = surf_cmap_wghost.GID(sc);
     ierr = Spp.ExtractGlobalRowCopy(sc_global, 9, entries, values, indices);
-    ASSERT(!ierr);
+    AMANZI_ASSERT(!ierr);
 
     // Convert Spp local cell numbers to Sff local face numbers
     AmanziMesh::Entity_ID frow = surface_mesh_->entity_get_parent(AmanziMesh::CELL,sc);
@@ -234,12 +234,12 @@ void MatrixMFD_Surf::AssembleSchur_() const {
     }
 
     ierr = Sff_->SumIntoGlobalValues(frow_global, entries, values, indices_global);
-    ASSERT(!ierr);
+    AMANZI_ASSERT(!ierr);
 
   }
 
   ierr = Sff_->GlobalAssemble();
-  ASSERT(!ierr);
+  AMANZI_ASSERT(!ierr);
 
   delete[] indices;
   delete[] indices_global;

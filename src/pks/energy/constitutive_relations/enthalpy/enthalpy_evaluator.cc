@@ -88,7 +88,7 @@ void EnthalpyEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State
   if (wrt_key == ie_key_) {
     result->PutScalar(1.);
   } else if (wrt_key ==pres_key_) {
-    ASSERT(include_work_);
+    AMANZI_ASSERT(include_work_);
     
     Teuchos::RCP<const CompositeVector> n_l = S->GetFieldData(dens_key_);
 
@@ -105,7 +105,7 @@ void EnthalpyEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State
     }
 
   } else if (wrt_key ==dens_key_) {
-    ASSERT(include_work_);
+    AMANZI_ASSERT(include_work_);
     
     Teuchos::RCP<const CompositeVector> pres = S->GetFieldData(pres_key_);
     Teuchos::RCP<const CompositeVector> n_l = S->GetFieldData(dens_key_);

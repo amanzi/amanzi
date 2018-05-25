@@ -112,7 +112,7 @@ void MatrixMFD_ScaledConstraint::CreateMFDstiffnessMatrices(
 
       if (matsum < 0.) {
         std::cout << "MatrixMFD_ScaledConstraint: local Acc < 0" << std::endl;
-        ASSERT(0);
+        AMANZI_ASSERT(0);
         Exceptions::amanzi_throw(Errors::CutTimeStep());
       }
 
@@ -232,7 +232,7 @@ void MatrixMFD_ScaledConstraint::DeriveFlux(const CompositeVector& solution,
 
   // ensure post-condition - we got them all
   for (int f=0; f!=nfaces_owned; ++f) {
-    ASSERT(done[f]);
+    AMANZI_ASSERT(done[f]);
   }
 
 }

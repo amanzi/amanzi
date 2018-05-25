@@ -49,7 +49,7 @@ TopCellsSurfaceEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
     // get the cell interior to the face
     AmanziMesh::Entity_ID_List cells;
     result->Mesh()->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
-    ASSERT(cells.size() == 1);
+    AMANZI_ASSERT(cells.size() == 1);
 
     result_cells[0][cells[0]] = surf_vector_cells[0][c];
   }
@@ -60,7 +60,7 @@ TopCellsSurfaceEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
 void
 TopCellsSurfaceEvaluator::EnsureCompatibility(const Teuchos::Ptr<State>& S) {
   // Ensure my field exists.  Requirements should be already set.  Claim ownership.
-  ASSERT(my_key_ != std::string(""));
+  AMANZI_ASSERT(my_key_ != std::string(""));
   Teuchos::RCP<CompositeVectorSpace> my_fac = S->RequireField(my_key_, my_key_);
 
   // check plist for vis or checkpointing control

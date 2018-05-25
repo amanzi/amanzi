@@ -140,7 +140,7 @@ void Matrix_TPFA::FillMatrixGraphs_(const Teuchos::Ptr<Epetra_CrsGraph> cf_graph
 
   // assemble the graphs
   int ierr = cf_graph->FillComplete();
-  ASSERT(!ierr);
+  AMANZI_ASSERT(!ierr);
 };
 
 
@@ -426,7 +426,7 @@ int Matrix_TPFA::Apply(const CompositeVector& X,
   int ierr = Spp_->Multiply(false, *X.ViewComponent("cell",false),
                             *Y.ViewComponent("cell",false));
 
-  ASSERT(!ierr);
+  AMANZI_ASSERT(!ierr);
 
 
   const Epetra_Map& fb_map = mesh_->exterior_face_map(false);
@@ -442,7 +442,7 @@ int Matrix_TPFA::Apply(const CompositeVector& X,
   int nb = fb_map.NumMyElements();
 
   ierr = Aff_->Multiply(false, Xfb, Yfb);
-  ASSERT(!ierr);
+  AMANZI_ASSERT(!ierr);
 
   for (int fb=0; fb!=nb; ++fb) {
     int face_lid = f_map.LID(fb_map.GID(fb));
@@ -746,7 +746,7 @@ void Matrix_TPFA::AnalyticJacobian(const Upwinding& upwinding,
   // Get the derivatives
   std::vector<Teuchos::RCP<Teuchos::SerialDenseMatrix<int, double> > > Jpp_faces;
   upwinding.UpdateDerivatives(S, potential_key, dconductivity, bc_markers, bc_values, &Jpp_faces);
-  ASSERT(Jpp_faces.size() == nfaces_owned);
+  AMANZI_ASSERT(Jpp_faces.size() == nfaces_owned);
 
   // Assemble into Spp
   for (unsigned int f=0; f!=nfaces_owned; ++f) {
@@ -757,12 +757,12 @@ void Matrix_TPFA::AnalyticJacobian(const Upwinding& upwinding,
       cells_GID[n] = cmap_wghost.GID(cells[n]);
     }
     ierr = (*Spp_).SumIntoGlobalValues(mcells, cells_GID, Jpp_faces[f]->values());
-    ASSERT(!ierr);
+    AMANZI_ASSERT(!ierr);
   }
 
   // finish assembly
   ierr = Spp_->GlobalAssemble();
-  ASSERT(!ierr);
+  AMANZI_ASSERT(!ierr);
 }
 
 /* ******************************************************************

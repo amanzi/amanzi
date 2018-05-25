@@ -97,7 +97,7 @@ void ThawDepthEvaluator::EnsureCompatibility(const Teuchos::Ptr<State>& S){
   } 
   
   // Ensure my field exists.  Requirements should be already set.
-  ASSERT(my_key_ != std::string(""));
+  AMANZI_ASSERT(my_key_ != std::string(""));
   
   Teuchos::RCP<CompositeVectorSpace> my_fac = S->RequireField(my_key_, my_key_);
   

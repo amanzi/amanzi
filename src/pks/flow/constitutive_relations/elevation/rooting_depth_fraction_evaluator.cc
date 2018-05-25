@@ -120,14 +120,14 @@ RootingDepthFractionEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::Pt
 {
   // this should only change if the mesh deforms.  don't do that!
   result->PutScalar(0.);
-  ASSERT(0);
+  AMANZI_ASSERT(0);
 }
 
 
 void
 RootingDepthFractionEvaluator::EnsureCompatibility(const Teuchos::Ptr<State>& S) {
   // Ensure my field exists.  Requirements should be already set.
-  ASSERT(!my_key_.empty());
+  AMANZI_ASSERT(!my_key_.empty());
   auto my_fac = S->RequireField(my_key_, my_key_);
 
   // check plist for vis or checkpointing control

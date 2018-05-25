@@ -116,7 +116,7 @@ MPCPermafrost4::Setup(const Teuchos::Ptr<State>& S) {
       // Add off-diagonal blocks for the surface
       // -- derivatives of surface water content with respect to surface temperature
       // -- ALWAYS ZERO!
-      // ASSERT(dWC_dT_block_ != Teuchos::null);
+      // AMANZI_ASSERT(dWC_dT_block_ != Teuchos::null);
       // Teuchos::ParameterList dWC_dT_plist;
       // dWC_dT_plist.set("surface operator", true);
       // dWC_dT_plist.set("entity kind", "cell");
@@ -125,7 +125,7 @@ MPCPermafrost4::Setup(const Teuchos::Ptr<State>& S) {
       // -- derivatives of surface energy with respect to surface pressure
       //    For the Operator, we have to create one with the surface mesh,
       //    then push the op into the full (subsurface) operator.
-      ASSERT(dE_dp_block_ != Teuchos::null);
+      AMANZI_ASSERT(dE_dp_block_ != Teuchos::null);
       Teuchos::ParameterList dE_dp_plist;
       dE_dp_plist.set("surface operator", true);
       dE_dp_plist.set("entity kind", "cell");
@@ -139,7 +139,7 @@ MPCPermafrost4::Setup(const Teuchos::Ptr<State>& S) {
 
     // must now re-symbolic assemble the matrix to get the updated surface parts
     preconditioner_->SymbolicAssembleMatrix();
-
+    preconditioner_->InitializePreconditioner(plist_->sublist("preconditioner"));
   }
       
   // set up the Water delegate
@@ -345,6 +345,7 @@ MPCPermafrost4::UpdatePreconditioner(double t,
   dE_dp_block_->Rescale(scaling);
   
   preconditioner_->AssembleMatrix();
+  preconditioner_->UpdatePreconditioner();
 
   if (dump_) {
     std::stringstream filename;
@@ -352,7 +353,6 @@ MPCPermafrost4::UpdatePreconditioner(double t,
     EpetraExt::RowMatrixToMatlabFile(filename.str().c_str(), *preconditioner_->A());
   }
 
-  preconditioner_->InitPreconditioner(plist_->sublist("preconditioner"));
   
   // update ewc Precons if needed
   //  surf_ewc_->UpdatePreconditioner(t, up, h);

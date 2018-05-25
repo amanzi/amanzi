@@ -73,7 +73,7 @@ void PCLiquidEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
 void PCLiquidEvaluator::EvaluateFieldPartialDerivative_(
     const Teuchos::Ptr<State>& S, Key wrt_key,
     const Teuchos::Ptr<CompositeVector>& result) {
-  ASSERT(wrt_key == pres_key_);
+  AMANZI_ASSERT(wrt_key == pres_key_);
 
   // Pull dependencies out of state.
   Teuchos::RCP<const CompositeVector> pres = S->GetFieldData(pres_key_);

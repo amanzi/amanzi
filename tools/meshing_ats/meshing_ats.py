@@ -204,6 +204,8 @@ class Mesh2D(object):
     @classmethod
     def read_VTK_Unstructured(cls, filename):
         with open(filename,'r') as fid:
+            points_found = False
+            polygons_found = False
             while True:
                 line = fid.readline().decode('utf-8')
                 if not line:
@@ -221,6 +223,7 @@ class Mesh2D(object):
                     ncoords = int(split[1])
                     points = np.fromfile(fid, count=ncoords*3, sep=' ', dtype='d')
                     points = points.reshape(ncoords, 3)
+                    points_found = True
 
                 elif section == 'POLYGONS':
                     ncells = int(split[1])
@@ -232,7 +235,7 @@ class Mesh2D(object):
                     idx = 0
                     for i in range(ncells):
                         n_in_gon = data[idx]
-                        gon = data[idx+1:idx+1+n_in_gon]
+                        gon = list(data[idx+1:idx+1+n_in_gon])
 
                         # check handedness -- need normals to point up!
                         cross = []
@@ -246,8 +249,8 @@ class Mesh2D(object):
                             else:
                                 ip = i+1
                                 ipp = i+2
-                            d2 = coords[gon[ipp]] - coords[gon[ip]]
-                            d1 = coords[gon[i]] - coords[gon[ip]]
+                            d2 = points[gon[ipp]] - points[gon[ip]]
+                            d1 = points[gon[i]] - points[gon[ip]]
                             cross.append(np.cross(d2, d1))
                         if (np.array([c[2] for c in cross]).mean() < 0):
                             gon.reverse()
@@ -256,9 +259,13 @@ class Mesh2D(object):
 
                         idx += n_in_gon + 1
                     assert(idx == n_to_read)
+                    polygons_found = True
                         
-                else:
-                    raise RuntimeError("VTK file includes not recognized section")
+
+        if not points_found:
+            raise RuntimeError("Unstructured VTK must contain sections 'POINTS'")
+        if not polygons_found:
+            raise RuntimeError("Unstructured VTK must contain sections 'POLYGONS'")
         return cls(points, gons)
 
         

@@ -53,7 +53,7 @@ Interfrost::UpdatePreconditioner(double t,
   }
 
   // update state with the solution up.
-  ASSERT(std::abs(S_next_->time() - t) <= 1.e-4*t);
+  AMANZI_ASSERT(std::abs(S_next_->time() - t) <= 1.e-4*t);
   PK_PhysicalBDF_Default::Solution_to_State(*up, S_next_);
   //PKDefaultBase::solution_to_state(*up, S_next_);
 
@@ -79,13 +79,13 @@ Interfrost::UpdatePreconditioner(double t,
         min_kr_lid = f;
       }
     }
-    ASSERT(min_kr_lid >= 0);
+    AMANZI_ASSERT(min_kr_lid >= 0);
 
     ENorm_t global_min_kr;
     ENorm_t local_min_kr;
     local_min_kr.value = min_kr;
     local_min_kr.gid = kr.Map().GID(min_kr_lid);
-    ASSERT(local_min_kr.gid >= 0);
+    AMANZI_ASSERT(local_min_kr.gid >= 0);
 
     MPI_Allreduce(&local_min_kr, &global_min_kr, 1, MPI_DOUBLE_INT, MPI_MINLOC, MPI_COMM_WORLD);
 
@@ -164,7 +164,7 @@ Interfrost::UpdatePreconditioner(double t,
 
   if (precon_used_) {
     preconditioner_->AssembleMatrix();
-    preconditioner_->InitPreconditioner(plist_->sublist("preconditioner"));
+    preconditioner_->UpdatePreconditioner();
   }      
       
 }

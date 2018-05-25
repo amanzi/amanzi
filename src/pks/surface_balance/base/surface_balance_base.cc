@@ -34,8 +34,8 @@ SurfaceBalanceBase::SurfaceBalanceBase(Teuchos::ParameterList& pk_tree,
   source_key_ = plist_->get<std::string>("source key", source_key_);
 
   theta_ = plist_->get<double>("time discretization theta", 1.0);
-  ASSERT(theta_ <= 1.);
-  ASSERT(theta_ >= 0.);
+  AMANZI_ASSERT(theta_ <= 1.);
+  AMANZI_ASSERT(theta_ >= 0.);
 
   // set a default absolute tolerance
   if (!plist_->isParameter("absolute error tolerance"))
@@ -75,6 +75,7 @@ SurfaceBalanceBase::Setup(const Teuchos::Ptr<State>& S) {
   precon_used_ = plist_->isSublist("preconditioner");
   if (precon_used_) {
     preconditioner_->SymbolicAssembleMatrix();
+    preconditioner_->InitializePreconditioner(plist_->sublist("preconditioner"));
   }
 
   //    Potentially create a linear solver
@@ -163,7 +164,7 @@ void
 SurfaceBalanceBase::UpdatePreconditioner(double t,
         Teuchos::RCP<const TreeVector> up, double h) {
   // update state with the solution up.
-  ASSERT(std::abs(S_next_->time() - t) <= 1.e-4*t);
+  AMANZI_ASSERT(std::abs(S_next_->time() - t) <= 1.e-4*t);
   PK_Physical_Default::Solution_to_State(*up, S_next_);
 
   if (conserved_quantity_) {
@@ -180,6 +181,11 @@ SurfaceBalanceBase::UpdatePreconditioner(double t,
       db_->WriteVector("d(Q)/d(prim)", S_next_->GetFieldData(dkey).ptr());
       preconditioner_acc_->AddAccumulationTerm(*S_next_->GetFieldData(dkey), -1.0/theta_, "cell", true);
     }      
+  }
+
+  if (precon_used_) {
+    preconditioner_->AssembleMatrix();
+    preconditioner_->UpdatePreconditioner();
   }
 }
 

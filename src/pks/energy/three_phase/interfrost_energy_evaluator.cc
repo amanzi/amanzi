@@ -154,7 +154,7 @@ void InterfrostEnergyEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::P
       result_v[0][c] = (1.0 - phib[0][c])*u_rock[0][c];
     }
   } else {
-    ASSERT(0);
+    AMANZI_ASSERT(0);
   }
 
   for (unsigned int c=0; c!=result->size("cell"); ++c) {

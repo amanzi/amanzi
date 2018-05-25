@@ -106,7 +106,7 @@ bool MPCDelegateEWCSurface::modify_predictor_smart_ewc_(double h, Teuchos::RCP<T
     model_->UpdateModel(S_next_.ptr(), c);
     ierr = model_->Evaluate(T_guess, pres_guess_c[0][c],
                             e_tmp, wc_tmp);
-    ASSERT(!ierr);
+    AMANZI_ASSERT(!ierr);
 
     if (dcvo != Teuchos::null && dcvo->os_OK(Teuchos::VERB_EXTREME))
       *dcvo->os() << "   Calc wc,e of extrap: " << wc_tmp*cv[0][c] << ", " << e_tmp*cv[0][c] << std::endl

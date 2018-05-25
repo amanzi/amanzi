@@ -187,7 +187,7 @@ plantMeshes(const Teuchos::RCP<AmanziMesh::Mesh>& subsurface_mesh,
   // create the logical mesh
   auto logical_mesh = fac.Create();
   AmanziMesh::MeshLogicalAudit audit(logical_mesh, std::cout);
-  ASSERT(!audit.Verify());
+  AMANZI_ASSERT(!audit.Verify());
   
   // now create the embedded mesh
   auto embedded = Teuchos::rcp(new AmanziMesh::MeshEmbeddedLogical(subsurface_mesh->get_comm(),
@@ -215,18 +215,18 @@ plantMesh(AmanziMesh::MeshLogicalFactory& fac,
 {
   // input DBC
 #ifdef ENABLE_DBC
-  ASSERT(p.Valid());
+  AMANZI_ASSERT(p.Valid());
   double rf_total = 0.;
   for (auto r : rooting_fraction) {
-    ASSERT(r >= 0.);
+    AMANZI_ASSERT(r >= 0.);
     rf_total += r;
   }
-  ASSERT(std::abs(1-rf_total) < 1.e-8);
+  AMANZI_ASSERT(std::abs(1-rf_total) < 1.e-8);
   for (auto dz : soil_col_dz) {
-    ASSERT(dz > 0);
+    AMANZI_ASSERT(dz > 0);
   }
-  ASSERT(n_stem > 0);
-  ASSERT(n_rheiz_shell >= 0);
+  AMANZI_ASSERT(n_stem > 0);
+  AMANZI_ASSERT(n_rheiz_shell >= 0);
 #endif
 
   
@@ -286,7 +286,7 @@ plantMesh(AmanziMesh::MeshLogicalFactory& fac,
 
   // add the TRoot
   int n_lev_roots = 0.;
-  ASSERT(rooting_fraction.size() == soil_col_dz.size());
+  AMANZI_ASSERT(rooting_fraction.size() == soil_col_dz.size());
   while (rooting_fraction[n_lev_roots] > 0.) {
     n_lev_roots++;
   }
@@ -327,7 +327,7 @@ plantMesh(AmanziMesh::MeshLogicalFactory& fac,
   fac.AddFace(f, stem_troot_face_cells, orientation, stem_troot_face_lengths, p.sapwood_area);
 
   // turn the orientation
-  ASSERT(stem_displacement[2] == 0.);
+  AMANZI_ASSERT(stem_displacement[2] == 0.);
   orientation = stem_displacement / AmanziGeometry::norm(stem_displacement);
   
   for (int slev=0; slev!=n_lev_roots; ++slev) {

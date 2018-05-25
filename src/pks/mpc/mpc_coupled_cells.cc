@@ -103,7 +103,7 @@ void MPCCoupledCells::Setup(const Teuchos::Ptr<State>& S) {
   if (precon_used_) {
     preconditioner_->SymbolicAssembleMatrix();
     Teuchos::ParameterList& pc_sublist = plist_->sublist("preconditioner");
-    preconditioner_->InitPreconditioner("preconditioner", pc_sublist);
+    preconditioner_->InitializePreconditioner(pc_sublist);
   }
 
   // setup and initialize the linear solver for the preconditioner
@@ -148,7 +148,7 @@ void MPCCoupledCells::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVect
 
   if (precon_used_) {
     preconditioner_->AssembleMatrix();
-    preconditioner_->InitPreconditioner(plist_->sublist("preconditioner"));
+    preconditioner_->UpdatePreconditioner();
   }
 }
 

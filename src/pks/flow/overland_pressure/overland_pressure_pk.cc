@@ -243,7 +243,7 @@ void OverlandPressureFlow::SetupOverlandFlow_(const Teuchos::Ptr<State>& S) {
       plist_->get<bool>("coupled to subsurface via flux", false);
   coupled_to_subsurface_via_head_ =
       plist_->get<bool>("coupled to subsurface via head", false);
-  ASSERT(!(coupled_to_subsurface_via_flux_ && coupled_to_subsurface_via_head_));
+  AMANZI_ASSERT(!(coupled_to_subsurface_via_flux_ && coupled_to_subsurface_via_head_));
 
   if (coupled_to_subsurface_via_head_) {
     // -- source term from subsurface, filled in by evaluator,
@@ -262,6 +262,7 @@ void OverlandPressureFlow::SetupOverlandFlow_(const Teuchos::Ptr<State>& S) {
   precon_used_ = plist_->isSublist("preconditioner");
   if (precon_used_) {
     preconditioner_->SymbolicAssembleMatrix();
+    preconditioner_->InitializePreconditioner(plist_->sublist("preconditioner"));
   }
 
   //    Potentially create a linear solver
@@ -323,7 +324,7 @@ void OverlandPressureFlow::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S
     S->RequireFieldEvaluator(slope_key);
   } else {
     if (standalone_mode_) {
-      ASSERT(plist_->isSublist("elevation evaluator"));
+      AMANZI_ASSERT(plist_->isSublist("elevation evaluator"));
       Teuchos::ParameterList elev_plist = plist_->sublist("elevation evaluator");
       elev_plist.set("evaluator name", Keys::getKey(domain_, "elevation"));
       elev_evaluator = Teuchos::rcp(new Flow::StandaloneElevationEvaluator(elev_plist));
@@ -384,7 +385,7 @@ void OverlandPressureFlow::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S
   // -- conductivity evaluator
   S->RequireField(Keys::getKey(domain_,"overland_conductivity"))->SetMesh(mesh_)->SetGhosted()
         ->AddComponent("cell", AmanziMesh::CELL, 1);
-  ASSERT(plist_->isSublist("overland conductivity evaluator"));
+  AMANZI_ASSERT(plist_->isSublist("overland conductivity evaluator"));
   Teuchos::ParameterList cond_plist = plist_->sublist("overland conductivity evaluator");
   cond_plist.set("evaluator name", Keys::getKey(domain_, "overland_conductivity"));
 
@@ -1022,7 +1023,7 @@ void OverlandPressureFlow::FixBCsForOperator_(const Teuchos::Ptr<State>& S) {
 
     AmanziMesh::Entity_ID_List cells;
     mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
-    ASSERT(cells.size() == 1);
+    AMANZI_ASSERT(cells.size() == 1);
     AmanziMesh::Entity_ID c = cells[0];
 
     if (f < nfaces_owned) {
@@ -1098,7 +1099,7 @@ void OverlandPressureFlow::FixBCsForPrecon_(const Teuchos::Ptr<State>& S) {
 
 //     AmanziMesh::Entity_ID_List cells;
 //     mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
-//     ASSERT(cells.size() == 1);
+//     AMANZI_ASSERT(cells.size() == 1);
 //     AmanziMesh::Entity_ID c = cells[0];
 
 //     if (c < ncells_owned) {
@@ -1110,7 +1111,7 @@ void OverlandPressureFlow::FixBCsForPrecon_(const Teuchos::Ptr<State>& S) {
 //         dp[n] = elevation_f[0][faces[n]] - elevation_c[0][c];
 //       }
 //       unsigned int my_n = std::find(faces.begin(), faces.end(), f) - faces.begin();
-//       ASSERT(my_n !=faces.size());
+//       AMANZI_ASSERT(my_n !=faces.size());
 
 //       double bc_val = 0.;
 //       for (unsigned int m=0; m!=faces.size(); ++m) {

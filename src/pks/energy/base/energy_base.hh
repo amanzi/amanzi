@@ -123,6 +123,10 @@ public:
   virtual void ApplyDiffusion_(const Teuchos::Ptr<State>& S,
           const Teuchos::Ptr<CompositeVector>& f);
 
+  virtual double BoundaryFaceValue(int f, const CompositeVector& u);
+  virtual int BoundaryFaceGetCell(int f) const;
+
+
  protected:
   int niter_;
 
@@ -158,6 +162,8 @@ public:
   bool precon_used_;
   bool flux_exists_;
   bool jacobian_;
+
+  bool compute_boundary_values_;
   
   double T_limit_;
   

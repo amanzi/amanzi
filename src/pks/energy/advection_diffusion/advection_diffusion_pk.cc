@@ -95,8 +95,8 @@ void AdvectionDiffusion::Setup(const Teuchos::Ptr<State>& S) {
   //   preconditioner_adv_ = Teuchos::rcp(new Operators::PDE_AdvectionUpwind(advect_plist, preconditioner_));
   // }
 
-  // preconditioner_->SymbolicAssembleMatrix();
-  // preconditioner_->InitPreconditioner("preconditioner", mfd_pc_plist);
+  preconditioner_->SymbolicAssembleMatrix();
+  preconditioner_->InitializePreconditioner(mfd_pc_plist);
   
   
 };

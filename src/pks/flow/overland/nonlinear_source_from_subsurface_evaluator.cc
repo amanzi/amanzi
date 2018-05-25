@@ -70,7 +70,7 @@ void NonlinearSourceFromSubsurfaceEvaluator::IdentifyFaceAndDirection_(
     // -- get the cell
     AmanziMesh::Entity_ID_List cells;
     subsurface->face_get_cells(domain_face, AmanziMesh::Parallel_type::OWNED, &cells);
-    ASSERT(cells.size() == 1);
+    AMANZI_ASSERT(cells.size() == 1);
 
     // -- Get directions
     AmanziMesh::Entity_ID_List faces;
@@ -111,7 +111,7 @@ NonlinearSourceFromSubsurfaceEvaluator::EvaluateField_(const Teuchos::Ptr<State>
     // subsurface cell
     AmanziMesh::Entity_ID_List cells;
     subsurface->face_get_cells(ss_f, AmanziMesh::Parallel_type::OWNED, &cells);
-    ASSERT(cells.size() == 1);
+    AMANZI_ASSERT(cells.size() == 1);
     int ss_c = cells[0];
 
     // calculate the surface pressure given height
@@ -145,7 +145,7 @@ NonlinearSourceFromSubsurfaceEvaluator::EvaluateField_(const Teuchos::Ptr<State>
 void
 NonlinearSourceFromSubsurfaceEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>& S,
         Key wrt_key, const Teuchos::Ptr<CompositeVector>& result) {
-  ASSERT(0);
+  AMANZI_ASSERT(0);
   // this would require differentiating height wrt pressure, which we
   // don't do for now.
 }

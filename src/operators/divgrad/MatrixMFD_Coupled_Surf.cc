@@ -31,7 +31,7 @@ MatrixMFD_Coupled_Surf::SetSurfaceOperators(const Teuchos::RCP<MatrixMFD_TPFA>& 
                          const Teuchos::RCP<MatrixMFD_TPFA>& surface_B) {
   surface_A_ = surface_A;
   surface_B_ = surface_B;
-  ASSERT(surface_A_->Mesh() == surface_B_->Mesh());
+  AMANZI_ASSERT(surface_A_->Mesh() == surface_B_->Mesh());
   surface_mesh_ = surface_A_->Mesh();
 
   MarkLocalMatricesAsChanged_();
@@ -109,16 +109,16 @@ void MatrixMFD_Coupled_Surf::SymbolicAssembleGlobalMatrices() {
 
   // Assemble the graphs
   ierr = cf_graph->FillComplete(*double_fmap_, *double_cmap_);
-  ASSERT(!ierr);
+  AMANZI_ASSERT(!ierr);
   ierr = ff_graph->GlobalAssemble();  // Symbolic graph is complete.
-  ASSERT(!ierr);
+  AMANZI_ASSERT(!ierr);
 
   // Create the matrices
   P2f2f_ = Teuchos::rcp(new Epetra_FEVbrMatrix(Copy, *ff_graph, false));
   ierr = P2f2f_->GlobalAssemble();
   A2f2f_ = Teuchos::rcp(new Epetra_FEVbrMatrix(Copy, *ff_graph, false));
   ierr = A2f2f_->GlobalAssemble();
-  ASSERT(!ierr);
+  AMANZI_ASSERT(!ierr);
 }
 
 void MatrixMFD_Coupled_Surf::AssembleSchur_() const {
@@ -162,15 +162,15 @@ void MatrixMFD_Coupled_Surf::AssembleSchur_() const {
     AmanziMesh::Entity_ID sc_global = surf_cmap_wghost.GID(sc);
 
     ierr = App.ExtractGlobalRowCopy(sc_global, 9, entriesA, valuesA, indicesA);
-    ASSERT(!ierr);
+    AMANZI_ASSERT(!ierr);
     ierr = Bpp.ExtractGlobalRowCopy(sc_global, 9, entriesB, valuesB, indicesB);
-    ASSERT(!ierr);
+    AMANZI_ASSERT(!ierr);
 
     // ensure consistency of the sparsity structure, this can likely be
     // removed eventually.
-    ASSERT(entriesA == entriesB);
+    AMANZI_ASSERT(entriesA == entriesB);
     for (int m=0; m!=entriesA; ++m) {
-      ASSERT(indicesA[m] == indicesB[m]);
+      AMANZI_ASSERT(indicesA[m] == indicesB[m]);
     }
 
     // Convert local cell numbers to domain's local face numbers
@@ -186,7 +186,7 @@ void MatrixMFD_Coupled_Surf::AssembleSchur_() const {
 
     // Add the entries
     ierr = P2f2f_->BeginSumIntoGlobalValues(frow_global, entriesA, indicesA);
-    ASSERT(!ierr);
+    AMANZI_ASSERT(!ierr);
 
 
     for (int m=0; m!=entriesA; ++m) {
@@ -202,22 +202,22 @@ void MatrixMFD_Coupled_Surf::AssembleSchur_() const {
         block(1,0) = 0.;
       }
       ierr = P2f2f_->SubmitBlockEntry(block.A(), block.LDA(), block.M(), block.N());
-      ASSERT(!ierr);
+      AMANZI_ASSERT(!ierr);
     }
 
     ierr = P2f2f_->EndSubmitEntries();
-    ASSERT(!ierr);
+    AMANZI_ASSERT(!ierr);
   }
 
   ierr = P2f2f_->GlobalAssemble();
-  ASSERT(!ierr);
+  AMANZI_ASSERT(!ierr);
 
   // DEBUG dump
   if (dump_schur_) {
     std::stringstream filename_s;
     filename_s << "schur_MatrixMFD_Coupled_Surf_" << 0 << ".txt";
     int ierr = EpetraExt::RowMatrixToMatlabFile(filename_s.str().c_str(), *P2f2f_);
-    ASSERT(!ierr);
+    AMANZI_ASSERT(!ierr);
   }
 
   delete[] indicesA;
@@ -270,15 +270,15 @@ void MatrixMFD_Coupled_Surf::AssembleAff_() const {
     AmanziMesh::Entity_ID sc_global = surf_cmap_wghost.GID(sc);
 
     ierr = App.ExtractGlobalRowCopy(sc_global, 9, entriesA, valuesA, indicesA);
-    ASSERT(!ierr);
+    AMANZI_ASSERT(!ierr);
     ierr = Bpp.ExtractGlobalRowCopy(sc_global, 9, entriesB, valuesB, indicesB);
-    ASSERT(!ierr);
+    AMANZI_ASSERT(!ierr);
 
     // ensure consistency of the sparsity structure, this can likely be
     // removed eventually.
-    ASSERT(entriesA == entriesB);
+    AMANZI_ASSERT(entriesA == entriesB);
     for (int m=0; m!=entriesA; ++m) {
-      ASSERT(indicesA[m] == indicesB[m]);
+      AMANZI_ASSERT(indicesA[m] == indicesB[m]);
     }
 
     // Convert local cell numbers to domain's local face numbers
@@ -294,7 +294,7 @@ void MatrixMFD_Coupled_Surf::AssembleAff_() const {
 
     // Add the entries
     ierr = A2f2f_->BeginSumIntoGlobalValues(frow_global, entriesA, indicesA);
-    ASSERT(!ierr);
+    AMANZI_ASSERT(!ierr);
 
 
     for (int m=0; m!=entriesA; ++m) {
@@ -310,15 +310,15 @@ void MatrixMFD_Coupled_Surf::AssembleAff_() const {
         block(1,0) = 0.;
       }
       ierr = A2f2f_->SubmitBlockEntry(block.A(), block.LDA(), block.M(), block.N());
-      ASSERT(!ierr);
+      AMANZI_ASSERT(!ierr);
     }
 
     ierr = A2f2f_->EndSubmitEntries();
-    ASSERT(!ierr);
+    AMANZI_ASSERT(!ierr);
   }
 
   ierr = A2f2f_->GlobalAssemble();
-  ASSERT(!ierr);
+  AMANZI_ASSERT(!ierr);
 
   delete[] indicesA;
   delete[] indicesB;
@@ -334,7 +334,7 @@ MatrixMFD_Coupled_Surf::Apply(const TreeVector& X,
         TreeVector& Y) const {
   // Apply the coupled Matrix, which gets the subsurface.
   int ierr = MatrixMFD_Coupled::Apply(X,Y);
-  ASSERT(!ierr);
+  AMANZI_ASSERT(!ierr);
 
   // Add in the Surface components
   Teuchos::RCP<const CompositeVector> XA = X.SubVector(0)->Data();
@@ -369,7 +369,7 @@ MatrixMFD_Coupled_Surf::Apply(const TreeVector& X,
 
   // -- + Dcc_surf * lambda_p
   ierr |= surf_YB.Multiply(scaling_, *Dcc_surf_, surf_XA, 1.0);
-  ASSERT(!ierr);
+  AMANZI_ASSERT(!ierr);
   
   // Add back into Y
   Epetra_MultiVector& YA_f = *YA->ViewComponent("face",false);
@@ -434,7 +434,7 @@ void MatrixMFD_Coupled_Surf::UpdateConsistentFaceCorrection(const TreeVector& u,
   A2f2f_op_->Destroy();
   A2f2f_op_->Update(A2f2f_);
   int ierr = A2f2f_solver_->ApplyInverse(Xf,Yf);
-  ASSERT(!ierr);
+  AMANZI_ASSERT(!ierr);
 
   // copy back into subblock
   {

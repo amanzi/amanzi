@@ -65,7 +65,7 @@ void Volumetric_FluxEvaluator::EnsureCompatibility(const Teuchos::Ptr<State>& S)
 
   void Volumetric_FluxEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>& S,
                                                                    Key wrt_key, const Teuchos::Ptr<CompositeVector>& result) {
-    ASSERT(0);
+    AMANZI_ASSERT(0);
     // this would require differentiating flux wrt pressure, which we
     // don't do for now.
   }

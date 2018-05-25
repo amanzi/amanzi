@@ -121,7 +121,7 @@ TranspirationDistributionEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
       for (auto c : subsurf_mesh.cells_of_column(sc)) {
         new_col_total += result_v[fpt][c] * cv[0][c];
       }
-      ASSERT(std::abs(new_col_total - trans_total[pft][sc]) < 1.e-8);
+      AMANZI_ASSERT(std::abs(new_col_total - trans_total[pft][sc]) < 1.e-8);
 #endif
     }
   }
@@ -139,7 +139,7 @@ TranspirationDistributionEvaluator::EvaluateFieldPartialDerivative_(const Teucho
 void
 TranspirationDistributionEvaluator::EnsureCompatibility(const Teuchos::Ptr<State>& S) {
   // Ensure my field exists.  Requirements should be already set.
-  ASSERT(!my_key_.empty());
+  AMANZI_ASSERT(!my_key_.empty());
   auto my_fac = S->RequireField(my_key_, my_key_);
 
   // check plist for vis or checkpointing control

@@ -331,7 +331,7 @@ SurfaceBalanceExplicit::AdvanceStep(double t_old, double t_new, bool reinit) {
     AmanziMesh::Entity_ID subsurf_f = mesh_->entity_get_parent(AmanziMesh::CELL, c);
     AmanziMesh::Entity_ID_List cells;
     subsurf_mesh_->face_get_cells(subsurf_f, AmanziMesh::Parallel_type::OWNED, &cells);
-    ASSERT(cells.size() == 1);
+    AMANZI_ASSERT(cells.size() == 1);
       seb.in.surf.saturation_liquid = saturation_liquid[0][cells[0]];
 
       // -- snow properties
@@ -385,7 +385,7 @@ SurfaceBalanceExplicit::AdvanceStep(double t_old, double t_new, bool reinit) {
 //      AmanziMesh::Entity_ID subsurf_f = mesh_->entity_get_parent(AmanziMesh::CELL, c);
 //      AmanziMesh::Entity_ID_List cells;
       subsurf_mesh_->face_get_cells(subsurf_f, AmanziMesh::Parallel_type::OWNED, &cells);
-      ASSERT(cells.size() == 1);
+      AMANZI_ASSERT(cells.size() == 1);
       // surface mass sources are in m^3 water / (m^2 s)
       // subsurface mass sources are in mol water / (m^3 s)
       vapor_flux[0][cells[0]] = seb.out.mb.MWg_subsurf
@@ -416,7 +416,7 @@ SurfaceBalanceExplicit::AdvanceStep(double t_old, double t_new, bool reinit) {
     AmanziMesh::Entity_ID subsurf_f = mesh_->entity_get_parent(AmanziMesh::CELL, c);
     AmanziMesh::Entity_ID_List cells;
     subsurf_mesh_->face_get_cells(subsurf_f, AmanziMesh::Parallel_type::OWNED, &cells);
-    ASSERT(cells.size() == 1);
+    AMANZI_ASSERT(cells.size() == 1);
       seb.in.surf.saturation_liquid = saturation_liquid[0][cells[0]];
 
       // -- snow properties
@@ -496,7 +496,7 @@ SurfaceBalanceExplicit::AdvanceStep(double t_old, double t_new, bool reinit) {
 //      AmanziMesh::Entity_ID subsurf_f = mesh_->entity_get_parent(AmanziMesh::CELL, c);
 //      AmanziMesh::Entity_ID_List cells;
       subsurf_mesh_->face_get_cells(subsurf_f, AmanziMesh::Parallel_type::OWNED, &cells);
-      ASSERT(cells.size() == 1);
+      AMANZI_ASSERT(cells.size() == 1);
       // surface mass sources are in m^3 water / (m^2 s)
       // subsurface mass sources are in mol water / (m^3 s)
       double mean_flux = theta * seb.out.mb.MWg_subsurf + (1-theta) * seb_bare.out.mb.MWg_subsurf;

@@ -47,7 +47,7 @@ void Matrix_TPFA_Surf::FillMatrixGraphs_(const Teuchos::Ptr<Epetra_CrsGraph> cf_
 
   for (unsigned int fs=0; fs!=nfaces_surf; ++fs) {
     surface_mesh_->face_get_cells(fs, AmanziMesh::Parallel_type::ALL, &surf_cells);
-    int ncells_surf = surf_cells.size(); ASSERT(ncells_surf <= 2);
+    int ncells_surf = surf_cells.size(); AMANZI_ASSERT(ncells_surf <= 2);
 
     // get the equivalent faces on the subsurface mesh
     for (int n=0; n!=ncells_surf; ++n) {
@@ -58,7 +58,7 @@ void Matrix_TPFA_Surf::FillMatrixGraphs_(const Teuchos::Ptr<Epetra_CrsGraph> cf_
     // insert the connection
     ierr = fbfb_graph->InsertGlobalIndices(ncells_surf, equiv_face_GID,
             ncells_surf, equiv_face_GID);
-    ASSERT(!ierr);
+    AMANZI_ASSERT(!ierr);
   }
   fill_graph = true;
 }
@@ -111,11 +111,11 @@ void Matrix_TPFA_Surf::AssembleSchur_() const{
     // Access the row in Spp
     AmanziMesh::Entity_ID sc_global = surf_cmap_wghost.GID(sc);
     ierr = Spp.ExtractGlobalRowCopy(sc_global, 9, entries, values, gsurfindices);
-    ASSERT(!ierr);
+    AMANZI_ASSERT(!ierr);
 
     // Convert Spp global cell numbers to Aff local face numbers
     AmanziMesh::Entity_ID frow = surface_mesh_->entity_get_parent(AmanziMesh::CELL,sc);
-    ASSERT(frow < nfaces_sub);
+    AMANZI_ASSERT(frow < nfaces_sub);
     int frow_global = fmap_wghost.GID(frow);
 
     for (int m=0; m!=entries; ++m) {
@@ -125,11 +125,11 @@ void Matrix_TPFA_Surf::AssembleSchur_() const{
     }
 
     ierr = Aff_->SumIntoGlobalValues(frow_global, entries, values, indices_global);
-    ASSERT(!ierr);
+    AMANZI_ASSERT(!ierr);
   }
 
   ierr = Aff_->GlobalAssemble();
-  ASSERT(!ierr);
+  AMANZI_ASSERT(!ierr);
 
   delete[] gsurfindices;
   delete[] surfindices;
@@ -259,7 +259,7 @@ void Matrix_TPFA_Surf::ComputeSchurComplement(const std::vector<MatrixBC>& bc_ma
     // Access the row in Spp
     AmanziMesh::Entity_ID sc_global = surf_cmap_wghost.GID(sc);
     ierr = Spp.ExtractGlobalRowCopy(sc_global, 9, entries, values, indices);
-    ASSERT(!ierr);
+    AMANZI_ASSERT(!ierr);
 
     // Convert Spp local cell numbers to Sff local face numbers
     AmanziMesh::Entity_ID frow = surface_mesh_->entity_get_parent(AmanziMesh::CELL,sc);
@@ -272,12 +272,12 @@ void Matrix_TPFA_Surf::ComputeSchurComplement(const std::vector<MatrixBC>& bc_ma
     }
 
     ierr = Aff_->SumIntoGlobalValues(frow_global, entries, values, indices_global);
-    ASSERT(!ierr);
+    AMANZI_ASSERT(!ierr);
 
   }
 
   ierr = Aff_->GlobalAssemble();
-  ASSERT(!ierr);
+  AMANZI_ASSERT(!ierr);
 
   delete[] indices;
   delete[] indices_global;

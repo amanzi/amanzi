@@ -216,7 +216,7 @@ void MatrixMFD_TPFA::AssembleRHS_() const {
     if (std::abs(Dff_f[0][f]) > 0) {
       (*rhs_faces)[0][f] /= Dff_f[0][f];
     } else {
-      ASSERT( (*rhs_faces)[0][f] == 0. );
+      AMANZI_ASSERT( (*rhs_faces)[0][f] == 0. );
     }
   }
   ApplyAcf(*rhs_, *rhs_, -1.);
@@ -330,11 +330,11 @@ void MatrixMFD_TPFA::AssembleApp_() const {
 
       mesh_->cell_get_faces(c, &faces);
       Bpp(n, n) = Dcc_c[0][c] / faces.size();
-      //      ASSERT(std::abs(Dcc_c[0][c] / faces.size()) < 1.e40);
+      //      AMANZI_ASSERT(std::abs(Dcc_c[0][c] / faces.size()) < 1.e40);
 
       if (c < ncells_owned) {
         int i = FindPosition<AmanziMesh::Entity_ID>(faces, f);
-        ASSERT(i>=0);
+        AMANZI_ASSERT(i>=0);
         Acf_copy[n] = Acf_cells_[c][i];
         Afc_copy[n] = Afc_cells_[c][i];
       } else {
@@ -346,11 +346,11 @@ void MatrixMFD_TPFA::AssembleApp_() const {
     for (int n = 0; n < mcells; n++) {
       for (int m = 0; m < mcells; m++) {
         if (std::abs(Dff_f[0][f] * Afc_copy[m]) == 0.) {
-          ASSERT(std::abs(Acf_copy[n]) == 0.);
+          AMANZI_ASSERT(std::abs(Acf_copy[n]) == 0.);
         } else {
           Bpp(n, m) -= Acf_copy[n] / Dff_f[0][f] * Afc_copy[m];
         }
-        //ASSERT(std::abs(Acf_copy[n] / Dff_f[0][f] * Afc_copy[m]) < 1.e40);
+        //AMANZI_ASSERT(std::abs(Acf_copy[n] / Dff_f[0][f] * Afc_copy[m]) < 1.e40);
       }
     }
 
@@ -371,8 +371,8 @@ void MatrixMFD_TPFA::AssembleApp_() const {
   double maxval;
   App_diag.MinValue(&minval);
   App_diag.MaxValue(&maxval);
-  ASSERT(std::abs(minval) < 1.e40);
-  ASSERT(std::abs(maxval) < 1.e40);
+  AMANZI_ASSERT(std::abs(minval) < 1.e40);
+  AMANZI_ASSERT(std::abs(maxval) < 1.e40);
 #endif
 
   // std::stringstream filename_s;
@@ -439,7 +439,7 @@ int MatrixMFD_TPFA::ApplyInverse(const CompositeVector& X,
 
   // Solve the pp system
   ierr = S_pc_->ApplyInverse(Xc, Tc);
-  ASSERT(!ierr);
+  AMANZI_ASSERT(!ierr);
 
   *Y.ViewComponent("cell",false) = Tc;
 
@@ -454,7 +454,7 @@ int MatrixMFD_TPFA::ApplyInverse(const CompositeVector& X,
     const Epetra_MultiVector& Dff_f = *Dff_->ViewComponent("face",false);
 
     ierr |= ApplyAfc_(Tc, Y, 0.);  // Afc is kept in the transpose form.
-    ASSERT(!ierr);
+    AMANZI_ASSERT(!ierr);
     Epetra_MultiVector& Yf = *Y.ViewComponent("face", false);
 
     Yf.Update(1., Xf, -1.);
@@ -552,7 +552,7 @@ void MatrixMFD_TPFA::AnalyticJacobian(const Upwinding& upwinding,
   // Get the derivatives
   std::vector<Teuchos::RCP<Teuchos::SerialDenseMatrix<int, double> > > Jpp_faces;
   upwinding.UpdateDerivatives(S, potential_key, dconductivity, bc_markers, bc_values, &Jpp_faces);
-  ASSERT(Jpp_faces.size() == nfaces_owned);
+  AMANZI_ASSERT(Jpp_faces.size() == nfaces_owned);
 
   // Assemble into App
   for (unsigned int f=0; f!=nfaces_owned; ++f) {
@@ -563,12 +563,12 @@ void MatrixMFD_TPFA::AnalyticJacobian(const Upwinding& upwinding,
       cells_GID[n] = cmap_wghost.GID(cells[n]);
     }
     ierr = (*App_).SumIntoGlobalValues(mcells, cells_GID, Jpp_faces[f]->values());
-    ASSERT(!ierr);
+    AMANZI_ASSERT(!ierr);
   }
 
   // finish assembly
   ierr = App_->GlobalAssemble();
-  ASSERT(!ierr);
+  AMANZI_ASSERT(!ierr);
 }
 
 }  // namespace AmanziFlow

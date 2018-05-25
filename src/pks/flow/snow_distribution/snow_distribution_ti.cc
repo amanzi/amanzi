@@ -30,8 +30,8 @@ void SnowDistribution::Functional( double t_old,
 
   // bookkeeping
   double h = t_new - t_old;
-  ASSERT(std::abs(S_inter_->time() - t_old) < 1.e-4*h);
-  ASSERT(std::abs(S_next_->time() - t_new) < 1.e-4*h);
+  AMANZI_ASSERT(std::abs(S_inter_->time() - t_old) < 1.e-4*h);
+  AMANZI_ASSERT(std::abs(S_next_->time() - t_new) < 1.e-4*h);
 
   Teuchos::RCP<CompositeVector> u = u_new->Data();
 
@@ -102,7 +102,7 @@ int SnowDistribution::ApplyPreconditioner(Teuchos::RCP<const TreeVector> u, Teuc
 #endif
 
   // apply the preconditioner
-  int ierr = preconditioner_->ApplyInverse(*u->Data(), *Pu->Data());
+  int ierr = lin_solver_->ApplyInverse(*u->Data(), *Pu->Data());
 
 #if DEBUG_FLAG
   db_->WriteVector("PC*h_res", Pu->Data().ptr(), true);
@@ -122,7 +122,7 @@ void SnowDistribution::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVec
     *vo_->os() << "Precon update at t = " << t << std::endl;
 
   // update state with the solution up.
-  ASSERT(std::abs(S_next_->time() - t) <= 1.e-4*t);
+  AMANZI_ASSERT(std::abs(S_next_->time() - t) <= 1.e-4*t);
   //PKDefaultBase::solution_to_state(*up, S_next_);
   PK_PhysicalBDF_Default::Solution_to_State(*up, S_next_);
 
@@ -167,7 +167,7 @@ void SnowDistribution::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVec
 
   preconditioner_diff_->ApplyBCs(true, true);
   preconditioner_->AssembleMatrix();
-  preconditioner_->InitPreconditioner(plist_->sublist("preconditioner"));
+  preconditioner_->UpdatePreconditioner();
 };
 
 double SnowDistribution::ErrorNorm(Teuchos::RCP<const TreeVector> u,

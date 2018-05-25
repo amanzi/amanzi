@@ -66,11 +66,11 @@ void MatrixMFD_Surf_ScaledConstraint::AssembleAff_() const {
     // Access the row in Spp
     AmanziMesh::Entity_ID sc_global = surf_cmap_wghost.GID(sc);
     ierr = Spp.ExtractGlobalRowCopy(sc_global, 9, entries, values, gsurfindices);
-    ASSERT(!ierr);
+    AMANZI_ASSERT(!ierr);
 
     // Convert Spp global cell numbers to Aff local face numbers
     AmanziMesh::Entity_ID frow = surface_mesh_->entity_get_parent(AmanziMesh::CELL,sc);
-    ASSERT(frow < nfaces_sub);
+    AMANZI_ASSERT(frow < nfaces_sub);
     int frow_global = fmap_wghost.GID(frow);
 
     int diag = -1;
@@ -80,7 +80,7 @@ void MatrixMFD_Surf_ScaledConstraint::AssembleAff_() const {
       indices_global[m] = fmap_wghost.GID(indices[m]);
       if (surfindices[m] == sc) diag = m;
     }
-    ASSERT(diag > -1);
+    AMANZI_ASSERT(diag > -1);
 
     // If frozen surface, and surface water, then we want the operator to just
     // have the surface terms.  Clobber Aff's row.
@@ -88,12 +88,12 @@ void MatrixMFD_Surf_ScaledConstraint::AssembleAff_() const {
     if ((*Krel_)[frow] == 0. && surf_water) {
       ierr = Aff_->ExtractGlobalRowCopy(frow_global, 9, subsurf_entries,
               gsubsurfvalues, gsubsurfindices);
-      ASSERT(!ierr);
+      AMANZI_ASSERT(!ierr);
       for (int m=0; m!=subsurf_entries; ++m)
         gsubsurfvalues[m] = 0.;
       ierr = Aff_->InsertGlobalValues(frow_global, subsurf_entries,
               gsubsurfvalues, gsubsurfindices);
-      ASSERT(!ierr);
+      AMANZI_ASSERT(!ierr);
     }
 
     // If not frozen surface, Krel > 0, and we can use the scaled constraint.
@@ -109,11 +109,11 @@ void MatrixMFD_Surf_ScaledConstraint::AssembleAff_() const {
 
     // Add contributions into Aff
     ierr = Aff_->SumIntoGlobalValues(frow_global, entries, values, indices_global);
-    ASSERT(!ierr);
+    AMANZI_ASSERT(!ierr);
   }
 
   ierr = Aff_->GlobalAssemble();
-  ASSERT(!ierr);
+  AMANZI_ASSERT(!ierr);
 
   delete[] gsurfindices;
   delete[] surfindices;
@@ -139,7 +139,7 @@ void MatrixMFD_Surf_ScaledConstraint::AssembleRHS_() const {
   for (AmanziMesh::Entity_ID sc=0; sc!=ncells_surf; ++sc) {
     AmanziMesh::Entity_ID f = surface_mesh_->entity_get_parent(AmanziMesh::CELL,sc);
     if (std::abs(rhs_surf_cells[0][sc]) > 0.) {
-      ASSERT( (*Krel_)[f] > 0. );
+      AMANZI_ASSERT( (*Krel_)[f] > 0. );
       rhs_faces[0][f] += rhs_surf_cells[0][sc] / (*Krel_)[f];
     }
   }
@@ -202,11 +202,11 @@ void MatrixMFD_Surf_ScaledConstraint::AssembleSchur_() const {
     // Access the row in Spp
     AmanziMesh::Entity_ID sc_global = surf_cmap_wghost.GID(sc);
     ierr = Spp.ExtractGlobalRowCopy(sc_global, 9, entries, values, indices);
-    ASSERT(!ierr);
+    AMANZI_ASSERT(!ierr);
 
     // Convert Spp local cell numbers to Sff local face numbers
     AmanziMesh::Entity_ID frow = surface_mesh_->entity_get_parent(AmanziMesh::CELL,sc);
-    ASSERT(frow < nfaces_sub);
+    AMANZI_ASSERT(frow < nfaces_sub);
     AmanziMesh::Entity_ID frow_global = fmap_wghost.GID(frow);
 
     // first loop sets up indices and determines the diagonal
@@ -217,7 +217,7 @@ void MatrixMFD_Surf_ScaledConstraint::AssembleSchur_() const {
       indices[m] = surface_mesh_->entity_get_parent(AmanziMesh::CELL,indices[m]);
       indices_global[m] = fmap_wghost.GID(indices[m]);
     }
-    ASSERT(diag > -1);
+    AMANZI_ASSERT(diag > -1);
 
     // If frozen surface, and surface water, then we want the operator to just
     // have the surface terms.  Clobber Aff's row.
@@ -225,12 +225,12 @@ void MatrixMFD_Surf_ScaledConstraint::AssembleSchur_() const {
     if ((*Krel_)[frow] == 0. && surf_water) {
       ierr = Sff_->ExtractGlobalRowCopy(frow_global, 9, subsurf_entries,
               gsubsurfvalues, gsubsurfindices);
-      ASSERT(!ierr);
+      AMANZI_ASSERT(!ierr);
       for (int m=0; m!=subsurf_entries; ++m)
         gsubsurfvalues[m] = 0.;
       ierr = Sff_->InsertGlobalValues(frow_global, subsurf_entries,
               gsubsurfvalues, gsubsurfindices);
-      ASSERT(!ierr);
+      AMANZI_ASSERT(!ierr);
     }
     
 
@@ -247,11 +247,11 @@ void MatrixMFD_Surf_ScaledConstraint::AssembleSchur_() const {
 
     // Add contributions into Sff
     ierr = Sff_->SumIntoGlobalValues(frow_global, entries, values, indices_global);
-    ASSERT(!ierr);
+    AMANZI_ASSERT(!ierr);
   }
 
   ierr = Sff_->GlobalAssemble();
-  ASSERT(!ierr);
+  AMANZI_ASSERT(!ierr);
 
   delete[] indices;
   delete[] indices_global;

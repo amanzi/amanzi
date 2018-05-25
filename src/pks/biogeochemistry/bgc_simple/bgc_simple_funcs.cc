@@ -425,7 +425,7 @@ namespace BGC {
               findflag = true;
             }
           }
-          ASSERT(findflag);
+          AMANZI_ASSERT(findflag);
 
           //-------------------------------------------------------------
           // calculate the root growth distribution in soil layers, the
@@ -591,14 +591,14 @@ namespace BGC {
       // AFFECTED BY DT! --etc
       double turnoverLeaf = (!pft.evergreen) ? 0. : dt_days / (pft.leaflongevity * 365.25);
       double carbondrawnLeaf = turnoverLeaf*pft.Bleaf;
-      ASSERT(turnoverLeaf <= 0.9);
+      AMANZI_ASSERT(turnoverLeaf <= 0.9);
 
       double turnoverStem = dt_days / (pft.stemlongevity * 365.25);
       double carbondrawnStem = turnoverStem*pft.Bstem;
-      ASSERT(turnoverStem <= 0.9);
+      AMANZI_ASSERT(turnoverStem <= 0.9);
 
       double turnoverRoot = dt_days / (pft.rootlongevity * 365.25);
-      ASSERT(turnoverRoot <= 0.9);
+      AMANZI_ASSERT(turnoverRoot <= 0.9);
 
       double storagecdrawn = carbondrawnLeaf*leafstoragecratio*(1.0-pft.storagecRspFrc);
       soilcarr[0]->SOM[0] += storagecdrawn;
@@ -624,7 +624,7 @@ namespace BGC {
           pft.Bstore -= storagecdrawn;
           for (int l=0; l!=2; ++l) {
             soilcarr[k]->SOM[l+1] += carbondrawn*pft.rootlitterfrc[l];
-            ASSERT(pft.BRootSoil[k] >= 0.0);
+            AMANZI_ASSERT(pft.BRootSoil[k] >= 0.0);
           }
 
           pft.BRootSoil[k] = pft.BRootSoil[k] * (1.0 - turnoverRoot);
@@ -711,7 +711,7 @@ namespace BGC {
     for (int l=0; l!=nPools; ++l){
       // AFFECTED BY DT --etc
       double turnover = dt_days * WFactor*TFactor*DFactor / (soilcarr[k]->params->TurnoverRates[l] * 365.25);
-      ASSERT(turnover <= 0.9);
+      AMANZI_ASSERT(turnover <= 0.9);
 
       double SOMDecomp = soilcarr[k]->SOM[l] * turnover;
       soilcarr[k]->SOM[l] *= 1.0 - turnover;

@@ -137,7 +137,7 @@ void IcyHeightEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::Ptr<Stat
                 rho_l[0][c], rho_i[0][c], p_atm, gz);
       }
     } else {
-      ASSERT(0);
+      AMANZI_ASSERT(0);
     }
   } else {
     if (wrt_key == pres_key_) {
@@ -169,7 +169,7 @@ void IcyHeightEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::Ptr<Stat
                 rho_l[0][c], rho_i[0][c], p_atm, gz);
       }
     } else {
-      ASSERT(0);
+      AMANZI_ASSERT(0);
     }
   }
 }

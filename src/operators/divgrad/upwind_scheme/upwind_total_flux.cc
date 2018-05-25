@@ -76,10 +76,14 @@ void UpwindTotalFlux::CalculateCoefficientsOnFaces(
 
   int ncells = cell_coef.size("cell",true);
   for (int c=0; c!=ncells; ++c) {
-    mesh->cell_get_faces_and_dirs(c, &faces, &fdirs);
+    mesh->cell_get_faces_and_dirs(c, &faces, &fdirs);   
 
     for (unsigned int n=0; n!=faces.size(); ++n) {
       int f = faces[n];
+
+      if  (face_coef->HasComponent("cell")) {        
+        (*face_coef->ViewComponent("cell",true))[0][c] = coef_cells[0][c];
+      }
 
       if (f < nfaces_local) {
         if (flux_v[0][f] * fdirs[n] > 0) {
@@ -109,7 +113,7 @@ void UpwindTotalFlux::CalculateCoefficientsOnFaces(
   for (int f=0; f!=nfaces; ++f) {
     int uw = upwind_cell[f];
     int dw = downwind_cell[f];
-    ASSERT(!((uw == -1) && (dw == -1)));
+    AMANZI_ASSERT(!((uw == -1) && (dw == -1)));
 
     // Teuchos::RCP<VerboseObject> dcvo_dw = Teuchos::null;
     // Teuchos::RCP<VerboseObject> dcvo_uw = Teuchos::null;
@@ -158,8 +162,8 @@ void UpwindTotalFlux::CalculateCoefficientsOnFaces(
       // if (dcvo_dw != Teuchos::null)
       //   *dcvo_dw->os() << "  AVG param = " << param << std::endl;
 
-      ASSERT(param >= 0.5);
-      ASSERT(param <= 1.0);
+      AMANZI_ASSERT(param >= 0.5);
+      AMANZI_ASSERT(param <= 1.0);
 
       coef_faces[0][f] = coefs[0] * param + coefs[1] * (1. - param);
     }
@@ -235,7 +239,7 @@ UpwindTotalFlux::UpdateDerivatives(const Teuchos::Ptr<State>& S,
   for (unsigned int f=0; f!=nfaces_owned; ++f) {
     int uw = upwind_cell[f];
     int dw = downwind_cell[f];
-    ASSERT(!((uw == -1) && (dw == -1)));
+    AMANZI_ASSERT(!((uw == -1) && (dw == -1)));
 
     AmanziMesh::Entity_ID_List cells;
     mesh->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);

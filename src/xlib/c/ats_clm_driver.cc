@@ -98,7 +98,7 @@ int32_t ATSCLMDriver::Initialize(const MPI_Comm& mpi_comm,
 
   // Read environment variable for XML Input File.
   char * xmlfile = getenv("ATS_XML_INPUT");
-  ASSERT(xmlfile != NULL);
+  AMANZI_ASSERT(xmlfile != NULL);
 
   std::cout << "Initing ATS with " << num_cols << " columns" << std::endl;
 
@@ -112,7 +112,7 @@ int32_t ATSCLMDriver::Initialize(const MPI_Comm& mpi_comm,
 
   Teuchos::ParameterList params_copy;
   bool native = input_parameter_list.get<bool>("Native Unstructured Input",false);
-  ASSERT(native);
+  AMANZI_ASSERT(native);
   params_copy = input_parameter_list;
 
   if(out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_LOW,true)) {
@@ -239,7 +239,7 @@ int32_t ATSCLMDriver::Initialize(const MPI_Comm& mpi_comm,
               << "Neither Read nor Generate options specified for mesh" << std::endl;
     throw std::exception();
   }
-  ASSERT(!mesh_.is_null());
+  AMANZI_ASSERT(!mesh_.is_null());
 
   // mesh verification
   bool expert_params_specified = mesh_plist.isSublist("Expert");
@@ -323,8 +323,8 @@ int32_t ATSCLMDriver::Initialize(const MPI_Comm& mpi_comm,
   if (surface_mesh != Teuchos::null) S_->RegisterMesh("surface", surface_mesh);
 
   // set up primary vars
-  ASSERT(!S_->FEList().isSublist("surface_total_energy_source"));
-  ASSERT(!S_->FEList().isSublist("surface_mass_source"));
+  AMANZI_ASSERT(!S_->FEList().isSublist("surface_total_energy_source"));
+  AMANZI_ASSERT(!S_->FEList().isSublist("surface_mass_source"));
   S_->FEList().sublist("surface_total_energy_source").set("field evaluator type", "primary variable");
   S_->FEList().sublist("surface_mass_source").set("field evaluator type", "primary variable");
 
@@ -347,7 +347,7 @@ int32_t ATSCLMDriver::Initialize(const MPI_Comm& mpi_comm,
 
   // -- identity map for surface
   ncells_surf_ = surface_mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
-  ASSERT(ncells_surf_ == num_cols);
+  AMANZI_ASSERT(ncells_surf_ == num_cols);
   surf_clm_map_ = Teuchos::rcp(new Epetra_Map(-1, ncells_surf_, 0, *comm));
 
   const Epetra_Map& ats_col_map = surface_mesh->cell_map(false);
@@ -355,7 +355,7 @@ int32_t ATSCLMDriver::Initialize(const MPI_Comm& mpi_comm,
 
   // -- subsurface map -- top down
   ncells_sub_ = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
-  ASSERT(ncells_sub_ == ncells_surf_ * 15); // MAGIC NUMBER OF CELLS PER COL IN CLM
+  AMANZI_ASSERT(ncells_sub_ == ncells_surf_ * 15); // MAGIC NUMBER OF CELLS PER COL IN CLM
   sub_clm_map_ = Teuchos::rcp(new Epetra_Map(-1, ncells_sub_, 0, *comm));
 
   // Set up the subsurface gids -- GIDs in sub_clm_map
@@ -369,7 +369,7 @@ int32_t ATSCLMDriver::Initialize(const MPI_Comm& mpi_comm,
 
     // get the LID of the corresponding GID on CLM (assumes map is local permutation, but does not assume identity map)
     int clm_col_lid = surf_clm_map_->LID(ats_col_gid);
-    ASSERT(clm_col_lid >= 0);
+    AMANZI_ASSERT(clm_col_lid >= 0);
 
     // get the face on the subsurf mesh
     AmanziMesh::Entity_ID f =
@@ -378,7 +378,7 @@ int32_t ATSCLMDriver::Initialize(const MPI_Comm& mpi_comm,
     // get the cell within the face
     AmanziMesh::Entity_ID_List cells;
     mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
-    ASSERT(cells.size() == 1);
+    AMANZI_ASSERT(cells.size() == 1);
     AmanziMesh::Entity_ID c = cells[0];
 
     // loop over cells_below() to find the column.  NOTE: CLM uses horizontal
@@ -391,11 +391,11 @@ int32_t ATSCLMDriver::Initialize(const MPI_Comm& mpi_comm,
       c = mesh_->cell_get_cell_below(c);
       ncells_in_col++;
     }
-    ASSERT(ncells_in_col == 15);
+    AMANZI_ASSERT(ncells_in_col == 15);
   }
 
   // Create the imports
-  ASSERT(*std::min_element(gids_sub.begin(), gids_sub.end()) >= 0);
+  AMANZI_ASSERT(*std::min_element(gids_sub.begin(), gids_sub.end()) >= 0);
   Epetra_Map ats_cell_gids(-1, ncells_sub_, &gids_sub[0], 0, *comm);
   sub_importer_ = Teuchos::rcp(new Epetra_Import(ats_cell_gids, *sub_clm_map_));
 
@@ -423,7 +423,7 @@ int32_t ATSCLMDriver::SetData_(std::string key, double* data, int length) {
   // Call the importer to map to state's vector
   Epetra_MultiVector& dat_v = *dat->ViewComponent("cell",false);
   int ierr = dat_v.Import(dat_clm, *sub_importer_, Insert);
-  ASSERT(!ierr);
+  AMANZI_ASSERT(!ierr);
 
   std::cout << "SetData (ATS):" << std::endl;
   std::cout << "data[0] = " << dat_v[0][0] << std::endl;
@@ -446,7 +446,7 @@ int32_t ATSCLMDriver::GetData_(std::string key, double* data, int length) {
   // Call the importer to map to state's vector
   Epetra_MultiVector& dat_v = *dat->ViewComponent("cell",false);
   int ierr = dat_v.Export(dat_clm, *sub_importer_, Insert);
-  ASSERT(!ierr);
+  AMANZI_ASSERT(!ierr);
   return ierr;
 }
 
@@ -467,7 +467,7 @@ int32_t ATSCLMDriver::SetSurfaceData_(std::string key, double* data, int length)
   // Call the importer to map to state's vector
   Epetra_MultiVector& dat_v = *dat->ViewComponent("cell",false);
   int ierr = dat_v.Import(dat_clm, *surf_importer_, Insert);
-  ASSERT(!ierr);
+  AMANZI_ASSERT(!ierr);
 
   std::cout << "Surf data in = " << std::endl;
   dat_clm.Print(std::cout);
@@ -492,7 +492,7 @@ int32_t ATSCLMDriver::GetSurfaceData_(std::string key, double* data, int length)
   // Call the importer to map to state's vector
   Epetra_MultiVector& dat_v = *dat->ViewComponent("cell",false);
   int ierr = dat_v.Export(dat_clm, *surf_importer_, Insert);
-  ASSERT(!ierr);
+  AMANZI_ASSERT(!ierr);
   return ierr;
 }
 
@@ -555,8 +555,8 @@ int32_t ATSCLMDriver::GetCLMData(double* T, double* sl, double* si) {
 
 
 int32_t ATSCLMDriver::Advance(double dt, bool force_vis) {
-  ASSERT(coord_setup_);
-  ASSERT(coord_init_);
+  AMANZI_ASSERT(coord_setup_);
+  AMANZI_ASSERT(coord_init_);
 
   int ierr(0);
 

@@ -40,8 +40,8 @@ void OverlandPressureFlow::Functional( double t_old,
   // pointer-copy temperature into state and update any auxilary data
   Solution_to_State(*u_new, S_next_);
 
-  //--  ASSERT(std::abs(S_inter_->time() - t_old) < 1.e-4*h);
-  //--ASSERT(std::abs(S_next_->time() - t_new) < 1.e-4*h);
+  //--  AMANZI_ASSERT(std::abs(S_inter_->time() - t_old) < 1.e-4*h);
+  //--AMANZI_ASSERT(std::abs(S_next_->time() - t_new) < 1.e-4*h);
 
 
   Teuchos::RCP<CompositeVector> u = u_new->Data();
@@ -207,7 +207,7 @@ void OverlandPressureFlow::UpdatePreconditioner(double t, Teuchos::RCP<const Tre
     iter_ = 0;
     iter_counter_time_ = t;
   }
-  ASSERT(std::abs(S_next_->time() - t) <= 1.e-4*t);
+  AMANZI_ASSERT(std::abs(S_next_->time() - t) <= 1.e-4*t);
   PK_PhysicalBDF_Default::Solution_to_State(*up, S_next_);
 
   // calculating the operator is done in 3 steps:
@@ -371,7 +371,7 @@ void OverlandPressureFlow::UpdatePreconditioner(double t, Teuchos::RCP<const Tre
 
   if (precon_used_) {
     preconditioner_->AssembleMatrix();
-    preconditioner_->InitPreconditioner(plist_->sublist("preconditioner"));
+    preconditioner_->UpdatePreconditioner();
   }      
   
   /*
@@ -457,7 +457,7 @@ double OverlandPressureFlow::ErrorNorm(Teuchos::RCP<const TreeVector> u,
     } else {
       double norm;
       dvec_v.Norm2(&norm);
-      ASSERT(norm < 1.e-15);
+      AMANZI_ASSERT(norm < 1.e-15);
     }
     
     // Write out Inf norms too.
@@ -472,7 +472,7 @@ double OverlandPressureFlow::ErrorNorm(Teuchos::RCP<const TreeVector> u,
 
       int ierr;
       ierr = MPI_Allreduce(&l_err, &err, 1, MPI_DOUBLE_INT, MPI_MAXLOC, mesh_->get_comm()->Comm());
-      ASSERT(!ierr);
+      AMANZI_ASSERT(!ierr);
       *vo_->os() << "  ENorm (" << *comp << ") = " << err.value << "[" << err.gid << "] (" << infnorm << ")" << std::endl;
     }
     
@@ -483,7 +483,7 @@ double OverlandPressureFlow::ErrorNorm(Teuchos::RCP<const TreeVector> u,
 
   int ierr;
   ierr = MPI_Allreduce(&enorm_val_l, &enorm_val, 1, MPI_DOUBLE, MPI_MAX, mesh_->get_comm()->Comm());
-  ASSERT(!ierr);
+  AMANZI_ASSERT(!ierr);
   return enorm_val;
 }
   

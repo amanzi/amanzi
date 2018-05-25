@@ -82,7 +82,7 @@ void OverlandSourceFromSubsurfaceFluxEvaluator::IdentifyFaceAndDirection_(
     // -- get the cell
     AmanziMesh::Entity_ID_List cells;
     subsurface->face_get_cells(domain_face, AmanziMesh::Parallel_type::OWNED, &cells);
-    ASSERT(cells.size() == 1);
+    AMANZI_ASSERT(cells.size() == 1);
 
     // -- Get directions
     AmanziMesh::Entity_ID_List faces;
@@ -114,7 +114,7 @@ void OverlandSourceFromSubsurfaceFluxEvaluator::EvaluateField_(const Teuchos::Pt
     for (int c=0; c!=ncells; ++c) {
       AmanziMesh::Entity_ID_List cells;
       subsurface->face_get_cells((*face_and_dirs_)[c].first, AmanziMesh::Parallel_type::OWNED, &cells);
-      ASSERT(cells.size() == 1);
+      AMANZI_ASSERT(cells.size() == 1);
 
       res_v[0][c] = flux[0][(*face_and_dirs_)[c].first] * (*face_and_dirs_)[c].second
           / dens[0][cells[0]];
@@ -124,7 +124,7 @@ void OverlandSourceFromSubsurfaceFluxEvaluator::EvaluateField_(const Teuchos::Pt
     for (int c=0; c!=ncells; ++c) {
       AmanziMesh::Entity_ID_List cells;
       subsurface->face_get_cells((*face_and_dirs_)[c].first, AmanziMesh::Parallel_type::OWNED, &cells);
-      ASSERT(cells.size() == 1);
+      AMANZI_ASSERT(cells.size() == 1);
 
       res_v[0][c] = flux[0][(*face_and_dirs_)[c].first] * (*face_and_dirs_)[c].second;
     }
@@ -133,7 +133,7 @@ void OverlandSourceFromSubsurfaceFluxEvaluator::EvaluateField_(const Teuchos::Pt
 
 void OverlandSourceFromSubsurfaceFluxEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>& S,
         Key wrt_key, const Teuchos::Ptr<CompositeVector>& result) {
-  ASSERT(0);
+  AMANZI_ASSERT(0);
   // this would require differentiating flux wrt pressure, which we
   // don't do for now.
 }

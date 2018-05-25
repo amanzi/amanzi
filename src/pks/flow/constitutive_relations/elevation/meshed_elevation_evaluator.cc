@@ -58,7 +58,7 @@ void MeshedElevationEvaluator::EvaluateElevationAndSlope_(const Teuchos::Ptr<Sta
     // Set the elevation on cells by getting the corresponding face and its
     // centroid.
     int ncells = elev_c.MyLength();
-    ASSERT(ncells == 1);
+    AMANZI_ASSERT(ncells == 1);
 
     // Note that a surface cell is a volume mesh's face
     AmanziMesh::Entity_ID domain_face;

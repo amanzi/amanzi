@@ -70,7 +70,7 @@ bool OperatorSplitMPC::AdvanceStep(double t_old, double t_new, bool reinit) {
 
   // Advance the star system 
   bool fail = false;
-  ASSERT(sub_pks_.size() == 2);
+  AMANZI_ASSERT(sub_pks_.size() == 2);
   fail = sub_pks_[0]->AdvanceStep(t_old, t_new, reinit);
   if (fail) return fail;
 

@@ -27,7 +27,7 @@ bool PredictorDelegateBCFlux::ModifyPredictor(const Teuchos::Ptr<CompositeVector
       // only do if below saturated
       if (lambda < 101325.) {
         int ierr = CalculateLambdaToms_(f, u, lambda);
-        ASSERT(!ierr);
+        AMANZI_ASSERT(!ierr);
         if (!ierr) u_f[0][f] = lambda;
       }
     }
@@ -42,7 +42,7 @@ PredictorDelegateBCFlux::CreateFunctor_(int f,
   // inner cell
   AmanziMesh::Entity_ID_List cells;
   mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
-  ASSERT(cells.size() == 1);
+  AMANZI_ASSERT(cells.size() == 1);
   int c = cells[0];
 
   // that cell's faces
@@ -52,7 +52,7 @@ PredictorDelegateBCFlux::CreateFunctor_(int f,
 
   // index within that cell's faces
   unsigned int n = std::find(faces.begin(), faces.end(), f) - faces.begin();
-  ASSERT(n != faces.size());
+  AMANZI_ASSERT(n != faces.size());
 
   Teuchos::RCP< std::vector<double> > Aff = Teuchos::rcp(new std::vector<double>());
   Aff->resize(faces.size());
@@ -157,7 +157,7 @@ int PredictorDelegateBCFlux::CalculateLambdaToms_(int f,
 
   AmanziMesh::Entity_ID_List cells;
   mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
-  ASSERT(cells.size() == 1);
+  AMANZI_ASSERT(cells.size() == 1);
   int c = cells[0];
 
   std::cout << "      with k_rel = " << wrms_->second[(*wrms_->first)[c]]->k_relative(wrms_->second[(*wrms_->first)[c]]->saturation(101325. - lambda)) << std::endl;

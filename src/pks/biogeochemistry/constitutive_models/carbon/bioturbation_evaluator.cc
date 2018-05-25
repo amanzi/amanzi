@@ -101,7 +101,7 @@ void BioturbationEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
 void BioturbationEvaluator::EvaluateFieldPartialDerivative_(
     const Teuchos::Ptr<State>& S,
     Key wrt_key, const Teuchos::Ptr<CompositeVector>& result) {
-  ASSERT(0);
+  AMANZI_ASSERT(0);
 }
 
 

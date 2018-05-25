@@ -22,18 +22,18 @@ WRMFPDPermafrostModel::saturations(double pc_liq, double pc_ice,
     sats[0] = 0.; // gas
     sats[1] = wrm_->saturation(pc_ice); // liquid
     sats[2] = 1.0 - sats[1];  // ice
-    ASSERT(sats[2] >= 0.);
+    AMANZI_ASSERT(sats[2] >= 0.);
   } else if (pc_ice <= pc_liq) {
     sats[2] = 0.; // ice
     sats[1] = wrm_->saturation(pc_liq);  // liquid
     sats[0] = 1.0 - sats[1];  // gas
-    ASSERT(sats[0] >= 0.);
+    AMANZI_ASSERT(sats[0] >= 0.);
   } else {
     sats[1] = wrm_->saturation(pc_ice);
     sats[2] = 1. - sats[1] / wrm_->saturation(pc_liq);
     sats[0] = 1. - sats[1] - sats[2];
-    ASSERT(sats[2] >= 0.);
-    ASSERT(sats[0] >= 0.);
+    AMANZI_ASSERT(sats[2] >= 0.);
+    AMANZI_ASSERT(sats[0] >= 0.);
   }
 }
 

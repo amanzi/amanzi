@@ -17,7 +17,7 @@ WRMEvaluator::WRMEvaluator(Teuchos::ParameterList& plist) :
     SecondaryVariablesFieldEvaluator(plist),
     calc_other_sat_(true) {
 
-  ASSERT(plist_.isSublist("WRM parameters"));
+  AMANZI_ASSERT(plist_.isSublist("WRM parameters"));
   Teuchos::ParameterList wrm_plist = plist_.sublist("WRM parameters");
   wrms_ = createWRMPartition(wrm_plist);
 
@@ -109,7 +109,7 @@ void WRMEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
       // given a boundary face, we need the internal cell to choose the right WRM
       AmanziMesh::Entity_ID f = face_map.LID(vandelay_map.GID(bf));
       mesh->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
-      ASSERT(cells.size() == 1);
+      AMANZI_ASSERT(cells.size() == 1);
 
       int index = (*wrms_->first)[cells[0]];
       sat_bf[0][bf] = wrms_->second[index]->saturation(pres_bf[0][bf]);
@@ -131,7 +131,7 @@ void WRMEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
 
         // Currently this is not ever the case.  If this error shows up, it
         // can easily be implemented. -- etc
-        ASSERT(0);
+        AMANZI_ASSERT(0);
       }
     }
   }
@@ -146,7 +146,7 @@ void WRMEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>& S,
     wrms_->first->Verify();
   }
 
-  ASSERT(wrt_key == cap_pres_key_);
+  AMANZI_ASSERT(wrt_key == cap_pres_key_);
 
   Epetra_MultiVector& sat_c = *results[0]->ViewComponent("cell",false);
   const Epetra_MultiVector& pres_c = *S->GetFieldData(cap_pres_key_)
@@ -176,7 +176,7 @@ void WRMEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>& S,
       // given a boundary face, we need the internal cell to choose the right WRM
       AmanziMesh::Entity_ID f = face_map.LID(vandelay_map.GID(bf));
       mesh->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
-      ASSERT(cells.size() == 1);
+      AMANZI_ASSERT(cells.size() == 1);
 
       int index = (*wrms_->first)[cells[0]];
       sat_bf[0][bf] = wrms_->second[index]->d_saturation(pres_bf[0][bf]);
@@ -197,7 +197,7 @@ void WRMEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>& S,
 
         // Currently this is not ever the case.  If this error shows up, it
         // can easily be implemented. -- etc
-        ASSERT(0);
+        AMANZI_ASSERT(0);
       }
     }
   }

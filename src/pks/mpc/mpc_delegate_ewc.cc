@@ -60,7 +60,7 @@ void MPCDelegateEWC::setup(const Teuchos::Ptr<State>& S) {
     precon_type_ = PRECON_NONE;
   } else if (precon_string == "ewc") {
     precon_type_ = PRECON_EWC;
-    ASSERT(0);
+    AMANZI_ASSERT(0);
   } else if (precon_string == "smart ewc") {
     precon_type_ = PRECON_SMART_EWC;
   } else {
@@ -76,7 +76,7 @@ void MPCDelegateEWC::setup(const Teuchos::Ptr<State>& S) {
     predictor_type_ = PREDICTOR_NONE;
   } else if (predictor_string == "ewc") {
     predictor_type_ = PREDICTOR_EWC;
-    ASSERT(0);
+    AMANZI_ASSERT(0);
   } else if (predictor_string == "smart ewc") {
     predictor_type_ = PREDICTOR_SMART_EWC;
   } else {
@@ -166,7 +166,7 @@ bool MPCDelegateEWC::ModifyPredictor(double h, Teuchos::RCP<TreeVector> up) {
 
   if (predictor_type_ == PREDICTOR_EWC) {
     if (dt_prev > 0.) {
-      ASSERT(0);
+      AMANZI_ASSERT(0);
       //      modified = modify_predictor_ewc_(h,up);
     }
   } else if (predictor_type_ == PREDICTOR_SMART_EWC) {

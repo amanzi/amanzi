@@ -53,8 +53,8 @@ TEST(PLANT_CONSTRUCTION) {
   std::vector<double> dz = { 0.1, 0.1, 0.1, 0.1, 0.1, 0.1 };
   std::vector<double> rheiz_outer_radius(dz.size(), 0.2);
   
-  ASSERT(rooting_fraction.size() == nsoil);
-  ASSERT(dz.size() == nsoil);
+  AMANZI_ASSERT(rooting_fraction.size() == nsoil);
+  AMANZI_ASSERT(dz.size() == nsoil);
   AmanziGeometry::Point centroid(0.,0.,0.);
   AmanziGeometry::Point displacement(std::sqrt(surface_area/PI)/2.,0.,0.);
   
@@ -128,8 +128,8 @@ TEST(PLANT_CONSTRUCTION_NO_SHELL) {
   std::vector<double> dz = { 0.1, 0.1, 0.1, 0.1, 0.1, 0.1 };
   std::vector<double> rheiz_outer_radius;
 
-  ASSERT(rooting_fraction.size() == nsoil);
-  ASSERT(dz.size() == nsoil);
+  AMANZI_ASSERT(rooting_fraction.size() == nsoil);
+  AMANZI_ASSERT(dz.size() == nsoil);
   AmanziGeometry::Point centroid(0.,0.,0.);
   AmanziGeometry::Point displacement(std::sqrt(surface_area/PI)/2.,0.,0.);
   
@@ -335,7 +335,7 @@ TEST(COLUMN_CONSTRUCTION_TREE_SHRUB_HILLSLOPE) {
       for (int i=0; i!=faces_of_col.size(); ++i) {
         auto fc = subsurface_mesh->face_centroid(faces_of_col[i]);
         double depth = scc[2] - fc[2];
-        ASSERT(depth >= 0.);
+        AMANZI_ASSERT(depth >= 0.);
 
         cum_rooting_frac[i] = i_pft == 0 ? (depth > 3 ? 1 : depth/3) : (depth > 1 ? 1 : depth);
       }

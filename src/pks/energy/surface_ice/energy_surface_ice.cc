@@ -84,7 +84,7 @@ void EnergySurfaceIce::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
       plist_->get<bool>("coupled to subsurface via temperature", false);
   coupled_to_subsurface_via_flux_ =
       plist_->get<bool>("coupled to subsurface via flux", false);
-  ASSERT(! (coupled_to_subsurface_via_flux_ && coupled_to_subsurface_via_temp_));
+  AMANZI_ASSERT(! (coupled_to_subsurface_via_flux_ && coupled_to_subsurface_via_temp_));
 
   if (coupled_to_subsurface_via_temp_ || coupled_to_subsurface_via_flux_ ) {
     // -- ensure mass source from subsurface exists
@@ -198,7 +198,7 @@ void EnergySurfaceIce::Initialize(const Teuchos::Ptr<State>& S) {
 
   Teuchos::RCP<Relations::EOSEvaluator> eos_eval =
     Teuchos::rcp_dynamic_cast<Relations::EOSEvaluator>(eos_fe);
-  ASSERT(eos_eval != Teuchos::null);
+  AMANZI_ASSERT(eos_eval != Teuchos::null);
   eos_liquid_ = eos_eval->get_EOS();
 
   Teuchos::RCP<FieldEvaluator> iem_fe =
@@ -207,7 +207,7 @@ void EnergySurfaceIce::Initialize(const Teuchos::Ptr<State>& S) {
   Teuchos::RCP<Energy::IEMEvaluator> iem_eval =
     Teuchos::rcp_dynamic_cast<Energy::IEMEvaluator>(iem_fe);
 
-  ASSERT(iem_eval != Teuchos::null);
+  AMANZI_ASSERT(iem_eval != Teuchos::null);
   iem_liquid_ = iem_eval->get_IEM();
 }
 
@@ -234,7 +234,7 @@ void EnergySurfaceIce::Initialize(const Teuchos::Ptr<State>& S) {
 //   for (unsigned int f=0; f!=nfaces; ++f) {
 //     mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
 //     if (bc_markers_adv_[f] == Operators::OPERATOR_BC_DIRICHLET) {
-//       ASSERT(bc_markers_[f] == Operators::OPERATOR_BC_DIRICHLET); // Dirichlet data -- does not yet handle split fluxes here
+//       AMANZI_ASSERT(bc_markers_[f] == Operators::OPERATOR_BC_DIRICHLET); // Dirichlet data -- does not yet handle split fluxes here
 //       double T = bc_values_[f];
 //       double p = pres_c[0][cells[0]];
 //       double dens = eos_liquid_->MolarDensity(T,p);
@@ -302,7 +302,7 @@ void EnergySurfaceIce::AddSources_(const Teuchos::Ptr<State>& S,
         AmanziMesh::Entity_ID f = mesh_->entity_get_parent(AmanziMesh::CELL, c);
         S->GetMesh(domain_ss)->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
 
-        ASSERT(cells.size() == 1);
+        AMANZI_ASSERT(cells.size() == 1);
         g_c[0][c] -= flux * enth_subsurf[0][cells[0]];
         //        std::cout << "source = " << flux << " * " << enth_subsurf[0][cells[0]] << " = " << -flux * enth_subsurf[0][cells[0]] << std::endl;
         //        std::cout << "OR source = " << flux << " * " << enth_surf[0][c] << " = " << -flux * enth_surf[0][c] << std::endl;

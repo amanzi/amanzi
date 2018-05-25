@@ -53,7 +53,7 @@ void PK_Physical_Default::Setup(const Teuchos::Ptr<State>& S) {
   S->RequireFieldEvaluator(key_);
   Teuchos::RCP<FieldEvaluator> fm = S->GetFieldEvaluator(key_);
   solution_evaluator_ = Teuchos::rcp_dynamic_cast<PrimaryVariableFieldEvaluator>(fm);
-  ASSERT(solution_evaluator_ != Teuchos::null);
+  AMANZI_ASSERT(solution_evaluator_ != Teuchos::null);
 };
 
 
@@ -71,7 +71,7 @@ void PK_Physical_Default::State_to_Solution(const Teuchos::RCP<State>& S,
 // -----------------------------------------------------------------------------
 void PK_Physical_Default::Solution_to_State(TreeVector& solution,
         const Teuchos::RCP<State>& S) {
-  ASSERT(solution.Data() == S->GetFieldData(key_));
+  AMANZI_ASSERT(solution.Data() == S->GetFieldData(key_));
   //  S->SetData(key_, name_, solution->Data());
   //  solution_evaluator_->SetFieldAsChanged();
 };
@@ -79,7 +79,7 @@ void PK_Physical_Default::Solution_to_State(TreeVector& solution,
 
 void PK_Physical_Default::Solution_to_State(const TreeVector& solution,
         const Teuchos::RCP<State>& S) {
-  ASSERT(solution.Data() == S->GetFieldData(key_));
+  AMANZI_ASSERT(solution.Data() == S->GetFieldData(key_));
   //  TreeVector* soln_nc_ptr = const_cast<TreeVector*>(&solution);
   //  Solution_to_State(*soln_nc_ptr, S);
 };
@@ -104,7 +104,7 @@ void PK_Physical_Default::set_states(const Teuchos::RCP<const State>& S,
   Teuchos::RCP<FieldEvaluator> fm = S_next->GetFieldEvaluator(key_);
 #if ENABLE_DBC
   solution_evaluator_ = Teuchos::rcp_dynamic_cast<PrimaryVariableFieldEvaluator>(fm);
-  ASSERT(solution_evaluator_ != Teuchos::null);
+  AMANZI_ASSERT(solution_evaluator_ != Teuchos::null);
 #else
   solution_evaluator_ = Teuchos::rcp_static_cast<PrimaryVariableFieldEvaluator>(fm);
 #endif
@@ -149,7 +149,7 @@ void PK_Physical_Default::ChangedSolutionPK(const Teuchos::Ptr<State>& S) {
 
   Teuchos::RCP<PrimaryVariableFieldEvaluator> solution_evaluator =
     Teuchos::rcp_dynamic_cast<PrimaryVariableFieldEvaluator>(fm);
-  ASSERT(solution_evaluator != Teuchos::null);
+  AMANZI_ASSERT(solution_evaluator != Teuchos::null);
   solution_evaluator->SetFieldAsChanged(S);
 }
 

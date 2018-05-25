@@ -167,6 +167,11 @@ protected:
 
   virtual void UpdateVelocity_(const Teuchos::Ptr<State>& S);
 
+  virtual int BoundaryFaceGetCell(int f) const;
+  virtual double BoundaryFaceValue(int f, const CompositeVector& u);
+  // virtual double DeriveBoundaryFaceValue
+  //        (int f, const CompositeVector& u, Teuchos::RCP<const WRM> wrm_model);
+
   // physical methods
   // -- diffusion term
   virtual void ApplyDiffusion_(const Teuchos::Ptr<State>& S,
@@ -244,6 +249,8 @@ protected:
   // coupling terms
   bool coupled_to_surface_via_head_; // surface-subsurface Dirichlet coupler
   bool coupled_to_surface_via_flux_; // surface-subsurface Neumann coupler
+
+  bool compute_boundary_values_;
 
   // -- water coupler coupling parameters
   double surface_head_cutoff_;

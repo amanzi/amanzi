@@ -57,7 +57,7 @@ void MatrixMFD_Permafrost::ComputeSchurComplement() {
   Epetra_Vector scaling(P2f2f_->RowMap());
   Epetra_Vector App_diag(App.RowMap());
   ierr = App.ExtractDiagonalCopy(App_diag);
-  ASSERT(!ierr);
+  AMANZI_ASSERT(!ierr);
   scaling.PutScalar(1.);
 
   int ncells_surf = surface_mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
@@ -69,7 +69,7 @@ void MatrixMFD_Permafrost::ComputeSchurComplement() {
     }
   }
   ierr = P2f2f_->LeftScale(scaling);
-  ASSERT(!ierr);
+  AMANZI_ASSERT(!ierr);
 
   // Now, add in the contributions from App
   // Loop over surface cells (subsurface faces)
@@ -78,15 +78,15 @@ void MatrixMFD_Permafrost::ComputeSchurComplement() {
     AmanziMesh::Entity_ID sc_global = surf_cmap_wghost.GID(sc);
 
     ierr = App.ExtractGlobalRowCopy(sc_global, 9, entriesA, valuesA, indicesA);
-    ASSERT(!ierr);
+    AMANZI_ASSERT(!ierr);
     ierr = Bpp.ExtractGlobalRowCopy(sc_global, 9, entriesB, valuesB, indicesB);
-    ASSERT(!ierr);
+    AMANZI_ASSERT(!ierr);
 
     // ensure consistency of the sparsity structure, this can likely be
     // removed eventually.
-    ASSERT(entriesA == entriesB);
+    AMANZI_ASSERT(entriesA == entriesB);
     for (int m=0; m!=entriesA; ++m) {
-      ASSERT(indicesA[m] == indicesB[m]);
+      AMANZI_ASSERT(indicesA[m] == indicesB[m]);
     }
 
     // Convert local cell numbers to domain's local face numbers
@@ -117,7 +117,7 @@ void MatrixMFD_Permafrost::ComputeSchurComplement() {
 
     // Add the entries
     ierr = P2f2f_->BeginSumIntoGlobalValues(frow_global, entriesA, indicesA);
-    ASSERT(!ierr);
+    AMANZI_ASSERT(!ierr);
 
     for (int m=0; m!=entriesA; ++m) {
       // if (indicesA[m] == 500) {
@@ -135,15 +135,15 @@ void MatrixMFD_Permafrost::ComputeSchurComplement() {
       // }
 
       ierr = P2f2f_->SubmitBlockEntry(block.A(), block.LDA(), block.M(), block.N());
-      ASSERT(!ierr);
+      AMANZI_ASSERT(!ierr);
     }
 
     ierr = P2f2f_->EndSubmitEntries();
-    ASSERT(!ierr);
+    AMANZI_ASSERT(!ierr);
   }
 
   ierr = P2f2f_->GlobalAssemble();
-  ASSERT(!ierr);
+  AMANZI_ASSERT(!ierr);
 
   // DEBUG dump
   // std::stringstream filename_s;

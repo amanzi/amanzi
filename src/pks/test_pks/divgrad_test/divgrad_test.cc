@@ -106,7 +106,7 @@ void DivGradTest::initialize(const Teuchos::Ptr<State>& S) {
   } else {
     std::cout << "Passed test, which is BAD!" << std::endl;
   }
-  ASSERT(fail);
+  AMANZI_ASSERT(fail);
 
   matrix_->UpdateConsistentFaceConstraints(soln.ptr());
 
@@ -117,7 +117,7 @@ void DivGradTest::initialize(const Teuchos::Ptr<State>& S) {
   } else {
     std::cout << "Passed test, which is good" << std::endl;
   }
-  ASSERT(!fail);
+  AMANZI_ASSERT(!fail);
 };
 
 

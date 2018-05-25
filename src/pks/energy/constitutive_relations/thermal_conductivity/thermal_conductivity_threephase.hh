@@ -26,19 +26,19 @@ public:
 
   virtual double ThermalConductivity(double porosity, double sat_liq, double sat_ice, double temp) = 0;
   virtual double DThermalConductivity_DPorosity(double porosity, double sat_liq, double sat_ice, double temp) {
-    ASSERT(false);
+    AMANZI_ASSERT(false);
     return 0.;
   }
   virtual double DThermalConductivity_DSaturationLiquid(double porosity, double sat_liq, double sat_ice, double temp) {
-    ASSERT(false);
+    AMANZI_ASSERT(false);
     return 0.;
   }
   virtual double DThermalConductivity_DSaturationIce(double porosity, double sat_liq, double sat_ice, double temp) {
-    ASSERT(false);
+    AMANZI_ASSERT(false);
     return 0.;
   }
   virtual double DThermalConductivity_DTemperature(double porosity, double sat_liq, double sat_ice, double temp) {
-    ASSERT(false);
+    AMANZI_ASSERT(false);
     return 0.;
   }
 };

@@ -416,9 +416,9 @@ void MatrixMFD::SymbolicAssembleGlobalMatrices() {
 
   // assemble the graphs
   int ierr = cf_graph->FillComplete(fmap, cmap);
-  ASSERT(!ierr);
+  AMANZI_ASSERT(!ierr);
   ierr = ff_graph->GlobalAssemble();  // Symbolic graph is complete.
-  ASSERT(!ierr);
+  AMANZI_ASSERT(!ierr);
 
   // allocate the matrices
   CreateMatrices_(*cf_graph, *ff_graph);
@@ -486,11 +486,11 @@ void MatrixMFD::CreateMatrices_(const Epetra_CrsGraph& cf_graph,
  ****************************************************************** */
 int MatrixMFD::Apply(const CompositeVector& X, CompositeVector& Y) const {
   if (!Y.Ghosted()) {
-    ASSERT(0);
+    AMANZI_ASSERT(0);
     return 1;
   }
   if (!X.Ghosted()) {
-    ASSERT(0);
+    AMANZI_ASSERT(0);
     return 1;
   }
 
@@ -556,7 +556,7 @@ int MatrixMFD::ApplyInverse(const CompositeVector& X, CompositeVector& Y) const 
   int ierr;
   Epetra_MultiVector& Tc = *T.ViewComponent("cell", false);
   ierr  = Tc.ReciprocalMultiply(1.0, *Acc_, *X.ViewComponent("cell", false), 0.0);
-  ASSERT(!ierr);
+  AMANZI_ASSERT(!ierr);
 
   ApplyAfc(T, T, 0.0);
   Epetra_MultiVector& Tf = *T.ViewComponent("face", false);
@@ -564,7 +564,7 @@ int MatrixMFD::ApplyInverse(const CompositeVector& X, CompositeVector& Y) const 
 
   // Solve the Schur complement system Sff_ * Yf = Tf.
   ierr = S_pc_->ApplyInverse(Tf, *Y.ViewComponent("face",false));
-  ASSERT(!ierr);
+  AMANZI_ASSERT(!ierr);
 
   // BACKWARD SUBSTITUTION:  Yc = inv(Acc_) (Xc - Acf_ Yf)
   ApplyAcf(Y, T, 0.0);
@@ -687,7 +687,7 @@ void MatrixMFD::DeriveFlux(const CompositeVector& solution,
 
   // ensure post-condition - we got them all
   for (int f=0; f!=nfaces_owned; ++f) {
-    ASSERT(done[f]);
+    AMANZI_ASSERT(done[f]);
   }
 }
 
@@ -804,7 +804,7 @@ void MatrixMFD::UpdateConsistentFaceCorrection(const CompositeVector& u,
   Aff_op_->Update(Aff_);
   int ierr = Aff_solver_->ApplyInverse(*(*work->ViewComponent("face",false))(0), 
 				       *(*Pu->ViewComponent("face",false))(0));
-  ASSERT(!ierr);
+  AMANZI_ASSERT(!ierr);
 }
 
 
@@ -867,7 +867,7 @@ int MatrixMFD::ApplyAcf(const CompositeVector& X, CompositeVector& Y,
 
 int MatrixMFD::ApplyAcf_(const CompositeVector& X, Epetra_MultiVector& Y, double scalar) const {
   if (!X.Ghosted()) {
-    ASSERT(0);
+    AMANZI_ASSERT(0);
     return 1;
   }
   X.ScatterMasterToGhosted("face", true); // force scatter for now... --etc
@@ -913,7 +913,7 @@ int MatrixMFD::ApplyAfc(const CompositeVector& X, CompositeVector& Y,
 
 int MatrixMFD::ApplyAfc_(const Epetra_MultiVector& X, CompositeVector& Y, double scalar) const {
   if (!Y.Ghosted()) {
-    ASSERT(0);
+    AMANZI_ASSERT(0);
     return 1;
   }
   
@@ -992,7 +992,7 @@ void MatrixMFD::AssembleRHS_() const {
  * assemble them into four global matrix Aff.
  ****************************************************************** */
 void MatrixMFD::AssembleAff_() const {
-  ASSERT(Aff_.get()); // precondition: matrices have been created
+  AMANZI_ASSERT(Aff_.get()); // precondition: matrices have been created
 
   // reinitialize to zero if adding
   Aff_->PutScalar(0.0);

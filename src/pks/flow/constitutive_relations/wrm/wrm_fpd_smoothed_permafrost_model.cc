@@ -18,7 +18,7 @@ WRMFPDSmoothedPermafrostModel::WRMFPDSmoothedPermafrostModel(Teuchos::ParameterL
 {
   if (plist.isParameter("smoothing length [Pa]")) {
     dp_ = plist.get<double>("smoothing length [Pa]");
-    ASSERT(dp_ > 0.);
+    AMANZI_ASSERT(dp_ > 0.);
   } else {
     double sigma_ice_liq = plist.get<double>("interfacial tension ice-water", 33.1);
     double sigma_gas_liq = plist.get<double>("interfacial tension air-water", 72.7);
@@ -27,7 +27,7 @@ WRMFPDSmoothedPermafrostModel::WRMFPDSmoothedPermafrostModel(Teuchos::ParameterL
     double dens = plist.get<double>("density", 999.87);
     double delT = plist.get<double>("smoothing length [K]", 1.0);
     dp_ = dens * sigma_gas_liq / sigma_ice_liq * heat_fusion * delT / T0;
-    ASSERT(dp_ > 0.);
+    AMANZI_ASSERT(dp_ > 0.);
   }
 }
 

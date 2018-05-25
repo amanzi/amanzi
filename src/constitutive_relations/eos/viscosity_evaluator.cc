@@ -30,7 +30,7 @@ ViscosityEvaluator::ViscosityEvaluator(Teuchos::ParameterList& plist) :
   dependencies_.insert(temp_key_);
 
   // Construct my Viscosity model
-  ASSERT(plist_.isSublist("viscosity model parameters"));
+  AMANZI_ASSERT(plist_.isSublist("viscosity model parameters"));
   ViscosityRelationFactory visc_fac;
   visc_ = visc_fac.createViscosity(plist_.sublist("viscosity model parameters"));
 };
@@ -60,7 +60,7 @@ void ViscosityEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
 
     int count = result->size(*comp);
     for (int id=0; id!=count; ++id) {
-      ASSERT(temp_v[0][id] > 200.);
+      AMANZI_ASSERT(temp_v[0][id] > 200.);
       result_v[0][id] = visc_->Viscosity(temp_v[0][id]);
     }
   }
@@ -70,7 +70,7 @@ void ViscosityEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
 void ViscosityEvaluator::EvaluateFieldPartialDerivative_(
     const Teuchos::Ptr<State>& S, Key wrt_key,
     const Teuchos::Ptr<CompositeVector>& result) {
-  ASSERT(wrt_key == temp_key_);
+  AMANZI_ASSERT(wrt_key == temp_key_);
 
   // Pull dependencies out of state.
   Teuchos::RCP<const CompositeVector> temp = S->GetFieldData(temp_key_);

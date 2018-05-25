@@ -83,11 +83,14 @@ void EnergyBase::ApplyDiffusion_(const Teuchos::Ptr<State>& S,
   Teuchos::RCP<const CompositeVector> conductivity =
       S_next_->GetFieldData(uw_conductivity_key_);
 
+  Teuchos::RCP<const CompositeVector> temp = S->GetFieldData(key_);
+
   // update the stiffness matrix
   matrix_diff_->global_operator()->Init();
   matrix_diff_->SetScalarCoefficient(conductivity, Teuchos::null);
-  matrix_diff_->UpdateMatrices(Teuchos::null, Teuchos::null);
-  Teuchos::RCP<const CompositeVector> temp = S->GetFieldData(key_);
+  matrix_diff_->UpdateMatrices(Teuchos::null, temp.ptr());
+  //matrix_diff_->UpdateMatrices(Teuchos::null, Teuchos::null);
+
 
   // update the flux if needed
   Teuchos::RCP<CompositeVector> flux = S->GetFieldData(energy_flux_key_, name_);

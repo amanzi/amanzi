@@ -72,14 +72,14 @@ void TwoPhase::Initialize(const Teuchos::Ptr<State>& S) {
     S->GetFieldEvaluator(Keys::getKey(domain_, "molar_density_liquid"));
   Teuchos::RCP<Relations::EOSEvaluator> eos_eval =
     Teuchos::rcp_dynamic_cast<Relations::EOSEvaluator>(eos_fe);
-  ASSERT(eos_eval != Teuchos::null);
+  AMANZI_ASSERT(eos_eval != Teuchos::null);
   eos_liquid_ = eos_eval->get_EOS();
 
   Teuchos::RCP<FieldEvaluator> iem_fe =
     S->GetFieldEvaluator(Keys::getKey(domain_, "internal_energy_liquid"));
   Teuchos::RCP<Energy::IEMEvaluator> iem_eval =
     Teuchos::rcp_dynamic_cast<Energy::IEMEvaluator>(iem_fe);
-  ASSERT(iem_eval != Teuchos::null);
+  AMANZI_ASSERT(iem_eval != Teuchos::null);
   iem_liquid_ = iem_eval->get_IEM();
 
 }

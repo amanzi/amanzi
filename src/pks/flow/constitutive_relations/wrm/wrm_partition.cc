@@ -29,7 +29,7 @@ createWRMPartition(Teuchos::ParameterList& plist) {
       region_list.push_back(sublist.get<std::string>("region"));
       wrm_list.push_back(fac.createWRM(sublist));
     } else {
-      ASSERT(0);
+      AMANZI_ASSERT(0);
     }
   }
 

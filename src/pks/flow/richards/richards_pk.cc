@@ -31,6 +31,7 @@ Authors: Neil Carlson (version 1)
 #include "rel_perm_evaluator.hh"
 #include "richards_water_content_evaluator.hh"
 #include "OperatorDefs.hh"
+#include "BoundaryFlux.hh"
 
 #include "richards.hh"
 
@@ -225,7 +226,8 @@ void Richards::SetupRichardsFlow_(const Teuchos::Ptr<State>& S) {
   if (jacobian_) {
     jacobian_lag_ = mfd_pc_plist.get<int>("Newton correction lag", 0);
 
-    if (preconditioner_->RangeMap().HasComponent("face")) {
+    //if (preconditioner_->RangeMap().HasComponent("face")) {
+    if (mfd_pc_plist.get<std::string>("discretization primary") != "fv: default"){
       // MFD -- upwind required
       dcoef_key_ = Keys::getDerivKey(coef_key_, key_);
       duw_coef_key_ = Keys::getDerivKey(uw_coef_key_, key_);
@@ -252,7 +254,7 @@ void Richards::SetupRichardsFlow_(const Teuchos::Ptr<State>& S) {
   // // -- vapor diffusion terms
   // vapor_diffusion_ = plist_->get<bool>("include vapor diffusion", false);
   // if (vapor_diffusion_){
-  //   ASSERT(0); // untested!
+  //   AMANZI_ASSERT(0); // untested!
     
   //   // Create the vapor diffusion vectors
   //   S->RequireField("vapor_diffusion_pressure", name_)->SetMesh(mesh_)->SetGhosted()
@@ -271,7 +273,8 @@ void Richards::SetupRichardsFlow_(const Teuchos::Ptr<State>& S) {
   precon_used_ = plist_->isSublist("preconditioner");
   if (precon_used_) {
     preconditioner_->SymbolicAssembleMatrix();
-  
+    preconditioner_->InitializePreconditioner(plist_->sublist("preconditioner"));
+
     //    Potentially create a linear solver
     if (plist_->isSublist("linear solver")) {
       Teuchos::ParameterList linsolve_sublist = plist_->sublist("linear solver");
@@ -328,6 +331,7 @@ void Richards::SetupRichardsFlow_(const Teuchos::Ptr<State>& S) {
     Exceptions::amanzi_throw(message);
   }
 
+
   // predictors for time integration
   modify_predictor_with_consistent_faces_ =
     plist_->get<bool>("modify predictor with consistent faces", false);
@@ -346,9 +350,16 @@ void Richards::SetupRichardsFlow_(const Teuchos::Ptr<State>& S) {
   sat_change_limit_ = plist_->get<double>("max valid change in saturation in a time step [-]", -1.);
   sat_ice_change_limit_ = plist_->get<double>("max valid change in ice saturation in a time step [-]", -1.);
 
+  compute_boundary_values_ = plist_->get<bool>("compute boundary values", false);
+
   // Require fields and evaluators for those fields.
   // -- primary variables
-  S->RequireField(key_, name_)->Update(matrix_->RangeMap())->SetGhosted();
+
+  CompositeVectorSpace matrix_cvs = matrix_->RangeMap();
+
+  if (compute_boundary_values_) matrix_cvs.AddComponent("boundary_face", AmanziMesh::BOUNDARY_FACE, 1); 
+  
+  S->RequireField(key_, name_)->Update(matrix_cvs)->SetGhosted();
 
   // -- secondary variables, with no evaluator used
   S->RequireField(flux_key_, name_)->SetMesh(mesh_)->SetGhosted()
@@ -474,7 +485,7 @@ void Richards::Initialize(const Teuchos::Ptr<State>& S) {
 
   // absolute perm
   SetAbsolutePermeabilityTensor_(S);
-
+  
   // operators
   Teuchos::RCP<const Epetra_Vector> gvec = S->GetConstantVectorData("gravity");
   AmanziGeometry::Point g(3);
@@ -484,11 +495,10 @@ void Richards::Initialize(const Teuchos::Ptr<State>& S) {
   matrix_diff_->SetBCs(bc_, bc_);
   matrix_diff_->SetTensorCoefficient(K_);
 
-
   preconditioner_diff_->SetGravity(g);
   preconditioner_diff_->SetBCs(bc_, bc_);
   preconditioner_diff_->SetTensorCoefficient(K_);
-  preconditioner_->SymbolicAssembleMatrix();
+  //  preconditioner_->SymbolicAssembleMatrix();
 
   face_matrix_diff_->SetGravity(g);
   face_matrix_diff_->SetBCs(bc_, bc_);
@@ -501,6 +511,7 @@ void Richards::Initialize(const Teuchos::Ptr<State>& S) {
   //   // residual vector for vapor diffusion
   //   res_vapor = Teuchos::rcp(new CompositeVector(*S->GetFieldData(key_))); 
   // }
+
 
 };
 
@@ -533,15 +544,29 @@ void Richards::Initialize(const Teuchos::Ptr<State>& S) {
     Teuchos::RCP<const CompositeVector> rel_perm =
       S->GetFieldData(uw_coef_key_);
     Teuchos::RCP<const CompositeVector> rho = S->GetFieldData(mass_dens_key_);
+    // derive fluxes
+    Teuchos::RCP<const CompositeVector> pres = S->GetFieldData(key_);
+
     matrix_->Init();
     matrix_diff_->SetDensity(rho);
     matrix_diff_->SetScalarCoefficient(rel_perm, Teuchos::null);
-    matrix_diff_->UpdateMatrices(Teuchos::null, Teuchos::null);
+    matrix_diff_->UpdateMatrices(Teuchos::null, pres.ptr());
+
 
     // derive fluxes
-    Teuchos::RCP<const CompositeVector> pres = S->GetFieldData(key_);
     Teuchos::RCP<CompositeVector> flux = S->GetFieldData(flux_key_, name_);
     matrix_diff_->UpdateFlux(pres.ptr(), flux.ptr());
+
+    if (compute_boundary_values_){
+      Epetra_MultiVector& pres_bf = *S->GetFieldData(key_, name_)->ViewComponent("boundary_face",false);
+      const Epetra_Map& vandalay_map = mesh_->exterior_face_map(false);
+      const Epetra_Map& face_map = mesh_->face_map(false);
+      int nbfaces = pres_bf.MyLength();
+      for (int bf=0; bf!=nbfaces; ++bf) {
+        AmanziMesh::Entity_ID f = face_map.LID(vandalay_map.GID(bf));
+        pres_bf[0][bf] =  BoundaryFaceValue(f, *pres);
+      }
+    }      
   }
 
   // As a diagnostic, calculate the mass balance error
@@ -633,6 +658,7 @@ void Richards::CalculateDiagnostics(const Teuchos::RCP<State>& S) {
   // update the cell velocities
   UpdateBoundaryConditions_(S.ptr());
 
+  Teuchos::RCP<const CompositeVector> pres = S->GetFieldData(key_);
   Teuchos::RCP<const CompositeVector> rel_perm =
       S->GetFieldData(uw_coef_key_);
   Teuchos::RCP<const CompositeVector> rho =
@@ -640,13 +666,11 @@ void Richards::CalculateDiagnostics(const Teuchos::RCP<State>& S) {
   // update the stiffness matrix
   matrix_diff_->SetDensity(rho);
   matrix_diff_->SetScalarCoefficient(rel_perm, Teuchos::null);
-  matrix_diff_->UpdateMatrices(Teuchos::null, Teuchos::null);
+  matrix_diff_->UpdateMatrices(Teuchos::null, pres.ptr());
 
   // derive fluxes
   Teuchos::RCP<CompositeVector> flux = S->GetFieldData(flux_key_, name_);
-  Teuchos::RCP<const CompositeVector> pres = S->GetFieldData(key_);
   matrix_diff_->UpdateFlux(pres.ptr(), flux.ptr());
-
   UpdateVelocity_(S.ptr());
 };
 
@@ -676,16 +700,22 @@ bool Richards::UpdatePermeabilityData_(const Teuchos::Ptr<State>& S) {
       // update the direction of the flux -- note this is NOT the flux
       Teuchos::RCP<const CompositeVector> rho = S->GetFieldData(mass_dens_key_);
       face_matrix_diff_->SetDensity(rho);
-      face_matrix_diff_->UpdateMatrices(Teuchos::null, Teuchos::null);
 
-      Teuchos::RCP<CompositeVector> flux_dir =
-          S->GetFieldData(flux_dir_key_, name_);
+      Teuchos::RCP<CompositeVector> flux_dir = S->GetFieldData(flux_dir_key_, name_);
       Teuchos::RCP<const CompositeVector> pres = S->GetFieldData(key_);
 
+      // std::cout<<*flux_dir->ViewComponent("face")<<"\n\n";
+
+      face_matrix_diff_->UpdateMatrices(Teuchos::null, pres.ptr());
+      //face_matrix_diff_->UpdateMatrices(Teuchos::null, Teuchos::null);
+    
       if (!pres->HasComponent("face"))
         face_matrix_diff_->ApplyBCs(true, true);
 
       face_matrix_diff_->UpdateFlux(pres.ptr(), flux_dir.ptr());
+
+      // std::cout<<*flux_dir->ViewComponent("face")<<"\n";
+      // exit(-1);
 
       if (clobber_boundary_flux_dir_) {
         Epetra_MultiVector& flux_dir_f = *flux_dir->ViewComponent("face",false);
@@ -697,7 +727,7 @@ bool Richards::UpdatePermeabilityData_(const Teuchos::Ptr<State>& S) {
           if (markers[f] == Operators::OPERATOR_BC_NEUMANN) {
             AmanziMesh::Entity_ID_List cells;
             mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
-            ASSERT(cells.size() == 1);
+            AMANZI_ASSERT(cells.size() == 1);
             int c = cells[0];
             AmanziMesh::Entity_ID_List faces;
             std::vector<int> dirs;
@@ -805,7 +835,7 @@ void Richards::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& S, bool kr) 
 #ifdef ENABLE_DBC
     AmanziMesh::Entity_ID_List cells;
     mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
-    ASSERT(cells.size() == 1);
+    AMANZI_ASSERT(cells.size() == 1);
 #endif
     
     markers[f] = Operators::OPERATOR_BC_DIRICHLET;
@@ -819,7 +849,7 @@ void Richards::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& S, bool kr) 
 #ifdef ENABLE_DBC
     AmanziMesh::Entity_ID_List cells;
     mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
-    ASSERT(cells.size() == 1);
+    AMANZI_ASSERT(cells.size() == 1);
 #endif
     
     markers[f] = Operators::OPERATOR_BC_DIRICHLET;
@@ -841,7 +871,7 @@ void Richards::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& S, bool kr) 
 #ifdef ENABLE_DBC
     AmanziMesh::Entity_ID_List cells;
     mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
-    ASSERT(cells.size() == 1);
+    AMANZI_ASSERT(cells.size() == 1);
 #endif
       markers[f] = Operators::OPERATOR_BC_NEUMANN;
       values[f] = bc->second;
@@ -856,7 +886,7 @@ void Richards::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& S, bool kr) 
 #ifdef ENABLE_DBC
     AmanziMesh::Entity_ID_List cells;
     mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
-    ASSERT(cells.size() == 1);
+    AMANZI_ASSERT(cells.size() == 1);
 #endif
 
       markers[f] = Operators::OPERATOR_BC_NEUMANN;
@@ -888,7 +918,7 @@ void Richards::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& S, bool kr) 
 #ifdef ENABLE_DBC
     AmanziMesh::Entity_ID_List cells;
     mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
-    ASSERT(cells.size() == 1);
+    AMANZI_ASSERT(cells.size() == 1);
 #endif
 
     double boundary_pressure = BoundaryValue(u, f);
@@ -923,7 +953,7 @@ void Richards::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& S, bool kr) 
 #ifdef ENABLE_DBC
     AmanziMesh::Entity_ID_List cells;
     mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
-    ASSERT(cells.size() == 1);
+    AMANZI_ASSERT(cells.size() == 1);
 #endif
 
     double flux_seepage_tol = std::abs(bc->second) * .001;
@@ -969,7 +999,7 @@ void Richards::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& S, bool kr) 
 
 
     } else {
-      ASSERT(0);
+      AMANZI_ASSERT(0);
     }
 
   }
@@ -997,7 +1027,7 @@ void Richards::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& S, bool kr) 
 #ifdef ENABLE_DBC
       AmanziMesh::Entity_ID_List cells;
       mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
-      ASSERT(cells.size() == 1);
+      AMANZI_ASSERT(cells.size() == 1);
 #endif
 
       // -- set that value to dirichlet
@@ -1024,7 +1054,7 @@ void Richards::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& S, bool kr) 
 #ifdef ENABLE_DBC
       AmanziMesh::Entity_ID_List cells;
       mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
-      ASSERT(cells.size() == 1);
+      AMANZI_ASSERT(cells.size() == 1);
 #endif
 
 
@@ -1144,8 +1174,9 @@ bool Richards::ModifyPredictorFluxBCs_(double h, Teuchos::RCP<TreeVector> u) {
   matrix_->Init();
   matrix_diff_->SetScalarCoefficient(rel_perm, Teuchos::null);
   Teuchos::RCP<const CompositeVector> rho = S_next_->GetFieldData(mass_dens_key_);
+  Teuchos::RCP<const CompositeVector> pres = S_next_->GetFieldData(key_);
   matrix_diff_->SetDensity(rho);
-  matrix_diff_->UpdateMatrices(Teuchos::null, Teuchos::null);
+  matrix_diff_->UpdateMatrices(Teuchos::null, pres.ptr());
   matrix_diff_->ApplyBCs(true, true);
 
   flux_predictor_->ModifyPredictor(h, u);
@@ -1166,7 +1197,7 @@ bool Richards::ModifyPredictorConsistentFaces_(double h, Teuchos::RCP<TreeVector
 }
 
 bool Richards::ModifyPredictorWC_(double h, Teuchos::RCP<TreeVector> u) {
-  ASSERT(0);
+  AMANZI_ASSERT(0);
   return false;
 }
 
@@ -1244,12 +1275,12 @@ void Richards::CalculateConsistentFaces(const Teuchos::Ptr<CompositeVector>& u) 
   Teuchos::RCP<const CompositeVector> rho =
       S_next_->GetFieldData(mass_dens_key_);
 
+
   // Update the preconditioner with darcy and gravity fluxes
   matrix_->Init();
   matrix_diff_->SetDensity(rho);
   matrix_diff_->SetScalarCoefficient(rel_perm, Teuchos::null);
-
-  matrix_diff_->UpdateMatrices(Teuchos::null, Teuchos::null);
+  matrix_diff_->UpdateMatrices(Teuchos::null, u);
   matrix_diff_->ApplyBCs(true, true);
 
   // derive the consistent faces, involves a solve
@@ -1478,6 +1509,93 @@ Richards::ModifyCorrection(double h, Teuchos::RCP<const TreeVector> res,
   return AmanziSolvers::FnBaseDefs::CORRECTION_NOT_MODIFIED;
 }
 
+/* ******************************************************************
+* Returns the first cell attached to a boundary face.   
+****************************************************************** */
+int Richards::BoundaryFaceGetCell(int f) const
+{
+  AmanziMesh::Entity_ID_List cells;
+  mesh_->face_get_cells(f, AmanziMesh::Parallel_type::GHOST, &cells);
+  return cells[0];
+}
+
+/* ******************************************************************
+* Returns either known pressure face value or calculates it using
+* the two-point flux approximation (FV) scheme.
+****************************************************************** */
+double Richards::BoundaryFaceValue(int f, const CompositeVector& u)
+{
+  double face_value;
+
+  if (u.HasComponent("face")) {
+    const Epetra_MultiVector& u_face = *u.ViewComponent("face");
+    face_value = u_face[0][f];
+  } else {
+    int c = BoundaryFaceGetCell(f);
+    const Epetra_MultiVector& u_cell = *u.ViewComponent("cell");
+    const std::vector<int>& bc_model = bc_->bc_model();
+    const std::vector<double>& bc_value = bc_->bc_value();
+
+    if (bc_model[f] == Operators::OPERATOR_BC_DIRICHLET) {
+      face_value =  bc_value[f];
+    }else{
+      face_value = u_cell[0][c];
+    // face_value = DeriveBoundaryFaceValue(f, u, wrms_->second[(*wrms_->first)[c]]);
+    }
+  }
+  return face_value;
+}
+
+
+/* ******************************************************************
+* Calculates pressure value on the boundary using the two-point flux 
+* approximation (FV) scheme.
+****************************************************************** */
+// double Richards::DeriveBoundaryFaceValue(int f, const CompositeVector& u, Teuchos::RCP<const WRM> wrm_model){
+
+//   const std::vector<int>& bc_model = bc_->bc_model();
+//   const std::vector<double>& bc_value = bc_->bc_value();
+
+//   if (bc_model[f] == Operators::OPERATOR_BC_DIRICHLET) {
+//     return bc_value[f];
+//   } else {
+//     const Epetra_MultiVector& mu_cell = *S_->GetFieldData("viscosity_liquid")->ViewComponent("cell");
+//     const Epetra_MultiVector& u_cell = *u.ViewComponent("cell");
+//     AmanziMesh::Entity_ID_List cells;
+//     mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+//     int c = cells[0];
+
+//     double patm = *S_next_->GetScalarData("atmospheric_pressure");
+//     double pc_shift(patm);   
+//     double trans_f = matrix_diff_->ComputeTransmissibility(f);
+//     double g_f = matrix_diff_->ComputeGravityFlux(f);
+//     double lmd = u_cell[0][c];
+//     int dir;
+//     mesh_->face_normal(f, false, c, &dir);
+//     double bnd_flux = 0.;//dir * bc_value[f] / (molar_rho_ / mu_cell[0][c]);
+
+//     double max_val(patm), min_val;
+//     if (bnd_flux <= 0.0) {
+//       min_val = u_cell[0][c];
+//     } else {
+//       min_val= u_cell[0][c] + (g_f - bnd_flux) / (dir * trans_f);
+//     }
+//     double eps = std::max(1.0e-4 * std::abs(bnd_flux), 1.0e-8);
+
+//   //   // std::cout<<"min_val "<<min_val<<" max_val "<<max_val<<" "<<" trans_f "<<trans_f<<"\n";
+//   //   // std::cout<<"g_f "<<g_f<<" bnd "<< bnd_flux <<" dir "<<dir<<"\n";
+//   //   // std::cout<<c <<"norm "<<n<<"\n";
+
+//     const KRelFn func = &WRM::k_relative;       
+//   //   Amanzi::BoundaryFaceSolver<WRM> bnd_solver(trans_f, g_f, u_cell[0][c], lmd, bnd_flux, dir, pc_shift, 
+//   //                                              min_val, max_val, eps, wrm_model, func);
+//   //   lmd = bnd_solver.FaceValue();
+
+//   //   return lmd;      
+
+//   }
+
+// }
 
 } // namespace
 } // namespace

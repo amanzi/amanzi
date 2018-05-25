@@ -78,7 +78,7 @@ MPCWeakSubgrid::init_(const Teuchos::RCP<State>& S)
 {
   // grab the list of subpks
   auto subpks = plist_->get<Teuchos::Array<std::string> >("PKs order");
-  ASSERT(subpks.size() == 1);
+  AMANZI_ASSERT(subpks.size() == 1);
   std::string subgrid_name = subpks[0];
   subpks.pop_back();
 

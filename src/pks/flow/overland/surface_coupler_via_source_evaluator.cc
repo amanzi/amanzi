@@ -76,7 +76,7 @@ void SurfaceCouplerViaSourceEvaluator::IdentifyFaceAndDirection_(
     // -- get the cell
     AmanziMesh::Entity_ID_List cells;
     subsurface->face_get_cells(domain_face, AmanziMesh::Parallel_type::OWNED, &cells);
-    ASSERT(cells.size() == 1);
+    AMANZI_ASSERT(cells.size() == 1);
 
     // -- Get directions
     AmanziMesh::Entity_ID_List faces;
@@ -112,7 +112,7 @@ void SurfaceCouplerViaSourceEvaluator::EvaluateField_(const Teuchos::Ptr<State>&
   for (int c=0; c!=ncells; ++c) {
     AmanziMesh::Entity_ID_List cells;
     subsurface->face_get_cells((*face_and_dirs_)[c].first, AmanziMesh::Parallel_type::OWNED, &cells);
-    ASSERT(cells.size() == 1);
+    AMANZI_ASSERT(cells.size() == 1);
 
     // surface head
     // -- this will change to be the surface water density when that exists...
@@ -145,7 +145,7 @@ void SurfaceCouplerViaSourceEvaluator::EvaluateField_(const Teuchos::Ptr<State>&
 
 void SurfaceCouplerViaSourceEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>& S,
         Key wrt_key, const Teuchos::Ptr<CompositeVector>& result) {
-  ASSERT(0);
+  AMANZI_ASSERT(0);
   // this would require differentiating flux wrt pressure, which we
   // don't do for now.
 }

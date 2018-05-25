@@ -49,7 +49,6 @@ FlowReactiveTransport_PK_ATS::FlowReactiveTransport_PK_ATS(
 // -----------------------------------------------------------------------------
 double FlowReactiveTransport_PK_ATS::get_dt() {
   double dt = Amanzi::PK_MPCSubcycled_ATS::get_dt();
-  //double dt = sub_pks_[master_]->get_dt();
   return dt;
 }
 

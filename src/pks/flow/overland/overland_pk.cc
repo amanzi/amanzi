@@ -68,7 +68,7 @@ void OverlandFlow::Setup(const Teuchos::Ptr<State>& S) {
   // set up the meshes
   if (!S->HasMesh("surface")) {
     Teuchos::RCP<const AmanziMesh::Mesh> domain = S->GetMesh();
-    //    ASSERT(domain->space_dimension() == 2);
+    //    AMANZI_ASSERT(domain->space_dimension() == 2);
     standalone_mode_ = true;
     S->AliasMesh("domain", "surface");
   } else {
@@ -194,15 +194,19 @@ void OverlandFlow::SetupOverlandFlow_(const Teuchos::Ptr<State>& S) {
   preconditioner_acc_ = Teuchos::rcp(new Operators::PDE_Accumulation(acc_pc_plist, preconditioner_));
   
   //    symbolic assemble
-  preconditioner_->SymbolicAssembleMatrix();
+  precon_used_ = plist_->isSublist("preconditioner");
+  if (precon_used_) {
+    preconditioner_->SymbolicAssembleMatrix();
+    preconditioner_->InitializePreconditioner(plist_->sublist("preconditioner"));
 
-  //    Potentially create a linear solver
-  if (plist_->isSublist("linear solver")) {
-    Teuchos::ParameterList linsolve_sublist = plist_->sublist("linear solver");
-    AmanziSolvers::LinearOperatorFactory<Operators::Operator,CompositeVector,CompositeVectorSpace> fac;
-    lin_solver_ = fac.Create(linsolve_sublist, preconditioner_);
-  } else {
-    lin_solver_ = preconditioner_;
+    //    Potentially create a linear solver
+    if (plist_->isSublist("linear solver")) {
+      Teuchos::ParameterList linsolve_sublist = plist_->sublist("linear solver");
+      AmanziSolvers::LinearOperatorFactory<Operators::Operator,CompositeVector,CompositeVectorSpace> fac;
+      lin_solver_ = fac.Create(linsolve_sublist, preconditioner_);
+    } else {
+      lin_solver_ = preconditioner_;
+    }
   }
 
   // primary variable
@@ -237,7 +241,7 @@ void OverlandFlow::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
 
   Teuchos::RCP<Flow::ElevationEvaluator> elev_evaluator;
   if (standalone_mode_) {
-    ASSERT(plist_->isSublist("elevation evaluator"));
+    AMANZI_ASSERT(plist_->isSublist("elevation evaluator"));
     Teuchos::ParameterList elev_plist = plist_->sublist("elevation evaluator");
     elev_plist.set("evaluator name", Keys::getKey(domain_, "elevation"));
     elev_evaluator = Teuchos::rcp(new Flow::StandaloneElevationEvaluator(elev_plist));
@@ -270,7 +274,7 @@ void OverlandFlow::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
   // -- conductivity evaluator
   S->RequireField(Keys::getKey(domain_,"overland_conductivity"))->SetMesh(mesh_)->SetGhosted()
       ->AddComponent("cell", AmanziMesh::CELL, 1);
-  ASSERT(plist_->isSublist("overland conductivity evaluator"));
+  AMANZI_ASSERT(plist_->isSublist("overland conductivity evaluator"));
   Teuchos::ParameterList cond_plist = plist_->sublist("overland conductivity evaluator");
   cond_plist.set("evaluator name", Keys::getKey(domain_, "overland_conductivity"));
 
@@ -608,7 +612,7 @@ void OverlandFlow::FixBCsForOperator_(const Teuchos::Ptr<State>& S) {
 
     AmanziMesh::Entity_ID_List cells;
     mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
-    ASSERT(cells.size() == 1);
+    AMANZI_ASSERT(cells.size() == 1);
     AmanziMesh::Entity_ID c = cells[0];
 
     if (f < nfaces_owned) {

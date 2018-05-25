@@ -37,7 +37,7 @@ ThermalConductivitySurfaceEvaluator::ThermalConductivitySurfaceEvaluator(
     dependencies_.insert(vpd_key_);
   }
 
-  ASSERT(plist_.isSublist("thermal conductivity parameters"));
+  AMANZI_ASSERT(plist_.isSublist("thermal conductivity parameters"));
   Teuchos::ParameterList sublist = plist_.sublist("thermal conductivity parameters");
   K_liq_ = sublist.get<double>("thermal conductivity of water [W/(m-K)]", 0.58);
   K_ice_ = sublist.get<double>("thermal conductivity of ice [W/(m-K)]", 2.18);
@@ -102,7 +102,7 @@ void ThermalConductivitySurfaceEvaluator::EvaluateFieldPartialDerivative_(
       const Teuchos::Ptr<State>& S, Key wrt_key,
       const Teuchos::Ptr<CompositeVector>& result) {
   std::cout<<"THERMAL CONDUCITIVITY: Derivative not implemented yet!"<<wrt_key<<"\n";
-  ASSERT(0); // not implemented, not yet needed
+  AMANZI_ASSERT(0); // not implemented, not yet needed
   result->Scale(1.e-6); // convert to MJ
 }
 

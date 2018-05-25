@@ -36,6 +36,11 @@ namespace Amanzi {
 void MPCSubsurface::Setup(const Teuchos::Ptr<State>& S) {
   // set up keys
 
+  ddivq_dT_key_ = "ddivq_dT";
+  ddivKgT_dp_key_ = "ddivKgT_dp";
+
+  // supress energy's vision of advective terms as we can do better
+
   Teuchos::Array<std::string> pk_order = plist_->get< Teuchos::Array<std::string> >("PKs order");
   // domain_name_ = plist_->get<std::string>("domain name", "domain");
   //--  domain_name_ =  plist_->sublist("PKs").sublist(pk_order[1]).get<std::string>("domain name", "domain");
@@ -83,10 +88,15 @@ void MPCSubsurface::Setup(const Teuchos::Ptr<State>& S) {
   // Get the sub-blocks from the sub-PK's preconditioners.
   Teuchos::RCP<Operators::Operator> pcA = sub_pks_[0]->preconditioner();
   Teuchos::RCP<Operators::Operator> pcB = sub_pks_[1]->preconditioner();
-  if (pcA->DomainMap().HasComponent("face")) {
-    is_fv_ = false;
-  } else {
+
+  Teuchos::ParameterList& diff0_list = pks_list_->sublist(pk_order[0]).sublist("diffusion");
+  Teuchos::ParameterList& diff1_list = pks_list_->sublist(pk_order[1]).sublist("diffusion");
+  
+  if ((diff0_list.get<std::string>("discretization primary") == "fv:default") &&
+      (diff1_list.get<std::string>("discretization primary") == "fv:default")){
     is_fv_ = true;
+  } else {
+    is_fv_ = false;
   }
   
   // Create the combined operator
@@ -108,10 +118,10 @@ void MPCSubsurface::Setup(const Teuchos::Ptr<State>& S) {
   } else if (precon_string == "picard") {
     precon_type_ = PRECON_PICARD;
   } else if (precon_string == "ewc") {
-    ASSERT(0);
+    AMANZI_ASSERT(0);
     precon_type_ = PRECON_EWC;
   } else if (precon_string == "smart ewc") {
-    ASSERT(0);
+    AMANZI_ASSERT(0);
     precon_type_ = PRECON_EWC;
   } else {
     Errors::Message message(std::string("Invalid preconditioner type ")+precon_string);
@@ -131,19 +141,27 @@ void MPCSubsurface::Setup(const Teuchos::Ptr<State>& S) {
     if (!plist_->get<bool>("supress Jacobian terms: d div q / dT", false)) {
       // need to upwind dkr/dT
       if (!is_fv_) {
-        Key dkrdT_key = Keys::getDerivKey(uw_kr_key_, temp_key_);
-        S->RequireField(dkrdT_key, name_)
-          ->SetMesh(mesh_)->SetGhosted()->SetComponent("face", AmanziMesh::FACE, 1);
-        S->GetField(dkrdT_key,name_)->set_io_vis(false);
-        upwinding_dkrdT_ = Teuchos::rcp(new Operators::UpwindTotalFlux(name_,
-                Keys::getDerivKey(kr_key_, temp_key_),
-                dkrdT_key, mass_flux_dir_key_, 1.e-8));
+
+         Key dkrdT_key = Keys::getDerivKey(uw_kr_key_, temp_key_);
+
+         // locations2[1] = AmanziMesh::FACE;
+         // names2[1] = "face";
+         S->RequireField(dkrdT_key, name_)
+           ->SetMesh(mesh_)->SetGhosted()->SetComponent("face", AmanziMesh::FACE, 1);
+           //->SetMesh(mesh_)->SetGhosted()->SetComponents(names2, locations2, num_dofs2);
+         S->GetField(dkrdT_key,name_)->set_io_vis(false);
+
+         upwinding_dkrdT_ = Teuchos::rcp(new Operators::UpwindTotalFlux(name_,
+                                                                        Keys::getDerivKey(kr_key_, temp_key_),
+                                                                        dkrdT_key, mass_flux_dir_key_, 1.e-8));
       }
 
       // set up the operator
       Teuchos::ParameterList divq_plist(pks_list_->sublist(pk_order[0]).sublist("diffusion preconditioner"));
+
       if (is_fv_) divq_plist.set("Newton correction", "true Jacobian");
       else divq_plist.set("Newton correction", "approximate Jacobian");
+     
       divq_plist.set("exclude primary terms", true);
       Operators::PDE_DiffusionFactory opfactory;
       ddivq_dT_ = opfactory.CreateWithGravity(divq_plist, mesh_);
@@ -158,15 +176,26 @@ void MPCSubsurface::Setup(const Teuchos::Ptr<State>& S) {
       dWC_dT_ = Teuchos::rcp(new Operators::PDE_Accumulation(AmanziMesh::CELL, dWC_dT_block_));
     }
 
+    Key dWC_dT_key = Keys::getDerivKey(wc_key_, temp_key_);
+    S->RequireField(dWC_dT_key, wc_key_)
+       ->SetMesh(mesh_)->SetGhosted()->SetComponent("cell", AmanziMesh::CELL, 1);
+    S->GetField(dWC_dT_key, wc_key_)->set_io_vis(true);
+    
+
     // Create the block for derivatives of energy conservation with respect to pressure
     // -- derivatives of thermal conductivity with respect to pressure
     if (!plist_->get<bool>("supress Jacobian terms: d div K grad T / dp", false)) {
       // need to upwind dKappa/dp
       if (!is_fv_) {
+
         Key uw_dKappa_dp_key = Keys::getDerivKey(uw_tc_key_, pres_key_);
         Key dKappa_dp_key = Keys::getDerivKey(tc_key_, pres_key_);
+
+        // locations2[1] = AmanziMesh::FACE;
+        // names2[1] = "face";        
         S->RequireField(uw_dKappa_dp_key, name_)
           ->SetMesh(mesh_)->SetGhosted()->SetComponent("face", AmanziMesh::FACE, 1);
+        //->SetMesh(mesh_)->SetGhosted()->SetComponents(names2, locations2, num_dofs2);
         S->GetField(uw_dKappa_dp_key,name_)->set_io_vis(false);
 
         upwinding_dKappa_dp_ = Teuchos::rcp(new Operators::UpwindTotalFlux(name_,
@@ -180,7 +209,7 @@ void MPCSubsurface::Setup(const Teuchos::Ptr<State>& S) {
       Teuchos::ParameterList ddivKgT_dp_plist(pks_list_->sublist(pk_order[1]).sublist("diffusion preconditioner"));
       if (is_fv_) ddivKgT_dp_plist.set("Newton correction", "true Jacobian");
       else ddivKgT_dp_plist.set("Newton correction", "approximate Jacobian");
-
+      
       ddivKgT_dp_plist.set("exclude primary terms", true);
       Operators::PDE_DiffusionFactory opfactory;
       if (dE_dp_block_ == Teuchos::null) {
@@ -235,9 +264,12 @@ void MPCSubsurface::Setup(const Teuchos::Ptr<State>& S) {
           ->AddComponents(names2, locations2, num_dofs2);
       S->SetFieldEvaluator(hkr_key_, hkr_eval);
 
+      // locations2[1] = AmanziMesh::FACE;
+      // names2[1] = "face";
       S->RequireField(uw_hkr_key_, name_)
-          ->SetMesh(mesh_)->SetGhosted()
-          ->SetComponent("face", AmanziMesh::FACE, 1);
+        ->SetMesh(mesh_)->SetGhosted()
+        ->SetComponent("face", AmanziMesh::FACE, 1);
+          // ->SetComponents(names2, locations2, num_dofs2);
       S->GetField(uw_hkr_key_,name_)->set_io_vis(false);
 
       std::string method_name = pks_list_->sublist(pk_order[0])
@@ -253,6 +285,10 @@ void MPCSubsurface::Setup(const Teuchos::Ptr<State>& S) {
       
       if (!is_fv_) {
         // -- and the upwinded field
+
+        locations2[1] = AmanziMesh::FACE;
+        names2[1] = "face";
+
         S->RequireField(Keys::getDerivKey(uw_hkr_key_, pres_key_), name_)
             ->SetMesh(mesh_)->SetGhosted()
             ->SetComponent("face", AmanziMesh::FACE, 1);
@@ -263,6 +299,7 @@ void MPCSubsurface::Setup(const Teuchos::Ptr<State>& S) {
             ->SetComponent("face", AmanziMesh::FACE, 1);
         S->GetField(Keys::getDerivKey(uw_hkr_key_, temp_key_), name_)
             ->set_io_vis(false);
+
 
         // -- and the upwinding
         upwinding_dhkr_dp_ = Teuchos::rcp(new Operators::UpwindTotalFlux(name_,
@@ -276,6 +313,14 @@ void MPCSubsurface::Setup(const Teuchos::Ptr<State>& S) {
       }
     }
 
+    // S->RequireField(ddivq_dT_key_, name_)->SetMesh(mesh_)->SetGhosted()
+    //   ->SetComponent("cell",AmanziMesh::CELL, 1);
+    // S->GetField(ddivq_dT_key_, name_)->set_io_vis(true);
+    // S->RequireField(ddivKgT_dp_key_, name_)->SetMesh(mesh_)->SetGhosted()
+    //   ->SetComponent("cell",AmanziMesh::CELL, 1);
+    // S->GetField(ddivKgT_dp_key_, name_)->set_io_vis(true);
+
+
     // -- derivatives of energy with respect to pressure
     if (dE_dp_block_ == Teuchos::null) {
       dE_dp_ = Teuchos::rcp(new Operators::PDE_Accumulation(AmanziMesh::CELL, mesh_));
@@ -284,14 +329,21 @@ void MPCSubsurface::Setup(const Teuchos::Ptr<State>& S) {
       dE_dp_ = Teuchos::rcp(new Operators::PDE_Accumulation(AmanziMesh::CELL, dE_dp_block_));
     }
 
-    ASSERT(dWC_dT_block_ != Teuchos::null);
-    ASSERT(dE_dp_block_ != Teuchos::null);
+    
+    // Key dE_dp_key = Keys::getDerivKey(e_key_, pres_key_);
+    // S->RequireField( dE_dp_key, e_key_)
+    //    ->SetMesh(mesh_)->SetGhosted()->SetComponent("cell", AmanziMesh::CELL, 1);
+    // S->GetField(dE_dp_key, e_key_)->set_io_vis(true);
+
+    AMANZI_ASSERT(dWC_dT_block_ != Teuchos::null);
+    AMANZI_ASSERT(dE_dp_block_ != Teuchos::null);
     preconditioner_->SetOperatorBlock(0, 1, dWC_dT_block_);
     preconditioner_->SetOperatorBlock(1, 0, dE_dp_block_);
   }
-  
+
   // set up sparsity structure
   preconditioner_->SymbolicAssembleMatrix();
+  preconditioner_->InitializePreconditioner(plist_->sublist("preconditioner"));
 
   // create the linear solver
   if (plist_->isSublist("linear solver")) {
@@ -326,12 +378,33 @@ void MPCSubsurface::Initialize(const Teuchos::Ptr<State>& S) {
 
   // initialize offdiagonal operators
   richards_pk_ = Teuchos::rcp_dynamic_cast<Flow::Richards>(sub_pks_[0]);
-  ASSERT(richards_pk_ != Teuchos::null);
+  AMANZI_ASSERT(richards_pk_ != Teuchos::null);
+
+  if (precon_type_ != PRECON_NONE && precon_type_ != PRECON_BLOCK_DIAGONAL) {
+    Key dWC_dT_key = Keys::getDerivKey(wc_key_, temp_key_);
+    if (S->HasField(dWC_dT_key)){
+      S->GetFieldData(dWC_dT_key, wc_key_)->PutScalar(0.0);
+      S->GetField(dWC_dT_key, wc_key_)->set_initialized();
+    }
+    Key dE_dp_key = Keys::getDerivKey(e_key_, pres_key_);
+    if (S->HasField(dE_dp_key)){
+      S->GetFieldData(dE_dp_key, e_key_)->PutScalar(0.0);
+      S->GetField(dE_dp_key, e_key_)->set_initialized();
+    }
+    if (S->HasField(ddivq_dT_key_)){
+      S->GetFieldData(ddivq_dT_key_, name_)->PutScalar(0.0);
+      S->GetField(ddivq_dT_key_, name_)->set_initialized();
+    }
+    if (S->HasField(ddivKgT_dp_key_)){
+      S->GetFieldData(ddivKgT_dp_key_, name_)->PutScalar(0.0);
+      S->GetField(ddivKgT_dp_key_, name_)->set_initialized();
+    }
+  }
 
   if (ddivq_dT_ != Teuchos::null) {
     if (!is_fv_) {
       Key dkrdT_key = Keys::getDerivKey(uw_kr_key_, temp_key_);
-      S->GetFieldData(dkrdT_key,name_)->PutScalar(1.0);
+      S->GetFieldData(dkrdT_key,name_)->PutScalar(0.0);
       S->GetField(dkrdT_key,name_)->set_initialized();
     }
 
@@ -346,7 +419,8 @@ void MPCSubsurface::Initialize(const Teuchos::Ptr<State>& S) {
   if (ddivKgT_dp_ != Teuchos::null) {
     if (!is_fv_) {
       Key uw_dKappa_dp_key = Keys::getDerivKey(uw_tc_key_, pres_key_);
-      S->GetFieldData(uw_dKappa_dp_key,name_)->PutScalar(1.0);
+      S->GetFieldData(uw_dKappa_dp_key,name_)->PutScalar(0.0);
+
       S->GetField(uw_dKappa_dp_key,name_)->set_initialized();
     }
 
@@ -359,9 +433,9 @@ void MPCSubsurface::Initialize(const Teuchos::Ptr<State>& S) {
     S->GetField(uw_hkr_key_, name_)->set_initialized();
 
     if (!is_fv_) {
-      S->GetFieldData(Keys::getDerivKey(uw_hkr_key_, pres_key_), name_)->PutScalar(1.);
+      S->GetFieldData(Keys::getDerivKey(uw_hkr_key_, pres_key_), name_)->PutScalar(0.);
       S->GetField(Keys::getDerivKey(uw_hkr_key_, pres_key_), name_)->set_initialized();
-      S->GetFieldData(Keys::getDerivKey(uw_hkr_key_, temp_key_), name_)->PutScalar(1.);
+      S->GetFieldData(Keys::getDerivKey(uw_hkr_key_, temp_key_), name_)->PutScalar(0.);
       S->GetField(Keys::getDerivKey(uw_hkr_key_, temp_key_), name_)->set_initialized();
     }
 
@@ -452,6 +526,15 @@ void MPCSubsurface::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector
       ddivq_dT_->UpdateMatricesNewtonCorrection(flux.ptr(),
               up->SubVector(0)->Data().ptr());              
       ddivq_dT_->ApplyBCs(false, true);
+
+      // ComputeDivCorrection(flux, kr_uw, dkrdT, 
+      //                      S_next_->GetFieldData( ddivq_dT_key_, name_)->ViewComponent("cell", false));
+
+      // double l2norm;
+      // S_next_->GetFieldData( ddivq_dT_key_, name_)->ViewComponent("cell", false)->Norm2(&l2norm);
+      // if (mesh_->get_comm()->MyPID()==0) std::cout<<"NORM ddivq_dT"<<l2norm<<"\n";
+
+
     }
 
     // -- dWC/dT diagonal term
@@ -460,6 +543,7 @@ void MPCSubsurface::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector
     Teuchos::RCP<const CompositeVector> dWC_dT =
       S_next_->GetFieldData(Keys::getDerivKey(wc_key_, temp_key_));
     dWC_dT_->AddAccumulationTerm(*dWC_dT, h, "cell", false);
+
 
     // std::cout << "1/h * DWC/DT" << std::endl;
     // CompositeVector dbg(*dWC_dT); dbg = *dWC_dT; dbg.Scale(1./h); dbg.Print(std::cout);
@@ -479,7 +563,9 @@ void MPCSubsurface::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector
         S_next_->GetFieldData(Keys::getDerivKey(uw_tc_key_, pres_key_), name_)
             ->PutScalar(0.);
         upwinding_dKappa_dp_->Update(S_next_.ptr(), db_.ptr());
+
         dKappa_dp = S_next_->GetFieldData(Keys::getDerivKey(uw_tc_key_, pres_key_));
+
       }
 
       // form the operator
@@ -493,6 +579,13 @@ void MPCSubsurface::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector
       ddivKgT_dp_->UpdateMatricesNewtonCorrection(flux.ptr(),
               up->SubVector(1)->Data().ptr());
       ddivKgT_dp_->ApplyBCs(false, true);
+
+      // ComputeDivCorrection(flux, uw_Kappa, dKappa_dp, 
+      //                      S_next_->GetFieldData(ddivKgT_dp_key_, name_)->ViewComponent("cell", false));
+      // double l2norm;
+      // S_next_->GetFieldData( ddivKgT_dp_key_ , name_)->ViewComponent("cell", false)->Norm2(&l2norm);
+      // if (mesh_->get_comm()->MyPID()==0) std::cout<<"NORM ddivKgT_dp"<<l2norm<<"\n";
+
     }
 
 
@@ -628,11 +721,11 @@ void MPCSubsurface::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector
         filename << "Subsurface_PC_" << S_next_->cycle() << ".txt";
         EpetraExt::RowMatrixToMatlabFile(filename.str().c_str(), *preconditioner_->A());
       }
-      Teuchos::ParameterList& pc_sublist = plist_->sublist("preconditioner");
-      preconditioner_->InitPreconditioner(pc_sublist);
+      preconditioner_->UpdatePreconditioner();
     }
   }
   
+
   if (precon_type_ == PRECON_EWC) {
     ewc_->UpdatePreconditioner(t,up,h);
   }
@@ -755,5 +848,52 @@ int MPCSubsurface::ApplyPreconditioner(Teuchos::RCP<const TreeVector> u,
 
 //   return AmanziSolvers::FnBaseDefs::CORRECTION_NOT_MODIFIED;
 // }
+
+
+void MPCSubsurface::ComputeDivCorrection( const Teuchos::RCP<const CompositeVector>& flux,
+                                          const Teuchos::RCP<const CompositeVector>& k,
+                                          const Teuchos::RCP<const CompositeVector>& dk,
+                                          const Teuchos::RCP<Epetra_MultiVector>& res){
+  
+   // ignore correction if no flux provided.
+  if (flux == Teuchos::null) return;
+
+  // Correction is zero for linear problems
+  if (k == Teuchos::null || dk == Teuchos::null) return;
+
+  const Epetra_MultiVector& kf = *k->ViewComponent("face");
+  const Epetra_MultiVector& dk_f = *dk->ViewComponent("face");
+  const Epetra_MultiVector& flux_f = *flux->ViewComponent("face");
+
+  res->PutScalar(0.0);
+
+  double v, vmod;
+  AmanziMesh::Entity_ID_List cells;
+
+  int nfaces_owned = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
+
+  for (int f = 0; f < nfaces_owned; f++) {
+    mesh_->face_get_cells(f, AmanziMesh::Parallel_type::GHOST, &cells);
+    int ncells = cells.size();
+
+    // We use the upwind discretization of the generalized flux.
+    v = std::abs(kf[0][f]) > 0.0 ? flux_f[0][f] * dk_f[0][f] / kf[0][f] : 0.0;
+    vmod = std::abs(v);
+
+// We use the upwind discretization of the generalized flux.
+    int i, dir, c1;
+    c1 = cells[0];
+    const AmanziGeometry::Point& normal = mesh_->face_normal(f, false, c1, &dir);
+    //i = (v * dir >= 0.0) ? 0 : 1;
+
+   if (ncells == 2) {
+     (*res)[0][cells[0]] += v * dir;
+     (*res)[0][cells[1]] += -v * dir;
+   } else if (i == 0) {
+     (*res)[0][cells[0]] += v * dir;
+   }
+
+  }
+}
 
 } // namespace

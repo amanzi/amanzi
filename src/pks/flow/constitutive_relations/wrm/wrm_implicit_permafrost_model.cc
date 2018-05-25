@@ -31,7 +31,7 @@ bool WRMImplicitPermafrostModel::sats_unfrozen_(double pc_liq,
     sats[2] = 0.; // ice
     sats[1] = wrm_->saturation(pc_liq);  // liquid
     sats[0] = 1.0 - sats[1];  // gas
-    ASSERT(sats[0] >= 0.);
+    AMANZI_ASSERT(sats[0] >= 0.);
     return true;
   }
   return false;
@@ -72,7 +72,7 @@ bool WRMImplicitPermafrostModel::sats_saturated_(double pc_liq,
     sats[0] = 0.; // gas
     sats[1] = wrm_->saturation(pc_ice); // liquid
     sats[2] = 1.0 - sats[1];  // ice
-    ASSERT(sats[2] >= 0.);
+    AMANZI_ASSERT(sats[2] >= 0.);
     return true;
   }
   return false;
@@ -113,12 +113,12 @@ bool WRMImplicitPermafrostModel::sats_frozen_unsaturated_(double pc_liq,
   sats[2] = si;
   sats[1] = (1. - si) * wrm_->saturation(pc_liq);
   sats[0] = 1. - si - sats[1];
-  ASSERT(sats[0] >= 0.);
-  ASSERT(sats[1] >= 0.);
-  ASSERT(sats[2] >= 0.);
-  ASSERT(sats[0] <= 1.);
-  ASSERT(sats[1] <= 1.);
-  ASSERT(sats[2] <= 1.);
+  AMANZI_ASSERT(sats[0] >= 0.);
+  AMANZI_ASSERT(sats[1] >= 0.);
+  AMANZI_ASSERT(sats[2] >= 0.);
+  AMANZI_ASSERT(sats[0] <= 1.);
+  AMANZI_ASSERT(sats[1] <= 1.);
+  AMANZI_ASSERT(sats[2] <= 1.);
   return true;
 }
 
@@ -161,7 +161,7 @@ double WRMImplicitPermafrostModel::si_frozen_unsaturated_(double pc_liq, double 
     FitSpline_(pc_ice, cutoff, si_cutoff, spline);
     si = ((spline[0] * pc_liq + spline[1]) * pc_liq + spline[2]) * pc_liq + spline[3];
     si = std::max(si, 0.);
-    ASSERT(si <= 1.);
+    AMANZI_ASSERT(si <= 1.);
   }
 
   return si;
@@ -326,7 +326,7 @@ double WRMImplicitPermafrostModel::si_frozen_unsaturated_nospline_(double pc_liq
   }
 
   double si = (result.first + result.second) / 2.;
-  ASSERT(0. <= si && si <= 1.);
+  AMANZI_ASSERT(0. <= si && si <= 1.);
 
   if (max_it >= max_it_) {
     // did not converge?  May be ABS converged but not REL converged!

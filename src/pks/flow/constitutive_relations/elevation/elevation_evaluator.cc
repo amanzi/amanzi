@@ -49,7 +49,7 @@ void ElevationEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
       // given a boundary face, we need the internal cell to choose the right WRM
       AmanziMesh::Entity_ID f = face_map.LID(vandelay_map.GID(bf));
       slope->Mesh()->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
-      ASSERT(cells.size() == 1);
+      AMANZI_ASSERT(cells.size() == 1);
 
       slope_bf[0][bf] = slope_c[0][cells[0]];
     }
@@ -59,7 +59,7 @@ void ElevationEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
 // This is hopefully never called?
 void ElevationEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>& S,
         Key wrt_key, const std::vector<Teuchos::Ptr<CompositeVector> >& results) {
-  ASSERT(0);
+  AMANZI_ASSERT(0);
 }
 
 // Custom EnsureCompatibility forces this to be updated once.

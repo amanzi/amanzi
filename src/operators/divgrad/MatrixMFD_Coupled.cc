@@ -160,7 +160,7 @@ int MatrixMFD_Coupled::ApplyInverse(const TreeVector& X,
   // Wf <-- Afc * Wc
   ierr |= blockA_->ApplyAfc(*A,*A,0.);
   ierr |= blockB_->ApplyAfc(*B,*B,0.);
-  ASSERT(!ierr);
+  AMANZI_ASSERT(!ierr);
 
   // Xf <-- (x_Af, x_Ac)^T - Afc * A2c2c_Inv * (x_Ac, x_Bc)^T, the rhs.
   {
@@ -175,7 +175,7 @@ int MatrixMFD_Coupled::ApplyInverse(const TreeVector& X,
 
   // Apply Schur Inverse,  Yf = Schur^-1 * Xf
   ierr = S_pc_->ApplyInverse(Xf, Yf);
-  ASSERT(!ierr);
+  AMANZI_ASSERT(!ierr);
 
   // copy back into subblock
   Teuchos::RCP<CompositeVector> YA = Y.SubVector(0)->Data();
@@ -196,7 +196,7 @@ int MatrixMFD_Coupled::ApplyInverse(const TreeVector& X,
   ierr |= adv_block_->ApplyAcf(*YA,*YB,0.);
   ierr |= blockB_->ApplyAcf(*YB,*YB,1.);
   //  ierr |= blockB_->ApplyAcf(*YB,*YB,0.);
-  ASSERT(!ierr);
+  AMANZI_ASSERT(!ierr);
 
   // Yc -= (x_Ac,x_Bc)^T
   {
@@ -220,7 +220,7 @@ int MatrixMFD_Coupled::ApplyInverse(const TreeVector& X,
  ****************************************************************** */
 int MatrixMFD_Coupled::Apply(const TreeVector& X,
         TreeVector& Y) const {
-  ASSERT(0); // this is currently screwed up with the inclusion of advective terms
+  AMANZI_ASSERT(0); // this is currently screwed up with the inclusion of advective terms
 
   Teuchos::RCP<const CompositeVector> XA = X.SubVector(0)->Data();
   Teuchos::RCP<const CompositeVector> XB = X.SubVector(1)->Data();
@@ -235,7 +235,7 @@ int MatrixMFD_Coupled::Apply(const TreeVector& X,
           *XB->ViewComponent("cell",false), 1.);
   ierr |= YB->ViewComponent("cell",false)->Multiply(scaling_, *Dcc_,
           *XA->ViewComponent("cell",false), 1.);
-  ASSERT(!ierr);
+  AMANZI_ASSERT(!ierr);
   return ierr;
 }
 
@@ -287,7 +287,7 @@ void MatrixMFD_Coupled::AssembleAff_() const {
     // -- Assemble Schur complement
     for (int i=0; i!=nfaces; ++i) {
       ierr = A2f2f_->BeginSumIntoGlobalValues(faces_GID[i], nentries, faces_GID);
-      ASSERT(!ierr);
+      AMANZI_ASSERT(!ierr);
 
       for (int j=0; j!=nfaces; ++j){
         values(0,0) = S2f2f(i,j);
@@ -298,11 +298,11 @@ void MatrixMFD_Coupled::AssembleAff_() const {
         //ierr = A2f2f_->SubmitBlockEntry(values);  // Bug in Trilinos 10.10 FeVbrMatrix
         ierr = A2f2f_->SubmitBlockEntry(values.A(), values.LDA(),
                 values.M(), values.N());
-        ASSERT(!ierr);
+        AMANZI_ASSERT(!ierr);
       }
 
       ierr = A2f2f_->EndSubmitEntries();
-      ASSERT(!ierr);
+      AMANZI_ASSERT(!ierr);
     }
   }
 
@@ -310,7 +310,7 @@ void MatrixMFD_Coupled::AssembleAff_() const {
   ierr = A2f2f_->GlobalAssemble();
   is_operator_created_ = true;
   assembled_operator_ = true;
-  ASSERT(!ierr);
+  AMANZI_ASSERT(!ierr);
 }
 
 
@@ -325,8 +325,8 @@ void MatrixMFD_Coupled::AssembleSchur_() const {
   const Epetra_BlockMap& fmap_wghost = mesh_->face_map(true);
 
   int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
-  ASSERT(Ccc_->MyLength() == ncells);
-  ASSERT(Dcc_->MyLength() == ncells);
+  AMANZI_ASSERT(Ccc_->MyLength() == ncells);
+  AMANZI_ASSERT(Dcc_->MyLength() == ncells);
 
   // Get the assorted sub-blocks
   std::vector<Teuchos::SerialDenseMatrix<int, double> >& Aff = blockA_->Aff_cells();
@@ -384,7 +384,7 @@ void MatrixMFD_Coupled::AssembleSchur_() const {
       cell_inv(1, 0) = -Dcc / det_cell;
     } else {
       std::cout << "MatrixMFD_Coupled: Division by zero: determinant of the cell block is zero" << std::endl;
-      //      ASSERT(0);
+      //      AMANZI_ASSERT(0);
       Exceptions::amanzi_throw(Errors::CutTimeStep());
     }
     A2c2c_cells_Inv_[c] = cell_inv;
@@ -392,7 +392,7 @@ void MatrixMFD_Coupled::AssembleSchur_() const {
     // -- Assemble Schur complement
     for (int i=0; i!=nfaces; ++i) {
       ierr = P2f2f_->BeginSumIntoGlobalValues(faces_GID[i], nentries, faces_GID);
-      ASSERT(!ierr);
+      AMANZI_ASSERT(!ierr);
 
       for (int j=0; j!=nfaces; ++j){
         values(0,0) = Aff[c](i, j) - Afc[c](i) * (cell_inv(0,0)*Acf[c](j) + cell_inv(0,1)*Gcf[c](j));
@@ -401,17 +401,17 @@ void MatrixMFD_Coupled::AssembleSchur_() const {
         values(1,1) = Bff[c](i, j) - Bfc[c](i)*cell_inv(1,1)*Bcf[c](j);
         ierr = P2f2f_->SubmitBlockEntry(values.A(), values.LDA(),
                 values.M(), values.N());
-        ASSERT(!ierr);
+        AMANZI_ASSERT(!ierr);
       }
 
       ierr = P2f2f_->EndSubmitEntries();
-      ASSERT(!ierr);
+      AMANZI_ASSERT(!ierr);
     }
   }
 
   // Finish assembly
   ierr = P2f2f_->GlobalAssemble();
-  ASSERT(!ierr);
+  AMANZI_ASSERT(!ierr);
   assembled_schur_ = true;
   is_schur_created_ = true;
 
@@ -468,9 +468,9 @@ void MatrixMFD_Coupled::SymbolicAssembleGlobalMatrices() {
 
   // Assemble the graphs
   ierr = cf_graph->FillComplete(*double_fmap_, *double_cmap_);
-  ASSERT(!ierr);
+  AMANZI_ASSERT(!ierr);
   ierr = ff_graph->GlobalAssemble();  // Symbolic graph is complete.
-  ASSERT(!ierr);
+  AMANZI_ASSERT(!ierr);
 
   // Create the matrices
   A2f2c_ = Teuchos::rcp(new Epetra_VbrMatrix(Copy, *cf_graph)); // stored in transpose
@@ -479,7 +479,7 @@ void MatrixMFD_Coupled::SymbolicAssembleGlobalMatrices() {
   //  A2f2f_ = Teuchos::rcp(new Epetra_FEVbrMatrix(Copy, *ff_graph, false));
   ierr = P2f2f_->GlobalAssemble();
   //  ierr = A2f2f_->GlobalAssemble();
-  ASSERT(!ierr);
+  AMANZI_ASSERT(!ierr);
 }
 
 

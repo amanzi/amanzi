@@ -75,7 +75,7 @@ void SnowSkinPotentialEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
 // This is hopefully never called?
 void SnowSkinPotentialEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>& S,
         Key wrt_key, const Teuchos::Ptr<CompositeVector>& result) {
-  ASSERT(0);
+  AMANZI_ASSERT(0);
   result->PutScalar(1.0);
 }
 

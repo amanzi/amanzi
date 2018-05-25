@@ -168,7 +168,8 @@ void EnergyBase::SetupEnergy_(const Teuchos::Ptr<State>& S) {
   //    derivative.
   jacobian_ = mfd_pc_plist.get<std::string>("Newton correction", "none") != "none";
   if (jacobian_) {
-    if (preconditioner_->RangeMap().HasComponent("face")) {
+    // if (preconditioner_->RangeMap().HasComponent("face")) {
+    if (mfd_pc_plist.get<std::string>("discretization primary") != "fv: default"){
       // MFD -- upwind required
       dconductivity_key_ = Keys::getDerivKey(conductivity_key_, key_);
       duw_conductivity_key_ = Keys::getDerivKey(uw_conductivity_key_, key_);
@@ -214,6 +215,7 @@ void EnergyBase::SetupEnergy_(const Teuchos::Ptr<State>& S) {
   precon_used_ = plist_->isSublist("preconditioner");
   if (precon_used_) {
     preconditioner_->SymbolicAssembleMatrix();
+    preconditioner_->InitializePreconditioner(plist_->sublist("preconditioner"));
 
     //    Potentially create a linear solver
     if (plist_->isSublist("linear solver")) {
@@ -276,8 +278,13 @@ void EnergyBase::SetupEnergy_(const Teuchos::Ptr<State>& S) {
     Exceptions::amanzi_throw(message);
   }
 
+  compute_boundary_values_ = plist_->get<bool>("compute boundary values", false);
+ 
+  CompositeVectorSpace matrix_cvs = matrix_->RangeMap();
+  if (compute_boundary_values_) matrix_cvs.AddComponent("boundary_face", AmanziMesh::BOUNDARY_FACE, 1); 
+
   // -- primary variable
-  S->RequireField(key_, name_)->Update(matrix_->RangeMap())->SetGhosted();
+  S->RequireField(key_, name_)->Update(matrix_cvs)->SetGhosted();
   
   // Require a field for the mass flux for advection.
   flux_exists_ = S->HasField(flux_key_); // this bool is needed to know if PK
@@ -370,15 +377,17 @@ void EnergyBase::CommitStep(double t_old, double t_new, const Teuchos::RCP<State
   niter_ = 0;
   bool update = UpdateConductivityData_(S.ptr());
 
+  Teuchos::RCP<const CompositeVector> temp = S->GetFieldData(key_);
   // if (update_flux_ == UPDATE_FLUX_TIMESTEP ||
   //     (update_flux_ == UPDATE_FLUX_ITERATION && update)) {
   Teuchos::RCP<const CompositeVector> conductivity =
       S->GetFieldData(uw_conductivity_key_);
   matrix_diff_->global_operator()->Init();
   matrix_diff_->SetScalarCoefficient(conductivity, Teuchos::null);
-  matrix_diff_->UpdateMatrices(Teuchos::null, Teuchos::null);
+  matrix_diff_->UpdateMatrices(Teuchos::null, temp.ptr());
+  //matrix_diff_->UpdateMatrices(Teuchos::null, Teuchos::null);
 
-  Teuchos::RCP<const CompositeVector> temp = S->GetFieldData(key_);
+
   Teuchos::RCP<CompositeVector> eflux = S->GetFieldData(energy_flux_key_, name_);
   matrix_diff_->UpdateFlux(temp.ptr(), eflux.ptr());
   //  }
@@ -394,7 +403,57 @@ void EnergyBase::CommitStep(double t_old, double t_new, const Teuchos::RCP<State
   matrix_adv_->UpdateFlux(enth.ptr(), flux.ptr(), bc_adv_, adv_energy.ptr());
   
 
+  if (compute_boundary_values_){
+    Epetra_MultiVector& temp_bf = *S->GetFieldData(key_, name_)->ViewComponent("boundary_face",false);
+    const Epetra_Map& vandalay_map = mesh_->exterior_face_map(false);
+    const Epetra_Map& face_map = mesh_->face_map(false);
+    int nbfaces = temp_bf.MyLength();
+    for (int bf=0; bf!=nbfaces; ++bf) {
+      AmanziMesh::Entity_ID f = face_map.LID(vandalay_map.GID(bf));
+      temp_bf[0][bf] =  BoundaryFaceValue(f, *temp);
+    }
+  }      
+
+
 };
+
+/* ******************************************************************
+* Returns the first cell attached to a boundary face.   
+****************************************************************** */
+int EnergyBase::BoundaryFaceGetCell(int f) const
+{
+  AmanziMesh::Entity_ID_List cells;
+  mesh_->face_get_cells(f, AmanziMesh::Parallel_type::GHOST, &cells);
+  return cells[0];
+}
+
+/* ******************************************************************
+* Returns either known pressure face value or calculates it using
+* the two-point flux approximation (FV) scheme.
+****************************************************************** */
+double EnergyBase::BoundaryFaceValue(int f, const CompositeVector& u)
+{
+  double face_value;
+
+  if (u.HasComponent("face")) {
+    const Epetra_MultiVector& u_face = *u.ViewComponent("face");
+    face_value = u_face[0][f];
+  } else {
+    int c = BoundaryFaceGetCell(f);
+    const Epetra_MultiVector& u_cell = *u.ViewComponent("cell");
+    const std::vector<int>& bc_model = bc_->bc_model();
+    const std::vector<double>& bc_value = bc_->bc_value();
+
+    if (bc_model[f] == Operators::OPERATOR_BC_DIRICHLET) {
+      face_value =  bc_value[f];
+    }else{
+      face_value = u_cell[0][c];
+    // face_value = DeriveBoundaryFaceValue(f, u, wrms_->second[(*wrms_->first)[c]]);
+    }
+  }
+  return face_value;
+}
+
 
 
 // -- Calculate any diagnostics prior to doing vis
@@ -743,7 +802,8 @@ void EnergyBase::CalculateConsistentFaces(const Teuchos::Ptr<CompositeVector>& u
   // Update the preconditioner
   matrix_diff_->global_operator()->Init();
   matrix_diff_->SetScalarCoefficient(conductivity, Teuchos::null);
-  matrix_diff_->UpdateMatrices(Teuchos::null, Teuchos::null);
+  matrix_diff_->UpdateMatrices(Teuchos::null, u);
+  //matrix_diff_->UpdateMatrices(Teuchos::null, Teuchos::null);
   matrix_diff_->ApplyBCs(true, true);
 
   // derive the consistent faces, involves a solve
