@@ -19,7 +19,7 @@
 #include "wrm_flow_registration.hh"
 
 
-TEST(MPC_DRIVER_FLOW) {
+TEST(MPC_WALKABOUT) {
 
 using namespace Amanzi;
 using namespace Amanzi::AmanziMesh;
@@ -27,20 +27,18 @@ using namespace Amanzi::AmanziMesh;
   Epetra_MpiComm comm(MPI_COMM_WORLD);
   
   // read the main parameter list
-  std::string xmlFileName = "test/mpc_driver_flow.xml";
+  std::string xmlFileName = "test/mpc_walkabout.xml";
   Teuchos::RCP<Teuchos::ParameterList> glist = Teuchos::getParametersFromXmlFile(xmlFileName);
-  glist->sublist("cycle driver").sublist("time periods")
-        .sublist("TP 0").set<double>("end period time", 1.0); 
 
   // For now create one geometric model from all the regions in the spec
   Teuchos::ParameterList region_list = glist->sublist("regions");
   Teuchos::RCP<AmanziGeometry::GeometricModel> gm =
-      Teuchos::rcp(new AmanziGeometry::GeometricModel(2, region_list, &comm));
+      Teuchos::rcp(new AmanziGeometry::GeometricModel(3, region_list, &comm));
 
   // create mesh
   MeshFactory meshfactory(&comm);
   meshfactory.preference(FrameworkPreference({MSTK}));
-  Teuchos::RCP<AmanziMesh::Mesh> mesh = meshfactory(0.0, 0.0, 216.0, 120.0, 27, 15, gm);
+  Teuchos::RCP<AmanziMesh::Mesh> mesh = meshfactory("test/mpc_walkabout_tet5.exo", gm);
 
   // use cycle driver to create and initialize state
   ObservationData obs_data;    
@@ -48,7 +46,7 @@ using namespace Amanzi::AmanziMesh;
   auto S = cycle_driver.Go();
 
   // overwrite flow & pressure
-  AmanziGeometry::Point vel(1.0, 2.0);
+  AmanziGeometry::Point vel(1.0, 2.0, 3.0);
   int nnodes = mesh->num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::OWNED);
   int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
 
@@ -62,9 +60,8 @@ using namespace Amanzi::AmanziMesh;
   pres.PutScalar(1.0);
 
   // verify recovered velocity
-  glist->set<std::string>("file name base", "walkabout")
-        .set<int>("file name digits", 5);
-  auto walkabout = Teuchos::rcp(new Amanzi::WalkaboutCheckpoint(*glist, &comm));
+  Teuchos::ParameterList& wlist = glist->sublist("walkabout data");
+  auto walkabout = Teuchos::rcp(new Amanzi::WalkaboutCheckpoint(wlist, &comm));
 
   std::vector<AmanziGeometry::Point> xyz, velocity;
   walkabout->CalculateDarcyVelocity(S, xyz, velocity);
@@ -73,7 +70,7 @@ using namespace Amanzi::AmanziMesh;
     CHECK(norm(vel - velocity[v]) < 1e-10);
   }
 
-  // verify recovered pressure
+  // verify interpolated pressure
   std::vector<int> material_ids;
   std::vector<double> porosity, saturation, pressure, isotherm_kd;
 
@@ -82,6 +79,30 @@ using namespace Amanzi::AmanziMesh;
 
   for (int v = 0; v < nnodes; ++v) {
     CHECK_CLOSE(1.0, pressure[v], 1e-10);
+    CHECK_CLOSE(1.0, saturation[v], 1e-10);
+  }
+
+  // verify other quantities at selected point on main diagonal
+  AmanziGeometry::Point x0(0.0, 0.0, 0.0), xv(3);
+  AmanziGeometry::Point x1(1.0, 1.0, 1.0);
+  AmanziGeometry::Point x2(2.0, 2.0, 2.0);
+  AmanziGeometry::Point x3(3.0, 3.0, 3.0);
+
+  for (int v = 0; v < nnodes; ++v) {
+    mesh->node_get_coordinates(v, &xv);
+    if (norm(xv - x0) < 1e-10) {
+      CHECK_CLOSE(0.2, porosity[v], 1e-10);
+      CHECK_EQUAL(1000, material_ids[v]);
+    } else if (norm(xv - x1) < 1e-10) {
+      CHECK_CLOSE(0.3, porosity[v], 1e-10);
+      CHECK_EQUAL(2000, material_ids[v]);
+    } else if (norm(xv - x2) < 1e-10) {
+      CHECK_CLOSE(0.5, porosity[v], 1e-10);
+      CHECK_EQUAL(3000, material_ids[v]);
+    } else if (norm(xv - x3) < 1e-10) {
+      CHECK_CLOSE(0.6, porosity[v], 1e-10);
+      CHECK_EQUAL(3000, material_ids[v]);
+    }
   }
 
   // create walkabout file

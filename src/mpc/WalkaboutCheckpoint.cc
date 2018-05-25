@@ -19,7 +19,9 @@
 
 #include "DenseMatrix.hh"
 #include "Mesh.hh"
+#include "ParallelCommunication.hh"
 #include "Tensor.hh"
+
 #include "WalkaboutCheckpoint.hh"
 
 namespace Amanzi {
@@ -97,7 +99,7 @@ void WalkaboutCheckpoint::CalculateData(
     std::vector<double>& pressure, std::vector<double>& isotherm_kd,
     std::vector<int>& material_ids)
 {
-  const AmanziMesh::Mesh& mesh = *S->GetMesh();
+  const auto& mesh = S->GetMesh();
   S->GetFieldData("porosity")->ScatterMasterToGhosted();
   S->GetFieldData("saturation_liquid")->ScatterMasterToGhosted();
   S->GetFieldData("pressure")->ScatterMasterToGhosted();
@@ -107,8 +109,8 @@ void WalkaboutCheckpoint::CalculateData(
   const Epetra_MultiVector& ws = *S->GetFieldData("saturation_liquid")->ViewComponent("cell", true);
   const Epetra_MultiVector& p = *S->GetFieldData("pressure")->ViewComponent("cell", true);
 
-  int nnodes_owned  = mesh.num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::OWNED);
-  int ncells_owned  = mesh.num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+  int nnodes_owned = mesh->num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::OWNED);
+  int ncells_owned = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
 
   // process non-flow state variables
   bool flag(false);
@@ -123,8 +125,9 @@ void WalkaboutCheckpoint::CalculateData(
 
   // collect material information
   AmanziMesh::Entity_ID_List cells;
+  Epetra_IntVector cell_ids(mesh->cell_map(true));
 
-  material_ids.resize(ncells_owned, -1);
+  cell_ids.PutValue(-1);
 
   if (plist_.isSublist("write regions")) {
     const Teuchos::ParameterList& tmp = plist_.sublist("write regions");
@@ -132,25 +135,29 @@ void WalkaboutCheckpoint::CalculateData(
     std::vector<int> ids = tmp.get<Teuchos::Array<int> >("material ids").toVector();
 
     for (int n = 0; n < regs.size(); ++n) {
-      mesh.get_set_entities(regs[n], AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED, &cells);
+      mesh->get_set_entities(regs[n], AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED, &cells);
 
       for (auto it = cells.begin(); it != cells.end(); ++it) {
-        material_ids[*it] = ids[n];
+        cell_ids[*it] = ids[n];
       }
     }
   }
+
+  ParallelCommunication pp(mesh);
+  pp.CopyMasterCell2GhostCell(cell_ids);
 
   // Populate state data at mesh nodes
   porosity.clear();
   saturation.clear();
   pressure.clear();
   isotherm_kd.clear();
+  material_ids.clear();
 
   double local_phi, local_ws, local_p, local_kd;
   int local_id(-1);
 
   for (int v = 0; v < nnodes_owned; v++) {
-    mesh.node_get_cells(v, AmanziMesh::Parallel_type::ALL, &cells);
+    mesh->node_get_cells(v, AmanziMesh::Parallel_type::ALL, &cells);
     int ncells = cells.size();
 
     local_phi = 0.0;
@@ -163,7 +170,7 @@ void WalkaboutCheckpoint::CalculateData(
       local_ws += ws[0][c];
       local_p += p[0][c];
       if (flag) local_kd += (*kd)[0][c];
-      local_id = std::max(local_id, material_ids[c]);
+      local_id = std::max(local_id, cell_ids[c]);
     }
     local_phi /= ncells;
     porosity.push_back(local_phi);

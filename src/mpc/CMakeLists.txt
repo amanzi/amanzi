@@ -161,7 +161,9 @@ if (BUILD_TESTS)
     # Test: walkabout
     add_amanzi_test(mpc_walkabout mpc_walkabout 
                     KIND      int
+                    NPROCS    2
                     SOURCE    test/Main.cc test/mpc_walkabout.cc
-                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES}
+                                             ${HYPRE_LIBRARIES})
 
 endif()
