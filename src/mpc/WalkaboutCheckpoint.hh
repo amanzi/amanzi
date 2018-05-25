@@ -36,19 +36,18 @@ class WalkaboutCheckpoint : public Checkpoint {
   // output of fields
   void WriteWalkabout(Teuchos::RCP<State>& S);
 
- private:
-  // -- recontruct vector velocity at mesh nodes
-  void CalculateDarcyVelocity_(Teuchos::RCP<State>& S,
-                               std::vector<AmanziGeometry::Point>& xyz, 
-                               std::vector<AmanziGeometry::Point>& velocity);
+  // recontruct vector velocity at mesh nodes
+  void CalculateDarcyVelocity(Teuchos::RCP<State>& S,
+                              std::vector<AmanziGeometry::Point>& xyz, 
+                              std::vector<AmanziGeometry::Point>& velocity);
 
-  // -- interpolate various fileds to mesh nodes
-  void CalculateData_(Teuchos::RCP<State>& S,
-                      std::vector<AmanziGeometry::Point>& xyz, 
-                      std::vector<AmanziGeometry::Point>& velocity,
-                      std::vector<double>& porosity, std::vector<double>& saturation,
-                      std::vector<double>& pressure, std::vector<double>& isotherm_kd,
-                      std::vector<int>& material_ids);
+  // interpolate various fileds to mesh nodes
+  void CalculateData(Teuchos::RCP<State>& S,
+                     std::vector<AmanziGeometry::Point>& xyz, 
+                     std::vector<AmanziGeometry::Point>& velocity,
+                     std::vector<double>& porosity, std::vector<double>& saturation,
+                     std::vector<double>& pressure, std::vector<double>& isotherm_kd,
+                     std::vector<int>& material_ids);
 };
 
 }  // namespace Amanzi
