@@ -58,7 +58,7 @@ void RunTestMarshakLogical(std::string op_list_name) {
   ParameterList plist = xmlreader.getParameters();
 
   // create a logical mesh
-  ParameterList region_list = plist.get<Teuchos::ParameterList>("regions");
+  ParameterList region_list = plist.sublist("regions");
   Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(3, region_list, &comm));
 
   MeshLogicalFactory fac(&comm, gm);
@@ -177,7 +177,7 @@ void RunTestMarshakLogical(std::string op_list_name) {
     global_op->AssembleMatrix();
 
     // create preconditoner
-    ParameterList slist = plist.get<Teuchos::ParameterList>("preconditioners");
+    ParameterList slist = plist.sublist("preconditioners");
     global_op->InitPreconditioner("Hypre AMG", slist);
 
     // solve the problem

@@ -476,7 +476,7 @@ void AdvectionTransient(std::string filename, int nx, int ny, double dt,
                             << ", weak formulation=" << weak_form << std::endl;
 
   // create a mesh framework
-  ParameterList region_list = plist.get<Teuchos::ParameterList>("regions");
+  ParameterList region_list = plist.sublist("regions");
   Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(2, region_list, &comm));
 
   MeshFactory meshfactory(&comm);

@@ -55,7 +55,7 @@ TEST(OPERATOR_DIFFUSION_HIGH_ORDER_CROUZIEX_RAVIART) {
   ParameterList plist = xmlreader.getParameters();
 
   // create a mesh framework
-  ParameterList region_list = plist.get<Teuchos::ParameterList>("regions");
+  ParameterList region_list = plist.sublist("regions");
   Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(2, region_list, &comm));
 
   MeshFactory meshfactory(&comm);
@@ -67,7 +67,7 @@ TEST(OPERATOR_DIFFUSION_HIGH_ORDER_CROUZIEX_RAVIART) {
   int nnodes_wghost = mesh->num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::ALL);
 
   // create boundary data (no mixed bc)
-  ParameterList op_list = plist.get<Teuchos::ParameterList>("PK operator")
+  ParameterList op_list = plist.sublist("PK operator")
                                .sublist("diffusion operator Crouzeix-Raviart");
   int order = op_list.get<int>("method order");
 
@@ -121,7 +121,7 @@ TEST(OPERATOR_DIFFUSION_HIGH_ORDER_CROUZIEX_RAVIART) {
   global_op->AssembleMatrix();
 
   // create preconditioner using the base operator class
-  ParameterList slist = plist.get<Teuchos::ParameterList>("preconditioners");
+  ParameterList slist = plist.sublist("preconditioners");
   slist.sublist("Hypre AMG").set<std::string>("preconditioner type", "diagonal");
   global_op->InitPreconditioner("Hypre AMG", slist);
 
@@ -180,7 +180,7 @@ void RunHighOrderLagrange(std::string vem_name, bool polygonal_mesh) {
   ParameterList plist = xmlreader.getParameters();
 
   // create a mesh framework
-  ParameterList region_list = plist.get<Teuchos::ParameterList>("regions");
+  ParameterList region_list = plist.sublist("regions");
   Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(2, region_list, &comm));
 
   MeshFactory meshfactory(&comm);
@@ -196,7 +196,7 @@ void RunHighOrderLagrange(std::string vem_name, bool polygonal_mesh) {
   int nnodes_wghost = mesh->num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::ALL);
 
   // create boundary data (no mixed bc)
-  ParameterList op_list = plist.get<Teuchos::ParameterList>("PK operator")
+  ParameterList op_list = plist.sublist("PK operator")
                                .sublist("diffusion operator " + vem_name);
   int order = op_list.get<int>("method order");
 
@@ -259,7 +259,7 @@ void RunHighOrderLagrange(std::string vem_name, bool polygonal_mesh) {
   global_op->AssembleMatrix();
 
   // create preconditioner using the base operator class
-  ParameterList slist = plist.get<Teuchos::ParameterList>("preconditioners");
+  ParameterList slist = plist.sublist("preconditioners");
   slist.sublist("Hypre AMG").set<std::string>("preconditioner type", "diagonal");
   global_op->InitPreconditioner("Hypre AMG", slist);
 

@@ -107,7 +107,7 @@ void RunTest(std::string op_list_name) {
   ParameterList plist = xmlreader.getParameters();
 
   // create an MSTK mesh framework
-  ParameterList region_list = plist.get<Teuchos::ParameterList>("Regions Closed");
+  ParameterList region_list = plist.sublist("Regions Closed");
   Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(3, region_list, &comm));
 
   MeshFactory meshfactory(&comm);
@@ -172,8 +172,7 @@ void RunTest(std::string op_list_name) {
     solution->ScatterMasterToGhosted();
     knc->UpdateValues(*solution);
 
-    Teuchos::ParameterList olist = plist.get<Teuchos::ParameterList>("PK operator")
-                                        .get<Teuchos::ParameterList>(op_list_name);
+    Teuchos::ParameterList olist = plist.sublist("PK operator").sublist(op_list_name);
     PDE_DiffusionMFD op(olist, surfmesh);
     op.SetBCs(bc, bc);
 
@@ -196,7 +195,7 @@ void RunTest(std::string op_list_name) {
     global_op->AssembleMatrix();
     
     // create preconditoner
-    ParameterList slist = plist.get<Teuchos::ParameterList>("preconditioners");
+    ParameterList slist = plist.sublist("preconditioners");
     global_op->InitPreconditioner("Hypre AMG", slist);
 
     // Test SPD properties of the matrix and preconditioner.

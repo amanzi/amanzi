@@ -54,7 +54,7 @@ void RunTestDiffusionCurved() {
   ParameterList plist = xmlreader.getParameters();
 
   // create a randomized mesh 
-  ParameterList region_list = plist.get<Teuchos::ParameterList>("regions");
+  ParameterList region_list = plist.sublist("regions");
   Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(3, region_list, &comm));
 
   MeshFactory meshfactory(&comm);
@@ -117,7 +117,7 @@ void RunTestDiffusionCurved() {
   global_op->AssembleMatrix();
 
   // create a preconditoner using the global matrix
-  ParameterList slist = plist.get<Teuchos::ParameterList>("preconditioners");
+  ParameterList slist = plist.sublist("preconditioners");
   global_op->InitPreconditioner("Hypre AMG", slist);
 
   // Test SPD properties of the preconditioner.

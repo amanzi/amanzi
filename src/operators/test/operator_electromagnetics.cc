@@ -59,7 +59,7 @@ void CurlCurl(double c_t, double tolerance, bool initial_guess) {
   ParameterList plist = xmlreader.getParameters();
 
   // create a MSTK mesh framework
-  ParameterList region_list = plist.get<Teuchos::ParameterList>("regions");
+  ParameterList region_list = plist.sublist("regions");
   Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(3, region_list, &comm));
 
   MeshFactory meshfactory(&comm);
@@ -117,8 +117,7 @@ void CurlCurl(double c_t, double tolerance, bool initial_guess) {
   }
 
   // create electromagnetics operator
-  Teuchos::ParameterList olist = plist.get<Teuchos::ParameterList>("PK operator")
-                                      .get<Teuchos::ParameterList>("electromagnetics operator");
+  Teuchos::ParameterList olist = plist.sublist("PK operator").sublist("electromagnetics operator");
   Teuchos::RCP<PDE_Electromagnetics> op_curlcurl = Teuchos::rcp(new PDE_Electromagnetics(olist, mesh));
   op_curlcurl->SetBCs(bc, bc);
   const CompositeVectorSpace& cvs = op_curlcurl->global_operator()->DomainMap();
@@ -178,7 +177,7 @@ void CurlCurl(double c_t, double tolerance, bool initial_guess) {
   global_op->AssembleMatrix();
   global_op->UpdateRHS(source, false);
 
-  ParameterList slist = plist.get<Teuchos::ParameterList>("preconditioners");
+  ParameterList slist = plist.sublist("preconditioners");
   global_op->InitPreconditioner("Hypre AMG", slist);
 
   // Test SPD properties of the matrix and preconditioner.

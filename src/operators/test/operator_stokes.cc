@@ -114,7 +114,7 @@ TEST(OPERATOR_STOKES_EXACTNESS) {
   // -- create an elasticity operator using in particular schema data. In the future,
   // -- we could take definition of DOFs data from WhetStone using the provided 
   // -- discretization method.
-  Teuchos::ParameterList op_list = plist.get<Teuchos::ParameterList>("PK operator").sublist("elasticity operator");
+  Teuchos::ParameterList op_list = plist.sublist("PK operator").sublist("elasticity operator");
   Teuchos::RCP<PDE_Elasticity> op00 = Teuchos::rcp(new PDE_Elasticity(op_list, mesh));
   op00->SetTensorCoefficient(K);
   // -- add boundary conditions to the discrete PDE: Lame equation
@@ -123,7 +123,7 @@ TEST(OPERATOR_STOKES_EXACTNESS) {
 
   // -- create a divergence operator. Note that it uses two different schemas for DOFs 
   // for velocity and pressure.
-  op_list = plist.get<Teuchos::ParameterList>("PK operator").sublist("divergence operator");
+  op_list = plist.sublist("PK operator").sublist("divergence operator");
   Teuchos::RCP<PDE_Abstract> op10 = Teuchos::rcp(new PDE_Abstract(op_list, mesh));
   // -- add boundary conditions to the discrete PDE: incompressibility equation
   op10->SetBCs(bcf, bcf);
@@ -188,7 +188,7 @@ TEST(OPERATOR_STOKES_EXACTNESS) {
   // The first block will reuse the assembled matrix to build a multigrid
   // solver. The second block is simply a diagonal matrix. The off-diagonal
   // blocks are empty and require no setup.
-  Teuchos::ParameterList slist = plist.get<Teuchos::ParameterList>("preconditioners");
+  Teuchos::ParameterList slist = plist.sublist("preconditioners");
   global00->InitPreconditioner("Hypre AMG", slist);
   global11->InitPreconditioner("Diagonal", slist); 
 

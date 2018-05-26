@@ -60,15 +60,11 @@ TEST(OPERATOR_MIXED_DIFFUSION) {
   Amanzi::VerboseObject::hide_line_prefix = true;
 
   // create a mesh 
-  Teuchos::ParameterList region_list = plist.get<Teuchos::ParameterList>("regions");
+  Teuchos::ParameterList region_list = plist.sublist("regions");
   Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(2, region_list, &comm));
 
-  FrameworkPreference pref;
-  pref.clear();
-  pref.push_back(MSTK);
-
   MeshFactory meshfactory(&comm);
-  meshfactory.preference(pref);
+  meshfactory.preference(FrameworkPreference({MSTK}));
   // Teuchos::RCP<Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 40, 40, gm);
   Teuchos::RCP<const Mesh> mesh = meshfactory("test/median32x33.exo", gm);
 
@@ -129,8 +125,7 @@ TEST(OPERATOR_MIXED_DIFFUSION) {
     double factor = pow(10.0, (double)(n - 50) / 100.0) / 2;
     
     // create the local diffusion operator
-    Teuchos::ParameterList olist = plist.get<Teuchos::ParameterList>("PK operators")
-                                        .get<Teuchos::ParameterList>("mixed diffusion");
+    Teuchos::ParameterList olist = plist.sublist("PK operators").sublist("mixed diffusion");
     PDE_DiffusionMFD op2(olist, mesh);
     op2.SetBCs(bc, bc);
 
@@ -153,7 +148,7 @@ TEST(OPERATOR_MIXED_DIFFUSION) {
     global_op->SymbolicAssembleMatrix();
     global_op->AssembleMatrix();
     
-    Teuchos::ParameterList slist = plist.get<Teuchos::ParameterList>("preconditioners");
+    Teuchos::ParameterList slist = plist.sublist("preconditioners");
     global_op->InitPreconditioner("Hypre AMG", slist);
 
     // solve the problem
@@ -219,15 +214,11 @@ TEST(OPERATOR_NODAL_DIFFUSION) {
   ParameterList plist = xmlreader.getParameters();
 
   // create an SIMPLE mesh framework
-  ParameterList region_list = plist.get<Teuchos::ParameterList>("regions");
+  ParameterList region_list = plist.sublist("regions");
   Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(2, region_list, &comm));
 
-  FrameworkPreference pref;
-  pref.clear();
-  pref.push_back(MSTK);
-
   MeshFactory meshfactory(&comm);
-  meshfactory.preference(pref);
+  meshfactory.preference(FrameworkPreference({MSTK}));
   RCP<const Mesh> mesh = meshfactory("test/median32x33.exo", gm);
   // RCP<Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 5, 5, gm);
   // RCP<const Mesh> mesh = meshfactory("test/median255x256.exo", gm);
@@ -288,8 +279,7 @@ TEST(OPERATOR_NODAL_DIFFUSION) {
     double factor = pow(10.0, (double)(n - 150) / 100.0) / 2;
 
     // create the local diffusion operator
-    Teuchos::ParameterList olist = plist.get<Teuchos::ParameterList>("PK operators")
-                                        .get<Teuchos::ParameterList>("nodal diffusion");
+    Teuchos::ParameterList olist = plist.sublist("PK operators").sublist("nodal diffusion");
     PDE_DiffusionMFD op2(olist, mesh);
     op2.SetBCs(bc, bc);
 
@@ -308,7 +298,7 @@ TEST(OPERATOR_NODAL_DIFFUSION) {
     global_op->SymbolicAssembleMatrix();
     global_op->AssembleMatrix();
     
-    Teuchos::ParameterList slist = plist.get<Teuchos::ParameterList>("preconditioners");
+    Teuchos::ParameterList slist = plist.sublist("preconditioners");
     global_op->InitPreconditioner("Hypre AMG", slist);
 
     // solve the problem

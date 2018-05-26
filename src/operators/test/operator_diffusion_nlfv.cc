@@ -52,8 +52,7 @@ void RunTestDiffusionNLFV_DMP(double gravity, bool testing) {
   std::string xmlFileName = "test/operator_diffusion.xml";
   Teuchos::ParameterXMLFileReader xmlreader(xmlFileName);
   Teuchos::ParameterList plist = xmlreader.getParameters();
-  Teuchos::ParameterList op_list = plist.get<Teuchos::ParameterList>("PK operator")
-                                        .sublist("diffusion operator nlfv");
+  Teuchos::ParameterList op_list = plist.sublist("PK operator").sublist("diffusion operator nlfv");
 
   // create an MSTK mesh framework
   MeshFactory meshfactory(&comm);
@@ -133,7 +132,7 @@ void RunTestDiffusionNLFV_DMP(double gravity, bool testing) {
     global_op->AssembleMatrix();
 
     // create preconditoner using the base operator class
-    Teuchos::ParameterList slist = plist.get<Teuchos::ParameterList>("preconditioners");
+    Teuchos::ParameterList slist = plist.sublist("preconditioners");
     global_op->InitPreconditioner("Hypre AMG", slist);
 
     // solve the problem
