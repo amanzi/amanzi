@@ -158,8 +158,12 @@ if (BUILD_TESTS)
                     SOURCE    test/Main.cc test/observable_line_segment.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
-#    add_executable(test_vis test/Main.cc test/test_vis.cpp)
-#    target_link_libraries(test_vis state mpc stk_mesh ${UnitTest_LIBRARIES})
-#    add_amanzi_test(vis test_vis KIND int)
+    # Test: walkabout
+    add_amanzi_test(mpc_walkabout mpc_walkabout 
+                    KIND      int
+                    NPROCS    2
+                    SOURCE    test/Main.cc test/mpc_walkabout.cc
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES}
+                                             ${HYPRE_LIBRARIES})
 
 endif()
