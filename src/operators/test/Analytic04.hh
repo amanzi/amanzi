@@ -8,7 +8,17 @@
 
   Author: Ethan Coon (ecoon@lanl.gov)
 
-  Non-polynomial solution with constant tensor and non-constant scalar coefficients.
+  Non-polynomial solution with constant tensor and non-constant 
+  other coefficients:
+
+  Solution:  p = 0         if x < 0,
+             p = 1         if x > PI / 2,
+             p = sin(x)^2  otherwise
+  Diffusion: K = 0         if x < 0,
+             K = 1         if x > PI / 2,
+             K = sin(x)^2  otherwise
+  Velocity: v = [0, 0]
+  Source: f = -div(K grad(p))
 */
 
 #ifndef AMANZI_OPERATOR_ANALYTIC_04_HH_
@@ -22,13 +32,13 @@ class Analytic04 : public AnalyticBase {
   Analytic04(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh) : AnalyticBase(mesh) {};
   ~Analytic04() {};
 
-  Amanzi::WhetStone::Tensor Tensor(const Amanzi::AmanziGeometry::Point& p, double t) {
+  Amanzi::WhetStone::Tensor TensorDiffusivity(const Amanzi::AmanziGeometry::Point& p, double t) {
     Amanzi::WhetStone::Tensor K(1,1);
     K(0, 0) = 1.0;
     return K;
   }
 
-  double ScalarCoefficient(const Amanzi::AmanziGeometry::Point& p, double t) { 
+  double ScalarDiffusivity(const Amanzi::AmanziGeometry::Point& p, double t) { 
     double x = p[0];
     double y = p[1];
     double k;
@@ -45,15 +55,15 @@ class Analytic04 : public AnalyticBase {
   double pressure_exact(const Amanzi::AmanziGeometry::Point& p, double t) { 
     double x = p[0];
     double y = p[1];
-    double k;
+    double pres;
     if (x < 0.0) {
-      k = 0.0;
+      pres = 0.0;
     } else if (x > Teuchos::Utils::pi()/2.0) {
-      k = 1.0;
+      pres = 1.0;
     } else {
-      k = std::pow(std::sin(x),2);
+      pres = std::pow(std::sin(x),2);
     }
-    return k;      
+    return pres;      
   }
 
   Amanzi::AmanziGeometry::Point gradient_exact(const Amanzi::AmanziGeometry::Point& p, double t) { 
@@ -69,6 +79,10 @@ class Analytic04 : public AnalyticBase {
       v[0] = 2.0 * std::sin(x) * std::cos(x);
     }
     return v;
+  }
+
+  Amanzi::AmanziGeometry::Point advection_exact(const Amanzi::AmanziGeometry::Point& p, double t) {
+    return Amanzi::AmanziGeometry::Point(2);
   }
 
   double source_exact(const Amanzi::AmanziGeometry::Point& p, double t) { 

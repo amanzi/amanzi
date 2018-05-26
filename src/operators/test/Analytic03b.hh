@@ -33,13 +33,13 @@ class Analytic03 : public AnalyticBase {
   }
   ~Analytic03() {};
 
-  Amanzi::WhetStone::Tensor Tensor(const Amanzi::AmanziGeometry::Point& p, double t) {
+  Amanzi::WhetStone::Tensor TensorDiffusivity(const Amanzi::AmanziGeometry::Point& p, double t) {
     Amanzi::WhetStone::Tensor K(1,1);
     K(0, 0) = 1.0;
     return K;
   }
 
-  double ScalarCoefficient(const Amanzi::AmanziGeometry::Point& p, double t) {
+  double ScalarDiffusivity(const Amanzi::AmanziGeometry::Point& p, double t) {
     double x = p[0];
     double y = p[1];
     double kr;
@@ -90,6 +90,10 @@ class Analytic03 : public AnalyticBase {
     return v;
   }
 
+  Amanzi::AmanziGeometry::Point advection_exact(const Amanzi::AmanziGeometry::Point& p, double t) {
+    return Amanzi::AmanziGeometry::Point(2);
+  }
+
   double source_exact(const Amanzi::AmanziGeometry::Point& p, double t) { 
     double x = p[0];
     double y = p[1];
@@ -97,7 +101,7 @@ class Analytic03 : public AnalyticBase {
     double plaplace, pmean, kmean;
     Amanzi::AmanziGeometry::Point pgrad(dim), kgrad(dim);
 
-    kmean = ScalarCoefficient(p,t);
+    kmean = ScalarDiffusivity(p,t);
     kgrad = ScalarTensorGradient(p, t);
 
     pmean = pressure_exact(p, t);

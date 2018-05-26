@@ -8,7 +8,13 @@
 
   Authors: Konstantin Lipnikov (lipnikov@lanl.gov)
 
-  Linear solution for problem with nonsymmetric diffusion coefficient.
+  Linear solution for problem with nonsymmetric diffusion coefficient:
+
+  Solution: p = 2x + y
+  Diffusion: K = [1   -x^2]
+                 [x^2  0.2]
+  Velocity: v = [0, 0]
+  Source: f = -div(K grad(p))
 */
 
 #ifndef AMANZI_OPERATOR_ANALYTIC_05_HH_
@@ -21,7 +27,7 @@ class Analytic05 : public AnalyticBase {
   Analytic05(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh) : AnalyticBase(mesh) {};
   ~Analytic05() {};
 
-  Amanzi::WhetStone::Tensor Tensor(const Amanzi::AmanziGeometry::Point& p, double t) {
+  Amanzi::WhetStone::Tensor TensorDiffusivity(const Amanzi::AmanziGeometry::Point& p, double t) {
     double x = p[0];
     Amanzi::WhetStone::Tensor K(2, 2);
     K(0, 0) = 1.0;
@@ -42,6 +48,10 @@ class Analytic05 : public AnalyticBase {
     v[0] = 2.0;
     v[1] = 1.0;
     return v;
+  }
+
+  Amanzi::AmanziGeometry::Point advection_exact(const Amanzi::AmanziGeometry::Point& p, double t) {
+    return Amanzi::AmanziGeometry::Point(2);
   }
 
   double source_exact(const Amanzi::AmanziGeometry::Point& p, double t) { 

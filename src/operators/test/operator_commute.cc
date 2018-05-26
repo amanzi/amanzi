@@ -36,8 +36,8 @@
 
 /* *****************************************************************
 * This test verified that operators can be computed in arbitrary
-* order. In addition, the factory of operators in used.
-* **************************************************************** */
+* order. In addition, the factory of operators is used.
+***************************************************************** */
 TEST(ADVECTION_DIFFUSION_COMMUTE) {
   using namespace Teuchos;
   using namespace Amanzi;

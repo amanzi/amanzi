@@ -8,11 +8,11 @@
 
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 
-  Base class for testing diffusion problems with gravity:
-    -div (K (grad(p) - g)) = f
-  where g is the gravity vector pointing downward of axis z 
-  or axis y in two dimensions.
-
+  Base class for testing advection-diffusion problems with gravity:
+    -div (K k (grad(p) - g) - v grad(p)) = f
+  where g is the gravity vector pointing downward of axis z or
+  axis y in two dimensions, K is diffusion tensor, v is velocity,
+  and k is scalar correction to diffusion coefficient.
 
   List of problems.  Note that all are 2D:
 
@@ -44,11 +44,11 @@ class AnalyticBase {
   ~AnalyticBase() {};
 
   // analytic solution for diffusion problem with gravity
-  // -- diffusion tensor T
-  virtual Amanzi::WhetStone::Tensor Tensor(const Amanzi::AmanziGeometry::Point& p, double t) = 0;
+  // -- tensorial diffusion coefficient
+  virtual Amanzi::WhetStone::Tensor TensorDiffusivity(const Amanzi::AmanziGeometry::Point& p, double t) = 0;
 
-  // -- scalar component of the coefficient
-  virtual double ScalarCoefficient(const Amanzi::AmanziGeometry::Point& p, double t) { return 1.0; }
+  // -- scalar diffusion coefficient
+  virtual double ScalarDiffusivity(const Amanzi::AmanziGeometry::Point& p, double t) { return 1.0; }
 
   // -- analytic solution p
   virtual double pressure_exact(const Amanzi::AmanziGeometry::Point& p, double t) = 0;
@@ -56,14 +56,17 @@ class AnalyticBase {
   // -- gradient of continuous velocity grad(h), where h = p + g z
   virtual Amanzi::AmanziGeometry::Point gradient_exact(const Amanzi::AmanziGeometry::Point& p, double t) = 0;
 
+  // -- analytic velocity function
+  virtual Amanzi::AmanziGeometry::Point advection_exact(const Amanzi::AmanziGeometry::Point& p, double t) = 0;
+
   // -- source term
   virtual double source_exact(const Amanzi::AmanziGeometry::Point& p, double t) = 0;
 
   // derived quantity: Darcy velocity -K * grad(h)
   virtual Amanzi::AmanziGeometry::Point velocity_exact(const Amanzi::AmanziGeometry::Point& p, double t) {
-    Amanzi::WhetStone::Tensor K = Tensor(p, t);
+    Amanzi::WhetStone::Tensor K = TensorDiffusivity(p, t);
     Amanzi::AmanziGeometry::Point g = gradient_exact(p, t);
-    double kr = ScalarCoefficient(p, t);
+    double kr = ScalarDiffusivity(p, t);
     return -(K * g) * kr;
   }
 
