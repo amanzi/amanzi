@@ -45,7 +45,14 @@ class VectorPolynomial {
   double NormMax() const;
 
   // ring algebra
-  VectorPolynomial& operator*=(double val);
+  template<typename Type>
+  VectorPolynomial& operator*=(Type val) {
+    for (int i = 0; i < polys_.size(); ++i) {
+      polys_[i] *= val;
+    }
+    return *this;
+  }
+
   VectorPolynomial& operator+=(const VectorPolynomial& vp);
   VectorPolynomial& operator-=(const VectorPolynomial& vp);
 
@@ -59,12 +66,14 @@ class VectorPolynomial {
     return tmp -= vp2;
   }
 
-  friend VectorPolynomial operator*(double val, const VectorPolynomial& vp) {
+  template<typename Type>
+  friend VectorPolynomial operator*(const Type& val, const VectorPolynomial& vp) {
     VectorPolynomial tmp(vp);
     return tmp *= val;
   }
 
-  friend VectorPolynomial operator*(const VectorPolynomial& vp, double val) {
+  template<typename Type>
+  friend VectorPolynomial operator*(const VectorPolynomial& vp, const Type& val) {
     VectorPolynomial tmp(vp);
     return tmp *= val;
   }
@@ -127,7 +136,6 @@ class VectorPolynomial {
   int d_;
   std::vector<Polynomial> polys_;
 };
-
 
 // non-member functions
 // --divergence

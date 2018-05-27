@@ -209,7 +209,9 @@ void PDE_AdvectionUpwind::ApplyBCs(const Teuchos::RCP<BCs>& bc, bool primary)
       int c1 = (*upwind_cell_)[f];
       int c2 = (*downwind_cell_)[f];
 
-      if (primary) { // advection only
+      // advection only
+      // this should never be called for physical PK
+      if (primary) { 
         if (c2 < 0) {
           // pass
           matrix[f](0, 0) = 0.0;
@@ -217,10 +219,16 @@ void PDE_AdvectionUpwind::ApplyBCs(const Teuchos::RCP<BCs>& bc, bool primary)
           matrix[f](0, 0) = 0.0;
           rhs_cell[0][c2] += bc_value[f] * mesh_->face_area(f);
         }
-      } else { // advection-diffusion
-        // push the flux onto the diffusion operator
-        matrix[f](0, 0) = 0.0;
       }
+      // advection-diffusion
+      // the diffusion operator takes care of diffusive flux only
+      else {
+        if (c1 < 0) {
+          matrix[f](0, 0) *= -1.0;
+        }
+      }
+    } else if (bc_model[f] == OPERATOR_BC_REMOVE) {
+      matrix[f](0, 0) = 0.0;
     }
   }
 }

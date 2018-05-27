@@ -175,15 +175,6 @@ void VectorPolynomial::Multiply(const std::vector<std::vector<Polynomial> >& A,
 /* ******************************************************************
 * Ring algebra
 ****************************************************************** */
-VectorPolynomial& VectorPolynomial::operator*=(double val)
-{
-  for (int i = 0; i < polys_.size(); ++i) {
-    polys_[i] *= val;
-  }
-  return *this;
-}
-
-
 VectorPolynomial& VectorPolynomial::operator+=(const VectorPolynomial& vp)
 {
   for (int i = 0; i < polys_.size(); ++i) {
@@ -191,7 +182,6 @@ VectorPolynomial& VectorPolynomial::operator+=(const VectorPolynomial& vp)
   }
   return *this;
 }
-
 
 VectorPolynomial& VectorPolynomial::operator-=(const VectorPolynomial& vp)
 {
