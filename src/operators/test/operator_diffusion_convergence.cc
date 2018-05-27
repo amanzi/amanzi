@@ -38,14 +38,6 @@
 #include "PDE_DiffusionFV.hh"
 
 
-int BoundaryFaceGetCell(const Amanzi::AmanziMesh::Mesh& mesh, int f)
-{
-  Amanzi::AmanziMesh::Entity_ID_List cells;
-  mesh.face_get_cells(f, Amanzi::AmanziMesh::Parallel_type::ALL, &cells);
-  return cells[0];
-}
-
-
 /* *****************************************************************
 * Exactness test for mixed diffusion solver.
 ***************************************************************** */
@@ -83,11 +75,11 @@ std::pair<double, double> RunForwardProblem(const std::string& discretization,
   std::vector<int>& bc_model = bc->bc_model();
   std::vector<double>& bc_value = bc->bc_value();
 
+  bool flag;
   for (int f = 0; f < nfaces_wghost; f++) {
     const Point& xf = mesh->face_centroid(f);
     double area = mesh->face_area(f);
-    int dir, c = BoundaryFaceGetCell(*mesh, f);
-    const Point& normal = mesh->face_normal(f, false, c, &dir);
+    Point normal = ana.face_normal_exterior(f, &flag);
 
     if (fabs(xf[0]) < 1e-6) {
       bc_model[f] = Operators::OPERATOR_BC_NEUMANN;
@@ -213,11 +205,11 @@ std::pair<double, double> RunInverseProblem(const std::string& discretization,
   std::vector<int>& bc_model = bc->bc_model();
   std::vector<double>& bc_value = bc->bc_value();
 
+  bool flag;
   for (int f = 0; f < nfaces_wghost; f++) {
     const Point& xf = mesh->face_centroid(f);
     double area = mesh->face_area(f);
-    int dir, c = BoundaryFaceGetCell(*mesh, f);
-    const Point& normal = mesh->face_normal(f, false, c, &dir);
+    Point normal = ana.face_normal_exterior(f, &flag);
 
     if (fabs(xf[0]) < 1e-6) {
       bc_model[f] = Operators::OPERATOR_BC_NEUMANN;

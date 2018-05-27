@@ -37,14 +37,6 @@
 #include "UpwindSecondOrder.hh"
 
 
-int BoundaryFaceGetCell(const Amanzi::AmanziMesh::Mesh& mesh, int f)
-{
-  Amanzi::AmanziMesh::Entity_ID_List cells;
-  mesh.face_get_cells(f, Amanzi::AmanziMesh::Parallel_type::ALL, &cells);
-  return cells[0];
-}
-
-
 /* *****************************************************************
 * Exactness test for mixed diffusion solver.
 ***************************************************************** */
@@ -101,8 +93,8 @@ void RunTestDiffusionMixed(double gravity) {
   for (int f = 0; f < nfaces_wghost; f++) {
     const Point& xf = mesh->face_centroid(f);
     double area = mesh->face_area(f);
-    int dir, c = BoundaryFaceGetCell(*mesh, f);
-    const Point& normal = mesh->face_normal(f, false, c, &dir);
+    bool flag;
+    Point normal = ana.face_normal_exterior(f, &flag);
 
     if (fabs(xf[0]) < 1e-6) {
       bc_model[f] = Operators::OPERATOR_BC_NEUMANN;
@@ -238,7 +230,7 @@ TEST(OPERATOR_DIFFUSION_CELL_EXACTNESS) {
   ParameterXMLFileReader xmlreader(xmlFileName);
   ParameterList plist = xmlreader.getParameters();
 
-  // create an SIMPLE mesh framework
+  // create a geometric model and mesh
   ParameterList region_list = plist.sublist("regions");
   Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(2, region_list, &comm));
 
@@ -254,7 +246,6 @@ TEST(OPERATOR_DIFFUSION_CELL_EXACTNESS) {
   Analytic02 ana(mesh);
 
   for (int c = 0; c < ncells; c++) {
-    const Point& xc = mesh->cell_centroid(c);
     WhetStone::Tensor Kc(2, 2);
 
     Kc(0, 0) = 3.0;
@@ -264,7 +255,6 @@ TEST(OPERATOR_DIFFUSION_CELL_EXACTNESS) {
 
     K->push_back(Kc);
   }
-  AmanziGeometry::Point g(0.0, -1.0);
 
   // create boundary data.
   Teuchos::RCP<BCs> bc_f = Teuchos::rcp(new BCs(mesh, AmanziMesh::FACE, DOF_Type::SCALAR));
@@ -311,7 +301,7 @@ TEST(OPERATOR_DIFFUSION_CELL_EXACTNESS) {
   global_op->AssembleMatrix();
   
   // create preconditoner using the base operator class
-  ParameterList slist = plist.sublist("preconditioners");
+  const ParameterList& slist = plist.sublist("preconditioners");
   global_op->InitPreconditioner("Hypre AMG", slist);
 
   // solve the problem

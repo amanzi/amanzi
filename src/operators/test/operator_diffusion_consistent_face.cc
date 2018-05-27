@@ -33,13 +33,6 @@
 #include "OperatorDefs.hh"
 #include "PDE_DiffusionMFD.hh"
 
-int BoundaryFaceGetCell(const Amanzi::AmanziMesh::Mesh& mesh, int f)
-{
-  Amanzi::AmanziMesh::Entity_ID_List cells;
-  mesh.face_get_cells(f, Amanzi::AmanziMesh::Parallel_type::ALL, &cells);
-  return cells[0];
-}
-
 
 /* *****************************************************************
  * This does a check that the UpdateConsistentFace method results in face
@@ -95,10 +88,10 @@ TEST(OPERATOR_DIFFUSION_MIXED) {
   std::vector<double>& bc_mixed = bc->bc_mixed();
 
   for (int f = 0; f < nfaces_wghost; f++) {
+    bool flag;
     const Point& xf = mesh->face_centroid(f);
     double area = mesh->face_area(f);
-    int dir, c = BoundaryFaceGetCell(*mesh, f);
-    const Point& normal = mesh->face_normal(f, false, c, &dir);
+    Point normal = ana.face_normal_exterior(f, &flag);
 
     if (fabs(xf[0]) < 1e-6) {
       bc_model[f] = Operators::OPERATOR_BC_NEUMANN;
