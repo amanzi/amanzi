@@ -116,7 +116,7 @@ void PDE_MagneticDiffusion_TM::ModifyFields(
 * options: (a) eliminate or not, (b) if eliminate, then put 1 on
 * the diagonal or not.
 ****************************************************************** */
-void PDE_MagneticDiffusion_TM::ApplyBCs(bool primary, bool eliminate)
+void PDE_MagneticDiffusion_TM::ApplyBCs(bool primary, bool eliminate, bool leading_op)
 {
   if (local_op_schema_ == (OPERATOR_SCHEMA_BASE_CELL
                          | OPERATOR_SCHEMA_DOFS_NODE)) {

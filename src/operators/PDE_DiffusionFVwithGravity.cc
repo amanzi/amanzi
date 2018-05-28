@@ -92,7 +92,7 @@ void PDE_DiffusionFVwithGravity::UpdateMatrices(
 /* ******************************************************************
 * Special implementation of boundary conditions.
 ****************************************************************** */
-void PDE_DiffusionFVwithGravity::ApplyBCs(bool primary, bool eliminate)
+void PDE_DiffusionFVwithGravity::ApplyBCs(bool primary, bool eliminate, bool leading_op)
 {
   PDE_DiffusionFV::ApplyBCs(primary, eliminate);
 

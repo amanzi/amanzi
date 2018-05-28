@@ -176,7 +176,7 @@ void MagneticDiffusion2D(double dt, double tend,
 
     // apply BCs and assemble
     op_mag->ModifyMatrices(E, B, dt);
-    op_mag->ApplyBCs(true, true);
+    op_mag->ApplyBCs(true, true, true);
     op_acc->ApplyBCs();
     global_op->SymbolicAssembleMatrix();
     global_op->AssembleMatrix();
@@ -427,7 +427,7 @@ void MagneticDiffusion3D(double dt, double tend, bool convergence,
 
     // BCs, sources, and assemble
     op_mag->ModifyMatrices(E, B, dt);
-    op_mag->ApplyBCs(true, true);
+    op_mag->ApplyBCs(true, true, true);
     global_op->SymbolicAssembleMatrix();
     global_op->AssembleMatrix();
 

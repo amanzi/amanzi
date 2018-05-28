@@ -109,7 +109,7 @@ void PDE_Reaction::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& u,
 /* *******************************************************************
 * Apply boundary condition to the local matrices
 ******************************************************************* */
-void PDE_Reaction::ApplyBCs(bool primary, bool eliminate)
+void PDE_Reaction::ApplyBCs(bool primary, bool eliminate, bool leading_op)
 {
   for (auto bc = bcs_trial_.begin(); bc != bcs_trial_.end(); ++bc) {
   }

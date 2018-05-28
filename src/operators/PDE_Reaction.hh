@@ -56,7 +56,7 @@ class PDE_Reaction : public PDE_HelperDiscretization {
                           const Teuchos::Ptr<CompositeVector>& u) override {};
   
   // boundary conditions
-  void ApplyBCs(bool primary, bool eliminate) override;
+  void ApplyBCs(bool primary, bool eliminate, bool leading_op) override;
 
  private:
   void InitReaction_(Teuchos::ParameterList& plist);

@@ -122,11 +122,18 @@ class PDE_DiffusionMFD : public virtual PDE_Diffusion {
                                               double scalar_limiter=1) override;
 
   // modify the operator
-  // -- by incorporating boundary conditions. Variable 'primary' indicates
-  //    that we put 1 on the matrix diagonal. Variable 'eliminate' says
-  //    that we eliminate essential BCs for the trial function, i.e. zeros
-  //    go in the corresponding matrix columns.
-  virtual void ApplyBCs(bool primary, bool eliminate) override;
+  // -- by incorporating boundary conditions.
+  //    primary=true indicates that operator is on the main diagonal in a tree 
+  //      operator. For the essential BCs, we place a positive number on the 
+  //      matrix diagonal. Otherwise, primary=false.
+  //    eliminate=true indicates that we eliminate essential BCs for the trial 
+  //      function, i.e. zeros go in the corresponding matrix columns. This is 
+  //      the optional parameter that enforces symmetry for symmetric tree 
+  //      operators.
+  //    leading_op=true indicates that an operator is the leading operator in 
+  //    a compositive (additive) global operator. The leading operator imposes
+  //    total Neumann boundary conditions.
+  virtual void ApplyBCs(bool primary, bool eliminate, bool leading_op = true) override;
 
   // -- by breaking p-lambda coupling.
   virtual void ModifyMatrices(const CompositeVector& u) override;

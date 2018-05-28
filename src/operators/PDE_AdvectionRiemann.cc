@@ -149,7 +149,8 @@ void PDE_AdvectionRiemann::UpdateMatrices(
 /* *******************************************************************
 * Apply boundary condition to the local matrices
 ******************************************************************* */
-void PDE_AdvectionRiemann::ApplyBCs(const Teuchos::RCP<BCs>& bc, bool primary)
+void PDE_AdvectionRiemann::ApplyBCs(const Teuchos::RCP<BCs>& bc, 
+                                    bool primary, bool eliminate, bool leading_op)
 {
   const std::vector<int>& bc_model = bc->bc_model();
   const std::vector<std::vector<double> >& bc_value = bc->bc_value_vector();

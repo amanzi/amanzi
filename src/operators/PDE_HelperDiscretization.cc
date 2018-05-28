@@ -95,7 +95,7 @@ void PDE_HelperDiscretization::set_local_matrices(const Teuchos::RCP<Op>& op)
 * options: (a) eliminate or not, (b) if eliminate, then put 1 on
 * the diagonal or not.
 ****************************************************************** */
-void PDE_HelperDiscretization::ApplyBCs(bool primary, bool eliminate)
+void PDE_HelperDiscretization::ApplyBCs(bool primary, bool eliminate, bool leading_op)
 {
   for (auto bc : bcs_trial_) {
     if (bc->type() == DOF_Type::SCALAR ||

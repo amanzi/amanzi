@@ -58,7 +58,7 @@ class PDE_DiffusionDG : public PDE_HelperDiscretization {
                               const Teuchos::Ptr<const CompositeVector>& p) override;
 
   // -- modify local matrices due to boundary conditions 
-  virtual void ApplyBCs(bool primary, bool eliminate) override;
+  virtual void ApplyBCs(bool primary, bool eliminate, bool leading_op) override;
 
   // -- postprocessing: calculated flux u from potential p
   virtual void UpdateFlux(const Teuchos::Ptr<const CompositeVector>& u,

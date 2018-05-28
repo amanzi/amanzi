@@ -66,7 +66,8 @@ class PDE_AdvectionRiemann : public PDE_Advection {
                           const Teuchos::Ptr<CompositeVector>& flux);
 
   // boundary conditions
-  virtual void ApplyBCs(const Teuchos::RCP<BCs>& bc, bool primary);
+  virtual void ApplyBCs(const Teuchos::RCP<BCs>& bc,
+                        bool primary, bool eliminate = true, bool leading_op = true);
 
  private:
   void InitAdvection_(Teuchos::ParameterList& plist);

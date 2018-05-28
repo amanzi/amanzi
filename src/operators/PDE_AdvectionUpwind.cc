@@ -166,8 +166,22 @@ void PDE_AdvectionUpwind::UpdateMatrices(
 
 /* *******************************************************************
 * Apply boundary condition to the local matrices
+*
+* Advection only problem.
+* Recommended options: primary=true, eliminate=any, leading_op=true
+*  - must deal with Dirichlet BC on inflow boundary
+*  - neumann is typically not used
+*
+* Advection-diffusion problem.
+* Recommended options: primary=true, eliminate=any, leading_op=false
+*  - Dirichlet BC is treated as usual
+*  - Neuman on inflow boundary: let diffusion take care of the total
+*    flux. Note that diffusion flux BC may lead to a non-SPD system.
+*  - Neuman on outflow boundary: let diffusion take care of the total
+*    flux.
 ******************************************************************* */
-void PDE_AdvectionUpwind::ApplyBCs(const Teuchos::RCP<BCs>& bc, bool primary)
+void PDE_AdvectionUpwind::ApplyBCs(const Teuchos::RCP<BCs>& bc,
+                                   bool primary, bool eliminate, bool leading_op)
 {
   std::vector<WhetStone::DenseMatrix>& matrix = local_op_->matrices;
   std::vector<WhetStone::DenseMatrix>& matrix_shadow = local_op_->matrices_shadow;
@@ -186,50 +200,18 @@ void PDE_AdvectionUpwind::ApplyBCs(const Teuchos::RCP<BCs>& bc, bool primary)
       } else if (c1 < 0) {
         // downwind cell is internal to the domain
         rhs_cell[0][c2] += matrix[f](0, 0) * bc_value[f];
-        matrix[f](0, 0) = 0.0;
+        matrix[f] = 0.0;
       }
-    } else if (bc_model[f] == OPERATOR_BC_NEUMANN) {
-      // ETC: Several cases here.
-      // 1. advection only problem
-      //   - must deal with inward neumann here
-      //   - outward neumann is not well posed?
-      // 2. advection-diffusion
-      //   - FV:
-      //     * outward -- let diffusion take care of it
-      //     * inward -- let diffusion take care of it
-      //   - MFD: MFD is special because we can't just force advective fluxes on
-      //     diffusion operator, as it should break 2nd order
-      //     * outward -- advective flux is independent of boundary soln, but diffusive
-      //       Neumann bc must subtract off advective flux
-      //     * inward -- advective flux is dependent on boundary soln, and diffusion
-      //        Neumann bc must subtract off advective flux
-      //
-      // For now, treat 1, and for 2, zero out advective flux, forcing diffusion op to 
-      // deal with both diffusive and advective flux
+    } else if (bc_model[f] == OPERATOR_BC_NEUMANN && ! leading_op) {
       int c1 = (*upwind_cell_)[f];
-      int c2 = (*downwind_cell_)[f];
-
-      // advection only
-      // this should never be called for physical PK
-      if (primary) { 
-        if (c2 < 0) {
-          // pass
-          matrix[f](0, 0) = 0.0;
-        } else if (c1 < 0) {
-          matrix[f](0, 0) = 0.0;
-          rhs_cell[0][c2] += bc_value[f] * mesh_->face_area(f);
-        }
-      }
-      // advection-diffusion
-      // the diffusion operator takes care of diffusive flux only
-      else {
-        if (c1 < 0) {
-          matrix[f](0, 0) *= -1.0;
-        }
-      }
-    } else if (bc_model[f] == OPERATOR_BC_REMOVE) {
-      matrix[f](0, 0) = 0.0;
-    }
+      if (c1 < 0)
+        matrix[f] *= -1.0;
+    } else if (bc_model[f] == OPERATOR_BC_NEUMANN_TOTAL && ! leading_op) {
+      // total flux is treated by the leading operator
+      matrix[f] = 0.0;
+    } else if (bc_model[f] != OPERATOR_BC_NONE) {
+      AMANZI_ASSERT(false);
+    } 
   }
 }
 

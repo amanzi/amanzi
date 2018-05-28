@@ -172,7 +172,7 @@ void CurlCurl(double c_t, double tolerance, bool initial_guess) {
   op_acc->AddAccumulationDelta(solution, phi, phi, dT, "edge");
 
   // BCs, sources, and assemble
-  op_curlcurl->ApplyBCs(true, true);
+  op_curlcurl->ApplyBCs(true, true, true);
   global_op->SymbolicAssembleMatrix();
   global_op->AssembleMatrix();
   global_op->UpdateRHS(source, false);

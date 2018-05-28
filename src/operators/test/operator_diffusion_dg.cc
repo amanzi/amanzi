@@ -173,7 +173,7 @@ void OperatorDiffusionDG(std::string solver_name) {
   *global_op->rhs() = src;
 
   // apply BCs (primary=true, eliminate=true) and assemble
-  op->ApplyBCs(true, true);
+  op->ApplyBCs(true, true, true);
   global_op->SymbolicAssembleMatrix();
   global_op->AssembleMatrix();
 

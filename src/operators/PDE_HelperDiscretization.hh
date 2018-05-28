@@ -49,7 +49,17 @@ class PDE_HelperDiscretization : public PDE_HelperBCsList {
     UpdateMatrices(Teuchos::null, Teuchos::null);
   }
   // -- modify matrix due to boundary conditions 
-  virtual void ApplyBCs(bool primary, bool eliminate);
+  //    primary=true indicates that operator is on the main diagonal in a tree 
+  //      operator. For the essential BCs, we place a positive number on the 
+  //      matrix diagonal. Otherwise, primary=false.
+  //    eliminate=true indicates that we eliminate essential BCs for the trial 
+  //      function, i.e. zeros go in the corresponding matrix columns. This is 
+  //      the optional parameter that enforces symmetry for symmetric tree 
+  //      operators.
+  //    leading_op=true indicates that an operator is the leading operator in 
+  //    a compositive (additive) global operator. Only the leading operator 
+  //    may impose total Neumann boundary conditions.
+  virtual void ApplyBCs(bool primary, bool eliminate, bool leading_op = true);
 
   // postprocessing
   // -- flux calculation uses potential p to calculate flux u

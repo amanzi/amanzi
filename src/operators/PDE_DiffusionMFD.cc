@@ -526,7 +526,7 @@ void PDE_DiffusionMFD::UpdateMatricesTPFA_()
 * NONE 1. Nodal scheme handles only the case trialBC = testBC.
 * NONE 2. Jacobian term handles only trial BCs.
 ****************************************************************** */
-void PDE_DiffusionMFD::ApplyBCs(bool primary, bool eliminate)
+void PDE_DiffusionMFD::ApplyBCs(bool primary, bool eliminate, bool leading_op)
 {
   if (!exclude_primary_terms_) {
     if (local_op_schema_ == (OPERATOR_SCHEMA_BASE_CELL

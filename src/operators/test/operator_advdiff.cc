@@ -155,7 +155,7 @@ void AdvectionDiffusion2D(int nx, double* error)
   // set up the diffusion operator
   op_diff->Setup(K, Teuchos::null, Teuchos::null);
   op_diff->UpdateMatrices(Teuchos::null, Teuchos::null);
-  op_diff->ApplyBCs(true, true);
+  op_diff->ApplyBCs(true, true, true);
 
   // create an advection operator  
   // this is minor op for advection-mdiffusion pair; hence, BCs are secondary
@@ -165,7 +165,7 @@ void AdvectionDiffusion2D(int nx, double* error)
 
   op_adv->Setup(*u);
   op_adv->UpdateMatrices(u.ptr());
-  op_adv->ApplyBCs(bca, false);
+  op_adv->ApplyBCs(bca, false, true, false);
 
   // assemble global matrix and creare preconditioner
   global_op->SymbolicAssembleMatrix();

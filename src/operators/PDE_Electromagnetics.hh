@@ -54,10 +54,17 @@ class PDE_Electromagnetics : public PDE_HelperDiscretization {
   virtual void UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& u,
                               const Teuchos::Ptr<const CompositeVector>& p) override;
   // -- modification of the operator due to boundary conditions
-  //    Variable 'primary' indicates that we put 1 on the matrix diagonal.
-  //    Variable 'eliminate' says that we eliminate essential BCs for the 
-  //    trial function, i.e. zeros go in the corresponding matrix columns.
-  virtual void ApplyBCs(bool primary, bool eliminate) override;
+  //    primary=true indicates that operator is on the main diagonal in a tree 
+  //      operator. For the essential BCs, we place a positive number on the 
+  //      matrix diagonal. Otherwise, primary=false.
+  //    eliminate=true indicates that we eliminate essential BCs for the trial 
+  //      function, i.e. zeros go in the corresponding matrix columns. This is 
+  //      the optional parameter that enforces symmetry for symmetric tree 
+  //      operators.
+  //    leading_op=true indicates that an operator is the leading operator in 
+  //    a compositive (additive) global operator. The leading operator imposes
+  //    total Neumann boundary conditions.
+  virtual void ApplyBCs(bool primary, bool eliminate, bool leading_op) override;
 
   // -- postprocessing: calculated flux u from potential p
   virtual void UpdateFlux(const Teuchos::Ptr<const CompositeVector>& p,

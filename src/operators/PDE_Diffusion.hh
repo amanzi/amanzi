@@ -98,7 +98,7 @@ class PDE_Diffusion : public PDE_HelperDiscretization {
                                      const Teuchos::Ptr<CompositeVector>& flux) = 0;
 
   // -- matrix modification
-  virtual void ApplyBCs(bool primary, bool eliminate) = 0;
+  virtual void ApplyBCs(bool primary, bool eliminate, bool leading_op = true) = 0;
   virtual void ModifyMatrices(const CompositeVector& u) = 0;
   virtual void ScaleMassMatrices(double s) = 0;
 
