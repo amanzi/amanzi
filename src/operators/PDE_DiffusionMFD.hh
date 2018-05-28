@@ -178,7 +178,7 @@ class PDE_DiffusionMFD : public virtual PDE_Diffusion {
 
   void ApplyBCs_Mixed_(const Teuchos::Ptr<const BCs>& bc_trial,
                        const Teuchos::Ptr<const BCs>& bc_test,
-                       bool primary, bool eliminate);
+                       bool primary, bool eliminate, bool leading_op);
   void ApplyBCs_Cell_(const Teuchos::Ptr<const BCs>& bc_trial,
                       const Teuchos::Ptr<const BCs>& bc_test,
                       bool primary, bool eliminate);

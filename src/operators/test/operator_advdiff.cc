@@ -102,8 +102,9 @@ void AdvectionDiffusion2D(int nx, double* error)
   }
 
   // create boundary data for diffusion and
-  // Neumann on outflow boundary is needed to proof operator's positive-definitness
+  // Neumann on outflow boundary is needed for perator's positive-definitness
   bool flag;
+  double diff_flux, adv_flux;
   auto bcd = Teuchos::rcp(new BCs(mesh, AmanziMesh::FACE, DOF_Type::SCALAR));
   {
     std::vector<int>& bc_model = bcd->bc_model();
@@ -115,7 +116,16 @@ void AdvectionDiffusion2D(int nx, double* error)
         bc_model[f] = OPERATOR_BC_DIRICHLET;
         bc_value[f] = ana.pressure_exact(xf, 0.0);
       }
-      else if (fabs(xf[0] - 1.0) < 1e-6 || fabs(xf[1]) < 1e-6) {
+      else if (fabs(xf[1]) < 1e-6) {  // inflow bottom boundary 
+        double area = mesh->face_area(f);
+        auto normal = ana.face_normal_exterior(f, &flag) / area;
+
+        bc_model[f] = OPERATOR_BC_TOTAL_FLUX;
+        diff_flux = ana.velocity_exact(xf, 0.0) * normal;
+        adv_flux = (ana.advection_exact(xf, 0.0) * normal) * ana.pressure_exact(xf, 0.0);
+        bc_value[f] = diff_flux + adv_flux;
+      }
+      else if (fabs(xf[0] - 1.0) < 1e-6) {  // outflow right boundary
         double area = mesh->face_area(f);
         auto normal = ana.face_normal_exterior(f, &flag);
 
@@ -125,6 +135,7 @@ void AdvectionDiffusion2D(int nx, double* error)
     }
   }
 
+  // This split of BCS was designed for testing purposes only!
   // we need to specify only the Dirichlet boundary condition on inflow boundary
   // Dirichlet on the outlow boundary is ignored by upwind operator
   // Neumann condition on inflow violates monotonicity; it generates negative 
@@ -136,11 +147,15 @@ void AdvectionDiffusion2D(int nx, double* error)
 
     for (int f = 0; f < nfaces_wghost; f++) {
       const auto& xf = mesh->face_centroid(f);
-      if (fabs(xf[0]) < 1e-6) {
+      if (fabs(xf[0]) < 1e-6 || fabs(xf[1] - 1.0) < 1e-6) {
         bc_model[f] = OPERATOR_BC_DIRICHLET;
         bc_value[f] = ana.pressure_exact(xf, 0.0);
       }
-      else if (fabs(xf[1]) < 1e-6) {
+      else if (fabs(xf[1]) < 1e-6) {  // inflow bottom boundary 
+        bc_model[f] = OPERATOR_BC_TOTAL_FLUX;
+        // bc_value[f] = not used
+      }
+      else if (fabs(xf[0] - 1.0) < 1e-6) {  // outflow right boundary
         bc_model[f] = OPERATOR_BC_NEUMANN;
         // bc_value[f] = not used
       }

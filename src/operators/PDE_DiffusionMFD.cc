@@ -534,7 +534,7 @@ void PDE_DiffusionMFD::ApplyBCs(bool primary, bool eliminate, bool leading_op)
                            | OPERATOR_SCHEMA_DOFS_CELL)) {
       AMANZI_ASSERT(bcs_trial_.size() == 1);
       AMANZI_ASSERT(bcs_test_.size() == 1);
-      ApplyBCs_Mixed_(bcs_trial_[0].ptr(), bcs_test_[0].ptr(), primary, eliminate);
+      ApplyBCs_Mixed_(bcs_trial_[0].ptr(), bcs_test_[0].ptr(), primary, eliminate, leading_op);
     
     } else if (local_op_schema_ == (OPERATOR_SCHEMA_BASE_FACE
                                   | OPERATOR_SCHEMA_DOFS_CELL)) {
@@ -569,7 +569,8 @@ void PDE_DiffusionMFD::ApplyBCs(bool primary, bool eliminate, bool leading_op)
     for (int f = 0; f != nfaces_owned; ++f) {
       WhetStone::DenseMatrix& Aface = jac_op_->matrices[f];
 
-      if (bc_model[f] == OPERATOR_BC_NEUMANN) {
+      if (bc_model[f] == OPERATOR_BC_NEUMANN ||
+          bc_model[f] == OPERATOR_BC_TOTAL_FLUX) {
         jac_op_->matrices_shadow[f] = Aface;
         Aface *= 0.0;
       }
@@ -584,7 +585,7 @@ void PDE_DiffusionMFD::ApplyBCs(bool primary, bool eliminate, bool leading_op)
 void PDE_DiffusionMFD::ApplyBCs_Mixed_(
     const Teuchos::Ptr<const BCs>& bc_trial,
     const Teuchos::Ptr<const BCs>& bc_test,
-    bool primary, bool eliminate)
+    bool primary, bool eliminate, bool leading_op)
 {
   // apply diffusion type BCs to FACE-CELL system
   AmanziMesh::Entity_ID_List faces;
@@ -681,6 +682,13 @@ void PDE_DiffusionMFD::ApplyBCs_Mixed_(
           } else {
             rhs_face[0][f] -= value * mesh_->face_area(f);
           }
+        } else {
+          rhs_face[0][f] -= value * mesh_->face_area(f);
+        }
+
+      } else if (bc_model_trial[f] == OPERATOR_BC_TOTAL_FLUX && primary && leading_op) {
+        if (scaled_constraint_ && kf[n] < scaled_constraint_cutoff_) {
+          AMANZI_ASSERT(false);
         } else {
           rhs_face[0][f] -= value * mesh_->face_area(f);
         }

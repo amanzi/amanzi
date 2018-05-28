@@ -54,7 +54,7 @@ class PDE_HelperDiscretization : public PDE_HelperBCsList {
   //      matrix diagonal. Otherwise, primary=false.
   //    eliminate=true indicates that we eliminate essential BCs for the trial 
   //      function, i.e. zeros go in the corresponding matrix columns. This is 
-  //      the optional parameter that enforces symmetry for symmetric tree 
+  //      the optional parameter that enforces symmetry for a symmetric tree 
   //      operators.
   //    leading_op=true indicates that an operator is the leading operator in 
   //    a compositive (additive) global operator. Only the leading operator 

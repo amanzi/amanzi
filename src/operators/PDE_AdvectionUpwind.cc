@@ -170,15 +170,21 @@ void PDE_AdvectionUpwind::UpdateMatrices(
 * Advection only problem.
 * Recommended options: primary=true, eliminate=any, leading_op=true
 *  - must deal with Dirichlet BC on inflow boundary
-*  - neumann is typically not used
+*  - Dirichlet on outflow boundary is ill-posed
+*  - Neumann on inflow boundary is typically not used, since it is 
+*    equivalent to Dirichlet BC.
 *
 * Advection-diffusion problem.
 * Recommended options: primary=true, eliminate=any, leading_op=false
 *  - Dirichlet BC is treated as usual
-*  - Neuman on inflow boundary: let diffusion take care of the total
-*    flux. Note that diffusion flux BC may lead to a non-SPD system.
-*  - Neuman on outflow boundary: let diffusion take care of the total
-*    flux.
+*  - Neuman on inflow boundary: If diffusion takes care of the total
+*    flux, then TOTAL_FLUX model must be used. If diffusion deals
+*    with the diffusive flux only (NEUMANN model), value of the 
+*    advective flux is in general not available and negative value
+*    is added to matrix diagonal. The discrete system may lose SPD 
+*    property.
+*  - Neuman on outflow boundary: If diffusion takes care of the total
+*    flux, then TOTAL_FLUX model must be used. Otherwise, do nothing.
 ******************************************************************* */
 void PDE_AdvectionUpwind::ApplyBCs(const Teuchos::RCP<BCs>& bc,
                                    bool primary, bool eliminate, bool leading_op)
@@ -206,7 +212,7 @@ void PDE_AdvectionUpwind::ApplyBCs(const Teuchos::RCP<BCs>& bc,
       int c1 = (*upwind_cell_)[f];
       if (c1 < 0)
         matrix[f] *= -1.0;
-    } else if (bc_model[f] == OPERATOR_BC_NEUMANN_TOTAL && ! leading_op) {
+    } else if (bc_model[f] == OPERATOR_BC_TOTAL_FLUX && ! leading_op) {
       // total flux is treated by the leading operator
       matrix[f] = 0.0;
     } else if (bc_model[f] != OPERATOR_BC_NONE) {

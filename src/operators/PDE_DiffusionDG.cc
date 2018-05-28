@@ -169,7 +169,8 @@ void PDE_DiffusionDG::ApplyBCs(bool primary, bool eliminate, bool leading_op)
 
   for (int f = 0; f != nfaces_owned; ++f) {
     if (bc_model[f] == OPERATOR_BC_DIRICHLET ||
-        bc_model[f] == OPERATOR_BC_NEUMANN) {
+        bc_model[f] == OPERATOR_BC_NEUMANN ||
+       (bc_model[f] == OPERATOR_BC_TOTAL_FLUX && leading_op)) {
       mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
       int c = cells[0];
 
@@ -206,7 +207,8 @@ void PDE_DiffusionDG::ApplyBCs(bool primary, bool eliminate, bool leading_op)
         for (int i = 0; i < ncols; ++i) {
           rhs_c[i][c] += pv(i) + jv(i);
         }
-      } else if (bc_model[f] == OPERATOR_BC_NEUMANN) {
+      } else if (bc_model[f] == OPERATOR_BC_NEUMANN ||
+                (bc_model[f] == OPERATOR_BC_TOTAL_FLUX && leading_op)) {
         WhetStone::DenseMatrix& Jcell = jump_pu_op_->matrices[f];
         Jcell.Multiply(v, jv, false);
 

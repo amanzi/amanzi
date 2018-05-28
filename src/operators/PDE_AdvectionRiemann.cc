@@ -213,9 +213,11 @@ void PDE_AdvectionRiemann::ApplyBCs(const Teuchos::RCP<BCs>& bc,
         }
       }
     } 
-
     else if (bc_model[f] == OPERATOR_BC_REMOVE) {
       local_op_->matrices[f].PutScalar(0.0);
+    }
+    else if (bc_model[f] != OPERATOR_BC_NONE) {
+      AMANZI_ASSERT(false);
     }
   } 
 }
