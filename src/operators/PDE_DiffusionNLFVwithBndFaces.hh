@@ -106,8 +106,9 @@ class PDE_DiffusionNLFVwithBndFaces : public virtual PDE_Diffusion {
   void InitStencils_();
   void OneSidedFluxCorrections_(int i0, const CompositeVector& u, CompositeVector& sideflux);
   void OneSidedWeightFluxes_(int i0, const CompositeVector& u, CompositeVector& sideflux);
+  void OneSidedNeumannCorrections_(const CompositeVector& u, CompositeVector& sideflux);
   int OrderCellsByGlobalId_(const AmanziMesh::Entity_ID_List& cells, int& c1, int& c2);
-  
+  int NLTPFAContributions_(int f, double& tc1, double& tc2);  
  protected:
   int dim_;
   int newton_correction_;

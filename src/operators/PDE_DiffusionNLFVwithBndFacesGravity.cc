@@ -63,6 +63,7 @@ void PDE_DiffusionNLFVwithBndFacesGravity::UpdateMatrices(
   const std::vector<int>& bc_model = bcs_trial_[0]->bc_model();
   Epetra_MultiVector& rhs_cell = *global_op_->rhs()->ViewComponent("cell", true);
   Epetra_MultiVector& rhs_bnd = *global_op_->rhs()->ViewComponent("boundary_face", true);
+  Epetra_MultiVector& weight = *stencil_data_->ViewComponent("weight", true);
 
   AmanziMesh::Entity_ID_List cells;
 
@@ -92,10 +93,14 @@ void PDE_DiffusionNLFVwithBndFacesGravity::UpdateMatrices(
       double rho_g = GetDensity(c) * fabs(g_[dim_ - 1]);
       double zf = (mesh_->face_centroid(f))[dim_ - 1];
       double zc = (mesh_->cell_centroid(c))[dim_ - 1];
-      rhs_cell[0][c] -= Aface(0, 0) * (zc - zf) * rho_g;
+      double gravity_flux = 0.;
+      gravity_flux = Aface(0, 0)*zc + Aface(0, 1)*zf;
+
+      //rhs_cell[0][c] -= Aface(0, 0) * (zc - zf) * rho_g;
+      rhs_cell[0][c] -=  (Aface(0, 0)*zc + Aface(0, 1)*zf )* rho_g;
       
       int bf = mesh_->exterior_face_map(false).LID(mesh_->face_map(false).GID(f));
-      rhs_bnd[0][bf] += Aface(0, 0) * (zc - zf) * rho_g;
+      rhs_bnd[0][bf] -=  (Aface(1, 0)*zc + Aface(1, 1)*zf ) * rho_g;
 
     }
   }

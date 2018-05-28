@@ -99,7 +99,7 @@ namespace Operators {
           //sur_norm[0]=1.; sur_norm[1]=0.6; sur_norm[2]=1.;  surf_d=-1.3;
           
           CellSurfaceInterception_(c, s_id, sur_norm, surf_d);
-          std::cout<<"CELL: "<<c<<"\n";
+          // std::cout<<"CELL: "<<c<<"\n";
 
           
           if (cell_surfaces_[c].size() > 0){

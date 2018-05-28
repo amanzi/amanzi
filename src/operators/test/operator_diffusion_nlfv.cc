@@ -59,7 +59,7 @@ void RunTestDiffusionNLFV_DMP(double gravity, bool testing) {
   // create an MSTK mesh framework
   MeshFactory meshfactory(&comm);
   meshfactory.preference(FrameworkPreference({MSTK}));
-  // Teuchos::RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 3, 3, Teuchos::null);
+  // Teuchos::RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 4, 4, Teuchos::null);
   Teuchos::RCP<const Mesh> mesh = meshfactory("test/random10.exo");
 
   // modify diffusion coefficient
@@ -119,7 +119,7 @@ void RunTestDiffusionNLFV_DMP(double gravity, bool testing) {
   for (int c = 0; c < ncells; c++) {
     const Point& xc = mesh->cell_centroid(c);
     src[0][c] = ana.source_exact(xc, 0.0);
-    // sol[0][c] = ana.pressure_exact(xc, 0.0);
+    //sol[0][c] = ana.pressure_exact(xc, 0.0);
   }
 
   // populate the diffusion operator
@@ -210,7 +210,7 @@ void RunTestDiffusionNLFVwithBndFaces_DMP(double gravity, bool testing) {
   // create an MSTK mesh framework
   MeshFactory meshfactory(&comm);
   meshfactory.preference(FrameworkPreference({MSTK}));
-  //Teuchos::RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 4, 4, Teuchos::null);
+  // Teuchos::RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 4, 4, Teuchos::null);
   Teuchos::RCP<const Mesh> mesh = meshfactory("test/random10.exo");
 
   // modify diffusion coefficient
@@ -271,12 +271,29 @@ void RunTestDiffusionNLFVwithBndFaces_DMP(double gravity, bool testing) {
   CompositeVector source(cvs), t1(cvs), t2(cvs);
   Epetra_MultiVector& src = *source.ViewComponent("cell");
   Epetra_MultiVector& sol = *solution->ViewComponent("cell");
+  Epetra_MultiVector& sol_bnd = *solution->ViewComponent("boundary_face");
 
   for (int c = 0; c < ncells; c++) {
     const Point& xc = mesh->cell_centroid(c);
     src[0][c] = ana.source_exact(xc, 0.0);
-    // sol[0][c] = ana.pressure_exact(xc, 0.0);
+    //sol[0][c] = ana.pressure_exact(xc, 0.0);
   }
+
+  // for (int f = 0; f < nfaces_wghost; f++) {
+  //   const Point& xf = mesh->face_centroid(f);
+  //   if (fabs(xf[0]) < 1e-6 || fabs(xf[0] - 1.0) < 1e-6 ||
+  //       fabs(xf[1]) < 1e-6) {
+  //     int bf = mesh->exterior_face_map(false).LID(mesh->face_map(false).GID(f));
+  //     sol_bnd[0][bf] = ana.pressure_exact(xf, 0.0);
+  //   } else if (fabs(xf[1] - 1.0) < 1e-6) {
+  //     int bf = mesh->exterior_face_map(false).LID(mesh->face_map(false).GID(f));
+  //     sol_bnd[0][bf] = ana.pressure_exact(xf, 0.0);
+  //   }
+  // }
+
+  // std::cout<<"solution\n";
+  // std::cout<<*solution->ViewComponent("cell");
+  // std::cout<<*solution->ViewComponent("boundary_face");
 
   // populate the diffusion operator
   op->Setup(K, Teuchos::null, Teuchos::null);
@@ -303,10 +320,18 @@ void RunTestDiffusionNLFVwithBndFaces_DMP(double gravity, bool testing) {
 
     CompositeVector& rhs = *global_op->rhs();
 
+    // std::cout<<"rhs\n";
     // std::cout<<*rhs.ViewComponent("cell");
     // std::cout<<*rhs.ViewComponent("boundary_face");
+    
+    // global_op->Apply(*solution, t1);
 
-    global_op->Apply(*solution, t1);
+    // t1.Update(-1, rhs, 1); 
+    // std::cout<<"residual\n";
+    // std::cout<<*t1.ViewComponent("cell");
+    // std::cout<<*t1.ViewComponent("boundary_face");
+
+    // exit(0);
     
     int ierr = solver.ApplyInverse(rhs, *solution);
 
@@ -345,7 +370,7 @@ void RunTestDiffusionNLFVwithBndFaces_DMP(double gravity, bool testing) {
       CHECK(solver.num_itrs() < 15);
     }
   }
-  //std::cout<<*solution->ViewComponent("boundary_face");
+
 }
 
 TEST(OPERATOR_DIFFUSION_NLFV_DMP_02) {
