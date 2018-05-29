@@ -78,33 +78,43 @@ void PreconditionerBoomerAMG::Init(const std::string& name, const Teuchos::Param
     funcs_.push_back(Teuchos::rcp(new FunctionParameter((Hypre_Chooser)1, &HYPRE_BoomerAMGSetMaxCoarseSize,
                                                         plist_.get<int>("max coarse size"))));
 
-  if (plist_.isParameter("number of functions")) {
-    // num_blocks_ > 1 tells BoomerAMG to use the "systems of PDEs" code.  Note
-    // that, to use this approach, unknowns must be ordered with DoF fastest
-    // varying (i.e. not the native Epetra_MultiVector order).  By default, it
-    // uses the "unknown" approach in which each equation is coarsened and
-    // interpolated independently.  Comments below are taken from Allison
-    // Baker's email to the PETSc mailing list, 25 Apr 2007, as these features
-    // of BoomerAMG are not documented very well.  Here we ignore her option
-    // 2, as she warns it is inefficient and likely not useful.
-    // http://lists.mcs.anl.gov/pipermail/petsc-users/2007-April/001487.html
-
-    num_blocks_ = plist_.get<int>("number of functions");
+  if (plist_.get<bool>("use block indices", false)) {
+    num_blocks_ = plist_.get<int>("number of unique block indices");
     funcs_.push_back(Teuchos::rcp(new FunctionParameter((Hypre_Chooser)1,
             &HYPRE_BoomerAMGSetNumFunctions, num_blocks_)));
 
     //
-    // (Not from above email): Block indices is an array of ints, indicating
-    // what unknowns are coarsened as a system.  For now just put in a
-    // placeholder.
-    if (plist_.isParameter("block indices")) {
-      block_indices_ = plist_.get<Teuchos::RCP<std::vector<int>>>("block indices");
-      block_index_function_index_ = funcs_.size();
-      funcs_.push_back(Teuchos::null);
+    // Block indices is an array of ints, indicating what unknowns are
+    // coarsened as a system.  For now just put in a placeholder.
+    block_indices_ = plist_.get<Teuchos::RCP<std::vector<int>>>("block indices");
+    block_index_function_index_ = funcs_.size();
+    funcs_.push_back(Teuchos::null);
+  }
+
+
+  if (plist_.isParameter("number of functions")) {
+    if (num_blocks_ > 0) {
+      Errors::Message msg("Hypre (BoomerAMG) cannot be given both \"use block indices\" and \"number of functions\" options as these are two ways of specifying the same thing.");
+      Exceptions::amanzi_throw(msg);
     }
 
+    // num_funcs > 1 tells BoomerAMG to use the automatic "systems of
+    // PDEs" code.  Note that, to use this approach, unknowns must be
+    // ordered with DoF fastest varying (i.e. not the native
+    // Epetra_MultiVector order).  By default, it uses the "unknown"
+    // approach in which each equation is coarsened and interpolated
+    // independently.  Comments below are taken from Allison Baker's
+    // email to the PETSc mailing list, 25 Apr 2007, as these features
+    // of BoomerAMG are not documented very well.  Here we ignore her
+    // option 2, as she warns it is inefficient and likely not useful.
+    // http://lists.mcs.anl.gov/pipermail/petsc-users/2007-April/001487.html
+
+    int num_funcs = plist_.get<int>("number of functions");
+    funcs_.push_back(Teuchos::rcp(new FunctionParameter((Hypre_Chooser)1,
+            &HYPRE_BoomerAMGSetNumFunctions, num_funcs)));
+
     // additional options
-    if (num_blocks_ > 1) {
+    if (num_funcs > 1) {
       // HYPRE_BOOMERAMGSetNodal(solver, int nodal ) tells AMG to coarsen such
       // that each variable has the same coarse grid - sometimes this is more
       // "physical" for a particular problem. The value chosen here for nodal
