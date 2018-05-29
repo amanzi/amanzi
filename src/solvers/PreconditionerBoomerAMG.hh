@@ -103,7 +103,7 @@ class PreconditionerBoomerAMG : public Preconditioner {
  private:
   Teuchos::ParameterList plist_;
   std::vector<Teuchos::RCP<FunctionParameter> > funcs_;
-  Teuchos::RCP<std::vector<int>> block_indices_;
+  Teuchos::RCP<std::vector<int> > block_indices_;
   int num_blocks_;
   int block_index_function_index_;
   

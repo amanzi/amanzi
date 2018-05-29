@@ -86,7 +86,7 @@ void PreconditionerBoomerAMG::Init(const std::string& name, const Teuchos::Param
     //
     // Block indices is an array of ints, indicating what unknowns are
     // coarsened as a system.  For now just put in a placeholder.
-    block_indices_ = plist_.get<Teuchos::RCP<std::vector<int>>>("block indices");
+    block_indices_ = plist_.get<Teuchos::RCP<std::vector<int> > >("block indices");
     block_index_function_index_ = funcs_.size();
     funcs_.push_back(Teuchos::null);
   }

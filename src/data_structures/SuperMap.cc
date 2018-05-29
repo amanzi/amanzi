@@ -129,13 +129,13 @@ SuperMap::GhostIndices(const std::string& compname, int dofnum) const {
 }
 
 
-std::pair<int, Teuchos::RCP<std::vector<int>>>
+std::pair<int, Teuchos::RCP<std::vector<int> > >
 SuperMap::BlockIndices() const {
   auto block_indices = Teuchos::rcp(new std::vector<int>(Map()->NumMyElements()));
   int block_id = 0;
   for (const auto& comp : *this) {
     int ndofs = NumDofs(comp);
-    for (int d = 0; d!=ndofs; ++d) {
+    for (int d=0; d!=ndofs; ++d) {
       const auto& inds = Indices(comp, d);
       for (int i=0; i!=inds.size(); ++i) (*block_indices)[inds[i]] = block_id;
       block_id++;
