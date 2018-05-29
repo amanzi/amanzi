@@ -200,6 +200,10 @@ Teuchos::ParameterList InputConverterU::TranslateOutput_()
           std::vector<std::string> regions = CharToStrings_(regs.c_str());
           visPL.sublist("write regions").set<Teuchos::Array<std::string> >(name, regions);
         }
+      } else if (strcmp(tagname, "write_partition") == 0) {
+        text = mm.transcode(jnode->getTextContent());
+        if (strcmp(text, "true") == 0)
+          visPL.set<bool>("write partitions", true);
       }
     }
     out_list.sublist("visualization data") = visPL;

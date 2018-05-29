@@ -117,7 +117,7 @@ generate_evaluators_registration_header(
 #
 set(flow_src_files Flow_PK.cc 
                    Flow_SeepageFace.cc FlowBoundaryFunction.cc
-                   Flow_VandV.cc Flow_Walkabout.cc 
+                   Flow_VandV.cc  
                    Darcy_PK.cc Darcy_TI.cc Darcy_LinearOperator.cc
                    Richards_PK.cc Richards_TI.cc Richards_WRM.cc
                    Richards_Picard.cc Richards_LinearOperator.cc Richards_CNLS.cc
@@ -133,7 +133,7 @@ set(flow_src_files Flow_PK.cc
                    )
 set(flow_tpl_libs ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES} ${Boost_LIBRARIES} ${SEACAS_LIBRARIES})
 if (Ifpack_ENABLE_HYPRE)
-  list(APPEND flow_tpl_libs ${Ifpack_LIBRARIES})
+  list(APPEND flow_tpl_libs ${Ifpack_LIBRARIES} ${HYPRE_LIBRARIES})
 endif()
 add_amanzi_library(flow SOURCE ${flow_src_files}
                    LINK_LIBS pks operators state functions 

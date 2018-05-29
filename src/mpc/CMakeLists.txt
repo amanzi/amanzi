@@ -117,7 +117,8 @@ if (BUILD_TESTS)
     add_amanzi_test(mpc_driver_flow mpc_driver_flow
                     KIND      int
                     SOURCE    test/Main.cc test/mpc_driver_flow.cc
-		    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
+		    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES}
+                                             ${HYPRE_LIBRARIES})
 
     # Test: mpc driver for transport
     add_amanzi_test(mpc_driver_transport mpc_driver_transport
@@ -129,7 +130,8 @@ if (BUILD_TESTS)
     add_amanzi_test(mpc_driver_reactive_transport mpc_driver_reactive_transport
                     KIND      int
                     SOURCE    test/Main.cc test/mpc_driver_reactive_transport.cc
-		    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
+		    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES}
+                                             ${HYPRE_LIBRARIES})
 
     # Test: mpc driver for thermal richards
     add_amanzi_test(mpc_driver_thermal_richards mpc_driver_thermal_richards
@@ -141,7 +143,8 @@ if (BUILD_TESTS)
     add_amanzi_test(mpc_driver_flow_reactive_transport mpc_driver_flow_reactive_transport
                     KIND      int
                     SOURCE    test/Main.cc test/mpc_driver_frt.cc
-		    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
+		    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES}
+                                             ${HYPRE_LIBRARIES})
 
     # Test: mpc-new driver dummy
     add_amanzi_test(mpc_driver_dummy mpc_driver_dummy
@@ -155,8 +158,12 @@ if (BUILD_TESTS)
                     SOURCE    test/Main.cc test/observable_line_segment.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
-#    add_executable(test_vis test/Main.cc test/test_vis.cpp)
-#    target_link_libraries(test_vis state mpc stk_mesh ${UnitTest_LIBRARIES})
-#    add_amanzi_test(vis test_vis KIND int)
+    # Test: walkabout
+    add_amanzi_test(mpc_walkabout mpc_walkabout 
+                    KIND      int
+                    NPROCS    2
+                    SOURCE    test/Main.cc test/mpc_walkabout.cc
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES}
+                                             ${HYPRE_LIBRARIES})
 
 endif()

@@ -154,6 +154,7 @@ message(STATUS "")
 ##############################################################################
 # Trilinos http://trilinos.sandia.gov
 ##############################################################################
+
 # This command alters Trilinos_DIR. If it finds the configuration file
 # Trilinos_DIR is set to the path the configuration file was found.
 if ( NOT Trilinos_INSTALL_PREFIX )
@@ -167,7 +168,12 @@ find_package(Trilinos ${Trilinos_MINIMUM_VERSION} REQUIRED
              PATH_SUFFIXES include)
             
 if (Trilinos_FOUND)
-  message(STATUS "Found Trilinos: ${Trilinos_DIR} (${Trilinos_VERSION})")
+  message(STATUS "Trilinos Package information")
+  message(STATUS "\tTrilinos_VERSION      = ${Trilinos_VERSION}")
+  message(STATUS "\tTrilinos_DIR          = ${Trilinos_DIR}")
+  message(STATUS "\tTrilinos_INCLUDE_DIRS = ${Trilinos_INCLUDE_DIRS}")
+  message(STATUS "")
+
   trilinos_package_enabled_tpls(Trilinos)           
 
   if ("${Trilinos_VERSION}" VERSION_LESS ${Trilinos_MINIMUM_VERSION}) 
@@ -202,7 +208,10 @@ if (Trilinos_FOUND)
                  HINTS ${Trilinos_INSTALL_PREFIX}
                  PATH_SUFFIXES include lib)
     trilinos_package_enabled_tpls(${tri_package})
-    message(STATUS "Located Trilinos package ${tri_package}: ${${tri_package}_DIR}")
+    message(STATUS "\t${tri_package}_DIR       = ${${tri_package}_DIR}")
+    message(STATUS "\t${tri_package}_LIBRARIES = ${${tri_package}_LIBRARIES}")
+    message(STATUS "")
+
     # Update the <PACKAGE>_INCLUDE_DIRS variable 
     foreach( _inc ${${tri_package}_TPL_INCLUDE_DIRS})
       list(APPEND ${tri_package}_INCLUDE_DIRS "${_inc}")
@@ -236,7 +245,10 @@ if (Trilinos_FOUND)
                  HINTS ${Trilinos_INSTALL_PREFIX}
                  PATH_SUFFIXES include lib)
     if (Zoltan_FOUND)
-      message(STATUS "Located Trilinos package Zoltan: ${Zoltan_DIR}")
+      message(STATUS "\tZoltan_DIR          = ${Zoltan_DIR}")
+      message(STATUS "\tZoltan_INCLUDE_DIRS = ${Zoltan_INCLUDE_DIRS}")
+      message(STATUS "\tZoltan_LIBRARIES    = ${Zoltan_LIBRARIES}")
+      message(STATUS "")
       trilinos_package_enabled_tpls(Zoltan)
       foreach( _inc "${ZOLTAN_TPL_INCLUDE_DIRS}")
         list(APPEND ZOLTAN_INCLUDE_DIRS "${_inc}")
@@ -256,8 +268,14 @@ if (Trilinos_FOUND)
                  PATH_SUFFIXES include lib
                  )
     if (Ifpack_FOUND)
-      message(STATUS "Located Triilnos package Ifpack: ${Ifpack_DIR}")
+      message(STATUS "\tIfpack_DIR          = ${Ifpack_DIR}")
+      message(STATUS "\tIfpack_DIR          = ${Ifpack_DIR}")
+      message(STATUS "\tIfpack_INCLUDE_DIRS = ${Ifpack_INCLUDE_DIRS}")
+      message(STATUS "\tIfpack_LIBRARIES    = ${Ifpack_LIBRARIES}")
+      message(STATUS "")
+
       trilinos_package_enabled_tpls(Ifpack)
+
       foreach( _inc "${Ifpack_TPL_INCLUDE_DIRS}")
         list(APPEND Ifpack_INCLUDE_DIRS "${_inc}")
       endforeach()
@@ -277,14 +295,6 @@ if (Trilinos_FOUND)
     list(APPEND Trilinos_INCLUDE_DIRS "${_inc}")
     list(REMOVE_DUPLICATES Trilinos_INCLUDE_DIRS)
   endforeach()
-
-  message(STATUS "Trilinos Package information")
-  message(STATUS "\tTrilinos_INCLUDE_DIR  = ${Trilinos_INCLUDE_DIR}")
-  message(STATUS "\tTrilinos_INCLUDE_DIRS = ${Trilinos_INCLUDE_DIRS}")
-  message(STATUS "\tTrilinos_LIBRARY_DIR  = ${Trilinos_LIBRARY_DIR}")
-  message(STATUS "\tTrilinos_LIBRARY      = ${Trilinos_LIBRARY}")
-  message(STATUS "\tTrilinos_LIBRARIES    = ${Trilinos_LIBRARIES}")
-  message(STATUS "")
 else()
   message(FATAL_ERROR "Can not locate Trilinos configuration file\n"
                       " Please define the location of your Trilinos installation\n"
@@ -293,8 +303,48 @@ endif()
 
 
 ##############################################################################
+# HYPRE and its dependencies
+##############################################################################
+
+if (ENABLE_HYPRE)
+  find_library(HYPRE_LIBRARY HYPRE
+               HINTS ${HYPRE_DIR}
+               PATH_SUFFIXES include lib)
+
+  find_library(SuperLU_LIBRARY superlu
+               HINTS ${HYPRE_DIR}
+               PATH_SUFFIXES include lib)
+
+  find_library(SuperLUDist_LIBRARY superlu_dist
+               HINTS ${HYPRE_DIR}
+               PATH_SUFFIXES include lib)
+
+  find_library(ParMetis_LIBRARY parmetis
+               HINTS ${HYPRE_DIR}
+               PATH_SUFFIXES include lib)
+
+  find_library(METIS_LIBRARY metis
+               HINTS ${HYPRE_DIR}
+               PATH_SUFFIXES include lib)
+
+  set(HYPRE_LIBRARIES ${HYPRE_LIBRARY} ${SuperLUDist_LIBRARY} ${SuperLU_LIBRARY}
+                                       ${ParMetis_LIBRARY} ${METIS_LIBRARY})
+
+  message(STATUS "HYPRE Package information")
+  message(STATUS "\tHYPRE_VERSION      = ${HYPRE_VERSION}")
+  message(STATUS "\tHYPRE_INCLUDE_DIRS = ${HYPRE_INCLUDE_DIRS}")
+  message(STATUS "\tHYPRE_LIBRARY_DIR  = ${HYPRE_LIBRARY_DIR}")
+  message(STATUS "\tHYPRE_LIBRARY      = ${HYPRE_LIBRARY}")
+  message(STATUS "\tHYPRE_LIBRARIES    = ${HYPRE_LIBRARIES}")
+  message(STATUS "")
+  # message(FATAL_ERROR "Can not locate HYPRE library and/or include\n")
+endif()
+
+
+##############################################################################
 # NetCDF - http://www.unidata.ucar.edu/software/netcdf/
 ##############################################################################
+
 find_package(NetCDF REQUIRED)
 set_package_properties(NetCDF
                  PROPERTIES
@@ -318,8 +368,8 @@ message(STATUS "")
 ##############################################################################
 find_package(XERCES REQUIRED)
 set_package_properties(XERCES
-		 PROPERTIES
-	         PURPOSE "Validating XML parser")
+                 PROPERTIES
+                 PURPOSE "Validating XML parser")
 
 if (XERCES_FOUND)
   message(STATUS "XERCES Package information")
