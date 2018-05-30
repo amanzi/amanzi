@@ -15,7 +15,7 @@ amanzi_tpl_version_write(FILENAME ${TPL_VERSIONS_INCLUDE_FILE}
                          VERSION ${PETSc_VERSION_MAJOR} ${PETSc_VERSION_MINOR} ${PETSc_VERSION_PATCH})
   
 # --- Download packages PETSc needs
-set(petsc_packages SuperLU SuperLUDist Sowing)
+set(petsc_packages Sowing)
 get_filename_component(real_download_path ${TPL_DOWNLOAD_DIR} REALPATH)
 
 message(STATUS ">>> Build_PETSc -- Checking PETSc required packages: ${petsc_packages}")
@@ -114,9 +114,9 @@ set(petsc_hypre_flags --with-hypre=1 --with-hypre-dir=${TPL_INSTALL_PREFIX})
 set(petsc_superlu_flags --with-superlu=1 --with-superlu-dir=${TPL_INSTALL_PREFIX})
 set(petsc_superlu_dist_flags --with-superlu_dist=1 --with-superlu_dist-dir=${TPL_INSTALL_PREFIX})
 
-set(petsc_package_flags ${petsc_superlu_flags} ${petsc_parmetis_flags} 
-                        ${petsc_superlu_dist_flags} ${petsc_sowing_flags}
-                        ${petsc_metis_flags} ${petsc_hypre_flags})
+set(petsc_package_flags ${petsc_hypre_flags} ${petsc_superlu_dist_flags} ${petsc_superlu_flags}
+                        ${petsc_parmetis_flags} ${petsc_sowing_flags} ${petsc_metis_flags})
+
 
 # PETSc install directory
 set(petsc_install_dir ${TPL_INSTALL_PREFIX}/${PETSc_BUILD_TARGET}-${PETSc_VERSION})
