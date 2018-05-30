@@ -413,7 +413,7 @@ void Operator::InitializePreconditioner(Teuchos::ParameterList& plist)
     // NOTE: Hypre frees this
     auto block_ids = smap_->BlockIndices();
 
-    plist.sublist("boomer amg parameters").set("number of functions", block_ids.first);
+    plist.sublist("boomer amg parameters").set("number of unique block indices", block_ids.first);
 
     // Note, this passes a raw pointer through a ParameterList.  I was surprised
     // this worked too, but ParameterList is a boost::any at heart... --etc

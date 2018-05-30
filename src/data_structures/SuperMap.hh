@@ -67,7 +67,7 @@ class SuperMap {
   // where each dof and component have a unique integer value.  The returned
   // int is the number of unique values, equal to
   // sum(NumDofs(comp) for comp in components), in this array.
-  std::pair<int, Teuchos::RCP<std::vector<int>>> BlockIndices() const;
+  std::pair<int, Teuchos::RCP<std::vector<int> > > BlockIndices() const;
   
   // iterate over compnames
   typedef std::vector<std::string>::const_iterator name_iterator;
