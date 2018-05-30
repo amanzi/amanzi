@@ -179,10 +179,14 @@ void PreconditionerBoomerAMG::Init(const std::string& name, const Teuchos::Param
 void PreconditionerBoomerAMG::Update(const Teuchos::RCP<Epetra_RowMatrix>& A)
 {
 #ifdef HAVE_HYPRE
-  if (!IfpHypre_.get()) {
-    IfpHypre_ = Teuchos::rcp(new Ifpack_Hypre(&*A));
-  }
-  IfpHypre_->Initialize();
+  // if (!IfpHypre_.get()) { // this should be sufficient, but since
+  // Ifpack_Hypre destroys the Hypre instance in each Compute(), which
+  // destroys block indices, we MUST new the block indices every time
+  // Compute() is called.  Nominally we shouldn't have to recreate this whole
+  // object each time, only the block data, but Ifpack doesn't allow that.
+  // For now, we'll comment this out and regenerate, but the next step is a
+  // reimplemented Ifpack_Hypre. --etc
+  IfpHypre_ = Teuchos::rcp(new Ifpack_Hypre(&*A));
 
   // must reset the paramters every time to reset the block index
   Teuchos::ParameterList hypre_list("Preconditioner List");
@@ -191,7 +195,7 @@ void PreconditionerBoomerAMG::Update(const Teuchos::RCP<Epetra_RowMatrix>& A)
   hypre_list.set("SetPreconditioner", true);
   hypre_list.set("NumFunctions", (int)funcs_.size());
 
-  if (block_indices_ != Teuchos::null) {
+  if (block_indices_.get()) {
     // must NEW the index array EVERY time, as it gets freed every time by
     // Hypre on cleanup.  This is pretty stupid, but we can't reuse it.  --etc
     //
@@ -202,12 +206,14 @@ void PreconditionerBoomerAMG::Update(const Teuchos::RCP<Epetra_RowMatrix>& A)
     for (int i=0; i!=block_indices_->size(); ++i) {
       indices[i] = (*block_indices_)[i];
     }
-    std::cout << "INDICES = " << indices[0] << "," << indices[block_indices_->size()-1] << std::endl;
     funcs_[block_index_function_index_] = 
         Teuchos::rcp(new FunctionParameter((Hypre_Chooser)1, &HYPRE_BoomerAMGSetDofFunc, indices));
   }
   hypre_list.set<Teuchos::RCP<FunctionParameter>*>("Functions", &funcs_[0]);
   IfpHypre_->SetParameters(hypre_list);
+  IfpHypre_->Initialize();
+  // } // see above --etc
+    
   IfpHypre_->Compute();
 #endif
 }

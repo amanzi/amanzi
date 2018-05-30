@@ -89,7 +89,9 @@ namespace AmanziPreconditioners {
 class PreconditionerBoomerAMG : public Preconditioner {
  public:
   PreconditionerBoomerAMG() :
-    num_blocks_(0) {};
+      num_blocks_(0),
+      block_indices_(Teuchos::null),
+      IfpHypre_(Teuchos::null) {}
   ~PreconditionerBoomerAMG() {};
 
   void Init(const std::string& name, const Teuchos::ParameterList& list);
