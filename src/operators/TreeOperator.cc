@@ -227,14 +227,55 @@ void TreeOperator::InitPreconditioner(
   preconditioner_->Update(A_);
 }
 
-
 /* ******************************************************************
-* Create preconditioner using a factory.
+* Create preconditioner using name and a factory.
 ****************************************************************** */
-void TreeOperator::InitPreconditioner(Teuchos::ParameterList& plist)
+void TreeOperator::InitPreconditioner(
+    Teuchos::ParameterList& plist)
 {
   AmanziPreconditioners::PreconditionerFactory factory;
   preconditioner_ = factory.Create(plist);
+  preconditioner_->Update(A_);
+}
+
+
+/* ******************************************************************
+* Two-stage initialization of preconditioner, part 1.
+* Create the PC and set options.  SymbolicAssemble() must have been called.
+****************************************************************** */
+void TreeOperator::InitializePreconditioner(Teuchos::ParameterList& plist)
+{
+  AMANZI_ASSERT(A_.get());
+  AMANZI_ASSERT(smap_.get());
+
+  // provide block ids for block strategies.
+  if (plist.isParameter("preconditioner type") &&
+      plist.get<std::string>("preconditioner type") == "boomer amg" &&
+      plist.isSublist("boomer amg parameters")) {
+
+    // NOTE: Hypre frees this
+    auto block_ids = smap_->BlockIndices();
+
+    plist.sublist("boomer amg parameters").set("number of functions", block_ids.first);
+
+    // Note, this passes a raw pointer through a ParameterList.  I was surprised
+    // this worked too, but ParameterList is a boost::any at heart... --etc
+    plist.sublist("boomer amg parameters").set("block indices", block_ids.second);
+  }
+
+  AmanziPreconditioners::PreconditionerFactory factory;
+  preconditioner_ = factory.Create(plist);
+}
+
+
+/* ******************************************************************
+* Two-stage initialization of preconditioner, part 2.
+* Set the matrix in the preconditioner.  Assemble() must have been called.
+****************************************************************** */
+void TreeOperator::UpdatePreconditioner()
+{
+  AMANZI_ASSERT(preconditioner_.get());
+  AMANZI_ASSERT(A_.get());
   preconditioner_->Update(A_);
 }
 
