@@ -307,37 +307,20 @@ endif()
 ##############################################################################
 
 if (ENABLE_HYPRE)
-  find_library(HYPRE_LIBRARY HYPRE
-               HINTS ${HYPRE_DIR}
-               PATH_SUFFIXES include lib)
 
-  find_library(SuperLU_LIBRARY superlu
-               HINTS ${HYPRE_DIR}
-               PATH_SUFFIXES include lib)
+  find_package(HYPRE)
 
-  find_library(SuperLUDist_LIBRARY superlu_dist
-               HINTS ${HYPRE_DIR}
-               PATH_SUFFIXES include lib)
-
-  find_library(ParMetis_LIBRARY parmetis
-               HINTS ${HYPRE_DIR}
-               PATH_SUFFIXES include lib)
-
-  find_library(METIS_LIBRARY metis
-               HINTS ${HYPRE_DIR}
-               PATH_SUFFIXES include lib)
-
-  set(HYPRE_LIBRARIES ${HYPRE_LIBRARY} ${SuperLUDist_LIBRARY} ${SuperLU_LIBRARY}
-                                       ${ParMetis_LIBRARY} ${METIS_LIBRARY})
-
-  message(STATUS "HYPRE Package information")
-  message(STATUS "\tHYPRE_VERSION      = ${HYPRE_VERSION}")
-  message(STATUS "\tHYPRE_INCLUDE_DIRS = ${HYPRE_INCLUDE_DIRS}")
-  message(STATUS "\tHYPRE_LIBRARY_DIR  = ${HYPRE_LIBRARY_DIR}")
-  message(STATUS "\tHYPRE_LIBRARY      = ${HYPRE_LIBRARY}")
-  message(STATUS "\tHYPRE_LIBRARIES    = ${HYPRE_LIBRARIES}")
-  message(STATUS "")
-  # message(FATAL_ERROR "Can not locate HYPRE library and/or include\n")
+  if (HYPRE_FOUND)
+    message(STATUS "HYPRE Package information")
+    message(STATUS "\tHYPRE_VERSION      = ${HYPRE_VERSION}")
+    message(STATUS "\tHYPRE_INCLUDE_DIRS = ${HYPRE_INCLUDE_DIRS}")
+    message(STATUS "\tHYPRE_LIBRARY_DIR  = ${HYPRE_LIBRARY_DIR}")
+    message(STATUS "\tHYPRE_LIBRARY      = ${HYPRE_LIBRARY}")
+    message(STATUS "\tHYPRE_LIBRARIES    = ${HYPRE_LIBRARIES}")
+    message(STATUS "")
+  else()
+    message(FATAL_ERROR "Can not locate HYPRE library and/or include\n")
+  endif()
 endif()
 
 
