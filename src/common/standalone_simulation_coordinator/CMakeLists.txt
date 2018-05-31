@@ -127,18 +127,14 @@ if (ENABLE_Structured)
       endif()
 endif()
 
-# if (ENALE_ALQUIMIA)
-#   list(APPEND ssc_tpl_libs ${ALQUIMIA_LIBRARIES})
-# endif()
-
 list(APPEND ssc_tpl_libs ${PETSC_LIBRARIES})
 
 # 
-# Main: Amanzi (seems to require redundant lib listing to resolve everything....not sure why)
+# Main: Amanzi
 #
 add_amanzi_executable(amanzi
                       SOURCE Main.cc SimulatorFactory.cc ${closing_dso}
-                      LINK_LIBS ${ssc_libs} ${ssc_tpl_libs} ${ssc_libs}
+                      LINK_LIBS ${ssc_libs} ${ssc_tpl_libs} 
                       OUTPUT_NAME amanzi
                       OUTPUT_DIRECTORY ${SSC_BINARY_DIR})
 
