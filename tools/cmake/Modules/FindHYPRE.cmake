@@ -199,7 +199,7 @@ else(HYPRE_LIBRARIES AND HYPRE_INCLUDE_DIRS)
 
   # set target properties   
   set_target_properties(${HYPRE_LIBRARY} PROPERTIES
-                       IMPORTED_LINK_INTERFACE_LIBRARIES "${_HYPRE_DEP_LIBS}")
+                       INTERFACE_LINK_LIBRARIES "${_HYPRE_DEP_LIBS}")
 
 endif(HYPRE_LIBRARIES AND HYPRE_INCLUDE_DIRS)    
 
