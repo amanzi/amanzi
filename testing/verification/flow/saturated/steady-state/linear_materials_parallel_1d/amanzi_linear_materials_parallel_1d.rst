@@ -1,9 +1,26 @@
 Steady-State One-Dimensional Flow: Materials in Parallel
---------------------------------------------------------
+========================================================
 
-Introduction
-~~~~~~~~~~~~
+Capabilties Tested
+------------------
 
+This one-dimensional, steady-state, flow through a saturated porous
+medium with constant properties, tests the Amanzi
+implementation of prescribed hydraulic head boundary conditions,
+Darcy's law, and mass conservation on an elementary problem with discrete heterogeneity.  
+Capabilties tested include,
+  
+  * one-dimensional reprsentation
+  * steady-state
+  * saturated flow
+  * heterogenous porous medium
+  * prescribed hydraulic head boundary conditions
+
+For details on this test, see :ref:`about_linear_materials_parallel_1d`.
+
+
+Background
+----------
 For one-dimensional, steady-state, flow through a saturated porous medium with constant properties, 
 the general governing differential equation expressing mass conservation and Darcy's law becomes simply
 
@@ -29,9 +46,10 @@ Equation :eq:`generalSoln_materials_parallel` can be applied to each subregion s
 special case, let the subscripts *1* and *2* denote the two subregions.
 
 
-Analytic solution for prescribed inlet and outlet pressures
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+Model
+-----
+The analytic solution for prescribed inlet and outlet pressures is shown below.
 When hydraulic head is prescribed at both boundaries as
 
 	.. math:: 
@@ -64,12 +82,31 @@ Note that the hydraulic head and Darcy velocity in each subregion are independen
 the other subregion.
 
 
-Amanzi verification test problem
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
+Problem Specification
+---------------------
 The analytic solutions for hydraulic head and Darcy velocity can be used to test Amanzi
 implementation of prescribed hydraulic head boundary conditions, Darcy's law, and mass conservation
-on an elementary problem with discrete heterogeneity. 
+on an elementary problem with discrete heterogeneity.
+
+
+Schematic
+~~~~~~~~~
+The domain is shown in the following schematic.
+
+.. figure:: schematic/schematic.png 
+    :figclass: align-center
+    :width: 400 px
+
+    ** One-dimensional, steady-state flow through a saturated porous medium with constant properties **
+
+
+Mesh
+~~~~
+A steady-flow mesh is applied.
+
+
+Variables
+~~~~~~~~~
 To generate numerical results the following specifications are considered:
 
 * Domain
@@ -106,10 +143,66 @@ and
 
 following Equations :eq:`specificSoln_materials_parallel` and :eq:`specificDarcyVel_materials_parallel`.
 
-Amanzi verification test results
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Results and Comparison
+----------------------
+The discretization is exact for linear solutions, and it is clear in the figure that
+Amanzi has reproduced the exact solution.
+
+.. plot:: amanzi_linear_materials_parallel_1d.py
+
+This is also visible in the following table.
 
 .. include:: table_values.txt
 
-.. plot:: amanzi_linear_materials_parallel_1d.py
+
+References
+----------
+Add a reference in here.
+
+
+.. _about_linear_materials_parallel_1d:
+
+About
+-----
+* Directory: testing/verification/flow/saturated/steady-state/linear_materials_parallel_1d
+
+* Authors:  Greg Flach
+
+* Maintainer(s): David Moulton, moulton@lanl.gov
+
+* Input Files:
+
+  * amanzi_linear_materials_parallel_1d-s.xlm 
+
+    * Spec Version 2.3.0, structured mesh framework
+    * mesh:  steady-flow_mesh.h5
+    * runs
+
+  * amanzi_linear_materials_parallel_1d_u.xml
+
+    * Spec Version 2.3.0, unstructured mesh framework
+    * runs
+
+* Mesh Files:
+
+  * steady-flow_mesh.h5
+
+* Analytic solution computed with golden output
+
+  * Subdirectory: golden_output
+
+  * Input Files:
+  
+    * steady-flow_data.h5
+
+Status
+~~~~~~
+.. todo:: 
+
+  * Documentation:
+    * keb: Is this really 1D flow or is it horizontal flow with 2 dimensions?
+    * keb: List what is expected out of Amanzi simulation output.
+    * keb: _u.xml should we renamed -u
+
 
