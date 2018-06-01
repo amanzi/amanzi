@@ -191,8 +191,10 @@ SurfaceBalanceBase::UpdatePreconditioner(double t,
       }
     }
 
-    preconditioner_->AssembleMatrix();
-    preconditioner_->InitPreconditioner(plist_->sublist("preconditioner"));
+    if (precon_used_) {
+      preconditioner_->AssembleMatrix();
+      preconditioner_->InitPreconditioner(plist_->sublist("preconditioner"));
+    }
   }
 }
 
