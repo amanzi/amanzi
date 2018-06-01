@@ -116,7 +116,7 @@ set(energy_src_files Energy_PK.cc
 
 set(energy_tpl_libs ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES})
 if (Ifpack_ENABLE_HYPRE)
-  list(APPEND energy_tpl_libs ${Ifpack_LIBRARIES} ${HYPRE_LIBRARIES})
+  list(APPEND energy_tpl_libs ${Ifpack_LIBRARIES} ${HYPRE_LIBRARY})
 endif()
 add_amanzi_library(energy SOURCE ${energy_src_files}
                    LINK_LIBS operators eos pks functions mesh_functions

@@ -189,6 +189,7 @@ modeled by three segments:
   </ParameterList>
     
  */
+#include <numeric>
 
 #include "Key.hh"
 #include "RegionEnumerated.hh"

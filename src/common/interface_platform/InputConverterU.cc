@@ -11,9 +11,10 @@
 */
 
 #include <string>
+#include <fstream>
 
 // TPLs
-#include <boost/algorithm/string.hpp>
+#include "boost/algorithm/string.hpp"
 
 #include "Teuchos_ParameterList.hpp"
 

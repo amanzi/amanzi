@@ -170,7 +170,7 @@ else()
                          LOCATION ${_SEACAS_Fortran_LIBRARY}
                          LINK_LANGUAGES "Fortran")
     set_target_properties(${SEACAS_Fortran_LIBRARY} PROPERTIES
-                          IMPORTED_LINK_INTERFACE_LIBRARIES "${Exodus_LIBRARY}")
+                          INTERFACE_LINK_LIBRARIES "${Exodus_LIBRARY}")
   endif()
 
   # Define prerequisite packages
@@ -180,7 +180,7 @@ else()
   # Search for NetCDF
   find_package(NetCDF QUIET REQUIRED)
   set_target_properties(${SEACAS_LIBRARY} PROPERTIES
-                        IMPORTED_LINK_INTERFACE_LIBRARIES "${NetCDF_C_LIBRARIES}")
+                        INTERFACE_LINK_LIBRARIES "${NetCDF_C_LIBRARIES}")
   list(APPEND SEACAS_INCLUDE_DIRS ${NetCDF_INCLUDE_DIRS})
 
 endif(SEACAS_LIBRARIES AND SEACAS_INCLUDE_DIRS )    

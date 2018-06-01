@@ -19,7 +19,7 @@ function(Create_Imported_Target_File output)
     set(_imported_target_properties 
          IMPORTED_LOCATION
 	 IMPORTED_LINK_INTERFACE_LANGUAGES
-	 IMPORTED_LINK_INTERFACE_LIBRARIES)
+	 INTERFACE_LINK_LIBRARIES)
 
     set(_write_string "SET_TARGET_PROPERTIES(${target} PROPERTIES\n")
 
