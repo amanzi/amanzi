@@ -83,14 +83,19 @@ class AnalyticDGBase {
     return tmp;
   }
 
-  // initial guess
-  void InitialGuess(Amanzi::WhetStone::DG_Modal& dg, Epetra_MultiVector& p, double t) {
+  // exact solution inside a region defined by external function inside
+  // -- typicall usage is for setting initial guess
+  void InitialGuess(Amanzi::WhetStone::DG_Modal& dg, Epetra_MultiVector& p, double t,
+                    bool inside(const Amanzi::AmanziGeometry::Point&) = NULL) {
     Amanzi::WhetStone::Polynomial coefs;
     Amanzi::WhetStone::NumericalIntegration numi(mesh_, false);
 
     int ncells = mesh_->num_entities(Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::Parallel_type::ALL);
     for (int c = 0; c < ncells; ++c) {
       const Amanzi::AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
+      if (inside != NULL) 
+        if (! inside(xc)) continue;
+
       SolutionTaylor(xc, t, coefs);
       numi.ChangeBasisRegularToNatural(c, coefs);
 

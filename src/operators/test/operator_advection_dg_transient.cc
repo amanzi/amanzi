@@ -423,7 +423,6 @@ void AdvectionFn<AnalyticDG>::ApproximateVelocity_LevelSet(
 
     mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
     int ncells = cells.size();
-    if (ncells == 1) continue;
 
     WhetStone::VectorPolynomial tmp(dim, dim);
     tmp.set_origin(zero);
@@ -444,11 +443,17 @@ void AdvectionFn<AnalyticDG>::ApproximateVelocity_LevelSet(
 * This tests exactness of the transient advection scheme for
 * dp/dt + div(v p) = f.
 ***************************************************************** */
+bool inside(const Amanzi::AmanziGeometry::Point& p) {
+  Amanzi::AmanziGeometry::Point c(0.5, 0.5);
+  return (norm(p - c) < 0.06); 
+}
+
 template <class AnalyticDG>
 void AdvectionTransient(std::string filename, int nx, int ny, double dt,
                         const Amanzi::Explicit_TI::method_t& rk_method,
                         bool conservative_form = true, 
-                        std::string weak_form = "dual")
+                        std::string weak_form = "dual",
+                        std::string face_velocity_method = "high order")                      
 {
   using namespace Teuchos;
   using namespace Amanzi;
@@ -495,8 +500,7 @@ void AdvectionTransient(std::string filename, int nx, int ny, double dt,
 
   // create main advection class
   plist.set<std::string>("file name", filename);
-  plist.set<std::string>("face velocity method", "high order");
-  // plist.set<std::string>("face velocity method", "level set");
+  plist.set<std::string>("face velocity method", face_velocity_method);
   AdvectionFn<AnalyticDG> fn(plist, nx, dt, mesh, order, conservative_form, weak_form);
 
   // create initial guess
@@ -519,11 +523,11 @@ void AdvectionTransient(std::string filename, int nx, int ny, double dt,
 
     sol = sol_next;
 
+    // visualization
     if (MyPID == 0 && std::fabs(t - tprint) < dt/4) {
       tprint += 0.1; 
       printf("t=%9.6f  |p|=%10.8g\n", t, fn.l2norm);
 
-      // visualization
       const Epetra_MultiVector& p = *sol.ViewComponent("cell");
       GMV::open_data_file(*mesh, (std::string)"operators.gmv");
       GMV::start_data();
@@ -542,6 +546,11 @@ void AdvectionTransient(std::string filename, int nx, int ny, double dt,
 
     t += dt;
     nstep++;
+
+    // modify solution at the origin
+    if (face_velocity_method == "level set") {
+      ana.InitialGuess(dg, sol_c, t, inside);
+    }
   }
 
   // compute solution error
@@ -560,7 +569,7 @@ void AdvectionTransient(std::string filename, int nx, int ny, double dt,
 
 
 TEST(OPERATOR_ADVECTION_TRANSIENT_DG) {
-  // AdvectionTransient<AnalyticDG07>("square", 50, 50, 0.0001, Amanzi::Explicit_TI::tvd_3rd_order, false, "primal");
+  // AdvectionTransient<AnalyticDG07>("square", 50, 50, 0.0002, Amanzi::Explicit_TI::tvd_3rd_order, false, "primal", "level set");
 
   AdvectionTransient<AnalyticDG06b>("square",  4,  4, 0.1, Amanzi::Explicit_TI::tvd_3rd_order);
   AdvectionTransient<AnalyticDG06>("square",  4,  4, 0.1, Amanzi::Explicit_TI::tvd_3rd_order, false);

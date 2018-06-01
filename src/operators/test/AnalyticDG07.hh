@@ -8,9 +8,9 @@
 
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 
-  Solution: u = 0.3 - [(x - 0.5)^2 + (y - 0.5)^2])^0.5
+  Solution: u = 0.3 + t - [(x - 0.5)^2 + (y - 0.5)^2])^0.5
   Diffusion: K = 1
-  Accumulation: a = 0
+  Accumulation: a = 1
   Reaction: r = 0
   Velocity: v = [0, 0]
   Source: f = 0
@@ -46,7 +46,7 @@ class AnalyticDG07 : public AnalyticDGBase {
     double dist2 = dx * dx + dy * dy;
     double dist = std::pow(dist2, 0.5);
 
-    sol(0, 0) = 0.3 - dist;
+    sol(0, 0) = 0.3 + t - dist;
 
     if (order_ > 0) {
       sol(1, 0) = -dx / dist;
@@ -60,6 +60,7 @@ class AnalyticDG07 : public AnalyticDGBase {
   virtual void AccumulationTaylor(const Amanzi::AmanziGeometry::Point& p, double t,
                                   Amanzi::WhetStone::Polynomial& a) override {
     a.Reshape(d_, 0, true); 
+    a(0, 0) = 1.0;
     a.set_origin(p);
   }
 
