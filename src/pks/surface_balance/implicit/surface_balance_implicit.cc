@@ -524,7 +524,7 @@ SurfaceBalanceImplicit::Functional(double t_old, double t_new, Teuchos::RCP<Tree
       seb_surf.saturation_gas = saturation_gas[0][cells[0]];
       seb_surf.density_w = seb_params.density_water; // NOTE: could update this to use true density! --etc
       seb_surf.dz = subsurf_mesh_->cell_volume(cells[0]) / subsurf_mesh_->face_area(subsurf_f) / 2.0;
-      ASSERT(seb_surf.dz > 0.);
+      AMANZI_ASSERT(seb_surf.dz > 0.);
       
       SEBPhysics::Partition al_part = SEBPhysics::Partitioner()
           .CalcPartition(0., ponded_depth[0][c], unfrozen_fraction[0][c]);
@@ -636,7 +636,7 @@ SurfaceBalanceImplicit::Functional(double t_old, double t_new, Teuchos::RCP<Tree
       seb_surf.saturation_gas = saturation_gas[0][cells[0]];
       seb_surf.density_w = seb_params.density_water; // NOTE: could update this to use true density! --etc
       seb_surf.dz = subsurf_mesh_->cell_volume(cells[0]) / subsurf_mesh_->face_area(subsurf_f) / 2.0;
-      ASSERT(seb_surf.dz > 0.);
+      AMANZI_ASSERT(seb_surf.dz > 0.);
       
       SEBPhysics::Partition al_part = SEBPhysics::Partitioner()
           .CalcPartition(0., ponded_depth[0][c], unfrozen_fraction[0][c]);

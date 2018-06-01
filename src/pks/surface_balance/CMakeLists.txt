@@ -114,24 +114,26 @@ if (BUILD_TESTS)
   include_directories(${Amanzi_TPL_Boost_INCLUDE_DIRS})
   include_directories(${ATS_SOURCE_DIR}/src/pks/surface_balance/constitutive_relations/SEB)
 
-  add_executable(test_SEBNew_continuity
-    constitutive_relations/SEB/test/test_SEBNew.cc
-    constitutive_relations/SEB/test/main.cc)
-  target_link_libraries(test_SEBNew_continuity
-    pk_surface_balance_SEB
-    amanzi_error_handling
-    ${Amanzi_TPL_Teuchos_LIBRARIES}
-    ${Amanzi_TPL_UnitTest_LIBRARIES}
-    ${Amanzi_TPL_Boost_LIBRARIES})
+  # Not actually tests -- these just write stuff to file for debugging --etc
+  
+  # add_executable(test_SEBNew_continuity
+  #   constitutive_relations/SEB/test/test_SEBNew.cc
+  #   constitutive_relations/SEB/test/main.cc)
+  # target_link_libraries(test_SEBNew_continuity
+  #   pk_surface_balance_SEB
+  #   amanzi_error_handling
+  #   ${Amanzi_TPL_Teuchos_LIBRARIES}
+  #   ${Amanzi_TPL_UnitTest_LIBRARIES}
+  #   ${Amanzi_TPL_Boost_LIBRARIES})
 
-  add_executable(test_SEBVPL_continuity
-    constitutive_relations/SEB/test/test_SEB_VPL.cc
-    constitutive_relations/SEB/test/main.cc)
-  target_link_libraries(test_SEBVPL_continuity
-    pk_surface_balance_SEB
-    amanzi_error_handling
-    ${Amanzi_TPL_Teuchos_LIBRARIES}
-    ${Amanzi_TPL_UnitTest_LIBRARIES}
-    ${Amanzi_TPL_Boost_LIBRARIES})
+  # add_executable(test_SEBVPL_continuity
+  #   constitutive_relations/SEB/test/test_SEB_VPL.cc
+  #   constitutive_relations/SEB/test/main.cc)
+  # target_link_libraries(test_SEBVPL_continuity
+  #   pk_surface_balance_SEB
+  #   amanzi_error_handling
+  #   ${Amanzi_TPL_Teuchos_LIBRARIES}
+  #   ${Amanzi_TPL_UnitTest_LIBRARIES}
+  #   ${Amanzi_TPL_Boost_LIBRARIES})
 
 endif()

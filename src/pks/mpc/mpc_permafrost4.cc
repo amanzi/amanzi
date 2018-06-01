@@ -327,7 +327,7 @@ MPCPermafrost4::UpdatePreconditioner(double t,
         ->HasFieldDerivativeChanged(S_next_.ptr(), name_, Keys::getKey(domain_surf_,"pressure"));
     Teuchos::RCP<const CompositeVector> dEdp =
         S_next_->GetFieldData(Keys::getDerivKey(Keys::getKey(domain_surf_,"energy"), Keys::getKey(domain_surf_,"pressure")));
-    dE_dp_surf_->AddAccumulationTerm(*dEdp->ViewComponent("cell", false), h, "cell", false);
+    dE_dp_surf_->AddAccumulationTerm(*dEdp, h, "cell", false);
   
     // write for debugging
     std::vector<std::string> vnames;

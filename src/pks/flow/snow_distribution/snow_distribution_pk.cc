@@ -70,7 +70,7 @@ void SnowDistribution::SetupSnowDistribution_(const Teuchos::Ptr<State>& S) {
   S->RequireFieldEvaluator(Keys::getKey(domain_, "cell_volume"));
   
   // boundary conditions
-  int nfaces = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
+  int nfaces = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
   bc_markers().resize(nfaces, Operators::OPERATOR_BC_NONE);
   bc_values().resize(nfaces, 0.0);
   UpdateBoundaryConditions_(S); // never change
@@ -131,7 +131,8 @@ void SnowDistribution::SetupSnowDistribution_(const Teuchos::Ptr<State>& S) {
   if (precon_used_) {
     preconditioner_->SymbolicAssembleMatrix();
     preconditioner_->InitializePreconditioner(plist_->sublist("preconditioner"));
-
+  }
+  
   //    Potentially create a linear solver
   if (plist_->isSublist("linear solver")) {
     Teuchos::ParameterList linsolve_sublist = plist_->sublist("linear solver");
@@ -140,7 +141,7 @@ void SnowDistribution::SetupSnowDistribution_(const Teuchos::Ptr<State>& S) {
   } else {
     lin_solver_ = preconditioner_;
   }
-};
+}
 
 
 // -------------------------------------------------------------
