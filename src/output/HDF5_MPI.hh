@@ -13,6 +13,7 @@
 #define HDF5MPI_MESH_HH_
 
 #include <string>
+#include <fstream>
 
 //#ifdef HAVE_MOAB_MESH
 //#include "Mesh_moab.hh"
