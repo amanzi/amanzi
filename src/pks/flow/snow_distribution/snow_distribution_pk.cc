@@ -102,11 +102,9 @@ void SnowDistribution::SetupSnowDistribution_(const Teuchos::Ptr<State>& S) {
       ->SetComponent("face", AmanziMesh::FACE, 1);
 
   int nfaces = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
-  bc_markers_.resize(nfaces, Operators::OPERATOR_BC_NONE);
-  bc_values_.resize(nfaces, 0.0);
+  bc_markers().resize(nfaces, Operators::OPERATOR_BC_NONE);
+  bc_values().resize(nfaces, 0.0);
   UpdateBoundaryConditions_(S); // never change
-  std::vector<double> mixed;
-  bc_ = Teuchos::rcp(new Operators::BCs(Operators::OPERATOR_BC_TYPE_FACE, bc_markers_, bc_values_, mixed));
 
   // operator for the diffusion terms: must use ScaledConstraint version
   Teuchos::ParameterList mfd_plist = plist_->sublist("diffusion");
@@ -208,7 +206,7 @@ bool SnowDistribution::UpdatePermeabilityData_(const Teuchos::Ptr<State>& S) {
 
       // Derive the flux
       Teuchos::RCP<const CompositeVector> potential = S->GetFieldData(Keys::getKey(domain_,"snow_skin_potential"));
-      matrix_diff_->UpdateFlux(*potential, *flux_dir);
+      matrix_diff_->UpdateFlux(potential.ptr(), flux_dir.ptr());
     }
 
     // get snow_conductivity data
@@ -247,17 +245,20 @@ void SnowDistribution::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& S) {
   if (vo_->os_OK(Teuchos::VERB_EXTREME))
     *vo_->os() << "  Updating BCs." << std::endl;
 
+  auto& markers = bc_markers();
+  auto& values = bc_values();
+  
   // mark all remaining boundary conditions as zero flux conditions
   int nfaces_owned = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
   AmanziMesh::Entity_ID_List cells;
   for (int f = 0; f < nfaces_owned; f++) {
-    if (bc_markers_[f] == Operators::OPERATOR_BC_NONE) {
+    if (markers[f] == Operators::OPERATOR_BC_NONE) {
       mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
       int ncells = cells.size();
 
       if (ncells == 1) {
-        bc_markers_[f] = Operators::OPERATOR_BC_NEUMANN;
-        bc_values_[f] = 0.0;
+        markers[f] = Operators::OPERATOR_BC_NEUMANN;
+        values[f] = 0.0;
       }
     }
   }

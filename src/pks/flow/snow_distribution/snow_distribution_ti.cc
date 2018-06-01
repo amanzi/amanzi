@@ -154,16 +154,9 @@ void SnowDistribution::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVec
   // 2.b Update local matrices diagonal with the accumulation terms.
   // -- update the accumulation derivatives
 
-  const Epetra_MultiVector& cell_volume = *S_next_->GetFieldData(Keys::getKey(domain_,"cell_volume"))
-
-      ->ViewComponent("cell",false);
-  std::vector<double>& Acc_cells = preconditioner_acc_->local_matrices()->vals;
-
-  int ncells = cell_volume.MyLength();
-  for (int c=0; c!=ncells; ++c) {
-    // accumulation term
-    Acc_cells[c] += 10*cell_volume[0][c];
-  }
+  const CompositeVector& cell_volume = *S_next_->GetFieldData(Keys::getKey(domain_,"cell_volume"));
+  CompositeVector cv_times_10(cell_volume); cv_times_10.Scale(10);
+  preconditioner_acc_->AddAccumulationTerm(cv_times_10, "cell");
 
   preconditioner_diff_->ApplyBCs(true, true);
   preconditioner_->AssembleMatrix();
