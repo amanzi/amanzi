@@ -32,11 +32,15 @@ Internal parameters for Boomer AMG include
 
 * `"max multigrid levels`" ``[int]`` optionally defined the maximum number of multigrid levels.
 
-* `"number of functions`" ``[int]`` **1**  Any value > 1 tells Boomer AMG to use the `"systems 
-  of PDEs`" code.  Note that, to use this approach, unknowns must be ordered with 
-  DoF fastest varying (i.e. not the native Epetra_MultiVector order).  By default, it
-  uses the `"unknown`" approach in which each equation is coarsened and
-  interpolated independently.  **Getting this correct is very helpful!**
+* `"use block indices`" ``[bool]`` **false** If true, uses the `"systems of
+    PDEs`" code with blocks given by the SuperMap, or one per DoF per entity
+    type.
+
+* `"number of functions`" ``[int]`` **1** Any value > 1 tells Boomer AMG to
+  use the `"systems of PDEs`" code with strided block type.  Note that, to use
+  this approach, unknowns must be ordered with DoF fastest varying (i.e. not
+  the native Epetra_MultiVector order).  By default, it uses the `"unknown`"
+  approach in which each equation is coarsened and interpolated independently.
   
 * `"nodal strength of connection norm`" ``[int]`` tells AMG to coarsen such
     that each variable has the same coarse grid - sometimes this is more
@@ -84,7 +88,10 @@ namespace AmanziPreconditioners {
 
 class PreconditionerBoomerAMG : public Preconditioner {
  public:
-  PreconditionerBoomerAMG() {};
+  PreconditionerBoomerAMG() :
+      num_blocks_(0),
+      block_indices_(Teuchos::null),
+      IfpHypre_(Teuchos::null) {}
   ~PreconditionerBoomerAMG() {};
 
   void Init(const std::string& name, const Teuchos::ParameterList& list);
@@ -98,6 +105,9 @@ class PreconditionerBoomerAMG : public Preconditioner {
  private:
   Teuchos::ParameterList plist_;
   std::vector<Teuchos::RCP<FunctionParameter> > funcs_;
+  Teuchos::RCP<std::vector<int> > block_indices_;
+  int num_blocks_;
+  int block_index_function_index_;
   
   int returned_code_;
   Teuchos::RCP<Ifpack_Hypre> IfpHypre_;

@@ -220,6 +220,8 @@ class Operator {
 
   void InitPreconditioner(const std::string& prec_name, const Teuchos::ParameterList& plist);
   void InitPreconditioner(Teuchos::ParameterList& plist);
+  void InitializePreconditioner(Teuchos::ParameterList& plist);
+  void UpdatePreconditioner();
 
   void CreateCheckPoint();
   void RestoreCheckPoint();
