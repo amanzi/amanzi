@@ -1,4 +1,4 @@
-#include <iostream>
+#include <fstream>
 #include "UnitTest++.h"
 
 #include "Teuchos_ParameterList.hpp"

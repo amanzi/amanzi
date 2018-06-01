@@ -5,6 +5,7 @@
   Deformation optimization matrix
 */
 
+#include <set>
 #include "EpetraExt_MatrixMatrix.h"
 #include "EpetraExt_RowMatrixOut.h"
 
