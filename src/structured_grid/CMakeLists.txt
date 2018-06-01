@@ -34,7 +34,8 @@ add_amanzi_library(structured_amanzi
                               $<TARGET_OBJECTS:strans>
                               $<TARGET_OBJECTS:sadv>
                               $<TARGET_OBJECTS:sflow>
-                              $<TARGET_OBJECTS:schem>)
+                              $<TARGET_OBJECTS:schem>
+                   LINK_LIBS interface_s)
 
 
 set_target_properties(structured_amanzi PROPERTIES LINKER_LANGUAGE C)
