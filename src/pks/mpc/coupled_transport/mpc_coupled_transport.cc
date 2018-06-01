@@ -17,6 +17,7 @@ namespace Amanzi {
                                            const Teuchos::RCP<Teuchos::ParameterList>& global_list,
                                            const Teuchos::RCP<State>& S,
                                            const Teuchos::RCP<TreeVector>& soln) :
+    PK(pk_tree_or_fe_list, global_list, S, soln),
     WeakMPC(pk_tree_or_fe_list, global_list, S, soln)
   {
 
@@ -68,8 +69,10 @@ double CoupledTransport_PK::get_dt() {
   double subsurf_dt = sub_pks_[subsurf_id_]->get_dt();
 
   Teuchos::OSTab tab = vo_->getOSTab();
-  *vo_->os()<< "surface transport dt = "<<surf_dt<<"\n";
-  *vo_->os()<< "sub surface transport dt = "<<subsurf_dt<<"\n";
+  if (vo_->os_OK(Teuchos::VERB_HIGH) {
+    *vo_->os()<< "surface transport dt = "<<surf_dt<<"\n";
+    *vo_->os()<< "sub surface transport dt = "<<subsurf_dt<<"\n";
+  }
 
   double dt = std::min(surf_dt, subsurf_dt);
   set_dt(dt);
@@ -157,10 +160,6 @@ void CoupledTransport_PK::ComputeVolumeDarcyFlux(const Teuchos::Ptr<State>& S){
 }
 
 
-
-
-
-
 // -----------------------------------------------------------------------------
 // Advance each sub-PK individually, returning a failure as soon as possible.
 // -----------------------------------------------------------------------------
@@ -189,13 +188,14 @@ bool CoupledTransport_PK::AdvanceStep(double t_old, double t_new, bool reinit) {
   sub_pks_[subsurf_id_]->AdvanceStep(t_old, t_new, reinit);
   sub_pks_[surf_id_]->AdvanceStep(t_old, t_new, reinit);
 
-
   const Epetra_MultiVector& surf_tcc = *S_->GetFieldCopyData("surface-total_component_concentration", "subcycling")->ViewComponent("cell",false);  
   const Epetra_MultiVector& tcc = *S_->GetFieldCopyData("total_component_concentration", "subcycling")->ViewComponent("cell",false);
 
-  int num_components = 1;
+  const std::vector<std::string>&  component_names_sub =
+    Teuchos::rcp_dynamic_cast<Transport::Transport_PK_ATS>(sub_pks_[subsurf_id_])->component_names();
+  
+  int num_components =  Teuchos::rcp_dynamic_cast<Transport::Transport_PK_ATS>(sub_pks_[subsurf_id_]) -> num_aqueous_component();
   std::vector<double> mass_subsurface(num_components, 0.), mass_surface(num_components, 0.);
-
   
   if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM){
     for (int i=0; i<num_components; i++){

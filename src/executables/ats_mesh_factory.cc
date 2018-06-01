@@ -88,6 +88,11 @@ createMesh(Teuchos::ParameterList& mesh_plist,
     auto mesh = factory.create(mesh_plist.sublist("generate mesh parameters"), gm);
     bool deformable = mesh_plist.get<bool>("deformable mesh",false);
 
+    if (mesh_plist.isParameter("build columns from set")) {
+      std::string regionname = mesh_plist.get<std::string>("build columns from set");
+      mesh->build_columns(regionname);
+    }
+
     checkVerifyMesh(mesh_plist, mesh);
     S.RegisterMesh(Amanzi::Keys::cleanPListName(mesh_plist.name()), mesh, deformable);
 

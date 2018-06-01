@@ -51,7 +51,7 @@ void LiquidIceModel::InitializeModel(const Teuchos::Ptr<State>& S,
   // Grab the models.
   // get the WRM models and their regions
 
-  Teuchos::RCP<FieldEvaluator> me = S->GetFieldEvaluator(Keys::getKey(domain, "saturation_gas"));
+  Teuchos::RCP<FieldEvaluator> me = S->GetFieldEvaluator(Keys::getKey(domain, "saturation_ice"));
   
   Teuchos::RCP<Flow::WRMPermafrostEvaluator> wrm_me =
       Teuchos::rcp_dynamic_cast<Flow::WRMPermafrostEvaluator>(me);
@@ -166,12 +166,10 @@ bool LiquidIceModel::IsSetUp_() {
 bool 
 LiquidIceModel::Freezing(double T, double p) {
   double eff_p = std::max(p_atm_, p);
-  double rho_l = liquid_eos_->MolarDensity(T,eff_p);
-  double mass_rho_l = liquid_eos_->MassDensity(T,eff_p);
-
   double pc_l = pc_l_->CapillaryPressure(p,p_atm_);
   double pc_i;
   if (pc_i_->IsMolarBasis()) {
+    double rho_l = liquid_eos_->MolarDensity(T,eff_p);
     pc_i = pc_i_->CapillaryPressure(T, rho_l);
   } else {
     double mass_rho_l = liquid_eos_->MassDensity(T,eff_p);
@@ -186,12 +184,10 @@ int LiquidIceModel::EvaluateSaturations(double T, double p, double& s_gas, doubl
   int ierr = 0;
   try {
     double eff_p = std::max(p_atm_, p);
-    double rho_l = liquid_eos_->MolarDensity(T,eff_p);
-    double mass_rho_l = liquid_eos_->MassDensity(T,eff_p);
-
     double pc_l = pc_l_->CapillaryPressure(p, p_atm_);
     double pc_i;
     if (pc_i_->IsMolarBasis()) {
+      double rho_l = liquid_eos_->MolarDensity(T,eff_p);
       pc_i = pc_i_->CapillaryPressure(T, rho_l);
     } else {
       double mass_rho_l = liquid_eos_->MassDensity(T,eff_p);
@@ -228,7 +224,6 @@ int LiquidIceModel::EvaluateEnergyAndWaterContent_(double T, double p, AmanziGeo
     double eff_p = std::max(p_atm_, p);
 
     double rho_l = liquid_eos_->MolarDensity(T,eff_p);
-    double mass_rho_l = liquid_eos_->MassDensity(T,eff_p);
     double rho_i = ice_eos_->MolarDensity(T,eff_p);
 
     double pc_i;

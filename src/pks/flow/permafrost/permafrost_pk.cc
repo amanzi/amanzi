@@ -33,9 +33,9 @@ namespace Flow {
 void Permafrost::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
   // -- Absolute permeability.
   //       For now, we assume scalar permeability.  This will change.
-  S->RequireField(Keys::getKey(domain_,"permeability"))->SetMesh(mesh_)->SetGhosted()
+  S->RequireField(perm_key_)->SetMesh(mesh_)->SetGhosted()
       ->AddComponent("cell", AmanziMesh::CELL, 1);
-  S->RequireFieldEvaluator(Keys::getKey(domain_,"permeability"));
+  S->RequireFieldEvaluator(perm_key_);
   
   S->RequireField(conserved_key_)->SetMesh(mesh_)->SetGhosted()
     ->AddComponent("cell", AmanziMesh::CELL, 1);
@@ -57,15 +57,15 @@ void Permafrost::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
  
   // -- This setup is a little funky -- we use four evaluators to capture the physics.
   Teuchos::ParameterList wrm_plist = plist_->sublist("water retention evaluator");
-  wrm_plist.set("evaluator name", Keys::getKey(domain_,"saturation_liquid"));
+  wrm_plist.set("evaluator name", sat_key_);
   Teuchos::RCP<Flow::WRMPermafrostEvaluator> wrm =
       Teuchos::rcp(new Flow::WRMPermafrostEvaluator(wrm_plist));
   
 
-  if (!S->HasFieldEvaluator(Keys::getKey(domain_,"saturation_liquid"))) {
-    S->SetFieldEvaluator(Keys::getKey(domain_,"saturation_liquid"), wrm);
-    S->SetFieldEvaluator(Keys::getKey(domain_,"saturation_gas"), wrm);
-    S->SetFieldEvaluator(Keys::getKey(domain_,"saturation_ice"), wrm);
+  if (!S->HasFieldEvaluator(sat_key_)) {
+    S->SetFieldEvaluator(sat_key_, wrm);
+    S->SetFieldEvaluator(sat_gas_key_, wrm);
+    S->SetFieldEvaluator(sat_ice_key_, wrm);
   }
 
   // -- the rel perm evaluator, also with the same underlying WRM.
@@ -82,18 +82,18 @@ void Permafrost::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
   
   // -- Liquid density and viscosity for the transmissivity.
 
-  S->RequireField(Keys::getKey(domain_,"molar_density_liquid"))->SetMesh(mesh_)->SetGhosted()
+  S->RequireField(molar_dens_key_)->SetMesh(mesh_)->SetGhosted()
       ->AddComponent("cell", AmanziMesh::CELL, 1);
-  S->RequireFieldEvaluator(Keys::getKey(domain_,"molar_density_liquid"));
+  S->RequireFieldEvaluator(molar_dens_key_);
 
   /* S->RequireField("viscosity_liquid")->SetMesh(S->GetMesh())->SetGhosted()
       ->AddComponent("cell", AmanziMesh::CELL, 1);
   S->RequireFieldEvaluator("viscosity_liquid");
   */
   // -- liquid mass density for the gravity fluxes
-  S->RequireField(Keys::getKey(domain_,"mass_density_liquid"))->SetMesh(mesh_)->SetGhosted()
+  S->RequireField(mass_dens_key_)->SetMesh(mesh_)->SetGhosted()
       ->AddComponent("cell", AmanziMesh::CELL, 1);
-  S->RequireFieldEvaluator(Keys::getKey(domain_,"mass_density_liquid")); // simply picks up the molar density one.
+  S->RequireFieldEvaluator(mass_dens_key_); // simply picks up the molar density one.
 
 }
 
