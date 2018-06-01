@@ -63,10 +63,10 @@ set(ENABLE_TESTS @ENABLE_TESTS@ CACHE BOOL "Build the tests")
 set(UnitTest_DIR @TPL_INSTALL_PREFIX@ CACHE PATH "UnitTest installation prefix")
 
 # ZLIB
-set(ZLIB_DIR  @ZLIB_DIR@ CACHE PATH "ZLIB installation prefix")
+set(ZLIB_DIR @ZLIB_DIR@ CACHE PATH "ZLIB installation prefix")
 
 # METIS  
-set(METIS_DIR  @METIS_DIR@ CACHE PATH "METIS installation prefix")
+set(METIS_DIR @METIS_DIR@ CACHE PATH "METIS installation prefix")
 
 # CCSE
 set(CCSE_DIR @TPL_INSTALL_PREFIX@ CACHE PATH "CCSE installation prefix")
@@ -130,3 +130,8 @@ set(PFLOTRAN_DIR @PFLOTRAN_DIR@ CACHE PATH "PFLOTRAN installation prefix")
 
 # CRUNCHTOPE
 set(CRUNCHTOPE_DIR @TPL_INSTALL_PREFIX@ CACHE PATH "CRUNCHTOPE installation prefix")
+
+# SuperLU
+set(SuperLU_DIR @SuperLU_DIR@ CACHE PATH "SuperLU installation prefix")
+set(SuperLUDist_DIR @SuperLUDist_DIR@ CACHE PATH "SuperLUDist installation prefix")
+
