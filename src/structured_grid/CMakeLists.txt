@@ -38,7 +38,7 @@ add_amanzi_library(structured_amanzi
                    LINK_LIBS interface_s)
 
 if (APPLE AND BUILD_SHARED_LIBS)
-  set_target_properties(structured_amanzi PROPERTIES LINK_FLAGS "-Wl,-undefined,dynamic_lookup")
+  set_target_properties(structured_amanzi PROPERTIES LINK_FLAGS "-Wl,-undefined,dynamic_lookup -L${CCSE_DIR}/lib")
 elseif (BUILD_SHARED_LIBS)
   set_target_properties(structured_amanzi PROPERTIES LINK_FLAGS "-L${CCSE_DIR}/lib")
 endif()			  
