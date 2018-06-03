@@ -354,7 +354,7 @@ void Richards_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVector>
  
   // finalize preconditioner
   op_preconditioner_->AssembleMatrix();
-  op_preconditioner_->InitPreconditioner(preconditioner_name_, *preconditioner_list_);
+  op_preconditioner_->UpdatePreconditioner();
 }
 
 

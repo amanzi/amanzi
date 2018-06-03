@@ -181,8 +181,9 @@ void MagneticDiffusion2D(double dt, double tend,
     global_op->SymbolicAssembleMatrix();
     global_op->AssembleMatrix();
 
-    ParameterList slist = plist.sublist("preconditioners");
-    global_op->InitPreconditioner("Hypre AMG", slist);
+    ParameterList slist = plist.sublist("preconditioners").sublist("Hypre AMG");
+    global_op->InitializePreconditioner(slist);
+    global_op->UpdatePreconditioner();
 
     // Solve the problem.
     ParameterList lop_list = plist.sublist("solvers").sublist("silent").sublist("pcg parameters");
@@ -431,8 +432,9 @@ void MagneticDiffusion3D(double dt, double tend, bool convergence,
     global_op->SymbolicAssembleMatrix();
     global_op->AssembleMatrix();
 
-    ParameterList slist = plist.sublist("preconditioners");
-    global_op->InitPreconditioner("Hypre AMG", slist);
+    ParameterList slist = plist.sublist("preconditioners").sublist("Hypre AMG");
+    global_op->InitializePreconditioner(slist);
+    global_op->UpdatePreconditioner();
 
     // Solve the problem.
     ParameterList lop_list = plist.sublist("solvers").sublist("silent").sublist("pcg parameters");

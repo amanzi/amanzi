@@ -290,7 +290,8 @@ std::pair<double, double> RunInverseProblem(const std::string& discretization,
   Teuchos::ParameterList pc_list;
   pc_list.set("preconditioner type", "boomer amg");
   pc_list.sublist("boomer amg parameters").set("tolerance", 0.0);
-  op->global_operator()->InitPreconditioner(pc_list);
+  op->global_operator()->InitializePreconditioner(pc_list);
+  op->global_operator()->UpdatePreconditioner();
 
   Teuchos::ParameterList lin_list;
   lin_list.sublist("verbose object").set("verbosity level", "low");

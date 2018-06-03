@@ -115,7 +115,7 @@ class Darcy_PK : public Flow_PK {
   double dt_desirable_, dt_factor_;
   std::vector<std::pair<double, double> > dt_history_;  // statistics
 
-  std::string preconditioner_name_, solver_name_;
+  std::string solver_name_;
   bool initialize_with_darcy_;
   int num_itrs_;
 

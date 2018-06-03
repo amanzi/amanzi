@@ -182,8 +182,9 @@ void OperatorDiffusionDG(std::string solver_name) {
   Operators::CheckMatrixCoercivity(global_op->A());
 
   // create preconditoner using the base operator class
-  ParameterList slist = plist.sublist("preconditioners");
-  global_op->InitPreconditioner("Hypre AMG", slist);
+  ParameterList slist = plist.sublist("preconditioners").sublist("Hypre AMG");
+  global_op->InitializePreconditioner(slist);
+  global_op->UpdatePreconditioner();
 
   // solve the problem
   ParameterList lop_list = plist.sublist("solvers");

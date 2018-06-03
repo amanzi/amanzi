@@ -136,8 +136,9 @@ TEST(OPERATOR_DIFFUSION_NODAL) {
   global_op->AssembleMatrix();
 
   // create preconditoner using the base operator class
-  ParameterList slist = plist.sublist("preconditioners");
-  global_op->InitPreconditioner("Hypre AMG", slist);
+  ParameterList slist = plist.sublist("preconditioners").sublist("Hypre AMG");
+  global_op->InitializePreconditioner(slist);
+  global_op->UpdatePreconditioner();
 
   // Test SPD properties of the preconditioner.
   CompositeVector a(cvs), ha(cvs), b(cvs), hb(cvs);
@@ -309,8 +310,9 @@ TEST(OPERATOR_DIFFUSION_NODAL_EXACTNESS) {
   global_op->AssembleMatrix();
 
   // create preconditoner using the base operator class
-  ParameterList slist = plist.sublist("preconditioners");
-  global_op->InitPreconditioner("Hypre AMG", slist);
+  ParameterList slist = plist.sublist("preconditioners").sublist("Hypre AMG");
+  global_op->InitializePreconditioner(slist);
+  global_op->UpdatePreconditioner();
 
   // solve the problem
   ParameterList lop_list = plist.sublist("solvers")

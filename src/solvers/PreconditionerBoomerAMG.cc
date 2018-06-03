@@ -24,8 +24,8 @@ namespace Amanzi {
 namespace AmanziPreconditioners {
 
 /* ******************************************************************
- * Apply the preconditioner.
- ****************************************************************** */
+* Apply the preconditioner.
+****************************************************************** */
 int PreconditionerBoomerAMG::ApplyInverse(const Epetra_MultiVector& v, Epetra_MultiVector& hv)
 {
   returned_code_ = IfpHypre_->ApplyInverse(v, hv);
@@ -35,8 +35,8 @@ int PreconditionerBoomerAMG::ApplyInverse(const Epetra_MultiVector& v, Epetra_Mu
 
 
 /* ******************************************************************
- * Initialize the preconditioner.
- ****************************************************************** */
+* Initialize the preconditioner.
+****************************************************************** */
 void PreconditionerBoomerAMG::Init(const std::string& name, const Teuchos::ParameterList& list)
 {
   plist_ = list;
@@ -83,14 +83,12 @@ void PreconditionerBoomerAMG::Init(const std::string& name, const Teuchos::Param
     funcs_.push_back(Teuchos::rcp(new FunctionParameter((Hypre_Chooser)1,
             &HYPRE_BoomerAMGSetNumFunctions, num_blocks_)));
 
-    //
-    // Block indices is an array of ints, indicating what unknowns are
+    // Block indices is an array of integers, indicating what unknowns are
     // coarsened as a system.  For now just put in a placeholder.
     block_indices_ = plist_.get<Teuchos::RCP<std::vector<int> > >("block indices");
     block_index_function_index_ = funcs_.size();
     funcs_.push_back(Teuchos::null);
   }
-
 
   if (plist_.isParameter("number of functions")) {
     if (num_blocks_ > 0) {
@@ -174,8 +172,8 @@ void PreconditionerBoomerAMG::Init(const std::string& name, const Teuchos::Param
 
 
 /* ******************************************************************
- * Rebuild the preconditioner using the given matrix A.
- ****************************************************************** */
+* Rebuild the preconditioner using the given matrix A.
+****************************************************************** */
 void PreconditionerBoomerAMG::Update(const Teuchos::RCP<Epetra_RowMatrix>& A)
 {
 #ifdef HAVE_HYPRE

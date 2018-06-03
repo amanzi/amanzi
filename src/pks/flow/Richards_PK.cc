@@ -538,11 +538,13 @@ void Richards_PK::Initialize(const Teuchos::Ptr<State>& S)
     op_vapor_diff_->SetScalarCoefficient(Teuchos::null, Teuchos::null);
   }
 
-  // -- generic linear solver for maost cases
+  // -- generic linear solver for most cases
   solver_name_ = ti_list_->get<std::string>("linear solver");
 
   // -- preconditioner or encapsulated preconditioner
-  preconditioner_name_ = ti_list_->get<std::string>("preconditioner");
+  std::string pc_name = ti_list_->get<std::string>("preconditioner");
+  Teuchos::ParameterList pc_list = preconditioner_list_->sublist(pc_name);
+  op_preconditioner_->InitializePreconditioner(pc_list);
   
   op_pc_solver_ = op_preconditioner_;
 
@@ -767,11 +769,12 @@ void Richards_PK::InitializeStatistics_()
 {
   if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
     std::string ti_method_name = ti_list_->get<std::string>("time integration method");
+    std::string pc_name = ti_list_->get<std::string>("preconditioner");
 
     Teuchos::OSTab tab = vo_->getOSTab();
     *vo_->os()<< "\nEC:" << error_control_ 
               << " Upwind:" << op_matrix_diff_->little_k()
-              << " PC:\"" << preconditioner_name_.c_str() << "\"" 
+              << " PC:\"" << pc_name.c_str() << "\"" 
               << " TI:\"" << ti_method_name.c_str() << "\"" << std::endl
               << "matrix: " << op_matrix_->PrintDiagnostics() << std::endl
               << "precon: " << op_preconditioner_->PrintDiagnostics() << std::endl;

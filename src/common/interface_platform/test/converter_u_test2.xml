@@ -109,7 +109,9 @@
         <tolerance>1e-20</tolerance>
       </unstr_linear_solver>
       <unstr_preconditioners>
-        <hypre_amg />
+        <hypre_amg>
+          <use_block_indices>false</use_block_indices>
+        </hypre_amg>
         <trilinos_ml />
         <block_ilu />
       </unstr_preconditioners>

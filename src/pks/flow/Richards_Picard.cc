@@ -95,7 +95,7 @@ int Richards_PK::AdvanceToSteadyState_Picard(Teuchos::ParameterList& plist)
 
     // create preconditioner
     op_preconditioner_->AssembleMatrix();
-    op_preconditioner_->InitPreconditioner(preconditioner_name_, *preconditioner_list_);
+    op_preconditioner_->UpdatePreconditioner();
 
     // check convergence of non-linear residual
     op_preconditioner_->ComputeResidual(solution_new, residual);

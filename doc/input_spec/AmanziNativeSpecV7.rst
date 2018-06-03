@@ -4999,6 +4999,12 @@ Internal parameters for Boomer AMG include
 
 * `"max coarse size`" [int] sets maximum size of coarsest grid. The default is 9.
 
+* `"use block indices`" [bool] If true, uses the `"systems of PDEs`" code with blocks 
+  given by the SuperMap, or one per DoF per entity type. Default is *false*.
+  Note Hypre's BoomerAMG cannot be given both `"use block indices`" and 
+  `"number of functions`" (see later) options as these are two ways of specifying 
+  the same thing.
+
 * `"number of function`" [int] the value > 1 tells Boomer AMG to use the "systems 
   of PDEs" code.  Note that, to use this approach, unknowns must be ordered with 
   DoF fastest varying (i.e. not the native Epetra_MultiVector order).  By default, it

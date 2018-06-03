@@ -148,7 +148,7 @@ class NavierStokes_PK : public PK_PhysicalBDF {
   Teuchos::RCP<Operators::PDE_Accumulation> op_matrix_acc_, op_preconditioner_acc_, op_mass_;
   Teuchos::RCP<Operators::PDE_Abstract> op_matrix_div_;
   Teuchos::RCP<Operators::PDE_Abstract> op_matrix_conv_, op_preconditioner_conv_;
-  std::string preconditioner_name_, solver_name_;
+  std::string solver_name_;
  
  private:
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
