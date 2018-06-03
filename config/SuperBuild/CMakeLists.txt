@@ -448,7 +448,7 @@ set(Amanzi_CMAKE_LINKER_ARGS
      -DCMAKE_EXE_LINKER_FLAGS:STRING=${CMAKE_EXE_LINKER_FLAGS}
      -DCMAKE_SHARED_LINKER_FLAGS:STRING=${CMAKE_SHARED_LINKER_FLAGS})
 
-message("AMANZI: SHARED LINKER FLAGS = ${Amanzi_CMAKE_LINKER_ARGS}")
+message(STATUS "Amanzi_CMAKE_LINKER_ARGS=${Amanzi_CMAKE_LINKER_ARGS}")
 
 # Common compiler flags to ensure a uniform build in projects that do not use CMake
 include(BuildWhitespaceString)

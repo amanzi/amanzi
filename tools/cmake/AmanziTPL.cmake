@@ -210,6 +210,8 @@ if (Trilinos_FOUND)
     trilinos_package_enabled_tpls(${tri_package})
     message(STATUS "\t${tri_package}_DIR       = ${${tri_package}_DIR}")
     message(STATUS "\t${tri_package}_LIBRARIES = ${${tri_package}_LIBRARIES}")
+    string(TOLOWER ${tri_package} _tri_package)
+    print_link_libraries(${_tri_package})
     message(STATUS "")
 
     # Update the <PACKAGE>_INCLUDE_DIRS variable 
@@ -272,6 +274,7 @@ if (Trilinos_FOUND)
       message(STATUS "\tIfpack_DIR          = ${Ifpack_DIR}")
       message(STATUS "\tIfpack_INCLUDE_DIRS = ${Ifpack_INCLUDE_DIRS}")
       message(STATUS "\tIfpack_LIBRARIES    = ${Ifpack_LIBRARIES}")
+      print_link_libraries(ifpack)
       message(STATUS "")
 
       trilinos_package_enabled_tpls(Ifpack)
@@ -307,37 +310,21 @@ endif()
 ##############################################################################
 
 if (ENABLE_HYPRE)
-  find_library(HYPRE_LIBRARY HYPRE
-               HINTS ${HYPRE_DIR}
-               PATH_SUFFIXES include lib)
 
-  find_library(SuperLU_LIBRARY superlu
-               HINTS ${HYPRE_DIR}
-               PATH_SUFFIXES include lib)
+  find_package(HYPRE)
 
-  find_library(SuperLUDist_LIBRARY superlu_dist
-               HINTS ${HYPRE_DIR}
-               PATH_SUFFIXES include lib)
-
-  find_library(ParMetis_LIBRARY parmetis
-               HINTS ${HYPRE_DIR}
-               PATH_SUFFIXES include lib)
-
-  find_library(METIS_LIBRARY metis
-               HINTS ${HYPRE_DIR}
-               PATH_SUFFIXES include lib)
-
-  set(HYPRE_LIBRARIES ${HYPRE_LIBRARY} ${SuperLUDist_LIBRARY} ${SuperLU_LIBRARY}
-                                       ${ParMetis_LIBRARY} ${METIS_LIBRARY})
-
-  message(STATUS "HYPRE Package information")
-  message(STATUS "\tHYPRE_VERSION      = ${HYPRE_VERSION}")
-  message(STATUS "\tHYPRE_INCLUDE_DIRS = ${HYPRE_INCLUDE_DIRS}")
-  message(STATUS "\tHYPRE_LIBRARY_DIR  = ${HYPRE_LIBRARY_DIR}")
-  message(STATUS "\tHYPRE_LIBRARY      = ${HYPRE_LIBRARY}")
-  message(STATUS "\tHYPRE_LIBRARIES    = ${HYPRE_LIBRARIES}")
-  message(STATUS "")
-  # message(FATAL_ERROR "Can not locate HYPRE library and/or include\n")
+  if (HYPRE_FOUND)
+    message(STATUS "HYPRE Package information")
+    message(STATUS "\tHYPRE_VERSION      = ${HYPRE_VERSION}")
+    message(STATUS "\tHYPRE_INCLUDE_DIRS = ${HYPRE_INCLUDE_DIRS}")
+    message(STATUS "\tHYPRE_LIBRARY_DIR  = ${HYPRE_LIBRARY_DIR}")
+    message(STATUS "\tHYPRE_LIBRARY      = ${HYPRE_LIBRARY}")
+    message(STATUS "\tHYPRE_LIBRARIES    = ${HYPRE_LIBRARIES}")
+    print_link_libraries(${HYPRE_LIBRARY})
+    message(STATUS "")
+  else()
+    message(FATAL_ERROR "Can not locate HYPRE library and/or include\n")
+  endif()
 endif()
 
 
@@ -360,6 +347,7 @@ message(STATUS "\tNetCDF_LIBRARY_DIR  = ${NetCDF_LIBRARY_DIR}")
 message(STATUS "\tNetCDF_C_LIBRARY    = ${NetCDF_C_LIBRARY}")
 message(STATUS "\tNetCDF_C_LIBRARIES  = ${NetCDF_C_LIBRARIES}")
 message(STATUS "\tNetCDF_CXX_LIBRARIES  = ${NetCDF_CXX_LIBRARIES}")
+print_link_libraries(${NetCDF_C_LIBRARY})
 message(STATUS "")
 
 
@@ -401,6 +389,7 @@ message(STATUS "\tSEACAS_INCLUDE_DIRS = ${SEACAS_INCLUDE_DIRS}")
 message(STATUS "\tSEACAS_LIBRARY_DIR  = ${SEACAS_LIBRARY_DIR}")
 message(STATUS "\tSEACAS_LIBRARY      = ${SEACAS_LIBRARY}")
 message(STATUS "\tSEACAS_LIBRARIES    = ${SEACAS_LIBRARIES}")
+print_link_libraries(${SEACAS_LIBRARY})
 message(STATUS "")
 
 
@@ -420,6 +409,7 @@ if (ENABLE_Structured)
     message(STATUS "\tCCSE_LIBRARY_DIR  = ${CCSE_LIBRARY_DIR}")
     message(STATUS "\tCCSE_LIBRARY      = ${CCSE_LIBRARY}")
     message(STATUS "\tCCSE_LIBRARIES    = ${CCSE_LIBRARIES}")
+    print_link_libraries(${CCSE_LIBRARY})
     message(STATUS "")
   endif()
 endif()
@@ -486,6 +476,7 @@ if (ENABLE_MOAB_Mesh)
     message(STATUS "\tMOAB_LIBRARY_DIR  = ${MOAB_LIBRARY_DIR}")
     message(STATUS "\tMOAB_LIBRARY      = ${MOAB_LIBRARY}")
     message(STATUS "\tMOAB_LIBRARIES    = ${MOAB_LIBRARIES}")
+    print_link_libraries(${MOAB_LIBRARY})
     message(STATUS "")
   endif() 
 endif()
@@ -510,6 +501,7 @@ if (ENABLE_MSTK_Mesh)
     message(STATUS "\tMSTK_LIBRARY_DIR  = ${MSTK_LIBRARY_DIR}")
     message(STATUS "\tMSTK_LIBRARY      = ${MSTK_LIBRARY}")
     message(STATUS "\tMSTK_LIBRARIES    = ${MSTK_LIBRARIES}")
+    print_link_libraries(${MSTK_LIBRARY})
     message(STATUS "")
   endif() 
 endif() 
@@ -624,6 +616,7 @@ if (ENABLE_Structured OR ENABLE_ALQUIMIA OR ENABLE_PETSC) # FIXME: Sloppy.
     message(STATUS "\tPETSC_INCLUDE_DIRS = ${PETSC_INCLUDE_DIRS}")
     message(STATUS "\tPETSC_LIBRARY      = ${PETSC_LIBRARY}")
     message(STATUS "\tPETSC_LIBRARIES    = ${PETSC_LIBRARIES}")
+    print_link_libraries(${PETSC_LIBRARY})
     message(STATUS "")
   endif()
 endif()
@@ -646,6 +639,7 @@ if (ENABLE_ALQUIMIA)
     message(STATUS "\tPFLOTRAN_LIBRARY_DIR  = ${PFLOTRAN_LIBRARY_DIR}")
     message(STATUS "\tPFLOTRAN_LIBRARY      = ${PFLOTRAN_LIBRARY}")
     message(STATUS "\tPFLOTRAN_LIBRARIES    = ${PFLOTRAN_LIBRARIES}")
+    print_link_libraries(${PFLOTRAN_LIBRARY})
     message(STATUS "")
   endif()
 
@@ -657,6 +651,7 @@ if (ENABLE_ALQUIMIA)
     message(STATUS "\tCRUNCHTOPE_LIBRARY_DIR  = ${CRUNCHTOPE_LIBRARY_DIR}")
     message(STATUS "\tCRUNCHTOPE_LIBRARY      = ${CRUNCHTOPE_LIBRARY}")
     message(STATUS "\tCRUNCHTOPE_LIBRARIES    = ${CRUNCHTOPE_LIBRARIES}")
+    print_link_libraries(${CRUNCHTOPE_LIBRARY})
     message(STATUS "")
   endif()
 
@@ -674,6 +669,7 @@ if (ENABLE_ALQUIMIA)
     message(STATUS "\tALQUIMIA_LIBRARY_DIR  = ${ALQUIMIA_LIBRARY_DIR}")
     message(STATUS "\tALQUIMIA_LIBRARY      = ${ALQUIMIA_LIBRARY}")
     message(STATUS "\tALQUIMIA_LIBRARIES    = ${ALQUIMIA_LIBRARIES}")
+    print_link_libraries(${ALQUIMIA_LIBRARY})
     message(STATUS "")
   endif()
 endif()

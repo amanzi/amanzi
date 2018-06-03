@@ -15,7 +15,7 @@
 #include <UnitTest++.h>
 
 #include <mpi.h>
-#include <iostream>
+#include <fstream>
 
 #include <Epetra_MpiComm.h>
 

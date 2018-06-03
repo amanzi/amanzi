@@ -118,7 +118,7 @@ if (BUILD_TESTS)
                     KIND      int
                     SOURCE    test/Main.cc test/mpc_driver_flow.cc
 		    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES}
-                                             ${HYPRE_LIBRARIES})
+                                             ${HYPRE_LIBRARY})
 
     # Test: mpc driver for transport
     add_amanzi_test(mpc_driver_transport mpc_driver_transport
@@ -131,7 +131,7 @@ if (BUILD_TESTS)
                     KIND      int
                     SOURCE    test/Main.cc test/mpc_driver_reactive_transport.cc
 		    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES}
-                                             ${HYPRE_LIBRARIES})
+                                             ${HYPRE_LIBRARY})
 
     # Test: mpc driver for thermal richards
     add_amanzi_test(mpc_driver_thermal_richards mpc_driver_thermal_richards
@@ -144,7 +144,7 @@ if (BUILD_TESTS)
                     KIND      int
                     SOURCE    test/Main.cc test/mpc_driver_frt.cc
 		    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES}
-                                             ${HYPRE_LIBRARIES})
+                                             ${HYPRE_LIBRARY})
 
     # Test: mpc-new driver dummy
     add_amanzi_test(mpc_driver_dummy mpc_driver_dummy
@@ -164,6 +164,6 @@ if (BUILD_TESTS)
                     NPROCS    2
                     SOURCE    test/Main.cc test/mpc_walkabout.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES}
-                                             ${HYPRE_LIBRARIES})
+                                             ${HYPRE_LIBRARY})
 
 endif()

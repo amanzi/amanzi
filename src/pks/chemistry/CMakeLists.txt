@@ -115,7 +115,7 @@ if (BUILD_TESTS AND ENABLE_Unstructured)
                               mesh_functions mesh mesh_factory error_handling interface
                               ${UnitTest_LIBRARIES} ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES}
                               ${XERCES_LIBRARIES} ${XERCES_ICU_LIBRARIES} ${NOX_LIBRARIES}
-                              ${HYPRE_LIBRARIES})
+                              ${HYPRE_LIBRARY})
 
     if (ENABLE_ALQUIMIA)
       add_amanzi_test(chemistry_alquimia_pk chemistry_alquimia_pk

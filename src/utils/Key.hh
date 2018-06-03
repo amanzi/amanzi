@@ -22,6 +22,7 @@
 #define UTILS_KEY_HH_
 
 
+#include <set>
 #include "boost/algorithm/string.hpp"
 #include "Teuchos_ParameterList.hpp"
 

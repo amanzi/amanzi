@@ -48,6 +48,7 @@ This example defines a degenerate box, a square on a surface *z=1*.
 #define AMANZI_BOX_VOLUME_FRACTIONS_REGION_HH_
 
 #include <vector>
+#include <list>
 
 #include "Point.hh"
 #include "Region.hh"

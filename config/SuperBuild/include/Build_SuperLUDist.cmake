@@ -45,9 +45,10 @@ ExternalProject_Add(${SuperLUDist_BUILD_TARGET}
                     TMP_DIR   ${SuperLUDist_tmp_dir}           # Temporary files directory
                     STAMP_DIR ${SuperLUDist_stamp_dir}         # Timestamp and log directory
                     # -- Download and URL definitions
-                    DOWNLOAD_DIR ${TPL_DOWNLOAD_DIR}           # Download directory
-                    URL          ${SuperLUDist_URL}            # URL may be a web site OR a local file
-                    URL_MD5      ${SuperLUDist_MD5_SUM}        # md5sum of the archive file
+                    DOWNLOAD_DIR  ${TPL_DOWNLOAD_DIR}          # Download directory
+                    URL           ${SuperLUDist_URL}           # URL may be a web site OR a local file
+                    URL_MD5       ${SuperLUDist_MD5_SUM}       # md5sum of the archive file
+                    DOWNLOAD_NAME ${SuperLUDist_SAVEAS_FILE}   # file name to store (if not end of URL)
                     # -- Patch
                     # PATCH_COMMAND ${SuperLUDist_PATCH_COMMAND}  # Mods to source
                     # -- Configure
@@ -79,3 +80,4 @@ build_library_name(superlu_dist SuperLUDist_LIB APPEND_PATH ${TPL_INSTALL_PREFIX
 
 # --- set cache (global) variables
 global_set(SuperLUDist_LIBRARY "${SuperLUDist_LIB}")
+global_set(SuperLUDist_DIR ${TPL_INSTALL_PREFIX})

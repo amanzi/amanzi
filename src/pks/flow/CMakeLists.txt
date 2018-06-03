@@ -133,7 +133,7 @@ set(flow_src_files Flow_PK.cc
                    )
 set(flow_tpl_libs ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES} ${Boost_LIBRARIES} ${SEACAS_LIBRARIES})
 if (Ifpack_ENABLE_HYPRE)
-  list(APPEND flow_tpl_libs ${Ifpack_LIBRARIES} ${HYPRE_LIBRARIES})
+  list(APPEND flow_tpl_libs ${Ifpack_LIBRARIES} ${HYPRE_LIBRARY})
 endif()
 add_amanzi_library(flow SOURCE ${flow_src_files}
                    LINK_LIBS pks operators state functions 

@@ -1496,6 +1496,7 @@ int PDE_DiffusionMFD::UpdateConsistentFaces(CompositeVector& u)
     consistent_face_op_ = Teuchos::rcp(new Operator_ConsistentFace(cface_cvs, plist_.sublist("consistent faces")));
     consistent_face_op_->OpPushBack(local_op_);
     consistent_face_op_->SymbolicAssembleMatrix();
+    consistent_face_op_->InitializePreconditioner(plist_.sublist("consistent faces").sublist("preconditioner"));
   }
 
   // calculate the rhs, given by y_f - Afc * x_c
@@ -1522,7 +1523,7 @@ int PDE_DiffusionMFD::UpdateConsistentFaces(CompositeVector& u)
 
   // x_f = Aff^-1 * ...
   consistent_face_op_->AssembleMatrix();
-  consistent_face_op_->InitPreconditioner(plist_.sublist("consistent faces").sublist("preconditioner"));
+  consistent_face_op_->UpdatePreconditioner();
 
   int ierr = 0;
   if (plist_.sublist("consistent faces").isSublist("linear solver")) {
