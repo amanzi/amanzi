@@ -135,9 +135,11 @@ void EnergyOnePhase_PK::Initialize(const Teuchos::Ptr<State>& S)
   op_preconditioner_advection_ = Teuchos::rcp(new Operators::PDE_AdvectionUpwind(oplist_adv, op_preconditioner_));
   op_preconditioner_->SymbolicAssembleMatrix();
 
-  // preconditioner and optional linear solver
+  // initialize preconditioner
   AMANZI_ASSERT(ti_list_->isParameter("preconditioner"));
-  preconditioner_name_ = ti_list_->get<std::string>("preconditioner");
+  std::string name = ti_list_->get<std::string>("preconditioner");
+  Teuchos::ParameterList slist = preconditioner_list_->sublist(name);
+  op_preconditioner_->InitializePreconditioner(slist);
 
   // initialize time integrator
   std::string ti_method_name = ti_list_->get<std::string>("time integration method", "none");

@@ -138,8 +138,9 @@ void RunTest(std::string op_list_name) {
   global_op->AssembleMatrix();
 
   // create preconditoner
-  ParameterList slist = plist.sublist("preconditioners");
-  global_op->InitPreconditioner("Hypre AMG", slist);
+  ParameterList slist = plist.sublist("preconditioners").sublist("Hypre AMG");
+  global_op->InitializePreconditioner(slist);
+  global_op->UpdatePreconditioner();
 
   // Test SPD properties of the matrix and preconditioner.
   VerificationCV ver(global_op);
@@ -173,7 +174,9 @@ void RunTest(std::string op_list_name) {
   op.ApplyBCs(true, true);
   global_op->SymbolicAssembleMatrix();
   global_op->AssembleMatrix();
-  global_op->InitPreconditioner("Hypre AMG", slist);
+
+  global_op->InitializePreconditioner(slist);
+  global_op->UpdatePreconditioner();
 
   ierr = solver.ApplyInverse(rhs, solution);
 

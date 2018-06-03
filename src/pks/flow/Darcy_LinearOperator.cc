@@ -40,7 +40,7 @@ void Darcy_PK::SolveFullySaturatedProblem(CompositeVector& u)
   AddSourceTerms(rhs);
 
   op_->AssembleMatrix();
-  op_->InitPreconditioner(preconditioner_name_, *preconditioner_list_);
+  op_->UpdatePreconditioner();
 
   AmanziSolvers::LinearOperatorFactory<Operators::Operator, CompositeVector, CompositeVectorSpace> sfactory;
   Teuchos::RCP<AmanziSolvers::LinearOperator<Operators::Operator, CompositeVector, CompositeVectorSpace> >

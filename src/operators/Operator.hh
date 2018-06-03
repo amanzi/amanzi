@@ -218,6 +218,7 @@ class Operator {
   int ComputeResidual(const CompositeVector& u, CompositeVector& r, bool zero = true);
   int ComputeNegativeResidual(const CompositeVector& u, CompositeVector& r, bool zero = true);
 
+  // preconditioner 
   void InitPreconditioner(const std::string& prec_name, const Teuchos::ParameterList& plist);
   void InitPreconditioner(Teuchos::ParameterList& plist);
   void InitializePreconditioner(Teuchos::ParameterList& plist);
@@ -226,7 +227,7 @@ class Operator {
   void CreateCheckPoint();
   void RestoreCheckPoint();
 
-  // -- supporting members
+  // supporting members
   int CopyShadowToMaster(int iops);
 
   // access

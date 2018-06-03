@@ -184,8 +184,9 @@ std::cout << "Passed EPK.Initilize()" << std::endl;
   // make preconditioner
   // Teuchos::RCP<Operator> op3 = Teuchos::rcp(new Operator(*op2));
 
-  Teuchos::ParameterList slist = plist->sublist("preconditioners");
-  op->InitPreconditioner("Hypre AMG", slist);
+  Teuchos::ParameterList slist = plist->sublist("preconditioners").sublist("Hypre AMG");
+  op->InitializePreconditioner(slist);
+  op->UpdatePreconditioner();
 
   if (MyPID == 0) {
     GMV::open_data_file(*mesh, (std::string)"energy.gmv");

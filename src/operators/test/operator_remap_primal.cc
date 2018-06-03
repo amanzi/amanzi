@@ -256,7 +256,8 @@ void RemapTests2DPrimal(int order, std::string disc_name,
     global_reac->AssembleMatrix();
 
     plist.set<std::string>("preconditioner type", "diagonal");
-    global_reac->InitPreconditioner(plist);
+    global_reac->InitializePreconditioner(plist);
+    global_reac->UpdatePreconditioner();
 
     AmanziSolvers::LinearOperatorPCG<Operator, CompositeVector, CompositeVectorSpace>
         pcg(global_reac, global_reac);

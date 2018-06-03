@@ -227,6 +227,7 @@ void TreeOperator::InitPreconditioner(
   preconditioner_->Update(A_);
 }
 
+
 /* ******************************************************************
 * Create preconditioner using name and a factory.
 ****************************************************************** */

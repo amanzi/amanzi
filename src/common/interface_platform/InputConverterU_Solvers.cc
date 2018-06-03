@@ -296,7 +296,7 @@ Teuchos::ParameterList InputConverterU::TranslateHypreAMG_()
   int nsmooth(HYPRE_AMG_NSMOOTH);
   double strong_threshold(HYPRE_AMG_STR_THR);
 
-  bool flag;
+  bool flag, block_indices(false);
   DOMNode* node = GetUniqueElementByTagsString_("unstr_preconditioners, hypre_amg", flag);
 
   if (flag) {
@@ -315,6 +315,8 @@ Teuchos::ParameterList InputConverterU::TranslateHypreAMG_()
         tol = std::strtod(text_content, NULL);
       } else if (strcmp(tagname, "hypre_strong_threshold") == 0) {
         strong_threshold = std::strtod(text_content, NULL);
+      } else if (strcmp(tagname, "use_block_indices") == 0) {
+        block_indices = (strcmp(text_content, "true") == 0);
       }
     }
   }
@@ -326,6 +328,8 @@ Teuchos::ParameterList InputConverterU::TranslateHypreAMG_()
   amg_list.set<double>("strong threshold", strong_threshold);
   amg_list.set<int>("cycle type", 1);
   amg_list.set<int>("coarsen type", 0);
+  if (block_indices)
+    amg_list.set<bool>("use block indices", block_indices);
   amg_list.set<int>("verbosity", 0);
   if (flow_single_phase_) {
     amg_list.set<int>("relaxation type down", 3);

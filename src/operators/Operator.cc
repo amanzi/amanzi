@@ -374,17 +374,21 @@ int Operator::ApplyInverse(const CompositeVector& X, CompositeVector& Y) const
 
 
 /* ******************************************************************
+*                       DEPRECATED
 * Initialization of the preconditioner. Note that boundary conditions
 * may be used in re-implementation of this virtual function.
 ****************************************************************** */
-void Operator::InitPreconditioner(const std::string& prec_name, const Teuchos::ParameterList& plist)
+void Operator::InitPreconditioner(const std::string& prec_name,
+                                  const Teuchos::ParameterList& plist)
 {
   AmanziPreconditioners::PreconditionerFactory factory;
   preconditioner_ = factory.Create(prec_name, plist);
   UpdatePreconditioner();
 }
 
+
 /* ******************************************************************
+*                       DEPRECATED
 * Initialization of the preconditioner. Note that boundary conditions
 * may be used in re-implementation of this virtual function.
 ****************************************************************** */
@@ -398,12 +402,15 @@ void Operator::InitPreconditioner(Teuchos::ParameterList& plist)
 
 /* ******************************************************************
 * Two-stage initialization of preconditioner, part 1.
-* Create the PC and set options.  SymbolicAssemble() must have been called.
+* Create the preconditioner and set options. Symbolic assemble of 
+* operator's matrix must have been called.
 ****************************************************************** */
 void Operator::InitializePreconditioner(Teuchos::ParameterList& plist)
 {
-  AMANZI_ASSERT(A_.get());
-  AMANZI_ASSERT(smap_.get());
+  if (A_.get() == NULL || smap_.get() == NULL) {
+    Errors::Message msg("InitializePreconditioner has no matrix or super map.\n");
+    Exceptions::amanzi_throw(msg);
+  }
 
   // provide block ids for block strategies.
   if (plist.isParameter("preconditioner type") &&
@@ -424,14 +431,18 @@ void Operator::InitializePreconditioner(Teuchos::ParameterList& plist)
   preconditioner_ = factory.Create(plist);
 }
 
+
 /* ******************************************************************
 * Two-stage initialization of preconditioner, part 2.
-* Set the matrix in the preconditioner.  Assemble() must have been called.
+* Set the preconditioner structure. Operator's matrix must have been
+* assembled.
 ****************************************************************** */
 void Operator::UpdatePreconditioner()
 {
-  AMANZI_ASSERT(preconditioner_.get());
-  AMANZI_ASSERT(A_.get());
+  if (A_.get() == NULL || preconditioner_.get() == NULL) {
+    Errors::Message msg("UpdatePreconditioner has no matrix or preconditioner.\n");
+    Exceptions::amanzi_throw(msg);
+  }
   preconditioner_->Update(A_);
 }
 

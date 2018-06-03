@@ -177,7 +177,7 @@ class Richards_PK : public Flow_PK {
   Teuchos::RCP<Operators::PDE_Diffusion> op_matrix_diff_, op_preconditioner_diff_;
   Teuchos::RCP<Operators::PDE_Accumulation> op_acc_;
   Teuchos::RCP<Operators::Upwind<RelPerm> > upwind_;
-  std::string preconditioner_name_, solver_name_, solver_name_constraint_;
+  std::string solver_name_, solver_name_constraint_;
 
   // coupling with energy
   Teuchos::RCP<Operators::Operator> op_vapor_;

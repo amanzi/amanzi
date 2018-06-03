@@ -287,7 +287,9 @@ void NavierStokes_PK::Initialize(const Teuchos::Ptr<State>& S)
   solver_name_ = ti_list_->get<std::string>("linear solver");
 
   // -- preconditioner or encapsulated preconditioner
-  preconditioner_name_ = ti_list_->get<std::string>("preconditioner");
+  std::string pc_name = ti_list_->get<std::string>("preconditioner");
+  Teuchos::ParameterList pc_list = preconditioner_list_->sublist(pc_name);
+  op_preconditioner_elas_->global_operator()->InitializePreconditioner(pc_list);
   
   op_pc_solver_ = op_preconditioner_;
 
