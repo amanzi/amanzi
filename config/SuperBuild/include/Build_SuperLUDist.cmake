@@ -80,3 +80,4 @@ build_library_name(superlu_dist SuperLUDist_LIB APPEND_PATH ${TPL_INSTALL_PREFIX
 
 # --- set cache (global) variables
 global_set(SuperLUDist_LIBRARY "${SuperLUDist_LIB}")
+global_set(SuperLUDist_DIR ${TPL_INSTALL_PREFIX})

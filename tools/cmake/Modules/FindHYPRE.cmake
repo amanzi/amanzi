@@ -160,7 +160,7 @@ else(HYPRE_LIBRARIES AND HYPRE_INCLUDE_DIRS)
 
   # -- SuperLU 
   find_library(SuperLU_LIBRARY superlu
-               HINTS ${HYPRE_DIR}
+               HINTS ${SuperLU_DIR}
                PATH_SUFFIXES lib)
 
   if (SuperLU_LIBRARY)
@@ -171,7 +171,7 @@ else(HYPRE_LIBRARIES AND HYPRE_INCLUDE_DIRS)
 
   # -- SuperLUDist
   find_library(SuperLUDist_LIBRARY superlu_dist
-               HINTS ${HYPRE_DIR}
+               HINTS ${SuperLUDist_DIR}
                PATH_SUFFIXES lib)
 
   if (SuperLUDist_LIBRARY)

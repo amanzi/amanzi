@@ -100,7 +100,7 @@ if (compiler_id_lc)
 
           if (BUILD_SHARED_LIBS)
             #set(shared_special "hardcode-dll-paths=true dll-path=${TPL_INSTALL_PREFIX}/lib")
-            set(shared_special "linkflags=\"-r ${TPL_INSTALL_PREFIX}/lib\"")
+            set(shared_special "linkflags=\"-Wl,-rpath,${TPL_INSTALL_PREFIX}/lib\"")
           else()
 	    set(shared_special )
           endif()

@@ -65,3 +65,4 @@ build_library_name(superlu SuperLU_LIB APPEND_PATH ${TPL_INSTALL_PREFIX}/lib)
 
 # --- set cache (global) variables
 global_set(SuperLU_LIBRARY "${SuperLU_LIB}")
+global_set(SuperLU_DIR ${TPL_INSTALL_PREFIX})
