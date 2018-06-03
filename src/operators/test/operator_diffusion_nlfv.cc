@@ -133,8 +133,9 @@ void RunTestDiffusionNLFV_DMP(double gravity, bool testing) {
     global_op->AssembleMatrix();
 
     // create preconditoner using the base operator class
-    Teuchos::ParameterList slist = plist.get<Teuchos::ParameterList>("preconditioners");
-    global_op->InitPreconditioner("Hypre AMG", slist);
+    Teuchos::ParameterList slist = plist.sublist("preconditioners").sublist("Hypre AMG");
+    global_op->InitializePreconditioner(slist);
+    global_op->UpdatePreconditioner();
 
     // solve the problem
     Teuchos::ParameterList lop_list = plist.sublist("solvers")

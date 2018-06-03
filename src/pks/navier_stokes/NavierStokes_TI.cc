@@ -98,12 +98,15 @@ void NavierStokes_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVec
   op_preconditioner_acc_->ApplyBCs();
 
   global_op->AssembleMatrix();
-  global_op->InitPreconditioner(preconditioner_name_, *preconditioner_list_);
+  global_op->UpdatePreconditioner();
 
   // populate pressure operator
+  Teuchos::ParameterList pc_list = preconditioner_list_->sublist("Diagonal");
+
   global_op = op_mass_->global_operator();
   global_op->AssembleMatrix();
-  global_op->InitPreconditioner("Diagonal", *preconditioner_list_);
+  global_op->InitializePreconditioner(pc_list);
+  global_op->UpdatePreconditioner();
 
   // finalize global preconditioner
   op_preconditioner_->InitBlockDiagonalPreconditioner();

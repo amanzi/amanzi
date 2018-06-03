@@ -135,7 +135,6 @@ class Energy_PK : public PK_PhysicalBDF {
   Teuchos::RCP<Operators::Operator> op_matrix_, op_preconditioner_, op_advection_;
   Teuchos::RCP<Operators::BCs> op_bc_;
 
-  std::string preconditioner_name_;
   bool prec_include_enthalpy_;
 
  protected:

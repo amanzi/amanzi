@@ -834,7 +834,10 @@ bool Transport_PK::AdvanceStep(double t_old, double t_new, bool reinit)
         op1->ApplyBCs(true, true);
         op->SymbolicAssembleMatrix();
         op->AssembleMatrix();
-        op->InitPreconditioner(dispersion_preconditioner, *preconditioner_list_);
+
+        Teuchos::ParameterList pc_list = preconditioner_list_->sublist(dispersion_preconditioner);
+        op->InitializePreconditioner(pc_list);
+        op->UpdatePreconditioner();
       } else {
         Epetra_MultiVector& rhs_cell = *op->rhs()->ViewComponent("cell");
         for (int c = 0; c < ncells_owned; c++) {
@@ -908,7 +911,10 @@ bool Transport_PK::AdvanceStep(double t_old, double t_new, bool reinit)
  
       op->SymbolicAssembleMatrix();
       op->AssembleMatrix();
-      op->InitPreconditioner(dispersion_preconditioner, *preconditioner_list_);
+
+      Teuchos::ParameterList pc_list = preconditioner_list_->sublist(dispersion_preconditioner);
+      op->InitializePreconditioner(pc_list);
+      op->UpdatePreconditioner();
   
       CompositeVector& rhs = *op->rhs();
       int ierr = solver->ApplyInverse(rhs, sol);

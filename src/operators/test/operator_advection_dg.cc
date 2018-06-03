@@ -239,11 +239,12 @@ void AdvectionSteady(int dim, std::string filename, int nx,
   op_reac->UpdateMatrices(Teuchos::null);
 
   // create preconditoner
-  ParameterList slist = plist.sublist("preconditioners");
+  ParameterList slist = plist.sublist("preconditioners").sublist("Hypre AMG");
 
   global_op->SymbolicAssembleMatrix();
   global_op->AssembleMatrix();
-  global_op->InitPreconditioner("Hypre AMG", slist);
+  global_op->InitializePreconditioner(slist);
+  global_op->UpdatePreconditioner();
 
   // solve the problem
   ParameterList lop_list = plist.sublist("solvers")

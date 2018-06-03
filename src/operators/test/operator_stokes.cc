@@ -188,9 +188,13 @@ TEST(OPERATOR_STOKES_EXACTNESS) {
   // The first block will reuse the assembled matrix to build a multigrid
   // solver. The second block is simply a diagonal matrix. The off-diagonal
   // blocks are empty and require no setup.
-  Teuchos::ParameterList slist = plist.get<Teuchos::ParameterList>("preconditioners");
-  global00->InitPreconditioner("Hypre AMG", slist);
-  global11->InitPreconditioner("Diagonal", slist); 
+  Teuchos::ParameterList slist = plist.sublist("preconditioners").sublist("Hypre AMG");
+  global00->InitializePreconditioner(slist);
+  global00->UpdatePreconditioner();
+
+  slist = plist.sublist("preconditioners").sublist("Diagonal");
+  global11->InitializePreconditioner(slist); 
+  global11->UpdatePreconditioner(); 
 
   Teuchos::RCP<TreeOperator> pc = Teuchos::rcp(new Operators::TreeOperator(tvs));
   pc->SetOperatorBlock(0, 0, op00->global_operator());

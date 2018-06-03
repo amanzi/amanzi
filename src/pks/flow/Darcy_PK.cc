@@ -339,8 +339,9 @@ void Darcy_PK::Initialize(const Teuchos::Ptr<State>& S)
 
   // -- preconditioner. There is no need to enhance it for Darcy
   AMANZI_ASSERT(ti_list_->isParameter("preconditioner"));
-  preconditioner_name_ = ti_list_->get<std::string>("preconditioner");
-  AMANZI_ASSERT(preconditioner_list_->isSublist(preconditioner_name_));
+  std::string name = ti_list_->get<std::string>("preconditioner");
+  Teuchos::ParameterList pc_list = preconditioner_list_->sublist(name);
+  op_->InitializePreconditioner(pc_list);
   
   // Optional step: calculate hydrostatic solution consistent with BCs.
   // We have to do it only once per time period.
@@ -399,12 +400,13 @@ void Darcy_PK::InitializeStatistics_(bool init_darcy)
     double mu = *S_->GetScalarData("fluid_viscosity");
     std::string ti_method_name = ti_list_->get<std::string>("time integration method");
     std::string dt_method_name = ti_list_->sublist("BDF1").get<std::string>("timestep controller type");
+    std::string pc_name = ti_list_->get<std::string>("preconditioner");
 
     Teuchos::OSTab tab = vo_->getOSTab();
     *vo_->os() << "\nTI:\"" << ti_method_name.c_str() << "\""
                << " dt:" << dt_method_name
                << " LS:\"" << solver_name_.c_str() << "\""
-               << " PC:\"" << preconditioner_name_.c_str() << "\"" << std::endl
+               << " PC:\"" << pc_name.c_str() << "\"" << std::endl
                << "matrix: " << op_->PrintDiagnostics() << std::endl;
     *vo_->os() << "constant viscosity model, mu=" << mu << std::endl;
 
@@ -471,7 +473,7 @@ bool Darcy_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   AddSourceTerms(rhs);
 
   op_->AssembleMatrix();
-  op_->InitPreconditioner(preconditioner_name_, *preconditioner_list_);
+  op_->UpdatePreconditioner();
 
   // save pressure at time t^n.
   std::string dt_control = ti_list_->sublist("BDF1").get<std::string>("timestep controller type");

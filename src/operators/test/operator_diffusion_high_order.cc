@@ -121,9 +121,10 @@ TEST(OPERATOR_DIFFUSION_HIGH_ORDER_CROUZIEX_RAVIART) {
   global_op->AssembleMatrix();
 
   // create preconditioner using the base operator class
-  ParameterList slist = plist.get<Teuchos::ParameterList>("preconditioners");
-  slist.sublist("Hypre AMG").set<std::string>("preconditioner type", "diagonal");
-  global_op->InitPreconditioner("Hypre AMG", slist);
+  ParameterList slist;
+  slist.set<std::string>("preconditioner type", "diagonal");
+  global_op->InitializePreconditioner(slist);
+  global_op->UpdatePreconditioner();
 
   // solve the problem
   ParameterList lop_list = plist.sublist("solvers")
@@ -259,9 +260,10 @@ void RunHighOrderLagrange(std::string vem_name, bool polygonal_mesh) {
   global_op->AssembleMatrix();
 
   // create preconditioner using the base operator class
-  ParameterList slist = plist.get<Teuchos::ParameterList>("preconditioners");
-  slist.sublist("Hypre AMG").set<std::string>("preconditioner type", "diagonal");
-  global_op->InitPreconditioner("Hypre AMG", slist);
+  ParameterList slist;
+  slist.set<std::string>("preconditioner type", "diagonal");
+  global_op->InitializePreconditioner(slist);
+  global_op->UpdatePreconditioner();
 
   // solve the problem
   ParameterList lop_list = plist.sublist("solvers")

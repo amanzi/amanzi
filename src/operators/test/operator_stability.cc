@@ -153,8 +153,9 @@ TEST(OPERATOR_MIXED_DIFFUSION) {
     global_op->SymbolicAssembleMatrix();
     global_op->AssembleMatrix();
     
-    Teuchos::ParameterList slist = plist.get<Teuchos::ParameterList>("preconditioners");
-    global_op->InitPreconditioner("Hypre AMG", slist);
+    Teuchos::ParameterList slist = plist.sublist("preconditioners").sublist("Hypre AMG");
+    global_op->InitializePreconditioner(slist);
+    global_op->UpdatePreconditioner();
 
     // solve the problem
     Teuchos::ParameterList lop_list = plist.sublist("solvers").sublist("PCG").sublist("pcg parameters");
@@ -308,8 +309,9 @@ TEST(OPERATOR_NODAL_DIFFUSION) {
     global_op->SymbolicAssembleMatrix();
     global_op->AssembleMatrix();
     
-    Teuchos::ParameterList slist = plist.get<Teuchos::ParameterList>("preconditioners");
-    global_op->InitPreconditioner("Hypre AMG", slist);
+    Teuchos::ParameterList slist = plist.sublist("preconditioners").sublist("Hypre AMG");
+    global_op->InitializePreconditioner(slist);
+    global_op->UpdatePreconditioner();
 
     // solve the problem
     Teuchos::ParameterList lop_list = plist.sublist("solvers").sublist("PCG").sublist("pcg parameters");

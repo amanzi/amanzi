@@ -27,10 +27,6 @@ namespace Flow {
 * preconditioner. Matrix may be used in external flux calculation. 
 * Moving flux calculation here impose restrictions on multiple 
 * possible scenarios of data flow.
-*
-* Comment:
-* When this is used by Init, shouldn't this also get preconditioner_name_ini 
-* instead of preconditioner_name? --etc
 ****************************************************************** */
 void Richards_PK::SolveFullySaturatedProblem(
     double t_old, CompositeVector& u, const std::string& solver_name)
@@ -52,9 +48,7 @@ void Richards_PK::SolveFullySaturatedProblem(
   op_preconditioner_diff_->UpdateMatrices(Teuchos::null, solution.ptr());
   op_preconditioner_diff_->ApplyBCs(true, true);
   op_preconditioner_->AssembleMatrix();
-  // Operators::CheckMatrixSymmetry(op_preconditioner_->A());
-  // Operators::CheckMatrixCoercivity(op_preconditioner_->A());
-  op_preconditioner_->InitPreconditioner(preconditioner_name_, *preconditioner_list_);
+  op_preconditioner_->UpdatePreconditioner();
 
   AmanziSolvers::LinearOperatorFactory<Operators::Operator, CompositeVector, CompositeVectorSpace> sfactory;
 
@@ -138,7 +132,7 @@ void Richards_PK::EnforceConstraints(double t_new, Teuchos::RCP<CompositeVector>
   op_preconditioner_diff_->ApplyBCs(true, true);
   op_preconditioner_diff_->ModifyMatrices(*u);
   op_preconditioner_->AssembleMatrix();
-  op_preconditioner_->InitPreconditioner(preconditioner_name_, *preconditioner_list_);
+  op_preconditioner_->UpdatePreconditioner();
 
   // solve non-symmetric problem
   AmanziSolvers::LinearOperatorFactory<Operators::Operator, CompositeVector, CompositeVectorSpace> factory;

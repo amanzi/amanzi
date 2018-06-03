@@ -111,8 +111,9 @@ TEST(LAPLACE_BELTRAMI_FLAT_SFF) {
   global_op->AssembleMatrix();
 
   // create preconditoner
-  ParameterList slist = plist.get<Teuchos::ParameterList>("preconditioners");
-  global_op->InitPreconditioner("Hypre AMG", slist);
+  ParameterList slist = plist.sublist("preconditioners").sublist("Hypre AMG");
+  global_op->InitializePreconditioner(slist);
+  global_op->UpdatePreconditioner();
 
   // Test SPD properties of the matrix and preconditioner.
   VerificationCV ver(global_op);
@@ -225,8 +226,9 @@ TEST(LAPLACE_BELTRAMI_FLAT_SCC) {
   global_op->AssembleMatrix();
 
   // create preconditoner
-  ParameterList slist = plist.get<Teuchos::ParameterList>("preconditioners");
-  global_op->InitPreconditioner("Hypre AMG", slist);
+  ParameterList slist = plist.sublist("preconditioners").sublist("Hypre AMG");
+  global_op->InitializePreconditioner(slist);
+  global_op->UpdatePreconditioner();
 
   // Test SPD properties of the matrix and preconditioner.
   VerificationCV ver(global_op);
@@ -339,8 +341,9 @@ TEST(LAPLACE_BELTRAMI_FLAT) {
   global_op->AssembleMatrix();
 
   // create preconditoner
-  ParameterList slist = plist.get<Teuchos::ParameterList>("preconditioners");
-  global_op->InitPreconditioner("Hypre AMG", slist);
+  ParameterList slist = plist.sublist("preconditioners").sublist("Hypre AMG");
+  global_op->InitializePreconditioner(slist);
+  global_op->UpdatePreconditioner();
 
   // Test SPD properties of the matrix and preconditioner.
   VerificationCV ver(global_op);

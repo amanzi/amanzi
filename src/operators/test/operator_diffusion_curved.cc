@@ -117,8 +117,9 @@ void RunTestDiffusionCurved() {
   global_op->AssembleMatrix();
 
   // create a preconditoner using the global matrix
-  ParameterList slist = plist.get<Teuchos::ParameterList>("preconditioners");
-  global_op->InitPreconditioner("Hypre AMG", slist);
+  ParameterList slist = plist.sublist("preconditioners").sublist("Hypre AMG");
+  global_op->InitializePreconditioner(slist);
+  global_op->UpdatePreconditioner();
 
   // Test SPD properties of the preconditioner.
   CompositeVector a(cvs), ha(cvs), b(cvs), hb(cvs);
