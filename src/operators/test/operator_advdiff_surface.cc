@@ -116,6 +116,7 @@ TEST(ADVECTION_DIFFUSION_SURFACE) {
   // create an advection operator  
   Teuchos::ParameterList alist;
   Teuchos::RCP<PDE_AdvectionUpwind> op_adv = Teuchos::rcp(new PDE_AdvectionUpwind(alist, global_op));
+  op_adv->SetBCs(bc, bc);
 
   // get a flux field
   Teuchos::RCP<CompositeVector> u = Teuchos::rcp(new CompositeVector(cvs));
@@ -141,8 +142,8 @@ TEST(ADVECTION_DIFFUSION_SURFACE) {
   op_acc->AddAccumulationDelta(solution, phi, phi, dT, "cell");
 
   // BCs and assemble
-  op_diff->ApplyBCs(true, true);
-  op_adv->ApplyBCs(bc, true);
+  op_diff->ApplyBCs(true, true, true);
+  op_adv->ApplyBCs(true, true, true);
   global_op->SymbolicAssembleMatrix();
   global_op->AssembleMatrix();
 

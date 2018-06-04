@@ -190,7 +190,7 @@ void RunTest(std::string op_list_name) {
 
     // apply BCs and assemble
     global_op->UpdateRHS(source, false);
-    op.ApplyBCs(true, true);
+    op.ApplyBCs(true, true, true);
     global_op->SymbolicAssembleMatrix();
     global_op->AssembleMatrix();
     

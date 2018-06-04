@@ -210,30 +210,6 @@ void Operator_FaceCellSff::AssembleMatrix(const SuperMap& map, MatrixFE& matrix,
             Scell(n, m) = Acell(n, m) - Acell(n, nfaces) * Acell(nfaces, m) / tmp;
           }
         }
-
-        // Symbolic boundary conditions
-        // -- from test functions
-        if (bc_test_ != Teuchos::null) {
-          const std::vector<int>& bc_model = bc_test_->bc_model();
-          for (int n = 0; n < nfaces; n++) {
-            int f = faces[n];
-            if (bc_model[f] == OPERATOR_BC_DIRICHLET) {
-              for (int m = 0; m < nfaces; m++) Scell(n, m) = 0.0;
-            }
-          }
-        }
-
-        // -- from trial functions
-        if (bc_trial_ != Teuchos::null) {
-          const std::vector<int>& bc_model = bc_trial_->bc_model();
-          for (int n = 0; n < nfaces; n++) {
-            int f = faces[n];
-            if (bc_model[f] == OPERATOR_BC_DIRICHLET) {
-              for (int m = 0; m < nfaces; m++) Scell(m, n) = 0.0;
-              Scell(n, n) = 1.0;
-            }
-          }
-        }
       }
 
       // Assemble this Schur Op into matrix

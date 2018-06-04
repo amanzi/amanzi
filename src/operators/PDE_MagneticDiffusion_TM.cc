@@ -116,7 +116,7 @@ void PDE_MagneticDiffusion_TM::ModifyFields(
 * options: (a) eliminate or not, (b) if eliminate, then put 1 on
 * the diagonal or not.
 ****************************************************************** */
-void PDE_MagneticDiffusion_TM::ApplyBCs(bool primary, bool eliminate, bool leading_op)
+void PDE_MagneticDiffusion_TM::ApplyBCs(bool primary, bool eliminate, bool essential_eqn)
 {
   if (local_op_schema_ == (OPERATOR_SCHEMA_BASE_CELL
                          | OPERATOR_SCHEMA_DOFS_NODE)) {
@@ -128,7 +128,7 @@ void PDE_MagneticDiffusion_TM::ApplyBCs(bool primary, bool eliminate, bool leadi
         bc_v = *bc;
       }
     }
-    ApplyBCs_Node_(bc_f.ptr(), bc_v.ptr(), primary, eliminate);
+    ApplyBCs_Node_(bc_f.ptr(), bc_v.ptr(), primary, eliminate, essential_eqn);
   }
 }
 
@@ -136,9 +136,10 @@ void PDE_MagneticDiffusion_TM::ApplyBCs(bool primary, bool eliminate, bool leadi
 /* ******************************************************************
 * Apply BCs on cell operators
 ****************************************************************** */
-void PDE_MagneticDiffusion_TM::ApplyBCs_Node_(const Teuchos::Ptr<const BCs>& bc_f,
-                                                const Teuchos::Ptr<const BCs>& bc_v,
-                                                bool primary, bool eliminate)
+void PDE_MagneticDiffusion_TM::ApplyBCs_Node_(
+    const Teuchos::Ptr<const BCs>& bc_f,
+    const Teuchos::Ptr<const BCs>& bc_v,
+    bool primary, bool eliminate, bool essential_eqn)
 {
   AmanziMesh::Entity_ID_List nodes, faces, cells;
   std::vector<int> fdirs;
@@ -201,7 +202,7 @@ void PDE_MagneticDiffusion_TM::ApplyBCs_Node_(const Teuchos::Ptr<const BCs>& bc_
             }
           }
 
-          if (primary) {
+          if (essential_eqn) {
             rhs_node[0][v] = value;
             Acell(n, n) = 1.0 / node_get_cells[v];
           }

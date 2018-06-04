@@ -77,7 +77,7 @@ void PDE_Electromagnetics::UpdateMatrices(
 * options: (a) eliminate or not, (b) if eliminate, then put 1 on
 * the diagonal or not.
 ****************************************************************** */
-void PDE_Electromagnetics::ApplyBCs(bool primary, bool eliminate, bool leading_op)
+void PDE_Electromagnetics::ApplyBCs(bool primary, bool eliminate, bool essential_eqn)
 {
   if (local_op_schema_ == (OPERATOR_SCHEMA_BASE_CELL
                          | OPERATOR_SCHEMA_DOFS_EDGE)) {
@@ -89,7 +89,7 @@ void PDE_Electromagnetics::ApplyBCs(bool primary, bool eliminate, bool leading_o
         bc_e = *bc;
       }
     }
-    ApplyBCs_Edge_(bc_f.ptr(), bc_e.ptr(), primary, eliminate);
+    ApplyBCs_Edge_(bc_f.ptr(), bc_e.ptr(), primary, eliminate, essential_eqn);
   }
 }
 
@@ -97,9 +97,10 @@ void PDE_Electromagnetics::ApplyBCs(bool primary, bool eliminate, bool leading_o
 /* ******************************************************************
 * Apply BCs on cell operators
 ****************************************************************** */
-void PDE_Electromagnetics::ApplyBCs_Edge_(const Teuchos::Ptr<const BCs>& bc_f,
-                                          const Teuchos::Ptr<const BCs>& bc_e,
-                                          bool primary, bool eliminate)
+void PDE_Electromagnetics::ApplyBCs_Edge_(
+    const Teuchos::Ptr<const BCs>& bc_f,
+    const Teuchos::Ptr<const BCs>& bc_e,
+    bool primary, bool eliminate, bool essential_eqn)
 {
   AmanziMesh::Entity_ID_List edges, faces, cells;
   std::vector<int> edirs, fdirs;
@@ -140,7 +141,7 @@ void PDE_Electromagnetics::ApplyBCs_Edge_(const Teuchos::Ptr<const BCs>& bc_f,
         int f = faces[n];
         const AmanziGeometry::Point& value = bc_value[f];
 
-        if (bc_model[f] == OPERATOR_BC_NEUMANN) {
+        if (bc_model[f] == OPERATOR_BC_NEUMANN && primary) {
           const AmanziGeometry::Point& normal = mesh_->face_normal(f);
           double area = mesh_->face_area(f);
 
@@ -210,7 +211,7 @@ void PDE_Electromagnetics::ApplyBCs_Edge_(const Teuchos::Ptr<const BCs>& bc_f,
             }
           }
 
-          if (primary) {
+          if (essential_eqn) {
             if (e < nedges_owned) rhs_edge[0][e] = value;
             Acell(n, n) = 1.0 / edge_ncells[e];
           }

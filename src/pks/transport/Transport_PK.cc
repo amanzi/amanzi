@@ -831,7 +831,7 @@ bool Transport_PK::AdvanceStep(double t_old, double t_new, bool reinit)
         }
         op2->AddAccumulationDelta(sol, factor, factor, dt_MPC, "cell");
  
-        op1->ApplyBCs(true, true);
+        op1->ApplyBCs(true, true, true);
         op->SymbolicAssembleMatrix();
         op->AssembleMatrix();
 
@@ -896,7 +896,7 @@ bool Transport_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 
       Epetra_MultiVector& rhs_cell = *op->rhs()->ViewComponent("cell");
       ComputeSources_(t_new, 1.0, rhs_cell, tcc_prev, i, i);
-      op1->ApplyBCs(true, true);
+      op1->ApplyBCs(true, true, true);
 
       // add accumulation term
       Epetra_MultiVector& fac1 = *factor.ViewComponent("cell");

@@ -39,14 +39,14 @@ void NavierStokes_PK::Functional(double t_old, double t_new,
   op_matrix_acc_->ApplyBCs();
 
   op_matrix_elas_->UpdateMatrices();
-  op_matrix_elas_->ApplyBCs(true, true);
+  op_matrix_elas_->ApplyBCs(true, true, true);
 
   op_matrix_conv_->UpdateMatrices(uu.ptr());
-  op_matrix_conv_->ApplyBCs(false, true);
+  op_matrix_conv_->ApplyBCs(false, true, false);
 
   op_matrix_div_->global_operator()->Init();
   op_matrix_div_->UpdateMatrices();
-  op_matrix_div_->ApplyBCs(false, true);
+  op_matrix_div_->ApplyBCs(false, true, false);
 
   // Teuchos::RCP<CompositeVector> rhs = op_matrix_->rhs();
   // AddSourceTerms(*rhs);
@@ -86,10 +86,10 @@ void NavierStokes_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVec
   auto global_op = op_preconditioner_elas_->global_operator();
   global_op->Init();
   op_preconditioner_elas_->UpdateMatrices();
-  op_preconditioner_elas_->ApplyBCs(true, true);
+  op_preconditioner_elas_->ApplyBCs(true, true, true);
 
   op_preconditioner_conv_->UpdateMatrices(uu.ptr());
-  op_preconditioner_conv_->ApplyBCs(false, true);
+  op_preconditioner_conv_->ApplyBCs(false, true, false);
 
   // add time derivative
   CompositeVector one(*uu);
