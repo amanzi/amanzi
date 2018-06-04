@@ -1,3 +1,4 @@
+
 #include "Teuchos_XMLParameterListHelpers.hpp"
 #include "EpetraExt_RowMatrixOut.h"
 
@@ -341,8 +342,7 @@ MPCPermafrost4::UpdatePreconditioner(double t,
 
   // assemble
   // -- scale the pressure dofs
-  CompositeVector scaling(sub_pks_[0]->preconditioner()->DomainMap());
-  scaling.PutScalar(1.e6); // dWC/dp_Pa * (Pa / MPa) --> dWC/dp_MPa
+  double scaling = 1.e6; // dWC/dp_Pa * (Pa / MPa) --> dWC/dp_MPa
   sub_pks_[0]->preconditioner()->Rescale(scaling);
   dE_dp_block_->Rescale(scaling);
   
@@ -351,10 +351,9 @@ MPCPermafrost4::UpdatePreconditioner(double t,
 
   if (dump_) {
     std::stringstream filename;
-    filename << "FullyCoupled_PC_" << S_next_->cycle() << ".txt";
+    filename << "FullyCoupled_PC_" << S_next_->cycle() << "_" << update_pcs_ << ".txt";
     EpetraExt::RowMatrixToMatlabFile(filename.str().c_str(), *preconditioner_->A());
   }
-
   
   // update ewc Precons if needed
   //  surf_ewc_->UpdatePreconditioner(t, up, h);

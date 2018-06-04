@@ -474,6 +474,7 @@ void MPCSubsurface::CommitStep(double t_old, double t_new, const Teuchos::RCP<St
   double dt = t_new - t_old;
   StrongMPC<PK_PhysicalBDF_Default>::CommitStep(t_old, t_new, S);
   if (ewc_ != Teuchos::null) ewc_->commit_state(dt,S);
+  update_pcs_ = 0;
 }
 
 // update the predictor to be physically consistent
@@ -728,7 +729,7 @@ void MPCSubsurface::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector
       preconditioner_->AssembleMatrix();
       if (dump_) {
         std::stringstream filename;
-        filename << "Subsurface_PC_" << S_next_->cycle() << ".txt";
+        filename << "Subsurface_PC_" << S_next_->cycle() << "_" << update_pcs_ << ".txt";
         EpetraExt::RowMatrixToMatlabFile(filename.str().c_str(), *preconditioner_->A());
       }
       preconditioner_->UpdatePreconditioner();
@@ -739,7 +740,7 @@ void MPCSubsurface::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector
   if (precon_type_ == PRECON_EWC) {
     ewc_->UpdatePreconditioner(t,up,h);
   }
-
+  update_pcs_++;
 }
 
 
