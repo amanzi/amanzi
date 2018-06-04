@@ -208,6 +208,7 @@ class Operator {
   // -- add a vector to operator's rhs vector  
   virtual void UpdateRHS(const CompositeVector& source, bool volume_included = true);
   // -- rescale elemental matrices
+  virtual void Rescale(double scaling);
   virtual void Rescale(const CompositeVector& scaling);
   virtual void Rescale(const CompositeVector& scaling, int iops);
 
