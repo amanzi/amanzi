@@ -267,10 +267,7 @@ void PDE_DiffusionFV::ApplyBCs(bool primary, bool eliminate)
   }
 
   if (jac_op_ != Teuchos::null) {
-    const std::vector<int>& bc_model = bcs_trial_[0]->bc_model();
     AMANZI_ASSERT(bc_model.size() == nfaces_wghost);
-
-
     for (int f = 0; f != nfaces_owned; ++f) {
       WhetStone::DenseMatrix& Aface = jac_op_->matrices[f];
 
