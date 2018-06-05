@@ -127,7 +127,7 @@ void RunTestDiffusionNLFV_DMP(double gravity, bool testing) {
 
     // get and assmeble the global operator
     global_op->UpdateRHS(source, false);
-    op->ApplyBCs(true, true);
+    op->ApplyBCs(true, true, true);
     global_op->SymbolicAssembleMatrix();
     global_op->AssembleMatrix();
 

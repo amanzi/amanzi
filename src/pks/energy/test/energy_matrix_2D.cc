@@ -172,12 +172,13 @@ std::cout << "Passed EPK.Initilize()" << std::endl;
 
   Teuchos::ParameterList alist;
   Teuchos::RCP<PDE_AdvectionUpwind> op3 = Teuchos::rcp(new PDE_AdvectionUpwind(alist, op));
+  op3->SetBCs(bc, bc);
   op3->Setup(*flux);
   op3->UpdateMatrices(flux.ptr());
 
   // build the matrix
-  op1->ApplyBCs(true, true);
-  op3->ApplyBCs(bc, true);
+  op1->ApplyBCs(true, true, true);
+  op3->ApplyBCs(true, true, true);
   op->SymbolicAssembleMatrix();
   op->AssembleMatrix();
 

@@ -167,7 +167,7 @@ void RunTestMarshak(std::string op_list_name, double TemperatureFloor) {
     op_acc.AddAccumulationDelta(*solution, heat_capacity, heat_capacity, dt, "cell");
 
     // apply BCs and assemble
-    op->ApplyBCs(true, true);
+    op->ApplyBCs(true, true, true);
     global_op->SymbolicAssembleMatrix();
     global_op->AssembleMatrix();
 

@@ -149,11 +149,10 @@ void PDE_AdvectionRiemann::UpdateMatrices(
 /* *******************************************************************
 * Apply boundary condition to the local matrices
 ******************************************************************* */
-void PDE_AdvectionRiemann::ApplyBCs(const Teuchos::RCP<BCs>& bc, 
-                                    bool primary, bool eliminate, bool leading_op)
+void PDE_AdvectionRiemann::ApplyBCs(bool primary, bool eliminate, bool essential_eqn)
 {
-  const std::vector<int>& bc_model = bc->bc_model();
-  const std::vector<std::vector<double> >& bc_value = bc->bc_value_vector();
+  const std::vector<int>& bc_model = bcs_trial_[0]->bc_model();
+  const std::vector<std::vector<double> >& bc_value = bcs_trial_[0]->bc_value_vector();
   int nk = bc_value[0].size();
 
   Epetra_MultiVector& rhs_c = *global_op_->rhs()->ViewComponent("cell", true);

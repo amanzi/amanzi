@@ -27,7 +27,7 @@ namespace AmanziGeometry { class Point; }
 namespace Operators {
 
 /* *******************************************************************
-* Elliptic equation L(u) = f. Three types of boundary conditions are
+* Elliptic equation E(u) = f. Three types of boundary conditions are
 * supported by this class:
 *   [Dirichlet]                  u = u0 
 *   [Neumann]     -K(u) grad u . n = g0
@@ -59,8 +59,25 @@ namespace Operators {
 *   into account that actual mesh normal may be oriented arbitrarily.
 *
 * **********************
+*
+* Diffusion-advection equation E(u) + A(u) = f. Four types of boundary 
+* conditions are supported:
+*   [Dirichlet]                         u = u0 
+*   [Neumann]            -K(u) grad u . n = g0
+*   [Mixed]        -K(u) grad u . n - c u = g1
+*   [Total flux] -(K(u) grad u - v c) . n = g2
+*
+* Here v is the advective velocity. For the diffusion-advection
+* operator, we may impose boundary conditions that make sence for 
+* diffusion but not appropriate for advection. To void creation of two
+* sets of boundary conditions, the total flux condition can be used.
+* Only the leading operator, typically diffusion, can set up this BC.
+* The other operators will remove all boundary contributions to the 
+* matrix and right-hand side when the total flux condition is specified.
 * 
-* Advection equation L(u) = f. One type of boundary condition is 
+* **********************
+*
+* Advection equation A(u) = f. One type of boundary condition is 
 * supported by this class:
 *   [Dirichlet]          u = u0 
 * 
@@ -71,7 +88,7 @@ namespace Operators {
 * diffusion problem. For other weak formulations, a weak form of this
 * boundary condition is added to the system:
 *
-*   (L(u) - f, w) + (u - u0, w) = 0.
+*   (A(u) - f, w) + (u - u0, w) = 0.
 * 
 * In the second approach, array bc_model should use TYPE2 boundary
 * condition, see OperatorDefs.hh for the full name.

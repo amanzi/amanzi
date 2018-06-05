@@ -110,6 +110,7 @@ TEST(ADVECTION_DIFFUSION_COMMUTE) {
   // create advection operator
   Teuchos::ParameterList alist;
   Teuchos::RCP<PDE_AdvectionUpwind> op1 = Teuchos::rcp(new PDE_AdvectionUpwind(alist, global_op));
+  op1->SetBCs(bc, bc);
   op1->Setup(*u);
   op1->UpdateMatrices(u.ptr());
 
@@ -121,8 +122,8 @@ TEST(ADVECTION_DIFFUSION_COMMUTE) {
   op2->UpdateMatrices(Teuchos::null, Teuchos::null);
 
   // create a preconditioner
-  op1->ApplyBCs(bc, true);
-  op2->ApplyBCs(true, true);
+  op1->ApplyBCs(true, true, true);
+  op2->ApplyBCs(true, true, true);
   global_op->SymbolicAssembleMatrix();
   global_op->AssembleMatrix();
 
@@ -138,12 +139,13 @@ TEST(ADVECTION_DIFFUSION_COMMUTE) {
 
   Teuchos::ParameterList alist2;
   Teuchos::RCP<PDE_AdvectionUpwind> op4 = Teuchos::rcp(new PDE_AdvectionUpwind(alist2, global_op2));
+  op4->SetBCs(bc, bc);
   op4->Setup(*u);
   op4->UpdateMatrices(u.ptr());
 
   // create a preconditioner
-  op3->ApplyBCs(true, true);
-  op4->ApplyBCs(bc, true);
+  op3->ApplyBCs(true, true, true);
+  op4->ApplyBCs(true, true, true);
   global_op2->SymbolicAssembleMatrix();
   global_op2->AssembleMatrix();
 
@@ -231,6 +233,7 @@ TEST(ADVECTION_DIFFUSION_COMMUTE_FV) {
   // create advection operator
   Teuchos::ParameterList alist;
   Teuchos::RCP<PDE_AdvectionUpwind> op1 = Teuchos::rcp(new PDE_AdvectionUpwind(alist, global_op));
+  op1->SetBCs(bc, bc);
   op1->Setup(*u);
   op1->UpdateMatrices(u.ptr());
 
@@ -242,8 +245,8 @@ TEST(ADVECTION_DIFFUSION_COMMUTE_FV) {
   op2->UpdateMatrices(Teuchos::null, Teuchos::null);
 
   // create a preconditioner
-  op1->ApplyBCs(bc, true);
-  op2->ApplyBCs(false, true);
+  op1->ApplyBCs(true, true, true);
+  op2->ApplyBCs(false, true, false);
   global_op->SymbolicAssembleMatrix();
   global_op->AssembleMatrix();
 
@@ -259,12 +262,13 @@ TEST(ADVECTION_DIFFUSION_COMMUTE_FV) {
 
   Teuchos::ParameterList alist2;
   Teuchos::RCP<PDE_AdvectionUpwind> op4 = Teuchos::rcp(new PDE_AdvectionUpwind(alist2, global_op2));
+  op4->SetBCs(bc, bc);
   op4->Setup(*u);
   op4->UpdateMatrices(u.ptr());
 
   // create a preconditioner
-  op3->ApplyBCs(false, true);
-  op4->ApplyBCs(bc, true);
+  op3->ApplyBCs(false, true, false);
+  op4->ApplyBCs(true, true, true);
   global_op2->SymbolicAssembleMatrix();
   global_op2->AssembleMatrix();
 

@@ -113,10 +113,10 @@ std::pair<double, double> RunForwardProblem(const std::string& discretization,
     const AmanziGeometry::Point& xc = mesh->cell_centroid(c);
     source_c[0][c] = ana.source_exact(xc,0);
   }
-  op->global_operator()->UpdateRHS(source,false);
+  op->global_operator()->UpdateRHS(source, false);
 
   // apply boundary conditions
-  op->ApplyBCs(true,true);
+  op->ApplyBCs(true, true, true);
 
   // set up the vectors
   CompositeVector& rhs = *op->global_operator()->rhs();
@@ -124,7 +124,7 @@ std::pair<double, double> RunForwardProblem(const std::string& discretization,
   
   // fill the solution
   u.PutScalar(0.0);
-  Epetra_MultiVector& u_c = *u.ViewComponent("cell",false);
+  Epetra_MultiVector& u_c = *u.ViewComponent("cell", false);
   for (int c = 0; c != ncells; ++c) {
     const AmanziGeometry::Point& xc = mesh->cell_centroid(c);
     u_c[0][c] = ana.pressure_exact(xc, 0.0);
@@ -246,7 +246,7 @@ std::pair<double, double> RunInverseProblem(const std::string& discretization,
   op->global_operator()->UpdateRHS(source, false);
 
   // apply boundary conditions
-  op->ApplyBCs(true,true);
+  op->ApplyBCs(true, true, true);
 
   // set up the vectors
   CompositeVector& rhs = *op->global_operator()->rhs();

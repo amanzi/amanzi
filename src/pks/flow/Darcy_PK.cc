@@ -467,7 +467,7 @@ bool Darcy_PK::AdvanceStep(double t_old, double t_new, bool reinit)
     op_acc_->AddAccumulationTerm(wi, "cell");
   }
 
-  op_diff_->ApplyBCs(true, true);
+  op_diff_->ApplyBCs(true, true, true);
 
   CompositeVector& rhs = *op_->rhs();
   AddSourceTerms(rhs);

@@ -151,7 +151,7 @@ void PDE_DiffusionDG::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& 
 /* ******************************************************************
 * Apply boundary conditions to the local matrices.
 ****************************************************************** */
-void PDE_DiffusionDG::ApplyBCs(bool primary, bool eliminate, bool leading_op)
+void PDE_DiffusionDG::ApplyBCs(bool primary, bool eliminate, bool essential_eqn)
 {
   const std::vector<int>& bc_model = bcs_trial_[0]->bc_model();
   const std::vector<std::vector<double> >& bc_value = bcs_trial_[0]->bc_value_vector();
@@ -169,8 +169,7 @@ void PDE_DiffusionDG::ApplyBCs(bool primary, bool eliminate, bool leading_op)
 
   for (int f = 0; f != nfaces_owned; ++f) {
     if (bc_model[f] == OPERATOR_BC_DIRICHLET ||
-        bc_model[f] == OPERATOR_BC_NEUMANN ||
-       (bc_model[f] == OPERATOR_BC_TOTAL_FLUX && leading_op)) {
+        bc_model[f] == OPERATOR_BC_NEUMANN) {
       mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
       int c = cells[0];
 
@@ -207,8 +206,7 @@ void PDE_DiffusionDG::ApplyBCs(bool primary, bool eliminate, bool leading_op)
         for (int i = 0; i < ncols; ++i) {
           rhs_c[i][c] += pv(i) + jv(i);
         }
-      } else if (bc_model[f] == OPERATOR_BC_NEUMANN ||
-                (bc_model[f] == OPERATOR_BC_TOTAL_FLUX && leading_op)) {
+      } else if (bc_model[f] == OPERATOR_BC_NEUMANN) {
         WhetStone::DenseMatrix& Jcell = jump_pu_op_->matrices[f];
         Jcell.Multiply(v, jv, false);
 

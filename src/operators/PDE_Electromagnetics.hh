@@ -53,18 +53,17 @@ class PDE_Electromagnetics : public PDE_HelperDiscretization {
   using PDE_HelperDiscretization::UpdateMatrices;
   virtual void UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& u,
                               const Teuchos::Ptr<const CompositeVector>& p) override;
-  // -- modification of the operator due to boundary conditions
-  //    primary=true indicates that operator is on the main diagonal in a tree 
-  //      operator. For the essential BCs, we place a positive number on the 
-  //      matrix diagonal. Otherwise, primary=false.
-  //    eliminate=true indicates that we eliminate essential BCs for the trial 
-  //      function, i.e. zeros go in the corresponding matrix columns. This is 
-  //      the optional parameter that enforces symmetry for symmetric tree 
-  //      operators.
-  //    leading_op=true indicates that an operator is the leading operator in 
-  //    a compositive (additive) global operator. The leading operator imposes
-  //    total Neumann boundary conditions.
-  virtual void ApplyBCs(bool primary, bool eliminate, bool leading_op) override;
+  // -- modify matrix due to boundary conditions 
+  //    primary=true indicates that the operator updates both matrix and right-hand
+  //      side using BC data. If primary=false, only matrix is changed.
+  //    eliminate=true indicates that we eliminate essential BCs for a trial 
+  //      function, i.e. zeros go in the corresponding matrix columns and 
+  //      right-hand side is modified using BC values. This is the optional 
+  //      parameter that enforces symmetry for a symmetric tree  operators.
+  //    essential_eqn=true indicates that the operator places a positive number on 
+  //      the main matrix diagonal for the case of essential BCs. This is the
+  //      implementtion trick.
+  virtual void ApplyBCs(bool primary, bool eliminate, bool essential_eqn) override;
 
   // -- postprocessing: calculated flux u from potential p
   virtual void UpdateFlux(const Teuchos::Ptr<const CompositeVector>& p,
@@ -87,7 +86,8 @@ class PDE_Electromagnetics : public PDE_HelperDiscretization {
  protected:
   void Init_(Teuchos::ParameterList& plist);
   void ApplyBCs_Edge_(const Teuchos::Ptr<const BCs>& bc_f,
-                      const Teuchos::Ptr<const BCs>& bc_e, bool primary, bool eliminate);
+                      const Teuchos::Ptr<const BCs>& bc_e,
+                      bool primary, bool eliminate, bool essential_eqn);
 
  protected:
   Teuchos::RCP<std::vector<WhetStone::Tensor> > K_;

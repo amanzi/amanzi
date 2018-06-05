@@ -126,7 +126,7 @@ TEST(OPERATOR_DIFFUSION_EDGES) {
   global_op->UpdateRHS(source, true);
 
   // apply BCs (primary=true, eliminate=true) and assemble
-  op->ApplyBCs(true, true);
+  op->ApplyBCs(true, true, true);
   global_op->SymbolicAssembleMatrix();
   global_op->AssembleMatrix();
 

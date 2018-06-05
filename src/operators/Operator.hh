@@ -193,17 +193,6 @@ class Operator {
   virtual void AssembleMatrix(const SuperMap& map,
           MatrixFE& matrix, int my_block_row, int my_block_col) const;
 
-  // boundary conditions (BC) require information on test and
-  // trial spaces. For a single PDE, these BCs could be the same.
-  // Note that trial corresponds to the column, while test corresponds to the row.
-  virtual void SetBCs(const Teuchos::RCP<const BCs>& bc_trial,
-                      const Teuchos::RCP<BCs>& bc_test) {
-    bc_trial_ = bc_trial;
-    bc_test_ = bc_test;
-  }
-  virtual void SetTrialBCs(const Teuchos::RCP<const BCs>& bc) { bc_trial_ = bc; }
-  virtual void SetTestBCs(const Teuchos::RCP<const BCs>& bc) { bc_test_ = bc; }
-
   // modifiers
   // -- add a vector to operator's rhs vector  
   virtual void UpdateRHS(const CompositeVector& source, bool volume_included = true);
@@ -414,7 +403,6 @@ class Operator {
   mutable std::vector<Teuchos::RCP<Op> > ops_;
   mutable std::vector<int> ops_properties_;
   Teuchos::RCP<CompositeVector> rhs_, rhs_checkpoint_;
-  Teuchos::RCP<const BCs> bc_trial_, bc_test_;
 
   int ncells_owned, nfaces_owned, nnodes_owned, nedges_owned;
   int ncells_wghost, nfaces_wghost, nnodes_wghost, nedges_wghost;

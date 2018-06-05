@@ -121,19 +121,17 @@ class PDE_DiffusionMFD : public virtual PDE_Diffusion {
                                               const Teuchos::Ptr<const CompositeVector>& u,
                                               double scalar_limiter=1) override;
 
-  // modify the operator
-  // -- by incorporating boundary conditions.
-  //    primary=true indicates that operator is on the main diagonal in a tree 
-  //      operator. For the essential BCs, we place a positive number on the 
-  //      matrix diagonal. Otherwise, primary=false.
-  //    eliminate=true indicates that we eliminate essential BCs for the trial 
-  //      function, i.e. zeros go in the corresponding matrix columns. This is 
-  //      the optional parameter that enforces symmetry for symmetric tree 
-  //      operators.
-  //    leading_op=true indicates that an operator is the leading operator in 
-  //    a compositive (additive) global operator. The leading operator imposes
-  //    total Neumann boundary conditions.
-  virtual void ApplyBCs(bool primary, bool eliminate, bool leading_op = true) override;
+  // modify matrix due to boundary conditions 
+  //    primary=true indicates that the operator updates both matrix and right-hand
+  //      side using BC data. If primary=false, only matrix is changed.
+  //    eliminate=true indicates that we eliminate essential BCs for a trial 
+  //      function, i.e. zeros go in the corresponding matrix columns and 
+  //      right-hand side is modified using BC values. This is the optional 
+  //      parameter that enforces symmetry for a symmetric tree operators.
+  //    essential_eqn=true indicates that the operator places a positive number on 
+  //      the main matrix diagonal for the case of essential BCs. This is the
+  //      implementation trick.
+  virtual void ApplyBCs(bool primary, bool eliminate, bool essential_eqn) override;
 
   // -- by breaking p-lambda coupling.
   virtual void ModifyMatrices(const CompositeVector& u) override;
@@ -178,16 +176,16 @@ class PDE_DiffusionMFD : public virtual PDE_Diffusion {
 
   void ApplyBCs_Mixed_(const Teuchos::Ptr<const BCs>& bc_trial,
                        const Teuchos::Ptr<const BCs>& bc_test,
-                       bool primary, bool eliminate, bool leading_op);
+                       bool primary, bool eliminate, bool essential_eqn);
   void ApplyBCs_Cell_(const Teuchos::Ptr<const BCs>& bc_trial,
                       const Teuchos::Ptr<const BCs>& bc_test,
-                      bool primary, bool eliminate);
+                      bool primary, bool eliminate, bool essential_eqn);
   void ApplyBCs_Edge_(const Teuchos::Ptr<const BCs>& bc_trial,
                       const Teuchos::Ptr<const BCs>& bc_test,
-                      bool primary, bool eliminate);
+                      bool primary, bool eliminate, bool essential_eqn);
   void ApplyBCs_Nodal_(const Teuchos::Ptr<const BCs>& bc_f,
                        const Teuchos::Ptr<const BCs>& bc_n,
-                       bool primary, bool eliminate);
+                       bool primary, bool eliminate, bool essential_eqn);
 
  protected:
   Teuchos::ParameterList plist_;

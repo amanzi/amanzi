@@ -115,7 +115,7 @@ TEST(OPERATOR_DIFFUSION_HIGH_ORDER_CROUZIEX_RAVIART) {
   Teuchos::RCP<Operator> global_op = op->global_operator();
   global_op->Init();
   op->UpdateMatrices(Teuchos::null, Teuchos::null);
-  op->ApplyBCs(true, true);
+  op->ApplyBCs(true, true, true);
 
   global_op->SymbolicAssembleMatrix();
   global_op->AssembleMatrix();
@@ -254,7 +254,7 @@ void RunHighOrderLagrange(std::string vem_name, bool polygonal_mesh) {
   Teuchos::RCP<Operator> global_op = op->global_operator();
   global_op->Init();
   op->UpdateMatrices(Teuchos::null, Teuchos::null);
-  op->ApplyBCs(true, true);
+  op->ApplyBCs(true, true, true);
 
   global_op->SymbolicAssembleMatrix();
   global_op->AssembleMatrix();

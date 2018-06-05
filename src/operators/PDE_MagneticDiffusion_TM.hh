@@ -37,7 +37,7 @@ class PDE_MagneticDiffusion_TM : public PDE_MagneticDiffusion {
   // main virtual members
   // -- before solving the problem
   virtual void ModifyMatrices(CompositeVector& E, CompositeVector& B, double dt);
-  virtual void ApplyBCs(bool primary, bool eliminate, bool leading_op);
+  virtual void ApplyBCs(bool primary, bool eliminate, bool essential_eqn);
 
   // -- after solving the problem
   virtual void ModifyFields(CompositeVector& E, CompositeVector& B, double dt);
@@ -47,7 +47,8 @@ class PDE_MagneticDiffusion_TM : public PDE_MagneticDiffusion {
 
  private:
   void ApplyBCs_Node_(const Teuchos::Ptr<const BCs>& bc_f,
-                      const Teuchos::Ptr<const BCs>& bc_v, bool primary, bool eliminate);
+                      const Teuchos::Ptr<const BCs>& bc_v,
+                      bool primary, bool eliminate, bool essential_eqn);
 };
 
 }  // namespace Operators

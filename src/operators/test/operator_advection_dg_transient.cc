@@ -278,9 +278,10 @@ void AdvectionFn<AnalyticDG>::Functional(
   }
 
   // populate the global operator
+  op_flux->SetBCs(bc, bc);
   op_flux->Setup(velc, velf);
   op_flux->UpdateMatrices(velf.ptr());
-  op_flux->ApplyBCs(bc, true);
+  op_flux->ApplyBCs(true, true, true);
 
   op_adv->SetupPolyVector(velc);
   op_adv->UpdateMatrices();

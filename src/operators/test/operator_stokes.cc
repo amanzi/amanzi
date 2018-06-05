@@ -167,7 +167,7 @@ TEST(OPERATOR_STOKES_EXACTNESS) {
   // into a global matrix.
   op00->UpdateMatrices();
   global00->UpdateRHS(source, true);
-  op00->ApplyBCs(true, true);
+  op00->ApplyBCs(true, true, true);
   global00->SymbolicAssembleMatrix();
   global00->AssembleMatrix();
 
@@ -175,7 +175,7 @@ TEST(OPERATOR_STOKES_EXACTNESS) {
   // a matrix-free matvec inside an iterative solver, there is no need to
   // assemble a global matrix.
   op10->UpdateMatrices();
-  op10->ApplyBCs(false, true);
+  op10->ApplyBCs(false, true, false);
 
   // populate local matrices in the pressure block (for preconditioner)
   CompositeVector vol(global11->DomainMap());

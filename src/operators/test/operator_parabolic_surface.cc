@@ -133,7 +133,7 @@ void RunTest(std::string op_list_name) {
 
   // apply BCs and assemble
   global_op->UpdateRHS(source, false);
-  op.ApplyBCs(true, true);
+  op.ApplyBCs(true, true, true);
   global_op->SymbolicAssembleMatrix();
   global_op->AssembleMatrix();
 
@@ -171,7 +171,7 @@ void RunTest(std::string op_list_name) {
   op_acc.AddAccumulationDelta(solution, phi, phi, dT, "cell");
 
   global_op->UpdateRHS(source, false);
-  op.ApplyBCs(true, true);
+  op.ApplyBCs(true, true, true);
   global_op->SymbolicAssembleMatrix();
   global_op->AssembleMatrix();
 

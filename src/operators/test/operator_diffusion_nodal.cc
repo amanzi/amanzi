@@ -131,7 +131,7 @@ TEST(OPERATOR_DIFFUSION_NODAL) {
   global_op->UpdateRHS(source, true);
 
   // apply BCs (primary=true, eliminate=true) and assemble
-  op->ApplyBCs(true, true);
+  op->ApplyBCs(true, true, true);
   global_op->SymbolicAssembleMatrix();
   global_op->AssembleMatrix();
 
@@ -304,7 +304,7 @@ TEST(OPERATOR_DIFFUSION_NODAL_EXACTNESS) {
   global_op->Init();
   op->Setup(K, Teuchos::null, Teuchos::null);
   op->UpdateMatrices(Teuchos::null, Teuchos::null);
-  op->ApplyBCs(true, true);
+  op->ApplyBCs(true, true, true);
 
   global_op->SymbolicAssembleMatrix();
   global_op->AssembleMatrix();

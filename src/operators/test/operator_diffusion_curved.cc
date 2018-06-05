@@ -109,7 +109,7 @@ void RunTestDiffusionCurved() {
   op->UpdateMatrices();
 
   // -- apply boundary conditions
-  op->ApplyBCs(true, true);
+  op->ApplyBCs(true, true, true);
 
   // -- assemble the global matrix
   Teuchos::RCP<Operator> global_op = op->global_operator();

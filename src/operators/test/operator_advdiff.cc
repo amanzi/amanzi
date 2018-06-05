@@ -177,10 +177,11 @@ void AdvectionDiffusion2D(int nx, double* error)
   auto global_op = op_diff->global_operator();
   olist = plist.sublist("PK operator").sublist("advection operator");
   auto op_adv = Teuchos::rcp(new PDE_AdvectionUpwind(olist, global_op));
+  op_adv->SetBCs(bca, bca);
 
   op_adv->Setup(*u);
   op_adv->UpdateMatrices(u.ptr());
-  op_adv->ApplyBCs(bca, false, true, false);
+  op_adv->ApplyBCs(false, true, false);
 
   // assemble global matrix and creare preconditioner
   global_op->SymbolicAssembleMatrix();

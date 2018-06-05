@@ -131,7 +131,7 @@ void RunTest(int icase, bool gravity) {
   op->UpdateMatrices(Teuchos::null, Teuchos::null);
 
   // apply BCs and assemble
-  op->ApplyBCs(true, true);
+  op->ApplyBCs(true, true, true);
   global_op->SymbolicAssembleMatrix();
   global_op->AssembleMatrix();
     

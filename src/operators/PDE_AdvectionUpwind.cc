@@ -168,14 +168,15 @@ void PDE_AdvectionUpwind::UpdateMatrices(
 * Apply boundary condition to the local matrices
 *
 * Advection only problem.
-* Recommended options: primary=true, eliminate=any, leading_op=true
+* Recommended options: primary=true, eliminate=false, essential_eqn=true
 *  - must deal with Dirichlet BC on inflow boundary
 *  - Dirichlet on outflow boundary is ill-posed
 *  - Neumann on inflow boundary is typically not used, since it is 
-*    equivalent to Dirichlet BC.
+*    equivalent to Dirichlet BC. We perform implicit conversion to 
+*    Dirichlet BC.
 *
 * Advection-diffusion problem.
-* Recommended options: primary=true, eliminate=any, leading_op=false
+* Recommended options: primary=false, eliminate=true, essential_eqn=true
 *  - Dirichlet BC is treated as usual
 *  - Neuman on inflow boundary: If diffusion takes care of the total
 *    flux, then TOTAL_FLUX model must be used. If diffusion deals
@@ -185,22 +186,23 @@ void PDE_AdvectionUpwind::UpdateMatrices(
 *    property.
 *  - Neuman on outflow boundary: If diffusion takes care of the total
 *    flux, then TOTAL_FLUX model must be used. Otherwise, do nothing.
+*
+* FIXME: So far we support the case bc_test = bc_trial
 ******************************************************************* */
-void PDE_AdvectionUpwind::ApplyBCs(const Teuchos::RCP<BCs>& bc,
-                                   bool primary, bool eliminate, bool leading_op)
+void PDE_AdvectionUpwind::ApplyBCs(bool primary, bool eliminate, bool essential_eqn)
 {
   std::vector<WhetStone::DenseMatrix>& matrix = local_op_->matrices;
   std::vector<WhetStone::DenseMatrix>& matrix_shadow = local_op_->matrices_shadow;
 
   Epetra_MultiVector& rhs_cell = *global_op_->rhs()->ViewComponent("cell");
 
-  const std::vector<int>& bc_model = bc->bc_model();
-  const std::vector<double>& bc_value = bc->bc_value();
+  const std::vector<int>& bc_model = bcs_trial_[0]->bc_model();
+  const std::vector<double>& bc_value = bcs_trial_[0]->bc_value();
 
   for (int f = 0; f < nfaces_owned; f++) {
+    int c1 = (*upwind_cell_)[f];
+    int c2 = (*downwind_cell_)[f];
     if (bc_model[f] == OPERATOR_BC_DIRICHLET) {
-      int c1 = (*upwind_cell_)[f];
-      int c2 = (*downwind_cell_)[f];
       if (c2 < 0) {
         // pass, the upwind cell is internal to the domain, so all is good
       } else if (c1 < 0) {
@@ -208,14 +210,26 @@ void PDE_AdvectionUpwind::ApplyBCs(const Teuchos::RCP<BCs>& bc,
         rhs_cell[0][c2] += matrix[f](0, 0) * bc_value[f];
         matrix[f] = 0.0;
       }
-    } else if (bc_model[f] == OPERATOR_BC_NEUMANN && ! leading_op) {
-      int c1 = (*upwind_cell_)[f];
+    } 
+
+    // treat as essential inflow BC for pure advection
+    else if (bc_model[f] == OPERATOR_BC_NEUMANN && primary) {
+      if (c1 < 0) {
+        rhs_cell[0][c2] += mesh_->face_area(f) * bc_value[f];
+        matrix[f] = 0.0;
+      }
+    }
+    // leave in matrix for composite operator
+    else if (bc_model[f] == OPERATOR_BC_NEUMANN && ! primary) {
       if (c1 < 0)
         matrix[f] *= -1.0;
-    } else if (bc_model[f] == OPERATOR_BC_TOTAL_FLUX && ! leading_op) {
-      // total flux is treated by the leading operator
+    }
+    // total flux was processed by another operator -> remove here
+    else if (bc_model[f] == OPERATOR_BC_TOTAL_FLUX && ! primary) {
       matrix[f] = 0.0;
-    } else if (bc_model[f] != OPERATOR_BC_NONE) {
+    }
+    // do not know what to do
+    else if (bc_model[f] != OPERATOR_BC_NONE) {
       AMANZI_ASSERT(false);
     } 
   }
