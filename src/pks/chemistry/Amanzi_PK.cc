@@ -20,7 +20,6 @@
 #include <algorithm>
 
 // TPLs
-#include "boost/algorithm/string.hpp"
 #include "Epetra_MultiVector.h"
 #include "Epetra_Vector.h"
 #include "Epetra_SerialDenseVector.h"
@@ -64,8 +63,8 @@ Amanzi_PK::Amanzi_PK(Teuchos::ParameterList& pk_tree,
 
   // extract pk name
   std::string pk_name = pk_tree.name();
-  boost::iterator_range<std::string::iterator> res = boost::algorithm::find_last(pk_name, "->"); 
-  if (res.end() - pk_name.end() != 0) boost::algorithm::erase_head(pk_name, res.end() - pk_name.begin());
+  auto found = pk_name.rfind("->");
+  if (found != std::string::npos) pk_name.erase(0, found + 2);
 
   // create pointer to the chemistry parameter list
   Teuchos::RCP<Teuchos::ParameterList> pk_list = Teuchos::sublist(glist, "PKs", true);

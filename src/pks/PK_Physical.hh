@@ -14,8 +14,9 @@
 #ifndef AMANZI_PK_PHYSICAL_HH_
 #define AMANZI_PK_PHYSICAL_HH_
 
+#include <string>
+
 #include "Teuchos_ParameterList.hpp"
-#include "boost/algorithm/string.hpp"
 #include "VerboseObject.hh"
 #include "primary_variable_field_evaluator.hh"
 #include "PK.hh"
@@ -35,9 +36,8 @@ class PK_Physical : virtual public PK {
 
     // name the PK
     name_ = pk_tree.name();
-    boost::iterator_range<std::string::iterator> res = boost::algorithm::find_last(name_,"->");
-    if (res.end() - name_.end() != 0) boost::algorithm::erase_head(name_, res.end() - name_.begin());
-
+    auto found = name_.rfind("->");
+    if (found != std::string::npos) name_.erase(0, found + 2);
 
     Teuchos::RCP<Teuchos::ParameterList> pks_list = Teuchos::sublist(glist, "PKs");
 
