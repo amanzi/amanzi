@@ -116,10 +116,10 @@ TranspirationDistributionEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
         }
       }
 
-#ifndef ENABLE_DBC
+#ifdef ENABLE_DBC
       double new_col_total = 0.;
       for (auto c : subsurf_mesh.cells_of_column(sc)) {
-        new_col_total += result_v[fpt][c] * cv[0][c];
+        new_col_total += result_v[pft][c] * cv[0][c];
       }
       AMANZI_ASSERT(std::abs(new_col_total - trans_total[pft][sc]) < 1.e-8);
 #endif
