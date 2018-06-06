@@ -92,6 +92,7 @@ class AdvectionFn : public Explicit_TI::fnBase<CompositeVector> {
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
   Teuchos::RCP<AmanziMesh::Mesh> mesh_new_;
 
+  int order_;
   double weak_sign_;
   bool conservative_form_;
   bool setup_, high_order_velf_, level_set_velf_;
@@ -139,6 +140,8 @@ AdvectionFn<AnalyticDG>::AdvectionFn(
     op_list = plist.sublist(pk_name_).sublist("reaction operator");
     op_reac = Teuchos::rcp(new Operators::PDE_Abstract(op_list, global_op_));
   }
+
+  order_ = op_list.get<int>("method order");
 
   // create auxiliary mesh
   Epetra_MpiComm comm(MPI_COMM_WORLD);
@@ -213,11 +216,9 @@ void AdvectionFn<AnalyticDG>::Functional(
   }
 
   // -- source term
-  int order = plist_.sublist(pk_name_).sublist("flux operator")
-                    .template get<int>("method order");
-  int nk = (order + 1) * (order + 2) / 2;
+  int nk = (order_ + 1) * (order_ + 2) / 2;
 
-  WhetStone::Polynomial sol, src, pc(2, order);
+  WhetStone::Polynomial sol, src, pc(2, order_);
   WhetStone::NumericalIntegration numi(mesh_, false);
 
   CompositeVector& rhs = *global_op_->rhs();
@@ -392,28 +393,44 @@ void AdvectionFn<AnalyticDG>::ApproximateVelocity_LevelSet(
 {
   int dim = mesh_->space_dimension();
   const Epetra_MultiVector& u_c = *u.ViewComponent("cell", true);
+  int nk = u_c.NumVectors();
 
   int ncells_wghost = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
   int nfaces_wghost = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
 
-  // cell-based velocity is constant for dG1
-  double norm;
+  // cell-based velocity is constant for dGP1
+  // we approximate it with a linear function for dGP2
+  double norm, norm2, norm3;
   AmanziMesh::Entity_ID_List cells;
   AmanziGeometry::Point zero(dim);
 
   for (int c = 0; c < ncells_wghost; ++c) {
-    norm = 0.0;
-    for (int i = 0; i < dim; ++i) {
-      norm += u_c[i + 1][c] * u_c[i + 1][c];
+    const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
+
+    // polynomial representation of solution
+    /*
+    Amanzi::WhetStone::DenseVector data(nk);
+    Amanzi::WhetStone::Polynomial poly(dim, order_); 
+
+    for (int i = 0; i < nk; ++i) {
+      data(i) = u_c[i][c];
     }
-    norm = std::pow(norm, 0.5);
+    poly.SetPolynomialCoefficients(data);
+    poly.set_origin(xc);
+    */
+
+    norm2 = 0.0;
+    for (int i = 0; i < dim; ++i) {
+      norm2 += u_c[i + 1][c] * u_c[i + 1][c];
+    }
+    norm = std::pow(norm2, 0.5);
 
     (*velc)[c].resize(dim);
     for (int i = 0; i < dim; ++i) {
-      (*velc)[c][i].Reshape(dim, 0);
+      (*velc)[c][i].Reshape(dim, order_ - 1);
       (*velc)[c][i](0, 0) = u_c[i + 1][c] * weak_sign_ / norm;
     }
-    (*velc)[c].set_origin(zero);
+    (*velc)[c].set_origin(xc);
 
     if (! conservative_form_) (*divc)[c] = Divergence((*velc)[c]);
   }
@@ -475,10 +492,6 @@ void AdvectionTransient(std::string filename, int nx, int ny, double dt,
 
   int order = plist.sublist(pk_name)
                    .sublist("flux operator").get<int>("method order");
-  if (order > 1 && face_velocity_method == "level set") {
-    std::cout << "(order == 1) has failed" << std::endl;
-    exit(0);
-  }
 
   std::string problem = (conservative_form) ? ", conservative formulation" : "";
   if (MyPID == 0) std::cout << "\nTest: 2D dG transient advection problem, " << filename 
@@ -574,7 +587,7 @@ void AdvectionTransient(std::string filename, int nx, int ny, double dt,
 
 
 TEST(OPERATOR_ADVECTION_TRANSIENT_DG) {
-  // AdvectionTransient<AnalyticDG07>("square", 200, 200, 0.001 / 4, Amanzi::Explicit_TI::tvd_3rd_order, false, "primal", "level set");
+  // AdvectionTransient<AnalyticDG07>("square", 50, 50, 0.001, Amanzi::Explicit_TI::tvd_3rd_order, false, "primal", "level set");
 
   AdvectionTransient<AnalyticDG06b>("square",  4,  4, 0.1, Amanzi::Explicit_TI::tvd_3rd_order);
   AdvectionTransient<AnalyticDG06>("square",  4,  4, 0.1, Amanzi::Explicit_TI::tvd_3rd_order, false);

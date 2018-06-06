@@ -944,66 +944,6 @@ void DG_Modal::UpdateIntegrals_(int c, int order)
   }
 }
 
-
-/* ******************************************************************
-* Normalize and optionally orthogonalize Taylor basis functions.
-****************************************************************** */
-void DG_Modal::UpdateScales_(int c, int order)
-{
-  if (scales_a_.size() == 0) {
-    int ncells_wghost = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
-    scales_a_.resize(ncells_wghost);
-    scales_b_.resize(ncells_wghost);
-
-    for (int n = 0; n < ncells_wghost; ++n) {
-      scales_a_[n].Reshape(d_, order);
-      scales_b_[n].Reshape(d_, order);
-    }
-
-    // For the moment, we update everything in one shot
-    for (int n = 0; n < ncells_wghost; ++n) {
-      UpdateIntegrals_(n, 2 * order);
-
-      const Polynomial& integrals = integrals_[n];
-      Polynomial poly(d_, order);
-
-      double a, b, norm;
-      double volume = integrals(0, 0); 
-
-      for (auto it = poly.begin(); it.end() <= poly.end(); ++it) {
-        int k = it.MonomialSetPosition();
-        const int* multi_index = it.multi_index();
-        int index[d_]; 
-
-        int m(0);
-        for (int i = 0; i < d_; ++i) {
-          m += multi_index[i];
-          index[i] = 2 * multi_index[i];
-        }
-
-        if (m == 0) {
-          a = 1.0;
-          b = 0.0;
-        } else {
-          if (basis_[0]->id() == TAYLOR_BASIS_NORMALIZED_ORTHO) {
-            b = integrals(m, k) / volume;
-          } else {
-            b = 0.0;  // no orthogonalization to constants
-          }
-
-          norm = integrals(2 * m, integrals.MonomialSetPosition(index));
-          norm -= b * b * volume;
-
-          a = std::pow(volume / norm, 0.5);
-        }
-
-        scales_a_[n](m, k) = a;
-        scales_b_[n](m, k) = b;
-      }
-    }
-  }
-}
-
 }  // namespace WhetStone
 }  // namespace Amanzi
 

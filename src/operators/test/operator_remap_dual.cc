@@ -464,10 +464,8 @@ void RemapTestsDualRK(int order_p, int order_u,
   Teuchos::RCP<CompositeVector> p1 = Teuchos::rcp(new CompositeVector(cvs1));
   Epetra_MultiVector& p1c = *p1->ViewComponent("cell", true);
 
-  // we need dg to compute scaling of basis functions
+  // we need dg to use correct scaling of basis functions
   WhetStone::DG_Modal dg(order_p, mesh0, "orthonormalized");
-for (int c = 0; c < ncells_wghost; c++) { dg.UpdateScales_(c, order_p); }
-
   AnalyticDG04 ana(mesh0, order_p);
   ana.InitialGuess(dg, p1c, 1.0);
 

@@ -106,9 +106,6 @@ class DG_Modal : public BilinearForm {
   int order() { return order_; }
   const Basis& cell_basis(int c) { return *basis_[c]; }
 
-  // deprecated
-  void UpdateScales_(int c, int order);
-
  private:
   int MassMatrixPoly_(int c, const Polynomial& K, DenseMatrix& M);
   int MassMatrixPiecewisePoly_(int c, const VectorPolynomial& K, DenseMatrix& M);
@@ -124,8 +121,6 @@ class DG_Modal : public BilinearForm {
   int order_, d_;
 
   VectorPolynomial integrals_;  // integrals of non-normalized monomials
-  VectorPolynomial scales_a_;   // partial orthonormalization of Taylor basis
-  VectorPolynomial scales_b_;  
   std::vector<std::shared_ptr<Basis> > basis_;
 };
 
