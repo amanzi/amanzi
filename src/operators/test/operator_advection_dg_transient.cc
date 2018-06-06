@@ -475,6 +475,10 @@ void AdvectionTransient(std::string filename, int nx, int ny, double dt,
 
   int order = plist.sublist(pk_name)
                    .sublist("flux operator").get<int>("method order");
+  if (order > 1 && face_velocity_method == "level set") {
+    std::cout << "(order == 1) has failed" << std::endl;
+    exit(0);
+  }
 
   std::string problem = (conservative_form) ? ", conservative formulation" : "";
   if (MyPID == 0) std::cout << "\nTest: 2D dG transient advection problem, " << filename 
@@ -570,7 +574,7 @@ void AdvectionTransient(std::string filename, int nx, int ny, double dt,
 
 
 TEST(OPERATOR_ADVECTION_TRANSIENT_DG) {
-  // AdvectionTransient<AnalyticDG07>("square", 50, 50, 0.0002, Amanzi::Explicit_TI::tvd_3rd_order, false, "primal", "level set");
+  // AdvectionTransient<AnalyticDG07>("square", 200, 200, 0.001 / 4, Amanzi::Explicit_TI::tvd_3rd_order, false, "primal", "level set");
 
   AdvectionTransient<AnalyticDG06b>("square",  4,  4, 0.1, Amanzi::Explicit_TI::tvd_3rd_order);
   AdvectionTransient<AnalyticDG06>("square",  4,  4, 0.1, Amanzi::Explicit_TI::tvd_3rd_order, false);
