@@ -69,33 +69,33 @@ set(Unittest_CMAKE_ARGS
    ${Unittest_CMAKE_EXTRA_ARGS})
 
 ExternalProject_add(${UnitTest_BUILD_TARGET}
-                    DEPENDS   ${UnitTest_PACKAGE_DEPENDS}             # Package dependency target
-                    TMP_DIR   ${UnitTest_tmp_dir}                     # Temporary files directory
-                    STAMP_DIR ${UnitTest_stamp_dir}                   # Timestamp and log directory
+                    DEPENDS   ${UnitTest_PACKAGE_DEPENDS}          # Package dependency target
+                    TMP_DIR   ${UnitTest_tmp_dir}                  # Temporary files directory
+                    STAMP_DIR ${UnitTest_stamp_dir}                # Timestamp and log directory
                     # -- Download and URL definitions
-                    DOWNLOAD_DIR ${TPL_DOWNLOAD_DIR}                  # Download directory
-                    URL          ${UnitTest_URL}                      # URL may be a web site OR a local file
-                    URL_MD5      ${UnitTest_MD5_SUM}                  # md5sum of the archive file
-                    PATCH_COMMAND ${UnitTest_PATCH_COMMAND}           # Mods to source
+                    DOWNLOAD_DIR ${TPL_DOWNLOAD_DIR}
+                    URL          ${UnitTest_URL}                   # URL may be a web site OR a local file
+                    URL_MD5      ${UnitTest_MD5_SUM}               # md5sum of the archive file
+                    PATCH_COMMAND ${UnitTest_PATCH_COMMAND}        # Mods to source
                     # -- Configure
-                    SOURCE_DIR          ${UnitTest_source_dir}        # Defining forces CMake to mkdir SOURCE_DIR
-                    CMAKE_ARGS          ${Unittest_Config_File_ARGS}
-                    CMAKE_CACHE_ARGS    ${AMANZI_CMAKE_CACHE_ARGS}    # Global definitions from root CMakeList
-                                        ${Unittest_CMAKE_ARGS}
-                                        -DCMAKE_INSTALL_PREFIX:PATH=<INSTALL_DIR>
-                                        -DBUILD_SHARED_LIBS:BOOL=${BUILD_SHARED_LIBS}
-                                        -DCMAKE_C_FLAGS:STRING=${Amanzi_COMMON_CFLAGS}  # Ensure uniform build
-                                        -DCMAKE_C_COMPILER:FILEPATH=${CMAKE_C_COMPILER}
-                                        -DCMAKE_CXX_FLAGS:STRING=${Amanzi_COMMON_CXXFLAGS}
-                                        -DCMAKE_CXX_COMPILER:FILEPATH=${CMAKE_CXX_COMPILER}
-                                        -DCMAKE_Fortran_FLAGS:STRING=${Amanzi_COMMON_FCFLAGS}
-                                        -DCMAKE_Fortran_COMPILER:FILEPATH=${CMAKE_Fortran_COMPILER}
+                    SOURCE_DIR       ${UnitTest_source_dir}        # Defining forces CMake to mkdir SOURCE_DIR
+                    CMAKE_ARGS       ${Unittest_Config_File_ARGS}
+                    CMAKE_CACHE_ARGS ${AMANZI_CMAKE_CACHE_ARGS}    # Global definitions from root CMakeList
+                                     ${Unittest_CMAKE_ARGS}
+                                     -DCMAKE_INSTALL_PREFIX:PATH=${TPL_INSTALL_PREFIX}
+                                     -DBUILD_SHARED_LIBS:BOOL=${BUILD_SHARED_LIBS}
+                                     -DCMAKE_C_FLAGS:STRING=${Amanzi_COMMON_CFLAGS}  # Ensure uniform build
+                                     -DCMAKE_C_COMPILER:FILEPATH=${CMAKE_C_COMPILER}
+                                     -DCMAKE_CXX_FLAGS:STRING=${Amanzi_COMMON_CXXFLAGS}
+                                     -DCMAKE_CXX_COMPILER:FILEPATH=${CMAKE_CXX_COMPILER}
+                                     -DCMAKE_Fortran_FLAGS:STRING=${Amanzi_COMMON_FCFLAGS}
+                                     -DCMAKE_Fortran_COMPILER:FILEPATH=${CMAKE_Fortran_COMPILER}
                     # -- Build
-                    BUILD_COMMAND       $(MAKE)                       # Run make in build directory $(MAKE) enables parallel build
-                    BINARY_DIR          ${UnitTest_build_dir}         # Define the build directory
-                    BUILD_IN_SOURCE     ${UnitTest_BUILD_IN_SOURCE}   # Flag in/out source build
+                    BUILD_COMMAND     $(MAKE)                       # Run make in build directory $(MAKE) enables parallel build
+                    BINARY_DIR        ${UnitTest_build_dir}         # Define the build directory
+                    BUILD_IN_SOURCE   ${UnitTest_BUILD_IN_SOURCE}   # Flag in/out source build
                     # -- Install
-                    INSTALL_DIR         ${TPL_INSTALL_PREFIX}         # Install directory
+                    INSTALL_DIR       ${TPL_INSTALL_PREFIX}         # Install directory
                     # -- Output control
                     ${UnitTest_logging_args})
 

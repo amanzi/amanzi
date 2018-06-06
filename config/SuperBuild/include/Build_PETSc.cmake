@@ -163,22 +163,22 @@ set(PETSC_PATCH_COMMAND ${CMAKE_COMMAND} -P ${PETSC_cmake_patch})
 
 # --- Add external project build 
 ExternalProject_Add(${PETSc_BUILD_TARGET}
-                    DEPENDS   ${PETSc_PACKAGE_DEPENDS}             # Package dependency target
-                    TMP_DIR   ${PETSc_tmp_dir}                     # Temporary files directory
-                    STAMP_DIR ${PETSc_stamp_dir}                   # Timestamp and log directory
+                    DEPENDS   ${PETSc_PACKAGE_DEPENDS}     # Package dependency target
+                    TMP_DIR   ${PETSc_tmp_dir}             # Temporary files directory
+                    STAMP_DIR ${PETSc_stamp_dir}           # Timestamp and log directory
                     # -- Download and URL definitions
-                    DOWNLOAD_DIR ${TPL_DOWNLOAD_DIR}               # Download directory
-                    URL          ${PETSc_URL}                      # URL may be a web site OR a local file
-                    URL_MD5      ${PETSc_MD5_SUM}                  # md5sum of the archive file
-                    DOWNLOAD_NAME ${PETSc_SAVEAS_FILE}             # file name to store (if not end of URL)
+                    DOWNLOAD_DIR  ${TPL_DOWNLOAD_DIR}
+                    URL           ${PETSc_URL}              # URL may be a web site OR a local file
+                    URL_MD5       ${PETSc_MD5_SUM}          # md5sum of the archive file
+                    DOWNLOAD_NAME ${PETSc_SAVEAS_FILE}      # file name to store (if not end of URL)
                     # -- Patch 
                     PATCH_COMMAND ${PETSC_PATCH_COMMAND}
                     # -- Configure
-                    SOURCE_DIR        ${PETSc_source_dir}          # Source directory
+                    SOURCE_DIR    ${PETSc_source_dir}       # Source directory
                     CONFIGURE_COMMAND
-                              <SOURCE_DIR>/configure
+                              ${PETSc_source_dir}/configure
                                           ${CONFIG_PETSC_SHARED}
-                                          --prefix=<INSTALL_DIR>
+                                          --prefix=${petsc_install_dir}
                                           ${petsc_mpi_compilers}
                                           --without-x
 					  --with-ssl=0

@@ -93,7 +93,7 @@ endif (ENABLE_SEACAS_Patch)
 
 # --- Configure the package
 set(SEACAS_CMAKE_CACHE_ARGS
-                    -DCMAKE_INSTALL_PREFIX:FILEPATH=<INSTALL_DIR>
+                    -DCMAKE_INSTALL_PREFIX:FILEPATH=${TPL_INSTALL_PREFIX}/SEACAS
                     -DCMAKE_BUILD_TYPE:STRING=${CMAKE_BUILD_TYPE}
                     -DCMAKE_EXE_LINKER_FLAGS:STRING=${seacas_lflags}
                     -DBUILD_SHARED_LIBS:BOOL=${BUILD_SHARED_LIBS}
@@ -145,11 +145,11 @@ ExternalProject_Add(${SEACAS_BUILD_TARGET}
                                      -DCMAKE_Fortran_FLAGS:STRING=${Amanzi_COMMON_FCFLAGS}
                                      -DCMAKE_Fortran_COMPILER:FILEPATH=${CMAKE_Fortran_COMPILER}
                     # -- Build
-                    BINARY_DIR        ${SEACAS_build_dir}           # Build directory 
-                    BUILD_COMMAND     $(MAKE)                       # $(MAKE) enables parallel builds through make
-                    BUILD_IN_SOURCE   ${SEACAS_BUILD_IN_SOURCE}     # Flag for in source builds
+                    BINARY_DIR       ${SEACAS_build_dir}           # Build directory 
+                    BUILD_COMMAND    $(MAKE)                       # $(MAKE) enables parallel builds through make
+                    BUILD_IN_SOURCE  ${SEACAS_BUILD_IN_SOURCE}     # Flag for in source builds
                     # -- Install
-                    INSTALL_DIR      ${TPL_INSTALL_PREFIX}/SEACAS   # Install directory, NOT in the usual place!
+                    INSTALL_DIR      ${TPL_INSTALL_PREFIX}/SEACAS  # Install directory, NOT in the usual place!
                     # -- Output control
                     ${SEACAS_logging_args})
 

@@ -79,7 +79,7 @@ set(MSTK_CMAKE_CACHE_ARGS
                     -DMetis_INCLUDE_DIRS:PATH=${METIS_DIR}/include
                     -DMETIS_INCLUDE_DIRS:PATH=${METIS_DIR}/include
                     -DENABLE_Tests:BOOL=FALSE
-                    -DINSTALL_DIR:PATH=<INSTALL_DIR>
+                    -DINSTALL_DIR:PATH=${TPL_INSTALL_PREFIX}
                     -DINSTALL_ADD_VERSION:BOOL=FALSE)
 
 # --- Add external project build and tie to the MSTK build target
@@ -100,9 +100,9 @@ ExternalProject_Add(${MSTK_BUILD_TARGET}
                     CMAKE_CACHE_ARGS ${AMANZI_CMAKE_CACHE_ARGS}   # Global definitions from root CMakeList
                                      ${MSTK_CMAKE_CACHE_ARGS}
                     # -- Build
-                    BINARY_DIR        ${MSTK_build_dir}           # Build directory 
-                    BUILD_COMMAND     $(MAKE)                     # $(MAKE) enables parallel builds through make
-                    BUILD_IN_SOURCE   ${MSTK_BUILD_IN_SOURCE}     # Flag for in source builds
+                    BINARY_DIR       ${MSTK_build_dir}            # Build directory 
+                    BUILD_COMMAND    $(MAKE)                      # $(MAKE) enables parallel builds through make
+                    BUILD_IN_SOURCE  ${MSTK_BUILD_IN_SOURCE}      # Flag for in source builds
                     # -- Install
                     INSTALL_DIR      ${TPL_INSTALL_PREFIX}        # Install directory
                     # -- Output control

@@ -34,20 +34,20 @@ ExternalProject_Add(${MPICH_BUILD_TARGET}
                     # -- Configure
                     SOURCE_DIR   ${MPICH_source_dir}
                     CONFIGURE_COMMAND
-                                   <SOURCE_DIR>/configure
-                                                --prefix=<INSTALL_DIR>
-                                                --enable-fortran
-						--enable-shared
-						--enable-static
-	  					--with-wrapper-ldflags=${mpich_extra_ldflags}
-                                                ${mpich_extra_options}
-                                                CC=${CMAKE_C_COMPILER}
-                                                CXX=${CMAKE_CXX_COMPILER}
-                                                FC=${CMAKE_Fortran_COMPILER}
+                                 ${MPICH_source_dir}/configure
+                                        --prefix=${TOOLS_INSTALL_PREFIX}
+                                        --enable-fortran
+                                        --enable-shared
+                                        --enable-static
+                                        --with-wrapper-ldflags=${mpich_extra_ldflags}
+                                        ${mpich_extra_options}
+                                        CC=${CMAKE_C_COMPILER}
+                                        CXX=${CMAKE_CXX_COMPILER}
+                                        FC=${CMAKE_Fortran_COMPILER}
                     # -- Build
-                    BINARY_DIR        ${MPICH_build_dir}        # Build directory 
-                    BUILD_COMMAND     make -j ${TOOLS_PARALLEL_JOBS}  # $(MAKE) enables parallel builds through make
-                    BUILD_IN_SOURCE   ${MPICH_BUILD_IN_SOURCE}  # Flag for in source builds
+                    BINARY_DIR       ${MPICH_build_dir}        # Build directory 
+                    BUILD_COMMAND    make -j ${TOOLS_PARALLEL_JOBS}  # $(MAKE) enables parallel builds through make
+                    BUILD_IN_SOURCE  ${MPICH_BUILD_IN_SOURCE}  # Flag for in source builds
                     # -- Install
                     INSTALL_DIR      ${TOOLS_INSTALL_PREFIX}
                     # -- Output control
