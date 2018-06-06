@@ -500,6 +500,17 @@ void Operator::CopySuperVectorToVector(const Epetra_Vector& sv, CompositeVector&
 /* ******************************************************************
 * Rescale the local matrices via dispatch.
 ****************************************************************** */
+void Operator::Rescale(double scaling)
+{
+  for (op_iterator it = OpBegin(); it != OpEnd(); ++it) {
+    (*it)->Rescale(scaling);
+  }
+}
+
+
+/* ******************************************************************
+* Rescale the local matrices via dispatch.
+****************************************************************** */
 void Operator::Rescale(const CompositeVector& scaling)
 {
   scaling.ScatterMasterToGhosted();
