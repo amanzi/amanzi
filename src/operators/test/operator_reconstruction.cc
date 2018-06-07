@@ -695,13 +695,8 @@ TEST(RECONSTRUCTION_SMOOTH_FIELD_2D_POLYMESH) {
   Teuchos::ParameterList region_list;
   Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(2, region_list, &comm));
 
-  FrameworkPreference pref;
-  pref.clear();
-  pref.push_back(MSTK);
-  pref.push_back(STKMESH);
-
   MeshFactory meshfactory(&comm);
-  meshfactory.preference(pref);
+  meshfactory.preference(FrameworkPreference({MSTK,STKMESH}));
 
   Teuchos::RCP<const Mesh> mesh = meshfactory("test/median32x33.exo", gm);
 

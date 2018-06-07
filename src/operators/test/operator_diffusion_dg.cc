@@ -59,7 +59,7 @@ void OperatorDiffusionDG(std::string solver_name) {
   ParameterList plist = xmlreader.getParameters();
 
   // create a mesh framework
-  ParameterList region_list = plist.get<Teuchos::ParameterList>("regions");
+  ParameterList region_list = plist.sublist("regions");
   Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(2, region_list, &comm));
 
   MeshFactory meshfactory(&comm);
@@ -92,8 +92,7 @@ void OperatorDiffusionDG(std::string solver_name) {
 
   // create boundary data. We use full Taylor expansion of boundary data in
   // the vicinity of domain boundary.
-  ParameterList op_list = plist.get<Teuchos::ParameterList>("PK operator")
-                               .sublist("diffusion operator dg");
+  ParameterList op_list = plist.sublist("PK operator").sublist("diffusion operator dg");
   int order = op_list.get<int>("method order");
   int nk = (order + 1) * (order + 2) / 2;
 
@@ -174,7 +173,7 @@ void OperatorDiffusionDG(std::string solver_name) {
   *global_op->rhs() = src;
 
   // apply BCs (primary=true, eliminate=true) and assemble
-  op->ApplyBCs(true, true);
+  op->ApplyBCs(true, true, true);
   global_op->SymbolicAssembleMatrix();
   global_op->AssembleMatrix();
 

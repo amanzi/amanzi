@@ -121,12 +121,17 @@ class PDE_DiffusionMFD : public virtual PDE_Diffusion {
                                               const Teuchos::Ptr<const CompositeVector>& u,
                                               double scalar_limiter=1) override;
 
-  // modify the operator
-  // -- by incorporating boundary conditions. Variable 'primary' indicates
-  //    that we put 1 on the matrix diagonal. Variable 'eliminate' says
-  //    that we eliminate essential BCs for the trial function, i.e. zeros
-  //    go in the corresponding matrix columns.
-  virtual void ApplyBCs(bool primary, bool eliminate) override;
+  // modify matrix due to boundary conditions 
+  //    primary=true indicates that the operator updates both matrix and right-hand
+  //      side using BC data. If primary=false, only matrix is changed.
+  //    eliminate=true indicates that we eliminate essential BCs for a trial 
+  //      function, i.e. zeros go in the corresponding matrix columns and 
+  //      right-hand side is modified using BC values. This is the optional 
+  //      parameter that enforces symmetry for a symmetric tree operators.
+  //    essential_eqn=true indicates that the operator places a positive number on 
+  //      the main matrix diagonal for the case of essential BCs. This is the
+  //      implementation trick.
+  virtual void ApplyBCs(bool primary, bool eliminate, bool essential_eqn) override;
 
   // -- by breaking p-lambda coupling.
   virtual void ModifyMatrices(const CompositeVector& u) override;
@@ -171,16 +176,16 @@ class PDE_DiffusionMFD : public virtual PDE_Diffusion {
 
   void ApplyBCs_Mixed_(const Teuchos::Ptr<const BCs>& bc_trial,
                        const Teuchos::Ptr<const BCs>& bc_test,
-                       bool primary, bool eliminate);
+                       bool primary, bool eliminate, bool essential_eqn);
   void ApplyBCs_Cell_(const Teuchos::Ptr<const BCs>& bc_trial,
                       const Teuchos::Ptr<const BCs>& bc_test,
-                      bool primary, bool eliminate);
+                      bool primary, bool eliminate, bool essential_eqn);
   void ApplyBCs_Edge_(const Teuchos::Ptr<const BCs>& bc_trial,
                       const Teuchos::Ptr<const BCs>& bc_test,
-                      bool primary, bool eliminate);
+                      bool primary, bool eliminate, bool essential_eqn);
   void ApplyBCs_Nodal_(const Teuchos::Ptr<const BCs>& bc_f,
                        const Teuchos::Ptr<const BCs>& bc_n,
-                       bool primary, bool eliminate);
+                       bool primary, bool eliminate, bool essential_eqn);
 
  protected:
   Teuchos::ParameterList plist_;

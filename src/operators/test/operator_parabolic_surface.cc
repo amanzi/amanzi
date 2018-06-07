@@ -59,7 +59,7 @@ void RunTest(std::string op_list_name) {
   ParameterList plist = xmlreader.getParameters();
 
   // create an SIMPLE mesh framework
-  ParameterList region_list = plist.get<Teuchos::ParameterList>("Regions Closed");
+  ParameterList region_list = plist.sublist("Regions Closed");
   Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(3, region_list, &comm));
 
   MeshFactory meshfactory(&comm);
@@ -118,8 +118,7 @@ void RunTest(std::string op_list_name) {
   double dT = 10.0;
 
   // add the diffusion operator
-  Teuchos::ParameterList olist = plist.get<Teuchos::ParameterList>("PK operator")
-                                      .get<Teuchos::ParameterList>(op_list_name);
+  Teuchos::ParameterList olist = plist.sublist("PK operator").sublist(op_list_name);
   PDE_DiffusionMFD op(olist, surfmesh);
   op.SetBCs(bc, bc);
   op.Setup(K, Teuchos::null, Teuchos::null);
@@ -134,7 +133,7 @@ void RunTest(std::string op_list_name) {
 
   // apply BCs and assemble
   global_op->UpdateRHS(source, false);
-  op.ApplyBCs(true, true);
+  op.ApplyBCs(true, true, true);
   global_op->SymbolicAssembleMatrix();
   global_op->AssembleMatrix();
 
@@ -172,7 +171,7 @@ void RunTest(std::string op_list_name) {
   op_acc.AddAccumulationDelta(solution, phi, phi, dT, "cell");
 
   global_op->UpdateRHS(source, false);
-  op.ApplyBCs(true, true);
+  op.ApplyBCs(true, true, true);
   global_op->SymbolicAssembleMatrix();
   global_op->AssembleMatrix();
 

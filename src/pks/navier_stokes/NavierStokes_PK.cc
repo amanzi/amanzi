@@ -272,10 +272,10 @@ void NavierStokes_PK::Initialize(const Teuchos::Ptr<State>& S)
 
   // -- assemble phase
   op_matrix_elas_->UpdateMatrices();
-  op_matrix_elas_->ApplyBCs(true, true);
+  op_matrix_elas_->ApplyBCs(true, true, true);
 
   op_preconditioner_elas_->UpdateMatrices();
-  op_preconditioner_elas_->ApplyBCs(true, true);
+  op_preconditioner_elas_->ApplyBCs(true, true, true);
   op_preconditioner_elas_->global_operator()->SymbolicAssembleMatrix();
 
   CompositeVector vol(op_mass_->global_operator()->DomainMap());

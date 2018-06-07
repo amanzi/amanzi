@@ -59,15 +59,11 @@ TEST(OPERATOR_DIFFUSION_TPFA_ZEROCOEF) {
   ParameterList plist = xmlreader.getParameters();
 
   // create a mesh
-  ParameterList region_list = plist.get<Teuchos::ParameterList>("regions");
+  ParameterList region_list = plist.sublist("regions");
   Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(2, region_list, &comm));
 
-  FrameworkPreference pref;
-  pref.clear();
-  pref.push_back(MSTK);
-
   MeshFactory meshfactory(&comm);
-  meshfactory.preference(pref);
+  meshfactory.preference(FrameworkPreference({MSTK}));
   RCP<const Mesh> mesh = meshfactory(-4.0, 0.0, 4.0, 1.0, 30, 1, gm);
 
   // model
@@ -147,7 +143,7 @@ TEST(OPERATOR_DIFFUSION_TPFA_ZEROCOEF) {
   Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(OPERATOR_BC_TYPE_FACE, bc_model, bc_value, bc_mixed));
 
   // create diffusion operator 
-  ParameterList op_list = plist.get<Teuchos::ParameterList>("PK operator").sublist("diffusion operator");
+  ParameterList op_list = plist.sublist("PK operator").sublist("diffusion operator");
   Point g(2);
   g[0] = 0.0;
   g[1] = 0.0;

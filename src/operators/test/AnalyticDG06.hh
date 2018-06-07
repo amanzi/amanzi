@@ -9,8 +9,7 @@
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 
   Solution: u = exp(-a [(x - x0)^2 + (y - y0)^2]), a = 20
-            x0 = 0.5 + 0.25 dx(t), dx(0) = 1
-            y0 = 0.5 + 0.25 dy(t), dy(0) = 0
+            default center: x0 = 0.75, y0 = 0.5
   Diffusion: K = 1
   Accumulation: a = 0
   Reaction: r = 0
@@ -46,11 +45,8 @@ class AnalyticDG06 : public AnalyticDGBase {
     sol.Reshape(d_, order_, true); 
     sol.set_origin(p);
 
-    double x0 = 0.75;
-    double y0 = 0.5;
-
-    double dx = p[0] - x0;
-    double dy = p[1] - y0;
+    double dx = p[0] - 0.75;
+    double dy = p[1] - 0.5;
     double dist2 = dx * dx + dy * dy;
     double u = std::exp(-a * dist2);
 
@@ -87,6 +83,7 @@ class AnalyticDG06 : public AnalyticDGBase {
   virtual void AccumulationTaylor(const Amanzi::AmanziGeometry::Point& p, double t,
                                   Amanzi::WhetStone::Polynomial& a) override {
     a.Reshape(d_, 0, true); 
+    a.set_origin(p);
   }
 
   // -- velocity

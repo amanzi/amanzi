@@ -24,7 +24,8 @@ namespace Amanzi {
 namespace WhetStone {
 
 /* ******************************************************************
-* Calculate mesh velocity in cell c: new algorithm
+* Calculate mesh velocity in cell c: new algorithm.
+* NOTE: second mesh is not used, so does it belong here?
 ****************************************************************** */
 void MeshMaps_VEM::VelocityCell(
     int c, const std::vector<VectorPolynomial>& vf, VectorPolynomial& vc) const

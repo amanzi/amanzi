@@ -59,7 +59,7 @@ TEST(ADVECTION_DIFFUSION_SURFACE) {
   ParameterList plist = xmlreader.getParameters();
 
   // create an MSTK mesh framework
-  ParameterList region_list = plist.get<Teuchos::ParameterList>("regions");
+  ParameterList region_list = plist.sublist("regions");
   Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(3, region_list, &comm));
 
   MeshFactory meshfactory(&comm);
@@ -100,8 +100,7 @@ TEST(ADVECTION_DIFFUSION_SURFACE) {
   }
 
   // create diffusion operator
-  Teuchos::ParameterList olist = plist.get<Teuchos::ParameterList>("PK operator")
-                                      .get<Teuchos::ParameterList>("diffusion operator");
+  Teuchos::ParameterList olist = plist.sublist("PK operator").sublist("diffusion operator");
   Teuchos::RCP<PDE_Diffusion> op_diff =
       Teuchos::rcp(new PDE_DiffusionMFD(olist, (Teuchos::RCP<const AmanziMesh::Mesh>) surfmesh));
   op_diff->SetBCs(bc, bc);
@@ -117,6 +116,7 @@ TEST(ADVECTION_DIFFUSION_SURFACE) {
   // create an advection operator  
   Teuchos::ParameterList alist;
   Teuchos::RCP<PDE_AdvectionUpwind> op_adv = Teuchos::rcp(new PDE_AdvectionUpwind(alist, global_op));
+  op_adv->SetBCs(bc, bc);
 
   // get a flux field
   Teuchos::RCP<CompositeVector> u = Teuchos::rcp(new CompositeVector(cvs));
@@ -142,8 +142,8 @@ TEST(ADVECTION_DIFFUSION_SURFACE) {
   op_acc->AddAccumulationDelta(solution, phi, phi, dT, "cell");
 
   // BCs and assemble
-  op_diff->ApplyBCs(true, true);
-  op_adv->ApplyBCs(bc, true);
+  op_diff->ApplyBCs(true, true, true);
+  op_adv->ApplyBCs(true, true, true);
   global_op->SymbolicAssembleMatrix();
   global_op->AssembleMatrix();
 
@@ -158,7 +158,7 @@ TEST(ADVECTION_DIFFUSION_SURFACE) {
   ver.CheckPreconditionerSPD(false, true);
 
   // Solve the problem.
-  ParameterList lop_list = plist.get<Teuchos::ParameterList>("solvers")
+  ParameterList lop_list = plist.sublist("solvers")
                                 .sublist("AztecOO CG").sublist("gmres parameters");
   AmanziSolvers::LinearOperatorGMRES<Operator, CompositeVector, CompositeVectorSpace>
      solver(global_op, global_op);

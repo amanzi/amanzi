@@ -52,17 +52,12 @@ TEST(OPERATOR_DIFFUSION_NONSYMMETRIC) {
   std::string xmlFileName = "test/operator_diffusion.xml";
   Teuchos::ParameterXMLFileReader xmlreader(xmlFileName);
   Teuchos::ParameterList plist = xmlreader.getParameters();
-  Teuchos::ParameterList op_list = plist.get<Teuchos::ParameterList>("PK operator")
+  Teuchos::ParameterList op_list = plist.sublist("PK operator")
                                         .sublist("diffusion operator nonsymmetric");
 
-  // create an SIMPLE mesh framework
-  FrameworkPreference pref;
-  pref.clear();
-  pref.push_back(MSTK);
-  pref.push_back(STKMESH);
-
+  // create a mesh framework
   MeshFactory meshfactory(&comm);
-  meshfactory.preference(pref);
+  meshfactory.preference(FrameworkPreference({MSTK,STKMESH}));
   Teuchos::RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 20, 20, Teuchos::null);
 
   // modify diffusion coefficient
@@ -76,7 +71,7 @@ TEST(OPERATOR_DIFFUSION_NONSYMMETRIC) {
 
   for (int c = 0; c < ncells; c++) {
     const Point& xc = mesh->cell_centroid(c);
-    const WhetStone::Tensor& Kc = ana.Tensor(xc, 0.0);
+    const WhetStone::Tensor& Kc = ana.TensorDiffusivity(xc, 0.0);
     K->push_back(Kc);
   }
 
@@ -126,7 +121,7 @@ TEST(OPERATOR_DIFFUSION_NONSYMMETRIC) {
   // get and assmeble the global operator
   Teuchos::RCP<Operator> global_op = op->global_operator();
   global_op->UpdateRHS(source, false);
-  op->ApplyBCs(true, true);
+  op->ApplyBCs(true, true, true);
   global_op->SymbolicAssembleMatrix();
   global_op->AssembleMatrix();
 

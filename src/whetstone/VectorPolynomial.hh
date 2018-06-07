@@ -19,6 +19,8 @@
 #include <vector>
 
 #include "Point.hh"
+
+#include "DenseVector.hh"
 #include "Polynomial.hh"
 
 namespace Amanzi {
@@ -43,7 +45,14 @@ class VectorPolynomial {
   double NormMax() const;
 
   // ring algebra
-  VectorPolynomial& operator*=(double val);
+  template<typename Type>
+  VectorPolynomial& operator*=(Type val) {
+    for (int i = 0; i < polys_.size(); ++i) {
+      polys_[i] *= val;
+    }
+    return *this;
+  }
+
   VectorPolynomial& operator+=(const VectorPolynomial& vp);
   VectorPolynomial& operator-=(const VectorPolynomial& vp);
 
@@ -57,12 +66,14 @@ class VectorPolynomial {
     return tmp -= vp2;
   }
 
-  friend VectorPolynomial operator*(double val, const VectorPolynomial& vp) {
+  template<typename Type>
+  friend VectorPolynomial operator*(const Type& val, const VectorPolynomial& vp) {
     VectorPolynomial tmp(vp);
     return tmp *= val;
   }
 
-  friend VectorPolynomial operator*(const VectorPolynomial& vp, double val) {
+  template<typename Type>
+  friend VectorPolynomial operator*(const VectorPolynomial& vp, const Type& val) {
     VectorPolynomial tmp(vp);
     return tmp *= val;
   }
@@ -71,8 +82,10 @@ class VectorPolynomial {
   void set_origin(const AmanziGeometry::Point& origin);
   void ChangeOrigin(const AmanziGeometry::Point& origin);
 
-  // typical operations with polynomials
-  // complex constructions
+  // typical operations with vector polynomials
+  // -- value
+  DenseVector Value(const AmanziGeometry::Point& xp) const;
+
   // -- gradient of a polynomial
   void Gradient(const Polynomial p);
 
@@ -112,7 +125,7 @@ class VectorPolynomial {
 
   // output 
   friend std::ostream& operator << (std::ostream& os, const VectorPolynomial& poly) {
-    os << "Vector Polynomial:" << std::endl;
+    os << "Vector Polynomial (size=" << poly.size() << "):" << std::endl;
     for (int i = 0; i < poly.size(); ++i) {
       os << "i=" << i << " " << poly[i];
     }
@@ -123,7 +136,6 @@ class VectorPolynomial {
   int d_;
   std::vector<Polynomial> polys_;
 };
-
 
 // non-member functions
 // --divergence

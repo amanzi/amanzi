@@ -8,8 +8,7 @@
 
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 
-  Non-polynomial solution plus discontinous (scalar) coefficient. This solution
-  has discontinuous tangential flux.
+  Description is missing.
 */
 
 #ifndef AMANZI_OPERATOR_ANALYTIC_06_HH_
@@ -24,7 +23,7 @@ class Analytic06 : public AnalyticBase {
       : AnalyticBase(mesh),
         ana_(mesh) {}
 
-  Amanzi::WhetStone::Tensor Tensor(const Amanzi::AmanziGeometry::Point& p, double t) {
+  Amanzi::WhetStone::Tensor TensorDiffusivity(const Amanzi::AmanziGeometry::Point& p, double t) {
     double u = ana_.exact0(p,t);
     double v = ana_.exact1(p,t);
     Amanzi::WhetStone::Tensor K = ana_.Tensor11(p,t);
@@ -39,6 +38,10 @@ class Analytic06 : public AnalyticBase {
 
   Amanzi::AmanziGeometry::Point gradient_exact(const Amanzi::AmanziGeometry::Point& p, double t) { 
     return ana_.gradient_exact1(p,t);
+  }
+
+  Amanzi::AmanziGeometry::Point advection_exact(const Amanzi::AmanziGeometry::Point& p, double t) {
+    return Amanzi::AmanziGeometry::Point(2);
   }
 
   double source_exact(const Amanzi::AmanziGeometry::Point& p, double t) { 

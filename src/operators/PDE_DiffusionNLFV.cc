@@ -608,7 +608,7 @@ void PDE_DiffusionNLFV::OneSidedWeightFluxes_(
 /* ******************************************************************
 * Matrix-based implementation of boundary conditions.
 ****************************************************************** */
-void PDE_DiffusionNLFV::ApplyBCs(bool primary, bool eliminate)
+void PDE_DiffusionNLFV::ApplyBCs(bool primary, bool eliminate, bool essential_eqn)
 {
   const std::vector<int>& bc_model = bcs_trial_[0]->bc_model();
   const std::vector<double>& bc_value = bcs_trial_[0]->bc_value();

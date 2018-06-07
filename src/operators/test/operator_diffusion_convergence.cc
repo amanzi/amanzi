@@ -38,14 +38,6 @@
 #include "PDE_DiffusionFV.hh"
 
 
-int BoundaryFaceGetCell(const Amanzi::AmanziMesh::Mesh& mesh, int f)
-{
-  Amanzi::AmanziMesh::Entity_ID_List cells;
-  mesh.face_get_cells(f, Amanzi::AmanziMesh::Parallel_type::ALL, &cells);
-  return cells[0];
-}
-
-
 /* *****************************************************************
 * Exactness test for mixed diffusion solver.
 ***************************************************************** */
@@ -74,7 +66,7 @@ std::pair<double, double> RunForwardProblem(const std::string& discretization,
 
   for (int c = 0; c < ncells; c++) {
     const Point& xc = mesh->cell_centroid(c);
-    const WhetStone::Tensor& Kc = ana.Tensor(xc, 0.0);
+    const WhetStone::Tensor& Kc = ana.TensorDiffusivity(xc, 0.0);
     K->push_back(Kc);
   }
   
@@ -83,11 +75,11 @@ std::pair<double, double> RunForwardProblem(const std::string& discretization,
   std::vector<int>& bc_model = bc->bc_model();
   std::vector<double>& bc_value = bc->bc_value();
 
+  bool flag;
   for (int f = 0; f < nfaces_wghost; f++) {
     const Point& xf = mesh->face_centroid(f);
     double area = mesh->face_area(f);
-    int dir, c = BoundaryFaceGetCell(*mesh, f);
-    const Point& normal = mesh->face_normal(f, false, c, &dir);
+    Point normal = ana.face_normal_exterior(f, &flag);
 
     if (fabs(xf[0]) < 1e-6) {
       bc_model[f] = Operators::OPERATOR_BC_NEUMANN;
@@ -121,10 +113,10 @@ std::pair<double, double> RunForwardProblem(const std::string& discretization,
     const AmanziGeometry::Point& xc = mesh->cell_centroid(c);
     source_c[0][c] = ana.source_exact(xc,0);
   }
-  op->global_operator()->UpdateRHS(source,false);
+  op->global_operator()->UpdateRHS(source, false);
 
   // apply boundary conditions
-  op->ApplyBCs(true,true);
+  op->ApplyBCs(true, true, true);
 
   // set up the vectors
   CompositeVector& rhs = *op->global_operator()->rhs();
@@ -132,7 +124,7 @@ std::pair<double, double> RunForwardProblem(const std::string& discretization,
   
   // fill the solution
   u.PutScalar(0.0);
-  Epetra_MultiVector& u_c = *u.ViewComponent("cell",false);
+  Epetra_MultiVector& u_c = *u.ViewComponent("cell", false);
   for (int c = 0; c != ncells; ++c) {
     const AmanziGeometry::Point& xc = mesh->cell_centroid(c);
     u_c[0][c] = ana.pressure_exact(xc, 0.0);
@@ -204,7 +196,7 @@ std::pair<double, double> RunInverseProblem(const std::string& discretization,
 
   for (int c = 0; c < ncells; c++) {
     const Point& xc = mesh->cell_centroid(c);
-    const WhetStone::Tensor& Kc = ana.Tensor(xc, 0.0);
+    const WhetStone::Tensor& Kc = ana.TensorDiffusivity(xc, 0.0);
     K->push_back(Kc);
   }
   
@@ -213,11 +205,11 @@ std::pair<double, double> RunInverseProblem(const std::string& discretization,
   std::vector<int>& bc_model = bc->bc_model();
   std::vector<double>& bc_value = bc->bc_value();
 
+  bool flag;
   for (int f = 0; f < nfaces_wghost; f++) {
     const Point& xf = mesh->face_centroid(f);
     double area = mesh->face_area(f);
-    int dir, c = BoundaryFaceGetCell(*mesh, f);
-    const Point& normal = mesh->face_normal(f, false, c, &dir);
+    Point normal = ana.face_normal_exterior(f, &flag);
 
     if (fabs(xf[0]) < 1e-6) {
       bc_model[f] = Operators::OPERATOR_BC_NEUMANN;
@@ -254,7 +246,7 @@ std::pair<double, double> RunInverseProblem(const std::string& discretization,
   op->global_operator()->UpdateRHS(source, false);
 
   // apply boundary conditions
-  op->ApplyBCs(true,true);
+  op->ApplyBCs(true, true, true);
 
   // set up the vectors
   CompositeVector& rhs = *op->global_operator()->rhs();

@@ -56,7 +56,7 @@ void RunTestDiffusionDivK2D(std::string diffusion_list, std::string upwind_list)
   std::string xmlFileName = "test/operator_diffusion.xml";
   Teuchos::ParameterXMLFileReader xmlreader(xmlFileName);
   Teuchos::ParameterList plist = xmlreader.getParameters();
-  Teuchos::ParameterList op_list = plist.get<Teuchos::ParameterList>("PK operator").sublist(diffusion_list);
+  Teuchos::ParameterList op_list = plist.sublist("PK operator").sublist(diffusion_list);
 
   // create an SIMPLE mesh framework
   MeshFactory meshfactory(&comm);
@@ -142,7 +142,7 @@ void RunTestDiffusionDivK2D(std::string diffusion_list, std::string upwind_list)
   // get and assemble the global operator
   Teuchos::RCP<Operator> global_op = op->global_operator();
   global_op->UpdateRHS(source, false);
-  op->ApplyBCs(true, true);
+  op->ApplyBCs(true, true, true);
   global_op->SymbolicAssembleMatrix();
   global_op->AssembleMatrix();
 
@@ -258,7 +258,7 @@ TEST(OPERATOR_DIFFUSION_DIVK_AVERAGE_3D) {
   }
 
   // create diffusion operator 
-  Teuchos::ParameterList op_list = plist.get<Teuchos::ParameterList>("PK operator").sublist("diffusion operator divk");
+  Teuchos::ParameterList op_list = plist.sublist("PK operator").sublist("diffusion operator divk");
   Teuchos::RCP<PDE_Diffusion> op = Teuchos::rcp(new PDE_DiffusionMFD(op_list, mesh));
   op->SetBCs(bc, bc);
   const CompositeVectorSpace& cvs = op->global_operator()->DomainMap();
@@ -306,7 +306,7 @@ TEST(OPERATOR_DIFFUSION_DIVK_AVERAGE_3D) {
   // get and assmeble the global operator
   Teuchos::RCP<Operator> global_op = op->global_operator();
   global_op->UpdateRHS(source, false);
-  op->ApplyBCs(true, true);
+  op->ApplyBCs(true, true, true);
   global_op->SymbolicAssembleMatrix();
   global_op->AssembleMatrix();
 
