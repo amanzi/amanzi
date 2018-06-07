@@ -128,6 +128,7 @@ shared=${FALSE}
 spacedim=2
 native=${FALSE}
 silo=${FALSE}
+physics=${TRUE}
 
 # Dry-Run
 dry_run=${FALSE}
@@ -299,6 +300,9 @@ Configuration:
   --opt                   build optimized TPLs and Amanzi binaries. This the default
                           configuration.
 
+  --relwithdebinfo		  build optimized TPLs and Amanzi binaries with debug info
+			  (for profiling)
+
   --debug                 build debug TPLs and Amanzi binaries.
 
   --branch=BRANCH         build TPLs and Amanzi found in BRANCH ['"${amanzi_branch}"']
@@ -328,6 +332,8 @@ Value in brackets indicates default setting.
   pflotran                build the PFlotran geochemistry backend ['"${pflotran}"']
   crunchtope              build the CrunchTope geochemistry backend ['"${crunchtope}"']
   alquimia                build the Alquimia geochemistry solver APIs ['"${alquimia}"']
+
+  physics		  build subset of Amanzi used in ATS ['"${physics}"']
 
   test_suite              run Amanzi Test Suite before installing ['"${test_suite}"']
   reg_tests               build regression tests into Amanzi Test Suite ['"${reg_tests}"']
@@ -472,6 +478,7 @@ Build Features:
     alquimia            ='"${alquimia}"'
     pflotran            ='"${pflotran}"'
     crunchtope          ='"${crunchtope}"'
+    physics             ='"${physics}"'
     native              ='"${native}"'
     Spack               ='"${Spack}"'
     xsdk                ='"${xsdk}"'
@@ -520,6 +527,10 @@ function parse_argv()
 		 enable_native=${FALSE}
                  ;;
 
+      --relwithdebinfo)
+                 build_type=RelWithDebInfo
+		 enable_native=${FALSE}
+                 ;;
       --debug)
                  build_type=Debug
 		 enable_native=${TRUE}
@@ -1554,6 +1565,7 @@ cmd_configure="${cmake_binary} \
     -DENABLE_ALQUIMIA:BOOL=${alquimia} \
     -DENABLE_PFLOTRAN:BOOL=${pflotran} \
     -DENABLE_CRUNCHTOPE:BOOL=${crunchtope} \
+    -DENABLE_Physics:BOOL=${physics} \
     -DBUILD_SHARED_LIBS:BOOL=${shared} \
     -DCCSE_BL_SPACEDIM:INT=${spacedim} \
     -DENABLE_Regression_Tests:BOOL=${reg_tests} \

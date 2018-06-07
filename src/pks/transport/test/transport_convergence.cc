@@ -83,7 +83,6 @@ TEST(CONVERGENCE_ANALYSIS_DONOR) {
     RCP<State> S = rcp(new State(state_list));
     S->RegisterDomainMesh(rcp_const_cast<Mesh>(mesh));
     S->set_time(0.0);
-    S->set_intermediate_time(0.0);
 
     Transport_PK TPK(plist, S, "transport", component_names);
     TPK.Setup(S.ptr());
@@ -124,6 +123,10 @@ TEST(CONVERGENCE_ANALYSIS_DONOR) {
     while (t_old < T1) {
       dt = std::min(TPK.StableTimeStep(), T1 - t_old);
       t_new = t_old + dt;
+
+      S->set_initial_time(t_old);
+      S->set_intermediate_time(t_old);
+      S->set_final_time(t_new);
 
       TPK.AdvanceStep(t_old, t_new);
       TPK.CommitStep(t_old, t_new, S);
@@ -195,7 +198,6 @@ TEST(CONVERGENCE_ANALYSIS_DONOR_SUBCYCLING) {
     RCP<State> S = rcp(new State(state_list));
     S->RegisterDomainMesh(rcp_const_cast<Mesh>(mesh));
     S->set_time(0.0);
-    S->set_intermediate_time(0.0);
 
     Transport_PK TPK(plist, S, "transport", component_names);
     TPK.Setup(S.ptr());
@@ -237,6 +239,10 @@ TEST(CONVERGENCE_ANALYSIS_DONOR_SUBCYCLING) {
       dt = std::min(TPK.StableTimeStep(), T1 - t_old);
       dt = dt * 7.7;
       t_new = t_old + dt;
+
+      S->set_initial_time(t_old);
+      S->set_intermediate_time(t_old);
+      S->set_final_time(t_new);
 
       TPK.AdvanceStep(t_old, t_new);
       TPK.CommitStep(t_old ,t_new, S);
@@ -311,6 +317,7 @@ TEST(CONVERGENCE_ANALYSIS_2ND) {
     Teuchos::ParameterList state_list = plist->sublist("state");
     RCP<State> S = rcp(new State(state_list));
     S->RegisterDomainMesh(rcp_const_cast<Mesh>(mesh));
+    S->set_time(0.0);
 
     Transport_PK TPK(plist, S, "transport", component_names);
     TPK.Setup(S.ptr());
@@ -355,6 +362,10 @@ TEST(CONVERGENCE_ANALYSIS_2ND) {
       dt = std::min(TPK.StableTimeStep(), T1 - t_old);
       dt = std::min(dt, dt0);
       t_new = t_old + dt;
+
+      S->set_initial_time(t_old);
+      S->set_intermediate_time(t_old);
+      S->set_final_time(t_new);
 
       TPK.AdvanceStep(t_old, t_new);
       TPK.CommitStep(t_old, t_new, S);
@@ -437,7 +448,6 @@ TEST(CONVERGENCE_ANALYSIS_DONOR_POLY) {
     RCP<State> S = rcp(new State(state_list));
     S->RegisterDomainMesh(rcp_const_cast<Mesh>(mesh));
     S->set_time(0.0);
-    S->set_intermediate_time(0.0);
 
     Transport_PK TPK(plist, S, "transport", component_names);
     TPK.Setup(S.ptr());
@@ -478,6 +488,10 @@ TEST(CONVERGENCE_ANALYSIS_DONOR_POLY) {
     while (t_old < T1) {
       dt = std::min(TPK.StableTimeStep(), T1 - t_old);
       t_new = t_old + dt;
+
+      S->set_initial_time(t_old);
+      S->set_intermediate_time(t_old);
+      S->set_final_time(t_new);
 
       TPK.AdvanceStep(t_old, t_new);
       TPK.CommitStep(t_old, t_new, S);
@@ -557,7 +571,6 @@ TEST(CONVERGENCE_ANALYSIS_2ND_POLY) {
     RCP<State> S = rcp(new State(state_list));
     S->RegisterDomainMesh(rcp_const_cast<Mesh>(mesh));
     S->set_time(0.0);
-    S->set_intermediate_time(0.0);
 
     Transport_PK TPK(plist, S, "transport", component_names);
     TPK.Setup(S.ptr());
@@ -598,6 +611,10 @@ TEST(CONVERGENCE_ANALYSIS_2ND_POLY) {
     while (t_old < T1) {
       dt = std::min(TPK.StableTimeStep(), T1 - t_old);
       t_new = t_old + dt;
+
+      S->set_initial_time(t_old);
+      S->set_intermediate_time(t_old);
+      S->set_final_time(t_new);
 
       TPK.AdvanceStep(t_old, t_new);
       TPK.CommitStep(t_old, t_new, S);

@@ -18,6 +18,7 @@
 #include "Teuchos_VerboseObjectParameterListHelpers.hpp"
 
 #include "DenseMatrix.hh"
+#include "errors.hh"
 #include "Mesh.hh"
 #include "ParallelCommunication.hh"
 #include "Tensor.hh"
@@ -142,6 +143,14 @@ void WalkaboutCheckpoint::CalculateData(
       }
     }
   }
+
+  // verify material ids
+  for (int c = 0; c < ncells_owned; ++c) {
+    if (cell_ids[c] == -1) {
+      Errors::Message msg("Negative material id: check materials attribute \"id\"");
+      Exceptions::amanzi_throw(msg);
+    }
+  } 
 
   ParallelCommunication pp(mesh);
   pp.CopyMasterCell2GhostCell(cell_ids);

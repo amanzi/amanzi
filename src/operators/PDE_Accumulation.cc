@@ -218,15 +218,15 @@ void PDE_Accumulation::CalculateEntityVolume_(
       mesh_->cell_get_nodes(c, &nodes);
       int nnodes = nodes.size();
 
-      double volume = mesh_->cell_volume(c);
+      double cellvolume = mesh_->cell_volume(c);
       std::vector<double> weights(nnodes, 1.0 / nnodes);
 
       if (mesh_->space_dimension() == 2) {
-        mfd.PolygonCentroidWeights(nodes, volume, weights);
+        mfd.PolygonCentroidWeights(nodes, cellvolume, weights);
       }
 
       for (int i = 0; i < nnodes; i++) {
-        vol[0][nodes[i]] += weights[i] * volume; 
+        vol[0][nodes[i]] += weights[i] * cellvolume; 
       }
     }
     volume.GatherGhostedToMaster(name);

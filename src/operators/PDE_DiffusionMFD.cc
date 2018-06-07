@@ -1465,8 +1465,8 @@ void PDE_DiffusionMFD::InitDiffusion_(Teuchos::ParameterList& plist)
     newton_correction_ = OPERATOR_DIFFUSION_JACOBIAN_APPROXIMATE;
     // create a local op
     jac_op_schema_ = OPERATOR_SCHEMA_BASE_FACE | OPERATOR_SCHEMA_DOFS_CELL;
-    std::string name("Jacobian FACE_CELL");
-    jac_op_ = Teuchos::rcp(new Op_Face_Cell(name, mesh_));
+    std::string opname("Jacobian FACE_CELL");
+    jac_op_ = Teuchos::rcp(new Op_Face_Cell(opname, mesh_));
     global_op_->OpPushBack(jac_op_);
   } else {
     Errors::Message msg;

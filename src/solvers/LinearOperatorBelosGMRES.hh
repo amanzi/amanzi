@@ -111,6 +111,10 @@ void LinearOperatorBelosGMRES<Matrix, Vector, VectorSpace>::Init(Teuchos::Parame
         criteria += LIN_SOLVER_ABSOLUTE_RESIDUAL;
       } else if (names[i] == "make one iteration") {
         criteria += LIN_SOLVER_MAKE_ONE_ITERATION;
+      } else {
+	Errors::Message msg;
+	msg << "LinearOperatorGMRES: \"convergence criteria\" type \"" << names[i] << "\" is not recognized.";
+	Exceptions::amanzi_throw(msg);
       }
     }
   } else {
