@@ -29,7 +29,7 @@
 
     <ParameterList name="flux operator">
       <Parameter name="method" type="string" value="dg modal"/>
-      <Parameter name="dg basis" type="string" value="natural"/>
+      <Parameter name="dg basis" type="string" value="regularized"/>
       <Parameter name="method order" type="int" value="2"/>
       <Parameter name="matrix type" type="string" value="flux"/>
       <Parameter name="flux formula" type="string" value="upwind"/>
@@ -51,7 +51,7 @@
 
     <ParameterList name="advection operator">
       <Parameter name="method" type="string" value="dg modal"/>
-      <Parameter name="dg basis" type="string" value="natural"/>
+      <Parameter name="dg basis" type="string" value="regularized"/>
       <Parameter name="method order" type="int" value="2"/>
       <Parameter name="matrix type" type="string" value="advection"/>
       <Parameter name="gradient operator on test function" type="bool" value="true"/>
@@ -72,7 +72,7 @@
 
     <ParameterList name="inverse mass operator">
       <Parameter name="method" type="string" value="dg modal"/>
-      <Parameter name="dg basis" type="string" value="natural"/>
+      <Parameter name="dg basis" type="string" value="regularized"/>
       <Parameter name="method order" type="int" value="2"/>
       <Parameter name="matrix type" type="string" value="mass inverse"/>
 
@@ -86,7 +86,7 @@
 
     <ParameterList name="reaction operator">
       <Parameter name="method" type="string" value="dg modal"/>
-      <Parameter name="dg basis" type="string" value="natural"/>
+      <Parameter name="dg basis" type="string" value="regularized"/>
       <Parameter name="method order" type="int" value="2"/>
       <Parameter name="matrix type" type="string" value="mass"/>
 
@@ -105,7 +105,7 @@
 
     <ParameterList name="flux operator">
       <Parameter name="method" type="string" value="dg modal"/>
-      <Parameter name="dg basis" type="string" value="natural"/>
+      <Parameter name="dg basis" type="string" value="regularized"/>
       <Parameter name="method order" type="int" value="2"/>
       <Parameter name="matrix type" type="string" value="flux"/>
       <Parameter name="flux formula" type="string" value="upwind"/>
@@ -127,7 +127,7 @@
 
     <ParameterList name="advection operator">
       <Parameter name="method" type="string" value="dg modal"/>
-      <Parameter name="dg basis" type="string" value="natural"/>
+      <Parameter name="dg basis" type="string" value="regularized"/>
       <Parameter name="method order" type="int" value="2"/>
       <Parameter name="matrix type" type="string" value="advection"/>
       <Parameter name="gradient operator on test function" type="bool" value="false"/>
@@ -148,7 +148,7 @@
 
     <ParameterList name="inverse mass operator">
       <Parameter name="method" type="string" value="dg modal"/>
-      <Parameter name="dg basis" type="string" value="natural"/>
+      <Parameter name="dg basis" type="string" value="regularized"/>
       <Parameter name="method order" type="int" value="2"/>
       <Parameter name="matrix type" type="string" value="mass inverse"/>
 
@@ -162,7 +162,7 @@
 
     <ParameterList name="reaction operator">
       <Parameter name="method" type="string" value="dg modal"/>
-      <Parameter name="dg basis" type="string" value="natural"/>
+      <Parameter name="dg basis" type="string" value="regularized"/>
       <Parameter name="method order" type="int" value="2"/>
       <Parameter name="matrix type" type="string" value="mass"/>
 

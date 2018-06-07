@@ -109,7 +109,7 @@ void PDE_DiffusionDG::SetProblemCoefficients(
 void PDE_DiffusionDG::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& flux,
                                      const Teuchos::Ptr<const CompositeVector>& u)
 {
-  WhetStone::DG_Modal dg(method_order_, mesh_, "natural");
+  WhetStone::DG_Modal dg(method_order_, mesh_, "regularized");
   WhetStone::DenseMatrix Acell, Aface;
 
   int d = mesh_->space_dimension();
@@ -188,7 +188,7 @@ void PDE_DiffusionDG::ApplyBCs(bool primary, bool eliminate, bool essential_eqn)
 
       // convert boundary polynomial to space polynomial
       pf.ChangeOrigin(mesh_->cell_centroid(c));
-      numi.ChangeBasisRegularToNatural(c, pf);
+      numi.ChangeBasisNaturalToRegularized(c, pf);
 
       // extract coefficients and update right-hand side 
       WhetStone::DenseMatrix& Pcell = penalty_op_->matrices[f];

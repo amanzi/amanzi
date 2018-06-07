@@ -23,7 +23,7 @@
 #include "Mesh.hh"
 #include "Point.hh"
 
-#include "Basis_Natural.hh"
+#include "Basis_Regularized.hh"
 #include "Polynomial.hh"
 #include "PolynomialOnMesh.hh"
 #include "Quadrature1D.hh"
@@ -85,11 +85,11 @@ class NumericalIntegration {
 
   // natural scaling of monomials (e.g. x^k / h^k)
   // -- scaling factor is constant for monomials of the same order
-  double MonomialNaturalScales(int c, int k);
+  double MonomialRegularizedScales(int c, int k);
   // -- polynomial is converted from regular to natural basis
-  void ChangeBasisRegularToNatural(int c, Polynomial& p);
+  void ChangeBasisNaturalToRegularized(int c, Polynomial& p);
   // -- polynomial is converted from natural to regular basis
-  void ChangeBasisNaturalToRegular(int c, Polynomial& p);
+  void ChangeBasisRegularizedToNatural(int c, Polynomial& p);
 
  private:
   void IntegrateMonomialsFace_(int c, int f, double factor, int k, Polynomial& integrals);
@@ -97,16 +97,14 @@ class NumericalIntegration {
       const AmanziGeometry::Point& x1, const AmanziGeometry::Point& x2,
       double factor, int k, Polynomial& integrals);
 
-  double MonomialNaturalSingleScale_(int k, double volume) const;
-
  private:
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
   int d_;
 
   // cached variables
   bool single_cell_;
-  Basis_Natural single_cell_basis_;
-  std::vector<Basis_Natural> basis_;
+  Basis_Regularized single_cell_basis_;
+  std::vector<Basis_Regularized> basis_;
 };
 
 }  // namespace WhetStone

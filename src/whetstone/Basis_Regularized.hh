@@ -9,11 +9,11 @@
 
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 
-  The natural basis for dG methods: (x - x0)^m / h^m.
+  The regularized basis for dG methods: (x - x0)^m / h^m.
 */
 
-#ifndef AMANZI_DG_BASIS_NATURAL_HH_
-#define AMANZI_DG_BASIS_NATURAL_HH_
+#ifndef AMANZI_DG_BASIS_REGULARIZED_HH_
+#define AMANZI_DG_BASIS_REGULARIZED_HH_
 
 #include <vector>
 
@@ -23,22 +23,22 @@
 namespace Amanzi {
 namespace WhetStone {
 
-class Basis_Natural : public Basis { 
+class Basis_Regularized : public Basis { 
  public:
-  Basis_Natural() { id_ = TAYLOR_BASIS_NATURAL; }
-  ~Basis_Natural() {};
+  Basis_Regularized() { id_ = TAYLOR_BASIS_REGULARIZED; }
+  ~Basis_Regularized() {};
 
   // initialization
   virtual void Init(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh, int c, int order);
 
-  // transformation from natural basis to owned basis (nothing to do)
+  // transformation from regularized basis to owned basis (nothing to do)
   virtual void ChangeBasisMatrix(DenseMatrix& A) const {};
   virtual void ChangeBasisVector(DenseVector& v) const {};
 
   virtual void ChangeBasisMatrix(Basis* bl, Basis* br, DenseMatrix& A) const {};
   virtual void ChangeBasisMatrix(std::shared_ptr<Basis> bl, std::shared_ptr<Basis> br, DenseMatrix& A) const {};
 
-  // Recover polynomial in regular basis
+  // Recover polynomial in natural basis
   virtual Polynomial CalculatePolynomial(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
                                          int c, int order, DenseVector& coefs) const;
 

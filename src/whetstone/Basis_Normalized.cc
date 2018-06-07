@@ -20,7 +20,7 @@ namespace Amanzi {
 namespace WhetStone {
 
 /* ******************************************************************
-* Prepare scaling data for the natural basis.
+* Prepare scaling data for the normalized basis.
 ****************************************************************** */
 void Basis_Normalized::Init(
     const Teuchos::RCP<const AmanziMesh::Mesh>& mesh, int c, int order)
@@ -58,7 +58,7 @@ void Basis_Normalized::Init(
 
 
 /* ******************************************************************
-* Transfrmation of natural basis to owned basis.
+* Transfrmation of regularized basis to owned basis.
 ****************************************************************** */
 void Basis_Normalized::ChangeBasisMatrix(DenseMatrix& A) const
 {
@@ -88,7 +88,7 @@ void Basis_Normalized::ChangeBasisMatrix(DenseMatrix& A) const
 
 
 /* ******************************************************************
-* Transfrmation of natural basis to owned basis.
+* Transformation of regularized basis to owned basis.
 ****************************************************************** */
 void Basis_Normalized::ChangeBasisVector(DenseVector& v) const
 {
@@ -105,7 +105,7 @@ void Basis_Normalized::ChangeBasisVector(DenseVector& v) const
 
 
 /* ******************************************************************
-* Transfrmation of natural basis to owned basis.
+* Transfrmation of regularized basis to owned basis.
 ****************************************************************** */
 void Basis_Normalized::ChangeBasisMatrix(
     std::shared_ptr<Basis> bl, std::shared_ptr<Basis> br, DenseMatrix& A) const

@@ -84,7 +84,7 @@ double NumericalIntegration::IntegratePolynomialCell(int c, const Polynomial& po
 
   double value(0.0);
   for (int k = 0; k <= order; ++k) {
-    double scale = MonomialNaturalScales(c, k);
+    double scale = MonomialRegularizedScales(c, k);
     int mk = integrals.MonomialSet(k).NumRows();
     for (int i = 0; i < mk; ++i) value += integrals(k, i) * tmp(k, i) / scale;
   }
@@ -290,7 +290,7 @@ void NumericalIntegration::IntegrateMonomialsCell(int c, int k, Polynomial& inte
   int nfaces = faces.size();
 
   const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
-  double factor = MonomialNaturalScales(c, k);
+  double factor = MonomialRegularizedScales(c, k);
 
   for (int n = 0; n < nfaces; ++n) {
     int f = faces[n];
@@ -454,7 +454,7 @@ double NumericalIntegration::PolynomialMaxValue(int f, const Polynomial& poly)
 * Re-scale polynomial coefficients: lazy implementation.
 * Scaling factor is constant for monomials of the same order.
 ****************************************************************** */
-double NumericalIntegration::MonomialNaturalScales(int c, int k) {
+double NumericalIntegration::MonomialRegularizedScales(int c, int k) {
   if (! single_cell_) {
     basis_[c].Init(mesh_, c, k);
     return basis_[c].monomial_scales()[k];
@@ -465,27 +465,21 @@ double NumericalIntegration::MonomialNaturalScales(int c, int k) {
 }
 
 
-void NumericalIntegration::ChangeBasisRegularToNatural(int c, Polynomial& p)
+void NumericalIntegration::ChangeBasisNaturalToRegularized(int c, Polynomial& p)
 {
   for (int k = 0; k <= p.order(); ++k) {
     auto& mono = p.MonomialSet(k);
-    mono /= MonomialNaturalScales(c, k);
+    mono /= MonomialRegularizedScales(c, k);
   }
 }
 
 
-void NumericalIntegration::ChangeBasisNaturalToRegular(int c, Polynomial& p)
+void NumericalIntegration::ChangeBasisRegularizedToNatural(int c, Polynomial& p)
 {
   for (int k = 0; k <= p.order(); ++k) {
     auto& mono = p.MonomialSet(k);
-    mono *= MonomialNaturalScales(c, k);
+    mono *= MonomialRegularizedScales(c, k);
   }
-}
-
-
-double NumericalIntegration::MonomialNaturalSingleScale_(int k, double volume) const {
-  // return 1.0;
-  return std::pow(volume, -(double)k / d_);
 }
 
 }  // namespace WhetStone

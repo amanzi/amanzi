@@ -90,7 +90,7 @@ TEST(DG3D_MASS_MATRIX) {
   T(0, 0) = 2.0;
 
   for (int k = 0; k < 3; k++) {
-    DG_Modal dg1(k, mesh, "natural");
+    DG_Modal dg1(k, mesh, "regularized");
     dg1.MassMatrix(0, T, M0);
     int nk = M0.NumRows();
 
@@ -340,7 +340,7 @@ TEST(DG2D_ADVECTION_MATRIX_CELL) {
   Teuchos::RCP<Mesh> mesh = meshfactory("test/one_quad.exo"); 
 
   for (int k = 0; k < 3; k++) {
-    DG_Modal dg(k, mesh, "natural");
+    DG_Modal dg(k, mesh, "regularized");
 
     DenseMatrix A0, A1;
     VectorPolynomial u(2, 2);
@@ -461,7 +461,7 @@ TEST(DG3D_ADVECTION_MATRIX_CELL) {
 
   int d(3);
   for (int k = 0; k < 2; k++) {
-    DG_Modal dg(k, mesh, "natural");
+    DG_Modal dg(k, mesh, "regularized");
 
     DenseMatrix A0;
     VectorPolynomial u(d, 3);

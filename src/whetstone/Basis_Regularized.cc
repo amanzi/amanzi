@@ -9,19 +9,19 @@
 
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 
-  The natural basis for dG methods: x^k y^l / h^(k+l), where
+  The regularized basis for dG methods: x^k y^l / h^(k+l), where
   h is a measure of cell size.
 */
 
-#include "Basis_Natural.hh"
+#include "Basis_Regularized.hh"
 
 namespace Amanzi {
 namespace WhetStone {
 
 /* ******************************************************************
-* Prepare scaling data for the natural basis.
+* Prepare scaling data for the regularized basis.
 ****************************************************************** */
-void Basis_Natural::Init(
+void Basis_Regularized::Init(
     const Teuchos::RCP<const AmanziMesh::Mesh>& mesh, int c, int order)
 {
   int k0 = monomial_scales_.size();
@@ -41,7 +41,7 @@ void Basis_Natural::Init(
 /* ******************************************************************
 * Recover polynomial from data coeffieints. 
 ****************************************************************** */
-Polynomial Basis_Natural::CalculatePolynomial(
+Polynomial Basis_Regularized::CalculatePolynomial(
     const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
     int c, int order, DenseVector& coefs) const
 {

@@ -49,7 +49,7 @@ add_amanzi_library(whetstone
                           MFD3D_Lagrange.cc
                           MFD3D_LagrangeSerendipity.cc
                           DG_Modal.cc
-                          Basis_Natural.cc Basis_Normalized.cc Basis_Orthonormalized.cc
+                          Basis_Regularized.cc Basis_Normalized.cc Basis_Orthonormalized.cc
                           nlfv.cc 
                           Tensor.cc DenseMatrix.cc
                           Polynomial.cc VectorPolynomial.cc
@@ -59,7 +59,7 @@ add_amanzi_library(whetstone
                    HEADERS DenseMatrix.hh DenseVector.hh
                            DG_Modal.hh
                            Basis.hh BasisFactory.hh
-                           Basis_Natural.hh Basis_Normalized.hh Basis_Orthonormalized.hh
+                           Basis_Regularized.hh Basis_Normalized.hh Basis_Orthonormalized.hh
                            lapack.hh
                            InnerProduct.hh InnerProductL2.hh InnerProductH1.hh
                            BilinearForm.hh Projectors.hh

@@ -527,7 +527,7 @@ void AdvectionTransient(std::string filename, int nx, int ny, double dt,
   sol.PutScalar(0.0);
 
   AnalyticDG ana(mesh, order);
-  WhetStone::DG_Modal dg(order, mesh, "natural");
+  WhetStone::DG_Modal dg(order, mesh, "regularized");
 
   Epetra_MultiVector& sol_c = *sol.ViewComponent("cell");
   ana.InitialGuess(dg, sol_c, 0.0);

@@ -154,7 +154,7 @@ int MFD3D_CrouzeixRaviart::H1consistencyHO_(
 
   for (auto it = poly.begin(); it.end() <= poly.end(); ++it) { 
     const int* index = it.multi_index();
-    double factor = numi.MonomialNaturalScales(c, it.MonomialSetOrder());
+    double factor = numi.MonomialRegularizedScales(c, it.MonomialSetOrder());
     Polynomial cmono(d_, index, factor);
     cmono.set_origin(xc);  
 
@@ -203,7 +203,7 @@ int MFD3D_CrouzeixRaviart::H1consistencyHO_(
     // N and R: degrees of freedom in cells
     if (cmono.order() > 1) {
       Polynomial tmp = cmono.Laplacian();
-      numi.ChangeBasisRegularToNatural(c, tmp);
+      numi.ChangeBasisNaturalToRegularized(c, tmp);
 
       for (auto jt = tmp.begin(); jt.end() <= tmp.end(); ++jt) {
         int m = jt.MonomialSetOrder();
@@ -235,8 +235,8 @@ int MFD3D_CrouzeixRaviart::H1consistencyHO_(
   // set the Gramm-Schidt matrix for gradients of polynomials
   G_.PutScalar(0.0);
 
-  // -- gradient of a naturally scaled polynomial needs correction
-  double scale = numi.MonomialNaturalScales(c, 1);
+  // -- gradient of a regularizedly scaled polynomial needs correction
+  double scale = numi.MonomialRegularizedScales(c, 1);
 
   for (auto it = poly.begin(); it.end() <= poly.end(); ++it) {
     const int* index = it.multi_index();
@@ -508,7 +508,7 @@ void MFD3D_CrouzeixRaviart::ProjectorCell_HO_(
     G_.Multiply(v4, v5, false);
 
     uc[i].SetPolynomialCoefficients(v5);
-    numi.ChangeBasisNaturalToRegular(c, uc[i]);
+    numi.ChangeBasisRegularizedToNatural(c, uc[i]);
 
     // uniqueness requires to specify constant in polynomial
     if (order_ == 1) {
@@ -539,7 +539,7 @@ void MFD3D_CrouzeixRaviart::ProjectorCell_HO_(
     if (type == Type::L2 && ndof_c > 0) {
       v5(0) = uc[i](0, 0);
 
-      DG_Modal dg(order_, mesh_, "natural");
+      DG_Modal dg(order_, mesh_, "regularized");
 
       DenseMatrix M, M2;
       DenseVector v6(nd - ndof_c);
@@ -560,7 +560,7 @@ void MFD3D_CrouzeixRaviart::ProjectorCell_HO_(
       M.Multiply(v4, v5, false);
 
       uc[i].SetPolynomialCoefficients(v5);
-      numi.ChangeBasisNaturalToRegular(c, uc[i]);
+      numi.ChangeBasisRegularizedToNatural(c, uc[i]);
     }
 
     // change origin from centroid to zero
@@ -657,7 +657,7 @@ void MFD3D_CrouzeixRaviart::ProjectorGradientCell_(
         int row = it.PolynomialPosition();
         const int* index = it.multi_index();
 
-        double factor = numi.MonomialNaturalScales(c, it.MonomialSetOrder());
+        double factor = numi.MonomialRegularizedScales(c, it.MonomialSetOrder());
         Polynomial cmono(d_, index, factor);
         cmono.set_origin(xc);  
 
@@ -678,7 +678,7 @@ void MFD3D_CrouzeixRaviart::ProjectorGradientCell_(
         if (order_ > 1) {
           VectorPolynomial grad(d_, d_);
           grad.Gradient(cmono);
-          numi.ChangeBasisRegularToNatural(c, grad[j]);
+          numi.ChangeBasisNaturalToRegularized(c, grad[j]);
 
           for (auto jt = grad[j].begin(); jt.end() <= grad[j].end(); ++jt) {
             int m = jt.MonomialSetOrder();
@@ -691,14 +691,14 @@ void MFD3D_CrouzeixRaviart::ProjectorGradientCell_(
 
       // calculate coefficients of polynomial
       DenseMatrix M;
-      DG_Modal dg(order_ - 1, mesh_, "natural");
+      DG_Modal dg(order_ - 1, mesh_, "regularized");
       dg.MassMatrix(c, T, integrals_, M);
 
       M.Inverse();
       M.Multiply(v4, v5, false);
 
       uc[i][j].SetPolynomialCoefficients(v5);
-      numi.ChangeBasisNaturalToRegular(c, uc[i][j]);
+      numi.ChangeBasisRegularizedToNatural(c, uc[i][j]);
 
       // change origin from centroid to zero
       AmanziGeometry::Point zero(d_);

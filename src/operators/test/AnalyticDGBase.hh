@@ -97,7 +97,7 @@ class AnalyticDGBase {
         if (! inside(xc)) continue;
 
       SolutionTaylor(xc, t, coefs);
-      numi.ChangeBasisRegularToNatural(c, coefs);
+      numi.ChangeBasisNaturalToRegularized(c, coefs);
 
       Amanzi::WhetStone::DenseVector data;
       coefs.GetPolynomialCoefficients(data);
@@ -135,7 +135,7 @@ class AnalyticDGBase {
       poly.set_origin(xc);
 
       SolutionTaylor(xc, t, sol);
-      numi.ChangeBasisRegularToNatural(c, sol);
+      numi.ChangeBasisNaturalToRegularized(c, sol);
 
       Amanzi::WhetStone::Polynomial poly_err(poly);
       poly_err -= sol;

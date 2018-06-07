@@ -83,7 +83,7 @@ int MFD3D_Lagrange::H1consistency(
 
   for (auto it = poly.begin(); it.end() <= poly.end(); ++it) { 
     const int* index = it.multi_index();
-    double factor = numi.MonomialNaturalScales(c, it.MonomialSetOrder());
+    double factor = numi.MonomialRegularizedScales(c, it.MonomialSetOrder());
     Polynomial cmono(d_, index, factor);
     cmono.set_origin(xc);  
 
@@ -202,7 +202,7 @@ int MFD3D_Lagrange::H1consistency(
     // N and R: degrees of freedom in cells
     if (cmono.order() > 1) {
       Polynomial tmp = cmono.Laplacian();
-      numi.ChangeBasisRegularToNatural(c, tmp);
+      numi.ChangeBasisNaturalToRegularized(c, tmp);
 
       for (auto jt = tmp.begin(); jt.end() <= tmp.end(); ++jt) {
         int m = jt.MonomialSetOrder();
@@ -234,8 +234,8 @@ int MFD3D_Lagrange::H1consistency(
   // set the Gramm-Schidt matrix for gradients of polynomials
   G_.PutScalar(0.0);
 
-  // -- gradient of a naturally scaled polynomial needs correction
-  double scale = numi.MonomialNaturalScales(c, 1);
+  // -- gradient of a regularizedly scaled polynomial needs correction
+  double scale = numi.MonomialRegularizedScales(c, 1);
    
   for (auto it = poly.begin(); it.end() <= poly.end(); ++it) {
     const int* index = it.multi_index();
@@ -437,7 +437,7 @@ void MFD3D_Lagrange::ProjectorCell_(
     G_.Multiply(v4, v5, false);
 
     uc[i].SetPolynomialCoefficients(v5);
-    numi.ChangeBasisNaturalToRegular(c, uc[i]);
+    numi.ChangeBasisRegularizedToNatural(c, uc[i]);
 
     // calculate the constant value for elliptic projector
     if (order_ == 1) {
@@ -468,7 +468,7 @@ void MFD3D_Lagrange::ProjectorCell_(
     if (type == Type::L2 && ndof_c > 0) {
       v5(0) = uc[i](0, 0);
 
-      DG_Modal dg(order_, mesh_, "natural");
+      DG_Modal dg(order_, mesh_, "regularized");
 
       DenseMatrix M, M2;
       DenseVector v6(nd - ndof_c);
@@ -489,7 +489,7 @@ void MFD3D_Lagrange::ProjectorCell_(
       M.Multiply(v4, v5, false);
 
       uc[i].SetPolynomialCoefficients(v5);
-      numi.ChangeBasisNaturalToRegular(c, uc[i]);
+      numi.ChangeBasisRegularizedToNatural(c, uc[i]);
     }
 
     // set origin to zero

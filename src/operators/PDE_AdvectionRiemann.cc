@@ -187,7 +187,7 @@ void PDE_AdvectionRiemann::ApplyBCs(bool primary, bool eliminate, bool essential
 
       // -- convert boundary polynomial to space polynomial
       pf.ChangeOrigin(mesh_->cell_centroid(c));
-      numi.ChangeBasisRegularToNatural(c, pf);
+      numi.ChangeBasisNaturalToRegularized(c, pf);
 
       // -- extract coefficients and update right-hand side 
       WhetStone::DenseMatrix& Aface = local_op_->matrices[f];

@@ -90,7 +90,7 @@ int MFD3D_LagrangeSerendipity::H1consistency(
   }
 
   // setup matrix representing Laplacian of polynomials
-  double scale = numi.MonomialNaturalScales(c, 1);
+  double scale = numi.MonomialRegularizedScales(c, 1);
 
   DenseMatrix L(nd, nd);
   L.PutScalar(0.0);
@@ -99,7 +99,7 @@ int MFD3D_LagrangeSerendipity::H1consistency(
     const int* index = it.multi_index();
     int k = it.PolynomialPosition();
 
-    double factor = numi.MonomialNaturalScales(c, it.MonomialSetOrder());
+    double factor = numi.MonomialRegularizedScales(c, it.MonomialSetOrder());
     Polynomial mono(d_, index, factor);
     Polynomial lap = mono.Laplacian();
     
@@ -209,7 +209,7 @@ void MFD3D_LagrangeSerendipity::L2Cell(
 
     uc[i].Reshape(d_, order_, true);
     uc[i].SetPolynomialCoefficients(v2);
-    numi.ChangeBasisNaturalToRegular(c, uc[i]);
+    numi.ChangeBasisRegularizedToNatural(c, uc[i]);
 
     // set origin to zero
     AmanziGeometry::Point zero(d_);

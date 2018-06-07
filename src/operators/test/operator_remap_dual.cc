@@ -478,7 +478,7 @@ void RemapTestsDualRK(int order_p, int order_u,
     }
     auto poly = dg.cell_basis(c).CalculatePolynomial(mesh0, c, order_p, data);
 
-    numi.ChangeBasisNaturalToRegular(c, poly);
+    numi.ChangeBasisRegularizedToNatural(c, poly);
     mass0 += numi.IntegratePolynomialCell(c, poly);
   }
   double mass_tmp(mass0);
@@ -579,7 +579,7 @@ void RemapTestsDualRK(int order_p, int order_u,
       data(i) = p2c[i][c];
     }
     auto poly = dg.cell_basis(c).CalculatePolynomial(mesh0, c, order_p, data);
-    numi.ChangeBasisNaturalToRegular(c, poly);
+    numi.ChangeBasisRegularizedToNatural(c, poly);
 
     // const AmanziGeometry::Point& xg = cell_geometric_center(*mesh1, c);
     const AmanziGeometry::Point& xg = mesh1->cell_centroid(c);
@@ -642,7 +642,7 @@ void RemapTestsDualRK(int order_p, int order_u,
     // optional projection on the space of polynomials 
     if (order_p > 0 && order_p < 3 && dim == 2) {
       poly = dg.cell_basis(c).CalculatePolynomial(mesh0, c, order_p, data);
-      numi.ChangeBasisNaturalToRegular(c, poly);
+      numi.ChangeBasisRegularizedToNatural(c, poly);
 
       maps->ProjectPolynomial(c, poly);
       poly.ChangeOrigin(mesh1->cell_centroid(c));

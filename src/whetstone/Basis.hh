@@ -34,13 +34,13 @@ class Basis {
   // initialization
   virtual void Init(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh, int c, int order) = 0;
 
-  // transformation from natural basis to owned basis
+  // transformation from regularized basis to owned basis
   virtual void ChangeBasisMatrix(DenseMatrix& A) const = 0;
   virtual void ChangeBasisVector(DenseVector& v) const = 0;
 
   virtual void ChangeBasisMatrix(std::shared_ptr<Basis> bl, std::shared_ptr<Basis> br, DenseMatrix& A) const = 0;
 
-  // recover polynomial in regular basis
+  // recover polynomial in natural basis
   virtual Polynomial CalculatePolynomial(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
                                          int c, int order, DenseVector& coefs) const = 0;
 
