@@ -58,7 +58,7 @@ void Basis_Normalized::Init(
 
 
 /* ******************************************************************
-* Transformation of regularized basis to owned basis.
+* Transformation from natural basis to owned basis.
 ****************************************************************** */
 void Basis_Normalized::ChangeBasisMatrix(DenseMatrix& A) const
 {
@@ -88,7 +88,7 @@ void Basis_Normalized::ChangeBasisMatrix(DenseMatrix& A) const
 
 
 /* ******************************************************************
-* Transformation of regularized basis to owned basis.
+* Transformation from natural basis to owned basis.
 ****************************************************************** */
 void Basis_Normalized::ChangeBasisVector(DenseVector& v) const
 {
@@ -105,7 +105,7 @@ void Basis_Normalized::ChangeBasisVector(DenseVector& v) const
 
 
 /* ******************************************************************
-* Transfrmation of regularized basis to owned basis.
+* Transformation from natural basis to owned basis.
 ****************************************************************** */
 void Basis_Normalized::ChangeBasisMatrix(
     std::shared_ptr<Basis> bl, std::shared_ptr<Basis> br, DenseMatrix& A) const

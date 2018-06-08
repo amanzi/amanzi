@@ -31,12 +31,11 @@ class Basis_Regularized : public Basis {
   // initialization
   virtual void Init(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh, int c, int order);
 
-  // transformation from regularized basis to owned basis (nothing to do)
-  virtual void ChangeBasisMatrix(DenseMatrix& A) const {};
-  virtual void ChangeBasisVector(DenseVector& v) const {};
+  // transformation from natural basis to owned basis
+  virtual void ChangeBasisMatrix(DenseMatrix& A) const;
+  virtual void ChangeBasisVector(DenseVector& v) const;
 
-  virtual void ChangeBasisMatrix(Basis* bl, Basis* br, DenseMatrix& A) const {};
-  virtual void ChangeBasisMatrix(std::shared_ptr<Basis> bl, std::shared_ptr<Basis> br, DenseMatrix& A) const {};
+  virtual void ChangeBasisMatrix(std::shared_ptr<Basis> bl, std::shared_ptr<Basis> br, DenseMatrix& A) const;
 
   // Recover polynomial in natural basis
   virtual Polynomial CalculatePolynomial(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
@@ -48,6 +47,8 @@ class Basis_Regularized : public Basis {
  private:
   using Basis::id_;
   std::vector<double> monomial_scales_;
+
+  int d_, order_;
 };
 
 }  // namespace WhetStone

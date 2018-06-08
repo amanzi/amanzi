@@ -38,7 +38,7 @@ class Basis {
   // initialization
   virtual void Init(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh, int c, int order) = 0;
 
-  // transformation from regularized basis to owned basis
+  // transformation from natural basis to owned basis
   virtual void ChangeBasisMatrix(DenseMatrix& A) const = 0;
   virtual void ChangeBasisVector(DenseVector& v) const = 0;
 

@@ -85,9 +85,8 @@ double NumericalIntegration::IntegratePolynomialCell(int c, const Polynomial& po
 
   double value(0.0);
   for (int k = 0; k <= order; ++k) {
-    double scale = MonomialRegularizedScales(c, k);
     int mk = integrals.MonomialSet(k).NumRows();
-    for (int i = 0; i < mk; ++i) value += integrals(k, i) * tmp(k, i) / scale;
+    for (int i = 0; i < mk; ++i) value += integrals(k, i) * tmp(k, i);
   }
 
   return value;
@@ -285,13 +284,12 @@ void NumericalIntegration::IntegrateMonomialsCell(int c, int k, Polynomial& inte
   int nfaces = faces.size();
 
   const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
-  double factor = MonomialRegularizedScales(c, k);
 
   for (int n = 0; n < nfaces; ++n) {
     int f = faces[n];
     const AmanziGeometry::Point& xf = mesh_->face_centroid(f);
     const AmanziGeometry::Point& normal = mesh_->face_normal(f);
-    double tmp = factor * dirs[n] * ((xf - xc) * normal) / (k + d_);
+    double tmp = dirs[n] * ((xf - xc) * normal) / (k + d_);
     
     if (d_ == 3) {
       tmp /= mesh_->face_area(f);
