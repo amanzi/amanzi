@@ -55,7 +55,7 @@ void RunTestMarshak(std::string op_list_name, double TemperatureFloor) {
   ParameterList plist = xmlreader.getParameters();
 
   // create an MSTK mesh framework
-  ParameterList region_list = plist.get<Teuchos::ParameterList>("regions");
+  ParameterList region_list = plist.sublist("regions");
   Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(2, region_list, &comm));
 
   MeshFactory meshfactory(&comm);
@@ -167,7 +167,7 @@ void RunTestMarshak(std::string op_list_name, double TemperatureFloor) {
     op_acc.AddAccumulationDelta(*solution, heat_capacity, heat_capacity, dt, "cell");
 
     // apply BCs and assemble
-    op->ApplyBCs(true, true);
+    op->ApplyBCs(true, true, true);
     global_op->SymbolicAssembleMatrix();
     global_op->AssembleMatrix();
 

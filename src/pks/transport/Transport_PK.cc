@@ -14,7 +14,6 @@
 #include <algorithm>
 #include <vector>
 
-#include "boost/algorithm/string.hpp"
 #include "Epetra_Vector.h"
 #include "Epetra_IntVector.h"
 #include "Epetra_MultiVector.h"
@@ -58,10 +57,8 @@ Transport_PK::Transport_PK(Teuchos::ParameterList& pk_tree,
   soln_(soln)
 {
   std::string pk_name = pk_tree.name();
-  const char* result = pk_name.data();
-
-  boost::iterator_range<std::string::iterator> res = boost::algorithm::find_last(pk_name, "->"); 
-  if (res.end() - pk_name.end() != 0) boost::algorithm::erase_head(pk_name, res.end() - pk_name.begin());
+  auto found = pk_name.rfind("->");
+  if (found != std::string::npos) pk_name.erase(0, found + 2);
 
   if (glist->isSublist("cycle driver")) {
     if (glist->sublist("cycle driver").isParameter("component names")) {
@@ -831,7 +828,7 @@ bool Transport_PK::AdvanceStep(double t_old, double t_new, bool reinit)
         }
         op2->AddAccumulationDelta(sol, factor, factor, dt_MPC, "cell");
  
-        op1->ApplyBCs(true, true);
+        op1->ApplyBCs(true, true, true);
         op->SymbolicAssembleMatrix();
         op->AssembleMatrix();
 
@@ -896,7 +893,7 @@ bool Transport_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 
       Epetra_MultiVector& rhs_cell = *op->rhs()->ViewComponent("cell");
       ComputeSources_(t_new, 1.0, rhs_cell, tcc_prev, i, i);
-      op1->ApplyBCs(true, true);
+      op1->ApplyBCs(true, true, true);
 
       // add accumulation term
       Epetra_MultiVector& fac1 = *factor.ViewComponent("cell");

@@ -114,7 +114,7 @@ TEST(OPERATOR_STOKES_EXACTNESS) {
   // -- create an elasticity operator using in particular schema data. In the future,
   // -- we could take definition of DOFs data from WhetStone using the provided 
   // -- discretization method.
-  Teuchos::ParameterList op_list = plist.get<Teuchos::ParameterList>("PK operator").sublist("elasticity operator");
+  Teuchos::ParameterList op_list = plist.sublist("PK operator").sublist("elasticity operator");
   Teuchos::RCP<PDE_Elasticity> op00 = Teuchos::rcp(new PDE_Elasticity(op_list, mesh));
   op00->SetTensorCoefficient(K);
   // -- add boundary conditions to the discrete PDE: Lame equation
@@ -123,7 +123,7 @@ TEST(OPERATOR_STOKES_EXACTNESS) {
 
   // -- create a divergence operator. Note that it uses two different schemas for DOFs 
   // for velocity and pressure.
-  op_list = plist.get<Teuchos::ParameterList>("PK operator").sublist("divergence operator");
+  op_list = plist.sublist("PK operator").sublist("divergence operator");
   Teuchos::RCP<PDE_Abstract> op10 = Teuchos::rcp(new PDE_Abstract(op_list, mesh));
   // -- add boundary conditions to the discrete PDE: incompressibility equation
   op10->SetBCs(bcf, bcf);
@@ -167,7 +167,7 @@ TEST(OPERATOR_STOKES_EXACTNESS) {
   // into a global matrix.
   op00->UpdateMatrices();
   global00->UpdateRHS(source, true);
-  op00->ApplyBCs(true, true);
+  op00->ApplyBCs(true, true, true);
   global00->SymbolicAssembleMatrix();
   global00->AssembleMatrix();
 
@@ -175,7 +175,7 @@ TEST(OPERATOR_STOKES_EXACTNESS) {
   // a matrix-free matvec inside an iterative solver, there is no need to
   // assemble a global matrix.
   op10->UpdateMatrices();
-  op10->ApplyBCs(false, true);
+  op10->ApplyBCs(false, true, false);
 
   // populate local matrices in the pressure block (for preconditioner)
   CompositeVector vol(global11->DomainMap());

@@ -54,6 +54,22 @@ void VectorPolynomial::PutScalar(double val)
 
 
 /* ******************************************************************
+* Calculate value at a point 
+****************************************************************** */
+DenseVector VectorPolynomial::Value(const AmanziGeometry::Point& xp) const
+{
+  int n = polys_.size();
+  DenseVector val(n);
+
+  for (int i = 0; i < n; ++i) {
+    val(i) = polys_[i].Value(xp);
+  }
+
+  return val;
+}
+
+
+/* ******************************************************************
 * Create object using gradient of a polynomial
 ****************************************************************** */
 void VectorPolynomial::Gradient(const Polynomial p)
@@ -159,15 +175,6 @@ void VectorPolynomial::Multiply(const std::vector<std::vector<Polynomial> >& A,
 /* ******************************************************************
 * Ring algebra
 ****************************************************************** */
-VectorPolynomial& VectorPolynomial::operator*=(double val)
-{
-  for (int i = 0; i < polys_.size(); ++i) {
-    polys_[i] *= val;
-  }
-  return *this;
-}
-
-
 VectorPolynomial& VectorPolynomial::operator+=(const VectorPolynomial& vp)
 {
   for (int i = 0; i < polys_.size(); ++i) {
@@ -175,7 +182,6 @@ VectorPolynomial& VectorPolynomial::operator+=(const VectorPolynomial& vp)
   }
   return *this;
 }
-
 
 VectorPolynomial& VectorPolynomial::operator-=(const VectorPolynomial& vp)
 {

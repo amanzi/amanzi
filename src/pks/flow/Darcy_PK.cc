@@ -15,7 +15,6 @@
 // TPLs
 #include "Epetra_Import.h"
 #include "Epetra_Vector.h"
-#include "boost/algorithm/string.hpp"
 
 // Amanzi
 #include "errors.hh"
@@ -50,10 +49,8 @@ Darcy_PK::Darcy_PK(Teuchos::ParameterList& pk_tree,
   S_ = S;
 
   std::string pk_name = pk_tree.name();
-  const char* result = pk_name.data();
-
-  boost::iterator_range<std::string::iterator> res = boost::algorithm::find_last(pk_name,"->"); 
-  if (res.end() - pk_name.end() != 0) boost::algorithm::erase_head(pk_name,  res.end() - pk_name.begin());
+  auto found = pk_name.rfind("->");
+  if (found != std::string::npos) pk_name.erase(0, found + 2);
 
   // We need the flow list
   Teuchos::RCP<Teuchos::ParameterList> pk_list = Teuchos::sublist(glist, "PKs", true);
@@ -467,7 +464,7 @@ bool Darcy_PK::AdvanceStep(double t_old, double t_new, bool reinit)
     op_acc_->AddAccumulationTerm(wi, "cell");
   }
 
-  op_diff_->ApplyBCs(true, true);
+  op_diff_->ApplyBCs(true, true, true);
 
   CompositeVector& rhs = *op_->rhs();
   AddSourceTerms(rhs);

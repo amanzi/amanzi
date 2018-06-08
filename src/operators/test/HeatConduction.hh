@@ -49,7 +49,7 @@ class HeatConduction {
 
     for (int c = 0; c < ncells; c++) {
       const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
-      const WhetStone::Tensor& Kc = ana_.Tensor(xc, 0.0);
+      const WhetStone::Tensor& Kc = ana_.TensorDiffusivity(xc, 0.0);
       vcell[0][c] = Kc(0, 0);
     }
 
@@ -173,7 +173,7 @@ class HeatConduction {
 
   double Conduction(int c, double T) const {
     const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
-    const WhetStone::Tensor& Kc = ana_.Tensor(xc, 0.0);
+    const WhetStone::Tensor& Kc = ana_.TensorDiffusivity(xc, 0.0);
     return Kc(0, 0);
   }
 

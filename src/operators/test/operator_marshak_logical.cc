@@ -58,7 +58,7 @@ void RunTestMarshakLogical(std::string op_list_name) {
   ParameterList plist = xmlreader.getParameters();
 
   // create a logical mesh
-  ParameterList region_list = plist.get<Teuchos::ParameterList>("regions");
+  ParameterList region_list = plist.sublist("regions");
   Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(3, region_list, &comm));
 
   MeshLogicalFactory fac(&comm, gm);
@@ -172,7 +172,7 @@ void RunTestMarshakLogical(std::string op_list_name) {
     op_acc.AddAccumulationDelta(solution, heat_capacity, heat_capacity, dT, "cell");
 
     // apply BCs and assemble
-    op.ApplyBCs(true, true);
+    op.ApplyBCs(true, true, true);
     global_op->SymbolicAssembleMatrix();
     global_op->AssembleMatrix();
 

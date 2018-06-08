@@ -9,7 +9,14 @@
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 
   Non-polynomial solution plus discontinous (scalar) coefficient. This solution
-  has discontinuous tangential flux.
+  has discontinuous tangential flux:
+
+  Solution:  p = x^2 / k1 + y^2       if x < 0.5,
+             p = x^x / k2 + y^2 + b2  otherwise
+  Diffusion: K = k1 (1 + x sin(y))      if x < 0.5,
+             K = k2 (1 + 2 x^2 sin(y))  otherwise
+  Velocity: v = [0, 0]
+  Source: f = -div(K grad(p))
 */
 
 #ifndef AMANZI_OPERATOR_ANALYTIC_03_HH_
@@ -30,7 +37,7 @@ class Analytic03 : public AnalyticBase {
   }
   ~Analytic03() {};
 
-  Amanzi::WhetStone::Tensor Tensor(const Amanzi::AmanziGeometry::Point& p, double t) {
+  Amanzi::WhetStone::Tensor TensorDiffusivity(const Amanzi::AmanziGeometry::Point& p, double t) {
     double x = p[0];
     double y = p[1];
     Amanzi::WhetStone::Tensor K(dim, 1);
@@ -81,6 +88,10 @@ class Analytic03 : public AnalyticBase {
     return v;
   }
 
+  Amanzi::AmanziGeometry::Point advection_exact(const Amanzi::AmanziGeometry::Point& p, double t) {
+    return Amanzi::AmanziGeometry::Point(2);
+  }
+
   double source_exact(const Amanzi::AmanziGeometry::Point& p, double t) { 
     double x = p[0];
     double y = p[1];
@@ -88,7 +99,7 @@ class Analytic03 : public AnalyticBase {
     double plaplace, pmean, kmean;
     Amanzi::AmanziGeometry::Point pgrad(dim), kgrad(dim);
 
-    kmean = (Tensor(p, t))(0, 0);
+    kmean = (TensorDiffusivity(p, t))(0, 0);
     kgrad = ScalarTensorGradient(p, t);
 
     pmean = pressure_exact(p, t);

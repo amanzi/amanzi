@@ -59,7 +59,7 @@ void CurlCurl(double c_t, double tolerance, bool initial_guess) {
   ParameterList plist = xmlreader.getParameters();
 
   // create a MSTK mesh framework
-  ParameterList region_list = plist.get<Teuchos::ParameterList>("regions");
+  ParameterList region_list = plist.sublist("regions");
   Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(3, region_list, &comm));
 
   MeshFactory meshfactory(&comm);
@@ -117,8 +117,7 @@ void CurlCurl(double c_t, double tolerance, bool initial_guess) {
   }
 
   // create electromagnetics operator
-  Teuchos::ParameterList olist = plist.get<Teuchos::ParameterList>("PK operator")
-                                      .get<Teuchos::ParameterList>("electromagnetics operator");
+  Teuchos::ParameterList olist = plist.sublist("PK operator").sublist("electromagnetics operator");
   Teuchos::RCP<PDE_Electromagnetics> op_curlcurl = Teuchos::rcp(new PDE_Electromagnetics(olist, mesh));
   op_curlcurl->SetBCs(bc, bc);
   const CompositeVectorSpace& cvs = op_curlcurl->global_operator()->DomainMap();
@@ -173,7 +172,7 @@ void CurlCurl(double c_t, double tolerance, bool initial_guess) {
   op_acc->AddAccumulationDelta(solution, phi, phi, dT, "edge");
 
   // BCs, sources, and assemble
-  op_curlcurl->ApplyBCs(true, true);
+  op_curlcurl->ApplyBCs(true, true, true);
   global_op->SymbolicAssembleMatrix();
   global_op->AssembleMatrix();
   global_op->UpdateRHS(source, false);

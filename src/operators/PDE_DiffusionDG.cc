@@ -151,7 +151,7 @@ void PDE_DiffusionDG::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& 
 /* ******************************************************************
 * Apply boundary conditions to the local matrices.
 ****************************************************************** */
-void PDE_DiffusionDG::ApplyBCs(bool primary, bool eliminate)
+void PDE_DiffusionDG::ApplyBCs(bool primary, bool eliminate, bool essential_eqn)
 {
   const std::vector<int>& bc_model = bcs_trial_[0]->bc_model();
   const std::vector<std::vector<double> >& bc_value = bcs_trial_[0]->bc_value_vector();

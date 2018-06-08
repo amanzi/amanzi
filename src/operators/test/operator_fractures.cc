@@ -55,7 +55,7 @@ void RunTest(int icase, bool gravity) {
   ParameterList plist = xmlreader.getParameters();
 
   // create an SIMPLE mesh framework
-  ParameterList region_list = plist.get<Teuchos::ParameterList>("regions");
+  ParameterList region_list = plist.sublist("regions");
   Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(3, region_list, &comm));
 
   MeshFactory meshfactory(&comm);
@@ -131,7 +131,7 @@ void RunTest(int icase, bool gravity) {
   op->UpdateMatrices(Teuchos::null, Teuchos::null);
 
   // apply BCs and assemble
-  op->ApplyBCs(true, true);
+  op->ApplyBCs(true, true, true);
   global_op->SymbolicAssembleMatrix();
   global_op->AssembleMatrix();
     

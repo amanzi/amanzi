@@ -8,29 +8,24 @@
 
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 
-  Solution: u = sqrt((x - x0)^2 + (y - y0)^2 + 0.05) - 0.3
-            x0 = 0.5 + 0.25 cos(t)
-            y0 = 0.5 + 0.25 sin(t)
+  Solution: u = 0.3 - [(x - 0.5)^2 + (y - 0.5)^2])^0.5
   Diffusion: K = 1
   Accumulation: a = 0
   Reaction: r = 0
-  Velocity: v = [0.5 - y, x - 0.5]
+  Velocity: v = [0, 0]
   Source: f = 0
 */
 
-#ifndef AMANZI_OPERATOR_ANALYTIC_DG_06b_BASE_HH_
-#define AMANZI_OPERATOR_ANALYTIC_DG_06b_BASE_HH_
+#ifndef AMANZI_OPERATOR_ANALYTIC_DG_07_BASE_HH_
+#define AMANZI_OPERATOR_ANALYTIC_DG_07_BASE_HH_
 
 #include "AnalyticDGBase.hh"
 
-class AnalyticDG06b : public AnalyticDGBase {
+class AnalyticDG07 : public AnalyticDGBase {
  public:
-  const double a = 20.0;
-
- public:
-  AnalyticDG06b(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh, int order)
+  AnalyticDG07(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh, int order)
     : AnalyticDGBase(mesh, order) {};
-  ~AnalyticDG06b() {};
+  ~AnalyticDG07() {};
 
   // analytic data in conventional Taylor basis
   // -- diffusion tensor
@@ -46,41 +41,19 @@ class AnalyticDG06b : public AnalyticDGBase {
     sol.Reshape(d_, order_, true); 
     sol.set_origin(p);
 
-    double x0 = 0.5 + 0.25 * std::cos(t);
-    double y0 = 0.5 + 0.25 * std::sin(t);
-
-    double dx = p[0] - x0;
-    double dy = p[1] - y0;
+    double dx = p[0] - 0.5;
+    double dy = p[1] - 0.5;
     double dist2 = dx * dx + dy * dy;
-    double u = std::exp(-a * dist2);
+    double dist = std::pow(dist2, 0.5);
 
-    dx *= -2 * a;
-    dy *= -2 * a;
-
-    sol(0, 0) = u;
+    sol(0, 0) = 0.3 - dist;
 
     if (order_ > 0) {
-      sol(1, 0) = u * dx;
-      sol(1, 1) = u * dy;
+      sol(1, 0) = -dx / dist;
+      sol(1, 1) = -dy / dist;
     }
 
-    double dx2, dy2;
-    if (order_ > 1) {
-      dx2 = dx * dx;
-      dy2 = dy * dy;
-      sol(2, 0) =  u * (dx2 - 2 * a) / 2;
-      sol(2, 1) =  u * dx * dy;
-      sol(2, 2) =  u * (dy2 - 2 * a) / 2;
-    }
-
-    if (order_ > 2) {
-      sol(3, 0) = u * (dx2 * dx + 3 * dx2) / 6;
-      sol(3, 1) = u * (dx2 * dy - 2 * a * dy) / 2;
-      sol(3, 2) = u * (dy2 * dx - 2 * a * dx) / 2;
-      sol(3, 3) = u * (dy2 * dy + 3 * dy2) / 6;
-    }
-
-    if (order_ > 3) AMANZI_ASSERT(false);
+    if (order_ > 1) AMANZI_ASSERT(false);
   }
 
   // -- accumulation
@@ -94,15 +67,8 @@ class AnalyticDG06b : public AnalyticDGBase {
   virtual void VelocityTaylor(const Amanzi::AmanziGeometry::Point& p, double t,
                               Amanzi::WhetStone::VectorPolynomial& v) override {
     v.resize(d_);
-    for (int i = 0; i < d_; ++i) {
-      v[i].Reshape(d_, 1, true); 
-      v[i].set_origin(p);
-    }
-    v[0](0, 0) = 0.5 - p[1];
-    v[1](0, 0) = p[0] - 0.5;
-
-    v[0](1, 1) =-1.0;
-    v[1](1, 0) = 1.0;
+    for (int i = 0; i < d_; ++i) v[i].Reshape(d_, 0, true);
+    v.set_origin(p);
   }
 
   // -- reaction
@@ -118,6 +84,9 @@ class AnalyticDG06b : public AnalyticDGBase {
     src.Reshape(d_, 0, true);
     src.set_origin(p);
   }
+
+ private:
+  double x0_, y0_;
 };
 
 #endif

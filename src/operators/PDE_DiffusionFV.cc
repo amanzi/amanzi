@@ -231,7 +231,7 @@ void PDE_DiffusionFV::UpdateMatricesNewtonCorrection(
 /* ******************************************************************
 * Special implementation of boundary conditions.
 ****************************************************************** */
-void PDE_DiffusionFV::ApplyBCs(bool primary, bool eliminate)
+void PDE_DiffusionFV::ApplyBCs(bool primary, bool eliminate, bool essential_eqn)
 {
   const Epetra_MultiVector& trans_face = *transmissibility_->ViewComponent("face", true);
 

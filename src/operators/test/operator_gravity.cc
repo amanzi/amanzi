@@ -51,16 +51,11 @@ void RunTestGravity(std::string op_list_name) {
   std::string xmlFileName = "test/operator_diffusion.xml";
   Teuchos::ParameterXMLFileReader xmlreader(xmlFileName);
   Teuchos::ParameterList plist = xmlreader.getParameters();
-  Teuchos::ParameterList op_list = plist.get<Teuchos::ParameterList>("PK operator").sublist(op_list_name);
+  Teuchos::ParameterList op_list = plist.sublist("PK operator").sublist(op_list_name);
 
   // create a mesh framework
-  FrameworkPreference pref;
-  pref.clear();
-  pref.push_back(MSTK);
-  pref.push_back(STKMESH);
-
   MeshFactory meshfactory(&comm);
-  meshfactory.preference(pref);
+  meshfactory.preference(FrameworkPreference({MSTK,STKMESH}));
   Teuchos::RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 3, 3, Teuchos::null);
 
   // create diffusion coefficient

@@ -162,7 +162,7 @@ if (BUILD_TESTS)
 
     set(amanzi_libs geometry atk mesh mesh_factory mesh_logical data_structures operators whetstone output atk)
 
-    # Test: operators for various PDEs
+    # Tests: diffusion
     add_amanzi_test(operators_utils operators_utils
                     KIND unit
                     SOURCE test/Main.cc test/operator_utils.cc
@@ -239,6 +239,12 @@ if (BUILD_TESTS)
     #                 SOURCE test/Main.cc test/operator_diffusion_tpfa.cc
     #                 LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
     
+    # Test: advection-diffusion 
+    add_amanzi_test(operators_advection_diffusion operators_advection_diffusion
+                    KIND unit
+                    SOURCE test/Main.cc test/operator_advdiff.cc
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
+
     # Test: matrices for surface
     add_amanzi_test(operators_surface operators_surface
                     KIND unit

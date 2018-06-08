@@ -54,7 +54,7 @@ void RunTestDiffusionCurved() {
   ParameterList plist = xmlreader.getParameters();
 
   // create a randomized mesh 
-  ParameterList region_list = plist.get<Teuchos::ParameterList>("regions");
+  ParameterList region_list = plist.sublist("regions");
   Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(3, region_list, &comm));
 
   MeshFactory meshfactory(&comm);
@@ -72,7 +72,7 @@ void RunTestDiffusionCurved() {
 
   for (int c = 0; c < ncells_owned; c++) {
     const Point& xc = mesh->cell_centroid(c);
-    const WhetStone::Tensor& Kc = ana.Tensor(xc, 0.0);
+    const WhetStone::Tensor& Kc = ana.TensorDiffusivity(xc, 0.0);
     K->push_back(Kc);
   }
 
@@ -109,7 +109,7 @@ void RunTestDiffusionCurved() {
   op->UpdateMatrices();
 
   // -- apply boundary conditions
-  op->ApplyBCs(true, true);
+  op->ApplyBCs(true, true, true);
 
   // -- assemble the global matrix
   Teuchos::RCP<Operator> global_op = op->global_operator();

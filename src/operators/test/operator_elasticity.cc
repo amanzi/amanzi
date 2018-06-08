@@ -52,7 +52,7 @@ TEST(OPERATOR_ELASTICITY_EXACTNESS) {
   std::string xmlFileName = "test/operator_elasticity.xml";
   Teuchos::ParameterXMLFileReader xmlreader(xmlFileName);
   Teuchos::ParameterList plist = xmlreader.getParameters();
-  Teuchos::ParameterList op_list = plist.get<Teuchos::ParameterList>("PK operator")
+  Teuchos::ParameterList op_list = plist.sublist("PK operator")
                                         .sublist("elasticity operator");
 
   // create the MSTK mesh framework 
@@ -143,7 +143,7 @@ TEST(OPERATOR_ELASTICITY_EXACTNESS) {
   // get and assmeble the global operator
   Teuchos::RCP<Operator> global_op = op->global_operator();
   global_op->UpdateRHS(source, true);
-  op->ApplyBCs(true, true);
+  op->ApplyBCs(true, true, true);
   global_op->SymbolicAssembleMatrix();
   global_op->AssembleMatrix();
 

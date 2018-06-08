@@ -1258,6 +1258,7 @@ function define_structured_dependencies
 {
   if [ "${structured}" -eq "${TRUE}" ]; then
     eval "petsc=$TRUE"
+    status_message "Enable package PETSc"
   fi
 }
 
@@ -1427,7 +1428,6 @@ if [ -z "${tpl_config_file}" ]; then
     fi
   fi
 
-  
   if [ "${tpls_only}" -eq "${TRUE}" ]; then
     status_message "Only building TPLs, stopping before building Amanzi itself"
   fi

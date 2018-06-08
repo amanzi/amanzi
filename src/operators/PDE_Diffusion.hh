@@ -98,7 +98,16 @@ class PDE_Diffusion : public PDE_HelperDiscretization {
                                      const Teuchos::Ptr<CompositeVector>& flux) = 0;
 
   // -- matrix modification
-  virtual void ApplyBCs(bool primary, bool eliminate) = 0;
+  //    primary=true indicates that the operator updates both matrix and right-hand
+  //      side using BC data. If primary=false, only matrix is changed.
+  //    eliminate=true indicates that we eliminate essential BCs for a trial 
+  //      function, i.e. zeros go in the corresponding matrix columns and 
+  //      right-hand side is modified using BC values. This is the optional 
+  //      parameter that enforces symmetry for a symmetric tree  operators.
+  //    essential_eqn=true indicates that the operator places a positive number on 
+  //      the main matrix diagonal for the case of essential BCs. This is the
+  //      implementtion trick.
+  virtual void ApplyBCs(bool primary, bool eliminate, bool essential_eqn) = 0;
   virtual void ModifyMatrices(const CompositeVector& u) = 0;
   virtual void ScaleMassMatrices(double s) = 0;
 
@@ -108,28 +117,6 @@ class PDE_Diffusion : public PDE_HelperDiscretization {
                      const Teuchos::RCP<const CompositeVector>& dkdp) {
     SetTensorCoefficient(K);
     SetScalarCoefficient(k, dkdp);
-  }
-
-  // boundary conditions (BC) require information on test and
-  // trial spaces. For a single PDE, these BCs could be the same.
-  virtual void SetBCs(const Teuchos::RCP<const BCs>& bc_trial,
-                      const Teuchos::RCP<const BCs>& bc_test) {
-    SetTrialBCs(bc_trial);  
-    SetTestBCs(bc_test);  
-  }
-  virtual void SetTrialBCs(const Teuchos::RCP<const BCs>& bc) {
-    if (bcs_trial_.size() == 0) {
-      bcs_trial_.resize(1);
-    }
-    bcs_trial_[0] = bc;
-    global_op_->SetTrialBCs(bc);
-  }
-  virtual void SetTestBCs(const Teuchos::RCP<const BCs>& bc) {
-    if (bcs_test_.size() == 0) {
-      bcs_test_.resize(1);
-    }
-    bcs_test_[0] = bc;
-    global_op_->SetTestBCs(bc);
   }
 
   // -- working with consistent faces -- may not be implemented

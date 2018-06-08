@@ -8,7 +8,12 @@
 
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 
-  Linear solution for problem with constant tensorial coefficient.
+  Linear solution for problem with constant tensorial coefficient:
+  Solution: p = x + 2y - gy y
+  Diffusion: K = [3  1]
+                 [1  1]
+  Velocity: v = [0, 0]
+  Source: f = -div(K grad(p))
 */
 
 #ifndef AMANZI_OPERATOR_ANALYTIC_02_HH_
@@ -26,7 +31,7 @@ class Analytic02 : public AnalyticBase {
       g_(g) {};
   ~Analytic02() {};
 
-  Amanzi::WhetStone::Tensor Tensor(const Amanzi::AmanziGeometry::Point& p, double t) {
+  Amanzi::WhetStone::Tensor TensorDiffusivity(const Amanzi::AmanziGeometry::Point& p, double t) {
     Amanzi::WhetStone::Tensor K(2, 2);
     K(0, 0) = 3.0;
     K(1, 1) = 1.0;
@@ -49,9 +54,11 @@ class Analytic02 : public AnalyticBase {
     return v;
   }
 
-  double source_exact(const Amanzi::AmanziGeometry::Point& p, double t) { 
-    return 0.0;
+  Amanzi::AmanziGeometry::Point advection_exact(const Amanzi::AmanziGeometry::Point& p, double t) {
+    return Amanzi::AmanziGeometry::Point(2);
   }
+
+  double source_exact(const Amanzi::AmanziGeometry::Point& p, double t) { return 0.0; }
 
  private:
   double g_;

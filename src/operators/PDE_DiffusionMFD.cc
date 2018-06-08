@@ -520,13 +520,13 @@ void PDE_DiffusionMFD::UpdateMatricesTPFA_()
 /* ******************************************************************
 * Apply boundary conditions to the local matrices. We always zero-out
 * matrix rows for essential test BCs. As to trial BCs, there are
-* options: (a) eliminate or not, (b) if eliminate, then put 1 on
-* the diagonal or not.
+* options: eliminate them or not. Finally we may add the essntial BC
+* the the system of equations as the trivial equations.
 *
-* NONE 1. Nodal scheme handles only the case trialBC = testBC.
-* NONE 2. Jacobian term handles only trial BCs.
+* NOTE 1. Nodal scheme handles only the case trialBC = testBC.
+* NOTE 2. Jacobian term handles only trial BCs.
 ****************************************************************** */
-void PDE_DiffusionMFD::ApplyBCs(bool primary, bool eliminate)
+void PDE_DiffusionMFD::ApplyBCs(bool primary, bool eliminate, bool essential_eqn)
 {
   if (!exclude_primary_terms_) {
     if (local_op_schema_ == (OPERATOR_SCHEMA_BASE_CELL
@@ -534,13 +534,13 @@ void PDE_DiffusionMFD::ApplyBCs(bool primary, bool eliminate)
                            | OPERATOR_SCHEMA_DOFS_CELL)) {
       AMANZI_ASSERT(bcs_trial_.size() == 1);
       AMANZI_ASSERT(bcs_test_.size() == 1);
-      ApplyBCs_Mixed_(bcs_trial_[0].ptr(), bcs_test_[0].ptr(), primary, eliminate);
+      ApplyBCs_Mixed_(bcs_trial_[0].ptr(), bcs_test_[0].ptr(), primary, eliminate, essential_eqn);
     
     } else if (local_op_schema_ == (OPERATOR_SCHEMA_BASE_FACE
                                   | OPERATOR_SCHEMA_DOFS_CELL)) {
       AMANZI_ASSERT(bcs_trial_.size() == 1);
       AMANZI_ASSERT(bcs_test_.size() == 1);
-      ApplyBCs_Cell_(bcs_trial_[0].ptr(), bcs_test_[0].ptr(), primary, eliminate);
+      ApplyBCs_Cell_(bcs_trial_[0].ptr(), bcs_test_[0].ptr(), primary, eliminate, essential_eqn);
     
     } else if (local_op_schema_ == (OPERATOR_SCHEMA_BASE_CELL
                                   | OPERATOR_SCHEMA_DOFS_NODE)) {
@@ -552,13 +552,13 @@ void PDE_DiffusionMFD::ApplyBCs(bool primary, bool eliminate)
           bc_n = bc.ptr();
         }
       }
-      ApplyBCs_Nodal_(bc_f.ptr(), bc_n.ptr(), primary, eliminate);
+      ApplyBCs_Nodal_(bc_f.ptr(), bc_n.ptr(), primary, eliminate, essential_eqn);
 
     } else if (local_op_schema_ == (OPERATOR_SCHEMA_BASE_CELL
                                   | OPERATOR_SCHEMA_DOFS_EDGE)) {
       AMANZI_ASSERT(bcs_trial_.size() == 1);
       AMANZI_ASSERT(bcs_test_.size() == 1);
-      ApplyBCs_Edge_(bcs_trial_[0].ptr(), bcs_test_[0].ptr(), primary, eliminate);
+      ApplyBCs_Edge_(bcs_trial_[0].ptr(), bcs_test_[0].ptr(), primary, eliminate, essential_eqn);
     }
   }
 
@@ -569,7 +569,8 @@ void PDE_DiffusionMFD::ApplyBCs(bool primary, bool eliminate)
     for (int f = 0; f != nfaces_owned; ++f) {
       WhetStone::DenseMatrix& Aface = jac_op_->matrices[f];
 
-      if (bc_model[f] == OPERATOR_BC_NEUMANN) {
+      if (bc_model[f] == OPERATOR_BC_NEUMANN ||
+          bc_model[f] == OPERATOR_BC_TOTAL_FLUX) {
         jac_op_->matrices_shadow[f] = Aface;
         Aface *= 0.0;
       }
@@ -584,7 +585,7 @@ void PDE_DiffusionMFD::ApplyBCs(bool primary, bool eliminate)
 void PDE_DiffusionMFD::ApplyBCs_Mixed_(
     const Teuchos::Ptr<const BCs>& bc_trial,
     const Teuchos::Ptr<const BCs>& bc_test,
-    bool primary, bool eliminate)
+    bool primary, bool eliminate, bool essential_eqn)
 {
   // apply diffusion type BCs to FACE-CELL system
   AmanziMesh::Entity_ID_List faces;
@@ -639,8 +640,7 @@ void PDE_DiffusionMFD::ApplyBCs_Mixed_(
           local_op_->matrices_shadow[c] = Acell;
           flag = false;
         }
-        for (int m = 0; m < nfaces; m++) Acell(n, m) = 0.0;
-        Acell(n, nfaces) = 0.0;
+        for (int m = 0; m < nfaces + 1; m++) Acell(n, m) = 0.0;
       }
     }
 
@@ -666,9 +666,9 @@ void PDE_DiffusionMFD::ApplyBCs_Mixed_(
           Acell(nfaces, n) = 0.0;
         }
 
-        if (primary) {
+        if (essential_eqn) {
           rhs_face[0][f] = value;
-          Acell(n,n) = 1.0;
+          Acell(n, n) = 1.0;
         }
 
       } else if (bc_model_trial[f] == OPERATOR_BC_NEUMANN && primary) {
@@ -681,6 +681,13 @@ void PDE_DiffusionMFD::ApplyBCs_Mixed_(
           } else {
             rhs_face[0][f] -= value * mesh_->face_area(f);
           }
+        } else {
+          rhs_face[0][f] -= value * mesh_->face_area(f);
+        }
+
+      } else if (bc_model_trial[f] == OPERATOR_BC_TOTAL_FLUX && primary) {
+        if (scaled_constraint_ && kf[n] < scaled_constraint_cutoff_) {
+          AMANZI_ASSERT(false);
         } else {
           rhs_face[0][f] -= value * mesh_->face_area(f);
         }
@@ -720,7 +727,7 @@ void PDE_DiffusionMFD::ApplyBCs_Mixed_(
 void PDE_DiffusionMFD::ApplyBCs_Cell_(
    const Teuchos::Ptr<const BCs>& bc_trial,
    const Teuchos::Ptr<const BCs>& bc_test,
-   bool primary, bool eliminate)
+   bool primary, bool eliminate, bool essential_eqn)
 {
   // apply diffusion type BCs to CELL system
   AmanziMesh::Entity_ID_List cells;
@@ -742,7 +749,7 @@ void PDE_DiffusionMFD::ApplyBCs_Cell_(
       rhs_cell[0][cells[0]] += bc_value[f] * Aface(0, 0);
     }
     // Neumann condition contributes to the RHS
-    else if (bc_model[f] == OPERATOR_BC_NEUMANN) {
+    else if (bc_model[f] == OPERATOR_BC_NEUMANN && primary) {
       local_op_->matrices_shadow[f] = Aface;
       
       mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
@@ -750,7 +757,7 @@ void PDE_DiffusionMFD::ApplyBCs_Cell_(
       Aface *= 0.0;
     }
     // solve system of two equations in three unknowns
-    else if (bc_model[f] == OPERATOR_BC_MIXED) {
+    else if (bc_model[f] == OPERATOR_BC_MIXED && primary) {
       local_op_->matrices_shadow[f] = Aface;
       
       mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
@@ -769,7 +776,7 @@ void PDE_DiffusionMFD::ApplyBCs_Cell_(
 void PDE_DiffusionMFD::ApplyBCs_Nodal_(
     const Teuchos::Ptr<const BCs>& bc_f,
     const Teuchos::Ptr<const BCs>& bc_v,
-    bool primary, bool eliminate)
+    bool primary, bool eliminate, bool essential_eqn)
 {
   AmanziMesh::Entity_ID_List faces, nodes, cells;
 
@@ -793,7 +800,7 @@ void PDE_DiffusionMFD::ApplyBCs_Nodal_(
       for (int n = 0; n != nfaces; ++n) {
         int f = faces[n];
 
-        if (bc_model[f] == OPERATOR_BC_NEUMANN) {
+        if (bc_model[f] == OPERATOR_BC_NEUMANN && primary) {
           nn++;
           double value = bc_value[f];
           double area = mesh_->face_area(f);
@@ -806,7 +813,7 @@ void PDE_DiffusionMFD::ApplyBCs_Nodal_(
             if (bc_v->bc_model()[v] != OPERATOR_BC_DIRICHLET)
               rhs_node[0][v] -= value * area / nnodes;
           }
-        } else if (bc_model[f] == OPERATOR_BC_MIXED) {
+        } else if (bc_model[f] == OPERATOR_BC_MIXED && primary) {
           nm++;
           if (flag) {  // make a copy of cell-based matrix
             local_op_->matrices_shadow[c] = Acell;
@@ -866,7 +873,7 @@ void PDE_DiffusionMFD::ApplyBCs_Nodal_(
 
           // We take into account multiple contributions to matrix diagonal
           // by dividing by the number of cells attached to a vertex.
-          if (primary) {
+          if (essential_eqn) {
             mesh_->node_get_cells(v, AmanziMesh::Parallel_type::ALL, &cells);
             if (v < nnodes_owned) rhs_node[0][v] = value;
             Acell(n, n) = 1.0 / cells.size();
@@ -886,9 +893,9 @@ void PDE_DiffusionMFD::ApplyBCs_Nodal_(
 void PDE_DiffusionMFD::ApplyBCs_Edge_(
     const Teuchos::Ptr<const BCs>& bc_trial,
     const Teuchos::Ptr<const BCs>& bc_test,
-    bool primary, bool eliminate)
+    bool primary, bool eliminate, bool essential_eqn)
 {
-  AmanziMesh::Entity_ID_List edges;
+  AmanziMesh::Entity_ID_List edges, cells;
 
   const std::vector<int>& bc_model = bc_trial->bc_model();
   const std::vector<double>& bc_value = bc_trial->bc_value();
@@ -934,8 +941,12 @@ void PDE_DiffusionMFD::ApplyBCs_Edge_(
           }
         }
 
-        if (primary) {
-          rhs_edge[0][e] = value; // FIXME: this may not work in 3D.
+        if (essential_eqn) {
+          // FIXME in 3D
+          // mesh_->edge_get_cells(e, AmanziMesh::Parallel_type::ALL, &cells);
+          // if (e < nedges_owned) rhs_edge[0][e] = value;
+          // Acell(n, n) = 1.0 / cells.size();
+          rhs_edge[0][e] = value;
           Acell(n, n) = 1.0;
         }
       }

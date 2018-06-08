@@ -52,7 +52,7 @@ TEST(LAPLACE_BELTRAMI_FLAT_SFF) {
   ParameterList plist = xmlreader.getParameters();
 
   // create an SIMPLE mesh framework
-  ParameterList region_list = plist.get<Teuchos::ParameterList>("Regions Flat");
+  ParameterList region_list = plist.sublist("Regions Flat");
   Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(3, region_list, &comm));
 
   MeshFactory meshfactory(&comm);
@@ -95,8 +95,7 @@ TEST(LAPLACE_BELTRAMI_FLAT_SFF) {
   }
 
   // create diffusion operator 
-  Teuchos::ParameterList olist = plist.get<Teuchos::ParameterList>("PK operator")
-                                      .get<Teuchos::ParameterList>("diffusion operator Sff");
+  Teuchos::ParameterList olist = plist.sublist("PK operator").sublist("diffusion operator Sff");
   Teuchos::RCP<PDE_Diffusion> op = Teuchos::rcp(new PDE_DiffusionMFD(olist, surfmesh));
   op->SetBCs(bc, bc);
   const CompositeVectorSpace& cvs = op->global_operator()->DomainMap();
@@ -106,7 +105,7 @@ TEST(LAPLACE_BELTRAMI_FLAT_SFF) {
 
   // get and assmeble the global operator
   Teuchos::RCP<Operator> global_op = op->global_operator();
-  op->ApplyBCs(true, true);
+  op->ApplyBCs(true, true, true);
   global_op->SymbolicAssembleMatrix();
   global_op->AssembleMatrix();
 
@@ -167,7 +166,7 @@ TEST(LAPLACE_BELTRAMI_FLAT_SCC) {
   ParameterList plist = xmlreader.getParameters();
 
   // create an SIMPLE mesh framework
-  ParameterList region_list = plist.get<Teuchos::ParameterList>("Regions Flat");
+  ParameterList region_list = plist.sublist("Regions Flat");
   Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(3, region_list, &comm));
 
   MeshFactory meshfactory(&comm);
@@ -210,8 +209,7 @@ TEST(LAPLACE_BELTRAMI_FLAT_SCC) {
   }
 
   // create diffusion operator 
-  Teuchos::ParameterList olist = plist.get<Teuchos::ParameterList>("PK operator")
-                                      .get<Teuchos::ParameterList>("diffusion operator Scc");
+  Teuchos::ParameterList olist = plist.sublist("PK operator").sublist("diffusion operator Scc");
   Teuchos::RCP<PDE_Diffusion> op = Teuchos::rcp(new PDE_DiffusionMFD(olist, surfmesh));
   op->SetBCs(bc, bc);
   const CompositeVectorSpace& cvs = op->global_operator()->DomainMap();
@@ -221,7 +219,7 @@ TEST(LAPLACE_BELTRAMI_FLAT_SCC) {
 
   // get and assmeble the global operator
   Teuchos::RCP<Operator> global_op = op->global_operator();
-  op->ApplyBCs(true, true);
+  op->ApplyBCs(true, true, true);
   global_op->SymbolicAssembleMatrix();
   global_op->AssembleMatrix();
 
@@ -282,7 +280,7 @@ TEST(LAPLACE_BELTRAMI_FLAT) {
   ParameterList plist = xmlreader.getParameters();
 
   // create an SIMPLE mesh framework
-  ParameterList region_list = plist.get<Teuchos::ParameterList>("Regions Flat");
+  ParameterList region_list = plist.sublist("Regions Flat");
   Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(3, region_list, &comm));
 
   MeshFactory meshfactory(&comm);
@@ -325,8 +323,7 @@ TEST(LAPLACE_BELTRAMI_FLAT) {
   }
 
   // create diffusion operator 
-  Teuchos::ParameterList olist = plist.get<Teuchos::ParameterList>("PK operator")
-                                      .get<Teuchos::ParameterList>("diffusion operator");
+  Teuchos::ParameterList olist = plist.sublist("PK operator").sublist("diffusion operator");
   Teuchos::RCP<PDE_Diffusion> op = Teuchos::rcp(new PDE_DiffusionMFD(olist, surfmesh));
   op->SetBCs(bc, bc);
   const CompositeVectorSpace& cvs = op->global_operator()->DomainMap();
@@ -336,7 +333,7 @@ TEST(LAPLACE_BELTRAMI_FLAT) {
 
   // get and assmeble the global operator
   Teuchos::RCP<Operator> global_op = op->global_operator();
-  op->ApplyBCs(true, true);
+  op->ApplyBCs(true, true, true);
   global_op->SymbolicAssembleMatrix();
   global_op->AssembleMatrix();
 
