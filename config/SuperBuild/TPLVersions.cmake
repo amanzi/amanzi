@@ -94,23 +94,24 @@
 #                - update SuperLU_dist to xsdk-0.2.0 (native 5.1.3)
 #                - update Alquimia to xsdk-0.2.0 (native 1.0.4)
 #                - update Hypre to xsdk-0.2.0 (native 2.11.2)
-#  0.94.10       - update Alquimia to 1.0.5 (critical bug fixes)
-#  0.94.11       - update MSTK to 3.0.3 (critical bug fixes)
+#   0.94.10      - update Alquimia to 1.0.5 (critical bug fixes)
+#   0.94.11      - update MSTK to 3.0.3 (critical bug fixes)
 #                - update NetCDF to 4.5.0
 #	         - update NetCDF-Fortran to 4.4.4
 #	         - update curl to 7.56.1
-#  0.94.12       - update xerces-c to 3.2.0 (CMake build)
+#   0.94.12      - update xerces-c to 3.2.0 (CMake build)
 
-#  0.95.0        - update Trilinos 12.12.1
+#   0.95.0       - update Trilinos 12.12.1
 #                - update Hypre 2.12.1  
 #                - note alquimia 1.0.5 == xsdk-0.3.0
 #                - pflotran release/xsdk-0.3.0
 #                - update PETSc 3.8.2
-#  0.95.1        - update OpenMPI to 3.0.1
-#  0.95.2        - added Amesos2 to list of built Trilinos packages
+#   0.95.1       - update OpenMPI to 3.0.1
+#   0.95.2       - added Amesos2 to list of built Trilinos packages
 #                - update MSTK to 3.0.4
-#  0.95.3        - removed CURL
+#   0.95.3       - removed CURL
 #                - update HYPRE to 2.14.0
+#   0.95.4       - update Boost to version 1.67.0
 
 include(CMakeParseArguments)
 
@@ -163,7 +164,7 @@ endmacro(amanzi_tpl_version_write)
 #
 set(AMANZI_TPLS_VERSION_MAJOR 0)
 set(AMANZI_TPLS_VERSION_MINOR 95)
-set(AMANZI_TPLS_VERSION_PATCH 3)
+set(AMANZI_TPLS_VERSION_PATCH 4)
 set(AMANZI_TPLS_VERSION ${AMANZI_TPLS_VERSION_MAJOR}.${AMANZI_TPLS_VERSION_MINOR}.${AMANZI_TPLS_VERSION_PATCH})
 # Not sure how to create a meaningful hash key for the collection
 
@@ -264,14 +265,14 @@ set(UnitTest_MD5_SUM      29f958e355e516e7ab016b467974728d)
 # TPL: Boost
 #
 set(Boost_VERSION_MAJOR 1)
-set(Boost_VERSION_MINOR 63)
+set(Boost_VERSION_MINOR 67)
 set(Boost_VERSION_PATCH 0)
 set(Boost_VERSION        ${Boost_VERSION_MAJOR}.${Boost_VERSION_MINOR}.${Boost_VERSION_PATCH})
 set(Boost_VERSION_STRING ${Boost_VERSION_MAJOR}_${Boost_VERSION_MINOR}_${Boost_VERSION_PATCH})
-set(Boost_URL_STRING     ${AMANZI_TPLS_DOWNLOAD_URL})
+set(Boost_URL_STRING     "https://dl.bintray.com/boostorg/release/${Boost_VERSION}/source/")
 set(Boost_ARCHIVE_FILE   boost_${Boost_VERSION_STRING}.tar.bz2)
 set(Boost_SAVEAS_FILE    ${Boost_ARCHIVE_FILE})
-set(Boost_MD5_SUM        1c837ecd990bb022d07e7aab32b09847)
+set(Boost_MD5_SUM        ced776cb19428ab8488774e1415535ab)
 
 #
 # TPL: HDF5

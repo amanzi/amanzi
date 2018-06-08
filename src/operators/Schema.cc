@@ -9,10 +9,9 @@
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
+#include <algorithm>
 #include <iostream>
 #include <vector>
-
-#include "boost/algorithm/string/case_conv.hpp"
 
 #include "OperatorDefs.hh"
 #include "Schema.hh"
@@ -273,7 +272,8 @@ std::string Schema::CreateUniqueName() const
     c = "+";
   }
 
-  return boost::to_upper_copy(name);
+  std::transform(name.begin(), name.end(), name.begin(), ::toupper);
+  return name;
 }
 
 }  // namespace Operators
