@@ -207,13 +207,13 @@ double NumericalIntegration::IntegratePolynomialsEdge(
 ****************************************************************** */
 double NumericalIntegration::IntegratePolynomialsTriangle(
     const std::vector<AmanziGeometry::Point>& xy,
-    const std::vector<const Polynomial*>& polys, int order) const
+    const std::vector<const WhetStoneFunction*>& funcs, int order) const
 {
   // calculate minimal quadrature rule 
   int m(order);
   if (m < 0) { 
     m = 0;
-    for (int i = 0; i < polys.size(); ++i) {
+    for (int i = 0; i < funcs.size(); ++i) {
       m += polys[i]->order();
     }
   }

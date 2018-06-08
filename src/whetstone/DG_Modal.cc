@@ -350,7 +350,7 @@ int DG_Modal::AdvectionMatrixPoly_(
   UpdateIntegrals_(c, order_ + std::max(0, order_ - 1) + uk);
   const Polynomial& integrals = integrals_[c];
 
-  // gradient of a naturally scaled polynomial needs correction
+  // gradient of a regularized polynomial needs correction
   double scale = numi_.MonomialRegularizedScales(c, 1);
 
   // sum-up integrals to the advection matrix

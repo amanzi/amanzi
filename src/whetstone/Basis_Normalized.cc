@@ -58,7 +58,7 @@ void Basis_Normalized::Init(
 
 
 /* ******************************************************************
-* Transfrmation of regularized basis to owned basis.
+* Transformation of regularized basis to owned basis.
 ****************************************************************** */
 void Basis_Normalized::ChangeBasisMatrix(DenseMatrix& A) const
 {
@@ -147,7 +147,7 @@ void Basis_Normalized::ChangeBasisMatrix(
 
 
 /* ******************************************************************
-* Recover polynomial from data coeffieints. 
+* Recover polynomial from data coefficients. 
 ****************************************************************** */
 Polynomial Basis_Normalized::CalculatePolynomial(
     const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,

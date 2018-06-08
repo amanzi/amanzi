@@ -40,6 +40,10 @@ class Monomial {
   // modifiers
   void set_origin(const AmanziGeometry::Point& origin) { origin_ = origin; }
 
+  // typical operations with monomials
+  virtual double Value(const AmanziGeometry::Point& xp) const override;
+
+  // -- polynomial norms
   // access
   int dimension() const { return d_; }
   int order() const { return order_; }
@@ -56,6 +60,23 @@ class Monomial {
   AmanziGeometry::Point origin_;
 };
  
+
+/* ******************************************************************
+* Calculate monomial value
+****************************************************************** */
+double Monomial::Value(const AmanziGeometry::Point& xp) const
+{
+  double tmp = coef_;
+  if (tmp != 0.0) {
+    for (int i = 0; i < d_; ++i) {
+      tmp *= std::pow(xp[i] - origin_[i], multi_index_[i]);
+    }
+  }
+
+  return tmp;
+}
+
+
 }  // namespace WhetStone
 }  // namespace Amanzi
 

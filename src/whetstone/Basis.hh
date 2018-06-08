@@ -10,6 +10,10 @@
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 
   The base class for dG basis.
+  We highlight two special bases: natural, with basis monomials 
+  of form (x-x0)^k, and regularized, with basis monomials of 
+  form (x-x0)^k / h^k, where h is cell measure. Matrix and vector
+  Tranformations are available to and from these bases.
 */
 
 #ifndef AMANZI_DG_BASIS_HH_

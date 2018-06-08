@@ -28,6 +28,7 @@
 #include "PolynomialOnMesh.hh"
 #include "Quadrature1D.hh"
 #include "Quadrature2D.hh"
+#include "WhetStoneFunction.hh"
 
 namespace Amanzi {
 namespace WhetStone {
@@ -53,7 +54,7 @@ class NumericalIntegration {
   // -- automatically calculate quadrature order if order < 0
   double IntegratePolynomialsTriangle(
       const std::vector<AmanziGeometry::Point>& xy,
-      const std::vector<const Polynomial*>& polys, int order = -1) const;
+      const std::vector<const WhetStoneFunction*>& funcs, int order = -1) const;
 
   double IntegratePolynomialsTriangle(
       const std::vector<AmanziGeometry::Point>& xy, const Polynomial& poly) const {

@@ -27,6 +27,7 @@
 
 #include "DenseVector.hh"
 #include "PolynomialIterator.hh"
+#include "WhetStoneFunction.hh"
 
 namespace Amanzi {
 namespace WhetStone {
@@ -34,7 +35,7 @@ namespace WhetStone {
 // formard declaration
 class Monomial;
 
-class Polynomial {
+class Polynomial : public WhetStoneFunction {
  public:
   Polynomial() : d_(0), order_(-1), size_(0) {};
   Polynomial(int d, int order);
@@ -64,7 +65,7 @@ class Polynomial {
 
   // typical operations with polynomials
   // -- polynomial values
-  double Value(const AmanziGeometry::Point& xp) const;
+  virtual double Value(const AmanziGeometry::Point& xp) const override;
   // -- polynomial norms
   double NormMax() const;
 
