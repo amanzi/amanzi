@@ -78,20 +78,20 @@ set(Silo_PATCH_COMMAND ${CMAKE_COMMAND} -P ${Silo_cmake_patch})
 
 # --- Add external project build 
 ExternalProject_Add(${Silo_BUILD_TARGET}
-                    DEPENDS   ${Silo_PACKAGE_DEPENDS}             # Package dependency target
-                    TMP_DIR   ${Silo_tmp_dir}                     # Temporary files directory
-                    STAMP_DIR ${Silo_stamp_dir}                   # Timestamp and log directory
+                    DEPENDS   ${Silo_PACKAGE_DEPENDS}      # Package dependency target
+                    TMP_DIR   ${Silo_tmp_dir}              # Temporary files directory
+                    STAMP_DIR ${Silo_stamp_dir}            # Timestamp and log directory
                     # -- Download and URL definitions
-                    DOWNLOAD_DIR ${TPL_DOWNLOAD_DIR}               # Download directory
-                    URL          ${Silo_URL}                      # URL may be a web site OR a local file
-                    URL_MD5      ${Silo_MD5_SUM}                  # md5sum of the archive file
+                    DOWNLOAD_DIR  ${TPL_DOWNLOAD_DIR}      
+                    URL           ${Silo_URL}              # URL may be a web site OR a local file
+                    URL_MD5       ${Silo_MD5_SUM}          # md5sum of the archive file
                     # -- Patch 
                     PATCH_COMMAND ${Silo_PATCH_COMMAND}
                     # -- Configure
-                    SOURCE_DIR        ${Silo_source_dir}          # Source directory
+                    SOURCE_DIR    ${Silo_source_dir}       # Source directory
                     CONFIGURE_COMMAND
-                              <SOURCE_DIR>/configure
-                                          --prefix=<INSTALL_DIR>
+                              ${Silo_source_dir}/configure
+                                          --prefix=${silo_install_dir}
                                           --with-x=0
                                           --with-hdf5=${HDF5_DIR}/include,${HDF5_DIR}/lib
                                           --enable-fortran=0
