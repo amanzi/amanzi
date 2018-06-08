@@ -39,10 +39,9 @@ class NumericalIntegration {
   ~NumericalIntegration() {};
 
   // main methods
-  // integrate product of polynomials with potentialy different origins
-  // -- automatically calculate quadrature order if order < 0 
-  double IntegratePolynomialsTrianglatedCell(
-      int c, const std::vector<const Polynomial*>& polys, int order = -1) const;
+  // integrate product of functions with quadrature order 
+  double IntegrateFunctionsTrianglatedCell(
+      int c, const std::vector<const WhetStoneFunction*>& funcs, int order) const;
 
   double IntegratePolynomialsFace(
       int f, const std::vector<const Polynomial*>& polys) const;
@@ -52,14 +51,14 @@ class NumericalIntegration {
       const std::vector<const Polynomial*>& polys) const;
 
   // -- automatically calculate quadrature order if order < 0
-  double IntegratePolynomialsTriangle(
+  double IntegrateFunctionsTriangle(
       const std::vector<AmanziGeometry::Point>& xy,
-      const std::vector<const WhetStoneFunction*>& funcs, int order = -1) const;
+      const std::vector<const WhetStoneFunction*>& funcs, int order) const;
 
-  double IntegratePolynomialsTriangle(
+  double IntegratePolynomialTriangle(
       const std::vector<AmanziGeometry::Point>& xy, const Polynomial& poly) const {
-    const std::vector<const Polynomial*> polys(1, &poly);
-    return IntegratePolynomialsTriangle(xy, polys);
+    const std::vector<const WhetStoneFunction*> funcs(1, &poly);
+    return IntegrateFunctionsTriangle(xy, funcs, poly.order());
   }
 
   // integrate group of monomials 

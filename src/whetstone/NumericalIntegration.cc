@@ -15,6 +15,7 @@
 #include "NumericalIntegration.hh"
 #include "Monomial.hh"
 #include "WhetStone_typedefs.hh"
+#include "WhetStoneFunction.hh"
 
 namespace Amanzi {
 namespace WhetStone {
@@ -36,10 +37,10 @@ NumericalIntegration::NumericalIntegration(
 
 
 /* ******************************************************************
-* Integrate over triangulated face a product of polynomials.
+* Integrate over triangulated face a product of functions.
 ****************************************************************** */
-double NumericalIntegration::IntegratePolynomialsTrianglatedCell(
-    int c, const std::vector<const Polynomial*>& polys, int order) const
+double NumericalIntegration::IntegrateFunctionsTrianglatedCell(
+    int c, const std::vector<const WhetStoneFunction*>& funcs, int order) const
 {
   double integral(0.0);
 
@@ -57,7 +58,7 @@ double NumericalIntegration::IntegratePolynomialsTrianglatedCell(
       mesh_->node_get_coordinates(nodes[0], &(xy[1]));
       mesh_->node_get_coordinates(nodes[1], &(xy[2]));
 
-      integral += IntegratePolynomialsTriangle(xy, polys, order);
+      integral += IntegrateFunctionsTriangle(xy, funcs, order);
     }
   }
 
@@ -205,18 +206,12 @@ double NumericalIntegration::IntegratePolynomialsEdge(
 * Integrate a product of polynomials that may have different origins
 * over a triangle.
 ****************************************************************** */
-double NumericalIntegration::IntegratePolynomialsTriangle(
+double NumericalIntegration::IntegrateFunctionsTriangle(
     const std::vector<AmanziGeometry::Point>& xy,
     const std::vector<const WhetStoneFunction*>& funcs, int order) const
 {
   // calculate minimal quadrature rule 
   int m(order);
-  if (m < 0) { 
-    m = 0;
-    for (int i = 0; i < funcs.size(); ++i) {
-      m += polys[i]->order();
-    }
-  }
   AMANZI_ASSERT(m < 10);
 
   int n1 = q2d_order[m][1];
@@ -231,8 +226,8 @@ double NumericalIntegration::IntegratePolynomialsTriangle(
     ym = xy[0] + y1 * q2d_points[n][1] + y2 * q2d_points[n][2];
 
     double a(q2d_weights[n]);
-    for (int i = 0; i < polys.size(); ++i) {
-      a *= polys[i]->Value(ym);
+    for (int i = 0; i < funcs.size(); ++i) {
+      a *= funcs[i]->Value(ym);
     }
     integral += a;      
   }

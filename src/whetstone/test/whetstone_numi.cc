@@ -91,11 +91,11 @@ TEST(NUMI_CELL_2D_QUADRATURE_POLYGON) {
   poly(1, 1) = 3.0;
   poly.set_origin(mesh->cell_centroid(cell));
 
-  std::vector<const Polynomial*> polys(1);
+  std::vector<const WhetStoneFunction*> polys(1);
   polys[0] = &poly;
 
   for (int order = 1; order < 10; ++order) {
-    val1 = numi.IntegratePolynomialsTrianglatedCell(cell, polys, order);
+    val1 = numi.IntegrateFunctionsTrianglatedCell(cell, polys, order);
 
     printf("order=%d  value=%10.6g\n", order, val1);
     CHECK_CLOSE(val1, poly.Value(mesh->cell_centroid(cell)), 1e-12);
@@ -106,7 +106,7 @@ TEST(NUMI_CELL_2D_QUADRATURE_POLYGON) {
     poly.Reshape(2, order, true);
     poly(order, 0) = 1.0;
 
-    val1 = numi.IntegratePolynomialsTrianglatedCell(cell, polys);
+    val1 = numi.IntegrateFunctionsTrianglatedCell(cell, polys, order);
     val2 = numi.IntegratePolynomialCell(cell, poly);
 
     printf("order=%d  values: %10.6g %10.6g\n", order, val1, val2);
@@ -140,10 +140,10 @@ TEST(NUMI_CELL_2D_QUADRATURE_SQUARE) {
     Polynomial poly(2, order);
     poly(order, 0) = 1.0;
 
-    std::vector<const Polynomial*> polys(1);
+    std::vector<const WhetStoneFunction*> polys(1);
     polys[0] = &poly;
 
-    val = numi.IntegratePolynomialsTrianglatedCell(cell, polys);
+    val = numi.IntegrateFunctionsTrianglatedCell(cell, polys, poly.order());
     exact = 1.0 / (order + 1);
 
     printf("order=%d  value=%10.6g  exact=%10.6g\n", order, val, exact);

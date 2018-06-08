@@ -209,7 +209,7 @@ int DG_Modal::MassMatrixPiecewisePoly_(
   M.Reshape(nrows, nrows);
   M.PutScalar(0.0);
 
-  std::vector<const Polynomial*> polys(3);
+  std::vector<const WhetStoneFunction*> polys(3);
 
   std::vector<AmanziGeometry::Point> xy(3); 
   // xy[0] = cell_geometric_center(*mesh_, c);
@@ -246,7 +246,7 @@ int DG_Modal::MassMatrixPiecewisePoly_(
 
         polys[2] = &(K[n]);
 
-        M(k, l) += numi_.IntegratePolynomialsTriangle(xy, polys);
+        M(k, l) += numi_.IntegrateFunctionsTriangle(xy, polys, s + t + K[n].order());
       }
     }
   }
@@ -431,7 +431,7 @@ int DG_Modal::AdvectionMatrixPiecewisePoly_(
   A.Reshape(nrows, nrows);
   A.PutScalar(0.0);
 
-  std::vector<const Polynomial*> polys(2);
+  std::vector<const WhetStoneFunction*> polys(2);
 
   std::vector<AmanziGeometry::Point> xy(3); 
   // xy[0] = cell_geometric_center(*mesh_, c);
@@ -473,7 +473,7 @@ int DG_Modal::AdvectionMatrixPiecewisePoly_(
         }
         polys[1] = &tmp;
 
-        A(k, l) += numi_.IntegratePolynomialsTriangle(xy, polys);
+        A(k, l) += numi_.IntegrateFunctionsTriangle(xy, polys, t + tmp.order());
       }
     }
   }

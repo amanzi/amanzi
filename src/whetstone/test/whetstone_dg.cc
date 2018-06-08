@@ -436,7 +436,7 @@ TEST(DG2D_ADVECTION_MATRIX_CELL) {
 
     dg.AdvectionMatrix(0, vu, A1, false);
     A1 -= A0;
-    CHECK_CLOSE(A1.NormInf(), 0.0, 1e-12);
+    CHECK_CLOSE(0.0, A1.NormInf(), 1e-12);
   }
 
   delete comm;

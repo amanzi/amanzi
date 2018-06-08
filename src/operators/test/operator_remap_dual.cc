@@ -609,6 +609,8 @@ void RemapTestsDualRK(int order_p, int order_u,
 
     double mass1_c;
     auto& jac = remap.jac();
+    int quad_order = (*jac)[c][0].order() + poly.order();
+
     if (maps_name == "PEM") {
       AmanziMesh::Entity_ID_List faces, nodes;
       mesh0->cell_get_faces(c, &faces);
@@ -625,10 +627,10 @@ void RemapTestsDualRK(int order_p, int order_u,
         mesh0->node_get_coordinates(nodes[0], &(xy[1]));
         mesh0->node_get_coordinates(nodes[1], &(xy[2]));
 
-        std::vector<const WhetStone::Polynomial*> polys(2);
+        std::vector<const WhetStone::WhetStoneFunction*> polys(2);
         polys[0] = &(*jac)[c][n];
         polys[1] = &poly;
-        mass1_c += numi.IntegratePolynomialsTriangle(xy, polys);
+        mass1_c += numi.IntegrateFunctionsTriangle(xy, polys, quad_order);
       }
     } else {
       WhetStone::Polynomial tmp((*jac)[c][0]);

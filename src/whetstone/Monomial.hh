@@ -21,11 +21,12 @@
 #include <cstdlib>
 
 #include "Point.hh"
+#include "WhetStoneFunction.hh"
 
 namespace Amanzi {
 namespace WhetStone {
 
-class Monomial {
+class Monomial : public WhetStoneFunction {
  public:
   Monomial() : d_(0), order_(-1), coef_(0.0) {};
   Monomial(int d, const int* multi_index, double coef) : d_(d), coef_(coef) {
@@ -64,6 +65,7 @@ class Monomial {
 /* ******************************************************************
 * Calculate monomial value
 ****************************************************************** */
+inline
 double Monomial::Value(const AmanziGeometry::Point& xp) const
 {
   double tmp = coef_;
@@ -72,7 +74,6 @@ double Monomial::Value(const AmanziGeometry::Point& xp) const
       tmp *= std::pow(xp[i] - origin_[i], multi_index_[i]);
     }
   }
-
   return tmp;
 }
 

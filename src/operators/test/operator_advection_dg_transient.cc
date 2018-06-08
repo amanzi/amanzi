@@ -550,7 +550,7 @@ void AdvectionTransient(std::string filename, int nx, int ny, double dt,
 
     // visualization
     if (MyPID == 0 && std::fabs(t - tprint) < dt/4) {
-      tprint += 0.01; 
+      tprint += 0.1; 
       printf("t=%9.6f  |p|=%10.8g\n", t, fn.l2norm);
 
       const Epetra_MultiVector& p = *sol.ViewComponent("cell");
@@ -594,11 +594,11 @@ void AdvectionTransient(std::string filename, int nx, int ny, double dt,
 
 
 TEST(OPERATOR_ADVECTION_TRANSIENT_DG) {
-  AdvectionTransient<AnalyticDG07>("square", 50, 50, 0.001, Amanzi::Explicit_TI::tvd_3rd_order, false, "primal", "level set");
+  // AdvectionTransient<AnalyticDG07>("square", 50, 50, 0.001, Amanzi::Explicit_TI::tvd_3rd_order, false, "primal", "level set");
 
-  // AdvectionTransient<AnalyticDG06b>("square",  4,  4, 0.1, Amanzi::Explicit_TI::tvd_3rd_order);
-  // AdvectionTransient<AnalyticDG06>("square",  4,  4, 0.1, Amanzi::Explicit_TI::tvd_3rd_order, false);
-  // AdvectionTransient<AnalyticDG06>("square",  4,  4, 0.1, Amanzi::Explicit_TI::tvd_3rd_order, false, "primal");
+  AdvectionTransient<AnalyticDG06b>("square",  4,  4, 0.1, Amanzi::Explicit_TI::tvd_3rd_order);
+  AdvectionTransient<AnalyticDG06>("square",  4,  4, 0.1, Amanzi::Explicit_TI::tvd_3rd_order, false);
+  AdvectionTransient<AnalyticDG06>("square",  4,  4, 0.1, Amanzi::Explicit_TI::tvd_3rd_order, false, "primal");
 
   /*
   AdvectionTransient<AnalyticDG06>("square",  20,  20, 0.01, Amanzi::Explicit_TI::tvd_3rd_order);
