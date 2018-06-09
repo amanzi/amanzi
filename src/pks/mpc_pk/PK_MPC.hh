@@ -26,7 +26,6 @@
 #define AMANZI_PK_MPC_HH_
 
 #include <vector>
-#include "boost/algorithm/string.hpp"
 
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
@@ -114,10 +113,8 @@ PK_MPC<PK_Base>::PK_MPC(Teuchos::ParameterList& pk_tree,
 {
   // name the PK
   name_ = pk_tree.name();
-
-  boost::iterator_range<std::string::iterator> res = boost::algorithm::find_last(name_,"->");
-
-  if (res.end() - name_.end() != 0) boost::algorithm::erase_head(name_, res.end() - name_.begin());
+  auto found = name_.rfind("->");
+  if (found != std::string::npos) name_.erase(0, found + 2);
 
   // get my parameter list
   my_list_ = Teuchos::sublist(Teuchos::sublist(global_list_, "PKs"), name_);

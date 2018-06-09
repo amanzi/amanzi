@@ -14,7 +14,6 @@
 #include <algorithm>
 #include <vector>
 
-#include "boost/algorithm/string.hpp"
 #include "Epetra_Vector.h"
 #include "Epetra_IntVector.h"
 #include "Epetra_MultiVector.h"
@@ -58,10 +57,8 @@ Transport_PK::Transport_PK(Teuchos::ParameterList& pk_tree,
   soln_(soln)
 {
   std::string pk_name = pk_tree.name();
-  const char* result = pk_name.data();
-
-  boost::iterator_range<std::string::iterator> res = boost::algorithm::find_last(pk_name, "->"); 
-  if (res.end() - pk_name.end() != 0) boost::algorithm::erase_head(pk_name, res.end() - pk_name.begin());
+  auto found = pk_name.rfind("->");
+  if (found != std::string::npos) pk_name.erase(0, found + 2);
 
   if (glist->isSublist("cycle driver")) {
     if (glist->sublist("cycle driver").isParameter("component names")) {

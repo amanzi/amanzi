@@ -80,7 +80,7 @@ VerboseObject::VerboseObject(const Epetra_Comm& comm, std::string name,
                              Teuchos::ParameterList& plist) :
     comm_(Teuchos::rcp(comm.Clone()))
 {
-  int root = 0;
+  int root = -1;
   // Check if we are in the mode of writing only a specific rank.
   if (plist.sublist("verbose object").isParameter("write on rank")) {
     root = plist.sublist("verbose object").get<int>("write on rank");

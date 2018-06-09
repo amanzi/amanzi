@@ -255,25 +255,25 @@ ExternalProject_Add(${Trilinos_BUILD_TARGET}
                     PATCH_COMMAND ${Trilinos_PATCH_COMMAND}
                     # -- Configure
                     SOURCE_DIR    ${Trilinos_source_dir}           # Source directory
-                    CMAKE_ARGS          ${Trilinos_Config_File_ARGS}
-                    CMAKE_CACHE_ARGS    ${Trilinos_CMAKE_ARGS} 
-                                        -DCMAKE_C_FLAGS:STRING=${Amanzi_COMMON_CFLAGS}  # Ensure uniform build
-                                        -DCMAKE_C_COMPILER:FILEPATH=${CMAKE_C_COMPILER}
-                                        -DCMAKE_CXX_FLAGS:STRING=${Amanzi_COMMON_CXXFLAGS}
-                                        -DCMAKE_CXX_COMPILER:FILEPATH=${CMAKE_CXX_COMPILER}
-                                        -DCMAKE_Fortran_FLAGS:STRING=${Amanzi_COMMON_FCFLAGS}
-                                        -DCMAKE_Fortran_COMPILER:FILEPATH=${CMAKE_Fortran_COMPILER}
-                                        -DCMAKE_INSTALL_PREFIX:PATH=<INSTALL_DIR>
-                                        -DTrilinos_ENABLE_Stratimikos:BOOL=FALSE
-                                        -DTrilinos_ENABLE_SEACAS:BOOL=FALSE
-                                        -DCMAKE_INSTALL_RPATH:PATH=${Trilinos_install_dir}/lib
-                                        -DCMAKE_INSTALL_NAME_DIR:PATH=${Trilinos_install_dir}/lib
+                    CMAKE_ARGS        ${Trilinos_Config_File_ARGS}
+                    CMAKE_CACHE_ARGS  ${Trilinos_CMAKE_ARGS} 
+                                      -DCMAKE_C_FLAGS:STRING=${Amanzi_COMMON_CFLAGS}  # Ensure uniform build
+                                      -DCMAKE_C_COMPILER:FILEPATH=${CMAKE_C_COMPILER}
+                                      -DCMAKE_CXX_FLAGS:STRING=${Amanzi_COMMON_CXXFLAGS}
+                                      -DCMAKE_CXX_COMPILER:FILEPATH=${CMAKE_CXX_COMPILER}
+                                      -DCMAKE_Fortran_FLAGS:STRING=${Amanzi_COMMON_FCFLAGS}
+                                      -DCMAKE_Fortran_COMPILER:FILEPATH=${CMAKE_Fortran_COMPILER}
+                                      -DCMAKE_INSTALL_PREFIX:PATH=${Trilinos_install_dir}
+                                      -DTrilinos_ENABLE_Stratimikos:BOOL=FALSE
+                                      -DTrilinos_ENABLE_SEACAS:BOOL=FALSE
+                                      -DCMAKE_INSTALL_RPATH:PATH=${Trilinos_install_dir}/lib
+                                      -DCMAKE_INSTALL_NAME_DIR:PATH=${Trilinos_install_dir}/lib
                     # -- Build
-                    BINARY_DIR        ${Trilinos_build_dir}        # Build directory 
-                    BUILD_COMMAND     $(MAKE)                      # $(MAKE) enables parallel builds through make
-                    BUILD_IN_SOURCE   ${Trilinos_BUILD_IN_SOURCE}  # Flag for in source builds
+                    BINARY_DIR       ${Trilinos_build_dir}        # Build directory 
+                    BUILD_COMMAND    $(MAKE)                      # $(MAKE) enables parallel builds through make
+                    BUILD_IN_SOURCE  ${Trilinos_BUILD_IN_SOURCE}  # Flag for in source builds
                     # -- Install
-                    INSTALL_DIR      ${Trilinos_install_dir}        # Install directory
+                    INSTALL_DIR      ${Trilinos_install_dir}      # Install directory
                     # -- Output control
                     ${Trilinos_logging_args}
 		    )
