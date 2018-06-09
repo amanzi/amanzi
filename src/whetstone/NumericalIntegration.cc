@@ -23,17 +23,10 @@ namespace WhetStone {
 /* ******************************************************************
 * Constructor.
 ****************************************************************** */
-NumericalIntegration::NumericalIntegration(
-    Teuchos::RCP<const AmanziMesh::Mesh> mesh, bool single_cell)
+NumericalIntegration::NumericalIntegration(Teuchos::RCP<const AmanziMesh::Mesh> mesh)
   : mesh_(mesh),
-    d_(mesh_->space_dimension()),
-    single_cell_(single_cell)
-{
-  if (! single_cell_) {
-    int ncells_wghost = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
-    basis_.resize(ncells_wghost);
-  }
-}
+    d_(mesh->space_dimension())
+{};
 
 
 /* ******************************************************************
@@ -440,39 +433,6 @@ double NumericalIntegration::PolynomialMaxValue(int f, const Polynomial& poly)
   }
 
   return pmax;
-}
-
-
-/* ******************************************************************
-* Re-scale polynomial coefficients: lazy implementation.
-* Scaling factor is constant for monomials of the same order.
-****************************************************************** */
-double NumericalIntegration::MonomialRegularizedScales(int c, int k) {
-  if (! single_cell_) {
-    basis_[c].Init(mesh_, c, k);
-    return basis_[c].monomial_scales()[k];
-  }
-
-  single_cell_basis_.Init(mesh_, c, k);
-  return single_cell_basis_.monomial_scales()[k];
-}
-
-
-void NumericalIntegration::ChangeBasisNaturalToRegularized(int c, Polynomial& p)
-{
-  for (int k = 0; k <= p.order(); ++k) {
-    auto& mono = p.MonomialSet(k);
-    mono /= MonomialRegularizedScales(c, k);
-  }
-}
-
-
-void NumericalIntegration::ChangeBasisRegularizedToNatural(int c, Polynomial& p)
-{
-  for (int k = 0; k <= p.order(); ++k) {
-    auto& mono = p.MonomialSet(k);
-    mono *= MonomialRegularizedScales(c, k);
-  }
 }
 
 }  // namespace WhetStone

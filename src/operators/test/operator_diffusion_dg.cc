@@ -132,6 +132,7 @@ void OperatorDiffusionDG(std::string solver_name) {
   // -- primary term
   Teuchos::RCP<PDE_DiffusionDG> op = Teuchos::rcp(new PDE_DiffusionDG(op_list, mesh));
   auto global_op = op->global_operator();
+  const WhetStone::DG_Modal& dg = op->dg();
 
   // -- boundary conditions
   op->SetBCs(bc, bc);
@@ -142,7 +143,7 @@ void OperatorDiffusionDG(std::string solver_name) {
   Epetra_MultiVector& src_c = *src.ViewComponent("cell");
 
   WhetStone::Polynomial pc(2, order);
-  WhetStone::NumericalIntegration numi(mesh, false);
+  WhetStone::NumericalIntegration numi(mesh);
 
   for (int c = 0; c < ncells; ++c) {
     const Point& xc = mesh->cell_centroid(c);
@@ -151,17 +152,22 @@ void OperatorDiffusionDG(std::string solver_name) {
     ana.SourceTaylor(xc, 0.0, coefs);
     coefs.set_origin(xc);
 
+    // -- calculate moments in natural basis
+    data.Reshape(pc.size());
     for (auto it = pc.begin(); it.end() <= pc.end(); ++it) {
       int n = it.PolynomialPosition();
-      int k = it.MonomialSetOrder();
 
-      double factor = numi.MonomialRegularizedScales(c, k);
-      WhetStone::Polynomial cmono(2, it.multi_index(), factor);
+      WhetStone::Polynomial cmono(2, it.multi_index(), 1.0);
       cmono.set_origin(xc);      
-
       WhetStone::Polynomial tmp = coefs * cmono;      
 
-      src_c[n][c] = numi.IntegratePolynomialCell(c, tmp);
+      data(n) = numi.IntegratePolynomialCell(c, tmp);
+    } 
+
+    // -- convert moment to my basis (inverse of basis change)
+    dg.cell_basis(c).ChangeBasisMyToNatural(data);
+    for (int n = 0; n < pc.size(); ++n) {
+      src_c[n][c] = data(n);
     }
   }
 
@@ -219,7 +225,7 @@ void OperatorDiffusionDG(std::string solver_name) {
   Epetra_MultiVector& p = *solution.ViewComponent("cell", false);
 
   double pnorm, pl2_err, pinf_err, pl2_mean, pinf_mean;
-  ana.ComputeCellError(p, 0.0, pnorm, pl2_err, pinf_err, pl2_mean, pinf_mean);
+  ana.ComputeCellError(dg, p, 0.0, pnorm, pl2_err, pinf_err, pl2_mean, pinf_mean);
 
   if (MyPID == 0) {
     printf("Mean:  L2(p)=%9.6f  Inf(p)=%9.6f  itr=%3d\n", pl2_mean, pinf_mean, solver->num_itrs());

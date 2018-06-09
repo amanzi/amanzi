@@ -29,7 +29,7 @@ void Basis_Normalized::Init(
   monomial_scales_.Reshape(d, order);
 
   Polynomial integrals(d, 2 * order);
-  NumericalIntegration numi(mesh, true);
+  NumericalIntegration numi(mesh);
 
   for (int k = 0; k <= 2 * order; ++k) {
     numi.IntegrateMonomialsCell(c, k, integrals);
@@ -60,7 +60,7 @@ void Basis_Normalized::Init(
 /* ******************************************************************
 * Transformation from natural basis to owned basis.
 ****************************************************************** */
-void Basis_Normalized::ChangeBasisMatrix(DenseMatrix& A) const
+void Basis_Normalized::ChangeBasisNaturalToMy(DenseMatrix& A) const
 {
   AMANZI_ASSERT(A.NumRows() == monomial_scales_.size());
 
@@ -88,9 +88,23 @@ void Basis_Normalized::ChangeBasisMatrix(DenseMatrix& A) const
 
 
 /* ******************************************************************
-* Transformation from natural basis to owned basis.
+* Vector transformation between my and natural bases.
+* Transformation is diagonal: Bn_i = s_i B_i and v = Sum_i v_i Bn_i 
 ****************************************************************** */
-void Basis_Normalized::ChangeBasisVector(DenseVector& v) const
+void Basis_Normalized::ChangeBasisMyToNatural(DenseVector& v) const
+{
+  AMANZI_ASSERT(v.NumRows() == monomial_scales_.size());
+
+  for (auto it = monomial_scales_.begin(); it.end() <= monomial_scales_.end(); ++it) {
+    int n = it.PolynomialPosition();
+    int m = it.MonomialSetOrder();
+    int k = it.MonomialSetPosition();
+
+    v(n) *= monomial_scales_(m, k);
+  }
+}
+
+void Basis_Normalized::ChangeBasisNaturalToMy(DenseVector& v) const
 {
   AMANZI_ASSERT(v.NumRows() == monomial_scales_.size());
 
@@ -103,11 +117,10 @@ void Basis_Normalized::ChangeBasisVector(DenseVector& v) const
   }
 }
 
-
 /* ******************************************************************
 * Transformation from natural basis to owned basis.
 ****************************************************************** */
-void Basis_Normalized::ChangeBasisMatrix(
+void Basis_Normalized::ChangeBasisNaturalToMy(
     std::shared_ptr<Basis> bl, std::shared_ptr<Basis> br, DenseMatrix& A) const
 {
   int order = monomial_scales_.order();
@@ -126,21 +139,18 @@ void Basis_Normalized::ChangeBasisMatrix(
     int m = it.MonomialSetOrder();
     int k = it.MonomialSetPosition();
 
-    double ak = (bll->monomial_scales())(m, k);
-    a1[n] = ak;
-
-    ak = (brr->monomial_scales())(m, k);
-    a2[n] = ak;
+    a1[n] = (bll->monomial_scales())(m, k);
+    a2[n] = (brr->monomial_scales())(m, k);
   }
 
   // calculate R^T * A * R
   for (int k = 0; k < m; ++k) {
     for (int i = 0; i < m; ++i) {
-      A(i, k) = A(i, k) * a1[k] * a2[i];
-      A(i, k + m) = A(i, k + m) * a2[k] * a1[i];
+      A(i, k) = A(i, k) * a1[i] * a1[k];
+      A(i, k + m) = A(i, k + m) * a1[i] * a2[k];
 
-      A(i + m, k) = A(i + m, k) * a1[k] * a2[i];
-      A(i + m, k + m) = A(i + m, k + m) * a2[k] * a1[i];
+      A(i + m, k) = A(i + m, k) * a2[i] * a1[k];
+      A(i + m, k + m) = A(i + m, k + m) * a2[i] * a2[k];
     }
   }
 }

@@ -11,6 +11,7 @@
 
 #include <vector>
 
+#include "Basis_Regularized.hh"
 #include "MFD3DFactory.hh"
 
 #include "OperatorDefs.hh"
@@ -163,7 +164,7 @@ void PDE_AdvectionRiemann::ApplyBCs(bool primary, bool eliminate, bool essential
   std::vector<AmanziGeometry::Point> tau(d - 1);
 
   // create integration object for all mesh cells
-  WhetStone::NumericalIntegration numi(mesh_, false);
+  WhetStone::NumericalIntegration numi(mesh_);
 
   for (int f = 0; f != nfaces_owned; ++f) {
     if (bc_model[f] == OPERATOR_BC_DIRICHLET ||
@@ -185,9 +186,8 @@ void PDE_AdvectionRiemann::ApplyBCs(bool primary, bool eliminate, bool essential
       pf.SetPolynomialCoefficients(coef);
       pf.set_origin(xf);
 
-      // -- convert boundary polynomial to space polynomial
+      // -- convert boundary polynomial to regularized space polynomial
       pf.ChangeOrigin(mesh_->cell_centroid(c));
-      numi.ChangeBasisNaturalToRegularized(c, pf);
 
       // -- extract coefficients and update right-hand side 
       WhetStone::DenseMatrix& Aface = local_op_->matrices[f];
@@ -196,6 +196,7 @@ void PDE_AdvectionRiemann::ApplyBCs(bool primary, bool eliminate, bool essential
 
       WhetStone::DenseVector v(nrows), av(ncols);
       pf.GetPolynomialCoefficients(v);
+      dg_->cell_basis(c).ChangeBasisNaturalToMy(v);
 
       Aface.Multiply(v, av, false);
 

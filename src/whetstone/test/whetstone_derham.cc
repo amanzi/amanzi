@@ -49,7 +49,7 @@ TEST(DERHAM_COMPLEX_NODE) {
   drc.MassMatrix(cell, T, M);
 
   printf("Mass matrix for cell %3d\n", cell);
-  M.PrintMatrix("%8.4f ");
+  PrintMatrix(M, "%8.4f ");
 
   // verify SPD propery
   for (int i = 0; i < nnodes; ++i) CHECK(M(i, i) > 0.0);

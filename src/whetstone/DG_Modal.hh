@@ -104,7 +104,7 @@ class DG_Modal : public BilinearForm {
   // -- order of polynomials in each cell
   void set_order(int order) { order_ = order; }
   int order() { return order_; }
-  const Basis& cell_basis(int c) { return *basis_[c]; }
+  const Basis& cell_basis(int c) const { return *basis_[c]; }
 
  private:
   int MassMatrixPoly_(int c, const Polynomial& K, DenseMatrix& M);

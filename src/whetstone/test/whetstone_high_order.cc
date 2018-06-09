@@ -58,7 +58,7 @@ TEST(HIGH_ORDER_CROUZEIX_RAVIART) {
   mfd.StiffnessMatrix(cell, T, Ak);
 
   printf("Stiffness matrix for order = 1\n");
-  A1.PrintMatrix("%8.4f ");
+  PrintMatrix(A1, "%8.4f ");
 
   A1 -= Ak;
   CHECK(A1.NormInf() <= 1e-10);
@@ -70,7 +70,7 @@ TEST(HIGH_ORDER_CROUZEIX_RAVIART) {
     mfd.StiffnessMatrix(cell, T, Ak);
 
     printf("Stiffness matrix for order = %d\n", k);
-    Ak.PrintMatrix("%8.4f ");
+    PrintMatrix(Ak, "%8.4f ");
 
     // verify SPD propery
     int nrows = Ak.NumRows();
@@ -123,7 +123,7 @@ void HighOrderLagrange(std::string file_name) {
     mfd_ho.StiffnessMatrix(c, T, Ak);
 
     printf("Stiffness matrix for order=1, cell=%d\n", c);
-    A1.PrintMatrix("%8.4f ");
+    PrintMatrix(A1, "%8.4f ");
 
     A1 -= Ak;
     CHECK(A1.NormInf() <= 1e-10);
@@ -135,7 +135,7 @@ void HighOrderLagrange(std::string file_name) {
       mfd_ho.StiffnessMatrix(c, T, Ak);
 
       printf("Stiffness matrix for order=%d, cell=%d\n", k, c);
-      Ak.PrintMatrix("%8.4f ");
+      PrintMatrix(Ak, "%8.4f ");
 
       // verify SPD propery
       int nrows = Ak.NumRows();
@@ -197,7 +197,7 @@ void HighOrderLagrangeSerendipity(std::string file_name) {
     mfd_ho.StiffnessMatrix(c, T, Ak);
 
     printf("Stiffness matrix for order=1, cell=%d\n", c);
-    Ak.PrintMatrix("%8.4f ");
+    PrintMatrix(Ak, "%8.4f ");
 
     A1 -= Ak;
     CHECK(A1.NormInf() <= 1e-10);
@@ -209,7 +209,7 @@ void HighOrderLagrangeSerendipity(std::string file_name) {
       mfd_ho.StiffnessMatrix(c, T, Ak);
 
       printf("Stiffness matrix for order=%d, cell=%d\n", k, c);
-      Ak.PrintMatrix("%8.3f ");
+      PrintMatrix(Ak, "%8.3f ");
 
       // verify SPD propery
       int nrows = Ak.NumRows();

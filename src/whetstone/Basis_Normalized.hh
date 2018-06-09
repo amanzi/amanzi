@@ -9,7 +9,7 @@
 
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 
-  The normalized basis for dG methods: |\psi| = 1.
+  The normalized basis for dG methods: |a (x-x0)^m| = 1.
 */
 
 #ifndef AMANZI_DG_BASIS_NORMALIZED_HH_
@@ -31,10 +31,12 @@ class Basis_Normalized : public Basis {
   virtual void Init(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh, int c, int order);
 
   // transformation from natural basis to owned basis
-  virtual void ChangeBasisMatrix(DenseMatrix& A) const;
-  virtual void ChangeBasisVector(DenseVector& v) const;
+  virtual void ChangeBasisNaturalToMy(DenseMatrix& A) const;
+  virtual void ChangeBasisNaturalToMy(std::shared_ptr<Basis> bl,
+                                      std::shared_ptr<Basis> br, DenseMatrix& A) const;
 
-  virtual void ChangeBasisMatrix(std::shared_ptr<Basis> bl, std::shared_ptr<Basis> br, DenseMatrix& A) const;
+  virtual void ChangeBasisMyToNatural(DenseVector& v) const;
+  virtual void ChangeBasisNaturalToMy(DenseVector& v) const;
 
   // Recover polynomial in regular basis
   virtual Polynomial CalculatePolynomial(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,

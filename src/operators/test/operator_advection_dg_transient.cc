@@ -223,7 +223,7 @@ void AdvectionFn<AnalyticDG>::Functional(
   int nk = (order_ + 1) * (order_ + 2) / 2;
 
   WhetStone::Polynomial sol, src, pc(2, order_);
-  WhetStone::NumericalIntegration numi(mesh_, false);
+  WhetStone::NumericalIntegration numi(mesh_);
 
   CompositeVector& rhs = *global_op_->rhs();
   Epetra_MultiVector& rhs_c = *rhs.ViewComponent("cell");
@@ -583,7 +583,7 @@ void AdvectionTransient(std::string filename, int nx, int ny, double dt,
   Epetra_MultiVector& p = *sol.ViewComponent("cell", false);
 
   double pnorm, pl2_err, pinf_err, pl2_mean, pinf_mean;
-  ana.ComputeCellError(p, tend, pnorm, pl2_err, pinf_err, pl2_mean, pinf_mean);
+  ana.ComputeCellError(*dg, p, tend, pnorm, pl2_err, pinf_err, pl2_mean, pinf_mean);
 
   if (MyPID == 0) {
     printf("nx=%3d (mean) L2(p)=%9.6g  Inf(p)=%9.6g\n", nx, pl2_mean, pinf_mean);

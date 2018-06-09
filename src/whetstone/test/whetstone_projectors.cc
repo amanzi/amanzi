@@ -197,7 +197,7 @@ TEST(HARMONIC_PROJECTORS_POLYGON_CR) {
 
     uc[0] -= vf[0][0];
     uc[1] -= vf[0][1];
-    CHECK(uc[0].NormMax() < 1e-12 && uc[1].NormMax() < 1e-12);
+    CHECK(uc[0].NormMax() < 1e-11 && uc[1].NormMax() < 1e-11);
   }
 
   // test quadratic deformation
@@ -258,7 +258,7 @@ TEST(HARMONIC_PROJECTORS_POLYGON_CR) {
 
   int dir;
   double val1(0.0), valx(0.0);
-  NumericalIntegration numi(mesh, true);
+  NumericalIntegration numi(mesh);
 
   for (int n = 0; n < nfaces; ++n) {
     const AmanziGeometry::Point& normal = mesh->face_normal(n, false, cell, &dir);
@@ -402,8 +402,6 @@ TEST(L2GRADIENT_PROJECTORS_SQUARE_CR) {
 
   uc[0][0] -= grad[0];
   uc[0][1] -= grad[1];
-  std::cout << grad[0] << std::endl;
-  std::cout << grad[1] << std::endl;
   CHECK(uc[0][0].NormMax() < 1e-12 && uc[0][1].NormMax() < 1e-12);
 
   std::cout << "    subtest: CUBIC deformation, computed moments" << std::endl;
@@ -579,7 +577,7 @@ TEST(HARMONIC_PROJECTORS_POLYGON_PK) {
 
   int dir;
   double val1(0.0), valx(0.0);
-  NumericalIntegration numi(mesh, true);
+  NumericalIntegration numi(mesh);
 
   for (int n = 0; n < nfaces; ++n) {
     const AmanziGeometry::Point& normal = mesh->face_normal(n, false, cell, &dir);

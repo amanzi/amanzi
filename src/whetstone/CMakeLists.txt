@@ -59,7 +59,8 @@ add_amanzi_library(whetstone
                    HEADERS DenseMatrix.hh DenseVector.hh
                            DG_Modal.hh
                            Basis.hh BasisFactory.hh
-                           Basis_Regularized.hh Basis_Normalized.hh Basis_Orthonormalized.hh
+                           Basis_Natural.hh Basis_Regularized.hh 
+                           Basis_Normalized.hh Basis_Orthonormalized.hh
                            lapack.hh
                            InnerProduct.hh InnerProductL2.hh InnerProductH1.hh
                            BilinearForm.hh Projectors.hh

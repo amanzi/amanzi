@@ -109,6 +109,7 @@ void AdvectionSteady(int dim, std::string filename, int nx,
   ParameterList op_list = plist.sublist(pk_name).sublist("flux operator");
   auto op_flux = Teuchos::rcp(new PDE_AdvectionRiemann(op_list, mesh));
   auto global_op = op_flux->global_operator();
+  const WhetStone::DG_Modal& dg = op_flux->dg();
 
   // -- volumetric advection term
   op_list = plist.sublist(pk_name).sublist("advection operator");
@@ -175,7 +176,8 @@ void AdvectionSteady(int dim, std::string filename, int nx,
   WhetStone::VectorPolynomial grad(dim, 0);
 
   WhetStone::Polynomial pc(dim, order);
-  WhetStone::NumericalIntegration numi(mesh, false);
+  WhetStone::DenseVector data(pc.size());
+  WhetStone::NumericalIntegration numi(mesh);
 
   Epetra_MultiVector& rhs_c = *global_op->rhs()->ViewComponent("cell");
   for (int c = 0; c < ncells; ++c) {
@@ -195,13 +197,18 @@ void AdvectionSteady(int dim, std::string filename, int nx,
       int n = it.PolynomialPosition();
       int k = it.MonomialSetOrder();
 
-      double factor = numi.MonomialRegularizedScales(c, k);
-      WhetStone::Polynomial cmono(dim, it.multi_index(), factor);
+      WhetStone::Polynomial cmono(dim, it.multi_index(), 1.0);
       cmono.set_origin(xc);      
 
       WhetStone::Polynomial tmp = src * cmono;      
 
-      rhs_c[n][c] = numi.IntegratePolynomialCell(c, tmp);
+      data(n) = numi.IntegratePolynomialCell(c, tmp);
+    }
+
+    // -- convert moment to my basis (inverse of basis change)
+    dg.cell_basis(c).ChangeBasisMyToNatural(data);
+    for (int n = 0; n < pc.size(); ++n) {
+      rhs_c[n][c] = data(n);
     }
   }
 
@@ -211,7 +218,6 @@ void AdvectionSteady(int dim, std::string filename, int nx,
   std::vector<std::vector<double> >& bc_value = bc->bc_value_vector(nk);
 
   WhetStone::Polynomial coefs;
-  WhetStone::DenseVector data;
 
   for (int f = 0; f < nfaces_wghost; f++) {
     const Point& xf = mesh->face_centroid(f);
@@ -298,7 +304,7 @@ void AdvectionSteady(int dim, std::string filename, int nx,
   Epetra_MultiVector& p = *solution.ViewComponent("cell", false);
 
   double pnorm, pl2_err, pinf_err, pl2_mean, pinf_mean;
-  ana.ComputeCellError(p, 0.0, pnorm, pl2_err, pinf_err, pl2_mean, pinf_mean);
+  ana.ComputeCellError(dg, p, 0.0, pnorm, pl2_err, pinf_err, pl2_mean, pinf_mean);
 
   if (MyPID == 0) {
     sol.ChangeOrigin(AmanziGeometry::Point(2));

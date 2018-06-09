@@ -252,6 +252,7 @@
     <!-- DG (nonconformal) schemes -->
     <ParameterList name="diffusion operator dg">
       <Parameter name="method" type="string" value="dg modal"/>
+      <Parameter name="dg basis" type="string" value="regularized"/>
       <Parameter name="method order" type="int" value="2"/>
       <Parameter name="matrix type" type="string" value="stiffness"/>
       <ParameterList name="schema">

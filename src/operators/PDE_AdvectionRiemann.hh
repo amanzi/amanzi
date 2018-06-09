@@ -68,6 +68,9 @@ class PDE_AdvectionRiemann : public PDE_Advection {
   // boundary conditions
   virtual void ApplyBCs(bool primary, bool eliminate, bool essential_eqn) override;
 
+  // access
+  const WhetStone::DG_Modal& dg() const { return *dg_; }
+
  private:
   void InitAdvection_(Teuchos::ParameterList& plist);
 

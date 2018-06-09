@@ -115,14 +115,6 @@ class DenseMatrix {
     }
     return os;
   }
-  void PrintMatrix(const char* format = "12.5f") const {
-    for (int i = 0; i < m_; i++) {
-      for (int j = 0; j < n_; j++) {
-        printf(format, *(data_ + j * m_ + i));
-      }
-      printf("\n");
-    }
-  }
 
   // First level routines
   // -- trace of a rectangular matrix
@@ -182,6 +174,7 @@ class DenseMatrix {
 };
 
 
+// non-member functions
 inline bool operator==(const DenseMatrix& A, const DenseMatrix& B) {
   if (A.NumRows() != B.NumRows()) return false;
   if (A.NumCols() != B.NumCols()) return false;
@@ -193,6 +186,18 @@ inline bool operator==(const DenseMatrix& A, const DenseMatrix& B) {
 
 inline bool operator!=(const DenseMatrix& A, const DenseMatrix& B) {
   return !(A == B);
+}
+
+
+inline void PrintMatrix(const DenseMatrix& A, const char* format = "%12.5f") {
+  int m = A.NumRows();
+  int n = A.NumCols();
+  
+  for (int i = 0; i < m; i++) {
+    for (int j = 0; j < n; j++) printf(format, A(i, j));
+    printf("\n");
+  }
+  printf("\n");
 }
 
 }  // namespace WhetStone

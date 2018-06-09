@@ -23,7 +23,6 @@
 #include "Mesh.hh"
 #include "Point.hh"
 
-#include "Basis_Regularized.hh"
 #include "Polynomial.hh"
 #include "PolynomialOnMesh.hh"
 #include "Quadrature1D.hh"
@@ -35,7 +34,7 @@ namespace WhetStone {
 
 class NumericalIntegration { 
  public:
-  NumericalIntegration(Teuchos::RCP<const AmanziMesh::Mesh> mesh, bool single_cell);
+  NumericalIntegration(Teuchos::RCP<const AmanziMesh::Mesh> mesh);
   ~NumericalIntegration() {};
 
   // main methods
@@ -83,14 +82,6 @@ class NumericalIntegration {
   // various bounds
   double PolynomialMaxValue(int f, const Polynomial& poly);
 
-  // natural scaling of monomials (e.g. x^k / h^k)
-  // -- scaling factor is constant for monomials of the same order
-  double MonomialRegularizedScales(int c, int k);
-  // -- polynomial is converted from regular to natural basis
-  void ChangeBasisNaturalToRegularized(int c, Polynomial& p);
-  // -- polynomial is converted from natural to regular basis
-  void ChangeBasisRegularizedToNatural(int c, Polynomial& p);
-
  private:
   void IntegrateMonomialsFace_(int c, int f, double factor, int k, Polynomial& integrals);
   void IntegrateMonomialsEdge_(
@@ -100,11 +91,6 @@ class NumericalIntegration {
  private:
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
   int d_;
-
-  // cached variables
-  bool single_cell_;
-  Basis_Regularized single_cell_basis_;
-  std::vector<Basis_Regularized> basis_;
 };
 
 }  // namespace WhetStone

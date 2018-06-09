@@ -21,6 +21,7 @@
 #include "Point.hh"
 #include "errors.hh"
 
+#include "Basis_Regularized.hh"
 #include "CoordinateSystems.hh"
 #include "MFD3D_LagrangeSerendipity.hh"
 #include "NumericalIntegration.hh"
@@ -63,8 +64,12 @@ int MFD3D_LagrangeSerendipity::H1consistency(
   MFD3D_Lagrange::H1consistency(c, K, Nf, Af);
 
   // pre-calculate integrals of monomials 
-  NumericalIntegration numi(mesh_, true);
+  NumericalIntegration numi(mesh_);
   numi.UpdateMonomialIntegralsCell(c, 2 * order_, integrals_);
+
+  // selecting regularized basis
+  Basis_Regularized basis;
+  basis.Init(mesh_, c, order_);
 
   // set the Gramm-Schidt matrix for polynomials
   DenseMatrix M(nd, nd);
@@ -72,10 +77,12 @@ int MFD3D_LagrangeSerendipity::H1consistency(
   for (auto it = poly.begin(); it.end() <= poly.end(); ++it) {
     const int* index = it.multi_index();
     int k = it.PolynomialPosition();
+    double scalei = basis.monomial_scales()[it.MonomialSetOrder()];
 
     for (auto jt = it; jt.end() <= poly.end(); ++jt) {
       const int* jndex = jt.multi_index();
       int l = jt.PolynomialPosition();
+      double scalej = basis.monomial_scales()[jt.MonomialSetOrder()];
       
       int n(0);
       int multi_index[3];
@@ -84,13 +91,13 @@ int MFD3D_LagrangeSerendipity::H1consistency(
         n += multi_index[i];
       }
 
-      double sum(0.0), tmp;
-      M(l, k) = M(k, l) = integrals_.poly()(n, poly.MonomialSetPosition(multi_index)); 
+      M(k, l) = integrals_.poly()(n, poly.MonomialSetPosition(multi_index)) * scalei * scalej; 
+      M(l, k) = M(k, l);
     }
   }
 
   // setup matrix representing Laplacian of polynomials
-  double scale = numi.MonomialRegularizedScales(c, 1);
+  double scale = basis.monomial_scales()[1];
 
   DenseMatrix L(nd, nd);
   L.PutScalar(0.0);
@@ -99,7 +106,7 @@ int MFD3D_LagrangeSerendipity::H1consistency(
     const int* index = it.multi_index();
     int k = it.PolynomialPosition();
 
-    double factor = numi.MonomialRegularizedScales(c, it.MonomialSetOrder());
+    double factor = basis.monomial_scales()[it.MonomialSetOrder()];
     Polynomial mono(d_, index, factor);
     Polynomial lap = mono.Laplacian();
     
@@ -167,7 +174,11 @@ void MFD3D_LagrangeSerendipity::L2Cell(
     const std::shared_ptr<DenseVector>& moments, VectorPolynomial& uc)
 {
   // create integration object for a single cell
-  NumericalIntegration numi(mesh_, true);
+  NumericalIntegration numi(mesh_);
+
+  // selecting regularized basis
+  Basis_Regularized basis;
+  basis.Init(mesh_, c, order_);
 
   // calculate stiffness matrix
   Tensor T(d_, 1);
@@ -207,9 +218,7 @@ void MFD3D_LagrangeSerendipity::L2Cell(
     Ns.Multiply(vdof, v1, true);
     NN.Multiply(v1, v2, false);
 
-    uc[i].Reshape(d_, order_, true);
-    uc[i].SetPolynomialCoefficients(v2);
-    numi.ChangeBasisRegularizedToNatural(c, uc[i]);
+    uc[i] = basis.CalculatePolynomial(mesh_, c, order_, v2);
 
     // set origin to zero
     AmanziGeometry::Point zero(d_);
@@ -236,7 +245,7 @@ void MFD3D_LagrangeSerendipity::CalculateDOFsOnBoundary_(
   int nfaces = faces.size();
 
   std::vector<const Polynomial*> polys(2);
-  NumericalIntegration numi(mesh_, true);
+  NumericalIntegration numi(mesh_);
 
   AmanziGeometry::Point xv(d_);
   std::vector<AmanziGeometry::Point> tau(d_ - 1);

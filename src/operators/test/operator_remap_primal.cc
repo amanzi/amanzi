@@ -112,7 +112,7 @@ void RemapTests2DPrimal(int order, std::string disc_name,
   auto maps = maps_factory.Create(map_list, mesh0, mesh1);
 
   // numerical integration
-  WhetStone::NumericalIntegration numi(mesh0, false);
+  WhetStone::NumericalIntegration numi(mesh0);
 
   // create and initialize cell-based field 
   CompositeVectorSpace cvs1;

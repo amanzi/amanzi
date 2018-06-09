@@ -10,10 +10,6 @@
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 
   The base class for dG basis.
-  We highlight two special bases: natural, with basis monomials 
-  of form (x-x0)^k, and regularized, with basis monomials of 
-  form (x-x0)^k / h^k, where h is cell measure. Matrix and vector
-  Tranformations are available to and from these bases.
 */
 
 #ifndef AMANZI_DG_BASIS_HH_
@@ -39,12 +35,14 @@ class Basis {
   virtual void Init(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh, int c, int order) = 0;
 
   // transformation from natural basis to owned basis
-  virtual void ChangeBasisMatrix(DenseMatrix& A) const = 0;
-  virtual void ChangeBasisVector(DenseVector& v) const = 0;
+  virtual void ChangeBasisNaturalToMy(DenseMatrix& A) const = 0;
+  virtual void ChangeBasisNaturalToMy(std::shared_ptr<Basis> bl,
+                                      std::shared_ptr<Basis> br, DenseMatrix& A) const = 0;
 
-  virtual void ChangeBasisMatrix(std::shared_ptr<Basis> bl, std::shared_ptr<Basis> br, DenseMatrix& A) const = 0;
+  virtual void ChangeBasisMyToNatural(DenseVector& v) const = 0;
+  virtual void ChangeBasisNaturalToMy(DenseVector& v) const = 0;
 
-  // recover polynomial in natural basis
+  // recover polynomial in the natural basis
   virtual Polynomial CalculatePolynomial(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
                                          int c, int order, DenseVector& coefs) const = 0;
 

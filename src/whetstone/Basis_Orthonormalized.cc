@@ -30,7 +30,7 @@ void Basis_Orthonormalized::Init(
   monomial_ortho_.Reshape(d, order);
 
   Polynomial integrals(d, 2 * order);
-  NumericalIntegration numi(mesh, true);
+  NumericalIntegration numi(mesh);
 
   for (int k = 0; k <= 2 * order; ++k) {
     numi.IntegrateMonomialsCell(c, k, integrals);
@@ -67,7 +67,7 @@ void Basis_Orthonormalized::Init(
 /* ******************************************************************
 * Transformation of regularized basis to owned basis.
 ****************************************************************** */
-void Basis_Orthonormalized::ChangeBasisMatrix(DenseMatrix& A) const
+void Basis_Orthonormalized::ChangeBasisNaturalToMy(DenseMatrix& A) const
 {
   AMANZI_ASSERT(A.NumRows() == monomial_scales_.size());
 
@@ -107,9 +107,11 @@ void Basis_Orthonormalized::ChangeBasisMatrix(DenseMatrix& A) const
 
 
 /* ******************************************************************
-* Transformation of regularized basis to owned basis.
+* Vector transformation between my and natural bases.
+* Transformation is bi-diagonal: Bn_i = a_i (B_i - b_i B_0) and 
+* v = Sum_i v_i Bn_i. Note that B_0 = 1.
 ****************************************************************** */
-void Basis_Orthonormalized::ChangeBasisVector(DenseVector& v) const
+void Basis_Orthonormalized::ChangeBasisMyToNatural(DenseVector& v) const
 {
   AMANZI_ASSERT(v.NumRows() == monomial_scales_.size());
  
@@ -120,16 +122,34 @@ void Basis_Orthonormalized::ChangeBasisVector(DenseVector& v) const
 
     double a = monomial_scales_(m, k);
     double b = monomial_ortho_(m, k);
+    v(n) *= a;
+    v(0) -= b * v(n);
+  }
+}
+
+
+void Basis_Orthonormalized::ChangeBasisNaturalToMy(DenseVector& v) const
+{
+  AMANZI_ASSERT(v.NumRows() == monomial_scales_.size());
+ 
+  double v0 = v(0);
+  for (auto it = monomial_scales_.begin(); it.end() <= monomial_scales_.end(); ++it) {
+    int n = it.PolynomialPosition();
+    int m = it.MonomialSetOrder();
+    int k = it.MonomialSetPosition();
+
+    double a = monomial_scales_(m, k);
+    double b = monomial_ortho_(m, k);
     v(n) /= a;
-    v(0) -= a * b;
+    v(0) += b * v(n);
   }
 }
 
 
 /* ******************************************************************
-* Transformation of regularized basis to owned basis.
+* Transformation from natural to my basis for polynomial coefficents.
 ****************************************************************** */
-void Basis_Orthonormalized::ChangeBasisMatrix(
+void Basis_Orthonormalized::ChangeBasisNaturalToMy(
     std::shared_ptr<Basis> bl, std::shared_ptr<Basis> br, DenseMatrix& A) const
 {
   int order = monomial_scales_.order();

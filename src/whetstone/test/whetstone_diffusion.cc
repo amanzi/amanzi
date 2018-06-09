@@ -66,7 +66,7 @@ TEST(DARCY_MASS_2D) {
     }
 
     printf("Mass matrix for cell %3d\n", cell);
-    M.PrintMatrix("%8.4f ");
+    PrintMatrix(M, "%8.4f ");
 
     // verify SPD propery
     for (int i=0; i<nfaces; i++) CHECK(M(i, i) > 0.0);
@@ -144,7 +144,7 @@ TEST(DARCY_MASS_3D) {
     }
 
     printf("Mass matrix for cell %3d\n", cell);
-    M.PrintMatrix("%8.4f ");
+    PrintMatrix(M, "%8.4f ");
 
     // verify SPD propery
     for (int i = 0; i < nfaces; ++i) CHECK(M(i, i) > 0.0);
@@ -230,7 +230,7 @@ TEST(DARCY_MASS_3D_GENERALIZED_POLYHEDRON) {
   mfd.MassMatrix(cell, T, M);
 
   printf("Mass matrix for cell %3d  volume=%12.4f\n", cell, volume);
-  M.PrintMatrix("%8.4f ");
+  PrintMatrix(M, "%8.4f ");
 
   // verify SPD propery
   for (int i = 0; i < nfaces; ++i) CHECK(M(i, i) > 0.0);
@@ -282,7 +282,7 @@ TEST(DARCY_INVERSE_MASS_3D) {
     }
 
     printf("Inverse of mass matrix for method=%d\n", method);
-    W.PrintMatrix("%8.4f ");
+    PrintMatrix(W, "%8.4f ");
 
     // verify SPD some propeties
     for (int i = 0; i < nfaces; i++) CHECK(W(i, i) > 0.0);
@@ -376,7 +376,7 @@ TEST(DARCY_FULL_TENSOR_2D) {
       }
 
       printf("Inverse of mass matrix for method=%d\n", method);
-      W.PrintMatrix("%8.4f ");
+      PrintMatrix(W, "%8.4f ");
 
       // verify PD propery
       for (int i = 0; i < nfaces; i++) CHECK(W(i, i) > 0.0);
@@ -472,7 +472,7 @@ TEST(DARCY_FULL_TENSOR_3D) {
     }
 
     printf("Inverse of mass matrix for method=%d\n", method);
-    W.PrintMatrix("%8.4f ");
+    PrintMatrix(W, "%8.4f ");
 
     // verify SPD propery
     for (int i=0; i<nfaces; i++) CHECK(W(i, i) > 0.0);
@@ -549,7 +549,7 @@ TEST(DARCY_STIFFNESS_2D_NODE) {
     }
 
     printf("Stiffness matrix for cell %3d\n", cell);
-    A.PrintMatrix("%8.4f ");
+    PrintMatrix(A, "%8.4f ");
 
     // verify SPD propery
     for (int i=0; i<nnodes; i++) CHECK(A(i, i) > 0.0);
@@ -617,7 +617,7 @@ TEST(DARCY_STIFFNESS_2D_EDGE) {
     }
 
     printf("Stiffness matrix for cell %3d\n", cell);
-    A.PrintMatrix("%8.4f ");
+    PrintMatrix(A, "%8.4f ");
 
     // verify SPD propery
     for (int i=0; i<nedges; i++) CHECK(A(i, i) > 0.0);
@@ -683,7 +683,7 @@ TEST(DARCY_STIFFNESS_3D) {
   mfd.StiffnessMatrixMMatrix(cell, T, A);
 
   printf("Stiffness matrix for cell %3d\n", cell);
-  A.PrintMatrix("%8.4f ");
+  PrintMatrix(A, "%8.4f ");
   std::cout << "Number of simplex itrs=" << mfd.simplex_num_itrs() << std::endl;
   std::cout << "Functional value=" << mfd.simplex_functional() << std::endl;
 
@@ -858,7 +858,7 @@ TEST(DARCY_INVERSE_MASS_2D) {
     }
 
     printf("Inverse of mass matrix for method=%d  ierr=%d\n", method, ok);
-    W.PrintMatrix("%8.4f ");
+    PrintMatrix(W, "%8.4f ");
 
     // verify monotonicity propery
     for (int i = 0; i < nfaces; i++) {

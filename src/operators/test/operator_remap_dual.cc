@@ -185,7 +185,7 @@ class RemapDG : public Explicit_TI::fnBase<CompositeVector> {
 
     WhetStone::Entity_ID_List faces;
     std::vector<const WhetStone::Polynomial*> polys(2);
-    WhetStone::NumericalIntegration numi(mesh_, false);
+    WhetStone::NumericalIntegration numi(mesh_);
 
     for (int c = 0; c < ncells_owned_; ++c) {
       mesh_->cell_get_faces(c, &faces);
@@ -255,7 +255,7 @@ class RemapDG : public Explicit_TI::fnBase<CompositeVector> {
     *errl2 = 0.0;
     *errinf = 0.0;
 
-    WhetStone::NumericalIntegration numi(mesh_, false);
+    WhetStone::NumericalIntegration numi(mesh_);
 
     UpdateGeometricQuantities_(1.0);
 
@@ -445,7 +445,7 @@ void RemapTestsDualRK(int order_p, int order_u,
   auto maps = maps_factory.Create(map_list, mesh0, mesh1);
 
   // numerical integration
-  WhetStone::NumericalIntegration numi(mesh0, false);
+  WhetStone::NumericalIntegration numi(mesh0);
 
   // basic remap algorithm
   RemapDG remap(mesh0, maps);
@@ -477,8 +477,6 @@ void RemapTestsDualRK(int order_p, int order_u,
       data(i) = p1c[i][c];
     }
     auto poly = dg.cell_basis(c).CalculatePolynomial(mesh0, c, order_p, data);
-
-    numi.ChangeBasisRegularizedToNatural(c, poly);
     mass0 += numi.IntegratePolynomialCell(c, poly);
   }
   double mass_tmp(mass0);
@@ -579,7 +577,6 @@ void RemapTestsDualRK(int order_p, int order_u,
       data(i) = p2c[i][c];
     }
     auto poly = dg.cell_basis(c).CalculatePolynomial(mesh0, c, order_p, data);
-    numi.ChangeBasisRegularizedToNatural(c, poly);
 
     // const AmanziGeometry::Point& xg = cell_geometric_center(*mesh1, c);
     const AmanziGeometry::Point& xg = mesh1->cell_centroid(c);
@@ -644,8 +641,6 @@ void RemapTestsDualRK(int order_p, int order_u,
     // optional projection on the space of polynomials 
     if (order_p > 0 && order_p < 3 && dim == 2) {
       poly = dg.cell_basis(c).CalculatePolynomial(mesh0, c, order_p, data);
-      numi.ChangeBasisRegularizedToNatural(c, poly);
-
       maps->ProjectPolynomial(c, poly);
       poly.ChangeOrigin(mesh1->cell_centroid(c));
 
