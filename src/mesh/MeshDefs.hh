@@ -20,14 +20,13 @@
 #include "boost/algorithm/string.hpp"
 
 #include "errors.hh"
-#include "GeometryDefs.hh"
 
 namespace Amanzi {
 namespace AmanziMesh {
 
 // Necessary typedefs and enumerations
-typedef AmanziGeometry::Set_ID Set_ID;
-typedef AmanziGeometry::Entity_ID Entity_ID;
+typedef int Set_ID;
+typedef int Entity_ID;
 typedef std::vector<Entity_ID> Entity_ID_List;
   
 // Recongnize special meshes

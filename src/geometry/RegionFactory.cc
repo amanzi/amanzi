@@ -45,7 +45,7 @@ namespace AmanziGeometry {
 // Create region from XML specification
 Teuchos::RCP<Region>
 createRegion(const std::string reg_name,
-             Set_ID reg_id,
+             int reg_id,
              Teuchos::ParameterList& reg_spec,
              const Epetra_MpiComm *comm)
 {

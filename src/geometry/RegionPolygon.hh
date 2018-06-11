@@ -62,7 +62,7 @@ class RegionPolygon : public Region {
  public:
   // Default constructor uses two corner points (order not important).
   RegionPolygon(const std::string& name,
-                const Set_ID id, 
+                const int id, 
                 const std::vector<Point>& polypoints, 
                 const LifeCycleType lifecycle=PERMANENT);
 

@@ -27,7 +27,7 @@ namespace AmanziGeometry {
 // Constructor
 // -------------------------------------------------------------------
 RegionBoxVolumeFractions::RegionBoxVolumeFractions(
-    const std::string& name, const Set_ID id,
+    const std::string& name, const int id,
     const Point& p0, const Point& p1,
     const std::vector<Point>& normals,
     const LifeCycleType lifecycle)

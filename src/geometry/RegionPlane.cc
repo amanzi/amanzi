@@ -26,7 +26,7 @@ namespace AmanziGeometry {
 // RegionPlane:: constructors / destructor
 // -------------------------------------------------------------
 RegionPlane::RegionPlane(const std::string& name, 
-                         const Set_ID id,
+                         const int id,
                          const Point& p,
                          const Point& normal,
                          const LifeCycleType lifecycle)

@@ -21,9 +21,6 @@ namespace AmanziGeometry {
 
 typedef std::vector<Point> Point_List;
 
-typedef int Set_ID;
-typedef int Entity_ID; 
-
 typedef enum {
   BOX,
   PLANE,

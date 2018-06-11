@@ -53,7 +53,7 @@ namespace AmanziGeometry {
   public:
 // Default constructor uses two corner points (order not important)
     RegionLineSegment(const std::string& name,
-                      const Set_ID id,
+                      const int id,
                       const Point& p0, 
                       const Point& p1,
                       const LifeCycleType lifecycle=PERMANENT);
