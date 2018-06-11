@@ -19,14 +19,14 @@ include(LibraryManager)
 # through these variables.
 project(OPERATORS)
 
-set(XMOF_INCLUDE_DIRS "/nh/u/dasvyat/XMOF/xmof2d/include")
-set(XMOF_LIB_DIR "/home/scratch/dasvyat/Amanzi/amanzi-tpls/TPLs-gcc-0.94.12/install/lib")
+#set(XMOF_INCLUDE_DIRS "/nh/u/dasvyat/XMOF/xmof2d/include")
+#set(XMOF_LIB_DIR "/home/scratch/dasvyat/Amanzi/amanzi-tpls/TPLs-gcc-0.94.12/install/lib")
 
 # External (TPL) include directories
 include_directories(${Teuchos_INCLUDE_DIRS})
 include_directories(${Epetra_INCLUDE_DIRS})
 include_directories(${MSTK_INCLUDE_DIRS})
-include_directories(${XMOF_INCLUDE_DIRS})
+#include_directories(${XMOF_INCLUDE_DIRS})
 include_directories(${Trilinos_INCLUDE_DIRS})
 
 # Amanzi include directories
@@ -139,7 +139,7 @@ add_amanzi_library(operators
                           PDE_Abstract.cc
                           PDE_AdvectionUpwind.cc PDE_AdvectionRiemann.cc
                           PDE_DiffusionMFD.cc PDE_DiffusionMFDwithGravity.cc
-                          PDE_DiffusionMFD_XMOF.cc PDE_DiffusionMFD_Tracer.cc
+                          # PDE_DiffusionMFD_XMOF.cc PDE_DiffusionMFD_Tracer.cc
                           PDE_DiffusionFV.cc PDE_DiffusionFVwithGravity.cc
                           PDE_DiffusionNLFV.cc PDE_DiffusionNLFVwithGravity.cc
                           PDE_DiffusionNLFVwithBndFaces.cc PDE_DiffusionNLFVwithBndFacesGravity.cc
@@ -153,8 +153,9 @@ add_amanzi_library(operators
                           ReconstructionCell.cc
                           ReconstructionCell_Limiters.cc
                           RemapUtils.cc
-                   HEADERS ${operators_inc_files}
-                   LINK_LIBS geometry mesh error_handling whetstone solvers data_structures ${XMOF_LIB_DIR}/libxmof2D-0.9.a ${Epetra_LIBRARIES})
+                          HEADERS ${operators_inc_files}
+                   LINK_LIBS geometry mesh error_handling whetstone solvers data_structures ${Epetra_LIBRARIES})                          
+                   # LINK_LIBS geometry mesh error_handling whetstone solvers data_structures ${XMOF_LIB_DIR}/libxmof2D-0.9.a ${Epetra_LIBRARIES})
 
 
 if (BUILD_TESTS)

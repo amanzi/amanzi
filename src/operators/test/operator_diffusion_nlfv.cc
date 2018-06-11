@@ -210,7 +210,7 @@ void RunTestDiffusionNLFVwithBndFaces_DMP(double gravity, bool testing) {
   // create an MSTK mesh framework
   MeshFactory meshfactory(&comm);
   meshfactory.preference(FrameworkPreference({MSTK}));
-  // Teuchos::RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 4, 4, Teuchos::null);
+  //Teuchos::RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 4, 4, Teuchos::null);
   Teuchos::RCP<const Mesh> mesh = meshfactory("test/random10.exo");
 
   // modify diffusion coefficient
@@ -279,14 +279,14 @@ void RunTestDiffusionNLFVwithBndFaces_DMP(double gravity, bool testing) {
     //sol[0][c] = ana.pressure_exact(xc, 0.0);
   }
 
-  // for (int f = 0; f < nfaces_wghost; f++) {
+  // for (int f = 0; f < nfaces; f++) {
   //   const Point& xf = mesh->face_centroid(f);
   //   if (fabs(xf[0]) < 1e-6 || fabs(xf[0] - 1.0) < 1e-6 ||
   //       fabs(xf[1]) < 1e-6) {
-  //     int bf = mesh->exterior_face_map(false).LID(mesh->face_map(false).GID(f));
+  //     int bf = mesh->exterior_face_map(true).LID(mesh->face_map(false).GID(f));
   //     sol_bnd[0][bf] = ana.pressure_exact(xf, 0.0);
   //   } else if (fabs(xf[1] - 1.0) < 1e-6) {
-  //     int bf = mesh->exterior_face_map(false).LID(mesh->face_map(false).GID(f));
+  //     int bf = mesh->exterior_face_map(true).LID(mesh->face_map(false).GID(f));
   //     sol_bnd[0][bf] = ana.pressure_exact(xf, 0.0);
   //   }
   // }
