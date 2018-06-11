@@ -49,7 +49,7 @@ class GeometricModel {
   
   // Get a region by its ID
   Teuchos::RCP<const Region>
-  FindRegion(const int id) const {
+  FindRegion(const Set_ID id) const {
     return regions_id_.at(id);
   }
 
@@ -63,11 +63,10 @@ private:
   // List of regions in this geometric model
   std::vector<Teuchos::RCP<const Region> > regions_;
   std::map<std::string, Teuchos::RCP<const Region> > regions_name_;
-  std::map<int, Teuchos::RCP<const Region> > regions_id_;
+  std::map<Set_ID, Teuchos::RCP<const Region> > regions_id_;
 
   unsigned int dim_;
 };
-
 
 } // namespace AmanziGeometry
 } // namespace Amanzi

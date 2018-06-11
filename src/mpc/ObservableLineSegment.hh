@@ -87,7 +87,7 @@ void ObservableLineSegment::ComputeObservation(
 
 
 void ObservableLineSegment::ComputeInterpolationPoints(Teuchos::RCP<const AmanziGeometry::Region> reg_ptr) {
-  AmanziGeometry::Entity_ID_List faces, cnodes, fnodes;
+  AmanziMesh::Entity_ID_List faces, cnodes, fnodes;
   std::vector<int> dirs;
   std::vector<AmanziGeometry::Point> polytope_nodes;
   std::vector<std::vector<int> > polytope_faces;
