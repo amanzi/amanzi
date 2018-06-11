@@ -79,14 +79,13 @@ add_amanzi_library(whetstone
                            NumericalIntegration.hh
                            Quadrature1D.hh Quadrature2D.hh
                            MeshMaps.hh MeshMapsFactory.hh
-                           MeshMaps_FEM.hh MeshMaps_VEM.hh MeshMaps_VEM.hh MeshUtils.hh
+                           MeshMaps_FEM.hh MeshMaps_VEM.hh MeshMaps_VEM.hh
                            CoordinateSystems.hh
                            Monomial.hh Polynomial.hh PolynomialIterator.hh
                            VectorPolynomial.hh PolynomialOnMesh.hh
                            Tensor.hh
                            WhetStoneDefs.hh
-                           WhetStone_typedefs.hh
-                           WhetStoneFunction.hh
+                           WhetStoneFunction.hh WhetStoneMeshUtils.hh
                    LINK_LIBS geometry mesh error_handling ${Epetra_LIBRARIES})
 
 

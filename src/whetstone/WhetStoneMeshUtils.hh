@@ -21,9 +21,30 @@
 #include "Mesh.hh"
 #include "Point.hh"
 
+#include "WhetStoneDefs.hh"
+
 namespace Amanzi {
 namespace WhetStone {
 
+/* ******************************************************************
+* Returns either cell across face f of given cell c or -1.
+****************************************************************** */
+inline
+int cell_get_face_adj_cell(const AmanziMesh::Mesh& mesh, int c, int f)
+{
+  AmanziGeometry::Entity_ID_List cells;
+  mesh.face_get_cells(f, Parallel_type::ALL, &cells);
+
+  if (cells.size() == 2)
+    return cells[0] + cells[1] - c;
+
+  return -1;
+}
+
+
+/* ******************************************************************
+* Geometric center
+****************************************************************** */
 inline
 AmanziGeometry::Point cell_geometric_center(const AmanziMesh::Mesh& mesh, int c)
 {

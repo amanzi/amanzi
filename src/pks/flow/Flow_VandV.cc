@@ -277,7 +277,7 @@ void Flow_PK::VV_PrintSourceExtrema() const
 
 
 /* ****************************************************************
-* Find string for the preconditoner.
+* 
 **************************************************************** */
 void Flow_PK::OutputTimeHistory(
     const Teuchos::ParameterList& plist, std::vector<dt_tuple>& dT_history)

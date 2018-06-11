@@ -33,7 +33,6 @@
 #include "Tensor.hh"
 #include "VectorPolynomial.hh"
 #include "WhetStoneDefs.hh"
-#include "WhetStone_typedefs.hh"
 
 namespace Amanzi {
 namespace WhetStone {

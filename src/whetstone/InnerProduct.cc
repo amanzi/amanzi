@@ -14,7 +14,7 @@
 
 #include "DenseMatrix.hh"
 #include "InnerProduct.hh"
-#include "WhetStone_typedefs.hh"
+#include "WhetStoneDefs.hh"
 
 namespace Amanzi {
 namespace WhetStone {

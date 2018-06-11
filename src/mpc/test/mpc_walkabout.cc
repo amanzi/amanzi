@@ -107,7 +107,7 @@ using namespace Amanzi::AmanziMesh;
 
   // create walkabout file
   walkabout->disable(false);
-  walkabout->WriteWalkabout(S);
+  walkabout->WriteDataFile(S, Teuchos::null);
 }
 
 

@@ -17,10 +17,10 @@
 #include "BasisFactory.hh"
 #include "DenseMatrix.hh"
 #include "DG_Modal.hh"
-#include "MeshUtils.hh"
 #include "Polynomial.hh"
 #include "VectorPolynomial.hh"
 #include "WhetStoneDefs.hh"
+#include "WhetStoneMeshUtils.hh"
 
 namespace Amanzi {
 namespace WhetStone {

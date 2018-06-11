@@ -22,7 +22,7 @@
 #include "Point.hh"
 
 #include "Polynomial.hh"
-#include "WhetStone_typedefs.hh"
+#include "WhetStoneDefs.hh"
 
 namespace Amanzi {
 namespace WhetStone {

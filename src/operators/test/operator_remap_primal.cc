@@ -28,9 +28,9 @@
 #include "Mesh.hh"
 #include "MeshFactory.hh"
 #include "MeshMapsFactory.hh"
-#include "MeshUtils.hh"
 #include "Tensor.hh"
-#include "WhetStone_typedefs.hh"
+#include "WhetStoneDefs.hh"
+#include "WhetStoneMeshUtils.hh"
 
 // Amanzi::Operators
 #include "OperatorDefs.hh"

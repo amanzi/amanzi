@@ -32,7 +32,7 @@
 #include "MeshMapsFactory.hh"
 #include "NumericalIntegration.hh"
 #include "Tensor.hh"
-#include "WhetStone_typedefs.hh"
+#include "WhetStoneDefs.hh"
 
 // Amanzi::Operators
 #include "OperatorDefs.hh"

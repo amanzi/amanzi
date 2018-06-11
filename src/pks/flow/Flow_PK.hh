@@ -80,7 +80,6 @@ class Flow_PK : public PK_PhysicalBDF {
 
   // -- io members
   void OutputTimeHistory(const Teuchos::ParameterList& plist, std::vector<dt_tuple>& dt_history);
-  void WriteGMVfile(Teuchos::RCP<State> S) const;
 
   // -- utilities
   double WaterVolumeChangePerSecond(const std::vector<int>& bc_model,
@@ -98,10 +97,9 @@ class Flow_PK : public PK_PhysicalBDF {
   void VerticalNormals(int c, AmanziGeometry::Point& n1, AmanziGeometry::Point& n2);
   virtual double BoundaryFaceValue(int f, const CompositeVector& u);
 
-  // -- support of unit tests
-  double rho() { return rho_; }
-  const AmanziGeometry::Point& gravity() { return gravity_; }
-  double seepage_mass() { return seepage_mass_; }
+  // access
+  Teuchos::RCP<Operators::BCs> op_bc() { return op_bc_; }
+  double seepage_mass() { return seepage_mass_; } // support of unit tests
 
  private:
   void InitializeFields_();

@@ -28,7 +28,7 @@
 #include "DenseMatrix.hh"
 #include "Tensor.hh"
 #include "VectorPolynomial.hh"
-#include "WhetStone_typedefs.hh"
+#include "WhetStoneDefs.hh"
 
 namespace Amanzi {
 namespace WhetStone {

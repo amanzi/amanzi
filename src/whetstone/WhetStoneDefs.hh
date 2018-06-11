@@ -13,8 +13,51 @@
 #ifndef AMANZI_WHETSTONE_DEFS_HH_
 #define AMANZI_WHETSTONE_DEFS_HH_
 
+#include <vector>
+
+#include "GeometryDefs.hh"
+#include "Mesh.hh"
+
 namespace Amanzi {
 namespace WhetStone {
+
+// This definition allows us to use WhetStone as a standalone library.
+#define AMANZI_CODE
+
+#ifdef AMANZI_CODE
+typedef AmanziGeometry::Entity_ID Entity_ID;
+typedef std::vector<Entity_ID> Entity_ID_List;
+typedef AmanziMesh::Parallel_type Parallel_type;
+typedef AmanziMesh::Entity_kind Entity_kind;
+
+const int NODE = AmanziMesh::NODE;
+const int EDGE = AmanziMesh::EDGE;
+const int FACE = AmanziMesh::FACE;
+const int CELL = AmanziMesh::CELL;
+const int BOUNDARY_FACE = AmanziMesh::BOUNDARY_FACE;
+
+#else
+typedef long long int Entity_ID;
+typedef std::vector<Entity_ID> Entity_ID_List;
+
+enum Entity_kind {
+  NODE = 0,
+  EDGE,
+  FACE,
+  CELL,
+  BOUNDARY_FACE
+};
+
+enum class Parallel_type {
+  OWNED = 1;  // Owned by this processor
+  GHOST = 2;  // Owned by another processor
+  ALL = 3;    // OWNED + GHOST
+};
+#endif
+
+class Polynomial;
+typedef std::vector<std::vector<Polynomial> > MatrixPolynomial;
+
 
 // status of elemental matrices
 const int WHETSTONE_ELEMENTAL_MATRIX_OK = 0;

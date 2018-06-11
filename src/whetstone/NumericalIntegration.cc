@@ -14,7 +14,7 @@
 
 #include "NumericalIntegration.hh"
 #include "Monomial.hh"
-#include "WhetStone_typedefs.hh"
+#include "WhetStoneDefs.hh"
 #include "WhetStoneFunction.hh"
 
 namespace Amanzi {

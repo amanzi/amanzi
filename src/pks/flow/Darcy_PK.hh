@@ -56,7 +56,7 @@ class Darcy_PK : public Flow_PK {
   virtual void CommitStep(double t_old, double t_new, const Teuchos::RCP<State>& S);
   virtual void CalculateDiagnostics(const Teuchos::RCP<State>& S);
 
-  virtual std::string name() { return passwd_; }
+  virtual std::string name() override { return passwd_; }
 
   // methods required for time integration interface: dummy routines for Darcy flow.
   // -- computes the non-linear functional f = f(t,u,udot) and related norm.

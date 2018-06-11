@@ -83,9 +83,7 @@ protected:
   // static -- this could be a function, but is only used here and
   // therefore scoping is convenient.
   static bool between_(const double& x, const double& x0, const double& x1);
-
 };
-
 
 } // namespace AmanziGeometry
 } // namespace Amanzi

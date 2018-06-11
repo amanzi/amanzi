@@ -168,7 +168,7 @@ void CycleDriver::Setup() {
     Teuchos::ParameterList& chkp_plist = glist_->sublist("checkpoint data");
     checkpoint_ = Teuchos::rcp(new Amanzi::Checkpoint(chkp_plist, comm_));
   }
-  else{
+  else {
     checkpoint_ = Teuchos::rcp(new Amanzi::Checkpoint());
   }
 
@@ -720,7 +720,7 @@ void CycleDriver::WriteWalkabout(bool force) {
     if (walkabout_->DumpRequested(S_->cycle(), S_->time()) || force) {
       if (!walkabout_->is_disabled())
          *vo_->os() << "Cycle " << S_->cycle() << ": writing walkabout file" << std::endl;
-      walkabout_->WriteWalkabout(S_);
+      walkabout_->WriteDataFile(S_, pk_);
     }
   }
 }

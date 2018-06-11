@@ -38,7 +38,6 @@
 #include "InnerProductL2.hh"
 #include "Projectors.hh"
 #include "Tensor.hh"
-#include "WhetStone_typedefs.hh"
 #include "WhetStoneDefs.hh"
 
 namespace Amanzi {
@@ -58,9 +57,6 @@ class MFD3D : public virtual BilinearForm,
   // access members
   double simplex_functional() { return simplex_functional_; }
   int simplex_num_itrs() { return simplex_num_itrs_; }
-
-  // extension of the mesh API (must be removed lipnikov@lanl.gov)
-  int cell_get_face_adj_cell(int cell, int face);
 
   // experimental methods (for stability region analysis; unit test)
   void ModifyStabilityScalingFactor(double factor);

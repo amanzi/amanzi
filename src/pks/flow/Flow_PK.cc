@@ -780,19 +780,6 @@ int Flow_PK::FindPosition(int f, AmanziMesh::Entity_ID_List faces)
   return -1;
 }
 
-
-/* ****************************************************************
-* DEBUG: creating GMV file 
-**************************************************************** */
-void Flow_PK::WriteGMVfile(Teuchos::RCP<State> FS) const
-{
-  GMV::open_data_file(*mesh_, (std::string)"flow.gmv");
-  GMV::start_data();
-  GMV::write_cell_data(*(S_->GetFieldData("pressure")->ViewComponent("cell")), 0, "pressure");
-  GMV::write_cell_data(*(S_->GetFieldData("saturation_liquid")->ViewComponent("cell")), 0, "saturation");
-  GMV::close_data_file();
-}
-
 }  // namespace Flow
 }  // namespace Amanzi
 

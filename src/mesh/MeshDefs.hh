@@ -32,15 +32,13 @@ namespace Amanzi {
 namespace AmanziMesh {
 
 // Necessary typedefs and enumerations
-  using AmanziGeometry::Entity_ID;
-  using AmanziGeometry::Entity_ID_List;
-  using AmanziGeometry::Set_ID;
-  using AmanziGeometry::Set_ID_List;
+using AmanziGeometry::Entity_ID;
+using AmanziGeometry::Entity_ID_List;
+using AmanziGeometry::Set_ID;
+using AmanziGeometry::Set_ID_List;
   
-
-  
-// Mesh Type
-
+ 
+// Recognize special meshes
 enum Mesh_type
 {
   RECTANGULAR,   // Equivalent of structured but can't use i,j,k notation

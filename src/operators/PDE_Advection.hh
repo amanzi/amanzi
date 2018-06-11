@@ -58,7 +58,7 @@ class PDE_Advection : public PDE_HelperDiscretization {
   //    essential_eqn=true indicates that the operator places a positive number on 
   //      the main matrix diagonal for the case of essential BCs. This is the
   //      implementtion trick.
-  virtual void ApplyBCs(bool primary, bool eliminate, bool essential_eqn) = 0;
+  virtual void ApplyBCs(bool primary, bool eliminate, bool essential_eqn) override {};
 
  protected:
   Schema global_schema_row_, global_schema_col_;
