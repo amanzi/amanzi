@@ -10,6 +10,7 @@
 */
 #include "Mesh.hh"
 #include "Epetra_Vector.h"
+#include "Epetra_IntVector.h"
 
 #include "CompositeVector.hh"
 #include "OperatorDefs.hh"
@@ -17,6 +18,7 @@
 #include "Schema.hh"
 #include "SuperMap.hh"
 #include "TreeVector.hh"
+#include "ParallelCommunication.hh"
 
 namespace Amanzi {
 namespace Operators {
@@ -310,9 +312,7 @@ Teuchos::RCP<SuperMap> CreateSuperMap(const CompositeVectorSpace& cvs, int schem
     //     std::cout<<"face "<<i<<" "<<f<<" : "<<cvs.Mesh()->face_centroid(f)<<"\n";
     //   }
     // }
-
     //exit(0);
-
     // int num_boundary_faces = meshmaps.first -> NumMyElements();    
     // Teuchos::RCP<Epetra_Map>  boundary_map =  Teuchos::rcp(new Epetra_Map(-1, num_boundary_faces, 0, meshmaps.first->Comm()));
 
@@ -476,6 +476,64 @@ CreateBoundaryMaps(Teuchos::RCP<const AmanziMesh::Mesh> mesh,
   
 
   return std::make_pair(boundary_map, boundary_map_ghosted);
+}
+
+std::pair<Teuchos::RCP<const Epetra_Map>, Teuchos::RCP<const Epetra_Map> >
+CreateNonuniformMaps(Teuchos::RCP<const AmanziMesh::Mesh> mesh,
+                     std::pair<Teuchos::RCP<const Epetra_Map>, Teuchos::RCP<const Epetra_Map> >& uni_maps,
+                     Epetra_IntVector& num_elems, Epetra_IntVector& block_start, AmanziMesh::Entity_kind kind){
+
+  int num_owned = mesh->num_entities(kind, AmanziMesh::OWNED);
+  int num_wghosted = mesh->num_entities(kind, AmanziMesh::USED);
+
+  int num_nonuni_owned = 0;
+  for (int n=0; n<num_owned; n++) {
+    block_start[n] = num_nonuni_owned;
+    num_nonuni_owned += num_elems[n];    
+  }
+
+  Teuchos::RCP<Epetra_Map> nonuni_map =  Teuchos::rcp(new Epetra_Map(-1, num_nonuni_owned, 0, uni_maps.first->Comm()));
+
+  Epetra_IntVector block_start_gl_id(block_start);
+  
+  for (int n=0; n<num_owned; n++){
+    int loc_id = block_start[n];
+    block_start_gl_id[n] = nonuni_map->GID(loc_id);
+  }
+ 
+  Epetra_Import importer(*uni_maps.second, *uni_maps.first);
+  
+  int* data;
+  block_start_gl_id.ExtractView(&data);
+  Epetra_IntVector vv1(View, *uni_maps.first, data);
+  block_start_gl_id.Import(vv1, importer, Insert);
+
+  num_elems.ExtractView(&data);
+  Epetra_IntVector vv2(View, *uni_maps.first, data);
+  num_elems.Import(vv2, importer, Insert);
+  
+
+  int num_nonuni_wghosted = num_nonuni_owned;
+  
+  for (int n = num_owned; n<num_wghosted; n++){
+     block_start[n] = num_nonuni_wghosted;
+     num_nonuni_wghosted += num_elems[n];
+  }
+
+  std::vector<int> global_id_ghosted(num_nonuni_wghosted);
+  for (int n=0; n<num_nonuni_owned; n++){
+    global_id_ghosted[n] = nonuni_map->GID(n);
+  }
+  for (int k=num_owned; k<num_wghosted; k++){
+    for (int n=0; n<num_elems[k]; n++){
+      global_id_ghosted[ block_start[k] + n ] =  block_start_gl_id[k] + n;
+    }
+  }
+
+  Teuchos::RCP<Epetra_Map> nonuni_map_ghosted =  Teuchos::rcp(new Epetra_Map(-1, num_nonuni_wghosted, global_id_ghosted.data(), 0,uni_maps.first->Comm()));
+                                          
+  
+
 }
 
 }  // namespace Operators
