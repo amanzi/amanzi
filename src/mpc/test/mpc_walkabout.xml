@@ -145,17 +145,17 @@
               <Parameter name="function type" type="string" value="composite function"/>
               <ParameterList name="dof 1 function">
                 <ParameterList name="function-constant">
-                  <Parameter name="value" type="double" value="1.0e-12"/>
+                  <Parameter name="value" type="double" value="1.0"/>
                 </ParameterList>
               </ParameterList>
               <ParameterList name="dof 2 function">
                 <ParameterList name="function-constant">
-                  <Parameter name="value" type="double" value="2.0e-12"/>
+                  <Parameter name="value" type="double" value="2.0"/>
                 </ParameterList>
               </ParameterList>
               <ParameterList name="dof 3 function">
                 <ParameterList name="function-constant">
-                  <Parameter name="value" type="double" value="3.0e-12"/>
+                  <Parameter name="value" type="double" value="3.0"/>
                 </ParameterList>
               </ParameterList>
             </ParameterList>

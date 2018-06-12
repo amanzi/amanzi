@@ -103,6 +103,9 @@ class Flow_PK : public PK_PhysicalBDF {
   const AmanziGeometry::Point& gravity() { return gravity_; }
   double seepage_mass() { return seepage_mass_; }
 
+  // access
+  Teuchos::RCP<Operators::BCs> op_bc() { return op_bc_; }
+
  private:
   void InitializeFields_();
 
