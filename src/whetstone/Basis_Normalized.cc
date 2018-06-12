@@ -72,10 +72,11 @@ void Basis_Normalized::ChangeBasisNaturalToMy(DenseMatrix& A) const
 
   PolynomialIterator it(d);
   for (it.begin(); it.end() <= order; ++it) {
+    int n = it.PolynomialPosition();
     int m = it.MonomialSetOrder();
     int k = it.MonomialSetPosition();
 
-    a[k] = monomial_scales_(m, k);
+    a[n] = monomial_scales_(m, k);
   }
 
   // calculate R^T * A * R

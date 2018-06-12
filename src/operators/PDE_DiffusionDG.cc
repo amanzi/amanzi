@@ -87,8 +87,9 @@ void PDE_DiffusionDG::Init_(Teuchos::ParameterList& plist)
   method_ = plist.get<std::string>("method");
   method_order_ = plist.get<int>("method order", 0);
   matrix_ = plist.get<std::string>("matrix type");
-
-  dg_ = std::make_shared<WhetStone::DG_Modal>(method_order_, mesh_, "regularized");
+  
+  std::string basis = plist.get<std::string>("dg basis");
+  dg_ = std::make_shared<WhetStone::DG_Modal>(method_order_, mesh_, basis);
 }
 
 

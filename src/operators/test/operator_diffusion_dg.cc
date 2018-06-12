@@ -41,7 +41,8 @@
 /* *****************************************************************
 * This test diffusion solver with full tensor and source term.
 * **************************************************************** */
-void OperatorDiffusionDG(std::string solver_name) {
+void OperatorDiffusionDG(std::string solver_name,
+                         std::string dg_basis = "regularized") {
   using namespace Teuchos;
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
@@ -130,6 +131,7 @@ void OperatorDiffusionDG(std::string solver_name) {
 
   // create diffusion operator 
   // -- primary term
+  op_list.set<std::string>("dg basis", dg_basis);
   Teuchos::RCP<PDE_DiffusionDG> op = Teuchos::rcp(new PDE_DiffusionDG(op_list, mesh));
   auto global_op = op->global_operator();
   const WhetStone::DG_Modal& dg = op->dg();
@@ -236,6 +238,7 @@ void OperatorDiffusionDG(std::string solver_name) {
 }
 
 TEST(OPERATOR_DIFFUSION_DG) {
+  OperatorDiffusionDG("AztecOO CG", "normalized");
   OperatorDiffusionDG("AztecOO CG");
   OperatorDiffusionDG("Amesos1");
   OperatorDiffusionDG("Amesos2");
