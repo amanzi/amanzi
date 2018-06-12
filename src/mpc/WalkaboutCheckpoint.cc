@@ -95,7 +95,7 @@ void WalkaboutCheckpoint::CalculateDarcyVelocity(
         node_normal[v] /= node_area[v];
         node_flux[v] /= node_area[v];
       } else {
-        node_area[v] = 0.0;
+        node_area[v] = 0.0;  // no control for outflow
       }
     }
   }
@@ -130,6 +130,18 @@ void WalkaboutCheckpoint::CalculateDarcyVelocity(
     matrix.Inverse();
     matrix.Multiply(rhs, sol, false);
     
+    // enforce constraint: formulas follow from solution of saddle-point problem
+    if (projection && node_area[v] > 0.0) {
+      WhetStone::DenseVector normal(d), tmp(d);
+      for (int i = 0; i < d; i++) normal(i) = node_normal[v][i];
+
+      matrix.Multiply(normal, tmp, false);
+
+      double sigma = normal * tmp;
+      double factor = ((normal * sol) - node_flux[v]) / sigma;
+      sol -= factor * tmp;
+    }
+
     for (int i = 0; i < d; i++) node_velocity[i] = sol(i);
     velocity.push_back(node_velocity);
 

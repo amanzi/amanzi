@@ -40,6 +40,7 @@ class DenseMatrix {
   
   // primary members 
   // -- reshape can be applied only to a matrix that owns data
+  // -- data are not remapped to the new matrix shape
   void Reshape(int mrow, int ncol);
 
   double& operator()(int i, int j) { return data_[j * m_ + i]; }
