@@ -140,8 +140,8 @@ void Basis_Orthonormalized::ChangeBasisNaturalToMy(DenseVector& v) const
 
     double a = monomial_scales_(m, k);
     double b = monomial_ortho_(m, k);
-    v(n) /= a;
     v(0) += b * v(n);
+    v(n) /= a;
   }
 }
 
@@ -205,7 +205,7 @@ void Basis_Orthonormalized::ChangeBasisNaturalToMy(
 
 
 /* ******************************************************************
-* Recover polynomial from data coeffieints. 
+* Recover polynomial from data coefficients. 
 ****************************************************************** */
 Polynomial Basis_Orthonormalized::CalculatePolynomial(
     const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,

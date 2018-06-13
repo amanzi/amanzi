@@ -54,7 +54,8 @@
 * **************************************************************** */
 template<class AnalyticDG>
 void AdvectionSteady(int dim, std::string filename, int nx,
-                     std::string weak_form, bool conservative_form)
+                     std::string weak_form, bool conservative_form,
+                     std::string dg_basis = "regularized")
 {
   using namespace Teuchos;
   using namespace Amanzi;
@@ -66,8 +67,10 @@ void AdvectionSteady(int dim, std::string filename, int nx,
   int MyPID = comm.MyPID();
 
   std::string problem = (conservative_form) ? ", conservative formulation" : "";
-  if (MyPID == 0) std::cout << "\nTest: " << dim << "D steady advection, dG method" << problem
-                            << ", weak formulation=" << weak_form << std::endl;
+  if (MyPID == 0) std::cout << "\nTest: " << dim 
+                            << "D steady advection, dG method" << problem
+                            << ", weak formulation=" << weak_form
+                            << ", basis=" << dg_basis << std::endl;
 
   // read parameter list
   std::string xmlFileName;
@@ -107,16 +110,19 @@ void AdvectionSteady(int dim, std::string filename, int nx,
   // create global operator 
   // -- flux term
   ParameterList op_list = plist.sublist(pk_name).sublist("flux operator");
+  op_list.set<std::string>("dg basis", dg_basis);
   auto op_flux = Teuchos::rcp(new PDE_AdvectionRiemann(op_list, mesh));
   auto global_op = op_flux->global_operator();
   const WhetStone::DG_Modal& dg = op_flux->dg();
 
   // -- volumetric advection term
   op_list = plist.sublist(pk_name).sublist("advection operator");
+  op_list.set<std::string>("dg basis", dg_basis);
   auto op_adv = Teuchos::rcp(new PDE_Abstract(op_list, global_op));
 
   // -- reaction term
   op_list = plist.sublist(pk_name).sublist("reaction operator");
+  op_list.set<std::string>("dg basis", dg_basis);
   auto op_reac = Teuchos::rcp(new PDE_Reaction(op_list, global_op));
   double Kreac = op_list.get<double>("coef");
 
@@ -317,8 +323,11 @@ void AdvectionSteady(int dim, std::string filename, int nx,
 
 
 TEST(OPERATOR_ADVECTION_STEADY_DG) {
-  AdvectionSteady<AnalyticDG03>(2, "test/median7x8.exo", 8, "primal", false);
-  AdvectionSteady<AnalyticDG03>(2, "test/median7x8.exo", 8, "dual", true);
+  // AdvectionSteady<AnalyticDG03>(2, "test/median7x8.exo", 8, "primal", false, "orthonormalized");
+  AdvectionSteady<AnalyticDG03>(2, "test/median7x8.exo", 8, "primal", false, "normalized");
+  AdvectionSteady<AnalyticDG03>(2, "test/median7x8.exo", 8, "primal", false, "regularized");
+  AdvectionSteady<AnalyticDG03>(2, "test/median7x8.exo", 8, "dual", true, "normalized");
+  AdvectionSteady<AnalyticDG03>(2, "test/median7x8.exo", 8, "dual", true, "regularized");
   AdvectionSteady<AnalyticDG03>(2, "test/median7x8.exo", 8, "dual", false);
   AdvectionSteady<AnalyticDG02>(3, "cubic", 3, "dual", true);
 }

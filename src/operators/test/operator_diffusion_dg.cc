@@ -118,7 +118,8 @@ void OperatorDiffusionDG(std::string solver_name,
         bc_value[f][i] = data(i);
       }
     } else if (fabs(xf[1] - 1.0) < 1e-6) {
-      bc_model[f] = OPERATOR_BC_NEUMANN;
+      // bc_model[f] = OPERATOR_BC_NEUMANN;
+      bc_model[f] = OPERATOR_BC_DIRICHLET;
 
       ana.SolutionTaylor(xf, 0.0, coefs);
       coefs.GetPolynomialCoefficients(data);
@@ -233,11 +234,12 @@ void OperatorDiffusionDG(std::string solver_name,
     printf("Mean:  L2(p)=%9.6f  Inf(p)=%9.6f  itr=%3d\n", pl2_mean, pinf_mean, solver->num_itrs());
     printf("Total: L2(p)=%9.6f  Inf(p)=%9.6f\n", pl2_err, pinf_err);
 
-    CHECK(pl2_err < 3e-2);
+    CHECK(pl2_err < 1e-10);
   }
 }
 
 TEST(OPERATOR_DIFFUSION_DG) {
+  // OperatorDiffusionDG("AztecOO CG", "orthonormalized");
   OperatorDiffusionDG("AztecOO CG", "normalized");
   OperatorDiffusionDG("AztecOO CG");
   OperatorDiffusionDG("Amesos1");
