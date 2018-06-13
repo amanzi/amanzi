@@ -12,8 +12,8 @@ namespace DBC {
  */
 class Assertion : public Exceptions::Amanzi_exception {
 public:
-  Assertion (const char* condition, const char* file, unsigned int line);
-  const char* what () const throw ();
+  Assertion(const char* condition, const char* file, unsigned int line);
+  const char* what() const noexcept;
 
  public:
   const char* assertion_;
