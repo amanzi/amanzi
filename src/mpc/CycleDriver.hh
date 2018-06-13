@@ -65,6 +65,9 @@ class CycleDriver {
   // one stop shopping
   Teuchos::RCP<State> Go();
 
+  // access (for unit tests only)
+  Teuchos::RCP<const Amanzi::WalkaboutCheckpoint> walkabout() const { return walkabout_; }
+
  private:
   void CoordinatorInit_();
   void ReadParameterList_();
