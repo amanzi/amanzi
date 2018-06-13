@@ -101,9 +101,6 @@ class Flow_PK : public PK_PhysicalBDF {
   Teuchos::RCP<Operators::BCs> op_bc() { return op_bc_; }
   double seepage_mass() { return seepage_mass_; } // support of unit tests
 
-  // access
-  Teuchos::RCP<Operators::BCs> op_bc() { return op_bc_; }
-
  private:
   void InitializeFields_();
 

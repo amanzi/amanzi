@@ -9,7 +9,9 @@
 
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 
-  Natural basis with basis monomials of form (x-x0)^k
+  Natural basis with basis with monomials of form (x-x0)^k. The
+  transformation matrix R is identity. This class is introduced 
+  for factory to work uniformly.
 */
 
 #ifndef AMANZI_DG_BASIS_NATURAL_HH_
@@ -38,11 +40,15 @@ class Basis_Natural : public Basis {
     order_ = order;
   }
 
-  // transformation from natural basis to owned basis (do nothing)
-  virtual void ChangeBasisNaturalToMy(DenseMatrix& A) const {};
-  virtual void ChangeBasisNaturalToMy(std::shared_ptr<Basis> bl,
-                                      std::shared_ptr<Basis> br, DenseMatrix& A) const {};
+  // transformation of bilinear form
+  virtual void BilinearFormNaturalToMy(DenseMatrix& A) const {};
+  virtual void BilinearFormNaturalToMy(std::shared_ptr<Basis> bl,
+                                       std::shared_ptr<Basis> br, DenseMatrix& A) const {};
 
+  // transformation of linear form
+  virtual void LinearFormNaturalToMy(DenseVector& v) const {};
+
+  // transformation of vector 
   virtual void ChangeBasisMyToNatural(DenseVector& v) const {};
   virtual void ChangeBasisNaturalToMy(DenseVector& v) const {};
 

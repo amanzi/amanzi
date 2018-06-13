@@ -40,9 +40,9 @@ void Basis_Regularized::Init(
 
 
 /* ******************************************************************
-* Transformation from natural basis to owned basis.
+* Transformation from natural basis to my basis: A_new = R^T A_old R.
 ****************************************************************** */
-void Basis_Regularized::ChangeBasisNaturalToMy(DenseMatrix& A) const
+void Basis_Regularized::BilinearFormNaturalToMy(DenseMatrix& A) const
 {
   int nrows = A.NumRows();
   std::vector<double> a(nrows);
@@ -64,35 +64,23 @@ void Basis_Regularized::ChangeBasisNaturalToMy(DenseMatrix& A) const
 
 
 /* ******************************************************************
-* Vector transformation between my and natural bases.
-* Transformation is diagonal: Bn_i = s_i B_i and v = Sum_i v_i Bn_i 
+* Transformation from natural basis to my basis: f_new = R^T f_old.
 ****************************************************************** */
-void Basis_Regularized::ChangeBasisMyToNatural(DenseVector& v) const
+void Basis_Regularized::LinearFormNaturalToMy(DenseVector& f) const
 {
   PolynomialIterator it(d_);
   for (it.begin(); it.end() <= order_; ++it) {
     int n = it.PolynomialPosition();
     int m = it.MonomialSetOrder();
-    v(n) *= monomial_scales_[m];
-  }
-}
-
-
-void Basis_Regularized::ChangeBasisNaturalToMy(DenseVector& v) const
-{
-  PolynomialIterator it(d_);
-  for (it.begin(); it.end() <= order_; ++it) {
-    int n = it.PolynomialPosition();
-    int m = it.MonomialSetOrder();
-    v(n) /= monomial_scales_[m];
+    f(n) *= monomial_scales_[m];
   }
 }
 
 
 /* ******************************************************************
-* Transformation from the natural basis to my basis.
+* Transformation of interface matrix from natural to my bases.
 ****************************************************************** */
-void Basis_Regularized::ChangeBasisNaturalToMy(
+void Basis_Regularized::BilinearFormNaturalToMy(
     std::shared_ptr<Basis> bl, std::shared_ptr<Basis> br, DenseMatrix& A) const
 {
   int nrows = A.NumRows();
@@ -125,8 +113,36 @@ void Basis_Regularized::ChangeBasisNaturalToMy(
 
 
 /* ******************************************************************
-* Recover polynomial in the natural basis from vector of coefficients
-* in the regularized basis. 
+* Transformation from my to natural bases: v_old = R * v_new.
+****************************************************************** */
+void Basis_Regularized::ChangeBasisMyToNatural(DenseVector& v) const
+{
+  PolynomialIterator it(d_);
+  for (it.begin(); it.end() <= order_; ++it) {
+    int n = it.PolynomialPosition();
+    int m = it.MonomialSetOrder();
+    v(n) *= monomial_scales_[m];
+  }
+}
+
+
+/* ******************************************************************
+* Transformation from natural to my bases: v_new = inv(R) * v_old.
+****************************************************************** */
+void Basis_Regularized::ChangeBasisNaturalToMy(DenseVector& v) const
+{
+  PolynomialIterator it(d_);
+  for (it.begin(); it.end() <= order_; ++it) {
+    int n = it.PolynomialPosition();
+    int m = it.MonomialSetOrder();
+    v(n) /= monomial_scales_[m];
+  }
+}
+
+
+/* ******************************************************************
+* Recover polynomial in the natural basis from vector coefs of 
+* coefficients in the regularized basis. 
 ****************************************************************** */
 Polynomial Basis_Regularized::CalculatePolynomial(
     const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,

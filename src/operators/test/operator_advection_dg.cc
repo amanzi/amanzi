@@ -211,8 +211,8 @@ void AdvectionSteady(int dim, std::string filename, int nx,
       data(n) = numi.IntegratePolynomialCell(c, tmp);
     }
 
-    // -- convert moment to my basis (inverse of basis change)
-    dg.cell_basis(c).ChangeBasisMyToNatural(data);
+    // -- convert moment to my basis
+    dg.cell_basis(c).LinearFormNaturalToMy(data);
     for (int n = 0; n < pc.size(); ++n) {
       rhs_c[n][c] = data(n);
     }
@@ -323,7 +323,7 @@ void AdvectionSteady(int dim, std::string filename, int nx,
 
 
 TEST(OPERATOR_ADVECTION_STEADY_DG) {
-  // AdvectionSteady<AnalyticDG03>(2, "test/median7x8.exo", 8, "primal", false, "orthonormalized");
+  AdvectionSteady<AnalyticDG03>(2, "test/median7x8.exo", 8, "primal", false, "orthonormalized");
   AdvectionSteady<AnalyticDG03>(2, "test/median7x8.exo", 8, "primal", false, "normalized");
   AdvectionSteady<AnalyticDG03>(2, "test/median7x8.exo", 8, "primal", false, "regularized");
   AdvectionSteady<AnalyticDG03>(2, "test/median7x8.exo", 8, "dual", true, "normalized");

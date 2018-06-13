@@ -58,9 +58,9 @@ void Basis_Normalized::Init(
 
 
 /* ******************************************************************
-* Transformation from natural basis to owned basis.
+* Transformation from natural basis to my basis: A_new = R^T A_old R.
 ****************************************************************** */
-void Basis_Normalized::ChangeBasisNaturalToMy(DenseMatrix& A) const
+void Basis_Normalized::BilinearFormNaturalToMy(DenseMatrix& A) const
 {
   AMANZI_ASSERT(A.NumRows() == monomial_scales_.size());
 
@@ -89,39 +89,9 @@ void Basis_Normalized::ChangeBasisNaturalToMy(DenseMatrix& A) const
 
 
 /* ******************************************************************
-* Vector transformation between my and natural bases.
-* Transformation is diagonal: Bn_i = s_i B_i and v = Sum_i v_i Bn_i 
+* Transformation of interface matrix from natural to my bases.
 ****************************************************************** */
-void Basis_Normalized::ChangeBasisMyToNatural(DenseVector& v) const
-{
-  AMANZI_ASSERT(v.NumRows() == monomial_scales_.size());
-
-  for (auto it = monomial_scales_.begin(); it.end() <= monomial_scales_.end(); ++it) {
-    int n = it.PolynomialPosition();
-    int m = it.MonomialSetOrder();
-    int k = it.MonomialSetPosition();
-
-    v(n) *= monomial_scales_(m, k);
-  }
-}
-
-void Basis_Normalized::ChangeBasisNaturalToMy(DenseVector& v) const
-{
-  AMANZI_ASSERT(v.NumRows() == monomial_scales_.size());
-
-  for (auto it = monomial_scales_.begin(); it.end() <= monomial_scales_.end(); ++it) {
-    int n = it.PolynomialPosition();
-    int m = it.MonomialSetOrder();
-    int k = it.MonomialSetPosition();
-
-    v(n) /= monomial_scales_(m, k);
-  }
-}
-
-/* ******************************************************************
-* Transformation from natural basis to owned basis.
-****************************************************************** */
-void Basis_Normalized::ChangeBasisNaturalToMy(
+void Basis_Normalized::BilinearFormNaturalToMy(
     std::shared_ptr<Basis> bl, std::shared_ptr<Basis> br, DenseMatrix& A) const
 {
   int order = monomial_scales_.order();
@@ -153,6 +123,59 @@ void Basis_Normalized::ChangeBasisNaturalToMy(
       A(i + m, k) = A(i + m, k) * a2[i] * a1[k];
       A(i + m, k + m) = A(i + m, k + m) * a2[i] * a2[k];
     }
+  }
+}
+
+
+/* ******************************************************************
+* Transformation from natural basis to my basis: f_new = R^T f_old.
+****************************************************************** */
+void Basis_Normalized::LinearFormNaturalToMy(DenseVector& f) const
+{
+  int order = monomial_scales_.order();
+  int d = monomial_scales_.dimension();
+
+  PolynomialIterator it(d);
+  for (it.begin(); it.end() <= order; ++it) {
+    int n = it.PolynomialPosition();
+    int m = it.MonomialSetOrder();
+    int k = it.MonomialSetPosition();
+
+    f(n) *= monomial_scales_(m, k);
+  }
+}
+
+
+/* ******************************************************************
+* Transformation from my to natural bases: v_old = R * v_new.
+****************************************************************** */
+void Basis_Normalized::ChangeBasisMyToNatural(DenseVector& v) const
+{
+  AMANZI_ASSERT(v.NumRows() == monomial_scales_.size());
+
+  for (auto it = monomial_scales_.begin(); it.end() <= monomial_scales_.end(); ++it) {
+    int n = it.PolynomialPosition();
+    int m = it.MonomialSetOrder();
+    int k = it.MonomialSetPosition();
+
+    v(n) *= monomial_scales_(m, k);
+  }
+}
+
+
+/* ******************************************************************
+* Transformation from natural to my bases: v_new = inv(R) * v_old.
+****************************************************************** */
+void Basis_Normalized::ChangeBasisNaturalToMy(DenseVector& v) const
+{
+  AMANZI_ASSERT(v.NumRows() == monomial_scales_.size());
+
+  for (auto it = monomial_scales_.begin(); it.end() <= monomial_scales_.end(); ++it) {
+    int n = it.PolynomialPosition();
+    int m = it.MonomialSetOrder();
+    int k = it.MonomialSetPosition();
+
+    v(n) /= monomial_scales_(m, k);
   }
 }
 

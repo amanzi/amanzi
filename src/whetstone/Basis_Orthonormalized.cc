@@ -65,9 +65,9 @@ void Basis_Orthonormalized::Init(
 
 
 /* ******************************************************************
-* Transformation of regularized basis to owned basis.
+* Transformation from natural basis to my basis: A_new = R^T A_old R.
 ****************************************************************** */
-void Basis_Orthonormalized::ChangeBasisNaturalToMy(DenseMatrix& A) const
+void Basis_Orthonormalized::BilinearFormNaturalToMy(DenseMatrix& A) const
 {
   AMANZI_ASSERT(A.NumRows() == monomial_scales_.size());
 
@@ -107,49 +107,9 @@ void Basis_Orthonormalized::ChangeBasisNaturalToMy(DenseMatrix& A) const
 
 
 /* ******************************************************************
-* Vector transformation between my and natural bases.
-* Transformation is bi-diagonal: Bn_i = a_i (B_i - b_i B_0) and 
-* v = Sum_i v_i Bn_i. Note that B_0 = 1.
+* Transformation of interface matrix from natural to my bases.
 ****************************************************************** */
-void Basis_Orthonormalized::ChangeBasisMyToNatural(DenseVector& v) const
-{
-  AMANZI_ASSERT(v.NumRows() == monomial_scales_.size());
- 
-  for (auto it = monomial_scales_.begin(); it.end() <= monomial_scales_.end(); ++it) {
-    int n = it.PolynomialPosition();
-    int m = it.MonomialSetOrder();
-    int k = it.MonomialSetPosition();
-
-    double a = monomial_scales_(m, k);
-    double b = monomial_ortho_(m, k);
-    v(n) *= a;
-    v(0) -= b * v(n);
-  }
-}
-
-
-void Basis_Orthonormalized::ChangeBasisNaturalToMy(DenseVector& v) const
-{
-  AMANZI_ASSERT(v.NumRows() == monomial_scales_.size());
- 
-  double v0 = v(0);
-  for (auto it = monomial_scales_.begin(); it.end() <= monomial_scales_.end(); ++it) {
-    int n = it.PolynomialPosition();
-    int m = it.MonomialSetOrder();
-    int k = it.MonomialSetPosition();
-
-    double a = monomial_scales_(m, k);
-    double b = monomial_ortho_(m, k);
-    v(0) += b * v(n);
-    v(n) /= a;
-  }
-}
-
-
-/* ******************************************************************
-* Transformation from natural to my basis for polynomial coefficents.
-****************************************************************** */
-void Basis_Orthonormalized::ChangeBasisNaturalToMy(
+void Basis_Orthonormalized::BilinearFormNaturalToMy(
     std::shared_ptr<Basis> bl, std::shared_ptr<Basis> br, DenseMatrix& A) const
 {
   int order = monomial_scales_.order();
@@ -200,6 +160,78 @@ void Basis_Orthonormalized::ChangeBasisNaturalToMy(
       A(k, i + m) = A(k, i + m) * a1[k] + A(0, i + m) * b1[k];
       A(k + m, i + m) = A(k + m, i + m) * a2[k] + A(m, i + m) * b2[k];
     }
+  }
+}
+
+
+/* ******************************************************************
+* Transformation from natural basis to my basis: f_new = R^T f_old.
+****************************************************************** */
+void Basis_Orthonormalized::LinearFormNaturalToMy(DenseVector& f) const
+{
+  int order = monomial_scales_.order();
+  int d = monomial_scales_.dimension();
+
+  int nrows = f.NumRows();
+  std::vector<double> a(nrows), b(nrows);
+
+  PolynomialIterator it(d);
+  for (it.begin(); it.end() <= order; ++it) {
+    int n = it.PolynomialPosition();
+    int m = it.MonomialSetOrder();
+    int k = it.MonomialSetPosition();
+
+    double ak = monomial_scales_(m, k);
+    double bk = monomial_ortho_(m, k);
+
+    a[n] = ak;
+    b[n] = -ak * bk;
+  }
+
+  // calculate R^T * f
+  for (int k = 1; k < nrows; ++k) {
+    f(k) = f(k) * a[k] + f(0) * b[k];
+  }
+}
+
+
+/* ******************************************************************
+* Transformation from my to natural bases: v_old = R * v_new.
+****************************************************************** */
+void Basis_Orthonormalized::ChangeBasisMyToNatural(DenseVector& v) const
+{
+  AMANZI_ASSERT(v.NumRows() == monomial_scales_.size());
+ 
+  for (auto it = monomial_scales_.begin(); it.end() <= monomial_scales_.end(); ++it) {
+    int n = it.PolynomialPosition();
+    int m = it.MonomialSetOrder();
+    int k = it.MonomialSetPosition();
+
+    double a = monomial_scales_(m, k);
+    double b = monomial_ortho_(m, k);
+    v(n) *= a;
+    v(0) -= b * v(n);
+  }
+}
+
+
+/* ******************************************************************
+* Transformation from natural to my bases: v_new = inv(R) * v_old.
+****************************************************************** */
+void Basis_Orthonormalized::ChangeBasisNaturalToMy(DenseVector& v) const
+{
+  AMANZI_ASSERT(v.NumRows() == monomial_scales_.size());
+ 
+  double v0 = v(0);
+  for (auto it = monomial_scales_.begin(); it.end() <= monomial_scales_.end(); ++it) {
+    int n = it.PolynomialPosition();
+    int m = it.MonomialSetOrder();
+    int k = it.MonomialSetPosition();
+
+    double a = monomial_scales_(m, k);
+    double b = monomial_ortho_(m, k);
+    v(0) += b * v(n);
+    v(n) /= a;
   }
 }
 

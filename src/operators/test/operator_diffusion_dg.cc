@@ -52,7 +52,8 @@ void OperatorDiffusionDG(std::string solver_name,
   Epetra_MpiComm comm(MPI_COMM_WORLD);
   int MyPID = comm.MyPID();
 
-  if (MyPID == 0) std::cout << "\nTest: 2D elliptic problem, dG method, solver: " << solver_name << std::endl;
+  if (MyPID == 0) std::cout << "\nTest: 2D elliptic problem, dG method, solver: " << solver_name 
+                            << ", basis=" << dg_basis << std::endl;
 
   // read parameter list
   std::string xmlFileName = "test/operator_diffusion.xml";
@@ -167,8 +168,8 @@ void OperatorDiffusionDG(std::string solver_name,
       data(n) = numi.IntegratePolynomialCell(c, tmp);
     } 
 
-    // -- convert moment to my basis (inverse of basis change)
-    dg.cell_basis(c).ChangeBasisMyToNatural(data);
+    // -- convert moment to my basis 
+    dg.cell_basis(c).LinearFormNaturalToMy(data);
     for (int n = 0; n < pc.size(); ++n) {
       src_c[n][c] = data(n);
     }
@@ -239,7 +240,7 @@ void OperatorDiffusionDG(std::string solver_name,
 }
 
 TEST(OPERATOR_DIFFUSION_DG) {
-  // OperatorDiffusionDG("AztecOO CG", "orthonormalized");
+  OperatorDiffusionDG("AztecOO CG", "orthonormalized");
   OperatorDiffusionDG("AztecOO CG", "normalized");
   OperatorDiffusionDG("AztecOO CG");
   OperatorDiffusionDG("Amesos1");

@@ -81,7 +81,7 @@ int DG_Modal::MassMatrix(int c, const Tensor& K, DenseMatrix& M)
     }
   }
 
-  basis_[c]->ChangeBasisNaturalToMy(M);
+  basis_[c]->BilinearFormNaturalToMy(M);
 
   return 0;
 }
@@ -124,7 +124,7 @@ int DG_Modal::MassMatrix(
     }
   }
 
-  basis_[c]->ChangeBasisNaturalToMy(M);
+  basis_[c]->BilinearFormNaturalToMy(M);
 
   return 0;
 }
@@ -184,7 +184,7 @@ int DG_Modal::MassMatrixPoly_(int c, const Polynomial& K, DenseMatrix& M)
     }
   }
 
-  basis_[c]->ChangeBasisNaturalToMy(M);
+  basis_[c]->BilinearFormNaturalToMy(M);
 
   return 0;
 }
@@ -255,7 +255,7 @@ int DG_Modal::MassMatrixPiecewisePoly_(
     }
   }
 
-  basis_[c]->ChangeBasisNaturalToMy(M);
+  basis_[c]->BilinearFormNaturalToMy(M);
 
   return 0;
 }
@@ -319,7 +319,7 @@ int DG_Modal::StiffnessMatrix(int c, const Tensor& K, DenseMatrix& A)
     }
   }
 
-  basis_[c]->ChangeBasisNaturalToMy(A);
+  basis_[c]->BilinearFormNaturalToMy(A);
 
   return 0;
 }
@@ -390,7 +390,7 @@ int DG_Modal::AdvectionMatrixPoly_(
     A.Transpose();
   }
 
-  basis_[c]->ChangeBasisNaturalToMy(A);
+  basis_[c]->BilinearFormNaturalToMy(A);
 
   return 0;
 }
@@ -472,7 +472,7 @@ int DG_Modal::AdvectionMatrixPiecewisePoly_(
     A.Transpose();
   }
 
-  basis_[c]->ChangeBasisNaturalToMy(A);
+  basis_[c]->BilinearFormNaturalToMy(A);
 
   return 0;
 }
@@ -587,9 +587,9 @@ int DG_Modal::FluxMatrix(int f, const Polynomial& un, DenseMatrix& A,
   }
 
   if (ncells == 1) {
-    basis_[cells[0]]->ChangeBasisNaturalToMy(A);
+    basis_[cells[0]]->BilinearFormNaturalToMy(A);
   } else { 
-    basis_[cells[0]]->ChangeBasisNaturalToMy(basis_[cells[0]], basis_[cells[1]], A);
+    basis_[cells[0]]->BilinearFormNaturalToMy(basis_[cells[0]], basis_[cells[1]], A);
   }
 
   return 0;
@@ -698,7 +698,7 @@ int DG_Modal::FluxMatrixRusanov(
     }
   }
 
-  basis_[cells[0]]->ChangeBasisNaturalToMy(basis_[cells[0]], basis_[cells[1]], A);
+  basis_[cells[0]]->BilinearFormNaturalToMy(basis_[cells[0]], basis_[cells[1]], A);
 
   return 0;
 }
@@ -799,9 +799,9 @@ int DG_Modal::FaceMatrixJump(int f, const Tensor& K1, const Tensor& K2, DenseMat
   }
 
   if (ncells == 1) {
-    basis_[c1]->ChangeBasisNaturalToMy(A);
+    basis_[c1]->BilinearFormNaturalToMy(A);
   } else {
-    basis_[c1]->ChangeBasisNaturalToMy(basis_[c1], basis_[c2], A);
+    basis_[c1]->BilinearFormNaturalToMy(basis_[c1], basis_[c2], A);
   }
 
   return 0;
@@ -883,9 +883,9 @@ int DG_Modal::FaceMatrixPenalty(int f, double Kf, DenseMatrix& A)
   }
 
   if (ncells == 1) {
-    basis_[c1]->ChangeBasisNaturalToMy(A);
+    basis_[c1]->BilinearFormNaturalToMy(A);
   } else {
-    basis_[c1]->ChangeBasisNaturalToMy(basis_[c1], basis_[c2], A);
+    basis_[c1]->BilinearFormNaturalToMy(basis_[c1], basis_[c2], A);
   }
 
   return 0;
