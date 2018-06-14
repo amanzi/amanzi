@@ -17,6 +17,7 @@
 #include "BasisFactory.hh"
 #include "DenseMatrix.hh"
 #include "DG_Modal.hh"
+#include "Monomial.hh"
 #include "Polynomial.hh"
 #include "VectorPolynomial.hh"
 #include "WhetStoneDefs.hh"
@@ -229,7 +230,7 @@ int DG_Modal::MassMatrixPiecewisePoly_(
       int l = jt.PolynomialPosition();
       int t = jt.MonomialSetOrder();
 
-      Polynomial p1(d_, idx1, 1.0);
+      Monomial p1(d_, idx1, 1.0);
       p1.set_origin(xc);
 
       polys[1] = &p1;
@@ -443,7 +444,7 @@ int DG_Modal::AdvectionMatrixPiecewisePoly_(
       int l = jt.PolynomialPosition();
       int t = jt.MonomialSetOrder();
 
-      Polynomial p1(d_, idx1, 1.0);
+      Monomial p1(d_, idx1, 1.0);
       p1.set_origin(xc);
 
       polys[0] = &p1;
