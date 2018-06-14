@@ -40,7 +40,7 @@ void amanzi_throw(const E& exception)
   if (behavior == Exceptions::RAISE)
       throw exception;
   else
-      abort ();
+      abort();
 }
 
 } // namespace Exceptions

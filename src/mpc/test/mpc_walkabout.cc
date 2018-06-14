@@ -19,15 +19,91 @@
 #include "wrm_flow_registration.hh"
 
 
-TEST(MPC_WALKABOUT) {
-
+TEST(MPC_WALKABOUT_2D) {
 using namespace Amanzi;
-using namespace Amanzi::AmanziMesh;
 
   Epetra_MpiComm comm(MPI_COMM_WORLD);
   
   // read the main parameter list
-  std::string xmlFileName = "test/mpc_walkabout.xml";
+  std::string xmlFileName = "test/mpc_walkabout_2D.xml";
+  Teuchos::RCP<Teuchos::ParameterList> glist = Teuchos::getParametersFromXmlFile(xmlFileName);
+
+  // For now create one geometric model from all the regions in the spec
+  Teuchos::ParameterList region_list = glist->sublist("regions");
+  Teuchos::RCP<AmanziGeometry::GeometricModel> gm =
+      Teuchos::rcp(new AmanziGeometry::GeometricModel(2, region_list, &comm));
+
+  // create mesh
+  AmanziMesh::MeshFactory meshfactory(&comm);
+  meshfactory.preference(AmanziMesh::FrameworkPreference({AmanziMesh::MSTK}));
+  auto mesh = meshfactory("test/mpc_walkabout_2D.exo", gm);
+
+  // use cycle driver to create and initialize state
+  ObservationData obs_data;    
+  CycleDriver cycle_driver(glist, mesh, &comm, obs_data);
+  auto S = cycle_driver.Go();
+
+  // verify no-flow at selected points using existing S
+  std::vector<AmanziGeometry::Point> xyz, velocity;
+  cycle_driver.walkabout()->CalculateDarcyVelocity(S, xyz, velocity);
+
+  std::vector<int> list = {1, 2, 3, 16, 17, 18};
+  for (int v : list) { 
+    AmanziGeometry::Point xv(2);
+    mesh->node_get_coordinates(v, &xv);
+    CHECK_CLOSE(0.0, xv * velocity[v], 1e-14);
+  }
+
+  // verify velocity at all points
+  // -- overwrite flow & pressure
+  AmanziGeometry::Point vel(1.0, 2.0);
+  int nnodes = mesh->num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::OWNED);
+  int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
+
+  auto& flow = *S->GetFieldData("darcy_flux", "flow")->ViewComponent("face");
+  auto& pres = *S->GetFieldData("pressure", "flow")->ViewComponent("cell");
+
+  for (int f = 0; f < nfaces; ++f) {
+    flow[0][f] = vel * mesh->face_normal(f);
+  }
+
+  pres.PutScalar(1.0);
+
+  // -- recovered velocity
+  Teuchos::ParameterList& wlist = glist->sublist("walkabout data");
+  auto walkabout = Teuchos::rcp(new Amanzi::WalkaboutCheckpoint(wlist, &comm));
+
+  walkabout->CalculateDarcyVelocity(S, xyz, velocity);
+
+  for (int v = 0; v < nnodes; ++v) {
+    CHECK(norm(vel - velocity[v]) < 1e-10);
+  }
+
+  // -- interpolated pressure
+  std::vector<int> material_ids;
+  std::vector<double> porosity, saturation, pressure, isotherm_kd;
+
+  walkabout->CalculateData(S, xyz, velocity,
+                           porosity, saturation, pressure, isotherm_kd, material_ids);
+
+  for (int v = 0; v < nnodes; ++v) {
+    CHECK_CLOSE(1.0, pressure[v], 1e-10);
+    CHECK_CLOSE(1.0, saturation[v], 1e-10);
+  }
+
+  // create walkabout file without pk
+  walkabout->disable(false);
+  walkabout->WriteDataFile(S, Teuchos::null);
+}
+
+
+TEST(MPC_WALKABOUT_3D) {
+using namespace Amanzi;
+
+  Epetra_MpiComm comm(MPI_COMM_WORLD);
+  
+  // read the main parameter list
+  std::string xmlFileName = "test/mpc_walkabout_3D.xml";
   Teuchos::RCP<Teuchos::ParameterList> glist = Teuchos::getParametersFromXmlFile(xmlFileName);
 
   // For now create one geometric model from all the regions in the spec
@@ -36,16 +112,17 @@ using namespace Amanzi::AmanziMesh;
       Teuchos::rcp(new AmanziGeometry::GeometricModel(3, region_list, &comm));
 
   // create mesh
-  MeshFactory meshfactory(&comm);
-  meshfactory.preference(FrameworkPreference({MSTK}));
-  Teuchos::RCP<AmanziMesh::Mesh> mesh = meshfactory("test/mpc_walkabout_tet5.exo", gm);
+  AmanziMesh::MeshFactory meshfactory(&comm);
+  meshfactory.preference(AmanziMesh::FrameworkPreference({AmanziMesh::MSTK}));
+  auto mesh = meshfactory("test/mpc_walkabout_tet5.exo", gm);
 
   // use cycle driver to create and initialize state
   ObservationData obs_data;    
   CycleDriver cycle_driver(glist, mesh, &comm, obs_data);
   auto S = cycle_driver.Go();
 
-  // overwrite flow & pressure
+  // verify velocity at all points
+  // -- overwrite flow & pressure
   AmanziGeometry::Point vel(1.0, 2.0, 3.0);
   int nnodes = mesh->num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::OWNED);
   int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
@@ -59,7 +136,7 @@ using namespace Amanzi::AmanziMesh;
 
   pres.PutScalar(1.0);
 
-  // verify recovered velocity
+  // -- check recovered velocity
   Teuchos::ParameterList& wlist = glist->sublist("walkabout data");
   auto walkabout = Teuchos::rcp(new Amanzi::WalkaboutCheckpoint(wlist, &comm));
 
@@ -70,7 +147,7 @@ using namespace Amanzi::AmanziMesh;
     CHECK(norm(vel - velocity[v]) < 1e-10);
   }
 
-  // verify interpolated pressure
+  // -- check interpolated pressure
   std::vector<int> material_ids;
   std::vector<double> porosity, saturation, pressure, isotherm_kd;
 
@@ -105,7 +182,7 @@ using namespace Amanzi::AmanziMesh;
     }
   }
 
-  // create walkabout file
+  // create walkabout file without flow pk
   walkabout->disable(false);
   walkabout->WriteDataFile(S, Teuchos::null);
 }

@@ -39,7 +39,7 @@ class WalkaboutCheckpoint : public Checkpoint {
   // recontruct vector velocity at mesh nodes
   void CalculateDarcyVelocity(Teuchos::RCP<State>& S,
                               std::vector<AmanziGeometry::Point>& xyz, 
-                              std::vector<AmanziGeometry::Point>& velocity);
+                              std::vector<AmanziGeometry::Point>& velocity) const;
 
   // interpolate various fileds to mesh nodes
   void CalculateData(Teuchos::RCP<State>& S,

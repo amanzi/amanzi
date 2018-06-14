@@ -36,7 +36,7 @@ namespace Amanzi {
 void WalkaboutCheckpoint::CalculateDarcyVelocity(
     Teuchos::RCP<State>& S,
     std::vector<AmanziGeometry::Point>& xyz, 
-    std::vector<AmanziGeometry::Point>& velocity)
+    std::vector<AmanziGeometry::Point>& velocity) const
 {
   xyz.clear();
   velocity.clear();
@@ -44,9 +44,9 @@ void WalkaboutCheckpoint::CalculateDarcyVelocity(
 
   int nnodes_owned  = mesh->num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::OWNED);
   int nnodes_wghost = mesh->num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::ALL);
-
   int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
 
+  double rho = *S->GetScalarData("fluid_density");
   S->GetFieldData("darcy_flux")->ScatterMasterToGhosted();
   const Epetra_MultiVector& flux = *S->GetFieldData("darcy_flux")->ViewComponent("face", true);
   
@@ -85,7 +85,7 @@ void WalkaboutCheckpoint::CalculateDarcyVelocity(
           int v = nodes[n];
           node_normal[v] += normal / nnodes;
           node_area[v] += area / nnodes;
-          node_flux[v] += bc_value[f] * area / nnodes;
+          node_flux[v] += (bc_value[f] / rho) * area / nnodes;
         }
       }
     }
