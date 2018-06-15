@@ -135,6 +135,13 @@ class DenseVector {
     return *this;
   }
 
+  // ring algebra
+  friend DenseVector operator*(double val, const DenseVector& v) {
+    DenseVector tmp(v);
+    tmp *= val;
+    return tmp;
+  }
+
   // -- vector type behaviour (no checks for compatiility) 
   DenseVector& operator+=(const DenseVector& A) {
     const double* dataA = A.Values();  

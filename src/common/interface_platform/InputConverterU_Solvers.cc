@@ -63,6 +63,11 @@ Teuchos::ParameterList InputConverterU::TranslateSolvers_()
   out_list.sublist("AztecOO") = TranslateLinearSolvers_("", LINEAR_SOLVER_METHOD, "");
 
   // add PCG and GMRES solvers (generic or specialized)
+  out_list.sublist("Dispersion Solver") = TranslateLinearSolvers_(
+      "unstr_transport_controls, dispersion_linear_solver", "pcg", "");
+  out_list.sublist("Dispersion Solver").sublist("pcg parameters")
+          .sublist("verbose object").set<std::string>("verbosity level", "low");
+
   out_list.sublist("PCG with Hypre AMG") = TranslateLinearSolvers_(
       "unstr_flow_controls, saturated_linear_solver", "pcg", "");
 

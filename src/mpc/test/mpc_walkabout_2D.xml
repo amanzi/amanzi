@@ -6,47 +6,35 @@
     <Parameter name="file name digits" type="int" value="5"/>
 
     <ParameterList name="write regions">
-      <Parameter name="region names" type="Array(string)" value="{Bottom Region, Middle Region, Top Region}"/>
-      <Parameter name="material names" type="Array(string)" value="{MAT1, MAT2, MAT3}"/>
-      <Parameter name="material ids" type="Array(int)" value="{1000, 2000, 3000}"/>
+      <Parameter name="region names" type="Array(string)" value="{All}"/>
+      <Parameter name="material names" type="Array(string)" value="{MAT1}"/>
+      <Parameter name="material ids" type="Array(int)" value="{1000}"/>
     </ParameterList>
   </ParameterList>
 
   <ParameterList name="regions">
-    <ParameterList name="Bottom Surface">
+    <ParameterList name="Inlet">
       <ParameterList name="region: box">
-        <Parameter name="low coordinate" type="Array(double)" value="{0.0, 0.0, 0.0}"/>
-        <Parameter name="high coordinate" type="Array(double)" value="{3.0, 3.0, 0.0}"/>
+        <Parameter name="low coordinate" type="Array(double)" value="{0.0, 0.0}"/>
+        <Parameter name="high coordinate" type="Array(double)" value="{0.0, 1.5}"/>
       </ParameterList>
     </ParameterList>
-    <ParameterList name="Bottom Region">
+    <ParameterList name="Outlet">
       <ParameterList name="region: box">
-        <Parameter name="low coordinate" type="Array(double)" value="{0.0, 0.0, 0.0}"/>
-        <Parameter name="high coordinate" type="Array(double)" value="{3.0, 3.0, 1.0}"/>
-      </ParameterList>
-    </ParameterList>
-    <ParameterList name="Middle Region">
-      <ParameterList name="region: box">
-        <Parameter name="low coordinate" type="Array(double)" value="{0.0, 0.0, 1.0}"/>
-        <Parameter name="high coordinate" type="Array(double)" value="{3.0, 3.0, 2.0}"/>
-      </ParameterList>
-    </ParameterList>
-    <ParameterList name="Top Region">
-      <ParameterList name="region: box">
-        <Parameter name="low coordinate" type="Array(double)" value="{0.0, 0.0, 2.0}"/>
-        <Parameter name="high coordinate" type="Array(double)" value="{3.0, 3.0, 3.0}"/>
+        <Parameter name="low coordinate" type="Array(double)" value="{0.0, 0.0}"/>
+        <Parameter name="high coordinate" type="Array(double)" value="{1.5, 0.0}"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="All">
       <ParameterList name="region: box">
-        <Parameter name="low coordinate" type="Array(double)" value="{0.0, 0.0, 0.0}"/>
-        <Parameter name="high coordinate" type="Array(double)" value="{3.0, 3.0, 3.0}"/>
+        <Parameter name="low coordinate" type="Array(double)" value="{0.0, 0.0}"/>
+        <Parameter name="high coordinate" type="Array(double)" value="{1.5, 1.5}"/>
       </ParameterList>
     </ParameterList>
   </ParameterList>
 
   <ParameterList name="domain">
-    <Parameter name="spatial dimension" type="int" value="3"/>
+    <Parameter name="spatial dimension" type="int" value="2"/>
   </ParameterList>
 
   <ParameterList name="cycle driver">
@@ -93,30 +81,12 @@
       <ParameterList name="porosity">
         <Parameter name="field evaluator type" type="string" value="independent variable"/>
         <ParameterList name="function">
-          <ParameterList name="Bottom Region">
-            <Parameter name="regions" type="Array(string)" value="{Bottom Region}"/>
+          <ParameterList name="All">
+            <Parameter name="regions" type="Array(string)" value="{All}"/>
             <Parameter name="component" type="string" value="cell"/>
             <ParameterList name="function">
               <ParameterList name="function-constant">
                 <Parameter name="value" type="double" value="0.2"/>
-              </ParameterList>
-            </ParameterList>
-          </ParameterList>
-          <ParameterList name="Middle Region">
-            <Parameter name="regions" type="Array(string)" value="{Middle Region}"/>
-            <Parameter name="component" type="string" value="cell"/>
-            <ParameterList name="function">
-              <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="0.4"/>
-              </ParameterList>
-            </ParameterList>
-          </ParameterList>
-          <ParameterList name="Top Region">
-            <Parameter name="regions" type="Array(string)" value="{Top Region}"/>
-            <Parameter name="component" type="string" value="cell"/>
-            <ParameterList name="function">
-              <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="0.6"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
@@ -126,7 +96,7 @@
 
     <ParameterList name="initial conditions">
       <ParameterList name="gravity">
-        <Parameter name="value" type="Array(double)" value="{0.0, 0.0, -9.81}"/>
+        <Parameter name="value" type="Array(double)" value="{0.0, -9.81}"/>
       </ParameterList>
       <ParameterList name="fluid_density">
         <Parameter name="value" type="double" value="998.2"/>
@@ -141,7 +111,7 @@
             <Parameter name="regions" type="Array(string)" value="{All}"/>
             <Parameter name="component" type="string" value="cell"/>
             <ParameterList name="function">
-              <Parameter name="number of dofs" type="int" value="3"/>
+              <Parameter name="number of dofs" type="int" value="2"/>
               <Parameter name="function type" type="string" value="composite function"/>
               <ParameterList name="dof 1 function">
                 <ParameterList name="function-constant">
@@ -153,26 +123,6 @@
                   <Parameter name="value" type="double" value="2.0e-12"/>
                 </ParameterList>
               </ParameterList>
-              <ParameterList name="dof 3 function">
-                <ParameterList name="function-constant">
-                  <Parameter name="value" type="double" value="3.0e-12"/>
-                </ParameterList>
-              </ParameterList>
-            </ParameterList>
-          </ParameterList>
-        </ParameterList>
-      </ParameterList>
-      <ParameterList name="pressure">
-        <ParameterList name="function">
-          <ParameterList name="All">
-            <Parameter name="regions" type="Array(string)" value="{All}"/>
-            <Parameter name="component" type="string" value="cell"/>
-            <ParameterList name="function">
-              <ParameterList name="function-linear">
-                <Parameter name="y0" type="double" value="1.01325e+05"/>
-                <Parameter name="x0" type="Array(double)" value="{0.0, 0.0, 0.0}"/>
-                <Parameter name="gradient" type="Array(double)" value="{0.0, 0.0, -9.793e+03}"/>
-              </ParameterList>
             </ParameterList>
           </ParameterList>
         </ParameterList>
@@ -180,7 +130,7 @@
     </ParameterList>
     <ParameterList name="mesh partitions">
       <ParameterList name="materials">
-        <Parameter name="region list" type="Array(string)" value="{Middle Region, Bottom Region, Top Region}"/>
+        <Parameter name="region list" type="Array(string)" value="{All}"/>
       </ParameterList>
     </ParameterList>
   </ParameterList>
@@ -210,9 +160,20 @@
       	</ParameterList>
       </ParameterList>
       <ParameterList name="boundary conditions">
-      	<ParameterList name="pressure">
+      	<ParameterList name="mass flux">
       	  <ParameterList name="BC 0">
-      	    <Parameter name="regions" type="Array(string)" value="{Bottom Surface}"/>
+      	    <Parameter name="regions" type="Array(string)" value="{Inlet}"/>
+            <Parameter name="spatial distribution method" type="string" value="none"/>
+      	    <ParameterList name="outward mass flux">
+      	      <ParameterList name="function-constant">
+      		<Parameter name="value" type="double" value="-1.0e-6"/>
+      	      </ParameterList>
+      	    </ParameterList>
+      	  </ParameterList>
+      	</ParameterList>
+      	<ParameterList name="pressure">
+      	  <ParameterList name="BC 1">
+      	    <Parameter name="regions" type="Array(string)" value="{Outlet}"/>
             <Parameter name="spatial distribution method" type="string" value="none"/>
       	    <ParameterList name="boundary pressure">
       	      <ParameterList name="function-constant">
@@ -220,7 +181,7 @@
       	      </ParameterList>
       	    </ParameterList>
       	  </ParameterList>
-      	</ParameterList>
+         </ParameterList>
       </ParameterList>
       <ParameterList name="time integrator">
 	<Parameter name="start interval time" type="double" value="0.0"/>
@@ -229,11 +190,6 @@
       	<Parameter name="error control options" type="Array(string)" value="{pressure}"/>
       	<Parameter name="linear solver" type="string" value="AztecOO"/>
       	<Parameter name="preconditioner" type="string" value="Hypre AMG"/>
-      	<ParameterList name="pressure-lambda constraints">
-      	  <Parameter name="method" type="string" value="projection"/>
-      	  <Parameter name="inflow krel correction" type="bool" value="true"/>
-      	  <Parameter name="linear solver" type="string" value="AztecOO"/>
-      	</ParameterList>
       	<Parameter name="time integration method" type="string" value="BDF1"/>
       	<ParameterList name="BDF1">
       	  <Parameter name="timestep controller type" type="string" value="standard"/>
@@ -259,7 +215,7 @@
       	</ParameterList>
       </ParameterList>
     </ParameterList>
-   </ParameterList>
+    </ParameterList>
   </ParameterList>
 
   <ParameterList name="preconditioners">

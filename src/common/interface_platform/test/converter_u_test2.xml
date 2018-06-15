@@ -105,6 +105,7 @@
 
       <unstr_linear_solver>
         <max_iterations>100</max_iterations>
+        <!-- iterative method will defined by the code -->
         <!--method>pcg</method-->
         <tolerance>1e-20</tolerance>
       </unstr_linear_solver>

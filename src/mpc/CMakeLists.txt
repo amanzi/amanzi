@@ -88,8 +88,8 @@ add_amanzi_library(mpc
                           ObservableFactory.cc MeshInfo.cc
                           ObservableAqueous.cc ObservableSolute.cc
                    HEADERS ${mpc_inc_files}
-                   LINK_LIBS time_integration solvers output mpc_tree state mesh dbg 
-                             ${mpc_tpl_libs})
+                   LINK_LIBS time_integration solvers output mpc_tree state mesh dbg
+                             flow ${mpc_tpl_libs})
 
 if (BUILD_TESTS)
     include_directories(${MESH_FACTORY_SOURCE_DIR})
@@ -161,7 +161,6 @@ if (BUILD_TESTS)
     # Test: walkabout
     add_amanzi_test(mpc_walkabout mpc_walkabout 
                     KIND      int
-                    NPROCS    2
                     SOURCE    test/Main.cc test/mpc_walkabout.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES}
                                              ${HYPRE_LIBRARY})

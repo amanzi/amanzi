@@ -111,12 +111,12 @@ int Transport_PK::FindDiffusionValue(const std::string& tcc_name, double* md, in
 
 
 /* ******************************************************************
-*  Find direction of axi-symmetry.                                               
+* Find direction of axi-symmetry for Lichtner-Kelkar-Robinson model
 ****************************************************************** */
 void Transport_PK::CalculateAxiSymmetryDirection()
 {
   axi_symmetry_.resize(ncells_owned, -1);
-  if (S_->HasField("permeability")) {
+  if (S_->HasField("permeability") && dim == 3) {
     const Epetra_MultiVector& perm = *S_->GetFieldData("permeability")->ViewComponent("cell");
 
     for (int c = 0; c < ncells_owned; ++c) {

@@ -19,7 +19,9 @@
 
 #include "DenseMatrix.hh"
 #include "errors.hh"
+#include "Darcy_PK.hh"
 #include "Mesh.hh"
+#include "OperatorDefs.hh"
 #include "ParallelCommunication.hh"
 #include "Tensor.hh"
 
@@ -34,7 +36,7 @@ namespace Amanzi {
 void WalkaboutCheckpoint::CalculateDarcyVelocity(
     Teuchos::RCP<State>& S,
     std::vector<AmanziGeometry::Point>& xyz, 
-    std::vector<AmanziGeometry::Point>& velocity)
+    std::vector<AmanziGeometry::Point>& velocity) const
 {
   xyz.clear();
   velocity.clear();
@@ -42,14 +44,63 @@ void WalkaboutCheckpoint::CalculateDarcyVelocity(
 
   int nnodes_owned  = mesh->num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::OWNED);
   int nnodes_wghost = mesh->num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::ALL);
+  int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
 
-  // least-square recovery at mesh nodes 
+  double rho = *S->GetScalarData("fluid_density");
   S->GetFieldData("darcy_flux")->ScatterMasterToGhosted();
   const Epetra_MultiVector& flux = *S->GetFieldData("darcy_flux")->ViewComponent("face", true);
   
   int d = mesh->space_dimension();
   AmanziGeometry::Point node_velocity(d);
 
+  // optional flux constraint at nodes
+  // -- flag
+  bool projection(false);
+  if (pk_ != Teuchos::null && pk_->name() == "flow") projection = true;
+
+  // -- area-weighted normal and average flux
+  std::vector<double> node_area, node_flux;
+  std::vector<AmanziGeometry::Point> node_normal;
+
+  if (projection) {
+    const auto pk_flow = dynamic_cast<Flow::Flow_PK*>(pk_.get());
+    const auto& bc = pk_flow->op_bc();
+    const auto& bc_model = bc->bc_model();
+    const auto& bc_value = bc->bc_value();
+
+    node_area.resize(nnodes_wghost, 0.0);
+    node_flux.resize(nnodes_wghost, 0.0);
+    node_normal.resize(nnodes_wghost, AmanziGeometry::Point(d));
+
+    for (int f = 0; f < nfaces_wghost; ++f) {
+      if (bc_model[f] == Operators::OPERATOR_BC_NEUMANN) {
+        double area = mesh->face_area(f);
+        const AmanziGeometry::Point& normal = mesh->face_normal(f);
+
+        AmanziMesh::Entity_ID_List nodes;
+        mesh->face_get_nodes(f, &nodes); 
+        int nnodes = nodes.size();
+
+        for (int n = 0; n < nnodes; ++n) {
+          int v = nodes[n];
+          node_normal[v] += normal / nnodes;
+          node_area[v] += area / nnodes;
+          node_flux[v] += (bc_value[f] / rho) * area / nnodes;
+        }
+      }
+    }
+
+    for (int v = 0; v < nnodes_wghost; ++v) {
+      if (node_area[v] > 0.0 && node_flux[v] <= 0.0) {
+        node_normal[v] /= node_area[v];
+        node_flux[v] /= node_area[v];
+      } else {
+        node_area[v] = 0.0;  // no control for outflow
+      }
+    }
+  }
+
+  // least-square recovery at mesh nodes 
   AmanziMesh::Entity_ID_List faces;
   AmanziGeometry::Point xv(d);
   WhetStone::DenseVector rhs(d), sol(d);
@@ -79,6 +130,18 @@ void WalkaboutCheckpoint::CalculateDarcyVelocity(
     matrix.Inverse();
     matrix.Multiply(rhs, sol, false);
     
+    // enforce constraint: formulas follow from solution of saddle-point problem
+    if (projection && node_area[v] > 0.0) {
+      WhetStone::DenseVector normal(d), tmp(d);
+      for (int i = 0; i < d; i++) normal(i) = node_normal[v][i];
+
+      matrix.Multiply(normal, tmp, false);
+
+      double sigma = normal * tmp;
+      double factor = ((normal * sol) - node_flux[v]) / sigma;
+      sol -= factor * tmp;
+    }
+
     for (int i = 0; i < d; i++) node_velocity[i] = sol(i);
     velocity.push_back(node_velocity);
 
@@ -206,9 +269,11 @@ void WalkaboutCheckpoint::CalculateData(
 /* ******************************************************************
 * Write walkabout data
 ****************************************************************** */
-void WalkaboutCheckpoint::WriteWalkabout(Teuchos::RCP<State>& S)
+void WalkaboutCheckpoint::WriteDataFile(
+    Teuchos::RCP<State>& S, Teuchos::RCP<PK> pk)
 {
   if (!is_disabled()) {
+    pk_ = pk;
     CreateFile(S->cycle());
 
     std::vector<AmanziGeometry::Point> xyz;

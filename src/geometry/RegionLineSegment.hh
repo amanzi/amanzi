@@ -35,7 +35,7 @@ Example:
       </ParameterList>
     </ParameterList>     
 
- */
+*/
 
 
 #ifndef AMANZI_LINE_SEGMENT_REGION_HH
@@ -49,16 +49,16 @@ Example:
 namespace Amanzi {
 namespace AmanziGeometry {
 
-  class RegionLineSegment: public Region {
-  public:
-// Default constructor uses two corner points (order not important)
-    RegionLineSegment(const std::string& name,
-                      const int id,
-                      const Point& p0, 
-                      const Point& p1,
-                      const LifeCycleType lifecycle=PERMANENT);
+class RegionLineSegment: public Region {
+ public:
+  // Default constructor uses two corner points (order not important)
+  RegionLineSegment(const std::string& name,
+                    const int id,
+                    const Point& p0, 
+                    const Point& p1,
+                    const LifeCycleType lifecycle=PERMANENT);
 
-// Is the specified point inside this region?
+  // Is the specified point inside this region?
   bool inside(const Point& p) const;
 
   // Calculate intersection polytope object with the line segment.
@@ -74,16 +74,11 @@ namespace AmanziGeometry {
                               Point& res_point) const;
 
  protected:
-
-
-
-    const Point p0_, p1_; // two end points of the line.
-    //std::vector<Point> line_points_;
-    //std::vector<double> line_frac_;
-    //std::vector<int> reg_entities_;
-    //bool complete_;
-
-  };
+  const Point p0_, p1_; // two end points of the line.
+  //std::vector<Point> line_points_;
+  //std::vector<double> line_frac_;
+  //bool complete_;
+};
 
 double PlaneLineIntersection(const std::vector<Point>& plane,
                              const std::vector<Point>& line);
