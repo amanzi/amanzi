@@ -52,9 +52,9 @@ Flow_PK::Flow_PK() : passwd_("flow") { vo_ = Teuchos::null; }
 ****************************************************************** */
 void Flow_PK::Setup(const Teuchos::Ptr<State>& S)
 {
-  if (!S->HasField("fluid_density")) {
-    S->RequireScalar("fluid_density", passwd_);
-  }
+  // if (!S->HasField("fluid_density")) {
+  //   S->RequireScalar("fluid_density", passwd_);
+  // }
 
   if (!S->HasField("atmospheric_pressure")) {
     S->RequireScalar("atmospheric_pressure", passwd_);
@@ -114,10 +114,7 @@ void Flow_PK::Initialize(const Teuchos::Ptr<State>& S)
                                           // are not sure if gravity_data is an
                                           // array or vector
   g_ = fabs(gravity_[dim - 1]);
-  rho_ = *S->GetScalarData("fluid_density");
 
-  // -- molar rescaling of some quantatities.
-  molar_rho_ = rho_ / CommonDefs::MOLAR_MASS_H2O;
   flux_units_ = 0.0;  // scaling from kg to moles
 
   // parallel execution data
@@ -139,25 +136,25 @@ void Flow_PK::InitializeFields_()
   Teuchos::OSTab tab = vo_->getOSTab();
 
   // set popular default values for missed fields.
-  if (S_->GetField("fluid_density")->owner() == passwd_) {
-    if (!S_->GetField("fluid_density", passwd_)->initialized()) {
-      *(S_->GetScalarData("fluid_density", passwd_)) = 1000.0;
-      S_->GetField("fluid_density", passwd_)->set_initialized();
+  // if (S_->GetField("fluid_density")->owner() == passwd_) {
+  //   if (!S_->GetField("fluid_density", passwd_)->initialized()) {
+  //     *(S_->GetScalarData("fluid_density", passwd_)) = 1000.0;
+  //     S_->GetField("fluid_density", passwd_)->set_initialized();
 
-      if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM)
-          *vo_->os() << "initilized fluid_density to default value 1000.0" << std::endl;  
-    }
-  }
+  //     if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM)
+  //         *vo_->os() << "initilized fluid_density to default value 1000.0" << std::endl;  
+  //   }
+  // }
 
-  if (S_->HasField("fluid_viscosity")) {
-    if (!S_->GetField("fluid_viscosity", passwd_)->initialized()) {
-      *(S_->GetScalarData("fluid_viscosity", passwd_)) = CommonDefs::ISOTHERMAL_VISCOSITY;
-      S_->GetField("fluid_viscosity", passwd_)->set_initialized();
+  // if (S_->HasField("fluid_viscosity")) {
+  //   if (!S_->GetField("fluid_viscosity", passwd_)->initialized()) {
+  //     *(S_->GetScalarData("fluid_viscosity", passwd_)) = CommonDefs::ISOTHERMAL_VISCOSITY;
+  //     S_->GetField("fluid_viscosity", passwd_)->set_initialized();
 
-      if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM)
-          *vo_->os() << "initilized fluid_viscosity to default value 1.002e-3" << std::endl;  
-    }
-  }
+  //     if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM)
+  //         *vo_->os() << "initilized fluid_viscosity to default value 1.002e-3" << std::endl;  
+  //   }
+  // }
 
   if (S_->HasField("atmospheric_pressure")) {
     if (!S_->GetField("atmospheric_pressure", passwd_)->initialized()) {
@@ -204,7 +201,6 @@ void Flow_PK::UpdateLocalFields_(const Teuchos::Ptr<State>& S)
 
   Epetra_MultiVector& hydraulic_head = *(S->GetFieldData("hydraulic_head", passwd_)->ViewComponent("cell"));
   const Epetra_MultiVector& pressure = *(S->GetFieldData("pressure")->ViewComponent("cell"));
-  double rho = *(S->GetScalarData("fluid_density"));
 
   // calculate hydraulic head
   double g = fabs(gravity_[dim - 1]);
@@ -212,7 +208,7 @@ void Flow_PK::UpdateLocalFields_(const Teuchos::Ptr<State>& S)
   for (int c = 0; c != ncells_owned; ++c) {
     const AmanziGeometry::Point& xc = mesh_->cell_centroid(c); 
     double z = xc[dim - 1]; 
-    hydraulic_head[0][c] = z + (pressure[0][c] - atm_pressure_) / (g * rho);
+    hydraulic_head[0][c] = z + (pressure[0][c] - atm_pressure_) / (g * CellMassDensity(c));
   }
 
   // calculate full velocity vector
@@ -485,7 +481,8 @@ void Flow_PK::ComputeOperatorBCs(const CompositeVector& u)
       for (auto it = bcs_[i]->begin(); it != bcs_[i]->end(); ++it) {
         int f = it->first;
         bc_model[f] = Operators::OPERATOR_BC_NEUMANN;
-        bc_value[f] = it->second[0] * flux_units_;
+        //bc_value[f] = it->second[0] * flux_units_;
+        bc_value[f] = it->second[0] * FaceMolarDensity(f) / FaceMassDensity(f);
       }
     }
   }
@@ -703,6 +700,33 @@ double Flow_PK::WaterVolumeChangePerSecond(const std::vector<int>& bc_model,
   }
   return volume;
 }
+
+/* ******************************************************************
+* Calculate change of water volume per second due to boundary flux.                                          
+****************************************************************** */
+double Flow_PK::WaterMassChangePerSecond(const std::vector<int>& bc_model,
+                                         const Epetra_MultiVector& darcy_flux) const
+{
+  AmanziMesh::Entity_ID_List faces;
+  std::vector<int> fdirs;
+
+  double mass = 0.0;
+  for (int c = 0; c < ncells_owned; c++) {
+    mesh_->cell_get_faces_and_dirs(c, &faces, &fdirs);
+
+    for (int i = 0; i < faces.size(); i++) {
+      int f = faces[i];
+      if (bc_model[f] != Operators::OPERATOR_BC_NONE && f < nfaces_owned) {
+        if (fdirs[i] >= 0) {
+          mass -= FaceMassDensity(f) * darcy_flux[0][f];
+        } else {
+          mass += FaceMassDensity(f) * darcy_flux[0][f];
+        }
+      }
+    }
+  }
+  return mass;
+}  
 
 
 /* ******************************************************************

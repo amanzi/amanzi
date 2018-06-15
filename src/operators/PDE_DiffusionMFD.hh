@@ -120,6 +120,11 @@ class PDE_DiffusionMFD : public virtual PDE_Diffusion {
   virtual void UpdateMatricesNewtonCorrection(const Teuchos::Ptr<const CompositeVector>& flux,
                                               const Teuchos::Ptr<const CompositeVector>& u,
                                               double scalar_limiter=1) override;
+  
+  virtual void UpdateMatricesNewtonCorrection(
+          const Teuchos::Ptr<const CompositeVector>& flux,
+          const Teuchos::Ptr<const CompositeVector>& u,
+          const Teuchos::Ptr<const CompositeVector>& limiter) override;
 
   // modify the operator
   // -- by incorporating boundary conditions. Variable 'primary' indicates
@@ -169,6 +174,11 @@ class PDE_DiffusionMFD : public virtual PDE_Diffusion {
   void AddNewtonCorrectionCell_(const Teuchos::Ptr<const CompositeVector>& flux,
                                 const Teuchos::Ptr<const CompositeVector>& u,
                                 double scalar_limiter);
+  
+  void AddNewtonCorrectionCell_(const Teuchos::Ptr<const CompositeVector>& flux,
+                                const Teuchos::Ptr<const CompositeVector>& u,
+                                const Teuchos::Ptr<const CompositeVector>& limiter_cell);
+  
 
   void ApplyBCs_Mixed_(const Teuchos::Ptr<const BCs>& bc_trial,
                        const Teuchos::Ptr<const BCs>& bc_test,

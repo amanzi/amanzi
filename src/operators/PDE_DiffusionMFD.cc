@@ -146,6 +146,22 @@ void PDE_DiffusionMFD::UpdateMatricesNewtonCorrection(
   }
 }
 
+void PDE_DiffusionMFD::UpdateMatricesNewtonCorrection(
+    const Teuchos::Ptr<const CompositeVector>& flux,
+    const Teuchos::Ptr<const CompositeVector>& u,
+    const Teuchos::Ptr<const CompositeVector>& limiter)
+{
+  // add Newton-type corrections
+  if (newton_correction_ == OPERATOR_DIFFUSION_JACOBIAN_APPROXIMATE) {
+    if (global_op_schema_ & OPERATOR_SCHEMA_DOFS_CELL) {
+      AddNewtonCorrectionCell_(flux, u, limiter);
+    } else {
+      Errors::Message msg("PDE_DiffusionMFD: Newton correction may only be applied to schemas that include CELL dofs.");
+      Exceptions::amanzi_throw(msg);
+    }
+  }
+}  
+
 
 /* ******************************************************************
 * Second-order reconstruction of little k inside mesh cells.
@@ -598,7 +614,8 @@ void PDE_DiffusionMFD::ApplyBCs_Mixed_(
   ASSERT(bc_model_trial.size() == nfaces_wghost);
   ASSERT(bc_value.size() == nfaces_wghost);
 
-  global_op_->rhs()->PutScalarGhosted(0.0);
+  global_op_->rhs()->PutScalarGhosted(0.0);  
+  
   Epetra_MultiVector& rhs_face = *global_op_->rhs()->ViewComponent("face", true);
   Epetra_MultiVector& rhs_cell = *global_op_->rhs()->ViewComponent("cell");
 
@@ -608,7 +625,7 @@ void PDE_DiffusionMFD::ApplyBCs_Mixed_(
     if (k_->HasComponent("cell")) k_cell = k_->ViewComponent("cell");
     if (k_->HasComponent("face")) k_face = k_->ViewComponent("face", true);
   }
-
+ 
   for (int c = 0; c != ncells_owned; ++c) {
     mesh_->cell_get_faces(c, &faces);
     int nfaces = faces.size();
@@ -627,7 +644,7 @@ void PDE_DiffusionMFD::ApplyBCs_Mixed_(
         for (int n = 0; n < nfaces; n++) kf[n] = kc;
       }
     }
-    
+
     bool flag(true);
     WhetStone::DenseMatrix& Acell = local_op_->matrices[c];
         
@@ -644,6 +661,8 @@ void PDE_DiffusionMFD::ApplyBCs_Mixed_(
       }
     }
 
+
+    
     // conditions for trial functions
     for (int n = 0; n != nfaces; ++n) {
       int f = faces[n];
@@ -711,6 +730,7 @@ void PDE_DiffusionMFD::ApplyBCs_Mixed_(
   }
 
   global_op_->rhs()->GatherGhostedToMaster("face", Add);
+  
 }
 
 
@@ -1003,6 +1023,63 @@ void PDE_DiffusionMFD::AddNewtonCorrectionCell_(
     jac_op_->matrices[f] = Aface;
   }
 }
+
+
+void PDE_DiffusionMFD::AddNewtonCorrectionCell_(
+    const Teuchos::Ptr<const CompositeVector>& flux,
+    const Teuchos::Ptr<const CompositeVector>& u,
+    const Teuchos::Ptr<const CompositeVector>& limiter)
+{
+  // hack: ignore correction if no flux provided.
+  if (flux == Teuchos::null) return;
+
+  // Correction is zero for linear problems
+  if (k_ == Teuchos::null || dkdp_ == Teuchos::null) return;
+
+  // only works on upwinded methods
+  if (little_k_ == OPERATOR_UPWIND_NONE) return;
+
+  const Epetra_MultiVector& kf = *k_->ViewComponent("face");
+  const Epetra_MultiVector& dkdp_f = *dkdp_->ViewComponent("face");
+  const Epetra_MultiVector& flux_f = *flux->ViewComponent("face");
+  const Epetra_MultiVector& limiter_cell = *limiter->ViewComponent("cell");
+
+  // populate the local matrices
+  double v, vmod;
+  AmanziMesh::Entity_ID_List cells;
+  for (int f = 0; f < nfaces_owned; f++) {
+    mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
+    int ncells = cells.size();
+    WhetStone::DenseMatrix Aface(ncells, ncells);
+    Aface.PutScalar(0.0);
+
+    // We use the upwind discretization of the generalized flux.
+    v = std::abs(kf[0][f]) > 0.0 ? flux_f[0][f] * dkdp_f[0][f] / kf[0][f] : 0.0;
+    vmod = std::abs(v);
+
+    double scalar_limiter=0.;
+    for (int j=0; j<ncells; j++) scalar_limiter += limiter_cell[0][cells[j]];
+    scalar_limiter *= 1./ncells;
+
+    // prototype for future limiters (external or internal ?)
+    vmod *= scalar_limiter;
+
+    // define the upwind cell, index i in this case
+    int i, dir, c1;
+    c1 = cells[0];
+    const AmanziGeometry::Point& normal = mesh_->face_normal(f, false, c1, &dir);
+    i = (v * dir >= 0.0) ? 0 : 1;
+
+    if (ncells == 2) {
+      Aface(i, i) = vmod;
+      Aface(1 - i, i) = -vmod;
+    } else if (i == 0) {
+      Aface(0, 0) = vmod;
+    }
+
+    jac_op_->matrices[f] = Aface;
+  }
+}  
 
 
 /* ******************************************************************

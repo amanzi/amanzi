@@ -77,6 +77,10 @@ class Flow_PK : public PK_PhysicalBDF {
   // -- miscallenous members
   void DeriveFaceValuesFromCellValues(const Epetra_MultiVector& ucells, Epetra_MultiVector& ufaces);
   int FindPosition(int f, AmanziMesh::Entity_ID_List faces);
+  virtual double FaceMassDensity(int f) const {};
+  virtual double FaceMolarDensity(int f) const {};
+  virtual double CellMassDensity(int c) const {};
+  virtual double CellMolarDensity(int c) const {};    
 
   // -- io members
   void OutputTimeHistory(const Teuchos::ParameterList& plist, std::vector<dt_tuple>& dt_history);
@@ -85,6 +89,8 @@ class Flow_PK : public PK_PhysicalBDF {
   // -- utilities
   double WaterVolumeChangePerSecond(const std::vector<int>& bc_model,
                                     const Epetra_MultiVector& darcy_flux) const;
+  double WaterMassChangePerSecond(const std::vector<int>& bc_model,
+                                  const Epetra_MultiVector& darcy_flux) const;
 
   void CalculateDarcyVelocity(std::vector<AmanziGeometry::Point>& xyz, 
                               std::vector<AmanziGeometry::Point>& velocity);
@@ -107,7 +113,6 @@ class Flow_PK : public PK_PhysicalBDF {
   virtual double BoundaryFaceValue(int f, const CompositeVector& u);
 
   // -- support of unit tests
-  double rho() { return rho_; }
   const AmanziGeometry::Point& gravity() { return gravity_; }
   double seepage_mass() { return seepage_mass_; }
 
@@ -143,7 +148,7 @@ class Flow_PK : public PK_PhysicalBDF {
   // Stationary physical quantatities
   std::vector<WhetStone::Tensor> K; 
   AmanziGeometry::Point gravity_;
-  double g_, rho_, molar_rho_, atm_pressure_;
+  double g_, atm_pressure_;
   double flux_units_;  // scaling for flux units from kg to moles.
 
   Teuchos::RCP<Epetra_Vector> Kxy;
@@ -160,7 +165,7 @@ class Flow_PK : public PK_PhysicalBDF {
   mutable double mass_bc, seepage_mass_, mass_initial;
 
   // field evaluators (MUST GO AWAY lipnikov@lanl.gov)
-  Teuchos::RCP<PrimaryVariableFieldEvaluator> darcy_flux_eval_;
+  Teuchos::RCP<PrimaryVariableFieldEvaluator> darcy_flux_eval_, mass_flux_eval_;
   Teuchos::RCP<PrimaryVariableFieldEvaluator> pressure_eval_, pressure_matrix_eval_;
 
   // io

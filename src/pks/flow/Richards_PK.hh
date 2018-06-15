@@ -138,10 +138,16 @@ class Richards_PK : public Flow_PK {
   // -- verbose output and visualization methods
   void PlotWRMcurves(Teuchos::ParameterList& plist);
 
+  virtual double FaceMassDensity(int f) const ;
+  virtual double FaceMolarDensity(int f) const ;
+  virtual double CellMassDensity(int c) const;
+  virtual double CellMolarDensity(int c) const;      
+  
   // -- developement methods
   double DeriveBoundaryFaceValue(int f, const CompositeVector& u, Teuchos::RCP<const WRM> model);
   virtual double BoundaryFaceValue(int f, const CompositeVector& pressure);
 
+  
  private:
   void InitializeFields_();
   void InitializeFieldFromField_(const std::string& field0, const std::string& field1, bool call_evaluator);

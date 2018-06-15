@@ -230,12 +230,16 @@ TEST(FLOW_3D_TRANSIENT_DARCY) {
   }
 
   *S->GetScalarData("fluid_density", passwd) = 1.0;
+  S->GetField("fluid_density", passwd)->set_initialized();
   *S->GetScalarData("fluid_viscosity", passwd) = 1.0;
+  S->GetField("fluid_viscosity", passwd)->set_initialized();
   Epetra_Vector& gravity = *S->GetConstantVectorData("gravity", "state");
   gravity[2] = -1.0;
 
   S->GetFieldData("specific_storage", passwd)->PutScalar(1.0);
+  S->GetField("specific_storage", passwd)->set_initialized();  
   S->GetFieldData("specific_yield", passwd)->PutScalar(0.0);
+  S->GetField("specific_yield", passwd)->set_initialized();
 
   /* create the initial pressure function */
   Epetra_MultiVector& p = *S->GetFieldData("pressure", passwd)->ViewComponent("cell", false);

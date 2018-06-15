@@ -105,40 +105,70 @@ void Flow_PK::VV_ValidateBCs() const
 
 
 /* *******************************************************************
-* Reports water balance.
+* Calculates extrema for hydraulic head.
 ******************************************************************* */
-void Flow_PK::VV_ReportWaterBalance(const Teuchos::Ptr<State>& S) const
+void Flow_PK::VV_PrintHeadExtrema(const CompositeVector& pressure) const
 {
-  const Epetra_MultiVector& phi = *S->GetFieldData("porosity")->ViewComponent("cell", false);
-  const Epetra_MultiVector& flux = *S->GetFieldData("darcy_flux")->ViewComponent("face", true);
-  const Epetra_MultiVector& ws = *S->GetFieldData("saturation_liquid")->ViewComponent("cell", false);
-
   std::vector<int>& bc_model = op_bc_->bc_model();
-  double mass_bc_dT = WaterVolumeChangePerSecond(bc_model, flux) * rho_ * dt_;
+  std::vector<double>& bc_value = op_bc_->bc_value();
 
-  double mass_amanzi = 0.0;
-  for (int c = 0; c < ncells_owned; c++) {
-    mass_amanzi += ws[0][c] * rho_ * phi[0][c] * mesh_->cell_volume(c);
+  double hmin(1.4e+9), hmax(-1.4e+9);  // diameter of the Sun
+  for (int f = 0; f < nfaces_owned; f++) {
+    if (bc_model[f] == Operators::OPERATOR_BC_DIRICHLET) {
+      double z = mesh_->face_centroid(f)[dim - 1];
+      double rho_g = FaceMassDensity(f) * fabs(gravity_[dim - 1]);
+      double h = z + (bc_value[f] - atm_pressure_) / rho_g;
+      hmax = std::max(hmax, h);
+      hmin = std::min(hmin, h);
+    }
   }
-
-  double mass_amanzi_tmp = mass_amanzi, mass_bc_tmp = mass_bc_dT;
-  mesh_->get_comm()->SumAll(&mass_amanzi_tmp, &mass_amanzi, 1);
-  mesh_->get_comm()->SumAll(&mass_bc_tmp, &mass_bc_dT, 1);
-
-  mass_bc += mass_bc_dT;
+  double tmp = hmin;  // global extrema
+  mesh_->get_comm()->MinAll(&tmp, &hmin, 1);
+  tmp = hmax;
+  mesh_->get_comm()->MaxAll(&tmp, &hmax, 1);
 
   Teuchos::OSTab tab = vo_->getOSTab();
-  *vo_->os() << "reservoir water mass=" << units_.OutputMass(mass_amanzi)
-             << ", total influx=" << units_.OutputMass(mass_bc) << std::endl;
+  *vo_->os() << "boundary head (BCs): min=" << units_.OutputLength(hmin) 
+             << ", max=" << units_.OutputLength(hmax) << std::endl;
 
-  // if (report_water_balance) {
-  //  if (mass_initial == 0.0) mass_initial = mass_amanzi;
-  //  double mass_lost = mass_amanzi - mass_bc - mass_initial;
-  //  *vo_->os() << " T=" << S->time() << " water balance error=" << mass_lost << " [kg]" << std::endl;
-  // }
+  // process cell-based quantaties
+  const Epetra_MultiVector& pcells = *pressure.ViewComponent("cell");
+ 
+  double vmin(1.4e+9), vmax(-1.4e+9);
+  for (int c = 0; c < ncells_owned; c++) {
+    double z = mesh_->cell_centroid(c)[dim - 1];
+    double rho_g = CellMassDensity(c) * fabs(gravity_[dim - 1]);
+    double h = z + (pcells[0][c] - atm_pressure_) / rho_g;
+    vmax = std::max(vmax, h);
+    vmin = std::min(vmin, h);
+  }
+  tmp = vmin;  // global extrema
+  mesh_->get_comm()->MinAll(&tmp, &vmin, 1);
+  tmp = vmax;
+  mesh_->get_comm()->MaxAll(&tmp, &vmax, 1);
+  *vo_->os() << "domain head (cells): min=" << units_.OutputLength(vmin) 
+             << ", max=" << units_.OutputLength(vmax) << std::endl;
+
+  // process face-based quantaties (if any)
+  if (pressure.HasComponent("face")) {
+    const Epetra_MultiVector& pface = *pressure.ViewComponent("face");
+
+    for (int f = 0; f < nfaces_owned; f++) {
+      double z = mesh_->face_centroid(f)[dim - 1];
+      double rho_g = FaceMassDensity(f) * fabs(gravity_[dim - 1]);      
+      double h = z + (pface[0][f] - atm_pressure_) / rho_g;
+      vmax = std::max(vmax, h);
+      vmin = std::min(vmin, h);
+    }
+    tmp = vmin;  // global extrema
+    mesh_->get_comm()->MinAll(&tmp, &vmin, 1);
+    tmp = vmax;
+    mesh_->get_comm()->MaxAll(&tmp, &vmax, 1);
+    *vo_->os() << "domain head (cells + faces): min=" << units_.OutputLength(vmin) 
+               << ", max=" << units_.OutputLength(vmax) << std::endl;
+  }
 }
 
- 
 /* *******************************************************************
 * Calculate flow out of the current seepage face.
 ******************************************************************* */
@@ -157,7 +187,7 @@ void Flow_PK::VV_ReportSeepageOutflow(const Teuchos::Ptr<State>& S) const
         if (f < nfaces_owned) {
           c = BoundaryFaceGetCell(f);
           const AmanziGeometry::Point& normal = mesh_->face_normal(f, false, c, &dir);
-          tmp = flux[0][f] * dir;
+          tmp = flux[0][f] * dir * FaceMassDensity(f);
           if (tmp > 0.0) outflow += tmp;
         }
       }
@@ -167,7 +197,6 @@ void Flow_PK::VV_ReportSeepageOutflow(const Teuchos::Ptr<State>& S) const
   tmp = outflow;
   mesh_->get_comm()->SumAll(&tmp, &outflow, 1);
 
-  outflow *= rho_;
   seepage_mass_ += outflow * dt_;
 
   if (MyPID == 0 && nbcs > 0) {
@@ -176,70 +205,6 @@ void Flow_PK::VV_ReportSeepageOutflow(const Teuchos::Ptr<State>& S) const
                << " total=" << seepage_mass_ << " [kg]" << std::endl;
   }
 }
-
-
-/* *******************************************************************
-* Calculates extrema for hydraulic head.
-******************************************************************* */
-void Flow_PK::VV_PrintHeadExtrema(const CompositeVector& pressure) const
-{
-  std::vector<int>& bc_model = op_bc_->bc_model();
-  std::vector<double>& bc_value = op_bc_->bc_value();
-
-  double hmin(1.4e+9), hmax(-1.4e+9);  // diameter of the Sun
-  double rho_g = rho_ * fabs(gravity_[dim - 1]);
-  for (int f = 0; f < nfaces_owned; f++) {
-    if (bc_model[f] == Operators::OPERATOR_BC_DIRICHLET) {
-      double z = mesh_->face_centroid(f)[dim - 1]; 
-      double h = z + (bc_value[f] - atm_pressure_) / rho_g;
-      hmax = std::max(hmax, h);
-      hmin = std::min(hmin, h);
-    }
-  }
-  double tmp = hmin;  // global extrema
-  mesh_->get_comm()->MinAll(&tmp, &hmin, 1);
-  tmp = hmax;
-  mesh_->get_comm()->MaxAll(&tmp, &hmax, 1);
-
-  Teuchos::OSTab tab = vo_->getOSTab();
-  *vo_->os() << "boundary head (BCs): min=" << units_.OutputLength(hmin) 
-             << ", max=" << units_.OutputLength(hmax) << std::endl;
-
-  // process cell-based quantaties
-  const Epetra_MultiVector& pcells = *pressure.ViewComponent("cell");
-  double vmin(1.4e+9), vmax(-1.4e+9);
-  for (int c = 0; c < ncells_owned; c++) {
-    double z = mesh_->cell_centroid(c)[dim - 1];              
-    double h = z + (pcells[0][c] - atm_pressure_) / rho_g;
-    vmax = std::max(vmax, h);
-    vmin = std::min(vmin, h);
-  }
-  tmp = vmin;  // global extrema
-  mesh_->get_comm()->MinAll(&tmp, &vmin, 1);
-  tmp = vmax;
-  mesh_->get_comm()->MaxAll(&tmp, &vmax, 1);
-  *vo_->os() << "domain head (cells): min=" << units_.OutputLength(vmin) 
-             << ", max=" << units_.OutputLength(vmax) << std::endl;
-
-  // process face-based quantaties (if any)
-  if (pressure.HasComponent("face")) {
-    const Epetra_MultiVector& pface = *pressure.ViewComponent("face");
-
-    for (int f = 0; f < nfaces_owned; f++) {
-      double z = mesh_->face_centroid(f)[dim - 1];              
-      double h = z + (pface[0][f] - atm_pressure_) / rho_g;
-      vmax = std::max(vmax, h);
-      vmin = std::min(vmin, h);
-    }
-    tmp = vmin;  // global extrema
-    mesh_->get_comm()->MinAll(&tmp, &vmin, 1);
-    tmp = vmax;
-    mesh_->get_comm()->MaxAll(&tmp, &vmax, 1);
-    *vo_->os() << "domain head (cells + faces): min=" << units_.OutputLength(vmin) 
-               << ", max=" << units_.OutputLength(vmax) << std::endl;
-  }
-}
-
  
 /* ******************************************************************
 * Calculate source extrema.                                   
@@ -275,6 +240,40 @@ void Flow_PK::VV_PrintSourceExtrema() const
   }
 }
 
+/* *******************************************************************
+* Reports water balance.
+******************************************************************* */
+void Flow_PK::VV_ReportWaterBalance(const Teuchos::Ptr<State>& S) const
+{
+  const Epetra_MultiVector& phi = *S->GetFieldData("porosity")->ViewComponent("cell", false);
+  const Epetra_MultiVector& darcy_flux = *S->GetFieldData("darcy_flux")->ViewComponent("face", true);
+  const Epetra_MultiVector& ws = *S->GetFieldData("saturation_liquid")->ViewComponent("cell", false);
+
+  std::vector<int>& bc_model = op_bc_->bc_model();
+  double mass_bc_dT = WaterMassChangePerSecond(bc_model, darcy_flux) * dt_;
+
+  double mass_amanzi = 0.0;
+  for (int c = 0; c < ncells_owned; c++) {
+    mass_amanzi += ws[0][c] * CellMassDensity(c) * phi[0][c] * mesh_->cell_volume(c);
+  }
+
+  double mass_amanzi_tmp = mass_amanzi, mass_bc_tmp = mass_bc_dT;
+  mesh_->get_comm()->SumAll(&mass_amanzi_tmp, &mass_amanzi, 1);
+  mesh_->get_comm()->SumAll(&mass_bc_tmp, &mass_bc_dT, 1);
+
+  mass_bc += mass_bc_dT;
+
+  Teuchos::OSTab tab = vo_->getOSTab();
+  *vo_->os() << "reservoir water mass=" << units_.OutputMass(mass_amanzi)
+             << ", total influx=" << units_.OutputMass(mass_bc) << std::endl;
+
+  // if (report_water_balance) {
+  //  if (mass_initial == 0.0) mass_initial = mass_amanzi;
+  //  double mass_lost = mass_amanzi - mass_bc - mass_initial;
+  //  *vo_->os() << " T=" << S->time() << " water balance error=" << mass_lost << " [kg]" << std::endl;
+  // }
+}
+  
 
 /* ****************************************************************
 * Find string for the preconditoner.

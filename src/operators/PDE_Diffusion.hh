@@ -92,6 +92,12 @@ class PDE_Diffusion : public PDE_HelperDiscretization {
           const Teuchos::Ptr<const CompositeVector>& flux,
           const Teuchos::Ptr<const CompositeVector>& u,
           double scalar_limiter = 1.0) = 0;
+  
+  // -- creation of an operator
+  virtual void UpdateMatricesNewtonCorrection(
+          const Teuchos::Ptr<const CompositeVector>& flux,
+          const Teuchos::Ptr<const CompositeVector>& u,
+          const Teuchos::Ptr<const CompositeVector>& limiter) = 0;
 
   // -- additional interface on non-manifolds
   virtual void UpdateFluxNonManifold(const Teuchos::Ptr<const CompositeVector>& u,

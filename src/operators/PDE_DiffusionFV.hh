@@ -99,7 +99,13 @@ class PDE_DiffusionFV : public virtual PDE_Diffusion {
       const Teuchos::Ptr<const CompositeVector>& flux,
       const Teuchos::Ptr<const CompositeVector>& u,
       double scalar_limiter = 1.0) override;
-  virtual void UpdateFlux(const Teuchos::Ptr<const CompositeVector>& u,
+  
+  virtual void UpdateMatricesNewtonCorrection(
+          const Teuchos::Ptr<const CompositeVector>& flux,
+          const Teuchos::Ptr<const CompositeVector>& u,
+          const Teuchos::Ptr<const CompositeVector>& limiter) override;
+
+    virtual void UpdateFlux(const Teuchos::Ptr<const CompositeVector>& u,
                           const Teuchos::Ptr<CompositeVector>& flux) override;
   virtual void UpdateFluxNonManifold(const Teuchos::Ptr<const CompositeVector>& u,
                                      const Teuchos::Ptr<CompositeVector>& flux) override;

@@ -136,13 +136,13 @@ void Richards_PK::Setup(const Teuchos::Ptr<State>& S)
   // Our decision can be affected by the list of models
   Teuchos::RCP<Teuchos::ParameterList> physical_models =
       Teuchos::sublist(fp_list_, "physical models and assumptions");
-  std::string vwc_model = physical_models->get<std::string>("water content model", "constant density");
+  std::string vwc_model = physical_models->get<std::string>("water content model", "variable density");
   std::string multiscale_model = physical_models->get<std::string>("multiscale model", "single porosity");
 
   // Require primary field for this PK, which is pressure
-  std::vector<std::string> names;
-  std::vector<AmanziMesh::Entity_kind> locations;
-  std::vector<int> ndofs;
+  std::vector<std::string> names, names_den;
+  std::vector<AmanziMesh::Entity_kind> locations, locations_den;
+  std::vector<int> ndofs, ndofs_den;
 
   Teuchos::RCP<Teuchos::ParameterList> list1 = Teuchos::sublist(fp_list_, "operators", true);
   Teuchos::RCP<Teuchos::ParameterList> list2 = Teuchos::sublist(list1, "diffusion operator", true);
@@ -157,6 +157,12 @@ void Richards_PK::Setup(const Teuchos::Ptr<State>& S)
     locations.push_back(AmanziMesh::FACE);
     ndofs.push_back(1);
   }
+  names_den.push_back("cell");
+  locations_den.push_back(AmanziMesh::CELL);
+  ndofs_den.push_back(1);
+  names_den.push_back("face");
+  locations_den.push_back(AmanziMesh::FACE);
+  ndofs_den.push_back(1);
 
   if (!S->HasField("pressure")) {
     S->RequireField("pressure", passwd_)->SetMesh(mesh_)->SetGhosted(true)
@@ -241,6 +247,16 @@ void Richards_PK::Setup(const Teuchos::Ptr<State>& S)
     S->SetFieldEvaluator("darcy_flux", darcy_flux_eval_);
   }
 
+  if (!S->HasField("mass_flux")) {
+    S->RequireField("mass_flux", passwd_)->SetMesh(mesh_)->SetGhosted(true)
+      ->SetComponent("face", AmanziMesh::FACE, 1);
+
+    Teuchos::ParameterList elist;
+    elist.set<std::string>("evaluator name", "mass_flux");
+    mass_flux_eval_ = Teuchos::rcp(new PrimaryVariableFieldEvaluator(elist));
+    S->SetFieldEvaluator("mass_flux", mass_flux_eval_);
+  }    
+
   // -- porosity
   if (!S->HasField("porosity")) {
     S->RequireField("porosity", "porosity")->SetMesh(mesh_)->SetGhosted(true)
@@ -264,35 +280,26 @@ void Richards_PK::Setup(const Teuchos::Ptr<State>& S)
     }
   }
 
-  // -- viscosity: if not requested by any PK, we request its constant value.
+  // -- viscosity: 
   if (!S->HasField("viscosity_liquid")) {
-    if (!S->HasField("fluid_viscosity")) {
-      S->RequireScalar("fluid_viscosity", passwd_);
-    }
-    S->RequireField("viscosity_liquid", passwd_)->SetMesh(mesh_)->SetGhosted(true)
+    S->RequireField("viscosity_liquid", "viscosity_liquid")->SetMesh(mesh_)->SetGhosted(true)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
-    S->GetField("viscosity_liquid", passwd_)->set_io_vis(false);
+    S->GetField("viscosity_liquid", "viscosity_liquid")->set_io_vis(false);
+    S->RequireFieldEvaluator("viscosity_liquid");    
   }
 
   // -- model for liquid density is constant density unless specified otherwise
   //    in high-level PKs.
   if (!S->HasField("molar_density_liquid")) {
     S->RequireField("molar_density_liquid", "molar_density_liquid")->SetMesh(mesh_)->SetGhosted(true)
-      ->SetComponent("cell", AmanziMesh::CELL, 1);
-
-    double rho = glist_->sublist("state").sublist("initial conditions")
-                        .sublist("fluid_density").get<double>("value", 1000.0);
-    double n_l = rho / CommonDefs::MOLAR_MASS_H2O;
-
-    Teuchos::ParameterList& wc_eval = S->FEList().sublist("molar_density_liquid");
-    wc_eval.sublist("function").sublist("DOMAIN")
-           .set<std::string>("region", "All")
-           .set<std::string>("component","cell")
-           .sublist("function").sublist("function-constant")
-           .set<double>("value", n_l);
-    wc_eval.set<std::string>("field evaluator type", "independent variable");
-
+      ->SetComponents(names_den, locations_den, ndofs_den);
     S->RequireFieldEvaluator("molar_density_liquid");
+  }
+
+  if (!S->HasField("mass_density_liquid")) {
+    S->RequireField("mass_density_liquid", "mass_density_liquid")->SetMesh(mesh_)->SetGhosted(true)
+      ->SetComponents(names_den, locations_den, ndofs_den);    
+    S->RequireFieldEvaluator("mass_density_liquid");
   }
   
   // -- saturation
@@ -409,7 +416,8 @@ void Richards_PK::Initialize(const Teuchos::Ptr<State>& S)
   dKdP_->PutScalarMasterAndGhosted(0.0);
 
   // Process models and assumptions.
-  flux_units_ = molar_rho_ / rho_;
+  //flux_units_ = molar_rho_ / rho_;
+  flux_units_ = 1./ CommonDefs::MOLAR_MASS_H2O;
 
   // -- coupling with other physical PKs
   Teuchos::RCP<Teuchos::ParameterList> physical_models = 
@@ -442,10 +450,12 @@ void Richards_PK::Initialize(const Teuchos::Ptr<State>& S)
   oplist_matrix.set<std::string>("nonlinear coefficient", nonlinear_coef);
   oplist_pc.set<std::string>("nonlinear coefficient", nonlinear_coef);
 
+  const Teuchos::RCP<const CompositeVector> rho = S->GetFieldData("mass_density_liquid");
+  
   Operators::PDE_DiffusionFactory opfactory;
-  op_matrix_diff_ = opfactory.Create(oplist_matrix, mesh_, op_bc_, rho_, gravity_);
+  op_matrix_diff_ = opfactory.Create(oplist_matrix, mesh_, op_bc_, rho, gravity_);
   op_matrix_ = op_matrix_diff_->global_operator();
-  op_preconditioner_diff_ = opfactory.Create(oplist_pc, mesh_, op_bc_, rho_, gravity_);
+  op_preconditioner_diff_ = opfactory.Create(oplist_pc, mesh_, op_bc_, rho, gravity_);
   op_preconditioner_ = op_preconditioner_diff_->global_operator();
   op_acc_ = Teuchos::rcp(new Operators::PDE_Accumulation(AmanziMesh::CELL, op_preconditioner_));
 
@@ -528,8 +538,10 @@ void Richards_PK::Initialize(const Teuchos::Ptr<State>& S)
   op_matrix_diff_->UpdateMatrices(Teuchos::null, solution.ptr());
   op_matrix_diff_->ApplyBCs(true, true);
 
+  const Teuchos::RCP<const CompositeVector> molar_rho = S->GetFieldData("molar_density_liquid");  
+  
   op_preconditioner_diff_->UpdateMatrices(darcy_flux_copy.ptr(), solution.ptr());
-  op_preconditioner_diff_->UpdateMatricesNewtonCorrection(darcy_flux_copy.ptr(), solution.ptr(), molar_rho_);
+  op_preconditioner_diff_->UpdateMatricesNewtonCorrection(darcy_flux_copy.ptr(), solution.ptr(), molar_rho.ptr());
   op_preconditioner_diff_->ApplyBCs(true, true);
   op_preconditioner_->SymbolicAssembleMatrix();
 
@@ -631,7 +643,7 @@ void Richards_PK::Initialize(const Teuchos::Ptr<State>& S)
     op_matrix_diff_->UpdateFlux(solution.ptr(), darcy_flux_copy.ptr());
 
     Epetra_MultiVector& flux = *darcy_flux_copy->ViewComponent("face", true);
-    for (int f = 0; f < nfaces_owned; f++) flux[0][f] /= molar_rho_;
+    //for (int f = 0; f < nfaces_owned; f++) flux[0][f] /= molar_rho_;
   }
 
   // Subspace entering: re-initialize lambdas.
@@ -649,7 +661,7 @@ void Richards_PK::Initialize(const Teuchos::Ptr<State>& S)
 
       // normalize to Darcy flux, m/s
       Epetra_MultiVector& flux = *darcy_flux_copy->ViewComponent("face", true);
-      for (int f = 0; f < nfaces_owned; f++) flux[0][f] /= molar_rho_;
+      //for (int f = 0; f < nfaces_owned; f++) flux[0][f] /= molar_rho_;
     }
   }
 
@@ -678,17 +690,17 @@ void Richards_PK::InitializeFields_()
 
   // set popular default values for missed fields.
   // -- viscosity: if not initialized, we constant value from state.
-  if (S_->GetField("viscosity_liquid")->owner() == passwd_) {
-    double mu = *S_->GetScalarData("fluid_viscosity");
+  // if (S_->GetField("viscosity_liquid")->owner() == passwd_) {
+  //   double mu = *S_->GetScalarData("fluid_viscosity");
+    
+  //   if (!S_->GetField("viscosity_liquid", passwd_)->initialized()) {
+  //     S_->GetFieldData("viscosity_liquid", passwd_)->PutScalar(mu);
+  //     S_->GetField("viscosity_liquid", passwd_)->set_initialized();
 
-    if (!S_->GetField("viscosity_liquid", passwd_)->initialized()) {
-      S_->GetFieldData("viscosity_liquid", passwd_)->PutScalar(mu);
-      S_->GetField("viscosity_liquid", passwd_)->set_initialized();
-
-      if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM)
-          *vo_->os() << "initilized viscosity_liquid to input value " << mu << std::endl;  
-    }
-  }
+  //     if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM)
+  //         *vo_->os() << "initilized viscosity_liquid to input value " << mu << std::endl;  
+  //   }
+  // }
 
   if (S_->GetField("saturation_liquid")->owner() == passwd_) {
     if (S_->HasField("saturation_liquid")) {
@@ -919,11 +931,14 @@ void Richards_PK::CommitStep(double t_old, double t_new, const Teuchos::RCP<Stat
 {
   // calculate Darcy flux.
   Teuchos::RCP<CompositeVector> darcy_flux = S->GetFieldData("darcy_flux", passwd_);
-  op_matrix_diff_->UpdateFlux(solution.ptr(), darcy_flux.ptr());
+  Teuchos::RCP<CompositeVector> mass_flux = S->GetFieldData("mass_flux", passwd_);
+  op_matrix_diff_->UpdateFlux(solution.ptr(), mass_flux.ptr());
 
-  Epetra_MultiVector& flux = *darcy_flux->ViewComponent("face", true);
-  for (int f = 0; f < nfaces_owned; f++) flux[0][f] /= molar_rho_;
-  *darcy_flux_copy->ViewComponent("face", true) = flux;
+  Epetra_MultiVector& darcy_flux_face = *darcy_flux->ViewComponent("face", true);
+  Epetra_MultiVector& mass_flux_face  =  *mass_flux->ViewComponent("face", true);  
+  for (int f = 0; f < nfaces_owned; f++) darcy_flux_face[0][f] = mass_flux_face[0][f] / FaceMolarDensity(f);
+
+  *darcy_flux_copy->ViewComponent("face", true) = darcy_flux_face;
 
   // update time derivative
   *pdot_cells_prev = *pdot_cells;
@@ -965,6 +980,7 @@ double Richards_PK::DeriveBoundaryFaceValue(
     return bc_value[f];
   } else {
     const Epetra_MultiVector& mu_cell = *S_->GetFieldData("viscosity_liquid")->ViewComponent("cell");
+    const Epetra_MultiVector& molar_rho = *S_->GetFieldData("molar_density_liquid")->ViewComponent("cell");
     const Epetra_MultiVector& u_cell = *u.ViewComponent("cell");
     AmanziMesh::Entity_ID_List cells;
     mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
@@ -976,7 +992,7 @@ double Richards_PK::DeriveBoundaryFaceValue(
     double lmd = u_cell[0][c];
     int dir;
     mesh_->face_normal(f, false, c, &dir);
-    double bnd_flux = dir * bc_value[f] / (molar_rho_ / mu_cell[0][c]);
+    double bnd_flux = dir * bc_value[f] / (molar_rho[0][c] / mu_cell[0][c]);
 
     double max_val(atm_pressure_), min_val;
     if (bnd_flux <= 0.0) {
@@ -999,6 +1015,41 @@ double Richards_PK::DeriveBoundaryFaceValue(
   }
 }
 
+double Richards_PK::FaceMassDensity(int f) const{
+  const Epetra_MultiVector& rho_cell = *S_->GetFieldData("mass_density_liquid")->ViewComponent("cell", true);
+
+  AmanziMesh::Entity_ID_List cells;
+  mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
+  double val=0.;
+  for (int i=0;i<cells.size();i++){
+    val += rho_cell[0][cells[i]];
+  }
+  val *= 1./cells.size();
+
+}
+
+double Richards_PK::CellMassDensity(int c) const{
+  const Epetra_MultiVector& rho_cell = *S_->GetFieldData("mass_density_liquid")->ViewComponent("cell", true);
+  return rho_cell[0][c];
+}
+
+double Richards_PK::FaceMolarDensity(int f) const {
+  const Epetra_MultiVector& molar_rho_cell = *S_->GetFieldData("molar_density_liquid")->ViewComponent("cell", true);
+
+  AmanziMesh::Entity_ID_List cells;
+  mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
+  double val=0.;
+  for (int i=0;i<cells.size();i++){
+    val += molar_rho_cell[0][cells[i]];
+  }
+  val *= 1./cells.size();  
+
+}
+
+double Richards_PK::CellMolarDensity(int c) const{
+  const Epetra_MultiVector& molar_rho_cell = *S_->GetFieldData("molar_density_liquid")->ViewComponent("cell", true);
+  return molar_rho_cell[0][c];
+}  
 
 /* ******************************************************************
 * This is strange.

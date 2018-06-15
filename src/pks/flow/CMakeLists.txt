@@ -117,7 +117,7 @@ generate_evaluators_registration_header(
 #
 set(flow_src_files Flow_PK.cc 
                    Flow_SeepageFace.cc FlowBoundaryFunction.cc
-                   Flow_VandV.cc Flow_Walkabout.cc 
+                   Flow_VandV.cc Flow_Walkabout.cc
                    Darcy_PK.cc Darcy_TI.cc Darcy_LinearOperator.cc
                    Richards_PK.cc Richards_TI.cc Richards_WRM.cc
                    Richards_Picard.cc Richards_LinearOperator.cc Richards_CNLS.cc
@@ -126,7 +126,7 @@ set(flow_src_files Flow_PK.cc
                    WRM_vanGenuchten.cc WRM_BrooksCorey.cc WRM_fake.cc
                    WRMPartition.cc WRMFactory.cc WRMEvaluator.cc 
                    VWContentEvaluator.cc VWContentEvaluator_ConstDensity.cc
-                   DarcyVelocityEvaluator.cc
+                   DarcyVelocityEvaluator.cc VWContentEvaluator_VariableDensity.cc
                    MultiscaleFlowPorosityFactory.cc MultiscaleFlowPorosityPartition.cc
                    MultiscaleFlowPorosity_DPM.cc
                    FracturePermModelPartition.cc FracturePermModelEvaluator.cc

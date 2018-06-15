@@ -474,6 +474,65 @@ void PDE_DiffusionNLFV::UpdateMatricesNewtonCorrection(
   }
 }
 
+void PDE_DiffusionNLFV::UpdateMatricesNewtonCorrection(
+    const Teuchos::Ptr<const CompositeVector>& flux,
+    const Teuchos::Ptr<const CompositeVector>& u,
+    const Teuchos::Ptr<const CompositeVector>& limiter)
+{
+  // ignore correction if no flux provided.
+  if (flux == Teuchos::null) return;
+
+  // Correction is zero for linear problems
+  if (k_ == Teuchos::null || dkdp_ == Teuchos::null) return;
+
+  // Correction is not required
+  if (newton_correction_ == OPERATOR_DIFFUSION_JACOBIAN_NONE) return;
+
+  // only works on upwinded methods
+  if (little_k_ == OPERATOR_UPWIND_NONE) return;
+
+  const Epetra_MultiVector& kf = *k_->ViewComponent("face");
+  const Epetra_MultiVector& dkdp_f = *dkdp_->ViewComponent("face");
+  const Epetra_MultiVector& flux_f = *flux->ViewComponent("face");
+  const Epetra_MultiVector& limiter_cell = *limiter->ViewComponent("cell");
+
+  // populate the local matrices
+  double v, vmod;
+  AmanziMesh::Entity_ID_List cells;
+
+  for (int f = 0; f < nfaces_owned; f++) {
+    mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
+    int ncells = cells.size();
+    WhetStone::DenseMatrix Aface(ncells, ncells);
+    Aface.PutScalar(0.0);
+
+    // We use the upwind discretization of the generalized flux.
+    v = std::abs(kf[0][f]) > 0.0 ? flux_f[0][f] * dkdp_f[0][f] / kf[0][f] : 0.0;
+    vmod = std::abs(v);
+
+    double scalar_limiter=0.;
+    for (int j=0; j<ncells; j++) scalar_limiter += limiter_cell[0][cells[j]];
+    scalar_limiter *= 1./ncells;
+    
+    // prototype for future limiters
+    vmod *= scalar_limiter;
+
+    // We use the upwind discretization of the generalized flux.
+    int i, dir, c1;
+    c1 = cells[0];
+    const AmanziGeometry::Point& normal = mesh_->face_normal(f, false, c1, &dir);
+    i = (v * dir >= 0.0) ? 0 : 1;
+
+    if (ncells == 2) {
+      Aface(i, i) = vmod;
+      Aface(1 - i, i) = -vmod;
+    } else if (i == 0) {
+      Aface(0, 0) = vmod;
+    }
+
+    jac_op_->matrices[f] = Aface;
+  }
+}
 
 /* ******************************************************************
 * Calculate one-sided fluxes (i0=0) or flux corrections (i0=1).

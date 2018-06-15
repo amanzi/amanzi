@@ -51,7 +51,15 @@ int Richards_PK::AdvanceToSteadyState_Picard(Teuchos::ParameterList& plist)
     srcs[i]->Compute(time, time); 
   }
 
+  if (S_->HasFieldEvaluator("viscosity_liquid")) {
+    S_->GetFieldEvaluator("viscosity_liquid")->HasFieldChanged(S_.ptr(), "viscosity_liquid");
+  }
   Teuchos::RCP<const CompositeVector> mu = S_->GetFieldData("viscosity_liquid");
+
+  if (S_->HasFieldEvaluator("molar_density_liquid")){
+    S_->GetFieldEvaluator("molar_density_liquid")->HasFieldChanged(S_.ptr(), "molar_density_liquid");
+  }  
+  Teuchos::RCP<const CompositeVector> molar_rho = S_->GetFieldData("molar_density_liquid");
 
   std::string linear_solver = plist.get<std::string>("linear solver");
   Teuchos::ParameterList& tmp_list = plist.sublist("picard parameters");
@@ -77,17 +85,17 @@ int Richards_PK::AdvanceToSteadyState_Picard(Teuchos::ParameterList& plist)
     relperm_->Compute(solution, bc_model, bc_value, krel_);
     upwind_->Compute(*darcy_flux_copy, *solution, bc_model, *krel_);
     Operators::CellToFace_ScaleInverse(mu, krel_);
-    krel_->ScaleMasterAndGhosted(molar_rho_);
+    krel_->Multiply(1., *krel_, *molar_rho, 0.);
 
     relperm_->ComputeDerivative(solution, bc_model, bc_value, dKdP_);
     upwind_->Compute(*darcy_flux_copy, *solution, bc_model, *dKdP_);
     Operators::CellToFace_ScaleInverse(mu, dKdP_);
-    dKdP_->ScaleMasterAndGhosted(molar_rho_);
+    dKdP_->Multiply(1., *dKdP_, *molar_rho, 0.);
 
     // create algebraic problem (matrix = preconditioner)
     op_preconditioner_->Init();
     op_preconditioner_diff_->UpdateMatrices(darcy_flux_copy.ptr(), solution.ptr());
-    op_preconditioner_diff_->UpdateMatricesNewtonCorrection(darcy_flux_copy.ptr(), Teuchos::null, molar_rho_);
+    op_preconditioner_diff_->UpdateMatricesNewtonCorrection(darcy_flux_copy.ptr(), Teuchos::null, molar_rho.ptr());
     op_preconditioner_diff_->ApplyBCs(true, true);
 
     Teuchos::RCP<CompositeVector> rhs = op_preconditioner_->rhs();  // export RHS from the matrix class

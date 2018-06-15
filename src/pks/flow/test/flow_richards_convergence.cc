@@ -73,6 +73,7 @@ void RunTestConvergence(std::string input_xml) {
     /* create Richards process kernel */
     Teuchos::RCP<TreeVector> soln = Teuchos::rcp(new TreeVector());
     Richards_PK* RPK = new Richards_PK(plist, "flow", S, soln);
+
     RPK->Setup(S.ptr());
     S->Setup();
     S->InitializeFields();

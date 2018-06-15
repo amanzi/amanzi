@@ -35,11 +35,22 @@ namespace Flow {
 void Richards_PK::SolveFullySaturatedProblem(
     double t_old, CompositeVector& u, const std::string& solver_name)
 {
+ 
+  if (S_->HasFieldEvaluator("viscosity_liquid")) {
+    S_->GetFieldEvaluator("viscosity_liquid")->HasFieldChanged(S_.ptr(), "viscosity_liquid");
+  }
   Teuchos::RCP<const CompositeVector> mu = S_->GetFieldData("viscosity_liquid");
 
+  if (S_->HasFieldEvaluator("molar_density_liquid")){
+    S_->GetFieldEvaluator("molar_density_liquid")->HasFieldChanged(S_.ptr(), "molar_density_liquid");
+  }  
+  Teuchos::RCP<const CompositeVector> molar_rho = S_->GetFieldData("molar_density_liquid");
+  
+
   UpdateSourceBoundaryData(t_old, t_old, u);
-  krel_->PutScalarMasterAndGhosted(molar_rho_);
+  krel_->Update(1., *molar_rho, 0.);
   Operators::CellToFace_ScaleInverse(mu, krel_);
+  krel_->ScatterMasterToGhosted();
   dKdP_->PutScalarMasterAndGhosted(0.0);
 
   // create diffusion operator
@@ -101,6 +112,7 @@ void Richards_PK::EnforceConstraints(double t_new, Teuchos::RCP<CompositeVector>
   std::vector<double>& bc_value = op_bc_->bc_value();
 
   Teuchos::RCP<const CompositeVector> mu = S_->GetFieldData("viscosity_liquid");
+  Teuchos::RCP<const CompositeVector> molar_rho = S_->GetFieldData("molar_density_liquid");
 
   UpdateSourceBoundaryData(t_new, t_new, *u);
 
@@ -115,12 +127,12 @@ void Richards_PK::EnforceConstraints(double t_new, Teuchos::RCP<CompositeVector>
   relperm_->Compute(u, bc_model, bc_value, krel_);
   upwind_->Compute(*darcy_flux_copy, *u, bc_model, *krel_);
   Operators::CellToFace_ScaleInverse(mu, krel_);
-  krel_->ScaleMasterAndGhosted(molar_rho_);
+  krel_->Multiply(1., *krel_, *molar_rho, 0.);
 
   relperm_->ComputeDerivative(u, bc_model, bc_value, dKdP_);
   upwind_->Compute(*darcy_flux_copy, *u, bc_model, *dKdP_);
   Operators::CellToFace_ScaleInverse(mu, dKdP_);
-  dKdP_->ScaleMasterAndGhosted(molar_rho_);
+  dKdP_->Multiply(1., *dKdP_, *molar_rho, 0.);
 
   // modify relative permeability coefficient for influx faces
   UpwindInflowBoundary(u);
@@ -180,8 +192,18 @@ void Richards_PK::UpwindInflowBoundary(Teuchos::RCP<const CompositeVector> u)
   std::vector<int>& bc_model = op_bc_->bc_model();
   std::vector<double>& bc_value = op_bc_->bc_value();
 
+
+  S_->GetFieldEvaluator("viscosity_liquid")->HasFieldChanged(S_.ptr(), "viscosity_liquid");
   Teuchos::RCP<const CompositeVector> mu = S_->GetFieldData("viscosity_liquid");
   const Epetra_MultiVector& mu_cell = *mu->ViewComponent("cell");
+
+  S_->GetFieldEvaluator("mass_density_liquid")->HasFieldChanged(S_.ptr(), "mass_density_liquid");
+  Teuchos::RCP<const CompositeVector> rho = S_->GetFieldData("mass_density_liquid");
+  const Epetra_MultiVector& rho_cell = *rho->ViewComponent("cell");
+
+  S_->GetFieldEvaluator("molar_density_liquid")->HasFieldChanged(S_.ptr(), "molar_density_liquid");
+  Teuchos::RCP<const CompositeVector> molar_rho = S_->GetFieldData("molar_density_liquid");
+  const Epetra_MultiVector& molar_rho_cell = *molar_rho->ViewComponent("cell");  
 
   const Epetra_MultiVector& u_cell = *u->ViewComponent("cell");
   Epetra_MultiVector& k_face = *krel_->ViewComponent("face", true);
@@ -200,10 +222,10 @@ void Richards_PK::UpwindInflowBoundary(Teuchos::RCP<const CompositeVector> u)
       // double save = 3.0;
       // k_face[0][f] = std::min(1.0, -save * bc_value[f] * mu_cell[0][c] / (Knn * rho_ * rho_ * g_));
       // k_face[0][f] *= rho_ / mu_cell[0][c];
-      double value = bc_value[f] / flux_units_;
+      double value = bc_value[f] / (FaceMolarDensity(f) / FaceMassDensity(f)) ; //flux_units_;
       double kr1 = relperm_->Compute(c, u_cell[0][c]);
-      double kr2 = std::min(1.0, -value * mu_cell[0][c] / (Knn * rho_ * rho_ * g_));
-      k_face[0][f] = (molar_rho_ / mu_cell[0][c]) * (kr1 + kr2) / 2;
+      double kr2 = std::min(1.0, -value * mu_cell[0][c] / (Knn * rho_cell[0][c] * rho_cell[0][c] * g_));
+      k_face[0][f] = (molar_rho_cell[0][c] / mu_cell[0][c]) * (kr1 + kr2) / 2;
     } 
   }
 
@@ -219,8 +241,13 @@ void Richards_PK::UpwindInflowBoundary_New(Teuchos::RCP<const CompositeVector> u
   std::vector<int>& bc_model = op_bc_->bc_model();
   std::vector<double>& bc_value = op_bc_->bc_value();
 
+  S_->GetFieldEvaluator("viscosity_liquid")->HasFieldChanged(S_.ptr(), "viscosity_liquid");
   Teuchos::RCP<const CompositeVector> mu = S_->GetFieldData("viscosity_liquid");
   const Epetra_MultiVector& mu_cell = *mu->ViewComponent("cell");
+  
+  S_->GetFieldEvaluator("molar_density_liquid")->HasFieldChanged(S_.ptr(), "molar_density_liquid");
+  Teuchos::RCP<const CompositeVector> molar_rho = S_->GetFieldData("molar_density_liquid");
+  const Epetra_MultiVector& molar_rho_cell = *molar_rho->ViewComponent("cell");  
 
   Epetra_MultiVector& k_face = *krel_->ViewComponent("face", true);
   AmanziMesh::Entity_ID_List cells;
@@ -233,7 +260,7 @@ void Richards_PK::UpwindInflowBoundary_New(Teuchos::RCP<const CompositeVector> u
 
       double value = DeriveBoundaryFaceValue(f, *u, wrm_->second[(*wrm_->first)[c]]);
       double kr = relperm_->Compute(c, value);
-      k_face[0][f] = kr * (molar_rho_ / mu_cell[0][c]);
+      k_face[0][f] = kr * (molar_rho_cell[0][c] / mu_cell[0][c]);
       // (*u->ViewComponent("face"))[0][f] = value;
     } 
   }

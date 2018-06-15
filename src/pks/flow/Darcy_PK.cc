@@ -31,6 +31,7 @@
 #include "Darcy_PK.hh"
 #include "DarcyVelocityEvaluator.hh"
 #include "FlowDefs.hh"
+#include "CommonDefs.hh"
 #include "FracturePermModelPartition.hh"
 #include "FracturePermModelEvaluator.hh"
 
@@ -174,6 +175,16 @@ void Darcy_PK::Setup(const Teuchos::Ptr<State>& S)
     S->SetFieldEvaluator("darcy_flux", darcy_flux_eval_);
   }
 
+  if (!S->HasField("mass_flux")) {
+    S->RequireField("mass_flux", passwd_)->SetMesh(mesh_)->SetGhosted(true)
+      ->SetComponent("face", AmanziMesh::FACE, 1);
+
+    Teuchos::ParameterList elist;
+    elist.set<std::string>("evaluator name", "mass_flux");
+    mass_flux_eval_ = Teuchos::rcp(new PrimaryVariableFieldEvaluator(elist));
+    S->SetFieldEvaluator("mass_flux", mass_flux_eval_);
+  }  
+
   // Require additional field evaluators for this PK.
   // -- porosity
   if (!S->HasField("porosity")) {
@@ -185,6 +196,11 @@ void Darcy_PK::Setup(const Teuchos::Ptr<State>& S)
   // -- viscosity
   if (!S->HasField("fluid_viscosity")) {
     S->RequireScalar("fluid_viscosity", passwd_);
+  }
+
+  // -- viscosity
+  if (!S->HasField("fluid_density")) {
+    S->RequireScalar("fluid_density", passwd_);
   }
 
   // -- effective fracture permeability
@@ -260,6 +276,10 @@ void Darcy_PK::Initialize(const Teuchos::Ptr<State>& S)
 
   // Initilize various base class data.
   Flow_PK::Initialize(S);
+
+  rho_ = *S->GetScalarData("fluid_density");
+  // -- molar rescaling of some quantatities.
+  molar_rho_ = rho_ / CommonDefs::MOLAR_MASS_H2O;
 
   // Initialize local fields and evaluators. 
   InitializeFields_();
@@ -530,16 +550,23 @@ bool Darcy_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 void Darcy_PK::CommitStep(double t_old, double t_new, const Teuchos::RCP<State>& S)
 {
   // calculate Darcy mass flux
-  Teuchos::RCP<CompositeVector> flux = S->GetFieldData("darcy_flux", passwd_);
-  op_diff_->UpdateFlux(solution.ptr(), flux.ptr());
-  flux->Scale(1.0 / rho_);
+  Teuchos::RCP<CompositeVector> darcy_flux = S->GetFieldData("darcy_flux", passwd_);
+  Teuchos::RCP<CompositeVector> mass_flux = S->GetFieldData("mass_flux", passwd_);  
+  op_diff_->UpdateFlux(solution.ptr(), mass_flux.ptr());
+  //darcy_flux->Scale(1. / rho_, *mass_flux);
+  mass_flux->Scale(molar_rho_ / rho_);
+
 
   // calculate Darcy mass flux in fractures
   if (S->HasField("darcy_flux_fracture")) {
     Teuchos::RCP<CompositeVector> flux_fracture = S->GetFieldData("darcy_flux_fracture", "state");
     op_diff_->UpdateFluxNonManifold(solution.ptr(), flux_fracture.ptr());
     flux_fracture->Scale(1.0 / rho_);
-  }
+    if (S->HasField("mass_flux_fracture")) {
+      Teuchos::RCP<CompositeVector> mass_flux_fracture = S->GetFieldData("mass_flux_fracture", "state");
+      //mass_flux_fracture->Scale(molar_rho_, *flux_fracture)
+    }
+  } 
 
   // update time derivative
   *pdot_cells_prev = *pdot_cells;
@@ -598,6 +625,9 @@ void Darcy_PK::UpdateSpecificYield_()
   }
 }
 
+  
+
+  
 
 /* ******************************************************************
 * This is strange.

@@ -39,9 +39,15 @@ void Richards_PK::Functional(double t_old, double t_new,
   std::vector<double>& bc_value = op_bc_->bc_value();
 
   if (S_->HasFieldEvaluator("viscosity_liquid")) {
-    S_->GetFieldEvaluator("viscosity_liquid")->HasFieldChanged(S_.ptr(), "flow");
+    S_->GetFieldEvaluator("viscosity_liquid")->HasFieldChanged(S_.ptr(), "viscosity_liquid");
   }
   Teuchos::RCP<const CompositeVector> mu = S_->GetFieldData("viscosity_liquid");
+
+  if (S_->HasFieldEvaluator("molar_density_liquid")){
+    S_->GetFieldEvaluator("molar_density_liquid")->HasFieldChanged(S_.ptr(), "molar_density_liquid");
+  }  
+  Teuchos::RCP<const CompositeVector> molar_rho = S_->GetFieldData("molar_density_liquid");
+  
 
   // refresh data
   // -- BCs and source terms
@@ -54,7 +60,7 @@ void Richards_PK::Functional(double t_old, double t_new,
   relperm_->Compute(u_new->Data(), bc_model, bc_value, krel_); 
   upwind_->Compute(*darcy_flux_copy, *u_new->Data(), bc_model, *krel_);
   Operators::CellToFace_ScaleInverse(mu, krel_);
-  krel_->ScaleMasterAndGhosted(molar_rho_);
+  krel_->Multiply(1., *krel_, *molar_rho, 0.);
 
   // modify relative permeability coefficient for influx faces
   // UpwindInflowBoundary_New(u_new->Data());
@@ -62,7 +68,7 @@ void Richards_PK::Functional(double t_old, double t_new,
   relperm_->ComputeDerivative(u_new->Data(), bc_model, bc_value, dKdP_); 
   upwind_->Compute(*darcy_flux_copy, *u_new->Data(), bc_model, *dKdP_);
   Operators::CellToFace_ScaleInverse(mu, dKdP_);
-  dKdP_->ScaleMasterAndGhosted(molar_rho_);
+  dKdP_->Multiply(1., *dKdP_, *molar_rho, 0.);
 
   // assemble residual for diffusion operator
   op_matrix_->Init();
@@ -84,7 +90,8 @@ void Richards_PK::Functional(double t_old, double t_new,
   S_->GetFieldEvaluator("water_content")->HasFieldChanged(S_.ptr(), "flow");
   const Epetra_MultiVector& wc_c = *S_->GetFieldData("water_content")->ViewComponent("cell");
   const Epetra_MultiVector& wc_prev_c = *S_->GetFieldData("prev_water_content")->ViewComponent("cell");
-
+  const Epetra_MultiVector& molar_rho_cell = *molar_rho->ViewComponent("cell");
+  
   for (int c = 0; c < ncells_owned; ++c) {
     double wc1 = wc_c[0][c];
     double wc2 = wc_prev_c[0][c];
@@ -109,8 +116,8 @@ void Richards_PK::Functional(double t_old, double t_new,
   functional_max_cell = 0;
 
   for (int c = 0; c < ncells_owned; ++c) {
-    double factor = mesh_->cell_volume(c) * molar_rho_ * phi_c[0][c] / dtp;
-    double tmp = fabs(f_cell[0][c]) / (factor * molar_rho_ * phi_c[0][c]);
+    double factor = mesh_->cell_volume(c) * molar_rho_cell[0][c] * phi_c[0][c] / dtp;
+    double tmp = fabs(f_cell[0][c]) / (factor * molar_rho_cell[0][c] * phi_c[0][c]);
     if (tmp > functional_max_norm) {
       functional_max_norm = tmp;
       functional_max_cell = c;        
@@ -238,6 +245,7 @@ void Richards_PK::Functional_AddMassTransferMatrix_(double dt, Teuchos::RCP<Comp
 
   const Epetra_MultiVector& wcm_prev = *S_->GetFieldData("prev_water_content_matrix")->ViewComponent("cell");
   Epetra_MultiVector& wcm = *S_->GetFieldData("water_content_matrix", passwd_)->ViewComponent("cell");
+  const Epetra_MultiVector& molar_rho = *S_->GetFieldData("molar_density_liquid")->ViewComponent("cell");
 
   Epetra_MultiVector& fc = *f->ViewComponent("cell");
 
@@ -248,9 +256,8 @@ void Richards_PK::Functional_AddMassTransferMatrix_(double dt, Teuchos::RCP<Comp
     wcm0 = wcm_prev[0][c];
     phi0 = phi[0][c];
 
-    int max_itrs(100);
-    wcm1 = msp_->second[(*msp_->first)[c]]->WaterContentMatrix(
-        dt, phi0, molar_rho_, wcm0, pcf0, pcm0, max_itrs);
+    int max_itrs(100);   
+    wcm1 = msp_->second[(*msp_->first)[c]]->WaterContentMatrix(dt, phi0, molar_rho[0][c], wcm0, pcf0, pcm0, max_itrs);
 
     fc[0][c] += (wcm1 - wcm0) / dt;
     wcm[0][c] = wcm1;
@@ -271,12 +278,13 @@ void Richards_PK::CalculateVWContentMatrix_()
   S_->GetFieldEvaluator("porosity_matrix")->HasFieldChanged(S_.ptr(), "flow");
   const Epetra_MultiVector& phi = *S_->GetFieldData("porosity_matrix")->ViewComponent("cell");
   Epetra_MultiVector& wcm = *S_->GetFieldData("water_content_matrix", passwd_)->ViewComponent("cell");
+  const Epetra_MultiVector& molar_rho = *S_->GetFieldData("molar_density_liquid")->ViewComponent("cell");
 
   double phi0, pcm0;
   for (int c = 0; c < ncells_owned; ++c) {
     pcm0 = atm_pressure_ - pcm[0][c];
     phi0 = phi[0][c];
-    wcm[0][c] = msp_->second[(*msp_->first)[c]]->ComputeField(phi0, molar_rho_, pcm0);
+    wcm[0][c] = msp_->second[(*msp_->first)[c]]->ComputeField(phi0, molar_rho[0][c], pcm0);
   }
 }
 
@@ -299,8 +307,16 @@ void Richards_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVector>
 {
   double t_old = tp - dtp;
 
+  if (S_->HasFieldEvaluator("viscosity_liquid")) {
+    S_->GetFieldEvaluator("viscosity_liquid")->HasFieldChanged(S_.ptr(), "viscosity_liquid");
+  }
   Teuchos::RCP<const CompositeVector> mu = S_->GetFieldData("viscosity_liquid");
 
+  if (S_->HasFieldEvaluator("molar_density_liquid")){
+    S_->GetFieldEvaluator("molar_density_liquid")->HasFieldChanged(S_.ptr(), "molar_density_liquid");
+  }  
+  Teuchos::RCP<const CompositeVector> molar_rho = S_->GetFieldData("molar_density_liquid");
+  
   std::vector<int>& bc_model = op_bc_->bc_model();
   std::vector<double>& bc_value = op_bc_->bc_value();
 
@@ -312,7 +328,7 @@ void Richards_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVector>
   if (upwind_frequency_ == FLOW_UPWIND_UPDATE_ITERATION) {
     op_matrix_diff_->UpdateFlux(solution.ptr(), darcy_flux_copy.ptr());
     Epetra_MultiVector& flux = *darcy_flux_copy->ViewComponent("face");
-    for (int f = 0; f < nfaces_owned; f++) flux[0][f] /= molar_rho_;
+    //for (int f = 0; f < nfaces_owned; f++) flux[0][f] /= molar_rho_;
   }
   darcy_flux_copy->ScatterMasterToGhosted("face");
 
@@ -320,7 +336,7 @@ void Richards_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVector>
   relperm_->Compute(u->Data(), bc_model, bc_value, krel_);
   upwind_->Compute(*darcy_flux_copy, *u->Data(), bc_model, *krel_);
   Operators::CellToFace_ScaleInverse(mu, krel_);
-  krel_->ScaleMasterAndGhosted(molar_rho_);
+  krel_->Multiply(1., *krel_, *molar_rho, 0.);  
 
   // modify relative permeability coefficient for influx faces
   // UpwindInflowBoundary_New(u->Data());
@@ -328,12 +344,12 @@ void Richards_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVector>
   relperm_->ComputeDerivative(u->Data(), bc_model, bc_value, dKdP_);
   upwind_->Compute(*darcy_flux_copy, *u->Data(), bc_model, *dKdP_);
   Operators::CellToFace_ScaleInverse(mu, dKdP_);
-  dKdP_->ScaleMasterAndGhosted(molar_rho_);
+  dKdP_->Multiply(1., *dKdP_, *molar_rho, 0.);
 
   // create diffusion operators
   op_preconditioner_->Init();
   op_preconditioner_diff_->UpdateMatrices(darcy_flux_copy.ptr(), solution.ptr());
-  op_preconditioner_diff_->UpdateMatricesNewtonCorrection(darcy_flux_copy.ptr(), solution.ptr(), molar_rho_);
+  op_preconditioner_diff_->UpdateMatricesNewtonCorrection(darcy_flux_copy.ptr(), solution.ptr(), molar_rho.ptr());
   op_preconditioner_diff_->ApplyBCs(true, true);
 
   // add time derivative

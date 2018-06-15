@@ -29,6 +29,7 @@ void PDE_DiffusionMFDwithGravity::UpdateMatrices(
 
   ASSERT(little_k_ != OPERATOR_LITTLE_K_DIVK_TWIN_GRAD);
   AddGravityToRHS_();
+
 }
 
 
@@ -52,7 +53,7 @@ void PDE_DiffusionMFDwithGravity::AddGravityToRHS_()
       if (k_->HasComponent("face")) k_face = k_->ViewComponent("face", true);
       if (k_->HasComponent("grav")) k_face = k_->ViewComponent("grav", true);
     }
-
+   
     int dir;
     AmanziMesh::Entity_ID_List faces;
     std::vector<int> dirs;

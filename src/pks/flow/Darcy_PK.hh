@@ -28,6 +28,7 @@
 
 // Amanzi::Flow
 #include "Flow_PK.hh"
+#include "FlowDefs.hh"
 
 namespace Amanzi {
 namespace Flow {
@@ -97,6 +98,14 @@ class Darcy_PK : public Flow_PK {
   // other members of the PK linear solvers
   void SolveFullySaturatedProblem(CompositeVector& u);
 
+  virtual double FaceMassDensity(int f) const { return rho_;}
+  virtual double FaceMolarDensity(int f) const { return molar_rho_;}
+  virtual double CellMassDensity(int c) const { return rho_;} ;
+  virtual double CellMolarDensity(int c) const { return molar_rho_;};      
+
+  // -- support of unit tests
+  double rho() { return rho_; }
+
  private:
   void InitializeFields_();
   void UpdateSpecificYield_();
@@ -118,6 +127,7 @@ class Darcy_PK : public Flow_PK {
   std::string preconditioner_name_, solver_name_;
   bool initialize_with_darcy_;
   int num_itrs_;
+  double molar_rho_, rho_;
 
   bool flow_in_fractures_;
 

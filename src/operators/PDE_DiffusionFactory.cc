@@ -103,6 +103,15 @@ Teuchos::RCP<PDE_Diffusion> PDE_DiffusionFactory::Create(
     op_g->SetDensity(rho);
     op = op_g;
 
+  // NLFV methods
+  } else if (name == "nlfv: default" && !flag) {
+    op = Teuchos::rcp(new PDE_DiffusionNLFV(oplist, mesh)); 
+    op->SetBCs(bc, bc);
+
+  } else if (name == "nlfv: default" && flag) {
+    op = Teuchos::rcp(new PDE_DiffusionNLFVwithGravity(oplist, mesh, rho, g)); 
+    op->SetBCs(bc, bc);
+    
   // MFD methods
   } else if (!flag) {
     op = Teuchos::rcp(new PDE_DiffusionMFD(oplist, mesh));

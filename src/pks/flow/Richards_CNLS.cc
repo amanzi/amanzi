@@ -31,11 +31,12 @@ void Richards_PK::CalculateCNLSLimiter_(
   const Epetra_MultiVector& wcc = *wc.ViewComponent("cell");
   const Epetra_MultiVector& dwc_dpc = *dwc_dp.ViewComponent("cell");
   const Epetra_MultiVector& por = *S_->GetFieldData("porosity")->ViewComponent("cell");
+  const Epetra_MultiVector& molar_rho = *S_->GetFieldData("molar_density_liquid")->ViewComponent("cell");
 
   double alpha0, alpha1, wc_max, wc_min(0.0);
   double eps = tol * atm_pressure_; 
   for (int c = 0; c < ncells_owned; ++c) {
-    wc_max = molar_rho_ * por[0][c];
+    wc_max = molar_rho[0][c] * por[0][c];
     if (dwc_dpc[0][c] > 1e-16) {
       alpha0 = (wcc[0][c] - wc_min) / (dwc_dpc[0][c] * eps);
       alpha1 = (wc_max - wcc[0][c]) / (dwc_dpc[0][c] * eps); 

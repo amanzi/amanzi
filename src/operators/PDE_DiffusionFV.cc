@@ -228,6 +228,18 @@ void PDE_DiffusionFV::UpdateMatricesNewtonCorrection(
   }
 }
 
+void PDE_DiffusionFV::UpdateMatricesNewtonCorrection(
+    const Teuchos::Ptr<const CompositeVector>& flux,
+    const Teuchos::Ptr<const CompositeVector>& u,
+    const Teuchos::Ptr<const CompositeVector>& limiter)
+{
+  // Add derivatives to the matrix (Jacobian in this case)
+  if (newton_correction_ == OPERATOR_DIFFUSION_JACOBIAN_TRUE && u.get()) {
+    ASSERT(u != Teuchos::null);
+    AnalyticJacobian_(*u);
+  }
+}  
+
 /* ******************************************************************
 * Special implementation of boundary conditions.
 ****************************************************************** */
