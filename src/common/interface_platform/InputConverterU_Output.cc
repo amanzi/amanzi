@@ -77,7 +77,7 @@ Teuchos::ParameterList InputConverterU::TranslateOutput_()
       // process time macros
       if (strcmp(tagname, "time_macro") == 0) {
         Teuchos::ParameterList tm_parameter;
-        std::string name = GetAttributeValueS_(static_cast<DOMElement*>(inode), "name");
+        std::string name = GetAttributeValueS_(inode, "name");
 
         // deal differently if "times" or "start-period-stop"
         bool flag;
@@ -126,7 +126,7 @@ Teuchos::ParameterList InputConverterU::TranslateOutput_()
       // process cycle macros
       else if (strcmp(tagname,"cycle_macro") == 0) {
         Teuchos::ParameterList cm_parameter;
-        std::string name = GetAttributeValueS_(static_cast<DOMElement*>(inode), "name");      
+        std::string name = GetAttributeValueS_(inode, "name");      
 
         DOMElement* element = static_cast<DOMElement*>(inode);
         DOMNodeList* list = element->getElementsByTagName(mm.transcode("start"));
@@ -345,7 +345,7 @@ Teuchos::ParameterList InputConverterU::TranslateOutput_()
           } else if (strcmp(obs_type, "ph") == 0) {
             obPL.set<std::string>("variable", "pH");
           } else if (strcmp(obs_type, "aqueous_conc") == 0) {
-            std::string solute_name = GetAttributeValueS_(static_cast<DOMElement*>(jnode), "solute");
+            std::string solute_name = GetAttributeValueS_(jnode, "solute");
             std::stringstream name;
             name << solute_name << " aqueous concentration";
             obPL.set<std::string>("variable", name.str());
@@ -356,7 +356,7 @@ Teuchos::ParameterList InputConverterU::TranslateOutput_()
           } else if (strcmp(obs_type, "water_table") == 0) {
             obPL.set<std::string>("variable", "water table");
           } else if (strcmp(obs_type, "solute_volumetric_flow_rate") == 0) {
-            std::string solute_name = GetAttributeValueS_(static_cast<DOMElement*>(jnode), "solute");
+            std::string solute_name = GetAttributeValueS_(jnode, "solute");
             std::stringstream name;
             name << solute_name << " volumetric flow rate";
             obPL.set<std::string>("variable", name.str());
@@ -423,7 +423,7 @@ Teuchos::ParameterList InputConverterU::TranslateOutput_()
           char* obs_type = mm.transcode(jnode->getNodeName());
 
           if (strcmp(obs_type, "gaseous_conc") == 0) {
-            std::string solute_name = GetAttributeValueS_(static_cast<DOMElement*>(jnode), "solute");
+            std::string solute_name = GetAttributeValueS_(jnode, "solute");
             std::stringstream name;
             name << solute_name << " gaseous concentration";
             obPL.set<std::string>("variable", name.str());

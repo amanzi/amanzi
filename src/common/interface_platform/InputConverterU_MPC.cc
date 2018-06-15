@@ -182,7 +182,7 @@ Teuchos::ParameterList InputConverterU::TranslateCycleDriver_()
     if (inode->getNodeType() != DOMNode::ELEMENT_NODE) continue;
     tagname = mm.transcode(inode->getNodeName());
 
-    std::string state = GetAttributeValueS_(static_cast<DOMElement*>(inode), "state");
+    std::string state = GetAttributeValueS_(inode, "state");
     pk_state[tagname] = (strcmp(state.c_str(), "on") == 0);
 
     if (strcmp(tagname, "flow") == 0) {
@@ -428,7 +428,7 @@ Teuchos::ParameterList InputConverterU::TranslateCycleDriverNew_()
     DOMNode* inode = pks->item(i);
     if (inode->getNodeType() != DOMNode::ELEMENT_NODE) continue;
     children = inode->getChildNodes();
-    std::string mode = GetAttributeValueS_(static_cast<DOMElement*>(inode), "mode");
+    std::string mode = GetAttributeValueS_(inode, "mode");
 
     // collect active pks and coupling of pks
     int transient_model(0);
@@ -471,7 +471,7 @@ Teuchos::ParameterList InputConverterU::TranslateCycleDriverNew_()
     pks_strong.clear();
     node = GetUniqueElementByTagsString_(inode, "strongly_coupled", flag);
     if (flag) {
-      pkname = GetAttributeValueS_(static_cast<DOMElement*>(node), "name");
+      pkname = GetAttributeValueS_(node, "name");
       pks_strong = CharToStrings_(mm.transcode(node->getTextContent()));
       strong_name = mm.transcode(node->getNodeName());
     }
@@ -480,7 +480,7 @@ Teuchos::ParameterList InputConverterU::TranslateCycleDriverNew_()
     pks_weak.clear();
     node = GetUniqueElementByTagsString_(inode, "weakly_coupled", flag);
     if (flag) {
-      pkname = GetAttributeValueS_(static_cast<DOMElement*>(node), "name");
+      pkname = GetAttributeValueS_(node, "name");
       pks_weak = CharToStrings_(mm.transcode(node->getTextContent()));
       weak_name = mm.transcode(node->getNodeName());
     }

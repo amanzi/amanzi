@@ -370,7 +370,7 @@ Teuchos::ParameterList InputConverterU::TranslateTransportBCs_()
     DOMNode* inode = children->item(i);
     if (inode->getNodeType() != DOMNode::ELEMENT_NODE) continue;
     tagname = mm.transcode(inode->getNodeName());
-    std::string bcname = GetAttributeValueS_(static_cast<DOMElement*>(inode), "name");
+    std::string bcname = GetAttributeValueS_(inode, "name");
 
     // read the assigned regions
     bool flag;
@@ -431,7 +431,7 @@ void InputConverterU::TranslateTransportBCsGroup_(
 
   while (same_list.size() > 0) {
     // process a group of elements named after the 0-th element
-    solute_name = GetAttributeValueS_(static_cast<DOMElement*>(same_list[0]), "name");
+    solute_name = GetAttributeValueS_(same_list[0], "name");
 
     // Check for spatially dependent BCs. Only one is allowed (FIXME)
     bool space_bc, time_bc;
@@ -640,7 +640,7 @@ Teuchos::ParameterList InputConverterU::TranslateTransportSources_()
     DOMNode* inode = children->item(i);
     if (inode->getNodeType() != DOMNode::ELEMENT_NODE) continue;
     tagname = mm.transcode(inode->getNodeName());
-    std::string srcname = GetAttributeValueS_(static_cast<DOMElement*>(inode), "name");
+    std::string srcname = GetAttributeValueS_(inode, "name");
 
     // read the assigned regions
     bool flag;
@@ -698,7 +698,7 @@ void InputConverterU::TranslateTransportSourcesGroup_(
     std::string srctype, solute_name, srctype_flow, unit("mol/s"), unit_in;
 
     std::vector<DOMNode*> same_list = GetSameChildNodes_(node, srctype, flag, true);
-    solute_name = GetAttributeValueS_(static_cast<DOMElement*>(same_list[0]), "name");
+    solute_name = GetAttributeValueS_(same_list[0], "name");
 
     // weighting method
     bool classical(true), mass_fraction(false);

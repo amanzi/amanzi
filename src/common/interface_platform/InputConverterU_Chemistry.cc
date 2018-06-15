@@ -51,7 +51,7 @@ Teuchos::ParameterList InputConverterU::TranslateChemistry_()
   // chemical engine
   bool flag;
   node = GetUniqueElementByTagsString_("process_kernels, chemistry", flag);
-  std::string engine = GetAttributeValueS_(static_cast<DOMElement*>(node), "engine");
+  std::string engine = GetAttributeValueS_(node, "engine");
 
   // process engine
   bool native(false);

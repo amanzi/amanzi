@@ -149,24 +149,38 @@ class InputConverter {
       xercesc::DOMNode* node, const std::string& childName, bool& flag, bool exception = false);
 
   // -- extract and verify children
-  // -- extract existing attribute value and verify it optionally against expected unit
+  // -- extract existing attribute value and verify it optionally against expected units
+  //    Consider two examples <parameters alpha="2.06e-03 Pa^-1"/>  and
+  //                          <parameters alpha=ALPHA/>
+  //    elem      = pointer to an element <.../> in an XML document
+  //    attr_name = name of the attribute  ("alpha" in the examples)
+  //    type      = value type. If the value (ALPHA) is defined in the XML section "constants",
+  //                then type should match the type of constant as follows: TYPE_TIME for 
+  //                time_constant TYPE_NUMERICAL for numerical_constant and TYPE_AREA_MASS_FLUX 
+  //                for area_mass_flux_constant. Use default value, otherwise.
+  //    valmin    = minimum allowed value in SI units (2.06e-03 >= valmin)
+  //    valmax    = maximum allowed value in SI units (2.06e-03 <= valmax) 
+  //    unit      = check expected units if provided. Derived and non-SI units are allowed.
+  //    exception = if false, use default value when either element or attribute is missing.
+  //                if true, throw an exception.
+  //    default_val = defult value
   int GetAttributeValueL_(
       xercesc::DOMElement* elem, const char* attr_name, const std::string& type = TYPE_NUMERICAL,
-      int valmin = INT_MIN, int valmax = INT_MAX, bool exception = true, int val = 0);
+      int valmin = INT_MIN, int valmax = INT_MAX, bool exception = true, int defaul_val = 0);
   double GetAttributeValueD_(  // supports units except for ppbm
       xercesc::DOMElement* elem, const char* attr_name, const std::string& type = TYPE_NUMERICAL,
       double valmin = DVAL_MIN, double valmax = DVAL_MAX, std::string unit = "",
-      bool exception = true, double val = 0.0);
+      bool exception = true, double default_val = 0.0);
   std::string GetAttributeValueS_(
-      xercesc::DOMElement* elem, const char* attr_name,
-      const std::string& type = TYPE_NUMERICAL, bool exception = true, std::string val = "");
+      xercesc::DOMElement* elem, const char* attr_name, const std::string& type = TYPE_NUMERICAL,
+      bool exception = true, std::string default_val = "");
   std::vector<double> GetAttributeVectorD_(  // supports units except ppbm
       xercesc::DOMElement* elem, const char* attr_name,
       std::string unit = "", bool exception = true, double mol_mass = -1.0);
   std::vector<std::string> GetAttributeVectorS_(
       xercesc::DOMElement* elem, const char* attr_name, bool exception = true);
 
-  // -- node is used more often
+  // -- node is used more often then element
   int GetAttributeValueL_(
       xercesc::DOMNode* node, const char* attr_name,
       const std::string& type = TYPE_NUMERICAL, int valmin = INT_MIN, int valmax = INT_MAX,
