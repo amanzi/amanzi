@@ -130,6 +130,10 @@ void OverlandPressureFlow::SetupOverlandFlow_(const Teuchos::Ptr<State>& S) {
   bc_seepage_head_ = bc_factory.CreateSeepageFaceHead();
   bc_seepage_pressure_ = bc_factory.CreateSeepageFacePressure();
   bc_critical_depth_ = bc_factory.CreateCriticalDepth();
+  bc_level_flux_lvl_ = bc_factory.CreateFixedLevelFlux_Level();
+  bc_level_flux_vel_ = bc_factory.CreateFixedLevelFlux_Velocity();
+
+  
   if (bc_plist.isParameter("seepage face")) {
     // old style! DEPRECATED
     Errors::Message message;
@@ -518,6 +522,9 @@ void OverlandPressureFlow::Initialize(const Teuchos::Ptr<State>& S) {
   bc_zero_gradient_->Compute(S->time());
   bc_flux_->Compute(S->time());
   bc_level_->Compute(S->time());
+  bc_level_flux_lvl_->Compute(S->time());
+  bc_level_flux_vel_->Compute(S->time());  
+  
   bc_seepage_head_->Compute(S->time());
   bc_seepage_pressure_->Compute(S->time());
   bc_critical_depth_->Compute(S->time());
@@ -564,6 +571,9 @@ void OverlandPressureFlow::CommitStep(double t_old, double t_new, const Teuchos:
   bc_pressure_->Compute(S->time());
   bc_flux_->Compute(S->time());
   bc_level_->Compute(S->time());
+  bc_level_flux_lvl_->Compute(S->time());
+  bc_level_flux_vel_->Compute(S->time());  
+  
   bc_seepage_head_->Compute(S->time());
   bc_seepage_pressure_->Compute(S->time());
   bc_critical_depth_->Compute(S->time());
@@ -846,6 +856,20 @@ void OverlandPressureFlow::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& 
     bc_values_[f] = bc->second;
   }
 
+  ASSERT(bc_level_flux_lvl_->size()==bc_level_flux_vel_->size());
+
+  for (auto bc_lvl=bc_level_flux_lvl_->begin(), bc_vel=bc_level_flux_vel_->begin();
+       bc_lvl != bc_level_flux_lvl_->end(); ++bc_lvl, ++bc_vel){
+
+    int f = bc_lvl->first;
+    bc_markers_[f] = Operators::OPERATOR_BC_NEUMANN;
+    double val = bc_lvl->second;
+    if (elevation[0][f] > val) bc_values_[f] = 0;
+    else {
+      bc_values_[f] = val * bc_vel->second;
+    }
+  }
+  
   // zero gradient: grad h = 0 implies that q = -k grad z
   // -- cannot be done yet as rel perm update is done after this and is needed.
   // -- Instead zero gradient BCs are done in FixBCs methods.
