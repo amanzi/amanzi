@@ -87,13 +87,41 @@ void Coupled_ReactiveTransport_PK_ATS::cast_sub_pks_(){
 
 }
 
+
+void Coupled_ReactiveTransport_PK_ATS::Setup(const Teuchos::Ptr<State>& S){
+
+  Amanzi::PK_MPCAdditive<PK>::Setup(S);
+  
+  cast_sub_pks_();
+
+  // std::cout<<tranport_pk_subsurface_->name()<<"\n";
+  // std::cout<<tranport_pk_overland_->name()<<"\n";
+  // std::cout<<chemistry_pk_subsurface_->name()<<"\n";
+  // std::cout<<chemistry_pk_overland_->name()<<"\n";
+
+
+  
+  // communicate chemistry engine to transport.
+#ifdef ALQUIMIA_ENABLED
+  tranport_pk_subsurface_->SetupAlquimia(Teuchos::rcp_static_cast<AmanziChemistry::Alquimia_PK>(chemistry_pk_subsurface_),
+                                            chemistry_pk_subsurface_->chem_engine());
+  tranport_pk_overland_->SetupAlquimia(Teuchos::rcp_static_cast<AmanziChemistry::Alquimia_PK>(chemistry_pk_overland_),
+                                            chemistry_pk_overland_->chem_engine());
+#endif
+
+
+}
+
+
+  
 // -----------------------------------------------------------------------------
 // Calculate the min of sub PKs timestep sizes.
 // -----------------------------------------------------------------------------
 double Coupled_ReactiveTransport_PK_ATS::get_dt() {
 
-  dTtran_ = tranport_pk_->get_dt();
   dTchem_ = chemistry_pk_->get_dt();
+  dTtran_ = tranport_pk_->get_dt();
+
 
   if (!chem_step_succeeded && (dTchem_/dTtran_ > 0.99)) {
      dTchem_ *= 0.5;
@@ -123,23 +151,6 @@ void Coupled_ReactiveTransport_PK_ATS::set_states(const Teuchos::RCP<const State
 }
 
 
-
-void Coupled_ReactiveTransport_PK_ATS::Setup(const Teuchos::Ptr<State>& S){
-
-  Amanzi::PK_MPCAdditive<PK>::Setup(S);
-  
-  cast_sub_pks_();
-
-  // communicate chemistry engine to transport.
-#ifdef ALQUIMIA_ENABLED
-  tranport_pk_subsurface_->SetupAlquimia(Teuchos::rcp_static_cast<AmanziChemistry::Alquimia_PK>(chemistry_pk_subsurface_),
-                                            chemistry_pk_subsurface_->chem_engine());
-  tranport_pk_overland_->SetupAlquimia(Teuchos::rcp_static_cast<AmanziChemistry::Alquimia_PK>(chemistry_pk_overland_),
-                                            chemistry_pk_overland_->chem_engine());
-#endif
-
-
-}
 
 void Coupled_ReactiveTransport_PK_ATS::Initialize(const Teuchos::Ptr<State>& S){
 
@@ -210,14 +221,13 @@ bool Coupled_ReactiveTransport_PK_ATS::AdvanceStep(double t_old, double t_new, b
 
   bool pk_fail = false;
   pk_fail = tranport_pk_->AdvanceStep(t_old, t_new, reinit);
+
    
   if (pk_fail){
     Errors::Message message("MPC: Coupled Transport PK returned an unexpected error.");
     Exceptions::amanzi_throw(message);
   }
 
-
-  
 
  
   try {
@@ -245,7 +255,8 @@ bool Coupled_ReactiveTransport_PK_ATS::AdvanceStep(double t_old, double t_new, b
   catch (const Errors::Message& chem_error) {
     fail = true;
   }
-    
+
+  
   return fail;
 };
 

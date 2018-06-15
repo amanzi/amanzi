@@ -681,8 +681,8 @@ void Transport_PK_ATS::InitializeFieldFromField_(const std::string& field0,
 double Transport_PK_ATS::StableTimeStep()
 {
 
+
   S_next_->GetFieldData(flux_key_)->ScatterMasterToGhosted("face");
-  //*vo_->os()<<"Stable step: "<<domain_name_<<" - After ScatterMasterToGhosted"<<"\n";
   
   flux_ = S_next_->GetFieldData(flux_key_)->ViewComponent("face", true);
   *flux_copy_ = *flux_; // copy flux vector from S_next_ to S_;
@@ -692,9 +692,9 @@ double Transport_PK_ATS::StableTimeStep()
   // flux_->NormInf(&flux_next_norm);
   // S_->GetFieldData(flux_key_)->ViewComponent("face", true)->NormInf(&flux_norm); 
   // if (vo_->getVerbLevel() >= Teuchos::VERB_EXTREME){
-  //   if (flux_key_=="surface-mass_flux"){
+  //   //if (flux_key_=="surface-mass_flux"){
   //     *vo_->os()<<"Stable step: "<<flux_key_<<" ||flux_next||="<<flux_next_norm<<" ||flux||="<<flux_norm<<"\n";
-  //   }
+  //     //}
   // }
   
   IdentifyUpwindCells();
@@ -707,7 +707,9 @@ double Transport_PK_ATS::StableTimeStep()
 
   for (int f = 0; f < nfaces_wghost; f++) {
     int c = (*upwind_cell_)[f];
-    if (c >= 0) total_outflux[c] += fabs((*flux_)[0][f]);
+    if (c >= 0) {
+      total_outflux[c] += fabs((*flux_)[0][f]);
+    }
   }
 
   Sinks2TotalOutFlux(tcc_prev, total_outflux, 0, num_aqueous - 1);
@@ -736,7 +738,9 @@ double Transport_PK_ATS::StableTimeStep()
       dt_cell = vol * (*mol_dens_)[0][c] * (*phi_)[0][c] * std::min( (*ws_prev_)[0][c], (*ws_)[0][c] ) / outflux;
     }
     if (dt_cell < dt_) {
-      // *vo_->os()<<"Stable step: "<<flux_key_<<" cell "<<c<<" out "<<outflux<<"  dt= "<<dt_cell<<"\n";
+      // if (domain_name_=="surface") std::cout<<"Stable step: "<<flux_key_<<" cell "<<c<<" out "<<outflux<<
+      //                                " wo_sink "<<total_outflux_wo_sink[c]<<"  dt= "<<dt_cell<<
+      //                                " cntr "<< mesh_->cell_centroid(c)<<"\n";
       dt_ = dt_cell;
       cmin_dt = c;
     }
@@ -756,9 +760,8 @@ double Transport_PK_ATS::StableTimeStep()
   dt_ *= cfl_;
 
   // print optional diagnostics using maximum cell id as the filter
- //  if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
+//   if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
 //     int cmin_dt_unique = (fabs(dt_tmp * cfl_ - dt_) < 1e-6 * dt_) ? cmin_dt : -1;
- 
 // #ifdef HAVE_MPI
 //     int cmin_dt_tmp = cmin_dt_unique;
 //     comm.MaxAll(&cmin_dt_tmp, &cmin_dt_unique, 1);
@@ -772,6 +775,8 @@ double Transport_PK_ATS::StableTimeStep()
 //       *vo_->os() << ")" << std::endl;
 //     }
 //   }
+  
+
   return dt_;
 }
 
@@ -863,7 +868,7 @@ bool Transport_PK_ATS::AdvanceStep(double t_old, double t_new, bool reinit)
     mol_dens_start = mol_dens_prev_;
     mol_dens_end = mol_dens_;
   }
-
+  
 
   for (int c = 0; c < ncells_owned; c++) {
     double vol_phi_ws_den;
@@ -872,7 +877,6 @@ bool Transport_PK_ATS::AdvanceStep(double t_old, double t_new, bool reinit)
       mass_solutes_stepstart_[i] = tcc_prev[i][c] * vol_phi_ws_den;
     }
   }
-
 
   int ncycles = 0, swap = 1;
      
@@ -886,8 +890,8 @@ bool Transport_PK_ATS::AdvanceStep(double t_old, double t_new, bool reinit)
     double dt_try = dt_MPC - dt_sum;
     double tol = 1e-10 * (dt_try + dt_stable); 
     bool final_cycle = false;
-    // *vo_->os() <<std::setprecision(10)<<"dt_MPC "<<dt_MPC<<" dt_cycle "<<dt_cycle<<" dt_sum "<<dt_sum<<" dt_stable "<<
-    //   dt_stable<<" dt_try "<<dt_try<<" "<<dt_try - (dt_stable + tol)<<" tol "<<tol<<"\n";
+    *vo_->os() <<std::setprecision(10)<<"dt_MPC "<<dt_MPC<<" dt_cycle "<<dt_cycle<<" dt_sum "<<dt_sum<<" dt_stable "<<
+      dt_stable<<" dt_try "<<dt_try<<" "<<dt_try - (dt_stable + tol)<<" tol "<<tol<<"\n";
     
     if (dt_try >= 2 * dt_stable) {
       dt_cycle = dt_stable;
@@ -1271,11 +1275,6 @@ void Transport_PK_ATS::AdvanceDonorUpwind(double dt_cycle)
   tcc->ScatterMasterToGhosted("cell");
   Epetra_MultiVector& tcc_prev = *tcc->ViewComponent("cell", true);
   Epetra_MultiVector& tcc_next = *tcc_tmp->ViewComponent("cell", true);
-  // if (domain_name_=="surface"){
-  //   std::cout<<"DonorUpwind start\n"<<tcc_prev<<"\n";
-  //   std::cout<<"ws\n"<<*ws_start<<"\n";
-  //   std::cout<<"den\n"<<*mol_dens_start<<"\n";
-  // }
 
   // prepare conservative state in master and slave cells
   double vol_phi_ws_den, tcc_flux;
@@ -1296,16 +1295,14 @@ void Transport_PK_ATS::AdvanceDonorUpwind(double dt_cycle)
       mass_start += (*conserve_qty_)[i][c];
     }
   }
-
-  //if (domain_name_=="domain") std::cout<<"DonorUpwind start\n"<<*conserve_qty_<<"\n";
-  
+ 
   tmp1 = mass_start;
   mesh_->get_comm()->SumAll(&tmp1, &mass_start, 1);
 
-  if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH){
-    if (domain_name_ == "surface")  *vo_->os()<<std::setprecision(10)<<"Surface mass start "<<mass_start<<"\n";
-    else  *vo_->os()<<std::setprecision(10)<<"Subsurface mass start "<<mass_start<<"\n";
-  }
+  // if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH){
+  //   if (domain_name_ == "surface")  *vo_->os()<<std::setprecision(10)<<"Surface mass start "<<mass_start<<"\n";
+  //   else  *vo_->os()<<std::setprecision(10)<<"Subsurface mass start "<<mass_start<<"\n";
+  // }
 
   
   // advance all components at once
@@ -1325,9 +1322,7 @@ void Transport_PK_ATS::AdvanceDonorUpwind(double dt_cycle)
     }
     else if (c1 >=0 && c1 < ncells_owned && (c2 >= ncells_owned || c2 < 0)) {
       for (int i = 0; i < num_advect; i++) {
-        tcc_flux = dt_ * u * tcc_prev[i][c1];
-        // if ((c2 < 0) && fabs(tcc_flux) >1e-17) std::cout <<MyPID<<":u "<<u<<" cell "<<c1<<" "<<c2<<" face "<<f<<
-        //                                          " tcc "<<tcc_prev[i][c1]<<" tcc_flux "<<tcc_flux<<" cntr "<<mesh_->face_centroid(f)<<"\n";
+        tcc_flux = dt_ * u * tcc_prev[i][c1];     
         (*conserve_qty_)[i][c1] -= tcc_flux;
         if (c2 < 0) mass_solutes_bc_[i] -= tcc_flux;
         //AmanziGeometry::Point normal = mesh_->face_normal(f);
@@ -1373,12 +1368,6 @@ void Transport_PK_ATS::AdvanceDonorUpwind(double dt_cycle)
           int k = tcc_index[i];
           if (k < num_advect) {
             tcc_flux = dt_ * u * values[i];
-            // if ((domain_name_=="surface")&&(k==13)) {
-            //   const AmanziGeometry::Point& xf = mesh_->face_centroid(f);
-            //   if ((xf[0]>16)&&(xf[0]<22)){
-            //     std::cout <<domain_name_<<" comp "<<k<<" from BC cell "<<c2<<" flux "<< u<<" dt "<<dt_<<" value "<<values[i]<<" + "<<tcc_flux<<" cnt "<<xf<<" "<<mass<<" "<<(*conserve_qty_)[k][c2]<<"\n";
-            //   }
-            // }
             (*conserve_qty_)[k][c2] += tcc_flux;
             mass_solutes_bc_[k] += tcc_flux;
           }
@@ -1454,31 +1443,33 @@ void Transport_PK_ATS::AdvanceDonorUpwind(double dt_cycle)
   // update mass balance
   for (int i = 0; i < mass_solutes_exact_.size(); i++) {
     mass_solutes_exact_[i] += mass_solutes_source_[i] * dt_;
-    if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH){
-      tmp1 = mass_solutes_bc_[i];
-      mesh_->get_comm()->SumAll(&tmp1, &mass_solutes_bc_[i], 1);
-      *vo_->os() << "*****************\n";
-      if (domain_name_ == "surface") *vo_->os()<<"Surface mass BC "<<mass_solutes_bc_[i]<<"\n";
-      else *vo_->os() <<"Subsurface mass BC "<<mass_solutes_bc_[i]<<"\n";
-      tmp1 = mass_solutes_source_[i];
-      mesh_->get_comm()->SumAll(&tmp1, &mass_solutes_source_[i], 1);
-      if (domain_name_ == "surface") *vo_->os()<<"Surface mass_solutes source "<<mass_solutes_source_[i]*dt_<<"\n";
-      else *vo_->os() << "Subsurface mass_solutes source "<<mass_solutes_source_[i]*dt_<<"\n";
-      *vo_->os() << "*****************\n";
-    }
+
+    // if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH){
+    //   tmp1 = mass_solutes_bc_[i];
+    //   mesh_->get_comm()->SumAll(&tmp1, &mass_solutes_bc_[i], 1);
+    //   *vo_->os() << "*****************\n";
+    //   if (domain_name_ == "surface") *vo_->os()<<"Surface mass BC "<<mass_solutes_bc_[i]<<"\n";
+    //   else *vo_->os() <<"Subsurface mass BC "<<mass_solutes_bc_[i]<<"\n";
+    //   tmp1 = mass_solutes_source_[i];
+    //   mesh_->get_comm()->SumAll(&tmp1, &mass_solutes_source_[i], 1);
+    //   if (domain_name_ == "surface") *vo_->os()<<"Surface mass_solutes source "<<mass_solutes_source_[i]*dt_<<"\n";
+    //   else *vo_->os() << "Subsurface mass_solutes source "<<mass_solutes_source_[i]*dt_<<"\n";
+    //   *vo_->os() << "*****************\n";
+    // }
+    
   }
 
   if (internal_tests) {
     VV_CheckGEDproperty(*tcc_tmp->ViewComponent("cell"));
   }
 
-  if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH){
-    if (domain_name_ == "surface")  *vo_->os()<<"Surface mass final "<<mass_final<<"\n";
-    else  *vo_->os()<<"Subsurface mass final "<<mass_final<<"\n";
-  }
+  // if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH){
+  //   if (domain_name_ == "surface")  *vo_->os()<<"Surface mass final "<<mass_final<<"\n";
+  //   else  *vo_->os()<<"Subsurface mass final "<<mass_final<<"\n";
+  // }
   
-  if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH)
-    *vo_->os()<<"mass error "<<abs(mass_final - (mass_start + mass_solutes_bc_[0] + mass_solutes_source_[0]*dt_) )<<"\n";
+  // if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH)
+  //   *vo_->os()<<"mass error "<<abs(mass_final - (mass_start + mass_solutes_bc_[0] + mass_solutes_source_[0]*dt_) )<<"\n";
 
   //if (abs(mass_final - (mass_start + mass_solutes_bc_[0] + mass_solutes_source_[0]*dt_) )/mass_final > 1e-6) exit(-1);
   
@@ -1723,6 +1714,7 @@ void Transport_PK_ATS::Sinks2TotalOutFlux(Epetra_MultiVector& tcc,
   double t0 = S_->intermediate_time();
   int num_vectors = tcc.NumVectors();
   int nsrcs = srcs_.size();
+  Key coupled_flux = "surface-surface_subsurface_flux";
 
   for (int m = 0; m < nsrcs; m++) {    
     srcs_[m]->Compute(t0, t0); 
@@ -1740,11 +1732,10 @@ void Transport_PK_ATS::Sinks2TotalOutFlux(Epetra_MultiVector& tcc,
         int imap = i;
         if (num_vectors == 1) imap = 0;
 
-        if ((values[k] < 0)&&(tcc[imap][c]>0)) {
+        if ((values[k] < 0)&&(tcc[imap][c]>1e-16)) {
           if (srcs_[m]->name() == "domain coupling") {
-            // if (values[k]<0) {
-              val = std::max(val, fabs(values[k])/tcc[imap][c]);              
-            //}
+            val = std::max(val, fabs(values[k])/tcc[imap][c]);
+            //val = std::max(val, fabs(values[k]));            
           }
         }                              
       }

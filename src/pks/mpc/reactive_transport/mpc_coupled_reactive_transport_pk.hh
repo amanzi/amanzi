@@ -41,11 +41,11 @@ private:
 
   virtual void cast_sub_pks_();
   
-  bool chem_step_succeeded;
-  bool storage_created;
-  bool transport_subcycling_;
-  double dTtran_, dTchem_;
-  //  int transport_pk_index_, chemistry_pk_index_;
+  // bool chem_step_succeeded;
+  // bool storage_created;
+  // bool transport_subcycling_;
+  // double dTtran_, dTchem_;
+  // int transport_pk_index_, chemistry_pk_index_;
   Teuchos::RCP<CoupledTransport_PK> tranport_pk_;
   Teuchos::RCP<WeakMPC> chemistry_pk_;
   Teuchos::RCP<Transport::Transport_PK_ATS> tranport_pk_overland_;

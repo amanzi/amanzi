@@ -62,14 +62,12 @@ namespace Amanzi {
 // Calculate the min of sub PKs timestep sizes.
 // -----------------------------------------------------------------------------
 double CoupledTransport_PK::get_dt() {
-  //double dt = Amanzi::PK_MPCSubcycled_ATS::get_dt();
-  //ComputeVolumeDarcyFlux(S_next_.ptr());
 
   double surf_dt = sub_pks_[surf_id_]->get_dt();
   double subsurf_dt = sub_pks_[subsurf_id_]->get_dt();
 
   Teuchos::OSTab tab = vo_->getOSTab();
-  if (vo_->getVerbLevel() >= Teuchos::VERB_EXTREME){
+  if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH){
     *vo_->os()<< "surface transport dt = "<<surf_dt<<"\n";
     *vo_->os()<< "sub surface transport dt = "<<subsurf_dt<<"\n";
   }
