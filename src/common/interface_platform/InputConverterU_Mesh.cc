@@ -14,6 +14,7 @@
 #include <fstream>
 #include <string>
 #include <algorithm>
+#include <climits>
 
 // TPLs
 #include "boost/bind.hpp"
@@ -113,9 +114,9 @@ Teuchos::ParameterList InputConverterU::TranslateMesh_()
         std::vector<int> ncells; 
         int nx = GetAttributeValueL_(node, "nx");
         if (nx > 0) ncells.push_back(nx);
-        int ny = GetAttributeValueL_(node, "ny", TYPE_NUMERICAL, false, 0);
+        int ny = GetAttributeValueL_(node, "ny", TYPE_NUMERICAL, 0, INT_MAX, false, 0);
         if (ny > 0) ncells.push_back(ny); 
-        int nz = GetAttributeValueL_(node, "nz", TYPE_NUMERICAL, false, 0);
+        int nz = GetAttributeValueL_(node, "nz", TYPE_NUMERICAL, 0, INT_MAX, false, 0);
         if (nz > 0) ncells.push_back(nz); 
 
         if (ncells.size() != dim_) 
@@ -319,7 +320,7 @@ Teuchos::ParameterList InputConverterU::TranslateRegions_()
         
         text = GetAttributeValueS_(reg_elem, "type");
         if (strcmp(text.c_str(), "color") == 0) {
-          int value = GetAttributeValueD_(reg_elem, "label");
+          int value = GetAttributeValueL_(reg_elem, "label");
           rfPL.set<int>("value", value);
           out_list.sublist(reg_name).sublist("region: color function") = rfPL;
         }

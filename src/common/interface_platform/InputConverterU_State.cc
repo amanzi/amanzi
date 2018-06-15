@@ -12,6 +12,7 @@
 
 #include <sstream>
 #include <string>
+#include <climits>
 
 // TPLs
 #include <xercesc/dom/DOM.hpp>
@@ -85,7 +86,7 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
     DOMNode* inode = children->item(i);
     if (DOMNode::ELEMENT_NODE == inode->getNodeType()) {
       std::string mat_name = GetAttributeValueS_(static_cast<DOMElement*>(inode), "name");
-      int mat_id = GetAttributeValueL_(inode, "id", TYPE_NUMERICAL, false, -1);
+      int mat_id = GetAttributeValueL_(inode, "id", TYPE_NUMERICAL, 0, INT_MAX, false, -1);
 
       node = GetUniqueElementByTagsString_(inode, "assigned_regions", flag);
       std::vector<std::string> regions = CharToStrings_(mm.transcode(node->getTextContent()));
@@ -154,9 +155,9 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
       std::vector<std::string> attr_names;
       double kx, ky, kz;
 
-      kx = GetAttributeValueD_(node, "x", TYPE_NUMERICAL, unit, false, -1.0);
-      ky = GetAttributeValueD_(node, "y", TYPE_NUMERICAL, unit, false, -1.0);
-      kz = GetAttributeValueD_(node, "z", TYPE_NUMERICAL, unit, false, -1.0);
+      kx = GetAttributeValueD_(node, "x", TYPE_NUMERICAL, 0.0, DVAL_MAX, unit, false, -1.0);
+      ky = GetAttributeValueD_(node, "y", TYPE_NUMERICAL, 0.0, DVAL_MAX, unit, false, -1.0);
+      kz = GetAttributeValueD_(node, "z", TYPE_NUMERICAL, 0.0, DVAL_MAX, unit, false, -1.0);
 
       type = GetAttributeValueS_(node, "type", TYPE_NONE, false, "");
       if (type == "file") file++;
@@ -263,7 +264,7 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
       // -- uniform pressure
       node = GetUniqueElementByTagsString_(inode, "liquid_phase, liquid_component, uniform_pressure", flag);
       if (flag) {
-        double p = GetAttributeValueD_(static_cast<DOMElement*>(node), "value");
+        double p = GetAttributeValueD_(node, "value", TYPE_NUMERICAL, DVAL_MIN, DVAL_MAX);
 
         Teuchos::ParameterList& pressure_ic = out_ic.sublist("pressure");
         pressure_ic.sublist("function").sublist(reg_str)
@@ -276,7 +277,7 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
       // -- linear pressure
       node = GetUniqueElementByTagsString_(inode, "liquid_phase, liquid_component, linear_pressure", flag);
       if (flag) {
-        double p = GetAttributeValueD_(node, "value", "Pa");
+        double p = GetAttributeValueD_(node, "value", TYPE_NUMERICAL, DVAL_MIN, DVAL_MAX, "Pa");
         std::vector<double> grad = GetAttributeVectorD_(node, "gradient", "Pa/m");
         std::vector<double> refc = GetAttributeVectorD_(node, "reference_coord", "m");
 
@@ -296,7 +297,7 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
       // -- uniform saturation
       node = GetUniqueElementByTagsString_(inode, "liquid_phase, liquid_component, uniform_saturation", flag);
       if (flag) {
-        double s = GetAttributeValueD_(node, "value", TYPE_NUMERICAL, "-");
+        double s = GetAttributeValueD_(node, "value", TYPE_NUMERICAL, 0.0, 1.0, "-");
 
         Teuchos::ParameterList& saturation_ic = out_ic.sublist("saturation_liquid");
         saturation_ic.sublist("function").sublist(reg_str)
@@ -309,7 +310,7 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
       // -- linear saturation
       node = GetUniqueElementByTagsString_(inode, "liquid_phase, liquid_component, linear_saturation", flag);
       if (flag) {
-        double s = GetAttributeValueD_(node, "value", TYPE_NUMERICAL, "-");
+        double s = GetAttributeValueD_(node, "value", TYPE_NUMERICAL, 0.0, 1.0, "-");
         std::vector<double> grad = GetAttributeVectorD_(node, "gradient", "m^-1");
         std::vector<double> refc = GetAttributeVectorD_(node, "reference_coord", "m");
 
@@ -330,9 +331,9 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
       node = GetUniqueElementByTagsString_(inode, "liquid_phase, liquid_component, velocity", flag);
       if (flag) {
         std::vector<double> velocity;
-        velocity.push_back(GetAttributeValueD_(static_cast<DOMElement*>(node), coords_[0].c_str()));
-        velocity.push_back(GetAttributeValueD_(static_cast<DOMElement*>(node), coords_[1].c_str()));
-        if (dim_ == 3) velocity.push_back(GetAttributeValueD_(static_cast<DOMElement*>(node), coords_[2].c_str()));
+        velocity.push_back(GetAttributeValueD_(node, coords_[0].c_str()));
+        velocity.push_back(GetAttributeValueD_(node, coords_[1].c_str()));
+        if (dim_ == 3) velocity.push_back(GetAttributeValueD_(node, coords_[2].c_str()));
 
         Teuchos::ParameterList& darcy_flux_ic = out_ic.sublist("darcy_flux");
         Teuchos::ParameterList& tmp_list =
@@ -370,7 +371,7 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
             std::string unit, text;
             text = GetAttributeValueS_(static_cast<DOMElement*>(jnode), "name");
             int m = GetPosition_(phases_["water"], text);
-            GetAttributeValueD_(jnode, "value", TYPE_NUMERICAL, "molar");  // just a check
+            GetAttributeValueD_(jnode, "value", TYPE_NUMERICAL, 0.0, DVAL_MAX, "molar");  // just a check
             vals[m] = ConvertUnits_(GetAttributeValueS_(jnode, "value"), unit, solute_molar_mass_[text]);
           }
         }
@@ -404,7 +405,7 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
           if (strcmp(tagname, "uniform_conc") == 0) {
             std::string text = GetAttributeValueS_(static_cast<DOMElement*>(jnode), "name");
             int m = GetPosition_(phases_["air"], text);
-            vals[m] = GetAttributeValueD_(static_cast<DOMElement*>(jnode), "value");
+            vals[m] = GetAttributeValueD_(jnode, "value", TYPE_NUMERICAL, 0.0, DVAL_MAX);
           }
         }
 
@@ -421,7 +422,7 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
       // -- uniform temperature
       node = GetUniqueElementByTagsString_(inode, "uniform_temperature", flag);
       if (flag) {
-        double val = GetAttributeValueD_(static_cast<DOMElement*>(node), "value");
+        double val = GetAttributeValueD_(node, "value", TYPE_NUMERICAL, 0.0, 1000.0, "K");
 
         Teuchos::ParameterList& temperature_ic = out_ic.sublist("temperature");
         temperature_ic.sublist("function").sublist(reg_str)
@@ -486,7 +487,7 @@ void InputConverterU::TranslateFieldEvaluator_(
     Teuchos::ParameterList& field_ev = out_ev.sublist(field);
     field_ev.set<std::string>("field evaluator type", "constant variable");
   } else {
-    double val = GetAttributeValueD_(node, data_key.c_str(), TYPE_NUMERICAL, unit);
+    double val = GetAttributeValueD_(node, data_key.c_str(), TYPE_NUMERICAL, DVAL_MIN, DVAL_MAX, unit);
 
     Teuchos::ParameterList& field_ev = out_ev.sublist(field);
     field_ev.sublist("function").sublist(reg_str)
@@ -513,7 +514,7 @@ void InputConverterU::TranslateFieldIC_(
     Teuchos::ParameterList& field_ic = out_ic.sublist(field);
     field_ic.set<std::string>("restart file", filename);
   } else {
-    double val = GetAttributeValueD_(node, "value", TYPE_NUMERICAL, unit);
+    double val = GetAttributeValueD_(node, "value", TYPE_NUMERICAL, DVAL_MIN, DVAL_MAX, unit);
 
     Teuchos::ParameterList& field_ic = out_ic.sublist(field);
     field_ic.sublist("function").sublist(reg_str)
@@ -606,7 +607,7 @@ void InputConverterU::TranslateStateICsAmanziGeochemistry_(
 
     for (int i = 0; i < children.size(); ++i) {
       std::string species = GetAttributeValueS_(children[i], "name");
-      double val = GetAttributeValueD_(children[i], "value", TYPE_NUMERICAL);
+      double val = GetAttributeValueD_(children[i], "value", TYPE_NUMERICAL, DVAL_MIN, DVAL_MAX);
 
       // find position of species in the list of component names
       int k(-1);
