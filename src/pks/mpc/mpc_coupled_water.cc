@@ -151,6 +151,8 @@ int MPCCoupledWater::ApplyPreconditioner(Teuchos::RCP<const TreeVector> u,
     *vo_->os() << "Precon applying subsurface operator." << std::endl;
   int ierr = lin_solver_->ApplyInverse(*u->SubVector(0)->Data(), *Pu->SubVector(0)->Data());
 
+  if (vo_->os_OK(Teuchos::VERB_EXTREME))
+    *vo_->os() << "Precon applying  CopySubsurfaceToSurface." << std::endl;
   // Copy subsurface face corrections to surface cell corrections
   CopySubsurfaceToSurface(*Pu->SubVector(0)->Data(),
                           Pu->SubVector(1)->Data().ptr());
@@ -177,7 +179,7 @@ int MPCCoupledWater::ApplyPreconditioner(Teuchos::RCP<const TreeVector> u,
     *vo_->os() << " Surface precon:" << std::endl;
     surf_db_->WriteVectors(vnames, vecs, true);
   }
-  
+
   return (ierr > 0) ? 0 : 1;
 }
 

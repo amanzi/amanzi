@@ -17,6 +17,11 @@ void
 MergeSubsurfaceAndSurfacePressure(const CompositeVector& kr_surf,
 				  const Teuchos::Ptr<CompositeVector>& sub_p,
 				  const Teuchos::Ptr<CompositeVector>& surf_p);
+double
+GetDomainFaceValue(const CompositeVector& sub_p, int f);
+
+void
+SetDomainFaceValue(CompositeVector& sub_p, int f, double value);  
 
 
 } // namespace
