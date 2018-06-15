@@ -227,24 +227,19 @@ Teuchos::ParameterList InputConverterU::TranslateWRM_()
 
     // -- smoothing
     double krel_smooth = GetAttributeValueD_(
-        element_cp, "optional_krel_smoothing_interval", TYPE_NUMERICAL, "", false, 0.0);
-    if (krel_smooth < 0.0) {
-      Errors::Message msg;
-      msg << "value of optional_krel_smoothing_interval must be non-negative.\n";
-      Exceptions::amanzi_throw(msg);
-    }
+        element_cp, "optional_krel_smoothing_interval", TYPE_NUMERICAL, 0.0, DVAL_MAX, "", false, 0.0);
 
     // -- ell
     double ell, ell_d = (rel_perm == "mualem") ? ELL_MUALEM : ELL_BURDINE;
-    ell = GetAttributeValueD_(element_rp, "value", TYPE_NUMERICAL, "", false, ell_d);
+    ell = GetAttributeValueD_(element_rp, "value", TYPE_NUMERICAL, 0.0, 10.0, "", false, ell_d);
 
     std::replace(rel_perm.begin(), rel_perm.begin() + 1, 'm', 'M');
     std::replace(rel_perm.begin(), rel_perm.begin() + 1, 'b', 'B');
 
     if (strcmp(model.c_str(), "van_genuchten") == 0) {
-      double alpha = GetAttributeValueD_(element_cp, "alpha", TYPE_NUMERICAL, "Pa^-1");
-      double sr = GetAttributeValueD_(element_cp, "sr");
-      double m = GetAttributeValueD_(element_cp, "m");
+      double alpha = GetAttributeValueD_(element_cp, "alpha", TYPE_NUMERICAL, 0.0, DVAL_MAX, "Pa^-1");
+      double sr = GetAttributeValueD_(element_cp, "sr", TYPE_NUMERICAL, 0.0, 1.0);
+      double m = GetAttributeValueD_(element_cp, "m", TYPE_NUMERICAL, 0.0, DVAL_MAX);
 
       for (std::vector<std::string>::const_iterator it = regions.begin(); it != regions.end(); ++it) {
         std::stringstream ss;
@@ -272,9 +267,9 @@ Teuchos::ParameterList InputConverterU::TranslateWRM_()
         }
       }
     } else if (strcmp(model.c_str(), "brooks_corey")) {
-      double lambda = GetAttributeValueD_(element_cp, "lambda");
-      double alpha = GetAttributeValueD_(element_cp, "alpha", "Pa^-1");
-      double sr = GetAttributeValueD_(element_cp, "sr");
+      double lambda = GetAttributeValueD_(element_cp, "lambda", TYPE_NUMERICAL, 0.0, DVAL_MAX);
+      double alpha = GetAttributeValueD_(element_cp, "alpha", TYPE_NUMERICAL, DVAL_MIN, DVAL_MAX, "Pa^-1");
+      double sr = GetAttributeValueD_(element_cp, "sr", TYPE_NUMERICAL, 0.0, 1.0);
 
       for (std::vector<std::string>::const_iterator it = regions.begin(); it != regions.end(); ++it) {
         std::stringstream ss;
@@ -340,8 +335,8 @@ Teuchos::ParameterList InputConverterU::TranslatePOM_()
 
     // get optional complessibility
     node = GetUniqueElementByTagsString_(inode, "mechanical_properties, porosity", flag);
-    double phi = GetAttributeValueD_(node, "value");
-    double compres = GetAttributeValueD_(node, "compressibility", TYPE_NUMERICAL, "Pa^-1", false, 0.0);
+    double phi = GetAttributeValueD_(node, "value", TYPE_NUMERICAL, 0.0, 1.0);
+    double compres = GetAttributeValueD_(node, "compressibility", TYPE_NUMERICAL, 0.0, 1.0, "Pa^-1", false, 0.0);
 
     for (std::vector<std::string>::const_iterator it = regions.begin(); it != regions.end(); ++it) {
       std::stringstream ss;
@@ -432,8 +427,8 @@ Teuchos::ParameterList InputConverterU::TranslateFlowMSM_()
 
     // -- porosity models
     node = GetUniqueElementByTagsString_(inode, "multiscale_structure, porosity", flag);
-    double phi = GetAttributeValueD_(node, "value");
-    double compres = GetAttributeValueD_(node, "compressibility", TYPE_NUMERICAL, "Pa^-1", false, 0.0);
+    double phi = GetAttributeValueD_(node, "value", TYPE_NUMERICAL, 0.0, 1.0);
+    double compres = GetAttributeValueD_(node, "compressibility", TYPE_NUMERICAL, 0.0, 1.0, "Pa^-1", false, 0.0);
 
     for (std::vector<std::string>::const_iterator it = regions.begin(); it != regions.end(); ++it) {
       std::stringstream ss;
@@ -454,16 +449,16 @@ Teuchos::ParameterList InputConverterU::TranslateFlowMSM_()
     // capillary pressure models
     // -- ell
     double ell, ell_d = (rel_perm == "mualem") ? ELL_MUALEM : ELL_BURDINE;
-    ell = GetAttributeValueD_(element_rp, "value", TYPE_NUMERICAL, "", false, ell_d);
+    ell = GetAttributeValueD_(element_rp, "value", TYPE_NUMERICAL, 0.0, 10.0, "", false, ell_d);
 
     std::replace(rel_perm.begin(), rel_perm.begin() + 1, 'm', 'M');
     std::replace(rel_perm.begin(), rel_perm.begin() + 1, 'b', 'B');
 
     // -- van Genuchten or Brooks-Corey
     if (strcmp(model.c_str(), "van_genuchten") == 0) {
-      double alpha = GetAttributeValueD_(element_cp, "alpha", "Pa^-1");
-      double sr = GetAttributeValueD_(element_cp, "sr");
-      double m = GetAttributeValueD_(element_cp, "m");
+      double alpha = GetAttributeValueD_(element_cp, "alpha", TYPE_NUMERICAL, 0.0, DVAL_MAX, "Pa^-1");
+      double sr = GetAttributeValueD_(element_cp, "sr", TYPE_NUMERICAL, 0.0, 1.0);
+      double m = GetAttributeValueD_(element_cp, "m", TYPE_NUMERICAL, 0.0, DVAL_MAX);
 
       for (std::vector<std::string>::const_iterator it = regions.begin(); it != regions.end(); ++it) {
         std::stringstream ss;
@@ -479,9 +474,9 @@ Teuchos::ParameterList InputConverterU::TranslateFlowMSM_()
             .set<std::string>("relative permeability model", rel_perm);
       }
     } else if (strcmp(model.c_str(), "brooks_corey")) {
-      double lambda = GetAttributeValueD_(element_cp, "lambda");
-      double alpha = GetAttributeValueD_(element_cp, "alpha", "Pa^-1");
-      double sr = GetAttributeValueD_(element_cp, "sr");
+      double lambda = GetAttributeValueD_(element_cp, "lambda", TYPE_NUMERICAL, 0.0, DVAL_MAX);
+      double alpha = GetAttributeValueD_(element_cp, "alpha", TYPE_NUMERICAL, 0.0, DVAL_MAX, "Pa^-1");
+      double sr = GetAttributeValueD_(element_cp, "sr", TYPE_NUMERICAL, 0.0, 1.0);
 
       for (std::vector<std::string>::const_iterator it = regions.begin(); it != regions.end(); ++it) {
         std::stringstream ss;
@@ -585,18 +580,18 @@ Teuchos::ParameterList InputConverterU::TranslateFlowBCs_()
     std::vector<std::string> forms;
 
     if (space_bc) {
-      data.push_back(GetAttributeValueD_(knode, "amplitude", TYPE_NUMERICAL, "kg/m^2/s"));
+      data.push_back(GetAttributeValueD_(knode, "amplitude", TYPE_NUMERICAL, DVAL_MIN, DVAL_MAX, "kg/m^2/s"));
       data_tmp = GetAttributeVectorD_(knode, "center", "m");
       data.insert(data.end(), data_tmp.begin(), data_tmp.end());
-      data.push_back(GetAttributeValueD_(knode, "standard_deviation", TYPE_NUMERICAL, "m"));
+      data.push_back(GetAttributeValueD_(knode, "standard_deviation", TYPE_NUMERICAL, 0.0, DVAL_MAX, "m"));
 
       if (time_bc) {
-        data[0] *= GetAttributeValueD_(lnode, "data", TYPE_NUMERICAL, "");
+        data[0] *= GetAttributeValueD_(lnode, "data", TYPE_NUMERICAL, DVAL_MIN, DVAL_MAX, "");
       }
     } else if (global_bc) {
       std::string unit_grad = unit + "/m";
       element = static_cast<DOMElement*>(same_list[0]);
-      refv = GetAttributeValueD_(element, "value", TYPE_NUMERICAL, unit);
+      refv = GetAttributeValueD_(element, "value", TYPE_NUMERICAL, DVAL_MIN, DVAL_MAX, unit);
       grad = GetAttributeVectorD_(element, "gradient", unit_grad);
       refc = GetAttributeVectorD_(element, "reference_coord", "m");
     } else {
@@ -605,11 +600,11 @@ Teuchos::ParameterList InputConverterU::TranslateFlowBCs_()
 
       for (int j = 0; j < same_list.size(); ++j) {
         element = static_cast<DOMElement*>(same_list[j]);
-        double t0 = GetAttributeValueD_(element, "start", TYPE_TIME, "s");
+        double t0 = GetAttributeValueD_(element, "start", TYPE_TIME, DVAL_MIN, DVAL_MAX, "s");
 
         tp_forms[t0] = GetAttributeValueS_(element, "function");
-        tp_values[t0] = GetAttributeValueD_(element, "value", TYPE_NUMERICAL, unit, false, 0.0);
-        tp_fluxes[t0] = GetAttributeValueD_(element, "inward_mass_flux", TYPE_NUMERICAL, unit, false, 0.0);
+        tp_values[t0] = GetAttributeValueD_(element, "value", TYPE_NUMERICAL, DVAL_MIN, DVAL_MAX, unit, false, 0.0);
+        tp_fluxes[t0] = GetAttributeValueD_(element, "inward_mass_flux", TYPE_NUMERICAL, DVAL_MIN, DVAL_MAX, unit, false, 0.0);
       }
 
       // create vectors of values and forms
@@ -794,9 +789,9 @@ Teuchos::ParameterList InputConverterU::TranslateFlowSources_()
  
     for (int j = 0; j < same_list.size(); ++j) {
        element = static_cast<DOMElement*>(same_list[j]);
-       double t0 = GetAttributeValueD_(element, "start", TYPE_TIME, "s");
+       double t0 = GetAttributeValueD_(element, "start", TYPE_TIME, DVAL_MIN, DVAL_MAX, "s");
        tp_forms[t0] = GetAttributeValueS_(element, "function");
-       tp_values[t0] = GetAttributeValueD_(element, "value", TYPE_NUMERICAL, unit);
+       tp_values[t0] = GetAttributeValueD_(element, "value", TYPE_NUMERICAL, DVAL_MIN, DVAL_MAX, unit);
     }
 
     // create vectors of values and forms
@@ -864,7 +859,7 @@ Teuchos::ParameterList InputConverterU::TranslateFlowFractures_()
     // get optional complessibility
     node = GetUniqueElementByTagsString_(inode, "fracture_permeability", flag);
     if (flag)  {
-      double aperture = GetAttributeValueD_(node, "aperture", TYPE_NUMERICAL, "m");
+      double aperture = GetAttributeValueD_(node, "aperture", TYPE_NUMERICAL, 0.0, DVAL_MAX, "m");
       std::string model = GetAttributeValueS_(node, "model", "cubic law, linear");
 
       for (std::vector<std::string>::const_iterator it = regions.begin(); it != regions.end(); ++it) {

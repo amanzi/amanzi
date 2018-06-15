@@ -13,6 +13,7 @@
 #define AMANZI_INPUT_CONVERTER_HH_
 
 #include <set>
+#include <climits>
 
 #include "boost/lambda/lambda.hpp"
 #include "boost/bind.hpp"
@@ -45,6 +46,9 @@ const std::string TYPE_NUMERICAL = "numerical";
 const std::string TYPE_AREA_MASS_FLUX = "area_mass_flux";
 const std::string TYPE_NONE = "none";
 const std::string TYPE_NOT_CONSTANT = "not_constant";
+
+const double DVAL_MIN = -1.0e+99;
+const double DVAL_MAX = 1.0e+99;
 
 XERCES_CPP_NAMESPACE_USE
 
@@ -147,11 +151,12 @@ class InputConverter {
   // -- extract and verify children
   // -- extract existing attribute value and verify it optionally against expected unit
   int GetAttributeValueL_(
-      xercesc::DOMElement* elem, const char* attr_name,
-      const std::string& type = TYPE_NUMERICAL, bool exception = true, int val = 0);
+      xercesc::DOMElement* elem, const char* attr_name, const std::string& type = TYPE_NUMERICAL,
+      int valmin = INT_MIN, int valmax = INT_MAX, bool exception = true, int val = 0);
   double GetAttributeValueD_(  // supports units except for ppbm
       xercesc::DOMElement* elem, const char* attr_name, const std::string& type = TYPE_NUMERICAL,
-      std::string unit = "", bool exception = true, double val = 0.0);
+      double valmin = DVAL_MIN, double valmax = DVAL_MAX, std::string unit = "",
+      bool exception = true, double val = 0.0);
   std::string GetAttributeValueS_(
       xercesc::DOMElement* elem, const char* attr_name,
       const std::string& type = TYPE_NUMERICAL, bool exception = true, std::string val = "");
@@ -164,15 +169,17 @@ class InputConverter {
   // -- node is used more often
   int GetAttributeValueL_(
       xercesc::DOMNode* node, const char* attr_name,
-      const std::string& type = TYPE_NUMERICAL, bool exception = true, int val = 0) {
+      const std::string& type = TYPE_NUMERICAL, int valmin = INT_MIN, int valmax = INT_MAX,
+       bool exception = true, int val = 0) {
     xercesc::DOMElement* element = static_cast<xercesc::DOMElement*>(node);
-    return GetAttributeValueL_(element, attr_name, type, exception, val);
+    return GetAttributeValueL_(element, attr_name, type, valmin, valmax, exception, val);
   }
   double GetAttributeValueD_(  // supports units except for ppbm
       xercesc::DOMNode* node, const char* attr_name, const std::string& type = TYPE_NUMERICAL,
-      std::string unit = "", bool exception = true, double val = 0.0) {
+      double valmin = DVAL_MIN, double valmax = DVAL_MAX, std::string unit = "",
+      bool exception = true, double val = 0.0) {
     xercesc::DOMElement* element = static_cast<xercesc::DOMElement*>(node);
-    return GetAttributeValueD_(element, attr_name, type, unit, exception, val);
+    return GetAttributeValueD_(element, attr_name, type, valmin, valmax, unit, exception, val);
   }
   std::string GetAttributeValueS_(
       xercesc::DOMNode* node, const char* attr_name,

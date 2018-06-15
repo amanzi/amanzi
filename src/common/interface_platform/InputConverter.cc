@@ -530,7 +530,7 @@ std::vector<DOMNode*> InputConverter::GetSameChildNodes_(
 ****************************************************************** */
 double InputConverter::GetAttributeValueD_(
     DOMElement* elem, const char* attr_name, const std::string& type,
-    std::string unit, bool exception, double default_val)
+     double valmin, double valmax, std::string unit, bool exception, double default_val)
 {
   double val;
   MemoryManager mm;
@@ -567,6 +567,12 @@ double InputConverter::GetAttributeValueD_(
       Exceptions::amanzi_throw(msg);
     }
  
+    if (! (val >= valmin && val <= valmax)) {
+      msg << "Value of attribute \"" << attr_name << "\"=" << val 
+          << "\" is out of range: " << valmin << " " << valmax << " [" << unit << "].\n";
+      Exceptions::amanzi_throw(msg);
+    }
+
     if ((unit != "" && unit_in != "") ||
         (unit == "-" && unit_in != "")) {
       if (!units_.CompareUnits(unit, unit_in)) {
@@ -591,8 +597,8 @@ double InputConverter::GetAttributeValueD_(
 * Extract atribute of type int.
 ****************************************************************** */
 int InputConverter::GetAttributeValueL_(
-    DOMElement* elem, const char* attr_name,
-    const std::string& type, bool exception, int default_val)
+    DOMElement* elem, const char* attr_name, const std::string& type,
+    int valmin, int valmax, bool exception, int default_val)
 {
   int val;
   MemoryManager mm;
@@ -613,6 +619,13 @@ int InputConverter::GetAttributeValueL_(
       Errors::Message msg;
       msg << "Usage of constant \"" << text << "\" of type=" << found_type 
           << ". Expect type=" << type << ".\n";
+      Exceptions::amanzi_throw(msg);
+    }
+
+    if (! (val >= valmin && val <= valmax)) {
+      Errors::Message msg;
+      msg << "Value of attribute \"" << attr_name << "\"=" << val 
+          << " is out of range: " << valmin << " " << valmax << ".\n";
       Exceptions::amanzi_throw(msg);
     }
   } else if (! exception) {
@@ -1322,8 +1335,8 @@ std::string InputConverter::CreateINFile_(std::string& filename, int rank)
       mineral_list << name << ", ";
       
       element = static_cast<DOMElement*>(inode);
-      double rate = GetAttributeValueD_(element, "rate_constant", TYPE_NUMERICAL, "", false, 0.0);
-      // double val = GetAttributeValueD_(element, "rate_constant", TYPE_NUMERICAL, "mol/m^2/s", false, 0.0);
+      double rate = GetAttributeValueD_(element, "rate_constant", TYPE_NUMERICAL, 0.0, DVAL_MAX, "", false, 0.0);
+      // double val = GetAttributeValueD_(element, "rate_constant", TYPE_NUMERICAL, 0.0, DVAL_MAX, "mol/m^2/s", false, 0.0);
       // double rate = units_.ConvertUnitD(val, "mol/m^2/s", "mol/cm^2/s", -1.0, flag);
       
       mineral_kinetics << "    " << name << "\n";
