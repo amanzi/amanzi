@@ -546,7 +546,7 @@
       <Parameter name="temporal discretization order" type="int" value="1"/>
       <Parameter name="cfl" type="double" value="1.0e+00"/>
       <Parameter name="flow mode" type="string" value="transient"/>
-      <Parameter name="solver" type="string" value="PCG with Hypre AMG"/>
+      <Parameter name="solver" type="string" value="Dispersion Solver"/>
       <Parameter name="enable internal tests" type="bool" value="false"/>
       <Parameter name="transport subcycling" type="bool" value="true"/>
       <ParameterList name="reconstruction">
@@ -659,6 +659,17 @@
         <Parameter name="maximum number of iterations" type="int" value="100"/>
         <ParameterList name="verbose object">
           <Parameter name="verbosity level" type="string" value="high"/>
+        </ParameterList>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="Dispersion Solver">
+      <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
+      <Parameter name="iterative method" type="string" value="pcg"/>
+      <ParameterList name="pcg parameters">
+        <Parameter name="error tolerance" type="double" value="9.99999999999999945e-21"/>
+        <Parameter name="maximum number of iterations" type="int" value="100"/>
+        <ParameterList name="verbose object">
+          <Parameter name="verbosity level" type="string" value="low"/>
         </ParameterList>
       </ParameterList>
     </ParameterList>

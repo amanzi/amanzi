@@ -65,7 +65,7 @@ Teuchos::ParameterList InputConverterU::TranslateTransport_()
   out_list.set<double>("cfl", cfl);
   out_list.set<std::string>("flow mode", "transient");
 
-  out_list.set<std::string>("solver", "PCG with Hypre AMG");
+  out_list.set<std::string>("solver", "Dispersion Solver");
   out_list.set<bool>("enable internal tests", false);
   out_list.set<bool>("transport subcycling", TRANSPORT_SUBCYCLING);
 
