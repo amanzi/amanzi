@@ -30,6 +30,7 @@ class Operator_Node : public Operator {
                Teuchos::ParameterList& plist) :
       Operator(cvs, plist, OPERATOR_SCHEMA_DOFS_NODE) {
     set_schema_string("NODE");
+    cell_max_nodes = mesh_->cell_get_max_nodes();
   }
 
   // rhs update which multiplies by cell
@@ -59,11 +60,13 @@ class Operator_Node : public Operator {
   virtual void AssembleMatrixOp(const Op_Node_Node& op,
           const SuperMap& map, MatrixFE& mat,
           int my_block_row, int my_block_col) const override;
+
+ protected:
+  int cell_max_nodes;
 };
 
 }  // namespace Operators
 }  // namespace Amanzi
-
 
 #endif
 

@@ -32,6 +32,7 @@ class Operator_Edge : public Operator {
                 Teuchos::ParameterList& plist) :
       Operator(cvs, plist, OPERATOR_SCHEMA_DOFS_EDGE) {
     set_schema_string("EDGE");
+    cell_max_edges = mesh_->cell_get_max_edges();
   }
 
   // rhs update which multiplies by cell
@@ -61,6 +62,9 @@ class Operator_Edge : public Operator {
   virtual void AssembleMatrixOp(const Op_Edge_Edge& op,
           const SuperMap& map, MatrixFE& mat,
           int my_block_row, int my_block_col) const;
+
+ protected:
+  int cell_max_edges;
 };
 
 }  // namespace Operators

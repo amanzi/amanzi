@@ -76,8 +76,8 @@ void Operator_ConsistentFace::SymbolicAssembleMatrixOp(const Op_Cell_FaceCell& o
                                              const SuperMap& map, GraphFE& graph,
                                              int my_block_row, int my_block_col) const
 {
-  int lid_r[OPERATOR_MAX_FACES];
-  int lid_c[OPERATOR_MAX_FACES];
+  std::vector<int> lid_r(cell_max_faces);
+  std::vector<int> lid_c(cell_max_faces);
 
   // ELEMENT: cell, DOFS: cell and face
   const std::vector<int>& face_row_inds = map.GhostIndices("face", my_block_row);
@@ -93,7 +93,7 @@ void Operator_ConsistentFace::SymbolicAssembleMatrixOp(const Op_Cell_FaceCell& o
       lid_r[n] = face_row_inds[faces[n]];
       lid_c[n] = face_col_inds[faces[n]];
     }
-    ierr |= graph.InsertMyIndices(nfaces, lid_r, nfaces, lid_c);
+    ierr |= graph.InsertMyIndices(nfaces, lid_r.data(), nfaces, lid_c.data());
   }
   AMANZI_ASSERT(!ierr);
 }
@@ -109,9 +109,9 @@ void Operator_ConsistentFace::AssembleMatrixOp(const Op_Cell_FaceCell& op,
 {
   AMANZI_ASSERT(op.matrices.size() == ncells_owned);
 
-  int lid_r[OPERATOR_MAX_FACES];
-  int lid_c[OPERATOR_MAX_FACES];
-  double vals[OPERATOR_MAX_FACES];
+  std::vector<int> lid_r(cell_max_faces);
+  std::vector<int> lid_c(cell_max_faces);
+  std::vector<double> vals(cell_max_faces);
 
   // ELEMENT: cell, DOFS: face and cell
   const std::vector<int>& face_row_inds = map.GhostIndices("face", my_block_row);
@@ -130,7 +130,7 @@ void Operator_ConsistentFace::AssembleMatrixOp(const Op_Cell_FaceCell& op,
 
     for (int n=0; n!=nfaces; ++n) {
       for (int m=0; m!=nfaces; ++m) vals[m] = op.matrices[c](n,m);
-      ierr |= mat.SumIntoMyValues(lid_r[n], nfaces, vals, lid_c);
+      ierr |= mat.SumIntoMyValues(lid_r[n], nfaces, vals.data(), lid_c.data());
     }
   }
   AMANZI_ASSERT(!ierr);

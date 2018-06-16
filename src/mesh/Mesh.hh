@@ -236,6 +236,7 @@ class Mesh {
   unsigned int cell_get_num_faces(const Entity_ID cellid) const;
   unsigned int cell_get_max_faces() const;
   unsigned int cell_get_max_nodes() const;
+  unsigned int cell_get_max_edges() const;
 
   // Get faces of a cell.
   //

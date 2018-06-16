@@ -122,8 +122,8 @@ void Operator_Edge::SymbolicAssembleMatrixOp(const Op_Cell_Edge& op,
                                              const SuperMap& map, GraphFE& graph,
                                              int my_block_row, int my_block_col) const
 {
-  int lid_r[OPERATOR_MAX_EDGES];
-  int lid_c[OPERATOR_MAX_EDGES];
+  std::vector<int> lid_r(cell_max_edges);
+  std::vector<int> lid_c(cell_max_edges);
 
   // ELEMENT: cell, DOFS: cell and edge
   const std::vector<int>& edge_row_inds = map.GhostIndices("edge", my_block_row);
@@ -139,7 +139,7 @@ void Operator_Edge::SymbolicAssembleMatrixOp(const Op_Cell_Edge& op,
       lid_r[n] = edge_row_inds[edges[n]];
       lid_c[n] = edge_col_inds[edges[n]];
     }
-    ierr |= graph.InsertMyIndices(nedges, lid_r, nedges, lid_c);
+    ierr |= graph.InsertMyIndices(nedges, lid_r.data(), nedges, lid_c.data());
   }
   AMANZI_ASSERT(!ierr);
 }
@@ -177,8 +177,8 @@ void Operator_Edge::AssembleMatrixOp(const Op_Cell_Edge& op,
 {
   AMANZI_ASSERT(op.matrices.size() == ncells_owned);
 
-  int lid_r[OPERATOR_MAX_EDGES];
-  int lid_c[OPERATOR_MAX_EDGES];
+  std::vector<int> lid_r(cell_max_edges);
+  std::vector<int> lid_c(cell_max_edges);
 
   // ELEMENT: cell, DOFS: edge and cell
   const std::vector<int>& edge_row_inds = map.GhostIndices("edge", my_block_row);
@@ -195,7 +195,7 @@ void Operator_Edge::AssembleMatrixOp(const Op_Cell_Edge& op,
       lid_c[n] = edge_col_inds[edges[n]];
     }
 
-    ierr |= mat.SumIntoMyValues(lid_r, lid_c, op.matrices[c]);
+    ierr |= mat.SumIntoMyValues(lid_r.data(), lid_c.data(), op.matrices[c]);
   }
   AMANZI_ASSERT(!ierr);
 }

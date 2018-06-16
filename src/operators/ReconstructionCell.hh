@@ -120,6 +120,7 @@ class ReconstructionCell : public Reconstruction {
   int dim;
   int ncells_owned, nfaces_owned, nnodes_owned;
   int ncells_wghost, nfaces_wghost, nnodes_wghost;
+  int cell_max_nodes;
 
   Teuchos::RCP<CompositeVector> gradient_;
   Teuchos::RCP<Epetra_Vector> limiter_;

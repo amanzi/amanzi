@@ -44,6 +44,8 @@ void ReconstructionCell::Init(Teuchos::RCP<const Epetra_MultiVector> field,
   nfaces_wghost = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
   nnodes_wghost = mesh_->num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::ALL);
 
+  cell_max_nodes = mesh_->cell_get_max_nodes();
+
   dim = mesh_->space_dimension();
 
   CompositeVectorSpace cv_space;
