@@ -34,6 +34,7 @@ class Operator_Cell : public Operator {
                 int schema) :
       Operator(cvs, plist, schema) {
     set_schema_string("CELL");
+    cell_max_faces = mesh_->cell_get_max_faces();
   }
 
   // rhs update which multiplies by cell
@@ -60,6 +61,9 @@ class Operator_Cell : public Operator {
   virtual void AssembleMatrixOp(const Op_Face_Cell& op,
           const SuperMap& map, MatrixFE& mat,
           int my_block_row, int my_block_col) const;
+
+ protected:
+  int cell_max_faces;
 };
 
 }  // namespace Operators

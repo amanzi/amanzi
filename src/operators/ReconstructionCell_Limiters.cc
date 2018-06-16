@@ -460,7 +460,7 @@ void ReconstructionCell::LimiterKuzmin_(
 
   double L22normal_new;
   AmanziGeometry::Point gradient_c(dim), p(dim), normal_new(dim), direction(dim);
-  std::vector<double> field_min_cell(OPERATOR_MAX_NODES), field_max_cell(OPERATOR_MAX_NODES);
+  std::vector<double> field_min_cell(cell_max_nodes), field_max_cell(cell_max_nodes);
 
   std::vector<AmanziGeometry::Point> normals;
 
@@ -516,7 +516,7 @@ void ReconstructionCell::LimiterKuzminSet_(AmanziMesh::Entity_ID_List& ids,
   // Step 1: local extrema are calculated here at nodes and updated later
   std::vector<double> field_node_min(nnodes_wghost);
   std::vector<double> field_node_max(nnodes_wghost);
-  std::vector<double> field_min_cell(OPERATOR_MAX_NODES), field_max_cell(OPERATOR_MAX_NODES);
+  std::vector<double> field_min_cell(cell_max_nodes), field_max_cell(cell_max_nodes);
 
   AmanziMesh::Entity_ID_List nodes;
 

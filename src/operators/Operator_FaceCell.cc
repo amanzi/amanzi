@@ -174,8 +174,8 @@ void Operator_FaceCell::SymbolicAssembleMatrixOp(const Op_Cell_FaceCell& op,
                                                  const SuperMap& map, GraphFE& graph,
                                                  int my_block_row, int my_block_col) const
 {
-  int lid_r[OPERATOR_MAX_FACES];
-  int lid_c[OPERATOR_MAX_FACES];
+  std::vector<int> lid_r(cell_max_faces + 1);
+  std::vector<int> lid_c(cell_max_faces + 1);
 
   // ELEMENT: cell, DOFS: cell and face
   const std::vector<int>& face_row_inds = map.GhostIndices("face", my_block_row);
@@ -195,7 +195,7 @@ void Operator_FaceCell::SymbolicAssembleMatrixOp(const Op_Cell_FaceCell& op,
     }
     lid_r[nfaces] = cell_row_inds[c];
     lid_c[nfaces] = cell_col_inds[c];
-    ierr |= graph.InsertMyIndices(nfaces+1, lid_r, nfaces+1, lid_c);
+    ierr |= graph.InsertMyIndices(nfaces+1, lid_r.data(), nfaces+1, lid_c.data());
   }
   AMANZI_ASSERT(!ierr);
 }
@@ -208,8 +208,8 @@ void Operator_FaceCell::SymbolicAssembleMatrixOp(const Op_Cell_Face& op,
                                                  const SuperMap& map, GraphFE& graph,
                                                  int my_block_row, int my_block_col) const
 {
-  int lid_r[OPERATOR_MAX_FACES];
-  int lid_c[OPERATOR_MAX_FACES];
+  std::vector<int> lid_r(cell_max_faces);
+  std::vector<int> lid_c(cell_max_faces);
 
   // ELEMENT: cell, DOFS: face
   const std::vector<int>& face_row_inds = map.GhostIndices("face", my_block_row);
@@ -225,7 +225,7 @@ void Operator_FaceCell::SymbolicAssembleMatrixOp(const Op_Cell_Face& op,
       lid_r[n] = face_row_inds[faces[n]];
       lid_c[n] = face_col_inds[faces[n]];
     }
-    ierr |= graph.InsertMyIndices(nfaces, lid_r, nfaces, lid_c);
+    ierr |= graph.InsertMyIndices(nfaces, lid_r.data(), nfaces, lid_c.data());
   }
   AMANZI_ASSERT(!ierr);
 }
@@ -291,8 +291,8 @@ void Operator_FaceCell::AssembleMatrixOp(const Op_Cell_FaceCell& op,
 {
   AMANZI_ASSERT(op.matrices.size() == ncells_owned);
 
-  int lid_r[OPERATOR_MAX_FACES + 1];
-  int lid_c[OPERATOR_MAX_FACES + 1];
+  std::vector<int> lid_r(cell_max_faces + 1);
+  std::vector<int> lid_c(cell_max_faces + 1);
 
   // ELEMENT: cell, DOFS: face and cell
   const std::vector<int>& face_row_inds = map.GhostIndices("face", my_block_row);
@@ -313,7 +313,7 @@ void Operator_FaceCell::AssembleMatrixOp(const Op_Cell_FaceCell& op,
     lid_r[nfaces] = cell_row_inds[c];
     lid_c[nfaces] = cell_col_inds[c];
 
-    ierr |= mat.SumIntoMyValues(lid_r, lid_c, op.matrices[c]);
+    ierr |= mat.SumIntoMyValues(lid_r.data(), lid_c.data(), op.matrices[c]);
   }
   AMANZI_ASSERT(!ierr);
 }
@@ -328,8 +328,8 @@ void Operator_FaceCell::AssembleMatrixOp(const Op_Cell_Face& op,
 {
   AMANZI_ASSERT(op.matrices.size() == ncells_owned);
 
-  int lid_r[OPERATOR_MAX_FACES];
-  int lid_c[OPERATOR_MAX_FACES];
+  std::vector<int> lid_r(cell_max_faces + 1);
+  std::vector<int> lid_c(cell_max_faces + 1);
 
   // ELEMENT: cell, DOFS: face and cell
   const std::vector<int>& face_row_inds = map.GhostIndices("face", my_block_row);
@@ -346,7 +346,7 @@ void Operator_FaceCell::AssembleMatrixOp(const Op_Cell_Face& op,
       lid_c[n] = face_col_inds[faces[n]];
     }
     
-    ierr |= mat.SumIntoMyValues(lid_r, lid_c, op.matrices[c]);
+    ierr |= mat.SumIntoMyValues(lid_r.data(), lid_c.data(), op.matrices[c]);
   }
   AMANZI_ASSERT(!ierr);
 }
