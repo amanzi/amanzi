@@ -278,8 +278,8 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
       node = GetUniqueElementByTagsString_(inode, "liquid_phase, liquid_component, linear_pressure", flag);
       if (flag) {
         double p = GetAttributeValueD_(node, "value", TYPE_NUMERICAL, DVAL_MIN, DVAL_MAX, "Pa");
-        std::vector<double> grad = GetAttributeVectorD_(node, "gradient", "Pa/m");
-        std::vector<double> refc = GetAttributeVectorD_(node, "reference_coord", "m");
+        std::vector<double> grad = GetAttributeVectorD_(node, "gradient", dim_, "Pa/m");
+        std::vector<double> refc = GetAttributeVectorD_(node, "reference_coord", dim_, "m");
 
         grad.insert(grad.begin(), 0.0);
         refc.insert(refc.begin(), 0.0);
@@ -311,8 +311,8 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
       node = GetUniqueElementByTagsString_(inode, "liquid_phase, liquid_component, linear_saturation", flag);
       if (flag) {
         double s = GetAttributeValueD_(node, "value", TYPE_NUMERICAL, 0.0, 1.0, "-");
-        std::vector<double> grad = GetAttributeVectorD_(node, "gradient", "m^-1");
-        std::vector<double> refc = GetAttributeVectorD_(node, "reference_coord", "m");
+        std::vector<double> grad = GetAttributeVectorD_(node, "gradient", dim_, "m^-1");
+        std::vector<double> refc = GetAttributeVectorD_(node, "reference_coord", dim_, "m");
 
         grad.insert(grad.begin(), 0.0);
         refc.insert(refc.begin(), 0.0);

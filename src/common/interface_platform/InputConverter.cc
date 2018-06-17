@@ -683,7 +683,7 @@ std::string InputConverter::GetAttributeValueS_(
 * must match the expected unit. 
 ****************************************************************** */
 std::vector<double> InputConverter::GetAttributeVectorD_(
-    DOMElement* elem, const char* attr_name, 
+    DOMElement* elem, const char* attr_name, int length,
     std::string unit, bool exception, double mol_mass)
 {
   std::vector<double> val;
@@ -705,6 +705,14 @@ std::vector<double> InputConverter::GetAttributeVectorD_(
         }
       }
     }
+
+    if (length > 0 && val.size() != length) {
+      Errors::Message msg;
+      msg << "Attribute \"" << attr_name << "\" has too few parameters: " << (int)val.size() 
+          << ", expected: " << length << ". Hint: check \"mesh->dimension\".\n";
+      Exceptions::amanzi_throw(msg);
+    }
+
   } else if (exception) {
     char* tagname = mm.transcode(elem->getNodeName());
     ThrowErrorMissattr_(tagname, "attribute", attr_name, tagname);

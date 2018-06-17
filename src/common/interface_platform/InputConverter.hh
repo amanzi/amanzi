@@ -161,6 +161,7 @@ class InputConverter {
   //    valmin    = minimum allowed value in SI units (2.06e-03 >= valmin)
   //    valmax    = maximum allowed value in SI units (2.06e-03 <= valmax) 
   //    unit      = check expected units if provided. Derived and non-SI units are allowed.
+  //    length    = expected length of vector. If size is unknown, use -1.
   //    exception = if false, use default value when either element or attribute is missing.
   //                if true, throw an exception.
   //    default_val = defult value
@@ -175,7 +176,7 @@ class InputConverter {
       xercesc::DOMElement* elem, const char* attr_name, const std::string& type = TYPE_NUMERICAL,
       bool exception = true, std::string default_val = "");
   std::vector<double> GetAttributeVectorD_(  // supports units except ppbm
-      xercesc::DOMElement* elem, const char* attr_name,
+      xercesc::DOMElement* elem, const char* attr_name, int length = -1,
       std::string unit = "", bool exception = true, double mol_mass = -1.0);
   std::vector<std::string> GetAttributeVectorS_(
       xercesc::DOMElement* elem, const char* attr_name, bool exception = true);
@@ -202,10 +203,10 @@ class InputConverter {
     return GetAttributeValueS_(element, attr_name, type, exception, val);
   }
   std::vector<double> GetAttributeVectorD_(  // supports units except ppbm
-      xercesc::DOMNode* node, const char* attr_name,
+      xercesc::DOMNode* node, const char* attr_name, int length = -1,
       std::string unit = "", bool exception = true, double mol_mass = -1.0) {
     xercesc::DOMElement* element = static_cast<xercesc::DOMElement*>(node);
-    return GetAttributeVectorD_(element, attr_name, unit, exception, mol_mass);
+    return GetAttributeVectorD_(element, attr_name, length, unit, exception, mol_mass);
   }
   std::vector<std::string> GetAttributeVectorS_(
       xercesc::DOMNode* node, const char* attr_name, bool exception = true) {

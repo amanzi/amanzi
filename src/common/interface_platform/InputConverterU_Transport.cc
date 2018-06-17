@@ -446,7 +446,7 @@ void InputConverterU::TranslateTransportBCsGroup_(
       std::string tmp = GetAttributeValueS_(knode, "amplitude");
       data.push_back(ConvertUnits_(tmp, unit, solute_molar_mass_[solute_name]));
 
-      data_tmp = GetAttributeVectorD_(knode, "center", "m");
+      data_tmp = GetAttributeVectorD_(knode, "center", -1, "m");
       data.insert(data.end(), data_tmp.begin(), data_tmp.end());
       data.push_back(GetAttributeValueD_(knode, "standard_deviation", TYPE_NUMERICAL, 0.0, DVAL_MAX, "m"));
 

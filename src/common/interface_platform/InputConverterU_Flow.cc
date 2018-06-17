@@ -581,7 +581,7 @@ Teuchos::ParameterList InputConverterU::TranslateFlowBCs_()
 
     if (space_bc) {
       data.push_back(GetAttributeValueD_(knode, "amplitude", TYPE_NUMERICAL, DVAL_MIN, DVAL_MAX, "kg/m^2/s"));
-      data_tmp = GetAttributeVectorD_(knode, "center", "m");
+      data_tmp = GetAttributeVectorD_(knode, "center", dim_, "m");
       data.insert(data.end(), data_tmp.begin(), data_tmp.end());
       data.push_back(GetAttributeValueD_(knode, "standard_deviation", TYPE_NUMERICAL, 0.0, DVAL_MAX, "m"));
 
@@ -592,8 +592,8 @@ Teuchos::ParameterList InputConverterU::TranslateFlowBCs_()
       std::string unit_grad = unit + "/m";
       element = static_cast<DOMElement*>(same_list[0]);
       refv = GetAttributeValueD_(element, "value", TYPE_NUMERICAL, DVAL_MIN, DVAL_MAX, unit);
-      grad = GetAttributeVectorD_(element, "gradient", unit_grad);
-      refc = GetAttributeVectorD_(element, "reference_coord", "m");
+      grad = GetAttributeVectorD_(element, "gradient", dim_, unit_grad);
+      refc = GetAttributeVectorD_(element, "reference_coord", dim_, "m");
     } else {
       std::map<double, double> tp_values, tp_fluxes;
       std::map<double, std::string> tp_forms;
