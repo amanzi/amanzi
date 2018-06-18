@@ -93,17 +93,22 @@ void RunTestDiffusionMixedXMOF(double gravity) {
   // -- framework will be used
   MeshFactory meshfactory(&comm);
   meshfactory.preference(FrameworkPreference({MSTK, STKMESH}));
+  // generate orthogonal mesh
   //RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 8, 8, gm);
+  // read mesh from file
   RCP<const Mesh> mesh = meshfactory("test/median15x16.exo", gm);
 
-  // modify diffusion coefficient
-  //Teuchos::RCP<std::vector<WhetStone::Tensor> > K = Teuchos::rcp(new std::vector<WhetStone::Tensor>());
+  // modify diffusion coefficient for multimaterial diffusion
   Teuchos::RCP<std::vector<std::vector<WhetStone::Tensor> > >KMulti = Teuchos::rcp(new std::vector<std::vector<WhetStone::Tensor> >());
-  int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
-  int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
-  int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
 
-  //AnalyticMultiMat00 ana(mesh, -1., 1.);
+  //number of cells in the mesh
+  int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  // number of faces in the mesh
+  int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
+  // number of faces with ghost faces as well
+  int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
+   
+  //Analytical model
   AnalyticMultiMat01 ana(mesh, 0., -1. ,1);
 
   // create boundary data
@@ -112,6 +117,7 @@ void RunTestDiffusionMixedXMOF(double gravity) {
   std::vector<double>& bc_value = bc->bc_value();
   std::vector<double>& bc_mixed = bc->bc_mixed();
 
+  //fill boundary data
   for (int f = 0; f < nfaces_wghost; f++) {
     const Point& xf = mesh->face_centroid(f);
     double area = mesh->face_area(f);
@@ -127,15 +133,19 @@ void RunTestDiffusionMixedXMOF(double gravity) {
     }
   }
 
+  //Create multimaterial data
   std::string matdata_fname2 =  "test/sandwich_15x16_matdata.dat";
   write_data_example_poly(*mesh, matdata_fname2);
-  
+  //Read multimaterial data  
   XMOF2D::CellsMatData mat_data = read_mat_data(matdata_fname2);
    
   int num_mat = 2;
   CompositeVectorSpace cvs1, cvs2, cvs_pl;
+  // composite vector space for volume fractions
   cvs1.SetMesh(mesh)->SetGhosted(true)->AddComponent("cell", AmanziMesh::CELL, num_mat);
+  // composite vector space for centroids  
   cvs2.SetMesh(mesh)->SetGhosted(true)->AddComponent("cell", AmanziMesh::CELL, 2*num_mat);
+  // composite vector space for solution  
   cvs_pl.SetMesh(mesh)->SetGhosted(true)->AddComponent("cell", AmanziMesh::CELL, 1 + num_mat);
   cvs_pl.AddComponent("face", AmanziMesh::FACE, 1);
   
@@ -145,18 +155,8 @@ void RunTestDiffusionMixedXMOF(double gravity) {
   Teuchos::RCP<CompositeVector> centroids = Teuchos::rcp(new CompositeVector(cvs2));
   Epetra_MultiVector& centroids_vec = *centroids->ViewComponent("cell", true);
 
-  
-  for (int i=0; i!= mat_data.cells_materials.size(); ++i){
-    // std::cout<<i<<": ";
-    // for (int j=0; j!= mat_data.cells_materials[i].size(); ++j) 
-    //   std::cout<<mat_data.cells_materials[i][j]<<" ";
-    // std::cout<<"\n";
-    // // std::cout<<i<<": ";
-    
-    // for (int j=0; j!= mat_data.cells_materials[i].size(); ++j) 
-    //   std::cout<<mat_data.cells_vfracs[i][j]<<" ";
-    // std::cout<<"\n";
-    
+  // Fill data for volume fraction, centroids, 
+  for (int i=0; i!= mat_data.cells_materials.size(); ++i){   
     const Point& xc = mesh->cell_centroid(i);
     std::vector<WhetStone::Tensor> Ks_cell;
 
@@ -171,39 +171,35 @@ void RunTestDiffusionMixedXMOF(double gravity) {
         centroids_vec[mat_id*2][i] = mat_data.cells_centroids[i][j].x;
         centroids_vec[mat_id*2+1][i] = mat_data.cells_centroids[i][j].y;
       }
-      //vol_frac_vec[0][i] = 1 - vol_frac_vec[1][i];
-      // std::cout<<centroids_vec[mat_id*2][i]<<" "<<centroids_vec[mat_id*2+1][i]<<" ";
     }else{
       int mat_id = int(mat_data.cells_materials[i][0]);
       const WhetStone::Tensor& Kc = ana.Tensor(xc, 0.0, mat_id);
       Ks_cell.push_back(Kc);
       vol_frac_vec[mat_id][i] = 1.0;
     }      
-    KMulti->push_back(Ks_cell);
-    // std::cout<<"\n";
-    
+    KMulti->push_back(Ks_cell);    
   }
 
-  //exit(0);
   // create diffusion operator 
   ParameterList op_list = plist.get<Teuchos::ParameterList>("PK operator").sublist("diffusion operator mixed xmof");
   Teuchos::RCP<PDE_DiffusionMFD_XMOF> op = Teuchos::rcp(new PDE_DiffusionMFD_XMOF(op_list, mesh));
   op->SetBCs(bc, bc);
   const CompositeVectorSpace& cvs = op->global_operator()->DomainMap();
 
-  // set up the diffusion operator
+  // set up the diffusion tensor for diffusion operator
   op->SetupMultiMatK(KMulti);
+  // Create minimesh for each cell
   op->ConstructMiniMesh(vol_frac.ptr(), centroids.ptr());
   Teuchos::RCP<Operator> global_op = op->global_operator();
 
+  //Create local matrices
   op->UpdateMatrices(Teuchos::null, Teuchos::null, 0.);
 
   // get and assmeble the global operator 
   op->ApplyBCs(true, true);
   global_op->SymbolicAssembleMatrix();
   global_op->AssembleMatrix();
-
-  
+ 
 
   // create preconditoner using the base operator class
   ParameterList slist = plist.get<Teuchos::ParameterList>("preconditioners");
@@ -219,10 +215,15 @@ void RunTestDiffusionMixedXMOF(double gravity) {
       solver(global_op, global_op);
   solver.Init(lop_list);
 
+  //RHS vector
   CompositeVector rhs = *global_op->rhs();
+  // Solution vector lambdas
   Teuchos::RCP<CompositeVector> solution = Teuchos::rcp(new CompositeVector(rhs));
+  // Flux solution 
   Teuchos::RCP<CompositeVector> flux = Teuchos::rcp(new CompositeVector(rhs));
   solution->PutScalar(0.0);
+
+  //
   Teuchos::RCP<CompositeVector> sol_pl = Teuchos::rcp(new CompositeVector(cvs_pl));
   *sol_pl->ViewComponent("face", false) = *solution->ViewComponent("face", false);
   op->UpdateFlux(sol_pl.ptr(), flux.ptr(), 0);  
@@ -245,11 +246,11 @@ void RunTestDiffusionMixedXMOF(double gravity) {
     global_op->AssembleMatrix();
 
     // double rhs_norm;
-    // rhs.ViewComponent("face", false)->Norm2(&rhs_norm);
-    
+    // rhs.ViewComponent("face", false)->Norm2(&rhs_norm);   
     // //std::cout<<"RHS\n"<<*solution->ViewComponent("face", false);
     
     int ierr = solver.ApplyInverse(rhs, *solution);
+    
     // double sol_norm;
     // solution->ViewComponent("face", false)->Norm2(&sol_norm);
     // std::cout<<"Rhs "<<rhs_norm<<" Sol "<<sol_norm<<"\n";
@@ -294,52 +295,13 @@ void RunTestDiffusionMixedXMOF(double gravity) {
     //break;
   }
 
+ 
+  // double pnorm(0.), pl2_err(0.), pinf_err(0.);
+  // double lnorm(0.), ll2_err(0.), linf_err(0.);
+  // ana.ComputeLambdaError(lmd, 0.0, lnorm, ll2_err, linf_err);
+  // ana.ComputeCellError(p, 0.0, pnorm, pl2_err, pinf_err);
 
 
-
-  // if (MyPID == 0) {
-  //   std::cout << "pressure solver (pcg): ||r||=" << solver.residual() 
-  //             << " itr=" << solver.num_itrs()
-  //             << " code=" << solver.returned_code() << std::endl;
-  // }
-
-  
-
-
-
-
-  
-  double pnorm(0.), pl2_err(0.), pinf_err(0.);
-  double lnorm(0.), ll2_err(0.), linf_err(0.);
-  ana.ComputeLambdaError(lmd, 0.0, lnorm, ll2_err, linf_err);
-  ana.ComputeCellError(p, 0.0, pnorm, pl2_err, pinf_err);
-
-  
-  // // calculate flux error
-  // Epetra_MultiVector& flx = *flux->ViewComponent("face", true);
-  // double unorm, ul2_err, uinf_err;
-
-  // op->UpdateFlux(solution.ptr(), flux.ptr());
-  // ana.ComputeFaceError(flx, 0.0, unorm, ul2_err, uinf_err);
-
-  if (MyPID == 0) {
-    pl2_err /= pnorm; 
-    // ul2_err /= unorm;
-    // printf("L2(p)=%9.6f  Inf(p)=%9.6f  L2(u)=%9.6g  Inf(u)=%9.6f  itr=%3d\n",
-    //     pl2_err, pinf_err, ul2_err, uinf_err, solver.num_itrs());
-    printf("Pressure L2(p)=%9.6f  Inf(p)=%9.6f  itr=%3d\n",
-        pl2_err, pinf_err, solver.num_itrs());    
-
-    ll2_err /= lnorm;
-    printf("Lambda L2(p)=%9.6f  Inf(p)=%9.6f  itr=%3d\n",
-        ll2_err, linf_err, solver.num_itrs());    
-    //   CHECK(pl2_err < 1e-12 && ul2_err < 1e-12);
-    //   CHECK(solver.num_itrs() < 10);
-    // GMV::open_data_file(*mesh, (std::string)"operators_xmof.gmv");
-    // GMV::start_data();
-    // GMV::write_cell_data(p, 0, "solution");
-    // GMV::close_data_file();
-  }
 }
 
 
