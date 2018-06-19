@@ -21,7 +21,7 @@ namespace AmanziGeometry {
 // entities in the mesh will determine the dimension.
 // -------------------------------------------------------------
 RegionBoundary::RegionBoundary(const std::string& name,
-                               const Set_ID id,
+                               const int id,
                                const LifeCycleType lifecycle)
     : Region(name, id, false, BOUNDARY, 0, 0, lifecycle) {};
 
