@@ -200,13 +200,6 @@ createRegion(const std::string reg_name,
     Teuchos::ParameterList enum_params = reg_spec.sublist(shape);
     std::string entity_str = enum_params.get<std::string>("entity");
 
-    if (entity_str == "Cell" || entity_str == "cell" || entity_str == "CELL")
-      entity_str = "CELL";
-    else if (entity_str == "Face" || entity_str == "face" || entity_str == "FACE")
-      entity_str = "FACE";
-    else if (entity_str == "Node" || entity_str == "node" || entity_str == "NODE")
-      entity_str = "NODE";
-      
     Teuchos::Array<int> entity_list = 
       enum_params.get< Teuchos::Array<int> >("entity gids");
 

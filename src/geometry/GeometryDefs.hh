@@ -19,6 +19,7 @@
 namespace Amanzi {
 namespace AmanziGeometry {  
 
+typedef int Entity_ID;  // should be consistent with similar definition in class Mesh
 typedef std::vector<Point> Point_List;
 
 typedef enum {

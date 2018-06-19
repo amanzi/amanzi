@@ -22,22 +22,11 @@ namespace AmanziGeometry {
 RegionEnumerated::RegionEnumerated(const std::string& name,
                                    const int id,
                                    const std::string& entity_str,
-                                   const std::vector<int>& ents,
+                                   const std::vector<Entity_ID>& ents,
                                    const LifeCycleType lifecycle)
   : Region(name, id, false, ENUMERATED, 0, 0, lifecycle),
     entity_str_(boost::to_upper_copy<std::string>(entity_str)),
     entities_(ents) {
-  // if (entity_str == "cell" ||
-  //     entity_str == "CELL" ||
-  //     entity_str == "Cell") {
-  //   entity_str_ = "CELL";
-  // } else if (entity_str == "face" ||
-  //            entity_str == "FACE" ||
-  //            entity_str == "Face") {
-  //   entity_str_ = "FACE";
-  // } else {
-  //   entity_str_ = entity_str;
-  // }
   // Region dimension is set arbitrarily as 0 since the set of
   // entities in the mesh will determine the dimension
 }

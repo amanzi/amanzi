@@ -13,7 +13,8 @@
 /*!
 
 List *region: enumerated set* defines a set of mesh entities via the list 
-of input global ids..
+of input global ids. Note that global ids are not defined correctly when
+parallle mesh is created on a fly.
 
 * `"entity`" ``[string]`` Type of the mesh object.  Valid are *cell*, *face*, *edge*, *node*
 
@@ -52,10 +53,10 @@ public:
   RegionEnumerated(const std::string& name,
                    const int id,
                    const std::string& entity_str,
-                   const std::vector<int>& ents,
+                   const std::vector<Entity_ID>& ents,
                    const LifeCycleType lifecycle=PERMANENT);
 
-  const std::vector<int>& entities() const { return entities_; }
+  const std::vector<Entity_ID>& entities() const { return entities_; }
   const std::string& entity_str() const { return entity_str_; }
 
   // Is the the specified point inside this region
@@ -63,7 +64,7 @@ public:
   
 protected:
   std::string entity_str_; // what kind of entities make up this set
-  const std::vector<int> entities_; // list of those included
+  const std::vector<Entity_ID> entities_; // list of those included
 };
 
 
