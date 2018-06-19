@@ -50,11 +50,6 @@ class MFD3D : public virtual BilinearForm,
   explicit MFD3D(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh);
   ~MFD3D() {};
 
-  // geometry methods
-  void PolygonCentroidWeights(
-      const Entity_ID_List& nodes,
-      double area, std::vector<double>& weights) const;
-
   // access members
   double simplex_functional() { return simplex_functional_; }
   int simplex_num_itrs() { return simplex_num_itrs_; }
