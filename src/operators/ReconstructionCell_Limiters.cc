@@ -14,8 +14,13 @@
 #include <algorithm>
 #include <vector>
 
+// TPLs
 #include "Epetra_Vector.h"
 
+// Amanzi
+#include "WhetStoneMeshUtils.hh"
+
+// Amanzi::Operators
 #include "OperatorDefs.hh"
 #include "ReconstructionCell.hh"
 
@@ -498,7 +503,6 @@ void ReconstructionCell::LimiterKuzmin_(
     }
 
     // Step 4: enforcing a priori time step estimate (division of dT by 2).
-    // Experimental version is limited to 2D (lipnikov@lanl.gov).
     LimiterExtensionTransportKuzmin_(field_local_min, field_local_max);
   }    
 
@@ -633,8 +637,16 @@ void ReconstructionCell::LimiterExtensionTransportKuzmin_(
 
       if (c == c1) {
         mesh_->face_get_nodes(f, &nodes);
+        int nnodes = nodes.size();
 
-        for (int j = 0; j < nodes.size(); j++) {
+        // define dimensionless quadrature weigths
+        std::vector<double> weights(nnodes, 0.5);
+        if (dim == 3) {
+          double area = mesh_->face_area(f);
+          WhetStone::PolygonCentroidWeights(*mesh_, nodes, area, weights);
+        }
+
+        for (int j = 0; j < nnodes; j++) {
           int v = nodes[j];
           mesh_->node_get_coordinates(v, &xp);
           up = getValue(c, xp);
@@ -647,7 +659,7 @@ void ReconstructionCell::LimiterExtensionTransportKuzmin_(
             else
               b = u1 - field_local_max[c];
 
-            flux = fabs((*flux_)[0][f]);
+            flux = fabs((*flux_)[0][f]) * weights[j];
             outflux += flux;
             if (b) {
               outflux_weigted += flux * a / b;

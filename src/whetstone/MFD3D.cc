@@ -400,41 +400,6 @@ void MFD3D::SimplexExchangeVariables_(DenseMatrix& T, int kp, int ip)
 }
 
 
-/* ******************************************************************
-* Return centroid weights for 2D and 3D polygons. We take list of 
-* nodes as input since it is not cached by the mesh.
-* NOTE: polygon must be star-shaped w.r.t. its geometric center.
-****************************************************************** */
-void MFD3D::PolygonCentroidWeights(
-    const Entity_ID_List& nodes,
-    double area, std::vector<double>& weights) const
-{
-  int nnodes = nodes.size();
-
-  weights.assign(nnodes, 1.0 / (3 * nnodes));
-  AmanziGeometry::Point p1(d_), p2(d_), p3(d_), xg(d_);
-
-  // geometric center
-  for (int i = 0; i < nnodes; ++i) {
-    mesh_->node_get_coordinates(nodes[i], &p1);
-    xg += p1;
-  }
-  xg /= nnodes;
-
-  // corner volume contributions
-  for (int i1 = 0; i1 < nnodes; ++i1) {
-    int i2 = (i1 + 1) % nnodes;  
-    mesh_->node_get_coordinates(nodes[i1], &p1);
-    mesh_->node_get_coordinates(nodes[i2], &p2);
-
-    p3 = (p1 - xg)^(p2 - xg);
-    double tmp = norm(p3) / (6 * area);
-
-    weights[i1] += tmp;
-    weights[i2] += tmp;
-  }
-}
-
 }  // namespace WhetStone
 }  // namespace Amanzi
 

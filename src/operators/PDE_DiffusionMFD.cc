@@ -116,8 +116,10 @@ void PDE_DiffusionMFD::UpdateMatrices(
                (local_op_schema_ & OPERATOR_SCHEMA_DOFS_FACE)) {
       if (little_k_ == OPERATOR_LITTLE_K_DIVK_TWIN_GRAD) {
         UpdateMatricesMixedWithGrad_(flux);
+      } else if (little_k_ == OPERATOR_LITTLE_K_NONE) {
+        UpdateMatricesMixed_();
       } else {
-        UpdateMatricesMixed_(flux);
+        UpdateMatricesMixed_little_k_();
       }
     } else if (local_op_schema_ & OPERATOR_SCHEMA_DOFS_CELL) {
       UpdateMatricesTPFA_();
@@ -227,8 +229,38 @@ void PDE_DiffusionMFD::UpdateMatricesMixedWithGrad_(
 /* ******************************************************************
 * Basic routine for each operator: creation of elemental matrices.
 ****************************************************************** */
-void PDE_DiffusionMFD::UpdateMatricesMixed_(
-    const Teuchos::Ptr<const CompositeVector>& flux)
+void PDE_DiffusionMFD::UpdateMatricesMixed_()
+{
+  for (int c = 0; c < ncells_owned; c++) {
+    WhetStone::DenseMatrix& Wff = Wff_cells_[c];
+    int nfaces = Wff.NumRows();
+    WhetStone::DenseMatrix Acell(nfaces + 1, nfaces + 1);
+
+    // create stiffness matrix by ellimination of the mass matrix
+    double matsum = 0.0;
+    for (int n = 0; n < nfaces; n++) {
+      double rowsum = 0.0;
+      for (int m = 0; m < nfaces; m++) {
+        double tmp = Wff(n, m);
+        rowsum += tmp;
+        Acell(n, m) = tmp;
+      }
+
+      Acell(n, nfaces) = -rowsum;
+      Acell(nfaces, n) = -rowsum;
+      matsum += rowsum;
+    }
+    Acell(nfaces, nfaces) = matsum;
+
+    local_op_->matrices[c] = Acell;
+  }
+}
+
+
+/* ******************************************************************
+* Basic routine for each operator: creation of elemental matrices.
+****************************************************************** */
+void PDE_DiffusionMFD::UpdateMatricesMixed_little_k_()
 {
   // un-rolling little-k data
   Teuchos::RCP<const Epetra_MultiVector> k_cell = Teuchos::null;
@@ -242,10 +274,9 @@ void PDE_DiffusionMFD::UpdateMatricesMixed_(
 
   // update matrix blocks
   AmanziMesh::Entity_ID_List faces, cells;
-  std::vector<int> dirs;
 
   for (int c = 0; c < ncells_owned; c++) {
-    mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+    mesh_->cell_get_faces(c, &faces);
     int nfaces = faces.size();
 
     WhetStone::DenseMatrix& Wff = Wff_cells_[c];

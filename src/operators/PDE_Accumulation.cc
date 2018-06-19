@@ -12,7 +12,7 @@
   This operator is a collection of local "DIAGONAL" Ops.
 */
 
-#include "MFD3D_Diffusion.hh"
+#include "WhetStoneMeshUtils.hh"
 
 #include "Operator_Cell.hh"
 #include "Operator_Edge.hh"
@@ -183,7 +183,6 @@ void PDE_Accumulation::CalculateEntityVolume_(
     CompositeVector& volume, const std::string& name)
 {
   AmanziMesh::Entity_ID_List nodes, edges;
-  WhetStone::MFD3D_Diffusion mfd(mesh_);
 
   if (name == "cell" && volume.HasComponent("cell")) {
     Epetra_MultiVector& vol = *volume.ViewComponent(name); 
@@ -222,7 +221,7 @@ void PDE_Accumulation::CalculateEntityVolume_(
       std::vector<double> weights(nnodes, 1.0 / nnodes);
 
       if (mesh_->space_dimension() == 2) {
-        mfd.PolygonCentroidWeights(nodes, cellvolume, weights);
+        WhetStone::PolygonCentroidWeights(*mesh_, nodes, cellvolume, weights);
       }
 
       for (int i = 0; i < nnodes; i++) {
