@@ -74,7 +74,7 @@ void EffectivePressureEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::
   Teuchos::RCP<const CompositeVector> pres = S->GetFieldData(pres_key_);
   const double& p_atm = *(S->GetScalarData("atmospheric_pressure"));
 
-  ASSERT(wrt_key == pres_key_);
+  AMANZI_ASSERT(wrt_key == pres_key_);
   // pressure is max(pres, p_atm), so derivative is 1 or 0
   for (CompositeVector::name_iterator comp=result->begin();
        comp!=result->end(); ++comp) {

@@ -58,7 +58,7 @@ void PoolDecompositionEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
 void PoolDecompositionEvaluator::EvaluateFieldPartialDerivative_(
     const Teuchos::Ptr<State>& S,
     Key wrt_key, const Teuchos::Ptr<CompositeVector>& result) {
-  ASSERT(0);
+  AMANZI_ASSERT(0);
 }
 
 

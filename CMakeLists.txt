@@ -12,19 +12,36 @@ set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 #set(CMAKE_CXX_EXTENSIONS OFF)
 
+# Standard CMake modules
+include(CMakeDependentOption)
+include(FeatureSummary)
 
-# Enable testing, ctest needs this
-# all add_test commands are ignored unless this is called!
+
+# --------------------------------------------------------------------------- #
+# Enable testing
+# --------------------------------------------------------------------------- #
 enable_testing()
+cmake_dependent_option(ENABLE_TESTS "Enable unit testing" ON
+                       "ENABLE_UnitTest" ON)
+add_feature_info(TESTS
+                 ENABLE_TESTS
+                 "Toggle for unit tests")
+if (ENABLE_TESTS)
+  set(BUILD_TESTS 1)
+endif()    
 
+# --------------------------------------------------------------------------- #
 # Define the project name
 # This command will define
 #     ATS_SOURCE_DIR
 #     ATS_BINARY_DIR
+# --------------------------------------------------------------------------- #
 project(ATS)
 
-set(ATS_MODULE_PATH "${ATS_SOURCE_DIR}/tools/cmake")
-set(CMAKE_MODULE_PATH ${ATS_MODULE_PATH})
+message(STATUS "\n-------------------------------------------")
+message(STATUS "\n-- CMake: Configuring ATS build/install.\n--")
+message(STATUS "----------------------------------------")
+
 
 # --------------------------------------------------------------------------- #
 # Search for Amanzi
@@ -37,11 +54,20 @@ if ( Amanzi_FOUND )
   message(STATUS "Amanzi_VERSION=${Amanzi_VERSION}")
   message(STATUS "Amanzi_DIR=${Amanzi_DIR}")
   message(STATUS "Amanzi_INCLUDE_DIR=${Amanzi_INCLUDE_DIR}")      
-  message(STATUS "Amanzi_ENABLE_STRUCTURED=${Amanzi_ENABLE_STRUCTURED}")
-  message(STATUS "Amanzi_ENABLE_UNSTRUCTURED=${Amanzi_ENABLE_UNSTRUCTURED}")
+  message(STATUS "Amanzi_SOURCE_DIR=${Amanzi_SOURCE_DIR}")
 else()
   message(FATAL_ERROR "Failed to locate Amanzi")
 endif()
+
+# Useful variables pointing to directories in the source tree
+set(AMANZI_SOURCE_TOOLS_DIR    "${AMANZI_SOURCE_DIR}/tools")
+
+# add amanzi cmake
+set(AMANZI_MODULE_PATH "${Amanzi_SOURCE_DIR}/tools/cmake")
+set(CMAKE_MODULE_PATH 
+    ${AMANZI_MODULE_PATH}
+    ${AMANZI_MODULE_PATH}/Modules
+    ${AMANZI_MODULE_PATH}/Utils)
 
 
 # --------------------------------------------------------------------------- #
@@ -62,17 +88,6 @@ message(STATUS " --- CMAKE_C_COMPILER ${CMAKE_C_COMPILER} ")
 message(STATUS " --- CMAKE_CXX_COMPILER ${CMAKE_CXX_COMPILER} ")
 message(STATUS " --- CMAKE_Fortran_COMPILER ${CMAKE_Fortran_COMPILER} ")
 
-if (Amanzi_DISABLE_MPI_CXX_BINDINGS)
-  add_definitions("-DOMPI_SKIP_MPICXX -DMPICH_SKIP_MPICXX")
-endif()
-
-# Should pass this from Amanzi as well (but flags should be set already).
-option(FORTRAN_SINGLE_UNDERSCORE "Use single-underscore in Fortran name-mangling" FALSE)
-if (DISABLE_MPI_CXX_BINDINGS)
-  set(FORTRAN_SINGLE_UNDERSCORE TRUE)
-endif()
-
-#find_package(MPI QUIET)
 
 # --------------------------------------------------------------------------- #
 #  Define the include paths
@@ -91,68 +106,30 @@ include_directories(${Amanzi_INCLUDE_DIR})
 # Amanzi_TPL_Teuchos_LIBRARY_DIRS => Library paths for Teuchos library and TPL libraries Teuchos calls
 # See AmanziConfigTPL.cmake for the entire list
 
-include_directories(${Amanzi_TPL_Teuchos_INCLUDE_DIRS})
-include_directories(${Amanzi_TPL_Epetra_INCLUDE_DIRS})
-include_directories(${Amanzi_TPL_ASCEMIO_INCLUDE_DIRS})
-
-# Each TPL is flagged as enabled ON(TRUE)|OFF(FALSE)
-
-if ( Amanzi_TPL_CGNS_ENABLED )
-  include_directories(${Amanzi_TPL_CGNS_INCLUDE_DIRS})
-  add_definitions(-DENABLE_CGNS)
-endif()
-
-if ( Amanzi_TPL_STK_ENABLED )
-  include_directories(${Amanzi_TPL_STK_INCLUDE_DIRS})
-  add_definitions(-DENABLE_STK_Mesh)
-endif()
-
-# enable structured/unstructured
-if ( Amanzi_ENABLE_UNSTRUCTURED )
-  add_definitions(-DENABLE_Unstructured)
-endif()
-
-if ( Amanzi_ENABLE_STRUCTURED )
-  add_definitions(-DENABLE_Structured)
-endif()
-
-#silo
-if ( Amanzi_TPL_Silo_ENABLED )
-  set(ENABLE_Silo ON)
-  add_definitions(-DENABLE_Silo)
-endif()
 
 if (ENABLE_ALQUIMIA)
-    # Use Alquimia as a chemistry engine.
+  # Use Alquimia as a chemistry engine.
   add_definitions(-DALQUIMIA_ENABLED)
-  #add_subdirectory(common/alquimia)
 endif()
 
 message(STATUS "Silo Enabled?: ${Amanzi_TPL_Silo_ENABLED}")
 message(STATUS "Silo Enabled?: ${ENABLE_Silo}")
+message(STATUS "Alquimia Enabled?: ${Amanzi_TPL_Alquimia_ENABLED}")
+message(STATUS "Alquimia Enabled?: ${ENABLE_Alquimia}")
 
-# We make every effort in the Amanzi build system to include TPL libraries 
-# in the target definitions. Avoid using Amanzi_TPL_*_LIBRARY or
-# Amanzi_TPL_*_LIBRARIES variables. Using these variables when it
-# is not neccessary may result in a command line length that exceeds
-# the OS limits and will prevent the host code from compiling.
-# Unfortunately Trilinos does not provide exported targets
-# The host code must explicitly link against the Trilinos library
-# path to link against the Trilinos libraries.
+include_directories(${Amanzi_TPL_Trilinos_INCLUDE_DIRS})
 link_directories(${Amanzi_TPL_Trilinos_LIBRARY_DIRS})
-
 
 # add the macros that help with registration of factories
 include(${Amanzi_LIBRARY_DIR}/RegisterEvaluators.cmake)
 
 
-
-
 # --------------------------------------------------------------------------- #
-#  Building against Amanzi
+#  Testing
 # --------------------------------------------------------------------------- #
+include(TestManager)
 
-# Source files for all binaries and libraries found under src
+
 add_subdirectory(src)
 
 

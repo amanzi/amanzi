@@ -20,9 +20,7 @@ endforeach(lcv)
 
 # collect all registrations and register
 file(GLOB_RECURSE registrations "./*_reg.hh" )
-message("My reg: ${registrations}")
 foreach(reg_lcv IN LISTS registrations)
-  message("REGISTERING: ${reg_lcv}")
   register_abs_evaluator_with_factory(HEADERFILE ${reg_lcv} LISTNAME ENERGY_RELATIONS)
 endforeach(reg_lcv)
 

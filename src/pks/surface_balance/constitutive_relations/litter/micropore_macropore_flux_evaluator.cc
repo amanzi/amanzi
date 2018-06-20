@@ -216,7 +216,7 @@ Teuchos::RCP<const CompositeVector> K = S->GetFieldData(K_key_);
     }
 
   } else {
-    ASSERT(0);
+    AMANZI_ASSERT(0);
   }
 }
 

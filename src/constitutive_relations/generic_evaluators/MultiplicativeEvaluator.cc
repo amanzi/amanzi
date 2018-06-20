@@ -31,7 +31,7 @@ void
 MultiplicativeEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
         const Teuchos::Ptr<CompositeVector>& result)
 {
-  ASSERT(dependencies_.size() > 1);
+  AMANZI_ASSERT(dependencies_.size() > 1);
   KeySet::const_iterator key = dependencies_.begin();
   *result = *S->GetFieldData(*key);
   result->Scale(coef_);
@@ -52,7 +52,7 @@ void
 MultiplicativeEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>& S,
         Key wrt_key, const Teuchos::Ptr<CompositeVector>& result)
 {
-  ASSERT(dependencies_.size() > 1);
+  AMANZI_ASSERT(dependencies_.size() > 1);
 
   KeySet::const_iterator key = dependencies_.begin();
   while (*key == wrt_key) key++;

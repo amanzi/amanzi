@@ -28,17 +28,9 @@ DepthEvaluator::UpdateField_(const Teuchos::Ptr<State>& S) {
     for (auto& comp : result) {
       if (comp == "cell") {
         // evaluate depths
-        result.ViewComponent("cell",true)->PutScalar(-1.);
         Epetra_MultiVector& depth = *result.ViewComponent("cell",false);
         const AmanziMesh::Mesh& mesh = *result.Mesh();
-        int z_dim = mesh.space_dimension() - 1;
-        
-        for (int c=0; c!=depth.MyLength(); ++c) {
-          if (depth[0][c] <= 0.) {
-            DepthModel_Cell(c, mesh, depth);
-          }            
-        }
-
+        DepthModel(mesh, depth);
       } else {
         Errors::Message message;
         message << "DepthEvaluator: Depth components on mesh entities named \"" << comp << "\" are not supported.";

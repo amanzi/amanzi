@@ -51,7 +51,7 @@ void UpwindPotentialDifference::CalculateCoefficientsOnFaces(
         const CompositeVector& overlap,
         const Teuchos::Ptr<CompositeVector>& face_coef) {
 
-  ASSERT(cell_coef.Ghosted());
+  AMANZI_ASSERT(cell_coef.Ghosted());
   
   // initialize the cell coefficients
   if (face_coef->HasComponent("cell")) {
@@ -77,7 +77,7 @@ void UpwindPotentialDifference::CalculateCoefficientsOnFaces(
 
   int nfaces = face_coef->size("face",false);
   for (unsigned int f=0; f!=nfaces; ++f) {
-    mesh->face_get_cells(f, AmanziMesh::USED, &cells);
+    mesh->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
 
     if (cells.size() == 1) {
       if (potential_f != Teuchos::null) {
@@ -113,8 +113,8 @@ void UpwindPotentialDifference::CalculateCoefficientsOnFaces(
           param = (potential_c[0][cells[1]] - potential_c[0][cells[0]])
               / (2*flow_eps) + 0.5;
         }
-        ASSERT(param >= 0.0);
-        ASSERT(param <= 1.0);
+        AMANZI_ASSERT(param >= 0.0);
+        AMANZI_ASSERT(param <= 1.0);
         face_coef_f[0][f] = cell_coef_c[0][cells[1]] * param
             + cell_coef_c[0][cells[0]] * (1. - param);
       }
@@ -137,10 +137,10 @@ UpwindPotentialDifference::UpdateDerivatives(const Teuchos::Ptr<State>& S,
   dconductivity.ScatterMasterToGhosted("cell");
   const Epetra_MultiVector& dcell_v = *dconductivity.ViewComponent("cell",true);
   
-  ASSERT(dconductivity.Ghosted());
+  AMANZI_ASSERT(dconductivity.Ghosted());
   
   // Grab potential
-  ASSERT(potential_key == potential_);
+  AMANZI_ASSERT(potential_key == potential_);
   Teuchos::RCP<const CompositeVector> pres = S->GetFieldData(potential_key);
   pres->ScatterMasterToGhosted("cell");
   const Epetra_MultiVector& pres_v = *pres->ViewComponent("cell",true);
@@ -152,7 +152,7 @@ UpwindPotentialDifference::UpdateDerivatives(const Teuchos::Ptr<State>& S,
 
   // Grab mesh and allocate space
   Teuchos::RCP<const AmanziMesh::Mesh> mesh = dconductivity.Mesh();
-  unsigned int nfaces_owned = mesh->num_entities(AmanziMesh::FACE,AmanziMesh::OWNED);
+  unsigned int nfaces_owned = mesh->num_entities(AmanziMesh::FACE,AmanziMesh::Parallel_type::OWNED);
   Jpp_faces->resize(nfaces_owned);
 
   // workspace
@@ -161,7 +161,7 @@ UpwindPotentialDifference::UpdateDerivatives(const Teuchos::Ptr<State>& S,
   
   for (unsigned int f=0; f!=nfaces_owned; ++f) {
     AmanziMesh::Entity_ID_List cells;
-    mesh->face_get_cells(f, AmanziMesh::USED, &cells);
+    mesh->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
     int mcells = cells.size();
 
     // create the local matrix
@@ -218,8 +218,8 @@ UpwindPotentialDifference::UpdateDerivatives(const Teuchos::Ptr<State>& S,
           param = (p[1] - p[0])
               / (2*flow_eps) + 0.5;
         }
-        ASSERT(param >= 0.0);
-        ASSERT(param <= 1.0);
+        AMANZI_ASSERT(param >= 0.0);
+        AMANZI_ASSERT(param <= 1.0);
 
         dK_dp[0] = (1.-param) * dcell_v[0][cells[0]];
         dK_dp[1] = param * dcell_v[0][cells[1]];

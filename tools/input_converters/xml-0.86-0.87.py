@@ -15,6 +15,7 @@ else:
 from amanzi_xml.utils import search as asearch
 from amanzi_xml.utils import io as aio
 from amanzi_xml.utils import errors as aerrors
+from amanzi_xml.common import parameter
 
 import flatten_pks
 
@@ -198,6 +199,114 @@ def vis(xml):
             vis_col.setName("column_*")
             vis_list.append(vis_col)
 
+
+def snow_depth(xml):
+    for seb_pk in asearch.generateElementByNamePath(xml, "PKs/SEB"):
+        if seb_pk.isElement("primary variable key") and \
+             asearch.childByName(seb_pk,"primary variable key").get("value") == "surface-snow_depth" and \
+             seb_pk.isElement("conserved quantity key") and \
+             asearch.childByName(seb_pk,"conserved quantity key").get("value") == "snow_depth":
+            asearch.childByName(seb_pk,"conserved quantity key").set("value", "surface-snow_depth")
+
+def snow_distribution(xml):
+    for snow_dist_pk in asearch.generateElementByNamePath(xml, "PKs/snow distribution"):
+        snow_dist_pk.append(parameter.DoubleParameter("distribution time", 86400.0))
+        if snow_dist_pk.isElement("primary variable key") and \
+             asearch.childByName(snow_dist_pk,"primary variable key").get("value") == "surface-precipitation_snow" and \
+             snow_dist_pk.isElement("conserved quantity key") and \
+             asearch.childByName(snow_dist_pk,"conserved quantity key").get("value") == "precipitation-snow":
+            asearch.childByName(snow_dist_pk,"conserved quantity key").set("value", "surface-precipitation-snow")
+        
+    for ssk in asearch.generateElementByNamePath(xml, "state/field evaluators/surface-snow_skin_potential"):
+        if not ssk.isElement("dt factor"):
+            ssk.append(parameter.DoubleParameter("dt factor", 86400.0))
+        else:
+            asearch.childByName(ssk, "dt factor").set("value","86400.0")
+
+    for ssc in asearch.generateElementByNamePath(xml, "state/field evaluators/surface-snow_conductivity"):
+        if not ssc.isElement("include dt factor"):
+            ssc.append(parameter.BoolParameter("include dt factor", True))
+        else:
+            asearch.childByName(ssc, "include dt factor").set("value","true")
+
+        if not ssc.isElement("dt factor"):
+            ssc.append(parameter.DoubleParameter("dt factor", 86400.0))
+        else:
+            asearch.childByName(ssc, "dt factor").set("value","86400.0")
+
+
+def seb(xml):
+    pk_list = [pk for pk in asearch.generateElementByNamePath(xml, "PKs")]
+    assert(len(pk_list) == 1)
+    pk_list = pk_list[0]
+
+    seb_pk = None
+    flow_sub_pk = None
+    flow_surf_pk = None
+    energy_sub_pk = None
+    energy_surf_pk = None
+    # make sure we can find all of them!
+    for pk in pk_list:
+        if asearch.childByName(pk,"PK type").get("value") == "surface balance implicit":
+            if seb_pk is not None:
+                raise RuntimeError("Cannot deal with SEB changes!")
+            seb_pk = pk
+        elif asearch.childByName(pk,"PK type").get("value") == "permafrost flow":
+            if flow_sub_pk is not None:
+                raise RuntimeError("Cannot deal with SEB changes!")
+            flow_sub_pk = pk
+        elif asearch.childByName(pk,"PK type").get("value") == "overland flow with ice":
+            if flow_surf_pk is not None:
+                raise RuntimeError("Cannot deal with SEB changes!")
+            flow_surf_pk = pk
+        elif asearch.childByName(pk,"PK type").get("value") == "three-phase energy":
+            if energy_sub_pk is not None:
+                raise RuntimeError("Cannot deal with SEB changes!")
+            energy_sub_pk = pk
+        elif asearch.childByName(pk,"PK type").get("value") == "surface energy":
+            if energy_surf_pk is not None:
+                raise RuntimeError("Cannot deal with SEB changes!")
+            energy_surf_pk = pk
+
+    if seb_pk is None or flow_sub_pk is None or flow_surf_pk is None or energy_sub_pk is None or energy_surf_pk is None:
+        return
+
+    # check the source terms for all
+    def set_source_term(pk):
+        if not pk.isElement("source term"):
+            pk.append(parameter.BoolParameter("source term", True))
+        else:
+            asearch.childByName(pk, "source term").set("value","true")
+    set_source_term(flow_sub_pk)
+    set_source_term(flow_surf_pk)
+    set_source_term(energy_sub_pk)
+    set_source_term(energy_surf_pk)
+
+    if not flow_sub_pk.isElement("mass source key"):
+        flow_sub_pk.append(parameter.StringParameter("mass source key", "mass_source"))
+    if not flow_surf_pk.isElement("source key"):
+        flow_surf_pk.append(parameter.StringParameter("source key", "surface-mass_source"))
+    if not flow_surf_pk.isElement("mass source in meters"):
+        flow_surf_pk.append(parameter.BoolParameter("mass source in meters", True))
+    if not energy_sub_pk.isElement("energy source"):
+        energy_sub_pk.append(parameter.StringParameter("energy source", "total_energy_source"))
+    if not energy_surf_pk.isElement("energy source"):
+        energy_surf_pk.append(parameter.StringParameter("energy source", "surface-total_energy_source"))
+
+    eval_list = [ev for ev in asearch.generateElementByNamePath(xml, "state/field evaluators")]
+    assert(len(eval_list) == 1)
+    eval_list = eval_list[0]
+    eval_list.pop("surface-total_energy_source")
+    eval_list.pop("surface-mass_source_enthalpy")
+    eval_list.pop("surface-source_internal_energy")
+    molar_dens = asearch.childByName(eval_list, "surface-source_molar_density")
+    if molar_dens.isElement("temperature key"):
+        asearch.childByName(molar_dens, "temperature key").set("value", "surface-temperature")
+    else:
+        molar_dens.append(parameter.StringParameter("temperature key", "surface-temperature"))
+    
+            
+            
 def update(xml):
     flatten_pks.flatten_pks(xml)
     fixEvaluator(xml, "ponded_depth", "surface-ponded_depth")
@@ -220,6 +329,9 @@ def update(xml):
     primary_variable(xml)
     mesh_list(xml)
     vis(xml)
+    snow_depth(xml)
+    snow_distribution(xml)
+    seb(xml)
 
 if __name__ == "__main__":
     import argparse

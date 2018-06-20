@@ -84,7 +84,7 @@ void EnergySurfaceIce::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
       plist_->get<bool>("coupled to subsurface via temperature", false);
   coupled_to_subsurface_via_flux_ =
       plist_->get<bool>("coupled to subsurface via flux", false);
-  ASSERT(! (coupled_to_subsurface_via_flux_ && coupled_to_subsurface_via_temp_));
+  AMANZI_ASSERT(! (coupled_to_subsurface_via_flux_ && coupled_to_subsurface_via_temp_));
 
   if (coupled_to_subsurface_via_temp_ || coupled_to_subsurface_via_flux_ ) {
     // -- ensure mass source from subsurface exists
@@ -153,7 +153,7 @@ void EnergySurfaceIce::Initialize(const Teuchos::Ptr<State>& S) {
       const Epetra_MultiVector& temp = *S->GetFieldData(key_ss)
         ->ViewComponent("face",false);
 
-      unsigned int ncells_surface = mesh_->num_entities(AmanziMesh::CELL,AmanziMesh::OWNED);
+      unsigned int ncells_surface = mesh_->num_entities(AmanziMesh::CELL,AmanziMesh::Parallel_type::OWNED);
       for (unsigned int c=0; c!=ncells_surface; ++c) {
         // -- get the surface cell's equivalent subsurface face and neighboring cell
         AmanziMesh::Entity_ID f =
@@ -175,7 +175,7 @@ void EnergySurfaceIce::Initialize(const Teuchos::Ptr<State>& S) {
       assert(domain_ == "surface_star");
       Epetra_MultiVector& surf_temp = *S->GetFieldData(key_, name_)->ViewComponent("cell",false);
       
-      unsigned int ncells_surface = mesh_->num_entities(AmanziMesh::CELL,AmanziMesh::OWNED);
+      unsigned int ncells_surface = mesh_->num_entities(AmanziMesh::CELL,AmanziMesh::Parallel_type::OWNED);
      
       for (unsigned int c=0; c!=ncells_surface; ++c) {
         int id = mesh_->cell_map(false).GID(c);
@@ -198,7 +198,7 @@ void EnergySurfaceIce::Initialize(const Teuchos::Ptr<State>& S) {
 
   Teuchos::RCP<Relations::EOSEvaluator> eos_eval =
     Teuchos::rcp_dynamic_cast<Relations::EOSEvaluator>(eos_fe);
-  ASSERT(eos_eval != Teuchos::null);
+  AMANZI_ASSERT(eos_eval != Teuchos::null);
   eos_liquid_ = eos_eval->get_EOS();
 
   Teuchos::RCP<FieldEvaluator> iem_fe =
@@ -207,7 +207,7 @@ void EnergySurfaceIce::Initialize(const Teuchos::Ptr<State>& S) {
   Teuchos::RCP<Energy::IEMEvaluator> iem_eval =
     Teuchos::rcp_dynamic_cast<Energy::IEMEvaluator>(iem_fe);
 
-  ASSERT(iem_eval != Teuchos::null);
+  AMANZI_ASSERT(iem_eval != Teuchos::null);
   iem_liquid_ = iem_eval->get_IEM();
 }
 
@@ -232,9 +232,9 @@ void EnergySurfaceIce::Initialize(const Teuchos::Ptr<State>& S) {
 //   AmanziMesh::Entity_ID_List cells;
 //   unsigned int nfaces = pres_c.MyLength();
 //   for (unsigned int f=0; f!=nfaces; ++f) {
-//     mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+//     mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
 //     if (bc_markers_adv_[f] == Operators::OPERATOR_BC_DIRICHLET) {
-//       ASSERT(bc_markers_[f] == Operators::OPERATOR_BC_DIRICHLET); // Dirichlet data -- does not yet handle split fluxes here
+//       AMANZI_ASSERT(bc_markers_[f] == Operators::OPERATOR_BC_DIRICHLET); // Dirichlet data -- does not yet handle split fluxes here
 //       double T = bc_values_[f];
 //       double p = pres_c[0][cells[0]];
 //       double dens = eos_liquid_->MolarDensity(T,p);
@@ -300,9 +300,9 @@ void EnergySurfaceIce::AddSources_(const Teuchos::Ptr<State>& S,
       if (flux > 0.) { // exfiltration
         // get the subsurface's enthalpy
         AmanziMesh::Entity_ID f = mesh_->entity_get_parent(AmanziMesh::CELL, c);
-        S->GetMesh(domain_ss)->face_get_cells(f, AmanziMesh::USED, &cells);
+        S->GetMesh(domain_ss)->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
 
-        ASSERT(cells.size() == 1);
+        AMANZI_ASSERT(cells.size() == 1);
         g_c[0][c] -= flux * enth_subsurf[0][cells[0]];
         //        std::cout << "source = " << flux << " * " << enth_subsurf[0][cells[0]] << " = " << -flux * enth_subsurf[0][cells[0]] << std::endl;
         //        std::cout << "OR source = " << flux << " * " << enth_surf[0][c] << " = " << -flux * enth_surf[0][c] << std::endl;

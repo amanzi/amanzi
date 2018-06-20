@@ -130,7 +130,7 @@ OverlandSubgridWaterContentEvaluator::EvaluateFieldPartialDerivative_(const Teuc
         Key wrt_key, const Teuchos::Ptr<CompositeVector>& result)
 {
 
-  ASSERT(wrt_key == pres_key_);
+  AMANZI_ASSERT(wrt_key == pres_key_);
 
   Epetra_MultiVector& res = *result->ViewComponent("cell",false);
   const Epetra_MultiVector& pres = *S->GetFieldData(pres_key_)

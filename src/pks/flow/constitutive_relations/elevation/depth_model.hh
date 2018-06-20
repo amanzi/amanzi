@@ -15,6 +15,9 @@ namespace Amanzi {
 namespace Flow {
 
 void
+DepthModel(const AmanziMesh::Mesh& mesh, Epetra_MultiVector& depth);
+
+void
 DepthModel_Cell(int c, const AmanziMesh::Mesh& mesh,
                 Epetra_MultiVector& depth);
 

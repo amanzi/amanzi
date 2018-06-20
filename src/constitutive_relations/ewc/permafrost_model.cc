@@ -60,77 +60,77 @@ void PermafrostModel::InitializeModel(const Teuchos::Ptr<State>& S,
   
   Teuchos::RCP<Flow::WRMPermafrostEvaluator> wrm_me =
       Teuchos::rcp_dynamic_cast<Flow::WRMPermafrostEvaluator>(me);
-  ASSERT(wrm_me != Teuchos::null);
+  AMANZI_ASSERT(wrm_me != Teuchos::null);
   wrms_ = wrm_me->get_WRMPermafrostModels();
   
   // -- liquid EOS
   me = S->GetFieldEvaluator(Keys::getKey(domain, "molar_density_liquid"));
   Teuchos::RCP<Relations::EOSEvaluator> eos_liquid_me =
       Teuchos::rcp_dynamic_cast<Relations::EOSEvaluator>(me);
-  ASSERT(eos_liquid_me != Teuchos::null);
+  AMANZI_ASSERT(eos_liquid_me != Teuchos::null);
   liquid_eos_ = eos_liquid_me->get_EOS();
 
   // -- ice EOS
   me = S->GetFieldEvaluator(Keys::getKey(domain, "molar_density_ice"));
   Teuchos::RCP<Relations::EOSEvaluator> eos_ice_me =
       Teuchos::rcp_dynamic_cast<Relations::EOSEvaluator>(me);
-  ASSERT(eos_ice_me != Teuchos::null);
+  AMANZI_ASSERT(eos_ice_me != Teuchos::null);
   ice_eos_ = eos_ice_me->get_EOS();
 
   // -- gas EOS
   me = S->GetFieldEvaluator(Keys::getKey(domain, "molar_density_gas"));
   Teuchos::RCP<Relations::EOSEvaluator> eos_gas_me =
       Teuchos::rcp_dynamic_cast<Relations::EOSEvaluator>(me);
-  ASSERT(eos_gas_me != Teuchos::null);
+  AMANZI_ASSERT(eos_gas_me != Teuchos::null);
   gas_eos_ = eos_gas_me->get_EOS();
 
   // -- gas vapor pressure
   me = S->GetFieldEvaluator(Keys::getKey(domain, "mol_frac_gas"));
   Teuchos::RCP<Relations::MolarFractionGasEvaluator> mol_frac_me =
     Teuchos::rcp_dynamic_cast<Relations::MolarFractionGasEvaluator>(me);
-  ASSERT(mol_frac_me != Teuchos::null);
+  AMANZI_ASSERT(mol_frac_me != Teuchos::null);
   vpr_ = mol_frac_me->get_VaporPressureRelation();
 
   // -- capillary pressure for ice/water
   me = S->GetFieldEvaluator(Keys::getKey(domain, "capillary_pressure_liq_ice"));
   Teuchos::RCP<Flow::PCIceEvaluator> pc_ice_me =
     Teuchos::rcp_dynamic_cast<Flow::PCIceEvaluator>(me);
-  ASSERT(pc_ice_me != Teuchos::null);
+  AMANZI_ASSERT(pc_ice_me != Teuchos::null);
   pc_i_ = pc_ice_me->get_PCIceWater();
 
   // -- capillary pressure for liq/gas
   me = S->GetFieldEvaluator(Keys::getKey(domain, "capillary_pressure_gas_liq"));
   Teuchos::RCP<Flow::PCLiquidEvaluator> pc_liq_me =
     Teuchos::rcp_dynamic_cast<Flow::PCLiquidEvaluator>(me);
-  ASSERT(pc_liq_me != Teuchos::null);
+  AMANZI_ASSERT(pc_liq_me != Teuchos::null);
   pc_l_ = pc_liq_me->get_PCLiqAtm();
   
   // -- iem for liquid
   me = S->GetFieldEvaluator(Keys::getKey(domain, "internal_energy_liquid"));
   Teuchos::RCP<Energy::IEMEvaluator> iem_liquid_me =
       Teuchos::rcp_dynamic_cast<Energy::IEMEvaluator>(me);
-  ASSERT(iem_liquid_me != Teuchos::null);
+  AMANZI_ASSERT(iem_liquid_me != Teuchos::null);
   liquid_iem_ = iem_liquid_me->get_IEM();
 
   // -- iem for ice
   me = S->GetFieldEvaluator(Keys::getKey(domain, "internal_energy_ice"));
   Teuchos::RCP<Energy::IEMEvaluator> iem_ice_me =
       Teuchos::rcp_dynamic_cast<Energy::IEMEvaluator>(me);
-  ASSERT(iem_ice_me != Teuchos::null);
+  AMANZI_ASSERT(iem_ice_me != Teuchos::null);
   ice_iem_ = iem_ice_me->get_IEM();
 
   // -- iem for gas
   me = S->GetFieldEvaluator(Keys::getKey(domain, "internal_energy_gas"));
   Teuchos::RCP<Energy::IEMWaterVaporEvaluator> iem_gas_me =
       Teuchos::rcp_dynamic_cast<Energy::IEMWaterVaporEvaluator>(me);
-  ASSERT(iem_gas_me != Teuchos::null);
+  AMANZI_ASSERT(iem_gas_me != Teuchos::null);
   gas_iem_ = iem_gas_me->get_IEM();
 
   // -- iem for rock
   me = S->GetFieldEvaluator(Keys::getKey(domain, "internal_energy_rock"));
   Teuchos::RCP<Energy::IEMEvaluator> iem_rock_me =
       Teuchos::rcp_dynamic_cast<Energy::IEMEvaluator>(me);
-  ASSERT(iem_rock_me != Teuchos::null);
+  AMANZI_ASSERT(iem_rock_me != Teuchos::null);
   rock_iem_ = iem_rock_me->get_IEM();
 
   // -- porosity
@@ -140,13 +140,13 @@ void PermafrostModel::InitializeModel(const Teuchos::Ptr<State>& S,
   if(!poro_leij_){
     Teuchos::RCP<Flow::CompressiblePorosityEvaluator> poro_me =
       Teuchos::rcp_dynamic_cast<Flow::CompressiblePorosityEvaluator>(me);
-    ASSERT(poro_me != Teuchos::null);
+    AMANZI_ASSERT(poro_me != Teuchos::null);
     poro_models_ = poro_me->get_Models();
   }
   else{
     Teuchos::RCP<Flow::CompressiblePorosityLeijnseEvaluator> poro_me =
       Teuchos::rcp_dynamic_cast<Flow::CompressiblePorosityLeijnseEvaluator>(me);
-    ASSERT(poro_me != Teuchos::null);
+    AMANZI_ASSERT(poro_me != Teuchos::null);
     poro_leij_models_ = poro_me->get_Models();
   }
   
@@ -165,7 +165,7 @@ void PermafrostModel::UpdateModel(const Teuchos::Ptr<State>& S, int c) {
   else
     poro_leij_model_ = poro_leij_models_->second[(*poro_leij_models_->first)[c]];
     
-  ASSERT(IsSetUp_());
+  AMANZI_ASSERT(IsSetUp_());
 }
 
 bool PermafrostModel::IsSetUp_() {
@@ -195,12 +195,11 @@ bool PermafrostModel::IsSetUp_() {
 bool 
 PermafrostModel::Freezing(double T, double p) {
   double eff_p = std::max(p_atm_, p);
-  double rho_l = liquid_eos_->MolarDensity(T,eff_p);
-  double mass_rho_l = liquid_eos_->MassDensity(T,eff_p);
 
   double pc_l = pc_l_->CapillaryPressure(p,p_atm_);
   double pc_i;
   if (pc_i_->IsMolarBasis()) {
+    double rho_l = liquid_eos_->MolarDensity(T,eff_p);
     pc_i = pc_i_->CapillaryPressure(T, rho_l);
   } else {
     double mass_rho_l = liquid_eos_->MassDensity(T,eff_p);
@@ -215,12 +214,11 @@ int PermafrostModel::EvaluateSaturations(double T, double p, double& s_gas, doub
   int ierr = 0;
   try {
     double eff_p = std::max(p_atm_, p);
-    double rho_l = liquid_eos_->MolarDensity(T,eff_p);
-    double mass_rho_l = liquid_eos_->MassDensity(T,eff_p);
 
     double pc_l = pc_l_->CapillaryPressure(p, p_atm_);
     double pc_i;
     if (pc_i_->IsMolarBasis()) {
+      double rho_l = liquid_eos_->MolarDensity(T,eff_p);
       pc_i = pc_i_->CapillaryPressure(T, rho_l);
     } else {
       double mass_rho_l = liquid_eos_->MassDensity(T,eff_p);
@@ -257,7 +255,6 @@ int PermafrostModel::EvaluateEnergyAndWaterContent_(double T, double p, AmanziGe
     double eff_p = std::max(p_atm_, p);
 
     double rho_l = liquid_eos_->MolarDensity(T,eff_p);
-    double mass_rho_l = liquid_eos_->MassDensity(T,eff_p);
     double rho_i = ice_eos_->MolarDensity(T,eff_p);
     double rho_g = gas_eos_->MolarDensity(T,eff_p);
     double omega = vpr_->SaturatedVaporPressure(T)/p_atm_;

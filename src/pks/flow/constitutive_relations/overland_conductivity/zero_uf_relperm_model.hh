@@ -27,12 +27,12 @@ class ZeroUFRelPermModel : public SurfaceRelPermModel {
   virtual double SurfaceRelPerm(double uf, double h);
 
   virtual double DSurfaceRelPermDUnfrozenFraction(double uf, double h) {
-    ASSERT(0);
+    AMANZI_ASSERT(0);
     return 0.;
   }
 
   virtual double DSurfaceRelPermDPondedDepth(double uf, double h) {
-    ASSERT(0);
+    AMANZI_ASSERT(0);
     return 0.;
   }
 

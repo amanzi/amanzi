@@ -407,7 +407,7 @@ double SurfaceEnergyBalance_VPL::CalcAlbedo(EnergyBalance& eb) {
   }
 
 #ifdef ENABLE_DBC
-  ASSERT(std::abs((perSnow + perTundra + perWater) - 1.) < 1.e-16);
+  AMANZI_ASSERT(std::abs((perSnow + perTundra + perWater) - 1.) < 1.e-16);
 #endif
 
   // weighted average function for surface albedo
@@ -462,7 +462,7 @@ double SurfaceEnergyBalance_VPL::CalcSnowTemperature(LocalData& seb) {
   }
 
 #ifdef ENABLE_DBC
-  ASSERT(Fa*Fb < 0);
+  AMANZI_ASSERT(Fa*Fb < 0);
 #endif
 
   int maxIterations = 200;
@@ -485,7 +485,7 @@ double SurfaceEnergyBalance_VPL::CalcSnowTemperature(LocalData& seb) {
   }
 
 #ifdef ENABLE_DBC
-  ASSERT(std::abs(res) <= tol);
+  AMANZI_ASSERT(std::abs(res) <= tol);
 #endif
   return Xx;
 }

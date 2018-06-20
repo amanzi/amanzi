@@ -18,40 +18,35 @@ Solves Richards equation:
   \frac{\partial \Theta}{\partial t} - \nabla \frac{k_r n_l}{\mu} K ( \nabla p + \rho g \cdot \hat{z} ) = Q_w
 
 
-Options:
+Includes options from:
 
-Variable naming:
-
-* `"domain`" ``[string]`` **""**  Defaults to the base subsurface domain.
-
-* `"primary variable`" ``[string]`` The primary variable associated with this PK, typically `"pressure`"
-
+* ``[pk-physical-default-spec]`` PKPhysicalDefault_
+# ``[pk-bdf-default-spec]`` PKBDFDefault_
+* ``[pk-physical-bdf-default-spec]`` PKPhysicalBDFDefault_
 
 Other variable names, typically not set as the default is basically always good:
 
-* `"conserved quantity suffix`" ``[string]`` **"water_content"**  If set, changes the conserved quantity key.
+* `"conserved quantity key`" ``[string]`` **DOMAIN-water_content** Typically not set, default is good. ``[mol]``
 
-* `"conserved quantity key`" ``[string]`` **"DOMAIN-CONSERVED_QUANTITY_SUFFIX"** Typically not set, default is good. ``[mol]``
+* `"mass density key`" ``[string]`` **DOMAIN-mass_density_liquid** liquid water density ``[kg m^-3]``
 
-* `"mass density key`" ``[string]`` **"DOMAIN-mass_density_liquid"** liquid water density ``[kg m^-3]``
+* `"molar density key`" ``[string]`` **DOMAIN-molar_density_liquid** liquid water density ``[mol m^-3]``
 
-* `"molar density key`" ``[string]`` **"DOMAIN-molar_density_liquid"** liquid water density ``[mol m^-3]``
+* `"permeability key`" ``[string]`` **DOMAIN-permeability** permeability of the soil medium ``[m^2]``
 
-* `"permeability key`" ``[string]`` **"DOMAIN-permeability"** permeability of the soil medium ``[m^2]``
+* `"conductivity key`" ``[string]`` **DOMAIN-relative_permeability** scalar coefficient of the permeability ``[-]``
 
-* `"conductivity key`" ``[string]`` **"DOMAIN-relative_permeability"** scalar coefficient of the permeability ``[-]``
+* `"upwind conductivity key`" ``[string]`` **DOMAIN-upwind_relative_permeability** upwinded (face-based) scalar coefficient of the permeability.  Note the units of this are strange, but this represents :math:`\frac{n_l k_r}{\mu}`  ``[mol kg^-1 s^1 m^-2]``
 
-* `"upwind conductivity key`" ``[string]`` **"DOMAIN-upwind_relative_permeability"** upwinded (face-based) scalar coefficient of the permeability.  Note the units of this are strange, but this represents :math:`\frac{n_l k_r}{\mu}`  ``[mol kg^-1 s^1 m^-2]``
+* `"darcy flux key`" ``[string]`` **DOMAIN-mass_flux** mass flux across a face ``[mol s^-1]``
 
-* `"darcy flux key`" ``[string]`` **"DOMAIN-mass_flux"** mass flux across a face ``[mol s^-1]``
+* `"darcy flux direction key`" ``[string]`` **DOMAIN-mass_flux_direction** direction of the darcy flux (used in upwinding :math:`k_r`) ``[??]``
 
-* `"darcy flux direction key`" ``[string]`` **"DOMAIN-mass_flux_direction"** direction of the darcy flux (used in upwinding :math:`k_r`) ``[??]``
+* `"darcy velocity key`" ``[string]`` **DOMAIN-darcy_velocity** darcy velocity vector, interpolated from faces to cells ``[m s^-1]``
 
-* `"darcy velocity key`" ``[string]`` **"DOMAIN-darcy_velocity"** darcy velocity vector, interpolated from faces to cells ``[m s^-1]``
+* `"darcy flux key`" ``[string]`` **DOMAIN-mass_flux** mass flux across a face ``[mol s^-1]``
 
-* `"darcy flux key`" ``[string]`` **"DOMAIN-mass_flux"** mass flux across a face ``[mol s^-1]``
-
-* `"saturation key`" ``[string]`` **"DOMAIN-saturation_liquid"** volume fraction of the liquid phase ``[-]``
+* `"saturation key`" ``[string]`` **DOMAIN-saturation_liquid** volume fraction of the liquid phase ``[-]``
 
 Discretization control:
 
@@ -59,51 +54,28 @@ Discretization control:
 
 * `"diffusion preconditioner`" ``[list]`` An PDE_Diffusion_ spec describing the diffusive parts of the preconditioner.
 
-
-Time integration and timestep control:
-
-* `"initial time step`" ``[double]`` **1.** Max initial time step size ``[s]``
-
-* `"time integrator`" ``[time-integrator-spec]`` is a TimeIntegrator_.  Note
-  that this is only provided if this Richards PK is not strongly coupled to
-  other PKs.
-
-* `"linear solver`" ``[linear-solver-spec]`` is a LinearSolver_ spec.  Note
+* `"linear solver`" ``[linear-solver-typed-spec]`` **optional** is a LinearSolver_ spec.  Note
   that this is only used if this PK is not strongly coupled to other PKs.
-
-* `"preconditioner`" ``[preconditioner-spec]`` is a Preconditioner_ spec.
-  Note that this is only used if this PK is not strongly coupled to other PKs.
-
-* `"initial condition`" ``[initial-condition-spec]`` See InitialConditions_.
-  Additionally, the following parameter is supported:
-
-  - `"initialize faces from cell`" ``[bool]`` **false** Indicates that the
-    primary variable field has both CELL and FACE objects, and the FACE values
-    are calculated as the average of the neighboring cells.
-
-Error control:
-
-* `"absolute error tolerance`" [double] **DERIVED** Defaults to a porosity of 0.5 * a saturation of 0.1 * n_l.  A small, but significant, amount of water.
-
-* `"relative error tolerance`" [double] **1** Take the error relative to the amount of water present in that cell.
-
-* `"flux tolerance`" [double] **1**
-
-  Multiplies the error in flux (on a face) relative to the min of water in the
-  neighboring cells.  Typically only changed if infiltration is very small and
-  the boundary condition is not converging, at which point it can be decreased
-  by an order of magnitude at a time until the boundary condition is
-  satisfied.
 
 Boundary conditions:
 
-* `"boundary conditions`" ``[subsurface-flow-bc-spec]`` **defaults to Neuman, 0 normal flux**  See `Flow-specific Boundary Conditions`_
+//* `"boundary conditions`" ``[subsurface-flow-bc-spec]`` Defaults to Neuman, 0 normal flux.  See `Flow-specific Boundary Conditions`_
 
 Physics control:
 
 * `"permeability rescaling`" ``[double]`` **1** Typically 1e7 or order :math:`sqrt(K)` is about right.  This rescales things to stop from multiplying by small numbers (permeability) and then by large number (:math:`\rho / \mu`).
 
-May inherit options from PKPhysicalBDFBase_
+* `"water retention evaluator`" ``[wrm-evaluator-spec]`` The WRM.  This needs to go away!
+
+This PK additionally requires the following:
+
+EVALUATORS:
+- `"conserved quantity`"
+- `"mass density`"
+- `"molar density`"
+- `"permeability`"
+- `"conductivity`"
+- `"saturation`"
 
 */
 
@@ -310,9 +282,6 @@ protected:
   // residual vector for vapor diffusion
   Teuchos::RCP<CompositeVector> res_vapor;
   // note PC is in PKPhysicalBDFBase
-
-  // custom enorm tolerances
-  double flux_tol_;
 
   // boundary condition data
   Teuchos::RCP<Functions::BoundaryFunction> bc_pressure_;

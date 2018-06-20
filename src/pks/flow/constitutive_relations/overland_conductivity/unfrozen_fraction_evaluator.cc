@@ -26,7 +26,7 @@ UnfrozenFractionEvaluator::UnfrozenFractionEvaluator(Teuchos::ParameterList& pli
   }
 
   // create the model, hard-coded until we have a 2nd model
-  ASSERT(plist_.isSublist("unfrozen fraction model"));
+  AMANZI_ASSERT(plist_.isSublist("unfrozen fraction model"));
   Teuchos::ParameterList sublist = plist_.sublist("unfrozen fraction model");
   model_ = Teuchos::rcp(new UnfrozenFractionModel(sublist));
 }
@@ -66,7 +66,7 @@ void UnfrozenFractionEvaluator::EvaluateFieldPartialDerivative_(
     const Teuchos::Ptr<State>& S,
     Key wrt_key, const Teuchos::Ptr<CompositeVector>& result) {
 
-  ASSERT(wrt_key == temp_key_);
+  AMANZI_ASSERT(wrt_key == temp_key_);
   Teuchos::RCP<const CompositeVector> temp = S->GetFieldData(temp_key_);
 
   for (CompositeVector::name_iterator comp=result->begin();

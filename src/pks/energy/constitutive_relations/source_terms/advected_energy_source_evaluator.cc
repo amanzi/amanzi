@@ -82,10 +82,10 @@ AdvectedEnergySourceEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
     }
   }
 
-  if (source_units_ != SOURCE_UNITS_MOLS_PER_SECOND) {
+  if (source_units_ == SOURCE_UNITS_MOLS_PER_SECOND) {
     unsigned int ncells = res.MyLength();
     for (unsigned int c=0; c!=ncells; ++c) {
-      res[0][c] *= cv[0][c];
+      res[0][c] /= cv[0][c];
     }
   }
   
@@ -95,7 +95,7 @@ AdvectedEnergySourceEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
         ->ViewComponent("cell",false);
     unsigned int ncells = res.MyLength();
     for (unsigned int c=0; c!=ncells; ++c) {
-      res[0][c] += cv[0][c] * cond[0][c];
+      res[0][c] += cond[0][c];
     }
   }
 }

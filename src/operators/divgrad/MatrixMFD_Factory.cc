@@ -80,7 +80,7 @@ CreateMatrixMFD(Teuchos::ParameterList& plist,
     }
   }
 
-  ASSERT(0);
+  AMANZI_ASSERT(0);
   return Teuchos::null;
 }
 
@@ -104,7 +104,7 @@ CreateMatrixMFD_Coupled(Teuchos::ParameterList& plist,
     return Teuchos::rcp(new MatrixMFD_Coupled(plist, mesh));
   }
 
-  ASSERT(0);
+  AMANZI_ASSERT(0);
   return Teuchos::null;
 }
 

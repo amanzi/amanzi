@@ -94,7 +94,7 @@ void PoolTransferEvaluator::EvaluateFieldPartialDerivative_(
     const Teuchos::Ptr<State>& S,
     Key wrt_key,
     const std::vector<Teuchos::Ptr<CompositeVector> >& results) {
-  ASSERT(0);
+  AMANZI_ASSERT(0);
 }
 
 void
@@ -107,9 +107,9 @@ PoolTransferEvaluator::InitModel_(const Teuchos::Ptr<State>& S, int npools) {
        r!=regions.end(); ++r) {
     // currently only handles century!
     Teuchos::ParameterList& model_list = models_list.sublist(*r);
-    ASSERT(model_list.get<std::string>("model type", "century") == "century");
-    ASSERT(model_list.get<int>("number of pools", 7) <= npools);
-    ASSERT(npools == 7);
+    AMANZI_ASSERT(model_list.get<std::string>("model type", "century") == "century");
+    AMANZI_ASSERT(model_list.get<int>("number of pools", 7) <= npools);
+    AMANZI_ASSERT(npools == 7);
     double percent_sand = model_list.get<double>("percent sand");
     InitCentryModel_(percent_sand);    
   }

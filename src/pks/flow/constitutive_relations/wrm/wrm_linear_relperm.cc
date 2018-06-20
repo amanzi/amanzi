@@ -19,7 +19,7 @@ WRMLinearRelPerm::WRMLinearRelPerm(Teuchos::ParameterList& plist) :
 
 
 void WRMLinearRelPerm::InitializeFromPlist_() {
-  ASSERT(plist_.isSublist("WRM parameters"));
+  AMANZI_ASSERT(plist_.isSublist("WRM parameters"));
   Teuchos::ParameterList sublist = plist_.sublist("WRM parameters");
 
   WRMFactory fac;

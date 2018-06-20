@@ -1,6 +1,5 @@
 # -*- mode: cmake -*-
 
-
 # Need this define. Errors from MSTK include files 
 # about MPI_COMM_WORLD. --lpritch
 add_definitions("-DMSTK_HAVE_MPI")
@@ -13,6 +12,7 @@ if (WITH_MSTK_2_21rc1_OR_NEWER)
   add_definitions("-DMSTK_2_21rc1_OR_NEWER")
 endif ()
 
+#project(EXECUTABLE)
 
 #
 #  ATS
@@ -71,7 +71,8 @@ include_evaluators_directories(LISTNAME TRANSPORT_AMANZI_REG_INCLUDES)
   
 
 
-add_executable(ats plant_1D_mesh.cc ats_mesh_factory.cc simulation_driver.cc main.cc )
+add_executable(ats main.cc plant_1D_mesh.cc ats_mesh_factory.cc simulation_driver.cc )
+
 
 set(ATS_LIBS
 		     coordinator
@@ -85,7 +86,7 @@ set(ATS_LIBS
                       pk_energy_base
 		      pk_flow_permafrost
                       pk_flow_richards
-#                      pk_flow_snow_distribution
+                      pk_flow_snow_distribution
 #                      pk_flow_overland
                       pk_flow_overland_pressure
                       pk_flow_icy_overland
@@ -137,75 +138,18 @@ set(AMANZI_LIBS
 		      amanzi_transport
 )
 
-# set(GEOCHEM_LIBS 
-#                  /home/scratch/dasvyat/Amanzi/build/amanzi_default/lib/libchemistry_pk.a 
-#                  /home/scratch/dasvyat/Amanzi/build/amanzi_default/lib/libgeochembase.a 
-#                  /home/scratch/dasvyat/Amanzi/build/amanzi_default/lib/libgeochemsolvers.a 
-#                  /home/scratch/dasvyat/Amanzi/build/amanzi_default/lib/libgeochemutil.a 
-#                  /home/scratch/dasvyat/Amanzi/build/amanzi_default/lib/libmpc_tree.a 
-#                  /home/scratch/dasvyat/Amanzi/build/amanzi_default/lib/libtransport.a
-# )
-
-target_link_libraries(ats ${ATS_LIBS} ${AMANZI_LIBS})# ${GEOCHEM_LIBS})
-
-
+target_link_libraries(ats ${ATS_LIBS} ${AMANZI_LIBS})
 install(TARGETS ats DESTINATION bin)
 
-#------------------------------------------------------------------------------#
-# ATS F90 test program
-#------------------------------------------------------------------------------#
 
-if (Amanzi_DISABLE_MPI_CXX_BINDINGS)  
+message("build tests = ${BUILD_TESTS}")
+if ( BUILD_TESTS )
+    include_directories(${Amanzi_TPL_UnitTest_INCLUDE_DIRS})
+    include_directories(".")
 
-   add_executable(ats_f90 main.f90)
-
-   target_link_libraries(
-        # Target
-	ats_f90
-
-        # ATS cross lib
-	atsx
-
-    ${ATS_LIBS}
-	${AMANZI_LIBS}
-	${Amanzi_TPL_Trilinos_LIBRARIES}
-
-        # MPI
-	${Amanzi_MPI_Fortran_LIBRARIES}
-	${Amanzi_MPI_C_LIBRARIES}
-   )
-
-   set_target_properties(ats_f90 PROPERTIES LINKER_LANGUAGE Fortran)
-
-   #---------------------------------------------------------------------------#
-   # Install rule
-   #---------------------------------------------------------------------------#
-
-   install(TARGETS ats_f90 DESTINATION bin)
-
-
-
-   add_executable(ats_test_clm_driver test_clm_driver.cc)
-
-   target_link_libraries(
-        # Target
-	ats_test_clm_driver
-
-        # ATS cross lib
-	atsx
-
-    ${ATS_LIBS}
-	${AMANZI_LIBS}
-	${Amanzi_TPL_Trilinos_LIBRARIES}
-
-        # MPI
-	${Amanzi_MPI_C_LIBRARIES}
-   )
-
-   #---------------------------------------------------------------------------#
-   # Install rule
-   #---------------------------------------------------------------------------#
-
-   install(TARGETS ats_test_clm_driver DESTINATION bin)
-
-endif()
+    # Test:
+    add_amanzi_test(plant_mesh plant_mesh
+                    KIND unit
+                    SOURCE test/main.cc test/plant_mesh.cc plant_1D_mesh.cc
+                    LINK_LIBS ${ATS_LIBS} ${AMANZI_LIBS} ${Amanzi_TPL_UnitTest_LIBRARIES})
+endif()   

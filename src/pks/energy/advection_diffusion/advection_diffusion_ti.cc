@@ -82,7 +82,7 @@ int AdvectionDiffusion::ApplyPreconditioner(Teuchos::RCP<const TreeVector> u, Te
 
 // updates the preconditioner
 void AdvectionDiffusion::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> up, double h) {
-  ASSERT(std::abs(S_next_->time() - t) <= 1.e-4*t);
+  AMANZI_ASSERT(std::abs(S_next_->time() - t) <= 1.e-4*t);
   PK_PhysicalBDF_Default::Solution_to_State(*up, S_next_);
 
   // update boundary conditions
@@ -116,7 +116,7 @@ void AdvectionDiffusion::UpdatePreconditioner(double t, Teuchos::RCP<const TreeV
   // assemble and create PC
   preconditioner_diff_->ApplyBCs(true, true);
   preconditioner_->AssembleMatrix();
-  preconditioner_->InitPreconditioner("preconditioner", plist_->sublist("diffusion preconditioner"));
+  preconditioner_->UpdatePreconditioner();
 
 };
 

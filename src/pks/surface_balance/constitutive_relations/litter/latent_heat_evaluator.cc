@@ -118,7 +118,7 @@ LatentHeatEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>& 
     }
 
   } else {
-    ASSERT(0);
+    AMANZI_ASSERT(0);
   }
 }
 

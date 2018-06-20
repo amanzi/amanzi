@@ -52,7 +52,7 @@ class Upwinding {
                     const std::vector<int>& bc_markers,
                     const std::vector<double>& bc_values,
                     std::vector<Teuchos::RCP<Teuchos::SerialDenseMatrix<int, double> > >* Jpp_faces) const {
-    ASSERT(0);
+    AMANZI_ASSERT(0);
   }
 
   virtual std::string

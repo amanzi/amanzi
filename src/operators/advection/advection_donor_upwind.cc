@@ -95,7 +95,7 @@ void AdvectionDonorUpwind::IdentifyUpwindCells_() {
   flux_->ScatterMasterToGhosted("face");
   const Epetra_MultiVector& flux_f = *flux_->ViewComponent("face",true);
 
-  unsigned int ncells_used = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::USED);
+  unsigned int ncells_used = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
   for (unsigned int c=0; c!=ncells_used; ++c) {
     mesh_->cell_get_faces_and_dirs(c, &faces, &fdirs);
 

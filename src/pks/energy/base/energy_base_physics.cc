@@ -89,6 +89,7 @@ void EnergyBase::ApplyDiffusion_(const Teuchos::Ptr<State>& S,
   matrix_diff_->global_operator()->Init();
   matrix_diff_->SetScalarCoefficient(conductivity, Teuchos::null);
   matrix_diff_->UpdateMatrices(Teuchos::null, temp.ptr());
+  //matrix_diff_->UpdateMatrices(Teuchos::null, Teuchos::null);
 
 
   // update the flux if needed
@@ -105,7 +106,6 @@ void EnergyBase::ApplyDiffusion_(const Teuchos::Ptr<State>& S,
 
 // ---------------------------------------------------------------------
 // Add in energy source, which are accumulated by a single evaluator.
-// Note that that evaluator applies the factor of cell volume.
 // ---------------------------------------------------------------------
 void EnergyBase::AddSources_(const Teuchos::Ptr<State>& S,
         const Teuchos::Ptr<CompositeVector>& g) {
@@ -119,11 +119,13 @@ void EnergyBase::AddSources_(const Teuchos::Ptr<State>& S,
     S->GetFieldEvaluator(source_key_)->HasFieldChanged(S, name_);
     const Epetra_MultiVector& source1 =
         *S->GetFieldData(source_key_)->ViewComponent("cell",false);
+    const Epetra_MultiVector& cv =
+      *S->GetFieldData(Keys::getKey(domain_,"cell_volume"))->ViewComponent("cell",false);
 
     // Add into residual
     unsigned int ncells = g_c.MyLength();
     for (unsigned int c=0; c!=ncells; ++c) {
-      g_c[0][c] -= source1[0][c];
+      g_c[0][c] -= source1[0][c] * cv[0][c];
     }
 
     if (vo_->os_OK(Teuchos::VERB_EXTREME))

@@ -56,7 +56,7 @@ void ElevationEvaluatorColumn::EvaluateElevationAndSlope_(const Teuchos::Ptr<Sta
     int id = S->GetMesh("surface_star")->cell_map(false).GID(c);
     my_name << "column_" << id;
     
-    //int nfaces = S->GetMesh(my_name.str())->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
+    //int nfaces = S->GetMesh(my_name.str())->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
     
     std::vector<AmanziGeometry::Point> coord; 
     // S->GetMesh(my_name.str())->face_get_coordinates(nfaces-1, &coord);
@@ -85,7 +85,7 @@ void ElevationEvaluatorColumn::EvaluateElevationAndSlope_(const Teuchos::Ptr<Sta
     for (int c=0; c!= ncells; c++){
       //int id = S->GetMesh("surface_star")->cell_map(false).GID(c);
       AmanziGeometry::Entity_ID_List nadj_cellids;
-      S->GetMesh("surface_star")->cell_get_face_adj_cells(c, AmanziMesh::USED, &nadj_cellids);
+      S->GetMesh("surface_star")->cell_get_face_adj_cells(c, AmanziMesh::Parallel_type::ALL, &nadj_cellids);
       int nface_pcell = S->GetMesh("surface_star")->cell_get_num_faces(c);
 
       int ngb_cells = nadj_cellids.size();
@@ -149,7 +149,7 @@ void ElevationEvaluatorColumn::EvaluateElevationAndSlope_(const Teuchos::Ptr<Sta
     
     for (int f=0; f!=nfaces; ++f) {
       AmanziGeometry::Entity_ID_List nadj_cellids;
-      S->GetMesh("surface_star")->face_get_cells(f, AmanziMesh::USED, &nadj_cellids);
+      S->GetMesh("surface_star")->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &nadj_cellids);
       double ef = 0;
       for (int i=0; i<nadj_cellids.size(); i++){
         ef += elev_ngb_c[0][nadj_cellids[i]];
@@ -165,7 +165,7 @@ void ElevationEvaluatorColumn::EnsureCompatibility(const Teuchos::Ptr<State>& S)
   
   Key domain = Keys::getDomain(my_keys_[0]);
 
-  int ncells = S->GetMesh("surface_star")->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  int ncells = S->GetMesh("surface_star")->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
  
   if (domain == "surface_star") {
     for (int c =0; c < ncells; c++){

@@ -57,7 +57,7 @@ OverlandConductivityEvaluator::OverlandConductivityEvaluator(Teuchos::ParameterL
   }
 
   // create the model
-  ASSERT(plist_.isSublist("overland conductivity model"));
+  AMANZI_ASSERT(plist_.isSublist("overland conductivity model"));
   Teuchos::ParameterList sublist = plist_.sublist("overland conductivity model");
   std::string model_type = sublist.get<std::string>("overland conductivity type", "manning");
   if ((model_type == "manning") || (model_type == "manning harmonic mean") ||
@@ -68,7 +68,7 @@ OverlandConductivityEvaluator::OverlandConductivityEvaluator(Teuchos::ParameterL
   } else if (model_type == "manning ponded depth passthrough") {
     model_ = Teuchos::rcp(new PondedDepthPassthroughConductivityModel(sublist));
   } else {
-    ASSERT(0);
+    AMANZI_ASSERT(0);
   }
     
 }
@@ -114,12 +114,17 @@ void OverlandConductivityEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
       Epetra_MultiVector& result_v = *result->ViewComponent(*comp,false);
 
       int ncomp = result->size(*comp, false);
-      if (dt_) {
+      if (dt_ && factor_ < 0.) {
+        double dt = S->time() - S->last_time();
         for (int i=0; i!=ncomp; ++i) {
-          result_v[0][i] = model_->Conductivity(factor_*depth_v[0][i], slope_v[0][i], coef_v[0][i]);
+          result_v[0][i] = model_->Conductivity(dt*depth_v[0][i], slope_v[0][i], coef_v[0][i]);
+        }
+      } else if (dt_) {
+        double dt = S->time() - S->last_time();
+        for (int i=0; i!=ncomp; ++i) {
+          result_v[0][i] = model_->Conductivity(10*factor_*depth_v[0][i], slope_v[0][i], coef_v[0][i]);
         }
       } else {
-        //      double dt = *S->GetScalarData("dt");
         for (int i=0; i!=ncomp; ++i) {
           result_v[0][i] = model_->Conductivity(depth_v[0][i], slope_v[0][i], coef_v[0][i]);
         }
@@ -153,9 +158,15 @@ void OverlandConductivityEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
       Epetra_MultiVector& result_v = *result->ViewComponent(*comp,false);
       
       int ncomp = result->size(*comp, false);
-      if (dt_) {
+      if (dt_ && factor_ < 0.) {
+        double dt = S->time() - S->last_time();
         for (int i=0; i!=ncomp; ++i) {
-          result_v[0][i] = model_->Conductivity(factor_*depth_v[0][i], slope_v[0][i],coef_v[0][i], pd_depth_v[0][i],frac_cond_v[0][i],drag_v[0][i]);
+          result_v[0][i] = model_->Conductivity(dt*depth_v[0][i], slope_v[0][i],coef_v[0][i], pd_depth_v[0][i],frac_cond_v[0][i],drag_v[0][i]);
+        }
+      } else if (dt_) {
+        double dt = S->time() - S->last_time();
+        for (int i=0; i!=ncomp; ++i) {
+          result_v[0][i] = model_->Conductivity(10*factor_*depth_v[0][i], slope_v[0][i],coef_v[0][i], pd_depth_v[0][i],frac_cond_v[0][i],drag_v[0][i]);
         }
       } else {
         for (int i=0; i!=ncomp; ++i) {
@@ -196,10 +207,15 @@ void OverlandConductivityEvaluator::EvaluateFieldPartialDerivative_(
       Epetra_MultiVector& result_v = *result->ViewComponent(*comp,false);
 
       int ncomp = result->size(*comp, false);
-      if (dt_) {
-        //        double dt = *S->GetScalarData("dt");
+      if (dt_ && factor_ < 0.) {
+        double dt = S->time() - S->last_time();
         for (int i=0; i!=ncomp; ++i) {
-          result_v[0][i] = model_->DConductivityDDepth(factor_*depth_v[0][i], slope_v[0][i], coef_v[0][i]) * factor_;
+          result_v[0][i] = model_->DConductivityDDepth(dt*depth_v[0][i], slope_v[0][i], coef_v[0][i]) * dt;
+        }
+      } else if (dt_) {
+        double dt = S->time() - S->last_time();
+        for (int i=0; i!=ncomp; ++i) {
+          result_v[0][i] = model_->DConductivityDDepth(10*factor_*depth_v[0][i], slope_v[0][i], coef_v[0][i]) * 10*factor_;
         }
       } else {
         for (int i=0; i!=ncomp; ++i) {
@@ -216,7 +232,7 @@ void OverlandConductivityEvaluator::EvaluateFieldPartialDerivative_(
     }
 
   } else if (wrt_key == dens_key_) {
-    ASSERT(dens_);
+    AMANZI_ASSERT(dens_);
     for (CompositeVector::name_iterator comp=result->begin();
          comp!=result->end(); ++comp) {
       const Epetra_MultiVector& depth_v = *depth->ViewComponent(*comp,false);
@@ -225,10 +241,15 @@ void OverlandConductivityEvaluator::EvaluateFieldPartialDerivative_(
       Epetra_MultiVector& result_v = *result->ViewComponent(*comp,false);
 
       int ncomp = result->size(*comp, false);
-      if (dt_) {
-        //        double dt = *S->GetScalarData("dt");
+      if (dt_ && factor_ < 0.) {
+        double dt = S->time() - S->last_time();
         for (int i=0; i!=ncomp; ++i) {
-          result_v[0][i] = model_->Conductivity(factor_*depth_v[0][i], slope_v[0][i], coef_v[0][i]);
+          result_v[0][i] = model_->Conductivity(dt*depth_v[0][i], slope_v[0][i], coef_v[0][i]) * dt;
+        }
+      } else if (dt_) {
+        double dt = S->time() - S->last_time();
+        for (int i=0; i!=ncomp; ++i) {
+          result_v[0][i] = model_->Conductivity(10*factor_*depth_v[0][i], slope_v[0][i], coef_v[0][i]) * 10*factor_;
         }
       } else {
         for (int i=0; i!=ncomp; ++i) {

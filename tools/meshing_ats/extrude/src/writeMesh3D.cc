@@ -76,7 +76,7 @@ writeMesh3D_exodus(const Mesh3D& m, const std::string& filename) {
   params.num_edge_sets = 0;
 
   int ierr = ex_put_init_ext(fid, &params);
-  ASSERT(!ierr);
+  AMANZI_ASSERT(!ierr);
   
   // make the coordinate arrays, set the coordinates
   // NOTE: exodus seems to only deal with floats!
@@ -100,9 +100,9 @@ writeMesh3D_exodus(const Mesh3D& m, const std::string& filename) {
   coord_names[2]=c;
 
   ierr |= ex_put_coord_names(fid, coord_names);
-  ASSERT(!ierr);
+  AMANZI_ASSERT(!ierr);
   ierr |= ex_put_coord(fid, &coords[0][0], &coords[1][0], &coords[2][0]);
-  ASSERT(!ierr);
+  AMANZI_ASSERT(!ierr);
 
   
   // put in the face block
@@ -114,30 +114,30 @@ writeMesh3D_exodus(const Mesh3D& m, const std::string& filename) {
   }
   ierr |= ex_put_block(fid, EX_FACE_BLOCK, 1, "NSIDED",
                        m.face2node.size(), facenodes.size(), 0,0,0);
-  ASSERT(!ierr);
+  AMANZI_ASSERT(!ierr);
 
   ierr |= ex_put_entity_count_per_polyhedra(fid, EX_FACE_BLOCK, 1,
           &facenodes_counts[0]);
-  ASSERT(!ierr);
+  AMANZI_ASSERT(!ierr);
 
   for (auto& e : facenodes) e++;
   ierr |= ex_put_conn(fid, EX_FACE_BLOCK, 1, &facenodes[0], NULL, NULL);
-  ASSERT(!ierr);
+  AMANZI_ASSERT(!ierr);
   
 
   // put in the element blocks
   for (int lcvb=0; lcvb!=blocks.size(); ++lcvb) {
     ierr |= ex_put_block(fid, EX_ELEM_BLOCK, blocks_id[lcvb], "NFACED",
                          blocks_ncells[lcvb], 0, 0, blocks[lcvb].size(),0);
-    ASSERT(!ierr);
+    AMANZI_ASSERT(!ierr);
 
     ierr |= ex_put_entity_count_per_polyhedra(fid, EX_ELEM_BLOCK, blocks_id[lcvb],
             &block_face_counts[lcvb][0]);
-    ASSERT(!ierr);
+    AMANZI_ASSERT(!ierr);
 
     for (auto&e : blocks[lcvb]) e++;
     ierr |= ex_put_conn(fid, EX_ELEM_BLOCK, blocks_id[lcvb], NULL, NULL, &blocks[lcvb][0]);
-    ASSERT(!ierr);
+    AMANZI_ASSERT(!ierr);
   }
 
   
@@ -151,13 +151,13 @@ writeMesh3D_exodus(const Mesh3D& m, const std::string& filename) {
     }
     for (auto& e : faces_copy) e++;
     ierr |= ex_put_set_param(fid, EX_SIDE_SET, m.side_sets_id[lcvs], elems_copy.size(), 0);
-    ASSERT(!ierr);
+    AMANZI_ASSERT(!ierr);
     ierr |= ex_put_set(fid, EX_SIDE_SET, m.side_sets_id[lcvs], &elems_copy[0], &faces_copy[0]);
-    ASSERT(!ierr);
+    AMANZI_ASSERT(!ierr);
   }
 
   ierr |= ex_close(fid);
-  ASSERT(!ierr);
+  AMANZI_ASSERT(!ierr);
 
 
   // debugging/nice output

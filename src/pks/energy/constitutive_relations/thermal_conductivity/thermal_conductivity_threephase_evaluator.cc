@@ -36,7 +36,7 @@ ThermalConductivityThreePhaseEvaluator::ThermalConductivityThreePhaseEvaluator(
   sat2_key_ = plist_.get<std::string>("second saturation key", Keys::getKey(domain_name, "saturation_ice"));
   dependencies_.insert(sat2_key_);
 
-  ASSERT(plist_.isSublist("thermal conductivity parameters"));
+  AMANZI_ASSERT(plist_.isSublist("thermal conductivity parameters"));
   Teuchos::ParameterList tc_sublist = plist_.sublist("thermal conductivity parameters");
 
   ThermalConductivityThreePhaseFactory fac;
@@ -84,7 +84,7 @@ void ThermalConductivityThreePhaseEvaluator::EvaluateField_(
 
   for (CompositeVector::name_iterator comp = result->begin();
        comp!=result->end(); ++comp) {
-    ASSERT(*comp == "cell");
+    AMANZI_ASSERT(*comp == "cell");
     const Epetra_MultiVector& poro_v = *poro->ViewComponent(*comp,false);
     const Epetra_MultiVector& temp_v = *temp->ViewComponent(*comp,false);
     const Epetra_MultiVector& sat_v = *sat->ViewComponent(*comp,false);
@@ -97,7 +97,7 @@ void ThermalConductivityThreePhaseEvaluator::EvaluateField_(
       if (mesh->valid_set_name(region_name, AmanziMesh::CELL)) {
         // get the indices of the domain.
         AmanziMesh::Entity_ID_List id_list;
-        mesh->get_set_entities(region_name, AmanziMesh::CELL, AmanziMesh::OWNED, &id_list);
+        mesh->get_set_entities(region_name, AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED, &id_list);
 
         // loop over indices
         for (AmanziMesh::Entity_ID_List::const_iterator id=id_list.begin();
@@ -129,7 +129,7 @@ void ThermalConductivityThreePhaseEvaluator::EvaluateFieldPartialDerivative_(
 
   for (CompositeVector::name_iterator comp = result->begin();
        comp!=result->end(); ++comp) {
-    ASSERT(*comp == "cell");
+    AMANZI_ASSERT(*comp == "cell");
     const Epetra_MultiVector& poro_v = *poro->ViewComponent(*comp,false);
     const Epetra_MultiVector& temp_v = *temp->ViewComponent(*comp,false);
     const Epetra_MultiVector& sat_v = *sat->ViewComponent(*comp,false);
@@ -143,7 +143,7 @@ void ThermalConductivityThreePhaseEvaluator::EvaluateFieldPartialDerivative_(
         if (mesh->valid_set_name(region_name, AmanziMesh::CELL)) {
           // get the indices of the domain.
           AmanziMesh::Entity_ID_List id_list;
-          mesh->get_set_entities(region_name, AmanziMesh::CELL, AmanziMesh::OWNED, &id_list);
+          mesh->get_set_entities(region_name, AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED, &id_list);
 
           // loop over indices
           for (AmanziMesh::Entity_ID_List::const_iterator id=id_list.begin();
@@ -166,7 +166,7 @@ void ThermalConductivityThreePhaseEvaluator::EvaluateFieldPartialDerivative_(
         if (mesh->valid_set_name(region_name, AmanziMesh::CELL)) {
           // get the indices of the domain.
           AmanziMesh::Entity_ID_List id_list;
-          mesh->get_set_entities(region_name, AmanziMesh::CELL, AmanziMesh::OWNED, &id_list);
+          mesh->get_set_entities(region_name, AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED, &id_list);
 
           // loop over indices
           for (AmanziMesh::Entity_ID_List::const_iterator id=id_list.begin();
@@ -189,7 +189,7 @@ void ThermalConductivityThreePhaseEvaluator::EvaluateFieldPartialDerivative_(
         if (mesh->valid_set_name(region_name, AmanziMesh::CELL)) {
           // get the indices of the domain.
           AmanziMesh::Entity_ID_List id_list;
-          mesh->get_set_entities(region_name, AmanziMesh::CELL, AmanziMesh::OWNED, &id_list);
+          mesh->get_set_entities(region_name, AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED, &id_list);
 
           // loop over indices
           for (AmanziMesh::Entity_ID_List::const_iterator id=id_list.begin();
@@ -212,7 +212,7 @@ void ThermalConductivityThreePhaseEvaluator::EvaluateFieldPartialDerivative_(
         if (mesh->valid_set_name(region_name, AmanziMesh::CELL)) {
           // get the indices of the domain.
           AmanziMesh::Entity_ID_List id_list;
-          mesh->get_set_entities(region_name, AmanziMesh::CELL, AmanziMesh::OWNED, &id_list);
+          mesh->get_set_entities(region_name, AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED, &id_list);
 
           // loop over indices
           for (AmanziMesh::Entity_ID_List::const_iterator id=id_list.begin();
@@ -229,7 +229,7 @@ void ThermalConductivityThreePhaseEvaluator::EvaluateFieldPartialDerivative_(
       }
       
     } else {
-      ASSERT(false);
+      AMANZI_ASSERT(false);
     }
   }
     

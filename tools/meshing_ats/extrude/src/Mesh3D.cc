@@ -65,8 +65,8 @@ void
 Mesh3D::extrude(const std::vector<double>& dz,
                 const std::vector<int>& block_ids_,
                 bool squash_zero_edges) {
-  ASSERT(dz.size() == m->coords.size());
-  ASSERT(block_ids_.size() == m->cell2node.size());
+  AMANZI_ASSERT(dz.size() == m->coords.size());
+  AMANZI_ASSERT(block_ids_.size() == m->cell2node.size());
 
   auto this_layer_sides = std::vector<int>(m->face2node.size(), -1);
   auto node_differs = [this](int n) {return this->dn_nodes[n] != this->up_nodes[n];};
@@ -109,8 +109,8 @@ Mesh3D::extrude(const std::vector<double>& dz,
       for (auto sf : m->cell2face[c]) {
         int my_f = this_layer_sides[sf];
 
-        ASSERT(node_same_horiz(m->face2node[sf][0]));
-        ASSERT(node_same_horiz(m->face2node[sf][1]));
+        AMANZI_ASSERT(node_same_horiz(m->face2node[sf][0]));
+        AMANZI_ASSERT(node_same_horiz(m->face2node[sf][1]));
         
         if (std::any_of(m->face2node[sf].begin(), m->face2node[sf].end(),
                         node_differs)) {
@@ -150,7 +150,7 @@ Mesh3D::extrude(const std::vector<double>& dz,
   up_nodes = dn_nodes;
   up_faces = dn_faces;
 
-  ASSERT(block_ids.size() == cell2face.size());
+  AMANZI_ASSERT(block_ids.size() == cell2face.size());
   std::cout << "POST-Extruding: currently " << cell2face.size() << " cells and " << face2node.size() << " faces." << std::endl;
 
 }

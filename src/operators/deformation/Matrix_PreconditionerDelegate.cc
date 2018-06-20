@@ -150,7 +150,7 @@ int Matrix_PreconditionerDelegate::ApplyInverse(const Epetra_MultiVector& b,
 #endif
   } else {
     ierr = -1;
-    ASSERT(0); // this error would have been caught already
+    AMANZI_ASSERT(0); // this error would have been caught already
   }
 
   return ierr;

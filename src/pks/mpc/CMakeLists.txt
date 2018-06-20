@@ -55,7 +55,7 @@ add_library(mpc
   mpc_subsurface.cc
 ##  mpc_permafrost3.cc
   mpc_permafrost4.cc
-#  mpc_coupled_transport.cc
+##  mpc_coupled_transport.cc
 )
 
 install(TARGETS mpc DESTINATION lib)
@@ -178,5 +178,5 @@ include_evaluators_directories(LISTNAME ENERGY_THREE_PHASE_REG_INCLUDES)
 include_evaluators_directories(LISTNAME MPC_PK_FAC_INCLUDES)
 
 
-add_subdirectory(coupled_transport)
+#add_subdirectory(coupled_transport)
 

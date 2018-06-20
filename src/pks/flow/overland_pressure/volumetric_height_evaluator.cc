@@ -109,7 +109,7 @@ void VolumetricHeightEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::P
     }
   else{
     std::cout<<"VOLUMETRIC HEIGHT EVALUATOR: NO DERIVATIVE EXISTS: "<<wrt_key<<"\n";
-    ASSERT(0);
+    AMANZI_ASSERT(0);
   }
 
 }

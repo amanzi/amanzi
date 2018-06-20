@@ -27,7 +27,7 @@ CompressiblePorosityLeijnseEvaluator::CompressiblePorosityLeijnseEvaluator(Teuch
                                       Keys::getKey(domain_name, "porosity"));
   }
 
-  ASSERT(plist_.isSublist("compressible porosity model parameters"));
+  AMANZI_ASSERT(plist_.isSublist("compressible porosity model parameters"));
   models_ = createCompressiblePorosityLeijnseModelPartition(plist_.sublist("compressible porosity model parameters"));
 }
 
@@ -60,7 +60,7 @@ void CompressiblePorosityLeijnseEvaluator::EvaluateField_(const Teuchos::Ptr<Sta
   // evaluate the model
   for (CompositeVector::name_iterator comp=result->begin();
        comp!=result->end(); ++comp) {
-    ASSERT(*comp == "cell");  // partition on cell only, could add boundary_face if needed (but not currently)
+    AMANZI_ASSERT(*comp == "cell");  // partition on cell only, could add boundary_face if needed (but not currently)
     const Epetra_MultiVector& pres_v = *(pres->ViewComponent(*comp,false));
     const Epetra_MultiVector& poro_v = *(poro->ViewComponent(*comp,false));
     Epetra_MultiVector& result_v = *(result->ViewComponent(*comp,false));
@@ -90,7 +90,7 @@ void CompressiblePorosityLeijnseEvaluator::EvaluateFieldPartialDerivative_(
     // evaluate the model
     for (CompositeVector::name_iterator comp=result->begin();
          comp!=result->end(); ++comp) {
-      ASSERT(*comp == "cell");  // partition on cell only, could add boundary_face if needed (but not currently)
+      AMANZI_ASSERT(*comp == "cell");  // partition on cell only, could add boundary_face if needed (but not currently)
       const Epetra_MultiVector& pres_v = *(pres->ViewComponent(*comp,false));
       const Epetra_MultiVector& poro_v = *(poro->ViewComponent(*comp,false));
       Epetra_MultiVector& result_v = *(result->ViewComponent(*comp,false));
@@ -105,7 +105,7 @@ void CompressiblePorosityLeijnseEvaluator::EvaluateFieldPartialDerivative_(
     // evaluate the model
     for (CompositeVector::name_iterator comp=result->begin();
          comp!=result->end(); ++comp) {
-      ASSERT(*comp == "cell");  // partition on cell only, could add boundary_face if needed (but not currently)
+      AMANZI_ASSERT(*comp == "cell");  // partition on cell only, could add boundary_face if needed (but not currently)
       const Epetra_MultiVector& pres_v = *(pres->ViewComponent(*comp,false));
       const Epetra_MultiVector& poro_v = *(poro->ViewComponent(*comp,false));
       Epetra_MultiVector& result_v = *(result->ViewComponent(*comp,false));
@@ -117,7 +117,7 @@ void CompressiblePorosityLeijnseEvaluator::EvaluateFieldPartialDerivative_(
     }
 
   } else {
-    ASSERT(0);
+    AMANZI_ASSERT(0);
   }
 }
 

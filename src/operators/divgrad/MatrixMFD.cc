@@ -142,7 +142,7 @@ void MatrixMFD::CreateMFDmassMatrices(
   WhetStone::MFD3D_Diffusion mfd(mesh_);
   //  AmanziMesh::Entity_ID_List faces;
 
-  int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
 
   if (Mff_cells_.size() != ncells) {
    Mff_cells_.resize(static_cast<size_t>(ncells));
@@ -157,7 +157,7 @@ void MatrixMFD::CreateMFDmassMatrices(
     Kc(0,0) = 1.0;
   }
 
-  //int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  //int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
   for (int c=0; c!=ncells; ++c) {
     int nfaces = mesh_->cell_get_num_faces(c);
 
@@ -231,7 +231,7 @@ void MatrixMFD::CreateMFDstiffnessMatrices(
   WhetStone::MFD3D_Diffusion mfd(mesh_);
   AmanziMesh::Entity_ID_List faces;
 
-  int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
   
   if (Aff_cells_.size() != ncells) {
     Aff_cells_.resize(static_cast<size_t>(ncells));
@@ -322,7 +322,7 @@ void MatrixMFD::CreateMFDstiffnessMatrices(
  ****************************************************************** */
 void MatrixMFD::CreateMFDrhsVectors() {
   
-  int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
   
   if (Ff_cells_.size() != ncells) {
     Ff_cells_.resize(static_cast<size_t>(ncells));
@@ -354,8 +354,8 @@ void MatrixMFD::ApplyBoundaryConditions(const std::vector<MatrixBC>& bc_markers,
   // tag global matrices as invalid
   MarkLocalMatricesAsChanged_();
 
-  int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
-  int nfaces = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
+  int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+  int nfaces = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
   AmanziMesh::Entity_ID_List faces;
   AmanziMesh::Entity_ID_List cells;
 
@@ -416,9 +416,9 @@ void MatrixMFD::SymbolicAssembleGlobalMatrices() {
 
   // assemble the graphs
   int ierr = cf_graph->FillComplete(fmap, cmap);
-  ASSERT(!ierr);
+  AMANZI_ASSERT(!ierr);
   ierr = ff_graph->GlobalAssemble();  // Symbolic graph is complete.
-  ASSERT(!ierr);
+  AMANZI_ASSERT(!ierr);
 
   // allocate the matrices
   CreateMatrices_(*cf_graph, *ff_graph);
@@ -439,7 +439,7 @@ void MatrixMFD::FillMatrixGraphs_(const Teuchos::Ptr<Epetra_CrsGraph> cf_graph,
   int faces_GID[MFD_MAX_FACES];
 
   // fill the graphs
-  int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
   for (int c=0; c!=ncells; ++c) {
     mesh_->cell_get_faces(c, &faces);
     int nfaces = faces.size();
@@ -486,11 +486,11 @@ void MatrixMFD::CreateMatrices_(const Epetra_CrsGraph& cf_graph,
  ****************************************************************** */
 int MatrixMFD::Apply(const CompositeVector& X, CompositeVector& Y) const {
   if (!Y.Ghosted()) {
-    ASSERT(0);
+    AMANZI_ASSERT(0);
     return 1;
   }
   if (!X.Ghosted()) {
-    ASSERT(0);
+    AMANZI_ASSERT(0);
     return 1;
   }
 
@@ -509,7 +509,7 @@ int MatrixMFD::Apply(const CompositeVector& X, CompositeVector& Y) const {
   Epetra_MultiVector& Yc = *Y.ViewComponent("cell");
 
   AmanziMesh::Entity_ID_List faces;
-  int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
 
   for (int c = 0; c < ncells_owned; c++) {
     mesh_->cell_get_faces(c, &faces);
@@ -556,7 +556,7 @@ int MatrixMFD::ApplyInverse(const CompositeVector& X, CompositeVector& Y) const 
   int ierr;
   Epetra_MultiVector& Tc = *T.ViewComponent("cell", false);
   ierr  = Tc.ReciprocalMultiply(1.0, *Acc_, *X.ViewComponent("cell", false), 0.0);
-  ASSERT(!ierr);
+  AMANZI_ASSERT(!ierr);
 
   ApplyAfc(T, T, 0.0);
   Epetra_MultiVector& Tf = *T.ViewComponent("face", false);
@@ -564,7 +564,7 @@ int MatrixMFD::ApplyInverse(const CompositeVector& X, CompositeVector& Y) const 
 
   // Solve the Schur complement system Sff_ * Yf = Tf.
   ierr = S_pc_->ApplyInverse(Tf, *Y.ViewComponent("face",false));
-  ASSERT(!ierr);
+  AMANZI_ASSERT(!ierr);
 
   // BACKWARD SUBSTITUTION:  Yc = inv(Acc_) (Xc - Acf_ Yf)
   ApplyAcf(Y, T, 0.0);
@@ -652,7 +652,7 @@ void MatrixMFD::DeriveFlux(const CompositeVector& solution,
 
   flux->PutScalar(0.);
 
-  int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
   int nfaces_owned = flux->size("face",false);
   solution.ScatterMasterToGhosted("face");
 
@@ -687,7 +687,7 @@ void MatrixMFD::DeriveFlux(const CompositeVector& solution,
 
   // ensure post-condition - we got them all
   for (int f=0; f!=nfaces_owned; ++f) {
-    ASSERT(done[f]);
+    AMANZI_ASSERT(done[f]);
   }
 }
 
@@ -705,7 +705,7 @@ void MatrixMFD::DeriveCellVelocity(const CompositeVector& flux,
   Epetra_MultiVector& velocity_c = *velocity->ViewComponent("cell",false);
 
   int dim = mesh_->space_dimension();
-  int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
 
   WhetStone::MFD3D_Diffusion mfd(mesh_);
   AmanziGeometry::Point gradient(dim);
@@ -804,7 +804,7 @@ void MatrixMFD::UpdateConsistentFaceCorrection(const CompositeVector& u,
   Aff_op_->Update(Aff_);
   int ierr = Aff_solver_->ApplyInverse(*(*work->ViewComponent("face",false))(0), 
 				       *(*Pu->ViewComponent("face",false))(0));
-  ASSERT(!ierr);
+  AMANZI_ASSERT(!ierr);
 }
 
 
@@ -831,7 +831,7 @@ void MatrixMFD::Add2MFDstiffnessMatrices(std::vector<double> *Acc_ptr,
 			      std::vector<Epetra_SerialDenseVector> *Acf_ptr,
 			      std::vector<Epetra_SerialDenseVector> *Afc_ptr){
 
-  int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
 
   if (Acc_ptr){
     for (int c=0; c!=ncells; ++c) {
@@ -867,7 +867,7 @@ int MatrixMFD::ApplyAcf(const CompositeVector& X, CompositeVector& Y,
 
 int MatrixMFD::ApplyAcf_(const CompositeVector& X, Epetra_MultiVector& Y, double scalar) const {
   if (!X.Ghosted()) {
-    ASSERT(0);
+    AMANZI_ASSERT(0);
     return 1;
   }
   X.ScatterMasterToGhosted("face", true); // force scatter for now... --etc
@@ -889,7 +889,7 @@ int MatrixMFD::ApplyAcf_(const Epetra_MultiVector& X, Epetra_MultiVector& Y, dou
   const std::vector<Epetra_SerialDenseVector>& Acf = Acf_cells();
 
   AmanziMesh::Entity_ID_List faces;
-  int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
 
   for (int c = 0; c < ncells_owned; c++) {
     mesh_->cell_get_faces(c, &faces);
@@ -913,7 +913,7 @@ int MatrixMFD::ApplyAfc(const CompositeVector& X, CompositeVector& Y,
 
 int MatrixMFD::ApplyAfc_(const Epetra_MultiVector& X, CompositeVector& Y, double scalar) const {
   if (!Y.Ghosted()) {
-    ASSERT(0);
+    AMANZI_ASSERT(0);
     return 1;
   }
   
@@ -932,15 +932,15 @@ int MatrixMFD::ApplyAfc_(const Epetra_MultiVector& X, Epetra_MultiVector& Y, dou
   } else if (scalar != 1.0) {
     Y.Scale(scalar);
 
-    int nfaces_owned = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
-    int nfaces_wghost = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
+    int nfaces_owned = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
+    int nfaces_wghost = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
     for (int f = nfaces_owned; f < nfaces_wghost; f++) Y[0][f] = 0.0;
   }
 
   const std::vector<Epetra_SerialDenseVector>& Afc = Afc_cells();
 
   AmanziMesh::Entity_ID_List faces;
-  int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
 
   for (int c = 0; c < ncells_owned; c++) {
     mesh_->cell_get_faces(c, &faces);
@@ -968,7 +968,7 @@ void MatrixMFD::AssembleRHS_() const {
   int faces_LID[MFD_MAX_FACES];
   int faces_GID[MFD_MAX_FACES];
 
-  int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
   for (int c=0; c!=ncells; ++c) {
     AmanziMesh::Entity_ID_List faces;
     mesh_->cell_get_faces(c, &faces);
@@ -992,7 +992,7 @@ void MatrixMFD::AssembleRHS_() const {
  * assemble them into four global matrix Aff.
  ****************************************************************** */
 void MatrixMFD::AssembleAff_() const {
-  ASSERT(Aff_.get()); // precondition: matrices have been created
+  AMANZI_ASSERT(Aff_.get()); // precondition: matrices have been created
 
   // reinitialize to zero if adding
   Aff_->PutScalar(0.0);
@@ -1001,7 +1001,7 @@ void MatrixMFD::AssembleAff_() const {
   int gid[MFD_MAX_FACES];
 
   const Epetra_Map& fmap_wghost = mesh_->face_map(true);
-  int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
 
   for (int c=0; c!=ncells; ++c) {
     mesh_->cell_get_faces(c, &faces);
@@ -1036,7 +1036,7 @@ void MatrixMFD::AssembleSchur_() const {
   // loop over cells and assemble
   AmanziMesh::Entity_ID_List faces;
   const Epetra_Map& fmap_wghost = mesh_->face_map(true);
-  int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
 
   for (int c=0; c!=ncells; ++c) {
     mesh_->cell_get_faces(c, &faces);

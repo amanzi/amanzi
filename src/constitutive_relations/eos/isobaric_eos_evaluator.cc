@@ -25,7 +25,7 @@ IsobaricEOSEvaluator::IsobaricEOSEvaluator(Teuchos::ParameterList& plist) :
   } else if (mode == "both") {
     mode_ = EOS_MODE_BOTH;
   } else {
-    ASSERT(0);
+    AMANZI_ASSERT(0);
   }
 
   // my keys
@@ -59,7 +59,7 @@ IsobaricEOSEvaluator::IsobaricEOSEvaluator(Teuchos::ParameterList& plist) :
   pres_key_ = plist_.get<std::string>("pressure key", "atmospheric_pressure");
 
   // Construct my EOS model
-  ASSERT(plist_.isSublist("EOS parameters"));
+  AMANZI_ASSERT(plist_.isSublist("EOS parameters"));
   EOSFactory eos_fac;
   eos_ = eos_fac.createEOS(plist_.sublist("EOS parameters"));
 };
@@ -168,7 +168,7 @@ void IsobaricEOSEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::Ptr<St
     }
 
   } else {
-    ASSERT(0);
+    AMANZI_ASSERT(0);
   }
 }
 

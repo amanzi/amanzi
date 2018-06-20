@@ -29,10 +29,10 @@ ReactiveTransport_PK_ATS::ReactiveTransport_PK_ATS(Teuchos::ParameterList& pk_tr
   chem_step_succeeded = true;
 
   tranport_pk_ = Teuchos::rcp_dynamic_cast<Transport::Transport_PK_ATS>(sub_pks_[1]);
-  ASSERT(tranport_pk_ != Teuchos::null);
+  AMANZI_ASSERT(tranport_pk_ != Teuchos::null);
 
   chemistry_pk_ = Teuchos::rcp_dynamic_cast<AmanziChemistry::Chemistry_PK>(sub_pks_[0]);
-  ASSERT(chemistry_pk_ != Teuchos::null);
+  AMANZI_ASSERT(chemistry_pk_ != Teuchos::null);
 
   // communicate chemistry engine to transport.
 #ifdef ALQUIMIA_ENABLED

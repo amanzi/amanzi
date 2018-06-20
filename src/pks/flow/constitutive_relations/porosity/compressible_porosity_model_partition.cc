@@ -26,7 +26,7 @@ createCompressiblePorosityModelPartition(Teuchos::ParameterList& plist) {
       region_list.push_back(sublist.get<std::string>("region"));
       mlist.push_back(Teuchos::rcp(new CompressiblePorosityModel(sublist)));
     } else {
-      ASSERT(0);
+      AMANZI_ASSERT(0);
     }
   }
 

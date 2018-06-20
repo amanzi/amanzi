@@ -59,6 +59,7 @@ class SurfaceBalanceBase : public PK_PhysicalBDF_Default {
 
   Key layer_;
   bool conserved_quantity_;
+  bool is_source_;
   Key source_key_;
 
   double theta_;

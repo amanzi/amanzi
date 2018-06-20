@@ -76,7 +76,7 @@ void MPCCoupledWaterSplitFlux::set_dt( double dt) {
 bool MPCCoupledWaterSplitFlux::AdvanceStep(double t_old, double t_new, bool reinit) {
   // Advance the star system 
   bool fail = false;
-  ASSERT(sub_pks_.size() == 2);
+  AMANZI_ASSERT(sub_pks_.size() == 2);
   fail = sub_pks_[0]->AdvanceStep(t_old, t_new, reinit);
   if (fail) return fail;
 
@@ -132,11 +132,11 @@ MPCCoupledWaterSplitFlux::CopyStarToPrimary(double dt) {
   if (eval_pvfe_ == Teuchos::null) {
     Teuchos::RCP<FieldEvaluator> fe = S_next_->GetFieldEvaluator(lateral_flow_source_);
     eval_pvfe_ = Teuchos::rcp_dynamic_cast<PrimaryVariableFieldEvaluator>(fe);
-    ASSERT(eval_pvfe_ != Teuchos::null);
+    AMANZI_ASSERT(eval_pvfe_ != Teuchos::null);
   }
 
   auto star_pk = Teuchos::rcp_dynamic_cast<PK_Physical>(sub_pks_[0]);
-  ASSERT(star_pk.get());
+  AMANZI_ASSERT(star_pk.get());
 
   // these updates should do nothing, but you never know
   S_inter_->GetFieldEvaluator(conserved_variable_star_)->HasFieldChanged(S_inter_.ptr(), name_);

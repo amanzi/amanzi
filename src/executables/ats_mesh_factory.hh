@@ -31,15 +31,15 @@ which checks for many common geometric and topologic errors in mesh
 generation.  This is reasonably fast, even for big meshes, and can be done
 through providing a "verify mesh" option.
 
+``[mesh-typed-spec]``
+
+* `"mesh type`" ``[string]`` One of `"generate mesh`", `"read mesh file`",
+   `"logical`", `"surface`", `"subgrid`", or `"column`".
+* `"_mesh_type_ parameters`" ``[_mesh_type_-spec]`` List of parameters
+  associated with the type.
 * `"verify mesh`" ``[bool]`` **false** Perform a mesh audit.
 * `"deformable mesh`" ``[bool]`` **false** Will this mesh be deformed?
 
-All mesh specs take a general form:
-
-* '`"mesh`" ``[parameter-list]`` The list of ``[mesh-specs]``
-  * `"MESH_NAME`" ``[parameter-list]`` User-defined mesh name.
-    * `"mesh type`" ``[string]`` One of the below types.
-    * `"MESH_TYPE parameters`" ``[mesh-parameters-spec]`` One of the below specs.
 
 GeneratedMesh
 ==============
@@ -50,10 +50,11 @@ of number of cells in each direction.
 
 Specified by `"mesh type`" of `"generate mesh`".
 
-* `"generate mesh parameters`" ``[list]``
-  * `"domain low coordinate`" ``[Array(double)]`` Location of low corner of domain
-  * `"domain high coordinate`" ``[Array(double)]`` Location of high corner of domain
-  * `"number of cells`" ``[Array(int)]`` the number of uniform cells in each coordinate direction
+``[mesh-type-generate-mesh-spec]``
+
+* `"domain low coordinate`" ``[Array(double)]`` Location of low corner of domain
+* `"domain high coordinate`" ``[Array(double)]`` Location of high corner of domain
+* `"number of cells`" ``[Array(int)]`` the number of uniform cells in each coordinate direction
 
 Example:
 
@@ -79,19 +80,19 @@ II" file format, and loaded in ATS.
 
 Specified by `"mesh type`" of `"read mesh file`".
 
-* `"read mesh file parameters`" ``[list]``
+``[mesh-type-read-mesh-file-spec]``
 
-  * `"file`" ``[string]`` name of pre-generated mesh file. Note that in the case of an
-        Exodus II mesh file, the suffix of the serial mesh file must be .exo and 
-        the suffix of the parallel mesh file must be .par.
-        When running in serial the code will read this the indicated file directly.
-        When running in parallel and the suffix is .par, the code will instead read
-        the partitioned files, that have been generated with a Nemesis tool and
-        named as filename.par.N.r where N is the number of processors and r is the rank.
-        When running in parallel and the suffix is .exo, the code will partition automatically
-        the serial file.
+* `"file`" ``[string]`` name of pre-generated mesh file. Note that in the case of an
+   Exodus II mesh file, the suffix of the serial mesh file must be .exo and 
+   the suffix of the parallel mesh file must be .par.
+   When running in serial the code will read this the indicated file directly.
+   When running in parallel and the suffix is .par, the code will instead read
+   the partitioned files, that have been generated with a Nemesis tool and
+   named as filename.par.N.r where N is the number of processors and r is the rank.
+   When running in parallel and the suffix is .exo, the code will partition automatically
+   the serial file.
      
-  * `"format`" ``[string]`` format of pre-generated mesh file (`"MSTK`" or `"Exodus II`")
+* `"format`" ``[string]`` format of pre-generated mesh file (`"MSTK`" or `"Exodus II`")
 
 Example:
 
@@ -116,7 +117,6 @@ LogicalMesh
 
 Specified by `"mesh type`" of `"logical`".
 
-* `"logical parameters`" ``[list]``
 
 
 SurfaceMesh
@@ -133,11 +133,12 @@ computation.
 
 Specified by `"mesh type`" of `"surface`".
 
-* `"surface parameters`" ``[list]``
-  * `"surface sideset name`" ``[string]`` The Region_ name containing all surface faces.
-  * `"surface sideset names`" ``[Array(string)]`` A list of Region_ names containing the surface faces.  Either this or the singular version must be specified.
-  * `"verify mesh`" ``[bool]`` **false** Verify validity of surface mesh.
-  * `"export mesh to file`" ``[string]`` Export the lifted surface mesh to this filename.
+``[mesh-type-surface-spec]``
+
+* `"surface sideset name`" ``[string]`` The Region_ name containing all surface faces.
+* `"surface sideset names`" ``[Array(string)]`` A list of Region_ names containing the surface faces.  Either this or the singular version must be specified.
+* `"verify mesh`" ``[bool]`` **false** Verify validity of surface mesh.
+* `"export mesh to file`" ``[string]`` Export the lifted surface mesh to this filename.
 
 Example:
 
@@ -177,11 +178,13 @@ entity local ID, in a provided region of the provided entity type.
 
 Specified by `"mesh type`" of `"subgrid`".
 
-* `"subgrid parameters`" ``[list]``
-  * `"subgrid region name`" ``[string]`` Region on which each subgrid mesh will be associated.
-  * `"entity kind`" ``[string]`` One of `"cell`", `"face`", etc.  Entity of the region (usually `" cell`") on which each subgrid mesh will be associated.
-  * `"parent domain`" ``[string]`` **domain** Mesh which includes the above region.
-  * `"flyweight mesh`" ``[bool]`` **False** NOT SUPPORTED?  Allows a single mesh instead of one per entity.
+``[mesh-type-subgrid-spec]``
+
+* `"subgrid region name`" ``[string]`` Region on which each subgrid mesh will be associated.
+* `"entity kind`" ``[string]`` One of `"cell`", `"face`", etc.  Entity of the region (usually
+   `"cell`") on which each subgrid mesh will be associated.
+* `"parent domain`" ``[string]`` **domain** Mesh which includes the above region.
+* `"flyweight mesh`" ``[bool]`` **False** NOT SUPPORTED?  Allows a single mesh instead of one per entity.
 
     
 ColumnMeshes
@@ -192,11 +195,13 @@ which generate a ColumnMesh_ spec for every face of the surface mesh.
 
 Specified by `"mesh type`" of `"column`".
 
-* `"column parameters`" ``[list]``
-  * `"parent domain`" ``[string]`` The Mesh_ name of the 3D mesh from which columns are generated.  Note that the `"build columns from set`" parameter must be set in that mesh.
-  * `"verify mesh`" ``[bool]`` **false** Verify validity of surface mesh.
-  * `"deformable mesh`" ``[bool]`` **false**  Used for deformation PKs to allow non-const access.
-  * `"entity LID`" ``[int]`` Local ID of the surface cell that is the top of the column.
+``[mesh-type-column-spec]``
+
+* `"parent domain`" ``[string]`` The Mesh_ name of the 3D mesh from which columns are generated.
+   Note that the `"build columns from set`" parameter must be set in that mesh.
+* `"verify mesh`" ``[bool]`` **false** Verify validity of surface mesh.
+* `"deformable mesh`" ``[bool]`` **false**  Used for deformation PKs to allow non-const access.
+* `"entity LID`" ``[int]`` Local ID of the surface cell that is the top of the column.
 
 Example:
 

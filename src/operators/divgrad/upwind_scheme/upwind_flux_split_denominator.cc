@@ -132,7 +132,7 @@ void UpwindFluxSplitDenominator::CalculateCoefficientsOnFaces(
   for (int f=0; f!=nfaces; ++f) {
     int uw = upwind_cell[f];
     int dw = downwind_cell[f];
-    ASSERT(!((uw == -1) && (dw == -1)));
+    AMANZI_ASSERT(!((uw == -1) && (dw == -1)));
 
     double denominator = 0.0;
     // uw coef
@@ -200,7 +200,7 @@ UpwindFluxSplitDenominator::UpdateDerivatives(const Teuchos::Ptr<State>& S,
                                               const std::vector<int>& bc_markers,
                                               const std::vector<double>& bc_values,
                                               std::vector<Teuchos::RCP<Teuchos::SerialDenseMatrix<int, double> > >* Jpp_faces) const {
-  ASSERT(0);
+  AMANZI_ASSERT(0);
 }
 } //namespace
 } //namespace

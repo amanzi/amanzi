@@ -50,7 +50,7 @@ void UnfrozenEffectiveDepthEvaluator::EvaluateField_(const Teuchos::Ptr<State>& 
   Teuchos::RCP<const CompositeVector> uf = S->GetFieldData(uf_key_);
 
   int ierr = result->Multiply(1., *depth, *uf, 0.);
-  ASSERT(!ierr);
+  AMANZI_ASSERT(!ierr);
 }
 
 
@@ -66,7 +66,7 @@ void UnfrozenEffectiveDepthEvaluator::EvaluateFieldPartialDerivative_(
   } else if (wrt_key == uf_key_) {
     *result = *depth;
   } else {
-    ASSERT(0);
+    AMANZI_ASSERT(0);
   }
 }
 

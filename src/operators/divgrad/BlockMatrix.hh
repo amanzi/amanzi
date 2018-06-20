@@ -104,12 +104,12 @@ class BlockMatrix : public CompositeMatrix{
   int GetNumberofBlocks(){ return blocks.size();}
 
   void SetBlock(int i, Teuchos::RCP<Epetra_FECrsMatrix> A){
-    ASSERT(i < blocks.size());
+    AMANZI_ASSERT(i < blocks.size());
     blocks[i] = A;
   }
 
   void SetPrec(int i,  Teuchos::RCP<AmanziPreconditioners::Preconditioner> A_pc){
-    ASSERT(i < blocks_pc.size());
+    AMANZI_ASSERT(i < blocks_pc.size());
     blocks_pc[i] = A_pc;
   }
 

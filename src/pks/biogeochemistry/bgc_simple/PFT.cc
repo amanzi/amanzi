@@ -98,6 +98,9 @@ void PFT::Init(double col_area)
   seedrainlai = 0.01;
   maxLAI = 1;
 
+  carbon2biomass = 2;
+  aroot_radius = 0.002;
+  
   for (int i = 0; i < 10; i++){
     annCBalance[i] = 0;
   }
@@ -125,7 +128,9 @@ void PFT::Init(Teuchos::ParameterList& plist,double col_area)
   rootlongevity =  plist.get<double>("root longevity [yr]", 4.0);
   stemlongevity =  plist.get<double>("stem longevity [yr]", 10.0);
 
+  height =  plist.get<double>("height [m]", 3.0);
   mp =  plist.get<double>("stomatal conductance to photosynthetic rate slope (mp) [?]", 9.0);
+  wood_density = plist.get<double>("wood density [kg m^-3]", 0.6e2);
   
 
   Bleaf = 1.0/SLA * col_area;//es note that all the following B vals are per m^2, so that elsewhere they should be *gridarea to account for varying grid areas.

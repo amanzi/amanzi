@@ -1,3 +1,4 @@
+
 #include "Teuchos_XMLParameterListHelpers.hpp"
 #include "EpetraExt_RowMatrixOut.h"
 
@@ -96,11 +97,13 @@ MPCPermafrost4::Setup(const Teuchos::Ptr<State>& S) {
     // of surface conductivity with respect to temperature, etc.
 
     // -- surface flow
-    Teuchos::RCP<Operators::Operator> surf_flow_pc = surf_flow_pk_->preconditioner();
-    Teuchos::RCP<Operators::Operator> domain_flow_pc = domain_flow_pk_->preconditioner();
-    for (Operators::Operator::op_iterator op = surf_flow_pc->OpBegin();
-         op != surf_flow_pc->OpEnd(); ++op) {
-      domain_flow_pc->OpPushBack(*op);
+    if (precon_type_ != PRECON_NO_FLOW_COUPLING) {
+      Teuchos::RCP<Operators::Operator> surf_flow_pc = surf_flow_pk_->preconditioner();
+      Teuchos::RCP<Operators::Operator> domain_flow_pc = domain_flow_pk_->preconditioner();
+      for (Operators::Operator::op_iterator op = surf_flow_pc->OpBegin();
+           op != surf_flow_pc->OpEnd(); ++op) {
+        domain_flow_pc->OpPushBack(*op);
+      }
     }
 
     // -- surface energy
@@ -111,12 +114,12 @@ MPCPermafrost4::Setup(const Teuchos::Ptr<State>& S) {
       domain_energy_pc->OpPushBack(*op);
     }
 
-    if (precon_type_ != PRECON_BLOCK_DIAGONAL) {
+    if (precon_type_ != PRECON_BLOCK_DIAGONAL && precon_type_ != PRECON_NO_FLOW_COUPLING) {
 
       // Add off-diagonal blocks for the surface
       // -- derivatives of surface water content with respect to surface temperature
       // -- ALWAYS ZERO!
-      // ASSERT(dWC_dT_block_ != Teuchos::null);
+      // AMANZI_ASSERT(dWC_dT_block_ != Teuchos::null);
       // Teuchos::ParameterList dWC_dT_plist;
       // dWC_dT_plist.set("surface operator", true);
       // dWC_dT_plist.set("entity kind", "cell");
@@ -125,7 +128,7 @@ MPCPermafrost4::Setup(const Teuchos::Ptr<State>& S) {
       // -- derivatives of surface energy with respect to surface pressure
       //    For the Operator, we have to create one with the surface mesh,
       //    then push the op into the full (subsurface) operator.
-      ASSERT(dE_dp_block_ != Teuchos::null);
+      AMANZI_ASSERT(dE_dp_block_ != Teuchos::null);
       Teuchos::ParameterList dE_dp_plist;
       dE_dp_plist.set("surface operator", true);
       dE_dp_plist.set("entity kind", "cell");
@@ -139,21 +142,20 @@ MPCPermafrost4::Setup(const Teuchos::Ptr<State>& S) {
 
     // must now re-symbolic assemble the matrix to get the updated surface parts
     preconditioner_->SymbolicAssembleMatrix();
-
+    preconditioner_->InitializePreconditioner(plist_->sublist("preconditioner"));
   }
       
-  // set up the Water delegate
-  Teuchos::RCP<Teuchos::ParameterList> water_list = Teuchos::sublist(plist_, "water delegate");
-
-  water_ = Teuchos::rcp(new MPCDelegateWater(water_list, domain_subsurf_));
-
-  water_->set_indices(0,2,1,3);
-
   // grab the debuggers
   domain_db_ = domain_flow_pk_->debugger();
   surf_db_ = surf_flow_pk_->debugger();
 
-  water_->set_db(surf_db_);
+  // set up the Water delegate
+  if (plist_->isSublist("water delegate")) {
+    Teuchos::RCP<Teuchos::ParameterList> water_list = Teuchos::sublist(plist_, "water delegate");
+    water_ = Teuchos::rcp(new MPCDelegateWater(water_list, domain_subsurf_));
+    water_->set_indices(0,2,1,3);
+    water_->set_db(surf_db_);
+  }
 }
 
 void
@@ -182,7 +184,7 @@ MPCPermafrost4::set_states(const Teuchos::RCP<const State>& S,
                            const Teuchos::RCP<State>& S_inter,
                            const Teuchos::RCP<State>& S_next) {
   MPCSubsurface::set_states(S,S_inter,S_next);
-  water_->set_states(S,S_inter,S_next);
+  if (water_.get()) water_->set_states(S,S_inter,S_next);
 }
 
 
@@ -199,7 +201,6 @@ MPCPermafrost4::Functional(double t_old, double t_new, Teuchos::RCP<TreeVector> 
 
   // The residual of the surface flow equation provides the mass flux from
   // subsurface to surface.
-
   Epetra_MultiVector& source = *S_next_->GetFieldData(Keys::getKey(domain_surf_,"surface_subsurface_flux"),
           name_)->ViewComponent("cell",false);
   source = *g->SubVector(2)->Data()->ViewComponent("cell",false);
@@ -320,39 +321,39 @@ MPCPermafrost4::UpdatePreconditioner(double t,
   //     S_next_->GetFieldData("dsurface-water_content_dsurface-temperature");
   // dWC_dT_surf_->AddAccumulationTerm(*dWCdT->ViewComponent("cell", false), h);
   
-  // -- surface dE_dp
 
-  S_next_->GetFieldEvaluator(Keys::getKey(domain_surf_,"energy"))
-    ->HasFieldDerivativeChanged(S_next_.ptr(), name_, Keys::getKey(domain_surf_,"pressure"));
-  Teuchos::RCP<const CompositeVector> dEdp =
-    S_next_->GetFieldData(Keys::getDerivKey(Keys::getKey(domain_surf_,"energy"), Keys::getKey(domain_surf_,"pressure")));
-  dE_dp_surf_->AddAccumulationTerm(*dEdp, h, "cell", false);
+  if (precon_type_ != PRECON_NO_FLOW_COUPLING) {
+    // -- surface dE_dp
+    S_next_->GetFieldEvaluator(Keys::getKey(domain_surf_,"energy"))
+        ->HasFieldDerivativeChanged(S_next_.ptr(), name_, Keys::getKey(domain_surf_,"pressure"));
+    Teuchos::RCP<const CompositeVector> dEdp =
+        S_next_->GetFieldData(Keys::getDerivKey(Keys::getKey(domain_surf_,"energy"), Keys::getKey(domain_surf_,"pressure")));
+    dE_dp_surf_->AddAccumulationTerm(*dEdp, h, "cell", false);
   
-  // write for debugging
-  std::vector<std::string> vnames;
-  //  vnames.push_back("  dwc_dT");
-  vnames.push_back("  de_dp");
-  std::vector< Teuchos::Ptr<const CompositeVector> > vecs;
-  //  vecs.push_back(dWCdT.ptr());
-  vecs.push_back(dEdp.ptr());
-  surf_db_->WriteVectors(vnames, vecs, false);
+    // write for debugging
+    std::vector<std::string> vnames;
+    //  vnames.push_back("  dwc_dT");
+    vnames.push_back("  de_dp");
+    std::vector< Teuchos::Ptr<const CompositeVector> > vecs;
+    //  vecs.push_back(dWCdT.ptr());
+    vecs.push_back(dEdp.ptr());
+    surf_db_->WriteVectors(vnames, vecs, false);
+  }
 
   // assemble
   // -- scale the pressure dofs
-  CompositeVector scaling(sub_pks_[0]->preconditioner()->DomainMap());
-  scaling.PutScalar(1.e6); // dWC/dp_Pa * (Pa / MPa) --> dWC/dp_MPa
+  double scaling = 1.e6; // dWC/dp_Pa * (Pa / MPa) --> dWC/dp_MPa
   sub_pks_[0]->preconditioner()->Rescale(scaling);
   dE_dp_block_->Rescale(scaling);
   
   preconditioner_->AssembleMatrix();
+  preconditioner_->UpdatePreconditioner();
 
   if (dump_) {
     std::stringstream filename;
-    filename << "FullyCoupled_PC_" << S_next_->cycle() << ".txt";
+    filename << "FullyCoupled_PC_" << S_next_->cycle() << "_" << update_pcs_ << ".txt";
     EpetraExt::RowMatrixToMatlabFile(filename.str().c_str(), *preconditioner_->A());
   }
-
-  preconditioner_->InitPreconditioner(plist_->sublist("preconditioner"));
   
   // update ewc Precons if needed
   //  surf_ewc_->UpdatePreconditioner(t, up, h);
@@ -437,7 +438,7 @@ MPCPermafrost4::ModifyPredictor(double h, Teuchos::RCP<const TreeVector> u0,
   // Copy consistent faces to surface
   if (modified) {
 
-    S_next_->GetFieldEvaluator(Keys::getKey(domain_surf_,"relative_permeability"))->HasFieldChanged(S_next_.ptr(),name_);
+    //S_next_->GetFieldEvaluator(Keys::getKey(domain_surf_,"relative_permeability"))->HasFieldChanged(S_next_.ptr(),name_);
     Teuchos::RCP<const CompositeVector> h_prev = S_inter_->GetFieldData(Keys::getKey(domain_surf_,"ponded_depth"));
 
     MergeSubsurfaceAndSurfacePressure(*h_prev, u->SubVector(0)->Data().ptr(), u->SubVector(2)->Data().ptr());
@@ -446,10 +447,12 @@ MPCPermafrost4::ModifyPredictor(double h, Teuchos::RCP<const TreeVector> u0,
 
   // Hack surface faces
   bool newly_modified = false;
-  newly_modified |= water_->ModifyPredictor_Heuristic(h, u);
-  newly_modified |= water_->ModifyPredictor_WaterSpurtDamp(h, u);
-  newly_modified |= water_->ModifyPredictor_TempFromSource(h, u);
-  modified |= newly_modified;
+  if (water_.get()) {
+    newly_modified |= water_->ModifyPredictor_Heuristic(h, u);
+    newly_modified |= water_->ModifyPredictor_WaterSpurtDamp(h, u);
+    newly_modified |= water_->ModifyPredictor_TempFromSource(h, u);
+    modified |= newly_modified;
+  }
 
   // write predictor
   if (newly_modified && vo_->os_OK(Teuchos::VERB_HIGH)) {
@@ -523,18 +526,21 @@ MPCPermafrost4::ModifyCorrection(double h, Teuchos::RCP<const TreeVector> r,
     
   // modify correction using water approaches
   int n_modified = 0;
-  double damping = water_->ModifyCorrection_SaturatedSpurtDamp(h, r, u, du);
-  n_modified += water_->ModifyCorrection_SaturatedSpurtCap(h, r, u, du, damping);
+  double damping = 1;
+  if (water_.get()) {
+    damping = water_->ModifyCorrection_SaturatedSpurtDamp(h, r, u, du);
+    n_modified += water_->ModifyCorrection_SaturatedSpurtCap(h, r, u, du, damping);
 
-  double damping_surf = water_->ModifyCorrection_WaterSpurtDamp(h, r, u, du);
-  n_modified += water_->ModifyCorrection_WaterSpurtCap(h, r, u, du, damping_surf);
+    double damping_surf = water_->ModifyCorrection_WaterSpurtDamp(h, r, u, du);
+    n_modified += water_->ModifyCorrection_WaterSpurtCap(h, r, u, du, damping_surf);
 
-  // -- total damping
-  damping = damping * damping_surf;
+    // -- total damping
+    damping = damping * damping_surf;
   
-  // -- accumulate globally
-  int n_modified_l = n_modified;
-  u->SubVector(0)->Data()->Comm().SumAll(&n_modified_l, &n_modified, 1);
+    // -- accumulate globally
+    int n_modified_l = n_modified;
+    u->SubVector(0)->Data()->Comm().SumAll(&n_modified_l, &n_modified, 1);
+  }
   bool modified = (n_modified > 0) || (damping < 1.);
 
   if (modified) {

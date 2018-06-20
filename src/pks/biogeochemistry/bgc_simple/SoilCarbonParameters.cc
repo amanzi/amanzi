@@ -77,7 +77,7 @@ void SoilCarbonParameters::Init_(Teuchos::ParameterList& plist)
     double p_sand = plist.get<double>("percent sand");
     InitCentury_(p_sand);
   } else {
-    ASSERT(0);
+    AMANZI_ASSERT(0);
   }
 
   // special case init from plist here...

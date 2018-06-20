@@ -27,16 +27,16 @@ class EOSVaporInGas : public EOS {
 public:
   EOSVaporInGas(Teuchos::ParameterList& eos_plist);
 
-  double MassDensity(double T, double p) { ASSERT(0); return 0.0; }
-  double DMassDensityDT(double T, double p)  { ASSERT(0); return 0.0; }
-  double DMassDensityDp(double T, double p)  { ASSERT(0); return 0.0; }
+  double MassDensity(double T, double p) { AMANZI_ASSERT(0); return 0.0; }
+  double DMassDensityDT(double T, double p)  { AMANZI_ASSERT(0); return 0.0; }
+  double DMassDensityDp(double T, double p)  { AMANZI_ASSERT(0); return 0.0; }
 
   double MolarDensity(double T, double p);
   double DMolarDensityDT(double T, double p);
   double DMolarDensityDp(double T, double p);
 
   bool IsConstantMolarMass() { return false; }
-  double MolarMass() { ASSERT(0); return 0.0; }
+  double MolarMass() { AMANZI_ASSERT(0); return 0.0; }
 
 protected:
   virtual void InitializeFromPlist_();

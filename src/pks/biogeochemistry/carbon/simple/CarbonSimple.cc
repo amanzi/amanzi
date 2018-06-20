@@ -84,7 +84,7 @@ CarbonSimple::Functional(const double t, const TreeVector& u, TreeVector& f) {
   Teuchos::OSTab tab = vo_->getOSTab();
 
   // eventually we need to ditch this multi-state approach --etc
-  ASSERT(std::abs(S_inter_->time() - t) < 1.e-4*S_next_->time() - S_inter_->time());
+  AMANZI_ASSERT(std::abs(S_inter_->time() - t) < 1.e-4*S_next_->time() - S_inter_->time());
   PK_Physical_Default::Solution_to_State(u, S_inter_);
 
   // debugging

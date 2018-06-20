@@ -49,23 +49,19 @@ RichardsWaterContentEvaluator::InitializeFromPlist_()
 
   // - pull Keys from plist
   // dependency: porosity
-  phi_key_ = plist_.get<std::string>("porosity key",
-          domain_name+"porosity");
+  phi_key_ = Keys::readKey(plist_, domain_name, "porosity", "porosity");
   dependencies_.insert(phi_key_);
 
   // dependency: saturation_liquid
-  sl_key_ = plist_.get<std::string>("saturation liquid key",
-          domain_name+"saturation_liquid");
+  sl_key_ = Keys::readKey(plist_, domain_name, "saturation liquid", "saturation_liquid");
   dependencies_.insert(sl_key_);
 
   // dependency: molar_density_liquid
-  nl_key_ = plist_.get<std::string>("molar density liquid key",
-          domain_name+"molar_density_liquid");
+  nl_key_ = Keys::readKey(plist_, domain_name, "molar density liquid", "molar_density_liquid");
   dependencies_.insert(nl_key_);
 
   // dependency: cell_volume
-  cv_key_ = plist_.get<std::string>("cell volume key",
-          domain_name+"cell_volume");
+  cv_key_ = Keys::readKey(plist_, domain_name, "cell volume", "cell_volume");
   dependencies_.insert(cv_key_);
 }
 
@@ -165,7 +161,7 @@ Teuchos::RCP<const CompositeVector> cv = S->GetFieldData(cv_key_);
     }
 
   } else {
-    ASSERT(0);
+    AMANZI_ASSERT(0);
   }
 }
 

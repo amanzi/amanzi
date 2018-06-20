@@ -24,7 +24,7 @@ class WRMInterfrostPermafrostModel : public WRMPermafrostModel {
       WRMPermafrostModel(plist) {
     W_ = plist.get<double>("W [K]");
     sr_ = plist.get<double>("residual saturation [-]");
-    ASSERT(sr_ > 0.); ASSERT(sr_ < 1.);
+    AMANZI_ASSERT(sr_ > 0.); AMANZI_ASSERT(sr_ < 1.);
   }
 
   // required methods from the base class

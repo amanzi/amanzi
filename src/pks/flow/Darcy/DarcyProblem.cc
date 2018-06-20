@@ -138,7 +138,7 @@ void DarcyProblem::validate_boundary_conditions() const
 
 DiffusionMatrix* DarcyProblem::create_diff_matrix_(Teuchos::RCP<AmanziMesh::Mesh>& mesh) const {
   // Generate the list of all Dirichlet-type faces.
-  // The provided list should include USED BC faces.
+  // The provided list should include Parallel_type::ALL BC faces.
   std::vector<int> dir_faces;
   for (BoundaryFunction::Iterator i = bc_press_->begin(); i != bc_press_->end(); ++i)
     dir_faces.push_back(i->first);
