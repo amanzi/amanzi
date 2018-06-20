@@ -49,10 +49,9 @@ namespace AmanziGeometry {
 
 class RegionBox : public Region {
  public:
-
   // Default constructor uses two corner points (order not important).
   RegionBox(const std::string& name,
-            const Set_ID id,
+            const int id,
             const Point& p0, 
             const Point& p1,
             const LifeCycleType lifecycle=PERMANENT);
@@ -73,8 +72,7 @@ class RegionBox : public Region {
   // if so in how many directions?
   bool is_degenerate(int *ndeg) const;
 
-protected:
-  
+ protected:
   const Point p0_; // one corner of the region
   const Point p1_; // the other corner of the region
 
@@ -87,6 +85,5 @@ protected:
 
 } // namespace AmanziGeometry
 } // namespace Amanzi
-
 
 #endif

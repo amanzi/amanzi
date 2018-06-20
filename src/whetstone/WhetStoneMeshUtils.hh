@@ -71,7 +71,7 @@ void PolygonCentroidWeights(
 inline
 int cell_get_face_adj_cell(const AmanziMesh::Mesh& mesh, int c, int f)
 {
-  AmanziGeometry::Entity_ID_List cells;
+  AmanziMesh::Entity_ID_List cells;
   mesh.face_get_cells(f, Parallel_type::ALL, &cells);
 
   if (cells.size() == 2)

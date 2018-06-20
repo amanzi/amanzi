@@ -20,7 +20,7 @@ namespace Amanzi {
 namespace AmanziGeometry {
 
 RegionPoint::RegionPoint(const std::string& name,
-                         const Set_ID id,
+                         const int id,
                          const Point& p,
                          const LifeCycleType lifecycle)
   : Region(name, id, true, POINT, 1, p.dim(), lifecycle),

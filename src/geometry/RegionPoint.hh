@@ -40,7 +40,7 @@ namespace AmanziGeometry {
 class RegionPoint : public Region {
  public:
   RegionPoint(const std::string& name,
-              const Set_ID id,
+              const int id,
               const Point& p,
               const LifeCycleType lifecycle=PERMANENT);
 

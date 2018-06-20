@@ -27,7 +27,7 @@ namespace AmanziGeometry {
 // Constructor
 // -------------------------------------------------------------------
 RegionLineSegment::RegionLineSegment(
-    const std::string& name, const Set_ID id,
+    const std::string& name, const int id,
     const Point& p0, const Point& p1,
     const LifeCycleType lifecycle)
   : Region(name, id, true, LINE_SEGMENT, p0.dim(), p0.dim(), lifecycle),
