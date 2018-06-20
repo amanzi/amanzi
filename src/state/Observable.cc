@@ -39,6 +39,7 @@ Observable::Observable(Teuchos::ParameterList& plist, Epetra_MpiComm *comm) :
   variable_ = plist.get<std::string>("variable");
   region_ = plist.get<std::string>("region");
   delimiter_ = plist.get<std::string>("delimiter", ",");
+  component_ = plist.get<int>("component", 0);
 
   functional_ = plist.get<std::string>("functional");
   if (functional_ == "observation data: point" ||
@@ -128,6 +129,7 @@ void Observable::WriteHeader_() {
     *out_ << "# Region: " << region_ << std::endl;
     *out_ << "# Functional: " << functional_ << std::endl;
     *out_ << "# Variable: " << variable_ << std::endl;
+    *out_ << "# Component: " << component_ << std::endl;
     *out_ << "# ==========================================================="
           << std::endl;
     *out_ << "#" << std::endl;
@@ -170,7 +172,7 @@ void Observable::Update_(const State& S,
       for (AmanziMesh::Entity_ID_List::const_iterator id=ids.begin();
            id!=ids.end(); ++id) {
         double vol = vec->Mesh()->cell_volume(*id);
-        value = (*function_)(value, subvec[0][*id], vol);
+        value = (*function_)(value, subvec[component_][*id], vol);
         volume += vol;
       }
     } else if (entity == AmanziMesh::FACE) {
@@ -199,14 +201,14 @@ void Observable::Update_(const State& S,
           }
         }
 
-        value = (*function_)(value, sign*subvec[0][*id], vol);
+        value = (*function_)(value, sign*subvec[component_][*id], vol);
         volume += std::abs(vol);
       }
     } else if (entity == AmanziMesh::NODE) {
       for (AmanziMesh::Entity_ID_List::const_iterator id=ids.begin();
            id!=ids.end(); ++id) {
         double vol = 1.0;
-        value = (*function_)(value, subvec[0][*id], vol);
+        value = (*function_)(value, subvec[component_][*id], vol);
         volume += vol;
       }
     }
