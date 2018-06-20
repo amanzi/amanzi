@@ -8,10 +8,10 @@
 add_subdirectory(constitutive_relations)
 add_subdirectory(richards)
 add_subdirectory(permafrost)
-#add_subdirectory(overland)
+add_subdirectory(overland)
 add_subdirectory(icy_overland)
 add_subdirectory(overland_pressure)
-#add_subdirectory(snow_distribution)
+add_subdirectory(snow_distribution)
 
 #=========================================================================================
 
@@ -32,16 +32,16 @@ generate_evaluators_registration_header(
   INSTALL    True
   )
 
-# overland/
-# register_evaluator_with_factory(
-#   HEADERFILE overland/overland_pk_reg.hh
-#   LISTNAME   FLOW_OVERLAND_HEAD_EVAL_FAC
-#   )
+#overland/
+register_evaluator_with_factory(
+  HEADERFILE overland/overland_pk_reg.hh
+  LISTNAME   FLOW_OVERLAND_HEAD_EVAL_FAC
+  )
 
-# register_evaluator_with_factory(
-#   HEADERFILE snow_distribution/snow_distribution_reg.hh
-#   LISTNAME   FLOW_OVERLAND_HEAD_EVAL_FAC
-#   )
+register_evaluator_with_factory(
+  HEADERFILE snow_distribution/snow_distribution_reg.hh
+  LISTNAME   FLOW_OVERLAND_HEAD_EVAL_FAC
+  )
 
 
 # overland_pressure/
@@ -91,10 +91,10 @@ register_evaluator_with_factory(
   LISTNAME   PERMAFROST_EVAL_FAC
   )
 
-# register_evaluator_with_factory(
-#   HEADERFILE permafrost/interfrost_pk_reg.hh
-#   LISTNAME   PERMAFROST_EVAL_FAC
-#   )
+register_evaluator_with_factory(
+  HEADERFILE permafrost/interfrost_pk_reg.hh
+  LISTNAME   PERMAFROST_EVAL_FAC
+  )
 
 generate_evaluators_registration_header(
   HEADERFILE flow_permafrost_registration.hh
