@@ -105,9 +105,10 @@ void RunTestDiffusionMixedXMOF(double gravity) {
   int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
   // number of faces in the mesh
   int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
-  // number of faces with ghost faces as well
+  // number of faces with ghost faces 
   int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
-   
+
+  
   //Analytical model
   AnalyticMultiMat01 ana(mesh, 0., -1. ,1);
 
@@ -244,27 +245,17 @@ void RunTestDiffusionMixedXMOF(double gravity) {
     op->ApplyBCs(true, true);
     global_op->SymbolicAssembleMatrix();
     global_op->AssembleMatrix();
-
-    // double rhs_norm;
-    // rhs.ViewComponent("face", false)->Norm2(&rhs_norm);   
-    // //std::cout<<"RHS\n"<<*solution->ViewComponent("face", false);
-    
+  
     int ierr = solver.ApplyInverse(rhs, *solution);
-    
-    // double sol_norm;
-    // solution->ViewComponent("face", false)->Norm2(&sol_norm);
-    // std::cout<<"Rhs "<<rhs_norm<<" Sol "<<sol_norm<<"\n";
-    
-    // //std::cout<<"Solution\n"<<*solution->ViewComponent("face", false);
-    
+       
     *sol_pl->ViewComponent("face", false) = *solution->ViewComponent("face", false);
     op->UpdateFlux(sol_pl.ptr(), flux.ptr(), dt);
 
     // // compute pressure error
-    double pmin(0.), pmax(0.);
-    p.MinValue(&pmin);
-    p.MaxValue(&pmax);
-    std::cout<<" Min= "<<pmin<<" Max= "<<pmax<<"\n";
+    // double pmin(0.), pmax(0.);
+    // p.MinValue(&pmin);
+    // p.MaxValue(&pmax);
+    // std::cout<<" Min= "<<pmin<<" Max= "<<pmax<<"\n";
 
     time_total += dt;
 
@@ -334,10 +325,13 @@ void RunTestDiffusionMixedXMOF_Linear() {
   meshfactory.preference(FrameworkPreference({MSTK, STKMESH}));
   RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 8, 8, gm);
 
-  // modify diffusion coefficient
+  // modify diffusion coefficient for multimaterial diffusion
   Teuchos::RCP<std::vector<std::vector<WhetStone::Tensor> > >KMulti = Teuchos::rcp(new std::vector<std::vector<WhetStone::Tensor> >());
+  //number of cells in the mesh
   int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  // number of faces in the mesh
   int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
+  // number of faces with ghost faces
   int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
 
   AnalyticMultiMat00 ana(mesh, -1., 1.);
@@ -387,16 +381,7 @@ void RunTestDiffusionMixedXMOF_Linear() {
 
   
   for (int i=0; i!= mat_data.cells_materials.size(); ++i){
-    // std::cout<<i<<": ";
-    // for (int j=0; j!= mat_data.cells_materials[i].size(); ++j) 
-    //   std::cout<<mat_data.cells_materials[i][j]<<" ";
-    // std::cout<<"\n";
-    // // std::cout<<i<<": ";
-    
-    // for (int j=0; j!= mat_data.cells_materials[i].size(); ++j) 
-    //   std::cout<<mat_data.cells_vfracs[i][j]<<" ";
-    // std::cout<<"\n";
-    
+   
     const Point& xc = mesh->cell_centroid(i);
     std::vector<WhetStone::Tensor> Ks_cell;
 
