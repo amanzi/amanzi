@@ -39,8 +39,8 @@ TEST(DG_TAYLOR_POLYNOMIALS) {
     int pos = p.PolynomialPosition(index);
     CHECK(pos == i++);
 
-    int m = p.MonomialPosition(index);
-    p.monomials(index[0] + index[1]).coefs()[m] = pos;
+    int m = p.MonomialSetPosition(index);
+    p(index[0] + index[1], m) = pos;
   }
   std::cout << p << std::endl; 
   CHECK(p.size() == 10);
@@ -74,10 +74,10 @@ TEST(DG_TAYLOR_POLYNOMIALS) {
     int pos = q.PolynomialPosition(index);
     CHECK(pos == i++);
 
-    int m = q.MonomialPosition(index);
-    q.monomials(index[0] + index[1] + index[2]).coefs()[m] = pos;
+    int m = q.MonomialSetPosition(index);
+    q(index[0] + index[1] + index[2], m) = pos;
   }
-  std::cout << q << std::endl; 
+  std::cout << "Original polynomial\n" << q << std::endl; 
   CHECK(q.size() == 20);
   Polynomial q_orig(q);
 
@@ -109,6 +109,9 @@ TEST(DG_TAYLOR_POLYNOMIALS) {
   grad.Gradient(q_orig);
   std::cout << "Gradient of a polynomial:\n" << grad[0] << grad[1] << grad[2] << std::endl;
 
+  Polynomial lp = q_orig.Laplacian();
+  std::cout << "Laplacian of original polynomial:\n" << lp << std::endl;
+
   // change origin of coordinate system
   AmanziGeometry::Point origin(0.5, 0.3, 0.2);
   q.Reshape(3, 2);
@@ -124,8 +127,8 @@ TEST(DG_TAYLOR_POLYNOMIALS) {
     const int* index = it.multi_index();
     int pos = p2d.PolynomialPosition(index);
 
-    int m = it.MonomialOrder();
-    int k = it.MonomialPosition();
+    int m = it.MonomialSetOrder();
+    int k = it.MonomialSetPosition();
     p2d(m, k) = pos;
   }
   AmanziGeometry::Point x0(0.0, 0.0), v1(1.0, 1.0);

@@ -1,4 +1,4 @@
-/* -*-  mode: c++; indent-tabs-mode: nil -*- */
+/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
 //! RegionLabeledSet: A region defined by a set of mesh entities in a mesh file
 
 /*
@@ -78,7 +78,7 @@ class RegionLabeledSet : public Region {
  public:
   // constructor 
   RegionLabeledSet(const std::string& name, 
-                   const Set_ID id, 
+                   const int id, 
                    const std::string& entity_str,
                    const std::string& file,
                    const std::string& format,

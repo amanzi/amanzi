@@ -9,8 +9,8 @@
   Author: Konstantin Lipnikov
 
   Supports parallel communications for integer arrays. Eventually this 
-  functionality should be absorbed in CompositeVector. But currently, it
-  supports only double.
+  functionality should be absorbed in CompositeVector. But currently, 
+  CV supports only double.
 */
 
 #include "ParallelCommunication.hh"

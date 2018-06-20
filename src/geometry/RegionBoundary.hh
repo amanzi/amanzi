@@ -1,4 +1,4 @@
-/* -*-  mode: c++; indent-tabs-mode: nil -*- */
+/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
 //! RegionBoundary:  A region consisting of all entities on the domain boundary
 
 /*
@@ -45,7 +45,7 @@ namespace AmanziGeometry {
 class RegionBoundary : public Region {
  public:
   RegionBoundary(const std::string& name,
-                 const Set_ID id,
+                 const int id,
                  const LifeCycleType lifecycle=PERMANENT);
 
   // Is the the specified point inside this region
@@ -53,7 +53,7 @@ class RegionBoundary : public Region {
   
  protected:
   const std::string entity_str_; // what kind of entities make up this set
-  const std::vector<Entity_ID> entities_; // list of those included
+  const std::vector<int> entities_; // list of those included
 };
 
 }  // namespace AmanziGeometry

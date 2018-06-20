@@ -76,7 +76,7 @@ if (BUILD_TESTS)
 
   set(tpl_libs ${Teuchos_LIBRARIES} ${Boost_LIBRARIES} 
                ${XERCES_LIBRARIES} ${XERCES_ICU_LIBRARIES}
-               ${CCSE_LIBRARIES} ${PETSC_LIBRARIES})
+               ${CCSE_LIBRARIES} ${PETSC_LIBRARIES} ${HDF5_LIBRARIES})
 
   if (BUILD_SHARED_LIBS)
     set(closing_dso ../shared_dso.f90)

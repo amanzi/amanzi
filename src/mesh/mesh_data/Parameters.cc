@@ -45,7 +45,7 @@ Parameters::Parameters (std::string title,
     side_set_ids_ (side_set_ids)
     
 {
-    ASSERT (valid ());
+    AMANZI_ASSERT (valid ());
 }
 
 

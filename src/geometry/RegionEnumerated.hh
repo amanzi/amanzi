@@ -1,4 +1,4 @@
-/* -*-  mode: c++; indent-tabs-mode: nil -*- */
+/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
 //! RegionEnumerated: A region enumerated as a list of IDs.
 
 /*
@@ -13,7 +13,8 @@
 /*!
 
 List *region: enumerated set* defines a set of mesh entities via the list 
-of input global ids..
+of input global ids. Note that global ids are not defined correctly when
+parallle mesh is created on a fly.
 
 * `"entity`" ``[string]`` Type of the mesh object.  Valid are *cell*, *face*, *edge*, *node*
 
@@ -50,7 +51,7 @@ class RegionEnumerated : public Region {
 public:
 
   RegionEnumerated(const std::string& name,
-                   const Set_ID id,
+                   const int id,
                    const std::string& entity_str,
                    const std::vector<Entity_ID>& ents,
                    const LifeCycleType lifecycle=PERMANENT);

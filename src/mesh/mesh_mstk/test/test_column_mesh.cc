@@ -1,4 +1,4 @@
-/* -*-  mode: c++; indent-tabs-mode: nil -*- */
+/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
 // -------------------------------------------------------------
 /**
  * @file   test_column_mesh.cc
@@ -15,7 +15,7 @@
 #include <UnitTest++.h>
 
 #include <mpi.h>
-#include <iostream>
+#include <fstream>
 
 #include <Epetra_MpiComm.h>
 
@@ -66,7 +66,7 @@ TEST(COLUMN_MESH_3D)
   
   // Perturb the nodes above the base layer just a bit
   int nnodes = mesh->num_entities(Amanzi::AmanziMesh::NODE,
-          Amanzi::AmanziMesh::OWNED);
+          Amanzi::AmanziMesh::Parallel_type::OWNED);
 
   for (int n = 0; n < nnodes; n++) {
     Amanzi::AmanziGeometry::Point xyz(3);
@@ -86,15 +86,15 @@ TEST(COLUMN_MESH_3D)
   
   // Verify column mesh topology
   int ncells = colmesh.num_entities(Amanzi::AmanziMesh::CELL,
-          Amanzi::AmanziMesh::OWNED);
+          Amanzi::AmanziMesh::Parallel_type::OWNED);
   CHECK_EQUAL(4,ncells);
   
   int nfaces = colmesh.num_entities(Amanzi::AmanziMesh::FACE,
-          Amanzi::AmanziMesh::OWNED);
+          Amanzi::AmanziMesh::Parallel_type::OWNED);
   CHECK_EQUAL(5,nfaces);
 
   nnodes = colmesh.num_entities(Amanzi::AmanziMesh::NODE,
-          Amanzi::AmanziMesh::OWNED);
+          Amanzi::AmanziMesh::Parallel_type::OWNED);
   CHECK_EQUAL(20,nnodes);
 
   for (int j = 0; j < ncells; j++) {
@@ -107,7 +107,7 @@ TEST(COLUMN_MESH_3D)
 
   for (int j = 0; j < nfaces; j++) {
     Amanzi::AmanziMesh::Entity_ID_List fcells;
-    colmesh.face_get_cells(j,Amanzi::AmanziMesh::OWNED,&fcells);
+    colmesh.face_get_cells(j,Amanzi::AmanziMesh::Parallel_type::OWNED,&fcells);
       
     if (j == 0) {
       CHECK_EQUAL(1,fcells.size());
@@ -193,7 +193,7 @@ TEST(COLUMN_MESH_3D)
 
   // verify that the regions have made it through
   Amanzi::AmanziMesh::Entity_ID_List myregion;
-  colmesh.get_set_entities("myregion", Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::USED, &myregion);
+  colmesh.get_set_entities("myregion", Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::Parallel_type::ALL, &myregion);
   CHECK_EQUAL(2, myregion.size());
   CHECK(colmesh.cell_centroid(myregion[0])[2] >= 2.5);
   CHECK(colmesh.cell_centroid(myregion[1])[2] >= 2.5);
@@ -240,7 +240,7 @@ TEST(COLUMN_MESH_3D_FROM_SURFACE)
   mesh->build_columns("surface");
 
   int nnodes = mesh->num_entities(Amanzi::AmanziMesh::NODE,
-          Amanzi::AmanziMesh::OWNED);
+          Amanzi::AmanziMesh::Parallel_type::OWNED);
 
   // verify in-going topology
   CHECK_EQUAL(16,mesh->num_columns());
@@ -253,15 +253,15 @@ TEST(COLUMN_MESH_3D_FROM_SURFACE)
   
   // Verify column mesh topology
   int ncells = colmesh.num_entities(Amanzi::AmanziMesh::CELL,
-          Amanzi::AmanziMesh::OWNED);
+          Amanzi::AmanziMesh::Parallel_type::OWNED);
   CHECK_EQUAL(4,ncells);
   
   int nfaces = colmesh.num_entities(Amanzi::AmanziMesh::FACE,
-          Amanzi::AmanziMesh::OWNED);
+          Amanzi::AmanziMesh::Parallel_type::OWNED);
   CHECK_EQUAL(5,nfaces);
 
   nnodes = colmesh.num_entities(Amanzi::AmanziMesh::NODE,
-          Amanzi::AmanziMesh::OWNED);
+          Amanzi::AmanziMesh::Parallel_type::OWNED);
   CHECK_EQUAL(20,nnodes);
 
   for (int j = 0; j < ncells; j++) {
@@ -274,7 +274,7 @@ TEST(COLUMN_MESH_3D_FROM_SURFACE)
 
   for (int j = 0; j < nfaces; j++) {
     Amanzi::AmanziMesh::Entity_ID_List fcells;
-    colmesh.face_get_cells(j,Amanzi::AmanziMesh::OWNED,&fcells);
+    colmesh.face_get_cells(j,Amanzi::AmanziMesh::Parallel_type::OWNED,&fcells);
       
     if (j == 0) {
       CHECK_EQUAL(1,fcells.size());
@@ -360,7 +360,7 @@ TEST(COLUMN_MESH_3D_FROM_SURFACE)
 
   // verify that the regions have made it through
   Amanzi::AmanziMesh::Entity_ID_List myregion;
-  colmesh.get_set_entities("myregion", Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::USED, &myregion);
+  colmesh.get_set_entities("myregion", Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::Parallel_type::ALL, &myregion);
   CHECK_EQUAL(2, myregion.size());
   CHECK(colmesh.cell_centroid(myregion[0])[2] >= 2.5);
   CHECK(colmesh.cell_centroid(myregion[1])[2] >= 2.5);

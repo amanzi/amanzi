@@ -41,7 +41,7 @@ TimestepControllerFromFile::get_timestep(double dt, int iterations) {
       return dt_history_[current_-1];
     } else {
       // successful, check to make sure the first simulation worked that way too
-      ASSERT(std::abs(dt_history_[current_] - dt) < 1.e-6);
+      AMANZI_ASSERT(std::abs(dt_history_[current_] - dt) < 1.e-6);
       current_ += 2;
       return dt_history_[current_-1];
     }

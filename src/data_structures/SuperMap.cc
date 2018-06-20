@@ -28,9 +28,9 @@ SuperMap::SuperMap(const Epetra_MpiComm& comm,
                    const std::vector<Teuchos::RCP<const Epetra_Map> >& ghosted_maps) :
     compnames_(compnames)
 {
-  ASSERT(compnames.size() == dofnums.size());
-  ASSERT(compnames.size() == maps.size());
-  ASSERT(compnames.size() == ghosted_maps.size());
+  AMANZI_ASSERT(compnames.size() == dofnums.size());
+  AMANZI_ASSERT(compnames.size() == maps.size());
+  AMANZI_ASSERT(compnames.size() == ghosted_maps.size());
 
   int offset = 0;
 
@@ -129,6 +129,22 @@ SuperMap::GhostIndices(const std::string& compname, int dofnum) const {
 }
 
 
+std::pair<int, Teuchos::RCP<std::vector<int> > >
+SuperMap::BlockIndices() const {
+  auto block_indices = Teuchos::rcp(new std::vector<int>(Map()->NumMyElements()));
+  int block_id = 0;
+  for (const auto& comp : *this) {
+    int ndofs = NumDofs(comp);
+    for (int d=0; d!=ndofs; ++d) {
+      const auto& inds = Indices(comp, d);
+      for (int i=0; i!=inds.size(); ++i) (*block_indices)[inds[i]] = block_id;
+      block_id++;
+    }
+  }
+  return std::make_pair(block_id, block_indices);
+}
+
+
 const std::vector<int>&
 SuperMap::CreateIndices_(const std::string& compname, int dofnum, bool ghosted) const {
   if (ghosted) {
@@ -202,7 +218,7 @@ getMaps(const AmanziMesh::Mesh& mesh, AmanziMesh::Entity_kind location) {
       return std::make_pair(Teuchos::rcpFromRef(mesh.exterior_face_map(false)),
                             Teuchos::rcpFromRef(mesh.exterior_face_map(false)));
     default:
-      ASSERT(false);
+      AMANZI_ASSERT(false);
       return std::make_pair(Teuchos::null, Teuchos::null);
   }
 }

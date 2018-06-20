@@ -50,8 +50,9 @@ if (BUILD_TESTS)
 
     # Need to copy files for the tests 
     if (NOT (${MOAB_SOURCE_DIR} EQUAL ${MOAB_BINARY_DIR}))
-        execute_process(COMMAND ${CMAKE_COMMAND} -E 
-          copy_directory ${MOAB_SOURCE_DIR}/test ${MOAB_BINARY_DIR}/test) 
+      file(GLOB DataFiles "${MOAB_SOURCE_DIR}/test/*.exo"
+                          "${MOAB_SOURCE_DIR}/test/*.h5m")
+      file(COPY ${DataFiles} DESTINATION ${MOAB_BINARY_DIR}/test/)
     endif()
 
     # Test: serial

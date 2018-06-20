@@ -1,4 +1,4 @@
-/* -*-  mode: c++; indent-tabs-mode: nil -*- */
+/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
 //! RegionLogical: A region defined by a logical operation on one or two other regions
 
 /*
@@ -52,7 +52,7 @@ class RegionLogical : public Region {
 
   // constructor 
   RegionLogical(const std::string& name, 
-                const Set_ID id, 
+                const int id, 
                 const std::string& operation_str,
                 const std::vector<std::string>& component_regions,
                 const LifeCycleType lifecycle=PERMANENT);
@@ -63,18 +63,14 @@ class RegionLogical : public Region {
   /// Is the the specified point inside this region
   bool inside(const Point& p) const;
 
-  std::vector<std::string> component_regions() const {
-    return component_regions_; }
-
+  std::vector<std::string> component_regions() const { return component_regions_; }
 
 protected:  
-  BoolOpType operation_; // what logical operation should be performed
-  std::vector<std::string> component_regions_;
-    // names of regions in operation
+  BoolOpType operation_;  // what logical operation should be performed
+  std::vector<std::string> component_regions_;  // names of regions in operation
 };
 
 } // namespace AmanziGeometry
 } // namespace Amanzi
-
 
 #endif

@@ -185,20 +185,20 @@ MatrixFE::FillComplete() {
   if (graph_->includes_offproc()) {
     // fill complete the offproc matrix
     ierr |= offproc_matrix_->FillComplete(graph_->DomainMap(), graph_->RangeMap());
-    ASSERT(!ierr);
+    AMANZI_ASSERT(!ierr);
 
     // scatter offproc into onproc
     ierr |= matrix_->Export(*offproc_matrix_, graph_->Exporter(), Add);
-    ASSERT(!ierr);
+    AMANZI_ASSERT(!ierr);
 
     // zero the offproc in case of multiple stage assembly and multiple calls to FillComplete()
     ierr |= offproc_matrix_->PutScalar(0.);
-    ASSERT(!ierr);
+    AMANZI_ASSERT(!ierr);
   }
 
   // fillcomplete the final graph
   ierr |= matrix_->FillComplete(graph_->DomainMap(), graph_->RangeMap());
-  ASSERT(!ierr);
+  AMANZI_ASSERT(!ierr);
 
   return ierr;  
 }

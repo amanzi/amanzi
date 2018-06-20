@@ -123,7 +123,7 @@ class Mesh_simple : public virtual Mesh {
   //
     
   // Number of entities of any kind (cell, face, node) and in a
-  // particular category (OWNED, GHOST, USED)
+  // particular category (OWNED, GHOST, ALL)
   unsigned int num_entities(const Entity_kind kind,
                             const Parallel_type ptype) const;
     
@@ -197,7 +197,7 @@ class Mesh_simple : public virtual Mesh {
   // (e.g. a hex has 6 face neighbors)
 
   // The order in which the cellids are returned cannot be
-  // guaranteed in general except when ptype = USED, in which case
+  // guaranteed in general except when ptype = ALL, in which case
   // the cellids will correcpond to cells across the respective
   // faces given by cell_get_faces
   void cell_get_face_adj_cells(const Entity_ID cellid,

@@ -1,4 +1,4 @@
-/* -*-  mode: c++; indent-tabs-mode: nil -*- */
+/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
 /*
   A point in space
 
@@ -20,7 +20,7 @@ namespace Amanzi {
 namespace AmanziGeometry {
 
 RegionPoint::RegionPoint(const std::string& name,
-                         const Set_ID id,
+                         const int id,
                          const Point& p,
                          const LifeCycleType lifecycle)
   : Region(name, id, true, POINT, 1, p.dim(), lifecycle),

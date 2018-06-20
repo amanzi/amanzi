@@ -1,4 +1,4 @@
-/* -*-  mode: c++; indent-tabs-mode: nil -*- */
+/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
 /*
   Collection of Regions which decompose the domain into subdomains.
 
@@ -67,7 +67,6 @@ private:
 
   unsigned int dim_;
 };
-
 
 } // namespace AmanziGeometry
 } // namespace Amanzi

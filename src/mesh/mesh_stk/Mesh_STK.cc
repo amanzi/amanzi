@@ -122,7 +122,7 @@ Parallel_type
 Mesh_STK::entity_get_ptype(const Entity_kind kind, 
                            const Entity_ID entid) const
 {
-  ASSERT(entity_valid_kind(kind));
+  AMANZI_ASSERT(entity_valid_kind(kind));
 
   bool owned, used;
   switch (kind) {
@@ -142,9 +142,9 @@ Mesh_STK::entity_get_ptype(const Entity_kind kind,
       Exceptions::amanzi_throw( STK::Error ("Unknown Entity Kind") );
   }
   if (owned) {
-    return OWNED;
+    return Parallel_type::OWNED;
   } else if (used) {
-    return GHOST;
+    return Parallel_type::GHOST;
   } else {
     Exceptions::amanzi_throw( STK::Error ("Invalid local identifier") );
   }
@@ -164,14 +164,14 @@ Mesh_STK::cell_get_type(const Entity_ID cellid) const
   stk::mesh::Entity* cell(mesh_->id_to_entity(rank, global_cell_id));
 
   // FIXME: Throw instead?
-  ASSERT(cell != NULL);
+  AMANZI_ASSERT(cell != NULL);
 
   const CellTopologyData* topo = stk::mesh::fem::get_cell_topology (*cell).getCellTopologyData();
 
   // FIXME: Polyhedral, 2D not yet supported
 
   Cell_type result(CELLTYPE_UNKNOWN);
-  ASSERT(topo != NULL);
+  AMANZI_ASSERT(topo != NULL);
   switch (topo->node_count) {
     case (8):
       result = HEX;
@@ -198,7 +198,7 @@ unsigned int
 Mesh_STK::num_entities (const Entity_kind kind,
                         const Parallel_type ptype) const
 {
-  ASSERT(entity_valid_kind(kind));
+  AMANZI_ASSERT(entity_valid_kind(kind));
   stk::mesh::EntityRank rank(mesh_->kind_to_rank(kind));
   return mesh_->count_entities(rank, ptype);
 }
@@ -209,20 +209,20 @@ Mesh_STK::num_entities (const Entity_kind kind,
 Entity_ID
 Mesh_STK::GID(const Entity_ID lid, const Entity_kind kind) const
 {
-  ASSERT(entity_valid_kind(kind));
+  AMANZI_ASSERT(entity_valid_kind(kind));
   unsigned int result;
 
   switch (kind) {
     case CELL:
-      ASSERT(this->cell_map(true).MyLID(lid));
+      AMANZI_ASSERT(this->cell_map(true).MyLID(lid));
       result = this->cell_map(true).GID(lid);
       break;
     case FACE:
-      ASSERT(this->face_map(true).MyLID(lid));
+      AMANZI_ASSERT(this->face_map(true).MyLID(lid));
       result = this->face_map(true).GID(lid);
       break;
     case NODE:
-      ASSERT(this->node_map(true).MyLID(lid));
+      AMANZI_ASSERT(this->node_map(true).MyLID(lid));
       result = this->node_map(true).GID(lid);
       break;
     default:
@@ -238,20 +238,20 @@ Mesh_STK::GID(const Entity_ID lid, const Entity_kind kind) const
 Entity_ID 
 Mesh_STK::LID(const Entity_ID& gid, const Entity_kind& kind) const
 {
-  ASSERT (entity_valid_kind(kind));
+  AMANZI_ASSERT (entity_valid_kind(kind));
   unsigned int result;
 
   switch (kind) {
     case CELL:
-      ASSERT(this->cell_map(true).MyGID(gid));
+      AMANZI_ASSERT(this->cell_map(true).MyGID(gid));
       result = this->cell_map(true).LID(gid);
       break;
     case FACE:
-      ASSERT(this->face_map(true).MyGID(gid));
+      AMANZI_ASSERT(this->face_map(true).MyGID(gid));
       result = this->face_map(true).LID(gid);
       break;
     case NODE:
-      ASSERT(this->node_map(true).MyGID(gid));
+      AMANZI_ASSERT(this->node_map(true).MyGID(gid));
       result = this->node_map(true).LID(gid);
       break;
     default:
@@ -302,7 +302,7 @@ Mesh_STK::cell_get_faces_and_dirs_internal_(const Entity_ID cellid,
   for (STK::Entity_Ids::iterator f = stk_face_ids.begin(); 
        f != stk_face_ids.end(); f++) {
     stk::mesh::EntityId global_face_id(*f);
-    ASSERT(this->face_map(true).MyGID((long long int) global_face_id));
+    AMANZI_ASSERT(this->face_map(true).MyGID((long long int) global_face_id));
     stk::mesh::EntityId local_face_id = 
       this->face_map(true).LID((long long int) global_face_id);
     *outf = local_face_id;
@@ -330,7 +330,7 @@ Mesh_STK::cell_get_nodes (const Entity_ID cellid,
   Entity_ID_List::iterator outn = outnodeids->begin();
   for (STK::Entity_Ids::iterator n = node_ids.begin(); n != node_ids.end(); n++) {
     stk::mesh::EntityId global_node_id(*n);
-    ASSERT(this->node_map(true).MyGID((long long int) global_node_id));
+    AMANZI_ASSERT(this->node_map(true).MyGID((long long int) global_node_id));
     stk::mesh::EntityId local_node_id = 
       this->node_map(true).LID((long long int) global_node_id);
     *outn = local_node_id;
@@ -357,13 +357,13 @@ Mesh_STK::face_get_nodes (const Entity_ID faceid,
   Entity_ID_List::iterator outn = outnodeids->begin();
   for (STK::Entity_Ids::iterator n = node_ids.begin(); n != node_ids.end(); n++) {
     stk::mesh::EntityId global_node_id(*n);
-    ASSERT(this->node_map(true).MyGID((long long int) global_node_id));
+    AMANZI_ASSERT(this->node_map(true).MyGID((long long int) global_node_id));
     stk::mesh::EntityId local_node_id = 
       this->node_map(true).LID((long long int) global_node_id);
     *outn = local_node_id;
     ++outn;
   }
-  ASSERT(!outnodeids->empty());
+  AMANZI_ASSERT(!outnodeids->empty());
 }
 
 // -------------------------------------------------------------
@@ -386,11 +386,11 @@ Mesh_STK::node_get_cells(const Entity_ID nodeid,
   for (STK::Entity_Ids::iterator i = cell_ids.begin(); i != cell_ids.end(); i++) {
     Entity_ID local_cell_id(this->cell_map(true).LID((long long int)*i));
     Parallel_type theptype(this->entity_get_ptype(CELL, local_cell_id));
-    if (theptype == OWNED && (ptype == OWNED || ptype == USED)) {
+    if (theptype == Parallel_type::OWNED && (ptype == Parallel_type::OWNED || ptype == Parallel_type::ALL)) {
       *outc = local_cell_id;
       ++outc;
       ++nc2;
-    } else if (theptype == GHOST && (ptype == GHOST || ptype == USED)) {
+    } else if (theptype == Parallel_type::GHOST && (ptype == Parallel_type::GHOST || ptype == Parallel_type::ALL)) {
       *outc = local_cell_id;
       ++outc;
       ++nc2;
@@ -419,11 +419,11 @@ Mesh_STK::node_get_faces(const Entity_ID nodeid,
   for (STK::Entity_Ids::iterator i = face_ids.begin(); i != face_ids.end(); i++) {
     Entity_ID local_face_id(this->face_map(true).LID((long long int)*i));
     Parallel_type theptype(this->entity_get_ptype(FACE, local_face_id));
-    if (theptype == OWNED && (ptype == OWNED || ptype == USED)) {
+    if (theptype == Parallel_type::OWNED && (ptype == Parallel_type::OWNED || ptype == Parallel_type::ALL)) {
       *outf = local_face_id;
       ++outf;
       ++nf2;
-    } else if (theptype == GHOST && (ptype == GHOST || ptype == USED)) {
+    } else if (theptype == Parallel_type::GHOST && (ptype == Parallel_type::GHOST || ptype == Parallel_type::ALL)) {
       *outf = local_face_id;
       ++outf;
       ++nf2;
@@ -456,7 +456,7 @@ Mesh_STK::node_get_cell_faces(const Entity_ID nodeid,
                         cell_faces.begin(), cell_faces.end(),
                         std::back_inserter(*outfaceids));
 
-  ASSERT(!outfaceids->empty());
+  AMANZI_ASSERT(!outfaceids->empty());
 }
 
 // -------------------------------------------------------------
@@ -481,11 +481,11 @@ Mesh_STK::face_get_cells_internal_(const Entity_ID faceid,
   for (STK::Entity_Ids::iterator i = cell_ids.begin(); i != cell_ids.end(); i++) {
     Entity_ID local_cell_id(this->cell_map(true).LID((long long int)*i));
     Parallel_type theptype(this->entity_get_ptype(FACE, local_cell_id));
-    if (theptype == OWNED && (ptype == OWNED || ptype == USED)) {
+    if (theptype == Parallel_type::OWNED && (ptype == Parallel_type::OWNED || ptype == Parallel_type::ALL)) {
       *outc = local_cell_id;
       ++outc;
       ++nc2;
-    } else if (theptype == GHOST && (ptype == GHOST || ptype == USED)) {
+    } else if (theptype == Parallel_type::GHOST && (ptype == Parallel_type::GHOST || ptype == Parallel_type::ALL)) {
       *outc = local_cell_id;
       ++outc;
       ++nc2;
@@ -722,7 +722,7 @@ Mesh_STK::get_set_entities_and_vofs(const std::string setname,
                                     Entity_ID_List *entids,
                                     std::vector<double> *vofs) const
 {
-  ASSERT (entity_valid_ptype(ptype));
+  AMANZI_ASSERT (entity_valid_ptype(ptype));
   stk::mesh::EntityRank rank(mesh_->kind_to_rank(kind));
 
   stk::mesh::Part *part;
@@ -797,7 +797,7 @@ Mesh_STK::get_set_entities_and_vofs(const std::string setname,
   // if the part is not found. It has to have been created during the 
   // initialization phase
 
-  ASSERT(part != NULL);
+  AMANZI_ASSERT(part != NULL);
 
   STK::Entity_vector entities;
   mesh_->get_entities(*part, ptype, entities);
@@ -865,7 +865,7 @@ Mesh_STK::build_maps_ ()
     Teuchos::RCP<Epetra_Map> map;
 
     // Get the collection of "owned" entities
-    mesh_->get_entities (rank, OWNED, entities);
+    mesh_->get_entities (rank, Parallel_type::OWNED, entities);
     extract_global_ids(entities, entity_ids);
 
     map.reset(new Epetra_Map(-1, entity_ids.size(), &entity_ids[0], ZERO, *comm_));
@@ -873,7 +873,7 @@ Mesh_STK::build_maps_ ()
 
     // Get the collection of "ghost" entities
     STK::Entity_vector ghost_entities;
-    mesh_->get_entities (rank, GHOST, ghost_entities);
+    mesh_->get_entities (rank, Parallel_type::GHOST, ghost_entities);
     std::vector<int> ghost_entity_ids;
     extract_global_ids(ghost_entities, ghost_entity_ids);
     std::copy(ghost_entity_ids.begin(), ghost_entity_ids.end(), 
@@ -894,10 +894,10 @@ Mesh_STK::get_map_(const Entity_kind& kind, const bool& include_ghost) const
   MapSet::const_iterator m;
   if (include_ghost) {
     m = map_used_.find(kind);
-    ASSERT(m != map_used_.end());
+    AMANZI_ASSERT(m != map_used_.end());
   } else {
     m = map_owned_.find(kind);
-    ASSERT(m != map_owned_.end());
+    AMANZI_ASSERT(m != map_owned_.end());
   }
   return *(m->second);
 }

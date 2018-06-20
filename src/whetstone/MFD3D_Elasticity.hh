@@ -33,7 +33,7 @@
 namespace Amanzi {
 namespace WhetStone {
 
-class MFD3D_Elasticity : public virtual MFD3D { 
+class MFD3D_Elasticity : public MFD3D { 
  public:
   MFD3D_Elasticity(Teuchos::RCP<const AmanziMesh::Mesh> mesh)
     : MFD3D(mesh),
@@ -49,19 +49,9 @@ class MFD3D_Elasticity : public virtual MFD3D {
   // -- inverse mass matrices
   virtual int L2consistencyInverse(int c, const Tensor& T, DenseMatrix& R, DenseMatrix& Wc, bool symmetry);
   virtual int MassMatrixInverse(int c, const Tensor& T, DenseMatrix& W) { return WHETSTONE_ELEMENTAL_MATRIX_OK; } 
-
   // -- stiffness matrix
   virtual int H1consistency(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Mc);
   virtual int StiffnessMatrix(int c, const Tensor& T, DenseMatrix& A);
-
-  // -- divergence matrices
-  virtual int DivergenceMatrix(int c, DenseMatrix& A) { return -1; }
-
-  // -- unsupported members
-  virtual int MassMatrixPoly(int c, const Polynomial& K, DenseMatrix& M) { return -1; }
-  virtual int StiffnessMatrixPoly(int c, const Polynomial& K, DenseMatrix& A) { return -1; }
-  virtual int AdvectionMatrix(int c, const AmanziGeometry::Point v, DenseMatrix& A, bool grad_on_test) { return -1; }
-  virtual int AdvectionMatrixPoly(int c, const VectorPolynomial& v, DenseMatrix& A, bool grad_on_test) { return -1; }
 
   // optimization methods (mainly for testing)
   int StiffnessMatrixOptimized(int c, const Tensor& T, DenseMatrix& A);

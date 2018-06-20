@@ -31,6 +31,7 @@ include_directories(${DBC_SOURCE_DIR})
 # External (TPL) include directories
 include_directories(${Teuchos_INCLUDE_DIRS})
 include_directories(${Epetra_INCLUDE_DIRS})
+include_directories(${HDF5_INCLUDE_DIRS})
 
 # Need to move this up to the root -- lpritch
 add_definitions("-DUSE_MPI")
@@ -56,8 +57,9 @@ if (BUILD_TESTS)
 
   # Copy test subdirectory for out of source builds
   if (NOT (FUNCS_SOURCE_DIR STREQUAL FUNCS_BINARY_DIR))
-      execute_process(COMMAND ${CMAKE_COMMAND} -E 
-        copy_directory ${FUNCS_SOURCE_DIR}/test ${FUNCS_BINARY_DIR}/test) 
+      file(GLOB DataFiles "${FUNCS_SOURCE_DIR}/test/*.txt"
+                          "${FUNCS_SOURCE_DIR}/test/*.h5")
+      file(COPY ${DataFiles} DESTINATION ${FUNCS_BINARY_DIR}/test/)
   endif()
 
   add_amanzi_test(function_all function_all

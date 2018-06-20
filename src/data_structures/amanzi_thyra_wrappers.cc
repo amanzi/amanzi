@@ -361,7 +361,7 @@ void ViewThyraVectorAsTreeVector(const Teuchos::RCP<Thyra::VectorBase<double> >&
   // Unpack vec as ProductVector
   Teuchos::RCP< Thyra::DefaultProductVector<double> > pvec =
     Teuchos::rcp_dynamic_cast< Thyra::DefaultProductVector<double> >(vec);
-  ASSERT(vec != Teuchos::null);
+  AMANZI_ASSERT(vec != Teuchos::null);
 
   // Loop over subvectors.
   int i = 0;
@@ -385,7 +385,7 @@ void ViewThyraVectorAsCompositeVector(const Teuchos::RCP<Thyra::VectorBase<doubl
   // Unpack vec as ProductVector
   Teuchos::RCP< Thyra::DefaultProductVector<double> > pvec =
     Teuchos::rcp_dynamic_cast< Thyra::DefaultProductVector<double> >(vec);
-  ASSERT(vec != Teuchos::null);
+  AMANZI_ASSERT(vec != Teuchos::null);
 
   // Loop over components, assigning the block's vec to the component Epetra_MultiVector
   int i=0;
@@ -395,7 +395,7 @@ void ViewThyraVectorAsCompositeVector(const Teuchos::RCP<Thyra::VectorBase<doubl
     // each block vector is actually a product
     Teuchos::RCP< Thyra::DefaultMultiVectorProductVector<double> > pv_block =
       Teuchos::rcp_dynamic_cast< Thyra::DefaultMultiVectorProductVector<double> >(block);
-    ASSERT(pv_block != Teuchos::null);
+    AMANZI_ASSERT(pv_block != Teuchos::null);
 
     // get the MultiVector data
     Teuchos::RCP< Thyra::MultiVectorBase<double> > mv_block =

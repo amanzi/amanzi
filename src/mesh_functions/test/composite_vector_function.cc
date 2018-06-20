@@ -120,15 +120,15 @@ TEST_FIXTURE(another_reference_mesh, cv_function)
   cv->PutScalar(0.0);
 
   // apply the function to the vector
-  cvfunc.Compute(0.0, *cv);
+  cvfunc.Compute(0.0, cv.ptr());
 
   // Check
-  int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
   for (int c=0; c!=ncells; ++c) {
     CHECK_CLOSE(1.0, (*cv)("cell", 0, c), 0.0000001);
   }
 
-  int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
+  int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
   for (int f=0; f!=nfaces; ++f) {
     CHECK_CLOSE(1.0, (*cv)("face", 0, f), 0.0000001);
   }

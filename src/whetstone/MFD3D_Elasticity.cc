@@ -152,7 +152,7 @@ int MFD3D_Elasticity::H1consistency(int c, const Tensor& T,
         u = dirs[i] * norm(v3) / (4 * area);
       }
 
-      int pos = FindPosition_(v, nodes);
+      int pos = FindPosition(v, nodes);
       for (int k = 0; k < nd; k++) {
         v1 = TE[k] * normal;
         for (int l = 0; l < d_; l++) R(l * nnodes + pos, k) += v1[l] * u;

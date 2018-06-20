@@ -1,4 +1,4 @@
-/* -*-  mode: c++; indent-tabs-mode: nil -*- */
+/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
 //! RegionPolygon: A closed polygonal segment of a plane.
 
 /*
@@ -62,7 +62,7 @@ class RegionPolygon : public Region {
  public:
   // Default constructor uses two corner points (order not important).
   RegionPolygon(const std::string& name,
-                const Set_ID id, 
+                const int id, 
                 const std::vector<Point>& polypoints, 
                 const LifeCycleType lifecycle=PERMANENT);
 

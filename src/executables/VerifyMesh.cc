@@ -1,4 +1,4 @@
-/* -*-  mode: c++; indent-tabs-mode: nil -*- */
+/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
 // -------------------------------------------------------------
 /**
  * @file   verify_mesh.cc
@@ -15,9 +15,7 @@
 // Last Change: Tue Jul 26 09:20:17 2011 by William A. Perkins <d3g096@PE10900.pnl.gov>
 // -------------------------------------------------------------
 
-
-#include <mpi.h>
-#include <iostream>
+#include <fstream>
 
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_CommandLineProcessor.hpp"

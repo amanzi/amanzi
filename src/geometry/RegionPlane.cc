@@ -1,4 +1,4 @@
-/* -*-  mode: c++; indent-tabs-mode: nil -*- */
+/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
 /*
   A planar (infinite) region in space, defined by a point and a normal.
 
@@ -26,7 +26,7 @@ namespace AmanziGeometry {
 // RegionPlane:: constructors / destructor
 // -------------------------------------------------------------
 RegionPlane::RegionPlane(const std::string& name, 
-                         const Set_ID id,
+                         const int id,
                          const Point& p,
                          const Point& normal,
                          const LifeCycleType lifecycle)

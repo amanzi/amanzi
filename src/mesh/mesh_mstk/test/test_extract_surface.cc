@@ -1,5 +1,5 @@
 #include <UnitTest++.h>
-#include <iostream>
+#include <fstream>
 
 #include "../Mesh_MSTK.hh"
 
@@ -61,19 +61,19 @@ TEST(Extract_Surface_MSTK1)
 
 
   // Number of cells (quadrilaterals) in surface mesh
-  int ncells_surf = surfmesh.get_set_size(setnames[0],Amanzi::AmanziMesh::CELL,Amanzi::AmanziMesh::OWNED);
-  ncells_surf += surfmesh.get_set_size(setnames[1],Amanzi::AmanziMesh::CELL,Amanzi::AmanziMesh::OWNED);
-  //  int ncells_surf = surfmesh.num_entities(Amanzi::AmanziMesh::CELL,Amanzi::AmanziMesh::OWNED);
+  int ncells_surf = surfmesh.get_set_size(setnames[0],Amanzi::AmanziMesh::CELL,Amanzi::AmanziMesh::Parallel_type::OWNED);
+  ncells_surf += surfmesh.get_set_size(setnames[1],Amanzi::AmanziMesh::CELL,Amanzi::AmanziMesh::Parallel_type::OWNED);
+  //  int ncells_surf = surfmesh.num_entities(Amanzi::AmanziMesh::CELL,Amanzi::AmanziMesh::Parallel_type::OWNED);
   CHECK_EQUAL(18,ncells_surf);
       
   // Number of "faces" (edges) in surface mesh
 
-  int nfaces_surf = surfmesh.num_entities(Amanzi::AmanziMesh::FACE,Amanzi::AmanziMesh::OWNED);
+  int nfaces_surf = surfmesh.num_entities(Amanzi::AmanziMesh::FACE,Amanzi::AmanziMesh::Parallel_type::OWNED);
   CHECK_EQUAL(45,nfaces_surf);
 
   // Number of nodes in surface mesh
 
-  int nnodes_surf = surfmesh.num_entities(Amanzi::AmanziMesh::NODE,Amanzi::AmanziMesh::OWNED);
+  int nnodes_surf = surfmesh.num_entities(Amanzi::AmanziMesh::NODE,Amanzi::AmanziMesh::Parallel_type::OWNED);
   CHECK_EQUAL(28,nnodes_surf);
 
 
@@ -137,7 +137,7 @@ TEST(Extract_Surface_MSTK2)
 
   // Perturb some nodes
 
-  int nv = mesh.num_entities(Amanzi::AmanziMesh::NODE,Amanzi::AmanziMesh::OWNED);
+  int nv = mesh.num_entities(Amanzi::AmanziMesh::NODE,Amanzi::AmanziMesh::Parallel_type::OWNED);
 
   for (int i = 0; i < nv; i++) {
     Amanzi::AmanziGeometry::Point pt;
@@ -159,17 +159,17 @@ TEST(Extract_Surface_MSTK2)
 
   // Number of cells (quadrilaterals) in surface mesh
 
-  int ncells_surf = surfmesh.num_entities(Amanzi::AmanziMesh::CELL,Amanzi::AmanziMesh::OWNED);
+  int ncells_surf = surfmesh.num_entities(Amanzi::AmanziMesh::CELL,Amanzi::AmanziMesh::Parallel_type::OWNED);
   CHECK_EQUAL(16,ncells_surf);
       
   // Number of "faces" (edges) in surface mesh
 
-  int nfaces_surf = surfmesh.num_entities(Amanzi::AmanziMesh::FACE,Amanzi::AmanziMesh::OWNED);
+  int nfaces_surf = surfmesh.num_entities(Amanzi::AmanziMesh::FACE,Amanzi::AmanziMesh::Parallel_type::OWNED);
   CHECK_EQUAL(40,nfaces_surf);
 
   // Number of nodes in surface mesh
 
-  int nnodes_surf = surfmesh.num_entities(Amanzi::AmanziMesh::NODE,Amanzi::AmanziMesh::OWNED);
+  int nnodes_surf = surfmesh.num_entities(Amanzi::AmanziMesh::NODE,Amanzi::AmanziMesh::Parallel_type::OWNED);
   CHECK_EQUAL(25,nnodes_surf);
 
 
@@ -246,17 +246,17 @@ TEST(Extract_Surface_MSTK3)
 
   // Number of cells (quadrilaterals) in surface mesh
 
-  int ncells_surf = surfmesh.num_entities(Amanzi::AmanziMesh::CELL,Amanzi::AmanziMesh::OWNED);
+  int ncells_surf = surfmesh.num_entities(Amanzi::AmanziMesh::CELL,Amanzi::AmanziMesh::Parallel_type::OWNED);
   CHECK_EQUAL(9,ncells_surf);
       
   // Number of "faces" (edges) in surface mesh
 
-  int nfaces_surf = surfmesh.num_entities(Amanzi::AmanziMesh::FACE,Amanzi::AmanziMesh::OWNED);
+  int nfaces_surf = surfmesh.num_entities(Amanzi::AmanziMesh::FACE,Amanzi::AmanziMesh::Parallel_type::OWNED);
   CHECK_EQUAL(24,nfaces_surf);
 
   // Number of nodes in surface mesh
 
-  int nnodes_surf = surfmesh.num_entities(Amanzi::AmanziMesh::NODE,Amanzi::AmanziMesh::OWNED);
+  int nnodes_surf = surfmesh.num_entities(Amanzi::AmanziMesh::NODE,Amanzi::AmanziMesh::Parallel_type::OWNED);
   CHECK_EQUAL(16,nnodes_surf);
 
 
@@ -286,7 +286,7 @@ TEST(Extract_Surface_MSTK3)
 
   Amanzi::AmanziMesh::Entity_ID_List setents;
   surfmesh.get_set_entities("Side Surface",Amanzi::AmanziMesh::FACE,
-                            Amanzi::AmanziMesh::OWNED,&setents);
+                            Amanzi::AmanziMesh::Parallel_type::OWNED,&setents);
 
   CHECK(setents.size() != 0);
 
@@ -345,7 +345,7 @@ TEST(Extract_Surface_MSTK4)
 
 
   // Perturb some nodes
-  int nv = mesh.num_entities(Amanzi::AmanziMesh::NODE,Amanzi::AmanziMesh::OWNED);
+  int nv = mesh.num_entities(Amanzi::AmanziMesh::NODE,Amanzi::AmanziMesh::Parallel_type::OWNED);
 
   for (int i = 0; i < nv; i++) {
     Amanzi::AmanziGeometry::Point pt;
@@ -380,17 +380,17 @@ TEST(Extract_Surface_MSTK4)
 
   // Number of cells (quadrilaterals) in surface mesh
 
-  int ncells_surf2D = surfmesh2D.num_entities(Amanzi::AmanziMesh::CELL,Amanzi::AmanziMesh::OWNED);
+  int ncells_surf2D = surfmesh2D.num_entities(Amanzi::AmanziMesh::CELL,Amanzi::AmanziMesh::Parallel_type::OWNED);
   CHECK_EQUAL(16,ncells_surf2D);
       
   // Number of "faces" (edges) in surface mesh
 
-  int nfaces_surf2D = surfmesh2D.num_entities(Amanzi::AmanziMesh::FACE,Amanzi::AmanziMesh::OWNED);
+  int nfaces_surf2D = surfmesh2D.num_entities(Amanzi::AmanziMesh::FACE,Amanzi::AmanziMesh::Parallel_type::OWNED);
   CHECK_EQUAL(40,nfaces_surf2D);
 
   // Number of nodes in surface mesh
 
-  int nnodes_surf2D = surfmesh2D.num_entities(Amanzi::AmanziMesh::NODE,Amanzi::AmanziMesh::OWNED);
+  int nnodes_surf2D = surfmesh2D.num_entities(Amanzi::AmanziMesh::NODE,Amanzi::AmanziMesh::Parallel_type::OWNED);
   CHECK_EQUAL(25,nnodes_surf2D);
 
 
@@ -418,7 +418,7 @@ TEST(Extract_Surface_MSTK4)
   delete [] found;
 
   Amanzi::AmanziMesh::Entity_ID_List setents;  
-  surfmesh2D.get_set_entities("Top Surface 2D",Amanzi::AmanziMesh::FACE,Amanzi::AmanziMesh::OWNED,&setents);
+  surfmesh2D.get_set_entities("Top Surface 2D",Amanzi::AmanziMesh::FACE,Amanzi::AmanziMesh::Parallel_type::OWNED,&setents);
   
   Amanzi::AmanziMesh::Entity_ID expents[4] = {11,21,30,39};
   double exp_centroid[4][2] = {{0.125,1.0},{0.375,1.0},{0.625,1.0},{0.875,1.0}};

@@ -56,11 +56,11 @@ check_face_ownership(BulkData& bulk_data) {
 
     // there better be at least one cell related to this face
 
-    ASSERT(!cells.empty());
+    AMANZI_ASSERT(!cells.empty());
 
     // There should be at most 2 cells related to this face
 
-    ASSERT(cells.size() <= 2);
+    AMANZI_ASSERT(cells.size() <= 2);
 
     unsigned int cowner =
       std::min<unsigned int>(cells.front()->owner_rank(),

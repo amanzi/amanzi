@@ -40,32 +40,17 @@ class MeshMaps_FEM : public MeshMaps {
   ~MeshMaps_FEM() {};
 
   // Maps
-  // -- pseudo-velocity in cell c
+  // -- pseudo-velocity
   virtual void VelocityCell(int c, const std::vector<VectorPolynomial>& vf,
                             VectorPolynomial& vc) const override;
+
   // -- Nanson formula
-  virtual void NansonFormula(int f, double t, const VectorPolynomial& v,
+  virtual void NansonFormula(int f, double t, const VectorPolynomial& vf,
                              VectorPolynomial& cn) const override;
 
-  // Jacobian
-  // -- tensors
-  virtual void Cofactors(int c, double t, const VectorPolynomial& vc,
-                         MatrixPolynomial& C) const override;
-  // -- determinant
-  virtual void JacobianDet(int c, double t, const std::vector<VectorPolynomial>& vf,
-                           Polynomial& vc) const override;
-  // -- value at point x
-  virtual void JacobianCellValue(int c,
-                                 double t, const AmanziGeometry::Point& x,
-                                 Tensor& J) const override;
-  virtual void JacobianFaceValue(int f, const VectorPolynomial& v,
-                                 const AmanziGeometry::Point& x,
-                                 Tensor& J) const override;
-
  private:
-  AmanziGeometry::Point Map_(int c, const AmanziGeometry::Point& xref) const;
+  void JacobianCellValue_(int c, double t, const AmanziGeometry::Point& x, Tensor& J) const;
 
-  void JacobianValue_(int c, const AmanziGeometry::Point& xref, Tensor& J) const;
   Tensor JacobianValueInternal_(Teuchos::RCP<const AmanziMesh::Mesh> mesh,
                                 int c, const AmanziGeometry::Point& xref) const;
 };

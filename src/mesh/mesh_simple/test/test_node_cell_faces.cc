@@ -29,7 +29,7 @@ TEST(NODE_CELL_FACES) {
       
       Amanzi::AmanziMesh::Entity_ID_List cells;
 
-      Mm.node_get_cells(node, Amanzi::AmanziMesh::OWNED, &cells);
+      Mm.node_get_cells(node, Amanzi::AmanziMesh::Parallel_type::OWNED, &cells);
 
       unsigned int ncells = cells.size();
 
@@ -39,7 +39,7 @@ TEST(NODE_CELL_FACES) {
 
 	  Amanzi::AmanziMesh::Entity_ID_List faces;
 
-	  Mm.node_get_cell_faces(node, cell, Amanzi::AmanziMesh::OWNED, &faces);
+	  Mm.node_get_cell_faces(node, cell, Amanzi::AmanziMesh::Parallel_type::OWNED, &faces);
 
 	  // This is a hex mesh. In any given cell, number of faces
 	  // connected to a node should be 3

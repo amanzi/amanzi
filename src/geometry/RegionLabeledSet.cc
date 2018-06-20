@@ -1,4 +1,4 @@
-/* -*-  mode: c++; indent-tabs-mode: nil -*- */
+/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
 /*
   A region defined by a set of mesh entities in a mesh file
 
@@ -37,7 +37,7 @@ namespace AmanziGeometry {
 // RegionLabeledSet:: constructor
 // -------------------------------------------------------------
 RegionLabeledSet::RegionLabeledSet(const std::string& name, 
-                                   const Set_ID id,
+                                   const int id,
                                    const std::string& entity_str,
                                    const std::string& file,
                                    const std::string& format,

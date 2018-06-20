@@ -187,7 +187,7 @@ int MFD3D_Diffusion::H1consistency(
         u = dirs[i] * norm(v3) / (4 * area);
       }
 
-      int pos = FindPosition_(v, nodes);
+      int pos = FindPosition(v, nodes);
       for (int k = 0; k < d_; k++) N(pos, k) += normal[k] * u;
     }
   }
@@ -407,7 +407,7 @@ int MFD3D_Diffusion::RecoverGradient_StiffnessMatrix(
         u = dirs[i] * norm(v3) / (4 * area);
       }
 
-      int pos = FindPosition_(v, nodes);
+      int pos = FindPosition(v, nodes);
       for (int k = 0; k < d_; k++) R(pos, k) += normal[k] * u;
     }
   }
@@ -512,7 +512,7 @@ int MFD3D_Diffusion::L2consistencyInverseDivKScaled(
         R(i, k) = (k1 * v1[k] + k2 * v2[k] + km * vm) * tmp;
       }
     } else {
-      ASSERT(false);
+      AMANZI_ASSERT(false);
     }
   }
 

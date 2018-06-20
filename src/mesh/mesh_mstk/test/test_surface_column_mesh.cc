@@ -1,4 +1,4 @@
-/* -*-  mode: c++; indent-tabs-mode: nil -*- */
+/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
 // -------------------------------------------------------------
 /**
  * @file   test_column_mesh.cc
@@ -15,7 +15,7 @@
 #include <UnitTest++.h>
 
 #include <mpi.h>
-#include <iostream>
+#include <fstream>
 
 #include <Epetra_MpiComm.h>
 
@@ -67,7 +67,7 @@ TEST(SURFACE_COLUMN_MESH_3D)
   
   // Perturb the nodes above the base layer just a bit
   int nnodes = mesh->num_entities(Amanzi::AmanziMesh::NODE,
-          Amanzi::AmanziMesh::OWNED);
+          Amanzi::AmanziMesh::Parallel_type::OWNED);
     
   for (int n = 0; n < nnodes; n++) {
     Amanzi::AmanziGeometry::Point xyz(3);
@@ -83,9 +83,9 @@ TEST(SURFACE_COLUMN_MESH_3D)
   Amanzi::AmanziMesh::MeshSurfaceCell col_surf(colmesh, "surface");
 
   // -- check basic mesh structure
-  CHECK_EQUAL(1, col_surf.num_entities(Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::OWNED));
-  CHECK_EQUAL(4, col_surf.num_entities(Amanzi::AmanziMesh::FACE, Amanzi::AmanziMesh::OWNED));
-  CHECK_EQUAL(4, col_surf.num_entities(Amanzi::AmanziMesh::NODE, Amanzi::AmanziMesh::OWNED));
+  CHECK_EQUAL(1, col_surf.num_entities(Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::Parallel_type::OWNED));
+  CHECK_EQUAL(4, col_surf.num_entities(Amanzi::AmanziMesh::FACE, Amanzi::AmanziMesh::Parallel_type::OWNED));
+  CHECK_EQUAL(4, col_surf.num_entities(Amanzi::AmanziMesh::NODE, Amanzi::AmanziMesh::Parallel_type::OWNED));
 
   // -- check flattened
   Amanzi::AmanziGeometry::Point node;
@@ -95,14 +95,14 @@ TEST(SURFACE_COLUMN_MESH_3D)
   // -- check sets
   Amanzi::AmanziMesh::Entity_ID_List cells_in_surf;
   col_surf.get_set_entities_and_vofs("surface", Amanzi::AmanziMesh::CELL,
-                                     Amanzi::AmanziMesh::OWNED,
+                                     Amanzi::AmanziMesh::Parallel_type::OWNED,
                                      &cells_in_surf, NULL);
   CHECK_EQUAL(1, cells_in_surf.size());
   CHECK_EQUAL(0, cells_in_surf[0]);
 
   Amanzi::AmanziMesh::Entity_ID_List cells_in_surf_2D;
   col_surf.get_set_entities_and_vofs("surface_domain", Amanzi::AmanziMesh::CELL,
-                                     Amanzi::AmanziMesh::OWNED,
+                                     Amanzi::AmanziMesh::Parallel_type::OWNED,
                                      &cells_in_surf_2D, NULL);
   CHECK_EQUAL(1, cells_in_surf.size());
   CHECK_EQUAL(0, cells_in_surf[0]);
@@ -139,32 +139,32 @@ TEST(SURFACE_COLUMN_MESH_3D_UNSTRUCTURED)
   Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh =
       Teuchos::rcp(new Amanzi::AmanziMesh::Mesh_MSTK("test/slab-0.05-5x4x25.exo", &comm, 3, gm));
 
-  CHECK_EQUAL(20, mesh->get_set_size("surface",Amanzi::AmanziMesh::FACE, Amanzi::AmanziMesh::USED));
+  CHECK_EQUAL(20, mesh->get_set_size("surface",Amanzi::AmanziMesh::FACE, Amanzi::AmanziMesh::Parallel_type::ALL));
 
   // Build columns in the mesh
   CHECK_EQUAL(1, mesh->build_columns());
   
   // Create a column mesh from one of the columns
   Amanzi::AmanziMesh::MeshColumn colmesh(*mesh,10);
-  CHECK_EQUAL(1, colmesh.get_set_size("surface",Amanzi::AmanziMesh::FACE, Amanzi::AmanziMesh::USED));
+  CHECK_EQUAL(1, colmesh.get_set_size("surface",Amanzi::AmanziMesh::FACE, Amanzi::AmanziMesh::Parallel_type::ALL));
 
   // Extract the surface from this column
   Amanzi::AmanziMesh::MeshSurfaceCell col_surf(colmesh, "surface");
 
-  CHECK_EQUAL(1, col_surf.num_entities(Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::OWNED));
-  CHECK_EQUAL(4, col_surf.num_entities(Amanzi::AmanziMesh::FACE, Amanzi::AmanziMesh::OWNED));
-  CHECK_EQUAL(4, col_surf.num_entities(Amanzi::AmanziMesh::NODE, Amanzi::AmanziMesh::OWNED));
+  CHECK_EQUAL(1, col_surf.num_entities(Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::Parallel_type::OWNED));
+  CHECK_EQUAL(4, col_surf.num_entities(Amanzi::AmanziMesh::FACE, Amanzi::AmanziMesh::Parallel_type::OWNED));
+  CHECK_EQUAL(4, col_surf.num_entities(Amanzi::AmanziMesh::NODE, Amanzi::AmanziMesh::Parallel_type::OWNED));
 
   Amanzi::AmanziMesh::Entity_ID_List cells_in_surf;
   col_surf.get_set_entities_and_vofs("surface", Amanzi::AmanziMesh::CELL,
-                                     Amanzi::AmanziMesh::OWNED,
+                                     Amanzi::AmanziMesh::Parallel_type::OWNED,
                                      &cells_in_surf, NULL);
   CHECK_EQUAL(1, cells_in_surf.size());
   CHECK_EQUAL(0, cells_in_surf[0]);
 
   Amanzi::AmanziMesh::Entity_ID_List cells_in_surf_2D;
   col_surf.get_set_entities_and_vofs("surface_domain", Amanzi::AmanziMesh::CELL,
-                                     Amanzi::AmanziMesh::OWNED,
+                                     Amanzi::AmanziMesh::Parallel_type::OWNED,
                                      &cells_in_surf_2D, NULL);
   CHECK_EQUAL(1, cells_in_surf.size());
   CHECK_EQUAL(0, cells_in_surf[0]);

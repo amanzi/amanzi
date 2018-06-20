@@ -32,6 +32,44 @@ VectorPolynomial::VectorPolynomial(int d, int size) : d_(d)
 
 
 /* ******************************************************************
+* Converter-type constructor
+****************************************************************** */
+VectorPolynomial::VectorPolynomial(const Polynomial& p)
+{
+  d_ = p.dimension();
+  polys_.resize(1);
+  polys_[0] = p;
+}
+
+
+/* ******************************************************************
+* Reset all coefficients to thesame number
+****************************************************************** */
+void VectorPolynomial::PutScalar(double val)
+{
+  for (int i = 0; i < size(); ++i) {
+    polys_[i].PutScalar(val);
+  }
+}
+
+
+/* ******************************************************************
+* Calculate value at a point 
+****************************************************************** */
+DenseVector VectorPolynomial::Value(const AmanziGeometry::Point& xp) const
+{
+  int n = polys_.size();
+  DenseVector val(n);
+
+  for (int i = 0; i < n; ++i) {
+    val(i) = polys_[i].Value(xp);
+  }
+
+  return val;
+}
+
+
+/* ******************************************************************
 * Create object using gradient of a polynomial
 ****************************************************************** */
 void VectorPolynomial::Gradient(const Polynomial p)
@@ -49,10 +87,10 @@ void VectorPolynomial::Gradient(const Polynomial p)
 
   int index[3];
   for (auto it = p.begin(); it.end() <= p.end(); ++it) {
-    int k = it.MonomialOrder();
+    int k = it.MonomialSetOrder();
     if (k > 0) {
       const int* idx = it.multi_index();
-      int m = it.MonomialPosition();
+      int m = it.MonomialSetPosition();
       double val = p(k, m);
 
       for (int i = 0; i < d; ++i) {
@@ -60,7 +98,7 @@ void VectorPolynomial::Gradient(const Polynomial p)
 
         if (index[i] > 0) {
           index[i]--;
-          m = p.MonomialPosition(index);
+          m = p.MonomialSetPosition(index);
           polys_[i](k - 1, m) = val * idx[i];
         }
       }
@@ -109,7 +147,7 @@ void VectorPolynomial::Multiply(const std::vector<std::vector<Polynomial> >& A,
                                 const AmanziGeometry::Point& p, bool transpose)
 {
   int d(p.dim());
-  ASSERT(A.size() == d);
+  AMANZI_ASSERT(A.size() == d);
 
   resize(d);
   if (!transpose) {
@@ -137,21 +175,55 @@ void VectorPolynomial::Multiply(const std::vector<std::vector<Polynomial> >& A,
 /* ******************************************************************
 * Ring algebra
 ****************************************************************** */
-VectorPolynomial& VectorPolynomial::operator*=(double val)
-{
-  for (int i = 0; i < polys_.size(); ++i) {
-    polys_[i] *= val;
-  }
-  return *this;
-}
-
-
 VectorPolynomial& VectorPolynomial::operator+=(const VectorPolynomial& vp)
 {
   for (int i = 0; i < polys_.size(); ++i) {
     polys_[i] += vp[i];
   }
   return *this;
+}
+
+VectorPolynomial& VectorPolynomial::operator-=(const VectorPolynomial& vp)
+{
+  for (int i = 0; i < polys_.size(); ++i) {
+    polys_[i] -= vp[i];
+  }
+  return *this;
+}
+
+
+/* ******************************************************************
+* Set same origin for all polynomials without modyfying them 
+****************************************************************** */
+void VectorPolynomial::set_origin(const AmanziGeometry::Point& origin)
+{
+  for (int i = 0; i < size(); ++i) {
+    polys_[i].set_origin(origin);
+  }
+}
+
+
+/* ******************************************************************
+* Change all polynomials to new same origin
+****************************************************************** */
+void VectorPolynomial::ChangeOrigin(const AmanziGeometry::Point& origin)
+{
+  for (int i = 0; i < size(); ++i) {
+    polys_[i].ChangeOrigin(origin);
+  }
+}
+
+
+/* ******************************************************************
+* Ring algebra
+****************************************************************** */
+double VectorPolynomial::NormMax() const
+{
+  double tmp(0.0);
+  for (int i = 0; i < polys_.size(); ++i) {
+    tmp = std::max(tmp, polys_[i].NormMax());
+  }
+  return tmp;
 }
 
 }  // namespace WhetStone

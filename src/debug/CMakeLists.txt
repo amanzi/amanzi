@@ -36,8 +36,8 @@ if (BUILD_TESTS)
 
     # Copy test directory files if an out of source build
     if (NOT (${DBG_SOURCE_DIR} EQUAL ${DBG_BINARY_DIR}))
-        execute_process(COMMAND ${CMAKE_COMMAND} -E 
-          copy_directory ${DBG_SOURCE_DIR}/test ${DBG_BINARY_DIR}/test) 
+      # file(GLOB DataFiles "${DBG_SOURCE_DIR}/test/*.xml")
+      # file(COPY ${DataFiles} DESTINATION ${DBG_BINARY_DIR}/test/)
     endif()
 
     # Add the utils directory to the include paths

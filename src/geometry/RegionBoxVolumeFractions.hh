@@ -1,4 +1,4 @@
-/* -*-  mode: c++; indent-tabs-mode: nil -*- */
+/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
 //! RegionBoxVolumeFractions: A rectangular region in space, defined by two corner points and normals to sides.
 
 /*
@@ -18,11 +18,11 @@ aligned with coordinate axes.
 Boxes are allowed to be of zero thickness in only one direction in which case 
 they are equivalent to rectangles on a plane or segments on a line.
 
-* `"corner coordinate`" [Array(double)] Location of one box corner.
+* `"corner coordinate`" ``[Array(double)]`` Location of one box corner.
 
-* `"opposite corner coordinate`" [Array(double)] Location of the opposite box corner.
+* `"opposite corner coordinate`" ``[Array(double)]`` Location of the opposite box corner.
 
-* `"normals`" [Array(double)] Normals to sides in a linear array. Default is columns of
+* `"normals`" ``[Array(double)]`` Normals to sides in a linear array. Default is columns of
   the identity matrix. The normals may be scaled arbitrarily but must be orthogonal to
   one another and form the right coordinate frame.
 
@@ -48,6 +48,7 @@ This example defines a degenerate box, a square on a surface *z=1*.
 #define AMANZI_BOX_VOLUME_FRACTIONS_REGION_HH_
 
 #include <vector>
+#include <list>
 
 #include "Point.hh"
 #include "Region.hh"
@@ -61,7 +62,7 @@ class RegionBoxVolumeFractions : public Region {
   // Default constructor uses two corner points (order not important)
   // and vector of normals (order is important).
   RegionBoxVolumeFractions(const std::string& name,
-                           const Set_ID id,
+                           const int id,
                            const Point& p0, 
                            const Point& p1,
                            const std::vector<Point>& normals,

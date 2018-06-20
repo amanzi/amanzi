@@ -33,6 +33,7 @@ include_directories(${SMATERIALS_SOURCE_DIR})
 include_directories(${PETSC_INCLUDE_DIRS})
 include_directories(${CHEMPK_SOURCE_DIR})
 include_directories(${GEOCHEM_SOURCE_DIR})
+include_directories(${ALQUIMIA_INCLUDE_DIRS})
 
 # External (TPL) include directories
 include_directories(${Teuchos_INCLUDE_DIRS})

@@ -1,4 +1,4 @@
-/* -*-  mode: c++; indent-tabs-mode: nil -*- */
+/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
 // -------------------------------------------------------------
 /**
  * @file   test_mesh_geometry.cc
@@ -98,9 +98,9 @@ TEST(MESH_GEOMETRY_PLANAR)
                                        {1.0,0.25},{0.75,0.5},
                                        {1.0,0.75},{0.75,1.0}};
 
-    int ncells = mesh->num_entities(Amanzi::AmanziMesh::CELL,Amanzi::AmanziMesh::OWNED);
-    int nfaces = mesh->num_entities(Amanzi::AmanziMesh::FACE,Amanzi::AmanziMesh::USED);
-    int nnodes = mesh->num_entities(Amanzi::AmanziMesh::NODE,Amanzi::AmanziMesh::USED);
+    int ncells = mesh->num_entities(Amanzi::AmanziMesh::CELL,Amanzi::AmanziMesh::Parallel_type::OWNED);
+    int nfaces = mesh->num_entities(Amanzi::AmanziMesh::FACE,Amanzi::AmanziMesh::Parallel_type::ALL);
+    int nnodes = mesh->num_entities(Amanzi::AmanziMesh::NODE,Amanzi::AmanziMesh::Parallel_type::ALL);
 
     int space_dim_ = 2;
 
@@ -162,7 +162,7 @@ TEST(MESH_GEOMETRY_PLANAR)
           // Check the normal with respect to each connected cell
           
           Amanzi::AmanziMesh::Entity_ID_List cellids;
-          mesh->face_get_cells(i,Amanzi::AmanziMesh::USED,&cellids);
+          mesh->face_get_cells(i,Amanzi::AmanziMesh::Parallel_type::ALL,&cellids);
           
           for (int k = 0; k < cellids.size(); k++) {
             int dir;
@@ -295,9 +295,9 @@ TEST(MESH_GEOMETRY_SURFACE)
                                        {0.5,0.25,0.5},{0.5,0.5,0.25},
                                        {0.5,0.75,0.5},{0.5,1.0,0.25}};
 
-    int ncells = mesh->num_entities(Amanzi::AmanziMesh::CELL,Amanzi::AmanziMesh::OWNED);
-    int nfaces = mesh->num_entities(Amanzi::AmanziMesh::FACE,Amanzi::AmanziMesh::USED);
-    int nnodes = mesh->num_entities(Amanzi::AmanziMesh::NODE,Amanzi::AmanziMesh::USED);
+    int ncells = mesh->num_entities(Amanzi::AmanziMesh::CELL,Amanzi::AmanziMesh::Parallel_type::OWNED);
+    int nfaces = mesh->num_entities(Amanzi::AmanziMesh::FACE,Amanzi::AmanziMesh::Parallel_type::ALL);
+    int nnodes = mesh->num_entities(Amanzi::AmanziMesh::NODE,Amanzi::AmanziMesh::Parallel_type::ALL);
 
     int space_dim_ = 3;
 
@@ -343,7 +343,7 @@ TEST(MESH_GEOMETRY_SURFACE)
           // Check the normal with respect to each connected cell
           
           Amanzi::AmanziMesh::Entity_ID_List cellids;
-          mesh->face_get_cells(i,Amanzi::AmanziMesh::USED,&cellids);
+          mesh->face_get_cells(i,Amanzi::AmanziMesh::Parallel_type::ALL,&cellids);
 
 
           Amanzi::AmanziGeometry::Point facecentroid = mesh->face_centroid(i);
@@ -541,9 +541,9 @@ TEST(MESH_GEOMETRY_SOLID)
     };
 
 
-    int ncells = mesh->num_entities(Amanzi::AmanziMesh::CELL,Amanzi::AmanziMesh::OWNED);
-    int nfaces = mesh->num_entities(Amanzi::AmanziMesh::FACE,Amanzi::AmanziMesh::USED);
-    int nnodes = mesh->num_entities(Amanzi::AmanziMesh::NODE,Amanzi::AmanziMesh::USED);
+    int ncells = mesh->num_entities(Amanzi::AmanziMesh::CELL,Amanzi::AmanziMesh::Parallel_type::OWNED);
+    int nfaces = mesh->num_entities(Amanzi::AmanziMesh::FACE,Amanzi::AmanziMesh::Parallel_type::ALL);
+    int nnodes = mesh->num_entities(Amanzi::AmanziMesh::NODE,Amanzi::AmanziMesh::Parallel_type::ALL);
 
     int space_dim_ = 3;
 
@@ -607,7 +607,7 @@ TEST(MESH_GEOMETRY_SOLID)
           // Check the normal with respect to each connected cell
           
           Amanzi::AmanziMesh::Entity_ID_List cellids;
-          mesh->face_get_cells(i,Amanzi::AmanziMesh::USED,&cellids);
+          mesh->face_get_cells(i,Amanzi::AmanziMesh::Parallel_type::ALL,&cellids);
           
           for (int k = 0; k < cellids.size(); k++) {
             int dir;

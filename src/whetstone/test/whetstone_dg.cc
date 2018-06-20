@@ -48,7 +48,7 @@ TEST(DG2D_MASS_MATRIX) {
   T(0, 0) = 1.0;
 
   for (int k = 0; k < 3; k++) {
-    DG_Modal dg(k, mesh);
+    DG_Modal dg(k, mesh, "orthonormalized");
 
     dg.MassMatrix(0, T, M);
     int nk = M.NumRows();
@@ -90,11 +90,8 @@ TEST(DG3D_MASS_MATRIX) {
   T(0, 0) = 2.0;
 
   for (int k = 0; k < 3; k++) {
-    DG_Modal dg(k, mesh);
-
-    // natural Taylor basis
-    dg.set_basis(WhetStone::TAYLOR_BASIS_SIMPLE);
-    dg.MassMatrix(0, T, M0);
+    DG_Modal dg1(k, mesh, "natural");
+    dg1.MassMatrix(0, T, M0);
     int nk = M0.NumRows();
 
     if (k > 0) {
@@ -110,7 +107,7 @@ TEST(DG3D_MASS_MATRIX) {
     Polynomial u(3, 0);
     u(0, 0) = 2.0;
 
-    dg.MassMatrixPoly(0, u, M1);
+    dg1.MassMatrix(0, u, M1);
     M1 -= M0;
     CHECK_CLOSE(M1.NormInf(), 0.0, 1e-12);
 
@@ -120,9 +117,9 @@ TEST(DG3D_MASS_MATRIX) {
       const AmanziGeometry::Point& xc = mesh->cell_centroid(0);
       v1.PutScalar(0.0);
       v1(0) = xc[0] + 2 * xc[1] + 3 * xc[2];
-      v1(1) = 1.0;
-      v1(2) = 2.0;
-      v1(3) = 3.0;
+      v1(1) = 0.5;
+      v1(2) = 1.0;
+      v1(3) = 1.5;
       v2 = v1;
  
       M0.Multiply(v1, v3, false);
@@ -132,8 +129,8 @@ TEST(DG3D_MASS_MATRIX) {
     }
 
     // partially orthonormalized Taylor basis
-    dg.set_basis(WhetStone::TAYLOR_BASIS_NORMALIZED);
-    dg.MassMatrix(0, T, M0);
+    DG_Modal dg2(k, mesh, "orthonormalized");
+    dg2.MassMatrix(0, T, M0);
 
     printf("Mass matrix for order=%d\n", k);
     for (int i = 0; i < nk; i++) {
@@ -164,24 +161,24 @@ TEST(DG2D_MASS_MATRIX_POLYNOMIAL) {
   MeshFactory meshfactory(comm);
   meshfactory.preference(FrameworkPreference({MSTK}));
   // Teuchos::RCP<Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 1, 1); 
-  Teuchos::RCP<Mesh> mesh = meshfactory("test/one_cell2.exo");
+  Teuchos::RCP<Mesh> mesh = meshfactory("test/one_pentagon.exo");
  
   double tmp, integral[3];
-  DenseMatrix A;
+  DenseMatrix M1, M2;
 
   for (int k = 0; k < 3; k++) {
-    DG_Modal dg(2, mesh);
+    DG_Modal dg(2, mesh, "orthonormalized");
 
     Polynomial u(2, k);
-    u.monomials(0).coefs()[0] = 1.0;
-    u.monomials(k).coefs()[0] = 1.0;
+    u(0, 0) = 1.0;
+    u(k, 0) = 1.0;
 
-    dg.MassMatrixPoly(0, u, A);
-    int nk = A.NumRows();
+    dg.MassMatrix(0, u, M1);
+    int nk = M1.NumRows();
 
-    printf("Mass matrix for polynomial coefficient: nk=2, pk=%d\n", k);
+    printf("Mass matrix for polynomial coefficient: order=2, uk=%d\n", k);
     for (int i = 0; i < nk; i++) {
-      for (int j = 0; j < nk; j++ ) printf("%8.4f ", A(i, j)); 
+      for (int j = 0; j < nk; j++ ) printf("%8.4f ", M1(i, j)); 
       printf("\n");
     }
 
@@ -194,10 +191,19 @@ TEST(DG2D_MASS_MATRIX_POLYNOMIAL) {
     v(1) = 1.0 / 1.6501110800;
     v(2) = 2.0 / 2.6871118178;
     
-    A.Multiply(v, av, false);
+    M1.Multiply(v, av, false);
     v.Dot(av, &tmp);
     integral[k] = tmp;
+
+    // method 2 for calculating mass matrix
+    VectorPolynomial vu(2, 5); 
+    vu[0] = vu[1] = vu[2] = vu[3] = vu[4] = u;
+
+    dg.MassMatrix(0, vu, M2);
+    M2 -= M1;
+    CHECK_CLOSE(M2.NormInf(), 0.0, 1e-12);
   }
+
   CHECK_CLOSE(20.2332916667, integral[0], 1e-10);
   CHECK(integral[0] < integral[1]);
 
@@ -220,15 +226,15 @@ TEST(DG2D_ADVECTION_MATRIX_FACE) {
   meshfactory.preference(FrameworkPreference({MSTK}));
   Teuchos::RCP<Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 2, 2); 
  
-  for (int k = 0; k < 2; k++) {
-    DG_Modal dg(k, mesh);
-    DenseMatrix A0, A1;
+  for (int k = 0; k < 3; k++) {
+    DG_Modal dg(k, mesh, "orthonormalized");
 
     Polynomial un(2, 0);
-    un.monomials(0).coefs()[0] = 1.0;
+    un(0, 0) = 1.0;
 
     // TEST1: constant u
-    dg.FluxMatrixPoly(1, un, A0, false);
+    DenseMatrix A0, A1;
+    dg.FluxMatrix(1, un, A0, true, false);
 
     printf("Advection matrix (face-based) for order=%d  u.n=1\n", k);
     int nk = A0.NumRows();
@@ -239,15 +245,15 @@ TEST(DG2D_ADVECTION_MATRIX_FACE) {
 
     // TEST2: add zero gradient to polynomial un
     un.Reshape(2, 1);
-    dg.FluxMatrixPoly(1, un, A1, false);
+    dg.FluxMatrix(1, un, A1, true, false);
 
     A1 -= A0;
     CHECK_CLOSE(0.0, A1.NormInf(), 1e-12);
 
     // TEST3: nonzero linear component polynomial un
-    un.monomials(1).coefs()[0] = 1.0;
+    un(1, 0) = 1.0;
 
-    dg.FluxMatrixPoly(1, un, A1, false);
+    dg.FluxMatrix(1, un, A1, true, false);
 
     printf("Advection matrix (face-based) for order=%d u.n=1+x\n", k);
     for (int i = 0; i < nk; i++) {
@@ -277,15 +283,15 @@ TEST(DG3D_ADVECTION_MATRIX_FACE) {
                                         Teuchos::null, true, true); 
  
   for (int k = 0; k < 2; k++) {
-    DG_Modal dg(k, mesh);
-    DenseMatrix A0, A1;
+    DG_Modal dg(k, mesh, "orthonormalized");
 
     int d(3), f(4);
     Polynomial un(d, 0);
     un(0, 0) = 1.0;
 
     // TEST1: constant u
-    dg.FluxMatrixPoly(f, un, A0, false);
+    DenseMatrix A0, A1;
+    dg.FluxMatrix(f, un, A0, true, false);
 
     printf("Advection matrix (face-based) for order=%d  u.n=1\n", k);
     int nk = A0.NumRows();
@@ -296,7 +302,7 @@ TEST(DG3D_ADVECTION_MATRIX_FACE) {
 
     // TEST2: add zero gradient to polynomial un
     un.Reshape(d, 1);
-    dg.FluxMatrixPoly(f, un, A1, false);
+    dg.FluxMatrix(f, un, A1, true, false);
 
     A1 -= A0;
     CHECK_CLOSE(0.0, A1.NormInf(), 1e-12);
@@ -304,7 +310,7 @@ TEST(DG3D_ADVECTION_MATRIX_FACE) {
     // TEST3: nonzero linear component polynomial un
     un(1, 0) = 1.0;
 
-    dg.FluxMatrixPoly(f, un, A1, false);
+    dg.FluxMatrix(f, un, A1, true, false);
 
     printf("Advection matrix (face-based) for order=%d u.n=1+x\n", k);
     for (int i = 0; i < nk; i++) {
@@ -334,18 +340,16 @@ TEST(DG2D_ADVECTION_MATRIX_CELL) {
   Teuchos::RCP<Mesh> mesh = meshfactory("test/one_quad.exo"); 
 
   for (int k = 0; k < 3; k++) {
-    DG_Modal dg(k, mesh);
-    dg.set_basis(WhetStone::TAYLOR_BASIS_SIMPLE);
+    DG_Modal dg(k, mesh, "natural");
 
-    DenseMatrix A0;
-
+    DenseMatrix A0, A1;
     VectorPolynomial u(2, 2);
     for (int i = 0; i < 2; ++i) u[i].Reshape(2, 2);
 
-    // TEST1: constant u
-    u[0].monomials(0).coefs()[0] = 1.0;
-    u[1].monomials(0).coefs()[0] = 1.0;
-    dg.AdvectionMatrixPoly(0, u, A0, false);
+    // TEST1: constant u, method 1
+    u[0](0, 0) = 1.0;
+    u[1](0, 0) = 1.0;
+    dg.AdvectionMatrix(0, u, A0, false);
 
     printf("Advection matrix (cell-based) for order=%d u=(1,1)\n", k);
     int nk = A0.NumRows();
@@ -354,10 +358,21 @@ TEST(DG2D_ADVECTION_MATRIX_CELL) {
       printf("\n");
     }
 
-    // TEST2: linear u
-    u[0].monomials(1).coefs()[0] = 1.0;
-    u[0].monomials(1).coefs()[1] = 1.0;
-    dg.AdvectionMatrixPoly(0, u, A0, false);
+    // TEST1: constant u, method 2
+    VectorPolynomial vu(2, 8); 
+    for (int i = 0; i < 4; ++i) {
+      vu[2 * i] = u[0];
+      vu[2 * i + 1] = u[1];
+    }
+
+    dg.AdvectionMatrix(0, vu, A1, false);
+    A1 -= A0;
+    CHECK_CLOSE(A1.NormInf(), 0.0, 1e-12);
+
+    // TEST2: linear u, method 1
+    u[0](1, 0) = 1.0;
+    u[0](1, 1) = 1.0;
+    dg.AdvectionMatrix(0, u, A0, false);
 
     printf("Advection matrix (cell-based) for order=%d u=(1+x+y,1), f(x,y)=2+x+3y\n", k);
     nk = A0.NumRows();
@@ -366,14 +381,26 @@ TEST(DG2D_ADVECTION_MATRIX_CELL) {
       printf("\n");
     }
 
+    // TEST2: linear u, method 2
+    for (int i = 0; i < 4; ++i) {
+      vu[2 * i] = u[0];
+      vu[2 * i + 1] = u[1];
+    }
+
+    dg.AdvectionMatrix(0, vu, A1, false);
+    A1 -= A0;
+    CHECK_CLOSE(A1.NormInf(), 0.0, 1e-12);
+
     // accuracy test for functions 1+x and 1+x
     DenseVector v1(nk), v2(nk), v3(nk);
     if (k > 0) {
       const AmanziGeometry::Point& xc = mesh->cell_centroid(0);
+      double scale = std::pow(mesh->cell_volume(0), 0.5);
+
       v1.PutScalar(0.0);
       v1(0) = 2 + xc[0] + 3 * xc[1];
-      v1(1) = 1.0;
-      v1(2) = 3.0;
+      v1(1) = 1.0 * scale;
+      v1(2) = 3.0 * scale;
       v2 = v1;
  
       A0.Multiply(v1, v3, false);
@@ -384,9 +411,9 @@ TEST(DG2D_ADVECTION_MATRIX_CELL) {
       CHECK_CLOSE(integral, 1891.0 / 48.0, 1e-12);
     }
 
-    // TEST3: quadratic u
-    u[1].monomials(2).coefs()[0] = 1.0;
-    dg.AdvectionMatrixPoly(0, u, A0, false);
+    // TEST3: quadratic u, method 1
+    u[1](2, 0) = 1.0;
+    dg.AdvectionMatrix(0, u, A0, false);
 
     printf("Advection matrix (cell-based) for order=%d u=(1+x+y,1+x^2)\n", k);
     nk = A0.NumRows();
@@ -400,6 +427,16 @@ TEST(DG2D_ADVECTION_MATRIX_CELL) {
       double integral(v2 * v3);
       printf("  inner product = %10.6f\n", integral);
     }
+
+    // TEST3: quadratic u, method 2
+    for (int i = 0; i < 4; ++i) {
+      vu[2 * i] = u[0];
+      vu[2 * i + 1] = u[1];
+    }
+
+    dg.AdvectionMatrix(0, vu, A1, false);
+    A1 -= A0;
+    CHECK_CLOSE(A1.NormInf(), 0.0, 1e-12);
   }
 
   delete comm;
@@ -424,11 +461,9 @@ TEST(DG3D_ADVECTION_MATRIX_CELL) {
 
   int d(3);
   for (int k = 0; k < 2; k++) {
-    DG_Modal dg(k, mesh);
-    dg.set_basis(WhetStone::TAYLOR_BASIS_SIMPLE);
+    DG_Modal dg(k, mesh, "natural");
 
     DenseMatrix A0;
-
     VectorPolynomial u(d, 3);
     for (int i = 0; i < d; ++i) u[i].Reshape(d, 1, true);
 
@@ -436,7 +471,7 @@ TEST(DG3D_ADVECTION_MATRIX_CELL) {
     u[0](0, 0) = 1.0;
     u[1](0, 0) = 1.0;
     u[2](0, 0) = 1.0;
-    dg.AdvectionMatrixPoly(0, u, A0, false);
+    dg.AdvectionMatrix(0, u, A0, false);
 
     printf("Advection matrix (cell-based) for order=%d u=(1,1,1)\n", k);
     int nk = A0.NumRows();
@@ -449,7 +484,7 @@ TEST(DG3D_ADVECTION_MATRIX_CELL) {
     u[0](1, 0) = 1.0;
     u[0](1, 1) = 1.0;
     u[0](1, 2) = 1.0;
-    dg.AdvectionMatrixPoly(0, u, A0, false);
+    dg.AdvectionMatrix(0, u, A0, false);
 
     printf("Advection matrix (cell-based) for order=%d u=(1+x+y+z,1,1), f(x,y)=2+x+3y\n", k);
     nk = A0.NumRows();
@@ -462,10 +497,12 @@ TEST(DG3D_ADVECTION_MATRIX_CELL) {
     DenseVector v1(nk), v2(nk), v3(nk);
     if (k > 0) {
       const AmanziGeometry::Point& xc = mesh->cell_centroid(0);
+      double scale = std::pow(mesh->cell_volume(0), 1.0 / 3);
+
       v1.PutScalar(0.0);
       v1(0) = 2 + xc[0] + 3 * xc[1];
-      v1(1) = 1.0;
-      v1(2) = 3.0;
+      v1(1) = 1.0 * scale;
+      v1(2) = 3.0 * scale;
       v2 = v1;
  
       A0.Multiply(v1, v3, false);
@@ -484,17 +521,17 @@ TEST(DG3D_ADVECTION_MATRIX_CELL) {
 /* ****************************************************************
 * Test of polynomial least-square approximation
 **************************************************************** */
-TEST(DG_MAP_APPROXIMATION_CELL) {
+TEST(DG_LEAST_SQUARE_MAP_CELL) {
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::WhetStone;
 
-  std::cout << "\nTest: Polynomial approximation of map in cells." << std::endl;
+  std::cout << "\nTest: Least-square polynomial approximation of map in cells." << std::endl;
   Epetra_MpiComm *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
 
   MeshFactory meshfactory(comm);
   meshfactory.preference(FrameworkPreference({MSTK}));
-  Teuchos::RCP<Mesh> mesh = meshfactory("test/one_cell2.exo");
+  Teuchos::RCP<Mesh> mesh = meshfactory("test/one_pentagon.exo");
 
   // extract polygon from the mesh
   Entity_ID_List nodes;
@@ -509,14 +546,19 @@ TEST(DG_MAP_APPROXIMATION_CELL) {
   }
 
   // test identity map
-  MeshMaps_VEM maps(mesh, mesh);
+  Teuchos::ParameterList plist;
+  plist.set<std::string>("method", "unknown")
+       .set<int>("method order", 1)
+       .set<std::string>("projector", "H1");
+
+  MeshMaps_VEM maps(mesh, mesh, plist);
   VectorPolynomial u;
 
   maps.LeastSquareFit(1, x1, x1, u);
   for (int i = 0; i < 2; ++i) {
-    CHECK_CLOSE(u[i].monomials(0).coefs()[0], 0.0, 1e-12);
-    CHECK_CLOSE(u[i].monomials(1).coefs()[i], 1.0, 1e-12);
-    CHECK_CLOSE(u[i].monomials(1).coefs()[1 - i], 0.0, 1e-12);
+    CHECK_CLOSE(u[i](0, 0), 0.0, 1e-12);
+    CHECK_CLOSE(u[i](1, i), 1.0, 1e-12);
+    CHECK_CLOSE(u[i](1, 1 - i), 0.0, 1e-12);
   }
 
   // test linear map
@@ -528,9 +570,9 @@ TEST(DG_MAP_APPROXIMATION_CELL) {
 
   maps.LeastSquareFit(1, x1, x2, u);
   for (int i = 0; i < 2; ++i) {
-    CHECK_CLOSE(u[i].monomials(0).coefs()[0], shift[i], 1e-12);
-    CHECK_CLOSE(u[i].monomials(1).coefs()[i], 1.0, 1e-12);
-    CHECK_CLOSE(u[i].monomials(1).coefs()[1 - i], 0.0, 1e-12);
+    CHECK_CLOSE(u[i](0, 0), shift[i], 1e-12);
+    CHECK_CLOSE(u[i](1, i), 1.0, 1e-12);
+    CHECK_CLOSE(u[i](1, 1 - i), 0.0, 1e-12);
   }
 
   // test rotation map
@@ -542,11 +584,11 @@ TEST(DG_MAP_APPROXIMATION_CELL) {
 
   maps.LeastSquareFit(1, x1, x2, u);
   for (int i = 0; i < 2; ++i) {
-    CHECK_CLOSE(u[i].monomials(0).coefs()[0], 0.0, 1e-12);
-    CHECK_CLOSE(u[i].monomials(1).coefs()[i], c, 1e-12);
+    CHECK_CLOSE(u[i](0, 0), 0.0, 1e-12);
+    CHECK_CLOSE(u[i](1, i), c, 1e-12);
   }
-  CHECK_CLOSE(u[0].monomials(1).coefs()[1], -s, 1e-12);
-  CHECK_CLOSE(u[1].monomials(1).coefs()[0],  s, 1e-12);
+  CHECK_CLOSE(u[0](1, 1), -s, 1e-12);
+  CHECK_CLOSE(u[1](1, 0),  s, 1e-12);
 
   // test non-linear deformation map
   x1.clear();
@@ -561,7 +603,7 @@ TEST(DG_MAP_APPROXIMATION_CELL) {
   maps.LeastSquareFit(1, x1, x2, u);
   std::cout << u[0] << " " << u[1] << std::endl;
 
-  CHECK_CLOSE(0.025, u[0].monomials(0).coefs()[0], 1e-12);
+  CHECK_CLOSE(0.025, u[0](0, 0), 1e-12);
 
   delete comm;
 }

@@ -1,4 +1,4 @@
-/* -*-  mode: c++; indent-tabs-mode: nil -*- */
+/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
 //! MultiplicativeFunction: f(x,y) = f1(x,y) * f2(x,y)
 
 /*
@@ -18,7 +18,12 @@ A multiplicative function simply multiplies two other function results together.
   f(x) = f_1(x) * f_2(x)
 
 where :math:`f_1` is defined by the `"function1`" sublist, and 
-:math:`f_2` by the `"function2`" sublist:
+:math:`f_2` by the `"function2`" sublist.
+
+* `"function1`" ``[function-spec]`` f_1 in f(x) = f_1(x) + f_2(x)
+* `"function2`" ``[function-spec]`` f_2 in f(x) = f_1(x) + f_2(x)
+
+Example:
 
 .. code-block:: xml
 

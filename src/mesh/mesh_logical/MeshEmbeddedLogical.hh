@@ -1,4 +1,4 @@
-/* -*-  mode: c++; indent-tabs-mode: nil -*- */
+/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
 #ifndef AMANZI_EMBEDDED_LOGICAL_MESH_H_
 #define AMANZI_EMBEDDED_LOGICAL_MESH_H_
 
@@ -57,7 +57,7 @@ class MeshEmbeddedLogical : public Mesh {
                       const std::vector<AmanziGeometry::Point>& face_area_normals,
                       const Teuchos::RCP<const VerboseObject>& verbosity_obj=Teuchos::null);
 
-  // Get parallel type of entity - OWNED, GHOST, USED (See MeshDefs.hh)
+  // Get parallel type of entity - OWNED, GHOST, ALL (See MeshDefs.hh)
   virtual
   Parallel_type entity_get_ptype(const Entity_kind kind,
           const Entity_ID entid) const;
@@ -76,7 +76,7 @@ class MeshEmbeddedLogical : public Mesh {
   // -------------------------
   //
   // Number of entities of any kind (cell, face, node) and in a
-  // particular category (OWNED, GHOST, USED)
+  // particular category (OWNED, GHOST, ALL)
   virtual
   unsigned int num_entities(const Entity_kind kind,
                             const Parallel_type ptype) const;
@@ -160,7 +160,7 @@ class MeshEmbeddedLogical : public Mesh {
   // (e.g. a hex has 6 face neighbors)
 
   // The order in which the cellids are returned cannot be
-  // guaranteed in general except when ptype = USED, in which case
+  // guaranteed in general except when ptype = ALL, in which case
   // the cellids will correcpond to cells across the respective
   // faces given by cell_get_faces
   virtual

@@ -1,22 +1,16 @@
-// Emacs Mode Line: -*- Mode:c++;-*-
-// -------------------------------------------------------------
-// file: MeshDefs.hh
-// -------------------------------------------------------------
-/**
- * @file   MeshDefs.hh
- * @author William A. Perkins
- * @date Mon May  2 13:03:23 2011
- * 
- * @brief  Various definitions needed by Mesh
- * 
- * 
- */
-// -------------------------------------------------------------
-// Created May  2, 2011 by William A. Perkins
-// Last Change: Mon May  2 13:03:23 2011 by William A. Perkins <d3g096@PE10900.pnl.gov>
-// -------------------------------------------------------------
+/*
+  Mesh
 
-// SCCS ID: $Id$ Battelle PNL
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
+
+  Authors: William A. Perkins
+           Rao Garimella
+ 
+ Various definitions needed by Mesh class.
+*/
 
 #ifndef _MeshDefs_hh_
 #define _MeshDefs_hh_
@@ -26,21 +20,16 @@
 #include "boost/algorithm/string.hpp"
 
 #include "errors.hh"
-#include "GeometryDefs.hh"
 
 namespace Amanzi {
 namespace AmanziMesh {
 
 // Necessary typedefs and enumerations
-  using AmanziGeometry::Entity_ID;
-  using AmanziGeometry::Entity_ID_List;
-  using AmanziGeometry::Set_ID;
-  using AmanziGeometry::Set_ID_List;
+typedef int Set_ID;
+typedef int Entity_ID;
+typedef std::vector<Entity_ID> Entity_ID_List;
   
-
-  
-// Mesh Type
-
+// Recongnize special meshes
 enum Mesh_type
 {
   RECTANGULAR,   // Equivalent of structured but can't use i,j,k notation
@@ -98,29 +87,24 @@ std::string entity_kind_string(Entity_kind kind)
     case(EDGE): return "edge";
     case(NODE): return "node";
     default: return "unknown";
-  }      
+  }
 }
-  
 
 // Parallel status of entity 
-    
-enum Parallel_type 
-{
-  PTYPE_UNKNOWN = 0, // Initializer
-  OWNED = 1,         // Owned by this processor
-  GHOST = 2,         // Owned by another processor
-  USED  = 3          // OWNED + GHOST
+enum class Parallel_type {
+  PTYPE_UNKNOWN = 0,
+  OWNED = 1,  // Owned by this processor
+  GHOST = 2,  // Owned by another processor
+  ALL = 3     // OWNED + GHOST 
 };
 
 // Check if Parallel_type is valid
-
 inline 
 bool entity_valid_ptype (const Parallel_type ptype) {
-  return (ptype >= OWNED && ptype <= USED);
+  return (ptype >= Parallel_type::OWNED && ptype <= Parallel_type::ALL);
 }
     
 // Standard element types and catchall (POLYGON/POLYHED)
-
 enum Cell_type {
   CELLTYPE_UNKNOWN = 0,
   TRI = 1,
@@ -172,9 +156,7 @@ std::ostream& operator<<(std::ostream& os,
 // Types of partitioning algorithms - Add as needed in the format METIS_RCB etc.
 enum class Partitioning_scheme {DEFAULT};
   
-}  // namespace Amanzi 
 }  // namespace AmanziMesh
-
-
+}  // namespace Amanzi 
 
 #endif

@@ -13,7 +13,7 @@ namespace Data {
 
 // std::string location_to_name (FIELD_LOCATION type)
 // {
-//     ASSERT (ok_field_location (type));
+//     AMANZI_ASSERT (ok_field_location (type));
 
 //     switch (type)
 //     {
@@ -37,7 +37,7 @@ bool ok_field_type (FIELD_TYPE type)
 
 std::string type_to_name (FIELD_TYPE type)
 {
-    ASSERT (ok_field_type (type));
+    AMANZI_ASSERT (ok_field_type (type));
 
     switch (type)
     {

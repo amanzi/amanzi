@@ -48,7 +48,7 @@ TEST(STK_HEX1)
 
   // Check number of nodes and their coordinates
 
-  nv = mesh.num_entities(Amanzi::AmanziMesh::NODE, Amanzi::AmanziMesh::OWNED);
+  nv = mesh.num_entities(Amanzi::AmanziMesh::NODE, Amanzi::AmanziMesh::Parallel_type::OWNED);
   CHECK_EQUAL(NV,nv);
 
   for (i = 0; i < nv; i++) {
@@ -63,7 +63,7 @@ TEST(STK_HEX1)
 
   // Check number of cells and their face nodes and their face coordinates
   
-  nc = mesh.num_entities(Amanzi::AmanziMesh::CELL,Amanzi::AmanziMesh::OWNED);
+  nc = mesh.num_entities(Amanzi::AmanziMesh::CELL,Amanzi::AmanziMesh::Parallel_type::OWNED);
   CHECK_EQUAL(NC,nc);
 
 
@@ -122,7 +122,7 @@ TEST(STK_HEX1)
 
   for (j = 0; j < 8; j++) {
     Amanzi::AmanziMesh::Entity_ID_List ncfaces;
-    mesh.node_get_cell_faces(j,0,Amanzi::AmanziMesh::OWNED,&ncfaces);
+    mesh.node_get_cell_faces(j,0,Amanzi::AmanziMesh::Parallel_type::OWNED,&ncfaces);
     CHECK_EQUAL(ncfaces.size(),3);
   }
       

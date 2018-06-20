@@ -1,4 +1,4 @@
-/* -*-  mode: c++; indent-tabs-mode: nil -*- */
+/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
 //! IOEvent: base time/timestep control determing when in time to do something.
 
 /*
@@ -16,7 +16,7 @@
 
 The IOEvent is used for multiple objects that need to indicate simulation times or cycles on which to do something.
 
-* `"cycles start period stop`" ``[Array(int)]`` 
+* `"cycles start period stop`" ``[Array(int)]`` **optional**
 
     The first entry is the start cycle, the second is the cycle
     period, and the third is the stop cycle or -1, in which case there
@@ -24,17 +24,18 @@ The IOEvent is used for multiple objects that need to indicate simulation times 
     cycles that satisfy cycle = start + n*period, for n=0,1,2,... and
     cycle < stop if stop != -1.0.
 
-* `"cycles start period stop N`" ``[Array(int)]`` 
+* `"cycles start period stop 0`" ``[Array(int)]`` **optional** 
 
-    If multiple cycles start period stop parameters are needed, then
-    use these parameters with N=0,1,2,...
+    If multiple cycles start period stop parameters are needed, then use these
+    parameters.  If one with 0 is found, then one with 1 is looked for, etc,
+    until the Nth one is not found.
 
-* `"cycles`" ``[Array(int)]`` 
+* `"cycles`" ``[Array(int)]``  **optional**
   
     An array of discrete cycles that at which a visualization dump is
     written.
 
-* `"times start period stop`" ``[Array(double)]`` 
+* `"times start period stop`" ``[Array(double)]`` **optional** 
 
     The first entry is the start time, the second is the time period,
     and the third is the stop time or -1, in which case there is no
@@ -42,14 +43,14 @@ The IOEvent is used for multiple objects that need to indicate simulation times 
     satisfy time = start + n*period, for n=0,1,2,... and time < stop
     if stop != -1.0.  Note that all times units are in seconds.
 
-* `"times start period stop n`" ``[Array(double)]``
+* `"times start period stop 0`" ``[Array(double)]`` **optional**
 
-    If multiple start period stop parameters are needed, then use this
-    these parameters with n=0,1,2,..., and not the single `"times
-    start period stop`" parameter.  Note that all times units are in
-    seconds.
+    If multiple start period stop parameters are needed, then use this these
+    parameters with N=0,1,2.  If one with 0 is found, then one with 1 is
+    looked for, etc, until the Nth one is not found.  Note that all times
+    units are in seconds.
 
-* `"times`" ``[Array(double)]`` 
+* `"times`" ``[Array(double)]`` **optional** 
 
     An array of discrete times that at which a visualization dump
     shall be written.  Note that all times units are in seconds.

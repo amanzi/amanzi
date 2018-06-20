@@ -32,7 +32,7 @@ const int WHETSTONE_DATA_ACCESS_VIEW = 2;
 class DenseMatrix {
  public:
   DenseMatrix();
-  DenseMatrix(int mrow, int ncol);
+  DenseMatrix(int mrow, int ncol);  // memory is not initialized
   DenseMatrix(int mrow, int ncol, double* data, int data_access = WHETSTONE_DATA_ACCESS_COPY);
   DenseMatrix(const DenseMatrix& B);
   DenseMatrix(const DenseMatrix& B, int m1, int m2, int n1, int n2);
@@ -87,7 +87,9 @@ class DenseMatrix {
     return *this;
   }
 
+  // calculates either A * B to A^T * B
   int Multiply(const DenseMatrix& A, const DenseMatrix& B, bool transposeA);
+  // calculates B = *this * A
   int Multiply(const DenseVector& A, DenseVector& B, bool transpose) const;
 
   void PutScalar(double val) {
@@ -137,13 +139,13 @@ class DenseMatrix {
   } 
   void MaxRowMagnitude(int irow, int jmin, int jmax, int* j, double* value); 
 
-  double NormInf() {
+  double NormInf() const {
     double a = 0.0;
     for (int i = 0; i < m_ * n_; i++) a = std::max(a, data_[i]);
     return a;
   }
 
-  double Norm2() {
+  double Norm2() const {
     double a = 0.0;
     for (int i = 0; i < m_ * n_; i++) a += data_[i] * data_[i];
     return std::sqrt(a);
@@ -154,6 +156,9 @@ class DenseMatrix {
   }
 
   // Second level routines
+  // -- submatrix in rows [ib, ie) and colums [jb, je) 
+  DenseMatrix SubMatrix(int ib, int ie, int jb, int je);
+ 
   // -- transpose creates new matrix
   void Transpose(const DenseMatrix& A);
   // -- transpose modifies square matrix

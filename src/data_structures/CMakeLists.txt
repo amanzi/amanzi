@@ -43,6 +43,7 @@ add_definitions("-DMSTK_HAVE_MPI")
 
 # Library: data_structures
 #
+#file(GLOB data_structures_src_files "*.cc")
 set(data_structures_src_files BlockVector.cc
                               CompositeVectorSpace.cc
                               CompositeVector.cc
@@ -82,8 +83,9 @@ if (BUILD_TESTS)
 
     # Copy test subdirectory for out of source builds
     if (NOT (DATA_STRUCTURES_SOURCE_DIR STREQUAL DATA_STRUCTURES_BINARY_DIR))
-        execute_process(COMMAND ${CMAKE_COMMAND} -E
-          copy_directory ${DATA_STRUCTURES_SOURCE_DIR}/test ${DATA_STRUCTURES_BINARY_DIR}/test)
+        file(GLOB DataFiles "${DATA_STRUCTURES_SOURCE_DIR}/test/*.xml"
+                            "${DATA_STRUCTURES_SOURCE_DIR}/test/*.exo")
+        file(COPY ${DataFiles} DESTINATION ${DATA_STRUCTURES_BINARY_DIR}/test/)
     endif()
 
     set(amanzi_libs data_structures geometry mstk_mesh mesh_factory mesh)

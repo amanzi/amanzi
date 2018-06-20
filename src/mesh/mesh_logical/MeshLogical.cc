@@ -1,3 +1,26 @@
+/* -*-  mode: c++; indent-tabs-mode: nil -*- */
+/*
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
+
+  Author: Ethan Coon (ecoon@lanl.gov)
+*/
+
+/*!
+ Logical mesh that can be modified and constructed on the fly.
+
+ Logical mesh is a topologically defined mesh with no real coordinate
+ geometry.  By definition it is perfectly parallel with no ghost entities,
+ as it is intended to be used along with a normal mesh as a subgrid model.
+ As it is not a geomtric mesh, it cannot work with all (many) spatial
+ discretizations -- currently only Finite Volume.
+
+ In particular:
+  1. nodes do not exist
+*/
+
+#include <set>
 #include "RegionEnumerated.hh"
 #include "MeshLogical.hh"
 
@@ -14,7 +37,7 @@ MeshLogical::MeshLogical(const Epetra_MpiComm *comm,
     : Mesh(verbosity_obj, true, false)
 {
   logical_ = true;
-  ASSERT(face_cell_ids.size() == face_normals.size());
+  AMANZI_ASSERT(face_cell_ids.size() == face_normals.size());
 
   set_comm(comm);
   set_space_dimension(3);
@@ -35,7 +58,7 @@ MeshLogical::MeshLogical(const Epetra_MpiComm *comm,
   }
 
   int num_cells = cells.size();
-  ASSERT(num_cells == (c_max+1));
+  AMANZI_ASSERT(num_cells == (c_max+1));
   cell_volumes_.resize(num_cells, 0.);
 
   // normal1 is negative normal0
@@ -54,9 +77,9 @@ MeshLogical::MeshLogical(const Epetra_MpiComm *comm,
   cell_face_bisectors_.resize(num_cells);
   int f_id=0;
   for (const auto f : face_cell_ids_) {
-    face_cell_ptype_[f_id].push_back(OWNED);
+    face_cell_ptype_[f_id].push_back(Parallel_type::OWNED);
     face_cell_ptype_[f_id].push_back(f.size() == 2 ?
-            OWNED : PTYPE_UNKNOWN);
+            Parallel_type::OWNED : Parallel_type::PTYPE_UNKNOWN);
 
     cell_face_ids_[f[0]].push_back(f_id);
     cell_face_dirs_[f[0]].push_back(1);
@@ -111,9 +134,26 @@ MeshLogical::MeshLogical(const Epetra_MpiComm *comm,
 
   logical_ = true;
   
-  ASSERT(face_cell_ids.size() == face_cell_lengths.size());
-  ASSERT(face_cell_ids.size() == face_area_normals.size());
+  if (face_cell_ids.size() != face_cell_lengths.size()) {
+    Errors::Message mesg("MeshLogical created with bad data");
+    Exceptions::amanzi_throw(mesg);
+  }
+  if (face_cell_ids.size() != face_area_normals.size()) {
+    Errors::Message mesg("MeshLogical created with bad data");
+    Exceptions::amanzi_throw(mesg);
+  }
+  if (cell_centroids != nullptr && cell_centroids->size() != cell_volumes.size()) {
+    Errors::Message mesg("MeshLogical created with bad data");
+    Exceptions::amanzi_throw(mesg);
+  }
+  for (int f=0; f!=face_cell_ids.size(); ++f) {
+    if (face_cell_ids[f].size() != face_cell_lengths[f].size()) {
+      Errors::Message mesg("MeshLogical created with bad data");
+      Exceptions::amanzi_throw(mesg);
+    }
+  }
 
+  
   set_comm(comm);
   set_space_dimension(3);
   set_manifold_dimension(1);
@@ -156,7 +196,7 @@ MeshLogical::MeshLogical(const Epetra_MpiComm *comm,
         face_centroids_[f] = (cell_centroids_[face_cell_ids_[f][0]] +
                 cell_centroids_[face_cell_ids_[f][1]]) / 2.0;
       } else {
-        ASSERT(face_cell_ids_[f].size() == 1);
+        AMANZI_ASSERT(face_cell_ids_[f].size() == 1);
         face_centroids_[f] = cell_centroids_[face_cell_ids_[f][0]]
             + (face_cell_lengths[f][0] / AmanziGeometry::norm(face_normals_[f][0]))
             * face_normals_[f][0];
@@ -174,9 +214,9 @@ MeshLogical::MeshLogical(const Epetra_MpiComm *comm,
   int f_id=0;
   for (std::vector<Entity_ID_List>::const_iterator f=face_cell_ids_.begin();
        f!=face_cell_ids_.end(); ++f) {
-    face_cell_ptype_[f_id].push_back(OWNED);
+    face_cell_ptype_[f_id].push_back(Parallel_type::OWNED);
     face_cell_ptype_[f_id].push_back(f->size() == 2 ?
-            OWNED : PTYPE_UNKNOWN);
+            Parallel_type::OWNED : Parallel_type::PTYPE_UNKNOWN);
     face_areas_[f_id] = AmanziGeometry::norm(face_normals_[f_id][0]);
 
     cell_face_ids_[(*f)[0]].push_back(f_id);
@@ -191,9 +231,9 @@ MeshLogical::MeshLogical(const Epetra_MpiComm *comm,
       cell_face_ids_[(*f)[1]].push_back(f_id);
       cell_face_dirs_[(*f)[1]].push_back(-1);
 
-      AmanziGeometry::Point unit_normal2(face_normals_[f_id][1]);
-      unit_normal2 /= face_areas_[f_id];
-      cell_face_bisectors_[(*f)[1]].push_back(unit_normal2 * face_cell_lengths[f_id][1]);
+      AmanziGeometry::Point unit_normal(face_normals_[f_id][1]);
+      unit_normal /= face_areas_[f_id];
+      cell_face_bisectors_[(*f)[1]].push_back(unit_normal * face_cell_lengths[f_id][1]);
     }
 
     f_id++;
@@ -240,17 +280,17 @@ void MeshLogical::set_logical_geometry(std::vector<double> const* const cell_vol
         std::vector<AmanziGeometry::Point> const* const cell_centroids)
 {
   if (cell_volumes) {
-    ASSERT(cell_volumes_.size() == cell_volumes->size());
+    AMANZI_ASSERT(cell_volumes_.size() == cell_volumes->size());
     cell_volumes_ = *cell_volumes;
   }
 
   if (cell_centroids) {
-    ASSERT(cell_centroids_.size() == cell_centroids->size());
+    AMANZI_ASSERT(cell_centroids_.size() == cell_centroids->size());
     cell_centroids_ = *cell_centroids;
   }
 
   if (face_areas) {
-    ASSERT(face_areas_.size() == face_areas->size());
+    AMANZI_ASSERT(face_areas_.size() == face_areas->size());
     for (int f=0; f!=face_areas_.size(); ++f) {
       face_normals_[f][0] *= ((*face_areas)[f]/face_areas_[f]);
       face_normals_[f][1] *= ((*face_areas)[f]/face_areas_[f]);
@@ -259,7 +299,7 @@ void MeshLogical::set_logical_geometry(std::vector<double> const* const cell_vol
   }
 
   if (cell_face_lengths) {
-    ASSERT(cell_face_bisectors_.size() == cell_face_lengths->size());
+    AMANZI_ASSERT(cell_face_bisectors_.size() == cell_face_lengths->size());
     int ncells = cell_face_bisectors_.size();
     for (int c=0; c!=ncells; ++c) {
       auto& c_bisectors = cell_face_bisectors_[c];
@@ -356,11 +396,11 @@ MeshLogical::operator==(const MeshLogical& other) {
 }
 
 
-// Get parallel type of entity - OWNED, GHOST, USED (See MeshDefs.hh)
+// Get parallel type of entity - OWNED, GHOST, ALL (See MeshDefs.hh)
 Parallel_type
 MeshLogical::entity_get_ptype(const Entity_kind kind,
                               const Entity_ID entid) const {
-  return OWNED;
+  return Parallel_type::OWNED;
 }
 
 
@@ -384,7 +424,7 @@ MeshLogical::cell_get_type(const Entity_ID cellid) const {
 // -------------------------
 //
 // Number of entities of any kind (cell, face, node) and in a
-// particular category (OWNED, GHOST, USED)
+// particular category (OWNED, Parallel_type::GHOST, Parallel_type::ALL)
 unsigned int
 MeshLogical::num_entities(const Entity_kind kind,
                           const Parallel_type ptype) const {
@@ -497,7 +537,7 @@ MeshLogical::node_get_cell_faces(const Entity_ID nodeid,
 // (e.g. a hex has 6 face neighbors)
 
 // The order in which the cellids are returned cannot be
-// guaranteed in general except when ptype = USED, in which case
+// guaranteed in general except when ptype = ALL, in which case
 // the cellids will correcpond to cells across the respective
 // faces given by cell_get_faces
 void
@@ -827,6 +867,45 @@ MeshLogical::compute_face_geometric_quantities_() const {
   Exceptions::amanzi_throw(mesg);
   return -1;
 }
+
+
+//
+// Note this works on Mesh, but is less useful for a general mesh
+// --------------------------------------------------------------------------------
+bool viewMeshLogical(const Mesh& m, std::ostream& os) {
+  if (m.get_comm()->NumProc() != 1) {
+    return true;
+  }
+
+  os << "cell_centroids, volumes =" << std::endl;
+  for (int c=0; c!=m.num_entities(CELL, Parallel_type::OWNED); ++c) {
+    os << m.cell_centroid(c) << " " << m.cell_volume(c) << std::endl;
+  }
+  os << "face_connections, areas =" << std::endl;
+  for (int f=0; f!=m.num_entities(FACE, Parallel_type::OWNED); ++f) {
+    AmanziMesh::Entity_ID_List fcells;
+    m.face_get_cells(f, Parallel_type::ALL, &fcells);
+    for (auto c : fcells) os << c << " ";
+    os << m.face_area(f) << std::endl;
+  }
+
+  os << "cell_sets =" << std::endl;
+  auto gm = m.geometric_model();
+  for (auto r = gm->RegionBegin(); r!=gm->RegionEnd(); ++r) {
+    if ((*r)->type() == AmanziGeometry::ENUMERATED) {
+      AmanziMesh::Entity_ID_List set;
+      m.get_set_entities((*r)->id(), AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED, &set);
+      os << (*r)->name() << " ";
+      for (auto e : set) os << e << " ";
+      os << std::endl;
+    }
+  }
+
+  return false;
+  
+}
+  
+
 
 }  // namespace AmanziMesh
 }  // namespace Amanzi

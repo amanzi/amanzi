@@ -24,7 +24,6 @@
 #include "DenseMatrix.hh"
 #include "MeshMaps.hh"
 #include "Polynomial.hh"
-#include "ProjectorH1.hh"
 #include "Tensor.hh"
 #include "WhetStone_typedefs.hh"
 
@@ -33,56 +32,49 @@ namespace WhetStone {
 
 class MeshMaps_VEM : public MeshMaps { 
  public:
-  MeshMaps_VEM(Teuchos::RCP<const AmanziMesh::Mesh> mesh) :
-      MeshMaps(mesh),
-      projector(mesh) {};
+  MeshMaps_VEM(Teuchos::RCP<const AmanziMesh::Mesh> mesh,
+               const Teuchos::ParameterList& plist) :
+      MeshMaps(mesh) {
+    ParseInputParameters_(plist);
+  }
   MeshMaps_VEM(Teuchos::RCP<const AmanziMesh::Mesh> mesh0,
-               Teuchos::RCP<const AmanziMesh::Mesh> mesh1) :
-      MeshMaps(mesh0, mesh1),
-      projector(mesh0) {};
+               Teuchos::RCP<const AmanziMesh::Mesh> mesh1,
+               const Teuchos::ParameterList& plist) :
+      MeshMaps(mesh0, mesh1) {
+    ParseInputParameters_(plist);
+  }
   ~MeshMaps_VEM() {};
 
   // Maps
-  // -- pseudo-velocity in cell c
+  // -- pseudo-velocity
+  virtual void VelocityFace(int f, VectorPolynomial& vf) const override;
   virtual void VelocityCell(int c, const std::vector<VectorPolynomial>& vf,
                             VectorPolynomial& vc) const override;
-  // -- pseudo-velocity on face f
-  virtual void VelocityFace(int f, VectorPolynomial& vf) const override;
+
   // -- Nanson formula
-  virtual void NansonFormula(int f, double t, const VectorPolynomial& v,
+  virtual void NansonFormula(int f, double t, const VectorPolynomial& vf,
                              VectorPolynomial& cn) const override;
 
-  // Jacobian
-  // -- tensors
-  virtual void Cofactors(int c, double t, const VectorPolynomial& vc,
-                         MatrixPolynomial& C) const override;
-  // -- determinant
-  virtual void JacobianDet(int c, double t, const std::vector<VectorPolynomial>& vf,
-                           Polynomial& vc) const override;
-  void JacobianDet(double t, const VectorPolynomial& vc, Polynomial& jac) const;
-
-  // -- value at point x
-  virtual void JacobianCellValue(int c,
-                                 double t, const AmanziGeometry::Point& x,
-                                 Tensor& J) const override;
-  virtual void JacobianFaceValue(int f, const VectorPolynomial& v,
-                                 const AmanziGeometry::Point& x,
-                                 Tensor& J) const override;
+  // -- Jacobian
+  virtual void JacobianCell(int c, const std::vector<VectorPolynomial>& vf,
+                            MatrixPolynomial& J) const override;
 
  private:
   // pseudo-velocity on edge e
   void VelocityEdge_(int e, VectorPolynomial& ve) const;
 
-  // support of development 
-  void Cofactors_P1_(int c, double t, const VectorPolynomial& vc, MatrixPolynomial& C) const;
-  void Cofactors_Pk_(int c, double t, const VectorPolynomial& vc, MatrixPolynomial& C) const;
-
   // old deprecated methods
+  void JacobianFaceValue_(int f, const VectorPolynomial& v, const AmanziGeometry::Point& x, Tensor& J) const;
+
   void LeastSquareProjector_Cell_(int order, int c, const std::vector<VectorPolynomial>& vf,
                                   VectorPolynomial& vc) const;
 
-  // elliptic projectors
-  ProjectorH1 projector;
+  // io
+  void ParseInputParameters_(const Teuchos::ParameterList& plist);
+
+ private:
+  std::string method_, projector_;
+  int order_;
 };
 
 }  // namespace WhetStone

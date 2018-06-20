@@ -53,7 +53,7 @@ OutputSilo::~OutputSilo() {
 void
 OutputSilo::InitializeCycle(double time, int cycle) {
   // check not open
-  ASSERT(fid_ == NULL);
+  AMANZI_ASSERT(fid_ == NULL);
   if (fid_) {
     CloseFile_();
   }
@@ -75,7 +75,7 @@ OutputSilo::InitializeCycle(double time, int cycle) {
   coordnames[2] = (char*)"z-coords";
 
   // -- nodal coordinates
-  int nnodes = mesh_->vis_mesh().num_entities(AmanziMesh::NODE, AmanziMesh::OWNED);
+  int nnodes = mesh_->vis_mesh().num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::OWNED);
   std::vector<double> x(nnodes), y(nnodes), z(nnodes);
 
   AmanziGeometry::Point xyz;
@@ -101,16 +101,16 @@ OutputSilo::InitializeCycle(double time, int cycle) {
   DBAddOption(optlist, DBOPT_DTIME, &time);
 
   // -- write the base mesh UCD object
-  int ncells = mesh_->vis_mesh().num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  int ncells = mesh_->vis_mesh().num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
   int ierr = DBPutUcdmesh(fid_, "mesh", mesh_->vis_mesh().space_dimension(),
                           (char const* const*)coordnames, coords,
                           nnodes, ncells, 0, 0, DB_DOUBLE, optlist);
-  ASSERT(!ierr);
+  AMANZI_ASSERT(!ierr);
 
   // -- Construct the silo face-node info.
   // We rely on the mesh having the faces nodes arranged counter-clockwise
   // around the face.  This should be satisfied by AmanziMesh.
-  int nfaces = mesh_->vis_mesh().num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
+  int nfaces = mesh_->vis_mesh().num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
   std::vector<int> face_node_counts(nfaces);
   std::vector<char> ext_faces(nfaces, 0x0);
   std::vector<int> face_node_list;
@@ -122,7 +122,7 @@ OutputSilo::InitializeCycle(double time, int cycle) {
     face_node_list.insert(face_node_list.end(), fnodes.begin(), fnodes.end());
 
     AmanziMesh::Entity_ID_List fcells;
-    mesh_->vis_mesh().face_get_cells(f, AmanziMesh::USED, &fcells);
+    mesh_->vis_mesh().face_get_cells(f, AmanziMesh::Parallel_type::ALL, &fcells);
     if (fcells.size() == 1) {
       ext_faces[f] = 0x1;
     }
@@ -150,7 +150,7 @@ OutputSilo::InitializeCycle(double time, int cycle) {
                           ncells, &cell_face_counts[0],
                           cell_face_list.size(), &cell_face_list[0],
                           0, 0, ncells-1, optlist);
-  ASSERT(!ierr);
+  AMANZI_ASSERT(!ierr);
                           
   // -- clean up (could be done on finalize if needed? --etc)
   DBFreeOptlist(optlist);
@@ -170,16 +170,16 @@ OutputSilo::FinalizeCycle() {
 void
 OutputSilo::WriteVector(const Epetra_Vector& vec,
                         const std::string& name) const {
-  if (vec.MyLength() == mesh_->vis_mesh().num_entities(AmanziMesh::CELL, AmanziMesh::OWNED)) {
+  if (vec.MyLength() == mesh_->vis_mesh().num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED)) {
     int ierr = DBPutUcdvar1(fid_, FixName_(name).c_str(), "mesh",
                             (void*)&vec[0], vec.MyLength(), NULL, 0,
                             DB_DOUBLE, DB_ZONECENT, NULL);
-    ASSERT(!ierr);
-  } else if (vec.MyLength() == mesh_->vis_mesh().num_entities(AmanziMesh::NODE, AmanziMesh::OWNED)) {
+    AMANZI_ASSERT(!ierr);
+  } else if (vec.MyLength() == mesh_->vis_mesh().num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::OWNED)) {
     int ierr = DBPutUcdvar1(fid_, FixName_(name).c_str(), "mesh",
                             (void*)&vec[0], vec.MyLength(), NULL, 0,
                             DB_DOUBLE, DB_NODECENT, NULL);
-    ASSERT(!ierr);
+    AMANZI_ASSERT(!ierr);
   } else {
     Errors::Message msg("OutputSilo only knows how to write CELL and NODE based quantities.");
     Exceptions::amanzi_throw(msg);
@@ -190,7 +190,7 @@ OutputSilo::WriteVector(const Epetra_Vector& vec,
 void
 OutputSilo::WriteMultiVector(const Epetra_MultiVector& vec,
                              const std::vector<std::string>& names) const {
-  ASSERT(vec.NumVectors() == names.size());
+  AMANZI_ASSERT(vec.NumVectors() == names.size());
   for (int i=0; i!=vec.NumVectors(); ++i) {
     WriteVector(*vec(i), names[i]);
   }
@@ -199,18 +199,18 @@ OutputSilo::WriteMultiVector(const Epetra_MultiVector& vec,
 // can we template this?
 void
 OutputSilo::WriteAttribute(const double& val, const std::string& name) const {
-  ASSERT(0);
+  AMANZI_ASSERT(0);
 }
 
 void
 OutputSilo::WriteAttribute(const int& val, const std::string& name) const {
-  ASSERT(0);
+  AMANZI_ASSERT(0);
 }
 
 
 void
 OutputSilo::WriteAttribute(const std::string& val, const std::string& name) const {
-  ASSERT(0);
+  AMANZI_ASSERT(0);
 }
 
 

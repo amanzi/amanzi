@@ -1,4 +1,4 @@
-/* -*-  mode: c++; indent-tabs-mode: nil -*- */
+/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
 // -------------------------------------------------------------
 /**
  * @file   test_deform.cc
@@ -103,7 +103,7 @@ TEST(MESH_DEFORM2D)
     int status, nnodes;
 
     nnodes = mesh->num_entities(Amanzi::AmanziMesh::NODE,
-                                Amanzi::AmanziMesh::OWNED);
+                                Amanzi::AmanziMesh::Parallel_type::OWNED);
     
     for (int j = 0; j < nnodes; j++) {
       nodeids.push_back(j);
@@ -127,7 +127,7 @@ TEST(MESH_DEFORM2D)
     // of what they were
     
     int ncells = mesh->num_entities(Amanzi::AmanziMesh::CELL,
-                                    Amanzi::AmanziMesh::USED);
+                                    Amanzi::AmanziMesh::Parallel_type::ALL);
 
     for (int j = 0; j < ncells; j++) {
       double volume = mesh->cell_volume(j);
@@ -214,7 +214,7 @@ TEST(MESH_DEFORM3D)
     if (nproc == 1) {
 
       nnodes = mesh->num_entities(Amanzi::AmanziMesh::NODE,
-                                 Amanzi::AmanziMesh::OWNED);
+                                 Amanzi::AmanziMesh::Parallel_type::OWNED);
 
       for (int j = 0; j < nnodes; j++) {
         double pi = 3.1415926;

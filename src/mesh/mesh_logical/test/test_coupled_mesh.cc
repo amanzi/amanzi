@@ -1,4 +1,4 @@
-/* -*-  mode: c++; indent-tabs-mode: nil -*- */
+/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
 
 #include <UnitTest++.h>
 
@@ -21,8 +21,8 @@ test_segment_regular(const Teuchos::RCP<Amanzi::AmanziMesh::Mesh>& m,
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::AmanziGeometry;
 
-  CHECK_EQUAL(4, m->num_entities(CELL, USED));
-  CHECK_EQUAL(5, m->num_entities(FACE, USED));
+  CHECK_EQUAL(4, m->num_entities(CELL, Parallel_type::ALL));
+  CHECK_EQUAL(5, m->num_entities(FACE, Parallel_type::ALL));
   CHECK_EQUAL(0.25, m->cell_volume(0));
   CHECK_EQUAL(1.0, m->face_area(0));
 
@@ -55,27 +55,27 @@ test_segment_regular(const Teuchos::RCP<Amanzi::AmanziMesh::Mesh>& m,
   CHECK_EQUAL(0., bisectors[1][2]);
 
   Entity_ID_List cells;
-  m->face_get_cells(0, USED, &cells);
+  m->face_get_cells(0, Parallel_type::ALL, &cells);
   CHECK_EQUAL(1, cells.size());
   CHECK_EQUAL(0, cells[0]);
 
-  m->face_get_cells(1, USED, &cells);
+  m->face_get_cells(1, Parallel_type::ALL, &cells);
   CHECK_EQUAL(2, cells.size());
   CHECK_EQUAL(0, cells[0]);
   CHECK_EQUAL(1, cells[1]);
 
-  m->face_get_cells(4, USED, &cells);
+  m->face_get_cells(4, Parallel_type::ALL, &cells);
   CHECK_EQUAL(1, cells.size());
   CHECK_EQUAL(3, cells[0]);
 
   
   if (test_region) {
     // check regions
-    CHECK_EQUAL(4, m->get_set_size("myregion", CELL, USED));
-    CHECK_EQUAL(0, m->get_set_size("myregion", FACE, USED));
+    CHECK_EQUAL(4, m->get_set_size("myregion", CELL, Parallel_type::ALL));
+    CHECK_EQUAL(0, m->get_set_size("myregion", FACE, Parallel_type::ALL));
 
     Entity_ID_List set_ents;
-    m->get_set_entities("myregion", CELL, USED, &set_ents);
+    m->get_set_entities("myregion", CELL, Parallel_type::ALL, &set_ents);
     CHECK_EQUAL(0, set_ents[0]);
     CHECK_EQUAL(2, set_ents[2]);
   }
@@ -100,12 +100,12 @@ test_segment_irregular(const Teuchos::RCP<Amanzi::AmanziMesh::Mesh>& m,
   gm->AddRegion(enum_rgn);
 
 
-  CHECK_EQUAL(2, m->get_set_size("myregion", CELL, USED));
-  CHECK_EQUAL(0, m->get_set_size("myregion", FACE, USED));
+  CHECK_EQUAL(2, m->get_set_size("myregion", CELL, Parallel_type::ALL));
+  CHECK_EQUAL(0, m->get_set_size("myregion", FACE, Parallel_type::ALL));
 
   if (test_region) {
     Entity_ID_List set_ents;
-    m->get_set_entities("myregion", CELL, USED, &set_ents);
+    m->get_set_entities("myregion", CELL, Parallel_type::ALL, &set_ents);
     CHECK_EQUAL(0, set_ents[0]);
     CHECK_EQUAL(3, set_ents[1]);
   }
@@ -138,8 +138,8 @@ test_Y(const Teuchos::RCP<Amanzi::AmanziMesh::Mesh>& m,
   CHECK_CLOSE(0., norm(tip-m->face_centroid(4)), 1.e-6);
 
   if (test_region) {
-    CHECK_EQUAL(3, m->get_set_size("coarse_root", CELL, USED));
-    CHECK_EQUAL(8, m->get_set_size("fine_root", CELL, USED));
+    CHECK_EQUAL(3, m->get_set_size("coarse_root", CELL, Parallel_type::ALL));
+    CHECK_EQUAL(8, m->get_set_size("fine_root", CELL, Parallel_type::ALL));
   }
 }
 

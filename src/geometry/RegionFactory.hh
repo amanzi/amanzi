@@ -1,4 +1,4 @@
-/* -*-  mode: c++; indent-tabs-mode: nil -*- */
+/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
 /*
   Nonmember function for creating regions.
 
@@ -26,7 +26,7 @@ class Region;
   
 Teuchos::RCP<Region>
 createRegion(const std::string reg_name,
-             Set_ID reg_id,
+             int reg_id,
              Teuchos::ParameterList& reg_spec,
              const Epetra_MpiComm *comm);
 

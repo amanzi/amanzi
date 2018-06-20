@@ -1,5 +1,5 @@
 /*
-  Time Integration
+  Time Integration 
 
   Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
@@ -8,6 +8,22 @@
 
   Author: Ethan Coon (ecoon@lanl.gov)
 */
+
+//! Solves globally implicit systems using Backwards Euler
+/*!
+
+``[implicit-time-integrator-typed-spec]``
+
+* `"extrapolate initial guess`" ``[bool]`` **true** Extrapolate successive solutions to guess the next.
+
+* `"solver type`" ``[string]`` One of the available solver types.
+* `"_solver_type_ parameters`" ``[_solver_type_-spec]`` One of the available solver types.
+
+* `"timestep controller type`" ``[string]`` One of the available solver types.
+* `"_timestep_controller_type_ parameters`" ``[_timestep_controller_type_-spec]`` One of the available solver types.
+
+ */
+
 
 #ifndef AMANZI_BDF1_TIME_INTEGRATOR_HH_
 #define AMANZI_BDF1_TIME_INTEGRATOR_HH_
@@ -20,6 +36,7 @@
 #include "VerboseObject.hh"
 #include "Solver.hh"
 #include "SolverFactory.hh"
+#include "SolverDefs.hh"
 
 #include "BDF1_State.hh"
 #include "SolutionHistory.hh"
@@ -45,7 +62,7 @@ class BDF1_TI {
   void CommitSolution(const double h, const Teuchos::RCP<Vector>& u, bool valid=true);
 
   // Computes a step and returns true whan it fails.
-  bool TimeStep(double dt, const Teuchos::RCP<Vector>& x0, const Teuchos::RCP<Vector>& x, double& dt_next);
+  bool TimeStep(double dt, double& dt_next, const Teuchos::RCP<Vector>& x);
 
   // Reset the memory of the time integrator
   void Reset();
@@ -171,10 +188,7 @@ double BDF1_TI<Vector,VectorSpace>::time() {
 * Implementation of implicit Euler time step.
 ****************************************************************** */
 template<class Vector,class VectorSpace>
-bool BDF1_TI<Vector,VectorSpace>::TimeStep(double dt,
-        const Teuchos::RCP<Vector>& u_prev,
-        const Teuchos::RCP<Vector>& u,
-        double& dt_next) {
+bool BDF1_TI<Vector,VectorSpace>::TimeStep(double dt, double& dt_next, const Teuchos::RCP<Vector>& u) {
   // initialize the output stream
   Teuchos::OSTab tab = vo_->getOSTab();
 
@@ -189,6 +203,9 @@ bool BDF1_TI<Vector,VectorSpace>::TimeStep(double dt,
                << " out of " << state_->maxpclag << std::endl;
   }
 
+  // u at the start of the time step
+  Teuchos::RCP<Vector> u0 = Teuchos::rcp(new Vector(*u));
+
   // Predicted solution (initial value for the nonlinear solver)
   if (state_->extrapolate_guess) {
     if (state_->uhist->history_size() > 1) {
@@ -196,10 +213,10 @@ bool BDF1_TI<Vector,VectorSpace>::TimeStep(double dt,
       fn_->ChangedSolution();
 
       if (fn_->IsAdmissible(u)) {
-        bool changed = fn_->ModifyPredictor(dt, u_prev, u);
+        bool changed = fn_->ModifyPredictor(dt, u0, u);
         if (changed) fn_->ChangedSolution();
       } else {
-        *u = *u_prev;
+        *u = *u0;
         fn_->ChangedSolution();
       }
     }
@@ -207,7 +224,7 @@ bool BDF1_TI<Vector,VectorSpace>::TimeStep(double dt,
 
   // Set up the solver fn.
   solver_fn_->SetTimes(tlast, tnew);
-  solver_fn_->SetPreviousTimeSolution(u_prev);
+  solver_fn_->SetPreviousTimeSolution(u0);
 
   // Set up tolerance due to damping.
   double factor = state_->tol_multiplier;
@@ -244,7 +261,7 @@ bool BDF1_TI<Vector,VectorSpace>::TimeStep(double dt,
     if (vo_->os_OK(Teuchos::VERB_HIGH)) {
       *vo_->os() << vo_->color("red") << "step failed with error code " << code << vo_->reset() << std::endl;
     }
-    *u = *u_prev;
+    *u = *u0;
   }
 
   // update the next timestep size
@@ -281,7 +298,7 @@ bool BDF1_TI<Vector,VectorSpace>::TimeStep(double dt,
       *udot_prev_ = *udot_;
       double tmp = 1.0 / dt;
       *udot_ = *u;
-      udot_->Update(-tmp, *u_prev, tmp);
+      udot_->Update(-tmp, *u0, tmp);
     }
 
     ReportStatistics_();
@@ -305,7 +322,7 @@ void BDF1_TI<Vector,VectorSpace>::ReportStatistics_()
     oss << " FS:" << state_->failed_solve;
     oss << " NS:" << state_->solve_itrs;
     oss << " PC:" << state_->pc_updates << " " << state_->pc_calls;
-    //    oss << " LS:" << fn_->ReportStatistics();
+    oss << " LS:" << fn_->ReportStatistics();
 
     oss << " dt:";
     oss.precision(4);

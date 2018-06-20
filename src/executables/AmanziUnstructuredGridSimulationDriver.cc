@@ -113,11 +113,11 @@ AmanziUnstructuredGridSimulationDriver::Run(const MPI_Comm& mpi_comm,
   // For now create one geometric model from all the regions in the spec
   Teuchos::ParameterList reg_params = plist_->sublist("regions");
 
-  Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> geom_model_ptr =
+  Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> geom_model =
       Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(spdim, reg_params, comm));
 
   // Add the geometric model to the domain
-  simdomain_ptr->Add_Geometric_Model(geom_model_ptr);
+  simdomain_ptr->Add_Geometric_Model(geom_model);
 
   Amanzi::timer_manager.stop("Geometric Model creation");
 
@@ -249,7 +249,7 @@ AmanziUnstructuredGridSimulationDriver::Run(const MPI_Comm& mpi_comm,
       ierr = 0;
       try {
         // create the mesh from the file
-	mesh = factory.create(file, geom_model_ptr);
+	mesh = factory.create(file, geom_model);
 	    
       } catch (const std::exception& e) {
 	std::cerr << rank << ": error: " << e.what() << std::endl;
@@ -268,7 +268,7 @@ AmanziUnstructuredGridSimulationDriver::Run(const MPI_Comm& mpi_comm,
     
     try {
       // create the mesh by internal generation
-      mesh = factory.create(gen_params, geom_model_ptr);
+      mesh = factory.create(gen_params, geom_model);
 
     } catch (const std::exception& e) {
       std::cerr << rank << ": error: " << e.what() << std::endl;
@@ -286,8 +286,12 @@ AmanziUnstructuredGridSimulationDriver::Run(const MPI_Comm& mpi_comm,
   }
   Amanzi::timer_manager.stop("Mesh creation");
 
-  ASSERT(!mesh.is_null());
+  AMANZI_ASSERT(!mesh.is_null());
 
+  // Verify mesh and geometric model compatibility
+  if (geom_model->dimension() != mesh->space_dimension()) {
+    amanzi_throw(Errors::Message("Geometric model and mesh have different dimensions."));
+  }
 
   if (expert_params_specified) {
     Teuchos::ParameterList expert_mesh_params = unstr_mesh_params.sublist("expert");  

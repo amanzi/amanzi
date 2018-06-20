@@ -1,4 +1,4 @@
-/* -*-  mode: c++; indent-tabs-mode: nil -*- */
+/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
 /*
   A region defined by a logical operation on one or two other regions
  
@@ -27,7 +27,7 @@ namespace AmanziGeometry {
 // RegionLogical:: constructor
 // -------------------------------------------------------------
 RegionLogical::RegionLogical(const std::string& name, 
-                             const Set_ID id,
+                             const int id,
                              const std::string& operation_str,
                              const std::vector<std::string>& component_regions,
                              const LifeCycleType lifecycle)

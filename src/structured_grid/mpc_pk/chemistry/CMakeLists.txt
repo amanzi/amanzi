@@ -16,6 +16,8 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 include_directories(${CCSE_INCLUDE_DIRS})
 include_directories(${GEOCHEM_STATE_DIR}) 
 include_directories(${GEOCHEM_SOURCE_DIR}) 
+include_directories(${CHEM_INCLUDES_DIRS})
+include_directories(${ALQUIMIA_INCLUDE_DIRS})
 
 # External (TPL) include directories
 include_directories(${Teuchos_INCLUDE_DIRS})

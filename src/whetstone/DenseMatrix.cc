@@ -120,7 +120,7 @@ DenseMatrix::DenseMatrix(const DenseMatrix& B, int m1, int m2, int n1, int n2)
 ****************************************************************** */
 void DenseMatrix::Reshape(int mrow, int ncol)
 {
-  ASSERT(access_ == WHETSTONE_DATA_ACCESS_COPY);
+  AMANZI_ASSERT(access_ == WHETSTONE_DATA_ACCESS_COPY);
 
   m_ = mrow;
   n_ = ncol;
@@ -272,6 +272,28 @@ void DenseMatrix::MaxRowMagnitude(int irow, int jmin, int jmax, int* j, double* 
       *value = fabs(*data); 
     }
   }
+}
+
+
+/* ******************************************************************
+* Second level routine: submatrix in rows [ib,ie) and columns [jb,je)
+****************************************************************** */
+DenseMatrix DenseMatrix::SubMatrix(int ib, int ie, int jb, int je) 
+{
+  int mrows(ie - ib), ncols(je - jb);
+  DenseMatrix tmp(mrows, ncols);
+  double* dataB = tmp.Values();
+
+  for (int j = jb; j < je; ++j) {
+    const double* dataA = data_ + j * m_ + ib;
+    for (int i = ib; i < ie; ++i) {
+      *dataB = *dataA;
+      dataA++; 
+      dataB++; 
+    }
+  } 
+
+  return tmp;
 }
 
 

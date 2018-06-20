@@ -1,4 +1,4 @@
-/* -*-  mode: c++; indent-tabs-mode: nil -*- */
+/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
 //! DistanceFunction: distance from a reference point.
 
 /*
@@ -19,6 +19,10 @@ using by the following expression:
   f(x) = \sqrt( \sum_{j=0}^{n} m_j (x_j - x_{0,j})^2 )
 
 Note that the first parameter in :math:`x` can be time.
+
+* `"x0`" ``[Array(double)]`` Point from which distance is measured.
+* `"metric`" ``[Array(double)]`` Linear scaling metric, typically all 1s.
+
 Here is an example of a distance function using isotropic metric:
 
 Example:

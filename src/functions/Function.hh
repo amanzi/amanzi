@@ -1,4 +1,4 @@
-/* -*-  mode: c++; indent-tabs-mode: nil -*- */
+/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
 //! Function: base class for all functions of space and time.
 
 /*
@@ -22,8 +22,39 @@ function of time:
 
 :math:`u = f(t,x,y,z)`
 
-A ``[function-spec]`` is used to prescribe these functions.
+``[function-spec]``
 
+ONE OF:
+* `"function: constant`" ``[constant-function-spec]``
+OR:
+* `"function: tabular`" ``[tabular-function-spec]``
+OR:
+* `"function: smooth step`" ``[smooth-step-function-spec]``
+OR:
+* `"function: polynomial`" ``[polynomial-function-spec]``
+OR:
+* `"function: monomial`" ``[monomial-function-spec]``
+OR:
+* `"function: linear`" ``[linear-function-spec]``
+OR:
+* `"function: separable`" ``[separable-function-spec]``
+OR:
+* `"function: additive`" ``[additive-function-spec]``
+OR:
+* `"function: multiplicative`" ``[multiplicative-function-spec]``
+OR:
+* `"function: composition`" ``[composition-function-spec]``
+OR:
+* `"function: static head`" ``[static-head-function-spec]``
+OR:
+* `"function: standard math`" ``[standard-math-function-spec]``
+OR:
+* `"function: bilinear`" ``[bilinear-function-spec]``
+OR:
+* `"function: distance`" ``[distance-function-spec]``
+#OR:
+#* `"function: squared distance`" ``[squared-distance-function-spec]``
+END
 */
   
 #ifndef AMANZI_FUNCTION_HH_

@@ -1,3 +1,4 @@
+/* -*-  mode: c++; indent-tabs-mode: nil -*- */
 /* 
    Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
    Amanzi is released under the three-clause BSD License. 
@@ -21,6 +22,7 @@
 #define UTILS_KEY_HH_
 
 
+#include <set>
 #include "boost/algorithm/string.hpp"
 #include "Teuchos_ParameterList.hpp"
 
@@ -32,11 +34,9 @@ typedef std::set<Key> KeySet;
 typedef std::vector<Key> KeyVector;
 
 typedef std::pair<Key,Key> KeyPair;
-typedef std::set<KeyPair> KeyPairSet;
-typedef std::vector<KeyPair> KeyPairVector;
+typedef std::set<std::pair<Key, Key> > KeyPairSet;
 
 typedef std::tuple<Key,Key,Key> KeyTriple;
-typedef std::set<KeyTriple> KeyTripleSet;
 
 namespace Keys {
 
@@ -49,7 +49,7 @@ cleanPListName(std::string name)
   return name;
 }
 
-// A fully resolved key is of the form  "DOMAIN-VARNAME:VARTAG"
+// Keys are often a combination of a domain and a variable name.
 
 // Generate a DOMAIN-VARNAME key.
 inline Key
@@ -102,42 +102,15 @@ matchesDomainSet(const Key& domain_set, const Key& name) {
   return splitDomainSet(name, result) ? std::get<0>(result) == domain_set : false;
 }
     
-
-// Tag'd variables are of the form VARNAME:TAG
+// Derivatives are of the form dKey_dKey.
 inline Key
-getKeyTag(const Key& var, const Key& tag) {
-  return tag.empty() ? var : var+":"+tag;
+getDerivKey(Key var, Key wrt) {
+  return std::string("d")+var+"_d"+wrt;
 }
-
-// Split a DOMAIN-VARNAME key.
-inline KeyPair
-splitKeyTag(const Key& name)
-{
-  std::size_t pos = name.find(':');
-  if (pos == std::string::npos) 
-    return std::make_pair(name, Key(""));
-  else
-    return std::make_pair(name.substr(0,pos), name.substr(pos+1,name.size()));
-}
-
-
-// Convenience function for requesting the name of a Key from an input spec.
+// Convencience function for requesting the name of a Key from an input spec.
 Key
 readKey(Teuchos::ParameterList& list, const Key& domain, const Key& basename,
         const Key& default_name="");
-
-// Convenience function for requesting a list of names of Keys from an input spec.
-Teuchos::Array<Key>
-readKeys(Teuchos::ParameterList& list, const Key& domain, const Key& basename,
-         Teuchos::Array<Key> const * const default_names=nullptr);
-
-
-// Convenience function to see if a map (or map-like) object has a key.
-template<typename T, typename K>
-bool
-hasKey(const T& container, const K& key) {
-  return container.count(key) > 0;
-}
 
 
 } // namespace Key

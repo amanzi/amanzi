@@ -146,7 +146,7 @@ class bogus_mesh : public Amanzi::AmanziMesh::Mesh {
   Amanzi::AmanziMesh::Parallel_type 
   entity_get_ptype(const Amanzi::AmanziMesh::Entity_kind kind, 
                    const Amanzi::AmanziMesh::Entity_ID entid) const
-  { return Amanzi::AmanziMesh::OWNED; }
+  { return Amanzi::AmanziMesh::Parallel_type::OWNED; }
 
   Amanzi::AmanziMesh::Cell_type 
   cell_get_type(const Amanzi::AmanziMesh::Entity_ID cellid) const

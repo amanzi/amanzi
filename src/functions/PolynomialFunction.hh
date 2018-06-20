@@ -1,4 +1,4 @@
-/* -*-  mode: c++; indent-tabs-mode: nil -*- */
+/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
 //! PolynomialFunction: a polynomial
 
 /*
@@ -18,13 +18,17 @@ A generic polynomial function is given by the following expression:
 where :math:`c_j` are coefficients of monomials,
 :math:`p_j` are integer exponents, and :math:`x_0` is the reference point.
 
+* `"coefficients`" ``[Array(double)]`` c_j polynomial coefficients
+* `"exponents`" ``[Array(int)]`` p_j polynomail exponents
+* `"reference point`" ``[double]`` x0 to which polynomial argument is normalized.
+
 Example:
 
 .. code-block:: xml
 
   <ParameterList name="function-polynomial">
-    <Parameter name="coefficients" type="Array(double)" value="{{1.0, 1.0}}"/>
-    <Parameter name="exponents" type="Array(int)" value="{{2, 4}}"/>
+    <Parameter name="coefficients" type="Array(double)" value="{1.0, 1.0}"/>
+    <Parameter name="exponents" type="Array(int)" value="{2, 4}"/>
     <Parameter name="reference point" type="double" value="0.0"/>
   </ParameterList>
 

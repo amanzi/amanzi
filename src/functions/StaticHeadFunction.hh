@@ -1,4 +1,4 @@
-/* -*-  mode: c++; indent-tabs-mode: nil -*- */
+/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
 //! StaticHeadFunction: f = p0 + rho*g*(z-z0)
 
 
@@ -15,6 +15,13 @@
 :math:`f(z) = p0 + rho * g * (z0 - z)`
 
 Note that dimension 0 is usually time.
+
+* `"p0`" ``[double]`` Pressure at z0
+* `"density`" ``[double]`` Density of water
+* `"gravity`" ``[double]`` Gravity
+* `"space dimension`" ``[int]`` Dimensionality, usually 3
+* `"water table elevation`" ``[function-spec]`` Water table elevation function.
+
 
 Example:
 .. code-block:: xml

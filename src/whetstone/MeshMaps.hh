@@ -51,39 +51,35 @@ class MeshMaps {
   ~MeshMaps() {};
 
   // Maps
-  // -- pseudo-velocity in cell c
+  // -- pseudo-velocity
+  virtual void VelocityFace(int f, VectorPolynomial& v) const;
   virtual void VelocityCell(int c, const std::vector<VectorPolynomial>& vf,
                             VectorPolynomial& vc) const = 0;
-  // -- pseudo-velocity on face f
-  virtual void VelocityFace(int f, VectorPolynomial& v) const;
+
   // -- Nanson formula
-  virtual void NansonFormula(int f, double t, const VectorPolynomial& v,
+  virtual void NansonFormula(int f, double t, const VectorPolynomial& vf,
                              VectorPolynomial& cn) const = 0;
 
-  // Jacobian
-  // -- tensors
-  virtual void Cofactors(int c, double t, const VectorPolynomial& vc,
-                         MatrixPolynomial& C) const = 0;
+  // -- Jacobian 
+  virtual void JacobianCell(int c, const std::vector<VectorPolynomial>& vf,
+                            MatrixPolynomial& J) const { AMANZI_ASSERT(0); }
+  void Jacobian(const VectorPolynomial& vc, MatrixPolynomial& J) const;
+
+  // -- matrix of cofactors
+  void Cofactors(double t, const MatrixPolynomial& J, MatrixPolynomial& C) const;
+
   // -- determinant
-  virtual void JacobianDet(int c, double t, const std::vector<VectorPolynomial>& vf,
-                           Polynomial& vc) const = 0;
-  // -- value at point x
-  virtual void JacobianCellValue(int c, 
-                                 double t, const AmanziGeometry::Point& x,
-                                 Tensor& J) const = 0;
-  virtual void JacobianFaceValue(int f, const VectorPolynomial& v,
-                                 const AmanziGeometry::Point& x,
-                                 Tensor& J) const = 0;
+  void Determinant(double t, const MatrixPolynomial& J, VectorPolynomial& det) const;
 
   // Miscalleneous
+  // -- projection ffrom reference coordinates (mesh0) to mesh1
+  void ProjectPolynomial(int c, Polynomial& poly) const;
+
   // -- polynomial approximation of map x2 = F(x1)
   int LeastSquareFit(int order,
                      const std::vector<AmanziGeometry::Point>& x1, 
                      const std::vector<AmanziGeometry::Point>& x2,
                      VectorPolynomial& u) const;
-
-  // extension of mesh interface
-  AmanziGeometry::Point cell_geometric_center(int id, int c) const;
 
  protected:
   Teuchos::RCP<const AmanziMesh::Mesh> mesh0_;  // initial mesh 

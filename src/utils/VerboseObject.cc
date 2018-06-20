@@ -80,7 +80,7 @@ VerboseObject::VerboseObject(const Epetra_Comm& comm, std::string name,
                              Teuchos::ParameterList& plist) :
     comm_(Teuchos::rcp(comm.Clone()))
 {
-  int root = 0;
+  int root = -1;
   // Check if we are in the mode of writing only a specific rank.
   if (plist.sublist("verbose object").isParameter("write on rank")) {
     root = plist.sublist("verbose object").get<int>("write on rank");
@@ -95,7 +95,7 @@ VerboseObject::VerboseObject(const Epetra_Comm& comm, std::string name,
   // -- Set up the VerboseObject header.
   std::string headername(name);
   if (plist.sublist("verbose object").isParameter("name")) {
-    headername = plist.sublist("verbose object").get<std::string>("name");
+    std::string headername = plist.sublist("verbose object").get<std::string>("name");
   }
   set_name(headername);
 
