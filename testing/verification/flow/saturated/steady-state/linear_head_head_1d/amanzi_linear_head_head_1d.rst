@@ -1,9 +1,22 @@
 Steady-State One-Dimensional Flow with Head Boundary Conditions
----------------------------------------------------------------
+===============================================================
 
-Introduction
-~~~~~~~~~~~~
+Capabilties Tested
+------------------
+This one-dimensional, steady-state test shows Amanzi's capability to
+simulate flow through a saturated porous medium with constant properties.  
+Capabilties tested include,
 
+  * one-dimensional reprsentation
+  * steady-state
+  * saturated flow
+  * heterogenous porous medium
+
+For details on this test, see :ref:`about_linear_head_head_1d`.
+
+
+Background
+----------
 For one-dimensional, steady-state, flow through a saturated porous medium with constant properties, 
 the general governing differential equation expressing mass conservation and Darcy's law becomes simply
 
@@ -24,9 +37,10 @@ direct integration as
 
 where the integration constants :math:`C_1` and :math:`C_2` depend on the boundary conditions.
 
-Analytic solution for prescribed inlet and outlet pressures
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+Model
+-----
+The analytic solution for prescribed inlet and outlet pressures is presented below.
 When hydraulic head is prescribed at both boundaries as
 
 	.. math:: 
@@ -49,12 +63,33 @@ where :math:`k` = intrinsic permeability [L\ :sup:`2`\ ],
 :math:`\mu` = viscosity [M/LT], and 
 :math:`K` = hydraulic conductivity [L/T]. 
 
-Amanzi verification test problem
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+Problem Specification
+---------------------
 The analytic solutions for hydraulic head and Darcy velocity can be used to test Amanzi
 implementation of prescribed hydraulic head boundary conditions, Darcy's law, and mass conservation
-on an elementary problem. To generate numerical results the following specifications are considered:
+on an elementary problem.
+
+
+Schematic
+~~~~~~~~~
+The domain is shown in the following schematic.
+
+.. figure:: schematic/schematic.png 
+    :figclass: align-center
+    :width: 400 px
+
+    ** One-dimensional, steady-state flow through a saturated porous medium with constant properties **
+
+
+Mesh
+~~~~
+A steady-flow mesh is applied.
+
+
+Variables
+~~~~~~~~~
+To generate numerical results the following specifications are considered:
 
 * Domain
 
@@ -91,24 +126,63 @@ and
 
 following Equations :eq:`specificSoln_linear_head_head` and :eq:`DarcyVel_linear_head_head`.
 
-Amanzi verification test results
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+Results and Comparison
+----------------------
 The discretization is exact for linear solutions, and it is clear in the figure that
 Amanzi has reproduced the exact solution. 
 
 .. plot:: amanzi_linear_head_head_1d.py
    :align: center
 
-
 This is also visible in the following table:
 
 .. include:: table_values.txt
 
+References
+----------
+Add a reference in here.
 
-FIXME:
+
+.. _about_linear_head_head_1d:
+
+About
+-----
+* Directory: testing/verification/flow/saturated/steady-state/linear_head_head_1d
+
+* Authors:  Greg Flach, Konstantin Lipnikov
+
+* Maintainer(s): David Moulton, moulton@lanl.gov
+
+* Input Files:
+
+  * amanzi_linear_head_head_1d-s.xlm 
+
+    * Spec Version 2.3.0, structured mesh framework
+    * mesh:  steady-flow_mesh.h5
+    * runs
+
+  * amanzi_linear_head_head_1d-u.xml
+    * Spec Version 2.3.0, unstructured
+    * runs
+
+* Mesh Files:
+
+  * steady-flow_mesh.h5
+
+* Analytic solution computed with golden output
+
+  * Subdirectory: golden_output
+
+  * Input Files:
+  
+    * steady-flow_data.h5
+
+Status
 ~~~~~~
+.. todo:: 
 
-  * probably do not want the points on the boundary 
-  * we may want to plot flux?
-  * values in the table need to be sorted.
+  * Documentation:
+    * Probably do not want the points on the boundary. keb: I think this is fine.
+    * We may want to plot flux. keb: I think this is uncessary but we can add a second plot if necessary.
+    * Values in the table need to be sorted. keb: These are sorted already.
