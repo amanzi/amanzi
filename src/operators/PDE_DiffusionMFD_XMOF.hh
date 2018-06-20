@@ -35,8 +35,6 @@ class PDE_DiffusionMFD_XMOF : public virtual PDE_Abstract {
  public:
  PDE_DiffusionMFD_XMOF(Teuchos::ParameterList& plist,
                    const Teuchos::RCP<Operator>& global_op) :
-   // PDE_Diffusion(global_op),
-   // PDE_DiffusionMFD(plist,global_op)
    PDE_Abstract(plist, global_op),  factor_(1.0)
   {
     operator_type_ = OPERATOR_DIFFUSION_MFD_XMOF;
@@ -45,23 +43,11 @@ class PDE_DiffusionMFD_XMOF : public virtual PDE_Abstract {
 
   PDE_DiffusionMFD_XMOF(Teuchos::ParameterList& plist,
                    const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) :
-    // PDE_Diffusion(mesh),
-    // PDE_DiffusionMFD(plist, mesh)
     PDE_Abstract(plist, mesh), factor_(1.0)
   {
     operator_type_ = OPERATOR_DIFFUSION_MFD_XMOF;
     InitDiffusion_(plist);
   }
-
-  // PDE_DiffusionMFD_XMOF(Teuchos::ParameterList& plist,
-  //                  const Teuchos::RCP<AmanziMesh::Mesh>& mesh) :
-  //   // PDE_Diffusion(mesh),
-  //   // PDE_DiffusionMFD(plist, mesh)
-  //   PDE_Abstract(plist, mesh)
-  // {
-  //   operator_type_ = OPERATOR_DIFFUSION_MFD_XMOF;
-  //   InitDiffusion_(plist);
-  // }
 
   virtual void UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& flux,
                               const Teuchos::Ptr<const CompositeVector>& u, 

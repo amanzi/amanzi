@@ -532,7 +532,7 @@ CreateNonuniformMaps(Teuchos::RCP<const AmanziMesh::Mesh> mesh,
 
   Teuchos::RCP<Epetra_Map> nonuni_map_ghosted =  Teuchos::rcp(new Epetra_Map(-1, num_nonuni_wghosted, global_id_ghosted.data(), 0,uni_maps.first->Comm()));
                                           
-  
+  return std::make_pair(nonuni_map,  nonuni_map_ghosted);
 
 }
 
