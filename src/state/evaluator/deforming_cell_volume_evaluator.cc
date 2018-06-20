@@ -32,7 +32,7 @@ DeformingCellVolumeEvaluator::DeformingCellVolumeEvaluator(
     my_mesh_ = my_key_.substr(0, my_key_.length() -
                                      std::string("cell_volume").length() - 1);
   } else {
-    ASSERT(0);
+    AMANZI_ASSERT(0);
   }
 
   // stick in the deformation key as my leaf node.

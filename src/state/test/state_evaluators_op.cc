@@ -135,10 +135,10 @@ protected:
       val = 0.;
 
     // set all exterior faces to dirichlet 0
-    int nfaces_owned = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
+    int nfaces_owned = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
     AmanziMesh::Entity_ID_List cells;
     for (int f = 0; f != nfaces_owned; ++f) {
-      mesh->face_get_cells(f, AmanziMesh::USED, &cells);
+      mesh->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
       if (cells.size() == 1) {
         model[f] = Operators::OPERATOR_BC_DIRICHLET;
         auto fc = mesh->face_centroid(f);
@@ -244,12 +244,12 @@ public:
 
     // compute local ops
     pde.UpdateMatrices(Teuchos::null, Teuchos::null);
-    pde.ApplyBCs(true, true);
+    pde.ApplyBCs(true, true, true);
   }
 
   virtual void UpdateDerivative_(State &S, const Key &wrt_key,
                                  const Key &wrt_tag) override {
-    ASSERT(0);
+    AMANZI_ASSERT(0);
   }
 
 protected:
@@ -449,7 +449,7 @@ SUITE(EVALUATOR_ON_OP) {
     auto &bc_fac = S.Require<Operators::BCs, Operators::BCs_Factory>("bcs", "");
     bc_fac.set_mesh(mesh);
     bc_fac.set_kind(AmanziMesh::FACE);
-    bc_fac.set_type(Operators::SCHEMA_DOFS_SCALAR);
+    bc_fac.set_type(Operators::DOF_Type::SCALAR);
     Teuchos::ParameterList bce_list;
     bce_list.sublist("verbose object")
         .set<std::string>("verbosity level", "extreme");

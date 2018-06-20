@@ -38,7 +38,7 @@ operator=(const Evaluator &other) {
   if (this != &other) {
     const EvaluatorIndependentTensorFunction *other_p =
         dynamic_cast<const EvaluatorIndependentTensorFunction *>(&other);
-    ASSERT(other_p != NULL);
+    AMANZI_ASSERT(other_p != NULL);
     *this = *other_p;
   }
   return *this;
@@ -47,7 +47,7 @@ operator=(const Evaluator &other) {
 EvaluatorIndependentTensorFunction &EvaluatorIndependentTensorFunction::
 operator=(const EvaluatorIndependentTensorFunction &other) {
   if (this != &other) {
-    ASSERT(my_key_ == other.my_key_);
+    AMANZI_ASSERT(my_key_ == other.my_key_);
     requests_ = other.requests_;
   }
   return *this;
@@ -59,7 +59,7 @@ void EvaluatorIndependentTensorFunction::EnsureCompatibility(State &S) {
       S.Require<TensorVector, TensorVector_Factory>(my_key_, my_tag_, my_key_);
   if (rank_ == -1 && f.map().Mesh().get()) {
     dimension_ = f.dimension();
-    ASSERT(dimension_ > 0);
+    AMANZI_ASSERT(dimension_ > 0);
     rank_ = plist_.get<int>("tensor rank");
     f.set_rank(rank_);
 
@@ -82,7 +82,7 @@ void EvaluatorIndependentTensorFunction::Update_(State &S) {
   if (!computed_once_) {
     // Create the function.
     auto &tv = S.Get<TensorVector>(my_key_, my_tag_);
-    ASSERT(plist_.isSublist("function"));
+    AMANZI_ASSERT(plist_.isSublist("function"));
 
     func_ = Functions::CreateCompositeVectorFunction(plist_.sublist("function"),
                                                      tv.map);

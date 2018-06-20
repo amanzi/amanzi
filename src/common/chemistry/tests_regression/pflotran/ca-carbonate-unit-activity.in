@@ -1,0 +1,134 @@
+:Description: Batch carbonate equilibrium speciation reaction
+
+:=========================== chemistry ========================================
+CHEMISTRY
+PRIMARY_SPECIES
+HCO3-
+Ca++
+H+
+/
+SECONDARY_SPECIES
+OH-
+CO2(aq)
+CO3--
+CaOH+
+CaHCO3+
+CaCO3(aq)
+/
+DATABASE ./ca-carbonate.dat
+LOG_FORMULATION
+:ACTIVITY_COEFFICIENTS TIMESTEP
+/
+
+:=========================== solver options ===================================
+TIMESTEPPER
+TS_ACCELERATION 8
+MAX_STEPS -1
+/
+
+NEWTON_SOLVER TRANSPORT
+:RTOL 1.d-4
+:ATOL 1.d-4
+:STOL 1.e-60
+:DTOL 1.e4
+:ITOL_UPDATE 1.d-4
+NO_INFINITY_NORM
+:NO_PRINT_CONVERGENCE
+:PRINT_DETAILED_CONVERGENCE
+/
+
+LINEAR_SOLVER TRANSPORT
+:KSP_TYPE GMRES
+:PC_TYPE NONE
+:KSP_TYPE PREONLY
+:PC_TYPE LU
+:SOLVER GMRES
+/
+
+:=========================== discretization ===================================
+GRID
+TYPE structured
+ORIGIN 0.d0 0.d0 0.d0
+NXYZ 1 1 1
+BOUNDS
+0.d0 1.d0
+0.d0 1.d0
+0.d0 1.d0
+/
+END
+
+:=========================== fluid properties =================================
+FLUID_PROPERTY 
+DIFFUSION_COEFFICIENT 1.d-9
+/
+
+:=========================== material properties ==============================
+MATERIAL_PROPERTY soil1
+ID 1
+POROSITY 0.25d0
+TORTUOSITY 1.d0
+SATURATION_FUNCTION default
+PERMEABILITY
+PERM_X 1.d-12
+PERM_Y 1.d-12
+PERM_Z 1.d-12
+/
+/
+
+:=========================== saturation functions =============================
+SATURATION_FUNCTION default
+/
+
+:=========================== output options ===================================
+OUTPUT
+PERIODIC TIME 1.d0 y
+FORMAT TECPLOT BLOCK
+/
+
+:=========================== times ============================================
+TIME
+FINAL_TIME 1.d0 y
+INITIAL_TIMESTEP_SIZE 1.d-6 y
+MAXIMUM_TIMESTEP_SIZE 1.d-1 y
+/
+
+:=========================== regions ==========================================
+REGION all
+COORDINATES
+0.d0 0.d0 0.d0
+1.d0 1.d0 1.d0
+/
+END
+
+:=========================== transport conditions =============================
+TRANSPORT_CONDITION initial
+TYPE zero_gradient
+CONSTRAINT_LIST
+0.d0 initial
+/
+END
+
+
+:=========================== constraints ======================================
+CONSTRAINT initial
+CONCENTRATIONS
+HCO3-  3.d-3      T
+Ca++   1.d-3      T
+H+     1.d-3      T
+/
+/
+
+:=========================== condition couplers ===============================
+: initial condition
+INITIAL_CONDITION
+TRANSPORT_CONDITION initial
+REGION all
+END
+
+:=========================== stratigraphy couplers ============================
+STRATA
+REGION all
+MATERIAL soil1
+END
+
+

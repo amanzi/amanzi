@@ -87,7 +87,7 @@ void Evaluator_PDE_Diffusion::EnsureCompatibility(State &S) {
     auto &bc_fac = S.Require<Operators::BCs, Operators::BCs_Factory>(bcs_key_, my_tag_);
     bc_fac.set_mesh(rhs_fac.Mesh());
     bc_fac.set_kind(AmanziMesh::FACE);
-    bc_fac.set_type(Operators::SCHEMA_DOFS_SCALAR);
+    bc_fac.set_type(Operators::DOF_Type::SCALAR);
     S.RequireEvaluator(bcs_key_, my_tag_).EnsureCompatibility(S);
 
     // require tensors on cells
@@ -111,8 +111,8 @@ void Evaluator_PDE_Diffusion::EnsureCompatibility(State &S) {
 
 bool Evaluator_PDE_Diffusion::UpdateDerivative(State &S, const Key &requestor, const Key &wrt_key,
                                                const Key &wrt_tag) {
-  ASSERT(IsDependency(S, wrt_key, wrt_tag));
-  ASSERT(!jac_op_key_.empty());
+  AMANZI_ASSERT(IsDependency(S, wrt_key, wrt_tag));
+  AMANZI_ASSERT(!jac_op_key_.empty());
   bool wrt_is_u = wrt_key == u_key_ && wrt_tag == my_tag_;
 
   Teuchos::OSTab tab = vo_.getOSTab();
@@ -134,7 +134,7 @@ bool Evaluator_PDE_Diffusion::UpdateDerivative(State &S, const Key &requestor, c
   // -- must update if any of our dependencies' derivatives have changed
   // NOTE: some assumptions about what is and is not differentiable
   // -- abs perm not a function of p
-  ASSERT(!S.GetEvaluator(tensor_coef_key_, my_tag_).IsDifferentiableWRT(S, wrt_key, wrt_tag));
+  AMANZI_ASSERT(!S.GetEvaluator(tensor_coef_key_, my_tag_).IsDifferentiableWRT(S, wrt_key, wrt_tag));
   if (!jac_op_key_.empty() &&
       S.GetEvaluator(scalar_coef_key_, my_tag_).IsDifferentiableWRT(S, wrt_key, wrt_tag)) {
     update |=
@@ -209,7 +209,7 @@ void Evaluator_PDE_Diffusion::Update_(State &S) {
   Teuchos::Ptr<const CompositeVector> u;
   if (!u_key_.empty()) u = S.GetPtr<CompositeVector>(u_key_, my_tag_).ptr();
   pde->UpdateMatrices(Teuchos::null, u);
-  pde->ApplyBCs(true, true);
+  pde->ApplyBCs(true, true, true);
 }
 
 void Evaluator_PDE_Diffusion::UpdateDerivative_(State &S, const Key &wrt_key, const Key &wrt_tag) {
@@ -250,7 +250,7 @@ void Evaluator_PDE_Diffusion::UpdateDerivative_(State &S, const Key &wrt_key, co
   global_op->Init();
   Teuchos::Ptr<const CompositeVector> u = S.GetPtr<CompositeVector>(u_key_, my_tag_).ptr();
   pde->UpdateMatricesNewtonCorrection(Teuchos::null, u);
-  pde->ApplyBCs(true, true);
+  pde->ApplyBCs(true, true, true);
 }
 
 }  // namespace Amanzi

@@ -42,9 +42,9 @@ class Op_Factory {
   
 
   Teuchos::RCP<Op> Create() const {
-    ASSERT(mesh_.get());
-    ASSERT(schema_row_.size() > 0);
-    ASSERT(schema_row_.OldSchema() == schema_col_.OldSchema());
+    AMANZI_ASSERT(mesh_.get());
+    AMANZI_ASSERT(schema_row_.size() > 0);
+    AMANZI_ASSERT(schema_row_.OldSchema() == schema_col_.OldSchema());
 
     if (schema_row_.OldSchema() == (OPERATOR_SCHEMA_BASE_CELL | OPERATOR_SCHEMA_DOFS_CELL)) {
       return Teuchos::rcp(new Op_Cell_Cell(name_, mesh_));

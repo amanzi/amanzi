@@ -83,7 +83,7 @@ void ReadColumnMeshFunction_ByDepth(const Function& func,
   AmanziMesh::Entity_ID_List surf_faces; 
   for (auto setname : sidesets) {
     v.Mesh()->get_set_entities(setname, AmanziMesh::FACE,
-              AmanziMesh::OWNED, &surf_faces);
+              AmanziMesh::Parallel_type::OWNED, &surf_faces);
 
     for (auto f : surf_faces) {
       // Collect the reference coordinate z0
@@ -92,8 +92,8 @@ void ReadColumnMeshFunction_ByDepth(const Function& func,
 
       // Iterate down the column
       AmanziMesh::Entity_ID_List cells;
-      v.Mesh()->face_get_cells(f, AmanziMesh::OWNED, &cells);
-      ASSERT(cells.size() == 1);
+      v.Mesh()->face_get_cells(f, AmanziMesh::Parallel_type::OWNED, &cells);
+      AMANZI_ASSERT(cells.size() == 1);
       AmanziMesh::Entity_ID c = cells[0];
 
       while (c >= 0) {

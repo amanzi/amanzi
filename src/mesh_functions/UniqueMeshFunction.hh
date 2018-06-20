@@ -16,8 +16,8 @@
 #define AMANZI_UNIQUE_MESH_FUNCTION_HH_
 
 #include <vector>
-#include <set>
 #include <string>
+#include <set>
 
 #include "Teuchos_RCP.hpp"
 

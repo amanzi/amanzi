@@ -120,7 +120,7 @@ TEST_FIXTURE(another_reference_mesh, cv_function)
   cv->PutScalar(0.0);
 
   // apply the function to the vector
-  cvfunc.Compute(0.0, cv.ptr());
+  cvfunc.Compute(0.0, *cv);
 
   // Check
   int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);

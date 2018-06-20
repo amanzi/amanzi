@@ -33,7 +33,7 @@ Evaluator &EvaluatorIndependentFunction::operator=(const Evaluator &other) {
   if (this != &other) {
     const EvaluatorIndependentFunction *other_p =
         dynamic_cast<const EvaluatorIndependentFunction *>(&other);
-    ASSERT(other_p != NULL);
+    AMANZI_ASSERT(other_p != NULL);
     *this = *other_p;
   }
   return *this;
@@ -42,7 +42,7 @@ Evaluator &EvaluatorIndependentFunction::operator=(const Evaluator &other) {
 EvaluatorIndependentFunction &EvaluatorIndependentFunction::
 operator=(const EvaluatorIndependentFunction &other) {
   if (this != &other) {
-    ASSERT(my_key_ == other.my_key_);
+    AMANZI_ASSERT(my_key_ == other.my_key_);
     requests_ = other.requests_;
   }
   return *this;
@@ -56,7 +56,7 @@ void EvaluatorIndependentFunction::Update_(State &S) {
   if (!computed_once_) {
     // Create the function.
     auto &cv = S.Get<CompositeVector>(my_key_, my_tag_);
-    ASSERT(plist_.isSublist("function"));
+    AMANZI_ASSERT(plist_.isSublist("function"));
     func_ = Functions::CreateCompositeVectorFunction(plist_.sublist("function"),
                                                      cv.Map());
   }

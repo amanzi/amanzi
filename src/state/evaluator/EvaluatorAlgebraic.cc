@@ -26,7 +26,7 @@ namespace Amanzi {
 // ---------------------------------------------------------------------------
 template <> void EvaluatorAlgebraic<double>::EnsureCompatibility(State &S) {
   // Ensure my field exists.  Requirements should be already set.
-  ASSERT(my_key_ != std::string(""));
+  AMANZI_ASSERT(my_key_ != std::string(""));
 
   // claim ownership, declare type
   S.Require<double>(my_key_, my_tag_, my_key_);
@@ -109,7 +109,7 @@ template <>
 void EvaluatorAlgebraic<CompositeVector,
                         CompositeVectorSpace>::EnsureCompatibility(State &S) {
   // Ensure my field exists.  Requirements should be already set.
-  ASSERT(my_key_ != std::string(""));
+  AMANZI_ASSERT(my_key_ != std::string(""));
 
   // claim ownership
   CompositeVectorSpace &my_fac =

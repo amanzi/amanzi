@@ -219,10 +219,10 @@ bool Initialize<CompositeVector>(
     bool map_normal = plist.get<bool>("dot with normal", false);
     if (map_normal) {
       // map_normal take a vector and dots it with face normals
-      ASSERT(t.NumComponents() == 1);                 // one comp
-      ASSERT(t.HasComponent("face"));                 // is named face
-      ASSERT(t.Location("face") == AmanziMesh::FACE); // is on face
-      ASSERT(t.NumVectors("face") == 1);              // and is scalar
+      AMANZI_ASSERT(t.NumComponents() == 1);                 // one comp
+      AMANZI_ASSERT(t.HasComponent("face"));                 // is named face
+      AMANZI_ASSERT(t.Location("face") == AmanziMesh::FACE); // is on face
+      AMANZI_ASSERT(t.NumVectors("face") == 1);              // and is scalar
 
       // create a vector on faces of the appropriate dimension
       int dim = t.Mesh()->space_dimension();
@@ -233,13 +233,12 @@ bool Initialize<CompositeVector>(
       CompositeVector vel_vec(cvs);
 
       // Evaluate the velocity function
-      Teuchos::RCP<Functions::CompositeVectorFunction> func =
-          Functions::CreateCompositeVectorFunction(func_plist, vel_vec.Map());
+      auto func = Functions::CreateCompositeVectorFunction(func_plist, vel_vec.Map());
       func->Compute(0.0, vel_vec);
 
       // Dot the velocity with the normal
       unsigned int nfaces_owned =
-          t.Mesh()->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
+          t.Mesh()->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
 
       Epetra_MultiVector &dat_f = *t.ViewComponent("face", false);
       const Epetra_MultiVector &vel_f = *vel_vec.ViewComponent("face", false);
@@ -252,7 +251,7 @@ bool Initialize<CompositeVector>(
         } else if (dim == 3) {
           vel.set(vel_f[0][f], vel_f[1][f], vel_f[2][f]);
         } else {
-          ASSERT(0);
+          AMANZI_ASSERT(0);
         }
         dat_f[0][f] = vel * normal;
       }

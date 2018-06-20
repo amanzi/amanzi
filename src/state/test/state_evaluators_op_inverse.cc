@@ -152,10 +152,10 @@ protected:
       val = 0.;
 
     // set all exterior faces to dirichlet 0
-    int nfaces_owned = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
+    int nfaces_owned = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
     AmanziMesh::Entity_ID_List cells;
     for (int f = 0; f != nfaces_owned; ++f) {
-      mesh->face_get_cells(f, AmanziMesh::USED, &cells);
+      mesh->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
       if (cells.size() == 1) {
         model[f] = Operators::OPERATOR_BC_DIRICHLET;
         auto fc = mesh->face_centroid(f);
@@ -172,7 +172,7 @@ public:
       : EvaluatorAlgebraic<CompositeVector, CompositeVectorSpace>(plist),
         coefs_(plist.get<Teuchos::Array<double>>("coefficients")) {
     if (coefs_.size() != dependencies_.size()) {
-      ASSERT(0);
+      AMANZI_ASSERT(0);
     }
   }
 

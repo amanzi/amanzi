@@ -1,0 +1,89 @@
+TITLE
+Modification of ShortCourse4.in: Test of surface complexation based on PHREEQC example 8:  Zn on iron hydroxide
+END
+
+RUNTIME
+time_units      days
+timestep_max    0.1
+timestep_init   1.E-10
+debye-huckel    true
+database_sweep  false
+time_tolerance  0.01
+correction_max  2.0
+gimrt           true
+master_variable Zn++
+speciate_only   false
+database        surface-complexation.dbs
+screen_output   100
+graphics        kaleidagraph
+END
+
+OUTPUT
+time_units               days
+spatial_profile          365
+time_series_at_node      PHREEQCexample8.out  1  1  1
+time_series_print        all
+ime_series_interval      1
+END
+
+POROSITY
+fix_porosity     0.90
+porosity_update  false
+END
+
+TEMPERATURE
+set_temperature      25.0
+END
+
+PRIMARY_SPECIES
+H+
+Zn++
+Na+
+NO3-
+Fe+++
+END
+
+SECONDARY_SPECIES
+OH-
+Zn(OH)2(aq)
+Zn(OH)3-
+Zn(OH)4--
+ZnOH+
+END
+
+MINERALS
+Fe(OH)3
+END
+
+SURFACE_COMPLEXATION
+>FeOH_strong   on Fe(OH)3
+>FeOH_weak    on Fe(OH)3
+END
+
+MINERALS  
+Fe(OH)3
+END
+
+DISCRETIZATION 
+xzones  1  1.0
+END
+
+INITIAL_CONDITIONS
+Solution1   1-1
+END
+ 
+Condition Solution1
+temperature          25.0
+pH                   5.00                       
+Zn++                 1.E-07           equilibrate_surface                   
+Na+                  charge                            
+NO3-                 1.0000E-01                          
+Fe+++                0.00            
+!Site name     <site density mol/m**2>   
+>FeOH_weak       3.703704E-06  
+>FeOH_strong     9.259259E-08                 
+Fe(OH)3          2.943109E-05  specific_surface_area  600.0     !! Note: Gives 0.09 g/kgw water Fe(OH)3, 54 m**2 surface
+!!  Based on a density of 1017 kg/m**3, 1.017 g/cm**3
+!!    Volume Fraction Fe(OH)3 [m**3/m**3]*0.001*Molecular Weight Fe(OH)3/(Porosity*Molar Volume Fe(OH)3 [m**3/mole]) = g/L, but we want g/kg water, so g/L * (1/ro) = g/kgw
+END
+

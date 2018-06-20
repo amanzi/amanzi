@@ -51,7 +51,7 @@ namespace Amanzi {
 
 Evaluator_OperatorApply::Evaluator_OperatorApply(Teuchos::ParameterList &plist)
     : EvaluatorSecondary<CompositeVector, CompositeVectorSpace>(plist) {
-  ASSERT(!my_key_.empty());
+  AMANZI_ASSERT(!my_key_.empty());
   Key domain = Keys::getDomain(my_key_);
 
   // x, x0
@@ -203,8 +203,8 @@ void Evaluator_OperatorApply::EnsureCompatibility(State &S) {
     if (has_derivs) {
       for (const auto& deriv : S.GetDerivativeSet(my_key_, my_tag_)) {
         auto wrt = Keys::splitKeyTag(deriv.first);
-        ASSERT(wrt.second == my_tag_);
-        ASSERT(wrt.first == x0_key_);     // NEED TO IMPLEMENT OFF-DIAGONALS EVENTUALLY --etc
+        AMANZI_ASSERT(wrt.second == my_tag_);
+        AMANZI_ASSERT(wrt.first == x0_key_);     // NEED TO IMPLEMENT OFF-DIAGONALS EVENTUALLY --etc
         auto& deriv_fac = S.RequireDerivative<Operators::Operator,Operators::Operator_Factory>(my_key_,
                 my_tag_, wrt.first, wrt.second, my_key_);
         deriv_fac.set_mesh(my_fac.Mesh());
@@ -221,8 +221,8 @@ void Evaluator_OperatorApply::EnsureCompatibility(State &S) {
   if (has_derivs) {
     for (const auto& deriv : S.GetDerivativeSet(my_key_, my_tag_)) {
       auto wrt = Keys::splitKeyTag(deriv.first);
-      ASSERT(wrt.second == my_tag_);
-      ASSERT(wrt.first == x0_key_);     // NEED TO IMPLEMENT OFF-DIAGONALS EVENTUALLY --etc
+      AMANZI_ASSERT(wrt.second == my_tag_);
+      AMANZI_ASSERT(wrt.first == x0_key_);     // NEED TO IMPLEMENT OFF-DIAGONALS EVENTUALLY --etc
       // quasi-linear operators covered by Update() call --etc
       // jacobian terms are covered by ParameterList jacobian option --etc
 
@@ -306,7 +306,7 @@ void Evaluator_OperatorApply::Evaluate_(const State &S,
 //
 void
 Evaluator_OperatorApply::UpdateDerivative_(State &S, const Key &wrt_key, const Key &wrt_tag) {
-  ASSERT(wrt_tag == my_tag_);
+  AMANZI_ASSERT(wrt_tag == my_tag_);
   auto global_op = S.GetDerivativePtrW<Operators::Operator>(my_key_, my_tag_, wrt_key, wrt_tag, my_key_);
 
   if (global_op->OpSize() == 0) {
@@ -335,7 +335,7 @@ Evaluator_OperatorApply::UpdateDerivative_(State &S, const Key &wrt_key, const K
               op_cell->diag->Scale(rhs_scalars_[j]);
               global_op->OpPushBack(op_cell);
             } else {
-              ASSERT(0);
+              AMANZI_ASSERT(0);
             }
           }
         }

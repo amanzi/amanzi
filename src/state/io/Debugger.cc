@@ -58,7 +58,7 @@ Debugger::Debugger(const Teuchos::RCP<const AmanziMesh::Mesh> &mesh,
       if (lf >= 0) {
         // debug the neighboring cells
         AmanziMesh::Entity_ID_List cells;
-        mesh->face_get_cells(lf, AmanziMesh::OWNED, &cells);
+        mesh->face_get_cells(lf, AmanziMesh::Parallel_type::OWNED, &cells);
 
         for (AmanziMesh::Entity_ID_List::const_iterator lc = cells.begin();
              lc != cells.end(); ++lc) {
@@ -229,7 +229,7 @@ void Debugger::WriteVectors(
     const std::vector<std::string> &names,
     const std::vector<Teuchos::Ptr<const CompositeVector>> &vecs,
     bool include_faces) {
-  ASSERT(names.size() == vecs.size());
+  AMANZI_ASSERT(names.size() == vecs.size());
 
   std::stringstream formatstream;
   formatstream << "%_" << width_ << "." << precision_ << "g";

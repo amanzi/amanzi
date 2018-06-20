@@ -82,7 +82,7 @@ Evaluator &EvaluatorSecondaries::operator=(const Evaluator &other) {
   if (this != &other) {
     const EvaluatorSecondaries *other_p =
         dynamic_cast<const EvaluatorSecondaries *>(&other);
-    ASSERT(other_p != NULL);
+    AMANZI_ASSERT(other_p != NULL);
     *this = *other_p;
   }
   return *this;
@@ -91,7 +91,7 @@ Evaluator &EvaluatorSecondaries::operator=(const Evaluator &other) {
 EvaluatorSecondaries &EvaluatorSecondaries::
 operator=(const EvaluatorSecondaries &other) {
   if (this != &other) {
-    ASSERT(my_keys_ == other.my_keys_);
+    AMANZI_ASSERT(my_keys_ == other.my_keys_);
     requests_ = other.requests_;
     deriv_requests_ = other.deriv_requests_;
   }
@@ -156,7 +156,7 @@ bool EvaluatorSecondaries::Update(State &S, const Key &request) {
 bool EvaluatorSecondaries::UpdateDerivative(State &S, const Key &requestor,
                                             const Key &wrt_key,
                                             const Key &wrt_tag) {
-  ASSERT(IsDependency(S, wrt_key, wrt_tag));
+  AMANZI_ASSERT(IsDependency(S, wrt_key, wrt_tag));
 
   Teuchos::OSTab tab = vo_.getOSTab();
   if (vo_.os_OK(Teuchos::VERB_EXTREME)) {

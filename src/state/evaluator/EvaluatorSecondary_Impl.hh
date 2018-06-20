@@ -62,8 +62,8 @@ operator=(const Evaluator &other) {
   if (this != &other) {
     const EvaluatorSecondary *other_p =
         dynamic_cast<const EvaluatorSecondary *>(&other);
-    ASSERT(other_p != NULL);
-    ASSERT(my_key_ == other_p->my_key_);
+    AMANZI_ASSERT(other_p != NULL);
+    AMANZI_ASSERT(my_key_ == other_p->my_key_);
 
     my_tag_ = other_p->my_tag_;
     requests_ = other_p->requests_;
@@ -133,7 +133,7 @@ bool EvaluatorSecondary<Data_t, DataFactory_t>::Update(State &S,
 template <typename Data_t, typename DataFactory_t>
 bool EvaluatorSecondary<Data_t, DataFactory_t>::UpdateDerivative(
     State &S, const Key &requestor, const Key &wrt_key, const Key &wrt_tag) {
-  ASSERT(IsDependency(S, wrt_key, wrt_tag));
+  AMANZI_ASSERT(IsDependency(S, wrt_key, wrt_tag));
 
   Teuchos::OSTab tab = vo_.getOSTab();
   if (vo_.os_OK(Teuchos::VERB_EXTREME)) {
@@ -267,7 +267,7 @@ bool EvaluatorSecondary<Data_t, DataFactory_t>::ProvidesKey(
 template <typename Data_t, typename DataFactory_t>
 void EvaluatorSecondary<Data_t, DataFactory_t>::EnsureCompatibility(State &S) {
   // Ensure my field exists.  Requirements should be already set.
-  ASSERT(my_key_ != std::string(""));
+  AMANZI_ASSERT(my_key_ != std::string(""));
   auto my_fac = S.Require<Data_t, DataFactory_t>(my_key_, my_tag_, my_key_);
   for (auto &dep : dependencies_)
     S.RequireEvaluator(dep.first, dep.second);

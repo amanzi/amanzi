@@ -76,7 +76,7 @@ TEST(FIELD_INITIALIZATION) {
 
   // check state's fields
   // -- porosity (simple field)
-  int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
   const Epetra_MultiVector &phi =
       *S.Get<CompositeVector>("porosity").ViewComponent("cell");
   for (int c = 0; c < ncells; ++c) {

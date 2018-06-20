@@ -29,7 +29,7 @@ RankEvaluator::RankEvaluator(Teuchos::ParameterList &plist)
     my_mesh_ = my_key_.substr(0, my_key_.length() -
                                      std::string("mpi_comm_rank").length() - 1);
   } else {
-    ASSERT(0);
+    AMANZI_ASSERT(0);
   }
 }
 

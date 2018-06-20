@@ -21,9 +21,11 @@ class BCs_Factory {
  public:
   BCs_Factory() {};
 
+  
+  Teuchos::RCP<const AmanziMesh::Mesh> mesh() const { return mesh_; }
   void set_mesh(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) { mesh_ = mesh; }
   void set_kind(AmanziMesh::Entity_kind kind) { kind_ = kind; }
-  void set_type(int type) { type_ = type; }
+  void set_type(DOF_Type type) { type_ = type; }
 
   Teuchos::RCP<BCs> Create() const {
     return Teuchos::rcp(new BCs(mesh_, kind_, type_));
@@ -32,7 +34,7 @@ class BCs_Factory {
  private:
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
   AmanziMesh::Entity_kind kind_;
-  int type_;
+  DOF_Type type_;
 };
 
 }  // namespace Operators

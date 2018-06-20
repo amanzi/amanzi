@@ -28,7 +28,7 @@ EvaluatorPrimary_::EvaluatorPrimary_(Teuchos::ParameterList &plist)
 EvaluatorPrimary_ &EvaluatorPrimary_::
 operator=(const EvaluatorPrimary_ &other) {
   if (this != &other) {
-    ASSERT(my_key_ == other.my_key_);
+    AMANZI_ASSERT(my_key_ == other.my_key_);
     requests_ = other.requests_;
     deriv_requests_ = other.deriv_requests_;
   }
@@ -42,7 +42,7 @@ Evaluator &EvaluatorPrimary_::operator=(const Evaluator &other) {
   if (this != &other) {
     const EvaluatorPrimary_ *other_p =
         dynamic_cast<const EvaluatorPrimary_ *>(&other);
-    ASSERT(other_p != NULL);
+    AMANZI_ASSERT(other_p != NULL);
     *this = *other_p;
   }
   return *this;
@@ -89,7 +89,7 @@ bool EvaluatorPrimary_::UpdateDerivative(State &S, const Key &request,
   // enforce the contract: all calls to this must either have wrt_key,wrt_tag
   // as the key provided (for primary evaluators) or as a dependency (for
   // secondary evaluators)
-  ASSERT(ProvidesKey(wrt_key, wrt_tag));
+  AMANZI_ASSERT(ProvidesKey(wrt_key, wrt_tag));
 
   Teuchos::OSTab tab = vo_.getOSTab();
   if (vo_.os_OK(Teuchos::VERB_EXTREME)) {

@@ -47,14 +47,14 @@ Evaluator_PDE_Accumulation::Evaluate_(const State &S, CompositeVector &result) {
 void
 Evaluator_PDE_Accumulation::EvaluatePartialDerivative_(const State &S,
         const Key &wrt_key, const Key &wrt_tag, CompositeVector &result) {
-  ASSERT(wrt_key == conserved_key_);
+  AMANZI_ASSERT(wrt_key == conserved_key_);
   double dt = S.Get<double>("time", tag_new_) - S.Get<double>("time", tag_old_);
   if (wrt_tag == tag_old_) {
     result.PutScalar(-1./dt);
   } else if (wrt_tag == tag_new_) {
     result.PutScalar(1./dt);
   } else {
-    ASSERT(0);
+    AMANZI_ASSERT(0);
   }
 }
 

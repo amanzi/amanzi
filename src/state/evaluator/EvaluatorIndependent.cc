@@ -31,7 +31,7 @@ EvaluatorIndependent_::EvaluatorIndependent_(Teuchos::ParameterList &plist)
 EvaluatorIndependent_ &EvaluatorIndependent_::
 operator=(const EvaluatorIndependent_ &other) {
   if (this != &other) {
-    ASSERT(my_key_ == other.my_key_);
+    AMANZI_ASSERT(my_key_ == other.my_key_);
     time_ = other.time_;
     computed_once_ = other.computed_once_;
     temporally_variable_ = other.temporally_variable_;
@@ -47,7 +47,7 @@ Evaluator &EvaluatorIndependent_::operator=(const Evaluator &other) {
   if (this != &other) {
     const EvaluatorIndependent_ *other_p =
         dynamic_cast<const EvaluatorIndependent_ *>(&other);
-    ASSERT(other_p != NULL);
+    AMANZI_ASSERT(other_p != NULL);
     *this = *other_p;
   }
   return *this;

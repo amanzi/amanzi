@@ -86,7 +86,7 @@ void Visualization::WriteRegions() {
         // for a region that consists of cells
         if (mesh_->valid_set_name(*reg_it, AmanziMesh::CELL)) {
           AmanziMesh::Entity_ID_List ids;
-          mesh_->get_set_entities(*reg_it, AmanziMesh::CELL, AmanziMesh::OWNED,
+          mesh_->get_set_entities(*reg_it, AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED,
                                   &ids);
 
           for (AmanziMesh::Entity_ID_List::const_iterator rit = ids.begin();
@@ -120,7 +120,7 @@ void Visualization::WritePartition() {
 // Writing to files
 // -----------------------------------------------------------------------------
 void Visualization::CreateFiles() {
-  ASSERT(mesh_ != Teuchos::null);
+  AMANZI_ASSERT(mesh_ != Teuchos::null);
 
   std::string file_format = plist_.get<std::string>("file format", "XDMF");
 
