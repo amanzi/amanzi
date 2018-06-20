@@ -23,7 +23,6 @@
 
 // Amanzi
 #include "MeshFactory.hh"
-#include "LinearOperatorFactory.hh"
 #include "Tensor.hh"
 
 // Amanzi::Operators
@@ -37,8 +36,8 @@
 
 /* *****************************************************************
 * This test verified that operators can be computed in arbitrary
-* order. In addition, the factory of operators in used.
-* **************************************************************** */
+* order. In addition, the factory of operators is used.
+***************************************************************** */
 TEST(ADVECTION_DIFFUSION_COMMUTE) {
   using namespace Teuchos;
   using namespace Amanzi;
@@ -57,21 +56,17 @@ TEST(ADVECTION_DIFFUSION_COMMUTE) {
   ParameterList plist = xmlreader.getParameters();
 
   // create an SIMPLE mesh framework
-  ParameterList region_list = plist.get<Teuchos::ParameterList>("regions");
+  ParameterList region_list = plist.sublist("regions");
   Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(2, region_list, &comm));
 
-  FrameworkPreference pref;
-  pref.clear();
-  pref.push_back(MSTK);
-
   MeshFactory meshfactory(&comm);
-  meshfactory.preference(pref);
+  meshfactory.preference(FrameworkPreference({MSTK}));
   RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 40, 40, gm);
 
   // modify diffusion coefficient.
   Teuchos::RCP<std::vector<WhetStone::Tensor> > K = Teuchos::rcp(new std::vector<WhetStone::Tensor>());
-  int ncells_owned = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
-  int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
+  int ncells_owned = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+  int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
 
   for (int c = 0; c < ncells_owned; c++) {
     WhetStone::Tensor Kc(2, 1);
@@ -80,7 +75,7 @@ TEST(ADVECTION_DIFFUSION_COMMUTE) {
   }
 
   // create boundary data
-  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(mesh, AmanziMesh::FACE, SCHEMA_DOFS_SCALAR));
+  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(mesh, AmanziMesh::FACE, DOF_Type::SCALAR));
   std::vector<int>& bc_model = bc->bc_model();
   std::vector<double>& bc_value = bc->bc_value();
 
@@ -102,7 +97,7 @@ TEST(ADVECTION_DIFFUSION_COMMUTE) {
   // create velocity field
   Teuchos::RCP<CompositeVector> u = Teuchos::rcp(new CompositeVector(*cvs));
   Epetra_MultiVector& uf = *u->ViewComponent("face");
-  int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
+  int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
   Point vel(4.0, 4.0);
   for (int f = 0; f < nfaces; f++) {
     uf[0][f] = vel * mesh->face_normal(f);
@@ -115,20 +110,20 @@ TEST(ADVECTION_DIFFUSION_COMMUTE) {
   // create advection operator
   Teuchos::ParameterList alist;
   Teuchos::RCP<PDE_AdvectionUpwind> op1 = Teuchos::rcp(new PDE_AdvectionUpwind(alist, global_op));
+  op1->SetBCs(bc, bc);
   op1->Setup(*u);
   op1->UpdateMatrices(u.ptr());
 
   // add the diffusion operator
-  Teuchos::ParameterList olist = plist.get<Teuchos::ParameterList>("PK operator")
-                                      .get<Teuchos::ParameterList>("diffusion operator mfd");
+  Teuchos::ParameterList olist = plist.sublist("PK operator").sublist("diffusion operator mfd");
   Teuchos::RCP<PDE_Diffusion> op2 = Teuchos::rcp(new PDE_DiffusionMFD(olist, global_op));
   op2->SetBCs(bc, bc);
   op2->Setup(K, Teuchos::null, Teuchos::null);
   op2->UpdateMatrices(Teuchos::null, Teuchos::null);
 
   // create a preconditioner
-  op1->ApplyBCs(bc, true);
-  op2->ApplyBCs(true, true);
+  op1->ApplyBCs(true, true, true);
+  op2->ApplyBCs(true, true, true);
   global_op->SymbolicAssembleMatrix();
   global_op->AssembleMatrix();
 
@@ -136,8 +131,7 @@ TEST(ADVECTION_DIFFUSION_COMMUTE) {
   Teuchos::ParameterList plist2;
   Teuchos::RCP<Operator> global_op2 = Teuchos::rcp(new Operator_FaceCell(cvs, plist2));
   
-  Teuchos::ParameterList olist2 = plist.get<Teuchos::ParameterList>("PK operator")
-                                       .get<Teuchos::ParameterList>("diffusion operator mfd");
+  Teuchos::ParameterList olist2 = plist.sublist("PK operator").sublist("diffusion operator mfd");
   Teuchos::RCP<PDE_Diffusion> op3 = Teuchos::rcp(new PDE_DiffusionMFD(olist2, global_op2));
   op3->SetBCs(bc, bc);
   op3->Setup(K, Teuchos::null, Teuchos::null);
@@ -145,12 +139,13 @@ TEST(ADVECTION_DIFFUSION_COMMUTE) {
 
   Teuchos::ParameterList alist2;
   Teuchos::RCP<PDE_AdvectionUpwind> op4 = Teuchos::rcp(new PDE_AdvectionUpwind(alist2, global_op2));
+  op4->SetBCs(bc, bc);
   op4->Setup(*u);
   op4->UpdateMatrices(u.ptr());
 
   // create a preconditioner
-  op3->ApplyBCs(true, true);
-  op4->ApplyBCs(bc, true);
+  op3->ApplyBCs(true, true, true);
+  op4->ApplyBCs(true, true, true);
   global_op2->SymbolicAssembleMatrix();
   global_op2->AssembleMatrix();
 
@@ -184,21 +179,17 @@ TEST(ADVECTION_DIFFUSION_COMMUTE_FV) {
   ParameterList plist = xmlreader.getParameters();
 
   // create an SIMPLE mesh framework
-  ParameterList region_list = plist.get<Teuchos::ParameterList>("regions");
+  ParameterList region_list = plist.sublist("regions");
   Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(2, region_list, &comm));
 
-  FrameworkPreference pref;
-  pref.clear();
-  pref.push_back(MSTK);
-
   MeshFactory meshfactory(&comm);
-  meshfactory.preference(pref);
+  meshfactory.preference(FrameworkPreference({MSTK}));
   RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 40, 40, gm);
 
   // modify diffusion coefficient
   Teuchos::RCP<std::vector<WhetStone::Tensor> > K = Teuchos::rcp(new std::vector<WhetStone::Tensor>());
-  int ncells_owned = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
-  int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
+  int ncells_owned = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+  int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
 
   for (int c = 0; c < ncells_owned; c++) {
     WhetStone::Tensor Kc(2, 1);
@@ -207,7 +198,7 @@ TEST(ADVECTION_DIFFUSION_COMMUTE_FV) {
   }
 
   // create boundary data
-  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(mesh, AmanziMesh::FACE, SCHEMA_DOFS_SCALAR));
+  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(mesh, AmanziMesh::FACE, DOF_Type::SCALAR));
   std::vector<int>& bc_model = bc->bc_model();
   std::vector<double>& bc_value = bc->bc_value();
 
@@ -229,7 +220,7 @@ TEST(ADVECTION_DIFFUSION_COMMUTE_FV) {
   // create velocity field
   Teuchos::RCP<CompositeVector> u = Teuchos::rcp(new CompositeVector(*cvs));
   Epetra_MultiVector& uf = *u->ViewComponent("face");
-  int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
+  int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
   Point vel(4.0, 4.0);
   for (int f = 0; f < nfaces; f++) {
     uf[0][f] = vel * mesh->face_normal(f);
@@ -242,20 +233,20 @@ TEST(ADVECTION_DIFFUSION_COMMUTE_FV) {
   // create advection operator
   Teuchos::ParameterList alist;
   Teuchos::RCP<PDE_AdvectionUpwind> op1 = Teuchos::rcp(new PDE_AdvectionUpwind(alist, global_op));
+  op1->SetBCs(bc, bc);
   op1->Setup(*u);
   op1->UpdateMatrices(u.ptr());
 
   // add the diffusion operator
-  Teuchos::ParameterList olist = plist.get<Teuchos::ParameterList>("PK operator")
-                                      .get<Teuchos::ParameterList>("diffusion operator fv");
+  Teuchos::ParameterList olist = plist.sublist("PK operator").sublist("diffusion operator fv");
   Teuchos::RCP<PDE_Diffusion> op2 = Teuchos::rcp(new PDE_DiffusionFV(olist, global_op));
   op2->SetBCs(bc, bc);
   op2->Setup(K, Teuchos::null, Teuchos::null);
   op2->UpdateMatrices(Teuchos::null, Teuchos::null);
 
   // create a preconditioner
-  op1->ApplyBCs(bc, true);
-  op2->ApplyBCs(false, true);
+  op1->ApplyBCs(true, true, true);
+  op2->ApplyBCs(false, true, false);
   global_op->SymbolicAssembleMatrix();
   global_op->AssembleMatrix();
 
@@ -263,8 +254,7 @@ TEST(ADVECTION_DIFFUSION_COMMUTE_FV) {
   Teuchos::ParameterList plist2;
   Teuchos::RCP<Operator> global_op2 = Teuchos::rcp(new Operator_Cell(cvs, plist2, OPERATOR_SCHEMA_DOFS_CELL));
   
-  Teuchos::ParameterList olist2 = plist.get<Teuchos::ParameterList>("PK operator")
-                                      .get<Teuchos::ParameterList>("diffusion operator fv");
+  Teuchos::ParameterList olist2 = plist.sublist("PK operator").sublist("diffusion operator fv");
   Teuchos::RCP<PDE_Diffusion> op3 = Teuchos::rcp(new PDE_DiffusionFV(olist2, global_op2));
   op3->SetBCs(bc, bc);
   op3->Setup(K, Teuchos::null, Teuchos::null);
@@ -272,12 +262,13 @@ TEST(ADVECTION_DIFFUSION_COMMUTE_FV) {
 
   Teuchos::ParameterList alist2;
   Teuchos::RCP<PDE_AdvectionUpwind> op4 = Teuchos::rcp(new PDE_AdvectionUpwind(alist2, global_op2));
+  op4->SetBCs(bc, bc);
   op4->Setup(*u);
   op4->UpdateMatrices(u.ptr());
 
   // create a preconditioner
-  op3->ApplyBCs(false, true);
-  op4->ApplyBCs(bc, true);
+  op3->ApplyBCs(false, true, false);
+  op4->ApplyBCs(true, true, true);
   global_op2->SymbolicAssembleMatrix();
   global_op2->AssembleMatrix();
 

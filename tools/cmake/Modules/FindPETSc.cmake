@@ -189,10 +189,19 @@ else(PETSC_LIBRARIES AND PETSC_INCLUDE_DIRS)
 	  endif()
         endforeach()
       endif()  
+
+      # set target properties   
+      set(petsc_deps HYPRE SUPERLU_DIST SUPERLU PARMETIS METIS)
+      foreach(lib ${petsc_deps})
+        if (PETSC_HAVE_${lib})
+          set_target_properties(${PETSC_LIBRARY} PROPERTIES
+                                INTERFACE_LINK_LIBRARIES "${PETSC_${lib}_LIB}")
+        endif()
+      endforeach()
     endif()
   endif()  
    
-endif(PETSC_LIBRARIES AND PETSC_INCLUDE_DIRS )    
+endif(PETSC_LIBRARIES AND PETSC_INCLUDE_DIRS)
 
 # Define the version
 if (NOT PETSC_VERSION)

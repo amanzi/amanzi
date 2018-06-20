@@ -25,7 +25,6 @@
 // Amanzi
 #include "MeshFactory.hh"
 #include "GMVMesh.hh"
-#include "LinearOperatorFactory.hh"
 #include "Tensor.hh"
 
 // Operators
@@ -33,13 +32,6 @@
 
 #include "OperatorDefs.hh"
 #include "PDE_DiffusionMFD.hh"
-
-int BoundaryFaceGetCell(const Amanzi::AmanziMesh::Mesh& mesh, int f)
-{
-  Amanzi::AmanziMesh::Entity_ID_List cells;
-  mesh.face_get_cells(f, Amanzi::AmanziMesh::USED, &cells);
-  return cells[0];
-}
 
 
 /* *****************************************************************
@@ -64,47 +56,42 @@ TEST(OPERATOR_DIFFUSION_MIXED) {
   ParameterList plist = xmlreader.getParameters();
 
   // create an SIMPLE mesh framework
-  ParameterList region_list = plist.get<Teuchos::ParameterList>("regions");
+  ParameterList region_list = plist.sublist("regions");
   Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(2, region_list, &comm));
 
-  FrameworkPreference pref;
-  pref.clear();
-  pref.push_back(MSTK);
-  pref.push_back(STKMESH);
-
   MeshFactory meshfactory(&comm);
-  meshfactory.preference(pref);
+  meshfactory.preference(FrameworkPreference({MSTK,STKMESH}));
   //RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 10, 1, gm);
   RCP<const Mesh> mesh = meshfactory("test/median32x33.exo", gm);
 
   // modify diffusion coefficient
   // -- since rho=mu=1.0, we do not need to scale the diffusion coefficient.
   Teuchos::RCP<std::vector<WhetStone::Tensor> > K = Teuchos::rcp(new std::vector<WhetStone::Tensor>());
-  int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
-  int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
-  int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
+  int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+  int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
+  int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
 
   Analytic02 ana(mesh);
 
   for (int c = 0; c < ncells; c++) {
     const Point& xc = mesh->cell_centroid(c);
-    const WhetStone::Tensor& Kc = ana.Tensor(xc, 0.0);
+    const WhetStone::Tensor& Kc = ana.TensorDiffusivity(xc, 0.0);
     K->push_back(Kc);
   }
   double rho(1.0), mu(1.0);
   AmanziGeometry::Point g(0.0, -1.0);
 
   // create boundary data
-  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(mesh, AmanziMesh::FACE, SCHEMA_DOFS_SCALAR));
+  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(mesh, AmanziMesh::FACE, DOF_Type::SCALAR));
   std::vector<int>& bc_model = bc->bc_model();
   std::vector<double>& bc_value = bc->bc_value();
   std::vector<double>& bc_mixed = bc->bc_mixed();
 
   for (int f = 0; f < nfaces_wghost; f++) {
+    bool flag;
     const Point& xf = mesh->face_centroid(f);
     double area = mesh->face_area(f);
-    int dir, c = BoundaryFaceGetCell(*mesh, f);
-    const Point& normal = mesh->face_normal(f, false, c, &dir);
+    Point normal = ana.face_normal_exterior(f, &flag);
 
     if (fabs(xf[0]) < 1e-6) {
       bc_model[f] = Operators::OPERATOR_BC_NEUMANN;
@@ -123,7 +110,7 @@ TEST(OPERATOR_DIFFUSION_MIXED) {
   }
 
   // create diffusion operator 
-  ParameterList op_list = plist.get<Teuchos::ParameterList>("PK operator").sublist("diffusion operator mixed");
+  ParameterList op_list = plist.sublist("PK operator").sublist("diffusion operator mixed");
   Teuchos::RCP<PDE_DiffusionMFD> op = Teuchos::rcp(new PDE_DiffusionMFD(op_list, mesh));
   op->SetBCs(bc, bc);
   const CompositeVectorSpace& cvs = op->global_operator()->DomainMap();
@@ -134,7 +121,7 @@ TEST(OPERATOR_DIFFUSION_MIXED) {
 
   // get and assmeble the global operator
   Teuchos::RCP<Operator> global_op = op->global_operator();
-  op->ApplyBCs(true, true);
+  op->ApplyBCs(true, true, true);
 
   // put in a random set of cell values
   CompositeVector x(cvs);

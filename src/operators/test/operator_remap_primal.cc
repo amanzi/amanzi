@@ -27,18 +27,18 @@
 #include "LinearOperatorPCG.hh"
 #include "Mesh.hh"
 #include "MeshFactory.hh"
-#include "MeshMaps_FEM.hh"
-#include "MeshMaps_VEM.hh"
+#include "MeshMapsFactory.hh"
+#include "MeshUtils.hh"
 #include "Tensor.hh"
 #include "WhetStone_typedefs.hh"
 
 // Amanzi::Operators
 #include "OperatorDefs.hh"
-#include "RemapUtils.hh"
 #include "PDE_Abstract.hh"
 #include "PDE_AdvectionRiemann.hh"
 #include "PDE_Reaction.hh"
 
+#include "AnalyticDG04.hh"
 
 /* *****************************************************************
 * Remap of polynomilas in two dimensions. Explicit time scheme.
@@ -68,12 +68,12 @@ void RemapTests2DPrimal(int order, std::string disc_name,
   Teuchos::RCP<const Mesh> mesh0 = meshfactory(0.0, 0.0, 1.0, 1.0, nx, ny);
   // Teuchos::RCP<const Mesh> mesh0 = meshfactory("test/median15x16.exo", Teuchos::null);
 
-  int ncells_owned = mesh0->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
-  int ncells_wghost = mesh0->num_entities(AmanziMesh::CELL, AmanziMesh::USED);
-  int nfaces_owned = mesh0->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
-  int nfaces_wghost = mesh0->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
-  int nnodes_owned = mesh0->num_entities(AmanziMesh::NODE, AmanziMesh::OWNED);
-  int nnodes_wghost = mesh0->num_entities(AmanziMesh::NODE, AmanziMesh::USED);
+  int ncells_owned = mesh0->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+  int ncells_wghost = mesh0->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
+  int nfaces_owned = mesh0->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
+  int nfaces_wghost = mesh0->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
+  int nnodes_owned = mesh0->num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::OWNED);
+  int nnodes_wghost = mesh0->num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::ALL);
 
   // create second and auxiliary mesh
   Teuchos::RCP<Mesh> mesh1 = meshfactory(0.0, 0.0, 1.0, 1.0, nx, ny);
@@ -81,7 +81,7 @@ void RemapTests2DPrimal(int order, std::string disc_name,
 
   // deform the second mesh
   AmanziGeometry::Point xv(2), xref(2);
-  Entity_ID_List nodeids;
+  Entity_ID_List nodeids, faces;
   AmanziGeometry::Point_List new_positions, final_positions;
 
   for (int v = 0; v < nnodes_wghost; ++v) {
@@ -101,6 +101,19 @@ void RemapTests2DPrimal(int order, std::string disc_name,
   }
   mesh1->deform(nodeids, new_positions, false, &final_positions);
 
+  // little factory of mesh maps
+  Teuchos::ParameterList map_list;
+  map_list.set<std::string>("method", "CrouzeixRaviart")
+          .set<int>("method order", order + 1)
+          .set<std::string>("projector", "H1 harmonic")
+          .set<std::string>("map name", maps_name);
+
+  WhetStone::MeshMapsFactory maps_factory;
+  auto maps = maps_factory.Create(map_list, mesh0, mesh1);
+
+  // numerical integration
+  WhetStone::NumericalIntegration numi(mesh0, false);
+
   // create and initialize cell-based field 
   CompositeVectorSpace cvs1;
   cvs1.SetMesh(mesh0)->SetGhosted(true)->AddComponent("cell", AmanziMesh::CELL, nk);
@@ -108,25 +121,10 @@ void RemapTests2DPrimal(int order, std::string disc_name,
   Epetra_MultiVector& p1c = *p1->ViewComponent("cell", true);
 
   // we need dg to compute scaling of basis functions
-  WhetStone::DG_Modal dg(order, mesh0);
+  WhetStone::DG_Modal dg(order, mesh0, "orthonormalized");
 
-  for (int c = 0; c < ncells_wghost; c++) {
-    const AmanziGeometry::Point& xc = mesh0->cell_centroid(c);
-    // p1c[0][c] = xc[0] + 2 * xc[1];
-    p1c[0][c] = std::sin(3 * xc[0]) * std::sin(6 * xc[1]);
-    if (nk > 1) {
-      double a, b;
-      WhetStone::Iterator it(2);
-
-      it.begin(1);
-      dg.TaylorBasis(c, it, &a, &b);
-      p1c[1][c] = 3 * std::cos(3 * xc[0]) * std::sin(6 * xc[1]) / a;
-
-      ++it;
-      dg.TaylorBasis(c, it, &a, &b);
-      p1c[2][c] = 6 * std::sin(3 * xc[0]) * std::cos(6 * xc[1]) / a;
-    }
-  }
+  AnalyticDG04 ana(mesh0, order);
+  ana.InitialGuess(dg, p1c, 1.0);
 
   // initial mass
   double mass0(0.0);
@@ -136,15 +134,41 @@ void RemapTests2DPrimal(int order, std::string disc_name,
   double mass_tmp(mass0);
   mesh0->get_comm()->SumAll(&mass_tmp, &mass0, 1);
 
-  // allocate memory
+  // allocate memory for global variables
+  // -- solution
   CompositeVectorSpace cvs2;
   cvs2.SetMesh(mesh1)->SetGhosted(true)->AddComponent("cell", AmanziMesh::CELL, nk);
   CompositeVector p2(cvs2);
   Epetra_MultiVector& p2c = *p2.ViewComponent("cell");
 
+  // -- face velocities
+  std::vector<WhetStone::VectorPolynomial> vec_vel(nfaces_wghost);
+  for (int f = 0; f < nfaces_wghost; ++f) {
+    maps->VelocityFace(f, vec_vel[f]);
+  }
+
+  // -- cell-baced velocities and Jacobian matrices
+  std::vector<WhetStone::VectorPolynomial> uc(ncells_owned);
+  std::vector<WhetStone::MatrixPolynomial> J(ncells_owned);
+
+  for (int c = 0; c < ncells_owned; ++c) {
+    mesh0->cell_get_faces(c, &faces);
+
+    std::vector<WhetStone::VectorPolynomial> vvf;
+    for (int n = 0; n < faces.size(); ++n) {
+      vvf.push_back(vec_vel[faces[n]]);
+    }
+
+    maps->VelocityCell(c, vvf, uc[c]);
+    maps->Jacobian(uc[c], J[c]);
+  }
+
   // create flux operator
   Teuchos::ParameterList plist;
   plist.set<std::string>("method", disc_name)
+       .set<std::string>("dg basis", "orthonormalized")
+       .set<std::string>("matrix type", "flux")
+       .set<std::string>("flux formula", "downwind")
        .set<int>("method order", order)
        .set<bool>("jump operator on test function", false);
 
@@ -159,7 +183,6 @@ void RemapTests2DPrimal(int order, std::string disc_name,
   Teuchos::RCP<PDE_AdvectionRiemann> op = Teuchos::rcp(new PDE_AdvectionRiemann(plist, mesh0));
   auto global_op = op->global_operator();
 
-  std::vector<WhetStone::VectorPolynomial> vec_vel(nfaces_wghost);
   Teuchos::RCP<std::vector<WhetStone::Polynomial> > vel = 
       Teuchos::rcp(new std::vector<WhetStone::Polynomial>(nfaces_wghost));
 
@@ -187,26 +210,14 @@ void RemapTests2DPrimal(int order, std::string disc_name,
   Teuchos::RCP<PDE_Reaction> op_reac = Teuchos::rcp(new PDE_Reaction(plist, mesh0));
   auto global_reac = op_reac->global_operator();
 
-  Teuchos::RCP<std::vector<WhetStone::Polynomial> > jac = 
-     Teuchos::rcp(new std::vector<WhetStone::Polynomial>(ncells_owned));
+  Teuchos::RCP<std::vector<WhetStone::VectorPolynomial> > jac = 
+     Teuchos::rcp(new std::vector<WhetStone::VectorPolynomial>(ncells_owned));
 
   op_reac->Setup(jac);
 
   double t(0.0), tend(1.0);
-  std::shared_ptr<WhetStone::MeshMaps> maps;
-  if (maps_name == "FEM") {
-    maps = std::make_shared<WhetStone::MeshMaps_FEM>(mesh0, mesh1);
-  } else if (maps_name == "VEM") {
-    maps = std::make_shared<WhetStone::MeshMaps_VEM>(mesh0, mesh1);
-  }
-
   while(t < tend - dt/2) {
-    // calculate face velocities
-    for (int f = 0; f < nfaces_wghost; ++f) {
-      maps->VelocityFace(f, vec_vel[f]);
-    }
-
-    // calculate normal component of face velocities and change its sign
+    // calculate normal component of face velocity at time t+dt/2 
     for (int f = 0; f < nfaces_wghost; ++f) {
       // cn = j J^{-t} N dA
       WhetStone::VectorPolynomial cn;
@@ -216,34 +227,14 @@ void RemapTests2DPrimal(int order, std::string disc_name,
       (*vel)[f] *= -1.0;
     }
 
-    // calculate cell velocities at time t+dt/2
-    Entity_ID_List faces;
+    // calculate various geometric quantities in reference framework
     WhetStone::MatrixPolynomial C;
-    WhetStone::VectorPolynomial tmp;
 
     for (int c = 0; c < ncells_owned; ++c) {
-      mesh0->cell_get_faces(c, &faces);
-      std::vector<WhetStone::VectorPolynomial> vf;
+      maps->Cofactors(t + dt/2, J[c], C);
+      (*cell_vel)[c].Multiply(C, uc[c], true);
 
-      for (int n = 0; n < faces.size(); ++n) {
-        vf.push_back(vec_vel[faces[n]]);
-      }
-
-      maps->VelocityCell(c, vf, tmp);
-      maps->Cofactors(c, t + dt/2, tmp, C);
-      (*cell_vel)[c].Multiply(C, tmp, true);
-    }
-
-    // calculate determinant of Jacobian at time t+dt
-    for (int c = 0; c < ncells_owned; ++c) {
-      mesh0->cell_get_faces(c, &faces);
-      std::vector<WhetStone::VectorPolynomial> vf;
-
-      for (int n = 0; n < faces.size(); ++n) {
-        vf.push_back(vec_vel[faces[n]]);
-      }
-
-      maps->JacobianDet(c, t + dt, vf, (*jac)[c]);
+      maps->Determinant(t + dt, J[c], (*jac)[c]);
     }
 
     // populate operators
@@ -265,7 +256,8 @@ void RemapTests2DPrimal(int order, std::string disc_name,
     global_reac->AssembleMatrix();
 
     plist.set<std::string>("preconditioner type", "diagonal");
-    global_reac->InitPreconditioner(plist);
+    global_reac->InitializePreconditioner(plist);
+    global_reac->UpdatePreconditioner();
 
     AmanziSolvers::LinearOperatorPCG<Operator, CompositeVector, CompositeVectorSpace>
         pcg(global_reac, global_reac);
@@ -291,7 +283,7 @@ void RemapTests2DPrimal(int order, std::string disc_name,
   double mass1(0.0);
   double pl2_err(0.0), pinf_err(0.0), area(0.0);
   for (int c = 0; c < ncells_owned; ++c) {
-    const AmanziGeometry::Point& xg = maps->cell_geometric_center(1, c);
+    AmanziGeometry::Point xg = WhetStone::cell_geometric_center(*mesh1, c);
     double area_c = mesh1->cell_volume(c);
 
     double tmp = p2c[0][c] - std::sin(3 * xg[0]) * std::sin(6 * xg[1]);
@@ -317,7 +309,7 @@ void RemapTests2DPrimal(int order, std::string disc_name,
 
   // error tests
   pl2_err = std::pow(pl2_err, 0.5);
-  CHECK(pl2_err < 0.08 / (order + 1));
+  if (MyPID == 0) CHECK(pl2_err < 0.08 / (order + 1));
 
   if (MyPID == 0) {
     printf("L2(p0)=%12.8g  Inf(p0)=%12.8g  dMass=%12.8g  Err(area)=%12.8g\n", 

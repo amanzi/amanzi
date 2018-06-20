@@ -74,8 +74,6 @@ endforeach()
 endfunction( ADD_INSTALL_SHELLSCRIPT )
 
 
-
-
 #
 # Usage: ADD_INSTALL_BINARY( exe1 exe2 ... )
 #

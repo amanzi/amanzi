@@ -10,8 +10,8 @@ message(STATUS ">>>>>>>> Build_Spack.cmake")
 find_package(Git REQUIRED)
 
 set(GIT ${GIT_EXECUTABLE})
-set(SPACK_URL https://github.com/LLNL/spack.git)
-set(XSDK_BRANCH barry/xsdk)
+set(SPACK_URL https://github.com/spack/spack.git)
+set(XSDK_BRANCH master)
 
 define_external_project_args(SPACK
     TARGET Spack

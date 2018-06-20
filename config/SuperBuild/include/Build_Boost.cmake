@@ -99,15 +99,17 @@ if (compiler_id_lc)
           message(STATUS "BOOST: compiler version: ${CMAKE_CXX_COMPILER_VERSION}")
 
           if (BUILD_SHARED_LIBS)
-            set(Boost_user_key darwin)
+            #set(shared_special "hardcode-dll-paths=true dll-path=${TPL_INSTALL_PREFIX}/lib")
+            set(shared_special "linkflags=\"-Wl,-rpath,${TPL_INSTALL_PREFIX}/lib\"")
           else()
-            set(Boost_user_key gcc)
-          endif() 
+	    set(shared_special )
+          endif()
+          set(Boost_user_key darwin)
+
           set(BOOST_using "using ${Boost_user_key} : ${CMAKE_CXX_COMPILER_VERSION} : ${RAW_CXX_COMPILER} \;")
           file (MAKE_DIRECTORY ${Boost_build_dir})
 	  file (WRITE ${Boost_build_dir}/user-config.jam ${BOOST_using} \n)
-
-	  set(Boost_bjam_args "${Boost_bjam_args} --user-config=${Boost_build_dir}/user-config.jam")
+	  set(Boost_bjam_args "${Boost_bjam_args} --user-config=${Boost_build_dir}/user-config.jam ${shared_special}")
           set(Boost_bootstrap_args)
 	  set(Boost_toolset ${Boost_user_key})
         elseif ( _version_string MATCHES "LLVM")
@@ -118,15 +120,15 @@ if (compiler_id_lc)
 
   elseif(UNIX)
     if (${compiler_id_lc} STREQUAL "gnu")
-        set(Boost_toolset gcc)
+      set(Boost_toolset gcc)
     elseif (${compiler_id_lc} STREQUAL "intel")
-        set(Boost_toolset intel-linux)
+      set(Boost_toolset intel-linux)
     elseif (${compiler_id_lc} STREQUAL "pgi")
-        set(Boost_toolset pgi)
+      set(Boost_toolset pgi)
     elseif (${compiler_id_lc} STREQUAL "pathscale")
-        set(Boost_toolset pathscale)
+      set(Boost_toolset pathscale)
     elseif (${compiler_id_lc} STREQUAL "clang")
-        set(Boost_toolset clang)
+      set(Boost_toolset clang)
     endif()
   endif()
 endif()
@@ -168,3 +170,8 @@ ExternalProject_Add(${Boost_BUILD_TARGET}
                     # -- Output control
                     ${Boost_logging_args})
 
+
+# --- Useful variables for other packages that depend on Boost
+set(BOOST_ROOT ${TPL_INSTALL_PREFIX})
+set(BOOST_INCLUDEDIR ${TPL_INSTALL_PREFIX}/include/boost)
+		  

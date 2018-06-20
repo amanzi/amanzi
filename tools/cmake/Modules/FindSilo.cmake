@@ -167,7 +167,7 @@ else(Silo_LIBRARIES AND Silo_INCLUDE_DIRS)
   list(APPEND _Silo_DEP_LIBS ${HDF5_LIBRARY})
 
   set_target_properties(${Silo_LIBRARY} PROPERTIES
-                        IMPORTED_LINK_INTERFACE_LIBRARIES "${_Silo_DEP_LIBS}")
+                        INTERFACE_LINK_LIBRARIES "${_Silo_DEP_LIBS}")
 
 endif(Silo_LIBRARIES AND Silo_INCLUDE_DIRS)  
 

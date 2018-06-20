@@ -58,9 +58,9 @@ class Op {
      const Teuchos::RCP<const AmanziMesh::Mesh> mesh) :
       schema_row_(schema_row),
       schema_col_(schema_col),
-      schema_string("UNDEFINED"),
-      mesh_(mesh)
-  {};
+      mesh_(mesh) {
+    schema_string = schema_row.CreateUniqueName() + '+' + schema_col.CreateUniqueName();
+  }
 
   virtual ~Op() = default;
 
@@ -133,6 +133,7 @@ class Op {
     for (int i = 0; i != matrices.size(); ++i) {
       matrices[i] *= scaling;
     }
+    if (diag.get()) diag->Scale(scaling);
   }
 
   // access

@@ -55,11 +55,11 @@ void RunTestMarshak(std::string op_list_name, double TemperatureFloor) {
   ParameterList plist = xmlreader.getParameters();
 
   // create an MSTK mesh framework
-  ParameterList region_list = plist.get<Teuchos::ParameterList>("regions");
+  ParameterList region_list = plist.sublist("regions");
   Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(2, region_list, &comm));
 
   MeshFactory meshfactory(&comm);
-  meshfactory.preference(FrameworkPreference({MSTK, STKMESH}));
+  meshfactory.preference(FrameworkPreference({Framework::MSTK, Framework::STKMESH}));
   // RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 3.0, 1.0, 200, 10, gm);
   RCP<const Mesh> mesh = meshfactory("test/marshak.exo", gm);
 
@@ -68,8 +68,8 @@ void RunTestMarshak(std::string op_list_name, double TemperatureFloor) {
 
   // modify diffusion coefficient
   Teuchos::RCP<std::vector<WhetStone::Tensor> > K = Teuchos::rcp(new std::vector<WhetStone::Tensor>());
-  int ncells_owned = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
-  int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
+  int ncells_owned = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+  int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
 
   for (int c = 0; c < ncells_owned; c++) {
     WhetStone::Tensor Kc(2, 1);
@@ -78,7 +78,7 @@ void RunTestMarshak(std::string op_list_name, double TemperatureFloor) {
   }
 
   // create boundary data (no mixed bc)
-  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(mesh, AmanziMesh::FACE, SCHEMA_DOFS_SCALAR));
+  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(mesh, AmanziMesh::FACE, DOF_Type::SCALAR));
   std::vector<int>& bc_model = bc->bc_model();
   std::vector<double>& bc_value = bc->bc_value();
 
@@ -167,13 +167,14 @@ void RunTestMarshak(std::string op_list_name, double TemperatureFloor) {
     op_acc.AddAccumulationDelta(*solution, heat_capacity, heat_capacity, dt, "cell");
 
     // apply BCs and assemble
-    op->ApplyBCs(true, true);
+    op->ApplyBCs(true, true, true);
     global_op->SymbolicAssembleMatrix();
     global_op->AssembleMatrix();
 
     // create preconditoner
-    ParameterList slist = plist.get<Teuchos::ParameterList>("preconditioners");
-    global_op->InitPreconditioner("Hypre AMG", slist);
+    ParameterList slist = plist.sublist("preconditioners").sublist("Hypre AMG");
+    global_op->InitializePreconditioner(slist);
+    global_op->UpdatePreconditioner();
 
     // solve the problem
     ParameterList lop_list = plist.sublist("solvers")
@@ -229,6 +230,11 @@ void RunTestMarshak(std::string op_list_name, double TemperatureFloor) {
     pl2_err += err * err;
     pnorm += p[0][c] * p[0][c];
   }
+  double tmp = pl2_err;
+  mesh->get_comm()->SumAll(&tmp, &pl2_err, 1);
+  tmp = pnorm;
+  mesh->get_comm()->SumAll(&tmp, &pnorm, 1);
+
   pl2_err = std::pow(pl2_err / pnorm, 0.5);
   pnorm = std::pow(pnorm, 0.5);
   printf("||dp||=%10.6g  ||p||=%10.6g\n", pl2_err, pnorm);

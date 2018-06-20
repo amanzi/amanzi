@@ -44,14 +44,14 @@ class ReconstructionCell : public Reconstruction {
   void Compute();
 
   // -- compute gradient in specified cells and return it.
-  void ComputeGradient(const AmanziGeometry::Entity_ID_List& ids,
+  void ComputeGradient(const AmanziMesh::Entity_ID_List& ids,
                        std::vector<AmanziGeometry::Point>& gradient);
 
   // internal and external limiters
   void InitLimiter(Teuchos::RCP<const Epetra_MultiVector> flux);
   void ApplyLimiter(const std::vector<int>& bc_model, const std::vector<double>& bc_value);
   void ApplyLimiter(Teuchos::RCP<Epetra_MultiVector> limiter);
-  void ApplyLimiter(AmanziGeometry::Entity_ID_List& ids,
+  void ApplyLimiter(AmanziMesh::Entity_ID_List& ids,
                     std::vector<AmanziGeometry::Point>& gradient);
 
   // estimate value of a reconstructed piece-wise smooth function
@@ -81,7 +81,7 @@ class ReconstructionCell : public Reconstruction {
   void LimiterKuzmin_(
       const std::vector<int>& bc_model, const std::vector<double>& bc_value);
 
-  void LimiterKuzminSet_(AmanziGeometry::Entity_ID_List& ids,
+  void LimiterKuzminSet_(AmanziMesh::Entity_ID_List& ids,
                          std::vector<AmanziGeometry::Point>& gradient);
 
   void LimiterKuzminCell_(int cell,
@@ -113,13 +113,14 @@ class ReconstructionCell : public Reconstruction {
 
   // On intersecting manifolds, we extract neighboors living in the same manifold
   // using a smoothness criterion.
-  void CellFaceAdjCellsNonManifold_(AmanziGeometry::Entity_ID c,
+  void CellFaceAdjCellsNonManifold_(AmanziMesh::Entity_ID c,
                                     AmanziMesh::Parallel_type ptype,
-                                    std::vector<AmanziGeometry::Entity_ID>& cells) const;
+                                    std::vector<AmanziMesh::Entity_ID>& cells) const;
  private:
   int dim;
   int ncells_owned, nfaces_owned, nnodes_owned;
   int ncells_wghost, nfaces_wghost, nnodes_wghost;
+  int cell_max_nodes;
 
   Teuchos::RCP<CompositeVector> gradient_;
   Teuchos::RCP<Epetra_Vector> limiter_;

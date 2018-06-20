@@ -52,8 +52,7 @@ void RunTestDiffusionNLFV_DMP(double gravity, bool testing) {
   std::string xmlFileName = "test/operator_diffusion.xml";
   Teuchos::ParameterXMLFileReader xmlreader(xmlFileName);
   Teuchos::ParameterList plist = xmlreader.getParameters();
-  Teuchos::ParameterList op_list = plist.get<Teuchos::ParameterList>("PK operator")
-                                        .sublist("diffusion operator nlfv");
+  Teuchos::ParameterList op_list = plist.sublist("PK operator").sublist("diffusion operator nlfv");
 
   // create an MSTK mesh framework
   MeshFactory meshfactory(&comm);
@@ -63,21 +62,21 @@ void RunTestDiffusionNLFV_DMP(double gravity, bool testing) {
 
   // modify diffusion coefficient
   Teuchos::RCP<std::vector<WhetStone::Tensor> > K = Teuchos::rcp(new std::vector<WhetStone::Tensor>());
-  int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
-  int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
-  int ncells_wghost = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::USED);
-  int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
+  int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+  int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
+  int ncells_wghost = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
+  int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
 
   Analytic ana(mesh, gravity);
 
   for (int c = 0; c < ncells; c++) {
     const Point& xc = mesh->cell_centroid(c);
-    const WhetStone::Tensor& Kc = ana.Tensor(xc, 0.0);
+    const WhetStone::Tensor& Kc = ana.TensorDiffusivity(xc, 0.0);
     K->push_back(Kc);
   }
 
   // create boundary data
-  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(mesh, AmanziMesh::FACE, SCHEMA_DOFS_SCALAR));
+  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(mesh, AmanziMesh::FACE, DOF_Type::SCALAR));
   std::vector<int>& bc_model = bc->bc_model();
   std::vector<double>& bc_value = bc->bc_value();
 
@@ -128,13 +127,14 @@ void RunTestDiffusionNLFV_DMP(double gravity, bool testing) {
 
     // get and assmeble the global operator
     global_op->UpdateRHS(source, false);
-    op->ApplyBCs(true, true);
+    op->ApplyBCs(true, true, true);
     global_op->SymbolicAssembleMatrix();
     global_op->AssembleMatrix();
 
     // create preconditoner using the base operator class
-    Teuchos::ParameterList slist = plist.get<Teuchos::ParameterList>("preconditioners");
-    global_op->InitPreconditioner("Hypre AMG", slist);
+    Teuchos::ParameterList slist = plist.sublist("preconditioners").sublist("Hypre AMG");
+    global_op->InitializePreconditioner(slist);
+    global_op->UpdatePreconditioner();
 
     // solve the problem
     Teuchos::ParameterList lop_list = plist.sublist("solvers")

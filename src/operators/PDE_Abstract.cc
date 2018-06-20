@@ -27,8 +27,22 @@ namespace Operators {
 ****************************************************************** */
 void PDE_Abstract::Init_(Teuchos::ParameterList& plist)
 {
-  Teuchos::ParameterList& range = plist.sublist("schema range");
-  Teuchos::ParameterList& domain = plist.sublist("schema domain");
+  Teuchos::ParameterList range, domain;
+  if (plist.isSublist("schema range") && plist.isSublist("schema domain")) {
+    range = plist.sublist("schema range");
+    domain = plist.sublist("schema domain");
+  }
+  else if (plist.isSublist("schema")) {
+    range = plist.sublist("schema");
+    domain = range;
+  }
+  else {
+    Errors::Message msg;
+    msg << "Schema mismatch for abstract operator.\n" 
+        << "  Use \"schema\" for a square operator.\n"
+        << "  Use \"schema range\" and \"schema domain\" for a general operator.\n";
+    Exceptions::amanzi_throw(msg);
+  }
 
   if (global_op_ == Teuchos::null) {
     // constructor was given a mesh
@@ -76,12 +90,14 @@ void PDE_Abstract::Init_(Teuchos::ParameterList& plist)
   // register the advection Op
   global_op_->OpPushBack(local_op_);
 
-  // parameters
+  // parse parameters
   // -- discretization details
-  method_ = plist.get<std::string>("method");
-  method_order_ = plist.get<int>("method order", 0);
   matrix_ = plist.get<std::string>("matrix type");
   grad_on_test_ = plist.get<bool>("gradient operator on test function", true);
+
+  // discretization method
+  WhetStone::MFD3DFactory factory;
+  mfd_ = factory.Create(mesh_, plist);
 }
 
 
@@ -98,9 +114,6 @@ void PDE_Abstract::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& u,
   int dir, d(mesh_->space_dimension());
   AmanziMesh::Entity_ID_List nodes;
 
-  WhetStone::MFD3DFactory factory;
-  auto mfd = factory.Create(mesh_, method_, method_order_);
- 
   // identify type of coefficient
   std::string coef("constant");
   if (Kpoly_.get()) coef = "polynomial";
@@ -113,23 +126,34 @@ void PDE_Abstract::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& u,
   if (matrix_ == "mass" && coef == "constant") {
     for (int c = 0; c < ncells_owned; ++c) {
       if (K_.get()) Kc = (*K_)[c];
-      mfd->MassMatrix(c, Kc, Acell);
+      mfd_->MassMatrix(c, Kc, Acell);
       matrix[c] = Acell;
     }
   } else if (matrix_ == "mass" && coef == "polynomial") {
     for (int c = 0; c < ncells_owned; ++c) {
-      mfd->MassMatrixPoly(c, (*Kpoly_)[c], Acell);
+      mfd_->MassMatrix(c, (*Kpoly_)[c], Acell);
+      matrix[c] = Acell;
+    }
+  } else if (matrix_ == "mass inverse" && coef == "constant") {
+    for (int c = 0; c < ncells_owned; ++c) {
+      if (K_.get()) Kc = (*K_)[c];
+      mfd_->MassMatrixInverse(c, Kc, Acell);
+      matrix[c] = Acell;
+    }
+  } else if (matrix_ == "mass inverse" && coef == "polynomial") {
+    for (int c = 0; c < ncells_owned; ++c) {
+      mfd_->MassMatrixInverse(c, (*Kpoly_)[c], Acell);
       matrix[c] = Acell;
     }
   } else if (matrix_ == "stiffness" && coef == "constant") {
     for (int c = 0; c < ncells_owned; ++c) {
       if (K_.get()) Kc = (*K_)[c];
-      mfd->StiffnessMatrix(c, Kc, Acell);
+      mfd_->StiffnessMatrix(c, Kc, Acell);
       matrix[c] = Acell;
     }
   } else if (matrix_ == "divergence") {
     for (int c = 0; c < ncells_owned; ++c) {
-      mfd->DivergenceMatrix(c, Acell);
+      mfd_->DivergenceMatrix(c, Acell);
       matrix[c] = Acell;
     }
   } else if (matrix_ == "advection" && coef == "constant") {
@@ -139,17 +163,17 @@ void PDE_Abstract::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& u,
       AmanziGeometry::Point vc(d);
       for (int i = 0; i < d; ++i) vc[i] = u_c[i][c];
 
-      mfd->AdvectionMatrix(c, vc, Acell, grad_on_test_);
+      mfd_->AdvectionMatrix(c, vc, Acell, grad_on_test_);
       matrix[c] = Acell;
     }
   } else if (matrix_ == "advection" && coef == "vector polynomial") {
     for (int c = 0; c < ncells_owned; ++c) {
-      mfd->AdvectionMatrixPoly(c, (*Kvec_)[c], Acell, grad_on_test_);
+      mfd_->AdvectionMatrix(c, (*Kvec_)[c], Acell, grad_on_test_);
       matrix[c] = Acell;
     }
   } else {
     Errors::Message msg;
-    msg << "Unsupported combination matrix_=" << matrix_ 
+    msg << "Unsupported combination matrix=" << matrix_ 
         << " and coef=" << coef << "\n";
     Exceptions::amanzi_throw(msg);
   }

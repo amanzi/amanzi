@@ -28,6 +28,7 @@ set(SuperLU_PATCH_COMMAND ${CMAKE_COMMAND} -P ${SuperLU_cmake_patch})
 # --- Define the arguments passed to CMake.
 set(SuperLU_CMAKE_ARGS 
       "-DCMAKE_INSTALL_PREFIX:FILEPATH=${TPL_INSTALL_PREFIX}"
+      "-DCMAKE_INSTALL_LIBDIR:FILEPATH=${TPL_INSTALL_PREFIX}/lib"
       "-DBUILD_SHARED_LIBS:BOOL=${BUILD_SHARED_LIBS}"
       "-Denable_blaslib:BOOL=FALSE")
 
@@ -37,9 +38,11 @@ ExternalProject_Add(${SuperLU_BUILD_TARGET}
                     TMP_DIR   ${SuperLU_tmp_dir}               # Temporary files directory
                     STAMP_DIR ${SuperLU_stamp_dir}             # Timestamp and log directory
                     # -- Download and URL definitions
-                    DOWNLOAD_DIR ${TPL_DOWNLOAD_DIR}           # Download directory
-                    URL          ${SuperLU_URL}                # URL may be a web site OR a local file
-                    URL_MD5      ${SuperLU_MD5_SUM}            # md5sum of the archive file
+                    DOWNLOAD_DIR  ${TPL_DOWNLOAD_DIR}          # Download directory
+                    URL           ${SuperLU_URL}               # URL may be a web site OR a local file
+                    URL_MD5       ${SuperLU_MD5_SUM}           # md5sum of the archive file
+                    DOWNLOAD_NAME ${SuperLU_SAVEAS_FILE}       # file name to store (if not end of URL)
+                    # -- Patch 
                     PATCH_COMMAND ${SuperLU_PATCH_COMMAND}     # Mods to source
                     # -- Configure
                     SOURCE_DIR    ${SuperLU_source_dir}        # Source directory
@@ -60,3 +63,6 @@ ExternalProject_Add(${SuperLU_BUILD_TARGET}
 include(BuildLibraryName)
 build_library_name(superlu SuperLU_LIB APPEND_PATH ${TPL_INSTALL_PREFIX}/lib)
 
+# --- set cache (global) variables
+global_set(SuperLU_LIBRARY "${SuperLU_LIB}")
+global_set(SuperLU_DIR ${TPL_INSTALL_PREFIX})

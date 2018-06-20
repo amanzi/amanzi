@@ -1,15 +1,13 @@
 # -*- mode: cmake -*-
 
 # 
-# Amanzi Print variable
-#
+# Usage:
 #
 # ADD_IMPORTED_LIBRARY(name [SHARED | STATIC]
 #                      LOCATION <path>
 #                      [ LINK_LANGUAGES <lang1> <lang2> <lang3> ... ]
 #                      [ LINK_INTERFACE_LIBRARIES <lib1> <lib2> ... ]
 #                     )
-#                    
 #                      
 
 include(CMakeParseArguments)
@@ -66,8 +64,21 @@ function(ADD_IMPORTED_LIBRARY target_name)
   endif()
   if (PARSE_LINK_INTERFACE_LIBRARIES)
     set_target_properties(${target_name} PROPERTIES
-                          IMPORTED_LINK_INTERFACE_LIBRARIES "${PARSE_LINK_INTERFACE_LIBRARIES}")
+                          INTERFACE_LINK_LIBRARIES "${PARSE_LINK_INTERFACE_LIBRARIES}")
   endif()
      
 endfunction(ADD_IMPORTED_LIBRARY)
+
+
+#
+# Useful macros
+#
+macro(PRINT_LINK_LIBRARIES target_lib)
+
+  if (TARGET ${target_lib})
+    get_property(_link_libs TARGET ${target_lib} PROPERTY INTERFACE_LINK_LIBRARIES)
+    message(STATUS "\tINTERFACE_LINK_LIBRARIES for target=${target_lib}: ${_link_libs}")
+  endif()  
+
+endmacro(PRINT_LINK_LIBRARIES)
 

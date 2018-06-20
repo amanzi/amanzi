@@ -108,7 +108,7 @@ int Operator_FaceCellSff::ApplyInverse(const CompositeVector& X, CompositeVector
         Epetra_MultiVector& Yf_short = *Y.ViewComponent("face", false);
 
         ierr = preconditioner_->ApplyInverse(Tf_short, Yf_short);
-        ASSERT(ierr >= 0);
+        AMANZI_ASSERT(ierr >= 0);
       }
 
       Y.ScatterMasterToGhosted("face");
@@ -174,7 +174,7 @@ void Operator_FaceCellSff::AssembleMatrix(const SuperMap& map, MatrixFE& matrix,
   for (const_op_iterator it = OpBegin(); it != OpEnd(); ++it) {
     if ((*it)->schema_old_ == (OPERATOR_SCHEMA_BASE_CELL |
                                OPERATOR_SCHEMA_DOFS_CELL | OPERATOR_SCHEMA_DOFS_FACE)) {
-      ASSERT((*it)->matrices.size() == ncells_owned);
+      AMANZI_ASSERT((*it)->matrices.size() == ncells_owned);
 
       // create or get extra ops, and keep them for future use
       Teuchos::RCP<Op_Cell_Face> schur_op;
@@ -184,7 +184,7 @@ void Operator_FaceCellSff::AssembleMatrix(const SuperMap& map, MatrixFE& matrix,
         schur_op = schur_ops_[i_schur];
       } else {
         // create and fill
-        ASSERT(i_schur == schur_ops_.size());
+        AMANZI_ASSERT(i_schur == schur_ops_.size());
         std::string name = "Sff alt CELL_FACE";
         schur_op = Teuchos::rcp(new Op_Cell_Face(name, mesh_));
         schur_ops_.push_back(schur_op);
@@ -210,30 +210,6 @@ void Operator_FaceCellSff::AssembleMatrix(const SuperMap& map, MatrixFE& matrix,
             Scell(n, m) = Acell(n, m) - Acell(n, nfaces) * Acell(nfaces, m) / tmp;
           }
         }
-
-        // Symbolic boundary conditions
-        // -- from test functions
-        if (bc_test_ != Teuchos::null) {
-          const std::vector<int>& bc_model = bc_test_->bc_model();
-          for (int n = 0; n < nfaces; n++) {
-            int f = faces[n];
-            if (bc_model[f] == OPERATOR_BC_DIRICHLET) {
-              for (int m = 0; m < nfaces; m++) Scell(n, m) = 0.0;
-            }
-          }
-        }
-
-        // -- from trial functions
-        if (bc_trial_ != Teuchos::null) {
-          const std::vector<int>& bc_model = bc_trial_->bc_model();
-          for (int n = 0; n < nfaces; n++) {
-            int f = faces[n];
-            if (bc_model[f] == OPERATOR_BC_DIRICHLET) {
-              for (int m = 0; m < nfaces; m++) Scell(m, n) = 0.0;
-              Scell(n, n) = 1.0;
-            }
-          }
-        }
       }
 
       // Assemble this Schur Op into matrix
@@ -256,7 +232,7 @@ void Operator_FaceCellSff::AssembleMatrix(const SuperMap& map, MatrixFE& matrix,
 int Operator_FaceCellSff::ApplyMatrixFreeOp(const Op_Cell_FaceCell& op,
                                             const CompositeVector& X, CompositeVector& Y) const
 {
-  ASSERT(op.matrices.size() == ncells_owned);
+  AMANZI_ASSERT(op.matrices.size() == ncells_owned);
 
   X.ScatterMasterToGhosted();
   const Epetra_MultiVector& Xf = *X.ViewComponent("face", true);
@@ -312,7 +288,7 @@ void Operator_FaceCellSff::SymbolicAssembleMatrix()
 
   // Completing and optimizing the graphs
   int ierr = graph->FillComplete(smap_->Map(), smap_->Map());
-  ASSERT(!ierr);
+  AMANZI_ASSERT(!ierr);
 
   // create global matrix
   Amat_ = Teuchos::rcp(new MatrixFE(graph));

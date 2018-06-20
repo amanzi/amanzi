@@ -12,7 +12,7 @@ amanzi_tpl_version_write(FILENAME ${TPL_VERSIONS_INCLUDE_FILE}
   VERSION ${XERCES_VERSION_MAJOR} ${XERCES_VERSION_MINOR} ${XERCES_VERSION_PATCH})
 
 # --- Patch original code
-set(XERCES_patch_file xerces-libicu.patch)
+set(XERCES_patch_file xerces-libicu.patch xerces-static-lib-install.patch)
 set(XERCES_sh_patch ${XERCES_prefix_dir}/xerces-patch-step.sh)
 configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/xerces-patch-step.sh.in
                ${XERCES_sh_patch}
@@ -70,4 +70,5 @@ include(BuildLibraryName)
 
 build_library_name(xerces-c XERCES_LIBRARY APPEND_PATH ${TPL_INSTALL_PREFIX}/lib)
 set(XERCES_LIBRARIES ${XERCES_LIBRARY})
+set(XERCES_DIR ${TPL_INSTALL_PREFIX})
 set(XERCES_INCLUDE_DIRS ${TPL_INSTALL_PREFIX}/include)

@@ -57,30 +57,25 @@ TEST(OPERATOR_DIFFUSION_NODAL) {
   ParameterList plist = xmlreader.getParameters();
 
   // create an SIMPLE mesh framework
-  ParameterList region_list = plist.get<Teuchos::ParameterList>("regions");
+  ParameterList region_list = plist.sublist("regions");
   Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(2, region_list, &comm));
 
-  FrameworkPreference pref;
-  pref.clear();
-  pref.push_back(MSTK);
-  pref.push_back(STKMESH);
-
   MeshFactory meshfactory(&comm);
-  meshfactory.preference(pref);
+  meshfactory.preference(FrameworkPreference({MSTK,STKMESH}));
   RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 30, 30, gm);
   // RCP<const Mesh> mesh = meshfactory("test/median32x33.exo", gm);
 
   // modify diffusion coefficient
   // -- since rho=mu=1.0, we do not need to scale the diffusion tensor.
   Teuchos::RCP<std::vector<WhetStone::Tensor> > K = Teuchos::rcp(new std::vector<WhetStone::Tensor>());
-  int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
-  int nnodes_wghost = mesh->num_entities(AmanziMesh::NODE, AmanziMesh::USED);
+  int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+  int nnodes_wghost = mesh->num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::ALL);
 
   Analytic01 ana(mesh);
 
   for (int c = 0; c < ncells; c++) {
     const Point& xc = mesh->cell_centroid(c);
-    const WhetStone::Tensor& Kc = ana.Tensor(xc, 0.0);
+    const WhetStone::Tensor& Kc = ana.TensorDiffusivity(xc, 0.0);
     K->push_back(Kc);
   }
   double rho(1.0), mu(1.0);
@@ -88,7 +83,7 @@ TEST(OPERATOR_DIFFUSION_NODAL) {
 
   // create boundary data
   Point xv(2);
-  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(mesh, AmanziMesh::NODE, SCHEMA_DOFS_SCALAR));
+  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(mesh, AmanziMesh::NODE, DOF_Type::SCALAR));
   std::vector<int>& bc_model = bc->bc_model();
   std::vector<double>& bc_value = bc->bc_value();
 
@@ -102,7 +97,7 @@ TEST(OPERATOR_DIFFUSION_NODAL) {
   }
 
   // create diffusion operator 
-  ParameterList op_list = plist.get<Teuchos::ParameterList>("PK operator").sublist("diffusion operator nodal");
+  ParameterList op_list = plist.sublist("PK operator").sublist("diffusion operator nodal");
   Teuchos::RCP<PDE_Diffusion> op = Teuchos::rcp(new PDE_DiffusionMFD(op_list, mesh));
   op->SetBCs(bc, bc);
   const CompositeVectorSpace& cvs = op->global_operator()->DomainMap();
@@ -136,13 +131,14 @@ TEST(OPERATOR_DIFFUSION_NODAL) {
   global_op->UpdateRHS(source, true);
 
   // apply BCs (primary=true, eliminate=true) and assemble
-  op->ApplyBCs(true, true);
+  op->ApplyBCs(true, true, true);
   global_op->SymbolicAssembleMatrix();
   global_op->AssembleMatrix();
 
   // create preconditoner using the base operator class
-  ParameterList slist = plist.get<Teuchos::ParameterList>("preconditioners");
-  global_op->InitPreconditioner("Hypre AMG", slist);
+  ParameterList slist = plist.sublist("preconditioners").sublist("Hypre AMG");
+  global_op->InitializePreconditioner(slist);
+  global_op->UpdatePreconditioner();
 
   // Test SPD properties of the preconditioner.
   CompositeVector a(cvs), ha(cvs), b(cvs), hb(cvs);
@@ -235,31 +231,26 @@ TEST(OPERATOR_DIFFUSION_NODAL_EXACTNESS) {
   ParameterList plist = xmlreader.getParameters();
 
   // create an SIMPLE mesh framework
-  ParameterList region_list = plist.get<Teuchos::ParameterList>("regions");
+  ParameterList region_list = plist.sublist("regions");
   Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(2, region_list, &comm));
 
-  FrameworkPreference pref;
-  pref.clear();
-  pref.push_back(MSTK);
-  pref.push_back(STKMESH);
-
   MeshFactory meshfactory(&comm);
-  meshfactory.preference(pref);
+  meshfactory.preference(FrameworkPreference({MSTK,STKMESH}));
   // RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 4, 4, gm);
   RCP<const Mesh> mesh = meshfactory("test/median32x33.exo", gm);
 
   // modify diffusion coefficient
   // -- since rho=mu=1.0, we do not need to scale the diffusion coefficient.
   Teuchos::RCP<std::vector<WhetStone::Tensor> > K = Teuchos::rcp(new std::vector<WhetStone::Tensor>());
-  int ncells_wghost = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::USED);
-  int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
-  int nnodes_wghost = mesh->num_entities(AmanziMesh::NODE, AmanziMesh::USED);
+  int ncells_wghost = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
+  int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
+  int nnodes_wghost = mesh->num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::ALL);
 
   Analytic02 ana(mesh);
 
   for (int c = 0; c < ncells_wghost; c++) {
     const Point& xc = mesh->cell_centroid(c);
-    const WhetStone::Tensor& Kc = ana.Tensor(xc, 0.0);
+    const WhetStone::Tensor& Kc = ana.TensorDiffusivity(xc, 0.0);
     K->push_back(Kc);
   }
   double rho(1.0), mu(1.0);
@@ -267,7 +258,7 @@ TEST(OPERATOR_DIFFUSION_NODAL_EXACTNESS) {
 
   // create boundary data (no mixed bc)
   Point xv(2);
-  Teuchos::RCP<BCs> bc_v = Teuchos::rcp(new BCs(mesh, AmanziMesh::NODE, SCHEMA_DOFS_SCALAR));
+  Teuchos::RCP<BCs> bc_v = Teuchos::rcp(new BCs(mesh, AmanziMesh::NODE, DOF_Type::SCALAR));
   std::vector<int>& bc_model_v = bc_v->bc_model();
   std::vector<double>& bc_value_v = bc_v->bc_value();
 
@@ -279,7 +270,7 @@ TEST(OPERATOR_DIFFUSION_NODAL_EXACTNESS) {
     }
   }
 
-  Teuchos::RCP<BCs> bc_f = Teuchos::rcp(new BCs(mesh, AmanziMesh::FACE, SCHEMA_DOFS_SCALAR));
+  Teuchos::RCP<BCs> bc_f = Teuchos::rcp(new BCs(mesh, AmanziMesh::FACE, DOF_Type::SCALAR));
   std::vector<int>& bc_model_f = bc_f->bc_model();
   std::vector<double>& bc_value_f = bc_f->bc_value();
   std::vector<double>& bc_mixed_f = bc_f->bc_mixed();
@@ -303,7 +294,7 @@ TEST(OPERATOR_DIFFUSION_NODAL_EXACTNESS) {
   }
 
   // create diffusion operator 
-  ParameterList op_list = plist.get<Teuchos::ParameterList>("PK operator").sublist("diffusion operator nodal");
+  ParameterList op_list = plist.sublist("PK operator").sublist("diffusion operator nodal");
   PDE_DiffusionFactory opfactory;
   Teuchos::RCP<PDE_Diffusion> op = opfactory.Create(op_list, mesh, bc_v, rho, g);
   op->AddBCs(bc_f, bc_f);
@@ -313,14 +304,15 @@ TEST(OPERATOR_DIFFUSION_NODAL_EXACTNESS) {
   global_op->Init();
   op->Setup(K, Teuchos::null, Teuchos::null);
   op->UpdateMatrices(Teuchos::null, Teuchos::null);
-  op->ApplyBCs(true, true);
+  op->ApplyBCs(true, true, true);
 
   global_op->SymbolicAssembleMatrix();
   global_op->AssembleMatrix();
 
   // create preconditoner using the base operator class
-  ParameterList slist = plist.get<Teuchos::ParameterList>("preconditioners");
-  global_op->InitPreconditioner("Hypre AMG", slist);
+  ParameterList slist = plist.sublist("preconditioners").sublist("Hypre AMG");
+  global_op->InitializePreconditioner(slist);
+  global_op->UpdatePreconditioner();
 
   // solve the problem
   ParameterList lop_list = plist.sublist("solvers")

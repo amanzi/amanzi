@@ -83,8 +83,8 @@ void UpwindFlux<Model>::Compute(
     const CompositeVector& flux, const CompositeVector& solution,
     const std::vector<int>& bc_model, CompositeVector& field)
 {
-  ASSERT(field.HasComponent("cell"));
-  ASSERT(field.HasComponent(face_comp_));
+  AMANZI_ASSERT(field.HasComponent("cell"));
+  AMANZI_ASSERT(field.HasComponent(face_comp_));
 
   field.ScatterMasterToGhosted("cell");
   flux.ScatterMasterToGhosted("face");
@@ -103,13 +103,13 @@ void UpwindFlux<Model>::Compute(
   flx_face.MaxValue(&flxmax);
   tol = tolerance_ * std::max(fabs(flxmin), fabs(flxmax));
 
-  int nfaces_wghost = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
+  int nfaces_wghost = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
   AmanziMesh::Entity_ID_List cells;
 
   int c1, c2, dir;
   double kc1, kc2;
   for (int f = 0; f < nfaces_wghost; ++f) {
-    mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+    mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
     int ncells = cells.size();
 
     c1 = cells[0];
@@ -154,8 +154,8 @@ void UpwindFlux<Model>::Compute2(
     CompositeVector& field,
     double (Model::*Value)(int, double) const)
 {
-  ASSERT(field.HasComponent("cell"));
-  ASSERT(field.HasComponent(face_comp_));
+  AMANZI_ASSERT(field.HasComponent("cell"));
+  AMANZI_ASSERT(field.HasComponent(face_comp_));
 
   field.ScatterMasterToGhosted("cell");
   flux.ScatterMasterToGhosted("face");
@@ -174,13 +174,13 @@ void UpwindFlux<Model>::Compute2(
   flx_face.MaxValue(&flxmax);
   tol = tolerance_ * std::max(fabs(flxmin), fabs(flxmax));
 
-  int nfaces_wghost = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
+  int nfaces_wghost = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
   AmanziMesh::Entity_ID_List cells;
 
   int c1, c2, dir;
   double kc1, kc2;
   for (int f = 0; f < nfaces_wghost; ++f) {
-    mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+    mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
     int ncells = cells.size();
 
     c1 = cells[0];

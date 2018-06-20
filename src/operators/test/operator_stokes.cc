@@ -50,28 +50,23 @@ TEST(OPERATOR_STOKES_EXACTNESS) {
   int MyPID = comm.MyPID();
   if (MyPID == 0) std::cout << "\nTest: 2D Stokes: exactness test" << std::endl;
 
-  // read parameter list
+  // read parameter list 
   std::string xmlFileName = "test/operator_stokes.xml";
   Teuchos::ParameterXMLFileReader xmlreader(xmlFileName);
   Teuchos::ParameterList plist = xmlreader.getParameters();
 
-  // create an SIMPLE mesh framework
-  FrameworkPreference pref;
-  pref.clear();
-  pref.push_back(MSTK);
-  pref.push_back(STKMESH);
-
+  // create a simple rectangular mesh
   MeshFactory meshfactory(&comm);
-  meshfactory.preference(pref);
+  meshfactory.preference(FrameworkPreference({MSTK, STKMESH}));
   Teuchos::RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 16, 20, Teuchos::null);
 
-  // modify diffusion coefficient
-  int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
-  int nnodes = mesh->num_entities(AmanziMesh::NODE, AmanziMesh::OWNED);
-  int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
-  int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
-  int nnodes_wghost = mesh->num_entities(AmanziMesh::NODE, AmanziMesh::USED);
+  int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+  int nnodes = mesh->num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::OWNED);
+  int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
+  int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
+  int nnodes_wghost = mesh->num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::ALL);
 
+  // populate diffusion coefficient using an analytic solution
   AnalyticElasticity02 ana(mesh);
 
   Teuchos::RCP<std::vector<WhetStone::Tensor> > K = Teuchos::rcp(new std::vector<WhetStone::Tensor>());
@@ -81,9 +76,9 @@ TEST(OPERATOR_STOKES_EXACTNESS) {
     K->push_back(Kc);
   }
 
-  // create boundary data
-  // -- on faces
-  Teuchos::RCP<BCs> bcf = Teuchos::rcp(new BCs(mesh, AmanziMesh::FACE, SCHEMA_DOFS_SCALAR));
+  // populate boundary data for Bernardi-Raugel-type element
+  // -- Dirichlet condition on faces for the normal velocity component
+  Teuchos::RCP<BCs> bcf = Teuchos::rcp(new BCs(mesh, AmanziMesh::FACE, DOF_Type::SCALAR));
   std::vector<int>& bcf_model = bcf->bc_model();
   std::vector<double>& bcf_value = bcf->bc_value();
 
@@ -99,9 +94,9 @@ TEST(OPERATOR_STOKES_EXACTNESS) {
     }
   }
 
-  // -- at nodes
+  // -- Dirichlet condition at nodes for the normal velocity component
   Point xv(2);
-  Teuchos::RCP<BCs> bcv = Teuchos::rcp(new BCs(mesh, AmanziMesh::NODE, SCHEMA_DOFS_POINT));
+  Teuchos::RCP<BCs> bcv = Teuchos::rcp(new BCs(mesh, AmanziMesh::NODE, DOF_Type::POINT));
   std::vector<int>& bcv_model = bcv->bc_model();
   std::vector<Point>& bcv_value = bcv->bc_value_point();
 
@@ -115,24 +110,32 @@ TEST(OPERATOR_STOKES_EXACTNESS) {
     }
   }
 
-  // create elasticity operator 
-  Teuchos::ParameterList op_list = plist.get<Teuchos::ParameterList>("PK operator").sublist("elasticity operator");
+  // create a discrete PDE
+  // -- create an elasticity operator using in particular schema data. In the future,
+  // -- we could take definition of DOFs data from WhetStone using the provided 
+  // -- discretization method.
+  Teuchos::ParameterList op_list = plist.sublist("PK operator").sublist("elasticity operator");
   Teuchos::RCP<PDE_Elasticity> op00 = Teuchos::rcp(new PDE_Elasticity(op_list, mesh));
   op00->SetTensorCoefficient(K);
+  // -- add boundary conditions to the discrete PDE: Lame equation
   op00->SetBCs(bcf, bcf);
   op00->AddBCs(bcv, bcv);
 
-  // create divergence operator
-  op_list = plist.get<Teuchos::ParameterList>("PK operator").sublist("divergence operator");
+  // -- create a divergence operator. Note that it uses two different schemas for DOFs 
+  // for velocity and pressure.
+  op_list = plist.sublist("PK operator").sublist("divergence operator");
   Teuchos::RCP<PDE_Abstract> op10 = Teuchos::rcp(new PDE_Abstract(op_list, mesh));
+  // -- add boundary conditions to the discrete PDE: incompressibility equation
   op10->SetBCs(bcf, bcf);
   op10->AddBCs(bcv, bcv);
 
-  // create pressure block (for preconditioner)
+  // create identity type operator: pressure block for preconditioner
   Teuchos::RCP<PDE_Accumulation> pc11 = Teuchos::rcp(new PDE_Accumulation(AmanziMesh::CELL, mesh));
   Teuchos::RCP<Operator> global11 = pc11->global_operator();
 
-  // create tree operator
+  // create a tree operator for the discrete Stokes PDE. It is a 2x2 block operator
+  // composed of Lame operator (blok 00), divergence operator (blok 10) and traspose 
+  // of the divergence operator (block 01).
   Teuchos::RCP<Operator> global00 = op00->global_operator();
   Teuchos::RCP<Operator> global10 = op10->global_operator();
 
@@ -146,11 +149,11 @@ TEST(OPERATOR_STOKES_EXACTNESS) {
   op->SetOperatorBlock(1, 0, global10);
   op->SetOperatorBlock(0, 1, global10, true);
 
-  // create and initialize state variables.
+  // create and initialize state variables: velocity and pressure.
   TreeVector solution(*tvs);
   solution.PutScalar(0.0);
 
-  // create source (for velocity block only)
+  // create source term representing external forces.
   CompositeVector source(cvs);
   Epetra_MultiVector& src = *source.ViewComponent("node");
 
@@ -160,29 +163,38 @@ TEST(OPERATOR_STOKES_EXACTNESS) {
     for (int k = 0; k < 2; ++k) src[k][v] = tmp[k];
   }
 
-  // populate the elasticity block
+  // populate local matrices inside the elasticity block and assemble them
+  // into a global matrix.
   op00->UpdateMatrices();
   global00->UpdateRHS(source, true);
-  op00->ApplyBCs(true, true);
+  op00->ApplyBCs(true, true, true);
   global00->SymbolicAssembleMatrix();
   global00->AssembleMatrix();
 
-  // populate the divergence block
+  // populate local matrices inside the divergence block. Since we will use
+  // a matrix-free matvec inside an iterative solver, there is no need to
+  // assemble a global matrix.
   op10->UpdateMatrices();
-  op10->ApplyBCs(false, true);
+  op10->ApplyBCs(false, true, false);
 
-  // populate pressure block (for preconditioner)
+  // populate local matrices in the pressure block (for preconditioner)
   CompositeVector vol(global11->DomainMap());
   vol.PutScalar(1.0);
   pc11->AddAccumulationTerm(vol, 1.0, "cell");
   global11->SymbolicAssembleMatrix();
   global11->AssembleMatrix();
 
-  // create preconditoner, identity is the default one. 
-  Teuchos::ParameterList slist = plist.get<Teuchos::ParameterList>("preconditioners");
-  global00->InitPreconditioner("Hypre AMG", slist);
+  // create a block-diagonal preconditoner, identity is the default one. 
+  // The first block will reuse the assembled matrix to build a multigrid
+  // solver. The second block is simply a diagonal matrix. The off-diagonal
+  // blocks are empty and require no setup.
+  Teuchos::ParameterList slist = plist.sublist("preconditioners").sublist("Hypre AMG");
+  global00->InitializePreconditioner(slist);
+  global00->UpdatePreconditioner();
 
-  global11->InitPreconditioner("Diagonal", slist); 
+  slist = plist.sublist("preconditioners").sublist("Diagonal");
+  global11->InitializePreconditioner(slist); 
+  global11->UpdatePreconditioner(); 
 
   Teuchos::RCP<TreeOperator> pc = Teuchos::rcp(new Operators::TreeOperator(tvs));
   pc->SetOperatorBlock(0, 0, op00->global_operator());
@@ -194,16 +206,19 @@ TEST(OPERATOR_STOKES_EXACTNESS) {
   ver1.CheckMatrixSPD();
   ver2.CheckPreconditionerSPD();
 
-  // solve the problem
+  // solve the discrete problem.
+  // -- create a linear solver: GMRES.
   Teuchos::ParameterList lop_list = plist.sublist("solvers")
                                          .sublist("GMRES").sublist("gmres parameters");
   AmanziSolvers::LinearOperatorGMRES<TreeOperator, TreeVector, TreeVectorSpace> solver(op, pc);
   solver.Init(lop_list);
 
+  // -- copy right-hand sides inside two operators to the global rhs.
   TreeVector rhs(*tvs);
   *rhs.SubVector(0)->Data() = *global00->rhs();
   *rhs.SubVector(1)->Data() = *global10->rhs();
 
+  // -- execute GMRES solver
   int ierr = solver.ApplyInverse(rhs, solution);
 
   if (MyPID == 0) {
@@ -212,10 +227,12 @@ TEST(OPERATOR_STOKES_EXACTNESS) {
               << " code=" << solver.returned_code() << std::endl;
   }
 
-  // compute velocity error
+  // Post-processing
+  // -- compute velocity error
   double unorm, ul2_err, uinf_err;
   ana.ComputeNodeError(*solution.SubVector(0)->Data(), 0.0, unorm, ul2_err, uinf_err);
 
+  // -- compute pressure error
   double pnorm, pl2_err, pinf_err;
   ana.ComputeCellError(*solution.SubVector(1)->Data(), 0.0, pnorm, pl2_err, pinf_err);
 

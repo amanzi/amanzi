@@ -47,7 +47,7 @@ using namespace Amanzi;
 int BoundaryFaceGetCell(const AmanziMesh::Mesh& mesh, int f)
 {
   AmanziMesh::Entity_ID_List cells;
-  mesh.face_get_cells(f, AmanziMesh::USED, &cells);
+  mesh.face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
   return cells[0];
 }
 
@@ -89,9 +89,9 @@ struct Problem {
   
   void FillCoefs(const CompositeVector& u,
                  const CompositeVector& v) {
-    int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
-    int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
-    int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
+    int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+    int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
+    int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
 
     // kr0,1 on faces, always upwinded
     Epetra_MultiVector& kr0_f = *kr0->ViewComponent("face",true);
@@ -102,7 +102,7 @@ struct Problem {
     
     for (int f=0; f!=nfaces; ++f) {
       AmanziMesh::Entity_ID_List cells;
-      mesh->face_get_cells(f, AmanziMesh::USED, &cells);
+      mesh->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
 
       if (cells.size() == 2) {
         if (u_c[0][cells[0]] > u_c[0][cells[1]]) {
@@ -165,7 +165,7 @@ struct Problem {
 
       for (int f=0; f!=nfaces; ++f) {
         AmanziMesh::Entity_ID_List cells;
-        mesh->face_get_cells(f, AmanziMesh::USED, &cells);
+        mesh->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
 
         if (cells.size() == 2) {
           if (u_c[0][cells[0]] > u_c[0][cells[1]]) {
@@ -227,15 +227,15 @@ struct Problem {
   }
 
   void MakeBCs() {
-    bc0 = Teuchos::rcp(new Operators::BCs(mesh, AmanziMesh::FACE, Operators::SCHEMA_DOFS_SCALAR));
+    bc0 = Teuchos::rcp(new Operators::BCs(mesh, AmanziMesh::FACE, Operators::DOF_Type::SCALAR));
     std::vector<int>& bc_model0 = bc0->bc_model();
     std::vector<double>& bc_value0 = bc0->bc_value();
 
-    bc1 = Teuchos::rcp(new Operators::BCs(mesh, AmanziMesh::FACE, Operators::SCHEMA_DOFS_SCALAR));
+    bc1 = Teuchos::rcp(new Operators::BCs(mesh, AmanziMesh::FACE, Operators::DOF_Type::SCALAR));
     std::vector<int>& bc_model1 = bc1->bc_model();
     std::vector<double>& bc_value1 = bc1->bc_value();
   
-    int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
+    int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
     for (int f = 0; f < nfaces_wghost; f++) {
       const AmanziGeometry::Point& xf = mesh->face_centroid(f);
       double area = mesh->face_area(f);
@@ -273,7 +273,7 @@ struct Problem {
   }
     
   void MakeTensorCoefs() {
-    int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+    int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
 
     // tensor list
     K00 = Teuchos::rcp(new std::vector<WhetStone::Tensor>());
@@ -292,7 +292,7 @@ struct Problem {
   }
 
   void MakeScalarTensorCoefs() {
-    int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+    int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
 
     // tensor list
     K00 = Teuchos::rcp(new std::vector<WhetStone::Tensor>());
@@ -339,7 +339,7 @@ struct Problem {
   }
 
   void FillSolution(CompositeVector& u,CompositeVector& v) {
-    int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+    int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
     Epetra_MultiVector& u_c = *u.ViewComponent("cell",false);
     Epetra_MultiVector& v_c = *v.ViewComponent("cell",false);
 
@@ -350,7 +350,7 @@ struct Problem {
     }
 
     if (u.HasComponent("face")) {
-      int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
+      int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
       Epetra_MultiVector& u_f = *u.ViewComponent("face",false);
       Epetra_MultiVector& v_f = *v.ViewComponent("face",false);
 
@@ -363,7 +363,7 @@ struct Problem {
 
     if (u.HasComponent("boundary_face")) {
       int nboundary_faces = mesh->num_entities(AmanziMesh::BOUNDARY_FACE,
-              AmanziMesh::OWNED);
+              AmanziMesh::Parallel_type::OWNED);
       Epetra_MultiVector& u_f = *u.ViewComponent("boundary_face",false);
       Epetra_MultiVector& v_f = *v.ViewComponent("boundary_face",false);
 
@@ -519,7 +519,7 @@ struct Problem {
     f0 = Teuchos::rcp(new CompositeVector(src_space));
     f1 = Teuchos::rcp(new CompositeVector(src_space));
 
-    int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+    int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
     Epetra_MultiVector& f0_c = *f0->ViewComponent("cell",false);
     Epetra_MultiVector& f1_c = *f1->ViewComponent("cell",false);
 
@@ -541,7 +541,7 @@ struct Problem {
   
   void Report(CompositeVector& u,
               CompositeVector& v) {
-    std::cout << "Problem with " << mesh->num_entities(AmanziMesh::CELL, AmanziMesh::USED)
+    std::cout << "Problem with " << mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL)
               << " on " << mesh->get_comm()->NumProc() << " cores with discretization \""
               << discretization << "\"" << std::endl;
     std::cout << "Solution:" << std::endl;
@@ -564,7 +564,7 @@ struct Problem {
     std::ofstream fid;
     fid.open(filename.c_str());
 
-    int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+    int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
     Epetra_MultiVector& e0_c = *err0.ViewComponent("cell",false);
     Epetra_MultiVector& e1_c = *err1.ViewComponent("cell",false);
 
@@ -577,7 +577,7 @@ struct Problem {
     }
 
     if (faces && err0.HasComponent("face")) {
-      int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
+      int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
       Epetra_MultiVector& e0_f = *err0.ViewComponent("face",false);
       Epetra_MultiVector& e1_f = *err1.ViewComponent("face",false);
 
@@ -644,9 +644,9 @@ Teuchos::RCP<Problem> getProblem(const std::string& discretization,
   Teuchos::RCP<Mesh> mesh =
       Teuchos::rcp(new Mesh_MSTK(0.,0.,1.,1.,nx,ny, comm));
 
-  int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
-  int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
-  int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
+  int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+  int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
+  int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
 
   // create the analytic solution
   Teuchos::RCP<AnalyticNonlinearCoupledBase> ana =
@@ -702,12 +702,12 @@ std::pair<double,double> RunForwardProblem(
   problem->op00->SetScalarCoefficient(problem->kr0, Teuchos::null);
   problem->op00->UpdateMatrices(Teuchos::null,Teuchos::null);
   problem->op00->global_operator()->UpdateRHS(*problem->f0,false);
-  problem->op00->ApplyBCs(true,true);
+  problem->op00->ApplyBCs(true,true,true);
 
   problem->op11->SetScalarCoefficient(problem->kr1, Teuchos::null);
   problem->op11->UpdateMatrices(Teuchos::null,Teuchos::null);
   problem->op11->global_operator()->UpdateRHS(*problem->f1,false);
-  problem->op11->ApplyBCs(true,true);
+  problem->op11->ApplyBCs(true,true,true);
 
   // apply!
   TreeVector B(*problem->tvs);
@@ -782,12 +782,12 @@ std::pair<double,double> RunForwardProblem_Assembled(
   problem->op00->SetScalarCoefficient(problem->kr0, Teuchos::null);
   problem->op00->UpdateMatrices(Teuchos::null,Teuchos::null);
   problem->op00->global_operator()->UpdateRHS(*problem->f0,false);
-  problem->op00->ApplyBCs(true,true);
+  problem->op00->ApplyBCs(true,true,true);
 
   problem->op11->SetScalarCoefficient(problem->kr1, Teuchos::null);
   problem->op11->UpdateMatrices(Teuchos::null,Teuchos::null);
   problem->op11->global_operator()->UpdateRHS(*problem->f1,false);
-  problem->op11->ApplyBCs(true,true);
+  problem->op11->ApplyBCs(true,true,true);
 
   // create vector storage
   TreeVector B(*problem->tvs);
@@ -869,12 +869,12 @@ std::pair<double,double> RunInverseProblem(
   problem->op00->SetScalarCoefficient(problem->kr0, Teuchos::null);
   problem->op00->UpdateMatrices(Teuchos::null,Teuchos::null);
   problem->op00->global_operator()->UpdateRHS(*problem->f0,false);
-  problem->op00->ApplyBCs(true,true);
+  problem->op00->ApplyBCs(true,true,true);
 
   problem->op11->SetScalarCoefficient(problem->kr1, Teuchos::null);
   problem->op11->UpdateMatrices(Teuchos::null,Teuchos::null);
   problem->op11->global_operator()->UpdateRHS(*problem->f1,false);
-  problem->op11->ApplyBCs(true,true);
+  problem->op11->ApplyBCs(true,true,true);
 
   // create vector storage
   TreeVector B(*problem->tvs);
@@ -983,7 +983,7 @@ std::pair<double,double> RunNonlinearProblem(
   } else if (jacobian == "full") {
     problem->CreateBlockPCs(true, true, upwind);
   } else {
-    ASSERT(0);
+    AMANZI_ASSERT(0);
   }
     
   problem->CreateTreeVectorSpace();
@@ -1013,12 +1013,12 @@ std::pair<double,double> RunNonlinearProblem(
     problem->op00->SetScalarCoefficient(problem->kr0, Teuchos::null);
     problem->op00->UpdateMatrices(Teuchos::null,Teuchos::null);
     problem->op00->global_operator()->UpdateRHS(*problem->f0,false);
-    problem->op00->ApplyBCs(true,true);
+    problem->op00->ApplyBCs(true,true,true);
     problem->op11->global_operator()->Init();
     problem->op11->SetScalarCoefficient(problem->kr1, Teuchos::null);
     problem->op11->UpdateMatrices(Teuchos::null,Teuchos::null);
     problem->op11->global_operator()->UpdateRHS(*problem->f1,false);
-    problem->op11->ApplyBCs(true,true);
+    problem->op11->ApplyBCs(true,true,true);
 
     // write forward operator to file for debugging
     if (write_file) {
@@ -1085,26 +1085,26 @@ std::pair<double,double> RunNonlinearProblem(
     problem->pc00->SetScalarCoefficient(problem->kr0, problem->kr0_u);
     problem->pc00->UpdateMatrices(problem->q0.ptr(), u.ptr());
     problem->pc00->UpdateMatricesNewtonCorrection(problem->q0.ptr(), u.ptr());
-    problem->pc00->ApplyBCs(true, true);
+    problem->pc00->ApplyBCs(true,true,true);
 
     problem->pc11->global_operator()->Init();
     problem->pc11->SetScalarCoefficient(problem->kr1, problem->kr1_v);
     problem->pc11->UpdateMatrices(problem->q1.ptr(), v.ptr());
     problem->pc11->UpdateMatricesNewtonCorrection(problem->q1.ptr(), v.ptr());
-    problem->pc11->ApplyBCs(true, true);
+    problem->pc11->ApplyBCs(true,true,true);
     
     if (problem->pc01 != Teuchos::null) {
       problem->pc01->global_operator()->Init();
       problem->pc01->SetScalarCoefficient(problem->kr0, problem->kr0_v);
       problem->pc01->UpdateMatrices(problem->q0.ptr(), u.ptr());
       problem->pc01->UpdateMatricesNewtonCorrection(problem->q0.ptr(), u.ptr());
-      problem->pc01->ApplyBCs(false, true);
+      problem->pc01->ApplyBCs(false,true,false);
 
       problem->pc10->global_operator()->Init();
       problem->pc10->SetScalarCoefficient(problem->kr1, problem->kr1_u);
       problem->pc10->UpdateMatrices(problem->q1.ptr(), v.ptr());
       problem->pc10->UpdateMatricesNewtonCorrection(problem->q1.ptr(), v.ptr());
-      problem->pc10->ApplyBCs(false, true);
+      problem->pc10->ApplyBCs(false,true,false);
     }
     problem->pc->AssembleMatrix();
 
@@ -1223,12 +1223,12 @@ std::pair<double,double> RunInverseProblem_Diag(
   problem->op00->SetScalarCoefficient(problem->kr0, Teuchos::null);
   problem->op00->UpdateMatrices(Teuchos::null,Teuchos::null);
   problem->op00->global_operator()->UpdateRHS(*problem->f0,false);
-  problem->op00->ApplyBCs(true,true);
+  problem->op00->ApplyBCs(true,true,true);
 
   problem->op11->SetScalarCoefficient(problem->kr1, Teuchos::null);
   problem->op11->UpdateMatrices(Teuchos::null,Teuchos::null);
   problem->op11->global_operator()->UpdateRHS(*problem->f1,false);
-  problem->op11->ApplyBCs(true,true);
+  problem->op11->ApplyBCs(true,true,true);
 
   // assemble, invert
   problem->op00->global_operator()->SymbolicAssembleMatrix();

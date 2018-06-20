@@ -10,6 +10,13 @@
 
   An abstract operator uses factory of mimetic schemes and standard
   interface for creating stiffness, mass and divergence matrices.
+
+  Examples of usage this operator are in test/operators_stokes.cc
+  and test/operators_diffusion_curved.cc
+  In the first example, we set up a discrete divergence operator
+  that corersponds to a rectangular matrix. In the second example,
+  we set up an elliptic operator when Hermite-type degrees of 
+  freedom are used on curved faces.
 */
 
 #ifndef AMANZI_OPERATOR_PDE_ABSTRACT_HH_
@@ -19,6 +26,7 @@
 #include <vector>
 
 // Amanzi
+#include "BilinearForm.hh"
 #include "Polynomial.hh"
 #include "Tensor.hh"
 #include "VectorPolynomial.hh"
@@ -42,6 +50,7 @@ class PDE_Abstract : public PDE_HelperDiscretization {
     global_op_ = Teuchos::null;
     Init_(plist);
   }
+  ~PDE_Abstract() {};
 
   // main members 
   // -- required by the interface
@@ -70,9 +79,10 @@ class PDE_Abstract : public PDE_HelperDiscretization {
   void Init_(Teuchos::ParameterList& plist);
 
  private:
-  std::string method_, matrix_;
-  int method_order_;
+  std::string matrix_;
   bool grad_on_test_;
+
+  Teuchos::RCP<WhetStone::BilinearForm> mfd_;
 };
 
 }  // namespace Operators

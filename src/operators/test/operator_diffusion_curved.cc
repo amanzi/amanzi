@@ -53,8 +53,8 @@ void RunTestDiffusionCurved() {
   ParameterXMLFileReader xmlreader(xmlFileName);
   ParameterList plist = xmlreader.getParameters();
 
-  // create an SIMPLE mesh framework
-  ParameterList region_list = plist.get<Teuchos::ParameterList>("regions");
+  // create a randomized mesh 
+  ParameterList region_list = plist.sublist("regions");
   Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(3, region_list, &comm));
 
   MeshFactory meshfactory(&comm);
@@ -62,22 +62,24 @@ void RunTestDiffusionCurved() {
   // RCP<const Mesh> mesh = meshfactory(0.0,0.0,0.0, 1.0,1.0,1.0, 2,2,2, gm);
   RCP<const Mesh> mesh = meshfactory("test/random3D_05.exo", gm);
 
-  // modify diffusion coefficient
+  // populate diffusion coefficient using the problem with analytic solution.
   Teuchos::RCP<std::vector<WhetStone::Tensor> > K = Teuchos::rcp(new std::vector<WhetStone::Tensor>());
-  int ncells_owned = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
-  int nfaces_owned = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
-  int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
+  int ncells_owned = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+  int nfaces_owned = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
+  int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
 
   Analytic02 ana(mesh);
 
   for (int c = 0; c < ncells_owned; c++) {
     const Point& xc = mesh->cell_centroid(c);
-    const WhetStone::Tensor& Kc = ana.Tensor(xc, 0.0);
+    const WhetStone::Tensor& Kc = ana.TensorDiffusivity(xc, 0.0);
     K->push_back(Kc);
   }
 
-  // create boundary data
-  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(mesh, AmanziMesh::FACE, SCHEMA_DOFS_VECTOR));
+  // populate boundary data: The discretization method uses 3 DOFs (moment) 
+  // on each mesh face which require to specify 3 boundary data of type double
+  // for each mesh face.
+  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(mesh, AmanziMesh::FACE, DOF_Type::VECTOR));
   std::vector<int>& bc_model = bc->bc_model();
   std::vector<std::vector<double> >& bc_value = bc->bc_value_vector(3);
 
@@ -96,24 +98,28 @@ void RunTestDiffusionCurved() {
   }
 
   // create diffusion operator 
+  // -- use the abstract operator based on factory of MFD discretization methods.
   ParameterList op_list = plist.sublist("PK operator").sublist("diffusion operator curved");
   Teuchos::RCP<PDE_Abstract> op = Teuchos::rcp(new PDE_Abstract(op_list, mesh));
   op->SetBCs(bc, bc);
   const CompositeVectorSpace& cvs = op->global_operator()->DomainMap();
 
-  // set up the diffusion operator
+  // -- set up diffusivity coefficient and populate local matrices.
   op->Setup(K);
   op->UpdateMatrices();
 
-  // get and assmeble the global operator
+  // -- apply boundary conditions
+  op->ApplyBCs(true, true, true);
+
+  // -- assemble the global matrix
   Teuchos::RCP<Operator> global_op = op->global_operator();
-  op->ApplyBCs(true, true);
   global_op->SymbolicAssembleMatrix();
   global_op->AssembleMatrix();
 
-  // create preconditoner using the base operator class
-  ParameterList slist = plist.get<Teuchos::ParameterList>("preconditioners");
-  global_op->InitPreconditioner("Hypre AMG", slist);
+  // create a preconditoner using the global matrix
+  ParameterList slist = plist.sublist("preconditioners").sublist("Hypre AMG");
+  global_op->InitializePreconditioner(slist);
+  global_op->UpdatePreconditioner();
 
   // Test SPD properties of the preconditioner.
   CompositeVector a(cvs), ha(cvs), b(cvs), hb(cvs);
@@ -138,6 +144,7 @@ void RunTestDiffusionCurved() {
   CHECK(bhb > 0.0);
 
   // solve the problem
+  // -- create iand initialize a linear operator: PCG
   ParameterList lop_list = plist.sublist("solvers")
                                 .sublist("PCG").sublist("pcg parameters");
   AmanziSolvers::LinearOperatorPCG<Operator, CompositeVector, CompositeVectorSpace>
@@ -148,6 +155,7 @@ void RunTestDiffusionCurved() {
   CompositeVector solution(rhs), flux(rhs);
   solution.PutScalar(0.0);
 
+  // -- run PCG
   int ierr = solver.ApplyInverse(rhs, solution);
 
   if (MyPID == 0) {
@@ -156,12 +164,13 @@ void RunTestDiffusionCurved() {
               << " code=" << solver.returned_code() << std::endl;
   }
 
-  // compute pressure error
+  // Post-processing
+  // -- compute pressure error
   Epetra_MultiVector& p = *solution.ViewComponent("cell", false);
   double pnorm, pl2_err, pinf_err;
   ana.ComputeCellError(p, 0.0, pnorm, pl2_err, pinf_err);
 
-  // calculate flux error
+  // -- coumpute flux error (work in progress)
   Epetra_MultiVector& flx = *flux.ViewComponent("face", true);
   double unorm(1.0), ul2_err(0.0), uinf_err(0.0);
 

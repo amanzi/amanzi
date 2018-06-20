@@ -21,6 +21,7 @@
 #include "Epetra_Vector.h"
 
 // Amanzi
+#include "dbc.hh"
 #include "DenseVector.hh"
 #include "MatrixFE.hh"
 #include "PreconditionerFactory.hh"
@@ -62,17 +63,17 @@ Operator::Operator(const Teuchos::RCP<const CompositeVectorSpace>& cvs,
   mesh_ = cvs_col_->Mesh();
   rhs_ = Teuchos::rcp(new CompositeVector(*cvs_row_, true));
 
-  ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
-  nfaces_owned = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
-  nnodes_owned = mesh_->num_entities(AmanziMesh::NODE, AmanziMesh::OWNED);
+  ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+  nfaces_owned = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
+  nnodes_owned = mesh_->num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::OWNED);
 
-  ncells_wghost = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::USED);
-  nfaces_wghost = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
-  nnodes_wghost = mesh_->num_entities(AmanziMesh::NODE, AmanziMesh::USED);
+  ncells_wghost = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
+  nfaces_wghost = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
+  nnodes_wghost = mesh_->num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::ALL);
 
   if (mesh_->valid_edges()) {
-    nedges_owned = mesh_->num_entities(AmanziMesh::EDGE, AmanziMesh::OWNED);
-    nedges_wghost = mesh_->num_entities(AmanziMesh::EDGE, AmanziMesh::USED);
+    nedges_owned = mesh_->num_entities(AmanziMesh::EDGE, AmanziMesh::Parallel_type::OWNED);
+    nedges_wghost = mesh_->num_entities(AmanziMesh::EDGE, AmanziMesh::Parallel_type::ALL);
   } else {
     nedges_owned = 0;
     nedges_wghost = 0;
@@ -105,17 +106,17 @@ Operator::Operator(const Teuchos::RCP<const CompositeVectorSpace>& cvs_row,
   mesh_ = cvs_col_->Mesh();
   rhs_ = Teuchos::rcp(new CompositeVector(*cvs_row_, true));
 
-  ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
-  nfaces_owned = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
-  nnodes_owned = mesh_->num_entities(AmanziMesh::NODE, AmanziMesh::OWNED);
+  ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+  nfaces_owned = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
+  nnodes_owned = mesh_->num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::OWNED);
 
-  ncells_wghost = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::USED);
-  nfaces_wghost = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
-  nnodes_wghost = mesh_->num_entities(AmanziMesh::NODE, AmanziMesh::USED);
+  ncells_wghost = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
+  nfaces_wghost = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
+  nnodes_wghost = mesh_->num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::ALL);
 
   if (mesh_->valid_edges()) {
-    nedges_owned = mesh_->num_entities(AmanziMesh::EDGE, AmanziMesh::OWNED);
-    nedges_wghost = mesh_->num_entities(AmanziMesh::EDGE, AmanziMesh::USED);
+    nedges_owned = mesh_->num_entities(AmanziMesh::EDGE, AmanziMesh::Parallel_type::OWNED);
+    nedges_wghost = mesh_->num_entities(AmanziMesh::EDGE, AmanziMesh::Parallel_type::ALL);
   } else {
     nedges_owned = 0;
     nedges_wghost = 0;
@@ -163,7 +164,7 @@ void Operator::SymbolicAssembleMatrix()
 
   // Completing and optimizing the graphs
   int ierr = graph->FillComplete(smap_->Map(), smap_->Map());
-  ASSERT(!ierr);
+  AMANZI_ASSERT(!ierr);
 
   // create global matrix
   Amat_ = Teuchos::rcp(new MatrixFE(graph));
@@ -373,18 +374,21 @@ int Operator::ApplyInverse(const CompositeVector& X, CompositeVector& Y) const
 
 
 /* ******************************************************************
+*                       DEPRECATED
 * Initialization of the preconditioner. Note that boundary conditions
 * may be used in re-implementation of this virtual function.
 ****************************************************************** */
-void Operator::InitPreconditioner(const std::string& prec_name, const Teuchos::ParameterList& plist)
+void Operator::InitPreconditioner(const std::string& prec_name,
+                                  const Teuchos::ParameterList& plist)
 {
   AmanziPreconditioners::PreconditionerFactory factory;
   preconditioner_ = factory.Create(prec_name, plist);
-  preconditioner_->Update(A_);
+  UpdatePreconditioner();
 }
 
 
 /* ******************************************************************
+*                       DEPRECATED
 * Initialization of the preconditioner. Note that boundary conditions
 * may be used in re-implementation of this virtual function.
 ****************************************************************** */
@@ -397,6 +401,54 @@ void Operator::InitPreconditioner(Teuchos::ParameterList& plist)
 
 
 /* ******************************************************************
+* Two-stage initialization of preconditioner, part 1.
+* Create the preconditioner and set options. Symbolic assemble of 
+* operator's matrix must have been called.
+****************************************************************** */
+void Operator::InitializePreconditioner(Teuchos::ParameterList& plist)
+{
+  if (A_.get() == NULL || smap_.get() == NULL) {
+    Errors::Message msg("InitializePreconditioner has no matrix or super map.\n");
+    Exceptions::amanzi_throw(msg);
+  }
+
+  // provide block ids for block strategies.
+  if (plist.isParameter("preconditioner type") &&
+      plist.get<std::string>("preconditioner type") == "boomer amg" &&
+      plist.isSublist("boomer amg parameters")) {
+
+    // NOTE: Hypre frees this
+    auto block_ids = smap_->BlockIndices();
+
+    plist.sublist("boomer amg parameters").set("number of unique block indices", block_ids.first);
+
+    // Note, this passes a raw pointer through a ParameterList.  I was surprised
+    // this worked too, but ParameterList is a boost::any at heart... --etc
+    plist.sublist("boomer amg parameters").set("block indices", block_ids.second);
+  }
+
+  AmanziPreconditioners::PreconditionerFactory factory;
+  preconditioner_ = factory.Create(plist);
+}
+
+
+/* ******************************************************************
+* Two-stage initialization of preconditioner, part 2.
+* Set the preconditioner structure. Operator's matrix must have been
+* assembled.
+****************************************************************** */
+void Operator::UpdatePreconditioner()
+{
+  if (A_.get() == NULL || preconditioner_.get() == NULL) {
+    Errors::Message msg("UpdatePreconditioner has no matrix or preconditioner.\n");
+    Exceptions::amanzi_throw(msg);
+  }
+  preconditioner_->Update(A_);
+}
+
+
+
+/* ******************************************************************
 * Update the RHS with this vector.
 * Note that derived classes may reimplement this with a volume term.
 ****************************************************************** */
@@ -405,6 +457,53 @@ void Operator::UpdateRHS(const CompositeVector& source, bool volume_included) {
     if (source.HasComponent(*it)) {
       rhs_->ViewComponent(*it, false)->Update(1.0, *source.ViewComponent(*it, false), 1.0);
     }
+  }
+}
+
+
+/* ******************************************************************
+* Deep copy for building interfaces to TPLs, mainly to solvers.
+* We assume that domain = range, which is natural for solvers.
+****************************************************************** */
+void Operator::CopyVectorToSuperVector(const CompositeVector& cv, Epetra_Vector& sv) const
+{
+  for (auto it = schema_col_.begin(); it != schema_col_.end(); ++it) {
+    std::string name(schema_col_.KindToString(it->kind));
+
+    for (int k = 0; k < it->num; ++k) {
+      const std::vector<int>& inds = smap_->Indices(name, k);
+      const Epetra_MultiVector& data = *cv.ViewComponent(name);
+      for (int n = 0; n != data.MyLength(); ++n) sv[inds[n]] = data[k][n];
+    }
+  }
+}
+
+
+/* ******************************************************************
+* Deep copy for building interfaces to TPLs, mainly to solvers.
+* We assume that domain = range, which is natural for solvers.
+****************************************************************** */
+void Operator::CopySuperVectorToVector(const Epetra_Vector& sv, CompositeVector& cv) const
+{
+  for (auto it = schema_col_.begin(); it != schema_col_.end(); ++it) {
+    std::string name(schema_col_.KindToString(it->kind));
+
+    for (int k = 0; k < it->num; ++k) {
+      const std::vector<int>& inds = smap_->Indices(name, k);
+      Epetra_MultiVector& data = *cv.ViewComponent(name);
+      for (int n = 0; n != data.MyLength(); ++n) data[k][n] = sv[inds[n]];
+    }
+  }
+}
+
+
+/* ******************************************************************
+* Rescale the local matrices via dispatch.
+****************************************************************** */
+void Operator::Rescale(double scaling)
+{
+  for (op_iterator it = OpBegin(); it != OpEnd(); ++it) {
+    (*it)->Rescale(scaling);
   }
 }
 
@@ -426,7 +525,7 @@ void Operator::Rescale(const CompositeVector& scaling)
 ****************************************************************** */
 void Operator::Rescale(const CompositeVector& scaling, int iops)
 {
-  ASSERT(iops < ops_.size());
+  AMANZI_ASSERT(iops < ops_.size());
   scaling.ScatterMasterToGhosted();
   ops_[iops]->Rescale(scaling);
 }
@@ -447,7 +546,7 @@ void Operator::CreateCheckPoint()
 void Operator::RestoreCheckPoint()
 {
   // The routine should be called after checkpoint is created.
-  ASSERT(rhs_checkpoint_ != Teuchos::null);
+  AMANZI_ASSERT(rhs_checkpoint_ != Teuchos::null);
 
   // restore accumulation and source terms
   *rhs_ = *rhs_checkpoint_;
@@ -465,7 +564,7 @@ void Operator::RestoreCheckPoint()
 int Operator::CopyShadowToMaster(int iops) 
 {
   int nops = ops_.size();
-  ASSERT(iops < nops);
+  AMANZI_ASSERT(iops < nops);
   ops_[iops]->CopyShadowToMaster();
 
   return 0;

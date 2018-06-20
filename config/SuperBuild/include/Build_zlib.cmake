@@ -21,7 +21,7 @@ amanzi_tpl_version_write(FILENAME ${TPL_VERSIONS_INCLUDE_FILE}
 # NO WHITESPACE between -D and VAR. Parser blows up otherwise.
 set(ZLIB_CMAKE_CACHE_ARGS
                   -DCMAKE_BUILD_TYPE:STRING=${CMAKE_BUILD_TYPE}
-                  -DCMAKE_INSTALL_PREFIX:STRING=<INSTALL_DIR>)
+                  -DCMAKE_INSTALL_PREFIX:PATH=${TPL_INSTALL_PREFIX})
 
 # --- Add external project build and tie to the ZLIB build target
 ExternalProject_Add(${ZLIB_BUILD_TARGET}
@@ -36,7 +36,6 @@ ExternalProject_Add(${ZLIB_BUILD_TARGET}
                     SOURCE_DIR       ${ZLIB_source_dir}
                     CMAKE_CACHE_ARGS ${AMANZI_CMAKE_CACHE_ARGS}   # Global definitions from root CMakeList
                                      ${ZLIB_CMAKE_CACHE_ARGS}
-                                     -DBUILD_SHARED_LIBS:BOOL=${BUILD_SHARED_LIBS}
                                      -DCMAKE_C_FLAGS:STRING=${Amanzi_COMMON_CFLAGS}  # Ensure uniform build
                                      -DCMAKE_C_COMPILER:FILEPATH=${CMAKE_C_COMPILER}
                     # -- Build
@@ -51,5 +50,6 @@ ExternalProject_Add(${ZLIB_BUILD_TARGET}
 # --- Useful variables that depend on ZlIB (HDF5, NetCDF)
 include(BuildLibraryName)
 build_library_name(z ZLIB_LIBRARIES APPEND_PATH ${TPL_INSTALL_PREFIX}/lib)
+set(ZLIB_DIR ${TPL_INSTALL_PREFIX})
 set(ZLIB_INCLUDE_DIRS ${TPL_INSTALL_PREFIX}/include)
 

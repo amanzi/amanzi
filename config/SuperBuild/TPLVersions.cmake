@@ -94,12 +94,25 @@
 #                - update SuperLU_dist to xsdk-0.2.0 (native 5.1.3)
 #                - update Alquimia to xsdk-0.2.0 (native 1.0.4)
 #                - update Hypre to xsdk-0.2.0 (native 2.11.2)
-#  0.94.10       - update Alquimia to 1.0.5 (critical bug fixes)
-#  0.94.11       - update MSTK to 3.0.3 (critical bug fixes)
+#   0.94.10      - update Alquimia to 1.0.5 (critical bug fixes)
+#   0.94.11      - update MSTK to 3.0.3 (critical bug fixes)
 #                - update NetCDF to 4.5.0
 #	         - update NetCDF-Fortran to 4.4.4
 #	         - update curl to 7.56.1
-#  0.94.12       - update xerces-c to 3.2.0 (CMake build)
+#   0.94.12      - update xerces-c to 3.2.0 (CMake build)
+
+#   0.95.0       - update Trilinos 12.12.1
+#                - update Hypre 2.12.1  
+#                - note alquimia 1.0.5 == xsdk-0.3.0
+#                - pflotran release/xsdk-0.3.0
+#                - update PETSc 3.8.2
+#   0.95.1       - update OpenMPI to 3.0.1
+#   0.95.2       - added Amesos2 to list of built Trilinos packages
+#                - update MSTK to 3.0.4
+#   0.95.3       - removed CURL
+#                - update HYPRE to 2.14.0
+#                - update OpenMPI to 3.0.2
+#   0.95.4       - update Boost to version 1.67.0
 
 include(CMakeParseArguments)
 
@@ -151,12 +164,13 @@ endmacro(amanzi_tpl_version_write)
 # TPLs and XSDK versions 
 #
 set(AMANZI_TPLS_VERSION_MAJOR 0)
-set(AMANZI_TPLS_VERSION_MINOR 94)
-set(AMANZI_TPLS_VERSION_PATCH 12)
+set(AMANZI_TPLS_VERSION_MINOR 95)
+set(AMANZI_TPLS_VERSION_PATCH 4)
 set(AMANZI_TPLS_VERSION ${AMANZI_TPLS_VERSION_MAJOR}.${AMANZI_TPLS_VERSION_MINOR}.${AMANZI_TPLS_VERSION_PATCH})
 # Not sure how to create a meaningful hash key for the collection
 
 set(XSDK_VERSION "0.2.0")
+set(XSDK_VERSION_NEW "0.3.0")
 
 #
 # Default location on GitHub
@@ -178,25 +192,26 @@ set(XERCES_MD5_SUM        7b1394c32abbdd87841d94a8404c2ac6)
 #
 # TPL: OpenMPI
 #
-set(OpenMPI_VERSION_MAJOR 2)
-set(OpenMPI_VERSION_MINOR 1)
+set(OpenMPI_VERSION_MAJOR 3)
+set(OpenMPI_VERSION_MINOR 0)
 set(OpenMPI_VERSION_PATCH 2)
 set(OpenMPI_VERSION ${OpenMPI_VERSION_MAJOR}.${OpenMPI_VERSION_MINOR}.${OpenMPI_VERSION_PATCH})
-set(OpenMPI_URL_STRING     "https://www.open-mpi.org/software/ompi/v2.1/downloads/")
+set(OpenMPI_URL_STRING     "https://www.open-mpi.org/software/ompi/v3.0/downloads/")
 set(OpenMPI_ARCHIVE_FILE   openmpi-${OpenMPI_VERSION}.tar.bz2)
 set(OpenMPI_SAVEAS_FILE    ${OpenMPI_ARCHIVE_FILE})
-set(OpenMPI_MD5_SUM        ff2e55cc529802e7b0738cf87acd3ee4)
+set(OpenMPI_MD5_SUM        098fa89646f5b4438d9d8534bc960cd6)
+
 #
-# TPL: CURL
+# TPL: MPICH
 #
-set(CURL_VERSION_MAJOR 7)
-set(CURL_VERSION_MINOR 56)
-set(CURL_VERSION_PATCH 1)
-set(CURL_VERSION ${CURL_VERSION_MAJOR}.${CURL_VERSION_MINOR}.${CURL_VERSION_PATCH})
-set(CURL_URL_STRING     "https://github.com/curl/curl/archive")
-set(CURL_ARCHIVE_FILE   curl-${CURL_VERSION_MAJOR}_${CURL_VERSION_MINOR}_${CURL_VERSION_PATCH}.tar.gz)
-set(CURL_SAVEAS_FILE    curl-${CURL_VERSION}.tar.gz)
-set(CURL_MD5_SUM        48c0db0d7b1407e19c51e8ef4f798d78)
+set(MPICH_VERSION_MAJOR 3)
+set(MPICH_VERSION_MINOR 2)
+set(MPICH_VERSION_PATCH 1)
+set(MPICH_VERSION ${MPICH_VERSION_MAJOR}.${MPICH_VERSION_MINOR}.${MPICH_VERSION_PATCH})
+set(MPICH_URL_STRING     "https://www.mpich.org/static/downloads/${MPICH_VERSION}/")
+set(MPICH_ARCHIVE_FILE   mpich-${MPICH_VERSION}.tar.gz)
+set(MPICH_SAVEAS_FILE    ${MPICH_ARCHIVE_FILE})
+set(MPICH_MD5_SUM        e175452f4d61646a52c73031683fc375)
 
 #
 # TPL: zlib
@@ -251,14 +266,14 @@ set(UnitTest_MD5_SUM      29f958e355e516e7ab016b467974728d)
 # TPL: Boost
 #
 set(Boost_VERSION_MAJOR 1)
-set(Boost_VERSION_MINOR 63)
+set(Boost_VERSION_MINOR 67)
 set(Boost_VERSION_PATCH 0)
 set(Boost_VERSION        ${Boost_VERSION_MAJOR}.${Boost_VERSION_MINOR}.${Boost_VERSION_PATCH})
 set(Boost_VERSION_STRING ${Boost_VERSION_MAJOR}_${Boost_VERSION_MINOR}_${Boost_VERSION_PATCH})
-set(Boost_URL_STRING     ${AMANZI_TPLS_DOWNLOAD_URL})
+set(Boost_URL_STRING     "https://dl.bintray.com/boostorg/release/${Boost_VERSION}/source/")
 set(Boost_ARCHIVE_FILE   boost_${Boost_VERSION_STRING}.tar.bz2)
 set(Boost_SAVEAS_FILE    ${Boost_ARCHIVE_FILE})
-set(Boost_MD5_SUM        1c837ecd990bb022d07e7aab32b09847)
+set(Boost_MD5_SUM        ced776cb19428ab8488774e1415535ab)
 
 #
 # TPL: HDF5
@@ -314,12 +329,12 @@ set(ASCEMIO_MD5_SUM       869820bacd4c289c8f320be58c1449a7)
 #
 set(MSTK_VERSION_MAJOR 3)
 set(MSTK_VERSION_MINOR 0)
-set(MSTK_VERSION_PATCH 3)
+set(MSTK_VERSION_PATCH 4)
 set(MSTK_VERSION ${MSTK_VERSION_MAJOR}.${MSTK_VERSION_MINOR}.${MSTK_VERSION_PATCH})
-set(MSTK_URL_STRING     ${AMANZI_TPLS_DOWNLOAD_URL})
-set(MSTK_ARCHIVE_FILE   mstk-${MSTK_VERSION}.tar.gz)
-set(MSTK_SAVEAS_FILE    ${MSTK_ARCHIVE_FILE})
-set(MSTK_MD5_SUM        a9561f1175da2c2863c517b08abe5f16)
+set(MSTK_URL_STRING     "https://github.com/MeshToolkit/MSTK/archive")
+set(MSTK_ARCHIVE_FILE   v${MSTK_VERSION_MAJOR}_${MSTK_VERSION_MINOR}_${MSTK_VERSION_PATCH}.tar.gz)
+set(MSTK_SAVEAS_FILE    mstk-${MSTK_VERSION}.tar.gz)
+set(MSTK_MD5_SUM        adb83cf12d2547f82f988e5da6bf7016)
 
 #
 # TPL: MOAB
@@ -337,13 +352,13 @@ set(MOAB_MD5_SUM        1840ca02366f4d3237d44af63e239e3b)
 # TPL: HYPRE
 #
 set(HYPRE_VERSION_MAJOR  2)
-set(HYPRE_VERSION_MINOR  11)
-set(HYPRE_VERSION_PATCH  2)
+set(HYPRE_VERSION_MINOR  14)
+set(HYPRE_VERSION_PATCH  0)
 set(HYPRE_VERSION  ${HYPRE_VERSION_MAJOR}.${HYPRE_VERSION_MINOR}.${HYPRE_VERSION_PATCH})
 set(HYPRE_URL_STRING     "https://github.com/LLNL/hypre/archive/")
-set(HYPRE_ARCHIVE_FILE   xsdk-${XSDK_VERSION}.tar.gz)
+set(HYPRE_ARCHIVE_FILE   v${HYPRE_VERSION}.tar.gz)
 set(HYPRE_SAVEAS_FILE    hypre-${HYPRE_VERSION}.tar.gz)
-set(HYPRE_MD5_SUM        fc9474058560602e9be2ce618db7fd14) 
+set(HYPRE_MD5_SUM        ecde5cc807ec45bfb647e9f28d2eaea1)
 
 #
 # TPL: ParMetis
@@ -373,50 +388,50 @@ set(SuperLU_MD5_SUM        3a1a9bff20cb06b7d97c46d337504447)
 # TPL: SuperLU Distrib (Built by PETSc!)
 #
 set(SuperLUDist_VERSION_MAJOR  5)
-set(SuperLUDist_VERSION_MINOR  1)
-set(SuperLUDist_VERSION_PATCH  3)
+set(SuperLUDist_VERSION_MINOR  2)
+set(SuperLUDist_VERSION_PATCH  2)
 set(SuperLUDist_VERSION  ${SuperLUDist_VERSION_MAJOR}.${SuperLUDist_VERSION_MINOR}.${SuperLUDist_VERSION_PATCH})
 set(SuperLUDist_URL_STRING     "https://github.com/xiaoyeli/superlu_dist/archive")
-set(SuperLUDist_ARCHIVE_FILE   xsdk-${XSDK_VERSION}.tar.gz)
+set(SuperLUDist_ARCHIVE_FILE   v${SuperLUDist_VERSION}.tar.gz)
 set(SuperLUDist_SAVEAS_FILE    superlu_dist_${SuperLUDist_VERSION}.tar.gz)
-set(SuperLUDist_MD5_SUM        9ccd1915dd06f167ed8dca7b14bbcedb)
+set(SuperLUDist_MD5_SUM        5f0087f64a6506375537117790c98e6b)
 
 #
 # TPL: Sowing (Built by PETSc!)
 #
 set(Sowing_VERSION_MAJOR  1)
 set(Sowing_VERSION_MINOR  1)
-set(Sowing_VERSION_PATCH  23-p1)
+set(Sowing_VERSION_PATCH  25-p1)
 set(Sowing_VERSION  ${Sowing_VERSION_MAJOR}.${Sowing_VERSION_MINOR}.${Sowing_VERSION_PATCH})
-set(Sowing_URL_STRING     "http://ftp.mcs.anl.gov/pub/petsc/externalpackages/")
-set(Sowing_ARCHIVE_FILE   sowing-${Sowing_VERSION}.tar.gz)
-set(Sowing_SAVEAS_FILE    ${Sowing_ARCHIVE_FILE})
-set(Sowing_MD5_SUM        65aaf3ae2a4c0f30d532fec291702e16)
+set(Sowing_URL_STRING     "https://bitbucket.org/petsc/pkg-sowing/get")
+set(Sowing_ARCHIVE_FILE   v${Sowing_VERSION}.tar.gz)
+set(Sowing_SAVEAS_FILE    sowing-${Sowing_VERSION}.tar.gz)
+set(Sowing_MD5_SUM        30ae83576038f00def33619a31f6a14c)
 
 #
 # TPL: PETSc
 #
 set(PETSc_VERSION_MAJOR  3)
-set(PETSc_VERSION_MINOR  7)
-set(PETSc_VERSION_PATCH  5)
+set(PETSc_VERSION_MINOR  8)
+set(PETSc_VERSION_PATCH  2)
 set(PETSc_VERSION  ${PETSc_VERSION_MAJOR}.${PETSc_VERSION_MINOR}.${PETSc_VERSION_PATCH})
 set(PETSc_ARCHIVE_VERSION ${PETSc_VERSION_MAJOR}.${PETSc_VERSION_MINOR}.${PETSc_VERSION_PATCH})
 set(PETSc_URL_STRING     "https://bitbucket.org/petsc/petsc/get")
-set(PETSc_ARCHIVE_FILE   xsdk-${XSDK_VERSION}.tar.gz)
+set(PETSc_ARCHIVE_FILE   v${PETSc_VERSION}.tar.gz)
 set(PETSc_SAVEAS_FILE    petsc-${PETSc_ARCHIVE_VERSION}.tar.gz)
-set(PETSc_MD5_SUM        41a10be8bbf9d13f137873a2d52c6715)
+set(PETSc_MD5_SUM        ce207f60800e19cfb55a2d7a879ca42c)
 
 #
 # TPL: Trilinos
 #
 set(Trilinos_VERSION_MAJOR 12)
-set(Trilinos_VERSION_MINOR 10)
+set(Trilinos_VERSION_MINOR 12)
 set(Trilinos_VERSION_PATCH 1)
 set(Trilinos_VERSION ${Trilinos_VERSION_MAJOR}-${Trilinos_VERSION_MINOR}-${Trilinos_VERSION_PATCH})
 set(Trilinos_URL_STRING     "https://github.com/trilinos/Trilinos/archive")
 set(Trilinos_ARCHIVE_FILE   trilinos-release-${Trilinos_VERSION}.tar.gz)
 set(Trilinos_SAVEAS_FILE    ${Trilinos_ARCHIVE_FILE})
-set(Trilinos_MD5_SUM        667333dbd7c0f031d47d7c5511fd0810)
+set(Trilinos_MD5_SUM        ecd4606fa332212433c98bf950a69cc7)
 
 #
 # TPL: SEACAS
@@ -434,13 +449,13 @@ set(SEACAS_MD5_SUM        3235d1b885ee8e1a04408382f50bd0f0)
 # TPL: PFlotran
 #
 set(PFLOTRAN_VERSION_MAJOR 0)
-set(PFLOTRAN_VERSION_MINOR 2)
+set(PFLOTRAN_VERSION_MINOR 3)
 set(PFLOTRAN_VERSION_PATCH 0)
 set(PFLOTRAN_VERSION ${PFLOTRAN_VERSION_MAJOR}.${PFLOTRAN_VERSION_MINOR}.${PFLOTRAN_VERSION_PATCH})
-set(PFLOTRAN_URL_STRING     "https://bitbucket.org/pflotran/pflotran/get")
-set(PFLOTRAN_ARCHIVE_FILE   xsdk-${XSDK_VERSION}-rc2.tar.gz)
+set(PFLOTRAN_URL_STRING     "https://bitbucket.org/pflotran/pflotran/get/release")
+set(PFLOTRAN_ARCHIVE_FILE   xsdk-${XSDK_VERSION_NEW}.tar.gz)
 set(PFLOTRAN_SAVEAS_FILE    pflotran-${PFLOTRAN_VERSION}.tar.gz)
-set(PFLOTRAN_MD5_SUM        80a214c394bbd4230c2ddc0ba177c8ea)
+set(PFLOTRAN_MD5_SUM        e8cf6f259fca1ebc403b950058be686e)
 
 #
 # TPL: Alquimia

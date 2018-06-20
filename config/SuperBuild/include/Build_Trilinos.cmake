@@ -4,10 +4,16 @@
 # Build TPL: Trilinos
 #    
 # --- Define all the directories and common external project flags
-set(trilinos_depend_projects NetCDF Boost SEACAS)
-if(ENABLE_HYPRE)
+if (ENABLE_XSDK)
+    set(trilinos_depend_projects XSDK SEACAS)
+else()
+    set(trilinos_depend_projects NetCDF Boost SEACAS)
+endif() 
+
+if (ENABLE_HYPRE AND NOT ENABLE_XSDK)
   list(APPEND trilinos_depend_projects HYPRE)
 endif()
+
 define_external_project_args(Trilinos
                              TARGET trilinos
                              DEPENDS ${trilinos_depend_projects})
@@ -30,14 +36,14 @@ amanzi_tpl_version_write(FILENAME ${TPL_VERSIONS_INCLUDE_FILE}
 #endif()
 
 # List of packages enabled in the Trilinos build
-set(Trilinos_PACKAGE_LIST Teuchos Epetra EpetraExt Amesos Belos NOX Ifpack AztecOO)
-if ( ENABLE_STK_Mesh )
+set(Trilinos_PACKAGE_LIST Teuchos Epetra EpetraExt Amesos Amesos2 Belos NOX Ifpack AztecOO)
+if (ENABLE_STK_Mesh)
   list(APPEND Trilinos_PACKAGE_LIST STK)
 endif()
-if ( ENABLE_MSTK_Mesh )
+if (ENABLE_MSTK_Mesh)
   list(APPEND Trilinos_PACKAGE_LIST Zoltan)
 endif()
-if ( ENABLE_Unstructured )
+if (ENABLE_Unstructured)
   list(APPEND Trilinos_PACKAGE_LIST ML)
 endif()
 
@@ -47,6 +53,9 @@ set(Trilinos_CMAKE_PACKAGE_ARGS "-DTrilinos_ENABLE_ALL_OPTIONAL_PACKAGES:BOOL=OF
 foreach(package ${Trilinos_PACKAGE_LIST})
   list(APPEND Trilinos_CMAKE_PACKAGE_ARGS "-DTrilinos_ENABLE_${package}:STRING=ON")
 endforeach()
+
+# Add support of parallel LU solvers
+list(APPEND Trilinos_CMAKE_PACKAGE_ARGS "-DAmesos2_ENABLE_Basker:BOOL=ON")
 
 # Build PyTrilinos if shared
 # if (BUILD_SHARED_LIBS)
@@ -77,7 +86,7 @@ foreach (var ${MPI_CMAKE_ARGS} )
 endforeach() 
 
 # BLAS
-if ( BLAS_LIBRARIES )
+if (BLAS_LIBRARIES)
   list(APPEND Trilinos_CMAKE_TPL_ARGS
               "-DTPL_ENABLE_BLAS:BOOL=TRUE")
   list(APPEND Trilinos_CMAKE_TPL_ARGS
@@ -88,7 +97,7 @@ else()
 endif()            
  
 # LAPACK
-if ( LAPACK_LIBRARIES )
+if (LAPACK_LIBRARIES)
   list(APPEND Trilinos_CMAKE_TPL_ARGS
               "-DTPL_LAPACK_LIBRARIES:STRING=${LAPACK_LIBRARIES}")
             message(STATUS "Trilinos LAPACK libraries: ${LAPACK_LIBRARIES}")    
@@ -101,10 +110,10 @@ list(APPEND Trilinos_CMAKE_TPL_ARGS
             "-DTPL_ENABLE_BoostLib:BOOL=ON" 
             "-DTPL_ENABLE_Boost:BOOL=ON" 
             "-DTPL_ENABLE_GLM:BOOL=OFF" 
-            "-DTPL_BoostLib_INCLUDE_DIRS:FILEPATH=${TPL_INSTALL_PREFIX}/include"
-            "-DBoostLib_LIBRARY_DIRS:FILEPATH=${TPL_INSTALL_PREFIX}/lib"
-            "-DTPL_Boost_INCLUDE_DIRS:FILEPATH=${TPL_INSTALL_PREFIX}/include"
-            "-DBoost_LIBRARY_DIRS:FILEPATH=${TPL_INSTALL_PREFIX}/lib")
+            "-DTPL_BoostLib_INCLUDE_DIRS:FILEPATH=${BOOST_ROOT}/include"
+            "-DBoostLib_LIBRARY_DIRS:FILEPATH=${BOOST_ROOT}/lib"
+            "-DTPL_Boost_INCLUDE_DIRS:FILEPATH=${BOOST_ROOT}/include"
+            "-DBoost_LIBRARY_DIRS:FILEPATH=${BOOST_ROOT}/lib")
 
 # NetCDF
 list(APPEND Trilinos_CMAKE_TPL_ARGS
@@ -112,13 +121,13 @@ list(APPEND Trilinos_CMAKE_TPL_ARGS
             "-DTPL_Netcdf_INCLUDE_DIRS:FILEPATH=${NetCDF_INCLUDE_DIRS}"
             "-DTPL_Netcdf_LIBRARIES:STRING=${NetCDF_C_LIBRARIES}")
 
-
 # HYPRE
-if( ENABLE_HYPRE )
+if (ENABLE_HYPRE)
   list(APPEND Trilinos_CMAKE_TPL_ARGS
               "-DTPL_ENABLE_HYPRE:BOOL=ON"
               "-DTPL_HYPRE_LIBRARIES:STRING=${HYPRE_LIBRARIES}"
-              "-DTPL_HYPRE_INCLUDE_DIRS:FILEPATH=${TPL_INSTALL_PREFIX}/include")
+              "-DHYPRE_LIBRARY_DIRS:FILEPATH=${HYPRE_DIR}/lib"
+              "-DTPL_HYPRE_INCLUDE_DIRS:FILEPATH=${HYPRE_DIR}/include")
 endif()
 
 #  - Addtional Trilinos CMake Arguments
@@ -130,7 +139,7 @@ set(Trilinos_CMAKE_EXTRA_ARGS
     "-DNOX_ENABLE_THYRA_EPETRA_ADAPTERS:BOOL=OFF"    
     )
 
-if ( CMAKE_BUILD_TYPE )
+if (CMAKE_BUILD_TYPE)
   list(APPEND Trilinos_CMAKE_EXTRA_ARGS
               "-DCMAKE_BUILD_TYPE:STRING=${CMAKE_BUILD_TYPE}")
 
@@ -141,7 +150,7 @@ if ( CMAKE_BUILD_TYPE )
   #message(DEBUG ": Trilinos_CMAKE_EXTRA_ARGS = ${Trilinos_CMAKE_EXTRA_ARGS}")
 endif()
 
-if ( BUILD_SHARED_LIBS )
+if (BUILD_SHARED_LIBS)
   list(APPEND Trilinos_CMAKE_EXTRA_ARGS
     "-DBUILD_SHARED_LIBS:BOOL=${BUILD_SHARED_LIBS}")
   #message(DEBUG ": Trilinos_CMAKE_EXTRA_ARGS = ${Trilinos_CMAKE_EXTRA_ARGS}")
@@ -149,7 +158,7 @@ endif()
 
 
 #  - Add CMake configuration file
-if(Trilinos_Build_Config_File)
+if (Trilinos_Build_Config_File)
     list(APPEND Trilinos_Config_File_ARGS
         "-C${Trilinos_Build_Config_File}")
     message(STATUS "Will add ${Trilinos_Build_Config_File} to the Trilinos configure")    
@@ -246,25 +255,25 @@ ExternalProject_Add(${Trilinos_BUILD_TARGET}
                     PATCH_COMMAND ${Trilinos_PATCH_COMMAND}
                     # -- Configure
                     SOURCE_DIR    ${Trilinos_source_dir}           # Source directory
-                    CMAKE_ARGS          ${Trilinos_Config_File_ARGS}
-                    CMAKE_CACHE_ARGS    ${Trilinos_CMAKE_ARGS} 
-                                        -DCMAKE_C_FLAGS:STRING=${Amanzi_COMMON_CFLAGS}  # Ensure uniform build
-                                        -DCMAKE_C_COMPILER:FILEPATH=${CMAKE_C_COMPILER}
-                                        -DCMAKE_CXX_FLAGS:STRING=${Amanzi_COMMON_CXXFLAGS}
-                                        -DCMAKE_CXX_COMPILER:FILEPATH=${CMAKE_CXX_COMPILER}
-                                        -DCMAKE_Fortran_FLAGS:STRING=${Amanzi_COMMON_FCFLAGS}
-                                        -DCMAKE_Fortran_COMPILER:FILEPATH=${CMAKE_Fortran_COMPILER}
-                                        -DCMAKE_INSTALL_PREFIX:PATH=<INSTALL_DIR>
-                                        -DTrilinos_ENABLE_Stratimikos:BOOL=FALSE
-                                        -DTrilinos_ENABLE_SEACAS:BOOL=FALSE
-                                        -DCMAKE_INSTALL_RPATH:PATH=${Trilinos_install_dir}/lib
-                                        -DCMAKE_INSTALL_NAME_DIR:PATH=${Trilinos_install_dir}/lib
+                    CMAKE_ARGS        ${Trilinos_Config_File_ARGS}
+                    CMAKE_CACHE_ARGS  ${Trilinos_CMAKE_ARGS} 
+                                      -DCMAKE_C_FLAGS:STRING=${Amanzi_COMMON_CFLAGS}  # Ensure uniform build
+                                      -DCMAKE_C_COMPILER:FILEPATH=${CMAKE_C_COMPILER}
+                                      -DCMAKE_CXX_FLAGS:STRING=${Amanzi_COMMON_CXXFLAGS}
+                                      -DCMAKE_CXX_COMPILER:FILEPATH=${CMAKE_CXX_COMPILER}
+                                      -DCMAKE_Fortran_FLAGS:STRING=${Amanzi_COMMON_FCFLAGS}
+                                      -DCMAKE_Fortran_COMPILER:FILEPATH=${CMAKE_Fortran_COMPILER}
+                                      -DCMAKE_INSTALL_PREFIX:PATH=${Trilinos_install_dir}
+                                      -DTrilinos_ENABLE_Stratimikos:BOOL=FALSE
+                                      -DTrilinos_ENABLE_SEACAS:BOOL=FALSE
+                                      -DCMAKE_INSTALL_RPATH:PATH=${Trilinos_install_dir}/lib
+                                      -DCMAKE_INSTALL_NAME_DIR:PATH=${Trilinos_install_dir}/lib
                     # -- Build
-                    BINARY_DIR        ${Trilinos_build_dir}        # Build directory 
-                    BUILD_COMMAND     $(MAKE)                      # $(MAKE) enables parallel builds through make
-                    BUILD_IN_SOURCE   ${Trilinos_BUILD_IN_SOURCE}  # Flag for in source builds
+                    BINARY_DIR       ${Trilinos_build_dir}        # Build directory 
+                    BUILD_COMMAND    $(MAKE)                      # $(MAKE) enables parallel builds through make
+                    BUILD_IN_SOURCE  ${Trilinos_BUILD_IN_SOURCE}  # Flag for in source builds
                     # -- Install
-                    INSTALL_DIR      ${Trilinos_install_dir}        # Install directory
+                    INSTALL_DIR      ${Trilinos_install_dir}      # Install directory
                     # -- Output control
                     ${Trilinos_logging_args}
 		    )

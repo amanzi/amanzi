@@ -7,6 +7,7 @@
 define_external_project_args(ALQUIMIA
                              TARGET alquimia)
 
+list(APPEND ALQUIMIA_PACKAGE_DEPENDS ${PETSC_BUILD_TARGET})
 list(APPEND ALQUIMIA_PACKAGE_DEPENDS ${PFLOTRAN_BUILD_TARGET})
 list(APPEND ALQUIMIA_PACKAGE_DEPENDS ${CRUNCHTOPE_BUILD_TARGET})
 
@@ -15,10 +16,10 @@ include(${SuperBuild_SOURCE_DIR}/TPLVersions.cmake)
 amanzi_tpl_version_write(FILENAME ${TPL_VERSIONS_INCLUDE_FILE}
                          PREFIX ALQUIMIA
                          VERSION ${ALQUIMIA_VERSION_MAJOR} ${ALQUIMIA_VERSION_MINOR} ${ALQUIMIA_VERSION_PATCH})
-  
+
 # --- Patch the original code
 # Alquimia and Amanzi disagree about how to find PETSc, so we override 
-set(ALQUIMIA_patch_file alquimia-cmake.patch)
+set(ALQUIMIA_patch_file alquimia-cmake.patch alquimia-FindPETSc.patch)
 set(ALQUIMIA_sh_patch ${ALQUIMIA_prefix_dir}/alquimia-patch-step.sh)
 configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/alquimia-patch-step.sh.in
                ${ALQUIMIA_sh_patch}
@@ -47,11 +48,12 @@ set(ALQUIMIA_CMAKE_ARGS
       "-DPETSC_DIR=${PETSC_DIR}"
       "-DPETSC_ARCH=."
       "-DXSDK_WITH_PFLOTRAN:BOOL=${ENABLE_PFLOTRAN}" 
-      "-DTPL_PFLOTRAN_LIBRARIES:FILEPATH=${PFLOTRAN_DIR}/src/pflotran/libpflotranchem.a" 
+      "-DTPL_PFLOTRAN_LIBRARIES:FILEPATH=${PFLOTRAN_DIR}/lib/libpflotranchem.a" 
       "-DTPL_PFLOTRAN_INCLUDE_DIRS:FILEPATH=${PFLOTRAN_INCLUDE_DIRS}"
       "-DXSDK_WITH_CRUNCHFLOW:BOOL=${ENABLE_CRUNCHTOPE}"
       "-DTPL_CRUNCHFLOW_LIBRARIES:FILEPATH=${CRUNCHTOPE_DIR}/lib/libcrunchchem.${suffix}"
       "-DTPL_CRUNCHFLOW_INCLUDE_DIRS:FILEPATH=${TPL_INSTALL_PREFIX}/lib"
+      "-DLAPACK_LIBRARIES=${LAPACK_LIBRARIES}"
       "-DCMAKE_Fortran_FLAGS:STRING=-fPIC -w -Wno-unused-variable -ffree-line-length-0 -O3")
 
 # --- Add external project build and tie to the ALQUIMIA build target
@@ -87,4 +89,4 @@ include(BuildLibraryName)
 build_library_name(alquimia_c ALQUIMIA_C_LIB APPEND_PATH ${TPL_INSTALL_PREFIX}/lib)
 build_library_name(alquimia_cutils ALQUIMIA_CUTILS_LIB APPEND_PATH ${TPL_INSTALL_PREFIX}/lib)
 build_library_name(alquimia_fortran ALQUIMIA_F_LIB APPEND_PATH ${TPL_INSTALL_PREFIX}/lib)
-
+set(ALQUIMIA_INSTALL_PREFIX ${TPL_INSTALL_PREFIX})

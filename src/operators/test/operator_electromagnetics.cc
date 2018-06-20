@@ -59,7 +59,7 @@ void CurlCurl(double c_t, double tolerance, bool initial_guess) {
   ParameterList plist = xmlreader.getParameters();
 
   // create a MSTK mesh framework
-  ParameterList region_list = plist.get<Teuchos::ParameterList>("regions");
+  ParameterList region_list = plist.sublist("regions");
   Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(3, region_list, &comm));
 
   MeshFactory meshfactory(&comm);
@@ -75,7 +75,7 @@ void CurlCurl(double c_t, double tolerance, bool initial_guess) {
   WhetStone::Tensor Kc(3, 2);
 
   Teuchos::RCP<std::vector<WhetStone::Tensor> > K = Teuchos::rcp(new std::vector<WhetStone::Tensor>());
-  int ncells_owned = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  int ncells_owned = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
 
   for (int c = 0; c < ncells_owned; c++) {
     const AmanziGeometry::Point& xc = mesh->cell_centroid(c);
@@ -84,11 +84,11 @@ void CurlCurl(double c_t, double tolerance, bool initial_guess) {
   }
 
   // create boundary data
-  int nedges_owned = mesh->num_entities(AmanziMesh::EDGE, AmanziMesh::OWNED);
-  int nedges_wghost = mesh->num_entities(AmanziMesh::EDGE, AmanziMesh::USED);
-  int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
+  int nedges_owned = mesh->num_entities(AmanziMesh::EDGE, AmanziMesh::Parallel_type::OWNED);
+  int nedges_wghost = mesh->num_entities(AmanziMesh::EDGE, AmanziMesh::Parallel_type::ALL);
+  int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
 
-  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(mesh, AmanziMesh::EDGE, SCHEMA_DOFS_SCALAR));
+  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(mesh, AmanziMesh::EDGE, DOF_Type::SCALAR));
   std::vector<int>& bc_model = bc->bc_model();
   std::vector<double>& bc_value = bc->bc_value();
 
@@ -117,8 +117,7 @@ void CurlCurl(double c_t, double tolerance, bool initial_guess) {
   }
 
   // create electromagnetics operator
-  Teuchos::ParameterList olist = plist.get<Teuchos::ParameterList>("PK operator")
-                                      .get<Teuchos::ParameterList>("electromagnetics operator");
+  Teuchos::ParameterList olist = plist.sublist("PK operator").sublist("electromagnetics operator");
   Teuchos::RCP<PDE_Electromagnetics> op_curlcurl = Teuchos::rcp(new PDE_Electromagnetics(olist, mesh));
   op_curlcurl->SetBCs(bc, bc);
   const CompositeVectorSpace& cvs = op_curlcurl->global_operator()->DomainMap();
@@ -173,13 +172,14 @@ void CurlCurl(double c_t, double tolerance, bool initial_guess) {
   op_acc->AddAccumulationDelta(solution, phi, phi, dT, "edge");
 
   // BCs, sources, and assemble
-  op_curlcurl->ApplyBCs(true, true);
+  op_curlcurl->ApplyBCs(true, true, true);
   global_op->SymbolicAssembleMatrix();
   global_op->AssembleMatrix();
   global_op->UpdateRHS(source, false);
 
-  ParameterList slist = plist.get<Teuchos::ParameterList>("preconditioners");
-  global_op->InitPreconditioner("Hypre AMG", slist);
+  ParameterList slist = plist.sublist("preconditioners").sublist("Hypre AMG");
+  global_op->InitializePreconditioner(slist);
+  global_op->UpdatePreconditioner();
 
   // Test SPD properties of the matrix and preconditioner.
   VerificationCV ver(global_op);

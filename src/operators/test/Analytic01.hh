@@ -8,7 +8,12 @@
 
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 
-  Non-polynomial solution and a full non-constant tensor.
+  Non-polynomial solution and a full non-constant tensor:
+  Solution: p = x^3y^2 + x sin(2 PI xy) sin(2 PI y) - gy * y
+  Diffusion: K = [(x+1)^2 + y^y   -xy  ]
+                 [     -xy      (x+1)^2]
+  Velocity: v = [0, 0]
+  Source: f = -div(K grad(p))
 */
 
 #ifndef AMANZI_OPERATOR_ANALYTIC_01_HH_
@@ -26,7 +31,7 @@ class Analytic01 : public AnalyticBase {
       g_(g) {};
   ~Analytic01() {};
 
-  Amanzi::WhetStone::Tensor Tensor(const Amanzi::AmanziGeometry::Point& p, double t) {
+  Amanzi::WhetStone::Tensor TensorDiffusivity(const Amanzi::AmanziGeometry::Point& p, double t) {
     Amanzi::WhetStone::Tensor K(2, 2);
     K(0, 0) = Kxx_(p, t);
     K(1, 1) = Kyy_(p, t);
@@ -64,6 +69,10 @@ class Analytic01 : public AnalyticBase {
     v[0] = px;
     v[1] = py;
     return v;
+  }
+
+  Amanzi::AmanziGeometry::Point advection_exact(const Amanzi::AmanziGeometry::Point& p, double t) {
+    return Amanzi::AmanziGeometry::Point(2);
   }
 
   double source_exact(const Amanzi::AmanziGeometry::Point& p, double t) { 

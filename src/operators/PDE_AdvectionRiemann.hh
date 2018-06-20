@@ -18,6 +18,9 @@
 
 #include <string>
 
+#include "DG_Modal.hh"
+#include "VectorPolynomial.hh"
+
 #include "PDE_Advection.hh"
 
 namespace Amanzi {
@@ -39,15 +42,21 @@ class PDE_AdvectionRiemann : public PDE_Advection {
     InitAdvection_(plist);
   }
 
-  // required members 
+  // main members 
   // -- setup
   virtual void Setup(const CompositeVector& u) {};
+
+  void Setup(const Teuchos::RCP<std::vector<WhetStone::VectorPolynomial> >& Kc,
+             const Teuchos::RCP<std::vector<WhetStone::Polynomial> >& Kf) {
+    Kc_ = Kc;
+    Kf_ = Kf;
+  }
 
   // -- generate linearized operator: standard interface
   virtual void UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& u,
                               const Teuchos::Ptr<const CompositeVector>& p) {};
 
-  // -- generate linearized operator: new interface interface
+  // -- generate linearized operator: new interface
   void UpdateMatrices(const Teuchos::Ptr<const std::vector<WhetStone::Polynomial> >& u);
 
   // -- determine advected flux of potential u
@@ -56,13 +65,20 @@ class PDE_AdvectionRiemann : public PDE_Advection {
                           const Teuchos::RCP<BCs>& bc,
                           const Teuchos::Ptr<CompositeVector>& flux);
 
+  // boundary conditions
+  virtual void ApplyBCs(bool primary, bool eliminate, bool essential_eqn) override;
+
  private:
   void InitAdvection_(Teuchos::ParameterList& plist);
 
  private:
-  std::string flux_, riemann_;
-  int method_order_;
+  Teuchos::RCP<std::vector<WhetStone::VectorPolynomial> > Kc_;
+  Teuchos::RCP<std::vector<WhetStone::Polynomial> > Kf_;
+
+  std::string method_, matrix_, flux_;
   bool jump_on_test_;
+
+  Teuchos::RCP<WhetStone::DG_Modal> dg_;
 };
 
 }  // namespace Operators

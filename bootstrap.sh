@@ -75,6 +75,8 @@ build_link_flags=
 
 # MPI installation
 mpi_root_dir=
+tools_mpi=openmpi
+tools_mpi_exec_args=
 
 # TPL (Third Party Libraries)
 
@@ -125,11 +127,22 @@ crunchtope=${FALSE}
 shared=${FALSE}
 spacedim=2
 native=${FALSE}
+silo=${FALSE}
+physics=${TRUE}
+
+# Dry-Run
+dry_run=${FALSE}
+
+# System specific options
+# - Intended for supercomputing facilities, and institutional computing
+#
+# NERSC
+#
+prefer_static=${TRUE}
+exec_static=${FALSE}
 nersc=${FALSE}
 nersc_tpl_opts=
 nersc_amanzi_opts=
-#silo=${TRUE}
-
 
 # ---------------------------------------------------------------------------- #
 # Functions: basic messages and exit functions
@@ -287,14 +300,20 @@ Configuration:
   --opt                   build optimized TPLs and Amanzi binaries. This the default
                           configuration.
 
+  --relwithdebinfo		  build optimized TPLs and Amanzi binaries with debug info
+			  (for profiling)
+
   --debug                 build debug TPLs and Amanzi binaries.
 
   --branch=BRANCH         build TPLs and Amanzi found in BRANCH ['"${amanzi_branch}"']
   
   --spacedim=DIM          dimension of structured build (DIM=2 or 3) ['"${spacedim}"']
 
-  --nersc_build           use cmake options required on NERSC machines ['"${nersc}"']
+  --nersc                 use cmake options required on NERSC machines ['"${nersc}"']
+
+  --dry_run               show the configuration commands (but do not execute them) ['"${dry_run}"']
   
+
 Build features:
 Each feature listed here can be enabled/disabled with --[enable|disable]-[feature]
 Value in brackets indicates default setting.
@@ -314,6 +333,8 @@ Value in brackets indicates default setting.
   crunchtope              build the CrunchTope geochemistry backend ['"${crunchtope}"']
   alquimia                build the Alquimia geochemistry solver APIs ['"${alquimia}"']
 
+  physics		  build subset of Amanzi used in ATS ['"${physics}"']
+
   test_suite              run Amanzi Test Suite before installing ['"${test_suite}"']
   reg_tests               build regression tests into Amanzi Test Suite ['"${reg_tests}"']
   shared                  build Amanzi and tpls using shared libraries ['"${shared}"']
@@ -322,6 +343,7 @@ Value in brackets indicates default setting.
   xsdk                    build TPLs available in xSDK first, then supplement with additional 
                           individual TPL builds ['"${xsdk}"']
   tpls_only               only build the TPLs, do not build Amanzi itself
+
 
 Tool definitions:
 
@@ -342,13 +364,13 @@ Tool definitions:
 
   --with-mpi=DIR             use MPI installed in DIR ['"${mpi_root_dir}"'].
                              Will search for MPI compiler wrappers under this directory. It this
-                             option is missing, OpenMPI will be build using the provided compiler.
+                             option is missing, OpenMPI will be built using the provided compiler.
+
   --with-xsdk=DIR            use libraries already available in xSDK installation in lieu of
                              downloading and installing them individually. ['"${xsdk_root_dir}"']
 
 
-
-Directory and file names: 
+Directories and file names: 
 
   --prefix=PREFIX                install ALL files in tree rooted at PREFIX
                                  ['"${dflt_install_prefix}"']
@@ -370,7 +392,7 @@ Directory and file names:
 
   --tools-install-prefix=DIR     install Amanzi tools in tree rooted at DIR
                                  ['"${tools_install_prefix}"']. The list of tools includes
-                                 currently OpenMPI.
+                                 currently OpenMPI and MPICH.
   
   --tools-build-dir=DIR          build Amanzi tools in DIR
                                  ['"${tools_build_dir}"']
@@ -378,6 +400,8 @@ Directory and file names:
   --tools-download-dir=DIR       direct downloads of Amanzi tools to DIR
                                  ['"${tools_download_dir}"']
 
+  --tools-mpi=NAME               implementation of the Message Passing Interface (MPI)
+                                 standard. NAME is either openmpi (default) or mpich.
 
 
 Example with pre-existing MPI installation that builds dynamic libraries
@@ -400,6 +424,7 @@ OSX C and C++ compilers and Fortran compiler from MacPorts:
                  --parallel=8 
                  --enable-alquimia --enable-pflotran --enable-crunchtope 
                  --enable-petsc --disable-stk_mesh 
+                 --tools-mpi=openmpi
 '
 }
 
@@ -434,7 +459,9 @@ Build configuration:
     parallel            ='"${parallel_jobs}"'
     shared              ='"${shared}"'
     spacedim            ='"${spacedim}"'
-    nersc_build         ='"${nersc}"'
+    nersc               ='"${nersc}"'
+    static_libs_prefer  ='"${prefer_static}"'
+    static_executables  ='"${exec_static}"'
 
 Build Features:   
     structured          ='"${structured}"'
@@ -451,6 +478,7 @@ Build Features:
     alquimia            ='"${alquimia}"'
     pflotran            ='"${pflotran}"'
     crunchtope          ='"${crunchtope}"'
+    physics             ='"${physics}"'
     native              ='"${native}"'
     Spack               ='"${Spack}"'
     xsdk                ='"${xsdk}"'
@@ -499,9 +527,16 @@ function parse_argv()
 		 enable_native=${FALSE}
                  ;;
 
+      --relwithdebinfo)
+                 build_type=RelWithDebInfo
+		 enable_native=${FALSE}
+                 ;;
       --debug)
                  build_type=Debug
 		 enable_native=${TRUE}
+                 ;;
+      --dry_run)
+                 dry_run=${TRUE}
                  ;;
 
       --disable-*)
@@ -526,7 +561,7 @@ function parse_argv()
                  spacedim=`parse_option_with_equal "${opt}" 'spacedim'`
                  ;;
 
-      --nersc_build)
+      --nersc)
                  nersc=${TRUE}
                  ;;
 
@@ -626,6 +661,10 @@ function parse_argv()
                  tpl_config_file=`make_fullpath $tmp`
                  ;;
 
+      --tpls_only)
+                 tpls_only=${TRUE}
+                 ;;
+
       --tools-install-prefix=*)
                  tmp=`parse_option_with_equal "${opt}" 'tools-install-prefix'`
                  tools_install_prefix=`make_fullpath $tmp`
@@ -641,6 +680,10 @@ function parse_argv()
                  tools_download_dir=`make_fullpath $tmp`
                  ;;
       
+      --tools-mpi=*)
+                 tools_mpi=`parse_option_with_equal "${opt}" 'tools-mpi'`
+                 ;;
+
       --print)
                  print_exit=${TRUE}
 		 ;;
@@ -931,11 +974,14 @@ function check_Spack
       cd ${tpl_install_prefix}
       git clone https://github.com/LLNL/spack.git
       
-#      if [ ${xsdk} == ${TRUE} ]; then
-#	  cd ${tpl_install_prefix}/spack
-#	  git checkout 44653fa4884c754c7925d5e031fdb9b5f2eec232
-#	  git pull
-#     fi
+
+      if [ ${xsdk} == ${TRUE} ]; then
+	  cd ${tpl_install_prefix}/spack/bin
+	  #git checkout 9e95e83
+	  #git pull
+	  status_message "Installing xSDK..."
+	  ./spack install xsdk@0.3.0
+      fi
       cd ${pwd_save}
     fi
 
@@ -1212,19 +1258,34 @@ function define_structured_dependencies
 {
   if [ "${structured}" -eq "${TRUE}" ]; then
     eval "petsc=$TRUE"
+    status_message "Enable package PETSc"
   fi
 }
 
 function define_nersc_options
 {
   if [ "${nersc}" -eq "${TRUE}" ]; then
-    nersc_tpl_opts="-DPREFER_STATIC_LIBRARIES:BOOL=TRUE"
-    nersc_amanzi_opts="-DTESTS_REQUIRE_MPIEXEC:BOOL=TRUE -DTESTS_REQUIRE_FULLPATH:BOOL=TRUE -DPREFER_STATIC_LIBRARIES:BOOL=TRUE -DBUILD_STATIC_EXECUTABLES:BOOL=TRUE"
-    status_message "NERSC TPL OPTS = ${nersc_tpl_opts}"
-    status_message "NERSC AMANZI OPTS = ${nersc_amanzi_opts}"
+
+    shared=$FALSE
+    prefer_static=$TRUE
+    exec_static=$TRUE
+    prg_env="gnu"
+    
+    libsci_file=${tpl_build_src_dir}/include/trilinos-blas-libsci-${prg_env}.cmake
+    nersc_tpl_opts="-DMPI_EXEC:STRING=srun \
+                    -DMPI_EXEC_NUMPROCS_FLAG:STRING=-n \
+                    -DPREFER_STATIC_LIBRARIES:BOOL=${prefer_static} \
+                    -DBUILD_STATIC_EXECUTABLES:BOOL=${exec_static} \
+                    -DTrilinos_Build_Config_File:FILEPATH=${libsci_file}"
+    
+    nersc_amanzi_opts="-DTESTS_REQUIRE_MPIEXEC:BOOL=${TRUE} \
+                       -DTESTS_REQUIRE_FULLPATH:BOOL=${TRUE}"
+    
+    echo "NERSC TPL OPTS = " ${nersc_tpl_opts}
+    echo "NERSC AMANZI OPTS = " ${nersc_amanzi_opts}
+
   fi
 }
-
 
 
 # ---------------------------------------------------------------------------- #
@@ -1235,8 +1296,8 @@ function define_nersc_options
 array=( "$@" )
 parse_argv "${array[@]}"
 
-# Set extra options for building on nersc
-define_nersc_options
+# Define the TPL build source directory
+tpl_build_src_dir=${amanzi_source_dir}/config/SuperBuild
 
 # Set packages that depend on unstructured
 define_unstructured_dependencies
@@ -1255,6 +1316,9 @@ check_compilers
 
 # Check the cmake, git and curl tools
 check_tools
+
+# Set extra options for building on nersc
+define_nersc_options
 
 # add fpic?
 #if [ "${shared}" -eq "${TRUE}" ]; then
@@ -1288,9 +1352,10 @@ if [ ! -n "${mpi_root_dir}" ]; then
       -DCMAKE_Fortran_FLAGS:STRING="${build_fort_flags}" \
       -DCMAKE_EXE_LINKER_FLAGS:STRING="${build_link_flags}" \
       -DCMAKE_BUILD_TYPE:STRING=${build_type} \
-      -DCMAKE_C_COMPILER:STRING=${build_c_compiler} \
-      -DCMAKE_CXX_COMPILER:STRING=${build_cxx_compiler} \
-      -DCMAKE_Fortran_COMPILER:STRING=${build_fort_compiler} \
+      -DCMAKE_C_COMPILER:FILEPATH=${build_c_compiler} \
+      -DCMAKE_CXX_COMPILER:FILEPATH=${build_cxx_compiler} \
+      -DCMAKE_Fortran_COMPILER:FILEPATH=${build_fort_compiler} \
+      -DTOOLS_MPI:STRING="${tools_mpi}" \
       -DTOOLS_INSTALL_PREFIX:STRING=${tools_install_prefix} \
       -DTOOLS_DOWNLOAD_DIR:FILEPATH=${tools_download_dir} \
       -DTOOLS_PARALLEL_JOBS:INT=${parallel_jobs} \
@@ -1301,6 +1366,12 @@ if [ ! -n "${mpi_root_dir}" ]; then
     exit_now 30
   fi
   status_message "Tools configure complete"
+ 
+  # Tools parameters
+  # OpenMPI 3.x requires more slots to run Amanzi tests
+  if [ "${tools_mpi}" = "openmpi" ]; then
+    tools_mpi_exec_args="--oversubscribe"
+  fi 
   
   # Tools install
   cd ${tools_build_dir}
@@ -1357,29 +1428,26 @@ if [ -z "${tpl_config_file}" ]; then
     fi
   fi
 
-  # Define the TPL build source directory
-  tpl_build_src_dir=${amanzi_source_dir}/config/SuperBuild
-  
   if [ "${tpls_only}" -eq "${TRUE}" ]; then
     status_message "Only building TPLs, stopping before building Amanzi itself"
   fi
 
   # Configure the TPL build
-  cd ${tpl_build_dir}
-  ${cmake_binary} \
+  cmd_configure="${cmake_binary} \
       -DCMAKE_C_FLAGS:STRING="${build_c_flags}" \
       -DCMAKE_CXX_FLAGS:STRING="${build_cxx_flags}" \
       -DCMAKE_Fortran_FLAGS:STRING="${build_fort_flags}" \
       -DCMAKE_EXE_LINKER_FLAGS:STRING="${build_link_flags}" \
       -DCMAKE_BUILD_TYPE:STRING=${build_type} \
-      -DCMAKE_C_COMPILER:STRING=${build_c_compiler} \
-      -DCMAKE_CXX_COMPILER:STRING=${build_cxx_compiler} \
-      -DCMAKE_Fortran_COMPILER:STRING=${build_fort_compiler} \
+      -DCMAKE_C_COMPILER:FILEPATH=${build_c_compiler} \
+      -DCMAKE_CXX_COMPILER:FILEPATH=${build_cxx_compiler} \
+      -DCMAKE_Fortran_COMPILER:FILEPATH=${build_fort_compiler} \
       -DMPI_PREFIX:STRING="${mpi_root_dir}" \
       -DTPL_INSTALL_PREFIX:STRING=${tpl_install_prefix} \
       -DENABLE_Structured:BOOL=${structured} \
       -DENABLE_Unstructured:BOOL=${unstructured} \
       -DENABLE_CCSE_TOOLS:BOOL=${ccse_tools} \
+      -DCCSE_BL_SPACEDIM:INT=${spacedim} \
       -DENABLE_STK_Mesh:BOOL=${stk_mesh} \
       -DENABLE_MOAB_Mesh:BOOL=${moab_mesh} \
       -DENABLE_MSTK_Mesh:BOOL=${mstk_mesh} \
@@ -1390,47 +1458,64 @@ if [ -z "${tpl_config_file}" ]; then
       -DENABLE_PFLOTRAN:BOOL=${pflotran} \
       -DENABLE_CRUNCHTOPE:BOOL=${crunchtope} \
       -DENABLE_Silo:BOOL=${silo} \
-      -DBUILD_SHARED_LIBS:BOOL=${shared} \
-      -DCCSE_BL_SPACEDIM:INT=${spacedim} \
-      -DPREFER_STATIC_LIBRARIES:BOOL=${static} \
       -DENABLE_SPACK:BOOL=${Spack} \
       -DSPACK_BINARY:STRING=${Spack_binary} \
       -DBUILD_SPACK:BOOL=${build_Spack} \
       -DENABLE_XSDK:BOOL=${xsdk} \
+      -DBUILD_SHARED_LIBS:BOOL=${shared} \
       -DTPL_DOWNLOAD_DIR:FILEPATH=${tpl_download_dir} \
       -DTPL_PARALLEL_JOBS:INT=${parallel_jobs} \
       ${nersc_tpl_opts} \
-      ${tpl_build_src_dir}
-  
-  if [ $? -ne 0 ]; then
-    error_message "Failed to configure TPL build"
-    exit_now 30
-  fi
-  status_message "TPL configure complete"
-  
-  # TPL make 
-  cd ${tpl_build_dir}
-  make -j ${parallel_jobs}
-  if [ $? -ne 0 ]; then
-    error_message "Failed to build TPLs"
-    exit_now 30
-  fi
-  
-  # TPL Install
-  cd ${tpl_build_dir}
-  make install
-  if [ $? -ne 0 ]; then
-    error_message "Failed to install configure script"
-    exit_now 30
-  fi
-      
+      ${tpl_build_src_dir}"
+
+  # TPL build will create this configuration file
   tpl_config_file=${tpl_install_prefix}/share/cmake/amanzi-tpl-config.cmake
+  
+  # Echo or execute configure command
+  if [ ${dry_run} == "${TRUE}" ] ; then
+    status_message "TPL configure command: \n"
+    echo ${cmd_configure}
+    echo ""
+  else
+    cd ${tpl_build_dir}
+    ${cmd_configure}
+
+    if [ $? -ne 0 ]; then
+      error_message "Failed to configure TPL build"
+      exit_now 30
+    fi
+  fi
+
+  if [ ${dry_run} == "${FALSE}" ]; then
+    status_message "TPL configure complete"
+  
+    # TPL make 
+    cd ${tpl_build_dir}
+    make -j ${parallel_jobs}
+    if [ $? -ne 0 ]; then
+      error_message "Failed to build TPLs"
+      exit_now 30
+    fi
+  
+    # TPL Install
+    cd ${tpl_build_dir}
+    make install
+    if [ $? -ne 0 ]; then
+      error_message "Failed to install configure script"
+      exit_now 30
+    fi
       
-  cd ${pwd_save}
+    cd ${pwd_save}
       
-  status_message "TPL build complete"
-  status_message "For future Amanzi builds use ${tpl_config_file}"
-      
+    status_message "TPL build complete"
+    status_message "For future Amanzi builds use ${tpl_config_file}"
+
+  else
+ 
+    status_message "To execute this TPL build remove the --dry_run option."
+  
+  fi
+  
 else 
 
   status_message "Checking configuration file ${tpl_config_file}"
@@ -1459,9 +1544,7 @@ fi
 status_message "Build Amanzi with configure file ${tpl_config_file}"
 
 # Configure the Amanzi build
-# Amanzi Configure
-cd ${amanzi_build_dir}
-${cmake_binary} \
+cmd_configure="${cmake_binary} \
     -C${tpl_config_file} \
     -DCMAKE_C_FLAGS:STRING="${build_c_flags}" \
     -DCMAKE_CXX_FLAGS:STRING="${build_cxx_flags}" \
@@ -1469,9 +1552,9 @@ ${cmake_binary} \
     -DCMAKE_EXE_LINKER_FLAGS:STRING="${build_link_flags}" \
     -DCMAKE_INSTALL_PREFIX:STRING=${amanzi_install_prefix} \
     -DCMAKE_BUILD_TYPE:STRING=${build_type} \
-    -DCMAKE_C_COMPILER:STRING=${build_c_compiler} \
-    -DCMAKE_CXX_COMPILER:STRING=${build_cxx_compiler} \
-    -DCMAKE_Fortran_COMPILER:STRING=${build_fort_compiler} \
+    -DCMAKE_C_COMPILER:FILEPATH=${build_c_compiler} \
+    -DCMAKE_CXX_COMPILER:FILEPATH=${build_cxx_compiler} \
+    -DCMAKE_Fortran_COMPILER:FILEPATH=${build_fort_compiler} \
     -DENABLE_Structured:BOOL=${structured} \
     -DENABLE_Unstructured:BOOL=${unstructured} \
     -DENABLE_STK_Mesh:BOOL=${stk_mesh} \
@@ -1482,14 +1565,26 @@ ${cmake_binary} \
     -DENABLE_ALQUIMIA:BOOL=${alquimia} \
     -DENABLE_PFLOTRAN:BOOL=${pflotran} \
     -DENABLE_CRUNCHTOPE:BOOL=${crunchtope} \
+    -DENABLE_Physics:BOOL=${physics} \
     -DBUILD_SHARED_LIBS:BOOL=${shared} \
     -DCCSE_BL_SPACEDIM:INT=${spacedim} \
     -DENABLE_Regression_Tests:BOOL=${reg_tests} \
     -DENABLE_NATIVE_XML_OUTPUT:BOOL=${native} \
+    -DMPI_EXEC_GLOBAL_ARGS:STRING=${tools_mpi_exec_args} \
     ${nersc_amanzi_opts} \
-    ${amanzi_source_dir}
+    ${amanzi_source_dir}"
 
+# Echo or execute configure command
+if [ ${dry_run} == "${TRUE}" ] ; then
+   status_message "Amanzi configure command: \n"
+   echo ${cmd_configure}
+   echo ""
+else
+   cd ${amanzi_build_dir}
+   ${cmd_configure}
+fi
 
+if [ ${dry_run} == "${FALSE}" ]; then
 if [ $? -ne 0 ]; then
   error_message "Failed to configure Amanzi"
   exit_now 50
@@ -1522,6 +1617,12 @@ if [ $? -ne 0 ]; then
   exit_now 50
 fi
 status_message "Amanzi install complete"
+
+else
+
+status_message "To execute this Amanzi build remove the --dry_run option."
+
+fi
 
 status_message "Bootstrap complete"
 

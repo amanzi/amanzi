@@ -22,7 +22,7 @@ set(ParMetis_METIS_DIR ${METIS_source_dir})
 # NO WHITESPACE between -D and VAR. Parser blows up otherwise.
 set(ParMetis_CMAKE_CACHE_ARGS
                   -DCMAKE_BUILD_TYPE:STRING=${CMAKE_BUILD_TYPE}
-                  -DCMAKE_INSTALL_PREFIX:STRING=<INSTALL_DIR>
+                  -DCMAKE_INSTALL_PREFIX:PATH=${TPL_INSTALL_PREFIX}
                   -DSHARED:BOOL=${BUILD_SHARED_LIBS}
                   -DGKLIB_PATH:PATH=${ParMetis_GKLIB_DIR}
                   -DMETIS_PATH:PATH=${ParMetis_METIS_DIR})
@@ -43,15 +43,20 @@ ExternalProject_Add(${ParMetis_BUILD_TARGET}
                                      -DCMAKE_C_FLAGS:STRING=${Amanzi_COMMON_CFLAGS}  # Ensure uniform build
                                      -DCMAKE_C_COMPILER:FILEPATH=${CMAKE_C_COMPILER}
                     # -- Build
-                    BINARY_DIR        ${ParMetis_build_dir}           # Build directory 
-                    BUILD_COMMAND     $(MAKE)                     # $(MAKE) enables parallel builds through make
-                    BUILD_IN_SOURCE   ${ParMetis_BUILD_IN_SOURCE}     # Flag for in source builds
+                    BINARY_DIR       ${ParMetis_build_dir}           # Build directory 
+                    BUILD_COMMAND    $(MAKE)                         # $(MAKE) enables parallel builds through make
+                    BUILD_IN_SOURCE  ${ParMetis_BUILD_IN_SOURCE}     # Flag for in source builds
                     # -- Install
-                    INSTALL_DIR      ${TPL_INSTALL_PREFIX}        # Install directory
+                    INSTALL_DIR      ${TPL_INSTALL_PREFIX}
                     # -- Output control
                     ${ParMetis_logging_args})
 
 # --- Useful variables that depend on ZlIB (HDF5, NetCDF)
 include(BuildLibraryName)
-build_library_name(z ParMetis_LIBRARIES APPEND_PATH ${TPL_INSTALL_PREFIX}/lib)
+build_library_name(parmetis ParMetis_LIB APPEND_PATH ${TPL_INSTALL_PREFIX}/lib)
+set(ParMetis_DIR ${TPL_INSTALL_PREFIX})
 set(ParMetis_INCLUDE_DIRS ${TPL_INSTALL_PREFIX}/include)
+
+# --- set cache (global) variables
+global_set(ParMetis_LIBRARIES "${ParMetis_LIB};${METIS_LIBRARIES}")
+

@@ -59,15 +59,11 @@ TEST(ADVECTION_DIFFUSION_SURFACE) {
   ParameterList plist = xmlreader.getParameters();
 
   // create an MSTK mesh framework
-  ParameterList region_list = plist.get<Teuchos::ParameterList>("regions");
+  ParameterList region_list = plist.sublist("regions");
   Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(3, region_list, &comm));
 
-  FrameworkPreference pref;
-  pref.clear();
-  pref.push_back(MSTK);
-
   MeshFactory meshfactory(&comm);
-  meshfactory.preference(pref);
+  meshfactory.preference(FrameworkPreference({Framework::MSTK}));
   RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 40, 40, 5, gm);
   RCP<const Mesh_MSTK> mesh_mstk = rcp_static_cast<const Mesh_MSTK>(mesh);
 
@@ -79,8 +75,8 @@ TEST(ADVECTION_DIFFUSION_SURFACE) {
 
   /* modify diffusion coefficient */
   Teuchos::RCP<std::vector<WhetStone::Tensor> > K = Teuchos::rcp(new std::vector<WhetStone::Tensor>());
-  int ncells_owned = surfmesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
-  int nfaces_wghost = surfmesh->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
+  int ncells_owned = surfmesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+  int nfaces_wghost = surfmesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
 
   for (int c = 0; c < ncells_owned; c++) {
     WhetStone::Tensor Kc(2, 1);
@@ -89,7 +85,7 @@ TEST(ADVECTION_DIFFUSION_SURFACE) {
   }
 
   // create boundary data
-  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(surfmesh, AmanziMesh::FACE, SCHEMA_DOFS_SCALAR));
+  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(surfmesh, AmanziMesh::FACE, DOF_Type::SCALAR));
 
   std::vector<int>& bc_model = bc->bc_model();
   std::vector<double>& bc_value = bc->bc_value();
@@ -104,8 +100,7 @@ TEST(ADVECTION_DIFFUSION_SURFACE) {
   }
 
   // create diffusion operator
-  Teuchos::ParameterList olist = plist.get<Teuchos::ParameterList>("PK operator")
-                                      .get<Teuchos::ParameterList>("diffusion operator");
+  Teuchos::ParameterList olist = plist.sublist("PK operator").sublist("diffusion operator");
   Teuchos::RCP<PDE_Diffusion> op_diff =
       Teuchos::rcp(new PDE_DiffusionMFD(olist, (Teuchos::RCP<const AmanziMesh::Mesh>) surfmesh));
   op_diff->SetBCs(bc, bc);
@@ -121,11 +116,12 @@ TEST(ADVECTION_DIFFUSION_SURFACE) {
   // create an advection operator  
   Teuchos::ParameterList alist;
   Teuchos::RCP<PDE_AdvectionUpwind> op_adv = Teuchos::rcp(new PDE_AdvectionUpwind(alist, global_op));
+  op_adv->SetBCs(bc, bc);
 
   // get a flux field
   Teuchos::RCP<CompositeVector> u = Teuchos::rcp(new CompositeVector(cvs));
   Epetra_MultiVector& uf = *u->ViewComponent("face");
-  int nfaces = surfmesh->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
+  int nfaces = surfmesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
   Point vel(4.0, 4.0, 0.0);
   for (int f = 0; f < nfaces; f++) {
     uf[0][f] = vel * surfmesh->face_normal(f);
@@ -146,14 +142,15 @@ TEST(ADVECTION_DIFFUSION_SURFACE) {
   op_acc->AddAccumulationDelta(solution, phi, phi, dT, "cell");
 
   // BCs and assemble
-  op_diff->ApplyBCs(true, true);
-  op_adv->ApplyBCs(bc, true);
+  op_diff->ApplyBCs(true, true, true);
+  op_adv->ApplyBCs(true, true, true);
   global_op->SymbolicAssembleMatrix();
   global_op->AssembleMatrix();
 
   // Create a preconditioner.
-  ParameterList slist = plist.get<Teuchos::ParameterList>("preconditioners");
-  global_op->InitPreconditioner("Hypre AMG", slist);
+  ParameterList slist = plist.sublist("preconditioners").sublist("Hypre AMG");
+  global_op->InitializePreconditioner(slist);
+  global_op->UpdatePreconditioner();
 
   // Test SPD properties of the matrix and preconditioner.
   VerificationCV ver(global_op);
@@ -161,7 +158,7 @@ TEST(ADVECTION_DIFFUSION_SURFACE) {
   ver.CheckPreconditionerSPD(false, true);
 
   // Solve the problem.
-  ParameterList lop_list = plist.get<Teuchos::ParameterList>("solvers")
+  ParameterList lop_list = plist.sublist("solvers")
                                 .sublist("AztecOO CG").sublist("gmres parameters");
   AmanziSolvers::LinearOperatorGMRES<Operator, CompositeVector, CompositeVectorSpace>
      solver(global_op, global_op);

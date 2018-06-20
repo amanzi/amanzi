@@ -8,7 +8,8 @@
 
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 
-  Example of usage this operator is in test/operators_elasticity.cc
+  Examples of usage this operator are in test/operators_elasticity.cc
+  and test/operators_stokes.cc
 */
 
 #ifndef AMANZI_OPERATOR_PDE_ELASTICITY_HH_
