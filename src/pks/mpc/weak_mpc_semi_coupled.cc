@@ -38,7 +38,7 @@ WeakMPCSemiCoupled::WeakMPCSemiCoupled(Teuchos::ParameterList& pk_tree,
 
   // add for the various columns based on GIDs of the surface system
   Teuchos::RCP<const AmanziMesh::Mesh> surf_mesh = S->GetMesh("surface");
-  int ncols = surf_mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  int ncols = surf_mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
   for (int i=0; i!=ncols; ++i) {
     int gid = surf_mesh->cell_map(false).GID(i);
     std::stringstream domain_name_stream;
@@ -118,7 +118,7 @@ WeakMPCSemiCoupled::Setup(const Teuchos::Ptr<State>& S) {
     sg_model_ = false;
 
   //  sync_time_ = plist_->get<double>("sync time"); //provide default value later!!
-  ASSERT(!(coupling_key_.empty()));
+  AMANZI_ASSERT(!(coupling_key_.empty()));
 
 };
 
@@ -155,7 +155,7 @@ WeakMPCSemiCoupled::CoupledSurfSubsurfColumns(double t_old, double t_new, bool r
     Teuchos::RCP<PK_BDF_Default> pk_sfstar =
       Teuchos::rcp_dynamic_cast<PK_BDF_Default>(sub_pks_[0]);
     
-    ASSERT(pk_sfstar.get());
+    AMANZI_ASSERT(pk_sfstar.get());
     pk_sfstar->ChangedSolution();
   }
 
@@ -255,7 +255,7 @@ WeakMPCSemiCoupled::CoupledSurfSubsurfColumns(double t_old, double t_new, bool r
   for(int i=1; i<numPKs_; i++){
     Teuchos::RCP<PK_BDF_Default> pk_domain =
       Teuchos::rcp_dynamic_cast<PK_BDF_Default>(sub_pks_[i]);
-    ASSERT(pk_domain.get()); // make sure the pk_domain is not empty
+    AMANZI_ASSERT(pk_domain.get()); // make sure the pk_domain is not empty
     pk_domain->ChangedSolution(S_inter_.ptr());
   }
 
@@ -341,7 +341,7 @@ WeakMPCSemiCoupled::CoupledSurfSubsurfColumns(double t_old, double t_new, bool r
 	  
 	   Teuchos::RCP<PK_PhysicalBDF_Default> pk_domain =
 	     Teuchos::rcp_dynamic_cast<PK_PhysicalBDF_Default>(sub_pks_[count+1]);
-	   ASSERT(pk_domain.get()); // make sure the pk_domain is not empty
+	   AMANZI_ASSERT(pk_domain.get()); // make sure the pk_domain is not empty
 	   pk_domain->ChangedSolution(S_inter_.ptr());
 	   
 	   S_inter_->set_time(t0+t);
@@ -382,7 +382,7 @@ WeakMPCSemiCoupled::CoupledSurfSubsurfColumns(double t_old, double t_new, bool r
 
 	   Teuchos::RCP<PK_PhysicalBDF_Default> pk_domain =
 	     Teuchos::rcp_dynamic_cast<PK_PhysicalBDF_Default>(sub_pks_[count+1]);
-	   ASSERT(pk_domain.get()); // make sure the pk_domain is not empty
+	   AMANZI_ASSERT(pk_domain.get()); // make sure the pk_domain is not empty
 	   pk_domain->ChangedSolution(S_next_.ptr());
 	   
 	   loc_dt = (*pk)->get_dt();
@@ -500,7 +500,7 @@ WeakMPCSemiCoupled::CoupledSurfSubsurfColumns(double t_old, double t_new, bool r
   // NOTE: later do it in the setup --aj
   Teuchos::RCP<PK_BDF_Default> pk_surf =
     Teuchos::rcp_dynamic_cast<PK_BDF_Default>(sub_pks_[0]);
-  ASSERT(pk_surf.get());
+  AMANZI_ASSERT(pk_surf.get());
   pk_surf->ChangedSolution();
   MPC<PK>::SubPKList::iterator pk1 = sub_pks_.begin();
 
@@ -550,7 +550,7 @@ WeakMPCSemiCoupled::CoupledSurfSubsurf3D(double t_old, double t_new, bool reinit
   
   Teuchos::RCP<PK_PhysicalBDF_Default> pk_domain =
     Teuchos::rcp_dynamic_cast<PK_PhysicalBDF_Default>(sub_pks_[1]);
-  ASSERT(pk_domain.get()); // make sure the pk_domain is not empty
+  AMANZI_ASSERT(pk_domain.get()); // make sure the pk_domain is not empty
   pk_domain->ChangedSolution(S_inter_.ptr());
   
   if(fail) return fail;  
@@ -579,7 +579,7 @@ WeakMPCSemiCoupled::CoupledSurfSubsurf3D(double t_old, double t_new, bool reinit
   // NOTE: later do it in the setup --aj
   Teuchos::RCP<PK_PhysicalBDF_Default> pk_surf =
     Teuchos::rcp_dynamic_cast<PK_PhysicalBDF_Default>(sub_pks_[0]);
-  ASSERT(pk_surf.get());
+  AMANZI_ASSERT(pk_surf.get());
   pk_surf->ChangedSolution();
   
   return fail;

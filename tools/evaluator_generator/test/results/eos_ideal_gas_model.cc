@@ -47,19 +47,19 @@ EosIdealGasModel::InitializeFromPlist_(Teuchos::ParameterList& plist)
 double
 EosIdealGasModel::Density(double temp, double pres) const
 {
-  return ASSERT(False);
+  return AMANZI_ASSERT(False);
 }
 
 double
 EosIdealGasModel::DDensityDTemperature(double temp, double pres) const
 {
-  return ASSERT(False);
+  return AMANZI_ASSERT(False);
 }
 
 double
 EosIdealGasModel::DDensityDPressure(double temp, double pres) const
 {
-  return ASSERT(False);
+  return AMANZI_ASSERT(False);
 }
 
 } //namespace

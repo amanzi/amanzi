@@ -273,7 +273,7 @@ void WRMPlantChristoffersen::InitializeFromPlist_() {
   } else if (fname == std::string("Burdine")) {
     function_ = FLOW_WRM_BURDINE;
   } else {
-    ASSERT(0);
+    AMANZI_ASSERT(0);
   }
 
   /*

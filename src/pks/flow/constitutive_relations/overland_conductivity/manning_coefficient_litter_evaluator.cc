@@ -111,8 +111,8 @@ ManningCoefficientLitterEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
     for (int bf=0; bf!=ncomp; ++bf) {
       // given a boundary face, we need the internal cell to choose the right model
       AmanziMesh::Entity_ID f = face_map.LID(vandelay_map.GID(bf));
-      mesh->face_get_cells(f, AmanziMesh::USED, &cells);
-      ASSERT(cells.size() == 1);
+      mesh->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
+      AMANZI_ASSERT(cells.size() == 1);
 
       int index = (*models_->first)[cells[0]];
       result_v[0][bf] = models_->second[index]->ManningCoefficient(ld_v[0][bf], pd_v[0][bf]);
@@ -153,7 +153,7 @@ ManningCoefficientLitterEvaluator::EvaluateFieldPartialDerivative_(const Teuchos
     }
 
   } else {
-    ASSERT(0);
+    AMANZI_ASSERT(0);
   }
 
   
@@ -174,8 +174,8 @@ ManningCoefficientLitterEvaluator::EvaluateFieldPartialDerivative_(const Teuchos
       for (int bf=0; bf!=ncomp; ++bf) {
 	// given a boundary face, we need the internal cell to choose the right model
 	AmanziMesh::Entity_ID f = face_map.LID(vandelay_map.GID(bf));
-	mesh->face_get_cells(f, AmanziMesh::USED, &cells);
-	ASSERT(cells.size() == 1);
+	mesh->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
+	AMANZI_ASSERT(cells.size() == 1);
 
 	int index = (*models_->first)[cells[0]];
 	result_v[0][bf] = models_->second[index]->DManningCoefficientDLitterThickness(ld_v[0][bf], pd_v[0][bf]);
@@ -185,15 +185,15 @@ ManningCoefficientLitterEvaluator::EvaluateFieldPartialDerivative_(const Teuchos
       for (int bf=0; bf!=ncomp; ++bf) {
 	// given a boundary face, we need the internal cell to choose the right model
 	AmanziMesh::Entity_ID f = face_map.LID(vandelay_map.GID(bf));
-	mesh->face_get_cells(f, AmanziMesh::USED, &cells);
-	ASSERT(cells.size() == 1);
+	mesh->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
+	AMANZI_ASSERT(cells.size() == 1);
 
 	int index = (*models_->first)[cells[0]];
 	result_v[0][bf] = models_->second[index]->DManningCoefficientDPondedDepth(ld_v[0][bf], pd_v[0][bf]);
       }
 
     } else {
-      ASSERT(0);
+      AMANZI_ASSERT(0);
     }
   }
 }

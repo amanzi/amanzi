@@ -31,7 +31,7 @@ class SurfaceTopCellsEvaluator : public SecondaryVariableFieldEvaluator {
           const Teuchos::Ptr<CompositeVector>& result);
   virtual void EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>& S,
           Key wrt_key, const Teuchos::Ptr<CompositeVector>& result) {
-    ASSERT(0);
+    AMANZI_ASSERT(0);
   }
 
   virtual void EnsureCompatibility(const Teuchos::Ptr<State>& S);

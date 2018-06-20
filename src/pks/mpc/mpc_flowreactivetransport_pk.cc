@@ -81,17 +81,26 @@ bool FlowReactiveTransport_PK_ATS::AdvanceStep(double t_old, double t_new, bool 
   fail = sub_pks_[master_]->AdvanceStep(t_old, t_new, reinit);
   fail |= !sub_pks_[master_]->ValidStep();
   
-  if (fail) return fail;
+  if (fail) {
+    if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) *vo_->os()<<"Master step is failed\n";
+    return fail;
+  }
 
   //return fail;
-
   master_dt_ = t_new - t_old;
-
   sub_pks_[master_]->CommitStep(t_old, t_new, S_next_);
 
-  slave_dt_ = sub_pks_[slave_]->get_dt();
+  Teuchos::RCP<const Field> field_tmp = S_->GetFieldCopy("mass_flux", "next_timestep");
+  Key copy_owner = field_tmp->owner();
+  Teuchos::RCP<Epetra_MultiVector> flux_copy = S_->GetFieldCopyData("mass_flux", "next_timestep", copy_owner)->ViewComponent("face", true);
+  *flux_copy = *S_next_->GetFieldData("mass_flux")->ViewComponent("face", true);
+ 
+  if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) *vo_->os()<<"Master step is successful\n";
 
+
+  slave_dt_ = sub_pks_[slave_]->get_dt(); 
   if (slave_dt_ > master_dt_) slave_dt_ = master_dt_;
+  if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) *vo_->os()<<"Slave dt="<<slave_dt_<<"\n";
 
   // advance the slave, subcycling if needed
   S_->set_intermediate_time(t_old);
@@ -100,6 +109,7 @@ bool FlowReactiveTransport_PK_ATS::AdvanceStep(double t_old, double t_new, bool 
 
   double dt_next = slave_dt_;
   double dt_done = 0.;
+  int ncycles = 0;
 
   while (!done) {
     // do not overstep
@@ -109,7 +119,8 @@ bool FlowReactiveTransport_PK_ATS::AdvanceStep(double t_old, double t_new, bool 
 
     // take the step
     fail = sub_pks_[slave_]->AdvanceStep(t_old + dt_done, t_old + dt_done + dt_next, reinit);
-
+    ncycles ++;
+    
     if (fail) {
       // if fail, cut the step and try again
       dt_next /= 2;
@@ -118,9 +129,9 @@ bool FlowReactiveTransport_PK_ATS::AdvanceStep(double t_old, double t_new, bool 
       // -- etc: unclear if state should be commited or not?
       // set the intermediate time
       S_ -> set_intermediate_time(t_old + dt_done + dt_next);
-      S_next_ -> set_intermediate_time(t_old + dt_done + dt_next);
-      //sub_pks_[slave_]->CommitStep(t_old + dt_done, t_old + dt_done + dt_next, S_);
-      sub_pks_[slave_]->CommitStep(t_old + dt_done, t_old + dt_done + dt_next, S_next_);
+      //S_next_ -> set_intermediate_time(t_old + dt_done + dt_next);
+      sub_pks_[slave_]->CommitStep(t_old + dt_done, t_old + dt_done + dt_next, S_);
+      //sub_pks_[slave_]->CommitStep(t_old + dt_done, t_old + dt_done + dt_next, S_next_);
       dt_done += dt_next;
     }
 
@@ -132,8 +143,12 @@ bool FlowReactiveTransport_PK_ATS::AdvanceStep(double t_old, double t_new, bool 
 
   if (std::abs(t_old + dt_done - t_new) / (t_new - t_old) < 0.1*min_dt_) {
     // done, success
+    if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) *vo_->os()<<"Slave step is successful after "
+                                                             <<ncycles <<" subcycles\n";
     return false;
   } else {
+    if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) *vo_->os()<<"Slave step is failed after "
+                                                             <<ncycles <<" subcycles\n";
     return true;
   }  
 }

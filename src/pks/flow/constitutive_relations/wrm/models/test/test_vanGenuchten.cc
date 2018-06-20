@@ -4,7 +4,7 @@
 #include "wrm_van_genuchten.hh"
 
 TEST(vanGenuchten) {
-  using namespace Amanzi::Flow::Flow;
+  using namespace Amanzi::Flow;
 
   double m = 0.5;
   double alpha = 0.1;
@@ -15,17 +15,16 @@ TEST(vanGenuchten) {
   plist.set("van Genuchten m", m);
   plist.set("van Genuchten alpha", alpha);
   plist.set("residual saturation", sr);
-  plist.set("smoothing interval width", 0.0);
+  plist.set("smoothing interval width [saturation]", 0.0);
   WRMVanGenuchten vG(plist);
 
   // check k_relative for p = 2*p_atm
   double pc = -p_atm;
-  CHECK_EQUAL(vG.k_relative(pc), 1.0);
+  CHECK_EQUAL(vG.k_relative(1.0), 1.0);
 
-  // check k_relative for p = 0
-  pc = p_atm;
-  double se = std::pow(1.0 + std::pow(alpha * pc, 1.0 / (1.0-m)),-m);
-  CHECK_CLOSE(vG.k_relative(pc),
+  // check k_relative for s = 0.5
+  double se = (0.5 - sr) / (1.0 - sr);
+  CHECK_CLOSE(vG.k_relative(0.5),
               sqrt(se) * std::pow(1.0 - std::pow(1.0 - std::pow(se, 1.0/m), m), 2.0), 1e-15);
 
   // check saturation for p = 2*p_atm

@@ -16,19 +16,16 @@
 are defined on a single mesh, and represent a single process model.  Typically
 all leaves of the PK tree will inherit from ``PKPhysicalBase``.
 
-* `"domain`" ``[string]`` **""**, e.g. `"surface`".
+* `"domain name`" ``[string]`` e.g. `"surface`".
 
   Domains and meshes are 1-to-1, and the empty string refers to the main domain or mesh.  PKs defined on other domains must specify which domain/mesh they refer to.
 
-* `"primary variable`" ``[string]``
+* `"primary variable key`" ``[string]`` Sets the primary variable.
 
   The primary variable associated with this PK, i.e. `"pressure`", `"temperature`", `"surface_pressure`", etc.
 
-* `"initial condition`" ``[initial-condition-spec]``  See InitialConditions_.
+* `"initial condition`" ``[initial-conditions-spec]``  See InitialConditions_.
 
-  Additionally, the following parameters are supported:
-
- - `"initialize faces from cell`" ``[bool]`` **false**
 
    Indicates that the primary variable field has both CELL and FACE objects, and the FACE values are calculated as the average of the neighboring cells.
 

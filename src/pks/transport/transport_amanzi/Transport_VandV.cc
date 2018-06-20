@@ -121,18 +121,18 @@ void Transport_PK_ATS::VV_PrintSoluteExtrema(const Epetra_MultiVector& tcc_next,
       if (mesh_->valid_set_name(runtime_regions_[k], AmanziMesh::FACE)) {
         flag = true;
         AmanziMesh::Entity_ID_List block;
-        mesh_->get_set_entities(runtime_regions_[k], AmanziMesh::FACE, AmanziMesh::OWNED, &block);
+        mesh_->get_set_entities(runtime_regions_[k], AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED, &block);
         int nblock = block.size();
 
         for (int m = 0; m < nblock; m++) {
           int f = block[m];
 
           Amanzi::AmanziMesh::Entity_ID_List cells;
-          mesh_->face_get_cells(f, Amanzi::AmanziMesh::USED, &cells);
+          mesh_->face_get_cells(f, Amanzi::AmanziMesh::Parallel_type::ALL, &cells);
           int dir, c = cells[0];
 
           const AmanziGeometry::Point& normal = mesh_->face_normal(f, false, c, &dir);
-          double u = (*flux)[0][f] * dir;
+          double u = (*flux_)[0][f] * dir;
           if (u > 0) solute_flux += u * tcc_next[i][c];
         }
       }
@@ -143,10 +143,11 @@ void Transport_PK_ATS::VV_PrintSoluteExtrema(const Epetra_MultiVector& tcc_next,
     double tmp = solute_flux;
     mesh_->get_comm()->SumAll(&tmp, &solute_flux, 1);
 
-    // *vo_->os() << runtime_solutes_[n] << ": min=" << units_.OutputConcentration(tccmin) 
-    //              << " max=" << units_.OutputConcentration(tccmax);
-
-    *vo_->os() << runtime_solutes_[n] << ": min=" << tccmin  << " max=" << tccmax<<"\n";
+    double ws_min, ws_max;
+    ws_->MinValue(&ws_min);
+    ws_->MaxValue(&ws_max);
+       
+    *vo_->os() << runtime_solutes_[n] << ": min=" << tccmin  << " max=" << tccmax<<" ws: "<<"min="<<ws_min<<" max="<<ws_max<<"\n";
     if (flag) *vo_->os() << ", flux=" << solute_flux << " mol/s";
 
     // old capability
@@ -208,7 +209,7 @@ void Transport_PK_ATS::VV_CheckInfluxBC() const
         if (i == tcc_index[k]) {
           for (auto it = bcs_[m]->begin(); it != bcs_[m]->end(); ++it) {
             int f = it->first;
-            if ((*flux)[0][f] < 0 && influx_face[f] == 0) {
+            if ((*flux_)[0][f] < 0 && influx_face[f] == 0) {
               char component[3];
               std::sprintf(component, "%3d", i);
 
@@ -306,7 +307,7 @@ double Transport_PK_ATS::VV_SoluteVolumeChangePerSecond(int idx_tracer)
           int c2 = (*downwind_cell_)[f];
 
           if (f < nfaces_owned && c2 >= 0) {
-            double u = fabs((*flux)[0][f]);
+            double u = fabs((*flux_)[0][f]);
             volume += u * values[i];
           }
         }
@@ -336,14 +337,16 @@ void Transport_PK_ATS::CalculateLpErrors(
 }
 
 
-double Transport_PK_ATS::ComputeSolute(const Epetra_MultiVector& tcc_vec, int i){
-
+double Transport_PK_ATS::ComputeSolute(const Epetra_MultiVector& tcc, int i){
+  
   double mass_solute(0.0);
   for (int c = 0; c < ncells_owned; c++) {
     double vol = mesh_->cell_volume(c);
-    //std::cout<<name_<<" "<<(*phi_)[0][c]<<" "<<tcc_vec[i][c]<<"\n";
-    mass_solute += (*ws_)[0][c] * (*phi_)[0][c] * tcc_vec[i][c] * vol * (*mol_dens_)[0][c];
-   }
+    mass_solute += (*ws_end)[0][c] * (*phi_)[0][c] * tcc[i][c] * vol * (*mol_dens_end)[0][c] + (*solid_qty_)[i][c];
+    // if (tcc_next[i][c] > 1e-16)
+    //   std::cout<<std::setprecision(12)<<"masscompute "<<MyPID<<" cell "<<c<<": "<<(*phi_)[0][c]<<" "
+    //            <<(*ws_end)[0][c]<<" "<< (*mol_dens_end)[0][c]<<" "<<tcc_next[i][c]<<"--"<<mesh_->cell_centroid(c)<<"\n";
+  }
   //mass_solute /= units_.concentration_factor();
 
   double tmp1 = mass_solute;
@@ -352,6 +355,29 @@ double Transport_PK_ATS::ComputeSolute(const Epetra_MultiVector& tcc_vec, int i)
   return mass_solute;
 
 }
+
+
+double Transport_PK_ATS::ComputeSolute(const Epetra_MultiVector& tcc,
+                                       const Epetra_MultiVector& ws,
+                                       const Epetra_MultiVector& den,
+                                       int i){
+  
+  double mass_solute(0.0);
+  for (int c = 0; c < ncells_owned; c++) {
+    double vol = mesh_->cell_volume(c);
+    mass_solute += ws[0][c] * (*phi_)[0][c] * tcc[i][c] * vol * den[0][c] + (*solid_qty_)[i][c];
+    // if (tcc_next[i][c] > 1e-16)
+    //   std::cout<<std::setprecision(12)<<"masscompute "<<MyPID<<" cell "<<c<<": "<<(*phi_)[0][c]<<" "
+    //            <<(*ws_end)[0][c]<<" "<< (*mol_dens_end)[0][c]<<" "<<tcc_next[i][c]<<"--"<<mesh_->cell_centroid(c)<<"\n";
+  }
+  //mass_solute /= units_.concentration_factor();
+
+  double tmp1 = mass_solute;
+  mesh_->get_comm()->SumAll(&tmp1, &mass_solute, 1);
+
+  return mass_solute;
+
+}  
 
 }  // namespace Transport
 }  // namespace Amanzi

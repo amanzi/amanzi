@@ -59,7 +59,7 @@ void UpwindGravityFlux::CalculateCoefficientsOnFaces(
     face_coef->ViewComponent("cell",true)->PutScalar(1.0);
   }
 
-  // Note that by scattering, and then looping over all USED cells, we
+  // Note that by scattering, and then looping over all Parallel_type::ALL cells, we
   // end up getting the correct upwind values in all faces (owned or
   // not) bordering an owned cell.  This is the necessary data for
   // making the local matrices in MFD, so there is no need to

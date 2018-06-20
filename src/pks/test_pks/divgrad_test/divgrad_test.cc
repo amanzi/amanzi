@@ -37,7 +37,7 @@ void DivGradTest::setup(const Teuchos::Ptr<State>& S) {
   S->RequireFieldEvaluator("cell_volume");
 
   // Create the absolute permeability tensor.
-  int c_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  int c_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
 
   Teuchos::RCP<std::vector<WhetStone::Tensor> > K = Teuchos::rcp( new std::vector<WhetStone::Tensor>(c_owned));
   for (int c=0; c!=c_owned; ++c) {
@@ -83,7 +83,7 @@ void DivGradTest::initialize(const Teuchos::Ptr<State>& S) {
   S->GetFieldData(key_)->ScatterMasterToGhosted("face");
 
   // initialize boundary conditions
-  int nfaces = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
+  int nfaces = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
   bc_markers_.resize(nfaces, Operators::OPERATOR_BC_NONE);
   bc_values_.resize(nfaces, 0.0);
 
@@ -106,7 +106,7 @@ void DivGradTest::initialize(const Teuchos::Ptr<State>& S) {
   } else {
     std::cout << "Passed test, which is BAD!" << std::endl;
   }
-  ASSERT(fail);
+  AMANZI_ASSERT(fail);
 
   matrix_->UpdateConsistentFaceConstraints(soln.ptr());
 
@@ -117,7 +117,7 @@ void DivGradTest::initialize(const Teuchos::Ptr<State>& S) {
   } else {
     std::cout << "Passed test, which is good" << std::endl;
   }
-  ASSERT(!fail);
+  AMANZI_ASSERT(!fail);
 };
 
 
@@ -167,7 +167,7 @@ bool DivGradTest::TestRegularFaceValues_(const Teuchos::RCP<CompositeVector>& pr
   int nfaces = pres->size("face");
   for (int f=0; f!=nfaces; ++f) {
     AmanziMesh::Entity_ID_List cells;
-    mesh_->face_get_cells(f, AmanziMesh::OWNED, &cells);
+    mesh_->face_get_cells(f, AmanziMesh::Parallel_type::OWNED, &cells);
 
     if (cells.size() == 1) {
       if (bc_markers_[f] == Operators::OPERATOR_BC_DIRICHLET) {

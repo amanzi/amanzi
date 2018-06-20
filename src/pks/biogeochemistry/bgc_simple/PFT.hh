@@ -44,7 +44,7 @@ class PFT {
 
   bool AssertRootBalance_or_die() {
     double totalRootW = BRootSoil.Norm1();
-    ASSERT(std::abs(totalRootW - Broot) < 1.e-6);
+    AMANZI_ASSERT(std::abs(totalRootW - Broot) < 1.e-6);
     return std::abs(totalRootW - Broot) < 1.e-6;
   }
 
@@ -105,7 +105,11 @@ class PFT {
   double seedrainlai; //the seed rain in cases of dying off
   int maxLAI; //maximum leaf area index;
   double annCBalance[10];//annual carbon balance for each leave layers
-
+  double height;
+  double carbon2biomass; // 2, the factor to convert Kg carbon to Kg biomass
+  double wood_density;
+  double aroot_radius; // m fine root radius
+  
   Epetra_SerialDenseVector BRootSoil; //root distribution at different soil depths
   std::string pft_type;
 

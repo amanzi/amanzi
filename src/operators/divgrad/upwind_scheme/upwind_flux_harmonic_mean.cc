@@ -107,7 +107,7 @@ void UpwindFluxHarmonicMean::CalculateCoefficientsOnFaces(
   for (int f=0; f!=nfaces; ++f) {
     int uw = upwind_cell[f];
     int dw = downwind_cell[f];
-    ASSERT(!((uw == -1) && (dw == -1)));
+    AMANZI_ASSERT(!((uw == -1) && (dw == -1)));
 
     // uw coef
     if (uw == -1) {
@@ -124,7 +124,7 @@ void UpwindFluxHarmonicMean::CalculateCoefficientsOnFaces(
     }
 
     bool negative_coef = (coefs[0] < 0.0) || (coefs[1] < 0.0);
-    ASSERT(!negative_coef);
+    AMANZI_ASSERT(!negative_coef);
     
     // Determine the size of the overlap region, a smooth transition region
     // near zero flux
@@ -176,7 +176,7 @@ void UpwindFluxHarmonicMean::UpdateDerivatives(const Teuchos::Ptr<State>& S,
                                         const std::vector<int>& bc_markers,
                                         const std::vector<double>& bc_values,
                                         std::vector<Teuchos::RCP<Teuchos::SerialDenseMatrix<int, double> > >* Jpp_faces) const {
-  ASSERT(0);
+  AMANZI_ASSERT(0);
 }
 } //namespace
 } //namespace

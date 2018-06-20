@@ -5,6 +5,7 @@
   Deformation optimization matrix
 */
 
+#include <set>
 #include "EpetraExt_MatrixMatrix.h"
 #include "EpetraExt_RowMatrixOut.h"
 
@@ -51,7 +52,7 @@ int MatrixVolumetricDeformation::ApplyInverse(const CompositeVector& b,
         CompositeVector& x) const {
   int ierr = prec_->ApplyInverse(*b.ViewComponent("node",false),
           *x.ViewComponent("node", false));
-  ASSERT(!ierr);
+  AMANZI_ASSERT(!ierr);
   return ierr;
 }
 
@@ -83,7 +84,7 @@ void MatrixVolumetricDeformation::ApplyRHS(const CompositeVector& x_cell,
   // Must also apply the boundary condition, dz_bottom = 0
   // -- Fix the bottom nodes, they may not move
   Epetra_MultiVector& rhs_n = *x_node->ViewComponent("node",false);
-  unsigned int nnodes_owned = mesh_->num_entities(AmanziMesh::NODE, AmanziMesh::OWNED);
+  unsigned int nnodes_owned = mesh_->num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::OWNED);
   for (AmanziMesh::Entity_ID_List::const_iterator n=fixed_nodes->begin();
        n!=fixed_nodes->end(); ++n) {
     if (*n < nnodes_owned)
@@ -120,8 +121,8 @@ void MatrixVolumetricDeformation::PreAssemble_() {
   domain_ = Teuchos::rcp(new CompositeVectorSpace());
   domain_->SetMesh(mesh_)->SetComponent("node",AmanziMesh::NODE,1);
 
-  unsigned int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
-  unsigned int nnodes = mesh_->num_entities(AmanziMesh::NODE, AmanziMesh::OWNED);
+  unsigned int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+  unsigned int nnodes = mesh_->num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::OWNED);
 
 
   // == Create dVdz ==
@@ -135,7 +136,7 @@ void MatrixVolumetricDeformation::PreAssemble_() {
 
     AmanziMesh::Entity_ID_List nodes;
     mesh_->cell_get_nodes(c, &nodes);
-    ASSERT(nodes.size() == nnz);
+    AMANZI_ASSERT(nodes.size() == nnz);
 
     // determine the upward/downward faces
     AmanziMesh::Entity_ID_List faces;
@@ -145,21 +146,21 @@ void MatrixVolumetricDeformation::PreAssemble_() {
     int my_down_n = -1;
     for (int n=0; n!=faces.size(); ++n) {
       if (mesh_->face_normal(faces[n],false,c)[2] > eps) {
-        ASSERT(my_up_n < 0);
+        AMANZI_ASSERT(my_up_n < 0);
         my_up_n = n;
       } else if (mesh_->face_normal(faces[n],false,c)[2] < -eps) {
-        ASSERT(my_down_n < 0);
+        AMANZI_ASSERT(my_down_n < 0);
         my_down_n = n;
       }
     }
-    ASSERT(my_up_n >= 0);
-    ASSERT(my_down_n >= 0);
+    AMANZI_ASSERT(my_up_n >= 0);
+    AMANZI_ASSERT(my_down_n >= 0);
 
     // Determine the perpendicular area (remember, face_normal() is weighted
     // by face area already).
     double perp_area_up = std::abs(mesh_->face_normal(faces[my_up_n])[2]);
     double perp_area_down = std::abs(mesh_->face_normal(faces[my_down_n])[2]);
-    ASSERT(std::abs(perp_area_up - perp_area_down) < 1.e-6);
+    AMANZI_ASSERT(std::abs(perp_area_up - perp_area_down) < 1.e-6);
 
     // loop over nodes in the top face, setting the Jacobian
     AmanziMesh::Entity_ID_List nodes_up;
@@ -180,16 +181,16 @@ void MatrixVolumetricDeformation::PreAssemble_() {
 
     // ensure all are nonzero
     for (int n=0; n!=nnz; ++n)
-      ASSERT(std::abs(values[n]) > 0.);
+      AMANZI_ASSERT(std::abs(values[n]) > 0.);
 
     // Assemble
     int ierr = dVdz_->InsertGlobalValues(cell_map.GID(c), nnz,
             values, indices);
-    ASSERT(!ierr);
+    AMANZI_ASSERT(!ierr);
   }
 
   ierr = dVdz_->FillComplete(node_map, cell_map);
-  ASSERT(!ierr);
+  AMANZI_ASSERT(!ierr);
 
   // dump dvdz
   //  EpetraExt::RowMatrixToMatlabFile("dvdz.txt", *dVdz_);
@@ -201,7 +202,7 @@ void MatrixVolumetricDeformation::PreAssemble_() {
   max_nnode_neighbors_ = 0;
   for (unsigned int no=0; no!=nnodes; ++no) {
     AmanziMesh::Entity_ID_List cells;
-    mesh_->node_get_cells(no, AmanziMesh::USED,&cells);
+    mesh_->node_get_cells(no, AmanziMesh::Parallel_type::ALL,&cells);
     // THIS IS VERY SPECIFIC TO GEOMETRY!
 #if MESH_TYPE
     int nnode_neighbors = (cells.size()/2 + 1) * 3;
@@ -224,9 +225,9 @@ void MatrixVolumetricDeformation::PreAssemble_() {
   // == Add in optimization components ==
   // -- Add a small shift to the diagonal
   Epetra_Vector diag(node_map);
-  ierr = operatorPre_->ExtractDiagonalCopy(diag);  ASSERT(!ierr);
+  ierr = operatorPre_->ExtractDiagonalCopy(diag);  AMANZI_ASSERT(!ierr);
   for (int n=0; n!=nnodes; ++n) diag[n] += diagonal_shift_;
-  ierr = operatorPre_->ReplaceDiagonalValues(diag);  ASSERT(!ierr);
+  ierr = operatorPre_->ReplaceDiagonalValues(diag);  AMANZI_ASSERT(!ierr);
 
   // dump Operator intermediate step
   //  EpetraExt::RowMatrixToMatlabFile("op_diag.txt", *operatorPre_);
@@ -239,7 +240,7 @@ void MatrixVolumetricDeformation::PreAssemble_() {
     // determine the set of node neighbors
     std::set<int> neighbors;
     AmanziMesh::Entity_ID_List faces;
-    mesh_->node_get_faces(n, AmanziMesh::USED, &faces);
+    mesh_->node_get_faces(n, AmanziMesh::Parallel_type::ALL, &faces);
     for (AmanziMesh::Entity_ID_List::const_iterator f=faces.begin();
          f!=faces.end(); ++f) {
       AmanziMesh::Entity_ID_List neighbor_nodes;
@@ -273,10 +274,10 @@ void MatrixVolumetricDeformation::PreAssemble_() {
     // add into the row
     ierr = operatorPre_->SumIntoGlobalValues(node_map.GID(n), nneighbors,
             node_values, node_indices);
-    ASSERT(!ierr);
+    AMANZI_ASSERT(!ierr);
   }
 
-  ierr = operatorPre_->FillComplete();  ASSERT(!ierr);
+  ierr = operatorPre_->FillComplete();  AMANZI_ASSERT(!ierr);
 
   // clean up
   delete[] node_indices;
@@ -309,7 +310,7 @@ void MatrixVolumetricDeformation::Assemble(
   // dnode_z that results in that dV.  Therefore, A * dnode_z = dV
   const Epetra_Map& node_map = mesh_->node_map(false);
   const Epetra_Map& node_map_wghost = mesh_->node_map(true);
-  unsigned int nnodes = mesh_->num_entities(AmanziMesh::NODE, AmanziMesh::OWNED);
+  unsigned int nnodes = mesh_->num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::OWNED);
 
   // reset to non-fixed operator.
   if (operator_ == Teuchos::null) {
@@ -319,7 +320,7 @@ void MatrixVolumetricDeformation::Assemble(
   }
 
   Epetra_Vector diag(node_map);
-  ierr = operatorPre_->ExtractDiagonalCopy(diag);  ASSERT(!ierr);
+  ierr = operatorPre_->ExtractDiagonalCopy(diag);  AMANZI_ASSERT(!ierr);
   double min(0.);
   diag.MinValue(&min);
   std::cout << "MIN VAL OP_PRE = " << min << std::endl;
@@ -332,7 +333,7 @@ void MatrixVolumetricDeformation::Assemble(
   std::cout << "SIZE op Domain = " << operator_->DomainMap().NumMyElements() << std::endl;
   std::cout << "SIZE op Range = " << operator_->RangeMap().NumMyElements() << std::endl;
 
-  ierr = operator_->ExtractDiagonalCopy(diag);  ASSERT(!ierr);
+  ierr = operator_->ExtractDiagonalCopy(diag);  AMANZI_ASSERT(!ierr);
   diag.MinValue(&min);
   std::cout << "MIN VAL OP (PRE) = " << min << std::endl;
 
@@ -345,7 +346,7 @@ void MatrixVolumetricDeformation::Assemble(
       int n_gid = node_map.GID(*n);
       int nneighbors;
       ierr = operator_->ExtractGlobalRowCopy(n_gid, max_nnode_neighbors_,
-              nneighbors, node_values, node_indices); ASSERT(!ierr);
+              nneighbors, node_values, node_indices); AMANZI_ASSERT(!ierr);
 
       // zero the row, 1 on diagonal
       for (int i=0; i!=nneighbors; ++i)
@@ -353,17 +354,17 @@ void MatrixVolumetricDeformation::Assemble(
 
       double rowsum = 0.;
       for (int i=0; i!=nneighbors; ++i) rowsum += node_indices[i];
-      ASSERT(rowsum > 0.);
+      AMANZI_ASSERT(rowsum > 0.);
 
       // replace the row
       ierr = operator_->ReplaceGlobalValues(n_gid, nneighbors,
-              node_values, node_indices); ASSERT(!ierr);
+              node_values, node_indices); AMANZI_ASSERT(!ierr);
     }
   }
 
-  ierr = operator_->FillComplete();  ASSERT(!ierr);
+  ierr = operator_->FillComplete();  AMANZI_ASSERT(!ierr);
 
-  ierr = operator_->ExtractDiagonalCopy(diag);  ASSERT(!ierr);
+  ierr = operator_->ExtractDiagonalCopy(diag);  AMANZI_ASSERT(!ierr);
   diag.MinValue(&min);
   std::cout << "MIN VAL OP (POST) = " << min << std::endl;
 

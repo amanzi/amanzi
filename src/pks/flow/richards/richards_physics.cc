@@ -158,7 +158,7 @@ void Richards::SetAbsolutePermeabilityTensor_(const Teuchos::Ptr<State>& S) {
     }
   } else {
     // ERROR -- unknown perm type
-    ASSERT(0);
+    AMANZI_ASSERT(0);
   }
 };
 
@@ -181,7 +181,7 @@ Richards::UpdateVelocity_(const Teuchos::Ptr<State>& S) {
   Teuchos::SerialDenseMatrix<int, double> matrix(d, d);
   double rhs[d];
 
-  int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
   AmanziMesh::Entity_ID_List faces;
   for (int c=0; c!=ncells_owned; ++c) {
     mesh_->cell_get_faces(c, &faces);
@@ -334,7 +334,7 @@ Richards::UpdateVelocity_(const Teuchos::Ptr<State>& S) {
 //    }
 //    else{
 //      // Unknown variable name
-//      ASSERT(0);
+//      AMANZI_ASSERT(0);
 //    }    
 
 // }

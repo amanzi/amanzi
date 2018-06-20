@@ -137,7 +137,7 @@ Teuchos::RCP<const CompositeVector> pres = S->GetFieldData(pres_key_);
     }
 
   } else {
-    ASSERT(0);
+    AMANZI_ASSERT(0);
   }
 }
 

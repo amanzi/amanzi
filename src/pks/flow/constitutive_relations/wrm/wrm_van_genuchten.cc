@@ -139,7 +139,7 @@ void WRMVanGenuchten::InitializeFromPlist_() {
   } else if (fname == std::string("Burdine")) {
     function_ = FLOW_WRM_BURDINE;
   } else {
-    ASSERT(0);
+    AMANZI_ASSERT(0);
   }
 
   alpha_ = plist_.get<double>("van Genuchten alpha");

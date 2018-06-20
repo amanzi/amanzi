@@ -26,9 +26,9 @@ void MatrixMFD_Coupled_TPFA::SetSubBlocks(const Teuchos::RCP<MatrixMFD>& blockA,
 				     const Teuchos::RCP<MatrixMFD>& blockB) {
   MatrixMFD_Coupled::SetSubBlocks(blockA,blockB);
   blockA_TPFA_ = Teuchos::rcp_dynamic_cast<MatrixMFD_TPFA>(blockA);
-  ASSERT(blockA_TPFA_ != Teuchos::null);
+  AMANZI_ASSERT(blockA_TPFA_ != Teuchos::null);
   blockB_TPFA_ = Teuchos::rcp_dynamic_cast<MatrixMFD_TPFA>(blockB);
-  ASSERT(blockB_TPFA_ != Teuchos::null);
+  AMANZI_ASSERT(blockB_TPFA_ != Teuchos::null);
 }
 
 int MatrixMFD_Coupled_TPFA::ApplyInverse(const TreeVector& X,
@@ -72,7 +72,7 @@ int MatrixMFD_Coupled_TPFA::ApplyInverse(const TreeVector& X,
   //  Xc.Print(std::cout);
   //S_pc_->ApplyInverse(Xc, Yc);
   ierr = S_pc_->ApplyInverse(Xc, Yc);
-  ASSERT(!ierr);
+  AMANZI_ASSERT(!ierr);
 
   for (int c=0; c!=ncells; ++c) {
     YA_c[0][c] = Yc[0][2*c];
@@ -124,9 +124,9 @@ void MatrixMFD_Coupled_TPFA::AssembleSchur_() const {
   const Epetra_BlockMap& fmap = mesh_->face_map(false);
   const Epetra_BlockMap& fmap_wghost = mesh_->face_map(true);
 
-  int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
-  ASSERT(Ccc_->MyLength() == ncells);
-  ASSERT(Dcc_->MyLength() == ncells);
+  int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+  AMANZI_ASSERT(Ccc_->MyLength() == ncells);
+  AMANZI_ASSERT(Dcc_->MyLength() == ncells);
 
   // Get the assorted sub-blocks
   const Epetra_FECrsMatrix& App = *blockA_TPFA_->TPFA();
@@ -155,14 +155,14 @@ void MatrixMFD_Coupled_TPFA::AssembleSchur_() const {
     // Access the row in App,Bpp
     ierr = App.ExtractGlobalRowCopy(cell_GID, 9, nentriesA, valuesA, indicesA);
     ierr |= Bpp.ExtractGlobalRowCopy(cell_GID, 9, nentriesB, valuesB, indicesB);
-    ASSERT(!ierr);
-    ASSERT(nentriesA == nentriesB);
+    AMANZI_ASSERT(!ierr);
+    AMANZI_ASSERT(nentriesA == nentriesB);
 
     ierr = P2c2c_->BeginReplaceGlobalValues(cell_GID, nentriesA, indicesA);
-    ASSERT(!ierr);
+    AMANZI_ASSERT(!ierr);
 
     for (int n=0; n!=nentriesA; ++n) {
-      ASSERT(indicesA[n] == indicesB[n]);
+      AMANZI_ASSERT(indicesA[n] == indicesB[n]);
       values(0,0) = valuesA[n];
       values(1,1) = valuesB[n];
 
@@ -175,15 +175,15 @@ void MatrixMFD_Coupled_TPFA::AssembleSchur_() const {
       }
 
       ierr |= P2c2c_->SubmitBlockEntry(values.A(), values.LDA(), values.M(), values.N());
-      ASSERT(!ierr);
+      AMANZI_ASSERT(!ierr);
     }
 
     ierr = P2c2c_->EndSubmitEntries();
-    ASSERT(!ierr);
+    AMANZI_ASSERT(!ierr);
   }
 
   ierr |= P2c2c_->GlobalAssemble();
-  ASSERT(!ierr);
+  AMANZI_ASSERT(!ierr);
 
   P2f2f_ = P2c2c_; // alias for use by PC
 
@@ -214,22 +214,22 @@ void MatrixMFD_Coupled_TPFA::SymbolicAssembleGlobalMatrices() {
   int cells_GID[2];
 
   int ierr = 0;
-  int nfaces = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
+  int nfaces = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
   for (int f = 0; f < nfaces; f++) {
-    mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+    mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
     int ncells = cells.size();
 
     for (int n = 0; n < ncells; n++) cells_GID[n] = cmap_wghost.GID(cells[n]);
 
     ierr |= double_pp_graph.InsertGlobalIndices(ncells, cells_GID, ncells, cells_GID);
-    ASSERT(!ierr);
+    AMANZI_ASSERT(!ierr);
   }
   ierr |= double_pp_graph.GlobalAssemble();  // Symbolic graph is complete.
-  ASSERT(!ierr);
+  AMANZI_ASSERT(!ierr);
 
   P2c2c_ = Teuchos::rcp(new Epetra_FEVbrMatrix(Copy, double_pp_graph, false));
   ierr |= P2c2c_->GlobalAssemble();
-  ASSERT(!ierr);
+  AMANZI_ASSERT(!ierr);
 }
 
 

@@ -39,7 +39,7 @@ void MatrixMFD_TPFA_ScaledConstraint::CreateMFDstiffnessMatrices(
     WhetStone::MFD3D_Diffusion mfd(mesh_);
     AmanziMesh::Entity_ID_List faces;
 
-    int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+    int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
 
     if (Aff_cells_.size() != ncells) {
       Aff_cells_.resize(static_cast<size_t>(ncells));

@@ -268,7 +268,7 @@ void SurfaceSubgridIceEnergyEvaluator::EvaluateFieldPartialDerivative_(
     
   } else {
     std::cout<<"SURFACE_SUBGRID_ICE_ENERGY: NO DERIVATIVE EXITS: "<<wrt_key<<"\n";
-    ASSERT(0);
+    AMANZI_ASSERT(0);
   }
 };
 

@@ -73,8 +73,8 @@ Seepage face boundary conditions
 A variety of seepage face boundary conditions are permitted for both surface
 and subsurface flow PKs.  Typically seepage conditions are of the form:
 
-  * if :math:`q \cdot \hat{n} < 0`, then :math:`q = 0`
-  * if :math:`p > p0`, then :math:`p = p0`
+  - if :math:`q \cdot \hat{n} < 0`, then :math:`q = 0`
+  - if :math:`p > p0`, then :math:`p = p0`
 
 This ensures that flow is only out of the domain, but that the max pressure on
 the boundary is specified by :math:`p0`.
@@ -121,8 +121,8 @@ be prescribed, to be enforced until the water table rises to the surface, at
 which point the precip is turned off and water seeps into runoff.  This
 capability is experimental and has not been well tested.
 
-  * if :math:`q \cdot \hat{n} < q0`, then :math:`q = q0`
-  * if :math:`p > p_atm`, then :math:`p = p_atm`
+  - if :math:`q \cdot \hat{n} < q0`, then :math:`q = q0`
+  - if :math:`p > p_atm`, then :math:`p = p_atm`
 
 Example: seepage with infiltration
 

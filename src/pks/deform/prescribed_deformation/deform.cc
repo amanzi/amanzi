@@ -89,11 +89,11 @@ void DeformMesh::print_VTK_unstructured_mesh( string fname ) {
 
   // number of vertices
   int nV = mesh_->num_entities(Amanzi::AmanziMesh::NODE,
-          Amanzi::AmanziMesh::OWNED);
+          Amanzi::AmanziMesh::Parallel_type::OWNED);
 
   // number of faces
   int nF = mesh_->num_entities(Amanzi::AmanziMesh::FACE,
-          Amanzi::AmanziMesh::OWNED);
+          Amanzi::AmanziMesh::Parallel_type::OWNED);
 
   // output file name
   string output_filename = fname+string(".vtk");
@@ -158,11 +158,11 @@ void DeformMesh::print_VTK_domain_boundary( string fname ) {
 
   // number of vertices
   int nV = mesh_->num_entities(Amanzi::AmanziMesh::NODE,
-          Amanzi::AmanziMesh::OWNED);
+          Amanzi::AmanziMesh::Parallel_type::OWNED);
 
   // number of faces
   int nF = mesh_->num_entities(Amanzi::AmanziMesh::FACE,
-          Amanzi::AmanziMesh::OWNED);
+          Amanzi::AmanziMesh::Parallel_type::OWNED);
 
   // output file name
   string output_filename = fname+string(".vtk");
@@ -195,7 +195,7 @@ void DeformMesh::print_VTK_domain_boundary( string fname ) {
   for (int iF=0; iF<nF; iF++) {
 
     Entity_ID_List cellids;
-    mesh_->face_get_cells ( iF, Amanzi::AmanziMesh::OWNED, &cellids );
+    mesh_->face_get_cells ( iF, Amanzi::AmanziMesh::Parallel_type::OWNED, &cellids );
 
     if ( cellids.size()==1 ) {
       bnd_face_ids.push_back( iF );
@@ -237,7 +237,7 @@ void DeformMesh::print_VTK_submesh( string fname ) {
 
   // number of vertices
   unsigned int nV = mesh_->num_entities(Amanzi::AmanziMesh::NODE,
-          Amanzi::AmanziMesh::OWNED);
+          Amanzi::AmanziMesh::Parallel_type::OWNED);
 
   // flag & renumber the nodes above the threshold (z direction)
   double threshold = 3.8;
@@ -278,7 +278,7 @@ void DeformMesh::print_VTK_submesh( string fname ) {
 
   // number of faces
   int nF = mesh_->num_entities(Amanzi::AmanziMesh::FACE,
-          Amanzi::AmanziMesh::OWNED);
+          Amanzi::AmanziMesh::Parallel_type::OWNED);
 
   // count the number of polygonal entries (size)
   int size = 0 ;
@@ -380,7 +380,7 @@ void DeformMesh::bell_shaped_profile( double ss ) {
 
   // number of vertices
   unsigned int nV = mesh0_->num_entities(Amanzi::AmanziMesh::NODE,
-          Amanzi::AmanziMesh::OWNED);
+          Amanzi::AmanziMesh::Parallel_type::OWNED);
 
   Amanzi::AmanziGeometry::Point coords(dim), new_coords(dim);
 
@@ -462,7 +462,7 @@ void DeformMesh::layer_profile( double ss ) {
 
   // number of vertices
   unsigned int nV = mesh0_->num_entities(Amanzi::AmanziMesh::NODE,
-          Amanzi::AmanziMesh::OWNED);
+          Amanzi::AmanziMesh::Parallel_type::OWNED);
 
   Amanzi::AmanziGeometry::Point coords(dim), new_coords(dim);
 
@@ -527,7 +527,7 @@ void DeformMesh::bell_shaped_profile( double ss,
 
   // number of vertices
   unsigned int nV = mesh0_->num_entities(Amanzi::AmanziMesh::NODE,
-          Amanzi::AmanziMesh::OWNED);
+          Amanzi::AmanziMesh::Parallel_type::OWNED);
 
   Amanzi::AmanziGeometry::Point coords(dim), new_coords(dim);
 
@@ -686,10 +686,10 @@ void DeformMesh::build_the_starting_mesh( Entity_ID_List & newnod ) {
 
   // number of faces & vertices
   unsigned int nF = mesh0_->num_entities(Amanzi::AmanziMesh::FACE,
-          Amanzi::AmanziMesh::OWNED);
+          Amanzi::AmanziMesh::Parallel_type::OWNED);
 
   unsigned int nV = mesh0_->num_entities(Amanzi::AmanziMesh::NODE,
-          Amanzi::AmanziMesh::OWNED);
+          Amanzi::AmanziMesh::Parallel_type::OWNED);
 
   bool recompute_flag(false);
 
@@ -698,7 +698,7 @@ void DeformMesh::build_the_starting_mesh( Entity_ID_List & newnod ) {
   // max height)
   for (unsigned int iF=0; iF<nF; iF++) {
     Entity_ID_List cellids;
-    mesh0_->face_get_cells ( iF, Amanzi::AmanziMesh::OWNED, &cellids );
+    mesh0_->face_get_cells ( iF, Amanzi::AmanziMesh::Parallel_type::OWNED, &cellids );
 
     // check if this is a boundary face
     if ( cellids.size()==1 ) {
@@ -781,7 +781,7 @@ void DeformMesh::mesh_deformation() {
   Entity_ID_List nodids;
 
   unsigned int nV = mesh0_->num_entities(Amanzi::AmanziMesh::NODE,
-          Amanzi::AmanziMesh::OWNED);
+          Amanzi::AmanziMesh::Parallel_type::OWNED);
 
   analyze_final_Mesh();
 
@@ -938,7 +938,7 @@ void DeformMesh::analyze_final_mesh( vector<PCol> & pcol ) {
 
   // number of vertices
   unsigned int nV = mesh1_->num_entities(Amanzi::AmanziMesh::NODE,
-          Amanzi::AmanziMesh::OWNED);
+          Amanzi::AmanziMesh::Parallel_type::OWNED);
 
   // get the bounding box
   double xmin(+1.e+20), xmax(-1.e+20), ymin(+1.e+20), ymax(-1.e+20);
@@ -1010,7 +1010,7 @@ void DeformMesh::analyze_final_Mesh() {
 
   // loop
   unsigned int nV = mesh0_->num_entities(Amanzi::AmanziMesh::NODE,
-          Amanzi::AmanziMesh::OWNED);
+          Amanzi::AmanziMesh::Parallel_type::OWNED);
 
   // new_coords
   Amanzi::AmanziGeometry::Point new_coords(dim);

@@ -20,7 +20,7 @@ PK_Physical_Default::PK_Physical_Default(Teuchos::ParameterList& pk_tree,
     PK(pk_tree, glist, S, solution),
     PK_Physical(pk_tree, glist, S, solution)
 {
-  domain_ = plist_->get<std::string>("domain name", "");
+  domain_ = plist_->get<std::string>("domain name", "domain");
   key_ = Keys::readKey(*plist_, domain_, "primary variable");
   
   // set up the primary variable solution, and its evaluator
@@ -53,7 +53,7 @@ void PK_Physical_Default::Setup(const Teuchos::Ptr<State>& S) {
   S->RequireFieldEvaluator(key_);
   Teuchos::RCP<FieldEvaluator> fm = S->GetFieldEvaluator(key_);
   solution_evaluator_ = Teuchos::rcp_dynamic_cast<PrimaryVariableFieldEvaluator>(fm);
-  ASSERT(solution_evaluator_ != Teuchos::null);
+  AMANZI_ASSERT(solution_evaluator_ != Teuchos::null);
 };
 
 
@@ -71,7 +71,7 @@ void PK_Physical_Default::State_to_Solution(const Teuchos::RCP<State>& S,
 // -----------------------------------------------------------------------------
 void PK_Physical_Default::Solution_to_State(TreeVector& solution,
         const Teuchos::RCP<State>& S) {
-  ASSERT(solution.Data() == S->GetFieldData(key_));
+  AMANZI_ASSERT(solution.Data() == S->GetFieldData(key_));
   //  S->SetData(key_, name_, solution->Data());
   //  solution_evaluator_->SetFieldAsChanged();
 };
@@ -79,7 +79,7 @@ void PK_Physical_Default::Solution_to_State(TreeVector& solution,
 
 void PK_Physical_Default::Solution_to_State(const TreeVector& solution,
         const Teuchos::RCP<State>& S) {
-  ASSERT(solution.Data() == S->GetFieldData(key_));
+  AMANZI_ASSERT(solution.Data() == S->GetFieldData(key_));
   //  TreeVector* soln_nc_ptr = const_cast<TreeVector*>(&solution);
   //  Solution_to_State(*soln_nc_ptr, S);
 };
@@ -104,7 +104,7 @@ void PK_Physical_Default::set_states(const Teuchos::RCP<const State>& S,
   Teuchos::RCP<FieldEvaluator> fm = S_next->GetFieldEvaluator(key_);
 #if ENABLE_DBC
   solution_evaluator_ = Teuchos::rcp_dynamic_cast<PrimaryVariableFieldEvaluator>(fm);
-  ASSERT(solution_evaluator_ != Teuchos::null);
+  AMANZI_ASSERT(solution_evaluator_ != Teuchos::null);
 #else
   solution_evaluator_ = Teuchos::rcp_static_cast<PrimaryVariableFieldEvaluator>(fm);
 #endif
@@ -149,7 +149,7 @@ void PK_Physical_Default::ChangedSolutionPK(const Teuchos::Ptr<State>& S) {
 
   Teuchos::RCP<PrimaryVariableFieldEvaluator> solution_evaluator =
     Teuchos::rcp_dynamic_cast<PrimaryVariableFieldEvaluator>(fm);
-  ASSERT(solution_evaluator != Teuchos::null);
+  AMANZI_ASSERT(solution_evaluator != Teuchos::null);
   solution_evaluator->SetFieldAsChanged(S);
 }
 
@@ -201,7 +201,7 @@ void PK_Physical_Default::DeriveFaceValuesFromCellValues_(const Teuchos::Ptr<Com
   int f_owned = cv_f.MyLength();
   for (int f=0; f!=f_owned; ++f) {
     AmanziMesh::Entity_ID_List cells;
-    cv->Mesh()->face_get_cells(f, AmanziMesh::USED, &cells);
+    cv->Mesh()->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
     int ncells = cells.size();
 
     double face_value = 0.0;

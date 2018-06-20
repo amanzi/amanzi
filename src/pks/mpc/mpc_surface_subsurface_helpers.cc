@@ -27,6 +27,7 @@ CopySubsurfaceToSurface(const CompositeVector& sub,
     AmanziMesh::Entity_ID f =
         surf->Mesh()->entity_get_parent(AmanziMesh::CELL, sc);
     surf_c[0][sc] = GetDomainFaceValue(sub, f);
+
   }
 }
 

@@ -14,8 +14,8 @@ Author: Ethan Coon (ecoon@lanl.gov)
 
 #include "FunctionFactory.hh"
 #include "CompositeVectorFunction.hh"
-
 #include "CompositeVectorFunctionFactory.hh"
+#include "LinearOperatorFactory.hh"
 #include "independent_variable_field_evaluator.hh"
 
 #include "PDE_DiffusionFV.hh"
@@ -35,11 +35,13 @@ SnowDistribution::SnowDistribution(Teuchos::ParameterList& FElist,
                                    const Teuchos::RCP<TreeVector>& solution) :
     PK(FElist, plist, S, solution),
     PK_PhysicalBDF_Default(FElist, plist, S, solution),
-    full_jacobian_(false) {
-
+    my_next_time_(-9.e80)
+{
   // set a default absolute tolerance
   if (!plist_->isParameter("absolute error tolerance"))
     plist_->set("absolute error tolerance", .01); // h * nl
+
+  dt_factor_ = plist_->get<double>("distribution time", 86400.0);
 }
 
 
@@ -67,67 +69,79 @@ void SnowDistribution::SetupSnowDistribution_(const Teuchos::Ptr<State>& S) {
   // -- cell volume and evaluator
   S->RequireFieldEvaluator(Keys::getKey(domain_, "cell_volume"));
   
-  // Create the upwinding method.
+  // boundary conditions
+  int nfaces = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
+  bc_markers().resize(nfaces, Operators::OPERATOR_BC_NONE);
+  bc_values().resize(nfaces, 0.0);
+  UpdateBoundaryConditions_(S); // never change
+
+  // -- create the upwinding method.
   S->RequireField(Keys::getKey(domain_,"upwind_snow_conductivity"), name_)->SetMesh(mesh_)
     ->SetGhosted()->SetComponent("face", AmanziMesh::FACE, 1);
   S->GetField(Keys::getKey(domain_,"upwind_snow_conductivity"),name_)->set_io_vis(false);
 
+  upwind_method_ = Operators::UPWIND_METHOD_TOTAL_FLUX;
+  upwinding_ = Teuchos::rcp(new Operators::UpwindTotalFlux(name_,
+          Keys::getKey(domain_,"snow_conductivity"),
+          Keys::getKey(domain_,"upwind_snow_conductivity"),
+          Keys::getKey(domain_,"snow_flux_direction"), 1.e-8));
 
-  std::string method_name = plist_->get<std::string>("upwind snow_conductivity method",
-          "upwind with total flux");
-  if (method_name == "upwind with total flux") {
-    upwind_method_ = Operators::UPWIND_METHOD_TOTAL_FLUX;
-    upwinding_ = Teuchos::rcp(new Operators::UpwindTotalFlux(name_,
-                 Keys::getKey(domain_,"snow_conductivity"), Keys::getKey(domain_,"upwind_snow_conductivity"),
-                                                     Keys::getKey(domain_,"snow_flux_direction"), 1.e-8));
-  } else if (method_name == "upwind by potential difference") {
-    upwind_method_ = Operators::UPWIND_METHOD_POTENTIAL_DIFFERENCE;
-    upwinding_ = Teuchos::rcp(new Operators::UpwindPotentialDifference(name_,
-                 Keys::getKey(domain_,"snow_conductivity"), Keys::getKey(domain_,"upwind_snow_conductivity"),
-                 Keys::getKey(domain_,"skin_potential"), Keys::getKey(domain_,"precipitation_snow")));
-  } else {
-    std::stringstream messagestream;
-    messagestream << "Snow Precipitation: has no upwinding method named: " << method_name;
-    Errors::Message message(messagestream.str());
-    Exceptions::amanzi_throw(message);
-  }
-
-  // -- owned secondary variables, no evaluator used
-  if (upwind_method_ == Operators::UPWIND_METHOD_TOTAL_FLUX) {
-
-    S->RequireField(Keys::getKey(domain_, "snow_flux_direction"), name_)->SetMesh(mesh_)->SetGhosted()
-        ->SetComponent("face", AmanziMesh::FACE, 1);
-  }
-  S->RequireField(Keys::getKey(domain_, "snow_flux"), name_)->SetMesh(mesh_)->SetGhosted()
-      ->SetComponent("face", AmanziMesh::FACE, 1);
-
-  int nfaces = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
-  bc_markers_.resize(nfaces, Operators::OPERATOR_BC_NONE);
-  bc_values_.resize(nfaces, 0.0);
-  UpdateBoundaryConditions_(S); // never change
-  std::vector<double> mixed;
-  bc_ = Teuchos::rcp(new Operators::BCs(Operators::OPERATOR_BC_TYPE_FACE, bc_markers_, bc_values_, mixed));
-
-  // operator for the diffusion terms: must use ScaledConstraint version
+  // -- operator for the diffusion terms
   Teuchos::ParameterList mfd_plist = plist_->sublist("diffusion");
+  mfd_plist.set("nonlinear coefficient", "upwind: face");
+  if (mfd_plist.isParameter("Newton correction")) {
+    Errors::Message message;
+    message << name_ << ": The forward operator for Diffusion should not set a "
+            << "\"Newton correction\" term, perhaps you meant to put this in a "
+            << "\"Diffusion PC\" sublist.";
+    Exceptions::amanzi_throw(message);
+  }    
   matrix_diff_ = Teuchos::rcp(new Operators::PDE_DiffusionFV(mfd_plist, mesh_));
-  matrix_ = matrix_diff_->global_operator();
   matrix_diff_->SetBCs(bc_, bc_);
   matrix_diff_->SetTensorCoefficient(Teuchos::null);
+  matrix_ = matrix_diff_->global_operator();
 
+  // -- create the operator, data for flux directions for upwinding
+  Teuchos::ParameterList face_diff_list(mfd_plist);
+  face_diff_list.set("nonlinear coefficient", "none");
+  face_matrix_diff_ = Teuchos::rcp(new Operators::PDE_DiffusionFV(face_diff_list, mesh_));
+  face_matrix_diff_->SetTensorCoefficient(Teuchos::null);
+  face_matrix_diff_->SetScalarCoefficient(Teuchos::null, Teuchos::null);
+  face_matrix_diff_->SetBCs(bc_, bc_);
+  face_matrix_diff_->UpdateMatrices(Teuchos::null, Teuchos::null);
+  S->RequireField(Keys::getKey(domain_, "snow_flux_direction"), name_)
+      ->SetMesh(mesh_)->SetGhosted()
+      ->SetComponent("face", AmanziMesh::FACE, 1);
+
+  // -- preconditioner
   Teuchos::ParameterList mfd_pc_plist = plist_->sublist("diffusion preconditioner");
   preconditioner_diff_ = Teuchos::rcp(new Operators::PDE_DiffusionFV(mfd_pc_plist, mesh_));
   preconditioner_diff_->SetBCs(bc_, bc_);
   preconditioner_diff_->SetTensorCoefficient(Teuchos::null);
+
   preconditioner_ = preconditioner_diff_->global_operator();
-  preconditioner_->SymbolicAssembleMatrix();
   
   // accumulation operator for the preconditioenr
   Teuchos::ParameterList& acc_pc_plist = plist_->sublist("accumulation preconditioner");
   acc_pc_plist.set("entity kind", "cell");
   preconditioner_acc_ = Teuchos::rcp(new Operators::PDE_Accumulation(acc_pc_plist, preconditioner_));
 
-};
+  // symbolic assemble, get PC
+  precon_used_ = plist_->isSublist("preconditioner");
+  if (precon_used_) {
+    preconditioner_->SymbolicAssembleMatrix();
+    preconditioner_->InitializePreconditioner(plist_->sublist("preconditioner"));
+  }
+  
+  //    Potentially create a linear solver
+  if (plist_->isSublist("linear solver")) {
+    Teuchos::ParameterList linsolve_sublist = plist_->sublist("linear solver");
+    AmanziSolvers::LinearOperatorFactory<Operators::Operator,CompositeVector,CompositeVectorSpace> fac;
+    lin_solver_ = fac.Create(linsolve_sublist, preconditioner_);
+  } else {
+    lin_solver_ = preconditioner_;
+  }
+}
 
 
 // -------------------------------------------------------------
@@ -166,8 +180,6 @@ void SnowDistribution::Initialize(const Teuchos::Ptr<State>& S) {
     S->GetFieldData(Keys::getKey(domain_,"snow_flux_direction"), name_)->PutScalar(0.);
     S->GetField(Keys::getKey(domain_,"snow_flux_direction"), name_)->set_initialized();
   }
-  S->GetFieldData(Keys::getKey(domain_,"snow_flux"), name_)->PutScalar(0.);
-  S->GetField(Keys::getKey(domain_,"snow_flux"), name_)->set_initialized();
 };
 
 
@@ -189,14 +201,9 @@ bool SnowDistribution::UpdatePermeabilityData_(const Teuchos::Ptr<State>& S) {
       Teuchos::RCP<CompositeVector> flux_dir =
           S->GetFieldData(Keys::getKey(domain_,"snow_flux_direction"), name_);
 
-      // Create the stiffness matrix without a rel perm (just n/mu)
-      matrix_->Init();
-      matrix_diff_->SetScalarCoefficient(Teuchos::null, Teuchos::null);
-      matrix_diff_->UpdateMatrices(Teuchos::null, Teuchos::null);
-
       // Derive the flux
       Teuchos::RCP<const CompositeVector> potential = S->GetFieldData(Keys::getKey(domain_,"snow_skin_potential"));
-      matrix_diff_->UpdateFlux(*potential, *flux_dir);
+      face_matrix_diff_->UpdateFlux(potential.ptr(), flux_dir.ptr());
     }
 
     // get snow_conductivity data
@@ -205,7 +212,6 @@ bool SnowDistribution::UpdatePermeabilityData_(const Teuchos::Ptr<State>& S) {
 
     // get upwind snow_conductivity data
     Teuchos::RCP<CompositeVector> uw_cond =
-
       S->GetFieldData(Keys::getKey(domain_,"upwind_snow_conductivity"), name_);
 
     { // place interior cells on boundary faces
@@ -214,7 +220,7 @@ bool SnowDistribution::UpdatePermeabilityData_(const Teuchos::Ptr<State>& S) {
       int nfaces = uw_cond_f.MyLength();
       AmanziMesh::Entity_ID_List cells;
       for (int f=0; f!=nfaces; ++f) {
-        mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+        mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
         if (cells.size() == 1) {
           int c = cells[0];
           uw_cond_f[0][f] = cond_c[0][c];
@@ -235,17 +241,20 @@ void SnowDistribution::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& S) {
   if (vo_->os_OK(Teuchos::VERB_EXTREME))
     *vo_->os() << "  Updating BCs." << std::endl;
 
+  auto& markers = bc_markers();
+  auto& values = bc_values();
+  
   // mark all remaining boundary conditions as zero flux conditions
-  int nfaces_owned = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
+  int nfaces_owned = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
   AmanziMesh::Entity_ID_List cells;
   for (int f = 0; f < nfaces_owned; f++) {
-    if (bc_markers_[f] == Operators::OPERATOR_BC_NONE) {
-      mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+    if (markers[f] == Operators::OPERATOR_BC_NONE) {
+      mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
       int ncells = cells.size();
 
       if (ncells == 1) {
-        bc_markers_[f] = Operators::OPERATOR_BC_NEUMANN;
-        bc_values_[f] = 0.0;
+        markers[f] = Operators::OPERATOR_BC_NEUMANN;
+        values[f] = 0.0;
       }
     }
   }

@@ -78,25 +78,25 @@ MPCPermafrost3::setup(const Teuchos::Ptr<State>& S) {
   /*
     pc_flow_ = Teuchos::rcp_dynamic_cast<Operators::MatrixMFD_Surf>(
     domain_flow_pk_->preconditioner());
-    ASSERT(pc_flow_ != Teuchos::null);
+    AMANZI_ASSERT(pc_flow_ != Teuchos::null);
     pc_energy_ = Teuchos::rcp_dynamic_cast<Operators::MatrixMFD_Surf>(
     domain_energy_pk_->preconditioner());
-    ASSERT(pc_energy_ != Teuchos::null);
+    AMANZI_ASSERT(pc_energy_ != Teuchos::null);
   */
 
   pc_flow_ = Teuchos::rcp_dynamic_cast<Operators::MatrixMFD>(
       domain_flow_pk_->preconditioner());
-  ASSERT(pc_flow_ != Teuchos::null);
+  AMANZI_ASSERT(pc_flow_ != Teuchos::null);
   pc_energy_ = Teuchos::rcp_dynamic_cast<Operators::MatrixMFD>(
       domain_energy_pk_->preconditioner());
-  ASSERT(pc_energy_ != Teuchos::null);
+  AMANZI_ASSERT(pc_energy_ != Teuchos::null);
 
   pc_surf_flow_ = Teuchos::rcp_dynamic_cast<Operators::MatrixMFD_TPFA>(
       surf_flow_pk_->preconditioner());
-  ASSERT(pc_surf_flow_ != Teuchos::null);
+  AMANZI_ASSERT(pc_surf_flow_ != Teuchos::null);
   pc_surf_energy_ = Teuchos::rcp_dynamic_cast<Operators::MatrixMFD_TPFA>(
       surf_energy_pk_->preconditioner());
-  ASSERT(pc_surf_energy_ != Teuchos::null);
+  AMANZI_ASSERT(pc_surf_energy_ != Teuchos::null);
 
   /*
   // -- Subsurface blocks include their surface operators.
@@ -118,11 +118,11 @@ MPCPermafrost3::setup(const Teuchos::Ptr<State>& S) {
   // -- clone the flow operator
   Teuchos::RCP<CompositeMatrix> pcAdv_mat = sub_pks_[0]->preconditioner()->Clone();
   pcAdv_ = Teuchos::rcp_dynamic_cast<Operators::MatrixMFD>(pcAdv_mat);
-  ASSERT(pcAdv_ != Teuchos::null);
+  AMANZI_ASSERT(pcAdv_ != Teuchos::null);
   precon_->SetAdvectiveBlock(pcAdv_);
   // -- get the field -- this is very hackish and demonstrates why coupled PKs should be redesigned --etc
   Teuchos::RCP<Energy::EnergyBase> pk_as_energy = Teuchos::rcp_dynamic_cast<Energy::EnergyBase>(domain_energy_pk_);
-  ASSERT(pk_as_energy != Teuchos::null);
+  AMANZI_ASSERT(pk_as_energy != Teuchos::null);
   adv_field_ = pk_as_energy->advection()->field();
   adv_flux_ = pk_as_energy->advection()->flux();
   
@@ -464,7 +464,7 @@ MPCPermafrost3::UpdatePreconditioner(double t,
   // // update advective components
   // if (adv_flux_ == Teuchos::null) {
   //   Teuchos::RCP<Energy::EnergyBase> pk_as_energy = Teuchos::rcp_dynamic_cast<Energy::EnergyBase>(domain_energy_pk_);
-  //   ASSERT(pk_as_energy != Teuchos::null);
+  //   AMANZI_ASSERT(pk_as_energy != Teuchos::null);
   //   adv_flux_ = pk_as_energy->advection()->flux();
   // }
 
@@ -484,7 +484,7 @@ MPCPermafrost3::UpdatePreconditioner(double t,
   //       kr_f[0][f] *= enth_u[0][f] / std::abs(flux[0][f]);
   //     } else {
   //       AmanziMesh::Entity_ID_List cells;
-  //       domain_mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+  //       domain_mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
   //       if (cells.size() == 1) {
   //         kr_f[0][f] *= enth_c[0][cells[0]];
   //       } else {

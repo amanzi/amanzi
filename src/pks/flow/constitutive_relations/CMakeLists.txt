@@ -18,9 +18,7 @@ endforeach(lcv)
 
 # collect all registrations and register
 file(GLOB_RECURSE registrations "./*_reg.hh" )
-message("My reg: ${registrations}")
 foreach(reg_lcv IN LISTS registrations)
-  message("REGISTERING: ${reg_lcv}")
   register_abs_evaluator_with_factory(HEADERFILE ${reg_lcv} LISTNAME FLOW_RELATIONS)
 endforeach(reg_lcv)
 
@@ -33,8 +31,7 @@ generate_evaluators_registration_header(
 
 # collect all sources
 foreach(lcv IN LISTS subdirs)
-
-file(GLOB subdir_sources "./${lcv}/*.cc")
+  file(GLOB subdir_sources "./${lcv}/*.cc")
   set(sources ${sources} ${subdir_sources})
 endforeach(lcv)
 
@@ -43,30 +40,21 @@ add_library(flow_relations ${sources})
 
 	
 if (BUILD_TESTS)
-    include_directories(./wrm)
-
     # Add UnitTest includes
     include_directories(${Amanzi_TPL_UnitTest_INCLUDE_DIRS})
+    include_directories("./wrm")
 
-    add_executable(wrm_vanGenuchten
-      wrm/models/test/main.cc
-      wrm/models/test/test_vanGenuchten.cc)
-    target_link_libraries(wrm_vanGenuchten
-      flow_relations
-      amanzi_error_handling
-      amanzi_state
-      ${Amanzi_TPL_UnitTest_LIBRARIES}                                                                                                                                                      
-      ${Amanzi_TPL_Trilinos_LIBRARIES})
+    add_amanzi_test(wrm_vanGenuchten wrm_vanGenuchten
+                    KIND unit
+                    SOURCE wrm/models/test/main.cc
+                           wrm/models/test/test_vanGenuchten.cc
+                    LINK_LIBS flow_relations amanzi_error_handling amanzi_state ${Amanzi_TPL_UnitTest_LIBRARIES} ${Amanzi_TPL_Trilinos_LIBRARIES})
 
-    add_executable(wrm_plantChristoffersen
-      wrm/models/test/main.cc
-      wrm/models/test/test_plantChristoffersen.cc)
-    target_link_libraries(wrm_plantChristoffersen
-      flow_relations
-      amanzi_error_handling
-      amanzi_state
-      ${Amanzi_TPL_UnitTest_LIBRARIES}                                                                                                                                                      
-      ${Amanzi_TPL_Trilinos_LIBRARIES})
+    add_amanzi_test(wrm_plantChristoffersen wrm_plantChristoffersen
+                    KIND unit
+                    SOURCE wrm/models/test/main.cc
+                           wrm/models/test/test_vanGenuchten.cc
+                    LINK_LIBS flow_relations amanzi_error_handling amanzi_state ${Amanzi_TPL_UnitTest_LIBRARIES} ${Amanzi_TPL_Trilinos_LIBRARIES})
 
 
 endif()

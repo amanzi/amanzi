@@ -72,6 +72,8 @@ TranspirationDistributionEvaluator::InitializeFromPlist_()
   dependencies_.insert(cv_key_);
   surf_cv_key_ = Keys::readKey(plist_, surface_name, "surface cell volume", "cell_volume");
   dependencies_.insert(surf_cv_key_);
+
+  npfts_ = plist_.get<int>("number of PFTs", 1);
 }
 
 
@@ -94,28 +96,33 @@ TranspirationDistributionEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
   const AmanziMesh::Mesh& subsurf_mesh = *result->Mesh();
   Epetra_MultiVector& result_v = *result->ViewComponent("cell", false);
   
-  for (int sc=0; sc!=trans_total.MyLength(); ++sc) {
-    double column_total = 0.;
-    double f_root_total = 0.;
-    double f_wp_total = 0.;
-    for (auto c : subsurf_mesh.cells_of_column(sc)) {
-      column_total += f_wp[0][c] * f_root[0][c] * cv[0][c];
-      result_v[0][c] = f_wp[0][c] * f_root[0][c];
-    }
-    if (column_total <= 0. && trans_total[0][sc] > 0.) {
-      Errors::Message message("TranspirationDistributionEvaluator: Broken run, non-zero transpiration draw but no cells with some roots are above the wilting point.");
-      Exceptions::amanzi_throw(message);
-    }
-    
-    if (column_total > 0.) {
+  for (int pft=0; pft!=result_v.NumVectors(); ++pft) {
+    for (int sc=0; sc!=trans_total.MyLength(); ++sc) {
+      double column_total = 0.;
+      double f_root_total = 0.;
+      double f_wp_total = 0.;
       for (auto c : subsurf_mesh.cells_of_column(sc)) {
-        result_v[0][c] = result_v[0][c] * trans_total[0][sc] * surf_cv[0][sc] / column_total;
+        column_total += f_wp[0][c] * f_root[pft][c] * cv[0][c];
+        result_v[pft][c] = f_wp[0][c] * f_root[pft][c];
       }
-    }
+      if (column_total <= 0. && trans_total[pft][sc] > 0.) {
+        Errors::Message message("TranspirationDistributionEvaluator: Broken run, non-zero transpiration draw but no cells with some roots are above the wilting point.");
+        Exceptions::amanzi_throw(message);
+      }
+    
+      if (column_total > 0.) {
+        for (auto c : subsurf_mesh.cells_of_column(sc)) {
+          result_v[pft][c] = result_v[pft][c] * trans_total[pft][sc] * surf_cv[0][sc] / column_total;
+        }
+      }
 
-    double new_col_total = 0.;
-    for (auto c : subsurf_mesh.cells_of_column(sc)) {
-      new_col_total += result_v[0][c] * cv[0][c];
+#ifdef ENABLE_DBC
+      double new_col_total = 0.;
+      for (auto c : subsurf_mesh.cells_of_column(sc)) {
+        new_col_total += result_v[pft][c] * cv[0][c];
+      }
+      AMANZI_ASSERT(std::abs(new_col_total - trans_total[pft][sc]) < 1.e-8);
+#endif
     }
   }
 }
@@ -132,8 +139,8 @@ TranspirationDistributionEvaluator::EvaluateFieldPartialDerivative_(const Teucho
 void
 TranspirationDistributionEvaluator::EnsureCompatibility(const Teuchos::Ptr<State>& S) {
   // Ensure my field exists.  Requirements should be already set.
-  ASSERT(!my_key_.empty());
-  Teuchos::RCP<CompositeVectorSpace> my_fac = S->RequireField(my_key_, my_key_);
+  AMANZI_ASSERT(!my_key_.empty());
+  auto my_fac = S->RequireField(my_key_, my_key_);
 
   // check plist for vis or checkpointing control
   bool io_my_key = plist_.get<bool>(std::string("visualize ")+my_key_, true);
@@ -143,27 +150,35 @@ TranspirationDistributionEvaluator::EnsureCompatibility(const Teuchos::Ptr<State
 
   Key domain = Keys::getDomain(my_key_);
   my_fac->SetMesh(S->GetMesh(domain))
-      ->SetComponent("cell", AmanziMesh::CELL, 1)
+      ->SetComponent("cell", AmanziMesh::CELL, npfts_)
       ->SetGhosted(true);
 
   // Create an unowned factory to check my dependencies.
   // -- first those on the subsurface mesh
-  Teuchos::RCP<CompositeVectorSpace> dep_fac =
-      Teuchos::rcp(new CompositeVectorSpace(*my_fac));
-  dep_fac->SetOwned(false);
-  S->RequireField(f_wp_key_)->Update(*dep_fac);
-  S->RequireField(cv_key_)->Update(*dep_fac);
-  S->RequireField(f_root_key_)->Update(*dep_fac);
+  CompositeVectorSpace dep_fac(*my_fac);
+  dep_fac.SetOwned(false);
+  S->RequireField(f_root_key_)->Update(dep_fac);
 
-  // -- next those on the surface mesh
-  Teuchos::RCP<CompositeVectorSpace> surf_fac =
-      Teuchos::rcp(new CompositeVectorSpace());
-  surf_fac->SetMesh(S->GetMesh(Keys::getDomain(surf_cv_key_)))
+  CompositeVectorSpace dep_fac_one;
+  dep_fac_one.SetMesh(my_fac->Mesh())
       ->SetGhosted(true)
       ->AddComponent("cell", AmanziMesh::CELL, 1);
-  S->RequireField(trans_total_key_)->Update(*surf_fac);
-  S->RequireField(surf_cv_key_)->Update(*surf_fac);
+  S->RequireField(f_wp_key_)->Update(dep_fac_one);
+  S->RequireField(cv_key_)->Update(dep_fac_one);
 
+  // -- next those on the surface mesh
+  CompositeVectorSpace surf_fac;
+  surf_fac.SetMesh(S->GetMesh(Keys::getDomain(surf_cv_key_)))
+      ->SetGhosted(true)
+      ->AddComponent("cell", AmanziMesh::CELL, npfts_);
+  S->RequireField(trans_total_key_)->Update(surf_fac);
+
+  CompositeVectorSpace surf_fac_one;
+  surf_fac_one.SetMesh(S->GetMesh(Keys::getDomain(surf_cv_key_)))
+      ->SetGhosted(true)
+      ->AddComponent("cell", AmanziMesh::CELL, 1);
+  S->RequireField(surf_cv_key_)->Update(surf_fac_one);
+  
   // Recurse into the tree to propagate info to leaves.
   for (KeySet::const_iterator key=dependencies_.begin();
        key!=dependencies_.end(); ++key) {

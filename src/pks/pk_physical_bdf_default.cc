@@ -27,7 +27,7 @@ void PK_PhysicalBDF_Default::Setup(const Teuchos::Ptr<State>& S) {
   PK_BDF_Default::Setup(S);
 
   // boundary conditions
-  bc_ = Teuchos::rcp(new Operators::BCs(mesh_, AmanziMesh::FACE, Operators::SCHEMA_DOFS_SCALAR));
+  bc_ = Teuchos::rcp(new Operators::BCs(mesh_, AmanziMesh::FACE, Operators::DOF_Type::SCALAR));
   
   // convergence criteria
   if (conserved_key_.empty()) {
@@ -117,7 +117,7 @@ double PK_PhysicalBDF_Default::ErrorNorm(Teuchos::RCP<const TreeVector> u,
 
       for (unsigned int f=0; f!=nfaces; ++f) {
         AmanziMesh::Entity_ID_List cells;
-        mesh_->face_get_cells(f, AmanziMesh::OWNED, &cells);
+        mesh_->face_get_cells(f, AmanziMesh::Parallel_type::OWNED, &cells);
         double cv_min = cells.size() == 1 ? cv[0][cells[0]]
             : std::min(cv[0][cells[0]],cv[0][cells[1]]);
         double conserved_min = cells.size() == 1 ? conserved[0][cells[0]]
@@ -134,7 +134,9 @@ double PK_PhysicalBDF_Default::ErrorNorm(Teuchos::RCP<const TreeVector> u,
     } else {
       double norm;
       dvec_v.Norm2(&norm);
-      //      ASSERT(norm < 1.e-15);
+
+      AMANZI_ASSERT(norm < 1.e-15);
+
     }
 
     // Write out Inf norms too.
@@ -149,7 +151,7 @@ double PK_PhysicalBDF_Default::ErrorNorm(Teuchos::RCP<const TreeVector> u,
 
       int ierr;
       ierr = MPI_Allreduce(&l_err, &err, 1, MPI_DOUBLE_INT, MPI_MAXLOC, mesh_->get_comm()->Comm());
-      ASSERT(!ierr);
+      AMANZI_ASSERT(!ierr);
       *vo_->os() << "  ENorm (" << *comp << ") = " << err.value << "[" << err.gid << "] (" << infnorm << ")" << std::endl;
     }
 
@@ -160,7 +162,7 @@ double PK_PhysicalBDF_Default::ErrorNorm(Teuchos::RCP<const TreeVector> u,
 
   int ierr;
   ierr = MPI_Allreduce(&enorm_val_l, &enorm_val, 1, MPI_DOUBLE, MPI_MAX, mesh_->get_comm()->Comm());
-  ASSERT(!ierr);
+  AMANZI_ASSERT(!ierr);
   return enorm_val;
 };
 
@@ -236,8 +238,8 @@ double PK_PhysicalBDF_Default::BoundaryValue(const Teuchos::RCP<const Amanzi::Co
     value = bc_values()[face_id];
   } else {
     AmanziMesh::Entity_ID_List cells;
-    mesh_->face_get_cells(face_id, AmanziMesh::USED, &cells);
-    ASSERT(cells.size() == 1);
+    mesh_->face_get_cells(face_id, AmanziMesh::Parallel_type::ALL, &cells);
+    AMANZI_ASSERT(cells.size() == 1);
     const Epetra_MultiVector& u = *solution->ViewComponent("cell",false);
     value = u[0][cells[0]];    
   }
@@ -265,8 +267,8 @@ void PK_PhysicalBDF_Default::set_states(const Teuchos::RCP<const State>& S,
 
 int PK_PhysicalBDF_Default::BoundaryDirection(int face_id) {
   AmanziMesh::Entity_ID_List cells;
-  mesh_->face_get_cells(face_id, AmanziMesh::USED, &cells);
-  ASSERT(cells.size() == 1);
+  mesh_->face_get_cells(face_id, AmanziMesh::Parallel_type::ALL, &cells);
+  AMANZI_ASSERT(cells.size() == 1);
   AmanziMesh::Entity_ID_List faces;
   std::vector<int> dirs;
   mesh_->cell_get_faces_and_dirs(cells[0], &faces, &dirs);
@@ -287,7 +289,7 @@ void PK_PhysicalBDF_Default::ChangedSolution(const Teuchos::Ptr<State>& S) {
 
     Teuchos::RCP<PrimaryVariableFieldEvaluator> solution_evaluator =
       Teuchos::rcp_dynamic_cast<PrimaryVariableFieldEvaluator>(fm);
-    ASSERT(solution_evaluator != Teuchos::null);
+    AMANZI_ASSERT(solution_evaluator != Teuchos::null);
     solution_evaluator->SetFieldAsChanged(S);
   }
 };

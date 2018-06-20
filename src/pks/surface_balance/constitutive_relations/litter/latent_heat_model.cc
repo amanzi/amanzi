@@ -51,14 +51,14 @@ LatentHeatModel::InitializeFromPlist_(Teuchos::ParameterList& plist)
 double
 LatentHeatModel::LatentHeat(double qe) const
 {
-  ASSERT(0);
+  AMANZI_ASSERT(0);
   return 0.;
 }
 
 double
 LatentHeatModel::DLatentHeatDEvaporativeFlux(double qe) const
 {
-  ASSERT(0);
+  AMANZI_ASSERT(0);
   return 0.;
 }
 

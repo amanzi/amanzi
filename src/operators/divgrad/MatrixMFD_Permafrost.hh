@@ -50,7 +50,7 @@ class MatrixMFD_Permafrost : public MatrixMFD_Coupled {
                            const Teuchos::RCP<MatrixMFD_TPFA>& surface_B) {
     surface_A_ = surface_A;
     surface_B_ = surface_B;
-    ASSERT(surface_A_->Mesh() == surface_B_->Mesh());
+    AMANZI_ASSERT(surface_A_->Mesh() == surface_B_->Mesh());
     surface_mesh_ = surface_A_->Mesh();
   }
 

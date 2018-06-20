@@ -168,7 +168,7 @@ EvaporativeFluxRelaxationEvaluator::EvaluateFieldPartialDerivative_(const Teucho
     }
 
   } else {
-    ASSERT(0);
+    AMANZI_ASSERT(0);
   }
 }
 

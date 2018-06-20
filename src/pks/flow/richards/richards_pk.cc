@@ -24,6 +24,7 @@ Authors: Neil Carlson (version 1)
 
 #include "CompositeVectorFunction.hh"
 #include "CompositeVectorFunctionFactory.hh"
+#include "LinearOperatorFactory.hh"
 
 #include "predictor_delegate_bc_flux.hh"
 #include "wrm_evaluator.hh"
@@ -86,8 +87,6 @@ void Richards::Setup(const Teuchos::Ptr<State>& S) {
   
   SetupRichardsFlow_(S);
   SetupPhysicalEvaluators_(S);
-
-  flux_tol_ = plist_->get<double>("flux tolerance", 1.);
 };
 
 
@@ -130,7 +129,7 @@ void Richards::SetupRichardsFlow_(const Teuchos::Ptr<State>& S) {
   bc_seepage_infilt_->Compute(0.); // compute at t=0 to set up
 
   // -- linear tensor coefficients
-  unsigned int c_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  unsigned int c_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
   K_ = Teuchos::rcp(new std::vector<WhetStone::Tensor>(c_owned));
   for (unsigned int c=0; c!=c_owned; ++c) {
     (*K_)[c].Init(mesh_->space_dimension(),1);
@@ -255,7 +254,7 @@ void Richards::SetupRichardsFlow_(const Teuchos::Ptr<State>& S) {
   // // -- vapor diffusion terms
   // vapor_diffusion_ = plist_->get<bool>("include vapor diffusion", false);
   // if (vapor_diffusion_){
-  //   ASSERT(0); // untested!
+  //   AMANZI_ASSERT(0); // untested!
     
   //   // Create the vapor diffusion vectors
   //   S->RequireField("vapor_diffusion_pressure", name_)->SetMesh(mesh_)->SetGhosted()
@@ -274,7 +273,8 @@ void Richards::SetupRichardsFlow_(const Teuchos::Ptr<State>& S) {
   precon_used_ = plist_->isSublist("preconditioner");
   if (precon_used_) {
     preconditioner_->SymbolicAssembleMatrix();
-  
+    preconditioner_->InitializePreconditioner(plist_->sublist("preconditioner"));
+
     //    Potentially create a linear solver
     if (plist_->isSublist("linear solver")) {
       Teuchos::ParameterList linsolve_sublist = plist_->sublist("linear solver");
@@ -292,8 +292,7 @@ void Richards::SetupRichardsFlow_(const Teuchos::Ptr<State>& S) {
   is_source_term_ = plist_->get<bool>("source term", false);
   if (is_source_term_) {
     if (source_key_.empty()) {
-      source_key_ = plist_->get<std::string>("mass source key",
-              Keys::getKey(domain_, "mass_source"));
+      source_key_ = Keys::readKey(*plist_, domain_, "mass source", "mass_source");
     }
 
     source_term_is_differentiable_ =
@@ -496,11 +495,10 @@ void Richards::Initialize(const Teuchos::Ptr<State>& S) {
   matrix_diff_->SetBCs(bc_, bc_);
   matrix_diff_->SetTensorCoefficient(K_);
 
-
   preconditioner_diff_->SetGravity(g);
   preconditioner_diff_->SetBCs(bc_, bc_);
   preconditioner_diff_->SetTensorCoefficient(K_);
-  preconditioner_->SymbolicAssembleMatrix();
+  //  preconditioner_->SymbolicAssembleMatrix();
 
   face_matrix_diff_->SetGravity(g);
   face_matrix_diff_->SetBCs(bc_, bc_);
@@ -548,12 +546,16 @@ void Richards::Initialize(const Teuchos::Ptr<State>& S) {
     Teuchos::RCP<const CompositeVector> rho = S->GetFieldData(mass_dens_key_);
     // derive fluxes
     Teuchos::RCP<const CompositeVector> pres = S->GetFieldData(key_);
-    Teuchos::RCP<CompositeVector> flux = S->GetFieldData(flux_key_, name_);
 
     matrix_->Init();
     matrix_diff_->SetDensity(rho);
     matrix_diff_->SetScalarCoefficient(rel_perm, Teuchos::null);
     matrix_diff_->UpdateMatrices(Teuchos::null, pres.ptr());
+
+    // derive fluxes
+    Teuchos::RCP<CompositeVector> flux = S->GetFieldData(flux_key_, name_);
+    matrix_diff_->UpdateFlux(pres.ptr(), flux.ptr());
+
 
     if (compute_boundary_values_){
       Epetra_MultiVector& pres_bf = *S->GetFieldData(key_, name_)->ViewComponent("boundary_face",false);
@@ -565,13 +567,6 @@ void Richards::Initialize(const Teuchos::Ptr<State>& S) {
         pres_bf[0][bf] =  BoundaryFaceValue(f, *pres);
       }
     }      
-    // derive fluxes
-    matrix_diff_->UpdateFlux(pres.ptr(), flux.ptr());
-
-
-    // Teuchos::RCP<const CompositeVector> pres = S->GetFieldData(key_);
-    // Teuchos::RCP<CompositeVector> flux = S->GetFieldData(flux_key_, name_);
-    // matrix_diff_->UpdateFlux(pres.ptr(), flux.ptr());
 
   }
 
@@ -678,7 +673,6 @@ void Richards::CalculateDiagnostics(const Teuchos::RCP<State>& S) {
   Teuchos::RCP<CompositeVector> flux = S->GetFieldData(flux_key_, name_);
   matrix_diff_->UpdateFlux(pres.ptr(), flux.ptr());
 
-
   UpdateVelocity_(S.ptr());
 };
 
@@ -721,8 +715,7 @@ bool Richards::UpdatePermeabilityData_(const Teuchos::Ptr<State>& S) {
       face_matrix_diff_->UpdateFlux(pres.ptr(), flux_dir.ptr());
 
 
-      // std::cout<<*flux_dir->ViewComponent("face")<<"\n";
-      // exit(-1);
+
 
       if (clobber_boundary_flux_dir_) {
         Epetra_MultiVector& flux_dir_f = *flux_dir->ViewComponent("face",false);
@@ -733,8 +726,8 @@ bool Richards::UpdatePermeabilityData_(const Teuchos::Ptr<State>& S) {
         for (int f=0; f!=markers.size(); ++f) {
           if (markers[f] == Operators::OPERATOR_BC_NEUMANN) {
             AmanziMesh::Entity_ID_List cells;
-            mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
-            ASSERT(cells.size() == 1);
+            mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
+            AMANZI_ASSERT(cells.size() == 1);
             int c = cells[0];
             AmanziMesh::Entity_ID_List faces;
             std::vector<int> dirs;
@@ -836,13 +829,13 @@ void Richards::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& S, bool kr) 
   // Dirichlet boundary conditions
   Functions::BoundaryFunction::Iterator bc;
   bc_counts.push_back(bc_pressure_->size());
-  bc_names.push_back(Keys::getKey(domain_,"pressure"));
+  bc_names.push_back(key_);
   for (bc=bc_pressure_->begin(); bc!=bc_pressure_->end(); ++bc) {
     int f = bc->first;
 #ifdef ENABLE_DBC
     AmanziMesh::Entity_ID_List cells;
-    mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
-    ASSERT(cells.size() == 1);
+    mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
+    AMANZI_ASSERT(cells.size() == 1);
 #endif
     
     markers[f] = Operators::OPERATOR_BC_DIRICHLET;
@@ -855,8 +848,8 @@ void Richards::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& S, bool kr) 
     int f = bc->first;
 #ifdef ENABLE_DBC
     AmanziMesh::Entity_ID_List cells;
-    mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
-    ASSERT(cells.size() == 1);
+    mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
+    AMANZI_ASSERT(cells.size() == 1);
 #endif
     
     markers[f] = Operators::OPERATOR_BC_DIRICHLET;
@@ -868,7 +861,7 @@ void Richards::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& S, bool kr) 
     *S->GetFieldData(uw_coef_key_)->ViewComponent("face",false);
 
   bc_counts.push_back(bc_flux_->size());
-  bc_names.push_back(Keys::getKey(domain_,"flux"));
+  bc_names.push_back(flux_key_);
 
   if (!infiltrate_only_if_unfrozen_) {
     // Standard Neuman boundary conditions
@@ -877,8 +870,8 @@ void Richards::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& S, bool kr) 
 
 #ifdef ENABLE_DBC
     AmanziMesh::Entity_ID_List cells;
-    mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
-    ASSERT(cells.size() == 1);
+    mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
+    AMANZI_ASSERT(cells.size() == 1);
 #endif
       markers[f] = Operators::OPERATOR_BC_NEUMANN;
       values[f] = bc->second;
@@ -892,8 +885,8 @@ void Richards::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& S, bool kr) 
       int f = bc->first;
 #ifdef ENABLE_DBC
     AmanziMesh::Entity_ID_List cells;
-    mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
-    ASSERT(cells.size() == 1);
+    mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
+    AMANZI_ASSERT(cells.size() == 1);
 #endif
 
       markers[f] = Operators::OPERATOR_BC_NEUMANN;
@@ -924,14 +917,13 @@ void Richards::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& S, bool kr) 
     int f = bc->first;
 #ifdef ENABLE_DBC
     AmanziMesh::Entity_ID_List cells;
-    mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
-    ASSERT(cells.size() == 1);
+    mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
+    AMANZI_ASSERT(cells.size() == 1);
 #endif
 
     double boundary_pressure = BoundaryValue(u, f);
     double boundary_flux = flux[0][f]*BoundaryDirection(f);
-    //    std::cout << "Seepage Face:" << std::endl
-    //              << "BFlux = " << boundary_flux << ", BPressure = " << boundary_pressure << " and constraint p <= " << bc->second << " (tol = " << seepage_tol << ")" << std::endl;
+    //    std::cout << "Seepage Face:" << "BFlux = " << boundary_flux << ", BPressure = " << boundary_pressure << " and constraint p <= " << bc->second << " (tol = " << seepage_tol << ")" << std::endl;
     if (boundary_pressure > bc->second) {
       //      std::cout << "  DIRICHLET" << std::endl;
       markers[f] = Operators::OPERATOR_BC_DIRICHLET;
@@ -959,8 +951,8 @@ void Richards::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& S, bool kr) 
     int f = bc->first;
 #ifdef ENABLE_DBC
     AmanziMesh::Entity_ID_List cells;
-    mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
-    ASSERT(cells.size() == 1);
+    mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
+    AMANZI_ASSERT(cells.size() == 1);
 #endif
 
     double flux_seepage_tol = std::abs(bc->second) * .001;
@@ -1006,7 +998,7 @@ void Richards::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& S, bool kr) 
 
 
     } else {
-      ASSERT(0);
+      AMANZI_ASSERT(0);
     }
 
   }
@@ -1033,8 +1025,8 @@ void Richards::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& S, bool kr) 
 
 #ifdef ENABLE_DBC
       AmanziMesh::Entity_ID_List cells;
-      mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
-      ASSERT(cells.size() == 1);
+      mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
+      AMANZI_ASSERT(cells.size() == 1);
 #endif
 
       // -- set that value to dirichlet
@@ -1060,8 +1052,8 @@ void Richards::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& S, bool kr) 
 
 #ifdef ENABLE_DBC
       AmanziMesh::Entity_ID_List cells;
-      mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
-      ASSERT(cells.size() == 1);
+      mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
+      AMANZI_ASSERT(cells.size() == 1);
 #endif
 
 
@@ -1083,10 +1075,10 @@ void Richards::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& S, bool kr) 
 
   int n_default = 0;
 
-  int nfaces_owned = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
+  int nfaces_owned = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
   for (int f = 0; f < nfaces_owned; f++) {
     if (markers[f] == Operators::OPERATOR_BC_NONE) {
-      mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+      mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
       int ncells = cells.size();
 
       if (ncells == 1) {
@@ -1204,7 +1196,7 @@ bool Richards::ModifyPredictorConsistentFaces_(double h, Teuchos::RCP<TreeVector
 }
 
 bool Richards::ModifyPredictorWC_(double h, Teuchos::RCP<TreeVector> u) {
-  ASSERT(0);
+  AMANZI_ASSERT(0);
   return false;
 }
 
@@ -1259,7 +1251,7 @@ void Richards::CalculateConsistentFaces(const Teuchos::Ptr<CompositeVector>& u) 
   int f_owned = u_f.MyLength();
   for (int f=0; f!=f_owned; ++f) {
     AmanziMesh::Entity_ID_List cells;
-    mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+    mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
     int ncells = cells.size();
 
     double face_value = 0.0;
@@ -1522,7 +1514,7 @@ Richards::ModifyCorrection(double h, Teuchos::RCP<const TreeVector> res,
 int Richards::BoundaryFaceGetCell(int f) const
 {
   AmanziMesh::Entity_ID_List cells;
-  mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+  mesh_->face_get_cells(f, AmanziMesh::Parallel_type::GHOST, &cells);
   return cells[0];
 }
 

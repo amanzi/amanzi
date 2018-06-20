@@ -36,8 +36,8 @@ void OverlandFlow::Functional( double t_old,
 
   // bookkeeping
   double h = t_new - t_old;
-  ASSERT(std::abs(S_inter_->time() - t_old) < 1.e-4*h);
-  ASSERT(std::abs(S_next_->time() - t_new) < 1.e-4*h);
+  AMANZI_ASSERT(std::abs(S_inter_->time() - t_old) < 1.e-4*h);
+  AMANZI_ASSERT(std::abs(S_next_->time() - t_new) < 1.e-4*h);
 
   Teuchos::RCP<CompositeVector> u = u_new->Data();
 
@@ -141,7 +141,7 @@ void OverlandFlow::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector>
     *vo_->os() << "Precon update at t = " << t << std::endl;
 
   // update state with the solution up.
-  ASSERT(std::abs(S_next_->time() - t) <= 1.e-4*t);
+  AMANZI_ASSERT(std::abs(S_next_->time() - t) <= 1.e-4*t);
   PK_PhysicalBDF_Default::Solution_to_State(*up, S_next_);
 
   // calculating the operator is done in 3 steps:
@@ -210,9 +210,10 @@ void OverlandFlow::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector>
   }
 
   preconditioner_diff_->ApplyBCs(true, true);
-  preconditioner_->AssembleMatrix();
-  preconditioner_->InitPreconditioner(plist_->sublist("preconditioner"));
-//  ASSERT(false);
+  if (precon_used_) {
+    preconditioner_->AssembleMatrix();
+    preconditioner_->UpdatePreconditioner();
+  }
 };
 
 
@@ -265,7 +266,7 @@ double OverlandFlow::ErrorNorm(Teuchos::RCP<const TreeVector> u,
 
       for (unsigned int f=0; f!=nfaces; ++f) {
         AmanziMesh::Entity_ID_List cells;
-        mesh_->face_get_cells(f, AmanziMesh::OWNED, &cells);
+        mesh_->face_get_cells(f, AmanziMesh::Parallel_type::OWNED, &cells);
         double cv_min = cells.size() == 1 ? cv[0][cells[0]]
             : std::min(cv[0][cells[0]],cv[0][cells[1]]);
         double conserved_min = cells.size() == 1 ? pd[0][cells[0]] * cv[0][cells[0]]
@@ -298,7 +299,7 @@ double OverlandFlow::ErrorNorm(Teuchos::RCP<const TreeVector> u,
       l_err.gid = dvec_v.Map().GID(enorm_loc);
 
       int ierr = MPI_Allreduce(&l_err, &err, 1, MPI_DOUBLE_INT, MPI_MAXLOC, MPI_COMM_WORLD);
-      ASSERT(!ierr);
+      AMANZI_ASSERT(!ierr);
       *vo_->os() << "  ENorm (" << *comp << ") = " << err.value << "[" << err.gid << "] (" << infnorm << ")" << std::endl;
     }
 
@@ -307,7 +308,7 @@ double OverlandFlow::ErrorNorm(Teuchos::RCP<const TreeVector> u,
 
   double enorm_val_l = enorm_val;
   int ierr = MPI_Allreduce(&enorm_val_l, &enorm_val, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
-  ASSERT(!ierr);
+  AMANZI_ASSERT(!ierr);
   return enorm_val;
 };
 

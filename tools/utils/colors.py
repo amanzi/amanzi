@@ -94,3 +94,33 @@ def cm_mapper(vmin=0., vmax=1., cmap=matplotlib.cm.jet):
     def mapper(value):
         return sm.to_rgba(value)
     return mapper
+
+
+def float_list_type(mystring):
+    """Convert string-form list of doubles into list of doubles."""
+    colors = []
+    for f in mystring.strip("(").strip(")").strip("[").strip("]").split(","):
+        try:
+            colors.append(float(f))
+        except:
+            colors.append(f)
+    return colors
+
+
+def desaturate(color, amount=0.4, is_hsv=False):
+    if not is_hsv:
+        hsv = matplotlib.colors.rgb_to_hsv(matplotlib.colors.to_rgb(color))
+    else:
+        hsv = color
+
+    print hsv 
+    hsv[1] = max(0,hsv[1] - amount)
+    return matplotlib.colors.hsv_to_rgb(hsv)
+
+def darken(color, fraction=0.6):
+    rgb = np.array(matplotlib.colors.to_rgb(color))
+    return tuple(np.maximum(rgb - fraction*rgb,0))
+
+def lighten(color, fraction=0.6):
+    rgb = np.array(matplotlib.colors.to_rgb(color))
+    return tuple(np.minimum(rgb + fraction*(1-rgb),1))

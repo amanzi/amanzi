@@ -107,7 +107,7 @@ void IEMWaterVaporEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::Ptr<
       }
     }
   } else {
-    ASSERT(0);
+    AMANZI_ASSERT(0);
   }
 }
 

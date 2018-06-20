@@ -45,7 +45,6 @@ void RichardsSteadyState::UpdatePreconditioner(double t, Teuchos::RCP<const Tree
   // Create the preconditioner
   Teuchos::RCP<const CompositeVector> rel_perm =
       S_next_->GetFieldData(uw_coef_key_);
-  preconditioner_->Init();
 
   S_next_->GetFieldEvaluator(mass_dens_key_)->HasFieldChanged(S_next_.ptr(), name_);
   Teuchos::RCP<const CompositeVector> rho = S_next_->GetFieldData(mass_dens_key_);
@@ -64,7 +63,7 @@ void RichardsSteadyState::UpdatePreconditioner(double t, Teuchos::RCP<const Tree
 
   if (precon_used_) {
     preconditioner_->AssembleMatrix();
-    preconditioner_->InitPreconditioner(plist_->sublist("preconditioner"));
+    preconditioner_->UpdatePreconditioner();
   }      
   
   
@@ -151,8 +150,8 @@ void RichardsSteadyState::Functional(double t_old, double t_new, Teuchos::RCP<Tr
 
   
   double h = t_new - t_old;
-  ASSERT(std::abs(S_inter_->time() - t_old) < 1.e-4*h);
-  ASSERT(std::abs(S_next_->time() - t_new) < 1.e-4*h);
+  AMANZI_ASSERT(std::abs(S_inter_->time() - t_old) < 1.e-4*h);
+  AMANZI_ASSERT(std::abs(S_next_->time() - t_new) < 1.e-4*h);
 
   // pointer-copy temperature into state and update any auxilary data
   Solution_to_State(*u_new, S_next_);

@@ -35,7 +35,7 @@ void AdvectionDiffusion::AddAccumulation_(Teuchos::RCP<CompositeVector> g) {
     S_next_->GetFieldData("cell_volume");
 
   double dt = S_next_->time() - S_inter_->time();
-  ASSERT(dt > 0.);
+  AMANZI_ASSERT(dt > 0.);
 
   //  --   g <-- g - (cv*h)_t0/dt
   g->ViewComponent("cell",false)->Multiply(-1./dt,

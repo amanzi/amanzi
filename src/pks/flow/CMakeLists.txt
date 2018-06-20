@@ -91,10 +91,12 @@ register_evaluator_with_factory(
   LISTNAME   PERMAFROST_EVAL_FAC
   )
 
-register_evaluator_with_factory(
-  HEADERFILE permafrost/interfrost_pk_reg.hh
-  LISTNAME   PERMAFROST_EVAL_FAC
-  )
+
+# register_evaluator_with_factory(
+#   HEADERFILE permafrost/interfrost_pk_reg.hh
+#   LISTNAME   PERMAFROST_EVAL_FAC
+#   )
+
 
 generate_evaluators_registration_header(
   HEADERFILE flow_permafrost_registration.hh

@@ -44,7 +44,7 @@ ThreePhase::Initialize(const Teuchos::Ptr<State>& S) {
   Teuchos::ParameterList& ic_plist = plist_->sublist("initial condition");
   if (ic_plist.isParameter("interfrost initial condition")) {
     std::string interfrost_ic = ic_plist.get<std::string>("interfrost initial condition");
-    ASSERT(interfrost_ic == "TH3");
+    AMANZI_ASSERT(interfrost_ic == "TH3");
 
     Teuchos::RCP<CompositeVector> temp = S->GetFieldData(key_, name_);
     double r_sq = std::pow(0.5099,2);

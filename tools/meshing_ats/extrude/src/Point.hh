@@ -68,8 +68,8 @@ class Point {
   //  }
 
   void set(const double& val) {
-    ASSERT(this);
-    ASSERT(d > 0);
+    AMANZI_ASSERT(this);
+    AMANZI_ASSERT(d > 0);
     for (int i = 0; i < d; i++) xyz[i] = val;
   }
   void set(const Point& p) {
@@ -77,12 +77,12 @@ class Point {
     std::copy(p.xyz, p.xyz+d, xyz);
   }
   void set(const double *val) {
-    ASSERT(val);
-    ASSERT(d > 0);
+    AMANZI_ASSERT(val);
+    AMANZI_ASSERT(d > 0);
     std::copy(val, val+d, xyz);
   }
   void set(const int N, const double *val) {
-    ASSERT(val);
+    AMANZI_ASSERT(val);
     d = N;
     std::copy(val,val+d,xyz);
   }

@@ -29,9 +29,7 @@ Variable naming:
 
 Other variable names, typically not set as the default is basically always good:
 
-* `"conserved quantity suffix`" ``[string]`` **"water_content"**  If set, changes the conserved quantity key.
-
-* `"conserved quantity key`" ``[string]`` **"DOMAIN-CONSERVED_QUANTITY_SUFFIX"** Typically not set, default is good. ``[mol]``
+* `"conserved quantity key`" ``[string]`` **"DOMAIN-water_content"** The conserved quantity name.
 
 Discretization control:
 
@@ -43,29 +41,24 @@ Time integration and timestep control:
 
 * `"initial time step`" ``[double]`` **1.** Max initial time step size ``[s]``.
 
-* `"time integrator`" ``[time-integrator-spec]`` is a TimeIntegrator_ spec.
+* `"time integrator`" ``[implicit-time-integrator-typed-spec]`` **optional** is a TimeIntegrator_ spec.
   Note that this is only used if this PK is not strongly coupled to other PKs.
 
-* `"linear solver`" ``[linear-solver-spec]`` is a LinearSolver_ spec.  Note
+* `"linear solver`" ``[linear-solver-typed-spec]`` **optional** is a LinearSolver_ spec.  Note
   that this is only used if this PK is not strongly coupled to other PKs.
 
-* `"preconditioner`" ``[preconditioner-spec]`` is a Preconditioner_ spec.
+* `"preconditioner`" ``[preconditioner-typed-spec]`` **optional** is a Preconditioner_ spec.
   Note that this is only used if this PK is not strongly coupled to other PKs.
 
-* `"initial condition`" ``[initial-condition-spec]`` See InitialConditions_.
-  Additionally, the following parameter is supported:
-
-  - `"initialize faces from cell`" ``[bool]`` **false** Indicates that the
-    primary variable field has both CELL and FACE objects, and the FACE values
-    are calculated as the average of the neighboring cells.
+* `"initial condition`" ``[initial-conditions-spec]`` See InitialConditions_.
 
 Error control:
 
-* `"absolute error tolerance`" [double] **DERIVED** Defaults to 1 cm of water.  A small, but significant, amount of water.
+* `"absolute error tolerance`" ``[double]`` **550.** Defaults to 1 cm of water.  A small, but significant, amount of water.
 
-* `"relative error tolerance`" [double] **1** Take the error relative to the amount of water present in that cell.
+* `"relative error tolerance`" ``[double]`` **1** Take the error relative to the amount of water present in that cell.
 
-* `"flux tolerance`" [double] **1** Multiplies the error in flux (on a face)
+* `"flux tolerance`" ``[double]`` **1** Multiplies the error in flux (on a face)
   relative to the min of water in the neighboring cells.  Typically only
   changed if infiltration is very small and the boundary condition is not
   converging, at which point it can be decreased by an order of magnitude at a
@@ -73,7 +66,7 @@ Error control:
 
 Boundary conditions:
 
-* `"boundary conditions`" ``[surface-flow-bc-spec]`` **defaults to Neuman, 0 normal flux**
+xx* `"boundary conditions`" ``[surface-flow-bc-spec]`` Defaults to Neuman, 0 normal flux.
 
 
 May inherit options from PKPhysicalBDFBase_.

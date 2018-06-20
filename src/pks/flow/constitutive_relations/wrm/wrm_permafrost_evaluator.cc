@@ -20,12 +20,12 @@ WRMPermafrostEvaluator::WRMPermafrostEvaluator(Teuchos::ParameterList& plist) :
     SecondaryVariablesFieldEvaluator(plist) {
 
   // get the WRMs
-  ASSERT(plist_.isSublist("WRM parameters"));
+  AMANZI_ASSERT(plist_.isSublist("WRM parameters"));
   Teuchos::ParameterList wrm_plist = plist_.sublist("WRM parameters");
   wrms_ = createWRMPartition(wrm_plist);
 
   // and the permafrost models
-  ASSERT(plist_.isSublist("permafrost model parameters"));
+  AMANZI_ASSERT(plist_.isSublist("permafrost model parameters"));
   Teuchos::ParameterList perm_plist = plist_.sublist("permafrost model parameters");
   permafrost_models_ = createWRMPermafrostModelPartition(perm_plist, wrms_);
 
@@ -42,7 +42,7 @@ WRMPermafrostEvaluator::WRMPermafrostEvaluator(Teuchos::ParameterList& plist,
     wrms_(wrms) {
 
   // and the permafrost models
-  ASSERT(plist_.isSublist("permafrost model parameters"));
+  AMANZI_ASSERT(plist_.isSublist("permafrost model parameters"));
   Teuchos::ParameterList perm_plist = plist_.sublist("permafrost model parameters");
   permafrost_models_ = createWRMPermafrostModelPartition(perm_plist, wrms_);
 
@@ -198,8 +198,8 @@ void WRMPermafrostEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
     for (int bf=0; bf!=nbfaces; ++bf) {
       // given a boundary face, we need the internal cell to choose the right WRM
       AmanziMesh::Entity_ID f = face_map.LID(vandelay_map.GID(bf));
-      mesh->face_get_cells(f, AmanziMesh::USED, &cells);
-      ASSERT(cells.size() == 1);
+      mesh->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
+      AMANZI_ASSERT(cells.size() == 1);
 
       int i = (*permafrost_models_->first)[cells[0]];
       permafrost_models_->second[i]
@@ -256,7 +256,7 @@ WRMPermafrostEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State
       sati_c[0][c] = dsats[2];
     }
   } else {
-    ASSERT(0);
+    AMANZI_ASSERT(0);
   }
 
   // Potentially do face values as well, though only for saturation_liquid?
@@ -281,8 +281,8 @@ WRMPermafrostEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State
       for (int bf=0; bf!=nbfaces; ++bf) {
         // given a boundary face, we need the internal cell to choose the right WRM
         AmanziMesh::Entity_ID f = face_map.LID(vandelay_map.GID(bf));
-        mesh->face_get_cells(f, AmanziMesh::USED, &cells);
-        ASSERT(cells.size() == 1);
+        mesh->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
+        AMANZI_ASSERT(cells.size() == 1);
 
         int i = (*permafrost_models_->first)[cells[0]];
         permafrost_models_->second[i]->dsaturations_dpc_liq(
@@ -298,8 +298,8 @@ WRMPermafrostEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State
       for (int bf=0; bf!=nbfaces; ++bf) {
         // given a boundary face, we need the internal cell to choose the right WRM
         AmanziMesh::Entity_ID f = face_map.LID(vandelay_map.GID(bf));
-        mesh->face_get_cells(f, AmanziMesh::USED, &cells);
-        ASSERT(cells.size() == 1);
+        mesh->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
+        AMANZI_ASSERT(cells.size() == 1);
 
         int i = (*permafrost_models_->first)[cells[0]];
         permafrost_models_->second[i]->dsaturations_dpc_ice(
@@ -309,7 +309,7 @@ WRMPermafrostEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State
         sati_bf[0][bf] = dsats[2];
       }
     } else {
-      ASSERT(0);
+      AMANZI_ASSERT(0);
     }
   }
 }

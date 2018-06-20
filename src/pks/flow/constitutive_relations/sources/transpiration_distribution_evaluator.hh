@@ -44,6 +44,7 @@ class TranspirationDistributionEvaluator : public SecondaryVariableFieldEvaluato
   Key trans_total_key_;
   Key cv_key_;
   Key surf_cv_key_;
+  int npfts_;
 
  private:
   static Utils::RegisteredFactory<FieldEvaluator,TranspirationDistributionEvaluator> reg_;

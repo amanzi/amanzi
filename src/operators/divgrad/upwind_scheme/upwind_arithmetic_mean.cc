@@ -46,7 +46,7 @@ void UpwindArithmeticMean::CalculateCoefficientsOnFaces(
     face_coef->ViewComponent("cell",true)->PutScalar(1.0);
   }
 
-  // Note that by scattering, and then looping over all USED cells, we
+  // Note that by scattering, and then looping over all Parallel_type::ALL cells, we
   // end up getting the correct upwind values in all faces (owned or
   // not) bordering an owned cell.  This is the necessary data for
   // making the local matrices in MFD, so there is no need to
@@ -69,10 +69,10 @@ void UpwindArithmeticMean::CalculateCoefficientsOnFaces(
   }
 
   // rescale boundary faces, as these had only one cell neighbor
-  unsigned int f_owned = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
+  unsigned int f_owned = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
   for (unsigned int f=0; f!=f_owned; ++f) {
     AmanziMesh::Entity_ID_List cells;
-    mesh->face_get_cells(f, AmanziMesh::USED, &cells);
+    mesh->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
     if (cells.size() == 1) {
       face_coef_f[0][f] *= 2.;
     }
@@ -98,7 +98,7 @@ UpwindArithmeticMean::UpdateDerivatives(const Teuchos::Ptr<State>& S,
 
   // Grab mesh and allocate space
   Teuchos::RCP<const AmanziMesh::Mesh> mesh = pres->Mesh();
-  unsigned int nfaces_owned = mesh->num_entities(AmanziMesh::FACE,AmanziMesh::OWNED);
+  unsigned int nfaces_owned = mesh->num_entities(AmanziMesh::FACE,AmanziMesh::Parallel_type::OWNED);
   Jpp_faces->resize(nfaces_owned);
 
   // workspace
@@ -108,7 +108,7 @@ UpwindArithmeticMean::UpdateDerivatives(const Teuchos::Ptr<State>& S,
   for (unsigned int f=0; f!=nfaces_owned; ++f) {
     // get neighboring cells
     AmanziMesh::Entity_ID_List cells;
-    mesh->face_get_cells(f, AmanziMesh::USED, &cells);
+    mesh->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
     int mcells = cells.size();
 
     // create the local matrix

@@ -43,10 +43,11 @@ class MPCSubsurface : public StrongMPC<PK_PhysicalBDF_Default> {
                 const Teuchos::RCP<Teuchos::ParameterList>& global_list,
                 const Teuchos::RCP<State>& S,
                 const Teuchos::RCP<TreeVector>& soln) :
-    PK(pk_tree_list, global_list, S, soln),
-    StrongMPC<PK_PhysicalBDF_Default>(pk_tree_list, global_list, S, soln) {
+      PK(pk_tree_list, global_list, S, soln),
+      StrongMPC<PK_PhysicalBDF_Default>(pk_tree_list, global_list, S, soln),
+      update_pcs_(0)
+  {
     dump_ = plist_->get<bool>("dump preconditioner", false);
-
   }
 
   // -- Initialize owned (dependent) variables.
@@ -89,7 +90,8 @@ class MPCSubsurface : public StrongMPC<PK_PhysicalBDF_Default> {
     PRECON_NONE = 0,
     PRECON_BLOCK_DIAGONAL = 1,
     PRECON_PICARD = 2,
-    PRECON_EWC = 3
+    PRECON_EWC = 3,
+    PRECON_NO_FLOW_COUPLING = 4,    
   };
 
   Teuchos::RCP<Operators::TreeOperator> preconditioner_;
@@ -158,6 +160,7 @@ class MPCSubsurface : public StrongMPC<PK_PhysicalBDF_Default> {
 
   // cruft for easier global debugging
   bool dump_;
+  int update_pcs_;
   Teuchos::RCP<Debugger> db_;
   
 private:

@@ -26,19 +26,15 @@ compressibility, and $\delta$ is the cutoff (inflection point).
 #is exact.  However, then the porosity function is not smooth (has
 #discontinuous derivatives).
   
-* `"pore compressibility [Pa^-1]`" ``[double]``
-
-  $\alpha$ as described above
+* `"pore compressibility [Pa^-1]`" ``[double]`` $\alpha$ as described above
   
-* `"pore compressibility inflection point [Pa]`" ``[double]`` **1000**
+* `"pore compressibility inflection point [Pa]`" ``[double]`` **1000** The inflection point above which the function is linear.
 
-  The inflection point above which the function is linear.
-
-* Provide a parameter in the EWC to turn Leijnse model ON 
+Provide a parameter in the EWC to turn Leijnse model ON 
 
   <Parameter name="porosity leijnse model" type="bool" value="true"/>
 
-* State --> ParameterList::Porosity
+State --> ParameterList::Porosity
    <Parameter name="field evaluator type" type="string" value="compressible porosity leijnse" />
 
 Example:

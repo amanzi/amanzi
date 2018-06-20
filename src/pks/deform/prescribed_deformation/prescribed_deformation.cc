@@ -106,7 +106,7 @@ void PrescribedDeformation::Initialize(const Teuchos::Ptr<State>& S) {
   Amanzi::AmanziGeometry::Point coords(dim);
   // number of vertices
   int nV = mesh_->num_entities(Amanzi::AmanziMesh::NODE,
-          Amanzi::AmanziMesh::OWNED);
+          Amanzi::AmanziMesh::Parallel_type::OWNED);
 
   Epetra_MultiVector& vc = *S->GetFieldData("vertex coordinate",name_)
       ->ViewComponent("node",false);
@@ -179,7 +179,7 @@ bool PrescribedDeformation::AdvanceStep(double t_old, double t_new, bool reinit)
 
         // number of vertices
         int nV = write_access_mesh_->num_entities(Amanzi::AmanziMesh::NODE,
-                Amanzi::AmanziMesh::OWNED);
+                Amanzi::AmanziMesh::Parallel_type::OWNED);
 
         // search the id of the mid point on the top
         for (int iV=0; iV<nV; iV++) {
@@ -203,7 +203,7 @@ bool PrescribedDeformation::AdvanceStep(double t_old, double t_new, bool reinit)
       {
         // number of vertices
         int nV = write_access_mesh_->num_entities(Amanzi::AmanziMesh::NODE,
-                Amanzi::AmanziMesh::OWNED);
+                Amanzi::AmanziMesh::Parallel_type::OWNED);
 
         if (vo_->os_OK(Teuchos::VERB_HIGH))
           *vo_->os() << std::setprecision(16)
@@ -232,7 +232,7 @@ bool PrescribedDeformation::AdvanceStep(double t_old, double t_new, bool reinit)
       {
         // number of vertices
         int nV = write_access_mesh_->num_entities(Amanzi::AmanziMesh::NODE,
-                Amanzi::AmanziMesh::OWNED);
+                Amanzi::AmanziMesh::Parallel_type::OWNED);
 
         if (vo_->os_OK(Teuchos::VERB_HIGH))
           *vo_->os() << std::setprecision(16)
@@ -276,7 +276,7 @@ bool PrescribedDeformation::AdvanceStep(double t_old, double t_new, bool reinit)
   // extract the correct new coordinates for the surface from the domain
   // mesh and update the surface mesh accordingly
   int nV = write_access_surface_mesh_->num_entities(Amanzi::AmanziMesh::NODE,
-          Amanzi::AmanziMesh::OWNED);
+          Amanzi::AmanziMesh::Parallel_type::OWNED);
   AmanziGeometry::Point coord_domain(3);
   AmanziGeometry::Point coord_surface(2);
 
@@ -309,7 +309,7 @@ bool PrescribedDeformation::AdvanceStep(double t_old, double t_new, bool reinit)
   Epetra_MultiVector& vc = *S_next_->GetFieldData("vertex coordinate",name_)
       ->ViewComponent("node",false);
   nV = write_access_mesh_->num_entities(Amanzi::AmanziMesh::NODE,
-          Amanzi::AmanziMesh::OWNED);
+          Amanzi::AmanziMesh::Parallel_type::OWNED);
   // loop over vertices and update vc
   for (int iV=0; iV<nV; iV++) {
     // get the coords of the node

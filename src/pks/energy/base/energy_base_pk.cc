@@ -14,6 +14,7 @@ Author: Ethan Coon
 #include "PDE_DiffusionFactory.hh"
 #include "PDE_Diffusion.hh"
 #include "PDE_AdvectionUpwind.hh"
+#include "LinearOperatorFactory.hh"
 #include "upwind_cell_centered.hh"
 #include "upwind_arithmetic_mean.hh"
 #include "upwind_total_flux.hh"
@@ -104,7 +105,7 @@ void EnergyBase::SetupEnergy_(const Teuchos::Ptr<State>& S) {
   bc_diff_flux_ = bc_factory.CreateDiffusiveFlux();
   bc_flux_ = bc_factory.CreateTotalFlux();
 
-  bc_adv_ = Teuchos::rcp(new Operators::BCs(mesh_, AmanziMesh::FACE, Operators::SCHEMA_DOFS_SCALAR));
+  bc_adv_ = Teuchos::rcp(new Operators::BCs(mesh_, AmanziMesh::FACE, Operators::DOF_Type::SCALAR));
 
   // -- nonlinear coefficient
   std::string method_name = plist_->get<std::string>("upwind conductivity method",
@@ -214,6 +215,7 @@ void EnergyBase::SetupEnergy_(const Teuchos::Ptr<State>& S) {
   precon_used_ = plist_->isSublist("preconditioner");
   if (precon_used_) {
     preconditioner_->SymbolicAssembleMatrix();
+    preconditioner_->InitializePreconditioner(plist_->sublist("preconditioner"));
 
     //    Potentially create a linear solver
     if (plist_->isSublist("linear solver")) {
@@ -421,7 +423,7 @@ void EnergyBase::CommitStep(double t_old, double t_new, const Teuchos::RCP<State
 int EnergyBase::BoundaryFaceGetCell(int f) const
 {
   AmanziMesh::Entity_ID_List cells;
-  mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+  mesh_->face_get_cells(f, AmanziMesh::Parallel_type::GHOST, &cells);
   return cells[0];
 }
 
@@ -598,10 +600,10 @@ void EnergyBase::UpdateBoundaryConditions_(
 
   // mark all remaining boundary conditions as zero diffusive flux conditions
   AmanziMesh::Entity_ID_List cells;
-  int nfaces_owned = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
+  int nfaces_owned = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
   for (int f = 0; f < nfaces_owned; f++) {
     if (markers[f] == Operators::OPERATOR_BC_NONE) {
-      mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+      mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
       int ncells = cells.size();
 
       if (ncells == 1) {
@@ -773,7 +775,7 @@ void EnergyBase::CalculateConsistentFaces(const Teuchos::Ptr<CompositeVector>& u
   int f_owned = u_f.MyLength();
   for (int f=0; f!=f_owned; ++f) {
     AmanziMesh::Entity_ID_List cells;
-    mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+    mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
     int ncells = cells.size();
 
     double face_value = 0.0;

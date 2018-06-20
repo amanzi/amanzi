@@ -4,7 +4,7 @@
 #include "wrm_plants_christoffersen.hh"
 
 TEST(plantChristoffersen) {
-  using namespace Amanzi::Flow::Flow;
+  using namespace Amanzi::Flow;
 
   double sr = 0.46567;
   double stlp = 0.8975;
@@ -23,7 +23,7 @@ TEST(plantChristoffersen) {
   plist.set("water potential at full saturation [Pa]", psi0);
   plist.set("osmotic potential at full turgor [Pa]", pi0);
   plist.set("water potential at full turgor [Pa]", psicap);
-  //plist.set("smoothing interval width", 0.0);
+  plist.set("smoothing interval width [saturation]", 0.0);
   WRMPlantChristoffersen pC(plist);
   /*
   // check k_relative for p = 2*p_atm
@@ -35,7 +35,7 @@ TEST(plantChristoffersen) {
   double se = std::pow(1.0 + std::pow(alpha * pc, 1.0 / (1.0-m)),-m);
   CHECK_CLOSE(vG.k_relative(pc),
               sqrt(se) * std::pow(1.0 - std::pow(1.0 - std::pow(se, 1.0/m), m), 2.0), 1e-15);
-*/
+  */
   // check saturation for p = 2*p_atm
   pc = p_atm;
   CHECK_CLOSE(pC.saturation(pc), 0.995698885081,1e-11);

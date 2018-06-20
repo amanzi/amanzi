@@ -95,8 +95,8 @@ void AdvectionDiffusion::Setup(const Teuchos::Ptr<State>& S) {
   //   preconditioner_adv_ = Teuchos::rcp(new Operators::PDE_AdvectionUpwind(advect_plist, preconditioner_));
   // }
 
-  // preconditioner_->SymbolicAssembleMatrix();
-  // preconditioner_->InitPreconditioner("preconditioner", mfd_pc_plist);
+  preconditioner_->SymbolicAssembleMatrix();
+  preconditioner_->InitializePreconditioner(mfd_pc_plist);
   
   
 };
@@ -141,10 +141,10 @@ void AdvectionDiffusion::UpdateBoundaryConditions_() {
 
   // mark all remaining boundary conditions as zero flux conditions
   AmanziMesh::Entity_ID_List cells;
-  int nfaces_owned = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
+  int nfaces_owned = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
   for (int f = 0; f < nfaces_owned; f++) {
     if (markers[f] == Operators::OPERATOR_BC_NONE) {
-      mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+      mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
       int ncells = cells.size();
 
       if (ncells == 1) {

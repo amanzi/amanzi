@@ -134,7 +134,7 @@ void StrongMPC<PK_t>::Setup(const Teuchos::Ptr<State>& S) {
     if (pks_list_->isSublist(name_i)){
       pks_list_->sublist(name_i).set("strongly coupled PK", true);
     } else {
-      ASSERT(0);
+      AMANZI_ASSERT(0);
     }
   }
 

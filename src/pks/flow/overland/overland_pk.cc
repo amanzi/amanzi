@@ -16,6 +16,7 @@ Author: Ethan Coon (ecoon@lanl.gov)
 
 #include "CompositeVectorFunction.hh"
 #include "CompositeVectorFunctionFactory.hh"
+#include "LinearOperatorFactory.hh"
 #include "independent_variable_field_evaluator.hh"
 
 #include "upwind_potential_difference.hh"
@@ -67,7 +68,7 @@ void OverlandFlow::Setup(const Teuchos::Ptr<State>& S) {
   // set up the meshes
   if (!S->HasMesh("surface")) {
     Teuchos::RCP<const AmanziMesh::Mesh> domain = S->GetMesh();
-    //    ASSERT(domain->space_dimension() == 2);
+    //    AMANZI_ASSERT(domain->space_dimension() == 2);
     standalone_mode_ = true;
     S->AliasMesh("domain", "surface");
   } else {
@@ -97,7 +98,7 @@ void OverlandFlow::SetupOverlandFlow_(const Teuchos::Ptr<State>& S) {
   bc_seepage_head_ = bc_factory.CreateWithFunction("seepage face head", "boundary head");
   bc_critical_depth_ = bc_factory.CreateCriticalDepth();
 
-  int nfaces = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
+  int nfaces = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
   bc_markers_.resize(nfaces, Operators::OPERATOR_BC_NONE);
   bc_values_.resize(nfaces, 0.0);
   std::vector<double> mixed;
@@ -193,15 +194,19 @@ void OverlandFlow::SetupOverlandFlow_(const Teuchos::Ptr<State>& S) {
   preconditioner_acc_ = Teuchos::rcp(new Operators::PDE_Accumulation(acc_pc_plist, preconditioner_));
   
   //    symbolic assemble
-  preconditioner_->SymbolicAssembleMatrix();
+  precon_used_ = plist_->isSublist("preconditioner");
+  if (precon_used_) {
+    preconditioner_->SymbolicAssembleMatrix();
+    preconditioner_->InitializePreconditioner(plist_->sublist("preconditioner"));
 
-  //    Potentially create a linear solver
-  if (plist_->isSublist("linear solver")) {
-    Teuchos::ParameterList linsolve_sublist = plist_->sublist("linear solver");
-    AmanziSolvers::LinearOperatorFactory<Operators::Operator,CompositeVector,CompositeVectorSpace> fac;
-    lin_solver_ = fac.Create(linsolve_sublist, preconditioner_);
-  } else {
-    lin_solver_ = preconditioner_;
+    //    Potentially create a linear solver
+    if (plist_->isSublist("linear solver")) {
+      Teuchos::ParameterList linsolve_sublist = plist_->sublist("linear solver");
+      AmanziSolvers::LinearOperatorFactory<Operators::Operator,CompositeVector,CompositeVectorSpace> fac;
+      lin_solver_ = fac.Create(linsolve_sublist, preconditioner_);
+    } else {
+      lin_solver_ = preconditioner_;
+    }
   }
 
   // primary variable
@@ -236,7 +241,7 @@ void OverlandFlow::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
 
   Teuchos::RCP<Flow::ElevationEvaluator> elev_evaluator;
   if (standalone_mode_) {
-    ASSERT(plist_->isSublist("elevation evaluator"));
+    AMANZI_ASSERT(plist_->isSublist("elevation evaluator"));
     Teuchos::ParameterList elev_plist = plist_->sublist("elevation evaluator");
     elev_plist.set("evaluator name", Keys::getKey(domain_, "elevation"));
     elev_evaluator = Teuchos::rcp(new Flow::StandaloneElevationEvaluator(elev_plist));
@@ -269,7 +274,7 @@ void OverlandFlow::SetupPhysicalEvaluators_(const Teuchos::Ptr<State>& S) {
   // -- conductivity evaluator
   S->RequireField(Keys::getKey(domain_,"overland_conductivity"))->SetMesh(mesh_)->SetGhosted()
       ->AddComponent("cell", AmanziMesh::CELL, 1);
-  ASSERT(plist_->isSublist("overland conductivity evaluator"));
+  AMANZI_ASSERT(plist_->isSublist("overland conductivity evaluator"));
   Teuchos::ParameterList cond_plist = plist_->sublist("overland conductivity evaluator");
   cond_plist.set("evaluator name", Keys::getKey(domain_, "overland_conductivity"));
 
@@ -287,7 +292,7 @@ void OverlandFlow::Initialize(const Teuchos::Ptr<State>& S) {
   PK_PhysicalBDF_Default::Initialize(S);
 
   // Initialize BC data structures
-  unsigned int nfaces = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
+  unsigned int nfaces = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
   bc_markers_.resize(nfaces, Operators::OPERATOR_BC_NONE);
   bc_values_.resize(nfaces, 0.0);
   std::vector<double> mixed;
@@ -402,9 +407,9 @@ bool OverlandFlow::UpdatePermeabilityData_(const Teuchos::Ptr<State>& S) {
       Epetra_MultiVector& uw_cond_f = *uw_cond->ViewComponent("face",false);
 
       AmanziMesh::Entity_ID_List cells;
-      int nfaces_owned = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
+      int nfaces_owned = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
       for (int f=0; f!=nfaces_owned; ++f) {
-        mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+        mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
         if (cells.size() == 1) {
           int c = cells[0];
           uw_cond_f[0][f] = cond_c[0][c];
@@ -511,7 +516,7 @@ void OverlandFlow::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& S) {
            bc != bc_seepage_head_->end(); ++bc) {
         int f = bc->first;
 
-        mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+        mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
         int c = cells[0];
 
         double hz_f = bc->second + elevation[0][f];
@@ -530,7 +535,7 @@ void OverlandFlow::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& S) {
       for (Functions::BoundaryFunction::Iterator bc = bc_seepage_head_->begin(); 
            bc != bc_seepage_head_->end(); ++bc) {
         int f = bc->first;
-        mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+        mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
         int c = cells[0];
 
         double hz_f = bc->second + elevation[0][f];
@@ -559,7 +564,7 @@ void OverlandFlow::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& S) {
     for (Functions::BoundaryFunction::Iterator bc = bc_critical_depth_->begin();
          bc != bc_critical_depth_->end(); ++bc) {
       int f = bc->first;
-      mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+      mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
       int c = cells[0];
       
       bc_markers_[f] = Operators::OPERATOR_BC_NEUMANN;
@@ -568,10 +573,10 @@ void OverlandFlow::UpdateBoundaryConditions_(const Teuchos::Ptr<State>& S) {
   }
   
   // mark all remaining boundary conditions as zero flux conditions
-  int nfaces_owned = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
+  int nfaces_owned = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
   for (int f = 0; f < nfaces_owned; f++) {
     if (bc_markers_[f] == Operators::OPERATOR_BC_NONE) {
-      mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+      mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
       int ncells = cells.size();
 
       if (ncells == 1) {
@@ -598,16 +603,16 @@ void OverlandFlow::FixBCsForOperator_(const Teuchos::Ptr<State>& S) {
   std::vector<WhetStone::DenseMatrix>& Aff =
       matrix_diff_->local_matrices()->matrices;
 
-  int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
-  int nfaces_owned = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
+  int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+  int nfaces_owned = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
   for (Functions::BoundaryFunction::Iterator bc=bc_zero_gradient_->begin();
        bc!=bc_zero_gradient_->end(); ++bc) {
 
     int f = bc->first;
 
     AmanziMesh::Entity_ID_List cells;
-    mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
-    ASSERT(cells.size() == 1);
+    mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
+    AMANZI_ASSERT(cells.size() == 1);
     AmanziMesh::Entity_ID c = cells[0];
 
     if (f < nfaces_owned) {

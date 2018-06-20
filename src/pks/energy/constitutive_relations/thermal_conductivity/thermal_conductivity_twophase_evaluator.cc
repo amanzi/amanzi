@@ -27,7 +27,7 @@ ThermalConductivityTwoPhaseEvaluator::ThermalConductivityTwoPhaseEvaluator(
   sat_key_ = plist_.get<std::string>("saturation key", "saturation_liquid");
   dependencies_.insert(sat_key_);
 
-  ASSERT(plist_.isSublist("thermal conductivity parameters"));
+  AMANZI_ASSERT(plist_.isSublist("thermal conductivity parameters"));
   Teuchos::ParameterList sublist = plist_.sublist("thermal conductivity parameters");
   ThermalConductivityTwoPhaseFactory fac;
   tc_ = fac.createThermalConductivityModel(sublist);
@@ -73,7 +73,7 @@ void ThermalConductivityTwoPhaseEvaluator::EvaluateField_(
 void ThermalConductivityTwoPhaseEvaluator::EvaluateFieldPartialDerivative_(
       const Teuchos::Ptr<State>& S, Key wrt_key,
       const Teuchos::Ptr<CompositeVector>& result) {
-  ASSERT(0); // not implemented, not yet needed
+  AMANZI_ASSERT(0); // not implemented, not yet needed
   result->Scale(1.e-6); // convert to MJ
 }
 

@@ -11,31 +11,42 @@
 
 /*!
 
-In the `"coordinator`" sublist, the user specifies global control of
-the simulation, including starting and ending times and restart options.  
+In the `"cycle driver`" sublist, the user specifies global control of the
+simulation, including starting and ending times and restart options.
  
-* `"start time`" ``[double]``, **0.** Specifies the start of time in model time.
+* `"start time`" ``[double]`` **0.** Specifies the start of time in model time.
  
-* `"start time units`" ``[string]``, **"s"**, `"d`", `"yr`"
+* `"start time units`" ``[string]`` **"s"** One of `"s`", `"d`", or `"yr`"
 
 * `"end time`" ``[double]`` Specifies the end of the simulation in model time.
  
-* `"end time units`" ``[string]``, **"s"**, `"d`", `"yr`" 
+* `"end time units`" ``[string]`` **"s"** One of `"s`", `"d`", or `"yr`"
 
-* `"end cycle`" ``[int]`` If provided, specifies the end of the simulation in timestep cycles.
+* `"end cycle`" ``[int]`` **optional** If provided, specifies the end of the
+   simulation in timestep cycles.
 
-* `"restart from checkpoint file`" ``[string]`` If provided, specifies a path to the checkpoint file to continue a stopped simulation.
+* `"restart from checkpoint file`" ``[string]`` **optional** If provided,
+   specifies a path to the checkpoint file to continue a stopped simulation.
 
-* `"wallclock duration [hrs]`" ``[double]`` After this time, the simulation will checkpoint and end.  Not required.
+* `"wallclock duration [hrs]`" ``[double]`` **optional** After this time, the
+   simulation will checkpoint and end.
 
-* `"required times`" ``[time-control-spec]``
+* `"required times`" ``[io-event-spec]`` **optional** An IOEvent_ spec that
+   sets a collection of times/cycles at which the simulation is guaranteed to
+   hit exactly.  This is useful for situations such as where data is provided
+   at a regular interval, and interpolation error related to that data is to
+   be minimized.
 
-  A TimeControl_ spec that sets a collection of times/cycles at which the simulation is guaranteed to hit exactly.  This is useful for situations such as where data is provided at a regular interval, and interpolation error related to that data is to be minimized.
+* `"PK tree`" ``[pk-type-spec-list]`` List of length one, the top level PK spec.
    
 Note: Either `"end cycle`" or `"end time`" are required, and if
 both are present, the simulation will stop with whichever arrives
 first.  An `"end cycle`" is commonly used to ensure that, in the case
 of a time step crash, we do not continue on forever spewing output.
+
+``[pk-type-spec]`` is a pk type and a list of subpks.
+* `"PK type`" ``[string]`` One of the registered PK types
+* `"sub PKs`" ``[pk-type-spec-list]`` **optional** If there are sub pks, list them.
 
 Example:
 

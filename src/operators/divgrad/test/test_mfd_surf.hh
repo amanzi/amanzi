@@ -39,12 +39,12 @@ struct test_mfd {
     surf_mesh = factory.create(&*mesh, surface_sets, AmanziMesh::FACE, true, false);
 
     // -- Boundary conditions
-    int nfaces_surf = surf_mesh->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
+    int nfaces_surf = surf_mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
     std::vector<Operators::MatrixBC> bc_surf_markers(nfaces_surf,
             Operators::MATRIX_BC_NULL);
     std::vector<double> bc_surf_values(nfaces_surf, 0.);
 
-    int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
+    int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
     std::vector<Operators::MatrixBC> bc_markers(nfaces, Operators::MATRIX_BC_NULL);
     std::vector<double> bc_values(nfaces, 0.);
 

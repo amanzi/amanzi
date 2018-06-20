@@ -78,7 +78,7 @@ MPCWeakSubgrid::init_(const Teuchos::RCP<State>& S)
 {
   // grab the list of subpks
   auto subpks = plist_->get<Teuchos::Array<std::string> >("PKs order");
-  ASSERT(subpks.size() == 1);
+  AMANZI_ASSERT(subpks.size() == 1);
   std::string subgrid_name = subpks[0];
   subpks.pop_back();
 
@@ -97,7 +97,7 @@ MPCWeakSubgrid::init_(const Teuchos::RCP<State>& S)
   std::string regionname = plist_->get<std::string>("subgrid region name");
   
   Teuchos::RCP<const AmanziMesh::Mesh> parent_mesh = S->GetMesh(parent_domain);
-  int nsubgrid = parent_mesh->num_entities(kind, AmanziMesh::OWNED);
+  int nsubgrid = parent_mesh->num_entities(kind, AmanziMesh::Parallel_type::OWNED);
   auto& map = parent_mesh->map(kind,false);
   for (int i=0; i!=nsubgrid; ++i) {
     int gid = map.GID(i);

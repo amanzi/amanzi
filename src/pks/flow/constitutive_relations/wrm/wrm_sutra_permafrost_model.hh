@@ -24,9 +24,9 @@ class WRMSutraPermafrostModel : public WRMPermafrostModel {
       WRMPermafrostModel(plist) {
     T0_ = plist.get<double>("freezing point [K]", 273.15);
     dT_ = plist.get<double>("temperature transition [K]");
-    ASSERT(dT_ >= 0.);
+    AMANZI_ASSERT(dT_ >= 0.);
     sr_ = plist.get<double>("residual saturation [-]");
-    ASSERT(sr_ > 0.); ASSERT(sr_ < 1.);
+    AMANZI_ASSERT(sr_ > 0.); AMANZI_ASSERT(sr_ < 1.);
   }
 
   // required methods from the base class

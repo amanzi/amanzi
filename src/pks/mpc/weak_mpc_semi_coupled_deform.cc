@@ -36,7 +36,7 @@ WeakMPCSemiCoupledDeform::WeakMPCSemiCoupledDeform(Teuchos::ParameterList& pk_tr
   
   // add for the various columns based on GIDs of the surface system
   Teuchos::RCP<const AmanziMesh::Mesh> surf_mesh = S->GetMesh("surface");
-  int ncols = surf_mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  int ncols = surf_mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
   for (int i=0; i!=ncols; ++i) {
     int gid = surf_mesh->cell_map(false).GID(i);
     std::stringstream domain_name_stream;
@@ -192,7 +192,7 @@ WeakMPCSemiCoupledDeform::Setup(const Teuchos::Ptr<State>& S) {
   else
     sg_model_ = false;
   
-  ASSERT(!(coupling_key_.empty()));
+  AMANZI_ASSERT(!(coupling_key_.empty()));
 
 };
 
@@ -239,7 +239,7 @@ WeakMPCSemiCoupledDeform::CoupledSurfSubsurfColumns(double t_old, double t_new, 
     Teuchos::RCP<PK_BDF_Default> pk_sfstar =
       Teuchos::rcp_dynamic_cast<PK_BDF_Default>(sub_pks_[0]);
 
-    ASSERT(pk_sfstar.get());
+    AMANZI_ASSERT(pk_sfstar.get());
     pk_sfstar->ChangedSolution();
   }
   
@@ -345,7 +345,7 @@ WeakMPCSemiCoupledDeform::CoupledSurfSubsurfColumns(double t_old, double t_new, 
   for(int i=1; i<numPKs_; i++){
     Teuchos::RCP<PK> pk_domain =
       Teuchos::rcp_dynamic_cast<PK>(sub_pks_[i]);
-    ASSERT(pk_domain.get());
+    AMANZI_ASSERT(pk_domain.get());
     pk_domain->ChangedSolutionPK(S_inter_.ptr()); 
   }
 
@@ -450,7 +450,7 @@ WeakMPCSemiCoupledDeform::CoupledSurfSubsurfColumns(double t_old, double t_new, 
 	      
 	      Teuchos::RCP<PK_PhysicalBDF_Default> pk_domain =
 		Teuchos::rcp_dynamic_cast<PK_PhysicalBDF_Default>(sub_pks_[count+1]);
-	      ASSERT(pk_domain.get()); // make sure the pk_domain is not empty
+	      AMANZI_ASSERT(pk_domain.get()); // make sure the pk_domain is not empty
 	      pk_domain->ChangedSolution(S_inter_.ptr());
 	      
 	      S_inter_->set_time(t0+t);
@@ -490,7 +490,7 @@ WeakMPCSemiCoupledDeform::CoupledSurfSubsurfColumns(double t_old, double t_new, 
 	    
 	    Teuchos::RCP<PK_PhysicalBDF_Default> pk_domain =
 	      Teuchos::rcp_dynamic_cast<PK_PhysicalBDF_Default>(sub_pks_[count+1]);
-	    ASSERT(pk_domain.get()); // make sure the pk_domain is not empty
+	    AMANZI_ASSERT(pk_domain.get()); // make sure the pk_domain is not empty
 	    pk_domain->ChangedSolution(S_next_.ptr());
 	    
 	    loc_dt = (*pk)->get_dt();
@@ -606,7 +606,7 @@ WeakMPCSemiCoupledDeform::CoupledSurfSubsurfColumns(double t_old, double t_new, 
     // Mark surface_star-pressure evaluator as changed.
     Teuchos::RCP<PK_BDF_Default> pk_surf =
       Teuchos::rcp_dynamic_cast<PK_BDF_Default>(sub_pks_[0]);
-    ASSERT(pk_surf.get());
+    AMANZI_ASSERT(pk_surf.get());
     pk_surf->ChangedSolution();
 
     MPC<PK>::SubPKList::iterator pk1 = sub_pks_.begin();

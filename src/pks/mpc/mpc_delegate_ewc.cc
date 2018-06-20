@@ -60,7 +60,7 @@ void MPCDelegateEWC::setup(const Teuchos::Ptr<State>& S) {
     precon_type_ = PRECON_NONE;
   } else if (precon_string == "ewc") {
     precon_type_ = PRECON_EWC;
-    ASSERT(0);
+    AMANZI_ASSERT(0);
   } else if (precon_string == "smart ewc") {
     precon_type_ = PRECON_SMART_EWC;
   } else {
@@ -76,7 +76,7 @@ void MPCDelegateEWC::setup(const Teuchos::Ptr<State>& S) {
     predictor_type_ = PREDICTOR_NONE;
   } else if (predictor_string == "ewc") {
     predictor_type_ = PREDICTOR_EWC;
-    ASSERT(0);
+    AMANZI_ASSERT(0);
   } else if (predictor_string == "smart ewc") {
     predictor_type_ = PREDICTOR_SMART_EWC;
   } else {
@@ -122,7 +122,7 @@ void MPCDelegateEWC::initialize(const Teuchos::Ptr<State>& S) {
 
   // initialize the Jacobian
   if (precon_type_ == PRECON_EWC || precon_type_ == PRECON_SMART_EWC) {
-    int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+    int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
     jac_.resize(ncells, WhetStone::Tensor(2,2));
   }
 
@@ -166,7 +166,7 @@ bool MPCDelegateEWC::ModifyPredictor(double h, Teuchos::RCP<TreeVector> up) {
 
   if (predictor_type_ == PREDICTOR_EWC) {
     if (dt_prev > 0.) {
-      ASSERT(0);
+      AMANZI_ASSERT(0);
       //      modified = modify_predictor_ewc_(h,up);
     }
   } else if (predictor_type_ == PREDICTOR_SMART_EWC) {
@@ -228,7 +228,7 @@ void MPCDelegateEWC::update_precon_ewc_(double t, Teuchos::RCP<const TreeVector>
   const Epetra_MultiVector& dwcdp = *S_next_->GetFieldData(dwcdp_key)
       ->ViewComponent("cell",false);
 
-  int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
   for (int c=0; c!=ncells; ++c) {
     jac_[c](0,0) = dwcdp[0][c];
     jac_[c](0,1) = dwcdT[0][c];
