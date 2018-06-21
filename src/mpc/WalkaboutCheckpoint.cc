@@ -12,17 +12,20 @@
 #include <iomanip>
 #include <iostream>
 
+// TPLs
 #include "Epetra_MpiComm.h"
 #include "Teuchos_LAPACK.hpp"
 #include "Teuchos_SerialDenseMatrix.hpp"
 #include "Teuchos_VerboseObjectParameterListHelpers.hpp"
 
+// Amanzi
 #include "DenseMatrix.hh"
 #include "errors.hh"
 #include "Darcy_PK.hh"
 #include "Mesh.hh"
 #include "OperatorDefs.hh"
 #include "ParallelCommunication.hh"
+#include "ReconstructionCell.hh"
 #include "Tensor.hh"
 
 #include "WalkaboutCheckpoint.hh"
@@ -171,7 +174,7 @@ void WalkaboutCheckpoint::CalculateData(
   const Epetra_MultiVector& flux = *S->GetFieldData("darcy_flux")->ViewComponent("face", true);
   const Epetra_MultiVector& phi = *S->GetFieldData("porosity")->ViewComponent("cell", true);
   const Epetra_MultiVector& ws = *S->GetFieldData("saturation_liquid")->ViewComponent("cell", true);
-  const Epetra_MultiVector& p = *S->GetFieldData("pressure")->ViewComponent("cell", true);
+  auto p = S->GetFieldData("pressure")->ViewComponent("cell", true);
 
   int nnodes_owned = mesh->num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::OWNED);
   int ncells_owned = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
@@ -218,6 +221,14 @@ void WalkaboutCheckpoint::CalculateData(
   ParallelCommunication pp(mesh);
   pp.CopyMasterCell2GhostCell(cell_ids);
 
+  // prepare reconstrction data
+  Teuchos::ParameterList plist;
+  plist.set<std::string>("limiter", "tensorial");
+
+  Operators::ReconstructionCell lifting(mesh);
+  lifting.Init(p, plist);
+  lifting.Compute();
+
   // Populate state data at mesh nodes
   porosity.clear();
   saturation.clear();
@@ -225,10 +236,14 @@ void WalkaboutCheckpoint::CalculateData(
   isotherm_kd.clear();
   material_ids.clear();
 
+  int dim = mesh->space_dimension();
+  AmanziGeometry::Point xv(dim);
+
   double local_phi, local_ws, local_p, local_kd;
   int local_id(-1);
 
   for (int v = 0; v < nnodes_owned; v++) {
+    mesh->node_get_coordinates(v, &xv);
     mesh->node_get_cells(v, AmanziMesh::Parallel_type::ALL, &cells);
     int ncells = cells.size();
 
@@ -240,7 +255,7 @@ void WalkaboutCheckpoint::CalculateData(
       int c = cells[n];
       local_phi += phi[0][c];
       local_ws += ws[0][c];
-      local_p += p[0][c];
+      local_p += lifting.getValue(c, xv);
       if (flag) local_kd += (*kd)[0][c];
       local_id = std::max(local_id, cell_ids[c]);
     }
