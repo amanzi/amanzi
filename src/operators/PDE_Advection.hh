@@ -48,18 +48,6 @@ class PDE_Advection : public PDE_HelperDiscretization {
                           const Teuchos::RCP<BCs>& bc, 
                           const Teuchos::Ptr<CompositeVector>& u) = 0;
   
-  // -- matrix modification
-  //    primary=true indicates that the operator updates both matrix and right-hand
-  //      side using BC data. If primary=false, only matrix is changed.
-  //    eliminate=true indicates that we eliminate essential BCs for a trial 
-  //      function, i.e. zeros go in the corresponding matrix columns and 
-  //      right-hand side is modified using BC values. This is the optional 
-  //      parameter that enforces symmetry for a symmetric tree  operators.
-  //    essential_eqn=true indicates that the operator places a positive number on 
-  //      the main matrix diagonal for the case of essential BCs. This is the
-  //      implementtion trick.
-  virtual void ApplyBCs(bool primary, bool eliminate, bool essential_eqn) override {};
-
  protected:
   Schema global_schema_row_, global_schema_col_;
   Schema local_schema_col_, local_schema_row_;
