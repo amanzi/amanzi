@@ -44,11 +44,11 @@ if (ENABLE_Unstructured)
   # Solvers
   add_subdirectory(solvers)
 
-  # Operators
-  add_subdirectory(operators)
-
   # Time integration
   add_subdirectory(time_integration)
+
+  # Operators
+  add_subdirectory(operators)
 
   # Build State
   add_subdirectory(state)

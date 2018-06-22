@@ -18,8 +18,7 @@
 
 #include "Mesh.hh"
 #include "MeshFactory.hh"
-
-#include "MFD3D_Diffusion.hh"
+#include "MeshUtils.hh"
 
 /* ****************************************************************
 * Test of face centroids
@@ -39,9 +38,7 @@ TEST(FACE_CENTROIDS) {
   MeshFactory factory(comm);
   factory.preference(pref);
   // Teuchos::RCP<Mesh> mesh = factory(0.0, 0.0, 1.0, 1.0, 1, 1); 
-  Teuchos::RCP<Mesh> mesh = factory("test/one_cell2.exo");
- 
-  MFD3D_Diffusion mfd(mesh);
+  Teuchos::RCP<Mesh> mesh = factory("test/one_pentagon.exo");
  
   AmanziGeometry::Point p(2), xc(2);
   Entity_ID_List nodes;
@@ -49,7 +46,7 @@ TEST(FACE_CENTROIDS) {
 
   double area = mesh->cell_volume(0);
   mesh->cell_get_nodes(0, &nodes); 
-  mfd.PolygonCentroidWeights(nodes, area, weights);
+  PolygonCentroidWeights(*mesh, nodes, area, weights);
   
   // verification
   for (int n = 0; n < nodes.size(); ++n) {

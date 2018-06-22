@@ -110,21 +110,21 @@ Teuchos::RCP<FunctionBase> PK_DomainFunctionFactory<FunctionBase>::Create(
     return func;
   }
   else if (model == "exponential decay") {
-    ASSERT(kind == AmanziMesh::CELL);
+    AMANZI_ASSERT(kind == AmanziMesh::CELL);
     Teuchos::RCP<PK_DomainFunctionExponentialDecay<FunctionBase> >
         func = Teuchos::rcp(new PK_DomainFunctionExponentialDecay<FunctionBase>(mesh_, plist, kind));
     func->Init(plist, keyword);
     return func;
   }
   else if (model == "subgrid") {
-    ASSERT(kind == AmanziMesh::FACE);
+    AMANZI_ASSERT(kind == AmanziMesh::FACE);
     Teuchos::RCP<PK_DomainFunctionSubgrid<FunctionBase> >
        func = Teuchos::rcp(new PK_DomainFunctionSubgrid<FunctionBase>(mesh_));
     func->Init(plist, keyword, kind);
     return func;
   }
   else if (model == "subgrid return") {
-    ASSERT(kind == AmanziMesh::CELL);
+    AMANZI_ASSERT(kind == AmanziMesh::CELL);
     Teuchos::RCP<PK_DomainFunctionSubgridReturn<FunctionBase> >
         func = Teuchos::rcp(new PK_DomainFunctionSubgridReturn<FunctionBase>(mesh_, plist));
     func->Init(plist, keyword);

@@ -94,7 +94,7 @@ Observable::Observable(Teuchos::ParameterList& plist, Epetra_MpiComm *comm) :
       std::replace(safename.begin(), safename.end(), ':', '_');
       std::stringstream filename;
       filename << filenamebase_ << "_" << safename;
-      ASSERT(boost::filesystem::portable_file_name(filenamebase_));
+      AMANZI_ASSERT(boost::filesystem::portable_file_name(filenamebase_));
       out_ = Teuchos::rcp(new std::ofstream(filenamebase_.c_str()));
     }
   }
@@ -150,11 +150,11 @@ void Observable::Update_(const State& S,
   } else if (field->type() == COMPOSITE_VECTOR_FIELD) {
     // vector field
     Teuchos::RCP<const CompositeVector> vec = field->GetFieldData();
-    ASSERT(vec->HasComponent(location_));
+    AMANZI_ASSERT(vec->HasComponent(location_));
 
     AmanziMesh::Entity_kind entity = vec->Location(location_);
     AmanziMesh::Entity_ID_List ids;
-    vec->Mesh()->get_set_entities(region_, entity, AmanziMesh::OWNED, &ids);
+    vec->Mesh()->get_set_entities(region_, entity, AmanziMesh::Parallel_type::OWNED, &ids);
 
     double value(0.);
     if (functional_ == "observation data: minimum") {
@@ -189,7 +189,7 @@ void Observable::Update_(const State& S,
           } else {
             // normalize to outward normal
             AmanziMesh::Entity_ID_List cells;
-            vec->Mesh()->face_get_cells(*id, AmanziMesh::USED, &cells);
+            vec->Mesh()->face_get_cells(*id, AmanziMesh::Parallel_type::ALL, &cells);
             AmanziMesh::Entity_ID_List faces;
             std::vector<int> dirs;
             vec->Mesh()->cell_get_faces_and_dirs(cells[0], &faces, &dirs);

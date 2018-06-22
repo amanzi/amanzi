@@ -250,7 +250,7 @@ void CompositeVector::CreateData_() {
 
 CompositeVector& CompositeVector::operator=(const CompositeVector& other) {
   if (this != &other) {
-    ASSERT(Map().SubsetOf(other.Map()));
+    AMANZI_ASSERT(Map().SubsetOf(other.Map()));
 
     if (Ghosted() && other.Ghosted()) {
       // If both are ghosted, copy the ghosted vector.
@@ -494,23 +494,35 @@ void CompositeVector::ApplyVandelay_() const {
 }
 
 
+// return non-empty importer
+const Teuchos::RCP<Epetra_Import>& CompositeVector::importer(std::string name) {
+  if (importers_[Index_(name)] == Teuchos::null) {
+    Teuchos::RCP<const Epetra_Map> target_map = ghostvec_->ComponentMap(name);
+    Teuchos::RCP<const Epetra_Map> source_map = mastervec_->ComponentMap(name);
+    importers_[Index_(name)] =
+      Teuchos::rcp(new Epetra_Import(*target_map, *source_map));
+  }
+  return importers_[Index_(name)];
+}
+
+
 // Mathematical operations
 // -- result <- other \dot this
 int CompositeVector::Dot(const CompositeVector& other, double* result) const {
-  *result = 0.0;
+  double tmp_result = 0.0;
   for (name_iterator lcv=begin(); lcv!=end(); ++lcv) {
     if (other.HasComponent(*lcv)) {
-      double intermediate_result[NumVectors(*lcv)];
-      for (int n=0; n!=NumVectors(*lcv); ++n) intermediate_result[n] = 0.0;
+      std::vector<double> intermediate_result(ViewComponent(*lcv,false)->NumVectors(),0.0);
       int ierr = ViewComponent(*lcv, false)->Dot(*other.ViewComponent(*lcv,false),
-                                                 intermediate_result);
+                                                 &intermediate_result[0]);
       if (ierr) return ierr;
       
       for (int lcv_vector = 0; lcv_vector != NumVectors(*lcv); ++lcv_vector) {
-        *result += intermediate_result[lcv_vector];
+        tmp_result += intermediate_result[lcv_vector];
       }
     }
   }
+  *result = tmp_result;
   return 0;
 };
 
@@ -518,7 +530,7 @@ int CompositeVector::Dot(const CompositeVector& other, double* result) const {
 // -- this <- scalarA*A + scalarThis*this
 CompositeVector& CompositeVector::Update(double scalarA, const CompositeVector& A,
                                          double scalarThis) {
-  //  ASSERT(map_->SubsetOf(*A.map_));
+  //  AMANZI_ASSERT(map_->SubsetOf(*A.map_));
   ChangedValue();
   for (name_iterator lcv=begin(); lcv!=end(); ++lcv) {
     if (A.HasComponent(*lcv))
@@ -531,8 +543,8 @@ CompositeVector& CompositeVector::Update(double scalarA, const CompositeVector& 
 // -- this <- scalarA*A + scalarB*B + scalarThis*this
 CompositeVector& CompositeVector::Update(double scalarA, const CompositeVector& A,
                  double scalarB, const CompositeVector& B, double scalarThis) {
-  //  ASSERT(map_->SubsetOf(*A.map_));
-  //  ASSERT(map_->SubsetOf(*B.map_));
+  //  AMANZI_ASSERT(map_->SubsetOf(*A.map_));
+  //  AMANZI_ASSERT(map_->SubsetOf(*B.map_));
   ChangedValue();
   for (name_iterator lcv=begin(); lcv!=end(); ++lcv) {
     if (A.HasComponent(*lcv) && B.HasComponent(*lcv))
@@ -546,8 +558,8 @@ CompositeVector& CompositeVector::Update(double scalarA, const CompositeVector& 
 // -- this <- scalarAB * A@B + scalarThis*this  (@ is the elementwise product
 int CompositeVector::Multiply(double scalarAB, const CompositeVector& A,
         const CompositeVector& B, double scalarThis) {
-  //  ASSERT(map_->SubsetOf(*A.map_));
-  //  ASSERT(map_->SubsetOf(*B.map_));
+  //  AMANZI_ASSERT(map_->SubsetOf(*A.map_));
+  //  AMANZI_ASSERT(map_->SubsetOf(*B.map_));
   ChangedValue();
   int ierr = 0;
   for (name_iterator lcv=begin(); lcv!=end(); ++lcv) {
@@ -562,8 +574,8 @@ int CompositeVector::Multiply(double scalarAB, const CompositeVector& A,
 // -- this <- scalarAB * B / A + scalarThis*this  (/ is the elementwise division
 int CompositeVector::ReciprocalMultiply(double scalarAB, const CompositeVector& A,
                                         const CompositeVector& B, double scalarThis) {
-  ASSERT(map_->SubsetOf(*A.map_));
-  ASSERT(map_->SubsetOf(*B.map_));
+  AMANZI_ASSERT(map_->SubsetOf(*A.map_));
+  AMANZI_ASSERT(map_->SubsetOf(*B.map_));
   ChangedValue();
   int ierr = 0;
   for (name_iterator lcv=begin(); lcv!=end(); ++lcv) {
@@ -642,7 +654,7 @@ void DeriveFaceValuesFromCellValues(CompositeVector& cv) {
     int f_owned = cv_f.MyLength();
     for (int f=0; f!=f_owned; ++f) {
       AmanziMesh::Entity_ID_List cells;
-      cv.Mesh()->face_get_cells(f, AmanziMesh::USED, &cells);
+      cv.Mesh()->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
       int ncells = cells.size();
 
       double face_value = 0.0;
@@ -666,10 +678,10 @@ void DeriveFaceValuesFromCellValues(CompositeVector& cv) {
       int f_gid = fb_map.GID(fb);
       int f_lid = f_map.LID(f_gid);
       
-      cv.Mesh()->face_get_cells(f_lid, AmanziMesh::USED, &cells);
+      cv.Mesh()->face_get_cells(f_lid, AmanziMesh::Parallel_type::ALL, &cells);
       int ncells = cells.size();
 
-      ASSERT((ncells==1));
+      AMANZI_ASSERT((ncells==1));
 
       double face_value = cv_c[0][cells[0]];
       cv_f[0][fb] = face_value;

@@ -125,7 +125,7 @@ void PK_DomainFunctionCoupling<FunctionBase>::Init(
     // Get the ids from the mesh by region name and entity kind.
     if (mesh_->valid_set_name(*region, kind)) {
       AmanziMesh::Entity_ID_List id_list;
-      mesh_->get_set_entities(*region, kind, AmanziMesh::USED, &id_list);
+      mesh_->get_set_entities(*region, kind, AmanziMesh::Parallel_type::ALL, &id_list);
       entity_ids_->insert(id_list.begin(), id_list.end());
     } else {
       std::stringstream m;
@@ -173,7 +173,7 @@ void PK_DomainFunctionCoupling<FunctionBase>::Compute(double t0, double t1)
 
       AmanziMesh::Entity_ID f = mesh_->entity_get_parent(AmanziMesh::CELL, *c);
 
-      mesh_out->face_get_cells(f, AmanziMesh::USED, &cells);
+      mesh_out->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
     
       if (cells.size() > 1) {
         std::stringstream m;

@@ -122,14 +122,14 @@ void Transport_PK::VV_PrintSoluteExtrema(const Epetra_MultiVector& tcc_next, dou
       if (mesh_->valid_set_name(runtime_regions_[k], AmanziMesh::FACE)) {
         flag = true;
         AmanziMesh::Entity_ID_List block;
-        mesh_->get_set_entities(runtime_regions_[k], AmanziMesh::FACE, AmanziMesh::OWNED, &block);
+        mesh_->get_set_entities(runtime_regions_[k], AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED, &block);
         int nblock = block.size();
 
         for (int m = 0; m < nblock; m++) {
           int f = block[m];
 
           Amanzi::AmanziMesh::Entity_ID_List cells;
-          mesh_->face_get_cells(f, Amanzi::AmanziMesh::USED, &cells);
+          mesh_->face_get_cells(f, Amanzi::AmanziMesh::Parallel_type::ALL, &cells);
           int dir, c = cells[0];
 
           const AmanziGeometry::Point& normal = mesh_->face_normal(f, false, c, &dir);
@@ -345,8 +345,10 @@ double Transport_PK::VV_SoluteVolumeChangePerSecond(int idx_tracer)
 void Transport_PK::CalculateLpErrors(
     AnalyticFunction f, double t, Epetra_Vector* sol, double* L1, double* L2)
 {
+  int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+
   *L1 = *L2 = 0.0;
-  for (int c = 0; c < sol->MyLength(); c++) {
+  for (int c = 0; c < ncells; c++) {
     const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
     double d = (*sol)[c] - f(xc, t);
 
@@ -355,7 +357,10 @@ void Transport_PK::CalculateLpErrors(
     *L2 += d * d * volume;
   }
 
-  *L2 = sqrt(*L2);
+  double tmp_out[2], tmp_in[2] = {*L1, *L2};
+  mesh_->get_comm()->SumAll(tmp_in, tmp_out, 2);
+  *L1 = tmp_out[0];
+  *L2 = sqrt(tmp_out[1]);
 }
 
 }  // namespace Transport

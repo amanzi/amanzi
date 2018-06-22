@@ -145,8 +145,9 @@ if (BUILD_TESTS)
 
     # Copy test subdirectory for out of source builds
     if (NOT ("${STATE_SOURCE_DIR}" STREQUAL "${STATE_BINARY_DIR}"))
-        execute_process(COMMAND ${CMAKE_COMMAND} -E 
-          copy_directory ${STATE_SOURCE_DIR}/test ${STATE_BINARY_DIR}/test) 
+      file(GLOB DataFiles "${STATE_SOURCE_DIR}/test/*.xml"
+                          "${STATE_SOURCE_DIR}/test/*.exo")
+      file(COPY ${DataFiles} DESTINATION ${STATE_BINARY_DIR}/test/)
     endif()
     
     add_amanzi_test(state_restart state_restart

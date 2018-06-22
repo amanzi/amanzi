@@ -59,25 +59,21 @@ TEST(OPERATOR_DIFFUSION_TPFA_ZEROCOEF) {
   ParameterList plist = xmlreader.getParameters();
 
   // create a mesh
-  ParameterList region_list = plist.get<Teuchos::ParameterList>("regions");
+  ParameterList region_list = plist.sublist("regions");
   Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(2, region_list, &comm));
 
-  FrameworkPreference pref;
-  pref.clear();
-  pref.push_back(MSTK);
-
   MeshFactory meshfactory(&comm);
-  meshfactory.preference(pref);
+  meshfactory.preference(FrameworkPreference({MSTK}));
   RCP<const Mesh> mesh = meshfactory(-4.0, 0.0, 4.0, 1.0, 30, 1, gm);
 
   // model
   Analytic04 ana(mesh);
 
   // vector spaces
-  int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
-  int ncells_wghost = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::USED);
-  int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
-  int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
+  int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+  int ncells_wghost = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
+  int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
+  int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
 
   Teuchos::RCP<CompositeVectorSpace> cell_space = Teuchos::rcp(new CompositeVectorSpace());
   cell_space->SetMesh(mesh)->SetComponent("cell",CELL,1)->SetGhosted();
@@ -129,7 +125,7 @@ TEST(OPERATOR_DIFFUSION_TPFA_ZEROCOEF) {
   std::vector<double> bc_mixed;
 
   AmanziMesh::Entity_ID_List left;
-  mesh->get_set_entities("Left side", AmanziMesh::FACE, AmanziMesh::USED, &left);
+  mesh->get_set_entities("Left side", AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL, &left);
   for (int f=0; f!=left.size(); ++f) {
     bc_model[f] = Operators::OPERATOR_BC_DIRICHLET;
     mesh->face_centroid(f, &xv);
@@ -137,7 +133,7 @@ TEST(OPERATOR_DIFFUSION_TPFA_ZEROCOEF) {
   }
 
   AmanziMesh::Entity_ID_List right;
-  mesh->get_set_entities("Right side", AmanziMesh::FACE, AmanziMesh::USED, &right);
+  mesh->get_set_entities("Right side", AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL, &right);
   for (int f=0; f!=right.size(); ++f) {
     bc_model[f] = Operators::OPERATOR_BC_DIRICHLET;
     mesh->face_centroid(f, &xv);
@@ -147,7 +143,7 @@ TEST(OPERATOR_DIFFUSION_TPFA_ZEROCOEF) {
   Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(OPERATOR_BC_TYPE_FACE, bc_model, bc_value, bc_mixed));
 
   // create diffusion operator 
-  ParameterList op_list = plist.get<Teuchos::ParameterList>("PK operator").sublist("diffusion operator");
+  ParameterList op_list = plist.sublist("PK operator").sublist("diffusion operator");
   Point g(2);
   g[0] = 0.0;
   g[1] = 0.0;

@@ -102,14 +102,14 @@ class HeatConduction : public AmanziSolvers::SolverFnBase<CompositeVector> {
 ****************************************************************** */
 double HeatConduction::Conduction(int c, double T) const
 {
-  ASSERT(T > 0.0);
+  AMANZI_ASSERT(T > 0.0);
   return T * T * T;
 }
 
 
 double HeatConduction::ConductionDerivative(int c, double T) const
 {
-  ASSERT(T > 0.0);
+  AMANZI_ASSERT(T > 0.0);
   return 3 * T * T;
 }
 
@@ -140,10 +140,10 @@ void HeatConduction::Init(
   InitialGuess();
 
   // create BCs
-  int ncells_owned = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
-  int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
+  int ncells_owned = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+  int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
 
-  bc_ = Teuchos::rcp(new Operators::BCs(mesh, AmanziMesh::FACE, Operators::SCHEMA_DOFS_SCALAR));
+  bc_ = Teuchos::rcp(new Operators::BCs(mesh, AmanziMesh::FACE, Operators::DOF_Type::SCALAR));
   std::vector<int>& bc_model = bc_->bc_model();
   std::vector<double>& bc_value = bc_->bc_value();
 
@@ -203,13 +203,14 @@ void HeatConduction::Init(
   op_acc_->AddAccumulationDelta(*solution0_, *phi_, *phi_, dT, "cell");
 
   // form the global matrix
-  op_diff_->ApplyBCs(true, true);
+  op_diff_->ApplyBCs(true, true, true);
   op_->SymbolicAssembleMatrix();
   op_->AssembleMatrix();
 
   // create preconditoner
-  Teuchos::ParameterList slist = plist.sublist("preconditioners");
-  op_->InitPreconditioner("Hypre AMG", slist);
+  Teuchos::ParameterList slist = plist.sublist("preconditioners").sublist("Hypre AMG");
+  op_->InitializePreconditioner(slist);
+  op_->UpdatePreconditioner();
 }
 
 
@@ -218,7 +219,7 @@ void HeatConduction::Init(
 ****************************************************************** */
 void HeatConduction::InitialGuess()
 { 
-  int ncells_wghost = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::USED);
+  int ncells_wghost = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
   Epetra_MultiVector& sol_c = *solution_->ViewComponent("cell", true);
   
   for (int c = 0; c < ncells_wghost; ++c) {
@@ -227,7 +228,7 @@ void HeatConduction::InitialGuess()
     sol_c[0][c] = a / 2 - a / M_PI * atan(20 * (xc[0] - 1.0));
   }
 
-  int nfaces_wghost = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
+  int nfaces_wghost = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
   Epetra_MultiVector& sol_f = *solution_->ViewComponent("face", true);
   
   for (int f = 0; f < nfaces_wghost; ++f) {
@@ -250,7 +251,7 @@ void HeatConduction::Residual(const Teuchos::RCP<CompositeVector>& u,
   UpdateValues(*u);
   op_diff_->UpdateMatrices(Teuchos::null, u.ptr());
   op_acc_->AddAccumulationDelta(*solution0_, *phi_, *phi_, dT, "cell");
-  op_diff_->ApplyBCs(true, true);
+  op_diff_->ApplyBCs(true, true, true);
   op_->ComputeNegativeResidual(*u, *f);
 }
 
@@ -268,13 +269,14 @@ void HeatConduction::UpdatePreconditioner(const Teuchos::RCP<const CompositeVect
   op_diff_->UpdateMatrices(flux_.ptr(), up.ptr());
   op_diff_->UpdateMatricesNewtonCorrection(flux_.ptr(), up.ptr(), 1.0);
   op_acc_->AddAccumulationDelta(*solution0_, *phi_, *phi_, dT, "cell");
-  op_diff_->ApplyBCs(true, true);
+  op_diff_->ApplyBCs(true, true, true);
 
   // Assemble matrix and calculate preconditioner.
   op_->AssembleMatrix();
 
-  Teuchos::ParameterList prec_list = plist_.sublist("preconditioners");
-  op_->InitPreconditioner("Hypre AMG", prec_list);
+  Teuchos::ParameterList pc_list = plist_.sublist("preconditioners").sublist("Hypre AMG");
+  op_->InitializePreconditioner(pc_list);
+  op_->UpdatePreconditioner();
 }
 
 
@@ -308,7 +310,7 @@ void HeatConduction::UpdateValues(const CompositeVector& u)
   Epetra_MultiVector& kc = *k->ViewComponent("cell", true); 
   Epetra_MultiVector& dkdT_c = *dkdT->ViewComponent("cell", true); 
 
-  int ncells_wghost = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::USED);
+  int ncells_wghost = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
   for (int c = 0; c < ncells_wghost; c++) {
     double u = uc[0][c];
     kc[0][c] = Conduction(c, u);
@@ -326,8 +328,8 @@ void HeatConduction::UpdateValues(const CompositeVector& u)
   for (int f=0; f!=face_map.NumMyElements(); ++f) {
     if (bc_model[f] == Operators::OPERATOR_BC_DIRICHLET) {
       AmanziMesh::Entity_ID_List cells;
-      mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
-      ASSERT(cells.size() == 1);
+      mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
+      AMANZI_ASSERT(cells.size() == 1);
       int bf = ext_face_map.LID(face_map.GID(f));
       k_df[0][bf] = Conduction(cells[0], bc_value[f]);
       dkdT_df[0][bf] = ConductionDerivative(cells[0], bc_value[f]);

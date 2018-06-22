@@ -13,8 +13,6 @@
 #include <vector>
 
 // TPLs
-#include "boost/math/tools/roots.hpp"
-#include "boost/algorithm/string.hpp"
 #include "Epetra_IntVector.h"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
@@ -33,6 +31,7 @@
 #include "primary_variable_field_evaluator.hh"
 #include "UpwindFactory.hh"
 #include "XMLParameterListWriter.hh"
+#include "LinearOperatorFactory.hh"
 
 // Amanzi::Flow
 #include "DarcyVelocityEvaluator.hh"
@@ -61,9 +60,8 @@ Richards_PK::Richards_PK(Teuchos::ParameterList& pk_tree,
   S_ = S;
 
   std::string pk_name = pk_tree.name();
-
-  boost::iterator_range<std::string::iterator> res = boost::algorithm::find_last(pk_name, "->"); 
-  if (res.end() - pk_name.end() != 0) boost::algorithm::erase_head(pk_name, res.end() - pk_name.begin());
+  auto found = pk_name.rfind("->");
+  if (found != std::string::npos) pk_name.erase(0, found + 2);
 
   // We need the flow list
   Teuchos::RCP<Teuchos::ParameterList> pk_list = Teuchos::sublist(glist, "PKs", true);
@@ -477,7 +475,7 @@ void Richards_PK::Initialize(const Teuchos::Ptr<State>& S)
   }
 
   // error control options
-  ASSERT(ti_list_->isParameter("error control options"));
+  AMANZI_ASSERT(ti_list_->isParameter("error control options"));
 
   error_control_ = 0;
   std::vector<std::string> options;
@@ -500,7 +498,7 @@ void Richards_PK::Initialize(const Teuchos::Ptr<State>& S)
 
   // initialize time integrator
   std::string ti_method_name = ti_list_->get<std::string>("time integration method", "none");
-  ASSERT(ti_method_name == "BDF1");
+  AMANZI_ASSERT(ti_method_name == "BDF1");
   Teuchos::ParameterList& bdf1_list = ti_list_->sublist("BDF1");
 
   if (! bdf1_list.isSublist("verbose object"))
@@ -520,16 +518,16 @@ void Richards_PK::Initialize(const Teuchos::Ptr<State>& S)
   op_matrix_diff_->Setup(Kptr, krel_, dKdP_);
 
   op_preconditioner_->Init();
-  op_preconditioner_->SetBCs(op_bc_, op_bc_);
+  op_preconditioner_diff_->SetBCs(op_bc_, op_bc_);
   op_preconditioner_diff_->Setup(Kptr, krel_, dKdP_);
 
   // -- assemble phase
   op_matrix_diff_->UpdateMatrices(Teuchos::null, solution.ptr());
-  op_matrix_diff_->ApplyBCs(true, true);
+  op_matrix_diff_->ApplyBCs(true, true, true);
 
   op_preconditioner_diff_->UpdateMatrices(darcy_flux_copy.ptr(), solution.ptr());
   op_preconditioner_diff_->UpdateMatricesNewtonCorrection(darcy_flux_copy.ptr(), solution.ptr(), molar_rho_);
-  op_preconditioner_diff_->ApplyBCs(true, true);
+  op_preconditioner_diff_->ApplyBCs(true, true, true);
   op_preconditioner_->SymbolicAssembleMatrix();
 
   if (vapor_diffusion_) {
@@ -537,18 +535,20 @@ void Richards_PK::Initialize(const Teuchos::Ptr<State>& S)
     op_vapor_diff_->SetScalarCoefficient(Teuchos::null, Teuchos::null);
   }
 
-  // -- generic linear solver for maost cases
+  // -- generic linear solver for most cases
   solver_name_ = ti_list_->get<std::string>("linear solver");
 
   // -- preconditioner or encapsulated preconditioner
-  preconditioner_name_ = ti_list_->get<std::string>("preconditioner");
+  std::string pc_name = ti_list_->get<std::string>("preconditioner");
+  Teuchos::ParameterList pc_list = preconditioner_list_->sublist(pc_name);
+  op_preconditioner_->InitializePreconditioner(pc_list);
   
   op_pc_solver_ = op_preconditioner_;
 
   if (ti_list_->isParameter("preconditioner enhancement")) {
     std::string tmp_solver = ti_list_->get<std::string>("preconditioner enhancement");
     if (tmp_solver != "none") {
-      ASSERT(linear_operator_list_->isSublist(tmp_solver));
+      AMANZI_ASSERT(linear_operator_list_->isSublist(tmp_solver));
 
       AmanziSolvers::LinearOperatorFactory<Operators::Operator, CompositeVector, CompositeVectorSpace> sfactory;
       op_pc_solver_ = sfactory.Create(tmp_solver, *linear_operator_list_, op_preconditioner_);
@@ -766,11 +766,12 @@ void Richards_PK::InitializeStatistics_()
 {
   if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
     std::string ti_method_name = ti_list_->get<std::string>("time integration method");
+    std::string pc_name = ti_list_->get<std::string>("preconditioner");
 
     Teuchos::OSTab tab = vo_->getOSTab();
     *vo_->os()<< "\nEC:" << error_control_ 
               << " Upwind:" << op_matrix_diff_->little_k()
-              << " PC:\"" << preconditioner_name_.c_str() << "\"" 
+              << " PC:\"" << pc_name.c_str() << "\"" 
               << " TI:\"" << ti_method_name.c_str() << "\"" << std::endl
               << "matrix: " << op_matrix_->PrintDiagnostics() << std::endl
               << "precon: " << op_preconditioner_->PrintDiagnostics() << std::endl;
@@ -966,7 +967,7 @@ double Richards_PK::DeriveBoundaryFaceValue(
     const Epetra_MultiVector& mu_cell = *S_->GetFieldData("viscosity_liquid")->ViewComponent("cell");
     const Epetra_MultiVector& u_cell = *u.ViewComponent("cell");
     AmanziMesh::Entity_ID_List cells;
-    mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+    mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
     int c = cells[0];
 
     double pc_shift(atm_pressure_);   

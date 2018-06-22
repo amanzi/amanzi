@@ -41,18 +41,17 @@ for gravitational terms in Richards equations.
 
 The input spec for a diffusion operator consists of:
 
-* `"discretization primary`" ``[string]`` Currently supported options include:
+* `"discretization primary`" ``[string]`` See below for supported options.
 
  - `"fv: default`" the standard two-point flux finite volume discretization
  - `"nlfv: default`" the nonlinear finite volume method of ???
  - MFD methods, including:
-
-  * `"mfd: default`"
-  * `"mfd: monotone for hex`"
-  * `"mfd: optimized for monotonicity`"
-  * `"mfd: two-point flux approximation`"
-  * `"mfd: optimized for sparsity`"
-  * `"mfd: support operator`"
+  - `"mfd: default`"
+  - `"mfd: monotone for hex`"
+  - `"mfd: optimized for monotonicity`"
+  - `"mfd: two-point flux approximation`"
+  - `"mfd: optimized for sparsity`"
+  - `"mfd: support operator`"
 
  Note that the most commonly used are `"fv: default`" for simple test
  problems (this method is not particularly accurate for distorted
@@ -60,21 +59,21 @@ The input spec for a diffusion operator consists of:
  unstructured meshes, and `"mfd: optimized for monotonicity`" for
  orthogonal meshes with diagonal tensor/scalar coefficients.
 
-* `"gravity`" [bool] **false** specifies if the gravitational flow term is included
+* `"gravity`" ``[bool]`` **false** specifies if the gravitational flow term is included
 
-* `"Newton correction`" [string] specifies a model for non-physical terms 
+* `"Newton correction`" ``[string]`` specifies a model for non-physical terms 
   that must be added to the matrix. These terms represent Jacobian and are needed 
   for the preconditioner. Available options are `"true Jacobian`" and `"approximate Jacobian`".
   The FV scheme accepts only the first options. The other schemes accept only the second option.
 
-* `"scaled constraint equation`" [bool] **false** rescales flux continuity equations
+* `"scaled constraint equation`" ``[bool]`` **false** rescales flux continuity equations
   on mesh faces.  These equations are formed without the nonlinear
   coefficient. This option allows us to treat the case of zero nonlinear
   coefficient, which otherwise generates zero rows in the operator, which is
   then singular.  At moment this feature does not work with non-zero gravity
   term.
 
-* `"constraint equation scaling cutoff"`" [double] specifies the cutoff value for
+* `"constraint equation scaling cutoff`" ``[double]`` specifies the cutoff value for
   applying rescaling strategy described above.
 */
 

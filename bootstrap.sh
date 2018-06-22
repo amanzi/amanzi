@@ -75,6 +75,8 @@ build_link_flags=
 
 # MPI installation
 mpi_root_dir=
+tools_mpi=openmpi
+tools_mpi_exec_args=
 
 # TPL (Third Party Libraries)
 
@@ -126,6 +128,7 @@ shared=${FALSE}
 spacedim=2
 native=${FALSE}
 silo=${FALSE}
+physics=${TRUE}
 
 # Dry-Run
 dry_run=${FALSE}
@@ -297,6 +300,9 @@ Configuration:
   --opt                   build optimized TPLs and Amanzi binaries. This the default
                           configuration.
 
+  --relwithdebinfo		  build optimized TPLs and Amanzi binaries with debug info
+			  (for profiling)
+
   --debug                 build debug TPLs and Amanzi binaries.
 
   --branch=BRANCH         build TPLs and Amanzi found in BRANCH ['"${amanzi_branch}"']
@@ -307,6 +313,7 @@ Configuration:
 
   --dry_run               show the configuration commands (but do not execute them) ['"${dry_run}"']
   
+
 Build features:
 Each feature listed here can be enabled/disabled with --[enable|disable]-[feature]
 Value in brackets indicates default setting.
@@ -326,6 +333,8 @@ Value in brackets indicates default setting.
   crunchtope              build the CrunchTope geochemistry backend ['"${crunchtope}"']
   alquimia                build the Alquimia geochemistry solver APIs ['"${alquimia}"']
 
+  physics		  build subset of Amanzi used in ATS ['"${physics}"']
+
   test_suite              run Amanzi Test Suite before installing ['"${test_suite}"']
   reg_tests               build regression tests into Amanzi Test Suite ['"${reg_tests}"']
   shared                  build Amanzi and tpls using shared libraries ['"${shared}"']
@@ -334,6 +343,7 @@ Value in brackets indicates default setting.
   xsdk                    build TPLs available in xSDK first, then supplement with additional 
                           individual TPL builds ['"${xsdk}"']
   tpls_only               only build the TPLs, do not build Amanzi itself
+
 
 Tool definitions:
 
@@ -354,13 +364,13 @@ Tool definitions:
 
   --with-mpi=DIR             use MPI installed in DIR ['"${mpi_root_dir}"'].
                              Will search for MPI compiler wrappers under this directory. It this
-                             option is missing, OpenMPI will be build using the provided compiler.
+                             option is missing, OpenMPI will be built using the provided compiler.
+
   --with-xsdk=DIR            use libraries already available in xSDK installation in lieu of
                              downloading and installing them individually. ['"${xsdk_root_dir}"']
 
 
-
-Directory and file names: 
+Directories and file names: 
 
   --prefix=PREFIX                install ALL files in tree rooted at PREFIX
                                  ['"${dflt_install_prefix}"']
@@ -382,7 +392,7 @@ Directory and file names:
 
   --tools-install-prefix=DIR     install Amanzi tools in tree rooted at DIR
                                  ['"${tools_install_prefix}"']. The list of tools includes
-                                 currently OpenMPI.
+                                 currently OpenMPI and MPICH.
   
   --tools-build-dir=DIR          build Amanzi tools in DIR
                                  ['"${tools_build_dir}"']
@@ -390,6 +400,8 @@ Directory and file names:
   --tools-download-dir=DIR       direct downloads of Amanzi tools to DIR
                                  ['"${tools_download_dir}"']
 
+  --tools-mpi=NAME               implementation of the Message Passing Interface (MPI)
+                                 standard. NAME is either openmpi (default) or mpich.
 
 
 Example with pre-existing MPI installation that builds dynamic libraries
@@ -412,6 +424,7 @@ OSX C and C++ compilers and Fortran compiler from MacPorts:
                  --parallel=8 
                  --enable-alquimia --enable-pflotran --enable-crunchtope 
                  --enable-petsc --disable-stk_mesh 
+                 --tools-mpi=openmpi
 '
 }
 
@@ -465,6 +478,7 @@ Build Features:
     alquimia            ='"${alquimia}"'
     pflotran            ='"${pflotran}"'
     crunchtope          ='"${crunchtope}"'
+    physics             ='"${physics}"'
     native              ='"${native}"'
     Spack               ='"${Spack}"'
     xsdk                ='"${xsdk}"'
@@ -513,6 +527,10 @@ function parse_argv()
 		 enable_native=${FALSE}
                  ;;
 
+      --relwithdebinfo)
+                 build_type=RelWithDebInfo
+		 enable_native=${FALSE}
+                 ;;
       --debug)
                  build_type=Debug
 		 enable_native=${TRUE}
@@ -643,6 +661,10 @@ function parse_argv()
                  tpl_config_file=`make_fullpath $tmp`
                  ;;
 
+      --tpls_only)
+                 tpls_only=${TRUE}
+                 ;;
+
       --tools-install-prefix=*)
                  tmp=`parse_option_with_equal "${opt}" 'tools-install-prefix'`
                  tools_install_prefix=`make_fullpath $tmp`
@@ -658,6 +680,10 @@ function parse_argv()
                  tools_download_dir=`make_fullpath $tmp`
                  ;;
       
+      --tools-mpi=*)
+                 tools_mpi=`parse_option_with_equal "${opt}" 'tools-mpi'`
+                 ;;
+
       --print)
                  print_exit=${TRUE}
 		 ;;
@@ -1232,6 +1258,7 @@ function define_structured_dependencies
 {
   if [ "${structured}" -eq "${TRUE}" ]; then
     eval "petsc=$TRUE"
+    status_message "Enable package PETSc"
   fi
 }
 
@@ -1328,6 +1355,7 @@ if [ ! -n "${mpi_root_dir}" ]; then
       -DCMAKE_C_COMPILER:FILEPATH=${build_c_compiler} \
       -DCMAKE_CXX_COMPILER:FILEPATH=${build_cxx_compiler} \
       -DCMAKE_Fortran_COMPILER:FILEPATH=${build_fort_compiler} \
+      -DTOOLS_MPI:STRING="${tools_mpi}" \
       -DTOOLS_INSTALL_PREFIX:STRING=${tools_install_prefix} \
       -DTOOLS_DOWNLOAD_DIR:FILEPATH=${tools_download_dir} \
       -DTOOLS_PARALLEL_JOBS:INT=${parallel_jobs} \
@@ -1338,6 +1366,12 @@ if [ ! -n "${mpi_root_dir}" ]; then
     exit_now 30
   fi
   status_message "Tools configure complete"
+ 
+  # Tools parameters
+  # OpenMPI 3.x requires more slots to run Amanzi tests
+  if [ "${tools_mpi}" = "openmpi" ]; then
+    tools_mpi_exec_args="--oversubscribe"
+  fi 
   
   # Tools install
   cd ${tools_build_dir}
@@ -1394,7 +1428,6 @@ if [ -z "${tpl_config_file}" ]; then
     fi
   fi
 
-  
   if [ "${tpls_only}" -eq "${TRUE}" ]; then
     status_message "Only building TPLs, stopping before building Amanzi itself"
   fi
@@ -1440,46 +1473,46 @@ if [ -z "${tpl_config_file}" ]; then
   
   # Echo or execute configure command
   if [ ${dry_run} == "${TRUE}" ] ; then
-      status_message "TPL configure command: \n"
-      echo ${cmd_configure}
-      echo ""
+    status_message "TPL configure command: \n"
+    echo ${cmd_configure}
+    echo ""
   else
-      cd ${tpl_build_dir}
-      ${cmd_configure}
+    cd ${tpl_build_dir}
+    ${cmd_configure}
+
+    if [ $? -ne 0 ]; then
+      error_message "Failed to configure TPL build"
+      exit_now 30
+    fi
   fi
 
   if [ ${dry_run} == "${FALSE}" ]; then
-  if [ $? -ne 0 ]; then
-    error_message "Failed to configure TPL build"
-    exit_now 30
-  fi
-  status_message "TPL configure complete"
+    status_message "TPL configure complete"
   
-  # TPL make 
-  cd ${tpl_build_dir}
-  make -j ${parallel_jobs}
-  if [ $? -ne 0 ]; then
-    error_message "Failed to build TPLs"
-    exit_now 30
-  fi
+    # TPL make 
+    cd ${tpl_build_dir}
+    make -j ${parallel_jobs}
+    if [ $? -ne 0 ]; then
+      error_message "Failed to build TPLs"
+      exit_now 30
+    fi
   
-  # TPL Install
-  cd ${tpl_build_dir}
-  make install
-  if [ $? -ne 0 ]; then
-    error_message "Failed to install configure script"
-    exit_now 30
-  fi
+    # TPL Install
+    cd ${tpl_build_dir}
+    make install
+    if [ $? -ne 0 ]; then
+      error_message "Failed to install configure script"
+      exit_now 30
+    fi
       
+    cd ${pwd_save}
       
-  cd ${pwd_save}
-      
-  status_message "TPL build complete"
-  status_message "For future Amanzi builds use ${tpl_config_file}"
+    status_message "TPL build complete"
+    status_message "For future Amanzi builds use ${tpl_config_file}"
 
   else
  
-  status_message "To execute this TPL build remove the --dry_run option."
+    status_message "To execute this TPL build remove the --dry_run option."
   
   fi
   
@@ -1532,10 +1565,12 @@ cmd_configure="${cmake_binary} \
     -DENABLE_ALQUIMIA:BOOL=${alquimia} \
     -DENABLE_PFLOTRAN:BOOL=${pflotran} \
     -DENABLE_CRUNCHTOPE:BOOL=${crunchtope} \
+    -DENABLE_Physics:BOOL=${physics} \
     -DBUILD_SHARED_LIBS:BOOL=${shared} \
     -DCCSE_BL_SPACEDIM:INT=${spacedim} \
     -DENABLE_Regression_Tests:BOOL=${reg_tests} \
     -DENABLE_NATIVE_XML_OUTPUT:BOOL=${native} \
+    -DMPI_EXEC_GLOBAL_ARGS:STRING=${tools_mpi_exec_args} \
     ${nersc_amanzi_opts} \
     ${amanzi_source_dir}"
 

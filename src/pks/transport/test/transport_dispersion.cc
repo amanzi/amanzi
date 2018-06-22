@@ -96,7 +96,7 @@ TEST(DISPERSION) {
       flux = S->GetFieldData("darcy_flux", passwd)->ViewComponent("face", false);
 
   AmanziGeometry::Point velocity(1.0, 0.0, 0.0);
-  int nfaces_owned = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
+  int nfaces_owned = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
   for (int f = 0; f < nfaces_owned; f++) {
     const AmanziGeometry::Point& normal = mesh->face_normal(f);
     (*flux)[0][f] = velocity * normal;
@@ -105,7 +105,7 @@ TEST(DISPERSION) {
   Teuchos::RCP<Epetra_MultiVector> 
       tcc = S->GetFieldData("total_component_concentration", passwd)->ViewComponent("cell", false);
 
-  int ncells_owned = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  int ncells_owned = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
   for (int c = 0; c < ncells_owned; c++) {
     const AmanziGeometry::Point& xc = mesh->cell_centroid(c);
     (*tcc)[0][c] = f_step(xc, 0.0);
@@ -201,7 +201,7 @@ TEST(DIFFUSION) {
       flux = S->GetFieldData("darcy_flux", passwd)->ViewComponent("face", false);
 
   AmanziGeometry::Point velocity(0.5, 0.0);
-  int nfaces_owned = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
+  int nfaces_owned = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
   for (int f = 0; f < nfaces_owned; f++) {
     const AmanziGeometry::Point& normal = mesh->face_normal(f);
     (*flux)[0][f] = velocity * normal;
@@ -307,7 +307,7 @@ TEST(GAS_DIFFUSION) {
   Teuchos::RCP<Epetra_MultiVector> flux = S->GetFieldData("darcy_flux", passwd)->ViewComponent("face", false);
 
   AmanziGeometry::Point velocity(0.1, 0.0);
-  int nfaces_owned = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
+  int nfaces_owned = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
   for (int f = 0; f < nfaces_owned; f++) {
     const AmanziGeometry::Point& normal = mesh->face_normal(f);
     (*flux)[0][f] = velocity * normal;
@@ -347,7 +347,7 @@ TEST(GAS_DIFFUSION) {
   CHECK_CLOSE(tcc[1][218], tcc[1][222], 1e-12);
 
   // check for bounds
-  int ncells_owned = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  int ncells_owned = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
   for (int c = 0; c < ncells_owned; ++c) {
     CHECK(tcc[0][c] >= 0.0 && tcc[0][c] <= 1.0);
     CHECK(tcc[1][c] >= 0.0 && tcc[1][c] <= 1.0);

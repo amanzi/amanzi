@@ -41,6 +41,7 @@ include_directories(${MESH_FACTORY_SOURCE_DIR})
 include_directories(${OPERATORS_SOURCE_DIR})
 include_directories(${OUTPUT_SOURCE_DIR})
 include_directories(${SOLVERS_SOURCE_DIR})
+include_directories(${TIME_INTEGRATION_SOURCE_DIR})
 include_directories(${WHETSTONE_SOURCE_DIR})
 
 
@@ -102,10 +103,11 @@ set(operators_inc_files
     PDE_DiffusionNLFV.hh
     PDE_DiffusionNLFVwithBndFaces.hh
     PDE_DiffusionNLFVwithGravity.hh
+    PDE_DiffusionDG.hh
     PDE_Elasticity.hh
     PDE_Electromagnetics.hh
-    PDE_ElectromagneticsMHD.hh
-    PDE_ElectromagneticsMHD_TM.hh
+    PDE_MagneticDiffusion.hh
+    PDE_MagneticDiffusion_TM.hh
     PDE_HelperBCsList.hh
     PDE_HelperDiscretization.hh
     PDE_Reaction.hh
@@ -143,10 +145,12 @@ add_amanzi_library(operators
                           PDE_DiffusionFV.cc PDE_DiffusionFVwithGravity.cc
                           PDE_DiffusionNLFV.cc PDE_DiffusionNLFVwithGravity.cc
                           PDE_DiffusionNLFVwithBndFaces.cc PDE_DiffusionNLFVwithBndFacesGravity.cc
+                          PDE_DiffusionDG.cc
                           PDE_DiffusionFactory.cc                   
                           PDE_HelperDiscretization.cc
                           PDE_Elasticity.cc
-                          PDE_Electromagnetics.cc PDE_ElectromagneticsMHD.cc PDE_ElectromagneticsMHD_TM.cc
+                          PDE_Electromagnetics.cc
+                          PDE_MagneticDiffusion.cc PDE_MagneticDiffusion_TM.cc
                           PDE_Reaction.cc
                           Schema.cc
                           TreeOperator.cc
@@ -172,7 +176,7 @@ if (BUILD_TESTS)
 
     set(amanzi_libs geometry atk mesh mesh_factory mesh_logical data_structures operators whetstone output atk)
 
-    # Test: operators for various PDEs
+    # Tests: diffusion
     add_amanzi_test(operators_utils operators_utils
                     KIND unit
                     SOURCE test/Main.cc test/operator_utils.cc
@@ -190,6 +194,7 @@ if (BUILD_TESTS)
 			LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
         add_amanzi_test(operators_marshak operators_marshak
                         KIND unit
+                        NPROCS 3
                         SOURCE test/Main.cc test/operator_marshak.cc
                         LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
         add_amanzi_test(operators_marshak_logical operators_marshak_logical
@@ -235,6 +240,11 @@ if (BUILD_TESTS)
     add_amanzi_test(operators_diffusion_consistent_face_3pe operators_diffusion_consistent_face 
                     NPROCS 3 KIND unit)
 
+    add_amanzi_test(operators_diffusion_dg operators_diffusion_dg
+                    KIND unit
+                    SOURCE test/Main.cc test/operator_diffusion_dg.cc
+                    LINK_LIBS operators_audit ${amanzi_libs} ${UnitTest_LIBRARIES})
+
     add_amanzi_test(operators_commute operators_commute
                     KIND unit
                     SOURCE test/Main.cc test/operator_commute.cc
@@ -246,6 +256,12 @@ if (BUILD_TESTS)
     #                 SOURCE test/Main.cc test/operator_diffusion_tpfa.cc
     #                 LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
     
+    # Test: advection-diffusion 
+    add_amanzi_test(operators_advection_diffusion operators_advection_diffusion
+                    KIND unit
+                    SOURCE test/Main.cc test/operator_advdiff.cc
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
+
     # Test: matrices for surface
     add_amanzi_test(operators_surface operators_surface
                     KIND unit
@@ -253,12 +269,12 @@ if (BUILD_TESTS)
                                         test/operator_fractures.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
-    # Test: operators on 
+    # Test: electromagnetics 
     add_amanzi_test(operators_electromagnetics operators_electromagnetics
                     KIND unit
                     SOURCE test/Main.cc test/AnalyticElectromagneticsBase.cc
                                         test/operator_electromagnetics.cc 
-                                        test/operator_electromagnetics_mhd.cc
+                                        test/operator_magnetic_diffusion.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
     # Test: utils
@@ -277,7 +293,7 @@ if (BUILD_TESTS)
 
     add_amanzi_test(operators_stability_2pe operators_stability NPROCS 2 KIND unit)
 
-    # converge rates
+    # convergence rates
     add_amanzi_test(operators_diffusion_convergence operators_diffusion_convergence
                     KIND unit
                     SOURCE test/Main.cc test/operator_diffusion_convergence.cc
@@ -295,7 +311,7 @@ if (BUILD_TESTS)
                     SOURCE test/Main.cc test/operator_gravity.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
-    # Test: elasticity-type methods
+    # Test: elasticity methods
     add_amanzi_test(operators_elasticity operators_elasticity
                     KIND unit
                     SOURCE test/Main.cc test/operator_elasticity.cc
@@ -326,6 +342,19 @@ if (BUILD_TESTS)
                            test/operator_remap_dual.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
+    # high-order diffusion test
+    add_amanzi_test(operators_diffusion_high_order operators_diffusion_high_order
+                    KIND unit
+                    SOURCE test/Main.cc test/operator_diffusion_high_order.cc
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+
+    # DG advection test
+    add_amanzi_test(operators_advection_dg operators_advection_dg
+                    KIND unit
+                    NPROCS 3
+                    SOURCE test/Main.cc test/operator_advection_dg.cc
+                                        test/operator_advection_dg_transient
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
 endif()
 
 

@@ -79,8 +79,8 @@ int DeRham_Face::L2consistency(
   // mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
   // int nfaces = faces.size();
   int nfaces = fm.size();
-  ASSERT(fnor.size() == nfaces);
-  ASSERT(face_area.size() == nfaces);
+  AMANZI_ASSERT(fnor.size() == nfaces);
+  AMANZI_ASSERT(face_area.size() == nfaces);
 
   N.Reshape(nfaces, d_);
   Mc.Reshape(nfaces, nfaces);
@@ -164,8 +164,8 @@ int DeRham_Face::L2consistencyInverse(const AmanziGeometry::Point& cm, double vo
   // int nfaces = faces.size();
 
   int nfaces = fm.size();
-  ASSERT(fnor.size() == nfaces);
-  ASSERT(face_area.size() == nfaces);
+  AMANZI_ASSERT(fnor.size() == nfaces);
+  AMANZI_ASSERT(face_area.size() == nfaces);
 
   R.Reshape(nfaces, d_);
   Wc.Reshape(nfaces, nfaces);

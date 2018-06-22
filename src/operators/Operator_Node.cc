@@ -60,7 +60,7 @@ void Operator_Node::UpdateRHS(const CompositeVector& source, bool volume_include
 int Operator_Node::ApplyMatrixFreeOp(const Op_Cell_Node& op,
                                      const CompositeVector& X, CompositeVector& Y) const 
 {
-  ASSERT(op.matrices.size() == ncells_owned);
+  AMANZI_ASSERT(op.matrices.size() == ncells_owned);
 
   X.ScatterMasterToGhosted();
   const Epetra_MultiVector& Xn = *X.ViewComponent("node", true);
@@ -122,8 +122,8 @@ void Operator_Node::SymbolicAssembleMatrixOp(const Op_Cell_Node& op,
                                              const SuperMap& map, GraphFE& graph,
                                              int my_block_row, int my_block_col) const
 {
-  int lid_r[OPERATOR_MAX_NODES];
-  int lid_c[OPERATOR_MAX_NODES];
+  std::vector<int> lid_r(cell_max_nodes);
+  std::vector<int> lid_c(cell_max_nodes);
 
   // ELEMENT: cell, DOFS: cell and node
   const std::vector<int>& node_row_inds = map.GhostIndices("node", my_block_row);
@@ -139,9 +139,9 @@ void Operator_Node::SymbolicAssembleMatrixOp(const Op_Cell_Node& op,
       lid_r[n] = node_row_inds[nodes[n]];
       lid_c[n] = node_col_inds[nodes[n]];
     }
-    ierr |= graph.InsertMyIndices(nnodes, lid_r, nnodes, lid_c);
+    ierr |= graph.InsertMyIndices(nnodes, lid_r.data(), nnodes, lid_c.data());
   }
-  ASSERT(!ierr);
+  AMANZI_ASSERT(!ierr);
 }
 
 
@@ -163,7 +163,7 @@ void Operator_Node::SymbolicAssembleMatrixOp(const Op_Node_Node& op,
 
     ierr |= graph.InsertMyIndices(row, 1, &col);
   }
-  ASSERT(!ierr);
+  AMANZI_ASSERT(!ierr);
 }
 
 
@@ -175,10 +175,10 @@ void Operator_Node::AssembleMatrixOp(const Op_Cell_Node& op,
                                      const SuperMap& map, MatrixFE& mat,
                                      int my_block_row, int my_block_col) const
 {
-  ASSERT(op.matrices.size() == ncells_owned);
+  AMANZI_ASSERT(op.matrices.size() == ncells_owned);
 
-  int lid_r[OPERATOR_MAX_NODES];
-  int lid_c[OPERATOR_MAX_NODES];
+  std::vector<int> lid_r(cell_max_nodes);
+  std::vector<int> lid_c(cell_max_nodes);
 
   // ELEMENT: cell, DOFS: node and cell
   const std::vector<int>& node_row_inds = map.GhostIndices("node", my_block_row);
@@ -195,9 +195,9 @@ void Operator_Node::AssembleMatrixOp(const Op_Cell_Node& op,
       lid_c[n] = node_col_inds[nodes[n]];
     }
 
-    ierr |= mat.SumIntoMyValues(lid_r, lid_c, op.matrices[c]);
+    ierr |= mat.SumIntoMyValues(lid_r.data(), lid_c.data(), op.matrices[c]);
   }
-  ASSERT(!ierr);
+  AMANZI_ASSERT(!ierr);
 }
 
 
@@ -209,7 +209,7 @@ void Operator_Node::AssembleMatrixOp(const Op_Node_Node& op,
                                      const SuperMap& map, MatrixFE& mat,
                                      int my_block_row, int my_block_col) const
 {
-  ASSERT(op.diag->NumVectors() == 1);
+  AMANZI_ASSERT(op.diag->NumVectors() == 1);
 
   const std::vector<int>& node_row_inds = map.GhostIndices("node", my_block_row);
   const std::vector<int>& node_col_inds = map.GhostIndices("node", my_block_col);
@@ -221,7 +221,7 @@ void Operator_Node::AssembleMatrixOp(const Op_Node_Node& op,
 
     ierr |= mat.SumIntoMyValues(row, 1, &(*op.diag)[0][v], &col);
   }
-  ASSERT(!ierr);
+  AMANZI_ASSERT(!ierr);
 }
 
 }  // namespace Operators

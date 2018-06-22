@@ -1,16 +1,24 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
-//
-// Logical mesh that can be modified and constructed on the fly.
-//
-// Logical mesh is a topologically defined mesh with no real coordinate
-// geometry.  By definition it is perfectly parallel with no ghost entities,
-// as it is intended to be used along with a normal mesh as a subgrid model.
-// As it is not a geomtric mesh, it cannot work with all (many) spatial
-// discretizations -- currently only Finite Volume.
-//
-// In particular:
-//  1. nodes do not exist
-//
+/* -*-  mode: c++; indent-tabs-mode: nil -*- */
+/*
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
+
+  Author: Ethan Coon (ecoon@lanl.gov)
+*/
+
+/*!
+ Logical mesh that can be modified and constructed on the fly.
+
+ Logical mesh is a topologically defined mesh with no real coordinate
+ geometry.  By definition it is perfectly parallel with no ghost entities,
+ as it is intended to be used along with a normal mesh as a subgrid model.
+ As it is not a geomtric mesh, it cannot work with all (many) spatial
+ discretizations -- currently only Finite Volume.
+
+ In particular:
+  1. nodes do not exist
+*/
 
 #ifndef AMANZI_LOGICAL_MESH_H_
 #define AMANZI_LOGICAL_MESH_H_
@@ -78,7 +86,7 @@ class MeshLogical : public Mesh {
   // for testing
   bool operator==(const MeshLogical& other);
   
-  // Get parallel type of entity - OWNED, GHOST, USED (See MeshDefs.hh)
+  // Get parallel type of entity - OWNED, GHOST, ALL (See MeshDefs.hh)
   virtual
   Parallel_type entity_get_ptype(const Entity_kind kind,
           const Entity_ID entid) const;
@@ -96,7 +104,7 @@ class MeshLogical : public Mesh {
   // -------------------------
   //
   // Number of entities of any kind (cell, face, node) and in a
-  // particular category (OWNED, GHOST, USED)
+  // particular category (OWNED, GHOST, ALL)
   virtual
   unsigned int num_entities(const Entity_kind kind,
                             const Parallel_type ptype) const;
@@ -178,7 +186,7 @@ class MeshLogical : public Mesh {
   // (e.g. a hex has 6 face neighbors)
 
   // The order in which the cellids are returned cannot be
-  // guaranteed in general except when ptype = USED, in which case
+  // guaranteed in general except when ptype = ALL, in which case
   // the cellids will correcpond to cells across the respective
   // faces given by cell_get_faces
   virtual
@@ -377,6 +385,8 @@ class MeshLogical : public Mesh {
   std::vector<std::vector<AmanziGeometry::Point> > cell_face_bisectors_;
 
 };
+
+bool viewMeshLogical(const Mesh& m, std::ostream& os=std::cout);
 
 
 } // close namespace AmanziMesh

@@ -84,8 +84,8 @@ TEST(OPERATOR_DIFFUSION_TRACER) {
   // modify diffusion coefficient
   // -- since rho=mu=1.0, we do not need to scale the diffusion tensor.
   Teuchos::RCP<std::vector<WhetStone::Tensor> > K = Teuchos::rcp(new std::vector<WhetStone::Tensor>());
-  int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
-  int nnodes_wghost = mesh->num_entities(AmanziMesh::NODE, AmanziMesh::USED);
+  int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+  int nnodes_wghost = mesh->num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::ALL);
 
   int num_surfaces = 1;
   CompositeVectorSpace cvs1, cvs4;
@@ -394,9 +394,9 @@ void DefineSurfacePlane(int surf_id,
 //   // modify diffusion coefficient
 //   // -- since rho=mu=1.0, we do not need to scale the diffusion coefficient.
 //   Teuchos::RCP<std::vector<WhetStone::Tensor> > K = Teuchos::rcp(new std::vector<WhetStone::Tensor>());
-//   int ncells_wghost = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::USED);
-//   int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
-//   int nnodes_wghost = mesh->num_entities(AmanziMesh::NODE, AmanziMesh::USED);
+//   int ncells_wghost = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
+//   int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
+//   int nnodes_wghost = mesh->num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::ALL);
 
 //   Analytic02 ana(mesh);
 

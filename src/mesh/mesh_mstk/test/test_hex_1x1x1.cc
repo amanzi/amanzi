@@ -1,6 +1,6 @@
 #include <UnitTest++.h>
 
-#include <iostream>
+#include <fstream>
 
 
 #include "../Mesh_MSTK.hh"
@@ -48,7 +48,7 @@ TEST(MSTK_HEX1)
 
   // Check number of nodes and their coordinates
 
-  nv = mesh->num_entities(Amanzi::AmanziMesh::NODE, Amanzi::AmanziMesh::OWNED);
+  nv = mesh->num_entities(Amanzi::AmanziMesh::NODE, Amanzi::AmanziMesh::Parallel_type::OWNED);
   CHECK_EQUAL(NV,nv);
 
   for (i = 0; i < nv; i++) {
@@ -63,7 +63,7 @@ TEST(MSTK_HEX1)
 
   // Check number of cells and their face nodes and their face coordinates
   
-  nc = mesh->num_entities(Amanzi::AmanziMesh::CELL,Amanzi::AmanziMesh::OWNED);
+  nc = mesh->num_entities(Amanzi::AmanziMesh::CELL,Amanzi::AmanziMesh::Parallel_type::OWNED);
   CHECK_EQUAL(NC,nc);
 
 

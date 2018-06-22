@@ -86,7 +86,7 @@ class PDE_DiffusionNLFVwithBndFaces : public virtual PDE_Diffusion {
                                      const Teuchos::Ptr<CompositeVector>& flux) override {};
 
   // -- modify an operator
-  virtual void ApplyBCs(bool primary, bool eliminate) override;
+  virtual void ApplyBCs(bool primary, bool eliminate, bool essential_eqn) override;
   virtual void ModifyMatrices(const CompositeVector& u) override {};
   virtual void ScaleMassMatrices(double s) override {};
 

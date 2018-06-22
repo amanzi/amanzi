@@ -194,21 +194,11 @@ class Operator {
   virtual void AssembleMatrix(const SuperMap& map,
           MatrixFE& matrix, int my_block_row, int my_block_col) const;
 
-  // boundary conditions (BC) require information on test and
-  // trial spaces. For a single PDE, these BCs could be the same.
-  // Note that trial corresponds to the column, while test corresponds to the row.
-  virtual void SetBCs(const Teuchos::RCP<const BCs>& bc_trial,
-                      const Teuchos::RCP<BCs>& bc_test) {
-    bc_trial_ = bc_trial;
-    bc_test_ = bc_test;
-  }
-  virtual void SetTrialBCs(const Teuchos::RCP<const BCs>& bc) { bc_trial_ = bc; }
-  virtual void SetTestBCs(const Teuchos::RCP<const BCs>& bc) { bc_test_ = bc; }
-
   // modifiers
   // -- add a vector to operator's rhs vector  
   virtual void UpdateRHS(const CompositeVector& source, bool volume_included = true);
   // -- rescale elemental matrices
+  virtual void Rescale(double scaling);
   virtual void Rescale(const CompositeVector& scaling);
   virtual void Rescale(const CompositeVector& scaling, int iops);
 
@@ -219,13 +209,16 @@ class Operator {
   int ComputeResidual(const CompositeVector& u, CompositeVector& r, bool zero = true);
   int ComputeNegativeResidual(const CompositeVector& u, CompositeVector& r, bool zero = true);
 
+  // preconditioner 
   void InitPreconditioner(const std::string& prec_name, const Teuchos::ParameterList& plist);
   void InitPreconditioner(Teuchos::ParameterList& plist);
+  void InitializePreconditioner(Teuchos::ParameterList& plist);
+  void UpdatePreconditioner();
 
   void CreateCheckPoint();
   void RestoreCheckPoint();
 
-  // -- supporting members
+  // supporting members
   int CopyShadowToMaster(int iops);
 
   // access
@@ -237,6 +230,7 @@ class Operator {
   void set_schema_string(const std::string& schema_string) { schema_string_ = schema_string; }
 
   Teuchos::RCP<const AmanziMesh::Mesh> Mesh() const { return mesh_; }
+  Teuchos::RCP<SuperMap> smap() const { return smap_; }
 
   Teuchos::RCP<Epetra_CrsMatrix> A() { return A_; }
   Teuchos::RCP<const Epetra_CrsMatrix> A() const { return A_; }
@@ -400,6 +394,11 @@ class Operator {
   virtual void AssembleVectorFaceOp(int c, const Schema& schema,
           const WhetStone::DenseVector& v, CompositeVector& X) const;
 
+  // deep copy for building interfaces to TPLs, mainly to solvers
+  // -- composite vectors
+  void CopyVectorToSuperVector(const CompositeVector& cv, Epetra_Vector& sv) const;
+  void CopySuperVectorToVector(const Epetra_Vector& sv, CompositeVector& cv) const;
+
   // diagnostics
   std::string PrintDiagnostics() const;
 
@@ -414,7 +413,6 @@ class Operator {
   mutable std::vector<Teuchos::RCP<Op> > ops_;
   mutable std::vector<int> ops_properties_;
   Teuchos::RCP<CompositeVector> rhs_, rhs_checkpoint_;
-  Teuchos::RCP<const BCs> bc_trial_, bc_test_;
 
   int ncells_owned, nfaces_owned, nnodes_owned, nedges_owned;
   int ncells_wghost, nfaces_wghost, nnodes_wghost, nedges_wghost;

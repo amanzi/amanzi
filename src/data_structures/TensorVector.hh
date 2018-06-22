@@ -62,7 +62,8 @@ struct TensorVector {
   int size_() {
     int count = 0;
     for (auto& name : map) {
-      count += map.Mesh()->num_entities(AmanziMesh::entity_kind(name), ghosted ? AmanziMesh::USED : AmanziMesh::OWNED);
+      count += map.Mesh()->num_entities(AmanziMesh::entity_kind(name), 
+          ghosted ? AmanziMesh::Parallel_type::ALL : AmanziMesh::Parallel_type::OWNED);
     }
     return count;
   }

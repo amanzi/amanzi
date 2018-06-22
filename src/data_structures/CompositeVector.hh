@@ -304,6 +304,9 @@ public:
   void GatherGhostedToMaster(Epetra_CombineMode mode=Add);
   void GatherGhostedToMaster(std::string name, Epetra_CombineMode mode=Add);
 
+  // returns non-empty importer
+  const Teuchos::RCP<Epetra_Import>& importer(std::string name);
+
   // -- Assorted vector operations, this implements a Vec --
 
   // Sets all vectors to value.
@@ -388,7 +391,7 @@ public:
 
   int Index_(std::string name) const {
     std::map<std::string, int>::const_iterator item = indexmap_.find(name);
-    ASSERT(item != indexmap_.end());
+    AMANZI_ASSERT(item != indexmap_.end());
     return item->second;
   }
 

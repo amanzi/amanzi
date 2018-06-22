@@ -84,8 +84,8 @@ void UpwindGravity<Model>::Compute(
     const CompositeVector& flux, const CompositeVector& solution,
     const std::vector<int>& bc_model, CompositeVector& field)
 {
-  ASSERT(field.HasComponent("cell"));
-  ASSERT(field.HasComponent(face_comp_));
+  AMANZI_ASSERT(field.HasComponent("cell"));
+  AMANZI_ASSERT(field.HasComponent(face_comp_));
 
   field.ScatterMasterToGhosted("cell");
   const Epetra_MultiVector& fld_cell = *field.ViewComponent("cell", true);
@@ -95,13 +95,13 @@ void UpwindGravity<Model>::Compute(
   Epetra_MultiVector& upw_face = *field.ViewComponent(face_comp_, true);
   // const Epetra_MultiVector& sol_face = *solution.ViewComponent("face", true);
 
-  int nfaces_wghost = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
+  int nfaces_wghost = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
   AmanziMesh::Entity_ID_List cells;
 
   int c1, c2, dir;
   double kc1, kc2;
   for (int f = 0; f < nfaces_wghost; ++f) {
-    mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+    mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
     int ncells = cells.size();
 
     c1 = cells[0];

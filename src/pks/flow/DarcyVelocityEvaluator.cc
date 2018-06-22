@@ -58,7 +58,7 @@ void DarcyVelocityEvaluator::EvaluateField_(
   Epetra_MultiVector& result_c = *(result->ViewComponent("cell", false));
 
   Teuchos::RCP<const AmanziMesh::Mesh> mesh = S->GetMesh();
-  int ncells_owned = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  int ncells_owned = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
   int dim = mesh->space_dimension();
 
   WhetStone::MFD3D_Diffusion mfd(mesh);

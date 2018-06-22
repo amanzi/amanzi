@@ -17,6 +17,8 @@
 
 #include "DenseMatrix.hh"
 #include "MeshMaps.hh"
+#include "MFD3D_LagrangeSerendipity.hh"
+#include "NumericalIntegration.hh"
 #include "Polynomial.hh"
 
 namespace Amanzi {
@@ -53,6 +55,124 @@ void MeshMaps::VelocityFace(int f, VectorPolynomial& v) const
     }
     v[i](0, 0) = xf1[i] - x1[i] * (x0 * xf0);
     v[i](1, i) -= 1.0;
+  }
+}
+
+
+/* ******************************************************************
+* Calculation of Jacobian.
+* Multiple velocities are packed in a rectagular matrix.
+****************************************************************** */
+void MeshMaps::Jacobian(const VectorPolynomial& vc, MatrixPolynomial& J) const
+{
+  // allocate memory
+  int nvc = vc.size();
+  J.resize(nvc);
+  for (int i = 0; i < nvc; ++i) {
+    J[i].resize(d_);
+  }
+
+  // copy velocity gradients to Jacobian
+  VectorPolynomial tmp(d_, 0);
+  for (int i = 0; i < nvc; ++i) {
+    tmp.Gradient(vc[i]);
+    for (int j = 0; j < d_; ++j) {
+      J[i][j] = tmp[j];
+    }
+  }
+}
+
+
+/* ******************************************************************
+* Calculation of matrix of cofactors.
+* Multiple cofactors are packed in a rectagular matrix.
+****************************************************************** */
+void MeshMaps::Cofactors(
+    double t, const MatrixPolynomial& J, MatrixPolynomial& C) const
+{
+  // allocate memory for matrix of cofactors
+  int nJ = J.size();
+  C.resize(nJ);
+  for (int i = 0; i < nJ; ++i) {
+    C[i].resize(d_);
+  }
+
+  // calculate cofactors
+  int kJ = nJ / d_;
+  for (int n = 0; n < kJ; ++n) {
+    int m0 = n * d_;
+    int m1 = m0 + 1;
+    if (d_ == 2) {
+      C[m1][1] = J[m0][0];
+      C[m1][0] = J[m0][1];
+      C[m1][0] *= -1.0;
+
+      C[m0][0] = J[m1][1];
+      C[m0][1] = J[m1][0];
+      C[m0][1] *= -1.0;
+    }
+    else if (d_ == 3) {
+      int m2 = m0 + 2;
+      C[m0][0] = J[m1][1] * J[m2][2] - J[m2][1] * J[m1][2];
+      C[m1][0] = J[m2][1] * J[m0][2] - J[m0][1] * J[m2][2];
+      C[m2][0] = J[m0][1] * J[m1][2] - J[m1][1] * J[m0][2];
+
+      C[m0][1] = J[m2][0] * J[m1][2] - J[m1][0] * J[m2][2];
+      C[m1][1] = J[m0][0] * J[m2][2] - J[m2][0] * J[m0][2];
+      C[m2][1] = J[m1][0] * J[m0][2] - J[m0][0] * J[m1][2];
+
+      C[m0][2] = J[m1][0] * J[m2][1] - J[m2][0] * J[m1][1];
+      C[m1][2] = J[m2][0] * J[m0][1] - J[m0][0] * J[m2][1];
+      C[m2][2] = J[m0][0] * J[m1][1] - J[m1][0] * J[m0][1];
+    }
+  }
+
+  // add time dependence
+  for (int i = 0; i < nJ; ++i) {
+    for (int j = 0; j < d_; ++j) {
+      C[i][j] *= t;
+    }
+    C[i][i % d_](0, 0) += 1.0;
+  }
+}
+
+
+/* ******************************************************************
+* Calculate detminant at time t.
+* Multiple determinatds are packed in a vector.
+****************************************************************** */
+void MeshMaps::Determinant(
+   double t, const MatrixPolynomial& J, VectorPolynomial& det) const
+{
+  int ndet = J.size() / d_;
+  det.resize(ndet);
+
+  MatrixPolynomial Jt;
+  Jt.resize(d_);
+  for (int i = 0; i < d_; ++i) {
+    Jt[i].resize(d_);
+  }
+
+  for (int n = 0; n < ndet; ++n) {
+    int m = n * d_;
+    for (int i = 0; i < d_; ++i) {
+      for (int j = 0; j < d_; ++j) {
+        Jt[i][j] = J[m + i][j] * t;
+      }
+      Jt[i][i](0, 0) += 1.0;
+    }
+
+    if (d_ == 2) {
+      det[n] = Jt[0][0] * Jt[1][1] - Jt[0][1] * Jt[1][0];
+    }
+    else if (d_ == 3) {
+      det[n] = Jt[0][0] * Jt[1][1] * Jt[2][2] 
+             + Jt[2][0] * Jt[0][1] * Jt[1][2] 
+             + Jt[1][0] * Jt[2][1] * Jt[0][2] 
+             - Jt[2][0] * Jt[1][1] * Jt[0][2] 
+             - Jt[1][0] * Jt[0][1] * Jt[2][2] 
+             - Jt[0][0] * Jt[2][1] * Jt[1][2]; 
+    }
   }
 }
 
@@ -119,10 +239,10 @@ int MeshMaps::LeastSquareFit(int order,
     A.Multiply(b, u, false);
 
     for (auto it = poly.begin(); it.end() <= poly.end(); ++it) {
-      int n = it.MonomialOrder();
-      int m = it.MonomialPosition();
+      int n = it.MonomialSetOrder();
+      int m = it.MonomialSetPosition();
       int i = it.PolynomialPosition();
-      v[k].monomials(n).coefs()[m] = u(i);
+      v[k](n, m) = u(i);
     }
   }
 
@@ -131,26 +251,68 @@ int MeshMaps::LeastSquareFit(int order,
 
 
 /* ******************************************************************
-* Error calculation requires geometric center.
+* Project polynomial on mesh0 to polynomial space on mesh1.
 ****************************************************************** */
-AmanziGeometry::Point MeshMaps::cell_geometric_center(int id, int c) const
+void MeshMaps::ProjectPolynomial(int c, Polynomial& poly) const
 {
-  Entity_ID_List nodes;
-  AmanziGeometry::Point v(d_), xg(d_);
+  int order = poly.order();
 
-  mesh0_->cell_get_nodes(c, &nodes);
-  int nnodes = nodes.size();
-  for (int i = 0; i < nnodes; ++i) {
-    if (id == 0) {
-      mesh0_->node_get_coordinates(nodes[i], &v);
+  WhetStone::Entity_ID_List faces, nodes;
+  std::vector<int> dirs;
+
+  mesh0_->cell_get_faces_and_dirs(c, &faces, &dirs);
+  int nfaces = faces.size();  
+
+  AmanziGeometry::Point v0(d_), v1(d_);
+  std::vector<VectorPolynomial> vvf;
+
+  for (int i = 0; i < nfaces; ++i) {
+    int f = faces[i];
+    const AmanziGeometry::Point& xf = mesh1_->face_centroid(f);
+    mesh0_->face_get_nodes(f, &nodes);
+
+    mesh0_->node_get_coordinates(nodes[0], &v0);
+    mesh0_->node_get_coordinates(nodes[1], &v1);
+    double f0 = poly.Value(v0);
+    double f1 = poly.Value(v1);
+
+    WhetStone::VectorPolynomial vf(d_ - 1, 1);
+    vf[0].Reshape(d_ - 1, order);
+    if (order == 1) {
+      vf[0](0, 0) = (f0 + f1) / 2; 
+      vf[0](1, 0) = f1 - f0; 
+    } else if (order == 2) {
+      double f2 = poly.Value((v0 + v1) / 2);
+      vf[0](0, 0) = f2;
+      vf[0](1, 0) = f1 - f0;
+      vf[0](2, 0) = -4 * f2 + 2 * f0 + 2 * f1;
     } else {
-      mesh1_->node_get_coordinates(nodes[i], &v);
+      AMANZI_ASSERT(0);
     }
-    xg += v;
-  } 
-  xg /= nnodes;
-  
-  return xg;
+
+    mesh1_->node_get_coordinates(nodes[0], &v0);
+    mesh1_->node_get_coordinates(nodes[1], &v1);
+
+    std::vector<AmanziGeometry::Point> tau;
+    tau.push_back(v1 - v0);
+    vf[0].InverseChangeCoordinates(xf, tau);
+    vvf.push_back(vf);
+  }
+
+  auto moments = std::make_shared<WhetStone::DenseVector>();
+  if (order == 2) {
+    NumericalIntegration numi(mesh1_, true);
+    double mass = numi.IntegratePolynomialCell(c, poly);
+
+    moments->Reshape(1);
+    (*moments)(0) = mass / mesh1_->cell_volume(c);
+  }
+
+  VectorPolynomial vc(d_, 0);
+  MFD3D_LagrangeSerendipity mfd(mesh1_);
+  mfd.set_order(order);
+  mfd.L2Cell(c, vvf, moments, vc);
+  poly = vc[0];
 }
 
 }  // namespace WhetStone

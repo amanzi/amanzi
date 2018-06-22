@@ -19,7 +19,8 @@
 #include "Epetra_MultiVector.h"
 
 // Amanzi
-#include "Polynomial.hh"
+#include "BilinearForm.hh"
+#include "VectorPolynomial.hh"
 
 // Amanzi::Operators
 #include "PDE_HelperDiscretization.hh"
@@ -31,7 +32,8 @@ namespace Operators {
 class PDE_Reaction : public PDE_HelperDiscretization {
  public:
   PDE_Reaction(Teuchos::ParameterList& plist, Teuchos::RCP<Operator> global_op) :
-      K_(Teuchos::null) {
+      K_(Teuchos::null),
+      PDE_HelperDiscretization(global_op) {
     InitReaction_(plist);
   }
 
@@ -43,8 +45,8 @@ class PDE_Reaction : public PDE_HelperDiscretization {
 
   // required members 
   // -- setup
-  virtual void Setup(Teuchos::RCP<Epetra_MultiVector>& K) { K_ = K; }
-  virtual void Setup(Teuchos::RCP<std::vector<WhetStone::Polynomial> >& poly) { poly_ = poly; }
+  void Setup(Teuchos::RCP<Epetra_MultiVector>& K) { K_ = K; }
+  void Setup(Teuchos::RCP<std::vector<WhetStone::VectorPolynomial> >& poly) { poly_ = poly; }
   // -- generate a linearized operator 
   using PDE_HelperDiscretization::UpdateMatrices;
   virtual void UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& u,
@@ -54,16 +56,16 @@ class PDE_Reaction : public PDE_HelperDiscretization {
                           const Teuchos::Ptr<CompositeVector>& u) override {};
   
   // boundary conditions
-  void ApplyBCs(bool primary, bool eliminate) override;
+  void ApplyBCs(bool primary, bool eliminate, bool essential_eqn) override;
 
  private:
   void InitReaction_(Teuchos::ParameterList& plist);
 
  protected:
   Teuchos::RCP<const Epetra_MultiVector> K_;
-  Teuchos::RCP<const std::vector<WhetStone::Polynomial> > poly_;
+  Teuchos::RCP<const std::vector<WhetStone::VectorPolynomial> > poly_;
 
-  int method_order_;
+  Teuchos::RCP<WhetStone::BilinearForm> mfd_;
 
  private:
   Schema global_schema_col_, global_schema_row_;

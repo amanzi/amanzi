@@ -48,12 +48,12 @@ void IndependentVariableFieldEvaluator::operator=(const FieldEvaluator& other) {
 #if ENABLE_DBC
   const IndependentVariableFieldEvaluator* other_p =
       dynamic_cast<const IndependentVariableFieldEvaluator*>(&other);
-  ASSERT(other_p != NULL);
+  AMANZI_ASSERT(other_p != NULL);
 #else
   const IndependentVariableFieldEvaluator* other_p =
       static_cast<const IndependentVariableFieldEvaluator*>(&other);
 #endif
-  ASSERT(my_key_ == other_p->my_key_);
+  AMANZI_ASSERT(my_key_ == other_p->my_key_);
 
   requests_ = other_p->requests_;
 }

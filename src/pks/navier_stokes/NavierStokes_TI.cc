@@ -39,14 +39,14 @@ void NavierStokes_PK::Functional(double t_old, double t_new,
   op_matrix_acc_->ApplyBCs();
 
   op_matrix_elas_->UpdateMatrices();
-  op_matrix_elas_->ApplyBCs(true, true);
+  op_matrix_elas_->ApplyBCs(true, true, true);
 
   op_matrix_conv_->UpdateMatrices(uu.ptr());
-  op_matrix_conv_->ApplyBCs(false, true);
+  op_matrix_conv_->ApplyBCs(false, true, false);
 
   op_matrix_div_->global_operator()->Init();
   op_matrix_div_->UpdateMatrices();
-  op_matrix_div_->ApplyBCs(false, true);
+  op_matrix_div_->ApplyBCs(false, true, false);
 
   // Teuchos::RCP<CompositeVector> rhs = op_matrix_->rhs();
   // AddSourceTerms(*rhs);
@@ -86,10 +86,10 @@ void NavierStokes_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVec
   auto global_op = op_preconditioner_elas_->global_operator();
   global_op->Init();
   op_preconditioner_elas_->UpdateMatrices();
-  op_preconditioner_elas_->ApplyBCs(true, true);
+  op_preconditioner_elas_->ApplyBCs(true, true, true);
 
   op_preconditioner_conv_->UpdateMatrices(uu.ptr());
-  op_preconditioner_conv_->ApplyBCs(false, true);
+  op_preconditioner_conv_->ApplyBCs(false, true, false);
 
   // add time derivative
   CompositeVector one(*uu);
@@ -98,12 +98,15 @@ void NavierStokes_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVec
   op_preconditioner_acc_->ApplyBCs();
 
   global_op->AssembleMatrix();
-  global_op->InitPreconditioner(preconditioner_name_, *preconditioner_list_);
+  global_op->UpdatePreconditioner();
 
   // populate pressure operator
+  Teuchos::ParameterList pc_list = preconditioner_list_->sublist("Diagonal");
+
   global_op = op_mass_->global_operator();
   global_op->AssembleMatrix();
-  global_op->InitPreconditioner("Diagonal", *preconditioner_list_);
+  global_op->InitializePreconditioner(pc_list);
+  global_op->UpdatePreconditioner();
 
   // finalize global preconditioner
   op_preconditioner_->InitBlockDiagonalPreconditioner();
@@ -167,7 +170,7 @@ void NavierStokes_PK::ComputeOperatorBCs()
       bc_model[n] = Operators::OPERATOR_BC_NONE;
     }
 
-    if (op_bcs_[i]->type() == Operators::SCHEMA_DOFS_POINT) {
+    if (op_bcs_[i]->type() == Operators::DOF_Type::POINT) {
       mv = i;
       std::vector<AmanziGeometry::Point>& bc_value = op_bcs_[i]->bc_value_point();
       for (int n = 0; n < bc_value.size(); n++) {
@@ -180,7 +183,7 @@ void NavierStokes_PK::ComputeOperatorBCs()
   // velocity boundary conditions
   for (int i = 0; i < bcs_.size(); ++i) {
     if (bcs_[i]->bc_name() == "no slip" && 
-        bcs_[i]->type() == Operators::SCHEMA_DOFS_POINT) {
+        bcs_[i]->type() == Operators::DOF_Type::POINT) {
       std::vector<int>& bc_model = op_bcs_[mv]->bc_model();
       std::vector<AmanziGeometry::Point>& bc_value = op_bcs_[mv]->bc_value_point();
 
@@ -195,7 +198,7 @@ void NavierStokes_PK::ComputeOperatorBCs()
     }
 
     if (bcs_[i]->bc_name() == "no slip" && 
-        bcs_[i]->type() == Operators::SCHEMA_DOFS_NORMAL_COMPONENT) {
+        bcs_[i]->type() == Operators::DOF_Type::NORMAL_COMPONENT) {
       std::vector<int>& bc_model = op_bcs_[mf]->bc_model();
       std::vector<double>& bc_value = op_bcs_[mf]->bc_value();
 

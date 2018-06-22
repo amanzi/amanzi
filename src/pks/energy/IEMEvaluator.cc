@@ -24,7 +24,7 @@ namespace Energy {
 IEMEvaluator::IEMEvaluator(Teuchos::ParameterList& plist) :
     SecondaryVariableFieldEvaluator(plist)
 {
-  ASSERT(plist_.isSublist("IEM parameters"));
+  AMANZI_ASSERT(plist_.isSublist("IEM parameters"));
   Teuchos::ParameterList sublist = plist_.sublist("IEM parameters");
   IEMFactory fac;
   iem_ = fac.CreateIEM(sublist);
@@ -110,7 +110,7 @@ void IEMEvaluator::EvaluateFieldPartialDerivative_(
     const Teuchos::Ptr<State>& S,
     Key wrt_key, const Teuchos::Ptr<CompositeVector>& result)
 {
-  ASSERT(wrt_key == temp_key_);
+  AMANZI_ASSERT(wrt_key == temp_key_);
   Teuchos::RCP<const CompositeVector> temp = S->GetFieldData(temp_key_);
 
   for (CompositeVector::name_iterator comp = result->begin(); comp != result->end(); ++comp) {

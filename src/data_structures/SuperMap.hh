@@ -63,6 +63,19 @@ class SuperMap {
   const std::vector<int>& Indices(const std::string& compname, int dofnum) const;
   const std::vector<int>& GhostIndices(const std::string& compname, int dofnum) const;
 
+  // block indices.  This is an array of integers, length Map().MyLength(),
+  // where each dof and component have a unique integer value.  The returned
+  // int is the number of unique values, equal to
+  // sum(NumDofs(comp) for comp in components), in this array.
+  std::pair<int, Teuchos::RCP<std::vector<int> > > BlockIndices() const;
+  
+  // iterate over compnames
+  typedef std::vector<std::string>::const_iterator name_iterator;
+  name_iterator begin() const { return compnames_.begin(); }
+  name_iterator end() const { return compnames_.end(); }
+  unsigned int size() const { return compnames_.size(); }
+
+  
   // // block accessors
   // void BlockIndices(const std::string& compname, int element_lid, std::vector<int>* indices) const {
   //   int ndofs = NumDofs(compname);
@@ -77,7 +90,7 @@ class SuperMap {
   // // block accessors -- copy into a location -- have some rope!
   // void BlockIndices(const std::string& compname, int element_lid, int& nindices, int* indices) const {
   //   int ndofs = NumDofs(compname);
-  //   ASSERT(nindices >= ndofs);
+  //   AMANZI_ASSERT(nindices >= ndofs);
   //   nindices = ndofs;
   //   int nelements = NumOwnedElements(compname);
 

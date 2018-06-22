@@ -34,8 +34,8 @@
 namespace Amanzi {
 namespace WhetStone {
 
-class MFD3D_Diffusion : public virtual MFD3D,
-                        public virtual DeRham_Face { 
+class MFD3D_Diffusion : public MFD3D,
+                        public DeRham_Face { 
  public:
   explicit MFD3D_Diffusion(Teuchos::RCP<const AmanziMesh::Mesh> mesh)
     : MFD3D(mesh), 
@@ -44,6 +44,9 @@ class MFD3D_Diffusion : public virtual MFD3D,
 
   // main methods 
   // -- default Derahm complex for the mass matrix is not used by Amanzi
+  //    but we have to tell compiler a proper member function
+  using DeRham_Face::MassMatrix;
+
   // -- inverse mass matrix is adjusted to reflect scaling of fluxes by area
   virtual int MassMatrixInverse(int c, const Tensor& K, DenseMatrix& W); 
   virtual int MassMatrixInverse(const AmanziGeometry::Point& cm, double volume,
@@ -56,13 +59,6 @@ class MFD3D_Diffusion : public virtual MFD3D,
 
   // -- divergence matrix
   virtual int DivergenceMatrix(int c, DenseMatrix& A);
-
-  // -- other interfaces not used yet by this class
-  virtual int MassMatrixPoly(int c, const Polynomial& K, DenseMatrix& M) { return 0; }
-  virtual int AdvectionMatrix(int c, const AmanziGeometry::Point v, DenseMatrix& A, bool grad_on_test) { return 0; }
-
-  virtual int StiffnessMatrixPoly(int c, const Polynomial& K, DenseMatrix& A) { return 0; }
-  virtual int AdvectionMatrixPoly(int c, const VectorPolynomial& v, DenseMatrix& A, bool grad_on_test) { return 0; }
 
   // other mimetic methods
   // -- bad consistency conditions (flux is scaled by area)

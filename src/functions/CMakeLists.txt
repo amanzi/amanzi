@@ -57,8 +57,9 @@ if (BUILD_TESTS)
 
   # Copy test subdirectory for out of source builds
   if (NOT (FUNCS_SOURCE_DIR STREQUAL FUNCS_BINARY_DIR))
-      execute_process(COMMAND ${CMAKE_COMMAND} -E 
-        copy_directory ${FUNCS_SOURCE_DIR}/test ${FUNCS_BINARY_DIR}/test) 
+      file(GLOB DataFiles "${FUNCS_SOURCE_DIR}/test/*.txt"
+                          "${FUNCS_SOURCE_DIR}/test/*.h5")
+      file(COPY ${DataFiles} DESTINATION ${FUNCS_BINARY_DIR}/test/)
   endif()
 
   add_amanzi_test(function_all function_all

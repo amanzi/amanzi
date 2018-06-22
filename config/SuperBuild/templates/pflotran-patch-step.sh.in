@@ -1,20 +1,28 @@
 #!/bin/sh
 
 # CMake generates this file 
-# Replaces each @VAR@ with value of ${VAR}
 
-# PFLOTRAN seems to want to call PetscTime() instead of using PetscGetTime(),
-# which would require us to use PETSc 3.4.x instead of PETSc 3.2.x, which we 
-# currently use. So far, this is the only reason to upgrade.
-#
-# HOWEVER, PETSc 3.4.x is impossible to build within our fabulous SuperBuild 
-# system, so instead of using it, I am making changes to the PFlotran source 
-# file option.F90, which uses PetscTime(), and having it use PetscGetTime() 
-# instead. This is by far the easiest solution to this problem at the moment.
-# -JNJ
-option_F90=@PFLOTRAN_source_dir@/src/pflotran/option.F90
+# Source and build locations
+pflotran_src_dir=@PFLOTRAN_source_dir@
 
-echo "Patching file ${option_F90}"
-@PERL_EXECUTABLE@ -w -i -p -e "s:PetscTime:PetscGetTime:" ${option_F90}
+OIFS=$IFS
+IFS=";"
+patch_files="@PFLOTRAN_patch_file@"
+
+for i in ${patch_files}; do
+
+ patch_file=@SuperBuild_SOURCE_DIR@/templates/${i}
+ echo "Applying patch: ${patch_file}"
+
+ if [ ! -e "${patch_file}" ] ; then
+  echo "Patch file ${patch_file} does not exist"
+  exit 10
+ fi
+
+ (cd ${pflotran_src_dir}; patch -p1 < ${patch_file})
+
+done
+
+IFS=$OIFS
 
 exit $?

@@ -74,8 +74,11 @@ if (BUILD_TESTS)
 
     # Need to copy files for the tests 
     if (NOT (${MSTK_SOURCE_DIR} EQUAL ${MSTK_BINARY_DIR}))
-        execute_process(COMMAND ${CMAKE_COMMAND} -E 
-          copy_directory ${MSTK_SOURCE_DIR}/test ${MSTK_BINARY_DIR}/test) 
+        file(GLOB DataFiles "${MSTK_SOURCE_DIR}/test/*.xml"
+                            "${MSTK_SOURCE_DIR}/test/*.txt"
+                            "${MSTK_SOURCE_DIR}/test/*.exo"
+                            "${MSTK_SOURCE_DIR}/test/*.par.*")
+        file(COPY ${DataFiles} DESTINATION ${MSTK_BINARY_DIR}/test/)
     endif()
 
     #Test: eliminate degeneracies for serial mesh

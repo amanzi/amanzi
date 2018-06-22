@@ -39,7 +39,7 @@ class LinearOperatorBelosGMRES : public LinearOperator<Matrix, Vector, VectorSpa
 {
  public:
   LinearOperatorBelosGMRES(const Teuchos::RCP<const Matrix>& m,
-                      const Teuchos::RCP<const Matrix>& h) :
+                           const Teuchos::RCP<const Matrix>& h) :
       LinearOperator<Matrix, Vector, VectorSpace>(m, h),
       tol_(1e-6),
       overflow_tol_(3.0e+50),  // mass of the Universe (J.Hopkins)
@@ -80,7 +80,6 @@ class LinearOperatorBelosGMRES : public LinearOperator<Matrix, Vector, VectorSpa
 };
 
 
-
 /* ******************************************************************
  * Initialization from a parameter list. Available parameters:
  * "error tolerance" [double] default = 1e-6
@@ -112,6 +111,10 @@ void LinearOperatorBelosGMRES<Matrix, Vector, VectorSpace>::Init(Teuchos::Parame
         criteria += LIN_SOLVER_ABSOLUTE_RESIDUAL;
       } else if (names[i] == "make one iteration") {
         criteria += LIN_SOLVER_MAKE_ONE_ITERATION;
+      } else {
+	Errors::Message msg;
+	msg << "LinearOperatorGMRES: \"convergence criteria\" type \"" << names[i] << "\" is not recognized.";
+	Exceptions::amanzi_throw(msg);
       }
     }
   } else {
@@ -152,7 +155,6 @@ int LinearOperatorBelosGMRES<Matrix, Vector, VectorSpace>::ApplyInverse(const Ve
     pl->set("Verbosity", Belos::Errors + Belos::Warnings);
   }
 
-    
   if(criteria_ & LIN_SOLVER_RELATIVE_RHS)
   {
     pl->set("Implicit Residual Scaling", "Norm of RHS");

@@ -85,7 +85,8 @@ class Dummy_PK : public PK_PhysicalBDF {
   virtual AmanziSolvers::FnBaseDefs::ModifyCorrectionResult
       ModifyCorrection(double h, Teuchos::RCP<const TreeVector> res,
                        Teuchos::RCP<const TreeVector> u,
-                       Teuchos::RCP<TreeVector> du) {};
+                       Teuchos::RCP<TreeVector> du) {
+      return AmanziSolvers::FnBaseDefs::CORRECTION_NOT_MODIFIED; }
 
   // experimental approach -- calling this indicates that the time
   // integration scheme is changing the value of the solution in

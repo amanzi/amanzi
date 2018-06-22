@@ -65,7 +65,7 @@ void PK_DomainFunctionWeight<FunctionBase>::Init(
     const Teuchos::ParameterList& plist, const std::string& keyword,
     Teuchos::RCP<const Epetra_Vector> weight)
 {
-  ASSERT(weight != Teuchos::null);
+  AMANZI_ASSERT(weight != Teuchos::null);
 
   keyword_ = keyword;
 
@@ -102,7 +102,7 @@ void PK_DomainFunctionWeight<FunctionBase>::Compute(double t0, double t1)
   int dim = mesh_->space_dimension();
   std::vector<double> args(1 + dim);
 
-  int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
 
   for (UniqueSpecList::const_iterator uspec = unique_specs_[AmanziMesh::CELL]->begin();
        uspec != unique_specs_[AmanziMesh::CELL]->end(); ++uspec) {

@@ -149,7 +149,7 @@ class Mesh_MSTK : public Mesh {
   // -------------------------
     
   // Number of entities of any kind (cell, face, node) and in a
-  // particular category (OWNED, GHOST, USED)
+  // particular category (OWNED, GHOST, ALL)
   unsigned int num_entities(const Entity_kind kind,
 			    const Parallel_type ptype) const;
     
@@ -636,9 +636,9 @@ inline Parallel_type Mesh_MSTK::entity_get_ptype(const Entity_kind kind, const E
     }
       
     if (MEnt_PType(ment) == PGHOST)
-      return GHOST;
+      return Parallel_type::GHOST;
     else
-      return OWNED;
+      return Parallel_type::OWNED;
 }
 
 } // namespace AmanziMesh

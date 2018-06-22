@@ -528,7 +528,7 @@ TEST(DARCY_STIFFNESS_2D_NODE) {
   MeshFactory meshfactory(comm);
   meshfactory.preference(FrameworkPreference({MSTK}));
   // RCP<Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 1, 1); 
-  RCP<Mesh> mesh = meshfactory("test/one_cell2.exo"); 
+  RCP<Mesh> mesh = meshfactory("test/one_pentagon.exo"); 
  
   MFD3D_Diffusion mfd(mesh);
 
@@ -602,7 +602,7 @@ TEST(DARCY_STIFFNESS_2D_EDGE) {
   MeshFactory meshfactory(comm);
   meshfactory.preference(FrameworkPreference({MSTK}));
   // RCP<Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 1, 1); 
-  RCP<Mesh> mesh = meshfactory("test/one_cell2.exo", Teuchos::null, true, true); 
+  RCP<Mesh> mesh = meshfactory("test/one_pentagon.exo", Teuchos::null, true, true); 
  
   MFD3D_CrouzeixRaviart mfd(mesh);
 
@@ -670,7 +670,7 @@ TEST(DARCY_STIFFNESS_3D) {
   MeshFactory meshfactory(comm);
   meshfactory.preference(FrameworkPreference({MSTK}));
   // RCP<Mesh> mesh = meshfactory(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1, 1, 1); 
-  // RCP<Mesh> mesh = meshfactory("test/one_cell.exo"); 
+  // RCP<Mesh> mesh = meshfactory("test/one_trapezoid.exo"); 
   RCP<Mesh> mesh = meshfactory("test/dodecahedron.exo"); 
  
   MFD3D_Diffusion mfd(mesh);
@@ -736,7 +736,7 @@ TEST(RECOVER_GRADIENT_MIXED) {
 
   MeshFactory meshfactory(comm);
   meshfactory.preference(FrameworkPreference({MSTK}));
-  RCP<Mesh> mesh = meshfactory("test/one_cell.exo"); 
+  RCP<Mesh> mesh = meshfactory("test/one_trapezoid.exo"); 
  
   MFD3D_Diffusion mfd(mesh);
 
@@ -786,7 +786,7 @@ TEST(RECOVER_GRADIENT_NODAL) {
 
   MeshFactory meshfactory(comm);
   meshfactory.preference(FrameworkPreference({MSTK}));
-  RCP<Mesh> mesh = meshfactory("test/one_cell.exo"); 
+  RCP<Mesh> mesh = meshfactory("test/one_trapezoid.exo"); 
  
   MFD3D_Diffusion mfd(mesh);
 
@@ -837,7 +837,7 @@ TEST(DARCY_INVERSE_MASS_2D) {
   factory.preference(FrameworkPreference({MSTK}));
   // RCP<Mesh> mesh = factory.create(0.0, 0.0, 1.0, 1.0, 1, 1); 
   // RCP<Mesh> mesh = factory.create(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1, 2, 3); 
-  // RCP<Mesh> mesh = factory("test/one_cell3.exo"); 
+  // RCP<Mesh> mesh = factory("test/cube_triangulated.exo"); 
   RCP<Mesh> mesh = factory("test/dodecahedron.exo"); 
  
   MFD3D_Diffusion mfd(mesh);

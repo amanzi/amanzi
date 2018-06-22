@@ -259,7 +259,7 @@ namespace Operators {
             // We take into account multiple contributions to matrix diagonal
             // by dividing by the number of cells attached to a vertex.
             if (primary) {
-              mesh_->node_get_cells(v, AmanziMesh::USED, &cells);
+              mesh_->node_get_cells(v, AmanziMesh::Parallel_type::ALL, &cells);
               if (v < nnodes_owned) rhs_node[0][v] = value;
               Acell(n, n) = 1.0 / cells.size();
             }
@@ -277,7 +277,7 @@ namespace Operators {
             local_op_->matrices_shadow[c] = Acell;
             flag = false;
           }
-          mesh_->node_get_cells(v, AmanziMesh::USED, &cells);
+          mesh_->node_get_cells(v, AmanziMesh::Parallel_type::ALL, &cells);
 
           if (bc_model[v] == OPERATOR_BC_DIRICHLET) {
             if (primary) {
@@ -528,8 +528,8 @@ namespace Operators {
 
     gmvwrite_openfile_ir_ascii((char*)filename.c_str(), 4, 8);
 
-    unsigned int num_edges = mesh_->num_entities(AmanziMesh::EDGE, AmanziMesh::OWNED);
-    unsigned int num_cells_bulk = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+    unsigned int num_edges = mesh_->num_entities(AmanziMesh::EDGE, AmanziMesh::Parallel_type::OWNED);
+    unsigned int num_cells_bulk = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
 
     std::vector<int> edges2node(num_edges, -1);
     std::vector<AmanziGeometry::Point> nodes;

@@ -58,7 +58,7 @@ Mesh_STK_Impl* Mesh_STK_factory::build_mesh(
     const Data::Fields& fields,
     const Teuchos::RCP<const AmanziGeometry::GeometricModel>& gm)
 {
-  ASSERT(communicator_->NumProc() == 1);
+  AMANZI_ASSERT(communicator_->NumProc() == 1);
 
   int ncell(data.parameters().num_elements_);
   Epetra_Map cmap(ncell, 1, *communicator_);
@@ -246,7 +246,7 @@ void Mesh_STK_factory::build_bulk_data_(
   //           << " faces, index " << global_fidx[communicator_.MyPID()]
   //           << " to "  << global_fidx[communicator_.MyPID()+1] - 1
   //           << std::endl;
-  ASSERT((global_fidx.back()-1) == nface_global);
+  AMANZI_ASSERT((global_fidx.back()-1) == nface_global);
 
   bulk_data_->modification_begin();
   generate_local_faces_(global_fidx[communicator_->MyPID()], false);
@@ -449,7 +449,7 @@ void Mesh_STK_factory::add_set_part_relation_(unsigned int set_id, stk::mesh::Pa
   const stk::mesh::EntityRank rank = part.primary_entity_rank();
   const Rank_and_id rank_set_id = std::make_pair(rank, set_id);
 
-  ASSERT (set_to_part_.find (rank_set_id) == set_to_part_.end());
+  AMANZI_ASSERT (set_to_part_.find (rank_set_id) == set_to_part_.end());
 
   set_to_part_[rank_set_id] = &part;
 }
@@ -506,10 +506,10 @@ Entity_vector
 Mesh_STK_factory::get_element_side_nodes_(const stk::mesh::Entity& element, 
                                           const unsigned int& s)
 {
-  ASSERT(element.entity_rank() == element_rank_);
+  AMANZI_ASSERT(element.entity_rank() == element_rank_);
 
   const CellTopologyData* topo = stk::mesh::fem::get_cell_topology(element).getCellTopologyData();
-  ASSERT(topo != NULL);
+  AMANZI_ASSERT(topo != NULL);
 
   // get the cell nodes on this side
   const CellTopologyData *side_topo = (topo->side[s].topology);
@@ -543,7 +543,7 @@ Mesh_STK_factory::get_element_side_face_(const stk::mesh::Entity& element, const
   std::vector< stk::mesh::Entity * > rfaces;
   get_entities_through_relations(snodes, face_rank_, rfaces);
   
-  ASSERT(rfaces.size() < 2);
+  AMANZI_ASSERT(rfaces.size() < 2);
 
   stk::mesh::Entity *result = NULL;
   if (!rfaces.empty()) result = rfaces.front();
@@ -837,12 +837,12 @@ void Mesh_STK_factory::add_sides_to_part_(const Data::Side_set& side_set,
   const int num_sides = side_set.num_sides();
   const std::vector<int>& element_list = side_set.element_list();
   const std::vector<int>& side_list = side_set.side_list();
-  ASSERT (element_list.size() == num_sides);
-  ASSERT (side_list.size() == num_sides);
+  AMANZI_ASSERT (element_list.size() == num_sides);
+  AMANZI_ASSERT (side_list.size() == num_sides);
 
   for (int index=0; index < num_sides; ++index) {
     int local_idx(element_list [index]);
-    ASSERT(local_idx < cmap.NumMyElements());
+    AMANZI_ASSERT(local_idx < cmap.NumMyElements());
 
     const int local_side = side_list [index];
     int global_idx(cmap.GID(element_list [index]));
@@ -898,7 +898,7 @@ void Mesh_STK_factory::add_nodes_to_part_(const Data::Node_set& node_set,
 
   const int num_nodes = node_set.num_nodes();
   const std::vector<int>& node_list = node_set.node_list();
-  ASSERT (node_list.size() == num_nodes);
+  AMANZI_ASSERT (node_list.size() == num_nodes);
 
   for (std::vector<int>::const_iterator it = node_list.begin();
        it != node_list.end(); ++it) {
@@ -992,10 +992,10 @@ void Mesh_STK_factory::fill_extra_parts_from_gm(const Teuchos::RCP<const AmanziG
         // Add faces in the region to this part
 
         part = meta_data_->get_part ("FACES_of_"+greg->name());
-        ASSERT (part);
+        AMANZI_ASSERT (part);
         parts_to_add.push_back(part);
 
-        ASSERT (part->primary_entity_rank() == face_rank_);
+        AMANZI_ASSERT (part->primary_entity_rank() == face_rank_);
 
         // Collect faces that lie in this region
           
@@ -1032,11 +1032,11 @@ void Mesh_STK_factory::fill_extra_parts_from_gm(const Teuchos::RCP<const AmanziG
         // Collect cells that lie in this region
 
         part = meta_data_->get_part ("CELLS_of_"+greg->name());
-        ASSERT(part);
+        AMANZI_ASSERT(part);
         parts_to_add.clear();
         parts_to_add.push_back(part);
 
-        ASSERT (part->primary_entity_rank() == element_rank_);
+        AMANZI_ASSERT (part->primary_entity_rank() == element_rank_);
           
         stk::mesh::EntityVector cells;
         stk::mesh::get_selected_entities(owned, bulk_data_->buckets(meta_data_->volume_rank()), cells);
@@ -1071,12 +1071,12 @@ void Mesh_STK_factory::fill_extra_parts_from_gm(const Teuchos::RCP<const AmanziG
       case AmanziGeometry::PLANE: {
 
         part = meta_data_->get_part (greg->name());
-        ASSERT (part);
+        AMANZI_ASSERT (part);
         parts_to_add.push_back(part);
           
         // Assumption is that user wants to extract side sets
           
-        ASSERT (part->primary_entity_rank() == face_rank_);
+        AMANZI_ASSERT (part->primary_entity_rank() == face_rank_);
 
         stk::mesh::Selector owned(meta_data_->locally_owned_part());
         stk::mesh::EntityVector faces;
@@ -1119,7 +1119,7 @@ void Mesh_STK_factory::fill_extra_parts_from_gm(const Teuchos::RCP<const AmanziG
 
       case AmanziGeometry::POINT: {
         part = meta_data_->get_part (greg->name());
-        ASSERT (part);
+        AMANZI_ASSERT (part);
         parts_to_add.push_back(part);
           
         stk::mesh::Selector owned(meta_data_->locally_owned_part());
@@ -1227,11 +1227,11 @@ void Mesh_STK_factory::fill_extra_parts_from_gm(const Teuchos::RCP<const AmanziG
       case AmanziGeometry::COLORFUNCTION: { 
         // Find the part with this name
         part = meta_data_->get_part(greg->name());
-        ASSERT(part);
+        AMANZI_ASSERT(part);
         parts_to_add.push_back(part);
           
         // Assumption is that user wants to extract cell sets
-        ASSERT(part->primary_entity_rank() == element_rank_);
+        AMANZI_ASSERT(part->primary_entity_rank() == element_rank_);
           
         stk::mesh::Selector owned(meta_data_->locally_owned_part());
         stk::mesh::EntityVector cells;

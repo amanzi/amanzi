@@ -455,7 +455,7 @@ void Mesh_simple::build_maps_()
 Parallel_type Mesh_simple::entity_get_ptype(const Entity_kind kind, 
                                             const Entity_ID entid) const 
 {
-  return OWNED;  // Its a serial code
+  return Parallel_type::OWNED;  // Its a serial code
 }
 
 
@@ -481,13 +481,13 @@ unsigned int Mesh_simple::num_entities(AmanziMesh::Entity_kind kind,
 {
   switch (kind) {
     case AmanziMesh::FACE: 
-      return (ptype != AmanziMesh::GHOST) ? num_faces_ : 0;
+      return (ptype != AmanziMesh::Parallel_type::GHOST) ? num_faces_ : 0;
       break;
     case AmanziMesh::NODE:
-      return (ptype != AmanziMesh::GHOST) ? num_nodes_ : 0;
+      return (ptype != AmanziMesh::Parallel_type::GHOST) ? num_nodes_ : 0;
       break;
     case AmanziMesh::CELL:
-      return (ptype != AmanziMesh::GHOST) ? num_cells_ : 0;
+      return (ptype != AmanziMesh::Parallel_type::GHOST) ? num_cells_ : 0;
       break;
     default:
       throw std::exception();
@@ -598,7 +598,7 @@ void Mesh_simple::node_set_coordinates(const AmanziMesh::Entity_ID local_node_id
   unsigned int offset = (unsigned int) 3*local_node_id;
   int spdim = Mesh::space_dimension();
 
-  ASSERT(ncoord != NULL);
+  AMANZI_ASSERT(ncoord != NULL);
   
   std::vector<double>::iterator destination_begin = coordinates_.begin() + offset;
   for (int i = 0; i < spdim; i++) {
@@ -715,7 +715,7 @@ void Mesh_simple::face_get_cells_internal_(const AmanziMesh::Entity_ID faceid,
 // (e.g. a hex has 6 face neighbors)
 
 // The order in which the cellids are returned cannot be
-// guaranteed in general except when ptype = USED, in which case
+// guaranteed in general except when ptype = ALL, in which case
 // the cellids will correcpond to cells across the respective
 // faces given by cell_get_faces
 //--------------------------------------

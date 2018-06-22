@@ -47,6 +47,13 @@ else()
     set(CONFIG_SILO_SHARED --disable-shared --enable-static)
 endif()
 
+# Force executables to built with all static libs.
+if (DEFINED ENV{NERSC_HOST})
+    set(LIBTOOL_STATIC "LIBTOOL_STATIC=-all-static")
+else()
+    set(LIBTOOL_STATIC "")
+endif()
+
 # Silo CMAKE_BUILD_TYPE=(Debug|Release)i
 if (${CMAKE_BUILD_TYPE} STREQUAL "Debug")
    set(CONFIG_SILO_DEBUG --disable-optimization)
@@ -55,7 +62,7 @@ else()
 endif()
 
 # --- Set the name of the patch 
-set(Silo_patch_file silo-4.10.2-remove-mpiposix.patch silo-4.10.2-debug-builds.patch)
+set(Silo_patch_file silo-4.10.2-remove-mpiposix.patch silo-4.10.2-debug-builds.patch silo-4.10.2-static-tools.patch)
 
 set(Silo_sh_patch ${Silo_prefix_dir}/silo-patch-step.sh)
 configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/silo-patch-step.sh.in
@@ -71,20 +78,20 @@ set(Silo_PATCH_COMMAND ${CMAKE_COMMAND} -P ${Silo_cmake_patch})
 
 # --- Add external project build 
 ExternalProject_Add(${Silo_BUILD_TARGET}
-                    DEPENDS   ${Silo_PACKAGE_DEPENDS}             # Package dependency target
-                    TMP_DIR   ${Silo_tmp_dir}                     # Temporary files directory
-                    STAMP_DIR ${Silo_stamp_dir}                   # Timestamp and log directory
+                    DEPENDS   ${Silo_PACKAGE_DEPENDS}      # Package dependency target
+                    TMP_DIR   ${Silo_tmp_dir}              # Temporary files directory
+                    STAMP_DIR ${Silo_stamp_dir}            # Timestamp and log directory
                     # -- Download and URL definitions
-                    DOWNLOAD_DIR ${TPL_DOWNLOAD_DIR}               # Download directory
-                    URL          ${Silo_URL}                      # URL may be a web site OR a local file
-                    URL_MD5      ${Silo_MD5_SUM}                  # md5sum of the archive file
+                    DOWNLOAD_DIR  ${TPL_DOWNLOAD_DIR}      
+                    URL           ${Silo_URL}              # URL may be a web site OR a local file
+                    URL_MD5       ${Silo_MD5_SUM}          # md5sum of the archive file
                     # -- Patch 
                     PATCH_COMMAND ${Silo_PATCH_COMMAND}
                     # -- Configure
-                    SOURCE_DIR        ${Silo_source_dir}          # Source directory
+                    SOURCE_DIR    ${Silo_source_dir}       # Source directory
                     CONFIGURE_COMMAND
-                              <SOURCE_DIR>/configure
-                                          --prefix=<INSTALL_DIR>
+                              ${Silo_source_dir}/configure
+                                          --prefix=${silo_install_dir}
                                           --with-x=0
                                           --with-hdf5=${HDF5_DIR}/include,${HDF5_DIR}/lib
                                           --enable-fortran=0
@@ -95,7 +102,7 @@ ExternalProject_Add(${Silo_BUILD_TARGET}
                                           CXX=${CMAKE_CXX_COMPILER}
                                           CFLAGS=${silo_cflags}
                                           CXXFLAGS=${silo_cxxflags}
-					  LIBS=-ldl
+					  LIBS=-ldl ${LIBTOOL_STATIC}
                     # -- Build
                     BINARY_DIR        ${Silo_build_dir}           # Build directory 
                     BUILD_COMMAND     $(MAKE) -j 1 SILO_DIR=${Silo_source_dir} # Run the CMake script to build

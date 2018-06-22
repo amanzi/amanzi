@@ -90,9 +90,9 @@ void UpwindSecondOrder<Model>::Compute(
     const CompositeVector& flux, const CompositeVector& solution,
     const std::vector<int>& bc_model, CompositeVector& field)
 {
-  ASSERT(field.HasComponent("cell"));
-  ASSERT(field.HasComponent("grad"));
-  ASSERT(field.HasComponent(face_comp_));
+  AMANZI_ASSERT(field.HasComponent("cell"));
+  AMANZI_ASSERT(field.HasComponent("grad"));
+  AMANZI_ASSERT(field.HasComponent(face_comp_));
 
   field.ScatterMasterToGhosted("cell");
   flux.ScatterMasterToGhosted("face");
@@ -119,7 +119,7 @@ void UpwindSecondOrder<Model>::Compute(
   AmanziMesh::Entity_ID_List faces;
   WhetStone::MFD3D_Diffusion mfd(mesh_);
 
-  int ncells_wghost = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::USED);
+  int ncells_wghost = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
   for (int c = 0; c < ncells_wghost; c++) {
     mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
     int nfaces = faces.size();

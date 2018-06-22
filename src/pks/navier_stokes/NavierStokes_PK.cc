@@ -12,6 +12,7 @@
 #include <vector>
 
 #include "PK_DomainFunctionFactory.hh"
+#include "LinearOperatorFactory.hh"
 
 // Amanzi::NavierStokes
 #include "NavierStokes_PK.hh"
@@ -32,10 +33,8 @@ NavierStokes_PK::NavierStokes_PK(Teuchos::ParameterList& pk_tree,
   S_ = S;
 
   std::string pk_name = pk_tree.name();
-  const char* result = pk_name.data();
-
-  boost::iterator_range<std::string::iterator> res = boost::algorithm::find_last(pk_name,"->"); 
-  if (res.end() - pk_name.end() != 0) boost::algorithm::erase_head(pk_name,  res.end() - pk_name.begin());
+  auto found = pk_name.rfind("->");
+  if (found != std::string::npos) pk_name.erase(0, found + 2);
 
   // We need the flow list
   Teuchos::RCP<Teuchos::ParameterList> pk_list = Teuchos::sublist(glist, "PKs", true);
@@ -136,14 +135,14 @@ void NavierStokes_PK::Initialize(const Teuchos::Ptr<State>& S)
   dt_next_ = dt_;
 
   // -- mesh dimensions
-  ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
-  ncells_wghost = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::USED);
+  ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+  ncells_wghost = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
 
-  nfaces_owned = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
-  nfaces_wghost = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
+  nfaces_owned = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
+  nfaces_wghost = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
 
-  nnodes_owned = mesh_->num_entities(AmanziMesh::NODE, AmanziMesh::OWNED);
-  nnodes_wghost = mesh_->num_entities(AmanziMesh::NODE, AmanziMesh::USED);
+  nnodes_owned = mesh_->num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::OWNED);
+  nnodes_wghost = mesh_->num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::ALL);
 
   // Create verbosity object to print out initialiation statistics.
   Teuchos::ParameterList vlist;
@@ -168,7 +167,7 @@ void NavierStokes_PK::Initialize(const Teuchos::Ptr<State>& S)
 
   // Initialize time integrator.
   std::string ti_method_name = ti_list_->get<std::string>("time integration method", "none");
-  ASSERT(ti_method_name == "BDF1");
+  AMANZI_ASSERT(ti_method_name == "BDF1");
   Teuchos::ParameterList& bdf1_list = ti_list_->sublist("BDF1");
 
   if (! bdf1_list.isSublist("verbose object"))
@@ -271,10 +270,10 @@ void NavierStokes_PK::Initialize(const Teuchos::Ptr<State>& S)
 
   // -- assemble phase
   op_matrix_elas_->UpdateMatrices();
-  op_matrix_elas_->ApplyBCs(true, true);
+  op_matrix_elas_->ApplyBCs(true, true, true);
 
   op_preconditioner_elas_->UpdateMatrices();
-  op_preconditioner_elas_->ApplyBCs(true, true);
+  op_preconditioner_elas_->ApplyBCs(true, true, true);
   op_preconditioner_elas_->global_operator()->SymbolicAssembleMatrix();
 
   CompositeVector vol(op_mass_->global_operator()->DomainMap());
@@ -286,7 +285,9 @@ void NavierStokes_PK::Initialize(const Teuchos::Ptr<State>& S)
   solver_name_ = ti_list_->get<std::string>("linear solver");
 
   // -- preconditioner or encapsulated preconditioner
-  preconditioner_name_ = ti_list_->get<std::string>("preconditioner");
+  std::string pc_name = ti_list_->get<std::string>("preconditioner");
+  Teuchos::ParameterList pc_list = preconditioner_list_->sublist(pc_name);
+  op_preconditioner_elas_->global_operator()->InitializePreconditioner(pc_list);
   
   op_pc_solver_ = op_preconditioner_;
 

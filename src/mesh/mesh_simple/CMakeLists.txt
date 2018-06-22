@@ -42,8 +42,9 @@ if (BUILD_TESTS)
 
    # Need to copy files for the tests 
     if (NOT (${MESH_SIMPLE_SOURCE_DIR} EQUAL ${MESH_SIMPLE_BINARY_DIR}))
-        execute_process(COMMAND ${CMAKE_COMMAND} -E 
-          copy_directory ${MESH_SIMPLE_SOURCE_DIR}/test ${MESH_SIMPLE_BINARY_DIR}/test) 
+      file(GLOB DataFiles "${MESH_SIMPLE_SOURCE_DIR}/test/*.xml"
+                          "${MESH_SIMPLE_SOURCE_DIR}/test/*.txt")
+      file(COPY ${DataFiles} DESTINATION ${MESH_SIMPLE_BINARY_DIR}/test/)
     endif()
 
     # Test: simple_mesh

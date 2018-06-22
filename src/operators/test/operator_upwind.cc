@@ -76,24 +76,19 @@ void RunTestUpwind(std::string method) {
   Teuchos::ParameterList plist = xmlreader.getParameters();
 
   // create an SIMPLE mesh framework
-  Teuchos::ParameterList region_list = plist.get<Teuchos::ParameterList>("regions");
+  Teuchos::ParameterList region_list = plist.sublist("regions");
   Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(3, region_list, &comm));
-
-  FrameworkPreference pref;
-  pref.clear();
-  pref.push_back(MSTK);
-  pref.push_back(STKMESH);
 
   Teuchos::RCP<VerboseObject> vo = Teuchos::rcp(new VerboseObject("dummy", "none"));
   MeshFactory meshfactory(&comm, vo);
-  meshfactory.preference(pref);
+  meshfactory.preference(FrameworkPreference({MSTK,STKMESH}));
 
   for (int n = 4; n < 17; n *= 2) {
     Teuchos::RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, n, n, n, gm);
 
-    int ncells_wghost = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::USED);
-    int nfaces_owned = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
-    int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
+    int ncells_wghost = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
+    int nfaces_owned = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
+    int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
 
     // create model of nonlinearity
     Teuchos::RCP<Model> model = Teuchos::rcp(new Model(mesh));
@@ -134,8 +129,8 @@ void RunTestUpwind(std::string method) {
     for (int f=0; f!=face_map.NumMyElements(); ++f) {
       if (bc_model[f] == OPERATOR_BC_DIRICHLET) {
         AmanziMesh::Entity_ID_List cells;
-        mesh->face_get_cells(f, AmanziMesh::USED, &cells);
-        ASSERT(cells.size() == 1);
+        mesh->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
+        AMANZI_ASSERT(cells.size() == 1);
         int bf = ext_face_map.LID(face_map.GID(f));
         fbfs[0][bf] = model->Value(cells[0], bc_value[f]);
       }

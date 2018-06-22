@@ -27,24 +27,24 @@ namespace WhetStone {
 
 class DenseVector {
  public:
-  DenseVector() {
-    m_ = 0;
-    data_ = NULL;
-  }
+  DenseVector() : m_(0), mem_(0), data_(NULL) {};
 
   explicit DenseVector(int mrow) {
     m_ = mrow;
-    data_ = new double[m_];
+    mem_ = mrow;
+    data_ = new double[mem_];
   }
 
   DenseVector(int mrow, double* data) {
     m_ = mrow;
-    data_ = new double[m_]; 
+    mem_ = mrow;
+    data_ = new double[mem_]; 
     for (int i = 0; i < m_; i++) data_[i] = data[i];
   }
 
   DenseVector(const DenseVector& B) {
     m_ = B.NumRows();
+    mem_ = m_;
     data_ = NULL;
     if (m_ > 0) {
       data_ = new double[m_];
@@ -56,9 +56,20 @@ class DenseVector {
   ~DenseVector() { if (data_ != NULL) { delete[] data_; } }
 
   // primary members 
-  // -- initialization
-  void clear() { for (int i = 0; i < m_; i++) data_[i] = 0.0; } 
+  // -- smart memory management: preserves data only for vector reduction
+  void Reshape(int mrow) {
+    m_ = mrow;
 
+    if (mem_ < m_) {
+      if (data_ != NULL) {
+        delete [] data_;
+      }
+      mem_ = m_;
+      data_ = new double[mem_];
+    }
+  }
+
+  // -- initialization
   DenseVector& operator=(const DenseVector& B) {
     if (this != &B) {
       if (m_ != B.m_ && B.m_ != 0) {
@@ -105,6 +116,11 @@ class DenseVector {
     return *this;
   }
 
+  DenseVector& operator/=(double val) {
+    for (int i = 0; i < m_; ++i) data_[i] /= val;
+    return *this;
+  }
+
   DenseVector& operator-=(double val) {
     for (int i = 0; i < m_; ++i) data_[i] -= val;
     return *this;
@@ -116,6 +132,26 @@ class DenseVector {
       data_ = new double[1];
     }
     for (int i = 0; i < m_; ++i) data_[i] = val;
+    return *this;
+  }
+
+  // ring algebra
+  friend DenseVector operator*(double val, const DenseVector& v) {
+    DenseVector tmp(v);
+    tmp *= val;
+    return tmp;
+  }
+
+  // -- vector type behaviour (no checks for compatiility) 
+  DenseVector& operator+=(const DenseVector& A) {
+    const double* dataA = A.Values();  
+    for (int i = 0; i < m_; ++i) data_[i] += dataA[i];
+    return *this;
+  }
+
+  DenseVector& operator-=(const DenseVector& A) {
+    const double* dataA = A.Values();  
+    for (int i = 0; i < m_; ++i) data_[i] -= dataA[i];
     return *this;
   }
 
@@ -139,6 +175,14 @@ class DenseVector {
     *result = std::pow(*result, 0.5);
   }
 
+  double NormMax() const {
+    double tmp(0.0);
+    for (int i = 0; i < m_; ++i) {
+      tmp = std::max(tmp, fabs(data_[i]));
+    }
+    return tmp;
+  }
+
   void SwapRows(int m1, int m2) {
     double tmp = data_[m2];
     data_[m2] = data_[m1];
@@ -146,7 +190,7 @@ class DenseVector {
   }
  
  private:
-  int m_;
+  int m_, mem_;
   double* data_;                       
 };
 

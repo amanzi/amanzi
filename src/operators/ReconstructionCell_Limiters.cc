@@ -14,8 +14,13 @@
 #include <algorithm>
 #include <vector>
 
+// TPLs
 #include "Epetra_Vector.h"
 
+// Amanzi
+#include "MeshUtils.hh"
+
+// Amanzi::Operators
 #include "OperatorDefs.hh"
 #include "ReconstructionCell.hh"
 
@@ -122,7 +127,7 @@ void ReconstructionCell::LimiterTensorial_(
   std::vector<double> field_local_max(ncells_wghost);
 
   for (int c = 0; c < ncells_owned; c++) {
-    mesh_->cell_get_face_adj_cells(c, AmanziMesh::USED, &cells);
+    mesh_->cell_get_face_adj_cells(c, AmanziMesh::Parallel_type::ALL, &cells);
     field_local_min[c] = field_local_max[c] = (*field_)[component_][c];
 
     for (int i = 0; i < cells.size(); i++) {
@@ -301,7 +306,7 @@ void ReconstructionCell::LimiterBarthJespersen_(
   std::vector<double> field_local_max(ncells_wghost);
 
   for (int c = 0; c < ncells_owned; c++) {
-    mesh_->cell_get_face_adj_cells(c, AmanziMesh::USED, &cells);
+    mesh_->cell_get_face_adj_cells(c, AmanziMesh::Parallel_type::ALL, &cells);
     field_local_min[c] = field_local_max[c] = (*field_)[component_][c];
 
     for (int i = 0; i < cells.size(); i++) {
@@ -346,8 +351,6 @@ void ReconstructionCell::LimiterBarthJespersen_(
   if (limiter_correction_) {
     LimiterExtensionTransportBarthJespersen_(field_local_min, field_local_max, limiter);
   }    
-
-  gradient_->ScatterMasterToGhosted("cell");
 }
 
 
@@ -462,7 +465,7 @@ void ReconstructionCell::LimiterKuzmin_(
 
   double L22normal_new;
   AmanziGeometry::Point gradient_c(dim), p(dim), normal_new(dim), direction(dim);
-  std::vector<double> field_min_cell(OPERATOR_MAX_NODES), field_max_cell(OPERATOR_MAX_NODES);
+  std::vector<double> field_min_cell(cell_max_nodes), field_max_cell(cell_max_nodes);
 
   std::vector<AmanziGeometry::Point> normals;
 
@@ -500,7 +503,6 @@ void ReconstructionCell::LimiterKuzmin_(
     }
 
     // Step 4: enforcing a priori time step estimate (division of dT by 2).
-    // Experimental version is limited to 2D (lipnikov@lanl.gov).
     LimiterExtensionTransportKuzmin_(field_local_min, field_local_max);
   }    
 
@@ -518,7 +520,7 @@ void ReconstructionCell::LimiterKuzminSet_(AmanziMesh::Entity_ID_List& ids,
   // Step 1: local extrema are calculated here at nodes and updated later
   std::vector<double> field_node_min(nnodes_wghost);
   std::vector<double> field_node_max(nnodes_wghost);
-  std::vector<double> field_min_cell(OPERATOR_MAX_NODES), field_max_cell(OPERATOR_MAX_NODES);
+  std::vector<double> field_min_cell(cell_max_nodes), field_max_cell(cell_max_nodes);
 
   AmanziMesh::Entity_ID_List nodes;
 
@@ -635,8 +637,16 @@ void ReconstructionCell::LimiterExtensionTransportKuzmin_(
 
       if (c == c1) {
         mesh_->face_get_nodes(f, &nodes);
+        int nnodes = nodes.size();
 
-        for (int j = 0; j < nodes.size(); j++) {
+        // define dimensionless quadrature weigths
+        std::vector<double> weights(nnodes, 0.5);
+        if (dim == 3) {
+          double area = mesh_->face_area(f);
+          WhetStone::PolygonCentroidWeights(*mesh_, nodes, area, weights);
+        }
+
+        for (int j = 0; j < nnodes; j++) {
           int v = nodes[j];
           mesh_->node_get_coordinates(v, &xp);
           up = getValue(c, xp);
@@ -649,7 +659,7 @@ void ReconstructionCell::LimiterExtensionTransportKuzmin_(
             else
               b = u1 - field_local_max[c];
 
-            flux = fabs((*flux_)[0][f]);
+            flux = fabs((*flux_)[0][f]) * weights[j];
             outflux += flux;
             if (b) {
               outflux_weigted += flux * a / b;

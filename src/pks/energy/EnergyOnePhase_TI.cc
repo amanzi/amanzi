@@ -34,7 +34,7 @@ void EnergyOnePhase_PK::Functional(
   // assemble residual for diffusion operator
   op_matrix_->Init();
   op_matrix_diff_->UpdateMatrices(Teuchos::null, solution.ptr());
-  op_matrix_diff_->ApplyBCs(true, true);
+  op_matrix_diff_->ApplyBCs(true, true, true);
 
   op_matrix_->ComputeNegativeResidual(*u_new->Data(), *g->Data());
 
@@ -90,7 +90,7 @@ void EnergyOnePhase_PK::UpdatePreconditioner(
   // assemble residual for diffusion operator
   op_preconditioner_->Init();
   op_preconditioner_diff_->UpdateMatrices(Teuchos::null, up->Data().ptr());
-  op_preconditioner_diff_->ApplyBCs(true, true);
+  op_preconditioner_diff_->ApplyBCs(true, true, true);
 
   // update with accumulation terms
   // update the accumulation derivatives, dE/dT
@@ -114,7 +114,7 @@ void EnergyOnePhase_PK::UpdatePreconditioner(
 
   // finalize preconditioner
   op_preconditioner_->AssembleMatrix();
-  op_preconditioner_->InitPreconditioner(preconditioner_name_, *preconditioner_list_);
+  op_preconditioner_->UpdatePreconditioner();
 }
 
 

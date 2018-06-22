@@ -34,7 +34,7 @@ TCMEvaluator_TwoPhase::TCMEvaluator_TwoPhase(Teuchos::ParameterList& plist) :
   saturation_key_ = plist_.get<std::string>("saturation key", "saturation_liquid");
   dependencies_.insert(saturation_key_);
 
-  ASSERT(plist_.isSublist("thermal conductivity parameters"));
+  AMANZI_ASSERT(plist_.isSublist("thermal conductivity parameters"));
   Teuchos::ParameterList sublist = plist_.sublist("thermal conductivity parameters");
   TCMFactory_TwoPhase fac;
   tc_ = fac.CreateTCM(sublist);
@@ -90,7 +90,7 @@ void TCMEvaluator_TwoPhase::EvaluateFieldPartialDerivative_(
     const Teuchos::Ptr<State>& S,
     Key wrt_key, const Teuchos::Ptr<CompositeVector>& result)
 {
-  ASSERT(0);
+  AMANZI_ASSERT(0);
 }
 
 }  // namespace Energy

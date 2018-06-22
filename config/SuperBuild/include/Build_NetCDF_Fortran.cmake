@@ -19,7 +19,7 @@ amanzi_tpl_version_write(FILENAME ${TPL_VERSIONS_INCLUDE_FILE}
   VERSION ${NetCDF_Fortran_VERSION_MAJOR} ${NetCDF_Fortran_VERSION_MINOR} ${NetCDF_Fortran_VERSION_PATCH})
   
 # --- Patch original code
-set(NetCDF_Fortran_patch_file netcdf-fortran-osx.patch)
+set(NetCDF_Fortran_patch_file netcdf-fortran-osx.patch netcdf-fortran-intel.patch)
 set(NetCDF_Fortran_sh_patch ${NetCDF_Fortran_prefix_dir}/netcdf-fortran-patch-step.sh)
 configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/netcdf-fortran-patch-step.sh.in
                ${NetCDF_Fortran_sh_patch}
@@ -61,6 +61,7 @@ ExternalProject_Add(${NetCDF_Fortran_BUILD_TARGET}
                                      -DCMAKE_CXX_COMPILER:FILEPATH=${CMAKE_CXX_COMPILER}
                                      -DCMAKE_Fortran_FLAGS:STRING=${Amanzi_COMMON_FCFLAGS}
                                      -DCMAKE_Fortran_COMPILER:FILEPATH=${CMAKE_Fortran_COMPILER}
+                                     -DCMAKE_PREFIX_PATH:FILEPATH=${TPL_INSTALL_PREFIX}
                     # -- Build
                     BINARY_DIR      ${NetCDF_Fortran_build_dir}  
                     BUILD_COMMAND   $(MAKE)                       # enables parallel builds through make

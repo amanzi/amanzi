@@ -45,11 +45,11 @@ class HeatConduction {
                     const std::vector<int>& bc_model,
                     const std::vector<double>& bc_value) { 
     Epetra_MultiVector& vcell = *values_->ViewComponent("cell", true); 
-    int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::USED);
+    int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
 
     for (int c = 0; c < ncells; c++) {
       const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
-      const WhetStone::Tensor& Kc = ana_.Tensor(xc, 0.0);
+      const WhetStone::Tensor& Kc = ana_.TensorDiffusivity(xc, 0.0);
       vcell[0][c] = Kc(0, 0);
     }
 
@@ -60,8 +60,8 @@ class HeatConduction {
     for (int f=0; f!=face_map.NumMyElements(); ++f) {
       if (bc_model[f] == Operators::OPERATOR_BC_DIRICHLET) {
         AmanziMesh::Entity_ID_List cells;
-        mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
-        ASSERT(cells.size() == 1);
+        mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
+        AMANZI_ASSERT(cells.size() == 1);
         int bf = ext_face_map.LID(face_map.GID(f));
         vbf[0][bf] = Conduction(cells[0], bc_value[f]);
       }
@@ -101,10 +101,10 @@ class HeatConduction {
     Epetra_MultiVector& vgrad = *values_->ViewComponent("grad", true); 
 
     vtwin = vface;
-    int nfaces = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
+    int nfaces = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
 
     for (int f = 0; f < nfaces; f++) {
-      mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+      mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
       int ncells = cells.size();
       
       if (ncells == 2) {
@@ -148,13 +148,13 @@ class HeatConduction {
     Epetra_MultiVector& vgrad = *values_->ViewComponent("grad", true); 
     Epetra_MultiVector& vtwin = *values_->ViewComponent("twin", true); 
 
-    int nfaces = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
+    int nfaces = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
     AmanziGeometry::Point grad(dim), xc(dim);
 
     for (int f = 0; f < nfaces; f++) {
       const AmanziGeometry::Point& xf = mesh_->face_centroid(f);
 
-      mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+      mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
       int ncells = cells.size();
       
       int c = cells[0];
@@ -173,7 +173,7 @@ class HeatConduction {
 
   double Conduction(int c, double T) const {
     const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
-    const WhetStone::Tensor& Kc = ana_.Tensor(xc, 0.0);
+    const WhetStone::Tensor& Kc = ana_.TensorDiffusivity(xc, 0.0);
     return Kc(0, 0);
   }
 

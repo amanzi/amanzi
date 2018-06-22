@@ -1609,11 +1609,9 @@ void Beaker::UpdateMolalitiesWithTruncation(const double max_ln_change) {
 
     if (!use_log_formulation()) {
       // ensure non-negative concentration
-      for (int i = 0; i < ncomp(); ++i) {
-        if (prev_molal_.at(i) <= rhs_.at(i)) {
-          double ratio = std::fabs(prev_molal_.at(i) / rhs_.at(i));
-          min_ratio = std::min(ratio, min_ratio);
-        }
+      if (prev_molal_.at(i) <= rhs_.at(i)) {
+        double ratio = std::fabs(prev_molal_.at(i) / rhs_.at(i));
+        min_ratio = std::min(ratio, min_ratio);
       }
     }  // if (use_log_formulation)
   }  // for (i)
@@ -1626,9 +1624,7 @@ void Beaker::UpdateMolalitiesWithTruncation(const double max_ln_change) {
     } else {
       if (min_ratio < 1.0) {
         // scale by 0.99 to make the update slightly smaller than the min_ratio
-        for (int i = 0; i < ncomp(); ++i) {
-          rhs_.at(i) *= min_ratio*0.99;
-        }
+        rhs_.at(i) *= min_ratio*0.99;
       }
       molality = prev_molal_.at(i) - rhs_.at(i);
     }

@@ -60,10 +60,10 @@ int ObservableLineSegment::ComputeRegionSize() {
   // all others need cells
   region_size_ = mesh_->get_set_size(region_,
                                      AmanziMesh::CELL, 
-                                     AmanziMesh::OWNED);    
+                                     AmanziMesh::Parallel_type::OWNED);    
   entity_ids_.resize(region_size_);
   mesh_->get_set_entities_and_vofs(region_,
-                                   AmanziMesh::CELL, AmanziMesh::OWNED,
+                                   AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED,
                                    &entity_ids_, &lofs_);
 
   ComputeInterpolationPoints(reg_ptr);
@@ -87,7 +87,7 @@ void ObservableLineSegment::ComputeObservation(
 
 
 void ObservableLineSegment::ComputeInterpolationPoints(Teuchos::RCP<const AmanziGeometry::Region> reg_ptr) {
-  AmanziGeometry::Entity_ID_List faces, cnodes, fnodes;
+  AmanziMesh::Entity_ID_List faces, cnodes, fnodes;
   std::vector<int> dirs;
   std::vector<AmanziGeometry::Point> polytope_nodes;
   std::vector<std::vector<int> > polytope_faces;

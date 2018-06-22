@@ -85,14 +85,14 @@ TEST(FLOW_2D_TRANSIENT_DARCY) {
 
   AmanziMesh::Entity_ID_List block;
 
-  mesh->get_set_entities("Material 1", AmanziMesh::CELL, AmanziMesh::OWNED, &block);
+  mesh->get_set_entities("Material 1", AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED, &block);
   for (int i = 0; i != block.size(); ++i) {
     int c = block[i];
     K[0][c] = 0.1;
     K[1][c] = 2.0;
   }
 
-  mesh->get_set_entities("Material 2", AmanziMesh::CELL, AmanziMesh::OWNED, &block);
+  mesh->get_set_entities("Material 2", AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED, &block);
   for (int i = 0; i != block.size(); ++i) {
     int c = block[i];
     K[0][c] = 0.5;
@@ -146,22 +146,6 @@ TEST(FLOW_2D_TRANSIENT_DARCY) {
       GMV::close_data_file();
     }
   }
-
-  // Testing secondary fields
-  DPK->UpdateLocalFields_(S.ptr());
-  const Epetra_MultiVector& darcy_velocity = *S->GetFieldData("darcy_velocity")->ViewComponent("cell");
-  Point p5(darcy_velocity[0][5], darcy_velocity[1][5]);
-
-  // Testing recovery
-  std::vector<AmanziGeometry::Point> xyz;
-  std::vector<AmanziGeometry::Point> velocity;
-  DPK->CalculateDarcyVelocity(xyz, velocity);
-
-  CHECK(L22(p5 - velocity[5]) < 1e-10);
-  
-  for (int n = 0; n < 10; n++) { 
-    // std::cout << n << " xyz=" << xyz[n] << " vel=" << velocity[n] << std::endl;
-  } 
 }
 
 
@@ -213,7 +197,7 @@ TEST(FLOW_3D_TRANSIENT_DARCY) {
   Epetra_MultiVector& K = *S->GetFieldData("permeability", passwd)->ViewComponent("cell", false);
   
   AmanziMesh::Entity_ID_List block;
-  mesh->get_set_entities("Material 1", AmanziMesh::CELL, AmanziMesh::OWNED, &block);
+  mesh->get_set_entities("Material 1", AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED, &block);
   for (int i = 0; i != block.size(); ++i) {
     int c = block[i];
     K[0][c] = 0.1;
@@ -221,7 +205,7 @@ TEST(FLOW_3D_TRANSIENT_DARCY) {
     K[2][c] = 2.0;
   }
 
-  mesh->get_set_entities("Material 2", AmanziMesh::CELL, AmanziMesh::OWNED, &block);
+  mesh->get_set_entities("Material 2", AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED, &block);
   for (int i = 0; i != block.size(); ++i) {
     int c = block[i];
     K[0][c] = 0.5;
@@ -264,14 +248,4 @@ TEST(FLOW_3D_TRANSIENT_DARCY) {
       GMV::close_data_file();
     }
   }
-
-  // Testing recovery
-  std::vector<AmanziGeometry::Point> xyz;
-  std::vector<AmanziGeometry::Point> velocity;
-  DPK->CalculateDarcyVelocity(xyz, velocity);
-
-  int nvel = velocity.size();
-  for (int n = 0; n < nvel; n++) { 
-    // std::cout << xyz[n] << " " << velocity[n] << std::endl;
-  } 
 }

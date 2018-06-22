@@ -41,12 +41,12 @@ void PrimaryVariableFieldEvaluator::operator=(const FieldEvaluator& other) {
 #if ENABLE_DBC
   const PrimaryVariableFieldEvaluator* other_p =
     dynamic_cast<const PrimaryVariableFieldEvaluator*>(&other);
-  ASSERT(other_p != NULL);
+  AMANZI_ASSERT(other_p != NULL);
 #else
   const PrimaryVariableFieldEvaluator* other_p =
     static_cast<const PrimaryVariableFieldEvaluator*>(&other);
 #endif
-  ASSERT(my_key_ == other_p->my_key_);
+  AMANZI_ASSERT(my_key_ == other_p->my_key_);
 
   requests_ = other_p->requests_;
   deriv_requests_ = other_p->deriv_requests_;

@@ -9,7 +9,7 @@ SUITE (DBC)
 
     TEST (Assert)
     {
-        CHECK_THROW (ASSERT (1==2), DBC::Assertion);
+        CHECK_THROW (AMANZI_ASSERT (1==2), DBC::Assertion);
     }
 
 }

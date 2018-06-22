@@ -70,8 +70,8 @@ if (BUILD_TESTS)
 
     # Copy test directory files if an out of source build
     if (NOT (${ATK_SOURCE_DIR} EQUAL ${ATK_BINARY_DIR}))
-        execute_process(COMMAND ${CMAKE_COMMAND} -E 
-          copy_directory ${ATK_SOURCE_DIR}/test ${ATK_BINARY_DIR}/test) 
+      # file(GLOB DataFiles "${ATK_SOURCE_DIR}/test/*.xml")
+      # file(COPY ${DataFiles} DESTINATION ${ATK_BINARY_DIR}/test/)
     endif()
 
     # Add the utils directory to the include paths

@@ -23,52 +23,135 @@
 
 #include "DenseMatrix.hh"
 #include "MFD3D.hh"
+#include "Polynomial.hh"
+#include "PolynomialOnMesh.hh"
 #include "Tensor.hh"
 
 namespace Amanzi {
 namespace WhetStone {
 
-class MFD3D_CrouzeixRaviart : public virtual MFD3D { 
+class MFD3D_CrouzeixRaviart : public MFD3D { 
  public:
   MFD3D_CrouzeixRaviart(Teuchos::RCP<const AmanziMesh::Mesh> mesh)
     : MFD3D(mesh),
       InnerProduct(mesh),
-      order_(1) {};
+      use_always_ho_(false) {};
   ~MFD3D_CrouzeixRaviart() {};
 
   // required methods
   // -- mass matrices
-  virtual int L2consistency(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Mc, bool symmetry) { return -1; }
-  virtual int MassMatrix(int c, const Tensor& T, DenseMatrix& M) { return -1; } 
+  virtual int L2consistency(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Mc, bool symmetry) override { return -1; }
+  virtual int MassMatrix(int c, const Tensor& T, DenseMatrix& M) override { return -1; } 
 
   // -- inverse mass matrices
-  virtual int L2consistencyInverse(int c, const Tensor& T, DenseMatrix& R, DenseMatrix& Wc, bool symmetry) { return -1; }
-  virtual int MassMatrixInverse(int c, const Tensor& T, DenseMatrix& M) { return -1; } 
+  virtual int L2consistencyInverse(int c, const Tensor& T, DenseMatrix& R, DenseMatrix& Wc, bool symmetry) override { return -1; }
+  virtual int MassMatrixInverse(int c, const Tensor& T, DenseMatrix& M) override { return -1; } 
 
   // -- stiffness matrix
-  virtual int H1consistency(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Ac);
-  virtual int StiffnessMatrix(int c, const Tensor& T, DenseMatrix& A);
+  virtual int H1consistency(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Ac) override {
+    if (order_ == 1 && !use_always_ho_) {
+      return H1consistencyLO_(c, T, N, Ac);
+    } else {
+      return H1consistencyHO_(c, T, N, Ac);
+    }
+  }
+  virtual int StiffnessMatrix(int c, const Tensor& T, DenseMatrix& A) override {
+    if (order_ == 1 && !use_always_ho_) {
+      return StiffnessMatrixLO_(c, T, A);
+    } else {
+      return StiffnessMatrixHO_(c, T, A);
+    }
+  }
 
-  // -- other matrices
-  virtual int DivergenceMatrix(int c, DenseMatrix& A) { return -1; }
-  virtual int AdvectionMatrix(int c, const std::vector<AmanziGeometry::Point>& u, DenseMatrix& A) { return -1; }
+  // -- projectors
+  virtual void L2Cell(
+      int c, const std::vector<VectorPolynomial>& vf,
+      const std::shared_ptr<DenseVector>& moments, VectorPolynomial& uc) override {
+    ProjectorCell_HO_(c, vf, Type::L2, false, moments, uc);
+  }
 
-  // -- not relevant or unsupported members
-  virtual int MassMatrixPoly(int c, const Polynomial& K, DenseMatrix& M) { return -1; }
-  virtual int StiffnessMatrixPoly(int c, const Polynomial& K, DenseMatrix& A) { return -1; }
-  virtual int AdvectionMatrix(int c, const AmanziGeometry::Point v, DenseMatrix& A, bool grad_on_test) { return -1; }
-  virtual int AdvectionMatrixPoly(int c, const VectorPolynomial& v, DenseMatrix& A, bool grad_on_test) { return -1; }
+  virtual void H1Cell(
+      int c, const std::vector<VectorPolynomial>& vf,
+      const std::shared_ptr<DenseVector>& moments, VectorPolynomial& uc) override {
+    ProjectorCell_HO_(c, vf, Type::H1, false, moments, uc);
+  }
 
-  // high-order methods
-  int H1consistencyHO(int c, int order, const Tensor& T,
-                      DenseMatrix& N, DenseMatrix& R, DenseMatrix& Ac, DenseMatrix& G);
-  int StiffnessMatrixHO(int c, int order, const Tensor& T, DenseMatrix& A);
+  // harmonic projector calculates and returns cell-moments
+  void L2CellHarmonic(
+      int c, const std::vector<VectorPolynomial>& vf,
+      const std::shared_ptr<DenseVector>& moments, VectorPolynomial& uc) {
+    ProjectorCell_HO_(c, vf, Type::L2, true, moments, uc);
+  }
 
-  // miscalleneous
-  void set_order(int order) { order_ = order; }
+  void H1CellHarmonic(
+      int c, const std::vector<VectorPolynomial>& vf,
+      const std::shared_ptr<DenseVector>& moments, VectorPolynomial& uc) {
+    if (order_ == 1 && !use_always_ho_) {
+      ProjectorCell_LO_(c, vf, uc);
+    } else {
+      ProjectorCell_HO_(c, vf, Type::H1, true, moments, uc);
+    }
+  }
+
+  // additional projectors: prototypes
+  // -- on faces
+  void H1FaceHarmonic(
+      int f, const AmanziGeometry::Point& p0,
+      const std::vector<VectorPolynomial>& ve, VectorPolynomial& uf) const;
+
+  // -- L2 projector of gradient
+  void L2GradientCell(
+      int c, const std::vector<VectorPolynomial>& vf,
+      const std::shared_ptr<DenseVector>& moments, MatrixPolynomial& uc) {
+    ProjectorGradientCell_(c, vf, Type::L2, false, moments, uc);
+  }
+
+  void L2GradientCellHarmonic(
+      int c, const std::vector<VectorPolynomial>& vf,
+      const std::shared_ptr<DenseVector>& moments, MatrixPolynomial& uc) {
+    ProjectorGradientCell_(c, vf, Type::L2, true, moments, uc);
+  }
+
+  // access / setup
+  // -- integrals of monomials in high-order schemes could be reused
+  const PolynomialOnMesh& integrals() const { return integrals_; }
+  const DenseMatrix& G() const { return G_; }
+  const DenseMatrix& R() const { return R_; }
+  // -- modify internal parameters
+  void set_use_always_ho(bool flag) { use_always_ho_ = flag; }
 
  private:
-  int order_;
+  // efficient implementation of low-order methods
+  int H1consistencyLO_(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Ac);
+  int StiffnessMatrixLO_(int c, const Tensor& T, DenseMatrix& A);
+
+  // high-order methods
+  int H1consistencyHO_(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Ac);
+  int StiffnessMatrixHO_(int c, const Tensor& T, DenseMatrix& A);
+
+  // efficient implementation of low-order elliptic projectors
+  void ProjectorCell_LO_(
+      int c, const std::vector<VectorPolynomial>& vf, VectorPolynomial& uc);
+
+  // generic code for multiple projectors
+  void ProjectorCell_HO_(
+      int c, const std::vector<VectorPolynomial>& vf,
+      const Projectors::Type type, bool is_harmonic,
+      const std::shared_ptr<DenseVector>& moments, VectorPolynomial& uc);
+
+  void ProjectorGradientCell_(
+      int c, const std::vector<VectorPolynomial>& vf,
+      const Projectors::Type type, bool is_harmonic, 
+      const std::shared_ptr<DenseVector>& moments, MatrixPolynomial& uc);
+
+  // supporting routines
+  void CalculateFaceDOFs_(int f, const Polynomial& vf, const Polynomial& pf,
+                          DenseVector& vdof, int& row);
+
+ private:
+  bool use_always_ho_;
+  PolynomialOnMesh integrals_;
+  DenseMatrix R_, G_;
 };
 
 }  // namespace WhetStone

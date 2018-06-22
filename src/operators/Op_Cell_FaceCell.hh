@@ -28,7 +28,7 @@ class Op_Cell_FaceCell : public Op {
          OPERATOR_SCHEMA_DOFS_FACE |
          OPERATOR_SCHEMA_DOFS_CELL, name, mesh) {
     WhetStone::DenseMatrix null_matrix;
-    matrices.resize(mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED), null_matrix);
+    matrices.resize(mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED), null_matrix);
     matrices_shadow = matrices;
   }
 
@@ -73,6 +73,7 @@ class Op_Cell_FaceCell : public Op {
 
     if (scaling.HasComponent("cell")) {
       const Epetra_MultiVector& s_c = *scaling.ViewComponent("cell",true);
+      AMANZI_ASSERT(s_c.MyLength() == matrices.size());
 
       AmanziMesh::Entity_ID_List face;
       for (int c = 0; c != matrices.size(); ++c) {

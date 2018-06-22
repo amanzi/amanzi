@@ -17,20 +17,43 @@
 
 #include "DenseMatrix.hh"
 #include "MeshMaps_VEM.hh"
+#include "MFD3DFactory.hh"
 #include "Polynomial.hh"
 
 namespace Amanzi {
 namespace WhetStone {
 
 /* ******************************************************************
-* Calculate mesh velocity in cell c: new algorithm
+* Calculate mesh velocity in cell c: new algorithm.
+* NOTE: second mesh is not used, so does it belong here?
 ****************************************************************** */
 void MeshMaps_VEM::VelocityCell(
     int c, const std::vector<VectorPolynomial>& vf, VectorPolynomial& vc) const
 {
-  // LeastSquareProjector_Cell_(1, c, vf, vc);
-  AmanziGeometry::Point p0(mesh1_->cell_centroid(c) - mesh0_->cell_centroid(c));
-  projector.HarmonicP1_Cell(c, p0, vf, vc);
+  // LeastSquareProjector_Cell_(order_, c, vf, vc);
+
+  auto moments = std::make_shared<DenseVector>();
+
+  WhetStone::MFD3DFactory factory;
+  auto mfd = factory.CreateMFD3D(mesh0_, method_, order_);
+
+  if (projector_ == "H1 harmonic") {
+    auto mfd_tmp = dynamic_cast<MFD3D_CrouzeixRaviart*>(&*mfd);
+    mfd_tmp->H1CellHarmonic(c, vf, moments, vc);
+  }
+  else if (projector_ == "L2 harmonic") {
+    auto mfd_tmp = dynamic_cast<MFD3D_CrouzeixRaviart*>(&*mfd);
+    mfd_tmp->L2CellHarmonic(c, vf, moments, vc);
+  } 
+  else if (projector_ == "H1") {
+    mfd->H1Cell(c, vf, moments, vc);
+  }
+  else if (projector_ == "L2") {
+    mfd->L2Cell(c, vf, moments, vc);
+  }
+  else {
+    AMANZI_ASSERT(false);
+  }
 }
 
 
@@ -57,8 +80,11 @@ void MeshMaps_VEM::VelocityFace(int f, VectorPolynomial& vf) const
       ve.push_back(v);
     }
 
+    MFD3D_CrouzeixRaviart mfd(mesh0_);
+    mfd.set_order(order_);
+
     AmanziGeometry::Point p0(mesh1_->face_centroid(f) - mesh0_->face_centroid(f));
-    projector.HarmonicP1_Face(f, p0, ve, vf);
+    mfd.H1FaceHarmonic(f, p0, ve, vf);
   }
 }
 
@@ -105,12 +131,12 @@ void MeshMaps_VEM::VelocityEdge_(int e, VectorPolynomial& ve) const
 * NOTE: Limited to P1 elements. FIXME
 ****************************************************************** */
 void MeshMaps_VEM::NansonFormula(
-    int f, double t, const VectorPolynomial& v, VectorPolynomial& cn) const
+    int f, double t, const VectorPolynomial& vf, VectorPolynomial& cn) const
 {
   AmanziGeometry::Point p(d_);
   WhetStone::Tensor J(d_, 2);
 
-  JacobianFaceValue(f, v, p, J);
+  JacobianFaceValue_(f, vf, p, J);
   J *= t;
   J += 1.0 - t;
 
@@ -126,163 +152,27 @@ void MeshMaps_VEM::NansonFormula(
 
 
 /* ******************************************************************
-* Calculation of matrix of cofactors
+* Calculate mesh velocity in cell c: new algorithm
 ****************************************************************** */
-void MeshMaps_VEM::Cofactors(
-    int c, double t, const VectorPolynomial& vc, MatrixPolynomial& C) const
+void MeshMaps_VEM::JacobianCell(
+    int c, const std::vector<VectorPolynomial>& vf, MatrixPolynomial& J) const
 {
-  if (vc[0].order() == 1 || d_ == 3) {
-    Cofactors_P1_(c, t, vc, C);
-  } else {
-    Cofactors_Pk_(c, t, vc, C);
-  }
-}
+  auto moments = std::make_shared<DenseVector>();
+  MFD3D_CrouzeixRaviart mfd(mesh0_);
 
-
-/* ******************************************************************
-* Calculation of matrix of cofactors: linear velocity
-****************************************************************** */
-void MeshMaps_VEM::Cofactors_P1_(
-    int c, double t, const VectorPolynomial& vc, MatrixPolynomial& C) const
-{
-  ASSERT(vc[0].order() == 1);
-
-  // gradient of linear velocity is constant tensor
-  Tensor T(d_, 2);
-  for (int i = 0; i < d_; ++i) {
-    for (int j = 0; j < d_; ++j) {
-      T(i, j) = vc[i](1, j);
-    }
-  }
-  T = T.Cofactors();
-
-  // convert constants to polynomials
-  C.resize(d_);
-  for (int i = 0; i < d_; ++i) {
-    C[i].resize(d_);
-    for (int j = 0; j < d_; ++j) {
-      C[i][j].Reshape(d_, 0);
-      C[i][j](0, 0) = t * T(i, j);
-    }
-    C[i][i](0, 0) += 1.0;
-  }
-}
-
-
-/* ******************************************************************
-* Calculation of matrix of cofactors: nonlinear velocity
-****************************************************************** */
-void MeshMaps_VEM::Cofactors_Pk_(
-    int c, double t, const VectorPolynomial& vc, MatrixPolynomial& C) const
-{
-  ASSERT(d_ == 2);
-
-  // allocate memory for matrix of cofactors
-  C.resize(d_);
-  for (int i = 0; i < d_; ++i) {
-    C[i].resize(d_);
-  }
-
-  // copy velocity gradients to C
-  VectorPolynomial tmp(d_, 0);
-  tmp.Gradient(vc[0]);
-  C[1][1] = tmp[0];
-  C[1][0] = tmp[1];
-  C[1][0] *= -1.0;
-
-  tmp.Gradient(vc[1]);
-  C[0][0] = tmp[1];
-  C[0][1] = tmp[0];
-  C[0][1] *= -1.0;
-
-  // add time dependence
-  for (int i = 0; i < d_; ++i) {
-    for (int j = 0; j < d_; ++j) {
-      C[i][j](0, 0) *= t;
-    }
-    C[i][i](0, 0) += 1.0;
-  }
-}
-
-
-/* ******************************************************************
-* Calculation of Jacobian.
-****************************************************************** */
-void MeshMaps_VEM::JacobianCellValue(
-    int c, double t, const AmanziGeometry::Point& xref, Tensor& J) const
-{
-}
-
-
-/* ******************************************************************
-* Calculate determinant of a Jacobian. A prototype for the future 
-* projection scheme. Currently, we return a number.
-****************************************************************** */
-void MeshMaps_VEM::JacobianDet(
-    int c, double t, const std::vector<VectorPolynomial>& vf, Polynomial& jac) const
-{
-  AmanziGeometry::Point x(d_), cn(d_);
-  WhetStone::Tensor J(d_, 2); 
-
-  Entity_ID_List faces;
-  std::vector<int> dirs;
-
-  mesh0_->cell_get_faces_and_dirs(c, &faces, &dirs);
-  int nfaces = faces.size();
-
-  double sum(0.0);
-  for (int n = 0; n < nfaces; ++n) {
-    int f = faces[n];
-
-    // calculate j J^{-t} N dA
-    JacobianFaceValue(f, vf[n], x, J);
-
-    J *= t;
-    J += 1.0 - t;
-
-    Tensor C = J.Cofactors();
-    cn = C * mesh0_->face_normal(f); 
-
-    const AmanziGeometry::Point& xf0 = mesh0_->face_centroid(f);
-    const AmanziGeometry::Point& xf1 = mesh1_->face_centroid(f);
-    sum += (xf0 + t * (xf1 - xf0)) * cn * dirs[n];
-  }
-  sum /= d_ * mesh0_->cell_volume(c);
-
-  jac.Reshape(d_, 0);
-  jac(0, 0) = sum;
-}
-
-
-/* ******************************************************************
-* Calculate determinant of a Jacobian. Different version
-****************************************************************** */
-void MeshMaps_VEM::JacobianDet(
-    double t, const VectorPolynomial& vc, Polynomial& jac) const
-{
-  Tensor T(d_, 2);
-  for (int i = 0; i < d_; ++i) {
-    for (int j = 0; j < d_; ++j) {
-      T(i, j) = vc[i](1, j);
-    }
-  }
-
-  T *= t;
-  T += 1.0;
-
-  jac.Reshape(d_, 0);
-  jac(0, 0) = T.Det();
+  mfd.set_order(order_ + 1);
+  mfd.L2GradientCellHarmonic(c, vf, moments, J);
 }
 
 
 /* ******************************************************************
 * Calculate Jacobian at point x of face f 
+* NOTE: limited to linear velocity FIXME
 ****************************************************************** */
-void MeshMaps_VEM::JacobianFaceValue(
+void MeshMaps_VEM::JacobianFaceValue_(
     int f, const VectorPolynomial& v,
     const AmanziGeometry::Point& x, Tensor& J) const
 {
-  // FIXME x is not used
   for (int i = 0; i < d_; ++i) {
     for (int j = 0; j < d_; ++j) {
       J(i, j) = v[i](1, j);
@@ -322,6 +212,17 @@ void MeshMaps_VEM::LeastSquareProjector_Cell_(
   for (int i = 0; i < d_; ++i) {
     vc[i](1, i) -= 1.0;
   }
+}
+
+
+/* ******************************************************************
+* Calculate mesh velocity in cell c: old algorithm
+****************************************************************** */
+void MeshMaps_VEM::ParseInputParameters_(const Teuchos::ParameterList& plist)
+{
+  method_ = plist.get<std::string>("method");
+  order_ = plist.get<int>("method order");
+  projector_ = plist.get<std::string>("projector");
 }
 
 }  // namespace WhetStone

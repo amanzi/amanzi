@@ -139,7 +139,7 @@ namespace Operators {
 
   void PDE_DiffusionMFD_XMOF::ConstructBaseMesh_(){
 
-    ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+    ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
     mesh_cfg_ = Teuchos::rcp(new std::vector<XMOF2D::MeshConfig>(ncells_owned));
     mat_data_ = Teuchos::rcp(new std::vector<XMOF2D::CellsMatData>(ncells_owned));
     xmof_ir_ = Teuchos::rcp(new std::vector<XMOF2D::XMOF_Reconstructor>);
@@ -617,8 +617,8 @@ void PDE_DiffusionMFD_XMOF::ApplyBCs_Mixed_(const Teuchos::Ptr<const BCs>& bc_tr
   const std::vector<double>& bc_value = bc_trial->bc_value();
   const std::vector<double>& bc_mixed = bc_trial->bc_mixed();
 
-  // ASSERT(bc_model_trial.size() == nfaces_wghost);
-  // ASSERT(bc_value.size() == nfaces_wghost);
+  // AMANZI_ASSERT(bc_model_trial.size() == nfaces_wghost);
+  // AMANZI_ASSERT(bc_value.size() == nfaces_wghost);
 
   //global_op_->rhs()->PutScalarGhosted(0.0);
   Epetra_MultiVector& rhs_face = *global_op_->rhs()->ViewComponent("face", true);
@@ -683,7 +683,7 @@ void PDE_DiffusionMFD_XMOF::ApplyBCs_Mixed_(const Teuchos::Ptr<const BCs>& bc_tr
                                          const Teuchos::Ptr<CompositeVector>& u,
                                          double dt){
 
-    ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+    ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
     AmanziMesh::Entity_ID_List faces, cells;
     std::vector<int> dirs;
     int ierr;
@@ -795,7 +795,7 @@ void PDE_DiffusionMFD_XMOF::ApplyBCs_Mixed_(const Teuchos::Ptr<const BCs>& bc_tr
     int dim_cell = mesh_->manifold_dimension();
     gmvwrite_openfile_ir_ascii((char*)filename.c_str(), 4, 8);
 
-    unsigned int num_nodes = mesh_->num_entities(AmanziMesh::NODE, AmanziMesh::OWNED);
+    unsigned int num_nodes = mesh_->num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::OWNED);
     std::vector<double> x,y,z;
     double val;
     int num_mat = vol_frac_vec.NumVectors();

@@ -37,7 +37,7 @@ set(CCSE_CMAKE_CACHE_ARGS
                        -DBL_PRECISION:STRING=DOUBLE
                        -DBL_SPACEDIM:INT=${CCSE_BL_SPACEDIM}
                        -DBL_USE_PARTICLES:INT=0
-                       -DCMAKE_INSTALL_PREFIX:STRING=<INSTALL_DIR>
+                       -DCMAKE_INSTALL_PREFIX:PATH=${TPL_INSTALL_PREFIX}
                        -DCMAKE_BUILD_TYPE:STRING=${CMAKE_BUILD_TYPE}
                        -DBUILD_SHARED_LIBS:BOOL=${BUILD_SHARED_LIBS}
                        -DCMAKE_C_COMPILER:FILEPATH=${CMAKE_C_COMPILER}
@@ -47,6 +47,9 @@ set(CCSE_CMAKE_CACHE_ARGS
                        -DCMAKE_CXX_FLAGS_RELEASE:STRING=${Amanzi_COMMON_CXXFLAGS}
                        -DCMAKE_Fortran_COMPILER:FILEPATH=${CMAKE_Fortran_COMPILER}
                        -DCMAKE_Fortran_FLAGS_${BUILD_TYPE_UPPER}:STRING=${Amanzi_COMMON_FCFLAGS}
+                       -DMPI_CXX_COMPILER:FILEPATH=${MPI_CXX_COMPILER}
+                       -DMPI_C_COMPILER:FILEPATH=${MPI_C_COMPILER}
+                       -DMPI_Fortran_COMPILER:FILEPATH=${MPI_Fortran_COMPILER}
                        -DVERBOSE:BOOL=ON)
 
 
@@ -81,9 +84,9 @@ ExternalProject_Add(${CCSE_BUILD_TARGET}
 		    CMAKE_CACHE_ARGS ${AMANZI_CMAKE_CACHE_ARGS}   # Global definitions from root CMakeList
 		                     ${CCSE_CMAKE_CACHE_ARGS}     
                     # -- Build
-                    BINARY_DIR        ${CCSE_build_dir}           # Build directory 
-                    BUILD_COMMAND     $(MAKE)                     # $(MAKE) enables parallel builds through make
-                    BUILD_IN_SOURCE   ${CCSE_BUILD_IN_SOURCE}     # Flag for in source builds
+                    BINARY_DIR       ${CCSE_build_dir}            # Build directory 
+                    BUILD_COMMAND    $(MAKE)                      # $(MAKE) enables parallel builds through make
+                    BUILD_IN_SOURCE  ${CCSE_BUILD_IN_SOURCE}      # Flag for in source builds
                     # -- Install
                     INSTALL_DIR      ${TPL_INSTALL_PREFIX}        # Install directory
                     # -- Output control

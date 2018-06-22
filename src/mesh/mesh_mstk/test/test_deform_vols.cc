@@ -1,6 +1,6 @@
 #include <UnitTest++.h>
 
-#include <iostream>
+#include <fstream>
 
 #include "../Mesh_MSTK.hh"
 
@@ -54,7 +54,7 @@ TEST(MSTK_DEFORM_VOLS_2D)
   CHECK_EQUAL(mesh->build_columns(), 1);
   
   int nc = 
-    mesh->num_entities(Amanzi::AmanziMesh::CELL,Amanzi::AmanziMesh::USED);
+    mesh->num_entities(Amanzi::AmanziMesh::CELL,Amanzi::AmanziMesh::Parallel_type::ALL);
 
   // Request target volume of 50% for some cells at the bottom of the center column
   // The others are unconstrained except for a barrier of minimum volume
@@ -79,7 +79,7 @@ TEST(MSTK_DEFORM_VOLS_2D)
 
   Amanzi::AmanziMesh::Entity_ID_List fixed_nodes;
   mesh->get_set_entities("Bottom Region", Amanzi::AmanziMesh::NODE,
-                         Amanzi::AmanziMesh::USED, &fixed_nodes);
+                         Amanzi::AmanziMesh::Parallel_type::ALL, &fixed_nodes);
 
   bool move_vertical = true;
   int status = mesh->deform(target_volumes,min_volumes,fixed_nodes,
@@ -138,9 +138,9 @@ TEST(MSTK_DEFORM_VOLS_3D)
   CHECK_EQUAL(mesh->build_columns(), 1);
   
   int ncused = 
-    mesh->num_entities(Amanzi::AmanziMesh::CELL,Amanzi::AmanziMesh::USED);
+    mesh->num_entities(Amanzi::AmanziMesh::CELL,Amanzi::AmanziMesh::Parallel_type::ALL);
   int ncowned = 
-    mesh->num_entities(Amanzi::AmanziMesh::CELL,Amanzi::AmanziMesh::OWNED);
+    mesh->num_entities(Amanzi::AmanziMesh::CELL,Amanzi::AmanziMesh::Parallel_type::OWNED);
 
   // Request target volume of 50% for some cells at the bottom of the center column
   // The others are unconstrained except for a barrier of minimum volume
@@ -170,7 +170,7 @@ TEST(MSTK_DEFORM_VOLS_3D)
 
   Amanzi::AmanziMesh::Entity_ID_List fixed_nodes;
   mesh->get_set_entities_and_vofs("Bottom Region", Amanzi::AmanziMesh::NODE,
-                                  Amanzi::AmanziMesh::USED, &fixed_nodes, NULL);
+                                  Amanzi::AmanziMesh::Parallel_type::ALL, &fixed_nodes, NULL);
 
   bool move_vertical = true;
   int status = mesh->deform(target_volumes,min_volumes,fixed_nodes,

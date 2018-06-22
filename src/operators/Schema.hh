@@ -15,22 +15,24 @@
 #include <string>
 #include <vector>
 
+#include "CompositeVectorSpace.hh"
 #include "Mesh.hh"
 #include "MeshDefs.hh"
-#include "CompositeVectorSpace.hh"
+
+#include "OperatorDefs.hh"
 
 namespace Amanzi {
 namespace Operators {
 
 struct SchemaItem {
  public:
-  SchemaItem() : type(0), num(0) {};
-  SchemaItem(AmanziMesh::Entity_kind kind_, int type_, int num_) :
+  SchemaItem() : type(DOF_Type::SCALAR), num(0) {};
+  SchemaItem(AmanziMesh::Entity_kind kind_, DOF_Type type_, int num_) :
       kind(kind_),
       type(type_),
       num(num_) {};
 
-  void set(AmanziMesh::Entity_kind kind_, int type_, int num_) {
+  void set(AmanziMesh::Entity_kind kind_, DOF_Type type_, int num_) {
     kind = kind_;
     type = type_;
     num = num_;
@@ -38,7 +40,7 @@ struct SchemaItem {
 
  public:
   AmanziMesh::Entity_kind kind;  // geometric location of DOF
-  int type;  // scalar, vector component, derivative, etc.
+  DOF_Type type;  // scalar, vector component, derivative, moment, etc.
   int num;  // number of times it is repeated.
 };
 
@@ -58,7 +60,7 @@ class Schema {
             Teuchos::RCP<const AmanziMesh::Mesh> mesh);
 
   void SetBase(AmanziMesh::Entity_kind base) { base_ = base; }
-  void AddItem(AmanziMesh::Entity_kind kind, int type, int num) {
+  void AddItem(AmanziMesh::Entity_kind kind, DOF_Type type, int num) {
     SchemaItem item(kind, type, num);
     items_.push_back(item);
   }
@@ -72,7 +74,7 @@ class Schema {
 
   std::string KindToString(AmanziMesh::Entity_kind kind) const;
   AmanziMesh::Entity_kind StringToKind(std::string& name) const;
-  int StringToType(std::string& name) const;
+  DOF_Type StringToType(std::string& name) const;
 
   // fancy io
   std::string CreateUniqueName() const;
@@ -88,7 +90,7 @@ class Schema {
     os << "base=" << s.KindToString(s.base()) << "\n";
     for (auto it = s.begin(); it != s.end(); ++it) {
       os << " item: kind=" << s.KindToString(it->kind) 
-         << ", num=" << it->num << ", type=" << it->type << "\n";
+         << ", num=" << it->num << ", type=" << (int)it->type << "\n";
     }
     return os;
   }

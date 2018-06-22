@@ -145,6 +145,7 @@ int AddSuperVectorToCompositeVector(const SuperMap& smap, const Epetra_Vector& s
 
 
 /* ******************************************************************
+*                        DEPRECATED
 * Copy super vector to composite vector: complex schema version.
 ****************************************************************** */
 int CopyCompositeVectorToSuperVector(const SuperMap& smap, const CompositeVector& cv,
@@ -165,6 +166,7 @@ int CopyCompositeVectorToSuperVector(const SuperMap& smap, const CompositeVector
 
 
 /* ******************************************************************
+*                        DEPRECATED
 * Copy super vector to composite vector: complex schema version
 ****************************************************************** */
 int CopySuperVectorToCompositeVector(const SuperMap& smap, const Epetra_Vector& sv,
@@ -190,15 +192,15 @@ int CopySuperVectorToCompositeVector(const SuperMap& smap, const Epetra_Vector& 
 int CopyTreeVectorToSuperVector(const SuperMap& map, const TreeVector& tv,
                                 Epetra_Vector& sv)
 {
-  ASSERT(tv.Data() == Teuchos::null);
+  AMANZI_ASSERT(tv.Data() == Teuchos::null);
   int ierr(0);
   int my_dof = 0;
   for (TreeVector::const_iterator it = tv.begin(); it != tv.end(); ++it) {
-    ASSERT((*it)->Data() != Teuchos::null);
+    AMANZI_ASSERT((*it)->Data() != Teuchos::null);
     ierr |= CopyCompositeVectorToSuperVector(map, *(*it)->Data(), sv, my_dof);
     my_dof++;            
   }
-  ASSERT(!ierr);
+  AMANZI_ASSERT(!ierr);
   return ierr;
 }
 
@@ -206,15 +208,15 @@ int CopyTreeVectorToSuperVector(const SuperMap& map, const TreeVector& tv,
 int CopySuperVectorToTreeVector(const SuperMap& map,const Epetra_Vector& sv,
                                 TreeVector& tv)
 {
-  ASSERT(tv.Data() == Teuchos::null);
+  AMANZI_ASSERT(tv.Data() == Teuchos::null);
   int ierr(0);
   int my_dof = 0;
   for (TreeVector::iterator it = tv.begin(); it != tv.end(); ++it) {
-    ASSERT((*it)->Data() != Teuchos::null);
+    AMANZI_ASSERT((*it)->Data() != Teuchos::null);
     ierr |= CopySuperVectorToCompositeVector(map, sv, *(*it)->Data(), my_dof);
     my_dof++;            
   }
-  ASSERT(!ierr);
+  AMANZI_ASSERT(!ierr);
   return ierr;
 }
 
@@ -225,16 +227,16 @@ int CopySuperVectorToTreeVector(const SuperMap& map,const Epetra_Vector& sv,
 int AddSuperVectorToTreeVector(const SuperMap& map,const Epetra_Vector& sv,
                                TreeVector& tv)
 {
-  ASSERT(tv.Data() == Teuchos::null);
+  AMANZI_ASSERT(tv.Data() == Teuchos::null);
   int ierr(0);
   int my_dof = 0;
   for (TreeVector::iterator it = tv.begin();
        it != tv.end(); ++it) {
-    ASSERT((*it)->Data() != Teuchos::null);
+    AMANZI_ASSERT((*it)->Data() != Teuchos::null);
     ierr |= AddSuperVectorToCompositeVector(map, sv, *(*it)->Data(), my_dof);
     my_dof++;            
   }
-  ASSERT(!ierr);
+  AMANZI_ASSERT(!ierr);
   return ierr;
 }
 
@@ -250,7 +252,7 @@ Teuchos::RCP<SuperMap> CreateSuperMap(const CompositeVectorSpace& cvs, int schem
   std::vector<Teuchos::RCP<const Epetra_Map> > ghost_maps;
 
   if (schema & OPERATOR_SCHEMA_DOFS_FACE) {
-    ASSERT(cvs.HasComponent("face"));
+    AMANZI_ASSERT(cvs.HasComponent("face"));
     compnames.push_back("face");
     dofnums.push_back(n_dofs);
     std::pair<Teuchos::RCP<const Epetra_Map>, Teuchos::RCP<const Epetra_Map> > meshmaps =
@@ -260,7 +262,7 @@ Teuchos::RCP<SuperMap> CreateSuperMap(const CompositeVectorSpace& cvs, int schem
   }
 
   if (schema & OPERATOR_SCHEMA_DOFS_CELL) {
-    ASSERT(cvs.HasComponent("cell"));
+    AMANZI_ASSERT(cvs.HasComponent("cell"));
     compnames.push_back("cell");
     dofnums.push_back(n_dofs);
     std::pair<Teuchos::RCP<const Epetra_Map>, Teuchos::RCP<const Epetra_Map> > meshmaps =
@@ -270,7 +272,7 @@ Teuchos::RCP<SuperMap> CreateSuperMap(const CompositeVectorSpace& cvs, int schem
   }
 
   if (schema & OPERATOR_SCHEMA_DOFS_EDGE) {
-    ASSERT(cvs.HasComponent("edge"));
+    AMANZI_ASSERT(cvs.HasComponent("edge"));
     compnames.push_back("edge");
     dofnums.push_back(n_dofs);
     std::pair<Teuchos::RCP<const Epetra_Map>, Teuchos::RCP<const Epetra_Map> > meshmaps =
@@ -280,7 +282,7 @@ Teuchos::RCP<SuperMap> CreateSuperMap(const CompositeVectorSpace& cvs, int schem
   }
 
   if (schema & OPERATOR_SCHEMA_DOFS_NODE) {
-    ASSERT(cvs.HasComponent("node"));
+    AMANZI_ASSERT(cvs.HasComponent("node"));
     compnames.push_back("node");
     dofnums.push_back(n_dofs);
     std::pair<Teuchos::RCP<const Epetra_Map>, Teuchos::RCP<const Epetra_Map> > meshmaps =
@@ -290,7 +292,7 @@ Teuchos::RCP<SuperMap> CreateSuperMap(const CompositeVectorSpace& cvs, int schem
   }
 
   if (schema & OPERATOR_SCHEMA_DOFS_BNDFACE) {
-    ASSERT(cvs.HasComponent("boundary_face"));
+    AMANZI_ASSERT(cvs.HasComponent("boundary_face"));
     compnames.push_back("boundary_face");
     dofnums.push_back(n_dofs);
 
@@ -362,7 +364,7 @@ unsigned int MaxRowSize(const AmanziMesh::Mesh& mesh, int schema, unsigned int n
   if (schema & OPERATOR_SCHEMA_DOFS_FACE) {
     unsigned int i = (dim == 2) ? OPERATOR_QUAD_FACES : OPERATOR_HEX_FACES;
 
-    for (int c = 0; c < mesh.num_entities(AmanziMesh::CELL, AmanziMesh::OWNED); ++c) {
+    for (int c = 0; c < mesh.num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED); ++c) {
       i = std::max(i, mesh.cell_get_num_faces(c));
     }
     row_size += 2 * i;
@@ -419,7 +421,7 @@ CreateBoundaryMaps(Teuchos::RCP<const AmanziMesh::Mesh> mesh,
 
   int num_boundary_faces_owned = bnd_maps.first -> NumMyElements();
 
-  ASSERT(num_boundary_faces_owned > 0);
+  AMANZI_ASSERT(num_boundary_faces_owned > 0);
   
   Teuchos::RCP<Epetra_Map>  boundary_map =  Teuchos::rcp(new Epetra_Map(-1, num_boundary_faces_owned, 0, bnd_maps.first->Comm()));
 
@@ -483,8 +485,8 @@ CreateNonuniformMaps(Teuchos::RCP<const AmanziMesh::Mesh> mesh,
                      std::pair<Teuchos::RCP<const Epetra_Map>, Teuchos::RCP<const Epetra_Map> >& uni_maps,
                      Epetra_IntVector& num_elems, Epetra_IntVector& block_start, AmanziMesh::Entity_kind kind){
 
-  int num_owned = mesh->num_entities(kind, AmanziMesh::OWNED);
-  int num_wghosted = mesh->num_entities(kind, AmanziMesh::USED);
+  int num_owned = mesh->num_entities(kind, AmanziMesh::Parallel_type::OWNED);
+  int num_wghosted = mesh->num_entities(kind, AmanziMesh::Parallel_type::ALL);
 
   int num_nonuni_owned = 0;
   for (int n=0; n<num_owned; n++) {

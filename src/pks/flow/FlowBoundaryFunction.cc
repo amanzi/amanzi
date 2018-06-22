@@ -123,12 +123,12 @@ void FlowBoundaryFunction::CalculateShiftWaterTable_(
   AmanziGeometry::Point p1(dim), p2(dim), p3(dim);
   std::vector<AmanziGeometry::Point> edges;
 
-  mesh->get_set_entities(region, AmanziMesh::FACE, AmanziMesh::OWNED, &ss_faces);
+  mesh->get_set_entities(region, AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED, &ss_faces);
   int n = ss_faces.size();
 
   for (int i = 0; i < n; i++) {
     int f1 = ss_faces[i];
-    mesh->face_get_cells(f1, AmanziMesh::USED, &cells);
+    mesh->face_get_cells(f1, AmanziMesh::Parallel_type::ALL, &cells);
 
     mesh->face_get_nodes(f1, &nodes1);
     std::sort(nodes1.begin(), nodes1.end());
@@ -141,7 +141,7 @@ void FlowBoundaryFunction::CalculateShiftWaterTable_(
     for (int j = 0; j < nfaces; j++) {
       int f2 = faces[j];
       if (f2 != f1) {
-        mesh->face_get_cells(f2, AmanziMesh::USED, &cells);
+        mesh->face_get_cells(f2, AmanziMesh::Parallel_type::ALL, &cells);
         int ncells = cells.size();
         if (ncells == 1) {
           mesh->face_get_nodes(f2, &nodes2);

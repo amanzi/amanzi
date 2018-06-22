@@ -8,59 +8,93 @@
 
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 
-  Linear solution plus constant coefficient.
-
-  u = g_x * x + g_y * y
-
-  for user-provided gradient g = {g_x, g_y}
-  
+  Polynomial solution and constant coefficient is defined by
+  the user-provided gradient and polynomial order:
+  Solution: p = 1  order=0
+            p = 1 + gx x + gy y  order=1
+            p = 1 + gx x + gy y + 3x^2 + 4xy - 3y^2  order=2
+            p = 1 + gx x + gy y + 3x^2 + 4xy - 3y^2 + x^3 + 6x^2y - 3xy^2 - 3y^3  order=3
+  Diffusion: K = 1
+  Velocity: v = [vx, vy]
+  Source: f = -Laplacian(p)
 */
 
 #ifndef AMANZI_OPERATOR_ANALYTIC_00_HH_
 #define AMANZI_OPERATOR_ANALYTIC_00_HH_
 
+#include "Polynomial.hh"
+#include "VectorPolynomial.hh"
+
 #include "AnalyticBase.hh"
 
 class Analytic00 : public AnalyticBase {
  public:
-  Analytic00(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh, double gx, double gy) :
+  Analytic00(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh, double gx, double gy, int order,
+             const Amanzi::AmanziGeometry::Point v = Amanzi::AmanziGeometry::Point(2)) :
       AnalyticBase(mesh),
-      gx_(gx),
-      gy_(gy) {};
+      poly_(2, order),
+      v_(v) {
+    poly_(0, 0) = 1.0;
+
+    if (order > 0) {
+      poly_(1, 0) = gx;
+      poly_(1, 1) = gy;
+    }
+
+    if (order > 1) {
+      poly_(2, 0) = 3.0;
+      poly_(2, 1) = 4.0;
+      poly_(2, 2) =-3.0;
+    }
+
+    if (order > 2) {
+      poly_(3, 0) = 1.0;
+      poly_(3, 1) = 6.0;
+      poly_(3, 2) =-3.0;
+      poly_(3, 3) =-2.0;
+    }
+
+    grad_.Gradient(poly_);
+ 
+    Amanzi::WhetStone::VectorPolynomial tmp(2, 2);
+    for (int i = 0; i < 2; ++i) {
+      tmp[i] = v_[i] * poly_;
+    }
+    rhs_ = Amanzi::WhetStone::Divergence(tmp) - poly_.Laplacian();
+  }
   ~Analytic00() {};
 
-  Amanzi::WhetStone::Tensor Tensor(const Amanzi::AmanziGeometry::Point& p, double t) {
+  Amanzi::WhetStone::Tensor TensorDiffusivity(const Amanzi::AmanziGeometry::Point& p, double t) {
     Amanzi::WhetStone::Tensor K(2, 1);
     K(0, 0) = 1.0;
     return K;
   }
 
   double pressure_exact(const Amanzi::AmanziGeometry::Point& p, double t) { 
-    double x = p[0];
-    double y = p[1];
-    return gx_ * x + gy_ * y;
+    return poly_.Value(p);
   }
 
   Amanzi::AmanziGeometry::Point velocity_exact(const Amanzi::AmanziGeometry::Point& p, double t) { 
     Amanzi::AmanziGeometry::Point v(2);
-    v[0] = -gx_;
-    v[1] = -gy_;
+    v[0] = -grad_[0].Value(p);
+    v[1] = -grad_[1].Value(p);
     return v;
   }
  
   Amanzi::AmanziGeometry::Point gradient_exact(const Amanzi::AmanziGeometry::Point& p, double t) { 
-    Amanzi::AmanziGeometry::Point v(2);
-    v[0] = gx_;
-    v[1] = gy_;
-    return v;
+    return -velocity_exact(p, t);
   }
 
-  double source_exact(const Amanzi::AmanziGeometry::Point& p, double t) { 
-    return 0.0;
+  Amanzi::AmanziGeometry::Point advection_exact(const Amanzi::AmanziGeometry::Point& p, double t) {
+    return v_;
   }
+
+  double source_exact(const Amanzi::AmanziGeometry::Point& p, double t) { return rhs_.Value(p); }
 
  private:
-  double gx_, gy_;
+  Amanzi::AmanziGeometry::Point v_;
+  Amanzi::WhetStone::Polynomial poly_, rhs_;
+  Amanzi::WhetStone::VectorPolynomial grad_;
 };
 
 class Analytic003D : public AnalyticBase {

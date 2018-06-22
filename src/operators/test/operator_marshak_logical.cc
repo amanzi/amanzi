@@ -26,7 +26,7 @@
 #include "UnitTest++.h"
 
 // Amanzi
-#include "LinearOperatorFactory.hh"
+#include "LinearOperatorGMRES.hh"
 #include "MeshLogicalFactory.hh"
 #include "MeshLogical.hh"
 #include "Tensor.hh"
@@ -58,7 +58,7 @@ void RunTestMarshakLogical(std::string op_list_name) {
   ParameterList plist = xmlreader.getParameters();
 
   // create a logical mesh
-  ParameterList region_list = plist.get<Teuchos::ParameterList>("regions");
+  ParameterList region_list = plist.sublist("regions");
   Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(3, region_list, &comm));
 
   MeshLogicalFactory fac(&comm, gm);
@@ -76,8 +76,8 @@ void RunTestMarshakLogical(std::string op_list_name) {
   // modify diffusion coefficient
   // -- since rho=mu=1.0, we do not need to scale the diffusion coefficient.
   Teuchos::RCP<std::vector<WhetStone::Tensor> > K = Teuchos::rcp(new std::vector<WhetStone::Tensor>());
-  int ncells_owned = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
-  int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
+  int ncells_owned = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+  int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
 
   for (int c = 0; c < ncells_owned; c++) {
     WhetStone::Tensor Kc(2, 1);
@@ -87,7 +87,7 @@ void RunTestMarshakLogical(std::string op_list_name) {
   double rho(1.0), mu(1.0);
 
   // create boundary data (no mixed bc)
-  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(mesh, AmanziMesh::FACE, SCHEMA_DOFS_SCALAR));
+  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(mesh, AmanziMesh::FACE, DOF_Type::SCALAR));
   std::vector<int>& bc_model = bc->bc_model();
   std::vector<double>& bc_value = bc->bc_value();
 
@@ -172,19 +172,21 @@ void RunTestMarshakLogical(std::string op_list_name) {
     op_acc.AddAccumulationDelta(solution, heat_capacity, heat_capacity, dT, "cell");
 
     // apply BCs and assemble
-    op.ApplyBCs(true, true);
+    op.ApplyBCs(true, true, true);
     global_op->SymbolicAssembleMatrix();
     global_op->AssembleMatrix();
 
     // create preconditoner
-    ParameterList slist = plist.get<Teuchos::ParameterList>("preconditioners");
-    global_op->InitPreconditioner("Hypre AMG", slist);
+    ParameterList slist = plist.sublist("preconditioners").sublist("Hypre AMG");
+    global_op->InitializePreconditioner(slist);
+    global_op->UpdatePreconditioner();
 
     // solve the problem
-    ParameterList lop_list = plist.get<Teuchos::ParameterList>("solvers");
-    AmanziSolvers::LinearOperatorFactory<Operator, CompositeVector, CompositeVectorSpace> factory;
-    Teuchos::RCP<AmanziSolvers::LinearOperator<Operator, CompositeVector, CompositeVectorSpace> >
-       solver = factory.Create("Amanzi GMRES", lop_list, global_op);
+    ParameterList lop_list = plist.sublist("solvers")
+                                  .sublist("Amanzi GMRES").sublist("gmres parameters");
+    auto solver = Teuchos::rcp(new AmanziSolvers::LinearOperatorGMRES<
+        Operator, CompositeVector, CompositeVectorSpace>(global_op, global_op));
+    solver->Init(lop_list);
 
     Epetra_MultiVector& sol_new = *solution.ViewComponent("cell");
     Epetra_MultiVector sol_old(sol_new);

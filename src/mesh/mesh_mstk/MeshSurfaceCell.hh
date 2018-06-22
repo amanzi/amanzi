@@ -50,8 +50,8 @@ class MeshSurfaceCell : public Mesh {
 
     // set my face
     Entity_ID_List my_face;
-    inmesh.get_set_entities(surface_set_name, FACE, OWNED, &my_face);
-    ASSERT(my_face.size() == 1);
+    inmesh.get_set_entities(surface_set_name, FACE, Parallel_type::OWNED, &my_face);
+    AMANZI_ASSERT(my_face.size() == 1);
     parent_face_ = my_face[0];
 
     // set my nodes
@@ -94,7 +94,7 @@ class MeshSurfaceCell : public Mesh {
         // label pulled from parent
         Entity_ID_List faces_in_set;
         std::vector<double> vofs;
-        inmesh.get_set_entities_and_vofs((*r)->name(), FACE, OWNED, &faces_in_set, &vofs);
+        inmesh.get_set_entities_and_vofs((*r)->name(), FACE, Parallel_type::OWNED, &faces_in_set, &vofs);
         sets_[(*r)->id()] = std::find(faces_in_set.begin(), faces_in_set.end(),
                 parent_face_) != faces_in_set.end();
 
@@ -121,18 +121,18 @@ class MeshSurfaceCell : public Mesh {
 
   ~MeshSurfaceCell() {};
 
-  // Get parallel type of entity - OWNED, GHOST, USED (See MeshDefs.hh)
+  // Get parallel type of entity - OWNED, GHOST, ALL (See MeshDefs.hh)
   virtual
   Parallel_type entity_get_ptype(const Entity_kind kind,
           const Entity_ID entid) const {
-    return OWNED;
+    return Parallel_type::OWNED;
   }
 
   // Parent entity in the source mesh if mesh was derived from another mesh
   virtual
   Entity_ID entity_get_parent(const Entity_kind kind, const Entity_ID entid) const {
-    ASSERT(kind == CELL);
-    ASSERT(entid == 0);
+    AMANZI_ASSERT(kind == CELL);
+    AMANZI_ASSERT(entid == 0);
     return parent_face_;
   }
 
@@ -149,7 +149,7 @@ class MeshSurfaceCell : public Mesh {
   //
 
   // Number of entities of any kind (cell, face, node) and in a
-  // particular category (OWNED, GHOST, USED)
+  // particular category (OWNED, GHOST, ALL)
   virtual
   unsigned int num_entities(const Entity_kind kind,
                             const Parallel_type ptype) const {
@@ -185,8 +185,8 @@ class MeshSurfaceCell : public Mesh {
   virtual
   void cell_get_nodes(const Entity_ID cellid,
                       Entity_ID_List *nodeids) const {
-    ASSERT(cellid == 0);
-    ASSERT(nodeids);
+    AMANZI_ASSERT(cellid == 0);
+    AMANZI_ASSERT(nodeids);
     nodeids->resize(nodes_.size());
     for (int i=0; i!=nodes_.size(); ++i) (*nodeids)[i] = i;
   }
@@ -201,7 +201,7 @@ class MeshSurfaceCell : public Mesh {
   virtual
   void face_get_nodes(const Entity_ID faceid,
                       Entity_ID_List *nodeids) const {
-    ASSERT(faceid < nodes_.size());
+    AMANZI_ASSERT(faceid < nodes_.size());
     nodeids->resize(2);
     (*nodeids)[0] = faceid;
     (*nodeids)[1] = (faceid + 1) % nodes_.size();
@@ -263,7 +263,7 @@ class MeshSurfaceCell : public Mesh {
   // (e.g. a hex has 6 face neighbors)
 
   // The order in which the cellids are returned cannot be
-  // guaranteed in general except when ptype = USED, in which case
+  // guaranteed in general except when ptype = ALL, in which case
   // the cellids will correcpond to cells across the respective
   // faces given by cell_get_faces
   virtual
@@ -470,7 +470,7 @@ class MeshSurfaceCell : public Mesh {
           Entity_ID_List *faceids,
           std::vector<int> *face_dirs,
           const bool ordered=false) const {
-    ASSERT(cellid == 0);
+    AMANZI_ASSERT(cellid == 0);
     faceids->resize(nodes_.size());
     for (int i=0; i!=nodes_.size(); ++i) (*faceids)[i] = i;
     face_dirs->resize(nodes_.size(),1);

@@ -30,7 +30,7 @@ class Op_Face_Schema : public Op {
                  const Teuchos::RCP<const AmanziMesh::Mesh> mesh) :
       Op(schema_row, schema_col, mesh) {
     WhetStone::DenseMatrix null_matrix;
-    matrices.resize(mesh->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED), null_matrix);
+    matrices.resize(mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED), null_matrix);
     matrices_shadow = matrices;
   }
 
@@ -57,7 +57,7 @@ class Op_Face_Schema : public Op {
   }
 
   // incomplete members
-  virtual void Rescale(const CompositeVector& scaling) { ASSERT(0); } 
+  virtual void Rescale(const CompositeVector& scaling) { AMANZI_ASSERT(0); } 
 };
 
 }  // namespace Operators

@@ -58,13 +58,13 @@ void KineticRate::SetSpeciesIds(const SpeciesArray& species,
           // geh          (*out_stoichiometry)[current] = in_stoichiometry.at(current);
           (*out_stoichiometry)[(*s).identifier()] = in_stoichiometry.at(current);
         }
-        if (debug() == kDebugMineralKinetics) {
+        if (debug()) {
           std::cout << "    KineticRate::SetSpeciesIds: Found " << species_type
                     << " species " << (*s).name() << std::endl;
         }
       }
     }
-    if (species_found == false && debug() == kDebugMineralKinetics) {
+    if (species_found == false && debug()) {
       // TODO(bandre): is this actually a runtime error?
       std::cout << "    KineticRate::SetSpeciesIds: Did not find species \'"
                 << in_names.at(current) << "\' in " << species_type

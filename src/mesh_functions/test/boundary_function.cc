@@ -121,15 +121,15 @@ TEST_FIXTURE(reference_mesh, values1)
   bf.Compute(0.0);
 
   Entity_ID_List face_list;
-  mesh->get_set_entities(RIGHT, FACE, USED, &face_list);
+  mesh->get_set_entities(RIGHT, FACE, Parallel_type::ALL, &face_list);
   for (Entity_ID_List::iterator f = face_list.begin(); f != face_list.end(); ++f)
     CHECK_EQUAL(1.0, bf.find(*f)->second);
 
-  mesh->get_set_entities(FRONT, FACE, USED, &face_list);
+  mesh->get_set_entities(FRONT, FACE, Parallel_type::ALL, &face_list);
   for (Entity_ID_List::iterator f = face_list.begin(); f != face_list.end(); ++f)
     CHECK_EQUAL(2.0, bf.find(*f)->second);
 
-  mesh->get_set_entities(BACK, FACE, USED, &face_list);
+  mesh->get_set_entities(BACK, FACE, Parallel_type::ALL, &face_list);
   for (Entity_ID_List::iterator f = face_list.begin(); f != face_list.end(); ++f)
     CHECK_EQUAL(3.0, bf.find(*f)->second);
 }

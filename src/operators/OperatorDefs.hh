@@ -25,17 +25,24 @@ typedef enum { OPERATOR_DIFFUSION_MFD,
                OPERATOR_DIFFUSION_NLFVFACES_GRAVITY,
                OPERATOR_DIFFUSION_MFD_XMOF,
                OPERATOR_DIFFUSION_MFD_TRACER,
+               OPERATOR_DIFFUSION_DG,
                OPERATOR_ADVECTION,
                OPERATOR_ACCUMULATION,
                OPERATOR_ELASTICITY,
                OPERATOR_ELECTROMAGNETICS,
-               OPERATOR_ELECTROMAGNETICS_MHD} OperatorType;
+               OPERATOR_MAGNETIC_DIFFUSION} OperatorType;
 
 typedef enum { BERNARDI_RAUGEL,
                MINI,
                RAVIART_THOMAS,
                P0,
                DG } SpaceNickName;
+
+enum class DOF_Type { SCALAR = 1,
+                      VECTOR,
+                      POINT,
+                      NORMAL_COMPONENT,
+                      MOMENT };
 
 // Constants in the next block must powers of 2.
 const int OPERATOR_SCHEMA_DOFS_FACE = 1;
@@ -50,19 +57,22 @@ const int OPERATOR_SCHEMA_BASE_NODE = 128;
 const int OPERATOR_SCHEMA_BASE_EDGE = 256;
 
 // schemas
-const int SCHEMA_DOFS_SCALAR = 1;
-const int SCHEMA_DOFS_VECTOR = 2;
-const int SCHEMA_DOFS_POINT = 3;
-const int SCHEMA_DOFS_NORMAL_COMPONENT = 4;
-
 const int OPERATOR_SCHEMA_RULE_EXACT = 1;
 const int OPERATOR_SCHEMA_RULE_SUBSET = 2;
 
-// boundary conditions
+// Boundary Conditions:
+//   Dirichlet, Neumann and Mixed are conventional boundary conditions
+//   for 2nd-order operators. Composite (additive) operators may require
+//   special treatment of total flux conditions. Finally some essential
+//   boundary conditions may be imposed in a weak form which leads to 
+//   type2 boundary conditions. See BCs.hh for more detail.
 const int OPERATOR_BC_NONE = 0;
 const int OPERATOR_BC_DIRICHLET = 1;
 const int OPERATOR_BC_NEUMANN = 2;
+const int OPERATOR_BC_TOTAL_FLUX = 3;
 const int OPERATOR_BC_MIXED = 4;
+const int OPERATOR_BC_DIRICHLET_TYPE2 = 5;
+const int OPERATOR_BC_REMOVE = 6;
 
 // memory allocation
 const int OPERATOR_HEX_FACES = 6;  // Hexahedron is the common element
@@ -72,10 +82,6 @@ const int OPERATOR_HEX_EDGES = 12;
 const int OPERATOR_QUAD_FACES = 4;  // Quadrilateral is the common element
 const int OPERATOR_QUAD_NODES = 4;
 const int OPERATOR_QUAD_EDGES = 4;
-
-const int OPERATOR_MAX_FACES = 21;  // Kelvin's tetrakaidecahedron isn't big enough
-const int OPERATOR_MAX_NODES = 47;  // More accurate bounds could be
-const int OPERATOR_MAX_EDGES = 60;  // calculated during initialization.
 
 // Newton-correction options
 const int OPERATOR_DIFFUSION_JACOBIAN_NONE = 0;

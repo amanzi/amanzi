@@ -100,8 +100,8 @@ int LinearOperatorNKA<Matrix, Vector, VectorSpace>::NKA_(
 {
   Teuchos::OSTab tab = vo_->getOSTab();
 
-  //  ASSERT(f.Map().SameAs(m_->RangeMap()));
-  //  ASSERT(x.Map().SameAs(m_->DomainMap()));
+  //  AMANZI_ASSERT(f.Map().SameAs(m_->RangeMap()));
+  //  AMANZI_ASSERT(x.Map().SameAs(m_->DomainMap()));
   nka_->Restart();
 
   residual_ = 0.0;
@@ -123,7 +123,7 @@ int LinearOperatorNKA<Matrix, Vector, VectorSpace>::NKA_(
   x.Norm2(&xnorm);
 
   int ierr = m_->Apply(x, *r);  // r = f - A * x
-  ASSERT(!ierr);
+  AMANZI_ASSERT(!ierr);
   r->Update(1.0, f, -1.0);
 
   double rnorm0;
@@ -152,13 +152,13 @@ int LinearOperatorNKA<Matrix, Vector, VectorSpace>::NKA_(
   bool done = false;
   while (!done) {
     ierr = h_->ApplyInverse(*r, *dxp);
-    ASSERT(!ierr);
+    AMANZI_ASSERT(!ierr);
 
     nka_->Correction(*dxp, *dx);
     x.Update(1.0, *dx, 1.0);
 
     ierr = m_->Apply(x, *r);  // r = f - A * x
-    ASSERT(!ierr);
+    AMANZI_ASSERT(!ierr);
     r->Update(1.0, f, -1.0);
 
     double rnorm;
@@ -168,7 +168,6 @@ int LinearOperatorNKA<Matrix, Vector, VectorSpace>::NKA_(
     num_itrs_++;
 
     if (vo_->getVerbLevel() >= Teuchos::VERB_EXTREME) {
-      Teuchos::OSTab tab = vo_->getOSTab();
       *vo_->os() << num_itrs_ << " ||r||=" << residual_ << std::endl;
     }
 
@@ -241,6 +240,10 @@ void LinearOperatorNKA<Matrix, Vector, VectorSpace>::Init(Teuchos::ParameterList
         criteria += LIN_SOLVER_ABSOLUTE_RESIDUAL;
       } else if (names[i] == "make one iteration") {
         criteria += LIN_SOLVER_MAKE_ONE_ITERATION;
+      } else {
+	Errors::Message msg;
+	msg << "LinearOperatorGMRES: \"convergence criteria\" type \"" << names[i] << "\" is not recognized.";
+	Exceptions::amanzi_throw(msg);
       }
     }
   } else {

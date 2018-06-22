@@ -11,6 +11,7 @@
   <ParameterList name="visualization data">
     <Parameter name="file name base" type="string" value="plot"/>
     <Parameter name="cycles start period stop 0" type="Array(int)" value="{0, 100, -1}"/>
+    <Parameter name="write partitions" type="bool" value="true"/>
   </ParameterList>
   <ParameterList name="walkabout data">
     <Parameter name="file name base" type="string" value="walkabout"/>
@@ -194,6 +195,20 @@
         </ParameterList>
         <Parameter name="field evaluator type" type="string" value="independent variable"/>
       </ParameterList>
+      <ParameterList name="mass_density_liquid">
+        <ParameterList name="function">
+          <ParameterList name="All">
+            <Parameter name="region" type="string" value="All"/>
+            <Parameter name="component" type="string" value="cell"/>
+            <ParameterList name="function">
+              <ParameterList name="function-constant">
+                <Parameter name="value" type="double" value="9.982e+02"/>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+        <Parameter name="field evaluator type" type="string" value="independent variable"/>
+      </ParameterList>
     </ParameterList>
 
     <ParameterList name="initial conditions">
@@ -208,19 +223,6 @@
       </ParameterList>
       <ParameterList name="fluid_density">
         <Parameter name="value" type="double" value="9.982e+02"/>
-      </ParameterList>
-      <ParameterList name="mass_density_liquid">
-        <ParameterList name="function">
-          <ParameterList name="All">
-            <Parameter name="region" type="string" value="All"/>
-            <Parameter name="component" type="string" value="cell"/>
-            <ParameterList name="function">
-              <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="9.982e+02"/>
-              </ParameterList>
-            </ParameterList>
-          </ParameterList>
-        </ParameterList>
       </ParameterList>
       <ParameterList name="permeability">
         <Parameter name="write checkpoint" type="bool" value="false"/>
@@ -310,10 +312,11 @@
       <ParameterList name="boomer amg parameters">
         <Parameter name="tolerance" type="double" value="0.0"/>
         <Parameter name="smoother sweeps" type="int" value="3"/>
-        <Parameter name="cycle applications" type="int" value="5"/>
+        <Parameter name="cycle applications" type="int" value="4"/>
         <Parameter name="strong threshold" type="double" value="5.0e-01"/>
         <Parameter name="cycle type" type="int" value="1"/>
         <Parameter name="coarsen type" type="int" value="0"/>
+        <Parameter name="use block indices" type="bool" value="true"/>
         <Parameter name="verbosity" type="int" value="0"/>
         <Parameter name="relaxation type" type="int" value="3"/>
       </ParameterList>
@@ -346,8 +349,8 @@
       <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
       <Parameter name="iterative method" type="string" value="pcg"/>
       <ParameterList name="pcg parameters">
-        <Parameter name="error tolerance" type="double" value="1.0e-20"/>
-        <Parameter name="maximum number of iterations" type="int" value="100"/>
+        <Parameter name="error tolerance" type="double" value="1.0e-11"/>
+        <Parameter name="maximum number of iterations" type="int" value="111"/>
         <ParameterList name="verbose object">
           <Parameter name="verbosity level" type="string" value="high"/>
         </ParameterList>
@@ -363,6 +366,17 @@
         <Parameter name="controller training end" type="int" value="3"/>
         <ParameterList name="verbose object">
           <Parameter name="verbosity level" type="string" value="high"/>
+        </ParameterList>
+      </ParameterList>
+    </ParameterList>
+    <ParameterList name="Dispersion Solver">
+      <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
+      <Parameter name="iterative method" type="string" value="pcg"/>
+      <ParameterList name="pcg parameters">
+        <Parameter name="error tolerance" type="double" value="2.00000000000000010e-22"/>
+        <Parameter name="maximum number of iterations" type="int" value="222"/>
+        <ParameterList name="verbose object">
+          <Parameter name="verbosity level" type="string" value="low"/>
         </ParameterList>
       </ParameterList>
     </ParameterList>
@@ -612,7 +626,7 @@
       <Parameter name="temporal discretization order" type="int" value="1"/>
       <Parameter name="cfl" type="double" value="1.0"/>
       <Parameter name="flow mode" type="string" value="transient"/>
-      <Parameter name="solver" type="string" value="PCG with Hypre AMG"/>
+      <Parameter name="solver" type="string" value="Dispersion Solver"/>
       <ParameterList name="verbose object">
         <Parameter name="verbosity level" type="string" value="high"/>
       </ParameterList>
@@ -622,6 +636,35 @@
         <Parameter name="polynomial order" type="int" value="0"/>
         <Parameter name="limiter" type="string" value="tensorial"/>
         <Parameter name="limiter extension for transport" type="bool" value="true"/>
+      </ParameterList>
+      <ParameterList name="material properties">
+        <ParameterList name="Facies_1">
+          <Parameter name="regions" type="Array(string)" value="{RegionMiddle}"/>
+          <Parameter name="model" type="string" value="Bear"/>
+          <ParameterList name="parameters for Bear">
+            <Parameter name="alpha_l" type="double" value="1.00000000000000002e-02"/>
+            <Parameter name="alpha_t" type="double" value="1.00000000000000002e-03"/>
+          </ParameterList>
+        </ParameterList>
+        <ParameterList name="Facies_2">
+          <Parameter name="regions" type="Array(string)" value="{RegionBottom}"/>
+          <Parameter name="model" type="string" value="Burnett-Frind"/>
+          <ParameterList name="parameters for Burnett-Frind">
+            <Parameter name="alpha_l" type="double" value="1.0e-02"/>
+            <Parameter name="alpha_th" type="double" value="1.0e-03"/>
+            <Parameter name="alpha_tv" type="double" value="1.0e-03"/>
+          </ParameterList>
+        </ParameterList>
+        <ParameterList name="Facies_3">
+          <Parameter name="regions" type="Array(string)" value="{RegionTop}"/>
+          <Parameter name="model" type="string" value="Lichtner-Kelkar-Robinson"/>
+          <ParameterList name="parameters for Lichtner-Kelkar-Robinson">
+            <Parameter name="alpha_lh" type="double" value="1.0e-02"/>
+            <Parameter name="alpha_lv" type="double" value="2.0e-02"/>
+            <Parameter name="alpha_th" type="double" value="1.0e-03"/>
+            <Parameter name="alpha_tv" type="double" value="1.0e-03"/>
+          </ParameterList>
+        </ParameterList>
       </ParameterList>
       <ParameterList name="molecular diffusion">
         <Parameter name="aqueous names" type="Array(string)" value="{Tc-99}"/>

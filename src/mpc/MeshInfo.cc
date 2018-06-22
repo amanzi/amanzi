@@ -16,7 +16,7 @@ void MeshInfo::WriteMeshCentroids(const AmanziMesh::Mesh& mesh) {
   checkpoint_output_->createDataFile(filename);
   checkpoint_output_->open_h5file();
 
-  int ncells_owned = mesh.num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  int ncells_owned = mesh.num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
   int n_glob;
   mesh.get_comm()->SumAll(&ncells_owned, &n_glob, 1);
 

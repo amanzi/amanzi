@@ -1,5 +1,5 @@
 /*
-  This is the MPC component of the Amanzi code. 
+  Multi-Process Coordinator
 
   Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
@@ -64,6 +64,9 @@ class CycleDriver {
   void ResetDriver(int time_period_id);
   // one stop shopping
   Teuchos::RCP<State> Go();
+
+  // access (for unit tests only)
+  Teuchos::RCP<const Amanzi::WalkaboutCheckpoint> walkabout() const { return walkabout_; }
 
  private:
   void CoordinatorInit_();

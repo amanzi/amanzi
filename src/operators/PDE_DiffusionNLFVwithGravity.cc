@@ -59,7 +59,10 @@ void PDE_DiffusionNLFVwithGravity::UpdateMatrices(
 
   for (int f = 0; f < nfaces_owned; ++f) {
     WhetStone::DenseMatrix& Aface = local_op_->matrices[f];
-    mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+
+
+    mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
+
     int ncells = cells.size();
 
     if (ncells == 2) {
@@ -121,7 +124,7 @@ double PDE_DiffusionNLFVwithGravity::MapBoundaryValue_(int f, double u)
 {
   AmanziMesh::Entity_ID_List cells;
   
-  mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+  mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
   
   double rho_g = GetDensity(cells[0]) * fabs(g_[dim_ - 1]);
   

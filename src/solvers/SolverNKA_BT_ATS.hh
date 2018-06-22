@@ -26,6 +26,7 @@
 #include "SolverFnBase.hh"
 #include "SolverDefs.hh"
 #include "NKA_Base.hh"
+#include "AA_Base.hh"
 
 namespace Amanzi {
 namespace AmanziSolvers {
@@ -88,6 +89,7 @@ class SolverNKA_BT_ATS : public Solver<Vector, VectorSpace> {
   Teuchos::ParameterList plist_;
   Teuchos::RCP<SolverFnBase<Vector> > fn_;
   Teuchos::RCP<NKA_Base<Vector, VectorSpace> > nka_;
+  Teuchos::RCP<AA_Base<Vector, VectorSpace> > aa_;
   Teuchos::RCP<VerboseObject> vo_;
   Teuchos::RCP<ResidualDebugger> db_;
 
@@ -100,6 +102,7 @@ class SolverNKA_BT_ATS : public Solver<Vector, VectorSpace> {
   int fun_calls_, pc_calls_, solve_calls_;
   int pc_lag_, pc_updates_;
   int nka_lag_iterations_;
+  double nka_overflow_;
 
   bool fail_on_failed_backtrack_;
   double max_backtrack_;
@@ -113,6 +116,10 @@ class SolverNKA_BT_ATS : public Solver<Vector, VectorSpace> {
 
   double residual_;  // defined by convergence criterion
   ConvergenceMonitor monitor_;
+
+  bool use_aa_;
+  bool use_nka_;
+  double aa_beta_;
 };
 
 
@@ -128,8 +135,13 @@ SolverNKA_BT_ATS<Vector,VectorSpace>::Init(const Teuchos::RCP<SolverFnBase<Vecto
   Init_(map.Comm());
 
   // Allocate the NKA space
-  nka_ = Teuchos::rcp(new NKA_Base<Vector, VectorSpace>(nka_dim_, nka_tol_, map));
-  nka_->Init(plist_);
+  if (use_aa_) {
+    aa_ = Teuchos::rcp(new AA_Base<Vector, VectorSpace>(nka_dim_, nka_tol_, aa_beta_, map));
+    aa_->Init(plist_);
+  } else {
+    nka_ = Teuchos::rcp(new NKA_Base<Vector, VectorSpace>(nka_dim_, nka_tol_, map));
+    nka_->Init(plist_);
+  }
 }
 
 
@@ -147,6 +159,7 @@ void SolverNKA_BT_ATS<Vector, VectorSpace>::Init_(const Epetra_Comm& comm)
   nka_dim_ = plist_.get<int>("nka max vectors", 10);
   nka_dim_ = std::min<int>(nka_dim_, max_itrs_ - 1);
   nka_tol_ = plist_.get<double>("nka vector tolerance", 0.05);
+  nka_overflow_ = plist_.get<double>("nka overflow protection", 1.e10);
 
   fun_calls_ = 0;
   pc_calls_ = 0;
@@ -164,6 +177,11 @@ void SolverNKA_BT_ATS<Vector, VectorSpace>::Init_(const Epetra_Comm& comm)
   backtrack_rtol_ = plist_.get<double>("backtrack relative tolerance", backtrack_tol);
   backtrack_atol_ = plist_.get<double>("backtrack absolute tolerance", backtrack_tol);
   fail_on_failed_backtrack_ = plist_.get<bool>("backtrack fail on bad search direction", false);
+
+  use_aa_ = plist_.get<bool>("Anderson mixing", false);
+  if (use_aa_) {
+    aa_beta_ = plist_.get<double>("relaxation parameter", 0.7);
+  }
 
   std::string bt_monitor_string = plist_.get<std::string>("backtrack monitor",
           "monitor either");
@@ -198,7 +216,8 @@ int SolverNKA_BT_ATS<Vector, VectorSpace>::NKA_BT_ATS_(const Teuchos::RCP<Vector
   Teuchos::OSTab tab = vo_->getOSTab();
 
   // restart the nonlinear solver (flush its history)
-  nka_->Restart();
+  if (use_aa_) aa_->Restart();
+  else nka_->Restart();
 
   // initialize the iteration and pc counters
   num_itrs_ = 0;
@@ -271,6 +290,8 @@ int SolverNKA_BT_ATS<Vector, VectorSpace>::NKA_BT_ATS_(const Teuchos::RCP<Vector
     pc_calls_++;
     du_pic->PutScalar(0.);
     prec_error = fn_->ApplyPreconditioner(res, du_pic);
+    double du_pic_norm = 0;
+    du_pic->NormInf(&du_pic_norm);
 
     if (nka_restarted) {
       // NKA was working, but failed.  Reset the iteration counter.
@@ -279,9 +300,11 @@ int SolverNKA_BT_ATS<Vector, VectorSpace>::NKA_BT_ATS_(const Teuchos::RCP<Vector
     }
 
     FnBaseDefs::ModifyCorrectionResult hacked = FnBaseDefs::CORRECTION_NOT_MODIFIED;
-    if (num_itrs_ > nka_lag_iterations_) {
+    if (num_itrs_ > nka_lag_iterations_ &&
+        du_pic_norm < nka_overflow_) {
       // Calculate the accelerated correction.
-      nka_->Correction(*du_pic, *du_nka);
+      if (use_aa_) aa_->Correction(*du_pic, *du_nka, u.ptr());
+      else nka_->Correction(*du_pic, *du_nka);
       nka_applied = true;
       nka_itr++;
 
@@ -295,7 +318,8 @@ int SolverNKA_BT_ATS<Vector, VectorSpace>::NKA_BT_ATS_(const Teuchos::RCP<Vector
         if (vo_->os_OK(Teuchos::VERB_HIGH)) {
           *vo_->os() << "Restarting NKA, correction modified." << std::endl;
         }
-        nka_->Restart();
+        if (use_aa_) aa_->Restart();
+        else nka_->Restart();
         nka_restarted = true;
       }
     } else {
@@ -303,6 +327,16 @@ int SolverNKA_BT_ATS<Vector, VectorSpace>::NKA_BT_ATS_(const Teuchos::RCP<Vector
       nka_applied = false;
       // Hack the Picard update
       hacked = fn_->ModifyCorrection(res, u, du_pic);
+
+      if (du_pic_norm >= nka_overflow_) {
+        if (vo_->os_OK(Teuchos::VERB_HIGH)) {
+          *vo_->os() << "Restarting NKA, too large of a correction (overflow)." << std::endl;
+        }
+        if (use_aa_) aa_->Restart();
+        else nka_->Restart();
+        nka_restarted = true;
+        
+      }
     }
 
     // potentially backtrack
@@ -358,7 +392,8 @@ int SolverNKA_BT_ATS<Vector, VectorSpace>::NKA_BT_ATS_(const Teuchos::RCP<Vector
             *vo_->os() << "Restarting NKA, NKA step does not improve error or resulted in inadmissible solution, on NKA itr = "
                        << nka_itr << std::endl;
           }
-          nka_->Restart();
+          if (use_aa_) aa_->Restart();
+          else nka_->Restart();
           nka_restarted = true;
 
           // Tried NKA, but failed, so will now use Picard.  The Picard update

@@ -15,6 +15,7 @@
 #include "Teuchos_RCP.hpp"
 #include "Ifpack_Hypre.h"
 
+#include "dbc.hh"
 #include "errors.hh"
 #include "exceptions.hh"
 #include "PreconditionerBoomerAMG.hh"
@@ -23,8 +24,8 @@ namespace Amanzi {
 namespace AmanziPreconditioners {
 
 /* ******************************************************************
- * Apply the preconditioner.
- ****************************************************************** */
+* Apply the preconditioner.
+****************************************************************** */
 int PreconditionerBoomerAMG::ApplyInverse(const Epetra_MultiVector& v, Epetra_MultiVector& hv)
 {
   returned_code_ = IfpHypre_->ApplyInverse(v, hv);
@@ -34,8 +35,8 @@ int PreconditionerBoomerAMG::ApplyInverse(const Epetra_MultiVector& v, Epetra_Mu
 
 
 /* ******************************************************************
- * Initialize the preconditioner.
- ****************************************************************** */
+* Initialize the preconditioner.
+****************************************************************** */
 void PreconditionerBoomerAMG::Init(const std::string& name, const Teuchos::ParameterList& list)
 {
   plist_ = list;
@@ -77,26 +78,38 @@ void PreconditionerBoomerAMG::Init(const std::string& name, const Teuchos::Param
     funcs_.push_back(Teuchos::rcp(new FunctionParameter((Hypre_Chooser)1, &HYPRE_BoomerAMGSetMaxCoarseSize,
                                                         plist_.get<int>("max coarse size"))));
 
+  if (plist_.get<bool>("use block indices", false)) {
+    num_blocks_ = plist_.get<int>("number of unique block indices");
+    funcs_.push_back(Teuchos::rcp(new FunctionParameter((Hypre_Chooser)1,
+            &HYPRE_BoomerAMGSetNumFunctions, num_blocks_)));
+
+    // Block indices is an array of integers, indicating what unknowns are
+    // coarsened as a system.  For now just put in a placeholder.
+    block_indices_ = plist_.get<Teuchos::RCP<std::vector<int> > >("block indices");
+    block_index_function_index_ = funcs_.size();
+    funcs_.push_back(Teuchos::null);
+  }
+
   if (plist_.isParameter("number of functions")) {
-    // num_funcs > 1 tells BoomerAMG to use the "systems of PDEs" code.  Note
-    // that, to use this approach, unknowns must be ordered with DoF fastest
-    // varying (i.e. not the native Epetra_MultiVector order).  By default, it
-    // uses the "unknown" approach in which each equation is coarsened and
-    // interpolated independently.  Comments below are taken from Allison
-    // Baker's email to the PETSc mailing list, 25 Apr 2007, as these features
-    // of BoomerAMG are not documented very well.  Here we ignore her option
-    // 2, as she warns it is inefficient and likely not useful.
+    if (num_blocks_ > 0) {
+      Errors::Message msg("Hypre (BoomerAMG) cannot be given both \"use block indices\" and \"number of functions\" options as these are two ways of specifying the same thing.");
+      Exceptions::amanzi_throw(msg);
+    }
+
+    // num_funcs > 1 tells BoomerAMG to use the automatic "systems of
+    // PDEs" code.  Note that, to use this approach, unknowns must be
+    // ordered with DoF fastest varying (i.e. not the native
+    // Epetra_MultiVector order).  By default, it uses the "unknown"
+    // approach in which each equation is coarsened and interpolated
+    // independently.  Comments below are taken from Allison Baker's
+    // email to the PETSc mailing list, 25 Apr 2007, as these features
+    // of BoomerAMG are not documented very well.  Here we ignore her
+    // option 2, as she warns it is inefficient and likely not useful.
     // http://lists.mcs.anl.gov/pipermail/petsc-users/2007-April/001487.html
 
     int num_funcs = plist_.get<int>("number of functions");
     funcs_.push_back(Teuchos::rcp(new FunctionParameter((Hypre_Chooser)1,
             &HYPRE_BoomerAMGSetNumFunctions, num_funcs)));
-
-    if (plist_.isParameter("integer blocking")) {
-      int* blocking = plist_.get<int*>("integer blocking");
-      funcs_.push_back(Teuchos::rcp(new FunctionParameter((Hypre_Chooser)1, &HYPRE_BoomerAMGSetDofFunc, blocking)));
-    }
-
 
     // additional options
     if (num_funcs > 1) {
@@ -159,22 +172,46 @@ void PreconditionerBoomerAMG::Init(const std::string& name, const Teuchos::Param
 
 
 /* ******************************************************************
- * Rebuild the preconditioner using the given matrix A.
- ****************************************************************** */
+* Rebuild the preconditioner using the given matrix A.
+****************************************************************** */
 void PreconditionerBoomerAMG::Update(const Teuchos::RCP<Epetra_RowMatrix>& A)
 {
 #ifdef HAVE_HYPRE
+  // if (!IfpHypre_.get()) { // this should be sufficient, but since
+  // Ifpack_Hypre destroys the Hypre instance in each Compute(), which
+  // destroys block indices, we MUST new the block indices every time
+  // Compute() is called.  Nominally we shouldn't have to recreate this whole
+  // object each time, only the block data, but Ifpack doesn't allow that.
+  // For now, we'll comment this out and regenerate, but the next step is a
+  // reimplemented Ifpack_Hypre. --etc
   IfpHypre_ = Teuchos::rcp(new Ifpack_Hypre(&*A));
 
+  // must reset the paramters every time to reset the block index
   Teuchos::ParameterList hypre_list("Preconditioner List");
   hypre_list.set("Preconditioner", BoomerAMG);
   hypre_list.set("SolveOrPrecondition", (Hypre_Chooser)1);
   hypre_list.set("SetPreconditioner", true);
   hypre_list.set("NumFunctions", (int)funcs_.size());
-  hypre_list.set<Teuchos::RCP<FunctionParameter>*>("Functions", &funcs_[0]);
 
+  if (block_indices_.get()) {
+    // must NEW the index array EVERY time, as it gets freed every time by
+    // Hypre on cleanup.  This is pretty stupid, but we can't reuse it.  --etc
+    //
+    // Note this is not a memory leak -- this gets freed the second time
+    // IfpHypre_::Compute() gets called (for every call but the last) and when
+    // IfpHypre_ gets destroyed (for the last call).
+    int* indices = new int[block_indices_->size()];
+    for (int i=0; i!=block_indices_->size(); ++i) {
+      indices[i] = (*block_indices_)[i];
+    }
+    funcs_[block_index_function_index_] = 
+        Teuchos::rcp(new FunctionParameter((Hypre_Chooser)1, &HYPRE_BoomerAMGSetDofFunc, indices));
+  }
+  hypre_list.set<Teuchos::RCP<FunctionParameter>*>("Functions", &funcs_[0]);
   IfpHypre_->SetParameters(hypre_list);
   IfpHypre_->Initialize();
+  // } // see above --etc
+    
   IfpHypre_->Compute();
 #endif
 }

@@ -30,7 +30,7 @@ CellVolumeEvaluator::CellVolumeEvaluator(Teuchos::ParameterList& plist) :
   } else if (my_key_.length() > std::string("cell_volume").length()) {
     my_mesh_ = my_key_.substr(0,my_key_.length() - std::string("cell_volume").length()-1);
   } else {
-    ASSERT(0);
+    AMANZI_ASSERT(0);
   }
 
   communicate_ = plist_.get<bool>("manage communication", false);

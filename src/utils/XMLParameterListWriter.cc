@@ -103,7 +103,7 @@ XMLObject Amanzi_XMLParameterListWriter::toXML(const ParameterEntry& entry) cons
     type = "any";
     std::ostringstream ss;
     ss << entry;
-    value = TEUCHOS_OSTRINGSTREAM_GET_C_STR(ss);
+    value = ss.str().c_str();
   }
   
   rtn.addAttribute("type", type);

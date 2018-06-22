@@ -51,10 +51,6 @@
 #include <map>
 #include <string>
 
-#include <boost/algorithm/string/predicate.hpp>
-#include "boost/algorithm/string.hpp"
-
-
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
 

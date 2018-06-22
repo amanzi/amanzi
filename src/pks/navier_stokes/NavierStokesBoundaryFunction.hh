@@ -37,12 +37,12 @@ class NavierStokesBoundaryFunction : public PK_DomainFunction {
   void set_bc_name(const std::string& name) { bc_name_ = name; }
   std::string bc_name() { return bc_name_; }
 
-  void set_type(int type) { type_ = type; }
-  int type() { return type_; }
+  void set_type(Operators::DOF_Type type) { type_ = type; }
+  Operators::DOF_Type type() { return type_; }
 
  private:
   std::string bc_name_;
-  int type_;  // type of dofs related to this bc
+  Operators::DOF_Type type_;  // type of dofs related to this bc
 
   std::vector<std::string> regions_;
 };

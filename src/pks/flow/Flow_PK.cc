@@ -97,11 +97,11 @@ void Flow_PK::Initialize(const Teuchos::Ptr<State>& S)
 {
   dt_ = 0.0;
 
-  ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
-  ncells_wghost = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::USED);
+  ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+  ncells_wghost = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
 
-  nfaces_owned = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
-  nfaces_wghost = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
+  nfaces_owned = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
+  nfaces_wghost = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
 
   nseepage_prev = 0;
   ti_phase_counter = 0;
@@ -232,7 +232,7 @@ void Flow_PK::InitializeBCsSources_(Teuchos::ParameterList& plist)
 
   // Create the BC objects
   // -- memory
-  op_bc_ = Teuchos::rcp(new Operators::BCs(mesh_, AmanziMesh::FACE, Operators::SCHEMA_DOFS_SCALAR));
+  op_bc_ = Teuchos::rcp(new Operators::BCs(mesh_, AmanziMesh::FACE, Operators::DOF_Type::SCALAR));
 
   Teuchos::RCP<FlowBoundaryFunction> bc;
   Teuchos::RCP<Teuchos::ParameterList>
@@ -360,7 +360,7 @@ void Flow_PK::ComputeWellIndex(Teuchos::ParameterList& spec)
   rw = well_list.get<double>("well radius");
   
   for (auto it = regions.begin(); it != regions.end(); ++it) {
-    mesh_->get_set_entities(*it, AmanziMesh::CELL, AmanziMesh::OWNED, &cells);
+    mesh_->get_set_entities(*it, AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED, &cells);
 
     for (int k = 0; k < cells.size(); k++) {
       int c = cells[k];
@@ -508,7 +508,7 @@ void Flow_PK::ComputeOperatorBCs(const CompositeVector& u)
   for (int f = 0; f < nfaces_owned; f++) {
     if (bc_model[f] == Operators::OPERATOR_BC_NONE) {
       cells.clear();
-      mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+      mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
       int ncells = cells.size();
 
       if (ncells == 1) {
@@ -663,11 +663,11 @@ void Flow_PK::DeriveFaceValuesFromCellValues(
     const Epetra_MultiVector& ucells, Epetra_MultiVector& ufaces)
 {
   AmanziMesh::Entity_ID_List cells;
-  int nfaces = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
+  int nfaces = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
 
   for (int f = 0; f < nfaces; f++) {
     cells.clear();
-    mesh_->face_get_cells(f, AmanziMesh::OWNED, &cells);
+    mesh_->face_get_cells(f, AmanziMesh::Parallel_type::OWNED, &cells);
     int ncells = cells.size();
 
     double face_value = 0.0;
@@ -711,7 +711,7 @@ double Flow_PK::WaterVolumeChangePerSecond(const std::vector<int>& bc_model,
 int Flow_PK::BoundaryFaceGetCell(int f) const
 {
   AmanziMesh::Entity_ID_List cells;
-  mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+  mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
   return cells[0];
 }
 

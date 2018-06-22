@@ -2218,7 +2218,7 @@ scheme, and selects assembling schemas for matrices and preconditioners.
   </ParameterList>
 
 This example creates a p-lambda system, i.e. the concentation is
-discretized in mesh cells and on mesh faces. The later unknowns are auxiliary unknwons.
+discretized in mesh cells and on mesh faces. The later unknowns are auxiliary unknowns.
 
 
 Multiscale continuum models
@@ -3190,15 +3190,10 @@ scheme, and selects assembling schemas for matrices and preconditioners.
 
   * `"matrix`" [list] defines parameters for generating and assembling diffusion matrix. See section
     describing operators. 
-    When `"Richards problem`" is selected, Flow PK sets up proper value for parameter `"upwind method`" of 
-    this sublist.
 
   * `"preconditioner`" [list] defines parameters for generating and assembling diffusion 
     matrix that is used to create preconditioner. 
-    This sublist is ignored inside sublist `"Darcy problem`".
     Since update of preconditioner can be lagged, we need two objects called `"matrix`" and `"preconditioner`".
-    When `"Richards problem`" is selected, Flow PK sets up proper value for parameter `"upwind method`" of 
-    this sublist.
 
 .. code-block:: xml
 
@@ -3329,8 +3324,7 @@ This section to be written.
 
    <ParameterList name="operators">  <!-- parent list -->
      <ParameterList name="convection operator">
-       <Parameter name="flux formula" type="string" value="NavierStokes"/>
-       <Parameter name="riemann problem" type="string" value="continuous"/>
+       <Parameter name="flux formula" type="string" value="Rusanov"/>
      </ParameterList>
    </ParameterList>
 
@@ -3552,10 +3546,52 @@ Operators
 Operators are discrete forms of linearized PDEs operators.
 They form a layer between physical process kernels and solvers
 and include diffusion, advection, elasticity, and source operators.
-A PK decides which collection of operators must be used to build a preconditioner.
+The residual associated with an operator :math:`L_h` helps to 
+understand the employed sign convention:
+
+.. math::
+  r = f - L_h u.
+
+A PK decides how to bundle operators in a collection of operators.
+For example, an advection-diffusion problem may benefit from using
+an operator that combines two operators representing diffusion and advection process.
+Collection of operators must be used for implicit solvers and for building preconditioners.
+In such a case, the collections acts as a single operator.
 
 Operators use a few tools that are generic in nature and can be used independently by PKs. 
 The list includes reconstruction and limiting algorithms. 
+
+
+Schema
+......
+
+The operators use notion of schema to describe operator's abstract structure.
+Old operators use a simple schema which is simply the list of geometric objects where
+scalar degrees of freedom are defined.
+New operators use a list to define location, type, and number of degrees of freedom.
+A rectangular operator needs two schemas do describe its domain (called `"schema domain`") 
+and its range (called `"schema range`").
+
+.. code-block:: xml
+
+  <ParameterList name="OPERATOR_NAME">  <!-- parent list-->
+    <ParameterList name="schema domain">
+      <Parameter name="location" type="Array(string)" value="{node, face}"/>
+      <Parameter name="type" type="Array(string)" value="{scalar, normal component}"/>
+      <Parameter name="number" type="Array(int)" value="{2, 1}"/>
+    </ParameterList>
+    <ParameterList name="schema domain">
+      <Parameter name="location" type="Array(string)" value="{node, face}"/>
+      <Parameter name="type" type="Array(string)" value="{scalar, normal component}"/>
+      <Parameter name="number" type="Array(int)" value="{2, 1}"/>
+    </ParameterList>
+  </ParameterList>
+
+This example describes square operator with two degrees of freedom per mesh node and one
+degree of freedom per mesh face. 
+The face-based degree of freedom is the normal component of a vector field. 
+Such set of degrees of freedom is used in the Bernardi-Raugel element for discretizing 
+Stokes equations.
 
 
 Diffusion operator
@@ -3665,13 +3701,8 @@ The structure of the schema is described in the previous section.
   * `"method`" [string] defines a discretization method. The available options 
     are `"DG order 0`", `"DG order 1`".
 
-  * `"riemann problem`" [string] defines a method for calculating Riemann flux. 
-    are `"upwind`", `"downwind`", `"average`".
-
   * `"flux formula`" [string] defines type of the flux. The available options 
-    are `"NavierStokes`", `nd "remap`".
-
-  * `"reconstruction order`" [int] defines accuracy of this discrete operator.
+    are `"Rusanov`" (default), `"upwind`", `"downwind`", and `"NavierStokes`".
 
   * `"schema domain`" [list] defines a discretization schema for the operator domain.
 
@@ -3681,9 +3712,12 @@ The structure of the schema is described in the previous section.
 
   <ParameterList name="OPERATOR_NAME">
     <Parameter name="method" type="string" value="DG order 0"/>
+    <Parameter name="method order" type="int" value="2"/>
     <Parameter name="reconstruction order" type="int" value="0"/>
-    <Parameter name="riemann problem" type="string" value="average"/>
-    <Parameter name="flux formula" type="string" value="NavierStokes"/>
+    <Parameter name="flux formula" type="string" value="Rusanov"/>
+    <Parameter name="matrix type" type="string" value="flux"/>
+    <Parameter name="jump operator on test function" type="bool" value="true"/>
+
     <ParameterList name="schema domain">
       <Parameter name="location" type="Array(string)" value="{node, face}"/>
       <Parameter name="type" type="Array(string)" value="{scalar, normal component}"/>
@@ -3753,6 +3787,42 @@ and Navier-Stokes).
       </ParameterList>
     </ParameterList>
 
+
+Abstract operator
+.................
+An abstract operator is designed for testing new discretization methods. 
+It uses the factory of discretization methods and a few control parameters
+required by this factory and/or particular method in it.
+
+* `"method`" [string] defines a discretization method. The available
+  options are `"diffusion`", `"diffusion generalized`", `"BernardiRaugel`",
+  `"CrouzeixRaviart`", `"Lagrange`", `"Lagrange serendipity`", and `"dg modal`".
+
+* `"method order`" [int] defines disretization order. It is used by 
+  high-order discretization methods such as the discontinuous Galerkin.
+
+* `"matrix type`" [string] defines type of local matrix. Available options are
+  `"mass`", `"mass inverse`", `"stiffness`", `"divergence`", and `"advection`".
+
+.. code-block:: xml
+
+    <ParameterList name="ABSTRACT OPERATOR">
+      <Parameter name="method" type="string" value="dg modal"/>
+      <Parameter name="method order" type="int" value="2"/>
+      <Parameter name="dg basis" type="string" value="natural"/>
+      <Parameter name="matrix type" type="string" value="flux"/>
+
+      <ParameterList name="schema domain">
+        ...
+      </ParameterList>
+      <ParameterList name="schema range">
+        ...
+      </ParameterList>
+    </ParameterList>
+
+
+
+Diffusion is the most frequently used operator.
 
 Reconstruction and limiters
 ...........................
@@ -4335,6 +4405,8 @@ This list contains sublists for various linear solvers such as PCG, GMRES, and N
 * `"iterative method`" [string] defines a Krylov-based method. The available options
   include `"pcg`" and `"gmres`".
 
+* `"direct method`" [string] defines a direct method. The available option is `"amesos`".
+
 * `"xxx parameters`" [list] provides parameters for the iterative method specified 
   by variable `"iterative method`".
  
@@ -4498,6 +4570,32 @@ Internal parameters for NKA include
       <ParameterList name="verbose object">
         <Parameter name="verbosity level" type="string" value="high"/>
       </ParameterList>
+    </ParameterList>
+  </ParameterList>
+
+
+Direct solvers from Amesos library 
+..................................
+
+Amesos library of Trilinos package provides interfaces to a few direct solvers.
+List `"amesos parameters`" contains parameters that understood by this library.
+These parameters may violate the camel-case convention employed by this spec.
+Additional parameters are:
+
+* `"solver name`" [string] declares name of one of the supported direct solvers. 
+  Available options are `"Klu`", `"Superlu`", `"Basker`", etc, see Amesos and 
+  Amesos2 manuals for details. The default value is serial solver `"Klu`".
+
+* `"amesos version`" [int] specifies version of Amesos. Available options are 1 and 2.
+  The default value is 1.
+
+.. code-block:: xml
+
+  <ParameterList name="AMESOS KLU">  <!-- parent list -->
+    <Parameter name="direct method" type="string" value="amesos"/>
+    <ParameterList name="amesos parameters">
+      <Parameter name="solver name" type="string" value="Klu"/>
+      <Parameter name="amesos version" type="int" value="1"/>
     </ParameterList>
   </ParameterList>
 
@@ -4883,7 +4981,29 @@ Internal parameters for Boomer AMG include
 
 * `"cycle applications`" [int] defines the number of V-cycles. Default is 5.
 
-* `"max multigrid levels`" [int] defined the maximum number of multigrid levels.
+* `"max multigrid levels`" [int] defines the maximum number of multigrid levels.
+
+* `"strong threshold`" [double] sets AMG strength threshold. The default is 0.25. 
+  For 2D Laplace operators, 0.25 is a good value, for 3D Laplace operators, 0.5 or 
+  0.6 is a better value. For elasticity problems, a large strength threshold,
+  such as 0.9, is often better.
+
+* `"coarsen type`" [int] defines which parallel coarsening algorithm is used. 
+  The following options for coarsen type:
+
+  * 0 - (default) CLJP-coarsening, a parallel coarsening algorithm using independent sets.
+  * 3 - classical Ruge-Stueben coarsening on each processor, followed by a third pass, which adds coarse points on the boundaries.
+  * 8 - PMIS-coarsening, a parallel coarsening algorithm using independent sets, generating lower complexities than CLJP, might also lead to slower convergence.
+  * 21 - CGC coarsening by M. Griebel, B. Metsch and A. Schweitzer.
+  * 22 - CGC-E coarsening by M. Griebel, B. Metsch and A.Schweitzer.
+
+* `"max coarse size`" [int] sets maximum size of coarsest grid. The default is 9.
+
+* `"use block indices`" [bool] If true, uses the `"systems of PDEs`" code with blocks 
+  given by the SuperMap, or one per DoF per entity type. Default is *false*.
+  Note Hypre's BoomerAMG cannot be given both `"use block indices`" and 
+  `"number of functions`" (see later) options as these are two ways of specifying 
+  the same thing.
 
 * `"number of function`" [int] the value > 1 tells Boomer AMG to use the "systems 
   of PDEs" code.  Note that, to use this approach, unknowns must be ordered with 
@@ -5590,6 +5710,7 @@ for its evaluation.  The observations are evaluated during the simulation and re
       * material id [-]
       * aqueous mass flow rate [kg/s] (when funtional="integral")
       * aqueous volumetric flow rate [m^3/s] (when functional="integral")
+      * fractures aqueous volumetric flow rate [m^3/s] (when functional="integral")
       * SOLUTE volumetric flow rate [mol/s] (when functional="integral")
 
     Observations *drawdown* and *permeability-weighted* are calculated with respect to the value 

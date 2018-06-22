@@ -35,8 +35,8 @@
 namespace Amanzi {
 namespace WhetStone {
 
-class MFD3D_Electromagnetics : public virtual MFD3D,
-                               public virtual DeRham_Edge {
+class MFD3D_Electromagnetics : public MFD3D,
+                               public DeRham_Edge {
  public:
   MFD3D_Electromagnetics(Teuchos::RCP<const AmanziMesh::Mesh> mesh)
     : MFD3D(mesh),
@@ -44,18 +44,14 @@ class MFD3D_Electromagnetics : public virtual MFD3D,
   ~MFD3D_Electromagnetics() {};
 
   // required methods
+  // -- mass matrices
+  // using InnerProductL2::MassMatrix;
+  using DeRham_Edge::MassMatrix;
+  using DeRham_Edge::MassMatrixInverse;
+
   // -- stiffness matrix
   virtual int H1consistency(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Ac);
   virtual int StiffnessMatrix(int c, const Tensor& T, DenseMatrix& A);
-
-  // -- divergence matrices
-  virtual int DivergenceMatrix(int c, DenseMatrix& A) { return -1; }
-
-  // -- unsupported members
-  virtual int MassMatrixPoly(int c, const Polynomial& K, DenseMatrix& M) { return -1; }
-  virtual int StiffnessMatrixPoly(int c, const Polynomial& K, DenseMatrix& A) { return -1; }
-  virtual int AdvectionMatrix(int c, const AmanziGeometry::Point v, DenseMatrix& A, bool grad_on_test) { return -1; }
-  virtual int AdvectionMatrixPoly(int c, const VectorPolynomial& v, DenseMatrix& A, bool grad_on_test) { return -1; }
 
   // other methods
   int MassMatrixOptimized(int c, const Tensor& T, DenseMatrix& M);

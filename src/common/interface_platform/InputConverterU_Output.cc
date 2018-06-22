@@ -200,6 +200,10 @@ Teuchos::ParameterList InputConverterU::TranslateOutput_()
           std::vector<std::string> regions = CharToStrings_(regs.c_str());
           visPL.sublist("write regions").set<Teuchos::Array<std::string> >(name, regions);
         }
+      } else if (strcmp(tagname, "write_partition") == 0) {
+        text = mm.transcode(jnode->getTextContent());
+        if (strcmp(text, "true") == 0)
+          visPL.set<bool>("write partitions", true);
       }
     }
     out_list.sublist("visualization data") = visPL;
@@ -356,6 +360,8 @@ Teuchos::ParameterList InputConverterU::TranslateOutput_()
             std::stringstream name;
             name << solute_name << " volumetric flow rate";
             obPL.set<std::string>("variable", name.str());
+          } else if (strcmp(obs_type, "fractures_aqueous_volumetric_flow_rate") == 0) {
+            obPL.set<std::string>("variable", "fractures aqueous volumetric flow rate");
           }
 
           DOMNodeList* kids = jnode->getChildNodes();

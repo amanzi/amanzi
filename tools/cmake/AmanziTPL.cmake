@@ -154,6 +154,7 @@ message(STATUS "")
 ##############################################################################
 # Trilinos http://trilinos.sandia.gov
 ##############################################################################
+
 # This command alters Trilinos_DIR. If it finds the configuration file
 # Trilinos_DIR is set to the path the configuration file was found.
 if ( NOT Trilinos_INSTALL_PREFIX )
@@ -167,7 +168,12 @@ find_package(Trilinos ${Trilinos_MINIMUM_VERSION} REQUIRED
              PATH_SUFFIXES include)
             
 if (Trilinos_FOUND)
-  message(STATUS "Found Trilinos: ${Trilinos_DIR} (${Trilinos_VERSION})")
+  message(STATUS "Trilinos Package information")
+  message(STATUS "\tTrilinos_VERSION      = ${Trilinos_VERSION}")
+  message(STATUS "\tTrilinos_DIR          = ${Trilinos_DIR}")
+  message(STATUS "\tTrilinos_INCLUDE_DIRS = ${Trilinos_INCLUDE_DIRS}")
+  message(STATUS "")
+
   trilinos_package_enabled_tpls(Trilinos)           
 
   if ("${Trilinos_VERSION}" VERSION_LESS ${Trilinos_MINIMUM_VERSION}) 
@@ -193,7 +199,7 @@ if (Trilinos_FOUND)
   # ML      - multilevel preconditioner (Unstructured ONLY)
   set(Trilinos_REQUIRED_PACKAGE_LIST Teuchos Epetra) 
   if (ENABLE_Unstructured)
-    list(APPEND Trilinos_REQUIRED_PACKAGE_LIST NOX ML)
+    list(APPEND Trilinos_REQUIRED_PACKAGE_LIST NOX ML Amesos2)
   endif()
 
   foreach(tri_package ${Trilinos_REQUIRED_PACKAGE_LIST})
@@ -202,12 +208,16 @@ if (Trilinos_FOUND)
                  HINTS ${Trilinos_INSTALL_PREFIX}
                  PATH_SUFFIXES include lib)
     trilinos_package_enabled_tpls(${tri_package})
-    message(STATUS "Located Trilinos package ${tri_package}: ${${tri_package}_DIR}")
+    message(STATUS "\t${tri_package}_DIR       = ${${tri_package}_DIR}")
+    message(STATUS "\t${tri_package}_LIBRARIES = ${${tri_package}_LIBRARIES}")
+    string(TOLOWER ${tri_package} _tri_package)
+    print_link_libraries(${_tri_package})
+    message(STATUS "")
+
     # Update the <PACKAGE>_INCLUDE_DIRS variable 
     foreach( _inc ${${tri_package}_TPL_INCLUDE_DIRS})
       list(APPEND ${tri_package}_INCLUDE_DIRS "${_inc}")
     endforeach()
-
   endforeach()
 
   # Now check optional Trilinos packages
@@ -237,7 +247,10 @@ if (Trilinos_FOUND)
                  HINTS ${Trilinos_INSTALL_PREFIX}
                  PATH_SUFFIXES include lib)
     if (Zoltan_FOUND)
-      message(STATUS "Located Trilinos package Zoltan: ${Zoltan_DIR}")
+      message(STATUS "\tZoltan_DIR          = ${Zoltan_DIR}")
+      message(STATUS "\tZoltan_INCLUDE_DIRS = ${Zoltan_INCLUDE_DIRS}")
+      message(STATUS "\tZoltan_LIBRARIES    = ${Zoltan_LIBRARIES}")
+      message(STATUS "")
       trilinos_package_enabled_tpls(Zoltan)
       foreach( _inc "${ZOLTAN_TPL_INCLUDE_DIRS}")
         list(APPEND ZOLTAN_INCLUDE_DIRS "${_inc}")
@@ -257,8 +270,15 @@ if (Trilinos_FOUND)
                  PATH_SUFFIXES include lib
                  )
     if (Ifpack_FOUND)
-      message(STATUS "Located Triilnos package Ifpack: ${Ifpack_DIR}")
+      message(STATUS "\tIfpack_DIR          = ${Ifpack_DIR}")
+      message(STATUS "\tIfpack_DIR          = ${Ifpack_DIR}")
+      message(STATUS "\tIfpack_INCLUDE_DIRS = ${Ifpack_INCLUDE_DIRS}")
+      message(STATUS "\tIfpack_LIBRARIES    = ${Ifpack_LIBRARIES}")
+      print_link_libraries(ifpack)
+      message(STATUS "")
+
       trilinos_package_enabled_tpls(Ifpack)
+
       foreach( _inc "${Ifpack_TPL_INCLUDE_DIRS}")
         list(APPEND Ifpack_INCLUDE_DIRS "${_inc}")
       endforeach()
@@ -278,14 +298,6 @@ if (Trilinos_FOUND)
     list(APPEND Trilinos_INCLUDE_DIRS "${_inc}")
     list(REMOVE_DUPLICATES Trilinos_INCLUDE_DIRS)
   endforeach()
-
-  message(STATUS "Trilinos Package information")
-  message(STATUS "\tTrilinos_INCLUDE_DIR  = ${Trilinos_INCLUDE_DIR}")
-  message(STATUS "\tTrilinos_INCLUDE_DIRS = ${Trilinos_INCLUDE_DIRS}")
-  message(STATUS "\tTrilinos_LIBRARY_DIR  = ${Trilinos_LIBRARY_DIR}")
-  message(STATUS "\tTrilinos_LIBRARY      = ${Trilinos_LIBRARY}")
-  message(STATUS "\tTrilinos_LIBRARIES    = ${Trilinos_LIBRARIES}")
-  message(STATUS "")
 else()
   message(FATAL_ERROR "Can not locate Trilinos configuration file\n"
                       " Please define the location of your Trilinos installation\n"
@@ -294,8 +306,32 @@ endif()
 
 
 ##############################################################################
+# HYPRE and its dependencies
+##############################################################################
+
+if (ENABLE_HYPRE)
+
+  find_package(HYPRE)
+
+  if (HYPRE_FOUND)
+    message(STATUS "HYPRE Package information")
+    message(STATUS "\tHYPRE_VERSION      = ${HYPRE_VERSION}")
+    message(STATUS "\tHYPRE_INCLUDE_DIRS = ${HYPRE_INCLUDE_DIRS}")
+    message(STATUS "\tHYPRE_LIBRARY_DIR  = ${HYPRE_LIBRARY_DIR}")
+    message(STATUS "\tHYPRE_LIBRARY      = ${HYPRE_LIBRARY}")
+    message(STATUS "\tHYPRE_LIBRARIES    = ${HYPRE_LIBRARIES}")
+    print_link_libraries(${HYPRE_LIBRARY})
+    message(STATUS "")
+  else()
+    message(FATAL_ERROR "Can not locate HYPRE library and/or include\n")
+  endif()
+endif()
+
+
+##############################################################################
 # NetCDF - http://www.unidata.ucar.edu/software/netcdf/
 ##############################################################################
+
 find_package(NetCDF REQUIRED)
 set_package_properties(NetCDF
                  PROPERTIES
@@ -311,6 +347,7 @@ message(STATUS "\tNetCDF_LIBRARY_DIR  = ${NetCDF_LIBRARY_DIR}")
 message(STATUS "\tNetCDF_C_LIBRARY    = ${NetCDF_C_LIBRARY}")
 message(STATUS "\tNetCDF_C_LIBRARIES  = ${NetCDF_C_LIBRARIES}")
 message(STATUS "\tNetCDF_CXX_LIBRARIES  = ${NetCDF_CXX_LIBRARIES}")
+print_link_libraries(${NetCDF_C_LIBRARY})
 message(STATUS "")
 
 
@@ -319,8 +356,8 @@ message(STATUS "")
 ##############################################################################
 find_package(XERCES REQUIRED)
 set_package_properties(XERCES
-		 PROPERTIES
-	         PURPOSE "Validating XML parser")
+                 PROPERTIES
+                 PURPOSE "Validating XML parser")
 
 if (XERCES_FOUND)
   message(STATUS "XERCES Package information")
@@ -352,6 +389,7 @@ message(STATUS "\tSEACAS_INCLUDE_DIRS = ${SEACAS_INCLUDE_DIRS}")
 message(STATUS "\tSEACAS_LIBRARY_DIR  = ${SEACAS_LIBRARY_DIR}")
 message(STATUS "\tSEACAS_LIBRARY      = ${SEACAS_LIBRARY}")
 message(STATUS "\tSEACAS_LIBRARIES    = ${SEACAS_LIBRARIES}")
+print_link_libraries(${SEACAS_LIBRARY})
 message(STATUS "")
 
 
@@ -371,6 +409,7 @@ if (ENABLE_Structured)
     message(STATUS "\tCCSE_LIBRARY_DIR  = ${CCSE_LIBRARY_DIR}")
     message(STATUS "\tCCSE_LIBRARY      = ${CCSE_LIBRARY}")
     message(STATUS "\tCCSE_LIBRARIES    = ${CCSE_LIBRARIES}")
+    print_link_libraries(${CCSE_LIBRARY})
     message(STATUS "")
   endif()
 endif()
@@ -437,6 +476,7 @@ if (ENABLE_MOAB_Mesh)
     message(STATUS "\tMOAB_LIBRARY_DIR  = ${MOAB_LIBRARY_DIR}")
     message(STATUS "\tMOAB_LIBRARY      = ${MOAB_LIBRARY}")
     message(STATUS "\tMOAB_LIBRARIES    = ${MOAB_LIBRARIES}")
+    print_link_libraries(${MOAB_LIBRARY})
     message(STATUS "")
   endif() 
 endif()
@@ -461,6 +501,7 @@ if (ENABLE_MSTK_Mesh)
     message(STATUS "\tMSTK_LIBRARY_DIR  = ${MSTK_LIBRARY_DIR}")
     message(STATUS "\tMSTK_LIBRARY      = ${MSTK_LIBRARY}")
     message(STATUS "\tMSTK_LIBRARIES    = ${MSTK_LIBRARIES}")
+    print_link_libraries(${MSTK_LIBRARY})
     message(STATUS "")
   endif() 
 endif() 
@@ -575,6 +616,7 @@ if (ENABLE_Structured OR ENABLE_ALQUIMIA OR ENABLE_PETSC) # FIXME: Sloppy.
     message(STATUS "\tPETSC_INCLUDE_DIRS = ${PETSC_INCLUDE_DIRS}")
     message(STATUS "\tPETSC_LIBRARY      = ${PETSC_LIBRARY}")
     message(STATUS "\tPETSC_LIBRARIES    = ${PETSC_LIBRARIES}")
+    print_link_libraries(${PETSC_LIBRARY})
     message(STATUS "")
   endif()
 endif()
@@ -597,6 +639,7 @@ if (ENABLE_ALQUIMIA)
     message(STATUS "\tPFLOTRAN_LIBRARY_DIR  = ${PFLOTRAN_LIBRARY_DIR}")
     message(STATUS "\tPFLOTRAN_LIBRARY      = ${PFLOTRAN_LIBRARY}")
     message(STATUS "\tPFLOTRAN_LIBRARIES    = ${PFLOTRAN_LIBRARIES}")
+    print_link_libraries(${PFLOTRAN_LIBRARY})
     message(STATUS "")
   endif()
 
@@ -608,6 +651,7 @@ if (ENABLE_ALQUIMIA)
     message(STATUS "\tCRUNCHTOPE_LIBRARY_DIR  = ${CRUNCHTOPE_LIBRARY_DIR}")
     message(STATUS "\tCRUNCHTOPE_LIBRARY      = ${CRUNCHTOPE_LIBRARY}")
     message(STATUS "\tCRUNCHTOPE_LIBRARIES    = ${CRUNCHTOPE_LIBRARIES}")
+    print_link_libraries(${CRUNCHTOPE_LIBRARY})
     message(STATUS "")
   endif()
 
@@ -625,6 +669,7 @@ if (ENABLE_ALQUIMIA)
     message(STATUS "\tALQUIMIA_LIBRARY_DIR  = ${ALQUIMIA_LIBRARY_DIR}")
     message(STATUS "\tALQUIMIA_LIBRARY      = ${ALQUIMIA_LIBRARY}")
     message(STATUS "\tALQUIMIA_LIBRARIES    = ${ALQUIMIA_LIBRARIES}")
+    print_link_libraries(${ALQUIMIA_LIBRARY})
     message(STATUS "")
   endif()
 endif()

@@ -19,7 +19,6 @@
 #include <string>
 
 // TPLs
-#include "boost/algorithm/string.hpp"
 #include "Epetra_MultiVector.h"
 #include "Epetra_Vector.h"
 #include "Epetra_SerialDenseVector.h"
@@ -53,16 +52,14 @@ Alquimia_PK::Alquimia_PK(Teuchos::ParameterList& pk_tree,
   chem_initialized_(false),
   current_time_(0.0),
   saved_time_(0.0)
-
 {
-
   S_ = S;
   glist_ = glist;
 
   // extract pk name
   std::string pk_name = pk_tree.name();
-  boost::iterator_range<std::string::iterator> res = boost::algorithm::find_last(pk_name, "->"); 
-  if (res.end() - pk_name.end() != 0) boost::algorithm::erase_head(pk_name, res.end() - pk_name.begin());
+  auto found = pk_name.rfind("->");
+  if (found != std::string::npos) pk_name.erase(0, found + 2);
 
   // create pointer to the chemistry parameter list
   Teuchos::RCP<Teuchos::ParameterList> pk_list = Teuchos::sublist(glist, "PKs", true);
@@ -74,7 +71,7 @@ Alquimia_PK::Alquimia_PK(Teuchos::ParameterList& pk_tree,
   tcc_key_ = Keys::getKey(domain_name_, "total_component_concentration"); 
   poro_key_ = cp_list_->get<std::string>("porosity key", Keys::getKey(domain_name_, "porosity"));
   saturation_key_ = cp_list_->get<std::string>("saturation key", Keys::getKey(domain_name_, "saturation_liquid"));
-  fluid_den_key_ = cp_list_->get<std::string>("fluid density key", Keys::getKey(domain_name_, "fluid_density"));
+  fluid_den_key_ = cp_list_->get<std::string>("fluid density key", Keys::getKey(domain_name_, "mass_density_liquid"));
 
   min_vol_frac_key_ = Keys::getKey(domain_name_, "mineral_volume_fractions");
   min_ssa_key_ = Keys::getKey(domain_name_, "mineral_specific_surface_area");
@@ -132,7 +129,7 @@ Alquimia_PK::Alquimia_PK(Teuchos::ParameterList& pk_tree,
   number_aqueous_kinetics_ = aqueous_kinetics_names_.size();
   
   // verbosity object
-  vo_ = Teuchos::rcp(new VerboseObject("Chem::Alquimia:" + domain_name_, *cp_list_));
+  vo_ = Teuchos::rcp(new VerboseObject("Alquimia_PK:" + domain_name_, *cp_list_));
   chem_out = &*vo_;
 
 }
@@ -206,7 +203,6 @@ void Alquimia_PK::Setup(const Teuchos::Ptr<State>& S)
 ******************************************************************* */
 void Alquimia_PK::Initialize(const Teuchos::Ptr<State>& S) 
 { 
-
   // initilaization using the base class
   Chemistry_PK::Initialize(S);
 
@@ -253,9 +249,9 @@ void Alquimia_PK::Initialize(const Teuchos::Ptr<State>& S)
       }
 
       // Get the cells that belong to this region.
-      unsigned int num_cells = mesh_->get_set_size(region, AmanziMesh::CELL, AmanziMesh::OWNED);
+      unsigned int num_cells = mesh_->get_set_size(region, AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
       AmanziMesh::Entity_ID_List cell_indices;
-      mesh_->get_set_entities(region, AmanziMesh::CELL, AmanziMesh::OWNED, &cell_indices);
+      mesh_->get_set_entities(region, AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED, &cell_indices);
   
       // Loop over the cells.
       for (unsigned int i = 0; i < num_cells; ++i) {
@@ -293,8 +289,7 @@ void Alquimia_PK::Initialize(const Teuchos::Ptr<State>& S)
         << S->time() << vo_->reset() << std::endl << std::endl;
   }
 
-  //S->WriteStatistics(vo_);
-
+  // S->WriteStatistics(vo_);
 }
 
 
@@ -309,26 +304,8 @@ int Alquimia_PK::InitializeSingleCell(int cell, const std::string& condition)
 
   CopyToAlquimia(cell, tcc, alq_mat_props_, alq_state_, alq_aux_data_);
 
-  // if (domain_name_ == "surface") {
-  //   std::cout<<"cell "<<cell<<"\n";
-  //   std::cout<<"alq_mat_props: volume "<<alq_mat_props_.volume<<"\n";
-  //   std::cout<<"alq_mat_props: saturation "<<alq_mat_props_.saturation<<"\n";
-  //   std::cout<<"alq_state_.water_density "<<alq_state_.water_density<<"\n";
-  //   std::cout<<"alq_state_.porosity "<<alq_state_.porosity<<"\n";
-  //   std::cout<<"alq_aux_data_.aux_doubles.data "<<alq_aux_data_.aux_doubles.data[0]<<" "<<alq_aux_data_.aux_doubles.data[1]<<"\n";
-  // }
-
   chem_engine_->EnforceCondition(condition, current_time_, alq_mat_props_, 
                                  alq_state_, alq_aux_data_, alq_aux_output_);
-
-  // if (domain_name_ == "surface") {
-  //   std::cout<<"cell "<<cell<<"\n";
-  //   std::cout<<"alq_mat_props: volume "<<alq_mat_props_.volume<<"\n";
-  //   std::cout<<"alq_mat_props: saturation "<<alq_mat_props_.saturation<<"\n";
-  //   std::cout<<"alq_state_.water_density "<<alq_state_.water_density<<"\n";
-  //   std::cout<<"alq_state_.porosity "<<alq_state_.porosity<<"\n";
-  //   std::cout<<"alq_aux_data_.aux_doubles.data "<<alq_aux_data_.aux_doubles.data[0]<<" "<<alq_aux_data_.aux_doubles.data[1]<<"\n";
-  // }
 
   CopyAlquimiaStateToAmanzi(cell, alq_mat_props_, alq_state_, alq_aux_data_,
                             alq_aux_output_, tcc);
@@ -538,16 +515,9 @@ void Alquimia_PK::CopyToAlquimia(int cell,
                                  AlquimiaAuxiliaryData& aux_data)
 {
   const Epetra_MultiVector& porosity = *S_->GetFieldData(poro_key_)->ViewComponent("cell", true);
+  const Epetra_MultiVector& fluid_density = *S_->GetFieldData(fluid_den_key_)->ViewComponent("cell", true);
 
-  double water_density(998.2);
-  if (S_->GetField(fluid_den_key_)->type() == Amanzi::CONSTANT_SCALAR) {
-    water_density = *S_->GetScalarData(fluid_den_key_);
-  } else if (S_->GetField(fluid_den_key_)->type() == Amanzi::COMPOSITE_VECTOR_FIELD) {
-    const Epetra_MultiVector& fl_den = *S_->GetFieldData(fluid_den_key_)->ViewComponent("cell", true);
-    water_density = fl_den[0][cell]; 
-  }
-
-  state.water_density = water_density;
+  state.water_density = fluid_density[0][cell]; 
   state.porosity = porosity[0][cell];
 
   for (int i = 0; i < number_aqueous_components_; i++) {
@@ -744,10 +714,8 @@ void Alquimia_PK::CopyFromAlquimia(const int cell,
 {
   // If the chemistry has modified the porosity and/or density, it needs to 
   // be updated here.
-  //(this->water_density())[cell] = state.water_density;
-  //(this->porosity())[cell] = state.porosity;
-
-
+  // (this->water_density())[cell] = state.water_density;
+  // (this->porosity())[cell] = state.porosity;
 
   for (int i = 0; i < number_aqueous_components_; ++i) {
     (*aqueous_components)[i][cell] = state.total_mobile.data[i] ;
@@ -844,16 +812,6 @@ int Alquimia_PK::AdvanceSingleCell(
   CopyToAlquimia(cell, aqueous_components, 
                  alq_mat_props_, alq_state_, alq_aux_data_);
 
-  // if (domain_name_=="surface"){
-  //   std::cout<<"cell "<<cell<<" "<<alq_state_.total_mobile.data[0]<<"\n";
-  //   std::cout<<"alq_mat_props: volume "<<alq_mat_props_.volume<<"\n";
-  //   std::cout<<"alq_mat_props: saturation "<<alq_mat_props_.saturation<<"\n";
-  //   std::cout<<"alq_state_.water_density "<<alq_state_.water_density<<"\n";
-  //   std::cout<<"alq_state_.porosity "<<alq_state_.porosity<<"\n";
-  //   std::cout<<"alq_aux_data_.aux_doubles.data "<<alq_aux_data_.aux_doubles.data[0]<<" "<<alq_aux_data_.aux_doubles.data[1]<<"\n";
-  // }
-
-
   // Do the reaction.
   int num_iterations;
   bool success = chem_engine_->Advance(dt, alq_mat_props_, alq_state_, 
@@ -891,7 +849,7 @@ bool Alquimia_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   }
 
   // Get the number of owned (non-ghost) cells for the mesh.
-  unsigned int num_cells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  unsigned int num_cells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
   
   int max_itrs (0), min_itrs(10000000), avg_itrs(0);
   int imax(-1), imin(-1);

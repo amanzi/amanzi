@@ -34,7 +34,7 @@ class Node_set;
 
 namespace STK {
 
-/*!
+/*
  * Class which builds a Mesh_STK_Impl and fields from a Data::Data
  * and Data::Fields specification.
  */

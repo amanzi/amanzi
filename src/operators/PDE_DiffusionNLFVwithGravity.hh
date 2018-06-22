@@ -132,7 +132,7 @@ class PDE_DiffusionNLFVwithGravity : public PDE_DiffusionNLFV,
   // Developments
   // -- interface to solvers for treating nonlinear BCs.
   virtual double ComputeGravityFlux(int f) const override {
-    ASSERT(0);
+    AMANZI_ASSERT(0);
     return 0.;
   };
 

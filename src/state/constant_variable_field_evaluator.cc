@@ -47,12 +47,12 @@ void ConstantVariableFieldEvaluator::operator=(const FieldEvaluator& other) {
 #if ENABLE_DBC
   const ConstantVariableFieldEvaluator* other_p =
       dynamic_cast<const ConstantVariableFieldEvaluator*>(&other);
-  ASSERT(other_p != NULL);
+  AMANZI_ASSERT(other_p != NULL);
 #else
   const ConstantVariableFieldEvaluator* other_p =
       static_cast<const ConstantVariableFieldEvaluator*>(&other);
 #endif
-  ASSERT(my_key_ == other_p->my_key_);
+  AMANZI_ASSERT(my_key_ == other_p->my_key_);
 
   requests_ = other_p->requests_;
 }

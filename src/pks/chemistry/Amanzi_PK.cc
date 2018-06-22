@@ -20,7 +20,6 @@
 #include <algorithm>
 
 // TPLs
-#include "boost/algorithm/string.hpp"
 #include "Epetra_MultiVector.h"
 #include "Epetra_Vector.h"
 #include "Epetra_SerialDenseVector.h"
@@ -64,8 +63,8 @@ Amanzi_PK::Amanzi_PK(Teuchos::ParameterList& pk_tree,
 
   // extract pk name
   std::string pk_name = pk_tree.name();
-  boost::iterator_range<std::string::iterator> res = boost::algorithm::find_last(pk_name, "->"); 
-  if (res.end() - pk_name.end() != 0) boost::algorithm::erase_head(pk_name, res.end() - pk_name.begin());
+  auto found = pk_name.rfind("->");
+  if (found != std::string::npos) pk_name.erase(0, found + 2);
 
   // create pointer to the chemistry parameter list
   Teuchos::RCP<Teuchos::ParameterList> pk_list = Teuchos::sublist(glist, "PKs", true);
@@ -76,7 +75,7 @@ Amanzi_PK::Amanzi_PK(Teuchos::ParameterList& pk_tree,
   tcc_key_ = Keys::getKey(domain_name_, "total_component_concentration"); 
   poro_key_ = cp_list_->get<std::string>("porosity key", Keys::getKey(domain_name_, "porosity"));
   saturation_key_ = cp_list_->get<std::string>("saturation key", Keys::getKey(domain_name_, "saturation_liquid"));
-  fluid_den_key_ = cp_list_->get<std::string>("fluid density key", Keys::getKey(domain_name_, "fluid_density"));
+  fluid_den_key_ = cp_list_->get<std::string>("fluid density key", Keys::getKey(domain_name_, "mass_density_liquid"));
 
   min_vol_frac_key_ = Keys::getKey(domain_name_,"mineral_volume_fractions");
   min_ssa_key_ = Keys::getKey(domain_name_,"mineral_specific_surface_area");
@@ -120,7 +119,7 @@ Amanzi_PK::Amanzi_PK(Teuchos::ParameterList& pk_tree,
   number_total_sorbed_ = number_aqueous_components_;
 
   // verbosity object
-  vo_ = Teuchos::rcp(new VerboseObject("Chem::Amanzi" + domain_name_, *cp_list_)); 
+  vo_ = Teuchos::rcp(new VerboseObject("Amanzi_PK:" + domain_name_, *cp_list_)); 
   chem_out = &*vo_;
 }
 
@@ -233,7 +232,7 @@ void Amanzi_PK::Initialize(const Teuchos::Ptr<State>& S)
   SetupAuxiliaryOutput();
 
   // solve for initial free-ion concentrations
-  int num_cells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  int num_cells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
   ierr = 0;
   if (fabs(initial_conditions_time_ - S->time()) <= 1e-8 * fabs(S->time())) {
     for (int c = 0; c < num_cells; ++c) {
@@ -557,16 +556,9 @@ void Amanzi_PK::CopyCellStateToBeakerStructures(
   // copy data from state arrays into the beaker parameters
   const Epetra_MultiVector& porosity = *S_->GetFieldData(poro_key_)->ViewComponent("cell", true);
   const Epetra_MultiVector& water_saturation = *S_->GetFieldData(saturation_key_)->ViewComponent("cell", true);
+  const Epetra_MultiVector& fluid_density = *S_->GetFieldData(fluid_den_key_)->ViewComponent("cell", true);
 
-  double water_density(998.2);
-  if (S_->GetField(fluid_den_key_)->type() == Amanzi::CONSTANT_SCALAR) {
-    water_density = *S_->GetScalarData(fluid_den_key_);
-  } else if (S_->GetField(fluid_den_key_)->type() == Amanzi::COMPOSITE_VECTOR_FIELD) {
-    const Epetra_MultiVector& fl_den = *S_->GetFieldData(fluid_den_key_)->ViewComponent("cell", true);
-    water_density = fl_den[0][cell_id]; 
-  }      
-
-  beaker_parameters_.water_density = water_density;
+  beaker_parameters_.water_density = fluid_density[0][cell_id];
   beaker_parameters_.porosity = porosity[0][cell_id];
   beaker_parameters_.saturation = water_saturation[0][cell_id];
   beaker_parameters_.volume = mesh_->cell_volume(cell_id);
@@ -690,7 +682,7 @@ bool Amanzi_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   int num_itrs, max_itrs(0), min_itrs(10000000), avg_itrs(0);
   int cmax(-1), cmin(-1), ierr(0);
 
-  int num_cells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  int num_cells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
   for (int c = 0; c < num_cells; ++c) {
     CopyCellStateToBeakerStructures(c, aqueous_components_);
     try {
@@ -783,7 +775,7 @@ Teuchos::RCP<Epetra_MultiVector> Amanzi_PK::extra_chemistry_output_data() {
   if (aux_data_ != Teuchos::null) {
     const Epetra_MultiVector& free_ion = *S_->GetFieldData(free_ion_species_key_)->ViewComponent("cell", true);
     const Epetra_MultiVector& activity = *S_->GetFieldData(primary_activity_coeff_key_)->ViewComponent("cell", true);
-    int num_cells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+    int num_cells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
 
     for (int cell = 0; cell < num_cells; cell++) {
       // populate aux_data_ by copying from the appropriate internal storage

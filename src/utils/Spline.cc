@@ -27,21 +27,21 @@ Spline::Setup(double x1, double y1, double dy1,
   y2_ = y2;
   dy2_ = dy2;
 
-  ASSERT(x1_ < x2_);
+  AMANZI_ASSERT(x1_ < x2_);
   if (y2_ >= y1_) {
-    ASSERT(dy1_ >= 0.);
-    ASSERT(dy2_ >= 0.);
+    AMANZI_ASSERT(dy1_ >= 0.);
+    AMANZI_ASSERT(dy2_ >= 0.);
   }
   if (y1_ >= y2_) {
-    ASSERT(dy1_ <= 0.);
-    ASSERT(dy2_ <= 0.);
+    AMANZI_ASSERT(dy1_ <= 0.);
+    AMANZI_ASSERT(dy2_ <= 0.);
   }
 }
 
 
 double
 Spline::Value(double x) {
-  ASSERT(x1_ <= x <= x2_);
+  AMANZI_ASSERT(x1_ <= x <= x2_);
   double t = T(x);
   return std::pow(1-t,2) * ((1+2*t) * y1_ + t * (x2_ - x1_) * dy1_)
       + std::pow(t,2) * ((3-2*t) * y2_ + (t-1) * (x2_ - x1_) * dy2_);
@@ -55,7 +55,7 @@ Spline::Value(double x) {
 
 double
 Spline::Derivative(double x) {
-  ASSERT(x1_ <= x <= x2_);
+  AMANZI_ASSERT(x1_ <= x <= x2_);
   double t = T(x);
   double dtdx = 1./(x2_ - x1_);
   double dydt = (6*std::pow(t,2) - 6*t)* y1_

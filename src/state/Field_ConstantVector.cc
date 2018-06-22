@@ -82,7 +82,7 @@ void Field_ConstantVector::set_dimension(int dimension) {
 
 // create data
 void Field_ConstantVector::CreateData() {
-  ASSERT(dimension_ > 0);
+  AMANZI_ASSERT(dimension_ > 0);
   Epetra_SerialComm comm;
   Epetra_LocalMap map(dimension_, 0, comm);
   data_ = Teuchos::rcp(new Epetra_Vector(map));
@@ -107,7 +107,7 @@ void Field_ConstantVector::SetData(const Epetra_Vector& data) {
 // Initialization
 void Field_ConstantVector::Initialize(Teuchos::ParameterList& plist) {
   Teuchos::Array<double> vals = plist.get<Teuchos::Array<double> >("value");
-  ASSERT(vals.size() == data_->MyLength());
+  AMANZI_ASSERT(vals.size() == data_->MyLength());
   for (int i=0; i!=vals.size(); ++i) {
     (*data_)[i] = vals[i];
   }

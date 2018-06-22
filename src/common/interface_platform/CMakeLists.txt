@@ -76,8 +76,9 @@ if (BUILD_TESTS)
 
     # Copy test directory files if an out of source build
     if (NOT (${PLATFORM_INTERFACE_SOURCE_DIR} EQUAL ${PLATFORM_INTERFACE_BINARY_DIR}) )
-        execute_process(COMMAND ${CMAKE_COMMAND} -E 
-          copy_directory ${PLATFORM_INTERFACE_SOURCE_DIR}/test ${PLATFORM_INTERFACE_BINARY_DIR}/test) 
+      file(GLOB DataFiles "${PLATFORM_INTERFACE_SOURCE_DIR}/test/*.xml"
+                          "${PLATFORM_INTERFACE_SOURCE_DIR}/test/*.dump")
+      file(COPY ${DataFiles} DESTINATION ${PLATFORM_INTERFACE_BINARY_DIR}/test/)
     endif()
 
     # Test: transient Darcy flow 

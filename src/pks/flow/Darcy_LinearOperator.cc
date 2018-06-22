@@ -35,12 +35,12 @@ void Darcy_PK::SolveFullySaturatedProblem(CompositeVector& u)
     op_acc_->AddAccumulationTerm(wi, "cell");
   }
 
-  op_diff_->ApplyBCs(true, true);
+  op_diff_->ApplyBCs(true, true, true);
   CompositeVector& rhs = *op_->rhs();
   AddSourceTerms(rhs);
 
   op_->AssembleMatrix();
-  op_->InitPreconditioner(preconditioner_name_, *preconditioner_list_);
+  op_->UpdatePreconditioner();
 
   AmanziSolvers::LinearOperatorFactory<Operators::Operator, CompositeVector, CompositeVectorSpace> sfactory;
   Teuchos::RCP<AmanziSolvers::LinearOperator<Operators::Operator, CompositeVector, CompositeVectorSpace> >

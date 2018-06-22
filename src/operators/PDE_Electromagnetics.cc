@@ -44,7 +44,7 @@ void PDE_Electromagnetics::SetTensorCoefficient(
   K_ = K;
 
   if (local_op_schema_ == OPERATOR_SCHEMA_BASE_CELL + OPERATOR_SCHEMA_DOFS_EDGE) {
-    if (K_ != Teuchos::null && K_.get()) ASSERT(K_->size() == ncells_owned);
+    if (K_ != Teuchos::null && K_.get()) AMANZI_ASSERT(K_->size() == ncells_owned);
   }
 }
 
@@ -77,7 +77,7 @@ void PDE_Electromagnetics::UpdateMatrices(
 * options: (a) eliminate or not, (b) if eliminate, then put 1 on
 * the diagonal or not.
 ****************************************************************** */
-void PDE_Electromagnetics::ApplyBCs(bool primary, bool eliminate)
+void PDE_Electromagnetics::ApplyBCs(bool primary, bool eliminate, bool essential_eqn)
 {
   if (local_op_schema_ == (OPERATOR_SCHEMA_BASE_CELL
                          | OPERATOR_SCHEMA_DOFS_EDGE)) {
@@ -89,7 +89,7 @@ void PDE_Electromagnetics::ApplyBCs(bool primary, bool eliminate)
         bc_e = *bc;
       }
     }
-    ApplyBCs_Edge_(bc_f.ptr(), bc_e.ptr(), primary, eliminate);
+    ApplyBCs_Edge_(bc_f.ptr(), bc_e.ptr(), primary, eliminate, essential_eqn);
   }
 }
 
@@ -97,9 +97,10 @@ void PDE_Electromagnetics::ApplyBCs(bool primary, bool eliminate)
 /* ******************************************************************
 * Apply BCs on cell operators
 ****************************************************************** */
-void PDE_Electromagnetics::ApplyBCs_Edge_(const Teuchos::Ptr<const BCs>& bc_f,
-                                          const Teuchos::Ptr<const BCs>& bc_e,
-                                          bool primary, bool eliminate)
+void PDE_Electromagnetics::ApplyBCs_Edge_(
+    const Teuchos::Ptr<const BCs>& bc_f,
+    const Teuchos::Ptr<const BCs>& bc_e,
+    bool primary, bool eliminate, bool essential_eqn)
 {
   AmanziMesh::Entity_ID_List edges, faces, cells;
   std::vector<int> edirs, fdirs;
@@ -113,13 +114,13 @@ void PDE_Electromagnetics::ApplyBCs_Edge_(const Teuchos::Ptr<const BCs>& bc_f,
 
   // calculate number of cells for each edge 
   // move to properties of BCs (lipnikov@lanl.gov)
-  std::vector<int> edge_get_cells(nedges_wghost, 0);
+  std::vector<int> edge_ncells(nedges_wghost, 0);
   for (int c = 0; c != ncells_wghost; ++c) {
     mesh_->cell_get_edges(c, &edges);
     int nedges = edges.size();
 
     for (int n = 0; n < nedges; ++n) {
-      edge_get_cells[edges[n]]++;
+      edge_ncells[edges[n]]++;
     }
   }
 
@@ -140,7 +141,7 @@ void PDE_Electromagnetics::ApplyBCs_Edge_(const Teuchos::Ptr<const BCs>& bc_f,
         int f = faces[n];
         const AmanziGeometry::Point& value = bc_value[f];
 
-        if (bc_model[f] == OPERATOR_BC_NEUMANN) {
+        if (bc_model[f] == OPERATOR_BC_NEUMANN && primary) {
           const AmanziGeometry::Point& normal = mesh_->face_normal(f);
           double area = mesh_->face_area(f);
 
@@ -210,9 +211,9 @@ void PDE_Electromagnetics::ApplyBCs_Edge_(const Teuchos::Ptr<const BCs>& bc_f,
             }
           }
 
-          if (primary) {
-            rhs_edge[0][e] = value;
-            Acell(n, n) = 1.0 / edge_get_cells[e];
+          if (essential_eqn) {
+            if (e < nedges_owned) rhs_edge[0][e] = value;
+            Acell(n, n) = 1.0 / edge_ncells[e];
           }
         }
       }
@@ -328,7 +329,7 @@ void PDE_Electromagnetics::Init_(Teuchos::ParameterList& plist)
     std::string name = "Electromagnetics: CELL_NODE";
     local_op_ = Teuchos::rcp(new Op_Cell_Node(name, mesh_));
   } else {
-    ASSERT(0);
+    AMANZI_ASSERT(0);
   }
   global_op_->OpPushBack(local_op_);
 

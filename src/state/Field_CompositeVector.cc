@@ -107,7 +107,12 @@ void Field_CompositeVector::Initialize(Teuchos::ParameterList& plist) {
   // ------ Try to set values from a restart file -----
   if (plist.isParameter("restart file")) {
     std::string filename = plist.get<std::string>("restart file");
-    ReadCheckpoint_(filename);
+    bool read = ReadCheckpoint_(filename);
+    if (!read) {
+      Errors::Message message;
+      message << "Field: \"" << fieldname() << "\" is not available in restart file \"" << filename << "\"";
+      Exceptions::amanzi_throw(message);
+    }      
     set_initialized();
     return;
   }
@@ -154,10 +159,10 @@ void Field_CompositeVector::Initialize(Teuchos::ParameterList& plist) {
     bool map_normal = plist.get<bool>("dot with normal", false); 
     if (map_normal) { 
       // map_normal take a vector and dots it with face normals 
-      ASSERT(data_->NumComponents() == 1); // one comp 
-      ASSERT(data_->HasComponent("face")); // is named face 
-      ASSERT(data_->Location("face") == AmanziMesh::FACE); // is on face 
-      ASSERT(data_->NumVectors("face") == 1);  // and is scalar 
+      AMANZI_ASSERT(data_->NumComponents() == 1); // one comp 
+      AMANZI_ASSERT(data_->HasComponent("face")); // is named face 
+      AMANZI_ASSERT(data_->Location("face") == AmanziMesh::FACE); // is on face 
+      AMANZI_ASSERT(data_->NumVectors("face") == 1);  // and is scalar 
  
       // create a vector on faces of the appropriate dimension 
       int dim = data_->Mesh()->space_dimension(); 
@@ -174,7 +179,7 @@ void Field_CompositeVector::Initialize(Teuchos::ParameterList& plist) {
  
       // Dot the velocity with the normal 
       unsigned int nfaces_owned = data_->Mesh() 
-          ->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED); 
+          ->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED); 
  
       Epetra_MultiVector& dat_f = *data_->ViewComponent("face",false); 
       const Epetra_MultiVector& vel_f = *vel_vec->ViewComponent("face",false); 
@@ -187,7 +192,7 @@ void Field_CompositeVector::Initialize(Teuchos::ParameterList& plist) {
         } else if (dim == 3) { 
           vel.set(vel_f[0][f], vel_f[1][f], vel_f[2][f]); 
         } else { 
-          ASSERT(0); 
+          AMANZI_ASSERT(0); 
         } 
         dat_f[0][f] = vel * normal; 
       } 
@@ -278,7 +283,7 @@ void Field_CompositeVector::ReadCellsFromCheckpoint_(std::string filename) {
 
       // get the MultiVector that should be read
       Teuchos::RCP<Epetra_MultiVector> vec = data_->ViewComponent(*compname, false);
-      ASSERT(vec != Teuchos::null);
+      AMANZI_ASSERT(vec != Teuchos::null);
       
       // construct name for the field in the checkpoint file
       for (unsigned int j = 0; j!=subfield_names_[i].size(); ++j) {
@@ -380,7 +385,7 @@ void Field_CompositeVector::InitializeFromColumn_(Teuchos::ParameterList& plist)
     for (Teuchos::Array<std::string>::const_iterator setname=sidesets.begin();
          setname!=sidesets.end(); ++setname) {
       data_->Mesh()->get_set_entities(*setname,AmanziMesh::FACE,
-              AmanziMesh::OWNED, &surf_faces);
+              AmanziMesh::Parallel_type::OWNED, &surf_faces);
 
       for (AmanziMesh::Entity_ID_List::const_iterator f=surf_faces.begin();
            f!=surf_faces.end(); ++f) {
@@ -390,8 +395,8 @@ void Field_CompositeVector::InitializeFromColumn_(Teuchos::ParameterList& plist)
 
         // Iterate down the column
         AmanziMesh::Entity_ID_List cells;
-        data_->Mesh()->face_get_cells(*f, AmanziMesh::OWNED, &cells);
-        ASSERT(cells.size() == 1);
+        data_->Mesh()->face_get_cells(*f, AmanziMesh::Parallel_type::OWNED, &cells);
+        AMANZI_ASSERT(cells.size() == 1);
         AmanziMesh::Entity_ID c = cells[0];
 
         while (c >= 0) {
@@ -411,7 +416,7 @@ void Field_CompositeVector::InitializeFromColumn_(Teuchos::ParameterList& plist)
     for (Teuchos::Array<std::string>::const_iterator setname=sidesets.begin();
          setname!=sidesets.end(); ++setname) {
       data_->Mesh()->get_set_entities(*setname,AmanziMesh::FACE,
-              AmanziMesh::OWNED, &surf_faces);
+              AmanziMesh::Parallel_type::OWNED, &surf_faces);
 
       for (AmanziMesh::Entity_ID_List::const_iterator f=surf_faces.begin();
            f!=surf_faces.end(); ++f) {
@@ -421,8 +426,8 @@ void Field_CompositeVector::InitializeFromColumn_(Teuchos::ParameterList& plist)
 
         // Iterate down the column
         AmanziMesh::Entity_ID_List cells;
-        data_->Mesh()->face_get_cells(*f, AmanziMesh::OWNED, &cells);
-        ASSERT(cells.size() == 1);
+        data_->Mesh()->face_get_cells(*f, AmanziMesh::Parallel_type::OWNED, &cells);
+        AMANZI_ASSERT(cells.size() == 1);
         AmanziMesh::Entity_ID c = cells[0];
 
         while (c >= 0) {

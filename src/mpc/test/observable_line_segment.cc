@@ -78,7 +78,7 @@ TEST(OBSERVABLE_LINE_SEGMENT) {
 
   Epetra_MultiVector& test =  *S->GetFieldData("test_field", "test_field")->ViewComponent("cell");
 
-  int ncells_owned = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  int ncells_owned = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
 
   double A=3., B=1., C=5., D=0.2;
 

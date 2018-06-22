@@ -56,7 +56,7 @@ std::cout << "Test: Advance on a 2D square mesh" << std::endl;
       Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, region_list, comm));
 
   MeshFactory meshfactory(comm);
-  meshfactory.preference(FrameworkPreference({MSTK, STKMESH}));
+  meshfactory.preference(FrameworkPreference({Framework::MSTK, Framework::STKMESH}));
   RCP<const Mesh> mesh3D = meshfactory(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 10, 10, 10, gm);
 
   // extract fractures mesh
@@ -67,8 +67,8 @@ std::cout << "Test: Advance on a 2D square mesh" << std::endl;
   RCP<const Mesh_MSTK> mesh_mstk = rcp_static_cast<const Mesh_MSTK>(mesh3D);
   RCP<const Mesh>  mesh = Teuchos::rcp(new Mesh_MSTK(*mesh_mstk, setnames, AmanziMesh::FACE));
 
-  int ncells_owned = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
-  int nfaces_owned = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
+  int ncells_owned = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+  int nfaces_owned = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
 
   // create a simple state and populate it
   Amanzi::VerboseObject::hide_line_prefix = true;
@@ -142,7 +142,7 @@ std::cout << "Test: Advance on a 2D square mesh" << std::endl;
 
   // test the maximum principle
   AmanziMesh::Entity_ID_List block;
-  mesh->get_set_entities("fracture 2", AmanziMesh::CELL, AmanziMesh::OWNED, &block);
+  mesh->get_set_entities("fracture 2", AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED, &block);
 
   // test that solute enter the second fracture
   double tcc_max(0.0);

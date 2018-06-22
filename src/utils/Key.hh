@@ -1,3 +1,4 @@
+/* -*-  mode: c++; indent-tabs-mode: nil -*- */
 /* 
    Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
    Amanzi is released under the three-clause BSD License. 
@@ -21,6 +22,7 @@
 #define UTILS_KEY_HH_
 
 
+#include <set>
 #include "boost/algorithm/string.hpp"
 #include "Teuchos_ParameterList.hpp"
 

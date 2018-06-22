@@ -22,32 +22,31 @@ SUITE (Mesh)
         if (my_pid == 0)
         {
             CHECK_EQUAL (mesh->rank_id (), my_pid);
-            CHECK_EQUAL (mesh->count_entities (mesh->kind_to_rank(Amanzi::AmanziMesh::CELL), Amanzi::AmanziMesh::OWNED), 4);
-            CHECK_EQUAL (mesh->count_entities (mesh->kind_to_rank(Amanzi::AmanziMesh::FACE),    Amanzi::AmanziMesh::OWNED), 21);
-            CHECK_EQUAL (mesh->count_entities (mesh->kind_to_rank(Amanzi::AmanziMesh::NODE),    Amanzi::AmanziMesh::OWNED), 20);
+            CHECK_EQUAL (mesh->count_entities (mesh->kind_to_rank(Amanzi::AmanziMesh::CELL), Amanzi::AmanziMesh::Parallel_type::OWNED), 4);
+            CHECK_EQUAL (mesh->count_entities (mesh->kind_to_rank(Amanzi::AmanziMesh::FACE), Amanzi::AmanziMesh::Parallel_type::OWNED), 21);
+            CHECK_EQUAL (mesh->count_entities (mesh->kind_to_rank(Amanzi::AmanziMesh::NODE), Amanzi::AmanziMesh::Parallel_type::OWNED), 20);
 
-            CHECK_EQUAL (mesh->count_entities (mesh->kind_to_rank(Amanzi::AmanziMesh::CELL), Amanzi::AmanziMesh::USED), 4);
-            CHECK_EQUAL (mesh->count_entities (mesh->kind_to_rank(Amanzi::AmanziMesh::FACE),    Amanzi::AmanziMesh::USED), 21);
-            CHECK_EQUAL (mesh->count_entities (mesh->kind_to_rank(Amanzi::AmanziMesh::NODE),    Amanzi::AmanziMesh::USED), 20);
+            CHECK_EQUAL (mesh->count_entities (mesh->kind_to_rank(Amanzi::AmanziMesh::CELL), Amanzi::AmanziMesh::Parallel_type::ALL), 4);
+            CHECK_EQUAL (mesh->count_entities (mesh->kind_to_rank(Amanzi::AmanziMesh::FACE), Amanzi::AmanziMesh::Parallel_type::ALL), 21);
+            CHECK_EQUAL (mesh->count_entities (mesh->kind_to_rank(Amanzi::AmanziMesh::NODE), Amanzi::AmanziMesh::Parallel_type::ALL), 20);
 
         }
         else
         {
             CHECK_EQUAL (mesh->rank_id (), my_pid);
-            CHECK_EQUAL (mesh->count_entities (mesh->kind_to_rank(Amanzi::AmanziMesh::NODE),    Amanzi::AmanziMesh::OWNED), 0);
-            CHECK_EQUAL (mesh->count_entities (mesh->kind_to_rank(Amanzi::AmanziMesh::FACE),    Amanzi::AmanziMesh::OWNED), 0);
-            CHECK_EQUAL (mesh->count_entities (mesh->kind_to_rank(Amanzi::AmanziMesh::CELL), Amanzi::AmanziMesh::OWNED), 0);
+            CHECK_EQUAL (mesh->count_entities (mesh->kind_to_rank(Amanzi::AmanziMesh::NODE), Amanzi::AmanziMesh::Parallel_type::OWNED), 0);
+            CHECK_EQUAL (mesh->count_entities (mesh->kind_to_rank(Amanzi::AmanziMesh::FACE), Amanzi::AmanziMesh::Parallel_type::OWNED), 0);
+            CHECK_EQUAL (mesh->count_entities (mesh->kind_to_rank(Amanzi::AmanziMesh::CELL), Amanzi::AmanziMesh::Parallel_type::OWNED), 0);
 
-            CHECK_EQUAL (mesh->count_entities (mesh->kind_to_rank(Amanzi::AmanziMesh::NODE),    Amanzi::AmanziMesh::USED), 0);
-            CHECK_EQUAL (mesh->count_entities (mesh->kind_to_rank(Amanzi::AmanziMesh::FACE),    Amanzi::AmanziMesh::USED), 0);
-            CHECK_EQUAL (mesh->count_entities (mesh->kind_to_rank(Amanzi::AmanziMesh::CELL), Amanzi::AmanziMesh::USED), 0);
+            CHECK_EQUAL (mesh->count_entities (mesh->kind_to_rank(Amanzi::AmanziMesh::NODE), Amanzi::AmanziMesh::Parallel_type::ALL), 0);
+            CHECK_EQUAL (mesh->count_entities (mesh->kind_to_rank(Amanzi::AmanziMesh::FACE), Amanzi::AmanziMesh::Parallel_type::ALL), 0);
+            CHECK_EQUAL (mesh->count_entities (mesh->kind_to_rank(Amanzi::AmanziMesh::CELL), Amanzi::AmanziMesh::Parallel_type::ALL), 0);
 
         }
 
         // CHECK_EQUAL (mesh->count_global_entities (mesh->kind_to_rank(Amanzi::AmanziMesh::CELL)), 4);
         // CHECK_EQUAL (mesh->count_global_entities (mesh->kind_to_rank(Amanzi::AmanziMesh::FACE)), 21);
         // CHECK_EQUAL (mesh->count_global_entities (mesh->kind_to_rank(Amanzi::AmanziMesh::NODE)), 20);
-
     }
 
     TEST_FIXTURE (Mesh_setup, Coordinates)

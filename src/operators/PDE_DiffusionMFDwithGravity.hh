@@ -25,8 +25,8 @@
 /*!
 Additional options for MFD with the gravity term include:
   
-* `"gravity term discretization`" [string] selects a model for discretizing the 
-  gravity term. Available options are `"hydraulic head`" [default] and `"finite volume`". 
+* `"gravity term discretization`" ``[string]`` selects a model for discretizing the 
+  gravity term. Available options are `"hydraulic head`" (default) and `"finite volume`". 
   The first option starts with equation for the shifted solution, i.e. the hydraulic 
   head, and derives gravity discretization by the reserve shifting.
   The second option is based on the divergence formula.

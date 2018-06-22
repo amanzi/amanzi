@@ -48,7 +48,7 @@ class RegionPlane : public Region {
  public:
   // Default constructor uses point and normal
   RegionPlane(const std::string& name,
-              const Set_ID id,
+              const int id,
               const Point& p, 
               const Point& normal,
               const LifeCycleType lifecycle=PERMANENT);
@@ -66,7 +66,6 @@ class RegionPlane : public Region {
 protected:
   const Point p_;  /* point on the plane */
   const Point n_;  /* normal to the plane */
-
 };
 
 } // namespace AmanziGeometry

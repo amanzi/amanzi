@@ -26,8 +26,12 @@ void Transport_PK::Functional(double t,
                               const Epetra_Vector& component,
                               Epetra_Vector& f_component)
 {
+  // distribute vector
+  Epetra_Vector component_tmp(component);
+  component_tmp.Import(component, *tcc->importer("cell"), Insert);
+
   // transport routines need an RCP pointer
-  Teuchos::RCP<const Epetra_Vector> component_rcp(&component, false);
+  Teuchos::RCP<const Epetra_Vector> component_rcp(&component_tmp, false);
 
   Teuchos::ParameterList plist = tp_list_->sublist("reconstruction");
   lifting_->Init(component_rcp, plist);

@@ -25,7 +25,6 @@
       <Parameter name="cfl" type="double" value="0.5"/>   
       <Parameter name="spatial discretization order" type="int" value="1"/>   
       <Parameter name="temporal discretization order" type="int" value="1"/>   
-      <Parameter name="advection limiter" type="string" value="tensorial"/>
       <!-- developers parameters --> 
       <Parameter name="enable internal tests" type="bool" value="true"/>   
       <Parameter name="internal tests tolerance" type="double" value="1e-5"/>   
@@ -65,7 +64,7 @@
     <ParameterList name="field evaluators">
       <ParameterList name="porosity">
         <ParameterList name="verbose object">
-          <Parameter name="verbosity level" type="string" value="extreme"/>
+          <Parameter name="verbosity level" type="string" value="low"/>
         </ParameterList>
         <Parameter name="field evaluator type" type="string" value="independent variable"/>
         <ParameterList name="function">

@@ -103,8 +103,8 @@ std::cout << "Passed EPK.Initilize()" << std::endl;
   EPK->UpdateConductivityData(S.ptr());
 
   // create boundary data
-  int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
-  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(mesh, AmanziMesh::FACE, Operators::SCHEMA_DOFS_SCALAR));
+  int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
+  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(mesh, AmanziMesh::FACE, Operators::DOF_Type::SCALAR));
   std::vector<int>& bc_model = bc->bc_model();
   std::vector<double>& bc_value = bc->bc_value();
   
@@ -160,7 +160,7 @@ std::cout << "Passed EPK.Initilize()" << std::endl;
     const AmanziGeometry::Point& normal = mesh->face_normal(f);
     q_l[0][f] = velocity * normal;
     
-    mesh->face_get_cells(f, AmanziMesh::USED, &cells);
+    mesh->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
     int ncells = cells.size();
     double tmp(0.0);
     for (int i = 0; i < ncells; i++) {
@@ -172,20 +172,22 @@ std::cout << "Passed EPK.Initilize()" << std::endl;
 
   Teuchos::ParameterList alist;
   Teuchos::RCP<PDE_AdvectionUpwind> op3 = Teuchos::rcp(new PDE_AdvectionUpwind(alist, op));
+  op3->SetBCs(bc, bc);
   op3->Setup(*flux);
   op3->UpdateMatrices(flux.ptr());
 
   // build the matrix
-  op1->ApplyBCs(true, true);
-  op3->ApplyBCs(bc, true);
+  op1->ApplyBCs(true, true, true);
+  op3->ApplyBCs(true, true, true);
   op->SymbolicAssembleMatrix();
   op->AssembleMatrix();
 
   // make preconditioner
   // Teuchos::RCP<Operator> op3 = Teuchos::rcp(new Operator(*op2));
 
-  Teuchos::ParameterList slist = plist->sublist("preconditioners");
-  op->InitPreconditioner("Hypre AMG", slist);
+  Teuchos::ParameterList slist = plist->sublist("preconditioners").sublist("Hypre AMG");
+  op->InitializePreconditioner(slist);
+  op->UpdatePreconditioner();
 
   if (MyPID == 0) {
     GMV::open_data_file(*mesh, (std::string)"energy.gmv");

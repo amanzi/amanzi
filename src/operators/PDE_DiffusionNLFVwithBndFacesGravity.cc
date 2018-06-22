@@ -71,7 +71,7 @@ void PDE_DiffusionNLFVwithBndFacesGravity::UpdateMatrices(
     WhetStone::DenseMatrix& Aface = local_op_->matrices[f];
     //std::cout<<"face "<<f<<"\n"<<Aface<<"\n";
     
-    mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+    mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
     int ncells = cells.size();
 
     if (ncells == 2) {
@@ -163,7 +163,7 @@ void PDE_DiffusionNLFVwithBndFacesGravity::UpdateFlux(const Teuchos::Ptr<const C
 // double PDE_DiffusionNLFVwithBndFacesGravity::MapBoundaryValue_(int f, double u)
 // {
 //   AmanziMesh::Entity_ID_List cells;  
-//   mesh_->face_get_cells(f, AmanziMesh::USED, &cells);  
+//   mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);  
 //   double rho_g = GetDensity(cells[0]) * fabs(g_[dim_ - 1]);
 
 //   double zf = (mesh_->face_centroid(f))[dim_ - 1];

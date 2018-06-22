@@ -30,7 +30,7 @@
 /*!
 Additional options available only for the MFD family of discretizations include:
   
-* `"nonlinear coefficient`" [string] specifies a method for treating nonlinear
+* `"nonlinear coefficient`" ``[string]`` specifies a method for treating nonlinear
   diffusion coefficient, if any. Available options are `"none`", `"upwind:
   face`", `"divk: cell-face`" (default), `"divk: face`", `"standard: cell`",
   `"divk: cell-face-twin`" and `"divk: cell-grad-face-twin`".  Symmetry
@@ -40,21 +40,21 @@ Additional options available only for the MFD family of discretizations include:
   indicates required components of the composite vector that must be provided
   by a physical PK.
 
-* `"discretization secondary`" [string] specifies the most robust
+* `"discretization secondary`" ``[string]`` specifies the most robust
   discretization method that is used when the primary selection fails to
-  satisfy all a priori conditions.  This is typically `"mfd: default`".
-  **Used only when an MFD `"primary discretization`" is used**
+  satisfy all a priori conditions.  This is typically `"mfd: default`", and is
+  used only when an MFD `"discretization primary`" is used.
 
-* `"schema`" [Array(string)] defines the operator stencil. It is a collection of 
+* `"schema`" ``[Array(string)]`` defines the operator stencil. It is a collection of 
   geometric objects.  Typically this is set by the implementation and is not provided.
 
-* `"preconditioner schema`" [Array(string)] **{face,cell}** Defines the
+* `"preconditioner schema`" ``[Array(string)]`` **{face,cell}** Defines the
   preconditioner stencil.  It is needed only when the default assembling
   procedure is not desirable. If skipped, the `"schema`" is used instead.
   In addition to the default, **{face}** may be used, which forms the Schur
   complement.
    
-* `"consistent faces`" [list] may contain a `"preconditioner`" and
+* `"consistent faces`" ``[list]`` may contain a `"preconditioner`" and
   `"linear operator`" list (see sections Preconditioners_ and LinearSolvers_
   respectively).  If these lists are provided, and the `"discretization
   primary`" is of type `"mfd: *`", then the diffusion method
@@ -63,7 +63,7 @@ Additional options available only for the MFD family of discretizations include:
   equation in MFD by assembling and inverting the face-only system.  This is
   not currently used by any Amanzi PKs.
 
-* `"diffusion tensor`" [string] allows us to solve problems with symmetric and 
+* `"diffusion tensor`" ``[string]`` allows us to solve problems with symmetric and 
   non-symmetric (but positive definite) tensors. Available options are *symmetric* 
   (default) and *nonsymmetric*.
 */
@@ -121,12 +121,17 @@ class PDE_DiffusionMFD : public virtual PDE_Diffusion {
                                               const Teuchos::Ptr<const CompositeVector>& u,
                                               double scalar_limiter=1) override;
 
-  // modify the operator
-  // -- by incorporating boundary conditions. Variable 'primary' indicates
-  //    that we put 1 on the matrix diagonal. Variable 'eliminate' says
-  //    that we eliminate essential BCs for the trial function, i.e. zeros
-  //    go in the corresponding matrix columns.
-  virtual void ApplyBCs(bool primary, bool eliminate) override;
+  // modify matrix due to boundary conditions 
+  //    primary=true indicates that the operator updates both matrix and right-hand
+  //      side using BC data. If primary=false, only matrix is changed.
+  //    eliminate=true indicates that we eliminate essential BCs for a trial 
+  //      function, i.e. zeros go in the corresponding matrix columns and 
+  //      right-hand side is modified using BC values. This is the optional 
+  //      parameter that enforces symmetry for a symmetric tree operators.
+  //    essential_eqn=true indicates that the operator places a positive number on 
+  //      the main matrix diagonal for the case of essential BCs. This is the
+  //      implementation trick.
+  virtual void ApplyBCs(bool primary, bool eliminate, bool essential_eqn) override;
 
   // -- by breaking p-lambda coupling.
   virtual void ModifyMatrices(const CompositeVector& u) override;
@@ -149,8 +154,7 @@ class PDE_DiffusionMFD : public virtual PDE_Diffusion {
   
   // -- interface to solvers for treating nonlinear BCs.
   virtual double ComputeTransmissibility(int f) const override;
-  virtual double ComputeGravityFlux(int f) const override
-    { return 0.0; }
+  virtual double ComputeGravityFlux(int f) const override { return 0.0; }
  
   // developer checks
   int nfailed_primary() { return nfailed_primary_; }
@@ -163,7 +167,8 @@ class PDE_DiffusionMFD : public virtual PDE_Diffusion {
   void UpdateMatricesNodal_();
   void UpdateMatricesEdge_();
   void UpdateMatricesTPFA_();
-  void UpdateMatricesMixed_(const Teuchos::Ptr<const CompositeVector>& flux);
+  void UpdateMatricesMixed_();
+  void UpdateMatricesMixed_little_k_();
   void UpdateMatricesMixedWithGrad_(const Teuchos::Ptr<const CompositeVector>& flux);
 
   void AddNewtonCorrectionCell_(const Teuchos::Ptr<const CompositeVector>& flux,
@@ -172,16 +177,16 @@ class PDE_DiffusionMFD : public virtual PDE_Diffusion {
 
   void ApplyBCs_Mixed_(const Teuchos::Ptr<const BCs>& bc_trial,
                        const Teuchos::Ptr<const BCs>& bc_test,
-                       bool primary, bool eliminate);
+                       bool primary, bool eliminate, bool essential_eqn);
   void ApplyBCs_Cell_(const Teuchos::Ptr<const BCs>& bc_trial,
                       const Teuchos::Ptr<const BCs>& bc_test,
-                      bool primary, bool eliminate);
+                      bool primary, bool eliminate, bool essential_eqn);
   void ApplyBCs_Edge_(const Teuchos::Ptr<const BCs>& bc_trial,
                       const Teuchos::Ptr<const BCs>& bc_test,
-                      bool primary, bool eliminate);
+                      bool primary, bool eliminate, bool essential_eqn);
   void ApplyBCs_Nodal_(const Teuchos::Ptr<const BCs>& bc_f,
                        const Teuchos::Ptr<const BCs>& bc_n,
-                       bool primary, bool eliminate);
+                       bool primary, bool eliminate, bool essential_eqn);
 
  protected:
   Teuchos::ParameterList plist_;

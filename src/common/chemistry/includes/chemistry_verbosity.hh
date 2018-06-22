@@ -2,7 +2,7 @@
 #ifndef AMANZI_CHEMISTRY_VERBOSITY_HH_
 #define AMANZI_CHEMISTRY_VERBOSITY_HH_
 
-/*!
+/*
 **  \file chemistry_verbosity.hh
 **
 **  \author Ben Andre

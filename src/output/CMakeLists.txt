@@ -102,8 +102,8 @@ if (BUILD_TESTS)
 
   # Copy test directory files if an out of source build
   if (NOT (${OUTPUT_SOURCE_DIR} EQUAL ${OUTPUT_BINARY_DIR}))
-      execute_process(COMMAND ${CMAKE_COMMAND} -E
-      copy_directory ${OUTPUT_SOURCE_DIR}/test ${OUTPUT_BINARY_DIR}/test)
+      file(GLOB DataFiles "${OUTPUT_SOURCE_DIR}/test/*.exo")
+      file(COPY ${DataFiles} DESTINATION ${OUTPUT_BINARY_DIR}/test/)
   endif()
 
     

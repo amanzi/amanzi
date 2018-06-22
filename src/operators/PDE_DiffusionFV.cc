@@ -152,13 +152,13 @@ void PDE_DiffusionFV::SetScalarCoefficient(const Teuchos::RCP<const CompositeVec
   dkdp_ = dkdp;
 
   if (k_ != Teuchos::null) {
-    ASSERT(k_->HasComponent("face"));
+    AMANZI_ASSERT(k_->HasComponent("face"));
     // NOTE: it seems that Amanzi passes in a cell based kr which is then
     // ignored, and assumed = 1.  This seems dangerous to me. --etc
-    // ASSERT(!k_->HasComponent("cell"));
+    // AMANZI_ASSERT(!k_->HasComponent("cell"));
   }
   if (dkdp_ != Teuchos::null) {
-    ASSERT(dkdp_->HasComponent("cell"));
+    AMANZI_ASSERT(dkdp_->HasComponent("cell"));
   }
 
   // verify that mass matrices were initialized.
@@ -192,7 +192,7 @@ void PDE_DiffusionFV::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& 
     std::vector<int> dirs;
 
     for (int f = 0; f != nfaces_owned; ++f) {
-      mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+      mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
       int ncells = cells.size();
 
       WhetStone::DenseMatrix Aface(ncells, ncells);
@@ -223,7 +223,7 @@ void PDE_DiffusionFV::UpdateMatricesNewtonCorrection(
 {
   // Add derivatives to the matrix (Jacobian in this case)
   if (newton_correction_ == OPERATOR_DIFFUSION_JACOBIAN_TRUE && u.get()) {
-    ASSERT(u != Teuchos::null);
+    AMANZI_ASSERT(u != Teuchos::null);
     AnalyticJacobian_(*u);
   }
 }
@@ -231,7 +231,7 @@ void PDE_DiffusionFV::UpdateMatricesNewtonCorrection(
 /* ******************************************************************
 * Special implementation of boundary conditions.
 ****************************************************************** */
-void PDE_DiffusionFV::ApplyBCs(bool primary, bool eliminate)
+void PDE_DiffusionFV::ApplyBCs(bool primary, bool eliminate, bool essential_eqn)
 {
   const Epetra_MultiVector& trans_face = *transmissibility_->ViewComponent("face", true);
 
@@ -250,7 +250,7 @@ void PDE_DiffusionFV::ApplyBCs(bool primary, bool eliminate)
 
     for (int f = 0; f < nfaces_owned; f++) {
       if (bc_model[f] != OPERATOR_BC_NONE) {
-        mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+        mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
         int c = cells[0];
 
         if (bc_model[f] == OPERATOR_BC_DIRICHLET && primary) {
@@ -267,10 +267,7 @@ void PDE_DiffusionFV::ApplyBCs(bool primary, bool eliminate)
   }
 
   if (jac_op_ != Teuchos::null) {
-    const std::vector<int>& bc_model = bcs_trial_[0]->bc_model();
-    ASSERT(bc_model.size() == nfaces_wghost);
-
-
+    AMANZI_ASSERT(bc_model.size() == nfaces_wghost);
     for (int f = 0; f != nfaces_owned; ++f) {
       WhetStone::DenseMatrix& Aface = jac_op_->matrices[f];
 
@@ -328,7 +325,7 @@ void PDE_DiffusionFV::UpdateFlux(const Teuchos::Ptr<const CompositeVector>& solu
         
       } else {
         if (f < nfaces_owned && !flag[f]) {
-          mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+          mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
           if (cells.size() <= 1) {
             Errors::Message msg("Flow PK: These boundary conditions are not supported by FV.");
             Exceptions::amanzi_throw(msg);
@@ -387,7 +384,7 @@ void PDE_DiffusionFV::AnalyticJacobian_(const CompositeVector& u)
   }
 
   for (int f=0; f!=nfaces_owned; ++f) {
-    mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+    mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
     int mcells = cells.size();
 
     WhetStone::DenseMatrix Aface(mcells, mcells);
@@ -446,7 +443,7 @@ void PDE_DiffusionFV::ComputeJacobianLocal_(
       dKrel_dp[0] = 0.5 * dkdp_cell[0];
       dKrel_dp[1] = 0.5 * dkdp_cell[1];
     } else {
-      ASSERT(0);
+      AMANZI_ASSERT(0);
     }
 
     Jpp(0, 0) = trans_face[0][f] * dpres * dKrel_dp[0];

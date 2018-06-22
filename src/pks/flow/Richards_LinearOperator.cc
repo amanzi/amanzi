@@ -27,10 +27,6 @@ namespace Flow {
 * preconditioner. Matrix may be used in external flux calculation. 
 * Moving flux calculation here impose restrictions on multiple 
 * possible scenarios of data flow.
-*
-* Comment:
-* When this is used by Init, shouldn't this also get preconditioner_name_ini 
-* instead of preconditioner_name? --etc
 ****************************************************************** */
 void Richards_PK::SolveFullySaturatedProblem(
     double t_old, CompositeVector& u, const std::string& solver_name)
@@ -45,16 +41,14 @@ void Richards_PK::SolveFullySaturatedProblem(
   // create diffusion operator
   op_matrix_->Init();
   op_matrix_diff_->UpdateMatrices(Teuchos::null, solution.ptr());
-  op_matrix_diff_->ApplyBCs(true, true);
+  op_matrix_diff_->ApplyBCs(true, true, true);
 
   // create diffusion preconditioner
   op_preconditioner_->Init();
   op_preconditioner_diff_->UpdateMatrices(Teuchos::null, solution.ptr());
-  op_preconditioner_diff_->ApplyBCs(true, true);
+  op_preconditioner_diff_->ApplyBCs(true, true, true);
   op_preconditioner_->AssembleMatrix();
-  // Operators::CheckMatrixSymmetry(op_preconditioner_->A());
-  // Operators::CheckMatrixCoercivity(op_preconditioner_->A());
-  op_preconditioner_->InitPreconditioner(preconditioner_name_, *preconditioner_list_);
+  op_preconditioner_->UpdatePreconditioner();
 
   AmanziSolvers::LinearOperatorFactory<Operators::Operator, CompositeVector, CompositeVectorSpace> sfactory;
 
@@ -129,16 +123,16 @@ void Richards_PK::EnforceConstraints(double t_new, Teuchos::RCP<CompositeVector>
   // calculate diffusion operator
   op_matrix_->Init();
   op_matrix_diff_->UpdateMatrices(Teuchos::null, solution.ptr());
-  op_matrix_diff_->ApplyBCs(true, true);
+  op_matrix_diff_->ApplyBCs(true, true, true);
   op_matrix_diff_->ModifyMatrices(*u);
 
   // calculate diffusion preconditioner
   op_preconditioner_->Init();
   op_preconditioner_diff_->UpdateMatrices(Teuchos::null, solution.ptr());
-  op_preconditioner_diff_->ApplyBCs(true, true);
+  op_preconditioner_diff_->ApplyBCs(true, true, true);
   op_preconditioner_diff_->ModifyMatrices(*u);
   op_preconditioner_->AssembleMatrix();
-  op_preconditioner_->InitPreconditioner(preconditioner_name_, *preconditioner_list_);
+  op_preconditioner_->UpdatePreconditioner();
 
   // solve non-symmetric problem
   AmanziSolvers::LinearOperatorFactory<Operators::Operator, CompositeVector, CompositeVectorSpace> factory;
@@ -190,7 +184,7 @@ void Richards_PK::UpwindInflowBoundary(Teuchos::RCP<const CompositeVector> u)
   for (int f = 0; f < nfaces_owned; f++) {
     if ((bc_model[f] == Operators::OPERATOR_BC_NEUMANN || 
          bc_model[f] == Operators::OPERATOR_BC_MIXED) && bc_value[f] < 0.0) {
-      mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+      mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
       int c = cells[0];
 
       const AmanziGeometry::Point& normal = mesh_->face_normal(f);
@@ -228,7 +222,7 @@ void Richards_PK::UpwindInflowBoundary_New(Teuchos::RCP<const CompositeVector> u
   for (int f = 0; f < nfaces_owned; f++) {
     if ((bc_model[f] == Operators::OPERATOR_BC_NEUMANN || 
          bc_model[f] == Operators::OPERATOR_BC_MIXED) && bc_value[f] < 0.0) {
-      mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
+      mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
       int c = cells[0];
 
       double value = DeriveBoundaryFaceValue(f, *u, wrm_->second[(*wrm_->first)[c]]);

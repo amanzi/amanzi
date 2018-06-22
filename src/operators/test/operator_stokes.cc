@@ -60,11 +60,11 @@ TEST(OPERATOR_STOKES_EXACTNESS) {
   meshfactory.preference(FrameworkPreference({MSTK, STKMESH}));
   Teuchos::RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 16, 20, Teuchos::null);
 
-  int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
-  int nnodes = mesh->num_entities(AmanziMesh::NODE, AmanziMesh::OWNED);
-  int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
-  int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
-  int nnodes_wghost = mesh->num_entities(AmanziMesh::NODE, AmanziMesh::USED);
+  int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+  int nnodes = mesh->num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::OWNED);
+  int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
+  int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
+  int nnodes_wghost = mesh->num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::ALL);
 
   // populate diffusion coefficient using an analytic solution
   AnalyticElasticity02 ana(mesh);
@@ -78,7 +78,7 @@ TEST(OPERATOR_STOKES_EXACTNESS) {
 
   // populate boundary data for Bernardi-Raugel-type element
   // -- Dirichlet condition on faces for the normal velocity component
-  Teuchos::RCP<BCs> bcf = Teuchos::rcp(new BCs(mesh, AmanziMesh::FACE, SCHEMA_DOFS_SCALAR));
+  Teuchos::RCP<BCs> bcf = Teuchos::rcp(new BCs(mesh, AmanziMesh::FACE, DOF_Type::SCALAR));
   std::vector<int>& bcf_model = bcf->bc_model();
   std::vector<double>& bcf_value = bcf->bc_value();
 
@@ -96,7 +96,7 @@ TEST(OPERATOR_STOKES_EXACTNESS) {
 
   // -- Dirichlet condition at nodes for the normal velocity component
   Point xv(2);
-  Teuchos::RCP<BCs> bcv = Teuchos::rcp(new BCs(mesh, AmanziMesh::NODE, SCHEMA_DOFS_POINT));
+  Teuchos::RCP<BCs> bcv = Teuchos::rcp(new BCs(mesh, AmanziMesh::NODE, DOF_Type::POINT));
   std::vector<int>& bcv_model = bcv->bc_model();
   std::vector<Point>& bcv_value = bcv->bc_value_point();
 
@@ -114,7 +114,7 @@ TEST(OPERATOR_STOKES_EXACTNESS) {
   // -- create an elasticity operator using in particular schema data. In the future,
   // -- we could take definition of DOFs data from WhetStone using the provided 
   // -- discretization method.
-  Teuchos::ParameterList op_list = plist.get<Teuchos::ParameterList>("PK operator").sublist("elasticity operator");
+  Teuchos::ParameterList op_list = plist.sublist("PK operator").sublist("elasticity operator");
   Teuchos::RCP<PDE_Elasticity> op00 = Teuchos::rcp(new PDE_Elasticity(op_list, mesh));
   op00->SetTensorCoefficient(K);
   // -- add boundary conditions to the discrete PDE: Lame equation
@@ -123,7 +123,7 @@ TEST(OPERATOR_STOKES_EXACTNESS) {
 
   // -- create a divergence operator. Note that it uses two different schemas for DOFs 
   // for velocity and pressure.
-  op_list = plist.get<Teuchos::ParameterList>("PK operator").sublist("divergence operator");
+  op_list = plist.sublist("PK operator").sublist("divergence operator");
   Teuchos::RCP<PDE_Abstract> op10 = Teuchos::rcp(new PDE_Abstract(op_list, mesh));
   // -- add boundary conditions to the discrete PDE: incompressibility equation
   op10->SetBCs(bcf, bcf);
@@ -167,7 +167,7 @@ TEST(OPERATOR_STOKES_EXACTNESS) {
   // into a global matrix.
   op00->UpdateMatrices();
   global00->UpdateRHS(source, true);
-  op00->ApplyBCs(true, true);
+  op00->ApplyBCs(true, true, true);
   global00->SymbolicAssembleMatrix();
   global00->AssembleMatrix();
 
@@ -175,7 +175,7 @@ TEST(OPERATOR_STOKES_EXACTNESS) {
   // a matrix-free matvec inside an iterative solver, there is no need to
   // assemble a global matrix.
   op10->UpdateMatrices();
-  op10->ApplyBCs(false, true);
+  op10->ApplyBCs(false, true, false);
 
   // populate local matrices in the pressure block (for preconditioner)
   CompositeVector vol(global11->DomainMap());
@@ -188,9 +188,13 @@ TEST(OPERATOR_STOKES_EXACTNESS) {
   // The first block will reuse the assembled matrix to build a multigrid
   // solver. The second block is simply a diagonal matrix. The off-diagonal
   // blocks are empty and require no setup.
-  Teuchos::ParameterList slist = plist.get<Teuchos::ParameterList>("preconditioners");
-  global00->InitPreconditioner("Hypre AMG", slist);
-  global11->InitPreconditioner("Diagonal", slist); 
+  Teuchos::ParameterList slist = plist.sublist("preconditioners").sublist("Hypre AMG");
+  global00->InitializePreconditioner(slist);
+  global00->UpdatePreconditioner();
+
+  slist = plist.sublist("preconditioners").sublist("Diagonal");
+  global11->InitializePreconditioner(slist); 
+  global11->UpdatePreconditioner(); 
 
   Teuchos::RCP<TreeOperator> pc = Teuchos::rcp(new Operators::TreeOperator(tvs));
   pc->SetOperatorBlock(0, 0, op00->global_operator());

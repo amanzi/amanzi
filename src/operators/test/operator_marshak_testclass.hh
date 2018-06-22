@@ -35,7 +35,7 @@ class HeatConduction {
     const Epetra_MultiVector& uc = *u.ViewComponent("cell", true); 
     const Epetra_MultiVector& values_c = *values_->ViewComponent("cell", true); 
 
-    int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::USED);
+    int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
     for (int c = 0; c < ncells; c++) {
       values_c[0][c] = std::pow(uc[0][c], 3.0);
     }
@@ -47,8 +47,8 @@ class HeatConduction {
     for (int f=0; f!=face_map.NumMyElements(); ++f) {
       if (bc_model[f] == Operators::OPERATOR_BC_DIRICHLET) {
         AmanziMesh::Entity_ID_List cells;
-        mesh_->face_get_cells(f, AmanziMesh::USED, &cells);
-        ASSERT(cells.size() == 1);
+        mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
+        AMANZI_ASSERT(cells.size() == 1);
         int bf = ext_face_map.LID(face_map.GID(f));
         vbf[0][bf] = std::pow(bc_value[f], 3.0);
       }
