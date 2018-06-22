@@ -308,6 +308,7 @@ namespace Operators {
 
   }
 
+  // for Alex to modify
   void PDE_DiffusionMFD_XMOF::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& flux,
                                              const Teuchos::Ptr<const CompositeVector>& u, 
                                              double dt){
