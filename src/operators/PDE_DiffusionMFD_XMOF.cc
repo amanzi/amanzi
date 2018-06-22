@@ -328,15 +328,13 @@ namespace Operators {
     //rhs_cells_->PutScalar(0.);
     
     for (int c = 0; c < ncells_owned; c++) {
-      // if ((c==16)||(c==24)) std::cout<<"\n"<<"cell "<<c<<"\n\n";
       mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
       int nfaces = faces.size();
 
       WhetStone::DenseMatrix Scell(nfaces,nfaces);
       
       if ((*xmof_ir_)[c].get_base_mesh().get_cell(0).has_minimesh()){  // mixed cell
-        // if ((c==16)||(c==24)) std::cout<<"MIXED\n";
-        
+       
         const XMOF2D::MiniMesh& mini_mesh = (*xmof_ir_)[c].get_base_mesh().get_cell(0).get_minimesh();        
         int num_cells = mini_mesh.ncells();
         int num_faces = mini_mesh.nfaces();
@@ -344,7 +342,6 @@ namespace Operators {
         std::vector<int> bnd_faces(num_faces, 0);
         for (int i=0;i<num_faces;i++) {
           const XMOF2D::Face fc = mini_mesh.get_face(i);         
-          //std::cout<<"face "<<i<<" "<<fc.is_boundary()<<"\n";
           if (fc.is_boundary()) {
             n_bnd++;
             bnd_faces[i] = n_bnd;
@@ -375,9 +372,7 @@ namespace Operators {
           int faces_c = cell.nfaces();
           WhetStone::DenseMatrix Acell(faces_c + 1, faces_c + 1);
           WhetStone::DenseMatrix& Wc = Wff_cells_mm_[c][i];
-          //std::vector<double> area(faces_c), tmp(faces_c);
-        
-
+      
           Acell = 0.;
           // Flux elimination
           double matsum = 0.0; 
@@ -433,7 +428,7 @@ namespace Operators {
               Pi(i2, i) = Acell(i1, faces_c);
             }                                       
           }
-          //std::cout<<"Acell "<<i<<" "<<Acell(faces_c, faces_c)<<"\n";
+      
           
           Pp_[c](i,i) = Acell(faces_c, faces_c);
           // Accumulation term
@@ -491,26 +486,10 @@ namespace Operators {
             Abb_[c](j1,i1)  = Abb_[c](i1,j1);
           }
         }
-
-        // std::cout<<"T3\n"<<T3_[c]<<"\n";
-        // std::cout<<"rhs_cell\n"<<rhs_cell<<"\n";
-        
+       
         rhs_local.Multiply(T3_[c], rhs_cell, false);
         rhs_local *= -1;
         
-        // std::cout<<"*************\n";
-        // std::cout<<"Abb_[c]\n"<<Abb_[c]<<"\n";
-
-        
-        // for (int i=0;i<num_faces;i++) {
-        //   std::cout<<bnd_faces[i]<<" ";
-        //   if (bnd_faces[i] > 0) {
-        //     int par_id = mini_mesh.get_face(i).iparent();
-        //     std::cout << par_id  <<" "<< mini_mesh.get_face(i).center()<<" *** "<<
-        //       (*xmof_ir_)[c].get_base_mesh().get_face(par_id).center()<<"\n";
-        //   }
-        //   std::cout<<"\n";
-        // }
         Scell = 0.;
         for (int i=0; i<num_faces; i++) {
           if (bnd_faces[i] > 0) {
@@ -531,10 +510,7 @@ namespace Operators {
           }          
         }
 
-        // if ((c==16)||(c==24)) std::cout<<rhs_local<<"\n";
-        //std::cout<<"Scell\n"<<Scell<<"\n";
-        //mixed_mat += Scell.Norm2();
-        
+       
         
       }else{
         // std::vector<double> area(nfaces), tmp(nfaces);
@@ -577,18 +553,11 @@ namespace Operators {
           rhs_faces[0][f] += rhs_local(i1,0);            
         }
         
-        //pure_mat += Scell.Norm2();
-        //std::cout<<rhs_local<<"\n";
       }
-      
-
-      // if ((c==16)||(c==24)) std::cout<<"Scell\n"<<Scell<<"\n";
       
       local_op_->matrices[c] = Scell;
 
     }
-
-    std::cout<<"mixed "<<mixed_mat<<" pure "<<pure_mat<<"\n";
 
   }
 
