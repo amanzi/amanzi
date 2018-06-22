@@ -48,7 +48,8 @@ class PDE_HelperDiscretization : public PDE_HelperBCsList {
   virtual void UpdateMatrices() {
     UpdateMatrices(Teuchos::null, Teuchos::null);
   }
-  // -- modify matrix due to boundary conditions 
+  // -- modify matrix due to boundary conditions: generic implementation 
+  //    for PDE classes based on new schema: 
   //    primary=true indicates that the operator updates both matrix and right-hand
   //      side using BC data. If primary=false, only matrix is changed.
   //    eliminate=true indicates that we eliminate essential BCs for a trial 
