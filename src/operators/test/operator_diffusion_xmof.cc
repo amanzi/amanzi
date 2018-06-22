@@ -463,8 +463,6 @@ void RunTestDiffusionMixedXMOF_Linear() {
   double pnorm, pl2_err, pinf_err;
   double lnorm, ll2_err, linf_err;
   ana.ComputeLambdaError(lmd, 0.0, lnorm, ll2_err, linf_err);
-  ana.ComputeCellError(p, 0.0, pnorm, pl2_err, pinf_err);
-
   
   // // calculate flux error
   // Epetra_MultiVector& flx = *flux->ViewComponent("face", true);
@@ -478,8 +476,8 @@ void RunTestDiffusionMixedXMOF_Linear() {
     // ul2_err /= unorm;
     // printf("L2(p)=%9.6f  Inf(p)=%9.6f  L2(u)=%9.6g  Inf(u)=%9.6f  itr=%3d\n",
     //     pl2_err, pinf_err, ul2_err, uinf_err, solver.num_itrs());
-    printf("Pressure L2(p)=%9.6f  Inf(p)=%9.6f  itr=%3d\n",
-        pl2_err, pinf_err, solver.num_itrs());    
+    // printf("Pressure L2(p)=%9.6f  Inf(p)=%9.6f  itr=%3d\n",
+    //     pl2_err, pinf_err, solver.num_itrs());    
 
     ll2_err /= lnorm;
     printf("Lambda L2(p)=%15.9f  Inf(p)=%15.9f  itr=%3d\n",
