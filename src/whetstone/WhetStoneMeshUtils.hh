@@ -82,6 +82,22 @@ int cell_get_face_adj_cell(const AmanziMesh::Mesh& mesh, int c, int f)
 
 
 /* ******************************************************************
+* Exterior boundary normal: dir = 0 for internal face
+****************************************************************** */
+inline
+AmanziGeometry::Point face_normal_exterior(const AmanziMesh::Mesh& mesh, int f, int* dir)
+{
+  Amanzi::AmanziMesh::Entity_ID_List cells;
+  mesh.face_get_cells(f, Amanzi::AmanziMesh::Parallel_type::ALL, &cells);
+
+  auto normal = mesh.face_normal(f, false, cells[0], dir);
+  if (cells.size() > 1) *dir = 0;
+
+  return normal;
+}
+
+
+/* ******************************************************************
 * Geometric center of a mesh cell 
 ****************************************************************** */
 inline
