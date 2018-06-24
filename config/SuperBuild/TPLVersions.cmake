@@ -113,6 +113,8 @@
 #                - update HYPRE to 2.14.0
 #                - update OpenMPI to 3.0.2
 #   0.95.4       - update Boost to version 1.67.0
+#   0.95.5       - update HDF5 to version 1.10.2
+#                - update NetCDF to version 4.6.1
 
 include(CMakeParseArguments)
 
@@ -165,7 +167,7 @@ endmacro(amanzi_tpl_version_write)
 #
 set(AMANZI_TPLS_VERSION_MAJOR 0)
 set(AMANZI_TPLS_VERSION_MINOR 95)
-set(AMANZI_TPLS_VERSION_PATCH 4)
+set(AMANZI_TPLS_VERSION_PATCH 5)
 set(AMANZI_TPLS_VERSION ${AMANZI_TPLS_VERSION_MAJOR}.${AMANZI_TPLS_VERSION_MINOR}.${AMANZI_TPLS_VERSION_PATCH})
 # Not sure how to create a meaningful hash key for the collection
 
@@ -267,6 +269,7 @@ set(UnitTest_MD5_SUM      29f958e355e516e7ab016b467974728d)
 #
 set(Boost_VERSION_MAJOR 1)
 set(Boost_VERSION_MINOR 67)
+
 set(Boost_VERSION_PATCH 0)
 set(Boost_VERSION        ${Boost_VERSION_MAJOR}.${Boost_VERSION_MINOR}.${Boost_VERSION_PATCH})
 set(Boost_VERSION_STRING ${Boost_VERSION_MAJOR}_${Boost_VERSION_MINOR}_${Boost_VERSION_PATCH})
@@ -279,26 +282,27 @@ set(Boost_MD5_SUM        ced776cb19428ab8488774e1415535ab)
 # TPL: HDF5
 #
 set(HDF5_VERSION_MAJOR 1)
-set(HDF5_VERSION_MINOR 8)
-set(HDF5_VERSION_PATCH 18)
+set(HDF5_VERSION_MINOR 10)
+set(HDF5_VERSION_PATCH 2)
 set(HDF5_VERSION ${HDF5_VERSION_MAJOR}.${HDF5_VERSION_MINOR}.${HDF5_VERSION_PATCH})
 set(HDF5_URL_STRING     ${AMANZI_TPLS_DOWNLOAD_URL})
 set(HDF5_ARCHIVE_FILE   hdf5-${HDF5_VERSION}.tar.gz)
 set(HDF5_SAVEAS_FILE    ${HDF5_ARCHIVE_FILE})
-set(HDF5_MD5_SUM        dd2148b740713ca0295442ec683d7b1c)
+set(HDF5_MD5_SUM        8d4eae84e533efa57496638fd0dca8c3)
 
 
 #
 # TPL: NetCDF
 #
 set(NetCDF_VERSION_MAJOR 4)
-set(NetCDF_VERSION_MINOR 5)
-set(NetCDF_VERSION_PATCH 0)
+set(NetCDF_VERSION_MINOR 6)
+set(NetCDF_VERSION_PATCH 1)
 set(NetCDF_VERSION ${NetCDF_VERSION_MAJOR}.${NetCDF_VERSION_MINOR}.${NetCDF_VERSION_PATCH})
 set(NetCDF_URL_STRING     "https://github.com/Unidata/netcdf-c/archive/")
 set(NetCDF_ARCHIVE_FILE   v${NetCDF_VERSION}.tar.gz)
 set(NetCDF_SAVEAS_FILE    netcdf-${NetCDF_VERSION}.tar.gz)
-set(NetCDF_MD5_SUM        a523ad253bd832efa632847940c2317e)
+set(NetCDF_MD5_SUM        ee81c593efc8a6229d9bcb350b6d7849)
+
 
 #
 # TPL: NetCDF Fortran
