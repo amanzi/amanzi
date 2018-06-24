@@ -44,7 +44,7 @@ class PDE_AdvectionRiemann : public PDE_Advection {
 
   // main members 
   // -- setup
-  virtual void Setup(const CompositeVector& u) {};
+  virtual void Setup(const CompositeVector& u) override {};
 
   void Setup(const Teuchos::RCP<std::vector<WhetStone::VectorPolynomial> >& Kc,
              const Teuchos::RCP<std::vector<WhetStone::Polynomial> >& Kf) {
@@ -54,7 +54,7 @@ class PDE_AdvectionRiemann : public PDE_Advection {
 
   // -- generate linearized operator: standard interface
   virtual void UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& u,
-                              const Teuchos::Ptr<const CompositeVector>& p) {};
+                              const Teuchos::Ptr<const CompositeVector>& p) override {};
 
   // -- generate linearized operator: new interface
   void UpdateMatrices(const Teuchos::Ptr<const std::vector<WhetStone::Polynomial> >& u);
@@ -63,7 +63,7 @@ class PDE_AdvectionRiemann : public PDE_Advection {
   virtual void UpdateFlux(const Teuchos::Ptr<const CompositeVector>& h,
                           const Teuchos::Ptr<const CompositeVector>& u,
                           const Teuchos::RCP<BCs>& bc,
-                          const Teuchos::Ptr<CompositeVector>& flux);
+                          const Teuchos::Ptr<CompositeVector>& flux) override;
 
   // boundary conditions
   virtual void ApplyBCs(bool primary, bool eliminate, bool essential_eqn) override;

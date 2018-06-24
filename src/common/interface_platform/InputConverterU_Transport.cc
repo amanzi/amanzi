@@ -174,7 +174,7 @@ Teuchos::ParameterList InputConverterU::TranslateTransport_()
           alh = GetAttributeValueD_(node, "alpha_lh", TYPE_NUMERICAL, 0.0, DVAL_MAX, "m");
           alv = GetAttributeValueD_(node, "alpha_lv", TYPE_NUMERICAL, 0.0, DVAL_MAX, "m");
           ath = GetAttributeValueD_(node, "alpha_th", TYPE_NUMERICAL, 0.0, DVAL_MAX, "m");
-          ath = GetAttributeValueD_(node, "alpha_tv", TYPE_NUMERICAL, 0.0, DVAL_MAX, "m");
+          atv = GetAttributeValueD_(node, "alpha_tv", TYPE_NUMERICAL, 0.0, DVAL_MAX, "m");
 
           tmp_list.sublist("parameters for Lichtner-Kelkar-Robinson")
               .set<double>("alpha_lh", alh).set<double>("alpha_lv", alv)

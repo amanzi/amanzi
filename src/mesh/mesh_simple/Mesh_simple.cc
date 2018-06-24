@@ -1174,6 +1174,7 @@ int Mesh_simple::deform(const std::vector<double>& target_cell_volumes_in,
 {
   Errors::Message mesg("Deformation not implemented for Mesh_simple");
   amanzi_throw(mesg);
+  return 0;
 }
 
 

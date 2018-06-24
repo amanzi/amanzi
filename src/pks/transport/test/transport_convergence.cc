@@ -276,8 +276,8 @@ void ConvergenceBoxMeshes(int order, double tol, std::string limiter)
     L2error.push_back(L2);
   }
 
-  double L1rate = Utils::bestLSfit(h, L1error);
-  double L2rate = Utils::bestLSfit(h, L2error);
+  double L1rate = Amanzi::Utils::bestLSfit(h, L1error);
+  double L2rate = Amanzi::Utils::bestLSfit(h, L2error);
   if (MyPID == 0)
     printf("convergence rates: %8.2f %20.2f\n", L1rate, L2rate);
 
