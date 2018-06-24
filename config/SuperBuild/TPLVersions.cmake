@@ -301,7 +301,7 @@ set(NetCDF_VERSION ${NetCDF_VERSION_MAJOR}.${NetCDF_VERSION_MINOR}.${NetCDF_VERS
 set(NetCDF_URL_STRING     "https://github.com/Unidata/netcdf-c/archive/")
 set(NetCDF_ARCHIVE_FILE   v${NetCDF_VERSION}.tar.gz)
 set(NetCDF_SAVEAS_FILE    netcdf-${NetCDF_VERSION}.tar.gz)
-set(NetCDF_MD5_SUM        ee81c593efc8a6229d9bcb350b6d7849)
+set(NetCDF_MD5_SUM        e35e98e2478271caa8c1d8569ac9835b)
 
 
 #
