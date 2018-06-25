@@ -87,11 +87,19 @@ TEST(FLOW_2D_RICHARDS_SEEPAGE_TPFA) {
   S->GetField("permeability", passwd)->set_initialized();
 
   // -- fluid density and viscosity
-  double rho = *S->GetScalarData("fluid_density", passwd) = 998.0;
-  S->GetField("fluid_density", passwd)->set_initialized();
+  // double rho = *S->GetScalarData("fluid_density", passwd) = 998.0;
+  // S->GetField("fluid_density", passwd)->set_initialized();
+  // S->GetFieldData("viscosity_liquid", passwd)->PutScalar(0.00089);
+  // S->GetField("viscosity_liquid", passwd)->set_initialized();
 
-  S->GetFieldData("viscosity_liquid", passwd)->PutScalar(0.00089);
-  S->GetField("viscosity_liquid", passwd)->set_initialized();
+  S->GetFieldData("mass_density_liquid", "mass_density_liquid")->ViewComponent("cell")->PutScalar(998.0);
+  S->GetField("mass_density_liquid", "mass_density_liquid")->set_initialized();
+
+  S->GetFieldData("molar_density_liquid", "molar_density_liquid")->ViewComponent("cell")->PutScalar(55397.254190977);
+  S->GetField("molar_density_liquid", "molar_density_liquid")->set_initialized();
+
+  S->GetFieldData("viscosity_liquid", "viscosity_liquid")->ViewComponent("cell")->PutScalar(0.00089);
+  S->GetField("viscosity_liquid", "viscosity_liquid")->set_initialized();
 
   // -- gravity
   Epetra_Vector& gravity = *S->GetConstantVectorData("gravity", "state");
@@ -100,11 +108,12 @@ TEST(FLOW_2D_RICHARDS_SEEPAGE_TPFA) {
 
   // create the initial pressure function
   Epetra_MultiVector& p = *S->GetFieldData("pressure", passwd)->ViewComponent("cell");
-
+  const Epetra_MultiVector& rho_c = *S->GetFieldData("molar_density_liquid")->ViewComponent("cell");
+   
   double p0(101325.0), z0(30.0);
   for (int c = 0; c < p.MyLength(); c++) {
     const Point& xc = mesh->cell_centroid(c);
-    p[0][c] = p0 + rho * g * (xc[1] - z0);
+    p[0][c] = p0 + rho_c[0][c] * g * (xc[1] - z0);
   }
 
   // create Richards process kernel

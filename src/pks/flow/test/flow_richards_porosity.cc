@@ -95,12 +95,15 @@ TEST(FLOW_POROSITY_MODELS) {
   S->GetField("permeability", "flow")->set_initialized();
 
   // -- fluid density and vicosity
-  *S->GetScalarData("fluid_density", passwd) = 10.0;
-  S->GetField("fluid_density", "flow")->set_initialized();
+  S->GetFieldData("mass_density_liquid", "mass_density_liquid")->ViewComponent("cell")->PutScalar(10.0);
+  S->GetField("mass_density_liquid", "mass_density_liquid")->set_initialized();
 
-  S->GetFieldData("viscosity_liquid", passwd)->PutScalar(1.0);
-  S->GetField("viscosity_liquid", passwd)->set_initialized();
+  S->GetFieldData("molar_density_liquid", "molar_density_liquid")->ViewComponent("cell")->PutScalar(555.08270732);
+  S->GetField("molar_density_liquid", "molar_density_liquid")->set_initialized();
 
+  S->GetFieldData("viscosity_liquid", "viscosity_liquid")->ViewComponent("cell")->PutScalar(1.0);
+  S->GetField("viscosity_liquid", "viscosity_liquid")->set_initialized();
+ 
   Epetra_Vector& gravity = *S->GetConstantVectorData("gravity", "state");
   gravity[1] = -9.8;
   S->GetField("gravity", "state")->set_initialized();

@@ -481,8 +481,8 @@ void Flow_PK::ComputeOperatorBCs(const CompositeVector& u)
       for (auto it = bcs_[i]->begin(); it != bcs_[i]->end(); ++it) {
         int f = it->first;
         bc_model[f] = Operators::OPERATOR_BC_NEUMANN;
-        //bc_value[f] = it->second[0] * flux_units_;
-        bc_value[f] = it->second[0] * FaceMolarDensity(f) / FaceMassDensity(f);
+        bc_value[f] = it->second[0] * flux_units_;
+        //bc_value[f] = it->second[0] * FaceMolarDensity(f) / FaceMassDensity(f);
       }
     }
   }

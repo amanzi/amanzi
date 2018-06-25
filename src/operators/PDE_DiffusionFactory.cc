@@ -53,13 +53,16 @@ Teuchos::RCP<PDE_Diffusion> PDE_DiffusionFactory::Create(
     op->SetBCs(bc, bc);
 
   // NLFV methods
-  } else if (name == "nlfv: default" && !flag) {
+  } else if (name == "nlfv: default" && !flag) {   
     op = Teuchos::rcp(new PDE_DiffusionNLFV(oplist, mesh)); 
     op->SetBCs(bc, bc);
 
   } else if (name == "nlfv: default" && flag) {
-    op = Teuchos::rcp(new PDE_DiffusionNLFVwithGravity(oplist, mesh, rho, g)); 
-    op->SetBCs(bc, bc);
+    Teuchos::RCP<PDE_DiffusionNLFVwithGravity> op_g =
+      Teuchos::rcp(new PDE_DiffusionNLFVwithGravity(oplist, mesh, g));
+    op_g->SetDensity(rho);
+    op_g->SetBCs(bc, bc);
+    op = op_g;
 
   // MFD methods
   } else if (!flag) {
@@ -109,8 +112,12 @@ Teuchos::RCP<PDE_Diffusion> PDE_DiffusionFactory::Create(
     op->SetBCs(bc, bc);
 
   } else if (name == "nlfv: default" && flag) {
-    op = Teuchos::rcp(new PDE_DiffusionNLFVwithGravity(oplist, mesh, rho, g)); 
-    op->SetBCs(bc, bc);
+    Teuchos::RCP<PDE_DiffusionNLFVwithGravity> op_g =
+      Teuchos::rcp(new PDE_DiffusionNLFVwithGravity(oplist, mesh, g));
+    op_g->SetDensity(rho);
+    op_g->SetBCs(bc, bc);
+    
+    op = op_g;
     
   // MFD methods
   } else if (!flag) {

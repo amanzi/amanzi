@@ -79,9 +79,18 @@ TEST(FLOW_3D_RICHARDS) {
   // modify the default state for the problem at hand
   std::string passwd("flow"); 
 
-  *S->GetScalarData("fluid_density", passwd) = 1.0;
-  S->GetFieldData("viscosity_liquid", passwd)->PutScalar(1.0);
-  S->GetField("viscosity_liquid", passwd)->set_initialized();
+  // *S->GetScalarData("fluid_density", passwd) = 1.0;
+  // S->GetFieldData("viscosity_liquid", passwd)->PutScalar(1.0);
+  // S->GetField("viscosity_liquid", passwd)->set_initialized();
+
+  S->GetFieldData("mass_density_liquid", "mass_density_liquid")->ViewComponent("cell")->PutScalar(1.0);
+  S->GetField("mass_density_liquid", "mass_density_liquid")->set_initialized();
+
+  S->GetFieldData("molar_density_liquid", "molar_density_liquid")->ViewComponent("cell")->PutScalar(55.508270732);
+  S->GetField("molar_density_liquid", "molar_density_liquid")->set_initialized();
+
+  S->GetFieldData("viscosity_liquid", "viscosity_liquid")->ViewComponent("cell")->PutScalar(1.0);
+  S->GetField("viscosity_liquid", "viscosity_liquid")->set_initialized();
 
   Epetra_Vector& gravity = *S->GetConstantVectorData("gravity", "state");
   gravity[2] = -1.0;

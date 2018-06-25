@@ -34,8 +34,8 @@ void PDE_DiffusionNLFVwithGravity::UpdateMatrices(
   Epetra_MultiVector& hh_c = *hh->ViewComponent("cell");
   const Epetra_MultiVector& u_c = *u->ViewComponent("cell");
 
-  double rho_g = rho_ * norm(g_);
   for (int c = 0; c < ncells_owned; ++c) {
+    double rho_g = GetDensity(c) * norm(g_);    
     double zc = (mesh_->cell_centroid(c))[dim_ - 1];
     hh_c[0][c] = u_c[0][c] + rho_g * zc;
   }
@@ -50,6 +50,8 @@ void PDE_DiffusionNLFVwithGravity::UpdateMatrices(
 
   AmanziMesh::Entity_ID_List cells;
 
+  
+
   for (int f = 0; f < nfaces_owned; ++f) {
     WhetStone::DenseMatrix& Aface = local_op_->matrices[f];
 
@@ -61,6 +63,10 @@ void PDE_DiffusionNLFVwithGravity::UpdateMatrices(
       for (int n = 0; n < ncells; n++) {
         int c = cells[n];
         double zc = (mesh_->cell_centroid(c))[dim_ - 1];
+        double rho;
+        if (is_scalar_) rho = rho_;
+        else rho = 0.5*( GetDensity(cells[0])  +  GetDensity(cells[1]) );
+        double rho_g = rho * norm(g_);
         v(n) = zc * rho_g;
       }
 
@@ -73,11 +79,20 @@ void PDE_DiffusionNLFVwithGravity::UpdateMatrices(
       int c = cells[0];
       double zf = (mesh_->face_centroid(f))[dim_ - 1];
       double zc = (mesh_->cell_centroid(c))[dim_ - 1];
+
+      double rho = GetDensity(c);
+      double rho_g = rho * norm(g_);
+      
       rhs_cell[0][c] -= Aface(0, 0) * (zc - zf) * rho_g;
     }
   }
 
+  // std::cout<<"rho "<< GetDensity(0) <<"\n";
+  // std::cout<<rhs_cell<<"\n";exit(0);
+  
+  
   global_op_->rhs()->GatherGhostedToMaster();
+
 }
 
 
@@ -95,9 +110,10 @@ void PDE_DiffusionNLFVwithGravity::UpdateFlux(const Teuchos::Ptr<const Composite
   Epetra_MultiVector& hh_c = *hh->ViewComponent("cell");
   const Epetra_MultiVector& u_c = *u->ViewComponent("cell");
 
-  double rho_g = rho_ * norm(g_);
   for (int c = 0; c < ncells_owned; ++c) {
     double zc = (mesh_->cell_centroid(c))[dim_ - 1];
+    double rho = GetDensity(c);
+    double rho_g = rho * norm(g_);    
     hh_c[0][c] = u_c[0][c] + rho_g * zc;
   }
 
@@ -110,9 +126,16 @@ void PDE_DiffusionNLFVwithGravity::UpdateFlux(const Teuchos::Ptr<const Composite
 * **************************************************************** */
 double PDE_DiffusionNLFVwithGravity::MapBoundaryValue_(int f, double u)
 {
-  double rho_g = rho_ * fabs(g_[dim_ - 1]); 
+  AmanziMesh::Entity_ID_List cells;
+  
+  mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
+  
+  double rho_g = GetDensity(cells[0]) * fabs(g_[dim_ - 1]);
+  
   double zf = (mesh_->face_centroid(f))[dim_ - 1];
-  return u + rho_g * zf; 
+  
+  return u + rho_g * zf;
+  
 }
 
 }  // namespace Operators

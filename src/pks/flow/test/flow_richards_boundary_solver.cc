@@ -112,7 +112,8 @@ TEST(FLOW_BOUNDARY_SOLVER) {
   S2->GetField("permeability", "flow")->set_initialized();
 
   double atm_pressure = 101325.0;
-  double rho = *S1->GetScalarData("fluid_density", passwd);
+
+  Epetra_MultiVector& rho_c = *S1->GetFieldData("mass_density_liquid", "mass_density_liquid")->ViewComponent("cell");
 
   Epetra_Vector& gravity1 = *S1->GetConstantVectorData("gravity", "state");
   gravity1[2] = -9.8;
@@ -128,8 +129,8 @@ TEST(FLOW_BOUNDARY_SOLVER) {
 
   for (int c = 0; c < p1.MyLength(); c++) {
     const Point& xc = mesh1->cell_centroid(c);
-    p1[0][c] = 0.6 * atm_pressure + rho * gravity1[1] * (xc[1] - bottom);
-    p2[0][c] = 0.6 * atm_pressure + rho * gravity2[1] * (xc[1] - bottom);
+    p1[0][c] = 0.6 * atm_pressure + rho_c[0][c] * gravity1[1] * (xc[1] - bottom);
+    p2[0][c] = 0.6 * atm_pressure + rho_c[0][c] * gravity2[1] * (xc[1] - bottom);
   }
 
   // initialize the Richards process kernel

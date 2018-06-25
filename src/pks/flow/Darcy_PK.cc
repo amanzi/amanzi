@@ -553,8 +553,8 @@ void Darcy_PK::CommitStep(double t_old, double t_new, const Teuchos::RCP<State>&
   Teuchos::RCP<CompositeVector> darcy_flux = S->GetFieldData("darcy_flux", passwd_);
   Teuchos::RCP<CompositeVector> mass_flux = S->GetFieldData("mass_flux", passwd_);  
   op_diff_->UpdateFlux(solution.ptr(), mass_flux.ptr());
-  //darcy_flux->Scale(1. / rho_, *mass_flux);
   mass_flux->Scale(molar_rho_ / rho_);
+  darcy_flux->Update(1./ molar_rho_, *mass_flux, 0.);
 
 
   // calculate Darcy mass flux in fractures
@@ -564,7 +564,7 @@ void Darcy_PK::CommitStep(double t_old, double t_new, const Teuchos::RCP<State>&
     flux_fracture->Scale(1.0 / rho_);
     if (S->HasField("mass_flux_fracture")) {
       Teuchos::RCP<CompositeVector> mass_flux_fracture = S->GetFieldData("mass_flux_fracture", "state");
-      //mass_flux_fracture->Scale(molar_rho_, *flux_fracture)
+      mass_flux_fracture->Update(molar_rho_, *flux_fracture, 0);
     }
   } 
 

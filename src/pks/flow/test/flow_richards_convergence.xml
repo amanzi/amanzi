@@ -256,7 +256,7 @@
             <Parameter name="component" type="string" value="cell"/>            
             <ParameterList name="function">
               <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="0.0091"/>
+                <Parameter name="value" type="double" value="1"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
@@ -271,7 +271,7 @@
             <Parameter name="components" type="Array(string)" value="{cell, face}"/>            
             <ParameterList name="function">
               <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="55397.254190977"/>
+                <Parameter name="value" type="double" value="55.508270732"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
@@ -286,7 +286,7 @@
             <Parameter name="components" type="Array(string)" value="{cell, face}"/>
             <ParameterList name="function">
               <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="998.0"/>
+                <Parameter name="value" type="double" value="1.0"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
@@ -296,13 +296,13 @@
 
 
     <ParameterList name="initial conditions">
-      <ParameterList name="fluid_density">
-        <Parameter name="value" type="double" value="1.0"/>
-      </ParameterList>
+      <!-- <ParameterList name="fluid_density"> -->
+      <!--   <Parameter name="value" type="double" value="1.0"/> -->
+      <!-- </ParameterList> -->
 
-      <ParameterList name="fluid_viscosity">
-        <Parameter name="value" type="double" value="1.0"/>
-      </ParameterList>
+      <!-- <ParameterList name="fluid_viscosity"> -->
+      <!--   <Parameter name="value" type="double" value="1.0"/> -->
+      <!-- </ParameterList> -->
 
       <ParameterList name="gravity">
         <Parameter name="value" type="Array(double)" value="{0.0, 0.0, -2.0}"/>

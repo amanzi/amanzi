@@ -60,6 +60,17 @@ class PDE_DiffusionNLFVwithGravity : public PDE_DiffusionNLFV,
     SetDensity(rho);
   }
 
+  PDE_DiffusionNLFVwithGravity(Teuchos::ParameterList& plist,
+                               const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
+                               const AmanziGeometry::Point& g) :
+      PDE_DiffusionNLFV(plist, mesh),
+      PDE_DiffusionWithGravity(mesh),
+      PDE_Diffusion(mesh)
+  {
+    operator_type_ = OPERATOR_DIFFUSION_NLFV_GRAVITY;
+    SetGravity(g);
+  }
+
   // main virtual members 
   // -- setup
   void Setup(const Teuchos::RCP<std::vector<WhetStone::Tensor> >& K,

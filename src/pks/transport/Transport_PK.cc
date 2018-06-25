@@ -250,6 +250,11 @@ void Transport_PK::Setup(const Teuchos::Ptr<State>& S)
         ->SetComponent("cell", AmanziMesh::CELL, mesh_->cell_get_max_faces());
       S->GetField("darcy_flux_fracture", passwd_)->set_io_vis(false);
     }
+    if (!S->HasField("mass_flux_fracture")) {
+      S->RequireField("mass_flux_fracture", passwd_)->SetMesh(mesh_)->SetGhosted(true)
+        ->SetComponent("cell", AmanziMesh::CELL, mesh_->cell_get_max_faces());
+      S->GetField("mass_flux_fracture", passwd_)->set_io_vis(false);
+    }    
   }
 }
 

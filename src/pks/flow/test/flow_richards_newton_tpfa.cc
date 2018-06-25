@@ -100,11 +100,15 @@ TEST(FLOW_3D_RICHARDS) {
   S->GetField("permeability", passwd)->set_initialized();
 
   // -- fluid density and viscosity
-  *S->GetScalarData("fluid_density", passwd) = 1.0;
-  S->GetField("fluid_density", passwd)->set_initialized();
 
-  S->GetFieldData("viscosity_liquid", passwd)->PutScalar(1.0);
-  S->GetField("viscosity_liquid", passwd)->set_initialized();
+  S->GetFieldData("mass_density_liquid", "mass_density_liquid")->ViewComponent("cell")->PutScalar(1.0);
+  S->GetField("mass_density_liquid", "mass_density_liquid")->set_initialized();
+
+  S->GetFieldData("molar_density_liquid", "molar_density_liquid")->ViewComponent("cell")->PutScalar(55.508270732);
+  S->GetField("molar_density_liquid", "molar_density_liquid")->set_initialized();
+
+  S->GetFieldData("viscosity_liquid", "viscosity_liquid")->ViewComponent("cell")->PutScalar(1.0);
+  S->GetField("viscosity_liquid", "viscosity_liquid")->set_initialized();
 
   // -- gravity
   Epetra_Vector& gravity = *S->GetConstantVectorData("gravity", "state");

@@ -102,7 +102,7 @@ class DarcyProblem {
 
     // create other parameters
     mu = *S->GetScalarData("fluid_viscosity", passwd);
-
+    
     return 0;
   }
 
@@ -177,7 +177,7 @@ class DarcyProblem {
     for (int f = 0; f < nfaces; f++) {
       const AmanziGeometry::Point& normal = mesh->face_normal(f);
       error_L2 += std::pow(flux[0][f] - velocity_exact * normal, 2.0);
-      // if(MyPID == 0) std::cout << f << " " << flux[0][f] << " exact=" << velocity_exact * normal << std::endl;
+      //if(MyPID == 0) std::cout << f << " " << flux[0][f] << " exact=" << velocity_exact * normal << std::endl;
     }
     return sqrt(error_L2);
   }
@@ -214,44 +214,44 @@ SUITE(Darcy_PK) {
 /* ******************************************************************
 * Testing the mesh of hexahedra.
 ****************************************************************** */
-TEST_FIXTURE(DarcyProblem, DirichletDirichlet) {
-  for (int i = 0; i < 2; i++) {
-    int ierr = Init("test/flow_darcy_misc.xml", "test/hexes.exo", framework[i]);
-    if (MyPID == 0) std::cout << "\nDarcy PK on tets: Dirichlet-Dirichlet"
-                              << ", mesh framework: " << framework_name[i] << std::endl;
-    if (ierr == 1) continue;
+  TEST_FIXTURE(DarcyProblem, DirichletDirichlet) {
+    for (int i = 0; i < 2; i++) {
+      int ierr = Init("test/flow_darcy_misc.xml", "test/hexes.exo", framework[i]);
+      if (MyPID == 0) std::cout << "\nDarcy PK on tets: Dirichlet-Dirichlet"
+                                << ", mesh framework: " << framework_name[i] << std::endl;
+      if (ierr == 1) continue;
 
-    Teuchos::Array<std::string> regions(1);  // modify boundary conditions
-    regions[0] = std::string("Top");
-    createBClist("pressure", "BC 1", regions, 0.0);
+      Teuchos::Array<std::string> regions(1);  // modify boundary conditions
+      regions[0] = std::string("Top");
+      createBClist("pressure", "BC 1", regions, 0.0);
 
-    regions[0] = std::string("Bottom");
-    createBClist("pressure", "BC 2", regions, 1.0);
-    // DPK->ResetParameterList(dp_list);
+      regions[0] = std::string("Bottom");
+      createBClist("pressure", "BC 2", regions, 1.0);
+      // DPK->ResetParameterList(dp_list);
  
-    DPK->Initialize(S.ptr());
-    S->CheckAllFieldsInitialized();
+      DPK->Initialize(S.ptr());
+      S->CheckAllFieldsInitialized();
 
-    DPK->SolveFullySaturatedProblem(*S->GetFieldData("pressure", passwd));
-    DPK->CommitStep(0.0, 1.0, S);
+      DPK->SolveFullySaturatedProblem(*S->GetFieldData("pressure", passwd));
+      DPK->CommitStep(0.0, 1.0, S);
 
-    // calculate errors
-    double p0 = 1.0;
-    AmanziGeometry::Point pressure_gradient(0.0, 0.0, -1.0);
-    AmanziGeometry::Point velocity(3);
-    velocity = -(pressure_gradient - DPK->rho() * DPK->gravity()) / mu;
-
-    double errorP = calculatePressureCellError(p0, pressure_gradient);
-    CHECK(errorP < 1.0e-8);
-    double errorL = calculatePressureFaceError(p0, pressure_gradient);
-    CHECK(errorL < 1.0e-8);
-    double errorU = calculateDarcyFluxError(velocity);
-    CHECK(errorU < 1.0e-8);
-    double errorDiv = calculateDarcyDivergenceError();
-    if (MyPID == 0)
+      // calculate errors
+      double p0 = 1.0;
+      AmanziGeometry::Point pressure_gradient(0.0, 0.0, -1.0);
+      AmanziGeometry::Point velocity(3);
+      velocity = -(pressure_gradient - DPK->rho() * DPK->gravity()) / mu;
+   
+      double errorP = calculatePressureCellError(p0, pressure_gradient);
+      CHECK(errorP < 1.0e-8);
+      double errorL = calculatePressureFaceError(p0, pressure_gradient);
+      CHECK(errorL < 1.0e-8);
+      double errorU = calculateDarcyFluxError(velocity);
+      CHECK(errorU < 1.0e-8);
+      double errorDiv = calculateDarcyDivergenceError();
+      if (MyPID == 0)
         std::cout << "Error: " << errorP << " " << errorL << " " << errorU << " " << errorDiv << std::endl;
+    }
   }
-}
 
 TEST_FIXTURE(DarcyProblem, DirichletNeumann) {
   for (int i = 0; i < 2; i++) {
@@ -453,8 +453,7 @@ TEST_FIXTURE(DarcyProblem, DDmixed) {
     if (MyPID == 0)
         std::cout << "Error: " << errorP << " " << errorL << " " << errorU << " " << errorDiv << std::endl;
   }
-}
+
+ }
 }  // SUITE
-
-
 

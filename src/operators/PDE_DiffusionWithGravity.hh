@@ -46,6 +46,14 @@ class PDE_DiffusionWithGravity : public virtual PDE_Diffusion {
     rho_cv_ = rho;
   }
 
+  double GetDensity( int c){
+    if (is_scalar_){
+      return rho_ ;
+    }else{
+      return (*rho_cv_->ViewComponent("cell", true))[0][c];
+    }
+  }
+
  protected:
   bool is_scalar_;
   double rho_;

@@ -213,7 +213,7 @@
             <Parameter name="component" type="string" value="cell"/>            
             <ParameterList name="function">
               <ParameterList name="function-constant">
-                <Parameter name="value" type="double" value="0.0091"/>
+                <Parameter name="value" type="double" value="0.001"/>
               </ParameterList>
             </ParameterList>
           </ParameterList>
@@ -250,12 +250,12 @@
     </ParameterList>
 
     <ParameterList name="initial conditions">
-      <ParameterList name="fluid_density">
-        <Parameter name="value" type="double" value="998.0"/>
-      </ParameterList>
-      <ParameterList name="fluid_viscosity">
-        <Parameter name="value" type="double" value="0.001"/>
-      </ParameterList>
+      <!-- <ParameterList name="fluid_density"> -->
+      <!--   <Parameter name="value" type="double" value="998.0"/> -->
+      <!-- </ParameterList> -->
+      <!-- <ParameterList name="fluid_viscosity"> -->
+      <!--   <Parameter name="value" type="double" value="0.001"/> -->
+      <!-- </ParameterList> -->
       <ParameterList name="atmospheric_pressure">
         <Parameter name="value" type="double" value="10.0"/>
       </ParameterList>
