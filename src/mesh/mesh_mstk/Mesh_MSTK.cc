@@ -893,7 +893,7 @@ void Mesh_MSTK::extract_mstk_mesh(const Epetra_MpiComm *incomm,
     }
     break;
     
-  case NODE: {
+  case MVERTEX: {
     Errors::Message mesg("Vertex list passed into extract mesh. Cannot extract a point mesh");
     amanzi_throw(mesg);
     break;
