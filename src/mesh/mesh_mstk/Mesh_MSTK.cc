@@ -3665,38 +3665,7 @@ void Mesh_MSTK::init_face_map()
     face_map_wo_ghosts_ = new Epetra_Map(-1,nface,face_gids,0,*epcomm_);
     extface_map_wo_ghosts_ = new Epetra_Map(-1,n_extface,extface_gids,0,*epcomm_);
 
-    //std::cout<<*extface_map_wo_ghosts_<<"\n";
-
-    // now we add ghost faces
-
-    // idx = 0;
-    // while ((ment = MSet_Next_Entry(NotOwnedFaces,&idx))) {
-    //   int gid = MEnt_GlobalID(ment);
-    //   face_gids[i++] = gid-1;
-
-    //   if (manifold_dimension() == 3) {
-    //     List_ptr fregs = MF_Regions((MFace_ptr) ment);
-    //     if (List_Num_Entries(fregs) == 1)
-    //       extface_gids[j++] = gid-1;
-    //     if (fregs)
-    //       List_Delete(fregs);
-    //   }
-    //   else if (manifold_dimension() == 2) {
-    //     List_ptr efaces = ME_Faces((MEdge_ptr) ment);
-    //     if (List_Num_Entries(efaces) == 1)
-    //       extface_gids[j++] = gid-1;
-    //     if (efaces)
-    //       List_Delete(efaces);
-    //   }
-    // }
-    // n_extface = j;
-    // nface += nnotowned;
-
-    // face_map_w_ghosts_ = new Epetra_Map(-1,nface,face_gids,0,*epcomm_);
-    // Epetra_Map *extface_map_w_ghosts_tmp = new Epetra_Map(-1,n_extface,extface_gids,0,*epcomm_);
-
-    // std::cout<<*extface_map_w_ghosts_tmp<<"\n";
-    
+   
     idx = 0;
     while ((ment = MSet_Next_Entry(NotOwnedFaces,&idx))) {
       int gid = MEnt_GlobalID(ment);
@@ -3705,21 +3674,9 @@ void Mesh_MSTK::init_face_map()
     nface += nnotowned;
 
     face_map_w_ghosts_ = new Epetra_Map(-1,nface,face_gids,0,*epcomm_);
-    //  extface_map_w_ghosts_ = new Epetra_Map(-1,n_extface,extface_gids,0,*epcomm_);
 
     std::vector<int> gl_id(nnotowned), pr_id(nnotowned), lc_id(nnotowned);
-    // int total_proc = epcomm_->NumProc();
-    int my_pid = epcomm_->MyPID();
-    // std::vector<int> min_global_id(total_proc, 0), tmp(total_proc, 0);
-
-    // tmp[my_pid] = extface_map_wo_ghosts_ -> GID(0);
-
-    // const MPI_Comm& comm = get_comm()->Comm();
-    // MPI_Allreduce(tmp.data(), min_global_id.data(), total_proc, MPI_INT, MPI_SUM, comm);
-
-    // std::cout<<my_pid<<": "<<min_global_id[0]<<" "<<min_global_id[1]<<"\n";
-
-    
+   
     idx = 0;
     int nnotowned_bnd = 0;
     while ((ment = MSet_Next_Entry(NotOwnedFaces,&idx))) {
@@ -3745,14 +3702,6 @@ void Mesh_MSTK::init_face_map()
     extface_map_wo_ghosts_ -> RemoteIDList(nnotowned, gl_id.data(), pr_id.data(), lc_id.data());
 
 
-      // std::cout<<my_pid<<" nnotowned_bnd "<<nnotowned_bnd<<"\n";
-      // for (int h=0; h<nnotowned_bnd; h++) std::cout<<gl_id[h]<<" "; std::cout<<"\n";
-      // for (int h=0; h<nnotowned_bnd; h++) std::cout<<pr_id[h]<<" "; std::cout<<"\n";
-      // for (int h=0; h<nnotowned_bnd; h++) std::cout<<lc_id[h]<<" "; std::cout<<"\n";      
-      //      exit(0);
-
-
-
     int n_extface_w_ghosts = extface_map_wo_ghosts_ -> NumMyElements();
        
     for (int k=0; k < nnotowned_bnd; k++){
@@ -3760,8 +3709,6 @@ void Mesh_MSTK::init_face_map()
         n_extface_w_ghosts++;
       }
     }
-
-    //std::cout<<my_pid<<": "<<"n_extface_w_ghosts " << n_extface_w_ghosts<<"\n";
 
     
     std::vector<int> global_id_ghosted(n_extface_w_ghosts);
@@ -3778,14 +3725,6 @@ void Mesh_MSTK::init_face_map()
     }
     
     extface_map_w_ghosts_ = new Epetra_Map(-1, n_extface_w_ghosts, global_id_ghosted.data(), 0, *epcomm_);
-
-    // for (int i=0; i<n_extface_w_ghosts; i++){
-    //   int f = face_map_w_ghosts_->LID(global_id_ghosted[i]);
-    //   std::cout <<my_pid<<" : "<< global_id_ghosted[i] <<"\n";
-    //}      
-
-    //std::cout<< *extface_map_w_ghosts_ <<"\n";
-    //    exit(0);
         
   }
   else {
