@@ -97,6 +97,11 @@ if (BUILD_TESTS)
                     SOURCE test/Main.cc test/solver_preconditioners.cc
                     LINK_LIBS ${solvers_test_link_libs} ${UnitTest_LIBRARIES} ${solvers_tpl_libs})
 
+    add_amanzi_test(solver_preconditioner_noncontiguous solver_preconditioner_noncontiguous
+                    KIND unit
+                    SOURCE test/Main.cc test/solver_preconditioner_noncontiguous.cc
+                    LINK_LIBS ${solvers_test_link_libs} ${UnitTest_LIBRARIES} ${solvers_tpl_libs})
+
     add_amanzi_test(solver_linear_jfnk solver_linear_jfnk
                     KIND unit
                     SOURCE test/Main.cc test/solver_linear_jfnk.cc
