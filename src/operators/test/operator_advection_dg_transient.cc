@@ -59,7 +59,7 @@ class AdvectionFn : public Explicit_TI::fnBase<CompositeVector> {
               bool conservative_form, std::string weak_form);
 
   // functional in dy/dt = F(y)
-  void Dudt(double t, const CompositeVector& u, CompositeVector& f) override;
+  void FunctionalTimeDerivative(double t, const CompositeVector& u, CompositeVector& f) override;
 
   // modify cell and face velocities using a mesh map
   void ApproximateVelocity_Projection(
@@ -165,7 +165,7 @@ AdvectionFn<AnalyticDG>::AdvectionFn(
 * Functional F in dy/dt = F(y)
 ***************************************************************** */
 template <class AnalyticDG>
-void AdvectionFn<AnalyticDG>::Dudt(
+void AdvectionFn<AnalyticDG>::FunctionalTimeDerivative(
     double t, const CompositeVector& u, CompositeVector& f)
 {
   int d = mesh_->space_dimension();

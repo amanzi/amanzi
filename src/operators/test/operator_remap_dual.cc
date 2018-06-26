@@ -100,7 +100,7 @@ class RemapDG : public Explicit_TI::fnBase<CompositeVector> {
     op_reac_ = op_reac;
   }
 
-  virtual void Dudt(double t, const CompositeVector& u, CompositeVector& f) override {
+  virtual void FunctionalTimeDerivative(double t, const CompositeVector& u, CompositeVector& f) override {
     UpdateGeometricQuantities_(t);
 
     // -- populate operators

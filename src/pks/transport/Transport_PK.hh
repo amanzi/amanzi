@@ -130,7 +130,7 @@ class Transport_PK : public PK_PhysicalExplicit<Epetra_Vector> {
 
   // time integration members
   void DudtOld(double t, const Epetra_Vector& component, Epetra_Vector& f_component);
-  void Dudt(double t, const Epetra_Vector& component, Epetra_Vector& f_component);
+  void FunctionalTimeDerivative(double t, const Epetra_Vector& component, Epetra_Vector& f_component);
 
   void IdentifyUpwindCells();
 

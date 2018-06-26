@@ -335,7 +335,7 @@ void RK<Vector>::TimeStep(double t, double h, const Vector& y, Vector& y_new)
         y_new.Update(a_(i,j), *k_[j], 1.0);
       }
     }
-    fn_.Dudt(sum_time, y_new, *k_[i]);
+    fn_.FunctionalTimeDerivative(sum_time, y_new, *k_[i]);
     k_[i]->Scale(h);
   }
 
