@@ -14,7 +14,7 @@ using namespace Amanzi;
 // ODE: y' = y
 class fn1 : public Explicit_TI::fnBase<Epetra_Vector> {
  public:
-  void Functional(const double t, const Epetra_Vector& y, Epetra_Vector& y_new) {
+  void Dudt(const double t, const Epetra_Vector& y, Epetra_Vector& y_new) {
     y_new = y;
   }
 };

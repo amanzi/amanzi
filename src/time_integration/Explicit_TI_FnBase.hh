@@ -10,7 +10,7 @@ template<class Vector>
 class fnBase {
  public:
   // computes the  functional f = f(t,u) 
-  virtual void Functional(const double t, const Vector& u, Vector& f) = 0;
+  virtual void Dudt(const double t, const Vector& u, Vector& f) = 0;
 };
 
 }  // namespace Explicit_TI
