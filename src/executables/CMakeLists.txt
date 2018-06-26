@@ -66,11 +66,6 @@ if(ENABLE_MSTK_Mesh)
   add_definitions("-DHAVE_MSTK_MESH")
 endif()
 
-# XML ouput
-if(ENABLE_NATIVE_XML_OUTPUT)
-  add_definitions("-DENABLE_NATIVE_XML_OUTPUT")
-endif()
-
 # External (TPL) include directories
 include_directories(${Boost_INCLUDE_DIRS})
 include_directories(${Teuchos_INCLUDE_DIRS})

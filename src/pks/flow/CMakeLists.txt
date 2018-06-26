@@ -15,11 +15,6 @@ include(TestManager)
 # through these variables.
 project(FLOW)
 
-# External instruction
-if(ENABLE_NATIVE_XML_OUTPUT)
-  add_definitions("-DENABLE_NATIVE_XML_OUTPUT")
-endif()
-
 # External (TPL) include directories
 include_directories(${Epetra_INCLUDE_DIRS})
 include_directories(${Teuchos_INCLUDE_DIRS})
