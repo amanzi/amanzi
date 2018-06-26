@@ -16,7 +16,7 @@ class BDFFnBase {
   virtual ~BDFFnBase() = default;
   
   // computes the non-linear functional f = f(t,u,udot)
-  virtual void Functional(double t_old, double t_new, Teuchos::RCP<Vector> u_old,
+  virtual void FunctionalResidual(double t_old, double t_new, Teuchos::RCP<Vector> u_old,
                           Teuchos::RCP<Vector> u_new, Teuchos::RCP<Vector> f) = 0;
 
   // applies preconditioner to u and returns the result in Pu

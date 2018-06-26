@@ -90,10 +90,8 @@ void PDE_HelperDiscretization::set_local_matrices(const Teuchos::RCP<Op>& op)
 
 
 /* ******************************************************************
-* Apply boundary conditions to the local matrices. We always zero-out
-* matrix rows for essential test BCs. As to trial BCs, there are
-* options: (a) eliminate or not, (b) if eliminate, then put 1 on
-* the diagonal or not.
+* Apply boundary conditions to the local matrices. 
+* NOTE: We always zero-out matrix rows for essential test BCs. 
 ****************************************************************** */
 void PDE_HelperDiscretization::ApplyBCs(bool primary, bool eliminate, bool essential_eqn)
 {

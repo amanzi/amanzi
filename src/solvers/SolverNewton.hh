@@ -115,11 +115,14 @@ void SolverNewton<Vector, VectorSpace>::Init_()
   modify_correction_ = plist_.get<bool>("modify correction", true);
 
   std::string monitor_name = plist_.get<std::string>("monitor", "monitor update");
-
   if (monitor_name == "monitor update") {
-    monitor_ = SOLVER_MONITOR_UPDATE;
+    monitor_ = SOLVER_MONITOR_UPDATE;  // default value
+  } else if (monitor_name == "monitor residual") {
+    monitor_ = SOLVER_MONITOR_RESIDUAL;
   } else {
-    monitor_ = SOLVER_MONITOR_RESIDUAL;  // default value
+    Errors::Message m;
+    m << "SolverNewton: Invalid monitor \"" << monitor_name << "\"";
+    Exceptions::amanzi_throw(m);
   }
 
   fun_calls_ = 0;
@@ -164,30 +167,31 @@ int SolverNewton<Vector, VectorSpace>::Newton_(const Teuchos::RCP<Vector>& u) {
       return SOLVER_MAX_ITERATIONS;
     }
 
-    // Update the preconditioner.
-    pc_calls_++;
-    fn_->UpdatePreconditioner(u);
-
     // Evaluate the nonlinear function.
+    if (vo_->os_OK(Teuchos::VERB_EXTREME))
+      *vo_->os() << "Calling residual function" << std::endl;
     fun_calls_++;
     fn_->Residual(u, r);
 
     // If monitoring the residual, check for convergence.
     if (monitor_ == SOLVER_MONITOR_RESIDUAL) {
+      if (vo_->os_OK(Teuchos::VERB_EXTREME))
+        *vo_->os() << "Monitoring residual" << std::endl;
       previous_error = error;
       error = fn_->ErrorNorm(u, r);
       residual_ = error;
 
       r->Norm2(&l2_error);
       u->Norm2(&u_norm);
-      *vo_->os() << "||u||=" << u_norm << " ||r||=" << l2_error << " error=" << error << "\n";
+      if (vo_->os_OK(Teuchos::VERB_HIGH))
+        *vo_->os() << "||u||=" << u_norm << " ||r||=" << l2_error << " error=" << error << std::endl;
 
       // attempt to catch non-convergence early
-      if (num_itrs_ == 1) {
+      if (num_itrs_ == 0) {
         l2_error_initial = l2_error;
       } else if (num_itrs_ > stagnation_itr_check_) {
         if (l2_error > l2_error_initial) {
-          if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) 
+          if (vo_->os_OK(Teuchos::VERB_MEDIUM))
             *vo_->os() << "Solver stagnating, L2-error=" << l2_error
                        << " > " << l2_error_initial << " (initial L2-error)" << std::endl;
           return SOLVER_STAGNATING;
@@ -199,14 +203,19 @@ int SolverNewton<Vector, VectorSpace>::Newton_(const Teuchos::RCP<Vector>& u) {
       if (ierr != SOLVER_CONTINUE) return ierr;
     }
 
-    // Increment iteration counter.
-    num_itrs_++;
-
+    // Update the preconditioner.
+    if (vo_->os_OK(Teuchos::VERB_EXTREME))
+      *vo_->os() << "Updating preconditioner" << std::endl;
+    pc_calls_++;
+    fn_->UpdatePreconditioner(u);
+    
     // Apply the preconditioner to the nonlinear residual.
     pc_calls_++;
     r->Norm2(&res_l2);
     r->NormInf(&res_inf);
 
+    if (vo_->os_OK(Teuchos::VERB_EXTREME))
+      *vo_->os() << "Applying preconditioner" << std::endl;
     int pc_error = fn_->ApplyPreconditioner(r, du);
     if (pc_error < 0) return SOLVER_LINEAR_SOLVER_ERROR;
 
@@ -215,6 +224,8 @@ int SolverNewton<Vector, VectorSpace>::Newton_(const Teuchos::RCP<Vector>& u) {
 
     // Hack the correction
     if (modify_correction_) {
+      if (vo_->os_OK(Teuchos::VERB_EXTREME))
+        *vo_->os() << "Modifying correction" << std::endl;
       bool hacked = fn_->ModifyCorrection(r, u, du);
     }
 
@@ -222,14 +233,14 @@ int SolverNewton<Vector, VectorSpace>::Newton_(const Teuchos::RCP<Vector>& u) {
     previous_du_norm = du_norm;
     du->NormInf(&du_norm);
 
-    if ((num_itrs_ > 1) && (du_norm > max_du_growth_factor_ * previous_du_norm)) {
-      if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) 
+    if ((num_itrs_ > 0) && (du_norm > max_du_growth_factor_ * previous_du_norm)) {
+      if (vo_->os_OK(Teuchos::VERB_HIGH))
         *vo_->os() << "Solver threatens to overflow: " << "  ||du||=" 
                    << du_norm << ", ||du_prev||=" << previous_du_norm << std::endl;
 
       // If it fails again, give up.
-      if ((num_itrs_ > 1) && (du_norm > max_du_growth_factor_ * previous_du_norm)) {
-        if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) 
+      if ((num_itrs_ > 0) && (du_norm > max_du_growth_factor_ * previous_du_norm)) {
+        if (vo_->os_OK(Teuchos::VERB_MEDIUM))
            *vo_->os() << "Solver threatens to overflow: FAIL." << std::endl
                       << "||du||=" << du_norm << ", ||du_prev||=" << previous_du_norm << std::endl;
         return SOLVER_OVERFLOW;
@@ -237,13 +248,13 @@ int SolverNewton<Vector, VectorSpace>::Newton_(const Teuchos::RCP<Vector>& u) {
     }
 
     // Keep track of diverging iterations
-    if (num_itrs_ > 1 && du_norm >= previous_du_norm) {
+    if (num_itrs_ > 0 && du_norm >= previous_du_norm) {
       // The solver is threatening to diverge.
       divergence_count++;
 
       // If it does not recover quickly, abort.
       if (divergence_count == max_divergence_count_) {
-        if (vo_->getVerbLevel() >= Teuchos::VERB_LOW)
+        if (vo_->os_OK(Teuchos::VERB_MEDIUM))
           *vo_->os() << "Solver is diverging repeatedly, FAIL." << std::endl;
         return SOLVER_DIVERGING;
       }
@@ -255,8 +266,13 @@ int SolverNewton<Vector, VectorSpace>::Newton_(const Teuchos::RCP<Vector>& u) {
     u->Update(-1.0, *du, 1.0);
     fn_->ChangedSolution();
     
+    // Increment iteration counter.
+    num_itrs_++;
+
     // If we monitor the update...
     if (monitor_ == SOLVER_MONITOR_UPDATE) {
+      if (vo_->os_OK(Teuchos::VERB_EXTREME))
+        *vo_->os() << "Monitoring Update" << std::endl;
       previous_error = error;
       error = fn_->ErrorNorm(u, du);
       residual_ = error;
@@ -280,21 +296,21 @@ int SolverNewton<Vector, VectorSpace>::Newton_ErrorControl_(double error,
                                                             double previous_du_norm, 
                                                             double du_norm)
 {
-  if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) 
+  if (vo_->os_OK(Teuchos::VERB_HIGH))
     *vo_->os() << num_itrs_ << ": error=" << error << "  L2-error=" << l2_error 
                << " contr. factor=" << du_norm/previous_du_norm << std::endl;
 
   if (error < tol_) {
-    if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) 
+    if (vo_->os_OK(Teuchos::VERB_MEDIUM))
       *vo_->os() << "Solver converged: " << num_itrs_ << " itrs, error=" << error << std::endl;
     return SOLVER_CONVERGED;
   } else if (error > overflow_tol_) {
-    if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) 
+    if (vo_->os_OK(Teuchos::VERB_MEDIUM))
       *vo_->os() << "Solve failed, error " << error << " > "
                  << overflow_tol_ << " (overflow)" << std::endl;
     return SOLVER_OVERFLOW;
   } else if ((num_itrs_ > 1) && (error > max_error_growth_factor_ * previous_error)) {
-    if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) 
+    if (vo_->os_OK(Teuchos::VERB_MEDIUM))
       *vo_->os() << "Solver threatens to overflow, error " << error << " > "
                  << previous_error << " (previous error)" << std::endl;
     return SOLVER_OVERFLOW;

@@ -235,6 +235,7 @@ void PDE_DiffusionFV::ApplyBCs(bool primary, bool eliminate, bool essential_eqn)
 {
   const Epetra_MultiVector& trans_face = *transmissibility_->ViewComponent("face", true);
 
+  AMANZI_ASSERT(bcs_trial_.size() > 0);
   const std::vector<int>& bc_model = bcs_trial_[0]->bc_model();
   const std::vector<double>& bc_value = bcs_trial_[0]->bc_value();
 

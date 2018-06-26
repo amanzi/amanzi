@@ -190,15 +190,6 @@ int SolverAA<Vector, VectorSpace>::AA_(const Teuchos::RCP<Vector>& u) {
       return SOLVER_MAX_ITERATIONS;
     }
 
-    // Update the preconditioner if necessary.
-    if (num_itrs_ % (pc_lag_ + 1) == 0) {
-      pc_updates_++;
-      fn_->UpdatePreconditioner(u);
-    }
-
-    // Increment iteration counter.
-    num_itrs_++;
-
     // Evaluate the nonlinear function.
     fun_calls_++;
     fn_->Residual(u, r);
@@ -211,9 +202,9 @@ int SolverAA<Vector, VectorSpace>::AA_(const Teuchos::RCP<Vector>& u) {
       r->Norm2(&l2_error);
 
       // We attempt to catch non-convergence early.
-      if (num_itrs_ == 1) {
+      if (num_itrs_ == 0) {
         l2_error_initial = l2_error;
-      } else if (num_itrs_ > 8) {
+      } else if (num_itrs_ > 7) {
         if (l2_error > l2_error_initial) {
           if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) 
             *vo_->os() << "Solver stagnating, L2-error=" << l2_error
@@ -227,6 +218,12 @@ int SolverAA<Vector, VectorSpace>::AA_(const Teuchos::RCP<Vector>& u) {
       if (ierr != SOLVER_CONTINUE) return ierr;
     }
 
+    // Update the preconditioner if necessary.
+    if (num_itrs_ % (pc_lag_ + 1) == 0) {
+      pc_updates_++;
+      fn_->UpdatePreconditioner(u);
+    }
+    
     // Apply the preconditioner to the nonlinear residual.
     pc_calls_++;
     prec_error = fn_->ApplyPreconditioner(r, du_tmp);
@@ -263,7 +260,7 @@ int SolverAA<Vector, VectorSpace>::AA_(const Teuchos::RCP<Vector>& u) {
     previous_du_norm = du_norm;
     du->NormInf(&du_norm);
 
-    if (num_itrs_ == 1) {
+    if (num_itrs_ == 0) {
       double u_norm2, du_norm2;
       u->Norm2(&u_norm2);
       du->Norm2(&du_norm2);
@@ -275,7 +272,7 @@ int SolverAA<Vector, VectorSpace>::AA_(const Teuchos::RCP<Vector>& u) {
       }
     }
 
-    if ((num_itrs_ > 1) && (du_norm > max_du_growth_factor_ * previous_du_norm)) {
+    if ((num_itrs_ > 0) && (du_norm > max_du_growth_factor_ * previous_du_norm)) {
       if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) 
         *vo_->os() << "overflow: ||du||=" << du_norm << ", ||du_prev||=" << previous_du_norm << std::endl
                    << "trying to restart AA..." << std::endl;
@@ -301,7 +298,7 @@ int SolverAA<Vector, VectorSpace>::AA_(const Teuchos::RCP<Vector>& u) {
     }
 
     // Keep track of diverging iterations
-    if (num_itrs_ > 1 && du_norm >= previous_du_norm) {
+    if (num_itrs_ > 0 && du_norm >= previous_du_norm) {
       divergence_count++;
 
       // If it does not recover quickly, abort.
@@ -316,11 +313,10 @@ int SolverAA<Vector, VectorSpace>::AA_(const Teuchos::RCP<Vector>& u) {
 
     // Next solution iterate and error estimate: u  = u - du
     u->Update(-1.0, *du, 1.0);
-    //std::cout<<"new u\n";u->Print(std::cout);
-
-    
-
     fn_->ChangedSolution();
+
+    // Increment iteration counter.
+    num_itrs_++;
 
     // Monitor the PC'd residual.
     if (monitor_ == SOLVER_MONITOR_PCED_RESIDUAL) {
