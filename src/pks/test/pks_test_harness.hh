@@ -18,7 +18,8 @@ struct Run {
 // Helper function that mocks a coordinator to run the test.
 // ================================================================================
 std::pair<double, double> run_test(const Teuchos::RCP<State> &S,
-                                   const Teuchos::RCP<PK> &pk) {
+        const Teuchos::RCP<PK> &pk,
+        double end_time=1.0) {
 
   pk->Setup();
   S->Setup();
@@ -29,7 +30,7 @@ std::pair<double, double> run_test(const Teuchos::RCP<State> &S,
   int nsteps_good = 0;
   int nsteps_bad = 0;
 
-  double t_final = 1.0;
+  double t_final = end_time;
   bool done = false;
   while (!done) {
     double dt = std::min(pk->get_dt(), 1.0);
@@ -99,7 +100,8 @@ std::unique_ptr<Run> createRunMPC(const std::string &mpc_name,
 }
 
 //
-// Helper function for creating a run with one MPC and two PKs
+// Helper function for creating a run with one PK, an ODE
+// This makes a 0D mesh (single cell).
 // ============================================================================
 template <class PK_t>
 std::unique_ptr<Run> createRunODE(const std::string &pk_name, const std::string& filename="test/pks_ode.xml") {
@@ -135,7 +137,8 @@ std::unique_ptr<Run> createRunODE(const std::string &pk_name, const std::string&
 
 
 //
-// Helper function for creating a run with one MPC and two PKs
+// Helper function for creating a run with PK, a PDE
+// Note that this is identical to ODE above but includes a 1D mesh.
 // ============================================================================
 template <class PK_t>
 std::unique_ptr<Run> createRunPDE(const std::string &pk_name, const std::string& filename) {
@@ -159,7 +162,7 @@ std::unique_ptr<Run> createRunPDE(const std::string &pk_name, const std::string&
   meshfactory.preference(pref);
   // make a 1x1 'mesh' for ODEs
   Teuchos::RCP<Amanzi::AmanziMesh::Mesh> mesh =
-      meshfactory(-1.0, -1.0, 1.0, 1.0, 11, 11, gm);
+      meshfactory(-1.0, -1.0, 1.0, 1.0, 100, 1, gm);
   S->RegisterDomainMesh(mesh);
 
   // create the PKs/MPCs

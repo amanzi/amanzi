@@ -118,7 +118,7 @@ void PK_MixinLeaf<Base_t, Data_t, DataFactory_t>::ChangedSolutionPK(
   auto eval = S_->GetEvaluatorPtr(key_, tag);
   auto eval_primary =
       Teuchos::rcp_dynamic_cast<EvaluatorPrimary<Data_t, DataFactory_t>>(eval);
-  ASSERT(eval_primary.get());
+  AMANZI_ASSERT(eval_primary.get());
   eval_primary->SetChanged();
 };
 
@@ -172,8 +172,8 @@ void PK_MixinLeafCompositeVector<Base_t>::StateToSolution(TreeVector &soln,
   if (soln.Data() == Teuchos::null)
     soln.SetData(this->S_->template GetPtrW<CompositeVector>(key, tag, key));
 
-  // ASSERTS for now?
-  ASSERT(soln.Data() == this->S_->template GetPtr<CompositeVector>(key, tag));
+  // AMANZI_ASSERTS for now?
+  AMANZI_ASSERT(soln.Data() == this->S_->template GetPtr<CompositeVector>(key, tag));
 }
 
 } // namespace Amanzi

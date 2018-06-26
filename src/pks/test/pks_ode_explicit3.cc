@@ -37,7 +37,7 @@ class DudtEvaluator
   }
   void EvaluatePartialDerivative_(State &S, const Key &wrt_key,
                                   Data_t &result) {
-    ASSERT(wrt_key == my_key_);
+    AMANZI_ASSERT(wrt_key == my_key_);
     result.PutScalar(1.);
   }
 }

@@ -26,7 +26,7 @@ public:
   Teuchos::RCP<const AmanziMesh::Mesh> mesh;
   Teuchos::RCP<PFTList> Create() {
     return Teuchos::rcp(
-        new PFTList(mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED)));
+        new PFTList(mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED)));
   }
 };
 
@@ -118,8 +118,8 @@ public:
   double get_dt() { return 0.1; }
 
   void StateToSolution(TreeVector &soln, const Key &tag, const Key &suffix) {
-    // ASSERTS for now?
-    ASSERT(false);
+    // AMANZI_ASSERTS for now?
+    AMANZI_ASSERT(false);
   }
 
   // THOU SHALL NOT PASS!

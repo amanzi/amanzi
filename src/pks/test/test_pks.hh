@@ -42,7 +42,7 @@ protected:
 
   void EvaluatePartialDerivative_(const State &S, const Key &wrt_key,
                                   const Key &wrt_tag, CompositeVector &result) {
-    ASSERT(std::make_pair(wrt_key, wrt_tag) == *dependencies_.begin());
+    AMANZI_ASSERT(std::make_pair(wrt_key, wrt_tag) == *dependencies_.begin());
     result.PutScalar(0.);
   }
 };
@@ -67,7 +67,7 @@ protected:
 
   void EvaluatePartialDerivative_(const State &S, const Key &wrt_key,
                                   const Key &wrt_tag, CompositeVector &result) {
-    ASSERT(std::make_pair(wrt_key, wrt_tag) == *dependencies_.begin());
+    AMANZI_ASSERT(std::make_pair(wrt_key, wrt_tag) == *dependencies_.begin());
     result.PutScalar(1.);
   }
 };
@@ -99,7 +99,7 @@ protected:
     } else if (wrt_key == "scaling") {
       result = S.Get<CompositeVector>("primaryC", my_tag_);
     } else {
-      ASSERT(false);
+      AMANZI_ASSERT(false);
     }
   }
 };
@@ -141,7 +141,7 @@ public:
     this->S_->GetRecordW(this->key_, "", this->key_).set_initialized();
   }
 
-  void Dudt(double t, const TreeVector &u, TreeVector &f) {
+  void Functional(double t, const TreeVector &u, TreeVector &f) {
     // these calls are here because the explicit ti is not aware that it should
     // call it
     this->S_->set_time(tag_inter_, t);
@@ -208,8 +208,8 @@ public:
 
   void Functional(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
                   Teuchos::RCP<TreeVector> u_new, Teuchos::RCP<TreeVector> f) {
-    ASSERT(std::abs(t_old - S_->time(tag_old_)) < 1.e-12);
-    ASSERT(std::abs(t_new - S_->time(tag_new_)) < 1.e-12);
+    AMANZI_ASSERT(std::abs(t_old - S_->time(tag_old_)) < 1.e-12);
+    AMANZI_ASSERT(std::abs(t_new - S_->time(tag_new_)) < 1.e-12);
 
     this->S_->GetEvaluator(dudt_key_, tag_new_)
         .Update(*this->S_, this->name());

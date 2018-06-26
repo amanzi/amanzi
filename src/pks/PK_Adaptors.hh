@@ -129,9 +129,9 @@ public:
   }
 
   // the Explicit_TI::fnBase interface
-  virtual void Dudt(double t, const TreeVector &u,
+  virtual void Functional(double t, const TreeVector &u,
                     TreeVector &f) override final {
-    Base_t::Dudt(t, u, f);
+    Base_t::Functional(t, u, f);
   }
 
 protected:
@@ -372,9 +372,9 @@ public:
   virtual void ChangedSolution() override final { Base_t::ChangedSolution(); }
 
   // the Explicit_TI::fnBase interface
-  virtual void Dudt(double t, const TreeVector &u,
+  virtual void Functional(double t, const TreeVector &u,
                     TreeVector &f) override final {
-    Base_t::Dudt(t, u, f);
+    Base_t::Functional(t, u, f);
   }
 
 protected:

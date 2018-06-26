@@ -89,7 +89,7 @@ std::unique_ptr<Run> createExplicit(const std::string &eqn_name,
             PK_MixinExplicit<PK_MixinLeafCompositeVector<PK_Default>>,
             DudtEvaluatorC>>(pk_tree, global_list, S));
   } else {
-    ASSERT(false);
+    AMANZI_ASSERT(false);
   }
 
   return std::make_unique<Run>(S, pk);
@@ -144,7 +144,7 @@ std::unique_ptr<Run> createExplicitSubcycled(const std::string &eqn_name,
             PK_MixinExplicitSubcycled<PK_MixinLeafCompositeVector<PK_Default>>,
             DudtEvaluatorC>>(pk_tree, global_list, S));
   } else {
-    ASSERT(false);
+    AMANZI_ASSERT(false);
   }
 
   return std::make_unique<Run>(S, pk);
@@ -201,7 +201,7 @@ std::unique_ptr<Run> createImplicit(const std::string &eqn_name,
             PK_MixinImplicit<PK_MixinLeafCompositeVector<PK_Default>>,
             DudtEvaluatorC>>(pk_tree, global_list, S));
   } else {
-    ASSERT(false);
+    AMANZI_ASSERT(false);
   }
 
   return std::make_unique<Run>(S, pk);
@@ -260,7 +260,7 @@ createImplicitSubcycled(const std::string &eqn_name,
             PK_MixinImplicitSubcycled<PK_MixinLeafCompositeVector<PK_Default>>,
             DudtEvaluatorC>>(pk_tree, global_list, S));
   } else {
-    ASSERT(false);
+    AMANZI_ASSERT(false);
   }
 
   return std::make_unique<Run>(S, pk);
@@ -287,7 +287,7 @@ SUITE(PKS_ODE) {
                 (*run->S->Get<CompositeVector>("primaryB")
                       .ViewComponent("cell", false))[0][0],
                 0.15);
-    CHECK_CLOSE(2.59374,
+    CHECK_CLOSE(2.59374, // calculated via test.py
                 (*run->S->Get<CompositeVector>("primaryB")
                       .ViewComponent("cell", false))[0][0],
                 1.e-4);
@@ -302,7 +302,7 @@ SUITE(PKS_ODE) {
                 (*run->S->Get<CompositeVector>("primaryC")
                       .ViewComponent("cell", false))[0][0],
                 0.4);
-    CHECK_CLOSE(2.33463,
+    CHECK_CLOSE(2.33463, // calculated via test.py
                 (*run->S->Get<CompositeVector>("primaryC")
                       .ViewComponent("cell", false))[0][0],
                 1.e-4);

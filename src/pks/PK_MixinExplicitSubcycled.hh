@@ -132,7 +132,7 @@ bool PK_MixinExplicitSubcycled<Base_t>::AdvanceStep(const Key &tag_old,
     S_->set_cycle(tag_new_, k + 1);
 
     bool fail = PK_MixinExplicit<Base_t>::AdvanceStep(tag_old_, tag_new_);
-    ASSERT(!fail);
+    AMANZI_ASSERT(!fail);
     this->CommitStep(tag_old_, tag_new_);
   }
 

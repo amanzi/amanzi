@@ -382,8 +382,8 @@ SUITE(EVALUATOR_ON_OP) {
     // Update residual
     CHECK(S.GetEvaluator("residual").Update(S, "pk"));
 
-    // b - Ax
-    CHECK_CLOSE(-33.0,
+    // Ax - b
+    CHECK_CLOSE(33.0,
                 (*S.Get<CompositeVector>("residual", "")
                       .ViewComponent("cell", false))[0][0],
                 1.e-10);
@@ -497,7 +497,7 @@ SUITE(EVALUATOR_ON_OP) {
     re_list.set("diagonal local operators keys", Teuchos::Array<std::string>(1,"A_local"));
     re_list.set("diagonal local operator rhss keys", Teuchos::Array<std::string>(1,"A_rhs"));
     re_list.set("additional rhss keys", Teuchos::Array<std::string>(1,"b"));
-    re_list.set("rhs coefficients", Teuchos::Array<double>(1,1.0));
+    re_list.set("rhs coefficients", Teuchos::Array<double>(1,-1.0));
     re_list.setName("residual");
     auto r_eval = Teuchos::rcp(new Evaluator_OperatorApply(re_list));
     S.SetEvaluator("residual", r_eval);
@@ -510,7 +510,7 @@ SUITE(EVALUATOR_ON_OP) {
     // Update residual
     CHECK(S.GetEvaluator("residual").Update(S, "pk"));
 
-    // b - Ax
+    // Ax - b
     double error(0.);
     auto &r =
         *S.Get<CompositeVector>("residual", "").ViewComponent("cell", false);

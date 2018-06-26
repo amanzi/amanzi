@@ -31,8 +31,8 @@ public:
   // ---------------------------------------------------------------------------
   // Set/get the time tag of this evaluator's metadata.
   // ---------------------------------------------------------------------------
-  Key tag() { return my_tag_; }
-  void set_tag(const Key &tag) { my_tag_ = tag; }
+  // Key tag() { return my_tag_; }
+  // void set_tag(const Key &tag) { my_tag_ = tag; }
 
   // ---------------------------------------------------------------------------
   // Lazy evaluation of the evaluator.
@@ -90,8 +90,6 @@ public:
   virtual std::string WriteToString() const = 0;
   friend std::ostream &operator<<(std::ostream &, const Evaluator &);
 
-protected:
-  Key my_tag_;
 
 }; // class Evaluator
 

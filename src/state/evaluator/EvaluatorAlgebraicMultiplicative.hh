@@ -39,6 +39,9 @@ public:
       EvaluatorAlgebraic<Data_t,DataFactory_t>(plist)
   {
     coef_ = this->plist_.template get<double>("coefficient", 1.0);
+
+    // if true, the last dependency is "divided by"
+    reciprocal_ = this->plist_.template get<bool>("reciprocal", false);
   }
     
 
@@ -50,26 +53,48 @@ public:
 protected:
 
   virtual void Evaluate_(const State &S, Data_t &result) override {
+    int i=0;
     result.PutScalar(coef_);
     for (const auto& dep : this->dependencies_) {
       const auto& term = S.Get<Data_t>(dep.first, dep.second);
-      result.Multiply(1., result, term, 0.);
+      if (reciprocal_ && this->dependencies_.size() - 1 == i) {
+        result.ReciprocalMultiply(1., term, result, 0.);
+      } else {
+        result.Multiply(1., term, result, 0.);
+      }
+      ++i;
     }
   }
   
   virtual void EvaluatePartialDerivative_(const State &S,
           const Key &wrt_key, const Key &wrt_tag, Data_t &result) override {
+    int i=0;
     result.PutScalar(coef_);
     for (const auto& dep : this->dependencies_) {
       if (dep.first != wrt_key || dep.second != wrt_tag) {
+        // not WRT
         const auto& term = S.Get<Data_t>(dep.first, dep.second);
-        result.Multiply(1., result, term, 0.);
+        if (reciprocal_ && this->dependencies_.size() - 1 == i) {
+          result.ReciprocalMultiply(1., term, result, 0.);
+        } else {
+          result.Multiply(1., term, result, 0.);
+        }
+      } else {
+        // IS WRT
+        if (reciprocal_ && this->dependencies_.size() - 1 == i) {
+          //  - term ^ -2
+          const auto& term = S.Get<Data_t>(dep.first, dep.second);
+          result.ReciprocalMultiply(-1., term, result, 0.);
+          result.ReciprocalMultiply(1., term, result, 0.);
+        }
       }
+      ++i;
     }
   }
 
  protected:
   double coef_;
+  bool reciprocal_;
 
  private:
   static Utils::RegisteredFactory<Evaluator, EvaluatorAlgebraicMultiplicative<Data_t,DataFactory_t>> fac_;

@@ -284,7 +284,7 @@ void test(const std::string &discretization) {
   S.SetEvaluator("A_local", A_eval);
   S.SetEvaluator("A_rhs", A_eval);
 
-  // require secondary evaluator for r = b - Ax
+  // require secondary evaluator for r = Ax - b
   Teuchos::ParameterList re_list("residual");
   re_list.sublist("verbose object")
       .set<std::string>("verbosity level", "extreme");
@@ -292,7 +292,7 @@ void test(const std::string &discretization) {
   re_list.set("diagonal local operators keys", Teuchos::Array<std::string>(1,"A_local"));
   re_list.set("diagonal local operator rhss keys", Teuchos::Array<std::string>(1,"A_rhs"));
   re_list.set("additional rhss keys", Teuchos::Array<std::string>(1,"b"));
-  re_list.set("rhs coefficients", Teuchos::Array<double>(1,1.0));
+  re_list.set("rhs coefficients", Teuchos::Array<double>(1,-1.0));
   auto r_eval = Teuchos::rcp(new Evaluator_OperatorApply(re_list));
   S.SetEvaluator("residual", r_eval);
   S.Require<CompositeVector, CompositeVectorSpace>("residual", "")
@@ -403,7 +403,7 @@ void test_inverse(const std::string &discretization) {
   re_list.set("diagonal local operators keys", Teuchos::Array<std::string>(1,"A_local"));
   re_list.set("diagonal local operator rhss keys", Teuchos::Array<std::string>(1,"A_rhs"));
   re_list.set("additional rhss keys", Teuchos::Array<std::string>(1,"b"));
-  re_list.set("rhs coefficients", Teuchos::Array<double>(1,1.0));
+  re_list.set("rhs coefficients", Teuchos::Array<double>(1,-1.0));
   re_list.sublist("preconditioner")
       .set<std::string>("preconditioner type", "boomer amg");
   auto& amg_p = re_list.sublist("preconditioner").sublist("boomer amg parameters");
@@ -459,7 +459,7 @@ void test_inverse(const std::string &discretization) {
     dx.Print(std::cout);
 
     // -- update x
-    S.GetW<CompositeVector>("x","","x").Update(1.0, dx, 1.0);
+    S.GetW<CompositeVector>("x","","x").Update(-1.0, dx, 1.0);
     std::cout << "x corrected:" << std::endl;
     S.Get<CompositeVector>("x","").Print(std::cout);
   }
@@ -494,12 +494,12 @@ SUITE(EVALUATOR_ON_OP) {
   // Apply a non-diagonal operator, including boundary conditions
   TEST(OP_APPLY_DIFFUSION_FV) { test("fv: default"); }
   TEST(OP_APPLY_DIFFUSION_MFD) { test("mfd: two-point flux approximation"); }
-  TEST(OP_APPLY_DIFFUSION_NLFV) { test("nlfv: default"); }
+  //  TEST(OP_APPLY_DIFFUSION_NLFV) { test("nlfv: default"); }
 
   // Invert a non-diagonal operator, determining the solution to a linear problem
   TEST(OP_APPLY_DIFFUSION_FV_INVERSE) { test_inverse("fv: default"); }
   TEST(OP_APPLY_DIFFUSION_MFD_INVERSE) { test_inverse("mfd: two-point flux approximation"); }
-  TEST(OP_APPLY_DIFFUSION_NLFV_INVERSE) { test_inverse("nlfv: default"); }
+  //  TEST(OP_APPLY_DIFFUSION_NLFV_INVERSE) { test_inverse("nlfv: default"); }
 
   
 }

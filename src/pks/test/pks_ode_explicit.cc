@@ -78,7 +78,7 @@ Teuchos::RCP<PK> createForwardEuler(const Teuchos::RCP<State> &S,
             PK_MixinExplicit<PK_MixinLeaf<PK_Default>>, DudtEvaluatorC>>(
             pk_tree, global_list, S, soln));
   } else {
-    ASSERT(false);
+    AMANZI_ASSERT(false);
   }
 }
 

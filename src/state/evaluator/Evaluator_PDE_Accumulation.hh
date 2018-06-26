@@ -44,6 +44,7 @@ class Evaluator_PDE_Accumulation : public EvaluatorAlgebraic<CompositeVector,Com
 
  protected:
   Key conserved_key_;
+  Key cv_key_;
   Key tag_old_, tag_new_;
 
  private:

@@ -130,7 +130,7 @@ bool PK_MixinImplicit<Base_t>::AdvanceStep(const Key &tag_old,
     bdf_plist.set("initial time", S_->time(tag_old));
 
     auto this_as_bdf_p = dynamic_cast<BDFFnBase<TreeVector> *>(this);
-    ASSERT(this_as_bdf_p);
+    AMANZI_ASSERT(this_as_bdf_p);
     time_stepper_ = Teuchos::rcp(new BDF1_TI<TreeVector, TreeVectorSpace>(
         *this_as_bdf_p, bdf_plist, soln_new));
 

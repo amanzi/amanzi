@@ -65,6 +65,7 @@ void Evaluator_BCs::Evaluate_(const State &S, Operators::BCs&result) {
   auto& model = result.bc_model();
   auto& value = result.bc_value();
 
+  // overwrite with actual BCs
   int i = 0;
   for (const auto& dep : dependencies_) {
     const auto& bc_value = S.Get<Functions::BoundaryFunction>(dep.first, dep.second);
@@ -72,7 +73,23 @@ void Evaluator_BCs::Evaluate_(const State &S, Operators::BCs&result) {
       model[fv.first] = bc_types_[i];
       value[fv.first] = fv.second;
     }
+    ++i;
   }
+
+  // must be faces to set defaults?  The BC design need some work.
+  AMANZI_ASSERT(result.kind() == AmanziMesh::FACE);
+  int nfaces_owned = result.mesh()->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
+  for (int f = 0; f != nfaces_owned; ++f) {
+    if (model[f] == Operators::OPERATOR_BC_NONE) {
+      AmanziMesh::Entity_ID_List cells;
+      result.mesh()->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
+      if (cells.size() == 1) {
+        model[f] = Operators::OPERATOR_BC_NEUMANN;
+        value[f] = 0.0;
+      }
+    }
+  }
+
 }
 
 }  // namespace Amanzi

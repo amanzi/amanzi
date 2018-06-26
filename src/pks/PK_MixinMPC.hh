@@ -192,7 +192,7 @@ void PK_MixinMPC<Base_t, PK_Contained_t>::StateToSolution(TreeVector &soln,
                                                           const Key &tag,
                                                           const Key &suffix) {
   if (soln.size() != sub_pks_.size()) {
-    ASSERT(soln.size() == 0);
+    AMANZI_ASSERT(soln.size() == 0);
     for (auto &pk : sub_pks_) {
       auto tv = Teuchos::rcp(new TreeVector());
       soln.PushBack(tv);

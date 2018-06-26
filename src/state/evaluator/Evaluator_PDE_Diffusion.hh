@@ -53,6 +53,7 @@ class Evaluator_PDE_Diffusion : public EvaluatorSecondaries {
   virtual void UpdateDerivative_(State &S, const Key &wrt_key, const Key &wrt_tag) override;
 
  protected:
+  Key my_tag_;
   Key rhs_key_, local_op_key_, jac_op_key_;
   Key tensor_coef_key_, scalar_coef_key_;
   Key bcs_key_;

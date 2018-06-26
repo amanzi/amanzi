@@ -257,9 +257,13 @@ void Evaluator_OperatorApply::Evaluate_(const State &S,
 
     // do the apply
     S.Get<Operators::Op>(op_key, my_tag_).ApplyMatrixFreeOp(&*global_op, x, result);
+    // std::cout << "Result after op0 op:" << std::endl;
+    // result.Print(std::cout);
 
     // Ax - b
     result.Update(-1.0, S.Get<CompositeVector>(op0_rhs_keys_[i], my_tag_), 1.0);
+    // std::cout << "Result after op0 rhs:" << std::endl;
+    // result.Print(std::cout);
     ++i;
   }
 
@@ -278,22 +282,25 @@ void Evaluator_OperatorApply::Evaluate_(const State &S,
 
       // do the apply
       S.Get<Operators::Op>(op_key, my_tag_).ApplyMatrixFreeOp(&*global_op, xj, result);
+      // std::cout << "Result after offdiagonal op:" << std::endl;
+      // result.Print(std::cout);
 
       // Ax - b
       result.Update(-1.0, S.Get<CompositeVector>(op_rhs_keys_[j][k], my_tag_), 1.0);
+      // std::cout << "Result after offdiagonal op rhs:" << std::endl;
+      // result.Print(std::cout);
       ++k;
     }
     ++j;
   }
-
-  // negate: all are now b-Ax
-  result.Scale(-1.0);
 
   // add all the additional RHSs
   j = 0;
   for (const auto& rhs_key : rhs_keys_) {
     result.Update(rhs_scalars_[j], S.Get<CompositeVector>(rhs_key, my_tag_), 1.0);
     ++j;
+    // std::cout << "Result after rhs " << j << ":" << std::endl;
+    // result.Print(std::cout);
   }
 }
 
@@ -316,6 +323,7 @@ Evaluator_OperatorApply::UpdateDerivative_(State &S, const Key &wrt_key, const K
       // collect all operators and jacobian info
       for (const auto& op_key : op0_keys_) {
         // FIX ME AND MAKE THIS CONST CORRECT --etc
+        std::cout << "Adding diffusion op to operator" << std::endl;
         global_op->OpPushBack(S.GetPtrW<Operators::Op>(op_key, my_tag_, op_key));
         if (S.GetEvaluator(op_key, my_tag_).IsDifferentiableWRT(S, wrt_key, wrt_tag)) {
           global_op->OpPushBack(S.GetDerivativePtrW<Operators::Op>(op_key, my_tag_, wrt_key, wrt_tag, op_key));
@@ -327,6 +335,8 @@ Evaluator_OperatorApply::UpdateDerivative_(State &S, const Key &wrt_key, const K
         if (S.GetEvaluator(rhs_key, my_tag_).IsDifferentiableWRT(S, wrt_key, wrt_tag)) {
           // FIX ME AND MAKE THIS LESS HACKY AND CONST CORRECT --etc
           CompositeVector drhs = S.GetDerivativeW<CompositeVector>(rhs_key, my_tag_, wrt_key, wrt_tag, rhs_key);
+          // std::cout << "Adding source op to operator";
+          // drhs.Print(std::cout);
           for (const auto& comp : drhs) {
             if (AmanziMesh::entity_kind(comp) == AmanziMesh::CELL) {
               auto op_cell = Teuchos::rcp(new Operators::Op_Cell_Cell(rhs_key, drhs.Mesh()));
@@ -348,12 +358,12 @@ Evaluator_OperatorApply::UpdateDerivative_(State &S, const Key &wrt_key, const K
 
     // symbolic assemble the first time
     global_op->SymbolicAssembleMatrix();
+    global_op->InitializePreconditioner(plist_.sublist("preconditioner"));
   }
 
   // assemble
   global_op->AssembleMatrix();
-  global_op->InitPreconditioner(plist_.sublist("preconditioner"));
-  //  global_op->A()->Print(std::cout);
+  global_op->UpdatePreconditioner();
 }
 
 

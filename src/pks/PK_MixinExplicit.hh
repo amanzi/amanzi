@@ -132,7 +132,7 @@ bool PK_MixinExplicit<Base_t>::AdvanceStep(const Key &tag_old,
     ti_plist.set("initial time", S_->time());
     auto this_as_explicit_p =
         dynamic_cast<Explicit_TI::fnBase<TreeVector> *>(this);
-    ASSERT(this_as_explicit_p);
+    AMANZI_ASSERT(this_as_explicit_p);
     time_stepper_ = Teuchos::rcp(new Explicit_TI::RK<TreeVector>(
         *this_as_explicit_p, ti_plist, *soln_inter));
   }
