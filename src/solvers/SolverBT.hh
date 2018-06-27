@@ -233,9 +233,6 @@ SolverBT<Vector,VectorSpace>::BT_(const Teuchos::RCP<Vector>& u)
       fn_->UpdatePreconditioner(u);
     }
 
-    // Increment iteration counter.
-    num_itrs_++;
-
     // Apply the preconditioner to the nonlinear residual.
     pc_calls_++;
     prec_error = fn_->ApplyPreconditioner(r, du);
@@ -278,6 +275,9 @@ SolverBT<Vector,VectorSpace>::BT_(const Teuchos::RCP<Vector>& u)
     u->Update(-result.first, *du, 1.);
     fn_->ChangedSolution();
 
+    // Increment iteration counter.
+    num_itrs_++;
+    
     // get the residual again
     fn_->Residual(u, r);
 
@@ -287,9 +287,9 @@ SolverBT<Vector,VectorSpace>::BT_(const Teuchos::RCP<Vector>& u)
     residual_ = error;
     r->Norm2(&l2_error);
 
-    int ierr = BT_ErrorControl_(error, previous_error, l2_error);
-    if (ierr == SOLVER_CONVERGED) return num_itrs_;
-    if (ierr != SOLVER_CONTINUE) return ierr;
+    int ierr2 = BT_ErrorControl_(error, previous_error, l2_error);
+    if (ierr2 == SOLVER_CONVERGED) return num_itrs_;
+    if (ierr2 != SOLVER_CONTINUE) return ierr2;
   } while(true);
 }    
 

@@ -129,8 +129,8 @@ class Transport_PK : public PK_PhysicalExplicit<Epetra_Vector> {
   void AdvanceDonorUpwindNonManifold(double dT);
 
   // time integration members
-  void FunctionalOld(double t, const Epetra_Vector& component, Epetra_Vector& f_component);
-  void Functional(double t, const Epetra_Vector& component, Epetra_Vector& f_component);
+  void DudtOld(double t, const Epetra_Vector& component, Epetra_Vector& f_component);
+  void FunctionalTimeDerivative(double t, const Epetra_Vector& component, Epetra_Vector& f_component);
 
   void IdentifyUpwindCells();
 

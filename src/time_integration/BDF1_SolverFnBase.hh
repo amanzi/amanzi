@@ -89,7 +89,7 @@ class BDF1_SolverFnBase : public AmanziSolvers::SolverFnBase<Vector> {
 template<class Vector>
 void BDF1_SolverFnBase<Vector>::Residual(const Teuchos::RCP<Vector>& u,
                                          const Teuchos::RCP<Vector>& r) {
-  bdf_fn_->Functional(t_old_, t_new_, u_old_, u, r);
+  bdf_fn_->FunctionalResidual(t_old_, t_new_, u_old_, u, r);
 }
 
 // preconditioner application

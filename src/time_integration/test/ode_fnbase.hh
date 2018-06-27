@@ -11,7 +11,7 @@ public:
       rtol_(rtol), atol_(atol), exact_jacobian_(exact_jacobian) {
   }
 
-  void Functional(double told, double tnew, Teuchos::RCP<Epetra_Vector> uold,
+  void FunctionalResidual(double told, double tnew, Teuchos::RCP<Epetra_Vector> uold,
                   Teuchos::RCP<Epetra_Vector> unew,
                   Teuchos::RCP<Epetra_Vector> f) {
     // f = udot - u^2
