@@ -278,7 +278,7 @@ void ConvergenceBoxMeshes(int order, double tol, std::string limiter)
 
   double L1rate = Amanzi::Utils::bestLSfit(h, L1error);
   double L2rate = Amanzi::Utils::bestLSfit(h, L2error);
-    if (MyPID == 0)
+  if (MyPID == 0)
     printf("convergence rates: %8.2f %20.2f\n", L1rate, L2rate);
 
   CHECK_CLOSE((double)order, L1rate, tol);

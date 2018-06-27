@@ -37,11 +37,12 @@ class ReconstructionCell : public Reconstruction {
   ~ReconstructionCell() {};
 
   // save pointer to the already distributed field.
-  void Init(Teuchos::RCP<const Epetra_MultiVector> field, Teuchos::ParameterList& plist, int component = 0) override;
+  virtual void Init(Teuchos::RCP<const Epetra_MultiVector> field,
+                    Teuchos::ParameterList& plist, int component = 0) override;
 
   // global reconstruction
   // -- compute gradient and keep it internally
-  void Compute() override;
+  virtual void Compute() override;
 
   // -- identify inflow boundaries (optional)
   void InitLimiter(Teuchos::RCP<const Epetra_MultiVector> flux);
