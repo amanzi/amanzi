@@ -383,7 +383,7 @@ void ReconstructionCell::LimiterExtensionTransportBarthJespersen_(
       if (c == c1) {
         const AmanziGeometry::Point& xcf = mesh_->face_centroid(f);
         u1 = (*field_)[component_][c];
-        for (int i = 0; i < dim; i++) gradient_c1[i] = (*grad)[i][c1];
+        for (int k = 0; k < dim; k++) gradient_c1[k] = (*grad)[k][c1];
         u1f = u1 + gradient_c1 * (xcf - xc);
 
         a = u1f - u1;
@@ -561,7 +561,7 @@ void ReconstructionCell::LimiterKuzminCell_(int cell,
                                             const std::vector<double>& field_node_min_c,
                                             const std::vector<double>& field_node_max_c)
 {
-  double umin, umax, up, u1;
+  double up, u1;
   AmanziGeometry::Point xp(dim);
 
   double L22normal_new;

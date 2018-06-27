@@ -137,8 +137,12 @@ void SolverNKA<Vector, VectorSpace>::Init_()
     monitor_ = SOLVER_MONITOR_RESIDUAL;
   } else if (monitor_name == "monitor preconditioned residual") {
     monitor_ = SOLVER_MONITOR_PCED_RESIDUAL;
-  } else {
+  } else if (monitor_name == "monitor update") {
     monitor_ = SOLVER_MONITOR_UPDATE;  // default value
+  } else {
+    Errors::Message m;
+    m << "SolverNKA: Invalid monitor \"" << monitor_name << "\"";
+    Exceptions::amanzi_throw(m);
   }
 
   nka_dim_ = plist_.get<int>("max nka vectors", 10);
@@ -195,15 +199,6 @@ int SolverNKA<Vector, VectorSpace>::NKA_(const Teuchos::RCP<Vector>& u) {
       return SOLVER_MAX_ITERATIONS;
     }
 
-    // Update the preconditioner if necessary.
-    if (num_itrs_ % (pc_lag_ + 1) == 0) {
-      pc_updates_++;
-      fn_->UpdatePreconditioner(u);
-    }
-
-    // Increment iteration counter.
-    num_itrs_++;
-
     // Evaluate the nonlinear function.
     fun_calls_++;
     fn_->Residual(u, r);
@@ -213,7 +208,7 @@ int SolverNKA<Vector, VectorSpace>::NKA_(const Teuchos::RCP<Vector>& u) {
     double r_norm;
     r->Norm2(&r_norm);
 
-    if (num_itrs_ == 1) {
+    if (num_itrs_ == 0) {
       r_norm_initial = r_norm;
     } else {
       if (r_norm > overflow_r_tol_ * r_norm_initial) {
@@ -248,6 +243,12 @@ int SolverNKA<Vector, VectorSpace>::NKA_(const Teuchos::RCP<Vector>& u) {
       if (ierr != SOLVER_CONTINUE) return ierr;
     }
 
+    // Update the preconditioner if necessary.
+    if (num_itrs_ % (pc_lag_ + 1) == 0) {
+      pc_updates_++;
+      fn_->UpdatePreconditioner(u);
+    }
+
     // Apply the preconditioner to the nonlinear residual.
     pc_calls_++;
     prec_error = fn_->ApplyPreconditioner(r, du_tmp);
@@ -256,7 +257,7 @@ int SolverNKA<Vector, VectorSpace>::NKA_(const Teuchos::RCP<Vector>& u) {
     double du_tmp_norm;
     du_tmp->NormInf(&du_tmp_norm);
 
-    if (num_itrs_ == 1) {
+    if (num_itrs_ == 0) {
       du_tmp_norm_initial = du_tmp_norm;
     } else {
       if (du_tmp_norm > overflow_pc_tol_ * du_tmp_norm_initial) {
@@ -297,7 +298,7 @@ int SolverNKA<Vector, VectorSpace>::NKA_(const Teuchos::RCP<Vector>& u) {
     previous_du_norm = du_norm;
     du->NormInf(&du_norm);
 
-    if (num_itrs_ == 1) {
+    if (num_itrs_ == 0) {
       double u_norm2, du_norm2;
       u->Norm2(&u_norm2);
       du->Norm2(&du_norm2);
@@ -309,7 +310,7 @@ int SolverNKA<Vector, VectorSpace>::NKA_(const Teuchos::RCP<Vector>& u) {
       }
     }
 
-    if ((num_itrs_ > 1) && (du_norm > max_du_growth_factor_ * previous_du_norm)) {
+    if ((num_itrs_ > 0) && (du_norm > max_du_growth_factor_ * previous_du_norm)) {
       if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) 
         *vo_->os() << "overflow: ||du||=" << du_norm << ", ||du_prev||=" << previous_du_norm << std::endl
                    << "trying to restart NKA..." << std::endl;
@@ -333,7 +334,7 @@ int SolverNKA<Vector, VectorSpace>::NKA_(const Teuchos::RCP<Vector>& u) {
     }
 
     // Keep track of diverging iterations
-    if (num_itrs_ > 1 && du_norm >= previous_du_norm) {
+    if (num_itrs_ > 0 && du_norm >= previous_du_norm) {
       divergence_count++;
 
       // If it does not recover quickly, abort.
@@ -350,6 +351,9 @@ int SolverNKA<Vector, VectorSpace>::NKA_(const Teuchos::RCP<Vector>& u) {
     u->Update(-1.0, *du, 1.0);
     fn_->ChangedSolution();
 
+    // Increment iteration counter.
+    num_itrs_++;
+    
     // Monitor the PC'd residual.
     if (monitor_ == SOLVER_MONITOR_PCED_RESIDUAL) {
       previous_error = error;
@@ -373,6 +377,7 @@ int SolverNKA<Vector, VectorSpace>::NKA_(const Teuchos::RCP<Vector>& u) {
       if (ierr == SOLVER_CONVERGED) return num_itrs_;
       if (ierr != SOLVER_CONTINUE) return ierr;
     }
+
   } while (true);
 }
 

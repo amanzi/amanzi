@@ -70,8 +70,7 @@ Teuchos::RCP<BilinearForm> MFD3DFactory::Create(
     return mfd;
   } else if (method_ == "dg modal") {
     std::string name = plist.get<std::string>("dg basis");
-    Teuchos::RCP<DG_Modal> mfd = Teuchos::rcp(new DG_Modal(method_order, mesh, name));
-    return mfd;
+    return Teuchos::rcp(new DG_Modal(method_order, mesh, name));
   }
 
   return Teuchos::null;

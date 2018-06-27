@@ -115,7 +115,6 @@ class SolverNKA_BT_ATS : public Solver<Vector, VectorSpace> {
   BacktrackMonitor bt_monitor_;
 
   double residual_;  // defined by convergence criterion
-  ConvergenceMonitor monitor_;
 
   bool use_aa_;
   bool use_nka_;
@@ -192,9 +191,8 @@ void SolverNKA_BT_ATS<Vector, VectorSpace>::Init_(const Epetra_Comm& comm)
   } else if (bt_monitor_string == "monitor either") {
     bt_monitor_ = BT_MONITOR_EITHER;
   } else {
-    std::stringstream mstream;
-    mstream << "Solver: Invalid backtrack monitor " << bt_monitor_string;
-    Errors::Message m(mstream.str());
+    Errors::Message m;
+    m << "Solver: Invalid backtrack monitor " << bt_monitor_string;
     Exceptions::amanzi_throw(m);
   }
 
