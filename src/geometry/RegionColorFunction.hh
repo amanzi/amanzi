@@ -59,7 +59,7 @@ class RegionColorFunction : public Region {
 
   // Constructor 
   RegionColorFunction(const std::string& name, 
-                      const Set_ID id, 
+                      const int id, 
                       const std::string& file,
                       const int value,
                       const Epetra_MpiComm *comm,

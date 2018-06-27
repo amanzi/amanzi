@@ -5,7 +5,7 @@ diff -rupN trilinos-11.6.1-source/packages/teuchos/parameterlist/src/Teuchos_XML
            TEUCHOS_TEST_FOR_EXCEPTION( 
              _allowDuplicateSublists == false
              &&
--            parentList->isSublist(name) == true, 
+-            parentList->isSublist(name) == true,
 +            (parentList->isSublist(name) == true || parentList->isParameter(name) == true), 
              DuplicateParameterSublist,
 -            "XMLParameterListReader encountered duplicate sublist \"" << name << "\", in violation"

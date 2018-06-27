@@ -44,32 +44,40 @@ using namespace Amanzi;
   auto S = cycle_driver.Go();
 
   // verify no-flow at selected points using existing S
+  std::cout << "Start test of 2D Walkabout\n";
+  AmanziGeometry::Point xv(2);
   std::vector<AmanziGeometry::Point> xyz, velocity;
   cycle_driver.walkabout()->CalculateDarcyVelocity(S, xyz, velocity);
 
-  std::vector<int> list = {1, 2, 3, 16, 17, 18};
-  for (int v : list) { 
-    AmanziGeometry::Point xv(2);
-    mesh->node_get_coordinates(v, &xv);
-    CHECK_CLOSE(0.0, xv * velocity[v], 1e-14);
+  if (comm.NumProc() == 1) {
+    std::vector<int> list = {1, 2, 3, 16, 17, 18};
+    for (int v : list) { 
+      mesh->node_get_coordinates(v, &xv);
+      CHECK_CLOSE(0.0, xv * velocity[v], 1e-14);
+    }
   }
 
   // verify velocity at all points
-  // -- overwrite flow & pressure
-  AmanziGeometry::Point vel(1.0, 2.0);
   int nnodes = mesh->num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::OWNED);
   int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
+  int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
 
   auto& flow = *S->GetFieldData("darcy_flux", "flow")->ViewComponent("face");
   auto& pres = *S->GetFieldData("pressure", "flow")->ViewComponent("cell");
-
+  
+  // -- overwite with constant velocity
+  AmanziGeometry::Point vel(1.0, 2.0);
   for (int f = 0; f < nfaces; ++f) {
     flow[0][f] = vel * mesh->face_normal(f);
   }
 
-  pres.PutScalar(1.0);
+  // -- overwite with linear pressure
+  for (int c = 0; c < ncells; ++c) {
+    const AmanziGeometry::Point& xc = mesh->cell_centroid(c);
+    pres[0][c] = 1.0 + xc[0] + 2 * xc[1];
+  }
 
-  // -- recovered velocity
+  // -- check recovered velocity
   Teuchos::ParameterList& wlist = glist->sublist("walkabout data");
   auto walkabout = Teuchos::rcp(new Amanzi::WalkaboutCheckpoint(wlist, &comm));
 
@@ -79,7 +87,7 @@ using namespace Amanzi;
     CHECK(norm(vel - velocity[v]) < 1e-10);
   }
 
-  // -- interpolated pressure
+  // -- check interpolated pressure and saturation
   std::vector<int> material_ids;
   std::vector<double> porosity, saturation, pressure, isotherm_kd;
 
@@ -87,7 +95,8 @@ using namespace Amanzi;
                            porosity, saturation, pressure, isotherm_kd, material_ids);
 
   for (int v = 0; v < nnodes; ++v) {
-    CHECK_CLOSE(1.0, pressure[v], 1e-10);
+    mesh->node_get_coordinates(v, &xv);
+    CHECK_CLOSE(1.0 + xv[0] + 2 * xv[1], pressure[v], 0.15);  // some tets have 1 neighboor
     CHECK_CLOSE(1.0, saturation[v], 1e-10);
   }
 
@@ -123,6 +132,7 @@ using namespace Amanzi;
 
   // verify velocity at all points
   // -- overwrite flow & pressure
+  std::cout << "Start test of 3D Walkabout\n";
   AmanziGeometry::Point vel(1.0, 2.0, 3.0);
   int nnodes = mesh->num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::OWNED);
   int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);

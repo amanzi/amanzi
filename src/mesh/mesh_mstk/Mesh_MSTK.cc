@@ -179,6 +179,12 @@ Mesh_MSTK::Mesh_MSTK(const char *filename, const Epetra_MpiComm *incomm_,
     set_space_dimension(space_dim);      
   }
 
+  // Verify mesh and geometric model compatibility
+
+  if (gm != Teuchos::null && gm->dimension() != space_dimension()) {
+    amanzi_throw(Errors::Message("Geometric model and mesh have different dimensions."));
+  }
+
   // Do all the processing required for setting up the mesh for Amanzi 
   
   post_create_steps_(request_faces, request_edges);
@@ -887,7 +893,7 @@ void Mesh_MSTK::extract_mstk_mesh(const Epetra_MpiComm *incomm,
     }
     break;
     
-  case NODE: {
+  case MVERTEX: {
     Errors::Message mesg("Vertex list passed into extract mesh. Cannot extract a point mesh");
     amanzi_throw(mesg);
     break;

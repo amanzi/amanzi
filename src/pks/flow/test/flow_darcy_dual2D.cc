@@ -52,7 +52,7 @@ TEST(FLOW_2D_TRANSIENT_DARCY) {
   // create a MSTK mesh framework
   ParameterList regions_list = plist->get<Teuchos::ParameterList>("regions");
   Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> gm =
-      Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(3, regions_list, &comm));
+      Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(2, regions_list, &comm));
 
   FrameworkPreference pref;
   pref.clear();

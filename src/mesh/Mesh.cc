@@ -173,7 +173,7 @@ Mesh::cell_get_num_faces(const Entity_ID cellid) const
 }
 
 
-// NOTE: this is a serial routine
+// NOTE: this is a on-processor routine
 unsigned int
 Mesh::cell_get_max_faces() const
 {
@@ -182,12 +182,11 @@ Mesh::cell_get_max_faces() const
   for (int c = 0; c < ncells; ++c) {
     n = std::max(n, cell_get_num_faces(c));
   }
-
   return n;
 }
 
 
-// NOTE: this is a serial routine
+// NOTE: this is a on-processor routine
 unsigned int
 Mesh::cell_get_max_nodes() const
 {
@@ -197,6 +196,23 @@ Mesh::cell_get_max_nodes() const
     AmanziMesh::Entity_ID_List nodes;
     cell_get_nodes(c, &nodes);
     n = std::max(n, (unsigned int) nodes.size());
+  }
+  return n;
+}
+
+
+// NOTE: this is a on-processor routine
+unsigned int
+Mesh::cell_get_max_edges() const
+{
+  unsigned int n(0);
+  if (edges_requested_) {
+    int ncells = num_entities(CELL, Parallel_type::OWNED);
+    for (int c = 0; c < ncells; ++c) {
+      AmanziMesh::Entity_ID_List edges;
+      cell_get_edges(c, &edges);
+      n = std::max(n, (unsigned int) edges.size());
+    }
   }
   return n;
 }

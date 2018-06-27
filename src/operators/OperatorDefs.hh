@@ -78,10 +78,6 @@ const int OPERATOR_QUAD_FACES = 4;  // Quadrilateral is the common element
 const int OPERATOR_QUAD_NODES = 4;
 const int OPERATOR_QUAD_EDGES = 4;
 
-const int OPERATOR_MAX_FACES = 21;  // Kelvin's tetrakaidecahedron isn't big enough
-const int OPERATOR_MAX_NODES = 47;  // More accurate bounds could be
-const int OPERATOR_MAX_EDGES = 60;  // calculated during initialization.
-
 // Newton-correction options
 const int OPERATOR_DIFFUSION_JACOBIAN_NONE = 0;
 const int OPERATOR_DIFFUSION_JACOBIAN_TRUE = 1;

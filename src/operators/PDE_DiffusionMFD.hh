@@ -167,7 +167,8 @@ class PDE_DiffusionMFD : public virtual PDE_Diffusion {
   void UpdateMatricesNodal_();
   void UpdateMatricesEdge_();
   void UpdateMatricesTPFA_();
-  void UpdateMatricesMixed_(const Teuchos::Ptr<const CompositeVector>& flux);
+  void UpdateMatricesMixed_();
+  void UpdateMatricesMixed_little_k_();
   void UpdateMatricesMixedWithGrad_(const Teuchos::Ptr<const CompositeVector>& flux);
 
   void AddNewtonCorrectionCell_(const Teuchos::Ptr<const CompositeVector>& flux,

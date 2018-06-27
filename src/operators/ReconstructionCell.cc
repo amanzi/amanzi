@@ -44,6 +44,8 @@ void ReconstructionCell::Init(Teuchos::RCP<const Epetra_MultiVector> field,
   nfaces_wghost = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
   nnodes_wghost = mesh_->num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::ALL);
 
+  cell_max_nodes = mesh_->cell_get_max_nodes();
+
   dim = mesh_->space_dimension();
 
   CompositeVectorSpace cv_space;
@@ -78,7 +80,7 @@ void ReconstructionCell::Init(Teuchos::RCP<const Epetra_MultiVector> field,
 void ReconstructionCell::Compute()
 {
   Teuchos::RCP<Epetra_MultiVector> grad = gradient_->ViewComponent("cell", false);
-  AmanziGeometry::Entity_ID_List cells;
+  AmanziMesh::Entity_ID_List cells;
   AmanziGeometry::Point xcc(dim);
 
   WhetStone::DenseMatrix matrix(dim, dim);
@@ -130,10 +132,10 @@ void ReconstructionCell::Compute()
 * in specied cells and internal structures are not modified.
 ****************************************************************** */
 void ReconstructionCell::ComputeGradient(
-    const AmanziGeometry::Entity_ID_List& ids,
+    const AmanziMesh::Entity_ID_List& ids,
     std::vector<AmanziGeometry::Point>& gradient)
 {
-  AmanziGeometry::Entity_ID_List cells;
+  AmanziMesh::Entity_ID_List cells;
   AmanziGeometry::Point xcc(dim), grad(dim);
 
   WhetStone::DenseMatrix matrix(dim, dim);
@@ -203,7 +205,7 @@ void ReconstructionCell::ApplyLimiter(
 /* ******************************************************************
 * Apply internal limiter over set of cells.
 ****************************************************************** */
-void ReconstructionCell::ApplyLimiter(AmanziGeometry::Entity_ID_List& ids,
+void ReconstructionCell::ApplyLimiter(AmanziMesh::Entity_ID_List& ids,
                                       std::vector<AmanziGeometry::Point>& gradient)
 {
   if (limiter_id_ == OPERATOR_LIMITER_KUZMIN) {
@@ -282,10 +284,10 @@ void ReconstructionCell::PopulateLeastSquareSystem_(
 * manifold using a smoothness criterion.
 ****************************************************************** */
 void ReconstructionCell::CellFaceAdjCellsNonManifold_(
-    AmanziGeometry::Entity_ID c, AmanziMesh::Parallel_type ptype,
-    std::vector<AmanziGeometry::Entity_ID>& cells) const
+    AmanziMesh::Entity_ID c, AmanziMesh::Parallel_type ptype,
+    std::vector<AmanziMesh::Entity_ID>& cells) const
 {
-  AmanziGeometry::Entity_ID_List faces, fcells;
+  AmanziMesh::Entity_ID_List faces, fcells;
   std::vector<int> dirs;
 
   mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
@@ -294,7 +296,7 @@ void ReconstructionCell::CellFaceAdjCellsNonManifold_(
   cells.clear();
 
   for (int n = 0; n < nfaces; ++n) {
-    AmanziGeometry::Entity_ID f = faces[n];
+    AmanziMesh::Entity_ID f = faces[n];
     mesh_->face_get_cells(f, ptype, &fcells);
     int ncells = fcells.size();
 
@@ -303,11 +305,11 @@ void ReconstructionCell::CellFaceAdjCellsNonManifold_(
     } else if (ncells > 2) {
       int dir;
       double dmax(0.0);
-      AmanziGeometry::Entity_ID cmax;
+      AmanziMesh::Entity_ID cmax;
       const AmanziGeometry::Point& normal0 = mesh_->face_normal(f, false, c, &dir);
 
       for (int i = 0; i < ncells; ++i) {
-        AmanziGeometry::Entity_ID c1 = fcells[i];
+        AmanziMesh::Entity_ID c1 = fcells[i];
         if (c1 != c) {
           const AmanziGeometry::Point& normal1 = mesh_->face_normal(f, false, c1, &dir);
           double d = fabs(normal0 * normal1) / norm(normal1);

@@ -15,7 +15,6 @@
 
 #include <vector>
 
-#include "GeometryDefs.hh"
 #include "MeshDefs.hh"
 
 // This variable allows usage of WhetStone as a standalone library.
@@ -25,7 +24,7 @@ namespace Amanzi {
 namespace WhetStone {
 
 #ifdef AMANZI_CODE
-typedef AmanziGeometry::Entity_ID Entity_ID;
+typedef AmanziMesh::Entity_ID Entity_ID;
 typedef std::vector<Entity_ID> Entity_ID_List;
 typedef AmanziMesh::Parallel_type Parallel_type;
 typedef AmanziMesh::Entity_kind Entity_kind;

@@ -18,7 +18,7 @@ namespace NavierStokes {
 /* ******************************************************************
 * Calculate f(u, du/dt) = a d(s(u))/dt + A*u - rhs.
 ****************************************************************** */
-void NavierStokes_PK::Functional(double t_old, double t_new, 
+void NavierStokes_PK::FunctionalResidual(double t_old, double t_new, 
                                  Teuchos::RCP<TreeVector> u_old,
                                  Teuchos::RCP<TreeVector> u_new, 
                                  Teuchos::RCP<TreeVector> f)

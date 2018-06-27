@@ -177,10 +177,10 @@ class Region {
   }
 
   // Integer identifier of the region
-  Set_ID id() const {
+  int id() const {
     return id_;
   }
-  void set_id(Set_ID id) {
+  void set_id(int id) {
     id_ = id;
   }
 
@@ -223,7 +223,7 @@ class Region {
  protected:
   // Constructor -- protected as it should never be called directly
   Region(const std::string& name,
-         Set_ID id,
+         int id,
          bool geometric,
          RegionType type,
          unsigned int dim,
@@ -248,8 +248,8 @@ class Region {
   // Name of identifier
   std::string name_;
 
-  // Integer identifier of region
-  Set_ID id_;
+  // Identifier of region
+  int id_;
 
   // Region type
   RegionType type_;

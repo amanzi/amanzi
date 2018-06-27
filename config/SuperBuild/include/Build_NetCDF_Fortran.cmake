@@ -61,6 +61,7 @@ ExternalProject_Add(${NetCDF_Fortran_BUILD_TARGET}
                                      -DCMAKE_CXX_COMPILER:FILEPATH=${CMAKE_CXX_COMPILER}
                                      -DCMAKE_Fortran_FLAGS:STRING=${Amanzi_COMMON_FCFLAGS}
                                      -DCMAKE_Fortran_COMPILER:FILEPATH=${CMAKE_Fortran_COMPILER}
+                                     -DCMAKE_PREFIX_PATH:FILEPATH=${TPL_INSTALL_PREFIX}
                     # -- Build
                     BINARY_DIR      ${NetCDF_Fortran_build_dir}  
                     BUILD_COMMAND   $(MAKE)                       # enables parallel builds through make

@@ -32,7 +32,7 @@
 #include "Transport_PK.hh"
 
 /* **************************************************************** */
-void runTest(double switch_time) {
+void runTest(double switch_time, std::string limiter) {
   using namespace Teuchos;
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
@@ -71,6 +71,8 @@ std::cout << "Test: Advance on a 2D square mesh" << std::endl;
   S->RegisterDomainMesh(rcp_const_cast<Mesh>(mesh));
   S->set_time(0.0);
 
+  plist->sublist("PKs").sublist("transport")
+        .sublist("reconstruction").set<std::string>("limiter", limiter);
   Transport_PK TPK(plist, S, "transport", component_names);
   TPK.Setup(S.ptr());
   TPK.CreateDefaultState(mesh, 2);
@@ -154,13 +156,15 @@ std::cout << "Test: Advance on a 2D square mesh" << std::endl;
 }
 
 
-TEST(ADVANCE_WITH_2D_MESH) {
-  runTest(1.0);  // no velocity swicth
+TEST(ADVANCE_2D_MESH) {
+  runTest(1.0, "tensorial");  // no velocity swicth
 }
 
-
-TEST(ADVANCE_WITH_2D_MESH_SWITCH_FLOW) {
-  runTest(0.16);
+TEST(ADVANCE_2D_MESH_SWITCH_FLOW) {
+  runTest(0.16, "tensorial");
 }
 
+TEST(ADVANCE_2D_MESH_SWITCH_FLOW_KUZMIN) {
+  runTest(0.16, "Kuzmin");
+}
 
