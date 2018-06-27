@@ -41,6 +41,7 @@
 //Analytic
 #include "AnalyticMultiMat00.hh"
 #include "AnalyticMultiMat01.hh"
+#include "AnalyticMultiMat02.hh"
 
 using namespace Teuchos; 
 using namespace Amanzi;
@@ -50,6 +51,7 @@ using namespace Amanzi::Operators;
 
 void write_data_example_simple(const Amanzi::AmanziMesh::Mesh& mesh, const std::string& matdata_fname);
 void write_data_example_poly(const Amanzi::AmanziMesh::Mesh& mesh, const std::string& matdata_fname);
+void write_data_example_skewed(const Amanzi::AmanziMesh::Mesh& mesh, const std::string& matdata_fname);
 void SplitPolyCell(const std::vector<Amanzi::AmanziGeometry::Point>& xy1, 
                    const Amanzi::AmanziGeometry::Point& pnt, 
                    const Amanzi::AmanziGeometry::Point& vec, 
@@ -493,9 +495,226 @@ void RunTestDiffusionMixedXMOF_Linear() {
   }
 }
 
+// linear solution; const diffusion; cont interface that crosses MMCs in a non-orthogonal way  
+void RunTestDiffusionMixedXMOF_LinearSkewedInterface() {
+  using namespace Teuchos; 
+  using namespace Amanzi;
+  using namespace Amanzi::AmanziMesh;
+  using namespace Amanzi::AmanziGeometry;
+  using namespace Amanzi::Operators;
+
+  Epetra_MpiComm comm(MPI_COMM_WORLD);
+  int MyPID = comm.MyPID();
+  if (MyPID == 0) std::cout << "\nTest: 2D elliptic solver, test for linear exact soln w/ skewed interface" 
+                            << " for mixed XMOF discretization" << std::endl;
+
+  // read parameter list
+  // -- it specifies details of the mesh, diffusion operator, and solver
+  // in our case, base mesh is a mesh of unit square (0,1)^2
+  std::string xmlFileName = "test/operator_diffusion_xmof.xml";
+  ParameterXMLFileReader xmlreader(xmlFileName);
+  ParameterList plist = xmlreader.getParameters();
+
+  // create the MSTK mesh framework 
+  // -- geometric model is defined in the region sublist of XML list
+  ParameterList region_list = plist.get<Teuchos::ParameterList>("regions");
+  Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(2, region_list, &comm));
+
+  // -- provide at lest one framework to the mesh factory. The first available
+  // -- framework will be used
+  MeshFactory meshfactory(&comm);
+  meshfactory.preference(FrameworkPreference({MSTK, STKMESH}));
+
+
+
+  size_t numb_of_x_cells;
+  std::cout << "numb of x (and y) cells: ";
+  std::cin >> numb_of_x_cells;
+  RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, numb_of_x_cells, numb_of_x_cells, gm);
+
+
+
+  // modify diffusion coefficient for multimaterial diffusion
+  Teuchos::RCP<std::vector<std::vector<WhetStone::Tensor> > >KMulti = Teuchos::rcp(new std::vector<std::vector<WhetStone::Tensor> >());
+  //number of cells in the mesh
+  int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+  // number of faces in the mesh
+  int nfaces = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::OWNED);
+  // number of faces with ghost faces
+  int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::USED);
+
+  // p = x + y
+  short solnType;
+  std::cout << "exact soln (0 for const, 1 for linear): ";
+  std::cin >> solnType;
+  double soln_g_x = 1., soln_g_y = 1., soln_c = 0.;
+  if (!solnType) {
+    soln_g_x = soln_g_y = 0.;
+    soln_c = 1.;
+  } 
+  AnalyticMultiMat02 ana(mesh, soln_g_x, soln_g_y, soln_c);
+  
+  // create boundary data
+  Teuchos::RCP<BCs> bc = Teuchos::rcp(new BCs(mesh, AmanziMesh::FACE, SCHEMA_DOFS_SCALAR));
+  std::vector<int>& bc_model = bc->bc_model();
+  std::vector<double>& bc_value = bc->bc_value();
+  std::vector<double>& bc_mixed = bc->bc_mixed();
+
+  for (int f = 0; f < nfaces_wghost; f++) {
+    const Point& xf = mesh->face_centroid(f);
+    double area = mesh->face_area(f);
+    int dir, c = BoundaryFaceGetCell(*mesh, f);
+    const Point& normal = mesh->face_normal(f, false, c, &dir);
+
+    if ((fabs(xf[0]) < 1e-6)||
+        (fabs(xf[1]) < 1e-6)||
+        (fabs(xf[1]) > 1 - 1e-6)||
+        (fabs(xf[0]) > 1 - 1e-6)){
+      bc_model[f] = Operators::OPERATOR_BC_DIRICHLET;
+      bc_value[f] = ana.pressure_exact(xf, 0.0);
+    }
+  
+  }
+
+  // set up "skewed" interface
+  std::string matdata_fname = "test/skewed_matdata.dat";
+  write_data_example_skewed(*mesh, matdata_fname);
+  XMOF2D::CellsMatData mat_data = read_mat_data(matdata_fname);
+
+
+  int num_mat = 2;
+  CompositeVectorSpace cvs1, cvs2, cvs_pl;
+  cvs1.SetMesh(mesh)->SetGhosted(true)->AddComponent("cell", AmanziMesh::CELL, num_mat);
+  cvs2.SetMesh(mesh)->SetGhosted(true)->AddComponent("cell", AmanziMesh::CELL, 2*num_mat);
+  cvs_pl.SetMesh(mesh)->SetGhosted(true)->AddComponent("cell", AmanziMesh::CELL, 1 + num_mat);
+  cvs_pl.AddComponent("face", AmanziMesh::FACE, 1);
+  
+
+  Teuchos::RCP<CompositeVector> vol_frac = Teuchos::rcp(new CompositeVector(cvs1)); 
+  Epetra_MultiVector& vol_frac_vec = *vol_frac->ViewComponent("cell", true);
+  Teuchos::RCP<CompositeVector> centroids = Teuchos::rcp(new CompositeVector(cvs2));
+  Epetra_MultiVector& centroids_vec = *centroids->ViewComponent("cell", true);
+
+  
+  for (int i=0; i!= mat_data.cells_materials.size(); ++i){
+   
+    const Point& xc = mesh->cell_centroid(i);
+    std::vector<WhetStone::Tensor> Ks_cell;
+
+    if (mat_data.cells_materials[i].size() > 1) {  //mixed cell
+      Ks_cell.resize(num_mat);
+      
+      for (int j=0; j!= mat_data.cells_materials[i].size(); ++j){
+        int mat_id = int(mat_data.cells_materials[i][j]);
+        const WhetStone::Tensor& Kc = ana.Tensor(xc, 0.0, mat_id);
+        Ks_cell[mat_id] = Kc;
+        vol_frac_vec[mat_id][i] = mat_data.cells_vfracs[i][j];
+        centroids_vec[mat_id*2][i] = mat_data.cells_centroids[i][j].x;
+        centroids_vec[mat_id*2+1][i] = mat_data.cells_centroids[i][j].y;
+      }
+    }else{
+      int mat_id = int(mat_data.cells_materials[i][0]);
+      const WhetStone::Tensor& Kc = ana.Tensor(xc, 0.0, mat_id);
+      Ks_cell.push_back(Kc);
+      vol_frac_vec[mat_id][i] = 1.0;
+    }      
+    KMulti->push_back(Ks_cell);       
+  }
+
+  // create diffusion operator 
+  ParameterList op_list = plist.get<Teuchos::ParameterList>("PK operator").sublist("diffusion operator mixed xmof");
+  Teuchos::RCP<PDE_DiffusionMFD_XMOF> op = Teuchos::rcp(new PDE_DiffusionMFD_XMOF(op_list, mesh));
+  op->SetBCs(bc, bc);
+  const CompositeVectorSpace& cvs = op->global_operator()->DomainMap();
+
+  // set up the diffusion operator
+  op->SetupMultiMatK(KMulti);
+  op->ConstructMiniMesh(vol_frac.ptr(), centroids.ptr());
+  Teuchos::RCP<Operator> global_op = op->global_operator();
+
+  op->UpdateMatrices(Teuchos::null, Teuchos::null, 0.);
+  // get and assmeble the global operator 
+  op->ApplyBCs(true, true);
+  global_op->SymbolicAssembleMatrix();
+  global_op->AssembleMatrix();
+
+  // create preconditoner using the base operator class
+  ParameterList slist = plist.get<Teuchos::ParameterList>("preconditioners");
+  global_op->InitPreconditioner("Hypre AMG", slist);
+
+  TestSPD(global_op);
+
+  // solve the problem
+  ParameterList lop_list = plist.sublist("solvers")
+                                .sublist("AztecOO CG").sublist("pcg parameters");
+  AmanziSolvers::LinearOperatorPCG<Operator, CompositeVector, CompositeVectorSpace>
+      solver(global_op, global_op);
+  solver.Init(lop_list);
+
+  CompositeVector rhs = *global_op->rhs();
+  Teuchos::RCP<CompositeVector> solution = Teuchos::rcp(new CompositeVector(rhs));
+  Teuchos::RCP<CompositeVector> flux = Teuchos::rcp(new CompositeVector(rhs));
+  solution->PutScalar(0.0);
+  Teuchos::RCP<CompositeVector> sol_pl = Teuchos::rcp(new CompositeVector(cvs_pl));
+  *sol_pl->ViewComponent("face", false) = *solution->ViewComponent("face", false);
+  op->UpdateFlux(sol_pl.ptr(), flux.ptr(), 0.);  
+
+  int ierr = solver.ApplyInverse(rhs, *solution);
+  *sol_pl->ViewComponent("face", false) = *solution->ViewComponent("face", false);
+  op->UpdateFlux(sol_pl.ptr(), flux.ptr(), 0.);
+
+
+  if (MyPID == 0) {
+    std::cout << "pressure solver (pcg): ||r||=" << solver.residual() 
+              << " itr=" << solver.num_itrs()
+              << " code=" << solver.returned_code() << std::endl;
+  }
+
+  
+
+  // compute pressure error
+  Epetra_MultiVector& lmd = *sol_pl->ViewComponent("face", false);
+  Epetra_MultiVector& p = *sol_pl->ViewComponent("cell", false);
+  //const Epetra_MultiVector& vol_frac_vec = *vol_frac->ViewComponent("cell", true);
+  double pnorm, pl2_err, pinf_err;
+  double lnorm, ll2_err, linf_err;
+  ana.ComputeLambdaError(lmd, 0.0, lnorm, ll2_err, linf_err);
+  
+  // // calculate flux error
+  // Epetra_MultiVector& flx = *flux->ViewComponent("face", true);
+  // double unorm, ul2_err, uinf_err;
+
+  // op->UpdateFlux(solution.ptr(), flux.ptr());
+  // ana.ComputeFaceError(flx, 0.0, unorm, ul2_err, uinf_err);
+
+  if (MyPID == 0) {
+    pl2_err /= pnorm; 
+    // ul2_err /= unorm;
+    // printf("L2(p)=%9.6f  Inf(p)=%9.6f  L2(u)=%9.6g  Inf(u)=%9.6f  itr=%3d\n",
+    //     pl2_err, pinf_err, ul2_err, uinf_err, solver.num_itrs());
+    // printf("Pressure L2(p)=%9.6f  Inf(p)=%9.6f  itr=%3d\n",
+    //     pl2_err, pinf_err, solver.num_itrs());    
+
+    ll2_err /= lnorm;
+    printf("Lambda L2(p)=%15.9f  Inf(p)=%15.9f  itr=%3d\n",
+        ll2_err, linf_err, solver.num_itrs());    
+    CHECK(ll2_err < 1e-6 && linf_err < 1e-6);
+    CHECK(solver.num_itrs() < 10);
+    // GMV::open_data_file(*mesh, (std::string)"operators_xmof.gmv");
+    // GMV::start_data();
+    // GMV::write_cell_data(p, 0, "solution");
+    // GMV::close_data_file();
+    op->WriteSpecialGMV( (std::string)"skew_xmof.gmv", vol_frac_vec, *sol_pl->ViewComponent("cell", false));
+    
+  }
+}
 
 TEST(OPERATOR_DIFFUSION_MIXED_XMOF_LINEAR) {
   RunTestDiffusionMixedXMOF_Linear();
+}
+
+TEST(OPERATOR_DIFFUSION_MIXED_XMOF_LINEAR_SKEWED_INTERFACE) {
+  RunTestDiffusionMixedXMOF_LinearSkewedInterface();
 }
 
 TEST(OPERATOR_DIFFUSION_MIXED_XMOF) {
@@ -668,6 +887,124 @@ void write_data_example_simple(const Amanzi::AmanziMesh::Mesh& mesh, const std::
 
 }
 
+void write_data_example_skewed(const Amanzi::AmanziMesh::Mesh& mesh, const std::string& matdata_fname){
+
+  using namespace Amanzi;
+  using namespace Amanzi::AmanziMesh;
+  using namespace Amanzi::AmanziGeometry;  
+  
+
+  std::ofstream os(matdata_fname.c_str(), std::ofstream::binary);
+
+  // if (!os.good())
+  //   THROW_EXCEPTION("Cannot open " << cfg.bin_mesh_data_fname << " for binary output");
+
+  int out_int = 2;  //Dimension: 2 for 2D, 3 for 3D
+
+  int ncells = mesh.num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
+
+  os.write((char*) &out_int, sizeof(int));
+  os.write((char*) &ncells, sizeof(int));
+  Point cell_l(2), cell_r(2), p1, p2, pl1(-1, -3), vec(2, 4.8);
+  double area_l, area_r;
+
+  AmanziMesh::Entity_ID_List nodes;
+
+  std::vector<std::vector<int> > mat_ids(ncells);
+  std::vector<std::vector<double> > vol_frac(ncells);
+  std::vector<std::vector<Point> > part_cntr(ncells);
+  
+
+  for (int c=0; c<ncells; c++) {
+    mesh.cell_get_nodes(c, &nodes);
+    int nnodes = nodes.size();
+    std::vector<Point> nodes_pnt, intersect_l, intersect_r;
+
+    for (int k = 0; k < nnodes; k++){
+      mesh.node_get_coordinates(nodes[k], &p1);
+      nodes_pnt.push_back(p1);
+    }
+    
+    SplitPolyCell(nodes_pnt, pl1,  vec, intersect_r);       
+    SplitPolyCell(nodes_pnt, pl1, -1*vec, intersect_l);
+
+    if ((intersect_l.size() > 0)&&(intersect_r.size() > 0)){
+      mat_ids[c].resize(2);
+      mat_ids[c][0] = 0;
+      mat_ids[c][1] = 1;
+      Intersection_Centroid_Area(intersect_l, cell_l, &area_l);
+      Intersection_Centroid_Area(intersect_r, cell_r, &area_r);
+      double cell_size = mesh.cell_volume(c);
+      vol_frac[c].resize(2);
+      vol_frac[c][0] =  area_l/cell_size;
+      vol_frac[c][1] =  area_r/cell_size;
+      ///Noise
+      //vol_frac[c][0] *= (1 - 0.2*sin(1.*c));  vol_frac[c][1] = 1 - vol_frac[c][0];
+      //
+      part_cntr[c].resize(2);
+      part_cntr[c][0] = cell_l;
+      part_cntr[c][1] = cell_r;
+      // std::cout<<"left "<<part_cntr[c][0]<<" right "<< part_cntr[c][1]<<"\n";      
+      if (std::abs(area_l + area_r - cell_size) > 1e-10){
+        std::cout<< "Wrong area calculation "<<area_l + area_r<<" "<<cell_size<<"\n";
+        exit(-1);
+      }      
+      
+    }
+    else if ((intersect_l.size() > 0)&&(intersect_r.size()==0)){
+      int id = 0;
+      mat_ids[c].push_back(id);
+    }
+    else {
+      int id = 1;
+      mat_ids[c].push_back(id);
+    }           
+  }
+  // save materials
+  for(int c = 0; c < ncells; c++) {   
+    int nmats = mat_ids[c].size();
+    os.write((char*) &nmats, sizeof(int));
+    for (int imat = 0; imat < nmats; imat++)
+        os.write((char*) &mat_ids[c][imat], sizeof(int));
+  }
+  // save volume fractions
+  for(int c = 0; c < ncells; c++) {   
+    int nmats = mat_ids[c].size();
+    if (nmats > 1) {
+      for (int imat = 0; imat < nmats; imat++)
+        os.write((char*) &vol_frac[c][imat], sizeof(double));
+    }
+  }
+  // save centroids
+  for(int c = 0; c < ncells; c++) {   
+    int nmats = mat_ids[c].size();
+    if (nmats > 1) {
+      double val;
+      for (int imat = 0; imat < nmats; imat++){
+        os.write((char*) &part_cntr[c][imat][0], sizeof(double));
+        os.write((char*) &part_cntr[c][imat][1], sizeof(double));
+      }
+    }
+  }
+   
+  os.close();
+
+  // const Epetra_BlockMap& cmap_owned = mesh.cell_map(false);
+  // Epetra_Vector nmat(cmap_owned);
+
+  // for (int c=0; c<ncells; c++){
+  //   std::cout<<"Cell cnt: "<<mesh.cell_centroid(c)<<":";
+  //   for (int k = 0; k < mat_ids[c].size(); k++) std::cout<<" "<<mat_ids[c][k];
+  //   // std::cout<<"\n";
+  //   // nmat[c] = mat_ids[c][0] + 2*mat_ids[c].size();
+  // }
+
+  // GMV::open_data_file(mesh, (std::string)"nmat_xmof.gmv");
+  // GMV::start_data();
+  // GMV::write_cell_data(nmat, 0, "nmat");
+  // GMV::close_data_file();
+
+}
 
 void write_data_example_poly(const Amanzi::AmanziMesh::Mesh& mesh, const std::string& matdata_fname){
 
@@ -886,7 +1223,7 @@ void SplitPolyCell(const std::vector<Amanzi::AmanziGeometry::Point>& xy1,
      tmp = l_vec[0];
      l_vec[0] = l_vec[1];
      l_vec[1] = -tmp;
-   }
+   }                                                                                 
 
    IntersectConvexPolygons(xy1, box, xy3);
 
