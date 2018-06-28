@@ -530,7 +530,7 @@ std::vector<DOMNode*> InputConverter::GetSameChildNodes_(
 ****************************************************************** */
 double InputConverter::GetAttributeValueD_(
     DOMElement* elem, const char* attr_name, const std::string& type,
-    std::string unit, bool exception, double default_val)
+     double valmin, double valmax, std::string unit, bool exception, double default_val)
 {
   double val;
   MemoryManager mm;
@@ -567,6 +567,12 @@ double InputConverter::GetAttributeValueD_(
       Exceptions::amanzi_throw(msg);
     }
  
+    if (! (val >= valmin && val <= valmax)) {
+      msg << "Value of attribute \"" << attr_name << "\"=" << val 
+          << "\" is out of range: " << valmin << " " << valmax << " [" << unit << "].\n";
+      Exceptions::amanzi_throw(msg);
+    }
+
     if ((unit != "" && unit_in != "") ||
         (unit == "-" && unit_in != "")) {
       if (!units_.CompareUnits(unit, unit_in)) {
@@ -591,8 +597,8 @@ double InputConverter::GetAttributeValueD_(
 * Extract atribute of type int.
 ****************************************************************** */
 int InputConverter::GetAttributeValueL_(
-    DOMElement* elem, const char* attr_name,
-    const std::string& type, bool exception, int default_val)
+    DOMElement* elem, const char* attr_name, const std::string& type,
+    int valmin, int valmax, bool exception, int default_val)
 {
   int val;
   MemoryManager mm;
@@ -613,6 +619,13 @@ int InputConverter::GetAttributeValueL_(
       Errors::Message msg;
       msg << "Usage of constant \"" << text << "\" of type=" << found_type 
           << ". Expect type=" << type << ".\n";
+      Exceptions::amanzi_throw(msg);
+    }
+
+    if (! (val >= valmin && val <= valmax)) {
+      Errors::Message msg;
+      msg << "Value of attribute \"" << attr_name << "\"=" << val 
+          << " is out of range: " << valmin << " " << valmax << ".\n";
       Exceptions::amanzi_throw(msg);
     }
   } else if (! exception) {
@@ -670,7 +683,7 @@ std::string InputConverter::GetAttributeValueS_(
 * must match the expected unit. 
 ****************************************************************** */
 std::vector<double> InputConverter::GetAttributeVectorD_(
-    DOMElement* elem, const char* attr_name, 
+    DOMElement* elem, const char* attr_name, int length,
     std::string unit, bool exception, double mol_mass)
 {
   std::vector<double> val;
@@ -692,6 +705,14 @@ std::vector<double> InputConverter::GetAttributeVectorD_(
         }
       }
     }
+
+    if (length > 0 && val.size() != length) {
+      Errors::Message msg;
+      msg << "Attribute \"" << attr_name << "\" has too few parameters: " << (int)val.size() 
+          << ", expected: " << length << ". Hint: check \"mesh->dimension\".\n";
+      Exceptions::amanzi_throw(msg);
+    }
+
   } else if (exception) {
     char* tagname = mm.transcode(elem->getNodeName());
     ThrowErrorMissattr_(tagname, "attribute", attr_name, tagname);
@@ -1322,8 +1343,8 @@ std::string InputConverter::CreateINFile_(std::string& filename, int rank)
       mineral_list << name << ", ";
       
       element = static_cast<DOMElement*>(inode);
-      double rate = GetAttributeValueD_(element, "rate_constant", TYPE_NUMERICAL, "", false, 0.0);
-      // double val = GetAttributeValueD_(element, "rate_constant", TYPE_NUMERICAL, "mol/m^2/s", false, 0.0);
+      double rate = GetAttributeValueD_(element, "rate_constant", TYPE_NUMERICAL, 0.0, DVAL_MAX, "", false, 0.0);
+      // double val = GetAttributeValueD_(element, "rate_constant", TYPE_NUMERICAL, 0.0, DVAL_MAX, "mol/m^2/s", false, 0.0);
       // double rate = units_.ConvertUnitD(val, "mol/m^2/s", "mol/cm^2/s", -1.0, flag);
       
       mineral_kinetics << "    " << name << "\n";
@@ -1382,7 +1403,7 @@ std::string InputConverter::CreateINFile_(std::string& filename, int rank)
           
           for (int j = 0; j < primary_list.size(); ++j) {
             DOMNode* jnode = primary_list[j];
-            std::string primary_name = GetAttributeValueS_(static_cast<DOMElement*>(jnode), "name");
+            std::string primary_name = GetAttributeValueS_(jnode, "name");
             DOMNode* kd_node = GetUniqueElementByTagsString_(jnode, "kd_model", flag2);
             DOMElement* kd_elem = static_cast<DOMElement*>(kd_node);
               
@@ -1417,7 +1438,7 @@ std::string InputConverter::CreateINFile_(std::string& filename, int rank)
           for (int j = 0; j < mineral_list.size(); ++j) {
             DOMNode* jnode = mineral_list[j];
             Teuchos::ParameterList ion_list;
-            double cec = GetAttributeValueD_(static_cast<DOMElement*>(jnode), "cec");
+            double cec = GetAttributeValueD_(jnode, "cec");
             ion_list.set<double>("cec",cec);
             
             // loop over list of cation names/selectivity pairs
@@ -1456,8 +1477,8 @@ std::string InputConverter::CreateINFile_(std::string& filename, int rank)
           for (int j = 0; j < site_list.size(); ++j) {
             DOMNode* jnode = site_list[j];
             Teuchos::ParameterList surface_list;
-            std::string site = GetAttributeValueS_(static_cast<DOMElement*>(jnode), "name");
-            double density = GetAttributeValueD_(static_cast<DOMElement*>(jnode), "density");
+            std::string site = GetAttributeValueS_(jnode, "name");
+            double density = GetAttributeValueD_(jnode, "density");
             surface_list.set<double>("density",density);
             
             std::string name2;
@@ -1480,9 +1501,9 @@ std::string InputConverter::CreateINFile_(std::string& filename, int rank)
           for (int j = 0; j < minerals_list.size(); ++j) {
             DOMNode* jnode = minerals_list[j];
             Teuchos::ParameterList mineral_list;
-            std::string mineral_name = GetAttributeValueS_(static_cast<DOMElement*>(jnode), "name");
-            double volume_fraction = GetAttributeValueD_(static_cast<DOMElement*>(jnode), "volume_fraction");
-            double specific_surface_area = GetAttributeValueD_(static_cast<DOMElement*>(jnode), "specific_surface_area");
+            std::string mineral_name = GetAttributeValueS_(jnode, "name");
+            double volume_fraction = GetAttributeValueD_(jnode, "volume_fraction");
+            double specific_surface_area = GetAttributeValueD_(jnode, "specific_surface_area");
             mineral_list.set<double>("volume_fraction",volume_fraction);
             mineral_list.set<double>("specific_surface_area",specific_surface_area);
             
@@ -1821,7 +1842,7 @@ std::string InputConverter::CreateBGDFile_(std::string& filename, int rank, int 
           
           for (int j = 0; j < primary_list.size(); ++j) {
             DOMNode* jnode = primary_list[j];
-            std::string primary_name = GetAttributeValueS_(static_cast<DOMElement*>(jnode), "name");
+            std::string primary_name = GetAttributeValueS_(jnode, "name");
             DOMNode* kd_node = GetUniqueElementByTagsString_(jnode, "kd_model", flag2);
             DOMElement* kd_elem = static_cast<DOMElement*>(kd_node);
             

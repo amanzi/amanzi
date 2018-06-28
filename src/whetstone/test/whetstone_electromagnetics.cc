@@ -14,9 +14,7 @@
 #include <iostream>
 #include <vector>
 
-#include "Teuchos_ParameterList.hpp"
 #include "Teuchos_RCP.hpp"
-#include "Teuchos_XMLParameterListHelpers.hpp"
 #include "Teuchos_LAPACK.hpp"
 #include "UnitTest++.h"
 

@@ -156,7 +156,8 @@ void InputConverterU::ParseSolutes_()
       phases_["water"].push_back(name);
 
       DOMElement* element = static_cast<DOMElement*>(inode);
-      double mol_mass = GetAttributeValueD_(element, "molar_mass", TYPE_NUMERICAL, "kg/mol", false, 1.0);
+      // Polyethylene glycol has a molar mass of 1,000,000 g/mol
+      double mol_mass = GetAttributeValueD_(element, "molar_mass", TYPE_NUMERICAL, 0.0, 1000.0, "kg/mol", false, 1.0);
       solute_molar_mass_[name] = mol_mass;
     }
   }
@@ -389,7 +390,7 @@ void InputConverterU::SaveXMLFile(
   if (flag) {
     DOMElement* element = static_cast<DOMElement*>(node);
     filename = GetAttributeValueS_(element, "file_name", TYPE_NONE, false, "skip");
-    precision = GetAttributeValueL_(element, "output_precision", TYPE_NONE, false, 0);
+    precision = GetAttributeValueL_(element, "output_precision", TYPE_NONE, 0, 10, false, 0);
   }
 
   if (filename == "") {
