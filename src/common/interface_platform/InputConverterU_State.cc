@@ -85,7 +85,7 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
   for (int i = 0; i < children->getLength(); i++) {
     DOMNode* inode = children->item(i);
     if (DOMNode::ELEMENT_NODE == inode->getNodeType()) {
-      std::string mat_name = GetAttributeValueS_(static_cast<DOMElement*>(inode), "name");
+      std::string mat_name = GetAttributeValueS_(inode, "name");
       int mat_id = GetAttributeValueL_(inode, "id", TYPE_NUMERICAL, 0, INT_MAX, false, -1);
 
       node = GetUniqueElementByTagsString_(inode, "assigned_regions", flag);
@@ -278,8 +278,8 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
       node = GetUniqueElementByTagsString_(inode, "liquid_phase, liquid_component, linear_pressure", flag);
       if (flag) {
         double p = GetAttributeValueD_(node, "value", TYPE_NUMERICAL, DVAL_MIN, DVAL_MAX, "Pa");
-        std::vector<double> grad = GetAttributeVectorD_(node, "gradient", "Pa/m");
-        std::vector<double> refc = GetAttributeVectorD_(node, "reference_coord", "m");
+        std::vector<double> grad = GetAttributeVectorD_(node, "gradient", dim_, "Pa/m");
+        std::vector<double> refc = GetAttributeVectorD_(node, "reference_coord", dim_, "m");
 
         grad.insert(grad.begin(), 0.0);
         refc.insert(refc.begin(), 0.0);
@@ -311,8 +311,8 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
       node = GetUniqueElementByTagsString_(inode, "liquid_phase, liquid_component, linear_saturation", flag);
       if (flag) {
         double s = GetAttributeValueD_(node, "value", TYPE_NUMERICAL, 0.0, 1.0, "-");
-        std::vector<double> grad = GetAttributeVectorD_(node, "gradient", "m^-1");
-        std::vector<double> refc = GetAttributeVectorD_(node, "reference_coord", "m");
+        std::vector<double> grad = GetAttributeVectorD_(node, "gradient", dim_, "m^-1");
+        std::vector<double> refc = GetAttributeVectorD_(node, "reference_coord", dim_, "m");
 
         grad.insert(grad.begin(), 0.0);
         refc.insert(refc.begin(), 0.0);
@@ -369,7 +369,7 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
 
           if (strcmp(tagname, "uniform_conc") == 0) {
             std::string unit, text;
-            text = GetAttributeValueS_(static_cast<DOMElement*>(jnode), "name");
+            text = GetAttributeValueS_(jnode, "name");
             int m = GetPosition_(phases_["water"], text);
             GetAttributeValueD_(jnode, "value", TYPE_NUMERICAL, 0.0, DVAL_MAX, "molar");  // just a check
             vals[m] = ConvertUnits_(GetAttributeValueS_(jnode, "value"), unit, solute_molar_mass_[text]);
@@ -403,7 +403,7 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
           tagname = mm.transcode(jnode->getNodeName());
 
           if (strcmp(tagname, "uniform_conc") == 0) {
-            std::string text = GetAttributeValueS_(static_cast<DOMElement*>(jnode), "name");
+            std::string text = GetAttributeValueS_(jnode, "name");
             int m = GetPosition_(phases_["air"], text);
             vals[m] = GetAttributeValueD_(jnode, "value", TYPE_NUMERICAL, 0.0, DVAL_MAX);
           }
@@ -435,7 +435,7 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
       // -- geochemical condition
       node = GetUniqueElementByTagsString_(inode, "liquid_phase, geochemistry_component, constraint", flag);
       if (flag) {
-        std::string name = GetAttributeValueS_(static_cast<DOMElement*>(node), "name");
+        std::string name = GetAttributeValueS_(node, "name");
 
         out_ic.sublist("geochemical conditions").sublist(name)
             .set<Teuchos::Array<std::string> >("regions", regions);
@@ -581,7 +581,7 @@ void InputConverterU::TranslateStateICsAmanziGeochemistry_(
   DOMElement* element;
 
   node = GetUniqueElementByTagsString_("process_kernels, chemistry", flag);
-  std::string engine = GetAttributeValueS_(static_cast<DOMElement*>(node), "engine");
+  std::string engine = GetAttributeValueS_(node, "engine");
 
   node = GetUniqueElementByTagsString_("geochemistry, constraints", flag);
   if (flag && engine == "amanzi") {
