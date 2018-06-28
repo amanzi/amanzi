@@ -652,7 +652,7 @@
           <ParameterList name="parameters for Burnett-Frind">
             <Parameter name="alpha_l" type="double" value="1.0e-02"/>
             <Parameter name="alpha_th" type="double" value="1.0e-03"/>
-            <Parameter name="alpha_tv" type="double" value="1.0e-03"/>
+            <Parameter name="alpha_tv" type="double" value="2.0e-03"/>
           </ParameterList>
         </ParameterList>
         <ParameterList name="Facies_3">
@@ -662,7 +662,7 @@
             <Parameter name="alpha_lh" type="double" value="1.0e-02"/>
             <Parameter name="alpha_lv" type="double" value="2.0e-02"/>
             <Parameter name="alpha_th" type="double" value="1.0e-03"/>
-            <Parameter name="alpha_tv" type="double" value="1.0e-03"/>
+            <Parameter name="alpha_tv" type="double" value="2.0e-03"/>
           </ParameterList>
         </ParameterList>
       </ParameterList>

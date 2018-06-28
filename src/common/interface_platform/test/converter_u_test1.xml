@@ -203,7 +203,7 @@
     <material name="Facies_2" id="2000">
       <mechanical_properties>
         <porosity value="0.2206"/>
-        <dispersion_tensor type="burnett_frind" alpha_l="0.01 m" alpha_th="0.001 m" alpha_tv="0.001 m"/>
+        <dispersion_tensor type="burnett_frind" alpha_l="0.01 m" alpha_th="0.001 m" alpha_tv="0.002 m"/>
       </mechanical_properties>
       <!--permeability x="6.9365E-11" z="6.9365E-12" /-->
       <permeability type="file" filename="mesh_data.exo" attribute="permx,permy"/>
@@ -218,7 +218,7 @@
       <mechanical_properties>
         <porosity value="0.234"/>
         <dispersion_tensor type="lichtner_kelkar_robinson" alpha_lh="0.01 m" alpha_lv="0.02 m"
-                                                           alpha_th="0.001 m" alpha_tv="0.001 m"/>
+                                                           alpha_th="0.001 m" alpha_tv="0.002 m"/>
       </mechanical_properties>
       <!--permeability x="2.0706E-09" z="2.0706E-10" /-->
       <permeability type="file" filename="mesh_data.exo" attribute="permx,permy"/>
