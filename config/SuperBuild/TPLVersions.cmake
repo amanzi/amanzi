@@ -113,8 +113,7 @@
 #                - update HYPRE to 2.14.0
 #                - update OpenMPI to 3.0.2
 #   0.95.4       - update Boost to version 1.67.0
-#   0.95.5       - update HDF5 to version 1.10.2
-#                - update NetCDF to version 4.6.1
+#   0.95.5       - update NetCDF to version 4.6.1
 
 include(CMakeParseArguments)
 
@@ -282,13 +281,13 @@ set(Boost_MD5_SUM        ced776cb19428ab8488774e1415535ab)
 # TPL: HDF5
 #
 set(HDF5_VERSION_MAJOR 1)
-set(HDF5_VERSION_MINOR 10)
-set(HDF5_VERSION_PATCH 2)
+set(HDF5_VERSION_MINOR 8)
+set(HDF5_VERSION_PATCH 18)
 set(HDF5_VERSION ${HDF5_VERSION_MAJOR}.${HDF5_VERSION_MINOR}.${HDF5_VERSION_PATCH})
 set(HDF5_URL_STRING     ${AMANZI_TPLS_DOWNLOAD_URL})
 set(HDF5_ARCHIVE_FILE   hdf5-${HDF5_VERSION}.tar.gz)
 set(HDF5_SAVEAS_FILE    ${HDF5_ARCHIVE_FILE})
-set(HDF5_MD5_SUM        8d4eae84e533efa57496638fd0dca8c3)
+set(HDF5_MD5_SUM        dd2148b740713ca0295442ec683d7b1c)
 
 
 #
