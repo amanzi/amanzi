@@ -487,26 +487,87 @@ namespace Amanzi {
         
           rhs_local.Multiply(T3_[c], rhs_cell, false);
           rhs_local *= -1;
-          
-          Scell = 0.;
-          for (int i=0; i<num_faces; i++) {
-            if (bnd_faces[i] > 0) {
+
+
+
+          // compute dimension of mtx R
+          std::vector<size_t> numbOfMiniFaces(nfaces, 0); // ith element is numb of minimesh faces belonging to base face i
+          for (size_t i = 0; i < num_faces; ++i) 
+            if (bnd_faces[i] > 0) // if ith face of minimesh is a part of bndry
+                ++numbOfMiniFaces[mini_mesh.get_face(i).iparent()];
+          size_t numbOfBaseDOFs = nfaces;
+          for (size_t i = 0; i < nfaces; ++i)
+            if (numbOfMiniFaces[i] > 1) ++numbOfBaseDOFs;
+          WhetStone::DenseMatrix R(n_bnd, numbOfBaseDOFs);
+          R = 0.;
+
+          std::cout 
+            << "\nMMC #" << c << '\n'
+            << "mtx R = \n" << R;
+
+          // // compute mtx R
+          // for (size_t i = 0; i < num_faces; ++i) 
+          //   if (bnd_faces[i] > 0) {// if ith face of minimesh is a part of bndry
+          //     size_t 
+          //       miniFaceLambdaIndex = bnd_faces[i] - 1, 
+          //       baseFaceLambdaIndex = mini_mesh.get_face(i).iparent(),
+          //       globalLambdaIndex = faces[baseFaceLambdaIndex];
+          //     R(miniFaceLambdaIndex, baseFaceLambdaIndex) = 1.;
+          //     if (numbOfMiniFaces[baseFaceLambdaIndex] > 1) { // we have a moment DOF
+          //       std::vector<AmanziGeometry::Point>* fcoords;
+          //       mesh_->face_get_coordinates(globalLambdaIndex, fcoords);
+          //       auto x0 = XMOF2D::Point2D(fcoords->front().x(), fcoords->front().y());
+          //       auto delta_s = distance(mini_mesh.get_face(i).as_segment().middle(), x0) - mesh_->face_area(globalLambdaIndex) / 2.;
+          //       R(miniFaceLambdaIndex, baseFaceLambdaIndex + 1) = delta_s;
+          //     }
+          //   }
+
+          // std::cout 
+          //   << "MMC #" << c << '\n'
+          //   << "mtx R = \n";
+          // R.PrintMatrix();
+
+          // // compute Scell 
+          // WhetStone::DenseMatrix Abb_times_R(n_bnd, numbOfBaseDOFs);
+          // Abb_times_R.Multiply(Abb_[c], R, false);
+          // Scell.Reshape(numbOfBaseDOFs, numbOfBaseDOFs);
+          // Scell.Multiply(R, Abb_times_R, true);
+
+          // std::cout << "mtx Scell = R^T Abb R = \n";
+          // Scell.PrintMatrix();
+
+          // // compute rhs
+          // WhetStone::DenseMatrix RTranspose_times_rhs_local(numbOfBaseDOFs, 1);
+          // RTranspose_times_rhs_local.Multiply(R, rhs_local, true);
+          // for (size_t i = 0; i < num_faces; i++)
+          //   if (bnd_faces[i] > 0) { // if ith face of minimesh is a part of bndry
+          //     size_t 
+          //       localIndex = mini_mesh.get_face(i).iparent(),
+          //       globalIndex = faces[localIndex]; // TODO: fix global enum
+          //     rhs_faces[0][globalIndex] += RTranspose_times_rhs_local(localIndex, 0);            
+          //   } 
+
+          // std::cout << "\nMMC #" << c << '\n';
             
-              int i1 = bnd_faces[i] - 1;
-              int par_i = mini_mesh.get_face(i).iparent();
-              for (int j=0; j<num_faces; j++) {
-                if (bnd_faces[j] > 0) {
-                  int j1 = bnd_faces[j] - 1;
-                  int par_j = mini_mesh.get_face(j).iparent();
-                  //std::cout<<i1<<" "<<j1<<" "<<par_i<<" "<<par_j<<"\n";
-                  Scell(par_i, par_j) += Abb_[c](i1, j1);
-                }
-              }
-              // Add to RHS
-              int f = faces[par_i];
-              rhs_faces[0][f] += rhs_local(i1,0);            
-            }          
-          }
+          // Scell = 0.;
+          // for (int i=0; i<num_faces; i++) {
+          //   if (bnd_faces[i] > 0) { // if ith face of minimesh is a part of bndry
+            
+          //     int i1 = bnd_faces[i] - 1;               
+          //     int par_i = mini_mesh.get_face(i).iparent();
+          //     for (int j=0; j<num_faces; j++) {
+          //       if (bnd_faces[j] > 0) {
+          //         int j1 = bnd_faces[j] - 1;
+          //         int par_j = mini_mesh.get_face(j).iparent();
+          //         //std::cout<<i1<<" "<<j1<<" "<<par_i<<" "<<par_j<<"\n";
+          //         Scell(par_i, par_j) += Abb_[c](i1, j1);
+          //       }
+          //     }
+          //     // Add to RHS
+          //     int f = faces[par_i];
+          //     rhs_faces[0][f] += rhs_local(i1,0);            
+          //   }          
+          // }
           
         }
         else {
