@@ -258,6 +258,9 @@ class InputConverter {
   // -- vector parsing
   int GetPosition_(const std::vector<std::string>& names, const std::string& name);
 
+  // -- test file parsing 
+  int CountFileLinesWithWord_(const std::string& filename, const std::string& word);
+
   // is spec structurally sound?
   // -- mandatory objects
   int IsEmpty(xercesc::DOMNodeList* node_list, const std::string& name, bool exception = true);

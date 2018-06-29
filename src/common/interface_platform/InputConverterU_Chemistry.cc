@@ -158,7 +158,7 @@ Teuchos::ParameterList InputConverterU::TranslateChemistry_()
       DOMNode* inode = children->item(i);
 
       double krate(-99.9);
-      krate = GetAttributeValueD_(inode, "first_order_decay_constant", TYPE_NUMERICAL, DVAL_MIN, 0.0, "", false, -99.9);
+      krate = GetAttributeValueD_(inode, "first_order_decay_constant", TYPE_NUMERICAL, DVAL_MIN, DVAL_MAX, "", false, -99.9);
 
       if (krate != -99.9){
 	kin_rate_cnst.push_back(krate);
