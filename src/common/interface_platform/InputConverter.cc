@@ -1232,6 +1232,13 @@ std::string InputConverter::CreateINFile_(std::string& filename, int rank)
   element = static_cast<DOMElement*>(node);
   std::string datfilename = GetAttributeValueS_(element, "database", TYPE_NONE, true, "");
   
+  struct stat buffer;
+  int status = stat(datfilename.c_str(), &buffer);
+  if (status == -1) {
+    Errors::Message msg("The database file '" + datfilename + "' is missing.");
+    Exceptions::amanzi_throw(msg);
+  }
+
   controls << "  DATABASE " << datfilename.c_str() << "\n";
 
   base = GetUniqueElementByTagsString_("numerical_controls, unstructured_controls, unstr_chemistry_controls", flag);
@@ -1287,7 +1294,10 @@ std::string InputConverter::CreateINFile_(std::string& filename, int rank)
       std::string name = TrimString_(mm.transcode(inode->getTextContent()));
       primaries << "    " << name << "\n";
       element = static_cast<DOMElement*>(inode);
-      if (element->hasAttribute(mm.transcode("forward_rate"))) {
+
+      // verify that specie is non-reactive (only one record (1 line) in database file)
+      int ncount = CountFileLinesWithWord_(datfilename, name);
+      if (ncount == 1 && element->hasAttribute(mm.transcode("forward_rate"))) { 
         double frate = GetAttributeValueD_(element, "forward_rate");
         double brate = GetAttributeValueD_(element, "backward_rate");
         std::string name = TrimString_(mm.transcode(inode->getTextContent()));
@@ -1343,7 +1353,7 @@ std::string InputConverter::CreateINFile_(std::string& filename, int rank)
       mineral_list << name << ", ";
       
       element = static_cast<DOMElement*>(inode);
-      double rate = GetAttributeValueD_(element, "rate_constant", TYPE_NUMERICAL, 0.0, DVAL_MAX, "", false, 0.0);
+      double rate = GetAttributeValueD_(element, "rate_constant", TYPE_NUMERICAL, DVAL_MIN, DVAL_MAX, "", false, 0.0);
       // double val = GetAttributeValueD_(element, "rate_constant", TYPE_NUMERICAL, 0.0, DVAL_MAX, "mol/m^2/s", false, 0.0);
       // double rate = units_.ConvertUnitD(val, "mol/m^2/s", "mol/cm^2/s", -1.0, flag);
       
@@ -1915,6 +1925,27 @@ std::string InputConverter::CreateBGDFile_(std::string& filename, int rank, int 
   }
 
   return bgdfilename;
+}
+
+
+/* ******************************************************************
+* Returns number of lines that use word in the file.
+****************************************************************** */
+int InputConverter::CountFileLinesWithWord_(
+    const std::string& filename, const std::string& word)
+{
+  std::ifstream file;
+  file.open(filename);
+
+  int n = 0;
+  while (!file.eof()) {
+    std::string line;
+    file >> line;
+    if (line.find(word) != std::string::npos) n++;
+  }
+  file.close();
+
+  return n;
 }
 
 }  // namespace AmanziInput
