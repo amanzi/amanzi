@@ -1295,21 +1295,22 @@ std::string InputConverter::CreateINFile_(std::string& filename, int rank)
       primaries << "    " << name << "\n";
       element = static_cast<DOMElement*>(inode);
 
-      // verify that specie is non-reactive (only one record (1 line) in database file)
-      int ncount = CountFileLinesWithWord_(datfilename, name);
-      if (ncount == 1 && element->hasAttribute(mm.transcode("forward_rate"))) { 
-        double frate = GetAttributeValueD_(element, "forward_rate");
-        double brate = GetAttributeValueD_(element, "backward_rate");
-        std::string name = TrimString_(mm.transcode(inode->getTextContent()));
-        reactionrates << "    REACTION " << name << " <->\n";
-        reactionrates << "    FORWARD_RATE " << frate << "\n";
-        reactionrates << "    BACKWARD_RATE " << brate << "\n";
-      }
       if (element->hasAttribute(mm.transcode("first_order_decay_constant"))) {
         double decay = GetAttributeValueD_(element, "first_order_decay_constant");
         std::string name = TrimString_(mm.transcode(inode->getTextContent()));
         decayrates << "    REACTION " << name << " <-> \n";
         decayrates << "    RATE_CONSTANT " << decay << "\n";
+      } else {
+        // verify that specie is non-reactive (only one record (1 line) in database file)
+        int ncount = CountFileLinesWithWord_(datfilename, name);
+        if (ncount == 1) { 
+          double frate = GetAttributeValueD_(element, "forward_rate");
+          double brate = GetAttributeValueD_(element, "backward_rate");
+          std::string name = TrimString_(mm.transcode(inode->getTextContent()));
+          reactionrates << "    REACTION " << name << " <->\n";
+          reactionrates << "    FORWARD_RATE " << frate << "\n";
+          reactionrates << "    BACKWARD_RATE " << brate << "\n";
+        }
       }
     }
   }
