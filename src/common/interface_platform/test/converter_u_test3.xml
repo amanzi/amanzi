@@ -260,6 +260,17 @@
     </boundary_condition>
   </boundary_conditions>
 
+  <sources>
+    <source name="Pumping Well">
+      <assigned_regions>Well</assigned_regions>
+      <liquid_phase name="water">
+        <liquid_component name="water">
+          <peaceman_well function="constant" radius="0.1" depth="25.0" start="0.0" value="110000.0 Pa"/>
+        </liquid_component>
+      </liquid_phase>
+    </source>
+  </sources>
+
   <output>
     <vis>
       <base_filename>plot</base_filename>

@@ -836,7 +836,7 @@ void InputConverterU::TranslateTransportSourcesGroup_(
 
 
 /* ******************************************************************
-* Create list of transport sources.
+* Setup flag for volume fractions.
 ****************************************************************** */
 bool InputConverterU::WeightVolumeSubmodel_(const std::vector<std::string>& regions)
 {

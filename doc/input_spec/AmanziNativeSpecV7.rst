@@ -1654,30 +1654,22 @@ Again, constant functions can be replaced by any of the available functions.
   For the other options, it is measured in [kg/s]. 
   When the source function is defined over a few regions, Q is distributed over their union.
   Option `"volume fraction`" can be used when the region geometric
-  model support volume fractions. Option `"simple well`" provides
-  capability to model source term by Peaceman model. The well flux is
-  defined as q_w = WI(p - p_w), where WI is the well index and p_w is
-  the well pressure and q_w [kg/s] is the well flux. The pressure in
-  a well is assumed to be hydrostatic.
+  model support volume fractions. Option `"simple well`" implements the Peaceman model. 
+  The well flux is defined as `q_w = WI (p - p_w)` [kg/s], where `WI` is the well index 
+  and `p_w` is the well pressure. The pressure in a well is assumed to be hydrostatic.
 
 * `"use volume fractions`" instructs the code to use all available volume fractions. 
   Note that the region geometric model supports volume fractions only for a few regions.
 
 * `"submodel`" [string] refines definition of the source. Available options are `"rate`",
-  `"integrated source`" and `"bhp"`. The first option defines the source in a natural way as the rate 
-  of change `q`. The second option defines the indefinite integral `Q` of the rate 
-  of change, i.e. the source term is calculated as `q =
-  dQ/dt`. Default is `"rate`". In the case of `"simple well`"
-  distribution method two submodel options are available: `"rate`" and
-  `"bhp`" (bottom hole pressure)
-
-* In the case of a `"simple well`" model and `"bhp`" submodel the
-  following parameters has to be defined: `"depth"`, `"well radius`"
-  and `"bhp`" pressure. In the case of  `"simple well`" model and
-  `"rate`" submodel only rate function has to be defined. `"integrated
-  source`" is not supported for `"simple well`".
-
-
+  `"integrated source`" and `"bhp"` (bottom hole pressure). The first option defines the source 
+  in a natural way as the rate of change `q`. The second option defines the indefinite
+  integral `Q` of the rate of change, i.e. the source term is calculated as `q = dQ/dt`. 
+  For most distributions methods, two submodles are available: `"rate`" and `"integrated source`".
+  For distribution method `"simple well`", two submodels are available: `"rate`" and
+  `"bhp`". Submodel `"bhp`" requires `"depth"`, `"well radius`" and 
+  `"bhp`" function. Submodel `"rate`" requires only rate function.
+  Default is `"rate`". 
 
 .. code-block:: xml
 
@@ -1705,7 +1697,7 @@ Again, constant functions can be replaced by any of the available functions.
        </ParameterList>
 
        <ParameterList name="SRC 2">
-         <Parameter name="regions" type="Array(string)" value="{WellCenter}"/>
+         <Parameter name="regions" type="Array(string)" value="{WELL_NORTH}"/>
            <Parameter name="spatial distribution method" type="string" value="simple well"/>    
            <ParameterList name="well">
              <Parameter name="submodel" type="string" value="bhp"/>
@@ -1721,7 +1713,7 @@ Again, constant functions can be replaced by any of the available functions.
        </ParameterList>
 
        <ParameterList name="SRC 3">
-         <Parameter name="regions" type="Array(string)" value="{WellCenter2}"/>
+         <Parameter name="regions" type="Array(string)" value="{WELL_SOUTH}"/>
            <Parameter name="spatial distribution method" type="string" value="simple well"/>
            <ParameterList name="well">
              <Parameter name="submodel" type="string" value="rate"/>
