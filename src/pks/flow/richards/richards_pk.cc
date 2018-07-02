@@ -709,7 +709,7 @@ bool Richards::UpdatePermeabilityData_(const Teuchos::Ptr<State>& S) {
       //face_matrix_diff_->UpdateMatrices(Teuchos::null, Teuchos::null);
     
       if (!pres->HasComponent("face"))
-        face_matrix_diff_->ApplyBCs(true, true);
+        face_matrix_diff_->ApplyBCs(true, true, true);
 
       face_matrix_diff_->UpdateFlux(pres.ptr(), flux_dir.ptr());
 
@@ -1175,7 +1175,7 @@ bool Richards::ModifyPredictorFluxBCs_(double h, Teuchos::RCP<TreeVector> u) {
   Teuchos::RCP<const CompositeVector> pres = S_next_->GetFieldData(key_);
   matrix_diff_->SetDensity(rho);
   matrix_diff_->UpdateMatrices(Teuchos::null, pres.ptr());
-  matrix_diff_->ApplyBCs(true, true);
+  matrix_diff_->ApplyBCs(true, true, true);
 
   flux_predictor_->ModifyPredictor(h, u);
   ChangedSolution(); // mark the solution as changed, as modifying with
@@ -1279,7 +1279,7 @@ void Richards::CalculateConsistentFaces(const Teuchos::Ptr<CompositeVector>& u) 
   matrix_diff_->SetDensity(rho);
   matrix_diff_->SetScalarCoefficient(rel_perm, Teuchos::null);
   matrix_diff_->UpdateMatrices(Teuchos::null, u);
-  matrix_diff_->ApplyBCs(true, true);
+  matrix_diff_->ApplyBCs(true, true, true);
 
   // derive the consistent faces, involves a solve
 

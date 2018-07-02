@@ -27,7 +27,7 @@ void SnowDistribution::ApplyDiffusion_(const Teuchos::Ptr<State>& S,
 
   matrix_diff_->SetScalarCoefficient(cond, Teuchos::null);
   matrix_diff_->UpdateMatrices(Teuchos::null, Teuchos::null);
-  matrix_diff_->ApplyBCs(true, true);
+  matrix_diff_->ApplyBCs(true, true, true);
   
   // update the potential
   S->GetFieldEvaluator(Keys::getKey(domain_,"snow_skin_potential"))->HasFieldChanged(S.ptr(), name_);

@@ -50,7 +50,7 @@ void Richards::ApplyDiffusion_(const Teuchos::Ptr<State>& S,
 
 
   // apply boundary conditions
-  matrix_diff_->ApplyBCs(true, true);
+  matrix_diff_->ApplyBCs(true, true, true);
 
   // calculate the residual
   matrix_->ComputeNegativeResidual(*pres, *g);

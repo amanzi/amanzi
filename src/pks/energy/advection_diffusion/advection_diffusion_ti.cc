@@ -109,12 +109,13 @@ void AdvectionDiffusion::UpdatePreconditioner(double t, Teuchos::RCP<const TreeV
   if (implicit_advection_) {
     Teuchos::RCP<const CompositeVector> mass_flux = S_next_->GetFieldData("mass_flux");
     preconditioner_adv_->Setup(*mass_flux);
+    preconditioner_adv_->SetBCs(bc_,bc_);
     preconditioner_adv_->UpdateMatrices(mass_flux.ptr());
-    preconditioner_adv_->ApplyBCs(bc_, false);
+    preconditioner_adv_->ApplyBCs(true, false, true);
   }
   
   // assemble and create PC
-  preconditioner_diff_->ApplyBCs(true, true);
+  preconditioner_diff_->ApplyBCs(true, true, true);
   preconditioner_->AssembleMatrix();
   preconditioner_->UpdatePreconditioner();
 

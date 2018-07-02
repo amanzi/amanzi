@@ -8,6 +8,7 @@
 # ATS include directories
 #add_subdirectory(passive_tracer)
 add_subdirectory(transport_amanzi)
+add_subdirectory(sediment_transport)
 
 #================================================
 # register evaluators/factories/pks
