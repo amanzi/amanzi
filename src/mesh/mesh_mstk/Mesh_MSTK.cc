@@ -3676,7 +3676,9 @@ void Mesh_MSTK::init_face_map()
     face_map_w_ghosts_ = new Epetra_Map(-1,nface,face_gids,0,*epcomm_);
 
     std::vector<int> gl_id(nnotowned), pr_id(nnotowned), lc_id(nnotowned);
-   
+
+    // Build a list of global IDs of ghost faces with only one cell attached - may be on exterior or processor boundary
+    
     idx = 0;
     int nnotowned_bnd = 0;
     while ((ment = MSet_Next_Entry(NotOwnedFaces,&idx))) {
@@ -3698,12 +3700,16 @@ void Mesh_MSTK::init_face_map()
       }
     }
 
-     
+    // Get the local IDs of  (lc_id) copies of owned boundary faces on remote processors (pr_id).
+    // In effect we are checking if a ghost face that claims to be on the boundary is in the
+    // owned boundary face list on another processor (pr_id >= 0)
+    
     extface_map_wo_ghosts_ -> RemoteIDList(nnotowned, gl_id.data(), pr_id.data(), lc_id.data());
 
 
     int n_extface_w_ghosts = extface_map_wo_ghosts_ -> NumMyElements();
-       
+
+    //Add to maping only external faces (which belong to local mapping on other processors
     for (int k=0; k < nnotowned_bnd; k++){
       if (pr_id[k] >= 0){
         n_extface_w_ghosts++;
@@ -3716,6 +3722,7 @@ void Mesh_MSTK::init_face_map()
       global_id_ghosted[k] = extface_gids[k];  
     }
 
+    //Add to maping only external faces (which belong to local mapping on other processors
     int l=0;
     for (int k=0; k < nnotowned_bnd; k++){
       if (pr_id[k] >= 0){
