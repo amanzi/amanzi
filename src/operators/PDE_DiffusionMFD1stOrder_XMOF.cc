@@ -39,7 +39,7 @@
 #include "Operator_FaceCellSff.hh"
 #include "Operator_Node.hh"
 
-#include "PDE_DiffusionMFD_XMOF.hh"
+#include "PDE_DiffusionMFD1stOrder_XMOF.hh"
 #include "GMVMesh.hh"
 //#include "xmof2D.h"
 
@@ -47,8 +47,9 @@ namespace Amanzi {
 
   namespace Operators {
 
-    void PDE_DiffusionMFD_XMOF::ConstructMiniMesh(const Teuchos::Ptr<const CompositeVector>& vol_fraction,
-                                                  const Teuchos::Ptr<const CompositeVector>& centroids){
+    void PDE_DiffusionMFD1stOrder_XMOF::ConstructMiniMesh(
+      const Teuchos::Ptr<const CompositeVector>& vol_fraction,
+      const Teuchos::Ptr<const CompositeVector>& centroids) {
 
       const Epetra_MultiVector& vol_frac_vec = *vol_fraction->ViewComponent("cell", true);
       const Epetra_MultiVector& centroids_vec = *centroids->ViewComponent("cell", true);
@@ -135,7 +136,7 @@ namespace Amanzi {
 
     }
 
-    void PDE_DiffusionMFD_XMOF::ConstructBaseMesh_(){
+    void PDE_DiffusionMFD1stOrder_XMOF::ConstructBaseMesh_() {
 
       ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
       mesh_cfg_ = Teuchos::rcp(new std::vector<XMOF2D::MeshConfig>(ncells_owned));
@@ -182,7 +183,7 @@ namespace Amanzi {
 
     }
 
-    void PDE_DiffusionMFD_XMOF::InitDiffusion_(Teuchos::ParameterList& plist){
+    void PDE_DiffusionMFD1stOrder_XMOF::InitDiffusion_(Teuchos::ParameterList& plist) {
 
       //PDE_DiffusionMFD::InitDiffusion_(plist);
 
@@ -215,7 +216,7 @@ namespace Amanzi {
 
     }
 
-    void PDE_DiffusionMFD_XMOF::CreateMassMatrices_(){
+    void PDE_DiffusionMFD1stOrder_XMOF::CreateMassMatrices_() {
 
       WhetStone::MFD3D_Diffusion mfd(mesh_);
       int ok = WhetStone::WHETSTONE_ELEMENTAL_MATRIX_FAILED;
@@ -305,44 +306,44 @@ namespace Amanzi {
 
     }
 
-    void PDE_DiffusionMFD_XMOF::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& flux,
-                                              const Teuchos::Ptr<const CompositeVector>& u, 
-                                              double dt){
+    void PDE_DiffusionMFD1stOrder_XMOF::UpdateMatrices(
+      const Teuchos::Ptr<const CompositeVector>& flux,
+      const Teuchos::Ptr<const CompositeVector>& u, 
+      double dt) {
 
       //CreateMassMatrices_();
 
-
-      
       // update matrix blocks
       AmanziMesh::Entity_ID_List faces, cells;
       std::vector<int> dirs;
       int ierr;
       double mixed_mat(0.), pure_mat(0.);
       
-
       global_op_->rhs()->PutScalarGhosted(0.0);
       Epetra_MultiVector& rhs_faces = *global_op_->rhs()->ViewComponent("face", true);
       //rhs_cells_->PutScalar(0.);
       
       for (int c = 0; c < ncells_owned; c++) {
+
         mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
         int nfaces = faces.size();
 
-        WhetStone::DenseMatrix Scell(nfaces,nfaces);
+        WhetStone::DenseMatrix Scell(nfaces, nfaces); // (R^T Scell R) LAMBDA = rhs
         
-        if ((*xmof_ir_)[c].get_base_mesh().get_cell(0).has_minimesh()){  // mixed cell
+        if ((*xmof_ir_)[c].get_base_mesh().get_cell(0).has_minimesh()) {  // mixed cell
         
           const XMOF2D::MiniMesh& mini_mesh = (*xmof_ir_)[c].get_base_mesh().get_cell(0).get_minimesh();        
           int num_cells = mini_mesh.ncells();
           int num_faces = mini_mesh.nfaces();
-          int n_bnd = 0, n_int = 0;
-          std::vector<int> bnd_faces(num_faces, 0);
+          int n_bnd = 0, n_int = 0; // numb of bndry and internal faces of the minimesh
+          std::vector<int> bnd_faces(num_faces, 0); 
           for (int i=0;i<num_faces;i++) {
             const XMOF2D::Face fc = mini_mesh.get_face(i);         
             if (fc.is_boundary()) {
               n_bnd++;
               bnd_faces[i] = n_bnd;
-            }else{
+            } 
+            else {
               n_int++;
               bnd_faces[i] = -n_int;
             }
@@ -486,30 +487,90 @@ namespace Amanzi {
         
           rhs_local.Multiply(T3_[c], rhs_cell, false);
           rhs_local *= -1;
-          
-          Scell = 0.;
-          for (int i=0; i<num_faces; i++) {
-            if (bnd_faces[i] > 0) {
-            
-              int i1 = bnd_faces[i] - 1;
-              int par_i = mini_mesh.get_face(i).iparent();
-              for (int j=0; j<num_faces; j++) {
-                if (bnd_faces[j] > 0) {
-                  int j1 = bnd_faces[j] - 1;
-                  int par_j = mini_mesh.get_face(j).iparent();
-                  //std::cout<<i1<<" "<<j1<<" "<<par_i<<" "<<par_j<<"\n";
-                  Scell(par_i, par_j) += Abb_[c](i1, j1);
-                }
-              }
-              // Add to RHS
-              int f = faces[par_i];
-              rhs_faces[0][f] += rhs_local(i1,0);            
-            }          
-          }
 
-        
+
+
+          // compute dimension of mtx R
+          std::vector<size_t> numbOfMiniFaces(nfaces, 0); // ith element is numb of minimesh faces belonging to base face i
+          for (size_t i = 0; i < num_faces; ++i) 
+            if (bnd_faces[i] > 0) // if ith face of minimesh is a part of bndry
+                ++numbOfMiniFaces[mini_mesh.get_face(i).iparent()];
+          size_t numbOfBaseDOFs = nfaces;
+          for (size_t i = 0; i < nfaces; ++i)
+            if (numbOfMiniFaces[i] > 1) ++numbOfBaseDOFs;
+          WhetStone::DenseMatrix R(n_bnd, numbOfBaseDOFs);
+          R = 0.;
+
+          std::cout 
+            << "\nMMC #" << c << '\n'
+            << "mtx R = \n" << R;
+
+          // // compute mtx R
+          // for (size_t i = 0; i < num_faces; ++i) 
+          //   if (bnd_faces[i] > 0) {// if ith face of minimesh is a part of bndry
+          //     size_t 
+          //       miniFaceLambdaIndex = bnd_faces[i] - 1, 
+          //       baseFaceLambdaIndex = mini_mesh.get_face(i).iparent(),
+          //       globalLambdaIndex = faces[baseFaceLambdaIndex];
+          //     R(miniFaceLambdaIndex, baseFaceLambdaIndex) = 1.;
+          //     if (numbOfMiniFaces[baseFaceLambdaIndex] > 1) { // we have a moment DOF
+          //       std::vector<AmanziGeometry::Point>* fcoords;
+          //       mesh_->face_get_coordinates(globalLambdaIndex, fcoords);
+          //       auto x0 = XMOF2D::Point2D(fcoords->front().x(), fcoords->front().y());
+          //       auto delta_s = distance(mini_mesh.get_face(i).as_segment().middle(), x0) - mesh_->face_area(globalLambdaIndex) / 2.;
+          //       R(miniFaceLambdaIndex, baseFaceLambdaIndex + 1) = delta_s;
+          //     }
+          //   }
+
+          // std::cout 
+          //   << "MMC #" << c << '\n'
+          //   << "mtx R = \n";
+          // R.PrintMatrix();
+
+          // // compute Scell 
+          // WhetStone::DenseMatrix Abb_times_R(n_bnd, numbOfBaseDOFs);
+          // Abb_times_R.Multiply(Abb_[c], R, false);
+          // Scell.Reshape(numbOfBaseDOFs, numbOfBaseDOFs);
+          // Scell.Multiply(R, Abb_times_R, true);
+
+          // std::cout << "mtx Scell = R^T Abb R = \n";
+          // Scell.PrintMatrix();
+
+          // // compute rhs
+          // WhetStone::DenseMatrix RTranspose_times_rhs_local(numbOfBaseDOFs, 1);
+          // RTranspose_times_rhs_local.Multiply(R, rhs_local, true);
+          // for (size_t i = 0; i < num_faces; i++)
+          //   if (bnd_faces[i] > 0) { // if ith face of minimesh is a part of bndry
+          //     size_t 
+          //       localIndex = mini_mesh.get_face(i).iparent(),
+          //       globalIndex = faces[localIndex]; // TODO: fix global enum
+          //     rhs_faces[0][globalIndex] += RTranspose_times_rhs_local(localIndex, 0);            
+          //   } 
+
+          // std::cout << "\nMMC #" << c << '\n';
+            
+          // Scell = 0.;
+          // for (int i=0; i<num_faces; i++) {
+          //   if (bnd_faces[i] > 0) { // if ith face of minimesh is a part of bndry
+            
+          //     int i1 = bnd_faces[i] - 1;               
+          //     int par_i = mini_mesh.get_face(i).iparent();
+          //     for (int j=0; j<num_faces; j++) {
+          //       if (bnd_faces[j] > 0) {
+          //         int j1 = bnd_faces[j] - 1;
+          //         int par_j = mini_mesh.get_face(j).iparent();
+          //         //std::cout<<i1<<" "<<j1<<" "<<par_i<<" "<<par_j<<"\n";
+          //         Scell(par_i, par_j) += Abb_[c](i1, j1);
+          //       }
+          //     }
+          //     // Add to RHS
+          //     int f = faces[par_i];
+          //     rhs_faces[0][f] += rhs_local(i1,0);            
+          //   }          
+          // }
           
-        }else{
+        }
+        else {
           // std::vector<double> area(nfaces), tmp(nfaces);
           // for (int j=0; j<nfaces; j++) area[j] = mesh_->face_area(faces[j]);
           T3_[c].Reshape(nfaces,1);
@@ -519,9 +580,9 @@ namespace Amanzi {
           double rhs_c = 0.;
           
           double alp = 0.;
-          for (int i1=0; i1<nfaces; i1++){
+          for (int i1=0; i1<nfaces; i1++) {
             T3_[c](i1,0) = 0.;
-            for (int j1=0; j1<nfaces; j1++){
+            for (int j1=0; j1<nfaces; j1++) {
               T3_[c](i1,0) += Wc(i1,j1);//*area[j1];
               alp += Wc(i1,j1);//*area[i1]*area[j1];
             }
@@ -534,15 +595,14 @@ namespace Amanzi {
             rhs_c = u_cell[0][c]*mesh_->cell_volume(c)/dt;
           }
           
-          
           T3_[c] *= -(1./alp);
           Pp_[c] = (1/alp);
 
           rhs_local = T3_[c];
           rhs_local *= -rhs_c;
           
-          for (int i1=0; i1<nfaces; i1++){
-            for (int j1=0; j1<nfaces; j1++){
+          for (int i1=0; i1<nfaces; i1++) {
+            for (int j1=0; j1<nfaces; j1++) {
               Scell(i1, j1) = (Wc(i1,j1) - alp*T3_[c](i1,0)*T3_[c](j1,0));
             }
             // Add to RHS
@@ -558,19 +618,17 @@ namespace Amanzi {
 
     }
   
-    void PDE_DiffusionMFD_XMOF::ApplyBCs(bool primary, bool eliminate){
-
+    void PDE_DiffusionMFD1stOrder_XMOF::ApplyBCs(bool primary, bool eliminate) {
       ApplyBCs_Mixed_(bcs_trial_[0].ptr(), bcs_test_[0].ptr(), primary, eliminate);
-
     }
     
     /* ******************************************************************
     * Apply BCs on face values.
     ****************************************************************** */
 
-    void PDE_DiffusionMFD_XMOF::ApplyBCs_Mixed_(const Teuchos::Ptr<const BCs>& bc_trial,
+    void PDE_DiffusionMFD1stOrder_XMOF::ApplyBCs_Mixed_(const Teuchos::Ptr<const BCs>& bc_trial,
                                                 const Teuchos::Ptr<const BCs>& bc_test,
-                                                bool primary, bool eliminate){
+                                                bool primary, bool eliminate) { 
 
 
       // apply diffusion type BCs to FACE-CELL system
@@ -644,9 +702,10 @@ namespace Amanzi {
 
     }
 
-    void PDE_DiffusionMFD_XMOF::UpdateFlux(const Teuchos::Ptr<CompositeVector>& p,
-                                          const Teuchos::Ptr<CompositeVector>& u,
-                                          double dt){
+    void PDE_DiffusionMFD1stOrder_XMOF::UpdateFlux(
+      const Teuchos::Ptr<CompositeVector>& p,
+      const Teuchos::Ptr<CompositeVector>& u,
+      double dt) {
 
       ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::OWNED);
       AmanziMesh::Entity_ID_List faces, cells;
@@ -752,9 +811,10 @@ namespace Amanzi {
 
     }
 
-    void PDE_DiffusionMFD_XMOF::WriteSpecialGMV(std::string filename,
-                                                const Epetra_MultiVector& vol_frac_vec,
-                                                const Epetra_MultiVector& solution){
+    void PDE_DiffusionMFD1stOrder_XMOF::WriteSpecialGMV(
+      std::string filename,
+      const Epetra_MultiVector& vol_frac_vec,
+      const Epetra_MultiVector& solution) {
 
       int dim = mesh_->space_dimension();
       int dim_cell = mesh_->manifold_dimension();

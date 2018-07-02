@@ -19,8 +19,8 @@ include(LibraryManager)
 # through these variables.
 project(OPERATORS)
 
-set(XMOF_INCLUDE_DIRS "/nh/u/dasvyat/XMOF/XMOF2D/include")
-set(XMOF_LIB_DIR "/nh/u/dasvyat/XMOF/XMOF2D/build-Debug/")
+set(XMOF_INCLUDE_DIRS "/nh/u/zhiliakov/Documents/Amanzi/XMOF2D/include")
+set(XMOF_LIB_DIR "/nh/u/zhiliakov/Documents/Amanzi/XMOF2D/build-Debug/")
 
 # External (TPL) include directories
 include_directories(${Teuchos_INCLUDE_DIRS})
@@ -140,6 +140,7 @@ add_amanzi_library(operators
                           PDE_AdvectionUpwind.cc PDE_AdvectionRiemann.cc
                           PDE_DiffusionMFD.cc PDE_DiffusionMFDwithGravity.cc
                           PDE_DiffusionMFD_XMOF.cc #PDE_DiffusionMFD_Tracer.cc
+                          PDE_DiffusionMFD1stOrder_XMOF.cc
                           PDE_DiffusionFV.cc PDE_DiffusionFVwithGravity.cc
                           PDE_DiffusionNLFV.cc PDE_DiffusionNLFVwithGravity.cc
                           PDE_DiffusionNLFVwithBndFaces.cc PDE_DiffusionNLFVwithBndFacesGravity.cc
