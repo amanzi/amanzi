@@ -59,7 +59,8 @@ enum Entity_kind
   EDGE,
   FACE,
   CELL,
-  BOUNDARY_FACE
+  BOUNDARY_FACE,
+  NOENTITY
 };
 
 // Check if Entity_kind is valid

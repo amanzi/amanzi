@@ -97,11 +97,26 @@ public:
   AddComponent(std::string name,
                AmanziMesh::Entity_kind location,
                int num_dofs);
-
+  
+  CompositeVectorSpace*
+  AddComponent(std::string names,
+               const std::vector<int>& num_dofs,
+               AmanziMesh::Entity_kind location,               
+               Teuchos::RCP<const Epetra_Map> mastermap,
+               Teuchos::RCP<const Epetra_Map> ghostmap);
+ 
   CompositeVectorSpace*
   AddComponents(const std::vector<std::string>& names,
                 const std::vector<AmanziMesh::Entity_kind>& locations,
                 const std::vector<int>& num_dofs);
+
+  CompositeVectorSpace*
+  AddComponents(const std::vector<std::string>& names,
+                const std::vector<AmanziMesh::Entity_kind>& locations,
+                const std::vector<int>& num_dofs,                
+                std::map<std::string, Teuchos::RCP<const Epetra_Map> > mastermaps,
+                std::map<std::string, Teuchos::RCP<const Epetra_Map> > ghostmaps);
+
 
   // Set methods fix the component specs, checking to make sure all previously
   // added specs are contained in the new spec.
@@ -124,6 +139,7 @@ private:
   }
 
   void InitIndexMap_();
+  void InitMaps_();
 
   // Consistency checking.
   bool CheckContained_(const std::vector<std::string>& containing,
@@ -142,6 +158,17 @@ private:
                            std::vector<std::string>& names2,
                            std::vector<AmanziMesh::Entity_kind>& locations2,
                            std::vector<int>& num_dofs2);
+ bool UnionAndConsistent_(const std::vector<std::string>& names1,
+                          const std::vector<AmanziMesh::Entity_kind>& locations1,
+                          const std::vector<int>& num_dofs1,
+                          const std::vector<Teuchos::RCP<const Epetra_Map> >& mastermaps1,
+                          const std::vector<Teuchos::RCP<const Epetra_Map> >& ghostmaps1,                                                             
+                          std::vector<std::string>& names2,
+                          std::vector<AmanziMesh::Entity_kind>& locations2,
+                          std::vector<int>& num_dofs2,
+                          std::map<std::string, Teuchos::RCP<const Epetra_Map> > mastermaps2,
+                          std::map<std::string, Teuchos::RCP<const Epetra_Map> > ghostmaps2);
+
 
 private:
   bool ghosted_;
@@ -154,6 +181,8 @@ private:
 
   std::vector<AmanziMesh::Entity_kind> locations_;
   std::vector<int> num_dofs_;
+  std::map<std::string, Teuchos::RCP<const Epetra_Map> > mastermaps_;
+  std::map<std::string, Teuchos::RCP<const Epetra_Map> > ghostmaps_;  
 
   friend class CompositeVector;
 };

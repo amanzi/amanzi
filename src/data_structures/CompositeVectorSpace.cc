@@ -151,6 +151,7 @@ CompositeVectorSpace::AddComponents(const std::vector<std::string>& names,
   }
 
   InitIndexMap_();
+  InitMaps_();
   return this;
 };
 
@@ -207,6 +208,7 @@ CompositeVectorSpace::SetComponents(const std::vector<std::string>& names,
 
   owned_ = true;
   InitIndexMap_();
+  InitMaps_();
   return this;
 };
 
@@ -215,6 +217,48 @@ void CompositeVectorSpace::InitIndexMap_() {
   for (int i=0; i!=names_.size(); ++i) {
     indexmap_[names_[i]] = i;
   }
+}
+
+void CompositeVectorSpace::InitMaps_() {
+
+  for (int i=0; i!=locations_.size(); ++i){
+    if (locations_[i] == AmanziMesh::CELL) {
+      mastermaps_[names_[i]] = Teuchos::rcpFromRef(mesh_->cell_map(false));
+    }
+    else if (locations_[i] == AmanziMesh::FACE) {
+      mastermaps_[names_[i]] = Teuchos::rcpFromRef(mesh_->face_map(false));
+    }
+    else if (locations_[i] == AmanziMesh::EDGE) {
+      mastermaps_[names_[i]] = Teuchos::rcpFromRef(mesh_->edge_map(false));
+    }
+    else if (locations_[i] == AmanziMesh::NODE) {
+      mastermaps_[names_[i]] = Teuchos::rcpFromRef(mesh_->node_map(false));
+    }
+    else if (locations_[i] == AmanziMesh::BOUNDARY_FACE) {
+      mastermaps_[names_[i]] = Teuchos::rcpFromRef(mesh_->exterior_face_map(false));
+    }    
+  }
+
+  if (ghosted_){
+    for (int i=0; i!=locations_.size(); ++i){
+      if (locations_[i] == AmanziMesh::CELL) {
+        ghostmaps_[names_[i]] = Teuchos::rcpFromRef(mesh_->cell_map(true));
+      }
+      else if (locations_[i] == AmanziMesh::FACE) {
+        ghostmaps_[names_[i]] = Teuchos::rcpFromRef(mesh_->face_map(true));
+      }
+      else if (locations_[i] == AmanziMesh::EDGE) {
+        ghostmaps_[names_[i]] = Teuchos::rcpFromRef(mesh_->edge_map(true));
+      }
+      else if (locations_[i] == AmanziMesh::NODE) {
+        ghostmaps_[names_[i]] = Teuchos::rcpFromRef(mesh_->node_map(true));
+      }
+      else if (locations_[i] == AmanziMesh::BOUNDARY_FACE) {
+        ghostmaps_[names_[i]] = Teuchos::rcpFromRef(mesh_->exterior_face_map(true));
+      }    
+    }
+  }
+
 }
 
 
@@ -340,6 +384,91 @@ bool CompositeVectorSpace::UnionAndConsistent_(const std::vector<std::string>& n
   }
   return true;
 };
+
+// Form the union, returning it in the 2 vectors.
+bool CompositeVectorSpace::UnionAndConsistent_(const std::vector<std::string>& names1,
+                                               const std::vector<AmanziMesh::Entity_kind>& locations1,
+                                               const std::vector<int>& num_dofs1,
+                                               const std::vector<Teuchos::RCP<const Epetra_Map> >& mastermaps1,
+                                               const std::vector<Teuchos::RCP<const Epetra_Map> >& ghostmaps1,                                                             
+                                               std::vector<std::string>& names2,
+                                               std::vector<AmanziMesh::Entity_kind>& locations2,
+                                               std::vector<int>& num_dofs2,
+                                               std::map<std::string, Teuchos::RCP<const Epetra_Map> > mastermaps2,
+                                               std::map<std::string, Teuchos::RCP<const Epetra_Map> > ghostmaps2) {
+  for (int i=0; i!=names1.size(); ++i) {
+    std::vector<std::string>::iterator n2_it =
+      std::find(names2.begin(), names2.end(), names1[i]);
+    if (n2_it == names2.end()) {
+      // no match
+
+      if (names1[i] == std::string("boundary_face")) {
+        // check if names1 is boundary_face, but names2 has face
+        n2_it = std::find(names2.begin(), names2.end(), std::string("face"));
+        if (n2_it != names2.end()) {
+          int j = n2_it - names2.begin();
+          if ((locations1[i] != AmanziMesh::BOUNDARY_FACE) ||
+              (locations2[j] != AmanziMesh::FACE)) {
+            return false;
+          }
+          if (num_dofs1[i] != num_dofs2[j]) {
+            return false;
+          }
+        } else {
+          // add this spec
+          names2.push_back(names1[i]);
+          locations2.push_back(locations1[i]);
+          num_dofs2.push_back(num_dofs1[i]);
+          mastermaps2[names1[i]] = mastermaps1[i];
+          ghostmaps2[names1[i]] = ghostmaps1[i];
+        }
+      } else if (names1[i] == std::string("face")) {
+        // check if names1 is face, but names2 has boundary_face
+        n2_it = std::find(names2.begin(), names2.end(), std::string("boundary_face"));
+        if (n2_it != names2.end()) {
+          int j = n2_it - names2.begin();
+          if ((locations1[i] != AmanziMesh::FACE) ||
+              (locations2[j] != AmanziMesh::BOUNDARY_FACE)) {
+            return false;
+          }
+          if (num_dofs1[i] != num_dofs2[j]) {
+            return false;
+          }
+
+          // union of face and boundary_face is face
+          names2[j] = "face";
+          locations2[j] = AmanziMesh::FACE;
+        } else {
+          // add this spec
+          names2.push_back(names1[i]);
+          locations2.push_back(locations1[i]);
+          num_dofs2.push_back(num_dofs1[i]);
+          mastermaps2[names1[i]] = mastermaps1[i];
+          ghostmaps2[names1[i]] = ghostmaps1[i];
+        }
+      } else {
+        // add this spec
+        names2.push_back(names1[i]);
+        locations2.push_back(locations1[i]);
+        num_dofs2.push_back(num_dofs1[i]);
+        mastermaps2[names1[i]] = mastermaps1[i];
+        ghostmaps2[names1[i]] = ghostmaps1[i];        
+      }
+
+    } else {
+      // just make sure they match
+      int j = n2_it - names2.begin();
+      if (locations1[i] != locations2[j]) {
+        return false;
+      }
+      if (num_dofs1[i] != num_dofs2[j]) {
+        return false;
+      }
+    }
+  }
+  return true;
+};
+  
 
 
 } // namespace Amanzi
