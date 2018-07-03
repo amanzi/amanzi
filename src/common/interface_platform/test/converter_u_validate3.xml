@@ -397,6 +397,23 @@
             </ParameterList>
           </ParameterList>
         </ParameterList>
+        <ParameterList name="source terms">
+          <ParameterList name="Pumping Well">
+            <Parameter name="regions" type="Array(string)" value="{Well}"/>
+            <Parameter name="spatial distribution method" type="string" value="simple well"/>
+            <Parameter name="use volume fractions" type="bool" value="false"/>
+            <ParameterList name="well">
+              <Parameter name="submodel" type="string" value="bhp"/>
+              <Parameter name="well radius" type="double" value="0.1"/>
+              <Parameter name="depth" type="double" value="25.0"/>
+              <ParameterList name="bhp">
+                <ParameterList name="function-constant">
+                  <Parameter name="value" type="double" value="1.1e+05"/>
+                </ParameterList>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
         <ParameterList name="physical models and assumptions">
           <Parameter name="water content model" type="string" value="constant density"/>
         </ParameterList>
@@ -529,6 +546,23 @@
               <Parameter name="spatial distribution method" type="string" value="none"/>
               <Parameter name="use area fractions" type="bool" value="false"/>
               <Parameter name="rainfall" type="bool" value="false"/>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+        <ParameterList name="source terms">
+          <ParameterList name="Pumping Well">
+            <Parameter name="regions" type="Array(string)" value="{Well}"/>
+            <Parameter name="spatial distribution method" type="string" value="simple well"/>
+            <Parameter name="use volume fractions" type="bool" value="false"/>
+            <ParameterList name="well">
+              <Parameter name="submodel" type="string" value="bhp"/>
+              <Parameter name="well radius" type="double" value="0.1"/>
+              <Parameter name="depth" type="double" value="25.0"/>
+              <ParameterList name="bhp">
+                <ParameterList name="function-constant">
+                  <Parameter name="value" type="double" value="1.1e+05"/>
+                </ParameterList>
+              </ParameterList>
             </ParameterList>
           </ParameterList>
         </ParameterList>
@@ -725,7 +759,7 @@
 
   <ParameterList name="analysis">
     <Parameter name="used boundary condition regions" type="Array(string)" value="{Bottom Surface, Crib, Recharge_Boundary_WestOfCrib, Recharge_Boundary_EastOfCrib, Bottom Surface, Crib, Recharge_Boundary_WestOfCrib, Recharge_Boundary_EastOfCrib, Bottom Surface, Crib, Recharge_Boundary_WestOfCrib, Recharge_Boundary_EastOfCrib}"/>
-    <Parameter name="used source regions" type="Array(string)" value="{}"/>
+    <Parameter name="used source regions" type="Array(string)" value="{Well, Well, Well}"/>
     <Parameter name="used observation regions" type="Array(string)" value="{}"/>
     <ParameterList name="verbose object">
       <Parameter name="verbosity level" type="string" value="high"/>
