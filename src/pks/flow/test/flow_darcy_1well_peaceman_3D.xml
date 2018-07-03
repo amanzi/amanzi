@@ -97,7 +97,7 @@
                 <ParameterList name="function-static-head">
                   <Parameter name="p0" type="double" value="0.0"/>
                   <Parameter name="density" type="double" value="1.0"/>
-                  <Parameter name="gravity" type="double" value="1.0"/> -->
+                  <Parameter name="gravity" type="double" value="1.0"/>
                   <Parameter name="space dimension" type="int" value="3"/>
                   <ParameterList name="water table elevation"> 
                     <ParameterList name="function-constant"> 
