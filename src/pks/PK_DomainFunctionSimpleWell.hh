@@ -7,7 +7,6 @@
   provided in the top-level COPYRIGHT file.
 
   Author: Daniil Svyatsky (dasvyat@lanl.gov)
-
 */
 
 #ifndef AMANZI_PK_DOMAIN_FUNCTION_SIMPLEWELL_HH_
@@ -30,11 +29,11 @@ class PK_DomainFunctionSimpleWell : public FunctionBase,
                                     public Functions::UniqueMeshFunction {
  public:
   PK_DomainFunctionSimpleWell(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) :
-      UniqueMeshFunction(mesh){};
+      UniqueMeshFunction(mesh) {};
 
   PK_DomainFunctionSimpleWell(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
                           const Teuchos::ParameterList& plist) :
-      UniqueMeshFunction(mesh){};
+      UniqueMeshFunction(mesh) {};
 
   ~PK_DomainFunctionSimpleWell() {};
 
@@ -97,7 +96,7 @@ void PK_DomainFunctionSimpleWell<FunctionBase>::Init(const Teuchos::ParameterLis
     Exceptions::amanzi_throw(m);
   }
 
-  if (submodel_ == "bhp"){
+  if (submodel_ == "bhp") {
     depth_ = well_list.get<double>("depth");
     double* gravity_data;
     int dim = (*mesh_).space_dimension();
@@ -120,7 +119,7 @@ void PK_DomainFunctionSimpleWell<FunctionBase>::Init(const Teuchos::ParameterLis
 template <class FunctionBase>
 void PK_DomainFunctionSimpleWell<FunctionBase>::Compute(double t0, double t1)
 {
-   // create the input tuple (time + space)
+  // create the input tuple (time + space)
   int dim = (*mesh_).space_dimension();
   std::vector<double> args(1 + dim);
 
@@ -173,7 +172,7 @@ void PK_DomainFunctionSimpleWell<FunctionBase>::Compute(double t0, double t1)
 
         double bhp;
         for (int i = 0; i < nfun; ++i){
-          bhp = (*(*uspec)->first->second)(args)[i] + rho_*g*(depth_ - xc[dim-1]);          
+          bhp = (*(*uspec)->first->second)(args)[i] + rho_ * g * (depth_ - xc[dim-1]);
           val_vec[i] = bhp * wi[0][*c] / mesh_->cell_volume(*c);
         }
         value_[*c] = val_vec;

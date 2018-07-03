@@ -177,7 +177,7 @@ void Run_3D_DarcyWell(std::string controller) {
 
   Epetra_MpiComm comm(MPI_COMM_WORLD);
   int MyPID = comm.MyPID();
-  if (MyPID == 0) std::cout << "Test: 3D Darcy flow, two wells" << std::endl;
+  if (MyPID == 0) std::cout << "\nTest: 3D Darcy flow, two wells" << std::endl;
 
   // read parameter list
   std::string xmlFileName = controller;
@@ -263,13 +263,13 @@ void Run_3D_DarcyWell(std::string controller) {
 }
 
 
-// TEST(FLOW_3D_DARCY_WELL) {
-//    Run_3D_DarcyWell("test/flow_darcy_well_3D.xml");
-// }
+TEST(FLOW_3D_DARCY_WELL) {
+  Run_3D_DarcyWell("test/flow_darcy_well_3D.xml");
+}
 
 
+/* **************************************************************** */
 TEST(FLOW_3D_DARCY_PEACEMAN_WELL) {
-  // Run_3D_DarcyWell("test/flow_darcy_well_peaceman_3D.xml");
   using namespace Teuchos;
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
@@ -278,7 +278,7 @@ TEST(FLOW_3D_DARCY_PEACEMAN_WELL) {
 
   Epetra_MpiComm comm(MPI_COMM_WORLD);
   int MyPID = comm.MyPID();
-  if (MyPID == 0) std::cout << "Test: 3D Darcy flow, one well" << std::endl;
+  if (MyPID == 0) std::cout << "\nTest: 3D Darcy flow, one well" << std::endl;
 
   // read parameter list
   std::string xmlFileName = "test/flow_darcy_1well_peaceman_3D.xml";
@@ -373,7 +373,7 @@ TEST(FLOW_3D_DARCY_PEACEMAN_WELL) {
     p_ex = pw + gravity[2]*(xc[2] + depth);
     if (r > 1e-3) {
       p_ex = p_ex + Q/(2*M_PI*k*h)*(log(r) - log(rw));
-    }else{
+    } else {
       p_ex = p[0][c];
     }
 
@@ -394,8 +394,8 @@ TEST(FLOW_3D_DARCY_PEACEMAN_WELL) {
 
   err = sqrt(err);
   sol = sqrt(sol);
-  err = err/sol;
-  std::cout<<"Error: "<<err<<"\n";
+  err /= sol;
+  std::cout << "Error: " << err << "\n";
 
   CHECK(err < 0.02);
 
@@ -405,7 +405,7 @@ TEST(FLOW_3D_DARCY_PEACEMAN_WELL) {
     GMV::write_cell_data(p, 0, "pressure");
     GMV::write_cell_data(p_exact, 0, "exact");
     GMV::write_cell_data(err_p, 0, "error");
-    if (S->HasField("well_index")){
+    if (S->HasField("well_index")) {
       const Epetra_MultiVector& wi = *S->GetFieldData("well_index")->ViewComponent("cell");
       GMV::write_cell_data(wi, 0, "well_index");
     }

@@ -780,6 +780,9 @@ Teuchos::ParameterList InputConverterU::TranslateFlowSources_()
     } else if (srctype == "uniform") {
       weight = "none";
       unit = "kg/m^3/s";
+    } else if (srctype == "peaceman_well") {
+      weight = "simple well";
+      unit = "Pa"; 
     } else {
       ThrowErrorIllformed_("sources", "element", srctype);
     } 
@@ -788,10 +791,18 @@ Teuchos::ParameterList InputConverterU::TranslateFlowSources_()
     std::map<double, std::string> tp_forms;
  
     for (int j = 0; j < same_list.size(); ++j) {
-       element = static_cast<DOMElement*>(same_list[j]);
-       double t0 = GetAttributeValueD_(element, "start", TYPE_TIME, DVAL_MIN, DVAL_MAX, "s");
-       tp_forms[t0] = GetAttributeValueS_(element, "function");
-       tp_values[t0] = GetAttributeValueD_(element, "value", TYPE_NUMERICAL, DVAL_MIN, DVAL_MAX, unit);
+      element = static_cast<DOMElement*>(same_list[j]);
+      double t0 = GetAttributeValueD_(element, "start", TYPE_TIME, DVAL_MIN, DVAL_MAX, "s");
+      tp_forms[t0] = GetAttributeValueS_(element, "function");
+      tp_values[t0] = GetAttributeValueD_(element, "value", TYPE_NUMERICAL, DVAL_MIN, DVAL_MAX, unit);
+    }
+
+    // additional options for submodels
+    double peaceman_r, peaceman_d;
+    if (srctype == "peaceman_well") {
+      element = static_cast<DOMElement*>(same_list[0]);
+      peaceman_r = GetAttributeValueD_(element, "radius", TYPE_NUMERICAL, 0.0, DVAL_MAX, "m");
+      peaceman_d = GetAttributeValueD_(element, "depth", TYPE_NUMERICAL, DVAL_MIN, DVAL_MAX, "m");
     }
 
     // create vectors of values and forms
@@ -810,11 +821,20 @@ Teuchos::ParameterList InputConverterU::TranslateFlowSources_()
     src.set<std::string>("spatial distribution method", weight);
     src.set<bool>("use volume fractions", WeightVolumeSubmodel_(regions));
 
-    Teuchos::ParameterList& srcfn = src.sublist("well");
+    Teuchos::ParameterList* srcfn = &src.sublist("well");
+
+    // additional output for submodels
+    if (srctype == "peaceman_well") {
+      srcfn->set<std::string>("submodel", "bhp");
+      srcfn->set<double>("well radius", peaceman_r);
+      srcfn->set<double>("depth", peaceman_d);
+      srcfn = &srcfn->sublist("bhp");
+    }
+
     if (times.size() == 1) {
-      srcfn.sublist("function-constant").set<double>("value", values[0]);
+      srcfn->sublist("function-constant").set<double>("value", values[0]);
     } else {
-      srcfn.sublist("function-tabular")
+      srcfn->sublist("function-tabular")
           .set<Teuchos::Array<double> >("x values", times)
           .set<Teuchos::Array<double> >("y values", values)
           .set<Teuchos::Array<std::string> >("forms", forms);

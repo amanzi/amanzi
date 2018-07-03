@@ -54,27 +54,27 @@
               </ParameterList>
             </ParameterList>
           </ParameterList>
-          <!-- <ParameterList name="SRC 1"> -->
-          <!--   <Parameter name="regions" type="Array(string)" value="{WellCenter}"/> -->
-          <!--   <Parameter name="spatial distribution method" type="string" value="simple well"/> -->
-          <!--   <ParameterList name="well"> -->
-          <!--     <Parameter name="submodel" type="string" value="rate"/> -->
-          <!--     <ParameterList name="rate"> -->
-          <!--       <ParameterList name="function-constant"> -->
-          <!--         <Parameter name="value" type="double" value="100.0"/> -->
-          <!--       </ParameterList> -->
-          <!--     </ParameterList> -->
-          <!--   </ParameterList> -->
-          <!-- </ParameterList> -->
-          <!-- <ParameterList name="SRC 2"> -->
-          <!--   <Parameter name="regions" type="Array(string)" value="{WellCenter}"/> -->
-          <!--   <Parameter name="spatial distribution method" type="string" value="volume"/> -->
-          <!--   <ParameterList name="well"> -->
-          <!--     <ParameterList name="function-constant"> -->
-          <!--       <Parameter name="value" type="double" value="100"/> -->
-          <!--     </ParameterList> -->
-          <!--   </ParameterList> -->
-          <!-- </ParameterList> -->
+          <!--ParameterList name="SRC 1">
+            <Parameter name="regions" type="Array(string)" value="{WellCenter}"/>
+            <Parameter name="spatial distribution method" type="string" value="simple well"/> 
+            <ParameterList name="well">
+              <Parameter name="submodel" type="string" value="rate"/>
+              <ParameterList name="rate">
+                <ParameterList name="function-constant">
+                  <Parameter name="value" type="double" value="100.0"/>
+                </ParameterList>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList-->
+          <!--ParameterList name="SRC 2">
+            <Parameter name="regions" type="Array(string)" value="{WellCenter}"/>
+            <Parameter name="spatial distribution method" type="string" value="volume"/>
+            <ParameterList name="well">
+              <ParameterList name="function-constant">
+                <Parameter name="value" type="double" value="100"/>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList-->
         </ParameterList>
 
         <ParameterList name="boundary conditions">
@@ -93,19 +93,19 @@
             <ParameterList name="BC 1">
               <Parameter name="regions" type="Array(string)" value="{Right side, Left side, Back side, Front side}"/>
               <Parameter name="spatial distribution method" type="string" value="none"/>
-              <!-- <ParameterList name="static head"> -->
-              <!--   <ParameterList name="function-static-head"> -->
-              <!--     <Parameter name="p0" type="double" value="0.0"/> -->
-              <!--     <Parameter name="density" type="double" value="1.0"/> -->
-              <!--     <Parameter name="gravity" type="double" value="1.0"/> -->
-              <!--     <Parameter name="space dimension" type="int" value="3"/> -->
-              <!--     <ParameterList name="water table elevation"> -->
-              <!--       <ParameterList name="function-constant"> -->
-              <!--         <Parameter name="value" type="double" value="-5.0"/> -->
-              <!--       </ParameterList> -->
-              <!--     </ParameterList> -->
-              <!--   </ParameterList> -->
-              <!-- </ParameterList> -->
+              <!--ParameterList name="static head"> 
+                <ParameterList name="function-static-head">
+                  <Parameter name="p0" type="double" value="0.0"/>
+                  <Parameter name="density" type="double" value="1.0"/>
+                  <Parameter name="gravity" type="double" value="1.0"/> -->
+                  <Parameter name="space dimension" type="int" value="3"/>
+                  <ParameterList name="water table elevation"> 
+                    <ParameterList name="function-constant"> 
+                      <Parameter name="value" type="double" value="-5.0"/>
+                    </ParameterList> 
+                  </ParameterList>
+                </ParameterList> 
+              </ParameterList-->
               <ParameterList name="boundary pressure">
                 <ParameterList name="function-additive">
                   
@@ -116,21 +116,16 @@
                       <Parameter name="x0" type="Array(double)" value="{0.0, 0.0, 0.0, -2.5}"/>
                     </ParameterList>
                   </ParameterList>
-                  <!-- <ParameterList name="function1"> -->
-                  <!--   <ParameterList name="function-constant"> -->
-                  <!--     <Parameter name="value" type="double" value="10.0"/> -->
-                  <!--   </ParameterList> -->
-                  <!-- </ParameterList> -->
 
                   <ParameterList name="function2">
                     <ParameterList name="function-multiplicative">
 
                       <ParameterList name="function1">
                         <ParameterList name="function-constant">
-                          <!-- <Parameter name="value" type="double" value="-1.59154943091895"/> -->
                           <Parameter name="value" type="double" value="-0.318309886183791"/>
-                          <!-- <Parameter name="value" type="double" value="-6.36619772367581"/> -->
-                          <!-- <Parameter name="value" type="double" value="-7.957747155"/> -->
+                          <!--Parameter name="value" type="double" value="-1.59154943091895"/-->
+                          <!--Parameter name="value" type="double" value="-6.36619772367581"/-->
+                          <!--Parameter name="value" type="double" value="-7.957747155"/-->
                         </ParameterList>
                       </ParameterList>
                       
@@ -166,10 +161,6 @@
                   </ParameterList>
                 
                 </ParameterList>
-                <!-- <ParameterList name="function-distance"> -->
-                <!--   <Parameter name="x0" type="Array(double)" value="{0., 0., -5.0}"/> -->
-                <!--   <Parameter name="metric" type="Array(double)" value="{1.0, 1.0, 0.0}"/> -->
-                <!-- </ParameterList>  -->
               </ParameterList>
               
             </ParameterList>
