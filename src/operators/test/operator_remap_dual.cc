@@ -627,7 +627,7 @@ void RemapTestsDualRK(int order_p, int order_u,
         std::vector<const WhetStone::WhetStoneFunction*> polys(2);
         polys[0] = &(*jac)[c][n];
         polys[1] = &poly;
-        mass1_c += numi.IntegrateFunctionsTriangle(xy, polys, quad_order);
+        mass1_c += numi.IntegrateFunctionsSimplex(xy, polys, quad_order);
       }
     } else {
       WhetStone::Polynomial tmp((*jac)[c][0]);

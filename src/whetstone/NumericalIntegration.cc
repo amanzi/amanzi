@@ -37,21 +37,34 @@ double NumericalIntegration::IntegrateFunctionsTrianglatedCell(
 {
   double integral(0.0);
 
-  if (d_ == 2) {
-    AmanziMesh::Entity_ID_List faces, nodes;
-    mesh_->cell_get_faces(c, &faces);
-    int nfaces = faces.size();
+  AmanziMesh::Entity_ID_List faces, nodes;
+  std::vector<AmanziGeometry::Point> xy(d_ + 1); 
 
-    std::vector<AmanziGeometry::Point> xy(3); 
-    xy[0] = mesh_->cell_centroid(c);
+  mesh_->cell_get_faces(c, &faces);
+  int nfaces = faces.size();
 
-    for (int n = 0; n < nfaces; ++n) {
-      int f = faces[n];
-      mesh_->face_get_nodes(f, &nodes);
+  xy[0] = mesh_->cell_centroid(c);
+
+  for (int n = 0; n < nfaces; ++n) {
+    int f = faces[n];
+    mesh_->face_get_nodes(f, &nodes);
+    int nnodes = nodes.size();
+
+    if (d_ == 3) {
+      xy[1] = mesh_->face_centroid(f);
+
+      for (int k = 0; k < nnodes; ++k) {
+        int l = (k + 1) % nnodes;
+        mesh_->node_get_coordinates(nodes[k], &(xy[2]));
+        mesh_->node_get_coordinates(nodes[l], &(xy[3]));
+
+        integral += IntegrateFunctionsTetrahedron_(xy, funcs, order);
+      }
+    } else if (d_ == 2) {
       mesh_->node_get_coordinates(nodes[0], &(xy[1]));
       mesh_->node_get_coordinates(nodes[1], &(xy[2]));
 
-      integral += IntegrateFunctionsTriangle(xy, funcs, order);
+      integral += IntegrateFunctionsTriangle_(xy, funcs, order);
     }
   }
 
@@ -195,10 +208,9 @@ double NumericalIntegration::IntegratePolynomialsEdge(
 
 
 /* ******************************************************************
-* Integrate a product of polynomials that may have different origins
-* over a triangle.
+* Integrate a product of functions over a 2D or 3D triangle.
 ****************************************************************** */
-double NumericalIntegration::IntegrateFunctionsTriangle(
+double NumericalIntegration::IntegrateFunctionsTriangle_(
     const std::vector<AmanziGeometry::Point>& xy,
     const std::vector<const WhetStoneFunction*>& funcs, int order) const
 {
@@ -209,13 +221,12 @@ double NumericalIntegration::IntegrateFunctionsTriangle(
   int n1 = q2d_order[m][1];
   int n2 = n1 + q2d_order[m][0];
 
-  AmanziGeometry::Point ym(d_);
   AmanziGeometry::Point y1 = xy[1] - xy[0];
   AmanziGeometry::Point y2 = xy[2] - xy[0];
 
   double integral(0.0);
   for (int n = n1; n < n2; ++n) { 
-    ym = xy[0] + y1 * q2d_points[n][1] + y2 * q2d_points[n][2];
+    auto ym = xy[0] + y1 * q2d_points[n][1] + y2 * q2d_points[n][2];
 
     double a(q2d_weights[n]);
     for (int i = 0; i < funcs.size(); ++i) {
@@ -224,10 +235,45 @@ double NumericalIntegration::IntegrateFunctionsTriangle(
     integral += a;      
   }
 
-  ym = y1^y2;
-  double area = std::fabs(ym[0] / 2);
+  double area = norm(y1^y2) / 2;
 
   return integral * area;
+}
+
+
+/* ******************************************************************
+* Integrate a product of functions over a tetrahedron
+****************************************************************** */
+double NumericalIntegration::IntegrateFunctionsTetrahedron_(
+    const std::vector<AmanziGeometry::Point>& xy,
+    const std::vector<const WhetStoneFunction*>& funcs, int order) const
+{
+  // calculate minimal quadrature rule 
+  int m(order);
+  AMANZI_ASSERT(m < 7);
+
+  int n1 = q3d_order[m][1];
+  int n2 = n1 + q3d_order[m][0];
+
+  AmanziGeometry::Point ym(d_);
+  AmanziGeometry::Point y1 = xy[1] - xy[0];
+  AmanziGeometry::Point y2 = xy[2] - xy[0];
+  AmanziGeometry::Point y3 = xy[3] - xy[0];
+
+  double integral(0.0);
+  for (int n = n1; n < n2; ++n) { 
+    ym = xy[0] + y1 * q3d_points[n][1] + y2 * q3d_points[n][2] + y3 * q3d_points[n][3];
+
+    double a(q3d_weights[n]);
+    for (int i = 0; i < funcs.size(); ++i) {
+      a *= funcs[i]->Value(ym);
+    }
+    integral += a;      
+  }
+
+  double volume = std::fabs(((y1^y2) * y3) / 6);
+
+  return integral * volume;
 }
 
 

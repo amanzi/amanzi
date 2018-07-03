@@ -77,7 +77,7 @@ add_amanzi_library(whetstone
                            MFD3DFactory.hh
                            nlfv.hh
                            NumericalIntegration.hh
-                           Quadrature1D.hh Quadrature2D.hh
+                           Quadrature1D.hh Quadrature2D.hh Quadrature3D.hh
                            MeshMaps.hh MeshMapsFactory.hh
                            MeshMaps_FEM.hh MeshMaps_VEM.hh MeshMaps_VEM.hh
                            CoordinateSystems.hh
@@ -89,13 +89,13 @@ add_amanzi_library(whetstone
                    LINK_LIBS geometry mesh error_handling ${Epetra_LIBRARIES})
 
 
-if ( BUILD_TESTS )
+if (BUILD_TESTS)
     # Add UnitTest includes
     include_directories(${UnitTest_INCLUDE_DIRS})
     include_directories(${MESH_SIMPLE_SOURCE_DIR})
 
     # Copy test directory files if an out of source build
-    if (NOT (${WHETSTONE_SOURCE_DIR} EQUAL ${WHETSTONE_BINARY_DIR}) )
+    if (NOT (${WHETSTONE_SOURCE_DIR} EQUAL ${WHETSTONE_BINARY_DIR}))
         file(GLOB DataFiles "${WHETSTONE_SOURCE_DIR}/test/*.exo")
         file(COPY ${DataFiles} DESTINATION ${WHETSTONE_BINARY_DIR}/test/)
     endif()

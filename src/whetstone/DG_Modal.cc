@@ -244,7 +244,7 @@ int DG_Modal::MassMatrixPiecewisePoly_(
 
         polys[2] = &(K[n]);
 
-        M(k, l) += numi_.IntegrateFunctionsTriangle(xy, polys, s + t + K[n].order());
+        M(k, l) += numi_.IntegrateFunctionsSimplex(xy, polys, s + t + K[n].order());
       }
     }
   }
@@ -463,7 +463,7 @@ int DG_Modal::AdvectionMatrixPiecewisePoly_(
         }
         polys[1] = &tmp;
 
-        A(k, l) += numi_.IntegrateFunctionsTriangle(xy, polys, t + tmp.order());
+        A(k, l) += numi_.IntegrateFunctionsSimplex(xy, polys, t + tmp.order());
       }
     }
   }

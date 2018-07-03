@@ -27,6 +27,7 @@
 #include "PolynomialOnMesh.hh"
 #include "Quadrature1D.hh"
 #include "Quadrature2D.hh"
+#include "Quadrature3D.hh"
 #include "WhetStoneFunction.hh"
 
 namespace Amanzi {
@@ -49,15 +50,14 @@ class NumericalIntegration {
       const AmanziGeometry::Point& x1, const AmanziGeometry::Point& x2,
       const std::vector<const Polynomial*>& polys) const;
 
-  // -- automatically calculate quadrature order if order < 0
-  double IntegrateFunctionsTriangle(
+  // -- integral over a simplex 
+  double IntegrateFunctionsSimplex(
       const std::vector<AmanziGeometry::Point>& xy,
-      const std::vector<const WhetStoneFunction*>& funcs, int order) const;
-
-  double IntegratePolynomialTriangle(
-      const std::vector<AmanziGeometry::Point>& xy, const Polynomial& poly) const {
-    const std::vector<const WhetStoneFunction*> funcs(1, &poly);
-    return IntegrateFunctionsTriangle(xy, funcs, poly.order());
+      const std::vector<const WhetStoneFunction*>& funcs, int order) const {
+    if (xy.size() == 3)
+      return IntegrateFunctionsTriangle_(xy, funcs, order);
+    else if (xy.size() == 4)
+      return IntegrateFunctionsTetrahedron_(xy, funcs, order);
   }
 
   // integrate group of monomials 
@@ -87,6 +87,14 @@ class NumericalIntegration {
   void IntegrateMonomialsEdge_(
       const AmanziGeometry::Point& x1, const AmanziGeometry::Point& x2,
       double factor, int k, Polynomial& integrals);
+
+  double IntegrateFunctionsTriangle_(
+      const std::vector<AmanziGeometry::Point>& xy,
+      const std::vector<const WhetStoneFunction*>& funcs, int order) const;
+
+  double IntegrateFunctionsTetrahedron_(
+      const std::vector<AmanziGeometry::Point>& xy,
+      const std::vector<const WhetStoneFunction*>& funcs, int order) const;
 
  private:
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;

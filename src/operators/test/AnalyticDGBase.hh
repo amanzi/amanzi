@@ -156,7 +156,7 @@ void AnalyticDGBase::ComputeCellError(
     poly.SetPolynomialCoefficients(data);
     poly.set_origin(xc);
 
-    // convert analytic solution from naturak to my basis 
+    // convert analytic solution from natural to my basis 
     SolutionTaylor(xc, t, sol);
     sol.GetPolynomialCoefficients(data);
 
