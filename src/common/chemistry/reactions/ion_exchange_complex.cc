@@ -73,8 +73,6 @@
 #include <iomanip>
 #include <sstream>
 
-#include "block.hh"
-
 namespace Amanzi {
 namespace AmanziChemistry {
 

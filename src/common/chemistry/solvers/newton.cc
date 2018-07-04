@@ -8,7 +8,6 @@ Newton::Newton(const int n) {
   size(n);
   x_.resize(n);
   r_.resize(n);
-  J_ = new Block(n);
   indices_.resize(n);
   vv_.resize(n);
 }  // end Newton constructor
@@ -105,13 +104,6 @@ void Newton::LUBackSolve(double** a, int n, int* indx, std::vector<double>* b) {
     (*b)[i] = sum / a[i][i];
   }
 }  // end lubksb()
-
-Newton::~Newton() {
-  if (J_) {
-    delete J_;
-  }
-  J_ = NULL;
-}  // end Newton destructor
 
 }  // namespace AmanziChemistry
 }  // namespace Amanzi

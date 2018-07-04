@@ -6,15 +6,13 @@
 #include <vector>
 #include <cmath>
 
-#include "block.hh"
-
 namespace Amanzi {
 namespace AmanziChemistry {
 
 class Newton {
  public:
   explicit Newton(const int n);
-  virtual ~Newton();
+  virtual ~Newton() {};
 
   void LUDecomposition(double** a, int n, int* indx);
   void LUBackSolve(double** a, int n, int* indx, std::vector<double>* b);
@@ -33,7 +31,6 @@ class Newton {
   int size_;
   std::vector<double> x_;
   std::vector<double> r_;
-  Block* J_;
 
   double d_;
   std::vector<int> indices_;

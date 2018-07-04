@@ -4,15 +4,10 @@
 
 /*
 **  Base class for ion exchange sites (e.g. X- in standard geochemistry notation)
-**
-**
 */
 #include <cmath>
-
 #include <string>
 #include <vector>
-
-#include "block.hh"
 
 namespace Amanzi {
 namespace AmanziChemistry {

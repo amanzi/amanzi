@@ -1,11 +1,10 @@
 /* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
 
-#include "matrix_block.hh"
-
 #include <cmath>
-
 #include <sstream>
 #include <iomanip>
+
+#include "matrix_block.hh"
 
 namespace Amanzi {
 namespace AmanziChemistry {

@@ -6,7 +6,6 @@
 #include <iomanip>
 
 #include "VerboseObject.hh"
-#include "block.hh"
 
 namespace Amanzi {
 namespace AmanziChemistry {
