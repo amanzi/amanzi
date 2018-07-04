@@ -6,7 +6,6 @@
 #include "VerboseObject.hh"
 
 #include "chemistry_verbosity.hh"
-#include "chemistry_containers.hh"
 
 // create a global ChemistryOutput* pointer in the Amanzi::chemisry
 // namespace that can be used by an other chemistry object

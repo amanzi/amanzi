@@ -22,7 +22,6 @@
 #include "beaker.hh"
 #include "chemistry_verbosity.hh"
 #include "chemistry_output.hh"
-#include "chemistry_containers.hh"
 #include "chemistry_exception.hh"
 
 // create a global ChemistryOutput object in the Amanzi::chemisry

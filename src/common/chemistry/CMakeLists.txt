@@ -35,8 +35,9 @@ include_directories(${Teuchos_INCLUDE_DIRS})
 # The global property will allow other directories (MPC) to
 # access this directory name through a variable.
 
-set(CHEM_INCLUDES_DIR "${CHEM_SOURCE_DIR}/includes"
-                      "${CHEM_SOURCE_DIR}/utility"
+set(CHEM_INCLUDES_DIR "${CHEM_SOURCE_DIR}/utility"
+                      "${CHEM_SOURCE_DIR}/base_chemistry"
+                      "${CHEM_SOURCE_DIR}/reactions"
                       "${CHEM_SOURCE_DIR}/solvers")
 set_property(GLOBAL PROPERTY CHEM_INCLUDES_DIR "${CHEM_INCLUDES_DIR}")
 include_directories(${CHEM_INCLUDES_DIR})
