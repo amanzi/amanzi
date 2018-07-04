@@ -48,7 +48,7 @@ set(geochemrxns_inc_files aqueous_equilibrium_complex.hh
 	                  surface_complex.hh
 	                  surface_complexation_rxn.hh 
 	                  sorption_isotherm.hh
-	                  sorption_isotherm_factory.h 
+	                  sorption_isotherm_factory.hh
 	                  sorption_isotherm_freundlich.hh 
 	                  sorption_isotherm_langmuir.hh
 	                  sorption_isotherm_linear.hh
