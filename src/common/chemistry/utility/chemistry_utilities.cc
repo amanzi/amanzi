@@ -36,19 +36,6 @@ bool CaseInsensitiveStringCompare(const std::string& string1,
   return true;
 }  // end CaseInsensitiveStringCompare()
 
-      // std::stringstream output;
-      // output << "CICS : strings are not the same length\n"
-      //        << "  string one : " << string1
-      //        << "\n  string two : " << string2 << std::endl;
-      // chem_out.Write(kVerbose, output.str());
-
-      // std::stringstream output;
-      // output << "CICS : strings differ at position "
-      //        << std::distance(string1.begin(), char1)
-      //        << "\n  string one value: " << *char1
-      //        << "\n  string two value: " << *char2 << std::endl;
-      // chem_out.Write(kVerbose, output.str());
-
 
 bool CompareFabs(const double& a, const double& b) {
   /* for use with stl algorithms such as max element. Must "return
@@ -98,7 +85,7 @@ void RemoveLeadingAndTrailingWhitespace(std::string* line) {
 ** output: ln(x)
 */ 
 double log_to_ln(double log10_x) {
-  return log10_x * 2.30258509299;
+  return log10_x * 2.30258509299405;
 }
 
 /*
@@ -108,7 +95,7 @@ double log_to_ln(double log10_x) {
 ** return: log10(x)
 */
 double ln_to_log(double ln_x) {
-  return ln_x * 0.434294481904;
+  return ln_x * 0.434294481903252;
 }
 
 }  // namespace utilities

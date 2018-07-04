@@ -8,15 +8,23 @@
 # Chemistry includes
 include_directories(${CHEM_INCLUDES_DIR})
 
-set(SRCS 
-	 ./matrix_block.cc 
-	 ./chemistry_exception.cc
-	 ./chemistry_utilities.cc
-	 ./string_tokenizer.cc
-	 ./chemistry_verbosity.cc
+set(geochemutil_src_files matrix_block.cc 
+	                  chemistry_exception.cc
+	                  chemistry_utilities.cc
+	                  string_tokenizer.cc
+	                  chemistry_verbosity.cc
 )
 
-add_amanzi_library(geochemutil SOURCE ${SRCS}
+set(geochemutil_inc_files matrix_block.hh
+                          chemistry_exception.hh
+                          chemistry_utilities.hh
+                          string_tokenizer.hh
+                          chemistry_verbosity.hh)
+
+add_amanzi_library(geochemutil SOURCE ${geochemutil_src_files}
 	                       LINK_LIBS ${Teuchos_LIBRARIES}) 
 
+set_target_properties(geochemutil PROPERTIES PUBLIC_HEADER ${geochemutil_inc_files})
+
+add_install_include_file(${geochemutil_inc_files})
 
