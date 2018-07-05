@@ -1,4 +1,16 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+/*
+  Chemistry 
+
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
+
+  Authors: Jeffrey Johnson <jnjohnson@lbl.gov>
+
+  Common stand alone utility functions
+*/
+
 #ifndef AMANZI_CHEMISTRY_UTILITIES_HH_
 #define AMANZI_CHEMISTRY_UTILITIES_HH_
 
@@ -6,10 +18,6 @@
 #include <sstream>
 #include <string>
 #include <iomanip>
-
-//
-// Common stand alone utility functions
-//
 
 #include "VerboseObject.hh"
 
@@ -20,34 +28,11 @@ extern VerboseObject* chem_out;
 
 namespace utilities {
 
-/*******************************************************************************
- **
- **  Custom comparison operators
- **
- ******************************************************************************/
-bool CompareFabs(const double& a, const double& b);
-
-/*******************************************************************************
- **
- **  String conversion utilities
- **
- ******************************************************************************/
-void LowerCaseString(const std::string& in, std::string* out);
 void RemoveLeadingAndTrailingWhitespace(std::string* line);
 
-/*******************************************************************************
- **
- **  Math conversion utilities
- **
- ******************************************************************************/
-double log_to_ln(double d);
-double ln_to_log(double d);
+inline double log_to_ln(double d) { return d * 2.30258509299405; }
+inline double ln_to_log(double d) { return d * 0.434294481903252; }
 
-/*******************************************************************************
- **
- **  Print Utilities
- **
- ******************************************************************************/
 template <typename T>
 void PrintVector(const std::string& name, 
                  const std::vector<T>& data,
@@ -71,10 +56,9 @@ void PrintVector(const std::string& name,
   }
   output << " }\n";
   chem_out->Write(Teuchos::VERB_HIGH, output);
-}  // end PrintVector
-
+}
 
 }  // namespace utilities
 }  // namespace AmanziChemistry
 }  // namespace Amanzi
-#endif  // AMANZI_CHEMISTRY_UTILITIES_HH_
+#endif

@@ -1,5 +1,3 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
-
 #include <cmath>
 #include <sstream>
 #include <iomanip>
@@ -8,6 +6,8 @@
 
 namespace Amanzi {
 namespace AmanziChemistry {
+
+VerboseObject* chem_out = NULL;
 
 MatrixBlock::MatrixBlock() 
   : size_(0),

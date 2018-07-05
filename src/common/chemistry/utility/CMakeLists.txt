@@ -12,7 +12,6 @@ set(geochemutil_src_files matrix_block.cc
 	                  chemistry_exception.cc
 	                  chemistry_utilities.cc
 	                  string_tokenizer.cc
-	                  chemistry_verbosity.cc
 )
 
 set(geochemutil_inc_files matrix_block.hh
