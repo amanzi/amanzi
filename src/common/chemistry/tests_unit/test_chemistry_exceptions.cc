@@ -22,7 +22,7 @@ SUITE(GeochemistryTests_ChemistryException) {
   }  // end TEST()
 
   TEST(TestChemistryException_error_string) {
-    CHECK_EQUAL("CHEMISTRY_ERROR: ", ac::ChemistryException::kChemistryError);
+    CHECK_EQUAL("CHEMISTRY_ERROR: ", ac::kChemistryError);
   }  // end TEST()
 
   TEST(TestChemistryException_message) {

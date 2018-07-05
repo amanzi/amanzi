@@ -9,7 +9,6 @@
 include_directories(${CHEM_INCLUDES_DIR})
 
 set(geochemutil_src_files matrix_block.cc 
-	                  chemistry_exception.cc
 	                  chemistry_utilities.cc
 	                  string_tokenizer.cc
 )

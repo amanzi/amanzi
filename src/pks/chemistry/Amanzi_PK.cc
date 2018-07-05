@@ -282,7 +282,7 @@ void Amanzi_PK::XMLParameters()
       } else {
         // invalid database format
         std::ostringstream msg;
-        msg << ChemistryException::kChemistryError;
+        msg << AmanziChemistry::kChemistryError;
         msg << "Amanzi_PK::XMLParameters(): \n";
         msg << "  In sublist 'thermodynamic database', the parameter 'format' must be 'simple'.\n";
         Exceptions::amanzi_throw(ChemistryInvalidInput(msg.str()));  
@@ -290,7 +290,7 @@ void Amanzi_PK::XMLParameters()
     } else {
       // invalid database format
       std::ostringstream msg;
-      msg << ChemistryException::kChemistryError;
+      msg << AmanziChemistry::kChemistryError;
       msg << "Amanzi_PK::XMLParameters(): \n";
       msg << "  In sublist 'thermodynamic database', the parameter 'format' must be specified.\n";
       Exceptions::amanzi_throw(ChemistryInvalidInput(msg.str()));
@@ -303,14 +303,14 @@ void Amanzi_PK::XMLParameters()
       beaker_parameters_.thermo_database_file = tdb_list_.get<std::string>("file");
     } else {
       std::ostringstream msg;
-      msg << ChemistryException::kChemistryError;
+      msg << AmanziChemistry::kChemistryError;
       msg << "Amanzi_PK::XMLParameters(): \n";
       msg << "  Input parameter 'file' in 'thermodynamic database' sublist must be specified.\n";
       Exceptions::amanzi_throw(ChemistryInvalidInput(msg.str()));         
     }
   } else {
     std::ostringstream msg;
-    msg << ChemistryException::kChemistryError;
+    msg << AmanziChemistry::kChemistryError;
     msg << "Amanzi_PK::XMLParameters(): \n";
     msg << "  'thermodynamic database' sublist must be specified.\n";
     Exceptions::amanzi_throw(ChemistryInvalidInput(msg.str()));    
@@ -324,7 +324,7 @@ void Amanzi_PK::XMLParameters()
       beaker_parameters_.pitzer_database = cp_list_->get<std::string>("Pitzer database file");
     } else {
       std::ostringstream msg;
-      msg << ChemistryException::kChemistryError;
+      msg << AmanziChemistry::kChemistryError;
       msg << "Amanzi_PK::XMLParameters():\n";
       msg << "  Input parameter 'Pitzer database file' must be specified if 'activity model' is 'pitzer-hwm'.\n";
       Exceptions::amanzi_throw(ChemistryInvalidInput(msg.str()));
@@ -703,7 +703,7 @@ bool Amanzi_PK::AdvanceStep(double t_old, double t_new, bool reinit)
       avg_itrs += num_itrs;
     } catch (ChemistryException& geochem_err) {
       ierr = 1;
-      internal_msg = geochem_err.kChemistryError;
+      internal_msg = AmanziChemistry::kChemistryError;
       break;
     }
 
