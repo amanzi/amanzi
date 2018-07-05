@@ -1,6 +1,16 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
-#ifndef AMANZI_CHEMISTRY_AMANZI_CHEMISTRY_MATRIXBLOCK_HH_
-#define AMANZI_CHEMISTRY_AMANZI_CHEMISTRY_MATRIXBLOCK_HH_
+/*
+  Chemistry 
+
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
+
+  Author: Ben Andre
+*/
+
+#ifndef AMANZI_CHEMISTRY_MATRIXBLOCK_HH_
+#define AMANZI_CHEMISTRY_MATRIXBLOCK_HH_
 
 
 // Boost may provide us with a more optimal matrix implementation - Glenn
