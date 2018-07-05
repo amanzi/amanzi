@@ -1,4 +1,21 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+/*
+  Chemistry 
+
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
+
+  Author: Ben Andre
+
+  Class for activity calculations based on the Debye-Huckel B-dot equation.
+   
+  TODO(bandre): need to fix the name of this class to be
+  DebyeHuckelBdot or something to distinguish it from a pure
+  Debye-Huckel. Is it worth worrying about code reuse between
+  debye-huckel and debye-huckel b-dot?
+*/
+
 #include "activity_model_debye_huckel.hh"
 #include <cmath>
 #include <iostream>
@@ -9,14 +26,6 @@ namespace AmanziChemistry {
 const double ActivityModelDebyeHuckel::debyeA = 0.5114;  // 25C
 const double ActivityModelDebyeHuckel::debyeB = 0.3288;  // 25C
 const double ActivityModelDebyeHuckel::debyeBdot = 0.0410;  // 25C
-
-ActivityModelDebyeHuckel::ActivityModelDebyeHuckel()
-    : ActivityModel() {
-}  // end ActivityModelDebyeHuckel constructor
-
-
-ActivityModelDebyeHuckel::~ActivityModelDebyeHuckel() {
-}  // end ActivityModelDebyeHuckel destructor
 
 double ActivityModelDebyeHuckel::Evaluate(const Species& species) {
   // log(gamma_i) = - A * z_i^2 * sqrt(I) / (1 + a0 * B * sqrt(I)) + Bdot * I
@@ -35,7 +44,8 @@ double ActivityModelDebyeHuckel::Evaluate(const Species& species) {
     gamma = std::exp(log_to_ln(log_gamma));
   }
   return gamma;
-}  // end Evaluate()
+}
+
 
 void ActivityModelDebyeHuckel::EvaluateVector(
     const std::vector<Species>& prim,
@@ -62,11 +72,12 @@ void ActivityModelDebyeHuckel::EvaluateVector(
     }
   }
   *actw = 1.0;
-}  // end evaluate
+}
+
 
 void ActivityModelDebyeHuckel::Display(void) const {
   std::cout << "Activity model: Debye-Huckel" << std::endl;
-}  // end Display()
+}
 
 }  // namespace AmanziChemistry
 }  // namespace Amanzi

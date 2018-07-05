@@ -1,8 +1,18 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+/*
+  Chemistry 
+
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
+
+  Author: Ben Andre
+
+  Class for storing surface site data for surface complexation
+*/
+
 #ifndef AMANZI_CHEMISTRY_SURFACESITE_HH_
 #define AMANZI_CHEMISTRY_SURFACESITE_HH_
-
-// Class for storing surface site data for surface complexation
 
 #include <vector>
 
@@ -20,7 +30,7 @@ class SurfaceSite {
   SurfaceSite(const SpeciesName name,
               const SpeciesId id,
               const double molar_density);
-  ~SurfaceSite();
+  ~SurfaceSite() {};
 
   // adds a pointer to mineral list
   void AddMineral(Mineral* mineral);
@@ -85,10 +95,7 @@ class SurfaceSite {
     return this->molar_surface_density_;
   }
 
- protected:
-
  private:
-
   SpeciesName name_;
   SpeciesId identifier_;
   double charge_;
@@ -105,4 +112,4 @@ class SurfaceSite {
 
 }  // namespace AmanziChemistry
 }  // namespace Amanzi
-#endif  // AMANZI_CHEMISTRY_SURFACESITE_HH_
+#endif

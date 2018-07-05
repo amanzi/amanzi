@@ -1,8 +1,18 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+/*
+  Chemistry 
+
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
+
+  Author: Ben Andre
+
+  Base class for species
+*/
+
 #ifndef AMANZI_CHEMISTRY_SPECIES_HH_
 #define AMANZI_CHEMISTRY_SPECIES_HH_
-
-// Base class for species
 
 #include <string>
 #include <vector>
@@ -22,7 +32,7 @@ class Species {
   Species();  // this is only present for stl containers, don't use it
   Species(SpeciesId id, SpeciesName name, double charge, double mol_wt,
           double size);
-  virtual ~Species();
+  virtual ~Species() {};
 
   // update(): calculate the new activity coefficient, set the molarity,
   // activity and associated log values. Need to look at different
@@ -110,8 +120,7 @@ class Species {
   double ln_activity_;
   double ln_act_coef_;
 
-  //  ActivityCoefficient* activityCoefficient;
-
+  // ActivityCoefficient* activityCoefficient;
 
  private:
   SpeciesId identifier_;
@@ -135,4 +144,4 @@ typedef std::vector<Species> SpeciesArray;
 
 }  // namespace AmanziChemistry
 }  // namespace Amanzi
-#endif  // AMANZI_CHEMISTRY_SPECIES_HH_
+#endif

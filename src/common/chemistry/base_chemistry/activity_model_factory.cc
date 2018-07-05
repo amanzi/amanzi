@@ -1,5 +1,13 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
-#include "activity_model_factory.hh"
+/*
+  Chemistry 
+
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
+
+  Author: Ben Andre
+*/
 
 #include <sstream>
 #include <string>
@@ -10,8 +18,10 @@
 #include "activity_model_pitzer_hwm.hh"
 #include "activity_model_unit.hh"
 #include "chemistry_exception.hh"
-#include "species.hh"
 #include "exceptions.hh"
+#include "species.hh"
+
+#include "activity_model_factory.hh"
 
 namespace Amanzi {
 namespace AmanziChemistry {
@@ -19,12 +29,6 @@ namespace AmanziChemistry {
 const std::string ActivityModelFactory::debye_huckel = "debye-huckel";
 const std::string ActivityModelFactory::pitzer_hwm = "pitzer-hwm";
 const std::string ActivityModelFactory::unit = "unit";
-
-ActivityModelFactory::ActivityModelFactory() {
-}  // end ActivityModelFactory constructor
-
-ActivityModelFactory::~ActivityModelFactory() {
-}  // end ActivityModelFactory destructor
 
 ActivityModel* ActivityModelFactory::Create(
     const std::string& model,
@@ -65,8 +69,9 @@ ActivityModel* ActivityModelFactory::Create(
     activity_model->name(model);
     activity_model->Setup(parameters, primary_species, secondary_species);
   }
+
   return activity_model;
-}  // end Create()
+}
 
 }  // namespace AmanziChemistry
 }  // namespace Amanzi

@@ -1,4 +1,14 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+/*
+  Chemistry 
+
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
+
+  Author: Ben Andre
+*/
+
 #ifndef AMANZI_CHEMISTRY_ACTIVITY_MODEL_FACTORY_HH_
 #define AMANZI_CHEMISTRY_ACTIVITY_MODEL_FACTORY_HH_
 
@@ -11,8 +21,8 @@ namespace AmanziChemistry {
 
 class ActivityModelFactory {
  public:
-  ActivityModelFactory();
-  ~ActivityModelFactory();
+  ActivityModelFactory() {};
+  ~ActivityModelFactory() {};
 
   ActivityModel* Create(const std::string& model,
                         const ActivityModel::ActivityModelParameters& parameters,
@@ -21,13 +31,8 @@ class ActivityModelFactory {
   static const std::string debye_huckel;
   static const std::string pitzer_hwm;
   static const std::string unit;
-
-
- protected:
-
- private:
 };
 
 }  // namespace AmanziChemistry
 }  // namespace Amanzi
-#endif  // AMANZI_CHEMISTRY_ACTIVITY_MODEL_FACTORY_HH_
+#endif

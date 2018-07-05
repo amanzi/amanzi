@@ -1,21 +1,34 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+/*
+  Chemistry 
+
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
+
+  Author: Ben Andre
+
+  Base class for activity calculations
+*/
+
 #ifndef AMANZI_CHEMISTRY_ACTIVITY_MODEL_HH_
 #define AMANZI_CHEMISTRY_ACTIVITY_MODEL_HH_
-
-// Base class for activity calculations
 
 #include <vector>
 #include <string>
 
-#include "species.hh"
 #include "aqueous_equilibrium_complex.hh"
 #include "chemistry_verbosity.hh"
+#include "species.hh"
 
 namespace Amanzi {
 namespace AmanziChemistry {
 
 class ActivityModel {
  public:
+  ActivityModel();
+  virtual ~ActivityModel() {};
+
   struct ActivityModelParameters {
     Verbosity verbosity;
     // if the activity model requires a database put the name here
@@ -23,9 +36,6 @@ class ActivityModel {
     // This the name of the approach for the J's function in the Pitzer model
     std::string pitzer_jfunction;
   };
-
-  ActivityModel();
-  virtual ~ActivityModel();
 
   virtual void Setup(const ActivityModelParameters& parameters,
                      const std::vector<Species>& primary_species,
@@ -90,9 +100,7 @@ class ActivityModel {
   }
 
   double I_;  // ionic strength
-
   double Z_;  // sum ( m_i * abs(z_i) )
-
   double M_;  // sum ( m_i )
 
  private:
@@ -109,4 +117,4 @@ class ActivityModel {
 }  // namespace AmanziChemistry
 }  // namespace Amanzi
 
-#endif  // AMANZI_CHEMISTRY_ACTIVITY_MODEL_HH_
+#endif

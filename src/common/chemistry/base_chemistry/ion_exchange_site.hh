@@ -1,10 +1,19 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+/*
+  Chemistry 
+
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
+
+  Author: Ben Andre
+
+  Base class for ion exchange sites (e.g. X- in standard geochemistry notation)
+*/
+
 #ifndef AMANZI_CHEMISTRY_IONEXCHANGESITE_HH_
 #define AMANZI_CHEMISTRY_IONEXCHANGESITE_HH_
 
-/*
-**  Base class for ion exchange sites (e.g. X- in standard geochemistry notation)
-*/
 #include <cmath>
 #include <string>
 #include <vector>
@@ -20,12 +29,11 @@ class IonExchangeSite {
   IonExchangeSite();
   IonExchangeSite(const IonxSiteName in_name);
   IonExchangeSite(const IonxSiteName in_name, const double charge, const std::string location);
-  virtual ~IonExchangeSite();
+  virtual ~IonExchangeSite() {};
 
   virtual void Display(void) const;
   void DisplayResultsHeader(void) const;
   void DisplayResults(void) const;
-
 
   // mutators
   void set_cation_exchange_capacity(const double in_value) {
@@ -66,10 +74,8 @@ class IonExchangeSite {
   double cation_exchange_capacity_;  // units...
   std::string mineral_name_;
   double charge_;
-
- private:
 };
 
 }  // namespace AmanziChemistry
 }  // namespace Amanzi
-#endif  // AMANZI_CHEMISTRY_IONEXCHANGESITE_HH_
+#endif

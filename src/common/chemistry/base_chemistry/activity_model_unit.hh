@@ -1,4 +1,14 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+/*
+  Chemistry 
+
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
+
+  Author: Ben Andre
+*/
+
 #ifndef AMANZI_CHEMISTRY_ACTIVITY_MODEL_UNIT_HH_
 #define AMANZI_CHEMISTRY_ACTIVITY_MODEL_UNIT_HH_
 
@@ -11,8 +21,8 @@ class Species;
 
 class ActivityModelUnit : public ActivityModel {
  public:
-  ActivityModelUnit();
-  ~ActivityModelUnit();
+  ActivityModelUnit() : ActivityModel() {};
+  ~ActivityModelUnit() {};
 
   double Evaluate(const Species& species);
 
@@ -22,13 +32,9 @@ class ActivityModelUnit : public ActivityModel {
                       double* actw);
 
   void Display(void) const;
-
- protected:
-
- private:
 };
 
 }  // namespace AmanziChemistry
 }  // namespace Amanzi
 
-#endif  // AMANZI_CHEMISTRY_ACTIVITY_MODEL_UNIT_HH_
+#endif
