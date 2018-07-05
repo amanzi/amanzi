@@ -1,8 +1,16 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+/*
+  Chemistry 
+
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
+
+  Class for ion exchange reaction
+*/
+
 #ifndef AMANZI_CHEMISTRY_IONEXCHANGERXN_HH_
 #define AMANZI_CHEMISTRY_IONEXCHANGERXN_HH_
-
-// Class for ion exchange reaction
 
 #include <vector>
 
@@ -22,7 +30,7 @@ class IonExchangeRxn {
   IonExchangeRxn(IonExchangeSite* ionx_sites,
                  const std::vector<IonExchangeComplex>& ionx_complexes);
   explicit IonExchangeRxn(IonExchangeSite ionx_sites);
-  ~IonExchangeRxn();
+  ~IonExchangeRxn() {};
 
   // add complexes to the reaction
   void AddIonExchangeComplex(const IonExchangeComplex& complex);
@@ -59,17 +67,14 @@ class IonExchangeRxn {
   void DisplayResultsHeader(void) const;
   void DisplayResults(void) const;
 
- protected:
-
  private:
   std::vector<IonExchangeComplex> ionx_complexes_;
   std::vector<IonExchangeSite> ionx_site_;
   bool uniform_z_;
   bool uniform_z_set_;
   double ref_cation_sorbed_conc_;
-
 };
 
 }  // namespace AmanziChemistry
 }  // namespace Amanzi
-#endif  // AMANZI_CHEMISTRY_IONEXCHANGERXN_HH_
+#endif

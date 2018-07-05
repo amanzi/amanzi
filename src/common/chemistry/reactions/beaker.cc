@@ -1,12 +1,17 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
-
 /*
-** TODO(bandre): update mineral volume fractions to components.minerals after kinetics....
-**
-** TODO(bandre): finish implementing ion exchange jacobian
-*/
+  Chemistry 
 
-#include "beaker.hh"
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
+
+  Driver class for evaluating geochemical related processes at a
+  single computational node
+
+  TODO(bandre): update mineral volume fractions to components.minerals after kinetics...
+  TODO(bandre): finish implementing ion exchange jacobian
+*/
 
 #include <cstdlib>
 #include <cassert>
@@ -16,6 +21,8 @@
 #include <iomanip>
 #include <vector>
 #include <sstream>
+
+#include "exceptions.hh"
 
 #include "activity_model.hh"
 #include "activity_model_factory.hh"
@@ -35,7 +42,7 @@
 #include "chemistry_verbosity.hh"
 #include "chemistry_exception.hh"
 
-#include "exceptions.hh"
+#include "beaker.hh"
 
 namespace Amanzi {
 namespace AmanziChemistry {
@@ -77,10 +84,6 @@ Beaker::Beaker()
       lu_solver_(),
       use_log_formulation_(true),
       sorption_isotherm_params_(4, 0.0) {
-  // this is ifdef is breaking the formatting tools
-  // #ifdef GLENN
-  // , solver(NULL) {
-  // #endif
   primary_species_.clear();
   minerals_.clear();
   aqComplexRxns_.clear();
@@ -91,7 +94,7 @@ Beaker::Beaker()
   sorption_isotherm_rxns_.clear();
   total_.clear();
   total_sorbed_.clear();
-}  // end Beaker() constructor
+}
 
 
 Beaker::~Beaker() {
@@ -111,10 +114,6 @@ Beaker::~Beaker() {
       rxn->CleanMemory();
     }
   }
-
-#ifdef GLENN
-  delete solver;
-#endif
 }
 
 
@@ -702,14 +701,14 @@ void Beaker::DisplayComponents(const Beaker::BeakerComponents& components) const
   message << std::setw(15) << "Name"
           << std::setw(15) << "Molality"
           << std::setw(15) << "Molarity"
-      // << std::setw(15) << "Free Ion" // TODO(bandre): uncomment and update test results
+          // << std::setw(15) << "Free Ion" // TODO(bandre): uncomment and update test results
           << std::endl;
   for (int i = 0; i < ncomp(); i++) {
     message << std::setw(15) << primary_species().at(i).name()
             << std::scientific << std::setprecision(5)
             << std::setw(15) << components.total.at(i) / water_density_kg_L()
             << std::setw(15) << components.total.at(i)
-        // << std::setw(15) << components.free_ion.at(i) // TODO(bandre): uncomment and update test results
+            // << std::setw(15) << components.free_ion.at(i) // TODO(bandre): uncomment and update test results
             << std::endl;
   }
 
@@ -1010,7 +1009,6 @@ void Beaker::CopyComponentsToBeaker(const Beaker::BeakerComponents& components) 
   //
   // minerals
   //
-
   unsigned int size = components.mineral_volume_fraction.size();
   if (minerals().size() == size) {
     for (unsigned int m = 0; m < size; m++) {
@@ -1704,7 +1702,8 @@ void Beaker::display(void) const {
     aec->display();
   }
   chem_out->Write(Teuchos::VERB_HIGH, "-------------------------------------");
-}  // end display()
+}
+
 
 void Beaker::DisplayParameters(void) const {
   std::stringstream message;
@@ -1722,7 +1721,8 @@ void Beaker::DisplayParameters(void) const {
   message << "    volume: " << volume() << " [m^3]" << std::endl;
   message << std::endl;
   chem_out->Write(Teuchos::VERB_HIGH, message);
-}  // end DisplayParameters()
+}
+
 
 void Beaker::DisplayPrimary(void) const {
   std::stringstream message;

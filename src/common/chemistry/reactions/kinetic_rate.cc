@@ -1,14 +1,22 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
-#include "kinetic_rate.hh"
+/*
+  Chemistry 
+
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
+
+  Abstract base class for all kinetic rates
+*/
 
 #include <cstdlib>
-
-#include <sstream>
 #include <iostream>
 #include <iomanip>
+#include <sstream>
 
-#include "string_tokenizer.hh"
 #include "chemistry_verbosity.hh"
+#include "kinetic_rate.hh"
+#include "string_tokenizer.hh"
 
 namespace Amanzi {
 namespace AmanziChemistry {
@@ -21,11 +29,7 @@ KineticRate::KineticRate(void)
   reactant_names.clear();
   reactant_stoichiometry.clear();
   reactant_ids.clear();
-}  // end KineticRate constructor
-
-
-KineticRate::~KineticRate(void) {
-}  // end KineticRate destructor
+}
 
 
 void KineticRate::SetSpeciesIds(const SpeciesArray& species,
@@ -71,7 +75,8 @@ void KineticRate::SetSpeciesIds(const SpeciesArray& species,
                 << " species list! " << std::endl;
     }
   }
-}  // end SetSpeciesIds()
+}
+
 
 void KineticRate::DisplayReaction(void) const {
   std::stringstream message;
@@ -90,7 +95,7 @@ void KineticRate::DisplayReaction(void) const {
   }
   message << std::endl;
   chem_out->Write(Teuchos::VERB_HIGH, message);
-}  // end DisplayReaction
+}
 
 }  // namespace AmanziChemistry
 }  // namespace Amanzi

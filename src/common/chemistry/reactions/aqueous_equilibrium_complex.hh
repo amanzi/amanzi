@@ -1,14 +1,20 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+/*
+  Chemistry 
+
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
+
+  Class for aqueous equilibrium complexation reaction
+*/
+
 #ifndef AMANZI_CHEMISTRY_AQUEOUS_EQUILIBRIUM_COMPLEX_HH_
 #define AMANZI_CHEMISTRY_AQUEOUS_EQUILIBRIUM_COMPLEX_HH_
-
-// Class for aqueous equilibrium complexation reaction
 
 #include <vector>
 
 #include "secondary_species.hh"
-
-// forward declarations from outside chemistry
 
 namespace Amanzi {
 namespace AmanziChemistry {
@@ -18,7 +24,7 @@ class MatrixBlock;
 
 class AqueousEquilibriumComplex : public SecondarySpecies {
  public:
-  AqueousEquilibriumComplex();
+  AqueousEquilibriumComplex() : SecondarySpecies() {};
   AqueousEquilibriumComplex(const SpeciesName name,
                             const SpeciesId id,
                             const std::vector<SpeciesName>& species,
@@ -29,7 +35,7 @@ class AqueousEquilibriumComplex : public SecondarySpecies {
                             const double mol_wt,
                             const double size,
                             const double logK);
-  ~AqueousEquilibriumComplex();
+  ~AqueousEquilibriumComplex() {};
 
   // update molalities
   virtual void Update(const std::vector<Species>& primary_species, const Species& water_species);
@@ -43,12 +49,8 @@ class AqueousEquilibriumComplex : public SecondarySpecies {
   void Display(void) const;
   void DisplayResultsHeader(void) const;
   void DisplayResults(void) const;
-
- protected:
-
- private:
 };
 
 }  // namespace AmanziChemistry
 }  // namespace Amanzi
-#endif  // AMANZI_CHEMISTRY_AQUEOUS_EQUILIBRIUM_COMPLEX_HH_
+#endif

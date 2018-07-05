@@ -1,8 +1,16 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+/*
+  Chemistry 
+
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
+
+  Class for general forward/reverse reaction
+*/
+
 #ifndef AMANZI_CHEMISTRY_GENERAL_RXN_HH_
 #define AMANZI_CHEMISTRY_GENERAL_RXN_HH_
-
-// Class for general forward/reverse reaction
 
 #include <string>
 #include <vector>
@@ -18,7 +26,7 @@ class MatrixBlock;
 class GeneralRxn {
  public:
   GeneralRxn();
-  explicit GeneralRxn(std::string s);
+  explicit GeneralRxn(std::string s) {};
   GeneralRxn(SpeciesName name,
              std::vector<SpeciesName>species,
              std::vector<double>stoichiometries,
@@ -28,7 +36,7 @@ class GeneralRxn {
              std::vector<double>backward_stoichiometries,
              std::vector<int>backward_species_ids,
              double kf, double kb);
-  ~GeneralRxn();
+  ~GeneralRxn() {};
 
   // update forward and reverse effective reaction rates
   void update_rates(const std::vector<Species> primarySpecies);
@@ -40,10 +48,7 @@ class GeneralRxn {
   void display(void) const;
   void Display(void) const;
 
- protected:
-
  private:
-
   unsigned int ncomp_;  // # components in reaction
   unsigned int ncomp_forward_;  // # components in forward reaction
   unsigned int ncomp_backward_;  // # components in backward reaction
@@ -63,4 +68,4 @@ class GeneralRxn {
 
 }  // namespace AmanziChemistry
 }  // namespace Amanzi
-#endif  // AMANZI_CHEMISTRY_GENERAL_RXN_HH_
+#endif

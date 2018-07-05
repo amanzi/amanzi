@@ -1,16 +1,21 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+/*
+  Chemistry 
+
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
+
+  Class for mineral reaction, should be written with the mineral
+  as the reactant:
+
+    Calcite = 1.0 Ca++ + 1.0 HCO3- -1.0 H+
+*/
+ 
 #ifndef AMANZI_CHEMISTRY_MINERAL_HH_
 #define AMANZI_CHEMISTRY_MINERAL_HH_
 
-/* Class for mineral reaction, should be written with the mineral as
-** the reactant:
-**
-**  Calcite = 1.0 Ca++ + 1.0 HCO3- -1.0 H+
-**
-*/
-
 #include <cmath>
-
 #include <vector>
 
 #include "species.hh"
@@ -34,7 +39,7 @@ class Mineral : public SecondarySpecies {
           const double h2o_stoich, const double mol_wt,
           const double logK, const double molar_volume,
           const double specific_surface_area);
-  ~Mineral();
+  ~Mineral() {};
 
   // update molalities
   virtual void Update(const std::vector<Species>& primary_species, const Species& water_species);
@@ -86,16 +91,13 @@ class Mineral : public SecondarySpecies {
     return this->verbosity_;
   };
 
- protected:
-
  private:
   Verbosity verbosity_;
   double molar_volume_;     // [m^3 / moles]
   double specific_surface_area_;  // [m^2 mineral / m^3 bulk]
   double volume_fraction_;   // [m^3 mineral / m^3 bulk]
-
 };
 
 }  // namespace AmanziChemistry
 }  // namespace Amanzi
-#endif  // AMANZI_CHEMISTRY_MINERAL_HH_
+#endif

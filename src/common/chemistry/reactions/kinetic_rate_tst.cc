@@ -1,66 +1,68 @@
-/*******************************************************************************
- **
- **  Description: implementation of the TST rate law for mineral kinetics
- **
- **  R = k * A * Prod_m (a_m^{mu_m}) * (1 - Q/Keq)
- **
- **  Q = Prod_p (a_p^{nu_p})
- **
- **  where:
- **    R : reaction rate, [moles/sec]
- **    Keq : equilibrium constant, [-]
- **    Q : ion activity product, [-]
- **    a_p : activity of primary species
- **    nu_p : stoichiometric coefficient of primary species
- **    k : reaction rate constant, [moles m^2 s^-1]
- **    A : reactive surface area, [m^2]
- **    a_m : activity of modifying species
- **    mu_m : exponent of modifying species
- **
- **  Residual:
- **
- **    r_i = nu_i R
- **
- **  Jacobian contributions:
- **
- **  dR/dC_j = k * A * (da_j/dC_j) *
- **           ( (1-Q/Keq) * (mu_j * a_j^{mu_j - 1}) * Prod_{m!=j}(a_m^{mu_m}) -
- **             Prod_{m}(a_m^{mu_m})/Keq * (nu_j * a_j^{nu_j - 1}) * Prod_{p!=j}(a_p^{nu_p}) )
- **
- **  J_ij = nu_i * dR/dCj
- **
- **
- **  Notes:
- **
- **    - R is the dissolution rate for the mineral, so positive when
- **    dissolution, negative when precipitation. dCalcite/dt = -R, dCa/dt = R
- **
- **    - assume that the "reactants" list as defined in KineticRate
- **    consists solely of the mineral and the coefficient is always
- **    one, so they are ignored in the ion activity product. The
- **    mineral is only accounted for in the accumulation / consumption
- **    of solid mass.
- **
- **    - assume that the stoichiometry, nu, and exponents, mu, are zero
- **    for any species that does not take part in the reaction!
- **
- **    - assume that the mineral reactions are always written so the
- **    products consist of only primary species.
- **
- **    - assume that the modifying species are only primary species
- **
- **    - ignoring the (1-(Q/Keq)^n) and (1-(Q/Keq)^n)^p forms for now.
- **
- **    - TODO(bandre): need to calculate the area (DONE) or read from the file.
- **
- **    - TODO(bandre): DONE: need to obtain log_Keq from the mineral object rather than read from a file.
- **
- **    - TODO(bandre): DONE: units of A and k are not consistent with the input
- **    file. need to pick a set!
- **
- **    - TODO(bandre): where should the mineral mass get updated at....?
- **
- *******************************************************************************/
+/*
+  Chemistry 
+
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
+
+  Implementation of the TST rate law for mineral kinetics
+ 
+    R = k * A * Prod (a_i^m_i) * ( 1 - Q/Keq)
+ 
+    Q = Prod_p (a_p^{nu_p})
+ 
+  where:
+    R : reaction rate, [moles/sec]
+    Keq : equilibrium constant, [-]
+    Q : ion activity product, [-]
+    a_p : activity of primary species
+    nu_p : stoichiometric coefficient of primary species
+    k : reaction rate constant, [moles m^2 s^-1]
+    A : reactive surface area, [m^2]
+    a_m : activity of modifying species
+    mu_m : exponent of modifying species
+
+  Residual:
+    r_i = nu_i R
+ 
+  Jacobian contributions:
+    dR/dC_j = k * A * (da_j/dC_j) *
+           ( (1-Q/Keq) * (mu_j * a_j^{mu_j - 1}) * Prod_{m!=j}(a_m^{mu_m}) -
+           Prod_{m}(a_m^{mu_m})/Keq * (nu_j * a_j^{nu_j - 1}) * Prod_{p!=j}(a_p^{nu_p}) )
+
+    J_ij = nu_i * dR/dCj
+ 
+  Notes:
+    - R is the dissolution rate for the mineral, so positive when
+        dissolution, negative when precipitation. dCalcite/dt = -R, dCa/dt = R
+ 
+   - assume that the "reactants" list as defined in KineticRate
+     consists solely of the mineral and the coefficient is always
+     one, so they are ignored in the ion activity product. The
+     mineral is only accounted for in the accumulation / consumption
+     of solid mass.
+ 
+   - assume that the stoichiometry, nu, and exponents, mu, are zero
+     for any species that does not take part in the reaction!
+ 
+   - assume that the mineral reactions are always written so the
+     products consist of only primary species.
+ 
+   - assume that the modifying species are only primary species
+ 
+   - ignoring the (1-(Q/Keq)^n) and (1-(Q/Keq)^n)^p forms for now.
+
+   - TODO(bandre): need to calculate the area (DONE) or read from the file.
+
+   - TODO(bandre): DONE: need to obtain log_Keq from the mineral object rather than read from a file.
+ 
+   - TODO(bandre): DONE: units of A and k are not consistent with the input
+     file. need to pick a set!
+
+   - TODO(bandre): where should the mineral mass get updated at....?
+*/
+
 #include <cmath>
 #include <cstdlib>
 #include <sstream>
@@ -101,10 +103,7 @@ KineticRateTST::KineticRateTST(void)
   this->modifying_primary_exponents.clear();
 
   this->modifying_secondary_exponents.clear();
-}  // end KineticRateTST constructor
-
-KineticRateTST::~KineticRateTST(void) {
-}  // end KineticRateTST destructor
+}
 
 
 void KineticRateTST::Setup(const SecondarySpecies& reaction,
@@ -146,8 +145,7 @@ void KineticRateTST::Setup(const SecondarySpecies& reaction,
   //     std::cout << "      name: " << primary_species.at(modifying_primary_ids.at(i)).name() << std::endl;
   //     std::cout << "    coeff: " << modifying_primary_exponents.at(i) << std::endl;
   //   }
-}  // end Setup()
-
+}
 
 
 void KineticRateTST::Update(const SpeciesArray& primary_species,
@@ -198,7 +196,8 @@ void KineticRateTST::Update(const SpeciesArray& primary_species,
             << std::endl;
     chem_out->Write(Teuchos::VERB_EXTREME, message);
   }
-}  // end Update()
+}
+
 
 void KineticRateTST::AddContributionToResidual(const std::vector<Mineral>&  minerals,
                                                const double bulk_volume,
@@ -237,7 +236,8 @@ void KineticRateTST::AddContributionToResidual(const std::vector<Mineral>&  mine
   // store the reaction rate so we can use it to update volume fractions
   // need [moles/sec/m^3 bulk], so we divide by volume!
   set_reaction_rate(rate / bulk_volume);
-}  // end AddContributionToResidual()
+}
+
 
 void KineticRateTST::AddContributionToJacobian(const SpeciesArray& primary_species,
                                                const std::vector<Mineral>&  minerals,
@@ -316,10 +316,10 @@ void KineticRateTST::AddContributionToJacobian(const SpeciesArray& primary_speci
         J->AddValue(i, j, dRdC_row.at(j) * primary_stoichiometry.at(i));
         // std::cout << dRdC_row.at(j) * primary_stoichiometry.at(i) << " ";
       }
-      // std::cout << std::endl;
     }
   }
-}  // end AddContributionToJacobian()
+}
+
 
 void KineticRateTST::ParseParameters(const StringTokenizer& reaction_data) {
   std::string space(" ");
@@ -369,7 +369,8 @@ void KineticRateTST::ParseParameters(const StringTokenizer& reaction_data) {
       std::cout << "  Field: " << *field << std::endl;
     }
   }
-}  // end ParseParameters()
+}
+
 
 void KineticRateTST::Display(void) const {
   chem_out->Write(Teuchos::VERB_HIGH, "    Rate law: TST\n");
@@ -388,7 +389,7 @@ void KineticRateTST::Display(void) const {
   }
   message << std::endl;
   chem_out->Write(Teuchos::VERB_HIGH, message);
-}  // end Display()
+}
 
 }  // namespace AmanziChemistry
 }  // namespace Amanzi

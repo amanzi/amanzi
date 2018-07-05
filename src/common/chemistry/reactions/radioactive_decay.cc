@@ -1,6 +1,15 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
-#include "radioactive_decay.hh"
+/*
+  Chemistry 
 
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
+
+  Class for radioactive decay of aqueous and sorbed components.
+  Does not deal with decay of solid phase.
+*/
+ 
 #include <cmath>
 #include <cassert>
 #include <sstream>
@@ -11,21 +20,19 @@
 #include "boost/algorithm/string.hpp"
 
 // Chemistry
-#include "matrix_block.hh"
 #include "chemistry_utilities.hh"
 #include "chemistry_exception.hh"
+#include "matrix_block.hh"
+#include "radioactive_decay.hh"
 
 namespace Amanzi {
 namespace AmanziChemistry {
 
 /*
-**
 **  Simple class for radioactive decay of aqueous and sorbed
 **  components. This class is not general enough to handle the decay
 **  of elements that are incorporated into minerals.
-**
- */
-
+*/
 RadioactiveDecay::RadioactiveDecay()
     : species_names_(),
       species_ids_(),
@@ -39,9 +46,6 @@ RadioactiveDecay::RadioactiveDecay()
   ConvertHalfLifeToRateConstant();
 }  // end RadioactiveDecay() constructor
 
-RadioactiveDecay::RadioactiveDecay(std::string s) {
-  static_cast<void>(s);
-}  // end RadioactiveDecay() constructor
 
 RadioactiveDecay::RadioactiveDecay(const std::vector<SpeciesName> species_names,
                                    const std::vector<int> species_ids,
@@ -65,10 +69,8 @@ RadioactiveDecay::RadioactiveDecay(const std::vector<SpeciesName> species_names,
   assert(stoichiometry_.at(0) < 0);
   ConvertHalfLifeUnits();
   ConvertHalfLifeToRateConstant();
-}  // end RadioactiveDecay() constructor
+}
 
-RadioactiveDecay::~RadioactiveDecay() {
-}  // end RadioactiveDecay() destructor
 
 void RadioactiveDecay::ConvertHalfLifeUnits(void) {
   double conversion = 1.0;
@@ -93,8 +95,8 @@ void RadioactiveDecay::ConvertHalfLifeUnits(void) {
   }
 
   half_life_seconds_ = half_life_user_ * conversion;
+}
 
-}  // end ConvertHalfLifeUnits()
 
 void RadioactiveDecay::ConvertHalfLifeToRateConstant(void) {
   /*
@@ -102,10 +104,11 @@ void RadioactiveDecay::ConvertHalfLifeToRateConstant(void) {
   **    C = C_0 * exp(-k*t) for k where C = 0.5*C_0 and t = half life > 0
   **    k = -ln(0.5) / half_life
   **  The reaction rate constant will be positive (-k is decay)!
-   */
+  */
   rate_constant_ = -std::log(0.5) / half_life_seconds_;
   assert(rate_constant_ > 0.0);
-}  // end ConvertHalfLifeToRateConstant()
+}
+
 
 // temporary location for member functions
 void RadioactiveDecay::UpdateRate(const std::vector<double>& total,
@@ -122,8 +125,9 @@ void RadioactiveDecay::UpdateRate(const std::vector<double>& total,
     rate_ += bulk_volume * total_sorbed.at(parent_id());
   }
   rate_ *= rate_constant();
-}  // end UpdateRate()
+}
  
+
 void RadioactiveDecay::AddContributionToResidual(std::vector<double> *residual) {
   // Note: rate is < 0, so we add to parent, subtract from
   // progeny. Stoichiometric coefficients should account for this.
@@ -132,7 +136,8 @@ void RadioactiveDecay::AddContributionToResidual(std::vector<double> *residual) 
     // this stoichiometry is for the overall reaction
     residual->at(icomp) -= stoichiometry_.at(i) * rate();
   }
-}  // end AddContributionToResidual()
+}
+
 
 void RadioactiveDecay::AddContributionToJacobian(
     const MatrixBlock& dtotal, const MatrixBlock& dtotal_sorbed,
@@ -157,7 +162,8 @@ void RadioactiveDecay::AddContributionToJacobian(
       J->AddValue(icomp, j, tempd);
     }
   }  // end columns
-}  // end AddContributionToJacobian()
+}
+
 
 void RadioactiveDecay::Display(void) const {
   // convention for this reaction is that reactants have negative
@@ -188,7 +194,7 @@ void RadioactiveDecay::Display(void) const {
   message << std::setw(10) << std::scientific << half_life_seconds_ << std::fixed << " [seconds]" << std::endl;
   message << std::setw(20) << " k : " << std::scientific << rate_constant() << std::fixed << std::endl;
   chem_out->Write(Teuchos::VERB_HIGH, message);
-}  // end Display()
+}
 
 }  // namespace AmanziChemistry
 }  // namespace Amanzi

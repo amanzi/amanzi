@@ -1,8 +1,17 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+/*
+  Chemistry 
+
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
+
+  Base class for sorption isotherm (linear, Langmuir, Freundlich)
+  reactions
+*/
+
 #ifndef AMANZI_CHEMISTRY_SORPTION_ISOTHERM_RXN_HH_
 #define AMANZI_CHEMISTRY_SORPTION_ISOTHERM_RXN_HH_
-
-// Base class for sorption isotherm (linear, Langmuir, Freundlich) reactions
 
 #include <string>
 #include <vector>
@@ -18,11 +27,11 @@ class MatrixBlock;
 
 class SorptionIsothermRxn {
  public:
-  SorptionIsothermRxn();
+  SorptionIsothermRxn() {};
   SorptionIsothermRxn(const SpeciesName species_name, 
                       const SpeciesId species_id,
                       SorptionIsotherm *isotherm);
-  ~SorptionIsothermRxn();
+  ~SorptionIsothermRxn() {};
 
   const std::vector<double>& GetIsothermParameters(void) const;
 
@@ -52,17 +61,13 @@ class SorptionIsothermRxn {
     delete isotherm_;
   }
 
- protected:
-
  private:
-
   SpeciesId species_id_; // ID of primary species
   SpeciesName species_name_; // Name of primary species
   double sorbed_concentration_;
   SorptionIsotherm *isotherm_;
-
-}; // SorptionIsothermRxn
+};
 
 }  // namespace AmanziChemistry
 }  // namespace Amanzi
-#endif  // AMANZI_CHEMISTRY_SORPTION_ISOTHERM_RXN_HH_
+#endif

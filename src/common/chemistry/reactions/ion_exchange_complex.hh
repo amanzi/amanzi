@@ -1,13 +1,18 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+/*
+  Chemistry 
+
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
+
+  Class for ion exchange complexation reaction
+
+  NaX <===> Na+ + X-
+*/
+
 #ifndef AMANZI_CHEMISTRY_IONEXCHANGECOMPLEX_HH_
 #define AMANZI_CHEMISTRY_IONEXCHANGECOMPLEX_HH_
-
-/*
-**  Class for ion exchange complexation reaction
-**
-**  NaX <===> Na+ + X-
-**
-*/
 
 #include <vector>
 
@@ -21,13 +26,13 @@ typedef int IonxComplexId;
 
 class IonExchangeComplex {
  public:
-  IonExchangeComplex();
+  IonExchangeComplex() {};
   IonExchangeComplex(const IonxComplexName,
                      const IonxComplexId complex_id,
                      const SpeciesName primary_name,
                      const SpeciesId primary_id,
                      const double K);
-  virtual ~IonExchangeComplex();
+  virtual ~IonExchangeComplex() {};
 
   void display(void) const;
   void Display(void) const;
@@ -70,4 +75,4 @@ class IonExchangeComplex {
 
 }  // namespace AmanziChemistry
 }  // namespace Amanzi
-#endif  // AMANZI_CHEMISTRY_IONEXCHANGECOMPLEX_HH_
+#endif

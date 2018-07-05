@@ -1,11 +1,20 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
-#include "surface_complex.hh"
+/*
+  Chemistry 
+
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
+
+  Class for aqueous equilibrium complexation reaction
+*/
 
 #include <sstream>
 #include <iostream>
 #include <iomanip>
 
 #include "matrix_block.hh"
+#include "surface_complex.hh"
 
 namespace Amanzi {
 namespace AmanziChemistry {
@@ -15,7 +24,8 @@ SurfaceComplex::SurfaceComplex() {
   species_ids_.clear();
   stoichiometry_.clear();
   logK_array_.clear();
-}  // end SurfaceComplex() constructor
+}
+
 
 SurfaceComplex::SurfaceComplex(const SpeciesName name,
                                const SpeciesId id,
@@ -60,7 +70,8 @@ SurfaceComplex::SurfaceComplex(const SpeciesName name,
        i != species_ids.end(); i++) {
     species_ids_.push_back(*i);
   }
-}  // end SurfaceComplex() constructor
+}
+
 
 SurfaceComplex::SurfaceComplex(const SpeciesName name,
                                const SpeciesId id,
@@ -107,10 +118,8 @@ SurfaceComplex::SurfaceComplex(const SpeciesName name,
        i != species_ids.end(); i++) {
     species_ids_.push_back(*i);
   }
-}  // end SurfaceComplex() constructor
+}
 
-SurfaceComplex::~SurfaceComplex() {
-}  // end SurfaceComplex() destructor
 
 void SurfaceComplex::Update(const std::vector<Species>& primarySpecies,
                             const SurfaceSite& surface_site) {
@@ -127,18 +136,21 @@ void SurfaceComplex::Update(const std::vector<Species>& primarySpecies,
   }
   set_lnQK(lnQK_temp);
   set_surface_concentration(std::exp(lnQK()));
-}  // end Update()
+}
+
 
 void SurfaceComplex::AddContributionToTotal(std::vector<double> *total) {
   for (int i = 0; i < ncomp_; i++) {
     (*total)[species_ids_[i]] += stoichiometry_[i] * surface_concentration();
   }
-}  // end AddContributionToTotal()
+}
+
 
 void SurfaceComplex::AddContributionToDTotal(
     const std::vector<Species>& primarySpecies,
     MatrixBlock* dtotal) {
-}  // end AddContributionToDTotal()
+}
+
 
 void SurfaceComplex::Display(void) const {
   std::stringstream message;
@@ -159,7 +171,8 @@ void SurfaceComplex::Display(void) const {
             << std::setw(10) << charge()
             << std::endl;
   chem_out->Write(Teuchos::VERB_HIGH, message);
-}  // end Display()
+}
+
 
 void SurfaceComplex::display(void) const {
   std::stringstream message;
@@ -178,7 +191,8 @@ void SurfaceComplex::display(void) const {
   message << "     log K: " << logK_
             << "\n     charge: " << charge() << std::endl;
   chem_out->Write(Teuchos::VERB_HIGH, message);
-}  // end Display()
+}
+
 
 void SurfaceComplex::DisplayResultsHeader(void) const {
   std::stringstream message;
@@ -189,7 +203,8 @@ void SurfaceComplex::DisplayResultsHeader(void) const {
             << std::setw(15) << "[mol/m^3]"
             << std::endl;
   chem_out->Write(Teuchos::VERB_HIGH, message);
-}  // end DisplayResultsHeader()
+}
+
 
 void SurfaceComplex::DisplayResults(void) const {
   std::stringstream message;
@@ -198,7 +213,7 @@ void SurfaceComplex::DisplayResults(void) const {
           << std::setw(15) << surface_concentration()
           << std::endl;
   chem_out->Write(Teuchos::VERB_HIGH, message);
-}  // end DisplayResults()
+}
 
 }  // namespace AmanziChemistry
 }  // namespace Amanzi

@@ -1,13 +1,19 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+/*
+  Chemistry 
+
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
+
+  Simple class template
+*/
+
 #ifndef AMANZI_CHEMISTRY_LU_SOLVER_HH_
 #define AMANZI_CHEMISTRY_LU_SOLVER_HH_
 
-//
-// Simple class template
-//
-
-#include <vector>
 #include <ostream>
+#include <vector>
 
 namespace Amanzi {
 namespace AmanziChemistry {
@@ -17,7 +23,7 @@ class MatrixBlock;
 class LUSolver {
  public:
   LUSolver();
-  virtual ~LUSolver();
+  virtual ~LUSolver() {};
 
   void Initialize(const int size);
   void Solve(MatrixBlock* A, std::vector<double>* b);
@@ -33,6 +39,7 @@ class LUSolver {
   int system_size(void) const {
     return this->system_size_;
   }
+
  private:
   int system_size_;
   double row_interchange_;
@@ -43,4 +50,4 @@ class LUSolver {
 
 }  // namespace AmanziChemistry
 }  // namespace Amanzi
-#endif  // AMANZI_CHEMISTRY_LU_SOLVER_HH_
+#endif

@@ -1,4 +1,12 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+/*
+  Chemistry 
+
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
+*/
+ 
 #ifndef AMANZI_CHEMISTRY_SIMPLETHERMODATABASE_HH_
 #define AMANZI_CHEMISTRY_SIMPLETHERMODATABASE_HH_
 
@@ -14,7 +22,7 @@ namespace AmanziChemistry {
 class SimpleThermoDatabase : public Beaker {
  public:
   SimpleThermoDatabase();
-  virtual ~SimpleThermoDatabase();
+  virtual ~SimpleThermoDatabase() {};
 
   void Setup(const Beaker::BeakerComponents& components,
              const Beaker::BeakerParameters& parameters);
@@ -74,4 +82,4 @@ class SimpleThermoDatabase : public Beaker {
 
 }  // namespace AmanziChemistry
 }  // namespace Amanzi
-#endif  // AMANZI_CHEMISTRY_SIMPLETHERMODATABASE_HH_
+#endif

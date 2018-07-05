@@ -1,9 +1,17 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+/*
+  Chemistry 
+
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
+
+  Driver class for evaluating geochemical related processes at a
+  single computational node
+*/
+
 #ifndef AMANZI_CHEMISTRY_BEAKER_HH_
 #define AMANZI_CHEMISTRY_BEAKER_HH_
-
-// Driver class for evaluating geochemical related processes at a
-// single computational node
 
 #include <string>
 #include <vector>
@@ -24,11 +32,6 @@
 #include "matrix_block.hh"
 #include "chemistry_verbosity.hh"
 #include "chemistry_utilities.hh"
-
-#ifdef GLENN
-#include "chemistry/includes/direct_solver.hh"
-#include "chemistry/includes/matrix_block.hh"
-#endif
 
 namespace Amanzi {
 namespace AmanziChemistry {
@@ -323,7 +326,6 @@ class Beaker {
   }
 
  private:
-
   void CheckChargeBalance(const std::vector<double>& aqueous_totals) const;
 
   // update discretization and flow parameters
@@ -456,12 +458,8 @@ class Beaker {
   bool use_log_formulation_;
 
   std::vector<double> sorption_isotherm_params_;
-  
-#ifdef GLENN
-  DirectSolver* solver;
-#endif
 };
 
 }  // namespace AmanziChemistry
 }  // namespace Amanzi
-#endif  // AMANZI_CHEMISTRY_BEAKER_HH_
+#endif

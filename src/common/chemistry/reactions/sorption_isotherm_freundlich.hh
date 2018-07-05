@@ -1,12 +1,20 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+/*
+  Chemistry 
+
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
+
+  Class for Freundlich isotherm
+*/
+
 #ifndef AMANZI_CHEMISTRY_SORPTION_ISOTHERM_FREUNDLICH_HH_
 #define AMANZI_CHEMISTRY_SORPTION_ISOTHERM_FREUNDLICH_HH_
 
 #include <vector>
 
 #include "sorption_isotherm.hh"
-
-// Class for Freundlich isotherm
 
 namespace Amanzi {
 namespace AmanziChemistry {
@@ -15,7 +23,7 @@ class SorptionIsothermFreundlich : public SorptionIsotherm {
  public:
   SorptionIsothermFreundlich();
   SorptionIsothermFreundlich(const double KD, const double n);
-  ~SorptionIsothermFreundlich();
+  ~SorptionIsothermFreundlich() {};
 
   // returns sorbed concentration
   double Evaluate(const Species& primarySpecies);
@@ -34,9 +42,8 @@ class SorptionIsothermFreundlich : public SorptionIsotherm {
   double KD_; // distribution coefficient
   double n_; // chemical-specific constant
   std::vector<double> params_;
-
-}; // SorptionIsothermFreundlich
+};
 
 }  // namespace AmanziChemistry
 }  // namespace Amanzi
-#endif  // AMANZI_CHEMISTRY_SORPTION_ISOTHERM_FREUNDLICH_HH_
+#endif

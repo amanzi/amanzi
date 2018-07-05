@@ -1,4 +1,12 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+/*
+  Chemistry 
+
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
+*/
+
 #include "newton.hh"
 
 namespace Amanzi {
@@ -10,11 +18,11 @@ Newton::Newton(const int n) {
   r_.resize(n);
   indices_.resize(n);
   vv_.resize(n);
-}  // end Newton constructor
+}
 
 void Newton::solve() {
   std::cout << "Solved!\n";
-}  // end solve()
+}
 
 
 void Newton::LUDecomposition(double** a, int n, int* indx) {
@@ -74,8 +82,7 @@ void Newton::LUDecomposition(double** a, int n, int* indx) {
       }
     }
   }
-}  // end ludcmp()
-
+}
 
 #undef TINY
 
@@ -103,7 +110,7 @@ void Newton::LUBackSolve(double** a, int n, int* indx, std::vector<double>* b) {
     }
     (*b)[i] = sum / a[i][i];
   }
-}  // end lubksb()
+}
 
 }  // namespace AmanziChemistry
 }  // namespace Amanzi

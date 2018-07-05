@@ -1,9 +1,17 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+/*
+  Chemistry 
+
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
+
+  Class for radioactive decay of aqueous and sorbed components.
+  Does not deal with decay of solid phase.
+*/
+ 
 #ifndef AMANZI_CHEMISTRY_RADIOACTIVE_DECAY_HH_
 #define AMANZI_CHEMISTRY_RADIOACTIVE_DECAY_HH_
-
-// Class for radioactive decay of aqueous and sorbed components. Does
-// not deal with decay of solid phase.
 
 #include <string>
 #include <vector>
@@ -19,13 +27,13 @@ class MatrixBlock;
 class RadioactiveDecay {
  public:
   RadioactiveDecay();
-  explicit RadioactiveDecay(std::string s);
+  explicit RadioactiveDecay(std::string s) {};
   RadioactiveDecay(const std::vector<SpeciesName> species_names,
                    const std::vector<int> species_ids,
                    const std::vector<double> stoichiometries,
                    const double half_life,
                    const std::string half_life_units);
-  ~RadioactiveDecay();
+  ~RadioactiveDecay() {};
 
   // update forward and reverse effective reaction rates
   void UpdateRate(const std::vector<double>& total,
@@ -49,8 +57,6 @@ class RadioactiveDecay {
   double rate(void) const { return rate_; }
   double rate_constant(void) const { return rate_constant_; }
 
- protected:
-
  private:
   void ConvertHalfLifeUnits(void);
   void ConvertHalfLifeToRateConstant(void);
@@ -67,4 +73,4 @@ class RadioactiveDecay {
 
 }  // namespace AmanziChemistry
 }  // namespace Amanzi
-#endif  // AMANZI_CHEMISTRY_RADIOACTIVE_DECAY_HH_
+#endif

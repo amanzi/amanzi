@@ -1,10 +1,18 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+/*
+  Chemistry 
+
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
+
+  Class for linear isotherm
+*/
+
 #ifndef AMANZI_CHEMISTRY_SORPTION_ISOTHERM_LINEAR_HH_
 #define AMANZI_CHEMISTRY_SORPTION_ISOTHERM_LINEAR_HH_
 
 #include "sorption_isotherm.hh"
-
-// Class for linear isotherm
 
 namespace Amanzi {
 namespace AmanziChemistry {
@@ -13,7 +21,7 @@ class SorptionIsothermLinear : public SorptionIsotherm {
  public:
   SorptionIsothermLinear();
   SorptionIsothermLinear(const double KD);
-  ~SorptionIsothermLinear();
+  ~SorptionIsothermLinear() {};
 
   void Init(const double KD);
   // returns sorbed concentration
@@ -32,9 +40,8 @@ class SorptionIsothermLinear : public SorptionIsotherm {
   // (currently) units = kg water/m^3 bulk
   double KD_; 
   std::vector<double> params_;
-
-}; // SorptionIsothermLinear
+};
 
 }  // namespace AmanziChemistry
 }  // namespace Amanzi
-#endif  // AMANZI_CHEMISTRY_SORPTION_ISOTHERM_LINEAR_HH_
+#endif

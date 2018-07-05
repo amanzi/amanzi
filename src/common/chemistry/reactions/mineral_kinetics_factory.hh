@@ -1,15 +1,17 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
-#ifndef AMANZI_CHEMISTRY_MINERAL_KINETICS_FACTORY_HH_
+/*
+  Chemistry 
 
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
+
+  Factory class for building a mineral kinetic rate object
+*/
+ 
+#ifndef AMANZI_CHEMISTRY_MINERAL_KINETICS_FACTORY_HH_
 #define AMANZI_CHEMISTRY_MINERAL_KINETICS_FACTORY_HH_
 
-/*******************************************************************************
- **
- **  File Name: MineralKineticsFactory.h
- **
- **  Description: factory class for building a mineral kinetic rate object
- **
- *******************************************************************************/
 #include <vector>
 #include <string>
 
@@ -25,7 +27,7 @@ class KineticRate;
 class MineralKineticsFactory {
  public:
   MineralKineticsFactory(void);
-  ~MineralKineticsFactory(void);
+  ~MineralKineticsFactory(void) {};
 
   KineticRate* Create(const std::string& rate_type,
                       const StringTokenizer& rate_data,
@@ -43,8 +45,6 @@ class MineralKineticsFactory {
     return this->debug_;
   };
 
- protected:
-
  private:
   bool debug_;
   static const std::string kTST;
@@ -52,4 +52,4 @@ class MineralKineticsFactory {
 
 }  // namespace AmanziChemistry
 }  // namespace Amanzi
-#endif     /* AMANZI_CHEMISTRY_MINERAL_KINETICS_FACTORY_HH_ */
+#endif

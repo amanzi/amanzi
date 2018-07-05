@@ -1,21 +1,27 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
-#include "sorption_isotherm_rxn.hh"
+/*
+  Chemistry 
+
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
+
+  Base class for sorption isotherm (linear, Langmuir, Freundlich)
+  reactions
+*/
 
 #include <cmath>
-#include <iostream>
 #include <iomanip>
+#include <iostream>
 #include <sstream>
 
 #include "chemistry_exception.hh"
-#include "matrix_block.hh"
-
 #include "exceptions.hh"
+#include "matrix_block.hh"
+#include "sorption_isotherm_rxn.hh"
 
 namespace Amanzi {
 namespace AmanziChemistry {
-
-SorptionIsothermRxn::SorptionIsothermRxn() {
-}
 
 SorptionIsothermRxn::SorptionIsothermRxn(const SpeciesName species_name, 
                                          const SpeciesId species_id,
@@ -25,31 +31,34 @@ SorptionIsothermRxn::SorptionIsothermRxn(const SpeciesName species_name,
       isotherm_(isotherm) {
 }
 
-SorptionIsothermRxn::~SorptionIsothermRxn() {
-}
 
 const std::vector<double>& SorptionIsothermRxn::GetIsothermParameters(void) const {
   return isotherm_->GetParameters();
 }
 
+
 void SorptionIsothermRxn::SetIsothermParameters(const std::vector<double>& params) {
   isotherm_->SetParameters(params);
 }
 
+
 void SorptionIsothermRxn::Update(const std::vector<Species>& primarySpecies) {
   sorbed_concentration_= (*isotherm_).Evaluate(primarySpecies.at(species_id_));
-}  // end Update()
+}
+
 
 void SorptionIsothermRxn::AddContributionToTotal(std::vector<double> *total) {
   (*total)[species_id_] += sorbed_concentration_;
-}  // end AddContributionToTotal()
+}
+
 
 void SorptionIsothermRxn::AddContributionToDTotal(
     const std::vector<Species>& primarySpecies,
     MatrixBlock* dtotal) {
   dtotal->AddValue(species_id_,species_id_,
       (*isotherm_).EvaluateDerivative(primarySpecies.at(species_id_)));
-}  // end AddContributionToDTotal()
+}
+
 
 void SorptionIsothermRxn::Display(void) const {
   std::stringstream message;
@@ -58,7 +67,7 @@ void SorptionIsothermRxn::Display(void) const {
           << std::setw(15);
   chem_out->Write(Teuchos::VERB_HIGH, message);
   isotherm_->Display();
-}  // end Display()
+}
 
 }  // namespace AmanziChemistry
 }  // namespace Amanzi

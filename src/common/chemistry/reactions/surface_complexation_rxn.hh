@@ -1,17 +1,21 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+/*
+  Chemistry 
+
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
+
+  Class for surface complexation reaction
+
+  Notes:
+  - Each instance of this class should contain a single unique
+    surface site (e.g. >FeOH) and ALL surface complexes associated
+    with that site!
+*/
+
 #ifndef AMANZI_CHEMISTRY_SURFACECOMPLEXATIONRXN_HH_
 #define AMANZI_CHEMISTRY_SURFACECOMPLEXATIONRXN_HH_
-
-/*
-** Class for surface complexation reaction
-**
-** Notes:
-**
-** - Each instance of this class should contain a single unique
-**   surface site (e.g. >FeOH) and ALL surface complexes associated with
-**   that site!
-**
-*/
 
 #include <vector>
 
@@ -30,7 +34,7 @@ class SurfaceComplexationRxn {
   SurfaceComplexationRxn(SurfaceSite* surface_sites,
                          const std::vector<SurfaceComplex>& surface_complexes);
   explicit SurfaceComplexationRxn(SurfaceSite surface_sites);
-  ~SurfaceComplexationRxn();
+  ~SurfaceComplexationRxn() {};
 
   // add complexes to the reaction
   void AddSurfaceComplex(SurfaceComplex surface_complex);
@@ -71,7 +75,6 @@ class SurfaceComplexationRxn {
   void DisplayResults(void) const;
 
  protected:
-
   void set_use_newton_solve(const bool b) {
     this->use_newton_solve_ = b;
   };
@@ -85,9 +88,9 @@ class SurfaceComplexationRxn {
   std::vector<SurfaceSite> surface_site_;
   bool use_newton_solve_;
 
-  //std::vector<double> dSx_dmi_;  // temporary storage for derivative calculations
+  // std::vector<double> dSx_dmi_;  // temporary storage for derivative calculations
 };
 
 }  // namespace AmanziChemistry
 }  // namespace Amanzi
-#endif  // AMANZI_CHEMISTRY_SURFACECOMPLEXATIONRXN_HH_
+#endif

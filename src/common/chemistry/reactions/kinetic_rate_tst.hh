@@ -1,24 +1,28 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
-#ifndef AMANZI_CHEMISTRY_KINETIC_RATE_TST_HH_
+/*
+  Chemistry 
 
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
+
+  Implementation of the TST rate law for mineral kinetics
+ 
+    R = k * A * Prod (a_i^m_i) * ( 1 - Q/Keq)
+ 
+  where:
+    R : reaction rate, [moles/sec]
+    Keq : equilibrium constant, [-]
+    Q : ion activity product, [-]
+    k : reaction rate constant, [moles m^2 s^-1]
+    A : reactive surface area, [m^2]
+    a_i : activity of modifying species (primary or secondary)
+    m_i : exponent of modifying species
+*/
+
+#ifndef AMANZI_CHEMISTRY_KINETIC_RATE_TST_HH_
 #define AMANZI_CHEMISTRY_KINETIC_RATE_TST_HH_
 
-/*******************************************************************************
- **
- **  Description: implementation of the TST rate law for mineral kinetics
- **
- **  R = k * A * Prod (a_i^m_i) * ( 1 - Q/Keq)
- **
- **  where:
- **    R : reaction rate, [moles/sec]
- **    Keq : equilibrium constant, [-]
- **    Q : ion activity product, [-]
- **    k : reaction rate constant, [moles m^2 s^-1]
- **    A : reactive surface area, [m^2]
- **    a_i : activity of modifying species (primary or secondary)
- **    m_i : exponent of modifying species
- **
- *******************************************************************************/
 #include <vector>
 
 #include "VerboseObject.hh"
@@ -39,7 +43,7 @@ class MatrixBlock;
 class KineticRateTST : public KineticRate {
  public:
   KineticRateTST(void);
-  virtual ~KineticRateTST(void);
+  virtual ~KineticRateTST(void) {};
 
   void Setup(const SecondarySpecies& reaction,
              const StringTokenizer& reaction_data,
@@ -62,9 +66,7 @@ class KineticRateTST : public KineticRate {
   ** end of KineticRate inherited interface
   */
 
-
  protected:
-
   void area(double set_area) {
     this->area_ = set_area;
   };
@@ -140,4 +142,4 @@ class KineticRateTST : public KineticRate {
 
 }  // namespace AmanziChemistry
 }  // namespace Amanzi
-#endif     /* AMANZI_CHEMISTRY_KINETIC_RATE_TST_HH_ */
+#endif

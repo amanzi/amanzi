@@ -1,15 +1,21 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+/*
+  Chemistry 
+
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
+
+  Base class for secondary species (aqueous equilibrium complexes,
+  minerals.
+*/
+ 
 #ifndef AMANZI_CHEMISTRY_SECONDARY_SPECIES_HH_
 #define AMANZI_CHEMISTRY_SECONDARY_SPECIES_HH_
-// Base class for secondary species (aqueous equilibrium complexes,
-// minerals)
 
 #include <vector>
 
 #include "species.hh"
-
-// forward declarations from outside chemistry
-
 
 namespace Amanzi {
 namespace AmanziChemistry {
@@ -31,7 +37,7 @@ class SecondarySpecies : public Species {
                    const double size,
                    const double logK);
 
-  virtual ~SecondarySpecies();
+  virtual ~SecondarySpecies() {};
 
   // update molalities
   virtual void Update(const std::vector<Species>& primary_species);
@@ -71,7 +77,6 @@ class SecondarySpecies : public Species {
   virtual void Display(void) const;
 
  protected:
-
   double log_to_ln(double d) {
     return d * 2.30258509299;
   }
@@ -99,4 +104,4 @@ class SecondarySpecies : public Species {
 
 }  // namespace AmanziChemistry
 }  // namespace Amanzi
-#endif  // AMANZI_CHEMISTRY_SECONDARY_SPECIES_HH_
+#endif

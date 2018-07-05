@@ -1,8 +1,16 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+/*
+  Chemistry 
+
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
+
+  Class for aqueous equilibrium complexation reaction
+*/
+
 #ifndef AMANZI_CHEMISTRY_SURFACECOMPLEX_HH_
 #define AMANZI_CHEMISTRY_SURFACECOMPLEX_HH_
-
-// Class for aqueous equilibrium complexation reaction
 
 #include <vector>
 
@@ -38,7 +46,7 @@ class SurfaceComplex {
                  SpeciesId free_site_id,
                  const double charge,
                  const double logK);
-  ~SurfaceComplex();
+  ~SurfaceComplex() {};
 
   // update molalities
   void Update(const std::vector<Species>& primarySpecies,
@@ -112,18 +120,13 @@ class SurfaceComplex {
     return this->surface_concentration_;
   };
 
- protected:
-
-
  private:
-
   double log_to_ln(double d) {
     return d * 2.30258509299;
   }
   double ln_to_log(double d) {
     return d * 0.434294481904;
   }
-
 
   SpeciesName name_;
   SpeciesId identifier_;
@@ -147,4 +150,4 @@ class SurfaceComplex {
 
 }  // namespace AmanziChemistry
 }  // namespace Amanzi
-#endif  // AMANZI_CHEMISTRY_SURFACECOMPLEX_HH_
+#endif
