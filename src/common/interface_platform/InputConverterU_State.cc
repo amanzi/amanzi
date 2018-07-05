@@ -21,6 +21,7 @@
 #include "exceptions.hh"
 #include "dbc.hh"
 
+#include "CommonDefs.hh"
 #include "InputConverterU.hh"
 #include "InputConverterU_Defs.hh"
 
@@ -59,20 +60,40 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
   bool flag;
   DOMNode* node = GetUniqueElementByTagsString_("phases, liquid_phase, viscosity", flag);
   double viscosity = GetTextContentD_(node, "Pa*s");
+  
   out_ic.sublist("fluid_viscosity").set<double>("value", viscosity);
 
+  out_ev.sublist("viscosity_liquid").sublist("function").sublist("All")
+    .set<std::string>("region", "All")
+    .set<std::string>("component", "cell")
+    .sublist("function").sublist("function-constant")
+    .set<double>("value", viscosity);
+  out_ev.sublist("viscosity_liquid")
+    .set<std::string>("field evaluator type", "independent variable");
+  
+ 
   // --- constant density
   node = GetUniqueElementByTagsString_("phases, liquid_phase, density", flag);
   rho_ = GetTextContentD_(node, "kg/m^3");
+
   out_ic.sublist("fluid_density").set<double>("value", rho_);
 
   out_ev.sublist("mass_density_liquid").sublist("function").sublist("All")
-      .set<std::string>("region", "All")
-      .set<std::string>("component", "cell")
-      .sublist("function").sublist("function-constant")
-      .set<double>("value", rho_);
+    .set<std::string>("region", "All")
+    .set<std::string>("component", "cell")
+    .sublist("function").sublist("function-constant")
+    .set<double>("value", rho_);
   out_ev.sublist("mass_density_liquid")
-        .set<std::string>("field evaluator type", "independent variable");
+    .set<std::string>("field evaluator type", "independent variable");
+
+  out_ev.sublist("molar_density_liquid").sublist("function").sublist("All")
+    .set<std::string>("region", "All")
+    .set<std::string>("component", "cell")
+    .sublist("function").sublist("function-constant")
+    .set<double>("value", rho_/CommonDefs::MOLAR_MASS_H2O);
+  out_ev.sublist("molar_density_liquid")
+    .set<std::string>("field evaluator type", "independent variable");
+  
 
   // --- region specific initial conditions from material properties
   std::map<std::string, int> reg2mat;

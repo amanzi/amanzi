@@ -2,16 +2,24 @@ import sys
 import matplotlib.pyplot as plt
 import numpy
 import math
+
+try:
+    sys.path.append('../../../../../../tools/amanzi_xml')
+except:
+    pass
+
 from amanzi_xml.observations.ObservationXML import ObservationXML as ObsXML
 from amanzi_xml.observations.ObservationData import ObservationData as ObsDATA
 import amanzi_xml.utils.search as search
-import prettytable
+
+#import prettytable
 
 # load the data from output file, which is in amanzi-output
-def load_amanzi_obs():
+def load_amanzi_obs(filename):
     # output_file=obs_xml.getObservationFilename()
-    output_file = "observations.out"
-    obs_data = ObsDATA("amanzi-output/" + output_file)
+    # output_file = "observations.out"
+    # obs_data = ObsDATA("amanzi-output/" + output_file)
+    obs_data = ObsDATA(filename)
     obs_data.getObservationData()
     return obs_data
 
@@ -32,13 +40,13 @@ def plottest(axes1, obstimes, obsdata, ana_data):
     ntime4 = len(obstimes[:,1])
 
     axes1.plot(numpy.log10(ana_data[0:ntime1,0]), ana_data[0:ntime1,1], '-r', label='Analitical Solution: r=24m')
-    axes1.plot(numpy.log10(obstimes[1:ntime4,1]), obsdata[1:ntime4,1], 'ro', label='Amanzi: r=24m')
+    axes1.plot(numpy.log10(obstimes[1:ntime3,0]), obsdata[1:ntime3,0], 'ro', label='Amanzi: r=24m')
     axes1.plot(numpy.log10(ana_data[ntime1+1:ntime2,0]), ana_data[ntime1+1:ntime2,1], '-b', label='Analytial Solution: r=100m')
-    axes1.plot(numpy.log10(obstimes[1:ntime3,0]), obsdata[1:ntime3,0], 'bo', label='Amanzi: r=100m')
-
+    axes1.plot(numpy.log10(obstimes[1:ntime4,1]), obsdata[1:ntime4,1], 'bo', label='Amanzi: r=100m')
+    
     axes1.legend(loc='lower right')
 
-if __name__ == "__main__":
+def RunTest():
 
     import os
     import run_amanzi_standard
@@ -49,7 +57,7 @@ if __name__ == "__main__":
     CWD = os.getcwd()
     try: 
         run_amanzi_standard.run_amanzi(input_file, 16, [input_file], run_dir)
-        obs_data = load_amanzi_obs()
+        obs_data = load_amanzi_obs(run_dir+"/observations.out")
 
         obsdata = []
         obstimes = []
@@ -68,9 +76,15 @@ if __name__ == "__main__":
         axes1=fig1.add_axes([.1,.1,.8,.8])
        
         plottest(axes1,obstimes, obsdata, ana_data)
-        # plt.show()
+        plt.savefig("boundedDomain_2d.png",format="png")
+        plt.show()
 
     finally:
         os.chdir(CWD)
+
+
+if __name__ == "__main__":
+
+    RunTest()
 
 

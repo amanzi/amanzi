@@ -105,8 +105,47 @@ def GetXY_CrunchFlow(path,root,cf_file,comp,ignore):
 
     return (xv, yv)
 
-# Main -------------------------------------------------------------------------------------
-if __name__ == "__main__":
+def RunAmanziUTest(root, input_file, path_to_amanzi, times):
+
+    import os,sys
+    try:
+        sys.path.append('../../../../tools/amanzi_xml')
+    except:
+        pass
+    import run_amanzi_standard
+    import numpy as np
+
+    x_amanzi = []
+    c_amanzi = []
+    Ca_amanzi = []
+    pH_amanzi  = []
+    VF_amanzi  = []
+
+    
+    run_amanzi_standard.run_amanzi(input_file, 1, ["calcite.bgd",input_file], path_to_amanzi)
+        
+    comp = 'total_component_concentration.cell.Ca++ conc'
+    for i, time in enumerate(times):
+        x_amanzi , c_amanzi  = GetXY_AmanziU(path_to_amanzi,root,comp)
+        Ca_amanzi  = Ca_amanzi  +[c_amanzi ]
+
+    comp = 'free_ion_species.cell.H+'
+    for i, time in enumerate(times):
+        x_amanzi , c_amanzi  = GetXY_AmanziU(path_to_amanzi,root,comp)
+        pH_amanzi  = pH_amanzi  +[-np.log10(c_amanzi )]
+
+    comp = 'mineral_volume_fractions.cell.Calcite vol frac'
+    for i, time in enumerate(times):
+        x_amanzi , c_amanzi  = GetXY_AmanziU(path_to_amanzi,root,comp)
+        VF_amanzi  = VF_amanzi  +[c_amanzi ]
+
+    complete = True
+    
+
+    return (complete, x_amanzi, Ca_amanzi, pH_amanzi, VF_amanzi)
+    
+
+def RunAllTests():
 
     import os,sys
     try:
@@ -477,4 +516,9 @@ if __name__ == "__main__":
 #    plt.savefig(local_path+"calcite_1d_2.png",format="png")
 
     #finally:
-    #    pass 
+    #    pass
+    
+# Main -------------------------------------------------------------------------------------
+if __name__ == "__main__":
+    
+    RunAllTests()

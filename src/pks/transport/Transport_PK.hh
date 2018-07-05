@@ -182,19 +182,32 @@ class Transport_PK : public PK_PhysicalExplicit<Epetra_Vector> {
 
  protected:
   Teuchos::RCP<TreeVector> soln_;
+
+  Key domain_name_;
+  Key saturation_key_;
+  Key prev_saturation_key_;
+  Key flux_key_;
+  Key darcy_flux_key_;
+  Key permeability_key_;
+  Key tcc_key_, tcc_matrix_key_;
+  Key porosity_key_, transport_porosity_key_;
+  Key molar_density_key_;
+  Key flux_fracture_key_, darcy_flux_fracture_key_;
+
  
  private:
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
   Teuchos::RCP<State> S_;
   std::string passwd_;
 
-  bool subcycling_, use_transport_porosity_;
+  bool subcycling_, use_transport_porosity_, use_variable_density_;
   int dim;
 
   Teuchos::RCP<CompositeVector> tcc_tmp;  // next tcc
   Teuchos::RCP<CompositeVector> tcc;  // smart mirrow of tcc 
   Teuchos::RCP<const Epetra_MultiVector> darcy_flux;
   Teuchos::RCP<const Epetra_MultiVector> ws, ws_prev, phi, transport_phi;
+  Teuchos::RCP<Epetra_MultiVector> mol_dens_, mol_dens_prev_;
   
 #ifdef ALQUIMIA_ENABLED
   Teuchos::RCP<AmanziChemistry::Alquimia_PK> chem_pk_;
