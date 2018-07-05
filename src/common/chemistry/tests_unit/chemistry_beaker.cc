@@ -41,7 +41,7 @@ SUITE(BeakerTests) {
 
     Beaker::BeakerParameters parameters = chem.GetDefaultParameters();
 
-    parameters.thermo_database_file = "carbonate.bgd";
+    parameters.thermo_database_file = "chemistry_beaker_carbonate.bgd";
     parameters.activity_model_name = ActivityModelFactory::unit;
 
     bool correct_exception = false;
@@ -108,7 +108,7 @@ SUITE(BeakerTests) {
 
     Beaker::BeakerParameters parameters = chem.GetDefaultParameters();
 
-    parameters.thermo_database_file = "carbonate.bgd";
+    parameters.thermo_database_file = "chemistry_beaker_carbonate.bgd";
     parameters.activity_model_name = "bad activity model name";
 
     bool correct_exception = false;

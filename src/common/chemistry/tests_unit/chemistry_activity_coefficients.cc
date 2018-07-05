@@ -1,11 +1,10 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
 #include <cstdlib>
 #include <cmath>
 #include <iostream>
-#include <vector>
 #include <typeinfo>
+#include <vector>
 
-#include <UnitTest++.h>
+#include "UnitTest++.h"
 
 #include "species.hh"
 #include "aqueous_equilibrium_complex.hh"
@@ -15,14 +14,9 @@
 #include "activity_model.hh"
 #include "chemistry_exception.hh"
 
-namespace Amanzi {
-namespace AmanziChemistry {
-namespace unit_tests {
 /*****************************************************************************
- **
- **  Common testing code
- **
- *****************************************************************************/
+*  Common testing code
+*****************************************************************************/
 namespace ac = Amanzi::AmanziChemistry;
 
 class ActivityModelTest {
@@ -115,17 +109,15 @@ void ActivityModelTest::RunTest(const std::string name, double * gamma) {
 
 
 /*!
-
   @namespace Amanzi::AmanziChemistry::unit_tests::ActivityModel
 
   @details Unit tests for the activity model base class, Amanzi::AmanziChemistry::ActivityModel
 
   @test ActivityModel
-
 */
+
 SUITE(amanzi_chemistry_unit_tests_ActivityModel) {
   /*!
-
     @class Amanzi::AmanziChemistry::unit_tests::ActivityModel::ActivityModel_IonicStrength
 
     @brief ActivityModel_IonicStrength
@@ -136,7 +128,6 @@ SUITE(amanzi_chemistry_unit_tests_ActivityModel) {
     0.025.
 
     @test ActivityModel::CalculateIonicStrength()
-
   */
   TEST_FIXTURE(ActivityModelTest, ActivityModel_IonicStrength) {
     set_activity_model_name(ac::ActivityModelFactory::unit);
@@ -144,11 +135,11 @@ SUITE(amanzi_chemistry_unit_tests_ActivityModel) {
     RunTest("H+", &gamma);
     // std::cout << "ionic strength: " << ionic_strength() << std::endl;
     CHECK_CLOSE(0.025, ionic_strength(), tolerance());
-  }  // end TEST_FIXTURE()
+  }
 }  // end SUITE(amanzi_chemistry_unit_tests_ActivityModel)
 
-/*!
 
+/*!
   @namespace Amanzi::AmanziChemistry::unit_tests::ActivityModelUnit
 
   @details Unit tests for class ActivityModelUnit.
@@ -157,8 +148,8 @@ SUITE(amanzi_chemistry_unit_tests_ActivityModel) {
   @f[ \gamma_i = 1.0 @f]
 
   @test ActivityModelUnit
-
 */
+
 SUITE(amanzi_chemistry_unit_tests_ActivityModelUnit) {
   /*!
     @brief ActivityModelUnit_H
@@ -168,14 +159,13 @@ SUITE(amanzi_chemistry_unit_tests_ActivityModelUnit) {
     @details Test calculation of unit activity coefficient for @f$ H^{+} @f$
 
     @test ActivityModelUnit::Evaluate()
-
   */
   TEST_FIXTURE(ActivityModelTest, ActivityModelUnit_H) {
     set_activity_model_name(ac::ActivityModelFactory::unit);
     double gamma;
     RunTest("H+", &gamma);
     CHECK_EQUAL(1.0, gamma);
-  }  // end TEST_FIXTURE()
+  }
 
   /*!
     @brief ActivityModelUnit_OH
@@ -185,14 +175,13 @@ SUITE(amanzi_chemistry_unit_tests_ActivityModelUnit) {
     @details Test calculation of unit activity coefficient for @f$ OH^{+} @f$
 
     @test ActivityModelUnit::Evaluate()
-
   */
   TEST_FIXTURE(ActivityModelTest, ActivityModelUnit_OH) {
     set_activity_model_name(ac::ActivityModelFactory::unit);
     double gamma;
     RunTest("OH-", &gamma);
     CHECK_EQUAL(1.0, gamma);
-  }  // end TEST_FIXTURE()
+  }
 
   /*!
     @brief ActivityModelUnit_Ca
@@ -202,14 +191,13 @@ SUITE(amanzi_chemistry_unit_tests_ActivityModelUnit) {
     @details Test calculation of unit activity coefficient for @f$ Ca^{+2} @f$
 
     @test ActivityModelUnit::Evaluate()
-
   */
   TEST_FIXTURE(ActivityModelTest, ActivityModelUnit_Ca) {
     set_activity_model_name(ac::ActivityModelFactory::unit);
     double gamma;
     RunTest("Ca++", &gamma);
     CHECK_EQUAL(1.0, gamma);
-  }  // end TEST_FIXTURE()
+  }
 
   /*!
     @brief ActivityModelUnit_SO4
@@ -219,14 +207,13 @@ SUITE(amanzi_chemistry_unit_tests_ActivityModelUnit) {
     @details Test calculation of unit activity coefficient for @f$ SO4^{-2} @f$
 
     @test ActivityModelUnit::Evaluate()
-
   */
   TEST_FIXTURE(ActivityModelTest, ActivityModelUnit_SO4) {
     set_activity_model_name(ac::ActivityModelFactory::unit);
     double gamma;
     RunTest("SO4--", &gamma);
     CHECK_EQUAL(1.0, gamma);
-  }  // end TEST_FIXTURE()
+  }
 
   /*!
     @brief ActivityModelUnit_Al
@@ -236,14 +223,13 @@ SUITE(amanzi_chemistry_unit_tests_ActivityModelUnit) {
     @details Test calculation of unit activity coefficient for @f$ Al^{+3} @f$
 
     @test ActivityModelUnit::Evaluate()
-
   */
   TEST_FIXTURE(ActivityModelTest, ActivityModelUnit_Al) {
     set_activity_model_name(ac::ActivityModelFactory::unit);
     double gamma;
     RunTest("Al+++", &gamma);
     CHECK_EQUAL(1.0, gamma);
-  }  // end TEST_FIXTURE()
+  }
 
   /*!
     @brief ActivityModelUnit_PO4
@@ -253,19 +239,17 @@ SUITE(amanzi_chemistry_unit_tests_ActivityModelUnit) {
     @details Test calculation of unit activity coefficient for @f$ PO4^{-3} @f$
 
     @test ActivityModelUnit::Evaluate()
-
   */
   TEST_FIXTURE(ActivityModelTest, ActivityModelUnit_PO4) {
     set_activity_model_name(ac::ActivityModelFactory::unit);
     double gamma;
     RunTest("PO4---", &gamma);
     CHECK_EQUAL(1.0, gamma);
-  }  // end TEST_FIXTURE()
-
+  }
 }  // end SUITE(amanzi_chemistry_unit_tests_ActivityModelUnit)
 
-/*!
 
+/*!
   @namespace Amanzi::AmanziChemistry::unit_tests::ActivityModelDebyeHuckel
 
   @details Test the calculation of the Debye-Huckel B-dot activity
@@ -290,8 +274,8 @@ SUITE(amanzi_chemistry_unit_tests_ActivityModelUnit) {
   for temperature dependance?
 
   @test ActivityModelDebyHuckel
-
 */
+
 SUITE(amanzi_chemistry_unit_tests_ActivityModelDebyeHuckel) {
   /*!
     @brief ActivityModelDebyeHuckel_H
@@ -307,7 +291,7 @@ SUITE(amanzi_chemistry_unit_tests_ActivityModelDebyeHuckel) {
     double gamma;
     RunTest("H+", &gamma);
     CHECK_CLOSE(0.88, gamma, 1.0e-2);
-  }  // end TEST_FIXTURE()
+  }
 
   /*!
     @brief ActivityModelDebyeHuckel_OH
@@ -323,37 +307,33 @@ SUITE(amanzi_chemistry_unit_tests_ActivityModelDebyeHuckel) {
     double gamma;
     RunTest("OH-", &gamma);
     CHECK_CLOSE(0.855, gamma, 1.0e-2);
-  }  // end TEST_FIXTURE()
+  }
 
   TEST_FIXTURE(ActivityModelTest, ActivityModelDebyeHuckel_Ca) {
     set_activity_model_name(ac::ActivityModelFactory::debye_huckel);
     double gamma;
     RunTest("Ca++", &gamma);
     CHECK_CLOSE(0.57, gamma, 1.0e-2);
-  }  // end TEST_FIXTURE()
+  }
 
   TEST_FIXTURE(ActivityModelTest, ActivityModelDebyeHuckel_SO4) {
     set_activity_model_name(ac::ActivityModelFactory::debye_huckel);
     double gamma;
     RunTest("SO4--", &gamma);
     CHECK_CLOSE(0.545, gamma, 1.0e-2);
-  }  // end TEST_FIXTURE()
+  }
 
   TEST_FIXTURE(ActivityModelTest, ActivityModelDebyeHuckel_Al) {
     set_activity_model_name(ac::ActivityModelFactory::debye_huckel);
     double gamma;
     RunTest("Al+++", &gamma);
     CHECK_CLOSE(0.325, gamma, 1.0e-2);
-  }  // end TEST_FIXTURE()
+  }
 
   TEST_FIXTURE(ActivityModelTest, ActivityModelDebyeHuckel_PO4) {
     set_activity_model_name(ac::ActivityModelFactory::debye_huckel);
     double gamma;
     RunTest("PO4---", &gamma);
     CHECK_CLOSE(0.25, gamma, 1.0e-2);
-  }  // end TEST_FIXTURE()
+  }
 }  // end SUITE(amanzi_chemistry_unit_tests_ActivityModelDebyeHuckel)
-
-}  // end namespace unit_tests
-}  // end namespace AmanziChemistry
-}  // end namespace Amanzi

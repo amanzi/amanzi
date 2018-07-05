@@ -1,9 +1,8 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
 #include <cstdlib>
 #include <cmath>
 #include <iostream>
-#include <vector>
 #include <typeinfo>
+#include <vector>
 
 #include <UnitTest++.h>
 
@@ -14,15 +13,7 @@
 #include "activity_model.hh"
 #include "chemistry_exception.hh"
 
-namespace Amanzi {
-namespace AmanziChemistry {
-namespace unit_tests {
-
-using std::vector;
-using std::string;
-
 SUITE(TestPitzer) {
-
   namespace ac = Amanzi::AmanziChemistry;
 
   class PitzerTest {
@@ -35,8 +26,8 @@ SUITE(TestPitzer) {
     ac::ActivityModel::ActivityModelParameters parameters;
     ac::ActivityModelFactory amfac_;
     ac::ActivityModel* am_;
-    vector<ac::Species> sp_;
-    vector<ac::AqueousEquilibriumComplex> aqx_;
+    std::vector<ac::Species> sp_;
+    std::vector<ac::AqueousEquilibriumComplex> aqx_;
 
     ac::Species H;
     ac::Species OH;
@@ -55,32 +46,29 @@ SUITE(TestPitzer) {
     ac::Species HSO4;
     ac::Species SO4;
     ac::Species Br;
-
-   protected:
-   private:
   };
 
   PitzerTest::PitzerTest() 
       : H(0, "H+", 1.0, 0.0, 0.0),
-      OH(1, "OH-", -1.0, 0.0, 0.0),
-      Cl(2, "Cl-", -1.0, 0.0, 0.0),
-      Na(3, "Na+", 1.0, 0.0, 0.0),
-      K(4, "K+", 1.0, 0.0, 0.0),
-      Ca(5, "Ca+2", 2.0, 0.0, 0.0),
-      Mg(6, "Mg+2", 2.0, 0.0, 0.0),
-      CO3(7, "CO3-2", -2.0, 0.0, 0.0),
-      CO2(8, "CO2", 0.0, 0.0, 0.0),
-      HCO3(9, "HCO3-", -1.0, 0.0, 0.0),
-      MgOH(10, "MgOH+", 1.0, 0.0, 0.0),
-      MgCO3(11, "MgCO3", 0.0, 0.0, 0.0),
-      CaCO3(12, "CaCO3", 0.0, 0.0, 0.0),
-      H2O(13, "H2O", 0.0, 0.0, 0.0),
-      HSO4(13, "HSO4-", -1.0,0.0,0.0),
-      SO4(14, "SO4-2", -2.0,0.0,0.0),
-      Br(16, "Br-", -1.0, 0.0, 0.0) {
-    //parameters.verbosity = kDebugActivityModel;
-    parameters.verbosity = kSilent;
-    parameters.database_filename = "phreeqc_pitzer.dat";
+        OH(1, "OH-", -1.0, 0.0, 0.0),
+        Cl(2, "Cl-", -1.0, 0.0, 0.0),
+        Na(3, "Na+", 1.0, 0.0, 0.0),
+        K(4, "K+", 1.0, 0.0, 0.0),
+        Ca(5, "Ca+2", 2.0, 0.0, 0.0),
+        Mg(6, "Mg+2", 2.0, 0.0, 0.0),
+        CO3(7, "CO3-2", -2.0, 0.0, 0.0),
+        CO2(8, "CO2", 0.0, 0.0, 0.0),
+        HCO3(9, "HCO3-", -1.0, 0.0, 0.0),
+        MgOH(10, "MgOH+", 1.0, 0.0, 0.0),
+        MgCO3(11, "MgCO3", 0.0, 0.0, 0.0),
+        CaCO3(12, "CaCO3", 0.0, 0.0, 0.0),
+        H2O(13, "H2O", 0.0, 0.0, 0.0),
+        HSO4(13, "HSO4-", -1.0,0.0,0.0),
+        SO4(14, "SO4-2", -2.0,0.0,0.0),
+        Br(16, "Br-", -1.0, 0.0, 0.0) {
+    parameters.verbosity = ac::kSilent;
+    // parameters.database_filename = "phreeqc_pitzer.dat";
+    parameters.database_filename = "chemistry_pitzer.dat";
     parameters.pitzer_jfunction = "pitzer1975";
   }
 
@@ -129,10 +117,10 @@ SUITE(TestPitzer) {
     H2O.update(1.0);
     StorePrimaries();
     aqx_.clear();
-    vector<double> gamma(sp_.size(), 1.0);
+    std::vector<double> gamma(sp_.size(), 1.0);
 
     am_ = amfac_.Create("pitzer-hwm", parameters, sp_, aqx_);
-    if (parameters.verbosity > kSilent) {
+    if (parameters.verbosity > ac::kSilent) {
       am_->Display();
     }
     am_->CalculateActivityCoefficients(&sp_, &aqx_, &H2O);
@@ -157,6 +145,7 @@ SUITE(TestPitzer) {
     CHECK_CLOSE(-0.437, gamma[8], 1.0e-2);  // HCO3
     CHECK_CLOSE(-0.055, actw, 1.0e-2);  // H2O
   }
+
   /*!
     @class Amanzi::AmanziChemistry::unit_tests::ActivityModelPitzer::TestComputeActivityCoeff_System_II
 
@@ -188,10 +177,10 @@ SUITE(TestPitzer) {
     sp_.push_back(HSO4);
     sp_.push_back(SO4);
     aqx_.clear();
-    vector<double> gamma(sp_.size(), 1.0);
+    std::vector<double> gamma(sp_.size(), 1.0);
 
     am_ = amfac_.Create("pitzer-hwm", parameters, sp_, aqx_);
-    if (parameters.verbosity > kSilent) {
+    if (parameters.verbosity > ac::kSilent) {
       am_->Display();
     }
 
@@ -218,6 +207,7 @@ SUITE(TestPitzer) {
     CHECK_CLOSE(-1.823, gamma[15], 1.0e-2);  // SO4
     CHECK_CLOSE(-0.055, actw, 1.0e-2);  // H2O
   }
+
   /*!
     @class Amanzi::AmanziChemistry::unit_tests::ActivityModelPitzer::TestComputeActivityCoeff_System_III
 
@@ -252,10 +242,10 @@ SUITE(TestPitzer) {
     sp_.push_back(HSO4);
     sp_.push_back(SO4);
     sp_.push_back(Br);
-    vector<double> gamma(sp_.size(), 1.0);
+    std::vector<double> gamma(sp_.size(), 1.0);
 
     am_ = amfac_.Create("pitzer-hwm", parameters, sp_, aqx_);
-    if (parameters.verbosity > kSilent) {
+    if (parameters.verbosity > ac::kSilent) {
       am_->Display();
     }
 
@@ -282,6 +272,7 @@ SUITE(TestPitzer) {
     CHECK_CLOSE(-0.038, gamma[16], 1.0e-2);  // Br
     CHECK_CLOSE(-0.13, actw, 1.0e-2);  // H2O
   }
+
   /*!
     @class Amanzi::AmanziChemistry::unit_tests::ActivityModelPitzer::TestInvalidActivityModel
 
@@ -303,6 +294,7 @@ SUITE(TestPitzer) {
     sp_.push_back(Na);
     CHECK_THROW(am_ = amfac_.Create("invalid activity model", parameters, sp_, aqx_), ac::ChemistryException);
   }
+
   /*!
     @class Amanzi::AmanziChemistry::unit_tests::ActivityModelPitzer::TestInvalidDatabase
 
@@ -325,6 +317,7 @@ SUITE(TestPitzer) {
     parameters.database_filename = "invalid data base";
     CHECK_THROW(am_ = amfac_.Create("pitzer-hwm", parameters, sp_, aqx_), ac::ChemistryException);
   }
+
   /*!
     @class Amanzi::AmanziChemistry::unit_tests::ActivityModelPitzer::TestZeroNumberSpecies
 
@@ -357,10 +350,10 @@ SUITE(TestPitzer) {
     sp_.clear();
     sp_.push_back(Cl);
     sp_.push_back(Na);
-    vector<double> gamma(sp_.size(), 1.0);
+    std::vector<double> gamma(sp_.size(), 1.0);
 
     am_ = amfac_.Create("pitzer-hwm", parameters, sp_, aqx_);
-    if (parameters.verbosity > kSilent) {
+    if (parameters.verbosity > ac::kSilent) {
       am_->Display();
     }
     CHECK_THROW(am_->CalculateActivityCoefficients(&sp_, &aqx_, &H2O), ac::ChemistryException);
@@ -389,9 +382,9 @@ SUITE(TestPitzer) {
     sp_.push_back(Cl);
     sp_.push_back(Na);
     sp_.push_back(Ca);
-    vector<double> gamma(sp_.size(), 1.0);
+    std::vector<double> gamma(sp_.size(), 1.0);
     am_ = amfac_.Create("pitzer-hwm", parameters, sp_, aqx_);
-    if (parameters.verbosity > kSilent) {
+    if (parameters.verbosity > ac::kSilent) {
       am_->Display();
     }
     sp_.pop_back();
@@ -399,6 +392,3 @@ SUITE(TestPitzer) {
   }
 }  // end SUITE(TestPitzer)
 
-}
-}
-}
