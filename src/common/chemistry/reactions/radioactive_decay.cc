@@ -3,11 +3,14 @@
 
 #include <cmath>
 #include <cassert>
-
 #include <sstream>
 #include <iostream>
 #include <iomanip>
 
+// TPLs
+#include "boost/algorithm/string.hpp"
+
+// Chemistry
 #include "matrix_block.hh"
 #include "chemistry_utilities.hh"
 #include "chemistry_exception.hh"
@@ -71,20 +74,15 @@ void RadioactiveDecay::ConvertHalfLifeUnits(void) {
   double conversion = 1.0;
   std::string units = half_life_units_;
   utilities::RemoveLeadingAndTrailingWhitespace(&units);
-  if (utilities::CaseInsensitiveStringCompare(units, "years") ||
-      utilities::CaseInsensitiveStringCompare(units, "y")) {
+  if (boost::iequals(units, "years") || boost::iequals(units, "y")) {
     conversion = 365.0 * 24.0 * 60.0 * 60.0; 
-  } else if (utilities::CaseInsensitiveStringCompare(units, "days") ||
-             utilities::CaseInsensitiveStringCompare(units, "d")) {
+  } else if (boost::iequals(units, "days") || boost::iequals(units, "d")) {
     conversion = 24.0 * 60.0 * 60.0;
-  } else if (utilities::CaseInsensitiveStringCompare(units, "hours") ||
-             utilities::CaseInsensitiveStringCompare(units, "h")) {
+  } else if (boost::iequals(units, "hours") || boost::iequals(units, "h")) {
     conversion = 60.0 * 60.0;
-  } else if (utilities::CaseInsensitiveStringCompare(units, "minutes") ||
-             utilities::CaseInsensitiveStringCompare(units, "m")) {
+  } else if (boost::iequals(units, "minutes") || boost::iequals(units, "m")) {
     conversion = 60.0;
-  } else if (utilities::CaseInsensitiveStringCompare(units, "seconds") ||
-             utilities::CaseInsensitiveStringCompare(units, "s")) {
+  } else if (boost::iequals(units, "seconds") || boost::iequals(units, "s")) {
     conversion = 1.0;
   } else {
     std::stringstream message;

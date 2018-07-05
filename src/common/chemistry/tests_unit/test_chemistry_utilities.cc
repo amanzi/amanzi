@@ -1,9 +1,8 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
 #include <cstdlib>
-
 #include <string>
 
-#include <UnitTest++.h>
+#include "UnitTest++.h"
+#include "boost/algorithm/string.hpp"
 
 #include "chemistry_utilities.hh"
 
@@ -15,9 +14,9 @@ SUITE(amanzi_chemistry_unit_tests_ChemistryUtilities) {
     std::string       test1("The Quick Brown Fox Jumps Over The Lazy Dog.");
     std::string       test3("This is a test. This is only a test. Failure");
     std::string       test2("This is a test.");
-    CHECK(acu::CaseInsensitiveStringCompare(base_string, test1));
-    CHECK(!acu::CaseInsensitiveStringCompare(base_string, test2));
-    CHECK(!acu::CaseInsensitiveStringCompare(base_string, test3));
+    CHECK(boost::iequals(base_string, test1));
+    CHECK(!boost::iequals(base_string, test2));
+    CHECK(!boost::iequals(base_string, test3));
   }  // end TEST(CaseInsensitiveStringCompare)
 
   TEST(TestUtilities_CompareFabs) {

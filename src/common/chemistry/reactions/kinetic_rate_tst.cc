@@ -1,5 +1,3 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
-
 /*******************************************************************************
  **
  **  Description: implementation of the TST rate law for mineral kinetics
@@ -63,21 +61,24 @@
  **    - TODO(bandre): where should the mineral mass get updated at....?
  **
  *******************************************************************************/
-#include "kinetic_rate_tst.hh"
-
 #include <cmath>
 #include <cstdlib>
-
 #include <sstream>
 #include <iostream>
 #include <sstream>
 
+// TPLs
+#include "boost/algorithm/string.hpp"
+
+// Chemistry
 #include "secondary_species.hh"
 #include "matrix_block.hh"
 #include "string_tokenizer.hh"
 #include "chemistry_verbosity.hh"
 #include "chemistry_utilities.hh"
 #include "chemistry_exception.hh"
+
+#include "kinetic_rate_tst.hh"
 
 namespace Amanzi {
 namespace AmanziChemistry {
@@ -334,10 +335,10 @@ void KineticRateTST::ParseParameters(const StringTokenizer& reaction_data) {
       // what units do we have [moles/cm^2/sec] or [moles/m^2/sec]? We
       // need to set [moles/m^2/sec]!
       std::string units = st.at(2);
-      if (utilities::CaseInsensitiveStringCompare(units, "moles/cm^2/sec")) {
+      if (boost::iequals(units, "moles/cm^2/sec")) {
         // add 4 in log10 space to convert cm^-2 m^-2
         value += 4.0;
-      } else if (utilities::CaseInsensitiveStringCompare(units, "moles/m^2/sec")) {
+      } else if (boost::iequals(units, "moles/m^2/sec")) {
         // no change
       } else {
         std::ostringstream error_stream;

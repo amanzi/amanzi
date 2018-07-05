@@ -25,8 +25,6 @@ namespace utilities {
  **  Custom comparison operators
  **
  ******************************************************************************/
-bool CaseInsensitiveStringCompare(const std::string& string1, 
-                                  const std::string& string2);
 bool CompareFabs(const double& a, const double& b);
 
 /*******************************************************************************

@@ -11,32 +11,6 @@ namespace Amanzi {
 namespace AmanziChemistry {
 namespace utilities {
 
-/*******************************************************************************
- **
- **  Custom comparison operators
- **
- ******************************************************************************/
-bool CaseInsensitiveStringCompare(const std::string& string1, 
-                                  const std::string& string2) {
-  // really CaseInsensitiveStringsEqual...
-
-  // if not the same length, not the same. don't bother checking
-  // individual characters
-  if (string1.size() != string2.size()) {
-    return false;
-  }
-  // loop through each string, check each character individually.
-  std::string::const_iterator char1, char2;
-  for (char1 = string1.begin(), char2 = string2.begin(); 
-       char1 != string1.end(); ++char1, ++char2) {
-    if (std::tolower(*char1) != std::tolower(*char2)) {
-      return false;
-    }
-  }
-  return true;
-}  // end CaseInsensitiveStringCompare()
-
-
 bool CompareFabs(const double& a, const double& b) {
   /* for use with stl algorithms such as max element. Must "return
    * true if the first argument is to be considered less than the

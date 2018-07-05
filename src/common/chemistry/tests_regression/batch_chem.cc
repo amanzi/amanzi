@@ -1,11 +1,4 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
-#include "batch_chem.hh"
-
-#ifdef WINDOWS
-#include "xgetopt.hh"
-#else
 #include <unistd.h>
-#endif
 
 //#define ABORT_ON_FLOATING_POINT_EXCEPTIONS
 #ifdef __APPLE__
@@ -14,7 +7,6 @@
 
 #include <cstdlib>
 #include <cctype>
-
 #include <iostream>
 #include <iomanip>
 #include <fstream>
@@ -22,9 +14,12 @@
 #include <string>
 #include <stdexcept>
 
+// TPLs
 #include "VerboseObject_objs.hh"
 #include "VerboseObject.hh"
+#include "boost/algorithm/string.hpp"
 
+// Chemistry
 #include "simple_thermo_database.hh"
 #include "beaker.hh"
 #include "activity_model_factory.hh"
@@ -32,6 +27,8 @@
 #include "chemistry_utilities.hh"
 #include "chemistry_exception.hh"
 #include "string_tokenizer.hh"
+
+#include "batch_chem.hh"
 
 // create a global ChemistryOutput* pointer in the Amanzi::chemisry
 // namespace that can be used by an other chemistry object
@@ -608,9 +605,9 @@ void SetupTextOutput(const SimulationParameters& simulation_params,
                      std::fstream* text_output, char* time_units,
                      double* time_units_conversion) {
   // are we writting to observations to a text file?
-  if (ac::utilities::CaseInsensitiveStringCompare(simulation_params.text_output, "true") ||
-      ac::utilities::CaseInsensitiveStringCompare(simulation_params.text_output, "yes") ||
-      ac::utilities::CaseInsensitiveStringCompare(simulation_params.text_output, "on")) {
+  if (boost::iequals(simulation_params.text_output, "true") ||
+      boost::iequals(simulation_params.text_output, "yes") ||
+      boost::iequals(simulation_params.text_output, "on")) {
     // generate the output file name:
     size_t position = input_file_name.find_last_of('.');
     std::string text_output_name = input_file_name.substr(0, position) + ".txt";
