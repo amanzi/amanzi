@@ -63,7 +63,6 @@ ExternalProject_Add(${CRUNCHTOPE_BUILD_TARGET}
                                   -DCMAKE_C_FLAGS:STRING=${Amanzi_COMMON_CFLAGS}  # Ensure uniform build
                                   -DCMAKE_C_COMPILER:FILEPATH=${CMAKE_C_COMPILER}
                                   -DCMAKE_Fortran_COMPILER:FILEPATH=${CMAKE_Fortran_COMPILER}
-
                     # -- Build
                     BINARY_DIR      ${CRUNCHTOPE_build_dir}           # Build directory 
                     BUILD_COMMAND   $(MAKE)

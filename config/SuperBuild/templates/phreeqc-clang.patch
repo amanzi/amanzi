@@ -1,0 +1,36 @@
+diff -ruNbB phreeqc-3.4.0/Tests/advection_c.c phreeqc-3.4.0-source/Tests/advection_c.c
+--- phreeqc-3.4.0/Tests/advection_c.c	2017-11-09 03:47:33.000000000 -0700
++++ phreeqc-3.4.0-source/Tests/advection_c.c	2018-07-05 22:01:23.000000000 -0600
+@@ -1,7 +1,7 @@
+ #if defined(USE_MPI)
+ #include <mpi.h>
+ #endif
+-#include <malloc.h>
++// #include <malloc.h>
+ #include <string.h>
+ #include <stdio.h>
+ #include <stdlib.h>
+diff -ruNbB phreeqc-3.4.0/Tests/species_c.c phreeqc-3.4.0-source/Tests/species_c.c
+--- phreeqc-3.4.0/Tests/species_c.c	2017-11-09 03:47:33.000000000 -0700
++++ phreeqc-3.4.0-source/Tests/species_c.c	2018-07-05 22:01:49.000000000 -0600
+@@ -1,7 +1,7 @@
+ #if defined(USE_MPI)
+ #include <mpi.h>
+ #endif
+-#include <malloc.h>
++// #include <malloc.h>
+ #include <string.h>
+ #include <stdio.h>
+ #include <stdlib.h>
+diff -ruNbB phreeqc-3.4.0/src/RM_interface_F.cpp phreeqc-3.4.0-source/src/RM_interface_F.cpp
+--- phreeqc-3.4.0/src/RM_interface_F.cpp	2017-11-09 03:47:33.000000000 -0700
++++ phreeqc-3.4.0-source/src/RM_interface_F.cpp	2018-07-05 21:56:52.000000000 -0600
+@@ -250,7 +250,7 @@
+ 	{
+ 		if (chem_name != NULL)
+ 		{
+-			if (l1 > 0 && *num > 0 && *num <= Reaction_module_ptr->GetComponentCount())
++			if (*l1 > 0 && *num > 0 && *num <= Reaction_module_ptr->GetComponentCount())
+ 			{
+ 				rmpadfstring(chem_name, Reaction_module_ptr->GetComponents()[*num - 1].c_str(), (unsigned int) *l1);
+ 				return IRM_OK;

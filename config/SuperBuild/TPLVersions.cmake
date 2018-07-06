@@ -115,6 +115,8 @@
 #   0.95.4       - update Boost to version 1.67.0
 #   0.95.5       - update NetCDF to version 4.6.1
 
+#   0.96.0       - added new geochemistry package PHREEQC
+
 include(CMakeParseArguments)
 
 MACRO(LIST_LENGTH var)
@@ -495,4 +497,16 @@ set(CRUNCHTOPE_URL_STRING    ${AMANZI_TPLS_DOWNLOAD_URL})
 set(CRUNCHTOPE_ARCHIVE_FILE  CrunchTope_160915-c31ecb9.tgz)
 set(CRUNCHTOPE_SAVEAS_FILE   ${CRUNCHTOPE_ARCHIVE_FILE})
 set(CRUNCHTOPE_MD5_SUM       84c38ca70da8f0e14cce3841dbbb4c0b)
+
+#
+# TPL: PHREEQC
+#
+set(PHREEQC_VERSION_MAJOR 3)
+set(PHREEQC_VERSION_MINOR 4)
+set(PHREEQC_VERSION_PATCH 0)
+set(PHREEQC_VERSION  ${PHREEQC_VERSION_MAJOR}.${PHREEQC_VERSION_MINOR}.${PHREEQC_VERSION_PATCH})
+set(PHREEQC_URL_STRING  "ftp://brrftp.cr.usgs.gov/pub/charlton/phreeqcrm/")
+set(PHREEQC_ARCHIVE_FILE  phreeqcrm-3.4.0-12927.tar.gz)
+set(PHREEQC_SAVEAS_FILE   phreeqc-3.4.0.tar.gz)
+set(PHREEQC_MD5_SUM       b0adb101c5d2d6853b5ea7325a9d8cf3)
 

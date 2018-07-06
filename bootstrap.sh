@@ -124,6 +124,7 @@ hypre=${TRUE}
 alquimia=${FALSE}
 pflotran=${FALSE}
 crunchtope=${FALSE}
+phreeqc=${FALSE}
 shared=${FALSE}
 spacedim=2
 silo=${FALSE}
@@ -330,6 +331,7 @@ Value in brackets indicates default setting.
 
   pflotran                build the PFlotran geochemistry backend ['"${pflotran}"']
   crunchtope              build the CrunchTope geochemistry backend ['"${crunchtope}"']
+  phreeqc                 build the PHREEQC geochemistry backend ['"${phreeqc}"']
   alquimia                build the Alquimia geochemistry solver APIs ['"${alquimia}"']
 
   physics		  build subset of Amanzi used in ATS ['"${physics}"']
@@ -476,6 +478,7 @@ Build Features:
     alquimia            ='"${alquimia}"'
     pflotran            ='"${pflotran}"'
     crunchtope          ='"${crunchtope}"'
+    phreeqc             ='"${phreeqc}"'
     physics             ='"${physics}"'
     Spack               ='"${Spack}"'
     xsdk                ='"${xsdk}"'
@@ -1451,6 +1454,7 @@ if [ -z "${tpl_config_file}" ]; then
       -DENABLE_ALQUIMIA:BOOL=${alquimia} \
       -DENABLE_PFLOTRAN:BOOL=${pflotran} \
       -DENABLE_CRUNCHTOPE:BOOL=${crunchtope} \
+      -DENABLE_PHREEQC:BOOL=${phreeqc} \
       -DENABLE_Silo:BOOL=${silo} \
       -DENABLE_SPACK:BOOL=${Spack} \
       -DSPACK_BINARY:STRING=${Spack_binary} \
@@ -1559,6 +1563,7 @@ cmd_configure="${cmake_binary} \
     -DENABLE_ALQUIMIA:BOOL=${alquimia} \
     -DENABLE_PFLOTRAN:BOOL=${pflotran} \
     -DENABLE_CRUNCHTOPE:BOOL=${crunchtope} \
+    -DENABLE_PHREEQC:BOOL=${phreeqc} \
     -DENABLE_Physics:BOOL=${physics} \
     -DBUILD_SHARED_LIBS:BOOL=${shared} \
     -DCCSE_BL_SPACEDIM:INT=${spacedim} \

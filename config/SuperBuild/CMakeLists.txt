@@ -796,6 +796,11 @@ else()
 
 endif()
 
+# Additional geochemical engine (stand-alone for a moment)
+if (ENABLE_PHREEQC)
+  include(${SuperBuild_BUILD_FILES_DIR}/Build_PHREEQC.cmake)
+endif()
+
 
 # ############################################################################ #
 #  Final steps
