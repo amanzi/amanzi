@@ -1860,7 +1860,7 @@ RichardMatFDColoringApply(Mat J,MatFDColoring coloring,Vec x1,void *sctx)
   }
 
   x1_tmp = x1; 
-  if (!coloring->vscale){ 
+  if (!coloring->vscale) {
     ierr = VecDuplicate(x1_tmp,&coloring->vscale);CHKPETSC(ierr);
   }
 
@@ -1896,9 +1896,9 @@ RichardMatFDColoringApply(Mat J,MatFDColoring coloring,Vec x1,void *sctx)
     Vec& SolnTypV = rs->GetSolnTypV();
     ierr = VecGetArray(SolnTypV,&solnTyp_array);CHKPETSC(ierr);
     ierr = VecGetArray(coloring->vscale,&vscale_array);CHKPETSC(ierr);
-    if (ctype == IS_COLORING_LOCAL){
+    if (ctype == IS_COLORING_LOCAL) {
       col_start = 0; col_end = N;
-    } else if (ctype == IS_COLORING_GLOBAL){
+    } else if (ctype == IS_COLORING_GLOBAL) {
       solnTyp_array = solnTyp_array - start;
       vscale_array = vscale_array - start;
       col_start = start; col_end = N + start;
@@ -1914,7 +1914,7 @@ RichardMatFDColoringApply(Mat J,MatFDColoring coloring,Vec x1,void *sctx)
     ierr = VecRestoreArray(SolnTypV,&solnTyp_array);CHKPETSC(ierr);
   }
 
-  if (ctype == IS_COLORING_GLOBAL){
+  if (ctype == IS_COLORING_GLOBAL) {
     ierr = VecGhostUpdateBegin(coloring->vscale,INSERT_VALUES,SCATTER_FORWARD);CHKPETSC(ierr);
     ierr = VecGhostUpdateEnd(coloring->vscale,INSERT_VALUES,SCATTER_FORWARD);CHKPETSC(ierr);
   }
@@ -2113,7 +2113,7 @@ SemiAnalyticMatFDColoringApply(Mat J,MatFDColoring coloring,Vec x1,void *sctx)
   }
 
   x1_tmp = x1; 
-  if (!coloring->vscale){ 
+  if (!coloring->vscale) {
     ierr = VecDuplicate(x1_tmp,&coloring->vscale);CHKPETSC(ierr);
   }
 
@@ -2161,7 +2161,7 @@ SemiAnalyticMatFDColoringApply(Mat J,MatFDColoring coloring,Vec x1,void *sctx)
   ierr = VecSet(coloring->vscale,1); CHKPETSC(ierr);
   ierr = VecScale(coloring->vscale,1/epsilon); CHKPETSC(ierr);
 
-  if (ctype == IS_COLORING_GLOBAL){
+  if (ctype == IS_COLORING_GLOBAL) {
     ierr = VecGhostUpdateBegin(coloring->vscale,INSERT_VALUES,SCATTER_FORWARD);CHKPETSC(ierr);
     ierr = VecGhostUpdateEnd(coloring->vscale,INSERT_VALUES,SCATTER_FORWARD);CHKPETSC(ierr);
   }
@@ -2356,11 +2356,11 @@ MatSqueeze(Mat& J,
   const PetscInt *Jcols;
   const PetscScalar *Jvals;
   PetscReal dtol = 1.e-20;
-  for (int row=rstart; row<rend; row++){
+  for (int row=rstart; row<rend; row++) {
     Array<PetscInt> Acols(0);
     Array<PetscReal> Avals(0);
     ierr = MatGetRow(J,row,&Jncols,&Jcols,&Jvals);CHKPETSC(ierr);
-    for (int j=0; j<Jncols; j++){
+    for (int j=0; j<Jncols; j++) {
       PetscScalar Jval = Jvals[j];
       if (std::abs(Jval) > dtol) {
 	Acols.push_back(Jcols[j]);

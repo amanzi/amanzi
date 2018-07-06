@@ -171,7 +171,7 @@ void PK_DomainFunctionSimpleWell<FunctionBase>::Compute(double t0, double t1)
         for (int i = 0; i != dim; ++i) args[i + 1] = xc[i];
 
         double bhp;
-        for (int i = 0; i < nfun; ++i){
+        for (int i = 0; i < nfun; ++i) {
           bhp = (*(*uspec)->first->second)(args)[i] + rho_ * g * (depth_ - xc[dim-1]);
           val_vec[i] = bhp * wi[0][*c] / mesh_->cell_volume(*c);
         }

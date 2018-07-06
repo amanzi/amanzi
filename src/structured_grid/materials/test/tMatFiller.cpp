@@ -344,9 +344,9 @@ main (int   argc,
   else {
     if (case_size=="medium") {
       nLevs = 3;
-    } else if (case_size=="large"){
+    } else if (case_size=="large") {
       nLevs = 4;
-    } else if (case_size=="xlarge"){
+    } else if (case_size=="xlarge") {
       nLevs = 5;
     }
     else {

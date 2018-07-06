@@ -3685,7 +3685,7 @@ void Mesh_MSTK::init_face_map()
       int gid = MEnt_GlobalID(ment);
       if (manifold_dimension() == 3) {
         List_ptr fregs = MF_Regions((MFace_ptr) ment);
-        if (List_Num_Entries(fregs) == 1){
+        if (List_Num_Entries(fregs) == 1) {
           gl_id[nnotowned_bnd++] = gid-1;
         }                
         if (fregs)
@@ -3710,8 +3710,8 @@ void Mesh_MSTK::init_face_map()
     int n_extface_w_ghosts = extface_map_wo_ghosts_ -> NumMyElements();
 
     //Add to maping only external faces (which belong to local mapping on other processors
-    for (int k=0; k < nnotowned_bnd; k++){
-      if (pr_id[k] >= 0){
+    for (int k=0; k < nnotowned_bnd; k++) {
+      if (pr_id[k] >= 0) {
         n_extface_w_ghosts++;
       }
     }
@@ -3724,8 +3724,8 @@ void Mesh_MSTK::init_face_map()
 
     //Add to maping only external faces (which belong to local mapping on other processors
     int l=0;
-    for (int k=0; k < nnotowned_bnd; k++){
-      if (pr_id[k] >= 0){
+    for (int k=0; k < nnotowned_bnd; k++) {
+      if (pr_id[k] >= 0) {
         global_id_ghosted[n_extface + l] = gl_id[k];
         l++;
       }
