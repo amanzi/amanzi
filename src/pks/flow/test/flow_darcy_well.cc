@@ -350,7 +350,7 @@ TEST(FLOW_3D_DARCY_PEACEMAN_WELL) {
   // steady_state solution
   double t_old(0.0), t_new(0.5), dt(0.5);
 
-  DPK->SolveFullySaturatedProblem(*S->GetFieldData("pressure", "flow"));
+  DPK->SolveFullySaturatedProblem(*S->GetFieldData("pressure", "flow"), true);
 
   t_old = t_new;
   const Epetra_MultiVector& p = *S->GetFieldData("pressure")->ViewComponent("cell");

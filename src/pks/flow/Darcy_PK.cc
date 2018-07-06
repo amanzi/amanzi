@@ -345,7 +345,8 @@ void Darcy_PK::Initialize(const Teuchos::Ptr<State>& S)
   bool init_darcy(false);
   if (ti_list_->isSublist("initialization") && initialize_with_darcy_) {
     initialize_with_darcy_ = false;
-    SolveFullySaturatedProblem(*solution);
+    bool wells_on = ti_list_->sublist("initialization").get<bool>("active wells", false);
+    SolveFullySaturatedProblem(*solution, wells_on);
     init_darcy = true;
   }
 
