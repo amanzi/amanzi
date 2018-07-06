@@ -1770,6 +1770,8 @@ Initialization and constraints
     a Darcy problem. The former option uses sublist `"picard parameters`".
     *Picard works better if a bounded initial pressure guess is provided.* 
 
+  * `"active wells`" [bool] specifies if wells are active or turned off. Default is *false*.
+
   * `"picard parameters`" [list] defines control parameters for the Picard solver.
 
     * `"convergence tolerance`" [double] specifies nonlinear convergence tolerance. 

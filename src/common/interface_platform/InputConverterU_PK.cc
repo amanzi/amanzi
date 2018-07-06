@@ -287,6 +287,13 @@ Teuchos::ParameterList InputConverterU::TranslateInitialization_(
     out_list.set<std::string>("method", method);
   }
 
+  node = GetUniqueElementByTagsString_(controls + ", wells_status", flag); 
+  if (flag) {
+    std::string text = mm.transcode(node->getTextContent());
+    flag = (text == "on");
+  }
+  out_list.set<bool>("active wells", flag);
+
   node = GetUniqueElementByTagsString_(controls + ", clipping_saturation", flag); 
   if (flag) out_list.set<double>("clipping saturation value",
       strtod(mm.transcode(node->getTextContent()), NULL));
