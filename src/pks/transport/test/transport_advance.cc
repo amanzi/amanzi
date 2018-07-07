@@ -94,12 +94,17 @@ TEST(ADVANCE_WITH_MESH_FRAMEWORK) {
     std::string passwd("state"); 
     Teuchos::RCP<Epetra_MultiVector> 
         flux = S->GetFieldData("darcy_flux", passwd)->ViewComponent("face", false);
+    Teuchos::RCP<Epetra_MultiVector> 
+        mass_flux = S->GetFieldData("mass_flux", passwd)->ViewComponent("face", false);
+
+    double molar_den =  (*S->GetScalarData("fluid_density")) / CommonDefs::MOLAR_MASS_H2O;
 
     AmanziGeometry::Point velocity(1.0, 0.0, 0.0);
     int nfaces_owned = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
     for (int f = 0; f < nfaces_owned; f++) {
       const AmanziGeometry::Point& normal = mesh->face_normal(f);
       (*flux)[0][f] = velocity * normal;
+      (*mass_flux)[0][f] = (*flux)[0][f] * molar_den;
     }
 
     // initialize a transport process kernel
@@ -132,7 +137,7 @@ TEST(ADVANCE_WITH_MESH_FRAMEWORK) {
 
     // check that the final state is constant
     for (int k = 0; k < 4; k++) 
-      CHECK_CLOSE((*tcc)[0][k], 1.0, 1e-6);
+      CHECK_CLOSE((*tcc)[0][k], 0.1, 1e-6);
 
     if (frm == 2) {
       for (int k = 0; k < 19; k++) {

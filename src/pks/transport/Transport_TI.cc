@@ -60,7 +60,7 @@ void Transport_PK::Functional(double t,
     }
   }
 
-  lifting_->InitLimiter(darcy_flux);
+  lifting_->InitLimiter(mass_flux_);
   lifting_->ApplyLimiter(bc_model, bc_value);
 
   // ADVECTIVE FLUXES
@@ -85,7 +85,7 @@ void Transport_PK::Functional(double t,
       u1 = u2 = umin = umax = component[c2];
     }
 
-    u = fabs((*darcy_flux)[0][f]);
+    u = fabs((*mass_flux_)[0][f]);
     const AmanziGeometry::Point& xf = mesh_->face_centroid(f);
 
     if (c1 >= 0 && c1 < ncells_owned && c2 >= 0 && c2 < ncells_owned) {
@@ -121,9 +121,10 @@ void Transport_PK::Functional(double t,
 
   for (int c = 0; c < ncells_owned; c++) {  // calculate conservative quantatity
     double a = t / dt_;
-    double ws = a * (*ws_end)[0][c] + (1.0 - a) * (*ws_start)[0][c]; 
-    double vol_phi_ws = mesh_->cell_volume(c) * (*phi)[0][c] * ws;
-    f_component[c] /= vol_phi_ws;
+    double ws = a * (*ws_end)[0][c] + (1.0 - a) * (*ws_start)[0][c];
+    double mol_den = a * (*mol_den_end)[0][c] + (1.0 - a) * (*mol_den_start)[0][c]; 
+    double vol_phi_ws_den = mesh_->cell_volume(c) * (*phi)[0][c] * ws * mol_den;
+    f_component[c] /= vol_phi_ws_den;
   }
 
   // BOUNDARY CONDITIONS for ADVECTION
@@ -140,10 +141,10 @@ void Transport_PK::Functional(double t,
 
           if (downwind_cells_[f].size() > 0 && f < nfaces_owned) {
             c2 = downwind_cells_[f][0];
-            u = fabs((*darcy_flux)[0][f]);
-            double vol_phi_ws = mesh_->cell_volume(c2) * (*phi)[0][c2] * (*ws_start)[0][c2];
+            u = fabs((*mass_flux_)[0][f]);
+            double vol_phi_ws_den = mesh_->cell_volume(c2) * (*phi)[0][c2] * (*ws_start)[0][c2] * (*mol_den_start)[0][c2]; 
             tcc_flux = u * values[i];
-            f_component[c2] += tcc_flux / vol_phi_ws;
+            f_component[c2] += tcc_flux / vol_phi_ws_den;
           }
         }
       }
@@ -190,7 +191,7 @@ void Transport_PK::FunctionalOld(double t,
     }
   }
 
-  lifting_->InitLimiter(darcy_flux);
+  lifting_->InitLimiter(mass_flux_);
   lifting_->ApplyLimiter(bc_model, bc_value);
 
   // ADVECTIVE FLUXES
@@ -215,7 +216,7 @@ void Transport_PK::FunctionalOld(double t,
       u1 = u2 = umin = umax = component[c2];
     }
 
-    u = fabs((*darcy_flux)[0][f]);
+    u = fabs((*mass_flux_)[0][f]);
     const AmanziGeometry::Point& xf = mesh_->face_centroid(f);
 
     if (c1 >= 0 && c1 < ncells_owned && c2 >= 0 && c2 < ncells_owned) {
@@ -250,8 +251,8 @@ void Transport_PK::FunctionalOld(double t,
   }
 
   for (int c = 0; c < ncells_owned; c++) {  // calculate conservative quantatity
-    double vol_phi_ws = mesh_->cell_volume(c) * (*phi)[0][c] * (*ws_start)[0][c];
-    f_component[c] /= vol_phi_ws;
+    double vol_phi_ws_den = mesh_->cell_volume(c) * (*phi)[0][c] * (*ws_start)[0][c] * (*mol_den_start)[0][c];
+    f_component[c] /= vol_phi_ws_den;
   }
 
   // BOUNDARY CONDITIONS for ADVECTION
@@ -269,10 +270,10 @@ void Transport_PK::FunctionalOld(double t,
 
           if (downwind_cells_[f].size() > 0 && f < nfaces_owned) {
             c2 = downwind_cells_[f][0];
-            u = fabs((*darcy_flux)[0][f]);
-            double vol_phi_ws = mesh_->cell_volume(c2) * (*phi)[0][c2] * (*ws_start)[0][c2];
+            u = fabs((*mass_flux_)[0][f]);
+            double vol_phi_ws_den = mesh_->cell_volume(c2) * (*phi)[0][c2] * (*ws_start)[0][c2]* (*mol_den_start)[0][c2];
             tcc_flux = u * values[i];
-            f_component[c2] += tcc_flux / vol_phi_ws;
+            f_component[c2] += tcc_flux / vol_phi_ws_den;
           }
         }
       }

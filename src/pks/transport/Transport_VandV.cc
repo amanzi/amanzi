@@ -81,7 +81,7 @@ void Transport_PK::CreateDefaultState(
   S_->GetFieldData(darcy_flux_key_, name)->PutScalar(0.0);
   S_->GetField(darcy_flux_key_, name)->set_initialized();
 
-    S_->GetFieldData(flux_key_, name)->PutScalar(0.0);
+  S_->GetFieldData(flux_key_, name)->PutScalar(0.0);
   S_->GetField(flux_key_, name)->set_initialized();
 
   S_->InitializeFields();
@@ -141,7 +141,7 @@ void Transport_PK::VV_PrintSoluteExtrema(const Epetra_MultiVector& tcc_next, dou
           int dir, c = cells[0];
 
           const AmanziGeometry::Point& normal = mesh_->face_normal(f, false, c, &dir);
-          double u = (*darcy_flux)[0][f] * dir;
+          double u = (*mass_flux_)[0][f] * dir;
           if (u > 0) solute_flux += u * tcc_next[i][c];
         }
       }
@@ -235,7 +235,7 @@ void Transport_PK::VV_CheckInfluxBC() const
         if (i == tcc_index[k]) {
           for (auto it = bcs_[m]->begin(); it != bcs_[m]->end(); ++it) {
             int f = it->first;
-            if ((*darcy_flux)[0][f] < 0 && influx_face[f] == 0) {
+            if ((*mass_flux_)[0][f] < 0 && influx_face[f] == 0) {
               char component[3];
               std::sprintf(component, "%3d", i);
 
@@ -335,7 +335,7 @@ double Transport_PK::VV_SoluteVolumeChangePerSecond(int idx_tracer)
             int c2 = downwind_cells_[f][0];
 
             if (f < nfaces_owned && c2 >= 0) {
-              double u = fabs((*darcy_flux)[0][f]);
+              double u = fabs((*darcy_flux_)[0][f]);
               volume += u * values[i];
             }
           }

@@ -72,13 +72,14 @@ void runTest(const Amanzi::AmanziMesh::Framework& mypref) {
   // modify the default state for the problem at hand
   std::string passwd("state"); 
   Teuchos::RCP<Epetra_MultiVector> 
-      flux = S->GetFieldData("darcy_flux", passwd)->ViewComponent("face", false);
-
+      mass_flux = S->GetFieldData("mass_flux", passwd)->ViewComponent("face", false);
+  double molar_den =  (*S->GetScalarData("fluid_density")) / CommonDefs::MOLAR_MASS_H2O;
+  
   AmanziGeometry::Point velocity(1.0, 0.0, 0.0);
   int nfaces_owned = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
   for (int f = 0; f < nfaces_owned; f++) {
-    const AmanziGeometry::Point& normal = mesh->face_normal(f);
-    (*flux)[0][f] = velocity * normal;
+     const AmanziGeometry::Point& normal = mesh->face_normal(f);
+    (*mass_flux)[0][f] = molar_den * velocity * normal;
   }
  
   Teuchos::RCP<Epetra_MultiVector>

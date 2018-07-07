@@ -142,11 +142,11 @@ class Transport_PK : public PK_PhysicalExplicit<Epetra_Vector> {
   // -- dispersion and diffusion
   void CalculateDispersionTensor_(
       const Epetra_MultiVector& darcy_flux, 
-      const Epetra_MultiVector& porosity, const Epetra_MultiVector& saturation);
+      const Epetra_MultiVector& porosity, const Epetra_MultiVector& saturation, const Epetra_MultiVector& mol_density);
 
   void CalculateDiffusionTensor_(
       double md, int phase,
-      const Epetra_MultiVector& porosity, const Epetra_MultiVector& saturation);
+      const Epetra_MultiVector& porosity, const Epetra_MultiVector& saturation, const Epetra_MultiVector& mol_density);
 
   int FindDiffusionValue(const std::string& tcc_name, double* md, int* phase);
 
@@ -205,7 +205,7 @@ class Transport_PK : public PK_PhysicalExplicit<Epetra_Vector> {
 
   Teuchos::RCP<CompositeVector> tcc_tmp;  // next tcc
   Teuchos::RCP<CompositeVector> tcc;  // smart mirrow of tcc 
-  Teuchos::RCP<const Epetra_MultiVector> darcy_flux;
+  Teuchos::RCP<const Epetra_MultiVector> darcy_flux_, mass_flux_;
   Teuchos::RCP<const Epetra_MultiVector> ws, ws_prev, phi, transport_phi;
   Teuchos::RCP<Epetra_MultiVector> mol_dens_, mol_dens_prev_;
   
@@ -220,6 +220,8 @@ class Transport_PK : public PK_PhysicalExplicit<Epetra_Vector> {
 
   Teuchos::RCP<const Epetra_MultiVector> ws_start, ws_end;  // data for subcycling 
   Teuchos::RCP<Epetra_MultiVector> ws_subcycle_start, ws_subcycle_end;
+  Teuchos::RCP<const Epetra_MultiVector> mol_den_start, mol_den_end;  // data for subcycling 
+  Teuchos::RCP<Epetra_MultiVector> mol_den_subcycle_start, mol_den_subcycle_end;
 
   int current_component_;  // data for lifting
   Teuchos::RCP<Operators::ReconstructionCell> lifting_;

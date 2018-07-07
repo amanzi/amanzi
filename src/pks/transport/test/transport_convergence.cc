@@ -31,7 +31,7 @@ double f_cubic(const Amanzi::AmanziGeometry::Point& x, double t) {
   if (x[0] < 1 + t) return 1.0;
   if (x[0] > 3 + t) return 0.0;
   double z = (x[0] - 1 - t) / 2;
-  return 2 * z * z * z - 3 * z * z + 1;
+  return (2 * z * z * z - 3 * z * z + 1);
 }
 
 double f_cubic_unit(const Amanzi::AmanziGeometry::Point& x, double t) {
@@ -99,23 +99,31 @@ TEST(CONVERGENCE_ANALYSIS_DONOR) {
     Teuchos::RCP<Epetra_MultiVector> 
         flux = S->GetFieldData("darcy_flux", passwd)->ViewComponent("face", false);
 
+    Teuchos::RCP<Epetra_MultiVector> 
+        mass_flux = S->GetFieldData("mass_flux", passwd)->ViewComponent("face", false);
+    
+    *(S->GetScalarData("fluid_density", passwd)) = 1.0;
+    double molar_den =  (*S->GetScalarData("fluid_density")) / CommonDefs::MOLAR_MASS_H2O;    
+    
     AmanziGeometry::Point velocity(1.0, 0.0, 0.0);
     int nfaces_owned = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
     for (int f = 0; f < nfaces_owned; f++) {
       const AmanziGeometry::Point& normal = mesh->face_normal(f);
       (*flux)[0][f] = velocity * normal;
+      (*mass_flux)[0][f] = (*flux)[0][f] * molar_den;      
     }
 
     Teuchos::RCP<Epetra_MultiVector> 
         tcc = S->GetFieldData("total_component_concentration", passwd)->ViewComponent("cell", false);
-
+    
+    
     int ncells_owned = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
     for (int c = 0; c < ncells_owned; c++) {
       const AmanziGeometry::Point& xc = mesh->cell_centroid(c);
       (*tcc)[0][c] = f_cubic(xc, 0.0);
     }
 
-    *(S->GetScalarData("fluid_density", passwd)) = 1.0;
+
 
     /* initialize a transport process kernel */
     TPK.Initialize(S.ptr());
@@ -214,13 +222,22 @@ TEST(CONVERGENCE_ANALYSIS_DONOR_SUBCYCLING) {
     Teuchos::RCP<Epetra_MultiVector> 
         flux = S->GetFieldData("darcy_flux", passwd)->ViewComponent("face", false);
 
+
+    Teuchos::RCP<Epetra_MultiVector> 
+        mass_flux = S->GetFieldData("mass_flux", passwd)->ViewComponent("face", false);
+    
+    *(S->GetScalarData("fluid_density", passwd)) = 1.0;
+    double molar_den =  (*S->GetScalarData("fluid_density")) / CommonDefs::MOLAR_MASS_H2O;    
+    
     AmanziGeometry::Point velocity(1.0, 0.0, 0.0);
     int nfaces_owned = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
     for (int f = 0; f < nfaces_owned; f++) {
       const AmanziGeometry::Point& normal = mesh->face_normal(f);
       (*flux)[0][f] = velocity * normal;
+      (*mass_flux)[0][f] = (*flux)[0][f] * molar_den;      
     }
 
+  
     Teuchos::RCP<Epetra_MultiVector> 
         tcc = S->GetFieldData("total_component_concentration", passwd)->ViewComponent("cell", false);
 
@@ -230,7 +247,6 @@ TEST(CONVERGENCE_ANALYSIS_DONOR_SUBCYCLING) {
       (*tcc)[0][c] = f_cubic(xc, 0.0);
     }
 
-    *(S->GetScalarData("fluid_density", passwd)) = 1.0;
 
     /* initialize a transport process kernel */
     TPK.Initialize(S.ptr());
@@ -332,11 +348,18 @@ TEST(CONVERGENCE_ANALYSIS_2ND) {
     Teuchos::RCP<Epetra_MultiVector> 
         flux = S->GetFieldData("darcy_flux", passwd)->ViewComponent("face", false);
 
+    Teuchos::RCP<Epetra_MultiVector> 
+        mass_flux = S->GetFieldData("mass_flux", passwd)->ViewComponent("face", false);
+    
+    *(S->GetScalarData("fluid_density", passwd)) = 1.0;
+    double molar_den =  (*S->GetScalarData("fluid_density")) / CommonDefs::MOLAR_MASS_H2O;    
+    
     AmanziGeometry::Point velocity(1.0, 0.0, 0.0);
     int nfaces_owned = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
     for (int f = 0; f < nfaces_owned; f++) {
       const AmanziGeometry::Point& normal = mesh->face_normal(f);
       (*flux)[0][f] = velocity * normal;
+      (*mass_flux)[0][f] = (*flux)[0][f] * molar_den;      
     }
 
     Teuchos::RCP<Epetra_MultiVector> 
@@ -348,7 +371,6 @@ TEST(CONVERGENCE_ANALYSIS_2ND) {
       (*tcc)[0][c] = f_cubic(xc, 0.0);
     }
 
-    *(S->GetScalarData("fluid_density", passwd)) = 1.0;
 
     /* initialize a transport process kernel */
     TPK.Initialize(S.ptr());
@@ -462,13 +484,20 @@ TEST(CONVERGENCE_ANALYSIS_DONOR_POLY) {
     Teuchos::RCP<Epetra_MultiVector> 
         flux = S->GetFieldData("darcy_flux", passwd)->ViewComponent("face", false);
 
-    AmanziGeometry::Point velocity(1.0, 0.0);
+    Teuchos::RCP<Epetra_MultiVector> 
+        mass_flux = S->GetFieldData("mass_flux", passwd)->ViewComponent("face", false);
+    
+    *(S->GetScalarData("fluid_density", passwd)) = 1.0;
+    double molar_den =  (*S->GetScalarData("fluid_density")) / CommonDefs::MOLAR_MASS_H2O;    
+    
+    AmanziGeometry::Point velocity(1.0, 0.0, 0.0);
     int nfaces_owned = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
     for (int f = 0; f < nfaces_owned; f++) {
       const AmanziGeometry::Point& normal = mesh->face_normal(f);
       (*flux)[0][f] = velocity * normal;
+      (*mass_flux)[0][f] = (*flux)[0][f] * molar_den;      
     }
-
+    
     Teuchos::RCP<Epetra_MultiVector> 
         tcc = S->GetFieldData("total_component_concentration", passwd)->ViewComponent("cell", false);
 
@@ -478,7 +507,7 @@ TEST(CONVERGENCE_ANALYSIS_DONOR_POLY) {
       (*tcc)[0][c] = f_cubic_unit(xc, 0.0);
     }
 
-    *(S->GetScalarData("fluid_density", passwd)) = 1.0;
+
 
     /* initialize a transport process kernel */
     TPK.Initialize(S.ptr());
@@ -586,13 +615,20 @@ TEST(CONVERGENCE_ANALYSIS_2ND_POLY) {
     Teuchos::RCP<Epetra_MultiVector> 
         flux = S->GetFieldData("darcy_flux", passwd)->ViewComponent("face", false);
 
-    AmanziGeometry::Point velocity(1.0, 0.0);
+    Teuchos::RCP<Epetra_MultiVector> 
+        mass_flux = S->GetFieldData("mass_flux", passwd)->ViewComponent("face", false);
+    
+    *(S->GetScalarData("fluid_density", passwd)) = 1.0;
+    double molar_den =  (*S->GetScalarData("fluid_density")) / CommonDefs::MOLAR_MASS_H2O;    
+    
+    AmanziGeometry::Point velocity(1.0, 0.0, 0.0);
     int nfaces_owned = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
     for (int f = 0; f < nfaces_owned; f++) {
       const AmanziGeometry::Point& normal = mesh->face_normal(f);
       (*flux)[0][f] = velocity * normal;
+      (*mass_flux)[0][f] = (*flux)[0][f] * molar_den;      
     }
-
+    
     Teuchos::RCP<Epetra_MultiVector> 
         tcc = S->GetFieldData("total_component_concentration", passwd)->ViewComponent("cell", false);
 
@@ -602,7 +638,7 @@ TEST(CONVERGENCE_ANALYSIS_2ND_POLY) {
       (*tcc)[0][c] = f_cubic_unit(xc, 0.0);
     }
 
-    *(S->GetScalarData("fluid_density", passwd)) = 1.0;
+
 
     /* initialize a transport process kernel */
     TPK.Initialize(S.ptr());

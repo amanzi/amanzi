@@ -51,7 +51,7 @@
                 <ParameterList name="function-tabular">
                   <Parameter name="forms" type="Array(string)" value="{constant}"/>
                   <Parameter name="x values" type="Array(double)" value="{0.0, 0.1}"/>
-                  <Parameter name="y values" type="Array(double)" value="{1.0, 1.0}"/>
+                  <Parameter name="y values" type="Array(double)" value="{0.1, 0.1}"/>
                 </ParameterList>
               </ParameterList>
             </ParameterList>

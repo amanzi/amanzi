@@ -95,7 +95,7 @@ class Chemistry_PK : public PK_Physical {
   Key tcc_key_;
   Key poro_key_;
   Key saturation_key_;
-  Key fluid_den_key_, molar_fluid_den_key_;
+  Key fluid_den_key_, mol_den_key_;
   Key min_vol_frac_key_;
   Key min_ssa_key_;
   Key sorp_sites_key_;

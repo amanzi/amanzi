@@ -75,6 +75,7 @@ Alquimia_PK::Alquimia_PK(Teuchos::ParameterList& pk_tree,
   poro_key_ = cp_list_->get<std::string>("porosity key", Keys::getKey(domain_name_, "porosity"));
   saturation_key_ = cp_list_->get<std::string>("saturation key", Keys::getKey(domain_name_, "saturation_liquid"));
   fluid_den_key_ = cp_list_->get<std::string>("fluid density key", Keys::getKey(domain_name_, "mass_density_liquid"));
+  mol_den_key_ = cp_list_->get<std::string>("molar density key", Keys::getKey(domain_name_, "molar_density_liquid"));
 
   min_vol_frac_key_ = Keys::getKey(domain_name_, "mineral_volume_fractions");
   min_ssa_key_ = Keys::getKey(domain_name_, "mineral_specific_surface_area");
@@ -519,12 +520,14 @@ void Alquimia_PK::CopyToAlquimia(int cell,
 {
   const Epetra_MultiVector& porosity = *S_->GetFieldData(poro_key_)->ViewComponent("cell", true);
   const Epetra_MultiVector& fluid_density = *S_->GetFieldData(fluid_den_key_)->ViewComponent("cell", true);
+  const Epetra_MultiVector& mol_dens = *S_->GetFieldData(mol_den_key_)->ViewComponent("cell", false);
 
   state.water_density = fluid_density[0][cell]; 
   state.porosity = porosity[0][cell];
 
   for (int i = 0; i < number_aqueous_components_; i++) {
-    state.total_mobile.data[i] = (*aqueous_components)[i][cell];
+    // convert from mole fraction to molar concentration
+    state.total_mobile.data[i] = (*aqueous_components)[i][cell] * (mol_dens[0][cell] / 1000.);
     if (using_sorption_) {
       const Epetra_MultiVector& sorbed = *S_->GetFieldData(total_sorbed_key_)->ViewComponent("cell", true);
       state.total_immobile.data[i] = sorbed[i][cell];
@@ -722,12 +725,11 @@ void Alquimia_PK::CopyFromAlquimia(const int cell,
 
   for (int i = 0; i < number_aqueous_components_; ++i) {
     (*aqueous_components)[i][cell] = state.total_mobile.data[i] ;
-    // if (convert2mole_fraction_){
-    //   if (S_->HasField(molar_fluid_den_key_)){
-    //     const Epetra_MultiVector& mol_dens = *S_->GetFieldData(molar_fluid_den_key_)->ViewComponent("cell", true);
-    //     (*aqueous_components)[i][cell] /= (mol_dens[0][cell] / 1000.);
-    //   }
-    // }
+    if (S_->HasField(mol_den_key_)){
+      const Epetra_MultiVector& mol_dens = *S_->GetFieldData(mol_den_key_)->ViewComponent("cell", false);
+      (*aqueous_components)[i][cell] /= (mol_dens[0][cell] / 1000.);
+    }
+
 
     if (using_sorption_) {
       const Epetra_MultiVector& sorbed = *S_->GetFieldData(total_sorbed_key_)->ViewComponent("cell", true);

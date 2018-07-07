@@ -89,8 +89,12 @@ std::cout << "Test: Advance on a 2D square mesh" << std::endl;
   S->InitializeEvaluators();
 
   // modify the default state
-  Epetra_MultiVector& flux = *S->GetFieldData("darcy_flux_fracture", "state")->ViewComponent("cell");
+  Epetra_MultiVector& mass_flux = *S->GetFieldData("mass_flux_fracture", "state")->ViewComponent("cell");
 
+  //(*S->GetScalarData("fluid_density", "state")) = CommonDefs::MOLAR_MASS_H2O; 
+  double molar_den =  (*S->GetScalarData("fluid_density")) / CommonDefs::MOLAR_MASS_H2O;
+  //  molar_den = 1.;
+  
   int dir;
   AmanziMesh::Entity_ID_List faces;
   std::vector<int> dirs;
@@ -103,16 +107,17 @@ std::cout << "Test: Advance on a 2D square mesh" << std::endl;
     for (int n = 0; n < nfaces; ++n) {
       int f = faces[n];
       const AmanziGeometry::Point& normal = mesh->face_normal(f, false, c, &dir);
-      flux[n][c] = velocity * normal;
+      mass_flux[n][c] = molar_den * velocity * normal;
     }
   }
   S->GetField("darcy_flux_fracture", "state")->set_initialized();
+  S->GetField("mass_flux_fracture", "state")->set_initialized();
 
   // we still need the old flux until testing is complete
-  Epetra_MultiVector& flux_old = *S->GetFieldData("darcy_flux", "state")->ViewComponent("face");
+  Epetra_MultiVector& mass_flux_old = *S->GetFieldData("mass_flux", "state")->ViewComponent("face");
   for (int f = 0; f < nfaces_owned; f++) {
     const AmanziGeometry::Point& normal = mesh->face_normal(f);
-    flux_old[0][f] = velocity * normal;
+    mass_flux_old[0][f] = molar_den * velocity * normal;
   }
 
   // initialize the transport process kernel
@@ -149,7 +154,8 @@ std::cout << "Test: Advance on a 2D square mesh" << std::endl;
   for (int n = 0; n < block.size(); ++n) {
     tcc_max = std::max(tcc_max, tcc[0][block[n]]);
   }
-  CHECK(tcc_max > 0.25);
+
+  CHECK(tcc_max > 0.025);
 
   GMV::open_data_file(*mesh, (std::string)"transport.gmv");
   GMV::start_data();

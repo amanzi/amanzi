@@ -31,8 +31,9 @@ namespace Transport {
 * assumed to be scaled by face area.
 ******************************************************************* */
 void Transport_PK::CalculateDispersionTensor_(
-    const Epetra_MultiVector& darcy_flux, 
-    const Epetra_MultiVector& porosity, const Epetra_MultiVector& saturation)
+    const Epetra_MultiVector& mass_flux, 
+    const Epetra_MultiVector& porosity, const Epetra_MultiVector& saturation,
+    const Epetra_MultiVector& mol_density)
 {
   D_.resize(ncells_owned);
   for (int c = 0; c < ncells_owned; c++) D_[c].Init(dim, 1);
@@ -46,7 +47,7 @@ void Transport_PK::CalculateDispersionTensor_(
     int nfaces = faces.size();
 
     std::vector<double> flux(nfaces);
-    for (int n = 0; n < nfaces; n++) flux[n] = darcy_flux[0][faces[n]];
+    for (int n = 0; n < nfaces; n++) flux[n] = mass_flux[0][faces[n]];
     mfd3d.RecoverGradient_MassMatrix(c, flux, velocity);
 
     D_[c] = mdm_->second[(*mdm_->first)[c]]->mech_dispersion(
@@ -60,7 +61,8 @@ void Transport_PK::CalculateDispersionTensor_(
 ******************************************************************* */
 void Transport_PK::CalculateDiffusionTensor_(
     double md, int phase, 
-    const Epetra_MultiVector& porosity, const Epetra_MultiVector& saturation)
+    const Epetra_MultiVector& porosity, const Epetra_MultiVector& saturation,
+    const Epetra_MultiVector& mol_density)
 {
   if (D_.size() == 0) {
     D_.resize(ncells_owned);
@@ -79,10 +81,14 @@ void Transport_PK::CalculateDiffusionTensor_(
       if (phase == TRANSPORT_PHASE_LIQUID) {
         for (c = block.begin(); c != block.end(); c++) {
           D_[*c] += md * spec->tau[phase] * porosity[0][*c] * saturation[0][*c];
+          double mol_den = mol_density[0][*c];
+          D_[*c] *= mol_den;
         }
       } else if (phase == TRANSPORT_PHASE_GAS) {
         for (c = block.begin(); c != block.end(); c++) {
           D_[*c] += md * spec->tau[phase] * porosity[0][*c] * (1.0 - saturation[0][*c]);
+          double mol_den = mol_density[0][*c];
+          D_[*c] *= mol_den;
         }
       }
     }

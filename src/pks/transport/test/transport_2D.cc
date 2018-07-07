@@ -32,7 +32,7 @@
 #include "Transport_PK.hh"
 
 /* **************************************************************** */
-void runTest(double switch_time) {
+void runTest(double switch_time, std::string limiter) {
   using namespace Teuchos;
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
@@ -72,6 +72,9 @@ std::cout << "Test: Advance on a 2D square mesh" << std::endl;
   S->set_time(0.0);
   S->set_intermediate_time(0.0);
 
+  plist->sublist("PKs").sublist("transport")
+        .sublist("reconstruction").set<std::string>("limiter", "tensorial");
+
   Transport_PK TPK(plist, S, "transport", component_names);
   TPK.Setup(S.ptr());
   TPK.CreateDefaultState(mesh, 2);
@@ -82,12 +85,19 @@ std::cout << "Test: Advance on a 2D square mesh" << std::endl;
   std::string passwd("state"); 
   Epetra_MultiVector& flux = *S->GetFieldData("darcy_flux", passwd)->ViewComponent("face", false);
 
+  Teuchos::RCP<Epetra_MultiVector> 
+    mass_flux = S->GetFieldData("mass_flux", passwd)->ViewComponent("face", false);
+  
+  double molar_den =  (*S->GetScalarData("fluid_density")) / CommonDefs::MOLAR_MASS_H2O;
+    
   AmanziGeometry::Point velocity(1.0, 1.0);
   int nfaces_owned = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
   for (int f = 0; f < nfaces_owned; f++) {
     const AmanziGeometry::Point& normal = mesh->face_normal(f);
     flux[0][f] = velocity * normal;
+    (*mass_flux)[0][f] = flux[0][f] * molar_den;      
   }
+
 
   // initialize a transport process kernel from a transport state
   TPK.Initialize(S.ptr());
@@ -99,12 +109,13 @@ std::cout << "Test: Advance on a 2D square mesh" << std::endl;
 
   Teuchos::RCP<Epetra_MultiVector> 
       tcc = S->GetFieldData("total_component_concentration", passwd)->ViewComponent("cell", false);
-
+ 
   iter = 0;
   while (t_new < 0.5) {
     if (t_new > switch_time && flag) {
       flag = false;
       flux.Scale(-1.0);
+      mass_flux -> Scale(-1.0);
       std::cout << "Changing Darcy velocity direction to opposite.\n\n";
     }
 
@@ -152,12 +163,14 @@ std::cout << "Test: Advance on a 2D square mesh" << std::endl;
 
 
 TEST(ADVANCE_WITH_2D_MESH) {
-  runTest(1.0);  // no velocity swicth
+  runTest(1.0, "tensorial");  // no velocity swicth
 }
 
 
 TEST(ADVANCE_WITH_2D_MESH_SWITCH_FLOW) {
-  runTest(0.16);
+  runTest(0.16, "tensorial");
 }
 
-
+TEST(ADVANCE_WITH_2D_MESH_SWITCH_FLOW_KUZMIN) {
+  runTest(0.16, "Kuzmin");
+}
