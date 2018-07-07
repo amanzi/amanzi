@@ -245,7 +245,7 @@ void CycleDriver::Setup() {
       it != reset_info_.end(); ++it) tsm_->RegisterTimeEvent(it->first);
 
 
-  for (int i=0;i<num_time_periods_; i++) {
+  for (int i=0; i<num_time_periods_; i++) {
     tsm_->RegisterTimeEvent(tp_end_[i]);
     tsm_->RegisterTimeEvent(tp_start_[i] + tp_dt_[i]);
   } 
@@ -818,15 +818,19 @@ Teuchos::RCP<State> CycleDriver::Go() {
   S_->CheckAllFieldsInitialized();
 
   // visualization at IC
-  //Amanzi::timer_manager.start("I/O");
+  // Amanzi::timer_manager.start("I/O");
   pk_->CalculateDiagnostics(S_);
   Visualize();
   Observations();
   WriteCheckpoint(dt);
   S_->WriteStatistics(vo_);
 
-  //Amanzi::timer_manager.stop("I/O");
- 
+  // Amanzi::timer_manager.stop("I/O");
+  if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
+    Teuchos::OSTab tab = vo_->getOSTab();
+    *vo_->os() << "\nSimulation end time: " << tp_end_[time_period_id_] << " sec." << std::endl;
+  }
+
   // iterate process kernels
   {
 #if !DEBUG_MODE
