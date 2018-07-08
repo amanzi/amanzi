@@ -238,13 +238,14 @@ void EnergyBase::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector> u
         ->HasFieldDerivativeChanged(S_next_.ptr(), name_, key_);
     Teuchos::RCP<const CompositeVector> dhdT = S_next_->GetFieldData(Keys::getDerivKey(enthalpy_key_, key_));
     preconditioner_adv_->Setup(*mass_flux);
+    preconditioner_adv_->SetBCs(bc_adv_, bc_adv_);
     preconditioner_adv_->UpdateMatrices(mass_flux.ptr(), dhdT.ptr());
     ApplyDirichletBCsToEnthalpy_(S_next_.ptr());
-    preconditioner_adv_->ApplyBCs(bc_adv_, false);
+    preconditioner_adv_->ApplyBCs(true, false, true);
   }
 
   // Apply boundary conditions.
-  preconditioner_diff_->ApplyBCs(true, true);
+  preconditioner_diff_->ApplyBCs(true, true, true);
   if (precon_used_) {
     preconditioner_->AssembleMatrix();
     preconditioner_->UpdatePreconditioner();

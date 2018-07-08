@@ -804,7 +804,7 @@ void EnergyBase::CalculateConsistentFaces(const Teuchos::Ptr<CompositeVector>& u
   matrix_diff_->SetScalarCoefficient(conductivity, Teuchos::null);
   matrix_diff_->UpdateMatrices(Teuchos::null, u);
   //matrix_diff_->UpdateMatrices(Teuchos::null, Teuchos::null);
-  matrix_diff_->ApplyBCs(true, true);
+  matrix_diff_->ApplyBCs(true, true, true);
 
   // derive the consistent faces, involves a solve
   matrix_diff_->UpdateConsistentFaces(*u);

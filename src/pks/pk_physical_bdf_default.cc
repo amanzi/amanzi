@@ -132,10 +132,10 @@ double PK_PhysicalBDF_Default::ErrorNorm(Teuchos::RCP<const TreeVector> u,
       }
 
     } else {
-      double norm;
-      dvec_v.Norm2(&norm);
+      // double norm;
+      // dvec_v.Norm2(&norm);
 
-      AMANZI_ASSERT(norm < 1.e-15);
+      //      AMANZI_ASSERT(norm < 1.e-15);
 
     }
 

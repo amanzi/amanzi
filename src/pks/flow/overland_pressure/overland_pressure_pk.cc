@@ -451,7 +451,7 @@ void OverlandPressureFlow::Initialize(const Teuchos::Ptr<State>& S) {
 
       
       Teuchos::RCP<const CompositeVector> subsurf_pres = S->GetFieldData(key_ss);
-      unsigned int ncells_surface = mesh_->num_entities(AmanziMesh::CELL,AmanziMesh::OWNED);
+      unsigned int ncells_surface = mesh_->num_entities(AmanziMesh::CELL,AmanziMesh::Parallel_type::OWNED);
       if (subsurf_pres->HasComponent("face")){
         const Epetra_MultiVector& subsurf_pres_vec = *subsurf_pres->ViewComponent("face",false);
         for (unsigned int c=0; c!=ncells_surface; ++c) {
@@ -463,7 +463,7 @@ void OverlandPressureFlow::Initialize(const Teuchos::Ptr<State>& S) {
       }else if (subsurf_pres->HasComponent("boundary_face")){
         const Epetra_MultiVector& subsurf_pres_vec = *subsurf_pres->ViewComponent("boundary_face",false);
         Teuchos::RCP<const AmanziMesh::Mesh> mesh_domain = S->GetMesh("domain");
-        unsigned int ncells_sub = mesh_domain->num_entities(AmanziMesh::CELL,AmanziMesh::OWNED);
+        unsigned int ncells_sub = mesh_domain->num_entities(AmanziMesh::CELL,AmanziMesh::Parallel_type::OWNED);
 
         for (unsigned int c=0; c!=ncells_surface; ++c) {
           // -- get the surface cell's equivalent subsurface face and neighboring cell

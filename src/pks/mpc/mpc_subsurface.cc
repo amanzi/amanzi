@@ -538,7 +538,7 @@ void MPCSubsurface::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector
               up->SubVector(0)->Data().ptr());              
       ddivq_dT_->UpdateMatricesNewtonCorrection(flux.ptr(),
               up->SubVector(0)->Data().ptr());              
-      ddivq_dT_->ApplyBCs(false, true);
+      ddivq_dT_->ApplyBCs(false, true, true);
 
       // ComputeDivCorrection(flux, kr_uw, dkrdT, 
       //                      S_next_->GetFieldData( ddivq_dT_key_, name_)->ViewComponent("cell", false));
@@ -591,7 +591,7 @@ void MPCSubsurface::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector
               up->SubVector(1)->Data().ptr());
       ddivKgT_dp_->UpdateMatricesNewtonCorrection(flux.ptr(),
               up->SubVector(1)->Data().ptr());
-      ddivKgT_dp_->ApplyBCs(false, true);
+      ddivKgT_dp_->ApplyBCs(false, true, true);
 
       // ComputeDivCorrection(flux, uw_Kappa, dKappa_dp, 
       //                      S_next_->GetFieldData(ddivKgT_dp_key_, name_)->ViewComponent("cell", false));
@@ -699,7 +699,7 @@ void MPCSubsurface::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector
       ddivhq_dp_->UpdateFlux(up->SubVector(0)->Data().ptr(), adv_flux_ptr);
       // -- add in components div (d h*kr / dp) grad q_a / (h*kr)
       ddivhq_dp_->UpdateMatricesNewtonCorrection(adv_flux_ptr, up->SubVector(0)->Data().ptr());
-      ddivhq_dp_->ApplyBCs(false, true);
+      ddivhq_dp_->ApplyBCs(false, true, true);
 
       // form the operator: temperature component
       ddivhq_dT_->SetDensity(rho);
@@ -707,7 +707,7 @@ void MPCSubsurface::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector
       // -- add in components div (d h*kr / dp) grad q_a / (h*kr)
       ddivhq_dT_->UpdateMatrices(adv_flux_ptr, up->SubVector(0)->Data().ptr());
       ddivhq_dT_->UpdateMatricesNewtonCorrection(adv_flux_ptr, up->SubVector(0)->Data().ptr());
-      ddivhq_dT_->ApplyBCs(false, true);
+      ddivhq_dT_->ApplyBCs(false, true, true);
 
     }
 

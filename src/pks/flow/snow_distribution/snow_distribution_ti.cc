@@ -164,7 +164,7 @@ void SnowDistribution::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVec
   CompositeVector cv_times_10(cell_volume); cv_times_10.Scale(10);
   preconditioner_acc_->AddAccumulationTerm(cv_times_10, "cell");
 
-  preconditioner_diff_->ApplyBCs(true, true);
+  preconditioner_diff_->ApplyBCs(true, true, true);
   preconditioner_->AssembleMatrix();
   preconditioner_->UpdatePreconditioner();
 };

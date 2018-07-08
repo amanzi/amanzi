@@ -8,7 +8,7 @@
 add_subdirectory(constitutive_relations)
 add_subdirectory(richards)
 add_subdirectory(permafrost)
-add_subdirectory(overland)
+#add_subdirectory(overland)
 add_subdirectory(icy_overland)
 add_subdirectory(overland_pressure)
 add_subdirectory(snow_distribution)
@@ -33,10 +33,10 @@ generate_evaluators_registration_header(
   )
 
 #overland/
-register_evaluator_with_factory(
-  HEADERFILE overland/overland_pk_reg.hh
-  LISTNAME   FLOW_OVERLAND_HEAD_EVAL_FAC
-  )
+# register_evaluator_with_factory(
+#   HEADERFILE overland/overland_pk_reg.hh
+#   LISTNAME   FLOW_OVERLAND_HEAD_EVAL_FAC
+#   )
 
 register_evaluator_with_factory(
   HEADERFILE snow_distribution/snow_distribution_reg.hh
