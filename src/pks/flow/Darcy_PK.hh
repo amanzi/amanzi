@@ -94,7 +94,7 @@ class Darcy_PK : public Flow_PK {
   virtual void ChangedSolution() override {};
 
   // other members of the PK linear solvers
-  void SolveFullySaturatedProblem(CompositeVector& u);
+  void SolveFullySaturatedProblem(CompositeVector& u, bool wells_on);
 
  private:
   void InitializeFields_();

@@ -351,6 +351,7 @@
           <ParameterList name="initialization">
             <Parameter name="method" type="string" value="saturated solver"/>
             <Parameter name="linear solver" type="string" value="AztecOO"/>
+            <Parameter name="active wells" type="bool" value="false"/>
           </ParameterList>
         </ParameterList>
         <ParameterList name="boundary conditions">

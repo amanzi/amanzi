@@ -719,8 +719,8 @@ void Alquimia_PK::CopyFromAlquimia(const int cell,
 
   for (int i = 0; i < number_aqueous_components_; ++i) {
     (*aqueous_components)[i][cell] = state.total_mobile.data[i] ;
-    // if (convert2mole_fraction_){
-    //   if (S_->HasField(molar_fluid_den_key_)){
+    // if (convert2mole_fraction_) {
+    //   if (S_->HasField(molar_fluid_den_key_)) {
     //     const Epetra_MultiVector& mol_dens = *S_->GetFieldData(molar_fluid_den_key_)->ViewComponent("cell", true);
     //     (*aqueous_components)[i][cell] /= (mol_dens[0][cell] / 1000.);
     //   }
@@ -949,7 +949,7 @@ void Alquimia_PK::ComputeNextTimeStep()
 }
 
 
-void Alquimia_PK::CopyFieldstoNewState(const Teuchos::RCP<State>& S_next){
+void Alquimia_PK::CopyFieldstoNewState(const Teuchos::RCP<State>& S_next) {
 
   Chemistry_PK::CopyFieldstoNewState(S_next);
 
@@ -961,7 +961,7 @@ void Alquimia_PK::CopyFieldstoNewState(const Teuchos::RCP<State>& S_next){
     std::vector<std::vector<std::string> > subname(1);
     subname[0].push_back("0");
     aux_names[i] = Keys::getKey(domain_name_, aux_names[i]);
-    if (S_->HasField(aux_names[i])&&S_next->HasField(aux_names[i])){
+    if (S_->HasField(aux_names[i])&&S_next->HasField(aux_names[i])) {
       *S_next->GetFieldData(aux_names[i], passwd_)->ViewComponent("cell", false) =
         *S_->GetFieldData(aux_names[i], passwd_)->ViewComponent("cell", false);
     }

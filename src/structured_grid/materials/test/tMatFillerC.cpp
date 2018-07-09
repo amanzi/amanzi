@@ -266,9 +266,9 @@ main (int   argc,
   Array<Real> prob_hi(BL_SPACEDIM);
   if (case_size=="medium") {
     nLevs = 3;
-  } else if (case_size=="large"){
+  } else if (case_size=="large") {
     nLevs = 4;
-  } else if (case_size=="xlarge"){
+  } else if (case_size=="xlarge") {
     nLevs = 5;
   } else {
     BoxLib::Abort("bad case_size");

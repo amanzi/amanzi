@@ -89,7 +89,7 @@ void RunTestDarcyWell(std::string controller) {
 
   Epetra_MultiVector& K = *S->GetFieldData("permeability", passwd)->ViewComponent("cell", false);
   double diff_in_perm = 0.;
-  if (!S->GetField("permeability")->initialized()){
+  if (!S->GetField("permeability")->initialized()) {
     for (int c = 0; c < K.MyLength(); c++) {
       const AmanziGeometry::Point xc = mesh->cell_centroid(c);
       K[0][c] = 0.1 + std::sin(xc[0]) * 0.02;
@@ -350,7 +350,7 @@ TEST(FLOW_3D_DARCY_PEACEMAN_WELL) {
   // steady_state solution
   double t_old(0.0), t_new(0.5), dt(0.5);
 
-  DPK->SolveFullySaturatedProblem(*S->GetFieldData("pressure", "flow"));
+  DPK->SolveFullySaturatedProblem(*S->GetFieldData("pressure", "flow"), true);
 
   t_old = t_new;
   const Epetra_MultiVector& p = *S->GetFieldData("pressure")->ViewComponent("cell");
@@ -366,7 +366,7 @@ TEST(FLOW_3D_DARCY_PEACEMAN_WELL) {
   int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
   double err = 0.;
   double sol = 0.;
-  for (int c = 0; c < ncells; c++){
+  for (int c = 0; c < ncells; c++) {
     const AmanziGeometry::Point& xc = mesh->cell_centroid(c);
     double r = sqrt(xc[0]*xc[0] + xc[1]*xc[1]);
     double p_ex;
@@ -387,7 +387,7 @@ TEST(FLOW_3D_DARCY_PEACEMAN_WELL) {
     sol += p[0][c] * p[0][c] * vol;
   }
 
-  // for (double r=55; r < 75; r+=0.25){
+  // for (double r=55; r < 75; r+=0.25) {
   //   double p_ex = pw + Q/(2*M_PI*k*h)*(log(r) - log(rw));
   //   std::cout<<r<<" "<<p_ex<<" "<<Q/(2*M_PI*k*h)<<" "<<log(rw)<<"\n";
   // }

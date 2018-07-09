@@ -48,7 +48,7 @@ Teuchos::RCP<Observable> CreateObservable(Teuchos::ParameterList& coord_plist,
   Teuchos::Array<std::string> comp_names;
   int num_liquid = 0;
 
-  if (coord_plist.isParameter("component names")){
+  if (coord_plist.isParameter("component names")) {
     comp_names = coord_plist.get<Teuchos::Array<std::string> >("component names");
   }
   num_liquid = coord_plist.get<int>("number of liquid components", comp_names.size());

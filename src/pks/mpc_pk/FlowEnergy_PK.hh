@@ -7,6 +7,7 @@
   provided in the top-level COPYRIGHT file.
 
   Authors: Daniil Svyatskiy
+           Konstantin Lipnikov
 
   Process kernel that strongly couples Flow PK with Energy PK.
 */
