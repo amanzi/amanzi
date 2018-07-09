@@ -141,7 +141,7 @@ public:
     this->S_->GetRecordW(this->key_, "", this->key_).set_initialized();
   }
 
-  void Functional(double t, const TreeVector &u, TreeVector &f) {
+  void FunctionalTimeDerivative(double t, const TreeVector &u, TreeVector &f) {
     // these calls are here because the explicit ti is not aware that it should
     // call it
     this->S_->set_time(tag_inter_, t);
@@ -206,7 +206,7 @@ public:
     this->S_->GetRecordW(this->key_, this->key_).set_initialized();
   }
 
-  void Functional(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
+  void FunctionalResidual(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
                   Teuchos::RCP<TreeVector> u_new, Teuchos::RCP<TreeVector> f) {
     AMANZI_ASSERT(std::abs(t_old - S_->time(tag_old_)) < 1.e-12);
     AMANZI_ASSERT(std::abs(t_new - S_->time(tag_new_)) < 1.e-12);

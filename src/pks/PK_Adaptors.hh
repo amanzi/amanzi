@@ -129,9 +129,9 @@ public:
   }
 
   // the Explicit_TI::fnBase interface
-  virtual void Functional(double t, const TreeVector &u,
+  virtual void FunctionalTimeDerivative(double t, const TreeVector &u,
                     TreeVector &f) override final {
-    Base_t::Functional(t, u, f);
+    Base_t::FunctionalTimeDerivative(t, u, f);
   }
 
 protected:
@@ -189,11 +189,11 @@ public:
 
   // the BDFfnBase interface
   // computes the non-linear functional f = f(t,u,udot)
-  virtual void Functional(double t_old, double t_new,
+  virtual void FunctionalResidual(double t_old, double t_new,
                           Teuchos::RCP<TreeVector> u_old,
                           Teuchos::RCP<TreeVector> u_new,
                           Teuchos::RCP<TreeVector> f) override final {
-    Base_t::Functional(t_old, t_new, u_old, u_new, f);
+    Base_t::FunctionalResidual(t_old, t_new, u_old, u_new, f);
   }
 
   // applies preconditioner to u and returns the result in Pu
@@ -308,11 +308,11 @@ public:
 
   // the BDFfnBase interface
   // computes the non-linear functional f = f(t,u,udot)
-  virtual void Functional(double t_old, double t_new,
+  virtual void FunctionalResidual(double t_old, double t_new,
                           Teuchos::RCP<TreeVector> u_old,
                           Teuchos::RCP<TreeVector> u_new,
                           Teuchos::RCP<TreeVector> f) override final {
-    Base_t::Functional(t_old, t_new, u_old, u_new, f);
+    Base_t::FunctionalResidual(t_old, t_new, u_old, u_new, f);
   }
 
   // applies preconditioner to u and returns the result in Pu
@@ -372,9 +372,9 @@ public:
   virtual void ChangedSolution() override final { Base_t::ChangedSolution(); }
 
   // the Explicit_TI::fnBase interface
-  virtual void Functional(double t, const TreeVector &u,
+  virtual void FunctionalTimeDerivative(double t, const TreeVector &u,
                     TreeVector &f) override final {
-    Base_t::Functional(t, u, f);
+    Base_t::FunctionalTimeDerivative(t, u, f);
   }
 
 protected:

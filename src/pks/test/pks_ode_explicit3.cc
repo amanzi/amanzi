@@ -77,7 +77,7 @@ public:
     this->S_->GetRecordW("primary", "primary").set_initialized();
   }
 
-  void Functional(double t, const TreeVector &u, TreeVector &f) {
+  void FunctionalTimeDerivative(double t, const TreeVector &u, TreeVector &f) {
     this->SolutionToState(u, name() + "_explicit_ti_intermediate");
     ChangedSolutionPK(name() + "_explicit_ti_intermediate");
     Key dudt_key = Keys::getDerivKey(key_, "t");

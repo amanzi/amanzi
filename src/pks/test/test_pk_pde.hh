@@ -70,7 +70,7 @@ public:
     this->S_->GetRecordW(this->key_, "", this->key_).set_initialized();
   }
 
-  void Functional(double t, const TreeVector &u, TreeVector &f) {
+  void FunctionalTimeDerivative(double t, const TreeVector &u, TreeVector &f) {
     // these calls are here because the explicit ti is not aware that it should
     // call it
     this->S_->set_time(tag_inter_, t);
@@ -89,10 +89,10 @@ public:
     // dudt = -dudt_eval / cv
     f.Data()->ReciprocalMultiply(-1.0, cv, dudt, 0.);
 
-    // std::cout << "Dudt at t = " << t << std::endl;
-    // std::cout << "================================================" << std::endl;
-    // std::cout << "  u = " << std::endl;
-    // u.Print(std::cout);
+    std::cout << "Dudt at t = " << t << std::endl;
+    std::cout << "================================================" << std::endl;
+    std::cout << "  u = " << std::endl;
+    u.Print(std::cout);
   }
 
 protected:
@@ -176,7 +176,7 @@ public:
     this->S_->GetRecordW(this->key_, "", this->key_).set_initialized();
   }
 
-  void Functional(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
+  void FunctionalResidual(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
                   Teuchos::RCP<TreeVector> u_new, Teuchos::RCP<TreeVector> f) {
     AMANZI_ASSERT(std::abs(t_old - this->S_->time(tag_old_)) < 1.e-12);
     AMANZI_ASSERT(std::abs(t_new - this->S_->time(tag_new_)) < 1.e-12);

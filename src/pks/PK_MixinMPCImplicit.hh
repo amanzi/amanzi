@@ -49,7 +49,7 @@ public:
   // PK methods
   // the BDFfnBase interface
   // computes the non-linear functional f = f(t,u,udot)
-  void Functional(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
+  void FunctionalResidual(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
                   Teuchos::RCP<TreeVector> u_new, Teuchos::RCP<TreeVector> f);
 
   // applies preconditioner to u and returns the result in Pu
@@ -102,12 +102,12 @@ protected:
 // the BDFfnBase interface
 // computes the non-linear functional f = f(t,u,udot)
 template <class Base_t, class PK_Contained_t>
-void PK_MixinMPCImplicit<Base_t, PK_Contained_t>::Functional(
+void PK_MixinMPCImplicit<Base_t, PK_Contained_t>::FunctionalResidual(
     double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
     Teuchos::RCP<TreeVector> u_new, Teuchos::RCP<TreeVector> f) {
   int i = 0;
   for (auto &pk : sub_pks_) {
-    pk->Functional(t_old, t_new, u_old->SubVector(i), u_new->SubVector(i),
+    pk->FunctionalResidual(t_old, t_new, u_old->SubVector(i), u_new->SubVector(i),
                    f->SubVector(i));
     ++i;
   }

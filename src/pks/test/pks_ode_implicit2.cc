@@ -52,12 +52,12 @@ public:
     this->S_->GetRecordW("primary", "", "primary").set_initialized();
   }
 
-  void Functional(double t, const TreeVector &u, TreeVector &f) { f = u; }
+  void FunctionalResidual(double t, const TreeVector &u, TreeVector &f) { f = u; }
 
-  void Functional(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
+  void FunctionalResidual(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
                   Teuchos::RCP<TreeVector> u_new, Teuchos::RCP<TreeVector> f) {
     double dt = t_new - t_old;
-    Functional(t_new, *u_new, *f);
+    FunctionalResidual(t_new, *u_new, *f);
     f->Update(1. / dt, *u_new, -1. / dt, *u_old, -1.);
     std::cout << "  At t = " << t_old << ": u_old = "
               << (*u_old->Data()->ViewComponent("cell", false))[0][0]

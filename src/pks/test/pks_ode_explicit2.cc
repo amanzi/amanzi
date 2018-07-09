@@ -52,7 +52,7 @@ public:
     this->S_->GetRecordW("primary", "primary").set_initialized();
   }
 
-  void Functional(double t, const TreeVector &u, TreeVector &f) {
+  void FunctionalTimeDerivative(double t, const TreeVector &u, TreeVector &f) {
     f = u;
     std::cout << "  At time t = " << t
               << ": u = " << (*u.Data()->ViewComponent("cell", false))[0][0]
