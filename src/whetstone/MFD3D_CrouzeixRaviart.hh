@@ -66,26 +66,26 @@ class MFD3D_CrouzeixRaviart : public MFD3D {
   // -- projectors
   virtual void L2Cell(
       int c, const std::vector<VectorPolynomial>& vf,
-      const std::shared_ptr<DenseVector>& moments, VectorPolynomial& uc) override {
+      VectorPolynomial& moments, VectorPolynomial& uc) override {
     ProjectorCell_HO_(c, vf, Type::L2, false, moments, uc);
   }
 
   virtual void H1Cell(
       int c, const std::vector<VectorPolynomial>& vf,
-      const std::shared_ptr<DenseVector>& moments, VectorPolynomial& uc) override {
+      VectorPolynomial& moments, VectorPolynomial& uc) override {
     ProjectorCell_HO_(c, vf, Type::H1, false, moments, uc);
   }
 
   // harmonic projector calculates and returns cell-moments
   void L2CellHarmonic(
       int c, const std::vector<VectorPolynomial>& vf,
-      const std::shared_ptr<DenseVector>& moments, VectorPolynomial& uc) {
+      VectorPolynomial& moments, VectorPolynomial& uc) {
     ProjectorCell_HO_(c, vf, Type::L2, true, moments, uc);
   }
 
   void H1CellHarmonic(
       int c, const std::vector<VectorPolynomial>& vf,
-      const std::shared_ptr<DenseVector>& moments, VectorPolynomial& uc) {
+      VectorPolynomial& moments, VectorPolynomial& uc) {
     if (order_ == 1 && !use_always_ho_) {
       ProjectorCell_LO_(c, vf, uc);
     } else {
@@ -137,7 +137,7 @@ class MFD3D_CrouzeixRaviart : public MFD3D {
   void ProjectorCell_HO_(
       int c, const std::vector<VectorPolynomial>& vf,
       const Projectors::Type type, bool is_harmonic,
-      const std::shared_ptr<DenseVector>& moments, VectorPolynomial& uc);
+      VectorPolynomial& moments, VectorPolynomial& uc);
 
   void ProjectorGradientCell_(
       int c, const std::vector<VectorPolynomial>& vf,

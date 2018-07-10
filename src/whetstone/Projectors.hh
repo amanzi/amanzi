@@ -37,7 +37,7 @@ class Projectors {
   // elliptic projector
   virtual void H1Cell(
       int c, const std::vector<VectorPolynomial>& vf,
-      const std::shared_ptr<DenseVector>& moments, VectorPolynomial& uc) {
+      VectorPolynomial& moments, VectorPolynomial& uc) {
     Errors::Message msg("Elliptic projector is not supported for this scheme.");
     Exceptions::amanzi_throw(msg);
   }
@@ -45,7 +45,7 @@ class Projectors {
   // L2 projector 
   virtual void L2Cell(
       int c, const std::vector<VectorPolynomial>& vf,
-      const std::shared_ptr<DenseVector>& moments, VectorPolynomial& uc) {
+      VectorPolynomial& moments, VectorPolynomial& uc) {
     Errors::Message msg("L2 projector is not supported for this scheme.");
     Exceptions::amanzi_throw(msg);
   }

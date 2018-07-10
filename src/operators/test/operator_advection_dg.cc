@@ -309,14 +309,15 @@ void AdvectionSteady(int dim, std::string filename, int nx,
   solution.ScatterMasterToGhosted();
   Epetra_MultiVector& p = *solution.ViewComponent("cell", false);
 
-  double pnorm, pl2_err, pinf_err, pl2_mean, pinf_mean;
-  ana.ComputeCellError(dg, p, 0.0, pnorm, pl2_err, pinf_err, pl2_mean, pinf_mean);
+  double pnorm, pl2_err, pinf_err, pl2_mean, pinf_mean, pl2_int;
+  ana.ComputeCellError(dg, p, 0.0, pnorm, pl2_err, pinf_err, pl2_mean, pinf_mean, pl2_int);
 
   if (MyPID == 0) {
     sol.ChangeOrigin(AmanziGeometry::Point(2));
     std::cout << "\nEXACT solution: " << sol << std::endl;
-    printf("Mean:  L2(p)=%12.9f  Inf(p)=%12.9f  itr=%3d\n", pl2_mean, pinf_mean, solver.num_itrs());
-    printf("Total: L2(p)=%12.9f  Inf(p)=%12.9f\n", pl2_err, pinf_err);
+    printf("Mean:     L2(p)=%12.9f  Inf(p)=%12.9f  itr=%3d\n", pl2_mean, pinf_mean, solver.num_itrs());
+    printf("Total:    L2(p)=%12.9f  Inf(p)=%12.9f\n", pl2_err, pinf_err);
+    printf("Integral: L2(p)=%12.9f\n", pl2_int);
     CHECK(pl2_err < 1e-10 && pinf_err < 1e-10);
   } 
 }

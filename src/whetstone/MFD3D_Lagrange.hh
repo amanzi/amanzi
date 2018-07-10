@@ -55,27 +55,27 @@ class MFD3D_Lagrange : public MFD3D {
   // -- projectors
   virtual void L2Cell(
       int c, const std::vector<VectorPolynomial>& vf,
-      const std::shared_ptr<DenseVector>& moments, VectorPolynomial& uc) override {
+      VectorPolynomial& moments, VectorPolynomial& uc) override {
     ProjectorCell_(c, vf, Type::L2, false, moments, uc);
   }
 
   virtual void H1Cell(
       int c, const std::vector<VectorPolynomial>& vf,
-      const std::shared_ptr<DenseVector>& moments, VectorPolynomial& uc) override {
+      VectorPolynomial& moments, VectorPolynomial& uc) override {
     ProjectorCell_(c, vf, Type::H1, false, moments, uc);
   }
 
   // L2 projector that calculates and returns cell moments
   void L2CellHarmonic(
       int c, const std::vector<VectorPolynomial>& vf,
-      const std::shared_ptr<DenseVector>& moments, VectorPolynomial& uc) {
+      VectorPolynomial& moments, VectorPolynomial& uc) {
     ProjectorCell_(c, vf, Type::L2, true, moments, uc);
   }
 
   // harmonic projector calculates and returns cell-moments
   void H1CellHarmonic(
       int c, const std::vector<VectorPolynomial>& vf,
-      const std::shared_ptr<DenseVector>& moments, VectorPolynomial& uc) {
+      VectorPolynomial& moments, VectorPolynomial& uc) {
     ProjectorCell_(c, vf, Type::H1, true, moments, uc);
   }
 
@@ -92,7 +92,7 @@ class MFD3D_Lagrange : public MFD3D {
   void ProjectorCell_(
       int c, const std::vector<VectorPolynomial>& vf,
       const Projectors::Type type, bool is_harmonic,
-      const std::shared_ptr<DenseVector>& moments, VectorPolynomial& uc);
+      VectorPolynomial& moments, VectorPolynomial& uc);
 
  protected:
   PolynomialOnMesh integrals_;

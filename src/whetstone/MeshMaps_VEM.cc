@@ -30,9 +30,7 @@ namespace WhetStone {
 void MeshMaps_VEM::VelocityCell(
     int c, const std::vector<VectorPolynomial>& vf, VectorPolynomial& vc) const
 {
-  // LeastSquareProjector_Cell_(order_, c, vf, vc);
-
-  auto moments = std::make_shared<DenseVector>();
+  VectorPolynomial moments(d_, vf.size());
 
   WhetStone::MFD3DFactory factory;
   auto mfd = factory.CreateMFD3D(mesh0_, method_, order_);
@@ -51,6 +49,9 @@ void MeshMaps_VEM::VelocityCell(
   else if (projector_ == "L2") {
     mfd->L2Cell(c, vf, moments, vc);
   }
+  else if (projector_ == "least square") {
+    LeastSquareProjector_Cell_(order_, c, vf, vc);
+  } 
   else {
     AMANZI_ASSERT(false);
   }
@@ -189,22 +190,41 @@ void MeshMaps_VEM::LeastSquareProjector_Cell_(
     int order, int c, const std::vector<VectorPolynomial>& vf, VectorPolynomial& vc) const
 {
   vc.resize(d_);
-  for (int i = 0; i < d_; ++i) vc[i].Reshape(d_, 1);
+  for (int i = 0; i < d_; ++i) vc[i].Reshape(d_, order);
   
-  Entity_ID_List nodes;
+  AmanziGeometry::Point px;
+  std::vector<AmanziGeometry::Point> x1, x2;
+
+  Entity_ID_List nodes, faces;
   mesh0_->cell_get_nodes(c, &nodes);
   int nnodes = nodes.size();
 
-  AmanziGeometry::Point px;
-  std::vector<AmanziGeometry::Point> x1, x2, u;
-  for (int i = 0; i < nnodes; ++i) {
-    mesh0_->node_get_coordinates(nodes[i], &px);
+  for (int n = 0; n < nnodes; ++n) {
+    mesh0_->node_get_coordinates(nodes[n], &px);
     x1.push_back(px);
-  }
-  for (int i = 0; i < nnodes; ++i) {
-    mesh1_->node_get_coordinates(nodes[i], &px);
+
+    mesh1_->node_get_coordinates(nodes[n], &px);
     x2.push_back(px);
   }
+
+  // FIXME
+  /*
+  if (order > 1) {
+    mesh0_->cell_get_faces(c, &faces);
+    int nfaces = faces.size();
+
+    for (int n = 0; n < nfaces; ++n) {
+      const auto& xf = mesh0_->face_centroid(faces[n]);
+      px = xf; 
+      x1.push_back(px);
+
+      for (int i = 0; i < d_; ++i)  {
+        px[i] += vf[n][i].Value(xf); 
+      }
+      x2.push_back(px);
+    }
+  }
+  */
 
   // calculate velocity u(X) = F(X) - X
   LeastSquareFit(order, x1, x2, vc);

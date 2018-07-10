@@ -582,12 +582,13 @@ void AdvectionTransient(std::string filename, int nx, int ny, double dt,
   sol.ScatterMasterToGhosted();
   Epetra_MultiVector& p = *sol.ViewComponent("cell", false);
 
-  double pnorm, pl2_err, pinf_err, pl2_mean, pinf_mean;
-  ana.ComputeCellError(*dg, p, tend, pnorm, pl2_err, pinf_err, pl2_mean, pinf_mean);
+  double pnorm, pl2_err, pinf_err, pl2_mean, pinf_mean, pl2_int;
+  ana.ComputeCellError(*dg, p, tend, pnorm, pl2_err, pinf_err, pl2_mean, pinf_mean, pl2_int);
 
   if (MyPID == 0) {
     printf("nx=%3d (mean) L2(p)=%9.6g  Inf(p)=%9.6g\n", nx, pl2_mean, pinf_mean);
     printf("      (total) L2(p)=%9.6g  Inf(p)=%9.6g\n", pl2_err, pinf_err);
+    printf("   (integral) L2(p)=%9.6g\n", pl2_int);
     CHECK(pl2_mean < 0.1 / nx);
   }
 }
@@ -605,7 +606,9 @@ TEST(OPERATOR_ADVECTION_TRANSIENT_DG) {
   AdvectionTransient<AnalyticDG06>("square",  40,  40, 0.01 / 2, Amanzi::Explicit_TI::tvd_3rd_order);
   AdvectionTransient<AnalyticDG06>("square",  80,  80, 0.01 / 4, Amanzi::Explicit_TI::tvd_3rd_order);
   AdvectionTransient<AnalyticDG06>("square", 160, 160, 0.01 / 8, Amanzi::Explicit_TI::tvd_3rd_order);
+  */
 
+  /*
   AdvectionTransient<AnalyticDG06>("test/triangular8.exo",    8, 0, 0.01, Amanzi::Explicit_TI::tvd_3rd_order);
   AdvectionTransient<AnalyticDG06>("test/triangular16.exo",  16, 0, 0.01 / 2, Amanzi::Explicit_TI::tvd_3rd_order);
   AdvectionTransient<AnalyticDG06>("test/triangular32.exo",  32, 0, 0.01 / 4, Amanzi::Explicit_TI::tvd_3rd_order);

@@ -30,6 +30,7 @@ class VectorPolynomial {
  public:
   VectorPolynomial() : d_(0) {};
   VectorPolynomial(int d, int size);
+  VectorPolynomial(int d, int size, int order);
   VectorPolynomial(const Polynomial& p);
   ~VectorPolynomial() {};
 

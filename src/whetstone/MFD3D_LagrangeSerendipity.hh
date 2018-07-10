@@ -46,7 +46,7 @@ class MFD3D_LagrangeSerendipity : public MFD3D_Lagrange {
   // -- projectors
   virtual void L2Cell(
       int c, const std::vector<VectorPolynomial>& vf,
-      const std::shared_ptr<DenseVector>& moments, VectorPolynomial& uc) override;
+      VectorPolynomial& moments, VectorPolynomial& uc) override;
 
  private:
   void CalculateDOFsOnBoundary_(

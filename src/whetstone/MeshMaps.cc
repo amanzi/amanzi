@@ -299,13 +299,13 @@ void MeshMaps::ProjectPolynomial(int c, Polynomial& poly) const
     vvf.push_back(vf);
   }
 
-  auto moments = std::make_shared<WhetStone::DenseVector>();
+  VectorPolynomial moments(d_, 1);
+
   if (order == 2) {
     NumericalIntegration numi(mesh1_);
     double mass = numi.IntegratePolynomialCell(c, poly);
 
-    moments->Reshape(1);
-    (*moments)(0) = mass / mesh1_->cell_volume(c);
+    moments[0](0, 0) = mass / mesh1_->cell_volume(c);
   }
 
   VectorPolynomial vc(d_, 0);
