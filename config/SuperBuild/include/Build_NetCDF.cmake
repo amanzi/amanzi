@@ -49,6 +49,7 @@ option(ENABLE_NetCDF4 "Enable netCDF4 build" TRUE)
 if (ENABLE_NetCDF4)
   list(APPEND NetCDF_PACKAGE_DEPENDS ${HDF5_BUILD_TARGET})
   list(APPEND NetCDF_CMAKE_CACHE_ARGS "-DENABLE_NETCDF_4:BOOL=TRUE")
+  list(APPEND NetCDF_CMAKE_CACHE_ARGS "-DZLIB_LIBRARY:FILEPATH=${ZLIB_LIBRARIES}")
 endif() 
 
 # share libraries -- disabled by default
