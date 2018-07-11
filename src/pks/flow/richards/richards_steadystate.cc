@@ -54,7 +54,7 @@ void RichardsSteadyState::UpdatePreconditioner(double t, Teuchos::RCP<const Tree
   preconditioner_diff_->UpdateMatrices(Teuchos::null, pres.ptr());
 
   // Assemble and precompute the Schur complement for inversion.
-  preconditioner_diff_->ApplyBCs(true, true);
+  preconditioner_diff_->ApplyBCs(true, true, true);
 
   if (precon_used_) {
     preconditioner_->AssembleMatrix();
@@ -83,7 +83,7 @@ void RichardsSteadyState::UpdatePreconditioner(double t, Teuchos::RCP<const Tree
   //   Teuchos::RCP<TreeVector> up2 = Teuchos::rcp(new TreeVector(*up));
   //   Teuchos::RCP<TreeVector> f1 = Teuchos::rcp(new TreeVector(*up));
   //   Teuchos::RCP<TreeVector> f2 = Teuchos::rcp(new TreeVector(*up));
-  //   Functional(S_->time(), S_next_->time(), Teuchos::null, up_nc, f1);
+  //   FunctionalResidual(S_->time(), S_next_->time(), Teuchos::null, up_nc, f1);
 
   //   *up2 = *up;
   //   int f = 500;
@@ -93,7 +93,7 @@ void RichardsSteadyState::UpdatePreconditioner(double t, Teuchos::RCP<const Tree
   //   (*up_nc->Data())("cell",c) =
   //       (*up_nc->Data())("cell",c) + 20;
   //   ChangedSolution();
-  //   Functional(S_->time(), S_next_->time(), Teuchos::null, up_nc, f2);
+  //   FunctionalResidual(S_->time(), S_next_->time(), Teuchos::null, up_nc, f2);
 
   //   std::cout.precision(16);
   //   std::cout << "DFDP: " << std::endl;
@@ -139,7 +139,7 @@ void RichardsSteadyState::UpdatePreconditioner(double t, Teuchos::RCP<const Tree
 // -----------------------------------------------------------------------------
 // computes the non-linear functional g = g(t,u,udot)
 // -----------------------------------------------------------------------------
-void RichardsSteadyState::Functional(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
+void RichardsSteadyState::FunctionalResidual(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
                        Teuchos::RCP<TreeVector> u_new, Teuchos::RCP<TreeVector> g) {
   // VerboseObject stuff.
   Teuchos::OSTab tab = vo_->getOSTab();

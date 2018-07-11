@@ -67,7 +67,7 @@ void EnergyBase::AddAdvection_(const Teuchos::Ptr<State>& S,
   S->GetFieldEvaluator(enthalpy_key_)->HasFieldChanged(S.ptr(), name_);
   Teuchos::RCP<const CompositeVector> enth = S->GetFieldData(enthalpy_key_);;
   ApplyDirichletBCsToEnthalpy_(S.ptr());
-  matrix_adv_->ApplyBCs(bc_adv_, false);
+  matrix_adv_->ApplyBCs(false, true, false);
 
   // apply
   matrix_adv_->global_operator()->ComputeNegativeResidual(*enth, *g, false);
@@ -97,7 +97,7 @@ void EnergyBase::ApplyDiffusion_(const Teuchos::Ptr<State>& S,
   matrix_diff_->UpdateFlux(temp.ptr(), flux.ptr());
 
   // finish assembly of the stiffness matrix
-  matrix_diff_->ApplyBCs(true, true);
+  matrix_diff_->ApplyBCs(true, true, true);
 
   // calculate the residual
   matrix_diff_->global_operator()->ComputeNegativeResidual(*temp, *g);

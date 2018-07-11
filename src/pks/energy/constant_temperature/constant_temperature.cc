@@ -78,7 +78,7 @@ bool ConstantTemperature::AdvanceStep(double t_old, double t_new, bool reinit) {
 
 // Methods for the BDF integrator
 // -- residual
-void ConstantTemperature::Functional(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
+void ConstantTemperature::FunctionalResidual(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
         Teuchos::RCP<TreeVector> u_new, Teuchos::RCP<TreeVector> f) {
   *f = *u_new;
   f->Data()->Update(-1.0, *temp0_, 1.0); // T - T0

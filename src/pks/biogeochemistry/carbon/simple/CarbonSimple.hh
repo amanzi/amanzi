@@ -45,7 +45,7 @@ class CarbonSimple : public PK_Physical_Explicit_Default {
 
   // EnergyBase is a BDFFnBase
   // computes the non-linear functional f = f(t,u,udot)
-  virtual void Functional(const double t, const TreeVector& u, TreeVector& f);
+  virtual void FunctionalTimeDerivative(const double t, const TreeVector& u, TreeVector& f);
 
   virtual std::string name(){return "carbon simple";};
 

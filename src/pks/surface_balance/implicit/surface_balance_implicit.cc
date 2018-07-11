@@ -332,7 +332,7 @@ SurfaceBalanceImplicit::Initialize(const Teuchos::Ptr<State>& S) {
 
 // computes the non-linear functional g = g(t,u,udot)
 void
-SurfaceBalanceImplicit::Functional(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
+SurfaceBalanceImplicit::FunctionalResidual(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
                             Teuchos::RCP<TreeVector> u_new, Teuchos::RCP<TreeVector> g) {
   Teuchos::OSTab tab = vo_->getOSTab();
   double dt = t_new - t_old;
@@ -904,7 +904,7 @@ SurfaceBalanceImplicit::ModifyPredictor(double h, Teuchos::RCP<const TreeVector>
   if (modify_predictor_advance_) {
     Teuchos::RCP<TreeVector> res = Teuchos::rcp(new TreeVector(*u));
     Teuchos::RCP<TreeVector> u0_nc = Teuchos::rcp_const_cast<TreeVector>(u0);
-    Functional(S_next_->time()-h, S_next_->time(), u0_nc, u, res);
+    FunctionalResidual(S_next_->time()-h, S_next_->time(), u0_nc, u, res);
   }
 
   return true;

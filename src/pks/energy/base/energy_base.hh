@@ -62,7 +62,7 @@ public:
 
   // EnergyBase is a BDFFnBase
   // computes the non-linear functional f = f(t,u,udot)
-  virtual void Functional(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
+  virtual void FunctionalResidual(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
                    Teuchos::RCP<TreeVector> u_new, Teuchos::RCP<TreeVector> f);
 
   // applies preconditioner to u and returns the result in Pu

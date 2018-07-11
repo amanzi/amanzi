@@ -25,7 +25,7 @@ namespace Flow {
 // -----------------------------------------------------------------------------
 // computes the non-linear functional g = g(t,u,udot)
 // -----------------------------------------------------------------------------
-void OverlandFlow::Functional( double t_old,
+void OverlandFlow::FunctionalResidual( double t_old,
                         double t_new,
                         Teuchos::RCP<TreeVector> u_old,
                         Teuchos::RCP<TreeVector> u_new,
@@ -209,7 +209,7 @@ void OverlandFlow::UpdatePreconditioner(double t, Teuchos::RCP<const TreeVector>
     Acc_cells[c] += cv[0][c] / h;
   }
 
-  preconditioner_diff_->ApplyBCs(true, true);
+  preconditioner_diff_->ApplyBCs(true, true, true);
   if (precon_used_) {
     preconditioner_->AssembleMatrix();
     preconditioner_->UpdatePreconditioner();

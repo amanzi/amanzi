@@ -1096,7 +1096,7 @@ void Transport_PK_ATS :: Advance_Dispersion_Diffusion(double t_old, double t_new
         }
         op2->AddAccumulationDelta(sol, factor, factor, dt_MPC, "cell");
  
-        op1->ApplyBCs(true, true);
+        op1->ApplyBCs(true, true, true);
         op->SymbolicAssembleMatrix();
         op->AssembleMatrix();
         op->InitPreconditioner(dispersion_preconditioner, *preconditioner_list_);
@@ -1158,7 +1158,7 @@ void Transport_PK_ATS :: Advance_Dispersion_Diffusion(double t_old, double t_new
 
       Epetra_MultiVector& rhs_cell = *op->rhs()->ViewComponent("cell");
       ComputeAddSourceTerms(t_new, 1.0, rhs_cell, i, i);
-      op1->ApplyBCs(true, true);
+      op1->ApplyBCs(true, true, true);
 
       // add accumulation term
       Epetra_MultiVector& fac1 = *factor.ViewComponent("cell");
@@ -1495,7 +1495,7 @@ void Transport_PK_ATS::AdvanceSecondOrderUpwindRK1(double dt_cycle)
 
     double T = t_physics_;
     Epetra_Vector*& component = tcc_prev(i);
-    Functional(T, *component, f_component);
+    FunctionalTimeDerivative(T, *component, f_component);
 
     for (int c = 0; c < ncells_owned; c++) {
       tcc_next[i][c] = (tcc_prev[i][c] + dt_ * f_component[c]) * ws_ratio[c];
@@ -1560,7 +1560,7 @@ void Transport_PK_ATS::AdvanceSecondOrderUpwindRK2(double dt_cycle)
 
     double T = t_physics_;
     Epetra_Vector*& component = tcc_prev(i);
-    Functional(T, *component, f_component);
+    FunctionalTimeDerivative(T, *component, f_component);
 
     for (int c = 0; c < ncells_owned; c++) {
       tcc_next[i][c] = (tcc_prev[i][c] + dt_ * f_component[c]) * ws_ratio[c];
@@ -1581,7 +1581,7 @@ void Transport_PK_ATS::AdvanceSecondOrderUpwindRK2(double dt_cycle)
 
     double T = t_physics_;
     Epetra_Vector*& component = tcc_next(i);
-    Functional(T, *component, f_component);
+    FunctionalTimeDerivative(T, *component, f_component);
 
     for (int c = 0; c < ncells_owned; c++) {
       double value = (tcc_prev[i][c] + dt_ * f_component[c]) * ws_ratio[c];

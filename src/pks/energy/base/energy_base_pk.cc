@@ -147,6 +147,7 @@ void EnergyBase::SetupEnergy_(const Teuchos::Ptr<State>& S) {
   // -- create the forward operator for the advection term
   Teuchos::ParameterList advect_plist = plist_->sublist("advection");
   matrix_adv_ = Teuchos::rcp(new Operators::PDE_AdvectionUpwind(advect_plist, mesh_));
+  matrix_adv_->SetBCs(bc_adv_, bc_adv_);
   
   // -- create the operators for the preconditioner
   //    diffusion
@@ -208,6 +209,7 @@ void EnergyBase::SetupEnergy_(const Teuchos::Ptr<State>& S) {
     if (implicit_advection_in_pc_) {
       Teuchos::ParameterList advect_plist = plist_->sublist("advection preconditioner");
       preconditioner_adv_ = Teuchos::rcp(new Operators::PDE_AdvectionUpwind(advect_plist, preconditioner_));
+      preconditioner_adv_->SetBCs(bc_adv_, bc_adv_);
     }
   }
 
@@ -804,7 +806,7 @@ void EnergyBase::CalculateConsistentFaces(const Teuchos::Ptr<CompositeVector>& u
   matrix_diff_->SetScalarCoefficient(conductivity, Teuchos::null);
   matrix_diff_->UpdateMatrices(Teuchos::null, u);
   //matrix_diff_->UpdateMatrices(Teuchos::null, Teuchos::null);
-  matrix_diff_->ApplyBCs(true, true);
+  matrix_diff_->ApplyBCs(true, true, true);
 
   // derive the consistent faces, involves a solve
   matrix_diff_->UpdateConsistentFaces(*u);

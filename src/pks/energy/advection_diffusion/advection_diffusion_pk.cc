@@ -82,6 +82,7 @@ void AdvectionDiffusion::Setup(const Teuchos::Ptr<State>& S) {
   // operator for advection terms
   Teuchos::ParameterList advect_plist = plist_->sublist("advection");
   matrix_adv_ = Teuchos::rcp(new Operators::PDE_AdvectionUpwind(advect_plist, mesh_));
+  matrix_adv_->SetBCs(bc_, bc_);
   
   // preconditioner
   Teuchos::ParameterList mfd_pc_plist = plist_->sublist("diffusion preconditioner");
