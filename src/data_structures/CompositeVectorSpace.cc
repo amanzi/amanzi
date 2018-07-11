@@ -81,14 +81,10 @@ CompositeVectorSpace::SubsetOf(const CompositeVectorSpace& other) const {
 // Useful for PKs to maintain default factories that apply to multiple CVs.
 CompositeVectorSpace*
 CompositeVectorSpace::Update(const CompositeVectorSpace& other) {
-  if (other.owned_) {
-    SetComponents(other.names_, other.locations_, other.num_dofs_);
-  } else {
+  if (this != &other) {
     AddComponents(other.names_, other.locations_, other.num_dofs_);
+    SetMesh(other.mesh_);
   }
-
-  SetMesh(other.mesh_);
-  //  SetGhosted(other.ghosted_);
   return this;
 };
 
@@ -106,8 +102,9 @@ CompositeVectorSpace::SetMesh(
         const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) {
   if (mesh_ == Teuchos::null) {
     mesh_ = mesh;
-  } else {
-    AMANZI_ASSERT(mesh_ == mesh);
+  } else if (mesh_ != mesh) {
+    Errors::Message message("CompositeVectorSpace: SetMesh called on space that already has a mesh with a different mesh.");
+    throw(message);
   }
   return this;
 };
