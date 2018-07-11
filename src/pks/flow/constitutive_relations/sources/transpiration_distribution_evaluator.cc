@@ -2,6 +2,8 @@
   Distributes transpiration based upon a rooting depth and a wilting-point water-potential factor.
 */
 
+#include "Function.hh"
+#include "FunctionFactory.hh"
 #include "transpiration_distribution_evaluator.hh"
 
 namespace Amanzi {
@@ -15,25 +17,12 @@ TranspirationDistributionEvaluator::TranspirationDistributionEvaluator(Teuchos::
   InitializeFromPlist_();
 }
 
-
-// Copy constructor
-TranspirationDistributionEvaluator::TranspirationDistributionEvaluator(const TranspirationDistributionEvaluator& other) :
-    SecondaryVariableFieldEvaluator(other),
-    f_wp_key_(other.f_wp_key_),
-    f_root_key_(other.f_root_key_),
-    trans_total_key_(other.trans_total_key_),    
-    cv_key_(other.cv_key_),
-    surf_cv_key_(other.surf_cv_key_)
-{}
-
-
 // Virtual copy constructor
 Teuchos::RCP<FieldEvaluator>
 TranspirationDistributionEvaluator::Clone() const
 {
   return Teuchos::rcp(new TranspirationDistributionEvaluator(*this));
 }
-
 
 // Initialize by setting up dependencies
 void
@@ -54,6 +43,11 @@ TranspirationDistributionEvaluator::InitializeFromPlist_()
     Exceptions::amanzi_throw(message);
   }
 
+  if (plist_.isSublist("water limiter function")) {
+    Amanzi::FunctionFactory fac;
+    limiter_ = Teuchos::rcp(fac.Create(plist_.sublist("water limiter function")));
+  }
+  
   // - pull Keys from plist
   // dependency: pressure
   f_wp_key_ = Keys::readKey(plist_, domain_name, "water potential fraction", "relative_permeability");
@@ -111,8 +105,17 @@ TranspirationDistributionEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
       }
     
       if (column_total > 0.) {
+        double coef = trans_total[pft][sc] * surf_cv[0][sc] / column_total;
+        if (limiter_.get()) {
+          auto column_total_vector = std::vector<double>(1, column_total / surf_cv[0][sc]);
+          double limiting_factor = (*limiter_)(column_total_vector);
+          AMANZI_ASSERT(limiting_factor >= 0.);
+          AMANZI_ASSERT(limiting_factor <= 1.);
+          coef *= limiting_factor;
+        }
+          
         for (auto c : subsurf_mesh.cells_of_column(sc)) {
-          result_v[pft][c] = result_v[pft][c] * trans_total[pft][sc] * surf_cv[0][sc] / column_total;
+          result_v[pft][c] = result_v[pft][c] * coef;
         }
       }
 
