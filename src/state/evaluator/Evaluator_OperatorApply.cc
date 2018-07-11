@@ -50,9 +50,9 @@ Note that we can infer some constraints here:
 namespace Amanzi {
 
 Evaluator_OperatorApply::Evaluator_OperatorApply(Teuchos::ParameterList &plist)
-    : EvaluatorSecondary<CompositeVector, CompositeVectorSpace>(plist) {
-  AMANZI_ASSERT(!my_key_.empty());
-  Key domain = Keys::getDomain(my_key_);
+    : EvaluatorSecondary(plist) {
+  AMANZI_ASSERT(my_keys_.size() == 1);
+  Key domain = Keys::getDomain(my_keys_[0].first);
 
   // x, x0
   x0_key_ = Keys::readKey(plist_, domain, "diagonal primary x");
@@ -93,24 +93,24 @@ Evaluator_OperatorApply::Evaluator_OperatorApply(Teuchos::ParameterList &plist)
     rhs_scalars_ = plist_.get<Teuchos::Array<double>>("rhs coefficients");
     if (rhs_keys_.size() != rhs_scalars_.size()) {
       Errors::Message message;
-      message << "Evaluator_OperatorApply for " << my_key_ << ": RHS terms names (" << (int) rhs_keys_.size()
+      message << "Evaluator_OperatorApply for " << my_keys_[0].first << ": RHS terms names (" << (int) rhs_keys_.size()
               << ") and scalings (" << (int) rhs_scalars_.size() << ") are not the same length";
       throw(message);
     }
   }
 
   // push dependencies
-  dependencies_.emplace_back(std::make_pair(x0_key_, my_tag_));
-  for (const auto& x_key : x_keys_) dependencies_.emplace_back(std::make_pair(x_key, my_tag_));
-  for (const auto& rhs : rhs_keys_) dependencies_.emplace_back(std::make_pair(rhs, my_tag_));
-  for (const auto& op_key : op0_keys_) dependencies_.emplace_back(std::make_pair(op_key, my_tag_));
-  for (const auto& op_rhs_key : op0_rhs_keys_) dependencies_.emplace_back(std::make_pair(op_rhs_key, my_tag_));
+  dependencies_.emplace_back(std::make_pair(x0_key_, my_keys_[0].second));
+  for (const auto& x_key : x_keys_) dependencies_.emplace_back(std::make_pair(x_key, my_keys_[0].second));
+  for (const auto& rhs : rhs_keys_) dependencies_.emplace_back(std::make_pair(rhs, my_keys_[0].second));
+  for (const auto& op_key : op0_keys_) dependencies_.emplace_back(std::make_pair(op_key, my_keys_[0].second));
+  for (const auto& op_rhs_key : op0_rhs_keys_) dependencies_.emplace_back(std::make_pair(op_rhs_key, my_keys_[0].second));
   for (const auto& op_list : op_keys_)
     for (const auto& op_key : op_list)
-      dependencies_.emplace_back(std::make_pair(op_key, my_tag_));
+      dependencies_.emplace_back(std::make_pair(op_key, my_keys_[0].second));
   for (const auto& rhs_list : op_rhs_keys_)
     for (const auto& rhs_key : rhs_list)
-      dependencies_.emplace_back(std::make_pair(rhs_key, my_tag_));
+      dependencies_.emplace_back(std::make_pair(rhs_key, my_keys_[0].second));
 
   // primary entity is the entity on which the operator primarily exists.
   // This is CELL for control volume methods and NODE for Lagrangian FE
@@ -123,15 +123,21 @@ Evaluator_OperatorApply::Evaluator_OperatorApply(Teuchos::ParameterList &plist)
 }
 
 void Evaluator_OperatorApply::EnsureCompatibility(State &S) {
-  // call base class's to get my requirements set
-  EvaluatorSecondary<CompositeVector,CompositeVectorSpace>::EnsureCompatibility(S);
+  // Ensure my field exists.  Requirements should be already set.
+  AMANZI_ASSERT(my_keys_.size() == 1);
+  auto& my_fac = S.Require<CompositeVector,CompositeVectorSpace>(my_keys_[0].first, my_keys_[0].second, my_keys_[0].first);
+  for (const auto &dep : dependencies_)
+    S.RequireEvaluator(dep.first, dep.second);
+
+  // check plist for vis or checkpointing control
+  EnsureCompatibility_Flags_(S);
 
   // set requirements on my dependencies
   //
   // NOTE: this process is a bit wierd.  We know the Mesh of the residual,
   // from the PK, but we don't necessarily know the CVS of the primary
-  // variable, since it depends upon the discretization of the Diffusion
-  // operator.  This leads us to the following odd setup:
+  // variable, since it depends upon the discretization of the operator.  This
+  // leads us to the following odd setup:
   //
   // 1. PK sets my mesh
   // 2. Push my mesh into all local operators' RHSs
@@ -143,9 +149,7 @@ void Evaluator_OperatorApply::EnsureCompatibility(State &S) {
   //
   // Futhermore, derivatives must be considered.
   //
-  bool has_derivs = S.HasDerivativeSet(my_key_, my_tag_);
-  
-  auto &my_fac = S.Require<CompositeVector,CompositeVectorSpace>(my_key_, my_tag_);
+  bool has_derivs = S.HasDerivativeSet(my_keys_[0].first, my_keys_[0].second);
   if (my_fac.Mesh() != Teuchos::null && my_fac.size() == 0) {
     // add the primary
     my_fac.AddComponent(primary_entity_, primary_entity_kind_, 1);
@@ -153,13 +157,13 @@ void Evaluator_OperatorApply::EnsureCompatibility(State &S) {
 
     // -- set the rhss' mesh, need for primary entity
     for (const auto& rhs_key : op0_rhs_keys_) {
-      auto &rhs_fac = S.Require<CompositeVector,CompositeVectorSpace>(rhs_key, my_tag_);
+      auto &rhs_fac = S.Require<CompositeVector,CompositeVectorSpace>(rhs_key, my_keys_[0].second);
       rhs_fac.Update(my_fac_mesh_only);
     }
 
     for (const auto& rhs_list : op_rhs_keys_) {
       for (const auto& rhs_key : rhs_list) {
-        auto &rhs_fac = S.Require<CompositeVector,CompositeVectorSpace>(rhs_key, my_tag_);
+        auto &rhs_fac = S.Require<CompositeVector,CompositeVectorSpace>(rhs_key, my_keys_[0].second);
         rhs_fac.Update(my_fac_mesh_only);
       }
     }
@@ -167,22 +171,22 @@ void Evaluator_OperatorApply::EnsureCompatibility(State &S) {
     // -- call ensure compatibility of all op dependencies, setting their mesh
     //    and getting their schema
     for (const auto& rhs_key : op0_rhs_keys_)
-      S.RequireEvaluator(rhs_key, my_tag_).EnsureCompatibility(S);
+      S.RequireEvaluator(rhs_key, my_keys_[0].second).EnsureCompatibility(S);
     for (const auto& rhs_list : op_rhs_keys_)
       for (const auto& rhs_key : rhs_list)
-        S.RequireEvaluator(rhs_key, my_tag_).EnsureCompatibility(S);
+        S.RequireEvaluator(rhs_key, my_keys_[0].second).EnsureCompatibility(S);
 
     // -- determine the space of the residual as the union of spaces of the
     //    op's rhs
     for (const auto& rhs_key : op0_rhs_keys_)
-      my_fac.Update(S.Require<CompositeVector,CompositeVectorSpace>(rhs_key, my_tag_));
+      my_fac.Update(S.Require<CompositeVector,CompositeVectorSpace>(rhs_key, my_keys_[0].second));
     for (const auto& rhs_list : op_rhs_keys_)
       for (const auto& rhs_key : rhs_list)
-        my_fac.Update(S.Require<CompositeVector,CompositeVectorSpace>(rhs_key, my_tag_));
+        my_fac.Update(S.Require<CompositeVector,CompositeVectorSpace>(rhs_key, my_keys_[0].second));
 
     // -- x must be the same as r
-    S.Require<CompositeVector,CompositeVectorSpace>(x0_key_, my_tag_).Update(my_fac);
-    S.RequireEvaluator(x0_key_, my_tag_).EnsureCompatibility(S);
+    S.Require<CompositeVector,CompositeVectorSpace>(x0_key_, my_keys_[0].second).Update(my_fac);
+    S.RequireEvaluator(x0_key_, my_keys_[0].second).EnsureCompatibility(S);
 
     // NOTE: should we ensure that other x's are a superset of the
     // domain-space of the other ops? Otherwise there is nothing to say about
@@ -190,23 +194,23 @@ void Evaluator_OperatorApply::EnsureCompatibility(State &S) {
 
     // -- other RHSs must be a subset of r's space
     for (const auto& rhs_key : rhs_keys_) {
-      S.Require<CompositeVector,CompositeVectorSpace>(rhs_key, my_tag_).Update(my_fac_mesh_only);
-      S.RequireEvaluator(rhs_key, my_tag_).EnsureCompatibility(S);
-      if (!S.Require<CompositeVector,CompositeVectorSpace>(rhs_key, my_tag_).SubsetOf(my_fac)) {
+      S.Require<CompositeVector,CompositeVectorSpace>(rhs_key, my_keys_[0].second).Update(my_fac_mesh_only);
+      S.RequireEvaluator(rhs_key, my_keys_[0].second).EnsureCompatibility(S);
+      if (!S.Require<CompositeVector,CompositeVectorSpace>(rhs_key, my_keys_[0].second).SubsetOf(my_fac)) {
         Errors::Message message;
-        message << "Evaluator_OperatorApply for " << my_key_ << ": RHS " << rhs_key
+        message << "Evaluator_OperatorApply for " << my_keys_[0].first << ": RHS " << rhs_key
                 << " space is not a subset of my space.";
         throw(message);
       }
     }
 
     if (has_derivs) {
-      for (const auto& deriv : S.GetDerivativeSet(my_key_, my_tag_)) {
+      for (const auto& deriv : S.GetDerivativeSet(my_keys_[0].first, my_keys_[0].second)) {
         auto wrt = Keys::splitKeyTag(deriv.first);
-        AMANZI_ASSERT(wrt.second == my_tag_);
+        AMANZI_ASSERT(wrt.second == my_keys_[0].second);
         AMANZI_ASSERT(wrt.first == x0_key_);     // NEED TO IMPLEMENT OFF-DIAGONALS EVENTUALLY --etc
-        auto& deriv_fac = S.RequireDerivative<Operators::Operator,Operators::Operator_Factory>(my_key_,
-                my_tag_, wrt.first, wrt.second, my_key_);
+        auto& deriv_fac = S.RequireDerivative<Operators::Operator,Operators::Operator_Factory>(my_keys_[0].first,
+                my_keys_[0].second, wrt.first, wrt.second, my_keys_[0].first);
         deriv_fac.set_mesh(my_fac.Mesh());
 
         // FIX ME TO BE NON_SQUARE FOR OFF DIAGONALS? --etc
@@ -219,21 +223,21 @@ void Evaluator_OperatorApply::EnsureCompatibility(State &S) {
 
   // require data for derivatives
   if (has_derivs) {
-    for (const auto& deriv : S.GetDerivativeSet(my_key_, my_tag_)) {
+    for (const auto& deriv : S.GetDerivativeSet(my_keys_[0].first, my_keys_[0].second)) {
       auto wrt = Keys::splitKeyTag(deriv.first);
-      AMANZI_ASSERT(wrt.second == my_tag_);
+      AMANZI_ASSERT(wrt.second == my_keys_[0].second);
       AMANZI_ASSERT(wrt.first == x0_key_);     // NEED TO IMPLEMENT OFF-DIAGONALS EVENTUALLY --etc
       // quasi-linear operators covered by Update() call --etc
       // jacobian terms are covered by ParameterList jacobian option --etc
 
       // rhs terms
       for (const auto& rhs_key : rhs_keys_) {
-        if (S.GetEvaluator(rhs_key, my_tag_).IsDifferentiableWRT(S, wrt.first, wrt.second)) {
+        if (S.GetEvaluator(rhs_key, my_keys_[0].second).IsDifferentiableWRT(S, wrt.first, wrt.second)) {
           // require the derivative, and update its factory to match its value
-          S.RequireDerivative<CompositeVector,CompositeVectorSpace>(rhs_key, my_tag_, wrt.first, wrt.second)
-              .Update(S.Require<CompositeVector,CompositeVectorSpace>(rhs_key, my_tag_));
+          S.RequireDerivative<CompositeVector,CompositeVectorSpace>(rhs_key, my_keys_[0].second, wrt.first, wrt.second)
+              .Update(S.Require<CompositeVector,CompositeVectorSpace>(rhs_key, my_keys_[0].second));
           // re-call EnsureCompatibility() to make sure these derivative requirements get processed
-          S.RequireEvaluator(rhs_key, my_tag_).EnsureCompatibility(S);
+          S.RequireEvaluator(rhs_key, my_keys_[0].second).EnsureCompatibility(S);
         }
       }
     }
@@ -241,9 +245,10 @@ void Evaluator_OperatorApply::EnsureCompatibility(State &S) {
 }
 
 // These do the actual work
-void Evaluator_OperatorApply::Evaluate_(const State &S,
-                                        CompositeVector &result) {
-  const auto &x = S.Get<CompositeVector>(x0_key_, my_tag_);
+void Evaluator_OperatorApply::Update_(State &S) {
+  auto& result = S.GetW<CompositeVector>(my_keys_[0].first, my_keys_[0].second, my_keys_[0].first);
+
+  const auto &x = S.Get<CompositeVector>(x0_key_, my_keys_[0].second);
   x.ScatterMasterToGhosted();
   result.PutScalarMasterAndGhosted(0.);
   
@@ -256,12 +261,12 @@ void Evaluator_OperatorApply::Evaluate_(const State &S,
     auto global_op = global_op_fac.Create();
 
     // do the apply
-    S.Get<Operators::Op>(op_key, my_tag_).ApplyMatrixFreeOp(&*global_op, x, result);
+    S.Get<Operators::Op>(op_key, my_keys_[0].second).ApplyMatrixFreeOp(&*global_op, x, result);
     // std::cout << "Result after op0 op:" << std::endl;
     // result.Print(std::cout);
 
     // Ax - b
-    result.Update(-1.0, S.Get<CompositeVector>(op0_rhs_keys_[i], my_tag_), 1.0);
+    result.Update(-1.0, S.Get<CompositeVector>(op0_rhs_keys_[i], my_keys_[0].second), 1.0);
     // std::cout << "Result after op0 rhs:" << std::endl;
     // result.Print(std::cout);
     ++i;
@@ -269,7 +274,7 @@ void Evaluator_OperatorApply::Evaluate_(const State &S,
 
   int j = 0;
   for (const auto& op_list : op_keys_) {
-    const auto& xj = S.Get<CompositeVector>(x_keys_[j], my_tag_);
+    const auto& xj = S.Get<CompositeVector>(x_keys_[j], my_keys_[0].second);
     xj.ScatterMasterToGhosted();
 
     int k = 0;
@@ -281,12 +286,12 @@ void Evaluator_OperatorApply::Evaluate_(const State &S,
       auto global_op = global_op_fac.Create();
 
       // do the apply
-      S.Get<Operators::Op>(op_key, my_tag_).ApplyMatrixFreeOp(&*global_op, xj, result);
+      S.Get<Operators::Op>(op_key, my_keys_[0].second).ApplyMatrixFreeOp(&*global_op, xj, result);
       // std::cout << "Result after offdiagonal op:" << std::endl;
       // result.Print(std::cout);
 
       // Ax - b
-      result.Update(-1.0, S.Get<CompositeVector>(op_rhs_keys_[j][k], my_tag_), 1.0);
+      result.Update(-1.0, S.Get<CompositeVector>(op_rhs_keys_[j][k], my_keys_[0].second), 1.0);
       // std::cout << "Result after offdiagonal op rhs:" << std::endl;
       // result.Print(std::cout);
       ++k;
@@ -297,7 +302,7 @@ void Evaluator_OperatorApply::Evaluate_(const State &S,
   // add all the additional RHSs
   j = 0;
   for (const auto& rhs_key : rhs_keys_) {
-    result.Update(rhs_scalars_[j], S.Get<CompositeVector>(rhs_key, my_tag_), 1.0);
+    result.Update(rhs_scalars_[j], S.Get<CompositeVector>(rhs_key, my_keys_[0].second), 1.0);
     ++j;
     // std::cout << "Result after rhs " << j << ":" << std::endl;
     // result.Print(std::cout);
@@ -313,8 +318,8 @@ void Evaluator_OperatorApply::Evaluate_(const State &S,
 //
 void
 Evaluator_OperatorApply::UpdateDerivative_(State &S, const Key &wrt_key, const Key &wrt_tag) {
-  AMANZI_ASSERT(wrt_tag == my_tag_);
-  auto global_op = S.GetDerivativePtrW<Operators::Operator>(my_key_, my_tag_, wrt_key, wrt_tag, my_key_);
+  AMANZI_ASSERT(wrt_tag == my_keys_[0].second);
+  auto global_op = S.GetDerivativePtrW<Operators::Operator>(my_keys_[0].first, my_keys_[0].second, wrt_key, wrt_tag, my_keys_[0].first);
 
   if (global_op->OpSize() == 0) {
     // push in local ops the first time
@@ -324,17 +329,17 @@ Evaluator_OperatorApply::UpdateDerivative_(State &S, const Key &wrt_key, const K
       for (const auto& op_key : op0_keys_) {
         // FIX ME AND MAKE THIS CONST CORRECT --etc
         std::cout << "Adding diffusion op to operator" << std::endl;
-        global_op->OpPushBack(S.GetPtrW<Operators::Op>(op_key, my_tag_, op_key));
-        if (S.GetEvaluator(op_key, my_tag_).IsDifferentiableWRT(S, wrt_key, wrt_tag)) {
-          global_op->OpPushBack(S.GetDerivativePtrW<Operators::Op>(op_key, my_tag_, wrt_key, wrt_tag, op_key));
+        global_op->OpPushBack(S.GetPtrW<Operators::Op>(op_key, my_keys_[0].second, op_key));
+        if (S.GetEvaluator(op_key, my_keys_[0].second).IsDifferentiableWRT(S, wrt_key, wrt_tag)) {
+          global_op->OpPushBack(S.GetDerivativePtrW<Operators::Op>(op_key, my_keys_[0].second, wrt_key, wrt_tag, op_key));
         }
       }
 
       int j = 0;
       for (const auto& rhs_key : rhs_keys_) {
-        if (S.GetEvaluator(rhs_key, my_tag_).IsDifferentiableWRT(S, wrt_key, wrt_tag)) {
+        if (S.GetEvaluator(rhs_key, my_keys_[0].second).IsDifferentiableWRT(S, wrt_key, wrt_tag)) {
           // FIX ME AND MAKE THIS LESS HACKY AND CONST CORRECT --etc
-          CompositeVector drhs = S.GetDerivativeW<CompositeVector>(rhs_key, my_tag_, wrt_key, wrt_tag, rhs_key);
+          CompositeVector drhs = S.GetDerivativeW<CompositeVector>(rhs_key, my_keys_[0].second, wrt_key, wrt_tag, rhs_key);
           // std::cout << "Adding source op to operator";
           // drhs.Print(std::cout);
           for (const auto& comp : drhs) {

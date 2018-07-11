@@ -19,7 +19,7 @@
 #include "Mesh.hh"
 #include "MeshFactory.hh"
 #include "State.hh"
-#include "evaluator/EvaluatorAlgebraic.hh"
+#include "evaluator/EvaluatorSecondaryMonotype.hh"
 #include "evaluator/EvaluatorPrimary.hh"
 
 using namespace Amanzi;
@@ -54,11 +54,10 @@ using namespace Amanzi::AmanziMesh;
 /* ******************************************************************
  * Equation A = 2*B + C*E*H
  ****************************************************************** */
-class AEvaluator : public EvaluatorAlgebraic<double> {
+class AEvaluator : public EvaluatorSecondaryMonotype<double> {
 public:
   AEvaluator(Teuchos::ParameterList &plist)
-      : EvaluatorAlgebraic<double>(plist) {
-    my_key_ = "fa";
+      : EvaluatorSecondaryMonotype<double>(plist) {
     dependencies_.emplace_back(std::make_pair(Key("fb"), Key()));
     dependencies_.emplace_back(std::make_pair(Key("fc"), Key()));
     dependencies_.emplace_back(std::make_pair(Key("fe"), Key()));
@@ -69,30 +68,30 @@ public:
     return Teuchos::rcp(new AEvaluator(*this));
   }
 
-  virtual void Evaluate_(const State &S, double &result) override {
+  virtual void Evaluate_(const State &S, const std::vector<double*> &results) override {
 
     auto &fb = S.Get<double>("fb");
     auto &fc = S.Get<double>("fc");
     auto &fe = S.Get<double>("fe");
     auto &fh = S.Get<double>("fh");
-    result = 2 * fb + fc * fe * fh;
+    (*results[0]) = 2 * fb + fc * fe * fh;
   }
 
   virtual void EvaluatePartialDerivative_(const State &S, const Key &wrt_key,
                                           const Key &wrt_tag,
-                                          double &result) override {
+                                          const std::vector<double*> &results) override {
     auto &fc = S.Get<double>("fc");
     auto &fe = S.Get<double>("fe");
     auto &fh = S.Get<double>("fh");
 
     if (wrt_key == "fb") {
-      result = 2.0;
+      (*results[0]) = 2.0;
     } else if (wrt_key == "fc") {
-      result = fe * fh;
+      (*results[0]) = fe * fh;
     } else if (wrt_key == "fe") {
-      result = fc * fh;
+      (*results[0]) = fc * fh;
     } else if (wrt_key == "fh") {
-      result = fc * fe;
+      (*results[0]) = fc * fe;
     }
   }
 };
@@ -100,11 +99,10 @@ public:
 /* ******************************************************************
  * Equation C = 2*D + G
  ****************************************************************** */
-class CEvaluator : public EvaluatorAlgebraic<double> {
+class CEvaluator : public EvaluatorSecondaryMonotype<double> {
 public:
   CEvaluator(Teuchos::ParameterList &plist)
-      : EvaluatorAlgebraic<double>(plist) {
-    my_key_ = "fc";
+      : EvaluatorSecondaryMonotype<double>(plist) {
     dependencies_.emplace_back(std::make_pair(Key("fd"), Key()));
     dependencies_.emplace_back(std::make_pair(Key("fg"), Key()));
   }
@@ -113,20 +111,20 @@ public:
     return Teuchos::rcp(new CEvaluator(*this));
   }
 
-  virtual void Evaluate_(const State &S, double &result) override {
+  virtual void Evaluate_(const State &S, const std::vector<double*> &results) override {
     auto &fd = S.Get<double>("fd");
     auto &fg = S.Get<double>("fg");
-    result = 2 * fd + fg;
+    (*results[0]) = 2 * fd + fg;
   }
 
   virtual void EvaluatePartialDerivative_(const State &S, const Key &wrt_key,
                                           const Key &wrt_tag,
-                                          double &result) override {
+                                          const std::vector<double*> &results) override {
 
     if (wrt_key == "fd") {
-      result = 2.;
+      (*results[0]) = 2.;
     } else if (wrt_key == "fg") {
-      result = 1.;
+      (*results[0]) = 1.;
     }
   }
 };
@@ -134,11 +132,10 @@ public:
 /* ******************************************************************
  * Equation D = 2*G
  ****************************************************************** */
-class DEvaluator : public EvaluatorAlgebraic<double> {
+class DEvaluator : public EvaluatorSecondaryMonotype<double> {
 public:
   DEvaluator(Teuchos::ParameterList &plist)
-      : EvaluatorAlgebraic<double>(plist) {
-    my_key_ = "fd";
+      : EvaluatorSecondaryMonotype<double>(plist) {
     dependencies_.emplace_back(std::make_pair(Key("fg"), Key()));
   }
 
@@ -146,16 +143,16 @@ public:
     return Teuchos::rcp(new DEvaluator(*this));
   }
 
-  virtual void Evaluate_(const State &S, double &result) override {
+  virtual void Evaluate_(const State &S, const std::vector<double*> &results) override {
     auto &fg = S.Get<double>("fg");
-    result = 2 * fg;
+    (*results[0]) = 2 * fg;
   }
 
   virtual void EvaluatePartialDerivative_(const State &S, const Key &wrt_key,
                                           const Key &wrt_tag,
-                                          double &result) override {
+                                          const std::vector<double*> &results) override {
     if (wrt_key == "fg") {
-      result = 2.;
+      (*results[0]) = 2.;
     }
   }
 };
@@ -163,11 +160,10 @@ public:
 /* ******************************************************************
  * Equation E = D*F
  ****************************************************************** */
-class EEvaluator : public EvaluatorAlgebraic<double> {
+class EEvaluator : public EvaluatorSecondaryMonotype<double> {
 public:
   EEvaluator(Teuchos::ParameterList &plist)
-      : EvaluatorAlgebraic<double>(plist) {
-    my_key_ = "fe";
+      : EvaluatorSecondaryMonotype<double>(plist) {
     dependencies_.emplace_back(std::make_pair(Key("fd"), Key()));
     dependencies_.emplace_back(std::make_pair(Key("ff"), Key()));
   }
@@ -176,22 +172,22 @@ public:
     return Teuchos::rcp(new EEvaluator(*this));
   }
 
-  virtual void Evaluate_(const State &S, double &result) override {
+  virtual void Evaluate_(const State &S, const std::vector<double*> &results) override {
     auto &fd = S.Get<double>("fd");
     auto &ff = S.Get<double>("ff");
-    result = fd * ff;
+    (*results[0]) = fd * ff;
   }
 
   virtual void EvaluatePartialDerivative_(const State &S, const Key &wrt_key,
                                           const Key &wrt_tag,
-                                          double &result) override {
+                                          const std::vector<double*> &results) override {
     auto &fd = S.Get<double>("fd");
     auto &ff = S.Get<double>("ff");
 
     if (wrt_key == "fd") {
-      result = ff;
+      (*results[0]) = ff;
     } else if (wrt_key == "ff") {
-      result = fd;
+      (*results[0]) = fd;
     }
   }
 };
@@ -199,11 +195,10 @@ public:
 /* ******************************************************************
  * Equation F = 2*G
  ****************************************************************** */
-class FEvaluator : public EvaluatorAlgebraic<double> {
+class FEvaluator : public EvaluatorSecondaryMonotype<double> {
 public:
   FEvaluator(Teuchos::ParameterList &plist)
-      : EvaluatorAlgebraic<double>(plist) {
-    my_key_ = "ff";
+      : EvaluatorSecondaryMonotype<double>(plist) {
     dependencies_.emplace_back(std::make_pair(Key("fg"), Key()));
   }
 
@@ -211,17 +206,17 @@ public:
     return Teuchos::rcp(new FEvaluator(*this));
   }
 
-  virtual void Evaluate_(const State &S, double &result) override {
+  virtual void Evaluate_(const State &S, const std::vector<double*> &results) override {
     auto &fg = S.Get<double>("fg");
-    result = 2 * fg;
+    (*results[0]) = 2 * fg;
   }
 
   virtual void EvaluatePartialDerivative_(const State &S, const Key &wrt_key,
                                           const Key &wrt_tag,
-                                          double &result) override {
+                                          const std::vector<double*> &results) override {
 
     if (wrt_key == "fg") {
-      result = 2.;
+      (*results[0]) = 2.;
     }
   }
 };
@@ -229,11 +224,10 @@ public:
 /* ******************************************************************
  * Equation H = 2*F
  ****************************************************************** */
-class HEvaluator : public EvaluatorAlgebraic<double> {
+class HEvaluator : public EvaluatorSecondaryMonotype<double> {
 public:
   HEvaluator(Teuchos::ParameterList &plist)
-      : EvaluatorAlgebraic<double>(plist) {
-    my_key_ = "fh";
+      : EvaluatorSecondaryMonotype<double>(plist) {
     dependencies_.emplace_back(std::make_pair(Key("ff"), Key()));
   }
 
@@ -241,16 +235,16 @@ public:
     return Teuchos::rcp(new HEvaluator(*this));
   }
 
-  virtual void Evaluate_(const State &S, double &result) override {
+  virtual void Evaluate_(const State &S, const std::vector<double*> &results) override {
     auto &ff = S.Get<double>("ff");
-    result = 2. * ff;
+    (*results[0]) = 2. * ff;
   }
 
   virtual void EvaluatePartialDerivative_(const State &S, const Key &wrt_key,
                                           const Key &wrt_tag,
-                                          double &result) override {
+                                          const std::vector<double*> &results) override {
     if (wrt_key == "ff") {
-      result = 2.;
+      (*results[0]) = 2.;
     }
   }
 };
@@ -267,6 +261,7 @@ public:
     // Secondary fields
     // --  A and its evaluator
     es_list.setName("fa");
+    es_list.set("tag", "");
     S.Require<double>("fa", "", "fa");
     S.RequireDerivative<double>("fa", "", "fb", "");
     S.RequireDerivative<double>("fa", "", "fg", "");

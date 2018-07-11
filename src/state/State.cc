@@ -1,17 +1,25 @@
 /* -*-  mode: c++; indent-tabs-mode: nil -*- */
-/* -------------------------------------------------------------------------
-ATS
+/*
+  Copyright 2010-201x held jointly by participating institutions.
+  Amanzi is released under the three-clause BSD License.
+  The terms of use and "as is" disclaimer for this license are
+  provided in the top-level COPYRIGHT file.
+  See $AMANZI_DIR/COPYRIGHT
 
-License: see $ATS_DIR/COPYRIGHT
-Author: Ethan Coon
+  Author: Ethan Coon
+*/
 
-Implementation for the State.  State is a simple data-manager, allowing PKs to
-require, read, and write various fields.  Provides some data protection by
-providing both const and non-const fields to PKs.  Provides some
-initialization capability -- this is where all independent variables can be
-initialized (as independent variables are owned by state, not by any PK).
+//! State is the primary data manager for Amanzi-ATS
 
-------------------------------------------------------------------------- */
+/*!
+  Interface for the State.  State is a simple data-manager, allowing PKs to
+  require, read, and write various fields, including:
+
+  -- Acts as a factory for fields through the various require methods.
+  -- Provides some data protection by providing both const and non-const
+       data pointers to PKs.
+
+*/
 
 #include <iostream>
 #include <map>

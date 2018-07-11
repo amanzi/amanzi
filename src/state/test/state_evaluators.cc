@@ -14,7 +14,7 @@
 #include "Mesh.hh"
 #include "MeshFactory.hh"
 #include "State.hh"
-#include "evaluator/EvaluatorAlgebraic.hh"
+#include "evaluator/EvaluatorSecondaryMonotype.hh"
 #include "evaluator/EvaluatorIndependent.hh"
 #include "evaluator/EvaluatorPrimary.hh"
 
@@ -24,12 +24,10 @@ using namespace Amanzi::AmanziMesh;
 /* ******************************************************************
  * Equation A = 2*B
  ****************************************************************** */
-class AEvaluator : public EvaluatorAlgebraic<double> {
+class AEvaluator : public EvaluatorSecondaryMonotype<double> {
 public:
   AEvaluator(Teuchos::ParameterList &plist)
-      : EvaluatorAlgebraic<double>(plist) {
-    my_key_ = std::string("fa");
-    my_tag_ = "";
+      : EvaluatorSecondaryMonotype<double>(plist) {
     dependencies_.emplace_back(std::make_pair(Key{"fb"}, Key{""}));
   }
 
@@ -37,18 +35,18 @@ public:
     return Teuchos::rcp(new AEvaluator(*this));
   };
 
-  virtual void Evaluate_(const State &S, double &result) override {
+  virtual void Evaluate_(const State &S, const std::vector<double*> &results) override {
     auto &fb = S.Get<double>("fb");
-    result = 2 * fb;
+    (*results[0]) = 2 * fb;
   }
 
   virtual void EvaluatePartialDerivative_(const State &S, const Key &wrt_key,
                                           const Key &wrt_tag,
-                                          double &result) override {
+                                          const std::vector<double*> &results) override {
     if (wrt_key == "fb" && wrt_tag == "") {
-      result = 2.0;
+      (*results[0]) = 2.0;
     } else {
-      result = 0.;
+      (*results[0]) = 0.;
     }
   }
 };
@@ -165,6 +163,7 @@ SUITE(EVALUATORS) {
     ea_list.sublist("verbose object")
         .set<std::string>("verbosity level", "extreme");
     ea_list.setName("fa");
+    ea_list.set("tag", "");
     S.Require<double>("fa", "", "fa");
     S.RequireDerivative<double>("fa", "", "fb", "");
     auto fa_eval = Teuchos::rcp(new AEvaluator(ea_list));

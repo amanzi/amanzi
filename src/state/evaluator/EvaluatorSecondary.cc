@@ -9,25 +9,23 @@ Default field evaluator base class.  A Evaluator is a node in the dependency
 graph.
 
 ------------------------------------------------------------------------- */
-#include "EvaluatorSecondaries.hh"
-
-#include "EvaluatorPrimary.hh"
+#include "EvaluatorSecondary.hh"
 
 namespace Amanzi {
 
 // -----------------------------------------------------------------------------
 // Constructor
 // -----------------------------------------------------------------------------
-EvaluatorSecondaries::EvaluatorSecondaries(Teuchos::ParameterList &plist)
+EvaluatorSecondary::EvaluatorSecondary(Teuchos::ParameterList &plist)
     : vo_(Keys::cleanPListName(plist.name()), plist), plist_(plist) {
-  // process the plist
+  // process the plist for names and tags of the things this evaluator calculates
   if (plist_.isParameter("names")) {
     auto names = plist_.get<Teuchos::Array<std::string>>("names");
     if (plist_.isParameter("tags")) {
       auto tags = plist_.get<Teuchos::Array<std::string>>("tags");
       if (names.size() != tags.size()) {
         Errors::Message message;
-        message << "EvaluatorSecondaries: "
+        message << "EvaluatorSecondary: "
                 << Keys::cleanPListName(plist.name())
                 << " has names and tags lists of different sizes!";
         throw(message);
@@ -44,11 +42,29 @@ EvaluatorSecondaries::EvaluatorSecondaries(Teuchos::ParameterList &plist)
         my_keys_.emplace_back(std::make_pair(name, tag));
       }
     }
+  } else {
+    auto name = Keys::cleanPListName(plist.name());
+    if (plist_.isParameter("tags")) {
+      auto tags = plist_.get<Teuchos::Array<std::string>>("tags");
+      for (auto tag : tags) {
+        my_keys_.emplace_back(std::make_pair(name, tag));
+      }
+    } else {
+      auto tag = plist_.get<std::string>("tag");
+      my_keys_.emplace_back(std::make_pair(name, tag));
+    }
   }
-
+  if (my_keys_.size() == 0) {
+    Errors::Message message;
+    message << "EvaluatorSecondary: " << plist.name()
+            << " processed no key-tag pairs.";
+    throw(message);
+  }
+    
+  // process the plist for dependencies
   if (plist_.isParameter("dependencies")) {
-    Teuchos::Array<std::string> deps =
-        plist_.get<Teuchos::Array<std::string>>("dependencies");
+    auto deps = plist_.get<Teuchos::Array<std::string>>("dependencies");
+
     if (plist_.isParameter("dependency tags")) {
       Teuchos::Array<std::string> tags =
           plist_.get<Teuchos::Array<std::string>>("dependency tags");
@@ -65,31 +81,31 @@ EvaluatorSecondaries::EvaluatorSecondaries(Teuchos::ParameterList &plist)
         ++i;
       }
     } else if (plist_.get<bool>("dependency tags are my tag", false)) {
-      auto my_tag = plist_.get<std::string>("evaluator tag");
+      auto my_tag = my_keys_[0].second;
       for (auto dep : deps) {
         dependencies_.emplace_back(std::make_pair(dep, my_tag));
       }
     } else {
       Errors::Message message;
-      message << "EvalutorSecondaries for " << my_keys_[0].first
+      message << "EvalutorSecondary for " << my_keys_[0].first
               << " was not provided its dependencies' tags.";
       throw(message);
     }
   }
 }
 
-Evaluator &EvaluatorSecondaries::operator=(const Evaluator &other) {
+Evaluator &EvaluatorSecondary::operator=(const Evaluator &other) {
   if (this != &other) {
-    const EvaluatorSecondaries *other_p =
-        dynamic_cast<const EvaluatorSecondaries *>(&other);
+    const EvaluatorSecondary *other_p =
+        dynamic_cast<const EvaluatorSecondary *>(&other);
     AMANZI_ASSERT(other_p != NULL);
     *this = *other_p;
   }
   return *this;
 }
 
-EvaluatorSecondaries &EvaluatorSecondaries::
-operator=(const EvaluatorSecondaries &other) {
+EvaluatorSecondary &EvaluatorSecondary::
+operator=(const EvaluatorSecondary &other) {
   if (this != &other) {
     AMANZI_ASSERT(my_keys_ == other.my_keys_);
     requests_ = other.requests_;
@@ -102,11 +118,11 @@ operator=(const EvaluatorSecondaries &other) {
 // Answers the question, has this Field changed since it was last requested
 // for Field Key reqest.  Updates the field if needed.
 // -----------------------------------------------------------------------------
-bool EvaluatorSecondaries::Update(State &S, const Key &request) {
+bool EvaluatorSecondary::Update(State &S, const Key &request) {
   Teuchos::OSTab tab = vo_.getOSTab();
 
   if (vo_.os_OK(Teuchos::VERB_EXTREME)) {
-    *vo_.os() << "SecondariesVariable " << my_keys_[0].first << " requested by "
+    *vo_.os() << "SecondaryVariable " << my_keys_[0].first << " requested by "
               << request << std::endl;
   }
 
@@ -153,7 +169,7 @@ bool EvaluatorSecondaries::Update(State &S, const Key &request) {
 // wrt_key changed since it was last requested for Field Key reqest.
 // Updates the derivative if needed.
 // ---------------------------------------------------------------------------
-bool EvaluatorSecondaries::UpdateDerivative(State &S, const Key &requestor,
+bool EvaluatorSecondary::UpdateDerivative(State &S, const Key &requestor,
                                             const Key &wrt_key,
                                             const Key &wrt_tag) {
   AMANZI_ASSERT(IsDependency(S, wrt_key, wrt_tag));
@@ -221,7 +237,7 @@ bool EvaluatorSecondaries::UpdateDerivative(State &S, const Key &requestor,
   }
 }
 
-inline bool EvaluatorSecondaries::IsDependency(const State &S, const Key &key,
+inline bool EvaluatorSecondary::IsDependency(const State &S, const Key &key,
                                                const Key &tag) const {
   if (std::find(dependencies_.begin(), dependencies_.end(),
                 std::make_pair(key, tag)) != dependencies_.end()) {
@@ -236,13 +252,13 @@ inline bool EvaluatorSecondaries::IsDependency(const State &S, const Key &key,
   return false;
 }
 
-inline bool EvaluatorSecondaries::ProvidesKey(const Key &key,
+inline bool EvaluatorSecondary::ProvidesKey(const Key &key,
                                               const Key &tag) const {
   return std::find(my_keys_.begin(), my_keys_.end(),
                    std::make_pair(key, tag)) != my_keys_.end();
 }
 
-std::string EvaluatorSecondaries::WriteToString() const {
+std::string EvaluatorSecondary::WriteToString() const {
   std::stringstream result;
   for (const auto &key : my_keys_) {
     result << key.first << ":" << key.second << ",";
@@ -254,4 +270,19 @@ std::string EvaluatorSecondaries::WriteToString() const {
   result << std::endl;
   return result.str();
 }
+
+
+void
+EvaluatorSecondary::EnsureCompatibility_Flags_(State &S) {
+  // check plist for vis or checkpointing control
+  for (auto keytag : my_keys_) {
+    bool io_my_key = plist_.get<bool>(std::string("visualize ") + keytag.first, true);
+    S.GetRecordW(keytag.first, keytag.second, keytag.first).set_io_vis(io_my_key);
+    bool checkpoint_my_key =
+        plist_.get<bool>(std::string("checkpoint ") + keytag.first, false);
+    S.GetRecordW(keytag.first, keytag.second, keytag.first).set_io_checkpoint(checkpoint_my_key);
+  }
+}
+
+
 } // namespace Amanzi

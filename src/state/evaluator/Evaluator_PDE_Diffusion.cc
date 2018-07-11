@@ -26,7 +26,7 @@ Lots of options here, document me!
 namespace Amanzi {
 
 Evaluator_PDE_Diffusion::Evaluator_PDE_Diffusion(Teuchos::ParameterList &plist)
-    : EvaluatorSecondaries(plist) {
+    : EvaluatorSecondary(plist) {
   my_tag_ = plist.get<std::string>("tag");
 
   // my keys

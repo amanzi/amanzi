@@ -8,7 +8,7 @@
   Author: Ethan Coon
 */
 
-//! EvaluatorAlgebraicMultiplicative adds its dependencies.
+//! EvaluatorSecondaryMonotypeMultiplicative adds its dependencies.
 
 /*!
 
@@ -26,17 +26,17 @@
 
 #include "exceptions.hh"
 
-#include "EvaluatorAlgebraic.hh"
+#include "EvaluatorSecondaryMonotype.hh"
 
 namespace Amanzi {
 
 // By default, this class adds nothing on top of EvaluatorSecondary.
 // Specializations can do useful things though.
 template <typename Data_t, typename DataFactory_t = NullFactory>
-class EvaluatorAlgebraicMultiplicative : public EvaluatorAlgebraic<Data_t, DataFactory_t> {
+class EvaluatorSecondaryMonotypeMultiplicative : public EvaluatorSecondaryMonotype<Data_t, DataFactory_t> {
 public:
-  EvaluatorAlgebraicMultiplicative(Teuchos::ParameterList &plist) :
-      EvaluatorAlgebraic<Data_t,DataFactory_t>(plist)
+  EvaluatorSecondaryMonotypeMultiplicative(Teuchos::ParameterList &plist) :
+      EvaluatorSecondaryMonotype<Data_t,DataFactory_t>(plist)
   {
     coef_ = this->plist_.template get<double>("coefficient", 1.0);
 
@@ -45,47 +45,48 @@ public:
   }
     
 
-  EvaluatorAlgebraicMultiplicative(const EvaluatorAlgebraicMultiplicative &other) = default;
+  EvaluatorSecondaryMonotypeMultiplicative(const EvaluatorSecondaryMonotypeMultiplicative &other) = default;
   virtual Teuchos::RCP<Evaluator> Clone() const override {
-    return Teuchos::rcp(new EvaluatorAlgebraicMultiplicative(*this));
+    return Teuchos::rcp(new EvaluatorSecondaryMonotypeMultiplicative(*this));
   }
 
 protected:
 
-  virtual void Evaluate_(const State &S, Data_t &result) override {
+  virtual void Evaluate_(const State &S, const std::vector<Data_t*> &results) override {
+    AMANZI_ASSERT(results.size() == 1);
     int i=0;
-    result.PutScalar(coef_);
+    results[0]->PutScalar(coef_);
     for (const auto& dep : this->dependencies_) {
       const auto& term = S.Get<Data_t>(dep.first, dep.second);
       if (reciprocal_ && this->dependencies_.size() - 1 == i) {
-        result.ReciprocalMultiply(1., term, result, 0.);
+        results[0]->ReciprocalMultiply(1., term, *results[0], 0.);
       } else {
-        result.Multiply(1., term, result, 0.);
+        results[0]->Multiply(1., term, *results[0], 0.);
       }
       ++i;
     }
   }
   
   virtual void EvaluatePartialDerivative_(const State &S,
-          const Key &wrt_key, const Key &wrt_tag, Data_t &result) override {
+          const Key &wrt_key, const Key &wrt_tag, const std::vector<Data_t*> &results) override {
     int i=0;
-    result.PutScalar(coef_);
+    results[0]->PutScalar(coef_);
     for (const auto& dep : this->dependencies_) {
       if (dep.first != wrt_key || dep.second != wrt_tag) {
         // not WRT
         const auto& term = S.Get<Data_t>(dep.first, dep.second);
         if (reciprocal_ && this->dependencies_.size() - 1 == i) {
-          result.ReciprocalMultiply(1., term, result, 0.);
+          results[0]->ReciprocalMultiply(1., term, *results[0], 0.);
         } else {
-          result.Multiply(1., term, result, 0.);
+          results[0]->Multiply(1., term, *results[0], 0.);
         }
       } else {
         // IS WRT
         if (reciprocal_ && this->dependencies_.size() - 1 == i) {
           //  - term ^ -2
           const auto& term = S.Get<Data_t>(dep.first, dep.second);
-          result.ReciprocalMultiply(-1., term, result, 0.);
-          result.ReciprocalMultiply(1., term, result, 0.);
+          results[0]->ReciprocalMultiply(-1., term, *results[0], 0.);
+          results[0]->ReciprocalMultiply(1., term, *results[0], 0.);
         }
       }
       ++i;
@@ -97,7 +98,7 @@ protected:
   bool reciprocal_;
 
  private:
-  static Utils::RegisteredFactory<Evaluator, EvaluatorAlgebraicMultiplicative<Data_t,DataFactory_t>> fac_;
+  static Utils::RegisteredFactory<Evaluator, EvaluatorSecondaryMonotypeMultiplicative<Data_t,DataFactory_t>> fac_;
   
   
 };

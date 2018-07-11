@@ -38,49 +38,73 @@ Note this is not done by region currently, but could easily be extended to do
 so if it was found useful.
 */
 
-#include "EvaluatorAlgebraicFromFunction.hh"
+#include "EvaluatorSecondaryMonotypeFromFunction.hh"
 
 #include "Function.hh"
 #include "FunctionFactory.hh"
 
 namespace Amanzi {
 
-EvaluatorAlgebraicFromFunction::EvaluatorAlgebraicFromFunction(
+EvaluatorSecondaryMonotypeFromFunction::EvaluatorSecondaryMonotypeFromFunction(
     Teuchos::ParameterList &plist)
-    : EvaluatorAlgebraic<CompositeVector, CompositeVectorSpace>(plist) {
+    : EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace>(plist) {
   FunctionFactory fac;
-  func_ = Teuchos::rcp(fac.Create(plist.sublist("function")));
+  if (plist.isSublist("functions")) {
+    auto& flist = plist.sublist("functions");
+    for (auto& lcv : flist) {
+      if (flist.isSublist(lcv.first)) {
+        funcs_.push_back(Teuchos::rcp(fac.Create(flist.sublist(lcv.first))));
+      }
+    }
+  } else if (plist.isSublist("function")) {
+    funcs_.push_back(Teuchos::rcp(fac.Create(plist.sublist("function"))));
+  } else {
+    Errors::Message m;
+    m << "EvaluatorSecondaryMonotypeFromFunction: " << my_keys_[0].first << ","
+      << my_keys_[0].second << ": missing list \"function\" or \"functions\"";
+    throw(m);
+  }
 }
 
-EvaluatorAlgebraicFromFunction::EvaluatorAlgebraicFromFunction(
-    const EvaluatorAlgebraicFromFunction &other)
-    : EvaluatorAlgebraic(other), func_(other.func_->Clone()) {}
+EvaluatorSecondaryMonotypeFromFunction::EvaluatorSecondaryMonotypeFromFunction(
+    const EvaluatorSecondaryMonotypeFromFunction &other)
+    : EvaluatorSecondaryMonotype(other) {
+  for (const auto& fp : other.funcs_) {
+    funcs_.emplace_back(fp->Clone());
+  }
+}
 
-Teuchos::RCP<Evaluator> EvaluatorAlgebraicFromFunction::Clone() const {
-  return Teuchos::rcp(new EvaluatorAlgebraicFromFunction(*this));
+Teuchos::RCP<Evaluator> EvaluatorSecondaryMonotypeFromFunction::Clone() const {
+  return Teuchos::rcp(new EvaluatorSecondaryMonotypeFromFunction(*this));
 }
 
 // These do the actual work
-void EvaluatorAlgebraicFromFunction::Evaluate_(const State &S,
-                                               CompositeVector &result) {
+void EvaluatorSecondaryMonotypeFromFunction::Evaluate_(const State &S,
+        const std::vector<CompositeVector*> &results) {
   int ndeps = dependencies_.size();
   std::vector<Teuchos::Ptr<const CompositeVector>> deps;
   for (auto &dep : dependencies_) {
     deps.emplace_back(S.GetPtr<CompositeVector>(dep.first, dep.second).ptr());
   }
 
-  for (auto comp : result) {
-    Epetra_MultiVector &result_vec = *result.ViewComponent(comp, false);
+  for (auto comp : *results[0]) {
     std::vector<Teuchos::Ptr<const Epetra_MultiVector>> dep_vecs;
-    for (auto &dep : deps) {
+    for (const auto &dep : deps) {
       dep_vecs.emplace_back(dep->ViewComponent(comp, false).ptr());
     }
-    for (int i = 0; i != result_vec.MyLength(); ++i) {
+
+    std::vector<Teuchos::Ptr<Epetra_MultiVector>> result_vecs;
+    for (auto &result : results) {
+      result_vecs.emplace_back(result->ViewComponent(comp, false).ptr());
+    }
+      
+    for (int i = 0; i != result_vecs[0]->MyLength(); ++i) {
       std::vector<double> p(ndeps);
-      for (int j = 0; j != ndeps; ++j) {
+      for (int j = 0; j != ndeps; ++j)
         p[j] = (*dep_vecs[j])[0][i];
-      }
-      result_vec[0][i] = (*func_)(p);
+
+      for (int k = 0; k != funcs_.size(); ++k)
+        (*result_vecs[k])[0][i] = (*funcs_[k])(p);
     }
   }
 }

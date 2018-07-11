@@ -1,7 +1,7 @@
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_RCP.hpp"
 
-#include "EvaluatorAlgebraic.hh"
+#include "EvaluatorSecondaryMonotype.hh"
 #include "State.hh"
 #include "TreeVector.hh"
 

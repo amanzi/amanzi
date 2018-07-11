@@ -15,10 +15,11 @@
 namespace Amanzi {
 
 Evaluator_BCs::Evaluator_BCs(Teuchos::ParameterList& plist)
-    : EvaluatorSecondary<Operators::BCs, Operators::BCs_Factory>(plist) {
+    : EvaluatorSecondary(plist) {
+  AMANZI_ASSERT(my_keys_.size() == 1);
   for (auto sublist : plist.sublist("boundary functions")) {
     std::string sublist_name = Keys::cleanPListName(sublist.first);
-    dependencies_.push_back(std::make_pair(sublist_name, my_tag_));
+    dependencies_.push_back(std::make_pair(sublist_name, my_keys_[0].second));
     std::string bc_type = plist.sublist("boundary functions")
                           .sublist(sublist_name).get<std::string>("boundary condition type");
     if (bc_type == "Dirichlet")
@@ -29,15 +30,10 @@ Evaluator_BCs::Evaluator_BCs(Teuchos::ParameterList& plist)
       bc_types_.push_back(Operators::OPERATOR_BC_MIXED);
     else {
       Errors::Message msg;
-      msg << "BC for " << my_key_ << " has unknown type \"" << bc_type << "\"";
+      msg << "BC for " << my_keys_[0].first << " has unknown type \"" << bc_type << "\"";
       throw(msg);
     }
   }
-}
-
-bool Evaluator_BCs::IsDifferentiableWRT(const State& S, const Key& wrt_key,
-                                        const Key& wrt_tag) const {
-  return false;
 }
 
 // void Evaluator_BCs::EnsureCompatibleDerivative(State &S,
@@ -47,7 +43,14 @@ bool Evaluator_BCs::IsDifferentiableWRT(const State& S, const Key& wrt_key,
 // }
 
 void Evaluator_BCs::EnsureCompatibility(State& S) {
-  auto& my_fac = S.Require<Operators::BCs, Operators::BCs_Factory>(my_key_, my_tag_, my_key_);
+  auto& my_fac = S.Require<Operators::BCs, Operators::BCs_Factory>(my_keys_[0].first, my_keys_[0].second, my_keys_[0].first);
+
+  for (auto &dep : dependencies_)
+    S.RequireEvaluator(dep.first, dep.second);
+
+  // check plist for vis or checkpointing control
+  EnsureCompatibility_Flags_(S);
+  
   if (my_fac.mesh().get()) {
     for (const auto& dep : dependencies_) {
       auto& eval = S.RequireEvaluator(dep.first, dep.second);
@@ -61,7 +64,8 @@ void Evaluator_BCs::EnsureCompatibility(State& S) {
   }
 }
 
-void Evaluator_BCs::Evaluate_(const State &S, Operators::BCs&result) {
+void Evaluator_BCs::Update_(State &S) {
+  auto& result = S.GetW<Operators::BCs>(my_keys_[0].first, my_keys_[0].second, my_keys_[0].first);
   auto& model = result.bc_model();
   auto& value = result.bc_value();
 

@@ -12,7 +12,7 @@
 //! dependenecies.
 
 /*!
-Uses functions to evaluate arbitrary secondary functions of its dependencies.
+Uses functions to evaluate arbitrary algebraic functions of its dependencies.
 
 For example, one might write a dependency:
 
@@ -23,7 +23,7 @@ as:
 Example:
 ..xml:
     <ParameterList name="VARNAME">
-      <Parameter name="field evaluator type" type="string" value="secondary
+      <Parameter name="field evaluator type" type="string" value="algebraic
 variable from function"/> <Parameter name="evaluator dependencies"
 type="Array{string}" value="{DEP1, DEP2}"/> <ParameterList name="function">
         <ParameterList name="function-linear">
@@ -39,8 +39,8 @@ Note this is not done by region currently, but could easily be extended to do
 so if it was found useful.
 */
 
-#ifndef STATE_EVALUATOR_SECONDARY_FROMFUNCTION_HH_
-#define STATE_EVALUATOR_SECONDARY_FROMFUNCTION_HH_
+#ifndef STATE_EVALUATOR_ALGEBRAIC_FROMFUNCTION_HH_
+#define STATE_EVALUATOR_ALGEBRAIC_FROMFUNCTION_HH_
 
 #include <string>
 #include <vector>
@@ -50,7 +50,7 @@ so if it was found useful.
 
 #include "CompositeVector.hh"
 #include "CompositeVectorSpace.hh"
-#include "EvaluatorSecondary.hh"
+#include "EvaluatorSecondaryMonotype.hh"
 #include "Evaluator_Factory.hh"
 #include "State.hh"
 
@@ -58,31 +58,32 @@ namespace Amanzi {
 
 class Function;
 
-class EvaluatorSecondaryFromFunction
-    : public EvaluatorAlgebraic<CompositeVector, CompositeVectorSpace> {
+class EvaluatorSecondaryMonotypeFromFunction
+    : public EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace> {
 
 public:
-  explicit EvaluatorSecondaryFromFunction(Teuchos::ParameterList &plist);
-  EvaluatorSecondaryFromFunction(const EvaluatorSecondaryFromFunction &other);
-  virtual Teuchos::RCP<Evaluator> Clone() const;
+  explicit EvaluatorSecondaryMonotypeFromFunction(Teuchos::ParameterList &plist);
+  EvaluatorSecondaryMonotypeFromFunction(const EvaluatorSecondaryMonotypeFromFunction &other);
+  virtual Teuchos::RCP<Evaluator> Clone() const override;
 
 protected:
   // These do the actual work
-  virtual void Evaluate_(const State &S, CompositeVector &result);
+  virtual void Evaluate_(const State &S, const std::vector<CompositeVector*>& results) override;
 
   // This should get some careful thought of the right strategy.  Punting for
   // now --etc
-  virtual void EvaluatePartialDerivative_(const State &S, const Key &wrt_key,
-                                          const Key &wrt_tag,
-                                          CompositeVector &result) {
-    result.PutScalar(0.);
+  virtual void EvaluatePartialDerivative_(const State &S,
+          const Key &wrt_key, const Key &wrt_tag, const std::vector<CompositeVector*> &results) override {
+    for (auto& r : results) {
+      r->PutScalar(0.);
+    }
   }
 
 protected:
-  Teuchos::RCP<const Function> func_;
+  std::vector<Teuchos::RCP<const Function>> funcs_;
 
 private:
-  static Utils::RegisteredFactory<Evaluator, EvaluatorSecondaryFromFunction>
+  static Utils::RegisteredFactory<Evaluator, EvaluatorSecondaryMonotypeFromFunction>
       fac_;
 
 }; // class

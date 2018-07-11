@@ -1,18 +1,19 @@
 /* -*-  mode: c++; indent-tabs-mode: nil -*- */
 /*
-  Copyright 2010-201x held jointly, see COPYRIGHT.
+  Copyright 2010-201x held jointly by participating institutions.
   Amanzi is released under the three-clause BSD License.
   The terms of use and "as is" disclaimer for this license are
   provided in the top-level COPYRIGHT file.
+  See $AMANZI_DIR/COPYRIGHT
 
   Author: Ethan Coon
 */
 
-//! EvaluatorSecondary is a generic function of other evaluators, potentially at
-//! other tags.
-
 /*!
 
+  A non-leaf node in the tree, secondary variables have dependencies on other
+  evaluators.  They may provide one or more than one variable, and may depend on
+  a collection of things with arbitrary names, tags, and data types.
 
 */
 
@@ -25,14 +26,11 @@
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_RCP.hpp"
 
-#include "exceptions.hh"
-
 #include "Evaluator.hh"
 #include "State.hh"
 
 namespace Amanzi {
 
-template <typename Data_t, typename DataFactory_t = NullFactory>
 class EvaluatorSecondary : public Evaluator {
 
 public:
@@ -40,14 +38,14 @@ public:
 
   EvaluatorSecondary(const EvaluatorSecondary &other) = default;
 
-  EvaluatorSecondary &operator=(const EvaluatorSecondary &other);
   virtual Evaluator &operator=(const Evaluator &other) override;
+  EvaluatorSecondary &operator=(const EvaluatorSecondary &other);
 
   // ---------------------------------------------------------------------------
   // Answers the question, has this Field changed since it was last requested
   // for Field Key reqest.  Updates the field if needed.
   // ---------------------------------------------------------------------------
-  virtual bool Update(State &S, const Key &request) override final;
+  virtual bool Update(State &S, const Key &request) override;
 
   // ---------------------------------------------------------------------------
   // Answers the question, Has This Field's derivative with respect to Key
@@ -56,50 +54,37 @@ public:
   // ---------------------------------------------------------------------------
   virtual bool UpdateDerivative(State &S, const Key &request,
                                 const Key &wrt_key,
-                                const Key &wrt_tag) override final;
+                                const Key &wrt_tag) override;
 
   virtual bool IsDependency(const State &S, const Key &key,
-                            const Key &wrt_tag) const override final;
-  virtual bool ProvidesKey(const Key &key,
-                           const Key &wrt_tag) const override final;
+                            const Key &tag) const override;
+  virtual bool ProvidesKey(const Key &key, const Key &tag) const override;
   virtual bool IsDifferentiableWRT(const State &S, const Key &wrt_key,
-                                   const Key &wrt_tag) const override {
+          const Key &wrt_tag) const override {
     return IsDependency(S, wrt_key, wrt_tag);
   }
-
-  virtual void EnsureCompatibility(State &S) override;
 
   virtual std::string WriteToString() const override;
 
 protected:
   // These do the actual work
-  virtual void Evaluate_(const State &S, Data_t &result) = 0;
-
-  // calls Evaluate with the correct data
-  virtual void Update_(State &S);
-
-  // For general data types, we do not know how to differentiate.
-  // Specializations can provide this.
+  virtual void Update_(State &S) = 0;
   virtual void UpdateDerivative_(State &S, const Key &wrt_key,
-                                 const Key &wrt_tag);
-  virtual void CheckDerivative_(State &S, const Key &wrt_key,
-                                const Key &wrt_tag);
+                                 const Key &wrt_tag) = 0;
 
+  void EnsureCompatibility_Flags_(State &S);
+  
 protected:
-  Key my_key_;
-  Key my_tag_;
+  KeyPairVector my_keys_;
 
   KeySet requests_;
   KeyTripleSet deriv_requests_;
   KeyPairVector dependencies_;
-  bool check_derivative_;
 
   VerboseObject vo_;
   Teuchos::ParameterList plist_;
 
-}; // class EvaluatorSecondary
-
-#include "EvaluatorSecondary_Impl.hh"
+}; // class Evaluator
 
 } // namespace Amanzi
 

@@ -22,11 +22,11 @@ Lots of options here, document me!
 
 #include "Evaluator_Factory.hh"
 #include "State.hh"
-#include "EvaluatorSecondaries.hh"
+#include "EvaluatorSecondary.hh"
 
 namespace Amanzi {
 
-class Evaluator_PDE_Diffusion : public EvaluatorSecondaries {
+class Evaluator_PDE_Diffusion : public EvaluatorSecondary {
  public:
   Evaluator_PDE_Diffusion(Teuchos::ParameterList &plist);
 

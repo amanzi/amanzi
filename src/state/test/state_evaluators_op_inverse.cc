@@ -29,10 +29,9 @@
 #include "PDE_DiffusionFactory.hh"
 #include "State.hh"
 #include "TensorVector.hh"
-#include "evaluator/EvaluatorAlgebraic.hh"
+#include "evaluator/EvaluatorSecondaryMonotype.hh"
 #include "evaluator/EvaluatorIndependent.hh"
 #include "evaluator/EvaluatorPrimary.hh"
-#include "evaluator/EvaluatorSecondaries.hh"
 #include "evaluator/EvaluatorSecondary.hh"
 #include "evaluator/Evaluator_OperatorApply.hh"
 #include "evaluator/Evaluator_PDE_Diffusion.hh"
@@ -165,47 +164,6 @@ protected:
   }
 };
 
-class AddAlgebraic
-    : public EvaluatorAlgebraic<CompositeVector, CompositeVectorSpace> {
-public:
-  AddAlgebraic(Teuchos::ParameterList &plist)
-      : EvaluatorAlgebraic<CompositeVector, CompositeVectorSpace>(plist),
-        coefs_(plist.get<Teuchos::Array<double>>("coefficients")) {
-    if (coefs_.size() != dependencies_.size()) {
-      AMANZI_ASSERT(0);
-    }
-  }
-
-  virtual Teuchos::RCP<Evaluator> Clone() const override {
-    return Teuchos::rcp(new AddAlgebraic(*this));
-  };
-
-  virtual void Evaluate_(const State &S, CompositeVector &result) override {
-    int i = 0;
-    for (const auto &dep : dependencies_) {
-      result.Update(coefs_[i], S.Get<CompositeVector>(dep.first, dep.second),
-                    1.);
-      ++i;
-    }
-  }
-  virtual void EvaluatePartialDerivative_(const State &S, const Key &wrt_key,
-                                          const Key &wrt_tag,
-                                          CompositeVector &result) override {
-    int i = 0;
-    for (const auto &dep : dependencies_) {
-      if (dep.first == wrt_key && dep.second == wrt_tag) {
-        const auto &x = S.Get<CompositeVector>(dep.first, dep.second);
-        for (const auto &comp : x)
-          result.ViewComponent(comp, false)->PutScalar(coefs_[i]);
-        return;
-      }
-      ++i;
-    }
-  }
-
-protected:
-  Teuchos::Array<double> coefs_;
-};
 
 void test(const std::string &discretization) {
   auto comm = new Epetra_MpiComm(MPI_COMM_WORLD);
@@ -293,6 +251,7 @@ void test(const std::string &discretization) {
   re_list.set("diagonal local operator rhss keys", Teuchos::Array<std::string>(1,"A_rhs"));
   re_list.set("additional rhss keys", Teuchos::Array<std::string>(1,"b"));
   re_list.set("rhs coefficients", Teuchos::Array<double>(1,-1.0));
+  re_list.set("tag","");
   auto r_eval = Teuchos::rcp(new Evaluator_OperatorApply(re_list));
   S.SetEvaluator("residual", r_eval);
   S.Require<CompositeVector, CompositeVectorSpace>("residual", "")
@@ -406,6 +365,7 @@ void test_inverse(const std::string &discretization) {
   re_list.set("rhs coefficients", Teuchos::Array<double>(1,-1.0));
   re_list.sublist("preconditioner")
       .set<std::string>("preconditioner type", "boomer amg");
+  re_list.set("tag","");
   auto& amg_p = re_list.sublist("preconditioner").sublist("boomer amg parameters");
   amg_p.set("tolerance", 0.0);
   amg_p.set("verbosity", 3);

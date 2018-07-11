@@ -28,7 +28,6 @@
 #include "TensorVector.hh"
 #include "evaluator/EvaluatorIndependent.hh"
 #include "evaluator/EvaluatorPrimary.hh"
-#include "evaluator/EvaluatorSecondaries.hh"
 #include "evaluator/EvaluatorSecondary.hh"
 #include "evaluator/Evaluator_OperatorApply.hh"
 
@@ -149,28 +148,40 @@ protected:
 };
 
 class Evaluator_PDE_Diagonal
-    : public EvaluatorSecondary<Operators::Op, Operators::Op_Factory> {
+    : public EvaluatorSecondary {
 public:
-  using EvaluatorSecondary<Operators::Op,
-                           Operators::Op_Factory>::EvaluatorSecondary;
+  using EvaluatorSecondary::EvaluatorSecondary;
 
   virtual Teuchos::RCP<Evaluator> Clone() const override {
     return Teuchos::rcp(new Evaluator_PDE_Diagonal(*this));
   };
 
 protected:
-  virtual void Evaluate_(const State &s, Operators::Op &op) override {
-    *op.diag = *s.Get<CompositeVector>(dependencies_.begin()->first,
+  virtual void Update_(State &S) override {
+    AMANZI_ASSERT(my_keys_.size() == 1);
+    auto& op = S.GetW<Operators::Op>(my_keys_[0].first, my_keys_[0].second, my_keys_[0].first);
+    *op.diag = *S.Get<CompositeVector>(dependencies_.begin()->first,
                                        dependencies_.begin()->second)
                     .ViewComponent("cell", false);
   }
 
+  virtual void EnsureCompatibility(State &S) override {
+    S.Require<Operators::Op,Operators::Op_Factory>(my_keys_[0].first, my_keys_[0].second, my_keys_[0].first);
+    for (auto &dep : dependencies_)
+      S.RequireEvaluator(dep.first, dep.second);
+  }
+
+  virtual void UpdateDerivative_(State &S, const Key &wrt_key,
+          const Key &wrt_tag) override {
+    AMANZI_ASSERT(false);
+  }
+  
 };
 
-class Evaluator_PDE_DiffusionFV : public EvaluatorSecondaries {
+class Evaluator_PDE_DiffusionFV : public EvaluatorSecondary {
 public:
   Evaluator_PDE_DiffusionFV(Teuchos::ParameterList &plist)
-      : EvaluatorSecondaries(plist) {
+      : EvaluatorSecondary(plist) {
     tag_ = plist.get<std::string>("tag");
 
     // my keys
@@ -354,6 +365,7 @@ SUITE(EVALUATOR_ON_OP) {
     Ae_list.setName("A_local");
     Ae_list.set("dependencies", Teuchos::Array<std::string>(1, "Diag"));
     Ae_list.set("dependency tags are my tag", true);
+    Ae_list.set("tag", "");
     auto A_eval = Teuchos::rcp(new Evaluator_PDE_Diagonal(Ae_list));
     S.SetEvaluator("A_local", A_eval);
 
@@ -368,6 +380,7 @@ SUITE(EVALUATOR_ON_OP) {
     re_list.set("diagonal local operators keys", Teuchos::Array<std::string>(1,"A_local"));
     re_list.set("diagonal local operator rhss keys", Teuchos::Array<std::string>(1,"b"));
     re_list.set("diagonal primary x key", "x");
+    re_list.set("tag", "");
     re_list.setName("residual");
     auto r_eval = Teuchos::rcp(new Evaluator_OperatorApply(re_list));
     S.SetEvaluator("residual", r_eval);
@@ -498,6 +511,7 @@ SUITE(EVALUATOR_ON_OP) {
     re_list.set("diagonal local operator rhss keys", Teuchos::Array<std::string>(1,"A_rhs"));
     re_list.set("additional rhss keys", Teuchos::Array<std::string>(1,"b"));
     re_list.set("rhs coefficients", Teuchos::Array<double>(1,-1.0));
+    re_list.set("tag", "");
     re_list.setName("residual");
     auto r_eval = Teuchos::rcp(new Evaluator_OperatorApply(re_list));
     S.SetEvaluator("residual", r_eval);

@@ -62,7 +62,7 @@ scale the linear operators by dh/dp. --etc
 namespace Amanzi {
 
 class Evaluator_OperatorApply
-    : public EvaluatorSecondary<CompositeVector, CompositeVectorSpace> {
+    : public EvaluatorSecondary {
  public:
   explicit Evaluator_OperatorApply(Teuchos::ParameterList &plist);
   Evaluator_OperatorApply(const Evaluator_OperatorApply &other) = default;
@@ -78,7 +78,7 @@ class Evaluator_OperatorApply
 
  protected:
   // These do the actual work
-  virtual void Evaluate_(const State &S, CompositeVector &result) override;
+  virtual void Update_(State &S) override;
 
   // creates the operator for applying inverses
   virtual void UpdateDerivative_(State &S, const Key &wrt_key,

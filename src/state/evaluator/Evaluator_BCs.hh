@@ -21,7 +21,7 @@
 
 namespace Amanzi {
 
-class Evaluator_BCs : public EvaluatorSecondary<Operators::BCs, Operators::BCs_Factory> {
+class Evaluator_BCs : public EvaluatorSecondary {
  public:
   explicit
   Evaluator_BCs(Teuchos::ParameterList &plist);
@@ -33,13 +33,19 @@ class Evaluator_BCs : public EvaluatorSecondary<Operators::BCs, Operators::BCs_F
 
   virtual bool
   IsDifferentiableWRT(const State &S, const Key &wrt_key,
-                      const Key &wrt_tag) const override final;
+                      const Key &wrt_tag) const override final {
+    return false;
+  }
 
   virtual void EnsureCompatibility(State &S) override;
   // virtual void EnsureCompatibleDerivative(State &S,
   //         const Key& wrt_key, const Key& wrt_tag) override;
 
-  virtual void Evaluate_(const State &S, Operators::BCs &result) override;
+  virtual void Update_(State &S) override;
+  virtual void UpdateDerivative_(State &S, const Key &wrt_key,
+          const Key &wrt_tag) override final {
+    AMANZI_ASSERT(false); // never called
+  }
 
  protected:
   std::vector<int> bc_types_;

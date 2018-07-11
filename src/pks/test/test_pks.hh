@@ -1,7 +1,7 @@
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_RCP.hpp"
 
-#include "EvaluatorAlgebraic.hh"
+#include "EvaluatorSecondaryMonotype.hh"
 #include "State.hh"
 #include "TreeVector.hh"
 
@@ -24,10 +24,10 @@ Test PKs:
 using namespace Amanzi;
 
 class DudtEvaluatorA
-    : public EvaluatorAlgebraic<CompositeVector, CompositeVectorSpace> {
+    : public EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace> {
 public:
-  DudtEvaluatorA(Teuchos::ParameterList &plist) : EvaluatorAlgebraic(plist) {
-    dependencies_.emplace_back(std::make_pair(Key("primaryA"), my_tag_));
+  DudtEvaluatorA(Teuchos::ParameterList &plist) : EvaluatorSecondaryMonotype(plist) {
+    dependencies_.emplace_back(std::make_pair(Key("primaryA"), my_keys_[0].second));
   }
 
   DudtEvaluatorA(const DudtEvaluatorA &other) = default;
@@ -36,22 +36,22 @@ public:
   }
 
 protected:
-  void Evaluate_(const State &S, CompositeVector &result) {
-    result.PutScalar(1.);
+  void Evaluate_(const State &S, const std::vector<CompositeVector*>& results) {
+    results[0]->PutScalar(1.);
   }
 
   void EvaluatePartialDerivative_(const State &S, const Key &wrt_key,
-                                  const Key &wrt_tag, CompositeVector &result) {
+                                  const Key &wrt_tag, const std::vector<CompositeVector*>& results) {
     AMANZI_ASSERT(std::make_pair(wrt_key, wrt_tag) == *dependencies_.begin());
-    result.PutScalar(0.);
+    results[0]->PutScalar(0.);
   }
 };
 
 class DudtEvaluatorB
-    : public EvaluatorAlgebraic<CompositeVector, CompositeVectorSpace> {
+    : public EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace> {
 public:
-  DudtEvaluatorB(Teuchos::ParameterList &plist) : EvaluatorAlgebraic(plist) {
-    dependencies_.emplace_back(std::make_pair(Key("primaryB"), my_tag_));
+  DudtEvaluatorB(Teuchos::ParameterList &plist) : EvaluatorSecondaryMonotype(plist) {
+    dependencies_.emplace_back(std::make_pair(Key("primaryB"), my_keys_[0].second));
   }
 
   DudtEvaluatorB(const DudtEvaluatorB &other) = default;
@@ -60,24 +60,24 @@ public:
   }
 
 protected:
-  void Evaluate_(const State &S, CompositeVector &result) {
-    result = S.Get<CompositeVector>(dependencies_.begin()->first,
+  void Evaluate_(const State &S, const std::vector<CompositeVector*>& results) {
+    *results[0] = S.Get<CompositeVector>(dependencies_.begin()->first,
                                     dependencies_.begin()->second);
   }
 
   void EvaluatePartialDerivative_(const State &S, const Key &wrt_key,
-                                  const Key &wrt_tag, CompositeVector &result) {
+                                  const Key &wrt_tag, const std::vector<CompositeVector*>& results) {
     AMANZI_ASSERT(std::make_pair(wrt_key, wrt_tag) == *dependencies_.begin());
-    result.PutScalar(1.);
+    results[0]->PutScalar(1.);
   }
 };
 
 class DudtEvaluatorC
-    : public EvaluatorAlgebraic<CompositeVector, CompositeVectorSpace> {
+    : public EvaluatorSecondaryMonotype<CompositeVector, CompositeVectorSpace> {
 public:
-  DudtEvaluatorC(Teuchos::ParameterList &plist) : EvaluatorAlgebraic(plist) {
-    dependencies_.emplace_back(std::make_pair(Key("primaryC"), my_tag_));
-    dependencies_.emplace_back(std::make_pair(Key("scaling"), my_tag_));
+  DudtEvaluatorC(Teuchos::ParameterList &plist) : EvaluatorSecondaryMonotype(plist) {
+    dependencies_.emplace_back(std::make_pair(Key("primaryC"), my_keys_[0].second));
+    dependencies_.emplace_back(std::make_pair(Key("scaling"), my_keys_[0].second));
   }
 
   DudtEvaluatorC(const DudtEvaluatorC &other) = default;
@@ -86,18 +86,18 @@ public:
   }
 
 protected:
-  void Evaluate_(const State &S, CompositeVector &result) {
-    const auto &u = S.Get<CompositeVector>("primaryC", my_tag_);
-    const auto &scaling = S.Get<CompositeVector>("scaling", my_tag_);
-    result.Multiply(1.0, scaling, u, 0.);
+  void Evaluate_(const State &S, const std::vector<CompositeVector*>& results) {
+    const auto &u = S.Get<CompositeVector>("primaryC", my_keys_[0].second);
+    const auto &scaling = S.Get<CompositeVector>("scaling", my_keys_[0].second);
+    results[0]->Multiply(1.0, scaling, u, 0.);
   }
 
   void EvaluatePartialDerivative_(const State &S, const Key &wrt_key,
-                                  const Key &wrt_tag, CompositeVector &result) {
+                                  const Key &wrt_tag, const std::vector<CompositeVector*>& results) {
     if (wrt_key == "primaryC") {
-      result = S.Get<CompositeVector>("scaling", my_tag_);
+      *results[0] = S.Get<CompositeVector>("scaling", my_keys_[0].second);
     } else if (wrt_key == "scaling") {
-      result = S.Get<CompositeVector>("primaryC", my_tag_);
+      *results[0] = S.Get<CompositeVector>("primaryC", my_keys_[0].second);
     } else {
       AMANZI_ASSERT(false);
     }

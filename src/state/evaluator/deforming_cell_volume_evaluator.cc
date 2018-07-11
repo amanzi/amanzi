@@ -20,7 +20,7 @@ namespace Amanzi {
 // ---------------------------------------------------------------------------
 DeformingCellVolumeEvaluator::DeformingCellVolumeEvaluator(
     Teuchos::ParameterList &plist)
-    : EvaluatorAlgebraic(plist) {
+    : EvaluatorSecondaryMonotype(plist) {
 
   my_key_ = plist.get<std::string>("evaluator name", "cell_volume");
 
@@ -45,7 +45,7 @@ DeformingCellVolumeEvaluator::DeformingCellVolumeEvaluator(
 // ---------------------------------------------------------------------------
 DeformingCellVolumeEvaluator::DeformingCellVolumeEvaluator(
     const DeformingCellVolumeEvaluator &other)
-    : EvaluatorAlgebraic(other), my_mesh_(other.my_mesh_) {}
+    : EvaluatorSecondaryMonotype(other), my_mesh_(other.my_mesh_) {}
 
 // ---------------------------------------------------------------------------
 // Virutal copy constructor for Evaluator.

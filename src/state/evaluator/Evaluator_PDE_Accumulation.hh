@@ -22,11 +22,11 @@ Lots of options here, document me!
 
 #include "Evaluator_Factory.hh"
 #include "State.hh"
-#include "EvaluatorAlgebraic.hh"
+#include "EvaluatorSecondaryMonotype.hh"
 
 namespace Amanzi {
 
-class Evaluator_PDE_Accumulation : public EvaluatorAlgebraic<CompositeVector,CompositeVectorSpace> {
+class Evaluator_PDE_Accumulation : public EvaluatorSecondaryMonotype<CompositeVector,CompositeVectorSpace> {
  public:
   Evaluator_PDE_Accumulation(Teuchos::ParameterList &plist);
 
@@ -38,9 +38,10 @@ class Evaluator_PDE_Accumulation : public EvaluatorAlgebraic<CompositeVector,Com
   virtual void EnsureCompatibility(State &S) override;
   
  protected:
-  virtual void Evaluate_(const State &S, CompositeVector &result) override;
   virtual void EvaluatePartialDerivative_(const State &S,
-          const Key &wrt_key, const Key &wrt_tag, CompositeVector &result) override;
+          const Key &wrt_key, const Key &wrt_tag, const std::vector<CompositeVector*>& results) override;
+
+  virtual void Evaluate_(const State &S, const std::vector<CompositeVector*>& results) override;
 
  protected:
   Key conserved_key_;
