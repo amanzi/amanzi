@@ -1,10 +1,14 @@
 .. _Theis:
 
 Transient One-Dimensional Confined Flow to a Pumping Well (Theis)
------------------------------------------------------------------
+=================================================================
 
-Introduction
-~~~~~~~~~~~~
+Capabilties Tested
+------------------
+
+
+Background
+----------
 
 Theis (1935) developed an analytical solution for transient (non
 steady state) drawdown for a fully penetrating well by imposing the
@@ -51,32 +55,8 @@ given value of *t* one can construct a draw down curve with respect to
 the distance from the pumping well, *r*. 
 
 
-Schematic
-`````````
-
-Note, the values in the schematic correlate to the values found in
-:ref:`plot_table_Theis`.
-
-.. figure:: schematic/Theis.png 
-    :figclass: align-center
-
-    **Figure 1.2:  Illustration of transient drawdown**
-		    
-.. _Variables:
-        
-Defining Variables
-``````````````````
-
-* *Q* constant pumping rate
-* :math:`h(r,0)` initial water table table height
-* *T* transmissivity 
-* *W(u)* well function
-* *r* radial distnace measured outward from well
-* *S* storage coefficient 
-* *t* duration of pumping time
-
 Model
-~~~~~
+-----
 
 Groundwater resource evaluation is crucial to understanding the
 concept of groundwater yield. This concept is vital because it helps
@@ -116,12 +96,94 @@ discharged from the well per unit time.
 
 .. _plot_table_Theis:
 
-Plot and Table of Analytic Solution and Amanzi Results
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Problem Specification
+---------------------
+
+
+Schematic
+~~~~~~~~~
+
+Note, the values in the schematic correlate to the values found in
+:ref:`plot_table_Theis`.
+
+.. figure:: schematic/Theis.png 
+    :figclass: align-center
+
+    **Figure 1.2:  Illustration of transient drawdown**
+		    
+.. _Variables:
+
+Mesh
+~~~~
+
+
+Variables
+~~~~~~~~~
+
+* *Q* constant pumping rate
+* :math:`h(r,0)` initial water table table height
+* *T* transmissivity 
+* *W(u)* well function
+* *r* radial distnace measured outward from well
+* *S* storage coefficient 
+* *t* duration of pumping time
+
+Results and Comparison
+----------------------
 
 .. plot:: amanzi_theis_isotropic_1d.py
 	  :align: center
 
 
 .. include:: table_values_theis.txt
+
+
+References
+----------
+
+
+About
+-----
+
+* Directory: testing/verification/transport/saturated/steady-state/dispersion_aligned_point_2d
+
+* Authors: Dylan Harp, Alec Thomas, David Moulton 
+
+* Maintainer(s): David Moulton (moulton@lanl.gov)
+
+* Input Files:
+
+  * 
+
+    * Spec Version 2.2, unstructured mesh framework
+    * mesh:  
+    * runs
+ 
+  * amanzi_dispersion_aligned_point_2d-s.xml
+
+    * Spec Version 1.2, structured AMR framework
+    * runs
+
+* Mesh Files:
+
+  * amanzi_dispersion_aligned_point_2d.exo
+
+    * two-dimensional statically refined mesh
+    * treated as an unstructured polygonal mesh
+
+  * amanzi_dispersion_aligned_point_2d-1layer.exo
+
+    * three-dimensional statically refined mesh
+    * one layer of cells in the z-direction
+
+* Analytic solution computed with AT123D-AT
+
+  * Subdirectory: at123d-at
+
+  * Input Files: 
+
+    * at123d-at_centerline.list, at123d-at_centerline.in
+    * at123d-at_slice_x=0.list, at123d-at_slice_x=0.in,  
+    * at123d-at_slice_x=420.list, at123d-at_slice_x=420.in
 
