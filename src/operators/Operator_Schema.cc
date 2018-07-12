@@ -243,13 +243,14 @@ void Operator_Schema::SymbolicAssembleMatrixOp(const Op_Cell_Schema& op,
         mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
         int nfaces = faces.size();
 
-        for (int k = 0; k < it->num; ++k) {
-          const std::vector<int>& col_inds = map.GhostIndices("face", k);
-          const std::vector<int>& row_inds = map.GhostIndices("face", k);
+        for (int n = 0; n != nfaces; ++n) {
+          int f = faces[n];
+          for (int k = 0; k < it->num; ++k) {
+            const std::vector<int>& col_inds = map.GhostIndices("face", k);
+            const std::vector<int>& row_inds = map.GhostIndices("face", k);
 
-          for (int n = 0; n != nfaces; ++n) {
-            lid_c.push_back(col_inds[faces[n]]);
-            lid_r.push_back(row_inds[faces[n]]);
+            lid_c.push_back(col_inds[f]);
+            lid_r.push_back(row_inds[f]);
           }
         }
       }
@@ -369,13 +370,14 @@ void Operator_Schema::AssembleMatrixOp(const Op_Cell_Schema& op,
         mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
         int nfaces = faces.size();
 
-        for (int k = 0; k < it->num; ++k) {
-          const std::vector<int>& col_inds = map.GhostIndices("face", k);
-          const std::vector<int>& row_inds = map.GhostIndices("face", k);
+        for (int n = 0; n != nfaces; ++n) {
+          int f  = faces[n];
+          for (int k = 0; k < it->num; ++k) {
+            const std::vector<int>& col_inds = map.GhostIndices("face", k);
+            const std::vector<int>& row_inds = map.GhostIndices("face", k);
 
-          for (int n = 0; n != nfaces; ++n) {
-            lid_c.push_back(col_inds[faces[n]]);
-            lid_r.push_back(row_inds[faces[n]]);
+            lid_c.push_back(col_inds[f]);
+            lid_r.push_back(row_inds[f]);
           }
         }
       }

@@ -385,6 +385,7 @@ void AdvectionFn<AnalyticDG>::ApproximateVelocity_Projection(
   }
 }
 
+
 /* *****************************************************************
 * Change original definitions of velocities: level set algorithm
 ***************************************************************** */

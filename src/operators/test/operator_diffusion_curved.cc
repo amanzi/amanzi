@@ -147,6 +147,8 @@ void RunTestDiffusionCurved() {
               << " code=" << solver.returned_code() << std::endl;
   }
 
+  ver.CheckResidual(solution, 3.0e-7);
+
   // Post-processing
   // -- compute pressure error
   Epetra_MultiVector& p = *solution.ViewComponent("cell", false);

@@ -228,6 +228,7 @@ int MeshMaps::LeastSquareFit(int order,
   v.resize(d_);
   for (int k = 0; k < d_; ++k) { 
     v[k].Reshape(d_, order);
+    v[k].set_origin(AmanziGeometry::Point(d_));
 
     for (int i = 0; i < nk; ++i) {
       b(i) = 0.0;

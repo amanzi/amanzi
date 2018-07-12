@@ -208,8 +208,8 @@ void MeshMaps_VEM::LeastSquareProjector_Cell_(
   }
 
   // FIXME
-  /*
   if (order > 1) {
+    AMANZI_ASSERT(false);
     mesh0_->cell_get_faces(c, &faces);
     int nfaces = faces.size();
 
@@ -224,7 +224,6 @@ void MeshMaps_VEM::LeastSquareProjector_Cell_(
       x2.push_back(px);
     }
   }
-  */
 
   // calculate velocity u(X) = F(X) - X
   LeastSquareFit(order, x1, x2, vc);

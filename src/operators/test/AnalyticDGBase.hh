@@ -184,6 +184,10 @@ void AnalyticDGBase::ComputeCellError(
     pnorm += std::pow(sol(0, 0), 2.0) * volume;
 
     // integrated error
+    poly_err.GetPolynomialCoefficients(data);
+    basis.ChangeBasisMyToNatural(data);
+    poly_err.SetPolynomialCoefficients(data);
+
     std::vector<const Amanzi::WhetStone::WhetStoneFunction*> funcs(2);
     funcs[0] = &poly_err;
     funcs[1] = &poly_err;

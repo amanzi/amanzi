@@ -33,9 +33,9 @@
 #include "AnalyticDG01.hh"
 #include "AnalyticDG02.hh"
 
-#include "OperatorAudit.hh"
 #include "OperatorDefs.hh"
 #include "PDE_DiffusionDG.hh"
+#include "Verification.hh"
 
 
 /* *****************************************************************
@@ -188,8 +188,8 @@ void OperatorDiffusionDG(std::string solver_name,
   global_op->AssembleMatrix();
 
   // Test SPD properties of the matrix.
-  Operators::CheckMatrixSymmetry(global_op->A());
-  Operators::CheckMatrixCoercivity(global_op->A());
+  VerificationCV ver(global_op);
+  ver.CheckMatrixSPD(false, true);
 
   // create preconditoner using the base operator class
   ParameterList slist = plist.sublist("preconditioners").sublist("Hypre AMG");
@@ -206,6 +206,8 @@ void OperatorDiffusionDG(std::string solver_name,
   solution.PutScalar(0.0);
 
   int ierr = solver->ApplyInverse(rhs, solution);
+
+  ver.CheckResidual(solution, 1.0e-11);
 
   if (MyPID == 0) {
     std::cout << "pressure solver (pcg): ||r||=" << solver->residual() 
