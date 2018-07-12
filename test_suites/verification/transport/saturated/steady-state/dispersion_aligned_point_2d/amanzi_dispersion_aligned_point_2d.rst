@@ -1,7 +1,7 @@
 2D Dispersive Transport in a Uniform Flow Field (aligned)
 =========================================================
 
-Capabilties Tested
+Capabilities Tested
 ------------------
 
 This two-dimensional transport problem, with a constant rate mass
@@ -90,8 +90,6 @@ The off-diagonal entries are
 .. math::
   D_{xy} = D_{yx} 
   = (\alpha_L - \alpha_T) \frac{v_x\, v_y}{\| \boldsymbol{v}\|}.
-
-
 
 
 Problem Specification

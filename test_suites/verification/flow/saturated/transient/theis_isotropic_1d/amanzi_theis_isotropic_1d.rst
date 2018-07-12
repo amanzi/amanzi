@@ -3,7 +3,7 @@
 Transient One-Dimensional Confined Flow to a Pumping Well (Theis)
 =================================================================
 
-Capabilties Tested
+Capabilities Tested
 ------------------
 
 
@@ -154,36 +154,8 @@ About
 
 * Input Files:
 
-  * 
+  *  amanzi_theis_isotropic_1d-u.xml
 
-    * Spec Version 2.2, unstructured mesh framework
+    * Spec Version 2.3, unstructured mesh framework
     * mesh:  
-    * runs
  
-  * amanzi_dispersion_aligned_point_2d-s.xml
-
-    * Spec Version 1.2, structured AMR framework
-    * runs
-
-* Mesh Files:
-
-  * amanzi_dispersion_aligned_point_2d.exo
-
-    * two-dimensional statically refined mesh
-    * treated as an unstructured polygonal mesh
-
-  * amanzi_dispersion_aligned_point_2d-1layer.exo
-
-    * three-dimensional statically refined mesh
-    * one layer of cells in the z-direction
-
-* Analytic solution computed with AT123D-AT
-
-  * Subdirectory: at123d-at
-
-  * Input Files: 
-
-    * at123d-at_centerline.list, at123d-at_centerline.in
-    * at123d-at_slice_x=0.list, at123d-at_slice_x=0.in,  
-    * at123d-at_slice_x=420.list, at123d-at_slice_x=420.in
-
