@@ -215,7 +215,8 @@ void RunTest(std::string op_list_name) {
     CompositeVector rhs = *global_op->rhs();
     int ierr = solver->ApplyInverse(rhs, *solution);
 
-    // ver.CheckResidual(*solution, 1.0e-12);
+    if (op_list_name == "diffusion operator")
+         ver.CheckResidual(*solution, 1.0e-12);
 
     int num_itrs = solver->num_itrs();
     CHECK(num_itrs > 5 && num_itrs < 15);
