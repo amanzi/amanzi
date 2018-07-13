@@ -157,6 +157,8 @@ void RunTest(std::string op_list_name) {
   solution.PutScalar(0.0);
   int ierr = solver.ApplyInverse(rhs, solution);
 
+  // ver.CheckResidual(solution, 1.0e-12);
+
   if (MyPID == 0) {
     std::cout << "pressure solver (pcg): ||r||=" << solver.residual() 
               << " itr=" << solver.num_itrs()

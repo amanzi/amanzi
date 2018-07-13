@@ -65,14 +65,14 @@ void ObservableLineSegmentSolute::ComputeObservation(
   unit = units_.system().concentration;
 
   if (weighting_ == "none") {
-    for (int i = 0; i < region_size_; i++){
+    for (int i = 0; i < region_size_; i++) {
       *value += values[i]*lofs_[i];
       *volume += lofs_[i];
     }
   } else if (weighting_ == "flux norm") {
     if (S.HasField("darcy_velocity")) {
       const Epetra_MultiVector& darcy_vel =  *S.GetFieldData("darcy_velocity")->ViewComponent("cell");
-      for (int i = 0; i < region_size_; i++){
+      for (int i = 0; i < region_size_; i++) {
         int c = entity_ids_[i];
         double norm = 0.0;
         for (int j = 0; j < dim; j++) norm += darcy_vel[j][c] * darcy_vel[j][c];
@@ -124,7 +124,7 @@ void ObservableLineSegmentSolute::InterpolatedValues(State& S,
       
     cv->ScatterMasterToGhosted();
 
-    if (limiter_){ // At the moment only Kuzmin limiter is implemented for observ.
+    if (limiter_) { // At the moment only Kuzmin limiter is implemented for observ.
       plist.set<std::string>("limiter", "Kuzmin");
     }
 
@@ -132,7 +132,7 @@ void ObservableLineSegmentSolute::InterpolatedValues(State& S,
     lifting.ComputeGradient(ids, gradient);
 
     if (limiter_) {
-      // if (!S.HasField("darcy_velocity")){
+      // if (!S.HasField("darcy_velocity")) {
       //   Errors::Message msg;
       //   msg <<"Limiter can't be apllied without darcy_velocity";
       //   Exceptions::amanzi_throw(msg);
@@ -144,7 +144,6 @@ void ObservableLineSegmentSolute::InterpolatedValues(State& S,
       lifting.ApplyLimiter(ids, gradient);
     }
     
-
     for (int i = 0; i < ids.size(); i++) {
       int c = ids[i];
       values[i] = lifting.getValue( gradient[i], c, line_pnts[i]);

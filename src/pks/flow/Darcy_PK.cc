@@ -460,7 +460,7 @@ bool Darcy_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   op_acc_->AddAccumulationDeltaNoVolume(*solution, sy_g, "cell");
 
   // Peaceman model
-  if (S_->HasField("well_index")){
+  if (S_->HasField("well_index")) {
     const CompositeVector& wi = *S_->GetFieldData("well_index");
     op_acc_->AddAccumulationTerm(wi, "cell");
   }

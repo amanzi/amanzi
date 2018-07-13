@@ -29,6 +29,7 @@
 #include "Point.hh"
 #include "Polynomial.hh"
 #include "VectorPolynomial.hh"
+#include "WhetStoneFunction.hh"
 #include "Tensor.hh"
 
 class AnalyticDGBase {
@@ -91,7 +92,8 @@ class AnalyticDGBase {
   // error calculations
   void ComputeCellError(const Amanzi::WhetStone::DG_Modal& dg, Epetra_MultiVector& p, double t,
                         double& pnorm, double& l2_err, double& inf_err,
-                                       double& l2_mean, double& inf_mean);
+                                       double& l2_mean, double& inf_mean,
+                                       double& l2_int);
 
  protected:
   Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh_;
@@ -136,11 +138,14 @@ inline
 void AnalyticDGBase::ComputeCellError(
     const Amanzi::WhetStone::DG_Modal& dg, Epetra_MultiVector& p, double t,
     double& pnorm, double& l2_err, double& inf_err,
-                   double& l2_mean, double& inf_mean)
+                   double& l2_mean, double& inf_mean,
+                   double& l2_int)
 {
   pnorm = 0.0;
-  l2_err = l2_mean = 0.0;
+  l2_err = l2_mean = l2_int = 0.0;
   inf_err = inf_mean = 0.0;
+
+  Amanzi::WhetStone::NumericalIntegration numi(mesh_);
 
   int ncells = mesh_->num_entities(Amanzi::AmanziMesh::CELL, Amanzi::AmanziMesh::Parallel_type::OWNED);
   for (int c = 0; c < ncells; c++) {
@@ -177,13 +182,24 @@ void AnalyticDGBase::ComputeCellError(
     // std::cout << c << " Exact: " << sol << "dG:" << poly << "ERRs: " << l2_err << " " << inf_err << "\n\n";
 
     pnorm += std::pow(sol(0, 0), 2.0) * volume;
+
+    // integrated error
+    poly_err.GetPolynomialCoefficients(data);
+    basis.ChangeBasisMyToNatural(data);
+    poly_err.SetPolynomialCoefficients(data);
+
+    std::vector<const Amanzi::WhetStone::WhetStoneFunction*> funcs(2);
+    funcs[0] = &poly_err;
+    funcs[1] = &poly_err;
+    l2_int += numi.IntegrateFunctionsTrianglatedCell(c, funcs, 2 * order_);
   }
 #ifdef HAVE_MPI
-  double tmp_out[3], tmp_ina[3] = {pnorm, l2_err, l2_mean};
-  mesh_->get_comm()->SumAll(tmp_ina, tmp_out, 3);
+  double tmp_out[4], tmp_ina[4] = {pnorm, l2_err, l2_mean, l2_int};
+  mesh_->get_comm()->SumAll(tmp_ina, tmp_out, 4);
   pnorm = tmp_out[0];
   l2_err = tmp_out[1];
   l2_mean = tmp_out[2];
+  l2_int = tmp_out[3];
 
   double tmp_inb[2] = {inf_err, inf_mean};
   mesh_->get_comm()->MaxAll(tmp_inb, tmp_out, 2);
@@ -193,6 +209,7 @@ void AnalyticDGBase::ComputeCellError(
   pnorm = sqrt(pnorm);
   l2_err = sqrt(l2_err);
   l2_mean = sqrt(l2_mean);
+  l2_int = sqrt(l2_int);
 }
 
 #endif

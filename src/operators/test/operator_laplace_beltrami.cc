@@ -245,6 +245,8 @@ TEST(LAPLACE_BELTRAMI_FLAT_SCC) {
 
   int ierr = solver->ApplyInverse(rhs, solution);
 
+  ver.CheckResidual(solution, 1.0e-12);
+
   int num_itrs = solver->num_itrs();
   CHECK(num_itrs < 10);
 
@@ -358,6 +360,8 @@ TEST(LAPLACE_BELTRAMI_FLAT) {
   solution.PutScalar(0.0);
 
   int ierr = solver->ApplyInverse(rhs, solution);
+
+  ver.CheckResidual(solution, 1.0e-12);
 
   int num_itrs = solver->num_itrs();
   CHECK(num_itrs < 10);

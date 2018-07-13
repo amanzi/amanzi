@@ -170,6 +170,8 @@ TEST(ADVECTION_DIFFUSION_SURFACE) {
   int num_itrs = solver.num_itrs();
   CHECK(num_itrs > 5 && num_itrs < 15);
 
+  ver.CheckResidual(solution, 1.0e-12);
+
   if (MyPID == 0) {
     std::cout << "pressure solver (gmres): ||r||=" << solver.residual() 
               << " itr=" << solver.num_itrs()

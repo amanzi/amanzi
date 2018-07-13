@@ -33,9 +33,9 @@
 #include "AnalyticDG01.hh"
 #include "AnalyticDG02.hh"
 
-#include "OperatorAudit.hh"
 #include "OperatorDefs.hh"
 #include "PDE_DiffusionDG.hh"
+#include "Verification.hh"
 
 
 /* *****************************************************************
@@ -188,8 +188,8 @@ void OperatorDiffusionDG(std::string solver_name,
   global_op->AssembleMatrix();
 
   // Test SPD properties of the matrix.
-  Operators::CheckMatrixSymmetry(global_op->A());
-  Operators::CheckMatrixCoercivity(global_op->A());
+  VerificationCV ver(global_op);
+  ver.CheckMatrixSPD(false, true);
 
   // create preconditoner using the base operator class
   ParameterList slist = plist.sublist("preconditioners").sublist("Hypre AMG");
@@ -206,6 +206,8 @@ void OperatorDiffusionDG(std::string solver_name,
   solution.PutScalar(0.0);
 
   int ierr = solver->ApplyInverse(rhs, solution);
+
+  ver.CheckResidual(solution, 1.0e-11);
 
   if (MyPID == 0) {
     std::cout << "pressure solver (pcg): ||r||=" << solver->residual() 
@@ -228,12 +230,13 @@ void OperatorDiffusionDG(std::string solver_name,
   solution.ScatterMasterToGhosted();
   Epetra_MultiVector& p = *solution.ViewComponent("cell", false);
 
-  double pnorm, pl2_err, pinf_err, pl2_mean, pinf_mean;
-  ana.ComputeCellError(dg, p, 0.0, pnorm, pl2_err, pinf_err, pl2_mean, pinf_mean);
+  double pnorm, pl2_err, pinf_err, pl2_mean, pinf_mean, pl2_int;
+  ana.ComputeCellError(dg, p, 0.0, pnorm, pl2_err, pinf_err, pl2_mean, pinf_mean, pl2_int);
 
   if (MyPID == 0) {
-    printf("Mean:  L2(p)=%9.6f  Inf(p)=%9.6f  itr=%3d\n", pl2_mean, pinf_mean, solver->num_itrs());
-    printf("Total: L2(p)=%9.6f  Inf(p)=%9.6f\n", pl2_err, pinf_err);
+    printf("Mean:     L2(p)=%9.6f  Inf(p)=%9.6f  itr=%3d\n", pl2_mean, pinf_mean, solver->num_itrs());
+    printf("Total:    L2(p)=%9.6f  Inf(p)=%9.6f\n", pl2_err, pinf_err);
+    printf("Integral: L2(p)=%9.6ff\n", pl2_int);
 
     CHECK(pl2_err < 1e-10);
   }

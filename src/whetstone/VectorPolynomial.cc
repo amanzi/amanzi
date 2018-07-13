@@ -22,12 +22,19 @@ namespace Amanzi {
 namespace WhetStone {
 
 /* ******************************************************************
-* Simple constructor
+* Simple constructors
 ****************************************************************** */
 VectorPolynomial::VectorPolynomial(int d, int size) : d_(d)
 {
   polys_.resize(size);
   for (int i = 0; i < size; ++i) polys_[i].Reshape(d_, 0, true);
+}
+
+
+VectorPolynomial::VectorPolynomial(int d, int size, int order) : d_(d)
+{
+  polys_.resize(size);
+  for (int i = 0; i < size; ++i) polys_[i].Reshape(d_, order, true);
 }
 
 

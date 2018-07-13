@@ -430,7 +430,7 @@ void MFD3D_CrouzeixRaviart::H1FaceHarmonic(
 void MFD3D_CrouzeixRaviart::ProjectorCell_HO_(
     int c, const std::vector<VectorPolynomial>& vf,
     const Projectors::Type type, bool is_harmonic, 
-    const std::shared_ptr<DenseVector>& moments, VectorPolynomial& uc)
+    VectorPolynomial& moments, VectorPolynomial& uc)
 {
   AMANZI_ASSERT(d_ == 2);
 
@@ -499,16 +499,22 @@ void MFD3D_CrouzeixRaviart::ProjectorCell_HO_(
       Acf.Multiply(v1, v2, false);
       Acc.Multiply(v2, v3, false);
 
-      moments->Reshape(ndof_c);
       for (int n = 0; n < ndof_c; ++n) {
         vdof(row + n) = -v3(n);
-        (*moments)(n) = -v3(n);
+        v3(n) *= -1;
       }
+
+      moments[i].Reshape(d_, order_ - 2);
+      moments[i].SetPolynomialCoefficients(v3);
     }
     else if (ndof_c > 0 && !is_harmonic) {
-      AMANZI_ASSERT(ndof_c == moments->NumRows());
+      DenseVector v3(ndof_c);
+      moments[i].GetPolynomialCoefficients(v3);
+
+      AMANZI_ASSERT(ndof_c == v3.NumRows());
+
       for (int n = 0; n < ndof_c; ++n) {
-        vdof(row + n) = (*moments)(n);
+        vdof(row + n) = v3(n);
       }
     }
 
@@ -558,8 +564,11 @@ void MFD3D_CrouzeixRaviart::ProjectorCell_HO_(
       M2 = M.SubMatrix(ndof_c, nd, 0, nd);
       M2.Multiply(v5, v6, false);
 
+      DenseVector v3(ndof_c);
+      moments[i].GetPolynomialCoefficients(v3);
+
       for (int n = 0; n < ndof_c; ++n) {
-        v4(n) = (*moments)(n) * mesh_->cell_volume(c);
+        v4(n) = v3(n) * mesh_->cell_volume(c);
       }
 
       for (int n = 0; n < nd - ndof_c; ++n) {

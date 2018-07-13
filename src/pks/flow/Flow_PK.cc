@@ -376,7 +376,7 @@ void Flow_PK::ComputeWellIndex(Teuchos::ParameterList& spec)
         xmin = std::min(xmin, xf[0]);
         ymax = std::max(ymax, xf[1]);
         ymin = std::min(ymin, xf[1]);
-        if (dim > 2){
+        if (dim > 2) {
           zmax = std::max(zmax, xf[2]);
           zmin = std::min(zmin, xf[2]);
         }        

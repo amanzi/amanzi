@@ -61,7 +61,7 @@ TEST(HARMONIC_PROJECTORS_SQUARE_CR) {
   }
 
   MFD3D_CrouzeixRaviart mfd(mesh);
-  auto moments = std::make_shared<WhetStone::DenseVector>();
+  VectorPolynomial moments(2, 2);
 
   mfd.set_order(2);
   mfd.H1CellHarmonic(cell, vf, moments, uc);
@@ -177,7 +177,7 @@ TEST(HARMONIC_PROJECTORS_POLYGON_CR) {
   }
   
   MFD3D_CrouzeixRaviart mfd(mesh);
-  auto moments = std::make_shared<WhetStone::DenseVector>();
+  VectorPolynomial moments(2, 2);
 
   // -- old scheme
   mfd.set_order(1);
@@ -283,18 +283,20 @@ TEST(HARMONIC_PROJECTORS_POLYGON_CR) {
   // preservation of moments (reusing previous boundary functions)
   std::cout << "    subtest: verify calculated moments" << std::endl;
   for (int k = 2; k < 4; ++k) {
-    Polynomial vc(2, k - 2);
-    int nk = vc.size();
+    moments[0].Reshape(2, k - 2);
+    moments[1].Reshape(2, k - 2);
 
-    moments->Reshape(nk);
-    for (int i = 0; i < nk; ++i) {
-      (*moments)(i) = 1.0 + i;
+    for (auto it = moments[0].begin(); it.end() <= moments[0].end(); ++it) {
+      int m = it.MonomialSetOrder();
+      int i = it.MonomialSetPosition();
+      int n = it.PolynomialPosition();
+      moments[0](m, i) = 1.0 + n;
     }
 
     mfd.set_order(k);
     mfd.H1Cell(cell, vf, moments, uc);
 
-    for (auto it = vc.begin(); it.end() <= vc.end(); ++it) {
+    for (auto it = moments[0].begin(); it.end() <= moments[0].end(); ++it) {
       Polynomial mono(2, it.multi_index(), 1.0);
       mono.set_origin(mesh->cell_centroid(cell));
    
@@ -344,9 +346,9 @@ TEST(L2_PROJECTORS_SQUARE_CR) {
   }
 
   MFD3D_CrouzeixRaviart mfd(mesh);
-  auto moments = std::make_shared<WhetStone::DenseVector>(6);
-  moments->PutScalar(0.0);
-  (*moments)(4) = 1.0 / 60;
+  VectorPolynomial moments(2, 2, 2);
+  moments[0](2, 1) = 1.0 / 60;
+  moments[1](2, 1) = 1.0 / 60;
 
   mfd.set_order(4);
   mfd.H1Cell(cell, vf, moments, uc);
@@ -442,7 +444,7 @@ TEST(HARMONIC_PROJECTORS_SQUARE_PK) {
 
   MFD3D_Lagrange mfd(mesh);
   MFD3D_CrouzeixRaviart mfd_cr(mesh);
-  auto moments = std::make_shared<WhetStone::DenseVector>();
+  VectorPolynomial moments(2, 2);
 
   // test linear deformation
   for (int n = 0; n < 4; ++n) {
@@ -518,7 +520,7 @@ TEST(HARMONIC_PROJECTORS_POLYGON_PK) {
 
   MFD3D_Lagrange mfd(mesh);
   MFD3D_CrouzeixRaviart mfd_cr(mesh);
-  auto moments = std::make_shared<WhetStone::DenseVector>();
+  VectorPolynomial moments(2, 2);
 
   // test globally linear deformation
   for (int n = 0; n < nfaces; ++n) {
@@ -638,14 +640,15 @@ TEST(HARMONIC_PROJECTORS_POLYGON_PK) {
     mfd.L2CellHarmonic(cell, vf, moments, uc2);
     uc2 -= uc;
     if (k < 3) CHECK(uc2[0].NormMax() < 1e-12);
-    if (k > 1) std::cout << "k=" << k << " moments:" << *moments;
+    if (k > 1) std::cout << "k=" << k << " moments:" << moments[0];
   }
 
   // preservation of moments (reusing previous boundary functions)
   std::cout << "\nTest: HO Lagrange projectors for pentagon (verify moments)" << std::endl;
   for (int k = 2; k < 4; ++k) {
-    moments->Reshape(k * (k - 1) / 2);
-    moments->PutScalar(1.0);
+    moments[0].Reshape(2, k - 2);
+    moments[0].PutScalar(1.0);
+    moments[1] = moments[0];
 
     mfd.set_order(k);
     mfd.H1Cell(cell, vf, moments, uc);
@@ -679,7 +682,7 @@ TEST(SERENDIPITY_PROJECTORS_POLYGON_PK) {
   std::vector<VectorPolynomial> vf(nfaces);
 
   MFD3D_LagrangeSerendipity mfd(mesh);
-  auto moments = std::make_shared<WhetStone::DenseVector>();
+  VectorPolynomial moments(2, 2);
 
   // test globally linear deformation
   for (int n = 0; n < nfaces; ++n) {

@@ -228,6 +228,7 @@ int MeshMaps::LeastSquareFit(int order,
   v.resize(d_);
   for (int k = 0; k < d_; ++k) { 
     v[k].Reshape(d_, order);
+    v[k].set_origin(AmanziGeometry::Point(d_));
 
     for (int i = 0; i < nk; ++i) {
       b(i) = 0.0;
@@ -299,13 +300,13 @@ void MeshMaps::ProjectPolynomial(int c, Polynomial& poly) const
     vvf.push_back(vf);
   }
 
-  auto moments = std::make_shared<WhetStone::DenseVector>();
+  VectorPolynomial moments(d_, 1);
+
   if (order == 2) {
     NumericalIntegration numi(mesh1_);
     double mass = numi.IntegratePolynomialCell(c, poly);
 
-    moments->Reshape(1);
-    (*moments)(0) = mass / mesh1_->cell_volume(c);
+    moments[0](0, 0) = mass / mesh1_->cell_volume(c);
   }
 
   VectorPolynomial vc(d_, 0);

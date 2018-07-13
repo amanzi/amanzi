@@ -171,7 +171,7 @@ int MFD3D_LagrangeSerendipity::StiffnessMatrix(
 ****************************************************************** */
 void MFD3D_LagrangeSerendipity::L2Cell(
     int c, const std::vector<VectorPolynomial>& vf,
-    const std::shared_ptr<DenseVector>& moments, VectorPolynomial& uc)
+    VectorPolynomial& moments, VectorPolynomial& uc)
 {
   // create integration object for a single cell
   NumericalIntegration numi(mesh_);
