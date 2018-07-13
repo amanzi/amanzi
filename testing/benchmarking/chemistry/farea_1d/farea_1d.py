@@ -10,38 +10,6 @@ import matplotlib
 from matplotlib import pyplot as plt
 
 
-# ----------- AMANZI U -----------------------------------------------------------------
-def GetXY_AmanziU(path,root,time,comp,last=False):
-
-#    import pdb; pdb.set_trace()
-   
-    # open amanzi concentration and mesh files
-    dataname = os.path.join(path, "plot_data.h5")
-    amanzi_file = h5py.File(dataname,'r')
-    meshname = os.path.join(path, "plot_mesh.h5")
-    amanzi_mesh = h5py.File(meshname,'r')
-
-    # if last = True, overwrite time with last time in file
-    if last:
-        alltimes=[int(n) for n in amanzi_file[comp].keys()]
-        time_ = amanzi_file[comp].keys()[alltimes.index(max(alltimes))]
-    else:
-        time_=time
-
-    # extract cell coordinates
-    y = np.array(amanzi_mesh['0']['Mesh']["Nodes"][0:len(amanzi_mesh['0']['Mesh']["Nodes"])/4,0])
-
-    # center of cell
-    x_amanzi_alquimia = np.diff(y)/2+y[0:-1]
-
-    # extract concentration array
-    c_amanzi_alquimia = np.array(amanzi_file[comp][time_]).flatten()
-    amanzi_file.close()
-    amanzi_mesh.close()
-    
-    return (x_amanzi_alquimia, c_amanzi_alquimia)
-
-
 # ----------- PFLOTRAN STANDALONE ------------------------------------------------------------
 def GetXY_PFloTran(path,root,time,comp):
 
@@ -67,8 +35,10 @@ if __name__ == "__main__":
         sys.path.append('../../../../tools/amanzi_xml')
     except:
         pass
+
     import run_amanzi_standard
     import numpy as np
+    from compare_field_results import GetXY_AmanziU
 
     try:
         sys.path.append('../../../../MY_TPL_BUILD/ccse/ccse-1.3.4-source/Tools/Py_util')
@@ -161,19 +131,19 @@ if __name__ == "__main__":
         # tot conc
         u_amanzi_native = [[] for x in range(len(totcama))]
         for j, comp in enumerate(totcama):
-              x_amanzi_native, c_amanzi_native = GetXY_AmanziU(path_to_amanzi,'farea-1d',time,comp,last=True)
+              x_amanzi_native, c_amanzi_native = GetXY_AmanziU(path_to_amanzi,'plot',comp)
               u_amanzi_native[j] = c_amanzi_native
 
         # sorb conc
         v_amanzi_native = [[] for x in range(len(sorbama))]
         for j, sorb in enumerate(sorbama):
-              x_amanzi_native, c_amanzi_native = GetXY_AmanziU(path_to_amanzi,'farea-1d',time,sorb,last=True)
+              x_amanzi_native, c_amanzi_native = GetXY_AmanziU(path_to_amanzi,'plot',sorb)
               v_amanzi_native[j] = c_amanzi_native
 
         # mineral volume fraction
         w_amanzi_native = [[] for x in range(len(vfama))]
         for j, vf in enumerate(vfama):
-              x_amanzi_native, c_amanzi_native = GetXY_AmanziU(path_to_amanzi,'farea-1d',time,vf,last=True)
+              x_amanzi_native, c_amanzi_native = GetXY_AmanziU(path_to_amanzi,'plot',vf)
               w_amanzi_native[j] = c_amanzi_native
 
         native = True
@@ -197,19 +167,19 @@ if __name__ == "__main__":
         # tot concentration
         u_amanzi_alquimia = [[] for x in range(len(totcama))]
         for j, comp in enumerate(totcama):
-              x_amanzi_alquimia, c_amanzi_alquimia = GetXY_AmanziU(path_to_amanzi,"farea-1d",time,comp,last=True)
+              x_amanzi_alquimia, c_amanzi_alquimia = GetXY_AmanziU(path_to_amanzi,"plot",comp)
               u_amanzi_alquimia[j] = c_amanzi_alquimia  
 
         # sorbed concentration
         v_amanzi_alquimia = [[] for x in range(len(sorbama))]
         for j, sorb in enumerate(sorbama):
-              x_amanzi_alquimia, c_amanzi_alquimia = GetXY_AmanziU(path_to_amanzi,"farea-1d",time,sorb,last=True)
+              x_amanzi_alquimia, c_amanzi_alquimia = GetXY_AmanziU(path_to_amanzi,"plot",sorb)
               v_amanzi_alquimia[j] = c_amanzi_alquimia
 
         # mineral volume fraction
         w_amanzi_alquimia = [[] for x in range(len(vfama))]
         for j, vf in enumerate(vfama):
-              x_amanzi_alquimia, c_amanzi_alquimia = GetXY_AmanziU(path_to_amanzi,"farea-1d",time,vf,last=True)
+              x_amanzi_alquimia, c_amanzi_alquimia = GetXY_AmanziU(path_to_amanzi,"plot",vf)
               w_amanzi_alquimia[j] = c_amanzi_alquimia
 
         alq = True
