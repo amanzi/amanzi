@@ -39,57 +39,45 @@ namespace WhetStone {
 int MFD3D_CrouzeixRaviart::H1consistencyLO_(
     int c, const Tensor& K, DenseMatrix& N, DenseMatrix& Ac)
 {
-  Entity_ID_List edges, faces, face_edges;
-  std::vector<int> dirs, map;
-
-  mesh_->cell_get_edges(c, &edges);
-  int nedges = edges.size();
-
-  N.Reshape(nedges, d_ + 1);
-  Ac.Reshape(nedges, nedges);
+  Entity_ID_List faces;
+  std::vector<int> dirs;
 
   mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
-  int num_faces = faces.size();
+  int nfaces = faces.size();
 
-  // to calculate matrix R, we use temporary matrix N 
-  N.PutScalar(0.0);
+  N.Reshape(nfaces, d_ + 1);
+  R_.Reshape(nfaces, d_ + 1);
+  Ac.Reshape(nfaces, nfaces);
 
-  for (int i = 0; i < num_faces; i++) {
-    int f = faces[i];
+  // calculate matrix R
+  for (int n = 0; n < nfaces; ++n) {
+    int f = faces[n];
     const AmanziGeometry::Point& normal = mesh_->face_normal(f);
 
-    if (d_ == 2) {
-      for (int k = 0; k < d_; k++) N(i, k) += normal[k] * dirs[i];
-    } else {
-      mesh_->face_to_cell_edge_map(f, c, &map);
-      int num_face_edges = map.size();
-
-      for (int j = 0; j < num_face_edges; j++) {
-        for (int k = 0; k < d_; k++) N(map[j], k) += normal[k] * dirs[i];
-      }
-    }
+    for (int k = 0; k < d_; k++) R_(n, k) = normal[k] * dirs[n];
+    R_(n, d_) = 0.0;
   }
 
   // calculate R K R^T / volume
   AmanziGeometry::Point v1(d_), v2(d_);
   double volume = mesh_->cell_volume(c);
-  for (int i = 0; i < nedges; i++) {
-    for (int k = 0; k < d_; k++) v1[k] = N(i, k);
+  for (int n = 0; n < nfaces; ++n) {
+    for (int k = 0; k < d_; k++) v1[k] = R_(n, k);
     v2 = K * v1;
 
-    for (int j = i; j < nedges; j++) {
-      for (int k = 0; k < d_; k++) v1[k] = N(j, k);
-      Ac(i, j) = (v1 * v2) / volume;
+    for (int m = n; m < nfaces; m++) {
+      for (int k = 0; k < d_; k++) v1[k] = R_(m, k);
+      Ac(n, m) = (v1 * v2) / volume;
     }
   }
 
   // calculate N
   const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
-  for (int i = 0; i < nedges; i++) {
-    int e = edges[i];
-    const AmanziGeometry::Point& xe = mesh_->edge_centroid(e);
-    for (int k = 0; k < d_; k++) N(i, k) = xe[k] - xc[k];
-    N(i, d_) = 1;  // additional column is added to the consistency condition
+  for (int n = 0; n < nfaces; n++) {
+    int f = faces[n];
+    const AmanziGeometry::Point& xf = mesh_->face_centroid(f);
+    for (int k = 0; k < d_; k++) N(n, k) = xf[k] - xc[k];
+    N(n, d_) = 1.0;  // additional column is added to the consistency condition
   }
 
   return WHETSTONE_ELEMENTAL_MATRIX_OK;

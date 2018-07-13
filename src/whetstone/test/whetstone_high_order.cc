@@ -21,6 +21,7 @@
 #include "MeshFactory.hh"
 
 #include "MFD3D_CrouzeixRaviart.hh"
+#include "MFD3D_CrouzeixRaviartSerendipity.hh"
 #include "MFD3D_Diffusion.hh"
 #include "MFD3D_Lagrange.hh"
 #include "MFD3D_LagrangeSerendipity.hh"
@@ -38,8 +39,8 @@ TEST(HIGH_ORDER_CROUZEIX_RAVIART) {
 
   MeshFactory meshfactory(comm.get());
   meshfactory.preference(FrameworkPreference({MSTK}));
-  // Teuchos::RCP<Mesh> mesh = meshfactory(0.0, 0.0, 1.2, 1.1, 1, 1, Teuchos::null, true, true); 
-  Teuchos::RCP<Mesh> mesh = meshfactory("test/one_pentagon.exo", Teuchos::null, true, true); 
+  // Teuchos::RCP<Mesh> mesh = meshfactory(0.0, 0.0, 1.2, 1.1, 1, 1, Teuchos::null, true, false); 
+  Teuchos::RCP<Mesh> mesh = meshfactory("test/one_pentagon.exo", Teuchos::null, true, false); 
  
   MFD3D_CrouzeixRaviart mfd(mesh);
 
@@ -88,6 +89,69 @@ TEST(HIGH_ORDER_CROUZEIX_RAVIART) {
     CHECK(G1.NormInf() <= 1e-10);
   }
 }
+
+
+/* **************************************************************** */
+void HighOrderCrouzeixRaviartSerendipity(std::string file_name) {
+  using namespace Amanzi;
+  using namespace Amanzi::AmanziMesh;
+  using namespace Amanzi::WhetStone;
+
+  std::cout << "\nTest: High-order Crouzeix Raviart Serendipity element in 2D, file=" << file_name << std::endl;
+  auto comm = std::make_shared<Epetra_MpiComm>(MPI_COMM_WORLD);
+
+  MeshFactory meshfactory(comm.get());
+  meshfactory.preference(FrameworkPreference({MSTK}));
+  Teuchos::RCP<const AmanziGeometry::GeometricModel> gm;
+  Teuchos::RCP<Mesh> mesh = meshfactory(file_name, gm, true, false); 
+ 
+  int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
+
+  MFD3D_CrouzeixRaviartSerendipity mfd(mesh);
+
+  for (int c = 0; c < ncells; ++c) {
+    if (mesh->cell_get_num_faces(c) < 4) continue;
+
+    Tensor T(2, 1);
+    T(0, 0) = 1.0;
+
+    // high-order schemes
+    for (int k = 1; k < 4; ++k) {
+      DenseMatrix N, Ak;
+
+      mfd.set_order(k);
+      mfd.H1consistency(c, T, N, Ak);
+      mfd.StiffnessMatrix(c, T, Ak);
+
+      printf("Stiffness matrix for order=%d, cell=%d\n", k, c);
+      PrintMatrix(Ak, "%8.3f ");
+
+      // verify SPD propery
+      int nrows = Ak.NumRows();
+      for (int i = 0; i < nrows; i++) CHECK(Ak(i, i) > 0.0);
+
+      // verify exact integration property
+      const DenseMatrix& R = mfd.R();
+      const DenseMatrix& G = mfd.G();
+
+      DenseMatrix G1(G);
+      G1.PutScalar(0.0);
+      G1.Multiply(N, R, true);
+      G1(0, 0) = 1.0;
+      G1.Inverse();
+      G1(0, 0) = 0.0;
+      G1 -= G;
+      std::cout << "Norm of dG=" << G1.NormInf() << " " << G.NormInf() << std::endl;      
+      CHECK(G1.NormInf() <= 1e-11 * G.NormInf());
+    }
+  }
+}
+
+
+TEST(HIGH_ORDER_CROUZEIX_RAVIART_SERENDIPITY) {
+  HighOrderCrouzeixRaviartSerendipity("test/two_cell2_dist.exo");
+  HighOrderCrouzeixRaviartSerendipity("test/one_pentagon.exo");
+} 
 
 
 /* **************************************************************** */

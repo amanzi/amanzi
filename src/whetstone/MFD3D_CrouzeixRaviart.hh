@@ -148,10 +148,12 @@ class MFD3D_CrouzeixRaviart : public MFD3D {
   void CalculateFaceDOFs_(int f, const Polynomial& vf, const Polynomial& pf,
                           DenseVector& vdof, int& row);
 
- private:
-  bool use_always_ho_;
+ protected:
   PolynomialOnMesh integrals_;
   DenseMatrix R_, G_;
+
+ private:
+  bool use_always_ho_;
 };
 
 }  // namespace WhetStone
