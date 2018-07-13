@@ -189,6 +189,8 @@ void MeshMaps_VEM::JacobianFaceValue_(
 void MeshMaps_VEM::LeastSquareProjector_Cell_(
     int order, int c, const std::vector<VectorPolynomial>& vf, VectorPolynomial& vc) const
 {
+  AMANZI_ASSERT(order == 1 || order == 2);
+
   vc.resize(d_);
   for (int i = 0; i < d_; ++i) vc[i].Reshape(d_, order);
   
@@ -209,7 +211,6 @@ void MeshMaps_VEM::LeastSquareProjector_Cell_(
 
   // FIXME
   if (order > 1) {
-    AMANZI_ASSERT(false);
     mesh0_->cell_get_faces(c, &faces);
     int nfaces = faces.size();
 
