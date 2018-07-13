@@ -10,25 +10,20 @@ def GetXY_AmanziU(path,root,comp):
     meshname = os.path.join(path,root+"_mesh.h5")
     amanzi_mesh = h5py.File(meshname,'r')
 
-    # extract cell coordinates (z = comp:2)
-    y = np.array(amanzi_mesh['0']['Mesh']['Nodes'][0:len(amanzi_mesh['0']['Mesh']['Nodes']),2])
+    # extract cell coordinates
+    y = np.array(amanzi_mesh['0']['Mesh']["Nodes"][0:len(amanzi_mesh['0']['Mesh']["Nodes"])/4,0])
 
     # center of cell
-    yy = np.array([y[4*i] for i in range(len(y)/4)])
-    x_amanziU = yy[0:-1]+np.diff(yy)/2
-
-
-    # determine 'time'
-    times = amanzi_file[comp].keys()
-    time = times[len(times)-1]
+    x_amanziU = np.diff(y)/2 + y[0:-1]
 
     # extract concentration array
-    c_amanziU = np.array(amanzi_file[comp][time])
-    c_amanziU = c_amanziU.reshape(len(c_amanziU))
+    alltimes = [int(n) for n in amanzi_file[comp].keys()]
+    time = amanzi_file[comp].keys()[alltimes.index(max(alltimes))]
 
+    c_amanziU = np.array(amanzi_file[comp][time]).flatten()
     amanzi_file.close()
     amanzi_mesh.close()
-    
+
     return (x_amanziU, c_amanziU)
 
 def GetXY_AmanziS(path,root,comp):

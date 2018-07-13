@@ -11,29 +11,6 @@ import matplotlib
 from matplotlib import pyplot as plt
 
 
-# ----------- AMANZI U -----------------------------------------------------------------
-def GetXY_AmanziU(path,root,comp):
-    dataname = os.path.join(path,root+"_data.h5")
-    amanzi_file = h5py.File(dataname,'r')
-    meshname = os.path.join(path,root+"_mesh.h5")
-    amanzi_mesh = h5py.File(meshname,'r')
-
-    # extract cell coordinates
-    y = np.array(amanzi_mesh['0']['Mesh']["Nodes"][0:len(amanzi_mesh['0']['Mesh']["Nodes"])/4,0])
-    # y = np.array(amanzi_mesh['Mesh']["Nodes"][0:len(amanzi_mesh['Mesh']["Nodes"])/4,0]) # old style
-
-    # center of cell
-    x_amanzi_alquimia  = np.diff(y)/2+y[0:-1]
-
-    # extract concentration array
-    time = str(max([int(x) for x in amanzi_file[comp].keys()]))
-    c_amanzi_alquimia = np.array(amanzi_file[comp][time])
-    amanzi_file.close()
-    amanzi_mesh.close()
-    
-    return (x_amanzi_alquimia, c_amanzi_alquimia)
-
-
 # ----------- AMANZI S -----------------------------------------------------------------
 def GetXY_AmanziS(path,root,comp):
     try:
@@ -107,8 +84,10 @@ if __name__ == "__main__":
         sys.path.append('../../../../tools/amanzi_xml')
     except:
         pass
+
     import run_amanzi_standard
     import numpy as np
+    from compare_field_results import GetXY_AmanziU
 
     try:
         sys.path.append('../../../../MY_TPL_BUILD/ccse/ccse-1.3.4-source/Tools/Py_util')
