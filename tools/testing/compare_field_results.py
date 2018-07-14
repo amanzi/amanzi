@@ -49,9 +49,9 @@ def GetXY_AmanziS(path,root,comp):
         (y, x, npts, err) = fsnapshot.fplotfile_get_data_1d(plotfile, comp, y, x)
 
         # temporary fix for CCSE internal error
-        (xmin, xmax, ymin, ymax, zmin, zmax) = fsnapshot.fplotfile_get_limits(plotfile)
-        dx = (xmax - xmin)/nx
-        x = xmin + dx*0.5 + np.arange( (nx), dtype=np.float64 )*dx
+        # (xmin, xmax, ymin, ymax, zmin, zmax) = fsnapshot.fplotfile_get_limits(plotfile)
+        # dx = (xmax - xmin)/nx
+        # x = xmin + dx*0.5 + np.arange( (nx), dtype=np.float64 )*dx
         
     else:
         y = np.zeros( (0), dtype=np.float64)

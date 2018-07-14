@@ -270,13 +270,13 @@ if __name__ == "__main__":
 
         root_amanziS = "plt00070"
         compS = "Ca++_water_Concentration"
-        x_amanziS_crunch, c_amanziS_crunch = GetXY_AmanziS(path_to_amanzi,root_amanziS,time,compS)
+        x_amanziS_crunch, c_amanziS_crunch = GetXY_AmanziS(path_to_amanzi,root_amanziS,compS)
         struct_c = len(x_amanziS_crunch)
         compS = "H+_Free_Ion_Guess"
-        x_amanziS_crunch, pH_amanziS_crunch = GetXY_AmanziS(path_to_amanzi,root_amanziS,time,compS)
+        x_amanziS_crunch, pH_amanziS_crunch = GetXY_AmanziS(path_to_amanzi,root_amanziS,compS)
         pH_amanziS_crunch = -np.log10(pH_amanziS_crunch)
         compS = "Calcite_Volume_Fraction"
-        x_amanziS_crunch, VF_amanziS_crunch = GetXY_AmanziS(path_to_amanzi,root_amanziS,time,compS)
+        x_amanziS_crunch, VF_amanziS_crunch = GetXY_AmanziS(path_to_amanzi,root_amanziS,compS)
     except:
         struct_c = 0
 
