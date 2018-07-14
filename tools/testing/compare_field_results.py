@@ -26,6 +26,7 @@ def GetXY_AmanziU(path,root,comp):
 
     return (x_amanziU, c_amanziU)
 
+
 def GetXY_AmanziS(path,root,comp):
     try:
         import fsnapshot
@@ -36,20 +37,70 @@ def GetXY_AmanziS(path,root,comp):
     plotfile = os.path.join(path,root)
 
     if os.path.isdir(plotfile) & fsnok:
+        # v = np.zeros( (nx,ny), dtype=np.float64)
+        # (v, err) = fsnapshot.fplotfile_get_data_2d(plotfile, comp, v)
+        # (xmin, xmax, ymin, ymax, zmin, zmax) = fsnapshot.fplotfile_get_limits(plotfile)
+        # dy = (ymax - ymin)/ny
+        # y = ymin + dy*0.5 + np.arange( (ny), dtype=np.float64 )*dy
+        # v = v[0]
         (nx, ny, nz) = fsnapshot.fplotfile_get_size(plotfile)
-        v = np.zeros( (nx,ny), dtype=np.float64)
-        (v, err) = fsnapshot.fplotfile_get_data_2d(plotfile, comp, v)
+        x = np.zeros( (nx), dtype=np.float64)
+        y = np.zeros( (nx), dtype=np.float64)
+        (y, x, npts, err) = fsnapshot.fplotfile_get_data_1d(plotfile, comp, y, x)
 
+        # temporary fix for CCSE internal error
         (xmin, xmax, ymin, ymax, zmin, zmax) = fsnapshot.fplotfile_get_limits(plotfile)
-        dy = (ymax - ymin)/ny
-        y = ymin + dy*0.5 + np.arange( (ny), dtype=np.float64 )*dy
-        v = v[0]
+        dx = (xmax - xmin)/nx
+        x = xmin + dx*0.5 + np.arange( (nx), dtype=np.float64 )*dx
         
     else:
         y = np.zeros( (0), dtype=np.float64)
         v = np.zeros( (0), dtype=np.float64)
     
-    return (y, v)
+    return (x, y)
+
+
+def GetXY_PFloTran(path,root,time,comp):
+
+    # read pflotran data
+    filename = os.path.join(path,root+".h5")
+    pfdata = h5py.File(filename,'r')
+
+    # extract coordinates
+    y = np.array(pfdata['Coordinates']['X [m]'])
+    x_pflotran = np.diff(y)/2+y[0:-1]
+
+    # extract concentrations
+    c_pflotran = np.array(pfdata[time][comp]).flatten()
+    pfdata.close()
+
+    return (x_pflotran, c_pflotran)
+
+
+def GetXY_CrunchFlow(path,root,cf_file,comp,ignore):
+
+    # read CrunchFlow data
+    filename = os.path.join(path,cf_file)
+    f = open(filename,'r')
+    lines = f.readlines()
+    f.close()
+
+    # ignore couple of lines
+    for i in range(ignore):
+      lines.pop(0)
+
+    # extract data x0, x1, ..., xN-1 per line, keep only two columns
+    xv=[]
+    yv=[] 
+    for line in lines:
+      xv = xv + [float(line.split()[0])]
+      yv = yv + [float(line.split()[comp+1])]
+    
+    xv = np.array(xv)
+    yv = np.array(yv)
+
+    return (xv, yv)
+
 
 def parse_input_xml(input_xml):
     """Parses the Amanzi input XML file and returns a tuple (type, output_file), 
