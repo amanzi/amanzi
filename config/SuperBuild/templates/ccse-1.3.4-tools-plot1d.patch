@@ -1,0 +1,12 @@
+diff -ruNbB ccse-1.3.4/Tools/Py_util/fsnapshot.f90 ccse-1.3.4-source/Tools/Py_util/fsnapshot.f90
+--- ccse-1.3.4/Tools/Py_util/fsnapshot.f90	2018-07-14 15:45:37.000000000 -0600
++++ ccse-1.3.4-source/Tools/Py_util/fsnapshot.f90	2018-07-14 15:46:22.000000000 -0600
+@@ -324,7 +324,7 @@
+   ! Note, imask is defined in terms of the finest level.  As we loop            
+   ! over levels, we will compare to the finest level index space to             
+   ! determine if we've already output here  
+-  allocate(imask(flo(1):fhi(1)))
++  allocate(imask(max(0, flo(1)-1):fhi(1)))
+   imask = .true.
+ 
+ 
