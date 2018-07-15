@@ -1284,6 +1284,8 @@ std::string InputConverter::CreateINFile_(std::string& filename, int rank)
   
   // get primary species names
   // and check for forward/backward rates (for solutes/non-reactive primaries only)
+  std::map<std::string, int> incomplete_tracers;
+
   node = GetUniqueElementByTagsString_("liquid_phase, dissolved_components, primaries", flag);
   if (flag) {
     std::string primary;
@@ -1301,15 +1303,18 @@ std::string InputConverter::CreateINFile_(std::string& filename, int rank)
         decayrates << "    REACTION " << name << " <-> \n";
         decayrates << "    RATE_CONSTANT " << decay << "\n";
       } else {
-        // verify that specie is non-reactive (only one record (1 line) in database file)
+        // verify that species is non-reactive (only one record (1 line) in database file)
         int ncount = CountFileLinesWithWord_(datfilename, name);
-        if (ncount == 1) { 
+        if (ncount == 1 && element->hasAttribute(mm.transcode("forward_rate"))) {
           double frate = GetAttributeValueD_(element, "forward_rate");
           double brate = GetAttributeValueD_(element, "backward_rate");
           std::string name = TrimString_(mm.transcode(inode->getTextContent()));
           reactionrates << "    REACTION " << name << " <->\n";
           reactionrates << "    FORWARD_RATE " << frate << "\n";
           reactionrates << "    BACKWARD_RATE " << brate << "\n";
+        } else {
+          // not yet a bug: species may be involved in sorption process 
+          incomplete_tracers[name];
         }
       }
     }
@@ -1407,7 +1412,6 @@ std::string InputConverter::CreateINFile_(std::string& filename, int rank)
       // look for sorption_isotherms
       child_elem = GetChildByName_(inode, "sorption_isotherms", flag2, false);
       if (flag2) {
-        
         // loop over sublist of primaries to get Kd information
         std::vector<DOMNode*> primary_list = GetSameChildNodes_(static_cast<DOMNode*>(child_elem), name, flag2, false);
         if (flag2) {
@@ -1442,7 +1446,6 @@ std::string InputConverter::CreateINFile_(std::string& filename, int rank)
       // look for ion exchange
       child_elem = GetChildByName_(inode, "ion_exchange", flag2, false);
       if (flag2) {
-        
         // loop over sublist of cations to get information
         std::vector<DOMNode*> mineral_list = GetSameChildNodes_(static_cast<DOMNode*>(child_elem), name, flag2, false);
         if (flag2) {
@@ -1462,6 +1465,7 @@ std::string InputConverter::CreateINFile_(std::string& filename, int rank)
                 DOMNode* knode = cations_list[k];
                 DOMElement* kelement = static_cast<DOMElement*>(knode);
                 cation_names.push_back(GetAttributeValueS_(kelement, "name"));
+
                 double value = GetAttributeValueD_(kelement, "value");
                 cation_selectivity.push_back(value);
                 if (value == 1.0) {
@@ -1481,7 +1485,6 @@ std::string InputConverter::CreateINFile_(std::string& filename, int rank)
       // look for surface complexation
       child_elem = GetChildByName_(inode, "surface_complexation", flag2, false);
       if (flag2) {
-        
         // loop over sublist of cations to get information
         std::vector<DOMNode*> site_list = GetSameChildNodes_(static_cast<DOMNode*>(child_elem), name, flag2, false);
         if (flag2) {
@@ -1527,8 +1530,8 @@ std::string InputConverter::CreateINFile_(std::string& filename, int rank)
   
   // create text for chemistry options - isotherms
   Teuchos::ParameterList& iso = ChemOptions.sublist("isotherms");
+
   for (auto iter = iso.begin(); iter != iso.end(); ++iter) {
-    
     std::string primary = iso.name(iter);
     Teuchos::ParameterList& curprimary = iso.sublist(primary);
     std::string model = curprimary.get<std::string>("model");
@@ -1697,90 +1700,99 @@ std::string InputConverter::CreateINFile_(std::string& filename, int rank)
   if (rank == 0) {
     struct stat buffer;
     int status = stat(infilename.c_str(), &buffer);
-      // TODO EIB - fix this
-      /*
-      if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
-        Teuchos::OSTab tab = vo_->getOSTab();
-        *vo_->os() << "Writing PFloTran partial input file \"" <<
-            infilename.c_str() << "\"" << std::endl;
-      }
-      */
-      std::cout << "Writing PFloTran partial input file " << infilename.c_str() << std::endl;
+    // TODO EIB - fix this
+    /*
+    if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
+      Teuchos::OSTab tab = vo_->getOSTab();
+      *vo_->os() << "Writing PFloTran partial input file \"" <<
+          infilename.c_str() << "\"" << std::endl;
+    }
+    */
+    std::cout << "Writing PFloTran partial input file " << infilename.c_str() << std::endl;
       
-      in_file.open(infilename.c_str());
+    in_file.open(infilename.c_str());
 
-      in_file << "CHEMISTRY\n";
-      // Chemistry - Species
-      in_file << "  PRIMARY_SPECIES\n";
-      in_file << primaries.str();
+    in_file << "CHEMISTRY\n";
+    // Chemistry - Species
+    in_file << "  PRIMARY_SPECIES\n";
+    in_file << primaries.str();
+    in_file << "  /\n";
+    if (!reactionrates.str().empty()) {
+      in_file << "  GENERAL_REACTION\n";
+      in_file << reactionrates.str();
       in_file << "  /\n";
-      if (!reactionrates.str().empty()) {
-        in_file << "  GENERAL_REACTION\n";
-        in_file << reactionrates.str();
-        in_file << "  /\n";
-      }
-      if (!decayrates.str().empty()) {
-        in_file << "  RADIOACTIVE_DECAY_REACTION\n";
-        in_file << decayrates.str();
-        in_file << "  /\n";
-      }
-      if (!secondaries.str().empty()) {
-        in_file << "  SECONDARY_SPECIES\n";
-        in_file << secondaries.str();
-        in_file << "  /\n";
-      }
-      if (!redoxes.str().empty()) {
-        in_file << "  REDOX_SPECIES\n";
-        in_file << redoxes.str();
-        in_file << "  /\n";
-      }
-      if (!gases.str().empty()) {
-        in_file << "  GAS_SPECIES\n";
-        in_file << gases.str();
-        in_file << "  /\n";
-      }
-      if (!minerals.str().empty()) {
-        in_file << "  MINERALS\n";
-        in_file << minerals.str();
-        in_file << "  /\n";
-      }
+    }
+    if (!decayrates.str().empty()) {
+      in_file << "  RADIOACTIVE_DECAY_REACTION\n";
+      in_file << decayrates.str();
+      in_file << "  /\n";
+    }
+    if (!secondaries.str().empty()) {
+      in_file << "  SECONDARY_SPECIES\n";
+      in_file << secondaries.str();
+      in_file << "  /\n";
+    }
+    if (!redoxes.str().empty()) {
+      in_file << "  REDOX_SPECIES\n";
+      in_file << redoxes.str();
+      in_file << "  /\n";
+    }
+    if (!gases.str().empty()) {
+      in_file << "  GAS_SPECIES\n";
+      in_file << gases.str();
+      in_file << "  /\n";
+    }
+    if (!minerals.str().empty()) {
+      in_file << "  MINERALS\n";
+      in_file << minerals.str();
+      in_file << "  /\n";
+    }
 
-      // Chemistry - Mineral Kinetics
-      if (!mineral_kinetics.str().empty()) {
-        in_file << "  MINERAL_KINETICS\n";
-        in_file << mineral_kinetics.str();
-        in_file << "  /\n";
+    // Chemistry - Mineral Kinetics
+    if (!mineral_kinetics.str().empty()) {
+      in_file << "  MINERAL_KINETICS\n";
+      in_file << mineral_kinetics.str();
+      in_file << "  /\n";
+    }
+
+    // Chemistry - Sorption
+    if (!isotherms.str().empty() || !complexes.str().empty() || !cations.str().empty()) {
+      in_file << "  SORPTION\n";
+      if (!isotherms.str().empty()) {
+        in_file << "    ISOTHERM_REACTIONS\n";
+        in_file << isotherms.str();
+        in_file << "    /\n";
       }
-
-      // Chemistry - Sorption
-      if (!isotherms.str().empty() || !complexes.str().empty() || !cations.str().empty()) {
-        in_file << "  SORPTION\n";
-        if (!isotherms.str().empty()) {
-          in_file << "    ISOTHERM_REACTIONS\n";
-          in_file << isotherms.str();
-          in_file << "    /\n";
-        }
-        if (!complexes.str().empty()) {
-          in_file << complexes.str();
-        }
-        if (!cations.str().empty()) {
-          in_file << "    ION_EXCHANGE_RXN\n";
-          in_file << cations.str();
-          in_file << "      /\n";
-          in_file << "    /\n";
-        }
-        in_file << "  /\n";
+      if (!complexes.str().empty()) {
+        in_file << complexes.str();
       }
+      if (!cations.str().empty()) {
+        in_file << "    ION_EXCHANGE_RXN\n";
+        in_file << cations.str();
+        in_file << "      /\n";
+        in_file << "    /\n";
+      }
+      in_file << "  /\n";
+    }
 
-      // Chemistry - Controls
-      in_file << controls.str();
-      in_file << "END\n";
+    // Chemistry - Controls
+    in_file << controls.str();
+    in_file << "END\n";
 
-      // Constraints
-      in_file << constraints.str();
-      //in_file << "END\n";
+    // Constraints
+    in_file << constraints.str();
+    //in_file << "END\n";
 
-      in_file.close();
+    in_file.close();
+  }
+
+  // prints warnings
+  if (incomplete_tracers.size() > 0) {
+    std::cout << "WARNING: primary species that may have missing atributes: ";
+    for (auto it = incomplete_tracers.begin(); it != incomplete_tracers.end(); ++it) {
+      std::cout << it->first << " ";
+    }
+    std::cout << std::endl;
   }
 
   return infilename;
