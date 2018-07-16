@@ -7,7 +7,7 @@ import utils_dispersion_45_point_2d
 #
 # Amanzi Input File:
 #
-input_filename = "amanzi_dispersion_45_point_2d.xml"
+input_filename = "amanzi_dispersion_45_point_2d-u.xml"
     
 #
 # Overwrite:  True|False
