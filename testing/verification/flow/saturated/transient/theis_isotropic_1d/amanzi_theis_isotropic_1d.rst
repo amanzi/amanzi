@@ -1,16 +1,23 @@
 .. _Theis:
 
-Transient One-Dimensional Confined Flow to a Pumping Well (Theis)
+Transient Two-Dimensional Confined Flow to a Pumping Well (Theis)
 =================================================================
 
 Capabilities Tested
 ------------------
 
+This transient two-dimensional (radial) flow problem tests the Amanzi flow process kernel. Capabilities tested include,
+
+  * two-dimensional radial flow to a point source
+  * horizontal flow in an isotropic medium
+
+For details on this test, see :ref:`about_theis`.
+
 
 Background
 ----------
 
-Theis (1935) developed an analytical solution for transient (non
+Theis (1935) developed an analytical solution for transient (non-
 steady state) drawdown for a fully penetrating well by imposing the
 boundary conditions: :math:`h = h_0` for :math:`t = 0` and 
 :math:`h \Rightarrow h_0` as :math:`r \Rightarrow \infty`.  The equation
@@ -114,6 +121,7 @@ Note, the values in the schematic correlate to the values found in
 		    
 .. _Variables:
 
+
 Mesh
 ~~~~
 
@@ -121,13 +129,14 @@ Mesh
 Variables
 ~~~~~~~~~
 
-* *Q* constant pumping rate
-* :math:`h(r,0)` initial water table table height
-* *T* transmissivity 
-* *W(u)* well function
-* *r* radial distnace measured outward from well
-* *S* storage coefficient 
-* *t* duration of pumping time
+* :math:`Q=4.0` constant pumping rate [:math:`m^3/s`]
+* :math:`h(r,0)=20.0` initial water table height [:math:`m`]
+* :math:`T=4.7 \cdot 10^{-4}` transmissivity [:math:`m^2/s`]
+* :math:`W(u)` well function
+* :math:`r` radial distance measured outward from well [:math:`m`]
+* :math:`S=0.0015` storage coefficient [-] 
+* :math:`t` duration of pumping time [:math:`s`]
+
 
 Results and Comparison
 ----------------------
@@ -143,6 +152,8 @@ References
 ----------
 
 
+.. _about_theis:
+
 About
 -----
 
@@ -157,5 +168,5 @@ About
   *  amanzi_theis_isotropic_1d-u.xml
 
     * Spec Version 2.3, unstructured mesh framework
-    * mesh:  
+    * mesh:  generated in file
  
