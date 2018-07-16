@@ -1,16 +1,16 @@
 Steady-State One-Dimensional Flow: Materials in Serial
 ======================================================
 
-Capabilties Tested
+Capabilities Tested
 ------------------
 This one-dimensional, steady-state test shows Amanzi's capability to
 simulate flow through a saturated porous medium with constant properties.  
-Capabilties tested include,
+Capabilities tested include,
 
   * one-dimensional representation
   * steady-state
   * saturated flow
-  * homogeneous porous medium
+  * heterogeneous porous medium
 
 For details on this test, see :ref:`about_linear_materials_serial_1d`.
 
@@ -114,7 +114,7 @@ The domain is shown in the following schematic.
     :figclass: align-center
     :width: 400 px
 
-    ** One-dimensional, steady-state flow through a saturated porous medium with constant properties **
+    **One-dimensional, steady-state flow through a saturated porous medium with constant properties.**
 
 
 Mesh
@@ -138,10 +138,10 @@ To generate numerical results the following specifications are considered:
 
 * Material properties:
 
-	* :math:`\rho = 998.2 \: kg/m^3, \mu = 1.002e-3 \: Pa\cdot s, g = 9.807 \: m/s^2` 
+	* :math:`\rho = 998.2 \: kg/m^3, \mu = 1.002 \times 10^{-3} \: Pa\cdot s, g = 9.807 \: m/s^2` 
 	* :math:`L_i = x_{max}/2`
-	* :math:`K_1 = 1.0 m/d` :math:`(k = 1.1847E-12 m^2)`
-	* :math:`K_2 = 10 m/d` :math:`(k = 1.1847E-11 m^2)`
+	* :math:`K_1 = 1.0 m/d` :math:`(k = 1.1847 \times 10^{-12} \: m^2)`
+	* :math:`K_2 = 10 m/d` :math:`(k = 1.1847 \times 10^{-11} \: m^2)`
 
 * Model discretization
 
@@ -176,7 +176,7 @@ This is also shown in the table below.
 
 References
 ----------
-Add a reference in here.
+
 
 
 .. _about_linear_materials_serial_1d:
