@@ -12,10 +12,10 @@ from matplotlib import pyplot as plt
 
 import run_amanzi_standard
 import numpy as np
-from compare_field_results import GetXY_AmanziU
-from compare_field_results import GetXY_AmanziS
-from compare_field_results import GetXY_PFloTran
-from compare_field_results import GetXY_CrunchFlow
+from compare_field_results import GetXY_AmanziU_1D
+from compare_field_results import GetXY_AmanziS_1D
+from compare_field_results import GetXY_PFloTran_1D
+from compare_field_results import GetXY_CrunchFlow_1D
 
 
 if __name__ == "__main__":
@@ -67,19 +67,19 @@ if __name__ == "__main__":
     u_pflotran = [[[] for x in range(len(comppflo))] for x in range(len(timespflo))]
     for i, time in enumerate(timespflo):
         for j, comp in enumerate(comppflo):          
-            x_pflotran, c_pflotran = GetXY_PFloTran(path_to_pflotran,root_pflotran,time,comp)
+            x_pflotran, c_pflotran = GetXY_PFloTran_1D(path_to_pflotran,root_pflotran,time,comp)
             u_pflotran[i][j] = c_pflotran
     
     v_pflotran = [[[] for x in range(len(components))] for x in range(len(timespflo))]
     for i, time in enumerate(timespflo):
         for j, comp in enumerate(components):
-            x_pflotran, c_pflotran = GetXY_PFloTran(path_to_pflotran,root_pflotran,time,'Total_Sorbed_'+comp+' [mol_m^3]')
+            x_pflotran, c_pflotran = GetXY_PFloTran_1D(path_to_pflotran,root_pflotran,time,'Total_Sorbed_'+comp+' [mol_m^3]')
             v_pflotran[i][j] = c_pflotran
 
     pH_pflotran = [[] for x in range(len(timespflo))]
     comp = 'pH'
     for i, time in enumerate(timespflo):
-        x_pflotran, c_pflotran = GetXY_PFloTran(path_to_pflotran,root_pflotran,time,comp)
+        x_pflotran, c_pflotran = GetXY_PFloTran_1D(path_to_pflotran,root_pflotran,time,comp)
         pH_pflotran[i] = c_pflotran
 
 # read crunchflow results --->
@@ -90,21 +90,21 @@ if __name__ == "__main__":
         ignore = 4
         for i, time in enumerate(times_CF):
             for j, comp in enumerate(compcrunch):
-                x_crunchflow, c_crunchflow = GetXY_CrunchFlow(path_to_crunch,root,time,comp,ignore)
+                x_crunchflow, c_crunchflow = GetXY_CrunchFlow_1D(path_to_crunch,root,time,comp,ignore)
                 u_crunchflow[i][j] = c_crunchflow
 
         v_crunchflow = [ [ [] for x in range(len(compcrunch)) ] for x in range(len(times_CF_surf)) ]
         ignore = 4
         for i, time in enumerate(times_CF_surf):
             for j, comp in enumerate(compcrunch):
-                x_crunchflow, c_crunchflow = GetXY_CrunchFlow(path_to_crunch,root,time,comp,ignore)
+                x_crunchflow, c_crunchflow = GetXY_CrunchFlow_1D(path_to_crunch,root,time,comp,ignore)
                 v_crunchflow[i][j] = c_crunchflow
 
         pH_crunchflow = [ [] for x in range(len(times_CF_pH)) ]
         ignore = 4
         comp = 0
         for i, time in enumerate(times_CF_pH):
-            y_crunchflow, c_crunchflow = GetXY_CrunchFlow(path_to_crunch,root,time,comp,ignore)
+            y_crunchflow, c_crunchflow = GetXY_CrunchFlow_1D(path_to_crunch,root,time,comp,ignore)
             pH_crunchflow[i] = c_crunchflow
 
         crunch = True
@@ -124,19 +124,19 @@ if __name__ == "__main__":
         u_amanzi_native = [[[] for x in range(len(amanzi_totc))] for x in range(len(times))]
         for i, time in enumerate(times):
             for j, comp in enumerate(amanzi_totc):
-                x_amanzi_native, c_amanzi_native = GetXY_AmanziU(path_to_amanzi,root,comp)
+                x_amanzi_native, c_amanzi_native = GetXY_AmanziU_1D(path_to_amanzi,root,comp,1)
                 u_amanzi_native[i][j] = c_amanzi_native
 
         v_amanzi_native = [[[] for x in range(len(amanzi_sorb))] for x in range(len(times))]
         for i, time in enumerate(times):
             for j, comp in enumerate(amanzi_sorb):
-                x_amanzi_native, c_amanzi_native = GetXY_AmanziU(path_to_amanzi,root,comp)
+                x_amanzi_native, c_amanzi_native = GetXY_AmanziU_1D(path_to_amanzi,root,comp,1)
                 v_amanzi_native[i][j] = c_amanzi_native
 
         pH_amanzi_native = [ [] for x in range(len(times)) ]
         comp = 'free_ion_species.cell.H+'
         for i, time in enumerate(times):
-            x_amanzi_native, c_amanzi_native = GetXY_AmanziU(path_to_amanzi,root,comp)
+            x_amanzi_native, c_amanzi_native = GetXY_AmanziU_1D(path_to_amanzi,root,comp,1)
             pH_amanzi_native[i] = -np.log10(c_amanzi_native)
 
 	native = True
@@ -156,19 +156,19 @@ if __name__ == "__main__":
         u_amanzi_alquimia = [[[] for x in range(len(amanzi_totc))] for x in range(len(times))]
         for i, time in enumerate(times):
             for j, comp in enumerate(amanzi_totc):
-                x_amanzi_alquimia, c_amanzi_alquimia = GetXY_AmanziU(path_to_amanzi,root,comp)
+                x_amanzi_alquimia, c_amanzi_alquimia = GetXY_AmanziU_1D(path_to_amanzi,root,comp,1)
                 u_amanzi_alquimia[i][j] = c_amanzi_alquimia
 
         v_amanzi_alquimia = [[[] for x in range(len(amanzi_sorb))] for x in range(len(times))]
         for i, time in enumerate(times):
             for j, comp in enumerate(amanzi_sorb):
-                x_amanzi_alquimia, c_amanzi_alquimia = GetXY_AmanziU(path_to_amanzi,root,comp)
+                x_amanzi_alquimia, c_amanzi_alquimia = GetXY_AmanziU_1D(path_to_amanzi,root,comp,1)
                 v_amanzi_alquimia[i][j] = c_amanzi_alquimia
 
         pH_amanzi_alquimia = [ [] for x in range(len(times)) ]
         comp = 'pH.cell.0'
         for i, time in enumerate(times):
-             x_amanzi_alquimia, c_amanzi_alquimia = GetXY_AmanziU(path_to_amanzi,root,comp)
+             x_amanzi_alquimia, c_amanzi_alquimia = GetXY_AmanziU_1D(path_to_amanzi,root,comp,1)
              pH_amanzi_alquimia[i] = c_amanzi_alquimia ## -np.log10(c_amanzi_native)
 
         alq = True
@@ -188,19 +188,19 @@ if __name__ == "__main__":
         u_amanzi_alquimia_crunch = [[[] for x in range(len(amanzi_totc))] for x in range(len(times))]
         for i, time in enumerate(times):
             for j, comp in enumerate(amanzi_totc):
-                x_amanzi_alquimia_crunch, c_amanzi_alquimia_crunch = GetXY_AmanziU(path_to_amanzi,root,comp)
+                x_amanzi_alquimia_crunch, c_amanzi_alquimia_crunch = GetXY_AmanziU_1D(path_to_amanzi,root,comp,1)
                 u_amanzi_alquimia_crunch[i][j] = c_amanzi_alquimia_crunch
               
         v_amanzi_alquimia_crunch = [[[] for x in range(len(amanzi_sorb))] for x in range(len(times))]
         for i, time in enumerate(times):
             for j, comp in enumerate(amanzi_sorb):
-                x_amanzi_alquimia_crunch, c_amanzi_alquimia_crunch = GetXY_AmanziU(path_to_amanzi,root,comp)
+                x_amanzi_alquimia_crunch, c_amanzi_alquimia_crunch = GetXY_AmanziU_1D(path_to_amanzi,root,comp,1)
                 v_amanzi_alquimia_crunch[i][j] = c_amanzi_alquimia_crunch
 
         pH_amanzi_alquimia_crunch = [ [] for x in range(len(times)) ]
         comp = 'pH.cell.0'
         for i, time in enumerate(times):
-            x_amanzi_alquimia_crunch, c_amanzi_alquimia_crunch = GetXY_AmanziU(path_to_amanzi,root,comp)
+            x_amanzi_alquimia_crunch, c_amanzi_alquimia_crunch = GetXY_AmanziU_1D(path_to_amanzi,root,comp,1)
             pH_amanzi_alquimia_crunch[i] = c_amanzi_alquimia_crunch ## -np.log10(c_amanzi_native)
 
         alq_crunch = True
@@ -222,7 +222,7 @@ if __name__ == "__main__":
         for i, time in enumerate(times):
             for j, comp in enumerate(amanzi_totcS):
                 # import pdb; pdb.set_trace()
-                x_amanziS, c_amanziS = GetXY_AmanziS(path_to_amanzi,root_amanziS,comp)
+                x_amanziS, c_amanziS = GetXY_AmanziS_1D(path_to_amanzi,root_amanziS,comp)
                 u_amanziS[i][j] = c_amanziS
               
         struct = len(x_amanziS)
@@ -232,13 +232,13 @@ if __name__ == "__main__":
         v_amanziS = [[[] for x in range(len(amanzi_sorbS))] for x in range(len(times))]
         for i, time in enumerate(times):
             for j, comp in enumerate(amanzi_sorbS):
-                x_amanziS, c_amanziS = GetXY_AmanziS(path_to_amanzi,root_amanziS,comp)
+                x_amanziS, c_amanziS = GetXY_AmanziS_1D(path_to_amanzi,root_amanziS,comp)
                 v_amanziS[i][j] = c_amanziS
 
         pH_amanziS = [ [] for x in range(len(times)) ]
         comp = 'H+_Free_Ion_Guess'
         for i, time in enumerate(times):
-            x_amanziS, c_amanziS = GetXY_AmanziS(path_to_amanzi,root_amanziS,comp)
+            x_amanziS, c_amanziS = GetXY_AmanziS_1D(path_to_amanzi,root_amanziS,comp)
             pH_amanziS[i] = -np.log10(c_amanziS)
 
     except:
@@ -259,7 +259,7 @@ if __name__ == "__main__":
         for i, time in enumerate(times):
             for j, comp in enumerate(amanzi_totcS):
                 # import pdb; pdb.set_trace()
-                x_amanziS_crunch, c_amanziS_crunch = GetXY_AmanziS(path_to_amanzi,root_amanziS,comp)
+                x_amanziS_crunch, c_amanziS_crunch = GetXY_AmanziS_1D(path_to_amanzi,root_amanziS,comp)
                 u_amanziS_crunch[i][j] = c_amanziS_crunch
               
         struct_c = len(x_amanziS_crunch)
@@ -267,13 +267,13 @@ if __name__ == "__main__":
         v_amanziS_crunch = [[[] for x in range(len(amanzi_sorbS))] for x in range(len(times))]
         for i, time in enumerate(times):
             for j, comp in enumerate(amanzi_sorbS):
-                x_amanziS_crunch, c_amanziS_crunch = GetXY_AmanziS(path_to_amanzi,root_amanziS,comp)
+                x_amanziS_crunch, c_amanziS_crunch = GetXY_AmanziS_1D(path_to_amanzi,root_amanziS,comp)
                 v_amanziS_crunch[i][j] = c_amanziS_crunch
 
         pH_amanziS_crunch = [ [] for x in range(len(times)) ]
         comp = 'H+_Free_Ion_Guess'
         for i, time in enumerate(times):
-            x_amanziS_crunch, c_amanziS_crunch = GetXY_AmanziS(path_to_amanzi,root_amanziS,comp)
+            x_amanziS_crunch, c_amanziS_crunch = GetXY_AmanziS_1D(path_to_amanzi,root_amanziS,comp)
             pH_amanziS_crunch[i] = -np.log10(c_amanziS_crunch)
 
     except:

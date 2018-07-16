@@ -2,7 +2,11 @@ import os, os.path, sys
 import h5py
 import numpy as np
 
-def GetXY_AmanziU(path,root,comp):
+#
+# Extract 1d array along dimension dim = 1,2,3 
+#
+
+def GetXY_AmanziU_1D(path,root,comp,dim):
 
     # open amanzi concentration and mesh files
     dataname = os.path.join(path,root+"_data.h5")
@@ -11,9 +15,12 @@ def GetXY_AmanziU(path,root,comp):
     amanzi_mesh = h5py.File(meshname,'r')
 
     # extract cell coordinates
-    y = np.array(amanzi_mesh['0']['Mesh']["Nodes"][0:len(amanzi_mesh['0']['Mesh']["Nodes"])/4,0])
+    if (dim == 1):
+        y = np.array(amanzi_mesh['0']['Mesh']["Nodes"][0:len(amanzi_mesh['0']['Mesh']["Nodes"])/4,0])
+    if (dim == 3):
+        y = np.array(amanzi_mesh['0']['Mesh']["Nodes"][0::4,2])
 
-    # center of cell
+    # shift array by dy/2
     x_amanziU = np.diff(y)/2 + y[0:-1]
 
     # extract concentration array
@@ -27,7 +34,7 @@ def GetXY_AmanziU(path,root,comp):
     return (x_amanziU, c_amanziU)
 
 
-def GetXY_AmanziS(path,root,comp):
+def GetXY_AmanziS_1D(path,root,comp):
     try:
         import fsnapshot
         fsnok = True
@@ -37,22 +44,11 @@ def GetXY_AmanziS(path,root,comp):
     plotfile = os.path.join(path,root)
 
     if os.path.isdir(plotfile) & fsnok:
-        # v = np.zeros( (nx,ny), dtype=np.float64)
-        # (v, err) = fsnapshot.fplotfile_get_data_2d(plotfile, comp, v)
-        # (xmin, xmax, ymin, ymax, zmin, zmax) = fsnapshot.fplotfile_get_limits(plotfile)
-        # dy = (ymax - ymin)/ny
-        # y = ymin + dy*0.5 + np.arange( (ny), dtype=np.float64 )*dy
-        # v = v[0]
         (nx, ny, nz) = fsnapshot.fplotfile_get_size(plotfile)
         x = np.zeros( (nx), dtype=np.float64)
         y = np.zeros( (nx), dtype=np.float64)
         (y, x, npts, err) = fsnapshot.fplotfile_get_data_1d(plotfile, comp, y, x)
 
-        # temporary fix for CCSE internal error
-        # (xmin, xmax, ymin, ymax, zmin, zmax) = fsnapshot.fplotfile_get_limits(plotfile)
-        # dx = (xmax - xmin)/nx
-        # x = xmin + dx*0.5 + np.arange( (nx), dtype=np.float64 )*dx
-        
     else:
         y = np.zeros( (0), dtype=np.float64)
         v = np.zeros( (0), dtype=np.float64)
@@ -60,7 +56,7 @@ def GetXY_AmanziS(path,root,comp):
     return (x, y)
 
 
-def GetXY_PFloTran(path,root,time,comp):
+def GetXY_PFloTran_1D(path,root,time,comp):
 
     # read pflotran data
     filename = os.path.join(path,root+".h5")
@@ -77,7 +73,7 @@ def GetXY_PFloTran(path,root,time,comp):
     return (x_pflotran, c_pflotran)
 
 
-def GetXY_CrunchFlow(path,root,cf_file,comp,ignore):
+def GetXY_CrunchFlow_1D(path,root,cf_file,comp,ignore):
 
     # read CrunchFlow data
     filename = os.path.join(path,cf_file)

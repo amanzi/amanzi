@@ -10,8 +10,8 @@ import matplotlib
 from matplotlib import pyplot as plt
 
 import run_amanzi_standard
-from compare_field_results import GetXY_AmanziU
-from compare_field_results import GetXY_PFloTran
+from compare_field_results import GetXY_AmanziU_1D
+from compare_field_results import GetXY_PFloTran_1D
 
 
 if __name__ == "__main__":
@@ -83,19 +83,19 @@ if __name__ == "__main__":
     # tot concentration
     u_pflotran = [[] for x in range(len(totcpflo))]
     for j, comp in enumerate(totcpflo):          
-        x_pflotran, c_pflotran = GetXY_PFloTran(path_to_pflotran,root_pflotran,time,comp)
+        x_pflotran, c_pflotran = GetXY_PFloTran_1D(path_to_pflotran,root_pflotran,time,comp)
         u_pflotran[j] = c_pflotran
 
     # sorbed concentration    
     v_pflotran = [[] for x in range(len(sorbpflo))]
     for j, sorb in enumerate(sorbpflo):
-        x_pflotran, c_pflotran = GetXY_PFloTran(path_to_pflotran,root_pflotran,time,sorb)
+        x_pflotran, c_pflotran = GetXY_PFloTran_1D(path_to_pflotran,root_pflotran,time,sorb)
         v_pflotran[j] = c_pflotran
 
     # mineral volume fraction
     w_pflotran = [[] for x in range(len(vfpflo))]
     for j, vf in enumerate(vfpflo):
-        x_pflotran, c_pflotran = GetXY_PFloTran(path_to_pflotran,root_pflotran,time,vf)
+        x_pflotran, c_pflotran = GetXY_PFloTran_1D(path_to_pflotran,root_pflotran,time,vf)
         w_pflotran[j] = c_pflotran
 
     CWD = os.getcwd()
@@ -113,19 +113,19 @@ if __name__ == "__main__":
         # tot conc
         u_amanzi_native = [[] for x in range(len(totcama))]
         for j, comp in enumerate(totcama):
-            x_amanzi_native, c_amanzi_native = GetXY_AmanziU(path_to_amanzi,'plot',comp)
+            x_amanzi_native, c_amanzi_native = GetXY_AmanziU_1D(path_to_amanzi,'plot',comp,1)
             u_amanzi_native[j] = c_amanzi_native
 
         # sorb conc
         v_amanzi_native = [[] for x in range(len(sorbama))]
         for j, sorb in enumerate(sorbama):
-            x_amanzi_native, c_amanzi_native = GetXY_AmanziU(path_to_amanzi,'plot',sorb)
+            x_amanzi_native, c_amanzi_native = GetXY_AmanziU_1D(path_to_amanzi,'plot',sorb,1)
             v_amanzi_native[j] = c_amanzi_native
 
         # mineral volume fraction
         w_amanzi_native = [[] for x in range(len(vfama))]
         for j, vf in enumerate(vfama):
-            x_amanzi_native, c_amanzi_native = GetXY_AmanziU(path_to_amanzi,'plot',vf)
+            x_amanzi_native, c_amanzi_native = GetXY_AmanziU_1D(path_to_amanzi,'plot',vf,1)
             w_amanzi_native[j] = c_amanzi_native
 
         native = True
@@ -148,19 +148,19 @@ if __name__ == "__main__":
         # tot concentration
         u_amanzi_alquimia = [[] for x in range(len(totcama))]
         for j, comp in enumerate(totcama):
-            x_amanzi_alquimia, c_amanzi_alquimia = GetXY_AmanziU(path_to_amanzi,"plot",comp)
+            x_amanzi_alquimia, c_amanzi_alquimia = GetXY_AmanziU_1D(path_to_amanzi,"plot",comp,1)
             u_amanzi_alquimia[j] = c_amanzi_alquimia  
 
         # sorbed concentration
         v_amanzi_alquimia = [[] for x in range(len(sorbama))]
         for j, sorb in enumerate(sorbama):
-            x_amanzi_alquimia, c_amanzi_alquimia = GetXY_AmanziU(path_to_amanzi,"plot",sorb)
+            x_amanzi_alquimia, c_amanzi_alquimia = GetXY_AmanziU_1D(path_to_amanzi,"plot",sorb,1)
             v_amanzi_alquimia[j] = c_amanzi_alquimia
 
         # mineral volume fraction
         w_amanzi_alquimia = [[] for x in range(len(vfama))]
         for j, vf in enumerate(vfama):
-            x_amanzi_alquimia, c_amanzi_alquimia = GetXY_AmanziU(path_to_amanzi,"plot",vf)
+            x_amanzi_alquimia, c_amanzi_alquimia = GetXY_AmanziU_1D(path_to_amanzi,"plot",vf,1)
             w_amanzi_alquimia[j] = c_amanzi_alquimia
 
         alq = True
