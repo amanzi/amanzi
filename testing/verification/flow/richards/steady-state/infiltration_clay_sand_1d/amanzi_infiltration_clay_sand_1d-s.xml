@@ -26,7 +26,7 @@
     <execution_controls>
         <verbosity level="high"/>
         <execution_control_defaults increase_factor="1.2" init_dt="1 s" max_dt="100 y" method="bdf1" mode="transient" reduction_factor="0.8"/>
-        <execution_control end="3.16e11 s" increase_factor="1.2" init_dt="1e7 s" method="bdf1" mode="steady" reduction_factor="0.8" start="0.0 y"/>
+        <execution_control end="3.16e11 s" increase_factor="1.2" init_dt="2 s" method="bdf1" mode="steady" reduction_factor="0.8" start="0.0 y"/>
     </execution_controls>
     <numerical_controls>
         <common_controls/>
