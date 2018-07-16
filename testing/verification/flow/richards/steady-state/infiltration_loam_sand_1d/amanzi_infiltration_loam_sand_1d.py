@@ -13,9 +13,9 @@ if __name__ == "__main__":
 
     # Amanzi: unstructured
     try:
-        input_file = "amanzi_infiltration_clay_sand_1d-u.xml"
+        input_file = "amanzi_infiltration_loam_sand_1d-u.xml"
         path_to_amanzi = "output-u"
-        root_amanzi = 'case_2c_plot'
+        root_amanzi = 'case_2a_plot'
     
         run_amanzi_standard.run_amanzi(input_file, 1, [input_file], path_to_amanzi)
 
@@ -25,12 +25,12 @@ if __name__ == "__main__":
     except:
         unstruct = 0
 
-        
+
     # Amanzi: structured
     try:
-        input_file = "amanzi_infiltration_clay_sand_1d-s.xml"
+        input_file = "amanzi_infiltration_loam_sand_1d-s.xml"
         path_to_amanzi = "output-s"
-        root_amanzi = "plot00529"
+        root_amanzi = "plot00283"
 
         run_amanzi_standard.run_amanzi(input_file, 1, [input_file], path_to_amanzi)
 
@@ -45,7 +45,7 @@ if __name__ == "__main__":
     # Amanzi: analytic
     try:
         path_to_amanzi = "golden_output"
-        root_amanzi = 'case_2c_plot'
+        root_amanzi = 'case_2a_plot'
 
         comp = 'pressure.cell.0'
         x_amanziU_gold, c_amanziU_gold = GetXY_AmanziU_1D(path_to_amanzi,root_amanzi,comp,3)
@@ -74,5 +74,5 @@ if __name__ == "__main__":
     plt.tick_params(axis='both', which='major', labelsize=20)
 
     # plt.show()
-    plt.savefig("clay_sand_1d.png",format="png")
+    plt.savefig("infiltration_loam_sand_1d.png",format="png")
     # plt.close()

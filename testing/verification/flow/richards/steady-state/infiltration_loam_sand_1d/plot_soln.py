@@ -12,30 +12,9 @@ from compare_field_results import GetXY_AmanziS_1D
 
 if __name__ == "__main__":
 
-    try:
-        path_to_amanziS = "."
-        root_amanziS = "case_2a_plot00001"
-        compS = "Aqueous_Pressure"
-        x_amanziS, c_amanziS = GetXY_AmanziS_1D(path_to_amanziS,root_amanziS,compS)
-        struct = len(x_amanziS)
-    except:
-        struct = 0
-        
     # subplots
     fig, ax = plt.subplots() 
         
-    try:
-        time = '428'
-        comp = 'pressure.cell.0'
-        path_to_amanziU = "."
-        root_amanziU = 'case_2a_plot'
-        x_amanziU, c_amanziU = GetXY_AmanziU_1D(path_to_amanziU,root_amanziU,comp,3)
-        unstruct = len(x_amanziU)
-     
-    except:
-
-        unstruct = 0
-
     # Do plot
     if (unstruct>0):
         alq = ax.plot(x_amanziU, c_amanziU,'m-',label='AmanziU',linewidth=2)
