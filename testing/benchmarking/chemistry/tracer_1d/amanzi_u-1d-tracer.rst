@@ -80,7 +80,7 @@ Simulation results
 
 In the figure below, the solution by Amanzi at time 50 years is compared to results obtained with PFloTran and CrunchFlow along the length of the domain. Amanzi, PFloTran and CrunchFlow GIMRT (the benchmark simulators used in the example) add a moderate amount of numerical dispersion to the solution. The TVD scheme used in CrunchFlow OS3D does a good job in minimizing numerical dispersion.
 
-.. plot:: tracer_1d.py
+.. plot:: benchmarking/chemistry/tracer_1d/tracer_1d.py
 
 ..   :align: left
 

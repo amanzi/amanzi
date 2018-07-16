@@ -11,10 +11,10 @@ import matplotlib
 from matplotlib import pyplot as plt
 
 import run_amanzi_standard
-from compare_field_results import GetXY_AmanziU
-from compare_field_results import GetXY_AmanziS
-from compare_field_results import GetXY_PFloTran
-from compare_field_results import GetXY_CrunchFlow
+from compare_field_results import GetXY_AmanziU_1D
+from compare_field_results import GetXY_AmanziS_1D
+from compare_field_results import GetXY_PFloTran_1D
+from compare_field_results import GetXY_CrunchFlow_1D
 
 if __name__ == "__main__":
 
@@ -39,7 +39,7 @@ if __name__ == "__main__":
     time = 'Time:  5.00000E+01 y'
     comp = 'Total_'+root.title()+' [M]'
 
-    x_pflotran, c_pflotran = GetXY_PFloTran(path_to_pflotran,root_pflo,time,comp)    
+    x_pflotran, c_pflotran = GetXY_PFloTran_1D(path_to_pflotran,root_pflo,time,comp)    
     
     # CrunchFlow
     # -- hardwired for calcite_1d_CF.in: time and comp
@@ -49,11 +49,11 @@ if __name__ == "__main__":
 
     # -- crunchflow GIMRT
     path_to_crunchflow = "crunchflow/gimrt"
-    x_crunchflow, c_crunchflow = GetXY_CrunchFlow(path_to_crunchflow,root,time_CF,comp,ignore)
+    x_crunchflow, c_crunchflow = GetXY_CrunchFlow_1D(path_to_crunchflow,root,time_CF,comp,ignore)
 
     # -- crunchflow OS3D
     path_to_crunchflow = "crunchflow/os3d"
-    x_crunchOS3D, c_crunchOS3D = GetXY_CrunchFlow(path_to_crunchflow,root,time_CF,comp,ignore)
+    x_crunchOS3D, c_crunchOS3D = GetXY_CrunchFlow_1D(path_to_crunchflow,root,time_CF,comp,ignore)
     
     CWD = os.getcwd()
     local_path = "" 
@@ -67,7 +67,7 @@ if __name__ == "__main__":
         input_file = os.path.join(root_amanzi)
         run_amanzi_standard.run_amanzi(input_file, 1, [input_file], path_to_amanzi)
 
-        x_amanzi_native, c_amanzi_native = GetXY_AmanziU(path_to_amanzi,root,comp)
+        x_amanzi_native, c_amanzi_native = GetXY_AmanziU_1D(path_to_amanzi,root,comp,1)
         native = len(x_amanzi_native)
   
     except:
@@ -80,7 +80,7 @@ if __name__ == "__main__":
         path_to_amanzi = "output-u-alq-pflo"
         run_amanzi_standard.run_amanzi(input_file, 1, ["1d-"+root+".in",root+".dat",input_file], path_to_amanzi)
 
-        x_amanzi_alquimia, c_amanzi_alquimia = GetXY_AmanziU(path_to_amanzi,root,comp)
+        x_amanzi_alquimia, c_amanzi_alquimia = GetXY_AmanziU_1D(path_to_amanzi,root,comp,1)
         alq = len(x_amanzi_alquimia)
 
     except:
@@ -95,7 +95,7 @@ if __name__ == "__main__":
 
         root_amanziS = "plt00051"
         compS = "tracer_water_Concentration"
-        x_amanziS, c_amanziS = GetXY_AmanziS(path_to_amanzi,root_amanziS,compS)
+        x_amanziS, c_amanziS = GetXY_AmanziS_1D(path_to_amanzi,root_amanziS,compS)
         struct = len(x_amanziS)
     except:
         struct = 0

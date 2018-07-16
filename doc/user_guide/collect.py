@@ -82,6 +82,7 @@ verification['index'] = {
   'index_file' : 'doc/user_guide/verification/index.rst',
   'index_list' : [ 'confined_flow',
                    'unconfined_flow',
+                   'infiltration',
                    'transport'
                  ],
 }
@@ -177,6 +178,20 @@ verification['unconfined_flow'] = {
     'from_dir' : 'testing/verification/flow/richards/steady-state/unconfined_recharge_1d',
     'dest_dir' : 'doc/user_guide/verification/unconfined_flow/unconfined_recharge_1d',
     'index_entry' : 'unconfined_recharge_1d/amanzi_unconfined_recharge_1d.rst',
+  },
+}
+
+verification['infiltration'] = {
+  'index_entry': 'infiltration/index.rst',
+  'index' : {'index_title' : 'Infiltration Flow Tests',
+             'index_file'  : 'doc/user_guide/verification/infiltration/index.rst',
+             'index_list'  : [ 'infiltration_clay_sand_1d', 
+                             ], 
+            },
+  'infiltration_clay_sand_1d': {
+    'from_dir' : 'testing/verification/flow/richards/steady-state/infiltration_clay_sand_1d',
+    'dest_dir' : 'doc/user_guide/verification/infiltration/infiltration_clay_sand_1d',
+    'index_entry' : 'infiltration_clay_sand_1d/amanzi_infiltration_clay_sand_1d.rst',
   },
 }
 

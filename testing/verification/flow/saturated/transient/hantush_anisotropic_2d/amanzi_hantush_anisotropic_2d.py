@@ -7,6 +7,9 @@ from amanzi_xml.observations.ObservationData import ObservationData as ObsDATA
 import amanzi_xml.utils.search as search
 import prettytable
 
+import os
+import run_amanzi_standard
+
 def load_amanzi_obs():
     #output_file = Obs_xml.getObservationFilename()
     output_file = "observation.out"
@@ -39,9 +42,6 @@ def plottest(axes1, obstimes, obsdata, ana_data):
 
 if __name__ == "__main__":
 
-    import os
-    import run_amanzi_standard
-
     input_file =os.path.join("amanzi_hantush_anisotropic_2d-u.xml")
     run_dir = "amanzi-output"
 
@@ -66,6 +66,7 @@ if __name__ == "__main__":
         axes1 = fig1.add_axes([.1,.1,.8,.8])
        
         plottest(axes1, obstimes, obsdata, ana_data)
+        plt.savefig("hantush_anisotropic_2d.png",format="png")
         # plt.show()
  
     finally:
