@@ -28,14 +28,16 @@ if __name__ == "__main__":
         
     # Amanzi: structured
     try:
+        input_file = "amanzi_infiltration_clay_sand_1d-s.xml"
         path_to_amanzi = "output-s"
-        root_amanzi = "case_2c_plot00001"
+        root_amanzi = "plot00529"
 
         run_amanzi_standard.run_amanzi(input_file, 1, [input_file], path_to_amanzi)
 
-        comp = "Aqueous_Pressure"
-        x_amanziS, c_amanziS = GetXY_AmanziS_1D(path_to_amanzi,root_amanzi,compS)
+        comp = "water_Pressure"
+        x_amanziS, c_amanziS = GetXY_AmanziS_1D(path_to_amanzi,root_amanzi,comp)
         struct = len(x_amanziS)
+        struct = 0
     except:
         struct = 0
         
@@ -60,7 +62,7 @@ if __name__ == "__main__":
     if (unstruct_gold>0):
         ax.plot(x_amanziU_gold, c_amanziU_gold,'m-',label='AmanziU-Gold',linewidth=2)
     if (struct>0):
-        sam = ax.plot(x_amanziS, c_amanziS,'g-',label='AmanziS',linewidth=2)
+        ax.plot(x_amanziS, c_amanziS,marker='x',label='AmanziS',linestyle='dotted', linewidth=2)
 
     # axes
     ax.set_xlabel("Distance (m)") #,fontsize=20)
@@ -71,6 +73,6 @@ if __name__ == "__main__":
     plt.suptitle("Aqueous Pressure",x=0.5,fontsize=20)
     plt.tick_params(axis='both', which='major', labelsize=20)
 
-    # plt.show()
+    plt.show()
     plt.savefig("clay_sand_1d.png",format="png")
     # plt.close()

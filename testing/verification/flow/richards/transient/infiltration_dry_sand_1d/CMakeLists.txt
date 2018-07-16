@@ -8,7 +8,7 @@ set(dataset "/hydraulic_head.cell.0")
 set(step 1816)
 
 if (ENABLE_TESTS)
-    add_amanzi_test(run_${test_name} KIND AMANZI AMANZI_INPUT ${INFILTRATION_DRY_SAND_1d_SOURCE_DIR}/amanzi_${test_name}-isv2.xml)
+    add_amanzi_test(run_${test_name} KIND AMANZI AMANZI_INPUT ${INFILTRATION_DRY_SAND_1d_SOURCE_DIR}/amanzi_${test_name}-u.xml)
     add_test(NAME compare_${test_name} 
 	COMMAND ${PYTHON_EXECUTABLE} ${INFILTRATION_DRY_SAND_1d_SOURCE_DIR}/convergence_test.py ${INFILTRATION_DRY_SAND_1d_SOURCE_DIR})
 	 #COMMAND ${HDF5_H5DIFF_BINARY} ${INFILTRATION_DRY_SAND_1d_BINARY_DIR}/${h5file}
