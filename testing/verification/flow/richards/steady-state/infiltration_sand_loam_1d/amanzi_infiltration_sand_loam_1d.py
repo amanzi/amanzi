@@ -9,13 +9,14 @@ import run_amanzi_standard
 from compare_field_results import GetXY_AmanziU_1D
 from compare_field_results import GetXY_AmanziS_1D
 
+
 if __name__ == "__main__":
 
     # Amanzi: unstructured
     try:
-        input_file = "amanzi_infiltration_clay_sand_1d-u.xml"
+        input_file = "amanzi_infiltration_sand_loam_1d-u.xml"
         path_to_amanzi = "output-u"
-        root_amanzi = 'case_2c_plot'
+        root_amanzi = 'case_2b_plot'
     
         run_amanzi_standard.run_amanzi(input_file, 1, [input_file], path_to_amanzi)
 
@@ -25,12 +26,12 @@ if __name__ == "__main__":
     except:
         unstruct = 0
 
-        
+
     # Amanzi: structured
     try:
-        input_file = "amanzi_infiltration_clay_sand_1d-s.xml"
+        input_file = "amanzi_infiltration_sand_loam_1d-s.xml"
         path_to_amanzi = "output-s"
-        root_amanzi = "plot00529"
+        root_amanzi = "plot00283"
 
         run_amanzi_standard.run_amanzi(input_file, 1, [input_file], path_to_amanzi)
 
@@ -45,7 +46,7 @@ if __name__ == "__main__":
     # Amanzi: analytic
     try:
         path_to_amanzi = "golden_output"
-        root_amanzi = 'case_2c_plot'
+        root_amanzi = 'case_2b_plot'
 
         comp = 'pressure.cell.0'
         x_amanziU_gold, c_amanziU_gold = GetXY_AmanziU_1D(path_to_amanzi,root_amanzi,comp,3)
@@ -56,7 +57,9 @@ if __name__ == "__main__":
 
     # subplots
     fig, ax = plt.subplots() 
+        
 
+    # Do plot
     if (unstruct>0):
         ax.plot(x_amanziU, c_amanziU,marker='o',color='g',label='AmanziU',linestyle='None')
     if (unstruct_gold>0):
@@ -65,14 +68,15 @@ if __name__ == "__main__":
         ax.plot(x_amanziS, c_amanziS,marker='x',label='AmanziS',linestyle='dotted', linewidth=2)
 
     # axes
-    ax.set_xlabel("Distance (m)") #, fontsize=20)
+    ax.set_xlabel("Distance (m)",fontsize=20)
  
     # plot adjustments
-    plt.subplots_adjust(left=0.18,bottom=0.12,right=0.98,top=0.9)
-    plt.legend(loc='upper left') #, fontsize=13)
+    plt.subplots_adjust(left=0.16,bottom=0.14,right=0.98,top=0.9)
+    plt.legend(loc='upper left',fontsize=13)
     plt.suptitle("Aqueous Pressure",x=0.5,fontsize=20)
     plt.tick_params(axis='both', which='major', labelsize=20)
 
     # plt.show()
-    plt.savefig("clay_sand_1d.png",format="png")
+    plt.savefig("infiltration_sand_loam_1d.png",format="png")
     # plt.close()
+

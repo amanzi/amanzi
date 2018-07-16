@@ -1,168 +1,151 @@
-<ParameterList name="Main">
-    <Parameter name="Amanzi Input Format Version" type="string" value="1.2.2"/>
-    <Parameter name="Petsc Options File" type="string" value=".petsc"/>
-    <ParameterList name="General Description">
-      <Parameter name="Model ID" type="string" value="TBD"/>
-      <Parameter name="Author" type="string" value="Day, Castleton"/>
-    </ParameterList>
-    <ParameterList name="Execution Control">
-      <Parameter name="Flow Model" type="string" value="Richards"/>
-      <Parameter name="Transport Model" type="string" value="Off"/>
-      <Parameter name="Chemistry Model" type="string" value="Off"/>
-      <ParameterList name="Time Integration Mode">
-        <ParameterList name="Steady">
-          <Parameter name="Start" type="double" value="0.0"/>
-          <Parameter name="End" type="double" value="3.16E11"/>
-	  <!-- want steady state so run to 10,000 years = 3.16E11 seconds -->
-          <Parameter name="Initial Time Step" type="double" value="1.e6"/>
-        </ParameterList>
-      </ParameterList>
-      <Parameter name="Verbosity" type="string" value="High"/>
-      <ParameterList name="Numerical Control Parameters">
-      </ParameterList>
-    </ParameterList>
-    <ParameterList name="Domain">
-      <Parameter name="Spatial Dimension" type="int" value="2"/>
-    </ParameterList>
-    <ParameterList name="Mesh">
-      <ParameterList name="Structured">
-        <Parameter name="Domain Low Coordinate"  type="Array(double)" value="{0, 0}"/>
-        <Parameter name="Domain High Coordinate" type="Array(double)" value="{1, 2}"/>
-        <Parameter name="Number of Cells"    type="Array(int)"    value="{2, 200}"/>
-      </ParameterList>
-    </ParameterList>
-    <ParameterList name="Regions">
-      <ParameterList name="Top Surface">
-        <ParameterList name="Region: Box">
-          <Parameter name="Low Coordinate" type="Array(double)" value="{0.0,2.0}"/>
-          <Parameter name="High Coordinate" type="Array(double)" value="{1.0,2.0}"/>
-			<!-- 2 meter column represented by 200 1x0.01 meter grid cells -->
-        </ParameterList>
-      </ParameterList>
-      <ParameterList name="Bottom Surface">
-        <ParameterList name="Region: Box">
-          <Parameter name="Low Coordinate" type="Array(double)" value="{0.0,0.0}"/>
-          <Parameter name="High Coordinate" type="Array(double)" value="{1.0,0.0}"/>
-        </ParameterList>
-      </ParameterList>
-      <ParameterList name="Region between Plane Surface 0 and Plane Surface 1">
-        <ParameterList name="Region: Box">
-          <Parameter name="Low Coordinate" type="Array(double)" value="{0.0,0.0}"/>
-          <Parameter name="High Coordinate" type="Array(double)" value="{1.0,1.5}"/>
-        </ParameterList>
-      </ParameterList>
-      <ParameterList name="Region between Plane Surface 1 and Plane Surface 2">
-        <ParameterList name="Region: Box">
-          <Parameter name="Low Coordinate" type="Array(double)" value="{0.0,1.5}"/>
-          <Parameter name="High Coordinate" type="Array(double)" value="{1.0,2.}"/>
-        </ParameterList>
-      </ParameterList>
-    </ParameterList>
-    <ParameterList name="Material Properties">
-      <ParameterList name="loam">
-        <ParameterList name="Porosity: Uniform">
-          <Parameter name="Value" type="double" value="0.43"/>
-        </ParameterList>
-        <ParameterList name="Intrinsic Permeability: Uniform">
-          <Parameter name="Value" type="double" value="5.92360e-13"/>
-        </ParameterList>
-        <ParameterList name="Capillary Pressure: van Genuchten">
-          <Parameter name="alpha" type="double" value="4.08622e-4" units="Pa^-1"/>
-          <Parameter name="Sr" type="double" value="0.186047" units="fraction"/>
-			<!-- changed residual saturation from 0.09 to 0.186407 (theta-r/theta-s =0.08/0.43) -->
-          <Parameter name="m" type="double" value="0.375"/>
-          <Parameter name="Relative Permeability" type="string" value="Mualem"/>
-        </ParameterList>
-        <Parameter name="Assigned Regions" type="Array(string)" value="{Region between Plane Surface 0 and Plane Surface 1}"/>
-      </ParameterList>
-      <ParameterList name="sand">
-        <ParameterList name="Porosity: Uniform">
-          <Parameter name="Value" type="double" value="0.43" units="fraction"/>
-        </ParameterList>
-        <ParameterList name="Intrinsic Permeability: Uniform">
-          <Parameter name="Value" type="double" value="1.18472e-11"/>
-        </ParameterList>
-        <ParameterList name="Capillary Pressure: van Genuchten">
-          <Parameter name="alpha" type="double" value="1.532333e-3" units="Pa^-1"/>
-          <Parameter name="Sr" type="double" value="0.104651" units="fraction"/>
-			<!-- changed from residual water content of 0.045 to residual saturation of 0.104651 -->
-          <Parameter name="m" type="double" value="0.6666667"/>
-          <Parameter name="Relative Permeability" type="string" value="Mualem"/>
-        </ParameterList>
-        <Parameter name="Assigned Regions" type="Array(string)" value="{Region between Plane Surface 1 and Plane Surface 2}"/>
-      </ParameterList>
-    </ParameterList>
-    <ParameterList name="Phase Definitions">
-      <ParameterList name="Aqueous">
-        <ParameterList name="Phase Properties">
-          <ParameterList name="Viscosity: Uniform">
-            <Parameter name="Viscosity" type="double" value="1.002e-3 "/>
-          </ParameterList>
-          <ParameterList name="Density: Uniform">
-            <Parameter name="Density" type="double" value="998.2 "/>
-          </ParameterList>
-        </ParameterList>
-        <ParameterList name="Phase Components">
-          <ParameterList name="Water">
-            <Parameter name="Component Solutes" type="Array(string)" value="{Tc-99}"/>
-          </ParameterList>
-        </ParameterList>
-      </ParameterList>
-    </ParameterList>
-    <ParameterList name="Initial Conditions">
-      <ParameterList name="All">
-        <Parameter name="Assigned Regions" type="Array(string)" value="{All}"/>
-        <ParameterList name="IC: Uniform Pressure">
-         <Parameter name="Value" type="double" value="81747."/>
-			<!-- -2 m water initial condition based on 9.80665 m/s^2 gravity -->
-        </ParameterList>
-        <ParameterList name="Solute IC">
-          <ParameterList name="Aqueous">
-            <ParameterList name="Water">
-              <ParameterList name="Tc-99">
-                <ParameterList name="IC: Uniform Concentration">
-                  <Parameter name="Value" type="double" value="0"/>
-                </ParameterList>
-              </ParameterList>
-            </ParameterList>
-          </ParameterList>
-        </ParameterList>
-      </ParameterList>
-    </ParameterList>
-    <ParameterList name="Boundary Conditions">
-      <ParameterList name="BC For Bottom Surface">
-        <Parameter name="Assigned Regions" type="Array(string)" value="{Bottom Surface}"/>
-		<ParameterList name="BC: Uniform Pressure">
-  	    <Parameter name="Times" type="Array(double)" value="{0.0}" units="s"/>
-            <Parameter name="Values" type="Array(double)" value="{99630.6336}" units="Pa"/>
-        </ParameterList>
-      </ParameterList>
-      <ParameterList name="BC For Top Surface">
-        <Parameter name="Assigned Regions" type="Array(string)" value="{Top Surface}"/>
-        <ParameterList name="BC: Flux">
-          <Parameter name="Inward Mass Flux" type="Array(double)" value="{5.776620e-5}"/>
-			<!-- 0.5 cm/d * (1 m/100 cm)(1 d/24 h)(1 h/3600 s) (998.2 kg/m3) -->
-        </ParameterList>
-      </ParameterList>
-    </ParameterList>
-    <ParameterList name="Output">
-      <ParameterList name="Time Macros"/>
-      <ParameterList name="Cycle Macros">
-        <ParameterList name="Every 100">
-          <Parameter name="Start_Period_Stop" type="Array(int)" value="{0,100,-1}"/>
-        </ParameterList>
-      </ParameterList>
-      <ParameterList name="Variable Macros"/>
-      <ParameterList name="Observation Data"/>
-      <ParameterList name="Visualization Data">
-        <Parameter name="File Name Base" type="string" value="case_2b_plot"/>
-        <Parameter name="File Name Digits" type="int" value="5"/>
-        <Parameter name="Cycle Macros" type="Array(string)" value="{Every 100}"/>
-      </ParameterList>
-      <ParameterList name="Checkpoint Data">
-        <Parameter name="File Name Base" type="string" value="case_2b_checkpoint"/>
-        <Parameter name="File Name Digits" type="int" value="5"/>
-        <Parameter name="Cycle Macro" type="string" value="Every 100"/>
-      </ParameterList>
-    </ParameterList>
-  </ParameterList>
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<amanzi_input type="structured" version="2.3.0">
+    <model_description name="infiltration_sand_loam_1d-str-2D">
+        <comments>infiltration_sand_loam_1d-str-2D	Tue Sep 22 13:54:12 PDT 2015</comments>
+    </model_description>
+    <definitions>
+        <macros>
+            <cycle_macro name="Every_100">
+                <start>0</start>
+                <stop>-1</stop>
+                <timestep_interval>100</timestep_interval>
+            </cycle_macro>
+        </macros>
+    </definitions>
+    <process_kernels>
+        <flow model="richards" state="on"/>
+        <transport state="off"/>
+        <chemistry engine="none" state="off"/>
+    </process_kernels>
+    <phases>
+        <liquid_phase name="water">
+            <viscosity>0.001002</viscosity>
+            <density>998.2</density>
+        </liquid_phase>
+    </phases>
+    <execution_controls>
+        <verbosity level="high"/>
+        <execution_control_defaults increase_factor="1.2" init_dt="1 s" max_dt="100 y" method="bdf1" mode="transient" reduction_factor="0.8"/>
+        <execution_control end="3.16e11 s" increase_factor="1.2" init_dt="1e7 s" method="bdf1" mode="steady" reduction_factor="0.8" start="0.0 y"/>
+    </execution_controls>
+    <numerical_controls>
+        <common_controls/>
+        <structured_controls>
+            <str_steady-state_controls>
+                <max_pseudo_time>1.0e14</max_pseudo_time>
+                <min_iterations>10</min_iterations>
+                <limit_iterations>20</limit_iterations>
+                <min_iterations_2>2</min_iterations_2>
+                <time_step_increase_factor>1.6</time_step_increase_factor>
+                <time_step_increase_factor_2>10.0</time_step_increase_factor_2>
+                <max_consecutive_failures_1>3</max_consecutive_failures_1>
+                <time_step_retry_factor_1>3.0</time_step_retry_factor_1>
+                <max_consecutive_failures_2>4</max_consecutive_failures_2>
+                <time_step_retry_factor_2>0.01</time_step_retry_factor_2>
+                <time_step_retry_factor_f>0.001</time_step_retry_factor_f>
+                <max_num_consecutive_success>0</max_num_consecutive_success>
+                <extra_time_step_increase_factor>10.0</extra_time_step_increase_factor>
+                <abort_on_psuedo_timestep_failure>true</abort_on_psuedo_timestep_failure>
+                <limit_function_evals>100000000</limit_function_evals>
+                <do_grid_sequence>false</do_grid_sequence>
+            </str_steady-state_controls>
+            <str_transient_controls>
+                <max_ls_iterations>10</max_ls_iterations>
+                <ls_reduction_factor>0.1</ls_reduction_factor>
+                <min_ls_factor>1.0e-8</min_ls_factor>
+                <ls_acceptance_factor>1.4</ls_acceptance_factor>
+                <monitor_line_search>0</monitor_line_search>
+                <monitor_linear_solve>0</monitor_linear_solve>
+                <use_fd_jac>true</use_fd_jac>
+                <perturbation_scale_for_J>1.0e-8</perturbation_scale_for_J>
+                <use_dense_Jacobian>false</use_dense_Jacobian>
+                <upwind_krel>true</upwind_krel>
+                <pressure_maxorder>3</pressure_maxorder>
+                <scale_solution_before_solve>true</scale_solution_before_solve>
+                <semi_analytic_J>true</semi_analytic_J>
+                <cfl>1</cfl>
+            </str_transient_controls>
+            <max_n_subcycle_transport>10</max_n_subcycle_transport>
+            <str_amr_controls/>
+        </structured_controls>
+    </numerical_controls>
+    <mesh>
+        <dimension>2</dimension>
+        <generate>
+            <number_of_cells nx="2" ny="200"/>
+            <box high_coordinates="1.0, 2.0" low_coordinates="0.0, 0.0"/>
+        </generate>
+    </mesh>
+    <regions>
+        <box high_coordinates="1.0, 1.5" low_coordinates="0.0, 0.0" name="Region_between_surface_0_and__1"/>
+        <box high_coordinates="1.0, 2.0" low_coordinates="0.0, 1.5" name="Region_between_surface_1_and__2"/>
+    </regions>
+    <materials>
+        <material name="loam">
+            <mechanical_properties>
+                <porosity value="0.43"/>
+                <particle_density value="2650.0"/>
+            </mechanical_properties>
+            <permeability x="5.9236E-13" y="5.9236E-13"/>
+            <cap_pressure model="van_genuchten">
+                <parameters alpha="4.08622E-4" m="0.375" sr="0.186047"/>
+            </cap_pressure>
+            <rel_perm model="mualem"/>
+            <assigned_regions>Region_between_surface_0_and__1</assigned_regions>
+        </material>
+        <material name="sand">
+            <mechanical_properties>
+                <porosity value="0.43"/>
+                <particle_density value="2650.0"/>
+            </mechanical_properties>
+            <permeability x="1.18472E-11" y="1.18472E-11"/>
+            <cap_pressure model="van_genuchten">
+                <parameters alpha="0.001532333" m="0.6666667" sr="0.104651"/>
+            </cap_pressure>
+            <rel_perm model="mualem"/>
+            <assigned_regions>Region_between_surface_1_and__2</assigned_regions>
+        </material>
+    </materials>
+    <initial_conditions>
+        <initial_condition name="IC">
+            <assigned_regions>All</assigned_regions>
+            <liquid_phase name="water">
+                <liquid_component name="water">
+                    <uniform_pressure value="81747.0"/>
+                </liquid_component>
+            </liquid_phase>
+        </initial_condition>
+    </initial_conditions>
+    <boundary_conditions>
+        <boundary_condition name="BC For Bottom Surface">
+            <assigned_regions>YLOBC</assigned_regions>
+            <liquid_phase name="water">
+                <liquid_component name="water">
+                    <uniform_pressure function="constant" start="0.0 y" value="99630.6336"/>
+                    <uniform_pressure function="constant" start="3.16e11 s" value="99630.6336"/>
+                </liquid_component>
+            </liquid_phase>
+        </boundary_condition>
+        <boundary_condition name="BC For Top Surface">
+            <assigned_regions>YHIBC</assigned_regions>
+            <liquid_phase name="water">
+                <liquid_component name="water">
+                    <inward_mass_flux function="constant" start="0.0 y" value="5.776620e-5"/>
+                    <inward_mass_flux function="constant" start="3.16e11 s" value="5.776620e-5"/>
+                </liquid_component>
+            </liquid_phase>
+        </boundary_condition>
+    </boundary_conditions>
+    <output>
+        <vis>
+            <base_filename>plot</base_filename>
+            <num_digits>5</num_digits>
+            <cycle_macros>Every_100</cycle_macros>
+        </vis>
+        <checkpoint>
+            <base_filename>checkpoint</base_filename>
+            <num_digits>5</num_digits>
+            <cycle_macros>Every_100</cycle_macros>
+        </checkpoint>
+    </output>
+</amanzi_input>
