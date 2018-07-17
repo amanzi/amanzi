@@ -194,7 +194,7 @@ void MeshMaps_VEM::LeastSquareProjector_Cell_(
   vc.resize(d_);
   for (int i = 0; i < d_; ++i) vc[i].Reshape(d_, order);
   
-  AmanziGeometry::Point px;
+  AmanziGeometry::Point px1, px2;
   std::vector<AmanziGeometry::Point> x1, x2;
 
   Entity_ID_List nodes, faces;
@@ -202,11 +202,11 @@ void MeshMaps_VEM::LeastSquareProjector_Cell_(
   int nnodes = nodes.size();
 
   for (int n = 0; n < nnodes; ++n) {
-    mesh0_->node_get_coordinates(nodes[n], &px);
-    x1.push_back(px);
+    mesh0_->node_get_coordinates(nodes[n], &px1);
+    x1.push_back(px1);
 
-    mesh1_->node_get_coordinates(nodes[n], &px);
-    x2.push_back(px);
+    mesh1_->node_get_coordinates(nodes[n], &px2);
+    x2.push_back(px2 - px1);
   }
 
   // FIXME
@@ -216,22 +216,17 @@ void MeshMaps_VEM::LeastSquareProjector_Cell_(
 
     for (int n = 0; n < nfaces; ++n) {
       const auto& xf = mesh0_->face_centroid(faces[n]);
-      px = xf; 
-      x1.push_back(px);
+      x1.push_back(xf);
 
       for (int i = 0; i < d_; ++i)  {
-        px[i] += vf[n][i].Value(xf); 
+        px2[i] = vf[n][i].Value(xf); 
       }
-      x2.push_back(px);
+      x2.push_back(px2);
     }
   }
 
   // calculate velocity u(X) = F(X) - X
   LeastSquareFit(order, x1, x2, vc);
-
-  for (int i = 0; i < d_; ++i) {
-    vc[i](1, i) -= 1.0;
-  }
 }
 
 
