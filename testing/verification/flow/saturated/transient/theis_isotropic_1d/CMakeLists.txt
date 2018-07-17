@@ -8,7 +8,7 @@ set(dataset "")
 set(step 1)
 
 if (ENABLE_TESTS)
-    add_amanzi_test(run_${test_name} KIND AMANZI AMANZI_INPUT ${THEIS_ISOTROPIC_1D_SOURCE_DIR}/amanzi_${test_name}-isv2.xml NPROCS 4)
+    add_amanzi_test(run_${test_name} KIND AMANZI AMANZI_INPUT ${THEIS_ISOTROPIC_1D_SOURCE_DIR}/amanzi_${test_name}-u.xml NPROCS 4)
     add_test(NAME compare_${test_name} 
 	COMMAND ${PYTHON_EXECUTABLE} ${THEIS_ISOTROPIC_1D_SOURCE_DIR}/convergence_test.py ${THEIS_ISOTROPIC_1D_SOURCE_DIR})
 	 #COMMAND diff ${THEIS_ISOTROPIC_1D_BINARY_DIR}/${compfile}

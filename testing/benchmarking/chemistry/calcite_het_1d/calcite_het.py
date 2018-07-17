@@ -10,98 +10,12 @@ import matplotlib
 #matplotlib.use('Agg')
 from matplotlib import pyplot as plt
 
+import run_amanzi_standard
+from compare_field_results import GetXY_AmanziU_1D
+from compare_field_results import GetXY_AmanziS_1D
+from compare_field_results import GetXY_PFloTran_1D
+from compare_field_results import GetXY_CrunchFlow_1D
 
-# ----------- AMANZI + ALQUIMIA -----------------------------------------------------------------
-
-def GetXY_Amanzi(path,root,comp):
-
-    # open amanzi concentration and mesh files
-    dataname = os.path.join(path,root+"_data.h5")
-    amanzi_file = h5py.File(dataname,'r')
-    meshname = os.path.join(path,root+"_mesh.h5")
-    amanzi_mesh = h5py.File(meshname,'r')
-
-    # extract cell coordinates
-    y = np.array(amanzi_mesh['0']['Mesh']["Nodes"][0:len(amanzi_mesh['0']['Mesh']["Nodes"])/4,0])
-    # y = np.array(amanzi_mesh['Mesh']["Nodes"][0:len(amanzi_mesh['Mesh']["Nodes"])/4,0]) # old style
-
-    # center of cell
-    x_amanzi_alquimia  = np.diff(y)/2+y[0:-1]
-
-    # extract concentration array
-    time = max(amanzi_file[comp].keys())
-    c_amanzi_alquimia = np.array(amanzi_file[comp][time])
-    amanzi_file.close()
-    amanzi_mesh.close()
-    
-    return (x_amanzi_alquimia, c_amanzi_alquimia)
-
-def GetXY_AmanziS(path,root,time,comp):
-    try:
-        import fsnapshot
-        fsnok = True
-    except:
-        fsnok = False
-
-    #import pdb; pdb.set_trace()
-
-    plotfile = os.path.join(path,root)
-    if os.path.isdir(plotfile) & fsnok:
-        (nx, ny, nz) = fsnapshot.fplotfile_get_size(plotfile)
-        x = np.zeros( (nx), dtype=np.float64)
-        y = np.zeros( (nx), dtype=np.float64)
-        (y, x, npts, err) = fsnapshot.fplotfile_get_data_1d(plotfile, comp, y, x)
-    else:
-        x = np.zeros( (0), dtype=np.float64)
-        y = np.zeros( (0), dtype=np.float64)
-    
-    return (x, y)
-
-# ----------- PFLOTRAN STANDALONE ------------------------------------------------------------
-
-def GetXY_PFloTran(path,root,time,comp):
-
-    # read pflotran data
-    filename = os.path.join(path,"1d-"+root+".h5")
-    pfdata = h5py.File(filename,'r')
-
-    # extract coordinates
-    y = np.array(pfdata['Coordinates']['X [m]'])
-    x_pflotran = np.diff(y)/2+y[0:-1]
-
-    # extract concentrations
-    c_pflotran = np.array(pfdata[time][comp])
-    c_pflotran = c_pflotran.flatten()
-    pfdata.close()
-
-    return (x_pflotran, c_pflotran)
-
-# ------------- CRUNCHFLOW ------------------------------------------------------------------
-def GetXY_CrunchFlow(path,root,cf_file,comp,ignore):
-
-    # read CrunchFlow data
-    filename = os.path.join(path,cf_file)
-    f = open(filename,'r')
-    lines = f.readlines()
-    f.close()
-
-    # ignore couple of lines
-    for i in range(ignore):
-      lines.pop(0)
-
-    # extract data x0, x1, ..., xN-1 per line, keep only two columns
-    xv=[]
-    yv=[] 
-    for line in lines:
-      xv = xv + [float(line.split()[0])]
-      yv = yv + [float(line.split()[comp+1])]
-    
-    xv = np.array(xv)
-    yv = np.array(yv)
-
-    return (xv, yv)
-
-# Main -------------------------------------------------------------------------------------
 if __name__ == "__main__":
 
     import os, sys
@@ -132,19 +46,19 @@ if __name__ == "__main__":
     comp = 'Total_Ca++ [M]'
     Ca_pflotran = []
     for i, time in enumerate(times):
-       x_pflotran, c_pflotran = GetXY_PFloTran(path_to_pflotran,root,time,comp)
+       x_pflotran, c_pflotran = GetXY_PFloTran_1D(path_to_pflotran,root,time,comp)
        Ca_pflotran = Ca_pflotran + [c_pflotran]
 
     comp = 'pH'
     pH_pflotran = []
     for i, time in enumerate(times):
-       x_pflotran, c_pflotran = GetXY_PFloTran(path_to_pflotran,root,time,comp)
+       x_pflotran, c_pflotran = GetXY_PFloTran_1D(path_to_pflotran,root,time,comp)
        pH_pflotran = pH_pflotran + [c_pflotran]
 
     comp = 'Calcite_VF'
     VF_pflotran = []
     for i, time in enumerate(times):
-       x_pflotran, c_pflotran = GetXY_PFloTran(path_to_pflotran,root,time,comp)
+       x_pflotran, c_pflotran = GetXY_PFloTran_1D(path_to_pflotran,root,time,comp)
        VF_pflotran = VF_pflotran + [c_pflotran]
 
     # pflotran Operator Splitting
@@ -157,19 +71,19 @@ if __name__ == "__main__":
     comp = 'Total_Ca++ [M]'
     Ca_pflotran_OS = []
     for i, time in enumerate(times):
-       x_pflotran_OS, c_pflotran = GetXY_PFloTran(path_to_pflotran,root,time,comp)
+       x_pflotran_OS, c_pflotran = GetXY_PFloTran_1D(path_to_pflotran,root,time,comp)
        Ca_pflotran_OS = Ca_pflotran_OS + [c_pflotran]
 
     comp = 'pH'
     pH_pflotran_OS = []
     for i, time in enumerate(times):
-       x_pflotran_OS, c_pflotran = GetXY_PFloTran(path_to_pflotran,root,time,comp)
+       x_pflotran_OS, c_pflotran = GetXY_PFloTran_1D(path_to_pflotran,root,time,comp)
        pH_pflotran_OS = pH_pflotran_OS + [c_pflotran]
 
     comp = 'Calcite_VF'
     VF_pflotran_OS = []
     for i, time in enumerate(times):
-       x_pflotran_OS, c_pflotran = GetXY_PFloTran(path_to_pflotran,root,time,comp)
+       x_pflotran_OS, c_pflotran = GetXY_PFloTran_1D(path_to_pflotran,root,time,comp)
        VF_pflotran_OS = VF_pflotran_OS + [c_pflotran]
 
     # crunchflow OS3D
@@ -182,7 +96,7 @@ if __name__ == "__main__":
     Ca_crunchOS3D = []
     ignore = 4
     for i, time in enumerate(times_CF):
-       x_crunchflow, c_crunchflow = GetXY_CrunchFlow(path_to_crunchflow,root,time,comp,ignore)
+       x_crunchflow, c_crunchflow = GetXY_CrunchFlow_1D(path_to_crunchflow,root,time,comp,ignore)
        Ca_crunchOS3D = Ca_crunchOS3D + [c_crunchflow]
 
 #    times_CF = ['pH1.out','pH2.out','pH3.out','pH4.out','pH5.out']
@@ -191,7 +105,7 @@ if __name__ == "__main__":
     pH_crunchOS3D = []
     ignore = 3
     for i, time in enumerate(times_CF):
-       x_crunchflow, c_crunchflow = GetXY_CrunchFlow(path_to_crunchflow,root,time,comp,ignore)
+       x_crunchflow, c_crunchflow = GetXY_CrunchFlow_1D(path_to_crunchflow,root,time,comp,ignore)
        pH_crunchOS3D = pH_crunchOS3D + [c_crunchflow]
 
 #    times_CF = ['volume1.out','volume2.out','volume3.out','volume4.out','volume5.out']
@@ -200,7 +114,7 @@ if __name__ == "__main__":
     VF_crunchOS3D = []
     ignore = 4
     for i, time in enumerate(times_CF):
-       x_crunchflow, c_crunchflow = GetXY_CrunchFlow(path_to_crunchflow,root,time,comp,ignore)
+       x_crunchflow, c_crunchflow = GetXY_CrunchFlow_1D(path_to_crunchflow,root,time,comp,ignore)
        VF_crunchOS3D = VF_crunchOS3D + [c_crunchflow]
 
     CWD = os.getcwd()
@@ -219,19 +133,19 @@ if __name__ == "__main__":
         comp = 'total_component_concentration.cell.Ca++ conc'
         Ca_amanzi_native = []
         for i, time in enumerate(times):
-           x_amanzi_native, c_amanzi_native = GetXY_Amanzi(path_to_amanzi,root,comp)
+           x_amanzi_native, c_amanzi_native = GetXY_AmanziU_1D(path_to_amanzi,root,comp,1)
            Ca_amanzi_native = Ca_amanzi_native +[c_amanzi_native]
 
         comp = 'free_ion_species.cell.H+'
         pH_amanzi_native = []
         for i, time in enumerate(times):
-           x_amanzi_native, c_amanzi_native = GetXY_Amanzi(path_to_amanzi,root,comp)
+           x_amanzi_native, c_amanzi_native = GetXY_AmanziU_1D(path_to_amanzi,root,comp,1)
            pH_amanzi_native = pH_amanzi_native +[-np.log10(c_amanzi_native)]
 
         comp = 'mineral_volume_fractions.cell.Calcite vol frac'
         VF_amanzi_native = []
         for i, time in enumerate(times):
-           x_amanzi_native, c_amanzi_native = GetXY_Amanzi(path_to_amanzi,root,comp)
+           x_amanzi_native, c_amanzi_native = GetXY_AmanziU_1D(path_to_amanzi,root,comp,1)
            VF_amanzi_native = VF_amanzi_native +[c_amanzi_native]
 
         native = True
@@ -252,19 +166,19 @@ if __name__ == "__main__":
         comp = 'total_component_concentration.cell.Ca++ conc'
         Ca_amanzi_alquimia = []
         for i, time in enumerate(times):
-           x_amanzi_alquimia, c_amanzi_alquimia = GetXY_Amanzi(path_to_amanzi,root,comp)
+           x_amanzi_alquimia, c_amanzi_alquimia = GetXY_AmanziU_1D(path_to_amanzi,root,comp,1)
            Ca_amanzi_alquimia = Ca_amanzi_alquimia +[c_amanzi_alquimia]
 
         comp = 'free_ion_species.cell.H+'
         pH_amanzi_alquimia = []
         for i, time in enumerate(times):
-           x_amanzi_alquimia, c_amanzi_alquimia = GetXY_Amanzi(path_to_amanzi,root,comp)
+           x_amanzi_alquimia, c_amanzi_alquimia = GetXY_AmanziU_1D(path_to_amanzi,root,comp,1)
            pH_amanzi_alquimia = pH_amanzi_alquimia +[-np.log10(c_amanzi_alquimia)]
 
         comp = 'mineral_volume_fractions.cell.Calcite vol frac'
         VF_amanzi_alquimia = []
         for i, time in enumerate(times):
-           x_amanzi_alquimia, c_amanzi_alquimia = GetXY_Amanzi(path_to_amanzi,root,comp)
+           x_amanzi_alquimia, c_amanzi_alquimia = GetXY_AmanziU_1D(path_to_amanzi,root,comp,1)
            VF_amanzi_alquimia = VF_amanzi_alquimia +[c_amanzi_alquimia]
 
         alq = True
@@ -284,19 +198,19 @@ if __name__ == "__main__":
         comp = 'total_component_concentration.cell.Ca++ conc'
         Ca_amanzi_alquimia_crunch = []
         for i, time in enumerate(times):
-           x_amanzi_alquimia_crunch, c_amanzi_alquimia_crunch = GetXY_Amanzi(path_to_amanzi,root,comp)
+           x_amanzi_alquimia_crunch, c_amanzi_alquimia_crunch = GetXY_AmanziU_1D(path_to_amanzi,root,comp,1)
            Ca_amanzi_alquimia_crunch = Ca_amanzi_alquimia_crunch +[c_amanzi_alquimia_crunch]
 
         comp = 'free_ion_species.cell.H+'
         pH_amanzi_alquimia_crunch = []
         for i, time in enumerate(times):
-           x_amanzi_alquimia_crunch, c_amanzi_alquimia_crunch = GetXY_Amanzi(path_to_amanzi,root,comp)
+           x_amanzi_alquimia_crunch, c_amanzi_alquimia_crunch = GetXY_AmanziU_1D(path_to_amanzi,root,comp,1)
            pH_amanzi_alquimia_crunch = pH_amanzi_alquimia_crunch +[-np.log10(c_amanzi_alquimia_crunch)]
 
         comp = 'mineral_volume_fractions.cell.Calcite vol frac'
         VF_amanzi_alquimia_crunch = []
         for i, time in enumerate(times):
-           x_amanzi_alquimia_crunch, c_amanzi_alquimia_crunch = GetXY_Amanzi(path_to_amanzi,root,comp)
+           x_amanzi_alquimia_crunch, c_amanzi_alquimia_crunch = GetXY_AmanziU_1D(path_to_amanzi,root,comp,1)
            VF_amanzi_alquimia_crunch = VF_amanzi_alquimia_crunch +[c_amanzi_alquimia_crunch]
 
         alq_crunch = True
@@ -318,13 +232,13 @@ if __name__ == "__main__":
 
         root_amanziS = "plt00501"
         compS = "Ca++_Aqueous_Concentration"
-        x_amanziS, c_amanziS = GetXY_AmanziS(path_to_amanzi,root_amanziS,time,compS)
+        x_amanziS, c_amanziS = GetXY_AmanziS_1D(path_to_amanzi,root_amanziS,compS,1)
         struct = len(x_amanziS)
         compS = "H+_Free_Ion_Guess"
-        x_amanziS, pH_amanziS = GetXY_AmanziS(path_to_amanzi,root_amanziS,time,compS)
+        x_amanziS, pH_amanziS = GetXY_AmanziS_1D(path_to_amanzi,root_amanziS,compS,1)
         pH_amanziS =  -np.log10(pH_amanziS)
         compS = "Calcite_Volume_Fraction"
-        x_amanziS, VF_amanziS = GetXY_AmanziS(path_to_amanzi,root_amanziS,time,compS)
+        x_amanziS, VF_amanziS = GetXY_AmanziS_1D(path_to_amanzi,root_amanziS,compS,1)
     except:
         struct = 0
 
@@ -338,13 +252,13 @@ if __name__ == "__main__":
                                        path_to_amanzi)
         root_amanziS = "plt00501"
         compS = "Ca++_Aqueous_Concentration"
-        x_amanziS_crunch, c_amanziS_crunch = GetXY_AmanziS(path_to_amanzi,root_amanziS,time,compS)
+        x_amanziS_crunch, c_amanziS_crunch = GetXY_AmanziS_1D(path_to_amanzi,root_amanziS,compS,1)
         struct_c = len(x_amanziS_crunch)
         compS = "H+_Free_Ion_Guess"
-        x_amanziS_crunch, pH_amanziS_crunch = GetXY_AmanziS(path_to_amanzi,root_amanziS,time,compS)
+        x_amanziS_crunch, pH_amanziS_crunch = GetXY_AmanziS_1D(path_to_amanzi,root_amanziS,compS,1)
         pH_amanziS_crunch = -np.log10(pH_amanziS_crunch)
         compS = "Calcite_Volume_Fraction"
-        x_amanziS_crunch, VF_amanziS_crunch = GetXY_AmanziS(path_to_amanzi,root_amanziS,time,compS)
+        x_amanziS_crunch, VF_amanziS_crunch = GetXY_AmanziS_1D(path_to_amanzi,root_amanziS,compS,1)
     except:
         struct_c = 0
 
