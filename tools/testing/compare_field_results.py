@@ -34,7 +34,7 @@ def GetXY_AmanziU_1D(path,root,comp,dim):
     return (x_amanziU, c_amanziU)
 
 
-def GetXY_AmanziS_1D(path,root,comp):
+def GetXY_AmanziS_1D(path,root,comp,dim):
     try:
         import fsnapshot
         fsnok = True
@@ -45,9 +45,13 @@ def GetXY_AmanziS_1D(path,root,comp):
 
     if os.path.isdir(plotfile) & fsnok:
         (nx, ny, nz) = fsnapshot.fplotfile_get_size(plotfile)
-        x = np.zeros( (nx), dtype=np.float64)
-        y = np.zeros( (nx), dtype=np.float64)
-        (y, x, npts, err) = fsnapshot.fplotfile_get_data_1d(plotfile, comp, y, x)
+        if (dim == 1):
+            nn = nx
+        if (dim == 2):
+            nn = ny
+        x = np.zeros( (nn), dtype=np.float64)
+        y = np.zeros( (nn), dtype=np.float64)
+        (y, x, npts, err) = fsnapshot.fplotfile_get_data_1d(plotfile, comp, y, x, dim)
 
     else:
         y = np.zeros( (0), dtype=np.float64)

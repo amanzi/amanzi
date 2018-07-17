@@ -11,8 +11,8 @@ import matplotlib
 from matplotlib import pyplot as plt
 
 import run_amanzi_standard
-from compare_field_results import GetXY_AmanziU_1D_1D
-from compare_field_results import GetXY_AmanziS_1D_1D
+from compare_field_results import GetXY_AmanziU_1D
+from compare_field_results import GetXY_AmanziS_1D
 from compare_field_results import GetXY_PFloTran_1D
 from compare_field_results import GetXY_CrunchFlow_1D
 
@@ -92,7 +92,7 @@ if __name__ == "__main__":
         run_amanzi_standard.run_amanzi(input_file, 1, ["1d-"+root+".in",root+".dat",input_file], path_to_amanziS)
         root_amanziS = "plt00051"
         compS = "tracer_water_Concentration"
-        x_amanziS, c_amanziS = GetXY_AmanziS_1D(path_to_amanziS,root_amanziS,compS)
+        x_amanziS, c_amanziS = GetXY_AmanziS_1D(path_to_amanziS,root_amanziS,compS,1)
         struct = len(x_amanziS)
     except:
         struct = 0
@@ -103,7 +103,7 @@ if __name__ == "__main__":
         run_amanzi_standard.run_amanzi(input_file, 1, ["1d-"+root+"-crunch.in",root+".dbs",input_file], path_to_amanziS)
         root_amanziS = "plt00051"
         compS = "tracer_water_Concentration"
-        x_amanziS_crunch, c_amanziS_crunch = GetXY_AmanziS_1D(path_to_amanziS,root_amanziS,compS)
+        x_amanziS_crunch, c_amanziS_crunch = GetXY_AmanziS_1D(path_to_amanziS,root_amanziS,compS,1)
         struct_crunch = len(x_amanziS_crunch)
     except:
         struct_crunch = 0

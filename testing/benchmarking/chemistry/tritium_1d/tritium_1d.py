@@ -68,7 +68,7 @@ if __name__ == "__main__":
                                        path_to_amanzi)
         root_amanzi = "plt00037"
         comp = "Tritium_water_Concentration"
-        x_amanziS, c_amanziS = GetXY_AmanziS_1D(path_to_amanzi,root_amanzi,comp)
+        x_amanziS, c_amanziS = GetXY_AmanziS_1D(path_to_amanzi,root_amanzi,comp,1)
         struct = len(x_amanziS)
     except:
         struct = 0
@@ -83,7 +83,7 @@ if __name__ == "__main__":
                                        path_to_amanzi)
         root_amanzi = "plt00037"
         comp = "Tritium_water_Concentration"
-        x_amanziS_crunch, c_amanziS_crunch = GetXY_AmanziS_1D(path_to_amanzi,root_amanzi,comp)
+        x_amanziS_crunch, c_amanziS_crunch = GetXY_AmanziS_1D(path_to_amanzi,root_amanzi,comp,1)
         struct_crunch = len(x_amanziS_crunch)
     except:
         struct_crunch = 0
