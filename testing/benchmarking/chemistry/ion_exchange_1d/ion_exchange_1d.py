@@ -195,20 +195,20 @@ if __name__ == "__main__":
 
         root_amanziS = "plt00036"
         # compS = "Na+_Aqueous_Concentration"
-        # x_amanziS, c_amanziS = GetXY_AmanziS_1D(path_to_amanzi,root_amanziS,compS)
+        # x_amanziS, c_amanziS = GetXY_AmanziS_1D(path_to_amanzi,root_amanziS,compS,1)
 
         # import pdb; pdb.set_trace()
         u_amanziS = [[] for x in range(len(amanzi_compS))]
         for j, compS in enumerate(amanzi_compS):
-            x_amanziS, c_amanziS = GetXY_AmanziS_1D(path_to_amanzi,root_amanziS,compS)
+            x_amanziS, c_amanziS = GetXY_AmanziS_1D(path_to_amanzi,root_amanziS,compS,1)
             u_amanziS[j] = c_amanziS
 
         # compS = "Na+_Sorbed_Concentration"
-        # x_amanziS, v_amanziS = GetXY_AmanziS_1D(path_to_amanzi,root_amanziS,compS)
+        # x_amanziS, v_amanziS = GetXY_AmanziS_1D(path_to_amanzi,root_amanziS,compS,1)
 
         v_amanziS = [[] for x in range(len(amanzi_sorbS))]
         for j, compS in enumerate(amanzi_sorbS):
-            x_amanziS, c_amanziS = GetXY_AmanziS_1D(path_to_amanzi,root_amanziS,compS)
+            x_amanziS, c_amanziS = GetXY_AmanziS_1D(path_to_amanzi,root_amanziS,compS,1)
             v_amanziS[j] = c_amanziS
 
         struct = len(x_amanziS)
@@ -225,20 +225,20 @@ if __name__ == "__main__":
 
         root_amanziS = "plt00036"
         # compS = "Na+_Aqueous_Concentration"
-        # x_amanziS, c_amanziS = GetXY_AmanziS_1D(path_to_amanzi,root_amanziS,compS)
+        # x_amanziS, c_amanziS = GetXY_AmanziS_1D(path_to_amanzi,root_amanziS,compS,1)
 
         # import pdb; pdb.set_trace()
         u_amanziS_c = [[] for x in range(len(amanzi_compS))]
         for j, compS in enumerate(amanzi_compS):
-            x_amanziS_c, c_amanziS = GetXY_AmanziS_1D(path_to_amanzi,root_amanziS,compS)
+            x_amanziS_c, c_amanziS = GetXY_AmanziS_1D(path_to_amanzi,root_amanziS,compS,1)
             u_amanziS_c[j] = c_amanziS
 
         # compS = "Na+_Sorbed_Concentration"
-        # x_amanziS, v_amanziS = GetXY_AmanziS_1D(path_to_amanzi,root_amanziS,compS)
+        # x_amanziS, v_amanziS = GetXY_AmanziS_1D(path_to_amanzi,root_amanziS,compS,1)
 
         v_amanziS_c = [[] for x in range(len(amanzi_sorbS))]
         for j, compS in enumerate(amanzi_sorbS):
-            x_amanziS_c, c_amanziS = GetXY_AmanziS_1D(path_to_amanzi,root_amanziS,compS)
+            x_amanziS_c, c_amanziS = GetXY_AmanziS_1D(path_to_amanzi,root_amanziS,compS,1)
             v_amanziS_c[j] = c_amanziS
 
         struct_c = len(x_amanziS_c)

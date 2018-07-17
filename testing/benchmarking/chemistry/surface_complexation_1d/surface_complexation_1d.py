@@ -222,7 +222,7 @@ if __name__ == "__main__":
         for i, time in enumerate(times):
             for j, comp in enumerate(amanzi_totcS):
                 # import pdb; pdb.set_trace()
-                x_amanziS, c_amanziS = GetXY_AmanziS_1D(path_to_amanzi,root_amanziS,comp)
+                x_amanziS, c_amanziS = GetXY_AmanziS_1D(path_to_amanzi,root_amanziS,comp,1)
                 u_amanziS[i][j] = c_amanziS
               
         struct = len(x_amanziS)
@@ -232,13 +232,13 @@ if __name__ == "__main__":
         v_amanziS = [[[] for x in range(len(amanzi_sorbS))] for x in range(len(times))]
         for i, time in enumerate(times):
             for j, comp in enumerate(amanzi_sorbS):
-                x_amanziS, c_amanziS = GetXY_AmanziS_1D(path_to_amanzi,root_amanziS,comp)
+                x_amanziS, c_amanziS = GetXY_AmanziS_1D(path_to_amanzi,root_amanziS,comp,1)
                 v_amanziS[i][j] = c_amanziS
 
         pH_amanziS = [ [] for x in range(len(times)) ]
         comp = 'H+_Free_Ion_Guess'
         for i, time in enumerate(times):
-            x_amanziS, c_amanziS = GetXY_AmanziS_1D(path_to_amanzi,root_amanziS,comp)
+            x_amanziS, c_amanziS = GetXY_AmanziS_1D(path_to_amanzi,root_amanziS,comp,1)
             pH_amanziS[i] = -np.log10(c_amanziS)
 
     except:
@@ -259,7 +259,7 @@ if __name__ == "__main__":
         for i, time in enumerate(times):
             for j, comp in enumerate(amanzi_totcS):
                 # import pdb; pdb.set_trace()
-                x_amanziS_crunch, c_amanziS_crunch = GetXY_AmanziS_1D(path_to_amanzi,root_amanziS,comp)
+                x_amanziS_crunch, c_amanziS_crunch = GetXY_AmanziS_1D(path_to_amanzi,root_amanziS,comp,1)
                 u_amanziS_crunch[i][j] = c_amanziS_crunch
               
         struct_c = len(x_amanziS_crunch)
@@ -267,13 +267,13 @@ if __name__ == "__main__":
         v_amanziS_crunch = [[[] for x in range(len(amanzi_sorbS))] for x in range(len(times))]
         for i, time in enumerate(times):
             for j, comp in enumerate(amanzi_sorbS):
-                x_amanziS_crunch, c_amanziS_crunch = GetXY_AmanziS_1D(path_to_amanzi,root_amanziS,comp)
+                x_amanziS_crunch, c_amanziS_crunch = GetXY_AmanziS_1D(path_to_amanzi,root_amanziS,comp,1)
                 v_amanziS_crunch[i][j] = c_amanziS_crunch
 
         pH_amanziS_crunch = [ [] for x in range(len(times)) ]
         comp = 'H+_Free_Ion_Guess'
         for i, time in enumerate(times):
-            x_amanziS_crunch, c_amanziS_crunch = GetXY_AmanziS_1D(path_to_amanzi,root_amanziS,comp)
+            x_amanziS_crunch, c_amanziS_crunch = GetXY_AmanziS_1D(path_to_amanzi,root_amanziS,comp,1)
             pH_amanziS_crunch[i] = -np.log10(c_amanziS_crunch)
 
     except:

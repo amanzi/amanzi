@@ -31,14 +31,13 @@ if __name__ == "__main__":
     try:
         input_file = "amanzi_infiltration_sand_loam_1d-s.xml"
         path_to_amanzi = "output-s"
-        root_amanzi = "plot00283"
+        root_amanzi = "plot00244"
 
         run_amanzi_standard.run_amanzi(input_file, 1, [input_file], path_to_amanzi)
 
         comp = "water_Pressure"
-        x_amanziS, c_amanziS = GetXY_AmanziS_1D(path_to_amanzi,root_amanzi,comp)
+        x_amanziS, c_amanziS = GetXY_AmanziS_1D(path_to_amanzi,root_amanzi,comp,2)
         struct = len(x_amanziS)
-        struct = 0
     except:
         struct = 0
         

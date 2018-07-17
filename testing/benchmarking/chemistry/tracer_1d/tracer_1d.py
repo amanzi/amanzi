@@ -95,7 +95,7 @@ if __name__ == "__main__":
 
         root_amanziS = "plt00051"
         compS = "tracer_water_Concentration"
-        x_amanziS, c_amanziS = GetXY_AmanziS_1D(path_to_amanzi,root_amanziS,compS)
+        x_amanziS, c_amanziS = GetXY_AmanziS_1D(path_to_amanzi,root_amanziS,compS,1)
         struct = len(x_amanziS)
     except:
         struct = 0

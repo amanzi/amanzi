@@ -250,13 +250,13 @@ if __name__ == "__main__":
         
         root_amanziS = "plt00070"
         compS = "Ca++_water_Concentration"
-        x_amanziS, c_amanziS = GetXY_AmanziS_1D(path_to_amanzi,root_amanziS,compS)
+        x_amanziS, c_amanziS = GetXY_AmanziS_1D(path_to_amanzi,root_amanziS,compS,1)
         struct = len(x_amanziS)
         compS = "H+_Free_Ion_Guess"
-        x_amanziS, pH_amanziS = GetXY_AmanziS_1D(path_to_amanzi,root_amanziS,compS)
+        x_amanziS, pH_amanziS = GetXY_AmanziS_1D(path_to_amanzi,root_amanziS,compS,1)
         pH_amanziS =  -np.log10(pH_amanziS)
         compS = "Calcite_Volume_Fraction"
-        x_amanziS, VF_amanziS = GetXY_AmanziS_1D(path_to_amanzi,root_amanziS,compS)
+        x_amanziS, VF_amanziS = GetXY_AmanziS_1D(path_to_amanzi,root_amanziS,compS,1)
     except:
         struct = 0
 
@@ -270,13 +270,13 @@ if __name__ == "__main__":
 
         root_amanziS = "plt00070"
         compS = "Ca++_water_Concentration"
-        x_amanziS_crunch, c_amanziS_crunch = GetXY_AmanziS_1D(path_to_amanzi,root_amanziS,compS)
+        x_amanziS_crunch, c_amanziS_crunch = GetXY_AmanziS_1D(path_to_amanzi,root_amanziS,compS,1)
         struct_c = len(x_amanziS_crunch)
         compS = "H+_Free_Ion_Guess"
-        x_amanziS_crunch, pH_amanziS_crunch = GetXY_AmanziS_1D(path_to_amanzi,root_amanziS,compS)
+        x_amanziS_crunch, pH_amanziS_crunch = GetXY_AmanziS_1D(path_to_amanzi,root_amanziS,compS,1)
         pH_amanziS_crunch = -np.log10(pH_amanziS_crunch)
         compS = "Calcite_Volume_Fraction"
-        x_amanziS_crunch, VF_amanziS_crunch = GetXY_AmanziS_1D(path_to_amanzi,root_amanziS,compS)
+        x_amanziS_crunch, VF_amanziS_crunch = GetXY_AmanziS_1D(path_to_amanzi,root_amanziS,compS,1)
     except:
         struct_c = 0
 

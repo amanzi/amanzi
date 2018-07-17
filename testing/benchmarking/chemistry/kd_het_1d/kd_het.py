@@ -188,9 +188,9 @@ if __name__ == "__main__":
         v_amanziS = [ [] for x in range(len(amanzi_totc)) ]
         for j,comp in enumerate(components):
            compS = "{0}_Aqueous_Concentration".format(comp)
-           x_amanziS, c_amanziS[j] = GetXY_AmanziS_1D(path_to_amanzi,root_amanziS,compS)
+           x_amanziS, c_amanziS[j] = GetXY_AmanziS_1D(path_to_amanzi,root_amanziS,compS,1)
            compS = "{0}_Sorbed_Concentration".format(comp)
-           x_amanziS, v_amanziS[j] = GetXY_AmanziS_1D(path_to_amanzi,root_amanziS,compS)
+           x_amanziS, v_amanziS[j] = GetXY_AmanziS_1D(path_to_amanzi,root_amanziS,compS,1)
         struct = len(x_amanziS)
     except:
         struct = 0
@@ -204,9 +204,9 @@ if __name__ == "__main__":
                                        path_to_amanzi)
         root_amanziS = "plt00051"
         compS = "A_Aqueous_Concentration"
-        x_amanziS_crunch, c_amanziS_crunch = GetXY_AmanziS_1D(path_to_amanzi,root_amanziS,compS)
+        x_amanziS_crunch, c_amanziS_crunch = GetXY_AmanziS_1D(path_to_amanzi,root_amanziS,compS,1)
         compS = "A_Sorbed_Concentration"
-        x_amanziS_crunch, v_amanziS_crunch = GetXY_AmanziS_1D(path_to_amanzi,root_amanziS,compS)        
+        x_amanziS_crunch, v_amanziS_crunch = GetXY_AmanziS_1D(path_to_amanzi,root_amanziS,compS,1) 
         struct_c = len(x_amanziS_crunch)
     except:
         struct_c = 0
