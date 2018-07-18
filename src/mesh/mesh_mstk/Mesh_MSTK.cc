@@ -135,7 +135,7 @@ Mesh_MSTK::Mesh_MSTK(const char *filename, const Epetra_MpiComm *incomm_,
     while (DebugWait);
   }
 
-  init_mesh_from_file_(filename);
+  init_mesh_from_file_(filename, partitioner);
 
   int cell_dim = MESH_Num_Regions(mesh) ? 3 : 2;
   
@@ -220,7 +220,7 @@ Mesh_MSTK::Mesh_MSTK(const char *filename, const Epetra_MpiComm *incomm_,
     while (DebugWait);
   }
 
-  init_mesh_from_file_(filename);
+  init_mesh_from_file_(filename, partitioner);
 
   int cell_dim = MESH_Num_Regions(mesh) ? 3 : 2;
   

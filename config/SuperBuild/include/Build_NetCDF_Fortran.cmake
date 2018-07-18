@@ -40,6 +40,11 @@ list(APPEND NetCDF_Fortran_CMAKE_CACHE_ARGS "-DBUILD_SHARED_LIBS:BOOL=${BUILD_SH
 list(APPEND NetCDF_Fortran_CMAKE_CACHE_ARGS "-DENABLE_TESTS:BOOL=FALSE")
 list(APPEND NetCDF_Fortran_CMAKE_CACHE_ARGS "-DNETCDF_C_LIBRARY:PATH=${NetCDF_C_LIBRARY}")
 
+# shared/static libraries
+if (BUILD_STATIC_LIBS)
+  list(APPEND NetCDF_Fortran_CMAKE_CACHE_ARGS "-DCMAKE_EXE_LINKER_FLAGS:STRING=-ldl")
+endif()
+
 # --- Add external project build 
 ExternalProject_Add(${NetCDF_Fortran_BUILD_TARGET}
                     DEPENDS ${NetCDF_Fortran_PACKAGE_DEPENDS} # Package dependency target
