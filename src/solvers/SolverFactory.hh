@@ -16,9 +16,9 @@ the \"solver type\" parameter and a sublist containing parameters for that
 solver.
 
 * `"solver type`" ``[string]`` Type of the solver, one of the below.
+* `"_solver_type_ parameters`" ``[_solver_type_-spec]`` A sublist containing
+  parameters specific to the type.
 
-* `"X parameters`" ``[X-spec]`` A sublist, where X is the `"solver type`"
-  above.  Pa rameters in this list are specific to the solver types below.
 */
 
 #ifndef AMANZI_SOLVER_FACTORY_HH_

@@ -56,6 +56,7 @@ class Op_Cell_Cell : public Op {
   virtual void Rescale(const CompositeVector& scaling) {
     if (scaling.HasComponent("cell")) {
       const Epetra_MultiVector& s_c = *scaling.ViewComponent("cell", false);
+      AMANZI_ASSERT(s_c.MyLength() == diag->MyLength());
       for (int k = 0; k != s_c.NumVectors(); ++k) {
         for (int i = 0; i != s_c.MyLength(); ++i) {
           (*diag)[k][i] *= s_c[0][i];

@@ -1,23 +1,75 @@
-/* -------------------------------------------------------------------------
-  State
-
-  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+/* -*-  mode: c++; indent-tabs-mode: nil -*- */
+/*
   Amanzi is released under the three-clause BSD License. 
   The terms of use and "as is" disclaimer for this license are 
   provided in the top-level COPYRIGHT file.
-  See $ATS_DIR/COPYRIGHT
 
-  Author: Ethan Coon
+  Author: Ethan Coon (ecoon@lanl.gov)
+*/
 
-  Interface for the State.  State is a simple data-manager, allowing PKs to
-  require, read, and write various fields, including:
-    -- Acts as a factory for fields through the various require methods.
-    -- Provides some data protection by providing both const and non-const
-       data pointers to PKs.
-    -- Provides some initialization capability -- this is where all
-       independent variables can be initialized (as independent variables
-       are owned by state, not by any PK).
-------------------------------------------------------------------------- */
+//! State, a container for data.
+/*!
+
+State  is a  simple data-manager,  allowing PKs  to require,  read, and  write
+various fields.
+
+- Acts as a factory for data through the various require methods.
+- Provides some data protection by providing both const and non-const
+  data pointers to PKs.
+- Provides some initialization capability -- this is where all
+  independent variables can be initialized (as independent variables
+  are owned by state, not by any PK).
+
+
+``[state-spec]``
+
+* `"field evaluators`" ``[evaluator-typedinline-spec-list]`` A list of evaluators.
+* `"initial conditions`" ``[list]`` A list of constants --
+    `"initial conditions`" is a terrible name and will go away in the next
+    iteration of state.
+
+``[evaluator-typedinline-spec]``
+
+* `"field evaluator type`" ``[string]`` Type of the evaluator
+    
+Included for convenience in defining data that is not in the dependency graph,
+constants are things (like gravity, or atmospheric pressure) which are stored
+in state but never change.  Typically they're limited to scalars and dense,
+local vectors.
+
+``[constants-spec]``
+
+* `"value`" ``[double]`` Value of a scalar constant
+
+or
+
+``[vector-spec]``
+
+* `"value`" ``[Array(double)]`` Value of a dense, local vector.
+
+Example:
+
+.. code-block:: xml
+
+    <ParameterList name="state">
+      <ParameterList name="field evaluators">
+        <ParameterList name="pressure">
+          <Parameter name="field evaluator type" type="string" value="primary variable field evaluator" />
+        </ParameterList>
+      </ParameterList>
+
+      <ParameterList name="initial conditions">
+        <ParameterList name="atmospheric pressure">
+          <Parameter name="value" type="double" value="101325.0" />
+        </ParameterList>
+        <ParameterList name="gravity">
+          <Parameter name="value" type="Array(double)" value="{0.0,0.0,-9.80665}" />
+        </ParameterList>
+      </ParameterList>
+    </ParameterList>
+
+    
+*/
 
 #ifndef STATE_STATE_HH_
 #define STATE_STATE_HH_

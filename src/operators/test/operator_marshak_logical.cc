@@ -26,7 +26,7 @@
 #include "UnitTest++.h"
 
 // Amanzi
-#include "LinearOperatorFactory.hh"
+#include "LinearOperatorGMRES.hh"
 #include "MeshLogicalFactory.hh"
 #include "MeshLogical.hh"
 #include "Tensor.hh"
@@ -58,7 +58,7 @@ void RunTestMarshakLogical(std::string op_list_name) {
   ParameterList plist = xmlreader.getParameters();
 
   // create a logical mesh
-  ParameterList region_list = plist.get<Teuchos::ParameterList>("regions");
+  ParameterList region_list = plist.sublist("regions");
   Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(3, region_list, &comm));
 
   MeshLogicalFactory fac(&comm, gm);
@@ -172,19 +172,21 @@ void RunTestMarshakLogical(std::string op_list_name) {
     op_acc.AddAccumulationDelta(solution, heat_capacity, heat_capacity, dT, "cell");
 
     // apply BCs and assemble
-    op.ApplyBCs(true, true);
+    op.ApplyBCs(true, true, true);
     global_op->SymbolicAssembleMatrix();
     global_op->AssembleMatrix();
 
     // create preconditoner
-    ParameterList slist = plist.get<Teuchos::ParameterList>("preconditioners");
-    global_op->InitPreconditioner("Hypre AMG", slist);
+    ParameterList slist = plist.sublist("preconditioners").sublist("Hypre AMG");
+    global_op->InitializePreconditioner(slist);
+    global_op->UpdatePreconditioner();
 
     // solve the problem
-    ParameterList lop_list = plist.get<Teuchos::ParameterList>("solvers");
-    AmanziSolvers::LinearOperatorFactory<Operator, CompositeVector, CompositeVectorSpace> factory;
-    Teuchos::RCP<AmanziSolvers::LinearOperator<Operator, CompositeVector, CompositeVectorSpace> >
-       solver = factory.Create("Amanzi GMRES", lop_list, global_op);
+    ParameterList lop_list = plist.sublist("solvers")
+                                  .sublist("Amanzi GMRES").sublist("gmres parameters");
+    auto solver = Teuchos::rcp(new AmanziSolvers::LinearOperatorGMRES<
+        Operator, CompositeVector, CompositeVectorSpace>(global_op, global_op));
+    solver->Init(lop_list);
 
     Epetra_MultiVector& sol_new = *solution.ViewComponent("cell");
     Epetra_MultiVector sol_old(sol_new);

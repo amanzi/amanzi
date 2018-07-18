@@ -121,6 +121,7 @@ int AddSuperVectorToCompositeVector(const SuperMap& smap, const Epetra_Vector& s
 
 
 /* ******************************************************************
+*                        DEPRECATED
 * Copy super vector to composite vector: complex schema version.
 ****************************************************************** */
 int CopyCompositeVectorToSuperVector(const SuperMap& smap, const CompositeVector& cv,
@@ -141,6 +142,7 @@ int CopyCompositeVectorToSuperVector(const SuperMap& smap, const CompositeVector
 
 
 /* ******************************************************************
+*                        DEPRECATED
 * Copy super vector to composite vector: complex schema version
 ****************************************************************** */
 int CopySuperVectorToCompositeVector(const SuperMap& smap, const Epetra_Vector& sv,
@@ -166,15 +168,15 @@ int CopySuperVectorToCompositeVector(const SuperMap& smap, const Epetra_Vector& 
 int CopyTreeVectorToSuperVector(const SuperMap& map, const TreeVector& tv,
                                 Epetra_Vector& sv)
 {
-  ASSERT(tv.Data() == Teuchos::null);
+  AMANZI_ASSERT(tv.Data() == Teuchos::null);
   int ierr(0);
   int my_dof = 0;
   for (TreeVector::const_iterator it = tv.begin(); it != tv.end(); ++it) {
-    ASSERT((*it)->Data() != Teuchos::null);
+    AMANZI_ASSERT((*it)->Data() != Teuchos::null);
     ierr |= CopyCompositeVectorToSuperVector(map, *(*it)->Data(), sv, my_dof);
     my_dof++;            
   }
-  ASSERT(!ierr);
+  AMANZI_ASSERT(!ierr);
   return ierr;
 }
 
@@ -182,15 +184,15 @@ int CopyTreeVectorToSuperVector(const SuperMap& map, const TreeVector& tv,
 int CopySuperVectorToTreeVector(const SuperMap& map,const Epetra_Vector& sv,
                                 TreeVector& tv)
 {
-  ASSERT(tv.Data() == Teuchos::null);
+  AMANZI_ASSERT(tv.Data() == Teuchos::null);
   int ierr(0);
   int my_dof = 0;
   for (TreeVector::iterator it = tv.begin(); it != tv.end(); ++it) {
-    ASSERT((*it)->Data() != Teuchos::null);
+    AMANZI_ASSERT((*it)->Data() != Teuchos::null);
     ierr |= CopySuperVectorToCompositeVector(map, sv, *(*it)->Data(), my_dof);
     my_dof++;            
   }
-  ASSERT(!ierr);
+  AMANZI_ASSERT(!ierr);
   return ierr;
 }
 
@@ -201,16 +203,16 @@ int CopySuperVectorToTreeVector(const SuperMap& map,const Epetra_Vector& sv,
 int AddSuperVectorToTreeVector(const SuperMap& map,const Epetra_Vector& sv,
                                TreeVector& tv)
 {
-  ASSERT(tv.Data() == Teuchos::null);
+  AMANZI_ASSERT(tv.Data() == Teuchos::null);
   int ierr(0);
   int my_dof = 0;
   for (TreeVector::iterator it = tv.begin();
        it != tv.end(); ++it) {
-    ASSERT((*it)->Data() != Teuchos::null);
+    AMANZI_ASSERT((*it)->Data() != Teuchos::null);
     ierr |= AddSuperVectorToCompositeVector(map, sv, *(*it)->Data(), my_dof);
     my_dof++;            
   }
-  ASSERT(!ierr);
+  AMANZI_ASSERT(!ierr);
   return ierr;
 }
 
@@ -226,7 +228,7 @@ Teuchos::RCP<SuperMap> CreateSuperMap(const CompositeVectorSpace& cvs, int schem
   std::vector<Teuchos::RCP<const Epetra_Map> > ghost_maps;
 
   if (schema & OPERATOR_SCHEMA_DOFS_FACE) {
-    ASSERT(cvs.HasComponent("face"));
+    AMANZI_ASSERT(cvs.HasComponent("face"));
     compnames.push_back("face");
     dofnums.push_back(n_dofs);
     std::pair<Teuchos::RCP<const Epetra_Map>, Teuchos::RCP<const Epetra_Map> > meshmaps =
@@ -236,7 +238,7 @@ Teuchos::RCP<SuperMap> CreateSuperMap(const CompositeVectorSpace& cvs, int schem
   }
 
   if (schema & OPERATOR_SCHEMA_DOFS_CELL) {
-    ASSERT(cvs.HasComponent("cell"));
+    AMANZI_ASSERT(cvs.HasComponent("cell"));
     compnames.push_back("cell");
     dofnums.push_back(n_dofs);
     std::pair<Teuchos::RCP<const Epetra_Map>, Teuchos::RCP<const Epetra_Map> > meshmaps =
@@ -246,7 +248,7 @@ Teuchos::RCP<SuperMap> CreateSuperMap(const CompositeVectorSpace& cvs, int schem
   }
 
   if (schema & OPERATOR_SCHEMA_DOFS_EDGE) {
-    ASSERT(cvs.HasComponent("edge"));
+    AMANZI_ASSERT(cvs.HasComponent("edge"));
     compnames.push_back("edge");
     dofnums.push_back(n_dofs);
     std::pair<Teuchos::RCP<const Epetra_Map>, Teuchos::RCP<const Epetra_Map> > meshmaps =
@@ -256,7 +258,7 @@ Teuchos::RCP<SuperMap> CreateSuperMap(const CompositeVectorSpace& cvs, int schem
   }
 
   if (schema & OPERATOR_SCHEMA_DOFS_NODE) {
-    ASSERT(cvs.HasComponent("node"));
+    AMANZI_ASSERT(cvs.HasComponent("node"));
     compnames.push_back("node");
     dofnums.push_back(n_dofs);
     std::pair<Teuchos::RCP<const Epetra_Map>, Teuchos::RCP<const Epetra_Map> > meshmaps =

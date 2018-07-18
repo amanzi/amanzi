@@ -39,7 +39,7 @@ Explicitly specifying the data:
 
 * `"x values`" ``[Array(double)]`` the :math:`x_i`
 * `"y values`" ``[Array(double)]`` the :math:`y_i`
-* `"forms`" ``[Array(string)]`` **linear**, `"constant`", `"USER_DEFINED`"
+* `"forms`" ``[Array(string)]`` **{linear,...}** Form of the interpolant, either `"constant`", `"linear`", or `"USER_DEFINED`"
 * `"USER_DEFINED`" ``[function-spec]`` user-provided functional forms on the interval
 * `"x coordinate`" ``[string]`` **t**, `"x`", `"y`", `"z`" defines which coordinate direction the :math:`x_i` are formed, defaulting to time.
 
@@ -72,7 +72,7 @@ Loading table from file (note that `"USER_DEFINED`" is not an option here, but c
 * `"file`" ``[string]`` filename of the HDF5 data
 * `"x header`" ``[string]`` name of the dataset for the :math:`x_i` in the file
 * `"y header`" ``[string]`` name of the dataset for the :math:`y_i` in the file
-* `"forms`" ``[Array(string)]`` **linear**, `"constant`"
+* `"forms`" ``[Array(string)]`` **{linear,...}**, Form of the interpolant, either `"constant`", `"linear`", or `"USER_DEFINED`".
 
 The example below would perform linear-interpolation on the intervals provided by data within the hdf5 file `"my_data.h5`".
 

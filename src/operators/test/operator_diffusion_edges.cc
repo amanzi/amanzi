@@ -56,7 +56,7 @@ TEST(OPERATOR_DIFFUSION_EDGES) {
   ParameterList plist = xmlreader.getParameters();
 
   // create an SIMPLE mesh framework
-  ParameterList region_list = plist.get<Teuchos::ParameterList>("regions");
+  ParameterList region_list = plist.sublist("regions");
   Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(2, region_list, &comm));
 
   MeshFactory meshfactory(&comm);
@@ -73,7 +73,7 @@ TEST(OPERATOR_DIFFUSION_EDGES) {
 
   for (int c = 0; c < ncells; c++) {
     const Point& xc = mesh->cell_centroid(c);
-    const WhetStone::Tensor& Kc = ana.Tensor(xc, 0.0);
+    const WhetStone::Tensor& Kc = ana.TensorDiffusivity(xc, 0.0);
     K->push_back(Kc);
   }
 
@@ -92,7 +92,7 @@ TEST(OPERATOR_DIFFUSION_EDGES) {
   }
 
   // create diffusion operator 
-  ParameterList op_list = plist.get<Teuchos::ParameterList>("PK operator").sublist("diffusion operator edge");
+  ParameterList op_list = plist.sublist("PK operator").sublist("diffusion operator edge");
   Teuchos::RCP<PDE_Diffusion> op = Teuchos::rcp(new PDE_DiffusionMFD(op_list, mesh));
   op->SetBCs(bc, bc);
   const CompositeVectorSpace& cvs = op->global_operator()->DomainMap();
@@ -126,13 +126,14 @@ TEST(OPERATOR_DIFFUSION_EDGES) {
   global_op->UpdateRHS(source, true);
 
   // apply BCs (primary=true, eliminate=true) and assemble
-  op->ApplyBCs(true, true);
+  op->ApplyBCs(true, true, true);
   global_op->SymbolicAssembleMatrix();
   global_op->AssembleMatrix();
 
   // create preconditoner using the base operator class
-  ParameterList slist = plist.get<Teuchos::ParameterList>("preconditioners");
-  global_op->InitPreconditioner("Hypre AMG", slist);
+  ParameterList slist = plist.sublist("preconditioners").sublist("Hypre AMG");
+  global_op->InitializePreconditioner(slist);
+  global_op->UpdatePreconditioner();
 
   // Test SPD properties of the preconditioner.
   CompositeVector a(cvs), ha(cvs), b(cvs), hb(cvs);

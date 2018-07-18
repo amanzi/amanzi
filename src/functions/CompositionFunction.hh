@@ -18,7 +18,11 @@ Function composition simply applies one function to the result of another.
   f(x) = f_1( f_2(x) )
 
 where :math:`f_1` is defined by the `"function1`" sublist, and 
-:math:`f_2` by the `"function2`" sublist:
+:math:`f_2` by the `"function2`" sublist.
+
+* `"function1`" ``[function-spec]`` f_1 in f(x) = f_1(f_2(x))
+* `"function2`" ``[function-spec]`` f_2 in f(x) = f_1(f_2(x))
+
 
 .. code-block:: xml
 

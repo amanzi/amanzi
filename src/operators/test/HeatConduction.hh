@@ -49,7 +49,7 @@ class HeatConduction {
 
     for (int c = 0; c < ncells; c++) {
       const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
-      const WhetStone::Tensor& Kc = ana_.Tensor(xc, 0.0);
+      const WhetStone::Tensor& Kc = ana_.TensorDiffusivity(xc, 0.0);
       vcell[0][c] = Kc(0, 0);
     }
 
@@ -61,7 +61,7 @@ class HeatConduction {
       if (bc_model[f] == Operators::OPERATOR_BC_DIRICHLET) {
         AmanziMesh::Entity_ID_List cells;
         mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
-        ASSERT(cells.size() == 1);
+        AMANZI_ASSERT(cells.size() == 1);
         int bf = ext_face_map.LID(face_map.GID(f));
         vbf[0][bf] = Conduction(cells[0], bc_value[f]);
       }
@@ -173,7 +173,7 @@ class HeatConduction {
 
   double Conduction(int c, double T) const {
     const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
-    const WhetStone::Tensor& Kc = ana_.Tensor(xc, 0.0);
+    const WhetStone::Tensor& Kc = ana_.TensorDiffusivity(xc, 0.0);
     return Kc(0, 0);
   }
 

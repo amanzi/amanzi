@@ -35,7 +35,7 @@ Teuchos::RCP<MultiscaleTransportPorosityPartition> CreateMultiscaleTransportPoro
       regions.push_back(sublist.get<Teuchos::Array<std::string> >("regions").toVector());
       msp.push_back(factory.Create(sublist));
     } else {
-      ASSERT(0);
+      AMANZI_ASSERT(0);
     }
   }
 

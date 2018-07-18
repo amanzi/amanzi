@@ -27,10 +27,10 @@
 #include "MFD3D_CrouzeixRaviart.hh"
 #include "MFD3D_Diffusion.hh"
 #include "MFD3D_Lagrange.hh"
+#include "MFD3D_LagrangeSerendipity.hh"
 #include "NumericalIntegration.hh"
 #include "Tensor.hh"
 #include "Polynomial.hh"
-#include "Projector.hh"
 
 
 /* **************************************************************** */
@@ -39,19 +39,20 @@ TEST(HARMONIC_PROJECTORS_SQUARE_CR) {
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::WhetStone;
 
-  std::cout << "\nTest: HO nonconforming projectors for square (linear deformation)" << std::endl;
+  std::cout << "\nTest: Crouziex-Raviart harmonic projectors for square" << std::endl;
   Epetra_MpiComm *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
 
   MeshFactory meshfactory(comm);
   meshfactory.preference(FrameworkPreference({MSTK}));
   Teuchos::RCP<const Amanzi::AmanziGeometry::GeometricModel> gm;
-  Teuchos::RCP<Mesh> mesh = meshfactory(0.0, 0.0, 1.2, 1.1, 1, 1, gm, true, true); 
+  Teuchos::RCP<Mesh> mesh = meshfactory(-1.2, 0.0, 1.2, 1.1, 2, 1, gm, true, true); 
  
-  int cell(0);
+  int cell(1);
   VectorPolynomial uc;
   std::vector<VectorPolynomial> vf(4);
 
   // test zero cell deformation
+  std::cout << "      subtest: LINEAR deformation" << std::endl;
   for (int n = 0; n < 4; ++n) {
     vf[n].resize(2);
     for (int i = 0; i < 2; ++i) {
@@ -59,10 +60,11 @@ TEST(HARMONIC_PROJECTORS_SQUARE_CR) {
     }
   }
 
-  Projector projector(mesh);
+  MFD3D_CrouzeixRaviart mfd(mesh);
   auto moments = std::make_shared<WhetStone::DenseVector>();
 
-  projector.HarmonicCell_CRk(cell, 2, vf, moments, uc);
+  mfd.set_order(2);
+  mfd.H1CellHarmonic(cell, vf, moments, uc);
 
   CHECK(uc[0].NormMax() < 1e-12 && uc[1].NormMax() < 1e-12);
 
@@ -75,7 +77,8 @@ TEST(HARMONIC_PROJECTORS_SQUARE_CR) {
     }
   }
   
-  projector.HarmonicCell_CR1(cell, vf, uc);
+  mfd.set_order(1);
+  mfd.H1CellHarmonic(cell, vf, moments, uc);
   std::cout << uc[0] << std::endl;
 
   uc[0] -= vf[0][0];
@@ -83,16 +86,17 @@ TEST(HARMONIC_PROJECTORS_SQUARE_CR) {
   CHECK(uc[0].NormMax() < 1e-12 && uc[1].NormMax() < 1e-12);
 
   for (int k = 2; k < 4; ++k) {
-    projector.HarmonicCell_CRk(cell, k, vf, moments, uc);
+    mfd.set_order(k);
+    mfd.H1CellHarmonic(cell, vf, moments, uc);
     std::cout << uc[1] << std::endl;
 
     uc[0] -= vf[0][0];
     uc[1] -= vf[0][1];
-    CHECK(uc[0].NormMax() < 1e-12 && uc[1].NormMax() < 1e-12);
+    CHECK(uc[0].NormMax() < 1e-11 && uc[1].NormMax() < 1e-11);
   }
 
   // test re-location of the right-top corner to (2,3)
-  std::cout << "Test: HO nonconforming projectors for square (bilinear deformation)" << std::endl;
+  std::cout << "      subtest: BILINEAR deformation" << std::endl;
   for (int n = 0; n < 4; ++n) vf[n].PutScalar(0.0);
   vf[1][0](1, 1) = 0.8 / 1.1; 
   vf[1][1](1, 1) = 1.9 / 1.1; 
@@ -100,7 +104,8 @@ TEST(HARMONIC_PROJECTORS_SQUARE_CR) {
   vf[2][0](1, 0) = 0.8 / 1.2; 
   vf[2][1](1, 0) = 1.9 / 1.2; 
 
-  projector.HarmonicCell_CRk(cell, 2, vf, moments, uc);
+  mfd.set_order(2);
+  mfd.H1CellHarmonic(cell, vf, moments, uc);
 
   std::cout << uc[0] << std::endl;
   std::cout << uc[1] << std::endl;
@@ -109,16 +114,18 @@ TEST(HARMONIC_PROJECTORS_SQUARE_CR) {
         fabs(uc[1].Value(p) - 1.9) < 1e-12);
 
   // add additive constant deformation 
-  std::cout << "Test: HO nonconforming projectors for square (2nd bilinear deformation)" << std::endl;
+  std::cout << "      subtest: 2nd BILINEAR deformation" << std::endl;
   for (int n = 0; n < 4; ++n) vf[n][0](0, 0) = 1.0;
-  projector.HarmonicCell_CRk(cell, 2, vf, moments, uc);
+  mfd.set_order(2);
+  mfd.H1CellHarmonic(cell, vf, moments, uc);
   std::cout << uc[0] << std::endl;
 
-  projector.HarmonicCell_CRk(cell, 3, vf, moments, uc);
+  mfd.set_order(3);
+  mfd.H1CellHarmonic(cell, vf, moments, uc);
   std::cout << uc[0] << std::endl;
 
   // test harmonic functions (is it always true for square?)
-  std::cout << "\nTest: HO nonconforming projectors for square (harmonic function)" << std::endl;
+  std::cout << "      subtest: harmonic function" << std::endl;
   for (int n = 0; n < 4; ++n) {
     for (int i = 0; i < 2; ++i) {
       vf[n][i].Reshape(2, 2, false);
@@ -127,7 +134,8 @@ TEST(HARMONIC_PROJECTORS_SQUARE_CR) {
       vf[n][i](2, 2) = 6.0;
     }
   }
-  projector.HarmonicCell_CRk(cell, 2, vf, moments, uc);
+  mfd.set_order(2);
+  mfd.H1CellHarmonic(cell, vf, moments, uc);
   std::cout << uc[0] << std::endl;
 
   CHECK(fabs(uc[0](2, 0) + uc[0](2, 2)) < 1e-12 &&
@@ -143,7 +151,7 @@ TEST(HARMONIC_PROJECTORS_POLYGON_CR) {
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::WhetStone;
 
-  std::cout << "\nTest: HO nonconforming projectors for pentagon (linear deformation)" << std::endl;
+  std::cout << "\nTest: Crouzeix-Raviart harmonic projector for pentagon" << std::endl;
   Epetra_MpiComm *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
 
   MeshFactory meshfactory(comm);
@@ -157,6 +165,7 @@ TEST(HARMONIC_PROJECTORS_POLYGON_CR) {
   std::vector<VectorPolynomial> vf(nfaces);
 
   // test linear deformation
+  std::cout << "    subtest: LINEAR deformation" << std::endl;
   for (int n = 0; n < nfaces; ++n) {
     vf[n].resize(2);
     for (int i = 0; i < 2; ++i) {
@@ -167,11 +176,12 @@ TEST(HARMONIC_PROJECTORS_POLYGON_CR) {
     }
   }
   
-  // -- old scheme
-  Projector projector(mesh);
+  MFD3D_CrouzeixRaviart mfd(mesh);
   auto moments = std::make_shared<WhetStone::DenseVector>();
 
-  projector.HarmonicCell_CR1(cell, vf, uc);
+  // -- old scheme
+  mfd.set_order(1);
+  mfd.H1CellHarmonic(cell, vf, moments, uc);
   std::cout << uc[0] << std::endl;
 
   uc[0] -= vf[0][0];
@@ -179,8 +189,10 @@ TEST(HARMONIC_PROJECTORS_POLYGON_CR) {
   CHECK(uc[0].NormMax() < 1e-12 && uc[1].NormMax() < 1e-12);
 
   // -- new scheme (k=1)
+  mfd.set_use_always_ho(true);
   for (int k = 1; k < 4; ++k) {
-    projector.HarmonicCell_CRk(cell, k, vf, moments, uc);
+    mfd.set_order(k);
+    mfd.H1CellHarmonic(cell, vf, moments, uc);
     std::cout << uc[0] << std::endl;
 
     uc[0] -= vf[0][0];
@@ -189,7 +201,7 @@ TEST(HARMONIC_PROJECTORS_POLYGON_CR) {
   }
 
   // test quadratic deformation
-  std::cout << "\nTest: HO nonconforming for pentagon (quadratic deformation)" << std::endl;
+  std::cout << "    subtest: QUADRATIC deformation" << std::endl;
   for (int n = 0; n < nfaces; ++n) {
     for (int i = 0; i < 2; ++i) {
       vf[n][i].Reshape(2, 2, false);
@@ -200,7 +212,8 @@ TEST(HARMONIC_PROJECTORS_POLYGON_CR) {
   }
 
   for (int k = 2; k < 4; ++k) {
-    projector.HarmonicCell_CRk(cell, k, vf, moments, uc);
+    mfd.set_order(k);
+    mfd.H1CellHarmonic(cell, vf, moments, uc);
     std::cout << uc[0] << std::endl;
     uc[0] -= vf[0][0];
     uc[1] -= vf[0][1];
@@ -208,7 +221,7 @@ TEST(HARMONIC_PROJECTORS_POLYGON_CR) {
   }
 
   // test cubic deformation
-  std::cout << "\nTest: HO nonconforming projectors for pentagon (cubic deformation)" << std::endl;
+  std::cout << "    subtest: CUBIC deformation" << std::endl;
   for (int n = 0; n < nfaces; ++n) {
     for (int i = 0; i < 2; ++i) {
       vf[n][i].Reshape(2, 3, false);
@@ -220,7 +233,8 @@ TEST(HARMONIC_PROJECTORS_POLYGON_CR) {
   }
 
   for (int k = 3; k < 4; ++k) {
-    projector.HarmonicCell_CRk(cell, k, vf, moments, uc);
+    mfd.set_order(k);
+    mfd.H1CellHarmonic(cell, vf, moments, uc);
     std::cout << vf[0][0] << std::endl;
     std::cout << uc[0] << std::endl;
     uc[0] -= vf[0][0];
@@ -229,7 +243,7 @@ TEST(HARMONIC_PROJECTORS_POLYGON_CR) {
   }
 
   // test trace compatibility between function and its projecton (k < 3 only!)
-  std::cout << "\nTest: HO non-conforming projectors for pentagon (harmonic function)" << std::endl;
+  std::cout << "    subtest: trace compatibility" << std::endl;
   for (int n = 0; n < nfaces; ++n) {
     for (int i = 0; i < 2; ++i) {
       vf[n][i].Reshape(2, 2, false);
@@ -238,12 +252,13 @@ TEST(HARMONIC_PROJECTORS_POLYGON_CR) {
       vf[n][i](2, 2) = 6.0;
     }
   }
-  projector.HarmonicCell_CRk(cell, 2, vf, moments, uc);
+  mfd.set_order(2);
+  mfd.H1CellHarmonic(cell, vf, moments, uc);
   std::cout << uc[0] << std::endl;
 
   int dir;
   double val1(0.0), valx(0.0);
-  NumericalIntegration numi(mesh);
+  NumericalIntegration numi(mesh, true);
 
   for (int n = 0; n < nfaces; ++n) {
     const AmanziGeometry::Point& normal = mesh->face_normal(n, false, cell, &dir);
@@ -266,7 +281,7 @@ TEST(HARMONIC_PROJECTORS_POLYGON_CR) {
   CHECK_CLOSE(valx, 0.0, 1e-12);
 
   // preservation of moments (reusing previous boundary functions)
-  std::cout << "\nTest: HO nonconforming projectors for pentagon (verify moments)" << std::endl;
+  std::cout << "    subtest: verify calculated moments" << std::endl;
   for (int k = 2; k < 4; ++k) {
     Polynomial vc(2, k - 2);
     int nk = vc.size();
@@ -276,7 +291,8 @@ TEST(HARMONIC_PROJECTORS_POLYGON_CR) {
       (*moments)(i) = 1.0 + i;
     }
 
-    projector.H1Cell_CRk(cell, k, vf, moments, uc);
+    mfd.set_order(k);
+    mfd.H1Cell(cell, vf, moments, uc);
 
     for (auto it = vc.begin(); it.end() <= vc.end(); ++it) {
       Polynomial mono(2, it.multi_index(), 1.0);
@@ -298,6 +314,109 @@ TEST(HARMONIC_PROJECTORS_POLYGON_CR) {
 
 
 /* **************************************************************** */
+TEST(L2_PROJECTORS_SQUARE_CR) {
+  using namespace Amanzi;
+  using namespace Amanzi::AmanziMesh;
+  using namespace Amanzi::WhetStone;
+
+  std::cout << "\nTest: Crouzeix-Raviart L2 projector for square" << std::endl;
+  Epetra_MpiComm *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
+
+  MeshFactory meshfactory(comm);
+  meshfactory.preference(FrameworkPreference({MSTK}));
+  Teuchos::RCP<const Amanzi::AmanziGeometry::GeometricModel> gm;
+  Teuchos::RCP<Mesh> mesh = meshfactory(0.0, 0.0, 2.0, 4.0, 1, 2, gm, true, true); 
+ 
+  int cell(1);
+  VectorPolynomial uc;
+  std::vector<VectorPolynomial> vf(4);
+
+  // test quartic deformation
+  std::cout << "    subtest: QUARTIC deformation" << std::endl;
+  for (int n = 0; n < 4; ++n) {
+    vf[n].resize(2);
+    for (int i = 0; i < 2; ++i) {
+      vf[n][i].Reshape(2, 4, true);
+      vf[n][i].set_origin(mesh->cell_centroid(cell));
+      vf[n][i](4, 1) = 1.0;
+      vf[n][i].ChangeOrigin(AmanziGeometry::Point(0.0, 0.0));
+    }
+  }
+
+  MFD3D_CrouzeixRaviart mfd(mesh);
+  auto moments = std::make_shared<WhetStone::DenseVector>(6);
+  moments->PutScalar(0.0);
+  (*moments)(4) = 1.0 / 60;
+
+  mfd.set_order(4);
+  mfd.H1Cell(cell, vf, moments, uc);
+  std::cout << uc[0] << std::endl;
+
+  uc[0] -= vf[0][0];
+  CHECK(uc[0].NormMax() < 1e-12);
+
+  delete comm;
+}
+
+
+/* **************************************************************** */
+TEST(L2GRADIENT_PROJECTORS_SQUARE_CR) {
+  using namespace Amanzi;
+  using namespace Amanzi::AmanziMesh;
+  using namespace Amanzi::WhetStone;
+
+  std::cout << "\nTest: Crouzeix-Raviart L2 projector of gradient for square" << std::endl;
+  Epetra_MpiComm *comm = new Epetra_MpiComm(MPI_COMM_WORLD);
+
+  MeshFactory meshfactory(comm);
+  meshfactory.preference(FrameworkPreference({MSTK}));
+  Teuchos::RCP<const Amanzi::AmanziGeometry::GeometricModel> gm;
+  Teuchos::RCP<Mesh> mesh = meshfactory(0.0, 0.0, 4.0, 2.0, 2, 1, gm, true, true); 
+ 
+  int cell(1);
+  MatrixPolynomial uc;
+  std::vector<VectorPolynomial> vf(4);
+
+  // test quadratic deformation
+  std::cout << "    subtest: CUBIC deformation, exact moments" << std::endl;
+  for (int n = 0; n < 4; ++n) {
+    vf[n].resize(1);
+    vf[n][0].Reshape(2, 3, true);
+    vf[n][0].set_origin(mesh->cell_centroid(cell));
+    vf[n][0](3, 1) = 3.0;
+    vf[n][0](3, 3) =-1.0;
+    vf[n][0].ChangeOrigin(AmanziGeometry::Point(0.0, 0.0));
+  }
+  VectorPolynomial grad;
+  grad.Gradient(vf[0][0]);
+
+  MFD3D_CrouzeixRaviart mfd(mesh);
+  auto moments = std::make_shared<WhetStone::DenseVector>(3);
+  moments->PutScalar(0.0);
+  (*moments)(2) = 1.0 / 15;
+
+  mfd.set_order(3);
+  mfd.L2GradientCell(cell, vf, moments, uc);
+  std::cout << uc[0][0] << std::endl;
+  std::cout << uc[0][1] << std::endl;
+
+  uc[0][0] -= grad[0];
+  uc[0][1] -= grad[1];
+  std::cout << grad[0] << std::endl;
+  std::cout << grad[1] << std::endl;
+  CHECK(uc[0][0].NormMax() < 1e-12 && uc[0][1].NormMax() < 1e-12);
+
+  std::cout << "    subtest: CUBIC deformation, computed moments" << std::endl;
+  mfd.L2GradientCellHarmonic(cell, vf, moments, uc);
+  std::cout << "    moments: " << *moments << std::endl;
+
+  CHECK_CLOSE(1.0 / 15, (*moments)(2), 1e-12);
+
+  delete comm;
+}
+
+
+/* **************************************************************** */
 TEST(HARMONIC_PROJECTORS_SQUARE_PK) {
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
@@ -309,9 +428,9 @@ TEST(HARMONIC_PROJECTORS_SQUARE_PK) {
   MeshFactory meshfactory(comm);
   meshfactory.preference(FrameworkPreference({MSTK}));
   Teuchos::RCP<const Amanzi::AmanziGeometry::GeometricModel> gm;
-  Teuchos::RCP<Mesh> mesh = meshfactory(0.0, 0.0, 1.2, 1.1, 1, 1, gm, true, true); 
+  Teuchos::RCP<Mesh> mesh = meshfactory(-1.2, 0.0, 1.2, 1.1, 2, 1, gm, true, true); 
  
-  int cell(0);
+  int cell(1);
   VectorPolynomial uc, uc2;
   std::vector<VectorPolynomial> vf(4);
 
@@ -323,7 +442,8 @@ TEST(HARMONIC_PROJECTORS_SQUARE_PK) {
     }
   }
 
-  Projector projector(mesh);
+  MFD3D_Lagrange mfd(mesh);
+  MFD3D_CrouzeixRaviart mfd_cr(mesh);
   auto moments = std::make_shared<WhetStone::DenseVector>();
 
   // test linear deformation
@@ -336,7 +456,8 @@ TEST(HARMONIC_PROJECTORS_SQUARE_PK) {
   }
   
   for (int k = 1; k < 4; ++k) {
-    projector.HarmonicCell_Pk(cell, k, vf, moments, uc);  
+    mfd.set_order(k);
+    mfd.H1CellHarmonic(cell, vf, moments, uc);  
     for (int i = 0; i < 2; ++i) {
       uc[i] -= vf[0][i];
       CHECK(uc[i].NormMax() < 1e-12);
@@ -354,15 +475,18 @@ TEST(HARMONIC_PROJECTORS_SQUARE_PK) {
   vf[2][1](1, 0) = 1.9 / 1.2; 
 
   for (int k = 1; k < 3; ++k) { 
-    projector.HarmonicCell_Pk(cell, k, vf, moments, uc);  
-    projector.HarmonicCell_CRk(cell, k, vf, moments, uc2);
+    mfd.set_order(k);
+    mfd.H1CellHarmonic(cell, vf, moments, uc);  
+
+    mfd_cr.set_order(k);
+    mfd_cr.H1CellHarmonic(cell, vf, moments, uc2);
     for (int i = 0; i < 2; ++i) {
       uc2[i] -= uc[i];
       CHECK(uc2[i].NormMax() < 1e-12);
     }
 
     // Compare H1 and L2 projectors
-    projector.L2HarmonicCell_Pk(cell, k, vf, moments, uc2);
+    mfd.L2CellHarmonic(cell, vf, moments, uc2);
     uc2[0] -= uc[0];
     CHECK(uc2[0].NormMax() < 1e-12);
   }
@@ -373,6 +497,7 @@ TEST(HARMONIC_PROJECTORS_SQUARE_PK) {
 
   delete comm;
 }
+
 
 /* **************************************************************** */
 TEST(HARMONIC_PROJECTORS_POLYGON_PK) {
@@ -393,7 +518,8 @@ TEST(HARMONIC_PROJECTORS_POLYGON_PK) {
   VectorPolynomial uc, uc2;
   std::vector<VectorPolynomial> vf(nfaces);
 
-  Projector projector(mesh);
+  MFD3D_Lagrange mfd(mesh);
+  MFD3D_CrouzeixRaviart mfd_cr(mesh);
   auto moments = std::make_shared<WhetStone::DenseVector>();
 
   // test globally linear deformation
@@ -408,7 +534,8 @@ TEST(HARMONIC_PROJECTORS_POLYGON_PK) {
   }
   
   for (int k = 1; k < 4; ++k) {
-    projector.HarmonicCell_Pk(cell, k, vf, moments, uc);
+    mfd.set_order(k);
+    mfd.H1CellHarmonic(cell, vf, moments, uc);
     std::cout << uc[0] << std::endl;
 
     uc[0] -= vf[0][0];
@@ -428,7 +555,8 @@ TEST(HARMONIC_PROJECTORS_POLYGON_PK) {
   }
 
   for (int k = 2; k < 4; ++k) {
-    projector.HarmonicCell_Pk(cell, k, vf, moments, uc);
+    mfd.set_order(k);
+    mfd.H1CellHarmonic(cell, vf, moments, uc);
     std::cout << uc[0] << std::endl;
     uc[0] -= vf[0][0];
     uc[1] -= vf[0][1];
@@ -445,12 +573,13 @@ TEST(HARMONIC_PROJECTORS_POLYGON_PK) {
       vf[n][i](2, 2) = 6.0;
     }
   }
-  projector.HarmonicCell_Pk(cell, 2, vf, moments, uc);
+  mfd.set_order(2);
+  mfd.H1CellHarmonic(cell, vf, moments, uc);
   std::cout << uc[0] << std::endl;
 
   int dir;
   double val1(0.0), valx(0.0);
-  NumericalIntegration numi(mesh);
+  NumericalIntegration numi(mesh, true);
 
   for (int n = 0; n < nfaces; ++n) {
     const AmanziGeometry::Point& normal = mesh->face_normal(n, false, cell, &dir);
@@ -499,13 +628,16 @@ TEST(HARMONIC_PROJECTORS_POLYGON_PK) {
   }
   
   for (int k = 1; k < 4; ++k) {
-    projector.HarmonicCell_Pk(cell, k, vf, moments, uc);
-    projector.HarmonicCell_CRk(cell, k, vf, moments, uc2);
+    mfd.set_order(k);
+    mfd.H1CellHarmonic(cell, vf, moments, uc);
+
+    mfd_cr.set_order(k);
+    mfd_cr.H1CellHarmonic(cell, vf, moments, uc2);
     uc2 -= uc;
     if (k == 1) CHECK(uc2[0].NormMax() < 1e-12);
     if (k == 2) CHECK(uc2[0].NormMax() > 1e-3 && uc2[0].NormMax() < 2e-3);
 
-    projector.L2HarmonicCell_Pk(cell, k, vf, moments, uc2);
+    mfd.L2CellHarmonic(cell, vf, moments, uc2);
     uc2 -= uc;
     if (k < 3) CHECK(uc2[0].NormMax() < 1e-12);
     if (k > 1) std::cout << "k=" << k << " moments:" << *moments;
@@ -517,11 +649,12 @@ TEST(HARMONIC_PROJECTORS_POLYGON_PK) {
     moments->Reshape(k * (k - 1) / 2);
     moments->PutScalar(1.0);
 
-    projector.H1Cell_Pk(cell, k, vf, moments, uc);
+    mfd.set_order(k);
+    mfd.H1Cell(cell, vf, moments, uc);
     double tmp = numi.IntegratePolynomialCell(cell, uc[0]) / mesh->cell_volume(cell);
     CHECK_CLOSE(1.0, tmp, 1e-12);
 
-    projector.L2Cell_Pk(cell, k, vf, moments, uc);
+    mfd.L2Cell(cell, vf, moments, uc);
     tmp = numi.IntegratePolynomialCell(cell, uc[0]) / mesh->cell_volume(cell);
     CHECK_CLOSE(1.0, tmp, 1e-12);
   }
@@ -547,7 +680,7 @@ TEST(SERENDIPITY_PROJECTORS_POLYGON_PK) {
   VectorPolynomial uc, uc2;
   std::vector<VectorPolynomial> vf(nfaces);
 
-  Projector projector(mesh);
+  MFD3D_LagrangeSerendipity mfd(mesh);
   auto moments = std::make_shared<WhetStone::DenseVector>();
 
   // test globally linear deformation
@@ -562,7 +695,8 @@ TEST(SERENDIPITY_PROJECTORS_POLYGON_PK) {
   }
   
   for (int k = 1; k < 4; ++k) {
-    projector.L2Cell_SerendipityPk(cell, k, vf, moments, uc);
+    mfd.set_order(k);
+    mfd.L2Cell(cell, vf, moments, uc);
     std::cout << uc[0] << std::endl;
 
     uc[0] -= vf[0][0];
@@ -582,7 +716,8 @@ TEST(SERENDIPITY_PROJECTORS_POLYGON_PK) {
   }
 
   for (int k = 2; k < 4; ++k) {
-    projector.L2Cell_SerendipityPk(cell, k, vf, moments, uc);
+    mfd.set_order(k);
+    mfd.L2Cell(cell, vf, moments, uc);
     // std::cout << uc[0] << std::endl;
     uc[0] -= vf[0][0];
     uc[1] -= vf[0][1];
@@ -616,7 +751,8 @@ TEST(SERENDIPITY_PROJECTORS_POLYGON_PK) {
   }
   
   for (int k = 1; k < 4; ++k) {
-    projector.L2Cell_SerendipityPk(cell, k, vf, moments, uc);
+    mfd.set_order(k);
+    mfd.L2Cell(cell, vf, moments, uc);
     uc[0].ChangeOrigin(mesh->cell_centroid(cell));
     std::cout << uc[0] << std::endl;
   }

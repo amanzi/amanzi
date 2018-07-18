@@ -58,25 +58,25 @@ void Data::to_stream (std::ostream& stream, const bool& verbose) const
 
 const Element_block& Data::element_block (int id) const
 {
-  ASSERT (params_->ok_element_block (id));
+  AMANZI_ASSERT (params_->ok_element_block (id));
   return *element_blocks_ [id];
 }
 
 Element_block& Data::element_block (int id)
 {
-  ASSERT (params_->ok_element_block (id));
+  AMANZI_ASSERT (params_->ok_element_block (id));
   return *element_blocks_ [id];
 }
 
 const Side_set& Data::side_set (int id) const
 {
-  ASSERT (params_->ok_side_set (id));
+  AMANZI_ASSERT (params_->ok_side_set (id));
   return *side_sets_ [id];
 }
 
 const Node_set& Data::node_set (int id) const
 {
-  ASSERT (params_->ok_node_set (id));
+  AMANZI_ASSERT (params_->ok_node_set (id));
   return *node_sets_ [id];
 }
 

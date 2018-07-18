@@ -12,7 +12,7 @@
   This operator is a collection of local "DIAGONAL" Ops.
 */
 
-#include "MFD3D_Diffusion.hh"
+#include "MeshUtils.hh"
 
 #include "Operator_Cell.hh"
 #include "Operator_Edge.hh"
@@ -155,7 +155,7 @@ void PDE_Accumulation::AddAccumulationDelta(
 void PDE_Accumulation::AddAccumulationDeltaNoVolume(
     const CompositeVector& u0, const CompositeVector& ss, const std::string& name)
 {
-  if (!ss.HasComponent(name)) ASSERT(false);
+  if (!ss.HasComponent(name)) AMANZI_ASSERT(false);
 
   Teuchos::RCP<Op> op = FindOp_(name);
   Epetra_MultiVector& diag = *op->diag;
@@ -183,7 +183,6 @@ void PDE_Accumulation::CalculateEntityVolume_(
     CompositeVector& volume, const std::string& name)
 {
   AmanziMesh::Entity_ID_List nodes, edges;
-  WhetStone::MFD3D_Diffusion mfd(mesh_);
 
   if (name == "cell" && volume.HasComponent("cell")) {
     Epetra_MultiVector& vol = *volume.ViewComponent(name); 
@@ -194,7 +193,7 @@ void PDE_Accumulation::CalculateEntityVolume_(
 
   } else if (name == "face" && volume.HasComponent("face")) {
     // Missing code.
-    ASSERT(false);
+    AMANZI_ASSERT(false);
 
   } else if (name == "edge" && volume.HasComponent("edge")) {
     Epetra_MultiVector& vol = *volume.ViewComponent(name, true); 
@@ -218,21 +217,21 @@ void PDE_Accumulation::CalculateEntityVolume_(
       mesh_->cell_get_nodes(c, &nodes);
       int nnodes = nodes.size();
 
-      double volume = mesh_->cell_volume(c);
+      double cellvolume = mesh_->cell_volume(c);
       std::vector<double> weights(nnodes, 1.0 / nnodes);
 
       if (mesh_->space_dimension() == 2) {
-        mfd.PolygonCentroidWeights(nodes, volume, weights);
+        WhetStone::PolygonCentroidWeights(*mesh_, nodes, cellvolume, weights);
       }
 
       for (int i = 0; i < nnodes; i++) {
-        vol[0][nodes[i]] += weights[i] * volume; 
+        vol[0][nodes[i]] += weights[i] * cellvolume; 
       }
     }
     volume.GatherGhostedToMaster(name);
 
   } else {
-    ASSERT(false);
+    AMANZI_ASSERT(false);
   }
 }
 

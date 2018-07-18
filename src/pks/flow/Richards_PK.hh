@@ -68,7 +68,7 @@ class Richards_PK : public Flow_PK {
 
   // methods required for time integration interface
   // -- computes the non-linear functional f = f(t,u,udot) and related norm.
-  void Functional(const double t_old, double t_new, 
+  void FunctionalResidual(const double t_old, double t_new, 
                   Teuchos::RCP<TreeVector> u_old, Teuchos::RCP<TreeVector> u_new, 
                   Teuchos::RCP<TreeVector> f);
   double ErrorNorm(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<const TreeVector> du);
@@ -183,7 +183,7 @@ class Richards_PK : public Flow_PK {
   Teuchos::RCP<Operators::PDE_Diffusion> op_matrix_diff_, op_preconditioner_diff_;
   Teuchos::RCP<Operators::PDE_Accumulation> op_acc_;
   Teuchos::RCP<Operators::Upwind<RelPerm> > upwind_;
-  std::string preconditioner_name_, solver_name_, solver_name_constraint_;
+  std::string solver_name_, solver_name_constraint_;
 
   // coupling with energy
   Teuchos::RCP<Operators::Operator> op_vapor_;

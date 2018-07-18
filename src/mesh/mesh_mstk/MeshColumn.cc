@@ -25,7 +25,7 @@ MeshColumn::MeshColumn(const Mesh& inmesh,
               inmesh, inmesh.cells_of_column(column_id), CELL,
               false, false, true, false)
 {
-  ASSERT(column_id_ >= 0 && column_id_ < inmesh.num_columns());
+  AMANZI_ASSERT(column_id_ >= 0 && column_id_ < inmesh.num_columns());
 
   // set supporting subclasses
   set_comm(extracted_.get_comm());

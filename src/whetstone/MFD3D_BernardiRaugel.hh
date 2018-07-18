@@ -28,7 +28,7 @@
 namespace Amanzi {
 namespace WhetStone {
 
-class MFD3D_BernardiRaugel : public virtual MFD3D { 
+class MFD3D_BernardiRaugel : public MFD3D { 
  public:
   MFD3D_BernardiRaugel(Teuchos::RCP<const AmanziMesh::Mesh> mesh)
     : MFD3D(mesh),

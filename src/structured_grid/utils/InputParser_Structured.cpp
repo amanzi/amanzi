@@ -1567,7 +1567,7 @@ namespace Amanzi {
             if (rlabel=="Region: Color Function") {
               convert_Region_ColorFunction(rslist,rlabel,rsublist);
             }
-            else if (rlabel=="Region: Point"){	      
+            else if (rlabel=="Region: Point") {	      
               convert_Region_Point(rslist,rlabel,rsublist);
             }
             else if (rlabel=="Region: Box") {
@@ -2070,7 +2070,7 @@ namespace Amanzi {
             if (rentry.isList())
             {
               const ParameterList& rsslist = rslist.sublist(rlabel);
-              if (rlabel==porosity_gslib_str || rlabel==porosity_uniform_str){
+              if (rlabel==porosity_gslib_str || rlabel==porosity_uniform_str) {
                 if (mtest["Porosity"]) {
                   std::string str = "More than one of: (\""+porosity_gslib_str+"\", \""+porosity_uniform_str+
                     "\") specified for material \""+label+"\"";
@@ -2079,7 +2079,7 @@ namespace Amanzi {
                 ParameterList psublist;
                 if (rlabel==porosity_uniform_str) {
                   convert_PorosityUniform(rsslist,psublist);
-                } else if (rlabel==porosity_gslib_str){
+                } else if (rlabel==porosity_gslib_str) {
                   convert_PorosityGSLib(rsslist,psublist);
                 }
                 rsublist.set("porosity",psublist);

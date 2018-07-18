@@ -88,8 +88,8 @@ add_amanzi_library(mpc
                           ObservableFactory.cc MeshInfo.cc
                           ObservableAqueous.cc ObservableSolute.cc
                    HEADERS ${mpc_inc_files}
-                   LINK_LIBS time_integration solvers output mpc_tree state mesh dbg 
-                             ${mpc_tpl_libs})
+                   LINK_LIBS time_integration solvers output mpc_tree state mesh dbg
+                             flow ${mpc_tpl_libs})
 
 if (BUILD_TESTS)
     include_directories(${MESH_FACTORY_SOURCE_DIR})
@@ -101,8 +101,12 @@ if (BUILD_TESTS)
 
     # Copy test subdirectory for out of source builds
     if (NOT (MPC_SOURCE_DIR STREQUAL MPC_BINARY_DIR))
-        execute_process(COMMAND ${CMAKE_COMMAND} -E 
-          copy_directory ${MPC_SOURCE_DIR}/test ${MPC_BINARY_DIR}/test) 
+      file(GLOB DataFiles "${MPC_SOURCE_DIR}/test/*.xml"
+                          "${MPC_SOURCE_DIR}/test/*.in"
+                          "${MPC_SOURCE_DIR}/test/*.bgd"
+                          "${MPC_SOURCE_DIR}/test/*.dat"
+                          "${MPC_SOURCE_DIR}/test/*.exo")
+      file(COPY ${DataFiles} DESTINATION ${MPC_BINARY_DIR}/test/)
     endif()
 
     set(amanzi_libs mpc pks mpc_tree flow transport chemistry_pk energy dummy pks eos 
@@ -113,7 +117,8 @@ if (BUILD_TESTS)
     add_amanzi_test(mpc_driver_flow mpc_driver_flow
                     KIND      int
                     SOURCE    test/Main.cc test/mpc_driver_flow.cc
-		    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
+		    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES}
+                                             ${HYPRE_LIBRARY})
 
     # Test: mpc driver for transport
     add_amanzi_test(mpc_driver_transport mpc_driver_transport
@@ -125,7 +130,8 @@ if (BUILD_TESTS)
     add_amanzi_test(mpc_driver_reactive_transport mpc_driver_reactive_transport
                     KIND      int
                     SOURCE    test/Main.cc test/mpc_driver_reactive_transport.cc
-		    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
+		    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES}
+                                             ${HYPRE_LIBRARY})
 
     # Test: mpc driver for thermal richards
     add_amanzi_test(mpc_driver_thermal_richards mpc_driver_thermal_richards
@@ -137,7 +143,8 @@ if (BUILD_TESTS)
     add_amanzi_test(mpc_driver_flow_reactive_transport mpc_driver_flow_reactive_transport
                     KIND      int
                     SOURCE    test/Main.cc test/mpc_driver_frt.cc
-		    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
+		    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES}
+                                             ${HYPRE_LIBRARY})
 
     # Test: mpc-new driver dummy
     add_amanzi_test(mpc_driver_dummy mpc_driver_dummy
@@ -151,8 +158,11 @@ if (BUILD_TESTS)
                     SOURCE    test/Main.cc test/observable_line_segment.cc
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
-#    add_executable(test_vis test/Main.cc test/test_vis.cpp)
-#    target_link_libraries(test_vis state mpc stk_mesh ${UnitTest_LIBRARIES})
-#    add_amanzi_test(vis test_vis KIND int)
+    # Test: walkabout
+    add_amanzi_test(mpc_walkabout mpc_walkabout 
+                    KIND      int
+                    SOURCE    test/Main.cc test/mpc_walkabout.cc
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES}
+                                             ${HYPRE_LIBRARY})
 
 endif()

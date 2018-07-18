@@ -132,7 +132,7 @@ GraphFE::InsertGlobalIndices(int row, int count, int *indices) {
   int ierr(0);
 
   int local_row = ghosted_row_map_->LID(row);
-  ASSERT(local_row >= 0);
+  AMANZI_ASSERT(local_row >= 0);
   if (local_row < n_owned_) {
     ierr = graph_->InsertGlobalIndices(row, count, indices);
     EPETRA_CHK_ERR(ierr);
@@ -179,18 +179,18 @@ GraphFE::FillComplete(const Teuchos::RCP<const Epetra_Map>& domain_map,
     // fill complete the offproc graph
     ierr = offproc_graph_->FillComplete(*offproc_row_map_, *range_map_);
     EPETRA_CHK_ERR(ierr);
-    ASSERT(!ierr);
+    AMANZI_ASSERT(!ierr);
 
     // scatter offproc into onproc
     ierr |= graph_->Export(*offproc_graph_, *exporter_, Insert);
     EPETRA_CHK_ERR(ierr);
-    ASSERT(!ierr);
+    AMANZI_ASSERT(!ierr);
   }
 
   // fillcomplete the final graph
   ierr |= graph_->FillComplete(*domain_map_, *range_map_);
   EPETRA_CHK_ERR(ierr);
-  ASSERT(!ierr);
+  AMANZI_ASSERT(!ierr);
 
   return ierr;  
 }

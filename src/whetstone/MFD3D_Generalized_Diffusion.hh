@@ -26,7 +26,7 @@
 namespace Amanzi {
 namespace WhetStone {
 
-class MFD3D_Generalized_Diffusion : virtual public MFD3D { 
+class MFD3D_Generalized_Diffusion : public MFD3D { 
  public:
   MFD3D_Generalized_Diffusion(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) 
     : MFD3D(mesh), 

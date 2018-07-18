@@ -24,7 +24,7 @@ CompositeVectorFunction::CompositeVectorFunction(
     const std::vector<std::string>& names) :
     func_(func) {
 
-  ASSERT(names.size() == func->size());
+  AMANZI_ASSERT(names.size() == func->size());
 
   // TODO: This is horrid.  Google won't tell me if STL has python's zip()
   // functionality, so this is probably bad C++.
@@ -87,7 +87,7 @@ void CompositeVectorFunction::Compute(double time,
             mesh->face_get_cells(id, AmanziMesh::Parallel_type::ALL, &cells);
             if (cells.size() == 1) {
               AmanziMesh::Entity_ID bf = vandelay_map.LID(face_map.GID(id));
-              ASSERT(bf >= 0);
+              AMANZI_ASSERT(bf >= 0);
 
               // get the coordinate
               AmanziGeometry::Point xf = mesh->face_centroid(id);
@@ -143,7 +143,7 @@ void CompositeVectorFunction::Compute(double time,
               mesh->face_get_cells(*id, AmanziMesh::Parallel_type::ALL, &cells);
               if (cells.size() == 1) {
                 AmanziMesh::Entity_ID bf = vandelay_map.LID(face_map.GID(*id));
-                ASSERT(bf >= 0);
+                AMANZI_ASSERT(bf >= 0);
 
 
                 // get the coordinate
@@ -182,7 +182,7 @@ void CompositeVectorFunction::Compute(double time,
               } else if (kind == AmanziMesh::NODE) {
                 mesh->node_get_coordinates(*id, &xc);
               } else {
-                ASSERT(0);
+                AMANZI_ASSERT(0);
               }
               for (int i=0; i!=dim; ++i) args[i+1] = xc[i];
 

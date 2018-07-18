@@ -25,7 +25,7 @@
 // Amanzi
 #include "MeshFactory.hh"
 #include "GMVMesh.hh"
-#include "LinearOperatorFactory.hh"
+#include "LinearOperatorBelosGMRES.hh"
 #include "Tensor.hh"
 
 // Operators
@@ -52,17 +52,12 @@ TEST(OPERATOR_DIFFUSION_NONSYMMETRIC) {
   std::string xmlFileName = "test/operator_diffusion.xml";
   Teuchos::ParameterXMLFileReader xmlreader(xmlFileName);
   Teuchos::ParameterList plist = xmlreader.getParameters();
-  Teuchos::ParameterList op_list = plist.get<Teuchos::ParameterList>("PK operator")
+  Teuchos::ParameterList op_list = plist.sublist("PK operator")
                                         .sublist("diffusion operator nonsymmetric");
 
-  // create an SIMPLE mesh framework
-  FrameworkPreference pref;
-  pref.clear();
-  pref.push_back(MSTK);
-  pref.push_back(STKMESH);
-
+  // create a mesh framework
   MeshFactory meshfactory(&comm);
-  meshfactory.preference(pref);
+  meshfactory.preference(FrameworkPreference({MSTK,STKMESH}));
   Teuchos::RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 20, 20, Teuchos::null);
 
   // modify diffusion coefficient
@@ -76,7 +71,7 @@ TEST(OPERATOR_DIFFUSION_NONSYMMETRIC) {
 
   for (int c = 0; c < ncells; c++) {
     const Point& xc = mesh->cell_centroid(c);
-    const WhetStone::Tensor& Kc = ana.Tensor(xc, 0.0);
+    const WhetStone::Tensor& Kc = ana.TensorDiffusivity(xc, 0.0);
     K->push_back(Kc);
   }
 
@@ -126,26 +121,29 @@ TEST(OPERATOR_DIFFUSION_NONSYMMETRIC) {
   // get and assmeble the global operator
   Teuchos::RCP<Operator> global_op = op->global_operator();
   global_op->UpdateRHS(source, false);
-  op->ApplyBCs(true, true);
+  op->ApplyBCs(true, true, true);
   global_op->SymbolicAssembleMatrix();
   global_op->AssembleMatrix();
 
   // create preconditoner using the base operator class
-  Teuchos::ParameterList slist = plist.get<Teuchos::ParameterList>("preconditioners");
-  global_op->InitPreconditioner("Hypre AMG", slist);
+  Teuchos::ParameterList slist = plist.sublist("preconditioners").sublist("Hypre AMG");
+  global_op->InitializePreconditioner(slist);
+  global_op->UpdatePreconditioner();
 
   // solve the problem
-  Teuchos::ParameterList lop_list = plist.get<Teuchos::ParameterList>("solvers");
-  AmanziSolvers::LinearOperatorFactory<Operator, CompositeVector, CompositeVectorSpace> factory;
-  Teuchos::RCP<AmanziSolvers::LinearOperator<Operator, CompositeVector, CompositeVectorSpace> >
-     solver = factory.Create("Belos GMRES", lop_list, global_op);
+  Teuchos::ParameterList lop_list = plist.sublist("solvers")
+                                         .sublist("Belos GMRES")
+                                         .sublist("belos gmres parameters");
+  auto solver = Teuchos::rcp(new AmanziSolvers::LinearOperatorBelosGMRES<
+     Operator, CompositeVector, CompositeVectorSpace>(global_op, global_op));
+  solver->Init(lop_list);
 
   CompositeVector& rhs = *global_op->rhs();
   int ierr = solver->ApplyInverse(rhs, *solution);
 
   if (MyPID == 0) {
-    std::cout << "pressure solver (" << solver->name() 
-              << "): ||r||=" << solver->residual() << " itr=" << solver->num_itrs()
+    std::cout << "pressure solver (belos gmres): ||r||=" << solver->residual()
+              << " itr=" << solver->num_itrs()
               << " code=" << solver->returned_code() << std::endl;
   }
 

@@ -11,7 +11,7 @@ namespace Data {
 std::string type_to_name (Cell_type type)
 {
 
-  ASSERT (cell_valid_type(type));
+  AMANZI_ASSERT (cell_valid_type(type));
 
   switch (type)
   {

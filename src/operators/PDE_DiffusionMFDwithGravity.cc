@@ -27,7 +27,7 @@ void PDE_DiffusionMFDwithGravity::UpdateMatrices(
 {
   PDE_DiffusionMFD::UpdateMatrices(flux, u);
 
-  ASSERT(little_k_ != OPERATOR_LITTLE_K_DIVK_TWIN_GRAD);
+  AMANZI_ASSERT(little_k_ != OPERATOR_LITTLE_K_DIVK_TWIN_GRAD);
   AddGravityToRHS_();
 
 }

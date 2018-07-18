@@ -50,8 +50,9 @@ set(solvers_source_files ResidualDebugger.cc
                          SolverFactory.cc)
 
 set(solvers_tpl_libs ${DBC_LIBRARIES}
-		     ${Teuchos_LIBRARIES}
-		     ${Epetra_LIBRARIES} ${Belos_LIBRARIES} ${NOX_LIBRARIES})
+		     ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES}
+                     ${Belos_LIBRARIES} ${NOX_LIBRARIES} ${Amesos2_LIBRARIES}
+                     ${HYPRE_LIBRARY})
 list(REVERSE solvers_tpl_libs)
 list(REMOVE_DUPLICATES solvers_tpl_libs)
 list(REVERSE solvers_tpl_libs)
@@ -79,8 +80,8 @@ if (BUILD_TESTS)
 
     # Copy test directory files if an out of source build
     if (NOT (${SOLVERS_SOURCE_DIR} EQUAL ${SOLVERS_BINARY_DIR}))
-        execute_process(COMMAND ${CMAKE_COMMAND} -E
-          copy_directory ${SOLVERS_SOURCE_DIR}/test ${SOLVERS_BINARY_DIR}/test)
+        # file(GLOB DataFiles "${SOLVER_SOURCE_DIR}/test/*.xml")
+        # file(COPY ${DataFiles} DESTINATION ${SOLVER_BINARY_DIR}/test/)
     endif()
 
     # Add the solvers directory to the include paths
@@ -94,6 +95,11 @@ if (BUILD_TESTS)
     add_amanzi_test(solver_preconditioners solver_preconditioners
                     KIND unit
                     SOURCE test/Main.cc test/solver_preconditioners.cc
+                    LINK_LIBS ${solvers_test_link_libs} ${UnitTest_LIBRARIES} ${solvers_tpl_libs})
+
+    add_amanzi_test(solver_preconditioner_noncontiguous solver_preconditioner_noncontiguous
+                    KIND unit
+                    SOURCE test/Main.cc test/solver_preconditioner_noncontiguous.cc
                     LINK_LIBS ${solvers_test_link_libs} ${UnitTest_LIBRARIES} ${solvers_tpl_libs})
 
     add_amanzi_test(solver_linear_jfnk solver_linear_jfnk

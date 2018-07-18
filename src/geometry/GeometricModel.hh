@@ -68,7 +68,6 @@ private:
   unsigned int dim_;
 };
 
-
 } // namespace AmanziGeometry
 } // namespace Amanzi
 

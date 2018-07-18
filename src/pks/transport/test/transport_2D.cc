@@ -70,10 +70,9 @@ std::cout << "Test: Advance on a 2D square mesh" << std::endl;
   RCP<State> S = rcp(new State(state_list));
   S->RegisterDomainMesh(rcp_const_cast<Mesh>(mesh));
   S->set_time(0.0);
-  S->set_intermediate_time(0.0);
 
   plist->sublist("PKs").sublist("transport")
-        .sublist("reconstruction").set<std::string>("limiter", "tensorial");
+        .sublist("reconstruction").set<std::string>("limiter", limiter);
 
   Transport_PK TPK(plist, S, "transport", component_names);
   TPK.Setup(S.ptr());
@@ -122,6 +121,10 @@ std::cout << "Test: Advance on a 2D square mesh" << std::endl;
     dt = TPK.StableTimeStep();
     t_new = t_old + dt;
 
+    S->set_initial_time(t_old);
+    S->set_intermediate_time(t_old);
+    S->set_final_time(t_new);
+
     TPK.AdvanceStep(t_old, t_new);
     TPK.CommitStep(t_old, t_new, S);
 
@@ -162,6 +165,7 @@ std::cout << "Test: Advance on a 2D square mesh" << std::endl;
 }
 
 
+
 TEST(ADVANCE_WITH_2D_MESH) {
   runTest(1.0, "tensorial");  // no velocity swicth
 }
@@ -174,3 +178,4 @@ TEST(ADVANCE_WITH_2D_MESH_SWITCH_FLOW) {
 TEST(ADVANCE_WITH_2D_MESH_SWITCH_FLOW_KUZMIN) {
   runTest(0.16, "Kuzmin");
 }
+

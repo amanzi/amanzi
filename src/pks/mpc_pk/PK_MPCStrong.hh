@@ -36,7 +36,7 @@
 namespace Amanzi {
 
 template<class PK_Base>
-class PK_MPCStrong :  virtual public PK_MPC<PK_Base>, public PK_BDF
+class PK_MPCStrong : virtual public PK_MPC<PK_Base>, public PK_BDF
 {
  public:
   PK_MPCStrong(Teuchos::ParameterList& pk_tree,
@@ -57,8 +57,8 @@ class PK_MPCStrong :  virtual public PK_MPC<PK_Base>, public PK_BDF
 
   // PK_MPCStrong is an PK_Implicit
   // -- computes the non-linear functional g = g(t,u,udot)
-  //    By default this just calls each sub pk Functional().
-  virtual void Functional(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
+  //    By default this just calls each sub pk FunctionalResidual().
+  virtual void FunctionalResidual(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
            Teuchos::RCP<TreeVector> u_new, Teuchos::RCP<TreeVector> g);
 
   // -- enorm for the coupled system
@@ -123,6 +123,7 @@ PK_MPCStrong<PK_Base>::PK_MPCStrong(Teuchos::ParameterList& pk_tree,
                               const Teuchos::RCP<State>& S,
                               const Teuchos::RCP<TreeVector>& soln) :
   PK_MPC<PK_Base>(pk_tree, global_list, S, soln) {};
+
 
 // -----------------------------------------------------------------------------
 // Setup
@@ -230,7 +231,7 @@ bool PK_MPCStrong<PK_Base>::AdvanceStep(double t_old, double t_new, bool reinit)
 // Compute the non-linear functional g = g(t,u,udot).
 // -----------------------------------------------------------------------------
 template<class PK_Base>
-void PK_MPCStrong<PK_Base>::Functional(
+void PK_MPCStrong<PK_Base>::FunctionalResidual(
     double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
     Teuchos::RCP<TreeVector> u_new, Teuchos::RCP<TreeVector> g) {
   // loop over sub-PKs
@@ -260,7 +261,7 @@ void PK_MPCStrong<PK_Base>::Functional(
     }
 
     // fill the nonlinear function with each sub-PKs contribution
-    sub_pks_[i]->Functional(t_old, t_new, pk_u_old, pk_u_new, pk_g);
+    sub_pks_[i]->FunctionalResidual(t_old, t_new, pk_u_old, pk_u_new, pk_g);
   }
 }
 

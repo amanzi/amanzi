@@ -416,7 +416,7 @@ Teuchos::RCP<FieldEvaluator> State::GetFieldEvaluator_(Key key) {
 
 
 void State::SetFieldEvaluator(Key key, const Teuchos::RCP<FieldEvaluator>& evaluator) {
-  ASSERT(field_evaluators_[key] == Teuchos::null);
+  AMANZI_ASSERT(field_evaluators_[key] == Teuchos::null);
   field_evaluators_[key] = evaluator;
 };
 
@@ -808,9 +808,9 @@ void State::SetData(Key fieldname, Key pk_name,
 // -----------------------------------------------------------------------------
 Teuchos::ParameterList
 State::GetModelParameters(std::string modelname) {
-  ASSERT(state_plist_.isSublist("model parameters"));
+  AMANZI_ASSERT(state_plist_.isSublist("model parameters"));
   Teuchos::ParameterList model_plist = state_plist_.sublist("model parameters");
-  ASSERT(model_plist.isSublist(modelname));
+  AMANZI_ASSERT(model_plist.isSublist(modelname));
   return model_plist.sublist(modelname);
 }
 
@@ -1131,7 +1131,7 @@ bool State::CheckAllFieldsInitialized(Teuchos::RCP<State> S) {
 // Check the consistency of a field's meta-data.
 Teuchos::RCP<Field>
 State::CheckConsistent_or_die_(Key fieldname, FieldType type, Key owner) {
-  ASSERT(fieldname != Key(""));
+  AMANZI_ASSERT(fieldname != Key(""));
 
   Teuchos::RCP<Field> record = GetField_(fieldname);
   if (record == Teuchos::null) {

@@ -49,11 +49,8 @@ class MeshMaps_FEM : public MeshMaps {
                              VectorPolynomial& cn) const override;
 
  private:
-  AmanziGeometry::Point Map_(int c, const AmanziGeometry::Point& xref) const;
-
   void JacobianCellValue_(int c, double t, const AmanziGeometry::Point& x, Tensor& J) const;
 
-  void JacobianValue_(int c, const AmanziGeometry::Point& xref, Tensor& J) const;
   Tensor JacobianValueInternal_(Teuchos::RCP<const AmanziMesh::Mesh> mesh,
                                 int c, const AmanziGeometry::Point& xref) const;
 };

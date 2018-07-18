@@ -47,7 +47,7 @@ class MatrixJF {
   // Space for the domain of the operator.
   const VectorSpace& DomainMap() const { return *map_; }
 
-  // Space for the domain of the operator.
+  // Space for the range of the operator.
   const VectorSpace& RangeMap() const { return *map_; }
 
   // Apply matrix, b <-- Ax, returns ierr = 0 if success, !0 otherwise

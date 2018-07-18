@@ -49,7 +49,7 @@ class SolverFnBase {
     return FnBaseDefs::CORRECTION_NOT_MODIFIED;
   }
 
-  virtual void UpdateContinuationParameter(double lambda) {}
+  virtual void UpdateContinuationParameter(double lambda) {};
   
   // Check the admissibility of an inner iterate (ensures preconditions for
   // F(u) to be defined).

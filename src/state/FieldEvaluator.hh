@@ -1,14 +1,25 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
-/* -------------------------------------------------------------------------
-ATS
+/* -*-  mode: c++; indent-tabs-mode: nil -*- */
+/*
+  ATS is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
 
-License: see $ATS_DIR/COPYRIGHT
-Author: Ethan Coon
+  Author: Ethan Coon (ecoon@lanl.gov)
+*/
 
-Interface class for a FieldEvaluator.  A FieldEvaluator is a node in the Phalanx-like
-dependency tree.
+//! A FieldEvaluator is a node in the dependency graph.
 
-------------------------------------------------------------------------- */
+/*!
+
+All field evaluators have keys they depend upon (unless they are a leaf) and
+keys they provide.
+
+All evaluator lists must provide an evaluator type, which is one of the types
+registered with the evaluator factory.
+
+* `"field evaluator type`" ``[string]`` Type registered in evaluator factory.
+  
+*/
 
 #ifndef AMANZI_STATE_FIELD_EVALUATOR_HH_
 #define AMANZI_STATE_FIELD_EVALUATOR_HH_

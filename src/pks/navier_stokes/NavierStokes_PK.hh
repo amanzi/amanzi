@@ -69,7 +69,7 @@ class NavierStokes_PK : public PK_PhysicalBDF {
 
   // methods required for time integration interface
   // -- computes the non-linear functional f = f(t,u,udot) and related norm.
-  void Functional(const double t_old, double t_new, 
+  void FunctionalResidual(const double t_old, double t_new, 
                   Teuchos::RCP<TreeVector> u_old, Teuchos::RCP<TreeVector> u_new, 
                   Teuchos::RCP<TreeVector> f);
   double ErrorNorm(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<const TreeVector> du);
@@ -148,7 +148,7 @@ class NavierStokes_PK : public PK_PhysicalBDF {
   Teuchos::RCP<Operators::PDE_Accumulation> op_matrix_acc_, op_preconditioner_acc_, op_mass_;
   Teuchos::RCP<Operators::PDE_Abstract> op_matrix_div_;
   Teuchos::RCP<Operators::PDE_Abstract> op_matrix_conv_, op_preconditioner_conv_;
-  std::string preconditioner_name_, solver_name_;
+  std::string solver_name_;
  
  private:
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;

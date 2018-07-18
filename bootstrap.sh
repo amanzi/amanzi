@@ -126,8 +126,8 @@ pflotran=${FALSE}
 crunchtope=${FALSE}
 shared=${FALSE}
 spacedim=2
-native=${FALSE}
 silo=${FALSE}
+physics=${TRUE}
 
 # Dry-Run
 dry_run=${FALSE}
@@ -299,6 +299,9 @@ Configuration:
   --opt                   build optimized TPLs and Amanzi binaries. This the default
                           configuration.
 
+  --relwithdebinfo		  build optimized TPLs and Amanzi binaries with debug info
+			  (for profiling)
+
   --debug                 build debug TPLs and Amanzi binaries.
 
   --branch=BRANCH         build TPLs and Amanzi found in BRANCH ['"${amanzi_branch}"']
@@ -329,10 +332,11 @@ Value in brackets indicates default setting.
   crunchtope              build the CrunchTope geochemistry backend ['"${crunchtope}"']
   alquimia                build the Alquimia geochemistry solver APIs ['"${alquimia}"']
 
+  physics		  build subset of Amanzi used in ATS ['"${physics}"']
+
   test_suite              run Amanzi Test Suite before installing ['"${test_suite}"']
   reg_tests               build regression tests into Amanzi Test Suite ['"${reg_tests}"']
   shared                  build Amanzi and tpls using shared libraries ['"${shared}"']
-  native                  build Amanzi with native xml output for debugging enabled ['"${native}"']
   Spack                   build TPLs using the Spack package manager when appropriate ['"${Spack}"']
   xsdk                    build TPLs available in xSDK first, then supplement with additional 
                           individual TPL builds ['"${xsdk}"']
@@ -472,7 +476,7 @@ Build Features:
     alquimia            ='"${alquimia}"'
     pflotran            ='"${pflotran}"'
     crunchtope          ='"${crunchtope}"'
-    native              ='"${native}"'
+    physics             ='"${physics}"'
     Spack               ='"${Spack}"'
     xsdk                ='"${xsdk}"'
 
@@ -517,12 +521,13 @@ function parse_argv()
       
       --opt)
                  build_type=Release
-		 enable_native=${FALSE}
                  ;;
 
+      --relwithdebinfo)
+                 build_type=RelWithDebInfo
+                 ;;
       --debug)
                  build_type=Debug
-		 enable_native=${TRUE}
                  ;;
       --dry_run)
                  dry_run=${TRUE}
@@ -1247,6 +1252,7 @@ function define_structured_dependencies
 {
   if [ "${structured}" -eq "${TRUE}" ]; then
     eval "petsc=$TRUE"
+    status_message "Enable package PETSc"
   fi
 }
 
@@ -1416,7 +1422,6 @@ if [ -z "${tpl_config_file}" ]; then
     fi
   fi
 
-  
   if [ "${tpls_only}" -eq "${TRUE}" ]; then
     status_message "Only building TPLs, stopping before building Amanzi itself"
   fi
@@ -1554,10 +1559,10 @@ cmd_configure="${cmake_binary} \
     -DENABLE_ALQUIMIA:BOOL=${alquimia} \
     -DENABLE_PFLOTRAN:BOOL=${pflotran} \
     -DENABLE_CRUNCHTOPE:BOOL=${crunchtope} \
+    -DENABLE_Physics:BOOL=${physics} \
     -DBUILD_SHARED_LIBS:BOOL=${shared} \
     -DCCSE_BL_SPACEDIM:INT=${spacedim} \
     -DENABLE_Regression_Tests:BOOL=${reg_tests} \
-    -DENABLE_NATIVE_XML_OUTPUT:BOOL=${native} \
     -DMPI_EXEC_GLOBAL_ARGS:STRING=${tools_mpi_exec_args} \
     ${nersc_amanzi_opts} \
     ${amanzi_source_dir}"

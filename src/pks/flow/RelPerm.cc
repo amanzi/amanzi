@@ -58,7 +58,7 @@ void RelPerm::Compute(Teuchos::RCP<const CompositeVector> p,
   for (int f = 0; f != face_map.NumMyElements(); ++f) {
     if (bc_model[f] == Operators::OPERATOR_BC_DIRICHLET) {
       mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
-      ASSERT(cells.size() == 1);
+      AMANZI_ASSERT(cells.size() == 1);
       int bf = ext_face_map.LID(face_map.GID(f));
       krel_df[0][bf] = wrm_->second[(*wrm_->first)[cells[0]]]->k_relative(patm_ - bc_value[f]);
     }
@@ -94,7 +94,7 @@ void RelPerm::ComputeDerivative(Teuchos::RCP<const CompositeVector> p,
     if (bc_model[f] == Operators::OPERATOR_BC_DIRICHLET) {
       AmanziMesh::Entity_ID_List cells;
       mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
-      ASSERT(cells.size() == 1);
+      AMANZI_ASSERT(cells.size() == 1);
       int bf = ext_face_map.LID(face_map.GID(f));
       derv_df[0][bf] = -wrm_->second[(*wrm_->first)[cells[0]]]->dKdPc(patm_ - bc_value[f]);
     }

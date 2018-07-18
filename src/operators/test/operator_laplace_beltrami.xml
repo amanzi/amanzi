@@ -63,7 +63,7 @@
 
   <!-- SOLVERS -->
   <ParameterList name="solvers">
-    <ParameterList name="AztecOO CG">
+    <ParameterList name="PCG">
       <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
       <Parameter name="iterative method" type="string" value="pcg"/>
       <ParameterList name="pcg parameters">

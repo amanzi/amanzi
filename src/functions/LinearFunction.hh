@@ -19,7 +19,19 @@ with the constant term "math:`y_0` and gradient :math:`g_0,\, g_1\,..., g_{{n-1}
 If the reference point :math:`x_0` is specified, it must have the same
 number of values as the gradient.  Otherwise, it defaults to zero.
 Note that one of the parameters in a multi-valued linear function can be time.
-Here is an example:
+
+* `"y0`" ``[double]`` y_0 in f = y0 + g * (x - x0)
+* `"gradient`" ``[Array(double)]`` g in f = y0 + g * (x - x0)
+* `"x0`" ``[Array(double)]`` x0 in f = y0 + g * (x - x0)
+
+Conditions:
+
+.. code-block:: python
+
+  len(x0) == len(gradient)
+
+
+Example:
 
 .. code-block:: xml
 

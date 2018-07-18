@@ -14,6 +14,7 @@
 #include <fstream>
 #include <string>
 #include <algorithm>
+#include <climits>
 
 // TPLs
 #include "boost/bind.hpp"
@@ -113,9 +114,9 @@ Teuchos::ParameterList InputConverterU::TranslateMesh_()
         std::vector<int> ncells; 
         int nx = GetAttributeValueL_(node, "nx");
         if (nx > 0) ncells.push_back(nx);
-        int ny = GetAttributeValueL_(node, "ny", TYPE_NUMERICAL, false, 0);
+        int ny = GetAttributeValueL_(node, "ny", TYPE_NUMERICAL, 0, INT_MAX, false, 0);
         if (ny > 0) ncells.push_back(ny); 
-        int nz = GetAttributeValueL_(node, "nz", TYPE_NUMERICAL, false, 0);
+        int nz = GetAttributeValueL_(node, "nz", TYPE_NUMERICAL, 0, INT_MAX, false, 0);
         if (nz > 0) ncells.push_back(nz); 
 
         if (ncells.size() != dim_) 
@@ -126,11 +127,11 @@ Teuchos::ParameterList InputConverterU::TranslateMesh_()
         if (!flag) 
             ThrowErrorIllformed_("mesh", "box", "generate");
 
-        std::vector<double> low = GetAttributeVectorD_(node, "low_coordinates", "m");
+        std::vector<double> low = GetAttributeVectorD_(node, "low_coordinates", dim_, "m");
         if (low.size() != dim_)
             ThrowErrorIllformed_("mesh", "low_coordinates", "generate");
 
-        std::vector<double> high = GetAttributeVectorD_(node, "high_coordinates", "m");
+        std::vector<double> high = GetAttributeVectorD_(node, "high_coordinates", dim_, "m");
         if (high.size() != dim_)
             ThrowErrorIllformed_("mesh", "high_coordinates", "generate");
 
@@ -292,8 +293,8 @@ Teuchos::ParameterList InputConverterU::TranslateRegions_()
       if (strcmp(node_name, "box") == 0) {
         tree_["regions"].push_back(reg_name);
         
-        std::vector<double> low = GetAttributeVectorD_(reg_elem, "low_coordinates", "m");
-        std::vector<double> high = GetAttributeVectorD_(reg_elem, "high_coordinates", "m");
+        std::vector<double> low = GetAttributeVectorD_(reg_elem, "low_coordinates", dim_, "m");
+        std::vector<double> high = GetAttributeVectorD_(reg_elem, "high_coordinates", dim_, "m");
         out_list.sublist(reg_name).sublist("region: box")
             .set<Teuchos::Array<double> >("low coordinate", low)
             .set<Teuchos::Array<double> >("high coordinate", high);
@@ -302,8 +303,8 @@ Teuchos::ParameterList InputConverterU::TranslateRegions_()
       else if (strcmp(node_name, "plane") == 0) {
         tree_["regions"].push_back(reg_name);
         
-        std::vector<double> loc = GetAttributeVectorD_(reg_elem, "location", "m");
-        std::vector<double> dir = GetAttributeVectorD_(reg_elem, "normal", "m");
+        std::vector<double> loc = GetAttributeVectorD_(reg_elem, "location", dim_, "m");
+        std::vector<double> dir = GetAttributeVectorD_(reg_elem, "normal", dim_, "m");
 
         out_list.sublist(reg_name).sublist("region: plane")
            .set<Teuchos::Array<double> >("point", loc)
@@ -319,7 +320,7 @@ Teuchos::ParameterList InputConverterU::TranslateRegions_()
         
         text = GetAttributeValueS_(reg_elem, "type");
         if (strcmp(text.c_str(), "color") == 0) {
-          int value = GetAttributeValueD_(reg_elem, "label");
+          int value = GetAttributeValueL_(reg_elem, "label");
           rfPL.set<int>("value", value);
           out_list.sublist(reg_name).sublist("region: color function") = rfPL;
         }
@@ -341,7 +342,7 @@ Teuchos::ParameterList InputConverterU::TranslateRegions_()
 
       else if (strcmp(node_name, "point") == 0) {
         tree_["regions"].push_back(reg_name);
-        std::vector<double> coord = GetAttributeVectorD_(reg_elem, "coordinate", "m");
+        std::vector<double> coord = GetAttributeVectorD_(reg_elem, "coordinate", dim_, "m");
         out_list.sublist(reg_name).sublist("region: point").set<Teuchos::Array<double> >("coordinate", coord);
       }
 
@@ -430,9 +431,9 @@ Teuchos::ParameterList InputConverterU::TranslateRegions_()
         tree_["regions"].push_back(reg_name);
         region_type_[reg_name] = 1;
         
-        std::vector<double> low = GetAttributeVectorD_(reg_elem, "corner_coordinates", "m");
-        std::vector<double> high = GetAttributeVectorD_(reg_elem, "opposite_corner_coordinates", "m");
-        std::vector<double> normals = GetAttributeVectorD_(reg_elem, "normals", "", false);
+        std::vector<double> low = GetAttributeVectorD_(reg_elem, "corner_coordinates", dim_, "m");
+        std::vector<double> high = GetAttributeVectorD_(reg_elem, "opposite_corner_coordinates", dim_, "m");
+        std::vector<double> normals = GetAttributeVectorD_(reg_elem, "normals", dim_, "", false);
 
         out_list.sublist(reg_name).sublist("region: box volume fractions")
            .set<Teuchos::Array<double> >("corner coordinate", low)
@@ -444,8 +445,8 @@ Teuchos::ParameterList InputConverterU::TranslateRegions_()
       }
       else if (strcmp(node_name, "line_segment") == 0) {
         tree_["regions"].push_back(reg_name); 
-        std::vector<double> p1 = GetAttributeVectorD_(reg_elem, "end_coordinates", "m");
-        std::vector<double> p2 = GetAttributeVectorD_(reg_elem, "opposite_end_coordinates", "m");
+        std::vector<double> p1 = GetAttributeVectorD_(reg_elem, "end_coordinates", dim_, "m");
+        std::vector<double> p2 = GetAttributeVectorD_(reg_elem, "opposite_end_coordinates", dim_, "m");
         out_list.sublist(reg_name).sublist("region: line segment")
           .set<Teuchos::Array<double> >("end coordinate", p1)
           .set<Teuchos::Array<double> >("opposite end coordinate", p2);

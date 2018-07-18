@@ -60,12 +60,12 @@ void SecondaryVariablesFieldEvaluator::operator=(const FieldEvaluator& other) {
 #if ENABLE_DBC
   const SecondaryVariablesFieldEvaluator* other_p =
     dynamic_cast<const SecondaryVariablesFieldEvaluator*>(&other);
-  ASSERT(other_p != NULL);
+  AMANZI_ASSERT(other_p != NULL);
 #else
   const SecondaryVariablesFieldEvaluator* other_p =
     static_cast<const SecondaryVariablesFieldEvaluator*>(&other);
 #endif
-  ASSERT(my_keys_[0] == other_p->my_keys_[0]);
+  AMANZI_ASSERT(my_keys_[0] == other_p->my_keys_[0]);
 
   requests_ = other_p->requests_;
   deriv_requests_ = other_p->deriv_requests_;
@@ -135,8 +135,8 @@ bool SecondaryVariablesFieldEvaluator::HasFieldChanged(const Teuchos::Ptr<State>
 // ---------------------------------------------------------------------------
 bool SecondaryVariablesFieldEvaluator::HasFieldDerivativeChanged(
     const Teuchos::Ptr<State>& S, Key request, Key wrt_key) {
-  ASSERT(!request.empty());
-  ASSERT(!wrt_key.empty());
+  AMANZI_ASSERT(!request.empty());
+  AMANZI_ASSERT(!wrt_key.empty());
 
   Teuchos::OSTab tab = vo_->getOSTab();
 

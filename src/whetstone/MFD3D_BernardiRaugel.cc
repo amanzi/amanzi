@@ -232,7 +232,7 @@ int MFD3D_BernardiRaugel::StiffnessMatrix(
 int MFD3D_BernardiRaugel::AdvectionMatrix(
     int c, const std::vector<AmanziGeometry::Point>& u, DenseMatrix& A)
 {
-  ASSERT(d_ == 2);
+  AMANZI_ASSERT(d_ == 2);
 
   Entity_ID_List nodes, faces;
   std::vector<int> dirs;

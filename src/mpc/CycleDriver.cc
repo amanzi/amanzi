@@ -168,7 +168,7 @@ void CycleDriver::Setup() {
     Teuchos::ParameterList& chkp_plist = glist_->sublist("checkpoint data");
     checkpoint_ = Teuchos::rcp(new Amanzi::Checkpoint(chkp_plist, comm_));
   }
-  else{
+  else {
     checkpoint_ = Teuchos::rcp(new Amanzi::Checkpoint());
   }
 
@@ -249,7 +249,7 @@ void CycleDriver::Setup() {
       it != reset_info_.end(); ++it) tsm_->RegisterTimeEvent(it->first);
 
 
-  for (int i=0;i<num_time_periods_; i++) {
+  for (int i=0; i<num_time_periods_; i++) {
     tsm_->RegisterTimeEvent(tp_end_[i]);
     tsm_->RegisterTimeEvent(tp_start_[i] + tp_dt_[i]);
   } 
@@ -446,7 +446,7 @@ void CycleDriver::ReadParameterList_() {
     Teuchos::ParameterList& tpc_list = coordinator_list_->sublist("time period control");
     Teuchos::Array<double> reset_times = tpc_list.get<Teuchos::Array<double> >("start times");
     Teuchos::Array<double> reset_times_dt = tpc_list.get<Teuchos::Array<double> >("initial time step");   
-    ASSERT(reset_times.size() == reset_times_dt.size());
+    AMANZI_ASSERT(reset_times.size() == reset_times_dt.size());
 
     Teuchos::Array<double>::const_iterator it_tim;
     Teuchos::Array<double>::const_iterator it_dt;
@@ -458,7 +458,7 @@ void CycleDriver::ReadParameterList_() {
 
     if (tpc_list.isParameter("maximum time step")) {
       Teuchos::Array<double> reset_max_dt = tpc_list.get<Teuchos::Array<double> >("maximum time step");
-      ASSERT(reset_times.size() == reset_max_dt.size());
+      AMANZI_ASSERT(reset_times.size() == reset_max_dt.size());
 
       Teuchos::Array<double>::const_iterator it_tim;
       Teuchos::Array<double>::const_iterator it_max;
@@ -720,7 +720,7 @@ void CycleDriver::WriteWalkabout(bool force) {
     if (walkabout_->DumpRequested(S_->cycle(), S_->time()) || force) {
       if (!walkabout_->is_disabled())
          *vo_->os() << "Cycle " << S_->cycle() << ": writing walkabout file" << std::endl;
-      walkabout_->WriteWalkabout(S_);
+      walkabout_->WriteDataFile(S_, pk_);
     }
   }
 }
@@ -823,15 +823,19 @@ Teuchos::RCP<State> CycleDriver::Go() {
   S_->CheckAllFieldsInitialized();
 
   // visualization at IC
-  //Amanzi::timer_manager.start("I/O");
+  // Amanzi::timer_manager.start("I/O");
   pk_->CalculateDiagnostics(S_);
   Visualize();
   Observations();
   WriteCheckpoint(dt);
   S_->WriteStatistics(vo_);
 
-  //Amanzi::timer_manager.stop("I/O");
- 
+  // Amanzi::timer_manager.stop("I/O");
+  if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
+    Teuchos::OSTab tab = vo_->getOSTab();
+    *vo_->os() << "\nSimulation end time: " << tp_end_[time_period_id_] << " sec." << std::endl;
+  }
+
   // iterate process kernels
   {
 #if !DEBUG_MODE

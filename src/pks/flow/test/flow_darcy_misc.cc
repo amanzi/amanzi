@@ -229,10 +229,11 @@ SUITE(Darcy_PK) {
       createBClist("pressure", "BC 2", regions, 1.0);
       // DPK->ResetParameterList(dp_list);
  
+
       DPK->Initialize(S.ptr());
       S->CheckAllFieldsInitialized();
 
-      DPK->SolveFullySaturatedProblem(*S->GetFieldData("pressure", passwd));
+      DPK->SolveFullySaturatedProblem(*S->GetFieldData("pressure", passwd), false);
       DPK->CommitStep(0.0, 1.0, S);
 
       // calculate errors
@@ -270,7 +271,7 @@ TEST_FIXTURE(DarcyProblem, DirichletNeumann) {
     DPK->Initialize(S.ptr());
     S->CheckAllFieldsInitialized();
 
-    DPK->SolveFullySaturatedProblem(*S->GetFieldData("pressure", passwd));
+    DPK->SolveFullySaturatedProblem(*S->GetFieldData("pressure", passwd), false);
     DPK->CommitStep(0.0, 1.0, S);
 
     // calculate errors
@@ -309,7 +310,7 @@ TEST_FIXTURE(DarcyProblem, StaticHeadDirichlet) {
     DPK->Initialize(S.ptr());
     S->CheckAllFieldsInitialized();
 
-    DPK->SolveFullySaturatedProblem(*S->GetFieldData("pressure", passwd));
+    DPK->SolveFullySaturatedProblem(*S->GetFieldData("pressure", passwd), false);
     DPK->CommitStep(0.0, 1.0, S);
 
     // calculate errors
@@ -350,7 +351,7 @@ TEST_FIXTURE(DarcyProblem, DDprisms) {
     DPK->Initialize(S.ptr());
     S->CheckAllFieldsInitialized();
 
-    DPK->SolveFullySaturatedProblem(*S->GetFieldData("pressure", passwd));
+    DPK->SolveFullySaturatedProblem(*S->GetFieldData("pressure", passwd), false);
     DPK->CommitStep(0.0, 1.0, S);
 
     // calculate errors
@@ -392,7 +393,7 @@ TEST_FIXTURE(DarcyProblem, DNtetrahedra) {
     DPK->Initialize(S.ptr());
     S->CheckAllFieldsInitialized();
 
-    DPK->SolveFullySaturatedProblem(*S->GetFieldData("pressure", passwd));
+    DPK->SolveFullySaturatedProblem(*S->GetFieldData("pressure", passwd), false);
     DPK->CommitStep(0.0, 1.0, S);
 
     // calculate errors
@@ -434,7 +435,7 @@ TEST_FIXTURE(DarcyProblem, DDmixed) {
     DPK->Initialize(S.ptr());
     S->CheckAllFieldsInitialized();
 
-    DPK->SolveFullySaturatedProblem(*S->GetFieldData("pressure", passwd));
+    DPK->SolveFullySaturatedProblem(*S->GetFieldData("pressure", passwd), false);
     DPK->CommitStep(0.0, 1.0, S);
 
     // calculate errors

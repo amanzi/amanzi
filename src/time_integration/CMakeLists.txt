@@ -64,8 +64,8 @@ if (BUILD_TESTS)
 
     # Copy test directory files if an out of source build
     if (NOT (${TIME_INTEGRATION_SOURCE_DIR} EQUAL ${TIME_INTEGRATION_BINARY_DIR}))
-        execute_process(COMMAND ${CMAKE_COMMAND} -E 
-          copy_directory ${TIME_INTEGRATION_SOURCE_DIR}/test ${TIME_INTEGRATION_BINARY_DIR}/test) 
+      # file(GLOB DataFiles "${TIME_INTEGRATION_SOURCE_DIR}/test/*.xml")
+      # file(COPY ${DataFiles} DESTINATION ${TIME_INTEGRATION_BINARY_DIR}/test/)
     endif()
 
     # Add the time_integration directory to the include paths

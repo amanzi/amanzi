@@ -14,9 +14,7 @@
 #include <iostream>
 #include <vector>
 
-#include "Teuchos_ParameterList.hpp"
 #include "Teuchos_RCP.hpp"
-#include "Teuchos_XMLParameterListHelpers.hpp"
 #include "Teuchos_LAPACK.hpp"
 #include "UnitTest++.h"
 
@@ -209,7 +207,7 @@ void MassMatrix3D(std::string mesh_file, int max_row) {
 }
 
 TEST(MASS_MATRIX_3D_HEX) {
-  MassMatrix3D("test/one_cell.exo", 12);
+  MassMatrix3D("test/one_trapezoid.exo", 12);
 }
 
 TEST(MASS_MATRIX_3D_DODECAHEDRON) {
@@ -217,7 +215,7 @@ TEST(MASS_MATRIX_3D_DODECAHEDRON) {
 }
 
 TEST(MASS_MATRIX_3D_24SIDED) {
-  MassMatrix3D("test/one_cell3.exo", 10);
+  MassMatrix3D("test/cube_triangulated.exo", 10);
 }
 
 
@@ -404,7 +402,7 @@ void StiffnessMatrix3D(std::string mesh_file, int max_row) {
 }
 
 TEST(STIFFNESS_MATRIX_3D_HEX) {
-  StiffnessMatrix3D("test/one_cell.exo", 12);
+  StiffnessMatrix3D("test/one_trapezoid.exo", 12);
 }
 
 TEST(STIFFNESS_MATRIX_3D_DODECAHEDRON) {
@@ -412,7 +410,7 @@ TEST(STIFFNESS_MATRIX_3D_DODECAHEDRON) {
 }
 
 TEST(STIFFNESS_MATRIX_3D_24SIDES) {
-  StiffnessMatrix3D("test/one_cell3.exo", 10);
+  StiffnessMatrix3D("test/cube_triangulated.exo", 10);
 } 
 
 

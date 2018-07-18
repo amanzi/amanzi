@@ -36,7 +36,7 @@ Teuchos::RCP<WRMPartition> CreateWRMPartition(
       region_list.push_back(sublist.get<std::string>("region"));
       wrm_list.push_back(factory.Create(sublist));
     } else {
-      ASSERT(0);
+      AMANZI_ASSERT(0);
     }
   }
 

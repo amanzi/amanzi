@@ -45,7 +45,7 @@ void IndependentVariableFieldEvaluatorFromFunction::UpdateField_(const Teuchos::
   if (!computed_once_) {
     // Create the function.
     Teuchos::RCP<const CompositeVector> cv = S->GetFieldData(my_key_);
-    ASSERT(plist_.isSublist("function"));
+    AMANZI_ASSERT(plist_.isSublist("function"));
     func_ = Functions::CreateCompositeVectorFunction(plist_.sublist("function"), cv->Map());
   }
 

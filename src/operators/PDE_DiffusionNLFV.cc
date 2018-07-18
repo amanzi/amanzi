@@ -57,7 +57,6 @@ void PDE_DiffusionNLFV::InitDiffusion_(Teuchos::ParameterList& plist)
   global_op_->OpPushBack(local_op_);
 
   // upwind options (not used yet)
-  Errors::Message msg;
   std::string uwname = plist.get<std::string>("nonlinear coefficient", "upwind: face");
   little_k_ = OPERATOR_LITTLE_K_UPWIND;
   if (uwname == "none") {
@@ -69,6 +68,7 @@ void PDE_DiffusionNLFV::InitDiffusion_(Teuchos::ParameterList& plist)
 
   // DEPRECATED INPUT -- remove this error eventually --etc
   if (plist.isParameter("newton correction")) {
+    Errors::Message msg;
     msg << "PDE_DiffusionNLFV: DEPRECATED: \"newton correction\" has been removed in favor of \"Newton correction\"";
     Exceptions::amanzi_throw(msg);
   }
@@ -89,6 +89,7 @@ void PDE_DiffusionNLFV::InitDiffusion_(Teuchos::ParameterList& plist)
     Errors::Message msg("PDE_DiffusionNLFV: \"true Jacobian\" not supported -- maybe you mean \"approximate Jacobian\"?");
     Exceptions::amanzi_throw(msg);
   } else {
+    Errors::Message msg;
     msg << "PDE_DiffusionNLFV: invalid parameter \"" << jacobian 
         << "\" for option \"Newton correction\" -- valid are: \"none\", \"approximate Jacobian\"";
     Exceptions::amanzi_throw(msg);
@@ -114,10 +115,10 @@ void PDE_DiffusionNLFV::SetScalarCoefficient(
 
   if (k_ != Teuchos::null) {
     if (little_k_ == OPERATOR_LITTLE_K_UPWIND) {
-      ASSERT(k_->HasComponent("face"));
+      AMANZI_ASSERT(k_->HasComponent("face"));
     }
   }
-  if (dkdp_ != Teuchos::null) ASSERT(dkdp_->HasComponent("cell")); 
+  if (dkdp_ != Teuchos::null) AMANZI_ASSERT(dkdp_->HasComponent("cell")); 
 }
 
 
@@ -248,7 +249,7 @@ void PDE_DiffusionNLFV::InitStencils_()
       conormal = ((*K_)[c] * normal) * dirs[n];
 
       ierr = nlfv.PositiveDecomposition(n, tau, conormal, ws, ids);
-      ASSERT(ierr == 0);
+      AMANZI_ASSERT(ierr == 0);
 
       mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
       OrderCellsByGlobalId_(cells, c1, c2);
@@ -667,7 +668,7 @@ void PDE_DiffusionNLFV::OneSidedWeightFluxes_(
 /* ******************************************************************
 * Matrix-based implementation of boundary conditions.
 ****************************************************************** */
-void PDE_DiffusionNLFV::ApplyBCs(bool primary, bool eliminate)
+void PDE_DiffusionNLFV::ApplyBCs(bool primary, bool eliminate, bool essential_eqn)
 {
   const std::vector<int>& bc_model = bcs_trial_[0]->bc_model();
   const std::vector<double>& bc_value = bcs_trial_[0]->bc_value();

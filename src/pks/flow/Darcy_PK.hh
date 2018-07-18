@@ -61,7 +61,7 @@ class Darcy_PK : public Flow_PK {
 
   // methods required for time integration interface: dummy routines for Darcy flow.
   // -- computes the non-linear functional f = f(t,u,udot) and related norm.
-  void Functional(const double t_old, double t_new, 
+  void FunctionalResidual(const double t_old, double t_new, 
                   Teuchos::RCP<TreeVector> u_old, Teuchos::RCP<TreeVector> u_new, 
                   Teuchos::RCP<TreeVector> f) {};
   double ErrorNorm(Teuchos::RCP<const TreeVector> u, Teuchos::RCP<const TreeVector> du) { return 0.0; }
@@ -96,7 +96,7 @@ class Darcy_PK : public Flow_PK {
   void ChangedSolution() {};
 
   // other members of the PK linear solvers
-  void SolveFullySaturatedProblem(CompositeVector& u);
+  void SolveFullySaturatedProblem(CompositeVector& u, bool wells_on);
 
   virtual double FaceMassDensity(int f) const { return rho_;}
   virtual double FaceMolarDensity(int f) const { return molar_rho_;}
@@ -124,7 +124,7 @@ class Darcy_PK : public Flow_PK {
   double dt_desirable_, dt_factor_;
   std::vector<std::pair<double, double> > dt_history_;  // statistics
 
-  std::string preconditioner_name_, solver_name_;
+  std::string solver_name_;
   bool initialize_with_darcy_;
   int num_itrs_;
   double molar_rho_, rho_;

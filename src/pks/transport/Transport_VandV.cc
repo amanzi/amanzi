@@ -357,8 +357,10 @@ double Transport_PK::VV_SoluteVolumeChangePerSecond(int idx_tracer)
 void Transport_PK::CalculateLpErrors(
     AnalyticFunction f, double t, Epetra_Vector* sol, double* L1, double* L2)
 {
+  int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+
   *L1 = *L2 = 0.0;
-  for (int c = 0; c < sol->MyLength(); c++) {
+  for (int c = 0; c < ncells; c++) {
     const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
     double d = (*sol)[c] - f(xc, t);
 
@@ -367,7 +369,10 @@ void Transport_PK::CalculateLpErrors(
     *L2 += d * d * volume;
   }
 
-  *L2 = sqrt(*L2);
+  double tmp_out[2], tmp_in[2] = {*L1, *L2};
+  mesh_->get_comm()->SumAll(tmp_in, tmp_out, 2);
+  *L1 = tmp_out[0];
+  *L2 = sqrt(tmp_out[1]);
 }
 
 }  // namespace Transport

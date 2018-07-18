@@ -1654,30 +1654,22 @@ Again, constant functions can be replaced by any of the available functions.
   For the other options, it is measured in [kg/s]. 
   When the source function is defined over a few regions, Q is distributed over their union.
   Option `"volume fraction`" can be used when the region geometric
-  model support volume fractions. Option `"simple well`" provides
-  capability to model source term by Peaceman model. The well flux is
-  defined as q_w = WI(p - p_w), where WI is the well index and p_w is
-  the well pressure and q_w [kg/s] is the well flux. The pressure in
-  a well is assumed to be hydrostatic.
+  model support volume fractions. Option `"simple well`" implements the Peaceman model. 
+  The well flux is defined as `q_w = WI (p - p_w)` [kg/s], where `WI` is the well index 
+  and `p_w` is the well pressure. The pressure in a well is assumed to be hydrostatic.
 
 * `"use volume fractions`" instructs the code to use all available volume fractions. 
   Note that the region geometric model supports volume fractions only for a few regions.
 
 * `"submodel`" [string] refines definition of the source. Available options are `"rate`",
-  `"integrated source`" and `"bhp"`. The first option defines the source in a natural way as the rate 
-  of change `q`. The second option defines the indefinite integral `Q` of the rate 
-  of change, i.e. the source term is calculated as `q =
-  dQ/dt`. Default is `"rate`". In the case of `"simple well`"
-  distribution method two submodel options are available: `"rate`" and
-  `"bhp`" (bottom hole pressure)
-
-* In the case of a `"simple well`" model and `"bhp`" submodel the
-  following parameters has to be defined: `"depth"`, `"well radius`"
-  and `"bhp`" pressure. In the case of  `"simple well`" model and
-  `"rate`" submodel only rate function has to be defined. `"integrated
-  source`" is not supported for `"simple well`".
-
-
+  `"integrated source`" and `"bhp"` (bottom hole pressure). The first option defines the source 
+  in a natural way as the rate of change `q`. The second option defines the indefinite
+  integral `Q` of the rate of change, i.e. the source term is calculated as `q = dQ/dt`. 
+  For most distributions methods, two submodles are available: `"rate`" and `"integrated source`".
+  For distribution method `"simple well`", two submodels are available: `"rate`" and
+  `"bhp`". Submodel `"bhp`" requires `"depth"`, `"well radius`" and 
+  `"bhp`" function. Submodel `"rate`" requires only rate function.
+  Default is `"rate`". 
 
 .. code-block:: xml
 
@@ -1705,7 +1697,7 @@ Again, constant functions can be replaced by any of the available functions.
        </ParameterList>
 
        <ParameterList name="SRC 2">
-         <Parameter name="regions" type="Array(string)" value="{WellCenter}"/>
+         <Parameter name="regions" type="Array(string)" value="{WELL_NORTH}"/>
            <Parameter name="spatial distribution method" type="string" value="simple well"/>    
            <ParameterList name="well">
              <Parameter name="submodel" type="string" value="bhp"/>
@@ -1721,7 +1713,7 @@ Again, constant functions can be replaced by any of the available functions.
        </ParameterList>
 
        <ParameterList name="SRC 3">
-         <Parameter name="regions" type="Array(string)" value="{WellCenter2}"/>
+         <Parameter name="regions" type="Array(string)" value="{WELL_SOUTH}"/>
            <Parameter name="spatial distribution method" type="string" value="simple well"/>
            <ParameterList name="well">
              <Parameter name="submodel" type="string" value="rate"/>
@@ -1777,6 +1769,8 @@ Initialization and constraints
     options are `"picard`" and `"saturated solver`". The latter option leads to solving 
     a Darcy problem. The former option uses sublist `"picard parameters`".
     *Picard works better if a bounded initial pressure guess is provided.* 
+
+  * `"active wells`" [bool] specifies if wells are active or turned off. Default is *false*.
 
   * `"picard parameters`" [list] defines control parameters for the Picard solver.
 
@@ -2218,7 +2212,7 @@ scheme, and selects assembling schemas for matrices and preconditioners.
   </ParameterList>
 
 This example creates a p-lambda system, i.e. the concentation is
-discretized in mesh cells and on mesh faces. The later unknowns are auxiliary unknwons.
+discretized in mesh cells and on mesh faces. The later unknowns are auxiliary unknowns.
 
 
 Multiscale continuum models
@@ -3190,15 +3184,10 @@ scheme, and selects assembling schemas for matrices and preconditioners.
 
   * `"matrix`" [list] defines parameters for generating and assembling diffusion matrix. See section
     describing operators. 
-    When `"Richards problem`" is selected, Flow PK sets up proper value for parameter `"upwind method`" of 
-    this sublist.
 
   * `"preconditioner`" [list] defines parameters for generating and assembling diffusion 
     matrix that is used to create preconditioner. 
-    This sublist is ignored inside sublist `"Darcy problem`".
     Since update of preconditioner can be lagged, we need two objects called `"matrix`" and `"preconditioner`".
-    When `"Richards problem`" is selected, Flow PK sets up proper value for parameter `"upwind method`" of 
-    this sublist.
 
 .. code-block:: xml
 
@@ -3551,10 +3540,52 @@ Operators
 Operators are discrete forms of linearized PDEs operators.
 They form a layer between physical process kernels and solvers
 and include diffusion, advection, elasticity, and source operators.
-A PK decides which collection of operators must be used to build a preconditioner.
+The residual associated with an operator :math:`L_h` helps to 
+understand the employed sign convention:
+
+.. math::
+  r = f - L_h u.
+
+A PK decides how to bundle operators in a collection of operators.
+For example, an advection-diffusion problem may benefit from using
+an operator that combines two operators representing diffusion and advection process.
+Collection of operators must be used for implicit solvers and for building preconditioners.
+In such a case, the collections acts as a single operator.
 
 Operators use a few tools that are generic in nature and can be used independently by PKs. 
 The list includes reconstruction and limiting algorithms. 
+
+
+Schema
+......
+
+The operators use notion of schema to describe operator's abstract structure.
+Old operators use a simple schema which is simply the list of geometric objects where
+scalar degrees of freedom are defined.
+New operators use a list to define location, type, and number of degrees of freedom.
+A rectangular operator needs two schemas do describe its domain (called `"schema domain`") 
+and its range (called `"schema range`").
+
+.. code-block:: xml
+
+  <ParameterList name="OPERATOR_NAME">  <!-- parent list-->
+    <ParameterList name="schema domain">
+      <Parameter name="location" type="Array(string)" value="{node, face}"/>
+      <Parameter name="type" type="Array(string)" value="{scalar, normal component}"/>
+      <Parameter name="number" type="Array(int)" value="{2, 1}"/>
+    </ParameterList>
+    <ParameterList name="schema domain">
+      <Parameter name="location" type="Array(string)" value="{node, face}"/>
+      <Parameter name="type" type="Array(string)" value="{scalar, normal component}"/>
+      <Parameter name="number" type="Array(int)" value="{2, 1}"/>
+    </ParameterList>
+  </ParameterList>
+
+This example describes square operator with two degrees of freedom per mesh node and one
+degree of freedom per mesh face. 
+The face-based degree of freedom is the normal component of a vector field. 
+Such set of degrees of freedom is used in the Bernardi-Raugel element for discretizing 
+Stokes equations.
 
 
 Diffusion operator
@@ -3665,9 +3696,7 @@ The structure of the schema is described in the previous section.
     are `"DG order 0`", `"DG order 1`".
 
   * `"flux formula`" [string] defines type of the flux. The available options 
-    are `"Rusanov`" (default), `"upwind`", and `"NavierStokes`".
-
-  * `"reconstruction order`" [int] defines accuracy of this discrete operator.
+    are `"Rusanov`" (default), `"upwind`", `"downwind`", and `"NavierStokes`".
 
   * `"schema domain`" [list] defines a discretization schema for the operator domain.
 
@@ -3677,8 +3706,12 @@ The structure of the schema is described in the previous section.
 
   <ParameterList name="OPERATOR_NAME">
     <Parameter name="method" type="string" value="DG order 0"/>
+    <Parameter name="method order" type="int" value="2"/>
     <Parameter name="reconstruction order" type="int" value="0"/>
     <Parameter name="flux formula" type="string" value="Rusanov"/>
+    <Parameter name="matrix type" type="string" value="flux"/>
+    <Parameter name="jump operator on test function" type="bool" value="true"/>
+
     <ParameterList name="schema domain">
       <Parameter name="location" type="Array(string)" value="{node, face}"/>
       <Parameter name="type" type="Array(string)" value="{scalar, normal component}"/>
@@ -3748,6 +3781,42 @@ and Navier-Stokes).
       </ParameterList>
     </ParameterList>
 
+
+Abstract operator
+.................
+An abstract operator is designed for testing new discretization methods. 
+It uses the factory of discretization methods and a few control parameters
+required by this factory and/or particular method in it.
+
+* `"method`" [string] defines a discretization method. The available
+  options are `"diffusion`", `"diffusion generalized`", `"BernardiRaugel`",
+  `"CrouzeixRaviart`", `"Lagrange`", `"Lagrange serendipity`", and `"dg modal`".
+
+* `"method order`" [int] defines disretization order. It is used by 
+  high-order discretization methods such as the discontinuous Galerkin.
+
+* `"matrix type`" [string] defines type of local matrix. Available options are
+  `"mass`", `"mass inverse`", `"stiffness`", `"divergence`", and `"advection`".
+
+.. code-block:: xml
+
+    <ParameterList name="ABSTRACT OPERATOR">
+      <Parameter name="method" type="string" value="dg modal"/>
+      <Parameter name="method order" type="int" value="2"/>
+      <Parameter name="dg basis" type="string" value="natural"/>
+      <Parameter name="matrix type" type="string" value="flux"/>
+
+      <ParameterList name="schema domain">
+        ...
+      </ParameterList>
+      <ParameterList name="schema range">
+        ...
+      </ParameterList>
+    </ParameterList>
+
+
+
+Diffusion is the most frequently used operator.
 
 Reconstruction and limiters
 ...........................
@@ -4330,6 +4399,8 @@ This list contains sublists for various linear solvers such as PCG, GMRES, and N
 * `"iterative method`" [string] defines a Krylov-based method. The available options
   include `"pcg`" and `"gmres`".
 
+* `"direct method`" [string] defines a direct method. The available option is `"amesos`".
+
 * `"xxx parameters`" [list] provides parameters for the iterative method specified 
   by variable `"iterative method`".
  
@@ -4493,6 +4564,32 @@ Internal parameters for NKA include
       <ParameterList name="verbose object">
         <Parameter name="verbosity level" type="string" value="high"/>
       </ParameterList>
+    </ParameterList>
+  </ParameterList>
+
+
+Direct solvers from Amesos library 
+..................................
+
+Amesos library of Trilinos package provides interfaces to a few direct solvers.
+List `"amesos parameters`" contains parameters that understood by this library.
+These parameters may violate the camel-case convention employed by this spec.
+Additional parameters are:
+
+* `"solver name`" [string] declares name of one of the supported direct solvers. 
+  Available options are `"Klu`", `"Superlu`", `"Basker`", etc, see Amesos and 
+  Amesos2 manuals for details. The default value is serial solver `"Klu`".
+
+* `"amesos version`" [int] specifies version of Amesos. Available options are 1 and 2.
+  The default value is 1.
+
+.. code-block:: xml
+
+  <ParameterList name="AMESOS KLU">  <!-- parent list -->
+    <Parameter name="direct method" type="string" value="amesos"/>
+    <ParameterList name="amesos parameters">
+      <Parameter name="solver name" type="string" value="Klu"/>
+      <Parameter name="amesos version" type="int" value="1"/>
     </ParameterList>
   </ParameterList>
 
@@ -4895,6 +4992,12 @@ Internal parameters for Boomer AMG include
   * 22 - CGC-E coarsening by M. Griebel, B. Metsch and A.Schweitzer.
 
 * `"max coarse size`" [int] sets maximum size of coarsest grid. The default is 9.
+
+* `"use block indices`" [bool] If true, uses the `"systems of PDEs`" code with blocks 
+  given by the SuperMap, or one per DoF per entity type. Default is *false*.
+  Note Hypre's BoomerAMG cannot be given both `"use block indices`" and 
+  `"number of functions`" (see later) options as these are two ways of specifying 
+  the same thing.
 
 * `"number of function`" [int] the value > 1 tells Boomer AMG to use the "systems 
   of PDEs" code.  Note that, to use this approach, unknowns must be ordered with 

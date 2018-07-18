@@ -77,7 +77,7 @@ void ThermalConductivity_Water::InitializeFromPlist_()
 
   if (eos_plist_.isParameter("polynomial expansion")) {
     Teuchos::Array<double> kai = eos_plist_.get<Teuchos::Array<double> >("polynomial expansion");
-    ASSERT(kai.size() == 3);
+    AMANZI_ASSERT(kai.size() == 3);
 
     ka0_ = kai[0]; 
     ka1_ = kai[1]; 

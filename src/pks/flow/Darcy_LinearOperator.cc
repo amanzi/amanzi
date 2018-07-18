@@ -25,22 +25,22 @@ namespace Flow {
 * does not depend on time. The boundary conditions are calculated
 * only once, during the initialization step.                                                
 ****************************************************************** */
-void Darcy_PK::SolveFullySaturatedProblem(CompositeVector& u)
+void Darcy_PK::SolveFullySaturatedProblem(CompositeVector& u, bool wells_on)
 {
   // add diffusion operator
   op_->RestoreCheckPoint();
  
-  if (S_->HasField("well_index")){
+  if (wells_on && S_->HasField("well_index")) {
     const CompositeVector& wi = *S_->GetFieldData("well_index");
     op_acc_->AddAccumulationTerm(wi, "cell");
   }
 
-  op_diff_->ApplyBCs(true, true);
+  op_diff_->ApplyBCs(true, true, true);
   CompositeVector& rhs = *op_->rhs();
-  AddSourceTerms(rhs);
+  if (wells_on) AddSourceTerms(rhs);
 
   op_->AssembleMatrix();
-  op_->InitPreconditioner(preconditioner_name_, *preconditioner_list_);
+  op_->UpdatePreconditioner();
 
   AmanziSolvers::LinearOperatorFactory<Operators::Operator, CompositeVector, CompositeVectorSpace> sfactory;
   Teuchos::RCP<AmanziSolvers::LinearOperator<Operators::Operator, CompositeVector, CompositeVectorSpace> >

@@ -8,9 +8,20 @@
 
   Authors: Ethan Coon (ecoon@lanl.gov)
            Konstantin Lipnikov (lipnikov@lanl.gov)
-
-  Base class for linear solvers.
 */
+
+//!  Base class for linear solvers.
+
+/*!
+
+``[linear-solver-typed-spec]``
+
+* `"iterative method type`" ``[string]`` Iterative method to be used.
+* `"_iterative_method_type_ parameters`" ``[_iterative_method_type_-spec]``
+  Parameters associated with the requested iterative method.
+  
+ */
+
 
 #ifndef AMANZI_LINEAR_OPERATOR_HH_
 #define AMANZI_LINEAR_OPERATOR_HH_
@@ -44,6 +55,7 @@ class LinearOperator : public Matrix {
     Init(plist);
   }
 
+  // standard interface recommended in MatrixBase.hh
   virtual int Apply(const Vector& v, Vector& mv) const { return m_->Apply(v, mv); }
   virtual int ApplyInverse(const Vector& v, Vector& hv) const = 0;
 
@@ -60,6 +72,7 @@ class LinearOperator : public Matrix {
     return true_residual;
   }
 
+  // control and statistics
   virtual double residual() = 0;
   virtual int num_itrs() = 0;
   virtual void add_criteria(int criteria) = 0;
@@ -68,6 +81,7 @@ class LinearOperator : public Matrix {
   std::string name() { return name_; }
   void set_name(std::string name) { name_ = name; }
 
+  // to recuperate from a crash, we post-process errors here
   Errors::Message DecodeErrorCode(int ierr) {
     Errors::Message msg;
     switch(ierr) {

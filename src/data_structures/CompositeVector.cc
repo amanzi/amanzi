@@ -218,6 +218,15 @@ void CompositeVector::InitData_(const CompositeVector& other, InitMode mode) {
 // Sets sizes of vectors, instantiates Epetra_Vectors, and preps for lazy
 // creation of everything else.
 void CompositeVector::CreateData_() {
+  if (!Mesh().get()) {
+    Errors::Message message("CompositeVector: construction called with no mesh.");
+    Exceptions::amanzi_throw(message);
+  }
+  if (NumComponents() == 0) {
+    Errors::Message message("CompositeVector: construction called with no components.");
+    Exceptions::amanzi_throw(message);
+  }
+
   if (importers_.size() == 0) {
     importers_.resize(NumComponents(), Teuchos::null);
   }
@@ -250,7 +259,7 @@ void CompositeVector::CreateData_() {
 
 CompositeVector& CompositeVector::operator=(const CompositeVector& other) {
   if (this != &other) {
-    ASSERT(Map().SubsetOf(other.Map()));
+    AMANZI_ASSERT(Map().SubsetOf(other.Map()));
 
     if (Ghosted() && other.Ghosted()) {
       // If both are ghosted, copy the ghosted vector.
@@ -530,7 +539,7 @@ int CompositeVector::Dot(const CompositeVector& other, double* result) const {
 // -- this <- scalarA*A + scalarThis*this
 CompositeVector& CompositeVector::Update(double scalarA, const CompositeVector& A,
                                          double scalarThis) {
-  //  ASSERT(map_->SubsetOf(*A.map_));
+  //  AMANZI_ASSERT(map_->SubsetOf(*A.map_));
   ChangedValue();
   for (name_iterator lcv=begin(); lcv!=end(); ++lcv) {
     if (A.HasComponent(*lcv))
@@ -543,8 +552,8 @@ CompositeVector& CompositeVector::Update(double scalarA, const CompositeVector& 
 // -- this <- scalarA*A + scalarB*B + scalarThis*this
 CompositeVector& CompositeVector::Update(double scalarA, const CompositeVector& A,
                  double scalarB, const CompositeVector& B, double scalarThis) {
-  //  ASSERT(map_->SubsetOf(*A.map_));
-  //  ASSERT(map_->SubsetOf(*B.map_));
+  //  AMANZI_ASSERT(map_->SubsetOf(*A.map_));
+  //  AMANZI_ASSERT(map_->SubsetOf(*B.map_));
   ChangedValue();
   for (name_iterator lcv=begin(); lcv!=end(); ++lcv) {
     if (A.HasComponent(*lcv) && B.HasComponent(*lcv))
@@ -558,8 +567,8 @@ CompositeVector& CompositeVector::Update(double scalarA, const CompositeVector& 
 // -- this <- scalarAB * A@B + scalarThis*this  (@ is the elementwise product
 int CompositeVector::Multiply(double scalarAB, const CompositeVector& A,
         const CompositeVector& B, double scalarThis) {
-  //  ASSERT(map_->SubsetOf(*A.map_));
-  //  ASSERT(map_->SubsetOf(*B.map_));
+  //  AMANZI_ASSERT(map_->SubsetOf(*A.map_));
+  //  AMANZI_ASSERT(map_->SubsetOf(*B.map_));
   ChangedValue();
   int ierr = 0;
   for (name_iterator lcv=begin(); lcv!=end(); ++lcv) {
@@ -574,8 +583,8 @@ int CompositeVector::Multiply(double scalarAB, const CompositeVector& A,
 // -- this <- scalarAB * B / A + scalarThis*this  (/ is the elementwise division
 int CompositeVector::ReciprocalMultiply(double scalarAB, const CompositeVector& A,
                                         const CompositeVector& B, double scalarThis) {
-  ASSERT(map_->SubsetOf(*A.map_));
-  ASSERT(map_->SubsetOf(*B.map_));
+  AMANZI_ASSERT(map_->SubsetOf(*A.map_));
+  AMANZI_ASSERT(map_->SubsetOf(*B.map_));
   ChangedValue();
   int ierr = 0;
   for (name_iterator lcv=begin(); lcv!=end(); ++lcv) {
@@ -681,7 +690,7 @@ void DeriveFaceValuesFromCellValues(CompositeVector& cv) {
       cv.Mesh()->face_get_cells(f_lid, AmanziMesh::Parallel_type::ALL, &cells);
       int ncells = cells.size();
 
-      ASSERT((ncells==1));
+      AMANZI_ASSERT((ncells==1));
 
       double face_value = cv_c[0][cells[0]];
       cv_f[0][fb] = face_value;

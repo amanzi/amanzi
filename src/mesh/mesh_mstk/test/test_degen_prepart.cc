@@ -2,7 +2,7 @@
 #include <TestReporterStdout.h>
 #include <mpi.h>
 
-#include <iostream>
+#include <fstream>
 #include "Epetra_Map.h"
 #include "Epetra_MpiComm.h"
 #include "Teuchos_ParameterList.hpp"
@@ -79,7 +79,7 @@ TEST(ELIM_DEGEN_PREPARTITION)
   }
   std::cout << "Reading the mesh..." << std::endl;
   mesh = factory.create(in_exo_file, gm);
-  ASSERT(!mesh.is_null());
+  AMANZI_ASSERT(!mesh.is_null());
   
   // mesh verification
   bool verify = mesh_plist.get<bool>("verify mesh", false);

@@ -116,7 +116,7 @@ set(energy_src_files Energy_PK.cc
 
 set(energy_tpl_libs ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES})
 if (Ifpack_ENABLE_HYPRE)
-  list(APPEND energy_tpl_libs ${Ifpack_LIBRARIES})
+  list(APPEND energy_tpl_libs ${Ifpack_LIBRARIES} ${HYPRE_LIBRARY})
 endif()
 add_amanzi_library(energy SOURCE ${energy_src_files}
                    LINK_LIBS operators eos pks functions mesh_functions
@@ -157,8 +157,8 @@ if (BUILD_TESTS)
 
     # Copy test directory files if an out of source build
     if (NOT (${ENERGY_SOURCE_DIR} EQUAL ${ENERGY_BINARY_DIR}) )
-        execute_process(COMMAND ${CMAKE_COMMAND} -E 
-          copy_directory ${ENERGY_SOURCE_DIR}/test ${ENERGY_BINARY_DIR}/test) 
+      file(GLOB DataFiles "${ENERGY_SOURCE_DIR}/test/*.xml")
+      file(COPY ${DataFiles} DESTINATION ${ENERGY_BINARY_DIR}/test/)
     endif()
 
     # Add the flow directory to the include paths

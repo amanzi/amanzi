@@ -45,7 +45,7 @@ namespace AmanziGeometry {
 // Create region from XML specification
 Teuchos::RCP<Region>
 createRegion(const std::string reg_name,
-             Set_ID reg_id,
+             int reg_id,
              Teuchos::ParameterList& reg_spec,
              const Epetra_MpiComm *comm)
 {
@@ -200,13 +200,6 @@ createRegion(const std::string reg_name,
     Teuchos::ParameterList enum_params = reg_spec.sublist(shape);
     std::string entity_str = enum_params.get<std::string>("entity");
 
-    if (entity_str == "Cell" || entity_str == "cell" || entity_str == "CELL")
-      entity_str = "CELL";
-    else if (entity_str == "Face" || entity_str == "face" || entity_str == "FACE")
-      entity_str = "FACE";
-    else if (entity_str == "Node" || entity_str == "node" || entity_str == "NODE")
-      entity_str = "NODE";
-      
     Teuchos::Array<int> entity_list = 
       enum_params.get< Teuchos::Array<int> >("entity gids");
 
@@ -253,7 +246,7 @@ createRegion(const std::string reg_name,
     region = Teuchos::rcp(new RegionBoxVolumeFractions(
         reg_name, reg_id, p0, p1, normals, lifecycle));
 
-  } else if (shape == "region: line segment"){
+  } else if (shape == "region: line segment") {
     Teuchos::ParameterList& reg_params = reg_spec.sublist(shape);
 
     Teuchos::Array<double> p0_vec = reg_params.get<Teuchos::Array<double> >("end coordinate");

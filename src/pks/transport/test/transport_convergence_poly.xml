@@ -76,7 +76,7 @@
     <ParameterList name="field evaluators">
       <ParameterList name="porosity">
         <ParameterList name="verbose object">
-          <Parameter name="verbosity level" type="string" value="extreme"/>
+          <Parameter name="verbosity level" type="string" value="low"/>
         </ParameterList>
         <Parameter name="field evaluator type" type="string" value="independent variable"/>
         <ParameterList name="function">

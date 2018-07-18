@@ -22,7 +22,7 @@ namespace Transport {
 * Routine takes a parallel overlapping vector C and returns parallel
 * overlapping vector F(C). 
 ****************************************************************** */
-void Transport_PK::Functional(double t,
+void Transport_PK::FunctionalTimeDerivative(double t,
                               const Epetra_Vector& component,
                               Epetra_Vector& f_component)
 {
@@ -157,7 +157,7 @@ void Transport_PK::Functional(double t,
 * Routine takes a parallel overlapping vector C and returns parallel
 * overlapping vector F(C). Old version.
 ****************************************************************** */
-void Transport_PK::FunctionalOld(double t,
+void Transport_PK::DudtOld(double t,
                                  const Epetra_Vector& component,
                                  Epetra_Vector& f_component)
 {

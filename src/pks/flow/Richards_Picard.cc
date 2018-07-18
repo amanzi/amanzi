@@ -95,15 +95,17 @@ int Richards_PK::AdvanceToSteadyState_Picard(Teuchos::ParameterList& plist)
     // create algebraic problem (matrix = preconditioner)
     op_preconditioner_->Init();
     op_preconditioner_diff_->UpdateMatrices(darcy_flux_copy.ptr(), solution.ptr());
+
     op_preconditioner_diff_->UpdateMatricesNewtonCorrection(darcy_flux_copy.ptr(), Teuchos::null, molar_rho.ptr());
-    op_preconditioner_diff_->ApplyBCs(true, true);
+    op_preconditioner_diff_->ApplyBCs(true, true, true);
+
 
     Teuchos::RCP<CompositeVector> rhs = op_preconditioner_->rhs();  // export RHS from the matrix class
     AddSourceTerms(*rhs);
 
     // create preconditioner
     op_preconditioner_->AssembleMatrix();
-    op_preconditioner_->InitPreconditioner(preconditioner_name_, *preconditioner_list_);
+    op_preconditioner_->UpdatePreconditioner();
 
     // check convergence of non-linear residual
     op_preconditioner_->ComputeResidual(solution_new, residual);

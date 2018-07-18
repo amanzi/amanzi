@@ -36,8 +36,8 @@ BlockVector::BlockVector(const Epetra_MpiComm& comm,
   num_components_ = maps_.size();
 
   // Check consistency of input args.
-  ASSERT(names_.size() == num_components_);
-  ASSERT(num_dofs_.size() == num_components_);
+  AMANZI_ASSERT(names_.size() == num_components_);
+  AMANZI_ASSERT(num_dofs_.size() == num_components_);
 
   data_.resize(num_components_);
 
@@ -145,8 +145,8 @@ BlockVector::ViewComponent(std::string name) {
 // Set data
 void BlockVector::SetComponent(std::string name,
         const Teuchos::RCP<Epetra_MultiVector>& data) {
-  ASSERT(ComponentMap(name)->SameAs(data->Map()));
-  ASSERT(NumVectors(name) == data->NumVectors());
+  AMANZI_ASSERT(ComponentMap(name)->SameAs(data->Map()));
+  AMANZI_ASSERT(NumVectors(name) == data->NumVectors());
   data_[Index_(name)] = data;
 }
 
@@ -165,7 +165,7 @@ int BlockVector::PutScalar(double scalar) {
 // -- Insert values into data, by DOF, not by component!
 int BlockVector::PutScalar(std::vector<double> scalar) {
   for (int i = 0; i != num_components_; ++i) {
-    ASSERT(scalar.size() == num_dofs_[i]);
+    AMANZI_ASSERT(scalar.size() == num_dofs_[i]);
     for (int lcv_vector = 0; lcv_vector != data_[i]->NumVectors(); ++lcv_vector) {
       int ierr = (*data_[i])(lcv_vector)->PutScalar(scalar[lcv_vector]);
       if (ierr) return ierr;
@@ -184,7 +184,7 @@ int BlockVector::PutScalar(std::string name, double scalar) {
 // -- Insert values into data of component [name].
 int BlockVector::PutScalar(std::string name, std::vector<double> scalar) {
   int i = Index_(name);
-  ASSERT(scalar.size() == num_dofs_[i]);
+  AMANZI_ASSERT(scalar.size() == num_dofs_[i]);
 
   for (int lcv_vector = 0; lcv_vector != data_[i]->NumVectors(); ++lcv_vector) {
     int ierr = (*data_[i])(lcv_vector)->PutScalar(scalar[lcv_vector]);

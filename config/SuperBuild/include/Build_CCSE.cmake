@@ -37,7 +37,7 @@ set(CCSE_CMAKE_CACHE_ARGS
                        -DBL_PRECISION:STRING=DOUBLE
                        -DBL_SPACEDIM:INT=${CCSE_BL_SPACEDIM}
                        -DBL_USE_PARTICLES:INT=0
-                       -DCMAKE_INSTALL_PREFIX:STRING=<INSTALL_DIR>
+                       -DCMAKE_INSTALL_PREFIX:PATH=${TPL_INSTALL_PREFIX}
                        -DCMAKE_BUILD_TYPE:STRING=${CMAKE_BUILD_TYPE}
                        -DBUILD_SHARED_LIBS:BOOL=${BUILD_SHARED_LIBS}
                        -DCMAKE_C_COMPILER:FILEPATH=${CMAKE_C_COMPILER}
@@ -54,7 +54,7 @@ set(CCSE_CMAKE_CACHE_ARGS
 
 
 # --- Set the name of the patch
-set(CCSE_patch_file ccse-1.3.4-dependency.patch ccse-1.3.4-tools-compilers.patch)
+set(CCSE_patch_file ccse-1.3.4-dependency.patch ccse-1.3.4-tools-compilers.patch ccse-1.3.4-tools-plot1d.patch)
 # --- Configure the bash patch script
 set(CCSE_sh_patch ${CCSE_prefix_dir}/ccse-patch-step.sh)
 configure_file(${SuperBuild_TEMPLATE_FILES_DIR}/ccse-patch-step.sh.in
@@ -84,9 +84,9 @@ ExternalProject_Add(${CCSE_BUILD_TARGET}
 		    CMAKE_CACHE_ARGS ${AMANZI_CMAKE_CACHE_ARGS}   # Global definitions from root CMakeList
 		                     ${CCSE_CMAKE_CACHE_ARGS}     
                     # -- Build
-                    BINARY_DIR        ${CCSE_build_dir}           # Build directory 
-                    BUILD_COMMAND     $(MAKE)                     # $(MAKE) enables parallel builds through make
-                    BUILD_IN_SOURCE   ${CCSE_BUILD_IN_SOURCE}     # Flag for in source builds
+                    BINARY_DIR       ${CCSE_build_dir}            # Build directory 
+                    BUILD_COMMAND    $(MAKE)                      # $(MAKE) enables parallel builds through make
+                    BUILD_IN_SOURCE  ${CCSE_BUILD_IN_SOURCE}      # Flag for in source builds
                     # -- Install
                     INSTALL_DIR      ${TPL_INSTALL_PREFIX}        # Install directory
                     # -- Output control

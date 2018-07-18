@@ -65,7 +65,7 @@ void MagneticDiffusion2D(double dt, double tend,
   ParameterList plist = xmlreader.getParameters();
 
   // create a MSTK mesh framework
-  ParameterList region_list = plist.get<Teuchos::ParameterList>("regions");
+  ParameterList region_list = plist.sublist("regions");
   Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(2, region_list, &comm));
 
   MeshFactory meshfactory(&comm);
@@ -102,8 +102,7 @@ void MagneticDiffusion2D(double dt, double tend,
   Teuchos::RCP<BCs> bc1 = Teuchos::rcp(new BCs(mesh, AmanziMesh::NODE, DOF_Type::SCALAR));
 
   // create electromagnetics operator
-  Teuchos::ParameterList olist = plist.get<Teuchos::ParameterList>("PK operator")
-                                      .get<Teuchos::ParameterList>("electromagnetics operator");
+  Teuchos::ParameterList olist = plist.sublist("PK operator").sublist("electromagnetics operator");
   Teuchos::RCP<PDE_MagneticDiffusion_TM> op_mag = Teuchos::rcp(new PDE_MagneticDiffusion_TM(olist, mesh));
   op_mag->SetBCs(bc1, bc1);
 
@@ -177,13 +176,14 @@ void MagneticDiffusion2D(double dt, double tend,
 
     // apply BCs and assemble
     op_mag->ModifyMatrices(E, B, dt);
-    op_mag->ApplyBCs(true, true);
+    op_mag->ApplyBCs(true, true, true);
     op_acc->ApplyBCs();
     global_op->SymbolicAssembleMatrix();
     global_op->AssembleMatrix();
 
-    ParameterList slist = plist.get<Teuchos::ParameterList>("preconditioners");
-    global_op->InitPreconditioner("Hypre AMG", slist);
+    ParameterList slist = plist.sublist("preconditioners").sublist("Hypre AMG");
+    global_op->InitializePreconditioner(slist);
+    global_op->UpdatePreconditioner();
 
     // Solve the problem.
     ParameterList lop_list = plist.sublist("solvers").sublist("silent").sublist("pcg parameters");
@@ -304,7 +304,7 @@ void MagneticDiffusion3D(double dt, double tend, bool convergence,
   ParameterList plist = xmlreader.getParameters();
 
   // create a MSTK mesh framework
-  ParameterList region_list = plist.get<Teuchos::ParameterList>("regions");
+  ParameterList region_list = plist.sublist("regions");
   Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(3, region_list, &comm));
 
   MeshFactory meshfactory(&comm);
@@ -344,8 +344,7 @@ void MagneticDiffusion3D(double dt, double tend, bool convergence,
   Teuchos::RCP<BCs> bc2 = Teuchos::rcp(new BCs(mesh, AmanziMesh::FACE, DOF_Type::SCALAR));
 
   // create electromagnetics operator
-  Teuchos::ParameterList olist = plist.get<Teuchos::ParameterList>("PK operator")
-                                      .get<Teuchos::ParameterList>("electromagnetics operator");
+  Teuchos::ParameterList olist = plist.sublist("PK operator").sublist("electromagnetics operator");
   Teuchos::RCP<PDE_MagneticDiffusion> op_mag = Teuchos::rcp(new PDE_MagneticDiffusion(olist, mesh));
   op_mag->SetBCs(bc1, bc1);
   if (!convergence) op_mag->AddBCs(bc2, bc2);
@@ -429,12 +428,13 @@ void MagneticDiffusion3D(double dt, double tend, bool convergence,
 
     // BCs, sources, and assemble
     op_mag->ModifyMatrices(E, B, dt);
-    op_mag->ApplyBCs(true, true);
+    op_mag->ApplyBCs(true, true, true);
     global_op->SymbolicAssembleMatrix();
     global_op->AssembleMatrix();
 
-    ParameterList slist = plist.get<Teuchos::ParameterList>("preconditioners");
-    global_op->InitPreconditioner("Hypre AMG", slist);
+    ParameterList slist = plist.sublist("preconditioners").sublist("Hypre AMG");
+    global_op->InitializePreconditioner(slist);
+    global_op->UpdatePreconditioner();
 
     // Solve the problem.
     ParameterList lop_list = plist.sublist("solvers").sublist("silent").sublist("pcg parameters");

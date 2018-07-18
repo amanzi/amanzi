@@ -133,6 +133,7 @@ class Op {
     for (int i = 0; i != matrices.size(); ++i) {
       matrices[i] *= scaling;
     }
+    if (diag.get()) diag->Scale(scaling);
   }
 
   // access

@@ -167,7 +167,7 @@ else()
   # Search for ExodusII
   find_package(ExodusII QUIET REQUIRED)
   set_target_properties(${Nemesis_LIBRARY} PROPERTIES
-                        IMPORTED_LINK_INTERFACE_LIBRARIES "${ExodusII_LIBRARY}")
+                        INTERFACE_LINK_LIBRARIES "${ExodusII_LIBRARY}")
   list(APPEND Nemesis_INCLUDE_DIRS ${ExodusII_INCLUDE_DIRS})
 
 endif(Nemesis_LIBRARIES AND Nemesis_INCLUDE_DIRS)    

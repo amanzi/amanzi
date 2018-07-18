@@ -1,3 +1,4 @@
+#include <fstream>
 #include "HDF5Mesh.hh"
 
 namespace Amanzi {

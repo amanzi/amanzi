@@ -123,7 +123,7 @@ void VWContentEvaluator_ConstDensity::EvaluateFieldPartialDerivative_(
         result_v[0][c] = phi[0][c] * (1.0 - s_l[0][c]) * n_g[0][c];
       }
     } else {
-      ASSERT(0);
+      AMANZI_ASSERT(0);
     }
     
   } else {
@@ -137,7 +137,7 @@ void VWContentEvaluator_ConstDensity::EvaluateFieldPartialDerivative_(
         result_v[0][c] = phi[0][c] * n_l;
       }
     } else {
-      ASSERT(0);
+      AMANZI_ASSERT(0);
     }
   }
 }

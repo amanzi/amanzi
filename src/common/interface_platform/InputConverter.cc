@@ -530,7 +530,7 @@ std::vector<DOMNode*> InputConverter::GetSameChildNodes_(
 ****************************************************************** */
 double InputConverter::GetAttributeValueD_(
     DOMElement* elem, const char* attr_name, const std::string& type,
-    std::string unit, bool exception, double default_val)
+     double valmin, double valmax, std::string unit, bool exception, double default_val)
 {
   double val;
   MemoryManager mm;
@@ -567,6 +567,12 @@ double InputConverter::GetAttributeValueD_(
       Exceptions::amanzi_throw(msg);
     }
  
+    if (! (val >= valmin && val <= valmax)) {
+      msg << "Value of attribute \"" << attr_name << "\"=" << val 
+          << "\" is out of range: " << valmin << " " << valmax << " [" << unit << "].\n";
+      Exceptions::amanzi_throw(msg);
+    }
+
     if ((unit != "" && unit_in != "") ||
         (unit == "-" && unit_in != "")) {
       if (!units_.CompareUnits(unit, unit_in)) {
@@ -591,8 +597,8 @@ double InputConverter::GetAttributeValueD_(
 * Extract atribute of type int.
 ****************************************************************** */
 int InputConverter::GetAttributeValueL_(
-    DOMElement* elem, const char* attr_name,
-    const std::string& type, bool exception, int default_val)
+    DOMElement* elem, const char* attr_name, const std::string& type,
+    int valmin, int valmax, bool exception, int default_val)
 {
   int val;
   MemoryManager mm;
@@ -613,6 +619,13 @@ int InputConverter::GetAttributeValueL_(
       Errors::Message msg;
       msg << "Usage of constant \"" << text << "\" of type=" << found_type 
           << ". Expect type=" << type << ".\n";
+      Exceptions::amanzi_throw(msg);
+    }
+
+    if (! (val >= valmin && val <= valmax)) {
+      Errors::Message msg;
+      msg << "Value of attribute \"" << attr_name << "\"=" << val 
+          << " is out of range: " << valmin << " " << valmax << ".\n";
       Exceptions::amanzi_throw(msg);
     }
   } else if (! exception) {
@@ -670,7 +683,7 @@ std::string InputConverter::GetAttributeValueS_(
 * must match the expected unit. 
 ****************************************************************** */
 std::vector<double> InputConverter::GetAttributeVectorD_(
-    DOMElement* elem, const char* attr_name, 
+    DOMElement* elem, const char* attr_name, int length,
     std::string unit, bool exception, double mol_mass)
 {
   std::vector<double> val;
@@ -692,6 +705,14 @@ std::vector<double> InputConverter::GetAttributeVectorD_(
         }
       }
     }
+
+    if (length > 0 && val.size() != length) {
+      Errors::Message msg;
+      msg << "Attribute \"" << attr_name << "\" has too few parameters: " << (int)val.size() 
+          << ", expected: " << length << ". Hint: check \"mesh->dimension\".\n";
+      Exceptions::amanzi_throw(msg);
+    }
+
   } else if (exception) {
     char* tagname = mm.transcode(elem->getNodeName());
     ThrowErrorMissattr_(tagname, "attribute", attr_name, tagname);
@@ -1211,6 +1232,13 @@ std::string InputConverter::CreateINFile_(std::string& filename, int rank)
   element = static_cast<DOMElement*>(node);
   std::string datfilename = GetAttributeValueS_(element, "database", TYPE_NONE, true, "");
   
+  struct stat buffer;
+  int status = stat(datfilename.c_str(), &buffer);
+  if (status == -1) {
+    Errors::Message msg("The database file '" + datfilename + "' is missing.");
+    Exceptions::amanzi_throw(msg);
+  }
+
   controls << "  DATABASE " << datfilename.c_str() << "\n";
 
   base = GetUniqueElementByTagsString_("numerical_controls, unstructured_controls, unstr_chemistry_controls", flag);
@@ -1256,6 +1284,8 @@ std::string InputConverter::CreateINFile_(std::string& filename, int rank)
   
   // get primary species names
   // and check for forward/backward rates (for solutes/non-reactive primaries only)
+  std::map<std::string, int> incomplete_tracers;
+
   node = GetUniqueElementByTagsString_("liquid_phase, dissolved_components, primaries", flag);
   if (flag) {
     std::string primary;
@@ -1266,19 +1296,26 @@ std::string InputConverter::CreateINFile_(std::string& filename, int rank)
       std::string name = TrimString_(mm.transcode(inode->getTextContent()));
       primaries << "    " << name << "\n";
       element = static_cast<DOMElement*>(inode);
-      if (element->hasAttribute(mm.transcode("forward_rate"))) {
-        double frate = GetAttributeValueD_(element, "forward_rate");
-        double brate = GetAttributeValueD_(element, "backward_rate");
-        std::string name = TrimString_(mm.transcode(inode->getTextContent()));
-        reactionrates << "    REACTION " << name << " <->\n";
-        reactionrates << "    FORWARD_RATE " << frate << "\n";
-        reactionrates << "    BACKWARD_RATE " << brate << "\n";
-      }
+
       if (element->hasAttribute(mm.transcode("first_order_decay_constant"))) {
         double decay = GetAttributeValueD_(element, "first_order_decay_constant");
         std::string name = TrimString_(mm.transcode(inode->getTextContent()));
         decayrates << "    REACTION " << name << " <-> \n";
         decayrates << "    RATE_CONSTANT " << decay << "\n";
+      } else {
+        // verify that species is non-reactive (only one record (1 line) in database file)
+        int ncount = CountFileLinesWithWord_(datfilename, name);
+        if (ncount == 1 && element->hasAttribute(mm.transcode("forward_rate"))) {
+          double frate = GetAttributeValueD_(element, "forward_rate");
+          double brate = GetAttributeValueD_(element, "backward_rate");
+          std::string name = TrimString_(mm.transcode(inode->getTextContent()));
+          reactionrates << "    REACTION " << name << " <->\n";
+          reactionrates << "    FORWARD_RATE " << frate << "\n";
+          reactionrates << "    BACKWARD_RATE " << brate << "\n";
+        } else {
+          // not yet a bug: species may be involved in sorption process 
+          incomplete_tracers[name];
+        }
       }
     }
   }
@@ -1322,8 +1359,8 @@ std::string InputConverter::CreateINFile_(std::string& filename, int rank)
       mineral_list << name << ", ";
       
       element = static_cast<DOMElement*>(inode);
-      double rate = GetAttributeValueD_(element, "rate_constant", TYPE_NUMERICAL, "", false, 0.0);
-      // double val = GetAttributeValueD_(element, "rate_constant", TYPE_NUMERICAL, "mol/m^2/s", false, 0.0);
+      double rate = GetAttributeValueD_(element, "rate_constant", TYPE_NUMERICAL, DVAL_MIN, DVAL_MAX, "", false, 0.0);
+      // double val = GetAttributeValueD_(element, "rate_constant", TYPE_NUMERICAL, 0.0, DVAL_MAX, "mol/m^2/s", false, 0.0);
       // double rate = units_.ConvertUnitD(val, "mol/m^2/s", "mol/cm^2/s", -1.0, flag);
       
       mineral_kinetics << "    " << name << "\n";
@@ -1375,14 +1412,13 @@ std::string InputConverter::CreateINFile_(std::string& filename, int rank)
       // look for sorption_isotherms
       child_elem = GetChildByName_(inode, "sorption_isotherms", flag2, false);
       if (flag2) {
-        
         // loop over sublist of primaries to get Kd information
         std::vector<DOMNode*> primary_list = GetSameChildNodes_(static_cast<DOMNode*>(child_elem), name, flag2, false);
         if (flag2) {
           
           for (int j = 0; j < primary_list.size(); ++j) {
             DOMNode* jnode = primary_list[j];
-            std::string primary_name = GetAttributeValueS_(static_cast<DOMElement*>(jnode), "name");
+            std::string primary_name = GetAttributeValueS_(jnode, "name");
             DOMNode* kd_node = GetUniqueElementByTagsString_(jnode, "kd_model", flag2);
             DOMElement* kd_elem = static_cast<DOMElement*>(kd_node);
               
@@ -1410,14 +1446,13 @@ std::string InputConverter::CreateINFile_(std::string& filename, int rank)
       // look for ion exchange
       child_elem = GetChildByName_(inode, "ion_exchange", flag2, false);
       if (flag2) {
-        
         // loop over sublist of cations to get information
         std::vector<DOMNode*> mineral_list = GetSameChildNodes_(static_cast<DOMNode*>(child_elem), name, flag2, false);
         if (flag2) {
           for (int j = 0; j < mineral_list.size(); ++j) {
             DOMNode* jnode = mineral_list[j];
             Teuchos::ParameterList ion_list;
-            double cec = GetAttributeValueD_(static_cast<DOMElement*>(jnode), "cec");
+            double cec = GetAttributeValueD_(jnode, "cec");
             ion_list.set<double>("cec",cec);
             
             // loop over list of cation names/selectivity pairs
@@ -1430,6 +1465,7 @@ std::string InputConverter::CreateINFile_(std::string& filename, int rank)
                 DOMNode* knode = cations_list[k];
                 DOMElement* kelement = static_cast<DOMElement*>(knode);
                 cation_names.push_back(GetAttributeValueS_(kelement, "name"));
+
                 double value = GetAttributeValueD_(kelement, "value");
                 cation_selectivity.push_back(value);
                 if (value == 1.0) {
@@ -1449,15 +1485,14 @@ std::string InputConverter::CreateINFile_(std::string& filename, int rank)
       // look for surface complexation
       child_elem = GetChildByName_(inode, "surface_complexation", flag2, false);
       if (flag2) {
-        
         // loop over sublist of cations to get information
         std::vector<DOMNode*> site_list = GetSameChildNodes_(static_cast<DOMNode*>(child_elem), name, flag2, false);
         if (flag2) {
           for (int j = 0; j < site_list.size(); ++j) {
             DOMNode* jnode = site_list[j];
             Teuchos::ParameterList surface_list;
-            std::string site = GetAttributeValueS_(static_cast<DOMElement*>(jnode), "name");
-            double density = GetAttributeValueD_(static_cast<DOMElement*>(jnode), "density");
+            std::string site = GetAttributeValueS_(jnode, "name");
+            double density = GetAttributeValueD_(jnode, "density");
             surface_list.set<double>("density",density);
             
             std::string name2;
@@ -1480,9 +1515,9 @@ std::string InputConverter::CreateINFile_(std::string& filename, int rank)
           for (int j = 0; j < minerals_list.size(); ++j) {
             DOMNode* jnode = minerals_list[j];
             Teuchos::ParameterList mineral_list;
-            std::string mineral_name = GetAttributeValueS_(static_cast<DOMElement*>(jnode), "name");
-            double volume_fraction = GetAttributeValueD_(static_cast<DOMElement*>(jnode), "volume_fraction");
-            double specific_surface_area = GetAttributeValueD_(static_cast<DOMElement*>(jnode), "specific_surface_area");
+            std::string mineral_name = GetAttributeValueS_(jnode, "name");
+            double volume_fraction = GetAttributeValueD_(jnode, "volume_fraction");
+            double specific_surface_area = GetAttributeValueD_(jnode, "specific_surface_area");
             mineral_list.set<double>("volume_fraction",volume_fraction);
             mineral_list.set<double>("specific_surface_area",specific_surface_area);
             
@@ -1495,8 +1530,8 @@ std::string InputConverter::CreateINFile_(std::string& filename, int rank)
   
   // create text for chemistry options - isotherms
   Teuchos::ParameterList& iso = ChemOptions.sublist("isotherms");
+
   for (auto iter = iso.begin(); iter != iso.end(); ++iter) {
-    
     std::string primary = iso.name(iter);
     Teuchos::ParameterList& curprimary = iso.sublist(primary);
     std::string model = curprimary.get<std::string>("model");
@@ -1665,90 +1700,99 @@ std::string InputConverter::CreateINFile_(std::string& filename, int rank)
   if (rank == 0) {
     struct stat buffer;
     int status = stat(infilename.c_str(), &buffer);
-      // TODO EIB - fix this
-      /*
-      if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
-        Teuchos::OSTab tab = vo_->getOSTab();
-        *vo_->os() << "Writing PFloTran partial input file \"" <<
-            infilename.c_str() << "\"" << std::endl;
-      }
-      */
-      std::cout << "Writing PFloTran partial input file " << infilename.c_str() << std::endl;
+    // TODO EIB - fix this
+    /*
+    if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
+      Teuchos::OSTab tab = vo_->getOSTab();
+      *vo_->os() << "Writing PFloTran partial input file \"" <<
+          infilename.c_str() << "\"" << std::endl;
+    }
+    */
+    std::cout << "Writing PFloTran partial input file " << infilename.c_str() << std::endl;
       
-      in_file.open(infilename.c_str());
+    in_file.open(infilename.c_str());
 
-      in_file << "CHEMISTRY\n";
-      // Chemistry - Species
-      in_file << "  PRIMARY_SPECIES\n";
-      in_file << primaries.str();
+    in_file << "CHEMISTRY\n";
+    // Chemistry - Species
+    in_file << "  PRIMARY_SPECIES\n";
+    in_file << primaries.str();
+    in_file << "  /\n";
+    if (!reactionrates.str().empty()) {
+      in_file << "  GENERAL_REACTION\n";
+      in_file << reactionrates.str();
       in_file << "  /\n";
-      if (!reactionrates.str().empty()) {
-        in_file << "  GENERAL_REACTION\n";
-        in_file << reactionrates.str();
-        in_file << "  /\n";
-      }
-      if (!decayrates.str().empty()) {
-        in_file << "  RADIOACTIVE_DECAY_REACTION\n";
-        in_file << decayrates.str();
-        in_file << "  /\n";
-      }
-      if (!secondaries.str().empty()) {
-        in_file << "  SECONDARY_SPECIES\n";
-        in_file << secondaries.str();
-        in_file << "  /\n";
-      }
-      if (!redoxes.str().empty()) {
-        in_file << "  REDOX_SPECIES\n";
-        in_file << redoxes.str();
-        in_file << "  /\n";
-      }
-      if (!gases.str().empty()) {
-        in_file << "  GAS_SPECIES\n";
-        in_file << gases.str();
-        in_file << "  /\n";
-      }
-      if (!minerals.str().empty()) {
-        in_file << "  MINERALS\n";
-        in_file << minerals.str();
-        in_file << "  /\n";
-      }
+    }
+    if (!decayrates.str().empty()) {
+      in_file << "  RADIOACTIVE_DECAY_REACTION\n";
+      in_file << decayrates.str();
+      in_file << "  /\n";
+    }
+    if (!secondaries.str().empty()) {
+      in_file << "  SECONDARY_SPECIES\n";
+      in_file << secondaries.str();
+      in_file << "  /\n";
+    }
+    if (!redoxes.str().empty()) {
+      in_file << "  REDOX_SPECIES\n";
+      in_file << redoxes.str();
+      in_file << "  /\n";
+    }
+    if (!gases.str().empty()) {
+      in_file << "  GAS_SPECIES\n";
+      in_file << gases.str();
+      in_file << "  /\n";
+    }
+    if (!minerals.str().empty()) {
+      in_file << "  MINERALS\n";
+      in_file << minerals.str();
+      in_file << "  /\n";
+    }
 
-      // Chemistry - Mineral Kinetics
-      if (!mineral_kinetics.str().empty()) {
-        in_file << "  MINERAL_KINETICS\n";
-        in_file << mineral_kinetics.str();
-        in_file << "  /\n";
+    // Chemistry - Mineral Kinetics
+    if (!mineral_kinetics.str().empty()) {
+      in_file << "  MINERAL_KINETICS\n";
+      in_file << mineral_kinetics.str();
+      in_file << "  /\n";
+    }
+
+    // Chemistry - Sorption
+    if (!isotherms.str().empty() || !complexes.str().empty() || !cations.str().empty()) {
+      in_file << "  SORPTION\n";
+      if (!isotherms.str().empty()) {
+        in_file << "    ISOTHERM_REACTIONS\n";
+        in_file << isotherms.str();
+        in_file << "    /\n";
       }
-
-      // Chemistry - Sorption
-      if (!isotherms.str().empty() || !complexes.str().empty() || !cations.str().empty()) {
-        in_file << "  SORPTION\n";
-        if (!isotherms.str().empty()) {
-          in_file << "    ISOTHERM_REACTIONS\n";
-          in_file << isotherms.str();
-          in_file << "    /\n";
-        }
-        if (!complexes.str().empty()) {
-          in_file << complexes.str();
-        }
-        if (!cations.str().empty()) {
-          in_file << "    ION_EXCHANGE_RXN\n";
-          in_file << cations.str();
-          in_file << "      /\n";
-          in_file << "    /\n";
-        }
-        in_file << "  /\n";
+      if (!complexes.str().empty()) {
+        in_file << complexes.str();
       }
+      if (!cations.str().empty()) {
+        in_file << "    ION_EXCHANGE_RXN\n";
+        in_file << cations.str();
+        in_file << "      /\n";
+        in_file << "    /\n";
+      }
+      in_file << "  /\n";
+    }
 
-      // Chemistry - Controls
-      in_file << controls.str();
-      in_file << "END\n";
+    // Chemistry - Controls
+    in_file << controls.str();
+    in_file << "END\n";
 
-      // Constraints
-      in_file << constraints.str();
-      //in_file << "END\n";
+    // Constraints
+    in_file << constraints.str();
+    //in_file << "END\n";
 
-      in_file.close();
+    in_file.close();
+  }
+
+  // prints warnings
+  if (incomplete_tracers.size() > 0) {
+    std::cout << "WARNING: primary species that may have missing atributes: ";
+    for (auto it = incomplete_tracers.begin(); it != incomplete_tracers.end(); ++it) {
+      std::cout << it->first << " ";
+    }
+    std::cout << std::endl;
   }
 
   return infilename;
@@ -1821,7 +1865,7 @@ std::string InputConverter::CreateBGDFile_(std::string& filename, int rank, int 
           
           for (int j = 0; j < primary_list.size(); ++j) {
             DOMNode* jnode = primary_list[j];
-            std::string primary_name = GetAttributeValueS_(static_cast<DOMElement*>(jnode), "name");
+            std::string primary_name = GetAttributeValueS_(jnode, "name");
             DOMNode* kd_node = GetUniqueElementByTagsString_(jnode, "kd_model", flag2);
             DOMElement* kd_elem = static_cast<DOMElement*>(kd_node);
             
@@ -1894,6 +1938,27 @@ std::string InputConverter::CreateBGDFile_(std::string& filename, int rank, int 
   }
 
   return bgdfilename;
+}
+
+
+/* ******************************************************************
+* Returns number of lines that use word in the file.
+****************************************************************** */
+int InputConverter::CountFileLinesWithWord_(
+    const std::string& filename, const std::string& word)
+{
+  std::ifstream file;
+  file.open(filename);
+
+  int n = 0;
+  while (!file.eof()) {
+    std::string line;
+    file >> line;
+    if (line.find(word) != std::string::npos) n++;
+  }
+  file.close();
+
+  return n;
 }
 
 }  // namespace AmanziInput

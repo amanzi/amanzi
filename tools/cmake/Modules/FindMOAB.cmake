@@ -175,7 +175,7 @@ else()
   list(APPEND _MOAB_DEP_LIBS ${NetCDF_C_LIBRARIES})
 
   set_target_properties(${MOAB_LIBRARY} PROPERTIES
-                        IMPORTED_LINK_INTERFACE_LIBRARIES "${_MOAB_DEP_LIBS}")
+                        INTERFACE_LINK_LIBRARIES "${_MOAB_DEP_LIBS}")
 
 endif(MOAB_LIBRARIES AND MOAB_INCLUDE_DIRS)
 

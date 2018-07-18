@@ -43,10 +43,10 @@ Teuchos::RCP<FracturePermModelPartition> CreateFracturePermModelPartition(
       } else if (model == "linear") {
         fpm_list.push_back(Teuchos::rcp(new FracturePermModel_Linear(sublist)));
       } else {
-        ASSERT(0);
+        AMANZI_ASSERT(0);
       }
     } else {
-      ASSERT(0);
+      AMANZI_ASSERT(0);
     }
   }
 

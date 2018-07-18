@@ -33,7 +33,7 @@ void MeshMaps_FEM::VelocityCell(
 
   mesh1_->cell_get_nodes(c, &nodes);
   int nnodes = nodes.size();
-  ASSERT(nnodes == 4);
+  AMANZI_ASSERT(nnodes == 4);
 
   AmanziGeometry::Point p1(d_), p2(d_), p3(d_), p4(d_);
   mesh1_->node_get_coordinates(nodes[0], &p1);
@@ -118,7 +118,7 @@ Tensor MeshMaps_FEM::JacobianValueInternal_(
 
   mesh->cell_get_nodes(c, &nodes);
   int nnodes = nodes.size();
-  ASSERT(nnodes == 4);
+  AMANZI_ASSERT(nnodes == 4);
 
   AmanziGeometry::Point p1(d_), p2(d_), p3(d_), p4(d_), j0(d_), j1(d_);
   mesh->node_get_coordinates(nodes[0], &p1);
@@ -135,32 +135,6 @@ Tensor MeshMaps_FEM::JacobianValueInternal_(
 
   return jac;
 }
-
-
-/* ******************************************************************
-* Bilinear map (2D algorithm)
-****************************************************************** */
-AmanziGeometry::Point MeshMaps_FEM::Map_(int c, const AmanziGeometry::Point& xref) const
-{
-  Entity_ID_List nodes;
-
-  mesh1_->cell_get_nodes(c, &nodes);
-  int nnodes = nodes.size();
-  ASSERT(nnodes == 4);
-
-  AmanziGeometry::Point p1(d_), p2(d_), p3(d_), p4(d_), f(d_);
-  mesh1_->node_get_coordinates(nodes[0], &p1);
-  mesh1_->node_get_coordinates(nodes[1], &p2);
-  mesh1_->node_get_coordinates(nodes[2], &p3);
-  mesh1_->node_get_coordinates(nodes[3], &p4);
-
-  double x(xref[0]), y(xref[1]);
-  f = (1.0 - x) * (1.0 - y) * p1 + x * (1.0 - y) * p2
-    + x * y * p3 + (1.0 - x) * y * p4;
-
-  return f;
-}
-
 
 }  // namespace WhetStone
 }  // namespace Amanzi

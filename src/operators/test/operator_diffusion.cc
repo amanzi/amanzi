@@ -37,14 +37,6 @@
 #include "UpwindSecondOrder.hh"
 
 
-int BoundaryFaceGetCell(const Amanzi::AmanziMesh::Mesh& mesh, int f)
-{
-  Amanzi::AmanziMesh::Entity_ID_List cells;
-  mesh.face_get_cells(f, Amanzi::AmanziMesh::Parallel_type::ALL, &cells);
-  return cells[0];
-}
-
-
 /* *****************************************************************
 * Exactness test for mixed diffusion solver.
 ***************************************************************** */
@@ -68,7 +60,7 @@ void RunTestDiffusionMixed(double gravity) {
 
   // create the MSTK mesh framework 
   // -- geometric model is defined in the region sublist of XML list
-  ParameterList region_list = plist.get<Teuchos::ParameterList>("regions");
+  ParameterList region_list = plist.sublist("regions");
   Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(2, region_list, &comm));
 
   // -- provide at lest one framework to the mesh factory. The first available
@@ -88,7 +80,7 @@ void RunTestDiffusionMixed(double gravity) {
 
   for (int c = 0; c < ncells; c++) {
     const Point& xc = mesh->cell_centroid(c);
-    const WhetStone::Tensor& Kc = ana.Tensor(xc, 0.0);
+    const WhetStone::Tensor& Kc = ana.TensorDiffusivity(xc, 0.0);
     K->push_back(Kc);
   }
 
@@ -101,8 +93,8 @@ void RunTestDiffusionMixed(double gravity) {
   for (int f = 0; f < nfaces_wghost; f++) {
     const Point& xf = mesh->face_centroid(f);
     double area = mesh->face_area(f);
-    int dir, c = BoundaryFaceGetCell(*mesh, f);
-    const Point& normal = mesh->face_normal(f, false, c, &dir);
+    bool flag;
+    Point normal = ana.face_normal_exterior(f, &flag);
 
     if (fabs(xf[0]) < 1e-6) {
       bc_model[f] = Operators::OPERATOR_BC_NEUMANN;
@@ -123,7 +115,7 @@ void RunTestDiffusionMixed(double gravity) {
   // create diffusion operator 
   double rho(1.0);
   AmanziGeometry::Point g(0.0, -gravity);
-  ParameterList op_list = plist.get<Teuchos::ParameterList>("PK operator").sublist("diffusion operator mixed");
+  ParameterList op_list = plist.sublist("PK operator").sublist("diffusion operator mixed");
   Teuchos::RCP<PDE_Diffusion> op = Teuchos::rcp(new PDE_DiffusionMFDwithGravity(op_list, mesh, rho, g));
   op->SetBCs(bc, bc);
   const CompositeVectorSpace& cvs = op->global_operator()->DomainMap();
@@ -134,13 +126,14 @@ void RunTestDiffusionMixed(double gravity) {
 
   // get and assmeble the global operator
   Teuchos::RCP<Operator> global_op = op->global_operator();
-  op->ApplyBCs(true, true);
+  op->ApplyBCs(true, true, true);
   global_op->SymbolicAssembleMatrix();
   global_op->AssembleMatrix();
 
   // create preconditoner using the base operator class
-  ParameterList slist = plist.get<Teuchos::ParameterList>("preconditioners");
-  global_op->InitPreconditioner("Hypre AMG", slist);
+  ParameterList slist = plist.sublist("preconditioners").sublist("Hypre AMG");
+  global_op->InitializePreconditioner(slist);
+  global_op->UpdatePreconditioner();
 
   // Test SPD properties of the preconditioner.
   CompositeVector a(cvs), ha(cvs), b(cvs), hb(cvs);
@@ -238,8 +231,8 @@ TEST(OPERATOR_DIFFUSION_CELL_EXACTNESS) {
   ParameterXMLFileReader xmlreader(xmlFileName);
   ParameterList plist = xmlreader.getParameters();
 
-  // create an SIMPLE mesh framework
-  ParameterList region_list = plist.get<Teuchos::ParameterList>("regions");
+  // create a geometric model and mesh
+  ParameterList region_list = plist.sublist("regions");
   Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(2, region_list, &comm));
 
   MeshFactory meshfactory(&comm);
@@ -254,7 +247,6 @@ TEST(OPERATOR_DIFFUSION_CELL_EXACTNESS) {
   Analytic02 ana(mesh);
 
   for (int c = 0; c < ncells; c++) {
-    const Point& xc = mesh->cell_centroid(c);
     WhetStone::Tensor Kc(2, 2);
 
     Kc(0, 0) = 3.0;
@@ -264,7 +256,6 @@ TEST(OPERATOR_DIFFUSION_CELL_EXACTNESS) {
 
     K->push_back(Kc);
   }
-  AmanziGeometry::Point g(0.0, -1.0);
 
   // create boundary data.
   Teuchos::RCP<BCs> bc_f = Teuchos::rcp(new BCs(mesh, AmanziMesh::FACE, DOF_Type::SCALAR));
@@ -295,7 +286,7 @@ TEST(OPERATOR_DIFFUSION_CELL_EXACTNESS) {
   }
 
   // create diffusion operator 
-  ParameterList op_list = plist.get<Teuchos::ParameterList>("PK operator").sublist("diffusion operator cell");
+  ParameterList op_list = plist.sublist("PK operator").sublist("diffusion operator cell");
   Teuchos::RCP<PDE_Diffusion> op = Teuchos::rcp(new PDE_DiffusionFV(op_list, mesh));
   op->SetBCs(bc_f, bc_f);
   const CompositeVectorSpace& cvs = op->global_operator()->DomainMap();
@@ -306,13 +297,14 @@ TEST(OPERATOR_DIFFUSION_CELL_EXACTNESS) {
 
   // get and assmeble the global operator
   Teuchos::RCP<Operator> global_op = op->global_operator();
-  op->ApplyBCs(true, true);
+  op->ApplyBCs(true, true, true);
   global_op->SymbolicAssembleMatrix();
   global_op->AssembleMatrix();
   
   // create preconditoner using the base operator class
-  ParameterList slist = plist.get<Teuchos::ParameterList>("preconditioners");
-  global_op->InitPreconditioner("Hypre AMG", slist);
+  ParameterList slist = plist.sublist("preconditioners").sublist("Hypre AMG");
+  global_op->InitializePreconditioner(slist);
+  global_op->UpdatePreconditioner();
 
   // solve the problem
   ParameterList lop_list = plist.sublist("solvers")

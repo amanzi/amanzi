@@ -18,7 +18,7 @@ namespace NavierStokes {
 /* ******************************************************************
 * Calculate f(u, du/dt) = a d(s(u))/dt + A*u - rhs.
 ****************************************************************** */
-void NavierStokes_PK::Functional(double t_old, double t_new, 
+void NavierStokes_PK::FunctionalResidual(double t_old, double t_new, 
                                  Teuchos::RCP<TreeVector> u_old,
                                  Teuchos::RCP<TreeVector> u_new, 
                                  Teuchos::RCP<TreeVector> f)
@@ -39,14 +39,14 @@ void NavierStokes_PK::Functional(double t_old, double t_new,
   op_matrix_acc_->ApplyBCs();
 
   op_matrix_elas_->UpdateMatrices();
-  op_matrix_elas_->ApplyBCs(true, true);
+  op_matrix_elas_->ApplyBCs(true, true, true);
 
   op_matrix_conv_->UpdateMatrices(uu.ptr());
-  op_matrix_conv_->ApplyBCs(false, true);
+  op_matrix_conv_->ApplyBCs(false, true, false);
 
   op_matrix_div_->global_operator()->Init();
   op_matrix_div_->UpdateMatrices();
-  op_matrix_div_->ApplyBCs(false, true);
+  op_matrix_div_->ApplyBCs(false, true, false);
 
   // Teuchos::RCP<CompositeVector> rhs = op_matrix_->rhs();
   // AddSourceTerms(*rhs);
@@ -86,10 +86,10 @@ void NavierStokes_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVec
   auto global_op = op_preconditioner_elas_->global_operator();
   global_op->Init();
   op_preconditioner_elas_->UpdateMatrices();
-  op_preconditioner_elas_->ApplyBCs(true, true);
+  op_preconditioner_elas_->ApplyBCs(true, true, true);
 
   op_preconditioner_conv_->UpdateMatrices(uu.ptr());
-  op_preconditioner_conv_->ApplyBCs(false, true);
+  op_preconditioner_conv_->ApplyBCs(false, true, false);
 
   // add time derivative
   CompositeVector one(*uu);
@@ -98,12 +98,15 @@ void NavierStokes_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVec
   op_preconditioner_acc_->ApplyBCs();
 
   global_op->AssembleMatrix();
-  global_op->InitPreconditioner(preconditioner_name_, *preconditioner_list_);
+  global_op->UpdatePreconditioner();
 
   // populate pressure operator
+  Teuchos::ParameterList pc_list = preconditioner_list_->sublist("Diagonal");
+
   global_op = op_mass_->global_operator();
   global_op->AssembleMatrix();
-  global_op->InitPreconditioner("Diagonal", *preconditioner_list_);
+  global_op->InitializePreconditioner(pc_list);
+  global_op->UpdatePreconditioner();
 
   // finalize global preconditioner
   op_preconditioner_->InitBlockDiagonalPreconditioner();

@@ -65,14 +65,14 @@
 
   <!-- SOLVERS -->
   <ParameterList name="solvers">
-    <ParameterList name="AztecOO CG">
+    <ParameterList name="PCG">
       <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
       <Parameter name="iterative method" type="string" value="pcg"/>
       <ParameterList name="pcg parameters">
         <Parameter name="maximum number of iterations" type="int" value="100"/>
         <Parameter name="error tolerance" type="double" value="1e-12"/>
         <ParameterList name="verbose object">
-          <Parameter name="verbosity level" type="string" value="low"/>
+          <Parameter name="verbosity level" type="string" value="none"/>
         </ParameterList>
       </ParameterList>
     </ParameterList>

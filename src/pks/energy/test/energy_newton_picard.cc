@@ -102,14 +102,14 @@ class HeatConduction : public AmanziSolvers::SolverFnBase<CompositeVector> {
 ****************************************************************** */
 double HeatConduction::Conduction(int c, double T) const
 {
-  ASSERT(T > 0.0);
+  AMANZI_ASSERT(T > 0.0);
   return T * T * T;
 }
 
 
 double HeatConduction::ConductionDerivative(int c, double T) const
 {
-  ASSERT(T > 0.0);
+  AMANZI_ASSERT(T > 0.0);
   return 3 * T * T;
 }
 
@@ -203,13 +203,14 @@ void HeatConduction::Init(
   op_acc_->AddAccumulationDelta(*solution0_, *phi_, *phi_, dT, "cell");
 
   // form the global matrix
-  op_diff_->ApplyBCs(true, true);
+  op_diff_->ApplyBCs(true, true, true);
   op_->SymbolicAssembleMatrix();
   op_->AssembleMatrix();
 
   // create preconditoner
-  Teuchos::ParameterList slist = plist.sublist("preconditioners");
-  op_->InitPreconditioner("Hypre AMG", slist);
+  Teuchos::ParameterList slist = plist.sublist("preconditioners").sublist("Hypre AMG");
+  op_->InitializePreconditioner(slist);
+  op_->UpdatePreconditioner();
 }
 
 
@@ -250,7 +251,7 @@ void HeatConduction::Residual(const Teuchos::RCP<CompositeVector>& u,
   UpdateValues(*u);
   op_diff_->UpdateMatrices(Teuchos::null, u.ptr());
   op_acc_->AddAccumulationDelta(*solution0_, *phi_, *phi_, dT, "cell");
-  op_diff_->ApplyBCs(true, true);
+  op_diff_->ApplyBCs(true, true, true);
   op_->ComputeNegativeResidual(*u, *f);
 }
 
@@ -268,13 +269,14 @@ void HeatConduction::UpdatePreconditioner(const Teuchos::RCP<const CompositeVect
   op_diff_->UpdateMatrices(flux_.ptr(), up.ptr());
   op_diff_->UpdateMatricesNewtonCorrection(flux_.ptr(), up.ptr(), 1.0);
   op_acc_->AddAccumulationDelta(*solution0_, *phi_, *phi_, dT, "cell");
-  op_diff_->ApplyBCs(true, true);
+  op_diff_->ApplyBCs(true, true, true);
 
   // Assemble matrix and calculate preconditioner.
   op_->AssembleMatrix();
 
-  Teuchos::ParameterList prec_list = plist_.sublist("preconditioners");
-  op_->InitPreconditioner("Hypre AMG", prec_list);
+  Teuchos::ParameterList pc_list = plist_.sublist("preconditioners").sublist("Hypre AMG");
+  op_->InitializePreconditioner(pc_list);
+  op_->UpdatePreconditioner();
 }
 
 
@@ -327,7 +329,7 @@ void HeatConduction::UpdateValues(const CompositeVector& u)
     if (bc_model[f] == Operators::OPERATOR_BC_DIRICHLET) {
       AmanziMesh::Entity_ID_List cells;
       mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
-      ASSERT(cells.size() == 1);
+      AMANZI_ASSERT(cells.size() == 1);
       int bf = ext_face_map.LID(face_map.GID(f));
       k_df[0][bf] = Conduction(cells[0], bc_value[f]);
       dkdT_df[0][bf] = ConductionDerivative(cells[0], bc_value[f]);
@@ -392,7 +394,7 @@ TEST(NKA) {
 
     // checks
     CHECK(solver->num_itrs() < 9);
-    if (i == 1) CHECK(solver->residual() < 2e-9);
+    if (i == 1) CHECK_CLOSE(0., solver->residual(), 1e-8);
 
     Epetra_MultiVector p0(*problem->solution()->ViewComponent("cell"));
     Epetra_MultiVector& p1 = *problem->solution()->ViewComponent("cell");

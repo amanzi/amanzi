@@ -18,6 +18,7 @@
 
 #include <string>
 
+#include "DG_Modal.hh"
 #include "VectorPolynomial.hh"
 
 #include "PDE_Advection.hh"
@@ -64,6 +65,9 @@ class PDE_AdvectionRiemann : public PDE_Advection {
                           const Teuchos::RCP<BCs>& bc,
                           const Teuchos::Ptr<CompositeVector>& flux);
 
+  // boundary conditions
+  virtual void ApplyBCs(bool primary, bool eliminate, bool essential_eqn) override;
+
  private:
   void InitAdvection_(Teuchos::ParameterList& plist);
 
@@ -72,8 +76,9 @@ class PDE_AdvectionRiemann : public PDE_Advection {
   Teuchos::RCP<std::vector<WhetStone::Polynomial> > Kf_;
 
   std::string method_, matrix_, flux_;
-  int method_order_;
   bool jump_on_test_;
+
+  Teuchos::RCP<WhetStone::DG_Modal> dg_;
 };
 
 }  // namespace Operators

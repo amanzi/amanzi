@@ -106,7 +106,7 @@ void Coordinates<S>::assign_coord_ (IT it, int dimension)
 {
   if (it != IT (0))
   {
-    ASSERT (ok_dim_ (dimension));
+    AMANZI_ASSERT (ok_dim_ (dimension));
     coordinates_ [dimension].assign (it, it+num_nodes_);
   }
 }
@@ -129,8 +129,8 @@ void Coordinates<S>::assign_data_ (IT it_x, IT it_y, IT it_z)
 template <typename S>
 S& Coordinates<S>::operator () (int node, int dimension)
 {
-  ASSERT (ok_dim_ (dimension));
-  ASSERT (ok_node_ (node));
+  AMANZI_ASSERT (ok_dim_ (dimension));
+  AMANZI_ASSERT (ok_node_ (node));
 
   return coordinates_ [dimension] [node];
 }
@@ -138,8 +138,8 @@ S& Coordinates<S>::operator () (int node, int dimension)
 template <typename S>
 S Coordinates<S>::operator () (int node, int dimension) const
 {
-  ASSERT (ok_dim_ (dimension));
-  ASSERT (ok_node_ (node));
+  AMANZI_ASSERT (ok_dim_ (dimension));
+  AMANZI_ASSERT (ok_node_ (node));
 
   return coordinates_ [dimension] [node];
 }
@@ -148,7 +148,7 @@ template <typename S>
 template <typename IT>
 void Coordinates<S>::operator () (int node, IT coords) const
 {
-  ASSERT (ok_node_ (node));
+  AMANZI_ASSERT (ok_node_ (node));
 
   for (int d=0; d<dimension_; ++d)
   {
@@ -215,7 +215,7 @@ void Coordinates<S>::take_data_from (std::vector<std::vector<T> >& rhs)
   dimension_ = coordinates_.size ();
   num_nodes_ = coordinates_ [0].size ();
 
-  ASSERT (valid ());
+  AMANZI_ASSERT (valid ());
 
 }
 
@@ -227,7 +227,7 @@ void Coordinates<S>::take_data_from (std::vector<std::vector<S> >& rhs)
   dimension_ = coordinates_.size ();
   num_nodes_ = coordinates_ [0].size ();
 
-  ASSERT (valid ());
+  AMANZI_ASSERT (valid ());
 
 }
 

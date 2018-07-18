@@ -19,7 +19,6 @@
 
 #include "CommonDefs.hh"
 #include "RemapUtils.hh"
-#include "LinearOperatorFactory.hh"
 
 #include "Richards_PK.hh"
 
@@ -29,7 +28,7 @@ namespace Flow {
 /* ******************************************************************
 * Calculate f(u, du/dt) = a d(s(u))/dt + A*u - rhs.
 ****************************************************************** */
-void Richards_PK::Functional(double t_old, double t_new, 
+void Richards_PK::FunctionalResidual(double t_old, double t_new, 
                              Teuchos::RCP<TreeVector> u_old, Teuchos::RCP<TreeVector> u_new, 
                              Teuchos::RCP<TreeVector> f)
 { 
@@ -73,7 +72,7 @@ void Richards_PK::Functional(double t_old, double t_new,
   // assemble residual for diffusion operator
   op_matrix_->Init();
   op_matrix_diff_->UpdateMatrices(darcy_flux_copy.ptr(), solution.ptr());
-  op_matrix_diff_->ApplyBCs(true, true);
+  op_matrix_diff_->ApplyBCs(true, true, true);
 
   Teuchos::RCP<CompositeVector> rhs = op_matrix_->rhs();
   AddSourceTerms(*rhs);
@@ -154,7 +153,7 @@ void Richards_PK::Functional_AddVaporDiffusion_(Teuchos::RCP<CompositeVector> f)
   op_vapor_->Init();
   op_vapor_diff_->SetScalarCoefficient(kvapor_temp, Teuchos::null);
   op_vapor_diff_->UpdateMatrices(Teuchos::null, Teuchos::null);
-  op_vapor_diff_->ApplyBCs(false, false);
+  op_vapor_diff_->ApplyBCs(false, false, false);
 
   // -- Calculate residual due to temperature
   CompositeVector g(*f);
@@ -166,7 +165,7 @@ void Richards_PK::Functional_AddVaporDiffusion_(Teuchos::RCP<CompositeVector> f)
   op_vapor_->Init();
   op_vapor_diff_->SetScalarCoefficient(kvapor_pres, Teuchos::null);
   op_vapor_diff_->UpdateMatrices(Teuchos::null, Teuchos::null);
-  op_vapor_diff_->ApplyBCs(false, true);
+  op_vapor_diff_->ApplyBCs(false, true, false);
 
   // -- Calculate residual due to pressure
   op_vapor_->ComputeNegativeResidual(pres, g);
@@ -349,8 +348,10 @@ void Richards_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVector>
   // create diffusion operators
   op_preconditioner_->Init();
   op_preconditioner_diff_->UpdateMatrices(darcy_flux_copy.ptr(), solution.ptr());
+
   op_preconditioner_diff_->UpdateMatricesNewtonCorrection(darcy_flux_copy.ptr(), solution.ptr(), molar_rho.ptr());
-  op_preconditioner_diff_->ApplyBCs(true, true);
+  op_preconditioner_diff_->ApplyBCs(true, true, true);
+
 
   // add time derivative
   if (dtp > 0.0) {
@@ -371,7 +372,7 @@ void Richards_PK::UpdatePreconditioner(double tp, Teuchos::RCP<const TreeVector>
  
   // finalize preconditioner
   op_preconditioner_->AssembleMatrix();
-  op_preconditioner_->InitPreconditioner(preconditioner_name_, *preconditioner_list_);
+  op_preconditioner_->UpdatePreconditioner();
 }
 
 

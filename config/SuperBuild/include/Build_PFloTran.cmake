@@ -37,7 +37,7 @@ set(PFLOTRAN_PATCH_COMMAND ${CMAKE_COMMAND} -P ${PFLOTRAN_cmake_patch})
 #      CMAKE_ARGS -DVAR=VALUE OK
 set(PFLOTRAN_CMAKE_CACHE_ARGS
       "-DCMAKE_BUILD_TYPE:STRING=${CMAKE_BUILD_TYPE}"
-      "-DCMAKE_INSTALL_PREFIX:STRING=<INSTALL_DIR>"
+      "-DCMAKE_INSTALL_PREFIX:PATH=${TPL_INSTALL_PREFIX}"
       "-DBUILD_SHARED_LIBS:BOOL=${BUILD_SHARED_LIBS}"
       "-DCMAKE_Fortran_FLAGS:STRING=-fPIC -w -Wno-unused-variable -ffree-line-length-0 -O3")
 
@@ -71,29 +71,29 @@ set(PFLOTRAN_INSTALL_COMMAND ${CMAKE_COMMAND} -P ${PFLOTRAN_cmake_install})
 
 # --- Add external project build and tie to the PFLOTRAN build target
 ExternalProject_Add(${PFLOTRAN_BUILD_TARGET}
-                    DEPENDS   ${PFLOTRAN_PACKAGE_DEPENDS}         # Package dependency target
-                    TMP_DIR   ${PFLOTRAN_tmp_dir}                 # Temporary files directory
-                    STAMP_DIR ${PFLOTRAN_stamp_dir}               # Timestamp and log directory
+                    DEPENDS   ${PFLOTRAN_PACKAGE_DEPENDS}        # Package dependency target
+                    TMP_DIR   ${PFLOTRAN_tmp_dir}                # Temporary files directory
+                    STAMP_DIR ${PFLOTRAN_stamp_dir}              # Timestamp and log directory
                     # -- Download and URL definitions
-                    DOWNLOAD_DIR  ${TPL_DOWNLOAD_DIR}             # Download directory
-                    URL           ${PFLOTRAN_URL}                 # URL may be a web site OR a local file
-                    URL_MD5       ${PFLOTRAN_MD5_SUM}             # md5sum of the archive file
-                    DOWNLOAD_NAME ${PFLOTRAN_SAVEAS_FILE}         # file name to store (if not end of URL)
+                    DOWNLOAD_DIR  ${TPL_DOWNLOAD_DIR}
+                    URL           ${PFLOTRAN_URL}                # URL may be a web site OR a local file
+                    URL_MD5       ${PFLOTRAN_MD5_SUM}            # md5sum of the archive file
+                    DOWNLOAD_NAME ${PFLOTRAN_SAVEAS_FILE}        # file name to store (if not end of URL)
                     # -- Patch 
                     PATCH_COMMAND ${PFLOTRAN_PATCH_COMMAND}
                     # -- Configure
-                    SOURCE_DIR    ${PFLOTRAN_source_dir}          # Source directory
+                    SOURCE_DIR    ${PFLOTRAN_source_dir}         # Source directory
                     CONFIGURE_COMMAND ""
-                    CMAKE_ARGS    ${PFLOTRAN_CMAKE_CACHE_ARGS}    # CMAKE_CACHE_ARGS or CMAKE_ARGS => CMake configure
+                    CMAKE_ARGS    ${PFLOTRAN_CMAKE_CACHE_ARGS}   # CMAKE_CACHE_ARGS or CMAKE_ARGS => CMake configure
                                   -DCMAKE_C_FLAGS:STRING=${Amanzi_COMMON_CFLAGS}  # Ensure uniform build
                                   -DCMAKE_C_COMPILER:FILEPATH=${CMAKE_C_COMPILER}
                                   -DCMAKE_Fortran_COMPILER:FILEPATH=${CMAKE_Fortran_COMPILER}
                     # -- Build
-                    # BINARY_DIR      ${PFLOTRAN_build_dir}       # Build directory 
-                    BUILD_COMMAND     ${PFLOTRAN_CMAKE_COMMAND}   # $(MAKE) enables parallel builds through make
-                    BUILD_IN_SOURCE   1                           # Flag for in source builds
+                    # BINARY_DIR     ${PFLOTRAN_build_dir}       # Build directory 
+                    BUILD_COMMAND    ${PFLOTRAN_CMAKE_COMMAND}   # $(MAKE) enables parallel builds through make
+                    BUILD_IN_SOURCE  1                           # Flag for in source builds
                     # -- Install
-                    INSTALL_DIR      ${TPL_INSTALL_PREFIX}        # Install directory
+                    INSTALL_DIR      ${TPL_INSTALL_PREFIX}       # Install directory
                     INSTALL_COMMAND  ${PFLOTRAN_INSTALL_COMMAND} 
                     # -- Output control
                     ${PFLOTRAN_logging_args})

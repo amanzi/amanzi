@@ -70,14 +70,14 @@ void Flow_PK::Setup(const Teuchos::Ptr<State>& S)
   }
 
   // Wells
-  if (!S->HasField("well_index")){
+  if (!S->HasField("well_index")) {
     if (fp_list_->isSublist("source terms")) {
       Teuchos::ParameterList& src_list = fp_list_->sublist("source terms");
       for (auto it = src_list.begin(); it != src_list.end(); ++it) {
         std::string name = it->first;
         if (src_list.isSublist(name)) {
           Teuchos::ParameterList& spec = src_list.sublist(name);
-          if (IsWellIndexRequire(spec)){
+          if (IsWellIndexRequire(spec)) {
             S->RequireField("well_index", passwd_)->SetMesh(mesh_)->SetGhosted(true)
                 ->SetComponent("cell", AmanziMesh::CELL, 1);
             peaceman_model_ = true;
@@ -226,7 +226,7 @@ void Flow_PK::InitializeBCsSources_(Teuchos::ParameterList& plist)
   // Process main one-line options (not sublists)
   atm_pressure_ = *S_->GetScalarData("atmospheric_pressure");
 
-  // Create the BC objects
+  // Create BC objects
   // -- memory
   op_bc_ = Teuchos::rcp(new Operators::BCs(mesh_, AmanziMesh::FACE, Operators::DOF_Type::SCALAR));
 
@@ -302,7 +302,9 @@ void Flow_PK::InitializeBCsSources_(Teuchos::ParameterList& plist)
 
   VV_ValidateBCs();
 
-  if (S_->HasField("well_index")){
+  // Create source objects
+  // -- evaluate the well index
+  if (S_->HasField("well_index")) {
     if (!S_->GetField("well_index", passwd_)->initialized()) {
       S_->GetFieldData("well_index", passwd_)->PutScalar(0.0);
 
@@ -320,10 +322,10 @@ void Flow_PK::InitializeBCsSources_(Teuchos::ParameterList& plist)
     S_->GetField("well_index", passwd_)->set_initialized();
   }
 
-  // Create the source object if any
+  // -- wells
   srcs.clear();
   if (plist.isSublist("source terms")) {
-    PK_DomainFunctionFactory<PK_DomainFunction > factory(mesh_, S_);
+    PK_DomainFunctionFactory<PK_DomainFunction> factory(mesh_, S_);
     PKUtils_CalculatePermeabilityFactorInWell(S_.ptr(), Kxy);
 
     Teuchos::ParameterList& src_list = plist.sublist("source terms");
@@ -339,7 +341,7 @@ void Flow_PK::InitializeBCsSources_(Teuchos::ParameterList& plist)
 
 
 /* ******************************************************************
-* TBW
+* Compute well index
 ****************************************************************** */
 void Flow_PK::ComputeWellIndex(Teuchos::ParameterList& spec)
 {
@@ -363,14 +365,14 @@ void Flow_PK::ComputeWellIndex(Teuchos::ParameterList& spec)
       mesh_->cell_get_faces(c, &faces);
       xmin = ymin = zmin = 1e+23;
       xmax = ymax = zmax = 1e-23;
-      for (int j = 0; j < faces.size(); j++){
+      for (int j = 0; j < faces.size(); j++) {
         int f = faces[j];
         const AmanziGeometry::Point& xf = mesh_->face_centroid(f);
         xmax = std::max(xmax, xf[0]);
         xmin = std::min(xmin, xf[0]);
         ymax = std::max(ymax, xf[1]);
         ymin = std::min(ymin, xf[1]);
-        if (dim > 2){
+        if (dim > 2) {
           zmax = std::max(zmax, xf[2]);
           zmin = std::min(zmin, xf[2]);
         }        
@@ -383,7 +385,7 @@ void Flow_PK::ComputeWellIndex(Teuchos::ParameterList& spec)
       kx = perm[0][c];
       ky = perm[1][c];
 
-      r0 = 0.28 * sqrt(dy*dy *sqrt(kx/ky) + dx*dx*sqrt(ky/kx));
+      r0 = 0.28 * sqrt(dy*dy * sqrt(kx/ky) + dx*dx * sqrt(ky/kx));
       r0 = r0 / (std::pow(kx/ky, 0.25) + std::pow(ky/kx, 0.25));
                       
       // r0 = 0.28 * sqrt(sqrt(kx/ky)*dx + sqrt(ky/kx)*dy);
@@ -396,7 +398,7 @@ void Flow_PK::ComputeWellIndex(Teuchos::ParameterList& spec)
 
 
 /* ******************************************************************
-* TBW
+* Analyze spec for well signature
 ****************************************************************** */
 bool Flow_PK::IsWellIndexRequire(Teuchos::ParameterList& spec)
 {

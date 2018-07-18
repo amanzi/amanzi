@@ -51,7 +51,7 @@ Teuchos::ParameterList InputConverterU::TranslateChemistry_()
   // chemical engine
   bool flag;
   node = GetUniqueElementByTagsString_("process_kernels, chemistry", flag);
-  std::string engine = GetAttributeValueS_(static_cast<DOMElement*>(node), "engine");
+  std::string engine = GetAttributeValueS_(node, "engine");
 
   // process engine
   bool native(false);
@@ -139,7 +139,7 @@ Teuchos::ParameterList InputConverterU::TranslateChemistry_()
       DOMNode* inode = children->item(i);
 
       double mrc(0.0);
-      mrc = GetAttributeValueD_(inode, "rate_constant", TYPE_NUMERICAL, "", false, 0.0);
+      mrc = GetAttributeValueD_(inode, "rate_constant", TYPE_NUMERICAL, DVAL_MIN, DVAL_MAX, "", false, 0.0);
       min_rate_cnst.push_back(mrc);
 
       std::string name = TrimString_(mm.transcode(inode->getTextContent()));
@@ -158,9 +158,9 @@ Teuchos::ParameterList InputConverterU::TranslateChemistry_()
       DOMNode* inode = children->item(i);
 
       double krate(-99.9);
-      krate = GetAttributeValueD_(inode, "first_order_decay_constant", TYPE_NUMERICAL, "", false, -99.9);
+      krate = GetAttributeValueD_(inode, "first_order_decay_constant", TYPE_NUMERICAL, DVAL_MIN, DVAL_MAX, "", false, -99.9);
 
-      if (krate != -99.9){
+      if (krate != -99.9) {
 	kin_rate_cnst.push_back(krate);
 	std::string name = TrimString_(mm.transcode(inode->getTextContent()));
 	aqueous_reactions.push_back(name);
@@ -205,7 +205,7 @@ Teuchos::ParameterList InputConverterU::TranslateChemistry_()
           double arc(0.0);
           if (flag) {
             element = GetUniqueChildByAttribute_(node, "name", aqueous_reactions[j], flag, true);
-	    arc = GetAttributeValueD_(element, "first_order_rate_constant", TYPE_NUMERICAL, "", false, 0.0);
+	    arc = GetAttributeValueD_(element, "first_order_rate_constant", TYPE_NUMERICAL, DVAL_MIN, DVAL_MAX, "", false, 0.0);
           }
           aux3_list.sublist(ss.str()).sublist("function-constant").set<double>("value", kin_rate_cnst[j]);
         }
@@ -251,9 +251,9 @@ Teuchos::ParameterList InputConverterU::TranslateChemistry_()
           double mvf(0.0), msa(0.0), mrc(0.0);
           if (flag) {
             element = GetUniqueChildByAttribute_(node, "name", minerals[j], flag, true);
-            mvf = GetAttributeValueD_(element, "volume_fraction", TYPE_NUMERICAL, "", false, 0.0);
-            msa = GetAttributeValueD_(element, "specific_surface_area", TYPE_NUMERICAL, "", false, 0.0);
-	    //            mrc = GetAttributeValueD_(element, "rate_constant", TYPE_NUMERICAL, "", false, 0.0);
+            mvf = GetAttributeValueD_(element, "volume_fraction", TYPE_NUMERICAL, 0.0, 1.0, "", false, 0.0);
+            msa = GetAttributeValueD_(element, "specific_surface_area", TYPE_NUMERICAL, 0.0, DVAL_MAX, "", false, 0.0);
+	    // mrc = GetAttributeValueD_(element, "rate_constant", TYPE_NUMERICAL, 0.0, DVAL_MAX, "", false, 0.0);
           }
           aux1_list.sublist(ss.str()).sublist("function-constant").set<double>("value", mvf);
           aux2_list.sublist(ss.str()).sublist("function-constant").set<double>("value", msa);
@@ -266,7 +266,7 @@ Teuchos::ParameterList InputConverterU::TranslateChemistry_()
     node = GetUniqueElementByTagsString_(inode, "ion_exchange, cations", flag);
     if (flag) {
       Teuchos::ParameterList& sites = ic_list.sublist("ion_exchange_sites");
-      double cec = GetAttributeValueD_(static_cast<DOMElement*>(node), "cec", "mol/m^3");
+      double cec = GetAttributeValueD_(node, "cec", TYPE_NUMERICAL, DVAL_MIN, DVAL_MAX, "mol/m^3");
 
       for (std::vector<std::string>::const_iterator it = regions.begin(); it != regions.end(); ++it) {
         sites.sublist("function").sublist(*it)
@@ -315,13 +315,13 @@ Teuchos::ParameterList InputConverterU::TranslateChemistry_()
           std::stringstream ss;
           ss << "dof " << j + 1 << " function";
 
-          double val = (!flag) ? 0.0 : GetAttributeValueD_(element, "kd", TYPE_NUMERICAL, "", false, 0.0);
+          double val = (!flag) ? 0.0 : GetAttributeValueD_(element, "kd", TYPE_NUMERICAL, 0.0, DVAL_MAX, "", false, 0.0);
           aux1_list.sublist(ss.str()).sublist("function-constant").set<double>("value", val);
 
-          val = (!flag) ? 0.0 : GetAttributeValueD_(element, "b", TYPE_NUMERICAL, "", false, 0.0);
+          val = (!flag) ? 0.0 : GetAttributeValueD_(element, "b", TYPE_NUMERICAL, 0.0, DVAL_MAX, "", false, 0.0);
           aux2_list.sublist(ss.str()).sublist("function-constant").set<double>("value", val);
 
-          val = (!flag) ? 0.0 : GetAttributeValueD_(element, "n", TYPE_NUMERICAL, "", false, 0.0);
+          val = (!flag) ? 0.0 : GetAttributeValueD_(element, "n", TYPE_NUMERICAL, 0.0, DVAL_MAX, "", false, 0.0);
           aux3_list.sublist(ss.str()).sublist("function-constant").set<double>("value", val);
         }
       }
@@ -350,7 +350,7 @@ Teuchos::ParameterList InputConverterU::TranslateChemistry_()
 
         for (int k = 0; k < sites.size(); ++k) {
           element = static_cast<DOMElement*>(sites[k]);
-          double val = GetAttributeValueD_(element, "density", TYPE_NUMERICAL);
+          double val = GetAttributeValueD_(element, "density", TYPE_NUMERICAL, 0.0, DVAL_MAX);
           sorption_sites.push_back(GetAttributeValueS_(element, "name", TYPE_NONE));
 
           std::stringstream dof_str;

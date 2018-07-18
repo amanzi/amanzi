@@ -55,11 +55,11 @@ void RunTest(int icase, bool gravity) {
   ParameterList plist = xmlreader.getParameters();
 
   // create an SIMPLE mesh framework
-  ParameterList region_list = plist.get<Teuchos::ParameterList>("regions");
+  ParameterList region_list = plist.sublist("regions");
   Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(3, region_list, &comm));
 
   MeshFactory meshfactory(&comm);
-  meshfactory.preference(FrameworkPreference({MSTK}));
+  meshfactory.preference(FrameworkPreference({Framework::MSTK}));
   RCP<Mesh> surfmesh;
 
   if (icase == 0) {
@@ -131,13 +131,14 @@ void RunTest(int icase, bool gravity) {
   op->UpdateMatrices(Teuchos::null, Teuchos::null);
 
   // apply BCs and assemble
-  op->ApplyBCs(true, true);
+  op->ApplyBCs(true, true, true);
   global_op->SymbolicAssembleMatrix();
   global_op->AssembleMatrix();
     
   // create preconditoner
-  ParameterList slist = plist.get<Teuchos::ParameterList>("preconditioners");
-  global_op->InitPreconditioner("Hypre AMG", slist);
+  ParameterList slist = plist.sublist("preconditioners").sublist("Hypre AMG");
+  global_op->InitializePreconditioner(slist);
+  global_op->UpdatePreconditioner();
 
   // solve the problem
   ParameterList lop_list = plist.sublist("solvers").sublist("PCG").sublist("pcg parameters");

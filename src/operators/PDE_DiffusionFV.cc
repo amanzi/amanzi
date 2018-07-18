@@ -152,13 +152,13 @@ void PDE_DiffusionFV::SetScalarCoefficient(const Teuchos::RCP<const CompositeVec
   dkdp_ = dkdp;
 
   if (k_ != Teuchos::null) {
-    ASSERT(k_->HasComponent("face"));
+    AMANZI_ASSERT(k_->HasComponent("face"));
     // NOTE: it seems that Amanzi passes in a cell based kr which is then
     // ignored, and assumed = 1.  This seems dangerous to me. --etc
-    // ASSERT(!k_->HasComponent("cell"));
+    // AMANZI_ASSERT(!k_->HasComponent("cell"));
   }
   if (dkdp_ != Teuchos::null) {
-    ASSERT(dkdp_->HasComponent("cell"));
+    AMANZI_ASSERT(dkdp_->HasComponent("cell"));
   }
 
   // verify that mass matrices were initialized.
@@ -223,7 +223,7 @@ void PDE_DiffusionFV::UpdateMatricesNewtonCorrection(
 {
   // Add derivatives to the matrix (Jacobian in this case)
   if (newton_correction_ == OPERATOR_DIFFUSION_JACOBIAN_TRUE && u.get()) {
-    ASSERT(u != Teuchos::null);
+    AMANZI_ASSERT(u != Teuchos::null);
     AnalyticJacobian_(*u);
   }
 }
@@ -235,7 +235,7 @@ void PDE_DiffusionFV::UpdateMatricesNewtonCorrection(
 {
   // Add derivatives to the matrix (Jacobian in this case)
   if (newton_correction_ == OPERATOR_DIFFUSION_JACOBIAN_TRUE && u.get()) {
-    ASSERT(u != Teuchos::null);
+    AMANZI_ASSERT(u != Teuchos::null);
     AnalyticJacobian_(*u);
   }
 }  
@@ -243,10 +243,11 @@ void PDE_DiffusionFV::UpdateMatricesNewtonCorrection(
 /* ******************************************************************
 * Special implementation of boundary conditions.
 ****************************************************************** */
-void PDE_DiffusionFV::ApplyBCs(bool primary, bool eliminate)
+void PDE_DiffusionFV::ApplyBCs(bool primary, bool eliminate, bool essential_eqn)
 {
   const Epetra_MultiVector& trans_face = *transmissibility_->ViewComponent("face", true);
 
+  AMANZI_ASSERT(bcs_trial_.size() > 0);
   const std::vector<int>& bc_model = bcs_trial_[0]->bc_model();
   const std::vector<double>& bc_value = bcs_trial_[0]->bc_value();
 
@@ -279,10 +280,7 @@ void PDE_DiffusionFV::ApplyBCs(bool primary, bool eliminate)
   }
 
   if (jac_op_ != Teuchos::null) {
-    const std::vector<int>& bc_model = bcs_trial_[0]->bc_model();
-    ASSERT(bc_model.size() == nfaces_wghost);
-
-
+    AMANZI_ASSERT(bc_model.size() == nfaces_wghost);
     for (int f = 0; f != nfaces_owned; ++f) {
       WhetStone::DenseMatrix& Aface = jac_op_->matrices[f];
 
@@ -458,7 +456,7 @@ void PDE_DiffusionFV::ComputeJacobianLocal_(
       dKrel_dp[0] = 0.5 * dkdp_cell[0];
       dKrel_dp[1] = 0.5 * dkdp_cell[1];
     } else {
-      ASSERT(0);
+      AMANZI_ASSERT(0);
     }
 
     Jpp(0, 0) = trans_face[0][f] * dpres * dKrel_dp[0];

@@ -25,10 +25,6 @@ All PKs have the following parameters in their spec:
 
   The PK type is a special key-word which corresponds to a given class in the PK factory.  See available PK types listed below.
 
-* `"PK name`" ``[string]`` **LIST-NAME**
-
-  This is automatically written as the `"name`" attribute of the containing PK sublist, and need not be included by the user.
-
 Example:
 
 .. code-block:: xml

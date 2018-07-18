@@ -24,7 +24,7 @@
 // Amanzi
 #include "MeshFactory.hh"
 #include "GMVMesh.hh"
-#include "LinearOperatorFactory.hh"
+#include "LinearOperatorPCG.hh"
 #include "Tensor.hh"
 
 // Operators
@@ -45,6 +45,7 @@ TEST(OPERATOR_MIXED_DIFFUSION) {
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::AmanziGeometry;
   using namespace Amanzi::Operators;
+  using namespace Amanzi::AmanziSolvers;
 
   Epetra_MpiComm comm(MPI_COMM_WORLD);
   int MyPID = comm.MyPID();
@@ -59,15 +60,11 @@ TEST(OPERATOR_MIXED_DIFFUSION) {
   Amanzi::VerboseObject::hide_line_prefix = true;
 
   // create a mesh 
-  Teuchos::ParameterList region_list = plist.get<Teuchos::ParameterList>("regions");
+  Teuchos::ParameterList region_list = plist.sublist("regions");
   Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(2, region_list, &comm));
 
-  FrameworkPreference pref;
-  pref.clear();
-  pref.push_back(MSTK);
-
   MeshFactory meshfactory(&comm);
-  meshfactory.preference(pref);
+  meshfactory.preference(FrameworkPreference({MSTK}));
   // Teuchos::RCP<Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 40, 40, gm);
   Teuchos::RCP<const Mesh> mesh = meshfactory("test/median32x33.exo", gm);
 
@@ -80,7 +77,7 @@ TEST(OPERATOR_MIXED_DIFFUSION) {
 
   for (int c = 0; c < ncells_owned; c++) {
     const Point& xc = mesh->cell_centroid(c);
-    const WhetStone::Tensor& Kc = ana.Tensor(xc, 0.0);
+    const WhetStone::Tensor& Kc = ana.TensorDiffusivity(xc, 0.0);
     K->push_back(Kc);
   }
   double rho(1.0), mu(1.0);
@@ -128,8 +125,7 @@ TEST(OPERATOR_MIXED_DIFFUSION) {
     double factor = pow(10.0, (double)(n - 50) / 100.0) / 2;
     
     // create the local diffusion operator
-    Teuchos::ParameterList olist = plist.get<Teuchos::ParameterList>("PK operators")
-                                        .get<Teuchos::ParameterList>("mixed diffusion");
+    Teuchos::ParameterList olist = plist.sublist("PK operators").sublist("mixed diffusion");
     PDE_DiffusionMFD op2(olist, mesh);
     op2.SetBCs(bc, bc);
 
@@ -148,19 +144,19 @@ TEST(OPERATOR_MIXED_DIFFUSION) {
     // get and assemeble the global operator
     Teuchos::RCP<Operator> global_op = op2.global_operator();
     global_op->UpdateRHS(source, false);
-    op2.ApplyBCs(true, true);
+    op2.ApplyBCs(true, true, true);
     global_op->SymbolicAssembleMatrix();
     global_op->AssembleMatrix();
     
-    Teuchos::ParameterList slist = plist.get<Teuchos::ParameterList>("preconditioners");
-    global_op->InitPreconditioner("Hypre AMG", slist);
+    Teuchos::ParameterList slist = plist.sublist("preconditioners").sublist("Hypre AMG");
+    global_op->InitializePreconditioner(slist);
+    global_op->UpdatePreconditioner();
 
     // solve the problem
-    Teuchos::ParameterList lop_list = plist.get<Teuchos::ParameterList>("solvers");
+    Teuchos::ParameterList lop_list = plist.sublist("solvers").sublist("PCG").sublist("pcg parameters");
     solution->PutScalar(0.0);
-    AmanziSolvers::LinearOperatorFactory<Operator, CompositeVector, CompositeVectorSpace> factory;
-    Teuchos::RCP<AmanziSolvers::LinearOperator<Operator, CompositeVector, CompositeVectorSpace> >
-       solver = factory.Create("AztecOO CG", lop_list, global_op);
+    auto solver = Teuchos::rcp(new LinearOperatorPCG<Operator, CompositeVector, CompositeVectorSpace>(global_op, global_op));
+    solver->Init(lop_list);
 
     CompositeVector& rhs = *global_op->rhs();
     int ierr = solver->ApplyInverse(rhs, *solution);
@@ -207,6 +203,7 @@ TEST(OPERATOR_NODAL_DIFFUSION) {
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::AmanziGeometry;
   using namespace Amanzi::Operators;
+  using namespace Amanzi::AmanziSolvers;
 
   Epetra_MpiComm comm(MPI_COMM_WORLD);
   int MyPID = comm.MyPID();
@@ -218,15 +215,11 @@ TEST(OPERATOR_NODAL_DIFFUSION) {
   ParameterList plist = xmlreader.getParameters();
 
   // create an SIMPLE mesh framework
-  ParameterList region_list = plist.get<Teuchos::ParameterList>("regions");
+  ParameterList region_list = plist.sublist("regions");
   Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(2, region_list, &comm));
 
-  FrameworkPreference pref;
-  pref.clear();
-  pref.push_back(MSTK);
-
   MeshFactory meshfactory(&comm);
-  meshfactory.preference(pref);
+  meshfactory.preference(FrameworkPreference({MSTK}));
   RCP<const Mesh> mesh = meshfactory("test/median32x33.exo", gm);
   // RCP<Mesh> mesh = meshfactory(0.0, 0.0, 1.0, 1.0, 5, 5, gm);
   // RCP<const Mesh> mesh = meshfactory("test/median255x256.exo", gm);
@@ -242,7 +235,7 @@ TEST(OPERATOR_NODAL_DIFFUSION) {
 
   for (int c = 0; c < ncells_owned; c++) {
     const Point& xc = mesh->cell_centroid(c);
-    const WhetStone::Tensor& Kc = ana.Tensor(xc, 0.0);
+    const WhetStone::Tensor& Kc = ana.TensorDiffusivity(xc, 0.0);
     K->push_back(Kc);
   }
   double rho(1.0), mu(1.0);
@@ -287,8 +280,7 @@ TEST(OPERATOR_NODAL_DIFFUSION) {
     double factor = pow(10.0, (double)(n - 150) / 100.0) / 2;
 
     // create the local diffusion operator
-    Teuchos::ParameterList olist = plist.get<Teuchos::ParameterList>("PK operators")
-                                        .get<Teuchos::ParameterList>("nodal diffusion");
+    Teuchos::ParameterList olist = plist.sublist("PK operators").sublist("nodal diffusion");
     PDE_DiffusionMFD op2(olist, mesh);
     op2.SetBCs(bc, bc);
 
@@ -303,19 +295,19 @@ TEST(OPERATOR_NODAL_DIFFUSION) {
     // get and assemeble the global operator
     Teuchos::RCP<Operator> global_op = op2.global_operator();
     global_op->UpdateRHS(source, false);
-    op2.ApplyBCs(true, true);
+    op2.ApplyBCs(true, true, true);
     global_op->SymbolicAssembleMatrix();
     global_op->AssembleMatrix();
     
-    Teuchos::ParameterList slist = plist.get<Teuchos::ParameterList>("preconditioners");
-    global_op->InitPreconditioner("Hypre AMG", slist);
+    Teuchos::ParameterList slist = plist.sublist("preconditioners").sublist("Hypre AMG");
+    global_op->InitializePreconditioner(slist);
+    global_op->UpdatePreconditioner();
 
     // solve the problem
-    ParameterList lop_list = plist.get<Teuchos::ParameterList>("solvers");
+    Teuchos::ParameterList lop_list = plist.sublist("solvers").sublist("PCG").sublist("pcg parameters");
     solution.PutScalar(0.0);
-    AmanziSolvers::LinearOperatorFactory<Operator, CompositeVector, CompositeVectorSpace> factory;
-    Teuchos::RCP<AmanziSolvers::LinearOperator<Operator, CompositeVector, CompositeVectorSpace> >
-       solver = factory.Create("AztecOO CG", lop_list, global_op);
+    auto solver = Teuchos::rcp(new LinearOperatorPCG<Operator, CompositeVector, CompositeVectorSpace>(global_op, global_op));
+    solver->Init(lop_list);
 
     CompositeVector& rhs = *global_op->rhs();
     solution.PutScalar(0.0);

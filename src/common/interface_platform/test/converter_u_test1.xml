@@ -74,12 +74,22 @@
           <max_iterations>100</max_iterations>
           <tolerance>1e-12</tolerance>
         </constraints_linear_solver>
+        <saturated_linear_solver>
+          <method>pcg</method>
+          <max_iterations>111</max_iterations>
+          <tolerance>1e-11</tolerance>
+        </saturated_linear_solver>
       </unstr_flow_controls>
 
       <unstr_transport_controls>
         <algorithm>explicit first-order</algorithm>
         <sub_cycling>on</sub_cycling>
         <cfl>1</cfl>
+        <dispersion_linear_solver>
+          <method>pcg</method>
+          <max_iterations>222</max_iterations>
+          <tolerance>2e-22</tolerance>
+        </dispersion_linear_solver>
       </unstr_transport_controls>
 
       <unstr_steady-state_controls>
@@ -116,7 +126,10 @@
         <tolerance>1e-20</tolerance>
       </unstr_linear_solver>
       <unstr_preconditioners>
-        <hypre_amg />
+        <hypre_amg>
+          <hypre_cycle_applications>4</hypre_cycle_applications>
+          <use_block_indices>true</use_block_indices>
+        </hypre_amg>
         <trilinos_ml />
         <block_ilu />
       </unstr_preconditioners>
@@ -177,6 +190,7 @@
         <porosity value="0.4082"/>
         <specific_storage value="0.0002"/>
         <particle_density type="file" filename="particle_density.h5"/>
+        <dispersion_tensor type="uniform_isotropic" alpha_l="0.01 m" alpha_t="0.001 m"/>
       </mechanical_properties>
       <permeability type="file" filename="mesh_data.exo" attribute="permx,permy"/>
       <cap_pressure model="van_genuchten">
@@ -189,6 +203,7 @@
     <material name="Facies_2" id="2000">
       <mechanical_properties>
         <porosity value="0.2206"/>
+        <dispersion_tensor type="burnett_frind" alpha_l="0.01 m" alpha_th="0.001 m" alpha_tv="0.002 m"/>
       </mechanical_properties>
       <!--permeability x="6.9365E-11" z="6.9365E-12" /-->
       <permeability type="file" filename="mesh_data.exo" attribute="permx,permy"/>
@@ -202,6 +217,8 @@
     <material name="Facies_3" id="3000">
       <mechanical_properties>
         <porosity value="0.234"/>
+        <dispersion_tensor type="lichtner_kelkar_robinson" alpha_lh="0.01 m" alpha_lv="0.02 m"
+                                                           alpha_th="0.001 m" alpha_tv="0.002 m"/>
       </mechanical_properties>
       <!--permeability x="2.0706E-09" z="2.0706E-10" /-->
       <permeability type="file" filename="mesh_data.exo" attribute="permx,permy"/>
@@ -309,6 +326,7 @@
       <base_filename>plot</base_filename>
       <num_digits>5</num_digits>
       <cycle_macros>Every100Cycles</cycle_macros>
+      <write_partition>true</write_partition>
     </vis>
     <walkabout>
       <base_filename>walkabout</base_filename>

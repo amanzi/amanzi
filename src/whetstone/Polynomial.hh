@@ -10,19 +10,8 @@
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 
   Operations with polynomials of type p(x - x0) where x0 is a
-  constant vector. This file includes three major classes: 
-
-  1.Iterator: starts with a given monomial order (e.g. x^2) runs
-    through all monomials of the same order (resp., xy, y^2), and
-    jumps to the next order (resp., x^3). 
-
-  2.Monomial: a simple container of homogeneous polynomials of the
-    same order. In Amanzi regular monomial is a defined with 
-    coefficient one. For example, regular monomials of order two 
-    in 2D are x^2, xy and y^2.
-
-  3.Polynomial: implements ring algebra for polynomials and a few
-    useful transformations. See also class VectorPolynomial.
+  constant vector. This class implements ring algebra for polynomials 
+  and a few useful transformations. See also class VectorPolynomial.
 */
 
 #ifndef AMANZI_WHETSTONE_POLYNOMIAL_HH_
@@ -37,141 +26,20 @@
 #include "Point.hh"
 
 #include "DenseVector.hh"
+#include "PolynomialIterator.hh"
 
 namespace Amanzi {
 namespace WhetStone {
 
-class Iterator {
- public:
-  Iterator() : d_(0) {};
-  Iterator(int d) : d_(d) {};
-  ~Iterator() {};
-
-  // set iterator to the monomials group of order k0
-  Iterator& begin(int k0 = 0) {
-    k_ = k0;
-    m_ = 0;
-    multi_index_[0] = k0;
-    multi_index_[1] = 0;
-    multi_index_[2] = 0;
-    count_ = 0;
-
-    return *this;
-  }
-
-  // Move iterator either to the next monomial in the group or
-  // to the begining of the next group of monomials.
-  // Only prefix version of this operator is used in the code.
-  Iterator& operator++() {
-    if (d_ == 1) {
-      k_++;
-      m_ = 0;
-      multi_index_[0] = k_;
-    } else if (d_ == 2) {
-      if (multi_index_[0] == 0) {
-        k_++;  // next group of monomials
-        m_ = 0;
-        multi_index_[0] = k_;
-        multi_index_[1] = 0;
-        multi_index_[2] = 0;
-      } else {
-        m_++;
-        multi_index_[0]--;
-        multi_index_[1] = k_ - multi_index_[0];
-      }
-    } else if (d_ == 3) {
-      if (multi_index_[0] == 0 && multi_index_[1] == 0) {
-        k_++;  // next group of monomials
-        m_ = 0;
-        multi_index_[0] = k_;
-        multi_index_[1] = 0;
-        multi_index_[2] = 0;
-      } else if (multi_index_[1] == 0) {
-        m_++;
-        multi_index_[0]--;
-        multi_index_[1] = k_ - multi_index_[0];
-        multi_index_[2] = 0;
-      } else {
-        m_++;
-        multi_index_[1]--;
-        multi_index_[2] = k_ - multi_index_[0] - multi_index_[1];
-      }
-    }
-    count_++;
-
-    return *this;
-  }
-
-  // One way to terminate a for-loop is to capture the moment when
-  // the iterator moved to the next group of monomials. Returning
-  // the current monomial order is not ideal solution, but robust.
-  int end() { return k_; }
-
-  // access
-  int MonomialOrder() const { return k_; }
-  int MonomialPosition() const { return m_; }
-  int PolynomialPosition() const { return count_; }
-  const int* multi_index() const { return multi_index_; }
-
- private:
-  int k_;  // current monomials order
-  int m_;  // current position in the list of monomials
-  int multi_index_[3];
-  int d_;
-  int count_;  // iterator count
-};
-
-
-class Monomial {
- public:
-  Monomial() : d_(0), order_(-1) {};
-  Monomial(int d, int order) : d_(d), order_(order), it_(d) {
-    int nk = (order_ == 0) ? 1 : d_;
-    for (int i = 1; i < order_; ++i) {
-      nk *= d_ + i;
-      nk /= i + 1;
-    }
-    coefs_.resize(nk, 0.0);
-  }
-  ~Monomial() {};
-
-  // iterators
-  Iterator& begin() const { return it_.begin(order_); }
-  int end() const { return order_; }
-
-  // reset all coefficients to a scalar
-  void PutScalar(double val) {
-    for (auto it = coefs_.begin(); it != coefs_.end(); ++it) *it = val;
-  }
-
-  // access
-  int order() const { return order_; }
-  int size() const { return coefs_.size(); }
-
-  std::vector<double>& coefs() { return coefs_; } 
-  const std::vector<double>& coefs() const { return coefs_; } 
-
- private:
-  // direct memory access operations
-  double& operator()(int i) { return coefs_[i]; }
-  const double& operator()(int i) const { return coefs_[i]; }
-
-  friend class Polynomial;
-
- protected:
-  mutable Iterator it_; 
-
- private:
-  int d_, order_;
-  std::vector<double> coefs_;
-};
- 
+// formard declaration
+class Monomial;
 
 class Polynomial {
  public:
   Polynomial() : d_(0), order_(-1), size_(0) {};
   Polynomial(int d, int order);
   Polynomial(int d, const int* multi_index, double factor);
+  Polynomial(const Monomial& mono);
 
   // reshape polynomial with erase (optionally) memory
   void Reshape(int d, int order, bool reset = false);
@@ -191,6 +59,8 @@ class Polynomial {
   void set_origin(const AmanziGeometry::Point& origin) { origin_ = origin; }
   // -- polynomial is recalculated
   void ChangeOrigin(const AmanziGeometry::Point& origin);
+  // -- polynomial is created from monomial by changing its origin
+  Polynomial ChangeOrigin(const Monomial& mono, const AmanziGeometry::Point& origin);
 
   // typical operations with polynomials
   // -- polynomial values
@@ -230,11 +100,11 @@ class Polynomial {
 
   // multi index defines both monomial order and current monomial
   // whenever possible, use faster Iterator's functions 
-  int MonomialPosition(const int* multi_index) const;
+  int MonomialSetPosition(const int* multi_index) const;
   int PolynomialPosition(const int* multi_index) const;
 
   // iterator starts with constant term for correct positioning
-  Iterator begin() const { Iterator it(d_); return it.begin(); }
+  PolynomialIterator begin() const { PolynomialIterator it(d_); return it.begin(); }
   int end() const { return order_; }
 
   // Change of coordinates:
@@ -251,11 +121,11 @@ class Polynomial {
   int size() const { return size_; }
   const AmanziGeometry::Point& origin() const { return origin_; }
 
+  DenseVector& MonomialSet(int k) { return coefs_[k]; }
+  const DenseVector& MonomialSet(int k) const { return coefs_[k]; }
+
   double& operator()(int i, int j) { return coefs_[i](j); }
   const double& operator()(int i, int j) const { return coefs_[i](j); }
-
-  Monomial& monomials(int i) { return coefs_[i]; }
-  const Monomial& monomials(int i) const { return coefs_[i]; }
 
   // output 
   friend std::ostream& operator << (std::ostream& os, const Polynomial& p);
@@ -267,8 +137,32 @@ class Polynomial {
  private:
   int d_, order_, size_;
   AmanziGeometry::Point origin_;
-  std::vector<Monomial> coefs_;
+  std::vector<DenseVector> coefs_;
 };
+
+// calculate dimension of monomial space of given order 
+inline
+int MonomialSpaceDimension(int d, int order)
+{
+  int nk = (order == 0) ? 1 : d;
+  for (int i = 1; i < order; ++i) {
+    nk *= d + i;
+    nk /= i + 1;
+  }
+  return nk;
+}
+
+// calculate dimension of polynomial space of given order 
+inline
+int PolynomialSpaceDimension(int d, int order)
+{
+  int nk = order + 1;
+  for (int i = 1; i < d; ++i) {
+    nk *= order + i + 1;
+    nk /= i + 1;
+  }
+  return nk;
+}
 
 }  // namespace WhetStone
 }  // namespace Amanzi

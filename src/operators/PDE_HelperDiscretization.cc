@@ -90,24 +90,22 @@ void PDE_HelperDiscretization::set_local_matrices(const Teuchos::RCP<Op>& op)
 
 
 /* ******************************************************************
-* Apply boundary conditions to the local matrices. We always zero-out
-* matrix rows for essential test BCs. As to trial BCs, there are
-* options: (a) eliminate or not, (b) if eliminate, then put 1 on
-* the diagonal or not.
+* Apply boundary conditions to the local matrices. 
+* NOTE: We always zero-out matrix rows for essential test BCs. 
 ****************************************************************** */
-void PDE_HelperDiscretization::ApplyBCs(bool primary, bool eliminate)
+void PDE_HelperDiscretization::ApplyBCs(bool primary, bool eliminate, bool essential_eqn)
 {
   for (auto bc : bcs_trial_) {
     if (bc->type() == DOF_Type::SCALAR ||
         bc->type() == DOF_Type::NORMAL_COMPONENT ||
         bc->type() == DOF_Type::MOMENT) {
-      ApplyBCs_Cell_Scalar_(*bc, local_op_, primary, eliminate);
+      ApplyBCs_Cell_Scalar_(*bc, local_op_, primary, eliminate, essential_eqn);
     } 
     else if (bc->type() == DOF_Type::POINT) {
-      ApplyBCs_Cell_Point_(*bc, local_op_, primary, eliminate);
+      ApplyBCs_Cell_Point_(*bc, local_op_, primary, eliminate, essential_eqn);
     }
     else if (bc->type() == DOF_Type::VECTOR) {
-      ApplyBCs_Cell_Vector_(*bc, local_op_, primary, eliminate);
+      ApplyBCs_Cell_Vector_(*bc, local_op_, primary, eliminate, essential_eqn);
     }
     else {
       Errors::Message msg("PDE_HelperDiscretization: Unsupported boundary condition.\n");
@@ -122,7 +120,7 @@ void PDE_HelperDiscretization::ApplyBCs(bool primary, bool eliminate)
 ****************************************************************** */
 void PDE_HelperDiscretization::ApplyBCs_Cell_Scalar_(
     const BCs& bc, Teuchos::RCP<Op> op,
-    bool primary, bool eliminate)
+    bool primary, bool eliminate, bool essential_eqn)
 {
   const std::vector<int>& bc_model = bc.bc_model();
   const std::vector<double>& bc_value = bc.bc_value();
@@ -137,7 +135,7 @@ void PDE_HelperDiscretization::ApplyBCs_Cell_Scalar_(
   const Schema& schema_col = global_op_->schema_col();
 
   AmanziMesh::Entity_kind kind = bc.kind();
-  ASSERT(kind != AmanziMesh::EDGE);
+  AMANZI_ASSERT(kind != AmanziMesh::EDGE);
   Teuchos::RCP<Epetra_MultiVector> rhs_kind;
   if (primary) rhs_kind = rhs.ViewComponent(schema_row.KindToString(kind), true);
 
@@ -210,7 +208,7 @@ void PDE_HelperDiscretization::ApplyBCs_Cell_Scalar_(
               }
             }
 
-            if (primary) {
+            if (essential_eqn) {
               rhs_loc(noff) = 0.0;
               (*rhs_kind)[0][x] = value;
 
@@ -238,7 +236,7 @@ void PDE_HelperDiscretization::ApplyBCs_Cell_Scalar_(
 ****************************************************************** */
 void PDE_HelperDiscretization::ApplyBCs_Cell_Point_(
     const BCs& bc, Teuchos::RCP<Op> op,
-    bool primary, bool eliminate)
+    bool primary, bool eliminate, bool essential_eqn)
 {
   const std::vector<int>& bc_model = bc.bc_model();
   const std::vector<AmanziGeometry::Point>& bc_value = bc.bc_value_point();
@@ -323,7 +321,7 @@ void PDE_HelperDiscretization::ApplyBCs_Cell_Point_(
                 }
               }
 
-              if (primary) {
+              if (essential_eqn) {
                 mesh_->node_get_cells(v, AmanziMesh::Parallel_type::ALL, &cells);
                 rhs_loc(noff) = 0.0;
                 (*rhs_node)[k][v] = value[k];
@@ -347,7 +345,7 @@ void PDE_HelperDiscretization::ApplyBCs_Cell_Point_(
 ****************************************************************** */
 void PDE_HelperDiscretization::ApplyBCs_Cell_Vector_(
     const BCs& bc, Teuchos::RCP<Op> op,
-    bool primary, bool eliminate)
+    bool primary, bool eliminate, bool essential_eqn)
 {
   const std::vector<int>& bc_model = bc.bc_model();
   const std::vector<std::vector<double> >& bc_value = bc.bc_value_vector();
@@ -363,7 +361,7 @@ void PDE_HelperDiscretization::ApplyBCs_Cell_Vector_(
   const Schema& schema_col = global_op_->schema_col();
 
   AmanziMesh::Entity_kind kind = bc.kind();
-  ASSERT(kind == AmanziMesh::FACE || kind == AmanziMesh::EDGE);
+  AMANZI_ASSERT(kind == AmanziMesh::FACE || kind == AmanziMesh::EDGE);
   Teuchos::RCP<Epetra_MultiVector> rhs_kind;
   if (primary) rhs_kind = rhs.ViewComponent(schema_row.KindToString(kind), true);
 
@@ -436,7 +434,7 @@ void PDE_HelperDiscretization::ApplyBCs_Cell_Vector_(
                 }
               }
 
-              if (primary) {
+              if (essential_eqn) {
                 rhs_loc(noff) = 0.0;
                 (*rhs_kind)[k][f] = value[k];
                 Acell(noff, noff) = 1.0;

@@ -23,7 +23,7 @@
 
 // Amanzi
 #include "GMVMesh.hh"
-#include "LinearOperatorFactory.hh"
+#include "LinearOperatorGMRES.hh"
 #include "MeshFactory.hh"
 #include "Mesh_MSTK.hh"
 #include "Tensor.hh"
@@ -107,11 +107,11 @@ void RunTest(std::string op_list_name) {
   ParameterList plist = xmlreader.getParameters();
 
   // create an MSTK mesh framework
-  ParameterList region_list = plist.get<Teuchos::ParameterList>("Regions Closed");
+  ParameterList region_list = plist.sublist("Regions Closed");
   Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(3, region_list, &comm));
 
   MeshFactory meshfactory(&comm);
-  meshfactory.preference(FrameworkPreference({MSTK}));
+  meshfactory.preference(FrameworkPreference({Framework::MSTK}));
   RCP<const Mesh> mesh = meshfactory("test/sphere.exo", gm);
   RCP<const Mesh_MSTK> mesh_mstk = rcp_static_cast<const Mesh_MSTK>(mesh);
 
@@ -172,8 +172,7 @@ void RunTest(std::string op_list_name) {
     solution->ScatterMasterToGhosted();
     knc->UpdateValues(*solution);
 
-    Teuchos::ParameterList olist = plist.get<Teuchos::ParameterList>("PK operator")
-                                        .get<Teuchos::ParameterList>(op_list_name);
+    Teuchos::ParameterList olist = plist.sublist("PK operator").sublist(op_list_name);
     PDE_DiffusionMFD op(olist, surfmesh);
     op.SetBCs(bc, bc);
 
@@ -191,13 +190,14 @@ void RunTest(std::string op_list_name) {
 
     // apply BCs and assemble
     global_op->UpdateRHS(source, false);
-    op.ApplyBCs(true, true);
+    op.ApplyBCs(true, true, true);
     global_op->SymbolicAssembleMatrix();
     global_op->AssembleMatrix();
     
     // create preconditoner
-    ParameterList slist = plist.get<Teuchos::ParameterList>("preconditioners");
-    global_op->InitPreconditioner("Hypre AMG", slist);
+    ParameterList slist = plist.sublist("preconditioners").sublist("Hypre AMG");
+    global_op->InitializePreconditioner(slist);
+    global_op->UpdatePreconditioner();
 
     // Test SPD properties of the matrix and preconditioner.
     if (loop == 2) {
@@ -207,10 +207,10 @@ void RunTest(std::string op_list_name) {
     }
 
     // solve the problem
-    ParameterList lop_list = plist.get<Teuchos::ParameterList>("solvers");
-    AmanziSolvers::LinearOperatorFactory<Operator, CompositeVector, CompositeVectorSpace> factory;
-    Teuchos::RCP<AmanziSolvers::LinearOperator<Operator, CompositeVector, CompositeVectorSpace> >
-       solver = factory.Create("Amanzi GMRES", lop_list, global_op);
+    ParameterList lop_list = plist.sublist("solvers").sublist("Amanzi GMRES").sublist("gmres parameters");
+    auto solver = Teuchos::rcp(new AmanziSolvers::LinearOperatorGMRES<
+        Operator, CompositeVector, CompositeVectorSpace>(global_op, global_op));
+    solver->Init(lop_list);
 
     CompositeVector rhs = *global_op->rhs();
     int ierr = solver->ApplyInverse(rhs, *solution);
@@ -221,8 +221,7 @@ void RunTest(std::string op_list_name) {
     if (MyPID == 0) {
       double a;
       rhs.Norm2(&a);
-      std::cout << "pressure solver (" << solver->name() 
-                << "): ||r||=" << solver->residual() << " itr=" << num_itrs
+      std::cout << "pressure solver (gmres): ||r||=" << solver->residual() << " itr=" << num_itrs
                 << "  ||f||=" << a 
                 << " code=" << solver->returned_code() << std::endl;
     }

@@ -41,6 +41,7 @@ set(ENABLE_MOAB_Mesh @ENABLE_MOAB_Mesh@ CACHE BOOL "Enable MOAB Unstructured Mes
 
 # TPL version
 set(AMANZI_TPLS_VERSION @AMANZI_TPLS_VERSION@ CACHE STRING "TPLs version")
+set(CMAKE_PREFIX_PATH @TPL_INSTALL_PREFIX@ CACHE STRING "search path for TPLs")
 
 
 # --------------------------------------------------------------------------- #
@@ -63,10 +64,10 @@ set(ENABLE_TESTS @ENABLE_TESTS@ CACHE BOOL "Build the tests")
 set(UnitTest_DIR @TPL_INSTALL_PREFIX@ CACHE PATH "UnitTest installation prefix")
 
 # ZLIB
-set(ZLIB_DIR  @ZLIB_DIR@ CACHE PATH "ZLIB installation prefix")
+set(ZLIB_DIR @ZLIB_DIR@ CACHE PATH "ZLIB installation prefix")
 
 # METIS  
-set(METIS_DIR  @METIS_DIR@ CACHE PATH "METIS installation prefix")
+set(METIS_DIR @METIS_DIR@ CACHE PATH "METIS installation prefix")
 
 # CCSE
 set(CCSE_DIR @TPL_INSTALL_PREFIX@ CACHE PATH "CCSE installation prefix")
@@ -111,6 +112,7 @@ set(PETSC_DIR @PETSC_DIR@ CACHE PATH "PETSc installation prefix")
 
 # HYPRE
 set(ENABLE_HYPRE @ENABLE_HYPRE@ CACHE BOOL "Enable HYPRE (Ifpack) solver interface")
+set(HYPRE_DIR @HYPRE_INSTALL_PREFIX@ CACHE PATH "HYPRE installation prefix")
 
 # Trilinos
 set(Trilinos_INSTALL_PREFIX @Trilinos_INSTALL_PREFIX@ CACHE PATH "Trilinos installation prefix")
@@ -129,3 +131,8 @@ set(PFLOTRAN_DIR @PFLOTRAN_DIR@ CACHE PATH "PFLOTRAN installation prefix")
 
 # CRUNCHTOPE
 set(CRUNCHTOPE_DIR @TPL_INSTALL_PREFIX@ CACHE PATH "CRUNCHTOPE installation prefix")
+
+# SuperLU
+set(SuperLU_DIR @SuperLU_DIR@ CACHE PATH "SuperLU installation prefix")
+set(SuperLUDist_DIR @SuperLUDist_DIR@ CACHE PATH "SuperLUDist installation prefix")
+

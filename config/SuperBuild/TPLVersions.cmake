@@ -94,19 +94,26 @@
 #                - update SuperLU_dist to xsdk-0.2.0 (native 5.1.3)
 #                - update Alquimia to xsdk-0.2.0 (native 1.0.4)
 #                - update Hypre to xsdk-0.2.0 (native 2.11.2)
-#  0.94.10       - update Alquimia to 1.0.5 (critical bug fixes)
-#  0.94.11       - update MSTK to 3.0.3 (critical bug fixes)
+#   0.94.10      - update Alquimia to 1.0.5 (critical bug fixes)
+#   0.94.11      - update MSTK to 3.0.3 (critical bug fixes)
 #                - update NetCDF to 4.5.0
 #	         - update NetCDF-Fortran to 4.4.4
 #	         - update curl to 7.56.1
-#  0.94.12       - update xerces-c to 3.2.0 (CMake build)
+#   0.94.12      - update xerces-c to 3.2.0 (CMake build)
 
-#  0.95.0        - update Trilinos 12.12.1
+#   0.95.0       - update Trilinos 12.12.1
 #                - update Hypre 2.12.1  
 #                - note alquimia 1.0.5 == xsdk-0.3.0
 #                - pflotran release/xsdk-0.3.0
 #                - update PETSc 3.8.2
-#  0.95.1        - update OpenMPI to 3.0.1
+#   0.95.1       - update OpenMPI to 3.0.1
+#   0.95.2       - added Amesos2 to list of built Trilinos packages
+#                - update MSTK to 3.0.4
+#   0.95.3       - removed CURL
+#                - update HYPRE to 2.14.0
+#                - update OpenMPI to 3.0.2
+#   0.95.4       - update Boost to version 1.67.0
+#   0.95.5       - update NetCDF to version 4.6.1
 
 include(CMakeParseArguments)
 
@@ -159,7 +166,7 @@ endmacro(amanzi_tpl_version_write)
 #
 set(AMANZI_TPLS_VERSION_MAJOR 0)
 set(AMANZI_TPLS_VERSION_MINOR 95)
-set(AMANZI_TPLS_VERSION_PATCH 0)
+set(AMANZI_TPLS_VERSION_PATCH 5)
 set(AMANZI_TPLS_VERSION ${AMANZI_TPLS_VERSION_MAJOR}.${AMANZI_TPLS_VERSION_MINOR}.${AMANZI_TPLS_VERSION_PATCH})
 # Not sure how to create a meaningful hash key for the collection
 
@@ -188,12 +195,12 @@ set(XERCES_MD5_SUM        7b1394c32abbdd87841d94a8404c2ac6)
 #
 set(OpenMPI_VERSION_MAJOR 3)
 set(OpenMPI_VERSION_MINOR 0)
-set(OpenMPI_VERSION_PATCH 1)
+set(OpenMPI_VERSION_PATCH 2)
 set(OpenMPI_VERSION ${OpenMPI_VERSION_MAJOR}.${OpenMPI_VERSION_MINOR}.${OpenMPI_VERSION_PATCH})
 set(OpenMPI_URL_STRING     "https://www.open-mpi.org/software/ompi/v3.0/downloads/")
 set(OpenMPI_ARCHIVE_FILE   openmpi-${OpenMPI_VERSION}.tar.bz2)
 set(OpenMPI_SAVEAS_FILE    ${OpenMPI_ARCHIVE_FILE})
-set(OpenMPI_MD5_SUM        565f5060e080b0871a64b295c3d4426a)
+set(OpenMPI_MD5_SUM        098fa89646f5b4438d9d8534bc960cd6)
 
 #
 # TPL: MPICH
@@ -206,18 +213,6 @@ set(MPICH_URL_STRING     "https://www.mpich.org/static/downloads/${MPICH_VERSION
 set(MPICH_ARCHIVE_FILE   mpich-${MPICH_VERSION}.tar.gz)
 set(MPICH_SAVEAS_FILE    ${MPICH_ARCHIVE_FILE})
 set(MPICH_MD5_SUM        e175452f4d61646a52c73031683fc375)
-
-#
-# TPL: CURL
-#
-set(CURL_VERSION_MAJOR 7)
-set(CURL_VERSION_MINOR 56)
-set(CURL_VERSION_PATCH 1)
-set(CURL_VERSION ${CURL_VERSION_MAJOR}.${CURL_VERSION_MINOR}.${CURL_VERSION_PATCH})
-set(CURL_URL_STRING     "https://github.com/curl/curl/archive")
-set(CURL_ARCHIVE_FILE   curl-${CURL_VERSION_MAJOR}_${CURL_VERSION_MINOR}_${CURL_VERSION_PATCH}.tar.gz)
-set(CURL_SAVEAS_FILE    curl-${CURL_VERSION}.tar.gz)
-set(CURL_MD5_SUM        48c0db0d7b1407e19c51e8ef4f798d78)
 
 #
 # TPL: zlib
@@ -272,14 +267,15 @@ set(UnitTest_MD5_SUM      29f958e355e516e7ab016b467974728d)
 # TPL: Boost
 #
 set(Boost_VERSION_MAJOR 1)
-set(Boost_VERSION_MINOR 63)
+set(Boost_VERSION_MINOR 67)
+
 set(Boost_VERSION_PATCH 0)
 set(Boost_VERSION        ${Boost_VERSION_MAJOR}.${Boost_VERSION_MINOR}.${Boost_VERSION_PATCH})
 set(Boost_VERSION_STRING ${Boost_VERSION_MAJOR}_${Boost_VERSION_MINOR}_${Boost_VERSION_PATCH})
-set(Boost_URL_STRING     ${AMANZI_TPLS_DOWNLOAD_URL})
+set(Boost_URL_STRING     "https://dl.bintray.com/boostorg/release/${Boost_VERSION}/source/")
 set(Boost_ARCHIVE_FILE   boost_${Boost_VERSION_STRING}.tar.bz2)
 set(Boost_SAVEAS_FILE    ${Boost_ARCHIVE_FILE})
-set(Boost_MD5_SUM        1c837ecd990bb022d07e7aab32b09847)
+set(Boost_MD5_SUM        ced776cb19428ab8488774e1415535ab)
 
 #
 # TPL: HDF5
@@ -298,13 +294,14 @@ set(HDF5_MD5_SUM        dd2148b740713ca0295442ec683d7b1c)
 # TPL: NetCDF
 #
 set(NetCDF_VERSION_MAJOR 4)
-set(NetCDF_VERSION_MINOR 5)
-set(NetCDF_VERSION_PATCH 0)
+set(NetCDF_VERSION_MINOR 6)
+set(NetCDF_VERSION_PATCH 1)
 set(NetCDF_VERSION ${NetCDF_VERSION_MAJOR}.${NetCDF_VERSION_MINOR}.${NetCDF_VERSION_PATCH})
 set(NetCDF_URL_STRING     "https://github.com/Unidata/netcdf-c/archive/")
 set(NetCDF_ARCHIVE_FILE   v${NetCDF_VERSION}.tar.gz)
 set(NetCDF_SAVEAS_FILE    netcdf-${NetCDF_VERSION}.tar.gz)
-set(NetCDF_MD5_SUM        a523ad253bd832efa632847940c2317e)
+set(NetCDF_MD5_SUM        e35e98e2478271caa8c1d8569ac9835b)
+
 
 #
 # TPL: NetCDF Fortran
@@ -335,12 +332,12 @@ set(ASCEMIO_MD5_SUM       869820bacd4c289c8f320be58c1449a7)
 #
 set(MSTK_VERSION_MAJOR 3)
 set(MSTK_VERSION_MINOR 0)
-set(MSTK_VERSION_PATCH 3)
+set(MSTK_VERSION_PATCH 4)
 set(MSTK_VERSION ${MSTK_VERSION_MAJOR}.${MSTK_VERSION_MINOR}.${MSTK_VERSION_PATCH})
-set(MSTK_URL_STRING     ${AMANZI_TPLS_DOWNLOAD_URL})
-set(MSTK_ARCHIVE_FILE   mstk-${MSTK_VERSION}.tar.gz)
-set(MSTK_SAVEAS_FILE    ${MSTK_ARCHIVE_FILE})
-set(MSTK_MD5_SUM        a9561f1175da2c2863c517b08abe5f16)
+set(MSTK_URL_STRING     "https://github.com/MeshToolkit/MSTK/archive")
+set(MSTK_ARCHIVE_FILE   v${MSTK_VERSION_MAJOR}_${MSTK_VERSION_MINOR}_${MSTK_VERSION_PATCH}.tar.gz)
+set(MSTK_SAVEAS_FILE    mstk-${MSTK_VERSION}.tar.gz)
+set(MSTK_MD5_SUM        adb83cf12d2547f82f988e5da6bf7016)
 
 #
 # TPL: MOAB
@@ -358,13 +355,13 @@ set(MOAB_MD5_SUM        1840ca02366f4d3237d44af63e239e3b)
 # TPL: HYPRE
 #
 set(HYPRE_VERSION_MAJOR  2)
-set(HYPRE_VERSION_MINOR  12)
-set(HYPRE_VERSION_PATCH  1)
+set(HYPRE_VERSION_MINOR  14)
+set(HYPRE_VERSION_PATCH  0)
 set(HYPRE_VERSION  ${HYPRE_VERSION_MAJOR}.${HYPRE_VERSION_MINOR}.${HYPRE_VERSION_PATCH})
 set(HYPRE_URL_STRING     "https://github.com/LLNL/hypre/archive/")
-set(HYPRE_ARCHIVE_FILE   xsdk-${XSDK_VERSION_NEW}-rc1.tar.gz)
+set(HYPRE_ARCHIVE_FILE   v${HYPRE_VERSION}.tar.gz)
 set(HYPRE_SAVEAS_FILE    hypre-${HYPRE_VERSION}.tar.gz)
-set(HYPRE_MD5_SUM        302b8aae460978952f6cb427aa8cb0c5)
+set(HYPRE_MD5_SUM        ecde5cc807ec45bfb647e9f28d2eaea1)
 
 #
 # TPL: ParMetis

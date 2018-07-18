@@ -1010,10 +1010,10 @@ void InputConverterS::ParseMesh_()
 
     // Stash min/max coordinates for our own porpoises.
     DOMElement* box = GetChildByName_(generate, "box", found, true);
-    lo_coords_ = GetAttributeVectorD_(box, "low_coordinates", "m", true);
+    lo_coords_ = GetAttributeVectorD_(box, "low_coordinates", dim_, "m", true);
     if (lo_coords_.size() != dim_)
       ThrowErrorIllformed_("mesh->generate->box", "coordinate array", "low_coordinates");
-    hi_coords_ = GetAttributeVectorD_(box, "high_coordinates", "m", true);
+    hi_coords_ = GetAttributeVectorD_(box, "high_coordinates", dim_, "m", true);
     if (hi_coords_.size() != dim_)
       ThrowErrorIllformed_("mesh->generate->box", "coordinate array", "high_coordinates");
     AddToTable(table, MakePPPrefix("geometry", "prob_lo"), MakePPEntry(lo_coords_));
@@ -1088,8 +1088,8 @@ void InputConverterS::ParseRegions_()
       DOMElement* box = static_cast<DOMElement*>(boxes[i]);
       string region_name = GetAttributeValueS_(box, "name");
       region_names.push_back(region_name);
-      vector<double> lo_coords = GetAttributeVectorD_(box, "low_coordinates", "m", found);
-      vector<double> hi_coords = GetAttributeVectorD_(box, "high_coordinates", "m", found);
+      vector<double> lo_coords = GetAttributeVectorD_(box, "low_coordinates", dim_, "m", found);
+      vector<double> hi_coords = GetAttributeVectorD_(box, "high_coordinates", dim_, "m", found);
       AddToTable(table, MakePPPrefix("geometry", region_name, "lo_coordinate"), MakePPEntry(lo_coords));
       AddToTable(table, MakePPPrefix("geometry", region_name, "hi_coordinate"), MakePPEntry(hi_coords));
 
@@ -1145,7 +1145,7 @@ void InputConverterS::ParseRegions_()
       DOMElement* point = static_cast<DOMElement*>(points[i]);
       string region_name = GetAttributeValueS_(point, "name");
       region_names.push_back(region_name);
-      vector<double> coords = GetAttributeVectorD_(point, "coordinate", "m", found);
+      vector<double> coords = GetAttributeVectorD_(point, "coordinate", dim_, "m", found);
       AddToTable(table, MakePPPrefix("geometry", region_name, "coordinate"), MakePPEntry(coords));
       AddToTable(table, MakePPPrefix("geometry", region_name, "type"), MakePPEntry("point"));
       AddToTable(table, MakePPPrefix("geometry", region_name, "purpose"), MakePPEntry("all"));
@@ -1159,8 +1159,8 @@ void InputConverterS::ParseRegions_()
       DOMElement* plane = static_cast<DOMElement*>(planes[i]);
       string region_name = GetAttributeValueS_(plane, "name");
       region_names.push_back(region_name);
-      vector<double> location = GetAttributeVectorD_(plane, "location", "m", found);
-      vector<double> normal = GetAttributeVectorD_(plane, "normal", "", found);
+      vector<double> location = GetAttributeVectorD_(plane, "location", dim_, "m", found);
+      vector<double> normal = GetAttributeVectorD_(plane, "normal", dim_, "", found);
 
       // FIXME: We need to redo the orientation logic.
       vector<double> lo_coords;
@@ -1881,11 +1881,11 @@ void InputConverterS::ParseInitialConditions_()
                   if (ic_type_labels[i]=="linear_pressure"
                       || ic_type_labels[i]=="linear_saturation") {
 
-                    gvalues = GetAttributeVectorD_(elt, "gradient", "Pa/m", true);
+                    gvalues = GetAttributeVectorD_(elt, "gradient", dim_, "Pa/m", true);
                     if (gvalues.size() != dim_)
                       ThrowErrorIllformed_("initial_conditions->linear_pressure", "coordinate array", "gradient");
 
-                    rpoints = GetAttributeVectorD_(elt, "reference_coord", "m", true);
+                    rpoints = GetAttributeVectorD_(elt, "reference_coord", dim_, "m", true);
                     if (rpoints.size() != dim_)
                       ThrowErrorIllformed_("initial_conditions->linear_pressure", "coordinate array", "reference_coord");
                   }

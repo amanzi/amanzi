@@ -11,8 +11,7 @@
 
 #include <vector>
 
-#include "DG_Modal.hh"
-#include "MFD3D_BernardiRaugel.hh"
+#include "MFD3DFactory.hh"
 
 #include "OperatorDefs.hh"
 #include "Operator_Schema.hh"
@@ -83,17 +82,20 @@ void PDE_AdvectionRiemann::InitAdvection_(Teuchos::ParameterList& plist)
   // register the advection Op
   global_op_->OpPushBack(local_op_);
 
-  // parameters
+  // parse discretization parameters
   // -- discretization method
-  method_ = plist.get<std::string>("method");
-  method_order_ = plist.get<int>("method order", 0);
+  WhetStone::MFD3DFactory factory;
+  auto mfd = factory.Create(mesh_, plist);
+
+  // -- matrices to build
   matrix_ = plist.get<std::string>("matrix type");
 
-  if (method_ == "dg modal") {
+  if (factory.method() == "dg modal") {
     space_col_ = DG;
+    dg_ = Teuchos::rcp_dynamic_cast<WhetStone::DG_Modal>(mfd);
   } else {
     Errors::Message msg;
-    msg << "Advection operator method \"" << method_ << "\" is invalid.";
+    msg << "Advection operator: method \"" << method_ << "\" is invalid.";
     Exceptions::amanzi_throw(msg);
   }
 
@@ -121,25 +123,102 @@ void PDE_AdvectionRiemann::UpdateMatrices(
 
   WhetStone::DenseMatrix Aface;
 
-  if (method_ == "dg modal" && matrix_ == "flux" && flux_ == "upwind") {
-    WhetStone::DG_Modal dg(mesh_);
-    dg.set_order(method_order_);
+  if (matrix_ == "flux" && flux_ == "upwind") {
     for (int f = 0; f < nfaces_owned; ++f) {
-      dg.FluxMatrixUpwind(f, (*u)[f], Aface, jump_on_test_);
+      dg_->FluxMatrix(f, (*u)[f], Aface, true, jump_on_test_);
       matrix[f] = Aface;
     }
-  } else if (method_ == "dg modal" && matrix_ == "flux" && flux_ == "Rusanov") {
-    WhetStone::DG_Modal dg(mesh_);
-    dg.set_order(method_order_);
+  } else if (matrix_ == "flux" && flux_ == "downwind") {
+    for (int f = 0; f < nfaces_owned; ++f) {
+      dg_->FluxMatrix(f, (*u)[f], Aface, false, jump_on_test_);
+      matrix[f] = Aface;
+    }
+  } else if (matrix_ == "flux" && flux_ == "Rusanov") {
     AmanziMesh::Entity_ID_List cells;
     for (int f = 0; f < nfaces_owned; ++f) {
       mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
       int c1 = cells[0];
       int c2 = (cells.size() == 2) ? cells[1] : c1;
-      dg.FluxMatrixRusanov(f, (*Kc_)[c1], (*Kc_)[c2], (*Kf_)[f], Aface);
+      dg_->FluxMatrixRusanov(f, (*Kc_)[c1], (*Kc_)[c2], (*Kf_)[f], Aface);
       matrix[f] = Aface;
     }
   }
+}
+
+
+/* *******************************************************************
+* Apply boundary condition to the local matrices
+******************************************************************* */
+void PDE_AdvectionRiemann::ApplyBCs(bool primary, bool eliminate, bool essential_eqn)
+{
+  const std::vector<int>& bc_model = bcs_trial_[0]->bc_model();
+  const std::vector<std::vector<double> >& bc_value = bcs_trial_[0]->bc_value_vector();
+  int nk = bc_value[0].size();
+
+  Epetra_MultiVector& rhs_c = *global_op_->rhs()->ViewComponent("cell", true);
+
+  AmanziMesh::Entity_ID_List cells;
+
+  int dir, d = mesh_->space_dimension();
+  std::vector<AmanziGeometry::Point> tau(d - 1);
+
+  // create integration object for all mesh cells
+  WhetStone::NumericalIntegration numi(mesh_, false);
+
+  for (int f = 0; f != nfaces_owned; ++f) {
+    if (bc_model[f] == OPERATOR_BC_DIRICHLET ||
+        bc_model[f] == OPERATOR_BC_DIRICHLET_TYPE2) {
+      // common section
+      mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
+      int c = cells[0];
+
+      const AmanziGeometry::Point& xf = mesh_->face_centroid(f);
+      const AmanziGeometry::Point& normal = mesh_->face_normal(f, false, c, &dir);
+
+      // --set polynomial with Dirichlet data
+      WhetStone::DenseVector coef(nk);
+      for (int i = 0; i < nk; ++i) {
+        coef(i) = bc_value[f][i];
+      }
+
+      WhetStone::Polynomial pf(d, dg_->order()); 
+      pf.SetPolynomialCoefficients(coef);
+      pf.set_origin(xf);
+
+      // -- convert boundary polynomial to space polynomial
+      pf.ChangeOrigin(mesh_->cell_centroid(c));
+      numi.ChangeBasisRegularToNatural(c, pf);
+
+      // -- extract coefficients and update right-hand side 
+      WhetStone::DenseMatrix& Aface = local_op_->matrices[f];
+      int nrows = Aface.NumRows();
+      int ncols = Aface.NumCols();
+
+      WhetStone::DenseVector v(nrows), av(ncols);
+      pf.GetPolynomialCoefficients(v);
+
+      Aface.Multiply(v, av, false);
+
+      // now fork the work flow
+      if (bc_model[f] == OPERATOR_BC_DIRICHLET) {
+        for (int i = 0; i < ncols; ++i) {
+          rhs_c[i][c] -= av(i);
+        }
+        local_op_->matrices_shadow[f] = Aface;
+        Aface.PutScalar(0.0);
+      } else {
+        for (int i = 0; i < ncols; ++i) {
+          rhs_c[i][c] += av(i);
+        }
+      }
+    } 
+    else if (bc_model[f] == OPERATOR_BC_REMOVE) {
+      local_op_->matrices[f].PutScalar(0.0);
+    }
+    else if (bc_model[f] != OPERATOR_BC_NONE) {
+      AMANZI_ASSERT(false);
+    }
+  } 
 }
 
 

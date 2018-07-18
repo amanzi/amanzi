@@ -1,16 +1,24 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
-//
-// Logical mesh that can be modified and constructed on the fly.
-//
-// Logical mesh is a topologically defined mesh with no real coordinate
-// geometry.  By definition it is perfectly parallel with no ghost entities,
-// as it is intended to be used along with a normal mesh as a subgrid model.
-// As it is not a geomtric mesh, it cannot work with all (many) spatial
-// discretizations -- currently only Finite Volume.
-//
-// In particular:
-//  1. nodes do not exist
-//
+/* -*-  mode: c++; indent-tabs-mode: nil -*- */
+/*
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
+
+  Author: Ethan Coon (ecoon@lanl.gov)
+*/
+
+/*!
+ Logical mesh that can be modified and constructed on the fly.
+
+ Logical mesh is a topologically defined mesh with no real coordinate
+ geometry.  By definition it is perfectly parallel with no ghost entities,
+ as it is intended to be used along with a normal mesh as a subgrid model.
+ As it is not a geomtric mesh, it cannot work with all (many) spatial
+ discretizations -- currently only Finite Volume.
+
+ In particular:
+  1. nodes do not exist
+*/
 
 #ifndef AMANZI_LOGICAL_MESH_H_
 #define AMANZI_LOGICAL_MESH_H_
@@ -377,6 +385,8 @@ class MeshLogical : public Mesh {
   std::vector<std::vector<AmanziGeometry::Point> > cell_face_bisectors_;
 
 };
+
+bool viewMeshLogical(const Mesh& m, std::ostream& os=std::cout);
 
 
 } // close namespace AmanziMesh

@@ -92,9 +92,9 @@ void PDE_DiffusionFVwithGravity::UpdateMatrices(
 /* ******************************************************************
 * Special implementation of boundary conditions.
 ****************************************************************** */
-void PDE_DiffusionFVwithGravity::ApplyBCs(bool primary, bool eliminate)
+void PDE_DiffusionFVwithGravity::ApplyBCs(bool primary, bool eliminate, bool essential_eqn)
 {
-  PDE_DiffusionFV::ApplyBCs(primary, eliminate);
+  PDE_DiffusionFV::ApplyBCs(primary, eliminate, essential_eqn);
 
   Epetra_MultiVector* gravity_face = &*gravity_term_->ViewComponent("face", true);
   const std::vector<int>& bc_model = bcs_trial_[0]->bc_model();
@@ -164,7 +164,7 @@ void PDE_DiffusionFVwithGravity::ComputeJacobianLocal_(
       dKrel_dp[0] = 0.5 * dkdp_cell[0];
       dKrel_dp[1] = 0.5 * dkdp_cell[1];
     } else {
-      ASSERT(0);
+      AMANZI_ASSERT(0);
     }
 
     Jpp(0, 0) = trans_face[0][f] * dpres * dKrel_dp[0];

@@ -153,10 +153,10 @@ Teuchos::ParameterList InputConverterU::TranslateEnergyBCs_()
     for (int j = 0; j < same_list.size(); ++j) {
       DOMNode* jnode = same_list[j];
       element = static_cast<DOMElement*>(jnode);
-      double t0 = GetAttributeValueD_(element, "start", "y");
+      double t0 = GetAttributeValueD_(element, "start", TYPE_TIME, DVAL_MIN, DVAL_MAX, "y");
 
       tp_forms[t0] = GetAttributeValueS_(element, "function");
-      tp_values[t0] = GetAttributeValueD_(element, "value", TYPE_NUMERICAL, "K", false, 0.0);
+      tp_values[t0] = GetAttributeValueD_(element, "value", TYPE_NUMERICAL, 0.0, 1000.0, "K", false, 0.0);
     }
 
     // create vectors of values and forms

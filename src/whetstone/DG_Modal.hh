@@ -9,11 +9,14 @@
 
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 
-  Discontinuous Galerkin modal method.
+  Discontinuous Galerkin modal method. Efficient implementation
+  requires to cache various data for all mesh cells.
 */
 
 #ifndef AMANZI_WHETSTONE_DG_MODAL_HH_
 #define AMANZI_WHETSTONE_DG_MODAL_HH_
+
+#include <memory>
 
 #include "Teuchos_RCP.hpp"
 
@@ -22,6 +25,7 @@
 #include "Point.hh"
 
 // WhetStone
+#include "Basis.hh"
 #include "BilinearForm.hh"
 #include "DenseMatrix.hh"
 #include "DenseVector.hh"
@@ -38,36 +42,52 @@ class Polynomial;
 
 class DG_Modal : public BilinearForm {
  public:
-  DG_Modal(Teuchos::RCP<const AmanziMesh::Mesh> mesh) 
-    : numi_(mesh),
-      mesh_(mesh),
-      order_(-1),
-      basis_(TAYLOR_BASIS_NORMALIZED_ORTHO),
-      d_(mesh_->space_dimension()) {};
-
-  DG_Modal(int order, Teuchos::RCP<const AmanziMesh::Mesh> mesh)
-    : numi_(mesh),
-      order_(order), 
-      mesh_(mesh),
-      basis_(TAYLOR_BASIS_NORMALIZED_ORTHO),
-      d_(mesh_->space_dimension()) {};
-
+  DG_Modal(int order, Teuchos::RCP<const AmanziMesh::Mesh> mesh, std::string basis_name);
   ~DG_Modal() {};
 
   // basic member functions
   // -- mass matrices
-  virtual int MassMatrix(int c, const Tensor& K, DenseMatrix& M);
-  virtual int MassMatrixPoly(int c, const Polynomial& K, DenseMatrix& M);
+  virtual int MassMatrix(int c, const Tensor& K, DenseMatrix& M) override;
+  virtual int MassMatrix(int c, const VectorPolynomial& K, DenseMatrix& M) override {
+    int ok;
+    if (K.size() == 1) {
+      ok = MassMatrixPoly_(c, K[0], M);
+    } else {
+      ok = MassMatrixPiecewisePoly_(c, K, M);
+    }
+    return ok;
+  }
   int MassMatrix(int c, const Tensor& K, PolynomialOnMesh& integrals, DenseMatrix& M);
 
+  // -- inverse mass matrices
+  virtual int MassMatrixInverse(int c, const Tensor& K, DenseMatrix& W) override {
+    int ok = MassMatrix(c, K, W);
+    W.Inverse();
+    return ok;
+  }
+
+  virtual int MassMatrixInverse(int c, const VectorPolynomial& K, DenseMatrix& W) override {
+    int ok = MassMatrix(c, K, W);
+    W.Inverse();
+    return ok;
+  }
+
   // -- stiffness matrices
-  virtual int StiffnessMatrix(int c, const Tensor& T, DenseMatrix& A);
+  virtual int StiffnessMatrix(int c, const Tensor& K, DenseMatrix& A) override;
 
   // -- advection matrices
-  virtual int AdvectionMatrixPoly(int c, const VectorPolynomial& uc, DenseMatrix& A, bool grad_on_test);
+  virtual int AdvectionMatrix(int c, const VectorPolynomial& uc, DenseMatrix& A, bool grad_on_test) override {
+    int ok;
+    if (uc.size() == d_) {
+      ok = AdvectionMatrixPoly_(c, uc, A, grad_on_test);
+    } else {
+      ok = AdvectionMatrixPiecewisePoly_(c, uc, A, grad_on_test);
+    }
+   return ok;
+  }
 
   // -- flux matrices
-  int FluxMatrixUpwind(int f, const Polynomial& uf, DenseMatrix& A, bool jump_on_test);
+  int FluxMatrix(int f, const Polynomial& uf, DenseMatrix& A, bool upwind, bool jump_on_test);
   int FluxMatrixRusanov(int f, const VectorPolynomial& uc1, const VectorPolynomial& uc2,
                         const Polynomial& uf, DenseMatrix& A);
 
@@ -76,41 +96,37 @@ class DG_Modal : public BilinearForm {
   int FaceMatrixPenalty(int f, double Kf, DenseMatrix& A);
 
   // interfaces that are not used
-  virtual int L2consistency(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Mc, bool symmetry) { return 0; }
-  virtual int L2consistencyInverse(int c, const Tensor& T, DenseMatrix& R, DenseMatrix& Wc, bool symmetry) { return 0; }
-  virtual int H1consistency(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Mc) { return 0; }
-
-  virtual int MassMatrixInverse(int c, const Tensor& T, DenseMatrix& W) { return 0; }
-  virtual int DivergenceMatrix(int c, DenseMatrix& A) { return 0; }
-
-  // scaling of Taylor basis function: \psi_k -> a (\psi_k - b \psi_0)
-  void TaylorBasis(int c, const Iterator& it, double* a, double* b);
-  
-  // create polynomial given array of its coefficients
-  Polynomial CalculatePolynomial(int c, const DenseVector& coefs) const;
+  virtual int L2consistency(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Mc, bool symmetry) override { return 0; }
+  virtual int L2consistencyInverse(int c, const Tensor& T, DenseMatrix& R, DenseMatrix& Wc, bool symmetry) override { return 0; }
+  virtual int H1consistency(int c, const Tensor& T, DenseMatrix& N, DenseMatrix& Mc) override { return 0; }
 
   // miscalleneous
   // -- order of polynomials in each cell
   void set_order(int order) { order_ = order; }
-  // -- modifications of Taylor basis. Available options are natural, 
-  //    normalized by volume, normalized aind orthogonalized to constant
-  void set_basis(int basis) { basis_ = basis; }
+  int order() { return order_; }
+  const Basis& cell_basis(int c) { return *basis_[c]; }
+
+  // deprecated
+  void UpdateScales_(int c, int order);
 
  private:
+  int MassMatrixPoly_(int c, const Polynomial& K, DenseMatrix& M);
+  int MassMatrixPiecewisePoly_(int c, const VectorPolynomial& K, DenseMatrix& M);
+
+  int AdvectionMatrixPoly_(int c, const VectorPolynomial& uc, DenseMatrix& A, bool grad_on_test);
+  int AdvectionMatrixPiecewisePoly_(int c, const VectorPolynomial& uc, DenseMatrix& A, bool grad_on_test);
+
   void UpdateIntegrals_(int c, int order);
-  void UpdateScales_(int c, int order);
-  void ChangeBasis_(int c, DenseMatrix& A);
-  void ChangeBasis_(int c1, int c2, DenseMatrix& A);
 
  private:
   Teuchos::RCP<const AmanziMesh::Mesh> mesh_;
   NumericalIntegration numi_;
   int order_, d_;
-  int basis_;
 
   VectorPolynomial integrals_;  // integrals of non-normalized monomials
   VectorPolynomial scales_a_;   // partial orthonormalization of Taylor basis
   VectorPolynomial scales_b_;  
+  std::vector<std::shared_ptr<Basis> > basis_;
 };
 
 }  // namespace WhetStone

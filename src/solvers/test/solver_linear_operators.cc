@@ -2,6 +2,7 @@
 #include "UnitTest++.h"
 
 #include "Teuchos_RCP.hpp"
+#include "Epetra_CrsMatrix.h"
 #include "Epetra_MpiComm.h"
 #include "Epetra_Vector.h"
 
@@ -11,13 +12,14 @@
 #include "LinearOperatorGMRES.hh"
 #include "LinearOperatorNKA.hh"
 #include "LinearOperatorBelosGMRES.hh"
+#include "LinearOperatorAmesos.hh"
 
 using namespace Amanzi;
 
 SUITE(SOLVERS) {
 class Matrix {
  public:
-  Matrix() {}
+  Matrix() {};
   Matrix(const Teuchos::RCP<Epetra_Map>& map) : map_(map) {
     x_[0] = 0.00699270335645641;
     x_[1] = 0.01398540671291281;
@@ -32,6 +34,7 @@ class Matrix {
     return Teuchos::rcp(new Matrix(*this));
   }
     
+  // 5-point FD stensil
   virtual int Apply(const Epetra_Vector& v, Epetra_Vector& mv) const { 
     int n = std::pow(v.Map().NumMyElements(), 0.5);
     for (int i = 0; i < n; i++) {
@@ -47,11 +50,30 @@ class Matrix {
     }
     return 0;
   }
+
   virtual int ApplyInverse(const Epetra_Vector& v, Epetra_Vector& hv) const {
     int n = v.Map().NumMyElements();
     for (int i = 0; i < n; i++) hv[i] = v[i];
     return 0;
   }
+
+  // 3-point FD stensil
+  void Init() {
+    int n = map_->NumMyElements();
+    A_ = Teuchos::rcp(new Epetra_CrsMatrix(Copy, *map_, *map_, 3));
+    for (int i = 0; i < n; i++) {
+      int indices[3];
+      double values[3] = {double(-i), double(2 * i + 1), double(-i - 1)};
+      for (int k = 0; k < 3; k++) indices[k] = i + k - 1; 
+      A_->InsertMyValues(i, 3, values, indices);
+    }
+    A_->FillComplete(*map_, *map_);
+  }
+
+  // partial consistency with Operators'interface
+  Teuchos::RCP<Epetra_CrsMatrix> A() const { return A_; }
+  void CopyVectorToSuperVector(const Epetra_Vector& ev, Epetra_Vector& sv) const { sv = ev; }
+  void CopySuperVectorToVector(const Epetra_Vector& sv, Epetra_Vector& ev) const { ev = sv; }
 
   virtual const Epetra_Map& DomainMap() const { return *map_; }
   virtual const Epetra_Map& RangeMap() const { return *map_; }
@@ -60,7 +82,9 @@ class Matrix {
  private:
   Teuchos::RCP<Epetra_Map> map_;
   double x_[5];
+  Teuchos::RCP<Epetra_CrsMatrix> A_;
 };
+
 
 TEST(PCG_SOLVER) {
   std::cout << "Checking PCG solver..." << std::endl;
@@ -234,6 +258,55 @@ TEST(BELOS_GMRES_SOLVER) {
 
   for (int i = 0; i < 5; i++) CHECK_CLOSE((m->x())[i], v[i], 1e-6);
 
+  delete comm;
+};
+
+TEST(AMESOS_SOLVER) {
+  std::cout << "\nChecking Amesos solver..." << std::endl;
+
+  Teuchos::ParameterList plist;
+  Teuchos::ParameterList& vo = plist.sublist("VerboseObject");
+  vo.set("Verbosity Level", "high");
+  plist.set<std::string>("solver name", "Amesos_Klu")
+       .set<int>("amesos version", 1);
+  
+  Epetra_MpiComm* comm = new Epetra_MpiComm(MPI_COMM_SELF);
+  Teuchos::RCP<Epetra_Map> map = Teuchos::rcp(new Epetra_Map(10, 0, *comm));
+
+  // create the operator
+  Teuchos::RCP<Matrix> m = Teuchos::rcp(new Matrix(map));
+  m->Init();
+
+  // initial guess
+  Epetra_Vector v(*map), u(*map);
+  u[5] = 1.0;
+
+  // Amesos1
+  {
+    AmanziSolvers::LinearOperatorAmesos<Matrix, Epetra_Vector, Epetra_Map> klu(m, m);
+    klu.Init(plist);
+
+    int ierr = klu.ApplyInverse(u, v);
+    CHECK(ierr > 0);
+
+    double residual = 11 * v[5] - 5 * v[4] - 6 * v[6];
+    CHECK_CLOSE(residual, 1.0, 1e-12); 
+  }
+
+  // Amesos2
+  {
+    AmanziSolvers::LinearOperatorAmesos<Matrix, Epetra_Vector, Epetra_Map> klu(m, m);
+    plist.set<std::string>("solver name", "Klu2")
+         .set<int>("amesos version", 2);
+    klu.Init(plist);
+
+    int ierr = klu.ApplyInverse(u, v);
+    CHECK(ierr > 0);
+
+    double residual = 11 * v[5] - 5 * v[4] - 6 * v[6];
+    CHECK_CLOSE(residual, 1.0, 1e-12); 
+  }
+  
   delete comm;
 };
 

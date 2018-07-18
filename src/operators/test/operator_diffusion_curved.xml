@@ -31,6 +31,7 @@
       <Parameter name="preconditioner type" type="string" value="diagonal"/>
       <!--Parameter name="preconditioner type" type="string" value="boomer amg"/-->
       <ParameterList name="boomer amg parameters">
+        <Parameter name="use block indices" type="bool" value="true"/>
         <Parameter name="cycle applications" type="int" value="2"/>
         <Parameter name="smoother sweeps" type="int" value="3"/>
         <Parameter name="strong threshold" type="double" value="0.25"/>
@@ -71,6 +72,7 @@
     <!-- Curved MFD schemes -->
     <ParameterList name="diffusion operator curved">
       <Parameter name="method" type="string" value="diffusion generalized"/>
+      <Parameter name="method order" type="int" value="-1"/>  <!-- not used /-->
       <Parameter name="matrix type" type="string" value="stiffness"/>
       <ParameterList name="schema domain">
         <Parameter name="base" type="string" value="cell"/>

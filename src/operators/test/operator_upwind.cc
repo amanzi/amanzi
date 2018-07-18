@@ -76,17 +76,12 @@ void RunTestUpwind(std::string method) {
   Teuchos::ParameterList plist = xmlreader.getParameters();
 
   // create an SIMPLE mesh framework
-  Teuchos::ParameterList region_list = plist.get<Teuchos::ParameterList>("regions");
+  Teuchos::ParameterList region_list = plist.sublist("regions");
   Teuchos::RCP<GeometricModel> gm = Teuchos::rcp(new GeometricModel(3, region_list, &comm));
-
-  FrameworkPreference pref;
-  pref.clear();
-  pref.push_back(MSTK);
-  pref.push_back(STKMESH);
 
   Teuchos::RCP<VerboseObject> vo = Teuchos::rcp(new VerboseObject("dummy", "none"));
   MeshFactory meshfactory(&comm, vo);
-  meshfactory.preference(pref);
+  meshfactory.preference(FrameworkPreference({MSTK,STKMESH}));
 
   for (int n = 4; n < 17; n *= 2) {
     Teuchos::RCP<const Mesh> mesh = meshfactory(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, n, n, n, gm);
@@ -135,7 +130,7 @@ void RunTestUpwind(std::string method) {
       if (bc_model[f] == OPERATOR_BC_DIRICHLET) {
         AmanziMesh::Entity_ID_List cells;
         mesh->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
-        ASSERT(cells.size() == 1);
+        AMANZI_ASSERT(cells.size() == 1);
         int bf = ext_face_map.LID(face_map.GID(f));
         fbfs[0][bf] = model->Value(cells[0], bc_value[f]);
       }

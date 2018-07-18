@@ -19,7 +19,6 @@
 #include <string>
 
 // TPLs
-#include "boost/algorithm/string.hpp"
 #include "Epetra_MultiVector.h"
 #include "Epetra_Vector.h"
 #include "Epetra_SerialDenseVector.h"
@@ -53,16 +52,14 @@ Alquimia_PK::Alquimia_PK(Teuchos::ParameterList& pk_tree,
   chem_initialized_(false),
   current_time_(0.0),
   saved_time_(0.0)
-
 {
-
   S_ = S;
   glist_ = glist;
 
   // extract pk name
   std::string pk_name = pk_tree.name();
-  boost::iterator_range<std::string::iterator> res = boost::algorithm::find_last(pk_name, "->"); 
-  if (res.end() - pk_name.end() != 0) boost::algorithm::erase_head(pk_name, res.end() - pk_name.begin());
+  auto found = pk_name.rfind("->");
+  if (found != std::string::npos) pk_name.erase(0, found + 2);
 
   // create pointer to the chemistry parameter list
   Teuchos::RCP<Teuchos::ParameterList> pk_list = Teuchos::sublist(glist, "PKs", true);
@@ -730,7 +727,6 @@ void Alquimia_PK::CopyFromAlquimia(const int cell,
       (*aqueous_components)[i][cell] /= (mol_dens[0][cell] / 1000.);
     }
 
-
     if (using_sorption_) {
       const Epetra_MultiVector& sorbed = *S_->GetFieldData(total_sorbed_key_)->ViewComponent("cell", true);
       sorbed[i][cell] = state.total_immobile.data[i];
@@ -954,7 +950,7 @@ void Alquimia_PK::ComputeNextTimeStep()
 }
 
 
-void Alquimia_PK::CopyFieldstoNewState(const Teuchos::RCP<State>& S_next){
+void Alquimia_PK::CopyFieldstoNewState(const Teuchos::RCP<State>& S_next) {
 
   Chemistry_PK::CopyFieldstoNewState(S_next);
 
@@ -966,7 +962,7 @@ void Alquimia_PK::CopyFieldstoNewState(const Teuchos::RCP<State>& S_next){
     std::vector<std::vector<std::string> > subname(1);
     subname[0].push_back("0");
     aux_names[i] = Keys::getKey(domain_name_, aux_names[i]);
-    if (S_->HasField(aux_names[i])&&S_next->HasField(aux_names[i])){
+    if (S_->HasField(aux_names[i])&&S_next->HasField(aux_names[i])) {
       *S_next->GetFieldData(aux_names[i], passwd_)->ViewComponent("cell", false) =
         *S_->GetFieldData(aux_names[i], passwd_)->ViewComponent("cell", false);
     }

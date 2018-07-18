@@ -120,7 +120,7 @@ DenseMatrix::DenseMatrix(const DenseMatrix& B, int m1, int m2, int n1, int n2)
 ****************************************************************** */
 void DenseMatrix::Reshape(int mrow, int ncol)
 {
-  ASSERT(access_ == WHETSTONE_DATA_ACCESS_COPY);
+  AMANZI_ASSERT(access_ == WHETSTONE_DATA_ACCESS_COPY);
 
   m_ = mrow;
   n_ = ncol;

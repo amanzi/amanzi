@@ -1,5 +1,5 @@
 /*
-  This is the state component of the Amanzi code. 
+  State
 
   Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
@@ -8,9 +8,10 @@
 
   Authors: Markus Berndt
            Ethan Coon (ecoon@lanl.gov)
-
-  Collection of Observations on an unstructured mesh.
 */
+
+//!  Collection of Observations on an unstructured mesh.
+
 
 #ifndef AMANZI_UNSTRUCTURED_OBSERVATIONS_HH_
 #define AMANZI_UNSTRUCTURED_OBSERVATIONS_HH_

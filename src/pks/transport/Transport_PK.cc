@@ -14,7 +14,6 @@
 #include <algorithm>
 #include <vector>
 
-#include "boost/algorithm/string.hpp"
 #include "Epetra_Vector.h"
 #include "Epetra_IntVector.h"
 #include "Epetra_MultiVector.h"
@@ -58,10 +57,8 @@ Transport_PK::Transport_PK(Teuchos::ParameterList& pk_tree,
   soln_(soln)
 {
   std::string pk_name = pk_tree.name();
-  const char* result = pk_name.data();
-
-  boost::iterator_range<std::string::iterator> res = boost::algorithm::find_last(pk_name, "->"); 
-  if (res.end() - pk_name.end() != 0) boost::algorithm::erase_head(pk_name, res.end() - pk_name.begin());
+  auto found = pk_name.rfind("->");
+  if (found != std::string::npos) pk_name.erase(0, found + 2);
 
   if (glist->isSublist("cycle driver")) {
     if (glist->sublist("cycle driver").isParameter("component names")) {
@@ -589,7 +586,7 @@ double Transport_PK::StableTimeStep()
     }
   }
 
-  // Account for extraction of solute is production wells.
+  // Account for extraction of solute in production wells.
   // We assume one well per cell (FIXME).
   double t_old = S_->intermediate_time();
   for (int m = 0; m < srcs_.size(); m++) {
@@ -909,10 +906,13 @@ bool Transport_PK::AdvanceStep(double t_old, double t_new, bool reinit)
         }
         op2->AddAccumulationDelta(sol, factor, factor, dt_MPC, "cell");
  
-        op1->ApplyBCs(true, true);
+        op1->ApplyBCs(true, true, true);
         op->SymbolicAssembleMatrix();
         op->AssembleMatrix();
-        op->InitPreconditioner(dispersion_preconditioner, *preconditioner_list_);
+
+        Teuchos::ParameterList pc_list = preconditioner_list_->sublist(dispersion_preconditioner);
+        op->InitializePreconditioner(pc_list);
+        op->UpdatePreconditioner();
       } else {
         Epetra_MultiVector& rhs_cell = *op->rhs()->ViewComponent("cell");
         for (int c = 0; c < ncells_owned; c++) {
@@ -971,7 +971,7 @@ bool Transport_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 
       Epetra_MultiVector& rhs_cell = *op->rhs()->ViewComponent("cell");
       ComputeSources_(t_new, 1.0, rhs_cell, tcc_prev, i, i);
-      op1->ApplyBCs(true, true);
+      op1->ApplyBCs(true, true, true);
 
       // add accumulation term
       Epetra_MultiVector& fac1 = *factor.ViewComponent("cell");
@@ -986,7 +986,10 @@ bool Transport_PK::AdvanceStep(double t_old, double t_new, bool reinit)
  
       op->SymbolicAssembleMatrix();
       op->AssembleMatrix();
-      op->InitPreconditioner(dispersion_preconditioner, *preconditioner_list_);
+
+      Teuchos::ParameterList pc_list = preconditioner_list_->sublist(dispersion_preconditioner);
+      op->InitializePreconditioner(pc_list);
+      op->UpdatePreconditioner();
   
       CompositeVector& rhs = *op->rhs();
       int ierr = solver->ApplyInverse(rhs, sol);
@@ -1345,7 +1348,7 @@ void Transport_PK::AdvanceSecondOrderUpwindRK1(double dt_cycle)
 
     double T = t_physics_;
     Epetra_Vector*& component = tcc_prev(i);
-    FunctionalOld(T, *component, f_component);
+    DudtOld(T, *component, f_component);
 
     double ws_ratio;
     for (int c = 0; c < ncells_owned; c++) {
@@ -1408,7 +1411,7 @@ void Transport_PK::AdvanceSecondOrderUpwindRK2(double dt_cycle)
 
     double T = t_physics_;
     Epetra_Vector*& component = tcc_prev(i);
-    FunctionalOld(T, *component, f_component);
+    DudtOld(T, *component, f_component);
 
     for (int c = 0; c < ncells_owned; c++) {
       tcc_next[i][c] = (tcc_prev[i][c] + dt_ * f_component[c]) * ws_ratio[c];
@@ -1423,7 +1426,7 @@ void Transport_PK::AdvanceSecondOrderUpwindRK2(double dt_cycle)
 
     double T = t_physics_;
     Epetra_Vector*& component = tcc_next(i);
-    FunctionalOld(T, *component, f_component);
+    DudtOld(T, *component, f_component);
 
     for (int c = 0; c < ncells_owned; c++) {
       double value = (tcc_prev[i][c] + dt_ * f_component[c]) * ws_ratio[c];
@@ -1459,8 +1462,8 @@ void Transport_PK::AdvanceSecondOrderUpwindRKn(double dt_cycle)
   if (temporal_disc_order == 2) {
     ti_method = Explicit_TI::heun_euler;
   } else if (temporal_disc_order == 3) {
-    ti_method = Explicit_TI::kutta_3rd_order;
-  } else if (temporal_disc_order == 3) {
+    ti_method = Explicit_TI::tvd_3rd_order;
+  } else if (temporal_disc_order == 4) {
     ti_method = Explicit_TI::runge_kutta_4th_order;
   }
 

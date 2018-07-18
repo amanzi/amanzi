@@ -18,6 +18,10 @@
   The material properties are imbedded into the the matrix Mc. 
 
   Notation used below: M (mass), W (inverse of M), A (stiffness).
+
+  NOTE: This class should be never instantiated directly. It is used to
+  add additional functionality to the base class (BilinearForm) related to
+  MFD and VEM methods, such as various projectors.
 */
 
 #ifndef AMANZI_MFD3D_HH_
@@ -45,11 +49,6 @@ class MFD3D : public virtual BilinearForm,
  public:
   explicit MFD3D(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh);
   ~MFD3D() {};
-
-  // geometry methods
-  void PolygonCentroidWeights(
-      const Entity_ID_List& nodes,
-      double area, std::vector<double>& weights) const;
 
   // access members
   double simplex_functional() { return simplex_functional_; }

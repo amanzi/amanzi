@@ -702,12 +702,12 @@ std::pair<double,double> RunForwardProblem(
   problem->op00->SetScalarCoefficient(problem->kr0, Teuchos::null);
   problem->op00->UpdateMatrices(Teuchos::null,Teuchos::null);
   problem->op00->global_operator()->UpdateRHS(*problem->f0,false);
-  problem->op00->ApplyBCs(true,true);
+  problem->op00->ApplyBCs(true,true,true);
 
   problem->op11->SetScalarCoefficient(problem->kr1, Teuchos::null);
   problem->op11->UpdateMatrices(Teuchos::null,Teuchos::null);
   problem->op11->global_operator()->UpdateRHS(*problem->f1,false);
-  problem->op11->ApplyBCs(true,true);
+  problem->op11->ApplyBCs(true,true,true);
 
   // apply!
   TreeVector B(*problem->tvs);
@@ -782,12 +782,12 @@ std::pair<double,double> RunForwardProblem_Assembled(
   problem->op00->SetScalarCoefficient(problem->kr0, Teuchos::null);
   problem->op00->UpdateMatrices(Teuchos::null,Teuchos::null);
   problem->op00->global_operator()->UpdateRHS(*problem->f0,false);
-  problem->op00->ApplyBCs(true,true);
+  problem->op00->ApplyBCs(true,true,true);
 
   problem->op11->SetScalarCoefficient(problem->kr1, Teuchos::null);
   problem->op11->UpdateMatrices(Teuchos::null,Teuchos::null);
   problem->op11->global_operator()->UpdateRHS(*problem->f1,false);
-  problem->op11->ApplyBCs(true,true);
+  problem->op11->ApplyBCs(true,true,true);
 
   // create vector storage
   TreeVector B(*problem->tvs);
@@ -869,12 +869,12 @@ std::pair<double,double> RunInverseProblem(
   problem->op00->SetScalarCoefficient(problem->kr0, Teuchos::null);
   problem->op00->UpdateMatrices(Teuchos::null,Teuchos::null);
   problem->op00->global_operator()->UpdateRHS(*problem->f0,false);
-  problem->op00->ApplyBCs(true,true);
+  problem->op00->ApplyBCs(true,true,true);
 
   problem->op11->SetScalarCoefficient(problem->kr1, Teuchos::null);
   problem->op11->UpdateMatrices(Teuchos::null,Teuchos::null);
   problem->op11->global_operator()->UpdateRHS(*problem->f1,false);
-  problem->op11->ApplyBCs(true,true);
+  problem->op11->ApplyBCs(true,true,true);
 
   // create vector storage
   TreeVector B(*problem->tvs);
@@ -983,7 +983,7 @@ std::pair<double,double> RunNonlinearProblem(
   } else if (jacobian == "full") {
     problem->CreateBlockPCs(true, true, upwind);
   } else {
-    ASSERT(0);
+    AMANZI_ASSERT(0);
   }
     
   problem->CreateTreeVectorSpace();
@@ -1013,12 +1013,12 @@ std::pair<double,double> RunNonlinearProblem(
     problem->op00->SetScalarCoefficient(problem->kr0, Teuchos::null);
     problem->op00->UpdateMatrices(Teuchos::null,Teuchos::null);
     problem->op00->global_operator()->UpdateRHS(*problem->f0,false);
-    problem->op00->ApplyBCs(true,true);
+    problem->op00->ApplyBCs(true,true,true);
     problem->op11->global_operator()->Init();
     problem->op11->SetScalarCoefficient(problem->kr1, Teuchos::null);
     problem->op11->UpdateMatrices(Teuchos::null,Teuchos::null);
     problem->op11->global_operator()->UpdateRHS(*problem->f1,false);
-    problem->op11->ApplyBCs(true,true);
+    problem->op11->ApplyBCs(true,true,true);
 
     // write forward operator to file for debugging
     if (write_file) {
@@ -1085,26 +1085,26 @@ std::pair<double,double> RunNonlinearProblem(
     problem->pc00->SetScalarCoefficient(problem->kr0, problem->kr0_u);
     problem->pc00->UpdateMatrices(problem->q0.ptr(), u.ptr());
     problem->pc00->UpdateMatricesNewtonCorrection(problem->q0.ptr(), u.ptr());
-    problem->pc00->ApplyBCs(true, true);
+    problem->pc00->ApplyBCs(true,true,true);
 
     problem->pc11->global_operator()->Init();
     problem->pc11->SetScalarCoefficient(problem->kr1, problem->kr1_v);
     problem->pc11->UpdateMatrices(problem->q1.ptr(), v.ptr());
     problem->pc11->UpdateMatricesNewtonCorrection(problem->q1.ptr(), v.ptr());
-    problem->pc11->ApplyBCs(true, true);
+    problem->pc11->ApplyBCs(true,true,true);
     
     if (problem->pc01 != Teuchos::null) {
       problem->pc01->global_operator()->Init();
       problem->pc01->SetScalarCoefficient(problem->kr0, problem->kr0_v);
       problem->pc01->UpdateMatrices(problem->q0.ptr(), u.ptr());
       problem->pc01->UpdateMatricesNewtonCorrection(problem->q0.ptr(), u.ptr());
-      problem->pc01->ApplyBCs(false, true);
+      problem->pc01->ApplyBCs(false,true,false);
 
       problem->pc10->global_operator()->Init();
       problem->pc10->SetScalarCoefficient(problem->kr1, problem->kr1_u);
       problem->pc10->UpdateMatrices(problem->q1.ptr(), v.ptr());
       problem->pc10->UpdateMatricesNewtonCorrection(problem->q1.ptr(), v.ptr());
-      problem->pc10->ApplyBCs(false, true);
+      problem->pc10->ApplyBCs(false,true,false);
     }
     problem->pc->AssembleMatrix();
 
@@ -1223,12 +1223,12 @@ std::pair<double,double> RunInverseProblem_Diag(
   problem->op00->SetScalarCoefficient(problem->kr0, Teuchos::null);
   problem->op00->UpdateMatrices(Teuchos::null,Teuchos::null);
   problem->op00->global_operator()->UpdateRHS(*problem->f0,false);
-  problem->op00->ApplyBCs(true,true);
+  problem->op00->ApplyBCs(true,true,true);
 
   problem->op11->SetScalarCoefficient(problem->kr1, Teuchos::null);
   problem->op11->UpdateMatrices(Teuchos::null,Teuchos::null);
   problem->op11->global_operator()->UpdateRHS(*problem->f1,false);
-  problem->op11->ApplyBCs(true,true);
+  problem->op11->ApplyBCs(true,true,true);
 
   // assemble, invert
   problem->op00->global_operator()->SymbolicAssembleMatrix();

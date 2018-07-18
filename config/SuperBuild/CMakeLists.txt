@@ -7,7 +7,7 @@
 #
 # Set minimum required version of CMake
 # NB: Must go before project() call.
-#
+# KL: Version used to build Amanzi must be the same!
 cmake_minimum_required(VERSION 3.6.1)
 
 #
@@ -448,7 +448,7 @@ set(Amanzi_CMAKE_LINKER_ARGS
      -DCMAKE_EXE_LINKER_FLAGS:STRING=${CMAKE_EXE_LINKER_FLAGS}
      -DCMAKE_SHARED_LINKER_FLAGS:STRING=${CMAKE_SHARED_LINKER_FLAGS})
 
-message("AMANZI: SHARED LINKER FLAGS = ${Amanzi_CMAKE_LINKER_ARGS}")
+message(STATUS "Amanzi_CMAKE_LINKER_ARGS=${Amanzi_CMAKE_LINKER_ARGS}")
 
 # Common compiler flags to ensure a uniform build in projects that do not use CMake
 include(BuildWhitespaceString)
@@ -520,9 +520,6 @@ else()
   set(ZLIB_DIR ${ZLIB_INSTALL_PREFIX})
 endif()
 
-# CURL
-include(${SuperBuild_BUILD_FILES_DIR}/Build_CURL.cmake)
-
 # UnitTest
 append_set(Amanzi_TPL_CMAKE_ARGS -DENABLE_TEST:BOOL=${ENABLE_TESTS})
 if (ENABLE_TESTS)
@@ -547,7 +544,7 @@ if (ENABLE_Structured)
 endif()
 
 # Boost
-if ( NOT ENABLE_XSDK )
+if (NOT ENABLE_XSDK)
     include(${SuperBuild_BUILD_FILES_DIR}/Build_Boost.cmake) 
     append_set(Amanzi_TPL_CMAKE_ARGS
         -DBOOST_ROOT:FILEPATH=${TPL_INSTALL_PREFIX}
@@ -566,7 +563,7 @@ else()
 endif()
 
 # HDF5  
-if ( NOT ENABLE_XSDK )
+if (NOT ENABLE_XSDK)
   include(${SuperBuild_BUILD_FILES_DIR}/Build_HDF5.cmake)
 else()
   amanzi_tpl_version_write(FILENAME ${TPL_VERSIONS_INCLUDE_FILE}
@@ -594,7 +591,7 @@ append_set(Amanzi_TPL_CMAKE_ARGS
           -DXERCES_DIR:FILEPATH=${XERCES_DIR})
 
 # NetCDF
-if ( NOT ENABLE_XSDK )
+if (NOT ENABLE_XSDK)
     include(${SuperBuild_BUILD_FILES_DIR}/Build_NetCDF.cmake) 
 else()
     find_spack_install_location(netcdf NETCDF_INSTALL_PREFIX)
@@ -604,7 +601,7 @@ else()
     set(NetCDF_INCLUDE_DIRS ${NETCDF_INSTALL_PREFIX}/include)
     set(NetCDF_DIR ${NETCDF_INSTALL_PREFIX})
     set(NetCDF_C_LIBRARIES ${NetCDF_C_LIBRARY})
-    if ( ENABLE_NetCDF4 )
+    if (ENABLE_NetCDF4)
       list(APPEND NetCDF_C_LIBRARIES ${HDF5_LIBRARIES})
       list(APPEND NetCDF_INCLUDE_DIRS ${HDF5_INCLUDE_DIRS})
       list(REMOVE_DUPLICATES NetCDF_INCLUDE_DIRS)
@@ -627,28 +624,8 @@ if (ENABLE_MOAB_Mesh)
              -DMOAB_DIR:PATH=${TPL_INSTALL_PREFIX})
 endif()
  
-# SuperLU -- needs to go before HYPRE and PETSc because they needs it
-include(${SuperBuild_BUILD_FILES_DIR}/Build_SuperLU.cmake)
-append_set(Amanzi_TPL_CMAKE_ARGS
-           -DSuperLU_DIR:FILEPATH=${TPL_INSTALL_PREFIX})
-
-# HYPRE
-option(ENABLE_HYPRE "Build the HYPRE solver package" TRUE)
-if ( ENABLE_HYPRE )
-  if ( NOT ENABLE_XSDK )
-    include(${SuperBuild_BUILD_FILES_DIR}/Build_HYPRE.cmake)
-  else()
-    find_spack_install_location(hypre HYPRE_INSTALL_PREFIX)
-    message(STATUS "HYPRE_INSTALL_PREFIX = ${HYPRE_INSTALL_PREFIX}")
-    set(HYPRE_DIR ${HYPRE_INSTALL_PREFIX})
-    set(HYPRE_INCLUDE_DIRS "${HYPRE_INSTALL_PREFIX}/include")
-    build_library_name(HYPRE HYPRE_LIBRARY APPEND_PATH ${HYPRE_INSTALL_PREFIX}/lib)
-    set(HYPRE_LIBRARIES "${HYPRE_LIBRARY}")
-  endif()
-endif()
-
 # METIS -- needs to go before PETSc because PETSc needs it.
-if ( NOT ENABLE_XSDK )
+if (NOT ENABLE_XSDK)
     include(${SuperBuild_BUILD_FILES_DIR}/Build_METIS.cmake) 
 else()
     find_spack_install_location(metis METIS_INSTALL_PREFIX)
@@ -661,7 +638,7 @@ append_set(Amanzi_TPL_CMAKE_ARGS
            -DMETIS_DIR:FILEPATH=${METIS_DIR})
 
 # ParMetis -- needs to go before PETSc because PETSc needs it.
-if ( NOT ENABLE_XSDK )
+if (NOT ENABLE_XSDK)
     include(${SuperBuild_BUILD_FILES_DIR}/Build_ParMetis.cmake)
 else()
     find_spack_install_location(parmetis PARMETIS_INSTALL_PREFIX)
@@ -669,6 +646,34 @@ else()
     build_library_name(z ParMetis_LIBRARIES APPEND_PATH ${PARMETIS_INSTALL_PREFIX}/lib)
     set(ParMetis_INCLUDE_DIRS ${PARMETIS_INSTALL_PREFIX}/include)
     set(ParMetis_DIR ${PARMETIS_INSTALL_PREFIX})
+endif()
+
+# SuperLU -- needs to go before HYPRE and PETSc because they needs it
+include(${SuperBuild_BUILD_FILES_DIR}/Build_SuperLU.cmake)
+append_set(Amanzi_TPL_CMAKE_ARGS
+           -DSuperLU_DIR:FILEPATH=${TPL_INSTALL_PREFIX})
+
+# SuperLUDist
+include(${SuperBuild_BUILD_FILES_DIR}/Build_SuperLUDist.cmake)
+append_set(Amanzi_TPL_CMAKE_ARGS
+           -DSuperLUDist_DIR:FILEPATH=${TPL_INSTALL_PREFIX})
+
+# HYPRE
+option(ENABLE_HYPRE "Build the HYPRE solver package" TRUE)
+if (ENABLE_HYPRE)
+  if (NOT ENABLE_XSDK)
+    include(${SuperBuild_BUILD_FILES_DIR}/Build_HYPRE.cmake)
+    set(HYPRE_INSTALL_PREFIX ${TPL_INSTALL_PREFIX})
+    set(HYPRE_DIR ${HYPRE_INSTALL_PREFIX})
+    set(HYPRE_INCLUDE_DIRS "${HYPRE_INSTALL_PREFIX}/include")
+  else()
+    find_spack_install_location(hypre HYPRE_INSTALL_PREFIX)
+    message(STATUS "HYPRE_INSTALL_PREFIX = ${HYPRE_INSTALL_PREFIX}")
+    set(HYPRE_DIR ${HYPRE_INSTALL_PREFIX})
+    set(HYPRE_INCLUDE_DIRS "${HYPRE_INSTALL_PREFIX}/include")
+    build_library_name(HYPRE HYPRE_LIBRARY APPEND_PATH ${HYPRE_INSTALL_PREFIX}/lib)
+    set(HYPRE_LIBRARIES "${HYPRE_LIBRARY}")
+  endif()
 endif()
 
 if (ENABLE_PETSC OR ENABLE_Structured)
@@ -680,7 +685,7 @@ endif()
 option(ENABLE_PETSC "Build the PETSc package" FALSE)
 if (ENABLE_PETSC OR ENABLE_Structured)
   set(ENABLE_PETSC TRUE)
-  if ( NOT ENABLE_XSDK )
+  if (NOT ENABLE_XSDK)
     include(${SuperBuild_BUILD_FILES_DIR}/Build_PETSc.cmake)
   else()
     find_spack_install_location(petsc PETSC_INSTALL_PREFIX)
@@ -693,7 +698,7 @@ endif()
 include(${SuperBuild_BUILD_FILES_DIR}/Build_SEACAS.cmake)
 
 # Trilinos  
-if ( NOT ENABLE_XSDK )
+if (NOT ENABLE_XSDK)
   include(${SuperBuild_BUILD_FILES_DIR}/Build_Trilinos.cmake)
 else()
 
@@ -836,13 +841,13 @@ if (BUILD_Amanzi)
   endif()
 
   # Build type
-  if(CMAKE_BUILD_TYPE)
+  if (CMAKE_BUILD_TYPE)
     append_set(Amanzi_CMAKE_ARGS -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE})
   endif() 
 
   # Disable shared libraries and executable unless user has requested shared libs
   set(Amanzi_SHARED_CMAKE_ARGS)
-  if(BUILD_SHARED_LIBS)
+  if (BUILD_SHARED_LIBS)
     append_set(Amanzi_SHARED_CMAKE_ARGS -DBUILD_SHARED_LIBS:BOOL=TRUE)
   else()  
     append_set(Amanzi_SHARED_CMAKE_ARGS 
@@ -887,7 +892,7 @@ if (BUILD_Amanzi)
 
   #print_variable(Amanzi_CMAKE_ARGS) 
 
-  if(NOT Amanzi_SOURCE_DIR)
+  if (NOT Amanzi_SOURCE_DIR)
     message(FATAL_ERROR "Enable Amanzi build requires an Amanzi source directory."
                         "Define this dorectory with:"
                         "-DAmanzi_SOURCE_DIR:FILEPATH=<Amanzi source location>"

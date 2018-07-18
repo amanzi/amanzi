@@ -34,10 +34,11 @@ add_amanzi_library(structured_amanzi
                               $<TARGET_OBJECTS:strans>
                               $<TARGET_OBJECTS:sadv>
                               $<TARGET_OBJECTS:sflow>
-                              $<TARGET_OBJECTS:schem>)
+                              $<TARGET_OBJECTS:schem>
+                   LINK_LIBS interface_s)
 
-
-set_target_properties(structured_amanzi PROPERTIES LINKER_LANGUAGE C)
 if (APPLE AND BUILD_SHARED_LIBS)
-  set_target_properties(structured_amanzi PROPERTIES LINK_FLAGS "-Wl,-undefined,dynamic_lookup")
+  set_target_properties(structured_amanzi PROPERTIES LINK_FLAGS "-Wl,-undefined,dynamic_lookup -L${CCSE_DIR}/lib")
+elseif (BUILD_SHARED_LIBS)
+  set_target_properties(structured_amanzi PROPERTIES LINK_FLAGS "-L${CCSE_DIR}/lib")
 endif()			  
