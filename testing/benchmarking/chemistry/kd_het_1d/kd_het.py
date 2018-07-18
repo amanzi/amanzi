@@ -183,7 +183,7 @@ if __name__ == "__main__":
         run_amanzi_standard.run_amanzi(input_file, 1, 
                                        ["1d-"+root+".in",root+".dat",input_file],
                                        path_to_amanzi)
-        root_amanziS = "plt00051"
+        root_amanziS = "plt"
         c_amanziS = [ [] for x in range(len(amanzi_totc)) ]
         v_amanziS = [ [] for x in range(len(amanzi_totc)) ]
         for j,comp in enumerate(components):
@@ -202,7 +202,7 @@ if __name__ == "__main__":
         run_amanzi_standard.run_amanzi(input_file, 1,
                                        ["1d-"+root+"-crunch.in",root+".dbs",input_file],
                                        path_to_amanzi)
-        root_amanziS = "plt00051"
+        root_amanziS = "plt"
         compS = "A_Aqueous_Concentration"
         x_amanziS_crunch, c_amanziS_crunch = GetXY_AmanziS_1D(path_to_amanzi,root_amanziS,compS,1)
         compS = "A_Sorbed_Concentration"
