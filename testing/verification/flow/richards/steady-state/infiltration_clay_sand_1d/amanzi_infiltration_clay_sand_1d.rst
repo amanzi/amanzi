@@ -1,6 +1,14 @@
 Sand Clay Layers
 ================
 
+Verification problems from the literature have been identified to test
+isothermal, single-phase, variably saturated flow.  We initially focus
+on test problems that address the two most widely used k-s-p
+functions, van Genuchten-Mualem and Brooks-Corey.  These include
+steady-state and transient tests with Dirichlet and Neumann boundary
+conditions.
+
+
 Background
 ----------
 

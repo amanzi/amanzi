@@ -17,7 +17,7 @@ if __name__ == "__main__":
 
     try:
         path_to_amanziS = "."
-        root_amanziS = "case_2b_plot00001"
+        root_amanziS = "case_2b_plot"
         compS = "Aqueous_Pressure"
         x_amanziS, c_amanziS = GetXY_AmanziS_1D(path_to_amanziS,root_amanziS,compS)
         struct = len(x_amanziS)

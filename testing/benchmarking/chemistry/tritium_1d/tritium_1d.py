@@ -66,7 +66,7 @@ if __name__ == "__main__":
         run_amanzi_standard.run_amanzi(input_file, 1,
                                        ["1d-"+root+"-trim.in",root+".dat",input_file],
                                        path_to_amanzi)
-        root_amanzi = "plt00037"
+        root_amanzi = "plt"
         comp = "Tritium_water_Concentration"
         x_amanziS, c_amanziS = GetXY_AmanziS_1D(path_to_amanzi,root_amanzi,comp,1)
         struct = len(x_amanziS)
@@ -81,7 +81,7 @@ if __name__ == "__main__":
         run_amanzi_standard.run_amanzi(input_file, 1, 
                                        ["1d-"+root+"-crunch.in",root+".dbs","aqueous.dbs",input_file],
                                        path_to_amanzi)
-        root_amanzi = "plt00037"
+        root_amanzi = "plt"
         comp = "Tritium_water_Concentration"
         x_amanziS_crunch, c_amanziS_crunch = GetXY_AmanziS_1D(path_to_amanzi,root_amanzi,comp,1)
         struct_crunch = len(x_amanziS_crunch)

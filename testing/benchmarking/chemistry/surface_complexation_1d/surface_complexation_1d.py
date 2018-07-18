@@ -216,7 +216,7 @@ if __name__ == "__main__":
         run_amanzi_standard.run_amanzi(input_file, 1,
                                        ["1d-"+root+".in",root+".dat",input_file],
                                        path_to_amanzi)
-        root_amanziS = "plt00362"
+        root_amanziS = "plt"
 
         u_amanziS = [[[] for x in range(len(amanzi_totcS))] for x in range(len(times))]
         for i, time in enumerate(times):
@@ -253,7 +253,7 @@ if __name__ == "__main__":
         run_amanzi_standard.run_amanzi(input_file, 1,
                                        ["1d-surface-complexation-crunch.in","surface-complexation.dbs",input_file],
                                        path_to_amanzi)
-        root_amanziS = "plt00362"
+        root_amanziS = "plt"
 
         u_amanziS_crunch = [[[] for x in range(len(amanzi_totcS))] for x in range(len(times))]
         for i, time in enumerate(times):

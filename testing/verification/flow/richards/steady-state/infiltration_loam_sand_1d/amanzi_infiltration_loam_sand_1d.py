@@ -30,7 +30,7 @@ if __name__ == "__main__":
     try:
         input_file = "amanzi_infiltration_loam_sand_1d-s.xml"
         path_to_amanzi = "output-s"
-        root_amanzi = "plot00283"
+        root_amanzi = "plot"
 
         run_amanzi_standard.run_amanzi(input_file, 1, [input_file], path_to_amanzi)
 
