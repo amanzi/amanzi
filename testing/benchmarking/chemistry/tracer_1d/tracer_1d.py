@@ -93,7 +93,7 @@ if __name__ == "__main__":
         path_to_amanzi = "output-s-alq-pflo"
         run_amanzi_standard.run_amanzi(input_file, 1, ["1d-"+root+".in",root+".dat",input_file], path_to_amanzi)
 
-        root_amanziS = "plt00051"
+        root_amanziS = "plt"
         compS = "tracer_water_Concentration"
         x_amanziS, c_amanziS = GetXY_AmanziS_1D(path_to_amanzi,root_amanziS,compS,1)
         struct = len(x_amanziS)

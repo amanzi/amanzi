@@ -1,6 +1,7 @@
 import os, os.path, sys
 import h5py
 import numpy as np
+import glob
 
 #
 # Extract 1d array along dimension dim = 1,2,3 
@@ -41,7 +42,8 @@ def GetXY_AmanziS_1D(path,root,comp,dim):
     except:
         fsnok = False
 
-    plotfile = os.path.join(path,root)
+    # plotfile = os.path.join(path,root)
+    plotfile = max(glob.glob(path+"/"+root+'*'))
 
     if os.path.isdir(plotfile) & fsnok:
         (nx, ny, nz) = fsnapshot.fplotfile_get_size(plotfile)
