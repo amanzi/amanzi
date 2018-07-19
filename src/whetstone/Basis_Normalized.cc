@@ -38,7 +38,7 @@ void Basis_Normalized::Init(
   double volume = integrals(0, 0); 
 
   monomial_scales_(0, 0) = 1.0;
-  for (auto it = monomial_scales_.begin(); it.end() <= monomial_scales_.end(); ++it) {
+  for (auto it = monomial_scales_.begin(); it < monomial_scales_.end(); ++it) {
     int k = it.MonomialSetPosition();
     const int* multi_index = it.multi_index();
     int index[d]; 
@@ -71,7 +71,7 @@ void Basis_Normalized::BilinearFormNaturalToMy(DenseMatrix& A) const
   std::vector<double> a(nrows);
 
   PolynomialIterator it(d);
-  for (it.begin(); it.end() <= order; ++it) {
+  for (it.begin(); it.MonomialSetOrder() <= order; ++it) {
     int n = it.PolynomialPosition();
     int m = it.MonomialSetOrder();
     int k = it.MonomialSetPosition();
@@ -105,7 +105,7 @@ void Basis_Normalized::BilinearFormNaturalToMy(
   auto brr = std::dynamic_pointer_cast<Basis_Normalized>(br);
 
   PolynomialIterator it(d);
-  for (it.begin(); it.end() <= order; ++it) {
+  for (it.begin(); it.MonomialSetOrder() <= order; ++it) {
     int n = it.PolynomialPosition();
     int m = it.MonomialSetOrder();
     int k = it.MonomialSetPosition();
@@ -136,7 +136,7 @@ void Basis_Normalized::LinearFormNaturalToMy(DenseVector& f) const
   int d = monomial_scales_.dimension();
 
   PolynomialIterator it(d);
-  for (it.begin(); it.end() <= order; ++it) {
+  for (it.begin(); it.MonomialSetOrder() <= order; ++it) {
     int n = it.PolynomialPosition();
     int m = it.MonomialSetOrder();
     int k = it.MonomialSetPosition();
@@ -153,7 +153,7 @@ void Basis_Normalized::ChangeBasisMyToNatural(DenseVector& v) const
 {
   AMANZI_ASSERT(v.NumRows() == monomial_scales_.size());
 
-  for (auto it = monomial_scales_.begin(); it.end() <= monomial_scales_.end(); ++it) {
+  for (auto it = monomial_scales_.begin(); it < monomial_scales_.end(); ++it) {
     int n = it.PolynomialPosition();
     int m = it.MonomialSetOrder();
     int k = it.MonomialSetPosition();
@@ -170,7 +170,7 @@ void Basis_Normalized::ChangeBasisNaturalToMy(DenseVector& v) const
 {
   AMANZI_ASSERT(v.NumRows() == monomial_scales_.size());
 
-  for (auto it = monomial_scales_.begin(); it.end() <= monomial_scales_.end(); ++it) {
+  for (auto it = monomial_scales_.begin(); it < monomial_scales_.end(); ++it) {
     int n = it.PolynomialPosition();
     int m = it.MonomialSetOrder();
     int k = it.MonomialSetPosition();
@@ -192,7 +192,7 @@ Polynomial Basis_Normalized::CalculatePolynomial(
   poly.set_origin(mesh->cell_centroid(c));
 
   int n(0);
-  for (auto it = poly.begin(); it.end() <= poly.end(); ++it) {
+  for (auto it = poly.begin(); it < poly.end(); ++it) {
     int m = it.MonomialSetOrder();
     int k = it.MonomialSetPosition();
 

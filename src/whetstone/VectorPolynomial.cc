@@ -93,7 +93,7 @@ void VectorPolynomial::Gradient(const Polynomial p)
   }
 
   int index[3];
-  for (auto it = p.begin(); it.end() <= p.end(); ++it) {
+  for (auto it = p.begin(); it < p.end(); ++it) {
     int k = it.MonomialSetOrder();
     if (k > 0) {
       const int* idx = it.multi_index();

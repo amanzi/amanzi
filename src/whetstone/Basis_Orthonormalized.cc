@@ -41,7 +41,7 @@ void Basis_Orthonormalized::Init(
   monomial_scales_(0, 0) = 1.0;
   monomial_ortho_(0, 0) = 0.0;
 
-  for (auto it = monomial_scales_.begin(); it.end() <= monomial_scales_.end(); ++it) {
+  for (auto it = monomial_scales_.begin(); it < monomial_scales_.end(); ++it) {
     int k = it.MonomialSetPosition();
     const int* multi_index = it.multi_index();
     int index[d]; 
@@ -78,7 +78,7 @@ void Basis_Orthonormalized::BilinearFormNaturalToMy(DenseMatrix& A) const
   std::vector<double> a(nrows), b(nrows);
 
   PolynomialIterator it(d);
-  for (it.begin(); it.end() <= order; ++it) {
+  for (it.begin(); it.MonomialSetOrder() <= order; ++it) {
     int n = it.PolynomialPosition();
     int m = it.MonomialSetOrder();
     int k = it.MonomialSetPosition();
@@ -123,7 +123,7 @@ void Basis_Orthonormalized::BilinearFormNaturalToMy(
   auto brr = std::dynamic_pointer_cast<Basis_Orthonormalized>(br);
 
   PolynomialIterator it(d);
-  for (it.begin(); it.end() <= order; ++it) {
+  for (it.begin(); it.MonomialSetOrder() <= order; ++it) {
     int n = it.PolynomialPosition();
     int m = it.MonomialSetOrder();
     int k = it.MonomialSetPosition();
@@ -176,7 +176,7 @@ void Basis_Orthonormalized::LinearFormNaturalToMy(DenseVector& f) const
   std::vector<double> a(nrows), b(nrows);
 
   PolynomialIterator it(d);
-  for (it.begin(); it.end() <= order; ++it) {
+  for (it.begin(); it.MonomialSetOrder() <= order; ++it) {
     int n = it.PolynomialPosition();
     int m = it.MonomialSetOrder();
     int k = it.MonomialSetPosition();
@@ -202,7 +202,7 @@ void Basis_Orthonormalized::ChangeBasisMyToNatural(DenseVector& v) const
 {
   AMANZI_ASSERT(v.NumRows() == monomial_scales_.size());
  
-  for (auto it = monomial_scales_.begin(); it.end() <= monomial_scales_.end(); ++it) {
+  for (auto it = monomial_scales_.begin(); it < monomial_scales_.end(); ++it) {
     int n = it.PolynomialPosition();
     int m = it.MonomialSetOrder();
     int k = it.MonomialSetPosition();
@@ -223,7 +223,7 @@ void Basis_Orthonormalized::ChangeBasisNaturalToMy(DenseVector& v) const
   AMANZI_ASSERT(v.NumRows() == monomial_scales_.size());
  
   double v0 = v(0);
-  for (auto it = monomial_scales_.begin(); it.end() <= monomial_scales_.end(); ++it) {
+  for (auto it = monomial_scales_.begin(); it < monomial_scales_.end(); ++it) {
     int n = it.PolynomialPosition();
     int m = it.MonomialSetOrder();
     int k = it.MonomialSetPosition();
@@ -248,7 +248,7 @@ Polynomial Basis_Orthonormalized::CalculatePolynomial(
   poly.set_origin(mesh->cell_centroid(c));
 
   int n(0);
-  for (auto it = poly.begin(); it.end() <= poly.end(); ++it) {
+  for (auto it = poly.begin(); it < poly.end(); ++it) {
     int m = it.MonomialSetOrder();
     int k = it.MonomialSetPosition();
 

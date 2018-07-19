@@ -168,14 +168,14 @@ Polynomial& Polynomial::operator*=(const Polynomial& poly)
   Reshape(d_, order_prod, true);
 
   int index[3];
-  for (auto it1 = arg1.begin(); it1.end() <= arg1.end(); ++it1) {
+  for (auto it1 = arg1.begin(); it1 < arg1.end(); ++it1) {
     const int* idx1 = it1.multi_index();
     int k1 = it1.MonomialSetOrder();
     int m1 = it1.MonomialSetPosition();
     double val1 = arg1(k1, m1);
     if (val1 == 0.0) continue;
 
-    for (auto it2 = arg2->begin(); it2.end() <= arg2->end(); ++it2) {
+    for (auto it2 = arg2->begin(); it2 < arg2->end(); ++it2) {
       const int* idx2 = it2.multi_index();
       int k2 = it2.MonomialSetOrder();
       int m2 = it2.MonomialSetPosition();
@@ -241,7 +241,7 @@ void Polynomial::ChangeOrigin(const AmanziGeometry::Point& origin)
 
     // iterate over polynomial and sum up products
     Polynomial rebased(d_, order_);
-    for (auto it = begin(); it.end() <= end(); ++it) {
+    for (auto it = begin(); it < end(); ++it) {
       int k = it.MonomialSetOrder();
       int m = it.MonomialSetPosition();
       double coef = coefs_[k](m);
@@ -408,7 +408,7 @@ double Polynomial::Value(const AmanziGeometry::Point& xp) const
 {
   double sum(0.0);
 
-  for (auto it = begin(); it.end() <= end(); ++it) {
+  for (auto it = begin(); it < end(); ++it) {
     int k = it.MonomialSetOrder();
     int l = it.MonomialSetPosition();
     const int* index = it.multi_index();
@@ -486,7 +486,7 @@ void Polynomial::ChangeCoordinates(
 
   // populate new polynomial using different algorithms
   Polynomial tmp(dnew, order_);
-  for (auto it = begin(); it.end() <= end(); ++it) {
+  for (auto it = begin(); it < end(); ++it) {
     const int* multi_index = it.multi_index();
     int m = it.MonomialSetOrder();
     int k = it.MonomialSetPosition();
@@ -521,7 +521,7 @@ void Polynomial::InverseChangeCoordinates(
     int i = (fabs(B[0][0]) > fabs(B[0][1])) ? 0 : 1;
     double scale = 1.0 / B[0][i];
 
-    for (auto it = begin(); it.end() <= end(); ++it) {
+    for (auto it = begin(); it < end(); ++it) {
       int m = it.MonomialSetOrder();
       tmp(m, i * m) = coefs_[m](0) * std::pow(scale, m);
     }
@@ -541,7 +541,7 @@ Polynomial Polynomial::Laplacian()
   Polynomial tmp(d_, order);
 
   int index[3];
-  for (auto it = begin(); it.end() <= end(); ++it) {
+  for (auto it = begin(); it < end(); ++it) {
     int k = it.MonomialSetOrder();
     if (k > 1) {
       const int* idx = it.multi_index();
@@ -571,7 +571,7 @@ std::ostream& operator << (std::ostream& os, const Polynomial& p)
 {
   os << "polynomial: order=" << p.order() << " d=" << p.dimension() 
      << " size=" << p.size() << std::endl;
-  for (auto it = p.begin(); it.end() <= p.end(); ++it) {
+  for (auto it = p.begin(); it < p.end(); ++it) {
     int k = it.MonomialSetOrder();
     int m = it.MonomialSetPosition();
     double val = p(k, m);

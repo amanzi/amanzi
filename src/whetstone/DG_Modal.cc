@@ -64,11 +64,11 @@ int DG_Modal::MassMatrix(int c, const Tensor& K, DenseMatrix& M)
   int nrows = p.size();
   M.Reshape(nrows, nrows);
 
-  for (auto it = p.begin(); it.end() <= p.end(); ++it) {
+  for (auto it = p.begin(); it < p.end(); ++it) {
     const int* idx_p = it.multi_index();
     int k = it.PolynomialPosition();
 
-    for (auto jt = it; jt.end() <= p.end(); ++jt) {
+    for (auto jt = it; jt < p.end(); ++jt) {
       const int* idx_q = jt.multi_index();
       int l = jt.PolynomialPosition();
       
@@ -106,11 +106,11 @@ int DG_Modal::MassMatrix(
   int nrows = p.size();
   M.Reshape(nrows, nrows);
 
-  for (auto it = p.begin(); it.end() <= p.end(); ++it) {
+  for (auto it = p.begin(); it < p.end(); ++it) {
     const int* idx_p = it.multi_index();
     int k = it.PolynomialPosition();
 
-    for (auto jt = it; jt.end() <= p.end(); ++jt) {
+    for (auto jt = it; jt < p.end(); ++jt) {
       const int* idx_q = jt.multi_index();
       int l = jt.PolynomialPosition();
       
@@ -153,17 +153,17 @@ int DG_Modal::MassMatrixPoly_(int c, const Polynomial& K, DenseMatrix& M)
   M.Reshape(nrows, nrows);
   M.PutScalar(0.0);
 
-  for (auto it = p.begin(); it.end() <= p.end(); ++it) {
+  for (auto it = p.begin(); it < p.end(); ++it) {
     const int* idx_p = it.multi_index();
     int k = it.PolynomialPosition();
 
-    for (auto mt = Kcopy.begin(); mt.end() <= Kcopy.end(); ++mt) {
+    for (auto mt = Kcopy.begin(); mt < Kcopy.end(); ++mt) {
       const int* idx_K = mt.multi_index();
       int m = mt.MonomialSetPosition();
-      double factor = Kcopy(mt.end(), m);
+      double factor = Kcopy(mt.MonomialSetOrder(), m);
       if (factor == 0.0) continue;
 
-      for (auto jt = it; jt.end() <= p.end(); ++jt) {
+      for (auto jt = it; jt < p.end(); ++jt) {
         const int* idx_q = jt.multi_index();
         int l = jt.PolynomialPosition();
 
@@ -215,7 +215,7 @@ int DG_Modal::MassMatrixPiecewisePoly_(
   // xy[0] = cell_geometric_center(*mesh_, c);
   xy[0] = mesh_->cell_centroid(c);
 
-  for (auto it = p.begin(); it.end() <= p.end(); ++it) {
+  for (auto it = p.begin(); it < p.end(); ++it) {
     int k = it.PolynomialPosition();
     int s = it.MonomialSetOrder();
     const int* idx0 = it.multi_index();
@@ -225,7 +225,7 @@ int DG_Modal::MassMatrixPiecewisePoly_(
 
     polys[0] = &p0;
 
-    for (auto jt = it; jt.end() <= p.end(); ++jt) {
+    for (auto jt = it; jt < p.end(); ++jt) {
       const int* idx1 = jt.multi_index();
       int l = jt.PolynomialPosition();
       int t = jt.MonomialSetOrder();
@@ -285,11 +285,11 @@ int DG_Modal::StiffnessMatrix(int c, const Tensor& K, DenseMatrix& A)
   int nrows = p.size();
   A.Reshape(nrows, nrows);
 
-  for (auto it = p.begin(); it.end() <= p.end(); ++it) {
+  for (auto it = p.begin(); it < p.end(); ++it) {
     const int* index = it.multi_index();
     int k = it.PolynomialPosition();
 
-    for (auto jt = it; jt.end() <= p.end(); ++jt) {
+    for (auto jt = it; jt < p.end(); ++jt) {
       const int* jndex = jt.multi_index();
       int l = jt.PolynomialPosition();
       
@@ -354,7 +354,7 @@ int DG_Modal::AdvectionMatrixPoly_(
   A.Reshape(nrows, nrows);
   A.PutScalar(0.0);
 
-  for (auto it = p.begin(); it.end() <= p.end(); ++it) {
+  for (auto it = p.begin(); it < p.end(); ++it) {
     const int* idx_p = it.multi_index();
     int k = it.PolynomialPosition();
 
@@ -365,13 +365,13 @@ int DG_Modal::AdvectionMatrixPoly_(
     pgrad.Gradient(pp);
     Polynomial tmp(pgrad * ucopy);
 
-    for (auto mt = tmp.begin(); mt.end() <= tmp.end(); ++mt) {
+    for (auto mt = tmp.begin(); mt < tmp.end(); ++mt) {
       const int* idx_K = mt.multi_index();
       int m = mt.MonomialSetPosition();
-      double factor = tmp(mt.end(), m);
+      double factor = tmp(mt.MonomialSetOrder(), m);
       if (factor == 0.0) continue;
 
-      for (auto jt = q.begin(); jt.end() <= q.end(); ++jt) {
+      for (auto jt = q.begin(); jt < q.end(); ++jt) {
         const int* idx_q = jt.multi_index();
         int l = q.PolynomialPosition(idx_q);
 
@@ -429,7 +429,7 @@ int DG_Modal::AdvectionMatrixPiecewisePoly_(
   // xy[0] = cell_geometric_center(*mesh_, c);
   xy[0] = mesh_->cell_centroid(c);
 
-  for (auto it = p.begin(); it.end() <= p.end(); ++it) {
+  for (auto it = p.begin(); it < p.end(); ++it) {
     int k = it.PolynomialPosition();
     int s = it.MonomialSetOrder();
     const int* idx0 = it.multi_index();
@@ -439,7 +439,7 @@ int DG_Modal::AdvectionMatrixPiecewisePoly_(
 
     pgrad.Gradient(p0);
 
-    for (auto jt = q.begin(); jt.end() <= q.end(); ++jt) {
+    for (auto jt = q.begin(); jt < q.end(); ++jt) {
       const int* idx1 = jt.multi_index();
       int l = jt.PolynomialPosition();
       int t = jt.MonomialSetOrder();
@@ -538,7 +538,7 @@ int DG_Modal::FluxMatrix(int f, const Polynomial& un, DenseMatrix& A,
   // integrate traces of polynomials on face f
   std::vector<const Polynomial*> polys(3);
 
-  for (auto it = poly0.begin(); it.end() <= poly0.end(); ++it) {
+  for (auto it = poly0.begin(); it < poly0.end(); ++it) {
     const int* idx0 = it.multi_index();
     int k = poly0.PolynomialPosition(idx0);
     int s = it.MonomialSetOrder();
@@ -549,7 +549,7 @@ int DG_Modal::FluxMatrix(int f, const Polynomial& un, DenseMatrix& A,
     Polynomial p1(d_, idx0, 1.0);
     p1.set_origin(mesh_->cell_centroid(c2));
 
-    for (auto jt = poly1.begin(); jt.end() <= poly1.end(); ++jt) {
+    for (auto jt = poly1.begin(); jt < poly1.end(); ++jt) {
       const int* idx1 = jt.multi_index();
       int l = poly1.PolynomialPosition(idx1);
       int t = jt.MonomialSetOrder();
@@ -648,7 +648,7 @@ int DG_Modal::FluxMatrixRusanov(
 
   std::vector<const Polynomial*> polys(3);
 
-  for (auto it = poly0.begin(); it.end() <= poly0.end(); ++it) {
+  for (auto it = poly0.begin(); it < poly0.end(); ++it) {
     const int* idx0 = it.multi_index();
     int k = poly0.PolynomialPosition(idx0);
     int s = it.MonomialSetOrder();
@@ -659,7 +659,7 @@ int DG_Modal::FluxMatrixRusanov(
     Polynomial p1(d_, idx0, 1.0);
     p1.set_origin(mesh_->cell_centroid(c2));
 
-    for (auto jt = poly1.begin(); jt.end() <= poly1.end(); ++jt) {
+    for (auto jt = poly1.begin(); jt < poly1.end(); ++jt) {
       const int* idx1 = jt.multi_index();
       int l = poly1.PolynomialPosition(idx1);
       int t = jt.MonomialSetOrder();
@@ -748,7 +748,7 @@ int DG_Modal::FaceMatrixJump(int f, const Tensor& K1, const Tensor& K2, DenseMat
   VectorPolynomial pgrad;
   std::vector<const Polynomial*> polys(2);
 
-  for (auto it = poly0.begin(); it.end() <= poly0.end(); ++it) {
+  for (auto it = poly0.begin(); it < poly0.end(); ++it) {
     const int* idx0 = it.multi_index();
     int k = poly0.PolynomialPosition(idx0);
     int s = it.MonomialSetOrder();
@@ -759,7 +759,7 @@ int DG_Modal::FaceMatrixJump(int f, const Tensor& K1, const Tensor& K2, DenseMat
     pgrad.Gradient(p0);
     p0 = pgrad * conormal1;
 
-    for (auto jt = poly1.begin(); jt.end() <= poly1.end(); ++jt) {
+    for (auto jt = poly1.begin(); jt < poly1.end(); ++jt) {
       const int* idx1 = jt.multi_index();
       int l = poly1.PolynomialPosition(idx1);
       int t = jt.MonomialSetOrder();
@@ -841,7 +841,7 @@ int DG_Modal::FaceMatrixPenalty(int f, double Kf, DenseMatrix& A)
   Polynomial p0, p1, q0, q1;
   std::vector<const Polynomial*> polys(2);
 
-  for (auto it = poly0.begin(); it.end() <= poly0.end(); ++it) {
+  for (auto it = poly0.begin(); it < poly0.end(); ++it) {
     const int* idx0 = it.multi_index();
     int k = poly0.PolynomialPosition(idx0);
     int s = it.MonomialSetOrder();
@@ -849,7 +849,7 @@ int DG_Modal::FaceMatrixPenalty(int f, double Kf, DenseMatrix& A)
     Polynomial p0(d_, idx0, 1.0);
     p0.set_origin(mesh_->cell_centroid(c1));
 
-    for (auto jt = poly1.begin(); jt.end() <= poly1.end(); ++jt) {
+    for (auto jt = poly1.begin(); jt < poly1.end(); ++jt) {
       const int* idx1 = jt.multi_index();
       int l = poly1.PolynomialPosition(idx1);
       int t = jt.MonomialSetOrder();

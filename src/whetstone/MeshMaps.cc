@@ -194,7 +194,7 @@ int MeshMaps::LeastSquareFit(int order,
   // evaluate basis functions at given points
   DenseMatrix psi(nk, nx);
 
-  for (auto it = poly.begin(); it.end() <= poly.end(); ++it) {
+  for (auto it = poly.begin(); it < poly.end(); ++it) {
     int i = it.PolynomialPosition();
     const int* idx = it.multi_index();
 
@@ -239,7 +239,7 @@ int MeshMaps::LeastSquareFit(int order,
 
     A.Multiply(b, u, false);
 
-    for (auto it = poly.begin(); it.end() <= poly.end(); ++it) {
+    for (auto it = poly.begin(); it < poly.end(); ++it) {
       int n = it.MonomialSetOrder();
       int m = it.MonomialSetPosition();
       int i = it.PolynomialPosition();

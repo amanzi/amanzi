@@ -154,7 +154,7 @@ double NumericalIntegration::IntegratePolynomialsFace(
     double tmp = dirs[n] * ((xe - xf) * enormal) / length;
 
     Polynomial q(product);
-    for (auto it = q.begin(); it.end() <= q.end(); ++it) {
+    for (auto it = q.begin(); it < q.end(); ++it) {
       int m = it.MonomialSetOrder();
       int k = it.MonomialSetPosition();
       q(m, k) *= tmp / (m + 2);
@@ -365,7 +365,7 @@ void NumericalIntegration::IntegrateMonomialsFace_(
   std::vector<const Polynomial*> polys(1);
 
   PolynomialIterator it(d_);
-  for (it.begin(k); it.end() <= k; ++it) {
+  for (it.begin(k); it.MonomialSetOrder() <= k; ++it) {
     int l = it.MonomialSetPosition();
 
     // using monomial centered at xc, create polynomial centred at xf
@@ -396,7 +396,7 @@ void NumericalIntegration::IntegrateMonomialsFace_(
       double tmp = (factor * dirs[n]) * ((xe - xf) * fnormal) / length;
 
       Polynomial q(poly);
-      for (auto jt = poly.begin(); jt.end() <= poly.end(); ++jt) {
+      for (auto jt = poly.begin(); jt < poly.end(); ++jt) {
         int m = jt.MonomialSetOrder();
         int k = jt.MonomialSetPosition();
         q(m, k) *= tmp / (m + d_ - 1);
@@ -430,7 +430,7 @@ void NumericalIntegration::IntegrateMonomialsEdge_(
   AMANZI_ASSERT(m < 8);
 
   PolynomialIterator it(d_);
-  for (it.begin(k); it.end() <= k; ++it) {
+  for (it.begin(k); it.MonomialSetOrder() <= k; ++it) {
     const int* idx = it.multi_index();
     int l = it.MonomialSetPosition();
 

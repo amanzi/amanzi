@@ -104,9 +104,10 @@ class Polynomial : public WhetStoneFunction {
   int MonomialSetPosition(const int* multi_index) const;
   int PolynomialPosition(const int* multi_index) const;
 
-  // iterator starts with constant term for correct positioning
+  // iterator starts with constant term
   PolynomialIterator begin() const { PolynomialIterator it(d_); return it.begin(); }
-  int end() const { return order_; }
+  // returns an iterator referring to the past-the-end term in the polynomial
+  PolynomialIterator end() const { PolynomialIterator it(d_); return it.begin(order_ + 1); }
 
   // Change of coordinates:
   // --  x = xf + B * s

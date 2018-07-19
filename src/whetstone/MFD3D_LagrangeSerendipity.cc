@@ -74,12 +74,12 @@ int MFD3D_LagrangeSerendipity::H1consistency(
   // set the Gramm-Schidt matrix for polynomials
   DenseMatrix M(nd, nd);
 
-  for (auto it = poly.begin(); it.end() <= poly.end(); ++it) {
+  for (auto it = poly.begin(); it < poly.end(); ++it) {
     const int* index = it.multi_index();
     int k = it.PolynomialPosition();
     double scalei = basis.monomial_scales()[it.MonomialSetOrder()];
 
-    for (auto jt = it; jt.end() <= poly.end(); ++jt) {
+    for (auto jt = it; jt < poly.end(); ++jt) {
       const int* jndex = jt.multi_index();
       int l = jt.PolynomialPosition();
       double scalej = basis.monomial_scales()[jt.MonomialSetOrder()];
@@ -102,7 +102,7 @@ int MFD3D_LagrangeSerendipity::H1consistency(
   DenseMatrix L(nd, nd);
   L.PutScalar(0.0);
 
-  for (auto it = poly.begin(); it.end() <= poly.end(); ++it) {
+  for (auto it = poly.begin(); it < poly.end(); ++it) {
     const int* index = it.multi_index();
     int k = it.PolynomialPosition();
 
@@ -110,7 +110,7 @@ int MFD3D_LagrangeSerendipity::H1consistency(
     Polynomial mono(d_, index, factor);
     Polynomial lap = mono.Laplacian();
     
-    for (auto jt = lap.begin(); jt.end() <= lap.end(); ++jt) {
+    for (auto jt = lap.begin(); jt < lap.end(); ++jt) {
       int l = jt.PolynomialPosition();
       int m = jt.MonomialSetOrder();
       int n = jt.MonomialSetPosition();
@@ -282,7 +282,7 @@ void MFD3D_LagrangeSerendipity::CalculateDOFsOnBoundary_(
 
       polys[0] = &(vf[n][i]);
 
-      for (auto it = pf.begin(); it.end() <= pf.end(); ++it) {
+      for (auto it = pf.begin(); it < pf.end(); ++it) {
         const int* index = it.multi_index();
         Polynomial fmono(d_ - 1, index, 1.0);
         fmono.InverseChangeCoordinates(xf, tau);  

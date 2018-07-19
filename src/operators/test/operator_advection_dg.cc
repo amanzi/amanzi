@@ -199,7 +199,7 @@ void AdvectionSteady(int dim, std::string filename, int nx,
     src = Kreac * sol + v * grad;
     if (conservative_form) src += divv * sol;
 
-    for (auto it = pc.begin(); it.end() <= pc.end(); ++it) {
+    for (auto it = pc.begin(); it < pc.end(); ++it) {
       int n = it.PolynomialPosition();
       int k = it.MonomialSetOrder();
 

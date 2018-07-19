@@ -32,7 +32,7 @@ TEST(DG_TAYLOR_POLYNOMIALS) {
   Polynomial p(2, 3);
 
   int i(0);
-  for (auto it = p.begin(); it.end() <= p.end(); ++it) {
+  for (auto it = p.begin(); it < p.end(); ++it) {
     const int* index = it.multi_index();
     CHECK(index[0] >= 0 && index[1] >= 0);
 
@@ -67,7 +67,7 @@ TEST(DG_TAYLOR_POLYNOMIALS) {
   Polynomial q(3, 3);
 
   i = 0;
-  for (auto it = q.begin(); it.end() <= q.end(); ++it) {
+  for (auto it = q.begin(); it < q.end(); ++it) {
     const int* index = it.multi_index();
     CHECK(index[0] >= 0 && index[1] >= 0 && index[2] >= 0);
 
@@ -123,7 +123,7 @@ TEST(DG_TAYLOR_POLYNOMIALS) {
   // trace of a 2D polynomial
   Polynomial p2d(2, 3);
 
-  for (auto it = p2d.begin(); it.end() <= p2d.end(); ++it) {
+  for (auto it = p2d.begin(); it < p2d.end(); ++it) {
     const int* index = it.multi_index();
     int pos = p2d.PolynomialPosition(index);
 

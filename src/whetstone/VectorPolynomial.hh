@@ -154,7 +154,7 @@ Polynomial Divergence(const VectorPolynomial vp)
 
   int index[3];
   for (int i = 0; i < d; ++i) {
-    for (auto it = vp[i].begin(); it.end() <= vp[i].end(); ++it) {
+    for (auto it = vp[i].begin(); it < vp[i].end(); ++it) {
       int k = it.MonomialSetOrder();
       if (k > 0) {
         const int* idx = it.multi_index();

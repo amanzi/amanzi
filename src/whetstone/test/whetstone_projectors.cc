@@ -286,7 +286,7 @@ TEST(HARMONIC_PROJECTORS_POLYGON_CR) {
     moments[0].Reshape(2, k - 2);
     moments[1].Reshape(2, k - 2);
 
-    for (auto it = moments[0].begin(); it.end() <= moments[0].end(); ++it) {
+    for (auto it = moments[0].begin(); it < moments[0].end(); ++it) {
       int m = it.MonomialSetOrder();
       int i = it.MonomialSetPosition();
       int n = it.PolynomialPosition();
@@ -296,7 +296,7 @@ TEST(HARMONIC_PROJECTORS_POLYGON_CR) {
     mfd.set_order(k);
     mfd.H1Cell(cell, vf, moments, uc);
 
-    for (auto it = moments[0].begin(); it.end() <= moments[0].end(); ++it) {
+    for (auto it = moments[0].begin(); it < moments[0].end(); ++it) {
       Polynomial mono(2, it.multi_index(), 1.0);
       mono.set_origin(mesh->cell_centroid(cell));
    

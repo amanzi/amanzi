@@ -158,7 +158,7 @@ void OperatorDiffusionDG(std::string solver_name,
 
     // -- calculate moments in natural basis
     data.Reshape(pc.size());
-    for (auto it = pc.begin(); it.end() <= pc.end(); ++it) {
+    for (auto it = pc.begin(); it < pc.end(); ++it) {
       int n = it.PolynomialPosition();
 
       WhetStone::Polynomial cmono(2, it.multi_index(), 1.0);

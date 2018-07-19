@@ -48,7 +48,7 @@ void Basis_Regularized::BilinearFormNaturalToMy(DenseMatrix& A) const
   std::vector<double> a(nrows);
 
   PolynomialIterator it(d_);
-  for (it.begin(); it.end() <= order_; ++it) {
+  for (it.begin(); it.MonomialSetOrder() <= order_; ++it) {
     int n = it.PolynomialPosition();
     int m = it.MonomialSetOrder();
     a[n] = monomial_scales_[m];
@@ -69,7 +69,7 @@ void Basis_Regularized::BilinearFormNaturalToMy(DenseMatrix& A) const
 void Basis_Regularized::LinearFormNaturalToMy(DenseVector& f) const
 {
   PolynomialIterator it(d_);
-  for (it.begin(); it.end() <= order_; ++it) {
+  for (it.begin(); it.MonomialSetOrder() <= order_; ++it) {
     int n = it.PolynomialPosition();
     int m = it.MonomialSetOrder();
     f(n) *= monomial_scales_[m];
@@ -91,7 +91,7 @@ void Basis_Regularized::BilinearFormNaturalToMy(
   auto brr = std::dynamic_pointer_cast<Basis_Regularized>(br);
 
   PolynomialIterator it(d_);
-  for (it.begin(); it.end() <= order_; ++it) {
+  for (it.begin(); it.MonomialSetOrder() <= order_; ++it) {
     int n = it.PolynomialPosition();
     int m = it.MonomialSetOrder();
 
@@ -118,7 +118,7 @@ void Basis_Regularized::BilinearFormNaturalToMy(
 void Basis_Regularized::ChangeBasisMyToNatural(DenseVector& v) const
 {
   PolynomialIterator it(d_);
-  for (it.begin(); it.end() <= order_; ++it) {
+  for (it.begin(); it.MonomialSetOrder() <= order_; ++it) {
     int n = it.PolynomialPosition();
     int m = it.MonomialSetOrder();
     v(n) *= monomial_scales_[m];
@@ -132,7 +132,7 @@ void Basis_Regularized::ChangeBasisMyToNatural(DenseVector& v) const
 void Basis_Regularized::ChangeBasisNaturalToMy(DenseVector& v) const
 {
   PolynomialIterator it(d_);
-  for (it.begin(); it.end() <= order_; ++it) {
+  for (it.begin(); it.MonomialSetOrder() <= order_; ++it) {
     int n = it.PolynomialPosition();
     int m = it.MonomialSetOrder();
     v(n) /= monomial_scales_[m];

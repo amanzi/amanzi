@@ -145,7 +145,7 @@ int MFD3D_CrouzeixRaviart::H1consistencyHO_(
 
   std::vector<const Polynomial*> polys(2);
 
-  for (auto it = poly.begin(); it.end() <= poly.end(); ++it) { 
+  for (auto it = poly.begin(); it < poly.end(); ++it) { 
     const int* index = it.multi_index();
     double factor = basis.monomial_scales()[it.MonomialSetOrder()];
     Polynomial cmono(d_, index, factor);
@@ -173,14 +173,14 @@ int MFD3D_CrouzeixRaviart::H1consistencyHO_(
       Polynomial tmp = grad * normal;
       tmp.ChangeCoordinates(xf, tau);
 
-      for (auto jt = tmp.begin(); jt.end() <= tmp.end(); ++jt) {
+      for (auto jt = tmp.begin(); jt < tmp.end(); ++jt) {
         int m = jt.MonomialSetOrder();
         int k = jt.MonomialSetPosition();
         int n = jt.PolynomialPosition();
         R_(row + n, col) = tmp(m, k);
       }
 
-      for (auto jt = pf.begin(); jt.end() <= pf.end(); ++jt) {
+      for (auto jt = pf.begin(); jt < pf.end(); ++jt) {
         const int* jndex = jt.multi_index();
         Polynomial fmono(d_ - 1, jndex, 1.0);
         fmono.InverseChangeCoordinates(xf, tau);  
@@ -197,7 +197,7 @@ int MFD3D_CrouzeixRaviart::H1consistencyHO_(
     if (cmono.order() > 1) {
       Polynomial tmp = cmono.Laplacian();
 
-      for (auto jt = tmp.begin(); jt.end() <= tmp.end(); ++jt) {
+      for (auto jt = tmp.begin(); jt < tmp.end(); ++jt) {
         int m = jt.MonomialSetOrder();
         int k = jt.MonomialSetPosition();
         int n = jt.PolynomialPosition();
@@ -207,7 +207,7 @@ int MFD3D_CrouzeixRaviart::H1consistencyHO_(
     }
 
     if (order_ > 1) {
-      for (auto jt = pc.begin(); jt.end() <= pc.end(); ++jt) {
+      for (auto jt = pc.begin(); jt < pc.end(); ++jt) {
         int n = jt.PolynomialPosition();
         const int* jndex = jt.multi_index();
 
@@ -229,12 +229,12 @@ int MFD3D_CrouzeixRaviart::H1consistencyHO_(
   // set the Gramm-Schidt matrix for gradients of polynomials
   G_.PutScalar(0.0);
 
-  for (auto it = poly.begin(); it.end() <= poly.end(); ++it) {
+  for (auto it = poly.begin(); it < poly.end(); ++it) {
     const int* index = it.multi_index();
     int k = it.PolynomialPosition();
     double scalei = basis.monomial_scales()[it.MonomialSetOrder()];
 
-    for (auto jt = it; jt.end() <= poly.end(); ++jt) {
+    for (auto jt = it; jt < poly.end(); ++jt) {
       const int* jndex = jt.multi_index();
       int l = jt.PolynomialPosition();
       double scalej = basis.monomial_scales()[jt.MonomialSetOrder()];
@@ -663,7 +663,7 @@ void MFD3D_CrouzeixRaviart::ProjectorGradientCell_(
       DenseVector v4(md), v5(md);
 
       v4.PutScalar(0.0);
-      for (auto it = poly.begin(); it.end() <= poly.end(); ++it) {
+      for (auto it = poly.begin(); it < poly.end(); ++it) {
         int row = it.PolynomialPosition();
         const int* index = it.multi_index();
 
@@ -689,7 +689,7 @@ void MFD3D_CrouzeixRaviart::ProjectorGradientCell_(
           VectorPolynomial grad(d_, d_);
           grad.Gradient(cmono);
 
-          for (auto jt = grad[j].begin(); jt.end() <= grad[j].end(); ++jt) {
+          for (auto jt = grad[j].begin(); jt < grad[j].end(); ++jt) {
             int m = jt.MonomialSetOrder();
             int k = jt.MonomialSetPosition();
             int s = jt.PolynomialPosition();
@@ -733,7 +733,7 @@ void MFD3D_CrouzeixRaviart::CalculateFaceDOFs_(
 
   polys[0] = &vf;
 
-  for (auto it = pf.begin(); it.end() <= pf.end(); ++it) {
+  for (auto it = pf.begin(); it < pf.end(); ++it) {
     const int* index = it.multi_index();
     Polynomial fmono(d_ - 1, index, 1.0);
     fmono.InverseChangeCoordinates(xf, tau);  

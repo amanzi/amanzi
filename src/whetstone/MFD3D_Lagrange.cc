@@ -86,7 +86,7 @@ int MFD3D_Lagrange::H1consistency(
 
   std::vector<const Polynomial*> polys(2);
 
-  for (auto it = poly.begin(); it.end() <= poly.end(); ++it) { 
+  for (auto it = poly.begin(); it < poly.end(); ++it) { 
     const int* index = it.multi_index();
     double factor = basis.monomial_scales()[it.MonomialSetOrder()];
     Polynomial cmono(d_, index, factor);
@@ -190,7 +190,7 @@ int MFD3D_Lagrange::H1consistency(
       }
 
       if (order_ > 1) {
-        for (auto jt = pf.begin(); jt.end() <= pf.end(); ++jt) {
+        for (auto jt = pf.begin(); jt < pf.end(); ++jt) {
           const int* jndex = jt.multi_index();
           Polynomial fmono(d_ - 1, jndex, 1.0);
           fmono.InverseChangeCoordinates(xf, tau);  
@@ -208,7 +208,7 @@ int MFD3D_Lagrange::H1consistency(
     if (cmono.order() > 1) {
       Polynomial tmp = cmono.Laplacian();
 
-      for (auto jt = tmp.begin(); jt.end() <= tmp.end(); ++jt) {
+      for (auto jt = tmp.begin(); jt < tmp.end(); ++jt) {
         int m = jt.MonomialSetOrder();
         int k = jt.MonomialSetPosition();
         int n = jt.PolynomialPosition();
@@ -218,7 +218,7 @@ int MFD3D_Lagrange::H1consistency(
     }
 
     if (order_ > 1) {
-      for (auto jt = pc.begin(); jt.end() <= pc.end(); ++jt) {
+      for (auto jt = pc.begin(); jt < pc.end(); ++jt) {
         int n = jt.PolynomialPosition();
         const int* jndex = jt.multi_index();
 
@@ -240,12 +240,12 @@ int MFD3D_Lagrange::H1consistency(
   // set the Gramm-Schidt matrix for gradients of polynomials
   G_.PutScalar(0.0);
 
-  for (auto it = poly.begin(); it.end() <= poly.end(); ++it) {
+  for (auto it = poly.begin(); it < poly.end(); ++it) {
     const int* index = it.multi_index();
     int k = it.PolynomialPosition();
     double scalei = basis.monomial_scales()[it.MonomialSetOrder()];
 
-    for (auto jt = it; jt.end() <= poly.end(); ++jt) {
+    for (auto jt = it; jt < poly.end(); ++jt) {
       const int* jndex = jt.multi_index();
       int l = jt.PolynomialPosition();
       double scalej = basis.monomial_scales()[jt.MonomialSetOrder()];
@@ -401,7 +401,7 @@ void MFD3D_Lagrange::ProjectorCell_(
 
         polys[0] = &(vf[n][i]);
 
-        for (auto it = pf.begin(); it.end() <= pf.end(); ++it) {
+        for (auto it = pf.begin(); it < pf.end(); ++it) {
           const int* index = it.multi_index();
           Polynomial fmono(d_ - 1, index, 1.0);
           fmono.InverseChangeCoordinates(xf, tau);  
