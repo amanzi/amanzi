@@ -125,17 +125,17 @@ The mesh refinement adds 17% more cells.
 Variables
 ~~~~~~~~~
 
-* :math:`Q=8.1483 \cdot 10^{-8}` constant pumping rate [kg/s/m]
-* :math:`\boldsymbol{q}=(1.8634 \cdot 10^{-6},\,0.0)` constant Darcy velocity [m/s]
+* :math:`Q=8.1483 \times 10^{-8}` constant pumping rate [kg/s/m]
+* :math:`\boldsymbol{q}=(1.8634 \times 10^{-6},\,0.0)` constant Darcy velocity [m/s]
 * :math:`\phi=0.35` constant porosity
 * :math:`\alpha_L=21.3` longitudinal dispersivity [m]
 * :math:`\alpha_T=4.3` transverse dispersivity [m]
-* :math:`D_m=0.0` molecular diffusion coefficient [m^2/s]
+* :math:`D_m=0.0` molecular diffusion coefficient [m\ :sup:`2`\/s]
 * :math:`T=1400` simulation time [d]
 
-Initial condition: :math:`C(x,0)=0` [kg/m^3]
+Initial condition: :math:`C(x,0)=0` [kg/m\ :sup:`3`\]
 
-Boundary conditions: :math:`C(x,t)=0` [kg/m^3]
+Boundary conditions: :math:`C(x,t)=0` [kg/m\ :sup:`3`\]
 
 
 Results and Comparison

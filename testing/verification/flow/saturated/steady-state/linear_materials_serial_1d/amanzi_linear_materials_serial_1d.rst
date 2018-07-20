@@ -129,12 +129,12 @@ To generate numerical results the following specifications are considered:
 * Domain
 
 	* :math:`x_{min} = y_{min} = z_{min} = 0`
-	* :math:`x_{max} = 100 m, y_{max} = 2 m, z_{max} = 10 m`
+	* :math:`x_{max} = 100 \: m, y_{max} = 2 \: m, z_{max} = 10 \: m`
 
 * Horizontal flow in the x-coordinate direction
 
 	* no-flow prescribed at the :math:`y_{min}, y_{max}, z_{min}, z_{max}` boundaries
-	* prescribed hydraulic head at the x-coordinate boundaries: :math:`h(0) = 20m, h(L) = 19m`
+	* prescribed hydraulic head at the x-coordinate boundaries: :math:`h(0) = 20 \: m, h(L) = 19 \: m`
 
 * Material properties:
 
@@ -145,18 +145,18 @@ To generate numerical results the following specifications are considered:
 
 * Model discretization
 
-	* :math:`\Delta x = 5 m, \Delta y = 2 m, \Delta z = 10 m`
+	* :math:`\Delta x = \: 5 m, \Delta y = 2 \: m, \Delta z = 10 \: m`
 
 For these input specifications, Amanzi simulation output is expected to closely match
 
-	.. math:: h_i = 19.090909m
+	.. math:: h_i = 19.090909 \:m
 		:label: expectedH_i_materials_serial
 
 and exhibit a linear head profile within each subregion following Equations :eq:`specificSolns_materials_serial`.
-The harmonic mean is :math:`1.818181818	m/d` from Equation :eq:`harmonicMean_materials_serial` and thus the 
+The harmonic mean is :math:`1.818181818	\:m/d` from Equation :eq:`harmonicMean_materials_serial` and thus the 
 expected Darcy velocity is 
 
-	.. math:: U = 0.0181818 m/d 
+	.. math:: U = 0.0181818 \: m/d 
 		:label: expectedU_materials_serial
 
 from Equation :eq:`domainDarcyVel_materials_serial`.
