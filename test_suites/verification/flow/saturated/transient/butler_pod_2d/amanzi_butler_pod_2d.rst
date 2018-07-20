@@ -4,13 +4,14 @@ Transient Flow in a 2D Confined Aquifer with a Disc Embedded in A Matrix
 Capabilities Tested
 -------------------
 
-This transient two-dimensional flow problem - with a constant pumping rate in a heterogenous confined aquifer - tests the Amanzi flow process kernel. Capabilities tested include,
+This transient two-dimensional flow problem --- with a constant pumping rate in a heterogenous confined aquifer --- tests the Amanzi flow process kernel. Capabilities tested include:
 
   * transient flow field induced by constant pumping
   * flow/drawdown in heterogeneous medium (confined aquifer)
   * lateral variations in flow properties
   * statically refined (nonuniform) mesh
 
+For details on this test, see :ref:`about_butler_pod_2d`
 
 Background
 ----------
@@ -70,7 +71,7 @@ The problem configuration is illustrated in the following schematic figure:
 Mesh
 ~~~~
 
-In numerical simulations, a non-uniform mesh was used to better represent the disc (Fig. 2), where the central part of the domain has been refined to better represent the disc. The grid spacing increases geometrically toward the domain boundaries.
+A non-uniform mesh was used to better represent the disc in numerical simulations (Fig. 2), where the central part of the domain is refined to better represent the disc. The grid spacing increases geometrically toward the domain boundaries.
 
 .. figure:: pod_mesh.jpg
     :figclass: align-center
@@ -82,15 +83,15 @@ In numerical simulations, a non-uniform mesh was used to better represent the di
 Variables
 ~~~~~~~~~
 
-	Transmissivity: :math:`\;\; T_1 = 0.0011574 \; m \ :sup: 2\/s`; :math:`T_2 = 0.011574 \;m \ :sup:2\/s`;
+	Transmissivity: :math:`\;\; T_1 = 0.0011574 \; m^{2}/s`; :math:`T_2 = 0.011574 \;m^{2}/s`;
 
 	Storativity: :math:`\;\; S_1 = S_2 = 2\times 10^{-4}`;
 
-	Pumping rate: :math:`\;\; Q = 1000 \;m \ :sup:3 \/day (= 0.011574 \;m \:sup:3 \/s)`;
+	Pumping rate: :math:`\;\; Q = 1000 \;m^{3} /day (= 0.011574 \;m^{3} /s)`;
 
 	Radius of the disc: :math:`\;\; d = 18 \;m`;
 
-	Pumping well location :math:`\;\; (600 \;m, 0^o)` in the polar coordinate with its origin at the center of the disc;
+	Pumping well location :math:`\;\; (600 \;m, 0^o)` in polar coordinates with its origin at the center of the disc;
 
 	Observation well locations :math:`\;\; (40\; m, 60^o)` and :math:`(360 \; m, 120^o)`.
 
@@ -124,6 +125,8 @@ References
    :style:  alpha
    :keyprefix: pod-
 
+
+.. _about_butler_pod_2d:
 
 About
 -----

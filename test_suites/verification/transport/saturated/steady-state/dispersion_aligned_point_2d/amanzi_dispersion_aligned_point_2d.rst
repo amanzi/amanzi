@@ -7,7 +7,7 @@ Capabilities Tested
 This two-dimensional transport problem, with a constant rate mass
 loading point source in a steady-state flow field, tests the Amanzi
 advection and dispersion features of the transport process kernel.  
-Capabilties tested include,
+Capabilities tested include:
   
   * prescribed constant velocity field 
   * source with constant mass loading rate 
