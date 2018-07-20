@@ -1,13 +1,29 @@
 Transient Flow in a 2D Confined Aquifer with a Linear Strip
 ===========================================================
 
-Introduction
-------------
+Capabilities Tested
+-------------------
 
-Butler and Liu (1991) :cite:`strip-Butler_Liu_linear_strip_1991` developed a semi-analytical solution for calculating drawdown in an aquifer system, in which an infinite linear strip of one material is embedded in a matrix of different hydraulic properties. The problem of interest is the drawdown as a function of location and time due to pumping from a fully penetrating well located in any of three zones. The problem is solved analytically in the Fourier-Laplace space and the drawdown is solved numerically by inversion from the Fourier-Laplace space to the real space.
+This two-dimensional flow problem --- with a constant pumping rate in a heterogeneous confined aquifer --- tests the Amanzi flow process kernel. Capabilities tested include:
+  
+  * transient flow field induced by constant pumping
+  * flow/drawdown response to pumping in heterogeneous medium (confined aquifer)
+  * differing flow regimes dependent on material transmissivity contrast and configuration 
+  * statically refined (nonuniform) mesh
 
-Problem Specification
----------------------
+For details on this test, see :ref:`about_butler_strip_2d`.
+
+
+Background
+----------
+
+Butler and Liu (1991) :cite:`strip-Butler_Liu_linear_strip_1991` developed a semi-analytical solution for calculating drawdown in an aquifer system, in which an infinite linear strip of one material is embedded in a matrix of different hydraulic properties. The problem is interested in the drawdown as a function of location and time due to pumping from a fully penetrating well located in any of three zones. The problem is solved analytically in the Fourier-Laplace space and the drawdown is solved numerically by inversion from the Fourier-Laplace space to the real space.
+
+The solution reveals several interesting features of flow in this configuration dependening on the relative contrast in material transmissivity. If the transmissivity of the strip is much higher than that of the matrix, linear and bilinear flow regimes dominate during the pumping test. If the contrast between matrix and strip properties is not as extreme, radial flow dominates.
+
+
+Model
+-----
 
 Flow within zones that do not contain the pumping well can be described mathematically as :eq:`flow_nowell`
 
@@ -31,7 +47,7 @@ Flow within zones that contain the pumping well can be represented as
   :label: flow_well
 
 where
-:math:`Q` [L\ :sup:`3`\/T]is the pumpage from well located at :math:`(a,b)`,
+:math:`Q` [L\ :sup:`3`\/T]is the pumping rate from well located at :math:`(a,b)`,
 :math:`\delta(x)` is the Direc delta function, being 1 for :math:`x = 0` and :math:`0 \text{ otherwise}`.
 
 The initial conditions are the same for all three zones:
@@ -52,7 +68,6 @@ The boundary conditions are:
   :label: bc_ButlerLiu_strip
 
 
-
 Problem Specification
 ---------------------
 
@@ -65,22 +80,29 @@ The domain configuration and well locations are indicated in the following schem
     :figclass: align-center
     :width: 600 px
 
-    Figure 1.  Schematic of the Butler and Liu's Linear Strip verification problem 
+    **Figure 1.  Schematic of the Butler and Liu's Linear Strip verification problem.**
 
 
-The boundary conditions are given as: constant pressure head of 1.07785 MPa (i.e., 100m) at all four boundaries and initially the pressure head is 1.07785 MPa everywhere in the domain. The parameter values for the problem are given as:
+Mesh
+~~~~
 
-	Transmissivity: :math:`\;\; T_1 = 0.11574 \; m2/s`; :math:`T_2 = 0.011574 \;m2/s`; :math:`T_3 = 0.0011574 \;m2/s`
 
-	Storativity: :math:`\;\; S_1 = 5\times 10^{-4}`; :math:`S_2 = 2\times 10^{-4}`; :math:`S_3 = 2\times 10^{-5}`;
+Variables
+~~~~~~~~~
 
-	Pumping rate: :math:`\;\; Q = 1000 \;m3/day (= 0.011574 \;m3/s)`
+* Transmissivity: :math:`\;\; T_1 = 0.11574 \; m^{2}/s`; :math:`T_2 = 0.011574 \;m^{2}/s`; :math:`T_3 = 0.0011574 \;m^{2}/s`
 
-	Width of the strip: :math:`\;\; d = 18 \;m`
+* Storativity: :math:`\;\; S_1 = 5\times 10^{-4}`; :math:`S_2 = 2\times 10^{-4}`; :math:`S_3 = 2\times 10^{-5}`;
 
-	Pumping well location :math:`\;\; (-9 m, 0 m)`
+* Pumping rate: :math:`\;\; Q = 1000 \;m^{3}/d \;(= 0.011574 \;m^{3}/s)`
 
-	Observation well locations :math:`(15 m, 0 m)` and :math:`(91 m, 0 m)`, which gives the distance between the pumping well and observation wells :math:`r = 24 \;m` and :math:`r = 100 \;m`.
+* Width of the strip: :math:`\;\; d = 18 \;m`
+
+* Pumping well location :math:`\;\; (-9\; m, 0\; m)`
+
+The boundary conditions are given as: constant pressure of 1.07785 MPa (i.e., head = 100 m) at all four boundaries and initially the pressure is 1.07785 MPa (head = 100 m) everywhere in the domain. 
+
+Observation well locations :math:`(15\; m, 0\; m)` and :math:`(91\; m, 0\; m)`, which gives the distance between the pumping well and observation wells :math:`r = 24 \;m` and :math:`r = 100 \;m`.
 
 
 Results and Comparison
@@ -96,8 +118,7 @@ Comparison of  Analytic Solution and Amanzi Results
              :align: center
 
 
-The comparison shows that the results from the Amanzi model match the analytical solution very well at early time, and they deviate when the effect of pumping hits the constant head boundary of the domain. Note that, the analytical solution was developed for unbounded domain, and therefore it is expected that the two solutions will deviate each other at later time.
-To show that such a deviation is indeed caused by the boundary effect, we also conducted numerical simulations using 
+The comparison shows that the results from the Amanzi model match the analytical solution very well at early time, and that they deviate when the effect of pumping hits the constant head boundary of the domain. Note that the analytical solution was developed for unbounded domain, so it is therefore expected that the two solutions will deviate from each other at late time.  To show that such a deviation is indeed caused by the boundary effect, we also conducted numerical simulations using 
 FEHM, a widely used numerical simulator for simulating heat and mass flow in subsurface environment :cite:`strip-Zyvoloski_FEHM_summary_1997`. It is showed that the results from Amanzi are almost the same as those from FEHM, see :cite:`strip-Lu_Harp_Birdsell_benchmarking_2014` for detailed comparison.
 
 References
@@ -108,7 +129,9 @@ References
    :style:  alpha
    :keyprefix: strip-
 
-	    
+
+.. _about_butler_strip_2d:
+
 About
 -----
 
