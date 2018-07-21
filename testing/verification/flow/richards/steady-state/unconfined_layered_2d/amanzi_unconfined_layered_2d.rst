@@ -121,11 +121,11 @@ van Genuchten, M. Th. 1980. *A Closed-form Equation for Predicting the Hydraulic
 Amanzi verification test results
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+.. plot:: verification/unconfined_flow/unconfined_layered_2d/amanzi_unconfined_layered_2d.py
+   :align: center
+
 (TBD) somehow insert table comparing analytic and Amanzi hydraulic head
 
 .... include:: table_values.txt
 
-(TBD) somehow insert plot comparing analytic and Amanzi hydraulic head
-
-.... plot:: amanzi_steady_linear.py
 

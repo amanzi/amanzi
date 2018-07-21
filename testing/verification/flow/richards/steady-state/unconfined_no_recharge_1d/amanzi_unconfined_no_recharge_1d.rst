@@ -148,7 +148,12 @@ For these input specifications, *Amanzi* simulation output is expected to closel
 	.. math:: h [ft] = \sqrt{1600 - 12 x}
 		:label: expectedH1
 
-from Equation :eq:`specificSoln1`. 
+from Equation :eq:`specificSoln1`. This is demonstrated with the next figure.
+
+.. plot:: verification/unconfined_flow/unconfined_no_recharge_1d/amanzi_unconfined_no_recharge_1d.py
+   :align: center
+
+(TBD) somehow insert table comparing analytic and Amanzi hydraulic head
 
 
 Amanzi verification test problem #2
@@ -157,9 +162,9 @@ Amanzi verification test problem #2
 Similarly, to generate numerical results for analytic solution #2 
 the following specifications are considered (Aleman 2007, Figure 4.2.2):
 
-	.. image:: ../unconfined_recharge_1d/schematic/porflow_4.2.2.png
-		:scale: 35 %
-		:align: center
+.. image:: ../unconfined_recharge_1d/schematic/porflow_4.2.2.png
+   :scale: 35 %
+   :align: center
 
 Input parameters for the numerical simulation are summarized as:
 
@@ -198,13 +203,12 @@ from Equation :eq:`specificSoln2`.
 Amanzi verification test results
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+.. image:: ../unconfined_recharge_1d/hydraulic_head.png
+   :scale: 75 %
+   :align: center
+
 (TBD) somehow insert table comparing analytic and Amanzi hydraulic head
 
-(TBD) somehow insert plot comparing analytic and Amanzi hydraulic head
-
-.. image:: figures/hydraulic_head.png
-   :width: 4in
-   :align: center
 
 References
 ----------
