@@ -77,8 +77,7 @@ void Basis_Orthonormalized::BilinearFormNaturalToMy(DenseMatrix& A) const
   int nrows = A.NumRows();
   std::vector<double> a(nrows), b(nrows);
 
-  PolynomialIterator it(d);
-  for (it.begin(); it.MonomialSetOrder() <= order; ++it) {
+  for (auto it = monomial_scales_.begin(); it < monomial_scales_.end(); ++it) {
     int n = it.PolynomialPosition();
     int m = it.MonomialSetOrder();
     int k = it.MonomialSetPosition();
@@ -122,8 +121,7 @@ void Basis_Orthonormalized::BilinearFormNaturalToMy(
   auto bll = std::dynamic_pointer_cast<Basis_Orthonormalized>(bl);
   auto brr = std::dynamic_pointer_cast<Basis_Orthonormalized>(br);
 
-  PolynomialIterator it(d);
-  for (it.begin(); it.MonomialSetOrder() <= order; ++it) {
+  for (auto it = bll->monomial_scales().begin(); it < bll->monomial_scales().end(); ++it) {
     int n = it.PolynomialPosition();
     int m = it.MonomialSetOrder();
     int k = it.MonomialSetPosition();
@@ -175,8 +173,7 @@ void Basis_Orthonormalized::LinearFormNaturalToMy(DenseVector& f) const
   int nrows = f.NumRows();
   std::vector<double> a(nrows), b(nrows);
 
-  PolynomialIterator it(d);
-  for (it.begin(); it.MonomialSetOrder() <= order; ++it) {
+  for (auto it = monomial_scales_.begin(); it < monomial_scales_.end(); ++it) {
     int n = it.PolynomialPosition();
     int m = it.MonomialSetOrder();
     int k = it.MonomialSetPosition();

@@ -58,6 +58,7 @@ class NumericalIntegration {
       return IntegrateFunctionsTriangle_(xy, funcs, order);
     else if (xy.size() == 4)
       return IntegrateFunctionsTetrahedron_(xy, funcs, order);
+    return 0.0;
   }
 
   // integrate group of monomials 
