@@ -3,10 +3,7 @@ import h5py
 import numpy as np
 import glob
 
-#
-# Extract 1d array along dimension dim = 1,2,3 
-#
-
+## Extract 1d array along dimension dim = 1,2,3 
 def GetXY_AmanziU_1D(path,root,comp,dim):
 
     # open amanzi concentration and mesh files
@@ -54,7 +51,6 @@ def GetXY_AmanziS_1D(path,root,comp,dim):
         x = np.zeros( (nn), dtype=np.float64)
         y = np.zeros( (nn), dtype=np.float64)
         (y, x, npts, err) = fsnapshot.fplotfile_get_data_1d(plotfile, comp, y, x, dim)
-
     else:
         y = np.zeros( (0), dtype=np.float64)
         v = np.zeros( (0), dtype=np.float64)
@@ -102,6 +98,44 @@ def GetXY_CrunchFlow_1D(path,root,cf_file,comp,ignore):
     yv = np.array(yv)
 
     return (xv, yv)
+
+
+## Cut logically structured array in logical direction d.
+## Node that mesh and data may be cut in diffrerent directions.
+##
+## Unstructured data are placed in a long array. If this array
+## has an underlying structure, we can slice it using step. 
+## The slice range is controlled by start and stop.
+def GetXY_AmanziU_Nodes(path, root, start, stop, step, d):
+
+    # open mesh file
+    name = os.path.join(path,root+"_mesh.h5")
+    amanzi_file = h5py.File(name,'r')
+
+    # extract cell d-coordinates
+    tmp = np.array(amanzi_file['0']['Mesh']["Nodes"][start:stop,d])
+    xp = tmp[::step]
+    xc = np.diff(xp) + xp[0:-1] 
+    amanzi_file.close()
+
+    return xc
+
+
+def GetXY_AmanziU_Values(path, root, comp, start, stop, step):
+
+    # open data file
+    name = os.path.join(path,root+"_data.h5")
+    amanzi_file = h5py.File(name,'r')
+
+    # extract data array with maximum time stamp
+    alltimes = [int(n) for n in amanzi_file[comp].keys()]
+    time = amanzi_file[comp].keys()[alltimes.index(max(alltimes))]
+
+    tmp = np.array(amanzi_file[comp][time][start:stop]).flatten()
+    values = tmp[::step]
+    amanzi_file.close()
+
+    return values
 
 
 def parse_input_xml(input_xml):
