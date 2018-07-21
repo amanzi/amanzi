@@ -288,7 +288,7 @@
       <vis>
         <base_filename>steady-flow</base_filename>
         <num_digits>5</num_digits>
-        <time_macros>Steady State</time_macros>
+        <cycle_macros>Every_20</cycle_macros>
       </vis>
     </output>
   </amanzi_input>
