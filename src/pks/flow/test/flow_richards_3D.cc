@@ -31,20 +31,19 @@
 #include "Richards_PK.hh"
 #include "Richards_SteadyState.hh"
 
-/* **************************************************************** */
-TEST(FLOW_3D_RICHARDS) {
-  using namespace Amanzi;
-  using namespace Amanzi::AmanziMesh;
-  using namespace Amanzi::AmanziGeometry;
-  using namespace Amanzi::Flow;
+using namespace Amanzi;
+using namespace Amanzi::AmanziMesh;
+using namespace Amanzi::AmanziGeometry;
+using namespace Amanzi::Flow;
 
+void RunTestRichards3D(std::string input_xml){
   Epetra_MpiComm comm(MPI_COMM_WORLD);
   int MyPID = comm.MyPID();
 
   if (MyPID == 0) std::cout << "Test: 3D Richards, 2-layer model" << std::endl;
 
   /* read parameter list */
-  std::string xmlFileName = "test/flow_richards_3D.xml";
+  std::string xmlFileName = input_xml; 
   Teuchos::RCP<Teuchos::ParameterList> plist = Teuchos::getParametersFromXmlFile(xmlFileName);
 
   // create an SIMPLE mesh framework
@@ -83,14 +82,14 @@ TEST(FLOW_3D_RICHARDS) {
   // S->GetFieldData("viscosity_liquid", passwd)->PutScalar(1.0);
   // S->GetField("viscosity_liquid", passwd)->set_initialized();
 
-  S->GetFieldData("mass_density_liquid", "mass_density_liquid")->ViewComponent("cell")->PutScalar(1.0);
-  S->GetField("mass_density_liquid", "mass_density_liquid")->set_initialized();
+  // S->GetFieldData("mass_density_liquid", "mass_density_liquid")->ViewComponent("cell")->PutScalar(1.0);
+  // S->GetField("mass_density_liquid", "mass_density_liquid")->set_initialized();
 
-  S->GetFieldData("molar_density_liquid", "molar_density_liquid")->ViewComponent("cell")->PutScalar(55.508270732);
-  S->GetField("molar_density_liquid", "molar_density_liquid")->set_initialized();
+  // S->GetFieldData("molar_density_liquid", "molar_density_liquid")->ViewComponent("cell")->PutScalar(55.508270732);
+  // S->GetField("molar_density_liquid", "molar_density_liquid")->set_initialized();
 
-  S->GetFieldData("viscosity_liquid", "viscosity_liquid")->ViewComponent("cell")->PutScalar(1.0);
-  S->GetField("viscosity_liquid", "viscosity_liquid")->set_initialized();
+  // S->GetFieldData("viscosity_liquid", "viscosity_liquid")->ViewComponent("cell")->PutScalar(1.0);
+  // S->GetField("viscosity_liquid", "viscosity_liquid")->set_initialized();
 
   Epetra_Vector& gravity = *S->GetConstantVectorData("gravity", "state");
   gravity[2] = -1.0;
@@ -130,4 +129,17 @@ TEST(FLOW_3D_RICHARDS) {
   for (int c = 0; c < ncells; c++) CHECK(p[0][c] > 0.0 && p[0][c] < 2.0);
 
   delete RPK;
+
+}
+
+/* **************************************************************** */
+TEST(FLOW_3D_RICHARDS) {
+  
+  RunTestRichards3D("test/flow_richards_3D.xml");  
+
+}
+TEST(FLOW_3D_RICHARDS_VAR_DENSITY) {
+  
+  RunTestRichards3D("test/flow_richards_3D_varden.xml");  
+
 }

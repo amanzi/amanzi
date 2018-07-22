@@ -32,6 +32,7 @@ include_directories(${SOLVERS_SOURCE_DIR})
 include_directories(${STATE_SOURCE_DIR})
 include_directories(${TIME_INTEGRATION_SOURCE_DIR})
 include_directories(${WHETSTONE_SOURCE_DIR})
+include_directories(${EOS_SOURCE_DIR})
 
 #
 # Flow registrations
@@ -131,7 +132,7 @@ if (Ifpack_ENABLE_HYPRE)
   list(APPEND flow_tpl_libs ${Ifpack_LIBRARIES} ${HYPRE_LIBRARY})
 endif()
 add_amanzi_library(flow SOURCE ${flow_src_files}
-                   LINK_LIBS pks operators state functions 
+                   LINK_LIBS pks operators state functions eos
                              mesh_functions time_integration data_structures
                              ${flow_tpl_libs})
 
@@ -287,7 +288,7 @@ if (BUILD_TESTS)
     add_amanzi_test(flow_richards_tensor flow_richards_tensor
                     KIND unit
                     SOURCE test/Main.cc test/flow_richards_tensor.cc
-                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
+                    LINK_LIBS ${amanzi_libs}  ${UnitTest_LIBRARIES} ${HDF5_LIBRARIES})
 
     add_amanzi_test(flow_richards_3D flow_richards_3D
                     KIND unit
