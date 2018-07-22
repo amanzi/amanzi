@@ -1,5 +1,4 @@
 <amanzi_input type="unstructured" version="2.3.0">
-    <echo_translated_input format="unstructured_native" file_name="oldspec.xml"/>
     <model_description name="unconfined_layered_2d">
       <comments>Steady-State Richards: unconfined_layered_2d</comments>
       <model_id>2SSUncFlow1</model_id>
@@ -11,19 +10,27 @@
         <conc_unit>molar</conc_unit>
       </units>
     </model_description>
+
     <definitions>
       <macros>
+        <cycle_macro name="Every_20">
+          <start>0</start>
+          <timestep_interval>20</timestep_interval>
+          <stop>-1 </stop>
+        </cycle_macro>
         <time_macro name="Steady State">
           <time>3.16e+12</time>
         </time_macro>
       </macros>
     </definitions>
+
     <process_kernels>
       <comments>Variably saturated flow</comments>
       <flow model="richards" state="on" />
       <transport state="off" />
       <chemistry engine="none" state="off" />
     </process_kernels>
+
     <phases>
       <liquid_phase name="water">
         <eos>false</eos>
@@ -31,11 +38,13 @@
         <density>998.2</density>
       </liquid_phase>
     </phases>
+
     <execution_controls>
       <verbosity level="high" />
       <execution_control_defaults init_dt="1000" max_dt="1000 y" method="bdf1" mode="steady" />
       <execution_control end="3.16e+12" init_dt="1000" method="bdf1" mode="steady" start="0.0" />
     </execution_controls>
+
     <numerical_controls>
       <unstructured_controls>
         <unstr_steady-state_controls>
@@ -63,6 +72,7 @@
         </unstr_preconditioners>
       </unstructured_controls>
     </numerical_controls>
+
     <mesh framework="mstk">
       <comments>Three-dimensional box 304.8m x 1.0m x 64.008m</comments>
       <dimension>3</dimension>
@@ -71,6 +81,7 @@
         <box high_coordinates="304.8, 1.0, 64.008" low_coordinates="0.0, 0.0, 0.0" />
       </generate>
     </mesh>
+
     <regions>
       <comments />
       <region name="Entire Domain">
@@ -288,6 +299,7 @@
       <point coordinate="149.352, 0.5, 63.0936" name="Middle z=207 ft" />
       <point coordinate="149.352, 0.5, 63.7032" name="Middle z=209 ft" />
     </regions>
+
     <materials>
       <material name="Confined Aquifer">
         <comments>Confined Aquifer</comments>
@@ -329,6 +341,7 @@
         <assigned_regions>Confining Unit</assigned_regions>
       </material>
     </materials>
+
     <initial_conditions>
       <initial_condition name="Initial Condition">
         <comments>Uniform pressure over entire domain</comments>
@@ -340,6 +353,7 @@
         </liquid_phase>
       </initial_condition>
     </initial_conditions>
+
     <boundary_conditions>
       <comments />
       <boundary_condition name="LeftBC Confined Aquifer">
@@ -379,6 +393,7 @@
         </liquid_phase>
       </boundary_condition>
     </boundary_conditions>
+
     <output>
       <observations>
         <filename>observation.out</filename>
@@ -1548,8 +1563,8 @@
       <vis>
         <base_filename>steady-flow</base_filename>
         <num_digits>5</num_digits>
-        <time_macros>Steady State</time_macros>
+        <cycle_macro>Every_20</cycle_macro>
       </vis>
     </output>
-  </amanzi_input>
+</amanzi_input>
 

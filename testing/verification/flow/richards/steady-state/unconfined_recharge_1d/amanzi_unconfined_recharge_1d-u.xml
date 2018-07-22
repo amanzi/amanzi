@@ -1,7 +1,7 @@
 <amanzi_input type="unstructured" version="2.3.0">
     <echo_translated_input file_name="oldspec.xml" format="v1" />
-    <model_description name="unconfined_head_head_no_recharge_2d">
-      <comments>Steady-State Richards: no_recharge_2d</comments>
+    <model_description name="unconfined_head_head_recharge_2d">
+      <comments>Steady-State Richards: recharge_2d</comments>
       <model_id>??</model_id>
       <author>Markus Berndt</author>
       <units>
@@ -288,7 +288,7 @@
       <vis>
         <base_filename>steady-flow</base_filename>
         <num_digits>5</num_digits>
-        <time_macros>Steady State</time_macros>
+        <cycle_macros>Every_20</cycle_macros>
       </vis>
     </output>
   </amanzi_input>

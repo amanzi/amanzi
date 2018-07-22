@@ -364,6 +364,8 @@ Teuchos::ParameterList InputConverterU::TranslateOutput_()
             obPL.set<std::string>("variable", "fractures aqueous volumetric flow rate");
           }
 
+          std::vector<std::string> regions;
+
           DOMNodeList* kids = jnode->getChildNodes();
           for (int k = 0; k < kids->getLength(); k++) {
             DOMNode* knode = kids->item(k);
@@ -372,8 +374,7 @@ Teuchos::ParameterList InputConverterU::TranslateOutput_()
               char* value = mm.transcode(knode->getTextContent());
 
               if (strcmp(elem, "assigned_regions") == 0) {
-                obPL.set<std::string>("region", TrimString_(value));
-                vv_obs_regions_.push_back(TrimString_(value));
+                regions = CharToStrings_(value);
               } else if (strcmp(elem, "functional") == 0) {
                 if (strcmp(value, "point") == 0) {
                   obPL.set<std::string>("functional", "observation data: point");
@@ -404,9 +405,16 @@ Teuchos::ParameterList InputConverterU::TranslateOutput_()
               }
             }
           }
-          std::stringstream list_name;
-          list_name << "obl " << ++nobs_liquid;
-          obsPL.sublist(list_name.str()) = obPL;
+
+          // process list of regions
+          for (int k = 0; k < regions.size(); ++k) {
+            obPL.set<std::string>("region", regions[k]);
+            vv_obs_regions_.push_back(regions[k]);
+
+            std::stringstream list_name;
+            list_name << "obl " << ++nobs_liquid;
+            obsPL.sublist(list_name.str()) = obPL;
+          }
         }
 
       } else if (strcmp(tagname, "gas_phase") == 0) {

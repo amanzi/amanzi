@@ -1,341 +1,166 @@
-<ParameterList name="Main">
-  <Parameter name="Amanzi Input Format Version" type="string" value="1.2.2"/>
-  <Parameter name="Petsc Options File" type="string" value=".petsc"/>
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<amanzi_input type="structured" version="2.3.0">
+  <model_description name="unconfined_no_recharge_1d-str-2D">
+    <comments>unconfined_no_recharge_1d-str-2D	Tue Sep 22 14:17:05 PDT 2015</comments>
+  </model_description>
+  <definitions>
+    <macros>
+      <time_macro name="Steady State">
+        <time>3.0e+9 s</time>
+      </time_macro>
+      <cycle_macro name="Every_100">
+        <start>0</start>
+        <stop>-1</stop>
+        <timestep_interval>100</timestep_interval>
+      </cycle_macro>
+    </macros>
+  </definitions>
 
-  <ParameterList name="Execution Control">
-    <Parameter name="Flow Model" type="string" value="Richards"/>
-    <Parameter name="Transport Model" type="string" value="Off"/>
-    <Parameter name="Chemistry Model" type="string" value="Off"/>
+  <process_kernels>
+    <flow model="richards" state="on"/>
+    <transport state="off"/>
+    <chemistry engine="none" state="off"/>
+  </process_kernels>
 
-    <ParameterList name="Time Integration Mode">
-        <ParameterList name="Steady">
-          <Parameter name="Start" type="double" value="0.0"/>
-          <Parameter name="End" type="double" value="3.0e+9"/>
-          <Parameter name="Initial Time Step" type="double" value="3.e9"/>
-        </ParameterList>
-    </ParameterList>
+  <phases>
+    <liquid_phase name="water">
+      <viscosity>0.001002</viscosity>
+      <density>998.2</density>
+    </liquid_phase>
+  </phases>
 
-    <Parameter name="Verbosity" type="string" value="High"/>
-    <ParameterList name="Numerical Control Parameters">
-    </ParameterList>
-  </ParameterList>
-      
-  <ParameterList name="Domain">
-    <Parameter name="Spatial Dimension" type="int" value="2"/>
-  </ParameterList>
+  <execution_controls>
+    <verbosity level="medium"/>
+    <execution_control_defaults increase_factor="1.2" init_dt="1 s" max_dt="100 y" method="bdf1" mode="transient" reduction_factor="0.8"/>
+    <execution_control end="3.0e9 s" increase_factor="1.2" init_dt="0.01" method="bdf1" mode="steady" reduction_factor="0.8" start="0.0 y"/>
+  </execution_controls>
 
-  <!-- Mesh:  three-dimensional box 100ft x 60ft -->
-  <ParameterList name="Mesh">
-    <ParameterList name="Structured">
-      <Parameter name="Domain Low Coordinate"  type="Array(double)" value="{0, 0}"/>
-      <Parameter name="Domain High Coordinate" type="Array(double)" value="{30.48, 18.288}"/>
-      <Parameter name="Number of Cells"    type="Array(int)"    value="{100, 60}"/>
-    </ParameterList>
-  </ParameterList>
+  <numerical_controls>
+    <common_controls/>
+    <structured_controls>
+      <str_steady-state_controls>
+        <max_pseudo_time>3.15576e11</max_pseudo_time>
+        <min_iterations>10</min_iterations>
+        <max_iterations>20</max_iterations>
+        <limit_iterations>100</limit_iterations>
+        <min_iterations_2>2</min_iterations_2>
+        <steady_time_step_reduction_factor>0.7</steady_time_step_reduction_factor>
+        <time_step_increase_factor>1.5</time_step_increase_factor>
+        <time_step_increase_factor_2>10.0</time_step_increase_factor_2>
+        <max_consecutive_failures_1>3</max_consecutive_failures_1>
+        <time_step_retry_factor_1>0.8</time_step_retry_factor_1>
+        <max_consecutive_failures_2>4</max_consecutive_failures_2>
+        <time_step_retry_factor_2>0.01</time_step_retry_factor_2>
+        <time_step_retry_factor_f>0.001</time_step_retry_factor_f>
+        <max_num_consecutive_success>0</max_num_consecutive_success>
+        <extra_time_step_increase_factor>10.0</extra_time_step_increase_factor>
+        <abort_on_psuedo_timestep_failure>false</abort_on_psuedo_timestep_failure>
+        <limit_function_evals>100000000</limit_function_evals>
+        <do_grid_sequence>false</do_grid_sequence>
+      </str_steady-state_controls>
+      <str_transient_controls>
+        <max_ls_iterations>10</max_ls_iterations>
+        <ls_reduction_factor>2</ls_reduction_factor>
+        <min_ls_factor>1.0e-8</min_ls_factor>
+        <ls_acceptance_factor>1.4</ls_acceptance_factor>
+        <monitor_line_search>0</monitor_line_search>
+        <monitor_linear_solve>0</monitor_linear_solve>
+        <use_fd_jac>true</use_fd_jac>
+        <perturbation_scale_for_J>1.0e-8</perturbation_scale_for_J>
+        <use_dense_Jacobian>false</use_dense_Jacobian>
+        <upwind_krel>true</upwind_krel>
+        <pressure_maxorder>3</pressure_maxorder>
+        <scale_solution_before_solve>true</scale_solution_before_solve>
+        <semi_analytic_J>true</semi_analytic_J>
+        <cfl>0.8</cfl>
+      </str_transient_controls>
+      <max_n_subcycle_transport>10</max_n_subcycle_transport>
+      <str_amr_controls/>
+    </structured_controls>
+  </numerical_controls>
 
-  <!--
-    Regions: 
-  -->
-  <ParameterList name="Regions">
-    <ParameterList name="Aquifer">
-      <ParameterList name="Region: Box">
-        <Parameter name="Low Coordinate" type="Array(double)" value="{0.0, 0.0}"/>
-        <Parameter name="High Coordinate" type="Array(double)" value="{30.48, 18.288}"/>
-      </ParameterList>
-    </ParameterList>
+  <mesh>
+    <dimension>2</dimension>
+    <generate>
+      <number_of_cells nx="100" ny="60"/>
+      <box high_coordinates="30.48, 18.288" low_coordinates="0.0, 0.0"/>
+    </generate>
+  </mesh>
 
-    <ParameterList name="Left">
-      <ParameterList name="Region: Box">
-        <Parameter name="Low Coordinate" type="Array(double)" value="{0,0}"/>
-        <Parameter name="High Coordinate" type="Array(double)" value="{0,18.288}"/>
-      </ParameterList>
-    </ParameterList>
-    <ParameterList name="Right">
-      <ParameterList name="Region: Box">
-        <Parameter name="Low Coordinate" type="Array(double)" value="{30.48,0}"/>
-        <Parameter name="High Coordinate" type="Array(double)" value="{30.48,18.288}"/>
-      </ParameterList>
-    </ParameterList>
+  <regions>
+    <box high_coordinates="30.48, 18.288" low_coordinates="0.0, 0.0" name="Region_between_surface_0_and__1"/>
+    <box high_coordinates="30.48, 18.288" low_coordinates="30.48, 0.0" name="+X_Boundary"/>
+    <box high_coordinates="30.48, 18.288" low_coordinates="0.0, 18.288" name="+Y_Boundary"/>
+    <box high_coordinates="30.48, 0.0" low_coordinates="0.0, 0.0" name="-Y_Boundary"/>
+    <box high_coordinates="0.0, 18.288" low_coordinates="0.0, 0.0" name="-X_Boundary"/>
+    <point coordinate="0.1524, 0.1524" name="Point0"/>
+    <point coordinate="3.2004, 0.1524" name="Point10"/>
+    <point coordinate="24.5364, 0.1524" name="Point80"/>
+    <point coordinate="21.4884, 0.1524" name="Point70"/>
+    <point coordinate="18.4404, 0.1524" name="Point60"/>
+    <point coordinate="27.5844, 0.1524" name="Point90"/>
+    <point coordinate="9.2964, 0.1524" name="Point30"/>
+    <point coordinate="30.3276, 0.1524" name="Point100"/>
+    <point coordinate="15.3924, 0.1524" name="Point50"/>
+    <point coordinate="12.3444, 0.1524" name="Point40"/>
+    <point coordinate="6.2484, 0.1524" name="Point20"/>
+  </regions>
 
-    <ParameterList name="Point0">
-      <ParameterList name="Region: Point">
-	<Parameter name="Coordinate" type="Array(double)" value="{0.1524, 0.1524}"/>
-      </ParameterList>
-    </ParameterList>
-    <ParameterList name="Point10">
-      <ParameterList name="Region: Point">
-	<Parameter name="Coordinate" type="Array(double)" value="{3.2004, 0.1524}"/>
-      </ParameterList>
-    </ParameterList>
-    <ParameterList name="Point20">
-      <ParameterList name="Region: Point">
-	<Parameter name="Coordinate" type="Array(double)" value="{6.2484, 0.1524}"/>
-      </ParameterList>
-    </ParameterList>
-    <ParameterList name="Point30">
-      <ParameterList name="Region: Point">
-	<Parameter name="Coordinate" type="Array(double)" value="{9.2964, 0.1524}"/>
-      </ParameterList>
-    </ParameterList>
-    <ParameterList name="Point40">
-      <ParameterList name="Region: Point">
-	<Parameter name="Coordinate" type="Array(double)" value="{12.3444, 0.1524}"/>
-      </ParameterList>
-    </ParameterList>
-    <ParameterList name="Point50">
-      <ParameterList name="Region: Point">
-	<Parameter name="Coordinate" type="Array(double)" value="{15.3924, 0.1524}"/>
-      </ParameterList>
-    </ParameterList>
-    <ParameterList name="Point60">
-      <ParameterList name="Region: Point">
-	<Parameter name="Coordinate" type="Array(double)" value="{18.4404, 0.1524}"/>
-      </ParameterList>
-    </ParameterList>
-    <ParameterList name="Point70">
-      <ParameterList name="Region: Point">
-	<Parameter name="Coordinate" type="Array(double)" value="{21.4884, 0.1524}"/>
-      </ParameterList>
-    </ParameterList>
-    <ParameterList name="Point80">
-      <ParameterList name="Region: Point">
-	<Parameter name="Coordinate" type="Array(double)" value="{24.5364, 0.1524}"/>
-      </ParameterList>
-    </ParameterList>
-    <ParameterList name="Point90">
-      <ParameterList name="Region: Point">
-	<Parameter name="Coordinate" type="Array(double)" value="{27.5844, 0.1524}"/>
-      </ParameterList>
-    </ParameterList>
-    <ParameterList name="Point100">
-      <ParameterList name="Region: Point">
-	<Parameter name="Coordinate" type="Array(double)" value="{30.3276, 0.1524}"/>
-      </ParameterList>
-    </ParameterList>
-  </ParameterList>
+  <materials>
+    <material name="Aquifer">
+      <mechanical_properties>
+        <porosity value="0.43"/>
+        <particle_density value="2650.0"/>
+      </mechanical_properties>
+      <permeability x="3.1189E-11" y="3.1189E-10"/>
+      <cap_pressure model="van_genuchten">
+        <parameters alpha="0.00146" m="0.314" sr="0.052"/>
+      </cap_pressure>
+      <rel_perm model="mualem"/>
+      <assigned_regions>All</assigned_regions>
+    </material>
+  </materials>
 
-  <!-- Materials -->
-  <ParameterList name="Material Properties">
-    <ParameterList name="Aquifers">
-      <Parameter name="Assigned Regions" type="Array(string)" value="{Aquifer}"/>
-      <ParameterList name="Porosity: Uniform">
-        <Parameter name="Value" type="double" value="0.43"/>
-      </ParameterList>
-      <ParameterList name="Intrinsic Permeability: Uniform">
-        <Parameter name="Value" type="double" value="3.1189e-11"/>
-      </ParameterList>
-      <ParameterList name="Capillary Pressure: van Genuchten">
-        <Parameter name="alpha" type="double" value="4.6690e-04"/>
-        <Parameter name="Sr" type="double" value="0.104651162"/>
-        <Parameter name="m" type="double" value="0.66667"/>
-        <Parameter name="Relative Permeability" type="string" value="Mualem"/>
-      </ParameterList>
-    </ParameterList>
-  </ParameterList>
+  <initial_conditions>
+    <initial_condition name="IC">
+      <assigned_regions>All</assigned_regions>
+      <liquid_phase name="water">
+        <liquid_component name="water">
+          <uniform_pressure value="101325.0"/>
+        </liquid_component>
+      </liquid_phase>
+    </initial_condition>
+  </initial_conditions>
 
-  <!-- Phases: -->
-  <ParameterList name="Phase Definitions">
-    <ParameterList name="Aqueous">
-      <ParameterList name="Phase Properties">
-        <ParameterList name="Viscosity: Uniform">
-          <Parameter name="Viscosity" type="double" value="1.002e-3"/>
-        </ParameterList>
-        <ParameterList name="Density: Uniform">
-          <Parameter name="Density" type="double" value="998.2"/>
-        </ParameterList>
-      </ParameterList>
-      <ParameterList name="Phase Components">
-        <ParameterList name="Water">
-        </ParameterList>
-      </ParameterList>
-    </ParameterList>
-  </ParameterList>
+  <boundary_conditions>
+    <boundary_condition name="Right BC">
+      <assigned_regions>+X_Boundary</assigned_regions>
+      <liquid_phase name="water">
+        <liquid_component name="water">
+          <hydrostatic coordinate_system="absolute" function="constant" start="0.0 y" value="6.096" submodel="none"/>
+        </liquid_component>
+      </liquid_phase>
+    </boundary_condition>
+    <boundary_condition name="Left BC Confiend Aquifer">
+      <assigned_regions>-X_Boundary</assigned_regions>
+      <liquid_phase name="water">
+        <liquid_component name="water">
+          <hydrostatic coordinate_system="absolute" function="constant" start="0.0 y" value="12.192" submodel="none"/>
+        </liquid_component>
+      </liquid_phase>
+    </boundary_condition>
+  </boundary_conditions>
 
-  <!-- Initial Conditions: -->
-  <ParameterList name="Initial Conditions">
-    <ParameterList name="Initial Condition">
-      <Parameter name="Assigned Regions" type="Array(string)" value="{Aquifer}"/>
-      <ParameterList name="IC: Uniform Pressure">
-        <Parameter name="Value" type="double" value="101325.0"/>
-      </ParameterList>
-    </ParameterList>
-  </ParameterList>
-
-  <!-- Boundary Conditions -->
-  <ParameterList name="Boundary Conditions">
-    <ParameterList name="LeftBC Confined Aquifer">
-      <Parameter name="Assigned Regions" type="Array(string)" value="{Left}"/>
-      <ParameterList name="BC: Hydrostatic">
-        <Parameter name="Water Table Height" type="Array(double)" value="{12.192}"/>
-      </ParameterList>
-    </ParameterList>
-    <ParameterList name="RightBC">
-      <Parameter name="Assigned Regions" type="Array(string)" value="{Right}"/>
-      <ParameterList name="BC: Hydrostatic">
-        <Parameter name="Water Table Height" type="Array(double)" value="{6.096}"/>
-      </ParameterList>
-    </ParameterList>
-  </ParameterList>
-
-  <ParameterList name="Output">
-    <ParameterList name="Time Macros">
-      <ParameterList name="Steady State">
-	<Parameter name="Values" type="Array(double)" value="{3.0e+9}"/>
-      </ParameterList>
-    </ParameterList>
-    <ParameterList name="Cycle Macros">
-      <ParameterList name="Every 100">
-        <Parameter name="Start_Period_Stop" type="Array(int)" value="{0,100,-1}"/>
-      </ParameterList>
-    </ParameterList>
-    
-    <ParameterList name="Observation Data">
-      <Parameter name="Observation Output Filename" type="string" value="observation4.2-s.out"/>
-      <ParameterList name="Output1">
-        <Parameter name="Region" type="string" value="Point0"/>
-        <Parameter name="Functional" type="string" value="Observation Data: Point"/>
-        <Parameter name="Variable" type="string" value="Hydraulic Head"/>
-        <Parameter name="Time Macros" type="Array(string)" value="{Steady State}"/>
-      </ParameterList>
-      <ParameterList name="Output2">
-        <Parameter name="Region" type="string" value="Point10"/>
-        <Parameter name="Functional" type="string" value="Observation Data: Point"/>
-        <Parameter name="Variable" type="string" value="Hydraulic Head"/>
-        <Parameter name="Time Macros" type="Array(string)" value="{Steady State}"/>
-      </ParameterList>
-      <ParameterList name="Output3">
-        <Parameter name="Region" type="string" value="Point20"/>
-        <Parameter name="Functional" type="string" value="Observation Data: Point"/>
-        <Parameter name="Variable" type="string" value="Hydraulic Head"/>
-        <Parameter name="Time Macros" type="Array(string)" value="{Steady State}"/>
-      </ParameterList>
-      <ParameterList name="Output4">
-        <Parameter name="Region" type="string" value="Point30"/>
-        <Parameter name="Functional" type="string" value="Observation Data: Point"/>
-        <Parameter name="Variable" type="string" value="Hydraulic Head"/>
-        <Parameter name="Time Macros" type="Array(string)" value="{Steady State}"/>
-      </ParameterList>
-      <ParameterList name="Output5">
-        <Parameter name="Region" type="string" value="Point40"/>
-        <Parameter name="Functional" type="string" value="Observation Data: Point"/>
-        <Parameter name="Variable" type="string" value="Hydraulic Head"/>
-        <Parameter name="Time Macros" type="Array(string)" value="{Steady State}"/>
-      </ParameterList>
-      <ParameterList name="Output6">
-        <Parameter name="Region" type="string" value="Point50"/>
-        <Parameter name="Functional" type="string" value="Observation Data: Point"/>
-        <Parameter name="Variable" type="string" value="Hydraulic Head"/>
-        <Parameter name="Time Macros" type="Array(string)" value="{Steady State}"/>
-      </ParameterList>
-      <ParameterList name="Output7">
-        <Parameter name="Region" type="string" value="Point60"/>
-        <Parameter name="Functional" type="string" value="Observation Data: Point"/>
-        <Parameter name="Variable" type="string" value="Hydraulic Head"/>
-        <Parameter name="Time Macros" type="Array(string)" value="{Steady State}"/>
-      </ParameterList>
-      <ParameterList name="Output8">
-        <Parameter name="Region" type="string" value="Point70"/>
-        <Parameter name="Functional" type="string" value="Observation Data: Point"/>
-        <Parameter name="Variable" type="string" value="Hydraulic Head"/>
-        <Parameter name="Time Macros" type="Array(string)" value="{Steady State}"/>
-      </ParameterList>
-      <ParameterList name="Output9">
-        <Parameter name="Region" type="string" value="Point80"/>
-        <Parameter name="Functional" type="string" value="Observation Data: Point"/>
-        <Parameter name="Variable" type="string" value="Hydraulic Head"/>
-        <Parameter name="Time Macros" type="Array(string)" value="{Steady State}"/>
-      </ParameterList>
-      <ParameterList name="Output10">
-        <Parameter name="Region" type="string" value="Point90"/>
-        <Parameter name="Functional" type="string" value="Observation Data: Point"/>
-        <Parameter name="Variable" type="string" value="Hydraulic Head"/>
-        <Parameter name="Time Macros" type="Array(string)" value="{Steady State}"/>
-      </ParameterList>
-      <ParameterList name="Output11">
-        <Parameter name="Region" type="string" value="Point100"/>
-        <Parameter name="Functional" type="string" value="Observation Data: Point"/>
-        <Parameter name="Variable" type="string" value="Hydraulic Head"/>
-        <Parameter name="Time Macros" type="Array(string)" value="{Steady State}"/>
-      </ParameterList>
-
-      <ParameterList name="Output1P">
-        <Parameter name="Region" type="string" value="Point0"/>
-        <Parameter name="Functional" type="string" value="Observation Data: Point"/>
-        <Parameter name="Variable" type="string" value="Aqueous Pressure"/>
-        <Parameter name="Time Macros" type="Array(string)" value="{Steady State}"/>
-      </ParameterList>
-      <ParameterList name="Output2P">
-        <Parameter name="Region" type="string" value="Point10"/>
-        <Parameter name="Functional" type="string" value="Observation Data: Point"/>
-        <Parameter name="Variable" type="string" value="Aqueous Pressure"/>
-        <Parameter name="Time Macros" type="Array(string)" value="{Steady State}"/>
-      </ParameterList>
-      <ParameterList name="Output3P">
-        <Parameter name="Region" type="string" value="Point20"/>
-        <Parameter name="Functional" type="string" value="Observation Data: Point"/>
-        <Parameter name="Variable" type="string" value="Aqueous Pressure"/>
-        <Parameter name="Time Macros" type="Array(string)" value="{Steady State}"/>
-      </ParameterList>
-      <ParameterList name="Output4P">
-        <Parameter name="Region" type="string" value="Point30"/>
-        <Parameter name="Functional" type="string" value="Observation Data: Point"/>
-        <Parameter name="Variable" type="string" value="Aqueous Pressure"/>
-        <Parameter name="Time Macros" type="Array(string)" value="{Steady State}"/>
-      </ParameterList>
-      <ParameterList name="Output5P">
-        <Parameter name="Region" type="string" value="Point40"/>
-        <Parameter name="Functional" type="string" value="Observation Data: Point"/>
-        <Parameter name="Variable" type="string" value="Aqueous Pressure"/>
-        <Parameter name="Time Macros" type="Array(string)" value="{Steady State}"/>
-      </ParameterList>
-      <ParameterList name="Output6P">
-        <Parameter name="Region" type="string" value="Point50"/>
-        <Parameter name="Functional" type="string" value="Observation Data: Point"/>
-        <Parameter name="Variable" type="string" value="Aqueous Pressure"/>
-        <Parameter name="Time Macros" type="Array(string)" value="{Steady State}"/>
-      </ParameterList>
-      <ParameterList name="Output7P">
-        <Parameter name="Region" type="string" value="Point60"/>
-        <Parameter name="Functional" type="string" value="Observation Data: Point"/>
-        <Parameter name="Variable" type="string" value="Aqueous Pressure"/>
-        <Parameter name="Time Macros" type="Array(string)" value="{Steady State}"/>
-      </ParameterList>
-      <ParameterList name="Output8P">
-        <Parameter name="Region" type="string" value="Point70"/>
-        <Parameter name="Functional" type="string" value="Observation Data: Point"/>
-        <Parameter name="Variable" type="string" value="Aqueous Pressure"/>
-        <Parameter name="Time Macros" type="Array(string)" value="{Steady State}"/>
-      </ParameterList>
-      <ParameterList name="Output9P">
-        <Parameter name="Region" type="string" value="Point80"/>
-        <Parameter name="Functional" type="string" value="Observation Data: Point"/>
-        <Parameter name="Variable" type="string" value="Aqueous Pressure"/>
-        <Parameter name="Time Macros" type="Array(string)" value="{Steady State}"/>
-      </ParameterList>
-      <ParameterList name="Output10P">
-        <Parameter name="Region" type="string" value="Point90"/>
-        <Parameter name="Functional" type="string" value="Observation Data: Point"/>
-        <Parameter name="Variable" type="string" value="Aqueous Pressure"/>
-        <Parameter name="Time Macros" type="Array(string)" value="{Steady State}"/>
-      </ParameterList>
-      <ParameterList name="Output11P">
-        <Parameter name="Region" type="string" value="Point100"/>
-        <Parameter name="Functional" type="string" value="Observation Data: Point"/>
-        <Parameter name="Variable" type="string" value="Aqueous Pressure"/>
-        <Parameter name="Time Macros" type="Array(string)" value="{Steady State}"/>
-      </ParameterList>
-    </ParameterList>
-
-    <ParameterList name="Visualization Data">
-      <Parameter name="File Name Base" type="string" value="plt"/>
-      <Parameter name="File Name Digits" type="int" value="5"/>
-      <Parameter name="Time Macros" type="Array(string)" value="{Steady State}"/>
-    </ParameterList>
-    <ParameterList name="Checkpoint Data">
-      <Parameter name="File Name Base" type="string" value="chk"/>
-      <Parameter name="File Name Digits" type="int" value="5"/>
-      <Parameter name="Cycle Macros" type="Array(string)" value="{Every 100}"/>
-    </ParameterList>
-  </ParameterList>
-</ParameterList>
-
+  <output>
+    <vis>
+      <base_filename>plot</base_filename>
+      <num_digits>5</num_digits>
+      <time_macros>Steady State</time_macros>
+    </vis>
+    <checkpoint>
+      <base_filename>checkpoint</base_filename>
+      <num_digits>5</num_digits>
+      <cycle_macros>Every_100</cycle_macros>
+    </checkpoint>
+  </output>
+</amanzi_input>
