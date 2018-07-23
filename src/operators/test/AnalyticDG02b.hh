@@ -112,7 +112,7 @@ class AnalyticDG02b : public AnalyticDGBase {
     src *= t;
     src.set_origin(p);
 
-    // add accumulation term whicj equals solution at time 1
+    // add accumulation term whicth equals solution at time 1
     Amanzi::WhetStone::Polynomial sol;
     SolutionTaylor(p, 1.0, sol);
     src += sol;

@@ -597,7 +597,7 @@ void AdvectionTransient(std::string filename, int nx, int ny, double dt,
     printf("      (total) L2(p)=%9.6g  Inf(p)=%9.6g\n", pl2_err, pinf_err);
     printf("   (integral) L2(p)=%9.6g\n", pl2_int);
     if (exact_solution_expected) 
-      CHECK(pl2_mean < 1e-11);
+      CHECK(pl2_mean < 1e-10);
     else
       CHECK(pl2_mean < 0.1 / nx);
   }
@@ -608,7 +608,7 @@ TEST(OPERATOR_ADVECTION_TRANSIENT_DG) {
   // AdvectionTransient<AnalyticDG07>("square", 50, 50, 0.001, Amanzi::Explicit_TI::tvd_3rd_order, false, "primal", "level set");
 
   exact_solution_expected = true;
-  AdvectionTransient<AnalyticDG02b>("square",  4,  4, 0.1, Amanzi::Explicit_TI::forward_euler, false);
+  AdvectionTransient<AnalyticDG02b>("square",  4,  4, 0.1, Amanzi::Explicit_TI::tvd_3rd_order, false);
 
   exact_solution_expected = false;
   AdvectionTransient<AnalyticDG06b>("square",  4,  4, 0.1, Amanzi::Explicit_TI::tvd_3rd_order);
