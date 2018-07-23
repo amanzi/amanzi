@@ -36,6 +36,7 @@
 #include "VectorPolynomial.hh"
 
 // Operators
+#include "AnalyticDG02b.hh"
 #include "AnalyticDG06.hh"
 #include "AnalyticDG06b.hh"
 #include "AnalyticDG07.hh"
@@ -46,6 +47,8 @@
 #include "PDE_AdvectionRiemann.hh"
 #include "PDE_Reaction.hh"
 
+// global variables
+bool exact_solution_expected;
 
 namespace Amanzi {
 
@@ -114,7 +117,7 @@ AdvectionFn<AnalyticDG>::AdvectionFn(
     : plist_(plist), nx_(nx), dt_(dt), 
       mesh_(mesh),
       dg_(dg), 
-      ana_(mesh, dg->order()),
+      ana_(mesh, dg->order(), true),
       conservative_form_(conservative_form)
 {
   if (weak_form == "dual") {
@@ -223,33 +226,37 @@ void AdvectionFn<AnalyticDG>::FunctionalTimeDerivative(
   int nk = (order_ + 1) * (order_ + 2) / 2;
 
   WhetStone::Polynomial sol, src, pc(2, order_);
+  WhetStone::DenseVector data(pc.size());
   WhetStone::NumericalIntegration numi(mesh_);
 
   CompositeVector& rhs = *global_op_->rhs();
   Epetra_MultiVector& rhs_c = *rhs.ViewComponent("cell");
   rhs_c.PutScalar(0.0);
 
-  /*
   for (int c = 0; c < ncells; ++c) {
     const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
     double volume = mesh_->cell_volume(c);
 
     ana_.SourceTaylor(xc, t, src);
 
-    for (auto it = pc.begin(); it.end() <= pc.end(); ++it) {
+    for (auto it = pc.begin(); it < pc.end(); ++it) {
       int n = it.PolynomialPosition();
-      int k = it.MonomialOrder();
+      int k = it.MonomialSetOrder();
 
-      double factor = numi.MonomialNaturalScale(k, volume);
-      WhetStone::Polynomial cmono(2, it.multi_index(), factor);
+      WhetStone::Polynomial cmono(2, it.multi_index(), 1.0);
       cmono.set_origin(xc);      
 
-       WhetStone::Polynomial tmp = src * cmono;      
+      WhetStone::Polynomial tmp = src * cmono;      
 
-      rhs_c[n][c] = numi.IntegratePolynomialCell(c, tmp);
+      data(n) = numi.IntegratePolynomialCell(c, tmp);
+    }
+
+    // -- convert moment to my basis
+    dg_->cell_basis(c).LinearFormNaturalToMy(data);
+    for (int n = 0; n < pc.size(); ++n) {
+      rhs_c[n][c] = data(n);
     }
   }
-  */
 
   // -- boundary data
   auto bc = Teuchos::rcp(new Operators::BCs(mesh_, AmanziMesh::FACE, Operators::DOF_Type::VECTOR));
@@ -257,7 +264,6 @@ void AdvectionFn<AnalyticDG>::FunctionalTimeDerivative(
   std::vector<std::vector<double> >& bc_value = bc->bc_value_vector(nk);
 
   WhetStone::Polynomial coefs;
-  WhetStone::DenseVector data;
 
   for (int f = 0; f < nfaces_wghost; f++) {
     const AmanziGeometry::Point& xf = mesh_->face_centroid(f);
@@ -347,7 +353,7 @@ void AdvectionFn<AnalyticDG>::ApproximateVelocity_Projection(
   Teuchos::ParameterList map_list;
   map_list.set<std::string>("method", "Lagrange serendipity")
           .set<int>("method order", 2)
-          .set<std::string>("projector", "L2")
+          .set<std::string>("projector", "least square")
           .set<std::string>("map name", "VEM");
   
   WhetStone::MeshMapsFactory maps_factory;
@@ -531,7 +537,7 @@ void AdvectionTransient(std::string filename, int nx, int ny, double dt,
   AdvectionFn<AnalyticDG> fn(plist, nx, dt, mesh, dg, conservative_form, weak_form);
 
   // create initial guess
-  AnalyticDG ana(mesh, order);
+  AnalyticDG ana(mesh, order, true);
 
   CompositeVector& rhs = *fn.op_flux->global_operator()->rhs();
   CompositeVector sol(rhs), sol_next(rhs);
@@ -590,7 +596,10 @@ void AdvectionTransient(std::string filename, int nx, int ny, double dt,
     printf("nx=%3d (mean) L2(p)=%9.6g  Inf(p)=%9.6g\n", nx, pl2_mean, pinf_mean);
     printf("      (total) L2(p)=%9.6g  Inf(p)=%9.6g\n", pl2_err, pinf_err);
     printf("   (integral) L2(p)=%9.6g\n", pl2_int);
-    CHECK(pl2_mean < 0.1 / nx);
+    if (exact_solution_expected) 
+      CHECK(pl2_mean < 1e-11);
+    else
+      CHECK(pl2_mean < 0.1 / nx);
   }
 }
 
@@ -598,6 +607,10 @@ void AdvectionTransient(std::string filename, int nx, int ny, double dt,
 TEST(OPERATOR_ADVECTION_TRANSIENT_DG) {
   // AdvectionTransient<AnalyticDG07>("square", 50, 50, 0.001, Amanzi::Explicit_TI::tvd_3rd_order, false, "primal", "level set");
 
+  exact_solution_expected = true;
+  AdvectionTransient<AnalyticDG02b>("square",  4,  4, 0.1, Amanzi::Explicit_TI::forward_euler, false);
+
+  exact_solution_expected = false;
   AdvectionTransient<AnalyticDG06b>("square",  4,  4, 0.1, Amanzi::Explicit_TI::tvd_3rd_order);
   AdvectionTransient<AnalyticDG06>("square",  4,  4, 0.1, Amanzi::Explicit_TI::tvd_3rd_order, false);
   AdvectionTransient<AnalyticDG06>("square",  4,  4, 0.1, Amanzi::Explicit_TI::tvd_3rd_order, false, "primal");

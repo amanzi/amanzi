@@ -123,7 +123,7 @@ void RemapTests2DPrimal(int order, std::string disc_name,
   // we need dg to compute scaling of basis functions
   WhetStone::DG_Modal dg(order, mesh0, "orthonormalized");
 
-  AnalyticDG04 ana(mesh0, order);
+  AnalyticDG04 ana(mesh0, order, true);
   ana.InitialGuess(dg, p1c, 1.0);
 
   // initial mass

@@ -131,7 +131,7 @@ void AdvectionSteady(int dim, std::string filename, int nx,
   int nk = (dim == 2) ? (order + 1) * (order + 2) / 2 :
                         (order + 1) * (order + 2) * (order + 3) / 6;
 
-  AnalyticDG ana(mesh, order);
+  AnalyticDG ana(mesh, order, true);
 
   // set up problem coefficients
   // -- reaction function

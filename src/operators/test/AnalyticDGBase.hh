@@ -13,7 +13,7 @@
 
     a du/dt + v . grad(u) - div(K grad(u)) + r u = f.
 
-  List of solutions:
+  Advection is activated via constructor. List of solutions:
     AnalyticDG0n: polynomial solution of order n, where n=0,1,2,3.
     AnalyticDG04: sin(3x) six(6y)
     AnalyticDG06: level-set circle problem with divergence-free velocity
@@ -34,9 +34,10 @@
 
 class AnalyticDGBase {
  public:
-  AnalyticDGBase(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh, int order)
+  AnalyticDGBase(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh, int order, bool advection)
     : mesh_(mesh),
       order_(order),
+      advection_(advection),
       d_(mesh_->space_dimension()) {};
   ~AnalyticDGBase() {};
 
@@ -98,6 +99,7 @@ class AnalyticDGBase {
  protected:
   Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh_;
   int order_, d_;
+  bool advection_;
 };
 
 

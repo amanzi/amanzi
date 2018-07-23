@@ -23,8 +23,8 @@
 
 class AnalyticDG04 : public AnalyticDGBase {
  public:
-  AnalyticDG04(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh, int order)
-    : AnalyticDGBase(mesh, order) {};
+  AnalyticDG04(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh, int order, bool advection)
+    : AnalyticDGBase(mesh, order, advection) {};
   ~AnalyticDG04() {};
 
   // analytic data in conventional Taylor basis

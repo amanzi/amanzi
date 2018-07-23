@@ -79,7 +79,7 @@ void OperatorDiffusionDG(std::string solver_name,
   auto Kc = std::make_shared<std::vector<WhetStone::Tensor> >();
   auto Kf = std::make_shared<std::vector<double> >();
 
-  AnalyticDG02 ana(mesh, 2);
+  AnalyticDG02 ana(mesh, 2, false);
 
   for (int c = 0; c < ncells_wghost; c++) {
     const Point& xc = mesh->cell_centroid(c);
@@ -236,7 +236,7 @@ void OperatorDiffusionDG(std::string solver_name,
   if (MyPID == 0) {
     printf("Mean:     L2(p)=%9.6f  Inf(p)=%9.6f  itr=%3d\n", pl2_mean, pinf_mean, solver->num_itrs());
     printf("Total:    L2(p)=%9.6f  Inf(p)=%9.6f\n", pl2_err, pinf_err);
-    printf("Integral: L2(p)=%9.6ff\n", pl2_int);
+    printf("Integral: L2(p)=%9.6f\n", pl2_int);
 
     CHECK(pl2_err < 1e-10);
   }

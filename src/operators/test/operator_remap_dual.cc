@@ -41,7 +41,6 @@
 #include "PDE_Reaction.hh"
 
 #include "AnalyticDG00.hh"
-#include "AnalyticDG01.hh"
 #include "AnalyticDG04.hh"
 
 namespace Amanzi {
@@ -466,7 +465,7 @@ void RemapTestsDualRK(int order_p, int order_u,
 
   // we need dg to use correct scaling of basis functions
   WhetStone::DG_Modal dg(order_p, mesh0, "orthonormalized");
-  AnalyticDG04 ana(mesh0, order_p);
+  AnalyticDG04 ana(mesh0, order_p, true);
   ana.InitialGuess(dg, p1c, 1.0);
 
   // initial mass
