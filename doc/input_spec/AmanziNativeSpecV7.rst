@@ -3611,12 +3611,13 @@ Diffusion is the most frequently used operator.
     (but positive definite) tensors. Available options are *symmetric* (default) and *nonsymmetric*.
 
   * `"nonlinear coefficient`" [string] specifies a method for treating nonlinear diffusion
-    coefficient, if any. Available options are `"upwind: face`", `"divk: cell-face`" (default),
+    coefficient, if any. Available options are `"none`", `"upwind: face`", `"divk: cell-face`" (default),
     `"divk: face`", `"standard: cell`", `"divk: cell-face-twin`" and `"divk: cell-grad-face-twin`".
     Symmetry preserving methods are the divk-family of methods and the classical cell-centered
     method (`"standard: cell`"). The first part of the name indicates the base scheme.
     The second part (after the semi-column) indicates required components of the composite vector
     that must be provided by a physical PK.
+    Default is `"none`".
 
   * `"schema`" [Array(string)] defines the operator stencil. It is a collection of 
     geometric objects.

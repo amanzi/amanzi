@@ -71,6 +71,7 @@
               <Parameter name="discretization primary" type="string" value="mfd: optimized for sparsity"/>
               <Parameter name="discretization secondary" type="string" value="mfd: optimized for sparsity"/>
               <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
+              <Parameter name="nonlinear coefficient" type="string" value="standard: cell"/>
               <Parameter name="gravity" type="bool" value="true"/>
             </ParameterList>
             <ParameterList name="preconditioner">
@@ -78,6 +79,7 @@
               <Parameter name="discretization secondary" type="string" value="mfd: optimized for sparsity"/>
               <Parameter name="schema" type="Array(string)" value="{face, cell}"/>
               <Parameter name="preconditioner schema" type="Array(string)" value="{face, cell}"/>
+              <Parameter name="nonlinear coefficient" type="string" value="standard: cell"/>
               <Parameter name="gravity" type="bool" value="true"/>
             </ParameterList>
           </ParameterList>
