@@ -1447,7 +1447,7 @@ void PDE_DiffusionMFD::InitDiffusion_(Teuchos::ParameterList& plist)
 
   // little-k options
   AMANZI_ASSERT(!plist.isParameter("upwind method"));
-  std::string name = plist.get<std::string>("nonlinear coefficient", "standard: cell");
+  std::string name = plist.get<std::string>("nonlinear coefficient", "none");
   if (name == "none") {
     little_k_ = OPERATOR_LITTLE_K_NONE;
   } else if (name == "upwind: face") {

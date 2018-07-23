@@ -22,7 +22,7 @@ class fn1 : public Explicit_TI::fnBase<Epetra_Vector> {
 class fn2 : public Explicit_TI::fnBase<Epetra_Vector> {
  public:
   void FunctionalTimeDerivative(const double t, const Epetra_Vector& y, Epetra_Vector& y_new) {
-    y_new.PutScalar(t);
+    y_new.PutScalar(t*t);
   }
 };
 
@@ -196,7 +196,7 @@ TEST(Explicit_TVD_RK3_Exact) {
     y = y_new;
   } while (t < 1.0);
 
-  CHECK_CLOSE(0.0, y[0] - t*t/2, 1e-15);
+  CHECK_CLOSE(0.0, y[0] - t*t*t/3, 1e-15);
 }
 
 
