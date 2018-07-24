@@ -1,5 +1,3 @@
-.. _Theis:
-
 Transient Two-Dimensional Confined Flow to a Pumping Well (Theis)
 =================================================================
 
@@ -20,8 +18,7 @@ Background
 Theis (1935) developed an analytical solution for transient (non-
 steady state) drawdown for a fully penetrating well by imposing the
 boundary conditions: :math:`h = h_0` for :math:`t = 0` and 
-:math:`h \Rightarrow h_0` as :math:`r \Rightarrow \infty`.  The equation
-assumes an infinite and uniform confined aquifer.  When a well is
+:math:`h \Rightarrow h_0` as :math:`r \Rightarrow \infty` :cite:`theis-Theis1935relation`. The equation assumes an infinite and uniform confined aquifer.  When a well is
 pumped the water table declines toward the well and flow is induced
 toward the well from all directions. Theoretically, this flow can be
 idealized by purely radial symmetric flow and can be decribed by the
@@ -150,6 +147,11 @@ Results and Comparison
 
 References
 ----------
+
+.. bibliography:: /bib/ascem.bib
+   :filter: docname in docnames
+   :style:  alpha
+   :keyprefix: theis-
 
 
 .. _about_theis:
