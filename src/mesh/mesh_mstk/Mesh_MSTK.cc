@@ -3028,7 +3028,7 @@ MSet_ptr Mesh_MSTK::build_set(const Teuchos::RCP<const AmanziGeometry::Region>& 
         *(verbobj->os()) << "Requested FACES on region " << region->name()
             << " of type " << region->type() << " and dimension "
             << region->manifold_dimension() << ".\n" 
-            << "This request will result in an empty set";
+            << "This request will result in an empty set\n";
       }
     }
     break;
@@ -3094,7 +3094,7 @@ MSet_ptr Mesh_MSTK::build_set(const Teuchos::RCP<const AmanziGeometry::Region>& 
         *(verbobj->os()) << "Requested POINTS on region " << region->name() 
             << " of type " << region->type() << " and dimension " 
             << region->manifold_dimension() << ".\n" 
-            << "This request will result in an empty set";
+            << "This request will result in an empty set\n";
       }
     }
       
@@ -3341,7 +3341,8 @@ void Mesh_MSTK::get_set_entities_and_vofs(const std::string setname,
         {
           if (verbobj.get() && verbobj->os_OK(Teuchos::VERB_MEDIUM)) {
             *(verbobj->os()) << "Found labeled set region named " << setname 
-                             << " but it contains entities of type " << entity_type << ", not the requested type";
+                             << " but it contains entities of type " << entity_type 
+                             << ", not the requested type\n";
           }
         } 
       else {
