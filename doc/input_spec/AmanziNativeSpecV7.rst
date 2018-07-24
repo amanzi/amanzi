@@ -500,6 +500,82 @@ constant value 0.8.
 Note that the user-defined name for this field cannot have spaces.
 
 
+Independent field evaluator from file
+.....................................
+
+An independent field evaluator from file has no dependencies and is specified by 
+data at specific time moments. 
+
+* `"filename`" [string] defines name of a data file.
+  
+* `"domain name`" [string] specifies mesh. Default is `"domain`".
+
+* `"variable name`" [string] defines variable name in the data file.
+
+* `"component name`" [string] defines component name in a composite vector.
+
+* `"mesh entity`" [string] specifies geometric object associated with the mesh function.
+  Available options are `"cell`", `"face`", and `"node`".
+
+* `"number of DoFs`" [string] defines the number of degrees of freedom. Default is 1.
+
+* `"time function`" [list] defines a time function to interpolate data. This is the 
+  optional parameter.
+
+.. code-block:: xml
+
+  <ParameterList name="field_evaluators">  <!-- parent list -->
+    <ParameterList name="POROSITY">
+      <Parameter name="field evaluator type" type="string" value="independent variable from file"/>
+      <Parameter name="filename" type="string" value="DATA_FILE.h5"/>
+      <Parameter name="domain name" type="string" value="domain"/>
+      <Parameter name="variable name" type="string" value="porosity"/>
+      <Parameter name="component name" type="string" value="cell"/>
+      <Parameter name="mesh entity" type="string" value="cell"/>
+      <Parameter name="number of DoFs" type="int" value="1"/>
+
+      <ParameterList name="time function">  
+        <Parameter name="times" type="Array(double)" value="{1.0, 2.0, 3.0}"/>
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
+
+The independent variable *POROSITY* is defined as a cell-based variable and
+interpolated between three time intervals.
+
+
+Constant field evaluator
+........................
+
+Constant field evaluator as a simplified version of independent field evaluator from
+file which allows one to define constant in time field. Initialization of the field 
+has to be done in the initial conditions sublist of state.
+
+.. code-block:: xml
+
+  <ParameterList name="initial conditions">  <!-- parent list -->
+    <ParameterList name="POROSITY"> 
+      <ParameterList name="function">
+        <ParameterList name="MESH BLOCK">
+          <Parameter name="regions" type="Array(string)" value="ALL"/>
+          <Parameter name="component" type="string" value="cell"/>
+          <ParameterList name="function">
+            <ParameterList name="function-constant">
+              <Parameter name="value" type="double" value="90000.0"/>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
+
+  <ParameterList name="field_evaluators">  <!-- parent list -->
+    <ParameterList name="POROSITY">
+      <Parameter name="field evaluator type" type="string" value="constant variable"/>
+    </ParameterList>
+  </ParameterList>
+
+
 Primary field evaluator
 .......................
 

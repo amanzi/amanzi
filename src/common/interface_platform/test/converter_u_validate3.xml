@@ -91,6 +91,12 @@
         <Parameter name="opposite end coordinate" type="Array(double)" value="{3.29183999999999983e+01, 3.38632799999999934e+00}"/>
       </ParameterList>
     </ParameterList>
+    <ParameterList name="Total_Recharge">
+      <ParameterList name="region: logical">
+        <Parameter name="operation" type="string" value="union"/>
+        <Parameter name="regions" type="Array(string)" value="{Recharge_Boundary_WestOfCrib, Recharge_Boundary_EastOfCrib}"/>
+      </ParameterList>
+    </ParameterList>
   </ParameterList>
 
   <ParameterList name="visualization data">
@@ -384,7 +390,7 @@
               <Parameter name="rainfall" type="bool" value="false"/>
             </ParameterList>
             <ParameterList name="BC 2">
-              <Parameter name="regions" type="Array(string)" value="{Recharge_Boundary_WestOfCrib, Recharge_Boundary_EastOfCrib}"/>
+              <Parameter name="regions" type="Array(string)" value="{Total_Recharge}"/>
               <ParameterList name="outward mass flux">
                 <ParameterList name="function-tabular">
                   <Parameter name="x values" type="Array(double)" value="{0.0, 6.172666560e+10}"/>
@@ -536,7 +542,7 @@
               <Parameter name="rainfall" type="bool" value="false"/>
             </ParameterList>
             <ParameterList name="BC 2">
-              <Parameter name="regions" type="Array(string)" value="{Recharge_Boundary_WestOfCrib, Recharge_Boundary_EastOfCrib}"/>
+              <Parameter name="regions" type="Array(string)" value="{Total_Recharge}"/>
               <ParameterList name="outward mass flux">
                 <ParameterList name="function-tabular">
                   <Parameter name="x values" type="Array(double)" value="{0.0, 6.172666560e+10}"/>
@@ -639,7 +645,7 @@
               <Parameter name="use area fractions" type="bool" value="false"/>
             </ParameterList>
             <ParameterList name="BC Rest">
-              <Parameter name="regions" type="Array(string)" value="{Recharge_Boundary_WestOfCrib, Recharge_Boundary_EastOfCrib}"/>
+              <Parameter name="regions" type="Array(string)" value="{Total_Recharge}"/>
               <ParameterList name="boundary concentration">
                 <ParameterList name="function-constant">
                   <Parameter name="value" type="double" value="0.0"/>
@@ -759,7 +765,7 @@
   </ParameterList>
 
   <ParameterList name="analysis">
-    <Parameter name="used boundary condition regions" type="Array(string)" value="{Bottom Surface, Crib, Recharge_Boundary_WestOfCrib, Recharge_Boundary_EastOfCrib, Bottom Surface, Crib, Recharge_Boundary_WestOfCrib, Recharge_Boundary_EastOfCrib, Bottom Surface, Crib, Recharge_Boundary_WestOfCrib, Recharge_Boundary_EastOfCrib}"/>
+    <Parameter name="used boundary condition regions" type="Array(string)" value="{Bottom Surface, Crib, Total_Recharge, Bottom Surface, Crib, Total_Recharge, Bottom Surface, Crib, Total_Recharge}"/>
     <Parameter name="used source regions" type="Array(string)" value="{Well, Well, Well}"/>
     <Parameter name="used observation regions" type="Array(string)" value="{}"/>
     <ParameterList name="verbose object">

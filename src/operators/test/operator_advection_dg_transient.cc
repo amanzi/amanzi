@@ -353,7 +353,7 @@ void AdvectionFn<AnalyticDG>::ApproximateVelocity_Projection(
   Teuchos::ParameterList map_list;
   map_list.set<std::string>("method", "Lagrange serendipity")
           .set<int>("method order", 2)
-          .set<std::string>("projector", "least square")
+          .set<std::string>("projector", "L2")
           .set<std::string>("map name", "VEM");
   
   WhetStone::MeshMapsFactory maps_factory;
