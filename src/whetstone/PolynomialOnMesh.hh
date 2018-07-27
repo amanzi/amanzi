@@ -32,6 +32,8 @@ struct PolynomialOnMesh {
   PolynomialOnMesh() : id_(-1), kind_((Entity_kind)WhetStone::CELL) {};
 
   Polynomial& poly() { return poly_; }
+  const Polynomial& poly() const { return poly_; }
+
   const Entity_kind& kind() const { return kind_; }
   const Entity_ID& id() const { return id_; }
 

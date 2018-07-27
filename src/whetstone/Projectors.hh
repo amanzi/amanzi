@@ -9,7 +9,20 @@
 
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 
-  Virtual framework for L2 and H1 projectors. 
+  Virtual framework for L2 and H1 projectors. The projectors
+  may require degrees of freedom on cell boundary (for low-order 
+  and high-order schemes) and inside it (for high-order schemes).
+  Degrees of freedom on faces are typically function moments or,
+  equivalently, polynomial approximation of the function. Degrees
+  of freedom in cell are high-order moments. 
+
+  NOTE. For a scheme of order k, polynomial of order k on each 
+  face, provides uniform interface for large variety of schemes.
+
+  NOTE. For a scheme of order k, internal moment of order k-s are
+  needed, where s=2 for most implemented schemes and s > 2 for 
+  serendipity schemes. At the moment, we assume s=2 and return 
+  moments that are derived quantities. 
 */
 
 #ifndef AMANZI_WHETSTONE_PROJECTORS_HH_

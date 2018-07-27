@@ -55,6 +55,7 @@ add_amanzi_library(whetstone
                           NumericalIntegration.cc
                           MeshMaps.cc
                           MeshMaps_FEM.cc MeshMaps_VEM.cc MeshMaps_PEM.cc
+                          GrammMatrix.cc
                    HEADERS DenseMatrix.hh DenseVector.hh
                            DG_Modal.hh
                            Basis.hh BasisFactory.hh
@@ -64,6 +65,7 @@ add_amanzi_library(whetstone
                            InnerProduct.hh InnerProductL2.hh InnerProductH1.hh
                            BilinearForm.hh Projectors.hh
                            DeRham_Node.hh DeRham_Edge.hh DeRham_Face.hh
+                           GrammMatrix.hh
                            MFD3D.hh
                            MFD3D_BernardiRaugel.hh
 			   MFD3D_CrouzeixRaviart.hh MFD3D_CrouzeixRaviartSerendipity.hh

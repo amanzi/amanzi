@@ -50,7 +50,7 @@ class Basis_Regularized : public Basis {
                                          int c, int order, DenseVector& coefs) const;
 
   // access
-  const std::vector<double>& monomial_scales() { return monomial_scales_; }
+  const std::vector<double>& monomial_scales() const { return monomial_scales_; }
 
  private:
   using Basis::id_;

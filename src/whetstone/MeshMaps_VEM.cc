@@ -35,15 +35,7 @@ void MeshMaps_VEM::VelocityCell(
   WhetStone::MFD3DFactory factory;
   auto mfd = factory.CreateMFD3D(mesh0_, method_, order_);
 
-  if (projector_ == "H1 harmonic") {
-    auto mfd_tmp = dynamic_cast<MFD3D_CrouzeixRaviart*>(&*mfd);
-    mfd_tmp->H1CellHarmonic(c, vf, moments, vc);
-  }
-  else if (projector_ == "L2 harmonic") {
-    auto mfd_tmp = dynamic_cast<MFD3D_CrouzeixRaviart*>(&*mfd);
-    mfd_tmp->L2CellHarmonic(c, vf, moments, vc);
-  } 
-  else if (projector_ == "H1") {
+  if (projector_ == "H1") {
     mfd->H1Cell(c, vf, moments, vc);
   }
   else if (projector_ == "L2") {
@@ -85,7 +77,7 @@ void MeshMaps_VEM::VelocityFace(int f, VectorPolynomial& vf) const
     mfd.set_order(order_);
 
     AmanziGeometry::Point p0(mesh1_->face_centroid(f) - mesh0_->face_centroid(f));
-    mfd.H1FaceHarmonic(f, p0, ve, vf);
+    mfd.H1Face(f, p0, ve, vf);
   }
 }
 
@@ -162,7 +154,7 @@ void MeshMaps_VEM::JacobianCell(
   MFD3D_CrouzeixRaviart mfd(mesh0_);
 
   mfd.set_order(order_ + 1);
-  mfd.L2GradientCellHarmonic(c, vf, moments, J);
+  mfd.L2GradientCell(c, vf, moments, J);
 }
 
 

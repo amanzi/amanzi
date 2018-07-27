@@ -27,6 +27,7 @@
 #include "DG_Modal.hh"
 #include "MFD3D_Lagrange.hh"
 #include "NumericalIntegration.hh"
+#include "ProjectorsUtils.hh"
 #include "Tensor.hh"
 
 namespace Amanzi {
@@ -237,40 +238,8 @@ int MFD3D_Lagrange::H1consistency(
     }
   }
 
-  // set the Gramm-Schidt matrix for gradients of polynomials
-  G_.PutScalar(0.0);
-
-  for (auto it = poly.begin(); it < poly.end(); ++it) {
-    const int* index = it.multi_index();
-    int k = it.PolynomialPosition();
-    double scalei = basis.monomial_scales()[it.MonomialSetOrder()];
-
-    for (auto jt = it; jt < poly.end(); ++jt) {
-      const int* jndex = jt.multi_index();
-      int l = jt.PolynomialPosition();
-      double scalej = basis.monomial_scales()[jt.MonomialSetOrder()];
-      
-      int n(0);
-      int multi_index[3];
-      for (int i = 0; i < d_; ++i) {
-        multi_index[i] = index[i] + jndex[i];
-        n += multi_index[i];
-      }
-
-      double sum(0.0), tmp;
-      for (int i = 0; i < d_; ++i) {
-        if (index[i] > 0 && jndex[i] > 0) {
-          multi_index[i] -= 2;
-          int m = poly.MonomialSetPosition(multi_index);
-          tmp = integrals_.poly()(n - 2, m) * scalei * scalej;
-          sum += tmp * index[i] * jndex[i];
-          multi_index[i] += 2;
-        }
-      }
-
-      G_(l, k) = G_(k, l) = K(0, 0) * sum; 
-    }
-  }
+  // Gramm matrix for gradients of polynomials
+  GrammMatrixGradients(K, poly, integrals_, basis, G_);
 
   // calculate R inv(G) R^T
   DenseMatrix RG(ndof, nd), Rtmp(nd, ndof);
@@ -309,7 +278,7 @@ int MFD3D_Lagrange::StiffnessMatrix(
 ****************************************************************** */
 void MFD3D_Lagrange::ProjectorCell_(
     int c, const std::vector<VectorPolynomial>& vf, 
-    const Projectors::Type type, bool is_harmonic,
+    const Projectors::Type type,
     VectorPolynomial& moments, VectorPolynomial& uc) 
 {
   AMANZI_ASSERT(d_ == 2);
@@ -346,14 +315,6 @@ void MFD3D_Lagrange::ProjectorCell_(
   int ndof_f(nnodes + nfaces * ndf);
   int ndof_c(ndof - ndof_f);
 
-  // auxiliary data for optional calculation of internal moments
-  DenseMatrix Acf, Acc;
-  if (ndof_c > 0 && is_harmonic) {
-    Acf = A.SubMatrix(ndof_f, ndof, 0, ndof_f);
-    Acc = A.SubMatrix(ndof_f, ndof, ndof_f, ndof);
-    Acc.Inverse();
-  }
-  
   // create zero vector polynomial
   int dim = vf[0].size();
   uc.resize(dim);
@@ -414,28 +375,8 @@ void MFD3D_Lagrange::ProjectorCell_(
       }
     }
 
-    // calculate DOFs inside cell using
-    // -- either harmonic extension inside cell
-    if (ndof_c > 0 && is_harmonic) {
-      DenseVector v1(ndof_f), v2(ndof_c), v3(ndof_c);
-
-      for (int n = 0; n < ndof_f; ++n) {
-        v1(n) = vdof(n);
-      }
-
-      Acf.Multiply(v1, v2, false);
-      Acc.Multiply(v2, v3, false);
-
-      for (int n = 0; n < ndof_c; ++n) {
-        vdof(row + n) = -v3(n);
-        v3(n) *= -1;
-      }
-
-      moments[i].Reshape(d_, order_ - 2);
-      moments[i].SetPolynomialCoefficients(v3);
-    }
-    // -- or copy moments from input data
-    else if (ndof_c > 0 && !is_harmonic) {
+    // DOFs inside cell: copy moments from input data
+    if (ndof_c > 0) {
       DenseVector v3(ndof_c);
       moments[i].GetPolynomialCoefficients(v3);
 

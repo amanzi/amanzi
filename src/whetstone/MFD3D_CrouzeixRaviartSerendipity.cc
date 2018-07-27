@@ -66,7 +66,7 @@ int MFD3D_CrouzeixRaviartSerendipity::H1consistency(
   Basis_Regularized basis;
   basis.Init(mesh_, c, order_);
 
-  // set the Gramm-Schidt matrix for polynomials
+  // Gramm matrix for polynomials
   DenseMatrix M(nd, nd);
 
   for (auto it = poly.begin(); it < poly.end(); ++it) {

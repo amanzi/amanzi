@@ -63,54 +63,29 @@ class MFD3D_CrouzeixRaviart : public MFD3D {
     }
   }
 
-  // -- projectors
+  // -- projectors: base L2 and H1 projectors
   virtual void L2Cell(
       int c, const std::vector<VectorPolynomial>& vf,
       VectorPolynomial& moments, VectorPolynomial& uc) override {
-    ProjectorCell_HO_(c, vf, Type::L2, false, moments, uc);
+    ProjectorCell_HO_(c, vf, Type::L2, moments, uc);
   }
 
   virtual void H1Cell(
       int c, const std::vector<VectorPolynomial>& vf,
       VectorPolynomial& moments, VectorPolynomial& uc) override {
-    ProjectorCell_HO_(c, vf, Type::H1, false, moments, uc);
+    ProjectorCell_HO_(c, vf, Type::H1, moments, uc);
   }
 
-  // harmonic projector calculates and returns cell-moments
-  void L2CellHarmonic(
-      int c, const std::vector<VectorPolynomial>& vf,
-      VectorPolynomial& moments, VectorPolynomial& uc) {
-    ProjectorCell_HO_(c, vf, Type::L2, true, moments, uc);
-  }
-
-  void H1CellHarmonic(
-      int c, const std::vector<VectorPolynomial>& vf,
-      VectorPolynomial& moments, VectorPolynomial& uc) {
-    if (order_ == 1 && !use_always_ho_) {
-      ProjectorCell_LO_(c, vf, uc);
-    } else {
-      ProjectorCell_HO_(c, vf, Type::H1, true, moments, uc);
-    }
-  }
-
-  // additional projectors: prototypes
-  // -- on faces
-  void H1FaceHarmonic(
-      int f, const AmanziGeometry::Point& p0,
-      const std::vector<VectorPolynomial>& ve, VectorPolynomial& uf) const;
-
-  // -- L2 projector of gradient
+  // additional miscaleneous projectors
   void L2GradientCell(
       int c, const std::vector<VectorPolynomial>& vf,
       const std::shared_ptr<DenseVector>& moments, MatrixPolynomial& uc) {
-    ProjectorGradientCell_(c, vf, Type::L2, false, moments, uc);
+    ProjectorGradientCell_(c, vf, Type::L2, moments, uc);
   }
 
-  void L2GradientCellHarmonic(
-      int c, const std::vector<VectorPolynomial>& vf,
-      const std::shared_ptr<DenseVector>& moments, MatrixPolynomial& uc) {
-    ProjectorGradientCell_(c, vf, Type::L2, true, moments, uc);
-  }
+  void H1Face(
+      int f, const AmanziGeometry::Point& p0,
+      const std::vector<VectorPolynomial>& ve, VectorPolynomial& uf) const;
 
   // access / setup
   // -- integrals of monomials in high-order schemes could be reused
@@ -136,12 +111,12 @@ class MFD3D_CrouzeixRaviart : public MFD3D {
   // generic code for multiple projectors
   void ProjectorCell_HO_(
       int c, const std::vector<VectorPolynomial>& vf,
-      const Projectors::Type type, bool is_harmonic,
+      const Projectors::Type type, 
       VectorPolynomial& moments, VectorPolynomial& uc);
 
   void ProjectorGradientCell_(
       int c, const std::vector<VectorPolynomial>& vf,
-      const Projectors::Type type, bool is_harmonic, 
+      const Projectors::Type type, 
       const std::shared_ptr<DenseVector>& moments, MatrixPolynomial& uc);
 
   // supporting routines

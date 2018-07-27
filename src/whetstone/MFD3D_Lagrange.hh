@@ -56,27 +56,13 @@ class MFD3D_Lagrange : public MFD3D {
   virtual void L2Cell(
       int c, const std::vector<VectorPolynomial>& vf,
       VectorPolynomial& moments, VectorPolynomial& uc) override {
-    ProjectorCell_(c, vf, Type::L2, false, moments, uc);
+    ProjectorCell_(c, vf, Type::L2, moments, uc);
   }
 
   virtual void H1Cell(
       int c, const std::vector<VectorPolynomial>& vf,
       VectorPolynomial& moments, VectorPolynomial& uc) override {
-    ProjectorCell_(c, vf, Type::H1, false, moments, uc);
-  }
-
-  // L2 projector that calculates and returns cell moments
-  void L2CellHarmonic(
-      int c, const std::vector<VectorPolynomial>& vf,
-      VectorPolynomial& moments, VectorPolynomial& uc) {
-    ProjectorCell_(c, vf, Type::L2, true, moments, uc);
-  }
-
-  // harmonic projector calculates and returns cell-moments
-  void H1CellHarmonic(
-      int c, const std::vector<VectorPolynomial>& vf,
-      VectorPolynomial& moments, VectorPolynomial& uc) {
-    ProjectorCell_(c, vf, Type::H1, true, moments, uc);
+    ProjectorCell_(c, vf, Type::H1, moments, uc);
   }
 
   // access 
@@ -91,7 +77,7 @@ class MFD3D_Lagrange : public MFD3D {
  private:
   void ProjectorCell_(
       int c, const std::vector<VectorPolynomial>& vf,
-      const Projectors::Type type, bool is_harmonic,
+      const Projectors::Type type,
       VectorPolynomial& moments, VectorPolynomial& uc);
 
  protected:

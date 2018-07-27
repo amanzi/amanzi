@@ -22,7 +22,7 @@ namespace Amanzi {
 namespace WhetStone {
 
 /* ******************************************************************
-* Simple constructors
+* Trivial constructor: each component is polynomial=0
 ****************************************************************** */
 VectorPolynomial::VectorPolynomial(int d, int size) : d_(d)
 {
@@ -31,6 +31,9 @@ VectorPolynomial::VectorPolynomial(int d, int size) : d_(d)
 }
 
 
+/* ******************************************************************
+* Constructor: each component is zero polynomial of given order 
+****************************************************************** */
 VectorPolynomial::VectorPolynomial(int d, int size, int order) : d_(d)
 {
   polys_.resize(size);

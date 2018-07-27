@@ -52,7 +52,7 @@ TEST(HARMONIC_PROJECTORS_SQUARE_CR) {
   std::vector<VectorPolynomial> vf(4);
 
   // test zero cell deformation
-  std::cout << "      subtest: LINEAR deformation" << std::endl;
+  std::cout << "      subtest: ZERO deformation" << std::endl;
   for (int n = 0; n < 4; ++n) {
     vf[n].resize(2);
     for (int i = 0; i < 2; ++i) {
@@ -61,14 +61,15 @@ TEST(HARMONIC_PROJECTORS_SQUARE_CR) {
   }
 
   MFD3D_CrouzeixRaviart mfd(mesh);
-  VectorPolynomial moments(2, 2);
+  VectorPolynomial moments(2, 2);  // trivial polynomials p=0
 
   mfd.set_order(2);
-  mfd.H1CellHarmonic(cell, vf, moments, uc);
+  mfd.H1Cell(cell, vf, moments, uc);
 
   CHECK(uc[0].NormMax() < 1e-12 && uc[1].NormMax() < 1e-12);
 
   // test linear deformation
+  std::cout << "      subtest: LINEAR deformation" << std::endl;
   for (int n = 0; n < 4; ++n) {
     for (int i = 0; i < 2; ++i) {
       vf[n][i](0, 0) = 1.0;
@@ -78,7 +79,7 @@ TEST(HARMONIC_PROJECTORS_SQUARE_CR) {
   }
   
   mfd.set_order(1);
-  mfd.H1CellHarmonic(cell, vf, moments, uc);
+  mfd.H1Cell(cell, vf, moments, uc);
   std::cout << uc[0] << std::endl;
 
   uc[0] -= vf[0][0];
@@ -86,8 +87,17 @@ TEST(HARMONIC_PROJECTORS_SQUARE_CR) {
   CHECK(uc[0].NormMax() < 1e-12 && uc[1].NormMax() < 1e-12);
 
   for (int k = 2; k < 4; ++k) {
+    moments[0].Reshape(2, k - 2, true);
+
+    moments[0](0, 0) = 3.85;
+    if (k > 2) {
+      moments[0](1, 0) = 0.208893187146837;
+      moments[0](1, 1) = 0.263292454632993;
+    }
+    moments[1] = moments[0];
+
     mfd.set_order(k);
-    mfd.H1CellHarmonic(cell, vf, moments, uc);
+    mfd.H1Cell(cell, vf, moments, uc);
     std::cout << uc[1] << std::endl;
 
     uc[0] -= vf[0][0];
@@ -104,25 +114,17 @@ TEST(HARMONIC_PROJECTORS_SQUARE_CR) {
   vf[2][0](1, 0) = 0.8 / 1.2; 
   vf[2][1](1, 0) = 1.9 / 1.2; 
 
+  moments[0].Reshape(2, 0, true);
+  moments[1].Reshape(2, 0, true);
+
   mfd.set_order(2);
-  mfd.H1CellHarmonic(cell, vf, moments, uc);
+  mfd.H1Cell(cell, vf, moments, uc);
 
   std::cout << uc[0] << std::endl;
   std::cout << uc[1] << std::endl;
   auto p = AmanziGeometry::Point(1.2, 1.1);
   CHECK(fabs(uc[0].Value(p) - 0.8) < 1e-12 &&
         fabs(uc[1].Value(p) - 1.9) < 1e-12);
-
-  // add additive constant deformation 
-  std::cout << "      subtest: 2nd BILINEAR deformation" << std::endl;
-  for (int n = 0; n < 4; ++n) vf[n][0](0, 0) = 1.0;
-  mfd.set_order(2);
-  mfd.H1CellHarmonic(cell, vf, moments, uc);
-  std::cout << uc[0] << std::endl;
-
-  mfd.set_order(3);
-  mfd.H1CellHarmonic(cell, vf, moments, uc);
-  std::cout << uc[0] << std::endl;
 
   // test harmonic functions (is it always true for square?)
   std::cout << "      subtest: harmonic function" << std::endl;
@@ -135,7 +137,7 @@ TEST(HARMONIC_PROJECTORS_SQUARE_CR) {
     }
   }
   mfd.set_order(2);
-  mfd.H1CellHarmonic(cell, vf, moments, uc);
+  mfd.H1Cell(cell, vf, moments, uc);
   std::cout << uc[0] << std::endl;
 
   CHECK(fabs(uc[0](2, 0) + uc[0](2, 2)) < 1e-12 &&
@@ -177,11 +179,11 @@ TEST(HARMONIC_PROJECTORS_POLYGON_CR) {
   }
   
   MFD3D_CrouzeixRaviart mfd(mesh);
-  VectorPolynomial moments(2, 2);
+  VectorPolynomial moments(2, 2);  // trivial polynomials p=0
 
   // -- old scheme
   mfd.set_order(1);
-  mfd.H1CellHarmonic(cell, vf, moments, uc);
+  mfd.H1Cell(cell, vf, moments, uc);
   std::cout << uc[0] << std::endl;
 
   uc[0] -= vf[0][0];
@@ -192,7 +194,7 @@ TEST(HARMONIC_PROJECTORS_POLYGON_CR) {
   mfd.set_use_always_ho(true);
   for (int k = 1; k < 4; ++k) {
     mfd.set_order(k);
-    mfd.H1CellHarmonic(cell, vf, moments, uc);
+    mfd.H1Cell(cell, vf, moments, uc);
     std::cout << uc[0] << std::endl;
 
     uc[0] -= vf[0][0];
@@ -213,7 +215,7 @@ TEST(HARMONIC_PROJECTORS_POLYGON_CR) {
 
   for (int k = 2; k < 4; ++k) {
     mfd.set_order(k);
-    mfd.H1CellHarmonic(cell, vf, moments, uc);
+    mfd.H1Cell(cell, vf, moments, uc);
     std::cout << uc[0] << std::endl;
     uc[0] -= vf[0][0];
     uc[1] -= vf[0][1];
@@ -234,7 +236,7 @@ TEST(HARMONIC_PROJECTORS_POLYGON_CR) {
 
   for (int k = 3; k < 4; ++k) {
     mfd.set_order(k);
-    mfd.H1CellHarmonic(cell, vf, moments, uc);
+    mfd.H1Cell(cell, vf, moments, uc);
     std::cout << vf[0][0] << std::endl;
     std::cout << uc[0] << std::endl;
     uc[0] -= vf[0][0];
@@ -253,7 +255,7 @@ TEST(HARMONIC_PROJECTORS_POLYGON_CR) {
     }
   }
   mfd.set_order(2);
-  mfd.H1CellHarmonic(cell, vf, moments, uc);
+  mfd.H1Cell(cell, vf, moments, uc);
   std::cout << uc[0] << std::endl;
 
   int dir;
@@ -407,7 +409,7 @@ TEST(L2GRADIENT_PROJECTORS_SQUARE_CR) {
   CHECK(uc[0][0].NormMax() < 1e-12 && uc[0][1].NormMax() < 1e-12);
 
   std::cout << "    subtest: CUBIC deformation, computed moments" << std::endl;
-  mfd.L2GradientCellHarmonic(cell, vf, moments, uc);
+  mfd.L2GradientCell(cell, vf, moments, uc);
   std::cout << "    moments: " << *moments << std::endl;
 
   CHECK_CLOSE(1.0 / 15, (*moments)(2), 1e-12);
@@ -457,7 +459,7 @@ TEST(HARMONIC_PROJECTORS_SQUARE_PK) {
   
   for (int k = 1; k < 4; ++k) {
     mfd.set_order(k);
-    mfd.H1CellHarmonic(cell, vf, moments, uc);  
+    mfd.H1Cell(cell, vf, moments, uc);  
     for (int i = 0; i < 2; ++i) {
       uc[i] -= vf[0][i];
       CHECK(uc[i].NormMax() < 1e-12);
@@ -476,17 +478,17 @@ TEST(HARMONIC_PROJECTORS_SQUARE_PK) {
 
   for (int k = 1; k < 3; ++k) { 
     mfd.set_order(k);
-    mfd.H1CellHarmonic(cell, vf, moments, uc);  
+    mfd.H1Cell(cell, vf, moments, uc);  
 
     mfd_cr.set_order(k);
-    mfd_cr.H1CellHarmonic(cell, vf, moments, uc2);
+    mfd_cr.H1Cell(cell, vf, moments, uc2);
     for (int i = 0; i < 2; ++i) {
       uc2[i] -= uc[i];
       CHECK(uc2[i].NormMax() < 1e-12);
     }
 
     // Compare H1 and L2 projectors
-    mfd.L2CellHarmonic(cell, vf, moments, uc2);
+    mfd.L2Cell(cell, vf, moments, uc2);
     uc2[0] -= uc[0];
     CHECK(uc2[0].NormMax() < 1e-12);
   }
@@ -535,7 +537,7 @@ TEST(HARMONIC_PROJECTORS_POLYGON_PK) {
   
   for (int k = 1; k < 4; ++k) {
     mfd.set_order(k);
-    mfd.H1CellHarmonic(cell, vf, moments, uc);
+    mfd.H1Cell(cell, vf, moments, uc);
     std::cout << uc[0] << std::endl;
 
     uc[0] -= vf[0][0];
@@ -556,7 +558,7 @@ TEST(HARMONIC_PROJECTORS_POLYGON_PK) {
 
   for (int k = 2; k < 4; ++k) {
     mfd.set_order(k);
-    mfd.H1CellHarmonic(cell, vf, moments, uc);
+    mfd.H1Cell(cell, vf, moments, uc);
     std::cout << uc[0] << std::endl;
     uc[0] -= vf[0][0];
     uc[1] -= vf[0][1];
@@ -574,7 +576,7 @@ TEST(HARMONIC_PROJECTORS_POLYGON_PK) {
     }
   }
   mfd.set_order(2);
-  mfd.H1CellHarmonic(cell, vf, moments, uc);
+  mfd.H1Cell(cell, vf, moments, uc);
   std::cout << uc[0] << std::endl;
 
   int dir;
@@ -629,15 +631,15 @@ TEST(HARMONIC_PROJECTORS_POLYGON_PK) {
   
   for (int k = 1; k < 4; ++k) {
     mfd.set_order(k);
-    mfd.H1CellHarmonic(cell, vf, moments, uc);
+    mfd.H1Cell(cell, vf, moments, uc);
 
     mfd_cr.set_order(k);
-    mfd_cr.H1CellHarmonic(cell, vf, moments, uc2);
+    mfd_cr.H1Cell(cell, vf, moments, uc2);
     uc2 -= uc;
     if (k == 1) CHECK(uc2[0].NormMax() < 1e-12);
     if (k == 2) CHECK(uc2[0].NormMax() > 1e-3 && uc2[0].NormMax() < 2e-3);
 
-    mfd.L2CellHarmonic(cell, vf, moments, uc2);
+    mfd.L2Cell(cell, vf, moments, uc2);
     uc2 -= uc;
     if (k < 3) CHECK(uc2[0].NormMax() < 1e-12);
     if (k > 1) std::cout << "k=" << k << " moments:" << moments[0];
