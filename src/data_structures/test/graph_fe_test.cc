@@ -26,8 +26,8 @@
 #include "GraphFE.hh"
 
 /* *****************************************************************
- * this test is a null test -- all entries are local
-* **************************************************************** */
+* this test is a null test -- all entries are local
+***************************************************************** */
 TEST(FE_GRAPH_NEAREST_NEIGHBOR_TPFA) {
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
@@ -102,8 +102,8 @@ TEST(FE_GRAPH_NEAREST_NEIGHBOR_TPFA) {
 
 
 /* *****************************************************************
- * this test is a null test -- all entries are local
-* **************************************************************** */
+* this test is a null test -- all entries are local
+***************************************************************** */
 TEST(FE_GRAPH_FACE_FACE) {
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
@@ -166,5 +166,4 @@ TEST(FE_GRAPH_FACE_FACE) {
   CHECK(!ierr);
   ierr |= graph_global.FillComplete(face_map, face_map);
   CHECK(!ierr);
-
 }
