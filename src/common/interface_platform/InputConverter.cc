@@ -1790,7 +1790,7 @@ std::string InputConverter::CreateINFile_(std::string& filename, int rank)
   if (incomplete_tracers.size() > 0) {
     std::cout << "WARNING: primary species that may have missing atributes: ";
     for (auto it = incomplete_tracers.begin(); it != incomplete_tracers.end(); ++it) {
-      std::cout << it->first << " ";
+      std::cout << it->first << ", ";
     }
     std::cout << std::endl;
   }

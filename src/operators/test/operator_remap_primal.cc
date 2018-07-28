@@ -105,7 +105,7 @@ void RemapTests2DPrimal(int order, std::string disc_name,
   Teuchos::ParameterList map_list;
   map_list.set<std::string>("method", "CrouzeixRaviart")
           .set<int>("method order", order + 1)
-          .set<std::string>("projector", "H1 harmonic")
+          .set<std::string>("projector", "H1")
           .set<std::string>("map name", maps_name);
 
   WhetStone::MeshMapsFactory maps_factory;
@@ -342,8 +342,8 @@ TEST(REMAP_DG0_PRIMAL_VEM) {
   RemapTests2DPrimal(0, "dg modal", "VEM", 10, 10, 0.1);
 }
 
-TEST(REMAP_DG1_PRIMAL_VEM) {
-  RemapTests2DPrimal(1, "dg modal", "VEM", 10, 10, 0.1);
-}
+// TEST(REMAP_DG1_PRIMAL_VEM) {
+//   RemapTests2DPrimal(1, "dg modal", "VEM", 10, 10, 0.1);
+// }
 
 

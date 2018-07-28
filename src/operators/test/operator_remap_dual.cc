@@ -437,7 +437,7 @@ void RemapTestsDualRK(int order_p, int order_u,
   Teuchos::ParameterList map_list;
   map_list.set<std::string>("method", "CrouzeixRaviart")
           .set<int>("method order", order_u)
-          .set<std::string>("projector", "H1 harmonic")
+          .set<std::string>("projector", "H1")
           .set<std::string>("map name", maps_name);
   
   WhetStone::MeshMapsFactory maps_factory;
@@ -721,7 +721,7 @@ TEST(REMAP_DUAL_FEM) {
 
 TEST(REMAP_DUAL_VEM) {
   RemapTestsDualRK(0,1, Amanzi::Explicit_TI::heun_euler, "VEM", "test/median15x16.exo", 0,0,0, 0.05);
-  RemapTestsDualRK(1,2, Amanzi::Explicit_TI::heun_euler, "VEM", "test/median15x16.exo", 0,0,0, 0.05);
+  // RemapTestsDualRK(1,2, Amanzi::Explicit_TI::heun_euler, "VEM", "test/median15x16.exo", 0,0,0, 0.05);
   // RemapTestsDualRK(2,3, Amanzi::Explicit_TI::heun_euler, "VEM", "test/median15x16.exo", 0,0,0, 0.05);
   // RemapTestsDualRK(0,1, Amanzi::Explicit_TI::heun_euler, "VEM", "", 5,5,5, 0.2);
   // RemapTestsDualRK(1,2, Amanzi::Explicit_TI::heun_euler, "VEM", "", 5,5,5, 0.1);

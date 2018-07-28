@@ -117,31 +117,16 @@ TEST(HARMONIC_PROJECTORS_SQUARE_CR) {
   moments[0].Reshape(2, 0, true);
   moments[1].Reshape(2, 0, true);
 
+  moments[0](0, 0) = 0.2;
+  moments[1](0, 0) = 0.475;
+
   mfd.set_order(2);
   mfd.H1Cell(cell, vf, moments, uc);
 
-  std::cout << uc[0] << std::endl;
-  std::cout << uc[1] << std::endl;
+  std::cout << uc << std::endl;
   auto p = AmanziGeometry::Point(1.2, 1.1);
   CHECK(fabs(uc[0].Value(p) - 0.8) < 1e-12 &&
         fabs(uc[1].Value(p) - 1.9) < 1e-12);
-
-  // test harmonic functions (is it always true for square?)
-  std::cout << "      subtest: harmonic function" << std::endl;
-  for (int n = 0; n < 4; ++n) {
-    for (int i = 0; i < 2; ++i) {
-      vf[n][i].Reshape(2, 2, false);
-      vf[n][i](2, 0) = 4.0;
-      vf[n][i](2, 1) = 5.0;
-      vf[n][i](2, 2) = 6.0;
-    }
-  }
-  mfd.set_order(2);
-  mfd.H1Cell(cell, vf, moments, uc);
-  std::cout << uc[0] << std::endl;
-
-  CHECK(fabs(uc[0](2, 0) + uc[0](2, 2)) < 1e-12 &&
-        fabs(uc[1](2, 0) + uc[1](2, 2)) < 1e-12);
 
   delete comm;
 }
@@ -193,13 +178,21 @@ TEST(HARMONIC_PROJECTORS_POLYGON_CR) {
   // -- new scheme (k=1)
   mfd.set_use_always_ho(true);
   for (int k = 1; k < 4; ++k) {
+    if (k > 1) moments[0].Reshape(2, k - 2, true);
+    moments[0](0, 0) = 5.366066066066;
+    if (k > 2) {
+      moments[0](1, 0) = 0.45291015482207;
+      moments[0](1, 1) = 0.25739762151369;
+    }
+    moments[1] = moments[0];
+
     mfd.set_order(k);
     mfd.H1Cell(cell, vf, moments, uc);
     std::cout << uc[0] << std::endl;
 
     uc[0] -= vf[0][0];
     uc[1] -= vf[0][1];
-    CHECK(uc[0].NormMax() < 1e-11 && uc[1].NormMax() < 1e-11);
+    CHECK(uc[0].NormMax() < 1e-12 && uc[1].NormMax() < 1e-12);
   }
 
   // test quadratic deformation
@@ -214,12 +207,20 @@ TEST(HARMONIC_PROJECTORS_POLYGON_CR) {
   }
 
   for (int k = 2; k < 4; ++k) {
+    moments[0].Reshape(2, k - 2, true);
+    moments[0](0, 0) = 13.99442192192193;
+    if (k > 2) {
+      moments[0](1, 0) = 3.30733251805033;
+      moments[0](1, 1) = 0.32898471449271;
+    }
+    moments[1] = moments[0];
+
     mfd.set_order(k);
     mfd.H1Cell(cell, vf, moments, uc);
     std::cout << uc[0] << std::endl;
     uc[0] -= vf[0][0];
     uc[1] -= vf[0][1];
-    CHECK(uc[0].NormMax() < 1e-10 && uc[1].NormMax() < 1e-10);
+    CHECK(uc[0].NormMax() < 1e-12 && uc[1].NormMax() < 1e-12);
   }
 
   // test cubic deformation
@@ -235,13 +236,22 @@ TEST(HARMONIC_PROJECTORS_POLYGON_CR) {
   }
 
   for (int k = 3; k < 4; ++k) {
+    moments[0].Reshape(2, k - 2, true);
+    moments[0](0, 0) = 9.72312102102103;
+    if (k > 2) {
+      moments[0](1, 0) = 2.60365194630611;
+      moments[0](1, 1) =-0.95827249608879;
+    }
+    moments[1] = moments[0];
+
     mfd.set_order(k);
     mfd.H1Cell(cell, vf, moments, uc);
     std::cout << vf[0][0] << std::endl;
     std::cout << uc[0] << std::endl;
     uc[0] -= vf[0][0];
     uc[1] -= vf[0][1];
-    CHECK(uc[0].NormMax() < 1e-11 && uc[1].NormMax() < 1e-11);
+    std::cout << uc[0].NormMax() << " " << uc[1].NormMax() << std::endl;
+    CHECK(uc[0].NormMax() < 1e-12 && uc[1].NormMax() < 1e-12);
   }
 
   // test trace compatibility between function and its projecton (k < 3 only!)
@@ -254,6 +264,11 @@ TEST(HARMONIC_PROJECTORS_POLYGON_CR) {
       vf[n][i](2, 2) = 6.0;
     }
   }
+
+  moments[0].Reshape(2, 0, true);
+  moments[0](0, 0) = 19.88406156156157;
+  moments[1] = moments[0];
+
   mfd.set_order(2);
   mfd.H1Cell(cell, vf, moments, uc);
   std::cout << uc[0] << std::endl;
@@ -458,6 +473,14 @@ TEST(HARMONIC_PROJECTORS_SQUARE_PK) {
   }
   
   for (int k = 1; k < 4; ++k) {
+    if (k > 1) moments[0].Reshape(2, k - 2, true);
+    moments[0](0, 0) = 3.85;
+    if (k > 2) {
+      moments[0](1, 0) = 0.20889318714684;
+      moments[0](1, 1) = 0.26329245463299;
+    }
+    moments[1] = moments[0];
+
     mfd.set_order(k);
     mfd.H1Cell(cell, vf, moments, uc);  
     for (int i = 0; i < 2; ++i) {
@@ -475,6 +498,12 @@ TEST(HARMONIC_PROJECTORS_SQUARE_PK) {
 
   vf[2][0](1, 0) = 0.8 / 1.2; 
   vf[2][1](1, 0) = 1.9 / 1.2; 
+
+  moments[0].Reshape(2, 0, true);
+  moments[1].Reshape(2, 0, true);
+
+  moments[0](0, 0) = 0.2;
+  moments[1](0, 0) = 0.475;
 
   for (int k = 1; k < 3; ++k) { 
     mfd.set_order(k);
@@ -536,6 +565,14 @@ TEST(HARMONIC_PROJECTORS_POLYGON_PK) {
   }
   
   for (int k = 1; k < 4; ++k) {
+    if (k > 1) moments[0].Reshape(2, k - 2, true);
+    moments[0](0, 0) = 5.36606606606607;
+    if (k > 2) {
+      moments[0](1, 0) = 0.45291015482207;
+      moments[0](1, 1) = 0.25739762151369;
+    }
+    moments[1] = moments[0];
+
     mfd.set_order(k);
     mfd.H1Cell(cell, vf, moments, uc);
     std::cout << uc[0] << std::endl;
@@ -557,6 +594,14 @@ TEST(HARMONIC_PROJECTORS_POLYGON_PK) {
   }
 
   for (int k = 2; k < 4; ++k) {
+    moments[0].Reshape(2, k - 2, true);
+    moments[0](0, 0) = 13.99442192192193;
+    if (k > 2) {
+      moments[0](1, 0) = 3.30733251805033;
+      moments[0](1, 1) = 0.32898471449271;
+    }
+    moments[1] = moments[0];
+
     mfd.set_order(k);
     mfd.H1Cell(cell, vf, moments, uc);
     std::cout << uc[0] << std::endl;
@@ -566,7 +611,7 @@ TEST(HARMONIC_PROJECTORS_POLYGON_PK) {
   }
 
   // test trace compatibility between function and its projecton (k < 3 only!)
-  std::cout << "\nTest: HO Lagrange projectors for pentagon (harmonic function)" << std::endl;
+  std::cout << "\nTest: HO Lagrange projectors for pentagon (trace compatibility)" << std::endl;
   for (int n = 0; n < nfaces; ++n) {
     for (int i = 0; i < 2; ++i) {
       vf[n][i].Reshape(2, 2, false);
@@ -575,6 +620,10 @@ TEST(HARMONIC_PROJECTORS_POLYGON_PK) {
       vf[n][i](2, 2) = 6.0;
     }
   }
+  moments[0].Reshape(2, 0, true);
+  moments[0](0, 0) = 19.88406156156157;
+  moments[1] = moments[0];
+
   mfd.set_order(2);
   mfd.H1Cell(cell, vf, moments, uc);
   std::cout << uc[0] << std::endl;
@@ -630,19 +679,27 @@ TEST(HARMONIC_PROJECTORS_POLYGON_PK) {
   }
   
   for (int k = 1; k < 4; ++k) {
+    if (k > 1) moments[0].Reshape(2, k - 2, true);
+    moments[0](0, 0) = 0.1;
+    if (k > 2) {
+      moments[0](1, 0) = 0.2;
+      moments[0](1, 1) = 0.3;
+    }
+    moments[1] = moments[0];
+
     mfd.set_order(k);
     mfd.H1Cell(cell, vf, moments, uc);
 
     mfd_cr.set_order(k);
     mfd_cr.H1Cell(cell, vf, moments, uc2);
     uc2 -= uc;
-    if (k == 1) CHECK(uc2[0].NormMax() < 1e-12);
-    if (k == 2) CHECK(uc2[0].NormMax() > 1e-3 && uc2[0].NormMax() < 2e-3);
+    if (k < 3) CHECK(uc2[0].NormMax() < 1e-12);
 
     mfd.L2Cell(cell, vf, moments, uc2);
     uc2 -= uc;
     if (k < 3) CHECK(uc2[0].NormMax() < 1e-12);
-    if (k > 1) std::cout << "k=" << k << " moments:" << moments[0];
+    if (k > 2) std::cout << " moments: " << moments[0](0, 0) << " " 
+                                         << moments[0](1, 0) << " " << moments[0](1, 1) << std::endl;
   }
 
   // preservation of moments (reusing previous boundary functions)

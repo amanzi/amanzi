@@ -27,7 +27,7 @@
 #include "DG_Modal.hh"
 #include "MFD3D_CrouzeixRaviart.hh"
 #include "NumericalIntegration.hh"
-#include "ProjectorsUtils.hh"
+#include "GrammMatrix.hh"
 #include "Tensor.hh"
 
 namespace Amanzi {

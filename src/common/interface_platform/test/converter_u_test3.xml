@@ -148,6 +148,10 @@
     <region name="Recharge_Boundary_EastOfCrib">
       <box high_coordinates="216.0, 120.0" low_coordinates="80.0, 120.0" />
     </region>
+    <logical name="Total_Recharge">
+      <operation>union</operation>
+      <region_list>Recharge_Boundary_WestOfCrib, Recharge_Boundary_EastOfCrib</region_list>
+    </logical>
     <region name="Well">
       <box high_coordinates="112.0 ft, 60.0" low_coordinates="108.0 ft, 40.0" />
     </region>
@@ -246,8 +250,7 @@
     </boundary_condition>
 
     <boundary_condition name="BC Rest">
-      <assigned_regions>Recharge_Boundary_WestOfCrib,
-                        Recharge_Boundary_EastOfCrib</assigned_regions>
+      <assigned_regions>Total_Recharge</assigned_regions>
       <liquid_phase name="water">
         <liquid_component name="water">
           <inward_volumetric_flux value="1.1071E-10" function="constant" start="0.0" />

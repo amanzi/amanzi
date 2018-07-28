@@ -30,7 +30,7 @@ namespace WhetStone {
 void MeshMaps_VEM::VelocityCell(
     int c, const std::vector<VectorPolynomial>& vf, VectorPolynomial& vc) const
 {
-  VectorPolynomial moments(d_, vf.size());
+  VectorPolynomial moments(d_, vf.size(), std::max(0, order_ - 2));
 
   WhetStone::MFD3DFactory factory;
   auto mfd = factory.CreateMFD3D(mesh0_, method_, order_);
