@@ -92,6 +92,7 @@ if (BUILD_TESTS)
 
     add_amanzi_test(data_structures test_data_structures 
                     KIND unit
+                    NPROCS 2
 		    SOURCE test/Main.cc 
 			   test/test_composite_vector.cc
 			   test/test_tree_vector.cc

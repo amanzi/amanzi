@@ -16,7 +16,6 @@
 #include "Teuchos_RCP.hpp"
 
 #include "DenseMatrix.hh"
-#include "BCs.hh"
 #include "Mesh.hh"
 #include "OperatorDefs.hh"
 #include "Schema.hh"
