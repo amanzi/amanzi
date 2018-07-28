@@ -26,9 +26,19 @@
 namespace Amanzi {
 namespace WhetStone {
 
+// Gramm matrix for polynomials
+void GrammMatrix(
+    const Polynomial& poly, const PolynomialOnMesh& integrals,
+    const Basis_Regularized& basis, DenseMatrix& G);
+
 // Gramm matrix for gradient of polynomials with tensorial weight
 void GrammMatrixGradients(
     const Tensor& K, 
+    const Polynomial& poly, const PolynomialOnMesh& integrals,
+    const Basis_Regularized& basis, DenseMatrix& G);
+
+// Gramm matrix for Laplacians of polynomials with tensorial weight
+void GrammMatrixLaplacian(
     const Polynomial& poly, const PolynomialOnMesh& integrals,
     const Basis_Regularized& basis, DenseMatrix& G);
 

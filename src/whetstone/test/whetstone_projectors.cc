@@ -48,6 +48,7 @@ TEST(HARMONIC_PROJECTORS_SQUARE_CR) {
   Teuchos::RCP<Mesh> mesh = meshfactory(-1.2, 0.0, 1.2, 1.1, 2, 1, gm, true, true); 
  
   int cell(1);
+  AmanziGeometry::Point zero(2);
   VectorPolynomial uc;
   std::vector<VectorPolynomial> vf(4);
 
@@ -66,6 +67,7 @@ TEST(HARMONIC_PROJECTORS_SQUARE_CR) {
   mfd.set_order(2);
   mfd.H1Cell(cell, vf, moments, uc);
 
+  uc.ChangeOrigin(zero);
   CHECK(uc[0].NormMax() < 1e-12 && uc[1].NormMax() < 1e-12);
 
   // test linear deformation
@@ -80,6 +82,8 @@ TEST(HARMONIC_PROJECTORS_SQUARE_CR) {
   
   mfd.set_order(1);
   mfd.H1Cell(cell, vf, moments, uc);
+
+  uc.ChangeOrigin(zero);
   std::cout << uc[0] << std::endl;
 
   uc[0] -= vf[0][0];
@@ -98,6 +102,8 @@ TEST(HARMONIC_PROJECTORS_SQUARE_CR) {
 
     mfd.set_order(k);
     mfd.H1Cell(cell, vf, moments, uc);
+
+    uc.ChangeOrigin(zero);
     std::cout << uc[1] << std::endl;
 
     uc[0] -= vf[0][0];
@@ -123,7 +129,9 @@ TEST(HARMONIC_PROJECTORS_SQUARE_CR) {
   mfd.set_order(2);
   mfd.H1Cell(cell, vf, moments, uc);
 
+  uc.ChangeOrigin(zero);
   std::cout << uc << std::endl;
+
   auto p = AmanziGeometry::Point(1.2, 1.1);
   CHECK(fabs(uc[0].Value(p) - 0.8) < 1e-12 &&
         fabs(uc[1].Value(p) - 1.9) < 1e-12);
@@ -148,6 +156,7 @@ TEST(HARMONIC_PROJECTORS_POLYGON_CR) {
   // Teuchos::RCP<Mesh> mesh = meshfactory("test/one_quad.exo", gm, true, true);
  
   int cell(0), nfaces(5);
+  AmanziGeometry::Point zero(2);
   VectorPolynomial uc;
   std::vector<VectorPolynomial> vf(nfaces);
 
@@ -169,6 +178,8 @@ TEST(HARMONIC_PROJECTORS_POLYGON_CR) {
   // -- old scheme
   mfd.set_order(1);
   mfd.H1Cell(cell, vf, moments, uc);
+
+  uc.ChangeOrigin(zero);
   std::cout << uc[0] << std::endl;
 
   uc[0] -= vf[0][0];
@@ -188,6 +199,8 @@ TEST(HARMONIC_PROJECTORS_POLYGON_CR) {
 
     mfd.set_order(k);
     mfd.H1Cell(cell, vf, moments, uc);
+
+    uc.ChangeOrigin(zero);
     std::cout << uc[0] << std::endl;
 
     uc[0] -= vf[0][0];
@@ -217,7 +230,10 @@ TEST(HARMONIC_PROJECTORS_POLYGON_CR) {
 
     mfd.set_order(k);
     mfd.H1Cell(cell, vf, moments, uc);
+
+    uc.ChangeOrigin(zero);
     std::cout << uc[0] << std::endl;
+
     uc[0] -= vf[0][0];
     uc[1] -= vf[0][1];
     CHECK(uc[0].NormMax() < 1e-12 && uc[1].NormMax() < 1e-12);
@@ -246,8 +262,11 @@ TEST(HARMONIC_PROJECTORS_POLYGON_CR) {
 
     mfd.set_order(k);
     mfd.H1Cell(cell, vf, moments, uc);
+
+    uc.ChangeOrigin(zero);
     std::cout << vf[0][0] << std::endl;
     std::cout << uc[0] << std::endl;
+
     uc[0] -= vf[0][0];
     uc[1] -= vf[0][1];
     std::cout << uc[0].NormMax() << " " << uc[1].NormMax() << std::endl;
@@ -271,6 +290,8 @@ TEST(HARMONIC_PROJECTORS_POLYGON_CR) {
 
   mfd.set_order(2);
   mfd.H1Cell(cell, vf, moments, uc);
+
+  uc.ChangeOrigin(zero);
   std::cout << uc[0] << std::endl;
 
   int dir;
@@ -347,6 +368,7 @@ TEST(L2_PROJECTORS_SQUARE_CR) {
   Teuchos::RCP<Mesh> mesh = meshfactory(0.0, 0.0, 2.0, 4.0, 1, 2, gm, true, true); 
  
   int cell(1);
+  AmanziGeometry::Point zero(2);
   VectorPolynomial uc;
   std::vector<VectorPolynomial> vf(4);
 
@@ -369,6 +391,8 @@ TEST(L2_PROJECTORS_SQUARE_CR) {
 
   mfd.set_order(4);
   mfd.H1Cell(cell, vf, moments, uc);
+
+  uc.ChangeOrigin(zero);
   std::cout << uc[0] << std::endl;
 
   uc[0] -= vf[0][0];
@@ -393,6 +417,7 @@ TEST(L2GRADIENT_PROJECTORS_SQUARE_CR) {
   Teuchos::RCP<Mesh> mesh = meshfactory(0.0, 0.0, 4.0, 2.0, 2, 1, gm, true, true); 
  
   int cell(1);
+  AmanziGeometry::Point zero(2);
   MatrixPolynomial uc;
   std::vector<VectorPolynomial> vf(4);
 
@@ -416,8 +441,10 @@ TEST(L2GRADIENT_PROJECTORS_SQUARE_CR) {
 
   mfd.set_order(3);
   mfd.L2GradientCell(cell, vf, moments, uc);
+
+  uc[0][0].ChangeOrigin(zero);
+  uc[0][1].ChangeOrigin(zero);
   std::cout << uc[0][0] << std::endl;
-  std::cout << uc[0][1] << std::endl;
 
   uc[0][0] -= grad[0];
   uc[0][1] -= grad[1];
@@ -448,6 +475,7 @@ TEST(HARMONIC_PROJECTORS_SQUARE_PK) {
   Teuchos::RCP<Mesh> mesh = meshfactory(-1.2, 0.0, 1.2, 1.1, 2, 1, gm, true, true); 
  
   int cell(1);
+  AmanziGeometry::Point zero(2);
   VectorPolynomial uc, uc2;
   std::vector<VectorPolynomial> vf(4);
 
@@ -483,6 +511,8 @@ TEST(HARMONIC_PROJECTORS_SQUARE_PK) {
 
     mfd.set_order(k);
     mfd.H1Cell(cell, vf, moments, uc);  
+
+    uc.ChangeOrigin(zero);
     for (int i = 0; i < 2; ++i) {
       uc[i] -= vf[0][i];
       CHECK(uc[i].NormMax() < 1e-12);
@@ -511,6 +541,9 @@ TEST(HARMONIC_PROJECTORS_SQUARE_PK) {
 
     mfd_cr.set_order(k);
     mfd_cr.H1Cell(cell, vf, moments, uc2);
+
+    uc.ChangeOrigin(zero);
+    uc2.ChangeOrigin(zero);
     for (int i = 0; i < 2; ++i) {
       uc2[i] -= uc[i];
       CHECK(uc2[i].NormMax() < 1e-12);
@@ -518,6 +551,8 @@ TEST(HARMONIC_PROJECTORS_SQUARE_PK) {
 
     // Compare H1 and L2 projectors
     mfd.L2Cell(cell, vf, moments, uc2);
+
+    uc2.ChangeOrigin(zero);
     uc2[0] -= uc[0];
     CHECK(uc2[0].NormMax() < 1e-12);
   }
@@ -546,6 +581,7 @@ TEST(HARMONIC_PROJECTORS_POLYGON_PK) {
   // Teuchos::RCP<Mesh> mesh = meshfactory("test/one_quad.exo", gm, true, true);
  
   int cell(0), nfaces(5);
+  AmanziGeometry::Point zero(2);
   VectorPolynomial uc, uc2;
   std::vector<VectorPolynomial> vf(nfaces);
 
@@ -575,6 +611,8 @@ TEST(HARMONIC_PROJECTORS_POLYGON_PK) {
 
     mfd.set_order(k);
     mfd.H1Cell(cell, vf, moments, uc);
+
+    uc.ChangeOrigin(zero);
     std::cout << uc[0] << std::endl;
 
     uc[0] -= vf[0][0];
@@ -604,6 +642,8 @@ TEST(HARMONIC_PROJECTORS_POLYGON_PK) {
 
     mfd.set_order(k);
     mfd.H1Cell(cell, vf, moments, uc);
+
+    uc.ChangeOrigin(zero);
     std::cout << uc[0] << std::endl;
     uc[0] -= vf[0][0];
     uc[1] -= vf[0][1];
@@ -626,6 +666,8 @@ TEST(HARMONIC_PROJECTORS_POLYGON_PK) {
 
   mfd.set_order(2);
   mfd.H1Cell(cell, vf, moments, uc);
+
+  uc.ChangeOrigin(zero);
   std::cout << uc[0] << std::endl;
 
   int dir;
@@ -692,10 +734,15 @@ TEST(HARMONIC_PROJECTORS_POLYGON_PK) {
 
     mfd_cr.set_order(k);
     mfd_cr.H1Cell(cell, vf, moments, uc2);
+
+    uc.ChangeOrigin(zero);
+    uc2.ChangeOrigin(zero);
     uc2 -= uc;
     if (k < 3) CHECK(uc2[0].NormMax() < 1e-12);
 
     mfd.L2Cell(cell, vf, moments, uc2);
+
+    uc2.ChangeOrigin(zero);
     uc2 -= uc;
     if (k < 3) CHECK(uc2[0].NormMax() < 1e-12);
     if (k > 2) std::cout << " moments: " << moments[0](0, 0) << " " 

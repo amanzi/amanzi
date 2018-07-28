@@ -27,7 +27,6 @@
 #include "DG_Modal.hh"
 #include "MFD3D_CrouzeixRaviart.hh"
 #include "NumericalIntegration.hh"
-#include "GrammMatrix.hh"
 #include "Tensor.hh"
 
 namespace Amanzi {
@@ -171,7 +170,8 @@ int MFD3D_CrouzeixRaviart::H1consistencyHO_(
       FaceCoordinateSystem(normal, tau);
       normal *= dirs[i];
 
-      Polynomial tmp = grad * normal;
+      auto conormal = K * normal;
+      Polynomial tmp = grad * conormal;
       tmp.ChangeCoordinates(xf, tau);
 
       for (auto jt = tmp.begin(); jt < tmp.end(); ++jt) {
@@ -196,7 +196,8 @@ int MFD3D_CrouzeixRaviart::H1consistencyHO_(
 
     // N and R: degrees of freedom in cells
     if (cmono.order() > 1) {
-      Polynomial tmp = cmono.Laplacian();
+      VectorPolynomial Kgrad = K * grad;
+      Polynomial tmp = Divergence(Kgrad);
 
       for (auto jt = tmp.begin(); jt < tmp.end(); ++jt) {
         int m = jt.MonomialSetOrder();
@@ -227,13 +228,13 @@ int MFD3D_CrouzeixRaviart::H1consistencyHO_(
     }
   }
 
-  // Gramm matrix for gradients of polynomials
-  GrammMatrixGradients(K, poly, integrals_, basis, G_);
+  // Gramm matrix for gradients of polynomials 
+  G_.Multiply(N, R_, true);
 
   // calculate R inv(G) R^T
   DenseMatrix RG(ndof, nd), Rtmp(nd, ndof);
 
-  // to invert generate matrix, we add and subtruct positive number
+  // to invert degenerate matrix, we add and subtruct positive diagonal entry 
   G_(0, 0) = 1.0;
   G_.Inverse();
   G_(0, 0) = 0.0;
@@ -299,7 +300,7 @@ void MFD3D_CrouzeixRaviart::ProjectorCell_LO_(
   }
 
   // calculate projector's low-order term
-  AmanziGeometry::Point grad(d_), zero(d_);
+  AmanziGeometry::Point grad(d_);
   for (int i = 0; i < dim; ++i) {
     for (int j = 0; j < d_; ++j) {
       grad[j] = uc[i](1, j);
@@ -319,11 +320,8 @@ void MFD3D_CrouzeixRaviart::ProjectorCell_LO_(
     uc[i](0, 0) = a1 / a2;
   }
 
-  // clean-up: fix the origin
-  for (int i = 0; i < dim; ++i) {
-    uc[i].set_origin(xc);
-    uc[i].ChangeOrigin(zero);
-  }
+  // set the correct origin
+  uc.set_origin(xc);
 }
 
 
@@ -513,10 +511,8 @@ void MFD3D_CrouzeixRaviart::ProjectorCell_HO_(
       uc[i] = basis.CalculatePolynomial(mesh_, c, order_, v5);
     }
 
-    // change origin from centroid to zero
-    AmanziGeometry::Point zero(d_);
+    // set correct origin 
     uc[i].set_origin(xc);
-    uc[i].ChangeOrigin(zero);
   }
 }
 
@@ -624,10 +620,10 @@ void MFD3D_CrouzeixRaviart::ProjectorGradientCell_(
       M.Multiply(v4, v5, false);
 
       uc[i][j] = basis.CalculatePolynomial(mesh_, c, order_ - 1, v5);
-      uc[i][j].ChangeOrigin(AmanziGeometry::Point(d_));
     }
   }
 }
+
 
 /* ******************************************************************
 * Degrees of freedom on face f.

@@ -27,7 +27,6 @@
 #include "DG_Modal.hh"
 #include "MFD3D_Lagrange.hh"
 #include "NumericalIntegration.hh"
-#include "GrammMatrix.hh"
 #include "Tensor.hh"
 
 namespace Amanzi {
@@ -119,6 +118,8 @@ int MFD3D_Lagrange::H1consistency(
       FaceCoordinateSystem(normal, tau);
       normal *= dirs[i];
 
+      AmanziGeometry::Point conormal = K * normal;
+
       Entity_ID_List face_nodes;
       mesh_->face_get_nodes(f, &face_nodes);
       int nfnodes = face_nodes.size();
@@ -127,13 +128,13 @@ int MFD3D_Lagrange::H1consistency(
         for (int j = 0; j < nfnodes; j++) {
           int v = face_nodes[j];
           int pos = FindPosition(v, nodes);
-          R_(pos, col) += factor * normal[col - 1] / 2;
+          R_(pos, col) += factor * conormal[col - 1] / 2;
         }
       } else if (col > 0) {
         int v, pos0, pos1;
         AmanziGeometry::Point x0(d_), x1(d_), xm(d_), sm(d_);
 
-        Polynomial tmp = grad * normal;
+        Polynomial tmp = grad * conormal;
 
         v = face_nodes[0];
         pos0 = FindPosition(v, nodes);
@@ -207,7 +208,8 @@ int MFD3D_Lagrange::H1consistency(
 
     // N and R: degrees of freedom in cells
     if (cmono.order() > 1) {
-      Polynomial tmp = cmono.Laplacian();
+      VectorPolynomial Kgrad = K * grad;
+      Polynomial tmp = Divergence(Kgrad);
 
       for (auto jt = tmp.begin(); jt < tmp.end(); ++jt) {
         int m = jt.MonomialSetOrder();
@@ -239,7 +241,7 @@ int MFD3D_Lagrange::H1consistency(
   }
 
   // Gramm matrix for gradients of polynomials
-  GrammMatrixGradients(K, poly, integrals_, basis, G_);
+  G_.Multiply(N, R_, true);
 
   // calculate R inv(G) R^T
   DenseMatrix RG(ndof, nd), Rtmp(nd, ndof);
@@ -450,10 +452,8 @@ void MFD3D_Lagrange::ProjectorCell_(
       uc[i] = basis.CalculatePolynomial(mesh_, c, order_, v5);
     }
 
-    // set origin to zero
-    AmanziGeometry::Point zero(d_);
+    // set correct origin
     uc[i].set_origin(xc);
-    uc[i].ChangeOrigin(zero);
   }
 }
 

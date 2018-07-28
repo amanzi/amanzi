@@ -47,8 +47,9 @@ TEST(HIGH_ORDER_CROUZEIX_RAVIART) {
   int cell(0);
   DenseMatrix N, A1, Ak;
 
-  Tensor T(2, 1);
-  T(0, 0) = 1.0;
+  Tensor T(2, 2);
+  T(0, 0) = T(1, 1) = 2.0;
+  T(0, 1) = T(1, 0) = 1.0;
 
   // 1st-order scheme
   mfd.set_order(1);
@@ -176,8 +177,9 @@ void HighOrderLagrange(std::string file_name) {
   for (int c = 0; c < ncells; ++c) {
     DenseMatrix N, A1, Ak;
 
-    Tensor T(2, 1);
-    T(0, 0) = 1.0;
+    Tensor T(2, 2);
+    T(0, 0) = T(1, 1) = 2.0;
+    T(0, 1) = T(1, 0) = 0.0;
 
     // 1st-order scheme
     mfd_lo.StiffnessMatrix(c, T, A1);

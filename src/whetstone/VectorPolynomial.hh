@@ -22,6 +22,7 @@
 
 #include "DenseVector.hh"
 #include "Polynomial.hh"
+#include "Tensor.hh"
 
 namespace Amanzi {
 namespace WhetStone {
@@ -98,7 +99,7 @@ class VectorPolynomial {
   void Multiply(const std::vector<std::vector<Polynomial> >& A,
                 const AmanziGeometry::Point& p, bool transpose);
 
-  // dot product 
+  // dot product v1 * p 
   friend Polynomial operator*(const VectorPolynomial& poly, const AmanziGeometry::Point& p) {
     int d(p.dim());
     Polynomial tmp(d, 0);
@@ -106,6 +107,26 @@ class VectorPolynomial {
 
     for (int i = 0; i < d; ++i) {
       tmp += poly[i] * p[i];
+    }
+    return tmp;
+  }
+
+  // dot product T * v1 
+  friend VectorPolynomial operator*(const Tensor& T, const VectorPolynomial& poly) {
+    int d(T.dimension());
+    VectorPolynomial tmp(d, d, 0);
+
+    if (T.rank() == 1) {
+      tmp = poly;
+      tmp *= T(0, 0);
+    } else {
+      tmp.set_origin(poly[0].origin());
+
+      for (int i = 0; i < d; ++i) {
+        for (int j = 0; j < d; ++j) {
+          tmp[i] += T(i, j) * poly[j];
+        }
+      }
     }
     return tmp;
   }

@@ -56,11 +56,10 @@ class MFD3D_CrouzeixRaviart : public MFD3D {
     }
   }
   virtual int StiffnessMatrix(int c, const Tensor& T, DenseMatrix& A) override {
-    if (order_ == 1 && !use_always_ho_) {
+    if (order_ == 1 && !use_always_ho_)
       return StiffnessMatrixLO_(c, T, A);
-    } else {
+    else
       return StiffnessMatrixHO_(c, T, A);
-    }
   }
 
   // -- projectors: base L2 and H1 projectors
@@ -73,7 +72,10 @@ class MFD3D_CrouzeixRaviart : public MFD3D {
   virtual void H1Cell(
       int c, const std::vector<VectorPolynomial>& vf,
       VectorPolynomial& moments, VectorPolynomial& uc) override {
-    ProjectorCell_HO_(c, vf, Type::H1, moments, uc);
+    if (order_ == 1 && !use_always_ho_)
+      ProjectorCell_LO_(c, vf, uc);
+    else 
+      ProjectorCell_HO_(c, vf, Type::H1, moments, uc);
   }
 
   // additional miscaleneous projectors

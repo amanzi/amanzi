@@ -18,6 +18,40 @@ namespace Amanzi {
 namespace WhetStone {
 
 /* ******************************************************************
+* Gramm matrix G for polynomials.
+****************************************************************** */
+void GrammMatrix(
+    const Polynomial& poly, const PolynomialOnMesh& integrals,
+    const Basis_Regularized& basis, DenseMatrix& G)
+{
+  int nd = poly.size();
+  int d = poly.dimension();
+  G.Reshape(nd, nd);
+
+  for (auto it = poly.begin(); it < poly.end(); ++it) {
+    const int* index = it.multi_index();
+    int k = it.PolynomialPosition();
+    double scalek = basis.monomial_scales()[it.MonomialSetOrder()];
+
+    for (auto jt = it; jt < poly.end(); ++jt) {
+      const int* jndex = jt.multi_index();
+      int l = jt.PolynomialPosition();
+      double scalel = basis.monomial_scales()[jt.MonomialSetOrder()];
+      
+      int n(0);
+      int multi_index[3];
+      for (int i = 0; i < d; ++i) {
+        multi_index[i] = index[i] + jndex[i];
+        n += multi_index[i];
+      }
+
+      int pos = poly.MonomialSetPosition(multi_index); 
+      G(k, l) = G(l, k) = integrals.poly()(n, pos) * scalek * scalel; 
+    }
+  }
+}
+
+/* ******************************************************************
 * Gramm matrix for gradient of polynomials with tensorial weight.
 ****************************************************************** */
 void GrammMatrixGradients(

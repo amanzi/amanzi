@@ -194,6 +194,7 @@ class RemapDG : public Explicit_TI::fnBase<CompositeVector> {
         int f = faces[n];
 
         WhetStone::Polynomial tmp(uc_[c][0]);
+        tmp.ChangeOrigin(velf_vec_[f][0].origin());
         tmp -= velf_vec_[f][0];
 
         polys[0] = &tmp;
@@ -232,6 +233,7 @@ class RemapDG : public Explicit_TI::fnBase<CompositeVector> {
         mesh_->node_get_coordinates(nodes[0], &xv);
 
         WhetStone::Polynomial tmp(uc_[c][0]);
+        tmp.ChangeOrigin(velf_vec_[f][0].origin());
         tmp -= velf_vec_[f][0];
 
         double err = tmp.Value(xv);
