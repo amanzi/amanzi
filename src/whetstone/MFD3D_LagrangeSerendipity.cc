@@ -72,11 +72,12 @@ int MFD3D_LagrangeSerendipity::H1consistency(
   Basis_Regularized basis;
   basis.Init(mesh_, c, order_);
 
-  // Gramm matrix for polynomials and Laplacian of polynomials
-  DenseMatrix M(nd, nd), L(nd, nd);
+  // Dot-product matrix for polynomials and Laplacian of polynomials
+  DenseMatrix M(nd, nd);
   GrammMatrix(poly, integrals_, basis, M);
 
-  double scale = basis.monomial_scales()[1];
+  // setup matrix representing Laplacian of polynomials
+  DenseMatrix L(nd, nd);
   L.PutScalar(0.0);
 
   for (auto it = poly.begin(); it < poly.end(); ++it) {
@@ -84,14 +85,18 @@ int MFD3D_LagrangeSerendipity::H1consistency(
     int k = it.PolynomialPosition();
 
     double factor = basis.monomial_scales()[it.MonomialSetOrder()];
-    Polynomial mono(d_, index, factor);
-    Polynomial lap = mono.Laplacian();
+    Polynomial cmono(d_, index, factor);
+    VectorPolynomial grad, Kgrad;
+
+    grad.Gradient(cmono);
+    Kgrad = K * grad;
+    Polynomial lap = Divergence(Kgrad);
     
     for (auto jt = lap.begin(); jt < lap.end(); ++jt) {
       int l = jt.PolynomialPosition();
       int m = jt.MonomialSetOrder();
       int n = jt.MonomialSetPosition();
-      L(l, k) = lap(m, n) / std::pow(scale, std::min(2, m));
+      L(l, k) = lap(m, n) / basis.monomial_scales()[m];
     }  
   }
 
@@ -182,7 +187,7 @@ void MFD3D_LagrangeSerendipity::L2Cell(
   NN.Multiply(Ns, Ns, true);
   NN.Inverse();
 
-  // calculate degrees of freedom
+  // calculate degrees of freedom (Ns^T Ns)^{-1} Ns^T v
   const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
   DenseVector vdof(ndof_f), v1(nd), v2(nd);
 
@@ -197,10 +202,8 @@ void MFD3D_LagrangeSerendipity::L2Cell(
 
     uc[i] = basis.CalculatePolynomial(mesh_, c, order_, v2);
 
-    // set origin to zero
-    AmanziGeometry::Point zero(d_);
+    // set correct origin 
     uc[i].set_origin(xc);
-    uc[i].ChangeOrigin(zero);
   }
 }
 

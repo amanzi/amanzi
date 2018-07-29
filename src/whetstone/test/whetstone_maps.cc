@@ -184,6 +184,7 @@ TEST(DG_MAP_LEAST_SQUARE_CELL) {
   auto maps = std::make_shared<MeshMaps_VEM>(mesh0, mesh1, plist);
 
   maps->VelocityCell(0, vf, vc1);
+  vc1.ChangeOrigin(mesh0->cell_centroid(cell));
 
   // Serendipity calculation
   plist.set<std::string>("method", "Lagrange serendipity")

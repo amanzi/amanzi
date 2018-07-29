@@ -769,6 +769,7 @@ TEST(HARMONIC_PROJECTORS_POLYGON_PK) {
   delete comm;
 }
 
+
 /* **************************************************************** */
 TEST(SERENDIPITY_PROJECTORS_POLYGON_PK) {
   using namespace Amanzi;
@@ -784,6 +785,7 @@ TEST(SERENDIPITY_PROJECTORS_POLYGON_PK) {
   Teuchos::RCP<Mesh> mesh = meshfactory("test/one_pentagon.exo", gm, true, true);
  
   int cell(0), nfaces(5);
+  AmanziGeometry::Point zero(2);
   VectorPolynomial uc, uc2;
   std::vector<VectorPolynomial> vf(nfaces);
 
@@ -804,6 +806,8 @@ TEST(SERENDIPITY_PROJECTORS_POLYGON_PK) {
   for (int k = 1; k < 4; ++k) {
     mfd.set_order(k);
     mfd.L2Cell(cell, vf, moments, uc);
+
+    uc.ChangeOrigin(zero);
     std::cout << uc[0] << std::endl;
 
     uc[0] -= vf[0][0];
@@ -825,6 +829,8 @@ TEST(SERENDIPITY_PROJECTORS_POLYGON_PK) {
   for (int k = 2; k < 4; ++k) {
     mfd.set_order(k);
     mfd.L2Cell(cell, vf, moments, uc);
+
+    uc.ChangeOrigin(zero);
     // std::cout << uc[0] << std::endl;
     uc[0] -= vf[0][0];
     uc[1] -= vf[0][1];

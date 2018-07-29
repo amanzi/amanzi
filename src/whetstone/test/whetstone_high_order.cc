@@ -252,8 +252,9 @@ void HighOrderLagrangeSerendipity(std::string file_name) {
   for (int c = 0; c < ncells; ++c) {
     if (mesh->cell_get_num_faces(c) < 4) continue;
 
-    Tensor T(2, 1);
-    T(0, 0) = 1.0;
+    Tensor T(2, 2);
+    T(0, 0) = T(1, 1) = 2.0;
+    T(0, 1) = T(1, 0) = 1.0;
 
     // 1st-order scheme
     DenseMatrix N, A1, Ak;

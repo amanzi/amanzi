@@ -23,6 +23,7 @@
 
 #include "Basis_Regularized.hh"
 #include "CoordinateSystems.hh"
+#include "GrammMatrix.hh"
 #include "MFD3D_CrouzeixRaviartSerendipity.hh"
 #include "NumericalIntegration.hh"
 #include "Tensor.hh"
@@ -68,32 +69,9 @@ int MFD3D_CrouzeixRaviartSerendipity::H1consistency(
 
   // Gramm matrix for polynomials
   DenseMatrix M(nd, nd);
-
-  for (auto it = poly.begin(); it < poly.end(); ++it) {
-    const int* index = it.multi_index();
-    int k = it.PolynomialPosition();
-    double scalei = basis.monomial_scales()[it.MonomialSetOrder()];
-
-    for (auto jt = it; jt < poly.end(); ++jt) {
-      const int* jndex = jt.multi_index();
-      int l = jt.PolynomialPosition();
-      double scalej = basis.monomial_scales()[jt.MonomialSetOrder()];
-      
-      int n(0);
-      int multi_index[3];
-      for (int i = 0; i < d_; ++i) {
-        multi_index[i] = index[i] + jndex[i];
-        n += multi_index[i];
-      }
-
-      M(k, l) = integrals_.poly()(n, poly.MonomialSetPosition(multi_index)) * scalei * scalej; 
-      M(l, k) = M(k, l);
-    }
-  }
+  GrammMatrix(poly, integrals_, basis, M);
 
   // setup matrix representing Laplacian of polynomials
-  double scale = basis.monomial_scales()[1];
-
   DenseMatrix L(nd, nd);
   L.PutScalar(0.0);
 
@@ -102,14 +80,18 @@ int MFD3D_CrouzeixRaviartSerendipity::H1consistency(
     int k = it.PolynomialPosition();
 
     double factor = basis.monomial_scales()[it.MonomialSetOrder()];
-    Polynomial mono(d_, index, factor);
-    Polynomial lap = mono.Laplacian();
-    
+    Polynomial cmono(d_, index, factor);
+    VectorPolynomial grad, Kgrad;
+
+    grad.Gradient(cmono);
+    Kgrad = K * grad;
+    Polynomial lap = Divergence(Kgrad);
+
     for (auto jt = lap.begin(); jt < lap.end(); ++jt) {
       int l = jt.PolynomialPosition();
       int m = jt.MonomialSetOrder();
       int n = jt.MonomialSetPosition();
-      L(l, k) = lap(m, n) / std::pow(scale, std::min(2, m));
+      L(l, k) = lap(m, n) / basis.monomial_scales()[m];
     }  
   }
 
@@ -212,10 +194,8 @@ void MFD3D_CrouzeixRaviartSerendipity::L2Cell(
 
     uc[i] = basis.CalculatePolynomial(mesh_, c, order_, v2);
 
-    // set origin to zero
-    AmanziGeometry::Point zero(d_);
+    // set correct origin
     uc[i].set_origin(xc);
-    uc[i].ChangeOrigin(zero);
   }
 }
 

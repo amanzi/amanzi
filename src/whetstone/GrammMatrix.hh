@@ -37,11 +37,6 @@ void GrammMatrixGradients(
     const Polynomial& poly, const PolynomialOnMesh& integrals,
     const Basis_Regularized& basis, DenseMatrix& G);
 
-// Gramm matrix for Laplacians of polynomials with tensorial weight
-void GrammMatrixLaplacian(
-    const Polynomial& poly, const PolynomialOnMesh& integrals,
-    const Basis_Regularized& basis, DenseMatrix& G);
-
 }  // namespace WhetStone
 }  // namespace Amanzi
 
