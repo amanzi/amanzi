@@ -48,12 +48,10 @@ int MFD3D_LagrangeSerendipity::H1consistency(
 
   // calculate degrees of freedom 
   Polynomial poly(d_, order_), pf, pc;
-  if (order_ > 1) {
+  if (order_ > 1)
     pf.Reshape(d_ - 1, order_ - 2);
-  }
-  if (order_ > 3) {
+  if (order_ > 3)
     pc.Reshape(d_, order_ - 4);
-  }
 
   int nd = poly.size();
   int ndf = pf.size();
@@ -149,13 +147,14 @@ int MFD3D_LagrangeSerendipity::StiffnessMatrix(
 
 
 /* ******************************************************************
-* L2 projector 
+* Generic projector on space of polynomials of order k in cell c.
 ****************************************************************** */
-void MFD3D_LagrangeSerendipity::L2Cell(
+void MFD3D_LagrangeSerendipity::ProjectorCell_(
     int c, const std::vector<VectorPolynomial>& vf,
+    const Projectors::Type type,
     VectorPolynomial& moments, VectorPolynomial& uc)
 {
-  // create integration object for a single cell
+  // create integration object
   NumericalIntegration numi(mesh_);
 
   // selecting regularized basis
@@ -170,14 +169,16 @@ void MFD3D_LagrangeSerendipity::L2Cell(
   MFD3D_Lagrange::H1consistency(c, T, N, A);  
 
   // number of degrees of freedom
-  Polynomial pc;
-  if (order_ > 1) {
+  Polynomial pc, pcs;
+  if (order_ > 1)
     pc.Reshape(d_, order_ - 2);
-  }
+  if (order_ > 3)
+    pcs.Reshape(d_, order_ - 4);
 
   int nd = G_.NumRows();
   int ndof = A.NumRows();
   int ndof_c(pc.size());
+  int ndof_cs(pcs.size());
   int ndof_f(ndof - ndof_c);
 
   // extract submatrix
@@ -189,7 +190,7 @@ void MFD3D_LagrangeSerendipity::L2Cell(
 
   // calculate degrees of freedom (Ns^T Ns)^{-1} Ns^T v
   const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
-  DenseVector vdof(ndof_f), v1(nd), v2(nd);
+  DenseVector vdof(ndof_f), v1(nd), v2(nd), v4(nd);
 
   int dim = vf[0].size();
   uc.resize(dim);
@@ -197,10 +198,54 @@ void MFD3D_LagrangeSerendipity::L2Cell(
   for (int i = 0; i < dim; ++i) {
     CalculateDOFsOnBoundary_(c, vf, vdof, i);
 
+    // DOFs inside cell: copy moments from input data
+    if (ndof_cs > 0) {
+      DenseVector v3(ndof_cs);
+      moments[i].GetPolynomialCoefficients(v3);
+
+      AMANZI_ASSERT(ndof_cs == v3.NumRows());
+
+      for (int n = 0; n < ndof_cs; ++n) {
+        vdof(ndof_f + n) = v3(n);
+      }
+    }
+
     Ns.Multiply(vdof, v1, true);
     NN.Multiply(v1, v2, false);
 
     uc[i] = basis.CalculatePolynomial(mesh_, c, order_, v2);
+
+    // projector: \Pi^S -> \Pi^0
+    if (type == Type::L2 && ndof_c > 0) {
+      DenseMatrix M, M2;
+      DenseVector v6(nd - ndof_cs);
+      Polynomial poly(d_, order_);
+      NumericalIntegration numi(mesh_);
+
+      numi.UpdateMonomialIntegralsCell(c, 2 * order_, integrals_);
+      GrammMatrix(poly, integrals_, basis, M);
+
+      M2 = M.SubMatrix(ndof_cs, nd, 0, nd);
+      M2.Multiply(v2, v6, false);
+
+      if (ndof_cs > 0) {
+        DenseVector v3(ndof_cs);
+        moments[i].GetPolynomialCoefficients(v3);
+
+        for (int n = 0; n < ndof_cs; ++n) {
+          v4(n) = v3(n) * mesh_->cell_volume(c);
+        }
+      }
+
+      for (int n = 0; n < nd - ndof_cs; ++n) {
+        v4(ndof_cs + n) = v6(n);
+      }
+
+      M.Inverse();
+      M.Multiply(v4, v2, false);
+
+      uc[i] = basis.CalculatePolynomial(mesh_, c, order_, v2);
+    }
 
     // set correct origin 
     uc[i].set_origin(xc);

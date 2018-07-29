@@ -347,6 +347,7 @@ void NumericalIntegration::IntegrateMonomialsCell(int c, int k, Polynomial& inte
   }
 }
 
+
 /* ******************************************************************
 * Integrate over face f a group of uniformly normalized monomials of
 * the same order k centered at the centroid of cell c.

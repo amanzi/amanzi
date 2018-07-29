@@ -866,9 +866,16 @@ TEST(SERENDIPITY_PROJECTORS_POLYGON_PK) {
   for (int k = 1; k < 4; ++k) {
     mfd.set_order(k);
     mfd.L2Cell(cell, vf, moments, uc);
-    uc[0].ChangeOrigin(mesh->cell_centroid(cell));
+
+    uc.ChangeOrigin(zero);
+    std::cout << "order=" << k << " " << uc[0] << std::endl;
+
+    mfd.L2Cell_LeastSquare(cell, vf, moments, uc);
+
+    uc.ChangeOrigin(zero);
     std::cout << uc[0] << std::endl;
   }
+exit(0);
 
   delete comm;
 }

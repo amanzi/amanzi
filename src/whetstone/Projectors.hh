@@ -41,6 +41,7 @@ class Projectors {
   enum class Type {
     L2,
     H1,
+    LS   // least square
   };
 
  public:

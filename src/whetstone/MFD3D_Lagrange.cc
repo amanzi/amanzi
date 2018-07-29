@@ -24,7 +24,7 @@
 // WhetStone
 #include "Basis_Regularized.hh"
 #include "CoordinateSystems.hh"
-#include "DG_Modal.hh"
+#include "GrammMatrix.hh"
 #include "MFD3D_Lagrange.hh"
 #include "NumericalIntegration.hh"
 #include "Tensor.hh"
@@ -426,11 +426,13 @@ void MFD3D_Lagrange::ProjectorCell_(
     if (type == Type::L2 && ndof_c > 0) {
       v5(0) = uc[i](0, 0);
 
-      DG_Modal dg(order_, mesh_, "regularized");
-
       DenseMatrix M, M2;
       DenseVector v6(nd - ndof_c);
-      dg.MassMatrix(c, T, integrals_, M);
+      Polynomial poly(d_, order_);
+      NumericalIntegration numi(mesh_);
+
+      numi.UpdateMonomialIntegralsCell(c, 2 * order_, integrals_);
+      GrammMatrix(poly, integrals_, basis, M);
 
       M2 = M.SubMatrix(ndof_c, nd, 0, nd);
       M2.Multiply(v5, v6, false);

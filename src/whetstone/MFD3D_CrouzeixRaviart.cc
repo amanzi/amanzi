@@ -24,7 +24,7 @@
 // WhetStone
 #include "Basis_Regularized.hh"
 #include "CoordinateSystems.hh"
-#include "DG_Modal.hh"
+#include "GrammMatrix.hh"
 #include "MFD3D_CrouzeixRaviart.hh"
 #include "NumericalIntegration.hh"
 #include "Tensor.hh"
@@ -485,11 +485,13 @@ void MFD3D_CrouzeixRaviart::ProjectorCell_HO_(
     if (type == Type::L2 && ndof_c > 0) {
       v5(0) = uc[i](0, 0);
 
-      DG_Modal dg(order_, mesh_, "regularized");
-
       DenseMatrix M, M2;
       DenseVector v6(nd - ndof_c);
-      dg.MassMatrix(c, T, integrals_, M);
+      Polynomial poly(d_, order_);
+      NumericalIntegration numi(mesh_);
+
+      numi.UpdateMonomialIntegralsCell(c, 2 * order_, integrals_);
+      GrammMatrix(poly, integrals_, basis, M);
 
       M2 = M.SubMatrix(ndof_c, nd, 0, nd);
       M2.Multiply(v5, v6, false);
@@ -613,8 +615,7 @@ void MFD3D_CrouzeixRaviart::ProjectorGradientCell_(
 
       // calculate coefficients of polynomial
       DenseMatrix M;
-      DG_Modal dg(order_ - 1, mesh_, "regularized");
-      dg.MassMatrix(c, T, integrals_, M);
+      GrammMatrix(poly, integrals_, basis, M);
 
       M.Inverse();
       M.Multiply(v4, v5, false);

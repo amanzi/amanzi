@@ -150,7 +150,7 @@ void MFD3D_CrouzeixRaviartSerendipity::L2Cell(
     int c, const std::vector<VectorPolynomial>& vf,
     VectorPolynomial& moments, VectorPolynomial& uc)
 {
-  // create integration object for a single cell
+  // create integration object 
   NumericalIntegration numi(mesh_);
 
   // selecting regularized basis
@@ -165,7 +165,9 @@ void MFD3D_CrouzeixRaviartSerendipity::L2Cell(
   MFD3D_CrouzeixRaviart::H1consistency(c, T, N, A);  
 
   // number of degrees of freedom
-  Polynomial pc(d_, order_ - 1);
+  Polynomial pc;
+  if (order_ > 1)
+    Polynomial pc(d_, order_ - 2);
 
   int nd = G_.NumRows();
   int ndof = A.NumRows();

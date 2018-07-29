@@ -9,8 +9,7 @@
 
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 
-  Numerical and exact integration over polytopal cells. An object of
-  this class can be used both for the whole mesh and single cell. 
+  Numerical and exact integration over polytopal cells. 
 */
 
 #ifndef AMANZI_WHETSTONE_NUMERICAL_INTEGRATION_HH_
