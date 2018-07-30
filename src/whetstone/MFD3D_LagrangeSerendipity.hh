@@ -50,6 +50,12 @@ class MFD3D_LagrangeSerendipity : public MFD3D_Lagrange {
     ProjectorCell_(c, vf, Type::L2, moments, uc);
   }
 
+  virtual void H1Cell(
+      int c, const std::vector<VectorPolynomial>& vf,
+      VectorPolynomial& moments, VectorPolynomial& uc) override {
+    ProjectorCell_(c, vf, Type::H1, moments, uc);
+  }
+
   // other methods
   void L2Cell_LeastSquare(
       int c, const std::vector<VectorPolynomial>& vf,

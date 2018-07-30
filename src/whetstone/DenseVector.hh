@@ -61,11 +61,13 @@ class DenseVector {
     m_ = mrow;
 
     if (mem_ < m_) {
+      double* data_tmp = new double[m_];
       if (data_ != NULL) {
+        for (int i = 0; i < mem_; i++) data_tmp[i] = data_[i];
         delete [] data_;
       }
       mem_ = m_;
-      data_ = new double[mem_];
+      data_ = data_tmp;
     }
   }
 

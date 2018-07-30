@@ -155,9 +155,12 @@ int MonomialSpaceDimension(int d, int order)
 }
 
 // calculate dimension of polynomial space of given order 
+// we assume that space of negative order has dimension zero
 inline
 int PolynomialSpaceDimension(int d, int order)
 {
+  if (order < 0) return 0;
+
   int nk = order + 1;
   for (int i = 1; i < d; ++i) {
     nk *= order + i + 1;

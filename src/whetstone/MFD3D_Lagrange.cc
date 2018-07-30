@@ -306,11 +306,10 @@ void MFD3D_Lagrange::ProjectorCell_(
 
   // number of degrees of freedom
   Polynomial pf;
-  if (order_ > 1) {
+  if (order_ > 1)
     pf.Reshape(d_ - 1, order_ - 2);
-  }
 
-  int nd = G_.NumRows();
+  int nd = PolynomialSpaceDimension(d_, order_);
   int ndf = pf.size();
   int ndof = A.NumRows();
 

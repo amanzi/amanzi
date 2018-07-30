@@ -39,19 +39,22 @@ int MFD3D_LagrangeSerendipity::H1consistency(
     int c, const Tensor& K, DenseMatrix& N, DenseMatrix& Ac)
 {
   Entity_ID_List nodes;
-
   mesh_->cell_get_nodes(c, &nodes);
   int nnodes = nodes.size();
 
   int nfaces = mesh_->cell_get_num_faces(c);
-  AMANZI_ASSERT(nfaces > 3);  // FIXME
 
-  // calculate degrees of freedom 
+  // select number of non-aligned edges: we assume cell convexity 
+  int eta(3);
+  if (nfaces > 3) eta = 4;
+
+  // calculate degrees of freedom: serendipity space S contains all boundary
+  // dofs plus a few internal dofs that depedend on the value of eta.
   Polynomial poly(d_, order_), pf, pc;
   if (order_ > 1)
     pf.Reshape(d_ - 1, order_ - 2);
   if (order_ > 3)
-    pc.Reshape(d_, order_ - 4);
+    pc.Reshape(d_, order_ - eta);
 
   int nd = poly.size();
   int ndf = pf.size();
@@ -154,9 +157,6 @@ void MFD3D_LagrangeSerendipity::ProjectorCell_(
     const Projectors::Type type,
     VectorPolynomial& moments, VectorPolynomial& uc)
 {
-  // create integration object
-  NumericalIntegration numi(mesh_);
-
   // selecting regularized basis
   Basis_Regularized basis;
   basis.Init(mesh_, c, order_);
@@ -168,16 +168,20 @@ void MFD3D_LagrangeSerendipity::ProjectorCell_(
   T(0, 0) = 1.0;
   MFD3D_Lagrange::H1consistency(c, T, N, A);  
 
-  // number of degrees of freedom
-  Polynomial pc, pcs;
-  if (order_ > 1)
-    pc.Reshape(d_, order_ - 2);
-  if (order_ > 3)
-    pcs.Reshape(d_, order_ - 4);
+  // select number of non-aligned edges: we assume cell convexity 
+  int nfaces = mesh_->cell_get_num_faces(c);
+  int eta(3);
+  if (nfaces > 3) eta = 4;
 
-  int nd = G_.NumRows();
+  // degrees of freedom: serendipity space S contains all boundary dofs
+  // plus a few internal dofs that depedend on the value of eta.
+  Polynomial pcs;
+  if (order_ > 3)
+    pcs.Reshape(d_, order_ - eta);
+
+  int nd = PolynomialSpaceDimension(d_, order_);
   int ndof = A.NumRows();
-  int ndof_c(pc.size());
+  int ndof_c = PolynomialSpaceDimension(d_, order_ - 2);
   int ndof_cs(pcs.size());
   int ndof_f(ndof - ndof_c);
 
@@ -189,18 +193,19 @@ void MFD3D_LagrangeSerendipity::ProjectorCell_(
   NN.Inverse();
 
   // calculate degrees of freedom (Ns^T Ns)^{-1} Ns^T v
+  // for consistency with other code, we use v5 for polynomial coefficients
   const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
-  DenseVector vdof(ndof_f), v1(nd), v2(nd), v4(nd);
+  DenseVector v1(nd), v3(std::max(1, ndof_cs)), v5(nd);
 
   int dim = vf[0].size();
   uc.resize(dim);
 
   for (int i = 0; i < dim; ++i) {
+    DenseVector vdof(ndof_f + ndof_cs);
     CalculateDOFsOnBoundary_(c, vf, vdof, i);
 
     // DOFs inside cell: copy moments from input data
     if (ndof_cs > 0) {
-      DenseVector v3(ndof_cs);
       moments[i].GetPolynomialCoefficients(v3);
 
       AMANZI_ASSERT(ndof_cs == v3.NumRows());
@@ -211,30 +216,49 @@ void MFD3D_LagrangeSerendipity::ProjectorCell_(
     }
 
     Ns.Multiply(vdof, v1, true);
-    NN.Multiply(v1, v2, false);
+    NN.Multiply(v1, v5, false);
 
-    uc[i] = basis.CalculatePolynomial(mesh_, c, order_, v2);
+    uc[i] = basis.CalculatePolynomial(mesh_, c, order_, v5);
 
-    // projector: \Pi^S -> \Pi^0
-    if (type == Type::L2 && ndof_c > 0) {
-      DenseMatrix M, M2;
-      DenseVector v6(nd - ndof_cs);
+    // H1 projector needs to populate moments from ndof_cs + 1 till ndof_c
+    if (type == Type::H1) {
+      DenseVector v4(nd);
+      DenseMatrix M;
       Polynomial poly(d_, order_);
+
       NumericalIntegration numi(mesh_);
-
       numi.UpdateMonomialIntegralsCell(c, 2 * order_, integrals_);
+
       GrammMatrix(poly, integrals_, basis, M);
+      M.Multiply(v5, v4, false);
 
+      vdof.Reshape(ndof_f + ndof_c);
+      for (int n = ndof_cs; n < ndof_c; ++n) {
+        vdof(ndof_f + n) = v4(n) / mesh_->cell_volume(c); 
+      }
+
+      R_.Multiply(vdof, v4, true);
+      G_.Multiply(v4, v5, false);
+
+      v5(0) = uc[i](0, 0);
+      uc[i] = basis.CalculatePolynomial(mesh_, c, order_, v5);
+    }
+
+    // L2 projector is different if the set S contains some internal dofs
+    if (type == Type::L2 && ndof_cs > 0) {
+      DenseVector v4(nd), v6(nd - ndof_cs);
+      DenseMatrix M, M2;
+      Polynomial poly(d_, order_);
+
+      NumericalIntegration numi(mesh_);
+      numi.UpdateMonomialIntegralsCell(c, 2 * order_, integrals_);
+
+      GrammMatrix(poly, integrals_, basis, M);
       M2 = M.SubMatrix(ndof_cs, nd, 0, nd);
-      M2.Multiply(v2, v6, false);
+      M2.Multiply(v5, v6, false);
 
-      if (ndof_cs > 0) {
-        DenseVector v3(ndof_cs);
-        moments[i].GetPolynomialCoefficients(v3);
-
-        for (int n = 0; n < ndof_cs; ++n) {
-          v4(n) = v3(n) * mesh_->cell_volume(c);
-        }
+      for (int n = 0; n < ndof_cs; ++n) {
+        v4(n) = v3(n) * mesh_->cell_volume(c);
       }
 
       for (int n = 0; n < nd - ndof_cs; ++n) {
@@ -242,9 +266,9 @@ void MFD3D_LagrangeSerendipity::ProjectorCell_(
       }
 
       M.Inverse();
-      M.Multiply(v4, v2, false);
+      M.Multiply(v4, v5, false);
 
-      uc[i] = basis.CalculatePolynomial(mesh_, c, order_, v2);
+      uc[i] = basis.CalculatePolynomial(mesh_, c, order_, v5);
     }
 
     // set correct origin 

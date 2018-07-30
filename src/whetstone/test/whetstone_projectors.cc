@@ -810,8 +810,12 @@ TEST(SERENDIPITY_PROJECTORS_POLYGON_PK) {
     uc.ChangeOrigin(zero);
     std::cout << uc[0] << std::endl;
 
-    uc[0] -= vf[0][0];
-    uc[1] -= vf[0][1];
+    uc -= vf[0];
+    CHECK(uc[0].NormMax() < 1e-12 && uc[1].NormMax() < 1e-12);
+
+    mfd.H1Cell(cell, vf, moments, uc);
+    uc.ChangeOrigin(zero);
+    uc -= vf[0];
     CHECK(uc[0].NormMax() < 1e-12 && uc[1].NormMax() < 1e-12);
   }
 
@@ -822,19 +826,24 @@ TEST(SERENDIPITY_PROJECTORS_POLYGON_PK) {
       vf[n][i].Reshape(2, 2, false);
       vf[n][i](2, 0) = 4.0;
       vf[n][i](2, 1) = 5.0;
-      vf[n][i](2, 2) = 6.0;
+      vf[n][i](2, 2) = 6.0 + i;
     }
   }
 
   for (int k = 2; k < 4; ++k) {
     mfd.set_order(k);
     mfd.L2Cell(cell, vf, moments, uc);
-
     uc.ChangeOrigin(zero);
     // std::cout << uc[0] << std::endl;
+
     uc[0] -= vf[0][0];
     uc[1] -= vf[0][1];
     CHECK(uc[0].NormMax() < 1e-10 && uc[1].NormMax() < 1e-10);
+
+    mfd.H1Cell(cell, vf, moments, uc);
+    uc.ChangeOrigin(zero);
+    uc -= vf[0];
+    CHECK(uc[0].NormMax() < 1e-11 && uc[1].NormMax() < 1e-11);
   }
 
   // test piecewise linear deformation (part I)
@@ -866,16 +875,19 @@ TEST(SERENDIPITY_PROJECTORS_POLYGON_PK) {
   for (int k = 1; k < 4; ++k) {
     mfd.set_order(k);
     mfd.L2Cell(cell, vf, moments, uc);
-
     uc.ChangeOrigin(zero);
     std::cout << "order=" << k << " " << uc[0] << std::endl;
 
-    mfd.L2Cell_LeastSquare(cell, vf, moments, uc);
+    mfd.L2Cell_LeastSquare(cell, vf, moments, uc2);
+    uc2.ChangeOrigin(zero);
+    uc2 -= uc;
+    CHECK(uc2[0].NormMax() < 1e-11 && uc2[1].NormMax() < 1e-11);
 
-    uc.ChangeOrigin(zero);
-    std::cout << uc[0] << std::endl;
+    mfd.H1Cell(cell, vf, moments, uc2);
+    uc2.ChangeOrigin(zero);
+    uc2 -= uc;
+    CHECK(uc2[0].NormMax() < 2e-2 && uc2[1].NormMax() < 4e-2);
   }
-exit(0);
 
   delete comm;
 }
