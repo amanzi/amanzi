@@ -25,6 +25,7 @@
 
 // WhetStone
 #include "MFD3D_CrouzeixRaviart.hh"
+#include "MFD3D_CrouzeixRaviartSerendipity.hh"
 #include "MFD3D_Diffusion.hh"
 #include "MFD3D_Lagrange.hh"
 #include "MFD3D_LagrangeSerendipity.hh"
@@ -34,7 +35,7 @@
 
 
 /* **************************************************************** */
-TEST(HARMONIC_PROJECTORS_SQUARE_CR) {
+TEST(PROJECTORS_SQUARE_CR) {
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::WhetStone;
@@ -141,7 +142,7 @@ TEST(HARMONIC_PROJECTORS_SQUARE_CR) {
 
 
 /* **************************************************************** */
-TEST(HARMONIC_PROJECTORS_POLYGON_CR) {
+TEST(PROJECTORS_POLYGON_CR) {
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::WhetStone;
@@ -461,7 +462,7 @@ TEST(L2GRADIENT_PROJECTORS_SQUARE_CR) {
 
 
 /* **************************************************************** */
-TEST(HARMONIC_PROJECTORS_SQUARE_PK) {
+TEST(PROJECTORS_SQUARE_PK) {
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::WhetStone;
@@ -566,7 +567,7 @@ TEST(HARMONIC_PROJECTORS_SQUARE_PK) {
 
 
 /* **************************************************************** */
-TEST(HARMONIC_PROJECTORS_POLYGON_PK) {
+TEST(PROJECTORS_POLYGON_PK) {
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::WhetStone;
@@ -771,7 +772,8 @@ TEST(HARMONIC_PROJECTORS_POLYGON_PK) {
 
 
 /* **************************************************************** */
-TEST(SERENDIPITY_PROJECTORS_POLYGON_PK) {
+template<class Serendipity>
+void SerendipityProjectorPolygon() {
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
   using namespace Amanzi::WhetStone;
@@ -789,7 +791,7 @@ TEST(SERENDIPITY_PROJECTORS_POLYGON_PK) {
   VectorPolynomial uc, uc2;
   std::vector<VectorPolynomial> vf(nfaces);
 
-  MFD3D_LagrangeSerendipity mfd(mesh);
+  Serendipity mfd(mesh);
   VectorPolynomial moments(2, 2);
 
   // test globally linear deformation
@@ -892,3 +894,11 @@ TEST(SERENDIPITY_PROJECTORS_POLYGON_PK) {
   delete comm;
 }
 
+
+TEST(SERENDIPITY_PROJECTORS_POLYGON_CR) {
+  // SerendipityProjectorPolygon<Amanzi::WhetStone::MFD3D_CrouzeixRaviartSerendipity>();
+}
+
+TEST(SERENDIPITY_PROJECTORS_POLYGON_PK) {
+  SerendipityProjectorPolygon<Amanzi::WhetStone::MFD3D_LagrangeSerendipity>();
+}
