@@ -353,7 +353,7 @@ void AdvectionFn<AnalyticDG>::ApproximateVelocity_Projection(
   Teuchos::ParameterList map_list;
   map_list.set<std::string>("method", "Lagrange serendipity")
           .set<int>("method order", 2)
-          .set<std::string>("projector", "L2")
+          .set<std::string>("projector", "H1")
           .set<std::string>("map name", "VEM");
   
   WhetStone::MeshMapsFactory maps_factory;
@@ -607,13 +607,15 @@ void AdvectionTransient(std::string filename, int nx, int ny, double dt,
 TEST(OPERATOR_ADVECTION_TRANSIENT_DG) {
   // AdvectionTransient<AnalyticDG07>("square", 50, 50, 0.001, Amanzi::Explicit_TI::tvd_3rd_order, false, "primal", "level set");
 
-  exact_solution_expected = true;
-  AdvectionTransient<AnalyticDG02b>("square",  4,  4, 0.1, Amanzi::Explicit_TI::tvd_3rd_order, false);
+  // exact_solution_expected = true;
+  // AdvectionTransient<AnalyticDG02b>("square",  4,  4, 0.1, Amanzi::Explicit_TI::tvd_3rd_order, false);
 
   exact_solution_expected = false;
+  /*
   AdvectionTransient<AnalyticDG06b>("square",  4,  4, 0.1, Amanzi::Explicit_TI::tvd_3rd_order);
   AdvectionTransient<AnalyticDG06>("square",  4,  4, 0.1, Amanzi::Explicit_TI::tvd_3rd_order, false);
   AdvectionTransient<AnalyticDG06>("square",  4,  4, 0.1, Amanzi::Explicit_TI::tvd_3rd_order, false, "primal");
+  */
 
   /*
   AdvectionTransient<AnalyticDG06>("square",  20,  20, 0.01, Amanzi::Explicit_TI::tvd_3rd_order);
@@ -626,6 +628,7 @@ TEST(OPERATOR_ADVECTION_TRANSIENT_DG) {
   AdvectionTransient<AnalyticDG06>("test/triangular32.exo",  32, 0, 0.01 / 4, Amanzi::Explicit_TI::tvd_3rd_order);
   AdvectionTransient<AnalyticDG06>("test/triangular64.exo",  64, 0, 0.01 / 8, Amanzi::Explicit_TI::tvd_3rd_order);
   AdvectionTransient<AnalyticDG06>("test/triangular128.exo",128, 0, 0.01 / 16,Amanzi::Explicit_TI::tvd_3rd_order);
+  */
 
   double dT0 = 0.01;
   AdvectionTransient<AnalyticDG06>("test/median15x16.exo",   16, 0, dT0, Amanzi::Explicit_TI::tvd_3rd_order);
@@ -633,6 +636,7 @@ TEST(OPERATOR_ADVECTION_TRANSIENT_DG) {
   AdvectionTransient<AnalyticDG06>("test/median63x64.exo",   64, 0, dT0 / 4, Amanzi::Explicit_TI::tvd_3rd_order);
   AdvectionTransient<AnalyticDG06>("test/median127x128.exo",128, 0, dT0 / 8, Amanzi::Explicit_TI::tvd_3rd_order);
 
+  /*
   double dT0 = 0.01;
   AdvectionTransient<AnalyticDG06>("test/mesh_poly20x20.exo",   20, 0, dT0, Amanzi::Explicit_TI::tvd_3rd_order);
   AdvectionTransient<AnalyticDG06>("test/mesh_poly40x40.exo",   40, 0, dT0 / 2, Amanzi::Explicit_TI::tvd_3rd_order);

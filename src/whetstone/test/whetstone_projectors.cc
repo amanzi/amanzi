@@ -808,17 +808,16 @@ void SerendipityProjectorPolygon() {
   for (int k = 1; k < 4; ++k) {
     mfd.set_order(k);
     mfd.L2Cell(cell, vf, moments, uc);
-
     uc.ChangeOrigin(zero);
     std::cout << uc[0] << std::endl;
 
     uc -= vf[0];
-    CHECK(uc[0].NormMax() < 1e-12 && uc[1].NormMax() < 1e-12);
+    CHECK(uc[0].NormMax() < 1e-10 && uc[1].NormMax() < 1e-10);
 
     mfd.H1Cell(cell, vf, moments, uc);
     uc.ChangeOrigin(zero);
     uc -= vf[0];
-    CHECK(uc[0].NormMax() < 1e-12 && uc[1].NormMax() < 1e-12);
+    CHECK(uc[0].NormMax() < 1e-10 && uc[1].NormMax() < 1e-10);
   }
 
   // test globally quadratic deformation
@@ -836,16 +835,16 @@ void SerendipityProjectorPolygon() {
     mfd.set_order(k);
     mfd.L2Cell(cell, vf, moments, uc);
     uc.ChangeOrigin(zero);
-    // std::cout << uc[0] << std::endl;
+    std::cout << uc[0] << std::endl;
 
     uc[0] -= vf[0][0];
     uc[1] -= vf[0][1];
-    CHECK(uc[0].NormMax() < 1e-10 && uc[1].NormMax() < 1e-10);
+    CHECK(uc[0].NormMax() < 2e-10 && uc[1].NormMax() < 2e-10);
 
     mfd.H1Cell(cell, vf, moments, uc);
     uc.ChangeOrigin(zero);
     uc -= vf[0];
-    CHECK(uc[0].NormMax() < 1e-11 && uc[1].NormMax() < 1e-11);
+    CHECK(uc[0].NormMax() < 3e-10 && uc[1].NormMax() < 2e-10);
   }
 
   // test piecewise linear deformation (part I)
@@ -894,11 +893,11 @@ void SerendipityProjectorPolygon() {
   delete comm;
 }
 
-
-TEST(SERENDIPITY_PROJECTORS_POLYGON_CR) {
-  // SerendipityProjectorPolygon<Amanzi::WhetStone::MFD3D_CrouzeixRaviartSerendipity>();
-}
-
 TEST(SERENDIPITY_PROJECTORS_POLYGON_PK) {
   SerendipityProjectorPolygon<Amanzi::WhetStone::MFD3D_LagrangeSerendipity>();
 }
+
+TEST(SERENDIPITY_PROJECTORS_POLYGON_CR) {
+  SerendipityProjectorPolygon<Amanzi::WhetStone::MFD3D_CrouzeixRaviartSerendipity>();
+}
+

@@ -158,7 +158,9 @@ void MFD3D_CrouzeixRaviartSerendipity::ProjectorCell_(
   Basis_Regularized basis;
   basis.Init(mesh_, c, order_);
 
-  // calculate stiffness matrix
+  // calculate full matrices
+  set_use_always_ho(true);
+
   Tensor T(d_, 1);
   DenseMatrix N, A;
 
@@ -198,6 +200,15 @@ void MFD3D_CrouzeixRaviartSerendipity::ProjectorCell_(
   for (int i = 0; i < dim; ++i) {
     DenseVector vdof(ndof_f + ndof_cs);
     CalculateDOFsOnBoundary_(c, vf, vdof, i);
+
+    // DOFs inside cell: copy moments from input data
+    if (ndof_cs > 0) {
+      moments[i].GetPolynomialCoefficients(v3);
+
+      for (int n = 0; n < ndof_cs; ++n) {
+        vdof(ndof_f + n) = v3(n);
+      }
+    }
 
     Ns.Multiply(vdof, v1, true);
     NN.Multiply(v1, v5, false);
@@ -287,26 +298,24 @@ void MFD3D_CrouzeixRaviartSerendipity::CalculateDOFsOnBoundary_(
   for (int n = 0; n < nfaces; ++n) {
     int f = faces[n];
 
-    if (order_ > 1) { 
-      const AmanziGeometry::Point& xf = mesh_->face_centroid(f); 
-      double area = mesh_->face_area(f);
+    const AmanziGeometry::Point& xf = mesh_->face_centroid(f); 
+    double area = mesh_->face_area(f);
 
-      // local coordinate system with origin at face centroid
-      const AmanziGeometry::Point& normal = mesh_->face_normal(f);
-      FaceCoordinateSystem(normal, tau);
+    // local coordinate system with origin at face centroid
+    const AmanziGeometry::Point& normal = mesh_->face_normal(f);
+    FaceCoordinateSystem(normal, tau);
 
-      polys[0] = &(vf[n][i]);
+    polys[0] = &(vf[n][i]);
 
-      for (auto it = pf.begin(); it < pf.end(); ++it) {
-        const int* index = it.multi_index();
-        Polynomial fmono(d_ - 1, index, 1.0);
-        fmono.InverseChangeCoordinates(xf, tau);  
+    for (auto it = pf.begin(); it < pf.end(); ++it) {
+      const int* index = it.multi_index();
+      Polynomial fmono(d_ - 1, index, 1.0);
+      fmono.InverseChangeCoordinates(xf, tau);  
 
-        polys[1] = &fmono;
+      polys[1] = &fmono;
 
-        vdof(row) = numi.IntegratePolynomialsFace(f, polys) / area;
-        row++;
-      }
+      vdof(row) = numi.IntegratePolynomialsFace(f, polys) / area;
+      row++;
     }
   }
 }
