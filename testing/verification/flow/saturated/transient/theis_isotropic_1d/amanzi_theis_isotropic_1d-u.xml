@@ -79,6 +79,8 @@
       </generate>
     </mesh>
 
+
+
     <regions>
       <region name="Entire Domain">
         <comments>One region covering the entire domain</comments>
@@ -156,6 +158,11 @@
     </sources>
 
     <output>
+      <vis>
+          <base_filename>plot</base_filename>
+          <num_digits>2</num_digits>
+          <time_macros>Observation Times</time_macros>
+      </vis>
       <observations>
         <filename>observation.out</filename>
         <liquid_phase name="water">

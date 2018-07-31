@@ -114,13 +114,21 @@ Note, the values in the schematic correlate to the values found in
 .. figure:: schematic/Theis.png 
     :figclass: align-center
 
-    **Figure 1.2:  Illustration of transient drawdown**
+    **Illustration of transient drawdown**
 		    
 .. _Variables:
 
 
 Mesh
 ~~~~
+
+The mesh is generated in the input file. It consists of cells with size :math:`dx=4` m, :math:`dy=4` m, and :math:`dz=10` m. It has 600 grid cells in the x-direction and 600 grid cells in the y-direction, with a single cell width in the z-direction.  
+
+.. figure:: figures/mesh.png
+    :figclass: align-center
+    :width: 600 px
+
+    **Computational mesh with 360,000 cells.**
 
 
 Variables
