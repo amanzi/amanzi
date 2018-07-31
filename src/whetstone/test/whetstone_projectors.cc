@@ -817,7 +817,7 @@ void SerendipityProjectorPolygon() {
     mfd.H1Cell(cell, vf, moments, uc);
     uc.ChangeOrigin(zero);
     uc -= vf[0];
-    CHECK(uc[0].NormMax() < 1e-10 && uc[1].NormMax() < 1e-10);
+    CHECK(uc[0].NormMax() < 2e-10 && uc[1].NormMax() < 2e-10);
   }
 
   // test globally quadratic deformation
@@ -839,12 +839,12 @@ void SerendipityProjectorPolygon() {
 
     uc[0] -= vf[0][0];
     uc[1] -= vf[0][1];
-    CHECK(uc[0].NormMax() < 2e-10 && uc[1].NormMax() < 2e-10);
+    CHECK(uc[0].NormMax() < 4e-10 && uc[1].NormMax() < 2e-10);
 
     mfd.H1Cell(cell, vf, moments, uc);
     uc.ChangeOrigin(zero);
     uc -= vf[0];
-    CHECK(uc[0].NormMax() < 3e-10 && uc[1].NormMax() < 2e-10);
+    CHECK(uc[0].NormMax() < 4e-10 && uc[1].NormMax() < 5e-10);
   }
 
   // test piecewise linear deformation (part I)
