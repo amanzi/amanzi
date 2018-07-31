@@ -2,13 +2,13 @@ Steady-State One-Dimensional Flow: Materials in Parallel
 ========================================================
 
 Capabilities Tested
-------------------
+-------------------
 
-This one-dimensional, steady-state, flow through a saturated porous
-medium with constant properties, tests the Amanzi
+This one-dimensional model of steady-state flow through a saturated porous
+medium with constant properties tests the Amanzi
 implementation of prescribed hydraulic head boundary conditions,
 Darcy's law, and mass conservation on an elementary problem with discrete heterogeneity.  
-Capabilities tested include,
+Capabilities tested include:
   
   * one-dimensional representation
   * steady-state
@@ -97,7 +97,7 @@ The domain is shown in the following schematic.
     :figclass: align-center
     :width: 400 px
 
-    ** One-dimensional, steady-state flow through a saturated porous medium with constant properties **
+    **One-dimensional, steady-state flow through a saturated porous medium with constant properties**
 
 
 Mesh
@@ -112,33 +112,33 @@ To generate numerical results the following specifications are considered:
 * Domain
 
 	* :math:`x_{min} = y_{min} = z_{min} = 0`
-	* :math:`x_{max} = 100 m, y_{max} = 2 m, z_{max} = 10 m`
+	* :math:`x_{max} = 100 \: m, \: y_{max} = 2 \: m, z_{max} = 10 \: m`
 
 * Horizontal flow in the x-coordinate direction
 
-	* no-flow prescribed at the :math:`y_{min}, y_{max}, z_{min}, z_{max}` boundaries
-	* prescribed hydraulic head at the x-coordinate boundaries: :math:`h(0) = 20m, h(L) = 19m`
+	* no-flow prescribed at the :math:`y_{min}, \: y_{max}, \: z_{min}, \: z_{max}` boundaries
+	* prescribed hydraulic head at the x-coordinate boundaries: :math:`h(0) = 20 \: m, \: h(L) = 19 \: m`
 
 * Material properties:
 
-	* :math:`\rho = 998.2 \: kg/m^3, \mu = 1.002e-3 \: Pa\cdot s, g = 9.807 \: m/s^2` 
-	* :math:`K_1 = 1.0 m/d` :math:`(k = 1.1847E-12 m^2)` for :math:`0 m \leqslant y \leqslant 1 m`
-	* :math:`K_2 = 10 m/d` :math:`(k = 1.1847E-11 m^2)` for :math:`1 m \leqslant y \leqslant 2 m`
+	* :math:`\rho = 998.2 \: kg/m^3, \:  \mu = 1.002 \times 10^{-3} \: Pa\cdot s, \: g = 9.807 \: m/s^2` 
+	* :math:`K_1 = 1.0 \: m/d` :math:`(k = 1.1847 \times 10^{-12} \: m^2)` for :math:`0 \: m \leqslant y \leqslant 1 \: m`
+	* :math:`K_2 = 10 \: m/d` :math:`(k = 1.1847 \times 10^{-11} \: m^2)` for :math:`1 \: m \leqslant y \leqslant 2 \: m`
 
 * Model discretization
 
-	* :math:`\Delta x = 5 m, \Delta y = 1 m, \Delta z = 10 m`
+	* :math:`\Delta x = 5 \: m, \Delta y = 1 \: m, \Delta z = 10 \: m`
 
 For these input specifications, Amanzi simulation output is expected to closely match
 
-	.. math:: h_i = 20m -\frac{x}{100m}, i=1,2
+	.. math:: h_i = 20m -\frac{x}{100m}, \: i=1,2
 		:label: expectedH_materials_parallel
 
 and
 
 	.. math:: 
-		U_1 &= 0.01 m/d\\
-		U_2 &= 0.1 m/d
+		U_1 &= 0.01 \: m/d\\
+		U_2 &= 0.1 \: m/d
 		:label: expectedU_materials_parallel
 
 following Equations :eq:`specificSoln_materials_parallel` and :eq:`specificDarcyVel_materials_parallel`.
@@ -179,7 +179,7 @@ About
     * mesh:  steady-flow_mesh.h5
     * runs
 
-  * amanzi_linear_materials_parallel_1d_u.xml
+  * amanzi_linear_materials_parallel_1d-u.xml
 
     * Spec Version 2.3.0, unstructured mesh framework
     * runs
@@ -201,8 +201,5 @@ Status
 .. todo:: 
 
   * Documentation:
-    * keb: Is this really 1D flow or is it horizontal flow with 2 dimensions?
-    * keb: List what is expected out of Amanzi simulation output.
-    * keb: _u.xml should we renamed -u
-
-
+  * keb: Is this really 1D flow or is it horizontal flow with 2 dimensions?
+  * keb: List what is expected out of Amanzi simulation output.

@@ -2,7 +2,7 @@
 =========================================================
 
 Capabilities Tested
-------------------
+-------------------
 
 This two-dimensional transport problem, with a constant rate mass
 loading point source in a steady-state flow field, tests the Amanzi

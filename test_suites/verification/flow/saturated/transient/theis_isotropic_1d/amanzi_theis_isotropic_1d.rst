@@ -2,7 +2,7 @@ Transient Two-Dimensional Confined Flow to a Pumping Well (Theis)
 =================================================================
 
 Capabilities Tested
-------------------
+-------------------
 
 This transient two-dimensional (radial) flow problem tests the Amanzi flow process kernel. Capabilities tested include,
 
