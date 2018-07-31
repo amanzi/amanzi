@@ -54,6 +54,7 @@ Problem 5.2 of :cite:`da-Aleman_PORFLOW_2007`.  The verification data from AT123
 is used to compare against Amanzi output is listed in Tables 5.2.3,
 5.2.4, and 5.2.5 of that document.
 
+
 Model
 -----
 
@@ -75,7 +76,7 @@ where :math:`\boldsymbol{D}` is the dispersion tensor
 Let :math:`\boldsymbol{v} = (v_x,\,v_y)` denote the pore velocity,
 :math:`\tau` the torsuosity, and :math:`D_m` the molecular diffusion.
 Then the diagonal entries in the dispersion tensor are
-
+,,,
 .. math::
   D_{xx} = \alpha_L \frac{v_x^2}{\| \boldsymbol{v}\|}
   + \alpha_T \frac{v_y^2}{\| \boldsymbol{v}\|}
@@ -83,7 +84,7 @@ Then the diagonal entries in the dispersion tensor are
   \qquad
   D_{yy} = \alpha_L \frac{v_y^2}{\| \boldsymbol{v}\|}
   + \alpha_L \frac{v_x^2}{\| \boldsymbol{v}\|}
-  + \phi \tau D_m.
+  + \phi \tau D_m.,
 
 The off-diagonal entries are
 
