@@ -353,7 +353,7 @@ void AdvectionFn<AnalyticDG>::ApproximateVelocity_Projection(
   Teuchos::ParameterList map_list;
   map_list.set<std::string>("method", "Lagrange serendipity")
           .set<int>("method order", 2)
-          .set<std::string>("projector", "H1")
+          .set<std::string>("projector", "L2")
           .set<std::string>("map name", "VEM");
   
   WhetStone::MeshMapsFactory maps_factory;
@@ -631,10 +631,10 @@ TEST(OPERATOR_ADVECTION_TRANSIENT_DG) {
   */
 
   double dT0 = 0.01;
-  AdvectionTransient<AnalyticDG06>("test/median15x16.exo",   16, 0, dT0, Amanzi::Explicit_TI::tvd_3rd_order);
-  AdvectionTransient<AnalyticDG06>("test/median32x33.exo",   32, 0, dT0 / 2, Amanzi::Explicit_TI::tvd_3rd_order);
-  AdvectionTransient<AnalyticDG06>("test/median63x64.exo",   64, 0, dT0 / 4, Amanzi::Explicit_TI::tvd_3rd_order);
-  AdvectionTransient<AnalyticDG06>("test/median127x128.exo",128, 0, dT0 / 8, Amanzi::Explicit_TI::tvd_3rd_order);
+  AdvectionTransient<AnalyticDG06>("test/median15x16.exo",   16, 0, dT0, Amanzi::Explicit_TI::heun_euler);
+  AdvectionTransient<AnalyticDG06>("test/median32x33.exo",   32, 0, dT0 / 2, Amanzi::Explicit_TI::heun_euler);
+  AdvectionTransient<AnalyticDG06>("test/median63x64.exo",   64, 0, dT0 / 4, Amanzi::Explicit_TI::heun_euler);
+  AdvectionTransient<AnalyticDG06>("test/median127x128.exo",128, 0, dT0 / 8, Amanzi::Explicit_TI::heun_euler);
 
   /*
   double dT0 = 0.01;

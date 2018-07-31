@@ -173,14 +173,10 @@ void MFD3D_CrouzeixRaviartSerendipity::ProjectorCell_(
   if (nfaces > 3) eta = 4;
 
   // number of degrees of freedom
-  Polynomial pcs;
-  if (order_ > 3)
-    Polynomial pcs(d_, order_ - eta);
-
   int nd = G_.NumRows();
   int ndof = A.NumRows();
   int ndof_c = PolynomialSpaceDimension(d_, order_ - 2);
-  int ndof_cs(pcs.size());
+  int ndof_cs = PolynomialSpaceDimension(d_, order_ - eta);
   int ndof_f(ndof - ndof_c);
 
   // extract submatrix

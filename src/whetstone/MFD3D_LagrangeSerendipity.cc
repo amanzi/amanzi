@@ -175,14 +175,10 @@ void MFD3D_LagrangeSerendipity::ProjectorCell_(
 
   // degrees of freedom: serendipity space S contains all boundary dofs
   // plus a few internal dofs that depedend on the value of eta.
-  Polynomial pcs;
-  if (order_ > 3)
-    pcs.Reshape(d_, order_ - eta);
-
   int nd = PolynomialSpaceDimension(d_, order_);
   int ndof = A.NumRows();
   int ndof_c = PolynomialSpaceDimension(d_, order_ - 2);
-  int ndof_cs(pcs.size());
+  int ndof_cs = PolynomialSpaceDimension(d_, order_ - eta);
   int ndof_f(ndof - ndof_c);
 
   // extract submatrix
