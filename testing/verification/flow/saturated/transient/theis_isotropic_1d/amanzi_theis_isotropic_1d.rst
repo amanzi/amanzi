@@ -15,6 +15,46 @@ For details on this test, see :ref:`about_theis`.
 Background
 ----------
 
+Groundwater resource evaluation is crucial to understanding the
+concept of groundwater yield. This concept is vital because it helps
+determine the maximum allowable pump rate out of an aquifer and aid in
+the understanding of the consequences on the water table.  For example,
+pumping water out of the water table (unconfined aquifer) may dry up
+nearby wells due to the fall in the saturated thickness of the
+aquifer. This can be prevented by modeling the fall of the water table
+given a certain pumping rate.
+
+To apply the analysis developed by Theis, three parameters must be known:
+
+* *T*, transmissivity
+* *S*, storativity
+* *Q*, constant pumping rate
+
+Transmissivity of the aquifer is defined as 
+
+.. math:: T = Kb
+
+where :math:`K` is the hydraulic conductivity of the aquifer and :math:`b` is the
+saturated thickness.  Transmissivity values greater than 0.015 
+:math:`\frac{m^2}{s}` represent aquifers capable of well exploitation.
+Storativity is a dimensionless parameter that describes the amount of
+water released by the aquifer per unit volume of the aquifer.
+Storativity can be calculated using
+
+.. math:: S = S_s b
+
+where :math:`S_s` is the *specific storage* and is unique to each aquifer.
+Again, :math:`b` is the saturated thickness of the aquifer.  Specific
+storage represents the volume of water released per unit volume of the
+aquifer per unit decline in hydraulic head.
+
+Lastly, the constant pumping rate, :math:`Q`, is the volume of water
+discharged from the well per unit time.
+
+
+Model
+-----
+
 Theis (1935) developed an analytical solution for transient (non-
 steady state) drawdown for a fully penetrating well by imposing the
 boundary conditions: :math:`h = h_0` for :math:`t = 0` and 
@@ -59,45 +99,6 @@ given value of *t* one can construct a draw down curve with respect to
 the distance from the pumping well, *r*. 
 
 
-Model
------
-
-Groundwater resource evaluation is crucial to understanding the
-concept of groundwater yield. This concept is vital because it helps
-determine the maximum allowable pump rate out of an aquifer and aid in
-the understanding of the consequnces on the water table.  For example,
-pumping water out of the water table (unconfined aquifer) may dry up
-near by wells due to the fall in the saturated thickness of the
-aquifer. This can be prevented by modeling the fall of the water table
-given a certain pumping rate.
-
-To apply the analysis developed by Theis, three parameters must be known:
-
-* *T*, transmissivity
-* *S*, storativity
-* *Q*, constant pumping rate
-
-Transimissivity of the aquifer is defined as 
-
-.. math:: T = Kb
-
-where :math:`K` is the hydraulic conductivity of the aquifer and :math:`b` is the
-saturated thickness.  Transmissivity values greater than 0.015 
-:math:`\frac{m^2}{s}` represent aquifers capable of well exploitation.
-Storativity is a dimensionless parameter that describes the amount of
-water released by the aquifer per unit volume of the aquifer.
-Storativity can be calculated using
-
-.. math:: S = S_s b
-
-where :math:`S_s` is the *specific storage* and is unique to each aquifer.
-Again, :math:`b` is the saturated thickness of the aquifer.  Specific
-storage represents the volume of water released per unit volume of the
-aquifer per unit decline in hydraulic head.
-
-Lastly, the constant pumping rate, :math:`Q`, is the volume of water
-discharged from the well per unit time.
-
 .. _plot_table_Theis:
 
 
@@ -109,15 +110,13 @@ Schematic
 ~~~~~~~~~
 
 Note, the values in the schematic correlate to the values found in
-:ref:`plot_table_Theis`.
+:ref:`Variables`.
 
 .. figure:: schematic/Theis.png 
     :figclass: align-center
 
     **Illustration of transient drawdown**
 		    
-.. _Variables:
-
 
 Mesh
 ~~~~
@@ -130,6 +129,7 @@ The mesh is generated in the input file. It consists of cells with size :math:`d
 
     **Computational mesh with 360,000 cells.**
 
+.. _Variables:
 
 Variables
 ~~~~~~~~~
@@ -167,7 +167,7 @@ References
 About
 -----
 
-* Directory: testing/verification/transport/saturated/steady-state/dispersion_aligned_point_2d
+* Directory: testing/verification/flow/saturated/transient/theis_isotropic_1d
 
 * Authors: Dylan Harp, Alec Thomas, David Moulton 
 
