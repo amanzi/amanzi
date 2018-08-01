@@ -76,13 +76,29 @@ Schematic
 Mesh
 ~~~~
 
+The mesh consists of 12,208 cells. There is a single cell in the z-direction, which is uniform :math:`\Delta z=5.0` m everywhere.
+
 .. figure:: figures/mesh.png
     :figclass: align-center
 
     **Unstructured computational mesh with 12208 cells.**
 
+
 Variables
 ~~~~~~~~~
+
+* :math:`Q=2.0` constant pumping rate, [m\ :sup:`3`/s]
+* :math:`\phi=0.3` constant porosity
+* :math:`S_s=7.5 \times 10^{-5}` specific storage (:math:`S=S_s b`), [m\ :sup:`-1`]
+* :math:`k_x=2.3543 \times 10^{-11}, \: k_y=k_z=2.3543 \times 10^{-12}` permeability tensor (:math:`k_i \rho g /\mu=K_i=T_i/b)`, [m\ :sup:`2`] 
+* :math:`\rho=998.20` water density, [kg/m\ :sup:`3`]
+* :math:`g=9.81` gravity constant, [m/s\ :sup:`2`]
+* :math:`\mu=1.002 \times 10^{-3}` dynamic viscosity, [kg/s/m]
+* :math:`t=86400` total simulation time (= 1 day), [s]
+
+Initial condition: zero drawdown everywhere in domain
+
+Boundary conditions: zero drawdown on four lateral boundaries
 
 
 Results and Comparison
@@ -134,3 +150,4 @@ About
 
     * Decide whether to keep structured run
     * Include info about analytic solution calculation?
+    * convert units in Variables to be same as in Model?
