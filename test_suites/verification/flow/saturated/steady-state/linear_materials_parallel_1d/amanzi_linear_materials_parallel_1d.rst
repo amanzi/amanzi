@@ -102,7 +102,7 @@ The domain is shown in the following schematic.
 
 Mesh
 ~~~~
-A steady-flow mesh is applied.
+A steady-flow mesh is applied. The mesh consists of 400 cells: 20 grid cells in the x-direction, 2 cells in the y-direction, and 1 cell in the z-direction. Mesh discretization is as follows: :math:`\Delta x = 5 \: m, \: \Delta y = 1 \: m,` and :math:`\Delta z = 10 \: m`. 
 
 
 Variables
@@ -182,11 +182,13 @@ About
   * amanzi_linear_materials_parallel_1d-u.xml
 
     * Spec Version 2.3.0, unstructured mesh framework
+    * mesh:  generated in file
     * runs
 
 * Mesh Files:
 
   * steady-flow_mesh.h5
+  * unstructured mesh is generated in file
 
 * Analytic solution computed with golden output
 
