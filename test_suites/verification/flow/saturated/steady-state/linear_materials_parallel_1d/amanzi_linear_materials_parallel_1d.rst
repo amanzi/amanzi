@@ -22,7 +22,7 @@ For details on this test, see :ref:`about_linear_materials_parallel_1d`.
 Background
 ----------
 For one-dimensional, steady-state, flow through a saturated porous medium with constant properties, 
-the general governing differential equation expressing mass conservation and Darcy's law becomes simply
+the general governing differential equation expressing mass conservation and Darcy's law :cite:`matp-Darcy_1856` becomes simply
 
 	.. math:: \frac{d^2h}{dx^2} = 0
 		:label: ode_materials_parallel
@@ -158,7 +158,11 @@ This is also visible in the following table.
 
 References
 ----------
-Add a reference in here.
+
+.. bibliography:: /bib/ascem.bib
+   :filter: docname in docnames
+   :style:  alpha
+   :keyprefix: matp- 
 
 
 .. _about_linear_materials_parallel_1d:
