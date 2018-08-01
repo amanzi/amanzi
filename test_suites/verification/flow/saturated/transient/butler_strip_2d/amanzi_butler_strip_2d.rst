@@ -80,11 +80,13 @@ The domain configuration and well locations are indicated in the following schem
     :figclass: align-center
     :width: 600 px
 
-    **Figure 1.  Schematic of the Butler and Liu's Linear Strip verification problem.**
+    **Schematic of the Butler and Liu's Linear Strip verification problem.**
 
 
 Mesh
 ~~~~
+
+The background mesh is :math:`2404 \: m \times 2404 \: m \times 1 \: m` and consists of 361,201 cells. There are 601 cells in the x-direction, 601 cells in the y-direction, and 1 cell in the z-direction.  
 
 
 Variables
@@ -108,11 +110,7 @@ Observation well locations :math:`(15\; m, 0\; m)` and :math:`(91\; m, 0\; m)`, 
 Results and Comparison
 ----------------------
 
-
 .. _plot_ButlerLiu_strip:
-
-Comparison of  Analytic Solution and Amanzi Results
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. plot:: amanzi_butler_strip_2d.py
              :align: center
@@ -120,6 +118,7 @@ Comparison of  Analytic Solution and Amanzi Results
 
 The comparison shows that the results from the Amanzi model match the analytical solution very well at early time, and that they deviate when the effect of pumping hits the constant head boundary of the domain. Note that the analytical solution was developed for unbounded domain, so it is therefore expected that the two solutions will deviate from each other at late time.  To show that such a deviation is indeed caused by the boundary effect, we also conducted numerical simulations using 
 FEHM, a widely used numerical simulator for simulating heat and mass flow in subsurface environment :cite:`strip-Zyvoloski_FEHM_summary_1997`. It is showed that the results from Amanzi are almost the same as those from FEHM, see :cite:`strip-Lu_Harp_Birdsell_benchmarking_2014` for detailed comparison.
+
 
 References
 ----------
@@ -144,10 +143,10 @@ About
 * Input Files: 
   
   * amanzi_butler_strip_2d.xml
- 
-     * Spec: Version 2.0
-     * Mesh: Generated in running time
-     * Runs
+
+    * Spec: Version 2.0
+    * Mesh: Generated in file 
+    * Runs
 
 * Analytical Solutions
 
@@ -157,11 +156,12 @@ About
 
   * Input Files:
 
-     * now.dat
+    * now.dat
 
   * Output Files:
-   
-     * drdn.dat,  drawdown as a function of time for all observation wells.
+
+    * drdn.dat,  drawdown as a function of time for all observation wells.
+
 
 Status
 ~~~~~~
