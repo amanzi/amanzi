@@ -112,7 +112,7 @@ To generate numerical results the following specifications are considered:
 * Domain
 
 	* :math:`x_{min} = y_{min} = z_{min} = 0`
-	* :math:`x_{max} = 100 \: m, \: y_{max} = 2 \: m, z_{max} = 10 \: m`
+	* :math:`x_{max} = 100 \: m, \: y_{max} = 2 \: m, \: z_{max} = 10 \: m`
 
 * Horizontal flow in the x-coordinate direction
 
