@@ -4,14 +4,21 @@ Transient Flow to a Pumping Well in an Anisotropic Aquifer (Hantush)
 Capabilities Tested
 -------------------
 
-This two-dimensional transient flow problem 
+This two-dimensional transient flow problem in a non-leaky aquifer with constant pumping tests the Amanzi flow process kernel in anistropic media.
+Capabilities tested include:
+
+  * transient, single-phase, saturated flow
+  * drawdown prediction in anistropic media
+  * statically refined (nonuniform) mesh
+
+For details on this test, see :ref:`about_hantush_anisotropic`.
+
 
 Background
 ----------
 
-Hantush and Thomas :cite:`han-Hantush_1966_method` developed an analytical solution for measuring drawdown
-during constant discharge for a completely penetrating well in a
-homogenous anisotropic nonleaky infinite confined aquifer. 
+Hantush and Thomas :cite:`han-Hantush_1966_method` developed an analytical solution for measuring drawdown during constant discharge for a completely penetrating well in a
+homogenous anisotropic, nonleaky confined aquifer of infinite extent. 
 
 Model
 -----
@@ -94,11 +101,36 @@ References
    :keyprefix: han-
 
 	    
-.. _about_aligned_dispersion:
+.. _about_hantush_anisotropic:
 
 About
 -----
+
 * Directory: testing/verification/flow/saturated/transient/hantush_anisotropic_2d
 
+* Authors: Alec Thomas, Konstantin Lipnikov
+
+* Maintainer: David Moulton (moulton@lanl.gov)
+
+* Input Files:
+
+  * amanzi_hantush_anisotropic_2d-u.xml
+
+    * Spec Version 2.3, unstructured mesh framework
+    * mesh:  porflow4_6.exo
+    * runs
+
+* Mesh Files:
+
+  * porflow4_6.exo
+
+    * three-dimensional statically refined mesh
+    * one layer of cells in the z-direction
 
 
+.. todo::
+
+  * Documentation:
+
+    * Decide whether to keep structured run
+    * Include info about analytic solution calculation?
