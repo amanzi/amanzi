@@ -69,6 +69,10 @@ Schematic
 Mesh
 ~~~~
 
+.. figure:: figures/mesh.png
+    :figclass: align-center
+
+    **Unstructured computational mesh with 12208 cells.**
 
 Variables
 ~~~~~~~~~
@@ -94,5 +98,7 @@ References
 
 About
 -----
+* Directory: testing/verification/flow/saturated/transient/hantush_anisotropic_2d
+
 
 
