@@ -222,6 +222,20 @@ References
 About
 -----
 
+* Directory: testing/verification/flow/richards/steady-state/unconfined_no_recharge_1d
+
+* Authors:  
+
+* Maintainer(s): David Moulton (moulton@lanl.gov) 
+
+* Input Files:
+
+  * amanzi_unconfined_no_recharge_1d.xml
+
+    * Spec Version 
+    * mesh:  
+    * runs
+
 Status
 ------
 
