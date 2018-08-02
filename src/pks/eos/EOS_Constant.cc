@@ -25,6 +25,7 @@ EOS_Constant::EOS_Constant(Teuchos::ParameterList& eos_plist) :
 
 void EOS_Constant::InitializeFromPlist_() {
   // defaults to water
+
   if (eos_plist_.isParameter("molar mass [kg/mol]")) {
     M_ = eos_plist_.get<double>("molar mass [kg/mol]");
   } else {

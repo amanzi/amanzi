@@ -28,6 +28,7 @@ def get_observation_data(obs_file, observation):
             obs_names.append(ob[3].strip())
     if observation not in obs_names:
         print('%s: observation %s was not found in file %s.'%(sys.argv[0], observation, obs_file))
+        print obs_names
         exit(0)
     obs_coords = {}
     obs_values = {}
@@ -60,7 +61,10 @@ def compute_error_norms(x_output, c_output, x_ref, c_ref):
     errors = {}
     for region in x_ref.keys():
         diff = c_ref[region] - c_output[region]
-        errors[region] = np.linalg.norm(diff)
+        ref_norm = np.linalg.norm(c_ref[region])
+        if (ref_norm < 1e-20):
+            raise RuntimeError, "Reference norm is close to zero"
+        errors[region] = np.linalg.norm(diff) / ref_norm
     return errors
 
 if __name__ == "__main__":
