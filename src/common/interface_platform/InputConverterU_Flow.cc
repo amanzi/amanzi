@@ -520,8 +520,9 @@ Teuchos::ParameterList InputConverterU::TranslateFlowBCs_()
 
   int ibc(0);
   children = node_list->item(0)->getChildNodes();
+  int nchildren = children->getLength();
 
-  for (int i = 0; i < children->getLength(); ++i) {
+  for (int i = 0; i < nchildren; ++i) {
     DOMNode* inode = children->item(i);
     if (inode->getNodeType() != DOMNode::ELEMENT_NODE) continue;
     tagname = mm.transcode(inode->getNodeName());
