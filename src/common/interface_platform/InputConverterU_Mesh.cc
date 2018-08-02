@@ -248,7 +248,9 @@ Teuchos::ParameterList InputConverterU::TranslateRegions_()
 
   // new options: comment, region, box, point
   DOMNodeList* childern = node->getChildNodes();
-  for (int i = 0; i < childern->getLength(); i++) {
+  int nchildern = childern->getLength();
+
+  for (int i = 0; i < nchildern; i++) {
     DOMNode* inode = childern->item(i);
 
     if (DOMNode::ELEMENT_NODE == inode->getNodeType()) {

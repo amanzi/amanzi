@@ -147,7 +147,9 @@ void InputConverterU::ParseSolutes_()
   }
 
   DOMNodeList* children = node->getChildNodes();
-  for (int i = 0; i < children->getLength(); ++i) {
+  int nchildren = children->getLength();
+
+  for (int i = 0; i < nchildren; ++i) {
     DOMNode* inode = children->item(i);
     tagname = mm.transcode(inode->getNodeName());
     std::string name = TrimString_(mm.transcode(inode->getTextContent()));
@@ -168,7 +170,9 @@ void InputConverterU::ParseSolutes_()
   node = GetUniqueElementByTagsString_(knode, "gas_phase, dissolved_components, solutes", flag);
   if (flag) {
     DOMNodeList* children = node->getChildNodes();
-    for (int i = 0; i < children->getLength(); ++i) {
+    int nchildren = children->getLength();
+
+    for (int i = 0; i < nchildren; ++i) {
       DOMNode* inode = children->item(i);
       tagname = mm.transcode(inode->getNodeName());
       text_content = mm.transcode(inode->getTextContent());
