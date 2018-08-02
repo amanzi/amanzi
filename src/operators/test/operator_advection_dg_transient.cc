@@ -48,7 +48,7 @@
 #include "PDE_Reaction.hh"
 
 // global variables
-bool exact_solution_expected;
+bool exact_solution_expected = false;
 
 namespace Amanzi {
 
@@ -352,7 +352,7 @@ void AdvectionFn<AnalyticDG>::ApproximateVelocity_Projection(
   // create a mesh map at time t
   Teuchos::ParameterList map_list;
   map_list.set<std::string>("method", "Lagrange serendipity")
-          .set<int>("method order", 2)
+          .set<int>("method order", 1)
           .set<std::string>("projector", "L2")
           .set<std::string>("map name", "VEM");
   
@@ -605,8 +605,7 @@ void AdvectionTransient(std::string filename, int nx, int ny, double dt,
 
 
 TEST(OPERATOR_ADVECTION_TRANSIENT_DG) {
-  // AdvectionTransient<AnalyticDG07>("square", 50, 50, 0.001, Amanzi::Explicit_TI::tvd_3rd_order, false, "primal", "level set");
-
+  /*
   exact_solution_expected = true;
   AdvectionTransient<AnalyticDG02b>("square",  4,  4, 0.1, Amanzi::Explicit_TI::tvd_3rd_order, false);
 
@@ -614,13 +613,16 @@ TEST(OPERATOR_ADVECTION_TRANSIENT_DG) {
   AdvectionTransient<AnalyticDG06b>("square",  4,  4, 0.1, Amanzi::Explicit_TI::tvd_3rd_order);
   AdvectionTransient<AnalyticDG06>("square",  4,  4, 0.1, Amanzi::Explicit_TI::tvd_3rd_order, false);
   AdvectionTransient<AnalyticDG06>("square",  4,  4, 0.1, Amanzi::Explicit_TI::tvd_3rd_order, false, "primal");
+  */
 
   /*
-  AdvectionTransient<AnalyticDG06>("square",  20,  20, 0.01, Amanzi::Explicit_TI::tvd_3rd_order);
-  AdvectionTransient<AnalyticDG06>("square",  40,  40, 0.01 / 2, Amanzi::Explicit_TI::tvd_3rd_order);
-  AdvectionTransient<AnalyticDG06>("square",  80,  80, 0.01 / 4, Amanzi::Explicit_TI::tvd_3rd_order);
-  AdvectionTransient<AnalyticDG06>("square", 160, 160, 0.01 / 8, Amanzi::Explicit_TI::tvd_3rd_order);
+  AdvectionTransient<AnalyticDG06>("square",  20,  20, 0.01, Amanzi::Explicit_TI::heun_euler);
+  AdvectionTransient<AnalyticDG06>("square",  40,  40, 0.01 / 2, Amanzi::Explicit_TI::heun_euler);
+  AdvectionTransient<AnalyticDG06>("square",  80,  80, 0.01 / 4, Amanzi::Explicit_TI::heun_euler);
+  AdvectionTransient<AnalyticDG06>("square", 160, 160, 0.01 / 8, Amanzi::Explicit_TI::heun_euler);
+  */
 
+  /*
   AdvectionTransient<AnalyticDG06>("test/triangular8.exo",    8, 0, 0.01, Amanzi::Explicit_TI::tvd_3rd_order);
   AdvectionTransient<AnalyticDG06>("test/triangular16.exo",  16, 0, 0.01 / 2, Amanzi::Explicit_TI::tvd_3rd_order);
   AdvectionTransient<AnalyticDG06>("test/triangular32.exo",  32, 0, 0.01 / 4, Amanzi::Explicit_TI::tvd_3rd_order);
@@ -629,7 +631,21 @@ TEST(OPERATOR_ADVECTION_TRANSIENT_DG) {
   */
 
   /*
-  double dT0 = 0.01;
+  AdvectionTransient<AnalyticDG07>("square", 20, 20, 0.001, Amanzi::Explicit_TI::heun_euler, false, "primal", "level set");
+  AdvectionTransient<AnalyticDG07>("square", 40, 40, 0.001 / 2, Amanzi::Explicit_TI::heun_euler, false, "primal", "level set");
+  AdvectionTransient<AnalyticDG07>("square", 80, 80, 0.001 / 4, Amanzi::Explicit_TI::heun_euler, false, "primal", "level set");
+  AdvectionTransient<AnalyticDG07>("square",160,160, 0.001 / 8, Amanzi::Explicit_TI::heun_euler, false, "primal", "level set");
+  */
+
+  double dT0 = 0.001;
+  AdvectionTransient<AnalyticDG07>("test/median15x16.exo",   16, 0, dT0, Amanzi::Explicit_TI::heun_euler, false, "primal", "level set");
+  AdvectionTransient<AnalyticDG07>("test/median32x33.exo",   32, 0, dT0 / 2, Amanzi::Explicit_TI::heun_euler, false, "primal", "level set");
+  AdvectionTransient<AnalyticDG07>("test/median63x64.exo",   64, 0, dT0 / 4, Amanzi::Explicit_TI::heun_euler, false, "primal", "level set");
+  AdvectionTransient<AnalyticDG07>("test/median127x128.exo",128, 0, dT0 / 8, Amanzi::Explicit_TI::heun_euler, false, "primal", "level set");
+
+  /*
+  double dT0 = 0.001;
+  // double dT0 = 0.01;
   AdvectionTransient<AnalyticDG06>("test/median15x16.exo",   16, 0, dT0, Amanzi::Explicit_TI::heun_euler);
   AdvectionTransient<AnalyticDG06>("test/median32x33.exo",   32, 0, dT0 / 2, Amanzi::Explicit_TI::heun_euler);
   AdvectionTransient<AnalyticDG06>("test/median63x64.exo",   64, 0, dT0 / 4, Amanzi::Explicit_TI::heun_euler);
