@@ -154,9 +154,11 @@ Polynomial Basis_Regularized::CalculatePolynomial(
   poly.SetPolynomialCoefficients(coefs);
   poly.set_origin(mesh->cell_centroid(c));
 
+  int n(0);
   for (int k = 0; k < order + 1; ++k) {
-    auto& mono = poly.MonomialSet(k);
-    mono *= monomial_scales_[k];
+    int mk = MonomialSpaceDimension(d, k);
+    double scale = monomial_scales_[k];
+    for (int m = 0; m < mk; ++m) poly(n++) *= scale;
   }
 
   return poly;

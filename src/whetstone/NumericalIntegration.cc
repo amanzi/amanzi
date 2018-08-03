@@ -91,7 +91,7 @@ double NumericalIntegration::IntegratePolynomialCell(int c, const Polynomial& po
 
   double value(0.0);
   for (int k = 0; k <= order; ++k) {
-    int mk = integrals.MonomialSet(k).NumRows();
+    int mk = MonomialSpaceDimension(d_, k);
     for (int i = 0; i < mk; ++i) value += integrals(k, i) * tmp(k, i);
   }
 
@@ -312,7 +312,8 @@ void NumericalIntegration::UpdateMonomialIntegralsCell(
 ****************************************************************** */
 void NumericalIntegration::IntegrateMonomialsCell(int c, int k, Polynomial& integrals)
 {
-  for (int i = 0; i < integrals.MonomialSet(k).NumRows(); ++i) {
+  int mk = MonomialSpaceDimension(d_, k);
+  for (int i = 0; i < mk; ++i) {
     integrals(k, i) = 0.0;
   }
 

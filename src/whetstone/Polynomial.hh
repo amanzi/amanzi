@@ -32,8 +32,10 @@
 namespace Amanzi {
 namespace WhetStone {
 
-// formard declaration
+// formard declarations
 class Monomial;
+
+int PolynomialSpaceDimension(int d, int order);
 
 class Polynomial : public WhetStoneFunction {
  public:
@@ -47,7 +49,7 @@ class Polynomial : public WhetStoneFunction {
 
   // initialization options
   // -- reset all coefficients to a scalar
-  void PutScalar(double val);
+  void PutScalar(double val) { coefs_.PutScalar(val); }
   // -- set polynomial coefficients from a vector.
   //    The vector size should match that of polynomial.
   void SetPolynomialCoefficients(const DenseVector& coefs);
@@ -67,7 +69,7 @@ class Polynomial : public WhetStoneFunction {
   // -- polynomial values
   virtual double Value(const AmanziGeometry::Point& xp) const override;
   // -- polynomial norms
-  double NormMax() const;
+  double NormMax() const { return coefs_.NormMax(); }
 
   // -- operators (ring algebra)
   Polynomial& operator+=(const Polynomial& poly);
@@ -123,11 +125,13 @@ class Polynomial : public WhetStoneFunction {
   int size() const { return size_; }
   const AmanziGeometry::Point& origin() const { return origin_; }
 
-  DenseVector& MonomialSet(int k) { return coefs_[k]; }
-  const DenseVector& MonomialSet(int k) const { return coefs_[k]; }
+  // -- one-index access
+  double& operator()(int i) { return coefs_(i); }
+  const double& operator()(int i) const { return coefs_(i); }
 
-  double& operator()(int i, int j) { return coefs_[i](j); }
-  const double& operator()(int i, int j) const { return coefs_[i](j); }
+  // -- expensive two-index access: try to avoid
+  double& operator()(int i, int j) { return coefs_(PolynomialSpaceDimension(d_, i - 1) + j); }
+  const double& operator()(int i, int j) const { return coefs_(PolynomialSpaceDimension(d_, i - 1) + j); }
 
   // output 
   friend std::ostream& operator << (std::ostream& os, const Polynomial& p);
@@ -139,7 +143,7 @@ class Polynomial : public WhetStoneFunction {
  private:
   int d_, order_, size_;
   AmanziGeometry::Point origin_;
-  std::vector<DenseVector> coefs_;
+  DenseVector coefs_;
 };
 
 // calculate dimension of monomial space of given order 
