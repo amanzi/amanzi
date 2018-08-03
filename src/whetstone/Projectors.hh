@@ -52,7 +52,7 @@ class Projectors {
   virtual void H1Cell(
       int c, const std::vector<VectorPolynomial>& vf,
       VectorPolynomial& moments, VectorPolynomial& uc) {
-    Errors::Message msg("Elliptic projector is not supported for this scheme.");
+    Errors::Message msg("H1 projector is not supported for this scheme.");
     Exceptions::amanzi_throw(msg);
   }
 
