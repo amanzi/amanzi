@@ -1,10 +1,15 @@
 Transient Drawdown due to Pumping Wells in a Bounded Domain
 ===========================================================
 
-Introduction
-------------
+Capabilities Tested
+-------------------
+
+
+Background
+----------
 
 As we see from the comparison of results from Amanzi and Butler's solutions, it is inevitable that the numerical solutions from the Amanzi model will not match the results from these analytical solutions at later time, because these analytical solutions were derived for the unbounded domains while in numerical simulations the domain is always bounded.  In this example, we will verify the Amanzi model using the solution for the bounded domain with uniform hydraulic properties.
+
 
 Problem Specification
 ---------------------
@@ -41,7 +46,6 @@ The boundary conditions are:
 
 where :math:`\Gamma_D` is the Dirichlet boundary and :math:`\Gamma_D` is the Neumann boundary.
 
-
 The drawdown solution can be written as
 
 .. math:: s(x,y,t) = -\frac{4}{DT} \sum_{n=0}^{\infty} \sum_{m=1}^{\infty}
@@ -57,9 +61,9 @@ where :math:`\alpha_m = m \pi/L_1, m=1,2,\cdots`,
 :math:`a_0 =1/2`, and :math:`a_n =1` for :math:`n \ge 1`,
 
 
-
 Problem Specification
 ---------------------
+
 
 Schematic
 ~~~~~~~~~
@@ -70,27 +74,33 @@ The domain configuration and well locations are indicated in the following schem
     :figclass: align-center
     :width: 600 px
 
-    Figure 1.  Schematic of verification problem  for bounded domains
+    **Schematic of verification problem for bounded domains.**
+
+    
+Mesh
+~~~~
+
+The model domain is 2400 m :math:`\times` 2400 m. It has 3600 grid cells: 600 cells in the x-direction, 600 cells in y-direction, and 1 cell in the z-direction. 
 
 
-The domain size is 2400m :math:`\times` 2400m. The boundary conditions are given as: constant pressure head of 1.07785 MPa (i.e., 100m) at the left and the right  boundaries, and a no-flow condition was imposed on the upper and lower boundaries. Initially the pressure head is 1.07785 MPa everywhere in the domain. The parameter values for the problem are given as:
+Variables
+~~~~~~~~~
 
-	Transmissivity: :math:`\;\; T = 0.011574 \; m2/s`; 
+* Transmissivity: :math:`\;\; T = 0.011574 \; m^2/s` 
+* Storativity: :math:`\;\; S = 2\times 10^{-4}` 
+* Pumping rate: :math:`\;\; Q = 1000 \;m^3/day \:(= 0.011574 \;m^3/s)`
+* Pumping well location (1200 m, 1200 m) and pumping starts at :math:`t = 0`
 
-	Storativity: :math:`\;\; S = 2\times 10^{-4}`; 
+Observation well locations (1224 m, 1200 m) and (1300 m, 1200 m), so  their distance  to the pumping well is 24 m and 100 m, respectively.
 
-	Pumping rate: :math:`\;\; Q = 1000 \;m3/day (= 0.011574 \;m3/s)`
-
-	Pumping well location (1200 m, 1200 m) and pumping starts at :math:`t = 0`.
-
-	Observation well locations (1224 m, 1200 m) and (1300 m, 1200 m), so  their distance  to the pumping well is 24m and 100m, respectively.
+The boundary conditions are given as: constant pressure head of 1.07785 MPa (i.e., 100 m) at the left and the right  boundaries, and a no-flow condition was imposed on the upper and lower boundaries. Initially the pressure head is 1.07785 MPa everywhere in the domain.
 
 
 Results and Comparison
 ----------------------
 
-
 .. _Plot_BoundedDomain2D:
+
 
 Comparison of  Analytic Solution and Amanzi Results
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -98,9 +108,9 @@ Comparison of  Analytic Solution and Amanzi Results
 .. plot:: amanzi_boundedDomain_2d.py
    :align: center
 
-
 The comparison shows that the results from the Amanzi model are nearly identical to those from the analytical solution.
 Detailed comparison can be found in :cite:`bd-Lu_Harp_Birdsell_benchmarking_2014`.
+
 
 References
 ----------
@@ -110,6 +120,8 @@ References
    :style:  alpha
    :keyprefix: bd-
 
+
+.. _about_bounded_domain:
 
 About
 -----
@@ -124,9 +136,9 @@ About
   
   * amanzi_boundedDomain_2d.xml
  
-     * Spec: Version 2.0
-     * Mesh: Generated in running time
-     * Runs
+    * Spec: Version 2.0
+    * mesh: Generated in running time
+    * runs
 
 * Analytical Solutions
 
@@ -136,11 +148,12 @@ About
 
   * Input Files:
 
-     * input
+    * input
 
   * Output Files:
    
-     * test_h_tr.dat,  drawdown as a function of time for all observation wells
+    * test_h_tr.dat,  drawdown as a function of time for all observation wells
+
 
 Status
 ~~~~~~
