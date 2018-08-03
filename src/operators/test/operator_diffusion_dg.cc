@@ -113,20 +113,16 @@ void OperatorDiffusionDG(std::string solver_name,
       bc_model[f] = OPERATOR_BC_DIRICHLET;
 
       ana.SolutionTaylor(xf, 0.0, coefs);
-      coefs.GetPolynomialCoefficients(data);
-
-      for (int i = 0; i < data.NumRows(); ++i) {
-        bc_value[f][i] = data(i);
+      for (int i = 0; i < coefs.size(); ++i) {
+        bc_value[f][i] = coefs(i);
       }
     } else if (fabs(xf[1] - 1.0) < 1e-6) {
       // bc_model[f] = OPERATOR_BC_NEUMANN;
       bc_model[f] = OPERATOR_BC_DIRICHLET;
 
       ana.SolutionTaylor(xf, 0.0, coefs);
-      coefs.GetPolynomialCoefficients(data);
-
-      for (int i = 0; i < data.NumRows(); ++i) {
-        bc_value[f][i] = data(i);
+      for (int i = 0; i < coefs.size(); ++i) {
+        bc_value[f][i] = coefs(i);
       }
     }
   }

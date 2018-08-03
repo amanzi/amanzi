@@ -96,8 +96,7 @@ int MFD3D_LagrangeSerendipity::H1consistency(
     for (auto jt = lap.begin(); jt < lap.end(); ++jt) {
       int l = jt.PolynomialPosition();
       int m = jt.MonomialSetOrder();
-      int n = jt.MonomialSetPosition();
-      L(l, k) = lap(m, n) / basis.monomial_scales()[m];
+      L(l, k) = lap(l) / basis.monomial_scales()[m];
     }  
   }
 
@@ -202,8 +201,7 @@ void MFD3D_LagrangeSerendipity::ProjectorCell_(
 
     // DOFs inside cell: copy moments from input data
     if (ndof_cs > 0) {
-      moments[i].GetPolynomialCoefficients(v3);
-
+      const DenseVector& v3 = moments[i].coefs();
       AMANZI_ASSERT(ndof_cs == v3.NumRows());
 
       for (int n = 0; n < ndof_cs; ++n) {

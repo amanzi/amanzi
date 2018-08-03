@@ -72,13 +72,11 @@ int DG_Modal::MassMatrix(int c, const Tensor& K, DenseMatrix& M)
       const int* idx_q = jt.multi_index();
       int l = jt.PolynomialPosition();
       
-      int n(0);
       for (int i = 0; i < d_; ++i) {
         multi_index[i] = idx_p[i] + idx_q[i];
-        n += multi_index[i];
       }
 
-      M(l, k) = M(k, l) = K00 * integrals(n, p.MonomialSetPosition(multi_index));
+      M(l, k) = M(k, l) = K00 * integrals(p.PolynomialPosition(multi_index));
     }
   }
 
@@ -114,13 +112,11 @@ int DG_Modal::MassMatrix(
       const int* idx_q = jt.multi_index();
       int l = jt.PolynomialPosition();
       
-      int n(0);
       for (int i = 0; i < d_; ++i) {
         multi_index[i] = idx_p[i] + idx_q[i];
-        n += multi_index[i];
       }
 
-      M(k, l) = K00 * integrals.poly()(n, p.MonomialSetPosition(multi_index));
+      M(k, l) = K00 * integrals.poly()(p.PolynomialPosition(multi_index));
       M(l, k) = M(k, l);
     }
   }
@@ -159,21 +155,19 @@ int DG_Modal::MassMatrixPoly_(int c, const Polynomial& K, DenseMatrix& M)
 
     for (auto mt = Kcopy.begin(); mt < Kcopy.end(); ++mt) {
       const int* idx_K = mt.multi_index();
-      int m = mt.MonomialSetPosition();
-      double factor = Kcopy(mt.MonomialSetOrder(), m);
+      int n = mt.PolynomialPosition();
+      double factor = Kcopy(n);
       if (factor == 0.0) continue;
 
       for (auto jt = it; jt < p.end(); ++jt) {
         const int* idx_q = jt.multi_index();
         int l = jt.PolynomialPosition();
 
-        int n(0);
         for (int i = 0; i < d_; ++i) {
           multi_index[i] = idx_p[i] + idx_q[i] + idx_K[i];
-          n += multi_index[i];
         }
 
-        M(k, l) += factor * integrals(n, p.MonomialSetPosition(multi_index));
+        M(k, l) += factor * integrals(p.PolynomialPosition(multi_index));
       }
     }
   }
@@ -293,11 +287,9 @@ int DG_Modal::StiffnessMatrix(int c, const Tensor& K, DenseMatrix& A)
       const int* jndex = jt.multi_index();
       int l = jt.PolynomialPosition();
       
-      int n(0);
       int multi_index[3];
       for (int i = 0; i < d_; ++i) {
         multi_index[i] = index[i] + jndex[i];
-        n += multi_index[i];
       }
 
       double sum(0.0), tmp;
@@ -307,7 +299,7 @@ int DG_Modal::StiffnessMatrix(int c, const Tensor& K, DenseMatrix& A)
             multi_index[i]--;
             multi_index[j]--;
 
-            tmp = integrals(n - 2, p.MonomialSetPosition(multi_index)); 
+            tmp = integrals(p.PolynomialPosition(multi_index)); 
             sum += Ktmp(i, j) * tmp * index[i] * jndex[j];
 
             multi_index[i]++;
@@ -336,9 +328,7 @@ int DG_Modal::AdvectionMatrixPoly_(
   const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
 
   VectorPolynomial ucopy(u);
-  for (int i = 0; i < d_; ++i) {
-    ucopy[i].ChangeOrigin(xc);
-  }
+  ucopy.ChangeOrigin(xc);
 
   // extend list of integrals of monomials
   int uk(ucopy[0].order());
@@ -367,21 +357,19 @@ int DG_Modal::AdvectionMatrixPoly_(
 
     for (auto mt = tmp.begin(); mt < tmp.end(); ++mt) {
       const int* idx_K = mt.multi_index();
-      int m = mt.MonomialSetPosition();
-      double factor = tmp(mt.MonomialSetOrder(), m);
+      int n = mt.PolynomialPosition();
+      double factor = tmp(n);
       if (factor == 0.0) continue;
 
       for (auto jt = q.begin(); jt < q.end(); ++jt) {
         const int* idx_q = jt.multi_index();
         int l = q.PolynomialPosition(idx_q);
 
-        int n(0);
         for (int i = 0; i < d_; ++i) {
           multi_index[i] = idx_q[i] + idx_K[i];
-          n += multi_index[i];
         }
 
-        A(k, l) += factor * integrals(n, p.MonomialSetPosition(multi_index));
+        A(k, l) += factor * integrals(p.PolynomialPosition(multi_index));
       }
     }
   }
@@ -411,9 +399,7 @@ int DG_Modal::AdvectionMatrixPiecewisePoly_(
 
   // rebase the velocity polynomial (due to dot-product)
   VectorPolynomial ucopy(u);
-  for (int i = 0; i < u.size(); ++i) {
-    ucopy[i].ChangeOrigin(xc);
-  }
+  ucopy.ChangeOrigin(xc);
 
   // allocate memory for matrix
   Polynomial p(d_, order_), q(d_, order_);
@@ -541,7 +527,6 @@ int DG_Modal::FluxMatrix(int f, const Polynomial& un, DenseMatrix& A,
   for (auto it = poly0.begin(); it < poly0.end(); ++it) {
     const int* idx0 = it.multi_index();
     int k = poly0.PolynomialPosition(idx0);
-    int s = it.MonomialSetOrder();
 
     Polynomial p0(d_, idx0, 1.0);
     p0.set_origin(mesh_->cell_centroid(c1));
@@ -552,7 +537,6 @@ int DG_Modal::FluxMatrix(int f, const Polynomial& un, DenseMatrix& A,
     for (auto jt = poly1.begin(); jt < poly1.end(); ++jt) {
       const int* idx1 = jt.multi_index();
       int l = poly1.PolynomialPosition(idx1);
-      int t = jt.MonomialSetOrder();
 
       Polynomial q(d_, idx1, 1.0);
       q.set_origin(mesh_->cell_centroid(c1));
@@ -651,7 +635,6 @@ int DG_Modal::FluxMatrixRusanov(
   for (auto it = poly0.begin(); it < poly0.end(); ++it) {
     const int* idx0 = it.multi_index();
     int k = poly0.PolynomialPosition(idx0);
-    int s = it.MonomialSetOrder();
 
     Polynomial p0(d_, idx0, 1.0);
     p0.set_origin(mesh_->cell_centroid(c1));
@@ -662,7 +645,6 @@ int DG_Modal::FluxMatrixRusanov(
     for (auto jt = poly1.begin(); jt < poly1.end(); ++jt) {
       const int* idx1 = jt.multi_index();
       int l = poly1.PolynomialPosition(idx1);
-      int t = jt.MonomialSetOrder();
 
       Polynomial q0(d_, idx1, 1.0);
       q0.set_origin(mesh_->cell_centroid(c1));
@@ -751,7 +733,6 @@ int DG_Modal::FaceMatrixJump(int f, const Tensor& K1, const Tensor& K2, DenseMat
   for (auto it = poly0.begin(); it < poly0.end(); ++it) {
     const int* idx0 = it.multi_index();
     int k = poly0.PolynomialPosition(idx0);
-    int s = it.MonomialSetOrder();
 
     Polynomial p0(d_, idx0, 1.0);
     p0.set_origin(mesh_->cell_centroid(c1));
@@ -762,7 +743,6 @@ int DG_Modal::FaceMatrixJump(int f, const Tensor& K1, const Tensor& K2, DenseMat
     for (auto jt = poly1.begin(); jt < poly1.end(); ++jt) {
       const int* idx1 = jt.multi_index();
       int l = poly1.PolynomialPosition(idx1);
-      int t = jt.MonomialSetOrder();
 
       Polynomial q0(d_, idx1, 1.0);
       q0.set_origin(mesh_->cell_centroid(c1));
@@ -844,7 +824,6 @@ int DG_Modal::FaceMatrixPenalty(int f, double Kf, DenseMatrix& A)
   for (auto it = poly0.begin(); it < poly0.end(); ++it) {
     const int* idx0 = it.multi_index();
     int k = poly0.PolynomialPosition(idx0);
-    int s = it.MonomialSetOrder();
 
     Polynomial p0(d_, idx0, 1.0);
     p0.set_origin(mesh_->cell_centroid(c1));
@@ -852,7 +831,6 @@ int DG_Modal::FaceMatrixPenalty(int f, double Kf, DenseMatrix& A)
     for (auto jt = poly1.begin(); jt < poly1.end(); ++jt) {
       const int* idx1 = jt.multi_index();
       int l = poly1.PolynomialPosition(idx1);
-      int t = jt.MonomialSetOrder();
 
       Polynomial q0(d_, idx1, 1.0);
       q0.set_origin(mesh_->cell_centroid(c1));
@@ -904,7 +882,7 @@ void DG_Modal::UpdateIntegrals_(int c, int order)
 
     for (int n = 0; n < ncells_wghost; ++n) {
       integrals_[n].Reshape(d_, 0);
-      integrals_[n](0, 0) = mesh_->cell_volume(n);
+      integrals_[n](0) = mesh_->cell_volume(n);
     }
   }
 

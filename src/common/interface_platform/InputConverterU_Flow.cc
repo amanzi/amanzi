@@ -109,6 +109,7 @@ Teuchos::ParameterList InputConverterU::TranslateFlow_(const std::string& mode)
   if (flag) disc_method = mm.transcode(node->getTextContent());
 
   std::string pc_method("linearized_operator");
+  if (pk_model_["flow"] == "darcy") pc_method = "diffusion_operator";
   node = GetUniqueElementByTagsString_("unstructured_controls, unstr_flow_controls, preconditioning_strategy", flag);
   if (flag) pc_method = GetTextContentS_(node, "linearized_operator, diffusion_operator"); 
 

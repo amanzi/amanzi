@@ -56,9 +56,7 @@ class Basis_Natural : public Basis {
   virtual Polynomial CalculatePolynomial(const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
                                          int c, int order, DenseVector& coefs) const {
     int d = mesh->space_dimension();
-    Polynomial poly(d, order);
-
-    poly.SetPolynomialCoefficients(coefs);
+    Polynomial poly(d, order, coefs);
     poly.set_origin(mesh->cell_centroid(c));
     return poly;
   }

@@ -184,8 +184,7 @@ void PDE_DiffusionDG::ApplyBCs(bool primary, bool eliminate, bool essential_eqn)
         coef(i) = bc_value[f][i];
       }
 
-      WhetStone::Polynomial pf(d, method_order_); 
-      pf.SetPolynomialCoefficients(coef);
+      WhetStone::Polynomial pf(d, method_order_, coef); 
       pf.set_origin(xf);
 
       // convert boundary polynomial to space polynomial
@@ -197,7 +196,7 @@ void PDE_DiffusionDG::ApplyBCs(bool primary, bool eliminate, bool essential_eqn)
       int ncols = Pcell.NumCols();
 
       WhetStone::DenseVector v(nrows), pv(ncols), jv(ncols);
-      pf.GetPolynomialCoefficients(v);
+      v = pf.coefs();
       dg_->cell_basis(c).ChangeBasisNaturalToMy(v);
 
       if (bc_model[f] == OPERATOR_BC_DIRICHLET) {

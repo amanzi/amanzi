@@ -41,6 +41,7 @@ class Polynomial : public WhetStoneFunction {
  public:
   Polynomial() : d_(0), order_(-1), size_(0) {};
   Polynomial(int d, int order);
+  Polynomial(int d, int order, const DenseVector& coefs);
   Polynomial(int d, const int* multi_index, double factor);
   Polynomial(const Monomial& mono);
 
@@ -50,12 +51,6 @@ class Polynomial : public WhetStoneFunction {
   // initialization options
   // -- reset all coefficients to a scalar
   void PutScalar(double val) { coefs_.PutScalar(val); }
-  // -- set polynomial coefficients from a vector.
-  //    The vector size should match that of polynomial.
-  void SetPolynomialCoefficients(const DenseVector& coefs);
-  // -- copy polynomial coefficients to a vector. 
-  //    The vector is resized to accomodate data.
-  void GetPolynomialCoefficients(DenseVector& coefs) const;
 
   // change the coordinate system
   // -- without changing polynomial
@@ -124,12 +119,13 @@ class Polynomial : public WhetStoneFunction {
   int order() const { return order_; }
   int size() const { return size_; }
   const AmanziGeometry::Point& origin() const { return origin_; }
+  const DenseVector& coefs() const { return coefs_; }
 
   // -- one-index access
   double& operator()(int i) { return coefs_(i); }
   const double& operator()(int i) const { return coefs_(i); }
 
-  // -- expensive two-index access: try to avoid
+  // -- two-index access
   double& operator()(int i, int j) { return coefs_(PolynomialSpaceDimension(d_, i - 1) + j); }
   const double& operator()(int i, int j) const { return coefs_(PolynomialSpaceDimension(d_, i - 1) + j); }
 

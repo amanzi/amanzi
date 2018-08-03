@@ -149,9 +149,7 @@ Polynomial Basis_Regularized::CalculatePolynomial(
     int c, int order, DenseVector& coefs) const
 {
   int d = mesh->space_dimension();
-  Polynomial poly(d, order);
-
-  poly.SetPolynomialCoefficients(coefs);
+  Polynomial poly(d, order, coefs);
   poly.set_origin(mesh->cell_centroid(c));
 
   int n(0);

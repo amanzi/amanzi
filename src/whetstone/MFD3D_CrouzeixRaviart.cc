@@ -174,11 +174,8 @@ int MFD3D_CrouzeixRaviart::H1consistencyHO_(
       Polynomial tmp = grad * conormal;
       tmp.ChangeCoordinates(xf, tau);
 
-      for (auto jt = tmp.begin(); jt < tmp.end(); ++jt) {
-        int m = jt.MonomialSetOrder();
-        int k = jt.MonomialSetPosition();
-        int n = jt.PolynomialPosition();
-        R_(row + n, col) = tmp(m, k);
+      for (int n = 0; n < tmp.size(); ++n) {
+        R_(row + n, col) = tmp(n);
       }
 
       for (auto jt = pf.begin(); jt < pf.end(); ++jt) {
@@ -201,10 +198,9 @@ int MFD3D_CrouzeixRaviart::H1consistencyHO_(
 
       for (auto jt = tmp.begin(); jt < tmp.end(); ++jt) {
         int m = jt.MonomialSetOrder();
-        int k = jt.MonomialSetPosition();
         int n = jt.PolynomialPosition();
 
-        R_(row + n, col) = -tmp(m, k) / basis.monomial_scales()[m] * volume;
+        R_(row + n, col) = -tmp(n) / basis.monomial_scales()[m] * volume;
       }
     }
 
@@ -438,9 +434,7 @@ void MFD3D_CrouzeixRaviart::ProjectorCell_HO_(
 
     // degrees of freedom in cell
     if (ndof_c > 0) {
-      DenseVector v3(ndof_c);
-      moments[i].GetPolynomialCoefficients(v3);
-
+      const DenseVector& v3 = moments[i].coefs();
       AMANZI_ASSERT(ndof_c == v3.NumRows());
 
       for (int n = 0; n < ndof_c; ++n) {
@@ -459,7 +453,7 @@ void MFD3D_CrouzeixRaviart::ProjectorCell_HO_(
     if (order_ == 1) {
       AmanziGeometry::Point grad(d_), zero(d_);
       for (int j = 0; j < d_; ++j) {
-        grad[j] = uc[i](1, j);
+        grad[j] = uc[i](j + 1);
       }
     
       double a1(0.0), a2(0.0), tmp;
@@ -475,7 +469,7 @@ void MFD3D_CrouzeixRaviart::ProjectorCell_HO_(
 
       uc[i](0, 0) = a1 / a2;
     } else if (order_ >= 2) {
-      integrals_.poly().GetPolynomialCoefficients(v4);
+      v4 = integrals_.poly().coefs();
       basis.ChangeBasisMyToNatural(v4);
       v4.Reshape(nd);
       uc[i](0, 0) = vdof(row) - (v4 * v5) / volume;
@@ -496,9 +490,7 @@ void MFD3D_CrouzeixRaviart::ProjectorCell_HO_(
       M2 = M.SubMatrix(ndof_c, nd, 0, nd);
       M2.Multiply(v5, v6, false);
 
-      DenseVector v3(ndof_c);
-      moments[i].GetPolynomialCoefficients(v3);
-
+      const DenseVector& v3 = moments[i].coefs();
       for (int n = 0; n < ndof_c; ++n) {
         v4(n) = v3(n) * mesh_->cell_volume(c);
       }
@@ -606,9 +598,8 @@ void MFD3D_CrouzeixRaviart::ProjectorGradientCell_(
 
           for (auto jt = grad[j].begin(); jt < grad[j].end(); ++jt) {
             int m = jt.MonomialSetOrder();
-            int k = jt.MonomialSetPosition();
             int s = jt.PolynomialPosition();
-            v4(row) -= grad[j](m, k) / basis.monomial_scales()[m] * (*moments)(s) * volume;
+            v4(row) -= grad[j](s) / basis.monomial_scales()[m] * (*moments)(s) * volume;
           }
         }
       }

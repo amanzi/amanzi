@@ -662,9 +662,8 @@ void RemapTestsDualRK(int order_p, int order_u,
       }
 
       // save the projected function
-      poly.GetPolynomialCoefficients(data);
       for (int i = 0; i < nk; ++i) {
-        q2c[i][c] = data(i);
+        q2c[i][c] = poly(i);
       }
     }
   }

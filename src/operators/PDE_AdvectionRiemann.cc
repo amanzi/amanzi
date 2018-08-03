@@ -182,8 +182,7 @@ void PDE_AdvectionRiemann::ApplyBCs(bool primary, bool eliminate, bool essential
         coef(i) = bc_value[f][i];
       }
 
-      WhetStone::Polynomial pf(d, dg_->order()); 
-      pf.SetPolynomialCoefficients(coef);
+      WhetStone::Polynomial pf(d, dg_->order(), coef);
       pf.set_origin(xf);
 
       // -- convert boundary polynomial to regularized space polynomial
@@ -195,7 +194,7 @@ void PDE_AdvectionRiemann::ApplyBCs(bool primary, bool eliminate, bool essential
       int ncols = Aface.NumCols();
 
       WhetStone::DenseVector v(nrows), av(ncols);
-      pf.GetPolynomialCoefficients(v);
+      v = pf.coefs();
       dg_->cell_basis(c).ChangeBasisNaturalToMy(v);
 
       Aface.Multiply(v, av, false);

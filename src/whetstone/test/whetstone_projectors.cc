@@ -844,7 +844,7 @@ void SerendipityProjectorPolygon() {
     mfd.H1Cell(cell, vf, moments, uc);
     uc.ChangeOrigin(zero);
     uc -= vf[0];
-    CHECK(uc[0].NormMax() < 4e-10 && uc[1].NormMax() < 5e-10);
+    CHECK(uc[0].NormMax() < 5e-10 && uc[1].NormMax() < 5e-10);
   }
 
   // test piecewise linear deformation (part I)

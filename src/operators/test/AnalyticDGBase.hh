@@ -118,12 +118,11 @@ void AnalyticDGBase::InitialGuess(
     if (inside != NULL) 
       if (! inside(xc)) continue;
 
-    Amanzi::WhetStone::DenseVector data;
     Amanzi::WhetStone::Polynomial coefs;
     const Amanzi::WhetStone::Basis& basis = dg.cell_basis(c);
 
     SolutionTaylor(xc, t, coefs);
-    coefs.GetPolynomialCoefficients(data);
+    Amanzi::WhetStone::DenseVector data = coefs.coefs();
     basis.ChangeBasisNaturalToMy(data);
 
     for (int n = 0; n < data.NumRows(); ++n) {
@@ -156,20 +155,18 @@ void AnalyticDGBase::ComputeCellError(
 
     int nk = p.NumVectors();
     Amanzi::WhetStone::DenseVector data(nk);
-    Amanzi::WhetStone::Polynomial sol, poly(d_, order_); 
-
-    // numerical solution in my basis 
     for (int i = 0; i < nk; ++i) data(i) = p[i][c];
-    poly.SetPolynomialCoefficients(data);
+
+    Amanzi::WhetStone::Polynomial sol, poly(d_, order_, data); 
     poly.set_origin(xc);
 
     // convert analytic solution from natural to my basis 
     SolutionTaylor(xc, t, sol);
-    sol.GetPolynomialCoefficients(data);
+    data = sol.coefs();
 
     const Amanzi::WhetStone::Basis& basis = dg.cell_basis(c);
     basis.ChangeBasisNaturalToMy(data);
-    sol.SetPolynomialCoefficients(data);
+    for (int i = 0; i < nk; ++i) sol(i) = data(i);
 
     Amanzi::WhetStone::Polynomial poly_err(poly);
     poly_err -= sol;
@@ -186,9 +183,9 @@ void AnalyticDGBase::ComputeCellError(
     pnorm += std::pow(sol(0, 0), 2.0) * volume;
 
     // integrated error
-    poly_err.GetPolynomialCoefficients(data);
+    data = poly_err.coefs();
     basis.ChangeBasisMyToNatural(data);
-    poly_err.SetPolynomialCoefficients(data);
+    for (int i = 0; i < nk; ++i) poly_err(i) = data(i);
 
     std::vector<const Amanzi::WhetStone::WhetStoneFunction*> funcs(2);
     funcs[0] = &poly_err;

@@ -90,8 +90,7 @@ int MFD3D_CrouzeixRaviartSerendipity::H1consistency(
     for (auto jt = lap.begin(); jt < lap.end(); ++jt) {
       int l = jt.PolynomialPosition();
       int m = jt.MonomialSetOrder();
-      int n = jt.MonomialSetPosition();
-      L(l, k) = lap(m, n) / basis.monomial_scales()[m];
+      L(l, k) = lap(l) / basis.monomial_scales()[m];
     }  
   }
 
@@ -188,7 +187,7 @@ void MFD3D_CrouzeixRaviartSerendipity::ProjectorCell_(
 
   // calculate degrees of freedom
   const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
-  DenseVector v1(nd), v3(std::max(1, ndof_cs)), v5(nd);
+  DenseVector v1(nd), v5(nd);
 
   int dim = vf[0].size();
   uc.resize(dim);
@@ -199,8 +198,7 @@ void MFD3D_CrouzeixRaviartSerendipity::ProjectorCell_(
 
     // DOFs inside cell: copy moments from input data
     if (ndof_cs > 0) {
-      moments[i].GetPolynomialCoefficients(v3);
-
+      const DenseVector& v3 = moments[i].coefs();
       for (int n = 0; n < ndof_cs; ++n) {
         vdof(ndof_f + n) = v3(n);
       }
@@ -248,6 +246,7 @@ void MFD3D_CrouzeixRaviartSerendipity::ProjectorCell_(
       M2 = M.SubMatrix(ndof_cs, nd, 0, nd);
       M2.Multiply(v5, v6, false);
 
+      const DenseVector& v3 = moments[i].coefs();
       for (int n = 0; n < ndof_cs; ++n) {
         v4(n) = v3(n) * mesh_->cell_volume(c);
       }

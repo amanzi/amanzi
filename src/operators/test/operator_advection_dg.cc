@@ -238,7 +238,7 @@ void AdvectionSteady(int dim, std::string filename, int nx,
         if (weak_sign < 0.0) bc_model[f] = OPERATOR_BC_DIRICHLET_TYPE2;
 
         ana.SolutionTaylor(xf, 0.0, coefs);
-        coefs.GetPolynomialCoefficients(data);
+        data = coefs.coefs();
 
         for (int i = 0; i < nk; ++i) {
           bc_value[f][i] = data(i);
@@ -324,7 +324,6 @@ void AdvectionSteady(int dim, std::string filename, int nx,
 
 
 TEST(OPERATOR_ADVECTION_STEADY_DG) {
-  /*
   AdvectionSteady<AnalyticDG03>(2, "test/median7x8.exo", 8, "primal", false, "orthonormalized");
   AdvectionSteady<AnalyticDG03>(2, "test/median7x8.exo", 8, "primal", false, "normalized");
   AdvectionSteady<AnalyticDG03>(2, "test/median7x8.exo", 8, "primal", false, "regularized");
@@ -332,7 +331,6 @@ TEST(OPERATOR_ADVECTION_STEADY_DG) {
   AdvectionSteady<AnalyticDG03>(2, "test/median7x8.exo", 8, "dual", true, "regularized");
   AdvectionSteady<AnalyticDG03>(2, "test/median7x8.exo", 8, "dual", false);
   AdvectionSteady<AnalyticDG02>(3, "cubic", 3, "dual", true);
-  */
 }
 
 

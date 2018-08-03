@@ -31,6 +31,18 @@ Polynomial::Polynomial(int d, int order) :
 
 
 /* ******************************************************************
+* Constructor from a  given vector.
+****************************************************************** */
+Polynomial::Polynomial(int d, int order, const DenseVector& coefs) :
+    d_(d), order_(order), origin_(d)
+{
+  size_ = PolynomialSpaceDimension(d_, order_);
+  AMANZI_ASSERT(size_ == coefs.NumRows());
+  coefs_ = coefs;
+}
+
+
+/* ******************************************************************
 * Constructor of a polynomial with a single term:
 *    p(x) = factor * (x)^multi_index
 ****************************************************************** */
@@ -232,15 +244,15 @@ void Polynomial::ChangeOrigin(const AmanziGeometry::Point& origin)
           double coef1 = powers[1][index[1]](i1); 
 
           if (d_ == 2) {
-            int pos = MonomialSetPosition(idx);
-            tmp(i0 + i1, pos) = coef * coef0 * coef1;
+            int pos = PolynomialPosition(idx);
+            tmp(pos) = coef * coef0 * coef1;
           } else {
             for (int i2 = 0; i2 <= index[2]; ++i2) {
               idx[2] = i2;
               double coef2 = powers[2][index[2]](i2); 
 
-              int pos = MonomialSetPosition(idx);
-              tmp(i0 + i1 + i2, pos) = coef * coef0 * coef1 * coef2;
+              int pos = PolynomialPosition(idx);
+              tmp(pos) = coef * coef0 * coef1 * coef2;
             }
           }
         }
@@ -321,26 +333,6 @@ Polynomial Polynomial::ChangeOrigin(
 
 
 /* ******************************************************************
-* Set polynomial coefficients to entries of the given vector.
-****************************************************************** */
-void Polynomial::SetPolynomialCoefficients(const DenseVector& coefs)
-{
-  AMANZI_ASSERT(size_ == coefs.NumRows());
-  coefs_ = coefs;
-}
-
-
-/* ******************************************************************
-* Copy polynomial coefficients to a vector. Vector is resized.
-****************************************************************** */
-void Polynomial::GetPolynomialCoefficients(DenseVector& coefs) const
-{
-  coefs.Reshape(size_);
-  coefs = coefs_;
-}
-
-
-/* ******************************************************************
 * Calculate polynomial value at a given point. 
 ****************************************************************** */
 double Polynomial::Value(const AmanziGeometry::Point& xp) const
@@ -387,8 +379,8 @@ int Polynomial::PolynomialPosition(const int* multi_index) const
   int k = 0;
   for (int i = 0; i < d_; ++i) k += multi_index[i];
 
-  // sum of previous monomials
-  int nk = (d_ == 2) ? k * (k + 1) / 2 : k * (k + 1) * (k + 2) / 6; 
+  // space of low-order monomials
+  int nk = PolynomialSpaceDimension(d_, k - 1);
 
   return nk + MonomialSetPosition(multi_index);
 }

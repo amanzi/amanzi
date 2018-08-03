@@ -213,10 +213,9 @@ int MFD3D_Lagrange::H1consistency(
 
       for (auto jt = tmp.begin(); jt < tmp.end(); ++jt) {
         int m = jt.MonomialSetOrder();
-        int k = jt.MonomialSetPosition();
         int n = jt.PolynomialPosition();
 
-        R_(row + n, col) = -tmp(m, k) / basis.monomial_scales()[m] * volume;
+        R_(row + n, col) = -tmp(n) / basis.monomial_scales()[m] * volume;
       }
     }
 
@@ -378,9 +377,7 @@ void MFD3D_Lagrange::ProjectorCell_(
 
     // DOFs inside cell: copy moments from input data
     if (ndof_c > 0) {
-      DenseVector v3(ndof_c);
-      moments[i].GetPolynomialCoefficients(v3);
-
+      const DenseVector& v3 = moments[i].coefs();
       AMANZI_ASSERT(ndof_c == v3.NumRows());
 
       for (int n = 0; n < ndof_c; ++n) {
@@ -415,7 +412,7 @@ void MFD3D_Lagrange::ProjectorCell_(
 
       uc[i](0, 0) = a1 / a2;
     } else if (order_ >= 2) {
-      integrals_.poly().GetPolynomialCoefficients(v4);
+      v4 = integrals_.poly().coefs();
       basis.ChangeBasisMyToNatural(v4);
       v4.Reshape(nd);
       uc[i](0, 0) = vdof(row) - (v4 * v5) / volume;
@@ -436,9 +433,7 @@ void MFD3D_Lagrange::ProjectorCell_(
       M2 = M.SubMatrix(ndof_c, nd, 0, nd);
       M2.Multiply(v5, v6, false);
 
-      DenseVector v3(ndof_c);
-      moments[i].GetPolynomialCoefficients(v3);
-
+      const DenseVector& v3 = moments[i].coefs();
       for (int n = 0; n < ndof_c; ++n) {
         v4(n) = v3(n) * mesh_->cell_volume(c);
       }
