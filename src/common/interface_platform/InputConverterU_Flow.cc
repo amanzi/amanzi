@@ -517,14 +517,14 @@ Teuchos::ParameterList InputConverterU::TranslateFlowBCs_()
   if (!node_list) return out_list;
 
   std::set<std::string> active_bcs;  // for statistics
-
   int ibc(0);
-  children = node_list->item(0)->getChildNodes();
-  int nchildren = children->getLength();
 
-  for (int i = 0; i < nchildren; ++i) {
-    DOMNode* inode = children->item(i);
-    if (inode->getNodeType() != DOMNode::ELEMENT_NODE) continue;
+  DOMNode* inode = node_list->item(0)->getFirstChild();
+  while (inode != NULL) {
+    if (inode->getNodeType() != DOMNode::ELEMENT_NODE) {
+      inode = inode->getNextSibling();
+      continue;
+    }
     tagname = mm.transcode(inode->getNodeName());
 
     // read the assigned regions
@@ -714,6 +714,8 @@ Teuchos::ParameterList InputConverterU::TranslateFlowBCs_()
           element, "submodel", TYPE_NONE, false, "none");
       bc.set<bool>("no flow above water table", (tmp == "no_flow_above_water_table"));
     }
+
+    inode = inode->getNextSibling();
   }
 
   // output statistics
