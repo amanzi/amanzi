@@ -77,13 +77,9 @@ void Basis_Orthonormalized::BilinearFormNaturalToMy(DenseMatrix& A) const
   int nrows = A.NumRows();
   std::vector<double> a(nrows), b(nrows);
 
-  for (auto it = monomial_scales_.begin(); it < monomial_scales_.end(); ++it) {
-    int n = it.PolynomialPosition();
-    int m = it.MonomialSetOrder();
-    int k = it.MonomialSetPosition();
-
-    double ak = monomial_scales_(m, k);
-    double bk = monomial_ortho_(m, k);
+  for (int n = 0; n < nrows; ++n) {
+    double ak = monomial_scales_(n);
+    double bk = monomial_ortho_(n);
 
     a[n] = ak;
     b[n] = -ak * bk;

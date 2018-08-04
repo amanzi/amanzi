@@ -169,10 +169,8 @@ Polynomial& Polynomial::operator*=(const Polynomial& poly)
       int n2 = it2.PolynomialPosition();
       double val2 = arg2->operator()(n2);
 
-      int n(0);
       for (int i = 0; i < d_; ++i) {
         index[i] = idx1[i] + idx2[i];
-        n += index[i];
       }
       int l = PolynomialPosition(index);
       coefs_(l) += val1 * val2;

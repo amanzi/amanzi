@@ -92,6 +92,7 @@ int DG_Modal::MassMatrix(int c, const Tensor& K, DenseMatrix& M)
 int DG_Modal::MassMatrix(
     int c, const Tensor& K, PolynomialOnMesh& integrals, DenseMatrix& M)
 {
+  // tensor must be scalar for this call
   double K00 = K(0, 0);
 
   // extend list of integrals of monomials
@@ -214,7 +215,7 @@ int DG_Modal::MassMatrixPiecewisePoly_(
     int s = it.MonomialSetOrder();
     const int* idx0 = it.multi_index();
 
-    Polynomial p0(d_, idx0, 1.0);
+    Monomial p0(d_, idx0, 1.0);
     p0.set_origin(xc);
 
     polys[0] = &p0;

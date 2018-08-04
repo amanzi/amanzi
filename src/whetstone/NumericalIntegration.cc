@@ -90,9 +90,8 @@ double NumericalIntegration::IntegratePolynomialCell(int c, const Polynomial& po
   tmp.ChangeOrigin(mesh_->cell_centroid(c));
 
   double value(0.0);
-  for (int k = 0; k <= order; ++k) {
-    int mk = MonomialSpaceDimension(d_, k);
-    for (int i = 0; i < mk; ++i) value += integrals(k, i) * tmp(k, i);
+  for (int n = 0; n < tmp.size(); ++n) {
+    value += integrals(n) * tmp(n);
   }
 
   return value;
@@ -312,9 +311,10 @@ void NumericalIntegration::UpdateMonomialIntegralsCell(
 ****************************************************************** */
 void NumericalIntegration::IntegrateMonomialsCell(int c, int k, Polynomial& integrals)
 {
+  int nk = PolynomialSpaceDimension(d_, k - 1);
   int mk = MonomialSpaceDimension(d_, k);
   for (int i = 0; i < mk; ++i) {
-    integrals(k, i) = 0.0;
+    integrals(nk + i) = 0.0;
   }
 
   Entity_ID_List faces, nodes;
@@ -372,9 +372,6 @@ void NumericalIntegration::IntegrateMonomialsFace_(
 
     // using monomial centered at xc, create polynomial centred at xf
     const int* idx = it.multi_index();
-    // Polynomial poly(d_, idx, 1.0);
-    // poly.set_origin(xc);
-    // poly.ChangeOrigin(xf);
 
     Monomial mono(d_, idx, 1.0);
     mono.set_origin(xc);
@@ -400,8 +397,8 @@ void NumericalIntegration::IntegrateMonomialsFace_(
       Polynomial q(poly);
       for (auto jt = poly.begin(); jt < poly.end(); ++jt) {
         int m = jt.MonomialSetOrder();
-        int k = jt.MonomialSetPosition();
-        q(m, k) *= tmp / (m + d_ - 1);
+        int s = jt.PolynomialPosition();
+        q(s) *= tmp / (m + d_ - 1);
       }
 
       // integrate along edge
@@ -451,7 +448,7 @@ void NumericalIntegration::IntegrateMonomialsEdge_(
 
 
 /* ******************************************************************
-* Pseudo-maximum value of a polynomial.
+* Approximate maximum value of a polynomial.
 ****************************************************************** */
 double NumericalIntegration::PolynomialMaxValue(int f, const Polynomial& poly)
 {

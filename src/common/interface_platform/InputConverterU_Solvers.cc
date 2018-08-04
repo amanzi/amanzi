@@ -306,8 +306,9 @@ Teuchos::ParameterList InputConverterU::TranslateHypreAMG_()
 
   if (flag) {
     DOMNodeList* children = node->getChildNodes();
+    int nchildren = children->getLength();
 
-    for (int i = 0; i < children->getLength(); i++) {
+    for (int i = 0; i < nchildren; i++) {
       DOMNode* inode = children->item(i);
       char* tagname = mm.transcode(inode->getNodeName());
       char* text_content = mm.transcode(inode->getTextContent());

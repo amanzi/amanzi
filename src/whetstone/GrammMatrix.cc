@@ -28,6 +28,7 @@ void GrammMatrix(
   int d = poly.dimension();
   G.Reshape(nd, nd);
 
+  int multi_index[3];
   for (auto it = poly.begin(); it < poly.end(); ++it) {
     const int* index = it.multi_index();
     int k = it.PolynomialPosition();
@@ -38,15 +39,12 @@ void GrammMatrix(
       int l = jt.PolynomialPosition();
       double scalel = basis.monomial_scales()[jt.MonomialSetOrder()];
       
-      int n(0);
-      int multi_index[3];
       for (int i = 0; i < d; ++i) {
         multi_index[i] = index[i] + jndex[i];
-        n += multi_index[i];
       }
 
-      int pos = poly.MonomialSetPosition(multi_index); 
-      G(k, l) = G(l, k) = integrals.poly()(n, pos) * scalek * scalel; 
+      int pos = poly.PolynomialPosition(multi_index); 
+      G(k, l) = G(l, k) = integrals.poly()(pos) * scalek * scalel; 
     }
   }
 }
@@ -69,6 +67,7 @@ void GrammMatrixGradients(
   else 
     Ktmp.MakeDiagonal(K(0, 0));
 
+  int multi_index[3];
   for (auto it = poly.begin(); it < poly.end(); ++it) {
     const int* index = it.multi_index();
     int k = it.PolynomialPosition();
@@ -79,11 +78,8 @@ void GrammMatrixGradients(
       int l = jt.PolynomialPosition();
       double scalel = basis.monomial_scales()[jt.MonomialSetOrder()];
       
-      int n(0);
-      int multi_index[3];
       for (int i = 0; i < d; ++i) {
         multi_index[i] = index[i] + jndex[i];
-        n += multi_index[i];
       }
 
       double sum(0.0), tmp;
@@ -95,8 +91,8 @@ void GrammMatrixGradients(
             if (jndex[j] > 0) {
               multi_index[j] -= 1;
 
-              int m = poly.MonomialSetPosition(multi_index);
-              tmp = integrals.poly()(n - 2, m);
+              int n = poly.PolynomialPosition(multi_index);
+              tmp = integrals.poly()(n);
               sum += Ktmp(i, j) * tmp * index[i] * jndex[j];
 
               multi_index[j] += 1;

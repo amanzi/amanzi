@@ -67,10 +67,9 @@ Teuchos::ParameterList InputConverterU::TranslateOutput_()
   // this contains any time macros and cycle macros
   Teuchos::ParameterList tmPL, cmPL;
   node_list = doc_->getElementsByTagName(mm.transcode("macros"));
-  children = node_list->item(0)->getChildNodes();
+  DOMNode* inode = node_list->item(0)->getFirstChild();
 
-  for (int i = 0; i < children->getLength(); ++i) {
-    DOMNode* inode = children->item(i);
+  while (inode != NULL) {
     if (DOMNode::ELEMENT_NODE == inode->getNodeType()) {
       tagname = mm.transcode(inode->getNodeName());
 
@@ -155,6 +154,7 @@ Teuchos::ParameterList InputConverterU::TranslateOutput_()
         cmPL.sublist(name) = cm_parameter;
       }
     }
+    inode = inode->getNextSibling();
   }
   if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH)
     *vo_->os() << "Found " << cmPL.numParams() << " cycle macros and "
@@ -170,8 +170,10 @@ Teuchos::ParameterList InputConverterU::TranslateOutput_()
     }
 
     DOMNodeList* children = node->getChildNodes();
+    int nchildren = children->getLength();
+
     Teuchos::ParameterList visPL;
-    for (int j = 0; j < children->getLength(); j++) {
+    for (int j = 0; j < nchildren; j++) {
       DOMNode* jnode = children->item(j);
       tagname = mm.transcode(jnode->getNodeName());
 
@@ -280,11 +282,12 @@ Teuchos::ParameterList InputConverterU::TranslateOutput_()
       *vo_->os() << "Translating output: observations" << std::endl;
 
     Teuchos::ParameterList obsPL;
-    DOMNodeList* OBList = node->getChildNodes();
-
-    for (int i = 0; i < OBList->getLength(); i++) {
-      DOMNode* inode = OBList->item(i);
-      if (inode->getNodeType() != DOMNode::ELEMENT_NODE) continue;
+    DOMNode* inode = node->getFirstChild();
+    while (inode != NULL) {
+      if (inode->getNodeType() != DOMNode::ELEMENT_NODE) { 
+        inode = inode->getNextSibling();
+        continue;
+      }
       tagname = mm.transcode(inode->getNodeName());
       text = mm.transcode(inode->getTextContent());
 
@@ -470,6 +473,7 @@ Teuchos::ParameterList InputConverterU::TranslateOutput_()
           obsPL.sublist(list_name.str()) = obPL;
         }
       }
+      inode = inode->getNextSibling();
     }
 
     out_list.sublist("observation data") = obsPL;

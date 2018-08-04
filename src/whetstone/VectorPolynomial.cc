@@ -100,15 +100,15 @@ void VectorPolynomial::Gradient(const Polynomial p)
     int k = it.MonomialSetOrder();
     if (k > 0) {
       const int* idx = it.multi_index();
-      int m = it.MonomialSetPosition();
-      double val = p(k, m);
+      int n = it.PolynomialPosition();
+      double val = p(n);
 
       for (int i = 0; i < d; ++i) {
         for (int j = 0; j < d; ++j) index[j] = idx[j];
 
         if (index[i] > 0) {
           index[i]--;
-          m = p.MonomialSetPosition(index);
+          int m = p.MonomialSetPosition(index);
           polys_[i](k - 1, m) = val * idx[i];
         }
       }

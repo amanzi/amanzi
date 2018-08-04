@@ -214,7 +214,9 @@ void InputConverter::ParseConstants_()
   if (node_list->getLength() == 0) return;
 
   children = node_list->item(0)->getChildNodes();
-  for (int i = 0; i < children->getLength(); ++i) {
+  int nchildren = children->getLength();
+
+  for (int i = 0; i < nchildren; ++i) {
     DOMNode* inode = children->item(i);
     if (inode->getNodeType() != DOMNode::ELEMENT_NODE) continue;
     element = static_cast<DOMElement*>(inode);
@@ -282,10 +284,10 @@ DOMNode* InputConverter::GetUniqueElementByTagsString_(
 
     bool found(true);
     for (int n = 1; n < tag_names.size(); ++n) {
-      DOMNodeList* children = node->getChildNodes();
       int ntag(0);
-      for (int i = 0; i < children->getLength(); i++) {
-        DOMNode* inode = children->item(i);
+      DOMNode* inode = node->getFirstChild();
+
+      while (inode != NULL) {
         if (DOMNode::ELEMENT_NODE == inode->getNodeType()) {
           char* tagname = mm.transcode(inode->getNodeName());   
           if (strcmp(tagname, tag_names[n].c_str()) == 0) {
@@ -293,7 +295,9 @@ DOMNode* InputConverter::GetUniqueElementByTagsString_(
             ntag++;
           }
         }
+        inode = inode->getNextSibling();
       }
+
       if (ntag > 1) {
         Errors::Message msg;
         msg << "Tag \"" << tag_names[n] << "\" in \"" << tags << "\"\n";
@@ -335,10 +339,10 @@ DOMNode* InputConverter::GetUniqueElementByTagsString_(
   node = const_cast<DOMNode*>(node1);
 
   for (int n = 0; n < tag_names.size(); ++n) {
-    DOMNodeList* children = node->getChildNodes();
     int ntag(0);
-    for (int i = 0; i < children->getLength(); i++) {
-      DOMNode* inode = children->item(i);
+    DOMNode* inode = node->getFirstChild();
+
+    while (inode != NULL) {
       if (DOMNode::ELEMENT_NODE == inode->getNodeType()) {
         char* tagname = XMLString::transcode(inode->getNodeName());   
         if (strcmp(tagname, tag_names[n].c_str()) == 0) {
@@ -347,6 +351,7 @@ DOMNode* InputConverter::GetUniqueElementByTagsString_(
         }
         XMLString::release(&tagname);
       }
+      inode = inode->getNextSibling();
     }
     if (ntag != 1) return node;
   }
@@ -370,7 +375,9 @@ DOMElement* InputConverter::GetUniqueChildByAttribute_(
   DOMElement* child = NULL;
 
   DOMNodeList* children = node->getChildNodes();
-  for (int i = 0; i < children->getLength(); ++i) {
+  int nchildren = children->getLength();
+
+  for (int i = 0; i < nchildren; ++i) {
     DOMNode* inode = children->item(i);
     if (inode->getNodeType() != DOMNode::ELEMENT_NODE) continue;
 
@@ -491,10 +498,12 @@ std::vector<DOMNode*> InputConverter::GetSameChildNodes_(
   std::vector<DOMNode*> same;
 
   name = "";
-  DOMNodeList* children = node->getChildNodes();
-  for (int i = 0; i < children->getLength(); ++i) {
-    DOMNode* inode = children->item(i);
-    if (inode->getNodeType() != DOMNode::ELEMENT_NODE) continue;
+  DOMNode* inode = node->getFirstChild();
+  while (inode != NULL) {
+    if (inode->getNodeType() != DOMNode::ELEMENT_NODE) {
+      inode = inode->getNextSibling();
+      continue;
+    }
 
     char* text = mm.transcode(inode->getNodeName());
     if (n == 0) name = text;
@@ -503,6 +512,7 @@ std::vector<DOMNode*> InputConverter::GetSameChildNodes_(
       n++;
     } 
     m++;
+    inode = inode->getNextSibling();
   }
   if (n == m && n > 0) flag = true;
 
@@ -756,7 +766,8 @@ std::string InputConverter::GetChildValueS_(
   flag = false;
 
   DOMNodeList* children = node->getChildNodes();
-  for (int i = 0; i < children->getLength(); ++i) {
+  int nchildren = children->getLength();
+  for (int i = 0; i < nchildren; ++i) {
     DOMNode* inode = children->item(i);
     char* tagname = mm.transcode(inode->getNodeName());   
     if (childName == tagname) {

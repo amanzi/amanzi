@@ -182,11 +182,11 @@ Polynomial Divergence(const VectorPolynomial vp)
         for (int j = 0; j < d; ++j) index[j] = idx[j];
 
         if (index[i] > 0) {
-          int m = it.MonomialSetPosition();
-          double val = vp[i](k, m);
+          int n = it.PolynomialPosition();
+          double val = vp[i](n);
 
           index[i]--;
-          m = vp[i].MonomialSetPosition(index);
+          int m = vp[i].MonomialSetPosition(index);
           div(k - 1, m) += val * idx[i];
         }
       }
