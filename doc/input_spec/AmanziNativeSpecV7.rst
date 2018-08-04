@@ -12,25 +12,6 @@ This is a continuously evolving specification format used by the code developers
 Its main purpose is to develop and test new capabilities without disruption of end-users.
 
 
-Changes V6 -> V7
-================
-
-* Lower-case naming convention for parameters.
-* Dual porosity model to flow and transport.
-* Support of units in output of observations.
-* New regions: with volume fractions and line segments.
-* Finer control of IO of state fields via blacklisting
-* New functions: distance and monomial.
-* Support of Trilinos solvers: Belos GMRES and NOX.
-* Simple back-tracking and continuation algorithms.
-* More submodels for boundary conditions.
-* New permeability models for flow in fractures.
-* Support of higher-order transport, 3rd and 4th.
-* New time step controller "from file".
-* Experimental support of Stokes and Navier Stokes flows
-* Better layout, less typos.
-
-
 ParameterList XML
 =================
 
@@ -3615,7 +3596,8 @@ Operators
 
 Operators are discrete forms of linearized PDEs operators.
 They form a layer between physical process kernels and solvers
-and include diffusion, advection, elasticity, and source operators.
+and include accumulation, diffusion, advection, elasticity, reaction, 
+and source operators.
 The residual associated with an operator :math:`L_h` helps to 
 understand the employed sign convention:
 
@@ -3624,7 +3606,7 @@ understand the employed sign convention:
 
 A PK decides how to bundle operators in a collection of operators.
 For example, an advection-diffusion problem may benefit from using
-an operator that combines two operators representing diffusion and advection process.
+a single operator that combines two operators representing diffusion and advection process.
 Collection of operators must be used for implicit solvers and for building preconditioners.
 In such a case, the collections acts as a single operator.
 
@@ -3639,35 +3621,40 @@ The operators use notion of schema to describe operator's abstract structure.
 Old operators use a simple schema which is simply the list of geometric objects where
 scalar degrees of freedom are defined.
 New operators use a list to define location, type, and number of degrees of freedom.
+In addition, the base of local stencil is either *face* or *cell*.
 A rectangular operator needs two schemas do describe its domain (called `"schema domain`") 
 and its range (called `"schema range`").
+A square operator may use either two identical schema lists or a single list called `"schema`".
 
 .. code-block:: xml
 
   <ParameterList name="OPERATOR_NAME">  <!-- parent list-->
     <ParameterList name="schema domain">
+      <Parameter name="base" type="string" value="cell"/>
       <Parameter name="location" type="Array(string)" value="{node, face}"/>
       <Parameter name="type" type="Array(string)" value="{scalar, normal component}"/>
       <Parameter name="number" type="Array(int)" value="{2, 1}"/>
     </ParameterList>
     <ParameterList name="schema domain">
+      <Parameter name="base" type="string" value="cell"/>
       <Parameter name="location" type="Array(string)" value="{node, face}"/>
       <Parameter name="type" type="Array(string)" value="{scalar, normal component}"/>
       <Parameter name="number" type="Array(int)" value="{2, 1}"/>
     </ParameterList>
   </ParameterList>
 
-This example describes square operator with two degrees of freedom per mesh node and one
+This example describes a square operator with two degrees of freedom per mesh node and one
 degree of freedom per mesh face. 
 The face-based degree of freedom is the normal component of a vector field. 
 Such set of degrees of freedom is used in the Bernardi-Raugel element for discretizing 
 Stokes equations.
+Parameter `"base`" indicates that local matrices are associated with mesh cells. 
 
 
 Diffusion operator
 ..................
 
-Diffusion is the most frequently used operator.
+Diffusion is the most frequently used operator. It employs the old schema.
 
 * `"OPERATOR_NAME`" [list] a PK specific name for the diffusion operator.
 
@@ -3682,9 +3669,11 @@ Diffusion is the most frequently used operator.
 
   * `"discretization secondary`" [string] specifies the most robust discretization method
     that is used when the primary selection fails to satisfy all a priori conditions.
+    Default value is equal to that for the primary discretization.
 
-  * `"diffusion tensor`" [string] allows us to solve problems with symmetric and non-symmetric 
-    (but positive definite) tensors. Available options are *symmetric* (default) and *nonsymmetric*.
+  * `"diffusion tensor`" [string] specifies additional properties of the diffusion tensor.
+    It allows us to solve problems with non-symmetric but positive definite tensors. 
+    Available options are *symmetric* (default) and *nonsymmetric*.
 
   * `"nonlinear coefficient`" [string] specifies a method for treating nonlinear diffusion
     coefficient, if any. Available options are `"none`", `"upwind: face`", `"divk: cell-face`" (default),
@@ -3696,11 +3685,12 @@ Diffusion is the most frequently used operator.
     Default is `"none`".
 
   * `"schema`" [Array(string)] defines the operator stencil. It is a collection of 
-    geometric objects.
+    geometric objects. It equals to `"{cell}`" for finite volume schemes. 
+    It is typically `"{face, cell}`" for mimetic discretizations.
 
   * `"preconditioner schema`" [Array(string)] defines the preconditioner stencil.
-    It is needed only when the default assembling procedure is not desirable. If skipped,
-    the `"schema`" is used instead. 
+    It is needed only when the default assembling procedure is not desirable. 
+    If skipped, the `"schema`" is used instead. 
 
   * `"gravity`" [bool] specifies if flow is driven also by the gravity.
 
@@ -3710,9 +3700,9 @@ Diffusion is the most frequently used operator.
     and derives gravity discretization by the reserve shifting.
     The second option is based on the divergence formula.
 
-  * `"Newton correction`" [string] specifies a model for non-physical terms 
-    that must be added to the matrix. These terms represent Jacobian and are needed 
-    for the preconditioner. Available options are `"true Jacobian`" and `"approximate Jacobian`".
+  * `"Newton correction`" [string] specifies a model for correction (non-physical) terms 
+    that must be added to the preconditioner. These terms approximate some Jacobian terms.
+    Available options are `"true Jacobian`" and `"approximate Jacobian`".
     The FV scheme accepts only the first options. The othre schemes accept only the second option.
 
   * `"scaled constraint equation`" [bool] rescales flux continuity equations on mesh faces.
@@ -3764,13 +3754,34 @@ Schur complement.
 Advection operator
 ..................
 
-An advection operator may have different domain and range and therefore requires two schemas.
-The structure of the schema is described in the previous section.
+A high-order advection operator may have different domain and range and therefore requires two schemas.
+The structure of the new schema is described in the previous section.
+A high-order advection operator has two terms in a weak formulation, corresponding to 
+volume and surface integrals. These two terms are discretixed using two operators with
+matrix of types *advection* and *flux*, respectively.
+
 
 * `"OPERATOR_NAME`" [list] a PK specific name for the advection operator.
 
-  * `"method`" [string] defines a discretization method. The available options 
-    are `"DG order 0`", `"DG order 1`".
+  * `"method`" [string] defines a discretization method. The available option is `"dg modal`".
+
+  * `"method order`" [int] defines method order. For example, the classical low-order finite 
+    volume scheme is equivalent to DG of order 0.
+
+  * `"matrix type`" [string] defines matrix type. The supported options are `"advection`"
+    and `"flux`".
+
+  * `"dg basis`" [string] defines bases for DG schemes. The available options are 
+    `"regularized`" (recommended), `"normalized`", `"orthonormalized`", and `"natural`" 
+    (not recommended).
+
+  * `"gradient operator on test function`" [bool] defines place of the gradient operator.
+    For integration by parts schemes, the gradient is transfered to a test function.
+    This option is needed for discretizing volumetric integrals.
+
+  * `"jump operator on test function`" [bool] defines place of the jump operator.
+    For integration by parts schemes, the jump operator is applied to a test function.
+    This option is needed for discretizing surface fluxes.
 
   * `"flux formula`" [string] defines type of the flux. The available options 
     are `"Rusanov`" (default), `"upwind`", `"downwind`", and `"NavierStokes`".
@@ -3782,7 +3793,7 @@ The structure of the schema is described in the previous section.
 .. code-block:: xml
 
   <ParameterList name="OPERATOR_NAME">
-    <Parameter name="method" type="string" value="DG order 0"/>
+    <Parameter name="method" type="string" value="dg modal"/>
     <Parameter name="method order" type="int" value="2"/>
     <Parameter name="reconstruction order" type="int" value="0"/>
     <Parameter name="flux formula" type="string" value="Rusanov"/>
@@ -3790,15 +3801,32 @@ The structure of the schema is described in the previous section.
     <Parameter name="jump operator on test function" type="bool" value="true"/>
 
     <ParameterList name="schema domain">
+      <Parameter name="base" type="string" value="cell"/>
       <Parameter name="location" type="Array(string)" value="{node, face}"/>
       <Parameter name="type" type="Array(string)" value="{scalar, normal component}"/>
       <Parameter name="number" type="Array(int)" value="{2, 1}"/>
     </ParameterList>
     <ParameterList name="schema range">
+      <Parameter name="base" type="string" value="cell"/>
       <Parameter name="location" type="Array(string)" value="{cell}"/>
       <Parameter name="type" type="Array(string)" value="{scalar}"/>
       <Parameter name="number" type="Array(int)" value="{1}"/>
     </ParameterList>
+  </ParameterList>
+
+In this example, we construct an operator for volumetric integrals in a weak formulation
+of advection problem.
+
+The only low-order advection operator in Amanzi is the upwind operator. 
+It employes the old schema.
+
+.. code-block:: xml
+
+  <ParameterList name="OPERATOR_NAME">
+    <Parameter name="base" type="string" value="face"/>
+    <Parameter name="schema" type="Array(string)" value="{cell}"/>
+    <Parameter name="method order" type="int" value="0"/>
+    <Parameter name="matrix type" type="string" value="advection"/>
   </ParameterList>
 
 
@@ -3811,17 +3839,19 @@ The structure of the schema is described in the previous section.
 
 * `"OPERATOR_NAME`" [list] a PK specific name for the advection operator.
 
-  * `"method`" [string] defines a discretization method. The available 
-    options are `"DG order 0`", `"DG order 1`".
+  * `"method`" [string] defines a discretization method. The only supported
+    option is `"dg nodal`".
 
   * `"schema`" [list] defines a discretization schema for the operator domain.
 
 .. code-block:: xml
 
   <ParameterList name="OPERATOR_NAME">
-    <Parameter name="method" type="string" value="DG order 1"/>
+    <Parameter name="method" type="string" value="dg modal"/>
+    <Parameter name="method order" type="int" value="1"/>
     <Parameter name="matrix type" type="string" value="mass"/>
     <ParameterList name="schema">
+      <Parameter name="base" type="string" value="cell"/>
       <Parameter name="location" type="Array(string)" value="{cell}"/>
       <Parameter name="type" type="Array(string)" value="{scalar}"/>
       <Parameter name="number" type="Array(int)" value="{3}"/>
@@ -3849,14 +3879,15 @@ and Navier-Stokes).
 
 .. code-block:: xml
 
-    <ParameterList name="elasticity operator">
-      <Parameter name="method" type="string" value="BernardiRaugel"/>
-      <ParameterList name="schema">
-        <Parameter name="location" type="Array(string)" value="{node, face}"/>
-        <Parameter name="type" type="Array(string)" value="{scalar, normal component}"/>
-        <Parameter name="number" type="Array(int)" value="{2, 1}"/>
-      </ParameterList>
+  <ParameterList name="elasticity operator">
+    <Parameter name="method" type="string" value="BernardiRaugel"/>
+    <ParameterList name="schema">
+      <Parameter name="base" type="string" value="cell"/>
+      <Parameter name="location" type="Array(string)" value="{node, face}"/>
+      <Parameter name="type" type="Array(string)" value="{scalar, normal component}"/>
+      <Parameter name="number" type="Array(int)" value="{2, 1}"/>
     </ParameterList>
+  </ParameterList>
 
 
 Abstract operator
@@ -3867,7 +3898,8 @@ required by this factory and/or particular method in it.
 
 * `"method`" [string] defines a discretization method. The available
   options are `"diffusion`", `"diffusion generalized`", `"BernardiRaugel`",
-  `"CrouzeixRaviart`", `"Lagrange`", `"Lagrange serendipity`", and `"dg modal`".
+  `"CrouzeixRaviart`", `"CrouzeixRaviart serendipity`", `"Lagrange`", 
+  `"Lagrange serendipity`", and `"dg modal`".
 
 * `"method order`" [int] defines disretization order. It is used by 
   high-order discretization methods such as the discontinuous Galerkin.
@@ -3880,7 +3912,7 @@ required by this factory and/or particular method in it.
     <ParameterList name="ABSTRACT OPERATOR">
       <Parameter name="method" type="string" value="dg modal"/>
       <Parameter name="method order" type="int" value="2"/>
-      <Parameter name="dg basis" type="string" value="natural"/>
+      <Parameter name="dg basis" type="string" value="regularized"/>
       <Parameter name="matrix type" type="string" value="flux"/>
 
       <ParameterList name="schema domain">
