@@ -92,18 +92,11 @@ void PDE_AdvectionRiemann::InitAdvection_(Teuchos::ParameterList& plist)
   matrix_ = plist.get<std::string>("matrix type");
 
   if (factory.method() == "dg modal") {
-    space_col_ = DG;
     dg_ = Teuchos::rcp_dynamic_cast<WhetStone::DG_Modal>(mfd);
   } else {
     Errors::Message msg;
     msg << "Advection operator: method \"" << method_ << "\" is invalid.";
     Exceptions::amanzi_throw(msg);
-  }
-
-  if (local_schema_row_ == local_schema_col_) { 
-    space_row_ = space_col_;
-  } else {
-    space_row_ = P0;  // FIXME
   }
 
   // -- fluxes

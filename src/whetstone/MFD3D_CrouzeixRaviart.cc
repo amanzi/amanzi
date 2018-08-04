@@ -313,7 +313,7 @@ void MFD3D_CrouzeixRaviart::ProjectorCell_LO_(
       a2 += area;
     }
 
-    uc[i](0, 0) = a1 / a2;
+    uc[i](0) = a1 / a2;
   }
 
   // set the correct origin
@@ -365,12 +365,10 @@ void MFD3D_CrouzeixRaviart::H1Face(
 
   // fix the constant value
   const AmanziGeometry::Point& xf0 = mesh_->face_centroid(f);
-  AmanziGeometry::Point zero(d_);
 
   for (int i = 0; i < d_; ++i) {
-    uf[i](0, 0) = p0[i];
+    uf[i](0) = p0[i];
     uf[i].set_origin(xf0);
-    uf[i].ChangeOrigin(zero);
   }
 }
 
@@ -467,17 +465,17 @@ void MFD3D_CrouzeixRaviart::ProjectorCell_HO_(
         a2 += area;
       }
 
-      uc[i](0, 0) = a1 / a2;
+      uc[i](0) = a1 / a2;
     } else if (order_ >= 2) {
       v4 = integrals_.poly().coefs();
       basis.ChangeBasisMyToNatural(v4);
       v4.Reshape(nd);
-      uc[i](0, 0) = vdof(row) - (v4 * v5) / volume;
+      uc[i](0) = vdof(row) - (v4 * v5) / volume;
     }
 
     // calculate L2 projector
     if (type == Type::L2 && ndof_c > 0) {
-      v5(0) = uc[i](0, 0);
+      v5(0) = uc[i](0);
 
       DenseMatrix M, M2;
       DenseVector v6(nd - ndof_c);

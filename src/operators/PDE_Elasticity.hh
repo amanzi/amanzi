@@ -15,13 +15,17 @@
 #ifndef AMANZI_OPERATOR_PDE_ELASTICITY_HH_
 #define AMANZI_OPERATOR_PDE_ELASTICITY_HH_
 
+// TPLs
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
 
+// Amanzi
 #include "exceptions.hh"
 #include "Tensor.hh"
 #include "CompositeVector.hh"
 
+// Amanzi::Operators
+#include "BilinearForm.hh"
 #include "Operator.hh"
 #include "OperatorDefs.hh"
 #include "PDE_HelperDiscretization.hh"
@@ -69,6 +73,8 @@ class PDE_Elasticity : public PDE_HelperDiscretization {
  protected:
   Teuchos::RCP<std::vector<WhetStone::Tensor> > K_;
   double K_default_;
+
+  Teuchos::RCP<WhetStone::BilinearForm> mfd_;
 
   // operator and schemas
   Schema global_schema_col_, global_schema_row_;

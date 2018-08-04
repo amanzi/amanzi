@@ -356,6 +356,8 @@ void NumericalIntegration::IntegrateMonomialsCell(int c, int k, Polynomial& inte
 void NumericalIntegration::IntegrateMonomialsFace_(
     int c, int f, double factor, int k, Polynomial& integrals)
 {
+  int nk = PolynomialSpaceDimension(d_, k - 1);
+
   const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
   const AmanziGeometry::Point& xf = mesh_->face_centroid(f);
 
@@ -408,7 +410,7 @@ void NumericalIntegration::IntegrateMonomialsFace_(
       mesh_->node_get_coordinates(n1, &x2);
 
       polys[0] = &q;
-      integrals(k, l) += IntegratePolynomialsEdge(x1, x2, polys);
+      integrals(nk + l) += IntegratePolynomialsEdge(x1, x2, polys);
     }
   }
 }
@@ -422,6 +424,7 @@ void NumericalIntegration::IntegrateMonomialsEdge_(
     const AmanziGeometry::Point& x1, const AmanziGeometry::Point& x2,
     double factor, int k, Polynomial& integrals)
 {
+  int nk = PolynomialSpaceDimension(d_, k - 1);
   AmanziGeometry::Point xm(d_);
 
   // minimal quadrature rule
@@ -441,7 +444,7 @@ void NumericalIntegration::IntegrateMonomialsEdge_(
         a1 *= std::pow(xm[i], idx[i]);
       }
 
-      integrals(k, l) += a1 * q1d_weights[m][n];      
+      integrals(nk + l) += a1 * q1d_weights[m][n];      
     }
   }
 }

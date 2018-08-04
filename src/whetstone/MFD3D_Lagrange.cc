@@ -410,17 +410,17 @@ void MFD3D_Lagrange::ProjectorCell_(
         a2 += area;
       }
 
-      uc[i](0, 0) = a1 / a2;
+      uc[i](0) = a1 / a2;
     } else if (order_ >= 2) {
       v4 = integrals_.poly().coefs();
       basis.ChangeBasisMyToNatural(v4);
       v4.Reshape(nd);
-      uc[i](0, 0) = vdof(row) - (v4 * v5) / volume;
+      uc[i](0) = vdof(row) - (v4 * v5) / volume;
     }
 
     // calculate L2 projector
     if (type == Type::L2 && ndof_c > 0) {
-      v5(0) = uc[i](0, 0);
+      v5(0) = uc[i](0);
 
       DenseMatrix M, M2;
       DenseVector v6(nd - ndof_c);

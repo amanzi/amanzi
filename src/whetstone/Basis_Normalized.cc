@@ -64,24 +64,13 @@ void Basis_Normalized::BilinearFormNaturalToMy(DenseMatrix& A) const
 {
   AMANZI_ASSERT(A.NumRows() == monomial_scales_.size());
 
-  int order = monomial_scales_.order();
-  int d = monomial_scales_.dimension();
-
   int nrows = A.NumRows();
-  std::vector<double> a(nrows);
-
-  for (auto it = monomial_scales_.begin(); it < monomial_scales_.end(); ++it) {
-    int n = it.PolynomialPosition();
-    int m = it.MonomialSetOrder();
-    int k = it.MonomialSetPosition();
-
-    a[n] = monomial_scales_(m, k);
-  }
+  const DenseVector& a = monomial_scales_.coefs();
 
   // calculate R^T * A * R
   for (int k = 0; k < nrows; ++k) {
     for (int i = 0; i < nrows; ++i) {
-      A(i, k) = A(i, k) * a[k] * a[i];
+      A(i, k) = A(i, k) * a(k) * a(i);
     }
   }
 }
@@ -93,33 +82,23 @@ void Basis_Normalized::BilinearFormNaturalToMy(DenseMatrix& A) const
 void Basis_Normalized::BilinearFormNaturalToMy(
     std::shared_ptr<Basis> bl, std::shared_ptr<Basis> br, DenseMatrix& A) const
 {
-  int order = monomial_scales_.order();
-  int d = monomial_scales_.dimension();
-
   int nrows = A.NumRows();
   int m(nrows / 2);
-  std::vector<double> a1(m), a2(m);
 
   auto bll = std::dynamic_pointer_cast<Basis_Normalized>(bl);
   auto brr = std::dynamic_pointer_cast<Basis_Normalized>(br);
 
-  for (auto it = bll->monomial_scales().begin(); it < bll->monomial_scales().end(); ++it) {
-    int n = it.PolynomialPosition();
-    int m = it.MonomialSetOrder();
-    int k = it.MonomialSetPosition();
-
-    a1[n] = (bll->monomial_scales())(m, k);
-    a2[n] = (brr->monomial_scales())(m, k);
-  }
+  const DenseVector& a1 = bll->monomial_scales().coefs();
+  const DenseVector& a2 = brr->monomial_scales().coefs();
 
   // calculate R^T * A * R
   for (int k = 0; k < m; ++k) {
     for (int i = 0; i < m; ++i) {
-      A(i, k) = A(i, k) * a1[i] * a1[k];
-      A(i, k + m) = A(i, k + m) * a1[i] * a2[k];
+      A(i, k) = A(i, k) * a1(i) * a1(k);
+      A(i, k + m) = A(i, k + m) * a1(i) * a2(k);
 
-      A(i + m, k) = A(i + m, k) * a2[i] * a1[k];
-      A(i + m, k + m) = A(i + m, k + m) * a2[i] * a2[k];
+      A(i + m, k) = A(i + m, k) * a2(i) * a1(k);
+      A(i + m, k + m) = A(i + m, k + m) * a2(i) * a2(k);
     }
   }
 }
@@ -130,15 +109,8 @@ void Basis_Normalized::BilinearFormNaturalToMy(
 ****************************************************************** */
 void Basis_Normalized::LinearFormNaturalToMy(DenseVector& f) const
 {
-  int order = monomial_scales_.order();
-  int d = monomial_scales_.dimension();
-
-  for (auto it = monomial_scales_.begin(); it < monomial_scales_.end(); ++it) {
-    int n = it.PolynomialPosition();
-    int m = it.MonomialSetOrder();
-    int k = it.MonomialSetPosition();
-
-    f(n) *= monomial_scales_(m, k);
+  for (int n = 0; n < monomial_scales_.size(); ++n) {
+    f(n) *= monomial_scales_(n);
   }
 }
 
@@ -150,12 +122,8 @@ void Basis_Normalized::ChangeBasisMyToNatural(DenseVector& v) const
 {
   AMANZI_ASSERT(v.NumRows() == monomial_scales_.size());
 
-  for (auto it = monomial_scales_.begin(); it < monomial_scales_.end(); ++it) {
-    int n = it.PolynomialPosition();
-    int m = it.MonomialSetOrder();
-    int k = it.MonomialSetPosition();
-
-    v(n) *= monomial_scales_(m, k);
+  for (int n = 0; n < monomial_scales_.size(); ++n) {
+    v(n) *= monomial_scales_(n);
   }
 }
 
@@ -167,12 +135,8 @@ void Basis_Normalized::ChangeBasisNaturalToMy(DenseVector& v) const
 {
   AMANZI_ASSERT(v.NumRows() == monomial_scales_.size());
 
-  for (auto it = monomial_scales_.begin(); it < monomial_scales_.end(); ++it) {
-    int n = it.PolynomialPosition();
-    int m = it.MonomialSetOrder();
-    int k = it.MonomialSetPosition();
-
-    v(n) /= monomial_scales_(m, k);
+  for (int n = 0; n < monomial_scales_.size(); ++n) {
+    v(n) /= monomial_scales_(n);
   }
 }
 
@@ -184,7 +148,6 @@ Polynomial Basis_Normalized::CalculatePolynomial(
     const Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
     int c, int order, DenseVector& coefs) const
 {
-  int d = mesh->space_dimension();
   Polynomial poly(monomial_scales_);
   poly.set_origin(mesh->cell_centroid(c));
 
