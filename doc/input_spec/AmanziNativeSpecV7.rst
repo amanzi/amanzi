@@ -2027,13 +2027,22 @@ The incomplete list is
 Transport PK
 ------------
 
-The conceptual PDE model for the fully saturated flow is
+Mathematical models
+...................
+
+A few PDE models can be instantiated using the parameters described below.
+
+
+Single-phase transport
+``````````````````````
+
+The conceptual PDE model for the transport in partially saturated media is
 
 .. math::
   \frac{\partial (\phi s_l C_l)}{\partial t} 
   =
   - \boldsymbol{\nabla} \cdot (\boldsymbol{q}_l C_l) 
-  + \boldsymbol{\nabla} \cdot (\phi_e s_l (\boldsymbol{D}_l + \tau \boldsymbol{M}_l) \boldsymbol{\nabla} C_l) + Q,
+  + \boldsymbol{\nabla} \cdot (\phi_e s_l\, (\boldsymbol{D}_l + \tau \boldsymbol{M}_l) \boldsymbol{\nabla} C_l) + Q,
 
 where 
 :math:`\phi` is total porosity,
@@ -2061,8 +2070,51 @@ and :math:`\boldsymbol{v}` is average pore velocity.
 Amanzi supports two additional models for dispersivity with 3 and 4 parameters.
 
 
-Physical models and assumptions
-...............................
+Single-phase transport with dual porosity model
+```````````````````````````````````````````````
+
+The dual porosity formulation of the solute transport consists of two equations
+for the fracture and matrix regions. 
+In the fracture region, we have \citep{simunek-vangenuchten_2008}
+
+.. math::
+  \frac{\partial (\phi_f\, s_{lf}\, C_{lf})}{\partial t} 
+  =
+  - \boldsymbol{\nabla} \cdot (\boldsymbol{q}_l C_{lf}) 
+  + \boldsymbol{\nabla} \cdot (\phi_f\, s_{lf}\, (\boldsymbol{D}_l + \tau \boldsymbol{M}_l) \boldsymbol{\nabla} C_{lf}) 
+  - \Sigma_s + Q_f,
+
+where 
+:math:`\phi_f` is fracture porosity,
+:math:`s_{lf}` is liquid saturation in fracture, 
+:math:`\boldsymbol{q}_l` is the Darcy velocity,
+:math:`\boldsymbol{D}_l` is dispersion tensor,
+:math:`\boldsymbol{M}_l` is diffusion coefficient,
+:math:`\Sigma_s` is the solute exchange term,
+and :math:`Q_f` is source or sink term.
+In the matrix region, we have
+
+.. math::
+  \frac{\partial (\phi_m\, s_{lm}\, C_{lm})}{\partial t}
+  = \Sigma_s + Q_m,
+
+where 
+:math:`\phi_m` is matrix porosity,
+:math:`s_{lm}` is liquid saturation in matrix, 
+:math:`Q_m` is source or sink term.
+The solute exchange term is defined as
+
+.. math::
+  \Sigma_s = \alpha_s (C_{lf} - C_{lm}) + \Sigma_w C^*,
+
+where 
+:math:`\Sigma_w` is transfer rate for water from the matrix to the fracture, and
+:math:`C^*` is equal to :math:`C_{lf}` if :math:`\Sigma_w > 0` and :math:`C_{lm}` is :math:`\Sigma_w < 0`.
+The coefficient :math:`\alpha_s` is the first-order solute mass transfer coefficient [:math:`s^{-1}`].
+
+
+Model specifications and assumptions
+....................................
 
 This list is used to summarize physical models and assumptions, such as
 coupling with other PKs.
