@@ -9,7 +9,7 @@ implementation of spatially-varying recharge and drain boundary
 conditions in an unconfined aquifer.
 Capabilities tested include:
 
-  * two-dimensional, variably-saturated flow in unconfined aquifer and adjoining vadose zone
+  * variably-saturated flow in unconfined aquifer and adjoining vadose zone
   * spatially-varying recharge and drain boundary conditions
   * mass conservation on a non-orthogonal grid
 
@@ -18,8 +18,6 @@ For details on this test, see :ref:`about_unconfined_seepage`.
 
 Background
 ----------
-
-
 
 
 Model
@@ -80,9 +78,11 @@ Consider the following scenario involving steady-state groundwater
 flow in an unconfined aquifer that discharges to a sloped ground
 surface along a seepage face (:cite:`us-Aleman_PORFLOW_2007`, Section 4.4):
 
-.. image:: schematic/porflow_4.4.1.png
-   :width: 5in
-   :align: center
+.. figure:: schematic/porflow_4.4.1.png
+    :figclass: align-center
+    :width: 5in
+
+    **Schematic of the model domain and boundary conditions.**
 
 The ground elevation slopes from 100 ft at :math:`x=0` to 50 ft at
 :math:`x=L`, and the location of the seepline is unknown *a priori*.
@@ -90,13 +90,20 @@ The ground elevation slopes from 100 ft at :math:`x=0` to 50 ft at
 
 Mesh
 ~~~~
- 
+
+The mesh uses constant grid discretization in the x-direction (:math:`\Delta x = 25` ft) and variable discretization in the z-direction (:math:`2.5` ft :math:`\leqslant \Delta z \leqslant 5` ft).
 To conform to the physical domain depicted in the test problem
 schematic, a conformal grid is used for the *Amanzi* simulation:
 
-.. image:: mesh/porflow_4.4.3.png
-   :width: 5in
-   :align: center
+.. figure:: mesh/porflow_4.4.3.png
+    :figclass: align-center
+    :width: 5in
+
+    **Unstructured two-dimensional mesh with upper bounds conforming to ground surface.**
+
+
+Variables
+~~~~~~~~~
 
 With the Dupuit approximation the analytic solution given by Equation
 :eq:`unconfinedLeft` is one-dimensional in the horizontal coordinate
@@ -111,34 +118,27 @@ required beyond the material properties implied by Equation
 are summarized as:
 
 * Domain (2D)
-
-	* :math:`x_{min} = z_{min} = 0`
-	* :math:`x_{max} = L = 1000 ft`
-	* :math:`z_{max} = 100 ft` at :math:`x = 0` and :math:`50 ft` at :math:`x = L`
+      
+  * :math:`x_{min} = z_{min} = 0` [ft]
+  * :math:`x_{max} = L = 1000` [ft]
+  * :math:`z_{max} = 100` at :math:`x = 0` and :math:`50` at :math:`x = L` [ft]
 
 * Boundary conditions
 
-	* no-flow prescribed at the :math:`z_{min}` boundary
-	* prescribed hydraulic head: :math:`h(0) = 80 ft, h(L) = 50 ft`
-	* recharge along the top surface = 1 ft/y for :math:`0 \leqslant x \leqslant L_s`
+  * no-flow prescribed at the :math:`z_{min}` boundary
+  * prescribed hydraulic head: :math:`h(0) = 80,\: h(L) = 50` [ft]
+  * recharge along the top surface = 1 ft/y for :math:`0 \leqslant x \leqslant L_s`
 
 * Material properties
 
-	* :math:`\rho = 998.2 \: kg/m^3, \mu = 1.002 \times 10^{-3} \: Pa\cdot s, g = 9.807 \: m/s^2` 
-	* hydraulic conductivity :math:`K = 1 ft/d`
-	* van Genuchten :cite:`us-vanGenuchten_1980` - Mualem :cite:`us-Mualem_1976` parameters
-		* :math:`\alpha = 1.0212e-04 Pa^{-1}`
-		* :math:`S_r = 0.25`
-		* :math:`m = 0.09090`
-
-* Model discretization
-
-	* :math:`\Delta x = 25 ft`
-	* variable: :math:`2.5 ft \leqslant \Delta z \leqslant 5 ft`
-
-
-Variables
-~~~~~~~~~
+  * :math:`\rho = 998.2` [kg/m\ :sup:`3`]
+  * :math:`\mu = 1.002 \times 10^{-3}` [Pa :math:`\cdot` s]
+  * :math:`g = 9.807` [m/s\ :sup:`2`]
+  * hydraulic conductivity :math:`K = 1` [ft/d]
+  * van Genuchten :cite:`us-vanGenuchten_1980` - Mualem :cite:`us-Mualem_1976` parameters
+    * :math:`\alpha = 1.0212 \times 10^{-4}` [Pa\ :sup:`-1`]
+	* :math:`S_r = 0.25`
+	* :math:`m = 0.09090`
 
 
 Results and Comparison
@@ -148,8 +148,8 @@ Results and Comparison
     :width: 4in
     :align: center
 
+.. include:: table_values.txt
 
-.. .. include:: table_values.txt
 
 References
 ----------
@@ -161,7 +161,7 @@ References
 		
 
 .. _about_unconfined_seepage:
-
+	
 About
 -----
 
