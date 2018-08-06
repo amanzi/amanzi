@@ -123,12 +123,6 @@ are summarized as:
   * :math:`x_{max} = L = 1000` [ft]
   * :math:`z_{max} = 100` at :math:`x = 0` and :math:`50` at :math:`x = L` [ft]
 
-* Boundary conditions
-
-  * no-flow prescribed at the :math:`z_{min}` boundary
-  * prescribed hydraulic head: :math:`h(0) = 80,\: h(L) = 50` [ft]
-  * recharge along the top surface = 1 ft/y for :math:`0 \leqslant x \leqslant L_s`
-
 * Material properties
 
   * :math:`\rho = 998.2` [kg/m\ :sup:`3`]
@@ -136,9 +130,16 @@ are summarized as:
   * :math:`g = 9.807` [m/s\ :sup:`2`]
   * hydraulic conductivity :math:`K = 1` [ft/d]
   * van Genuchten :cite:`us-vanGenuchten_1980` - Mualem :cite:`us-Mualem_1976` parameters
+
     * :math:`\alpha = 1.0212 \times 10^{-4}` [Pa\ :sup:`-1`]
-	* :math:`S_r = 0.25`
-	* :math:`m = 0.09090`
+    * :math:`S_r = 0.25`
+    * :math:`m = 0.09090`
+
+* Boundary conditions
+
+  * no-flow prescribed at the :math:`z_{min}` boundary
+  * prescribed hydraulic head: :math:`h(0) = 80,\: h(L) = 50` [ft]
+  * recharge along the top surface = 1 ft/y for :math:`0 \leqslant x \leqslant L_s`
 
 
 Results and Comparison

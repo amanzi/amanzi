@@ -17,8 +17,21 @@ For details on this test, see :ref:`about_hantush_anisotropic`.
 Background
 ----------
 
-Hantush and Thomas :cite:`han-Hantush_1966_method` developed an analytical solution for measuring drawdown during constant discharge for a completely penetrating well in a
-homogenous anisotropic, nonleaky confined aquifer of infinite extent. 
+An aquifer is homogeneous and anisotropic when the hydraulic conductivity is a function of
+direction only. Because of this, the transmissivity of such an aquifer varies with direction.
+The transmissivity in the major direction of anisotropy may be 2 - 10 times greater than 
+in the minor direction of anisotripy. Estimates of groundwater flow may be in significant error
+if the effect of such anisotropy is not accounted for. The in-place determination of the
+hydraulic properties of anisotropic aquifers, then, is of great practical importance. 
+
+Hantush and Thomas :cite:`han-Hantush_1966_method` developed an analytical solution for measuring
+drawdown during constant discharge for a completely penetrating well in a
+homogenous anisotropic, nonleaky confined aquifer of infinite extent. Their work follows 
+Hantush's previously published work :cite:`han-Hantush_1966_wells`, extending it by describing
+a method for obtaining the transmissivity in any direction and storativity of a homogeneous
+anisotropic non-leaky aquifer by delineating the expected elliptical shape of an equal residual
+drawdown curve. 
+
 
 Model
 -----
@@ -52,7 +65,7 @@ where
 .. math:: \phi = \frac{(x^2T_t + y^2T_x)\;S}{4T_xT_yt}
 
 Notice when :math:`T_x=T_y`, :math:`\phi` is now equal to *u* and the
-problem simplifies to the Theis solution.  The variables in
+problem simplifies to the Theis solution :cite:`han-Theis1935relation`.  The variables in
 the equations above are defined in :ref:`Variables` with subtle
 differences.  We have now defined transmissivity in two directions and
 redefined the well function, *W*, to apply to :math:`\phi` instead of
