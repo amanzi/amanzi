@@ -13,7 +13,7 @@ Capabilties tested include:
 
   * steady-state, one-dimensional flow
   * saturated flow conditions
-  * constant-head (Neumann) boundary conditions
+  * constant-head (Dirichlet) boundary conditions
   * mass conservation
   * homogeneous porous medium
 
