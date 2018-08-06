@@ -238,6 +238,28 @@ void Transport_PK::Setup(const Teuchos::Ptr<State>& S)
         ->SetMesh(mesh_)->SetGhosted(false)
         ->SetComponent("cell", AmanziMesh::CELL, ncomponents);
     }
+
+    // -- water content in fractures
+    if (!S->HasField("water_content")) {
+      S->RequireField("water_content", passwd_)->SetMesh(mesh_)->SetGhosted(true)
+        ->SetComponent("cell", AmanziMesh::CELL, 1);
+    }
+    if (!S->HasField("prev_water_content")) {
+      S->RequireField("prev_water_content", passwd_)->SetMesh(mesh_)->SetGhosted(true)
+        ->SetComponent("cell", AmanziMesh::CELL, 1);
+      S->GetField("prev_water_content", passwd_)->set_io_vis(false);
+    }
+
+    // -- water content in matrix
+    if (!S->HasField("water_content_matrix")) {
+      S->RequireField("water_content_matrix", passwd_)->SetMesh(mesh_)->SetGhosted(true)
+        ->SetComponent("cell", AmanziMesh::CELL, 1);
+    }
+    if (!S->HasField("prev_water_content_matrix")) {
+      S->RequireField("prev_water_content_matrix", passwd_)->SetMesh(mesh_)->SetGhosted(true)
+        ->SetComponent("cell", AmanziMesh::CELL, 1);
+      S->GetField("prev_water_content_matrix", passwd_)->set_io_vis(false);
+    }
   }
 
   // require fracture fields
@@ -463,6 +485,12 @@ void Transport_PK::InitializeFields_()
   // set popular default values when flow PK is off
   InitializeField(S_.ptr(), passwd_, "saturation_liquid", 1.0);
   InitializeField(S_.ptr(), passwd_, "darcy_flux_fracture", 0.0);
+
+  InitializeFieldFromField_("water_content", "porosity", false);
+  InitializeFieldFromField_("prev_water_content", "water_content_matrix", false);
+
+  InitializeFieldFromField_("water_content_matrix", "porosity", false);
+  InitializeFieldFromField_("prev_water_content_matrix", "water_content_matrix", false);
 
   InitializeFieldFromField_("prev_saturation_liquid", "saturation_liquid", false);
   InitializeFieldFromField_("total_component_concentration_matrix", "total_component_concentration", false);
