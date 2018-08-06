@@ -1,23 +1,30 @@
 Steady-State One-Dimensional Flow with Flux and Head Boundary Conditions
 ========================================================================
 
-Capabilties Tested
-------------------
-This test illustrates the capability to model one-dimensional,
-steady-state flow through a saturated porous medium with constant properties.
-Capabilties tested include,
+Capabilities Tested
+-------------------
 
-  * one-dimensional reprsentation
-  * steady-state
-  * saturated flow
-  * heterogenous porous medium
-  * flow and head boundaries
+This one-dimensional, steady-state flow problem tests the Amanzi saturated flow process kernel to
+simulate flow through a homogeneous, saturated porous medium with constant properties. The 
+analytical solutions for hydraulic head and Darcy velocity can be used to test the Amanzi 
+implementation of prescribed hydraulic head boundary conditions, prescribed flux boundary 
+conditions, Darcy’s law :cite:`linfh-Darcy_1856`, and mass conservation for an elementary problem.
+Capabilities tested include:
 
-For details on this test, see :ref:`about_linear_flux_head_1d`.
+  * steady-state, one-dimensional flow
+  * saturated flow conditions
+  * constant-head (Dirichlet) boundary conditions
+  * specified flux (Neumann) boundary conditions
+  * mass conservation
+  * homogeneous porous medium
+  * uniform mesh 
+
+  For details on this test, see :ref:`about_linear_flux_head_1d`. 
 
 
 Background
 ----------
+
 For one-dimensional, steady-state, flow through a saturated porous medium with constant properties, 
 the general governing differential equation expressing mass conservation and Darcy's law becomes simply
 
@@ -82,48 +89,49 @@ The domain is shown in the following schematic.
     :figclass: align-center
     :width: 400 px
 
-    **One-dimensional, steady-state flow through a saturated porous medium with prescribed hydraulic head boundary conditions.**
+    **One-dimensional, steady-state flow through a saturated porous medium.**
 
 
 Mesh
 ~~~~
-A steady-flow mesh is applied.
+
+The numerical mesh has dimensions :math:`100 \text{ m } \times 2 \text{ m } \times 10 \text{ m}`. The mesh is
+comprised of 20 cells with uniform discretization such that it contains 20 cells in the
+x-direction, 1 cell in the y-direction, and 1 cell in the z-direction (:math:`\Delta x = 5 \text{ m}, \: \Delta y = 2 \text{ m}, \: \Delta z = 10 \text{ m}`).
 
 
 Variables
 ~~~~~~~~~
+
 To generate numerical results the following specifications are considered:
 
 * Domain
 
-	* :math:`x_{min} = y_{min} = z_{min} = 0`
-	* :math:`x_{max} = 100 m, y_{max} = 2 m, z_{max} = 10 m`
+  * :math:`x_{min} = y_{min} = z_{min} = 0`
+  * :math:`x_{max} = 100` m, :math:`y_{max} = 2` m, :math:`z_{max} = 10` m
 
 * Horizontal flow in the x-coordinate direction
 
-	* no-flow prescribed at the :math:`y_{min}, y_{max}, z_{min}, z_{max}` boundaries
-	* prescribed Darcy velocity at the x-coordinate inlet: :math:`U(0) = 0.01 \text{[m/d]}`
-	* prescribed hydraulic head at the x-coordinate outlet: :math:`h(L) = 19 \text{[m]}`
+  * no-flow prescribed at the :math:`y_{min}, \: y_{max}, \: z_{min}, \: z_{max}` boundaries
+  * prescribed Darcy flux at the x-coordinate inlet: :math:`U(0) = 0.01 \text{ [m/d]}`
+  * prescribed hydraulic head at the x-coordinate outlet: :math:`h(L) = 19 \text{ [m]}`
 
 * Material properties:
 
-	* :math:`\rho = 998.2 \: \text{[kg/m}^3\text{]}`,
-          :math:`\mu = 1.002e-3 \: \text{[Pa}\cdot \text{s]}`, 
-          :math:`g = 9.807 \: \text{[m/s}^2\text{]}` 
-	* :math:`K = 1.0 \text{[m/d]}` :math:`(k = 1.1847E-12 \text{[m}^2\text{]})`
-
-* Model discretization
-
-	* :math:`\Delta x = 5 \text{[m]}, \Delta y = 2 \text{[m]}, \Delta z = 10 \text{[m]}`
+  * :math:`\rho = 998.2 \: \text{[kg/m}^3\text{]}`
+  * :math:`\mu = 1.002 \times 10^{-3} \: \text{[Pa} \cdot \text{s]}` 
+  * :math:`g = 9.807 \: \text{[m/s}^2\text{]}` 
+  * :math:`K = 1.0 \: \text{[m/d]}` 
+          (permeability: :math:`k = 1.1847 \times 10^{-12} \text{ [m}^2\text{]})`
 
 For these input specifications, Amanzi simulation output is expected to closely match
 
-	.. math:: h = 20 -\frac{x}{100m} \text{[m]}
+	.. math:: h = 20 -\frac{x}{100m} \text{ [m]}
 		:label: expectedH_linear_flux_head
 
 and
 
-	.. math:: U = 1.0 \text{[m/d]}
+	.. math:: U = 1.0 \text{ [m/d]}
 		:label: expectedU_linear_flux_head
 
 following Equations :eq:`specificSoln_linear_flux_head` and :eq:`DarcyVel_linear_flux_head`.
@@ -144,7 +152,11 @@ This is also visible in the following table:
 
 References
 ----------
-Add a reference in here.
+
+.. bibliography:: /bib/ascem.bib
+   :filter: docname in docnames
+   :style:  alpha
+   :keyprefix: linfh-
 
 
 .. _about_linear_flux_head_1d:
@@ -154,35 +166,42 @@ About
 
 * Directory: testing/verification/flow/saturated/steady-state/linear_flux_head_1d
 
-* Authors:  Greg Flach, SRNL and Marc Day, LBNL
+* Authors:  Greg Flach (SRNL) and Marc Day (LBNL)
 
 * Maintainer(s): David Moulton, moulton@lanl.gov
 
 * Input Files:
 
   * amanzi_linear_flux_head_1d-s.xlm 
+
     * Spec Version 1.2.2, structured mesh framework
     * mesh:  steady-flow_mesh.h5
-    * runs
-  * amanzi_linear_flue_head_1d-u.xml
-    * Spec Version 2.3.0, unstructured
-    * runs
+
+  * amanzi_linear_flue_head_1d_u.xml
+
+    * Spec Version 2.3.0, unstructured mesh framework
+    * mesh:  generated internally 
 
 * Mesh Files:
+
   * steady-flow_mesh.h5
 
 * Analytic solution computed with golden output
+
   * Subdirectory: golden_output
 
   * Input Files: 
+
     * steady-flow_data.h5
 
 
 Status
 ~~~~~~
+
 .. todo:: 
 
   * Documentation:
+
     * keb: find a schematic for this test
     * keb: amanzi_linear_flux_head_1d-s.xlm seems like an older format
     * keb: there is an extra xml in folder, is that used? amanzi_linear_flux_head_1d-s-isv2.xml
