@@ -370,7 +370,9 @@ DOMElement* InputConverter::GetUniqueChildByAttribute_(
   DOMElement* child = NULL;
 
   DOMNodeList* children = node->getChildNodes();
-  for (int i = 0; i < children->getLength(); ++i) {
+  int nchildren = children->getLength();
+
+  for (int i = 0; i < nchildren; ++i) {
     DOMNode* inode = children->item(i);
     if (inode->getNodeType() != DOMNode::ELEMENT_NODE) continue;
 
@@ -439,7 +441,7 @@ std::vector<xercesc::DOMNode*> InputConverter::GetChildren_(
 
 
 /* ******************************************************************
-* Returns child with the given name.
+* Returns any child with the given name.
 ****************************************************************** */
 DOMElement* InputConverter::GetChildByName_(
     xercesc::DOMNode* node, const std::string& childName, bool& flag, bool exception)
@@ -451,7 +453,9 @@ DOMElement* InputConverter::GetChildByName_(
   DOMNode* child = NULL;
 
   DOMNodeList* children = node->getChildNodes();
-  for (int i = 0; i < children->getLength(); ++i) {
+  int nchildren = children->getLength();
+
+  for (int i = 0; i < nchildren; ++i) {
     DOMNode* inode = children->item(i);
     if (inode->getNodeType() != DOMNode::ELEMENT_NODE) continue;
 
