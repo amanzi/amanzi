@@ -4,31 +4,23 @@ Steady-State Unconfined Flow with a Seepage Boundary Condition
 Capabilities Tested
 -------------------
 
+This one-dimensional flow problem  tests the Amanzi 
+implementation of spatially-varying recharge and drain boundary
+conditions in an unconfined aquifer.
+Capabilities tested include:
+
+  * two-dimensional, variably-saturated flow in unconfined aquifer and adjoining vadose zone
+  * spatially-varying recharge and drain boundary conditions
+  * mass conservation on a non-orthogonal grid
+
+For details on this test, see :ref:`about_unconfined_seepage`. 
 
 
 Background
 ----------
 
-Consider the following scenario involving steady-state groundwater
-flow in an unconfined aquifer that discharges to a sloped ground
-surface along a seepage face (:cite:`us-Aleman_PORFLOW_2007`, Section 4.4):
-
-.. image:: schematic/porflow_4.4.1.png
-   :width: 5in
-   :align: center
 
 
-The ground elevation slopes from 100 ft at :math:`x=0` to 50 ft at
-:math:`x=L`, and the location of the seepline is unknown *a priori*.
-This test case presents an opportunity to verify *Amanzi*
-implementation of spatially-varying recharge and drain boundary
-conditions along the top surface of the domain, as well as, correct
-simulation of two-dimensional variably-saturated flow in an unconfined
-aquifer and adjoining vadose zone similar to related *Amanzi*
-verification cases. The test problem motivates use of a numerical grid
-that conforms to the ground surface, and the simulation can also serve
-as a test of *Amanzi* mass conservation etc.  on a non-orthogonal
-grid.
 
 Model
 -----
@@ -78,11 +70,26 @@ test problem schematic yields :math:`L_s = 829 ft`.
 
 
 Problem Specification
-~~~~~~~~~~~~~~~~~~~~~
+---------------------
+
+
+Schematic
+~~~~~~~~~
+
+Consider the following scenario involving steady-state groundwater
+flow in an unconfined aquifer that discharges to a sloped ground
+surface along a seepage face (:cite:`us-Aleman_PORFLOW_2007`, Section 4.4):
+
+.. image:: schematic/porflow_4.4.1.png
+   :width: 5in
+   :align: center
+
+The ground elevation slopes from 100 ft at :math:`x=0` to 50 ft at
+:math:`x=L`, and the location of the seepline is unknown *a priori*.
 
 
 Mesh
-----
+~~~~
  
 To conform to the physical domain depicted in the test problem
 schematic, a conformal grid is used for the *Amanzi* simulation:
@@ -129,9 +136,13 @@ are summarized as:
 	* :math:`\Delta x = 25 ft`
 	* variable: :math:`2.5 ft \leqslant \Delta z \leqslant 5 ft`
 
-Results and Comparison
-~~~~~~~~~~~~~~~~~~~~~~
 
+Variables
+~~~~~~~~~
+
+
+Results and Comparison
+----------------------
 
  .. image:: figures/hydraulic_head.png
     :width: 4in
@@ -140,7 +151,6 @@ Results and Comparison
 
 .. .. include:: table_values.txt
 
-
 References
 ----------
 
@@ -148,10 +158,33 @@ References
    :filter: docname in docnames
    :style:  alpha
    :keyprefix: us-
-		 
+		
+
+.. _about_unconfined_seepage:
 
 About
 -----
+
+* Directory:  testing/verification/flow/richards/steady-state/unconfined_seepage_1d
+
+* Authors:  Markus Berndt
+
+* Maintainer:  David Moulton (moulton@lanl.gov)
+
+* Input Files:
+
+  * amanzi_unconfined_seepage_1d-u.xml
+
+    * Spec Version 2.3, unstructured mesh framework
+    * mesh:  porflow4_4.exo 
+    * runs
+
+* Mesh Files:
+
+  * porflow4_4.exo
+ 
+    * two-dimensional mesh with conformal grid
+
 
 Status
 ------
