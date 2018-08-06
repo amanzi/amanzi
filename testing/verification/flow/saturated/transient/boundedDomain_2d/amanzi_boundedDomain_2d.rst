@@ -4,15 +4,22 @@ Transient Drawdown due to Pumping Wells in a Bounded Domain
 Capabilities Tested
 -------------------
 
+This two-dimensional flow problem --- with a constant pumping rate in a heterogeneous confined aquifer --- tests the Amanzi flow process kernel. Capabilities tested include:
+  
+  * transient flow field induced by constant pumping
+  * flow/drawdown response to pumping in homogeneous medium (confined aquifer) with uniform properties
+  * flow/drawdown response of an aquifer in a bounded domain
+
+For details on this test, see :ref:`about_bounded_domain`.
+
 
 Background
 ----------
 
-As we see from the comparison of results from Amanzi and Butler's solutions, it is inevitable that the numerical solutions from the Amanzi model will not match the results from these analytical solutions at later time, because these analytical solutions were derived for the unbounded domains while in numerical simulations the domain is always bounded.  In this example, we will verify the Amanzi model using the solution for the bounded domain with uniform hydraulic properties.
+As we see from the comparison of results from Amanzi and Butler's solutions :cite:`bd-Butler_Liu_linear_strip_1991` :cite:`bd-Butler_Liu_radially_asymmetric_1993`, it is inevitable that the numerical solutions from the Amanzi model will not match the results from these analytical solutions at later time, because these analytical solutions were derived for the unbounded domains while in numerical simulations the domain is always bounded. In this example, we will verify the Amanzi model using the solution for the bounded domain with uniform hydraulic properties.
 
-
-Problem Specification
----------------------
+Model
+-----
 
 Transient flow in saturated uniform porous media can be represented by
 
@@ -39,7 +46,6 @@ Initially the head is a constant everywhere in the domain:
 
 The boundary conditions are:
 
-.. math:: 
 .. math::    h({\bf x}, t) =  0, \text{   for } {\bf x} \in \Gamma_D\\
 .. math::    T \nabla h({\bf x,t}) \cdot {\bf n}({\bf x})  = q({\bf x}, t)  \text{  for } {\bf x} \in \Gamma_N\\
   :label: bc_bounded_domain_2D
@@ -58,7 +64,7 @@ where :math:`\alpha_m = m \pi/L_1, m=1,2,\cdots`,
 :math:`\beta_n = n \pi/L_2, n=0,2,\cdots`, 
 :math:`L_1` and :math:`L_2` are the domain size in the x and y directions, respectively,
 :math:`D = L_1L_2` is the area of the domain,
-:math:`a_0 =1/2`, and :math:`a_n =1` for :math:`n \ge 1`,
+:math:`a_0 =1/2`, and :math:`a_n =1` for :math:`n \ge 1`.
 
 
 Problem Specification
