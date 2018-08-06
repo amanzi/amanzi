@@ -18,6 +18,7 @@ Background
 
 As we see from the comparison of results from Amanzi and Butler's solutions :cite:`bd-Butler_Liu_linear_strip_1991` :cite:`bd-Butler_Liu_radially_asymmetric_1993`, it is inevitable that the numerical solutions from the Amanzi model will not match the results from these analytical solutions at later time, because these analytical solutions were derived for the unbounded domains while in numerical simulations the domain is always bounded. In this example, we will verify the Amanzi model using the solution for the bounded domain with uniform hydraulic properties.
 
+
 Model
 -----
 
@@ -92,14 +93,16 @@ The model domain is 2400 m :math:`\times` 2400 m. It has 3600 grid cells: 600 ce
 Variables
 ~~~~~~~~~
 
-* Transmissivity: :math:`\;\; T = 0.011574 \; m^2/s` 
-* Storativity: :math:`\;\; S = 2\times 10^{-4}` 
-* Pumping rate: :math:`\;\; Q = 1000 \;m^3/day \:(= 0.011574 \;m^3/s)`
-* Pumping well location (1200 m, 1200 m) and pumping starts at :math:`t = 0`
+* :math:`T = 0.011574` transmissivity [m\ :sup:`2`\/s]
+* :math:`S = 2\times 10^{-4}` storativity
+* :math:`Q = 1000` pumping rate [m\ :sup:`3`\/s] 
+* :math:`(x_i,y_i) = (1200, 1200)` pumping well coordinates [m]
 
-Observation well locations (1224 m, 1200 m) and (1300 m, 1200 m), so  their distance  to the pumping well is 24 m and 100 m, respectively.
+Observation wells located at (1224 m, 1200 m) and (1300 m, 1200 m), so  their respective distances  to the pumping well are 24 m and 100 m.
 
-The boundary conditions are given as: constant pressure head of 1.07785 MPa (i.e., 100 m) at the left and the right  boundaries, and a no-flow condition was imposed on the upper and lower boundaries. Initially the pressure head is 1.07785 MPa everywhere in the domain.
+Initial condition: pressure head = 1.07785 MPa everywhere in the domain at :math:`t = 0`. 
+
+Boundary conditions: constant pressure head (1.07785 MPa) at left/right boundaries, no-flow condition at upper/lower boundaries.  
 
 
 Results and Comparison
