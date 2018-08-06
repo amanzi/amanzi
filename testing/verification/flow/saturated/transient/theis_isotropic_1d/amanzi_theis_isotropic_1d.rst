@@ -17,8 +17,8 @@ Background
 
 Groundwater resource evaluation is crucial to understanding the
 concept of groundwater yield. This concept is vital because it helps
-determine the maximum allowable pump rate out of an aquifer and aid in
-the understanding of the consequences on the water table.  For example,
+determine the maximum allowable pump rate out of an aquifer and
+the consequences on the water table.  For example,
 pumping water out of the water table (unconfined aquifer) may dry up
 nearby wells due to the fall in the saturated thickness of the
 aquifer. This can be prevented by modeling the fall of the water table
@@ -26,9 +26,9 @@ given a certain pumping rate.
 
 To apply the analysis developed by Theis, three parameters must be known:
 
-* *T*, transmissivity
-* *S*, storativity
-* *Q*, constant pumping rate
+* :math:`T`, transmissivity
+* :math:`S`, storativity
+* :math:`Q`, constant pumping rate
 
 Transmissivity of the aquifer is defined as 
 
@@ -115,13 +115,13 @@ Note, the values in the schematic correlate to the values found in
 .. figure:: schematic/Theis.png 
     :figclass: align-center
 
-    **Illustration of transient drawdown**
+    **Illustration of transient drawdown in a confined aquifer.**
 		    
 
 Mesh
 ~~~~
 
-The mesh is generated in the input file. It consists of cells with size :math:`dx=4` m, :math:`dy=4` m, and :math:`dz=10` m. It has 600 grid cells in the x-direction and 600 grid cells in the y-direction, with a single cell width in the z-direction.  
+The mesh is generated in the input file. It consists of cells with size :math:`\Delta x=4` m, :math:`\Delta y=4` m, and :math:`\Delta z=10` m. It has 600 grid cells in the x-direction and 600 grid cells in the y-direction, with a single cell width in the z-direction.  
 
 .. figure:: figures/mesh.png
     :figclass: align-center
@@ -134,13 +134,13 @@ The mesh is generated in the input file. It consists of cells with size :math:`d
 Variables
 ~~~~~~~~~
 
-* :math:`Q=4.0` constant pumping rate [:math:`m^3/s`]
-* :math:`h(r,0)=20.0` initial water table height [:math:`m`]
-* :math:`T=4.7 \cdot 10^{-4}` transmissivity [:math:`m^2/s`]
+* :math:`Q=4.0` constant pumping rate [m\ :sup:`3`/s]
+* :math:`h(r,0)=20.0` initial water table height [m]
+* :math:`T=4.7 \times 10^{-4}` transmissivity [m\ :sup:`2`/s]
 * :math:`W(u)` well function
-* :math:`r` radial distance measured outward from well [:math:`m`]
+* :math:`r` radial distance measured outward from well [m]
 * :math:`S=0.0015` storage coefficient [-] 
-* :math:`t` duration of pumping time [:math:`s`]
+* :math:`t` duration of pumping time [s]
 
 
 Results and Comparison
@@ -178,5 +178,5 @@ About
   *  amanzi_theis_isotropic_1d-u.xml
 
     * Spec Version 2.3, unstructured mesh framework
-    * mesh:  generated in file
+    * mesh:  generated internally
  
