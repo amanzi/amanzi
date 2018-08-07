@@ -327,7 +327,7 @@ Teuchos::ParameterList InputConverterU::TranslateTransportMSM_()
 
     node = GetUniqueElementByTagsString_(inode, "multiscale_structure, solute_transfer_coefficient", flag);
     if (!flag) return empty_list;
-    double omega = std::strtod(mm.transcode(node->getTextContent()), NULL);
+    double omega = InputConverter::GetTextContentD_(node, "s^-1", true);
     
     std::stringstream ss;
     ss << "MSM " << i;
