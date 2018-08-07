@@ -94,8 +94,9 @@ Variables
 ~~~~~~~~~
 
 * :math:`Q=8.1483 \times 10^{-8}` constant pumping rate [kg/s/m]
-* :math:`\boldsymbol{q}=(1.8634 \times 10^{-6},\,0.0)` constant Darcy velocity [m/s]
+* :math:`\boldsymbol{q}=(1.3176 \times 10^{-6},\,0.0)` constant Darcy velocity [m/s]
 * :math:`\phi=0.35` constant porosity
+* :math:`k=1.0 \times 10^{-10}` intrinsic permeability [m\:sup:`2`]
 * :math:`\alpha_L=21.3` longitudinal dispersivity [m]
 * :math:`\alpha_T=4.3` transverse dispersivity [m]
 * :math:`D_m=0.0` molecular diffusion coefficient [m\ :sup:`2`\/s]
