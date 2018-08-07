@@ -29,6 +29,9 @@
       <Parameter name="enable internal tests" type="bool" value="true"/>   
       <Parameter name="internal tests tolerance" type="double" value="1e-5"/>   
       <!-- end of developers parameters -->
+      <ParameterList name="physical models and assumptions">
+        <Parameter name="variable density" type="bool" value="false"/>
+      </ParameterList>
 
       <ParameterList name="reconstruction">
         <Parameter name="polynomial order" type="int" value="1"/>
@@ -79,6 +82,20 @@
           </ParameterList>
         </ParameterList>
       </ParameterList>
+      <ParameterList name="molar_density_liquid">
+        <Parameter name="field evaluator type" type="string" value="independent variable"/>
+        <ParameterList name="function">
+          <ParameterList name="domain">
+            <Parameter name="region" type="string" value="Computational domain"/>
+            <Parameter name="components" type="Array(string)" value="{cell}"/>            
+            <ParameterList name="function">
+              <ParameterList name="function-constant">
+                <Parameter name="value" type="double" value="1"/>
+              </ParameterList>
+            </ParameterList>
+          </ParameterList>
+        </ParameterList>
+      </ParameterList>      
     </ParameterList>
   </ParameterList>
 </ParameterList>

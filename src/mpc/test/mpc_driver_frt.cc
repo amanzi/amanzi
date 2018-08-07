@@ -59,12 +59,14 @@ using namespace Amanzi::AmanziGeometry;
 
   {
     Amanzi::CycleDriver cycle_driver(glist, mesh, &comm, obs_data);
-    try {
-      auto S = cycle_driver.Go();
-      S->GetFieldData("pressure")->MeanValue(&avg1);
-    } catch (...) {
-      CHECK(false);
-    }
+    auto S = cycle_driver.Go();
+    S->GetFieldData("pressure")->MeanValue(&avg1);
+    // try {
+    //   auto S = cycle_driver.Go();
+    //   S->GetFieldData("pressure")->MeanValue(&avg1);
+    // } catch (...) {
+    //   CHECK(false);
+    // }
 
     // check observations
     std::vector<std::string> labels = obs_data.observationLabels();

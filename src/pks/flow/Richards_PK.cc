@@ -1023,10 +1023,11 @@ double Richards_PK::FaceMassDensity(int f) const{
   AmanziMesh::Entity_ID_List cells;
   mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
   double val=0.;
-  for (int i=0;i<cells.size();i++){
+  for (int i=0; i<cells.size(); i++){
     val += rho_cell[0][cells[i]];
   }
   val *= 1./cells.size();
+  return val;
 
 }
 
@@ -1045,7 +1046,7 @@ double Richards_PK::FaceMolarDensity(int f) const {
     val += molar_rho_cell[0][cells[i]];
   }
   val *= 1./cells.size();  
-
+  return val;
 }
 
 double Richards_PK::CellMolarDensity(int c) const{

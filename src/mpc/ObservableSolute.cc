@@ -14,6 +14,7 @@
 #include "ObservableSolute.hh"
 #include "RegionPlane.hh"
 #include "RegionPolygon.hh"
+#include "CommonDefs.hh"
 
 namespace Amanzi {
 
@@ -108,8 +109,15 @@ void ObservableSolute::ComputeObservation(
     return;
   }
 
+  Teuchos::RCP<const Epetra_MultiVector> mol_den = Teuchos::null;
+
+  if (S.HasField("molar_density_liquid")) {
+    mol_den = S.GetFieldData("molar_density_liquid")->ViewComponent("cell");
+  }
+
+  
   const Epetra_MultiVector& ws = *S.GetFieldData("saturation_liquid")->ViewComponent("cell");
-  const Epetra_MultiVector& mol_den = *S.GetFieldData("molar_density_liquid")->ViewComponent("cell");
+
   const Epetra_MultiVector& tcc = *S.GetFieldData("total_component_concentration")->ViewComponent("cell");
   const Epetra_MultiVector& porosity = *S.GetFieldData("porosity")->ViewComponent("cell");    
 
@@ -118,10 +126,16 @@ void ObservableSolute::ComputeObservation(
   if (variable_ == comp_names_[tcc_index_] + " aqueous concentration") { 
     for (int i = 0; i < region_size_; i++) {
       int c = entity_ids_[i];
-      double factor = porosity[0][c] * ws[0][c]  * mesh_->cell_volume(c);
+      double mol_density_c;
+      if (mol_den!=Teuchos::null){
+        mol_density_c = (*mol_den)[0][c];
+      }else{
+        mol_density_c = *S.GetScalarData("fluid_density") / CommonDefs::MOLAR_MASS_H2O;
+      }
+      double factor = porosity[0][c] * ws[0][c]  * mesh_->cell_volume(c) ;
       factor *= units_.concentration_factor();
 
-      *value += tcc[tcc_index_][c] * mol_den[0][c] * factor;
+      *value += tcc[tcc_index_][c] * mol_density_c * factor;
       *volume += factor;
     }
 
@@ -131,7 +145,14 @@ void ObservableSolute::ComputeObservation(
       double factor = porosity[0][c] * (1.0 - ws[0][c]) * mesh_->cell_volume(c);
       factor *= units_.concentration_factor();
 
-      *value += tcc[tcc_index_][c] * mol_den[0][c] * factor;
+      double mol_density_c;
+      if (mol_den!=Teuchos::null){
+        mol_density_c = (*mol_den)[0][c];
+      }else{
+        mol_density_c = *S.GetScalarData("fluid_density") / CommonDefs::MOLAR_MASS_H2O;
+      }
+      
+      *value += tcc[tcc_index_][c] * mol_density_c * factor;
       *volume += factor;
     }
 
@@ -149,7 +170,14 @@ void ObservableSolute::ComputeObservation(
         double area = mesh_->face_area(f);
         double factor = units_.concentration_factor();
 
-        *value += std::max(0.0, sign * darcy_flux[0][f]) * tcc[tcc_index_][c] * mol_den[0][c] * factor;
+        double mol_density_c;
+        if (mol_den!=Teuchos::null){
+          mol_density_c = (*mol_den)[0][c];
+        }else{
+          mol_density_c = *S.GetScalarData("fluid_density") / CommonDefs::MOLAR_MASS_H2O;
+        }
+        
+        *value += std::max(0.0, sign * darcy_flux[0][f]) * tcc[tcc_index_][c] * mol_density_c * factor;
         *volume += area * factor;
       }
 
@@ -162,11 +190,18 @@ void ObservableSolute::ComputeObservation(
         const AmanziGeometry::Point& face_normal = mesh_->face_normal(f, false, c, &csign);
         if (darcy_flux[0][f] * csign < 0) c = cells[1];
 
+        double mol_density_c;
+        if (mol_den!=Teuchos::null){
+          mol_density_c = (*mol_den)[0][c];
+        }else{
+          mol_density_c = *S.GetScalarData("fluid_density") / CommonDefs::MOLAR_MASS_H2O;
+        }
+
         double area = mesh_->face_area(f);
         double sign = (reg_normal_ * face_normal) * csign / area;
         double factor = units_.concentration_factor();
     
-        *value += sign * darcy_flux[0][f] * tcc[tcc_index_][c] * mol_den[0][c] * factor;
+        *value += sign * darcy_flux[0][f] * tcc[tcc_index_][c] * mol_density_c * factor;
         *volume += area * factor;
       }
 

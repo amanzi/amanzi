@@ -53,10 +53,6 @@ register_evaluator_with_factory(
   LISTNAME   EOS_EVALUATORS
   )
 register_evaluator_with_factory(
-  HEADERFILE EOS_RichardsGas_reg.hh
-  LISTNAME   EOS_EVALUATORS
-  )
-register_evaluator_with_factory(
   HEADERFILE MolarFractionGasEvaluator_reg.hh
   LISTNAME   EOS_EVALUATORS
   )
@@ -88,7 +84,6 @@ set(eos_src_files
     EOS_Constant.cc
     EOS_IdealGas.cc
     EOS_VaporInGas.cc
-    EOS_RichardsGas.cc
     EOS_Water.cc
     IsobaricEOSEvaluator.cc
     MolarFractionGasEvaluator.cc
@@ -119,7 +114,6 @@ set(eos_inc_files
     EOS_Constant.hh
     EOS_ConstantMolarMass.hh
     EOS_IdealGas.hh
-    EOS_RichardsGas.hh
     EOS_VaporInGas.hh
     EOS_Water.hh
     eos_registration.hh

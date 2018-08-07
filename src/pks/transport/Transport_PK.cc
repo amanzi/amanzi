@@ -349,7 +349,7 @@ void Transport_PK::Initialize(const Teuchos::Ptr<State>& S)
   
   if (use_variable_density_){
     mol_dens_ = S->GetFieldData(molar_density_key_, molar_density_key_)->ViewComponent("cell", false);
-    S->RequireFieldCopy(molar_density_key_, "prev_state", passwd_);
+    S->RequireFieldCopy(molar_density_key_, "prev_state", molar_density_key_);
     mol_dens_prev_ = S->GetField(molar_density_key_, molar_density_key_)->GetCopy("prev_state", molar_density_key_)->GetFieldData()->ViewComponent("cell", false);
   }else {
     mol_dens_ = Teuchos::rcp(new Epetra_Vector(cmap_owned));
