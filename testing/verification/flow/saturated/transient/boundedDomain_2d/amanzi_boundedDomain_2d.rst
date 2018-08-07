@@ -4,11 +4,17 @@ Transient Drawdown due to Pumping Wells in a Bounded Domain
 Capabilities Tested
 -------------------
 
-This two-dimensional flow problem --- with a constant pumping rate in a heterogeneous confined aquifer --- tests the Amanzi flow process kernel. Capabilities tested include:
+This two-dimensional flow problem --- with a constant pumping rate in a heterogeneous confined aquifer --- tests the Amanzi saturated flow process kernel. 
+Capabilities tested include:
   
-  * transient flow field induced by constant pumping
+  * single-phase, transient flow
+  * saturated flow conditions
+  * flow-field response to multiple point-source pumping wells
   * flow/drawdown response to pumping in homogeneous medium (confined aquifer) with uniform properties
   * flow/drawdown response of an aquifer in a bounded domain
+  * constant-head (Dirichlet) boundary conditions
+  * no-flux (Neumann) boundary conditions 
+  * uniform mesh 
 
 For details on this test, see :ref:`about_bounded_domain`.
 
@@ -145,9 +151,8 @@ About
   
   * amanzi_boundedDomain_2d.xml
  
-    * Spec: Version 2.0
-    * mesh: Generated in running time
-    * runs
+    * Spec: Version 2.3, unstructured mesh framework
+    * mesh: Generated internally 
 
 * Analytical Solutions
 
