@@ -94,7 +94,7 @@ Variables
 
 * Transmissivity: :math:`\;\; T_1 = 0.11574 \; m^{2}/s`; :math:`T_2 = 0.011574 \;m^{2}/s`; :math:`T_3 = 0.0011574 \;m^{2}/s`
 
-* Storativity: :math:`\;\; S_1 = 5\times 10^{-4}`; :math:`S_2 = 2\times 10^{-4}`; :math:`S_3 = 2\times 10^{-5}`;
+* Storativity: :math:`\;\; S_1 = 5\times 10^{-4}`; :math:`S_2 = 2\times 10^{-4}`; :math:`S_3 = 2\times 10^{-5}`
 
 * Pumping rate: :math:`\;\; Q = 1000 \;m^{3}/d \;(= 0.011574 \;m^{3}/s)`
 
