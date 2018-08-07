@@ -260,6 +260,12 @@ void Transport_PK::Setup(const Teuchos::Ptr<State>& S)
         ->SetComponent("cell", AmanziMesh::CELL, 1);
       S->GetField("prev_water_content_matrix", passwd_)->set_io_vis(false);
     }
+
+    // -- porosity of matrix
+    if (!S->HasField("porosity_matrix")) {
+      S->RequireField("porosity_matrix", passwd_)->SetMesh(mesh_)->SetGhosted(true)
+        ->SetComponent("cell", AmanziMesh::CELL, 1);
+    }
   }
 
   // require fracture fields
@@ -487,9 +493,9 @@ void Transport_PK::InitializeFields_()
   InitializeField(S_.ptr(), passwd_, "darcy_flux_fracture", 0.0);
 
   InitializeFieldFromField_("water_content", "porosity", false);
-  InitializeFieldFromField_("prev_water_content", "water_content_matrix", false);
+  InitializeFieldFromField_("prev_water_content", "water_content", false);
 
-  InitializeFieldFromField_("water_content_matrix", "porosity", false);
+  InitializeFieldFromField_("water_content_matrix", "porosity_matrix", false);
   InitializeFieldFromField_("prev_water_content_matrix", "water_content_matrix", false);
 
   InitializeFieldFromField_("prev_saturation_liquid", "saturation_liquid", false);
