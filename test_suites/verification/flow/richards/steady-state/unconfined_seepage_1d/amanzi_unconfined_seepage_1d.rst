@@ -4,14 +4,16 @@ Steady-State Unconfined Flow with a Seepage Boundary Condition
 Capabilities Tested
 -------------------
 
-This one-dimensional flow problem  tests the Amanzi 
-implementation of spatially-varying recharge and drain boundary
+This one-dimensional flow problem tests the Amanzi unsaturated (Richards) flow process
+kernel with spatially-varying recharge and drain boundary
 conditions in an unconfined aquifer.
 Capabilities tested include:
 
-  * variably-saturated flow in unconfined aquifer and adjoining vadose zone
-  * spatially-varying recharge and drain boundary conditions
-  * mass conservation on a non-orthogonal grid
+  * steady-state flow  
+  * variably-saturated flow in unconfined aquifer with adjoining vadose zone
+  * spatially-varying recharge/drain (Cauchy) boundary conditions
+  * mass conservation 
+  * non-orthogonal mesh 
 
 For details on this test, see :ref:`about_unconfined_seepage`. 
 
@@ -19,28 +21,42 @@ For details on this test, see :ref:`about_unconfined_seepage`.
 Background
 ----------
 
+Unconfined aquifers are often fed by surface recharge (e.g. precipitation), which can be
+represented in numerical models as a Cauchy boundary condition. Similarly, if the water table
+intersects the surface topography, perhaps due to slope of the ground surface, a seepage
+face develops that can likewise be represented with the Cauchy boundary condition.
+
+Flow in an unconfined aquifer is inherently multi-dimensional, which generally precludes 
+simple closed-form analytic solutions. In many practical applications however, vertical 
+gradients and velocities are small relative to their horizontal components and can be 
+neglected following Dupuit :cite:`us-Dupuit_1863` and Forchheimer :cite:`us-Forchheimer_1930`.
+The Dupuit-Forchheimer theory of free-surface flow assumes that :cite:`us-Freeze_1979`:
+
+#. flow is horizontal and equipotential lines are vertical, and 
+#. hydraulic gradient is equal to the slope of the free surface. 
+
+In this problem, we present an analytical solution for the elevation of the water table in an 
+unconfined aquifer where the upper bounds are at once draining along a seepage face and being
+fed by areal recharge. Analytical solution results are compared to those generated using *Amanzi*.
+
 
 Model
 -----
 
 An analytic solution for the elevation of the water table can be
-readily derived if vertical gradients and velocities in the saturated
-zone are assumed to be negligible relative to their horizontal
-counterparts following :cite:`us-Dupuit_1863` and :cite:`us-Forchheimer_1930`.  The
-Dupuit-Forchheimer theory of free-surface flow specifically assumes
-that :cite:`us-Freeze_1979`:
-1) flow is horizontal and equipotential lines are vertical, and 
-2) hydraulic gradient is equal to the slope of the free surface.
+readily derived if we make Dupuit-Forchheimer assumptions of free-surface flow --- that is, 
+that flow is horizontal and the hydraulic gradient is equal to the slope of the free surface 
+:cite:`us-Freeze_1979`.
 
 Let :math:`L_s` denote the unknown location of the seepline, and
 :math:`h_s` the hydraulic head or height of the water table at this
 location. Between the left boundary and seepline, the analytic
 solution for hydraulic head in the saturated zone :math:`h` is
 analogous to *Amanzi* unconfined aquifer test case #1 (:cite:`us-Aleman_PORFLOW_2007`,
-Equation 4.3.5; **<link to unconfined test case>**) with
+Equation 4.3.5) with
 :math:`(L_s,h_s)` taking the place of :math:`(L,h_L)`:
 
-	.. math:: h^2 = h_0^2 + (h_s^2 - h_0^2) \frac{x}{L_s} + \frac{Q_{src}L_s^2}{K}\left( \frac{x}{L_s} \right) \left(1 - \frac{x}{L_s} \right), 0 \leqslant x \leqslant L_s
+	.. math:: h^2 = h_0^2 + (h_s^2 - h_0^2) \frac{x}{L_s} + \frac{Q_{src}L_s^2}{K}\left( \frac{x}{L_s} \right) \left(1 - \frac{x}{L_s} \right),\: 0 \leqslant x \leqslant L_s
 		:label: unconfinedLeft
 
 The hydraulic head :math:`h` is also the height of the water table. To
@@ -48,7 +64,7 @@ the right of the seepline, any surface water is assumed to readily
 drain off such that the hydraulic head or water table elevation
 coincides exactly with the ground elevation, that is,
 
-	.. math:: h = 50 ft \left(2 - \frac{x}{L}  \right), L_s \leqslant x \leqslant L
+	.. math:: h = 50 \text{ ft} \left(2 - \frac{x}{L}  \right),\: L_s \leqslant x \leqslant L
 		:label: unconfinedRight
 
 The location of the seepline is obtained by recognizing that Darcy's law and 
@@ -59,7 +75,7 @@ mass conservation across the vertical line :math:`x=L_s` requires
 		:label: massConstraint
 
 where
-	.. math:: h_s = 50 ft \left(2 - \frac{L_s}{L}  \right)
+	.. math:: h_s = 50 \text{ ft} \left(2 - \frac{L_s}{L}  \right)
 		:label: elevationConstraint
 
 Simultaneous solution of Equations :eq:`massConstraint` and
@@ -178,7 +194,6 @@ About
 
     * Spec Version 2.3, unstructured mesh framework
     * mesh:  porflow4_4.exo 
-    * runs
 
 * Mesh Files:
 
