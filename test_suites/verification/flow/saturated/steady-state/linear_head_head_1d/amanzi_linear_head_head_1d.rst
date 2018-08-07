@@ -98,6 +98,7 @@ x-direction, 1 cell in the y-direction, and 1 cell in the z-direction (:math:`\D
 
 Variables
 ~~~~~~~~~
+
 To generate numerical results, the following specifications are considered:
 
 * Domain

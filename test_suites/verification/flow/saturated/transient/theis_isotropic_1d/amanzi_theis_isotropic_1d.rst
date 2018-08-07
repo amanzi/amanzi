@@ -167,11 +167,11 @@ References
 About
 -----
 
-* Directory: testing/verification/flow/saturated/transient/theis_isotropic_1d
+* Directory:  testing/verification/flow/saturated/transient/theis_isotropic_1d
 
-* Authors: Dylan Harp, Alec Thomas, David Moulton 
+* Authors:  Dylan Harp, Alec Thomas, David Moulton 
 
-* Maintainer(s): David Moulton (moulton@lanl.gov)
+* Maintainer:  David Moulton, moulton@lanl.gov
 
 * Input Files:
 
@@ -179,4 +179,5 @@ About
 
     * Spec Version 2.3, unstructured mesh framework
     * mesh:  generated internally
- 
+
+* Analytic solution computed with model_theis_isotropic_1d.py
