@@ -4,12 +4,13 @@ Transient Flow to a Pumping Well in an Anisotropic Aquifer (Hantush)
 Capabilities Tested
 -------------------
 
-This two-dimensional transient flow problem in a non-leaky aquifer with constant pumping tests the Amanzi flow process kernel in anistropic media.
+This two-dimensional transient flow problem in a non-leaky aquifer with constant pumping tests the Amanzi saturated flow process kernel in anistropic media.
 Capabilities tested include:
 
-  * transient, single-phase, saturated flow
+  * transient, single-phase flow
+  * saturated flow conditions 
   * drawdown prediction in anistropic media
-  * statically refined (nonuniform) mesh
+  * statically refined (non-uniform) mesh
 
 For details on this test, see :ref:`about_hantush_anisotropic`.
 
@@ -147,14 +148,10 @@ About
 
     * Spec Version 2.3, unstructured mesh framework
     * mesh:  porflow4_6.exo
-    * runs
 
 * Mesh Files:
 
   * porflow4_6.exo
-
-    * three-dimensional statically refined mesh
-    * one layer of cells in the z-direction
 
 
 .. todo::
