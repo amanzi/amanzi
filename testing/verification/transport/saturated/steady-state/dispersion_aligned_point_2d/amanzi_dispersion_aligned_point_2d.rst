@@ -4,15 +4,17 @@
 Capabilities Tested
 -------------------
 
-This two-dimensional transport problem, with a constant rate mass
-loading point source in a steady-state flow field, tests the Amanzi
+This two-dimensional transport problem --- with a constant rate mass
+loading point source in a steady-state flow field --- tests the Amanzi
 advection and dispersion features of the transport process kernel.  
 Capabilities tested include:
   
-  * prescribed constant velocity field 
-  * source with constant mass loading rate 
-  * advection in an isotropic medium, longitudinal and transverse dispersivities
-  * statically refined (nonuniform) mesh
+  * single-phase, steady-state flow induced by prescribed constant velocity field 
+  * saturated flow conditions  
+  * solute source with constant mass loading rate 
+  * advection in an isotropic medium
+  * longitudinal and transverse dispersivities
+  * statically refined (non-uniform) mesh
 
 For details on this test, see :ref:`about_aligned_dispersion`.
 
@@ -26,19 +28,14 @@ well that is fully screened over the confined flow interval.  In this
 case, the steady-state flow field is uniform and the mass source rate
 does not affect the flow field.  The dominant transport processes are
 advection and dispersion.  Dispersion results in the spreading of the
-released mass in all directions including upstream of the source
+released mass in all directions, including upstream of the source
 location.  Longitudinal dispersivity (in the axis of flow) is
 typically several times larger than the transverse dispersivity.
 Accuracy of the simulated concentrations in the vicinity of the source
 is sensitive to the resolution of the grid and the numerical transport
 scheme.
 
-This two-dimensional transport problem, with a constant rate mass
-loading point source in a steady-state flow field, tests the advection
-and dispersion features of the transport process kernels.  Options
-tested include specified velocity field, constant mass loading rate
-source term, advection, longitudinal and transverse dispersivities,
-and nonuniform gridding.  The analytical solution uses Green's
+The analytical solution uses Green's
 functions to integrate solutions for point and line sources in each of
 the principle coordinate directions to generate advective-dispersive
 transport from a point, line, planar, or rectangular sources.  The
@@ -76,7 +73,7 @@ where :math:`\boldsymbol{D}` is the dispersion tensor
 Let :math:`\boldsymbol{v} = (v_x,\,v_y)` denote the pore velocity,
 :math:`\tau` the torsuosity, and :math:`D_m` the molecular diffusion.
 Then the diagonal entries in the dispersion tensor are
-,,,
+
 .. math::
   D_{xx} = \alpha_L \frac{v_x^2}{\| \boldsymbol{v}\|}
   + \alpha_T \frac{v_y^2}{\| \boldsymbol{v}\|}
@@ -121,7 +118,7 @@ The mesh refinement adds 17% more cells.
 .. figure:: figures/mesh.png 
     :figclass: align-center
 
-    **Computational mesh with 3650 cells.**
+    **Computational mesh with 3650 cells and static refinement around the well.**
 
 
 Variables
@@ -194,12 +191,10 @@ About
 
     * Spec Version 2.2, unstructured mesh framework
     * mesh:  amanzi_dispersion_aligned_point_2d.exo
-    * runs
  
   * amanzi_dispersion_aligned_point_2d-s.xml
 
     * Spec Version 1.2, structured AMR framework
-    * runs
 
 * Mesh Files:
 
