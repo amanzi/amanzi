@@ -5,7 +5,10 @@
 #include <iostream>
 #include <vector>
 
-#include <UnitTest++.h>
+#include "UnitTest++.h"
+#include "Teuchos_RCP.hpp"
+
+#include "VerboseObject.hh"
 
 #include "simple_thermo_database.hh"
 #include "beaker.hh"
@@ -23,7 +26,10 @@ SUITE(BeakerTests) {
   using Amanzi::AmanziChemistry::ChemistryInvalidInput;
 
   TEST(CheckBadComponentSizes) {
-    SimpleThermoDatabase chem;
+    Teuchos::ParameterList plist;
+    auto vo = Teuchos::rcp(new Amanzi::VerboseObject("Chemistry PK", plist));
+
+    SimpleThermoDatabase chem(vo);
 
     Beaker::BeakerComponents components;
     components.free_ion.clear();
@@ -61,7 +67,10 @@ SUITE(BeakerTests) {
 
 
   TEST(CheckBadDatabaseFile) {
-    SimpleThermoDatabase chem;
+    Teuchos::ParameterList plist;
+    auto vo = Teuchos::rcp(new Amanzi::VerboseObject("Chemistry PK", plist));
+
+    SimpleThermoDatabase chem(vo);
 
     Beaker::BeakerComponents components;
     components.free_ion.clear();
@@ -94,7 +103,10 @@ SUITE(BeakerTests) {
   }  // end TEST(CheckBadDatabaseFile)
 
   TEST(CheckBadActivityModel) {
-    SimpleThermoDatabase chem;
+    Teuchos::ParameterList plist;
+    auto vo = Teuchos::rcp(new Amanzi::VerboseObject("Chemistry PK", plist));
+
+    SimpleThermoDatabase chem(vo);
 
     Beaker::BeakerComponents components;
     components.free_ion.clear();

@@ -74,15 +74,15 @@ void Mineral::UpdateVolumeFraction(const double rate,
   if (volume_fraction_ < 0.0) {
     volume_fraction_ = 0.0;
   }
-  if (false) {
+  /*
     std::stringstream message;
     message << name() << "::UpdateVolumeFraction() : \n"
             << "molar_volume : " << molar_volume() << "\n"
             << "rate : " << rate << "\n"
             << "dt : " << delta_time << "\n"
             << "delta_vf : " << molar_volume() * rate * delta_time << std::endl;
-    chem_out->Write(Teuchos::VERB_HIGH, message);
-  }
+    vo->Write(Teuchos::VERB_HIGH, message);
+  */
 }
 
 
@@ -111,7 +111,7 @@ void Mineral::AddContributionToDTotal(const std::vector<Species>& primary_specie
 /*
 **  Display functions
 */
-void Mineral::Display(void) const {
+void Mineral::Display(const Teuchos::RCP<VerboseObject>& vo) const {
   std::stringstream message;
   message << "    " << name() << " = ";
   for (unsigned int i = 0; i < species_names_.size(); i++) {
@@ -132,21 +132,21 @@ void Mineral::Display(void) const {
           << std::setw(13) << specific_surface_area()
           << std::setw(13) << std::fixed << volume_fraction()
           << std::endl;
-  chem_out->Write(Teuchos::VERB_HIGH, message);
+  vo->Write(Teuchos::VERB_HIGH, message);
 }
 
 
-void Mineral::DisplayResultsHeader(void) const {
+void Mineral::DisplayResultsHeader(const Teuchos::RCP<VerboseObject>& vo) const {
   std::stringstream message;
   message << std::setw(15) << "Name"
           << std::setw(15) << "Q/K"
           << std::setw(15) << "SI"
           << std::endl;
-  chem_out->Write(Teuchos::VERB_HIGH, message);
+  vo->Write(Teuchos::VERB_HIGH, message);
 }
 
 
-void Mineral::DisplayResults(void) const {
+void Mineral::DisplayResults(const Teuchos::RCP<VerboseObject>& vo) const {
   std::stringstream message;
   message << std::setw(15) << name()
           << std::scientific << std::setprecision(5)
@@ -154,7 +154,7 @@ void Mineral::DisplayResults(void) const {
           << std::fixed << std::setprecision(3)
           << std::setw(15) << saturation_index()
           << std::endl;
-  chem_out->Write(Teuchos::VERB_HIGH, message);
+  vo->Write(Teuchos::VERB_HIGH, message);
 }
 
 }  // namespace AmanziChemistry

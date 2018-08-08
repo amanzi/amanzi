@@ -57,10 +57,10 @@ class SurfaceComplex {
   void AddContributionToDTotal(const std::vector<Species>& primarySpecies,
                                MatrixBlock* dtotal);
 
-  void display(void) const;
-  void Display(void) const;
-  void DisplayResultsHeader(void) const;
-  void DisplayResults(void) const;
+  void display(const Teuchos::RCP<VerboseObject>& vo) const;
+  void Display(const Teuchos::RCP<VerboseObject>& vo) const;
+  void DisplayResultsHeader(const Teuchos::RCP<VerboseObject>& vo) const;
+  void DisplayResults(const Teuchos::RCP<VerboseObject>& vo) const;
 
   void set_name(SpeciesName name) {
     this->name_ = name;

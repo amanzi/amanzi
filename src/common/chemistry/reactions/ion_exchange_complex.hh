@@ -34,11 +34,11 @@ class IonExchangeComplex {
                      const double K);
   virtual ~IonExchangeComplex() {};
 
-  void display(void) const;
-  void Display(void) const;
-  void DisplayReaction(void) const;
-  void DisplayResultsHeader(void) const;
-  void DisplayResults(void) const;
+  void display(const Teuchos::RCP<VerboseObject>& vo) const;
+  void Display(const Teuchos::RCP<VerboseObject>& vo) const;
+  void DisplayReaction(const Teuchos::RCP<VerboseObject>& vo) const;
+  void DisplayResultsHeader(const Teuchos::RCP<VerboseObject>& vo) const;
+  void DisplayResults(const Teuchos::RCP<VerboseObject>& vo) const;
 
   std::string name(void) const {
     return name_;

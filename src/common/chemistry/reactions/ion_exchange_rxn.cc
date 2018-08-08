@@ -224,54 +224,53 @@ void IonExchangeRxn::CheckUniformZ(const std::vector<Species>& primarySpecies) {
 }
 
 
-void IonExchangeRxn::DisplaySite(void) const {
+void IonExchangeRxn::DisplaySite(const Teuchos::RCP<VerboseObject>& vo) const {
   std::vector<IonExchangeSite>::const_iterator site;
   for (site = ionx_site_.begin(); site != ionx_site_.end(); site++) {
-    site->Display();
+    site->Display(vo);
   }
 }
 
 
-void IonExchangeRxn::DisplayComplexes(void) const {
+void IonExchangeRxn::DisplayComplexes(const Teuchos::RCP<VerboseObject>& vo) const {
   std::vector<IonExchangeComplex>::const_iterator complex;
   for (complex = ionx_complexes_.begin();
        complex != ionx_complexes_.end(); complex++) {
-    complex->Display();
+    complex->Display(vo);
   }
 }
 
 
-void IonExchangeRxn::Display(void) const {
+void IonExchangeRxn::Display(const Teuchos::RCP<VerboseObject>& vo) const {
   //DisplaySite();
-  DisplayComplexes();
+  DisplayComplexes(vo);
 }
 
 
-void IonExchangeRxn::display(void) const {
-  DisplaySite();
-  DisplayComplexes();
+void IonExchangeRxn::display(const Teuchos::RCP<VerboseObject>& vo) const {
+  DisplaySite(vo);
+  DisplayComplexes(vo);
 }
 
 
 void IonExchangeRxn::DisplayResultsHeader(void) const {
-  std::cout << std::setw(15) << "---"
-            << std::endl;
+  std::cout << std::setw(15) << "---" << std::endl;
 }
 
 
-void IonExchangeRxn::DisplayResults(void) const {
-  ionx_site_[0].DisplayResultsHeader();
+void IonExchangeRxn::DisplayResults(const Teuchos::RCP<VerboseObject>& vo) const {
+  ionx_site_[0].DisplayResultsHeader(vo);
   std::vector<IonExchangeSite>::const_iterator site;
   for (site = ionx_site_.begin();
        site != ionx_site_.end(); site++) {
-    site->DisplayResults();
+    site->DisplayResults(vo);
   }
 
-  ionx_complexes_[0].DisplayResultsHeader();
+  ionx_complexes_[0].DisplayResultsHeader(vo);
   std::vector<IonExchangeComplex>::const_iterator complex;
   for (complex = ionx_complexes_.begin();
        complex != ionx_complexes_.end(); complex++) {
-    complex->DisplayResults();
+    complex->DisplayResults(vo);
   }
 }
 

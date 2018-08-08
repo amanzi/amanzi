@@ -60,13 +60,13 @@ void SorptionIsothermRxn::AddContributionToDTotal(
 }
 
 
-void SorptionIsothermRxn::Display(void) const {
+void SorptionIsothermRxn::Display(const Teuchos::RCP<VerboseObject>& vo) const {
   std::stringstream message;
   message << std::setw(12) << species_name_
           << std::setw(15) << isotherm_->name()
           << std::setw(15);
-  chem_out->Write(Teuchos::VERB_HIGH, message);
-  isotherm_->Display();
+  vo->Write(Teuchos::VERB_HIGH, message);
+  isotherm_->Display(vo);
 }
 
 }  // namespace AmanziChemistry

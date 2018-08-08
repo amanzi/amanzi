@@ -36,9 +36,6 @@
 namespace Amanzi {
 namespace AmanziChemistry {
 
-// This should go away
-extern VerboseObject* chem_out;
-
 /* *******************************************************************
 * Constructor 
 ******************************************************************* */
@@ -130,8 +127,6 @@ Alquimia_PK::Alquimia_PK(Teuchos::ParameterList& pk_tree,
   
   // verbosity object
   vo_ = Teuchos::rcp(new VerboseObject("Alquimia_PK:" + domain_name_, *cp_list_));
-  chem_out = &*vo_;
-
 }
 
 

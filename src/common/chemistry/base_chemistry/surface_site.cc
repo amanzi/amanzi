@@ -22,8 +22,6 @@
 namespace Amanzi {
 namespace AmanziChemistry {
 
-extern VerboseObject* chem_out;
-
 SurfaceSite::SurfaceSite()
     : name_(""),
       identifier_(0),
@@ -86,16 +84,16 @@ void SurfaceSite::display(void) const {
 }
 
 
-void SurfaceSite::Display(void) const {
+void SurfaceSite::Display(const Teuchos::RCP<VerboseObject>& vo) const {
   std::stringstream message;
   message << std::setw(15) << name()
           << std::setw(15) << std::scientific << molar_density()
           << std::endl;
-  chem_out->Write(Teuchos::VERB_HIGH, message);
+  vo->Write(Teuchos::VERB_HIGH, message);
 }
 
 
-void SurfaceSite::DisplayResultsHeader(void) const {
+void SurfaceSite::DisplayResultsHeader(const Teuchos::RCP<VerboseObject>& vo) const {
   std::stringstream message;
   message << std::setw(15) << "Site Name"
           << std::setw(15) << "Free Conc."
@@ -103,17 +101,17 @@ void SurfaceSite::DisplayResultsHeader(void) const {
   message << std::setw(15) << " "
           << std::setw(15) << "[mol/m^3 bulk]"
           << std::endl;
-  chem_out->Write(Teuchos::VERB_HIGH, message);
+  vo->Write(Teuchos::VERB_HIGH, message);
 }
 
 
-void SurfaceSite::DisplayResults(void) const {
+void SurfaceSite::DisplayResults(const Teuchos::RCP<VerboseObject>& vo) const {
   std::stringstream message;
   message << std::setw(15) << name()
           << std::scientific << std::setprecision(5)
           << std::setw(15) << free_site_concentration()
           << std::endl;
-  chem_out->Write(Teuchos::VERB_HIGH, message);
+  vo->Write(Teuchos::VERB_HIGH, message);
 }
 
 }  // namespace AmanziChemistry

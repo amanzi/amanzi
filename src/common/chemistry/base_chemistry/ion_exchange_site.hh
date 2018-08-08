@@ -18,6 +18,10 @@
 #include <string>
 #include <vector>
 
+#include "Teuchos_RCP.hpp"
+
+#include "VerboseObject.hh"
+
 namespace Amanzi {
 namespace AmanziChemistry {
 
@@ -31,9 +35,9 @@ class IonExchangeSite {
   IonExchangeSite(const IonxSiteName in_name, const double charge, const std::string location);
   virtual ~IonExchangeSite() {};
 
-  virtual void Display(void) const;
-  void DisplayResultsHeader(void) const;
-  void DisplayResults(void) const;
+  virtual void Display(const Teuchos::RCP<VerboseObject>& vo) const;
+  void DisplayResultsHeader(const Teuchos::RCP<VerboseObject>& vo) const;
+  void DisplayResults(const Teuchos::RCP<VerboseObject>& vo) const;
 
   // mutators
   void set_cation_exchange_capacity(const double in_value) {

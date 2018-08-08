@@ -114,8 +114,6 @@ void KineticRateTST::Setup(const SecondarySpecies& reaction,
   set_identifier(reaction.identifier());
 
   // copy the reactant species, ids and stoichiometry from the reaction species
-  chem_out->Write(Teuchos::VERB_EXTREME, 
-                  "  KineticRateTST::Setup(): Searching for reactant species ids...\n");
   reactant_names = reaction.species_names();
   reactant_stoichiometry = reaction.stoichiometry();
   reactant_ids = reaction.species_ids();
@@ -130,9 +128,6 @@ void KineticRateTST::Setup(const SecondarySpecies& reaction,
   ParseParameters(reaction_data);
 
   // determine the species ids for the modifying species
-  chem_out->Write(Teuchos::VERB_EXTREME,
-                  "  KineticRateTST::Setup(): Searching for modifying species ids...\n");
-
   SetSpeciesIds(primary_species, species_type,
                 modifying_species_names, modifying_exponents,
                 &modifying_primary_ids, &modifying_primary_exponents);
@@ -159,12 +154,14 @@ void KineticRateTST::Update(const SpeciesArray& primary_species,
   double lnQ = 0.0;
   for (unsigned int p = 0; p < primary_species.size(); p++) {
     lnQ += primary_stoichiometry.at(p) * primary_species.at(p).ln_activity();
+    /*
     if (debug()) {
       std::stringstream message;
       message << "  Update: p: " << p << "  coeff: " << primary_stoichiometry.at(p)
               << "  ln_a: " << primary_species.at(p).ln_activity() << std::endl;
-      chem_out->Write(Teuchos::VERB_EXTREME, message);
+      vo->Write(Teuchos::VERB_EXTREME, message);
     }
+    */
   }
   double Q = std::exp(lnQ);
   double Keq = std::pow(10.0, log_Keq());
@@ -178,7 +175,7 @@ void KineticRateTST::Update(const SpeciesArray& primary_species,
   modifying_term(std::exp(ln_mod_term));
 
   // calculate the modifying secondary species term:
-
+  /*
   if (debug()) {
     std::stringstream message;
     message << "  Update:\n"
@@ -194,8 +191,9 @@ void KineticRateTST::Update(const SpeciesArray& primary_species,
             << "    1-Q/K: " << 1.0 - Q_over_Keq() << " [--]\n"
             << std::fixed
             << std::endl;
-    chem_out->Write(Teuchos::VERB_EXTREME, message);
+    vo->Write(Teuchos::VERB_EXTREME, message);
   }
+  */
 }
 
 
@@ -223,14 +221,15 @@ void KineticRateTST::AddContributionToResidual(const std::vector<Mineral>&  mine
     for (unsigned int p = 0; p < reactant_stoichiometry.size(); p++) {
       int reactant_id = reactant_ids.at(p);
       residual->at(reactant_id) -= reactant_stoichiometry.at(p) * rate;
-      // if (true) {
+      /*
       if (debug()) {
         std::stringstream message;
         message << "  AddToResidual p: " << p
                 << "  coeff: " << reactant_stoichiometry.at(p)
                 << "  rate: " << rate / bulk_volume << "  redsidual: " << residual->at(p) << std::endl;
-        chem_out->Write(Teuchos::VERB_EXTREME, message);
+        vo->Write(Teuchos::VERB_EXTREME, message);
       }
+      */
     }
   }
   // store the reaction rate so we can use it to update volume fractions
@@ -292,6 +291,7 @@ void KineticRateTST::AddContributionToJacobian(const SpeciesArray& primary_speci
           (one_minus_QK * modifying_deriv * temp_modifying_term -
            (modifying_term() / Keq) * primary_deriv * temp_Q);
       dRdC_row[p] = -dRdC;  // where does the neg sign come from...?
+      /*
       if (debug()) {
         std::stringstream message;
         message << "J_row_contrib: p: " << p
@@ -306,8 +306,9 @@ void KineticRateTST::AddContributionToJacobian(const SpeciesArray& primary_speci
                 << "\ttemp_Q: " << temp_Q
                 << "\trow: " << dRdC_row.at(p)
                 << std::endl;
-        chem_out->Write(Teuchos::VERB_EXTREME, message);
+        vo->Write(Teuchos::VERB_EXTREME, message);
       }
+      */
     }
 
     // J_ij = nu_i * dR/dCj
@@ -372,9 +373,9 @@ void KineticRateTST::ParseParameters(const StringTokenizer& reaction_data) {
 }
 
 
-void KineticRateTST::Display(void) const {
-  chem_out->Write(Teuchos::VERB_HIGH, "    Rate law: TST\n");
-  this->DisplayReaction();
+void KineticRateTST::Display(const Teuchos::RCP<VerboseObject>& vo) const {
+  vo->Write(Teuchos::VERB_HIGH, "    Rate law: TST\n");
+  this->DisplayReaction(vo);
   std::stringstream message;
   message << "    Parameters:" << std::endl;
   message << "      mineral = " << name() << std::endl;
@@ -388,7 +389,7 @@ void KineticRateTST::Display(void) const {
     message << "^" << this->modifying_exponents.at(mod) << " " << std::endl;
   }
   message << std::endl;
-  chem_out->Write(Teuchos::VERB_HIGH, message);
+  vo->Write(Teuchos::VERB_HIGH, message);
 }
 
 }  // namespace AmanziChemistry

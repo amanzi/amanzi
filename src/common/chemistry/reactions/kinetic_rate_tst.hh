@@ -36,8 +36,6 @@
 namespace Amanzi {
 namespace AmanziChemistry {
 
-extern VerboseObject* chem_out;
-
 class MatrixBlock;
 
 class KineticRateTST : public KineticRate {
@@ -58,7 +56,7 @@ class KineticRateTST : public KineticRate {
                                  const std::vector<Mineral>& minerals,
                                  const double bulk_volume_vol,
                                  MatrixBlock* J);
-  void Display(void) const;
+  void Display(const Teuchos::RCP<VerboseObject>& vo) const;
 
   void ParseParameters(const StringTokenizer& rate);
 

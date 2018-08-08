@@ -78,7 +78,7 @@ void KineticRate::SetSpeciesIds(const SpeciesArray& species,
 }
 
 
-void KineticRate::DisplayReaction(void) const {
+void KineticRate::DisplayReaction(const Teuchos::RCP<VerboseObject>& vo) const {
   std::stringstream message;
   message << "    Reaction: " << std::endl;
   message << "      ";
@@ -94,7 +94,7 @@ void KineticRate::DisplayReaction(void) const {
     }
   }
   message << std::endl;
-  chem_out->Write(Teuchos::VERB_HIGH, message);
+  vo->Write(Teuchos::VERB_HIGH, message);
 }
 
 }  // namespace AmanziChemistry

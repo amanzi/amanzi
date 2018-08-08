@@ -69,8 +69,6 @@
 namespace Amanzi {
 namespace AmanziChemistry {
 
-extern VerboseObject* chem_out;
-
 IonExchangeComplex::IonExchangeComplex(
     const IonxComplexName in_name,
     const IonxComplexId in_id,
@@ -92,49 +90,49 @@ IonExchangeComplex::IonExchangeComplex(
 **  Display functions
 **
 */
-void IonExchangeComplex::display(void) const {
-  DisplayReaction();
+void IonExchangeComplex::display(const Teuchos::RCP<VerboseObject>& vo) const {
+  DisplayReaction(vo);
   std::cout << "      K: " << K() << std::endl;
 }
 
 
-void IonExchangeComplex::Display(void) const {
-  DisplayReaction();
+void IonExchangeComplex::Display(const Teuchos::RCP<VerboseObject>& vo) const {
+  DisplayReaction(vo);
   std::stringstream message;
   message << std::setw(40) << " "
           << std::setw(10) << K()
           << std::endl;
-  chem_out->Write(Teuchos::VERB_HIGH, message);
+  vo->Write(Teuchos::VERB_HIGH, message);
 }
 
 
-void IonExchangeComplex::DisplayReaction(void) const {
+void IonExchangeComplex::DisplayReaction(const Teuchos::RCP<VerboseObject>& vo) const {
   std::stringstream message;
   message << "    " << name() << " = "
           << primary_name()
           << std::endl;
-  chem_out->Write(Teuchos::VERB_HIGH, message);
+  vo->Write(Teuchos::VERB_HIGH, message);
 }
 
 
-void IonExchangeComplex::DisplayResultsHeader(void) const {
+void IonExchangeComplex::DisplayResultsHeader(const Teuchos::RCP<VerboseObject>& vo) const {
   std::stringstream message;
   message << std::setw(15) << "Name"
           << std::setw(15) << "X"
           << std::setw(15) << "Concentration"
           << std::endl;
-  chem_out->Write(Teuchos::VERB_HIGH, message);
+  vo->Write(Teuchos::VERB_HIGH, message);
 }
 
 
-void IonExchangeComplex::DisplayResults(void) const {
+void IonExchangeComplex::DisplayResults(const Teuchos::RCP<VerboseObject>& vo) const {
   std::stringstream message;
   message << std::setw(15) << name()
           << std::scientific << std::setprecision(5)
           << std::setw(15) << X()
           << std::setw(15) << concentration()
           << std::endl;
-  chem_out->Write(Teuchos::VERB_HIGH, message);
+  vo->Write(Teuchos::VERB_HIGH, message);
 }
 
 }  // namespace AmanziChemistry

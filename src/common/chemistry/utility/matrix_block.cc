@@ -18,8 +18,6 @@
 namespace Amanzi {
 namespace AmanziChemistry {
 
-VerboseObject* chem_out = NULL;
-
 MatrixBlock::MatrixBlock() 
   : size_(0),
     A_(NULL) {
@@ -215,11 +213,11 @@ void MatrixBlock::AddValues(int ioffset, int joffset, MatrixBlock* b, double sca
   }
 }
 
-void MatrixBlock::Print() const {
-  Print("");
+void MatrixBlock::Print(const Teuchos::RCP<VerboseObject>& vo) const {
+  Print("", vo);
 }
 
-void MatrixBlock::Print(const std::string& name) const {
+void MatrixBlock::Print(const std::string& name, const Teuchos::RCP<VerboseObject>& vo) const {
   std::stringstream message;
   message << name << " : \n";
   for (int i = 0; i < size(); i++) {
@@ -231,10 +229,10 @@ void MatrixBlock::Print(const std::string& name) const {
       }
     }
   }
-  chem_out->Write(Teuchos::VERB_HIGH, message);
+  vo->Write(Teuchos::VERB_HIGH, message);
 }
 
-void MatrixBlock::Print_ij() const {
+void MatrixBlock::Print_ij(const Teuchos::RCP<VerboseObject>& vo) const {
   std::stringstream message;
   for (int i = 0; i < size(); i++) {
     for (int j = 0; j < size(); j++) {
@@ -244,7 +242,7 @@ void MatrixBlock::Print_ij() const {
       }
     }
   }
-  chem_out->Write(Teuchos::VERB_HIGH, message);
+  vo->Write(Teuchos::VERB_HIGH, message);
 }
 
 }  // namespace AmanziChemistry

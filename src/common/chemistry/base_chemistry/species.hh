@@ -17,6 +17,10 @@
 #include <string>
 #include <vector>
 
+#include "Teuchos_RCP.hpp"
+
+#include "VerboseObject.hh"
+
 namespace Amanzi {
 namespace AmanziChemistry {
 
@@ -90,9 +94,9 @@ class Species {
   }
 
   void display(void) const;
-  void Display(void) const;
-  void DisplayResultsHeader(void) const;
-  void DisplayResults(void) const;
+  void Display(const Teuchos::RCP<VerboseObject>& vo) const;
+  void DisplayResultsHeader(const Teuchos::RCP<VerboseObject>& vo) const;
+  void DisplayResults(const Teuchos::RCP<VerboseObject>& vo) const;
 
  protected:
   // Species(const double s_charge, const double s_GMW,

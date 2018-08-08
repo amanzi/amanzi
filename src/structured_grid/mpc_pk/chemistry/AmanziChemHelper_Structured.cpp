@@ -105,7 +105,9 @@ AmanziChemHelper_Structured::AmanziChemHelper_Structured(const std::vector<std::
   parameters.resize(tnum);
       
   for (int ithread = 0; ithread < tnum; ithread++) {
-    chemSolve.set(ithread, new Amanzi::AmanziChemistry::SimpleThermoDatabase());
+    Teuchos::ParameterList vo_list;
+    vo_ = Teuchos::rcp(new Amanzi::VerboseObject("Chemistry PK", vo_list));
+    chemSolve.set(ithread, new Amanzi::AmanziChemistry::SimpleThermoDatabase(vo_));
 	  
     parameters[ithread] = chemSolve[ithread].GetDefaultParameters();
     parameters[ithread].thermo_database_file = thermo_database_file;
@@ -316,7 +318,7 @@ AmanziChemHelper_Structured::Advance(const FArrayBox& aqueous_saturation,       
       {
         if (chem_verbose>=0) {
           std::cout << "CHEMISTRY FAILED on level at " << iv << " : ";
-          TheComponent.Display("components: ");
+          TheComponent.Display("components: ", vo_);
           if (abort_on_chem_fail) {
             BoxLib::Abort(geochem_error.what());
           }
@@ -531,7 +533,7 @@ AmanziChemHelper_Structured::Initialize(const FArrayBox& aqueous_saturation,    
       catch (const Amanzi::AmanziChemistry::ChemistryException& geochem_error)
       {
 	std::cout << "CHEMISTRY SPECIATION FAILED on level at " << iv << " : ";
-	TheComponent.Display("components: ");
+	TheComponent.Display("components: ", vo_);
 	if (abort_on_chem_fail) {
 	  BoxLib::Abort(geochem_error.what());
 	}

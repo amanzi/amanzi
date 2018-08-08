@@ -21,7 +21,7 @@ namespace AmanziChemistry {
 
 class SimpleThermoDatabase : public Beaker {
  public:
-  SimpleThermoDatabase();
+  SimpleThermoDatabase(Teuchos::RCP<VerboseObject> vo);
   virtual ~SimpleThermoDatabase() {};
 
   void Setup(const Beaker::BeakerComponents& components,

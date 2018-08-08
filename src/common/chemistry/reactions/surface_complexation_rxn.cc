@@ -30,8 +30,6 @@
 namespace Amanzi {
 namespace AmanziChemistry {
 
-extern VerboseObject* chem_out;
-
 SurfaceComplexationRxn::SurfaceComplexationRxn()
     : use_newton_solve_(false) {
   surface_site_.clear();
@@ -219,55 +217,55 @@ void SurfaceComplexationRxn::AddContributionToDTotal(
 }
 
 
-void SurfaceComplexationRxn::DisplaySite(void) const {
+void SurfaceComplexationRxn::DisplaySite(const Teuchos::RCP<VerboseObject>& vo) const {
   std::vector<SurfaceSite>::const_iterator site;
   for (site = surface_site_.begin(); site != surface_site_.end(); site++) {
-    site->Display();
+    site->Display(vo);
   }
 }
 
 
-void SurfaceComplexationRxn::DisplayComplexes(void) const {
+void SurfaceComplexationRxn::DisplayComplexes(const Teuchos::RCP<VerboseObject>& vo) const {
   std::vector<SurfaceComplex>::const_iterator complex;
   for (complex = surface_complexes_.begin();
        complex != surface_complexes_.end(); complex++) {
-    complex->Display();
+    complex->Display(vo);
   }
 }
 
 
-void SurfaceComplexationRxn::Display(void) const {
-  DisplaySite();
-  DisplayComplexes();
+void SurfaceComplexationRxn::Display(const Teuchos::RCP<VerboseObject>& vo) const {
+  DisplaySite(vo);
+  DisplayComplexes(vo);
 }
 
 
-void SurfaceComplexationRxn::display(void) const {
-  DisplaySite();
-  DisplayComplexes();
+void SurfaceComplexationRxn::display(const Teuchos::RCP<VerboseObject>& vo) const {
+  DisplaySite(vo);
+  DisplayComplexes(vo);
 }
 
 
-void SurfaceComplexationRxn::DisplayResultsHeader(void) const {
+void SurfaceComplexationRxn::DisplayResultsHeader(const Teuchos::RCP<VerboseObject>& vo) const {
   std::stringstream message;
   message << std::setw(7) << "---" << std::endl;
-  chem_out->Write(Teuchos::VERB_HIGH, message);
+  vo->Write(Teuchos::VERB_HIGH, message);
 }
 
 
-void SurfaceComplexationRxn::DisplayResults(void) const {
-  surface_site_[0].DisplayResultsHeader();
+void SurfaceComplexationRxn::DisplayResults(const Teuchos::RCP<VerboseObject>& vo) const {
+  surface_site_[0].DisplayResultsHeader(vo);
   std::vector<SurfaceSite>::const_iterator site;
   for (site = surface_site_.begin();
        site != surface_site_.end(); site++) {
-    site->DisplayResults();
+    site->DisplayResults(vo);
   }
-  chem_out->Write(Teuchos::VERB_HIGH, "\n");
-  surface_complexes_[0].DisplayResultsHeader();
+  vo->Write(Teuchos::VERB_HIGH, "\n");
+  surface_complexes_[0].DisplayResultsHeader(vo);
   std::vector<SurfaceComplex>::const_iterator complex;
   for (complex = surface_complexes_.begin();
        complex != surface_complexes_.end(); complex++) {
-    complex->DisplayResults();
+    complex->DisplayResults(vo);
   }
 }
 

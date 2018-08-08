@@ -67,12 +67,12 @@ class SurfaceComplexationRxn {
   // is the case.
   void SetNewtonSolveFlag(void);
 
-  void display(void) const;
-  void Display(void) const;
-  void DisplaySite(void) const;
-  void DisplayComplexes(void) const;
-  void DisplayResultsHeader(void) const;
-  void DisplayResults(void) const;
+  void display(const Teuchos::RCP<VerboseObject>& vo) const;
+  void Display(const Teuchos::RCP<VerboseObject>& vo) const;
+  void DisplaySite(const Teuchos::RCP<VerboseObject>& vo) const;
+  void DisplayComplexes(const Teuchos::RCP<VerboseObject>& vo) const;
+  void DisplayResultsHeader(const Teuchos::RCP<VerboseObject>& vo) const;
+  void DisplayResults(const Teuchos::RCP<VerboseObject>& vo) const;
 
  protected:
   void set_use_newton_solve(const bool b) {

@@ -24,8 +24,6 @@
 namespace Amanzi {
 namespace AmanziChemistry {
 
-extern VerboseObject* chem_out;
-
 namespace utilities {
 
 void RemoveLeadingAndTrailingWhitespace(std::string* line);
@@ -36,6 +34,7 @@ inline double ln_to_log(double d) { return d * 0.434294481903252; }
 template <typename T>
 void PrintVector(const std::string& name, 
                  const std::vector<T>& data,
+                 const Teuchos::RCP<VerboseObject>& vo,
                  const int precision = -1,
                  const bool comma_seperated = false) {
   std::stringstream output;
@@ -55,7 +54,7 @@ void PrintVector(const std::string& name,
     }
   }
   output << " }\n";
-  chem_out->Write(Teuchos::VERB_HIGH, output);
+  vo->Write(Teuchos::VERB_HIGH, output);
 }
 
 }  // namespace utilities

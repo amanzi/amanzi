@@ -41,9 +41,6 @@
 namespace Amanzi {
 namespace AmanziChemistry {
 
-// This should go away
-extern VerboseObject* chem_out;
-
 /* ******************************************************************
 * Constructor
 ******************************************************************* */
@@ -88,7 +85,6 @@ Amanzi_PK::Amanzi_PK(Teuchos::ParameterList& pk_tree,
   free_ion_species_key_ = Keys::getKey(domain_name_,"free_ion_species");
   primary_activity_coeff_key_ = Keys::getKey(domain_name_,"primary_activity_coeff");
 
-
   ion_exchange_sites_key_ = Keys::getKey(domain_name_,"ion_exchange_sites");
   //ion_exchange_sites_key_ = "ion_exchange_sites";
 
@@ -98,7 +94,6 @@ Amanzi_PK::Amanzi_PK(Teuchos::ParameterList& pk_tree,
   mineral_rate_constant_key_ = Keys::getKey(domain_name_,"mineral_rate_constant");
   first_order_decay_constant_key_ = Keys::getKey(domain_name_,"first_order_decay_constant");  
   
-
   // collect high-level information about the problem
   Teuchos::RCP<Teuchos::ParameterList> state_list = Teuchos::sublist(glist, "state", true);
 
@@ -120,7 +115,6 @@ Amanzi_PK::Amanzi_PK(Teuchos::ParameterList& pk_tree,
 
   // verbosity object
   vo_ = Teuchos::rcp(new VerboseObject("Amanzi_PK:" + domain_name_, *cp_list_)); 
-  chem_out = &*vo_;
 }
 
 
@@ -278,7 +272,7 @@ void Amanzi_PK::XMLParameters()
     if (tdb_list_.isParameter("format")) {
       std::string database_format = tdb_list_.get<std::string>("format");
       if (database_format == "simple") {
-        chem_ = new SimpleThermoDatabase();
+        chem_ = new SimpleThermoDatabase(vo_);
       } else {
         // invalid database format
         std::ostringstream msg;

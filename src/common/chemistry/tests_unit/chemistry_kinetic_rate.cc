@@ -101,7 +101,7 @@ SUITE(GeochemistryTestsKineticRate) {
       static_cast<void>(J);
     };  // end addContributionToJacobian()
 
-    void Display(void) const {
+    void Display(const Teuchos::RCP<Amanzi::VerboseObject>& vo) const {
       std::cout << this->name() << std::endl;
     };  // end Display()
 

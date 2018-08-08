@@ -56,8 +56,7 @@ struct SimulationParameters {
         site_density(),
         isotherm_kd(),
         isotherm_langmuir_b(),
-        isotherm_freundlich_n() {
-  }
+        isotherm_freundlich_n() {};
 };
 
 static const std::string kSimulationSection("simulation parameters");
@@ -92,9 +91,11 @@ int CommandLineOptions(int argc, char** argv,
                        std::string* verbosity_name,
                        std::string* input_file_name,
                        std::string* template_file_name,
-                       bool* debug_batch_driver);
+                       bool* debug_batch_driver,
+                       const Teuchos::RCP<Amanzi::VerboseObject>& vo);
 
-void WriteTemplateFile(const std::string& file_name);
+void WriteTemplateFile(const std::string& file_name,
+                       const Teuchos::RCP<Amanzi::VerboseObject>& vo);
 
 void SetupChemistryOutput(void);
 
@@ -114,7 +115,8 @@ void WriteTextOutput(std::fstream* text_output,
 
 void ReadInputFile(const std::string& file_name,
                    SimulationParameters* simulation_params,
-                   Amanzi::AmanziChemistry::Beaker::BeakerComponents* components);
+                   Amanzi::AmanziChemistry::Beaker::BeakerComponents* components,
+                   const Teuchos::RCP<Amanzi::VerboseObject>& vo);
 
 void ParseSimulationParameter(const std::string& raw_line,
                               SimulationParameters* params);
@@ -128,8 +130,10 @@ void ModelSpecificParameters(const std::string model,
                              Amanzi::AmanziChemistry::Beaker::BeakerParameters* parameters);
 
 void PrintInput(const SimulationParameters& params,
-                const Amanzi::AmanziChemistry::Beaker::BeakerComponents& components);
-void PrintSimulationParameters(const SimulationParameters& params);
+                const Amanzi::AmanziChemistry::Beaker::BeakerComponents& components,
+                const Teuchos::RCP<Amanzi::VerboseObject>& vo);
+void PrintSimulationParameters(const SimulationParameters& params,
+                               const Teuchos::RCP<Amanzi::VerboseObject>& vo);
 
 
 #endif  /* AMANZI_CHEMISTRY_BATCH_CHEM_HH_ */

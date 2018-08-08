@@ -49,9 +49,9 @@ class Mineral : public SecondarySpecies {
   virtual void AddContributionToDTotal(const std::vector<Species>& primary_species,
                                        MatrixBlock* dtotal);
 
-  void Display(void) const;
-  void DisplayResultsHeader(void) const;
-  void DisplayResults(void) const;
+  void Display(const Teuchos::RCP<VerboseObject>& vo) const;
+  void DisplayResultsHeader(const Teuchos::RCP<VerboseObject>& vo) const;
+  void DisplayResults(const Teuchos::RCP<VerboseObject>& vo) const;
 
   double Q_over_K(void) const {
     return std::exp(this->lnQK_);

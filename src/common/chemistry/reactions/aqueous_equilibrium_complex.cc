@@ -87,7 +87,7 @@ void AqueousEquilibriumComplex::AddContributionToDTotal(
 }
 
 
-void AqueousEquilibriumComplex::display(void) const {
+void AqueousEquilibriumComplex::display(const Teuchos::RCP<VerboseObject>& vo) const {
   std::stringstream message;
   message << "    " << name() << " = ";
   // TODO(bandre): uncomment and update test output
@@ -108,11 +108,11 @@ void AqueousEquilibriumComplex::display(void) const {
   message << "        logK = " << logK_ << std::endl;
   message << "        charge = " << charge() << std::endl;
   message << "        mol wt = " << gram_molecular_weight() << std::endl;
-  chem_out->Write(Teuchos::VERB_HIGH, message);
+  vo->Write(Teuchos::VERB_HIGH, message);
 }
 
 
-void AqueousEquilibriumComplex::Display(void) const {
+void AqueousEquilibriumComplex::Display(const Teuchos::RCP<VerboseObject>& vo) const {
   std::stringstream message;
   message << "    " << name() << " = "
             << std::fixed << std::setprecision(3);
@@ -137,22 +137,22 @@ void AqueousEquilibriumComplex::Display(void) const {
           << std::setprecision(5) << std::setw(10) << gram_molecular_weight()
           << std::setprecision(2) << std::setw(8) << ion_size_parameter()
           << std::endl;
-  chem_out->Write(Teuchos::VERB_HIGH, message);
+  vo->Write(Teuchos::VERB_HIGH, message);
 }
 
 
-void AqueousEquilibriumComplex::DisplayResultsHeader(void) const {
+void AqueousEquilibriumComplex::DisplayResultsHeader(const Teuchos::RCP<VerboseObject>& vo) const {
   std::stringstream message;
   message << std::setw(15) << "Name"
           << std::setw(15) << "Molality"
           << std::setw(15) << "Activity Coeff"
           << std::setw(15) << "Activity"
           << std::endl;
-  chem_out->Write(Teuchos::VERB_HIGH, message);
+  vo->Write(Teuchos::VERB_HIGH, message);
 }
 
 
-void AqueousEquilibriumComplex::DisplayResults(void) const {
+void AqueousEquilibriumComplex::DisplayResults(const Teuchos::RCP<VerboseObject>& vo) const {
   std::stringstream message;
   message << std::setw(15) << name()
           << std::scientific << std::setprecision(5)
@@ -160,7 +160,7 @@ void AqueousEquilibriumComplex::DisplayResults(void) const {
           << std::setw(15) << act_coef()
           << std::setw(15) << activity()
           << std::endl;
-  chem_out->Write(Teuchos::VERB_HIGH, message);
+  vo->Write(Teuchos::VERB_HIGH, message);
 }
 
 }  // namespace AmanziChemistry

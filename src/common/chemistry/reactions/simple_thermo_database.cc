@@ -42,7 +42,7 @@ namespace AmanziChemistry {
 /*
 ** TODO(bandre): need a lot more error checking and helpfull error messages from here.
 */
-SimpleThermoDatabase::SimpleThermoDatabase(void)
+SimpleThermoDatabase::SimpleThermoDatabase(Teuchos::RCP<VerboseObject> vo)
     : Beaker(),
       primary_id_(0),
       aqueous_equilibrium_complex_id_(0),
@@ -53,6 +53,7 @@ SimpleThermoDatabase::SimpleThermoDatabase(void)
       surface_complexation_rxn_id_(0) {
   surface_sites_.clear();
   surface_complexation_reactions_.clear();
+  vo_ = vo;
 }
 
 
@@ -97,7 +98,7 @@ void SimpleThermoDatabase::ReadFile(const std::string& file_name) {
   if (!input) {
     std::stringstream msg;
     msg << "SimpleThermoDatabase cannot open file \"" << file_name << "\"\n";
-    chem_out->WriteWarning(Teuchos::VERB_NONE, msg);
+    vo_->WriteWarning(Teuchos::VERB_NONE, msg);
     Exceptions::amanzi_throw(ChemistryInvalidInput(msg.str()));
   }
 
@@ -417,7 +418,7 @@ void SimpleThermoDatabase::ParseAqueousEquilibriumComplex(const std::string& dat
                                       charge, gram_molecular_weight, size_parameter, logKeq);
   this->AddAqueousEquilibriumComplex(secondary);
   if (verbosity() == kDebugInputFile) {
-    secondary.display();
+    secondary.display(vo_);
   }
 }
 
@@ -439,7 +440,7 @@ void SimpleThermoDatabase::ParseSorptionIsotherm(const std::string& data) {
   std::stringstream message;
   message << "SimpleThermoDatabase::ParseSorptionIsotherm()...." << std::endl
           << "  data: " << data << std::endl;
-  chem_out->Write(Teuchos::VERB_EXTREME, message);
+  vo_->Write(Teuchos::VERB_EXTREME, message);
 
   std::string semicolon(";");
   std::string space(" ");
@@ -705,7 +706,7 @@ void SimpleThermoDatabase::ParseRadioactiveDecay(const std::string& data) {
   std::stringstream message;
   message << "SimpleThermoDatabase::ParseRadioactiveDecay()....\n"
           << "  data: " << data << std::endl;
-  chem_out->Write(Teuchos::VERB_EXTREME, message);
+  vo_->Write(Teuchos::VERB_EXTREME, message);
   
   std::string semicolon(";");
   std::string space(" ");
@@ -910,7 +911,7 @@ void SimpleThermoDatabase::ParseMineralKinetics(const std::string& data) {
 
   this->AddMineralKineticRate(kinetic_rate);
   if (verbosity() == kDebugInputFile || verbosity() == kDebugMineralKinetics) {
-    kinetic_rate->Display();
+    kinetic_rate->Display(vo_);
   }
 }
 
@@ -958,7 +959,7 @@ void SimpleThermoDatabase::ParseIonExchangeSite(const std::string& data) {
 
   this->AddIonExchangeRxn(ionx_rxn);
   if (verbosity() == kDebugInputFile) {
-    exchanger.Display();
+    exchanger.Display(vo_);
   }
 }
 
@@ -1023,7 +1024,7 @@ void SimpleThermoDatabase::ParseIonExchangeComplex(const std::string& data) {
   }
 
   if (verbosity() == kDebugInputFile) {
-    exchange_complex.display();
+    exchange_complex.display(vo_);
   }
 }
 
@@ -1139,7 +1140,7 @@ void SimpleThermoDatabase::ParseSurfaceComplex(const std::string& data) {
   surface_complexation_reactions_[surface_site_id].AddSurfaceComplex(surface_complex);
 
   if (verbosity() == kDebugInputFile) {
-    surface_complex.display();
+    surface_complex.display(vo_);
   }
 }  // end ParseSurfaceComplex()
 

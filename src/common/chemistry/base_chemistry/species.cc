@@ -25,8 +25,6 @@
 namespace Amanzi {
 namespace AmanziChemistry {
 
-extern VerboseObject* chem_out;
-
 Species::Species()
     : molality_(1.e-9),
       activity_(1.0),
@@ -107,29 +105,29 @@ void Species::display(void) const {
 }
 
 
-void Species::Display(void) const {
+void Species::Display(const Teuchos::RCP<VerboseObject>& vo) const {
   std::stringstream message;
   message << std::setw(15) << name() << std::fixed
           << std::setprecision(2) << std::setw(10) << charge()
           << std::setprecision(5) << std::setw(10) << gram_molecular_weight()
           << std::setprecision(2) << std::setw(10) << ion_size_parameter()
           << std::endl;
-  chem_out->Write(Teuchos::VERB_HIGH, message);
+  vo->Write(Teuchos::VERB_HIGH, message);
 }
 
 
-void Species::DisplayResultsHeader(void) const {
+void Species::DisplayResultsHeader(const Teuchos::RCP<VerboseObject>& vo) const {
   std::stringstream message;
   message << std::setw(15) << "Name"
           << std::setw(15) << "Molality"
           << std::setw(15) << "Activity Coeff"
           << std::setw(15) << "Activity"
           << std::endl;
-  chem_out->Write(Teuchos::VERB_HIGH, message);
+  vo->Write(Teuchos::VERB_HIGH, message);
 }
 
 
-void Species::DisplayResults(void) const {
+void Species::DisplayResults(const Teuchos::RCP<VerboseObject>& vo) const {
   std::stringstream message;
   message << std::setw(15) << name()
           << std::scientific << std::setprecision(5)
@@ -137,7 +135,7 @@ void Species::DisplayResults(void) const {
           << std::setw(15) << act_coef()
           << std::setw(15) << activity()
           << std::endl;
-  chem_out->Write(Teuchos::VERB_HIGH, message);
+  vo->Write(Teuchos::VERB_HIGH, message);
 }
 
 }  // namespace AmanziChemistry

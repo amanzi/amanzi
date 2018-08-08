@@ -20,8 +20,6 @@
 namespace Amanzi {
 namespace AmanziChemistry {
 
-extern VerboseObject* chem_out;
-
 class MatrixBlock {
  public:
   MatrixBlock();
@@ -73,9 +71,9 @@ class MatrixBlock {
   void Zero(void);
   void SetDiagonal(double d);
 
-  void Print(const std::string& name) const;
-  void Print(void) const;
-  void Print_ij(void) const;
+  void Print(const std::string& name, const Teuchos::RCP<VerboseObject>& vo) const;
+  void Print(const Teuchos::RCP<VerboseObject>& vo) const;
+  void Print_ij(const Teuchos::RCP<VerboseObject>& vo) const;
 
 
  private:

@@ -16,6 +16,8 @@
 #include <string>
 #include <vector>
 
+#include "Teuchos_RCP.hpp"
+
 #include "VerboseObject.hh"
 
 #include "activity_model.hh"
@@ -35,8 +37,6 @@
 
 namespace Amanzi {
 namespace AmanziChemistry {
-
-extern VerboseObject* chem_out;
 
 class KineticRate;
 
@@ -64,24 +64,24 @@ class Beaker {
     std::vector<double> isotherm_freundlich_n;
     std::vector<double> isotherm_langmuir_b;
 
-    void Display(const std::string& message) const {
-      chem_out->Write(Teuchos::VERB_HIGH, message);
-      utilities::PrintVector("Totals", total, 16, true);
-      utilities::PrintVector("Total sorbed", total_sorbed, 16, true);
-      utilities::PrintVector("Free Ion", free_ion, 16, true);
-      utilities::PrintVector("Primary activity coeff", primary_activity_coeff, 16, true);
-      utilities::PrintVector("Secondary activity coeff", secondary_activity_coeff, 16, true);
-      utilities::PrintVector("Mineral VF", mineral_volume_fraction, 16, true);
-      utilities::PrintVector("Mineral SSA", mineral_specific_surface_area, 16, true);
-      utilities::PrintVector("Ion Exchange Sites", ion_exchange_sites, 16, true);
-      utilities::PrintVector("Ion Exchange ref cation conc", ion_exchange_ref_cation_conc, 16, true);
-      utilities::PrintVector("Surface Site Density", surface_site_density, 16, true);
-      utilities::PrintVector("Surface Complex free site conc", surface_complex_free_site_conc, 16, true);
-      utilities::PrintVector("Kd", isotherm_kd, 16, true);
-      utilities::PrintVector("Freundlich n", isotherm_freundlich_n, 16, true);
-      utilities::PrintVector("Langmuir b", isotherm_langmuir_b, 16, true);
+    void Display(const std::string& message, const Teuchos::RCP<VerboseObject>& vo) const {
+      vo->Write(Teuchos::VERB_HIGH, message);
+      utilities::PrintVector("Totals", total, vo, 16, true);
+      utilities::PrintVector("Total sorbed", total_sorbed, vo, 16, true);
+      utilities::PrintVector("Free Ion", free_ion, vo, 16, true);
+      utilities::PrintVector("Primary activity coeff", primary_activity_coeff, vo, 16, true);
+      utilities::PrintVector("Secondary activity coeff", secondary_activity_coeff, vo, 16, true);
+      utilities::PrintVector("Mineral VF", mineral_volume_fraction, vo, 16, true);
+      utilities::PrintVector("Mineral SSA", mineral_specific_surface_area, vo, 16, true);
+      utilities::PrintVector("Ion Exchange Sites", ion_exchange_sites, vo, 16, true);
+      utilities::PrintVector("Ion Exchange ref cation conc", ion_exchange_ref_cation_conc, vo, 16, true);
+      utilities::PrintVector("Surface Site Density", surface_site_density, vo, 16, true);
+      utilities::PrintVector("Surface Complex free site conc", surface_complex_free_site_conc, vo, 16, true);
+      utilities::PrintVector("Kd", isotherm_kd, vo, 16, true);
+      utilities::PrintVector("Freundlich n", isotherm_freundlich_n, vo, 16, true);
+      utilities::PrintVector("Langmuir b", isotherm_langmuir_b, vo, 16, true);
     }
-    void DumpCfg(const std::vector<std::string>& names) const {
+    void DumpCfg(const std::vector<std::string>& names, const Teuchos::RCP<VerboseObject>& vo) const {
       std::stringstream message;
       message << std::scientific << std::setprecision(12);
       message << "\n[total]\n";
@@ -96,7 +96,7 @@ class Beaker {
       for (int i = 0; i < free_ion.size(); ++i) {
         message << names.at(i) << " = " << free_ion.at(i) << "\n";
       }
-      chem_out->Write(Teuchos::VERB_HIGH, message);
+      vo->Write(Teuchos::VERB_HIGH, message);
     }
   };
 
@@ -163,7 +163,6 @@ class Beaker {
   int ReactionStep(BeakerComponents* components, const BeakerParameters& parameters,
                    double dt);
 
-  virtual void display(void) const;
   void print_results(void) const;
   void print_results(double time) const;
   void print_linear_system(const std::string& s, 
@@ -324,6 +323,9 @@ class Beaker {
   bool use_log_formulation(void) const {
     return use_log_formulation_;
   }
+
+ protected:
+  Teuchos::RCP<VerboseObject> vo_;
 
  private:
   void CheckChargeBalance(const std::vector<double>& aqueous_totals) const;

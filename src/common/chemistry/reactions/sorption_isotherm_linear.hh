@@ -27,7 +27,7 @@ class SorptionIsothermLinear : public SorptionIsotherm {
   // returns sorbed concentration
   double Evaluate(const Species& primarySpecies);
   double EvaluateDerivative(const Species& primarySpecies);
-  void Display(void) const;
+  void Display(const Teuchos::RCP<VerboseObject>& vo) const;
 
   double KD(void) const { return KD_; }
   void set_KD(const double KD) { KD_ = KD; }

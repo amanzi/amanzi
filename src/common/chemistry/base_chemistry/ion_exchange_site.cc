@@ -23,8 +23,6 @@
 namespace Amanzi {
 namespace AmanziChemistry {
 
-extern VerboseObject* chem_out;
-
 IonExchangeSite::IonExchangeSite()
     : name_(),
       cation_exchange_capacity_(0.0),
@@ -49,32 +47,32 @@ IonExchangeSite::IonExchangeSite(const IonxSiteName name,
 }
 
 
-void IonExchangeSite::Display(void) const {
+void IonExchangeSite::Display(const Teuchos::RCP<VerboseObject>& vo) const {
   std::stringstream message;
   message << std::setw(15) << name()
           << std::setw(20) << mineral_name()
           << std::setw(10) << std::fixed << charge()
           << std::setw(10) << std::scientific << cation_exchange_capacity()
           << std::fixed << std::endl;
-  chem_out->Write(Teuchos::VERB_HIGH, message);
+  vo->Write(Teuchos::VERB_HIGH, message);
 }
 
 
-void IonExchangeSite::DisplayResultsHeader(void) const {
+void IonExchangeSite::DisplayResultsHeader(const Teuchos::RCP<VerboseObject>& vo) const {
   std::stringstream message;
   message << std::setw(15) << "Name"
           << std::setw(15) << "CEC"
           << std::endl;
-  chem_out->Write(Teuchos::VERB_HIGH, message);
+  vo->Write(Teuchos::VERB_HIGH, message);
 }
 
 
-void IonExchangeSite::DisplayResults(void) const {
+void IonExchangeSite::DisplayResults(const Teuchos::RCP<VerboseObject>& vo) const {
   std::stringstream message;
   message << std::setw(15) << name()
           << std::setw(15) << cation_exchange_capacity()
           << std::endl;
-  chem_out->Write(Teuchos::VERB_HIGH, message);
+  vo->Write(Teuchos::VERB_HIGH, message);
 }
 
 }  // namespace AmanziChemistry
