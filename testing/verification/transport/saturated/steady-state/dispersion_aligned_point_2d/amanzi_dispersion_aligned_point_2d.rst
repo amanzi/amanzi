@@ -1,3 +1,5 @@
+.. _amanzi_dispersion_aligned_point_2d:
+
 2D Dispersive Transport in a Uniform Flow Field (aligned)
 =========================================================
 
