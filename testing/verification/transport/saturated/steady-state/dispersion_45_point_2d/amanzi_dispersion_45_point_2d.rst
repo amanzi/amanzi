@@ -84,7 +84,7 @@ Problem Specification
 Schematic
 ~~~~~~~~~
 
-The flow direction, and source location are shown in the following schematic.
+The flow direction and source location are shown in the following schematic.
 
 .. figure:: schematic/schematic.png 
     :figclass: align-center
@@ -97,7 +97,7 @@ Mesh
 ~~~~
 
 The background mesh consists of square cells with size :math:`H=15` m.
-It has 83 grid cells in the x-direction and 37 grid cells in the y-direction. 
+It has 83 grid cells in the x-direction and 83 grid cells in the y-direction. 
 The mesh is gradually refined toward the source such that the well is
 represented by a square cell of :math:`h=0.46875` [m] (:math:`h = H/32`).
 The mesh refinement adds 8.4% more cells.
