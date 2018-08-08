@@ -283,8 +283,6 @@ void CycleDriver::Initialize() {
 
   // S_->WriteDependencyGraph();
 
-  S_->GetMeshPartition("materials");
-
   // commit the initial conditions.
   // pk_->CommitStep(t0_-get_dt(), get_dt());
   if (!restart_requested_) {
@@ -473,6 +471,9 @@ void CycleDriver::ReadParameterList_() {
     std::sort(reset_info_.begin(), reset_info_.end(), reset_info_compfunc);
     std::sort(reset_max_.begin(),  reset_max_.end(),  reset_info_compfunc);
   }
+
+  // verification (move this to state ?)
+  S_->GetMeshPartition("materials");
 }
 
 

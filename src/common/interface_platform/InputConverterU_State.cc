@@ -137,6 +137,12 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
         Exceptions::amanzi_throw(msg);
       }
 
+      // -- dual porosity: matrix porosity
+      node = GetUniqueElementByTagsString_(inode, "multiscale_structure, porosity", flag);
+      if (flag) {
+        TranslateFieldIC_(node, "porosity_matrix", "-", reg_str, regions, out_ic, out_ev);
+      }
+
       // -- permeability. We parse matrix and fractures together.
       double perm_x, perm_y, perm_z;
       bool perm_err(false), perm_init_from_file(false), conductivity(false);
