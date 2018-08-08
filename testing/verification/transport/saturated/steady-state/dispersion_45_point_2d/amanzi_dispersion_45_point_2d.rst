@@ -145,6 +145,8 @@ The second-order transport scheme provides excellent match.
 .. plot:: verification/transport/dispersion_45_point_2d/amanzi_dispersion_45_point_2d-b.py
    :align: center
 
+.. include:: table_cross-section-b.txt
+
 
 References
 ----------
@@ -165,13 +167,6 @@ About
 * Author:  Konstantin Lipnikov 
 
 * Maintainer:  David Moulton (moulton@lanl.gov)
-
-
-
-
-
-
-
 
 * Input Files:
 
