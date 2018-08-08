@@ -130,6 +130,7 @@ if __name__ == "__main__":
 
         cmap = plotTestObservations(obs_xml,obs_data,axes1)
         plotTestModel(input_file,cmap,axes1,obs_xml,obs_data)
+        plt.savefig('unconfined_seepage_1d.png')
         # plt.show()
 
     finally:
