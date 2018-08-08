@@ -151,7 +151,7 @@
     </boundary_conditions>
     <output>
       <observations>
-        <filename>observation-isv2.out</filename>
+        <filename>observation.out</filename>
         <liquid_phase name="water">
           <hydraulic_head>
             <assigned_regions>Point25</assigned_regions>
