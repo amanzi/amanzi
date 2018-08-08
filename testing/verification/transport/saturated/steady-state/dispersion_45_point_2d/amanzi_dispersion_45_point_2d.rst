@@ -84,6 +84,14 @@ Problem Specification
 Schematic
 ~~~~~~~~~
 
+The flow direction, and source location are shown in the following schematic.
+
+.. figure:: schematic/schematic.png 
+    :figclass: align-center
+    :width: 600 px
+
+    **Plume from point source loading in a constant uniform groundwater flow field.**
+
 
 Mesh
 ~~~~
