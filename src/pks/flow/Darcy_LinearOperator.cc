@@ -29,7 +29,9 @@ void Darcy_PK::SolveFullySaturatedProblem(CompositeVector& u)
 {
   // add diffusion operator
   op_->RestoreCheckPoint();
- 
+
+  /*  For most cases we are running now this is not appropriate.  The master branch adds a 
+      parameter to control this behavior, but porting it here is non trivial.
   if (S_->HasField("well_index")){
     const Epetra_MultiVector& wi = *S_->GetFieldData("well_index")->ViewComponent("cell");
     // for (int c = 0; c < ncells_owned; c++) {
@@ -37,10 +39,13 @@ void Darcy_PK::SolveFullySaturatedProblem(CompositeVector& u)
     // }
     op_acc_->AddAccumulationTerm(wi);
   }
+  */
 
   op_diff_->ApplyBCs(true, true);
+  
   CompositeVector& rhs = *op_->rhs();
-  AddSourceTerms(rhs);
+  //  AddSourceTerms(rhs);
+
 
   op_->AssembleMatrix();
   op_->InitPreconditioner(preconditioner_name_, *preconditioner_list_);
