@@ -1,3 +1,5 @@
+.. _amanzi_dispersion_45_point_2d:
+
 2D Dispersive Transport in a Uniform Flow Field (diagonal)
 ==========================================================
 
@@ -7,8 +9,9 @@ Capabilities Tested
 This two-dimensional transport problem --- with a constant rate mass
 loading point source in a steady-state flow field --- tests the Amanzi
 advection and dispersion features of the transport process kernel. It is a slight modification
-of the previous (aligned) test: the direction of the velocity field is rotated by
-:math:`45^\circ` counter-clockwise with respect to the mesh.
+of the previous test :ref:`amanzi_dispersion_aligned_point_2d`: the direction 
+of the velocity field is rotated by :math:`45^\circ` counter-clockwise with respect to the 
+mesh. Thus, the test simulates non-grid-aligned advective and dispersive transport. 
 Capabilities tested include:
   
   * single-phase, steady-state flow induced by prescribed constant velocity field 
@@ -16,6 +19,7 @@ Capabilities tested include:
   * solute source with constant mass loading rate 
   * advection in an isotropic medium
   * longitudinal and transverse dispersivities
+  * non-grid-alignedi flow and transport
   * statically refined (non-uniform) mesh
 
 For details on this test, see :ref:`about_diagonal_dispersion`.
@@ -24,9 +28,15 @@ For details on this test, see :ref:`about_diagonal_dispersion`.
 Background
 ----------
 
-This test problem is a slight modification of the previous test,
-the direction of the velocity field is rotated by :math:`45^\circ` 
-counter clockwise with respect to the mesh.
+Numerical dispersion caused by flow and transport processes not aligned with the 
+rectangular grid can cause numerical solutions to be innacurate. Such flow and transport
+regimes can arise if different solutes are injected at different rates, or if the model domain
+is characterized by geologic media with non-uniform anisotropy, to name a couple examples. It
+is therefore desirable to minimize this numerical dispersion in numerical flow and transport
+schemes.
+
+This test problem is a slight modification of the previous test :ref:`amanzi_dispersion_aligned_point_2d`: the direction of the velocity field is rotated by :math:`45^\circ` 
+counter-clockwise with respect to the mesh. 
 
 
 Model
@@ -74,12 +84,20 @@ Problem Specification
 Schematic
 ~~~~~~~~~
 
+The flow direction and source location are shown in the following schematic.
+
+.. figure:: schematic/schematic.png 
+    :figclass: align-center
+    :width: 600 px
+
+    **Plume from point source loading in a constant uniform groundwater flow field.**
+
 
 Mesh
 ~~~~
 
 The background mesh consists of square cells with size :math:`H=15` m.
-It has 83 grid cells in the x-direction and 37 grid cells in the y-direction. 
+It has 83 grid cells in the x-direction and 83 grid cells in the y-direction. 
 The mesh is gradually refined toward the source such that the well is
 represented by a square cell of :math:`h=0.46875` [m] (:math:`h = H/32`).
 The mesh refinement adds 8.4% more cells.
@@ -94,8 +112,9 @@ Variables
 ~~~~~~~~~
 
 * :math:`Q=8.1483 \times 10^{-8}` constant pumping rate [kg/s/m]
-* :math:`\boldsymbol{q}=(1.8634 \times 10^{-6},\,0.0)` constant Darcy velocity [m/s]
+* :math:`\boldsymbol{q}=(1.3176 \times 10^{-6},\,0.0)` constant Darcy velocity [m/s]
 * :math:`\phi=0.35` constant porosity
+* :math:`k=1.0 \times 10^{-10}` intrinsic permeability [m\ :sup:`2`]
 * :math:`\alpha_L=21.3` longitudinal dispersivity [m]
 * :math:`\alpha_T=4.3` transverse dispersivity [m]
 * :math:`D_m=0.0` molecular diffusion coefficient [m\ :sup:`2`\/s]
@@ -126,6 +145,8 @@ The second-order transport scheme provides excellent match.
 .. plot:: verification/transport/dispersion_45_point_2d/amanzi_dispersion_45_point_2d-b.py
    :align: center
 
+.. include:: table_cross-section-b.txt
+
 
 References
 ----------
@@ -146,13 +167,6 @@ About
 * Author:  Konstantin Lipnikov 
 
 * Maintainer:  David Moulton (moulton@lanl.gov)
-
-
-
-
-
-
-
 
 * Input Files:
 
