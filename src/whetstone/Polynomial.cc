@@ -12,6 +12,7 @@
   Operations with polynomials.
 */
 
+#include "DenseMatrix.hh"
 #include "Monomial.hh"
 #include "Polynomial.hh"
 
@@ -76,6 +77,56 @@ Polynomial::Polynomial(const Monomial& mono)
 
   int l = PolynomialPosition(mono.multi_index());
   coefs_(l) = mono.coef();
+}
+
+
+/* ******************************************************************
+* Complex constructor based on minimum set of given points and value.
+****************************************************************** */
+Polynomial::Polynomial(int d, int order,
+                       const std::vector<AmanziGeometry::Point>& xyz, 
+                       const DenseVector& values) :
+    d_(d), order_(order), origin_(d)
+{
+  d_ = d;
+  order_ = order;
+  size_ = PolynomialSpaceDimension(d, order);
+
+  AMANZI_ASSERT(size_ == xyz.size());
+  AMANZI_ASSERT(size_ == values.NumRows());
+
+  coefs_.Reshape(size_);
+
+  if (order == 0) {
+    coefs_(0) = values(0);
+  } else {
+    // evaluate basis functions at given points
+    DenseMatrix psi(size_, size_);
+
+    for (auto it = begin(); it < end(); ++it) {
+      int i = it.PolynomialPosition();
+      const int* idx = it.multi_index();
+
+      for (int n = 0; n < size_; ++n) {
+        double val(1.0);
+        for (int k = 0; k < d_; ++k) {
+          val *= std::pow(xyz[n][k], idx[k]);
+        }
+        psi(n, i) = val;
+      }
+    }
+      
+    // form linear system
+    DenseMatrix A(size_, size_);
+    DenseVector b(size_);
+
+    A.Multiply(psi, psi, true);
+    psi.Multiply(values, b, true);
+
+    // solver linear systems
+    A.Inverse();
+    A.Multiply(b, coefs_, false);
+  }
 }
 
 

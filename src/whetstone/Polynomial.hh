@@ -44,6 +44,9 @@ class Polynomial : public WhetStoneFunction {
   Polynomial(int d, int order, const DenseVector& coefs);
   Polynomial(int d, const int* multi_index, double factor);
   Polynomial(const Monomial& mono);
+  Polynomial(int d, int order,
+             const std::vector<AmanziGeometry::Point>& xyz, 
+             const DenseVector& values);
 
   // reshape polynomial with erase (optionally) memory
   void Reshape(int d, int order, bool reset = false);

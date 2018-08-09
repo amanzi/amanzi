@@ -192,7 +192,7 @@ int MeshMaps::LeastSquareFit(int order,
   int nx = x1.size();
 
   // evaluate basis functions at given points
-  DenseMatrix psi(nk, nx);
+  DenseMatrix psi(nx, nk);
 
   for (auto it = poly.begin(); it < poly.end(); ++it) {
     int i = it.PolynomialPosition();
@@ -203,23 +203,14 @@ int MeshMaps::LeastSquareFit(int order,
       for (int k = 0; k < d_; ++k) {
         val *= std::pow(x1[n][k], idx[k]);
       }
-      psi(i, n) = val;
+      psi(n, i) = val;
     }
   }
       
-  // form matrix of linear system
+  // form linear system
   DenseMatrix A(nk, nk);
 
-  for (int i = 0; i < nk; ++i) {
-    for (int j = i; j < nk; ++j) {
-      double tmp(0.0);
-      for (int n = 0; n < nx; ++n) {
-        tmp += psi(i, n) * psi(j, n);
-      }
-      A(i, j) = A(j, i) = tmp;
-    }
-  }
-
+  A.Multiply(psi, psi, true);
   A.Inverse();
 
   // solver linear systems
@@ -233,17 +224,14 @@ int MeshMaps::LeastSquareFit(int order,
     for (int i = 0; i < nk; ++i) {
       b(i) = 0.0;
       for (int n = 0; n < nx; ++n) {
-        b(i) += x2[n][k] * psi(i, n);
+        b(i) += x2[n][k] * psi(n, i);
       }
     }
 
     A.Multiply(b, u, false);
 
-    for (auto it = poly.begin(); it < poly.end(); ++it) {
-      int n = it.MonomialSetOrder();
-      int m = it.MonomialSetPosition();
-      int i = it.PolynomialPosition();
-      v[k](n, m) = u(i);
+    for (auto i = 0; i < nk; ++i) {
+      v[k](i) = u(i);
     }
   }
 
