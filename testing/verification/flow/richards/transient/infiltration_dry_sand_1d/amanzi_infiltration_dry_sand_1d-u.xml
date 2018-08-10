@@ -47,23 +47,29 @@
                 <nonlinear_iteration_damping_factor>1</nonlinear_iteration_damping_factor>
                 <nonlinear_iteration_divergence_factor>1000</nonlinear_iteration_divergence_factor>
                 <max_divergent_iterations>3</max_divergent_iterations>
-                <initialize_with_darcy>true</initialize_with_darcy>
                 <restart_tolerance_relaxation_factor>1</restart_tolerance_relaxation_factor>
                 <preconditioner>hypre_amg</preconditioner>
+		<unstr_initialization>
+		  <method>darcy_solver</method>
+		  <linear_solver>aztecoo</linear_solver>
+		</unstr_initialization>
             </unstr_steady-state_controls>
             <unstr_transient_controls>
-                    <min_iterations>10</min_iterations>
-                    <max_iterations>15</max_iterations>
-                    <limit_iterations>20</limit_iterations>
-                    <nonlinear_tolerance>1.0e-5</nonlinear_tolerance>
-                    <nonlinear_iteration_damping_factor>1.0</nonlinear_iteration_damping_factor>
-                    <max_preconditioner_lag_iterations>5</max_preconditioner_lag_iterations>
-                    <max_divergent_iterations>3</max_divergent_iterations>
-                    <nonlinear_iteration_divergence_factor>1000</nonlinear_iteration_divergence_factor>
-                    <restart_tolerance_relaxation_factor>1</restart_tolerance_relaxation_factor>
-                    <error_control_options>pressure,residual</error_control_options>
+                <min_iterations>10</min_iterations>
+                <max_iterations>15</max_iterations>
+                <limit_iterations>20</limit_iterations>
+                <nonlinear_tolerance>1.0e-5</nonlinear_tolerance>
+                <nonlinear_iteration_damping_factor>1.0</nonlinear_iteration_damping_factor>
+                <max_preconditioner_lag_iterations>5</max_preconditioner_lag_iterations>
+                <max_divergent_iterations>3</max_divergent_iterations>
+                <nonlinear_iteration_divergence_factor>1000</nonlinear_iteration_divergence_factor>
+                <restart_tolerance_relaxation_factor>1</restart_tolerance_relaxation_factor>
+                <error_control_options>pressure,residual</error_control_options>
                 <preconditioner>hypre_amg</preconditioner>
-                <initialize_with_darcy>true</initialize_with_darcy>
+		<unstr_initialization>
+		  <method>darcy_solver</method>
+		  <linear_solver>aztecoo</linear_solver>
+		</unstr_initialization>
             </unstr_transient_controls>
             <unstr_preconditioners>
                 <hypre_amg>

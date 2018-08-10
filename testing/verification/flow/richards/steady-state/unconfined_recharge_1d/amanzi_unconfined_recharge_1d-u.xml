@@ -1,5 +1,4 @@
 <amanzi_input type="unstructured" version="2.3.0">
-    <echo_translated_input file_name="oldspec.xml" format="v1" />
     <model_description name="unconfined_head_head_recharge_2d">
       <comments>Steady-State Richards: recharge_2d</comments>
       <model_id>??</model_id>
@@ -152,8 +151,7 @@
         <cap_pressure model="van_genuchten">
           <parameters alpha="1.46e-3" m="0.314" optional_krel_smoothing_interval="100.0" sr="0.052" />
         </cap_pressure>
-        <rel_perm model="mualem">
-			</rel_perm>
+        <rel_perm model="mualem" />
         <assigned_regions>Aquifer</assigned_regions>
       </material>
     </materials>
