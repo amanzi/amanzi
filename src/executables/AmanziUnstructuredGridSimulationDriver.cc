@@ -53,8 +53,7 @@
 // v1 spec constructor -- delete when we get rid of v1.2 spec.
 AmanziUnstructuredGridSimulationDriver::AmanziUnstructuredGridSimulationDriver(const std::string& xmlInFileName)
 {
-  Teuchos::RCP<Teuchos::ParameterList> native = Teuchos::getParametersFromXmlFile(xmlInFileName);
-  plist_ = new Teuchos::ParameterList(*native);
+  plist_ = Teuchos::getParametersFromXmlFile(xmlInFileName);
 }
 
 
@@ -66,13 +65,7 @@ AmanziUnstructuredGridSimulationDriver::AmanziUnstructuredGridSimulationDriver(c
   int num_proc = Teuchos::GlobalMPISession::getNProc();
 
   Amanzi::AmanziInput::InputConverterU converter(xmlInFileName, input, output_prefix);
-  plist_ = new Teuchos::ParameterList(converter.Translate(rank, num_proc));
-}
-
-
-AmanziUnstructuredGridSimulationDriver::~AmanziUnstructuredGridSimulationDriver()
-{
-  delete plist_;
+  plist_ = Teuchos::rcp(new Teuchos::ParameterList(converter.Translate(rank, num_proc)));
 }
 
 
@@ -349,9 +342,8 @@ AmanziUnstructuredGridSimulationDriver::Run(const MPI_Comm& mpi_comm,
   analysis.OutputBCs();
 
 
-  Teuchos::RCP<Teuchos::ParameterList> glist = Teuchos::rcp(new Teuchos::ParameterList(*plist_));
-  Amanzi::CycleDriver cycle_driver(glist, mesh, comm, observations_data);
-
+  // -------------- EXECUTION -------------------------------------------
+  Amanzi::CycleDriver cycle_driver(plist_, mesh, comm, observations_data);
 
   cycle_driver.Go();
 
