@@ -104,7 +104,7 @@ AmanziUnstructuredGridSimulationDriver::Run(const MPI_Comm& mpi_comm,
   // with a geometric model.
 
   // For now create one geometric model from all the regions in the spec
-  Teuchos::ParameterList reg_params = plist_->sublist("regions");
+  Teuchos::ParameterList& reg_params = plist_->sublist("regions");
 
   Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> geom_model =
       Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(spdim, reg_params, comm));
