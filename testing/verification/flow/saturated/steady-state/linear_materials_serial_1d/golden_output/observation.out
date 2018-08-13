@@ -1,9 +1,9 @@
 Observation Name, Region, Functional, Variable, Time, Value
 ===========================================================
-observation-2:water, LeftBoundary, Observation Data: Point, Aqueous pressure, 0.0000000000000000e+00, 2.4771501599409169e+05
-observation-4:water, RightBoundary, Observation Data: Point, Aqueous pressure, 0.0000000000000000e+00, 2.3841546786559204e+05
-observation-6:water, Midpoint, Observation Data: Point, Aqueous pressure, 0.0000000000000000e+00, 2.3946111083698220e+05
-observation-8:water, LeftmostCell, Observation Data: Point, Aqueous pressure, 0.0000000000000000e+00, 2.4771501599409169e+05
-observation-10:water, RightmostCell, Observation Data: Point, Aqueous pressure, 0.0000000000000000e+00, 2.3841546786559204e+05
-observation-12:water, LeftMidpointCell, Observation Data: Point, Aqueous pressure, 0.0000000000000000e+00, 2.3970583578773207e+05
-observation-14:water, RightMidpointCell, Observation Data: Point, Aqueous pressure, 0.0000000000000000e+00, 2.3921638588623228e+05
+observation-2:water, LeftBoundary, Observation Data: Point, aqueous pressure, 0.0000000000000000e+00, 2.4771501599409169e+05
+observation-4:water, RightBoundary, Observation Data: Point, aqueous pressure, 0.0000000000000000e+00, 2.3841546786559204e+05
+observation-6:water, Midpoint, Observation Data: Point, aqueous pressure, 0.0000000000000000e+00, 2.3946111083698220e+05
+observation-8:water, LeftmostCell, Observation Data: Point, aqueous pressure, 0.0000000000000000e+00, 2.4771501599409169e+05
+observation-10:water, RightmostCell, Observation Data: Point, aqueous pressure, 0.0000000000000000e+00, 2.3841546786559204e+05
+observation-12:water, LeftMidpointCell, Observation Data: Point, aqueous pressure, 0.0000000000000000e+00, 2.3970583578773207e+05
+observation-14:water, RightMidpointCell, Observation Data: Point, aqueous pressure, 0.0000000000000000e+00, 2.3921638588623228e+05
