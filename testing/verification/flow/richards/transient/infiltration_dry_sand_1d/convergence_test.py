@@ -49,7 +49,7 @@ if __name__ == "__main__":
         error = np.linalg.norm(diff)
 
     # Report
-        tol = 1e-8
+        tol = 1e-4
         if error < tol:
 	    msg = msg + "Comparison Passed"
             msg = msg + "\n  error = " + str(error)
