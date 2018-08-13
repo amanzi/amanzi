@@ -104,7 +104,7 @@ InputConverter::InputConverter(const std::string& input_filename):
 {
   parser_ = CreateXMLParser();
   doc_ = OpenXMLInput(parser_, input_filename);
-  FilterNodes(doc_, "comments");
+  FilterNodes("comments");
 }
 
 InputConverter::InputConverter(const std::string& input_filename,
@@ -114,7 +114,7 @@ InputConverter::InputConverter(const std::string& input_filename,
     parser_(NULL),
     units_("molar")
 {
-  FilterNodes(doc_, "comments");
+  FilterNodes("comments");
 }
 
 InputConverter::~InputConverter()
@@ -130,20 +130,16 @@ XERCES_CPP_NAMESPACE_USE
 /* ******************************************************************
 * Filters out all nodes named "filter" starting with node "parent".
 ****************************************************************** */
-void InputConverter::FilterNodes(DOMNode* parent, const std::string& filter)
+void InputConverter::FilterNodes(const std::string& filter)
 {
-  DOMNodeList* children = parent->getChildNodes();
   MemoryManager mm;
-  
-  for (int i = 0; i < children->getLength(); ++i) {
-    DOMNode* child = children->item(i);
-  
+
+  DOMNodeList* remove = doc_->getElementsByTagName(mm.transcode(filter.c_str()));
+  while (remove->getLength() > 0) {
+    DOMNode* child = remove->item(0);
+
     if (child->getNodeType() == DOMNode::ELEMENT_NODE) {
-      if (mm.transcode(child->getNodeName()) == filter) {
-        parent->removeChild(child);
-      } else {
-        FilterNodes(child, filter);
-      }
+      child->getParentNode()->removeChild(child);
     }
   }
 }
@@ -374,7 +370,9 @@ DOMElement* InputConverter::GetUniqueChildByAttribute_(
   DOMElement* child = NULL;
 
   DOMNodeList* children = node->getChildNodes();
-  for (int i = 0; i < children->getLength(); ++i) {
+  int nchildren = children->getLength();
+
+  for (int i = 0; i < nchildren; ++i) {
     DOMNode* inode = children->item(i);
     if (inode->getNodeType() != DOMNode::ELEMENT_NODE) continue;
 
@@ -443,7 +441,7 @@ std::vector<xercesc::DOMNode*> InputConverter::GetChildren_(
 
 
 /* ******************************************************************
-* Returns child with the given name.
+* Returns any child with the given name.
 ****************************************************************** */
 DOMElement* InputConverter::GetChildByName_(
     xercesc::DOMNode* node, const std::string& childName, bool& flag, bool exception)
@@ -455,7 +453,9 @@ DOMElement* InputConverter::GetChildByName_(
   DOMNode* child = NULL;
 
   DOMNodeList* children = node->getChildNodes();
-  for (int i = 0; i < children->getLength(); ++i) {
+  int nchildren = children->getLength();
+
+  for (int i = 0; i < nchildren; ++i) {
     DOMNode* inode = children->item(i);
     if (inode->getNodeType() != DOMNode::ELEMENT_NODE) continue;
 

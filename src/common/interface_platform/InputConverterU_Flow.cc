@@ -45,6 +45,8 @@ Teuchos::ParameterList InputConverterU::TranslateFlow_(const std::string& mode)
   MemoryManager mm;
   DOMNode* node;
 
+  std::string msm;
+
   // set up default values for some expert parameters
   double atm_pres(ATMOSPHERIC_PRESSURE);
   std::string rel_perm("upwind-darcy_velocity"), rel_perm_out;
@@ -73,6 +75,14 @@ Teuchos::ParameterList InputConverterU::TranslateFlow_(const std::string& mode)
 
     flow_list = &darcy_list;
     flow_single_phase_ = true;
+
+    DOMNodeList* tmp = doc_->getElementsByTagName(mm.transcode("multiscale_structure"));
+    if (tmp->getLength() > 0) {
+      msm = GetAttributeValueS_(tmp->item(0), "name");
+      flow_list->sublist("physical models and assumptions")
+          .set<std::string>("multiscale model", msm);
+    }
+
   } else if (pk_model_["flow"] == "richards") {
     Teuchos::ParameterList& richards_list = out_list.sublist("Richards problem");
     Teuchos::ParameterList& upw_list = richards_list.sublist("relative permeability");
@@ -91,9 +101,11 @@ Teuchos::ParameterList InputConverterU::TranslateFlow_(const std::string& mode)
     }
     richards_list.sublist("multiscale models") = TranslateFlowMSM_();
     if (richards_list.sublist("multiscale models").numParams() > 0) {
+      msm = "dual porosity";
       flow_list->sublist("physical models and assumptions")
-          .set<std::string>("multiscale model", "dual porosity");
+          .set<std::string>("multiscale model", msm);
     }
+
   } else {
     Errors::Message msg;
     msg << "Internal error for flow model \"" << pk_model_["flow"] << "\".\n";
@@ -180,6 +192,12 @@ Teuchos::ParameterList InputConverterU::TranslateFlow_(const std::string& mode)
       .set<std::string>("water content model", "constant density");
 
   flow_list->sublist("verbose object") = verb_list_.sublist("verbose object");
+
+  // statistics
+  Teuchos::OSTab tab = vo_->getOSTab();
+  if (msm.size() > 0 && vo_->getVerbLevel() >= Teuchos::VERB_HIGH)
+    *vo_->os() << "found at least one multiscale model: \"" << msm << "\"\n";
+
   return out_list;
 }
 
@@ -517,13 +535,14 @@ Teuchos::ParameterList InputConverterU::TranslateFlowBCs_()
   if (!node_list) return out_list;
 
   std::set<std::string> active_bcs;  // for statistics
-
   int ibc(0);
-  children = node_list->item(0)->getChildNodes();
 
-  for (int i = 0; i < children->getLength(); ++i) {
-    DOMNode* inode = children->item(i);
-    if (inode->getNodeType() != DOMNode::ELEMENT_NODE) continue;
+  DOMNode* inode = node_list->item(0)->getFirstChild();
+  while (inode != NULL) {
+    if (inode->getNodeType() != DOMNode::ELEMENT_NODE) {
+      inode = inode->getNextSibling();
+      continue;
+    }
     tagname = mm.transcode(inode->getNodeName());
 
     // read the assigned regions
@@ -713,6 +732,8 @@ Teuchos::ParameterList InputConverterU::TranslateFlowBCs_()
           element, "submodel", TYPE_NONE, false, "none");
       bc.set<bool>("no flow above water table", (tmp == "no_flow_above_water_table"));
     }
+
+    inode = inode->getNextSibling();
   }
 
   // output statistics

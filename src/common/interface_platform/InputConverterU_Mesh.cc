@@ -247,17 +247,15 @@ Teuchos::ParameterList InputConverterU::TranslateRegions_()
   node = node_list->item(0);
 
   // new options: comment, region, box, point
-  DOMNodeList* childern = node->getChildNodes();
-  for (int i = 0; i < childern->getLength(); i++) {
-    DOMNode* inode = childern->item(i);
-
+  DOMNode* inode = node->getFirstChild();
+  while (inode != NULL) {
     if (DOMNode::ELEMENT_NODE == inode->getNodeType()) {
       tagname = mm.transcode(inode->getNodeName());
       bool have_name(false);
       
       DOMElement* reg_elem;
-      // If region is under a region tag, get get the name
-      // and set child element as region element.
+      // If region is under a region tag, get the name and set
+      // child element as region element.
       if (strcmp(tagname, "region") == 0) {
         reg_name = GetAttributeValueS_(static_cast<DOMElement*>(inode), "name");
         have_name = true;
@@ -451,8 +449,9 @@ Teuchos::ParameterList InputConverterU::TranslateRegions_()
           .set<Teuchos::Array<double> >("end coordinate", p1)
           .set<Teuchos::Array<double> >("opposite end coordinate", p2);
       }
-          
     }
+
+    inode = inode->getNextSibling();
   }
 
   if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {

@@ -327,7 +327,7 @@ Teuchos::ParameterList InputConverterU::TranslateTransportMSM_()
 
     node = GetUniqueElementByTagsString_(inode, "multiscale_structure, solute_transfer_coefficient", flag);
     if (!flag) return empty_list;
-    double omega = std::strtod(mm.transcode(node->getTextContent()), NULL);
+    double omega = InputConverter::GetTextContentD_(node, "s^-1", true);
     
     std::stringstream ss;
     ss << "MSM " << i;
@@ -365,8 +365,9 @@ Teuchos::ParameterList InputConverterU::TranslateTransportBCs_()
   if (node_list->getLength() == 0) return out_list;
 
   children = node_list->item(0)->getChildNodes();
+  int nchildren = children->getLength();
 
-  for (int i = 0; i < children->getLength(); ++i) {
+  for (int i = 0; i < nchildren; ++i) {
     DOMNode* inode = children->item(i);
     if (inode->getNodeType() != DOMNode::ELEMENT_NODE) continue;
     tagname = mm.transcode(inode->getNodeName());

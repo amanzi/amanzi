@@ -53,8 +53,7 @@
 // v1 spec constructor -- delete when we get rid of v1.2 spec.
 AmanziUnstructuredGridSimulationDriver::AmanziUnstructuredGridSimulationDriver(const std::string& xmlInFileName)
 {
-  Teuchos::RCP<Teuchos::ParameterList> native = Teuchos::getParametersFromXmlFile(xmlInFileName);
-  plist_ = new Teuchos::ParameterList(*native);
+  plist_ = Teuchos::getParametersFromXmlFile(xmlInFileName);
 }
 
 
@@ -66,13 +65,7 @@ AmanziUnstructuredGridSimulationDriver::AmanziUnstructuredGridSimulationDriver(c
   int num_proc = Teuchos::GlobalMPISession::getNProc();
 
   Amanzi::AmanziInput::InputConverterU converter(xmlInFileName, input, output_prefix);
-  plist_ = new Teuchos::ParameterList(converter.Translate(rank, num_proc));
-}
-
-
-AmanziUnstructuredGridSimulationDriver::~AmanziUnstructuredGridSimulationDriver()
-{
-  delete plist_;
+  plist_ = Teuchos::rcp(new Teuchos::ParameterList(converter.Translate(rank, num_proc)));
 }
 
 
@@ -111,7 +104,7 @@ AmanziUnstructuredGridSimulationDriver::Run(const MPI_Comm& mpi_comm,
   // with a geometric model.
 
   // For now create one geometric model from all the regions in the spec
-  Teuchos::ParameterList reg_params = plist_->sublist("regions");
+  Teuchos::ParameterList& reg_params = plist_->sublist("regions");
 
   Teuchos::RCP<Amanzi::AmanziGeometry::GeometricModel> geom_model =
       Teuchos::rcp(new Amanzi::AmanziGeometry::GeometricModel(spdim, reg_params, comm));
@@ -349,9 +342,8 @@ AmanziUnstructuredGridSimulationDriver::Run(const MPI_Comm& mpi_comm,
   analysis.OutputBCs();
 
 
-  Teuchos::RCP<Teuchos::ParameterList> glist = Teuchos::rcp(new Teuchos::ParameterList(*plist_));
-  Amanzi::CycleDriver cycle_driver(glist, mesh, comm, observations_data);
-
+  // -------------- EXECUTION -------------------------------------------
+  Amanzi::CycleDriver cycle_driver(plist_, mesh, comm, observations_data);
 
   cycle_driver.Go();
 
