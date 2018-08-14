@@ -1,50 +1,50 @@
-Observation Name, Region, Functional, Variable, Time, Value
-===========================================================
-observation-2:water, Obs1, Observation Data: Point, Drawdown, 0.0000000000000000e+00, 0.0000000000000000e+00
-observation-2:water, Obs1, Observation Data: Point, Drawdown, 1.0000000000000000e+00, -8.1001871876651421e-13
-observation-2:water, Obs1, Observation Data: Point, Drawdown, 3.0000000000000000e+00, -4.9737991503207013e-13
-observation-2:water, Obs1, Observation Data: Point, Drawdown, 7.0000000000000000e+00, -1.7053025658242404e-13
-observation-2:water, Obs1, Observation Data: Point, Drawdown, 1.5000000000000000e+01, 2.5579538487363607e-13
-observation-2:water, Obs1, Observation Data: Point, Drawdown, 3.1000000000000000e+01, 2.0392576516314875e-11
-observation-2:water, Obs1, Observation Data: Point, Drawdown, 6.3000000000000000e+01, 4.5385633029582095e-09
-observation-2:water, Obs1, Observation Data: Point, Drawdown, 1.2700000000000000e+02, 9.8319927133161400e-07
-observation-2:water, Obs1, Observation Data: Point, Drawdown, 2.5500000000000000e+02, 5.2169029643778231e-05
-observation-2:water, Obs1, Observation Data: Point, Drawdown, 5.1100000000000000e+02, 8.8572510270523708e-04
-observation-2:water, Obs1, Observation Data: Point, Drawdown, 1.0230000000000000e+03, 6.7392402349639724e-03
-observation-2:water, Obs1, Observation Data: Point, Drawdown, 2.0470000000000000e+03, 2.5524828477102801e-02
-observation-2:water, Obs1, Observation Data: Point, Drawdown, 4.0950000000000000e+03, 5.9792511439553664e-02
-observation-2:water, Obs1, Observation Data: Point, Drawdown, 8.1910000000000000e+03, 1.0451236153114962e-01
-observation-2:water, Obs1, Observation Data: Point, Drawdown, 1.6383000000000000e+04, 1.5462267025797871e-01
-observation-2:water, Obs1, Observation Data: Point, Drawdown, 3.2677000000000000e+04, 2.0724016442405002e-01
-observation-2:water, Obs1, Observation Data: Point, Drawdown, 6.5535000000000000e+04, 2.6099660721044415e-01
-observation-2:water, Obs1, Observation Data: Point, Drawdown, 1.3107100000000000e+05, 3.1649365690338982e-01
-observation-2:water, Obs1, Observation Data: Point, Drawdown, 2.6214300000000000e+05, 3.7167664700200476e-01
-observation-2:water, Obs1, Observation Data: Point, Drawdown, 5.2428700000000000e+05, 4.2323379444796672e-01
-observation-2:water, Obs1, Observation Data: Point, Drawdown, 1.0000000000000000e+06, 4.5673911323110872e-01
-observation-2:water, Obs1, Observation Data: Point, Drawdown, 1.0000000000000000e+07, 4.7306119627600651e-01
-observation-2:water, Obs1, Observation Data: Point, Drawdown, 1.0000000000000000e+08, 4.7306120711243693e-01
-observation-2:water, Obs1, Observation Data: Point, Drawdown, 1.0000000000000000e+09, 4.7306124914972258e-01
-observation-4:water, Obs2, Observation Data: Point, Drawdown, 0.0000000000000000e+00, 0.0000000000000000e+00
-observation-4:water, Obs2, Observation Data: Point, Drawdown, 1.0000000000000000e+00, 2.9746076507547617e-11
-observation-4:water, Obs2, Observation Data: Point, Drawdown, 3.0000000000000000e+00, 2.3978257003702030e-11
-observation-4:water, Obs2, Observation Data: Point, Drawdown, 7.0000000000000000e+00, 2.0279483316960759e-11
-observation-4:water, Obs2, Observation Data: Point, Drawdown, 1.5000000000000000e+01, 9.1689907100444523e-12
-observation-4:water, Obs2, Observation Data: Point, Drawdown, 3.1000000000000000e+01, 2.6047302820806342e-11
-observation-4:water, Obs2, Observation Data: Point, Drawdown, 6.3000000000000000e+01, 9.6791663909742834e-11
-observation-4:water, Obs2, Observation Data: Point, Drawdown, 1.2700000000000000e+02, 2.8089762816315535e-08
-observation-4:water, Obs2, Observation Data: Point, Drawdown, 2.5500000000000000e+02, 3.8306581391524391e-06
-observation-4:water, Obs2, Observation Data: Point, Drawdown, 5.1100000000000000e+02, 1.2315600988055980e-04
-observation-4:water, Obs2, Observation Data: Point, Drawdown, 1.0230000000000000e+03, 1.5467511328589132e-03
-observation-4:water, Obs2, Observation Data: Point, Drawdown, 2.0470000000000000e+03, 8.6063816072720328e-03
-observation-4:water, Obs2, Observation Data: Point, Drawdown, 4.0950000000000000e+03, 2.6789403741293322e-02
-observation-4:water, Obs2, Observation Data: Point, Drawdown, 8.1910000000000000e+03, 5.8053694590849400e-02
-observation-4:water, Obs2, Observation Data: Point, Drawdown, 1.6383000000000000e+04, 9.9593389093515519e-02
-observation-4:water, Obs2, Observation Data: Point, Drawdown, 3.2677000000000000e+04, 1.4741433001165816e-01
-observation-4:water, Obs2, Observation Data: Point, Drawdown, 6.5535000000000000e+04, 1.9865631835386899e-01
-observation-4:water, Obs2, Observation Data: Point, Drawdown, 1.3107100000000000e+05, 2.5280399021257682e-01
-observation-4:water, Obs2, Observation Data: Point, Drawdown, 2.6214300000000000e+05, 3.0732070436544268e-01
-observation-4:water, Obs2, Observation Data: Point, Drawdown, 5.2428700000000000e+05, 3.5855954667469597e-01
-observation-4:water, Obs2, Observation Data: Point, Drawdown, 1.0000000000000000e+06, 3.9194405683301137e-01
-observation-4:water, Obs2, Observation Data: Point, Drawdown, 1.0000000000000000e+07, 4.0822238040870495e-01
-observation-4:water, Obs2, Observation Data: Point, Drawdown, 1.0000000000000000e+08, 4.0822238824598128e-01
-observation-4:water, Obs2, Observation Data: Point, Drawdown, 1.0000000000000000e+09, 4.0822243536610475e-01
+Observation Name, Region, Functional, Variable, Time [s], Value [kg m molar]
+============================================================================
+obl 1, Obs1, observation data: point, drawdown, 0.0000000000000000e+00, 0.0000000000000000e+00
+obl 1, Obs1, observation data: point, drawdown, 1.0000000000000000e+00, 2.8421709430404007e-14
+obl 1, Obs1, observation data: point, drawdown, 3.0000000000000000e+00, 2.1316282072803006e-13
+obl 1, Obs1, observation data: point, drawdown, 7.0000000000000000e+00, -6.2527760746888816e-13
+obl 1, Obs1, observation data: point, drawdown, 1.5000000000000000e+01, -2.3021584638627246e-12
+obl 1, Obs1, observation data: point, drawdown, 3.1000000000000000e+01, -1.2079226507921703e-12
+obl 1, Obs1, observation data: point, drawdown, 6.3000000000000000e+01, 3.2732287991166231e-09
+obl 1, Obs1, observation data: point, drawdown, 1.2700000000000000e+02, 8.5451843290229590e-07
+obl 1, Obs1, observation data: point, drawdown, 2.5500000000000000e+02, 5.1325256933409946e-05
+obl 1, Obs1, observation data: point, drawdown, 5.1100000000000000e+02, 9.4038312509781008e-04
+obl 1, Obs1, observation data: point, drawdown, 1.0230000000000000e+03, 7.0859751021998818e-03
+obl 1, Obs1, observation data: point, drawdown, 2.0470000000000000e+03, 2.5489836631905405e-02
+obl 1, Obs1, observation data: point, drawdown, 4.0950000000000000e+03, 5.9348147886225888e-02
+obl 1, Obs1, observation data: point, drawdown, 8.1910000000000000e+03, 1.0377831065054011e-01
+obl 1, Obs1, observation data: point, drawdown, 1.6383000000000000e+04, 1.5374801126095861e-01
+obl 1, Obs1, observation data: point, drawdown, 3.2677000000000000e+04, 2.0492227750899872e-01
+obl 1, Obs1, observation data: point, drawdown, 6.5535000000000000e+04, 2.6011678248694636e-01
+obl 1, Obs1, observation data: point, drawdown, 1.3107100000000000e+05, 3.1549866392226988e-01
+obl 1, Obs1, observation data: point, drawdown, 2.6214300000000000e+05, 3.7060978856406734e-01
+obl 1, Obs1, observation data: point, drawdown, 5.2428700000000000e+05, 4.2197885384905476e-01
+obl 1, Obs1, observation data: point, drawdown, 1.0000000000000000e+06, 4.5488188893290271e-01
+obl 1, Obs1, observation data: point, drawdown, 1.0000000000000000e+07, 4.7306098988944711e-01
+obl 1, Obs1, observation data: point, drawdown, 1.0000000000000000e+08, 4.7306125078667094e-01
+obl 1, Obs1, observation data: point, drawdown, 1.0000000000000000e+09, 4.7306131066075352e-01
+obl 2, Obs2, observation data: point, drawdown, 0.0000000000000000e+00, 0.0000000000000000e+00
+obl 2, Obs2, observation data: point, drawdown, 1.0000000000000000e+00, -1.7005856030994349e-13
+obl 2, Obs2, observation data: point, drawdown, 3.0000000000000000e+00, -9.9200826847467034e-14
+obl 2, Obs2, observation data: point, drawdown, 7.0000000000000000e+00, -1.4454977626345196e-12
+obl 2, Obs2, observation data: point, drawdown, 1.5000000000000000e+01, 2.8343093384990583e-13
+obl 2, Obs2, observation data: point, drawdown, 3.1000000000000000e+01, 8.5029280154971743e-13
+obl 2, Obs2, observation data: point, drawdown, 6.3000000000000000e+01, 2.7804574610675759e-11
+obl 2, Obs2, observation data: point, drawdown, 1.2700000000000000e+02, 2.2218661080175046e-08
+obl 2, Obs2, observation data: point, drawdown, 2.5500000000000000e+02, 3.7383522941180989e-06
+obl 2, Obs2, observation data: point, drawdown, 5.1100000000000000e+02, 1.3682398986378304e-04
+obl 2, Obs2, observation data: point, drawdown, 1.0230000000000000e+03, 1.7404984465750641e-03
+obl 2, Obs2, observation data: point, drawdown, 2.0470000000000000e+03, 8.6887318463015374e-03
+obl 2, Obs2, observation data: point, drawdown, 4.0950000000000000e+03, 2.6701731752514116e-02
+obl 2, Obs2, observation data: point, drawdown, 8.1910000000000000e+03, 5.7661710030286605e-02
+obl 2, Obs2, observation data: point, drawdown, 1.6383000000000000e+04, 9.8942444025873710e-02
+obl 2, Obs2, observation data: point, drawdown, 3.2677000000000000e+04, 1.4540281014259715e-01
+obl 2, Obs2, observation data: point, drawdown, 6.5535000000000000e+04, 1.9783927775941118e-01
+obl 2, Obs2, observation data: point, drawdown, 1.3107100000000000e+05, 2.5184366615598480e-01
+obl 2, Obs2, observation data: point, drawdown, 2.6214300000000000e+05, 3.0627175061748962e-01
+obl 2, Obs2, observation data: point, drawdown, 5.2428700000000000e+05, 3.5731364393289772e-01
+obl 2, Obs2, observation data: point, drawdown, 1.0000000000000000e+06, 3.9009356191631983e-01
+obl 2, Obs2, observation data: point, drawdown, 1.0000000000000000e+07, 4.0822216989460197e-01
+obl 2, Obs2, observation data: point, drawdown, 1.0000000000000000e+08, 4.0822243031879502e-01
+obl 2, Obs2, observation data: point, drawdown, 1.0000000000000000e+09, 4.0822248923087828e-01
