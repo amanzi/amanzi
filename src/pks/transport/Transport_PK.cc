@@ -1000,7 +1000,7 @@ void Transport_PK::AddMultiscalePorosity_(
     double t_old, double t_new, double t_int1, double t_int2)
 {
   const Epetra_MultiVector& tcc_prev = *tcc->ViewComponent("cell");
-  Epetra_MultiVector& tcc = *tcc_tmp->ViewComponent("cell");
+  Epetra_MultiVector& tcc_next = *tcc_tmp->ViewComponent("cell");
   Epetra_MultiVector& tcc_matrix = 
      *S_->GetFieldData("total_component_concentration_matrix", passwd_)->ViewComponent("cell");
 
@@ -1041,7 +1041,7 @@ void Transport_PK::AddMultiscalePorosity_(
     for (int i = 0; i < num_aqueous; ++i) {
       flux_solute = msp_->second[(*msp_->first)[c]]->ComputeSoluteFlux(
           flux_liquid, tcc_prev[i][c], tcc_matrix[i][c]);
-      tcc[i][c] -= flux_solute * f1;
+      tcc_next[i][c] -= flux_solute * f1;
       tcc_matrix[i][c] = tcc_matrix[i][c] * f3 + flux_solute * f2;
     }
   }

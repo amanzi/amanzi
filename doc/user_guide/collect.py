@@ -212,7 +212,8 @@ verification['transport'] = {
   'index' : {'index_title' : 'Transport of Solutes: Advection, Dispersion and Diffusion',
              'index_file' : 'doc/user_guide/verification/transport/index.rst',
              'index_list' : [ 'dispersion_aligned_point_2d',
-                              'dispersion_45_point_2d'
+                              'dispersion_45_point_2d',
+                              'dual_porosity_1d'
                             ],
             },
   'dispersion_aligned_point_2d' : {
@@ -224,6 +225,11 @@ verification['transport'] = {
     'from_dir' : 'testing/verification/transport/saturated/steady-state/dispersion_45_point_2d',
     'dest_dir' : 'doc/user_guide/verification/transport/dispersion_45_point_2d',
     'index_entry' : 'dispersion_45_point_2d/amanzi_dispersion_45_point_2d.rst',
+  },
+  'dual_porosity_1d' : {
+    'from_dir' : 'testing/verification/transport/saturated/transient/dual_porosity_1d',
+    'dest_dir' : 'doc/user_guide/verification/transport/dual_porosity_1d',
+    'index_entry' : 'dual_porosity_1d/amanzi_dual_porosity_1d.rst',
   },
 }
 
