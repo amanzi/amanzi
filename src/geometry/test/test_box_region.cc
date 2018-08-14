@@ -32,8 +32,7 @@ TEST(BOX_REGION_2D)
   Teuchos::ParameterList reg_params = reg_spec.sublist(reg_name);
     
   // Create a rectangular region
-  Teuchos::RCP<Amanzi::AmanziGeometry::Region> reg = 
-    Amanzi::AmanziGeometry::createRegion(reg_name, reg_id, reg_params, &ecomm);
+  auto reg = Amanzi::AmanziGeometry::createRegion(reg_name, reg_id, reg_params, &ecomm);
   
   // See if we retrieved the name and id correctly
   CHECK_EQUAL(reg->name(), reg_name);
@@ -56,19 +55,19 @@ TEST(BOX_REGION_2D)
   
   // See if the min-max of the region were correctly retrieved
   Amanzi::AmanziGeometry::Point pmin, pmax;
-  Teuchos::RCP<const Amanzi::AmanziGeometry::RegionBox> rect =
-    Teuchos::rcp_dynamic_cast<const Amanzi::AmanziGeometry::RegionBox>(reg);
+  auto rect = Teuchos::rcp_dynamic_cast<const Amanzi::AmanziGeometry::RegionBox>(reg);
 
   // Make sure we got back 2D points
-  rect->corners(&pmin,&pmax);
+  pmin = rect->point0();
+  pmax = rect->point1();
   CHECK_EQUAL(pmin.dim(),2);
   CHECK_EQUAL(pmax.dim(),2);
 
   // Compare coordinates read from XML file and retrieved from region
   CHECK_EQUAL(pmin.x(),in_min_xyz[0]);
-  CHECK_EQUAL(pmin.y(),in_min_xyz[1]);
+  CHECK_EQUAL(pmin.y(),in_max_xyz[1]);
   CHECK_EQUAL(pmax.x(),in_max_xyz[0]);
-  CHECK_EQUAL(pmax.y(),in_max_xyz[1]);
+  CHECK_EQUAL(pmax.y(),in_min_xyz[1]);
 
   // test the functionality of the region
   std::vector<Amanzi::AmanziGeometry::Point> pin;
@@ -138,10 +137,10 @@ TEST(BOX_REGION_3D)
   
   // See if the min-max of the region were correctly retrieved
   Amanzi::AmanziGeometry::Point pmin, pmax;
-  Teuchos::RCP<const Amanzi::AmanziGeometry::RegionBox> rect =
-    Teuchos::rcp_dynamic_cast<const Amanzi::AmanziGeometry::RegionBox>(reg);
+  auto rect = Teuchos::rcp_dynamic_cast<const Amanzi::AmanziGeometry::RegionBox>(reg);
 
-  rect->corners(&pmin,&pmax);
+  pmin = rect->point0();
+  pmax = rect->point1();
 
   // Make sure we got back 3D points
   CHECK_EQUAL(pmin.dim(),3);

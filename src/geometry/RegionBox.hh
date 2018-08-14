@@ -1,5 +1,5 @@
 /* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
-//! RegionBox: a rectangular region in space, defined by two points
+//! RegionBox: a rectangular region in space, defined by two corners
 
 /*
   Copyright 2010-2013 held jointly by LANS/LANL, LBNL, and PNNL. 
@@ -65,22 +65,13 @@ class RegionBox : public Region {
   // Is the the specified point inside this region
   bool inside(const Point& p) const;
 
-  // corners
-  void corners(Point *lo_corner, Point *hi_corner) const;
-
   // Is the box degenerate - zero length in one or more directions and
   // if so in how many directions?
   bool is_degenerate(int *ndeg) const;
 
- protected:
-  const Point p0_; // one corner of the region
-  const Point p1_; // the other corner of the region
-
-  // Is the specified value between the two values (inclusive, order not important)
-  //
-  // static -- this could be a function, but is only used here and
-  // therefore scoping is convenient.
-  static bool between_(const double& x, const double& x0, const double& x1);
+ private:
+  Point p0_; // lower corner of the box
+  Point p1_; // high  corner of the box
 };
 
 } // namespace AmanziGeometry

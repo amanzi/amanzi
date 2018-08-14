@@ -106,10 +106,10 @@ TEST(GEOMETRIC_MODEL)
       
       // See if the min-max of the region were correctly retrieved
       Amanzi::AmanziGeometry::Point pmin, pmax;
-      Teuchos::RCP<const Amanzi::AmanziGeometry::RegionBox> rect =
-	Teuchos::rcp_dynamic_cast<const Amanzi::AmanziGeometry::RegionBox>(reg);
+      auto rect = Teuchos::rcp_dynamic_cast<const Amanzi::AmanziGeometry::RegionBox>(reg);
       
-      rect->corners(&pmin,&pmax);
+      pmin = rect->point0();
+      pmax = rect->point1();
       
       // Make sure we got back 3D points
       CHECK_EQUAL(pmin.dim(),in_min_xyz.size());
