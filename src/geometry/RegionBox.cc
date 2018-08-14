@@ -1,6 +1,6 @@
 /* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
 /*
-  A rectangular region in space, defined by two points
+  A rectangular region in space, defined by two opposite corners.
 
   Copyright 2010-2013 held jointly by LANS/LANL, LBNL, and PNNL. 
   Amanzi is released under the three-clause BSD License. 
@@ -41,40 +41,25 @@ RegionBox::RegionBox(const std::string& name,
   
   // Check if this is a reduced dimensionality box (e.g. even though
   // it is in 3D space it is a 2D box)
-
   int dim = p0.dim();
-  for (int i=0; i!=p0.dim(); ++i)
+  for (int i = 0; i != p0.dim(); ++i)
     if (p0[i] == p1[i]) dim--;
   
   if (dim < p0.dim()) set_manifold_dimension(dim);
+
+  // create opposite corners
+  for (int i = 0; i != p0.dim(); ++i) {
+    p0_[i] = std::min(p0[i], p1[i]);
+    p1_[i] = std::max(p0[i], p1[i]);
+  }
 }
 
-void
-RegionBox::corners(Point *lo_corner, Point *hi_corner) const
-{
-  AMANZI_ASSERT(lo_corner != NULL);
-  AMANZI_ASSERT(hi_corner != NULL);
-
-  lo_corner->set(p0_);
-  hi_corner->set(p1_);
-}
-  
-// -------------------------------------------------------------
-// RegionBox::between_
-// -------------------------------------------------------------
-bool
-RegionBox::between_(const double& x, const double& x0, const double& x1)
-{
-  return  (x0+TOL >= x && x >= x1-TOL) || (x1+TOL >= x && x >= x0-TOL);
-}
 
 // -------------------------------------------------------------
 // RegionBox::inside
 // -------------------------------------------------------------
-bool
-RegionBox::inside(const Point& p) const
+bool RegionBox::inside(const Point& p) const
 {
-
 #ifdef ENABLE_DBC
   if (p.dim() != p0_.dim()) {
     Errors::Message msg;
@@ -84,18 +69,18 @@ RegionBox::inside(const Point& p) const
   }
 #endif
 
-  bool result(true);
-  for (int i = 0; i!=p.dim(); ++i) {
-    result = result && between_(p[i], p0_[i], p1_[i]);
+  for (int i = 0; i != p.dim(); ++i) {
+    if (p[i] < p0_[i] - TOL) return false;
+    if (p[i] > p1_[i] + TOL) return false;
   }
-  return result;
+  return true;
 }
+
 
 // -------------------------------------------------------------
 // RegionBox::is_degenerate (also indicate in how many dimensions)
 // -------------------------------------------------------------
-bool
-RegionBox::is_degenerate(int *ndeg) const
+bool RegionBox::is_degenerate(int *ndeg) const
 {
   *ndeg = 0;
   for (int i=0; i!=p0_.dim(); ++i) {

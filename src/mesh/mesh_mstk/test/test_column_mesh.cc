@@ -45,14 +45,12 @@ TEST(COLUMN_MESH_3D)
   Amanzi::AmanziGeometry::Point p0(3), p1(3);
   p0[2] = 2.5;
   p1[0] = 4.; p1[1] = 4.; p1[2] = 5.;
-  Teuchos::RCP<Amanzi::AmanziGeometry::RegionBox> r0 =
-      Teuchos::rcp(new Amanzi::AmanziGeometry::RegionBox("myregion", 0, p0, p1));
+  auto r0 = Teuchos::rcp(new Amanzi::AmanziGeometry::RegionBox("myregion", 0, p0, p1));
   gm->AddRegion(r0);
 
 
   Amanzi::AmanziGeometry::Point p2(0.,0.,4.), p3(4.,4.,4.);
-  Teuchos::RCP<Amanzi::AmanziGeometry::RegionBox> r1 =
-      Teuchos::rcp(new Amanzi::AmanziGeometry::RegionBox("surface", 0, p2, p3));
+  auto r1 = Teuchos::rcp(new Amanzi::AmanziGeometry::RegionBox("surface", 0, p2, p3));
   gm->AddRegion(r1);
   
 
@@ -221,14 +219,12 @@ TEST(COLUMN_MESH_3D_FROM_SURFACE)
   Amanzi::AmanziGeometry::Point p0(3), p1(3);
   p0[2] = 2.5;
   p1[0] = 4.; p1[1] = 4.; p1[2] = 5.;
-  Teuchos::RCP<Amanzi::AmanziGeometry::RegionBox> r0 =
-      Teuchos::rcp(new Amanzi::AmanziGeometry::RegionBox("myregion", 0, p0, p1));
+  auto r0 = Teuchos::rcp(new Amanzi::AmanziGeometry::RegionBox("myregion", 0, p0, p1));
   gm->AddRegion(r0);
 
 
   Amanzi::AmanziGeometry::Point p2(0.,0.,4.), p3(4.,4.,4.);
-  Teuchos::RCP<Amanzi::AmanziGeometry::RegionBox> r1 =
-      Teuchos::rcp(new Amanzi::AmanziGeometry::RegionBox("surface", 0, p2, p3));
+  auto r1 = Teuchos::rcp(new Amanzi::AmanziGeometry::RegionBox("surface", 0, p2, p3));
   gm->AddRegion(r1);
   
 
