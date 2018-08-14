@@ -418,7 +418,7 @@ void AdvectionFn<AnalyticDG>::ApproximateVelocity_LevelSet(
   AmanziMesh::Entity_ID_List faces, cells;
   AmanziGeometry::Point zero(dim);
 
-  // -- normalized cell-centred velocity
+  // -- normalized cell-centered velocity
   for (int c = 0; c < ncells_wghost; ++c) {
     const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
 
@@ -431,55 +431,58 @@ void AdvectionFn<AnalyticDG>::ApproximateVelocity_LevelSet(
   }
 
   // -- normalized face-based velocities
-  int mk = WhetStone::PolynomialSpaceDimension(dim - 1, order_ - 1);
-  std::vector<AmanziGeometry::Point> coefs(mk);
-
+  int mk = WhetStone::PolynomialSpaceDimension(2, order_ - 1);
   CompositeVectorSpace cvs;
   cvs.SetMesh(mesh_)->SetGhosted(true)->AddComponent("face", AmanziMesh::FACE, dim * mk);
+
   CompositeVector vecf(cvs);
   Epetra_MultiVector vecf_f = *vecf.ViewComponent("face", true);
-
   vecf.PutScalar(0.0);
+
   for (int f = 0; f < nfaces_owned; ++f) {
     const AmanziGeometry::Point& xf = mesh_->face_centroid(f);
 
     mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
     int ncells = cells.size();
 
-    for (int m = 0; m < mk; ++m) coefs[m] = zero;
+    WhetStone::VectorPolynomial vvf(2, 2, 0);
+    vvf.set_origin(xf);
 
-    for (int i = 0; i < dim; ++i) {
-      for (int n = 0; n < ncells; ++n) {
-        int c = cells[n];
+    for (int n = 0; n < ncells; ++n) {
+      auto tmp = (*velc)[cells[n]];
+      tmp.ChangeOrigin(xf);
+      vvf -= tmp;
+    }
 
-        if (order_ == 1) {
-          coefs[0][i] -= (*velc)[c][i].Value(xf);
-        } else if (order_ == 2) {
-          coefs[0][i] -= (*velc)[c][i].Value(xf);
-          coefs[1][i] -= (*velc)[c][i].Value(xf);
-        }
+    vvf *= 1.0 / std::pow(vvf[0](0) * vvf[0](0) + vvf[1](0) * vvf[1](0), 0.5);
+
+    for (int i = 0; i < 2; ++i) {
+      for (int m = 0; m < mk; ++m) {
+        vecf_f[i * mk + m][f] = vvf[i](m);
       }
     }
-
-    for (int m = 0; m < mk; ++m) {
-      coefs[m] /= norm(coefs[m]);
-    }
-    for (int i = 0; i < dim; ++i) vecf_f[i][f] = coefs[0][i];
   } 
     
   vecf.ScatterMasterToGhosted();
+
+  // face-based fluxes scaled by area
+  WhetStone::VectorPolynomial vvf(2, 2, order_ - 1);
 
   for (int f = 0; f < nfaces_wghost; ++f) {
     const AmanziGeometry::Point& normal = mesh_->face_normal(f);
     double  area = mesh_->face_area(f);
 
-    for (int i = 0; i < dim; ++i) coefs[0][i] = vecf_f[i][f];
+    for (int i = 0; i < 2; ++i) {
+      for (int m = 0; m < mk; ++m) {
+        vvf[i](m) = vecf_f[i * mk + m][f];
+      }
+    }
 
-    (*velf)[f].Reshape(dim, order_ - 1);
-    (*velf)[f](0) = coefs[0] * normal;
+    (*velf)[f] = vvf * normal;
   }
 
   // re-calculate cell-centered velocities from face-centered ones
+  /*
   WhetStone::VectorPolynomial v(dim, dim, order_ - 1);
   std::vector<WhetStone::VectorPolynomial> vvf;
 
@@ -493,18 +496,17 @@ void AdvectionFn<AnalyticDG>::ApproximateVelocity_LevelSet(
       int f = faces[n];
       for (int i = 0; i < dim; ++i) v[i](0) = -vecf_f[i][f];
       vvf.push_back(v);
-      for (int i = 0; i < dim; ++i) (*velc)[c][i](0) += -vecf_f[i][f] / nfaces;
     }
+    // (*velc)[c] *= 1.0 / std::pow((*velc)[c][0](0) * (*velc)[c][0](0) + (*velc)[c][1](0) * (*velc)[c][1](0), 0.5);
 
-    /*
-    WhetStone::VectorPolynomial moments;
-    WhetStone::MFD3DFactory factory;
-    auto mfd = factory.CreateMFD3D(mesh_, "CrouzeixRaviart serendipity", 1);
-    mfd->L2Cell(c, vvf, moments, (*velc)[c]);
-    */
+    // WhetStone::VectorPolynomial moments;
+    // WhetStone::MFD3DFactory factory;
+    // auto mfd = factory.CreateMFD3D(mesh_, "CrouzeixRaviart serendipity", 1);
+    // mfd->H1Cell(c, vvf, moments, (*velc)[c]);
 
     if (! conservative_form_) (*divc)[c] = Divergence((*velc)[c]);
   }
+  */
 }
 
 }  // namespace Amanzi
@@ -670,10 +672,11 @@ TEST(OPERATOR_ADVECTION_TRANSIENT_DG) {
   AdvectionTransient<AnalyticDG06>("test/triangular128.exo",128, 0, 0.01 / 16,Amanzi::Explicit_TI::tvd_3rd_order);
   */
 
-  AdvectionTransient<AnalyticDG07>("square", 20, 20, 0.001, Amanzi::Explicit_TI::heun_euler, false, "primal", "level set");
-  AdvectionTransient<AnalyticDG07>("square", 40, 40, 0.001 / 2, Amanzi::Explicit_TI::heun_euler, false, "primal", "level set");
-  AdvectionTransient<AnalyticDG07>("square", 80, 80, 0.001 / 4, Amanzi::Explicit_TI::heun_euler, false, "primal", "level set");
-  AdvectionTransient<AnalyticDG07>("square",160,160, 0.001 / 8, Amanzi::Explicit_TI::heun_euler, false, "primal", "level set");
+  double dT0 = 0.001 / 8;
+  AdvectionTransient<AnalyticDG07>("square", 20, 20, dT0, Amanzi::Explicit_TI::tvd_3rd_order, false, "primal", "level set");
+  AdvectionTransient<AnalyticDG07>("square", 40, 40, dT0 / 2, Amanzi::Explicit_TI::tvd_3rd_order, false, "primal", "level set");
+  AdvectionTransient<AnalyticDG07>("square", 80, 80, dT0 / 4, Amanzi::Explicit_TI::tvd_3rd_order, false, "primal", "level set");
+  AdvectionTransient<AnalyticDG07>("square",160,160, dT0 / 8, Amanzi::Explicit_TI::tvd_3rd_order, false, "primal", "level set");
 
   /*
   double dT0 = 0.001;
@@ -685,7 +688,6 @@ TEST(OPERATOR_ADVECTION_TRANSIENT_DG) {
 
   /*
   double dT0 = 0.001;
-  // double dT0 = 0.01;
   AdvectionTransient<AnalyticDG06>("test/median15x16.exo",   16, 0, dT0, Amanzi::Explicit_TI::heun_euler);
   AdvectionTransient<AnalyticDG06>("test/median32x33.exo",   32, 0, dT0 / 2, Amanzi::Explicit_TI::heun_euler);
   AdvectionTransient<AnalyticDG06>("test/median63x64.exo",   64, 0, dT0 / 4, Amanzi::Explicit_TI::heun_euler);
