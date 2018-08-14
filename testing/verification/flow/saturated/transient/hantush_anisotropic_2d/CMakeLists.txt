@@ -3,7 +3,7 @@
 project (HANTUSH_ANISOTROPIC_2D)
 
 add_amanzi_comparison_test(hantush_anisotropid_2d
-                           INPUT amanzi_hantush_anisotropid_2d-u.xml
+                           INPUT amanzi_hantush_anisotropic_2d-u.xml
                            TOLERANCE 2e-3
                            OBSERVATION drawdown
                            REFERENCE ${HANTUSH_ANISOTROPIC_2D_SOURCE_DIR}/golden_output/observation.out
