@@ -37,7 +37,7 @@ GeometricModel::GeometricModel(unsigned int dim,
     std::string region_name = gm_params.name(i);
     if (gm_params.isSublist(region_name)) {
       // Extract sublist specifying region
-      Teuchos::ParameterList &reg_spec = gm_params.sublist(region_name);
+      Teuchos::ParameterList& reg_spec = gm_params.sublist(region_name);
 
       // Create the region
       Teuchos::RCP<Region> reg =
