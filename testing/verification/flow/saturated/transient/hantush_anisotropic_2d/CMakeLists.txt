@@ -4,6 +4,7 @@ project (HANTUSH_ANISOTROPIC_2D)
 
 add_amanzi_comparison_test(hantush_anisotropid_2d
                            INPUT amanzi_hantush_anisotropic_2d-u.xml
+                           FILES porflow4_6.exo
                            TOLERANCE 2e-3
                            OBSERVATION drawdown
                            REFERENCE ${HANTUSH_ANISOTROPIC_2D_SOURCE_DIR}/golden_output/observation.out
