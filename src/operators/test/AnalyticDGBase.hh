@@ -104,7 +104,7 @@ class AnalyticDGBase {
 
 
 /* ******************************************************************
-* Initial guess in specified region. Defaul is all domain.
+* Initial guess in specified region. Default is all domain.
 ****************************************************************** */
 inline
 void AnalyticDGBase::InitialGuess(

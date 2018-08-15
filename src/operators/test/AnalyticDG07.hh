@@ -55,9 +55,9 @@ class AnalyticDG07 : public AnalyticDGBase {
 
     if (order_ > 1) {
       double dist3 = dist2 * dist;
-      sol(2, 0) = -dy * dy / dist3;
+      sol(2, 0) = -dy * dy / dist3 / 2;
       sol(2, 1) = -dx * dy / dist3;
-      sol(2, 2) = -dx * dx / dist3;
+      sol(2, 2) = -dx * dx / dist3 / 2;
     }
 
     if (order_ > 2) AMANZI_ASSERT(false);
