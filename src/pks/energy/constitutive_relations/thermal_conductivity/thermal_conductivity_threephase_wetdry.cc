@@ -24,7 +24,7 @@ double ThermalConductivityThreePhaseWetDry::ThermalConductivity(double poro,
         double sat_liq, double sat_ice, double temp) {
   double Ki = 831.51 * std::pow(temp, -1.0552);
   double Kl = 0.5611;
-  double k_sat_f = k_sat_u_ * std::pow(Ki/Kl, poro);
+  double k_sat_f =  beta_sat_f_ * k_sat_u_ * std::pow(Ki/Kl, poro);
 
   double kersten_u = std::pow(sat_liq + eps_, alpha_u_);
   double kersten_f = std::pow(sat_ice + eps_, alpha_f_);
@@ -37,7 +37,7 @@ ThermalConductivityThreePhaseWetDry::DThermalConductivity_DPorosity(double poro,
   double Ki = 831.51 * std::pow(temp, -1.0552);
   double Kl = 0.5611;
   double kersten_f = std::pow(sat_ice + eps_, alpha_f_);
-  double dk_sat_f = k_sat_u_ * std::pow(Ki/Kl, poro) * std::log(Ki/Kl);
+  double dk_sat_f =  beta_sat_f_ * k_sat_u_ * std::pow(Ki/Kl, poro) * std::log(Ki/Kl);
   return kersten_f * dk_sat_f;
 }
 
@@ -54,7 +54,7 @@ ThermalConductivityThreePhaseWetDry::DThermalConductivity_DSaturationIce(double 
         double sat_liq, double sat_ice, double temp) {
   double Ki = 831.51 * std::pow(temp, -1.0552);
   double Kl = 0.5611;
-  double k_sat_f = k_sat_u_ * std::pow(Ki/Kl, poro);
+  double k_sat_f =  beta_sat_f_ * k_sat_u_ * std::pow(Ki/Kl, poro);
   double dkersten_f = alpha_f_ * std::pow(sat_ice + eps_, alpha_f_-1.0);
   return dkersten_f * k_sat_f - dkersten_f * k_dry_;
 }
@@ -65,8 +65,7 @@ ThermalConductivityThreePhaseWetDry::DThermalConductivity_DTemperature(double po
   double Ki = 831.51 * std::pow(temp, -1.0552);
   double Kl = 0.5611;
   double dKi = 831.51 * -1.0552 * std::pow(temp, -2.0552);
-
-  double dk_sat_f = k_sat_u_ * poro * std::pow(Ki/Kl, poro-1.0) * dKi / Kl;
+  double dk_sat_f =  beta_sat_f_ * k_sat_u_ * poro * std::pow(Ki/Kl, poro-1.0) * dKi / Kl;
   double kersten_f = std::pow(sat_ice + eps_, alpha_f_);
   return kersten_f * dk_sat_f;
 }
@@ -78,6 +77,7 @@ void ThermalConductivityThreePhaseWetDry::InitializeFromPlist_() {
   alpha_f_ = plist_.get<double>("unsaturated alpha frozen [-]");
   k_dry_ = plist_.get<double>("thermal conductivity, dry [W/(m-K)]");
   k_sat_u_ = plist_.get<double>("thermal conductivity, saturated (unfrozen) [W/(m-K)]");
+  beta_sat_f_ = plist_.get<double>("saturated beta frozen [-]",1.0);
 };
 
 } // namespace Relations
