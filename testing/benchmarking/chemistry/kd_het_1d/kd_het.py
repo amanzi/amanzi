@@ -35,7 +35,7 @@ if __name__ == "__main__":
         pass
     
     # root name for problem
-    root = "isotherms"
+    root = "1d-isotherms"
     components = ['A']
     compcrunch = ['A']
 

@@ -33,7 +33,7 @@ if __name__ == "__main__":
 
     
     # root name for problem
-    root = "calcite"
+    root = "1d-calcite"
 
     # pflotran
     path_to_pflotran = "pflotran"
