@@ -100,7 +100,7 @@ class AdvectionFn : public Explicit_TI::fnBase<CompositeVector> {
   Teuchos::RCP<WhetStone::DG_Modal> dg_;  
 
   double weak_sign_;
-  bool conservative_form_;
+  bool conservative_form_, divergence_term_;
   bool setup_, high_order_velf_, level_set_velf_;
   std::string pk_name_;
 };
@@ -121,12 +121,14 @@ AdvectionFn<AnalyticDG>::AdvectionFn(
       ana_(mesh, dg->order(), true),
       conservative_form_(conservative_form)
 {
+  divergence_term_ = !conservative_form_;
   if (weak_form == "dual") {
     weak_sign_ = 1.0;
     pk_name_ = "PK operator";
   } else {
     weak_sign_ = -1.0;
     pk_name_ = "PK operator: primal";
+    divergence_term_ = false;
   }
 
   // create global operator 
@@ -144,7 +146,7 @@ AdvectionFn<AnalyticDG>::AdvectionFn(
   op_mass = Teuchos::rcp(new Operators::PDE_Abstract(op_list, mesh_));
 
   // -- reaction term
-  if (!conservative_form_) {
+  if (divergence_term_) {
     op_list = plist.sublist(pk_name_).sublist("reaction operator");
     op_reac = Teuchos::rcp(new Operators::PDE_Abstract(op_list, global_op_));
   }
@@ -201,7 +203,7 @@ void AdvectionFn<AnalyticDG>::FunctionalTimeDerivative(
     (*velf)[f] = v * (mesh_->face_normal(f) * weak_sign_);
   }
 
-  if (! conservative_form_) {
+  if (divergence_term_) {
     for (int c = 0; c < ncells_wghost; ++c) {
       (*divc)[c] = Divergence((*velc)[c]);
     }
@@ -298,7 +300,7 @@ void AdvectionFn<AnalyticDG>::FunctionalTimeDerivative(
   op_adv->SetupPolyVector(velc);
   op_adv->UpdateMatrices();
 
-  if (!conservative_form_) {
+  if (divergence_term_) {
     op_reac->SetupPoly(divc);
     op_reac->UpdateMatrices();
   }
@@ -388,7 +390,7 @@ void AdvectionFn<AnalyticDG>::ApproximateVelocity_Projection(
     maps->VelocityCell(c, vvf, (*velc)[c]);
     (*velc)[c] *= -dtfac * weak_sign_;
 
-    if (! conservative_form_) (*divc)[c] = Divergence((*velc)[c]);
+    if (divergence_term_) (*divc)[c] = Divergence((*velc)[c]);
   }
 }
 
@@ -429,7 +431,7 @@ void AdvectionFn<AnalyticDG>::ApproximateVelocity_LevelSet(
     (*velc)[c].Gradient(poly);
     (*velc)[c] *= weak_sign_ / std::pow((*velc)[c][0](0) * (*velc)[c][0](0) + (*velc)[c][1](0) * (*velc)[c][1](0), 0.5);
 
-    // if (! conservative_form_) (*divc)[c] = Divergence((*velc)[c]);
+    if (divergence_term_) (*divc)[c] = Divergence((*velc)[c]);
   }
 
   // -- normalized face-based velocities
@@ -577,7 +579,7 @@ void AdvectionTransient(std::string filename, int nx, int ny, double dt,
     // visualization
     if (MyPID == 0 && std::fabs(t - tprint) < dt/4) {
       tprint += 0.1; 
-      printf("t=%9.6f  |p|=%10.8g\n", t, fn.l2norm);
+      printf("t=%9.6f  |p|=%14.12g\n", t, fn.l2norm);
 
       const Epetra_MultiVector& p = *sol.ViewComponent("cell");
       GMV::open_data_file(*mesh, (std::string)"operators.gmv");
@@ -624,7 +626,6 @@ void AdvectionTransient(std::string filename, int nx, int ny, double dt,
 
 
 TEST(OPERATOR_ADVECTION_TRANSIENT_DG) {
-  /*
   exact_solution_expected = true;
   AdvectionTransient<AnalyticDG02b>("square",  4,  4, 0.1, Amanzi::Explicit_TI::tvd_3rd_order, false);
 
@@ -632,7 +633,6 @@ TEST(OPERATOR_ADVECTION_TRANSIENT_DG) {
   AdvectionTransient<AnalyticDG06b>("square",  4,  4, 0.1, Amanzi::Explicit_TI::tvd_3rd_order);
   AdvectionTransient<AnalyticDG06>("square",  4,  4, 0.1, Amanzi::Explicit_TI::tvd_3rd_order, false);
   AdvectionTransient<AnalyticDG06>("square",  4,  4, 0.1, Amanzi::Explicit_TI::tvd_3rd_order, false, "primal");
-  */
 
   /*
   AdvectionTransient<AnalyticDG06>("square",  20,  20, 0.01, Amanzi::Explicit_TI::heun_euler);
@@ -649,11 +649,13 @@ TEST(OPERATOR_ADVECTION_TRANSIENT_DG) {
   AdvectionTransient<AnalyticDG06>("test/triangular128.exo",128, 0, 0.01 / 16,Amanzi::Explicit_TI::tvd_3rd_order);
   */
 
+  /*
   double dT0 = 0.001;
   AdvectionTransient<AnalyticDG07>("square", 20, 20, dT0, Amanzi::Explicit_TI::tvd_3rd_order, false, "primal", "level set");
   AdvectionTransient<AnalyticDG07>("square", 40, 40, dT0 / 2, Amanzi::Explicit_TI::tvd_3rd_order, false, "primal", "level set");
   AdvectionTransient<AnalyticDG07>("square", 80, 80, dT0 / 4, Amanzi::Explicit_TI::tvd_3rd_order, false, "primal", "level set");
   AdvectionTransient<AnalyticDG07>("square",160,160, dT0 / 8, Amanzi::Explicit_TI::tvd_3rd_order, false, "primal", "level set");
+  */
 
   /*
   double dT0 = 0.001;

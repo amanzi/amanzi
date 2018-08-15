@@ -324,7 +324,6 @@ void AdvectionSteady(int dim, std::string filename, int nx,
 
 
 TEST(OPERATOR_ADVECTION_STEADY_DG) {
-  /*
   AdvectionSteady<AnalyticDG03>(2, "test/median7x8.exo", 8, "primal", false, "orthonormalized");
   AdvectionSteady<AnalyticDG03>(2, "test/median7x8.exo", 8, "primal", false, "normalized");
   AdvectionSteady<AnalyticDG03>(2, "test/median7x8.exo", 8, "primal", false, "regularized");
@@ -332,7 +331,6 @@ TEST(OPERATOR_ADVECTION_STEADY_DG) {
   AdvectionSteady<AnalyticDG03>(2, "test/median7x8.exo", 8, "dual", true, "regularized");
   AdvectionSteady<AnalyticDG03>(2, "test/median7x8.exo", 8, "dual", false);
   AdvectionSteady<AnalyticDG02>(3, "cubic", 3, "dual", true);
-  */
 }
 
 

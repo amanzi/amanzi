@@ -162,7 +162,7 @@ class VectorPolynomial {
 // non-member functions
 // --divergence
 inline
-Polynomial Divergence(const VectorPolynomial vp) 
+Polynomial Divergence(const VectorPolynomial& vp) 
 {
   int d = vp[0].dimension();
   AMANZI_ASSERT(d == vp.size());
