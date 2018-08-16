@@ -56,11 +56,19 @@ class AnalyticDG07 : public AnalyticDGBase {
     if (order_ > 1) {
       double dist3 = dist2 * dist;
       sol(2, 0) = -dy * dy / dist3 / 2;
-      sol(2, 1) = -dx * dy / dist3;
+      sol(2, 1) =  dx * dy / dist3;
       sol(2, 2) = -dx * dx / dist3 / 2;
     }
 
-    if (order_ > 2) AMANZI_ASSERT(false);
+    if (order_ > 2) {
+      double dist5 = dist2 * dist2 * dist;
+      sol(3, 0) = dx * dy * dy / dist5 / 2;
+      sol(3, 1) = dy * (dy * dy - 2 * dx * dx) / dist5 / 2;
+      sol(3, 2) = dx * (dx * dx - 2 * dy * dy) / dist5 / 2;
+      sol(3, 3) = dy * dx * dx / dist5 / 2;
+    }
+
+    if (order_ > 3) AMANZI_ASSERT(false);
   }
 
   // -- accumulation
