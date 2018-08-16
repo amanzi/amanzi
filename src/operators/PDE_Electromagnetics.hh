@@ -35,7 +35,6 @@ class PDE_Electromagnetics : public PDE_HelperDiscretization {
   PDE_Electromagnetics(Teuchos::ParameterList& plist,
                        const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) :
       PDE_HelperDiscretization(mesh),
-      plist_(plist),
       K_(Teuchos::null)
   {
     global_op_ = Teuchos::null;
@@ -97,7 +96,6 @@ class PDE_Electromagnetics : public PDE_HelperDiscretization {
   int global_op_schema_, local_op_schema_;
 
   // miscaleneous
-  Teuchos::ParameterList plist_;
   int mfd_primary_, mfd_secondary_;
 };
 

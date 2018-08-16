@@ -38,7 +38,6 @@ class PDE_DiffusionDG : public PDE_HelperDiscretization {
   PDE_DiffusionDG(Teuchos::ParameterList& plist,
                   const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) :
       PDE_HelperDiscretization(mesh),
-      plist_(plist),
       Kc_(NULL),
       Kf_(NULL)
   {
@@ -68,7 +67,6 @@ class PDE_DiffusionDG : public PDE_HelperDiscretization {
   virtual void Init_(Teuchos::ParameterList& plist);
 
  private:
-  Teuchos::ParameterList plist_;
   std::string method_, matrix_;
   int method_order_;
 
