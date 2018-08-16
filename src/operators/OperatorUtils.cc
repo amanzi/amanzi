@@ -303,6 +303,7 @@ unsigned int MaxRowSize(const AmanziMesh::Mesh& mesh, int schema, unsigned int n
   int dim = mesh.space_dimension();
   if (schema & OPERATOR_SCHEMA_DOFS_FACE) {
     unsigned int i = 0;
+
     for (int c = 0; c < mesh.num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED); ++c) {
       i = std::max(i, mesh.cell_get_num_faces(c));
     }
