@@ -100,7 +100,7 @@ add_subdirectory(src)
 include(CTest)
 if (ENABLE_Regression_Tests)
   find_package(PythonInterp)
-  add_subdirectory(testing) 
+  add_subdirectory(test_suites) 
 endif()
 
 
