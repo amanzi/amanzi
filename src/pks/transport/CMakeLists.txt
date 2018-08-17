@@ -100,6 +100,11 @@ register_evaluator_with_factory(
   LISTNAME   MSM_TRANSPORT_REGISTRATIONS
   )
 
+register_evaluator_with_factory(
+  HEADERFILE MultiscaleTransportPorosity_GDPM_reg.hh
+  LISTNAME   MSM_TRANSPORT_REGISTRATIONS
+  )
+
 generate_evaluators_registration_header( 
   HEADERFILE multiscale_transport_registration.hh   
   LISTNAME   MSM_TRANSPORT_REGISTRATIONS
@@ -121,6 +126,7 @@ set(transport_inc_files
   MultiscaleTransportPorosityFactory.hh
   MultiscaleTransportPorosityPartition.hh
   MultiscaleTransportPorosity_DPM.hh
+  MultiscaleTransportPorosity_GDPM.hh
   TransportDomainFunction.hh
   TransportBoundaryFunction_Alquimia.hh
   TransportSourceFunction_Alquimia.hh
@@ -132,7 +138,8 @@ set(transport_src_files Transport_PK.cc Transport_TI.cc
                         Transport_Dispersion.cc Transport_HenryLaw.cc
                         MDM_Isotropic.cc MDM_Bear.cc MDM_BurnettFrind.cc MDM_LichtnerKelkarRobinson.cc
                         MDMPartition.cc MDMFactory.cc
-                        MultiscaleTransportPorosityFactory.cc MultiscaleTransportPorosity_DPM.cc
+                        MultiscaleTransportPorosityFactory.cc
+                        MultiscaleTransportPorosity_DPM.cc MultiscaleTransportPorosity_GDPM.cc
                         MultiscaleTransportPorosityPartition.cc
                         TransportBoundaryFunction_Alquimia.cc
                         TransportSourceFunction_Alquimia.cc)

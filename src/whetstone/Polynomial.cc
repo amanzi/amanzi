@@ -12,6 +12,8 @@
   Operations with polynomials.
 */
 
+#include <cmath>
+
 #include "DenseMatrix.hh"
 #include "Monomial.hh"
 #include "Polynomial.hh"
@@ -328,7 +330,7 @@ Polynomial Polynomial::ChangeOrigin(
   Polynomial poly(d, order);
 
   if (order == 0) {
-    poly(0, 0) = coef;
+    poly(0) = coef;
   }
   else if (order > 0) {
     AmanziGeometry::Point shift(origin - mono.origin());
@@ -386,9 +388,15 @@ Polynomial Polynomial::ChangeOrigin(
 ****************************************************************** */
 double Polynomial::Value(const AmanziGeometry::Point& xp) const
 {
-  double sum(0.0);
+  double sum(coefs_(0));
+  
+  if (order_ > 0) {
+    for (int i = 0; i < d_; ++i) {
+      sum += (xp[i] - origin_[i]) * coefs_(i + 1);
+    }
+  }
 
-  for (auto it = begin(); it < end(); ++it) {
+  for (auto it = begin(2); it < end(); ++it) {
     int n = it.PolynomialPosition();
     const int* index = it.multi_index();
 

@@ -105,7 +105,7 @@ class Polynomial : public WhetStoneFunction {
   int PolynomialPosition(const int* multi_index) const;
 
   // iterator starts with constant term
-  PolynomialIterator begin() const { PolynomialIterator it(d_); return it.begin(); }
+  PolynomialIterator begin(int k0 = 0) const { PolynomialIterator it(d_); return it.begin(k0); }
   // returns an iterator referring to the past-the-end term in the polynomial
   PolynomialIterator end() const { PolynomialIterator it(d_); return it.begin(order_ + 1); }
 

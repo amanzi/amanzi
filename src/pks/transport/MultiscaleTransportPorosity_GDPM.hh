@@ -8,15 +8,15 @@
 
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 
-  A two-scale porosity model (fracture + matrix) aka dual porosity
-  model. Current naming convention is that the fields used in the 
-  single-porosity model correspond now to the fracture continuum.
+  A generalized dual porosity model, fracture + multiple matrix nodes.
+  Current naming convention is that the fields used in the single-porosity 
+  model correspond now to the fracture continuum.
   Example: tcc = total component concentration in the fracture continuum;
            tcc_matrix = total component concentration in the matrix continuum.
 */
 
-#ifndef MULTISCALE_TRANSPORT_POROSITY_DPM_HH_
-#define MULTISCALE_TRANSPORT_POROSITY_DPM_HH_
+#ifndef MULTISCALE_TRANSPORT_POROSITY_GDPM_HH_
+#define MULTISCALE_TRANSPORT_POROSITY_GDPM_HH_
 
 #include "Teuchos_ParameterList.hpp"
 
@@ -27,10 +27,10 @@
 namespace Amanzi {
 namespace Transport {
 
-class MultiscaleTransportPorosity_DPM : public MultiscaleTransportPorosity {
+class MultiscaleTransportPorosity_GDPM : public MultiscaleTransportPorosity {
  public:
-  MultiscaleTransportPorosity_DPM(Teuchos::ParameterList& plist);
-  ~MultiscaleTransportPorosity_DPM() {};
+  MultiscaleTransportPorosity_GDPM(Teuchos::ParameterList& plist);
+  ~MultiscaleTransportPorosity_GDPM() {};
 
   // Advances concentrations in the matrix continuum to the next time level
   virtual double ComputeSoluteFlux(double flux_liquid, double tcc_f, double tcc_m);
@@ -39,9 +39,7 @@ class MultiscaleTransportPorosity_DPM : public MultiscaleTransportPorosity {
   virtual void UpdateStabilityOutflux(double flux_liquid, double* outflux);
 
  private:
-  double omega_;
-
-  static Utils::RegisteredFactory<MultiscaleTransportPorosity, MultiscaleTransportPorosity_DPM> factory_;
+  static Utils::RegisteredFactory<MultiscaleTransportPorosity, MultiscaleTransportPorosity_GDPM> factory_;
 };
 
 }  // namespace Transport
