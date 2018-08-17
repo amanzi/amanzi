@@ -391,7 +391,7 @@ function(ADD_AMANZI_COMPARISON_TEST test_name)
 
   # Parse through the remaining options
   set(options PARALLEL)
-  set(oneValueArgs FIELD OBSERVATION INPUT REFERENCE TOLERANCE FILES)
+  set(oneValueArgs FIELD OBSERVATION INPUT REFERENCE REALTIVE_TOLERANCE ABSOLUTE_TOLERANCE FILES)
   set(multiValueArgs NPROCS MPI_EXEC_ARGS)
   cmake_parse_arguments(AMANZI_COMPARISON_TEST "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
 
