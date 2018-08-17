@@ -428,8 +428,8 @@ void AdvectionFn<AnalyticDG>::ApproximateVelocity_LevelSet(
     WhetStone::Polynomial poly(dim, order_, data); 
     poly.set_origin(xc);
 
-    (*velc)[c].Gradient(poly);
-    (*velc)[c] *= weak_sign_ / std::pow((*velc)[c][0](0) * (*velc)[c][0](0) + (*velc)[c][1](0) * (*velc)[c][1](0), 0.5);
+    (*velc)[c] = GradientOnUnitSphere(poly, 1);
+    (*velc)[c] *= weak_sign_;
 
     if (divergence_term_) (*divc)[c] = Divergence((*velc)[c]);
   }
@@ -449,7 +449,7 @@ void AdvectionFn<AnalyticDG>::ApproximateVelocity_LevelSet(
     mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
     int ncells = cells.size();
 
-    WhetStone::VectorPolynomial vvf(2, 2, 0);
+    WhetStone::VectorPolynomial vvf(2, 2, 1);
     vvf.set_origin(xf);
 
     for (int n = 0; n < ncells; ++n) {
@@ -458,7 +458,8 @@ void AdvectionFn<AnalyticDG>::ApproximateVelocity_LevelSet(
       vvf -= tmp;
     }
 
-    vvf *= 1.0 / std::pow(vvf[0](0) * vvf[0](0) + vvf[1](0) * vvf[1](0), 0.5);
+    // vvf *= 1.0 / std::pow(vvf[0](0) * vvf[0](0) + vvf[1](0) * vvf[1](0), 0.5);
+    vvf *= 1.0 / ncells;  
 
     for (int i = 0; i < 2; ++i) {
       for (int m = 0; m < mk; ++m) {
@@ -634,8 +635,8 @@ TEST(OPERATOR_ADVECTION_TRANSIENT_DG) {
   AdvectionTransient<AnalyticDG06>("square",  4,  4, 0.1, Amanzi::Explicit_TI::tvd_3rd_order, false);
   AdvectionTransient<AnalyticDG06>("square",  4,  4, 0.1, Amanzi::Explicit_TI::tvd_3rd_order, false, "primal");
 
-  AdvectionTransient<AnalyticDG06>("square",  20,  20, 0.01, Amanzi::Explicit_TI::heun_euler);
   /*
+  AdvectionTransient<AnalyticDG06>("square",  20,  20, 0.01, Amanzi::Explicit_TI::heun_euler);
   AdvectionTransient<AnalyticDG06>("square",  40,  40, 0.01 / 2, Amanzi::Explicit_TI::heun_euler);
   AdvectionTransient<AnalyticDG06>("square",  80,  80, 0.01 / 4, Amanzi::Explicit_TI::heun_euler);
   AdvectionTransient<AnalyticDG06>("square", 160, 160, 0.01 / 8, Amanzi::Explicit_TI::heun_euler);
@@ -659,10 +660,10 @@ TEST(OPERATOR_ADVECTION_TRANSIENT_DG) {
 
   /*
   double dT0 = 0.001;
-  AdvectionTransient<AnalyticDG07>("test/median15x16.exo",   16, 0, dT0, Amanzi::Explicit_TI::heun_euler, false, "primal", "level set");
-  AdvectionTransient<AnalyticDG07>("test/median32x33.exo",   32, 0, dT0 / 2, Amanzi::Explicit_TI::heun_euler, false, "primal", "level set");
-  AdvectionTransient<AnalyticDG07>("test/median63x64.exo",   64, 0, dT0 / 4, Amanzi::Explicit_TI::heun_euler, false, "primal", "level set");
-  AdvectionTransient<AnalyticDG07>("test/median127x128.exo",128, 0, dT0 / 8, Amanzi::Explicit_TI::heun_euler, false, "primal", "level set");
+  AdvectionTransient<AnalyticDG07>("test/median15x16.exo",   16,0, dT0, Amanzi::Explicit_TI::tvd_3rd_order, false, "primal", "level set");
+  AdvectionTransient<AnalyticDG07>("test/median32x33.exo",   32,0, dT0 / 2, Amanzi::Explicit_TI::tvd_3rd_order, false, "primal", "level set");
+  AdvectionTransient<AnalyticDG07>("test/median63x64.exo",   64,0, dT0 / 4, Amanzi::Explicit_TI::tvd_3rd_order, false, "primal", "level set");
+  AdvectionTransient<AnalyticDG07>("test/median127x128.exo",128,0, dT0 / 8, Amanzi::Explicit_TI::tvd_3rd_order, false, "primal", "level set");
   */
 
   /*

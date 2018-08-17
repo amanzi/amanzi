@@ -145,6 +145,11 @@ class VectorPolynomial {
     return tmp;
   }
 
+  // specialized member functions
+  // -- project gradient of the given polynomial on unit sphere using
+  //    the Taylor expansion with k terms
+  friend VectorPolynomial GradientOnUnitSphere(const Polynomial& poly, int k);
+
   // output 
   friend std::ostream& operator << (std::ostream& os, const VectorPolynomial& poly) {
     os << "Vector Polynomial (size=" << poly.size() << "):" << std::endl;
@@ -194,6 +199,42 @@ Polynomial Divergence(const VectorPolynomial& vp)
   }
 
   return div;
+}
+
+
+// Projecton of gradient using Taylor expansion with k terms
+inline
+VectorPolynomial GradientOnUnitSphere(const Polynomial& poly, int k)
+{
+  int d = poly.dimension();
+  AMANZI_ASSERT(d == 2);
+  AMANZI_ASSERT(k < 2);
+
+  VectorPolynomial out(d, d, k);
+  out.set_origin(poly.origin());
+
+  double a1, a2, a3, a4, a5, len;
+  a1 = poly(1);
+  a2 = poly(2);
+  len = std::pow(a1 * a1 + a2 * a2, 0.5);
+
+  out[0](0) = a1 / len;
+  out[1](0) = a2 / len;
+
+  if (k > 0) {
+    len = len * len * len;
+    a3 = poly(3);
+    a4 = poly(4);
+    a5 = poly(5);
+
+    out[0](1) = a2 * (2 * a2 * a3 - a1 * a4) / len; 
+    out[0](2) = a2 * (a2 * a4 - 2 * a1 * a5) / len; 
+
+    out[1](1) = a1 * (a1 * a4 - 2 * a2 * a3) / len; 
+    out[1](2) = a1 * (2 * a1 * a5 - a2 * a4) / len; 
+  }
+
+  return out;
 }
 
 }  // namespace WhetStone

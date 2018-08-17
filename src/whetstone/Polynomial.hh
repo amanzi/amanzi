@@ -135,7 +135,7 @@ class Polynomial : public WhetStoneFunction {
   // output 
   friend std::ostream& operator << (std::ostream& os, const Polynomial& p);
 
-  // special non-member functions
+  // specialized member functions
   // -- Laplacian
   Polynomial Laplacian();
 

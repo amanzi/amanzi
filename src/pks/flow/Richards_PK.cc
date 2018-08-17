@@ -789,8 +789,10 @@ void Richards_PK::InitializeStatistics_()
     VV_PrintHeadExtrema(*solution);
     VV_PrintSourceExtrema();
 
-    *vo_->os() << "\nPrinting WRM files..." << std::endl;
-    relperm_->PlotWRMcurves();
+    if (vo_->getVerbLevel() >= Teuchos::VERB_EXTREME) {
+      *vo_->os() << "\nPrinting WRM files..." << std::endl;
+      relperm_->PlotWRMcurves();
+    }
 
     *vo_->os() << vo_->color("green") << "Initalization of PK is complete, T=" 
                << units_.OutputTime(S_->time()) << vo_->reset() << std::endl << std::endl;

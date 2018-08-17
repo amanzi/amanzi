@@ -504,7 +504,7 @@ void Polynomial::InverseChangeCoordinates(
 
 
 /* ******************************************************************
-* Special operations: Laplacian
+* Laplacian operator
 ****************************************************************** */
 Polynomial Polynomial::Laplacian()
 {
