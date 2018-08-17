@@ -56,26 +56,29 @@ def find_output_observation_path(input_xml):
     obs_file = observations.find('filename').text
     return obs_file
 
-def compute_error_norms(x_output, c_output, x_ref, c_ref):
+def compute_error_norms(x_output, c_output, x_ref, c_ref, rel_or_abs):
     errors = {}
     for region in x_ref.keys():
         diff = c_ref[region] - c_output[region]
         errors[region] = np.linalg.norm(diff)
+        if (rel_or_abs == 'relative'):
+            errors[region] /= np.linalg.norm(c_ref[region])
     return errors
 
 if __name__ == "__main__":
 
     # Check argument number.
     if len(sys.argv) != 5:
-        print('%s: usage:'%sys.argv[0])
-        print('%s observation input.xml reference.obs tolerance'%sys.argv[0])
+        print("%s: usage:"%sys.argv[0])
+        print("%s observation input.xml reference.obs relative/absolute tolerance"%sys.argv[0])
         exit(0)
 
     # Get arguments.
     observation = sys.argv[1]
     input_xml = sys.argv[2]
     ref_file = sys.argv[3]
-    tolerance = float(sys.argv[4])
+    rel_or_abs = sys.argv[4]
+    tolerance = float(sys.argv[5])
 
     # Check arguments.
     if not os.path.exists(input_xml):
@@ -98,7 +101,7 @@ if __name__ == "__main__":
     x_ref, c_ref = get_observation_data(ref_file, observation)
 
     # Compute the error norms for each of the observations in their respective regions.
-    errors = compute_error_norms(x_output, c_output, x_ref, c_ref)
+    errors = compute_error_norms(x_output, c_output, x_ref, c_ref, rel_or_abs)
     msg = ""
 
     # Report.
