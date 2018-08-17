@@ -49,7 +49,6 @@ class VWContentEvaluator : public SecondaryVariableFieldEvaluator {
 
  protected:
   bool vapor_phase_;
-  Teuchos::ParameterList plist_;
   
  private:
   static Utils::RegisteredFactory<FieldEvaluator,VWContentEvaluator> reg_;
