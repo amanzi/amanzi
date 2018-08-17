@@ -14,6 +14,7 @@ if (ENABLE_TESTS)
 	 #COMMAND ${HDF5_H5DIFF_BINARY} ${INFILTRATION_DRY_SAND_1d_BINARY_DIR}/${h5file}
 	 #                                  ${INFILTRATION_DRY_SAND_1d_SOURCE_DIR}/golden_output/${h5file} 
 	 #					   ${dataset}/${step}  ${dataset}/${step} )
+    set_tests_properties( compare_${test_name} PROPERTIES ENVIRONMENT "PYTHONPATH=${AMANZI_SOURCE_DIR}/tools/amanzi_xml:${AMANZI_SOURCE_DIR}/tools/prettytable:${AMANZI_SOURCE_DIR}/tools/testing:${PYTHONPATH}" )
     set_tests_properties( compare_${test_name} PROPERTIES DEPENDS run_${test_name} )
     set_tests_properties( compare_${test_name} PROPERTIES FAIL_REGULAR_EXPRSSION "Comparison Failed" )
     #set_tests_properties( compare_${test_name} PROPERTIES FAIL_REGULAR_EXPRSSION "differences found" )
