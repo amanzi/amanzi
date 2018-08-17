@@ -72,8 +72,20 @@ class UnconfinedSeepageHead(object):
 
         """
 
-        head = numpy.zeros(len(coords))
-        head[:] = numpy.sqrt(self.h_0*self.h_0 + (self.h_s*self.h_s - self.h_0*self.h_0)*(coords[:,0]/self.L_s) + (self.Q_src*self.L_s*self.L_s/self.K)*(coords[:,0]/self.L_s)*(1.0-coords[:,0]/self.L_s))
+        head = []
+        Ls = self.L_s
+        h0 = self.h_0
+        h1 = self.h_1
+        hs = self.h_s
+
+        for x in coords[:,0]:
+            if x < Ls:
+                a = x / Ls
+                tmp = numpy.sqrt(h0*h0 + (hs*hs - h0*h0) * a + (self.Q_src*Ls*Ls/self.K) * a * (1 - a))
+            else:
+                a = x / self.x_1
+                tmp = h1 * (2 - a)
+            head.append(tmp)
 
         return head
 
