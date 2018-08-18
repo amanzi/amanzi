@@ -1,4 +1,14 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+/*
+  Chemistry 
+
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
+
+  Class for linear isotherm
+*/
+
 #include "sorption_isotherm_linear.hh"
 
 #include <iostream>
@@ -11,35 +21,34 @@
 namespace Amanzi {
 namespace AmanziChemistry {
 
-extern VerboseObject* chem_out;
-
 SorptionIsothermLinear::SorptionIsothermLinear()
     : SorptionIsotherm("linear", SorptionIsotherm::LINEAR),
       KD_(0.0),
       params_(1, 0.0) {
-}  // end SorptionIsothermLinear() constructor
+}
+
 
 SorptionIsothermLinear::SorptionIsothermLinear(const double KD)
     : SorptionIsotherm("linear", SorptionIsotherm::LINEAR),
       KD_(KD),
       params_(1, 0.0) {
-}  // end SorptionIsothermLinear() constructor
+}
 
-SorptionIsothermLinear::~SorptionIsothermLinear() {
-}  // end SorptionIsothermLinear() destructor
 
 void SorptionIsothermLinear::Init(const double KD) {
   set_KD(KD);
 }
 
+
 const std::vector<double>& SorptionIsothermLinear::GetParameters(void) {
   params_.at(0) = KD();
   return params_;
-}  // end GetParameters()
+}
+
 
 void SorptionIsothermLinear::SetParameters(const std::vector<double>& params) {
   set_KD(params.at(0));
-}  // end SetParameters()
+}
 
 
 double SorptionIsothermLinear::Evaluate(const Species& primarySpecies ) {
@@ -48,7 +57,8 @@ double SorptionIsothermLinear::Evaluate(const Species& primarySpecies ) {
   // sorbed_concentration [mol/m^3 bulk] = KD [kg water/m^3 bulk] * 
   //   activity [mol/kg water]
   return KD() * primarySpecies.activity();
-}  // end Evaluate()
+}
+
 
 double SorptionIsothermLinear::EvaluateDerivative(const Species& primarySpecies) {
   // Csorb = KD * activity
@@ -56,15 +66,16 @@ double SorptionIsothermLinear::EvaluateDerivative(const Species& primarySpecies)
   // Units:
   //  KD [kg water/m^3 bulk]
   return KD() * primarySpecies.act_coef();
-}  // end EvaluateDerivative()
+}
 
-void SorptionIsothermLinear::Display(void) const {
+
+void SorptionIsothermLinear::Display(const Teuchos::RCP<VerboseObject>& vo) const {
   std::stringstream message;
   message << std::setw(5) << "KD:"
           << std::scientific << std::setprecision(5)
           << std::setw(15) << KD() << std::endl;
-  chem_out->Write(Teuchos::VERB_HIGH, message);
-}  // end Display()
+  vo->Write(Teuchos::VERB_HIGH, message);
+}
 
 }  // namespace AmanziChemistry
 }  // namespace Amanzi

@@ -1789,7 +1789,7 @@ PorousMedia::init ()
 
   U_cor.setVal(0.);
 
-  if (flow_eval = PM_FLOW_EVAL_CONSTANT) { // FIXME: Be sure that this was not done already
+  if ((flow_eval = PM_FLOW_EVAL_CONSTANT)) { // FIXME: Be sure that this was not done already
     set_vel_from_bcs(cur_time,u_mac_curr);
   }
   else {
@@ -3978,7 +3978,7 @@ PorousMedia::errorEst (TagBoxArray& tags,
               max_level = parent->maxLevel();
           }
 
-          if ( ( (min_time>=max_time) || (min_time<=time) && (max_time>=time) )
+          if ( ((min_time>=max_time) || ((min_time<=time) && (max_time>=time)))
                && (level<max_level) )
           {
               IntVect cumRatio = IntVect(D_DECL(1,1,1));
