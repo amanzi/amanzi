@@ -114,7 +114,6 @@
 #                - update OpenMPI to 3.0.2
 #   0.95.4       - update Boost to version 1.67.0
 #   0.95.5       - update NetCDF to version 4.6.1
-#   0.95.6       - update HDF5 to version 1.10.1
 #                - update OpenMPI to 3.1.1
 
 include(CMakeParseArguments)
@@ -168,7 +167,7 @@ endmacro(amanzi_tpl_version_write)
 #
 set(AMANZI_TPLS_VERSION_MAJOR 0)
 set(AMANZI_TPLS_VERSION_MINOR 95)
-set(AMANZI_TPLS_VERSION_PATCH 6)
+set(AMANZI_TPLS_VERSION_PATCH 5)
 set(AMANZI_TPLS_VERSION ${AMANZI_TPLS_VERSION_MAJOR}.${AMANZI_TPLS_VERSION_MINOR}.${AMANZI_TPLS_VERSION_PATCH})
 # Not sure how to create a meaningful hash key for the collection
 
@@ -283,13 +282,13 @@ set(Boost_MD5_SUM        ced776cb19428ab8488774e1415535ab)
 # TPL: HDF5
 #
 set(HDF5_VERSION_MAJOR 1)
-set(HDF5_VERSION_MINOR 10)
-set(HDF5_VERSION_PATCH 1)
+set(HDF5_VERSION_MINOR 8)
+set(HDF5_VERSION_PATCH 18)
 set(HDF5_VERSION ${HDF5_VERSION_MAJOR}.${HDF5_VERSION_MINOR}.${HDF5_VERSION_PATCH})
 set(HDF5_URL_STRING     ${AMANZI_TPLS_DOWNLOAD_URL})
 set(HDF5_ARCHIVE_FILE   hdf5-${HDF5_VERSION}.tar.gz)
 set(HDF5_SAVEAS_FILE    ${HDF5_ARCHIVE_FILE})
-set(HDF5_MD5_SUM        43a2f9466702fb1db31df98ae6677f15)
+set(HDF5_MD5_SUM        dd2148b740713ca0295442ec683d7b1c)
 
 
 #
