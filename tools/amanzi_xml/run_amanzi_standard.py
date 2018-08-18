@@ -77,7 +77,7 @@ def run_amanzi(input_file, max_np, copyfiles=None, subdirectory=None):
         mpi_np = os.getenv('AMANZI_MPI_NP', '1')
         mpi_np = str(min(int(mpi_np), max_np))
         if (mpi_np != '1'):
-           mpi_cmd = mpi_exec + " -np " + mpi_np + " " + executable + " " + xml_cmd + input_file
+           mpi_cmd = mpi_exec + " -np " + mpi_np + " --oversubscribe " + executable + " " + xml_cmd + input_file
            ierr = subprocess.call(mpi_cmd, stdout=logfile, stderr=subprocess.STDOUT, shell=True)
         else:
            args = xml_cmd + input_file

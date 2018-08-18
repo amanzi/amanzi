@@ -35,7 +35,6 @@ class PDE_Elasticity : public PDE_HelperDiscretization {
   PDE_Elasticity(Teuchos::ParameterList& plist,
                  const Teuchos::RCP<const AmanziMesh::Mesh>& mesh) :
       PDE_HelperDiscretization(mesh),
-      plist_(plist),
       K_(Teuchos::null),
       K_default_(1.0)
   {
@@ -75,9 +74,6 @@ class PDE_Elasticity : public PDE_HelperDiscretization {
   Schema local_schema_col_, local_schema_row_;
 
   OperatorType operator_type_;
-
-  // miscaleneous
-  Teuchos::ParameterList plist_;
 };
 
 }  // namespace Operators

@@ -18,7 +18,7 @@ include(TestManager)
 # through these variables.
 project(MPC_TREE)
 
-# Get the includes directory for chemistry (needed for ReactiveTransport).
+# Get the includes directory for chemistry
 get_property(CHEM_INCLUDES_DIR GLOBAL PROPERTY CHEM_INCLUDES_DIR)
 
 # Amanzi include directories

@@ -135,9 +135,9 @@ void InputAnalysis::RegionAnalysis()
   if (alist.isParameter("used observation regions")) {
     std::vector<std::string> regions = alist.get<Teuchos::Array<std::string> >("used observation regions").toVector();
 
-    int nblock;
+    int nblock, nblock_tmp;
     for (int i = 0; i < regions.size(); i++) {
-      double volume(0.0);
+      double volume(0.0), volume_tmp;
       std::string type;
       AmanziMesh::Entity_ID_List block;
       std::vector<double> vofs;
@@ -151,25 +151,30 @@ void InputAnalysis::RegionAnalysis()
       }
 
       mesh_->get_set_entities_and_vofs(regions[i], AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED, &block, &vofs);
-      nblock = block.size();
+      nblock_tmp = nblock = block.size();
       type = "cells";
       for (int n = 0; n < nblock; n++) 
           volume += mesh_->cell_volume(block[n]);
 
-      if (nblock == 0) {
-        mesh_->get_set_entities_and_vofs(regions[i], AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED, &block, &vofs);
-        nblock = block.size();
-        type = "faces";
-        for (int n = 0; n < nblock; n++) 
-            volume += mesh_->face_area(block[n]);
-      } 
-
 #ifdef HAVE_MPI
-      int nblock_tmp = nblock;
-      double volume_tmp = volume;
+      volume_tmp = volume;
       mesh_->get_comm()->SumAll(&nblock_tmp, &nblock, 1);
       mesh_->get_comm()->SumAll(&volume_tmp, &volume, 1);
 #endif
+
+      if (nblock == 0) {
+        mesh_->get_set_entities_and_vofs(regions[i], AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED, &block, &vofs);
+        nblock_tmp = nblock = block.size();
+        type = "faces";
+        for (int n = 0; n < nblock; n++) 
+            volume += mesh_->face_area(block[n]);
+
+#ifdef HAVE_MPI
+        volume_tmp = volume;
+        mesh_->get_comm()->SumAll(&nblock_tmp, &nblock, 1);
+        mesh_->get_comm()->SumAll(&volume_tmp, &volume, 1);
+#endif
+      } 
 
       if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
         std::string name(regions[i]);

@@ -135,7 +135,7 @@ Mesh_MSTK::Mesh_MSTK(const char *filename, const Epetra_MpiComm *incomm_,
     while (DebugWait);
   }
 
-  init_mesh_from_file_(filename);
+  init_mesh_from_file_(filename, partitioner);
 
   int cell_dim = MESH_Num_Regions(mesh) ? 3 : 2;
   
@@ -220,7 +220,7 @@ Mesh_MSTK::Mesh_MSTK(const char *filename, const Epetra_MpiComm *incomm_,
     while (DebugWait);
   }
 
-  init_mesh_from_file_(filename);
+  init_mesh_from_file_(filename, partitioner);
 
   int cell_dim = MESH_Num_Regions(mesh) ? 3 : 2;
   
@@ -3028,7 +3028,7 @@ MSet_ptr Mesh_MSTK::build_set(const Teuchos::RCP<const AmanziGeometry::Region>& 
         *(verbobj->os()) << "Requested FACES on region " << region->name()
             << " of type " << region->type() << " and dimension "
             << region->manifold_dimension() << ".\n" 
-            << "This request will result in an empty set";
+            << "This request will result in an empty set\n";
       }
     }
     break;
@@ -3094,7 +3094,7 @@ MSet_ptr Mesh_MSTK::build_set(const Teuchos::RCP<const AmanziGeometry::Region>& 
         *(verbobj->os()) << "Requested POINTS on region " << region->name() 
             << " of type " << region->type() << " and dimension " 
             << region->manifold_dimension() << ".\n" 
-            << "This request will result in an empty set";
+            << "This request will result in an empty set\n";
       }
     }
       
@@ -3341,7 +3341,8 @@ void Mesh_MSTK::get_set_entities_and_vofs(const std::string setname,
         {
           if (verbobj.get() && verbobj->os_OK(Teuchos::VERB_MEDIUM)) {
             *(verbobj->os()) << "Found labeled set region named " << setname 
-                             << " but it contains entities of type " << entity_type << ", not the requested type";
+                             << " but it contains entities of type " << entity_type 
+                             << ", not the requested type\n";
           }
         } 
       else {
@@ -3685,7 +3686,7 @@ void Mesh_MSTK::init_face_map()
       int gid = MEnt_GlobalID(ment);
       if (manifold_dimension() == 3) {
         List_ptr fregs = MF_Regions((MFace_ptr) ment);
-        if (List_Num_Entries(fregs) == 1){
+        if (List_Num_Entries(fregs) == 1) {
           gl_id[nnotowned_bnd++] = gid-1;
         }                
         if (fregs)
@@ -3710,8 +3711,8 @@ void Mesh_MSTK::init_face_map()
     int n_extface_w_ghosts = extface_map_wo_ghosts_ -> NumMyElements();
 
     //Add to maping only external faces (which belong to local mapping on other processors
-    for (int k=0; k < nnotowned_bnd; k++){
-      if (pr_id[k] >= 0){
+    for (int k=0; k < nnotowned_bnd; k++) {
+      if (pr_id[k] >= 0) {
         n_extface_w_ghosts++;
       }
     }
@@ -3724,8 +3725,8 @@ void Mesh_MSTK::init_face_map()
 
     //Add to maping only external faces (which belong to local mapping on other processors
     int l=0;
-    for (int k=0; k < nnotowned_bnd; k++){
-      if (pr_id[k] >= 0){
+    for (int k=0; k < nnotowned_bnd; k++) {
+      if (pr_id[k] >= 0) {
         global_id_ghosted[n_extface + l] = gl_id[k];
         l++;
       }

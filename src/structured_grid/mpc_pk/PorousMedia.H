@@ -281,7 +281,7 @@ public:
   virtual Real advance (Real time,
 			Real dt,
 			int  iteration,
-			int  ncycle) {}
+			int  ncycle) { return 0.0; }
 
   bool multilevel_advance (Real  time,
 			   Real  dt,

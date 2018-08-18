@@ -1,12 +1,20 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
-#include "general_rxn.hh"
+/*
+  Chemistry 
+
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
+
+  Class for general forward/reverse reaction
+*/
 
 #include <cmath>
-
-#include <sstream>
 #include <iostream>
 #include <iomanip>
+#include <sstream>
 
+#include "general_rxn.hh"
 #include "matrix_block.hh"
 
 namespace Amanzi {
@@ -28,11 +36,8 @@ GeneralRxn::GeneralRxn() {
 
   lnQkf_ = 0.;
   lnQkb_ = 0.;
-}  // end GeneralRxn() constructor
+}
 
-GeneralRxn::GeneralRxn(std::string s) {
-  static_cast<void>(s);
-}  // end GeneralRxn() constructor
 
 GeneralRxn::GeneralRxn(SpeciesName name,
                        std::vector<SpeciesName>species,
@@ -81,10 +86,8 @@ GeneralRxn::GeneralRxn(SpeciesName name,
 
   kf_ = kf;
   kb_ = kb;
-}  // end GeneralRxn() constructor
+}
 
-GeneralRxn::~GeneralRxn() {
-}  // end GeneralRxn() destructor
 
 // temporary location for member functions
 void GeneralRxn::update_rates(const std::vector<Species> primarySpecies) {
@@ -107,7 +110,8 @@ void GeneralRxn::update_rates(const std::vector<Species> primarySpecies) {
           primarySpecies[ backward_species_ids_[i] ].ln_activity();
     }  // end backward species
   }  // end backward expression
-}  // end update_rates()
+}
+
 
 void GeneralRxn::addContributionToResidual(std::vector<double> *residual,
                                            double por_den_sat_vol) {
@@ -126,7 +130,8 @@ void GeneralRxn::addContributionToResidual(std::vector<double> *residual,
     // this stoichiometry is for the overall reaction
     (*residual)[icomp] -= stoichiometry_[i] * effective_rate;
   }
-}  // end addContributionToResidual()
+}
+
 
 void GeneralRxn::addContributionToJacobian(
     MatrixBlock* J,
@@ -165,9 +170,10 @@ void GeneralRxn::addContributionToJacobian(
       }
     }  // end columns
   }  // end backward expression
-}  // end addContributionToJacobian()
+}
 
-void GeneralRxn::display(void) const {
+
+void GeneralRxn::display(const Teuchos::RCP<VerboseObject>& vo) const {
   std::stringstream message;
   for (unsigned int i = 0; i < species_names_.size(); i++) {
     message << stoichiometry_.at(i) << " " << species_names_.at(i);
@@ -178,10 +184,11 @@ void GeneralRxn::display(void) const {
   message << std::endl;
   message << "        forward_rate = " << std::exp(lnQkf_) << std::endl;
   message << "        backward_rate = " << std::exp(lnQkb_) << std::endl;
-  chem_out->Write(Teuchos::VERB_HIGH, message);
-}  // end display()
+  vo->Write(Teuchos::VERB_HIGH, message);
+}
 
-void GeneralRxn::Display(void) const {
+
+void GeneralRxn::Display(const Teuchos::RCP<VerboseObject>& vo) const {
   // convention for this reaction is that reactants have negative
   // stoichiometries, products have positive stoichiometries....
   // write them in standard chemistry notation by printing -stoich
@@ -238,8 +245,8 @@ void GeneralRxn::Display(void) const {
       }
     }
   }
-  chem_out->Write(Teuchos::VERB_HIGH, message);
-}  // end Display()
+  vo->Write(Teuchos::VERB_HIGH, message);
+}
 
 }  // namespace AmanziChemistry
 }  // namespace Amanzi

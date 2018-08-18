@@ -156,7 +156,7 @@ void PK_DomainFunctionCoupling<FunctionBase>::Compute(double t0, double t1)
         //*S_->GetFieldCopyData(field_surf_key_, "subcycling")->ViewComponent("cell", true);
         *S_->GetFieldCopyData(field_in_key_, copy_field_in_key_)->ViewComponent("cell", true);
 
-    if (field_in.NumVectors() != field_out.NumVectors()){
+    if (field_in.NumVectors() != field_out.NumVectors()) {
       std::stringstream m;
       m << "Mismatch of vector sizes in domain couplong function.\n";
       Errors::Message message(m.str());
@@ -210,7 +210,7 @@ void PK_DomainFunctionCoupling<FunctionBase>::Compute(double t0, double t1)
 
     ///////CHECK!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!????????????
     int i(0);
-    for (MeshIDs::const_iterator c = entity_ids_->begin(); c != entity_ids_->end(); ++c){      
+    for (MeshIDs::const_iterator c = entity_ids_->begin(); c != entity_ids_->end(); ++c) {
       for (int k=0; k<num_vec; ++k) val[k] = field_out[k][i];            
       value_[*c] = val;     
       i++;

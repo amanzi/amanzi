@@ -352,7 +352,6 @@ void Darcy_PK::Initialize(const Teuchos::Ptr<State>& S)
 
   // Verbose output of initialization statistics.
   InitializeStatistics_(init_darcy);
-
 }
 
 
@@ -364,28 +363,8 @@ void Darcy_PK::InitializeFields_()
 {
   Teuchos::OSTab tab = vo_->getOSTab();
 
-  // set popular default values for missed fields.
-  if (S_->GetField("saturation_liquid")->owner() == passwd_) {
-    if (S_->HasField("saturation_liquid")) {
-      if (!S_->GetField("saturation_liquid", passwd_)->initialized()) {
-        S_->GetFieldData("saturation_liquid", passwd_)->PutScalar(1.0);
-        S_->GetField("saturation_liquid", passwd_)->set_initialized();
-
-        if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM)
-            *vo_->os() << "initilized saturation_liquid to default value 1.0" << std::endl;  
-      }
-    }
-  }
-
-  if (S_->HasField("prev_saturation_liquid")) {
-    if (!S_->GetField("prev_saturation_liquid", passwd_)->initialized()) {
-      S_->GetFieldData("prev_saturation_liquid", passwd_)->PutScalar(1.0);
-      S_->GetField("prev_saturation_liquid", passwd_)->set_initialized();
-
-      if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM)
-          *vo_->os() << "initilized prev_saturation_liquid to default value 1.0" << std::endl;  
-    }
-  }
+  InitializeField(S_.ptr(), passwd_, "saturation_liquid", 1.0);
+  InitializeField(S_.ptr(), passwd_, "prev_saturation_liquid", 1.0);
 }
 
 
@@ -460,7 +439,7 @@ bool Darcy_PK::AdvanceStep(double t_old, double t_new, bool reinit)
   op_acc_->AddAccumulationDeltaNoVolume(*solution, sy_g, "cell");
 
   // Peaceman model
-  if (S_->HasField("well_index")){
+  if (S_->HasField("well_index")) {
     const CompositeVector& wi = *S_->GetFieldData("well_index");
     op_acc_->AddAccumulationTerm(wi, "cell");
   }

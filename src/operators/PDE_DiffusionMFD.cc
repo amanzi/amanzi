@@ -1199,6 +1199,8 @@ void PDE_DiffusionMFD::CreateMassMatrices_()
 
     // For problems with degenerate coefficients we should skip WhetStone.
     if (Kc.Trace() == 0.0) {
+      int nfaces = mesh_->cell_get_num_faces(c);
+      Wff.Reshape(nfaces, nfaces);
       Wff.PutScalar(0.0);
       ok = WhetStone::WHETSTONE_ELEMENTAL_MATRIX_OK;
     } else if (surface_mesh) {
@@ -1447,7 +1449,7 @@ void PDE_DiffusionMFD::InitDiffusion_(Teuchos::ParameterList& plist)
 
   // little-k options
   AMANZI_ASSERT(!plist.isParameter("upwind method"));
-  std::string name = plist.get<std::string>("nonlinear coefficient", "standard: cell");
+  std::string name = plist.get<std::string>("nonlinear coefficient", "none");
   if (name == "none") {
     little_k_ = OPERATOR_LITTLE_K_NONE;
   } else if (name == "upwind: face") {

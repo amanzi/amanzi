@@ -29,8 +29,7 @@ namespace Flow {
 * Constructor.
 ****************************************************************** */
 VWContentEvaluator::VWContentEvaluator(Teuchos::ParameterList& plist) :
-    SecondaryVariableFieldEvaluator(plist),
-    plist_(plist) {}; 
+    SecondaryVariableFieldEvaluator(plist) {};
 
 
 /* ******************************************************************

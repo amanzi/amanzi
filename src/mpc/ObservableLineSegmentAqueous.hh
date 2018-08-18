@@ -60,7 +60,7 @@ void ObservableLineSegmentAqueous::ComputeObservation(
   unit = "m";
 
   if (weighting_ == "none") {
-    for (int i = 0; i < region_size_; i++){
+    for (int i = 0; i < region_size_; i++) {
       *value += values[i] * lofs_[i];
       *volume += lofs_[i];
     }
@@ -122,7 +122,7 @@ void ObservableLineSegmentAqueous::InterpolatedValues(State& S,
       
     cv->ScatterMasterToGhosted();
 
-    if (limiter_){ // At the moment only Kuzmin limiter is implemented for observ.
+    if (limiter_) { // At the moment only Kuzmin limiter is implemented for observ.
       plist.set<std::string>("limiter", "Kuzmin");
     }
     
@@ -130,7 +130,7 @@ void ObservableLineSegmentAqueous::InterpolatedValues(State& S,
     lifting.ComputeGradient(ids, gradient);
 
     if (limiter_) {
-      // if (!S.HasField("darcy_velocity")){
+      // if (!S.HasField("darcy_velocity")) {
       //   Errors::Message msg;
       //   msg <<"Limiter can't be apllied without darcy_velocity";
       //   Exceptions::amanzi_throw(msg);

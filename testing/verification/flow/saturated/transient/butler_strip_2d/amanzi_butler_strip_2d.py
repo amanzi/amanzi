@@ -49,7 +49,7 @@ if __name__ == "__main__":
     import os
     import run_amanzi_standard
 
-    input_file =os.path.join("amanzi_butler_strip_2d.xml")
+    input_file =os.path.join("amanzi_butler_strip_2d-u.xml")
     run_dir = "amanzi-output"
 
     CWD = os.getcwd()

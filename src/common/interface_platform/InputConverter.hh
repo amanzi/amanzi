@@ -14,6 +14,7 @@
 
 #include <set>
 #include <climits>
+#include <list>
 
 #include "boost/lambda/lambda.hpp"
 #include "boost/bind.hpp"
@@ -76,15 +77,15 @@ class MemoryManager {
 
  private:
   void Destroy_() {
-    for (std::vector<char*>::iterator it = pchar.begin(); it != pchar.end(); ++it)
+    for (auto it = pchar.begin(); it != pchar.end(); ++it)
       xercesc::XMLString::release(&*it);
-    for (std::vector<XMLCh*>::iterator it = xchar.begin(); it != xchar.end(); ++it)
+    for (auto it = xchar.begin(); it != xchar.end(); ++it)
       xercesc::XMLString::release(&*it);
   }
 
  private:
-  std::vector<char*> pchar;
-  std::vector<XMLCh*> xchar;
+  std::list<char*> pchar;
+  std::list<XMLCh*> xchar;
 };
 
 
@@ -117,7 +118,7 @@ class InputConverter {
   // parse various nodes
   void ParseVersion_();
   void ParseConstants_();
-  void FilterNodes(xercesc::DOMNode* parent, const std::string& filter);
+  void FilterNodes(const std::string& filter);
 
   // auto-generated input files
   // -- native chemistry

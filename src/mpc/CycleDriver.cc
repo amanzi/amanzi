@@ -249,7 +249,7 @@ void CycleDriver::Setup() {
       it != reset_info_.end(); ++it) tsm_->RegisterTimeEvent(it->first);
 
 
-  for (int i=0;i<num_time_periods_; i++) {
+  for (int i=0; i<num_time_periods_; i++) {
     tsm_->RegisterTimeEvent(tp_end_[i]);
     tsm_->RegisterTimeEvent(tp_start_[i] + tp_dt_[i]);
   } 
@@ -282,8 +282,6 @@ void CycleDriver::Initialize() {
   S_->CheckAllFieldsInitialized();
 
   // S_->WriteDependencyGraph();
-
-  S_->GetMeshPartition("materials");
 
   // commit the initial conditions.
   // pk_->CommitStep(t0_-get_dt(), get_dt());
@@ -473,6 +471,9 @@ void CycleDriver::ReadParameterList_() {
     std::sort(reset_info_.begin(), reset_info_.end(), reset_info_compfunc);
     std::sort(reset_max_.begin(),  reset_max_.end(),  reset_info_compfunc);
   }
+
+  // verification (move this to state ?)
+  S_->GetMeshPartition("materials");
 }
 
 
@@ -823,15 +824,19 @@ Teuchos::RCP<State> CycleDriver::Go() {
   S_->CheckAllFieldsInitialized();
 
   // visualization at IC
-  //Amanzi::timer_manager.start("I/O");
+  // Amanzi::timer_manager.start("I/O");
   pk_->CalculateDiagnostics(S_);
   Visualize();
   Observations();
   WriteCheckpoint(dt);
   S_->WriteStatistics(vo_);
 
-  //Amanzi::timer_manager.stop("I/O");
- 
+  // Amanzi::timer_manager.stop("I/O");
+  if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
+    Teuchos::OSTab tab = vo_->getOSTab();
+    *vo_->os() << "\nSimulation end time: " << tp_end_[time_period_id_] << " sec." << std::endl;
+  }
+
   // iterate process kernels
   {
 #if !DEBUG_MODE

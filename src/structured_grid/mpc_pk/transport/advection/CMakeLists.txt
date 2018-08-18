@@ -11,7 +11,6 @@ project(SADV)
 include_directories(${SADV_SOURCE_DIR})
 
 if (AMANZI_CHEMEVOL_PKG STREQUAL "AMANZI")
-  include_directories(${CHEM_SOURCE_DIR}/includes)
   include_directories(${DBC_SOURCE_DIR})
 endif()
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})

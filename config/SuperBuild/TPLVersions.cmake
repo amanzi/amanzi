@@ -114,6 +114,7 @@
 #                - update OpenMPI to 3.0.2
 #   0.95.4       - update Boost to version 1.67.0
 #   0.95.5       - update NetCDF to version 4.6.1
+#                - update OpenMPI to 3.1.1
 
 #   0.96.0       - added new geochemistry package PHREEQC
 
@@ -196,13 +197,13 @@ set(XERCES_MD5_SUM        7b1394c32abbdd87841d94a8404c2ac6)
 # TPL: OpenMPI
 #
 set(OpenMPI_VERSION_MAJOR 3)
-set(OpenMPI_VERSION_MINOR 0)
-set(OpenMPI_VERSION_PATCH 2)
+set(OpenMPI_VERSION_MINOR 1)
+set(OpenMPI_VERSION_PATCH 1)
 set(OpenMPI_VERSION ${OpenMPI_VERSION_MAJOR}.${OpenMPI_VERSION_MINOR}.${OpenMPI_VERSION_PATCH})
-set(OpenMPI_URL_STRING     "https://www.open-mpi.org/software/ompi/v3.0/downloads/")
+set(OpenMPI_URL_STRING     "https://www.open-mpi.org/software/ompi/v3.1/downloads/")
 set(OpenMPI_ARCHIVE_FILE   openmpi-${OpenMPI_VERSION}.tar.bz2)
 set(OpenMPI_SAVEAS_FILE    ${OpenMPI_ARCHIVE_FILE})
-set(OpenMPI_MD5_SUM        098fa89646f5b4438d9d8534bc960cd6)
+set(OpenMPI_MD5_SUM        493f1db2f75afaab1c8ecba78d2f5aab)
 
 #
 # TPL: MPICH

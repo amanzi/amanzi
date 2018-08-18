@@ -2,7 +2,7 @@
 #
 
 AMANZI_UG_DIR = $(CURDIR)
-AMANZI_PYTHON = $(subst doc/user_guide,tools/amanzi_xml,$(CURDIR)):$(subst doc/user_guide,tools/prettytable,$(CURDIR))
+AMANZI_PYTHON = $(subst doc/user_guide,tools/amanzi_xml,$(CURDIR)):$(subst doc/user_guide,tools/prettytable,$(CURDIR)):$(subst doc/user_guide,tools/testing,$(CURDIR))
 
 ifndef PYTHONPATH
   NEW_PYTHONPATH=$(AMANZI_PYTHON)
@@ -49,10 +49,16 @@ help:
 	@echo "  linkcheck  to check all external links for integrity"
 	@echo "  doctest    to run all doctests embedded in the documentation (if enabled)"
 	@echo ""
-	@echo "Environment Check "
-	@echo "  AMANZI_UG_DIR  = $(AMANZI_UG_DIR)"
-	@echo "  AMANZI_PYTHON  = $(AMANZI_PYTHON)"
-	@echo "  NEW_PYTHONPATH = $(NEW_PYTHONPATH)"
+	@echo "CHECK: environment variables for running Amanzi executable:"
+	@echo "  AMANZI_INSTALL_DIR = $(AMANZI_INSTALL_DIR)"
+	@echo "  AMANZI_MPI_EXEC    = $(AMANZI_MPI_EXEC)"
+	@echo "  AMANZI_MPI_NP      = $(AMANZI_MPI_NP)"
+	@echo ""
+	@echo "CHECK: environment variables for running Python scripts:"
+	@echo "  AMANZI_UG_DIR          = $(AMANZI_UG_DIR)"
+	@echo "  AMANZI_PYTHON          = $(AMANZI_PYTHON)"
+	@echo "  PYTHONPATH (current)   = $(PYTHONPATH)"
+	@echo "  PYTHONPATH (suggested) = $(NEW_PYTHONPATH)"
 	@echo ""
 	@echo "Use the variable AMANZI_SECTION_OPTIONS to include optional sections of the"
 	@echo "User Guide in your build,"

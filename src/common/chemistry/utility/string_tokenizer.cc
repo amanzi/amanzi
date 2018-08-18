@@ -1,20 +1,16 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
-/*******************************************************************************
- **
- **  File Name: StringTokenizer.cpp
- **
- **  Description: This class is a simple string tokenizer.
- **
- **  Notes:
- **    - Found July 2003, unencumbered, on the web at:
- **
- **      http:// www.thecodezone.com/diary/archives/000057.html
- **
- **    - no longer available from origional source, but archived at:
- **
- **      http:// web.archive.org/web/20030810163805/http:// www.thecodezone.com/diary/archives/000057.html
- **
- *******************************************************************************/
+/*
+  Chemistry 
+
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
+
+  Author: Ben Andre
+
+  This class is a simple string tokenizer.
+*/
+
 #include "string_tokenizer.hh"
 
 #include <sstream>
@@ -23,14 +19,6 @@
 
 namespace Amanzi {
 namespace AmanziChemistry {
-
-StringTokenizer::StringTokenizer(void) {
-} /* end StringTokenizer() */
-
-StringTokenizer::StringTokenizer(const std::string& source,
-                                 const std::string& delimiters) {
-  tokenize(source, delimiters);
-} /* StringTokenizer(source, delimiters) */
 
 void StringTokenizer::tokenize(const std::string& source,
                                const std::string& delimiters) {
@@ -43,7 +31,8 @@ void StringTokenizer::tokenize(const std::string& source,
     spos = source.find_first_not_of(delimiters, epos);
     epos = source.find_first_of(delimiters, spos);
   }
-} /* end tokenize(source, delimitiers) */
+}
+
 
 void StringTokenizer::tokenize_leave_delimiters(const std::string& source,
                                                const std::string& delimiters) {
@@ -66,7 +55,7 @@ void StringTokenizer::tokenize_leave_delimiters(const std::string& source,
       epos = source.find_first_of(delimiters, spos);
     }
   }
-} /* end tokenize_with_delimiters(source, delimitiers) */
+}
 
 }  // namespace AmanziChemistry
 }  // namespace Amanzi

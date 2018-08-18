@@ -36,7 +36,7 @@
 namespace Amanzi {
 
 template<class PK_Base>
-class PK_MPCStrong :  virtual public PK_MPC<PK_Base>, public PK_BDF
+class PK_MPCStrong : virtual public PK_MPC<PK_Base>, public PK_BDF
 {
  public:
   PK_MPCStrong(Teuchos::ParameterList& pk_tree,
@@ -123,6 +123,7 @@ PK_MPCStrong<PK_Base>::PK_MPCStrong(Teuchos::ParameterList& pk_tree,
                               const Teuchos::RCP<State>& S,
                               const Teuchos::RCP<TreeVector>& soln) :
   PK_MPC<PK_Base>(pk_tree, global_list, S, soln) {};
+
 
 // -----------------------------------------------------------------------------
 // Setup
