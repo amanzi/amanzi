@@ -538,7 +538,7 @@ void ReconstructionCell::LimiterKuzminSet_(AmanziMesh::Entity_ID_List& ids,
     }
   }
 
-  for (int k = 0; k < ids.size(); ++k){
+  for (int k = 0; k < ids.size(); ++k) {
     int c = ids[k];
     mesh_->cell_get_nodes(c, &nodes);
     int nnodes = nodes.size();

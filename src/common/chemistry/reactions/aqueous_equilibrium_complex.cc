@@ -1,21 +1,24 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
-#include "aqueous_equilibrium_complex.hh"
+/*
+  Chemistry 
+
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
+
+  Class for aqueous equilibrium complexation reaction
+*/
 
 #include <cmath>
-
-#include <sstream>
 #include <iostream>
 #include <iomanip>
+#include <sstream>
 
+#include "aqueous_equilibrium_complex.hh"
 #include "matrix_block.hh"
 
 namespace Amanzi {
 namespace AmanziChemistry {
-
-AqueousEquilibriumComplex::AqueousEquilibriumComplex()
-    : SecondarySpecies() {
-}  // end AqueousEquilibriumComplex() constructor
-
 
 AqueousEquilibriumComplex::AqueousEquilibriumComplex(
     const SpeciesName name,
@@ -31,10 +34,8 @@ AqueousEquilibriumComplex::AqueousEquilibriumComplex(
     : SecondarySpecies(name, id, species, stoichiometry,
                        species_ids, h2o_stoich, charge,
                        mol_wt, size, logK) {
-}  // end AqueousEquilibriumComplex() constructor
+}
 
-AqueousEquilibriumComplex::~AqueousEquilibriumComplex() {
-}  // end AqueousEquilibriumComplex() destructor
 
 void AqueousEquilibriumComplex::Update(const std::vector<Species>& primarySpecies, const Species& water_species) {
   /* This is not the true Q/K for the reaction, but is instead
@@ -53,13 +54,15 @@ void AqueousEquilibriumComplex::Update(const std::vector<Species>& primarySpecie
   lnQK_ = lnQK;
   //  molality_ = std::exp(lnQK) / act_coef_;
   update(std::exp(lnQK) / act_coef_);
-}  // end update()
+}
+
 
 void AqueousEquilibriumComplex::AddContributionToTotal(std::vector<double> *total) {
   for (int i = 0; i < ncomp(); i++) {
     (*total)[species_ids_.at(i)] += stoichiometry_.at(i) * molality();
   }
-}  // end addContributionToTotal()
+}
+
 
 void AqueousEquilibriumComplex::AddContributionToDTotal(
     const std::vector<Species>& primarySpecies,
@@ -81,9 +84,10 @@ void AqueousEquilibriumComplex::AddContributionToDTotal(
       dtotal->AddValue(species_ids_.at(i), jcomp, stoichiometry_.at(i)*tempd);
     }
   }
-}  // end addContributionToDTotal()
+}
 
-void AqueousEquilibriumComplex::display(void) const {
+
+void AqueousEquilibriumComplex::display(const Teuchos::RCP<VerboseObject>& vo) const {
   std::stringstream message;
   message << "    " << name() << " = ";
   // TODO(bandre): uncomment and update test output
@@ -104,10 +108,11 @@ void AqueousEquilibriumComplex::display(void) const {
   message << "        logK = " << logK_ << std::endl;
   message << "        charge = " << charge() << std::endl;
   message << "        mol wt = " << gram_molecular_weight() << std::endl;
-  chem_out->Write(Teuchos::VERB_HIGH, message);
-}  // end display()
+  vo->Write(Teuchos::VERB_HIGH, message);
+}
 
-void AqueousEquilibriumComplex::Display(void) const {
+
+void AqueousEquilibriumComplex::Display(const Teuchos::RCP<VerboseObject>& vo) const {
   std::stringstream message;
   message << "    " << name() << " = "
             << std::fixed << std::setprecision(3);
@@ -132,20 +137,22 @@ void AqueousEquilibriumComplex::Display(void) const {
           << std::setprecision(5) << std::setw(10) << gram_molecular_weight()
           << std::setprecision(2) << std::setw(8) << ion_size_parameter()
           << std::endl;
-  chem_out->Write(Teuchos::VERB_HIGH, message);
-}  // end Display()
+  vo->Write(Teuchos::VERB_HIGH, message);
+}
 
-void AqueousEquilibriumComplex::DisplayResultsHeader(void) const {
+
+void AqueousEquilibriumComplex::DisplayResultsHeader(const Teuchos::RCP<VerboseObject>& vo) const {
   std::stringstream message;
   message << std::setw(15) << "Name"
           << std::setw(15) << "Molality"
           << std::setw(15) << "Activity Coeff"
           << std::setw(15) << "Activity"
           << std::endl;
-  chem_out->Write(Teuchos::VERB_HIGH, message);
-}  // end DisplayResultsHeader()
+  vo->Write(Teuchos::VERB_HIGH, message);
+}
 
-void AqueousEquilibriumComplex::DisplayResults(void) const {
+
+void AqueousEquilibriumComplex::DisplayResults(const Teuchos::RCP<VerboseObject>& vo) const {
   std::stringstream message;
   message << std::setw(15) << name()
           << std::scientific << std::setprecision(5)
@@ -153,8 +160,8 @@ void AqueousEquilibriumComplex::DisplayResults(void) const {
           << std::setw(15) << act_coef()
           << std::setw(15) << activity()
           << std::endl;
-  chem_out->Write(Teuchos::VERB_HIGH, message);
-}  // end DisplayResults()
+  vo->Write(Teuchos::VERB_HIGH, message);
+}
 
 }  // namespace AmanziChemistry
 }  // namespace Amanzi

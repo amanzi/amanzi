@@ -1,21 +1,29 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
-#include "species.hh"
+/*
+  Chemistry 
+
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
+
+  Author: Ben Andre
+
+  Base class for species
+*/
 
 #include <cmath>
-
-#include <sstream>
 #include <iostream>
 #include <iomanip>
-
-#include "chemistry_exception.hh"
+#include <sstream>
 
 #include "VerboseObject.hh"
+
+#include "chemistry_exception.hh"
 #include "exceptions.hh"
+#include "species.hh"
 
 namespace Amanzi {
 namespace AmanziChemistry {
-
-extern VerboseObject* chem_out;
 
 Species::Species()
     : molality_(1.e-9),
@@ -29,8 +37,8 @@ Species::Species()
       gram_molecular_weight_(0.0),
       ion_size_parameter_(0.0),
       name_("") {
-  //  ActivityCoefficient* activityCoefficient;
-}  // end Species constructor
+   //  ActivityCoefficient* activityCoefficient;
+}
 
 
 Species::Species(SpeciesId id, SpeciesName name, double charge, double mol_wt,
@@ -67,10 +75,8 @@ Species::Species(SpeciesId id, SpeciesName name, double charge, double mol_wt,
                  << "(size < 0.0), size = " << ion_size_parameter() << std::endl;
     Exceptions::amanzi_throw(ChemistryInvalidInput(error_stream.str()));
   }
-}  // end Species constructor
+}
 
-Species::~Species() {
-}  // end Species destructor
 
 void Species::update(const double molality) {
   molality_ = molality;
@@ -80,43 +86,48 @@ void Species::update(const double molality) {
   ln_molality_ = std::log(molality_);
   ln_act_coef_ = std::log(act_coef_);
   ln_activity_ = ln_molality_ + ln_act_coef_;
-}  // end update()
+}
+
 
 void Species::update(void) {
   activity_ = act_coef_ * molality_;
   ln_molality_ = std::log(molality_);
   ln_act_coef_ = std::log(act_coef_);
   ln_activity_ = ln_molality_ + ln_act_coef_;
-}  // end update()
+}
+
 
 void Species::display(void) const {
   std::cout << "    " << name();
   std::cout << std::endl;
   std::cout << "        charge = " << charge() << std::endl;
   std::cout << "        mol wt = " << gram_molecular_weight() << std::endl;
-}  // end display()
+}
 
-void Species::Display(void) const {
+
+void Species::Display(const Teuchos::RCP<VerboseObject>& vo) const {
   std::stringstream message;
   message << std::setw(15) << name() << std::fixed
           << std::setprecision(2) << std::setw(10) << charge()
           << std::setprecision(5) << std::setw(10) << gram_molecular_weight()
           << std::setprecision(2) << std::setw(10) << ion_size_parameter()
           << std::endl;
-  chem_out->Write(Teuchos::VERB_HIGH, message);
-}  // end Display()
+  vo->Write(Teuchos::VERB_HIGH, message);
+}
 
-void Species::DisplayResultsHeader(void) const {
+
+void Species::DisplayResultsHeader(const Teuchos::RCP<VerboseObject>& vo) const {
   std::stringstream message;
   message << std::setw(15) << "Name"
           << std::setw(15) << "Molality"
           << std::setw(15) << "Activity Coeff"
           << std::setw(15) << "Activity"
           << std::endl;
-  chem_out->Write(Teuchos::VERB_HIGH, message);
-}  // end DisplayResultsHeader()
+  vo->Write(Teuchos::VERB_HIGH, message);
+}
 
-void Species::DisplayResults(void) const {
+
+void Species::DisplayResults(const Teuchos::RCP<VerboseObject>& vo) const {
   std::stringstream message;
   message << std::setw(15) << name()
           << std::scientific << std::setprecision(5)
@@ -124,8 +135,8 @@ void Species::DisplayResults(void) const {
           << std::setw(15) << act_coef()
           << std::setw(15) << activity()
           << std::endl;
-  chem_out->Write(Teuchos::VERB_HIGH, message);
-}  // end DisplayResults()
+  vo->Write(Teuchos::VERB_HIGH, message);
+}
 
 }  // namespace AmanziChemistry
 }  // namespace Amanzi

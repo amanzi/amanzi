@@ -151,17 +151,17 @@ Teuchos::ParameterList InputConverterU::TranslateTransport_()
         if (strcmp(model.c_str(), "uniform_isotropic") == 0) { 
           tmp_list.set<std::string>("model", "Bear");
 
-          al = GetAttributeValueD_(node, "alpha_l", TYPE_NUMERICAL, "m");
-          at = GetAttributeValueD_(node, "alpha_t", TYPE_NUMERICAL, "m");
+          al = GetAttributeValueD_(node, "alpha_l", TYPE_NUMERICAL, 0.0, DVAL_MAX, "m");
+          at = GetAttributeValueD_(node, "alpha_t", TYPE_NUMERICAL, 0.0, DVAL_MAX, "m");
 
           tmp_list.sublist("parameters for Bear").set<double>("alpha_l", al)
                                                  .set<double>("alpha_t", at);
         } else if (strcmp(model.c_str(), "burnett_frind") == 0) {
           tmp_list.set<std::string>("model", "Burnett-Frind");
 
-          al = GetAttributeValueD_(node, "alpha_l", TYPE_NUMERICAL, "m");
-          ath = GetAttributeValueD_(node, "alpha_th", TYPE_NUMERICAL, "m");
-          atv = GetAttributeValueD_(node, "alpha_tv", TYPE_NUMERICAL, "m");
+          al = GetAttributeValueD_(node, "alpha_l", TYPE_NUMERICAL, 0.0, DVAL_MAX, "m");
+          ath = GetAttributeValueD_(node, "alpha_th", TYPE_NUMERICAL, 0.0, DVAL_MAX, "m");
+          atv = GetAttributeValueD_(node, "alpha_tv", TYPE_NUMERICAL, 0.0, DVAL_MAX, "m");
 
           tmp_list.sublist("parameters for Burnett-Frind")
               .set<double>("alpha_l", al).set<double>("alpha_th", ath)
@@ -171,10 +171,10 @@ Teuchos::ParameterList InputConverterU::TranslateTransport_()
         } else if (strcmp(model.c_str(), "lichtner_kelkar_robinson") == 0) {
           tmp_list.set<std::string>("model", "Lichtner-Kelkar-Robinson");
 
-          alh = GetAttributeValueD_(node, "alpha_lh", TYPE_NUMERICAL, "m");
-          alv = GetAttributeValueD_(node, "alpha_lv", TYPE_NUMERICAL, "m");
-          ath = GetAttributeValueD_(node, "alpha_th", TYPE_NUMERICAL, "m");
-          atv = GetAttributeValueD_(node, "alpha_tv", TYPE_NUMERICAL, "m");
+          alh = GetAttributeValueD_(node, "alpha_lh", TYPE_NUMERICAL, 0.0, DVAL_MAX, "m");
+          alv = GetAttributeValueD_(node, "alpha_lv", TYPE_NUMERICAL, 0.0, DVAL_MAX, "m");
+          ath = GetAttributeValueD_(node, "alpha_th", TYPE_NUMERICAL, 0.0, DVAL_MAX, "m");
+          atv = GetAttributeValueD_(node, "alpha_tv", TYPE_NUMERICAL, 0.0, DVAL_MAX, "m");
 
           tmp_list.sublist("parameters for Lichtner-Kelkar-Robinson")
               .set<double>("alpha_lh", alh).set<double>("alpha_lv", alv)
@@ -187,13 +187,13 @@ Teuchos::ParameterList InputConverterU::TranslateTransport_()
       // -- tortousity
       node = GetUniqueElementByTagsString_(inode, "mechanical_properties, tortuosity", flag);
       if (flag) {
-        double val = GetAttributeValueD_(static_cast<DOMElement*>(node), "value");
+        double val = GetAttributeValueD_(node, "value", TYPE_NUMERICAL, 0.0, DVAL_MAX);
         tmp_list.set<double>("aqueous tortuosity", val);
       }
 
       node = GetUniqueElementByTagsString_(inode, "mechanical_properties, tortuosity_gas", flag);
       if (flag) {
-        double val = GetAttributeValueD_(static_cast<DOMElement*>(node), "value");
+        double val = GetAttributeValueD_(node, "value", TYPE_NUMERICAL, 0.0, DVAL_MAX);
         tmp_list.set<double>("gaseous tortuosity", val);
       }
     }
@@ -215,7 +215,7 @@ Teuchos::ParameterList InputConverterU::TranslateTransport_()
       tagname = mm.transcode(inode->getNodeName());
       if (strcmp(tagname, "solute") != 0) continue;
 
-      double val = GetAttributeValueD_(inode, "coefficient_of_diffusion", TYPE_NUMERICAL, "m^2/s", false);
+      double val = GetAttributeValueD_(inode, "coefficient_of_diffusion", TYPE_NUMERICAL, 0.0, DVAL_MAX, "m^2/s", false);
       text = mm.transcode(inode->getTextContent());
 
       aqueous_names.push_back(TrimString_(text));
@@ -242,8 +242,8 @@ Teuchos::ParameterList InputConverterU::TranslateTransport_()
       tagname = mm.transcode(inode->getNodeName());
       if (strcmp(tagname, "solute") != 0) continue;
 
-      double val = GetAttributeValueD_(inode, "coefficient_of_diffusion", TYPE_NUMERICAL, "", false);
-      double kh = GetAttributeValueD_(inode, "kh");
+      double val = GetAttributeValueD_(inode, "coefficient_of_diffusion", TYPE_NUMERICAL, 0.0, DVAL_MAX, "", false);
+      double kh = GetAttributeValueD_(inode, "kh", TYPE_NUMERICAL, 0.0, DVAL_MAX);
       text = mm.transcode(inode->getTextContent());
 
       gaseous_names.push_back(TrimString_(text));
@@ -327,7 +327,7 @@ Teuchos::ParameterList InputConverterU::TranslateTransportMSM_()
 
     node = GetUniqueElementByTagsString_(inode, "multiscale_structure, solute_transfer_coefficient", flag);
     if (!flag) return empty_list;
-    double omega = std::strtod(mm.transcode(node->getTextContent()), NULL);
+    double omega = InputConverter::GetTextContentD_(node, "s^-1", true);
     
     std::stringstream ss;
     ss << "MSM " << i;
@@ -365,12 +365,13 @@ Teuchos::ParameterList InputConverterU::TranslateTransportBCs_()
   if (node_list->getLength() == 0) return out_list;
 
   children = node_list->item(0)->getChildNodes();
+  int nchildren = children->getLength();
 
-  for (int i = 0; i < children->getLength(); ++i) {
+  for (int i = 0; i < nchildren; ++i) {
     DOMNode* inode = children->item(i);
     if (inode->getNodeType() != DOMNode::ELEMENT_NODE) continue;
     tagname = mm.transcode(inode->getNodeName());
-    std::string bcname = GetAttributeValueS_(static_cast<DOMElement*>(inode), "name");
+    std::string bcname = GetAttributeValueS_(inode, "name");
 
     // read the assigned regions
     bool flag;
@@ -431,7 +432,7 @@ void InputConverterU::TranslateTransportBCsGroup_(
 
   while (same_list.size() > 0) {
     // process a group of elements named after the 0-th element
-    solute_name = GetAttributeValueS_(static_cast<DOMElement*>(same_list[0]), "name");
+    solute_name = GetAttributeValueS_(same_list[0], "name");
 
     // Check for spatially dependent BCs. Only one is allowed (FIXME)
     bool space_bc, time_bc;
@@ -446,12 +447,12 @@ void InputConverterU::TranslateTransportBCsGroup_(
       std::string tmp = GetAttributeValueS_(knode, "amplitude");
       data.push_back(ConvertUnits_(tmp, unit, solute_molar_mass_[solute_name]));
 
-      data_tmp = GetAttributeVectorD_(knode, "center", "m");
+      data_tmp = GetAttributeVectorD_(knode, "center", -1, "m");
       data.insert(data.end(), data_tmp.begin(), data_tmp.end());
-      data.push_back(GetAttributeValueD_(knode, "standard_deviation", TYPE_NUMERICAL, "m"));
+      data.push_back(GetAttributeValueD_(knode, "standard_deviation", TYPE_NUMERICAL, 0.0, DVAL_MAX, "m"));
 
       if (time_bc) {
-        data[0] *= GetAttributeValueD_(lnode, "data", TYPE_NUMERICAL, "");
+        data[0] *= GetAttributeValueD_(lnode, "data", TYPE_NUMERICAL, DVAL_MIN, DVAL_MAX, "");
       }
 
       same_list.erase(same_list.begin());
@@ -463,9 +464,9 @@ void InputConverterU::TranslateTransportBCsGroup_(
         tmp_name = GetAttributeValueS_(*it, "name");
 
         if (tmp_name == solute_name) {
-          double t0 = GetAttributeValueD_(*it, "start", TYPE_TIME, "s");
+          double t0 = GetAttributeValueD_(*it, "start", TYPE_TIME, DVAL_MIN, DVAL_MAX, "s");
           tp_forms[t0] = GetAttributeValueS_(*it, "function");
-          GetAttributeValueD_(*it, "value", TYPE_NUMERICAL, "molar");  // just a check
+          GetAttributeValueD_(*it, "value", TYPE_NUMERICAL, DVAL_MIN, DVAL_MAX, "molar");  // just a check
           tp_values[t0] = ConvertUnits_(GetAttributeValueS_(*it, "value"), unit, solute_molar_mass_[solute_name]);
 
           same_list.erase(it);
@@ -520,7 +521,7 @@ void InputConverterU::TranslateTransportGeochemistry_(
 
   for (int j = 0; j < same_list.size(); ++j) {
     DOMElement* element = static_cast<DOMElement*>(same_list[j]);
-    double t0 = GetAttributeValueD_(element, "start", TYPE_TIME, "s");
+    double t0 = GetAttributeValueD_(element, "start", TYPE_TIME, DVAL_MIN, DVAL_MAX, "s");
     tp_values[t0] = GetAttributeValueS_(element, "name");
     tp_forms[t0] = GetAttributeValueS_(element, "function", TYPE_NONE, false, "constant");
     // no form -> use geochemistry engine
@@ -640,7 +641,7 @@ Teuchos::ParameterList InputConverterU::TranslateTransportSources_()
     DOMNode* inode = children->item(i);
     if (inode->getNodeType() != DOMNode::ELEMENT_NODE) continue;
     tagname = mm.transcode(inode->getNodeName());
-    std::string srcname = GetAttributeValueS_(static_cast<DOMElement*>(inode), "name");
+    std::string srcname = GetAttributeValueS_(inode, "name");
 
     // read the assigned regions
     bool flag;
@@ -698,7 +699,7 @@ void InputConverterU::TranslateTransportSourcesGroup_(
     std::string srctype, solute_name, srctype_flow, unit("mol/s"), unit_in;
 
     std::vector<DOMNode*> same_list = GetSameChildNodes_(node, srctype, flag, true);
-    solute_name = GetAttributeValueS_(static_cast<DOMElement*>(same_list[0]), "name");
+    solute_name = GetAttributeValueS_(same_list[0], "name");
 
     // weighting method
     bool classical(true), mass_fraction(false);
@@ -736,11 +737,11 @@ void InputConverterU::TranslateTransportSourcesGroup_(
 
       for (int j = 0; j < same_list.size(); ++j) {
         element = static_cast<DOMElement*>(same_list[j]);
-        double t0 = GetAttributeValueD_(element, "start", TYPE_TIME, "s");
+        double t0 = GetAttributeValueD_(element, "start", TYPE_TIME, DVAL_MIN, DVAL_MAX, "s");
         tp_forms[t0] = GetAttributeValueS_(element, "function");
         tp_values[t0] = ConvertUnits_(GetAttributeValueS_(element, "value"),
                                       unit_in, solute_molar_mass_[solute_name]);
-        GetAttributeValueD_(element, "value", TYPE_NUMERICAL, unit);  // unit check
+        GetAttributeValueD_(element, "value", TYPE_NUMERICAL, DVAL_MIN, DVAL_MAX, unit);  // unit check
 
         // ugly correction when liquid/solute lists match
         if (mass_fraction) {
@@ -800,14 +801,14 @@ void InputConverterU::TranslateTransportSourcesGroup_(
       }
     } else {
       element = static_cast<DOMElement*>(same_list[0]);
-      double total = GetAttributeValueD_(element, "total_inventory", "mol");
-      double diff = GetAttributeValueD_(element, "effective_diffusion_coefficient");
-      double length = GetAttributeValueD_(element, "mixing_length", "m");
+      double total = GetAttributeValueD_(element, "total_inventory", TYPE_NUMERICAL, 0.0, DVAL_MAX, "mol");
+      double diff = GetAttributeValueD_(element, "effective_diffusion_coefficient", TYPE_NUMERICAL, 0.0, DVAL_MAX);
+      double length = GetAttributeValueD_(element, "mixing_length", TYPE_NUMERICAL, 0.0, DVAL_MAX, "m");
       std::vector<double> times;
-      times.push_back(GetAttributeValueD_(element, "start", TYPE_TIME, "s"));
+      times.push_back(GetAttributeValueD_(element, "start", TYPE_TIME, DVAL_MIN, DVAL_MAX, "s"));
 
       element = static_cast<DOMElement*>(same_list[1]);
-      times.push_back(GetAttributeValueD_(element, "start", TYPE_TIME, "s"));
+      times.push_back(GetAttributeValueD_(element, "start", TYPE_TIME, DVAL_MIN, DVAL_MAX, "s"));
 
       // save data in the XML
       Teuchos::ParameterList& src_list = out_list.sublist("concentration");
@@ -836,7 +837,7 @@ void InputConverterU::TranslateTransportSourcesGroup_(
 
 
 /* ******************************************************************
-* Create list of transport sources.
+* Setup flag for volume fractions.
 ****************************************************************** */
 bool InputConverterU::WeightVolumeSubmodel_(const std::vector<std::string>& regions)
 {

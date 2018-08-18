@@ -13,6 +13,8 @@
 #define AMANZI_INPUT_CONVERTER_HH_
 
 #include <set>
+#include <climits>
+#include <list>
 
 #include "boost/lambda/lambda.hpp"
 #include "boost/bind.hpp"
@@ -46,6 +48,9 @@ const std::string TYPE_AREA_MASS_FLUX = "area_mass_flux";
 const std::string TYPE_NONE = "none";
 const std::string TYPE_NOT_CONSTANT = "not_constant";
 
+const double DVAL_MIN = -1.0e+99;
+const double DVAL_MAX = 1.0e+99;
+
 XERCES_CPP_NAMESPACE_USE
 
 /* 
@@ -72,15 +77,15 @@ class MemoryManager {
 
  private:
   void Destroy_() {
-    for (std::vector<char*>::iterator it = pchar.begin(); it != pchar.end(); ++it)
+    for (auto it = pchar.begin(); it != pchar.end(); ++it)
       xercesc::XMLString::release(&*it);
-    for (std::vector<XMLCh*>::iterator it = xchar.begin(); it != xchar.end(); ++it)
+    for (auto it = xchar.begin(); it != xchar.end(); ++it)
       xercesc::XMLString::release(&*it);
   }
 
  private:
-  std::vector<char*> pchar;
-  std::vector<XMLCh*> xchar;
+  std::list<char*> pchar;
+  std::list<XMLCh*> xchar;
 };
 
 
@@ -113,7 +118,7 @@ class InputConverter {
   // parse various nodes
   void ParseVersion_();
   void ParseConstants_();
-  void FilterNodes(xercesc::DOMNode* parent, const std::string& filter);
+  void FilterNodes(const std::string& filter);
 
   // auto-generated input files
   // -- native chemistry
@@ -145,34 +150,52 @@ class InputConverter {
       xercesc::DOMNode* node, const std::string& childName, bool& flag, bool exception = false);
 
   // -- extract and verify children
-  // -- extract existing attribute value and verify it optionally against expected unit
+  // -- extract existing attribute value and verify it optionally against expected units
+  //    Consider two examples <parameters alpha="2.06e-03 Pa^-1"/>  and
+  //                          <parameters alpha=ALPHA/>
+  //    elem      = pointer to an element <.../> in an XML document
+  //    attr_name = name of the attribute  ("alpha" in the examples)
+  //    type      = value type. If the value (ALPHA) is defined in the XML section "constants",
+  //                then type should match the type of constant as follows: TYPE_TIME for 
+  //                time_constant TYPE_NUMERICAL for numerical_constant and TYPE_AREA_MASS_FLUX 
+  //                for area_mass_flux_constant. Use default value, otherwise.
+  //    valmin    = minimum allowed value in SI units (2.06e-03 >= valmin)
+  //    valmax    = maximum allowed value in SI units (2.06e-03 <= valmax) 
+  //    unit      = check expected units if provided. Derived and non-SI units are allowed.
+  //    length    = expected length of vector. If size is unknown, use -1.
+  //    exception = if false, use default value when either element or attribute is missing.
+  //                if true, throw an exception.
+  //    default_val = defult value
   int GetAttributeValueL_(
-      xercesc::DOMElement* elem, const char* attr_name,
-      const std::string& type = TYPE_NUMERICAL, bool exception = true, int val = 0);
+      xercesc::DOMElement* elem, const char* attr_name, const std::string& type = TYPE_NUMERICAL,
+      int valmin = INT_MIN, int valmax = INT_MAX, bool exception = true, int defaul_val = 0);
   double GetAttributeValueD_(  // supports units except for ppbm
       xercesc::DOMElement* elem, const char* attr_name, const std::string& type = TYPE_NUMERICAL,
-      std::string unit = "", bool exception = true, double val = 0.0);
+      double valmin = DVAL_MIN, double valmax = DVAL_MAX, std::string unit = "",
+      bool exception = true, double default_val = 0.0);
   std::string GetAttributeValueS_(
-      xercesc::DOMElement* elem, const char* attr_name,
-      const std::string& type = TYPE_NUMERICAL, bool exception = true, std::string val = "");
+      xercesc::DOMElement* elem, const char* attr_name, const std::string& type = TYPE_NUMERICAL,
+      bool exception = true, std::string default_val = "");
   std::vector<double> GetAttributeVectorD_(  // supports units except ppbm
-      xercesc::DOMElement* elem, const char* attr_name,
+      xercesc::DOMElement* elem, const char* attr_name, int length = -1,
       std::string unit = "", bool exception = true, double mol_mass = -1.0);
   std::vector<std::string> GetAttributeVectorS_(
       xercesc::DOMElement* elem, const char* attr_name, bool exception = true);
 
-  // -- node is used more often
+  // -- node is used more often then element
   int GetAttributeValueL_(
       xercesc::DOMNode* node, const char* attr_name,
-      const std::string& type = TYPE_NUMERICAL, bool exception = true, int val = 0) {
+      const std::string& type = TYPE_NUMERICAL, int valmin = INT_MIN, int valmax = INT_MAX,
+       bool exception = true, int val = 0) {
     xercesc::DOMElement* element = static_cast<xercesc::DOMElement*>(node);
-    return GetAttributeValueL_(element, attr_name, type, exception, val);
+    return GetAttributeValueL_(element, attr_name, type, valmin, valmax, exception, val);
   }
   double GetAttributeValueD_(  // supports units except for ppbm
       xercesc::DOMNode* node, const char* attr_name, const std::string& type = TYPE_NUMERICAL,
-      std::string unit = "", bool exception = true, double val = 0.0) {
+      double valmin = DVAL_MIN, double valmax = DVAL_MAX, std::string unit = "",
+      bool exception = true, double val = 0.0) {
     xercesc::DOMElement* element = static_cast<xercesc::DOMElement*>(node);
-    return GetAttributeValueD_(element, attr_name, type, unit, exception, val);
+    return GetAttributeValueD_(element, attr_name, type, valmin, valmax, unit, exception, val);
   }
   std::string GetAttributeValueS_(
       xercesc::DOMNode* node, const char* attr_name,
@@ -181,10 +204,10 @@ class InputConverter {
     return GetAttributeValueS_(element, attr_name, type, exception, val);
   }
   std::vector<double> GetAttributeVectorD_(  // supports units except ppbm
-      xercesc::DOMNode* node, const char* attr_name,
+      xercesc::DOMNode* node, const char* attr_name, int length = -1,
       std::string unit = "", bool exception = true, double mol_mass = -1.0) {
     xercesc::DOMElement* element = static_cast<xercesc::DOMElement*>(node);
-    return GetAttributeVectorD_(element, attr_name, unit, exception, mol_mass);
+    return GetAttributeVectorD_(element, attr_name, length, unit, exception, mol_mass);
   }
   std::vector<std::string> GetAttributeVectorS_(
       xercesc::DOMNode* node, const char* attr_name, bool exception = true) {
@@ -235,6 +258,9 @@ class InputConverter {
 
   // -- vector parsing
   int GetPosition_(const std::vector<std::string>& names, const std::string& name);
+
+  // -- test file parsing 
+  int CountFileLinesWithWord_(const std::string& filename, const std::string& word);
 
   // is spec structurally sound?
   // -- mandatory objects

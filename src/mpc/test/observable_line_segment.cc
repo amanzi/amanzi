@@ -82,7 +82,7 @@ TEST(OBSERVABLE_LINE_SEGMENT) {
 
   double A=3., B=1., C=5., D=0.2;
 
-  for (int c=0; c<ncells_owned; c++){
+  for (int c=0; c<ncells_owned; c++) {
     const AmanziGeometry::Point& xc = mesh->cell_centroid(c);
     test[0][c] = A*xc[0] + B*xc[1] + C*xc[2] + D;
   }
@@ -111,7 +111,7 @@ TEST(OBSERVABLE_LINE_SEGMENT) {
   Teuchos::Array<double> xyzc(3);
   double len = 0.;
 
-  for (int i=0;i<3;i++){
+  for (int i=0;i<3;i++) {
     xyzc[i] = 0.5*(xyz0[i] + xyz1[i]);
     len += (xyz0[i] - xyz1[i])*(xyz0[i] - xyz1[i]);
   }
@@ -132,7 +132,7 @@ TEST(OBSERVABLE_LINE_SEGMENT) {
   observe2 -> ComputeRegionSize();
   observe2 -> ComputeObservation(*S, &value2, &volume2, unit2);
   double len2 = 0.;
-  for (int i=0;i<3;i++){
+  for (int i=0;i<3;i++) {
     xyzc[i] = 0.5*(xyz0_2[i] + xyz1_2[i]);
     len2 += (xyz0_2[i] - xyz1_2[i])*(xyz0_2[i] - xyz1_2[i]);
     //std::cout<<xyzc[i]<<" "<<xyz0_2[i]<<" "<<xyz1_2[i]<<"\n";

@@ -13,6 +13,7 @@
 #include <algorithm>
 #include <sstream>
 #include <string>
+#include <climits>
 
 //TPLs
 #include <xercesc/dom/DOM.hpp>
@@ -82,11 +83,11 @@ Teuchos::ParameterList InputConverterU::TranslateCycleDriver_()
     DOMNode* inode = children->item(i);
     if (inode->getNodeType() != DOMNode::ELEMENT_NODE) continue;
 
-    t0 = GetAttributeValueD_(inode, "start", TYPE_TIME, "s");
-    t1 = GetAttributeValueD_(inode, "end", TYPE_TIME, "s", false, t0 - 10.0);
+    t0 = GetAttributeValueD_(inode, "start", TYPE_TIME, DVAL_MIN, DVAL_MAX, "s");
+    t1 = GetAttributeValueD_(inode, "end", TYPE_TIME, DVAL_MIN, DVAL_MAX, "s", false, t0 - 10.0);
     dt0 = ConvertUnits_(GetAttributeValueS_(inode, "init_dt", TYPE_TIME, false, dt0_d), unit);
     dt_max = ConvertUnits_(GetAttributeValueS_(inode, "max_dt", TYPE_TIME, false, dt_max_d), unit);
-    max_cycles = GetAttributeValueL_(inode, "max_cycles", TYPE_NUMERICAL, false, -1);
+    max_cycles = GetAttributeValueL_(inode, "max_cycles", TYPE_NUMERICAL, -1, INT_MAX, false, -1);
     std::string mode = GetAttributeValueS_(inode, "mode", TYPE_NONE, false, mode_d);
 
     if (mode != "steady" && mode != "transient") {
@@ -181,7 +182,7 @@ Teuchos::ParameterList InputConverterU::TranslateCycleDriver_()
     if (inode->getNodeType() != DOMNode::ELEMENT_NODE) continue;
     tagname = mm.transcode(inode->getNodeName());
 
-    std::string state = GetAttributeValueS_(static_cast<DOMElement*>(inode), "state");
+    std::string state = GetAttributeValueS_(inode, "state");
     pk_state[tagname] = (strcmp(state.c_str(), "on") == 0);
 
     if (strcmp(tagname, "flow") == 0) {
@@ -381,8 +382,8 @@ Teuchos::ParameterList InputConverterU::TranslateCycleDriverNew_()
 
     tagname = mm.transcode(inode->getNodeName());
     if (strcmp(tagname, "execution_control") == 0) {
-      t0 = GetAttributeValueD_(inode, "start", TYPE_TIME, "s");
-      t1 = GetAttributeValueD_(inode, "end", TYPE_TIME, "s");
+      t0 = GetAttributeValueD_(inode, "start", TYPE_TIME, DVAL_MIN, DVAL_MAX, "s");
+      t1 = GetAttributeValueD_(inode, "end", TYPE_TIME, DVAL_MIN, DVAL_MAX, "s");
       dt0 = ConvertUnits_(GetAttributeValueS_(inode, "init_dt", TYPE_TIME, false, dt0_d), unit);
       dt_max = ConvertUnits_(GetAttributeValueS_(inode, "max_dt", TYPE_TIME, false, dt_max_d), unit);
       std::string mode = GetAttributeValueS_(inode, "mode", TYPE_NONE, false, mode_d);
@@ -391,7 +392,7 @@ Teuchos::ParameterList InputConverterU::TranslateCycleDriverNew_()
       tp_t1[mode] = t1;
       tp_dt0[mode] = dt0;
       tp_max_dt[mode] = dt_max;
-      tp_max_cycles[mode] = GetAttributeValueL_(inode, "max_cycles", TYPE_NUMERICAL, false, -1);
+      tp_max_cycles[mode] = GetAttributeValueL_(inode, "max_cycles", TYPE_NUMERICAL, -1, INT_MAX, false, -1);
       dt_cut_[mode] = ConvertUnits_(GetAttributeValueS_(
           inode, "reduction_factor", TYPE_TIME, false, dt_cut_d), unit);
       dt_inc_[mode] = ConvertUnits_(GetAttributeValueS_(
@@ -427,7 +428,7 @@ Teuchos::ParameterList InputConverterU::TranslateCycleDriverNew_()
     DOMNode* inode = pks->item(i);
     if (inode->getNodeType() != DOMNode::ELEMENT_NODE) continue;
     children = inode->getChildNodes();
-    std::string mode = GetAttributeValueS_(static_cast<DOMElement*>(inode), "mode");
+    std::string mode = GetAttributeValueS_(inode, "mode");
 
     // collect active pks and coupling of pks
     int transient_model(0);
@@ -470,7 +471,7 @@ Teuchos::ParameterList InputConverterU::TranslateCycleDriverNew_()
     pks_strong.clear();
     node = GetUniqueElementByTagsString_(inode, "strongly_coupled", flag);
     if (flag) {
-      pkname = GetAttributeValueS_(static_cast<DOMElement*>(node), "name");
+      pkname = GetAttributeValueS_(node, "name");
       pks_strong = CharToStrings_(mm.transcode(node->getTextContent()));
       strong_name = mm.transcode(node->getNodeName());
     }
@@ -479,7 +480,7 @@ Teuchos::ParameterList InputConverterU::TranslateCycleDriverNew_()
     pks_weak.clear();
     node = GetUniqueElementByTagsString_(inode, "weakly_coupled", flag);
     if (flag) {
-      pkname = GetAttributeValueS_(static_cast<DOMElement*>(node), "name");
+      pkname = GetAttributeValueS_(node, "name");
       pks_weak = CharToStrings_(mm.transcode(node->getTextContent()));
       weak_name = mm.transcode(node->getNodeName());
     }
@@ -594,17 +595,17 @@ Teuchos::ParameterList InputConverterU::TranslateTimePeriodControls_()
   double t, dt_init_d, dt_max_d;
   std::map<double, double> init_dt, max_dt;
 
-  dt_init_d = GetAttributeValueD_(node, "init_dt", TYPE_TIME, "s", false, RESTART_TIMESTEP);
-  dt_max_d = GetAttributeValueD_(node, "max_dt", TYPE_TIME, "s", false, MAXIMUM_TIMESTEP);
+  dt_init_d = GetAttributeValueD_(node, "init_dt", TYPE_TIME, DVAL_MIN, DVAL_MAX, "s", false, RESTART_TIMESTEP);
+  dt_max_d = GetAttributeValueD_(node, "max_dt", TYPE_TIME, DVAL_MIN, DVAL_MAX, "s", false, MAXIMUM_TIMESTEP);
 
   children = doc_->getElementsByTagName(mm.transcode("execution_control"));
   for (int i = 0; i < children->getLength(); ++i) {
     DOMNode* inode = children->item(i);
     if (inode->getNodeType() != DOMNode::ELEMENT_NODE) continue;
 
-    t = GetAttributeValueD_(inode, "start", TYPE_TIME, "s");
-    double dt_init = GetAttributeValueD_(inode, "init_dt", TYPE_TIME, "s", false, dt_init_d);
-    double dt_max = GetAttributeValueD_(inode, "max_dt", TYPE_TIME, "s", false, dt_max_d);
+    t = GetAttributeValueD_(inode, "start", TYPE_TIME, DVAL_MIN, DVAL_MAX, "s");
+    double dt_init = GetAttributeValueD_(inode, "init_dt", TYPE_TIME, DVAL_MIN, DVAL_MAX, "s", false, dt_init_d);
+    double dt_max = GetAttributeValueD_(inode, "max_dt", TYPE_TIME, DVAL_MIN, DVAL_MAX, "s", false, dt_max_d);
     init_dt[t] = dt_init;
     max_dt[t] = dt_max;
   }
@@ -627,11 +628,13 @@ Teuchos::ParameterList InputConverterU::TranslateTimePeriodControls_()
 
     for (int n = 0; n < bc_names.size(); ++n) {
       children = static_cast<DOMElement*>(node)->getElementsByTagName(mm.transcode(bc_names[n].c_str()));
-      for (int i = 0; i < children->getLength(); ++i) {
+      int nchildren = children->getLength();
+
+      for (int i = 0; i < nchildren; ++i) {
         DOMNode* inode = children->item(i);
         if (inode->getNodeType() != DOMNode::ELEMENT_NODE) continue;
 
-        t = GetAttributeValueD_(static_cast<DOMElement*>(inode), "start", TYPE_TIME, "s");
+        t = GetAttributeValueD_(inode, "start", TYPE_TIME, DVAL_MIN, DVAL_MAX, "s");
         // find position before t
         std::map<double, double>::iterator it = init_dt.upper_bound(t);
         if (it == init_dt.end()) it--;
@@ -663,7 +666,7 @@ Teuchos::ParameterList InputConverterU::TranslateTimePeriodControls_()
         DOMNode* inode = children->item(i);
         if (inode->getNodeType() != DOMNode::ELEMENT_NODE) continue;
 
-        t = GetAttributeValueD_(static_cast<DOMElement*>(inode), "start", TYPE_TIME, "s");
+        t = GetAttributeValueD_(inode, "start", TYPE_TIME, DVAL_MIN, DVAL_MAX, "s");
         // find position before t
         std::map<double, double>::iterator it = init_dt.upper_bound(t);
         if (it == init_dt.end()) it--;

@@ -135,7 +135,7 @@ Mesh_MSTK::Mesh_MSTK(const char *filename, const Epetra_MpiComm *incomm_,
     while (DebugWait);
   }
 
-  init_mesh_from_file_(filename);
+  init_mesh_from_file_(filename, partitioner);
 
   int cell_dim = MESH_Num_Regions(mesh) ? 3 : 2;
   
@@ -220,7 +220,7 @@ Mesh_MSTK::Mesh_MSTK(const char *filename, const Epetra_MpiComm *incomm_,
     while (DebugWait);
   }
 
-  init_mesh_from_file_(filename);
+  init_mesh_from_file_(filename, partitioner);
 
   int cell_dim = MESH_Num_Regions(mesh) ? 3 : 2;
   
@@ -3028,7 +3028,7 @@ MSet_ptr Mesh_MSTK::build_set(const Teuchos::RCP<const AmanziGeometry::Region>& 
         *(verbobj->os()) << "Requested FACES on region " << region->name()
             << " of type " << region->type() << " and dimension "
             << region->manifold_dimension() << ".\n" 
-            << "This request will result in an empty set";
+            << "This request will result in an empty set\n";
       }
     }
     break;
@@ -3094,7 +3094,7 @@ MSet_ptr Mesh_MSTK::build_set(const Teuchos::RCP<const AmanziGeometry::Region>& 
         *(verbobj->os()) << "Requested POINTS on region " << region->name() 
             << " of type " << region->type() << " and dimension " 
             << region->manifold_dimension() << ".\n" 
-            << "This request will result in an empty set";
+            << "This request will result in an empty set\n";
       }
     }
       
@@ -3341,7 +3341,8 @@ void Mesh_MSTK::get_set_entities_and_vofs(const std::string setname,
         {
           if (verbobj.get() && verbobj->os_OK(Teuchos::VERB_MEDIUM)) {
             *(verbobj->os()) << "Found labeled set region named " << setname 
-                             << " but it contains entities of type " << entity_type << ", not the requested type";
+                             << " but it contains entities of type " << entity_type 
+                             << ", not the requested type\n";
           }
         } 
       else {
@@ -3665,34 +3666,74 @@ void Mesh_MSTK::init_face_map()
     face_map_wo_ghosts_ = new Epetra_Map(-1,nface,face_gids,0,*epcomm_);
     extface_map_wo_ghosts_ = new Epetra_Map(-1,n_extface,extface_gids,0,*epcomm_);
 
-    // now we add ghost faces
-
+   
     idx = 0;
     while ((ment = MSet_Next_Entry(NotOwnedFaces,&idx))) {
       int gid = MEnt_GlobalID(ment);
       face_gids[i++] = gid-1;
+    }
+    nface += nnotowned;
 
+    face_map_w_ghosts_ = new Epetra_Map(-1,nface,face_gids,0,*epcomm_);
+
+    std::vector<int> gl_id(nnotowned), pr_id(nnotowned), lc_id(nnotowned);
+
+    // Build a list of global IDs of ghost faces with only one cell attached - may be on exterior or processor boundary
+    
+    idx = 0;
+    int nnotowned_bnd = 0;
+    while ((ment = MSet_Next_Entry(NotOwnedFaces,&idx))) {
+      int gid = MEnt_GlobalID(ment);
       if (manifold_dimension() == 3) {
         List_ptr fregs = MF_Regions((MFace_ptr) ment);
-        if (List_Num_Entries(fregs) == 1)
-          extface_gids[j++] = gid-1;
+        if (List_Num_Entries(fregs) == 1) {
+          gl_id[nnotowned_bnd++] = gid-1;
+        }                
         if (fregs)
           List_Delete(fregs);
       }
       else if (manifold_dimension() == 2) {
         List_ptr efaces = ME_Faces((MEdge_ptr) ment);
         if (List_Num_Entries(efaces) == 1)
-          extface_gids[j++] = gid-1;
+          gl_id[nnotowned_bnd++] = gid-1;
         if (efaces)
           List_Delete(efaces);
       }
     }
-    n_extface = j;
-    nface += nnotowned;
 
-    face_map_w_ghosts_ = new Epetra_Map(-1,nface,face_gids,0,*epcomm_);
-    extface_map_w_ghosts_ = new Epetra_Map(-1,n_extface,extface_gids,0,*epcomm_);
+    // Get the local IDs of  (lc_id) copies of owned boundary faces on remote processors (pr_id).
+    // In effect we are checking if a ghost face that claims to be on the boundary is in the
+    // owned boundary face list on another processor (pr_id >= 0)
+    
+    extface_map_wo_ghosts_ -> RemoteIDList(nnotowned, gl_id.data(), pr_id.data(), lc_id.data());
 
+
+    int n_extface_w_ghosts = extface_map_wo_ghosts_ -> NumMyElements();
+
+    //Add to maping only external faces (which belong to local mapping on other processors
+    for (int k=0; k < nnotowned_bnd; k++) {
+      if (pr_id[k] >= 0) {
+        n_extface_w_ghosts++;
+      }
+    }
+
+    
+    std::vector<int> global_id_ghosted(n_extface_w_ghosts);
+    for (int k=0; k<n_extface; k++)  {
+      global_id_ghosted[k] = extface_gids[k];  
+    }
+
+    //Add to maping only external faces (which belong to local mapping on other processors
+    int l=0;
+    for (int k=0; k < nnotowned_bnd; k++) {
+      if (pr_id[k] >= 0) {
+        global_id_ghosted[n_extface + l] = gl_id[k];
+        l++;
+      }
+    }
+    
+    extface_map_w_ghosts_ = new Epetra_Map(-1, n_extface_w_ghosts, global_id_ghosted.data(), 0, *epcomm_);
+        
   }
   else {
 

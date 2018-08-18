@@ -89,7 +89,7 @@ void RunTestDarcyWell(std::string controller) {
 
   Epetra_MultiVector& K = *S->GetFieldData("permeability", passwd)->ViewComponent("cell", false);
   double diff_in_perm = 0.;
-  if (!S->GetField("permeability")->initialized()){
+  if (!S->GetField("permeability")->initialized()) {
     for (int c = 0; c < K.MyLength(); c++) {
       const AmanziGeometry::Point xc = mesh->cell_centroid(c);
       K[0][c] = 0.1 + std::sin(xc[0]) * 0.02;
@@ -177,7 +177,7 @@ void Run_3D_DarcyWell(std::string controller) {
 
   Epetra_MpiComm comm(MPI_COMM_WORLD);
   int MyPID = comm.MyPID();
-  if (MyPID == 0) std::cout << "Test: 3D Darcy flow, two wells" << std::endl;
+  if (MyPID == 0) std::cout << "\nTest: 3D Darcy flow, two wells" << std::endl;
 
   // read parameter list
   std::string xmlFileName = controller;
@@ -263,13 +263,13 @@ void Run_3D_DarcyWell(std::string controller) {
 }
 
 
-// TEST(FLOW_3D_DARCY_WELL) {
-//    Run_3D_DarcyWell("test/flow_darcy_well_3D.xml");
-// }
+TEST(FLOW_3D_DARCY_WELL) {
+  Run_3D_DarcyWell("test/flow_darcy_well_3D.xml");
+}
 
 
+/* **************************************************************** */
 TEST(FLOW_3D_DARCY_PEACEMAN_WELL) {
-  // Run_3D_DarcyWell("test/flow_darcy_well_peaceman_3D.xml");
   using namespace Teuchos;
   using namespace Amanzi;
   using namespace Amanzi::AmanziMesh;
@@ -278,7 +278,7 @@ TEST(FLOW_3D_DARCY_PEACEMAN_WELL) {
 
   Epetra_MpiComm comm(MPI_COMM_WORLD);
   int MyPID = comm.MyPID();
-  if (MyPID == 0) std::cout << "Test: 3D Darcy flow, one well" << std::endl;
+  if (MyPID == 0) std::cout << "\nTest: 3D Darcy flow, one well" << std::endl;
 
   // read parameter list
   std::string xmlFileName = "test/flow_darcy_1well_peaceman_3D.xml";
@@ -350,7 +350,7 @@ TEST(FLOW_3D_DARCY_PEACEMAN_WELL) {
   // steady_state solution
   double t_old(0.0), t_new(0.5), dt(0.5);
 
-  DPK->SolveFullySaturatedProblem(*S->GetFieldData("pressure", "flow"));
+  DPK->SolveFullySaturatedProblem(*S->GetFieldData("pressure", "flow"), true);
 
   t_old = t_new;
   const Epetra_MultiVector& p = *S->GetFieldData("pressure")->ViewComponent("cell");
@@ -366,14 +366,14 @@ TEST(FLOW_3D_DARCY_PEACEMAN_WELL) {
   int ncells = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
   double err = 0.;
   double sol = 0.;
-  for (int c = 0; c < ncells; c++){
+  for (int c = 0; c < ncells; c++) {
     const AmanziGeometry::Point& xc = mesh->cell_centroid(c);
     double r = sqrt(xc[0]*xc[0] + xc[1]*xc[1]);
     double p_ex;
     p_ex = pw + gravity[2]*(xc[2] + depth);
     if (r > 1e-3) {
       p_ex = p_ex + Q/(2*M_PI*k*h)*(log(r) - log(rw));
-    }else{
+    } else {
       p_ex = p[0][c];
     }
 
@@ -387,15 +387,15 @@ TEST(FLOW_3D_DARCY_PEACEMAN_WELL) {
     sol += p[0][c] * p[0][c] * vol;
   }
 
-  // for (double r=55; r < 75; r+=0.25){
+  // for (double r=55; r < 75; r+=0.25) {
   //   double p_ex = pw + Q/(2*M_PI*k*h)*(log(r) - log(rw));
   //   std::cout<<r<<" "<<p_ex<<" "<<Q/(2*M_PI*k*h)<<" "<<log(rw)<<"\n";
   // }
 
   err = sqrt(err);
   sol = sqrt(sol);
-  err = err/sol;
-  std::cout<<"Error: "<<err<<"\n";
+  err /= sol;
+  std::cout << "Error: " << err << "\n";
 
   CHECK(err < 0.02);
 
@@ -405,7 +405,7 @@ TEST(FLOW_3D_DARCY_PEACEMAN_WELL) {
     GMV::write_cell_data(p, 0, "pressure");
     GMV::write_cell_data(p_exact, 0, "exact");
     GMV::write_cell_data(err_p, 0, "error");
-    if (S->HasField("well_index")){
+    if (S->HasField("well_index")) {
       const Epetra_MultiVector& wi = *S->GetFieldData("well_index")->ViewComponent("cell");
       GMV::write_cell_data(wi, 0, "well_index");
     }

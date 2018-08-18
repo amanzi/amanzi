@@ -39,8 +39,7 @@ set(interface_inc_files
   Simulator.hh
   InputConverter.hh
   InputConverterU.hh
-  InputConverterU_Defs.hh
-  InputParserIS_Defs.hh)
+  InputConverterU_Defs.hh)
 
 set(interface_src_files  InputConverter.cc InputConverterU.cc
                          InputConverterU_State.cc InputConverterU_MPC.cc InputConverterU_PK.cc
@@ -77,6 +76,7 @@ if (BUILD_TESTS)
     # Copy test directory files if an out of source build
     if (NOT (${PLATFORM_INTERFACE_SOURCE_DIR} EQUAL ${PLATFORM_INTERFACE_BINARY_DIR}) )
       file(GLOB DataFiles "${PLATFORM_INTERFACE_SOURCE_DIR}/test/*.xml"
+                          "${PLATFORM_INTERFACE_SOURCE_DIR}/test/*.dat"
                           "${PLATFORM_INTERFACE_SOURCE_DIR}/test/*.dump")
       file(COPY ${DataFiles} DESTINATION ${PLATFORM_INTERFACE_BINARY_DIR}/test/)
     endif()

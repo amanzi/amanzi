@@ -218,6 +218,15 @@ void CompositeVector::InitData_(const CompositeVector& other, InitMode mode) {
 // Sets sizes of vectors, instantiates Epetra_Vectors, and preps for lazy
 // creation of everything else.
 void CompositeVector::CreateData_() {
+  if (!Mesh().get()) {
+    Errors::Message message("CompositeVector: construction called with no mesh.");
+    Exceptions::amanzi_throw(message);
+  }
+  if (NumComponents() == 0) {
+    Errors::Message message("CompositeVector: construction called with no components.");
+    Exceptions::amanzi_throw(message);
+  }
+
   if (importers_.size() == 0) {
     importers_.resize(NumComponents(), Teuchos::null);
   }

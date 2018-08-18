@@ -367,7 +367,7 @@ public:
 
   virtual bool inRegion (const Array<Real>& x) const;
   virtual BoxArray approximate_bounds(const Array<Real>& plo,
-                                      const Array<Real>& dx) const {}
+                                      const Array<Real>& dx) const { return BoxArray(); }
 
 protected:
   int p_dir, p_lohi;

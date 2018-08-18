@@ -1,6 +1,17 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
-#include "mineral.hh"
+/*
+  Chemistry 
 
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
+
+  Class for mineral reaction, should be written with the mineral
+  as the reactant:
+
+    Calcite = 1.0 Ca++ + 1.0 HCO3- -1.0 H+
+*/
+ 
 #include <sstream>
 #include <iostream>
 #include <iomanip>
@@ -8,6 +19,8 @@
 #include "secondary_species.hh"
 #include "matrix_block.hh"
 #include "chemistry_verbosity.hh"
+
+#include "mineral.hh"
 
 namespace Amanzi {
 namespace AmanziChemistry {
@@ -18,7 +31,8 @@ Mineral::Mineral()
       molar_volume_(0.0),
       specific_surface_area_(0.0),
       volume_fraction_(0.0) {
-}  // end Mineral() constructor
+}
+
 
 Mineral::Mineral(const SpeciesName in_name,
                  const SpeciesId in_id,
@@ -37,16 +51,13 @@ Mineral::Mineral(const SpeciesName in_name,
       molar_volume_(molar_volume),
       specific_surface_area_(specific_surface_area),
       volume_fraction_(0.0) {
-}  // end Mineral costructor
+}
 
-
-Mineral::~Mineral() {
-}  // end Mineral() destructor
 
 void Mineral::UpdateSpecificSurfaceArea(void) {
   // updating SSA not supported at this time!
+}
 
-}  // end UpdateSpecificSurfaceArea()
 
 void Mineral::UpdateVolumeFraction(const double rate,
                                    const double delta_time) {
@@ -63,16 +74,17 @@ void Mineral::UpdateVolumeFraction(const double rate,
   if (volume_fraction_ < 0.0) {
     volume_fraction_ = 0.0;
   }
-  if (false) {
+  /*
     std::stringstream message;
     message << name() << "::UpdateVolumeFraction() : \n"
             << "molar_volume : " << molar_volume() << "\n"
             << "rate : " << rate << "\n"
             << "dt : " << delta_time << "\n"
             << "delta_vf : " << molar_volume() * rate * delta_time << std::endl;
-    chem_out->Write(Teuchos::VERB_HIGH, message);
-  }
-}  // end UpdateVolumeFraction()
+    vo->Write(Teuchos::VERB_HIGH, message);
+  */
+}
+
 
 void Mineral::Update(const std::vector<Species>& primary_species, const Species& water_species) {
   double lnQK = -lnK_;
@@ -82,25 +94,24 @@ void Mineral::Update(const std::vector<Species>& primary_species, const Species&
   // Add the contribution of the water activity
   lnQK += SecondarySpecies::h2o_stoich_ * std::log(water_species.act_coef());
   lnQK_ = lnQK;
-}  // end update()
+}
+
 
 void Mineral::AddContributionToTotal(std::vector<double> *total) {
-  static_cast<void>(total);
-}  // end addContributionToTotal()
+}
+
 
 void Mineral::AddContributionToDTotal(const std::vector<Species>& primary_species,
                                       MatrixBlock* dtotal) {
   static_cast<void>(primary_species);
   static_cast<void>(dtotal);
-}  // end addContributionToDTotal()
+}
 
 
 /*
-**
 **  Display functions
-**
 */
-void Mineral::Display(void) const {
+void Mineral::Display(const Teuchos::RCP<VerboseObject>& vo) const {
   std::stringstream message;
   message << "    " << name() << " = ";
   for (unsigned int i = 0; i < species_names_.size(); i++) {
@@ -121,19 +132,21 @@ void Mineral::Display(void) const {
           << std::setw(13) << specific_surface_area()
           << std::setw(13) << std::fixed << volume_fraction()
           << std::endl;
-  chem_out->Write(Teuchos::VERB_HIGH, message);
-}  // end Display()
+  vo->Write(Teuchos::VERB_HIGH, message);
+}
 
-void Mineral::DisplayResultsHeader(void) const {
+
+void Mineral::DisplayResultsHeader(const Teuchos::RCP<VerboseObject>& vo) const {
   std::stringstream message;
   message << std::setw(15) << "Name"
           << std::setw(15) << "Q/K"
           << std::setw(15) << "SI"
           << std::endl;
-  chem_out->Write(Teuchos::VERB_HIGH, message);
-}  // end DisplayResultsHeader()
+  vo->Write(Teuchos::VERB_HIGH, message);
+}
 
-void Mineral::DisplayResults(void) const {
+
+void Mineral::DisplayResults(const Teuchos::RCP<VerboseObject>& vo) const {
   std::stringstream message;
   message << std::setw(15) << name()
           << std::scientific << std::setprecision(5)
@@ -141,8 +154,8 @@ void Mineral::DisplayResults(void) const {
           << std::fixed << std::setprecision(3)
           << std::setw(15) << saturation_index()
           << std::endl;
-  chem_out->Write(Teuchos::VERB_HIGH, message);
-}  // end DisplayResults()
+  vo->Write(Teuchos::VERB_HIGH, message);
+}
 
 }  // namespace AmanziChemistry
 }  // namespace Amanzi

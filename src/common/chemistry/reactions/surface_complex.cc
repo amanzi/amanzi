@@ -1,11 +1,20 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
-#include "surface_complex.hh"
+/*
+  Chemistry 
+
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
+
+  Class for aqueous equilibrium complexation reaction
+*/
 
 #include <sstream>
 #include <iostream>
 #include <iomanip>
 
 #include "matrix_block.hh"
+#include "surface_complex.hh"
 
 namespace Amanzi {
 namespace AmanziChemistry {
@@ -15,7 +24,8 @@ SurfaceComplex::SurfaceComplex() {
   species_ids_.clear();
   stoichiometry_.clear();
   logK_array_.clear();
-}  // end SurfaceComplex() constructor
+}
+
 
 SurfaceComplex::SurfaceComplex(const SpeciesName name,
                                const SpeciesId id,
@@ -60,7 +70,8 @@ SurfaceComplex::SurfaceComplex(const SpeciesName name,
        i != species_ids.end(); i++) {
     species_ids_.push_back(*i);
   }
-}  // end SurfaceComplex() constructor
+}
+
 
 SurfaceComplex::SurfaceComplex(const SpeciesName name,
                                const SpeciesId id,
@@ -107,10 +118,8 @@ SurfaceComplex::SurfaceComplex(const SpeciesName name,
        i != species_ids.end(); i++) {
     species_ids_.push_back(*i);
   }
-}  // end SurfaceComplex() constructor
+}
 
-SurfaceComplex::~SurfaceComplex() {
-}  // end SurfaceComplex() destructor
 
 void SurfaceComplex::Update(const std::vector<Species>& primarySpecies,
                             const SurfaceSite& surface_site) {
@@ -127,20 +136,23 @@ void SurfaceComplex::Update(const std::vector<Species>& primarySpecies,
   }
   set_lnQK(lnQK_temp);
   set_surface_concentration(std::exp(lnQK()));
-}  // end Update()
+}
+
 
 void SurfaceComplex::AddContributionToTotal(std::vector<double> *total) {
   for (int i = 0; i < ncomp_; i++) {
     (*total)[species_ids_[i]] += stoichiometry_[i] * surface_concentration();
   }
-}  // end AddContributionToTotal()
+}
+
 
 void SurfaceComplex::AddContributionToDTotal(
     const std::vector<Species>& primarySpecies,
     MatrixBlock* dtotal) {
-}  // end AddContributionToDTotal()
+}
 
-void SurfaceComplex::Display(void) const {
+
+void SurfaceComplex::Display(const Teuchos::RCP<VerboseObject>& vo) const {
   std::stringstream message;
   message << "    " << name() << " = ";
   message << free_site_stoichiometry_ << " " << free_site_name_ << " + ";
@@ -158,10 +170,11 @@ void SurfaceComplex::Display(void) const {
             << std::setw(10) << logK_
             << std::setw(10) << charge()
             << std::endl;
-  chem_out->Write(Teuchos::VERB_HIGH, message);
-}  // end Display()
+  vo->Write(Teuchos::VERB_HIGH, message);
+}
 
-void SurfaceComplex::display(void) const {
+
+void SurfaceComplex::display(const Teuchos::RCP<VerboseObject>& vo) const {
   std::stringstream message;
   message << "    " << name() << " = ";
   message << free_site_stoichiometry_ << " " << free_site_name_ << " + ";
@@ -177,10 +190,11 @@ void SurfaceComplex::display(void) const {
   message << std::endl;
   message << "     log K: " << logK_
             << "\n     charge: " << charge() << std::endl;
-  chem_out->Write(Teuchos::VERB_HIGH, message);
-}  // end Display()
+  vo->Write(Teuchos::VERB_HIGH, message);
+}
 
-void SurfaceComplex::DisplayResultsHeader(void) const {
+
+void SurfaceComplex::DisplayResultsHeader(const Teuchos::RCP<VerboseObject>& vo) const {
   std::stringstream message;
   message << std::setw(15) << "Complex Name"
             << std::setw(15) << "Concentration"
@@ -188,17 +202,18 @@ void SurfaceComplex::DisplayResultsHeader(void) const {
   message << std::setw(15) << " "
             << std::setw(15) << "[mol/m^3]"
             << std::endl;
-  chem_out->Write(Teuchos::VERB_HIGH, message);
-}  // end DisplayResultsHeader()
+  vo->Write(Teuchos::VERB_HIGH, message);
+}
 
-void SurfaceComplex::DisplayResults(void) const {
+
+void SurfaceComplex::DisplayResults(const Teuchos::RCP<VerboseObject>& vo) const {
   std::stringstream message;
   message << std::setw(15) << name()
           << std::scientific << std::setprecision(5)
           << std::setw(15) << surface_concentration()
           << std::endl;
-  chem_out->Write(Teuchos::VERB_HIGH, message);
-}  // end DisplayResults()
+  vo->Write(Teuchos::VERB_HIGH, message);
+}
 
 }  // namespace AmanziChemistry
 }  // namespace Amanzi

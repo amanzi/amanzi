@@ -112,7 +112,7 @@ if __name__ == "__main__":
     import os
     import run_amanzi_standard
 
-    input_file = "amanzi_linear_flux_head_1d_u.xml"
+    input_file = "amanzi_linear_flux_head_1d-u.xml"
     run_dir = "amanzi-output"
     try: 
         run_amanzi_standard.run_amanzi(input_file, 2, [input_file], run_dir)

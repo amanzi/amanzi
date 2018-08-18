@@ -16,12 +16,10 @@ set(BATCH_EXE_NAME batch_chem)
 
 set(BATCH_EXE_SRCS batch_chem.cc)
 
-set(GEOCHEM_LIBS
-	geochemrxns
-	geochembase
-	geochemsolvers
-	geochemutil
-)
+set(GEOCHEM_LIBS geochemrxns
+	         geochembase
+	         geochemsolvers
+	         geochemutil)
 
 
 add_executable(${BATCH_EXE_NAME} ${BATCH_EXE_SRCS})

@@ -1,14 +1,23 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+/*
+  Chemistry 
+
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
+
+  Simple class template
+*/
 
 #include <cmath>
 #include <iostream>
 
-#include "lu_solver.hh"
-#include "matrix_block.hh"
+#include "exceptions.hh"
+
 #include "chemistry_strings.hh"
 #include "chemistry_exception.hh"
-
-#include "exceptions.hh"
+#include "lu_solver.hh"
+#include "matrix_block.hh"
 
 namespace Amanzi {
 namespace AmanziChemistry {
@@ -21,17 +30,14 @@ LUSolver::LUSolver(void)
       factored_(false) {
   pivoting_indices_.clear();
   row_scaling_.clear();
-}  // end LUSolver constructor
-
-LUSolver::~LUSolver() {
-}  // end LUSolver destructor
+}
 
 
 void LUSolver::Initialize(const int size) {
   set_system_size(size);
   pivoting_indices_.resize(system_size());
   row_scaling_.resize(system_size());
-}  // end Initialize()
+}
 
 
 void LUSolver::Solve(MatrixBlock* A, std::vector<double>* b) {
@@ -39,7 +45,7 @@ void LUSolver::Solve(MatrixBlock* A, std::vector<double>* b) {
   // equal.
   Decomposition(A);
   BackSolve(A, b);
-}  // end Solve()
+}
 
 
 void LUSolver::Decomposition(MatrixBlock* A) {
@@ -107,7 +113,7 @@ void LUSolver::Decomposition(MatrixBlock* A) {
 
   a = NULL;
   factored_ = true;
-}  // end Decomposition()
+}
 
 
 void LUSolver::BackSolve(MatrixBlock* A, std::vector<double>* b) {
@@ -135,8 +141,7 @@ void LUSolver::BackSolve(MatrixBlock* A, std::vector<double>* b) {
     b->at(i) = sum / a[i][i];
   }
   a = NULL;
-}  // end BackSolve()
-
+}
 
 }  // namespace AmanziChemistry
 }  // namespace Amanzi
