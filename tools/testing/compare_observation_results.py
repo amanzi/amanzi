@@ -68,7 +68,7 @@ def compute_error_norms(x_output, c_output, x_ref, c_ref, rel_or_abs):
 if __name__ == "__main__":
 
     # Check argument number.
-    if len(sys.argv) != 5:
+    if len(sys.argv) != 6:
         print("%s: usage:"%sys.argv[0])
         print("%s observation input.xml reference.obs relative/absolute tolerance"%sys.argv[0])
         exit(0)
