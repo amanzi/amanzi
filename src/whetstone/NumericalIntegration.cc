@@ -103,7 +103,7 @@ double NumericalIntegration::IntegratePolynomialCell(int c, const Polynomial& po
 * different origins. 
 ****************************************************************** */
 double NumericalIntegration::IntegratePolynomialsFace(
-    int f, const std::vector<const Polynomial*>& polys) const
+    int f, const std::vector<const PolynomialBase*>& polys) const
 {
   AmanziGeometry::Point enormal(d_), x1(d_), x2(d_);
 
@@ -124,11 +124,12 @@ double NumericalIntegration::IntegratePolynomialsFace(
 
   // create a single polynomial centered at face centroid
   Polynomial product(d_, 0);
-  product(0, 0) = 1.0;
+  product(0) = 1.0;
   product.set_origin(xf);
 
   for (int i = 0; i < polys.size(); ++ i) {
-    Polynomial tmp(*polys[i]);
+    Polynomial tmp(d_, polys[i]->order(), polys[i]->ExpandCoefficients());
+    tmp.set_origin(polys[i]->origin());
     tmp.ChangeOrigin(xf);
     product *= tmp;
   }
@@ -165,7 +166,7 @@ double NumericalIntegration::IntegratePolynomialsFace(
     mesh_->node_get_coordinates(n0, &x1);
     mesh_->node_get_coordinates(n1, &x2);
 
-    std::vector<const Polynomial*> q_ptr(1, &q);
+    std::vector<const PolynomialBase*> q_ptr(1, &q);
     sum += IntegratePolynomialsEdge(x1, x2, q_ptr);
   }
 
@@ -179,7 +180,7 @@ double NumericalIntegration::IntegratePolynomialsFace(
 ****************************************************************** */
 double NumericalIntegration::IntegratePolynomialsEdge(
     const AmanziGeometry::Point& x1, const AmanziGeometry::Point& x2,
-    const std::vector<const Polynomial*>& polys) const
+    const std::vector<const PolynomialBase*>& polys) const
 {
   // minimal quadrature rule
   int k(0);
@@ -366,7 +367,7 @@ void NumericalIntegration::IntegrateMonomialsFace_(
   normal /= area;
 
   AmanziGeometry::Point fnormal(d_), x1(d_), x2(d_);
-  std::vector<const Polynomial*> polys(1);
+  std::vector<const PolynomialBase*> polys(1);
 
   PolynomialIterator it(d_);
   for (it.begin(k); it.MonomialSetOrder() <= k; ++it) {

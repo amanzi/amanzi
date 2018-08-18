@@ -36,10 +36,10 @@ TEST(DG_TAYLOR_POLYNOMIALS) {
     const int* index = it.multi_index();
     CHECK(index[0] >= 0 && index[1] >= 0);
 
-    int pos = p.PolynomialPosition(index);
+    int pos = PolynomialPosition(2, index);
     CHECK(pos == i++);
 
-    int m = p.MonomialSetPosition(index);
+    int m = MonomialSetPosition(2, index);
     p(index[0] + index[1], m) = pos;
   }
   std::cout << p << std::endl; 
@@ -71,10 +71,10 @@ TEST(DG_TAYLOR_POLYNOMIALS) {
     const int* index = it.multi_index();
     CHECK(index[0] >= 0 && index[1] >= 0 && index[2] >= 0);
 
-    int pos = q.PolynomialPosition(index);
+    int pos = PolynomialPosition(3, index);
     CHECK(pos == i++);
 
-    int m = q.MonomialSetPosition(index);
+    int m = MonomialSetPosition(3, index);
     q(index[0] + index[1] + index[2], m) = pos;
   }
   std::cout << "Original polynomial\n" << q << std::endl; 
@@ -125,7 +125,7 @@ TEST(DG_TAYLOR_POLYNOMIALS) {
 
   for (auto it = p2d.begin(); it < p2d.end(); ++it) {
     const int* index = it.multi_index();
-    int pos = p2d.PolynomialPosition(index);
+    int pos = PolynomialPosition(2, index);
 
     int m = it.MonomialSetOrder();
     int k = it.MonomialSetPosition();

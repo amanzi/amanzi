@@ -84,7 +84,7 @@ int MFD3D_Lagrange::H1consistency(
   R_.PutScalar(0.0);
   N.PutScalar(0.0);
 
-  std::vector<const Polynomial*> polys(2);
+  std::vector<const PolynomialBase*> polys(2);
 
   for (auto it = poly.begin(); it < poly.end(); ++it) { 
     const int* index = it.multi_index();
@@ -231,7 +231,7 @@ int MFD3D_Lagrange::H1consistency(
           nm += multi_index[i];
         }
 
-        int m = poly.MonomialSetPosition(multi_index);
+        int m = MonomialSetPosition(d_, multi_index);
         double factor = basis.monomial_scales()[it.MonomialSetOrder()] *
                         basis.monomial_scales()[jt.MonomialSetOrder()];
         N(row + n, col) = integrals_.poly()(nm, m) * factor / volume; 
@@ -323,7 +323,7 @@ void MFD3D_Lagrange::ProjectorCell_(
   }
 
   DenseVector vdof(ndof);
-  std::vector<const Polynomial*> polys(2);
+  std::vector<const PolynomialBase*> polys(2);
   NumericalIntegration numi(mesh_);
 
   // selecting regularized basis

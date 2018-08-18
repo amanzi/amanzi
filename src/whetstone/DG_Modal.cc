@@ -76,7 +76,7 @@ int DG_Modal::MassMatrix(int c, const Tensor& K, DenseMatrix& M)
         multi_index[i] = idx_p[i] + idx_q[i];
       }
 
-      M(l, k) = M(k, l) = K00 * integrals(p.PolynomialPosition(multi_index));
+      M(l, k) = M(k, l) = K00 * integrals(PolynomialPosition(d_, multi_index));
     }
   }
 
@@ -117,7 +117,7 @@ int DG_Modal::MassMatrix(
         multi_index[i] = idx_p[i] + idx_q[i];
       }
 
-      M(k, l) = K00 * integrals.poly()(p.PolynomialPosition(multi_index));
+      M(k, l) = K00 * integrals.poly()(PolynomialPosition(d_, multi_index));
       M(l, k) = M(k, l);
     }
   }
@@ -168,7 +168,7 @@ int DG_Modal::MassMatrixPoly_(int c, const Polynomial& K, DenseMatrix& M)
           multi_index[i] = idx_p[i] + idx_q[i] + idx_K[i];
         }
 
-        M(k, l) += factor * integrals(p.PolynomialPosition(multi_index));
+        M(k, l) += factor * integrals(PolynomialPosition(d_, multi_index));
       }
     }
   }
@@ -300,7 +300,7 @@ int DG_Modal::StiffnessMatrix(int c, const Tensor& K, DenseMatrix& A)
             multi_index[i]--;
             multi_index[j]--;
 
-            tmp = integrals(p.PolynomialPosition(multi_index)); 
+            tmp = integrals(PolynomialPosition(d_, multi_index)); 
             sum += Ktmp(i, j) * tmp * index[i] * jndex[j];
 
             multi_index[i]++;
@@ -364,13 +364,13 @@ int DG_Modal::AdvectionMatrixPoly_(
 
       for (auto jt = q.begin(); jt < q.end(); ++jt) {
         const int* idx_q = jt.multi_index();
-        int l = q.PolynomialPosition(idx_q);
+        int l = PolynomialPosition(d_, idx_q);
 
         for (int i = 0; i < d_; ++i) {
           multi_index[i] = idx_q[i] + idx_K[i];
         }
 
-        A(k, l) += factor * integrals(p.PolynomialPosition(multi_index));
+        A(k, l) += factor * integrals(PolynomialPosition(d_, multi_index));
       }
     }
   }
@@ -484,8 +484,8 @@ int DG_Modal::FluxMatrix(int f, const Polynomial& un, DenseMatrix& A,
   mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
   int ncells = cells.size();
 
-  Polynomial poly0(d_, order_), poly1(d_, order_);
-  int size = poly0.size();
+  Polynomial poly(d_, order_);
+  int size = poly.size();
 
   int nrows = ncells * size;
   A.Reshape(nrows, nrows);
@@ -523,23 +523,23 @@ int DG_Modal::FluxMatrix(int f, const Polynomial& un, DenseMatrix& A,
   }
 
   // integrate traces of polynomials on face f
-  std::vector<const Polynomial*> polys(3);
+  std::vector<const PolynomialBase*> polys(3);
 
-  for (auto it = poly0.begin(); it < poly0.end(); ++it) {
+  for (auto it = poly.begin(); it < poly.end(); ++it) {
     const int* idx0 = it.multi_index();
-    int k = poly0.PolynomialPosition(idx0);
+    int k = PolynomialPosition(d_, idx0);
 
-    Polynomial p0(d_, idx0, 1.0);
+    Monomial p0(d_, idx0, 1.0);
     p0.set_origin(mesh_->cell_centroid(c1));
 
-    Polynomial p1(d_, idx0, 1.0);
+    Monomial p1(d_, idx0, 1.0);
     p1.set_origin(mesh_->cell_centroid(c2));
 
-    for (auto jt = poly1.begin(); jt < poly1.end(); ++jt) {
+    for (auto jt = poly.begin(); jt < poly.end(); ++jt) {
       const int* idx1 = jt.multi_index();
-      int l = poly1.PolynomialPosition(idx1);
+      int l = PolynomialPosition(d_, idx1);
 
-      Polynomial q(d_, idx1, 1.0);
+      Monomial q(d_, idx1, 1.0);
       q.set_origin(mesh_->cell_centroid(c1));
 
       polys[0] = &un;
@@ -598,8 +598,8 @@ int DG_Modal::FluxMatrixRusanov(
   mesh_->face_get_cells(f, Parallel_type::ALL, &cells);
   int ncells = cells.size();
 
-  Polynomial poly0(d_, order_), poly1(d_, order_);
-  int size = poly0.size();
+  Polynomial poly(d_, order_);
+  int size = poly.size();
 
   int nrows = ncells * size;
   A.Reshape(nrows, nrows);
@@ -631,11 +631,11 @@ int DG_Modal::FluxMatrixRusanov(
   uf1(0, 0) -= tmp;
   uf2(0, 0) += tmp;
 
-  std::vector<const Polynomial*> polys(3);
+  std::vector<const PolynomialBase*> polys(3);
 
-  for (auto it = poly0.begin(); it < poly0.end(); ++it) {
+  for (auto it = poly.begin(); it < poly.end(); ++it) {
     const int* idx0 = it.multi_index();
-    int k = poly0.PolynomialPosition(idx0);
+    int k = PolynomialPosition(d_, idx0);
 
     Polynomial p0(d_, idx0, 1.0);
     p0.set_origin(mesh_->cell_centroid(c1));
@@ -643,9 +643,9 @@ int DG_Modal::FluxMatrixRusanov(
     Polynomial p1(d_, idx0, 1.0);
     p1.set_origin(mesh_->cell_centroid(c2));
 
-    for (auto jt = poly1.begin(); jt < poly1.end(); ++jt) {
+    for (auto jt = poly.begin(); jt < poly.end(); ++jt) {
       const int* idx1 = jt.multi_index();
-      int l = poly1.PolynomialPosition(idx1);
+      int l = PolynomialPosition(d_, idx1);
 
       Polynomial q0(d_, idx1, 1.0);
       q0.set_origin(mesh_->cell_centroid(c1));
@@ -699,8 +699,8 @@ int DG_Modal::FaceMatrixJump(int f, const Tensor& K1, const Tensor& K2, DenseMat
   mesh_->face_get_cells(f, Parallel_type::ALL, &cells);
   int ncells = cells.size();
 
-  Polynomial poly0(d_, order_), poly1(d_, order_);
-  int size = poly0.size();
+  Polynomial poly(d_, order_);
+  int size = poly.size();
 
   int nrows = ncells * size;
   A.Reshape(nrows, nrows);
@@ -729,11 +729,11 @@ int DG_Modal::FaceMatrixJump(int f, const Tensor& K1, const Tensor& K2, DenseMat
   double coef00, coef01, coef10, coef11;
   Polynomial p0, p1, q0, q1;
   VectorPolynomial pgrad;
-  std::vector<const Polynomial*> polys(2);
+  std::vector<const PolynomialBase*> polys(2);
 
-  for (auto it = poly0.begin(); it < poly0.end(); ++it) {
+  for (auto it = poly.begin(); it < poly.end(); ++it) {
     const int* idx0 = it.multi_index();
-    int k = poly0.PolynomialPosition(idx0);
+    int k = PolynomialPosition(d_, idx0);
 
     Polynomial p0(d_, idx0, 1.0);
     p0.set_origin(mesh_->cell_centroid(c1));
@@ -741,9 +741,9 @@ int DG_Modal::FaceMatrixJump(int f, const Tensor& K1, const Tensor& K2, DenseMat
     pgrad.Gradient(p0);
     p0 = pgrad * conormal1;
 
-    for (auto jt = poly1.begin(); jt < poly1.end(); ++jt) {
+    for (auto jt = poly.begin(); jt < poly.end(); ++jt) {
       const int* idx1 = jt.multi_index();
-      int l = poly1.PolynomialPosition(idx1);
+      int l = PolynomialPosition(d_, idx1);
 
       Polynomial q0(d_, idx1, 1.0);
       q0.set_origin(mesh_->cell_centroid(c1));
@@ -802,8 +802,8 @@ int DG_Modal::FaceMatrixPenalty(int f, double Kf, DenseMatrix& A)
   mesh_->face_get_cells(f, Parallel_type::ALL, &cells);
   int ncells = cells.size();
 
-  Polynomial poly0(d_, order_), poly1(d_, order_);
-  int size = poly0.size();
+  Polynomial poly(d_, order_);
+  int size = poly.size();
 
   int nrows = ncells * size;
   A.Reshape(nrows, nrows);
@@ -820,18 +820,18 @@ int DG_Modal::FaceMatrixPenalty(int f, double Kf, DenseMatrix& A)
   // integrate traces of polynomials on face f
   double coef00, coef01, coef11;
   Polynomial p0, p1, q0, q1;
-  std::vector<const Polynomial*> polys(2);
+  std::vector<const PolynomialBase*> polys(2);
 
-  for (auto it = poly0.begin(); it < poly0.end(); ++it) {
+  for (auto it = poly.begin(); it < poly.end(); ++it) {
     const int* idx0 = it.multi_index();
-    int k = poly0.PolynomialPosition(idx0);
+    int k = PolynomialPosition(d_, idx0);
 
     Polynomial p0(d_, idx0, 1.0);
     p0.set_origin(mesh_->cell_centroid(c1));
 
-    for (auto jt = poly1.begin(); jt < poly1.end(); ++jt) {
+    for (auto jt = poly.begin(); jt < poly.end(); ++jt) {
       const int* idx1 = jt.multi_index();
-      int l = poly1.PolynomialPosition(idx1);
+      int l = PolynomialPosition(d_, idx1);
 
       Polynomial q0(d_, idx1, 1.0);
       q0.set_origin(mesh_->cell_centroid(c1));

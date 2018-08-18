@@ -143,7 +143,7 @@ int MFD3D_CrouzeixRaviart::H1consistencyHO_(
   R_.PutScalar(0.0);
   N.PutScalar(0.0);
 
-  std::vector<const Polynomial*> polys(2);
+  std::vector<const PolynomialBase*> polys(2);
 
   for (auto it = poly.begin(); it < poly.end(); ++it) { 
     const int* index = it.multi_index();
@@ -216,7 +216,7 @@ int MFD3D_CrouzeixRaviart::H1consistencyHO_(
           nm += multi_index[i];
         }
 
-        int np = poly.MonomialSetPosition(multi_index); 
+        int np = MonomialSetPosition(d_, multi_index); 
         double factor = basis.monomial_scales()[it.MonomialSetOrder()] *
                         basis.monomial_scales()[jt.MonomialSetOrder()];
         N(row + n, col) = integrals_.poly()(nm, np) * factor / volume; 
@@ -554,7 +554,7 @@ void MFD3D_CrouzeixRaviart::ProjectorGradientCell_(
     }
   }
 
-  std::vector<const Polynomial*> polys(2);
+  std::vector<const PolynomialBase*> polys(2);
   NumericalIntegration numi(mesh_);
 
   // selecting regularized basis
@@ -622,7 +622,7 @@ void MFD3D_CrouzeixRaviart::CalculateFaceDOFs_(
     int f, const Polynomial& vf, const Polynomial& pf,
     DenseVector& vdof, int& row)
 {
-  std::vector<const Polynomial*> polys(2);
+  std::vector<const PolynomialBase*> polys(2);
   std::vector<AmanziGeometry::Point> tau(d_ - 1);
 
   NumericalIntegration numi(mesh_);

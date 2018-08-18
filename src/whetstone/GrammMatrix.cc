@@ -43,7 +43,7 @@ void GrammMatrix(
         multi_index[i] = index[i] + jndex[i];
       }
 
-      int pos = poly.PolynomialPosition(multi_index); 
+      int pos = PolynomialPosition(d, multi_index); 
       G(k, l) = G(l, k) = integrals.poly()(pos) * scalek * scalel; 
     }
   }
@@ -91,7 +91,7 @@ void GrammMatrixGradients(
             if (jndex[j] > 0) {
               multi_index[j] -= 1;
 
-              int n = poly.PolynomialPosition(multi_index);
+              int n = PolynomialPosition(d, multi_index);
               tmp = integrals.poly()(n);
               sum += Ktmp(i, j) * tmp * index[i] * jndex[j];
 

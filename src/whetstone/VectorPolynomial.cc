@@ -108,7 +108,7 @@ void VectorPolynomial::Gradient(const Polynomial p)
 
         if (index[i] > 0) {
           index[i]--;
-          int m = p.MonomialSetPosition(index);
+          int m = MonomialSetPosition(d, index);
           polys_[i](k - 1, m) = val * idx[i];
         }
       }

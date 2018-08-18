@@ -50,7 +50,7 @@ void Basis_Normalized::Init(
     }
 
     if (m > 0) {
-      double norm = integrals(2 * m, integrals.MonomialSetPosition(index));
+      double norm = integrals(2 * m, MonomialSetPosition(d, index));
       monomial_scales_(m, k) = std::pow(volume / norm, 0.5);
     }
   }

@@ -54,7 +54,7 @@ void Basis_Orthonormalized::Init(
 
     if (m > 0) {
       double b = integrals(m, k) / volume;
-      double norm = integrals(2 * m, integrals.MonomialSetPosition(index));
+      double norm = integrals(2 * m, MonomialSetPosition(d, index));
 
       norm -= b * b * volume;
       monomial_scales_(m, k) = std::pow(volume / norm, 0.5);

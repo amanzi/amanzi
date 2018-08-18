@@ -191,7 +191,7 @@ Polynomial Divergence(const VectorPolynomial& vp)
           double val = vp[i](n);
 
           index[i]--;
-          int m = vp[i].MonomialSetPosition(index);
+          int m = MonomialSetPosition(d, index);
           div(k - 1, m) += val * idx[i];
         }
       }

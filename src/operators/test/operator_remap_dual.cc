@@ -183,7 +183,7 @@ class RemapDG : public Explicit_TI::fnBase<CompositeVector> {
     *errinf = 0.0;
 
     WhetStone::Entity_ID_List faces;
-    std::vector<const WhetStone::Polynomial*> polys(2);
+    std::vector<const WhetStone::PolynomialBase*> polys(2);
     WhetStone::NumericalIntegration numi(mesh_);
 
     for (int c = 0; c < ncells_owned_; ++c) {

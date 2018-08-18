@@ -303,7 +303,7 @@ TEST(PROJECTORS_POLYGON_CR) {
     const AmanziGeometry::Point& normal = mesh->face_normal(n, false, cell, &dir);
     double factor = normal[0] / mesh->face_area(n) * dir;
 
-    std::vector<const Polynomial*> polys;
+    std::vector<const PolynomialBase*> polys;
 
     Polynomial tmp = vf[n][0] - uc[0];
     polys.push_back(&tmp);
@@ -679,7 +679,7 @@ TEST(PROJECTORS_POLYGON_PK) {
     const AmanziGeometry::Point& normal = mesh->face_normal(n, false, cell, &dir);
     double factor = normal[0] / mesh->face_area(n) * dir;
 
-    std::vector<const Polynomial*> polys;
+    std::vector<const PolynomialBase*> polys;
 
     Polynomial tmp = vf[n][0] - uc[0];
     polys.push_back(&tmp);

@@ -280,7 +280,7 @@ void MFD3D_CrouzeixRaviartSerendipity::CalculateDOFsOnBoundary_(
   mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
   int nfaces = faces.size();
 
-  std::vector<const Polynomial*> polys(2);
+  std::vector<const PolynomialBase*> polys(2);
   NumericalIntegration numi(mesh_);
 
   AmanziGeometry::Point xv(d_);

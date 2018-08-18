@@ -43,11 +43,11 @@ class NumericalIntegration {
       int c, const std::vector<const WhetStoneFunction*>& funcs, int order) const;
 
   double IntegratePolynomialsFace(
-      int f, const std::vector<const Polynomial*>& polys) const;
+      int f, const std::vector<const PolynomialBase*>& polys) const;
 
   double IntegratePolynomialsEdge(
       const AmanziGeometry::Point& x1, const AmanziGeometry::Point& x2,
-      const std::vector<const Polynomial*>& polys) const;
+      const std::vector<const PolynomialBase*>& polys) const;
 
   // -- integral over a simplex 
   double IntegrateFunctionsSimplex(
@@ -68,14 +68,14 @@ class NumericalIntegration {
   double IntegratePolynomialCell(int c, const Polynomial& poly);
 
   double IntegratePolynomialFace(int f, const Polynomial& poly) const {
-    const std::vector<const Polynomial*> polys(1, &poly);
+    const std::vector<const PolynomialBase*> polys(1, &poly);
     return IntegratePolynomialsFace(f, polys);
   }
 
   double IntegratePolynomialEdge(
       const AmanziGeometry::Point& x1, const AmanziGeometry::Point& x2,
       const Polynomial& poly) const {
-    const std::vector<const Polynomial*> polys(1, &poly);
+    const std::vector<const PolynomialBase*> polys(1, &poly);
     return IntegratePolynomialsEdge(x1, x2, polys);
   }
 
