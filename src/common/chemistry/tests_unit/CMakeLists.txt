@@ -20,22 +20,21 @@ include_directories(${UnitTest_INCLUDE_DIRS})
 
 add_amanzi_test(chemistry chemistry_tests
                 KIND unit
-                SOURCE 
-		      main.cc   
-	              test_string_tokenizer.cc
-				  test_chemistry_utilities.cc
-	              test_chemistry_exceptions.cc
-	              test_species.cc
-	              test_surface_site.cc	       
-	              test_activity_model_factory.cc
-	              test_activity_coefficients.cc
-	              test_pitzer.cc
-	              test_secondary_species.cc
-	              test_aqueous_equilibrium_complex.cc
-	              test_mineral.cc
-	              test_mineral_kinetics_factory.cc
-	              test_kinetic_rate.cc
-	              test_beaker.cc	       
+                SOURCE Main.cc   
+                       chemistry_string_tokenizer.cc
+                       chemistry_utilities.cc
+                       chemistry_exceptions.cc
+                       chemistry_species.cc
+                       chemistry_surface_site.cc           
+                       chemistry_activity_model_factory.cc
+                       chemistry_activity_coefficients.cc
+                       chemistry_pitzer.cc
+                       chemistry_secondary_species.cc
+                       chemistry_aqueous_equilibrium_complex.cc
+                       chemistry_mineral.cc
+                       chemistry_mineral_kinetics_factory.cc
+                       chemistry_kinetic_rate.cc
+                       chemistry_beaker.cc           
                  LINK_LIBS
                       error_handling atk ${GEOCHEM_LIBS} ${GEOCHEM_LIBS} 
                       ${Teuchos_LIBRARIES} ${Epetra_LIBRARIES} ${UnitTest_LIBRARIES})

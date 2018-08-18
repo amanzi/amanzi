@@ -62,6 +62,8 @@ protected:
 
   std::string thermo_database_file, thermo_database_format, activity_model;
   int verbose;
+
+  Teuchos::RCP<Amanzi::VerboseObject> vo_;
 };
 
 #endif

@@ -1,17 +1,26 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
-#include "surface_site.hh"
+/*
+  Chemistry 
+
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
+
+  Author: Ben Andre
+
+  Class for storing surface site data for surface complexation
+*/
 
 #include <sstream>
 #include <iostream>
 #include <iomanip>
 
 #include "VerboseObject.hh"
-#include "block.hh"
+
+#include "surface_site.hh"
 
 namespace Amanzi {
 namespace AmanziChemistry {
-
-extern VerboseObject* chem_out;
 
 SurfaceSite::SurfaceSite()
     : name_(""),
@@ -38,18 +47,18 @@ SurfaceSite::SurfaceSite(const SpeciesName name,
   // minerals_.clear();
 }
 
-SurfaceSite::~SurfaceSite() {
-}
 
 // Add a pointer to mineral list
 void SurfaceSite::AddMineral(Mineral* mineral) {
   // minerals_.push_back(mineral);
 }
 
+
 void SurfaceSite::UpdateSiteDensity(const double site_density) {
   // needs to change for minerals....
   set_molar_density(site_density);
-}  // end UpdateSiteDenity()
+} 
+
 
 // Sum the total site concentration based on minerals
 double SurfaceSite::SiteDensity(void) const {
@@ -66,22 +75,25 @@ double SurfaceSite::SiteDensity(void) const {
      return sum*molar_surface_density();
   */
   return molar_density();
-}  // end SiteDensity()
+}
+
 
 void SurfaceSite::display(void) const {
   std::cout << "    " << name() << std::endl;
   std::cout << "        site density = " << molar_density() << std::endl;
-}  // end display()
+}
 
-void SurfaceSite::Display(void) const {
+
+void SurfaceSite::Display(const Teuchos::RCP<VerboseObject>& vo) const {
   std::stringstream message;
   message << std::setw(15) << name()
           << std::setw(15) << std::scientific << molar_density()
           << std::endl;
-  chem_out->Write(Teuchos::VERB_HIGH, message);
-}  // end Display()
+  vo->Write(Teuchos::VERB_HIGH, message);
+}
 
-void SurfaceSite::DisplayResultsHeader(void) const {
+
+void SurfaceSite::DisplayResultsHeader(const Teuchos::RCP<VerboseObject>& vo) const {
   std::stringstream message;
   message << std::setw(15) << "Site Name"
           << std::setw(15) << "Free Conc."
@@ -89,17 +101,18 @@ void SurfaceSite::DisplayResultsHeader(void) const {
   message << std::setw(15) << " "
           << std::setw(15) << "[mol/m^3 bulk]"
           << std::endl;
-  chem_out->Write(Teuchos::VERB_HIGH, message);
-}  // end DisplayResultsHeader()
+  vo->Write(Teuchos::VERB_HIGH, message);
+}
 
-void SurfaceSite::DisplayResults(void) const {
+
+void SurfaceSite::DisplayResults(const Teuchos::RCP<VerboseObject>& vo) const {
   std::stringstream message;
   message << std::setw(15) << name()
           << std::scientific << std::setprecision(5)
           << std::setw(15) << free_site_concentration()
           << std::endl;
-  chem_out->Write(Teuchos::VERB_HIGH, message);
-}  // end DisplayResults()
+  vo->Write(Teuchos::VERB_HIGH, message);
+}
 
 }  // namespace AmanziChemistry
 }  // namespace Amanzi

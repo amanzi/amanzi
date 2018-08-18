@@ -1,18 +1,25 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
-#include "sorption_isotherm_factory.hh"
+/*
+  Chemistry 
+
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
+*/
 
 #include <cstdlib>
 #include <sstream>
 #include <string>
 
+#include "chemistry_exception.hh"
+#include "chemistry_verbosity.hh"
+#include "exceptions.hh"
+#include "sorption_isotherm_factory.hh"
 #include "sorption_isotherm.hh"
 #include "sorption_isotherm_linear.hh"
 #include "sorption_isotherm_langmuir.hh"
 #include "sorption_isotherm_freundlich.hh"
-#include "chemistry_exception.hh"
 #include "string_tokenizer.hh"
-#include "chemistry_verbosity.hh"
-#include "exceptions.hh"
 
 namespace Amanzi {
 namespace AmanziChemistry {
@@ -22,10 +29,8 @@ const std::string SorptionIsothermFactory::langmuir = "langmuir";
 const std::string SorptionIsothermFactory::freundlich = "freundlich";
 
 SorptionIsothermFactory::SorptionIsothermFactory(void) : verbosity_(kSilent) {
-}  // end ActivityModelFactory constructor
+}
 
-SorptionIsothermFactory::~SorptionIsothermFactory(void) {
-}  // end ActivityModelFactory destructor
 
 SorptionIsotherm* SorptionIsothermFactory::Create( 
     const std::string& isotherm_type,
@@ -86,8 +91,9 @@ SorptionIsotherm* SorptionIsothermFactory::Create(
     // finish any additional setup
     // GEH - none for now
   }
+
   return sorption_isotherm;
-}  // end Create()
+}
 
 
 SpeciesId SorptionIsothermFactory::VerifySpeciesName(
@@ -109,8 +115,9 @@ SpeciesId SorptionIsothermFactory::VerifySpeciesName(
                  << "       in the primary species list. " << std::endl;
     Exceptions::amanzi_throw(ChemistryInvalidInput(error_stream.str()));
   }
+
   return species_id;
-}  // end VerifyMineralName()
+}
 
 }  // namespace AmanziChemistry
 }  // namespace Amanzi

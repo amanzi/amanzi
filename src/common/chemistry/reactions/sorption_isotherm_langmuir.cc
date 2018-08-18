@@ -1,4 +1,14 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+/*
+  Chemistry 
+
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
+
+  Class for Langmuir isotherm
+*/
+
 #include "sorption_isotherm_langmuir.hh"
 
 #include <vector>
@@ -15,7 +25,8 @@ SorptionIsothermLangmuir::SorptionIsothermLangmuir()
       K_(0.), 
       b_(0.),
       params_(2, 0.0) {
-}  // end SorptionIsothermLangmuir() constructor
+}
+
 
 SorptionIsothermLangmuir::SorptionIsothermLangmuir(const double K, 
                                                    const double b)
@@ -23,26 +34,26 @@ SorptionIsothermLangmuir::SorptionIsothermLangmuir(const double K,
       K_(K), 
       b_(b),
       params_(2, 0.0) {
-}  // end SorptionIsothermLangmuir() constructor
+}
 
-SorptionIsothermLangmuir::~SorptionIsothermLangmuir() {
-}  // end SorptionIsothermLangmuir() destructor
 
 void SorptionIsothermLangmuir::Init(const double K, const double b) {
   set_K(K);
   set_b(b);
 }
 
+
 const std::vector<double>& SorptionIsothermLangmuir::GetParameters(void) {
   params_.at(0) = K();
   params_.at(1) = b();
   return params_;
-}  // end GetParameters()
+}
+
 
 void SorptionIsothermLangmuir::SetParameters(const std::vector<double>& params) {
   set_K(params.at(0));
   set_b(params.at(1));
-}  // end SetParameters()
+}
 
 
 double SorptionIsothermLangmuir::Evaluate(const Species& primarySpecies) {
@@ -57,7 +68,8 @@ double SorptionIsothermLangmuir::Evaluate(const Species& primarySpecies) {
   // Csorb = K * b * activity / (1 + b * activity)
   double K_activity = K() * primarySpecies.activity(); // temporary variable
   return K_activity * b() / (1. + K_activity);
-}  // end Evaluate()
+}
+
 
 double SorptionIsothermLangmuir::EvaluateDerivative(
     const Species& primarySpecies) {
@@ -71,7 +83,8 @@ double SorptionIsothermLangmuir::EvaluateDerivative(
   return C_sorb / primarySpecies.molality() - 
            (C_sorb / (1. + K_activity) * K_activity / 
              primarySpecies.molality());
-}  // end EvaluateDerivative()
+}
+
 
 void SorptionIsothermLangmuir::Display(void) const {
   std::cout << std::setw(5) << "K:"
@@ -81,7 +94,7 @@ void SorptionIsothermLangmuir::Display(void) const {
             << std::scientific << std::setprecision(5)
             << std::setw(15) << b() 
             << std::endl;
-}  // end Display()
+}
 
 }  // namespace AmanziChemistry
 }  // namespace Amanzi
