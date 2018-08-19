@@ -199,9 +199,15 @@ Teuchos::ParameterList InputConverterU::TranslateTransport_()
     }
   }
 
-  // -- molecular diffusion
+  // -- molecular diffusion (liquid)
   //    check in phases->water list (other solutes are ignored)
+  //    two names are supported (solutes and primaries) FIXME
+  std::string species("solute");
   node = GetUniqueElementByTagsString_("phases, liquid_phase, dissolved_components, solutes", flag);
+  if (!flag) {
+    node = GetUniqueElementByTagsString_("phases, liquid_phase, dissolved_components, primaries", flag);
+    species = "primary";
+  }
   if (flag) {
     Teuchos::ParameterList& diff_list = out_list.sublist("molecular diffusion");
     std::vector<std::string> aqueous_names;
@@ -213,7 +219,7 @@ Teuchos::ParameterList InputConverterU::TranslateTransport_()
       if (inode->getNodeType() != DOMNode::ELEMENT_NODE) continue;
 
       tagname = mm.transcode(inode->getNodeName());
-      if (strcmp(tagname, "solute") != 0) continue;
+      if (strcmp(tagname, species.c_str()) != 0) continue;
 
       double val = GetAttributeValueD_(inode, "coefficient_of_diffusion", TYPE_NUMERICAL, 0.0, DVAL_MAX, "m^2/s", false);
       text = mm.transcode(inode->getTextContent());
@@ -228,7 +234,13 @@ Teuchos::ParameterList InputConverterU::TranslateTransport_()
 
   // -- molecular diffusion
   //    check in phases->air list (other solutes are ignored)
+  species = "solute";
   node = GetUniqueElementByTagsString_("phases, gas_phase, dissolved_components, solutes", flag);
+  if (!flag) {
+    node = GetUniqueElementByTagsString_("phases, gas_phase, dissolved_components, primaries", flag);
+    species = "primary";
+  }
+
   if (flag) {
     Teuchos::ParameterList& diff_list = out_list.sublist("molecular diffusion");
     std::vector<std::string> gaseous_names;
@@ -240,7 +252,7 @@ Teuchos::ParameterList InputConverterU::TranslateTransport_()
       if (inode->getNodeType() != DOMNode::ELEMENT_NODE) continue;
 
       tagname = mm.transcode(inode->getNodeName());
-      if (strcmp(tagname, "solute") != 0) continue;
+      if (strcmp(tagname, species.c_str()) != 0) continue;
 
       double val = GetAttributeValueD_(inode, "coefficient_of_diffusion", TYPE_NUMERICAL, 0.0, DVAL_MAX, "", false);
       double kh = GetAttributeValueD_(inode, "kh", TYPE_NUMERICAL, 0.0, DVAL_MAX);
@@ -591,7 +603,7 @@ void InputConverterU::TranslateTransportBCsAmanziGeochemistry_(
 
         bcn.set("regions", bco.get<Teuchos::Array<std::string> >("regions"))
            .set<std::string>("spatial distribution method", "none")
-           .set<bool>("use volume fractions", false);
+           .set<bool>("use area fractions", false);
         fnc.set("x values", bco.get<Teuchos::Array<double> >("times"));
         fnc.set("forms", bco.get<Teuchos::Array<std::string> >("time functions"));
       

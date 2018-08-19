@@ -51,9 +51,9 @@
       <viscosity>1.002E-03</viscosity>
       <density>998.2</density>
       <dissolved_components>
-        <solutes>
-          <solute coefficient_of_diffusion="1.0e-9" molar_mass="98.906255e-3">Tc-99</solute>
-        </solutes>
+        <primaries>
+          <primary coefficient_of_diffusion="1.0e-9" molar_mass="98.906255e-3">Tc-99</primary>
+        </primaries>
       </dissolved_components>
     </liquid_phase>
   </phases>
