@@ -59,6 +59,8 @@ add_definitions("-DENABLE_Structured")
 #
 # The common pieces
 #
+get_property(CHEM_INCLUDES_DIR GLOBAL PROPERTY CHEM_INCLUDES_DIR)
+
 include_directories(${DBC_SOURCE_DIR})
 include_directories(${CHEM_INCLUDES_DIR})
 

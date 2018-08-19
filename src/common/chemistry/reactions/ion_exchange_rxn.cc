@@ -1,8 +1,15 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
-#include "ion_exchange_rxn.hh"
+/*
+  Chemistry 
+
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
+
+  Class for ion exchange reaction
+*/
 
 #include <cmath>
-
 #include <iostream>
 #include <iomanip>
 #include <sstream>
@@ -11,6 +18,7 @@
 #include "matrix_block.hh"
 
 #include "exceptions.hh"
+#include "ion_exchange_rxn.hh"
 
 namespace Amanzi {
 namespace AmanziChemistry {
@@ -22,6 +30,7 @@ IonExchangeRxn::IonExchangeRxn()
   ionx_site_.clear();
   ionx_complexes_.clear();
 }
+
 
 IonExchangeRxn::IonExchangeRxn(
     IonExchangeSite* ionx_sites,
@@ -39,6 +48,7 @@ IonExchangeRxn::IonExchangeRxn(
   }
 }
 
+
 IonExchangeRxn::IonExchangeRxn(IonExchangeSite ionx_sites) 
     : ref_cation_sorbed_conc_(1.e-9),
       uniform_z_(false),
@@ -48,16 +58,16 @@ IonExchangeRxn::IonExchangeRxn(IonExchangeSite ionx_sites)
   ionx_complexes_.clear();
 }
 
-IonExchangeRxn::~IonExchangeRxn() {
-}
 
 void IonExchangeRxn::AddIonExchangeComplex(const IonExchangeComplex& ionx_complex) {
   ionx_complexes_.push_back(ionx_complex);
 }
 
+
 void IonExchangeRxn::AddIonExchangeSite(const IonExchangeSite& site) {
   ionx_site_.push_back(site);
 }
+
 
 void IonExchangeRxn::Update(const std::vector<Species>& primarySpecies) {
   // pflotran: reaction.F90, function RTotalSorbEqIonX
@@ -147,8 +157,8 @@ void IonExchangeRxn::Update(const std::vector<Species>& primarySpecies) {
     // NOTE: pflotran is doing a += here, but the array was zeroed out.
     ionx->set_concentration(ionx->X()*omega/primarySpecies[icomp].charge());
   }
+}
 
-}  // end Update()
 
 void IonExchangeRxn::AddContributionToTotal(std::vector<double> *total) {
   // pflotran: reaction.F90, function RTotalSorbEqIonX
@@ -158,7 +168,8 @@ void IonExchangeRxn::AddContributionToTotal(std::vector<double> *total) {
     int icomp = ionx->primary_id();
     (*total)[icomp] += ionx->concentration();
   }
-}  // end AddContributionToTotal()
+}
+
 
 void IonExchangeRxn::AddContributionToDTotal(
     const std::vector<Species>& primarySpecies,
@@ -193,7 +204,8 @@ void IonExchangeRxn::AddContributionToDTotal(
       dtotal->AddValue(icomp,jcomp,value);
     }
   }
-}  // end AddContributionToDTotal()
+}
+
 
 void IonExchangeRxn::CheckUniformZ(const std::vector<Species>& primarySpecies) {
   bool uniform_z = true;
@@ -211,51 +223,56 @@ void IonExchangeRxn::CheckUniformZ(const std::vector<Species>& primarySpecies) {
   uniform_z_set_ = true;
 }
 
-void IonExchangeRxn::DisplaySite(void) const {
+
+void IonExchangeRxn::DisplaySite(const Teuchos::RCP<VerboseObject>& vo) const {
   std::vector<IonExchangeSite>::const_iterator site;
   for (site = ionx_site_.begin(); site != ionx_site_.end(); site++) {
-    site->Display();
+    site->Display(vo);
   }
-}  // end DisplaySite()
+}
 
-void IonExchangeRxn::DisplayComplexes(void) const {
+
+void IonExchangeRxn::DisplayComplexes(const Teuchos::RCP<VerboseObject>& vo) const {
   std::vector<IonExchangeComplex>::const_iterator complex;
   for (complex = ionx_complexes_.begin();
        complex != ionx_complexes_.end(); complex++) {
-    complex->Display();
+    complex->Display(vo);
   }
-}  // end DisplayComplexes()
+}
 
-void IonExchangeRxn::Display(void) const {
+
+void IonExchangeRxn::Display(const Teuchos::RCP<VerboseObject>& vo) const {
   //DisplaySite();
-  DisplayComplexes();
-}  // end Display()
+  DisplayComplexes(vo);
+}
 
-void IonExchangeRxn::display(void) const {
-  DisplaySite();
-  DisplayComplexes();
-}  // end display()
+
+void IonExchangeRxn::display(const Teuchos::RCP<VerboseObject>& vo) const {
+  DisplaySite(vo);
+  DisplayComplexes(vo);
+}
+
 
 void IonExchangeRxn::DisplayResultsHeader(void) const {
-  std::cout << std::setw(15) << "---"
-            << std::endl;
-}  // end DisplayResultsHeader()
+  std::cout << std::setw(15) << "---" << std::endl;
+}
 
-void IonExchangeRxn::DisplayResults(void) const {
-  ionx_site_[0].DisplayResultsHeader();
+
+void IonExchangeRxn::DisplayResults(const Teuchos::RCP<VerboseObject>& vo) const {
+  ionx_site_[0].DisplayResultsHeader(vo);
   std::vector<IonExchangeSite>::const_iterator site;
   for (site = ionx_site_.begin();
        site != ionx_site_.end(); site++) {
-    site->DisplayResults();
+    site->DisplayResults(vo);
   }
 
-  ionx_complexes_[0].DisplayResultsHeader();
+  ionx_complexes_[0].DisplayResultsHeader(vo);
   std::vector<IonExchangeComplex>::const_iterator complex;
   for (complex = ionx_complexes_.begin();
        complex != ionx_complexes_.end(); complex++) {
-    complex->DisplayResults();
+    complex->DisplayResults(vo);
   }
-}  // end DisplayResults()
+}
 
 }  // namespace AmanziChemistry
 }  // namespace Amanzi

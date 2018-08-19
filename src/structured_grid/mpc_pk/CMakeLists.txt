@@ -11,8 +11,9 @@ include(PrintVariable)
 # through these variables.
 project(SAMR)
 
+# Get the includes directory for chemistry
+get_property(CHEM_INCLUDES_DIR GLOBAL PROPERTY CHEM_INCLUDES_DIR)
 
-include_directories(${CHEM_SOURCE_DIR}/includes)
 include_directories(${DBC_SOURCE_DIR})
 include_directories(${ATK_SOURCE_DIR})
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})

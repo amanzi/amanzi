@@ -1,20 +1,29 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
-#include "mineral_kinetics_factory.hh"
+/*
+  Chemistry 
 
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
+
+  Factory class for building a mineral kinetic rate object
+*/
+ 
 #include <cstdlib>
 #include <iostream>
 #include <fstream>
 #include <string>
 #include <sstream>
 
-#include "mineral.hh"
-#include "kinetic_rate_tst.hh"
-#include "kinetic_rate.hh"
-#include "species.hh"
-#include "string_tokenizer.hh"
 #include "chemistry_verbosity.hh"
 #include "chemistry_exception.hh"
 #include "exceptions.hh"
+#include "kinetic_rate_tst.hh"
+#include "kinetic_rate.hh"
+#include "mineral.hh"
+#include "mineral_kinetics_factory.hh"
+#include "species.hh"
+#include "string_tokenizer.hh"
 
 namespace Amanzi {
 namespace AmanziChemistry {
@@ -23,10 +32,7 @@ const std::string MineralKineticsFactory::kTST = "TST";
 
 MineralKineticsFactory::MineralKineticsFactory(void)
     : debug_(false) {
-}  // end MineralKineticsFactory constructor
-
-MineralKineticsFactory::~MineralKineticsFactory(void) {
-}  // end MineralKineticsFactory destructor
+} 
 
 
 KineticRate* MineralKineticsFactory::Create(const std::string& rate_type,
@@ -66,7 +72,7 @@ KineticRate* MineralKineticsFactory::Create(const std::string& rate_type,
   }
 
   return kinetic_rate;
-}  // end Create()
+}
 
 
 SpeciesId MineralKineticsFactory::VerifyMineralName(const std::string mineral_name,
@@ -88,8 +94,9 @@ SpeciesId MineralKineticsFactory::VerifyMineralName(const std::string mineral_na
                  << "       in the mineral list. " << std::endl;
     Exceptions::amanzi_throw(ChemistryInvalidInput(error_stream.str()));
   }
+
   return mineral_id;
-}  // end VerifyMineralName()
+}
 
 }  // namespace AmanziChemistry
 }  // namespace Amanzi

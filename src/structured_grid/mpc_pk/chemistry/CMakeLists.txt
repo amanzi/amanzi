@@ -8,15 +8,17 @@
 # through these variables.
 project(SCHEM)
 
+# Get the includes directory for chemistry
+get_property(CHEM_INCLUDES_DIR GLOBAL PROPERTY CHEM_INCLUDES_DIR)
+
 include_directories(${PMAMR_INCLUDE_DIRS})
-include_directories(${CHEM_SOURCE_DIR}/includes)
 include_directories(${DBC_SOURCE_DIR})
 include_directories(${ATK_SOURCE_DIR})
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 include_directories(${CCSE_INCLUDE_DIRS})
 include_directories(${GEOCHEM_STATE_DIR}) 
 include_directories(${GEOCHEM_SOURCE_DIR}) 
-include_directories(${CHEM_INCLUDES_DIRS})
+include_directories(${CHEM_INCLUDES_DIR})
 include_directories(${ALQUIMIA_INCLUDE_DIRS})
 
 # External (TPL) include directories

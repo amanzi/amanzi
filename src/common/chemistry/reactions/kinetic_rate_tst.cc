@@ -1,83 +1,86 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+/*
+  Chemistry 
 
-/*******************************************************************************
- **
- **  Description: implementation of the TST rate law for mineral kinetics
- **
- **  R = k * A * Prod_m (a_m^{mu_m}) * (1 - Q/Keq)
- **
- **  Q = Prod_p (a_p^{nu_p})
- **
- **  where:
- **    R : reaction rate, [moles/sec]
- **    Keq : equilibrium constant, [-]
- **    Q : ion activity product, [-]
- **    a_p : activity of primary species
- **    nu_p : stoichiometric coefficient of primary species
- **    k : reaction rate constant, [moles m^2 s^-1]
- **    A : reactive surface area, [m^2]
- **    a_m : activity of modifying species
- **    mu_m : exponent of modifying species
- **
- **  Residual:
- **
- **    r_i = nu_i R
- **
- **  Jacobian contributions:
- **
- **  dR/dC_j = k * A * (da_j/dC_j) *
- **           ( (1-Q/Keq) * (mu_j * a_j^{mu_j - 1}) * Prod_{m!=j}(a_m^{mu_m}) -
- **             Prod_{m}(a_m^{mu_m})/Keq * (nu_j * a_j^{nu_j - 1}) * Prod_{p!=j}(a_p^{nu_p}) )
- **
- **  J_ij = nu_i * dR/dCj
- **
- **
- **  Notes:
- **
- **    - R is the dissolution rate for the mineral, so positive when
- **    dissolution, negative when precipitation. dCalcite/dt = -R, dCa/dt = R
- **
- **    - assume that the "reactants" list as defined in KineticRate
- **    consists solely of the mineral and the coefficient is always
- **    one, so they are ignored in the ion activity product. The
- **    mineral is only accounted for in the accumulation / consumption
- **    of solid mass.
- **
- **    - assume that the stoichiometry, nu, and exponents, mu, are zero
- **    for any species that does not take part in the reaction!
- **
- **    - assume that the mineral reactions are always written so the
- **    products consist of only primary species.
- **
- **    - assume that the modifying species are only primary species
- **
- **    - ignoring the (1-(Q/Keq)^n) and (1-(Q/Keq)^n)^p forms for now.
- **
- **    - TODO(bandre): need to calculate the area (DONE) or read from the file.
- **
- **    - TODO(bandre): DONE: need to obtain log_Keq from the mineral object rather than read from a file.
- **
- **    - TODO(bandre): DONE: units of A and k are not consistent with the input
- **    file. need to pick a set!
- **
- **    - TODO(bandre): where should the mineral mass get updated at....?
- **
- *******************************************************************************/
-#include "kinetic_rate_tst.hh"
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
+
+  Implementation of the TST rate law for mineral kinetics
+ 
+    R = k * A * Prod (a_i^m_i) * ( 1 - Q/Keq)
+ 
+    Q = Prod_p (a_p^{nu_p})
+ 
+  where:
+    R : reaction rate, [moles/sec]
+    Keq : equilibrium constant, [-]
+    Q : ion activity product, [-]
+    a_p : activity of primary species
+    nu_p : stoichiometric coefficient of primary species
+    k : reaction rate constant, [moles m^2 s^-1]
+    A : reactive surface area, [m^2]
+    a_m : activity of modifying species
+    mu_m : exponent of modifying species
+
+  Residual:
+    r_i = nu_i R
+ 
+  Jacobian contributions:
+    dR/dC_j = k * A * (da_j/dC_j) *
+           ( (1-Q/Keq) * (mu_j * a_j^{mu_j - 1}) * Prod_{m!=j}(a_m^{mu_m}) -
+           Prod_{m}(a_m^{mu_m})/Keq * (nu_j * a_j^{nu_j - 1}) * Prod_{p!=j}(a_p^{nu_p}) )
+
+    J_ij = nu_i * dR/dCj
+ 
+  Notes:
+    - R is the dissolution rate for the mineral, so positive when
+        dissolution, negative when precipitation. dCalcite/dt = -R, dCa/dt = R
+ 
+   - assume that the "reactants" list as defined in KineticRate
+     consists solely of the mineral and the coefficient is always
+     one, so they are ignored in the ion activity product. The
+     mineral is only accounted for in the accumulation / consumption
+     of solid mass.
+ 
+   - assume that the stoichiometry, nu, and exponents, mu, are zero
+     for any species that does not take part in the reaction!
+ 
+   - assume that the mineral reactions are always written so the
+     products consist of only primary species.
+ 
+   - assume that the modifying species are only primary species
+ 
+   - ignoring the (1-(Q/Keq)^n) and (1-(Q/Keq)^n)^p forms for now.
+
+   - TODO(bandre): need to calculate the area (DONE) or read from the file.
+
+   - TODO(bandre): DONE: need to obtain log_Keq from the mineral object rather than read from a file.
+ 
+   - TODO(bandre): DONE: units of A and k are not consistent with the input
+     file. need to pick a set!
+
+   - TODO(bandre): where should the mineral mass get updated at....?
+*/
 
 #include <cmath>
 #include <cstdlib>
-
 #include <sstream>
 #include <iostream>
 #include <sstream>
 
+// TPLs
+#include "boost/algorithm/string.hpp"
+
+// Chemistry
 #include "secondary_species.hh"
 #include "matrix_block.hh"
 #include "string_tokenizer.hh"
 #include "chemistry_verbosity.hh"
 #include "chemistry_utilities.hh"
 #include "chemistry_exception.hh"
+
+#include "kinetic_rate_tst.hh"
 
 namespace Amanzi {
 namespace AmanziChemistry {
@@ -100,10 +103,7 @@ KineticRateTST::KineticRateTST(void)
   this->modifying_primary_exponents.clear();
 
   this->modifying_secondary_exponents.clear();
-}  // end KineticRateTST constructor
-
-KineticRateTST::~KineticRateTST(void) {
-}  // end KineticRateTST destructor
+}
 
 
 void KineticRateTST::Setup(const SecondarySpecies& reaction,
@@ -114,8 +114,6 @@ void KineticRateTST::Setup(const SecondarySpecies& reaction,
   set_identifier(reaction.identifier());
 
   // copy the reactant species, ids and stoichiometry from the reaction species
-  chem_out->Write(Teuchos::VERB_EXTREME, 
-                  "  KineticRateTST::Setup(): Searching for reactant species ids...\n");
   reactant_names = reaction.species_names();
   reactant_stoichiometry = reaction.stoichiometry();
   reactant_ids = reaction.species_ids();
@@ -130,9 +128,6 @@ void KineticRateTST::Setup(const SecondarySpecies& reaction,
   ParseParameters(reaction_data);
 
   // determine the species ids for the modifying species
-  chem_out->Write(Teuchos::VERB_EXTREME,
-                  "  KineticRateTST::Setup(): Searching for modifying species ids...\n");
-
   SetSpeciesIds(primary_species, species_type,
                 modifying_species_names, modifying_exponents,
                 &modifying_primary_ids, &modifying_primary_exponents);
@@ -145,8 +140,7 @@ void KineticRateTST::Setup(const SecondarySpecies& reaction,
   //     std::cout << "      name: " << primary_species.at(modifying_primary_ids.at(i)).name() << std::endl;
   //     std::cout << "    coeff: " << modifying_primary_exponents.at(i) << std::endl;
   //   }
-}  // end Setup()
-
+}
 
 
 void KineticRateTST::Update(const SpeciesArray& primary_species,
@@ -160,12 +154,14 @@ void KineticRateTST::Update(const SpeciesArray& primary_species,
   double lnQ = 0.0;
   for (unsigned int p = 0; p < primary_species.size(); p++) {
     lnQ += primary_stoichiometry.at(p) * primary_species.at(p).ln_activity();
+    /*
     if (debug()) {
       std::stringstream message;
       message << "  Update: p: " << p << "  coeff: " << primary_stoichiometry.at(p)
               << "  ln_a: " << primary_species.at(p).ln_activity() << std::endl;
-      chem_out->Write(Teuchos::VERB_EXTREME, message);
+      vo->Write(Teuchos::VERB_EXTREME, message);
     }
+    */
   }
   double Q = std::exp(lnQ);
   double Keq = std::pow(10.0, log_Keq());
@@ -179,7 +175,7 @@ void KineticRateTST::Update(const SpeciesArray& primary_species,
   modifying_term(std::exp(ln_mod_term));
 
   // calculate the modifying secondary species term:
-
+  /*
   if (debug()) {
     std::stringstream message;
     message << "  Update:\n"
@@ -195,9 +191,11 @@ void KineticRateTST::Update(const SpeciesArray& primary_species,
             << "    1-Q/K: " << 1.0 - Q_over_Keq() << " [--]\n"
             << std::fixed
             << std::endl;
-    chem_out->Write(Teuchos::VERB_EXTREME, message);
+    vo->Write(Teuchos::VERB_EXTREME, message);
   }
-}  // end Update()
+  */
+}
+
 
 void KineticRateTST::AddContributionToResidual(const std::vector<Mineral>&  minerals,
                                                const double bulk_volume,
@@ -223,20 +221,22 @@ void KineticRateTST::AddContributionToResidual(const std::vector<Mineral>&  mine
     for (unsigned int p = 0; p < reactant_stoichiometry.size(); p++) {
       int reactant_id = reactant_ids.at(p);
       residual->at(reactant_id) -= reactant_stoichiometry.at(p) * rate;
-      // if (true) {
+      /*
       if (debug()) {
         std::stringstream message;
         message << "  AddToResidual p: " << p
                 << "  coeff: " << reactant_stoichiometry.at(p)
                 << "  rate: " << rate / bulk_volume << "  redsidual: " << residual->at(p) << std::endl;
-        chem_out->Write(Teuchos::VERB_EXTREME, message);
+        vo->Write(Teuchos::VERB_EXTREME, message);
       }
+      */
     }
   }
   // store the reaction rate so we can use it to update volume fractions
   // need [moles/sec/m^3 bulk], so we divide by volume!
   set_reaction_rate(rate / bulk_volume);
-}  // end AddContributionToResidual()
+}
+
 
 void KineticRateTST::AddContributionToJacobian(const SpeciesArray& primary_species,
                                                const std::vector<Mineral>&  minerals,
@@ -291,6 +291,7 @@ void KineticRateTST::AddContributionToJacobian(const SpeciesArray& primary_speci
           (one_minus_QK * modifying_deriv * temp_modifying_term -
            (modifying_term() / Keq) * primary_deriv * temp_Q);
       dRdC_row[p] = -dRdC;  // where does the neg sign come from...?
+      /*
       if (debug()) {
         std::stringstream message;
         message << "J_row_contrib: p: " << p
@@ -305,8 +306,9 @@ void KineticRateTST::AddContributionToJacobian(const SpeciesArray& primary_speci
                 << "\ttemp_Q: " << temp_Q
                 << "\trow: " << dRdC_row.at(p)
                 << std::endl;
-        chem_out->Write(Teuchos::VERB_EXTREME, message);
+        vo->Write(Teuchos::VERB_EXTREME, message);
       }
+      */
     }
 
     // J_ij = nu_i * dR/dCj
@@ -315,10 +317,10 @@ void KineticRateTST::AddContributionToJacobian(const SpeciesArray& primary_speci
         J->AddValue(i, j, dRdC_row.at(j) * primary_stoichiometry.at(i));
         // std::cout << dRdC_row.at(j) * primary_stoichiometry.at(i) << " ";
       }
-      // std::cout << std::endl;
     }
   }
-}  // end AddContributionToJacobian()
+}
+
 
 void KineticRateTST::ParseParameters(const StringTokenizer& reaction_data) {
   std::string space(" ");
@@ -334,10 +336,10 @@ void KineticRateTST::ParseParameters(const StringTokenizer& reaction_data) {
       // what units do we have [moles/cm^2/sec] or [moles/m^2/sec]? We
       // need to set [moles/m^2/sec]!
       std::string units = st.at(2);
-      if (utilities::CaseInsensitiveStringCompare(units, "moles/cm^2/sec")) {
+      if (boost::iequals(units, "moles/cm^2/sec")) {
         // add 4 in log10 space to convert cm^-2 m^-2
         value += 4.0;
-      } else if (utilities::CaseInsensitiveStringCompare(units, "moles/m^2/sec")) {
+      } else if (boost::iequals(units, "moles/m^2/sec")) {
         // no change
       } else {
         std::ostringstream error_stream;
@@ -368,11 +370,12 @@ void KineticRateTST::ParseParameters(const StringTokenizer& reaction_data) {
       std::cout << "  Field: " << *field << std::endl;
     }
   }
-}  // end ParseParameters()
+}
 
-void KineticRateTST::Display(void) const {
-  chem_out->Write(Teuchos::VERB_HIGH, "    Rate law: TST\n");
-  this->DisplayReaction();
+
+void KineticRateTST::Display(const Teuchos::RCP<VerboseObject>& vo) const {
+  vo->Write(Teuchos::VERB_HIGH, "    Rate law: TST\n");
+  this->DisplayReaction(vo);
   std::stringstream message;
   message << "    Parameters:" << std::endl;
   message << "      mineral = " << name() << std::endl;
@@ -386,8 +389,8 @@ void KineticRateTST::Display(void) const {
     message << "^" << this->modifying_exponents.at(mod) << " " << std::endl;
   }
   message << std::endl;
-  chem_out->Write(Teuchos::VERB_HIGH, message);
-}  // end Display()
+  vo->Write(Teuchos::VERB_HIGH, message);
+}
 
 }  // namespace AmanziChemistry
 }  // namespace Amanzi

@@ -1,14 +1,23 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
-#include "secondary_species.hh"
+/*
+  Chemistry 
 
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
+
+  Base class for secondary species (aqueous equilibrium complexes,
+  minerals.
+*/
+ 
 #include <iostream>
 #include <iomanip>
 #include <sstream>
 
-#include "matrix_block.hh"
 #include "chemistry_exception.hh"
-
 #include "exceptions.hh"
+#include "matrix_block.hh"
+#include "secondary_species.hh"
 
 namespace Amanzi {
 namespace AmanziChemistry {
@@ -24,7 +33,8 @@ SecondarySpecies::SecondarySpecies()
   species_ids_.clear();
   stoichiometry_.clear();
   logK_array_.clear();
-}  // end SecondarySpecies() constructor
+}
+
 
 SecondarySpecies::SecondarySpecies(const SpeciesName in_name,
                                    const SpeciesId in_id,
@@ -89,37 +99,32 @@ SecondarySpecies::SecondarySpecies(const SpeciesName in_name,
                  << "species_names.size() != species_ids.size()" << std::endl;
     Exceptions::amanzi_throw(ChemistryInvalidInput(error_stream.str()));
   }
-}  // end SecondarySpecies costructor
+}
 
-
-SecondarySpecies::~SecondarySpecies() {
-}  // end SecondarySpecies() destructor
 
 /*
-**
 **  these functions are only needed if SecondarySpecies equilibrium is added.
-**
 */
 void SecondarySpecies::Update(const std::vector<Species>& primary_species) {
   static_cast<void>(primary_species);
-}  // end update()
+}
+
 
 void SecondarySpecies::AddContributionToTotal(std::vector<double> *total) {
   static_cast<void>(total);
-}  // end addContributionToTotal()
+}
+
 
 void SecondarySpecies::AddContributionToDTotal(
     const std::vector<Species>& primary_species,
     MatrixBlock* dtotal) {
   static_cast<void>(primary_species);
   static_cast<void>(dtotal);
-}  // end addContributionToDTotal()
+}
 
 
 /*
-**
 **  Display functions
-**
 */
 void SecondarySpecies::Display(void) const {
   std::cout << "    " << name() << " = ";
@@ -134,7 +139,7 @@ void SecondarySpecies::Display(void) const {
             << std::setw(10) << logK_
             << std::setw(10) << gram_molecular_weight()
             << std::endl;
-}  // end Display()
+}
 
 }  // namespace AmanziChemistry
 }  // namespace Amanzi

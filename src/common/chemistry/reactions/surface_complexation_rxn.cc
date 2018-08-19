@@ -1,4 +1,19 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+/*
+  Chemistry 
+
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
+
+  Class for surface complexation reaction
+
+  Notes:
+  - Each instance of this class should contain a single unique
+    surface site (e.g. >FeOH) and ALL surface complexes associated
+    with that site!
+*/
+
 #include "surface_complexation_rxn.hh"
 
 #include <cmath>
@@ -14,8 +29,6 @@
 
 namespace Amanzi {
 namespace AmanziChemistry {
-
-extern VerboseObject* chem_out;
 
 SurfaceComplexationRxn::SurfaceComplexationRxn()
     : use_newton_solve_(false) {
@@ -37,18 +50,18 @@ SurfaceComplexationRxn::SurfaceComplexationRxn(
   }
 }
 
+
 SurfaceComplexationRxn::SurfaceComplexationRxn(SurfaceSite surface_sites) {
   // surface site
   surface_site_.push_back(surface_sites);
   surface_complexes_.clear();
 }
 
-SurfaceComplexationRxn::~SurfaceComplexationRxn() {
-}
 
 void SurfaceComplexationRxn::AddSurfaceComplex(SurfaceComplex surface_complex) {
   surface_complexes_.push_back(surface_complex);
 }
+
 
 void SurfaceComplexationRxn::SetNewtonSolveFlag(void) {
   std::vector<SurfaceComplex>::const_iterator srfcplx =
@@ -60,11 +73,13 @@ void SurfaceComplexationRxn::SetNewtonSolveFlag(void) {
       break;
     }
   }
-}  // end SetNewtonSolveFlag
+}
+
 
 void SurfaceComplexationRxn::UpdateSiteDensity(const double site_density) {
   surface_site_.at(0).UpdateSiteDensity(site_density);
-}  // end UpdateSiteDensity()
+}
+
 
 void SurfaceComplexationRxn::Update(const std::vector<Species>& primarySpecies) {
   // see pflotran source: surface_complexation.F90:694, subroutine RTotalSorbEqSurfCplx1
@@ -129,7 +144,8 @@ void SurfaceComplexationRxn::Update(const std::vector<Species>& primarySpecies) 
                  << "loop reached max_iterations: " << iterations << std::endl;
     Exceptions::amanzi_throw(ChemistryMaxIterationsReached(error_stream.str()));
   }
-}  // end Update()
+}
+
 
 void SurfaceComplexationRxn::AddContributionToTotal(std::vector<double> *total) {
   // see pflotran source: surface_complexation.F90:825, subroutine RTotalSorbEqSurfCplx1
@@ -138,7 +154,8 @@ void SurfaceComplexationRxn::AddContributionToTotal(std::vector<double> *total) 
        srfcplx != surface_complexes_.end(); srfcplx++) {
     srfcplx->AddContributionToTotal(total);
   }
-}  // end AddContributionToTotal()
+}
+
 
 void SurfaceComplexationRxn::AddContributionToDTotal(
     const std::vector<Species>& primarySpecies,
@@ -197,55 +214,60 @@ void SurfaceComplexationRxn::AddContributionToDTotal(
       }
     }
   }
-}  // end AddContributionToDTotal()
+}
 
-void SurfaceComplexationRxn::DisplaySite(void) const {
+
+void SurfaceComplexationRxn::DisplaySite(const Teuchos::RCP<VerboseObject>& vo) const {
   std::vector<SurfaceSite>::const_iterator site;
   for (site = surface_site_.begin(); site != surface_site_.end(); site++) {
-    site->Display();
+    site->Display(vo);
   }
-}  // end DisplaySite()
+}
 
-void SurfaceComplexationRxn::DisplayComplexes(void) const {
+
+void SurfaceComplexationRxn::DisplayComplexes(const Teuchos::RCP<VerboseObject>& vo) const {
   std::vector<SurfaceComplex>::const_iterator complex;
   for (complex = surface_complexes_.begin();
        complex != surface_complexes_.end(); complex++) {
-    complex->Display();
+    complex->Display(vo);
   }
-}  // end DisplayComplexes()
+}
 
-void SurfaceComplexationRxn::Display(void) const {
-  DisplaySite();
-  DisplayComplexes();
-}  // end Display()
 
-void SurfaceComplexationRxn::display(void) const {
-  DisplaySite();
-  DisplayComplexes();
-}  // end display()
+void SurfaceComplexationRxn::Display(const Teuchos::RCP<VerboseObject>& vo) const {
+  DisplaySite(vo);
+  DisplayComplexes(vo);
+}
 
-void SurfaceComplexationRxn::DisplayResultsHeader(void) const {
+
+void SurfaceComplexationRxn::display(const Teuchos::RCP<VerboseObject>& vo) const {
+  DisplaySite(vo);
+  DisplayComplexes(vo);
+}
+
+
+void SurfaceComplexationRxn::DisplayResultsHeader(const Teuchos::RCP<VerboseObject>& vo) const {
   std::stringstream message;
-  message << std::setw(7) << "---"
-            << std::endl;
-  chem_out->Write(Teuchos::VERB_HIGH, message);
-}  // end DisplayResultsHeader()
+  message << std::setw(7) << "---" << std::endl;
+  vo->Write(Teuchos::VERB_HIGH, message);
+}
 
-void SurfaceComplexationRxn::DisplayResults(void) const {
-  surface_site_[0].DisplayResultsHeader();
+
+void SurfaceComplexationRxn::DisplayResults(const Teuchos::RCP<VerboseObject>& vo) const {
+  surface_site_[0].DisplayResultsHeader(vo);
   std::vector<SurfaceSite>::const_iterator site;
   for (site = surface_site_.begin();
        site != surface_site_.end(); site++) {
-    site->DisplayResults();
+    site->DisplayResults(vo);
   }
-  chem_out->Write(Teuchos::VERB_HIGH, "\n");
-  surface_complexes_[0].DisplayResultsHeader();
+  vo->Write(Teuchos::VERB_HIGH, "\n");
+  surface_complexes_[0].DisplayResultsHeader(vo);
   std::vector<SurfaceComplex>::const_iterator complex;
   for (complex = surface_complexes_.begin();
        complex != surface_complexes_.end(); complex++) {
-    complex->DisplayResults();
+    complex->DisplayResults(vo);
   }
-}  // end DisplayResults()
+}
 
 }  // namespace AmanziChemistry
 }  // namespace Amanzi

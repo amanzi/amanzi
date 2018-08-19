@@ -1,11 +1,19 @@
-/* -*-  mode: c++; c-default-style: "google"; indent-tabs-mode: nil -*- */
+/*
+  Chemistry 
 
-#include "matrix_block.hh"
+  Copyright 2010-201x held jointly by LANS/LANL, LBNL, and PNNL. 
+  Amanzi is released under the three-clause BSD License. 
+  The terms of use and "as is" disclaimer for this license are 
+  provided in the top-level COPYRIGHT file.
+
+  Author: Ben Andre
+*/
 
 #include <cmath>
-
 #include <sstream>
 #include <iomanip>
+
+#include "matrix_block.hh"
 
 namespace Amanzi {
 namespace AmanziChemistry {
@@ -205,11 +213,11 @@ void MatrixBlock::AddValues(int ioffset, int joffset, MatrixBlock* b, double sca
   }
 }
 
-void MatrixBlock::Print() const {
-  Print("");
+void MatrixBlock::Print(const Teuchos::RCP<VerboseObject>& vo) const {
+  Print("", vo);
 }
 
-void MatrixBlock::Print(const std::string& name) const {
+void MatrixBlock::Print(const std::string& name, const Teuchos::RCP<VerboseObject>& vo) const {
   std::stringstream message;
   message << name << " : \n";
   for (int i = 0; i < size(); i++) {
@@ -221,10 +229,10 @@ void MatrixBlock::Print(const std::string& name) const {
       }
     }
   }
-  chem_out->Write(Teuchos::VERB_HIGH, message);
+  vo->Write(Teuchos::VERB_HIGH, message);
 }
 
-void MatrixBlock::Print_ij() const {
+void MatrixBlock::Print_ij(const Teuchos::RCP<VerboseObject>& vo) const {
   std::stringstream message;
   for (int i = 0; i < size(); i++) {
     for (int j = 0; j < size(); j++) {
@@ -234,7 +242,7 @@ void MatrixBlock::Print_ij() const {
       }
     }
   }
-  chem_out->Write(Teuchos::VERB_HIGH, message);
+  vo->Write(Teuchos::VERB_HIGH, message);
 }
 
 }  // namespace AmanziChemistry

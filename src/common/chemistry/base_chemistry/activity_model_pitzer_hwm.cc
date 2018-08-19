@@ -36,6 +36,8 @@ const double ActivityModelPitzerHWM::c6aphi_debye_huckel_slope = 0.1481291;  // 
 const double ActivityModelPitzerHWM::c7aphi_debye_huckel_slope = 1.5188505;  //   Temperature depending coefficients
 const double ActivityModelPitzerHWM::c8aphi_debye_huckel_slope = 1.8016317;  //   Temperature depending coefficients
 const double ActivityModelPitzerHWM::c9aphi_debye_huckel_slope = 9.3816144;  //   Temperature depending coefficients
+
+
 /*!
   @brief ActivityModelPitzerHWM
 
@@ -60,17 +62,8 @@ ActivityModelPitzerHWM::ActivityModelPitzerHWM(void)
       number_species(0),
       macinnes_scaled(false),
       jfunction_approach("pitzer1975") {
-}  // end ActivityModelPitzer constructor
+}
 
-/*!
-  @brief ~ActivityModelPitzerHWM
-
-  @class ActivityModelPitzerHWM
-
-  @details Destroy the object
-*/
-ActivityModelPitzerHWM::~ActivityModelPitzerHWM() {
-}  // end ActivityModelPitzer destructor
 
 /*!
   @brief ActivityModelPitzerHWM
@@ -83,23 +76,18 @@ void ActivityModelPitzerHWM::Setup(
     const ActivityModelParameters& parameters,
     const std::vector<Species>& primary_species,
     const std::vector<AqueousEquilibriumComplex>& aqueous_complexes) {
-  //
+
   // initialize storage in the base class:
-  //
   ResizeGamma(primary_species.size() + aqueous_complexes.size());
 
-  //
   // initialize the local stuff:
-  //
   set_verbosity(parameters.verbosity);
-  // --------------------------------------------------------------------------
+
   // Store the J's functions approach name
-  // --------------------------------------------------------------------------
   jfunction_approach = parameters.pitzer_jfunction;
-  // --------------------------------------------------------------------------
+
   // Store constant values for j functions
   // These constants were taken from Table III in Pitzer (1975).
-  // --------------------------------------------------------------------------
   if (jfunction_approach == "pitzer1975") {
     const_j_functions.push_back(4.118);
     const_j_functions.push_back(7.247);
@@ -108,12 +96,11 @@ void ActivityModelPitzerHWM::Setup(
     const_j_functions.push_back(-0.251);
     const_j_functions.push_back(0.0164);
   }
-  // --------------------------------------------------------------------------
+
   // Read Pitzer coefficients database
-  // --------------------------------------------------------------------------
   ReadDataBase(parameters.database_filename,
                primary_species, aqueous_complexes);
-}  // end Setup()
+}
 
 
 /*!
@@ -125,7 +112,7 @@ void ActivityModelPitzerHWM::Setup(
 */
 double ActivityModelPitzerHWM::Evaluate(const Species& species) {
   return 1.0;
-}  // end Evaluate()
+}
 
 /*!
   @brief EvaluateVector
@@ -140,9 +127,8 @@ void ActivityModelPitzerHWM::EvaluateVector(
     std::vector<double>* gamma,
     double* water_activity) {
   unsigned int number_species_(primary_species.size() + aqueous_complexes.size());
-  // --------------------------------------------------------------------------
+
   // Check the number of species
-  // --------------------------------------------------------------------------
   if (number_species_ != number_species) {
     std::ostringstream error_stream;
     error_stream << "Error, different number of aqueous species" << "\n";
@@ -181,7 +167,7 @@ void ActivityModelPitzerHWM::EvaluateVector(
       }
   }
   *water_activity = osmotic_coefficient;
-}  // end EvaluateVector()
+}
 
 /*!
   @brief ComputeQc
@@ -212,6 +198,7 @@ void ActivityModelPitzerHWM::ComputemQcmProduct(std::vector<double>& gamma,
   }
 }
 
+
 /*!
   @brief ComputeQl
 
@@ -228,7 +215,8 @@ void ActivityModelPitzerHWM::ComputemQlmProduct(double& osmotic_coefficient) {
     double mj(molality.at(j));
     osmotic_coefficient += mi * mj * Lij;
   }
-}  // end ComputeQl
+}
+
 
 /*!
   @brief ComputeQ
@@ -258,6 +246,7 @@ void ActivityModelPitzerHWM::ComputemQmProduct(std::vector<double>& gamma,
     gamma.at(i) += charge.at(i) * charge.at(i) * q2prim;
   }
 }
+
 
 /*!
   @brief ComputeT
@@ -300,6 +289,7 @@ void ActivityModelPitzerHWM::ComputemTmmProduct(std::vector<double>& gamma,
   }
 }
 
+
 /*!
   @brief ComputeDH
 
@@ -325,6 +315,7 @@ void ActivityModelPitzerHWM::ComputeDebyeHuckelTerm(std::vector<double>& gamma,
   }
 }
 
+
 /*!
   @brief gclm_
 
@@ -345,6 +336,7 @@ double ActivityModelPitzerHWM::gclm_(const double& dhterm) {
   yyy += mtb0kcl;
   return exp(dhterm + I_ * I_ * xxx + I_ * (2.0 * yyy + I_ * mtc0kcl) + I_ * I_ * mtc0kcl / 2.0);
 }
+
 
 /*!
   @brief ComputeQmatrices
@@ -434,6 +426,7 @@ void ActivityModelPitzerHWM::ComputeQmatrices() {
   }
 }
 
+
 /*!
   @brief ComputeFbeta
 
@@ -459,6 +452,7 @@ void ActivityModelPitzerHWM::ComputeBetaFunctions() {
     }
   }
 }
+
 
 /*!
   @brief ComputeFj
@@ -503,14 +497,12 @@ void ActivityModelPitzerHWM::ComputeJFunctions() {
     }
 
   } else {
-
     std::ostringstream error_stream;
     error_stream << "Name for the J's functions approach not recognized" << "\n";
     Exceptions::amanzi_throw(ChemistryInvalidInput(error_stream.str()));
-
   }
-
 }
+
 
 /*!
   @brief Display
@@ -610,9 +602,9 @@ void ActivityModelPitzerHWM::Display(void) const {
       isp3 = psi_virial.at(i).GetIsp3();
       if (psi_virial.at(i).GetVirial() != 0.0) {
         nvirial++;
-        std::cout << name_species.at(isp1) << "  " << name_species.at(isp2) << "  " << name_species.at(isp3) << "  " << psi_virial.at(i).GetVirial() << std::endl;
+        std::cout << name_species.at(isp1) << "  " << name_species.at(isp2) << "  " 
+                  << name_species.at(isp3) << "  " << psi_virial.at(i).GetVirial() << std::endl;
       }
-
     }
   }
   std::cout << "=====================================>" << std::endl;
@@ -626,7 +618,8 @@ void ActivityModelPitzerHWM::Display(void) const {
     std::cout << "Zi Zj product:" << charge_product[i] << std::endl;
   }
   std::cout << "=====================================>" << std::endl;
-}  // end Display()
+}
+
 
 /*!
   @brief ReadDataBase
@@ -663,9 +656,8 @@ void ActivityModelPitzerHWM::ReadDataBase(const std::string& namedatabase,
     charge.push_back((*i).charge());
     name_species.push_back((*i).name());
   }
-  // --------------------------------------------------------------------------
+
   // Open Pitzer virial coefficients database
-  // --------------------------------------------------------------------------
   if (isdebug) {
     std::cout << "=================> Opening Pitzer Data Base ==============> "
               << namedatabase << std::endl;
@@ -794,7 +786,8 @@ void ActivityModelPitzerHWM::ReadDataBase(const std::string& namedatabase,
   if (isdebug) {
     std::cout << "=================> End print virial coefficients ==============>" << std::endl;
   }
-}  // end ReadDataBase()
+}
+
 
 /*!
   @brief ParseB0
@@ -831,7 +824,8 @@ void ActivityModelPitzerHWM::ParseBeta0VirialCoefficient(const std::string& data
       std::cout << name_species.at(isp1) << name_species.at(isp2) << virial << std::endl;
     }
   }
-}  // ParseB0
+}
+
 
 /*!
   @brief ParseB1
@@ -871,6 +865,7 @@ void ActivityModelPitzerHWM::ParseBeta1VirialCoefficient(const std::string& data
   }
 }
 
+
 /*!
   @brief ParseB2
 
@@ -907,6 +902,7 @@ void ActivityModelPitzerHWM::ParseBeta2VirialCoefficient(const std::string& data
     }
   }
 }
+
 
 /*!
   @brief ParseCfi
@@ -945,6 +941,7 @@ void ActivityModelPitzerHWM::ParseCfiVirialCoefficient(const std::string& data) 
     }
   }
 }
+
 
 /*!
   @brief ParseTheta
@@ -988,6 +985,7 @@ void ActivityModelPitzerHWM::ParseThetaVirialCoefficient(const std::string& data
   }
 }
 
+
 /*!
   @brief ParseLamda
 
@@ -1025,6 +1023,7 @@ void ActivityModelPitzerHWM::ParseLamdaVirialCoefficient(const std::string& data
     }
   }
 }
+
 
 /*!
   @brief ParsePsi
@@ -1069,6 +1068,7 @@ void ActivityModelPitzerHWM::ParsePsiVirialCoefficient(const std::string& data) 
     }
   }
 }
+
 
 /*!
   @brief SetVirial
@@ -1215,8 +1215,8 @@ void ActivityModelPitzerHWM::SetVirialCoefficient(const std::vector<double>& vir
     error_stream << "Type virial coefficient not defined" << typevirial;
     Exceptions::amanzi_throw(ChemistryInvalidInput(error_stream.str()));
   }
+}
 
-}  // end SetVirialCoefficient()
 
 /*!
   @brief AssignFbeta
@@ -1281,7 +1281,8 @@ void ActivityModelPitzerHWM::AssignIndexBetaFunctions() {
       }
     }
   }
-}  // end AssignFbeta
+}
+
 
 /*!
   @brief AssignFj
@@ -1316,9 +1317,8 @@ void ActivityModelPitzerHWM::AssignIndexJFunctions() {
       }
     }
   }
-  // -----------------------------------------------------------
+
   // Compute number of functions j and save
-  // -----------------------------------------------------------
   if (number_non_zero_theta > 0) {
     number_j_functions = 1;
     charge_product.push_back(double(theta_virial.at(0).GetIfun1()));
@@ -1366,7 +1366,8 @@ void ActivityModelPitzerHWM::AssignIndexJFunctions() {
       }
     }
   }
-}  // end AssignFJ
+}
+
 
 /*!
   @brief PushPrivateVectors
@@ -1402,6 +1403,7 @@ void ActivityModelPitzerHWM::PushPrivateVectors() {
   }
 }
 
+
 /*!
   @brief Update
 
@@ -1433,6 +1435,7 @@ void ActivityModelPitzerHWM::Update(const double& temperature,
     (*i).UpdateVirial(temperature, pressure);
   }
 }
+
 
 /*!
   @brief Update
