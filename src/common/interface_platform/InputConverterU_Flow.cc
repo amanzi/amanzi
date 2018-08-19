@@ -257,8 +257,8 @@ Teuchos::ParameterList InputConverterU::TranslateWRM_()
 
     if (strcmp(model.c_str(), "van_genuchten") == 0) {
       double alpha = GetAttributeValueD_(element_cp, "alpha", TYPE_NUMERICAL, 0.0, DVAL_MAX, "Pa^-1");
-      double sr = GetAttributeValueD_(element_cp, "sr", TYPE_NUMERICAL, 0.0, 1.0);
-      double m = GetAttributeValueD_(element_cp, "m", TYPE_NUMERICAL, 0.0, DVAL_MAX);
+      double sr = GetAttributeValueD_(element_cp, "sr", TYPE_NUMERICAL, 0.0, 1.0, "-");
+      double m = GetAttributeValueD_(element_cp, "m", TYPE_NUMERICAL, 0.0, DVAL_MAX, "-");
 
       for (std::vector<std::string>::const_iterator it = regions.begin(); it != regions.end(); ++it) {
         std::stringstream ss;

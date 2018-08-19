@@ -927,8 +927,11 @@ std::string InputConverter::GetTextContentS_(
 * Parse input string using lists of available constants.
 ****************************************************************** */
 std::string InputConverter::GetConstantType_(
-    const std::string& val, std::string& parsed_val)
+    const std::string& val_in, std::string& parsed_val)
 {
+  std::string val(val_in);
+  boost::algorithm::trim(val);
+
   std::string type;
   if (constants_time_.find(val) != constants_time_.end()) {
     type = TYPE_TIME;

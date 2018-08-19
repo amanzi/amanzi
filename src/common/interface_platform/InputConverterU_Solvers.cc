@@ -137,9 +137,9 @@ Teuchos::ParameterList InputConverterU::TranslateLinearSolvers_(
   if (flag) prec = mm.transcode(node->getTextContent());
 
   node = GetUniqueElementByTagsString_(tags_default + ", tolerance", flag);
-  if (flag) tol = GetTextContentD_(node);
+  if (flag) tol = GetTextContentD_(node, "-");
   node = GetUniqueElementByTagsString_(tags + ", tolerance", flag);
-  if (flag) tol = GetTextContentD_(node);
+  if (flag) tol = GetTextContentD_(node, "-");
 
   node = GetUniqueElementByTagsString_(tags_default + ", max_iterations", flag);
   if (flag) maxiter = std::strtol(mm.transcode(node->getTextContent()), NULL, 10);

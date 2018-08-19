@@ -1,6 +1,4 @@
 <amanzi_input type="unstructured" version="2.3.0">
-  <echo_translated_input format="unstructured_native" file_name="oldspec.xml"/>
-
   <model_description name="DVZ 3layer 2D">
     <author>Konstantin Lipnikov</author>
     <!-- default SI units -->
@@ -52,7 +50,7 @@
       <density>998.2</density>
       <dissolved_components>
         <primaries>
-          <primary coefficient_of_diffusion="1.0e-9" molar_mass="98.906255e-3">Tc-99</primary>
+          <primary coefficient_of_diffusion="1.0e-9  m^2/s " molar_mass="98.906255e-3 kg/mol">Tc-99</primary>
         </primaries>
       </dissolved_components>
     </liquid_phase>
@@ -62,7 +60,8 @@
     <verbosity level="high" />
     <execution_control_defaults init_dt="1.0" method="picard" mode="steady" />
     <execution_control mode="steady" start="0.0  y" />
-    <execution_control end="END" mode="transient" start="START" />
+    <!-- spaces here and later are parts of testing -->
+    <execution_control end=" END" mode="transient" start="START " />
   </execution_controls>
 
   <numerical_controls>
@@ -88,7 +87,7 @@
         <dispersion_linear_solver>
           <method>pcg</method>
           <max_iterations>222</max_iterations>
-          <tolerance>2e-22</tolerance>
+          <tolerance>2e-22 </tolerance>
         </dispersion_linear_solver>
       </unstr_transport_controls>
 
@@ -223,7 +222,7 @@
       <!--permeability x="2.0706E-09" z="2.0706E-10" /-->
       <permeability type="file" filename="mesh_data.exo" attribute="permx,permy"/>
       <cap_pressure model="van_genuchten">
-        <parameters alpha="2.0674E-03 Pa^-1" m="vG_M" sr="0.0"/>
+        <parameters alpha="2.0674E-03 Pa^-1" m=" vG_M" sr="0.0"/>
       </cap_pressure>
       <rel_perm model="mualem"/>
       <assigned_regions>RegionTop</assigned_regions>
@@ -254,7 +253,7 @@
         </liquid_component>
         <solute_component>
           <aqueous_conc name="Tc-99" value="0.0" function="constant" start="0.0"/>
-          <aqueous_conc name="Tc-99" value="0.0" function="constant" start="9.4672798E10"/>
+          <aqueous_conc name="Tc-99" value="0.0" function=" constant" start="9.4672798E10"/>
         </solute_component> 
       </liquid_phase>
     </boundary_condition>
@@ -265,13 +264,13 @@
         <liquid_component name="water">
           <inward_volumetric_flux value="1.1071e-10" function="constant" start="0.0" />
           <inward_volumetric_flux value="0.00254022e-3" function="constant" start="6.17266656e+10" />
-          <inward_volumetric_flux value="1.48666E-9" function="constant" start="6.1729344E10" />
+          <inward_volumetric_flux value="1.48666E-9 m/s" function="constant" start="6.1729344E10" />
           <inward_volumetric_flux value="1.48666E-9" function="constant" start="9.4672798E10" />
         </liquid_component>
         <solute_component>
           <aqueous_conc name="Tc-99" value="0.0" function="constant" start="0.0"/>
           <aqueous_conc name="Tc-99" value="1.881389E-06 SI" function="constant" start="6.17266656e+10"/>
-          <aqueous_conc name="Tc-99" value="0.0" function="constant" start="6.1729344E10"/>
+          <aqueous_conc name="Tc-99 " value="0.0" function="constant" start="6.1729344E10"/>
        </solute_component> 
       </liquid_phase>
     </boundary_condition>
@@ -331,7 +330,7 @@
     <walkabout>
       <base_filename>walkabout</base_filename>
       <num_digits>5</num_digits>
-      <cycle_macros>Every100Cycles</cycle_macros>
+      <cycle_macros>Every100Cycles </cycle_macros>
     </walkabout>
   </output>
 </amanzi_input>
