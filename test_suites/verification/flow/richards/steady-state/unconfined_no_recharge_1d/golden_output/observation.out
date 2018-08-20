@@ -1,0 +1,24 @@
+Observation Name, Region, Functional, Variable, Time [s], Value [kg m molar]
+============================================================================
+obl 1, Point0, observation data: point, hydraulic head, 3.0000000000000000e+09, 1.2168639324045534e+01
+obl 2, Point10, observation data: point, hydraulic head, 3.0000000000000000e+09, 1.1697315415915252e+01
+obl 3, Point20, observation data: point, hydraulic head, 3.0000000000000000e+09, 1.1209718420871207e+01
+obl 4, Point30, observation data: point, hydraulic head, 3.0000000000000000e+09, 1.0700483381777445e+01
+obl 5, Point40, observation data: point, hydraulic head, 3.0000000000000000e+09, 1.0165784027121751e+01
+obl 6, Point50, observation data: point, hydraulic head, 3.0000000000000000e+09, 9.6015474946768560e+00
+obl 7, Point60, observation data: point, hydraulic head, 3.0000000000000000e+09, 9.0020403803650968e+00
+obl 8, Point70, observation data: point, hydraulic head, 3.0000000000000000e+09, 8.3600187351329609e+00
+obl 9, Point80, observation data: point, hydraulic head, 3.0000000000000000e+09, 7.6647815097497558e+00
+obl 10, Point90, observation data: point, hydraulic head, 3.0000000000000000e+09, 6.9008456314008848e+00
+obl 11, Point100, observation data: point, hydraulic head, 3.0000000000000000e+09, 6.1397858699744399e+00
+obl 12, Point0, observation data: point, aqueous pressure, 3.0000000000000000e+09, 2.1895194307109027e+05
+obl 13, Point10, observation data: point, aqueous pressure, 3.0000000000000000e+09, 2.1433815426291103e+05
+obl 14, Point20, observation data: point, aqueous pressure, 3.0000000000000000e+09, 2.0956506823899096e+05
+obl 15, Point30, observation data: point, aqueous pressure, 3.0000000000000000e+09, 2.0458016744449516e+05
+obl 16, Point40, observation data: point, aqueous pressure, 3.0000000000000000e+09, 1.9934599651512830e+05
+obl 17, Point50, observation data: point, aqueous pressure, 3.0000000000000000e+09, 1.9382268621057115e+05
+obl 18, Point60, observation data: point, aqueous pressure, 3.0000000000000000e+09, 1.8795411224960239e+05
+obl 19, Point70, observation data: point, aqueous pressure, 3.0000000000000000e+09, 1.8166936362920766e+05
+obl 20, Point80, observation data: point, aqueous pressure, 3.0000000000000000e+09, 1.7486368779954879e+05
+obl 21, Point90, observation data: point, aqueous pressure, 3.0000000000000000e+09, 1.6738552099134537e+05
+obl 22, Point100, observation data: point, aqueous pressure, 3.0000000000000000e+09, 1.5993550848602963e+05

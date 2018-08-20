@@ -391,7 +391,7 @@ function(ADD_AMANZI_COMPARISON_TEST test_name)
 
   # Parse through the remaining options
   set(options PARALLEL)
-  set(oneValueArgs FIELD OBSERVATION INPUT REFERENCE TOLERANCE FILES)
+  set(oneValueArgs FIELD OBSERVATION INPUT REFERENCE RELATIVE_TOLERANCE ABSOLUTE_TOLERANCE FILES)
   set(multiValueArgs NPROCS MPI_EXEC_ARGS)
   cmake_parse_arguments(AMANZI_COMPARISON_TEST "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
 
@@ -411,8 +411,16 @@ function(ADD_AMANZI_COMPARISON_TEST test_name)
     message(FATAL_ERROR "REFERENCE must be specified.")
   endif()
 
-  if ( NOT AMANZI_COMPARISON_TEST_TOLERANCE)
-    message(FATAL_ERROR "TOLERANCE must be specified.")
+  if ( NOT AMANZI_COMPARISON_TEST_RELATIVE_TOLERANCE AND NOT AMANZI_COMPARISON_TEST_ABSOLUTE_TOLERANCE )
+    message(FATAL_ERROR "Either RELATIVE_TOLERANCE or ABSOLUTE_TOLERANCE is required.")
+  endif()
+
+  if ( NOT AMANZI_COMPARISON_TEST_RELATIVE_TOLERANCE )
+    set(AMANZI_COMPARISON_TEST_RELATIVE_TOLERANCE "0.0")
+  endif()
+
+  if ( NOT AMANZI_COMPARISON_TEST_ABSOLUTE_TOLERANCE )
+    set(AMANZI_COMPARISON_TEST_ABSOLUTE_TOLERANCE "0.0")
   endif()
 
   # Assemble the arguments we will pass to add_amanzi_test.
@@ -435,15 +443,20 @@ function(ADD_AMANZI_COMPARISON_TEST test_name)
 
   # Call add_test
   add_amanzi_test(run_${test_name}_for_comparison KIND AMANZI AMANZI_INPUT ${AMANZI_COMPARISON_TEST_INPUT} ${amanzi_test_args})
+  set_tests_properties(run_${test_name}_for_comparison PROPERTIES FIXTURES_SETUP ${test_name})
   _append_test_label(run_${test_name}_for_comparison REG)
   if (AMANZI_COMPARISON_TEST_FIELD)
-    add_test(NAME compare_${test_name}_field COMMAND ${PYTHON_EXECUTABLE} ${AMANZI_SOURCE_DIR}/tools/testing/compare_field_results.py ${AMANZI_COMPARISON_TEST_FIELD} ${AMANZI_COMPARISON_TEST_INPUT} ${AMANZI_COMPARISON_TEST_REFERENCE} ${AMANZI_COMPARISON_TEST_TOLERANCE})
-    set_tests_properties( compare_${test_name}_field PROPERTIES DEPENDS run_${test_name}_for_comparison )
+    add_test(NAME compare_${test_name}_field COMMAND ${PYTHON_EXECUTABLE} ${AMANZI_SOURCE_DIR}/tools/testing/compare_field_results.py ${AMANZI_COMPARISON_TEST_FIELD} ${AMANZI_COMPARISON_TEST_INPUT} ${AMANZI_COMPARISON_TEST_REFERENCE} ${AMANZI_COMPARISON_TEST_RELATIVE_TOLERANCE} ${AMANZI_COMPARISON_TEST_ABSOLUTE_TOLERANCE})
+    set_tests_properties(compare_${test_name}_field PROPERTIES ENVIRONMENT "PYTHONPATH=${AMANZI_SOURCE_DIR}/tools/amanzi_xml:${AMANZI_SOURCE_DIR}/tools/prettytable:${AMANZI_SOURCE_DIR}/tools/testing:${PYTHONPATH}")
+    set_tests_properties(compare_${test_name}_field PROPERTIES FIXTURES_REQUIRED ${test_name})
+    set_tests_properties(run_${test_name}_for_comparison compare_${test_name}_field PROPERTIES RESOURCE_LOCK field_${test_name}_db)
     set_tests_properties( compare_${test_name}_field PROPERTIES PASS_REGULAR_EXPRESSION "Comparison Passed" )
     _append_test_label(compare_${test_name}_field REG)
   else()
-    add_test(NAME compare_${test_name}_observation COMMAND ${PYTHON_EXECUTABLE} ${AMANZI_SOURCE_DIR}/tools/testing/compare_observation_results.py ${AMANZI_COMPARISON_TEST_OBSERVATION} ${AMANZI_COMPARISON_TEST_INPUT} ${AMANZI_COMPARISON_TEST_REFERENCE} ${AMANZI_COMPARISON_TEST_TOLERANCE})
-    set_tests_properties( compare_${test_name}_observation PROPERTIES DEPENDS run_${test_name}_for_comparison )
+    add_test(NAME compare_${test_name}_observation COMMAND ${PYTHON_EXECUTABLE} ${AMANZI_SOURCE_DIR}/tools/testing/compare_observation_results.py ${AMANZI_COMPARISON_TEST_OBSERVATION} ${AMANZI_COMPARISON_TEST_INPUT} ${AMANZI_COMPARISON_TEST_REFERENCE} ${AMANZI_COMPARISON_TEST_RELATIVE_TOLERANCE} ${AMANZI_COMPARISON_TEST_ABSOLUTE_TOLERANCE})
+    set_tests_properties(compare_${test_name}_observation PROPERTIES ENVIRONMENT "PYTHONPATH=${AMANZI_SOURCE_DIR}/tools/amanzi_xml:${AMANZI_SOURCE_DIR}/tools/prettytable:${AMANZI_SOURCE_DIR}/tools/testing:${PYTHONPATH}")
+    set_tests_properties(compare_${test_name}_observation PROPERTIES FIXTURES_REQUIRED ${test_name})
+    set_tests_properties(run_${test_name}_for_comparison compare_${test_name}_observation PROPERTIES RESOURCE_LOCK observation_${test_name}_db)
     set_tests_properties( compare_${test_name}_observation PROPERTIES PASS_REGULAR_EXPRESSION "Comparison Passed" )
     _append_test_label(compare_${test_name}_observation REG)
   endif()

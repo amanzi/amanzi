@@ -56,26 +56,30 @@ def find_output_observation_path(input_xml):
     obs_file = observations.find('filename').text
     return obs_file
 
-def compute_error_norms(x_output, c_output, x_ref, c_ref):
-    errors = {}
+def compute_error_norms(x_output, c_output, x_ref, c_ref, relative_tol, absolute_tol):
+    errors_tols = {}
     for region in x_ref.keys():
         diff = c_ref[region] - c_output[region]
-        errors[region] = np.linalg.norm(diff)
-    return errors
+        # Save a tuple of errors and tolerance
+        errors_tols[region] = (np.linalg.norm(diff),
+                               relative_tol*np.linalg.norm(c_ref[region]) + absolute_tol)
+
+    return errors_tols
 
 if __name__ == "__main__":
 
     # Check argument number.
-    if len(sys.argv) != 5:
-        print('%s: usage:'%sys.argv[0])
-        print('%s observation input.xml reference.obs tolerance'%sys.argv[0])
+    if len(sys.argv) != 6:
+        print("%s: usage:"%sys.argv[0])
+        print("%s observation input.xml reference.obs relative_tolerance absolute_tolerance"%sys.argv[0])
         exit(0)
 
     # Get arguments.
     observation = sys.argv[1]
     input_xml = sys.argv[2]
     ref_file = sys.argv[3]
-    tolerance = float(sys.argv[4])
+    relative_tol = float(sys.argv[4])
+    absolute_tol = float(sys.argv[5])
 
     # Check arguments.
     if not os.path.exists(input_xml):
@@ -84,8 +88,8 @@ if __name__ == "__main__":
     if not os.path.exists(ref_file):
         print('%s: reference file %s does not exist.'%(sys.argv[0], ref_file))
         exit(0)
-    if tolerance <= 0.0:
-        print('%s: tolerance must be positive.'%sys.argv[0])
+    if (relative_tol < 0.0) or (absolute_tol < 0.0):
+        print('%s: tolerance must be non-negative.'%sys.argv[0])
         exit(0)
 
     # Root through the input file and find out where the output lives.
@@ -98,13 +102,14 @@ if __name__ == "__main__":
     x_ref, c_ref = get_observation_data(ref_file, observation)
 
     # Compute the error norms for each of the observations in their respective regions.
-    errors = compute_error_norms(x_output, c_output, x_ref, c_ref)
+    errors_tols = compute_error_norms(x_output, c_output, x_ref, c_ref, relative_tol, absolute_tol)
     msg = ""
 
     # Report.
     total_errors = 0
     error_lines = []
-    for region, error in errors.items():
+    for region, value in errors_tols.items():
+        error, tolerance = value[0], value[1]
         if (error > tolerance):
             total_errors += 1
             error_lines.append('  error %g > tolerance %g in region %s'%(error, tolerance, region))

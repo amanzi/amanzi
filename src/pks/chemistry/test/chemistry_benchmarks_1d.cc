@@ -83,7 +83,7 @@ SUITE(ChemistryBenchmarkTests) {
     amanzi_exe_ = std::string(CMAKE_BINARY_DIR) + std::string("/src/common/standalone_simulation_coordinator/amanzi");
 
     // Figure out the 1D chemistry benchmark directory.
-    benchmark_dir_ = std::string(CMAKE_SOURCE_DIR) + std::string("/testing/benchmarking/chemistry");
+    benchmark_dir_ = std::string(CMAKE_SOURCE_DIR) + std::string("/test_suites/benchmarking/chemistry");
   }
 
   Chemistry1DBenchmarkTest::~Chemistry1DBenchmarkTest() {

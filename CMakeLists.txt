@@ -99,7 +99,8 @@ add_subdirectory(src)
 # EIB - uncommenting this will include the verification/benchmarking tests
 include(CTest)
 if (ENABLE_Regression_Tests)
-  add_subdirectory(testing) 
+  find_package(PythonInterp)
+  add_subdirectory(test_suites) 
 endif()
 
 

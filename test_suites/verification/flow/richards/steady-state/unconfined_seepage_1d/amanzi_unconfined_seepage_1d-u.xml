@@ -1,0 +1,220 @@
+<amanzi_input type="unstructured" version="2.3.0">
+    <model_description name="unconfined_seepaged_2d">
+      <comments>Steady-State Richards: unconfined seepage_2d</comments>
+      <model_id>??</model_id>
+      <author>Markus Berndt</author>
+      <units>
+        <length_unit>m</length_unit>
+        <time_unit>s</time_unit>
+        <mass_unit>kg</mass_unit>
+        <conc_unit>molar</conc_unit>
+      </units>
+    </model_description>
+    <definitions>
+      <macros>
+        <time_macro name="EndTime">
+          <time>9.46728e+10</time>
+        </time_macro>
+      </macros>
+    </definitions>
+    <process_kernels>
+      <comments>Variably saturated flow</comments>
+      <flow model="richards" state="on" />
+      <transport state="off" />
+      <chemistry engine="none" state="off" />
+    </process_kernels>
+    <phases>
+      <liquid_phase name="water">
+        <eos>false</eos>
+        <viscosity>1.002E-03</viscosity>
+        <density>998.2</density>
+      </liquid_phase>
+    </phases>
+    <execution_controls>
+      <verbosity level="high" />
+      <execution_control_defaults init_dt="1" max_dt="1000 y" method="bdf1" mode="steady" />
+      <execution_control end="9.46728e+10" init_dt="1 h" method="bdf1" mode="steady" start="0.0" />
+    </execution_controls>
+    <numerical_controls>
+      <unstructured_controls>
+        <unstr_linear_solver>
+          <max_iterations>100</max_iterations>
+          <tolerance>1.0e-18</tolerance>
+        </unstr_linear_solver>
+        <unstr_steady-state_controls>
+          <initialize_with_darcy>true</initialize_with_darcy>
+        </unstr_steady-state_controls>
+        <unstr_flow_controls>
+          <rel_perm_method>upwind-darcy_velocity</rel_perm_method>
+        </unstr_flow_controls>
+        <unstr_transport_controls>
+          <algorithm>none</algorithm>
+        </unstr_transport_controls>
+      </unstructured_controls>
+    </numerical_controls>
+    <mesh framework="mstk">
+      <dimension>2</dimension>
+      <comments />
+      <read>
+        <format>exodus ii</format>
+        <file>porflow4_4.exo</file>
+      </read>
+    </mesh>
+    <regions>
+      <comments />
+      <region name="Aquifer">
+        <comments>One region comprising the entire domain</comments>
+        <region_file entity="cell" format="exodus ii" label="1" name="porflow4_4.exo" type="labeled set" />
+      </region>
+      <region name="Left side">
+        <comments>left side</comments>
+        <region_file entity="face" format="exodus ii" label="4" name="porflow4_4.exo" type="labeled set" />
+      </region>
+      <region name="Right side">
+        <comments>right side</comments>
+        <region_file entity="face" format="exodus ii" label="2" name="porflow4_4.exo" type="labeled set" />
+      </region>
+      <region name="Top side">
+        <comments>top side</comments>
+        <region_file entity="face" format="exodus ii" label="3" name="porflow4_4.exo" type="labeled set" />
+      </region>
+      <region name="Bottom side">
+        <comments>bottom side</comments>
+        <region_file entity="face" format="exodus ii" label="1" name="porflow4_4.exo" type="labeled set" />
+      </region>
+      <point coordinate="7.6, 0.524" name="Point25" />
+      <point coordinate="38.1, 0.524" name="Point125" />
+      <point coordinate="68.6, 0.524" name="Point225" />
+      <point coordinate="99.1, 0.524" name="Point325" />
+      <point coordinate="129.5, 0.524" name="Point425" />
+      <point coordinate="160.0, 0.524" name="Point525" />
+      <point coordinate="190.5, 0.524" name="Point625" />
+      <point coordinate="221.0, 0.524" name="Point725" />
+      <point coordinate="251.5, 0.524" name="Point825" />
+      <point coordinate="282.0, 0.524" name="Point925" />
+      <point coordinate="297.2, 0.524" name="Point975" />
+    </regions>
+    <materials>
+      <material name="Aquifer">
+        <comments>Aquifer</comments>
+        <mechanical_properties>
+          <porosity value="0.3" />
+        </mechanical_properties>
+        <permeability x="3.6098e-13" y="3.6098e-13" />
+        <cap_pressure model="van_genuchten">
+          <parameters alpha="1.0212e-04" m="0.09090" sr="0.25" optional_krel_smoothing_interval="100"/>
+        </cap_pressure>
+        <rel_perm model="mualem"/>
+        <assigned_regions>Aquifer</assigned_regions>
+      </material>
+    </materials>
+    <initial_conditions>
+      <initial_condition name="Initial Condition">
+        <comments>Aquifer</comments>
+        <assigned_regions>Aquifer</assigned_regions>
+        <liquid_phase name="water">
+          <liquid_component name="water">
+            <linear_pressure gradient="0.0,-9793.52" reference_coord="0.0, 20.0" value="101325.0" />
+          </liquid_component>
+        </liquid_phase>
+      </initial_condition>
+    </initial_conditions>
+    <boundary_conditions>
+      <comments />
+      <boundary_condition name="LeftBC">
+        <comments>Boundary condition at the left side</comments>
+        <assigned_regions>Left side</assigned_regions>
+        <liquid_phase name="water">
+          <liquid_component name="water">
+            <hydrostatic function="constant" start="0.0" value="24.384" />
+          </liquid_component>
+        </liquid_phase>
+      </boundary_condition>
+      <boundary_condition name="RightBC">
+        <comments>Boundary condition at the right side</comments>
+        <assigned_regions>Right side</assigned_regions>
+        <liquid_phase name="water">
+          <liquid_component name="water">
+            <hydrostatic function="constant" start="0.0" value="15.24" />
+          </liquid_component>
+        </liquid_phase>
+      </boundary_condition>
+      <boundary_condition name="TopBC">
+        <comments>Boundary condition at the top</comments>
+        <assigned_regions>Top side</assigned_regions>
+        <liquid_phase name="water">
+          <liquid_component name="water">
+            <seepage_face function="constant" inward_mass_flux="9.6411e-06" start="0.0" />
+          </liquid_component>
+        </liquid_phase>
+      </boundary_condition>
+    </boundary_conditions>
+    <output>
+      <observations>
+        <filename>observation.out</filename>
+        <liquid_phase name="water">
+          <hydraulic_head>
+            <assigned_regions>Point25</assigned_regions>
+            <functional>point</functional>
+            <time_macros>EndTime</time_macros>
+          </hydraulic_head>
+          <hydraulic_head>
+            <assigned_regions>Point125</assigned_regions>
+            <functional>point</functional>
+            <time_macros>EndTime</time_macros>
+          </hydraulic_head>
+          <hydraulic_head>
+            <assigned_regions>Point225</assigned_regions>
+            <functional>point</functional>
+            <time_macros>EndTime</time_macros>
+          </hydraulic_head>
+          <hydraulic_head>
+            <assigned_regions>Point325</assigned_regions>
+            <functional>point</functional>
+            <time_macros>EndTime</time_macros>
+          </hydraulic_head>
+          <hydraulic_head>
+            <assigned_regions>Point425</assigned_regions>
+            <functional>point</functional>
+            <time_macros>EndTime</time_macros>
+          </hydraulic_head>
+          <hydraulic_head>
+            <assigned_regions>Point525</assigned_regions>
+            <functional>point</functional>
+            <time_macros>EndTime</time_macros>
+          </hydraulic_head>
+          <hydraulic_head>
+            <assigned_regions>Point625</assigned_regions>
+            <functional>point</functional>
+            <time_macros>EndTime</time_macros>
+          </hydraulic_head>
+          <hydraulic_head>
+            <assigned_regions>Point725</assigned_regions>
+            <functional>point</functional>
+            <time_macros>EndTime</time_macros>
+          </hydraulic_head>
+          <hydraulic_head>
+            <assigned_regions>Point825</assigned_regions>
+            <functional>point</functional>
+            <time_macros>EndTime</time_macros>
+          </hydraulic_head>
+          <hydraulic_head>
+            <assigned_regions>Point925</assigned_regions>
+            <functional>point</functional>
+            <time_macros>EndTime</time_macros>
+          </hydraulic_head>
+          <hydraulic_head>
+            <assigned_regions>Point975</assigned_regions>
+            <functional>point</functional>
+            <time_macros>EndTime</time_macros>
+          </hydraulic_head>
+        </liquid_phase>
+      </observations>
+      <vis>
+        <base_filename>plot-isv2</base_filename>
+        <num_digits>5</num_digits>
+        <time_macros>EndTime</time_macros>
+      </vis>
+    </output>
+  </amanzi_input>
+  
