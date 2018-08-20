@@ -55,7 +55,8 @@ set(transport_inc_files
   sediment_transport_pk.hh
   )
 
-set(transport_src_files sediment_transport_pk.cc )
+set(transport_src_files sediment_transport_pk.cc
+                        Transport_Diffusion.cc )
 
 add_library(pk_sediment_transport 
             ${transport_src_files}

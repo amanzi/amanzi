@@ -133,10 +133,15 @@ register_evaluator_with_factory(
 #   LISTNAME   MPC_PK_FAC
 #   )
 
-# register_evaluator_with_factory(
-#    HEADERFILE coupled_transport/mpc_coupled_transport_reg.hh
-#    LISTNAME   MPC_PK_FAC
-#   )
+register_evaluator_with_factory(
+  HEADERFILE morphology_pk/mpc_morphology_reg.hh
+  LISTNAME   MPC_PK_FAC
+  )
+
+register_evaluator_with_factory(
+  HEADERFILE coupled_transport/mpc_coupled_transport_reg.hh
+  LISTNAME   MPC_PK_FAC
+  )
 
 
 register_evaluator_with_factory(
@@ -178,5 +183,6 @@ include_evaluators_directories(LISTNAME ENERGY_THREE_PHASE_REG_INCLUDES)
 include_evaluators_directories(LISTNAME MPC_PK_FAC_INCLUDES)
 
 
-#add_subdirectory(coupled_transport)
+add_subdirectory(coupled_transport)
+add_subdirectory(morphology_pk)
 

@@ -91,7 +91,9 @@ set(ATS_LIBS
                       pk_flow_overland_pressure
                       pk_flow_icy_overland
                       pk_transport
-#                      pk_coupled_transport
+                      pk_morphology
+                      pk_coupled_transport
+                      pk_sediment_transport
 	              # pk_prescribed_deformation
 #                      pk_prescribed_volumetric_deformation
                       pk_volumetric_deformation

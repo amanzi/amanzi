@@ -69,10 +69,10 @@ double CoupledTransport_PK::get_dt() {
   double subsurf_dt = sub_pks_[subsurf_id_]->get_dt();
 
   Teuchos::OSTab tab = vo_->getOSTab();
-  if (vo_->os_OK(Teuchos::VERB_HIGH) {
+  //if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH) {
     *vo_->os()<< "surface transport dt = "<<surf_dt<<"\n";
     *vo_->os()<< "sub surface transport dt = "<<subsurf_dt<<"\n";
-  }
+   //}
 
   double dt = std::min(surf_dt, subsurf_dt);
   set_dt(dt);
@@ -105,60 +105,6 @@ void CoupledTransport_PK::Initialize(const Teuchos::Ptr<State>& S){
 
 }
 
-void CoupledTransport_PK::ComputeVolumeDarcyFlux(const Teuchos::Ptr<State>& S){
-
-  int  nfaces_owned;
-
-  Teuchos::RCP<const Epetra_MultiVector> darcy_flux = 
-    S->GetFieldData(Keys::getKey(subsurface_name_,"mass_flux"))->ViewComponent("face");
-
-  Teuchos::RCP<const Epetra_MultiVector> surf_darcy_flux =
-    S->GetFieldData(Keys::getKey(surface_name_,"mass_flux"))->ViewComponent("face");
-
-  Key molar_den_key = Keys::getKey(subsurface_name_, "molar_density_liquid");
-  Teuchos::RCP<const Epetra_MultiVector> molar_density = 
-    S->GetFieldData(molar_den_key)->ViewComponent("cell", true);
-
-  Key surf_molar_den_key = Keys::getKey(surface_name_, "molar_density_liquid");
-  Teuchos::RCP<const Epetra_MultiVector> surf_molar_density = 
-    S->GetFieldData(surf_molar_den_key)->ViewComponent("cell", true);
-
-  Teuchos::RCP<Epetra_MultiVector> vol_darcy = 
-    S->GetFieldData(vol_darcy_key_, passwd_)->ViewComponent("face");
-
-  Teuchos::RCP<Epetra_MultiVector> surf_vol_darcy = 
-    S->GetFieldData(surf_vol_darcy_key_, passwd_)->ViewComponent("face");
-
-
-  // subsurface
-  nfaces_owned = mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
-  AmanziMesh::Entity_ID_List cells;
-  
-  for (int f = 0; f < nfaces_owned; f++){
-    mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
-    double n_liq=0.;
-    for (int c=0; c<cells.size();c++) n_liq += (*molar_density)[0][c];
-    n_liq /= cells.size();
-    if (n_liq > 0) (*vol_darcy)[0][f] = (*darcy_flux)[0][f]/n_liq;
-    else (*vol_darcy)[0][f] = 0.;
-  }
-  S->GetField(vol_darcy_key_, passwd_)->set_initialized();  
-
-  // surface
-  nfaces_owned = surf_mesh_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
-  for (int f = 0; f < nfaces_owned; f++){
-    mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
-    double n_liq=0.;
-    for (int c=0; c<cells.size();c++) n_liq += (*surf_molar_density)[0][c];
-    n_liq /= cells.size();
-    if (n_liq > 0) (*surf_vol_darcy)[0][f] = (*surf_darcy_flux)[0][f]/n_liq;
-    else (*surf_vol_darcy)[0][f] = 0.;
-  }
-  S->GetField(surf_vol_darcy_key_, passwd_)->set_initialized();
-    
-
-}
-
 
 // -----------------------------------------------------------------------------
 // Advance each sub-PK individually, returning a failure as soon as possible.
@@ -186,16 +132,20 @@ bool CoupledTransport_PK::AdvanceStep(double t_old, double t_new, bool reinit) {
 
 
   sub_pks_[subsurf_id_]->AdvanceStep(t_old, t_new, reinit);
+  *vo_->os() <<"Subsurface step successful\n";
   sub_pks_[surf_id_]->AdvanceStep(t_old, t_new, reinit);
+  *vo_->os() <<"Overland step successful\n";
+
 
   const Epetra_MultiVector& surf_tcc = *S_->GetFieldCopyData("surface-total_component_concentration", "subcycling")->ViewComponent("cell",false);  
   const Epetra_MultiVector& tcc = *S_->GetFieldCopyData("total_component_concentration", "subcycling")->ViewComponent("cell",false);
 
   const std::vector<std::string>&  component_names_sub =
     Teuchos::rcp_dynamic_cast<Transport::Transport_PK_ATS>(sub_pks_[subsurf_id_])->component_names();
-  
+
   int num_components =  Teuchos::rcp_dynamic_cast<Transport::Transport_PK_ATS>(sub_pks_[subsurf_id_]) -> num_aqueous_component();
-  std::vector<double> mass_subsurface(num_components, 0.), mass_surface(num_components, 0.);
+   std::vector<double> mass_subsurface(num_components, 0.), mass_surface(num_components, 0.);
+
   
   if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM){
     for (int i=0; i<num_components; i++){

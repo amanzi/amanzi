@@ -11,8 +11,8 @@
            Konstantin Lipnikov (lipnikov@lanl.gov)
 */
 
-#ifndef AMANZI_TRANSPORT_DOMAIN_FUNCTION_HH_
-#define AMANZI_TRANSPORT_DOMAIN_FUNCTION_HH_
+#ifndef AMANZI_SEDTRANSPORT_DOMAIN_FUNCTION_HH_
+#define AMANZI_SEDTRANSPORT_DOMAIN_FUNCTION_HH_
 
 #include <vector>
 #include <map>
@@ -28,7 +28,7 @@
 class State;
 
 namespace Amanzi {
-namespace Transport {
+namespace SedimentTransport {
 
 class TransportDomainFunction {
  public:
@@ -69,7 +69,7 @@ protected:
   std::vector<int> tcc_index_;  // index of component in the global list
 };
 
-}  // namespace Transport
+}  // namespace SedimentTransport
 }  // namespace Amanzi
 
 #endif

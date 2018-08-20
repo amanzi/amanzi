@@ -20,9 +20,8 @@
 
 // Amanzi
 #include "CompositeVector.hh"
-#include "DiffusionPhase.hh"
 #include "Explicit_TI_FnBase.hh"
-#include "MaterialProperties.hh"
+//#include "MaterialProperties.hh"
 #include "PK.hh"
 #include "PK_Factory.hh"
 #include "ReconstructionCell.hh"
@@ -36,10 +35,8 @@
 #include <string>
 
 // Transport
-#include "MDMPartition.hh"
-#include "MultiscaleTransportPorosityPartition.hh"
 #include "TransportDomainFunction.hh"
-#include "TransportDefs.hh"
+#include "SedimentTransportDefs.hh"
 
 
 /* ******************************************************************
@@ -51,7 +48,7 @@ pointers to the original variables.
 ****************************************************************** */
 
 namespace Amanzi {
-namespace Transport {
+namespace SedimentTransport {
 
 typedef double AnalyticFunction(const AmanziGeometry::Point&, const double);
 
@@ -101,11 +98,11 @@ typedef double AnalyticFunction(const AmanziGeometry::Point&, const double);
 
   // -- control members
   void CreateDefaultState(Teuchos::RCP<const AmanziMesh::Mesh>& mesh, int ncomponents);
-  void Policy(Teuchos::Ptr<State> S);
+  // void Policy(Teuchos::Ptr<State> S);
 
-  void VV_CheckGEDproperty(Epetra_MultiVector& tracer) const; 
-  void VV_CheckTracerBounds(Epetra_MultiVector& tracer, int component,
-                            double lower_bound, double upper_bound, double tol = 0.0) const;
+  // void VV_CheckGEDproperty(Epetra_MultiVector& tracer) const; 
+  // void VV_CheckTracerBounds(Epetra_MultiVector& tracer, int component,
+  //                           double lower_bound, double upper_bound, double tol = 0.0) const;
   void VV_CheckInfluxBC() const;
   void VV_PrintSoluteExtrema(const Epetra_MultiVector& tcc_next, double dT_MPC);
   double VV_SoluteVolumeChangePerSecond(int idx_solute);
@@ -139,13 +136,13 @@ typedef double AnalyticFunction(const AmanziGeometry::Point&, const double);
 
   // advection members
   void AdvanceDonorUpwind(double dT);
-  void AdvanceSecondOrderUpwindRKn(double dT);
-  void AdvanceSecondOrderUpwindRK1(double dT);
-  void AdvanceSecondOrderUpwindRK2(double dT);
-  void Advance_Dispersion_Diffusion(double t_old, double t_new);
+  // void AdvanceSecondOrderUpwindRKn(double dT);
+  // void AdvanceSecondOrderUpwindRK1(double dT);
+  // void AdvanceSecondOrderUpwindRK2(double dT);
+  void Advance_Diffusion(double t_old, double t_new);
 
   // time integration members
-  void Functional(const double t, const Epetra_Vector& component, Epetra_Vector& f_component);
+    void Functional(const double t, const Epetra_Vector& component, Epetra_Vector& f_component){};
     //  void Functional(const double t, const Epetra_Vector& component, TreeVector& f_component);
 
   void IdentifyUpwindCells();
@@ -159,13 +156,9 @@ typedef double AnalyticFunction(const AmanziGeometry::Point&, const double);
 
   // physical models
   // -- dispersion and diffusion
-  void CalculateDispersionTensor_(
-      const Epetra_MultiVector& darcy_flux, const Epetra_MultiVector& porosity, 
-      const Epetra_MultiVector& saturation, const Epetra_MultiVector& mol_density);
-
-  void CalculateDiffusionTensor_(
-      double md, int phase, const Epetra_MultiVector& porosity, 
-      const Epetra_MultiVector& saturation, const Epetra_MultiVector& mol_density);
+  void CalculateDiffusionTensor_(const Epetra_MultiVector& km,
+                                 const Epetra_MultiVector& saturation,
+                                 const Epetra_MultiVector& mol_density);
 
   int FindDiffusionValue(const std::string& tcc_name, double* md, int* phase);
 
@@ -199,13 +192,10 @@ typedef double AnalyticFunction(const AmanziGeometry::Point&, const double);
     Key saturation_key_;
     Key prev_saturation_key_;
     Key flux_key_;
-    Key darcy_flux_key_;
-    Key permeability_key_;
     Key tcc_key_;
-    Key porosity_key_;
-    Key tcc_matrix_key_;
     Key molar_density_key_;
     Key solid_residue_mass_key_;
+    Key sd_trapping_key_, sd_settling_key_, sd_erosion_key_, horiz_mixing_key_;
 
   
  
@@ -223,8 +213,9 @@ typedef double AnalyticFunction(const AmanziGeometry::Point&, const double);
   Teuchos::RCP<CompositeVector> tcc;  // smart mirrow of tcc 
   Teuchos::RCP<Epetra_MultiVector> conserve_qty_, solid_qty_;
   Teuchos::RCP<const Epetra_MultiVector> flux_;
-  Teuchos::RCP<const Epetra_MultiVector> ws_, ws_prev_, phi_, mol_dens_, mol_dens_prev_;
+  Teuchos::RCP<const Epetra_MultiVector> ws_, ws_prev_, mol_dens_;//, mol_dens_prev_;
   Teuchos::RCP<Epetra_MultiVector> flux_copy_;
+  Teuchos::RCP<const Epetra_MultiVector> km_;  
     
   Teuchos::RCP<Epetra_IntVector> upwind_cell_;
   Teuchos::RCP<Epetra_IntVector> downwind_cell_;
@@ -240,21 +231,22 @@ typedef double AnalyticFunction(const AmanziGeometry::Point&, const double);
   std::vector<Teuchos::RCP<TransportDomainFunction> > srcs_;  // Source or sink for components
   std::vector<Teuchos::RCP<TransportDomainFunction> > bcs_;  // influx BC for components
   double bc_scaling;
-  Teuchos::RCP<Epetra_Vector> Kxy;  // absolute permeability in plane xy
 
   Teuchos::RCP<Epetra_Import> cell_importer;  // parallel communicators
   Teuchos::RCP<Epetra_Import> face_importer;
 
   // mechanical dispersion and molecual diffusion
-  Teuchos::RCP<MDMPartition> mdm_;
+  // Teuchos::RCP<MDMPartition> mdm_;
+    
   std::vector<WhetStone::Tensor> D_;
+  std::string diffusion_preconditioner, diffusion_solver;    
 
-  bool flag_dispersion_;
-  std::vector<int> axi_symmetry_;  // axi-symmetry direction of permeability tensor
-  std::string dispersion_preconditioner, dispersion_solver;
+  // bool flag_dispersion_;
+  // std::vector<int> axi_symmetry_;  // axi-symmetry direction of permeability tensor
+  
 
-  std::vector<Teuchos::RCP<MaterialProperties> > mat_properties_;  // vector of materials
-  std::vector<Teuchos::RCP<DiffusionPhase> > diffusion_phase_;   // vector of phases
+  // std::vector<Teuchos::RCP<MaterialProperties> > mat_properties_;  // vector of materials
+  // std::vector<Teuchos::RCP<DiffusionPhase> > diffusion_phase_;   // vector of phases
 
 
   double cfl_, dt_, dt_debug_, t_physics_;  
@@ -287,7 +279,7 @@ typedef double AnalyticFunction(const AmanziGeometry::Point&, const double);
   static RegisteredPKFactory<SedimentTransport_PK> reg_;
 };
 
-}  // namespace Transport
+}  // namespace SedimentTransport
 }  // namespace Amanzi
 
 #endif
