@@ -208,12 +208,13 @@ VectorPolynomial GradientOnUnitSphere(const Polynomial& poly, int k)
 {
   int d = poly.dimension();
   AMANZI_ASSERT(d == 2);
-  AMANZI_ASSERT(k < 2);
+  AMANZI_ASSERT(k < 3);
 
   VectorPolynomial out(d, d, k);
   out.set_origin(poly.origin());
 
-  double a1, a2, a3, a4, a5, len;
+  double a1, a2, a3, a4, a5, a6, a7, a8, a9;
+  double len, len2, len3, len5, ux, uy, vx, vy;
   a1 = poly(1);
   a2 = poly(2);
   len = std::pow(a1 * a1 + a2 * a2, 0.5);
@@ -222,16 +223,53 @@ VectorPolynomial GradientOnUnitSphere(const Polynomial& poly, int k)
   out[1](0) = a2 / len;
 
   if (k > 0) {
-    len = len * len * len;
     a3 = poly(3);
     a4 = poly(4);
     a5 = poly(5);
 
-    out[0](1) = a2 * (2 * a2 * a3 - a1 * a4) / len; 
-    out[0](2) = a2 * (a2 * a4 - 2 * a1 * a5) / len; 
+    double tmp1 = a1 * a4 - 2 * a2 * a3;
+    double tmp2 = a2 * a4 - 2 * a1 * a5;
 
-    out[1](1) = a1 * (a1 * a4 - 2 * a2 * a3) / len; 
-    out[1](2) = a1 * (2 * a1 * a5 - a2 * a4) / len; 
+    len3 = len * len * len;
+    ux =-a2 * tmp1;
+    uy = a2 * tmp2;
+
+    vx = a1 * tmp1;
+    vy =-a1 * tmp2;
+
+    out[0](1) = ux / len3; 
+    out[0](2) = uy / len3; 
+
+    out[1](1) = vx / len3; 
+    out[1](2) = vy / len3; 
+  }
+
+  if (k > 1) {
+    a6 = poly(6);
+    a7 = poly(7);
+    a8 = poly(8);
+    a9 = poly(9);
+
+    len2 = len * len;
+    len5 = len3 * len2;
+    double uxx = 2 * a2 * (3 * a2 * a6 + a3 * a4) - a1 * (a4 * a4 + 2 * a2 * a7);
+    double uxy = 2 * a2 * (a7 * a7 + 4 * a3 * a5 - a1 * a8) - a4 * (a2 * a4 + 2 * a1 * a5);
+    double uyy = 2 * a2 * (a2 * a8 + a4 * a5) - a1 * (4 * a5 * a5 + 6 * a2 * a9);
+
+    double dx = 2 * a1 * a3 + a2 * a4;
+    double dy = 2 * a2 * a5 + a1 * a4;
+
+    double vxx = 2 * a1 * (a1 * a7 + a3 * a4) - a2 * (4 * a3 * a3 + 6 * a1 * a6); 
+    double vxy = 2 * a1 * (a1 * a8 + a4 * a4 - 2 * a3 * a5) - 2 * a2 * (a3 * a4 + a1 * a7); 
+    double vyy = 2 * a1 * (3 * a1 * a9 + a4 * a5) - a2 * (a4 * a4 + 2 * a1 * a8); 
+
+    out[0](3) = (uxx * len2 - 3 * ux * dx) / (2 * len5);
+    out[0](4) = (uxy * len2 - 3 * ux * dy) / len5;
+    out[0](5) = (uyy * len2 - 3 * uy * dy) / (2 * len5);
+
+    out[1](3) = (vxx * len2 - 3 * vx * dx) / (2 * len5);
+    out[1](4) = (vxy * len2 - 3 * vx * dy) / len5;
+    out[1](5) = (vyy * len2 - 3 * vy * dy) / (2 * len5);
   }
 
   return out;

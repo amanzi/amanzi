@@ -405,6 +405,7 @@ void AdvectionFn<AnalyticDG>::ApproximateVelocity_LevelSet(
     const Teuchos::RCP<std::vector<WhetStone::Polynomial> >& velf,
     const Teuchos::RCP<std::vector<WhetStone::Polynomial> >& divc)
 {
+  u.ScatterMasterToGhosted();
   const Epetra_MultiVector& u_c = *u.ViewComponent("cell", true);
 
   int dim = mesh_->space_dimension();
@@ -449,7 +450,7 @@ void AdvectionFn<AnalyticDG>::ApproximateVelocity_LevelSet(
     mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
     int ncells = cells.size();
 
-    WhetStone::VectorPolynomial vvf(2, 2, 1);
+    WhetStone::VectorPolynomial vvf(2, 2, order_ - 1);
     vvf.set_origin(xf);
 
     for (int n = 0; n < ncells; ++n) {
