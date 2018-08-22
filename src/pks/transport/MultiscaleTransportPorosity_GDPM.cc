@@ -20,7 +20,8 @@ namespace Transport {
 ****************************************************************** */
 MultiscaleTransportPorosity_GDPM::MultiscaleTransportPorosity_GDPM(Teuchos::ParameterList& plist)
 {
-  // omega_ = plist.get<double>("solute transfer coefficient", 0.0);
+  // omega_ = plist.sublist("generalized dual porosity parameters")
+  //               .get<int>("number of matrix layers", 2);
 }
 
 

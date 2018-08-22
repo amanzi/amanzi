@@ -2327,16 +2327,32 @@ discretized in mesh cells and on mesh faces. The later unknowns are auxiliary un
 Multiscale continuum models
 ...........................
 
-The list of multiscale models is the placeholder for various multiscale models.
+The list of multiscale models is the place for various subscale models that coul 
+be mixed and matched.
 Its ordered by materials and includes parameters for the assigned multiscale model
 This list is optional.
 
-* `"multiscale model`" [string] is the model name. Available option is "dual porosity".
+* `"multiscale model`" [string] is the model name. Available option is `"dual porosity`"
+  and `"generalized dual porosity`".
 
 * `"regions`" [Array(string)] is the list of regions where this model should be applied.
 
+* `"xxx parameters`" [sublist] provides parameters for the model specified by variable `"multiscale model`".
+
+Dual porosity model
+```````````````````
+
 * `"solute transfer coefficient`" [list] defines diffusive solute transport due to
   convetration gradients.
+
+
+Generalized dual porosity model
+```````````````````````````````
+
+* `"number of matrix nodes`" [int] defines number of matrix layers.
+* `"matrix depth`" [double] is the characteristic length for matrix continuum.
+* `"matrix geometry`" [string] specfies geometric configuration of pore space.
+  Available options are `"planar`" and `"spherical`".
 
 .. code-block:: xml
 
@@ -2345,11 +2361,19 @@ This list is optional.
       <ParameterList name="WHITE SOIL">
         <Parameter name="multiscale model" type="string" value="dual porosity"/>
         <Parameter name="regions" type="Array(string)" value="{TOP_REGION, BOTTOM_REGION}"/>
-        <Paramater name="solute transfer coefficient" type="double" value="4.0e-5"/>
+        <ParameterList name="dual porosity parameters">
+          <Paramater name="solute transfer coefficient" type="double" value="4.0e-5"/>
+        </ParameterList>  
       </ParameterList>  
 
       <ParameterList name="GREY SOIL">
-         ...  
+        <Parameter name="multiscale model" type="string" value="generalized dual porosity"/>
+        <Parameter name="regions" type="Array(string)" value="{MIDDLE_REGION}"/>
+        <ParameterList name="generalized dual porosity parameters">
+          <Paramater name="number of matrix nodes" type="int" value="2"/>
+          <Paramater name="matrix depth" type="double" value="0.01"/>
+          <Paramater name="matrix geometry" type="string" value="planar"/>
+        </ParameterList>  
       </ParameterList>  
     </ParameterList>  
   </ParameterList>  

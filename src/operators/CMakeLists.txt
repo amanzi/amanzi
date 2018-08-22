@@ -56,6 +56,7 @@ add_amanzi_library(operators_audit
 #
 set(operators_inc_files
     BCs.hh
+    Mini_Diffusion1D.hh
     RemapUtils.hh
     OperatorDefs.hh
     OperatorUtils.hh
@@ -115,7 +116,8 @@ set(operators_inc_files
 )
 
 add_amanzi_library(operators 
-                   SOURCE OperatorUtils.cc
+                   SOURCE Mini_Diffusion1D.cc
+                          OperatorUtils.cc
                           Operator.cc
                           Operator_Node.cc
                           Operator_Edge.cc

@@ -347,8 +347,9 @@ Teuchos::ParameterList InputConverterU::TranslateTransportMSM_()
     Teuchos::ParameterList& msm_list = out_list.sublist(ss.str());
 
     msm_list.set<std::string>("multiscale model", "dual porosity")
-        .set<double>("solute transfer coefficient", omega)
-        .set<Teuchos::Array<std::string> >("regions", regions);
+        .set<Teuchos::Array<std::string> >("regions", regions)
+        .sublist("dual porosity parameters")
+        .set<double>("solute transfer coefficient", omega);
   }
 
   return out_list;

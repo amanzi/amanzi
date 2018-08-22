@@ -20,7 +20,8 @@ namespace Transport {
 ****************************************************************** */
 MultiscaleTransportPorosity_DPM::MultiscaleTransportPorosity_DPM(Teuchos::ParameterList& plist)
 {
-  omega_ = plist.get<double>("solute transfer coefficient", 0.0);
+  omega_ = plist.sublist("dual porosity parameters")
+                .get<double>("solute transfer coefficient", 0.0);
 }
 
 
