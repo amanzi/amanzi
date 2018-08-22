@@ -215,7 +215,7 @@ void Operator_Schema::SymbolicAssembleMatrixOp(const Op_Cell_Schema& op,
                                                const SuperMap& map, GraphFE& graph,
                                                int my_block_row, int my_block_col) const
 {
-  std::vector<int> lid_r, lid_c, dirs;
+  std::vector<int> lid_r, lid_c;
   AmanziMesh::Entity_ID_List nodes, faces;
 
   int ierr(0);
@@ -240,7 +240,7 @@ void Operator_Schema::SymbolicAssembleMatrixOp(const Op_Cell_Schema& op,
       }
 
       if (it->kind == AmanziMesh::FACE) {
-        mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+        mesh_->cell_get_faces(c, &faces);
         int nfaces = faces.size();
 
         for (int n = 0; n != nfaces; ++n) {
@@ -342,7 +342,7 @@ void Operator_Schema::AssembleMatrixOp(const Op_Cell_Schema& op,
 {
   AMANZI_ASSERT(op.matrices.size() == ncells_owned);
 
-  std::vector<int> lid_r, lid_c, dirs;
+  std::vector<int> lid_r, lid_c;
   AmanziMesh::Entity_ID_List nodes, faces;
 
   int ierr(0);
@@ -367,7 +367,7 @@ void Operator_Schema::AssembleMatrixOp(const Op_Cell_Schema& op,
       }
 
       if (it->kind == AmanziMesh::FACE) {
-        mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+        mesh_->cell_get_faces(c, &faces);
         int nfaces = faces.size();
 
         for (int n = 0; n != nfaces; ++n) {
@@ -471,7 +471,6 @@ void Operator_Schema::AssembleVectorCellOp(
     const WhetStone::DenseVector& v, CompositeVector& X) const
 {
   AmanziMesh::Entity_ID_List nodes, faces;
-  std::vector<int> dirs;
 
   int m(0);
   for (auto it = schema.begin(); it != schema.end(); ++it) {
@@ -491,7 +490,7 @@ void Operator_Schema::AssembleVectorCellOp(
     if (it->kind == AmanziMesh::FACE) {
       Epetra_MultiVector& Xf = *X.ViewComponent("face", true);
 
-      mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+      mesh_->cell_get_faces(c, &faces);
       int nfaces = faces.size();
 
       for (int n = 0; n != nfaces; ++n) {
@@ -547,7 +546,6 @@ void Operator_Schema::ExtractVectorCellOp(
     WhetStone::DenseVector& v, const CompositeVector& X) const
 {
   AmanziMesh::Entity_ID_List nodes, faces;
-  std::vector<int> dirs;
 
   int m(0);
   for (auto it = schema.begin(); it != schema.end(); ++it) {
@@ -567,7 +565,7 @@ void Operator_Schema::ExtractVectorCellOp(
     if (it->kind == AmanziMesh::FACE) {
       const Epetra_MultiVector& Xf = *X.ViewComponent("face", true);
 
-      mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+      mesh_->cell_get_faces(c, &faces);
       int nfaces = faces.size();
 
       for (int n = 0; n != nfaces; ++n) {

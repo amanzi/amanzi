@@ -315,14 +315,13 @@ void PDE_DiffusionNLFV::UpdateMatrices(
 
   // split each stencil between different local matrices
   int c1, c2, c3, c4, k1, k2;
-  std::vector<int> dirs;
   AmanziMesh::Entity_ID_List cells, cells_tmp, faces;
 
   matrix_cv.PutScalarMasterAndGhosted(0.0);
   flux_data.PutScalar(0.0);
 
   for (int c = 0; c < ncells_owned; ++c) {
-    mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+    mesh_->cell_get_faces(c, &faces);
     int nfaces = faces.size();
     
     for (int n = 0; n < nfaces; ++n) {
@@ -497,12 +496,11 @@ void PDE_DiffusionNLFV::OneSidedFluxCorrections_(
 
   int c1, c2, c3, k1, k2, dir;
   double gamma, tmp;
-  std::vector<int> dirs;
   AmanziMesh::Entity_ID_List cells, cells_tmp, faces;
 
   flux_cv.PutScalarMasterAndGhosted(0.0);
   for (int c = 0; c < ncells_owned; ++c) {
-    mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+    mesh_->cell_get_faces(c, &faces);
     int nfaces = faces.size();
     
     for (int n = 0; n < nfaces; ++n) {
@@ -566,12 +564,11 @@ void PDE_DiffusionNLFV::OneSidedWeightFluxes_(
 
   int c1, c2, c3, k1, k2, dir;
   double gamma, tmp;
-  std::vector<int> dirs;
   AmanziMesh::Entity_ID_List cells, cells_tmp, faces;
 
   flux_cv.PutScalarMasterAndGhosted(0.0);
   for (int c = 0; c < ncells_owned; ++c) {
-    mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+    mesh_->cell_get_faces(c, &faces);
     int nfaces = faces.size();
     
     for (int n = 0; n < nfaces; ++n) {

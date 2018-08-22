@@ -279,12 +279,11 @@ void MFD3D_LagrangeSerendipity::CalculateDOFsOnBoundary_(
     DenseVector& vdof, int i)
 {
   Entity_ID_List nodes, faces;
-  std::vector<int> dirs;
 
   mesh_->cell_get_nodes(c, &nodes);
   int nnodes = nodes.size();
 
-  mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+  mesh_->cell_get_faces(c, &faces);
   int nfaces = faces.size();
 
   std::vector<const PolynomialBase*> polys(2);

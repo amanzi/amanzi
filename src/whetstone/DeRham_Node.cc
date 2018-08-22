@@ -28,7 +28,6 @@ int DeRham_Node::L2consistency(int c, const Tensor& T,
                                DenseMatrix& N, DenseMatrix& Mc, bool symmetry)
 {
   Entity_ID_List nodes, faces, face_nodes;
-  std::vector<int> dirs;
 
   mesh_->cell_get_nodes(c, &nodes);
   int nnodes = nodes.size();
@@ -36,7 +35,7 @@ int DeRham_Node::L2consistency(int c, const Tensor& T,
   N.Reshape(nnodes, 1);
   Mc.Reshape(nnodes, nnodes);
 
-  mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+  mesh_->cell_get_faces(c, &faces);
   int nfaces = faces.size();
 
   double volume = mesh_->cell_volume(c);

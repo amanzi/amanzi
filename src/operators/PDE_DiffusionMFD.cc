@@ -177,7 +177,6 @@ void PDE_DiffusionMFD::UpdateMatricesMixedWithGrad_(
   WhetStone::DenseMatrix Wff;
 
   AmanziMesh::Entity_ID_List faces, cells;
-  std::vector<int> dirs;
 
   WhetStone::Tensor Kc(mesh_->space_dimension(), 1);
   Kc(0, 0) = 1.0;
@@ -189,7 +188,7 @@ void PDE_DiffusionMFD::UpdateMatricesMixedWithGrad_(
     for (int i = 0; i < dim; i++) kgrad[i] = (*k_grad)[i][c];
  
     // upwinded values of nonlinear factor
-    mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+    mesh_->cell_get_faces(c, &faces);
     int nfaces = faces.size();
     std::vector<double> kf(nfaces, 1.0); 
     if (k_twin == Teuchos::null) {
@@ -1152,10 +1151,9 @@ void PDE_DiffusionMFD::UpdateFluxNonManifold(
   Epetra_MultiVector& flux_data = *flux->ViewComponent("cell", true);
 
   AmanziMesh::Entity_ID_List faces;
-  std::vector<int> dirs;
 
   for (int c = 0; c < ncells_owned; c++) {
-    mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+    mesh_->cell_get_faces(c, &faces);
     int nfaces = faces.size();
 
     WhetStone::DenseVector v(nfaces + 1), av(nfaces + 1);

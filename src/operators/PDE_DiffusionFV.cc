@@ -189,7 +189,6 @@ void PDE_DiffusionFV::UpdateMatrices(const Teuchos::Ptr<const CompositeVector>& 
 
     // updating matrix blocks
     AmanziMesh::Entity_ID_List cells, faces;
-    std::vector<int> dirs;
 
     for (int f = 0; f != nfaces_owned; ++f) {
       mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
@@ -374,7 +373,6 @@ void PDE_DiffusionFV::AnalyticJacobian_(const CompositeVector& u)
 
   const Epetra_Map& cmap_wghost = mesh_->cell_map(true);
   AmanziMesh::Entity_ID_List cells, faces;
-  std::vector<int> dirs;
 
   double k_rel[2], dkdp[2], pres[2], dist;
 

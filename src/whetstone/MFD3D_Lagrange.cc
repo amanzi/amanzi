@@ -285,12 +285,11 @@ void MFD3D_Lagrange::ProjectorCell_(
   AMANZI_ASSERT(d_ == 2);
 
   Entity_ID_List nodes, faces;
-  std::vector<int> dirs;
 
   mesh_->cell_get_nodes(c, &nodes);
   int nnodes = nodes.size();
 
-  mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+  mesh_->cell_get_faces(c, &faces);
   int nfaces = faces.size();
 
   const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);

@@ -1560,7 +1560,7 @@ void Transport_PK::IdentifyUpwindCells()
     S_->GetFieldData("darcy_flux_fracture", passwd_)->ScatterMasterToGhosted();
 
     for (int c = 0; c < ncells_wghost; c++) {
-      mesh_->cell_get_faces_and_dirs(c, &faces, &dirs);
+      mesh_->cell_get_faces(c, &faces);
 
       for (int i = 0; i < faces.size(); i++) {
         int f = faces[i];
