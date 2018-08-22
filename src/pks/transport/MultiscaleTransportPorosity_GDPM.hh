@@ -18,9 +18,12 @@
 #ifndef MULTISCALE_TRANSPORT_POROSITY_GDPM_HH_
 #define MULTISCALE_TRANSPORT_POROSITY_GDPM_HH_
 
+#include <string>
+
 #include "Teuchos_ParameterList.hpp"
 
 #include "factory.hh"
+#include "Mini_Diffusion1D.hh"
 
 #include "MultiscaleTransportPorosity.hh"
 
@@ -40,6 +43,10 @@ class MultiscaleTransportPorosity_GDPM : public MultiscaleTransportPorosity {
 
  private:
   static Utils::RegisteredFactory<MultiscaleTransportPorosity, MultiscaleTransportPorosity_GDPM> factory_;
+  Operators::Mini_Diffusion1D op_diff_;
+
+  double depth_;
+  std::string geometry_;
 };
 
 }  // namespace Transport

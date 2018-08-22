@@ -24,8 +24,12 @@ namespace Operators {
 
 class Mini_Diffusion1D {
  public:
-  Mini_Diffusion1D(std::shared_ptr<const WhetStone::DenseVector> mesh);
+  Mini_Diffusion1D() {};
   ~Mini_Diffusion1D() {};
+
+  // initialize ddiffusion operator
+  void Init(std::shared_ptr<const WhetStone::DenseVector> mesh,
+            const std::string& geometry, double area_min, double area_max);
 
   // set up operator
   void Setup(const std::shared_ptr<WhetStone::DenseVector> K,
@@ -52,7 +56,9 @@ class Mini_Diffusion1D {
   std::shared_ptr<WhetStone::DenseVector> K_, k_, dkdp_;
 
  private:
-  WhetStone::DenseVector diag_;
+  WhetStone::DenseVector diag_, up_;
+  int igeo_;
+  double area_min_, area_max_;
 };
 
 }  // namespace Operators

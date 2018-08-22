@@ -2339,11 +2339,12 @@ This list is optional.
 
 * `"xxx parameters`" [sublist] provides parameters for the model specified by variable `"multiscale model`".
 
+
 Dual porosity model
 ```````````````````
 
 * `"solute transfer coefficient`" [list] defines diffusive solute transport due to
-  convetration gradients.
+  concentration gradient.
 
 
 Generalized dual porosity model
@@ -2351,7 +2352,7 @@ Generalized dual porosity model
 
 * `"number of matrix nodes`" [int] defines number of matrix layers.
 * `"matrix depth`" [double] is the characteristic length for matrix continuum.
-* `"matrix geometry`" [string] specfies geometric configuration of pore space.
+* `"pore space geometry`" [string] specfies geometric configuration of pore space.
   Available options are `"planar`" and `"spherical`".
 
 .. code-block:: xml
@@ -2372,7 +2373,7 @@ Generalized dual porosity model
         <ParameterList name="generalized dual porosity parameters">
           <Paramater name="number of matrix nodes" type="int" value="2"/>
           <Paramater name="matrix depth" type="double" value="0.01"/>
-          <Paramater name="matrix geometry" type="string" value="planar"/>
+          <Paramater name="pore space geometry" type="string" value="planar"/>
         </ParameterList>  
       </ParameterList>  
     </ParameterList>  
