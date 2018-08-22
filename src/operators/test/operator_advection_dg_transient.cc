@@ -429,14 +429,14 @@ void AdvectionFn<AnalyticDG>::ApproximateVelocity_LevelSet(
     WhetStone::Polynomial poly(dim, order_, data); 
     poly.set_origin(xc);
 
-    (*velc)[c] = GradientOnUnitSphere(poly, 1);
-    (*velc)[c] *= weak_sign_;
+    poly *= weak_sign_;
+    (*velc)[c] = GradientOnUnitSphere(poly, order_ - 1);
 
     if (divergence_term_) (*divc)[c] = Divergence((*velc)[c]);
   }
 
   // -- normalized face-based velocities
-  int mk = WhetStone::PolynomialSpaceDimension(2, order_ - 1);
+  int mk = WhetStone::PolynomialSpaceDimension(dim, order_ - 1);
   CompositeVectorSpace cvs;
   cvs.SetMesh(mesh_)->SetGhosted(true)->AddComponent("face", AmanziMesh::FACE, dim * mk);
 
@@ -450,17 +450,22 @@ void AdvectionFn<AnalyticDG>::ApproximateVelocity_LevelSet(
     mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
     int ncells = cells.size();
 
-    WhetStone::VectorPolynomial vvf(2, 2, order_ - 1);
-    vvf.set_origin(xf);
+    WhetStone::Polynomial poly(dim, order_);
+    poly.set_origin(xf);
 
     for (int n = 0; n < ncells; ++n) {
-      auto tmp = (*velc)[cells[n]];
-      tmp.ChangeOrigin(xf);
-      vvf -= tmp;
-    }
+      int c = cells[n];
+      for (int i = 0; i < nk; ++i) data(i) = u_c[i][c];
+      WhetStone::Polynomial tmp(dim, order_, data); 
+      tmp.set_origin(mesh_->cell_centroid(c));
 
-    // vvf *= 1.0 / std::pow(vvf[0](0) * vvf[0](0) + vvf[1](0) * vvf[1](0), 0.5);
-    vvf *= 1.0 / ncells;  
+      tmp.ChangeOrigin(xf);
+      poly -= tmp;
+    }
+    // vvf *= 1.0 / ncells;  
+
+    poly *= weak_sign_;
+    auto vvf = GradientOnUnitSphere(poly, order_ - 1);
 
     for (int i = 0; i < 2; ++i) {
       for (int m = 0; m < mk; ++m) {
