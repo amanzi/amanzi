@@ -80,7 +80,7 @@ Teuchos::ParameterList InputConverterU::TranslateFlow_(const std::string& mode)
     if (tmp->getLength() > 0) {
       msm = GetAttributeValueS_(tmp->item(0), "name");
       flow_list->sublist("physical models and assumptions")
-          .set<std::string>("multiscale model", msm);
+          .set<std::string>("multiscale model", "dual continuum discontinuous matrix");
     }
 
   } else if (pk_model_["flow"] == "richards") {
@@ -101,7 +101,7 @@ Teuchos::ParameterList InputConverterU::TranslateFlow_(const std::string& mode)
     }
     richards_list.sublist("multiscale models") = TranslateFlowMSM_();
     if (richards_list.sublist("multiscale models").numParams() > 0) {
-      msm = "dual porosity";
+      msm = "dual continuum discontinuous matrix";
       flow_list->sublist("physical models and assumptions")
           .set<std::string>("multiscale model", msm);
     }

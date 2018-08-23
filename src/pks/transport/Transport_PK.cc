@@ -168,7 +168,7 @@ void Transport_PK::Setup(const Teuchos::Ptr<State>& S)
   Teuchos::RCP<Teuchos::ParameterList> physical_models =
       Teuchos::sublist(tp_list_, "physical models and assumptions");
   bool abs_perm = physical_models->get<bool>("permeability field is required", false);
-  std::string multiscale_model = physical_models->get<std::string>("multiscale model", "single porosity");
+  std::string multiscale_model = physical_models->get<std::string>("multiscale model", "single continuum");
   use_transport_porosity_ = physical_models->get<bool>("effective transport porosity", false);
 
   // require state fields when Flow PK is off
@@ -224,7 +224,7 @@ void Transport_PK::Setup(const Teuchos::Ptr<State>& S)
 
   // require multiscale fields
   multiscale_porosity_ = false;
-  if (multiscale_model == "dual porosity") {
+  if (multiscale_model == "dual continuum discontinuous matrix") {
     multiscale_porosity_ = true;
     Teuchos::RCP<Teuchos::ParameterList>
         msp_list = Teuchos::sublist(tp_list_, "multiscale models", true);
@@ -237,6 +237,16 @@ void Transport_PK::Setup(const Teuchos::Ptr<State>& S)
       S->RequireField("total_component_concentration_matrix", passwd_, subfield_names)
         ->SetMesh(mesh_)->SetGhosted(false)
         ->SetComponent("cell", AmanziMesh::CELL, ncomponents);
+
+      // Secondary matrix nodes are collected here. We assume same order of species.
+      int nnodes, nnodes_tmp = NumberMatrixNodes(msp_);
+      mesh_->get_comm()->MaxAll(&nnodes_tmp, &nnodes, 1);
+      if (nnodes > 1) {
+        S->RequireField("total_component_concentration_matrix_aux", passwd_)
+          ->SetMesh(mesh_)->SetGhosted(false)
+          ->SetComponent("cell", AmanziMesh::CELL, ncomponents * (nnodes - 1));
+        S->GetField("total_component_concentration_matrix_aux", passwd_)->set_io_vis(false);
+      }
     }
 
     // -- water content in fractures
@@ -466,7 +476,7 @@ void Transport_PK::Initialize(const Teuchos::Ptr<State>& S)
 #endif
   }
 
-  // Temporarily Transport hosts Henry law.
+  // Temporarily Transport PK hosts the Henry law.
   PrepareAirWaterPartitioning_();
 
   if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM) {
@@ -500,6 +510,8 @@ void Transport_PK::InitializeFields_()
 
   InitializeFieldFromField_("prev_saturation_liquid", "saturation_liquid", false);
   InitializeFieldFromField_("total_component_concentration_matrix", "total_component_concentration", false);
+
+  InitializeField(S_.ptr(), passwd_, "total_component_concentration_matrix_aux", 0.0);
 }
 
 
@@ -522,7 +534,7 @@ void Transport_PK::InitializeFieldFromField_(
         S_->GetField(field0, passwd_)->set_initialized();
 
         if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM)
-            *vo_->os() << "initiliazed " << field0 << " to " << field1 << std::endl;
+            *vo_->os() << "initialized " << field0 << " to " << field1 << std::endl;
       }
     }
   }

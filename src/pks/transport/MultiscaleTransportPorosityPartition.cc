@@ -46,6 +46,22 @@ Teuchos::RCP<MultiscaleTransportPorosityPartition> CreateMultiscaleTransportPoro
   return Teuchos::rcp(new MultiscaleTransportPorosityPartition(partition, msp));
 }
 
+
+/* ******************************************************************
+* Non-member function quering partition.
+****************************************************************** */
+int NumberMatrixNodes(Teuchos::RCP<MultiscaleTransportPorosityPartition>& msp)
+{
+  int nnodes(0);
+  const auto& list = msp->second;
+
+  for (int i = 0; i < list.size(); ++i) {
+    nnodes = std::max(nnodes, list[i]->NumberMatrixNodes());
+  }
+
+  return nnodes;
+}
+
 }  // namespace Transport
 }  // namespace Amanzi
 

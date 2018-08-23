@@ -29,6 +29,9 @@ class MultiscaleTransportPorosity {
 
   // Modify outflux used in the stability estimate.
   virtual void UpdateStabilityOutflux(double flux_liquid, double* outflux) = 0;
+
+  // Number of matrix nodes
+  virtual int NumberMatrixNodes() = 0;
 };
 
 }  // namespace Transport

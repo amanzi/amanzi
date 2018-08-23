@@ -29,6 +29,9 @@ Teuchos::RCP<MultiscaleTransportPorosityPartition> CreateMultiscaleTransportPoro
     Teuchos::RCP<const AmanziMesh::Mesh>& mesh,
     Teuchos::RCP<Teuchos::ParameterList> plist);
 
+// Non-member function quering partition
+int NumberMatrixNodes(Teuchos::RCP<MultiscaleTransportPorosityPartition>& msp);
+
 }  // namespace Transport
 }  // namespace Amanzi
 

@@ -38,6 +38,9 @@ class MultiscaleTransportPorosity_DPM : public MultiscaleTransportPorosity {
   // Modify outflux used in the stability estimate.
   virtual void UpdateStabilityOutflux(double flux_liquid, double* outflux);
 
+  // Number of matrix nodes
+  virtual int NumberMatrixNodes() { return 1; }
+
  private:
   double omega_;
 

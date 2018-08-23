@@ -24,16 +24,15 @@ namespace Transport {
 MultiscaleTransportPorosity_GDPM::MultiscaleTransportPorosity_GDPM(Teuchos::ParameterList& plist)
 {
   auto& sublist = plist.sublist("generalized dual porosity parameters");
-  int ncells = sublist.get<int>("number of matrix layers", 2);
-  int nnodes = ncells + 1;
+  nnodes_ = sublist.get<int>("number of matrix layers", 2);
 
   depth_ = sublist.get<double>("matrix depth");
   geometry_ = sublist.get<std::string>("pore space geometry", "planar");
 
   // make uniform mesh inside matrix
-  auto mesh = std::make_shared<WhetStone::DenseVector>(WhetStone::DenseVector(nnodes));
-  double h = depth_ / ncells;
-  for (int i = 0; i < ncells + 1; ++i) (*mesh)(i) = h * i;
+  auto mesh = std::make_shared<WhetStone::DenseVector>(WhetStone::DenseVector(nnodes_ + 1));
+  double h = depth_ / nnodes_;
+  for (int i = 0; i < nnodes_ + 1; ++i) (*mesh)(i) = h * i;
 
   op_diff_.Init(mesh, geometry_, 1.0, 1.0);
 }

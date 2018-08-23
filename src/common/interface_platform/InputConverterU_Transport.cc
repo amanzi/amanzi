@@ -285,7 +285,7 @@ Teuchos::ParameterList InputConverterU::TranslateTransport_()
   out_list.sublist("multiscale models") = TranslateTransportMSM_();
   if (out_list.sublist("multiscale models").numParams() > 0) {
     out_list.sublist("physical models and assumptions")
-        .set<std::string>("multiscale model", "dual porosity");
+        .set<std::string>("multiscale model", "dual continuum discontinuous matrix");
   }
 
   // create the sources and boundary conditions lists

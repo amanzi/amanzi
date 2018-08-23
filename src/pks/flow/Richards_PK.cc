@@ -134,7 +134,7 @@ void Richards_PK::Setup(const Teuchos::Ptr<State>& S)
   Teuchos::RCP<Teuchos::ParameterList> physical_models =
       Teuchos::sublist(fp_list_, "physical models and assumptions");
   std::string vwc_model = physical_models->get<std::string>("water content model", "constant density");
-  std::string multiscale_model = physical_models->get<std::string>("multiscale model", "single porosity");
+  std::string multiscale_model = physical_models->get<std::string>("multiscale model", "single continuum");
 
   // Require primary field for this PK, which is pressure
   std::vector<std::string> names;
@@ -413,7 +413,7 @@ void Richards_PK::Initialize(const Teuchos::Ptr<State>& S)
       Teuchos::sublist(fp_list_, "physical models and assumptions");
   vapor_diffusion_ = physical_models->get<bool>("vapor diffusion", false);
   multiscale_porosity_ = (physical_models->get<std::string>(
-      "multiscale model", "single porosity") != "single porosity");
+      "multiscale model", "single continuum") != "single continuum");
 
   // Process other fundamental structures.
   SetAbsolutePermeabilityTensor();
@@ -685,7 +685,7 @@ void Richards_PK::InitializeFields_()
       S_->GetField("viscosity_liquid", passwd_)->set_initialized();
 
       if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM)
-          *vo_->os() << "initilized viscosity_liquid to input value " << mu << std::endl;  
+          *vo_->os() << "initialized viscosity_liquid to input value " << mu << std::endl;  
     }
   }
 
@@ -696,7 +696,7 @@ void Richards_PK::InitializeFields_()
         S_->GetField("saturation_liquid", passwd_)->set_initialized();
 
         if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM)
-            *vo_->os() << "initiliazed saturation_liquid to default value 1.0" << std::endl;  
+            *vo_->os() << "initialized saturation_liquid to default value 1.0" << std::endl;  
       }
     }
   }
@@ -753,7 +753,7 @@ void Richards_PK::InitializeFieldFromField_(
       S_->GetField(field0, passwd_)->set_initialized();
 
       if (vo_->getVerbLevel() >= Teuchos::VERB_MEDIUM)
-          *vo_->os() << "initiliazed " << field0 << " to " << field1 << std::endl;
+          *vo_->os() << "initialized " << field0 << " to " << field1 << std::endl;
     }
   }
 }

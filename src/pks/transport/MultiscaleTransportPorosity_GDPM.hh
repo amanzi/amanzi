@@ -41,10 +41,14 @@ class MultiscaleTransportPorosity_GDPM : public MultiscaleTransportPorosity {
   // Modify outflux used in the stability estimate.
   virtual void UpdateStabilityOutflux(double flux_liquid, double* outflux);
 
+  // Number of matrix nodes
+  virtual int NumberMatrixNodes() { return nnodes_; }
+
  private:
   static Utils::RegisteredFactory<MultiscaleTransportPorosity, MultiscaleTransportPorosity_GDPM> factory_;
   Operators::Mini_Diffusion1D op_diff_;
 
+  int nnodes_;
   double depth_;
   std::string geometry_;
 };
