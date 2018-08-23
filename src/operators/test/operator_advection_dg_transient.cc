@@ -73,7 +73,7 @@ class AdvectionFn : public Explicit_TI::fnBase<CompositeVector> {
       const Teuchos::RCP<std::vector<WhetStone::Polynomial> >& divc);
 
   void ApproximateVelocity_LevelSet(
-      const CompositeVector& u,
+      double t, const CompositeVector& u,
       const Teuchos::RCP<std::vector<WhetStone::VectorPolynomial> >& velc,
       const Teuchos::RCP<std::vector<WhetStone::Polynomial> >& velf,
       const Teuchos::RCP<std::vector<WhetStone::Polynomial> >& divc);
@@ -211,7 +211,7 @@ void AdvectionFn<AnalyticDG>::FunctionalTimeDerivative(
 
   // modify analytic Taylor expansions
   if (level_set_velf_) {
-    ApproximateVelocity_LevelSet(u, velc, velf, divc);
+    ApproximateVelocity_LevelSet(t, u, velc, velf, divc);
   } else {
     ApproximateVelocity_Projection(t, dt_, velc, velf, divc);
   }
@@ -400,7 +400,7 @@ void AdvectionFn<AnalyticDG>::ApproximateVelocity_Projection(
 ***************************************************************** */
 template <class AnalyticDG>
 void AdvectionFn<AnalyticDG>::ApproximateVelocity_LevelSet(
-    const CompositeVector& u,
+    double t, const CompositeVector& u,
     const Teuchos::RCP<std::vector<WhetStone::VectorPolynomial> >& velc,
     const Teuchos::RCP<std::vector<WhetStone::Polynomial> >& velf,
     const Teuchos::RCP<std::vector<WhetStone::Polynomial> >& divc)
@@ -425,7 +425,11 @@ void AdvectionFn<AnalyticDG>::ApproximateVelocity_LevelSet(
   for (int c = 0; c < ncells_wghost; ++c) {
     const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
 
+    // ana_.VelocityTaylor(xc, t, (*velc)[c]); 
+    // (*velc)[c] *= -weak_sign_;  // velocity is negative of normalized gradient
+
     for (int i = 0; i < nk; ++i) data(i) = u_c[i][c];
+    dg_->cell_basis(c).ChangeBasisMyToNatural(data);
     WhetStone::Polynomial poly(dim, order_, data); 
     poly.set_origin(xc);
 
@@ -436,6 +440,8 @@ void AdvectionFn<AnalyticDG>::ApproximateVelocity_LevelSet(
   }
 
   // -- normalized face-based velocities
+  WhetStone::VectorPolynomial vvf(dim, dim, order_ - 1);
+
   int mk = WhetStone::PolynomialSpaceDimension(dim, order_ - 1);
   CompositeVectorSpace cvs;
   cvs.SetMesh(mesh_)->SetGhosted(true)->AddComponent("face", AmanziMesh::FACE, dim * mk);
@@ -447,6 +453,9 @@ void AdvectionFn<AnalyticDG>::ApproximateVelocity_LevelSet(
   for (int f = 0; f < nfaces_owned; ++f) {
     const AmanziGeometry::Point& xf = mesh_->face_centroid(f);
 
+    // ana_.VelocityTaylor(xf, t, vvf); 
+    // vvf *= weak_sign_;  // velocity is negative of normalized gradient
+
     mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
     int ncells = cells.size();
 
@@ -456,16 +465,16 @@ void AdvectionFn<AnalyticDG>::ApproximateVelocity_LevelSet(
     for (int n = 0; n < ncells; ++n) {
       int c = cells[n];
       for (int i = 0; i < nk; ++i) data(i) = u_c[i][c];
+      dg_->cell_basis(c).ChangeBasisMyToNatural(data);
       WhetStone::Polynomial tmp(dim, order_, data); 
       tmp.set_origin(mesh_->cell_centroid(c));
 
       tmp.ChangeOrigin(xf);
       poly -= tmp;
     }
-    // vvf *= 1.0 / ncells;  
 
     poly *= weak_sign_;
-    auto vvf = GradientOnUnitSphere(poly, order_ - 1);
+    vvf = GradientOnUnitSphere(poly, order_ - 1);
 
     for (int i = 0; i < 2; ++i) {
       for (int m = 0; m < mk; ++m) {
@@ -477,8 +486,6 @@ void AdvectionFn<AnalyticDG>::ApproximateVelocity_LevelSet(
   vecf.ScatterMasterToGhosted();
 
   // face-based fluxes scaled by area
-  WhetStone::VectorPolynomial vvf(2, 2, order_ - 1);
-
   for (int f = 0; f < nfaces_wghost; ++f) {
     const AmanziGeometry::Point& xf = mesh_->face_centroid(f);
     const AmanziGeometry::Point& normal = mesh_->face_normal(f);
@@ -633,6 +640,7 @@ void AdvectionTransient(std::string filename, int nx, int ny, double dt,
 
 
 TEST(OPERATOR_ADVECTION_TRANSIENT_DG) {
+  /*
   exact_solution_expected = true;
   AdvectionTransient<AnalyticDG02b>("square",  4,  4, 0.1, Amanzi::Explicit_TI::tvd_3rd_order, false);
 
@@ -640,6 +648,7 @@ TEST(OPERATOR_ADVECTION_TRANSIENT_DG) {
   AdvectionTransient<AnalyticDG06b>("square",  4,  4, 0.1, Amanzi::Explicit_TI::tvd_3rd_order);
   AdvectionTransient<AnalyticDG06>("square",  4,  4, 0.1, Amanzi::Explicit_TI::tvd_3rd_order, false);
   AdvectionTransient<AnalyticDG06>("square",  4,  4, 0.1, Amanzi::Explicit_TI::tvd_3rd_order, false, "primal");
+  */
 
   /*
   AdvectionTransient<AnalyticDG06>("square",  20,  20, 0.01, Amanzi::Explicit_TI::heun_euler);
@@ -656,13 +665,11 @@ TEST(OPERATOR_ADVECTION_TRANSIENT_DG) {
   AdvectionTransient<AnalyticDG06>("test/triangular128.exo",128, 0, 0.01 / 16,Amanzi::Explicit_TI::tvd_3rd_order);
   */
 
-  /*
   double dT0 = 0.001;
   AdvectionTransient<AnalyticDG07>("square", 20, 20, dT0, Amanzi::Explicit_TI::tvd_3rd_order, false, "primal", "level set");
   AdvectionTransient<AnalyticDG07>("square", 40, 40, dT0 / 2, Amanzi::Explicit_TI::tvd_3rd_order, false, "primal", "level set");
   AdvectionTransient<AnalyticDG07>("square", 80, 80, dT0 / 4, Amanzi::Explicit_TI::tvd_3rd_order, false, "primal", "level set");
   AdvectionTransient<AnalyticDG07>("square",160,160, dT0 / 8, Amanzi::Explicit_TI::tvd_3rd_order, false, "primal", "level set");
-  */
 
   /*
   double dT0 = 0.001;

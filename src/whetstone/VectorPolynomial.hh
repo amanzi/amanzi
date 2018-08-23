@@ -253,7 +253,7 @@ VectorPolynomial GradientOnUnitSphere(const Polynomial& poly, int k)
     len2 = len * len;
     len5 = len3 * len2;
     double uxx = 2 * a2 * (3 * a2 * a6 + a3 * a4) - a1 * (a4 * a4 + 2 * a2 * a7);
-    double uxy = 2 * a2 * (a7 * a7 + 4 * a3 * a5 - a1 * a8) - a4 * (a2 * a4 + 2 * a1 * a5);
+    double uxy = 2 * a2 * (a2 * a7 + 4 * a3 * a5 - a1 * a8) - a4 * (a2 * a4 + 2 * a1 * a5);
     double uyy = 2 * a2 * (a2 * a8 + a4 * a5) - a1 * (4 * a5 * a5 + 6 * a2 * a9);
 
     double dx = 2 * a1 * a3 + a2 * a4;
