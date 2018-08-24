@@ -21,20 +21,28 @@ namespace Transport {
 /* ******************************************************************
 * Simple constructor
 ****************************************************************** */
-MultiscaleTransportPorosity_GDPM::MultiscaleTransportPorosity_GDPM(Teuchos::ParameterList& plist)
+MultiscaleTransportPorosity_GDPM::MultiscaleTransportPorosity_GDPM(
+    Teuchos::ParameterList& plist)
 {
   auto& sublist = plist.sublist("generalized dual porosity parameters");
   nnodes_ = sublist.get<int>("number of matrix layers", 2);
 
   depth_ = sublist.get<double>("matrix depth");
   geometry_ = sublist.get<std::string>("pore space geometry", "planar");
+  std::vector<double> mol_diff = plist.get<Teuchos::Array<double> >("molecular diffusion").toVector();
 
   // make uniform mesh inside matrix
   auto mesh = std::make_shared<WhetStone::DenseVector>(WhetStone::DenseVector(nnodes_ + 1));
   double h = depth_ / nnodes_;
   for (int i = 0; i < nnodes_ + 1; ++i) (*mesh)(i) = h * i;
 
-  op_diff_.Init(mesh, geometry_, 1.0, 1.0);
+  // initialize diffusion operators for each species
+  int ncomp = mol_diff.size();
+  op_diff_.resize(ncomp);
+  for (int i = 0; i < ncomp; ++i) {
+    op_diff_[i].Init(mesh, geometry_, 1.0, 1.0);
+    op_diff_[i].Setup(mol_diff[i]);
+  }
 }
 
 
@@ -42,7 +50,8 @@ MultiscaleTransportPorosity_GDPM::MultiscaleTransportPorosity_GDPM(Teuchos::Para
 * It should be called only once; otherwise, create an evaluator.
 ****************************************************************** */
 double MultiscaleTransportPorosity_GDPM::ComputeSoluteFlux(
-    double flux_liquid, double tcc_f, double tcc_m)
+    double flux_liquid, double tcc_f, double tcc_m,
+    int icomp, double phi, std::vector<double>* tcc_m_aux)
 {
   double tmp = (flux_liquid > 0.0) ? tcc_f : tcc_m; 
   return flux_liquid;  // * tmp + omega_ * (tcc_f - tcc_m);

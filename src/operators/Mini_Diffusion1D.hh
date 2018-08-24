@@ -32,6 +32,7 @@ class Mini_Diffusion1D {
             const std::string& geometry, double area_min, double area_max);
 
   // set up operator
+  void Setup(double K) { Kconst_ = K; }
   void Setup(const std::shared_ptr<WhetStone::DenseVector> K,
              const std::shared_ptr<WhetStone::DenseVector> k,
              const std::shared_ptr<WhetStone::DenseVector> dkdp) {
@@ -54,6 +55,7 @@ class Mini_Diffusion1D {
  protected:
   std::shared_ptr<const WhetStone::DenseVector> mesh_;
   std::shared_ptr<WhetStone::DenseVector> K_, k_, dkdp_;
+  double Kconst_;
 
  private:
   WhetStone::DenseVector diag_, up_;

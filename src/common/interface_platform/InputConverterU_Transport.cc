@@ -281,7 +281,7 @@ Teuchos::ParameterList InputConverterU::TranslateTransport_()
   out_list.sublist("operators") = TranslateDiffusionOperator_(
       disc_methods, "diffusion_operator", "", "", "", false);
 
-  // multiscale model list
+  // multiscale models sublist
   out_list.sublist("multiscale models") = TranslateTransportMSM_();
   if (out_list.sublist("multiscale models").numParams() > 0) {
     out_list.sublist("physical models and assumptions")

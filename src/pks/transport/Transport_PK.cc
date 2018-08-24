@@ -226,9 +226,7 @@ void Transport_PK::Setup(const Teuchos::Ptr<State>& S)
   multiscale_porosity_ = false;
   if (multiscale_model == "dual continuum discontinuous matrix") {
     multiscale_porosity_ = true;
-    Teuchos::RCP<Teuchos::ParameterList>
-        msp_list = Teuchos::sublist(tp_list_, "multiscale models", true);
-    msp_ = CreateMultiscaleTransportPorosityPartition(mesh_, msp_list);
+    msp_ = CreateMultiscaleTransportPorosityPartition(mesh_, tp_list_);
 
     if (!S->HasField("total_component_concentraion_matrix")) {
       std::vector<std::vector<std::string> > subfield_names(1);
@@ -1022,6 +1020,19 @@ void Transport_PK::AddMultiscalePorosity_(
   const Epetra_MultiVector& wcm_prev = *S_->GetFieldData("prev_water_content_matrix")->ViewComponent("cell");
   const Epetra_MultiVector& wcm = *S_->GetFieldData("water_content_matrix")->ViewComponent("cell");
 
+  // multi-node matrix requires more input data
+  const Epetra_MultiVector& phi_matrix = *S_->GetFieldData("porosity_matrix")->ViewComponent("cell");
+
+  int nnodes;
+  std::vector<double> tcc_m_aux;
+  Teuchos::RCP<Epetra_MultiVector> tcc_matrix_aux;
+
+  if (S_->HasField("total_component_concentration_matrix_aux")) {
+    tcc_matrix_aux = S_->GetFieldData("total_component_concentration_matrix_aux", passwd_)->ViewComponent("cell");
+    nnodes = tcc_matrix_aux->NumVectors(); 
+    tcc_m_aux.resize(nnodes); 
+  }
+
   double flux_solute, flux_liquid, f1, f2, f3;
   std::vector<AmanziMesh::Entity_ID> block;
 
@@ -1050,9 +1061,18 @@ void Transport_PK::AddMultiscalePorosity_(
     f2 = dts / tmp1;
     f3 = tmp0 / tmp1;
 
+    double phim = phi_matrix[0][c];
+
     for (int i = 0; i < num_aqueous; ++i) {
+      if (tcc_matrix_aux != Teuchos::null) {
+        for (int n = 0; n < nnodes - 1; ++n) 
+           tcc_m_aux[n] = (*tcc_matrix_aux)[n][c];
+      }
+
       flux_solute = msp_->second[(*msp_->first)[c]]->ComputeSoluteFlux(
-          flux_liquid, tcc_prev[i][c], tcc_matrix[i][c]);
+          flux_liquid, tcc_prev[i][c], tcc_matrix[i][c],
+          i, phim, &tcc_m_aux);
+
       tcc_next[i][c] -= flux_solute * f1;
       tcc_matrix[i][c] = tcc_matrix[i][c] * f3 + flux_solute * f2;
     }

@@ -19,6 +19,7 @@
 #define MULTISCALE_TRANSPORT_POROSITY_GDPM_HH_
 
 #include <string>
+#include <vector>
 
 #include "Teuchos_ParameterList.hpp"
 
@@ -35,8 +36,10 @@ class MultiscaleTransportPorosity_GDPM : public MultiscaleTransportPorosity {
   MultiscaleTransportPorosity_GDPM(Teuchos::ParameterList& plist);
   ~MultiscaleTransportPorosity_GDPM() {};
 
-  // Advances concentrations in the matrix continuum to the next time level
-  virtual double ComputeSoluteFlux(double flux_liquid, double tcc_f, double tcc_m);
+  // Compute solute flux: icomp - component id, phi - matrix porosity phi,
+  // tcc_m_aux - vector of concentration values in secondary nodes
+  virtual double ComputeSoluteFlux(double flux_liquid, double tcc_f, double tcc_m, 
+                 int icomp, double phi, std::vector<double>* tcc_m_aux);
 
   // Modify outflux used in the stability estimate.
   virtual void UpdateStabilityOutflux(double flux_liquid, double* outflux);
@@ -46,7 +49,7 @@ class MultiscaleTransportPorosity_GDPM : public MultiscaleTransportPorosity {
 
  private:
   static Utils::RegisteredFactory<MultiscaleTransportPorosity, MultiscaleTransportPorosity_GDPM> factory_;
-  Operators::Mini_Diffusion1D op_diff_;
+  std::vector<Operators::Mini_Diffusion1D> op_diff_;
 
   int nnodes_;
   double depth_;

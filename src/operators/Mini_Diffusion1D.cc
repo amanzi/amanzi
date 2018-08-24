@@ -47,14 +47,15 @@ void Mini_Diffusion1D::Init(
 void Mini_Diffusion1D::UpdateMatrices()
 {
   int ncells = mesh_->NumRows() - 1; 
-  double al, ar, hl, hr, area, x0, x1;
+  double al, ar, hl, hr, area, x0, x1, Kc;
 
   const auto& mesh = *mesh_;
 
   x0 = mesh(0);
   x1 = mesh(ncells);
   
-  hl = (*K_)(0) / (mesh(1) - mesh(0));
+  Kc = (K_ != NULL) ? (*K_)(0) : Kconst_;
+  hl = Kc / (mesh(1) - mesh(0));
   al = 2 * hl * area_min_;
 
   for (int i = 0; i < ncells - 1; ++i) {
@@ -62,7 +63,8 @@ void Mini_Diffusion1D::UpdateMatrices()
     area = (area_max_ * (mesh(i) - x0) + area_min_ * (x1 - x)) / (x1 - x0);
     area = std::pow(area, igeo_);
 
-    hr = (*K_)(i + 1) / (mesh(i + 2) - x);
+    Kc = (K_ != NULL) ? (*K_)(i + 1) : Kconst_;
+    hr = Kc / (mesh(i + 2) - x);
     ar = 2 * hl * hr / (hl + hr) * area;
 
     diag_(i) = al + ar;
