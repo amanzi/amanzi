@@ -76,7 +76,7 @@ TEST(OBSERVABLE_LINE_SEGMENT) {
   S->InitializeFields();
   S->InitializeEvaluators();
 
-  Epetra_MultiVector& test =  *S->GetFieldData("test_field", "test_field")->ViewComponent("cell");
+  Epetra_MultiVector& test = *S->GetFieldData("test_field", "test_field")->ViewComponent("cell");
 
   int ncells_owned = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
 
@@ -105,8 +105,8 @@ TEST(OBSERVABLE_LINE_SEGMENT) {
 
   double value, volume;
   std::string unit; 
-  observe -> ComputeRegionSize();
-  observe -> ComputeObservation(*S, &value, &volume, unit);
+  observe->ComputeRegionSize();
+  observe->ComputeObservation(*S, &value, &volume, unit);
 
   Teuchos::Array<double> xyzc(3);
   double len = 0.;
@@ -124,13 +124,12 @@ TEST(OBSERVABLE_LINE_SEGMENT) {
   region="Well3013";
   obs_plist.set<std::string>("region", region);
 
-  Teuchos::RCP<ObservableLineSegment> observe2 = 
-    Teuchos::rcp(new ObservableLineSegmentAqueous(var, region, func, obs_plist, units_plist, mesh));
+  observe2 = Teuchos::rcp(new ObservableLineSegmentAqueous(var, region, func, obs_plist, units_plist, mesh));
 
   double value2, volume2;
   std::string unit2;
-  observe2 -> ComputeRegionSize();
-  observe2 -> ComputeObservation(*S, &value2, &volume2, unit2);
+  observe2->ComputeRegionSize();
+  observe2->ComputeObservation(*S, &value2, &volume2, unit2);
   double len2 = 0.;
   for (int i=0;i<3;i++) {
     xyzc[i] = 0.5*(xyz0_2[i] + xyz1_2[i]);
