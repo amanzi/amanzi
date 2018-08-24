@@ -124,7 +124,7 @@ TEST(OBSERVABLE_LINE_SEGMENT) {
   region="Well3013";
   obs_plist.set<std::string>("region", region);
 
-  observe2 = Teuchos::rcp(new ObservableLineSegmentAqueous(var, region, func, obs_plist, units_plist, mesh));
+  auto observe2 = Teuchos::rcp(new ObservableLineSegmentAqueous(var, region, func, obs_plist, units_plist, mesh));
 
   double value2, volume2;
   std::string unit2;
