@@ -15,34 +15,15 @@
 #include <dbc.hh>
 
 #include <Mini_Diffusion1D.hh>
+#include <OperatorDefs.hh>
 
 namespace Amanzi {
 namespace Operators {
 
 /* ******************************************************************
-* Initialize 1D uniform mesh with given end-point areas.
-****************************************************************** */
-void Mini_Diffusion1D::Init(
-    std::shared_ptr<const WhetStone::DenseVector> mesh,
-    const std::string& geometry, double area_min, double area_max)
-{
-  mesh_ = mesh;
-  area_min_ = area_min;
-  area_max_ = area_max;
-
-  int ncells = mesh_->NumRows() - 1;
-  AMANZI_ASSERT(ncells > 0);
-
-  igeo_ = 1;
-  if (geometry == "spherical") igeo_ = 2;
-
-  diag_.Reshape(ncells + 1);
-  up_.Reshape(ncells - 1);
-}
-
-
-/* ******************************************************************
-* Create a tri-diagonal matrix
+* Create a tri-diagonal matrix. Structure of underlying equation is
+*   down_(i) x_{i-1} + diag_(i) x_i + up_(i) x_{i + 1} = b_i
+* We use end values of sub-diagonals to impose boundary conditions.
 ****************************************************************** */
 void Mini_Diffusion1D::UpdateMatrices()
 {
@@ -60,7 +41,7 @@ void Mini_Diffusion1D::UpdateMatrices()
 
   for (int i = 0; i < ncells - 1; ++i) {
     double x = mesh(i + 1);
-    area = (area_max_ * (mesh(i) - x0) + area_min_ * (x1 - x)) / (x1 - x0);
+    area = (area_max_ * (x - x0) + area_min_ * (x1 - x)) / (x1 - x0);
     area = std::pow(area, igeo_);
 
     Kc = (K_ != NULL) ? (*K_)(i + 1) : Kconst_;
@@ -68,12 +49,42 @@ void Mini_Diffusion1D::UpdateMatrices()
     ar = 2 * hl * hr / (hl + hr) * area;
 
     diag_(i) = al + ar;
+    down_(i) = -al;
     up_(i) = -ar;
 
     al = ar;
+    hl = hr;
   }
 
-  diag_(ncells) = al;
+  Kc = (K_ != NULL) ? (*K_)(ncells - 1) : Kconst_;
+  hr = Kc / (mesh(ncells) - mesh(ncells - 1));
+  ar = 2 * hr * area_max_;
+
+  diag_(ncells - 1) = al + ar;
+  down_(ncells - 1) = -al;
+  up_(ncells - 1) = -ar;
+}
+
+
+/* ******************************************************************
+* Apply boundary conditions.
+****************************************************************** */
+void Mini_Diffusion1D::ApplyBCs(double bcl, int type_l, double bcr, int type_r)
+{
+  if (type_l == Operators::OPERATOR_BC_DIRICHLET) {
+    rhs_(0) -= down_(0) * bcl;
+  } else if(type_l == Operators::OPERATOR_BC_NEUMANN) {
+    diag_(0) += down_(0);
+    rhs_(0) += bcl;
+  }
+
+  int n = mesh_->NumRows() - 2;
+  if (type_r == Operators::OPERATOR_BC_DIRICHLET) {
+    rhs_(n) -= up_(n) * bcr;
+  } else if(type_r == Operators::OPERATOR_BC_NEUMANN) {
+    diag_(n) += up_(n);
+    rhs_(n) += bcr;
+  }
 }
 
 }  // namespace Operators

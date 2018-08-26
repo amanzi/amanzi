@@ -2352,6 +2352,7 @@ Generalized dual porosity model
 
 * `"number of matrix nodes`" [int] defines number of matrix layers.
 * `"matrix depth`" [double] is the characteristic length for matrix continuum.
+* `"tortousity`" [double] defines tortuosity to correct diffusivity of a liquid solute.
 * `"pore space geometry`" [string] specfies geometric configuration of pore space.
   Available options are `"planar`" and `"spherical`".
 
@@ -2373,6 +2374,7 @@ Generalized dual porosity model
         <ParameterList name="generalized dual porosity parameters">
           <Paramater name="number of matrix nodes" type="int" value="2"/>
           <Paramater name="matrix depth" type="double" value="0.01"/>
+          <Paramater name="matrix tortuosity" type="double" value="1.0"/>
           <Paramater name="pore space geometry" type="string" value="planar"/>
         </ParameterList>  
       </ParameterList>  

@@ -7,11 +7,15 @@
   provided in the top-level COPYRIGHT file.
 
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
+
+  Implicit time discretization is unconditionally stable.
 */
 
 #include <string>
 
 #include "DenseVector.hh"
+#include "Mini_Diffusion1D.hh"
+#include "OperatorDefs.hh"
 
 #include "MultiscaleTransportPorosity_GDPM.hh"
 
@@ -25,23 +29,25 @@ MultiscaleTransportPorosity_GDPM::MultiscaleTransportPorosity_GDPM(
     Teuchos::ParameterList& plist)
 {
   auto& sublist = plist.sublist("generalized dual porosity parameters");
-  nnodes_ = sublist.get<int>("number of matrix layers", 2);
+  matrix_nodes_ = sublist.get<int>("number of matrix nodes");
 
   depth_ = sublist.get<double>("matrix depth");
+  tau_ = sublist.get<double>("matrix tortuosity");
   geometry_ = sublist.get<std::string>("pore space geometry", "planar");
-  std::vector<double> mol_diff = plist.get<Teuchos::Array<double> >("molecular diffusion").toVector();
+  mol_diff_ = plist.get<Teuchos::Array<double> >("molecular diffusion").toVector();
 
   // make uniform mesh inside matrix
-  auto mesh = std::make_shared<WhetStone::DenseVector>(WhetStone::DenseVector(nnodes_ + 1));
-  double h = depth_ / nnodes_;
-  for (int i = 0; i < nnodes_ + 1; ++i) (*mesh)(i) = h * i;
+  auto mesh = std::make_shared<WhetStone::DenseVector>(WhetStone::DenseVector(matrix_nodes_ + 1));
+  double h = depth_ / matrix_nodes_;
+  for (int i = 0; i < matrix_nodes_ + 1; ++i) (*mesh)(i) = h * i;
 
   // initialize diffusion operators for each species
-  int ncomp = mol_diff.size();
+  int ncomp = mol_diff_.size();
   op_diff_.resize(ncomp);
   for (int i = 0; i < ncomp; ++i) {
     op_diff_[i].Init(mesh, geometry_, 1.0, 1.0);
-    op_diff_[i].Setup(mol_diff[i]);
+    op_diff_[i].Setup(mol_diff_[i]);
+    op_diff_[i].UpdateMatrices();
   }
 }
 
@@ -50,21 +56,39 @@ MultiscaleTransportPorosity_GDPM::MultiscaleTransportPorosity_GDPM(
 * It should be called only once; otherwise, create an evaluator.
 ****************************************************************** */
 double MultiscaleTransportPorosity_GDPM::ComputeSoluteFlux(
-    double flux_liquid, double tcc_f, double tcc_m,
-    int icomp, double phi, std::vector<double>* tcc_m_aux)
+    double flux_liquid, double& tcc_f, WhetStone::DenseVector& tcc_m, int icomp,
+    double dt, double wcf0, double wcf1, double wcm0, double wcm1, double phi)
 {
-  double tmp = (flux_liquid > 0.0) ? tcc_f : tcc_m; 
-  return flux_liquid;  // * tmp + omega_ * (tcc_f - tcc_m);
-}
+  // make a copy of static mini-operator
+  Operators::Mini_Diffusion1D op(op_diff_[icomp]);
 
+  double scale = phi * tau_;
+  op.ScaleMatrix(scale);
+  op.AddAccumulationTerm(wcm0, wcm1, dt, tcc_m);
 
-/* ******************************************************************
-* It should be called only once; otherwise, create an evaluator.
-****************************************************************** */
-void MultiscaleTransportPorosity_GDPM::UpdateStabilityOutflux(
-    double flux_liquid, double* outflux)
-{ 
-  *outflux += std::max(0.0, flux_liquid);  // + omega_;
+  // get Schur complement due to fracture equation. This is one of
+  // a few possible implementations.
+  double al, ad, ar, al_mod, ad_mod, tcc_f_mod, beta, h;
+  op.GetMatrixRow(0, &al, &ad, &ar); 
+
+  h = op.mesh_cell_volume(0);
+  beta = al * dt;
+  al_mod = al * wcf1 / (wcf1 - beta);
+  ad_mod = ad + al - al_mod;
+  tcc_f_mod = tcc_f * wcf0 / wcf1;
+
+  op.SetMatrixRow(0, al_mod, ad_mod, ar); 
+
+  // use modified boundary condition
+  op.ApplyBCs(tcc_f_mod, Operators::OPERATOR_BC_DIRICHLET,
+              0.0, Operators::OPERATOR_BC_NEUMANN);
+
+  op.ApplyInverse(op.rhs(), tcc_m);  
+
+  tcc_f = (wcf0 * tcc_f - beta * tcc_m(0)) / (wcf1 - beta);
+
+  double tmp = (flux_liquid > 0.0) ? tcc_f : tcc_m(0); 
+  return flux_liquid * tmp - al / h * (tcc_f - tcc_m(0));
 }
 
 }  // namespace Transport

@@ -365,8 +365,9 @@ Teuchos::ParameterList InputConverterU::TranslateTransportMSM_()
       if (!flag)
          ThrowErrorMissattr_("materials", "element", "matrix", "multiscale_structure");
 
-      int nnodes = GetAttributeValueL_(node, "matrix_nodes", TYPE_NUMERICAL, 0, INT_MAX, false, 1);
+      int nnodes = GetAttributeValueL_(node, "number_of_nodes", TYPE_NUMERICAL, 0, INT_MAX, false, 1);
       double depth = GetAttributeValueD_(node, "depth", TYPE_NUMERICAL, 0.0, DVAL_MAX, "m");
+      double tau = GetAttributeValueD_(node, "tortuosity", TYPE_NUMERICAL, 0.0, DVAL_MAX, "-");
       std::string geometry = GetAttributeValueS_(node, "pore_geometry");
     
       std::stringstream ss;
@@ -379,6 +380,7 @@ Teuchos::ParameterList InputConverterU::TranslateTransportMSM_()
           .sublist("generalized dual porosity parameters")
           .set<int>("number of matrix nodes", nnodes)
           .set<double>("matrix depth", depth)
+          .set<double>("matrix tortuosity", tau)
           .set<std::string>("pore space geometry", geometry);
     }
   }

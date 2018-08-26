@@ -36,24 +36,25 @@ class MultiscaleTransportPorosity_GDPM : public MultiscaleTransportPorosity {
   MultiscaleTransportPorosity_GDPM(Teuchos::ParameterList& plist);
   ~MultiscaleTransportPorosity_GDPM() {};
 
-  // Compute solute flux: icomp - component id, phi - matrix porosity phi,
-  // tcc_m_aux - vector of concentration values in secondary nodes
-  virtual double ComputeSoluteFlux(double flux_liquid, double tcc_f, double tcc_m, 
-                 int icomp, double phi, std::vector<double>* tcc_m_aux);
-
-  // Modify outflux used in the stability estimate.
-  virtual void UpdateStabilityOutflux(double flux_liquid, double* outflux);
+  // Compute solute flux: icomp - component id, phi - matrix porosity,
+  // tcc_m_aux - vector of concentration values in secondary nodes,
+  // wfm[0|1] - fracture water content at initial and final time moments,
+  // wcm[0|1] - water content at initial and final time moments
+  virtual double ComputeSoluteFlux(
+      double flux_liquid, double& tcc_f, WhetStone::DenseVector& tcc_m, int icomp,
+      double dt, double wcf0, double wcf1, double wcm0, double wcm1, double phi) override;
 
   // Number of matrix nodes
-  virtual int NumberMatrixNodes() { return nnodes_; }
+  virtual int NumberMatrixNodes() override { return matrix_nodes_; }
 
  private:
   static Utils::RegisteredFactory<MultiscaleTransportPorosity, MultiscaleTransportPorosity_GDPM> factory_;
   std::vector<Operators::Mini_Diffusion1D> op_diff_;
 
-  int nnodes_;
-  double depth_;
+  int matrix_nodes_;
+  double depth_, tau_;
   std::string geometry_;
+  std::vector<double> mol_diff_;
 };
 
 }  // namespace Transport

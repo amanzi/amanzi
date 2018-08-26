@@ -19,17 +19,15 @@
 
 #include <DenseVector.hh>
 
+#include <Mini_Operator1D.hh>
+
 namespace Amanzi {
 namespace Operators {
 
-class Mini_Diffusion1D {
+class Mini_Diffusion1D : public Mini_Operator1D {
  public:
   Mini_Diffusion1D() {};
   ~Mini_Diffusion1D() {};
-
-  // initialize ddiffusion operator
-  void Init(std::shared_ptr<const WhetStone::DenseVector> mesh,
-            const std::string& geometry, double area_min, double area_max);
 
   // set up operator
   void Setup(double K) { Kconst_ = K; }
@@ -45,22 +43,15 @@ class Mini_Diffusion1D {
   void UpdateMatrices();
 
   // modify matrix due to boundary conditions
-  void SetBCs();
-  void ApplyBCs(bool primary, bool eliminate, bool essential_eqn);
+  void ApplyBCs(double bcl, int type_l, double bcr, int type_r);
 
   // postprocessing
   // -- flux calculation uses potential p to calculate flux u
-  void UpdateFlux(const WhetStone::DenseVector& p, WhetStone::DenseVector& u);
-
- protected:
-  std::shared_ptr<const WhetStone::DenseVector> mesh_;
-  std::shared_ptr<WhetStone::DenseVector> K_, k_, dkdp_;
-  double Kconst_;
+  // void UpdateFlux(const WhetStone::DenseVector& p, WhetStone::DenseVector& u);
 
  private:
-  WhetStone::DenseVector diag_, up_;
-  int igeo_;
-  double area_min_, area_max_;
+  std::shared_ptr<WhetStone::DenseVector> K_, k_, dkdp_;
+  double Kconst_;
 };
 
 }  // namespace Operators

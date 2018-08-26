@@ -584,18 +584,6 @@ double Transport_PK::StableTimeStep()
     }
   }
 
-  // modify estimate for other models
-  if (multiscale_porosity_) {
-    const Epetra_MultiVector& wcm_prev = *S_->GetFieldData("prev_water_content_matrix")->ViewComponent("cell");
-    const Epetra_MultiVector& wcm = *S_->GetFieldData("water_content_matrix")->ViewComponent("cell");
-
-    double dtg = S_->final_time() - S_->initial_time();
-    for (int c = 0; c < ncells_owned; ++c) {
-      double flux_liquid = (wcm[0][c] - wcm_prev[0][c]) / dtg;
-      msp_->second[(*msp_->first)[c]]->UpdateStabilityOutflux(flux_liquid, &total_outflux[c]);
-    }
-  }
-
   // loop over cells and calculate minimal time step
   double vol, outflux, dt_cell;
   dt_ = dt_cell = TRANSPORT_LARGE_TIME_STEP;
@@ -762,7 +750,7 @@ bool Transport_PK::AdvanceStep(double t_old, double t_new, bool reinit)
       }
     }
 
-    // add multiscale model
+    // add implicit multiscale model
     if (multiscale_porosity_) {
       double t_int1 = t_old + dt_sum - dt_cycle;
       double t_int2 = t_old + dt_sum;
@@ -1002,14 +990,14 @@ bool Transport_PK::AdvanceStep(double t_old, double t_new, bool reinit)
 
 
 /* ******************************************************************* 
-* Add multiscale porosity model on sub interval [t_int1, t_int2]:
+* Add implict time discretization of the multiscale porosity model on 
+* time sub-interval [t_int1, t_int2]:
 *   d(VWC_f)/dt -= G_s, d(VWC_m) = G_s 
 *   G_s = G_w C^* + omega_s (C_f - C_m).
 ******************************************************************* */
 void Transport_PK::AddMultiscalePorosity_(
     double t_old, double t_new, double t_int1, double t_int2)
 {
-  const Epetra_MultiVector& tcc_prev = *tcc->ViewComponent("cell");
   Epetra_MultiVector& tcc_next = *tcc_tmp->ViewComponent("cell");
   Epetra_MultiVector& tcc_matrix = 
      *S_->GetFieldData("total_component_concentration_matrix", passwd_)->ViewComponent("cell");
@@ -1023,20 +1011,19 @@ void Transport_PK::AddMultiscalePorosity_(
   // multi-node matrix requires more input data
   const Epetra_MultiVector& phi_matrix = *S_->GetFieldData("porosity_matrix")->ViewComponent("cell");
 
-  int nnodes;
-  std::vector<double> tcc_m_aux;
+  int nnodes(1);
   Teuchos::RCP<Epetra_MultiVector> tcc_matrix_aux;
-
   if (S_->HasField("total_component_concentration_matrix_aux")) {
     tcc_matrix_aux = S_->GetFieldData("total_component_concentration_matrix_aux", passwd_)->ViewComponent("cell");
-    nnodes = tcc_matrix_aux->NumVectors(); 
-    tcc_m_aux.resize(nnodes); 
+    nnodes = tcc_matrix_aux->NumVectors() + 1; 
   }
+  WhetStone::DenseVector tcc_m(nnodes);
 
-  double flux_solute, flux_liquid, f1, f2, f3;
+
+  double flux_liquid, flux_solute, wcm0, wcm1, wcf0, wcf1;
+  double dtg, dts, t1, t2, tmp0, tmp1, tfp0, tfp1, a, b;
   std::vector<AmanziMesh::Entity_ID> block;
 
-  double dtg, dts, t1, t2, wcm0, wcm1, wcf0, wcf1,tmp0, tmp1, a, b;
   dtg = t_new - t_old;
   dts = t_int2 - t_int1;
   t1 = t_int1 - t_old;
@@ -1050,31 +1037,33 @@ void Transport_PK::AddMultiscalePorosity_(
     wcf0 = wcf_prev[0][c];
     wcf1 = wcf[0][c];
   
-    a = t2 / dtg;
-    tmp1 = a * wcf1 + (1.0 - a) * wcf0;
-    f1 = dts / tmp1;
+    a = t1 / dtg;
+    b = t2 / dtg;
 
-    b = t1 / dtg;
-    tmp0 = b * wcm1 + (1.0 - b) * wcm0;
-    tmp1 = a * wcm1 + (1.0 - a) * wcm0;
+    tfp0 = a * wcf1 + (1.0 - a) * wcf0;
+    tfp1 = b * wcf1 + (1.0 - b) * wcf0;
 
-    f2 = dts / tmp1;
-    f3 = tmp0 / tmp1;
+    tmp0 = a * wcm1 + (1.0 - a) * wcm0;
+    tmp1 = b * wcm1 + (1.0 - b) * wcm0;
 
     double phim = phi_matrix[0][c];
 
     for (int i = 0; i < num_aqueous; ++i) {
+      tcc_m(0) = tcc_matrix[i][c];
       if (tcc_matrix_aux != Teuchos::null) {
         for (int n = 0; n < nnodes - 1; ++n) 
-           tcc_m_aux[n] = (*tcc_matrix_aux)[n][c];
+          tcc_m(n + 1) = (*tcc_matrix_aux)[n][c];
       }
 
       flux_solute = msp_->second[(*msp_->first)[c]]->ComputeSoluteFlux(
-          flux_liquid, tcc_prev[i][c], tcc_matrix[i][c],
-          i, phim, &tcc_m_aux);
+          flux_liquid, tcc_next[i][c], tcc_m, 
+          i, dts, tfp0, tfp1, tmp0, tmp1, phim);
 
-      tcc_next[i][c] -= flux_solute * f1;
-      tcc_matrix[i][c] = tcc_matrix[i][c] * f3 + flux_solute * f2;
+      tcc_matrix[i][c] = tcc_m(0);
+      if (tcc_matrix_aux != Teuchos::null) {
+        for (int n = 0; n < nnodes - 1; ++n) 
+          (*tcc_matrix_aux)[n][c] = tcc_m(n + 1);
+      }
     }
   }
 }

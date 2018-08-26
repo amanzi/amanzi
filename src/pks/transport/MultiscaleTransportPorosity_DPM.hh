@@ -21,6 +21,7 @@
 #include "Teuchos_ParameterList.hpp"
 
 #include "factory.hh"
+#include "DenseVector.hh"
 
 #include "MultiscaleTransportPorosity.hh"
 
@@ -32,16 +33,16 @@ class MultiscaleTransportPorosity_DPM : public MultiscaleTransportPorosity {
   MultiscaleTransportPorosity_DPM(const Teuchos::ParameterList& plist);
   ~MultiscaleTransportPorosity_DPM() {};
 
-  // Compute solute flux: icomp - component id, phi - matrix porosity phi,
-  // tcc_m_aux - vector of concentration values in secondary nodes
-  virtual double ComputeSoluteFlux(double flux_liquid, double tcc_f, double tcc_m, 
-                 int icomp, double phi, std::vector<double>* tcc_m_aux);
-
-  // Modify outflux used in the stability estimate.
-  virtual void UpdateStabilityOutflux(double flux_liquid, double* outflux);
+  // Compute solute flux: icomp - component id, phi - matrix porosity,
+  // tcc_m_aux - vector of concentration values in secondary nodes,
+  // wfm[0|1] - fracture water content at initial and final time moments,
+  // wcm[0|1] - water content at initial and final time moments
+  virtual double ComputeSoluteFlux(
+      double flux_liquid, double& tcc_f, WhetStone::DenseVector& tcc_m, int icomp,
+      double dt, double wcf0, double wcf1, double wcm0, double wcm1, double phi) override;
 
   // Number of matrix nodes
-  virtual int NumberMatrixNodes() { return 1; }
+  virtual int NumberMatrixNodes() override { return 1; }
 
  private:
   double omega_;
