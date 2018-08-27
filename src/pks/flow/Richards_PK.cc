@@ -185,7 +185,7 @@ void Richards_PK::Setup(const Teuchos::Ptr<State>& S)
   }
 
   // -- multiscale extension: secondary (immobile water content)
-  if (multiscale_model == "dual porosity") {
+  if (multiscale_model == "dual continuum discontinuous matrix") {
     if (!S->HasField("pressure_matrix")) {
       S->RequireField("pressure_matrix", passwd_)->SetMesh(mesh_)->SetGhosted(false)
         ->SetComponent("cell", AmanziMesh::CELL, 1);

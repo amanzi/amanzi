@@ -402,11 +402,12 @@ Teuchos::ParameterList InputConverterU::TranslateFlowMSM_()
 
   MemoryManager mm;
   DOMNodeList *node_list, *children;
-  DOMNode* node;
+  DOMNode *node, *knode;
   DOMElement* element;
 
+  int msm(0);
   bool flag;
-  std::string model, rel_perm;
+  std::string dual, model, rel_perm;
 
   node_list = doc_->getElementsByTagName(mm.transcode("materials"));
   element = static_cast<DOMElement*>(node_list->item(0));
@@ -414,42 +415,54 @@ Teuchos::ParameterList InputConverterU::TranslateFlowMSM_()
 
   for (int i = 0; i < children->getLength(); ++i) {
     DOMNode* inode = children->item(i); 
-    node = GetUniqueElementByTagsString_(inode, "multiscale_structure, cap_pressure", flag);
+    knode = GetUniqueElementByTagsString_(inode, "multiscale_structure", flag);
     if (!flag) continue;
 
-    model = GetAttributeValueS_(node, "model", "van_genuchten, brooks_corey");
-    DOMNode* nnode = GetUniqueElementByTagsString_(node, "parameters", flag);
-    DOMElement* element_cp = static_cast<DOMElement*>(nnode);
-
-    node = GetUniqueElementByTagsString_(inode, "multiscale_structure, rel_perm", flag);
-    rel_perm = GetAttributeValueS_(node, "model", "mualem, burdine");
-    DOMNode* mnode = GetUniqueElementByTagsString_(node, "exp", flag);
-    DOMElement* element_rp = (flag) ? static_cast<DOMElement*>(mnode) : NULL;
+    msm++;
+    dual = GetAttributeValueS_(knode, "name");
 
     // common stuff
     // -- assigned regions
     node = GetUniqueElementByTagsString_(inode, "assigned_regions", flag);
     std::vector<std::string> regions = CharToStrings_(mm.transcode(node->getTextContent()));
 
-    // -- mass transfer coefficient
-    node = GetUniqueElementByTagsString_(inode, "multiscale_structure, mass_transfer_coefficient", flag);
-    double alpha = std::strtod(mm.transcode(node->getTextContent()), NULL);
-    
-    for (std::vector<std::string>::const_iterator it = regions.begin(); it != regions.end(); ++it) {
-      std::stringstream ss;
-      ss << "MSM for " << *it;
-      Teuchos::ParameterList& msm_list = out_list.sublist(ss.str());
+    // water retention model
+    node = GetUniqueElementByTagsString_(knode, "cap_pressure", flag);
 
-      msm_list.set<std::string>("multiscale model", "dual porosity")
-          .set<double>("mass transfer coefficient", alpha);
+    model = GetAttributeValueS_(node, "model", "van_genuchten, brooks_corey");
+    DOMNode* nnode = GetUniqueElementByTagsString_(node, "parameters", flag);
+    DOMElement* element_cp = static_cast<DOMElement*>(nnode);
+
+    node = GetUniqueElementByTagsString_(knode, "rel_perm", flag);
+    rel_perm = GetAttributeValueS_(node, "model", "mualem, burdine");
+    DOMNode* mnode = GetUniqueElementByTagsString_(node, "exp", flag);
+    DOMElement* element_rp = (flag) ? static_cast<DOMElement*>(mnode) : NULL;
+
+    // dual continuum models
+    if (dual == "dual porosity") {
+      node = GetUniqueElementByTagsString_(knode, "mass_transfer_coefficient", flag);
+      double alpha = GetTextContentD_(node, "s^-1", true);
+    
+      for (auto it = regions.begin(); it != regions.end(); ++it) {
+        std::stringstream ss;
+        ss << "MSM for " << *it;
+        Teuchos::ParameterList& msm_list = out_list.sublist(ss.str());
+
+        msm_list.set<std::string>("multiscale model", dual)
+                .set<double>("mass transfer coefficient", alpha);
+      }
+    }
+    else if (dual == "generalized dual porosity") {
+      Errors::Message msg("Generalized dual porosity model is supported only for transport.\n");
+      Exceptions::amanzi_throw(msg);
     }
 
-    // -- porosity models
-    node = GetUniqueElementByTagsString_(inode, "multiscale_structure, porosity", flag);
+    // porosity models
+    node = GetUniqueElementByTagsString_(knode, "porosity", flag);
     double phi = GetAttributeValueD_(node, "value", TYPE_NUMERICAL, 0.0, 1.0);
     double compres = GetAttributeValueD_(node, "compressibility", TYPE_NUMERICAL, 0.0, 1.0, "Pa^-1", false, 0.0);
 
-    for (std::vector<std::string>::const_iterator it = regions.begin(); it != regions.end(); ++it) {
+    for (auto it = regions.begin(); it != regions.end(); ++it) {
       std::stringstream ss;
       ss << "MSM for " << *it;
       Teuchos::ParameterList& msm_list = out_list.sublist(ss.str());
@@ -514,6 +527,10 @@ Teuchos::ParameterList InputConverterU::TranslateFlowMSM_()
     }
   }
 
+  if (msm > 0 && children->getLength() != msm) {
+    Errors::Message msg("Mutiscale object may be used for all or none materials.\n");
+    Exceptions::amanzi_throw(msg);
+  } 
   return out_list;
 }
 

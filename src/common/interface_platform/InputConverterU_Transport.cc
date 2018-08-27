@@ -313,7 +313,7 @@ Teuchos::ParameterList InputConverterU::TranslateTransport_()
 ****************************************************************** */
 Teuchos::ParameterList InputConverterU::TranslateTransportMSM_()
 {
-  Teuchos::ParameterList out_list, empty_list;
+  Teuchos::ParameterList out_list;
 
   Teuchos::OSTab tab = vo_->getOSTab();
   if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH)
@@ -324,6 +324,7 @@ Teuchos::ParameterList InputConverterU::TranslateTransportMSM_()
   DOMNode* node;
   DOMElement* element;
 
+  int msm(0);
   bool flag;
   std::string model, rel_perm;
 
@@ -338,8 +339,9 @@ Teuchos::ParameterList InputConverterU::TranslateTransportMSM_()
     std::vector<std::string> regions = CharToStrings_(mm.transcode(node->getTextContent()));
 
     node = GetUniqueElementByTagsString_(inode, "multiscale_structure", flag);
-    if (!flag) return empty_list;
+    if (!flag) continue;
 
+    msm++;
     model = GetAttributeValueS_(node, "name");
 
     // dual porosity model
@@ -385,6 +387,10 @@ Teuchos::ParameterList InputConverterU::TranslateTransportMSM_()
     }
   }
 
+  if (msm > 0 && children->getLength() != msm) {
+    Errors::Message msg("Mutiscale object may be used for all or none materials.\n");
+    Exceptions::amanzi_throw(msg);
+  } 
   return out_list;
 }
 
