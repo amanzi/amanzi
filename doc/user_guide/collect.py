@@ -227,7 +227,7 @@ verification['transport'] = {
     'index_entry' : 'dispersion_45_point_2d/amanzi_dispersion_45_point_2d.rst',
   },
   'dual_porosity_1d' : {
-    'from_dir' : 'testing/verification/transport/saturated/transient/dual_porosity_1d',
+    'from_dir' : 'test_suites/verification/transport/saturated/transient/dual_porosity_1d',
     'dest_dir' : 'doc/user_guide/verification/transport/dual_porosity_1d',
     'index_entry' : 'dual_porosity_1d/amanzi_dual_porosity_1d.rst',
   },
