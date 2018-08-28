@@ -31,6 +31,8 @@ MultiscaleTransportPorosity_GDPM::MultiscaleTransportPorosity_GDPM(
   auto& sublist = plist.sublist("generalized dual porosity parameters");
   matrix_nodes_ = sublist.get<int>("number of matrix nodes");
 
+  // depth is defined for each matrix block as A_m / V_m, so in general,
+  // it depends on geometry 
   depth_ = sublist.get<double>("matrix depth");
   tau_ = sublist.get<double>("matrix tortuosity");
   geometry_ = sublist.get<std::string>("pore space geometry", "planar");
@@ -72,7 +74,7 @@ double MultiscaleTransportPorosity_GDPM::ComputeSoluteFlux(
   op.GetMatrixRow(0, &al, &ad, &ar); 
 
   h = op.mesh_cell_volume(0);
-  beta = al * dt;
+  beta = al * dt / depth_;
   al_mod = al * wcf1 / (wcf1 - beta);
   ad_mod = ad + al - al_mod;
   tcc_f_mod = tcc_f * wcf0 / wcf1;

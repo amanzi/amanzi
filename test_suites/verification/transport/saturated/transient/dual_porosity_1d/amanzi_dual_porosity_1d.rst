@@ -12,7 +12,7 @@ Capabilties tested include,
   * prescribed constant velocity field 
   * constant boundary condition for tracer
   * advection in an isotropic medium, longitudinal dispersivity
-  * dual porosity
+  * generalized dual porosity
 
 For details on this test, see :ref:`about_dual_porosity`.
 
@@ -34,7 +34,7 @@ Accuracy of the break-through curve at a distant point down the stream
 is sensitive to the time step in Amanzi's operator split approach.
 
 The verification data used in this test is generated from Fortran code
-shared by authros of :cite:`Sudicky_et_al_1982`. 
+shared by authors of :cite:`Sudicky_et_al_1982`. 
 
 Model
 -----
@@ -46,33 +46,23 @@ The analytical solution addresses the advection-dispersion equation in fracture
   =
   - \boldsymbol{\nabla} \cdot (\boldsymbol{q} C_f) 
   + \boldsymbol{\nabla} \cdot (\phi_f\, (\boldsymbol{D} + \tau_f M_f) \boldsymbol{\nabla} C_f) 
-  - \Sigma_s,
+  - \frac{\phi_m\,\tau_m}{L_m}\, M_m \nabla C_m,
 
 and linear ODE in matrix:
 
 .. math::
-  \frac{\partial (\phi_m\, C_m)}{\partial t} = \Sigma_s.
+  \frac{\partial (\phi_m\, C_m)}{\partial t} = -\nabla\cdot (\phi_m\, \tau_m\, M_m \nabla C_m).
 
 Here
 :math:`\phi` is porosity,
 :math:`\boldsymbol{q}` is the Darcy velocity,
-:math:`\boldsymbol{D}` is dispersion tensor,
+:math:`\boldsymbol{D}` is dispersion tensor, 
 :math:`M` is molecular diffusion coefficient, and
-:math:`\Sigma_s` is the solute exchange term.
+:math:`L_m` is the characteristic matrix depth defined typically as the ration of matrix block
+volume to its surface area.
 Subscripts :math:`f` and :math:`m` indicate fracture and matrix media, respectively. 
-The solute exchange term is modeled using van Genuchtech formula:
 
-.. math::
-  \Sigma_s = \alpha_s (C_f - C_m) + \Sigma_w C^*,
-
-where 
-:math:`\Sigma_w` is transfer rate for water from the matrix to the fracture, and
-:math:`C^*` is equal to :math:`C_f` if :math:`\Sigma_w > 0` and :math:`C_m` is :math:`\Sigma_w < 0`.
-The coefficient :math:`\alpha_s` is the first-order solute mass transfer coefficient [:math:`s^{-1}`].
-Since, the farcture and matrix are fully saturated, :math:`\Sigma_w = 0`.
-To match the one-dimension setup of Sudicky's and el al, we set  :math:`\alpha_s=4\phi_m \tau_m M_m`.
-
-For one-dimenstion problem, the dispersion tensor is diagonal:
+For pseudo one-dimenstion problem, the dispersion tensor is diagonal:
 
 .. math::
   \boldsymbol{D} = \begin{pmatrix}
@@ -105,7 +95,6 @@ The background mesh consists of square cells with size :math:`H=1` m.
 It has 100 grid cells in the x-direction and 1 grid cell in the y-direction. 
 
 
-
 Variables
 ~~~~~~~~~
 
@@ -126,9 +115,7 @@ Boundary conditions: :math:`C(x,t)=1` [kg/m^3] at :math:`x=0.0` of fracture.
 Results and Comparison
 ----------------------
 
-The plume structure is characterized by three line cuts.
-The first cut is given by line :math:`y=0` that goes through the well.
-The two other cuts are given by lines :math:`x=0` and :math:`x=424`.
+The concentrantaion at the fracture end point as the function of time.
 
 .. plot:: amanzi_dual_porosity_1d.py
    :align: center
@@ -161,7 +148,7 @@ About
 
 * Input Files:
 
-  * amanzi_dsual_porosity_1d-u.xml 
+  * amanzi_dual_porosity_1d-u.xml 
 
     * Spec Version 2.3, unstructured mesh framework
  

@@ -31,6 +31,7 @@ MultiscaleTransportPorosity_DPM::MultiscaleTransportPorosity_DPM(const Teuchos::
   const auto& sublist = plist.sublist("dual porosity parameters");
   warren_root_ = sublist.get<double>("Warren Root parameter");
   tau_ = sublist.get<double>("matrix tortuosity");
+  depth_ = sublist.get<double>("matrix depth");
 }
 
 
@@ -43,7 +44,7 @@ double MultiscaleTransportPorosity_DPM::ComputeSoluteFlux(
 {
   double bf, bm, omega;
 
-  omega = warren_root_ * phi * tau_ * mol_diff_[icomp];
+  omega = warren_root_ * phi * tau_ * mol_diff_[icomp] / depth_ / depth_;
   if (flux_liquid > 0.0) {
     bm = omega * dt;
     bf = bm + flux_liquid;

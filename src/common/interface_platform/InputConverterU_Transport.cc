@@ -346,14 +346,13 @@ Teuchos::ParameterList InputConverterU::TranslateTransportMSM_()
 
     // dual porosity model
     if (model == "dual porosity") {
-      double sigma, tau;
-      knode = GetUniqueElementByTagsString_(node, "warren_root_parameter", flag);
-      if (!flag) ThrowErrorMissattr_("materials", "element", "warren_root_parameter", "multiscale_structure");
-      sigma = InputConverter::GetTextContentD_(knode, "s^-1", true);
+      node = GetUniqueElementByTagsString_(node, "matrix", flag);
+      if (!flag) ThrowErrorMissattr_("materials", "element", "matrix", "multiscale_structure");
 
-      knode = GetUniqueElementByTagsString_(node, "matrix_tortuosity", flag);
-      if (flag) tau = GetTextContentD_(knode, "-", false, 1.0);
-    
+      double depth = GetAttributeValueD_(node, "depth", TYPE_NUMERICAL, 0.0, DVAL_MAX, "m");
+      double sigma = GetAttributeValueD_(node, "warren_root", TYPE_NUMERICAL, 0.0, 1000.0, "m^-2");
+      double tau = GetAttributeValueD_(node, "tortuosity", TYPE_NUMERICAL, 0.0, DVAL_MAX, "-");
+
       std::stringstream ss;
       ss << "MSM " << i;
 
@@ -362,13 +361,13 @@ Teuchos::ParameterList InputConverterU::TranslateTransportMSM_()
       msm_list.set<std::string>("multiscale model", "dual porosity")
           .set<Teuchos::Array<std::string> >("regions", regions)
           .sublist("dual porosity parameters")
-          .set<double>("Warren Root parameter", sigma)
-          .set<double>("matrix tortuosity", tau);
+              .set<double>("Warren Root parameter", sigma)
+              .set<double>("matrix depth", depth)
+              .set<double>("matrix tortuosity", tau);
 
     } else if (model == "generalized dual porosity") {
       node = GetUniqueElementByTagsString_(node, "matrix", flag);
-      if (!flag)
-         ThrowErrorMissattr_("materials", "element", "matrix", "multiscale_structure");
+      if (!flag) ThrowErrorMissattr_("materials", "element", "matrix", "multiscale_structure");
 
       int nnodes = GetAttributeValueL_(node, "number_of_nodes", TYPE_NUMERICAL, 0, INT_MAX, false, 1);
       double depth = GetAttributeValueD_(node, "depth", TYPE_NUMERICAL, 0.0, DVAL_MAX, "m");
@@ -383,10 +382,10 @@ Teuchos::ParameterList InputConverterU::TranslateTransportMSM_()
       msm_list.set<std::string>("multiscale model", "generalized dual porosity")
           .set<Teuchos::Array<std::string> >("regions", regions)
           .sublist("generalized dual porosity parameters")
-          .set<int>("number of matrix nodes", nnodes)
-          .set<double>("matrix depth", depth)
-          .set<double>("matrix tortuosity", tau)
-          .set<std::string>("pore space geometry", geometry);
+              .set<int>("number of matrix nodes", nnodes)
+              .set<double>("matrix depth", depth)
+              .set<double>("matrix tortuosity", tau)
+              .set<std::string>("pore space geometry", geometry);
     }
   }
 
