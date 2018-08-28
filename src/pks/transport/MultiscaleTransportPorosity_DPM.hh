@@ -45,7 +45,8 @@ class MultiscaleTransportPorosity_DPM : public MultiscaleTransportPorosity {
   virtual int NumberMatrixNodes() override { return 1; }
 
  private:
-  double omega_;
+  std::vector<double> mol_diff_;
+  double warren_root_, tau_;
 
   static Utils::RegisteredFactory<MultiscaleTransportPorosity, MultiscaleTransportPorosity_DPM> factory_;
 };

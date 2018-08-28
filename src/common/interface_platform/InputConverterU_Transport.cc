@@ -321,7 +321,7 @@ Teuchos::ParameterList InputConverterU::TranslateTransportMSM_()
 
   MemoryManager mm;
   DOMNodeList *node_list, *children;
-  DOMNode* node;
+  DOMNode *node, *knode;
   DOMElement* element;
 
   int msm(0);
@@ -346,11 +346,13 @@ Teuchos::ParameterList InputConverterU::TranslateTransportMSM_()
 
     // dual porosity model
     if (model == "dual porosity") {
-      node = GetUniqueElementByTagsString_(node, "solute_transfer_coefficient", flag);
-      if (!flag)
-         ThrowErrorMissattr_("materials", "element", "solute_transfer_coefficient", "multiscale_structure");
+      double sigma, tau;
+      knode = GetUniqueElementByTagsString_(node, "warren_root_parameter", flag);
+      if (!flag) ThrowErrorMissattr_("materials", "element", "warren_root_parameter", "multiscale_structure");
+      sigma = InputConverter::GetTextContentD_(knode, "s^-1", true);
 
-      double omega = InputConverter::GetTextContentD_(node, "s^-1", true);
+      knode = GetUniqueElementByTagsString_(node, "matrix_tortuosity", flag);
+      if (flag) tau = GetTextContentD_(knode, "-", false, 1.0);
     
       std::stringstream ss;
       ss << "MSM " << i;
@@ -360,7 +362,8 @@ Teuchos::ParameterList InputConverterU::TranslateTransportMSM_()
       msm_list.set<std::string>("multiscale model", "dual porosity")
           .set<Teuchos::Array<std::string> >("regions", regions)
           .sublist("dual porosity parameters")
-          .set<double>("solute transfer coefficient", omega);
+          .set<double>("Warren Root parameter", sigma)
+          .set<double>("matrix tortuosity", tau);
 
     } else if (model == "generalized dual porosity") {
       node = GetUniqueElementByTagsString_(node, "matrix", flag);

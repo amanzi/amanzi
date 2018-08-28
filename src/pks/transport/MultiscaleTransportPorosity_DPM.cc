@@ -26,8 +26,11 @@ namespace Transport {
 ****************************************************************** */
 MultiscaleTransportPorosity_DPM::MultiscaleTransportPorosity_DPM(const Teuchos::ParameterList& plist)
 {
-  omega_ = plist.sublist("dual porosity parameters")
-                .get<double>("solute transfer coefficient");
+  mol_diff_ = plist.get<Teuchos::Array<double> >("molecular diffusion").toVector();
+
+  const auto& sublist = plist.sublist("dual porosity parameters");
+  warren_root_ = sublist.get<double>("Warren Root parameter");
+  tau_ = sublist.get<double>("matrix tortuosity");
 }
 
 
@@ -38,12 +41,14 @@ double MultiscaleTransportPorosity_DPM::ComputeSoluteFlux(
     double flux_liquid, double& tcc_f, WhetStone::DenseVector& tcc_m, int icomp,
     double dt, double wcf0, double wcf1, double wcm0, double wcm1, double phi)
 {
-  double bf, bm;
+  double bf, bm, omega;
+
+  omega = warren_root_ * phi * tau_ * mol_diff_[icomp];
   if (flux_liquid > 0.0) {
-    bm = omega_ * dt;
+    bm = omega * dt;
     bf = bm + flux_liquid;
   } else {
-    bf = omega_ * dt;
+    bf = omega * dt;
     bm = bf - flux_liquid;
   }
 
@@ -66,7 +71,7 @@ double MultiscaleTransportPorosity_DPM::ComputeSoluteFlux(
   tcc_m(0) = x(1);
 
   double tmp = (flux_liquid > 0.0) ? tcc_f : tcc_m(0); 
-  return flux_liquid * tmp + omega_ * (tcc_f - tcc_m(0));
+  return flux_liquid * tmp + omega * (tcc_f - tcc_m(0));
 }
 
 }  // namespace Transport

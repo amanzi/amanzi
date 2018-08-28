@@ -2343,8 +2343,9 @@ This list is optional.
 Dual porosity model
 ```````````````````
 
-* `"solute transfer coefficient`" [list] defines diffusive solute transport due to
+* `"Warren Root parameter`" [list] scales diffusive solute transport due to
   concentration gradient.
+* `"tortousity`" [double] defines tortuosity to correct diffusivity of a liquid solute.
 
 
 Generalized dual porosity model
@@ -2364,7 +2365,8 @@ Generalized dual porosity model
         <Parameter name="multiscale model" type="string" value="dual porosity"/>
         <Parameter name="regions" type="Array(string)" value="{TOP_REGION, BOTTOM_REGION}"/>
         <ParameterList name="dual porosity parameters">
-          <Paramater name="solute transfer coefficient" type="double" value="4.0e-5"/>
+          <Paramater name="Warren Root parameter" type="double" value="4.0e-5"/>
+          <Paramater name="matrix tortuosity" type="double" value="0.95"/>
         </ParameterList>  
       </ParameterList>  
 
