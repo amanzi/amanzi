@@ -30,6 +30,7 @@ add_library(pk_surface_balance_SEB
        # SEB_VPL/surface_balance_evaluator_VPL.cc
        # explicit/surface_balance_explicit.cc
        implicit/surface_balance_implicit.cc
+       implicit_subgrid/surface_balance_implicit_subgrid.cc
        base/surface_balance_base.cc
 )
 
@@ -81,6 +82,11 @@ register_evaluator_with_factory(
 # SEB implicit
 register_evaluator_with_factory(
   HEADERFILE implicit/surface_balance_implicit_reg.hh
+  LISTNAME SURFACE_BALANCE_SEB_REG
+)
+
+register_evaluator_with_factory(
+  HEADERFILE implicit_subgrid/surface_balance_implicit_subgrid_reg.hh
   LISTNAME SURFACE_BALANCE_SEB_REG
 )
 
