@@ -35,7 +35,7 @@ class Reconstruction {
                     Teuchos::ParameterList& plist) { field_ = field; }
   virtual void Init(Teuchos::RCP<const Epetra_MultiVector> field,
                     Teuchos::ParameterList& plist, int component) { field_ = field; component_ = component;}
-  virtual void Compute() = 0;
+  virtual void ComputeGradient() = 0;
 
   // apply either internal or external limiter
   virtual void ApplyLimiter(const std::vector<int>& bc_model, const std::vector<double>& bc_values) {};

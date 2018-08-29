@@ -355,7 +355,7 @@ void ReconstructionCell::LimiterBarthJespersen_(
 
 
 /* *******************************************************************
-* Extension of Barth-JEspersen's limiter. Routine changes gradient to 
+* Extension of Barth-Jespersen's limiter. Routine changes gradient to 
 * satisfy an a prioty estimate of the stable time step. That estimate
 * assumes that the weigthed flux is smaller that the first-order flux.
 ******************************************************************* */

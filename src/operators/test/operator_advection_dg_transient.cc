@@ -583,7 +583,7 @@ void AdvectionTransient(std::string filename, int nx, int ny, double dt,
   ana.InitialGuess(*dg, sol_c, 0.0);
 
   int nstep(0);
-  double t(0.0), tend(6.28), tprint(0.0);
+  double t(0.0), tend(1.0), tprint(0.0);
   Explicit_TI::RK<CompositeVector> rk(fn, rk_method, sol);
 
   while(t < tend - dt/2) {
@@ -649,7 +649,7 @@ TEST(OPERATOR_ADVECTION_TRANSIENT_DG) {
   AdvectionTransient<AnalyticDG06>("square",  4,  4, 0.1, Amanzi::Explicit_TI::tvd_3rd_order, false);
   AdvectionTransient<AnalyticDG06>("square",  4,  4, 0.1, Amanzi::Explicit_TI::tvd_3rd_order, false, "primal");
 
-  // AdvectionTransient<AnalyticDG08>("square",  80,  80, 0.02 / 4, Amanzi::Explicit_TI::heun_euler);
+  // AdvectionTransient<AnalyticDG08>("square",  160,  160, 0.02 / 8, Amanzi::Explicit_TI::heun_euler);
 
   /*
   AdvectionTransient<AnalyticDG06>("square",  20,  20, 0.01, Amanzi::Explicit_TI::heun_euler);

@@ -656,6 +656,7 @@
           <Parameter name="regions" type="Array(string)" value="{RegionMiddle}"/>
           <ParameterList name="dual porosity parameters">
             <Parameter name="Warren Root parameter" type="double" value="4.0"/>
+            <Parameter name="matrix depth" type="double" value="8.00000000000000044e-01"/>
             <Parameter name="matrix tortuosity" type="double" value="0.9"/>
           </ParameterList>
         </ParameterList>

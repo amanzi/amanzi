@@ -74,10 +74,10 @@ void ReconstructionCell::Init(Teuchos::RCP<const Epetra_MultiVector> field,
 
 
 /* ******************************************************************
-* Implementation is tuned up for gradient (first-order reconstruction).
-* It can be extended easily if needed in the future.
+* Gradient of linear reconstruction is based on stabilized 
+* least-square fit.
 ****************************************************************** */
-void ReconstructionCell::Compute()
+void ReconstructionCell::ComputeGradient()
 {
   Teuchos::RCP<Epetra_MultiVector> grad = gradient_->ViewComponent("cell", false);
   AmanziMesh::Entity_ID_List cells;
@@ -128,8 +128,8 @@ void ReconstructionCell::Compute()
 
 
 /* ******************************************************************
-* Special implementation of Compute(). The gradient is computed only
-* in specied cells and internal structures are not modified.
+* Special implementation of ComputeGradient(). The gradient is computed 
+* only in specied cells and internal structures are not modified.
 ****************************************************************** */
 void ReconstructionCell::ComputeGradient(
     const AmanziMesh::Entity_ID_List& ids,

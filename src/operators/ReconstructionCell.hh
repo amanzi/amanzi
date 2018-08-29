@@ -42,7 +42,7 @@ class ReconstructionCell : public Reconstruction {
 
   // global reconstruction
   // -- compute gradient and keep it internally
-  virtual void Compute() override;
+  virtual void ComputeGradient() override;
 
   // -- identify inflow boundaries (optional)
   void InitLimiter(Teuchos::RCP<const Epetra_MultiVector> flux);

@@ -178,8 +178,7 @@
       <multiscale_structure name="dual porosity">
         <porosity value="0.25"/>
         <mass_transfer_coefficient>0.0</mass_transfer_coefficient>
-        <warren_root_parameter>4.0</warren_root_parameter>
-        <matrix_tortuosity>0.9</matrix_tortuosity>
+        <matrix depth="0.8 m" tortuosity="0.9" warren_root="4.0"/>
       </multiscale_structure>
     </material>
 
