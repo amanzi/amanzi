@@ -41,6 +41,7 @@
 #include "AnalyticDG06.hh"
 #include "AnalyticDG06b.hh"
 #include "AnalyticDG07.hh"
+#include "AnalyticDG08.hh"
 
 #include "OperatorAudit.hh"
 #include "OperatorDefs.hh"
@@ -582,7 +583,7 @@ void AdvectionTransient(std::string filename, int nx, int ny, double dt,
   ana.InitialGuess(*dg, sol_c, 0.0);
 
   int nstep(0);
-  double t(0.0), tend(1.0), tprint(0.0);
+  double t(0.0), tend(6.28), tprint(0.0);
   Explicit_TI::RK<CompositeVector> rk(fn, rk_method, sol);
 
   while(t < tend - dt/2) {
@@ -640,7 +641,6 @@ void AdvectionTransient(std::string filename, int nx, int ny, double dt,
 
 
 TEST(OPERATOR_ADVECTION_TRANSIENT_DG) {
-  /*
   exact_solution_expected = true;
   AdvectionTransient<AnalyticDG02b>("square",  4,  4, 0.1, Amanzi::Explicit_TI::tvd_3rd_order, false);
 
@@ -648,7 +648,8 @@ TEST(OPERATOR_ADVECTION_TRANSIENT_DG) {
   AdvectionTransient<AnalyticDG06b>("square",  4,  4, 0.1, Amanzi::Explicit_TI::tvd_3rd_order);
   AdvectionTransient<AnalyticDG06>("square",  4,  4, 0.1, Amanzi::Explicit_TI::tvd_3rd_order, false);
   AdvectionTransient<AnalyticDG06>("square",  4,  4, 0.1, Amanzi::Explicit_TI::tvd_3rd_order, false, "primal");
-  */
+
+  // AdvectionTransient<AnalyticDG08>("square",  80,  80, 0.02 / 4, Amanzi::Explicit_TI::heun_euler);
 
   /*
   AdvectionTransient<AnalyticDG06>("square",  20,  20, 0.01, Amanzi::Explicit_TI::heun_euler);
@@ -665,11 +666,13 @@ TEST(OPERATOR_ADVECTION_TRANSIENT_DG) {
   AdvectionTransient<AnalyticDG06>("test/triangular128.exo",128, 0, 0.01 / 16,Amanzi::Explicit_TI::tvd_3rd_order);
   */
 
+  /*
   double dT0 = 0.001;
   AdvectionTransient<AnalyticDG07>("square", 20, 20, dT0, Amanzi::Explicit_TI::tvd_3rd_order, false, "primal", "level set");
   AdvectionTransient<AnalyticDG07>("square", 40, 40, dT0 / 2, Amanzi::Explicit_TI::tvd_3rd_order, false, "primal", "level set");
   AdvectionTransient<AnalyticDG07>("square", 80, 80, dT0 / 4, Amanzi::Explicit_TI::tvd_3rd_order, false, "primal", "level set");
   AdvectionTransient<AnalyticDG07>("square",160,160, dT0 / 8, Amanzi::Explicit_TI::tvd_3rd_order, false, "primal", "level set");
+  */
 
   /*
   double dT0 = 0.001;
