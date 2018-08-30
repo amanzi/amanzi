@@ -175,11 +175,11 @@
       <rel_perm model="mualem"/>
       <assigned_regions>RegionMiddle</assigned_regions>
 
-      <multiscale_structure name="dual porosity">
-        <porosity value="0.25"/>
+      <multiscale_model name="dual porosity">
         <mass_transfer_coefficient>0.0</mass_transfer_coefficient>
-        <matrix depth="0.8 m" tortuosity="0.9" warren_root="4.0"/>
-      </multiscale_structure>
+        <matrix depth="0.8 m" tortuosity="0.9" warren_root="4.0" volume_fraction="0.9999"/>
+        <matrix_porosity value="0.25"/>
+      </multiscale_model>
     </material>
 
     <material name="Facies_2">
@@ -194,10 +194,11 @@
       <rel_perm model="mualem"/>
       <assigned_regions>RegionBottom</assigned_regions>
 
-      <multiscale_structure name="generalized dual porosity">
-        <porosity value="0.25"/>
-        <matrix depth="1.0 m" pore_geometry="planar" number_of_nodes="2" tortuosity="1.0"/>
-      </multiscale_structure>
+      <multiscale_model name="generalized dual porosity">
+        <mass_transfer_coefficient>0.0</mass_transfer_coefficient>
+        <matrix depth="1.0 m" number_of_nodes="2" tortuosity="1.0" volume_fraction="0.9999"/>
+        <matrix_porosity value="0.25"/>
+      </multiscale_model>
     </material>
 
     <material name="Facies_3">
@@ -212,10 +213,11 @@
       <rel_perm model="mualem"/>
       <assigned_regions>RegionTop</assigned_regions>
 
-      <multiscale_structure name="generalized dual porosity">
-        <porosity value="0.25"/>
-        <matrix depth="2.0 m" pore_geometry="planar" number_of_nodes="3" tortuosity="0.8"/>
-      </multiscale_structure>
+      <multiscale_model name="generalized dual porosity">
+        <mass_transfer_coefficient>0.0</mass_transfer_coefficient>
+        <matrix depth="2.0 m" number_of_nodes="3" tortuosity="0.8" volume_fraction="0.9999"/>
+        <matrix_porosity value="0.25"/>
+      </multiscale_model>
     </material>
   </materials>
 

@@ -117,10 +117,10 @@
         <dispersion_tensor alpha_l="1.0" alpha_t="2.65e-12" type="uniform_isotropic" />
       </mechanical_properties>
 
-      <multiscale_structure name="generalized dual porosity">
-        <porosity value="0.25"/>
-        <matrix depth="0.8 m" pore_geometry="planar" number_of_nodes="7" tortuosity="1.0"/>
-      </multiscale_structure>
+      <multiscale_model name="generalized dual porosity">
+        <matrix depth="0.8 m" number_of_nodes="7" tortuosity="1.0" volume_fraction="0.9999"/>
+        <matrix_porosity value="0.25"/>
+      </multiscale_model>
     </material>
   </materials>
 

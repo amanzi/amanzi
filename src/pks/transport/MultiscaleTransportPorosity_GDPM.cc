@@ -35,8 +35,8 @@ MultiscaleTransportPorosity_GDPM::MultiscaleTransportPorosity_GDPM(
   // it depends on geometry 
   depth_ = sublist.get<double>("matrix depth");
   tau_ = sublist.get<double>("matrix tortuosity");
-  geometry_ = sublist.get<std::string>("pore space geometry", "planar");
   mol_diff_ = plist.get<Teuchos::Array<double> >("molecular diffusion").toVector();
+  std::string geometry("planar");
 
   // make uniform mesh inside matrix
   auto mesh = std::make_shared<WhetStone::DenseVector>(WhetStone::DenseVector(matrix_nodes_ + 1));
@@ -47,7 +47,7 @@ MultiscaleTransportPorosity_GDPM::MultiscaleTransportPorosity_GDPM(
   int ncomp = mol_diff_.size();
   op_diff_.resize(ncomp);
   for (int i = 0; i < ncomp; ++i) {
-    op_diff_[i].Init(mesh, geometry_, 1.0, 1.0);
+    op_diff_[i].Init(mesh, geometry, 1.0, 1.0);
     op_diff_[i].Setup(mol_diff_[i]);
     op_diff_[i].UpdateMatrices();
   }
@@ -70,10 +70,9 @@ double MultiscaleTransportPorosity_GDPM::ComputeSoluteFlux(
 
   // get Schur complement due to fracture equation. This is one of
   // a few possible implementations.
-  double al, ad, ar, al_mod, ad_mod, tcc_f_mod, beta, h;
+  double al, ad, ar, al_mod, ad_mod, tcc_f_mod, beta;
   op.GetMatrixRow(0, &al, &ad, &ar); 
 
-  h = op.mesh_cell_volume(0);
   beta = al * dt / depth_;
   al_mod = al * wcf1 / (wcf1 - beta);
   ad_mod = ad + al - al_mod;
@@ -89,6 +88,7 @@ double MultiscaleTransportPorosity_GDPM::ComputeSoluteFlux(
 
   tcc_f = (wcf0 * tcc_f - beta * tcc_m(0)) / (wcf1 - beta);
 
+  double h = op.mesh_cell_volume(0);
   double tmp = (flux_liquid > 0.0) ? tcc_f : tcc_m(0); 
   return flux_liquid * tmp - al / h * (tcc_f - tcc_m(0));
 }

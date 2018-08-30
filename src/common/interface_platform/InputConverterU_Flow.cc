@@ -76,7 +76,7 @@ Teuchos::ParameterList InputConverterU::TranslateFlow_(const std::string& mode)
     flow_list = &darcy_list;
     flow_single_phase_ = true;
 
-    DOMNodeList* tmp = doc_->getElementsByTagName(mm.transcode("multiscale_structure"));
+    DOMNodeList* tmp = doc_->getElementsByTagName(mm.transcode("multiscale_model"));
     if (tmp->getLength() > 0) {
       msm = GetAttributeValueS_(tmp->item(0), "name");
       flow_list->sublist("physical models and assumptions")
@@ -415,7 +415,7 @@ Teuchos::ParameterList InputConverterU::TranslateFlowMSM_()
 
   for (int i = 0; i < children->getLength(); ++i) {
     DOMNode* inode = children->item(i); 
-    knode = GetUniqueElementByTagsString_(inode, "multiscale_structure", flag);
+    knode = GetUniqueElementByTagsString_(inode, "multiscale_model", flag);
     if (!flag) continue;
 
     msm++;
@@ -458,7 +458,7 @@ Teuchos::ParameterList InputConverterU::TranslateFlowMSM_()
     }
 
     // porosity models
-    node = GetUniqueElementByTagsString_(knode, "porosity", flag);
+    node = GetUniqueElementByTagsString_(knode, "matrix_porosity", flag);
     double phi = GetAttributeValueD_(node, "value", TYPE_NUMERICAL, 0.0, 1.0);
     double compres = GetAttributeValueD_(node, "compressibility", TYPE_NUMERICAL, 0.0, 1.0, "Pa^-1", false, 0.0);
 

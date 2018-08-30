@@ -138,7 +138,7 @@ Teuchos::ParameterList InputConverterU::TranslateState_()
       }
 
       // -- dual porosity: matrix porosity
-      node = GetUniqueElementByTagsString_(inode, "multiscale_structure, porosity", flag);
+      node = GetUniqueElementByTagsString_(inode, "multiscale_model, matrix_porosity", flag);
       if (flag) {
         TranslateFieldIC_(node, "porosity_matrix", "-", reg_str, regions, out_ic, out_ev);
       }

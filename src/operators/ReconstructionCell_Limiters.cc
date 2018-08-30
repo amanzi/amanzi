@@ -44,6 +44,9 @@ void ReconstructionCell::InitLimiter(Teuchos::RCP<const Epetra_MultiVector> flux
 void ReconstructionCell::LimiterTensorial_(
     const std::vector<int>& bc_model, const std::vector<double>& bc_value)
 {
+  AMANZI_ASSERT(upwind_cells_.size() > 0);
+  AMANZI_ASSERT(downwind_cells_.size() > 0);
+
   double u1, u2, u1f, u2f, umin, umax, L22normal_new;
   AmanziGeometry::Point gradient_c1(dim), gradient_c2(dim);
   AmanziGeometry::Point normal_new(dim), direction(dim), p(dim);
@@ -52,7 +55,7 @@ void ReconstructionCell::LimiterTensorial_(
 
   std::vector<AmanziGeometry::Point> normals;
   AmanziMesh::Entity_ID_List faces;
-  Teuchos::RCP<Epetra_Vector> limiter = Teuchos::rcp(new Epetra_Vector(mesh_->cell_map(false)));
+  auto limiter = Teuchos::rcp(new Epetra_Vector(mesh_->cell_map(false)));
 
   // Step 1: limit gradient to a feasiable set excluding Dirichlet boundary
   for (int c = 0; c < ncells_owned; c++) {
@@ -201,9 +204,6 @@ void ReconstructionCell::LimiterTensorial_(
 void ReconstructionCell::LimiterExtensionTransportTensorial_(
     const std::vector<double>& field_local_min, const std::vector<double>& field_local_max)
 {
-  AMANZI_ASSERT(upwind_cells_.size() > 0);
-  AMANZI_ASSERT(downwind_cells_.size() > 0);
-
   double u1f, u1;
   AmanziMesh::Entity_ID_List faces;
 
@@ -260,8 +260,11 @@ void ReconstructionCell::LimiterBarthJespersen_(
     const std::vector<int>& bc_model, const std::vector<double>& bc_value,
     Teuchos::RCP<Epetra_Vector> limiter)
 {
+  AMANZI_ASSERT(upwind_cells_.size() > 0);
+  AMANZI_ASSERT(downwind_cells_.size() > 0);
+
   limiter->PutScalar(1.0);
-  Teuchos::RCP<Epetra_MultiVector> grad = gradient_->ViewComponent("cell", false);
+  Epetra_MultiVector& grad = *gradient_->ViewComponent("cell", false);
 
   double u1, u2, u1f, u2f, umin, umax;  // cell and inteface values
   AmanziGeometry::Point gradient_c1(dim), gradient_c2(dim);
@@ -282,7 +285,7 @@ void ReconstructionCell::LimiterBarthJespersen_(
     const AmanziGeometry::Point& xc2 = mesh_->cell_centroid(c2);
     const AmanziGeometry::Point& xcf = mesh_->face_centroid(f);
 
-    for (int i = 0; i < dim; i++) gradient_c1[i] = (*grad)[i][c1];
+    for (int i = 0; i < dim; i++) gradient_c1[i] = grad[i][c1];
     double u1_add = gradient_c1 * (xcf - xc1);
     u1f = u1 + u1_add;
 
@@ -292,7 +295,7 @@ void ReconstructionCell::LimiterBarthJespersen_(
       (*limiter)[c1] = std::min((*limiter)[c1], (umax - u1) / u1_add);
     }
 
-    for (int i = 0; i < dim; i++) gradient_c2[i] = (*grad)[i][c2];
+    for (int i = 0; i < dim; i++) gradient_c2[i] = grad[i][c2];
     double u2_add = gradient_c2 * (xcf - xc2);
     u2f = u2 + u2_add;
 
@@ -337,7 +340,7 @@ void ReconstructionCell::LimiterBarthJespersen_(
         const AmanziGeometry::Point& xc2 = mesh_->cell_centroid(c2);
         const AmanziGeometry::Point& xcf = mesh_->face_centroid(f);
 
-        for (int k = 0; k < dim; k++) gradient_c2[k] = (*grad)[k][c2];
+        for (int k = 0; k < dim; k++) gradient_c2[k] = grad[k][c2];
         double u_add = gradient_c2 * (xcf - xc2);
         u2f = u2 + u_add;
 
@@ -366,14 +369,11 @@ void ReconstructionCell::LimiterExtensionTransportBarthJespersen_(
     const std::vector<double>& field_local_min, const std::vector<double>& field_local_max,
     Teuchos::RCP<Epetra_Vector> limiter)
 {
-  AMANZI_ASSERT(upwind_cells_.size() > 0);
-  AMANZI_ASSERT(downwind_cells_.size() > 0);
-
   double u1, u1f;
   AmanziGeometry::Point gradient_c1(dim);
   AmanziMesh::Entity_ID_List faces;
 
-  Teuchos::RCP<Epetra_MultiVector> grad = gradient_->ViewComponent("cell", false);
+  Epetra_MultiVector& grad = *gradient_->ViewComponent("cell", false);
 
   for (int c = 0; c < ncells_owned; c++) {
     const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
@@ -389,7 +389,7 @@ void ReconstructionCell::LimiterExtensionTransportBarthJespersen_(
       if (c == c1) {
         const AmanziGeometry::Point& xcf = mesh_->face_centroid(f);
         u1 = (*field_)[component_][c];
-        for (int k = 0; k < dim; k++) gradient_c1[k] = (*grad)[k][c1];
+        for (int k = 0; k < dim; k++) gradient_c1[k] = grad[k][c1];
         u1f = u1 + gradient_c1 * (xcf - xc);
 
         a = u1f - u1;
@@ -423,7 +423,7 @@ void ReconstructionCell::LimiterExtensionTransportBarthJespersen_(
 void ReconstructionCell::LimiterKuzmin_(
     const std::vector<int>& bc_model, const std::vector<double>& bc_value)
 {
-  Epetra_MultiVector grad = *gradient_->ViewComponent("cell", false);
+  Epetra_MultiVector& grad = *gradient_->ViewComponent("cell", false);
 
   // Step 1: local extrema are calculated here at nodes and updated later
   std::vector<double> field_node_min(nnodes_wghost);
@@ -646,7 +646,7 @@ void ReconstructionCell::LimiterExtensionTransportKuzmin_(
   AmanziGeometry::Point xp(dim);
   AmanziMesh::Entity_ID_List faces, nodes;
 
-  Teuchos::RCP<Epetra_MultiVector> grad = gradient_->ViewComponent("cell", false);
+  Epetra_MultiVector& grad = *gradient_->ViewComponent("cell", false);
 
   for (int c = 0; c < ncells_owned; c++) {
     mesh_->cell_get_faces(c, &faces);
@@ -687,7 +687,7 @@ void ReconstructionCell::LimiterExtensionTransportKuzmin_(
             if (b) {
               outflux_weigted += flux * a / b;
             } else {
-              for (int k = 0; k < dim; k++) (*grad)[k][c] = 0.0;
+              for (int k = 0; k < dim; k++) grad[k][c] = 0.0;
               break;
             }
           }
@@ -697,7 +697,7 @@ void ReconstructionCell::LimiterExtensionTransportKuzmin_(
 
     if (outflux_weigted > outflux) {
       double psi = outflux / outflux_weigted;
-      for (int i = 0; i < dim; i++) (*grad)[i][c] *= psi;
+      for (int i = 0; i < dim; i++) grad[i][c] *= psi;
     }
   }
 }

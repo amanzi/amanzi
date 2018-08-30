@@ -658,6 +658,7 @@
             <Parameter name="Warren Root parameter" type="double" value="4.0"/>
             <Parameter name="matrix depth" type="double" value="8.00000000000000044e-01"/>
             <Parameter name="matrix tortuosity" type="double" value="0.9"/>
+            <Parameter name="matrix volume fraction" type="double" value="9.99900000000000011e-01"/>
           </ParameterList>
         </ParameterList>
         <ParameterList name="MSM 1">
@@ -667,7 +668,7 @@
             <Parameter name="number of matrix nodes" type="int" value="2"/>
             <Parameter name="matrix depth" type="double" value="1.0"/>
             <Parameter name="matrix tortuosity" type="double" value="1.0"/>
-            <Parameter name="pore space geometry" type="string" value="planar"/>
+            <Parameter name="matrix volume fraction" type="double" value="9.99900000000000011e-01"/>
           </ParameterList>
         </ParameterList>
         <ParameterList name="MSM 2">
@@ -677,7 +678,7 @@
             <Parameter name="number of matrix nodes" type="int" value="3"/>
             <Parameter name="matrix depth" type="double" value="2.0"/>
             <Parameter name="matrix tortuosity" type="double" value="0.8"/>
-            <Parameter name="pore space geometry" type="string" value="planar"/>
+            <Parameter name="matrix volume fraction" type="double" value="9.99900000000000011e-01"/>
           </ParameterList>
         </ParameterList>
       </ParameterList>
