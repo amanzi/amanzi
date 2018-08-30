@@ -201,6 +201,9 @@ void ReconstructionCell::LimiterTensorial_(
 void ReconstructionCell::LimiterExtensionTransportTensorial_(
     const std::vector<double>& field_local_min, const std::vector<double>& field_local_max)
 {
+  AMANZI_ASSERT(upwind_cells_.size() > 0);
+  AMANZI_ASSERT(downwind_cells_.size() > 0);
+
   double u1f, u1;
   AmanziMesh::Entity_ID_List faces;
 
@@ -363,6 +366,9 @@ void ReconstructionCell::LimiterExtensionTransportBarthJespersen_(
     const std::vector<double>& field_local_min, const std::vector<double>& field_local_max,
     Teuchos::RCP<Epetra_Vector> limiter)
 {
+  AMANZI_ASSERT(upwind_cells_.size() > 0);
+  AMANZI_ASSERT(downwind_cells_.size() > 0);
+
   double u1, u1f;
   AmanziGeometry::Point gradient_c1(dim);
   AmanziMesh::Entity_ID_List faces;
@@ -417,7 +423,7 @@ void ReconstructionCell::LimiterExtensionTransportBarthJespersen_(
 void ReconstructionCell::LimiterKuzmin_(
     const std::vector<int>& bc_model, const std::vector<double>& bc_value)
 {
-  Teuchos::RCP<Epetra_MultiVector> grad = gradient_->ViewComponent("cell", false);
+  Epetra_MultiVector grad = *gradient_->ViewComponent("cell", false);
 
   // Step 1: local extrema are calculated here at nodes and updated later
   std::vector<double> field_node_min(nnodes_wghost);
@@ -440,20 +446,22 @@ void ReconstructionCell::LimiterKuzmin_(
   }
 
   // Update min/max at nodes from influx boundary data
-  for (int f = 0; f < nfaces_owned; ++f) {
-    int c1 = (upwind_cells_[f].size() > 0) ? upwind_cells_[f][0] : -1;
-    int c2 = (downwind_cells_[f].size() > 0) ? downwind_cells_[f][0] : -1;
+  if (flux_ != Teuchos::null) {
+    for (int f = 0; f < nfaces_owned; ++f) {
+      int c1 = (upwind_cells_[f].size() > 0) ? upwind_cells_[f][0] : -1;
+      int c2 = (downwind_cells_[f].size() > 0) ? downwind_cells_[f][0] : -1;
 
-    if (c2 >= 0 && c1 < 0) {
-      mesh_->face_get_nodes(f, &nodes);
-      int nnodes = nodes.size();
+      if (c2 >= 0 && c1 < 0) {
+        mesh_->face_get_nodes(f, &nodes);
+        int nnodes = nodes.size();
 
-      for (int i = 0; i < nnodes; i++) {
-        int v = nodes[i];
-        if (bc_model[v] == OPERATOR_BC_DIRICHLET) {
-          double value = bc_value[v];
-          field_node_min[v] = std::min(field_node_min[v], value);
-          field_node_max[v] = std::max(field_node_max[v], value);
+        for (int i = 0; i < nnodes; i++) {
+          int v = nodes[i];
+          if (bc_model[v] == OPERATOR_BC_DIRICHLET) {
+            double value = bc_value[v];
+            field_node_min[v] = std::min(field_node_min[v], value);
+            field_node_max[v] = std::max(field_node_max[v], value);
+          }
         }
       }
     }
@@ -478,11 +486,12 @@ void ReconstructionCell::LimiterKuzmin_(
       field_max_cell[i] = field_node_max[v];
     }
 
-    for (int i = 0; i < dim; i++) gradient_c[i] = (*grad)[i][c];
+    for (int i = 0; i < dim; i++) gradient_c[i] = grad[i][c];
+    (*limiter_)[c] = norm(gradient_c); 
 
     LimiterKuzminCell_(c, gradient_c, field_min_cell, field_max_cell);
 
-    for (int i = 0; i < dim; i++) (*grad)[i][c] = gradient_c[i];
+    for (int i = 0; i < dim; i++) grad[i][c] = gradient_c[i];
   }
 
   if (limiter_correction_) {
@@ -507,6 +516,17 @@ void ReconstructionCell::LimiterKuzmin_(
   }    
 
   gradient_->ScatterMasterToGhosted("cell");
+
+  // approximate estimate of scalar limiter (mainly for statistics)
+  for (int c = 0; c < ncells_owned; c++) {
+    double grad_norm0 = (*limiter_)[c];
+    if (grad_norm0 == 0.0) { 
+      (*limiter_)[c] = 1.0;
+    } else {
+      for (int i = 0; i < dim; i++) gradient_c[i] = grad[i][c];
+      (*limiter_)[c] = norm(gradient_c) / grad_norm0;
+    }
+  }
 }
 
 
@@ -619,6 +639,9 @@ void ReconstructionCell::LimiterKuzminCell_(int cell,
 void ReconstructionCell::LimiterExtensionTransportKuzmin_(
     const std::vector<double>& field_local_min, const std::vector<double>& field_local_max)
 {
+  AMANZI_ASSERT(upwind_cells_.size() > 0);
+  AMANZI_ASSERT(downwind_cells_.size() > 0);
+
   double u1, up;
   AmanziGeometry::Point xp(dim);
   AmanziMesh::Entity_ID_List faces, nodes;

@@ -25,7 +25,7 @@
 
 // Amanzi
 #include "Explicit_TI_RK.hh"
-#include "GMVMesh.hh"
+#include "OutputXDMF.hh"
 #include "CompositeVector.hh"
 #include "DG_Modal.hh"
 #include "LinearOperatorGMRES.hh"
@@ -48,6 +48,7 @@
 #include "PDE_Abstract.hh"
 #include "PDE_AdvectionRiemann.hh"
 #include "PDE_Reaction.hh"
+#include "ReconstructionCell.hh"
 
 // global variables
 bool exact_solution_expected = false;
@@ -57,14 +58,16 @@ namespace Amanzi {
 template <class AnalyticDG>
 class AdvectionFn : public Explicit_TI::fnBase<CompositeVector> {
  public:
-  AdvectionFn(Teuchos::ParameterList& plist,
-              int nx, double dt, 
+  AdvectionFn(Teuchos::ParameterList& plist, int nx, double dt0,
               const Teuchos::RCP<const AmanziMesh::Mesh> mesh,
               Teuchos::RCP<WhetStone::DG_Modal> dg,  
               bool conservative_form, std::string weak_form);
 
   // functional in dy/dt = F(y)
   void FunctionalTimeDerivative(double t, const CompositeVector& u, CompositeVector& f) override;
+
+  // modify time step
+  void set_dt(double dt) { dt_ = dt; }
 
   // modify cell and face velocities using a mesh map
   void ApproximateVelocity_Projection(
@@ -79,8 +82,12 @@ class AdvectionFn : public Explicit_TI::fnBase<CompositeVector> {
       const Teuchos::RCP<std::vector<WhetStone::Polynomial> >& velf,
       const Teuchos::RCP<std::vector<WhetStone::Polynomial> >& divc);
 
+  // limit solution
+  void ApplyLimiter(CompositeVector& u);
+
  public:
   double l2norm;
+  double limiter_min, limiter_mean;
 
   Teuchos::RCP<Operators::PDE_AdvectionRiemann> op_flux;
   Teuchos::RCP<Operators::PDE_Abstract> op_adv;
@@ -120,7 +127,9 @@ AdvectionFn<AnalyticDG>::AdvectionFn(
       mesh_(mesh),
       dg_(dg), 
       ana_(mesh, dg->order(), true),
-      conservative_form_(conservative_form)
+      conservative_form_(conservative_form),
+      limiter_min(-1.0),
+      limiter_mean(-1.0)
 {
   divergence_term_ = !conservative_form_;
   if (weak_form == "dual") {
@@ -503,6 +512,71 @@ void AdvectionFn<AnalyticDG>::ApproximateVelocity_LevelSet(
   }
 }
 
+
+/* *****************************************************************
+* Limit gradient
+***************************************************************** */
+template <class AnalyticDG>
+void AdvectionFn<AnalyticDG>::ApplyLimiter(CompositeVector& u)
+{
+  const Epetra_MultiVector& u_c = *u.ViewComponent("cell", true);
+  int dim = mesh_->space_dimension();
+
+  // initialize limiter
+  Teuchos::ParameterList plist;
+  plist.set<std::string>("limiter", "Kuzmin");
+  plist.set<int>("polynomial_order", 1);
+  plist.set<bool>("limiter extension for transport", false);
+
+  int ncells_owned = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
+  int nnodes_wghost = mesh_->num_entities(AmanziMesh::NODE, AmanziMesh::Parallel_type::ALL);
+
+  std::vector<int> bc_model(nnodes_wghost, Operators::OPERATOR_BC_NONE);
+  std::vector<double> bc_value(nnodes_wghost, 0.0);
+
+  Operators::ReconstructionCell lifting(mesh_);
+  lifting.Init(u.ViewComponent("cell", true), plist);
+
+  // create gradient in the natural basis
+  int nk = u_c.NumVectors();
+  WhetStone::DenseVector data(nk);
+
+  CompositeVectorSpace cvs;
+  cvs.SetMesh(mesh_)->SetGhosted(true)->AddComponent("cell", AmanziMesh::CELL, dim);
+  auto grad = Teuchos::rcp(new CompositeVector(cvs));
+  Epetra_MultiVector& grad_c = *grad->ViewComponent("cell");
+
+  for (int c = 0; c < ncells_owned; ++c) {
+    for (int i = 0; i < nk; ++i) data(i) = u_c[i][c];
+    dg_->cell_basis(c).ChangeBasisMyToNatural(data);
+    for (int i = 0; i < dim; ++i) grad_c[i][c] = data(i + 1);
+  }
+
+  grad->ScatterMasterToGhosted("cell");
+  lifting.set_gradient(grad);
+
+  // limit gradient and save it to solution
+  lifting.ApplyLimiter(bc_model, bc_value);
+
+  for (int c = 0; c < ncells_owned; ++c) {
+    data(0) = u_c[0][c];
+    for (int i = 0; i < dim; ++i) data(i + 1) = grad_c[i][c];
+    dg_->cell_basis(c).ChangeBasisNaturalToMy(data);
+    for (int i = 0; i < nk; ++i) u_c[i][c] = data(i);
+  }
+
+  // statistics
+  auto limiter = *lifting.limiter();
+  double tmp1(1.0), tmp2(0.0);
+  for (int c = 0; c < ncells_owned; ++c) {
+    tmp1 = std::min(tmp1, limiter[c]);
+    tmp2 += limiter[c];
+  }
+  mesh_->get_comm()->MinAll(&tmp1, &limiter_min, 1);
+  mesh_->get_comm()->SumAll(&tmp2, &limiter_mean, 1);
+  limiter_mean /= limiter.Map().MaxAllGID();
+}
+
 }  // namespace Amanzi
 
 
@@ -516,11 +590,13 @@ bool inside(const Amanzi::AmanziGeometry::Point& p) {
 }
 
 template <class AnalyticDG>
-void AdvectionTransient(std::string filename, int nx, int ny, double dt,
+void AdvectionTransient(std::string filename, int nx, int ny,
+                        double dt0, double tend,
                         const Amanzi::Explicit_TI::method_t& rk_method,
                         bool conservative_form = true, 
                         std::string weak_form = "dual",
-                        std::string face_velocity_method = "high order")                      
+                        std::string face_velocity_method = "high order",
+                        bool limiter = false)
 {
   using namespace Teuchos;
   using namespace Amanzi;
@@ -543,9 +619,11 @@ void AdvectionTransient(std::string filename, int nx, int ny, double dt,
                    .sublist("flux operator").get<int>("method order");
 
   std::string problem = (conservative_form) ? ", conservative formulation" : "";
-  if (MyPID == 0) std::cout << "\nTest: 2D dG transient advection problem, " << filename 
+  if (MyPID == 0) std::cout << "\nTest: 2D dG transient advection: " << filename 
                             << ", order=" << order << problem 
-                            << ", weak formulation=" << weak_form << std::endl;
+                            << ", formulation=\"" << weak_form << "\""
+                            << ", face_velocity=\"" << face_velocity_method << "\""
+                            << ", limiter=" << limiter << std::endl;
 
   // create a mesh framework
   ParameterList region_list = plist.sublist("regions");
@@ -565,12 +643,17 @@ void AdvectionTransient(std::string filename, int nx, int ny, double dt,
   int ncells_wghost = mesh->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::ALL);
   int nfaces_wghost = mesh->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
 
+  // initialize I/O
+  Teuchos::ParameterList iolist;
+  iolist.get<std::string>("file name base", "plot");
+  OutputXDMF io(iolist, mesh, true, false);
+
   // create main advection class
   plist.set<std::string>("file name", filename);
   plist.set<std::string>("face velocity method", face_velocity_method);
 
   auto dg = Teuchos::rcp(new WhetStone::DG_Modal(order, mesh, "regularized"));
-  AdvectionFn<AnalyticDG> fn(plist, nx, dt, mesh, dg, conservative_form, weak_form);
+  AdvectionFn<AnalyticDG> fn(plist, nx, dt0, mesh, dg, conservative_form, weak_form);
 
   // create initial guess
   AnalyticDG ana(mesh, order, true);
@@ -583,41 +666,41 @@ void AdvectionTransient(std::string filename, int nx, int ny, double dt,
   ana.InitialGuess(*dg, sol_c, 0.0);
 
   int nstep(0);
-  double t(0.0), tend(1.0), tprint(0.0);
+  double dt(dt0), t(0.0), tio(dt0);
   Explicit_TI::RK<CompositeVector> rk(fn, rk_method, sol);
 
-  while(t < tend - dt/2) {
+  while(t < tend || dt > 1e-12) {
+    fn.set_dt(dt);
     rk.TimeStep(t, dt, sol, sol_next);
 
     sol = sol_next;
 
-    // visualization
-    if (MyPID == 0 && std::fabs(t - tprint) < dt/4) {
-      tprint += 0.1; 
-      printf("t=%9.6f  |p|=%14.12g\n", t, fn.l2norm);
-
-      const Epetra_MultiVector& p = *sol.ViewComponent("cell");
-      GMV::open_data_file(*mesh, (std::string)"operators.gmv");
-      GMV::start_data();
-      GMV::write_cell_data(p, 0, "solution");
-      if (order > 0) {
-        GMV::write_cell_data(p, 1, "gradx");
-        GMV::write_cell_data(p, 2, "grady");
-      }
-      if (order > 1) {
-        GMV::write_cell_data(p, 3, "hesxx");
-        GMV::write_cell_data(p, 4, "hesxy");
-        GMV::write_cell_data(p, 5, "hesyy");
-      }
-      GMV::close_data_file();
-    }
-
     t += dt;
+    dt = std::min(dt0, tend - t);
     nstep++;
 
-    // modify solution at the origin
+    // visualization
+    if (std::fabs(t - tio) < dt/4) {
+      tio = std::min(tio + 0.1, tend); 
+      if (MyPID == 0)
+        printf("t=%9.6f |p|=%14.12g limiter=%8.4g %8.4g\n",
+            t, fn.l2norm, fn.limiter_min, fn.limiter_mean);
+
+      const Epetra_MultiVector& p = *sol.ViewComponent("cell");
+  
+      io.InitializeCycle(t, nstep);
+      io.WriteVector(*p(0), "solution");
+      io.FinalizeCycle();
+    }
+
+    // modify solution
+    // -- overwrite solution at the origin
     if (face_velocity_method == "level set") {
       ana.InitialGuess(*dg, sol_c, t, inside);
+    }
+    // -- limit solution gradient
+    if (limiter) {
+      fn.ApplyLimiter(sol);
     }
   }
 
@@ -641,59 +724,75 @@ void AdvectionTransient(std::string filename, int nx, int ny, double dt,
 
 
 TEST(OPERATOR_ADVECTION_TRANSIENT_DG) {
+  double dT(0.1), T1(1.0);
+  auto rk_order = Amanzi::Explicit_TI::tvd_3rd_order;
   exact_solution_expected = true;
-  AdvectionTransient<AnalyticDG02b>("square",  4,  4, 0.1, Amanzi::Explicit_TI::tvd_3rd_order, false);
+  AdvectionTransient<AnalyticDG02b>("square", 4,4, dT,T1, rk_order, false);
 
   exact_solution_expected = false;
-  AdvectionTransient<AnalyticDG06b>("square",  4,  4, 0.1, Amanzi::Explicit_TI::tvd_3rd_order);
-  AdvectionTransient<AnalyticDG06>("square",  4,  4, 0.1, Amanzi::Explicit_TI::tvd_3rd_order, false);
-  AdvectionTransient<AnalyticDG06>("square",  4,  4, 0.1, Amanzi::Explicit_TI::tvd_3rd_order, false, "primal");
-
-  // AdvectionTransient<AnalyticDG08>("square",  160,  160, 0.02 / 8, Amanzi::Explicit_TI::heun_euler);
+  AdvectionTransient<AnalyticDG06b>("square", 4,4, dT,T1, rk_order);
+  AdvectionTransient<AnalyticDG06>("square",  4,4, dT,T1, rk_order, false);
+  AdvectionTransient<AnalyticDG06>("square",  4,4, dT,T1, rk_order, false, "primal");
 
   /*
-  AdvectionTransient<AnalyticDG06>("square",  20,  20, 0.01, Amanzi::Explicit_TI::heun_euler);
-  AdvectionTransient<AnalyticDG06>("square",  40,  40, 0.01 / 2, Amanzi::Explicit_TI::heun_euler);
-  AdvectionTransient<AnalyticDG06>("square",  80,  80, 0.01 / 4, Amanzi::Explicit_TI::heun_euler);
-  AdvectionTransient<AnalyticDG06>("square", 160, 160, 0.01 / 8, Amanzi::Explicit_TI::heun_euler);
+  double dT(0.02), T1(6.28);
+  auto rk_order = Amanzi::Explicit_TI::heun_euler;
+  AdvectionTransient<AnalyticDG08>("square", 160,160, dT/8,T1, rk_order, true, "dual", "high order", true);
   */
 
   /*
-  AdvectionTransient<AnalyticDG06>("test/triangular8.exo",    8, 0, 0.01, Amanzi::Explicit_TI::tvd_3rd_order);
-  AdvectionTransient<AnalyticDG06>("test/triangular16.exo",  16, 0, 0.01 / 2, Amanzi::Explicit_TI::tvd_3rd_order);
-  AdvectionTransient<AnalyticDG06>("test/triangular32.exo",  32, 0, 0.01 / 4, Amanzi::Explicit_TI::tvd_3rd_order);
-  AdvectionTransient<AnalyticDG06>("test/triangular64.exo",  64, 0, 0.01 / 8, Amanzi::Explicit_TI::tvd_3rd_order);
-  AdvectionTransient<AnalyticDG06>("test/triangular128.exo",128, 0, 0.01 / 16,Amanzi::Explicit_TI::tvd_3rd_order);
+  double dT(0.01), T1(1.0);
+  auto rk_order = Amanzi::Explicit_TI::heun_euler;
+  AdvectionTransient<AnalyticDG06>("square",  20, 20, dT,  T1, rk_order);
+  AdvectionTransient<AnalyticDG06>("square",  40, 40, dT/2,T1, rk_order);
+  AdvectionTransient<AnalyticDG06>("square",  80, 80, dT/4,T1, rk_order);
+  AdvectionTransient<AnalyticDG06>("square", 160,160, dT/8,T1, rk_order);
   */
 
   /*
-  double dT0 = 0.001;
-  AdvectionTransient<AnalyticDG07>("square", 20, 20, dT0, Amanzi::Explicit_TI::tvd_3rd_order, false, "primal", "level set");
-  AdvectionTransient<AnalyticDG07>("square", 40, 40, dT0 / 2, Amanzi::Explicit_TI::tvd_3rd_order, false, "primal", "level set");
-  AdvectionTransient<AnalyticDG07>("square", 80, 80, dT0 / 4, Amanzi::Explicit_TI::tvd_3rd_order, false, "primal", "level set");
-  AdvectionTransient<AnalyticDG07>("square",160,160, dT0 / 8, Amanzi::Explicit_TI::tvd_3rd_order, false, "primal", "level set");
+  double dT(0.01), T1(1.0);
+  auto rk_order = Amanzi::Explicit_TI::tvd_3rd_order;
+  AdvectionTransient<AnalyticDG06>("test/triangular8.exo",    8, 0, dT,   T1, rk_order);
+  AdvectionTransient<AnalyticDG06>("test/triangular16.exo",  16, 0, dT/2, T1, rk_order);
+  AdvectionTransient<AnalyticDG06>("test/triangular32.exo",  32, 0, dT/4, T1, rk_order);
+  AdvectionTransient<AnalyticDG06>("test/triangular64.exo",  64, 0, dT/8, T1, rk_order);
+  AdvectionTransient<AnalyticDG06>("test/triangular128.exo",128, 0, dT/16,T1  rk_order);
   */
 
   /*
-  double dT0 = 0.001;
-  AdvectionTransient<AnalyticDG07>("test/median15x16.exo",   16,0, dT0, Amanzi::Explicit_TI::tvd_3rd_order, false, "primal", "level set");
-  AdvectionTransient<AnalyticDG07>("test/median32x33.exo",   32,0, dT0 / 2, Amanzi::Explicit_TI::tvd_3rd_order, false, "primal", "level set");
-  AdvectionTransient<AnalyticDG07>("test/median63x64.exo",   64,0, dT0 / 4, Amanzi::Explicit_TI::tvd_3rd_order, false, "primal", "level set");
-  AdvectionTransient<AnalyticDG07>("test/median127x128.exo",128,0, dT0 / 8, Amanzi::Explicit_TI::tvd_3rd_order, false, "primal", "level set");
+  double dT(0.001), T1(1.0);
+  auto rk_order = Amanzi::Explicit_TI::tvd_3rd_order;
+  AdvectionTransient<AnalyticDG07>("square", 20, 20, dT,T1,   rk_order, false, "primal", "level set");
+  AdvectionTransient<AnalyticDG07>("square", 40, 40, dT/2,T1, rk_order, false, "primal", "level set");
+  AdvectionTransient<AnalyticDG07>("square", 80, 80, dT/4,T1, rk_order, false, "primal", "level set");
+  AdvectionTransient<AnalyticDG07>("square",160,160, dT/8,T1, rk_order, false, "primal", "level set");
   */
 
   /*
-  double dT0 = 0.001;
-  AdvectionTransient<AnalyticDG06>("test/median15x16.exo",   16, 0, dT0, Amanzi::Explicit_TI::heun_euler);
-  AdvectionTransient<AnalyticDG06>("test/median32x33.exo",   32, 0, dT0 / 2, Amanzi::Explicit_TI::heun_euler);
-  AdvectionTransient<AnalyticDG06>("test/median63x64.exo",   64, 0, dT0 / 4, Amanzi::Explicit_TI::heun_euler);
-  AdvectionTransient<AnalyticDG06>("test/median127x128.exo",128, 0, dT0 / 8, Amanzi::Explicit_TI::heun_euler);
+  double dT(0.001), T1(1.0);
+  auto rk_order = Amanzi::Explicit_TI::tvd_3rd_order;
+  AdvectionTransient<AnalyticDG07>("test/median15x16.exo",   16,0, dT,  T1, rk_order, false, "primal", "level set");
+  AdvectionTransient<AnalyticDG07>("test/median32x33.exo",   32,0, dT/2,T1, rk_order, false, "primal", "level set");
+  AdvectionTransient<AnalyticDG07>("test/median63x64.exo",   64,0, dT/4,T1, rk_order, false, "primal", "level set");
+  AdvectionTransient<AnalyticDG07>("test/median127x128.exo",128,0, dT/8,T1, rk_order, false, "primal", "level set");
+  */
 
-  double dT0 = 0.01;
-  AdvectionTransient<AnalyticDG06>("test/mesh_poly20x20.exo",   20, 0, dT0, Amanzi::Explicit_TI::tvd_3rd_order);
-  AdvectionTransient<AnalyticDG06>("test/mesh_poly40x40.exo",   40, 0, dT0 / 2, Amanzi::Explicit_TI::tvd_3rd_order);
-  AdvectionTransient<AnalyticDG06>("test/mesh_poly80x80.exo",   80, 0, dT0 / 4, Amanzi::Explicit_TI::tvd_3rd_order);
-  AdvectionTransient<AnalyticDG06>("test/mesh_poly160x160.exo",160, 0, dT0 / 8, Amanzi::Explicit_TI::tvd_3rd_order);
+  /*
+  double dT(0.001), T1(1.0);
+  auto rk_order = Amanzi::Explicit_TI::heun_euler;
+  AdvectionTransient<AnalyticDG06>("test/median15x16.exo",   16,0, dT,  T1, rk_order);
+  AdvectionTransient<AnalyticDG06>("test/median32x33.exo",   32,0, dT/2,T1, rk_order);
+  AdvectionTransient<AnalyticDG06>("test/median63x64.exo",   64,0, dT/4,T1, rk_order);
+  AdvectionTransient<AnalyticDG06>("test/median127x128.exo",128,0, dT/8,T1, rk_order);
+  */
+
+  /*
+  double dT(0.01), T1(1.0);
+  auto rk_order = Amanzi::Explicit_TI::tvd_3rd_order;
+  AdvectionTransient<AnalyticDG06>("test/mesh_poly20x20.exo",   20,0, dT,  T1, rk_order);
+  AdvectionTransient<AnalyticDG06>("test/mesh_poly40x40.exo",   40,0, dT/2,T1, rk_order);
+  AdvectionTransient<AnalyticDG06>("test/mesh_poly80x80.exo",   80,0, dT/4,T1, rk_order);
+  AdvectionTransient<AnalyticDG06>("test/mesh_poly160x160.exo",160,0, dT/8,T1, rk_order);
   */
 }
 

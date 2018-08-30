@@ -187,9 +187,6 @@ void ReconstructionCell::ComputeGradient(
 void ReconstructionCell::ApplyLimiter(
     const std::vector<int>& bc_model, const std::vector<double>& bc_value)
 {
-  AMANZI_ASSERT(upwind_cells_.size() > 0);
-  AMANZI_ASSERT(downwind_cells_.size() > 0);
-
   limiter_ = Teuchos::rcp(new Epetra_Vector(mesh_->cell_map(true)));
   if (limiter_id_ == OPERATOR_LIMITER_BARTH_JESPERSEN) {
     LimiterBarthJespersen_(bc_model, bc_value, limiter_);

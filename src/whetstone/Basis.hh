@@ -12,7 +12,7 @@
   The base class for dG basis.
 
   Let each column of R represent new basis vector in the old basis.
-  Then transformation of the bilinear form matrix A form old to new
+  Then, transformation of the bilinear form matrix A from old to new
   basis is calculated as follows: R^T A R. Also, to change vector v 
   from the new to old basis, we compute v_old = R v_new. Inverse of
   R defines the backward transformation. Finally, transformation of
