@@ -123,7 +123,6 @@ void VectorPolynomial::Gradient(const Polynomial p)
 void VectorPolynomial::Multiply(const std::vector<std::vector<Polynomial> >& A, 
                                 const VectorPolynomial& v, bool transpose)
 {
-  int d(v[0].dimension());
   int nrows(A.size());
   int ncols(v.size());
 
@@ -131,10 +130,9 @@ void VectorPolynomial::Multiply(const std::vector<std::vector<Polynomial> >& A,
     resize(nrows);
 
     for (int i = 0; i < nrows; ++i) {
-      polys_[i].Reshape(d, 0, true);
-      polys_[i].set_origin(v[0].origin());
+      polys_[i] = A[i][0] * v[0];
 
-      for (int k = 0; k < ncols; ++k) {
+      for (int k = 1; k < ncols; ++k) {
         polys_[i] += A[i][k] * v[k];
       }
     }
@@ -142,10 +140,9 @@ void VectorPolynomial::Multiply(const std::vector<std::vector<Polynomial> >& A,
     resize(ncols);
 
     for (int i = 0; i < ncols; ++i) {
-      polys_[i].Reshape(d, 0, true);
-      polys_[i].set_origin(v[0].origin());
+      polys_[i] = A[0][i] * v[0];
 
-      for (int k = 0; k < nrows; ++k) {
+      for (int k = 1; k < nrows; ++k) {
         polys_[i] += A[k][i] * v[k];
       }
     }
@@ -162,19 +159,17 @@ void VectorPolynomial::Multiply(const std::vector<std::vector<Polynomial> >& A,
   resize(d);
   if (!transpose) {
     for (int i = 0; i < d; ++i) {
-      polys_[i].Reshape(d, 0, true);
-      polys_[i].set_origin(A[0][0].origin());
+      polys_[i] = A[i][0] * p[0];
 
-      for (int k = 0; k < d; ++k) {
+      for (int k = 1; k < d; ++k) {
         polys_[i] += A[i][k] * p[k];
       }
     }
   } else {
     for (int i = 0; i < d; ++i) {
-      polys_[i].Reshape(d, 0, true);
-      polys_[i].set_origin(A[0][0].origin());
+      polys_[i] = A[0][i] * p[0];
 
-      for (int k = 0; k < d; ++k) {
+      for (int k = 1; k < d; ++k) {
         polys_[i] += A[k][i] * p[k];
       }
     }

@@ -101,11 +101,9 @@ class VectorPolynomial {
 
   // dot product v1 * p 
   friend Polynomial operator*(const VectorPolynomial& poly, const AmanziGeometry::Point& p) {
-    int d(p.dim());
-    Polynomial tmp(d, 0);
-    tmp.set_origin(poly[0].origin());
+    Polynomial tmp(poly[0] * p[0]);
 
-    for (int i = 0; i < d; ++i) {
+    for (int i = 1; i < p.dim(); ++i) {
       tmp += poly[i] * p[i];
     }
     return tmp;
@@ -135,11 +133,9 @@ class VectorPolynomial {
   friend Polynomial operator*(const VectorPolynomial& v1, const VectorPolynomial& v2) {
     AMANZI_ASSERT(v1.size() == v2.size());
 
-    int d(v1[0].dimension());
-    Polynomial tmp(d, 0);
-    tmp.set_origin(v1[0].origin());
+    Polynomial tmp(v1[0] * v2[0]);
 
-    for (int i = 0; i < v1.size(); ++i) {
+    for (int i = 1; i < v1.size(); ++i) {
       tmp += v1[i] * v2[i];
     }
     return tmp;
