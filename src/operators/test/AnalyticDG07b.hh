@@ -8,9 +8,11 @@
 
   Author: Konstantin Lipnikov (lipnikov@lanl.gov)
 
-  Analytic solution for level-set algorithms: expanding sphere
+  Analytic solution for level-set algorithms: two expanding and 
+  merging spheres.
 
-  Solution: u = 0.3 + t - [(x - 0.5)^2 + (y - 0.5)^2])^0.5
+  Solution: u = 0.1 + t - (x^2 + y^2)^0.5      if x < 0.5
+            u = 0.1 + t - ((x-1)^2 + y^2)^0.5  otherwise
   Diffusion: K = 1
   Accumulation: a = 1
   Reaction: r = 0
@@ -18,16 +20,16 @@
   Source: f = 0
 */
 
-#ifndef AMANZI_OPERATOR_ANALYTIC_DG_07_BASE_HH_
-#define AMANZI_OPERATOR_ANALYTIC_DG_07_BASE_HH_
+#ifndef AMANZI_OPERATOR_ANALYTIC_DG_07B_BASE_HH_
+#define AMANZI_OPERATOR_ANALYTIC_DG_07B_BASE_HH_
 
 #include "AnalyticDGBase.hh"
 
-class AnalyticDG07 : public AnalyticDGBase {
+class AnalyticDG07b : public AnalyticDGBase {
  public:
-  AnalyticDG07(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh, int order, bool advection)
+  AnalyticDG07b(Teuchos::RCP<const Amanzi::AmanziMesh::Mesh> mesh, int order, bool advection)
     : AnalyticDGBase(mesh, order, advection) {};
-  ~AnalyticDG07() {};
+  ~AnalyticDG07b() {};
 
   // analytic data in conventional Taylor basis
   // -- diffusion tensor
@@ -44,12 +46,12 @@ class AnalyticDG07 : public AnalyticDGBase {
     sol.set_origin(p);
 
     double dx, dy, dist, dist2, dist3, dist5;
-    dx = p[0] - 0.5;
-    dy = p[1] - 0.5;
+    dx = (p[0] < 0.5) ? p[0] : p[0] - 1.0;
+    dy = p[1];
     dist2 = dx * dx + dy * dy;
     dist = std::pow(dist2, 0.5);
 
-    sol(0, 0) = 0.3 + t - dist;
+    sol(0, 0) = 0.1 + t - dist;
 
     if (order_ > 0) {
       sol(1, 0) = -dx / dist;
@@ -90,8 +92,8 @@ class AnalyticDG07 : public AnalyticDGBase {
     v.set_origin(p);
 
     double dx, dy, dist, dist2, dist3, dist5;
-    dx = p[0] - 0.5;
-    dy = p[1] - 0.5;
+    dx = (p[0] < 0.5) ? p[0] : p[0] - 1.0;
+    dy = p[1];
     dist = std::pow(dx * dx + dy * dy, 0.5);
     
     v[0](0) = dx / dist;

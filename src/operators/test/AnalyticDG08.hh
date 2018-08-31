@@ -43,18 +43,39 @@ class AnalyticDG08 : public AnalyticDGBase {
     sol.Reshape(d_, order_, true); 
     sol.set_origin(p);
 
-    double tol(1e-5);
-    double dx = p[0] - 0.5;
-    double dy = p[1] - 0.75;
+    double tol(1e-5), x0, y0, dx, dy;
+    double uxp, uxm, uyp, uym;
+    x0 = 0.5 - 0.25 * std::sin(t);
+    y0 = 0.5 + 0.25 * std::cos(t);
+    dx = p[0] - x0;
+    dy = p[1] - y0;
 
     sol(0) = DistanceNotchedCircle_(dx, dy);
 
     if (order_ > 0) {
-      sol(1) = (DistanceNotchedCircle_(dx + tol, dy) - DistanceNotchedCircle_(dx - tol, dy)) / (2 * tol);
-      sol(2) = (DistanceNotchedCircle_(dx, dy + tol) - DistanceNotchedCircle_(dx, dy - tol)) / (2 * tol);
+      uxm = DistanceNotchedCircle_(dx - tol, dy);
+      uxp = DistanceNotchedCircle_(dx + tol, dy);
+
+      uym = DistanceNotchedCircle_(dx, dy - tol);
+      uyp = DistanceNotchedCircle_(dx, dy + tol);
+
+      sol(1) = (uxp - uxm) / (2 * tol);
+      sol(2) = (uyp - uym) / (2 * tol);
     }
 
-    if (order_ > 1) AMANZI_ASSERT(false);
+    if (order_ > 1) {
+      double umm, ump, upm, upp;
+      umm = DistanceNotchedCircle_(dx - tol, dy - tol);
+      ump = DistanceNotchedCircle_(dx - tol, dy + tol);
+      upm = DistanceNotchedCircle_(dx + tol, dy - tol);
+      upp = DistanceNotchedCircle_(dx + tol, dy + tol);
+
+      sol(3) = (uxm - 2 * sol(0) + uxp) / (tol * tol);
+      sol(4) = (upp + umm - upm - ump) / (4 * tol * tol);
+      sol(5) = (uym - 2 * sol(0) + uyp) / (tol * tol);
+    }
+
+    if (order_ > 2) AMANZI_ASSERT(false);
   }
 
   // -- accumulation
@@ -96,9 +117,6 @@ class AnalyticDG08 : public AnalyticDGBase {
 
  private:
   double DistanceNotchedCircle_(double x, double y);
-
- private:
-  double x0_, y0_;
 };
 
 
