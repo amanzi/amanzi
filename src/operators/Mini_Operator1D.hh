@@ -46,9 +46,11 @@ class Mini_Operator1D {
 
   // elementary mesh operations
   double mesh_cell_volume(int i) { return (*mesh_)(i + 1) - (*mesh_)(i); } 
+  double mesh_cell_centroid(int i) { return ((*mesh_)(i + 1) + (*mesh_)(i)) / 2; } 
 
   // access
   const WhetStone::DenseVector& rhs() const { return rhs_; }
+  WhetStone::DenseVector& rhs() { return rhs_; }
 
  protected:
   // mesh

@@ -342,6 +342,13 @@ if (BUILD_TESTS)
                     SOURCE test/Main.cc test/operator_advection_dg.cc
                                         test/operator_advection_dg_transient
                     LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+
+    # Test: mini PDEs
+    add_amanzi_test(operators_mini1D operators_mini1D
+                    KIND unit
+                    SOURCE test/Main.cc test/operator_mini1D.cc
+                    LINK_LIBS ${amanzi_libs} ${UnitTest_LIBRARIES})
+
 endif()
 
 

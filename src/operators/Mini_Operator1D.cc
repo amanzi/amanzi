@@ -74,7 +74,6 @@ void Mini_Operator1D::ApplyInverse(const WhetStone::DenseVector& rhs,
   double* dr = up_.Values(); 
   dl++;
 
-  sol = rhs;
   WhetStone::DGTSV_F77(&n, &nrhs, dl, diag_.Values(), dr,
                        sol.Values(), &n, &info);
 }
