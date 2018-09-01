@@ -174,12 +174,6 @@
       </cap_pressure>
       <rel_perm model="mualem"/>
       <assigned_regions>RegionMiddle</assigned_regions>
-
-      <multiscale_model name="dual porosity">
-        <mass_transfer_coefficient>0.0</mass_transfer_coefficient>
-        <matrix depth="0.8 m" tortuosity="0.9" warren_root="4.0" volume_fraction="0.9999"/>
-        <matrix_porosity value="0.25"/>
-      </multiscale_model>
     </material>
 
     <material name="Facies_2">
@@ -193,12 +187,6 @@
       </cap_pressure>
       <rel_perm model="mualem"/>
       <assigned_regions>RegionBottom</assigned_regions>
-
-      <multiscale_model name="generalized dual porosity">
-        <mass_transfer_coefficient>0.0</mass_transfer_coefficient>
-        <matrix depth="1.0 m" number_of_nodes="2" tortuosity="1.0" volume_fraction="0.9999"/>
-        <matrix_porosity value="0.25"/>
-      </multiscale_model>
     </material>
 
     <material name="Facies_3">
@@ -212,14 +200,51 @@
       </cap_pressure>
       <rel_perm model="mualem"/>
       <assigned_regions>RegionTop</assigned_regions>
+    </material>
+  </materials>
+
+  <materials_secondary_continuum>
+    <material name="Facies_1">
+      <mechanical_properties>
+        <porosity value="0.25"/>
+        <tortuosity value="0.9"/>
+      </mechanical_properties>
+      <assigned_regions>RegionMiddle</assigned_regions>
+      <volume_fraction>0.9999</volume_fraction>
+
+      <multiscale_model name="dual porosity">
+        <mass_transfer_coefficient>0.0</mass_transfer_coefficient>
+        <matrix depth="0.8 m" warren_root="4.0"/>
+      </multiscale_model>
+    </material>
+
+    <material name="Facies_2">
+      <mechanical_properties>
+        <porosity value="0.25"/>
+      </mechanical_properties>
+      <assigned_regions>RegionBottom</assigned_regions>
+      <volume_fraction>0.9999</volume_fraction>
 
       <multiscale_model name="generalized dual porosity">
         <mass_transfer_coefficient>0.0</mass_transfer_coefficient>
-        <matrix depth="2.0 m" number_of_nodes="3" tortuosity="0.8" volume_fraction="0.9999"/>
-        <matrix_porosity value="0.25"/>
+        <matrix depth="1.0 m" number_of_nodes="2"/>
       </multiscale_model>
     </material>
-  </materials>
+
+    <material name="Facies_3">
+      <mechanical_properties>
+        <porosity value="0.25"/>
+        <tortuosity value="0.8"/>
+      </mechanical_properties>
+      <assigned_regions>RegionTop</assigned_regions>
+      <volume_fraction>0.9999</volume_fraction>
+
+      <multiscale_model name="generalized dual porosity">
+        <mass_transfer_coefficient>0.0</mass_transfer_coefficient>
+        <matrix depth="2.0 m" number_of_nodes="3"/>
+      </multiscale_model>
+    </material>
+  </materials_secondary_continuum>
 
   <initial_conditions>
     <initial_condition name="All">

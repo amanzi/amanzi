@@ -593,7 +593,7 @@ double InputConverter::GetAttributeValueD_(
     val = default_val;
   } else {
     char* tagname = mm.transcode(elem->getNodeName());
-    ThrowErrorMissattr_(tagname, "attribute", attr_name, tagname);
+    ThrowErrorMissing_(tagname, "attribute", attr_name, tagname);
     val = default_val;
   }
 
@@ -640,7 +640,7 @@ int InputConverter::GetAttributeValueL_(
     val = default_val;
   } else {
     char* tagname = mm.transcode(elem->getNodeName());
-    ThrowErrorMissattr_(tagname, "attribute", attr_name, tagname);
+    ThrowErrorMissing_(tagname, "attribute", attr_name, tagname);
   }
 
   return val;
@@ -679,7 +679,7 @@ std::string InputConverter::GetAttributeValueS_(
     val = default_val;
   } else {
     char* tagname = mm.transcode(elem->getNodeName());
-    ThrowErrorMissattr_(tagname, "attribute", attr_name, tagname);
+    ThrowErrorMissing_(tagname, "attribute", attr_name, tagname);
   }
 
   return val;
@@ -723,7 +723,7 @@ std::vector<double> InputConverter::GetAttributeVectorD_(
 
   } else if (exception) {
     char* tagname = mm.transcode(elem->getNodeName());
-    ThrowErrorMissattr_(tagname, "attribute", attr_name, tagname);
+    ThrowErrorMissing_(tagname, "attribute", attr_name, tagname);
   }
 
   return val;
@@ -749,7 +749,7 @@ std::vector<std::string> InputConverter::GetAttributeVectorS_(
     }
   } else if (exception) {
     char* tagname = mm.transcode(elem->getNodeName());
-    ThrowErrorMissattr_(tagname, "attribute", attr_name, tagname);
+    ThrowErrorMissing_(tagname, "attribute", attr_name, tagname);
   }
 
   return val;
@@ -1181,15 +1181,16 @@ void InputConverter::ThrowErrorIllformed_(
 /* *******************************************************************
 * Generate unified error message for missing item
 ******************************************************************* */
-void InputConverter::ThrowErrorMissattr_(
-    const std::string& section, const std::string& type, const std::string& missing, const std::string& name)
+void InputConverter::ThrowErrorMissing_(
+    const std::string& node, const std::string& type,
+    const std::string& key, const std::string& subnode)
 {
   Errors::Message msg;
-  msg << "An error occurred during parsing node \"" << section << "\"\n";
-  msg << "No " << type << " \"" << missing << "\" found for \"" << name << "\".\n";
-  msg << "Please correct and try again \n";
+  msg << "An error occurred during parsing high-level node \"" << node << "\"\n";
+  msg << "No " << type << " \"" << key << "\" found for sub-node \"" << subnode << "\".\n";
   Exceptions::amanzi_throw(msg);
 }
+
 
 /* *******************************************************************
 * Generate unified error message for missing child

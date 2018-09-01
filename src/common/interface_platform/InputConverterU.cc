@@ -379,6 +379,31 @@ void InputConverterU::FilterEmptySublists_(Teuchos::ParameterList& plist)
 }
 
 
+/* ******************************************************************
+* Search tools
+****************************************************************** */
+bool InputConverterU::FindNameInVector_(
+   const std::string& name, const std::vector<std::string>& list)
+{
+  for (int i = 0; i < list.size(); ++i) {
+    if (name == list[i]) return true;
+  }
+  return false;
+}
+
+
+/* ******************************************************************
+* Create automatic string name.
+****************************************************************** */
+std::string InputConverterU::CreateNameFromVector_(const std::vector<std::string>& list)
+{
+  std::string str;
+  for (auto it = list.begin(); it != list.end(); ++it) {
+    str = str + *it;
+  }
+  return str;
+}
+
 
 /* ******************************************************************
 * Output of XML

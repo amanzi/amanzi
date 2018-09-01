@@ -405,21 +405,27 @@ Teuchos::ParameterList InputConverterU::TranslateFlowMSM_()
   DOMNode *node, *knode;
   DOMElement* element;
 
-  int msm(0);
   bool flag;
-  std::string dual, model, rel_perm;
+  std::string name, dual, model, rel_perm;
 
-  node_list = doc_->getElementsByTagName(mm.transcode("materials"));
+  node_list = doc_->getElementsByTagName(mm.transcode("materials_second_continuum"));
+  if (node_list->getLength() == 0) return out_list;
+
   element = static_cast<DOMElement*>(node_list->item(0));
   children = element->getElementsByTagName(mm.transcode("material"));
 
   for (int i = 0; i < children->getLength(); ++i) {
     DOMNode* inode = children->item(i); 
     knode = GetUniqueElementByTagsString_(inode, "multiscale_model", flag);
-    if (!flag) continue;
-
-    msm++;
+    if (!flag) ThrowErrorMissing_("materials", "element", "multiscale_model", "material");
     dual = GetAttributeValueS_(knode, "name");
+
+    // verify material name
+    name = GetAttributeValueS_(inode, "name");
+    if (! FindNameInVector_(name, material_names_)) {
+      Errors::Message msg("Materials names in primary and secondary continua do not match.\n");
+      Exceptions::amanzi_throw(msg);
+    } 
 
     // common stuff
     // -- assigned regions
@@ -427,13 +433,13 @@ Teuchos::ParameterList InputConverterU::TranslateFlowMSM_()
     std::vector<std::string> regions = CharToStrings_(mm.transcode(node->getTextContent()));
 
     // water retention model
-    node = GetUniqueElementByTagsString_(knode, "cap_pressure", flag);
+    node = GetUniqueElementByTagsString_(inode, "cap_pressure", flag);
 
     model = GetAttributeValueS_(node, "model", "van_genuchten, brooks_corey");
     DOMNode* nnode = GetUniqueElementByTagsString_(node, "parameters", flag);
     DOMElement* element_cp = static_cast<DOMElement*>(nnode);
 
-    node = GetUniqueElementByTagsString_(knode, "rel_perm", flag);
+    node = GetUniqueElementByTagsString_(inode, "rel_perm", flag);
     rel_perm = GetAttributeValueS_(node, "model", "mualem, burdine");
     DOMNode* mnode = GetUniqueElementByTagsString_(node, "exp", flag);
     DOMElement* element_rp = (flag) ? static_cast<DOMElement*>(mnode) : NULL;
@@ -458,7 +464,7 @@ Teuchos::ParameterList InputConverterU::TranslateFlowMSM_()
     }
 
     // porosity models
-    node = GetUniqueElementByTagsString_(knode, "matrix_porosity", flag);
+    node = GetUniqueElementByTagsString_(inode, "porosity", flag);
     double phi = GetAttributeValueD_(node, "value", TYPE_NUMERICAL, 0.0, 1.0);
     double compres = GetAttributeValueD_(node, "compressibility", TYPE_NUMERICAL, 0.0, 1.0, "Pa^-1", false, 0.0);
 
@@ -527,10 +533,6 @@ Teuchos::ParameterList InputConverterU::TranslateFlowMSM_()
     }
   }
 
-  if (msm > 0 && children->getLength() != msm) {
-    Errors::Message msg("Mutiscale object may be used for all or none materials.\n");
-    Exceptions::amanzi_throw(msg);
-  } 
   return out_list;
 }
 

@@ -117,8 +117,6 @@ Teuchos::ParameterList InputConverterU::TranslateTransport_()
 
   // check if we need to write a dispersivity sublist
   bool dispersion = doc_->getElementsByTagName(mm.transcode("dispersion_tensor"))->getLength() > 0;
-  dispersion |= doc_->getElementsByTagName(mm.transcode("tortuosity"))->getLength() > 0;
-  dispersion |= doc_->getElementsByTagName(mm.transcode("tortuosity_gas"))->getLength() > 0;
 
   // create dispersion list
   if (dispersion) {
@@ -324,77 +322,77 @@ Teuchos::ParameterList InputConverterU::TranslateTransportMSM_()
   DOMNode *node, *knode;
   DOMElement* element;
 
-  int msm(0);
   bool flag;
-  std::string model, rel_perm;
+  std::string name, model, rel_perm;
 
-  node_list = doc_->getElementsByTagName(mm.transcode("materials"));
+  // check that list of models does exist
+  node_list = doc_->getElementsByTagName(mm.transcode("materials_secondary_continuum"));
+  if (node_list->getLength() == 0) return out_list;
+
   element = static_cast<DOMElement*>(node_list->item(0));
   children = element->getElementsByTagName(mm.transcode("material"));
 
   for (int i = 0; i < children->getLength(); ++i) {
     DOMNode* inode = children->item(i); 
 
+    node = GetUniqueElementByTagsString_(inode, "multiscale_model", flag);
+    if (!flag) ThrowErrorMissing_("materials", "element", "multiscale_model", "material");
+    model = GetAttributeValueS_(node, "name");
+
+    // verify material name
+    name = GetAttributeValueS_(inode, "name");
+    if (! FindNameInVector_(name, material_names_)) {
+      Errors::Message msg("Materials names in primary and secondary continua do not match.\n");
+      Exceptions::amanzi_throw(msg);
+    } 
+
+    // common for all models
+    std::stringstream ss;
+    ss << "MSM " << i;
+    Teuchos::ParameterList& msm_plist = out_list.sublist(ss.str());
+    Teuchos::ParameterList& msm_slist = msm_plist.sublist(model + " parameters");
+
+    // -- regions
     node = GetUniqueElementByTagsString_(inode, "assigned_regions", flag);
     std::vector<std::string> regions = CharToStrings_(mm.transcode(node->getTextContent()));
+    msm_plist.set<Teuchos::Array<std::string> >("regions", regions)
+             .set<std::string>("multiscale model", model);
 
-    node = GetUniqueElementByTagsString_(inode, "multiscale_model", flag);
-    if (!flag) continue;
+    // -- volume fraction
+    node = GetUniqueElementByTagsString_(inode, "volume_fraction", flag);
+    double vof = GetTextContentD_(node, "", true);
 
-    msm++;
-    model = GetAttributeValueS_(node, "name");
+    // -- tortousity
+    double tau(1.0);
+    node = GetUniqueElementByTagsString_(inode, "mechanical_properties, tortuosity", flag);
+    if (flag) tau = GetAttributeValueD_(node, "value", TYPE_NUMERICAL, 0.0, DVAL_MAX, "-");
+    msm_slist.set<double>("matrix tortuosity", tau);
 
     // dual porosity model
     if (model == "dual porosity") {
-      node = GetUniqueElementByTagsString_(node, "matrix", flag);
-      if (!flag) ThrowErrorMissattr_("materials", "element", "matrix", "multiscale_model");
+      node = GetUniqueElementByTagsString_(inode, "multiscale_model, matrix", flag);
+      if (!flag) ThrowErrorMissing_("materials", "element", "matrix", "multiscale_model");
 
       double depth = GetAttributeValueD_(node, "depth", TYPE_NUMERICAL, 0.0, DVAL_MAX, "m");
       double sigma = GetAttributeValueD_(node, "warren_root", TYPE_NUMERICAL, 0.0, 1000.0, "m^-2");
-      double tau = GetAttributeValueD_(node, "tortuosity", TYPE_NUMERICAL, 0.0, DVAL_MAX, "-");
-      double vof = GetAttributeValueD_(node, "volume_fraction", TYPE_NUMERICAL, 0.0, 1.0, "-");
 
-      std::stringstream ss;
-      ss << "MSM " << i;
-
-      Teuchos::ParameterList& msm_list = out_list.sublist(ss.str());
-
-      msm_list.set<std::string>("multiscale model", "dual porosity")
-          .set<Teuchos::Array<std::string> >("regions", regions)
-          .sublist("dual porosity parameters")
-              .set<double>("Warren Root parameter", sigma)
-              .set<double>("matrix depth", depth)
-              .set<double>("matrix tortuosity", tau)
-              .set<double>("matrix volume fraction", vof);
+      msm_slist.set<double>("Warren Root parameter", sigma)
+               .set<double>("matrix depth", depth)
+               .set<double>("matrix volume fraction", vof);
 
     } else if (model == "generalized dual porosity") {
-      node = GetUniqueElementByTagsString_(node, "matrix", flag);
-      if (!flag) ThrowErrorMissattr_("materials", "element", "matrix", "multiscale_model");
+      node = GetUniqueElementByTagsString_(inode, "multiscale_model, matrix", flag);
+      if (!flag) ThrowErrorMissing_("materials", "element", "matrix", "multiscale_model");
 
       int nnodes = GetAttributeValueL_(node, "number_of_nodes", TYPE_NUMERICAL, 0, INT_MAX, false, 1);
       double depth = GetAttributeValueD_(node, "depth", TYPE_NUMERICAL, 0.0, DVAL_MAX, "m");
-      double tau = GetAttributeValueD_(node, "tortuosity", TYPE_NUMERICAL, 0.0, DVAL_MAX, "-");
-      double vof = GetAttributeValueD_(node, "volume_fraction", TYPE_NUMERICAL, 0.0, 1.0, "-");
     
-      std::stringstream ss;
-      ss << "MSM " << i;
-
-      Teuchos::ParameterList& msm_list = out_list.sublist(ss.str());
-
-      msm_list.set<std::string>("multiscale model", "generalized dual porosity")
-          .set<Teuchos::Array<std::string> >("regions", regions)
-          .sublist("generalized dual porosity parameters")
-              .set<int>("number of matrix nodes", nnodes)
-              .set<double>("matrix depth", depth)
-              .set<double>("matrix tortuosity", tau)
-              .set<double>("matrix volume fraction", vof);
+      msm_slist.set<int>("number of matrix nodes", nnodes)
+               .set<double>("matrix depth", depth)
+               .set<double>("matrix volume fraction", vof);
     }
   }
 
-  if (msm > 0 && children->getLength() != msm) {
-    Errors::Message msg("Mutiscale object may be used for all or none materials.\n");
-    Exceptions::amanzi_throw(msg);
-  } 
   return out_list;
 }
 

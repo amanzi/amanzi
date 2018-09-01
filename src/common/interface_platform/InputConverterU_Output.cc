@@ -311,7 +311,7 @@ Teuchos::ParameterList InputConverterU::TranslateOutput_()
       } else if (strcmp(tagname, "liquid_phase") == 0) {
         node = inode->getAttributes()->getNamedItem(mm.transcode("name"));
         if (!node)
-            ThrowErrorMissattr_("observations", "attribute", "name", "liquid_phase");
+            ThrowErrorMissing_("observations", "attribute", "name", "liquid_phase");
 
         nobs_liquid = 0;
         DOMNodeList* children = inode->getChildNodes();
@@ -423,7 +423,7 @@ Teuchos::ParameterList InputConverterU::TranslateOutput_()
       } else if (strcmp(tagname, "gas_phase") == 0) {
         node = inode->getAttributes()->getNamedItem(mm.transcode("name"));
         if (!node)
-            ThrowErrorMissattr_("observations", "attribute", "name", "gas_phase");
+            ThrowErrorMissing_("observations", "attribute", "name", "gas_phase");
 
         nobs_gas = 0;
         DOMNodeList* children = inode->getChildNodes();

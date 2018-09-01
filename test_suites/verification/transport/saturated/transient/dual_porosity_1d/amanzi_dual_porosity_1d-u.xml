@@ -111,18 +111,26 @@
     <material name="Material">
       <assigned_regions>All</assigned_regions>
       <permeability x="6.65e-16" y="6.65e-16" />
-
       <mechanical_properties>
         <porosity value="0.0001"/>
         <dispersion_tensor alpha_l="1.0" alpha_t="2.65e-12" type="uniform_isotropic" />
       </mechanical_properties>
-
-      <multiscale_model name="generalized dual porosity">
-        <matrix depth="0.8 m" number_of_nodes="7" tortuosity="1.0" volume_fraction="0.9999"/>
-        <matrix_porosity value="0.25"/>
-      </multiscale_model>
     </material>
   </materials>
+
+  <materials_secondary_continuum>
+    <material name="Material">
+      <assigned_regions>All</assigned_regions>
+      <volume_fraction>0.9999</volume_fraction>
+      <mechanical_properties>
+        <porosity value="0.25"/>
+        <tortuosity value="1.0"/>
+      </mechanical_properties>
+      <multiscale_model name="generalized dual porosity">
+        <matrix depth="0.8 m" number_of_nodes="7" tortuosity="1.0"/>
+      </multiscale_model>
+    </material>
+  </materials_secondary_continuum>
 
   <initial_conditions>
     <initial_condition name="All">
