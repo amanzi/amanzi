@@ -76,7 +76,6 @@ class Flow_PK : public PK_PhysicalBDF {
 
   // -- miscallenous members
   void DeriveFaceValuesFromCellValues(const Epetra_MultiVector& ucells, Epetra_MultiVector& ufaces);
-  int FindPosition(int f, AmanziMesh::Entity_ID_List faces);
 
   // -- io members
   void OutputTimeHistory(const Teuchos::ParameterList& plist, std::vector<dt_tuple>& dt_history);

@@ -770,18 +770,6 @@ void Flow_PK::VerticalNormals(int c, AmanziGeometry::Point& n1, AmanziGeometry::
   n2 = mesh_->face_normal(faces[i2]) * dirs[i2];
 }
 
-
-/* ******************************************************************
-* Returns position of face f in the list faces.  
-****************************************************************** */
-int Flow_PK::FindPosition(int f, AmanziMesh::Entity_ID_List faces)
-{
-  for (int i = 0; i < faces.size(); i++) {
-    if (faces[i] == f) return i;
-  }
-  return -1;
-}
-
 }  // namespace Flow
 }  // namespace Amanzi
 

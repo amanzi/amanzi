@@ -14,7 +14,7 @@
   and high-order schemes) and inside it (for high-order schemes).
   Degrees of freedom on faces are typically function moments or,
   equivalently, polynomial approximation of the function. Degrees
-  of freedom in cell are high-order moments. 
+  of freedom in cell are function moments. 
 
   NOTE. For a scheme of order k, polynomial of order k on each 
   face, provides uniform interface for large variety of schemes.
