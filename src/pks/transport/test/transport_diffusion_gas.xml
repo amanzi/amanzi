@@ -49,6 +49,7 @@
       <Parameter name="spatial discretization order" type="int" value="2"/>   
       <Parameter name="temporal discretization order" type="int" value="1"/>   
       <Parameter name="solver" type="string" value="Dispersion Solver"/>
+      <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
 
       <ParameterList name="material properties">
         <ParameterList name="Brown soil">

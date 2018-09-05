@@ -2170,6 +2170,8 @@ and temporal accuracy, and verbosity:
 
 * `"solver`" [string] Specifies the dispersion/diffusion solver.
 
+* `"preconditioner`" [string] specifies preconditioner for dispersion solver.
+
 * `"number of aqueous components`" [int] The total number of aqueous components. 
   Default value is the total number of components.
 

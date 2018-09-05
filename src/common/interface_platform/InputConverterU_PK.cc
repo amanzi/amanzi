@@ -55,7 +55,7 @@ Teuchos::ParameterList InputConverterU::TranslateTimeIntegrator_(
 
   // linear solver
   bool flag;
-  std::string prec(TI_PRECONDITIONER)
+  std::string prec(TI_PRECONDITIONER);
   node = GetUniqueElementByTagsString_(unstr_controls + ", preconditioner", flag);
   if (flag) prec = mm.transcode(node->getTextContent());
 

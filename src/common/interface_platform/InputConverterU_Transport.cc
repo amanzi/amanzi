@@ -66,6 +66,7 @@ Teuchos::ParameterList InputConverterU::TranslateTransport_()
   out_list.set<std::string>("flow mode", "transient");
 
   out_list.set<std::string>("solver", "Dispersion Solver");
+  out_list.set<std::string>("preconditioner", LINEAR_SOLVER_PC);
   out_list.set<bool>("enable internal tests", false);
   out_list.set<bool>("transport subcycling", TRANSPORT_SUBCYCLING);
 

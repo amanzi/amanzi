@@ -576,6 +576,7 @@
       <Parameter name="cfl" type="double" value="1.0"/>
       <Parameter name="flow mode" type="string" value="transient"/>
       <Parameter name="solver" type="string" value="Dispersion Solver"/>
+      <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
       <Parameter name="enable internal tests" type="bool" value="false"/>
       <Parameter name="transport subcycling" type="bool" value="true"/>
       <ParameterList name="reconstruction">
@@ -804,7 +805,6 @@
 
   <ParameterList name="solvers">
     <ParameterList name="AztecOO">
-      <Parameter name="preconditioner" type="string" value="hypre_amg"/>
       <Parameter name="iterative method" type="string" value="gmres"/>
       <ParameterList name="gmres parameters">
         <Parameter name="error tolerance" type="double" value="1.0e-16"/>
@@ -817,7 +817,6 @@
       </ParameterList>
     </ParameterList>
     <ParameterList name="Dispersion Solver">
-      <Parameter name="preconditioner" type="string" value="hypre_amg"/>
       <Parameter name="iterative method" type="string" value="gmres"/>
       <ParameterList name="gmres parameters">
         <Parameter name="error tolerance" type="double" value="1.0e-16"/>
@@ -835,7 +834,6 @@
       </ParameterList>
     </ParameterList>
     <ParameterList name="PCG with Hypre AMG">
-      <Parameter name="preconditioner" type="string" value="hypre_amg"/>
       <Parameter name="iterative method" type="string" value="gmres"/>
       <ParameterList name="gmres parameters">
         <Parameter name="error tolerance" type="double" value="1.0e-16"/>
@@ -848,7 +846,6 @@
       </ParameterList>
     </ParameterList>
     <ParameterList name="GMRES with Hypre AMG">
-      <Parameter name="preconditioner" type="string" value="hypre_amg"/>
       <Parameter name="iterative method" type="string" value="gmres"/>
       <ParameterList name="gmres parameters">
         <Parameter name="error tolerance" type="double" value="1.0e-16"/>
