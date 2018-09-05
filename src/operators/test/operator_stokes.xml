@@ -32,7 +32,6 @@
   <!-- SOLVERS -->
   <ParameterList name="solvers">
     <ParameterList name="GMRES">
-      <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
       <Parameter name="iterative method" type="string" value="gmres"/>
       <ParameterList name="gmres parameters">
         <Parameter name="maximum number of iterations" type="int" value="100"/>

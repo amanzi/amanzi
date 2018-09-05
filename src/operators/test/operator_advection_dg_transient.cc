@@ -729,6 +729,7 @@ void AdvectionTransient(std::string filename, int nx, int ny,
 
 
 TEST(OPERATOR_ADVECTION_TRANSIENT_DG) {
+  /*
   double dT(0.1), T1(1.0);
   auto rk_order = Amanzi::Explicit_TI::tvd_3rd_order;
   exact_solution_expected = true;
@@ -738,6 +739,7 @@ TEST(OPERATOR_ADVECTION_TRANSIENT_DG) {
   AdvectionTransient<AnalyticDG06b>("square", 4,4, dT,T1, rk_order);
   AdvectionTransient<AnalyticDG06>("square",  4,4, dT,T1, rk_order, false);
   AdvectionTransient<AnalyticDG06>("square",  4,4, dT,T1, rk_order, false, "primal");
+  */
 
   /*
   double dT(0.01), T1(6.2832);
@@ -774,12 +776,10 @@ TEST(OPERATOR_ADVECTION_TRANSIENT_DG) {
   AdvectionTransient<AnalyticDG07>("square",160,160, dT/8,T1, rk_order, false, "primal", "level set");
   */
 
-  /*
   double dT(0.001), T1(0.8);
   auto rk_order = Amanzi::Explicit_TI::tvd_3rd_order;
   AdvectionTransient<AnalyticDG07b>("square", 128, 128, dT/6,T1, rk_order, false, "primal", "level set");
-  AdvectionTransient<AnalyticDG07b>("test/median127x128.exo", 128,0, dT/6,T1, rk_order, false, "primal", "level set");
-  */
+  // AdvectionTransient<AnalyticDG07b>("test/median127x128.exo", 128,0, dT/6,T1, rk_order, false, "primal", "level set");
 
   /*
   double dT(0.001), T1(1.0);

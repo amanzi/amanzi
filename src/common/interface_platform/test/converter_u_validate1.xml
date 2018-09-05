@@ -335,7 +335,6 @@
   </ParameterList>
   <ParameterList name="solvers">
     <ParameterList name="AztecOO">
-      <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
       <Parameter name="iterative method" type="string" value="pcg"/>
       <ParameterList name="pcg parameters">
         <Parameter name="error tolerance" type="double" value="9.99999999999999945e-21"/>
@@ -346,7 +345,6 @@
       </ParameterList>
     </ParameterList>
     <ParameterList name="PCG with Hypre AMG">
-      <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
       <Parameter name="iterative method" type="string" value="pcg"/>
       <ParameterList name="pcg parameters">
         <Parameter name="error tolerance" type="double" value="1.0e-11"/>
@@ -357,7 +355,6 @@
       </ParameterList>
     </ParameterList>
     <ParameterList name="GMRES with Hypre AMG">
-      <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
       <Parameter name="iterative method" type="string" value="gmres"/>
       <ParameterList name="gmres parameters">
         <Parameter name="error tolerance" type="double" value="9.99999999999999980e-13"/>
@@ -370,7 +367,6 @@
       </ParameterList>
     </ParameterList>
     <ParameterList name="Dispersion Solver">
-      <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
       <Parameter name="iterative method" type="string" value="pcg"/>
       <ParameterList name="pcg parameters">
         <Parameter name="error tolerance" type="double" value="2.00000000000000010e-22"/>

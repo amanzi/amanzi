@@ -1812,6 +1812,7 @@ Initialization and constraints
 
 * `"linear solver`" [string] refers to a generic linear solver from list `"solvers`".
   It is used in all cases except for `"initialization`" and `"enforce pressure-lambda constraints`".
+  Currently, it is used by the Darcy PK only.
 
 * `"preconditioner`" [string] specifies preconditioner for linear and nonlinear solvers.
 
@@ -1835,7 +1836,7 @@ Initialization and constraints
       Default is 1e-8.
     * `"maximum number of iterations`" [int] limits the number of iterations. Default is 400. 
 
-  * `"linear solver`" [string] refers to a solver sublist of the list `"solvers`".
+  * `"linear solver`" [string] refers to a solver sublist of the list `"solvers`". 
 
   * `"clipping saturation value`" [double] is an experimental option. It is used 
     after pressure initialization to cut-off small values of pressure.
@@ -1864,8 +1865,8 @@ Initialization and constraints
      <ParameterList name="time integrator">
        <Parameter name="error control options" type="Array(string)" value="{pressure, saturation}"/>
        <Parameter name="linear solver" type="string" value="GMRES_with_AMG"/>
-       <Parameter name="linear solver as preconditioner" type="string" value="GMRES_with_AMG"/>
        <Parameter name="preconditioner" type="string" value="HYPRE_AMG"/>
+       <Parameter name="preconditioner enhancement" type="string" value="none"/>
 
        <ParameterList name="initialization">  <!-- first method -->
          <Parameter name="method" type="string" value="saturated solver"/>
@@ -4581,9 +4582,8 @@ Linear solvers
 --------------
 
 This list contains sublists for various linear solvers such as PCG, GMRES, and NKA.
-
-* `"preconditioner`" [string] is name in the list of preconditioners. If it is missing, 
-  the identity preconditioner is employed.
+Note that only PK can provide a preconditioner for a linear solver; hence, we cannot
+specify it here.
 
 * `"iterative method`" [string] defines a Krylov-based method. The available options
   include `"pcg`" and `"gmres`".
@@ -4598,7 +4598,6 @@ This list contains sublists for various linear solvers such as PCG, GMRES, and N
    <ParameterList>  <!-- parent list -->
      <ParameterList name="solvers">
        <ParameterList name="GMRES with HYPRE AMG">
-         <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
          <Parameter name="iterative method" type="string" value="gmres"/>
 
          <ParameterList name="gmres parameters">
@@ -4607,7 +4606,6 @@ This list contains sublists for various linear solvers such as PCG, GMRES, and N
        </ParameterList>
 
        <ParameterList name="PCG with HYPRE AMG">
-         <Parameter name="preconditioner" type="string" value="Hypre AMG"/>
          <Parameter name="iterative method" type="string" value="pcg"/>
          <ParameterList name="pcg parameters">
            ...

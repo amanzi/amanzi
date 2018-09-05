@@ -126,7 +126,6 @@
   <!-- SOLVERS -->
   <ParameterList name="solvers">
     <ParameterList name="AztecOO">
-      <Parameter name="preconditioner" type="string" value="Trilinos ML"/>
       <Parameter name="iterative method" type="string" value="gmres"/>
       <ParameterList name="gmres parameters">
         <Parameter name="maximum number of iterations" type="int" value="400"/>
