@@ -107,7 +107,9 @@ void PDE_DiffusionMFD::UpdateMatrices(
     const Teuchos::Ptr<const CompositeVector>& flux,
     const Teuchos::Ptr<const CompositeVector>& u)
 {
+
   if (k_ != Teuchos::null) k_ -> ScatterMasterToGhosted();
+
   
   if (!exclude_primary_terms_) {
     if (local_op_schema_ & OPERATOR_SCHEMA_DOFS_NODE) {
@@ -1173,6 +1175,7 @@ void PDE_DiffusionMFD::UpdateFlux(const Teuchos::Ptr<const CompositeVector>& u,
   // Initialize intensity in ghost faces.
   flux->PutScalar(0.0);
   u->ScatterMasterToGhosted("face");
+
   if (k_ != Teuchos::null) k_->ScatterMasterToGhosted("face");
 
   const Epetra_MultiVector& u_cell = *u->ViewComponent("cell");
@@ -1225,7 +1228,9 @@ void PDE_DiffusionMFD::UpdateFluxNonManifold(
   // Initialize intensity in ghost faces.
   flux->PutScalar(0.0);
   u->ScatterMasterToGhosted("face");
+
   if (k_ != Teuchos::null) k_->ScatterMasterToGhosted("face");
+
 
   const Epetra_MultiVector& u_cell = *u->ViewComponent("cell");
   const Epetra_MultiVector& u_face = *u->ViewComponent("face", true);
