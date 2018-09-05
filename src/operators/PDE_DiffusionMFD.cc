@@ -108,9 +108,9 @@ void PDE_DiffusionMFD::UpdateMatrices(
     const Teuchos::Ptr<const CompositeVector>& u)
 {
 
+
   if (k_ != Teuchos::null) k_ -> ScatterMasterToGhosted();
 
-  
   if (!exclude_primary_terms_) {
     if (local_op_schema_ & OPERATOR_SCHEMA_DOFS_NODE) {
       UpdateMatricesNodal_();
@@ -144,8 +144,10 @@ void PDE_DiffusionMFD::UpdateMatricesNewtonCorrection(
   // add Newton-type corrections
   if (newton_correction_ == OPERATOR_DIFFUSION_JACOBIAN_APPROXIMATE) {
     if (global_op_schema_ & OPERATOR_SCHEMA_DOFS_CELL) {
+
       if (dkdp_ !=  Teuchos::null) dkdp_ -> ScatterMasterToGhosted();      
       AddNewtonCorrectionCell_(flux, u, scalar_factor);
+      
     } else {
       Errors::Message msg("PDE_DiffusionMFD: Newton correction may only be applied to schemas that include CELL dofs.");
       Exceptions::amanzi_throw(msg);
@@ -162,8 +164,10 @@ void PDE_DiffusionMFD::UpdateMatricesNewtonCorrection(
   // add Newton-type corrections
   if (newton_correction_ == OPERATOR_DIFFUSION_JACOBIAN_APPROXIMATE) {
     if (global_op_schema_ & OPERATOR_SCHEMA_DOFS_CELL) {
+
       if (dkdp_ !=  Teuchos::null) dkdp_ -> ScatterMasterToGhosted();      
       AddNewtonCorrectionCell_(flux, u, factor);
+
     } else {
       Errors::Message msg("PDE_DiffusionMFD: Newton correction may only be applied to schemas that include CELL dofs.");
       Exceptions::amanzi_throw(msg);
@@ -1228,6 +1232,7 @@ void PDE_DiffusionMFD::UpdateFluxNonManifold(
   // Initialize intensity in ghost faces.
   flux->PutScalar(0.0);
   u->ScatterMasterToGhosted("face");
+
 
   if (k_ != Teuchos::null) k_->ScatterMasterToGhosted("face");
 
