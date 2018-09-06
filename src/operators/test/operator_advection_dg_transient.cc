@@ -364,12 +364,7 @@ void AdvectionFn<AnalyticDG>::ApproximateVelocity_Projection(
   mesh_new_->deform(nodeids, new_positions, false, &final_positions);
 
   // create a mesh map at time t
-  Teuchos::ParameterList map_list;
-  map_list.set<std::string>("method", "Lagrange serendipity")
-          .set<int>("method order", 2)
-          .set<std::string>("projector", "L2")
-          .set<std::string>("map name", "VEM");
-  
+  const Teuchos::ParameterList& map_list = plist_.sublist("maps");
   WhetStone::MeshMapsFactory maps_factory;
   auto maps = maps_factory.Create(map_list, mesh_, mesh_new_);
 
@@ -623,12 +618,26 @@ void AdvectionTransient(std::string filename, int nx, int ny,
   int order = plist.sublist(pk_name)
                    .sublist("flux operator").get<int>("method order");
 
-  std::string problem = (conservative_form) ? ", conservative formulation" : "";
-  if (MyPID == 0) std::cout << "\nTest: 2D dG transient advection: " << filename 
-                            << ", order=" << order << problem 
-                            << ", formulation=\"" << weak_form << "\""
-                            << ", face_velocity=\"" << face_velocity_method << "\""
-                            << ", limiter=" << limiter << std::endl;
+  { 
+    std::string problem = (conservative_form) ? ", conservative PDE" : "";
+    if (MyPID == 0) {
+      std::cout << "\nTest: 2D dG transient advection: " << filename 
+                << ", order=" << order << problem 
+                << "\n      weak formulation=\"" << weak_form << "\""
+                << ", face_velocity=\"" << face_velocity_method << "\""
+                << ", limiter=" << limiter << std::endl;
+      if (face_velocity_method == "high order") {
+        const auto& map_list = plist.sublist("maps");
+        int vel_order = map_list.get<int>("method order");
+        std::string vel_method = map_list.get<std::string>("method");
+        std::string vel_projector = map_list.get<std::string>("projector");
+      
+        std::cout << "      face velocity: order=" << vel_order 
+                  << ", projector=" << vel_projector 
+                  << ", method=\"" << vel_method << "\"" << std::endl;
+      }
+    }
+  }
 
   // create a mesh framework
   ParameterList region_list = plist.sublist("regions");
@@ -740,19 +749,12 @@ TEST(OPERATOR_ADVECTION_TRANSIENT_DG) {
   AdvectionTransient<AnalyticDG06>("square",  4,4, dT,T1, rk_order, false, "primal");
 
   /*
-  double dT(0.01), T1(6.2832);
-  auto rk_order = Amanzi::Explicit_TI::tvd_3rd_order;
-  // AdvectionTransient<AnalyticDG08>("square", 160,160, dT/8,T1, rk_order, true, "dual", "high order", false);
-  AdvectionTransient<AnalyticDG08>("test/median127x128.exo", 128,0, dT/8,T1, rk_order, true, "dual", "high order", false);
-  */
-
-  /*
   double dT(0.01), T1(1.0);
   auto rk_order = Amanzi::Explicit_TI::heun_euler;
-  AdvectionTransient<AnalyticDG06>("square",  20, 20, dT,  T1, rk_order);
-  AdvectionTransient<AnalyticDG06>("square",  40, 40, dT/2,T1, rk_order);
-  AdvectionTransient<AnalyticDG06>("square",  80, 80, dT/4,T1, rk_order);
-  AdvectionTransient<AnalyticDG06>("square", 160,160, dT/8,T1, rk_order);
+  AdvectionTransient<AnalyticDG06>("square",  16, 16, dT,  T1, rk_order);
+  AdvectionTransient<AnalyticDG06>("square",  32, 32, dT/2,T1, rk_order);
+  AdvectionTransient<AnalyticDG06>("square",  64, 64, dT/4,T1, rk_order);
+  AdvectionTransient<AnalyticDG06>("square", 128,128, dT/8,T1, rk_order);
   */
 
   /*
@@ -763,31 +765,6 @@ TEST(OPERATOR_ADVECTION_TRANSIENT_DG) {
   AdvectionTransient<AnalyticDG06>("test/triangular32.exo",  32,0, dT/4, T1, rk_order);
   AdvectionTransient<AnalyticDG06>("test/triangular64.exo",  64,0, dT/8, T1, rk_order);
   AdvectionTransient<AnalyticDG06>("test/triangular128.exo",128,0, dT/16,T1  rk_order);
-  */
-
-  /*
-  double dT(0.001), T1(1.0);
-  auto rk_order = Amanzi::Explicit_TI::tvd_3rd_order;
-  AdvectionTransient<AnalyticDG07>("square", 20, 20, dT,  T1, rk_order, false, "primal", "level set");
-  AdvectionTransient<AnalyticDG07>("square", 40, 40, dT/2,T1, rk_order, false, "primal", "level set");
-  AdvectionTransient<AnalyticDG07>("square", 80, 80, dT/4,T1, rk_order, false, "primal", "level set");
-  AdvectionTransient<AnalyticDG07>("square",160,160, dT/8,T1, rk_order, false, "primal", "level set");
-  */
-
-  /*
-  double dT(0.001), T1(0.8);
-  auto rk_order = Amanzi::Explicit_TI::tvd_3rd_order;
-  AdvectionTransient<AnalyticDG07b>("square", 128, 128, dT/6,T1, rk_order, false, "primal", "level set");
-  // AdvectionTransient<AnalyticDG07b>("test/median127x128.exo", 128,0, dT/6,T1, rk_order, false, "primal", "level set");
-  */
-
-  /*
-  double dT(0.001), T1(1.0);
-  auto rk_order = Amanzi::Explicit_TI::tvd_3rd_order;
-  AdvectionTransient<AnalyticDG07>("test/median15x16.exo",   16,0, dT,  T1, rk_order, false, "primal", "level set");
-  AdvectionTransient<AnalyticDG07>("test/median32x33.exo",   32,0, dT/2,T1, rk_order, false, "primal", "level set");
-  AdvectionTransient<AnalyticDG07>("test/median63x64.exo",   64,0, dT/4,T1, rk_order, false, "primal", "level set");
-  AdvectionTransient<AnalyticDG07>("test/median127x128.exo",128,0, dT/8,T1, rk_order, false, "primal", "level set");
   */
 
   /*
@@ -806,6 +783,38 @@ TEST(OPERATOR_ADVECTION_TRANSIENT_DG) {
   AdvectionTransient<AnalyticDG06>("test/mesh_poly40x40.exo",   40,0, dT/2,T1, rk_order);
   AdvectionTransient<AnalyticDG06>("test/mesh_poly80x80.exo",   80,0, dT/4,T1, rk_order);
   AdvectionTransient<AnalyticDG06>("test/mesh_poly160x160.exo",160,0, dT/8,T1, rk_order);
+  */
+
+  /*
+  double dT(0.001), T1(1.0);
+  auto rk_order = Amanzi::Explicit_TI::tvd_3rd_order;
+  AdvectionTransient<AnalyticDG07>("square", 20, 20, dT,  T1, rk_order, false, "primal", "level set");
+  AdvectionTransient<AnalyticDG07>("square", 40, 40, dT/2,T1, rk_order, false, "primal", "level set");
+  AdvectionTransient<AnalyticDG07>("square", 80, 80, dT/4,T1, rk_order, false, "primal", "level set");
+  AdvectionTransient<AnalyticDG07>("square",160,160, dT/8,T1, rk_order, false, "primal", "level set");
+  */
+
+  /*
+  double dT(0.001), T1(1.0);
+  auto rk_order = Amanzi::Explicit_TI::tvd_3rd_order;
+  AdvectionTransient<AnalyticDG07>("test/median15x16.exo",   16,0, dT,  T1, rk_order, false, "primal", "level set");
+  AdvectionTransient<AnalyticDG07>("test/median32x33.exo",   32,0, dT/2,T1, rk_order, false, "primal", "level set");
+  AdvectionTransient<AnalyticDG07>("test/median63x64.exo",   64,0, dT/4,T1, rk_order, false, "primal", "level set");
+  AdvectionTransient<AnalyticDG07>("test/median127x128.exo",128,0, dT/8,T1, rk_order, false, "primal", "level set");
+  */
+
+  /*
+  double dT(0.001), T1(0.8);
+  auto rk_order = Amanzi::Explicit_TI::tvd_3rd_order;
+  AdvectionTransient<AnalyticDG07b>("square", 128, 128, dT/6,T1, rk_order, false, "primal", "level set");
+  // AdvectionTransient<AnalyticDG07b>("test/median127x128.exo", 128,0, dT/6,T1, rk_order, false, "primal", "level set");
+  */
+
+  /*
+  double dT(0.01), T1(6.2832);
+  auto rk_order = Amanzi::Explicit_TI::tvd_3rd_order;
+  // AdvectionTransient<AnalyticDG08>("square", 160,160, dT/8,T1, rk_order, true, "dual", "high order", false);
+  AdvectionTransient<AnalyticDG08>("test/median127x128.exo", 128,0, dT/8,T1, rk_order, true, "dual", "high order", false);
   */
 }
 
