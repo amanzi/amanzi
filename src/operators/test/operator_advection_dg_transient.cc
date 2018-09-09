@@ -750,7 +750,7 @@ TEST(OPERATOR_ADVECTION_TRANSIENT_DG) {
 
   /*
   double dT(0.01), T1(1.0);
-  auto rk_order = Amanzi::Explicit_TI::heun_euler;
+  auto rk_order = Amanzi::Explicit_TI::tvd_3rd_order;
   AdvectionTransient<AnalyticDG06>("square",  16, 16, dT,  T1, rk_order);
   AdvectionTransient<AnalyticDG06>("square",  32, 32, dT/2,T1, rk_order);
   AdvectionTransient<AnalyticDG06>("square",  64, 64, dT/4,T1, rk_order);
@@ -769,7 +769,7 @@ TEST(OPERATOR_ADVECTION_TRANSIENT_DG) {
 
   /*
   double dT(0.001), T1(1.0);
-  auto rk_order = Amanzi::Explicit_TI::heun_euler;
+  auto rk_order = Amanzi::Explicit_TI::tvd_3rd_order;
   AdvectionTransient<AnalyticDG06>("test/median15x16.exo",   16,0, dT,  T1, rk_order);
   AdvectionTransient<AnalyticDG06>("test/median32x33.exo",   32,0, dT/2,T1, rk_order);
   AdvectionTransient<AnalyticDG06>("test/median63x64.exo",   64,0, dT/4,T1, rk_order);
