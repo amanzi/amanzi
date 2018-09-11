@@ -25,7 +25,7 @@
 
   <!-- MAPS -->
   <ParameterList name="maps">
-    <Parameter name="method" type="string" value="CrouzeixRaviart"/>
+    <Parameter name="method" type="string" value="Lagrange serendipity"/>
     <Parameter name="method order" type="int" value="1"/>
     <Parameter name="projector" type="string" value="H1"/>
     <Parameter name="map name" type="string" value="VEM"/>
@@ -38,7 +38,7 @@
     <ParameterList name="flux operator">
       <Parameter name="method" type="string" value="dg modal"/>
       <Parameter name="dg basis" type="string" value="orthonormalized"/>
-      <Parameter name="method order" type="int" value="0"/>
+      <Parameter name="method order" type="int" value="1"/>
       <Parameter name="matrix type" type="string" value="flux"/>
       <Parameter name="flux formula" type="string" value="downwind"/>
       <Parameter name="jump operator on test function" type="bool" value="true"/>
@@ -47,20 +47,20 @@
         <Parameter name="base" type="string" value="face"/>
         <Parameter name="location" type="Array(string)" value="{cell}"/>
         <Parameter name="type" type="Array(string)" value="{scalar}"/>
-        <Parameter name="number" type="Array(int)" value="{1}"/>
+        <Parameter name="number" type="Array(int)" value="{3}"/>
       </ParameterList>
       <ParameterList name="schema range">
         <Parameter name="base" type="string" value="face"/>
         <Parameter name="location" type="Array(string)" value="{cell}"/>
         <Parameter name="type" type="Array(string)" value="{scalar}"/>
-        <Parameter name="number" type="Array(int)" value="{1}"/>
+        <Parameter name="number" type="Array(int)" value="{3}"/>
       </ParameterList>
     </ParameterList>
 
     <ParameterList name="advection operator">
       <Parameter name="method" type="string" value="dg modal"/>
       <Parameter name="dg basis" type="string" value="orthonormalized"/>
-      <Parameter name="method order" type="int" value="0"/>
+      <Parameter name="method order" type="int" value="1"/>
       <Parameter name="matrix type" type="string" value="advection"/>
       <Parameter name="gradient operator on test function" type="bool" value="true"/>
 
@@ -68,27 +68,27 @@
         <Parameter name="base" type="string" value="cell"/>
         <Parameter name="location" type="Array(string)" value="{cell}"/>
         <Parameter name="type" type="Array(string)" value="{scalar}"/>
-        <Parameter name="number" type="Array(int)" value="{1}"/>
+        <Parameter name="number" type="Array(int)" value="{3}"/>
       </ParameterList>
       <ParameterList name="schema range">
         <Parameter name="base" type="string" value="cell"/>
         <Parameter name="location" type="Array(string)" value="{cell}"/>
         <Parameter name="type" type="Array(string)" value="{scalar}"/>
-        <Parameter name="number" type="Array(int)" value="{1}"/>
+        <Parameter name="number" type="Array(int)" value="{3}"/>
       </ParameterList>
     </ParameterList>
 
     <ParameterList name="reaction operator">
       <Parameter name="method" type="string" value="dg modal"/>
       <Parameter name="dg basis" type="string" value="orthonormalized"/>
-      <Parameter name="method order" type="int" value="0"/>
+      <Parameter name="method order" type="int" value="1"/>
       <Parameter name="matrix type" type="string" value="mass"/>
 
       <ParameterList name="schema">
         <Parameter name="base" type="string" value="cell"/>
         <Parameter name="location" type="Array(string)" value="{cell}"/>
         <Parameter name="type" type="Array(string)" value="{scalar}"/>
-        <Parameter name="number" type="Array(int)" value="{1}"/>
+        <Parameter name="number" type="Array(int)" value="{3}"/>
       </ParameterList>
     </ParameterList>
   </ParameterList>
