@@ -78,7 +78,8 @@ class DenseVector {
         if (data_ != NULL) {
           delete [] data_;
         }
-        data_ = new double[B.m_];
+        mem_ = B.m_;
+        data_ = new double[mem_];
       }
       m_ = B.m_;
       const double *b = B.Values();
@@ -131,7 +132,8 @@ class DenseVector {
   DenseVector& operator=(double val) {
     if (data_ == NULL) {
       m_ = 1;
-      data_ = new double[1];
+      mem_ = 1;
+      data_ = new double[mem_];
     }
     for (int i = 0; i < m_; ++i) data_[i] = val;
     return *this;
