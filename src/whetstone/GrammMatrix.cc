@@ -13,6 +13,8 @@
 */
 
 #include "GrammMatrix.hh"
+#include "Polynomial.hh"
+#include "PolynomialOnMesh.hh"
 
 namespace Amanzi {
 namespace WhetStone {

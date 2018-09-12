@@ -80,14 +80,26 @@ class AnalyticDG04 : public AnalyticDGBase {
   // -- velocity
   virtual void VelocityTaylor(const Amanzi::AmanziGeometry::Point& p, double t,
                               Amanzi::WhetStone::VectorPolynomial& v) override {
+    int order_tmp = std::min(order_, 2);
     v.resize(d_);
+
     for (int i = 0; i < d_; ++i) {
-      v[i].Reshape(d_, 2, true); 
+      v[i].Reshape(d_, order_tmp, true); 
       v[i].set_origin(p);
-      double tmp = p[i];
-      v[i](0, 0) = tmp - tmp * tmp;
-      v[i](1, i) = 1.0 - 2 * tmp;
-      v[i](2, 2*i) = -1.0;
+    }
+
+    double x(p[0]), y(p[1]);
+    v[0](0) = x - x * x;
+    v[1](0) = y - y * y;
+
+    if (order_ > 0) {
+      v[0](1) = 1.0 - 2 * x;
+      v[1](2) = 1.0 - 2 * y;
+    }
+
+    if (order_ > 1) {
+      v[0](3) = -1.0;
+      v[1](5) = -1.0;
     }
   }
 

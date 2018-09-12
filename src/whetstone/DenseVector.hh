@@ -29,9 +29,7 @@ class DenseVector {
  public:
   DenseVector() : m_(0), mem_(0), data_(NULL) {};
 
-  explicit DenseVector(int mrow) {
-    m_ = mrow;
-    mem_ = mrow;
+  explicit DenseVector(int mrow) : m_(mrow), mem_(mrow) {
     data_ = new double[mem_];
   }
 
@@ -57,36 +55,10 @@ class DenseVector {
 
   // primary members 
   // -- smart memory management: preserves data only for vector reduction
-  void Reshape(int mrow) {
-    m_ = mrow;
-
-    if (mem_ < m_) {
-      double* data_tmp = new double[m_];
-      if (data_ != NULL) {
-        for (int i = 0; i < mem_; i++) data_tmp[i] = data_[i];
-        delete [] data_;
-      }
-      mem_ = m_;
-      data_ = data_tmp;
-    }
-  }
+  void Reshape(int mrow);
 
   // -- initialization
-  DenseVector& operator=(const DenseVector& B) {
-    if (this != &B) {
-      if (m_ != B.m_ && B.m_ != 0) {
-        if (data_ != NULL) {
-          delete [] data_;
-        }
-        mem_ = B.m_;
-        data_ = new double[mem_];
-      }
-      m_ = B.m_;
-      const double *b = B.Values();
-      for (int i = 0; i < m_; ++i) data_[i] = b[i];
-    }
-    return (*this);
-  }
+  DenseVector& operator=(const DenseVector& B);
 
   void PutScalar(double val) {
     for (int i = 0; i < m_; i++) data_[i] = val;
@@ -165,7 +137,7 @@ class DenseVector {
   const double* Values() const { return data_; }
 
   // output 
-  friend std::ostream& operator << (std::ostream& os, DenseVector& A) {
+  friend std::ostream& operator << (std::ostream& os, const DenseVector& A) {
     for (int i = 0; i < A.NumRows(); i++)
         os << std::setw(12) << std::setprecision(12) << A(i) << " ";
     os << "\n";

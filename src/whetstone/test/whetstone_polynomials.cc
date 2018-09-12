@@ -146,5 +146,10 @@ TEST(DG_TAYLOR_POLYNOMIALS) {
   p1d.ChangeCoordinates(x0, tau);
   std::cout << "Before ChangeCoordinates: " << p2d << std::endl;
   std::cout << "After ChangeCoordinates: " << p1d << std::endl;
+
+  // assignement small to large
+  q1.Reshape(2, 3, true);
+  q2.Reshape(2, 2, true);
+  q1 = q2;
 }
 

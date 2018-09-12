@@ -19,12 +19,13 @@
 #include <vector>
 
 #include "Basis_Regularized.hh"
-#include "Polynomial.hh"
-#include "PolynomialOnMesh.hh"
 #include "Tensor.hh"
 
 namespace Amanzi {
 namespace WhetStone {
+
+class Polynomial;
+class PolynomialOnMesh;
 
 // Gramm matrix for polynomials
 void GrammMatrix(

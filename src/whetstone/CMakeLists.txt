@@ -50,7 +50,7 @@ add_amanzi_library(whetstone
                           DG_Modal.cc
                           Basis_Regularized.cc Basis_Normalized.cc Basis_Orthonormalized.cc
                           nlfv.cc 
-                          Tensor.cc DenseMatrix.cc
+                          Tensor.cc DenseMatrix.cc DenseVector.cc
                           Polynomial.cc VectorPolynomial.cc
                           NumericalIntegration.cc
                           MeshMaps.cc

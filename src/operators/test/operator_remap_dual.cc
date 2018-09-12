@@ -48,7 +48,8 @@ class RemapDG : public Explicit_TI::fnBase<CompositeVector> {
  public:
   RemapDG(const Teuchos::RCP<const AmanziMesh::Mesh> mesh0,
           const Teuchos::RCP<const AmanziMesh::Mesh> mesh1,
-          Teuchos::ParameterList& plist);
+          Teuchos::ParameterList& plist,
+          bool high_order_velocity);
   ~RemapDG() {};
 
   virtual void FunctionalTimeDerivative(double t, const CompositeVector& u, CompositeVector& f) override;
@@ -101,7 +102,8 @@ class RemapDG : public Explicit_TI::fnBase<CompositeVector> {
 ***************************************************************** */
 RemapDG::RemapDG(const Teuchos::RCP<const AmanziMesh::Mesh> mesh0,
                  const Teuchos::RCP<const AmanziMesh::Mesh> mesh1,
-                 Teuchos::ParameterList& plist)
+                 Teuchos::ParameterList& plist,
+                 bool high_order_velocity)
   : mesh0_(mesh0), mesh1_(mesh1), plist_(plist)
 {
   // mesh data
@@ -110,6 +112,9 @@ RemapDG::RemapDG(const Teuchos::RCP<const AmanziMesh::Mesh> mesh0,
   nfaces_owned_ = mesh0_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::OWNED);
   nfaces_wghost_ = mesh0_->num_entities(AmanziMesh::FACE, AmanziMesh::Parallel_type::ALL);
   dim_ = mesh0_->space_dimension();
+
+  int order = plist.sublist("PK operator")
+                   .sublist("flux operator").get<int>("method order");
 
   // create right-hand side operator
   // -- flux
@@ -132,9 +137,19 @@ RemapDG::RemapDG(const Teuchos::RCP<const AmanziMesh::Mesh> mesh0,
 
   // face velocities
   velf_vec_.resize(nfaces_wghost_);
-  for (int f = 0; f < nfaces_wghost_; ++f) {
-    maps_->VelocityFace(f, velf_vec_[f]);
-  }
+  if (high_order_velocity) {
+    AnalyticDG04 ana(mesh0_, order, true);
+
+    for (int f = 0; f < nfaces_wghost_; ++f) {
+      const auto& xf = mesh0_->face_centroid(f);
+      ana.VelocityTaylor(xf, 0.0, velf_vec_[f]); 
+      velf_vec_[f].ChangeOrigin(AmanziGeometry::Point(dim_));
+    }
+  } else {
+    for (int f = 0; f < nfaces_wghost_; ++f) {
+      maps_->VelocityFace(f, velf_vec_[f]);
+    }
+  } 
 
   // cell-baced velocities and Jacobian matrices
   WhetStone::Entity_ID_List faces;
@@ -287,6 +302,7 @@ void RemapDG::UpdateGeometricQuantities_(double t)
     }
 
     // experimental code:
+    /*
     WhetStone::Entity_ID_List faces;
     mesh0_->cell_get_faces(c, &faces);
     int nfaces = faces.size();
@@ -300,6 +316,7 @@ void RemapDG::UpdateGeometricQuantities_(double t)
 
     maps_->VelocityCell(c, vvf, (*velc_)[c]);
     (*velc_)[c] *= -1.0;
+    */
 
     // determinant of Jacobian
     maps_->Determinant(t, J_[c], (*jac_)[c]);
@@ -424,6 +441,10 @@ void RemapTestsDualRK(const Amanzi::Explicit_TI::method_t& rk_method,
           xv[i] += sin(3 * yv[1 - i]) * sin(4 * yv[i]) / nx / 8;
       }
     }
+    else if (deform == 4) {
+      xv[0] = yv[0] + yv[0] * (1.0 - yv[0]);
+      xv[1] = yv[1] + yv[1] * (1.0 - yv[1]);
+    }
 
     nodeids.push_back(v);
     new_positions.push_back(xv);
@@ -431,7 +452,8 @@ void RemapTestsDualRK(const Amanzi::Explicit_TI::method_t& rk_method,
   mesh1->deform(nodeids, new_positions, false, &final_positions);
 
   // basic remap algorithm
-  RemapDG remap(mesh0, mesh1, plist);
+  bool high_order_velocity(false);
+  RemapDG remap(mesh0, mesh1, plist, high_order_velocity);
 
   // create and initialize cell-based field 
   CompositeVectorSpace cvs1;
@@ -647,20 +669,18 @@ void RemapTestsDualRK(const Amanzi::Explicit_TI::method_t& rk_method,
 }
 
 TEST(REMAP_DUAL_2D) {
-  /*
   double dT(0.1);
   auto rk_method = Amanzi::Explicit_TI::heun_euler;
   RemapTestsDualRK(rk_method, "FEM", "", 10,10,0, dT);
 
   RemapTestsDualRK(rk_method, "VEM", "test/median15x16.exo", 0,0,0, dT/2);
   // RemapTestsDualRK(rk_method, "VEM", "", 5,5,5, dT);
-  */
 
   /*
-  double dT(0.02);
+  double dT(0.01);
   auto rk_method = Amanzi::Explicit_TI::tvd_3rd_order;
   std::string maps = "VEM";
-  int deform = 2;
+  int deform = 4;
   RemapTestsDualRK(rk_method, maps, "",  16, 16,0, dT,    deform);
   RemapTestsDualRK(rk_method, maps, "",  32, 32,0, dT/2,  deform);
   RemapTestsDualRK(rk_method, maps, "",  64, 64,0, dT/4,  deform);
@@ -668,6 +688,7 @@ TEST(REMAP_DUAL_2D) {
   RemapTestsDualRK(rk_method, maps, "", 256,256,0, dT/16, deform);
   */
 
+  /*
   double dT(0.02);
   auto rk_method = Amanzi::Explicit_TI::tvd_3rd_order;
   std::string maps = "VEM";
@@ -677,6 +698,7 @@ TEST(REMAP_DUAL_2D) {
   RemapTestsDualRK(rk_method, maps, "test/median63x64.exo",    64,0,0, dT/4, deform);
   RemapTestsDualRK(rk_method, maps, "test/median127x128.exo", 128,0,0, dT/8, deform);
   RemapTestsDualRK(rk_method, maps, "test/median255x256.exo", 256,0,0, dT/16,deform);
+  */
 
   /*
   double dT(0.05);
