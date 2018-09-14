@@ -12,7 +12,7 @@
   Diffusion: K = 1
   Accumulation: a = 0
   Reaction: r = 0
-  Velocity: v = [x - x^2, y - y^2]
+  Velocity: v = [xy(1-x)/2, xy(1-y)/2]
   Source: f = u / t + v . \grad u  
 */
 
@@ -80,7 +80,7 @@ class AnalyticDG04 : public AnalyticDGBase {
   // -- velocity
   virtual void VelocityTaylor(const Amanzi::AmanziGeometry::Point& p, double t,
                               Amanzi::WhetStone::VectorPolynomial& v) override {
-    int order_tmp = std::min(order_, 2);
+    int order_tmp = std::min(order_, 3);
     v.resize(d_);
 
     for (int i = 0; i < d_; ++i) {
@@ -89,17 +89,23 @@ class AnalyticDG04 : public AnalyticDGBase {
     }
 
     double x(p[0]), y(p[1]);
-    v[0](0) = x - x * x;
-    v[1](0) = y - y * y;
+    v[0](0) = y * (x - x * x) / 2;
+    v[1](0) = x * (y - y * y) / 2;
 
     if (order_ > 0) {
-      v[0](1) = 1.0 - 2 * x;
-      v[1](2) = 1.0 - 2 * y;
+      v[0](1) = y * (1 - 2 * x) / 2;
+      v[0](2) = (x - x * x) / 2;
+
+      v[1](1) = (y - y * y) / 2;
+      v[1](2) = x * (1 - 2 * y) / 2;
     }
 
     if (order_ > 1) {
-      v[0](3) = -1.0;
-      v[1](5) = -1.0;
+      v[0](3) = -y / 2;
+      v[0](4) = (1 - 2 * x) / 2;
+
+      v[1](4) = (1 - 2 * y) / 2;
+      v[1](5) = -x / 2;
     }
   }
 
