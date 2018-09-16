@@ -21,10 +21,9 @@ diff -ruNbB crunchtope_160915-c31ecb9/AssembleGlobal.F90 crunchtope-160915.c31ec
 diff -ruNbB crunchtope_160915-c31ecb9/CMakeLists.txt crunchtope-160915.c31ecb9.0-source/CMakeLists.txt
 --- crunchtope_160915-c31ecb9/CMakeLists.txt	1969-12-31 17:00:00.000000000 -0700
 +++ crunchtope-160915.c31ecb9.0-source/CMakeLists.txt	2017-09-01 11:31:58.831168408 -0600
-@@ -0,0 +1,57 @@
+@@ -0,0 +1,90 @@
 +# Minimum CMake version.
 +cmake_minimum_required (VERSION 2.8.12)
-+set(CMAKE_BUILD_TYPE Release)
 +
 +project(CRUNCHTOPE)
 +
@@ -34,9 +33,36 @@ diff -ruNbB crunchtope_160915-c31ecb9/CMakeLists.txt crunchtope-160915.c31ecb9.0
 +option(XSDK_ENABLE_DEBUG "Enables Debug mode builds [OFF]." OFF)
 +option(BUILD_SHARED_LIBS "Builds shared libraries [ON]." ON)
 +
++if (${CMAKE_BUILD_TYPE} STREQUAL "")
++  set(CMAKE_BUILD_TYPE Debug)
++endif()
++
 +# Make sure compilers are set. This must be done before enabling languages.
 +if (NOT CMAKE_Fortran_COMPILER)
-+  message(FATAL_ERROR "Fortran compiler is not set")
++  if (NOT $ENV{FC} STREQUAL "")
++    set(CMAKE_Fortran_COMPILER $ENV{FC})
++  else()
++    message(FATAL_ERROR "Fortran compiler is not set")
++  endif()
++endif()
++if (NOT CMAKE_Fortran_FLAGS)
++  if (NOT $ENV{FFLAGS} STREQUAL "")
++    set(CMAKE_Fortran_FLAGS ${FFLAGS})
++    if (NOT $ENV{FCFLAGS} STREQUAL "")
++      if (NOT ${CMAKE_Fortran_FLAGS} STREQUAL $ENV{FCFLAGS})
++         message(FATAL_ERROR "Fortran compiler flags FFLAGS and FCFLAGS do not match")
++      endif()
++    endif()
++  elseif (NOT $ENV{FCFLAGS} STREQUAL "")
++    set(CMAKE_Fortran_FLAGS ${FCFLAGS})
++    if (NOT $ENV{FFLAGS} STREQUAL "")
++      if (NOT ${CMAKE_Fortran_FLAGS} STREQUAL $ENV{FFLAGS})
++         message(FATAL_ERROR "Fortran compiler flags FFLAGS and FCFLAGS do not match")
++      endif()
++    endif()
++  else()
++    message(FATAL_ERROR "Fortran compiler flags are not set")
++  endif()
 +endif()
 +enable_language(Fortran)
 +
@@ -66,8 +92,15 @@ diff -ruNbB crunchtope_160915-c31ecb9/CMakeLists.txt crunchtope-160915.c31ecb9.0
 +set(CRUNCHTOPE_LIB "crunchchem")
 +set(CMAKE_Fortran_MODULE_DIRECTORY "${PROJECT_BINARY_DIR}/mod_files")
 +
-+include_directories(${PETSC_DIR}/include)
++if (NOT (TPL_PETSC_LIBRARIES AND TPL_PETSC_INCLUDE_DIRS)) 
++  message(FATAL_ERROR "PETSc libraries/include dirs are not provided")
++endif()
++
++include_directories(${TPL_PETSC_INCLUDE_DIRS})
++
 +add_library(${CRUNCHTOPE_LIB} ${CRUNCH_SRC})
++set_target_properties(${CRUNCHTOPE_LIB} 
++                      PROPERTIES LINK_LIBRARIES ${TPL_PETSC_LIBRARIES})
 +if (APPLE AND BUILD_SHARED_LIBS)
 +  set_target_properties(${CRUNCHTOPE_LIB} 
 +                        PROPERTIES INSTALL_NAME_DIR ${CMAKE_INSTALL_PREFIX}/lib

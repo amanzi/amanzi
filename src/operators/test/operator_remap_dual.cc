@@ -462,7 +462,9 @@ void RemapTestsDualRK(const Amanzi::Explicit_TI::method_t& rk_method,
   Epetra_MultiVector& p1c = *p1->ViewComponent("cell", true);
 
   // we need dg to use correct scaling of basis functions
-  WhetStone::DG_Modal dg(order, mesh0, "orthonormalized");
+  std::string basis = plist.sublist("PK operator")
+                           .sublist("flux operator").get<std::string>("dg basis");
+  WhetStone::DG_Modal dg(order, mesh0, basis);
   AnalyticDG04 ana(mesh0, order, true);
   ana.InitialGuess(dg, p1c, 1.0);
 
@@ -538,7 +540,6 @@ void RemapTestsDualRK(const Amanzi::Explicit_TI::method_t& rk_method,
     }
     auto poly = dg.cell_basis(c).CalculatePolynomial(mesh0, c, order, data);
 
-    // const AmanziGeometry::Point& xg = cell_geometric_center(*mesh1, c);
     const AmanziGeometry::Point& xg = mesh1->cell_centroid(c);
     double err = poly.Value(xc0) - ana.SolutionExact(xg, 1.0);
 
@@ -574,7 +575,6 @@ void RemapTestsDualRK(const Amanzi::Explicit_TI::method_t& rk_method,
       int nfaces = faces.size();
 
       std::vector<AmanziGeometry::Point> xy(3);
-      // xy[0] = cell_geometric_center(*mesh0, c);
       xy[0] = mesh0->cell_centroid(c);
 
       mass1_c = 0.0;
@@ -679,10 +679,10 @@ TEST(REMAP_DUAL_2D) {
   */
 
   /*
-  double dT(0.01);
+  double dT(0.02);
   auto rk_method = Amanzi::Explicit_TI::tvd_3rd_order;
   std::string maps = "VEM";
-  int deform = 4;
+  int deform = 1;
   RemapTestsDualRK(rk_method, maps, "",  16, 16,0, dT,    deform);
   RemapTestsDualRK(rk_method, maps, "",  32, 32,0, dT/2,  deform);
   RemapTestsDualRK(rk_method, maps, "",  64, 64,0, dT/4,  deform);

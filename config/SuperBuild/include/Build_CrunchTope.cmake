@@ -42,8 +42,10 @@ set(CRUNCHTOPE_PATCH_COMMAND ${CMAKE_COMMAND} -P ${CRUNCHTOPE_cmake_patch})
 set(CRUNCHTOPE_CMAKE_ARGS 
       "-DCMAKE_INSTALL_PREFIX:FILEPATH=${TPL_INSTALL_PREFIX}"
       "-DBUILD_SHARED_LIBS:BOOL=${BUILD_SHARED_LIBS}"
+      "-DCMAKE_BUILD_TYPE:=${CMAKE_BUILD_TYPE}"
       "-DCMAKE_Fortran_FLAGS:STRING=-w -DALQUIMIA -Wall -fPIC -Wno-unused-variable -ffree-line-length-0 -O3"
-      "-DPETSC_DIR=${PETSC_DIR}"
+      "-DTPL_PETSC_LIBRARIES=NOT-USED-YET"
+      "-DTPL_PETSC_INCLUDE_DIRS=${PETSC_DIR}/include"
       "-DPETSC_ARCH=.")
 
 # --- Add external project build and tie to the CRUNCHTOPE build target
