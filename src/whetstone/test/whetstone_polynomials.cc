@@ -105,12 +105,14 @@ TEST(DG_TAYLOR_POLYNOMIALS) {
   CHECK_CLOSE(q4.Value(xyz), 0.0, 1e-10);
 
   // derivatives
-  VectorPolynomial grad;
-  grad.Gradient(q_orig);
-  std::cout << "Gradient of a polynomial:\n" << grad[0] << grad[1] << grad[2] << std::endl;
-
+  auto grad = Gradient(q_orig);
+  std::cout << "Gradient of a polynomial:\n" << grad << std::endl;
+ 
   Polynomial lp = q_orig.Laplacian();
   std::cout << "Laplacian of original polynomial:\n" << lp << std::endl;
+
+  q4 = Divergence(grad) - lp; 
+  CHECK_CLOSE(0.0, q4.NormMax(), 1e-12);
 
   // change origin of coordinate system
   AmanziGeometry::Point origin(0.5, 0.3, 0.2);

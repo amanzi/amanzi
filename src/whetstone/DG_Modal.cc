@@ -339,7 +339,6 @@ int DG_Modal::AdvectionMatrixPoly_(
   // sum-up integrals to the advection matrix
   int multi_index[3];
   Polynomial p(d_, order_), q(d_, order_);
-  VectorPolynomial pgrad;
 
   int nrows = p.size();
   A.Reshape(nrows, nrows);
@@ -353,8 +352,7 @@ int DG_Modal::AdvectionMatrixPoly_(
     Polynomial pp(d_, idx_p, 1.0);
     pp.set_origin(xc);
 
-    pgrad.Gradient(pp);
-    Polynomial tmp(pgrad * ucopy);
+    Polynomial tmp(Gradient(pp) * ucopy);
 
     for (auto mt = tmp.begin(); mt < tmp.end(); ++mt) {
       const int* idx_K = mt.multi_index();
@@ -404,7 +402,6 @@ int DG_Modal::AdvectionMatrixPiecewisePoly_(
 
   // allocate memory for matrix
   Polynomial p(d_, order_), q(d_, order_);
-  VectorPolynomial pgrad;
 
   int nrows = p.size();
   A.Reshape(nrows, nrows);
@@ -424,7 +421,7 @@ int DG_Modal::AdvectionMatrixPiecewisePoly_(
     Polynomial p0(d_, idx0, 1.0);
     p0.set_origin(xc);
 
-    pgrad.Gradient(p0);
+    auto pgrad = Gradient(p0);
 
     for (auto jt = q.begin(); jt < q.end(); ++jt) {
       const int* idx1 = jt.multi_index();
@@ -738,7 +735,7 @@ int DG_Modal::FaceMatrixJump(int f, const Tensor& K1, const Tensor& K2, DenseMat
     Polynomial p0(d_, idx0, 1.0);
     p0.set_origin(mesh_->cell_centroid(c1));
 
-    pgrad.Gradient(p0);
+    pgrad = Gradient(p0);
     p0 = pgrad * conormal1;
 
     for (auto jt = poly.begin(); jt < poly.end(); ++jt) {
@@ -758,7 +755,7 @@ int DG_Modal::FaceMatrixJump(int f, const Tensor& K1, const Tensor& K2, DenseMat
         Polynomial p1(d_, idx0, 1.0);
         p1.set_origin(mesh_->cell_centroid(c2));
 
-        pgrad.Gradient(p1);
+        pgrad = Gradient(p1);
         p1 = pgrad * conormal2;
 
         Polynomial q1(d_, idx1, 1.0);

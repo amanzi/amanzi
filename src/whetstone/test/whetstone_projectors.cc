@@ -432,8 +432,7 @@ TEST(L2GRADIENT_PROJECTORS_SQUARE_CR) {
     vf[n][0](3, 3) =-1.0;
     vf[n][0].ChangeOrigin(AmanziGeometry::Point(0.0, 0.0));
   }
-  VectorPolynomial grad;
-  grad.Gradient(vf[0][0]);
+  auto grad = Gradient(vf[0][0]);
 
   MFD3D_CrouzeixRaviart mfd(mesh);
   auto moments = std::make_shared<WhetStone::DenseVector>(3);

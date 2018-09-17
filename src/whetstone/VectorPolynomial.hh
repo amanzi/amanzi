@@ -88,9 +88,6 @@ class VectorPolynomial {
   // -- value
   DenseVector Value(const AmanziGeometry::Point& xp) const;
 
-  // -- gradient of a polynomial
-  void Gradient(const Polynomial p);
-
   // -- matrix-vector product A * v
   void Multiply(const std::vector<std::vector<Polynomial> >& A,
                 const VectorPolynomial& v, bool transpose);
@@ -161,6 +158,40 @@ class VectorPolynomial {
 };
 
 // non-member functions
+// -- gradient
+inline
+VectorPolynomial Gradient(const Polynomial p)
+{
+  int d = p.dimension();
+  int order = std::max(0, p.order() - 1);
+
+  VectorPolynomial poly(d, d, order);
+  poly.set_origin(p.origin());
+
+  int index[3];
+  for (auto it = p.begin(); it < p.end(); ++it) {
+    int k = it.MonomialSetOrder();
+    if (k > 0) {
+      const int* idx = it.multi_index();
+      int n = it.PolynomialPosition();
+      double val = p(n);
+
+      for (int i = 0; i < d; ++i) {
+        for (int j = 0; j < d; ++j) index[j] = idx[j];
+
+        if (index[i] > 0) {
+          index[i]--;
+          int m = MonomialSetPosition(d, index);
+          poly[i](k - 1, m) = val * idx[i];
+        }
+      }
+    }
+  }
+
+  return poly;
+}
+
+
 // --divergence
 inline
 Polynomial Divergence(const VectorPolynomial& vp) 

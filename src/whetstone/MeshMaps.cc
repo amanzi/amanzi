@@ -73,9 +73,8 @@ void MeshMaps::Jacobian(const VectorPolynomial& vc, MatrixPolynomial& J) const
   }
 
   // copy velocity gradients to Jacobian
-  VectorPolynomial tmp(d_, 0);
   for (int i = 0; i < nvc; ++i) {
-    tmp.Gradient(vc[i]);
+    auto tmp = Gradient(vc[i]);
     for (int j = 0; j < d_; ++j) {
       J[i][j] = tmp[j];
     }

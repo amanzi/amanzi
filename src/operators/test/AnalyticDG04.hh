@@ -120,7 +120,6 @@ class AnalyticDG04 : public AnalyticDGBase {
                             Amanzi::WhetStone::Polynomial& src) override {
     Amanzi::WhetStone::Polynomial sol;
     Amanzi::WhetStone::VectorPolynomial v;
-    Amanzi::WhetStone::VectorPolynomial grad(d_, 0);
 
     SolutionTaylor(p, 1.0, sol);
     VelocityTaylor(p, t, v); 
@@ -128,8 +127,7 @@ class AnalyticDG04 : public AnalyticDGBase {
     v[0].ChangeOrigin(p);
     v[1].ChangeOrigin(p);
 
-    grad.Gradient(sol); 
-    src = sol + (v * grad) * t;
+    src = sol + (v * Gradient(sol)) * t;
   }
 };
 

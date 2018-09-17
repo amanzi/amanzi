@@ -81,10 +81,8 @@ int MFD3D_CrouzeixRaviartSerendipity::H1consistency(
 
     double factor = basis.monomial_scales()[it.MonomialSetOrder()];
     Polynomial cmono(d_, index, factor);
-    VectorPolynomial grad, Kgrad;
 
-    grad.Gradient(cmono);
-    Kgrad = K * grad;
+    auto Kgrad = K * Gradient(cmono);
     Polynomial lap = Divergence(Kgrad);
 
     for (auto jt = lap.begin(); jt < lap.end(); ++jt) {

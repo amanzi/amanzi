@@ -179,8 +179,6 @@ void AdvectionSteady(int dim, std::string filename, int nx,
   // -- source term is calculated using method of manufactured solutions
   //    f = K p + div (v p) = K p + v . grad p + p div(v)
   WhetStone::Polynomial sol, src;
-  WhetStone::VectorPolynomial grad(dim, 0);
-
   WhetStone::Polynomial pc(dim, order);
   WhetStone::DenseVector data(pc.size());
   WhetStone::NumericalIntegration numi(mesh);
@@ -194,9 +192,8 @@ void AdvectionSteady(int dim, std::string filename, int nx,
     divv.ChangeOrigin(xc);
 
     ana.SolutionTaylor(xc, 0.0, sol);
-    grad.Gradient(sol); 
 
-    src = Kreac * sol + v * grad;
+    src = Kreac * sol + v * Gradient(sol);
     if (conservative_form) src += divv * sol;
 
     for (auto it = pc.begin(); it < pc.end(); ++it) {

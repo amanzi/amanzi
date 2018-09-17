@@ -80,44 +80,6 @@ DenseVector VectorPolynomial::Value(const AmanziGeometry::Point& xp) const
 
 
 /* ******************************************************************
-* Create object using gradient of a polynomial
-****************************************************************** */
-void VectorPolynomial::Gradient(const Polynomial p)
-{
-  int d = p.dimension();
-  int order = p.order();
-  order = std::max(0, order - 1);
-
-  polys_.resize(d);
-
-  for (int i = 0; i < d; ++i) {
-    polys_[i].Reshape(d, order, true);
-    polys_[i].set_origin(p.origin());
-  }
-
-  int index[3];
-  for (auto it = p.begin(); it < p.end(); ++it) {
-    int k = it.MonomialSetOrder();
-    if (k > 0) {
-      const int* idx = it.multi_index();
-      int n = it.PolynomialPosition();
-      double val = p(n);
-
-      for (int i = 0; i < d; ++i) {
-        for (int j = 0; j < d; ++j) index[j] = idx[j];
-
-        if (index[i] > 0) {
-          index[i]--;
-          int m = MonomialSetPosition(d, index);
-          polys_[i](k - 1, m) = val * idx[i];
-        }
-      }
-    }
-  }
-}
-
-
-/* ******************************************************************
 * Matrix-vector operations
 ***************************************************************** */
 void VectorPolynomial::Multiply(const std::vector<std::vector<Polynomial> >& A, 

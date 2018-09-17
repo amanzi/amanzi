@@ -93,8 +93,7 @@ int MFD3D_Lagrange::H1consistency(
     cmono.set_origin(xc);  
 
     // N and R: degrees of freedom on faces 
-    VectorPolynomial grad;
-    grad.Gradient(cmono);
+    auto grad = Gradient(cmono);
      
     polys[0] = &cmono;
 
@@ -127,7 +126,7 @@ int MFD3D_Lagrange::H1consistency(
       if (order_ == 1 && col > 0) {
         for (int j = 0; j < nfnodes; j++) {
           int v = face_nodes[j];
-          int pos = FindPosition(v, nodes);
+          int pos = std::distance(nodes.begin(), std::find(nodes.begin(), nodes.end(), v));
           R_(pos, col) += factor * conormal[col - 1] / 2;
         }
       } else if (col > 0) {
@@ -137,11 +136,11 @@ int MFD3D_Lagrange::H1consistency(
         Polynomial tmp = grad * conormal;
 
         v = face_nodes[0];
-        pos0 = FindPosition(v, nodes);
+        pos0 = std::distance(nodes.begin(), std::find(nodes.begin(), nodes.end(), v));
         mesh_->node_get_coordinates(v, &x0);
 
         v = face_nodes[1];
-        pos1 = FindPosition(v, nodes);
+        pos1 = std::distance(nodes.begin(), std::find(nodes.begin(), nodes.end(), v));
         mesh_->node_get_coordinates(v, &x1);
 
         if (order_ == 2) {
@@ -347,7 +346,7 @@ void MFD3D_Lagrange::ProjectorCell_(
         int v = face_nodes[j];
         mesh_->node_get_coordinates(v, &xv);
 
-        int pos = WhetStone::FindPosition(v, nodes);
+        int pos = std::distance(nodes.begin(), std::find(nodes.begin(), nodes.end(), v));
         vdof(pos) = vf[n][i].Value(xv);
       }
 

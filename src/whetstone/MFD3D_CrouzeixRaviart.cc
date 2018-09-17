@@ -152,8 +152,7 @@ int MFD3D_CrouzeixRaviart::H1consistencyHO_(
     cmono.set_origin(xc);  
 
     // N and R: degrees of freedom on faces 
-    VectorPolynomial grad;
-    grad.Gradient(cmono);
+    auto grad = Gradient(cmono);
      
     polys[0] = &cmono;
 
@@ -591,8 +590,7 @@ void MFD3D_CrouzeixRaviart::ProjectorGradientCell_(
 
         // -- cell contribution
         if (order_ > 1) {
-          VectorPolynomial grad(d_, d_);
-          grad.Gradient(cmono);
+          auto grad = Gradient(cmono);
 
           for (auto jt = grad[j].begin(); jt < grad[j].end(); ++jt) {
             int m = jt.MonomialSetOrder();

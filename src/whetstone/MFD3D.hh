@@ -73,15 +73,6 @@ class MFD3D : public virtual BilinearForm,
   int simplex_num_itrs_;
 };
 
-
-// non-member functions
-inline int FindPosition(int id, Entity_ID_List list) {
-  for (int i = 0; i < list.size(); i++) {
-    if (list[i] == id) return i;
-  }
-  return -1;
-}
-
 }  // namespace WhetStone
 }  // namespace Amanzi
 
