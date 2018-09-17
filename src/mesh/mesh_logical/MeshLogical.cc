@@ -47,7 +47,7 @@ MeshLogical::MeshLogical(const Epetra_MpiComm *comm,
   face_cell_ids_ = face_cell_ids;
 
   // Count number of cells referenced, and check that the number of cells
-  // references is equal to the largest id referenced (+1 for 0)
+  // referenced is equal to the largest id referenced (+1 for 0)
   int c_max = -1;
   std::set<int> cells;
   for (auto f : face_cell_ids_) {
@@ -76,7 +76,7 @@ MeshLogical::MeshLogical(const Epetra_MpiComm *comm,
   cell_face_dirs_.resize(num_cells);
   cell_face_bisectors_.resize(num_cells);
   int f_id=0;
-  for (const auto f : face_cell_ids_) {
+  for (auto & f : face_cell_ids_) {
     face_cell_ptype_[f_id].push_back(Parallel_type::OWNED);
     face_cell_ptype_[f_id].push_back(f.size() == 2 ?
             Parallel_type::OWNED : Parallel_type::PTYPE_UNKNOWN);
@@ -89,6 +89,8 @@ MeshLogical::MeshLogical(const Epetra_MpiComm *comm,
       cell_face_ids_[f[1]].push_back(f_id);
       cell_face_dirs_[f[1]].push_back(-1);
       cell_face_bisectors_[f[1]].push_back(face_normals_[f_id][1]);
+
+      f[1] = ~f[1];  // 1s complement as face normal points into cell
     }
 
     f_id++;
@@ -212,7 +214,7 @@ MeshLogical::MeshLogical(const Epetra_MpiComm *comm,
   cell_face_dirs_.resize(cell_volumes_.size());
   cell_face_bisectors_.resize(cell_volumes_.size());
   int f_id=0;
-  for (std::vector<Entity_ID_List>::const_iterator f=face_cell_ids_.begin();
+  for (std::vector<Entity_ID_List>::iterator f=face_cell_ids_.begin();
        f!=face_cell_ids_.end(); ++f) {
     face_cell_ptype_[f_id].push_back(Parallel_type::OWNED);
     face_cell_ptype_[f_id].push_back(f->size() == 2 ?
@@ -234,6 +236,8 @@ MeshLogical::MeshLogical(const Epetra_MpiComm *comm,
       AmanziGeometry::Point unit_normal(face_normals_[f_id][1]);
       unit_normal /= face_areas_[f_id];
       cell_face_bisectors_[(*f)[1]].push_back(unit_normal * face_cell_lengths[f_id][1]);
+
+      (*f)[1] = ~((*f)[1]);  // 1s complement as face is pointing into cell 1
     }
 
     f_id++;
@@ -842,17 +846,10 @@ MeshLogical::build_columns_() const {
 
 // Cache connectivity info.
 void
-MeshLogical::cache_cell2face_info_() const {
+MeshLogical::cache_cell_face_info_() const {
   Errors::Message mesg("DEVELOPER ERROR: cache should be created in finalize()");
   Exceptions::amanzi_throw(mesg);
 }
-
-void
-MeshLogical::cache_face2cell_info_() const {
-  Errors::Message mesg("DEVELOPER ERROR: cache should be created in finalize()");
-  Exceptions::amanzi_throw(mesg);
-}
-
 
 int
 MeshLogical::compute_cell_geometric_quantities_() const {

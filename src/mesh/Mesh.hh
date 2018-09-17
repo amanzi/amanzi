@@ -768,9 +768,7 @@ protected:
   //
   // Default implementations use _internal() methods below.
   virtual
-  void cache_cell2face_info_() const;
-  virtual
-  void cache_face2cell_info_() const;
+  void cache_cell_face_info_() const;
   virtual
   void cache_cell2edge_info_() const;
   virtual
@@ -877,8 +875,12 @@ protected:
   
   // -- topology
   mutable std::vector<Entity_ID_List> cell_face_ids_;
-  mutable std::vector< std::vector<int> > cell_face_dirs_;
+  mutable std::vector< std::vector<int> > cell_face_dirs_;  // 1 or -1
+
+  // 1s complement if face is pointing out of cell; cannot use 0 as
+  // cellid can be 0
   mutable std::vector<Entity_ID_List> face_cell_ids_;
+
   mutable std::vector< std::vector<Parallel_type> > face_cell_ptype_;
   mutable std::vector<Entity_ID_List> cell_edge_ids_;
   mutable std::vector< std::vector<int> > cell_2D_edge_dirs_;
