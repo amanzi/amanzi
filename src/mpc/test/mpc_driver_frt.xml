@@ -728,21 +728,21 @@
         <Parameter name="tolerance" type="double" value="0.00000e+00"/>
         <Parameter name="smoother sweeps" type="int" value="3"/>
         <Parameter name="cycle applications" type="int" value="5"/>
-        <Parameter name="strong threshold" type="double" value="5.00000000000000000e-01"/>
+        <Parameter name="strong threshold" type="double" value="0.5"/>
         <Parameter name="cycle type" type="int" value="1"/>
         <Parameter name="coarsen type" type="int" value="0"/>
         <Parameter name="verbosity" type="int" value="0"/>
-        <Parameter name="relaxation type down" type="int" value="3"/>
-        <Parameter name="relaxation type up" type="int" value="4"/>
+        <Parameter name="relaxation type down" type="int" value="13"/>
+        <Parameter name="relaxation type up" type="int" value="14"/>
       </ParameterList>
     </ParameterList>
     <ParameterList name="Block ILU">
       <Parameter name="preconditioner type" type="string" value="block ilu"/>
       <Parameter name="discretization method" type="string" value="mfd: optimized for sparsity"/>
       <ParameterList name="block ilu parameters">
-        <Parameter name="fact: relax value" type="double" value="1.00000e+00"/>
-        <Parameter name="fact: absolute threshold" type="double" value="0.00000e+00"/>
-        <Parameter name="fact: relative threshold" type="double" value="1.00000e+00"/>
+        <Parameter name="fact: relax value" type="double" value="1.0"/>
+        <Parameter name="fact: absolute threshold" type="double" value="0.0"/>
+        <Parameter name="fact: relative threshold" type="double" value="1.0"/>
         <Parameter name="fact: level-of-fill" type="int" value="0"/>
         <Parameter name="overlap" type="int" value="0"/>
         <Parameter name="schwarz: combine mode" type="string" value="Add"/>
