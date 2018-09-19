@@ -66,18 +66,6 @@ TEST(DG_MAP_DETERMINANT_CELL) {
   }
   mesh1->deform(nodeids, new_positions, false, &final_positions);
 
-  // collect geometric data
-  Teuchos::ParameterList plist;
-  plist.set<std::string>("method", "unknown")
-       .set<int>("method order", 1)
-       .set<std::string>("projector", "H1");
-  auto maps = std::make_shared<MeshMaps_VEM>(mesh0, mesh1, plist);
-
-  std::vector<WhetStone::VectorPolynomial> vf(nfaces);
-  for (int f = 0; f < nfaces; ++f) {
-    maps->VelocityFace(f, vf[f]);
-  }
-
   // cell-baced velocities and Jacobian matrices
   // test piecewise linear deformation (part II)
   VectorPolynomial det;
@@ -90,12 +78,20 @@ TEST(DG_MAP_DETERMINANT_CELL) {
   
   for (auto name : list) {
     double fac(0.5), volume = mesh1->cell_volume(cell);
-    for (int k = 1; k < 6; ++k) {
+    for (int k = 1; k < 4; ++k) {
+      // collect geometric data
+      Teuchos::ParameterList plist;
+      plist.set<std::string>("method", "Lagrange serendipity")
+           .set<int>("method order", k)
+           .set<std::string>("projector", "L2");
+      auto maps = std::make_shared<MeshMaps_VEM>(mesh0, mesh1, plist);
+
+      std::vector<WhetStone::VectorPolynomial> vf(nfaces);
+      for (int f = 0; f < nfaces; ++f) maps->VelocityFace(f, vf[f]);
+
+      // run differet discretization methods
       if (std::strcmp(name, "SerendipityPk") == 0) {
-        if (k > 3) continue;
-        MFD3D_LagrangeSerendipity mfd(mesh0);
-        mfd.set_order(k);
-        mfd.L2Cell(cell, vf, moments, uc);
+        maps->VelocityCell(cell, vf, uc);
       }
       maps->Jacobian(uc, J);
       maps->Determinant(1.0, J, det);

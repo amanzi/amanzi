@@ -64,14 +64,14 @@ class MFD3D_CrouzeixRaviart : public MFD3D {
 
   // -- projectors: base L2 and H1 projectors
   virtual void L2Cell(
-      int c, const std::vector<VectorPolynomial>& vf,
-      VectorPolynomial& moments, VectorPolynomial& uc) override {
+      int c, const std::vector<Polynomial>& vf,
+      Polynomial& moments, Polynomial& uc) override {
     ProjectorCell_HO_(c, vf, Type::L2, moments, uc);
   }
 
   virtual void H1Cell(
-      int c, const std::vector<VectorPolynomial>& vf,
-      VectorPolynomial& moments, VectorPolynomial& uc) override {
+      int c, const std::vector<Polynomial>& vf,
+      Polynomial& moments, Polynomial& uc) override {
     if (order_ == 1 && !use_always_ho_)
       ProjectorCell_LO_(c, vf, uc);
     else 
@@ -108,13 +108,13 @@ class MFD3D_CrouzeixRaviart : public MFD3D {
 
   // efficient implementation of low-order elliptic projectors
   void ProjectorCell_LO_(
-      int c, const std::vector<VectorPolynomial>& vf, VectorPolynomial& uc);
+      int c, const std::vector<Polynomial>& vf, Polynomial& uc);
 
   // generic code for multiple projectors
   void ProjectorCell_HO_(
-      int c, const std::vector<VectorPolynomial>& vf,
+      int c, const std::vector<Polynomial>& vf,
       const Projectors::Type type, 
-      VectorPolynomial& moments, VectorPolynomial& uc);
+      Polynomial& moments, Polynomial& uc);
 
   void ProjectorGradientCell_(
       int c, const std::vector<VectorPolynomial>& vf,

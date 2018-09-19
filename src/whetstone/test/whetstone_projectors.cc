@@ -50,82 +50,68 @@ TEST(PROJECTORS_SQUARE_CR) {
  
   int cell(1);
   AmanziGeometry::Point zero(2);
-  VectorPolynomial uc;
-  std::vector<VectorPolynomial> vf(4);
+  Polynomial uc;
+  std::vector<Polynomial> vf(4);
 
   // test zero cell deformation
   std::cout << "      subtest: ZERO deformation" << std::endl;
   for (int n = 0; n < 4; ++n) {
-    vf[n].resize(2);
-    for (int i = 0; i < 2; ++i) {
-      vf[n][i].Reshape(2, 1, true);
-    }
+    vf[n].Reshape(2, 1, true);
   }
 
   MFD3D_CrouzeixRaviart mfd(mesh);
-  VectorPolynomial moments(2, 2);  // trivial polynomials p=0
+  Polynomial moments(2, 0);  // trivial polynomials p=0
 
   mfd.set_order(2);
   mfd.H1Cell(cell, vf, moments, uc);
 
   uc.ChangeOrigin(zero);
-  CHECK(uc[0].NormMax() < 1e-12 && uc[1].NormMax() < 1e-12);
+  CHECK(uc.NormMax() < 1e-12);
 
   // test linear deformation
   std::cout << "      subtest: LINEAR deformation" << std::endl;
   for (int n = 0; n < 4; ++n) {
-    for (int i = 0; i < 2; ++i) {
-      vf[n][i](0, 0) = 1.0;
-      vf[n][i](1, 0) = 2.0;
-      vf[n][i](1, 1) = 3.0;
-    }
+    vf[n](0, 0) = 1.0;
+    vf[n](1, 0) = 2.0;
+    vf[n](1, 1) = 3.0;
   }
   
   mfd.set_order(1);
   mfd.H1Cell(cell, vf, moments, uc);
 
   uc.ChangeOrigin(zero);
-  std::cout << uc[0] << std::endl;
+  std::cout << uc << std::endl;
 
-  uc[0] -= vf[0][0];
-  uc[1] -= vf[0][1];
-  CHECK(uc[0].NormMax() < 1e-12 && uc[1].NormMax() < 1e-12);
+  uc -= vf[0];
+  CHECK(uc.NormMax() < 1e-12);
 
   for (int k = 2; k < 4; ++k) {
-    moments[0].Reshape(2, k - 2, true);
+    moments.Reshape(2, k - 2, true);
 
-    moments[0](0, 0) = 3.85;
+    moments(0, 0) = 3.85;
     if (k > 2) {
-      moments[0](1, 0) = 0.208893187146837;
-      moments[0](1, 1) = 0.263292454632993;
+      moments(1, 0) = 0.208893187146837;
+      moments(1, 1) = 0.263292454632993;
     }
-    moments[1] = moments[0];
 
     mfd.set_order(k);
     mfd.H1Cell(cell, vf, moments, uc);
 
     uc.ChangeOrigin(zero);
-    std::cout << uc[1] << std::endl;
+    std::cout << uc << std::endl;
 
-    uc[0] -= vf[0][0];
-    uc[1] -= vf[0][1];
-    CHECK(uc[0].NormMax() < 1e-11 && uc[1].NormMax() < 1e-11);
+    uc -= vf[0];
+    CHECK(uc.NormMax() < 1e-11);
   }
 
   // test re-location of the right-top corner to (2,3)
   std::cout << "      subtest: BILINEAR deformation" << std::endl;
   for (int n = 0; n < 4; ++n) vf[n].PutScalar(0.0);
-  vf[1][0](1, 1) = 0.8 / 1.1; 
-  vf[1][1](1, 1) = 1.9 / 1.1; 
+  vf[1](1, 1) = 0.8 / 1.1; 
+  vf[2](1, 0) = 0.8 / 1.2; 
 
-  vf[2][0](1, 0) = 0.8 / 1.2; 
-  vf[2][1](1, 0) = 1.9 / 1.2; 
-
-  moments[0].Reshape(2, 0, true);
-  moments[1].Reshape(2, 0, true);
-
-  moments[0](0, 0) = 0.2;
-  moments[1](0, 0) = 0.475;
+  moments.Reshape(2, 0, true);
+  moments(0) = 0.2;
 
   mfd.set_order(2);
   mfd.H1Cell(cell, vf, moments, uc);
@@ -134,8 +120,7 @@ TEST(PROJECTORS_SQUARE_CR) {
   std::cout << uc << std::endl;
 
   auto p = AmanziGeometry::Point(1.2, 1.1);
-  CHECK(fabs(uc[0].Value(p) - 0.8) < 1e-12 &&
-        fabs(uc[1].Value(p) - 1.9) < 1e-12);
+  CHECK(fabs(uc.Value(p) - 0.8) < 1e-12);
 
   delete comm;
 }
@@ -158,142 +143,125 @@ TEST(PROJECTORS_POLYGON_CR) {
  
   int cell(0), nfaces(5);
   AmanziGeometry::Point zero(2);
-  VectorPolynomial uc;
-  std::vector<VectorPolynomial> vf(nfaces);
+  Polynomial uc;
+  std::vector<Polynomial> vf(nfaces);
 
   // test linear deformation
   std::cout << "    subtest: LINEAR deformation" << std::endl;
   for (int n = 0; n < nfaces; ++n) {
-    vf[n].resize(2);
-    for (int i = 0; i < 2; ++i) {
-      vf[n][i].Reshape(2, 1, true);
-      vf[n][i](0, 0) = 1.0;
-      vf[n][i](1, 0) = 2.0;
-      vf[n][i](1, 1) = 3.0;
-    }
+    vf[n].Reshape(2, 1, true);
+    vf[n](0, 0) = 1.0;
+    vf[n](1, 0) = 2.0;
+    vf[n](1, 1) = 3.0;
   }
   
   MFD3D_CrouzeixRaviart mfd(mesh);
-  VectorPolynomial moments(2, 2);  // trivial polynomials p=0
+  Polynomial moments(2, 0);  // trivial polynomials p=0
 
   // -- old scheme
   mfd.set_order(1);
   mfd.H1Cell(cell, vf, moments, uc);
 
   uc.ChangeOrigin(zero);
-  std::cout << uc[0] << std::endl;
+  std::cout << uc << std::endl;
 
-  uc[0] -= vf[0][0];
-  uc[1] -= vf[0][1];
-  CHECK(uc[0].NormMax() < 1e-12 && uc[1].NormMax() < 1e-12);
+  uc -= vf[0];
+  CHECK(uc.NormMax() < 1e-12);
 
   // -- new scheme (k=1)
   mfd.set_use_always_ho(true);
   for (int k = 1; k < 4; ++k) {
-    if (k > 1) moments[0].Reshape(2, k - 2, true);
-    moments[0](0, 0) = 5.366066066066;
+    if (k > 1) moments.Reshape(2, k - 2, true);
+    moments(0, 0) = 5.366066066066;
     if (k > 2) {
-      moments[0](1, 0) = 0.45291015482207;
-      moments[0](1, 1) = 0.25739762151369;
+      moments(1, 0) = 0.45291015482207;
+      moments(1, 1) = 0.25739762151369;
     }
-    moments[1] = moments[0];
 
     mfd.set_order(k);
     mfd.H1Cell(cell, vf, moments, uc);
 
     uc.ChangeOrigin(zero);
-    std::cout << uc[0] << std::endl;
+    std::cout << uc << std::endl;
 
-    uc[0] -= vf[0][0];
-    uc[1] -= vf[0][1];
-    CHECK(uc[0].NormMax() < 1e-12 && uc[1].NormMax() < 1e-12);
+    uc -= vf[0];
+    CHECK(uc.NormMax() < 1e-12);
   }
 
   // test quadratic deformation
   std::cout << "    subtest: QUADRATIC deformation" << std::endl;
   for (int n = 0; n < nfaces; ++n) {
-    for (int i = 0; i < 2; ++i) {
-      vf[n][i].Reshape(2, 2, false);
-      vf[n][i](2, 0) = 4.0;
-      vf[n][i](2, 1) = 5.0;
-      vf[n][i](2, 2) = -4.0;
-    }
+    vf[n].Reshape(2, 2, false);
+    vf[n](2, 0) = 4.0;
+    vf[n](2, 1) = 5.0;
+    vf[n](2, 2) = -4.0;
   }
 
   for (int k = 2; k < 4; ++k) {
-    moments[0].Reshape(2, k - 2, true);
-    moments[0](0, 0) = 13.99442192192193;
+    moments.Reshape(2, k - 2, true);
+    moments(0, 0) = 13.99442192192193;
     if (k > 2) {
-      moments[0](1, 0) = 3.30733251805033;
-      moments[0](1, 1) = 0.32898471449271;
+      moments(1, 0) = 3.30733251805033;
+      moments(1, 1) = 0.32898471449271;
     }
-    moments[1] = moments[0];
 
     mfd.set_order(k);
     mfd.H1Cell(cell, vf, moments, uc);
 
     uc.ChangeOrigin(zero);
-    std::cout << uc[0] << std::endl;
+    std::cout << uc << std::endl;
 
-    uc[0] -= vf[0][0];
-    uc[1] -= vf[0][1];
-    CHECK(uc[0].NormMax() < 1e-12 && uc[1].NormMax() < 1e-12);
+    uc -= vf[0];
+    CHECK(uc.NormMax() < 1e-12);
   }
 
   // test cubic deformation
   std::cout << "    subtest: CUBIC deformation" << std::endl;
   for (int n = 0; n < nfaces; ++n) {
-    for (int i = 0; i < 2; ++i) {
-      vf[n][i].Reshape(2, 3, false);
-      vf[n][i](3, 0) = 2.0;
-      vf[n][i](3, 1) = -6.0;
-      vf[n][i](3, 2) = -6.0;
-      vf[n][i](3, 3) = 2.0;
-    }
+    vf[n].Reshape(2, 3, false);
+    vf[n](3, 0) = 2.0;
+    vf[n](3, 1) = -6.0;
+    vf[n](3, 2) = -6.0;
+    vf[n](3, 3) = 2.0;
   }
 
   for (int k = 3; k < 4; ++k) {
-    moments[0].Reshape(2, k - 2, true);
-    moments[0](0, 0) = 9.72312102102103;
+    moments.Reshape(2, k - 2, true);
+    moments(0, 0) = 9.72312102102103;
     if (k > 2) {
-      moments[0](1, 0) = 2.60365194630611;
-      moments[0](1, 1) =-0.95827249608879;
+      moments(1, 0) = 2.60365194630611;
+      moments(1, 1) =-0.95827249608879;
     }
-    moments[1] = moments[0];
 
     mfd.set_order(k);
     mfd.H1Cell(cell, vf, moments, uc);
 
     uc.ChangeOrigin(zero);
-    std::cout << vf[0][0] << std::endl;
-    std::cout << uc[0] << std::endl;
+    std::cout << vf[0] << std::endl;
+    std::cout << uc << std::endl;
 
-    uc[0] -= vf[0][0];
-    uc[1] -= vf[0][1];
-    std::cout << uc[0].NormMax() << " " << uc[1].NormMax() << std::endl;
-    CHECK(uc[0].NormMax() < 1e-12 && uc[1].NormMax() < 1e-12);
+    uc -= vf[0];
+    std::cout << uc.NormMax() << std::endl;
+    CHECK(uc.NormMax() < 1e-12);
   }
 
   // test trace compatibility between function and its projecton (k < 3 only!)
   std::cout << "    subtest: trace compatibility" << std::endl;
   for (int n = 0; n < nfaces; ++n) {
-    for (int i = 0; i < 2; ++i) {
-      vf[n][i].Reshape(2, 2, false);
-      vf[n][i](2, 0) = 4.0;
-      vf[n][i](2, 1) = 5.0;
-      vf[n][i](2, 2) = 6.0;
-    }
+    vf[n].Reshape(2, 2, false);
+    vf[n](2, 0) = 4.0;
+    vf[n](2, 1) = 5.0;
+    vf[n](2, 2) = 6.0;
   }
 
-  moments[0].Reshape(2, 0, true);
-  moments[0](0, 0) = 19.88406156156157;
-  moments[1] = moments[0];
+  moments.Reshape(2, 0, true);
+  moments(0) = 19.88406156156157;
 
   mfd.set_order(2);
   mfd.H1Cell(cell, vf, moments, uc);
 
   uc.ChangeOrigin(zero);
-  std::cout << uc[0] << std::endl;
+  std::cout << uc << std::endl;
 
   int dir;
   double val1(0.0), valx(0.0);
@@ -305,7 +273,7 @@ TEST(PROJECTORS_POLYGON_CR) {
 
     std::vector<const PolynomialBase*> polys;
 
-    Polynomial tmp = vf[n][0] - uc[0];
+    Polynomial tmp = vf[n] - uc;
     polys.push_back(&tmp);
     val1 += factor * numi.IntegratePolynomialsFace(n, polys);
 
@@ -322,24 +290,23 @@ TEST(PROJECTORS_POLYGON_CR) {
   // preservation of moments (reusing previous boundary functions)
   std::cout << "    subtest: verify calculated moments" << std::endl;
   for (int k = 2; k < 4; ++k) {
-    moments[0].Reshape(2, k - 2);
-    moments[1].Reshape(2, k - 2);
+    moments.Reshape(2, k - 2);
 
-    for (auto it = moments[0].begin(); it < moments[0].end(); ++it) {
+    for (auto it = moments.begin(); it < moments.end(); ++it) {
       int m = it.MonomialSetOrder();
       int i = it.MonomialSetPosition();
       int n = it.PolynomialPosition();
-      moments[0](m, i) = 1.0 + n;
+      moments(m, i) = 1.0 + n;
     }
 
     mfd.set_order(k);
     mfd.H1Cell(cell, vf, moments, uc);
 
-    for (auto it = moments[0].begin(); it < moments[0].end(); ++it) {
+    for (auto it = moments.begin(); it < moments.end(); ++it) {
       Polynomial mono(2, it.multi_index(), 1.0);
       mono.set_origin(mesh->cell_centroid(cell));
    
-      Polynomial poly(uc[0]);
+      Polynomial poly(uc);
       poly.ChangeOrigin(mesh->cell_centroid(cell));
       poly *= mono;
 
@@ -370,34 +337,30 @@ TEST(L2_PROJECTORS_SQUARE_CR) {
  
   int cell(1);
   AmanziGeometry::Point zero(2);
-  VectorPolynomial uc;
-  std::vector<VectorPolynomial> vf(4);
+  Polynomial uc;
+  std::vector<Polynomial> vf(4);
 
   // test quartic deformation
   std::cout << "    subtest: QUARTIC deformation" << std::endl;
   for (int n = 0; n < 4; ++n) {
-    vf[n].resize(2);
-    for (int i = 0; i < 2; ++i) {
-      vf[n][i].Reshape(2, 4, true);
-      vf[n][i].set_origin(mesh->cell_centroid(cell));
-      vf[n][i](4, 1) = 1.0;
-      vf[n][i].ChangeOrigin(AmanziGeometry::Point(0.0, 0.0));
-    }
+    vf[n].Reshape(2, 4, true);
+    vf[n].set_origin(mesh->cell_centroid(cell));
+    vf[n](4, 1) = 1.0;
+    vf[n].ChangeOrigin(AmanziGeometry::Point(0.0, 0.0));
   }
 
   MFD3D_CrouzeixRaviart mfd(mesh);
-  VectorPolynomial moments(2, 2, 2);
-  moments[0](2, 1) = 1.0 / 60;
-  moments[1](2, 1) = 1.0 / 60;
+  Polynomial moments(2, 2);
+  moments(2, 1) = 1.0 / 60;
 
   mfd.set_order(4);
   mfd.H1Cell(cell, vf, moments, uc);
 
   uc.ChangeOrigin(zero);
-  std::cout << uc[0] << std::endl;
+  std::cout << uc << std::endl;
 
-  uc[0] -= vf[0][0];
-  CHECK(uc[0].NormMax() < 1e-12);
+  uc -= vf[0];
+  CHECK(uc.NormMax() < 1e-12);
 
   delete comm;
 }
@@ -476,64 +439,48 @@ TEST(PROJECTORS_SQUARE_PK) {
  
   int cell(1);
   AmanziGeometry::Point zero(2);
-  VectorPolynomial uc, uc2;
-  std::vector<VectorPolynomial> vf(4);
+  Polynomial uc, uc2;
+  std::vector<Polynomial> vf(4);
 
   // test zero cell deformation
-  for (int n = 0; n < 4; ++n) {
-    vf[n].resize(2);
-    for (int i = 0; i < 2; ++i) {
-      vf[n][i].Reshape(2, 1, true);
-    }
-  }
+  for (int n = 0; n < 4; ++n) vf[n].Reshape(2, 1, true);
 
   MFD3D_Lagrange mfd(mesh);
   MFD3D_CrouzeixRaviart mfd_cr(mesh);
-  VectorPolynomial moments(2, 2);
+  Polynomial moments(2, 0);
 
   // test linear deformation
   for (int n = 0; n < 4; ++n) {
-    for (int i = 0; i < 2; ++i) {
-      vf[n][i](0, 0) = 1.0;
-      vf[n][i](1, 0) = 2.0;
-      vf[n][i](1, 1) = 3.0;
-    }
+    vf[n](0, 0) = 1.0;
+    vf[n](1, 0) = 2.0;
+    vf[n](1, 1) = 3.0;
   }
   
   for (int k = 1; k < 4; ++k) {
-    if (k > 1) moments[0].Reshape(2, k - 2, true);
-    moments[0](0, 0) = 3.85;
+    if (k > 1) moments.Reshape(2, k - 2, true);
+    moments(0, 0) = 3.85;
     if (k > 2) {
-      moments[0](1, 0) = 0.20889318714684;
-      moments[0](1, 1) = 0.26329245463299;
+      moments(1, 0) = 0.20889318714684;
+      moments(1, 1) = 0.26329245463299;
     }
-    moments[1] = moments[0];
 
     mfd.set_order(k);
     mfd.H1Cell(cell, vf, moments, uc);  
 
     uc.ChangeOrigin(zero);
-    for (int i = 0; i < 2; ++i) {
-      uc[i] -= vf[0][i];
-      CHECK(uc[i].NormMax() < 1e-12);
-    }
+    uc -= vf[0];
+    CHECK(uc.NormMax() < 1e-12);
   }
 
   // test re-location of the right-top corner to (2,3)
   // cross-check with the CR projectors
   std::cout << "Test: HO Lagrange projectors for square (bilinear deformation)" << std::endl;
   for (int n = 0; n < 4; ++n) vf[n].PutScalar(0.0);
-  vf[1][0](1, 1) = 0.8 / 1.1; 
-  vf[1][1](1, 1) = 1.9 / 1.1; 
+  vf[1](1, 1) = 0.8 / 1.1; 
+  vf[2](1, 0) = 0.8 / 1.2; 
 
-  vf[2][0](1, 0) = 0.8 / 1.2; 
-  vf[2][1](1, 0) = 1.9 / 1.2; 
-
-  moments[0].Reshape(2, 0, true);
-  moments[1].Reshape(2, 0, true);
-
-  moments[0](0, 0) = 0.2;
-  moments[1](0, 0) = 0.475;
+  moments.Reshape(2, 0, true);
+  moments(0) = 0.2;
 
   for (int k = 1; k < 3; ++k) { 
     mfd.set_order(k);
@@ -544,22 +491,19 @@ TEST(PROJECTORS_SQUARE_PK) {
 
     uc.ChangeOrigin(zero);
     uc2.ChangeOrigin(zero);
-    for (int i = 0; i < 2; ++i) {
-      uc2[i] -= uc[i];
-      CHECK(uc2[i].NormMax() < 1e-12);
-    }
+    uc2 -= uc;
+    CHECK(uc2.NormMax() < 1e-12);
 
     // Compare H1 and L2 projectors
     mfd.L2Cell(cell, vf, moments, uc2);
 
     uc2.ChangeOrigin(zero);
-    uc2[0] -= uc[0];
-    CHECK(uc2[0].NormMax() < 1e-12);
+    uc2 -= uc;
+    CHECK(uc2.NormMax() < 1e-12);
   }
 
   auto p = AmanziGeometry::Point(1.2, 1.1);
-  CHECK(fabs(uc[0].Value(p) - 0.8) < 1e-12 &&
-        fabs(uc[1].Value(p) - 1.9) < 1e-12);
+  CHECK(fabs(uc.Value(p) - 0.8) < 1e-12);
 
   delete comm;
 }
@@ -582,93 +526,81 @@ TEST(PROJECTORS_POLYGON_PK) {
  
   int cell(0), nfaces(5);
   AmanziGeometry::Point zero(2);
-  VectorPolynomial uc, uc2;
-  std::vector<VectorPolynomial> vf(nfaces);
+  Polynomial uc, uc2;
+  std::vector<Polynomial> vf(nfaces);
 
   MFD3D_Lagrange mfd(mesh);
   MFD3D_CrouzeixRaviart mfd_cr(mesh);
-  VectorPolynomial moments(2, 2);
+  Polynomial moments(2, 0);
 
   // test globally linear deformation
   for (int n = 0; n < nfaces; ++n) {
-    vf[n].resize(2);
-    for (int i = 0; i < 2; ++i) {
-      vf[n][i].Reshape(2, 1, true);
-      vf[n][i](0, 0) = 1.0;
-      vf[n][i](1, 0) = 2.0;
-      vf[n][i](1, 1) = 3.0;
-    }
+    vf[n].Reshape(2, 1, true);
+    vf[n](0, 0) = 1.0;
+    vf[n](1, 0) = 2.0;
+    vf[n](1, 1) = 3.0;
   }
   
   for (int k = 1; k < 4; ++k) {
-    if (k > 1) moments[0].Reshape(2, k - 2, true);
-    moments[0](0, 0) = 5.36606606606607;
+    if (k > 1) moments.Reshape(2, k - 2, true);
+    moments(0, 0) = 5.36606606606607;
     if (k > 2) {
-      moments[0](1, 0) = 0.45291015482207;
-      moments[0](1, 1) = 0.25739762151369;
+      moments(1, 0) = 0.45291015482207;
+      moments(1, 1) = 0.25739762151369;
     }
-    moments[1] = moments[0];
 
     mfd.set_order(k);
     mfd.H1Cell(cell, vf, moments, uc);
 
     uc.ChangeOrigin(zero);
-    std::cout << uc[0] << std::endl;
+    std::cout << uc << std::endl;
 
-    uc[0] -= vf[0][0];
-    uc[1] -= vf[0][1];
-    CHECK(uc[0].NormMax() < 1e-12 && uc[1].NormMax() < 1e-12);
+    uc -= vf[0];
+    CHECK(uc.NormMax() < 1e-12);
   }
 
   // test globally quadratic deformation
   std::cout << "\nTest: HO Lagrange for pentagon (quadratic deformation)" << std::endl;
   for (int n = 0; n < nfaces; ++n) {
-    for (int i = 0; i < 2; ++i) {
-      vf[n][i].Reshape(2, 2, false);
-      vf[n][i](2, 0) = 4.0;
-      vf[n][i](2, 1) = 5.0;
-      vf[n][i](2, 2) = -4.0;
-    }
+    vf[n].Reshape(2, 2, false);
+    vf[n](2, 0) = 4.0;
+    vf[n](2, 1) = 5.0;
+    vf[n](2, 2) = -4.0;
   }
 
   for (int k = 2; k < 4; ++k) {
-    moments[0].Reshape(2, k - 2, true);
-    moments[0](0, 0) = 13.99442192192193;
+    moments.Reshape(2, k - 2, true);
+    moments(0, 0) = 13.99442192192193;
     if (k > 2) {
-      moments[0](1, 0) = 3.30733251805033;
-      moments[0](1, 1) = 0.32898471449271;
+      moments(1, 0) = 3.30733251805033;
+      moments(1, 1) = 0.32898471449271;
     }
-    moments[1] = moments[0];
 
     mfd.set_order(k);
     mfd.H1Cell(cell, vf, moments, uc);
 
     uc.ChangeOrigin(zero);
-    std::cout << uc[0] << std::endl;
-    uc[0] -= vf[0][0];
-    uc[1] -= vf[0][1];
-    CHECK(uc[0].NormMax() < 1e-10 && uc[1].NormMax() < 1e-10);
+    std::cout << uc << std::endl;
+    uc -= vf[0];
+    CHECK(uc.NormMax() < 1e-10);
   }
 
   // test trace compatibility between function and its projecton (k < 3 only!)
   std::cout << "\nTest: HO Lagrange projectors for pentagon (trace compatibility)" << std::endl;
   for (int n = 0; n < nfaces; ++n) {
-    for (int i = 0; i < 2; ++i) {
-      vf[n][i].Reshape(2, 2, false);
-      vf[n][i](2, 0) = 4.0;
-      vf[n][i](2, 1) = 5.0;
-      vf[n][i](2, 2) = 6.0;
-    }
+    vf[n].Reshape(2, 2, false);
+    vf[n](2, 0) = 4.0;
+    vf[n](2, 1) = 5.0;
+    vf[n](2, 2) = 6.0;
   }
-  moments[0].Reshape(2, 0, true);
-  moments[0](0, 0) = 19.88406156156157;
-  moments[1] = moments[0];
+  moments.Reshape(2, 0, true);
+  moments(0) = 19.88406156156157;
 
   mfd.set_order(2);
   mfd.H1Cell(cell, vf, moments, uc);
 
   uc.ChangeOrigin(zero);
-  std::cout << uc[0] << std::endl;
+  std::cout << uc << std::endl;
 
   int dir;
   double val1(0.0), valx(0.0);
@@ -680,7 +612,7 @@ TEST(PROJECTORS_POLYGON_PK) {
 
     std::vector<const PolynomialBase*> polys;
 
-    Polynomial tmp = vf[n][0] - uc[0];
+    Polynomial tmp = vf[n] - uc;
     polys.push_back(&tmp);
     val1 += factor * numi.IntegratePolynomialsFace(n, polys);
 
@@ -711,23 +643,20 @@ TEST(PROJECTORS_POLYGON_PK) {
     tau = x2 - x1;
     tau /= AmanziGeometry::L22(tau);
 
-    for (int i = 0; i < 2; ++i) {
-      vf[n][i].Reshape(2, 1);
-      vf[n][i](0, 0) = vv[n][i] * (x2 * tau) - vv[m][i] * (x1 * tau);
+    vf[n].Reshape(2, 1);
+    vf[n](0, 0) = vv[n][0] * (x2 * tau) - vv[m][0] * (x1 * tau);
 
-      vf[n][i](1, 0) = (vv[m][i] - vv[n][i]) * tau[0];
-      vf[n][i](1, 1) = (vv[m][i] - vv[n][i]) * tau[1];
-    }
+    vf[n](1, 0) = (vv[m][0] - vv[n][0]) * tau[0];
+    vf[n](1, 1) = (vv[m][0] - vv[n][0]) * tau[1];
   }
   
   for (int k = 1; k < 4; ++k) {
-    if (k > 1) moments[0].Reshape(2, k - 2, true);
-    moments[0](0, 0) = 0.1;
+    if (k > 1) moments.Reshape(2, k - 2, true);
+    moments(0, 0) = 0.1;
     if (k > 2) {
-      moments[0](1, 0) = 0.2;
-      moments[0](1, 1) = 0.3;
+      moments(1, 0) = 0.2;
+      moments(1, 1) = 0.3;
     }
-    moments[1] = moments[0];
 
     mfd.set_order(k);
     mfd.H1Cell(cell, vf, moments, uc);
@@ -738,31 +667,30 @@ TEST(PROJECTORS_POLYGON_PK) {
     uc.ChangeOrigin(zero);
     uc2.ChangeOrigin(zero);
     uc2 -= uc;
-    if (k < 3) CHECK(uc2[0].NormMax() < 1e-12);
+    if (k < 3) CHECK(uc2.NormMax() < 1e-12);
 
     mfd.L2Cell(cell, vf, moments, uc2);
 
     uc2.ChangeOrigin(zero);
     uc2 -= uc;
-    if (k < 3) CHECK(uc2[0].NormMax() < 1e-12);
-    if (k > 2) std::cout << " moments: " << moments[0](0, 0) << " " 
-                                         << moments[0](1, 0) << " " << moments[0](1, 1) << std::endl;
+    if (k < 3) CHECK(uc2.NormMax() < 1e-12);
+    if (k > 2) std::cout << " moments: " << moments(0, 0) << " " 
+                                         << moments(1, 0) << " " << moments(1, 1) << std::endl;
   }
 
   // preservation of moments (reusing previous boundary functions)
   std::cout << "\nTest: HO Lagrange projectors for pentagon (verify moments)" << std::endl;
   for (int k = 2; k < 4; ++k) {
-    moments[0].Reshape(2, k - 2);
-    moments[0].PutScalar(1.0);
-    moments[1] = moments[0];
+    moments.Reshape(2, k - 2);
+    moments.PutScalar(1.0);
 
     mfd.set_order(k);
     mfd.H1Cell(cell, vf, moments, uc);
-    double tmp = numi.IntegratePolynomialCell(cell, uc[0]) / mesh->cell_volume(cell);
+    double tmp = numi.IntegratePolynomialCell(cell, uc) / mesh->cell_volume(cell);
     CHECK_CLOSE(1.0, tmp, 1e-12);
 
     mfd.L2Cell(cell, vf, moments, uc);
-    tmp = numi.IntegratePolynomialCell(cell, uc[0]) / mesh->cell_volume(cell);
+    tmp = numi.IntegratePolynomialCell(cell, uc) / mesh->cell_volume(cell);
     CHECK_CLOSE(1.0, tmp, 1e-12);
   }
 
@@ -787,63 +715,57 @@ void SerendipityProjectorPolygon() {
  
   int cell(0), nfaces(5);
   AmanziGeometry::Point zero(2);
-  VectorPolynomial uc, uc2;
-  std::vector<VectorPolynomial> vf(nfaces);
+  Polynomial uc, uc2;
+  std::vector<Polynomial> vf(nfaces);
 
   Serendipity mfd(mesh);
-  VectorPolynomial moments(2, 2);
+  Polynomial moments(2, 0);
 
   // test globally linear deformation
   for (int n = 0; n < nfaces; ++n) {
-    vf[n].resize(2);
-    for (int i = 0; i < 2; ++i) {
-      vf[n][i].Reshape(2, 1, true);
-      vf[n][i](0, 0) = 1.0;
-      vf[n][i](1, 0) = 2.0;
-      vf[n][i](1, 1) = 3.0;
-    }
+    vf[n].Reshape(2, 1, true);
+    vf[n](0, 0) = 1.0;
+    vf[n](1, 0) = 2.0;
+    vf[n](1, 1) = 3.0;
   }
   
   for (int k = 1; k < 4; ++k) {
     mfd.set_order(k);
     mfd.L2Cell(cell, vf, moments, uc);
     uc.ChangeOrigin(zero);
-    std::cout << uc[0] << std::endl;
+    std::cout << uc << std::endl;
 
     uc -= vf[0];
-    CHECK(uc[0].NormMax() < 1e-10 && uc[1].NormMax() < 1e-10);
+    CHECK(uc.NormMax() < 1e-10);
 
     mfd.H1Cell(cell, vf, moments, uc);
     uc.ChangeOrigin(zero);
     uc -= vf[0];
-    CHECK(uc[0].NormMax() < 2e-10 && uc[1].NormMax() < 2e-10);
+    CHECK(uc.NormMax() < 2e-10);
   }
 
   // test globally quadratic deformation
   std::cout << "\nTest: HO Serendipity Lagrange projectors for pentagon (quadratic deformation)" << std::endl;
   for (int n = 0; n < nfaces; ++n) {
-    for (int i = 0; i < 2; ++i) {
-      vf[n][i].Reshape(2, 2, false);
-      vf[n][i](2, 0) = 4.0;
-      vf[n][i](2, 1) = 5.0;
-      vf[n][i](2, 2) = 6.0 + i;
-    }
+    vf[n].Reshape(2, 2, false);
+    vf[n](2, 0) = 4.0;
+    vf[n](2, 1) = 5.0;
+    vf[n](2, 2) = 6.0;
   }
 
   for (int k = 2; k < 4; ++k) {
     mfd.set_order(k);
     mfd.L2Cell(cell, vf, moments, uc);
     uc.ChangeOrigin(zero);
-    std::cout << uc[0] << std::endl;
+    std::cout << uc << std::endl;
 
-    uc[0] -= vf[0][0];
-    uc[1] -= vf[0][1];
-    CHECK(uc[0].NormMax() < 4e-10 && uc[1].NormMax() < 2e-10);
+    uc -= vf[0];
+    CHECK(uc.NormMax() < 4e-10);
 
     mfd.H1Cell(cell, vf, moments, uc);
     uc.ChangeOrigin(zero);
     uc -= vf[0];
-    CHECK(uc[0].NormMax() < 5e-10 && uc[1].NormMax() < 5e-10);
+    CHECK(uc.NormMax() < 5e-10);
   }
 
   // test piecewise linear deformation (part I)
@@ -863,30 +785,28 @@ void SerendipityProjectorPolygon() {
     tau = x2 - x1;
     tau /= AmanziGeometry::L22(tau);
 
-    for (int i = 0; i < 2; ++i) {
-      vf[n][i].Reshape(2, 1);
-      vf[n][i](0, 0) = vv[n][i] * (x2 * tau) - vv[m][i] * (x1 * tau);
+    vf[n].Reshape(2, 1);
+    vf[n](0, 0) = vv[n][0] * (x2 * tau) - vv[m][0] * (x1 * tau);
 
-      vf[n][i](1, 0) = (vv[m][i] - vv[n][i]) * tau[0];
-      vf[n][i](1, 1) = (vv[m][i] - vv[n][i]) * tau[1];
-    }
+    vf[n](1, 0) = (vv[m][0] - vv[n][0]) * tau[0];
+    vf[n](1, 1) = (vv[m][0] - vv[n][0]) * tau[1];
   }
   
   for (int k = 1; k < 4; ++k) {
     mfd.set_order(k);
     mfd.L2Cell(cell, vf, moments, uc);
     uc.ChangeOrigin(zero);
-    std::cout << "order=" << k << " " << uc[0] << std::endl;
+    std::cout << "order=" << k << " " << uc << std::endl;
 
     mfd.L2Cell_LeastSquare(cell, vf, moments, uc2);
     uc2.ChangeOrigin(zero);
     uc2 -= uc;
-    CHECK(uc2[0].NormMax() < 1e-11 && uc2[1].NormMax() < 1e-11);
+    CHECK(uc2.NormMax() < 1e-11);
 
     mfd.H1Cell(cell, vf, moments, uc2);
     uc2.ChangeOrigin(zero);
     uc2 -= uc;
-    CHECK(uc2[0].NormMax() < 2e-2 && uc2[1].NormMax() < 4e-2);
+    CHECK(uc2.NormMax() < 2e-2);
   }
 
   delete comm;

@@ -277,9 +277,9 @@ int MFD3D_Lagrange::StiffnessMatrix(
 * Generic projector on space of polynomials of order k in cell c.
 ****************************************************************** */
 void MFD3D_Lagrange::ProjectorCell_(
-    int c, const std::vector<VectorPolynomial>& vf, 
+    int c, const std::vector<Polynomial>& vf, 
     const Projectors::Type type,
-    VectorPolynomial& moments, VectorPolynomial& uc) 
+    Polynomial& moments, Polynomial& uc) 
 {
   AMANZI_ASSERT(d_ == 2);
 
@@ -313,13 +313,6 @@ void MFD3D_Lagrange::ProjectorCell_(
   int ndof_f(nnodes + nfaces * ndf);
   int ndof_c(ndof - ndof_f);
 
-  // create zero vector polynomial
-  int dim = vf[0].size();
-  uc.resize(dim);
-  for (int i = 0; i < dim; ++i) { 
-    uc[i].Reshape(d_, order_, true);
-  }
-
   DenseVector vdof(ndof);
   std::vector<const PolynomialBase*> polys(2);
   NumericalIntegration numi(mesh_);
@@ -331,124 +324,122 @@ void MFD3D_Lagrange::ProjectorCell_(
   AmanziGeometry::Point xv(d_);
   std::vector<AmanziGeometry::Point> tau(d_ - 1);
 
-  for (int i = 0; i < dim; ++i) {
-    int row(nnodes);
+  int row(nnodes);
 
-    // calculate DOFs on boundary
-    for (int n = 0; n < nfaces; ++n) {
-      int f = faces[n];
+  // calculate DOFs on boundary
+  for (int n = 0; n < nfaces; ++n) {
+    int f = faces[n];
 
-      Entity_ID_List face_nodes;
-      mesh_->face_get_nodes(f, &face_nodes);
-      int nfnodes = face_nodes.size();
+    Entity_ID_List face_nodes;
+    mesh_->face_get_nodes(f, &face_nodes);
+    int nfnodes = face_nodes.size();
 
-      for (int j = 0; j < nfnodes; j++) {
-        int v = face_nodes[j];
-        mesh_->node_get_coordinates(v, &xv);
+    for (int j = 0; j < nfnodes; j++) {
+      int v = face_nodes[j];
+      mesh_->node_get_coordinates(v, &xv);
 
-        int pos = std::distance(nodes.begin(), std::find(nodes.begin(), nodes.end(), v));
-        vdof(pos) = vf[n][i].Value(xv);
-      }
-
-      if (order_ > 1) { 
-        const AmanziGeometry::Point& xf = mesh_->face_centroid(f); 
-        double area = mesh_->face_area(f);
-
-        // local coordinate system with origin at face centroid
-        const AmanziGeometry::Point& normal = mesh_->face_normal(f);
-        FaceCoordinateSystem(normal, tau);
-
-        polys[0] = &(vf[n][i]);
-
-        for (auto it = pf.begin(); it < pf.end(); ++it) {
-          const int* index = it.multi_index();
-          Polynomial fmono(d_ - 1, index, 1.0);
-          fmono.InverseChangeCoordinates(xf, tau);  
-
-          polys[1] = &fmono;
-
-          vdof(row) = numi.IntegratePolynomialsFace(f, polys) / area;
-          row++;
-        }
-      }
+      int pos = std::distance(nodes.begin(), std::find(nodes.begin(), nodes.end(), v));
+      vdof(pos) = vf[n].Value(xv);
     }
 
-    // DOFs inside cell: copy moments from input data
-    if (ndof_c > 0) {
-      const DenseVector& v3 = moments[i].coefs();
-      AMANZI_ASSERT(ndof_c == v3.NumRows());
+    if (order_ > 1) { 
+      const AmanziGeometry::Point& xf = mesh_->face_centroid(f); 
+      double area = mesh_->face_area(f);
 
-      for (int n = 0; n < ndof_c; ++n) {
-        vdof(row + n) = v3(n);
+      // local coordinate system with origin at face centroid
+      const AmanziGeometry::Point& normal = mesh_->face_normal(f);
+      FaceCoordinateSystem(normal, tau);
+
+      polys[0] = &(vf[n]);
+
+      for (auto it = pf.begin(); it < pf.end(); ++it) {
+        const int* index = it.multi_index();
+        Polynomial fmono(d_ - 1, index, 1.0);
+        fmono.InverseChangeCoordinates(xf, tau);  
+
+        polys[1] = &fmono;
+
+        vdof(row) = numi.IntegratePolynomialsFace(f, polys) / area;
+        row++;
       }
     }
-
-    // calculate polynomial coefficients (in vector v5)
-    DenseVector v4(nd), v5(nd);
-    R_.Multiply(vdof, v4, true);
-    G_.Multiply(v4, v5, false);
-
-    uc[i] = basis.CalculatePolynomial(mesh_, c, order_, v5);
-
-    // calculate the constant value for elliptic projector
-    if (order_ == 1) {
-      AmanziGeometry::Point grad(d_), zero(d_);
-      for (int j = 0; j < d_; ++j) {
-        grad[j] = uc[i](1, j);
-      }
-    
-      double a1(0.0), a2(0.0), tmp;
-      for (int n = 0; n < nfaces; ++n) {  
-        int f = faces[n];
-        const AmanziGeometry::Point& xf = mesh_->face_centroid(f);
-        double area = mesh_->face_area(f);
-       
-        tmp = vf[n][i].Value(xf) - grad * (xf - xc);
-        a1 += tmp * area;
-        a2 += area;
-      }
-
-      uc[i](0) = a1 / a2;
-    } else if (order_ >= 2) {
-      v4 = integrals_.poly().coefs();
-      basis.ChangeBasisMyToNatural(v4);
-      v4.Reshape(nd);
-      uc[i](0) = vdof(row) - (v4 * v5) / volume;
-    }
-
-    // calculate L2 projector
-    if (type == Type::L2 && ndof_c > 0) {
-      v5(0) = uc[i](0);
-
-      DenseMatrix M, M2;
-      DenseVector v6(nd - ndof_c);
-      Polynomial poly(d_, order_);
-      NumericalIntegration numi(mesh_);
-
-      numi.UpdateMonomialIntegralsCell(c, 2 * order_, integrals_);
-      GrammMatrix(poly, integrals_, basis, M);
-
-      M2 = M.SubMatrix(ndof_c, nd, 0, nd);
-      M2.Multiply(v5, v6, false);
-
-      const DenseVector& v3 = moments[i].coefs();
-      for (int n = 0; n < ndof_c; ++n) {
-        v4(n) = v3(n) * mesh_->cell_volume(c);
-      }
-
-      for (int n = 0; n < nd - ndof_c; ++n) {
-        v4(ndof_c + n) = v6(n);
-      }
-
-      M.Inverse();
-      M.Multiply(v4, v5, false);
-
-      uc[i] = basis.CalculatePolynomial(mesh_, c, order_, v5);
-    }
-
-    // set correct origin
-    uc[i].set_origin(xc);
   }
+
+  // DOFs inside cell: copy moments from input data
+  if (ndof_c > 0) {
+    const DenseVector& v3 = moments.coefs();
+    AMANZI_ASSERT(ndof_c == v3.NumRows());
+
+    for (int n = 0; n < ndof_c; ++n) {
+      vdof(row + n) = v3(n);
+    }
+  }
+
+  // calculate polynomial coefficients (in vector v5)
+  DenseVector v4(nd), v5(nd);
+  R_.Multiply(vdof, v4, true);
+  G_.Multiply(v4, v5, false);
+
+  uc = basis.CalculatePolynomial(mesh_, c, order_, v5);
+
+  // calculate the constant value for elliptic projector
+  if (order_ == 1) {
+    AmanziGeometry::Point grad(d_), zero(d_);
+    for (int j = 0; j < d_; ++j) {
+      grad[j] = uc(1, j);
+    }
+    
+    double a1(0.0), a2(0.0), tmp;
+    for (int n = 0; n < nfaces; ++n) {  
+      int f = faces[n];
+      const AmanziGeometry::Point& xf = mesh_->face_centroid(f);
+      double area = mesh_->face_area(f);
+       
+      tmp = vf[n].Value(xf) - grad * (xf - xc);
+      a1 += tmp * area;
+      a2 += area;
+    }
+
+    uc(0) = a1 / a2;
+  } else if (order_ >= 2) {
+    v4 = integrals_.poly().coefs();
+    basis.ChangeBasisMyToNatural(v4);
+    v4.Reshape(nd);
+    uc(0) = vdof(row) - (v4 * v5) / volume;
+  }
+
+  // calculate L2 projector
+  if (type == Type::L2 && ndof_c > 0) {
+    v5(0) = uc(0);
+
+    DenseMatrix M, M2;
+    DenseVector v6(nd - ndof_c);
+    Polynomial poly(d_, order_);
+    NumericalIntegration numi(mesh_);
+
+    numi.UpdateMonomialIntegralsCell(c, 2 * order_, integrals_);
+    GrammMatrix(poly, integrals_, basis, M);
+
+    M2 = M.SubMatrix(ndof_c, nd, 0, nd);
+    M2.Multiply(v5, v6, false);
+
+    const DenseVector& v3 = moments.coefs();
+    for (int n = 0; n < ndof_c; ++n) {
+      v4(n) = v3(n) * mesh_->cell_volume(c);
+    }
+
+    for (int n = 0; n < nd - ndof_c; ++n) {
+      v4(ndof_c + n) = v6(n);
+    }
+
+    M.Inverse();
+    M.Multiply(v4, v5, false);
+
+    uc = basis.CalculatePolynomial(mesh_, c, order_, v5);
+  }
+
+  // set correct origin
+  uc.set_origin(xc);
 }
 
 }  // namespace WhetStone

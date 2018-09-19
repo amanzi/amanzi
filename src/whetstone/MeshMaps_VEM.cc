@@ -30,22 +30,29 @@ namespace WhetStone {
 void MeshMaps_VEM::VelocityCell(
     int c, const std::vector<VectorPolynomial>& vf, VectorPolynomial& vc) const
 {
-  VectorPolynomial moments(d_, vf.size(), std::max(0, order_ - 2));
+  Polynomial moments(d_, std::max(0, order_ - 2));
 
   WhetStone::MFD3DFactory factory;
   auto mfd = factory.CreateMFD3D(mesh0_, method_, order_);
 
-  if (projector_ == "H1") {
-    mfd->H1Cell(c, vf, moments, vc);
-  }
-  else if (projector_ == "L2") {
-    mfd->L2Cell(c, vf, moments, vc);
-  }
-  else if (projector_ == "least square") {
+  vc.resize(d_);
+
+  if (projector_ == "least square") {
     LeastSquareProjector_Cell_(order_, c, vf, vc);
-  } 
-  else {
-    AMANZI_ASSERT(false);
+  } else {
+    for (int i = 0; i < d_; ++i) {
+      std::vector<Polynomial> vvf;
+      for (int n = 0; n < vf.size(); ++n) {
+        vvf.push_back(vf[n][i]);
+      }
+    
+      if (projector_ == "H1") {
+        mfd->H1Cell(c, vvf, moments, vc[i]);
+      }
+      else if (projector_ == "L2") {
+        mfd->L2Cell(c, vvf, moments, vc[i]);
+      }
+    }
   }
 }
 

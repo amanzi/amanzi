@@ -144,9 +144,9 @@ int MFD3D_CrouzeixRaviartSerendipity::StiffnessMatrix(
 * L2 projector 
 ****************************************************************** */
 void MFD3D_CrouzeixRaviartSerendipity::ProjectorCell_(
-    int c, const std::vector<VectorPolynomial>& vf,
+    int c, const std::vector<Polynomial>& vf,
     const Projectors::Type type,
-    VectorPolynomial& moments, VectorPolynomial& uc)
+    Polynomial& moments, Polynomial& uc)
 {
   // create integration object 
   NumericalIntegration numi(mesh_);
@@ -187,81 +187,76 @@ void MFD3D_CrouzeixRaviartSerendipity::ProjectorCell_(
   const AmanziGeometry::Point& xc = mesh_->cell_centroid(c);
   DenseVector v1(nd), v5(nd);
 
-  int dim = vf[0].size();
-  uc.resize(dim);
+  DenseVector vdof(ndof_f + ndof_cs);
+  CalculateDOFsOnBoundary_(c, vf, vdof);
 
-  for (int i = 0; i < dim; ++i) {
-    DenseVector vdof(ndof_f + ndof_cs);
-    CalculateDOFsOnBoundary_(c, vf, vdof, i);
-
-    // DOFs inside cell: copy moments from input data
-    if (ndof_cs > 0) {
-      const DenseVector& v3 = moments[i].coefs();
-      for (int n = 0; n < ndof_cs; ++n) {
-        vdof(ndof_f + n) = v3(n);
-      }
+  // DOFs inside cell: copy moments from input data
+  if (ndof_cs > 0) {
+    const DenseVector& v3 = moments.coefs();
+    for (int n = 0; n < ndof_cs; ++n) {
+      vdof(ndof_f + n) = v3(n);
     }
-
-    Ns.Multiply(vdof, v1, true);
-    NN.Multiply(v1, v5, false);
-
-    uc[i] = basis.CalculatePolynomial(mesh_, c, order_, v5);
-
-    // H1 projector needs to populate moments from ndof_cs + 1 till ndof_c
-    if (type == Type::H1) {
-      DenseVector v4(nd);
-      DenseMatrix M;
-      Polynomial poly(d_, order_);
-
-      NumericalIntegration numi(mesh_);
-      numi.UpdateMonomialIntegralsCell(c, 2 * order_, integrals_);
-
-      GrammMatrix(poly, integrals_, basis, M);
-      M.Multiply(v5, v4, false);
-
-      vdof.Reshape(ndof_f + ndof_c);
-      for (int n = ndof_cs; n < ndof_c; ++n) {
-        vdof(ndof_f + n) = v4(n) / mesh_->cell_volume(c); 
-      }
-
-      R_.Multiply(vdof, v4, true);
-      G_.Multiply(v4, v5, false);
-
-      v5(0) = uc[i](0, 0);
-      uc[i] = basis.CalculatePolynomial(mesh_, c, order_, v5);
-    }
-
-    // L2 projector is different if the set S contains some internal dofs
-    if (type == Type::L2 && ndof_cs > 0) {
-      DenseVector v4(nd), v6(nd - ndof_cs);
-      DenseMatrix M, M2;
-      Polynomial poly(d_, order_);
-
-      NumericalIntegration numi(mesh_);
-      numi.UpdateMonomialIntegralsCell(c, 2 * order_, integrals_);
-
-      GrammMatrix(poly, integrals_, basis, M);
-      M2 = M.SubMatrix(ndof_cs, nd, 0, nd);
-      M2.Multiply(v5, v6, false);
-
-      const DenseVector& v3 = moments[i].coefs();
-      for (int n = 0; n < ndof_cs; ++n) {
-        v4(n) = v3(n) * mesh_->cell_volume(c);
-      }
-
-      for (int n = 0; n < nd - ndof_cs; ++n) {
-        v4(ndof_cs + n) = v6(n);
-      }
-
-      M.Inverse();
-      M.Multiply(v4, v5, false);
-
-      uc[i] = basis.CalculatePolynomial(mesh_, c, order_, v5);
-    }
-
-    // set correct origin
-    uc[i].set_origin(xc);
   }
+
+  Ns.Multiply(vdof, v1, true);
+  NN.Multiply(v1, v5, false);
+
+  uc = basis.CalculatePolynomial(mesh_, c, order_, v5);
+
+  // H1 projector needs to populate moments from ndof_cs + 1 till ndof_c
+  if (type == Type::H1) {
+    DenseVector v4(nd);
+    DenseMatrix M;
+    Polynomial poly(d_, order_);
+
+    NumericalIntegration numi(mesh_);
+    numi.UpdateMonomialIntegralsCell(c, 2 * order_, integrals_);
+
+    GrammMatrix(poly, integrals_, basis, M);
+    M.Multiply(v5, v4, false);
+
+    vdof.Reshape(ndof_f + ndof_c);
+    for (int n = ndof_cs; n < ndof_c; ++n) {
+      vdof(ndof_f + n) = v4(n) / mesh_->cell_volume(c); 
+    }
+
+    R_.Multiply(vdof, v4, true);
+    G_.Multiply(v4, v5, false);
+
+    v5(0) = uc(0);
+    uc = basis.CalculatePolynomial(mesh_, c, order_, v5);
+  }
+
+  // L2 projector is different if the set S contains some internal dofs
+  if (type == Type::L2 && ndof_cs > 0) {
+    DenseVector v4(nd), v6(nd - ndof_cs);
+    DenseMatrix M, M2;
+    Polynomial poly(d_, order_);
+
+    NumericalIntegration numi(mesh_);
+    numi.UpdateMonomialIntegralsCell(c, 2 * order_, integrals_);
+
+    GrammMatrix(poly, integrals_, basis, M);
+    M2 = M.SubMatrix(ndof_cs, nd, 0, nd);
+    M2.Multiply(v5, v6, false);
+
+    const DenseVector& v3 = moments.coefs();
+    for (int n = 0; n < ndof_cs; ++n) {
+      v4(n) = v3(n) * mesh_->cell_volume(c);
+    }
+
+    for (int n = 0; n < nd - ndof_cs; ++n) {
+      v4(ndof_cs + n) = v6(n);
+    }
+
+    M.Inverse();
+    M.Multiply(v4, v5, false);
+
+    uc = basis.CalculatePolynomial(mesh_, c, order_, v5);
+  }
+
+  // set correct origin
+  uc.set_origin(xc);
 }
 
 
@@ -269,8 +264,7 @@ void MFD3D_CrouzeixRaviartSerendipity::ProjectorCell_(
 * Calculate degrees of freedom in 2D.
 ****************************************************************** */
 void MFD3D_CrouzeixRaviartSerendipity::CalculateDOFsOnBoundary_(
-    int c, const std::vector<VectorPolynomial>& vf,
-    DenseVector& vdof, int i)
+    int c, const std::vector<Polynomial>& vf, DenseVector& vdof)
 {
   Entity_ID_List faces;
 
@@ -297,7 +291,7 @@ void MFD3D_CrouzeixRaviartSerendipity::CalculateDOFsOnBoundary_(
     const AmanziGeometry::Point& normal = mesh_->face_normal(f);
     FaceCoordinateSystem(normal, tau);
 
-    polys[0] = &(vf[n][i]);
+    polys[0] = &(vf[n]);
 
     for (auto it = pf.begin(); it < pf.end(); ++it) {
       const int* index = it.multi_index();

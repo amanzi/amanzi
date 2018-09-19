@@ -251,7 +251,7 @@ void MeshMaps::ProjectPolynomial(int c, Polynomial& poly) const
   int nfaces = faces.size();  
 
   AmanziGeometry::Point v0(d_), v1(d_);
-  std::vector<VectorPolynomial> vvf;
+  std::vector<Polynomial> vvf;
 
   for (int i = 0; i < nfaces; ++i) {
     int f = faces[i];
@@ -263,16 +263,16 @@ void MeshMaps::ProjectPolynomial(int c, Polynomial& poly) const
     double f0 = poly.Value(v0);
     double f1 = poly.Value(v1);
 
-    WhetStone::VectorPolynomial vf(d_ - 1, 1);
-    vf[0].Reshape(d_ - 1, order);
+    WhetStone::Polynomial vf(d_ - 1, 1);
+    vf.Reshape(d_ - 1, order);
     if (order == 1) {
-      vf[0](0, 0) = (f0 + f1) / 2; 
-      vf[0](1, 0) = f1 - f0; 
+      vf(0, 0) = (f0 + f1) / 2; 
+      vf(1, 0) = f1 - f0; 
     } else if (order == 2) {
       double f2 = poly.Value((v0 + v1) / 2);
-      vf[0](0, 0) = f2;
-      vf[0](1, 0) = f1 - f0;
-      vf[0](2, 0) = -4 * f2 + 2 * f0 + 2 * f1;
+      vf(0, 0) = f2;
+      vf(1, 0) = f1 - f0;
+      vf(2, 0) = -4 * f2 + 2 * f0 + 2 * f1;
     } else {
       AMANZI_ASSERT(0);
     }
@@ -282,24 +282,22 @@ void MeshMaps::ProjectPolynomial(int c, Polynomial& poly) const
 
     std::vector<AmanziGeometry::Point> tau;
     tau.push_back(v1 - v0);
-    vf[0].InverseChangeCoordinates(xf, tau);
+    vf.InverseChangeCoordinates(xf, tau);
     vvf.push_back(vf);
   }
 
-  VectorPolynomial moments(d_, 1);
+  Polynomial moments(d_, 0);
 
   if (order == 2) {
     NumericalIntegration numi(mesh1_);
     double mass = numi.IntegratePolynomialCell(c, poly);
 
-    moments[0](0, 0) = mass / mesh1_->cell_volume(c);
+    moments(0) = mass / mesh1_->cell_volume(c);
   }
 
-  VectorPolynomial vc(d_, 0);
   MFD3D_LagrangeSerendipity mfd(mesh1_);
   mfd.set_order(order);
-  mfd.L2Cell(c, vvf, moments, vc);
-  poly = vc[0];
+  mfd.L2Cell(c, vvf, moments, poly);
 }
 
 }  // namespace WhetStone

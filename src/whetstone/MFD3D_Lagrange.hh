@@ -54,14 +54,14 @@ class MFD3D_Lagrange : public MFD3D {
 
   // -- projectors
   virtual void L2Cell(
-      int c, const std::vector<VectorPolynomial>& vf,
-      VectorPolynomial& moments, VectorPolynomial& uc) override {
+      int c, const std::vector<Polynomial>& vf,
+      Polynomial& moments, Polynomial& uc) override {
     ProjectorCell_(c, vf, Type::L2, moments, uc);
   }
 
   virtual void H1Cell(
-      int c, const std::vector<VectorPolynomial>& vf,
-      VectorPolynomial& moments, VectorPolynomial& uc) override {
+      int c, const std::vector<Polynomial>& vf,
+      Polynomial& moments, Polynomial& uc) override {
     ProjectorCell_(c, vf, Type::H1, moments, uc);
   }
 
@@ -76,9 +76,9 @@ class MFD3D_Lagrange : public MFD3D {
 
  private:
   void ProjectorCell_(
-      int c, const std::vector<VectorPolynomial>& vf,
+      int c, const std::vector<Polynomial>& vf,
       const Projectors::Type type,
-      VectorPolynomial& moments, VectorPolynomial& uc);
+      Polynomial& moments, Polynomial& uc);
 
  protected:
   PolynomialOnMesh integrals_;
