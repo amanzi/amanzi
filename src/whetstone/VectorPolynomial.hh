@@ -98,6 +98,8 @@ class VectorPolynomial {
 
   // dot product v1 * p 
   friend Polynomial operator*(const VectorPolynomial& poly, const AmanziGeometry::Point& p) {
+    AMANZI_ASSERT(poly.size() == p.dim());
+
     Polynomial tmp(poly[0] * p[0]);
 
     for (int i = 1; i < p.dim(); ++i) {
