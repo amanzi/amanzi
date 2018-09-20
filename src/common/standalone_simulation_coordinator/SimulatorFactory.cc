@@ -59,20 +59,19 @@ Simulator* Create(const std::string& input_filename, const std::string& output_p
     XMLString::transcode(element->getAttribute(xstr), str, 99);
     type = str;
   } else {
-    // We check the parameter lists for the Structured tag. If we don't 
-    // find this, we assume it to be unstructured.
-    type = "unstructured";
-    XMLString::transcode("ParameterList", xstr, 99);
-    DOMNodeList* nodes = doc->getElementsByTagName(xstr);
-    for (int i = 0; i < nodes->getLength(); ++i) {
-      DOMElement* element = static_cast<DOMElement*>(nodes->item(i));
-      if (element != NULL) {
-        XMLString::transcode("name", xstr, 99);
-        XMLString::transcode(element->getAttribute(xstr), str, 99);
-        if (strcmp(str, "Structured") == 0) {
-          type = "structured";
-          break;
-        }
+    // We check the parameter lists for the unstructured tag. If we don't 
+    // find this, we assume it to be structured.
+    type = "structured";
+    DOMNodeList* children = doc->getDocumentElement()->getChildNodes();
+    for (int i = 0; i < children->getLength(); ++i) {
+      DOMNode* child = children->item(i);
+      if (child->getNodeType() != DOMNode::ELEMENT_NODE) continue;
+      DOMElement* element = static_cast<DOMElement*>(child);
+      XMLString::transcode("name", xstr, 99);
+      XMLString::transcode(element->getAttribute(xstr), str, 99);
+      if (strcmp(str, "Native Unstructured Input") == 0) {
+        type = "unstructured";
+        break;
       }
     }
   }
