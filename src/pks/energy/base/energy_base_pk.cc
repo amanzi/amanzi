@@ -242,6 +242,8 @@ void EnergyBase::SetupEnergy_(const Teuchos::Ptr<State>& S) {
 
   // source terms
   is_source_term_ = plist_->get<bool>("source term");
+  is_source_term_differentiable_ = plist_->get<bool>("source term is differentiable", true);
+  is_source_term_finite_differentiable_ = plist_->get<bool>("source term finite difference", false);
   if (is_source_term_) {
     S->RequireField(source_key_)->SetMesh(mesh_)
         ->AddComponent("cell", AmanziMesh::CELL, 1);

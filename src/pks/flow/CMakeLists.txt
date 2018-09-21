@@ -57,6 +57,11 @@ register_evaluator_with_factory(
   )
 
 register_evaluator_with_factory(
+  HEADERFILE overland_pressure/volumetric_height_subgrid_evaluator_reg.hh
+  LISTNAME   FLOW_OVERLAND_HEAD_EVAL_FAC
+  )
+
+register_evaluator_with_factory(
   HEADERFILE overland_pressure/effective_height_evaluator_reg.hh
   LISTNAME   FLOW_OVERLAND_HEAD_EVAL_FAC
   )

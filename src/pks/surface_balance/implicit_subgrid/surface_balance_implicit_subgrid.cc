@@ -29,788 +29,78 @@ ImplicitSubgrid::ImplicitSubgrid(Teuchos::ParameterList& pk_tree,
                                      const Teuchos::RCP<State>& S,
                                      const Teuchos::RCP<TreeVector>& solution):
   PK(pk_tree, global_list,  S, solution),
-  PK_PhysicalBDF_Default(pk_tree, global_list,  S, solution)
+  SurfaceBalanceBase(pk_tree, global_list,  S, solution)
 {
   if (!plist_->isParameter("conserved quantity suffix"))
-    plist_->set("conserved quantity suffix", "snow_depth");
+    plist_->set("conserved quantity suffix", "snow_water_equivalent");
 
   Teuchos::ParameterList& FElist = S->FEList();
 
-  // set up additional primary variables -- this is very hacky...
-  // -- surface energy source
-  if (domain_ == "surface") {
-    domain_ss_ = plist_->get<std::string>("subsurface domain name", "domain");
-  } else if (boost::starts_with(domain_, "surface_")) {
-    domain_ss_ = plist_->get<std::string>("subsurface domain name", domain_.substr(8,domain_.size()));
-  } else if (boost::ends_with(domain_, "_surface")) {
-    domain_ss_ = plist_->get<std::string>("subsurface domain name", domain_.substr(0,domain_.size()-8));
-  } else {
-    plist_->get<std::string>("subsurface domain name");
-  }
-
-  // -- surface mass,energy sources
-  Teuchos::ParameterList& wsource_sublist =
-    FElist.sublist(Keys::getKey(domain_,"mass_source"));
-  wsource_sublist.set("evaluator name", Keys::getKey(domain_,"mass_source"));
-  wsource_sublist.set("field evaluator type", "primary variable");
-  Teuchos::ParameterList& esource_sublist =
-    FElist.sublist(Keys::getKey(domain_,"total_energy_source"));
-  esource_sublist.set("evaluator name", Keys::getKey(domain_,"total_energy_source"));
-  esource_sublist.set("field evaluator type", "primary variable");
-
-  // -- subsurface mass source for VaporFlux at cell center
-  Teuchos::ParameterList& w_v_source_sublist =
-    FElist.sublist(Keys::getKey(domain_ss_,"mass_source"));
-  w_v_source_sublist.set("evaluator name", Keys::getKey(domain_ss_,"mass_source"));
-  w_v_source_sublist.set("field evaluator type", "primary variable");
-  Teuchos::ParameterList& e_sub_source_sublist =
-    FElist.sublist(Keys::getKey(domain_ss_,"total_energy_source"));
-  e_sub_source_sublist.set("evaluator name", Keys::getKey(domain_ss_,"total_energy_source"));
-  e_sub_source_sublist.set("field evaluator type", "primary variable");
-
-  // Derivatives for PC
-  eval_derivatives_ = plist_->get<bool>("evaluate source derivatives", true);
-
-  // min wind speed
-  min_wind_speed_ = plist_->get<double>("minimum wind speed [m/s]?", 1.0);
-  wind_speed_ref_ht_ = plist_->get<double>("wind speed reference height [m]", 2.0);
-  dessicated_zone_thickness_ = plist_->get<double>("dessicated zone thickness [m]", 0.025);
-  AMANZI_ASSERT(dessicated_zone_thickness_ > 0.);
-
-  // roughness parameters, default to 4 cm for soil, 4 mm for snow
-  roughness_bare_ground_ = plist_->get<double>("roughness length of bare ground [m]", 0.04);
-  roughness_snow_covered_ground_ = plist_->get<double>("roughness length of snow-covered ground [m]", 0.004);
+  // set up keys
+  snow_dens_key_ = Keys::readKey(*plist_, domain_, "snow density", "density");
+  snow_age_key_ = Keys::readKey(*plist_, domain_, "snow age", "age");
+  new_snow_key_ = Keys::readKey(*plist_, domain_, "new snow source", "source");
   
-  // Reading in Longwave Radation
-  longwave_input_ = FElist.isParameter(Keys::getKey(domain_,"incoming_longwave_radiation"));
-  
-  // transition snow depth
-  snow_ground_trans_ = plist_->get<double>("snow-ground transitional depth", 0.02);
-  min_snow_trans_ = plist_->get<double>("minimum snow transitional depth", 1.e-8);
-  if (min_snow_trans_ < 0. || snow_ground_trans_ < min_snow_trans_) {
-    Errors::Message message("Invalid parameters: snow-ground transitional depth or minimum snow transitional depth.");
-    Exceptions::amanzi_throw(message);
-  }
+  // set up additional primary variables -- this is very hacky, and can become an evaluator in new-state
+  // -- snow density
+  Teuchos::ParameterList& snow_dens_sublist = FElist.sublist(snow_dens_key_);
+  snow_dens_sublist.set("evaluator name", snow_dens_key_);
+  snow_dens_sublist.set("field evaluator type", "primary variable");
+  S->FEList().set(snow_dens_key_, snow_dens_sublist);
 
-  // shortwave radiation key changes if shaded
-  sw_incoming_key_ = Keys::readKey(*plist_, domain_,"incoming shortwave radiation", "incoming_shortwave_radiation");
-
+  // set the error tolerance for snow
+  plist_->set("absolute error tolerance", 0.01);
 }
 
 // main methods
 // -- Setup data.
 void
 ImplicitSubgrid::Setup(const Teuchos::Ptr<State>& S) {
-  PK_PhysicalBDF_Default::Setup(S);
-  subsurf_mesh_ = S->GetMesh(domain_ss_); // needed for VPL, which is treated as subsurface source
-
-  // requirements: primary variable
-  S->RequireField(key_, name_)->SetMesh(mesh_)->
-      SetComponent("cell", AmanziMesh::CELL, 1);
+  SurfaceBalanceBase::Setup(S);
 
   // requirements: other primary variables
   Teuchos::RCP<FieldEvaluator> fm;
-  S->RequireField(Keys::getKey(domain_,"mass_source"), name_)->SetMesh(mesh_)
+  S->RequireField(snow_dens_key_, name_)->SetMesh(mesh_)
       ->SetComponent("cell", AmanziMesh::CELL, 1);
-  S->RequireFieldEvaluator(Keys::getKey(domain_,"mass_source"));
-  fm = S->GetFieldEvaluator(Keys::getKey(domain_,"mass_source"));
-  pvfe_wsource_ = Teuchos::rcp_dynamic_cast<PrimaryVariableFieldEvaluator>(fm);
-  if (pvfe_wsource_ == Teuchos::null) {
+  S->RequireFieldEvaluator(snow_dens_key_);
+  fm = S->GetFieldEvaluator(snow_dens_key_);
+  pvfe_snow_dens_ = Teuchos::rcp_dynamic_cast<PrimaryVariableFieldEvaluator>(fm);
+  if (pvfe_snow_dens_ == Teuchos::null) {
     Errors::Message message("SurfaceBalanceSEB: error, failure to initialize primary variable");
     Exceptions::amanzi_throw(message);
   }
 
-  S->RequireField(Keys::getKey(domain_,"total_energy_source"), name_)->SetMesh(mesh_)
-      ->SetComponent("cell", AmanziMesh::CELL, 1);
-  S->RequireFieldEvaluator(Keys::getKey(domain_,"total_energy_source"));
-  fm = S->GetFieldEvaluator(Keys::getKey(domain_,"total_energy_source"));
-  pvfe_esource_ = Teuchos::rcp_dynamic_cast<PrimaryVariableFieldEvaluator>(fm);
-  if (pvfe_esource_ == Teuchos::null) {
-    Errors::Message message("SurfaceBalanceSEB: error, failure to initialize primary variable");
-    Exceptions::amanzi_throw(message);
-  }
-
-  S->RequireField(Keys::getKey(domain_ss_,"mass_source"), name_)->SetMesh(subsurf_mesh_)
-    ->SetComponent("cell", AmanziMesh::CELL, 1);
-  S->RequireFieldEvaluator(Keys::getKey(domain_ss_,"mass_source"));
-  fm = S->GetFieldEvaluator(Keys::getKey(domain_ss_,"mass_source"));
-  pvfe_w_sub_source_ = Teuchos::rcp_dynamic_cast<PrimaryVariableFieldEvaluator>(fm);
-  if (pvfe_w_sub_source_ == Teuchos::null) {
-    Errors::Message message("SurfaceBalanceSEB: error, failure to initialize primary variable");
-    Exceptions::amanzi_throw(message);
-  }
-  
-  S->RequireField(Keys::getKey(domain_ss_,"total_energy_source"), name_)->SetMesh(subsurf_mesh_)
-    ->SetComponent("cell", AmanziMesh::CELL, 1);
-  S->RequireFieldEvaluator(Keys::getKey(domain_ss_,"total_energy_source"));
-  fm = S->GetFieldEvaluator(Keys::getKey(domain_ss_,"total_energy_source"));
-  pvfe_e_sub_source_ = Teuchos::rcp_dynamic_cast<PrimaryVariableFieldEvaluator>(fm);
-  if (pvfe_e_sub_source_ == Teuchos::null) {
-    Errors::Message message("SurfaceBalanceSEB: error, failure to initialize primary variable");
-    Exceptions::amanzi_throw(message);
-  }
-
-  // requirements: fractional areas
-  Key frac_area_keys = Keys::getKey(domain_,"fractional_areas");
-  S->RequireField(frac_area_keys, name_)->SetMesh(mesh_)
-      ->SetComponent("cell", AmanziMesh::CELL, 3);
-  S->RequireFieldEvaluator(frac_area_keys);
-
-  // requirements: source derivatives
-  if (eval_derivatives_) {
-    Key key_cond_temp = Keys::getDerivKey(Keys::getKey(domain_,"total_energy_source"),
-            Keys::getKey(domain_,"temperature"));
-    S->RequireField(key_cond_temp, name_)->SetMesh(mesh_)
-       ->SetComponent("cell", AmanziMesh::CELL, 1);
-  }
-
-  // requirements: diagnostic variables
-  S->RequireField(Keys::getKey(domain_,"albedo"),name_)->SetMesh(mesh_)
-    ->SetComponent("cell", AmanziMesh::CELL, 1);
-  S->GetField(Keys::getKey(domain_,"albedo"),name_)->set_io_checkpoint(false);
-  S->RequireField(Keys::getKey(domain_,"evaporative_flux"),name_)->SetMesh(mesh_)
-    ->SetComponent("cell", AmanziMesh::CELL, 1);
-  S->GetField(Keys::getKey(domain_,"evaporative_flux"),name_)->set_io_checkpoint(false);
-  S->RequireField(Keys::getKey(domain_,"qE_latent_heat"),name_)->SetMesh(mesh_)
-    ->SetComponent("cell", AmanziMesh::CELL, 1);
-  S->GetField(Keys::getKey(domain_,"qE_latent_heat"),name_)->set_io_checkpoint(false);
-  S->RequireField(Keys::getKey(domain_,"qE_sensible_heat"),name_)->SetMesh(mesh_)
-    ->SetComponent("cell", AmanziMesh::CELL, 1);
-  S->GetField(Keys::getKey(domain_,"qE_sensible_heat"),name_)->set_io_checkpoint(false);
-  S->RequireField(Keys::getKey(domain_,"qE_lw_out"),name_)->SetMesh(mesh_)
-    ->SetComponent("cell", AmanziMesh::CELL, 1);
-  S->GetField(Keys::getKey(domain_,"qE_lw_out"),name_)->set_io_checkpoint(false);
-  S->RequireField(Keys::getKey(domain_,"qE_melt_out"),name_)->SetMesh(mesh_)
-    ->SetComponent("cell", AmanziMesh::CELL, 1);
-  S->GetField(Keys::getKey(domain_,"qE_melt_out"),name_)->set_io_checkpoint(false);
-  
-  // requirements: independent variables (data from MET)
-  S->RequireFieldEvaluator(sw_incoming_key_);
-  S->RequireField(sw_incoming_key_)->SetMesh(mesh_)
+  // requirements: internally we must track snow age, this should become an
+  // evaluator with snow_density.
+  S->RequireField(snow_age_key_, name_)->SetMesh(mesh_)
       ->AddComponent("cell", AmanziMesh::CELL, 1);
-
-  if (longwave_input_) {
-    S->RequireFieldEvaluator(Keys::getKey(domain_,"incoming_longwave_radiation"));
-    S->RequireField(Keys::getKey(domain_,"incoming_longwave_radiation"))->SetMesh(mesh_)
-        ->AddComponent("cell", AmanziMesh::CELL, 1);
-  } else {
-    // it is a diagnostic
-    S->RequireField(Keys::getKey(domain_,"incoming_longwave_radiation"), name_)->SetMesh(mesh_)
-        ->SetComponent("cell", AmanziMesh::CELL, 1);
-  }
-
-  S->RequireFieldEvaluator(Keys::getKey(domain_,"air_temperature"));
-  S->RequireField(Keys::getKey(domain_,"air_temperature"))->SetMesh(mesh_)
-      ->AddComponent("cell", AmanziMesh::CELL, 1);
-
-  S->RequireFieldEvaluator(Keys::getKey(domain_,"relative_humidity"));
-  S->RequireField(Keys::getKey(domain_,"relative_humidity"))->SetMesh(mesh_)
-      ->AddComponent("cell", AmanziMesh::CELL, 1);
-
-  S->RequireFieldEvaluator(Keys::getKey(domain_,"wind_speed"));
-  S->RequireField(Keys::getKey(domain_,"wind_speed"))->SetMesh(mesh_)
-      ->AddComponent("cell", AmanziMesh::CELL, 1);
-
-  S->RequireFieldEvaluator(Keys::getKey(domain_,"precipitation_rain"));
-  S->RequireField(Keys::getKey(domain_,"precipitation_rain"))->SetMesh(mesh_)
-      ->AddComponent("cell", AmanziMesh::CELL, 1);
-
-  S->RequireFieldEvaluator(Keys::getKey(domain_,"precipitation_snow"));
-  S->RequireField(Keys::getKey(domain_,"precipitation_snow"))->SetMesh(mesh_)
-      ->AddComponent("cell", AmanziMesh::CELL, 1);
-
-  // requirements: stored secondary variables
-  S->RequireField(Keys::getKey(domain_,"snow_density"), name_)->SetMesh(mesh_)
-      ->AddComponent("cell", AmanziMesh::CELL, 1);
-
-  S->RequireField(Keys::getKey(domain_,"snow_age"), name_)->SetMesh(mesh_)
-      ->AddComponent("cell", AmanziMesh::CELL, 1);
-
-  S->RequireField(Keys::getKey(domain_,"snow_temperature"), name_)->SetMesh(mesh_)
-      ->AddComponent("cell", AmanziMesh::CELL, 1);
-
-  S->RequireField(Keys::getKey(domain_,"stored_SWE"), name_)->SetMesh(mesh_)
-      ->AddComponent("cell", AmanziMesh::CELL, 1);
-
-  S->RequireFieldEvaluator(Keys::getKey(domain_,"temperature"));
-  S->RequireField(Keys::getKey(domain_,"temperature"))->SetMesh(mesh_)
-      ->AddComponent("cell", AmanziMesh::CELL, 1);
-
-  S->RequireFieldEvaluator(Keys::getKey(domain_,"pressure"));
-  S->RequireField(Keys::getKey(domain_,"pressure"))->SetMesh(mesh_)
-      ->AddComponent("cell", AmanziMesh::CELL, 1);
-
-  S->RequireFieldEvaluator(Keys::getKey(domain_,"volumetric_ponded_depth"));
-  S->RequireField(Keys::getKey(domain_,"volumetric_ponded_depth"))->SetMesh(mesh_)
-      ->AddComponent("cell", AmanziMesh::CELL, 1);
-
-  // cannot work with current implementation because WRMs are hard coded into
-  //  flow PKs.  Design fail.  Future versions will need this call.
-  //  S->RequireFieldEvaluator(Keys::getKey(domain_ss_, "saturation_gas"));
-  S->RequireField(Keys::getKey(domain_ss_,"saturation_gas"))->SetMesh(subsurf_mesh_)
-       ->AddComponent("cell", AmanziMesh::CELL, 1);
-
-  S->RequireFieldEvaluator(Keys::getKey(domain_,"unfrozen_fraction"));
-  S->RequireField(Keys::getKey(domain_,"unfrozen_fraction"))->SetMesh(mesh_)
-      ->AddComponent("cell", AmanziMesh::CELL, 1);
-
-  S->RequireFieldEvaluator(Keys::getKey(domain_ss_,"porosity"));
-  S->RequireField(Keys::getKey(domain_ss_,"porosity"))->SetMesh(subsurf_mesh_)
-      ->AddComponent("cell", AmanziMesh::CELL, 1);
-
 }
 
 // -- Initialize owned (dependent) variables.
 void
 ImplicitSubgrid::Initialize(const Teuchos::Ptr<State>& S) {
-  PK_PhysicalBDF_Default::Initialize(S);
+  SurfaceBalanceBase::Initialize(S);
 
   // initialize snow density, age
   AMANZI_ASSERT(plist_->isSublist("initial condition"));
   Teuchos::ParameterList& ic_list = plist_->sublist("initial condition");
-
-  SEBPhysics::ModelParams seb_params;
   
-  if (!S->GetField(Keys::getKey(domain_,"snow_density"))->initialized()) {
+  if (!S->GetField(snow_dens_key_)->initialized()) {
     if (ic_list.isParameter("restart file")) {
       // initialize density, age from restart file
-      S->GetField(Keys::getKey(domain_,"snow_density"), name_)->Initialize(ic_list);
-      S->GetField(Keys::getKey(domain_,"snow_density"), name_)->set_initialized();
-      S->GetField(Keys::getKey(domain_,"snow_age"), name_)->Initialize(ic_list);
-      S->GetField(Keys::getKey(domain_,"snow_age"), name_)->set_initialized();
+      S->GetField(snow_dens_key_, name_)->Initialize(ic_list);
+      S->GetField(snow_dens_key_, name_)->set_initialized();
+      S->GetField(snow_age_key_, name_)->Initialize(ic_list);
+      S->GetField(snow_age_key_, name_)->set_initialized();
     } else {
       // initialize density to fresh powder, age to 0
-      S->GetFieldData(Keys::getKey(domain_,"snow_density"),name_)->PutScalar(seb_params.density_freshsnow);
-      S->GetField(Keys::getKey(domain_,"snow_density"), name_)->set_initialized();
-      S->GetFieldData(Keys::getKey(domain_,"snow_age"),name_)->PutScalar(0.);
-      S->GetField(Keys::getKey(domain_,"snow_age"), name_)->set_initialized();
-
+      SEBPhysics::ModelParams params;
+      S->GetFieldData(snow_dens_key_,name_)->PutScalar(params.density_freshsnow);
+      S->GetField(snow_dens_key_, name_)->set_initialized();
+      S->GetFieldData(snow_age_key_,name_)->PutScalar(0.);
+      S->GetField(snow_age_key_, name_)->set_initialized();
     }
   }
-
-  // initialize swe consistently with snow height and density
-
-  Epetra_MultiVector& swe = *S->GetFieldData(Keys::getKey(domain_,"stored_SWE"),name_)->ViewComponent("cell",false);
-  const Epetra_MultiVector& snow_ht = *S->GetFieldData(key_)->ViewComponent("cell",false);
-  const Epetra_MultiVector& snow_dens = *S->GetFieldData(Keys::getKey(domain_,"snow_density"))->ViewComponent("cell",false);
-  for (int c=0; c!=swe.MyLength(); ++c) {
-    swe[0][c] = snow_ht[0][c] * snow_dens[0][c] / seb_params.density_water;
-  }
-  S->GetField(Keys::getKey(domain_,"stored_SWE"), name_)->set_initialized();
-
-  // initialize snow temp
-  S->GetFieldData(Keys::getKey(domain_,"snow_temperature"),name_)->PutScalar(0.);
-  S->GetField(Keys::getKey(domain_,"snow_temperature"), name_)->set_initialized();
-
-  // initialize sources, temps
-  S->GetFieldData(Keys::getKey(domain_,"mass_source"),name_)->PutScalar(0.);
-  S->GetField(Keys::getKey(domain_,"mass_source"),name_)->set_initialized();
-  S->GetFieldData(Keys::getKey(domain_,"total_energy_source"),name_)->PutScalar(0.);
-  S->GetField(Keys::getKey(domain_,"total_energy_source"),name_)->set_initialized();
-
-  S->GetFieldData(Keys::getKey(domain_ss_,"mass_source"),name_)->PutScalar(0.);
-  S->GetField(Keys::getKey(domain_ss_,"mass_source"),name_)->set_initialized();
-  S->GetFieldData(Keys::getKey(domain_ss_,"total_energy_source"),name_)->PutScalar(0.);
-  S->GetField(Keys::getKey(domain_ss_,"total_energy_source"),name_)->set_initialized();
-
-  if (eval_derivatives_) {
-    Key key_cond_temp = Keys::getDerivKey(Keys::getKey(domain_,"total_energy_source"), Keys::getKey(domain_,"temperature"));
-    S->GetFieldData(key_cond_temp,name_)->PutScalar(0.);
-    S->GetField(key_cond_temp,name_)->set_initialized();
-  }
-
-  // initialize diagnostics
-  S->GetField(Keys::getKey(domain_,"albedo"),name_)->set_initialized();
-  S->GetField(Keys::getKey(domain_,"evaporative_flux"),name_)->set_initialized();
-  S->GetField(Keys::getKey(domain_,"qE_latent_heat"),name_)->set_initialized();
-  S->GetField(Keys::getKey(domain_,"qE_sensible_heat"),name_)->set_initialized();
-  S->GetField(Keys::getKey(domain_,"qE_lw_out"),name_)->set_initialized();
-  S->GetField(Keys::getKey(domain_,"qE_melt_out"),name_)->set_initialized();
-  if (!longwave_input_) {
-    S->GetField(Keys::getKey(domain_,"incoming_longwave_radiation"),name_)->set_initialized();
-  }
-}
-
-
-// computes the non-linear functional g = g(t,u,udot)
-void
-ImplicitSubgrid::FunctionalResidual(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
-                            Teuchos::RCP<TreeVector> u_new, Teuchos::RCP<TreeVector> g) {
-  Teuchos::OSTab tab = vo_->getOSTab();
-  double dt = t_new - t_old;
-  double T_eps = 1.e-10;
-
-  bool debug = false;
-  Teuchos::RCP<VerboseObject> dcvo = Teuchos::null;
-  int rank = mesh_->get_comm()->MyPID();
-
-  if (vo_->os_OK(Teuchos::VERB_HIGH)) {
-    *vo_->os() << "----------------------------------------------------------------" << std::endl
-               << "Residual calculation: t0 = " << t_old
-               << " t1 = " << t_new << " h = " << dt << std::endl;
-    std::vector<std::string> vnames;
-    std::vector< Teuchos::Ptr<const CompositeVector> > vecs;
-    vnames.push_back("old snow depth");
-    vecs.push_back(u_old->Data().ptr());
-    vnames.push_back("solver snow depth");
-    vecs.push_back(u_new->Data().ptr());
-    db_->WriteVectors(vnames, vecs, true);
-  }
-
-  // pull residual vector
-  Epetra_MultiVector& res = *g->Data()->ViewComponent("cell",false);
-
-  // pull old snow data
-  const Epetra_MultiVector& snow_depth_old = *u_old->Data()->ViewComponent("cell",false);
-
-  const Epetra_MultiVector& snow_age_old = *S_inter_->GetFieldData(Keys::getKey(domain_,"snow_age"))
-      ->ViewComponent("cell",false);
-  const Epetra_MultiVector& snow_dens_old = *S_inter_->GetFieldData(Keys::getKey(domain_,"snow_density"))
-      ->ViewComponent("cell",false);
-  const Epetra_MultiVector& stored_SWE_old = *S_inter_->GetFieldData(Keys::getKey(domain_,"stored_SWE"))
-      ->ViewComponent("cell",false);
-
-  // pull current snow data
-  const Epetra_MultiVector& snow_depth_new = *u_new->Data()->ViewComponent("cell",false);
-  CompositeVector snow_depth_new_computed(*u_new->Data());
-  Epetra_MultiVector& snow_depth_new_computed_c = *snow_depth_new_computed.ViewComponent("cell",false);
-
-  Epetra_MultiVector& snow_temp_new = *S_next_->GetFieldData(Keys::getKey(domain_,"snow_temperature"), name_)
-      ->ViewComponent("cell",false);
-  Epetra_MultiVector& snow_age_new = *S_next_->GetFieldData(Keys::getKey(domain_,"snow_age"), name_)
-      ->ViewComponent("cell",false);
-  Epetra_MultiVector& snow_dens_new = *S_next_->GetFieldData(Keys::getKey(domain_,"snow_density"), name_)
-      ->ViewComponent("cell",false);
-  Epetra_MultiVector& stored_SWE_new = *S_next_->GetFieldData(Keys::getKey(domain_,"stored_SWE"), name_)
-      ->ViewComponent("cell",false);
-
-  // pull diagnostics
-  Epetra_MultiVector& albedo = *S_next_->GetFieldData(Keys::getKey(domain_,"albedo"),name_)
-      ->ViewComponent("cell",false);
-  Epetra_MultiVector& evaporative_flux = *S_next_->GetFieldData(Keys::getKey(domain_,"evaporative_flux"),name_)
-      ->ViewComponent("cell",false);
-  Epetra_MultiVector& qE_latent_heat = *S_next_->GetFieldData(Keys::getKey(domain_,"qE_latent_heat"),name_)
-      ->ViewComponent("cell",false);
-  Epetra_MultiVector& qE_sensible_heat = *S_next_->GetFieldData(Keys::getKey(domain_,"qE_sensible_heat"),name_)
-      ->ViewComponent("cell",false);
-  Epetra_MultiVector& qE_lw_out = *S_next_->GetFieldData(Keys::getKey(domain_,"qE_lw_out"),name_)
-      ->ViewComponent("cell",false);
-  Epetra_MultiVector& qE_melt_out = *S_next_->GetFieldData(Keys::getKey(domain_,"qE_melt_out"),name_)
-      ->ViewComponent("cell",false);
-
-  // pull ATS data
-  S_next_->GetFieldEvaluator(Keys::getKey(domain_,"temperature"))->HasFieldChanged(S_next_.ptr(), name_);
-  const Epetra_MultiVector& surf_temp =
-    *S_next_->GetFieldData(Keys::getKey(domain_,"temperature"))->ViewComponent("cell", false);
-
-  S_next_->GetFieldEvaluator(Keys::getKey(domain_,"pressure"))->HasFieldChanged(S_next_.ptr(), name_);
-  const Epetra_MultiVector& surf_pres =
-    *S_next_->GetFieldData(Keys::getKey(domain_,"pressure"))->ViewComponent("cell", false);
-
-  S_next_->GetFieldEvaluator(Keys::getKey(domain_,"volumetric_ponded_depth"))->HasFieldChanged(S_next_.ptr(), name_);
-  const Epetra_MultiVector& ponded_depth =
-    *S_next_->GetFieldData(Keys::getKey(domain_,"volumetric_ponded_depth"))->ViewComponent("cell", false);
-
-  // cannot work with current implementation because WRMs are hard coded into
-  //  flow PKs.  Design fail.  Future versions will need this call.
-  //  S_next_->GetFieldEvaluator(Keys::getKey(domain_ss_,"saturation_gas"))->HasFieldChanged(S_next_.ptr(), name_);
-  const Epetra_MultiVector& saturation_gas =
-     *S_next_->GetFieldData(Keys::getKey(domain_ss_,"saturation_gas"))->ViewComponent("cell", false);
-
-   S_next_->GetFieldEvaluator(Keys::getKey(domain_,"unfrozen_fraction"))->HasFieldChanged(S_next_.ptr(), name_);
-  const Epetra_MultiVector& unfrozen_fraction =
-    *S_next_->GetFieldData(Keys::getKey(domain_,"unfrozen_fraction"))->ViewComponent("cell", false);
-
-  S_next_->GetFieldEvaluator(Keys::getKey(domain_ss_,"porosity"))->HasFieldChanged(S_next_.ptr(), name_);
-  const Epetra_MultiVector& porosity =
-    *S_next_->GetFieldData(Keys::getKey(domain_ss_,"porosity"))->ViewComponent("cell", false);
-
-  // pull fractional areas
-  S_next_->GetFieldEvaluator(Keys::getKey(domain_,"fractional_areas"))->HasFieldChanged(S_next_.ptr(), name_);
-  const Epetra_MultiVector& area_fracs_v =
-    *S_next_->GetFieldData(Keys::getKey(domain_,"fractional_areas"))->ViewComponent("cell", false);
-  
-
-  // pull Met data
-  S_next_->GetFieldEvaluator(Keys::getKey(domain_,"air_temperature"))->HasFieldChanged(S_next_.ptr(), name_);
-  const Epetra_MultiVector& air_temp =
-    *S_next_->GetFieldData(Keys::getKey(domain_,"air_temperature"))->ViewComponent("cell", false);
-
-  S_next_->GetFieldEvaluator(sw_incoming_key_)->HasFieldChanged(S_next_.ptr(), name_);
-  const Epetra_MultiVector& incoming_shortwave =
-    *S_next_->GetFieldData(sw_incoming_key_)->ViewComponent("cell", false);
-
- Teuchos::RCP<const Epetra_MultiVector> incoming_longwave = Teuchos::null;
- Teuchos::RCP<Epetra_MultiVector> incoming_longwave_diag = Teuchos::null;
-  if (longwave_input_) {
-    S_next_->GetFieldEvaluator(Keys::getKey(domain_,"incoming_longwave_radiation"))->HasFieldChanged(S_next_.ptr(), name_);
-    incoming_longwave =
-        S_next_->GetFieldData(Keys::getKey(domain_,"incoming_longwave_radiation"))->ViewComponent("cell", false);
-  } else {
-    incoming_longwave_diag =
-        S_next_->GetFieldData(Keys::getKey(domain_,"incoming_longwave_radiation"), name_)->ViewComponent("cell", false);
-  }
-
-  S_next_->GetFieldEvaluator(Keys::getKey(domain_,"relative_humidity"))->HasFieldChanged(S_next_.ptr(), name_);
-  const Epetra_MultiVector& relative_humidity =
-    *S_next_->GetFieldData(Keys::getKey(domain_,"relative_humidity"))->ViewComponent("cell", false);
-
-  S_next_->GetFieldEvaluator(Keys::getKey(domain_,"wind_speed"))->HasFieldChanged(S_next_.ptr(), name_);
-  const Epetra_MultiVector& wind_speed =
-    *S_next_->GetFieldData(Keys::getKey(domain_,"wind_speed"))->ViewComponent("cell", false);
-
-  S_next_->GetFieldEvaluator(Keys::getKey(domain_,"precipitation_rain"))->HasFieldChanged(S_next_.ptr(), name_);
-  const Epetra_MultiVector& precip_rain =
-    *S_next_->GetFieldData(Keys::getKey(domain_,"precipitation_rain"))->ViewComponent("cell", false);
-
-  // snow precip need not be updated each iteration
-  bool update = false;
-  update = S_inter_->GetFieldEvaluator(Keys::getKey(domain_,"precipitation_snow"))->HasFieldChanged(S_inter_.ptr(), name_);
-  const Epetra_MultiVector& precip_snow = *S_inter_->GetFieldData(Keys::getKey(domain_,"precipitation_snow"))->ViewComponent("cell", false);
-
-  // pull additional primary variable data
-  Epetra_MultiVector& surf_water_flux =
-    *S_next_->GetFieldData(Keys::getKey(domain_,"mass_source"), name_)->ViewComponent("cell", false);
-  Epetra_MultiVector& surf_energy_flux =
-    *S_next_->GetFieldData(Keys::getKey(domain_,"total_energy_source"), name_)->ViewComponent("cell", false);
-  Teuchos::RCP<Epetra_MultiVector> dsurf_energy_flux_dT;
-  if (eval_derivatives_) {
-    Key key_cond_temp = Keys::getDerivKey(Keys::getKey(domain_,"total_energy_source"), Keys::getKey(domain_,"temperature"));
-    dsurf_energy_flux_dT = S_next_->GetFieldData(key_cond_temp, name_)
-      ->ViewComponent("cell", false);
-  }
-  Epetra_MultiVector& ss_water_flux =
-    *S_next_->GetFieldData(Keys::getKey(domain_ss_,"mass_source"), name_)->ViewComponent("cell", false);
-  Epetra_MultiVector& ss_energy_flux =
-    *S_next_->GetFieldData(Keys::getKey(domain_ss_,"total_energy_source"), name_)->ViewComponent("cell", false);
-
-  unsigned int ncells = mesh_->num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED);
-  for (unsigned int c=0; c!=ncells; ++c) {
-    dcvo = Teuchos::null;
-    if (vo_->os_OK(Teuchos::VERB_EXTREME)) dcvo = db_->GetVerboseObject(c, rank);
-    Teuchos::OSTab dctab = dcvo == Teuchos::null ? vo_->getOSTab() : dcvo->getOSTab();
-
-    // get the top cell
-    AmanziMesh::Entity_ID subsurf_f = mesh_->entity_get_parent(AmanziMesh::CELL, c);
-    AmanziMesh::Entity_ID_List cells;
-    subsurf_mesh_->face_get_cells(subsurf_f, AmanziMesh::Parallel_type::OWNED, &cells);
-    AMANZI_ASSERT(cells.size() == 1);
-    
-    // calculate full column snow state
-    SEBPhysics::ModelParams seb_params;
-    double snow_depth = snow_depth_old[0][c];
-    double snow_dens = snow_dens_old[0][c];
-    double swe = stored_SWE_old[0][c];
-    double snow_age = snow_age_old[0][c];
-    double Ps = std::max(precip_snow[0][c], 0.);
-    swe += dt * Ps;
-    snow_depth += dt * Ps * seb_params.density_water / seb_params.density_freshsnow;
-    snow_age = swe > 0. ? (snow_age * stored_SWE_old[0][c]) / swe : 0.; // age of new snow is 0 here, as increment happens internally
-    snow_dens = snow_depth > 0. ? swe * seb_params.density_water / snow_depth : seb_params.density_freshsnow;
-
-    // calculate ground state partitioning
-    double land_frac = area_fracs_v[0][c];
-    double water_frac = area_fracs_v[1][c];
-    double snow_frac = area_fracs_v[2][c];
-
-    // set up data structures that are channel independent
-    // -- surface parameters
-    SEBPhysics::SurfaceParams seb_surf_pars;
-
-    // -- met data
-    SEBPhysics::MetData seb_met;
-    seb_met.Z_Us = wind_speed_ref_ht_;
-    seb_met.Us = std::max(wind_speed[0][c], min_wind_speed_);
-    seb_met.QswIn = incoming_shortwave[0][c];
-    seb_met.Ps = 0.; // snow already added explicitly
-    seb_met.Pr = precip_rain[0][c];
-    seb_met.air_temp = air_temp[0][c];
-    seb_met.relative_humidity = relative_humidity[0][c];
-    if (longwave_input_) {
-      seb_met.QlwIn = (*incoming_longwave)[0][c];
-    } else {     
-      seb_met.QlwIn = SEBPhysics::CalcIncomingLongwave(seb_met.air_temp, seb_met.relative_humidity, seb_params.stephB);
-      (*incoming_longwave_diag)[0][c] = seb_met.QlwIn;
-    }
-
-    // set up channel dependent data structures
-    int num_channels = (land_frac > 0. ? 1 : 0) + (water_frac > 0. ? 1 : 0) + (snow_frac > 0. ? 1 : 0);
-    std::vector<SEBPhysics::GroundProperties> seb_surf(num_channels);
-    std::vector<SEBPhysics::SnowProperties> seb_snow(num_channels);
-    std::vector<double> area_fracs(num_channels, 0.);
-    // -- ground properties
-    int i_channel = 0;
-    int i_land = -1, i_water = -1, i_snow = -1;
-    if (land_frac > 0.) {
-      seb_surf[i_channel].temp = surf_temp[0][c];
-      seb_surf[i_channel].pressure = surf_pres[0][c];
-      seb_surf[i_channel].roughness = roughness_bare_ground_;
-      seb_surf[i_channel].saturation_gas = saturation_gas[0][cells[0]];
-      seb_surf[i_channel].density_w = seb_params.density_water; // NOTE: could update this to use true density! --etc
-      seb_surf[i_channel].dz = dessicated_zone_thickness_;
-      seb_surf[i_channel].albedo = seb_surf_pars.a_tundra;
-      seb_surf[i_channel].emissivity = seb_surf_pars.e_tundra;
-      seb_surf[i_channel].porosity = porosity[0][cells[0]];
-      seb_surf[i_channel].ponded_depth = 0.;
-
-      seb_snow[i_channel].height = 0.;
-      seb_snow[i_channel].SWE = 0.;
-      area_fracs[i_channel] = land_frac;
-      i_land = i_channel;
-      i_channel++;
-    }
-    if (water_frac > 0.) {
-      seb_surf[i_channel].temp = surf_temp[0][c];
-      seb_surf[i_channel].pressure = surf_pres[0][c];
-      seb_surf[i_channel].roughness = roughness_bare_ground_;
-      seb_surf[i_channel].saturation_gas = saturation_gas[0][cells[0]];
-      seb_surf[i_channel].density_w = seb_params.density_water; // NOTE: could update this to use true density! --etc
-      seb_surf[i_channel].dz = dessicated_zone_thickness_;
-
-      // albedo and emissivity include some vision through the water
-      // FIXME: Replace with effective ponded depth! --etc
-      SEBPhysics::Partition al_part = SEBPhysics::Partitioner()
-                                      .CalcPartition(0., ponded_depth[0][c], unfrozen_fraction[0][c]);
-      seb_surf[i_channel].albedo = al_part.Interpolate(1., seb_surf_pars.a_water, seb_surf_pars.a_ice, seb_surf_pars.a_tundra);
-
-      // FIXME: Replace with effective ponded depth! --etc
-      SEBPhysics::Partition other_part = SEBPhysics::Partitioner(0.02, 0.02)
-                                       .CalcPartition(0., ponded_depth[0][c], unfrozen_fraction[0][c]);
-      seb_surf[i_channel].emissivity = other_part.Interpolate(1., seb_surf_pars.e_water, seb_surf_pars.e_ice, seb_surf_pars.e_tundra);
-      seb_surf[i_channel].porosity = 1.;
-      seb_surf[i_channel].ponded_depth = -1; // FIXME: Replace with effective ponded depth! --etc
-
-      seb_snow[i_channel].height = 0.;
-      seb_snow[i_channel].SWE = 0.;
-      area_fracs[i_channel] = water_frac;
-      i_water = i_channel;
-      i_channel++;
-    }
-    if (snow_frac > 0.) {
-      // -- snow properties
-      seb_snow[i_channel].height = std::max(snow_ground_trans_, snow_depth);
-      seb_snow[i_channel].density = snow_dens;
-      seb_snow[i_channel].age = snow_age;
-      seb_snow[i_channel].SWE = swe / snow_frac;
-      seb_snow[i_channel].temp = 273.15;
-      seb_snow[i_channel].albedo = SEBPhysics::CalcAlbedoSnow(snow_dens);
-      seb_snow[i_channel].emissivity = seb_surf_pars.e_snow;
-      seb_snow[i_channel].roughness = roughness_snow_covered_ground_;
-
-      seb_surf[i_channel].temp = surf_temp[0][c];
-      seb_surf[i_channel].roughness = roughness_bare_ground_;
-      seb_surf[i_channel].density_w = seb_params.density_water; // NOTE: could update this to use true density! --etc
-      seb_surf[i_channel].albedo = seb_snow[i_channel].albedo;
-      area_fracs[i_channel] = snow_frac;
-      i_snow = i_channel;
-      i_channel++;
-    }
-
-    // Run the model
-    std::vector<std::tuple<SEBPhysics::SnowProperties, SEBPhysics::EnergyBalance,
-                           SEBPhysics::MassBalance, SEBPhysics::FluxBalance>> seb_results(num_channels);
-    for (int i=0; i!=num_channels; ++i) {
-      seb_results[i] = SEBPhysics::CalculateSurfaceBalance(dt, seb_surf[i], seb_snow[i], seb_met, seb_params, false, dcvo);
-    }
-
-    // evaluate the residual, collect and average outputs
-    surf_water_flux[0][c] = 0.;
-    surf_energy_flux[0][c] = 0.;
-    ss_water_flux[0][c] = 0.;
-    ss_energy_flux[0][c] = 0.;
-    albedo[0][c] = 0.;
-    evaporative_flux[0][c] = 0.;
-    qE_latent_heat[0][c] = 0.;
-    qE_sensible_heat[0][c] = 0.;
-    qE_lw_out[0][c] = 0.;
-    qE_melt_out[0][c] = 0.;
-
-    bool snow_done = false;
-    for (int i=0; i!=num_channels; ++i) {
-      const SEBPhysics::SnowProperties& seb_snow_new = std::get<0>(seb_results[i]);
-      const SEBPhysics::EnergyBalance& seb_eb = std::get<1>(seb_results[i]);
-      const SEBPhysics::MassBalance& seb_mb = std::get<2>(seb_results[i]);
-      const SEBPhysics::FluxBalance& seb_flux = std::get<3>(seb_results[i]);
-
-      // -- fluxes
-      //    -- surface mass = Pr + Melt - evap if ponded and no snow
-      surf_water_flux[0][c] += area_fracs[i] * seb_flux.M_surf;
-      //    -- surface energy = diffusion + change due to evap
-      surf_energy_flux[0][c] += area_fracs[i] * seb_flux.E_surf;
-      //    -- subsurface mass flux, evap?
-      ss_water_flux[0][cells[0]] += area_fracs[i] * seb_flux.M_sub;
-      //    -- subsurface energy flux, evap?
-      ss_energy_flux[0][cells[0]] += area_fracs[i] * seb_flux.E_sub;
-      
-      // -- snow properties: SWE averaged
-      if (seb_snow_new.height > 0.) {
-        AMANZI_ASSERT(!snow_done);
-        snow_done = true;
-        snow_depth_new_computed_c[0][c] = area_fracs[i] * seb_snow_new.height;
-        stored_SWE_new[0][c] = area_fracs[i] * seb_snow_new.height * seb_snow_new.density / seb_surf[i].density_w;
-        snow_age_new[0][c] = seb_snow_new.age;
-        snow_temp_new[0][c] = seb_snow_new.temp;
-      }
-
-      // -- diagnostics
-      albedo[0][c] +=  area_fracs[i] * seb_surf[i].albedo;
-      evaporative_flux[0][c] -= area_fracs[i] * seb_mb.Me;
-      qE_latent_heat[0][c] += area_fracs[i] * seb_eb.fQe;
-      qE_sensible_heat[0][c] += area_fracs[i] * seb_eb.fQh;
-      qE_lw_out[0][c] += area_fracs[i] * seb_eb.fQlwOut;
-      qE_melt_out[0][c] += area_fracs[i] * seb_eb.fQm;
-    }
-
-    // derived quantities and unit changes
-    snow_dens_new[0][c] = stored_SWE_new[0][c] * seb_surf[0].density_w / snow_depth_new_computed_c[0][c];
-    
-    // surface mass sources are in m^3 water / (m^2 s), no unit change needed
-    // subsurface mass sources are in mol water / (m^3 s)
-    ss_water_flux[0][cells[0]] *= mesh_->cell_volume(c) * seb_surf[0].density_w / 0.0180153
-                                 / subsurf_mesh_->cell_volume(cells[0]);
-    // surface energy sources are in W / m^2, no unit change needed
-    // subsurface energy sources are in W / m^3
-    ss_energy_flux[0][cells[0]] *= mesh_->cell_volume(c) / subsurf_mesh_->cell_volume(cells[0]);
-
-    // difference in snow depths
-    res[0][c] = snow_depth_new[0][c] - snow_depth_new_computed_c[0][c];
-
-    if (eval_derivatives_) {
-      // evaluate FD derivative of energy flux wrt surface temperature
-      (*dsurf_energy_flux_dT)[0][c] = 0.;
-      for (int i=0; i!=num_channels; ++i) {
-        SEBPhysics::GroundProperties seb_surf2(seb_surf[i]);
-        seb_surf2.temp += T_eps;
-        // for now ignore the effect on unfrozen fraction, and therefore on albedo and emissivity
-        auto result2 = SEBPhysics::CalculateSurfaceBalance(dt, seb_surf2, seb_snow[i], seb_met, seb_params, false, dcvo);
-        SEBPhysics::FluxBalance& seb_flux2 = std::get<3>(result2);
-        (*dsurf_energy_flux_dT)[0][c] += area_fracs[i] * seb_flux2.E_surf;
-      }
-      (*dsurf_energy_flux_dT)[0][c] = ((*dsurf_energy_flux_dT)[0][c] - surf_energy_flux[0][c]) / T_eps;
-    }
-  }  // END CELL LOOP ###############################
-
-  // debug
-  if (vo_->os_OK(Teuchos::VERB_HIGH)) {
-    std::vector<std::string> vnames;
-    std::vector< Teuchos::Ptr<const CompositeVector> > vecs;
-    vnames.push_back("computed snow depth");
-    Teuchos::Ptr<CompositeVector> snow_depth_new_computed_p(&snow_depth_new_computed);
-    vecs.push_back(snow_depth_new_computed_p);
-    db_->WriteVectors(vnames, vecs, true);
-    db_->WriteDivider();
-
-    vnames.push_back("air_temp"); 
-    vecs.push_back(S_next_->GetFieldData(Keys::getKey(domain_,"air_temperature")).ptr());
-    vnames.push_back("rel_hum"); 
-    vecs.push_back(S_next_->GetFieldData(Keys::getKey(domain_,"relative_humidity")).ptr());
-    vnames.push_back("precip_rain"); 
-    vecs.push_back(S_next_->GetFieldData(Keys::getKey(domain_,"precipitation_rain")).ptr());
-    vnames.push_back("precip_snow");
-    vecs.push_back(S_inter_->GetFieldData(Keys::getKey(domain_,"precipitation_snow")).ptr());
-    db_->WriteVectors(vnames, vecs, true);
-    db_->WriteDivider();
-
-    vnames.clear();
-    vecs.clear();
-    
-    vnames.push_back("p_ground"); 
-    vecs.push_back(S_next_->GetFieldData(Keys::getKey(domain_,"pressure")).ptr());
-    vnames.push_back("ponded_depth"); 
-    vecs.push_back(S_next_->GetFieldData(Keys::getKey(domain_,"volumetric_ponded_depth")).ptr());
-    vnames.push_back("snow_depth"); 
-    vecs.push_back(S_next_->GetFieldData(Keys::getKey(domain_,"snow_depth")).ptr());
-    db_->WriteVectors(vnames, vecs, true);
-    db_->WriteDivider();
-
-    vnames.clear();
-    vecs.clear();
-
-    vnames.push_back("T_ground"); 
-    vecs.push_back(S_next_->GetFieldData(Keys::getKey(domain_,"temperature")).ptr());
-    vnames.push_back("snow_temp"); 
-    vecs.push_back(S_next_->GetFieldData(Keys::getKey(domain_,"snow_temperature")).ptr());
-    db_->WriteVectors(vnames, vecs, true);
-    db_->WriteDivider();
-
-    vnames.clear();
-    vecs.clear();
-
-    vnames.push_back("inc shortwave radiation"); 
-    vecs.push_back(S_next_->GetFieldData(sw_incoming_key_).ptr());
-    vnames.push_back("inc longwave radiation");
-    vecs.push_back(S_next_->GetFieldData(Keys::getKey(domain_, "incoming_longwave_radiation")).ptr());
-    vnames.push_back("inc latent heat"); 
-    vecs.push_back(S_next_->GetFieldData(Keys::getKey(domain_,"qE_latent_heat")).ptr());
-    vnames.push_back("inc sensible heat"); 
-    vecs.push_back(S_next_->GetFieldData(Keys::getKey(domain_,"qE_sensible_heat")).ptr());
-    vnames.push_back("out longwave radiation"); 
-    vecs.push_back(S_next_->GetFieldData(Keys::getKey(domain_,"qE_lw_out")).ptr());
-    vnames.push_back("out conducted energy"); 
-    vecs.push_back(S_next_->GetFieldData(Keys::getKey(domain_,"total_energy_source")).ptr());
-    vnames.push_back("out melting energy"); 
-    vecs.push_back(S_next_->GetFieldData(Keys::getKey(domain_,"qE_melt_out")).ptr());
-
-    db_->WriteVectors(vnames, vecs, true);
-    db_->WriteDivider();
-
-    vnames.clear();
-    vecs.clear();
-    
-    vnames.push_back("water_source"); 
-    vecs.push_back(S_next_->GetFieldData(Keys::getKey(domain_,"mass_source")).ptr());
-    vnames.push_back("evap flux"); 
-    vecs.push_back(S_next_->GetFieldData(Keys::getKey(domain_,"evaporative_flux")).ptr());
-    db_->WriteVectors(vnames, vecs, true);
-    db_->WriteDivider();
-
-    vnames.clear();
-    vecs.clear();
-
-    vnames.push_back("res(snow_diff)"); 
-    vecs.push_back(g->Data().ptr());
-    
-    db_->WriteVectors(vnames, vecs, true);
-  }
-
-  // scale to MJ for ATS units
-  surf_energy_flux.Scale(1.e-6);
-  if (dsurf_energy_flux_dT.get()) dsurf_energy_flux_dT->Scale(1.e-6);
-  ss_energy_flux.Scale(1.e-6);
-  
-  // mark our other primary variables as changed
-  pvfe_esource_->SetFieldAsChanged(S_next_.ptr());
-  pvfe_wsource_->SetFieldAsChanged(S_next_.ptr());
-  pvfe_w_sub_source_->SetFieldAsChanged(S_next_.ptr());
-  pvfe_e_sub_source_->SetFieldAsChanged(S_next_.ptr());
-}
-
-
-// applies preconditioner to u and returns the result in Pu
-int ImplicitSubgrid::ApplyPreconditioner(Teuchos::RCP<const TreeVector> u,
-        Teuchos::RCP<TreeVector> Pu) {
-  *Pu = *u;
-  return 0;
-}
-
-
-// updates the preconditioner
-void
-ImplicitSubgrid::UpdatePreconditioner(double t,
-        Teuchos::RCP<const TreeVector> up, double h) {}
-
-
-// error monitor, inf norm is good, this is relative to 1m snow pack
-double
-ImplicitSubgrid::ErrorNorm(Teuchos::RCP<const TreeVector> u,
-        Teuchos::RCP<const TreeVector> du) {
-  Teuchos::OSTab tab = vo_->getOSTab();
-  double err;
-  du->NormInf(&err);
-  if (vo_->os_OK(Teuchos::VERB_MEDIUM)) {
-    *vo_->os() << "ENorm (cells) = " << err << std::endl;
-  }
-  return err;
 }
 
 
@@ -826,6 +116,73 @@ ImplicitSubgrid::ModifyPredictor(double h, Teuchos::RCP<const TreeVector> u0,
 }
 
 
+// computes the non-linear functional g = g(t,u,udot)
+void
+ImplicitSubgrid::FunctionalResidual(double t_old, double t_new, Teuchos::RCP<TreeVector> u_old,
+        Teuchos::RCP<TreeVector> u_new, Teuchos::RCP<TreeVector> g) {
+  int cycle = S_next_->cycle();
+
+  // update the residual
+  SurfaceBalanceBase::FunctionalResidual(t_old, t_new, u_old, u_new, g);  
+
+  // first fill the role of age/density evaluator, as these depend upon old and new values
+  const auto& snow_swe_old = *S_inter_->GetFieldData(conserved_key_)->ViewComponent("cell",false);
+  const auto& cell_vol = *S_next_->GetFieldData(cell_vol_key_)->ViewComponent("cell",false);
+
+  const auto& snow_age_old = *S_inter_->GetFieldData(snow_age_key_)->ViewComponent("cell",false);
+  auto& snow_age_new = *S_next_->GetFieldData(snow_age_key_, name_)->ViewComponent("cell",false);
+
+  const auto& snow_dens_old = *S_inter_->GetFieldData(snow_dens_key_)->ViewComponent("cell",false);
+  auto& snow_dens_new = *S_next_->GetFieldData(snow_dens_key_, name_)->ViewComponent("cell",false);
+
+  S_next_->GetFieldEvaluator(new_snow_key_)->HasFieldChanged(S_next_.ptr(), name_);
+  const auto& new_snow = *S_next_->GetFieldData(new_snow_key_)->ViewComponent("cell",false);
+
+  S_next_->GetFieldEvaluator(source_key_)->HasFieldChanged(S_next_.ptr(), name_);
+  const auto& source = *S_next_->GetFieldData(source_key_)->ViewComponent("cell",false);
+
+  SEBPhysics::ModelParams params;
+  double dt_days = (t_new - t_old) / 86400.;
+  for (unsigned int c=0; c!=snow_dens_new.MyLength(); ++c) {
+    double swe_added = new_snow[0][c] * (t_new - t_old) * cell_vol[0][c];
+    double swe_lost = (new_snow[0][c] - source[0][c] ) * (t_new - t_old) * cell_vol[0][c];
+    double swe_old = snow_swe_old[0][c];
+
+    double age_new_snow = dt_days / 2.;
+    if (swe_old + swe_added - swe_lost < 1.e-10) {
+      snow_age_new[0][c] = 0.;
+      snow_dens_new[0][c] = params.density_freshsnow;
+    } else {
+      // age the old snow
+      double age_settled = snow_age_old[0][c] + dt_days;
+      double dens_settled = params.density_freshsnow * std::max(std::pow(age_settled, 0.3), 1.);
+      
+      // Match frost age with assigned density -- Calculate which day frost
+      // density matched snow defermation function from (Martinec, 1977)
+      //double age_frost = std::pow((params.density_frost / params.density_freshsnow),
+      //        (1/0.3)) - 1 + dt;
+
+      // ignoring frost, just weighting precip and old snow
+      snow_age_new[0][c] = (age_settled * (swe_old - swe_lost) + age_new_snow * swe_added)
+                           / (swe_old + swe_added - swe_lost);
+      snow_dens_new[0][c] = (dens_settled * (swe_old - swe_lost) + params.density_freshsnow * swe_added)
+                            / (swe_old + swe_added - swe_lost);
+    }
+  }
+  pvfe_snow_dens_->SetFieldAsChanged(S_next_.ptr());
+
+
+  // debugging
+  std::vector<std::string> vnames;
+  vnames.push_back("snow age");
+  vnames.push_back("snow dens");
+
+  std::vector< Teuchos::Ptr<const CompositeVector> > vecs;
+  vecs.push_back(S_next_->GetFieldData(snow_age_key_).ptr());
+  vecs.push_back(S_next_->GetFieldData(snow_dens_key_).ptr());
+  db_->WriteVectors(vnames, vecs, false);
+  
+}
 
 
 } // namespace

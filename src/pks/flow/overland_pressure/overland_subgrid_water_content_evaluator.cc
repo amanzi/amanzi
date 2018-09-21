@@ -1,11 +1,28 @@
+/* -*-  mode: c++; indent-tabs-mode: nil -*- */
 /*
-  The overland subgrid water content evaluator is an algebraic evaluator of a given model.
-Subgrid water content.  
-  Generated via evaluator_generator.
+
+  License: see $ATS_DIR/COPYRIGHT
+  Authors: Ahmad Jan (jana@ornl.gov)
+           Ethan Coon (ecoon@ornl.gov)
+*/
+
+//! An evaluator for determining the water content of a given pressure in a cell that includes subgrid microtopography.
+/*!
+
+This is Phi * density * area, where Phi is the volumetric (effective) ponded depth as in Jan et al WRR 2018.
+
+* `"maximum ponded depth key`" ``[string]`` **DOMAIN-maximum_ponded_depth**
+         The name of del_max, the max microtopography value.
+* `"excluded volume key`" ``[string]`` **DOMAIN-excluded_volume**
+         The name of del_excluded, the integral of the microtopography.
+* `"pressure key`" ``[string]`` **DOMAIN-pressure**
+         The name of the pressure on the surface.
+* `"cell volume key`" ``[string]`` **DOMAIN-cell_volume**
+         The name of the cell's volume.
+
 */
 
 #include "overland_subgrid_water_content_evaluator.hh"
-#include "overland_subgrid_water_content_model.hh"
 
 namespace Amanzi {
 namespace Flow {
@@ -14,48 +31,37 @@ namespace Flow {
 OverlandSubgridWaterContentEvaluator::OverlandSubgridWaterContentEvaluator(Teuchos::ParameterList& plist) :
     SecondaryVariableFieldEvaluator(plist){ 
 
+  //
+  // NOTE: this evaluator simplifies the situation by assuming constant
+  // density.  This make it so that ice and water see the same geometry per
+  // unit pressure, which isn't quite true thanks to density differences.
+  // However, we hypothesize that these differences, on the surface (unlike in
+  // the subsurface) really don't matter much. --etc
   M_ = plist_.get<double>("molar mass", 0.0180153);
-  bar_ = plist_.get<bool>("allow negative water content", false);
-  rollover_ = plist_.get<double>("water content rollover", 0.);
-  
+  n_liq_ = plist_.get<double>("molar density", 1000./0.0180153);
+  //bar_ = plist_.get<bool>("allow negative water content", false);
+
+  //
+  // NOTE: A bar in this evaluator doesn't make sense, because bar is intended
+  // to keep the derivative positive even for negative pressures, but this
+  // curve asympotes to 0 with a 0 derivative, so negative values should be
+  // zero.  That said I'm afraid to delete the code in case I'm missing
+  // something.  FIXME!  --etc
+  bar_ = false;
   
   Key domain = Keys::getDomain(my_key_);
 
-  delta_max_key_ = plist_.get<std::string>("maximum ponded depth key", Keys::getKey(domain,"maximum_ponded_depth"));
+  delta_max_key_ = Keys::readKey(plist_, domain, "microtopographic relief", "microtopographic_relief"); 
   dependencies_.insert(delta_max_key_);
-  delta_ex_key_ = plist_.get<std::string>("excluded volume key", Keys::getKey(domain,"excluded_volume"));
-  dependencies_.insert(delta_ex_key_);
-  // my dependencies
-  pres_key_ = plist_.get<std::string>("pressure key", Keys::getKey(domain,"pressure"));
-  dependencies_.insert(pres_key_);
-  // vpd_key_ = plist_.get<std::string>("volumetric height key", Keys::getKey(domain,"volumetric_ponded_depth"));
-  //dependencies_.insert(vpd_key_);
-  cv_key_ = plist_.get<std::string>("cell volume key", Keys::getKey(domain,"cell_volume"));
-  dependencies_.insert(cv_key_);
-
   
-}
+  delta_ex_key_ = Keys::readKey(plist_, domain, "excluded volume", "excluded_volume");
+  dependencies_.insert(delta_ex_key_);
 
+  pres_key_ = Keys::readKey(plist_, domain, "pressure", "pressure");
+  dependencies_.insert(pres_key_);
 
-// Copy constructor
-OverlandSubgridWaterContentEvaluator::OverlandSubgridWaterContentEvaluator(const OverlandSubgridWaterContentEvaluator& other) :
-    SecondaryVariableFieldEvaluator(other),
-    pres_key_(other.pres_key_),
-    model_(other.model_),
-    M_(other.M_),
-    delta_max_key_(other.delta_max_key_),
-    delta_ex_key_(other.delta_ex_key_),
-    bar_(other.bar_),
-    rollover_(other.rollover_),
-    cv_key_(other.cv_key_)
- {}
-
-
-// Virtual copy constructor
-Teuchos::RCP<FieldEvaluator>
-OverlandSubgridWaterContentEvaluator::Clone() const
-{
-  return Teuchos::rcp(new OverlandSubgridWaterContentEvaluator(*this));
+  cv_key_ = Keys::readKey(plist_, domain, "cell volume", "cell_volume");
+  dependencies_.insert(cv_key_);
 }
 
 
@@ -63,65 +69,53 @@ void
 OverlandSubgridWaterContentEvaluator::EvaluateField_(const Teuchos::Ptr<State>& S,
         const Teuchos::Ptr<CompositeVector>& result)
 {
-  Epetra_MultiVector& res = *result->ViewComponent("cell",false);
-  const Epetra_MultiVector& pres = *S->GetFieldData(pres_key_)->ViewComponent("cell",false);
-  //  const Epetra_MultiVector& vpd = *S->GetFieldData(vpd_key_)->ViewComponent("cell",false);
+  auto& res = *result->ViewComponent("cell",false);
 
-  const Epetra_MultiVector& cv = *S->GetFieldData(cv_key_)->ViewComponent("cell",false);
+  const auto& pres = *S->GetFieldData(pres_key_)->ViewComponent("cell",false);
+  const auto& cv = *S->GetFieldData(cv_key_)->ViewComponent("cell",false);
 
-  const double& p_atm = *S->GetScalarData("atmospheric_pressure");
-  const Epetra_Vector& gravity = *S->GetConstantVectorData("gravity");
-  double gz = -gravity[2];  // check this
+  // these dependencies are assumed here -- must be updated in state-dev --etc
+  const auto& p_atm = *S->GetScalarData("atmospheric_pressure");
+  const auto& gravity = *S->GetConstantVectorData("gravity");
+  double gz = -gravity[2];
   
-  Teuchos::RCP<const CompositeVector> max_pd = S->GetFieldData(delta_max_key_);
-  Teuchos::RCP<const CompositeVector> ex_vol = S->GetFieldData(delta_ex_key_);
-  // cell values
-  const Epetra_MultiVector& max_pd_v = *max_pd->ViewComponent("cell", false);
-  const Epetra_MultiVector& ex_vol_v = *ex_vol->ViewComponent("cell", false);
+  const auto& max_pd_v = *S->GetFieldData(delta_max_key_)->ViewComponent("cell", false);
+  const auto& ex_vol_v = *S->GetFieldData(delta_ex_key_)->ViewComponent("cell", false);
 
- 
-  //assert(max_pd_v[0][3]);
-  //assert(ex_vol_v[0][3]);
+  // if (bar_) {
+  //   for (int c=0; c!=res.MyLength(); ++c) {
+  //     // convert these parameters to water content
+  //     double delta_max = max_pd_v[0][c] * n_liq_;
+  //     double delta_ex = ex_vol_v[0][c] * n_liq_;
 
-  int ncells = res.MyLength();
-  if (bar_) {
-    for (int c=0; c!=ncells; ++c) {
-      double delta_max = max_pd_v[0][c]*1000./M_;
-      double delta_ex = ex_vol_v[0][c]*1000. / M_;
-    
+  //     double pd = (pres[0][c] - p_atm) / (gz * M_);
+  //     if (pd <=delta_max){
+  //       double pd_on_delmax =  pd / delta_max;
+  //       res[0][c] = std::pow(pd_on_delmax,2) * (2*delta_max - 3*delta_ex)
+  //                   + std::pow(pd_on_delmax,3) * (2*delta_ex - delta_max);
+  //       res[0][c] *= cv[0][c];
+  //     } else if (pd > delta_max) {
+  //       res[0][c] = cv[0][c] *(pd - delta_ex);
+  //     }
+  //   }
+  // } else {
+    for (int c=0; c!=res.MyLength(); ++c) {
+      double delta_max = max_pd_v[0][c] * n_liq_;
+      double delta_ex = ex_vol_v[0][c] * n_liq_;
+
       double pd = (pres[0][c] - p_atm)/ (gz * M_);
-      if (pd <=delta_max){
-	res[0][c] = std::pow(pd,2)*(2*delta_max - 3*delta_ex)/std::pow(delta_max,2) + std::pow(pd,3)*(2*delta_ex - delta_max)/std::pow(delta_max,3);
+      if (pd <= 0.) {
+        res[0][c] = 0.;
+      } else if (pd < delta_max) {
+        double pd_on_delmax = pd / delta_max;
+        res[0][c] = std::pow(pd_on_delmax,2) * (2*delta_max - 3*delta_ex)
+                    + std::pow(pd_on_delmax,3) * (2*delta_ex - delta_max);
 	res[0][c] *= cv[0][c];
+      } else {
+	res[0][c] = cv[0][c] * (pd - delta_ex);
       }
-      else if( pd > delta_max)
-	res[0][c] = cv[0][c] *(pd - delta_ex);  
     }
-  } else if (rollover_ > 0.) {
-    std::cout<<"Debugging....ROLLOVER_ in the subgrid water content evaluator: \n"; abort();
-    for (int c=0; c!=ncells; ++c) {
-      double dp = pres[0][c] - p_atm;
-      double dp_eff = dp < 0. ? 0. :
-          dp < rollover_ ?
-            dp*dp/(2*rollover_) :
-            dp - rollover_/2.;
-      res[0][c] = cv[0][c] * dp_eff / (gz * M_);
-    }
-  } else {
-
-    for (int c=0; c!=ncells; ++c) {
-      double pd = pres[0][c] < p_atm ? 0.0 : (pres[0][c] - p_atm)/ (gz * M_);
-      double delta_max = max_pd_v[0][c]*1000./M_;
-      double delta_ex = ex_vol_v[0][c]*1000. / M_;
-      if (0 <= pd && pd <=delta_max){
-	res[0][c] = std::pow(pd,2)*(2*delta_max - 3*delta_ex)/std::pow(delta_max,2) + std::pow(pd,3)*(2*delta_ex - delta_max)/std::pow(delta_max,3);
-	res[0][c] *= cv[0][c];
-      }
-      else if( pd > delta_max)
-	res[0][c] = cv[0][c] *(pd - delta_ex);  
-    }
-  }
-  
+  // }
 }
 
 
@@ -129,70 +123,56 @@ void
 OverlandSubgridWaterContentEvaluator::EvaluateFieldPartialDerivative_(const Teuchos::Ptr<State>& S,
         Key wrt_key, const Teuchos::Ptr<CompositeVector>& result)
 {
-
   AMANZI_ASSERT(wrt_key == pres_key_);
 
-  Epetra_MultiVector& res = *result->ViewComponent("cell",false);
-  const Epetra_MultiVector& pres = *S->GetFieldData(pres_key_)
-      ->ViewComponent("cell",false);
-  const Epetra_MultiVector& cv = *S->GetFieldData(cv_key_)
-      ->ViewComponent("cell",false);
+  auto& res = *result->ViewComponent("cell",false);
+  const auto& pres = *S->GetFieldData(pres_key_)->ViewComponent("cell",false);
+  const auto& cv = *S->GetFieldData(cv_key_)->ViewComponent("cell",false);
 
-  const double& p_atm = *S->GetScalarData("atmospheric_pressure");
-  const Epetra_Vector& gravity = *S->GetConstantVectorData("gravity");
-  double gz = -gravity[2];  // check this
+  const auto& p_atm = *S->GetScalarData("atmospheric_pressure");
+  const auto& gravity = *S->GetConstantVectorData("gravity");
+  double gz = -gravity[2];
  
+  const auto& max_pd_v = *S->GetFieldData(delta_max_key_)->ViewComponent("cell", false);
+  const auto& ex_vol_v = *S->GetFieldData(delta_ex_key_)->ViewComponent("cell", false);
 
-  Teuchos::RCP<const CompositeVector> max_pd = S->GetFieldData(delta_max_key_);
-  Teuchos::RCP<const CompositeVector> ex_vol = S->GetFieldData(delta_ex_key_);
-  // cell values
-  const Epetra_MultiVector& max_pd_v = *max_pd->ViewComponent("cell", false);
-  const Epetra_MultiVector& ex_vol_v = *ex_vol->ViewComponent("cell", false);
-  
-  
+  if (wrt_key == pres_key_) {
+    // if (bar_) {
+    //   for (int c=0; c!=res.MyLength(); ++c) {
+    //     // This doesn't keep the value from 0, and I don't think it should have to in normal usage. --etc
+    //     double pd = pres[0][c] < p_atm ? 1.0e-5 : (pres[0][c] - p_atm)/ (gz * M_);
+    //     //double pd = (pres[0][c] - p_atm)/ (gz * M_);
 
-  int ncells = res.MyLength();
+    //     double delta_max = max_pd_v[0][c] * n_liq_;
+    //     double delta_ex = ex_vol_v[0][c] * n_liq_;
+    //     if (pd < delta_max){
+    //       res[0][c] = 2 * pd * (2*delta_max - 3*delta_ex) / std::pow(delta_max,2)
+    //                   + 3 * std::pow(pd, 2) * (2*delta_ex - delta_max) / std::pow(delta_max,3);
+    //       res[0][c] *= cv[0][c] / (gz * M_);
+    //     } else {
+    //       res[0][c] = cv[0][c] / (gz * M_);
+    //     }
+    //   }
 
-  
-  if (bar_) {
-    for (int c=0; c!=ncells; ++c) {
-      double pd = pres[0][c] < p_atm ? 1.0e-5 : (pres[0][c] - p_atm)/ (gz * M_);
-      //      double pd = (pres[0][c] - p_atm)/ (gz * M_);
-      double delta_max = max_pd_v[0][c]*1000./M_;
-      double delta_ex = ex_vol_v[0][c]*1000. / M_;
-      if (pd <=delta_max){
-	res[0][c] = 2*pd*(2*delta_max - 3*delta_ex )/ std::pow(delta_max,2) + 3*pd*pd*(2*delta_ex - delta_max)/std::pow(delta_max,3);
-	res[0][c] *= cv[0][c] / (gz * M_);
+    // } else {
+      for (int c=0; c!=res.MyLength(); ++c) {
+        double pd = (pres[0][c] - p_atm) / (gz * M_);
+        double delta_max =  max_pd_v[0][c] * n_liq_;
+        double delta_ex = ex_vol_v[0][c] * n_liq_;
+        if (pd <= 0.) {
+          res[0][c] = 0.;
+        } else if (pd < delta_max) {
+          res[0][c] = 2 * pd * (2*delta_max - 3*delta_ex) / std::pow(delta_max,2)
+                      + 3 * std::pow(pd, 2) * (2*delta_ex - delta_max) / std::pow(delta_max,3);
+          res[0][c] *= cv[0][c] / (gz * M_);
+        } else {
+          res[0][c] = cv[0][c] / (gz * M_);
+        }
       }
-      else if( pd > delta_max)
-	res[0][c] = cv[0][c]/ (gz * M_);
-    }
-  } else if (rollover_ > 0.) {
-    std::cout<<"Debugging...ROLLOVER-DERIVATIVE in the subgrid water content. \n"; abort();
-    for (int c=0; c!=ncells; ++c) {
-      double dp = pres[0][c] - p_atm;
-      double ddp_eff = dp < 0. ? 0. :
-          dp < rollover_ ? dp/rollover_ : 1.;
-      res[0][c] = cv[0][c] * ddp_eff / (gz * M_);
-    }
+    // }
   } else {
-    
-     for (int c=0; c!=ncells; ++c) {
-       double pd = pres[0][c] < p_atm ? 1.0e-5 : (pres[0][c] - p_atm)/ (gz * M_);
-       double delta_max =  max_pd_v[0][c]*1000./M_;
-       double delta_ex = ex_vol_v[0][c]*1000. / M_;
-      if (0 <= pd && pd <=delta_max){
-	res[0][c] = 2*pd*(2*delta_max - 3*delta_ex )/ std::pow(delta_max,2) + 3*pd*pd*(2*delta_ex - delta_max)/std::pow(delta_max,3);
-	res[0][c] *= cv[0][c] / (gz * M_);
-      }
-      else if( pd > delta_max)
-	res[0][c] = cv[0][c]/ (gz * M_);
-       
-    }
-     
+    res.PutScalar(0.);
   }
-
-
 }
 
 
