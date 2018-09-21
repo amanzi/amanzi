@@ -125,6 +125,7 @@ class VerboseObject : public Teuchos::VerboseObject<VerboseObject> {
   // Color output for developers
   std::string color(std::string name) const;
   std::string reset() const;
+  std::string clock() const;
 
   void set_name(std::string name);
 
