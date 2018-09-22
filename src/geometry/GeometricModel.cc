@@ -31,8 +31,7 @@ GeometricModel::GeometricModel(unsigned int dim,
   : dim_(dim)
 {
   // Go through the parameter list and populate the geometric model with regions
-  for (Teuchos::ParameterList::ConstIterator i = gm_params.begin();
-       i!=gm_params.end(); ++i) {
+  for (auto i = gm_params.begin(); i != gm_params.end(); ++i) {
 
     std::string region_name = gm_params.name(i);
     if (gm_params.isSublist(region_name)) {
@@ -40,8 +39,7 @@ GeometricModel::GeometricModel(unsigned int dim,
       Teuchos::ParameterList& reg_spec = gm_params.sublist(region_name);
 
       // Create the region
-      Teuchos::RCP<Region> reg =
-          createRegion(region_name, -1, reg_spec, comm);
+      Teuchos::RCP<Region> reg = createRegion(region_name, -1, reg_spec, comm);
 
       // Add it to the geometric model
       AddRegion(reg);
