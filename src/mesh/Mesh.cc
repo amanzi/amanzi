@@ -1114,46 +1114,45 @@ Mesh::valid_set_name(std::string name, Entity_kind kind) const
     Exceptions::amanzi_throw(mesg);
   }
 
-  unsigned int ngr = geometric_model_->RegionSize();
-  for (int i = 0; i < ngr; i++) {
-    Teuchos::RCP<const AmanziGeometry::Region> rgn = geometric_model_->FindRegion(i);
-
-    unsigned int rdim = rgn->manifold_dimension();
-
-    if (rgn->name() == name) {
-      // For regions of type Color Function, the dimension
-      // parameter is not guaranteed to be correct
-      if (rgn->type() == AmanziGeometry::COLORFUNCTION) return true;
-
-      // For regions of type Labeled set, extract some more info and verify
-      if (rgn->type() == AmanziGeometry::LABELEDSET) {
-        Teuchos::RCP<const AmanziGeometry::RegionLabeledSet> lsrgn =
-            Teuchos::rcp_dynamic_cast<const AmanziGeometry::RegionLabeledSet>(rgn);
-        std::string entity_type = lsrgn->entity_str();
-
-        if ((kind == CELL && entity_type == "CELL") ||
-            (kind == FACE && entity_type == "FACE") ||
-            (kind == EDGE && entity_type == "EDGE") ||
-            (kind == NODE && entity_type == "NODE"))
-          return true;
-        else
-          return false;
-      }
-
-      // If we are looking for a cell set the region has to be
-      // of the same topological dimension as the cells or it
-      // has to be a point region
-      if (kind == CELL && (rdim >= manifold_dim_ || rdim == 1 || rdim == 0)) return true;
-
-      // If we are looking for a side set, the region has to be
-      // one topological dimension less than the cells
-      if (kind == FACE && (rdim >= manifold_dim_-1 || rdim == 0)) return true;
-
-      // If we are looking for a node set, the region can be of any
-      // dimension upto the spatial dimension of the domain
-      if (kind == NODE) return true;
-    }
+  Teuchos::RCP<const AmanziGeometry::Region> rgn;
+  try {
+    rgn = geometric_model_->FindRegion(name);
+  } catch (...) {
+    return false;
   }
+
+  unsigned int rdim = rgn->manifold_dimension();
+
+  // For regions of type Color Function, the dimension
+  // parameter is not guaranteed to be correct
+  if (rgn->type() == AmanziGeometry::COLORFUNCTION) return true;
+
+  // For regions of type Labeled set, extract some more info and verify
+  if (rgn->type() == AmanziGeometry::LABELEDSET) {
+    auto lsrgn = Teuchos::rcp_dynamic_cast<const AmanziGeometry::RegionLabeledSet>(rgn);
+    std::string entity_type = lsrgn->entity_str();
+
+    if ((kind == CELL && entity_type == "CELL") ||
+        (kind == FACE && entity_type == "FACE") ||
+        (kind == EDGE && entity_type == "EDGE") ||
+        (kind == NODE && entity_type == "NODE"))
+      return true;
+    else
+      return false;
+  }
+
+  // If we are looking for a cell set the region has to be
+  // of the same topological dimension as the cells or it
+  // has to be a point region
+  if (kind == CELL && (rdim >= manifold_dim_ || rdim == 1 || rdim == 0)) return true;
+
+  // If we are looking for a side set, the region has to be
+  // one topological dimension less than the cells
+  if (kind == FACE && (rdim >= manifold_dim_-1 || rdim == 0)) return true;
+
+  // If we are looking for a node set, the region can be of any
+  // dimension upto the spatial dimension of the domain
+  if (kind == NODE) return true;
 
   return false;
 }
