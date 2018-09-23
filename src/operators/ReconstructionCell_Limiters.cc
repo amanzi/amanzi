@@ -126,17 +126,20 @@ void ReconstructionCell::LimiterTensorial_(
 
   // Local extrema are calculated here and updated in Step 2.
   AmanziMesh::Entity_ID_List cells;
-  std::vector<double> field_local_min(ncells_wghost);
-  std::vector<double> field_local_max(ncells_wghost);
+  std::vector<double> field_local_min(ncells_wghost, OPERATOR_LIMITER_INFINITY);
+  std::vector<double> field_local_max(ncells_wghost,-OPERATOR_LIMITER_INFINITY);
 
-  for (int c = 0; c < ncells_owned; c++) {
-    mesh_->cell_get_face_adj_cells(c, AmanziMesh::Parallel_type::ALL, &cells);
-    field_local_min[c] = field_local_max[c] = (*field_)[component_][c];
+  for (int f = 0; f < nfaces_wghost; ++f) {
+    mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
 
-    for (int i = 0; i < cells.size(); i++) {
-      double value = (*field_)[component_][cells[i]];
-      field_local_min[c] = std::min(field_local_min[c], value);
-      field_local_max[c] = std::max(field_local_max[c], value);
+    for (int i = 0; i < cells.size(); ++i) {
+      int c1 = cells[i];
+      for (int j = 0; j < cells.size(); ++j) {
+        int c2 = cells[j];
+        double value = (*field_)[component_][c2];
+        field_local_min[c1] = std::min(field_local_min[c1], value);
+        field_local_max[c1] = std::max(field_local_max[c1], value);
+      }
     }
   }
 
