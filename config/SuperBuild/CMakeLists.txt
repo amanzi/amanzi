@@ -796,6 +796,13 @@ else()
 
 endif()
 
+# Nanoflann is used by MSTK only
+if (ENABLE_MSTK_Mesh)
+  include(${SuperBuild_BUILD_FILES_DIR}/Build_Nanoflann.cmake)
+  set(Nanoflann_INSTALL_PREFIX ${TPL_INSTALL_PREFIX})
+  set(Nanoflann_INCLUDE_DIRS "${Nanoflann_INSTALL_PREFIX}/include")
+endif()
+
 
 # ############################################################################ #
 #  Final steps

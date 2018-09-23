@@ -115,6 +115,7 @@
 #   0.95.4       - update Boost to version 1.67.0
 #   0.95.5       - update NetCDF to version 4.6.1
 #                - update OpenMPI to 3.1.1
+#   0.95.6       - added new package nanoflann 1.3.0
 
 include(CMakeParseArguments)
 
@@ -496,4 +497,16 @@ set(CRUNCHTOPE_URL_STRING    ${AMANZI_TPLS_DOWNLOAD_URL})
 set(CRUNCHTOPE_ARCHIVE_FILE  CrunchTope_160915-c31ecb9.tgz)
 set(CRUNCHTOPE_SAVEAS_FILE   ${CRUNCHTOPE_ARCHIVE_FILE})
 set(CRUNCHTOPE_MD5_SUM       84c38ca70da8f0e14cce3841dbbb4c0b)
+
+#
+# TPL: Nanoflann
+#
+set(Nanoflann_VERSION_MAJOR 1)
+set(Nanoflann_VERSION_MINOR 3)
+set(Nanoflann_VERSION_PATCH 0)
+set(Nanoflann_VERSION  ${Nanoflann_VERSION_MAJOR}.${Nanoflann_VERSION_MINOR}.${Nanoflann_VERSION_PATCH})
+set(Nanoflann_URL_STRING    "https://github.com/jlblancoc/nanoflann/archive")
+set(Nanoflann_ARCHIVE_FILE  v${Nanoflann_VERSION}.tar.gz)
+set(Nanoflann_SAVEAS_FILE   nanoflann-${Nanoflann_VERSION}.tar.gz)
+set(Nanoflann_MD5_SUM       c9836578e97fca4f05335699b8394b4d)
 
