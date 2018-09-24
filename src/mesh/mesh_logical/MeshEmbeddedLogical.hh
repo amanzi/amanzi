@@ -336,9 +336,7 @@ class MeshEmbeddedLogical : public Mesh {
 
   // Cache connectivity info.
   virtual
-  void cache_cell2face_info_() const;
-  virtual
-  void cache_face2cell_info_() const;
+  void cache_cell_face_info_() const;
 
 
   virtual

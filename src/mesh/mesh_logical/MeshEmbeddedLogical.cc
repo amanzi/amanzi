@@ -40,20 +40,16 @@ MeshEmbeddedLogical::MeshEmbeddedLogical(const Epetra_MpiComm* comm,
     bg_mesh->compute_cell_geometric_quantities_();
   if (!bg_mesh->face_geometry_precomputed_)
     bg_mesh->compute_face_geometric_quantities_();
-  if (!bg_mesh->cell2face_info_cached_)
-    bg_mesh->cache_cell2face_info_();
-  if (!bg_mesh->face2cell_info_cached_)
-    bg_mesh->cache_face2cell_info_();
+  if (!bg_mesh->cell2face_info_cached_ || !bg_mesh->face2cell_info_cached_)
+    bg_mesh->cache_cell_face_info_();
 
   // ensure cached properties are available
   if (!log_mesh->cell_geometry_precomputed_)
     log_mesh->compute_cell_geometric_quantities_();
   if (!log_mesh->face_geometry_precomputed_)
     log_mesh->compute_face_geometric_quantities_();
-  if (!log_mesh->cell2face_info_cached_)
-    log_mesh->cache_cell2face_info_();
-  if (!log_mesh->face2cell_info_cached_)
-    log_mesh->cache_face2cell_info_();
+  if (!log_mesh->cell2face_info_cached_ || !log_mesh->face2cell_info_cached_)
+    log_mesh->cache_cell_face_info_();
 
   // merge and remap
   int ncells_bg_owned = bg_mesh->num_entities(CELL, Parallel_type::OWNED);
@@ -81,21 +77,32 @@ MeshEmbeddedLogical::MeshEmbeddedLogical(const Epetra_MpiComm* comm,
   // face-to-cell map -- remap and add in extras
   // -- first faces are the logical-logical faces
   face_cell_ids_ = log_mesh->face_cell_ids_;
-  // -- next are the logical-background faces, insert and remap
-  face_cell_ids_.insert(face_cell_ids_.end(), face_cell_ids.begin(),
-                        face_cell_ids.end());
+  // -- next are the logical-background faces, insert and remap.
+  //
+  // Per stated convention of normal direction, take 1s complement of
+  // second cell (if not done already)
+  std::vector<Entity_ID_List> face_cell_ids_copy = face_cell_ids;
+  for (auto & fc : face_cell_ids_copy)
+    if (!std::signbit(fc[1])) fc[1] = ~fc[1];
+  face_cell_ids_.insert(face_cell_ids_.end(), face_cell_ids_copy.begin(),
+                        face_cell_ids_copy.end());
   for (int f=nfaces_log; f!=face_cell_ids_.size(); ++f) {
-    // all new faces are logical,bg.  must remap the bg cell
-    face_cell_ids_[f][1] += ncells_log;
+    // all new faces are logical,bg.  must remap the bg cell. since
+    // cell 1 is storing the 1s complement of the ID, we have convert
+    // it to a regular ID by taking the 1s complement, offset it and
+    // then convert it back
+    face_cell_ids_[f][1] = ~(~face_cell_ids_[f][1] + ncells_log);
   }
   // -- finally the bg-bg faces, insert and remap
   face_cell_ids_.insert(face_cell_ids_.end(), bg_mesh->face_cell_ids_.begin(),
                         bg_mesh->face_cell_ids_.end());
   for (int f=nfaces_log+nfaces_extra; f!=face_cell_ids_.size(); ++f) {
     int n_cells = face_cell_ids_[f].size();
-    for (int i=0; i!=n_cells; ++i) {
-      face_cell_ids_[f][i] += ncells_log;
-    }
+    for (int i=0; i!=n_cells; ++i)
+      if (std::signbit(face_cell_ids_[f][i]))
+        face_cell_ids_[f][i] = ~(~face_cell_ids_[f][i] + ncells_log);
+      else
+        face_cell_ids_[f][i] += ncells_log;
   }
 
   // // face normals -- same order: log-log, log-bg, bg-bg
@@ -176,7 +183,7 @@ MeshEmbeddedLogical::MeshEmbeddedLogical(const Epetra_MpiComm* comm,
   // now loop over new faces, adding the updates to the cell-ordered versions
   for (int f=nfaces_log; f!=nfaces_log+nfaces_extra; ++f) {
     Entity_ID c0 = face_cell_ids_[f][0];
-    Entity_ID c1 = face_cell_ids_[f][1];
+    Entity_ID c1 = ~face_cell_ids_[f][1];
     cell_face_ids_[c0].push_back(f);
     cell_face_ids_[c1].push_back(f);
     cell_face_dirs_[c0].push_back(1);
@@ -206,8 +213,10 @@ MeshEmbeddedLogical::MeshEmbeddedLogical(const Epetra_MpiComm* comm,
     // -- face, take new face centroids as mean of cell centroids
     face_centroids_ = log_mesh->face_centroids_;
     for (int f=nfaces_log; f!=nfaces_log+nfaces_extra; ++f) {
-      face_centroids_.push_back((cell_centroids_[face_cell_ids_[f][0]] +
-                                cell_centroids_[face_cell_ids_[f][1]])/2.0);
+      Entity_ID c0 = face_cell_ids_[f][0];
+      Entity_ID c1 = ~face_cell_ids_[f][1];      
+      face_centroids_.push_back((cell_centroids_[c0] +
+                                 cell_centroids_[c1])/2.0);
     }
     face_centroids_.insert(face_centroids_.end(), bg_mesh->face_centroids_.begin(),
                            bg_mesh->face_centroids_.end());
@@ -766,17 +775,11 @@ MeshEmbeddedLogical::build_columns_() const {
 
 // Cache connectivity info.
 void
-MeshEmbeddedLogical::cache_cell2face_info_() const {
+MeshEmbeddedLogical::cache_cell_face_info_() const {
   Errors::Message mesg("DEVELOPER ERROR: cache should be created in finalize()");
   Exceptions::amanzi_throw(mesg);
 }
 
-void
-MeshEmbeddedLogical::cache_face2cell_info_() const {
-  Errors::Message mesg("DEVELOPER ERROR: cache should be created in finalize()");
-  Exceptions::amanzi_throw(mesg);
-}
-  
   
 int
 MeshEmbeddedLogical::compute_cell_geometric_quantities_() const {
