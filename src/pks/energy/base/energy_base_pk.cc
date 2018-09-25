@@ -87,9 +87,6 @@ void EnergyBase::SetupEnergy_(const Teuchos::Ptr<State>& S) {
   adv_energy_flux_key_ = Keys::readKey(*plist_, domain_, "advected energy flux", "advected_energy_flux");
   conductivity_key_ = Keys::readKey(*plist_, domain_, "thermal conductivity", "thermal_conductivity");
   uw_conductivity_key_ = Keys::readKey(*plist_, domain_, "upwinded thermal conductivity", "upwind_thermal_conductivity");
-  source_key_ = Keys::readKey(*plist_, domain_, "energy source", "total_energy_source");
-
-
 
   // Get data for special-case entities.
   S->RequireField(cell_vol_key_)->SetMesh(mesh_)
@@ -243,6 +240,7 @@ void EnergyBase::SetupEnergy_(const Teuchos::Ptr<State>& S) {
   // source terms
   is_source_term_ = plist_->get<bool>("source term");
   if (is_source_term_) {
+    source_key_ = Keys::readKey(*plist_, domain_, "source", "total_energy_source");
     S->RequireField(source_key_)->SetMesh(mesh_)
         ->AddComponent("cell", AmanziMesh::CELL, 1);
     S->RequireFieldEvaluator(source_key_);
