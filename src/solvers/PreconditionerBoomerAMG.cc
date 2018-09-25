@@ -66,9 +66,11 @@ void PreconditionerBoomerAMG::Init(const std::string& name, const Teuchos::Param
                                                         plist_.get<int>("relaxation type down"), 1)));
     funcs_.push_back(Teuchos::rcp(new FunctionParameter((Hypre_Chooser)1, &HYPRE_BoomerAMGSetCycleRelaxType,
                                                         plist_.get<int>("relaxation type up"), 2)));
-  } else {
+  } else if (plist_.isParameter("relaxation type")) {
     funcs_.push_back(Teuchos::rcp(new FunctionParameter((Hypre_Chooser)1, &HYPRE_BoomerAMGSetRelaxType,
-                                                        plist_.get<int>("relaxation type", 3))));
+                                                        plist_.get<int>("relaxation type"))));
+  } else {
+    // use Hypre's defaults
   }
 
   if (plist_.isParameter("max multigrid levels"))

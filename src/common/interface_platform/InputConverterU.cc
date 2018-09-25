@@ -95,8 +95,11 @@ Teuchos::ParameterList InputConverterU::Translate(int rank, int num_proc)
   // -- final I/O
   PrintStatistics_();
 
-  // sava the translate file
+  // save the translated file
   if (rank_ == 0) SaveXMLFile(out_list, xmlfilename_);
+
+  if (vo_->getVerbLevel() >= Teuchos::VERB_HIGH)
+    *vo_->os() << "CPU time stamp: " << vo_->clock() << std::endl;
 
   return out_list;
 }
