@@ -32,7 +32,7 @@ def get_keys_and_times(dat, time_range=None):
         keys = [key for key,time in zip(all_keys,all_times) if time_range[0] <= time <= time_range[1]]
         times = [time for time in all_times if time_range[0] <= time <= time_range[1]]        
     else:
-        keys = dat[dat.keys()[0]].keys()
+        keys = dat[list(dat.keys())[0]].keys()
         keys.sort(lambda a,b: int.__cmp__(int(a),int(b)))
         times = get_times(dat, keys)
 
@@ -82,13 +82,13 @@ def subsetFile(directory=".", base="visdump_data.h5", outfile="my_visdump_data.h
         times = times[::interval]
 
     if (interval == 1) and (null_time_range) and (inds == None) and dry_run:
-        print "Available times (count = %d):"%len(times), times
+        print("Available times (count = %d):"%len(times), times)
         return (None,None)
     elif dry_run:
-        print "Matched times (count = %d):"%len(times), times
+        print("Matched times (count = %d):"%len(times), times)
         return (None, None)
         
-    print "Transfering %d times to %s"%(len(times),outfile)
+    print("Transfering %d times to %s"%(len(times),outfile))
     
     if names is None:
         names = dat.keys()
@@ -119,10 +119,10 @@ def subsetXMFFile(out_directory, base="visdump_data.VisIt.xmf", inds=None, inter
         files = files[::interval]
 
     if (interval == 1) and (null_time_range) and (inds == None) and dry_run:
-        print "Available times (count = %d):"%len(times), times
+        print("Available times (count = %d):"%len(times), times)
         return (None,None)
     elif dry_run:
-        print "Matched times (count = %d):"%len(times), times
+        print("Matched times (count = %d):"%len(times), times)
         return (None, None)
 
     to_remove = [f for f in xmf_in.getroot()[0][0] if f not in files]
@@ -161,7 +161,7 @@ def subsetXMFFile(out_directory, base="visdump_data.VisIt.xmf", inds=None, inter
             try:
                 assert not os.path.exists(out_f)
             except AssertionError:
-                print "Exists:", out_f
+                print("Exists:", out_f)
                 raise AssertionError
 
             step_xmf = etree.parse(in_f)
