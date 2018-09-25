@@ -80,10 +80,14 @@ All instructions assume you use bash.  Change as needed for other shells.
     ```
 
   * Clone the Amanzi source for the latest release.  Currently this is ``0.88``
-    ```git clone -b amanzi-0.88 http://github.com/amanzi/amanzi $AMANZI_SRC_DIR```
+    ```
+    git clone -b amanzi-0.88 http://github.com/amanzi/amanzi $AMANZI_SRC_DIR
+    ```
 
   * Clone the ATS source for the latest release.
-    ```git clone -b ats-0.88 http://github.com/amanzi/ats $ATS_SRC_DIR```
+    ```
+    git clone -b ats-0.88 http://github.com/amanzi/ats $ATS_SRC_DIR
+    ```
 
 
 2. Configure and build the Amanzi TPLs and Amanzi.
