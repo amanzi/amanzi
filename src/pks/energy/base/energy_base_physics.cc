@@ -142,9 +142,10 @@ void EnergyBase::AddSourcesToPrecon_(const Teuchos::Ptr<State>& S, double h) {
 
     // evaluate the derivative
     S->GetFieldEvaluator(source_key_)->HasFieldDerivativeChanged(S, name_, key_);
-    const CompositeVector& dsource_dT =
-        *S->GetFieldData(Keys::getDerivKey(source_key_, key_));
-    preconditioner_acc_->AddAccumulationTerm(dsource_dT, -1.0, "cell", false);
+
+    auto dsource_dT = S->GetFieldData(Keys::getDerivKey(source_key_, key_)).ptr();
+    db_->WriteVector("  dQ_ext/dT", dsource_dT, false);
+    preconditioner_acc_->AddAccumulationTerm(*dsource_dT, -1.0, "cell", true);
   }
 }
 
