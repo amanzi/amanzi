@@ -49,137 +49,64 @@ All instructions assume you use bash.  Change as needed for other shells.
 1. Set up your directory structure.  Life gets much easier if you get this right first.
   a. I use the following:
     ```
-    mkdir /my/path/to/atsl
-    export ATS_BASE=/my/path/to/ats
+    # EDIT THESE!
+    export ATS_BASE=/my/path/to/all/things/ats
+    export ATS_BUILD_TYPE=Release
+    # END EDIT THESE!
 
     export ATS_SRC_DIR=${ATS_BASE}/repos/ats
-    export ATS_BUILD_DIR=${ATS_BASE}/ats-build
-    export ATS_DIR=${ATS_BASE}/ats-install
+    export ATS_BUILD_DIR=${ATS_BASE}/ats-build-${ATS_BUILD_TYPE}
+    export ATS_DIR=${ATS_BASE}/ats-install-${ATS_BUILD_TYPE}
 
     export AMANZI_SRC_DIR=${ATS_BASE}/repos/amanzi
-    export AMANZI_BUILD_DIR=${ATS_BASE}/amanzi-build    
-    export AMANZI_DIR=${ATS_BASE}/amanzi-install    
+    export AMANZI_BUILD_DIR=${ATS_BASE}/amanzi-build-${ATS_BUILD_TYPE}
+    export AMANZI_DIR=${ATS_BASE}/amanzi-install-${ATS_BUILD_TYPE}
 
-    export AMANZI_TPLS_BUILD_DIR=${ATS_BASE}/amanzi-tpls-build    
-    export AMANZI_TPLS_DIR=${ATS_BASE}/amanzi-tpls-install
+    export AMANZI_TPLS_BUILD_DIR=${ATS_BASE}/amanzi-tpls-build-${ATS_BUILD_TYPE}
+    export AMANZI_TPLS_DIR=${ATS_BASE}/amanzi-tpls-install-${ATS_BUILD_TYPE}
     export PATH=${ATS_DIR}/bin:${AMANZI_TPLS_DIR}/bin:${PATH}
     export PYTHONPATH=${ATS_SRC_DIR}/tools/utils:${PYTHONPATH}
     ```    
+
+    Note two things here -- first, you may want to build both a ATS_BUILD_TYPE=Debug and ATS_BUILD_TYPE=Release builds.  Debug is extremely useful for catching errors in your input files, while Release is significantly faster.  I HIGHLY RECOMMEND BUILDING BOTH, then using Debug until your input files work and give reasonable results, then swapping to Release to do production runs.
+
     You may want to put these lines in your ~/.bashrc or similar files (~/.bash_profile on Mac OS X), or better yet use Environment modules.
-  b. Clone the Amanzi source for the latest release.  Currently this is ``0.87``
-    ```git clone -b amanzi-0.87 http://github.com/amanzi/amanzi $AMANZI_SRC_DIR```
+
+    Then make your base directory and go there:
+    ```
+    mkdir -p ${ATS_BASE}
+    cd ${ATS_BASE}
+    ```
+
+
+  b. Clone the Amanzi source for the latest release.  Currently this is ``0.88``
+    ```git clone -b amanzi-0.88 http://github.com/amanzi/amanzi $AMANZI_SRC_DIR```
 
   c. Clone the ATS source for the latest release.
-    ```git clone -b ats-0.87 http://github.com/amanzi/ats $ATS_SRC_DIR```
-
-  d. Set up a directory for configuration scripts and a TPL installation directory.
-    ```
-    cd ${ATS_BASE}
-    mkdir ats-config-files  # this will hold scripts that call cmake to build things
-    ```
+    ```git clone -b ats-0.88 http://github.com/amanzi/ats $ATS_SRC_DIR```
 
 
-2. Build the Amanzi TPLs.
-  a. Write a configure script for SuperBuild / Amanzi TPLs.  Edit a file (I call it $ATS_BASE/ats-config-files/configure-amanzi-tpls-debug.sh).  Add something like the following text:
+2. Configure and build the Amanzi TPLs and Amanzi.
+  a. Run bootstrap.  An example usage of bootstrap is in ${ATS_SRC_DIR} at amanzi_bootstrap.sh.  If you follow the above instructions exactly, you can use that file as is, but maybe read it anyway, so you see what is happening.
+  ```
+  . ${ATS_SRC_DIR}/amanzi_bootstrap.sh
+  ```
+  b. Go get a cup of coffee.  This will take a bit, from 10-15 minutes on a fast workstation to much longer on a cluster.
 
-    ```
-    #!/bin/bash
-    # configure-amanzi-tpls.sh
-    # script for running CMake to build TPLs for Amanzi.
-
-    rm -rf ${AMANZI_TPLS_BUILD_DIR}
-    rm -rf ${AMANZI_TPLS_DIR}
-    mkdir -p ${AMANZI_TPLS_BUILD_DIR}
-    mkdir -p ${AMANZI_TPLS_DIR}
-    cd ${AMANZI_TPLS_BUILD_DIR}
-
-    CC=/my/path/to/mpicc  # <--- edit me
-    CXX=/my/path/to/mpicxx  # <--- edit me
-    FC=/my/path/to/mpif90 # <--- edit me
-
-    cmake \
-      -D CMAKE_C_COMPILER=${CC} \
-      -D CMAKE_CXX_COMPILER=${CXX} \
-      -D CMAKE_Fortran_COMPILER=${FC} \
-      -D ENABLE_HYPRE:BOOL=ON \
-      -D ENABLE_Structured:BOOL=OFF \
-      -D ENABLE_STK_Mesh:BOOL=OFF \
-      -D TPL_INSTALL_PREFIX=${AMANZI_TPLS_DIR} \
-    ${AMANZI_SRC_DIR}/config/SuperBuild
-
-    make -j8  # <--- edit me to be approximately your number of cores + a few for faster build time.
-    make install
-    ```
-
-  b. Run the script.
-    ```. $ATS_BASE/ats-config-files/configure-amanzi-tpls-debug.sh```
-  c. Go get a cup of coffee.  If this works, it will take ~15 minutes, depending upon your machine.  When you come back, it should tell you if it passed or not.
-
-
-3. Build Amanzi.
-  a. Edit another script to build Amanzi.  (I call this one $ATS_BASE/ats-config-files/configure-amanzi-debug.sh).  Add something like:
-    ```
-    #!/bin/bash
-    # configure-amanzi.sh
-    # script for running CMake to build Amanzi.
-
-    rm -rf ${AMANZI_BUILD_DIR}
-    mkdir -p ${AMANZI_BUILD_DIR}
-    rm -rf ${AMANZI_DIR}
-    mkdir -p ${AMANZI_DIR}
-    cd ${AMANZI_BUILD_DIR}
-
-    cmake \
-       -C  ${AMANZI_TPLS_DIR}/share/cmake/amanzi-tpl-config.cmake \
-       -D CMAKE_INSTALL_PREFIX=${AMANZI_DIR} \
-       -D ENABLE_Physics:BOOL=OFF \
-       -D ENABLE_Structured:BOOL=OFF \
-       -D CMAKE_BUILD_TYPE=Debug \
-    ${AMANZI_SRC_DIR}
-
-    make -j8
-    make install
-    ```
-  b. Run the script.
-    ```. $ATS_BASE/ats-config-files/configure-amanzi-debug.sh```
-  c. Check your email.  This isn't as long (~3-5 minutes?)
-  d. Run Amanzi tests.  Some may not pass, but having them run with most passing means you should be in good shape.
-    ```
-    cd $AMANZI_BUILD_DIR
-    make test
-    ```
-
-4. Install ATS.
-  a. Edit another script to build ATS.  (I call this one configure-ats-debug.sh).  Add something like:
-    ```
-    #!/bin/bash
-    # configure-ats.sh
-    # script for running CMake to build ATS.
-
-    rm -rf ${ATS_BUILD_DIR}
-    mkdir -p ${ATS_BUILD_DIR}
-    rm -rf ${ATS_DIR}
-    mkdir -p ${ATS_DIR}
-    cd ${ATS_BUILD_DIR}
-
-    cmake \
-      -D Amanzi_DIR=${AMANZI_DIR}/lib \
-      -D CMAKE_INSTALL_PREFIX=${ATS_DIR} \
-      -D CMAKE_BUILD_TYPE=Debug \
-    ${ATS_SRC_DIR}
-
-    make -j8
-    make install
-    ```
+3. Configure and build ATS.
+  a. Configure and build.  Unfortunately, we have no bootstrap here, so you have to write your own cmake script.  Again, if you follow these instructions exactly, you can use the sample at ${ATS_SRC_DIR} at configure-ats.sh
+  ```
+  . ${ATS_SRC_DIR}/configure-ats.sh
+  ```
   b. Twiddle your thumbs.  ~1-5 minutes?
 
-5. Download ats-demos to get at some examples, and run one!
+4. Download ats-demos to get at some examples, and run one!
   a. Get the example repo:
   ```
   cd $ATS_BASE
   mkdir testing
   cd testing
-  git clone -b ats-demos-0.87 http://github.com/amanzi/ats-demos
+  git clone -b ats-demos-0.88 http://github.com/amanzi/ats-demos
   ```
   b. Run a test problem.
     ```
