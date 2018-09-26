@@ -11,11 +11,11 @@ implementation of prescribed hydraulic head boundary conditions, prescribed flux
 conditions, Darcy’s law :cite:`linfh-Darcy_1856`, and mass conservation for an elementary problem.
 Capabilities tested include:
 
-  * steady-state, one-dimensional flow
-  * saturated flow conditions
+  * single-phase, one-dimensional flow 
+  * steady-state flow 
+  * saturated flow
   * constant-head (Dirichlet) boundary conditions
   * specified volumetric flux (Neumann) boundary conditions
-  * mass conservation
   * homogeneous porous medium
   * uniform mesh 
 
@@ -119,11 +119,11 @@ To generate numerical results the following specifications are considered:
 
 * Material properties:
 
-  * :math:`\rho = 998.2 \: \text{[kg/m}^3\text{]}`
-  * :math:`\mu = 1.002 \times 10^{-3} \: \text{[Pa} \cdot \text{s]}` 
-  * :math:`g = 9.807 \: \text{[m/s}^2\text{]}` 
-  * :math:`K = 1.0 \: \text{[m/d]}` 
-          (permeability: :math:`k = 1.1847 \times 10^{-12} \text{ [m}^2\text{]})`
+  * fluid density:    :math:`\rho = 998.2 \: \text{[kg/m}^3\text{]}`
+  * dynamic viscosity:    :math:`\mu = 1.002 \times 10^{-3} \: \text{[Pa} \cdot \text{s]}` 
+  * gravitational acceleration:    :math:`g = 9.807 \: \text{[m/s}^2\text{]}` 
+  * hydraulic conductivity:    :math:`K = 1.0 \: \text{[m/d]}` 
+          (permeability:    :math:`k = 1.1847 \times 10^{-12} \text{ [m}^2\text{]})`
 
 For these input specifications, Amanzi simulation output is expected to closely match
 
@@ -173,19 +173,19 @@ About
 
 * Input Files:
 
-  * amanzi_linear_flux_head_1d-s.xlm 
+  .. * amanzi_linear_flux_head_1d-s.xlm 
 
-    * Spec Version 1.2.2, structured mesh framework
-    * mesh:  steady-flow_mesh.h5
+    .. * Spec Version 1.2.2, structured mesh framework
+       * mesh:  steady-flow_mesh.h5
 
   * amanzi_linear_flux_head_1d-u.xml
 
     * Spec Version 2.3.0, unstructured mesh framework
     * mesh:  generated internally 
 
-* Mesh Files:
+.. * Mesh Files:
 
-  * steady-flow_mesh.h5
+  .. * steady-flow_mesh.h5
 
 * Analytic solution computed with golden output
 
