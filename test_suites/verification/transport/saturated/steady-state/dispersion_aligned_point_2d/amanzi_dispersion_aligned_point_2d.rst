@@ -31,12 +31,13 @@ Background
 This test problem is motivated by confined flow applications with
 transport from a relatively small source.  A typical source would be a
 well that is fully screened over the confined flow interval.  In this
-case, the steady-state flow field is uniform and the mass source rate
+case, the steady-state flow field is uniform and the injection well tracer 
+mass source rate
 does not affect the flow field.  The dominant transport processes are
 advection and dispersion.  Dispersion results in the spreading of the
 released mass in all directions, including upstream of the source
 location.  Longitudinal dispersivity (in the axis of flow) is
-typically several times larger than the transverse dispersivity.
+typically up to an order of magnitude larger than the transverse dispersivity.
 Accuracy of the simulated concentrations in the vicinity of the source
 is sensitive to the resolution of the grid and the numerical transport
 scheme.
@@ -130,17 +131,28 @@ The mesh refinement adds 17% more cells.
 Variables
 ~~~~~~~~~
 
-* :math:`Q=8.1483 \times 10^{-8}` constant pumping rate [kg/s/m]
-* :math:`\boldsymbol{q}=(1.8634 \times 10^{-6},\,0.0)` constant Darcy velocity [m/s]
-* :math:`\phi=0.35` constant porosity
-* :math:`\alpha_L=21.3` longitudinal dispersivity [m]
-* :math:`\alpha_T=4.3` transverse dispersivity [m]
-* :math:`D_m=0.0` molecular diffusion coefficient [m\ :sup:`2`\/s]
-* :math:`T=1400` simulation time [d]
+* constant solute mass injection rate:    :math:`Q=8.1483 \times 10^{-8} \: \text{[kg/m}^3\text{/s]}`
+* volumetric fluid flux:    :math:`\boldsymbol{q}=(1.8634 \times 10^{-6},\,0.0) \: \text{[m}^3 \text{/(m}^2 \text{ s)]}` or :math:`\text{[m/s]}`
 
-Initial condition: :math:`C(x,0)=0` [kg/m\ :sup:`3`\]
+* Material properties:
 
-Boundary conditions: :math:`C(x,t)=0` [kg/m\ :sup:`3`\]
+  * isotropic hydraulic conductivity:    :math:`K = 84.41 \: \text{[m/d]}`
+
+    * derived from:    :math:`K=\frac{k \rho g}{\mu}`, where permeability, :math:`k = 1.0 \times 10^{-10} \text{ [m}^2\text{]}`
+  
+  * porosity:    :math:`\phi=0.35` 
+  * longitudinal dispersivity:    :math:`\alpha_L=21.3 \: \text{[m]}` 
+  * transverse dispersivity:    :math:`\alpha_T=4.3 \: \text{[m]}` 
+  * molecular diffusion coefficient:    :math:`D_m=0.0 \: \text{[m}^2\text{/s]}` 
+  * fluid density:    :math:`\rho = 998.2 \: \text{[kg/m}^3\text{]}`
+  * dynamic viscosity:    :math:`\mu = 1.002 \times 10^{-3} \: \text{[Pa} \cdot \text{s]}` 
+  * gravitational acceleration:    :math:`g = 9.807 \: \text{[m/s}^2\text{]}` 
+
+* total simulation time:    :math:`t=1400 \: \text{[d]}`
+
+Initial concentration condition: :math:`C(x,0)=0 \: \text{[kg/m}^3\text{]}`
+
+.. Boundary conditions: :math:`C(x,t)=0 \: \text{[kg/m}^3\text{]}`
 
 
 Results and Comparison
