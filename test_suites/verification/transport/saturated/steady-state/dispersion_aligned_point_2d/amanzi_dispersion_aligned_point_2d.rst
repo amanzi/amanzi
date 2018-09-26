@@ -131,6 +131,7 @@ The mesh refinement adds 17% more cells.
 Variables
 ~~~~~~~~~
 
+* initial concentration condition:    :math:`C(x,0)=0 \: \text{[kg/m}^3\text{]}`
 * constant solute mass injection rate:    :math:`Q=8.1483 \times 10^{-8} \: \text{[kg/m}^3\text{/s]}`
 * volumetric fluid flux:    :math:`\boldsymbol{q}=(1.8634 \times 10^{-6},\,0.0) \: \text{[m}^3 \text{/(m}^2 \text{ s)]}` or :math:`\text{[m/s]}`
 
@@ -150,9 +151,10 @@ Variables
 
 * total simulation time:    :math:`t=1400 \: \text{[d]}`
 
-Initial concentration condition: :math:`C(x,0)=0 \: \text{[kg/m}^3\text{]}`
-
 .. Boundary conditions: :math:`C(x,t)=0 \: \text{[kg/m}^3\text{]}`
+
+
+
 
 
 Results and Comparison
@@ -210,20 +212,20 @@ About
     * Spec Version 2.2, unstructured mesh framework
     * mesh:  amanzi_dispersion_aligned_point_2d.exo
  
-  * amanzi_dispersion_aligned_point_2d-s.xml
+  .. * amanzi_dispersion_aligned_point_2d-s.xml
 
-    * Spec Version 1.2, structured AMR framework
+    .. * Spec Version 1.2, structured AMR framework
 
-* Mesh Files:
+.. * Mesh Files:
 
-  * amanzi_dispersion_aligned_point_2d.exo
+  .. * amanzi_dispersion_aligned_point_2d.exo
 
-    * two-dimensional statically refined mesh
+    .. * two-dimensional statically refined mesh
     * treated as an unstructured polygonal mesh
 
-  * amanzi_dispersion_aligned_point_2d-1layer.exo
+  .. * amanzi_dispersion_aligned_point_2d-1layer.exo
 
-    * three-dimensional statically refined mesh
+    .. * three-dimensional statically refined mesh
     * one layer of cells in the z-direction
 
 * Analytic solution computed with AT123D-AT
