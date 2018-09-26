@@ -120,7 +120,7 @@ void PDE_DiffusionNLFVwithBndFaces::SetScalarCoefficient(
       AMANZI_ASSERT(k_->HasComponent("face"));
     }
   }
-  if (dkdp_ != Teuchos::null) AMANZI_ASSERT(dkdp_->HasComponent("cell")); 
+  //if (dkdp_ != Teuchos::null) AMANZI_ASSERT(dkdp_->HasComponent("cell")); 
 }
 
 
