@@ -5,15 +5,21 @@ Capabilities Tested
 -------------------
 
 This two-dimensional transport problem --- with a constant rate mass
-loading point source in a steady-state flow field --- tests the Amanzi
-advection and dispersion features of the transport process kernel.  
+loading point source in a steady-state flow field --- tests the Amanzi flow process kernel as well as advection and dispersion features of the 
+transport process kernel.  
 Capabilities tested include:
   
-  * single-phase, steady-state flow induced by prescribed constant velocity field 
-  * saturated flow conditions  
-  * solute source with constant mass loading rate 
-  * advection in an isotropic medium
-  * longitudinal and transverse dispersivities
+  * single-phase, one-dimensional flow
+  * two-dimensional transport
+  * steady-state flow
+  * saturated flow
+  * constant-rate solute mass injection well 
+  * advective transport
+  * dispersive transport
+  * longitudinal and transverse dispersivity
+  * non-reactive (conservative) solute
+  * homogeneous porous medium
+  * isotropic porous medium
   * statically refined (non-uniform) mesh
 
 For details on this test, see :ref:`about_aligned_dispersion`.
