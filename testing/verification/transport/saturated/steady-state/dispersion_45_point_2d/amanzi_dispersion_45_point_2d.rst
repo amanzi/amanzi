@@ -8,20 +8,25 @@ Capabilities Tested
 
 This two-dimensional transport problem --- with a constant rate mass
 loading point source in a steady-state flow field --- tests the Amanzi
-advection and dispersion features of the transport process kernel. It is a slight modification
+flow process kernel as well as advection and dispersion features of the transport process kernel. It is a slight modification
 of the previous test :ref:`amanzi_dispersion_aligned_point_2d`: the direction 
 of the velocity field is rotated by :math:`45^\circ` counter-clockwise with respect to the 
 mesh. Thus, the test simulates non-grid-aligned advective and dispersive transport. 
 Capabilities tested include:
   
-  * single-phase, steady-state flow induced by prescribed constant velocity field 
-  * saturated flow conditions  
-  * solute source with constant mass loading rate 
-  * advection in an isotropic medium
-  * longitudinal and transverse dispersivities
-  * non-grid-alignedi flow and transport
+  * single-phase, one-dimensional flow
+  * two-dimensional transport
+  * steady-state flow
+  * saturated flow
+  * constant-rate solute mass injection well 
+  * advective transport
+  * dispersive transport
+  * longitudinal and transverse dispersivity
+  * non-reactive (conservative) solute
+  * homogeneous porous medium
+  * isotropic porous medium
   * statically refined (non-uniform) mesh
-
+  
 For details on this test, see :ref:`about_diagonal_dispersion`.
 
 
@@ -47,9 +52,9 @@ The analytical solution addresses the advection-dispersion equation
 
 .. math::
   \phi \frac{\partial C}{\partial t} 
-  = Q + {\rm div}(\boldsymbol{D} \nabla C),
+  = Q + {\nabla \cdot }(\boldsymbol{D} \nabla C),
 
-where :math:`\boldsymbol{D}` is the dispersion tensor
+where :math:`\phi` is porosity, :math:`C` is the solute concentration [kg/m\ :sup:`3`], :math:`t` is time [s], :math:`Q` is solute mass injection rate [kg of tracer/m\ :sup:`3`/s], and :math:`\boldsymbol{D}` is the dispersion tensor:
 
 .. math::
   \boldsymbol{D} = \begin{pmatrix}
@@ -58,7 +63,7 @@ where :math:`\boldsymbol{D}` is the dispersion tensor
   \end{pmatrix}.
 
 Let :math:`\boldsymbol{v} = (v_x,\,v_y)` denote the pore velocity,
-:math:`\tau` the torsuosity, and :math:`D_m` the molecular diffusion.
+:math:`\tau` the tortuosityi [-], and :math:`D_m` the molecular diffusion [m\ :sup:`2`/s].
 Then the diagonal entries in the dispersion tensor are
 
 .. math::
@@ -68,9 +73,9 @@ Then the diagonal entries in the dispersion tensor are
   \qquad
   D_{yy} = \alpha_L \frac{v_y^2}{\| \boldsymbol{v}\|}
   + \alpha_L \frac{v_x^2}{\| \boldsymbol{v}\|}
-  + \phi \tau D_m.,
+  + \phi \tau D_m,
 
-The off-diagonal entries are
+where :math:`\alpha_L` is longitudinal dispersivity [m] and :math:`\alpha_T` is transverse dispersivity [m]. The off-diagonal entries are:
 
 .. math::
   D_{xy} = D_{yx} 
@@ -111,18 +116,27 @@ The mesh refinement adds 8.4% more cells.
 Variables
 ~~~~~~~~~
 
-* :math:`Q=8.1483 \times 10^{-8}` constant pumping rate [kg/s/m]
-* :math:`\boldsymbol{q}=(1.3176 \times 10^{-6},\,0.0)` constant Darcy velocity [m/s]
-* :math:`\phi=0.35` constant porosity
-* :math:`k=1.0 \times 10^{-10}` intrinsic permeability [m\ :sup:`2`]
-* :math:`\alpha_L=21.3` longitudinal dispersivity [m]
-* :math:`\alpha_T=4.3` transverse dispersivity [m]
-* :math:`D_m=0.0` molecular diffusion coefficient [m\ :sup:`2`\/s]
-* :math:`T=1400` simulation time [d]
+* initial concentration condition:    :math:`C(x,0)=0 \: \text{[kg/m}^3\text{]}`
+* constant solute mass injection rate:    :math:`Q=8.1483 \times 10^{-8} \: \text{[kg/m}^3\text{/s]}`
+* volumetric fluid flux:    :math:`\boldsymbol{q}=(1.3176 \times 10^{-6},\,1.3176 \times 10^{-6}) \: \text{[m}^3 \text{/(m}^2 \text{ s)]}` or :math:`\text{[m/s]}`
 
-Initial condition: :math:`C(x,0)=0` [kg/m\ :sup:`3`\]
+* Material properties:
 
-Boundary conditions: :math:`C(x,t)=0` [kg/m\ :sup:`3`\]
+  * isotropic hydraulic conductivity:    :math:`K = 84.41 \: \text{[m/d]}`
+
+    * derived from:    :math:`K=\frac{k \rho g}{\mu}`, where permeability, :math:`k = 1.0 \times 10^{-10} \text{ [m}^2\text{]}`
+  
+  * porosity:    :math:`\phi=0.35` 
+  * longitudinal dispersivity:    :math:`\alpha_L=21.3 \: \text{[m]}` 
+  * transverse dispersivity:    :math:`\alpha_T=4.3 \: \text{[m]}` 
+  * molecular diffusion coefficient:    :math:`D_m=0.0 \: \text{[m}^2\text{/s]}` 
+  * fluid density:    :math:`\rho = 998.2 \: \text{[kg/m}^3\text{]}`
+  * dynamic viscosity:    :math:`\mu = 1.002 \times 10^{-3} \: \text{[Pa} \cdot \text{s]}` 
+  * gravitational acceleration:    :math:`g = 9.807 \: \text{[m/s}^2\text{]}` 
+
+* total simulation time:    :math:`t=1400 \: \text{[d]}`
+
+.. Boundary conditions: :math:`C(x,t)=0 \: \text{[kg/m}^3\text{]}`
 
 
 Results and Comparison
@@ -175,6 +189,22 @@ About
     * Spec Version 2.3, unstructured mesh framework
     * mesh:  amanzi_dispersion_45_point_2d.exo
 
-* Mesh Files:
+.. * Mesh Files:
 
-  * amanzi_dispersion_45_point_2d.exo
+  .. * amanzi_dispersion_45_point_2d.exo
+
+* Analytic solution computed with AT123D-AT
+
+  * Subdirectory: at123d-at
+
+  * Input Files: 
+
+    * at123d-at_centerline.list, at123d-at_centerline.in
+    * at123d-at_slice_x=0.in
+
+.. todo:: 
+
+  * Documentation:
+
+    * write script to generate the x=420m slice [jpo]
+    * need \*.list file for slice x=0? [jpo] 
