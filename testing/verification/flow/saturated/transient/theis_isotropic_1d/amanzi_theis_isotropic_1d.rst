@@ -1,13 +1,20 @@
-Transient Two-Dimensional Confined Flow to a Pumping Well (Theis)
+Transient One-Dimensional Confined Flow to a Pumping Well (Theis)
 =================================================================
 
 Capabilities Tested
 -------------------
 
-This transient two-dimensional (radial) flow problem tests the Amanzi flow process kernel. Capabilities tested include,
+This transient one-dimensional (radial) flow problem tests the Amanzi flow process kernel. Capabilities tested include:
 
-  * two-dimensional radial flow to a point source
-  * horizontal flow in an isotropic medium
+  * single-phase, one-dimensional flow 
+  * transient flow
+  * saturated flow
+  * constant-rate pumping well
+  * constant-head (Dirichlet) boundary conditions
+  * specified volumetric flux (Neumann) boundary conditions
+  * homogeneous porous medium
+  * isotropic porous medium
+  * uniform mesh
 
 For details on this test, see :ref:`about_theis`.
 
@@ -28,9 +35,9 @@ To apply the analysis developed by Theis, three parameters must be known:
 
 * :math:`T`, transmissivity
 * :math:`S`, storativity
-* :math:`Q`, constant pumping rate
+* :math:`Q`, well-head pumping rate
 
-Transmissivity of the aquifer is defined as 
+Transmissivity of the aquifer is defined as: 
 
 .. math:: T = Kb
 
@@ -39,7 +46,7 @@ saturated thickness.  Transmissivity values greater than 0.015
 :math:`\frac{m^2}{s}` represent aquifers capable of well exploitation.
 Storativity is a dimensionless parameter that describes the amount of
 water released by the aquifer per unit volume of the aquifer.
-Storativity can be calculated using
+Storativity can be calculated using:
 
 .. math:: S = S_s b
 
@@ -134,13 +141,34 @@ The mesh is generated in the input file. It consists of cells with size :math:`\
 Variables
 ~~~~~~~~~
 
-* :math:`Q=4.0` constant pumping rate [m\ :sup:`3`/s]
-* :math:`h(r,0)=20.0` initial water table height [m]
-* :math:`T=4.7 \times 10^{-4}` transmissivity [m\ :sup:`2`/s]
-* :math:`W(u)` well function
-* :math:`r` radial distance measured outward from well [m]
-* :math:`S=0.0015` storage coefficient [-] 
-* :math:`t` duration of pumping time [s]
+* Domain:
+
+  * :math:`x_{min} = y_{min} = z_{min} = -1200` m
+  * :math:`x_{max} = 1200` m, :math:`y_{max} = 1200` m, :math:`z_{max} = 10` m
+
+* Boundary and initial conditions:
+
+  * initial hydraulic head:   :math:`h(r,0)=20.0 \: \text{[m]}`
+  * constant-head (Dirichlet) lateral boundary conditions:   :math:`h(x_{max},t)=h(y_{max},t)=20.0 \: \text{[m]}`
+  * no-flow (Neumann) upper and lower boundary conditions
+  * well-head pumping rate:   :math:`Q=4.0 \: \text{[m}^3\text{/s]}`
+
+* radial distance from well:    :math:`r \: \text{[m]}`
+* duration of pumping time:    :math:`t \: \text{[s]}`
+
+* Material properties:
+
+  * fluid density:    :math:`\rho = 1000.0 \: \text{[kg/m}^3\text{]}`
+  * dynamic viscosity:    :math:`\mu = 1.002 \times 10^{-3} \: \text{[Pa} \cdot \text{s]}` 
+  * gravitational acceleration:    :math:`g = 9.807 \: \text{[m/s}^2\text{]}`
+  * storativity:    :math:`S=7.5 \times 10^{-4} \: \text{[-]}`
+
+    * derived from:    :math:`S=S_s b`, where :math:`S_s=7.5 \times 10^{-5} \: \text{[m}^{-1} \text{]}` and :math:`b=10 \: \text{[m]}`
+  * porosity:    :math:`\phi = 0.2`
+  * transmissivity:    :math:`T=4.7 \times 10^{-4} \: \text{[m}^2\text{/s]}`
+
+    * derived from:    :math:`T=Kb`, where :math:`K=\frac{k \rho g}{\mu}`
+    * intrinsic permeability:    :math:`k = 2.35 \times 10^{-11} \: \text{[m}^2\text{]}` 
 
 
 Results and Comparison

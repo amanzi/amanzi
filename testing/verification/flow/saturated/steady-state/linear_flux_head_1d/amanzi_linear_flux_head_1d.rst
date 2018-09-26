@@ -106,12 +106,12 @@ Variables
 
 To generate numerical results the following specifications are considered:
 
-* Domain
+* Domain:
 
   * :math:`x_{min} = y_{min} = z_{min} = 0`
   * :math:`x_{max} = 100` m, :math:`y_{max} = 2` m, :math:`z_{max} = 10` m
 
-* Horizontal flow in the x-coordinate direction
+* Horizontal flow in the x-coordinate direction:
 
   * no-flow prescribed at the :math:`y_{min}, \: y_{max}, \: z_{min}, \: z_{max}` boundaries
   * prescribed volumetric flux at the x-coordinate inlet: :math:`U(0) = 0.01 \text{ [m/d]}` 
@@ -123,7 +123,7 @@ To generate numerical results the following specifications are considered:
   * dynamic viscosity:    :math:`\mu = 1.002 \times 10^{-3} \: \text{[Pa} \cdot \text{s]}` 
   * gravitational acceleration:    :math:`g = 9.807 \: \text{[m/s}^2\text{]}` 
   * hydraulic conductivity:    :math:`K = 1.0 \: \text{[m/d]}` 
-          (permeability:    :math:`k = 1.1847 \times 10^{-12} \text{ [m}^2\text{]})`
+    * (permeability:    :math:`k = 1.1847 \times 10^{-12} \text{ [m}^2\text{]})`
 
 For these input specifications, Amanzi simulation output is expected to closely match
 
