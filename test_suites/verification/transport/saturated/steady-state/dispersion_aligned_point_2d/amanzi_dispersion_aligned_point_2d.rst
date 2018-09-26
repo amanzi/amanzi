@@ -67,9 +67,9 @@ The analytical solution addresses the advection-dispersion equation
 
 .. math::
   \phi \frac{\partial C}{\partial t} 
-  = Q + {\rm div}(\boldsymbol{D} \nabla C),
+  = Q + {\nabla \cdot }(\boldsymbol{D} \nabla C),
 
-where :math:`\boldsymbol{D}` is the dispersion tensor
+where :math:`\phi` is porosity, :math:`C` is the solute concentration [kg/m\ :sup:`3`], :math:`t` is time [s], :math:`Q` is solute mass injection rate [kg of tracer/m\ :sup:`3`/s], and :math:`\boldsymbol{D}` is the dispersion tensor:
 
 .. math::
   \boldsymbol{D} = \begin{pmatrix}
@@ -78,7 +78,7 @@ where :math:`\boldsymbol{D}` is the dispersion tensor
   \end{pmatrix}.
 
 Let :math:`\boldsymbol{v} = (v_x,\,v_y)` denote the pore velocity,
-:math:`\tau` the torsuosity, and :math:`D_m` the molecular diffusion.
+:math:`\tau` the tortuosityi [-], and :math:`D_m` the molecular diffusion [m\ :sup:`2`/s].
 Then the diagonal entries in the dispersion tensor are
 
 .. math::
@@ -88,9 +88,9 @@ Then the diagonal entries in the dispersion tensor are
   \qquad
   D_{yy} = \alpha_L \frac{v_y^2}{\| \boldsymbol{v}\|}
   + \alpha_L \frac{v_x^2}{\| \boldsymbol{v}\|}
-  + \phi \tau D_m.,
+  + \phi \tau D_m,
 
-The off-diagonal entries are
+where :math:`\alpha_L` is longitudinal dispersivity [m] and :math:`\alpha_T` is transverse dispersivity [m]. The off-diagonal entries are:
 
 .. math::
   D_{xy} = D_{yx} 
