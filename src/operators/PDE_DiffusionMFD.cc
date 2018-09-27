@@ -107,6 +107,10 @@ void PDE_DiffusionMFD::UpdateMatrices(
     const Teuchos::Ptr<const CompositeVector>& flux,
     const Teuchos::Ptr<const CompositeVector>& u)
 {
+
+
+  if (k_ != Teuchos::null) k_ -> ScatterMasterToGhosted();
+
   if (!exclude_primary_terms_) {
     if (local_op_schema_ & OPERATOR_SCHEMA_DOFS_NODE) {
       UpdateMatricesNodal_();
@@ -135,12 +139,15 @@ void PDE_DiffusionMFD::UpdateMatrices(
 void PDE_DiffusionMFD::UpdateMatricesNewtonCorrection(
     const Teuchos::Ptr<const CompositeVector>& flux,
     const Teuchos::Ptr<const CompositeVector>& u,
-    double scalar_limiter)
+    double scalar_factor)
 {
   // add Newton-type corrections
   if (newton_correction_ == OPERATOR_DIFFUSION_JACOBIAN_APPROXIMATE) {
     if (global_op_schema_ & OPERATOR_SCHEMA_DOFS_CELL) {
-      AddNewtonCorrectionCell_(flux, u, scalar_limiter);
+
+      if (dkdp_ !=  Teuchos::null) dkdp_ -> ScatterMasterToGhosted();      
+      AddNewtonCorrectionCell_(flux, u, scalar_factor);
+      
     } else {
       Errors::Message msg("PDE_DiffusionMFD: Newton correction may only be applied to schemas that include CELL dofs.");
       Exceptions::amanzi_throw(msg);
@@ -148,6 +155,25 @@ void PDE_DiffusionMFD::UpdateMatricesNewtonCorrection(
   }
 }
 
+
+void PDE_DiffusionMFD::UpdateMatricesNewtonCorrection(
+    const Teuchos::Ptr<const CompositeVector>& flux,
+    const Teuchos::Ptr<const CompositeVector>& u,
+    const Teuchos::Ptr<const CompositeVector>& factor)
+{
+  // add Newton-type corrections
+  if (newton_correction_ == OPERATOR_DIFFUSION_JACOBIAN_APPROXIMATE) {
+    if (global_op_schema_ & OPERATOR_SCHEMA_DOFS_CELL) {
+
+      if (dkdp_ !=  Teuchos::null) dkdp_ -> ScatterMasterToGhosted();      
+      AddNewtonCorrectionCell_(flux, u, factor);
+
+    } else {
+      Errors::Message msg("PDE_DiffusionMFD: Newton correction may only be applied to schemas that include CELL dofs.");
+      Exceptions::amanzi_throw(msg);
+    }
+  }
+}  
 
 /* ******************************************************************
 * Second-order reconstruction of little k inside mesh cells.
@@ -997,7 +1023,7 @@ void PDE_DiffusionMFD::ApplyBCs_Edge_(
 void PDE_DiffusionMFD::AddNewtonCorrectionCell_(
     const Teuchos::Ptr<const CompositeVector>& flux,
     const Teuchos::Ptr<const CompositeVector>& u,
-    double scalar_limiter)
+    double scalar_factor)
 {
   // hack: ignore correction if no flux provided.
   if (flux == Teuchos::null) return;
@@ -1026,7 +1052,7 @@ void PDE_DiffusionMFD::AddNewtonCorrectionCell_(
     vmod = std::abs(v);
 
     // prototype for future limiters (external or internal ?)
-    vmod *= scalar_limiter;
+    vmod *= scalar_factor;
 
     // define the upwind cell, index i in this case
     int i, dir, c1;
@@ -1046,6 +1072,64 @@ void PDE_DiffusionMFD::AddNewtonCorrectionCell_(
 }
 
 
+void PDE_DiffusionMFD::AddNewtonCorrectionCell_(
+    const Teuchos::Ptr<const CompositeVector>& flux,
+    const Teuchos::Ptr<const CompositeVector>& u,
+    const Teuchos::Ptr<const CompositeVector>& factor)
+{
+  // hack: ignore correction if no flux provided.
+  if (flux == Teuchos::null) return;
+
+  // Correction is zero for linear problems
+  if (k_ == Teuchos::null || dkdp_ == Teuchos::null) return;
+
+  // only works on upwinded methods
+  if (little_k_ == OPERATOR_UPWIND_NONE) return;
+
+  const Epetra_MultiVector& kf = *k_->ViewComponent("face");
+  const Epetra_MultiVector& dkdp_f = *dkdp_->ViewComponent("face");
+  const Epetra_MultiVector& flux_f = *flux->ViewComponent("face");
+  const Epetra_MultiVector& factor_cell = *factor->ViewComponent("cell");
+
+  // populate the local matrices
+  double v, vmod;
+  AmanziMesh::Entity_ID_List cells;
+  for (int f = 0; f < nfaces_owned; f++) {
+    mesh_->face_get_cells(f, AmanziMesh::Parallel_type::ALL, &cells);
+    int ncells = cells.size();
+    WhetStone::DenseMatrix Aface(ncells, ncells);
+    Aface.PutScalar(0.0);
+
+    // We use the upwind discretization of the generalized flux.
+    v = std::abs(kf[0][f]) > 0.0 ? flux_f[0][f] * dkdp_f[0][f] / kf[0][f] : 0.0;
+    vmod = std::abs(v);
+
+    double scalar_factor=0.;
+    for (int j=0; j<ncells; j++) scalar_factor += factor_cell[0][cells[j]];
+    scalar_factor *= 1./ncells;
+
+    // prototype for future limiters (external or internal ?)
+    vmod *= scalar_factor;
+
+    // define the upwind cell, index i in this case
+    int i, dir, c1;
+    c1 = cells[0];
+    const AmanziGeometry::Point& normal = mesh_->face_normal(f, false, c1, &dir);
+    i = (v * dir >= 0.0) ? 0 : 1;
+
+    if (ncells == 2) {
+      Aface(i, i) = vmod;
+      Aface(1 - i, i) = -vmod;
+    } else if (i == 0) {
+      Aface(0, 0) = vmod;
+    }
+
+    jac_op_->matrices[f] = Aface;
+  }
+}  
+
+
+  
 /* ******************************************************************
 * Given pressures, reduce the problem to Lagrange multipliers.
 ****************************************************************** */
@@ -1094,6 +1178,8 @@ void PDE_DiffusionMFD::UpdateFlux(const Teuchos::Ptr<const CompositeVector>& u,
   // Initialize intensity in ghost faces.
   flux->PutScalar(0.0);
   u->ScatterMasterToGhosted("face");
+
+  if (k_ != Teuchos::null) k_->ScatterMasterToGhosted("face");
 
   const Epetra_MultiVector& u_cell = *u->ViewComponent("cell");
   const Epetra_MultiVector& u_face = *u->ViewComponent("face", true);
@@ -1145,6 +1231,8 @@ void PDE_DiffusionMFD::UpdateFluxNonManifold(
   // Initialize intensity in ghost faces.
   flux->PutScalar(0.0);
   u->ScatterMasterToGhosted("face");
+
+  if (k_ != Teuchos::null) k_->ScatterMasterToGhosted("face");
 
   const Epetra_MultiVector& u_cell = *u->ViewComponent("cell");
   const Epetra_MultiVector& u_face = *u->ViewComponent("face", true);
