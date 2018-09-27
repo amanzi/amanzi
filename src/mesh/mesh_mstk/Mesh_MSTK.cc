@@ -2954,7 +2954,7 @@ MSet_ptr Mesh_MSTK::build_set(const Teuchos::RCP<const AmanziGeometry::Region>& 
       if (! kdtree_faces_initialized_) {
         int nface = num_entities(FACE, Parallel_type::ALL);
         face_centroid(0);
-        kdtree_faces_.Init(face_centroids_);
+        kdtree_faces_.Init(&face_centroids_);
         kdtree_faces_initialized_ = true;
       }
 

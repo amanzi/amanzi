@@ -35,7 +35,7 @@ TEST(NANOFLANN) {
 
   // construct a kd-tree index:
   Amanzi::AmanziMesh::PointCloud cloud;
-  cloud.Init(points);
+  cloud.Init(&points);
 
   MyKDTree tree(d, cloud, nanoflann::KDTreeSingleIndexAdaptorParams(10));
   tree.buildIndex();

@@ -42,7 +42,7 @@ class PointCloud {
   template <class BoundingBox>
   bool kdtree_get_bbox(BoundingBox& bb) const { return false; }
 
-  void Init(std::vector<AmanziGeometry::Point>& points) { points_ = &points; }
+  void Init(const std::vector<AmanziGeometry::Point>* points) { points_ = points; }
 
  private:
   std::vector<AmanziGeometry::Point>* points_;
