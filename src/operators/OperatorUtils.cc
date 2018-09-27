@@ -8,8 +8,9 @@
 
   Author: Ethan Coon (ecoon@lanl.gov)
 */
-
+#include "Mesh.hh"
 #include "Epetra_Vector.h"
+#include "Epetra_IntVector.h"
 
 #include "CompositeVector.hh"
 #include "OperatorDefs.hh"
@@ -17,6 +18,7 @@
 #include "Schema.hh"
 #include "SuperMap.hh"
 #include "TreeVector.hh"
+#include "ParallelCommunication.hh"
 
 namespace Amanzi {
 namespace Operators {
@@ -31,7 +33,7 @@ int CopyCompositeVectorToSuperVector(const SuperMap& smap, const CompositeVector
     const std::vector<int>& face_inds = smap.Indices("face", dofnum);
     const Epetra_MultiVector& data = *cv.ViewComponent("face");
     for (int f = 0; f != data.MyLength(); ++f) sv[face_inds[f]] = data[0][f];
-  } 
+  }
 
   if (cv.HasComponent("cell") && smap.HasComponent("cell")) {
     const std::vector<int>& cell_inds = smap.Indices("cell", dofnum);
@@ -50,6 +52,15 @@ int CopyCompositeVectorToSuperVector(const SuperMap& smap, const CompositeVector
     const Epetra_MultiVector& data = *cv.ViewComponent("node");
     for (int v = 0; v != data.MyLength(); ++v) sv[node_inds[v]] = data[0][v];
   }
+
+  if (cv.HasComponent("boundary_face") && smap.HasComponent("boundary_face")) {
+    const std::vector<int>& bndface_inds = smap.Indices("boundary_face", dofnum);
+    //for (int i=0; i<bndface_inds.size(); i++) std::cout<<bndface_inds[i]<<" "; std::cout<<"\n";
+    
+    const Epetra_MultiVector& data = *cv.ViewComponent("boundary_face");
+    for (int f = 0; f != data.MyLength(); ++f) sv[bndface_inds[f]] = data[0][f];
+  }
+  
   return 0;
 }
 
@@ -64,7 +75,7 @@ int CopySuperVectorToCompositeVector(const SuperMap& smap, const Epetra_Vector& 
     const std::vector<int>& face_inds = smap.Indices("face", dofnum);
     Epetra_MultiVector& data = *cv.ViewComponent("face");
     for (int f = 0; f != data.MyLength(); ++f) data[0][f] = sv[face_inds[f]];
-  } 
+  }
 
   if (cv.HasComponent("cell") && smap.HasComponent("cell")) {
     const std::vector<int>& cell_inds = smap.Indices("cell", dofnum);
@@ -82,6 +93,13 @@ int CopySuperVectorToCompositeVector(const SuperMap& smap, const Epetra_Vector& 
     const std::vector<int>& node_inds = smap.Indices("node", dofnum);
     Epetra_MultiVector& data = *cv.ViewComponent("node");
     for (int v = 0; v != data.MyLength(); ++v) data[0][v] = sv[node_inds[v]];
+  }
+
+  if (cv.HasComponent("boundary_face") && smap.HasComponent("boundary_face")) {
+    const std::vector<int>& bndface_inds = smap.Indices("boundary_face", dofnum);
+    // for (int i=0; i<bndface_inds.size(); i++) std::cout<<bndface_inds[i]<<" "; std::cout<<"\n";
+    Epetra_MultiVector& data = *cv.ViewComponent("boundary_face");
+    for (int f = 0; f != data.MyLength(); ++f) data[0][f] = sv[bndface_inds[f]];
   } 
   return 0;
 }
@@ -99,6 +117,12 @@ int AddSuperVectorToCompositeVector(const SuperMap& smap, const Epetra_Vector& s
     for (int f = 0; f != data.MyLength(); ++f) data[0][f] += sv[face_inds[f]];
   } 
 
+  if (cv.HasComponent("boundary_face") && smap.HasComponent("boundary_face")) {
+    const std::vector<int>& bndface_inds = smap.Indices("boundary_face", dofnum);   
+    const Epetra_MultiVector& data = *cv.ViewComponent("boundary_face");
+    for (int f = 0; f != data.MyLength(); ++f) data[0][f] += sv[bndface_inds[f]];
+  } 
+  
   if (cv.HasComponent("cell") && smap.HasComponent("cell")) {
     const std::vector<int>& cell_inds = smap.Indices("cell", dofnum);
     Epetra_MultiVector& data = *cv.ViewComponent("cell");
@@ -267,6 +291,42 @@ Teuchos::RCP<SuperMap> CreateSuperMap(const CompositeVectorSpace& cvs, int schem
     ghost_maps.push_back(meshmaps.second);
   }
 
+  if (schema & OPERATOR_SCHEMA_DOFS_BNDFACE) {
+    AMANZI_ASSERT(cvs.HasComponent("boundary_face"));
+    compnames.push_back("boundary_face");
+    dofnums.push_back(n_dofs);
+
+    std::pair<Teuchos::RCP<const Epetra_Map>, Teuchos::RCP<const Epetra_Map> > meshmaps =
+        getMaps(*cvs.Mesh(), AmanziMesh::BOUNDARY_FACE);
+    
+    std::pair<Teuchos::RCP<const Epetra_Map>, Teuchos::RCP<const Epetra_Map> > facemaps =
+        getMaps(*cvs.Mesh(), AmanziMesh::FACE);
+    // std::cout<<*meshmaps.first<<"\n";
+    // std::cout<<*meshmaps.second<<"\n";
+    
+    // maps.push_back(meshmaps.first);
+    // ghost_maps.push_back(meshmaps.second);
+    // if (meshmaps.second->Comm().MyPID() == 1){
+    //   std::cout<<meshmaps.first->NumMyElements()<<" "<<meshmaps.second->NumMyElements()<<"\n";
+    //   for (int i=0; i<meshmaps.second->NumMyElements();i++){
+    //     int f = facemaps.second->LID(meshmaps.second->GID(i));
+    //     //std::cout<<"face "<<i<<" "<<f<<" "<<cvs.Mesh()->face_centroid(f)<<"\n";
+    //     std::cout<<"face "<<i<<" "<<f<<" : "<<cvs.Mesh()->face_centroid(f)<<"\n";
+    //   }
+    // }
+    //exit(0);
+    // int num_boundary_faces = meshmaps.first -> NumMyElements();    
+    // Teuchos::RCP<Epetra_Map>  boundary_map =  Teuchos::rcp(new Epetra_Map(-1, num_boundary_faces, 0, meshmaps.first->Comm()));
+
+    std::pair<Teuchos::RCP<const Epetra_Map>, Teuchos::RCP<const Epetra_Map> > new_bnd_map =
+      CreateBoundaryMaps(cvs.Mesh(), meshmaps, facemaps);
+    
+    maps.push_back(new_bnd_map.first);
+    ghost_maps.push_back(new_bnd_map.second);
+
+
+  }
+  
   return Teuchos::rcp(new SuperMap(cvs.Comm(), compnames, dofnums, maps, ghost_maps));
 }
 
@@ -302,12 +362,12 @@ unsigned int MaxRowSize(const AmanziMesh::Mesh& mesh, int schema, unsigned int n
   unsigned int row_size(0);
   int dim = mesh.space_dimension();
   if (schema & OPERATOR_SCHEMA_DOFS_FACE) {
-    unsigned int i = 0;
+    unsigned int i = (dim == 2) ? OPERATOR_QUAD_FACES : OPERATOR_HEX_FACES;
 
     for (int c = 0; c < mesh.num_entities(AmanziMesh::CELL, AmanziMesh::Parallel_type::OWNED); ++c) {
       i = std::max(i, mesh.cell_get_num_faces(c));
     }
-    row_size += 2 * i - 1;
+    row_size += 2 * i;
   }
 
   if (schema & OPERATOR_SCHEMA_DOFS_CELL) {
@@ -348,7 +408,135 @@ unsigned int MaxRowSize(const AmanziMesh::Mesh& mesh, Schema& schema)
   }
 
   return row_size;
-}    
+}
+
+/* ******************************************************************
+*  Create continuous boundary maps
+****************************************************************** */
+  
+std::pair<Teuchos::RCP<const Epetra_Map>, Teuchos::RCP<const Epetra_Map> >
+CreateBoundaryMaps(Teuchos::RCP<const AmanziMesh::Mesh> mesh,
+                   std::pair<Teuchos::RCP<const Epetra_Map>, Teuchos::RCP<const Epetra_Map> >& bnd_maps,
+                   std::pair<Teuchos::RCP<const Epetra_Map>, Teuchos::RCP<const Epetra_Map> >& face_maps){
+
+  int num_boundary_faces_owned = bnd_maps.first -> NumMyElements();
+
+  AMANZI_ASSERT(num_boundary_faces_owned > 0);
+  
+  Teuchos::RCP<Epetra_Map>  boundary_map =  Teuchos::rcp(new Epetra_Map(-1, num_boundary_faces_owned, 0, bnd_maps.first->Comm()));
+
+  int n_ghosted = bnd_maps.second -> NumMyElements() - num_boundary_faces_owned;
+  std::vector<int> gl_id(n_ghosted), pr_id(n_ghosted), lc_id(n_ghosted);
+
+  int total_proc = mesh->get_comm()->NumProc();
+  int my_pid = mesh->get_comm()->MyPID();
+  std::vector<int> min_global_id(total_proc, 0), tmp(total_proc, 0);
+
+  tmp[my_pid] = boundary_map->GID(0);
+
+#ifdef HAVE_MPI
+  const MPI_Comm& comm = mesh->get_comm()->Comm();
+  MPI_Allreduce(tmp.data(), min_global_id.data(), total_proc, MPI_INT, MPI_SUM, comm);
+#endif
+  
+  for (int n = num_boundary_faces_owned; n < bnd_maps.second -> NumMyElements(); n++){
+    int f = face_maps.second->LID(bnd_maps.second->GID(n));
+    gl_id[n - num_boundary_faces_owned] = face_maps.second->GID(f);
+    //if (mesh->get_comm()->MyPID() == 1) std::cout << gl_id[n - num_boundary_faces_owned]<<" "<<n - num_boundary_faces_owned<<" : "<<mesh->face_centroid(f)<<"\n";
+  }
+
+  bnd_maps.first->RemoteIDList(n_ghosted, gl_id.data(), pr_id.data(), lc_id.data());
+
+
+  int n_ghosted_new = num_boundary_faces_owned;
+  for (int i=0; i<n_ghosted; i++){
+    if (pr_id[i] >= 0){
+      n_ghosted_new++;
+    }
+  }
+  
+  //std::cout<<*face_maps.second<<"\n";
+
+  std::vector<int> global_id_ghosted(n_ghosted_new);
+  for (int i=0; i<num_boundary_faces_owned; i++)  {
+    global_id_ghosted[i] = boundary_map->GID(i);  
+    // int f = face_maps.second -> LID(bnd_maps.first->GID(i));
+    // if (my_pid==1) std::cout<<global_id_ghosted[i]<<" "<<f<<" "<<mesh->face_centroid(f)<<"\n";
+  }
+
+  int j = num_boundary_faces_owned;
+  for (int i=0; i<n_ghosted; i++){
+    if (pr_id[i] >= 0){
+      int proc_id = pr_id[i];
+      global_id_ghosted[j] = min_global_id[proc_id] + lc_id[i];
+      j++;
+    }
+  }
+  
+
+  Teuchos::RCP<Epetra_Map>  boundary_map_ghosted =  Teuchos::rcp(new Epetra_Map(-1, n_ghosted_new, global_id_ghosted.data(), 0, bnd_maps.first->Comm()));
+  
+
+  return std::make_pair(boundary_map, boundary_map_ghosted);
+}
+
+std::pair<Teuchos::RCP<const Epetra_Map>, Teuchos::RCP<const Epetra_Map> >
+CreateNonuniformMaps(Teuchos::RCP<const AmanziMesh::Mesh> mesh,
+                     std::pair<Teuchos::RCP<const Epetra_Map>, Teuchos::RCP<const Epetra_Map> >& uni_maps,
+                     Epetra_IntVector& num_elems, Epetra_IntVector& block_start, AmanziMesh::Entity_kind kind){
+
+  int num_owned = mesh->num_entities(kind, AmanziMesh::Parallel_type::OWNED);
+  int num_wghosted = mesh->num_entities(kind, AmanziMesh::Parallel_type::ALL);
+
+  int num_nonuni_owned = 0;
+  for (int n=0; n<num_owned; n++) {
+    block_start[n] = num_nonuni_owned;
+    num_nonuni_owned += num_elems[n];    
+  }
+
+  Teuchos::RCP<Epetra_Map> nonuni_map =  Teuchos::rcp(new Epetra_Map(-1, num_nonuni_owned, 0, uni_maps.first->Comm()));
+
+  Epetra_IntVector block_start_gl_id(block_start);
+  
+  for (int n=0; n<num_owned; n++){
+    int loc_id = block_start[n];
+    block_start_gl_id[n] = nonuni_map->GID(loc_id);
+  }
+ 
+  Epetra_Import importer(*uni_maps.second, *uni_maps.first);
+  
+  int* data;
+  block_start_gl_id.ExtractView(&data);
+  Epetra_IntVector vv1(View, *uni_maps.first, data);
+  block_start_gl_id.Import(vv1, importer, Insert);
+
+  num_elems.ExtractView(&data);
+  Epetra_IntVector vv2(View, *uni_maps.first, data);
+  num_elems.Import(vv2, importer, Insert);
+  
+
+  int num_nonuni_wghosted = num_nonuni_owned;
+  
+  for (int n = num_owned; n<num_wghosted; n++){
+     block_start[n] = num_nonuni_wghosted;
+     num_nonuni_wghosted += num_elems[n];
+  }
+
+  std::vector<int> global_id_ghosted(num_nonuni_wghosted);
+  for (int n=0; n<num_nonuni_owned; n++){
+    global_id_ghosted[n] = nonuni_map->GID(n);
+  }
+  for (int k=num_owned; k<num_wghosted; k++){
+    for (int n=0; n<num_elems[k]; n++){
+      global_id_ghosted[ block_start[k] + n ] =  block_start_gl_id[k] + n;
+    }
+  }
+
+  Teuchos::RCP<Epetra_Map> nonuni_map_ghosted =  Teuchos::rcp(new Epetra_Map(-1, num_nonuni_wghosted, global_id_ghosted.data(), 0,uni_maps.first->Comm()));
+                                          
+  
+
+}
 
 }  // namespace Operators
 }  // namespace Amanzi
