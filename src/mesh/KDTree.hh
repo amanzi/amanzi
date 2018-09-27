@@ -45,7 +45,7 @@ class PointCloud {
   void Init(const std::vector<AmanziGeometry::Point>* points) { points_ = points; }
 
  private:
-  std::vector<AmanziGeometry::Point>* points_;
+  const std::vector<AmanziGeometry::Point>* points_;
 };
 
 
@@ -59,8 +59,8 @@ class KDTree {
   ~KDTree() {};
 
   // main member function
-  void Init(std::vector<AmanziGeometry::Point>& points) {
-    int d = points[0].dim();
+  void Init(const std::vector<AmanziGeometry::Point>* points) {
+    int d = (*points)[0].dim();
     cloud_.Init(points);
     tree_ = std::make_shared<KDTree_L2Adaptor>(d, cloud_, nanoflann::KDTreeSingleIndexAdaptorParams(10));
     tree_->buildIndex();
