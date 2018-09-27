@@ -4,16 +4,19 @@ Steady-State Unconfined Flow with a Seepage Boundary Condition
 Capabilities Tested
 -------------------
 
-This one-dimensional flow problem tests the Amanzi unsaturated (Richards) flow process
-kernel with spatially-varying recharge and drain boundary
+This one-dimensional flow problem tests the Amanzi unsaturated (Richards) flow process kernel with spatially-varying recharge and drain boundary
 conditions in an unconfined aquifer.
 Capabilities tested include:
 
-  * steady-state flow  
-  * variably-saturated flow in unconfined aquifer with adjoining vadose zone
+  * single-phase, one-dimensional flow
+  * steady-state flow
+  * variably-saturated (both saturated and unsaturated) flow
+  * constant-head (Dirichlet) boundary conditions
+  * no-flow (Neumann) boundary conditions
   * spatially-varying recharge/drain (Cauchy) boundary conditions
-  * mass conservation 
-  * non-orthogonal mesh 
+  * homogeneous porous medium
+  * isotropic porous medium
+  * non-uniform, non-orthogonal mesh
 
 For details on this test, see :ref:`about_unconfined_seepage`. 
 
